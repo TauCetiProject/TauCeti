@@ -23,12 +23,14 @@ paths are obtained as limits of nearly minimizing ones.
 ## References
 
 * D. Burago, Y. Burago, and S. Ivanov, *A Course in Metric Geometry*, AMS, 2001, Section 2.5.
+* Riccardo Brasca, *ColdingMinicozziTheory*,
+  [complete-ball proof](https://github.com/riccardobrasca/ColdingMinicozziTheory/commit/afd6c6c8).
 -/
 
 public section
 
 open Set
-open scoped ENNReal unitInterval
+open scoped ENNReal NNReal unitInterval
 
 namespace TauCeti
 
@@ -62,5 +64,37 @@ theorem IsLengthSpace.exists_lipschitz_path [IsLengthSpace X] {x y : X} {r : ℝ
   · simpa only [ContinuousMap.coe_mk, Icc.coe_one, Function.comp_apply,
       variationOnFromTo.eq_of_le _ _ zero_le_one, inter_self, hγ.target, mul_one] using
       hfactor (right_mem_Icc.2 zero_le_one)
+
+/-- In a length space, a point at distance at most `s + t` from `p` lies within `t + ε` of a
+point at distance at most `s` from `p`. -/
+theorem IsLengthSpace.exists_dist_le_of_dist_le_add [IsLengthSpace X] {p x : X} {s t ε : ℝ}
+    (hs : 0 ≤ s) (ht : 0 ≤ t) (hε : 0 < ε) (hx : dist p x ≤ s + t) :
+    ∃ y, dist p y ≤ s ∧ dist y x ≤ t + ε := by
+  by_cases hxs : dist p x ≤ s
+  · exact ⟨x, hxs, by rw [dist_self]; positivity⟩
+  rw [not_le] at hxs
+  set r := dist p x + ε with _hr_def
+  have hr : 0 < r := by positivity
+  obtain ⟨f, hf0, hf1, hf⟩ := IsLengthSpace.exists_lipschitz_path (x := p) (y := x)
+    (r := r) (by linarith)
+  have hsr : s / r ≤ 1 := (div_le_one hr).2 (by linarith)
+  let τ : unitInterval := ⟨s / r, div_nonneg hs hr.le, hsr⟩
+  have hK : ((r.toNNReal : ℝ≥0) : ℝ) = r := Real.coe_toNNReal _ hr.le
+  refine ⟨f τ, ?_, ?_⟩
+  · have h := hf.dist_le_mul 0 τ
+    rw [hf0, hK, Subtype.dist_eq, Real.dist_eq] at h
+    have hτ : |((0 : unitInterval) : ℝ) - (τ : ℝ)| = s / r := by
+      simp only [Icc.coe_zero, zero_sub, abs_neg, τ]
+      exact abs_of_nonneg (div_nonneg hs hr.le)
+    rw [hτ, mul_div_cancel₀ _ hr.ne'] at h
+    exact h
+  · have h := hf.dist_le_mul τ 1
+    rw [hf1, hK, Subtype.dist_eq, Real.dist_eq] at h
+    have hτ : |(τ : ℝ) - ((1 : unitInterval) : ℝ)| = 1 - s / r := by
+      simp only [Icc.coe_one, τ]
+      rw [abs_of_nonpos (by linarith)]
+      ring
+    rw [hτ, mul_sub, mul_one, mul_div_cancel₀ _ hr.ne'] at h
+    linarith
 
 end TauCeti

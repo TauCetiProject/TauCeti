@@ -6,9 +6,10 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Topology.UniformSpace.Completion
+public import Mathlib.Topology.UniformSpace.CompleteSeparated
 
 /-!
-# Neighbourhoods and fibres of the map to the separated completion
+# Neighbourhoods, fibres and range of the map to the separated completion
 
 The neighbourhood filter of a point of a uniform space is countably generated exactly when the
 neighbourhood filter of its image in the separated completion is. Nothing is assumed of the space
@@ -26,6 +27,7 @@ points that the separation quotient identifies.
 
 * `UniformSpace.Completion.isCountablyGenerated_nhds_coe_iff`.
 * `UniformSpace.Completion.coe_eq_coe_iff_inseparable`.
+* `TauCeti.range_coe_completion_eq_univ`: a complete uniform space maps onto its completion.
 -/
 
 public section
@@ -52,5 +54,17 @@ theorem coe_eq_coe_iff_inseparable {α : Type*} [UniformSpace α] {a b : α} :
   rw [← inseparable_iff_eq, isDenseInducing_coe.isInducing.inseparable_iff]
 
 end UniformSpace.Completion
+
+namespace TauCeti
+
+/-- A complete space has no ideal boundary: every point of its completion comes from the
+space. -/
+@[simp]
+theorem range_coe_completion_eq_univ {α : Type*} [UniformSpace α] [CompleteSpace α] :
+    Set.range ((↑) : α → UniformSpace.Completion α) = Set.univ := by
+  rw [← (UniformSpace.Completion.isUniformInducing_coe α).isComplete_range.isClosed.closure_eq]
+  exact UniformSpace.Completion.denseRange_coe.closure_range
+
+end TauCeti
 
 end
