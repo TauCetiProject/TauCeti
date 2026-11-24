@@ -40,9 +40,9 @@ the triangle of `C`.
 
 * `CategoryTheory.Idempotents.Karoubi.mem_distTriang_iff`: the distinguished triangles of
   `Karoubi C` are the retracts of images of distinguished triangles of `C`.
-* The instance `(toKaroubi C).IsTriangulated`.
-* `CategoryTheory.Idempotents.Karoubi.toKaroubi_mapTriangle_mem_distTriang_iff`: a triangle of `C`
-  is distinguished exactly when its image in `Karoubi C` is.
+* The instance `(toKaroubi C).IsTriangulated`. As `toKaroubi C` is fully faithful, Mathlib's
+  `CategoryTheory.Functor.map_distinguished_iff` then shows that a triangle of `C` is
+  distinguished exactly when its image in `Karoubi C` is.
 
 ## References
 
@@ -229,24 +229,6 @@ theorem mem_distTriang_iff (T : Triangle (Karoubi C)) :
 /-- The embedding of a pretriangulated category in its idempotent completion is triangulated. -/
 instance : (toKaroubi C).IsTriangulated where
   map_distinguished T hT := ⟨T, hT, ⟨Retract.refl _⟩⟩
-
-/-- A triangle of `C` is distinguished exactly when its image in the idempotent completion is. -/
-theorem toKaroubi_mapTriangle_mem_distTriang_iff (T : Triangle C) :
-    (toKaroubi C).mapTriangle.obj T ∈ distTriang (Karoubi C) ↔ T ∈ distTriang C := by
-  refine ⟨fun hT ↦ ?_, (toKaroubi C).map_distinguished T⟩
-  obtain ⟨Z, g, h, hD⟩ := Pretriangulated.distinguished_cocone_triangle T.mor₁
-  obtain ⟨e, -, -⟩ := exists_iso_of_arrow_iso _ _ hT
-    ((toKaroubi C).map_distinguished _ hD) (Iso.refl _)
-  let ff := fullyFaithfulToKaroubi C
-  refine Pretriangulated.isomorphic_distinguished _ hD _
-    (Triangle.isoMk _ (Triangle.mk T.mor₁ g h) (ff.preimageIso (Triangle.π₁.mapIso e))
-      (ff.preimageIso (Triangle.π₂.mapIso e)) (ff.preimageIso (Triangle.π₃.mapIso e)) ?_ ?_ ?_)
-  -- The preimage of a morphism under `toKaroubi C` is its underlying morphism, by definition.
-  · exact (by simpa using congr_arg Hom.f e.hom.comm₁ :
-      T.mor₁ ≫ e.hom.hom₂.f = e.hom.hom₁.f ≫ T.mor₁)
-  · exact (by simpa using congr_arg Hom.f e.hom.comm₂ : T.mor₂ ≫ e.hom.hom₃.f = e.hom.hom₂.f ≫ g)
-  · exact (by simpa using congr_arg Hom.f e.hom.comm₃ :
-      T.mor₃ ≫ e.hom.hom₁.f⟦(1 : ℤ)⟧' = e.hom.hom₃.f ≫ h)
 
 end Idempotents.Karoubi
 
