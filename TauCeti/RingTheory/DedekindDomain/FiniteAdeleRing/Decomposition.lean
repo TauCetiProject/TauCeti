@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Away.Decomposition
 
 /-!
