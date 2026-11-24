@@ -361,33 +361,6 @@ theorem analyticOnNhd_tsum_mul_pow_of_eventually_le {𝕜 : Type*} [Nontrivially
     simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_ofReal_iff hR, Metric.mem_ball]
       using hz
 
-/-- **Polynomial-growth radius criterion.** If the coefficients `c : ℕ → 𝕜` satisfy an eventual
-polynomial bound `‖c k‖ ≤ C * (k + 1) ^ m`, then the scalar series `ofScalars E c` has
-convergence radius at least `1`. -/
-theorem one_le_radius_ofScalars_of_eventually_norm_le_mul_pow {𝕜 E : Type*}
-    [NontriviallyNormedField 𝕜] [NormedRing E] [NormedAlgebra 𝕜 E]
-    {c : ℕ → 𝕜} {C : ℝ} {m : ℕ}
-    (hc : ∀ᶠ k in Filter.atTop, ‖c k‖ ≤ C * ((k : ℝ) + 1) ^ m) :
-    1 ≤ (ofScalars E c).radius := by
-  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
-  rw [ENNReal.coe_lt_one_iff] at hr
-  have hC : 0 ≤ max C 0 := le_max_right C 0
-  have hu : Summable fun k : ℕ ↦ (max C 0 * 2 ^ m) * ((k : ℝ) ^ m * (r : ℝ) ^ k) :=
-    (summable_pow_mul_geometric_of_norm_lt_one m (r := (r : ℝ))
-      (by simpa [Real.norm_of_nonneg r.coe_nonneg] using NNReal.coe_lt_one.mpr hr)).mul_left _
-  refine le_radius_ofScalars_of_eventually_le (r := r) hu ?_
-  filter_upwards [hc, Filter.eventually_ge_atTop 1] with k hck hk
-  have hk1 : (k : ℝ) + 1 ≤ 2 * (k : ℝ) := by
-    have : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
-    linarith
-  have hck' : ‖c k‖ ≤ max C 0 * 2 ^ m * (k : ℝ) ^ m := by
-    refine hck.trans ((mul_le_mul_of_nonneg_right (le_max_left C 0) (by positivity)).trans ?_)
-    calc
-      max C 0 * ((k : ℝ) + 1) ^ m ≤ max C 0 * (2 * (k : ℝ)) ^ m :=
-        mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hk1 m) hC
-      _ = max C 0 * 2 ^ m * (k : ℝ) ^ m := by rw [mul_pow, mul_assoc]
-  exact (mul_le_mul_of_nonneg_right hck' (pow_nonneg r.coe_nonneg k)).trans_eq (mul_assoc _ _ _)
-
 end FormalMultilinearSeries
 
 namespace TauCeti

@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Basic
 
 /-!
 # Gauss' series for digamma

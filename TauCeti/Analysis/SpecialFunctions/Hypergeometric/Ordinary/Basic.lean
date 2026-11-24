@@ -77,9 +77,10 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
 * `TauCeti.ordinaryHypergeometric_gaussEquation`: Gauss's hypergeometric equation inside the disc
   of convergence, with the special cases
   `TauCeti.ordinaryHypergeometric_gaussEquation_of_norm_lt_one` (the open unit disc),
-  `TauCeti.ordinaryHypergeometric_gaussEquation_of_neg_nat` (terminating series, everywhere), and
-  `TauCeti.hasDerivAt_mul_one_sub_rpow_deriv_ordinaryHypergeometric` (Sturm–Liouville form for
-  `c = 1` on `(-1, 1)`).
+  `TauCeti.ordinaryHypergeometric_gaussEquation_of_neg_nat` (terminating series, everywhere),
+  `TauCeti.hasDerivAt_rpow_mul_one_sub_rpow_deriv_ordinaryHypergeometric` (Sturm–Liouville form for
+  general `c ∉ −ℕ`), and `TauCeti.hasDerivAt_mul_one_sub_rpow_deriv_ordinaryHypergeometric` (`c = 1`
+  on `(-1, 1)`).
 * `TauCeti.mk_ordinaryHypergeometricCoefficient_gaussEquation`: Gauss's hypergeometric equation
   for the series as a formal power series, over any field of characteristic zero.
 
@@ -461,6 +462,36 @@ theorem ordinaryHypergeometric_gaussEquation_of_neg_nat (a b c : 𝕂) {k : ℕ}
 
 end Scalar
 
+/-- **Sturm–Liouville form of Gauss's hypergeometric equation**: whenever `c` is not a nonpositive
+integer, on `(-1, 1)` (away from `0` unless `1 ≤ c`, in particular on `(0, 1)`),
+`y = ₂F₁(a, b; c; ·)` satisfies
+`(x ^ c * (1 - x) ^ (a + b - c + 1) * y')' = a * b * x ^ (c - 1) * (1 - x) ^ (a + b - c) * y`. -/
+theorem hasDerivAt_rpow_mul_one_sub_rpow_deriv_ordinaryHypergeometric (a b c : ℝ)
+    (hc : ∀ k : ℕ, (k : ℝ) ≠ -c) {x : ℝ} (hx : |x| < 1) (hx0 : x ≠ 0 ∨ 1 ≤ c) :
+    HasDerivAt (fun y ↦ y ^ c * (1 - y) ^ (a + b - c + 1) * deriv (₂F₁ a b c) y)
+      (a * b * x ^ (c - 1) * (1 - x) ^ (a + b - c) * ₂F₁ a b c x) x := by
+  have hx_e : x ∈ Metric.eball (0 : ℝ) 1 := mem_eball_zero_iff.mpr <| by
+    rwa [← ofReal_norm, ENNReal.ofReal_lt_one, Real.norm_eq_abs]
+  have hf := hasFPowerSeriesOnBall_ordinaryHypergeometric ℝ a b c
+  have hd2 := (hf.deriv_ofScalars.analyticAt_of_mem hx_e).differentiableAt.hasDerivAt
+  have h1x : 0 < 1 - x := sub_pos.mpr (abs_lt.mp hx).2
+  have hd1 := (Real.hasDerivAt_rpow_const hx0).mul
+    ((Real.hasDerivAt_rpow_const (p := a + b - c + 1) (Or.inl h1x.ne')).comp x
+      ((hasDerivAt_id x).const_sub 1))
+  refine (hd1.mul hd2).congr_deriv ?_
+  have hode := ordinaryHypergeometric_gaussEquation_of_norm_lt_one (𝕂 := ℝ) a b c
+    hc (Real.norm_eq_abs x ▸ hx)
+  have hpow1 : (1 - x) ^ (a + b - c + 1) = (1 - x) ^ (a + b - c) * (1 - x) := by
+    simpa only [sub_add_cancel] using Real.rpow_add_one h1x.ne' (a + b - c)
+  have hpow0 : x ^ c = x ^ (c - 1) * x := by
+    by_cases hx_ne : x = 0
+    · subst hx_ne
+      have hc0 : c ≠ 0 := fun h ↦ hc 0 (by simp [h])
+      simp [hc0]
+    · simpa only [sub_add_cancel] using Real.rpow_add_one hx_ne (c - 1)
+  simp only [Pi.mul_apply, Function.comp_apply, add_sub_cancel_right, hpow0, hpow1]
+  linear_combination x ^ (c - 1) * (1 - x) ^ (a + b - c) * hode
+
 /-- **Sturm–Liouville form of Gauss's hypergeometric equation for `c = 1`**: on `(-1, 1)`,
 `y = ₂F₁(a, b; 1; ·)` satisfies
 `(x (1 - x) ^ (a + b) y')' = a b (1 - x) ^ (a + b - 1) y`. -/
@@ -468,21 +499,9 @@ theorem hasDerivAt_mul_one_sub_rpow_deriv_ordinaryHypergeometric (a b : ℝ) {x 
     (hx : |x| < 1) :
     HasDerivAt (fun y ↦ y * (1 - y) ^ (a + b) * deriv (₂F₁ a b 1) y)
       (a * b * (1 - x) ^ (a + b - 1) * ₂F₁ a b 1 x) x := by
-  have hx_e : x ∈ Metric.eball (0 : ℝ) 1 := by
-    rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one, Real.norm_eq_abs]
-  have hf := hasFPowerSeriesOnBall_ordinaryHypergeometric ℝ a b 1
-  have hd2 := (hf.deriv_ofScalars.analyticAt_of_mem hx_e).differentiableAt.hasDerivAt
-  have h1x : 0 < 1 - x := sub_pos.mpr (abs_lt.mp hx).2
-  have hd1 := (hasDerivAt_id x).mul ((Real.hasDerivAt_rpow_const (p := a + b)
-    (Or.inl h1x.ne')).comp x ((hasDerivAt_id x).const_sub 1))
-  refine (hd1.mul hd2).congr_deriv ?_
-  have hode := ordinaryHypergeometric_gaussEquation_of_norm_lt_one (𝕂 := ℝ) a b 1
-    (fun k hk ↦ by linarith [show (0 : ℝ) ≤ k by positivity])
-    (Real.norm_eq_abs x ▸ hx)
-  have hpow : (1 - x) ^ (a + b) = (1 - x) ^ (a + b - 1) * (1 - x) := by
-    simpa only [sub_add_cancel] using Real.rpow_add_one h1x.ne' (a + b - 1)
-  simp only [Pi.mul_apply, Function.comp_apply, id_eq, hpow]
-  linear_combination (1 - x) ^ (a + b - 1) * hode
+  have h := hasDerivAt_rpow_mul_one_sub_rpow_deriv_ordinaryHypergeometric a b 1
+    (fun k hk ↦ by linarith [show (0 : ℝ) ≤ k by positivity]) hx (Or.inr le_rfl)
+  simpa only [Real.rpow_one, sub_add_cancel, sub_self, Real.rpow_zero, mul_one] using h
 
 section FormalGaussEquation
 

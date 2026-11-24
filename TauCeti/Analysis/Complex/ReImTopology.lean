@@ -24,9 +24,9 @@ open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively op
 `Ω ∩ {0 ≤ im}` once it holds on the upper half of `Ω` and on the half-discs centred on the real
 axis (`TauCeti.inter_setOf_im_nonneg_induction`).
 
-Every point of a real neighborhood (and in particular every point of an open interval `(a, b)`)
-embeds into `ℂ` as an accumulation point of the real image (`Complex.accPt_ofReal_of_mem_nhds`,
-`Complex.accPt_ofReal_Ioo`).
+The centre `t₀` of any real neighborhood `s`, and every point of an open interval `(a, b)`, is an
+accumulation point in `ℂ` of the image of `s` (resp. `(a, b)`) under `Complex.ofReal`
+(`Complex.accPt_ofReal_of_mem_nhds`, `Complex.accPt_ofReal_Ioo`).
 -/
 
 public noncomputable section
@@ -118,8 +118,8 @@ theorem TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf (Ω :
     Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) = Ω.upperHalf :=
   Opens.ext ((TauCeti.interior_inter_setOf_im_nonneg Ω.isOpen).trans (Opens.coe_upperHalf Ω).symm)
 
-/-- Every point of a real set whose interior contains `t₀` (more generally, any neighborhood of `t₀`
-in `ℝ`) has `(t₀ : ℂ)` as an accumulation point of its image under `Complex.ofReal`. -/
+/-- If `s` is a neighborhood of `t₀` in `ℝ`, then `(t₀ : ℂ)` is an accumulation point of
+`Complex.ofReal '' s`. -/
 theorem Complex.accPt_ofReal_of_mem_nhds {s : Set ℝ} {t₀ : ℝ} (hs : s ∈ 𝓝 t₀) :
     AccPt (t₀ : ℂ) (Filter.principal ((↑) '' s)) := by
   rw [accPt_iff_frequently_nhdsNE]

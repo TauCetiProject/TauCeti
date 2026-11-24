@@ -86,69 +86,82 @@ theorem one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow_eq_sub_log {a x : ℝ}
       ∀ w ∈ uIcc 0 (1 - x), w ^ (a - 1) / (1 - w) = (w ^ (a - 1) - 1) / (1 - w) + (1 - w)⁻¹),
     intervalIntegral.integral_add hint1 hint2, hlog, ← sub_eq_add_neg]
 
+private theorem integral_finset_range_rpow_sub_pow {a : ℝ} (ha : 0 < a) (N : ℕ) :
+    ∫ w in (0 : ℝ)..1, ∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k) =
+      ∑ k ∈ Finset.range N, (1 / ((k : ℝ) + a) - 1 / ((k : ℝ) + 1)) := by
+  have h1 := TauCeti.integral_finset_rpow_zero_one (Finset.range N)
+    (fun k ↦ (k : ℝ) + a - 1) fun k _ ↦ by linarith [k.cast_nonneg (α := ℝ)]
+  simp only [sub_add_cancel] at h1
+  have h2 := TauCeti.integral_finset_rpow_zero_one (Finset.range N)
+    (fun k ↦ (k : ℝ)) fun k _ ↦ by linarith [k.cast_nonneg (α := ℝ)]
+  have hi1 : IntervalIntegrable (fun w : ℝ ↦ ∑ k ∈ Finset.range N, w ^ ((k : ℝ) + a - 1))
+      volume 0 1 :=
+    (IntervalIntegrable.sum (Finset.range N) fun k _ ↦
+      intervalIntegral.intervalIntegrable_rpow' (r := (k : ℝ) + a - 1)
+        (by linarith [k.cast_nonneg (α := ℝ)])).congr
+      fun w _ ↦ Finset.sum_apply w _ _
+  have hi2 : IntervalIntegrable (fun w : ℝ ↦ ∑ k ∈ Finset.range N, w ^ (k : ℕ)) volume 0 1 :=
+    Continuous.intervalIntegrable (by fun_prop) 0 1
+  have h2' : ∫ w in (0 : ℝ)..1, ∑ k ∈ Finset.range N, w ^ (k : ℕ) =
+      ∑ k ∈ Finset.range N, 1 / ((k : ℝ) + 1) := by
+    rw [← h2]
+    refine intervalIntegral.integral_congr fun w hw ↦ Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [uIcc_of_le zero_le_one] at hw
+    exact (rpow_natCast w k).symm
+  have hsub : ∫ w in (0 : ℝ)..1,
+        (∑ k ∈ Finset.range N, w ^ ((k : ℝ) + a - 1) - ∑ k ∈ Finset.range N, w ^ (k : ℕ)) =
+      ∑ k ∈ Finset.range N, (1 / ((k : ℝ) + a) - 1 / ((k : ℝ) + 1)) := by
+    rw [intervalIntegral.integral_sub hi1 hi2, h1, h2', ← Finset.sum_sub_distrib]
+  simpa only [Finset.sum_sub_distrib] using hsub
+
+private theorem rpow_add_sub_one_sub_pow {w a : ℝ} (hw : 0 < w) (k : ℕ) :
+    w ^ ((k : ℝ) + a - 1) - w ^ k = (w ^ (a - 1) - 1) * w ^ k := by
+  rw [sub_mul, one_mul, (by ring : (k : ℝ) + a - 1 = (a - 1) + k), rpow_add hw, rpow_natCast]
+
+private theorem norm_finset_range_rpow_sub_pow_le {a w : ℝ} (ha : 0 < a)
+    (hw₀ : 0 < w) (hw₁ : w < 1) (N : ℕ) :
+    ‖∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k)‖ ≤ w ^ (a - 1) + (⌈a⌉₊ : ℝ) := by
+  have hsum : ∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k) =
+      (w ^ (a - 1) - 1) * ∑ k ∈ Finset.range N, w ^ k := by
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun k _ ↦ rpow_add_sub_one_sub_pow hw₀ k
+  rw [hsum, Real.norm_eq_abs, abs_mul,
+    abs_of_nonneg (Finset.sum_nonneg fun k _ ↦ pow_nonneg hw₀.le k)]
+  refine (mul_le_mul_of_nonneg_left (sum_le_hasSum _ (fun _ _ ↦ pow_nonneg hw₀.le _)
+    (hasSum_geometric_of_lt_one hw₀.le hw₁)) (abs_nonneg _)).trans ?_
+  rw [← abs_of_pos (inv_pos.mpr (sub_pos.mpr hw₁)), ← abs_mul, ← div_eq_mul_inv]
+  exact Real.abs_rpow_sub_one_div_one_sub_le ha hw₀ hw₁
+
+private theorem tendsto_integral_finset_range_rpow_sub_pow {a : ℝ} (ha : 0 < a) :
+    Tendsto (fun N : ℕ ↦ ∫ w in (0 : ℝ)..1, ∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k))
+      atTop (𝓝 (∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w))) := by
+  refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence
+    (F := fun N w ↦ ∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k))
+    (fun w ↦ w ^ (a - 1) + (⌈a⌉₊ : ℝ)) (Eventually.of_forall fun N ↦ ?_)
+    (Eventually.of_forall fun N ↦ ?_)
+    ((intervalIntegral.intervalIntegrable_rpow' (by linarith)).add intervalIntegrable_const) ?_
+  · exact (intervalIntegrable_iff.mp (IntervalIntegrable.sum (Finset.range N) fun k _ ↦
+      (intervalIntegral.intervalIntegrable_rpow' (by linarith [k.cast_nonneg (α := ℝ)])).sub
+        (Continuous.intervalIntegrable (by fun_prop) 0 1))).aestronglyMeasurable.congr
+      (Eventually.of_forall fun w ↦ Finset.sum_apply w _ _)
+  · filter_upwards [Measure.ae_ne volume (1 : ℝ)] with w hw1 hw
+    rw [uIoc_of_le zero_le_one] at hw
+    exact norm_finset_range_rpow_sub_pow_le ha hw.1 (lt_of_le_of_ne hw.2 hw1) N
+  · filter_upwards [Measure.ae_ne volume (1 : ℝ)] with w hw1 hw
+    rw [uIoc_of_le zero_le_one] at hw
+    exact (div_eq_mul_inv (w ^ (a - 1) - 1) (1 - w) ▸
+      ((hasSum_geometric_of_lt_one hw.1.le (lt_of_le_of_ne hw.2 hw1)).mul_left _).congr_fun
+        fun k ↦ rpow_add_sub_one_sub_pow hw.1 k).tendsto_sum_nat
+
 /-- **Euler's integral representation of real digamma** (DLMF 5.9.16): for every `0 < a`,
 `∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w) = digamma 1 - digamma a`
 (equivalently `-eulerMascheroniConstant - digamma a`). -/
 theorem integral_rpow_sub_one_div_one_sub {a : ℝ} (ha : 0 < a) :
     ∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w) = digamma 1 - digamma a := by
-  let F : ℕ → ℝ → ℝ := fun N w ↦ ∑ k ∈ Finset.range N, (w ^ ((k : ℝ) + a - 1) - w ^ k)
-  have hrpow_mul {w : ℝ} (hw : 0 < w) (k : ℕ) :
-      w ^ ((k : ℝ) + a - 1) - w ^ k = (w ^ (a - 1) - 1) * w ^ k := by
-    rw [sub_mul, one_mul, (by ring : (k : ℝ) + a - 1 = (a - 1) + k), rpow_add hw, rpow_natCast]
-  have hdct : Tendsto (fun N ↦ ∫ w in (0 : ℝ)..1, F N w) atTop
-      (𝓝 (∫ w in (0 : ℝ)..1, (w ^ (a - 1) - 1) / (1 - w))) := by
-    refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (F := F)
-      (fun w ↦ w ^ (a - 1) + (⌈a⌉₊ : ℝ)) (Eventually.of_forall fun N ↦ ?_)
-      (Eventually.of_forall fun N ↦ ?_)
-      ((intervalIntegral.intervalIntegrable_rpow' (by linarith)).add intervalIntegrable_const) ?_
-    · exact (intervalIntegrable_iff.mp (IntervalIntegrable.sum (Finset.range N) fun k _ ↦
-        (intervalIntegral.intervalIntegrable_rpow' (by linarith [k.cast_nonneg (α := ℝ)])).sub
-          (Continuous.intervalIntegrable (by fun_prop) 0 1))).aestronglyMeasurable.congr
-        (Eventually.of_forall fun w ↦ Finset.sum_apply w _ _)
-    · filter_upwards [Measure.ae_ne volume (1 : ℝ)] with w hw1 hw
-      rw [uIoc_of_le zero_le_one] at hw
-      have hwoo : w ∈ Ioo (0 : ℝ) 1 := ⟨hw.1, lt_of_le_of_ne hw.2 hw1⟩
-      have hFN : F N w = (w ^ (a - 1) - 1) * ∑ k ∈ Finset.range N, w ^ k := by
-        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun k _ ↦ hrpow_mul hwoo.1 k
-      rw [hFN, Real.norm_eq_abs, abs_mul,
-        abs_of_nonneg (Finset.sum_nonneg fun k _ ↦ pow_nonneg hwoo.1.le k)]
-      refine (mul_le_mul_of_nonneg_left (sum_le_hasSum _ (fun _ _ ↦ pow_nonneg hwoo.1.le _)
-        (hasSum_geometric_of_lt_one hwoo.1.le hwoo.2)) (abs_nonneg _)).trans ?_
-      rw [← abs_of_pos (inv_pos.mpr (sub_pos.mpr hwoo.2)), ← abs_mul, ← div_eq_mul_inv]
-      exact Real.abs_rpow_sub_one_div_one_sub_le ha hwoo.1 hwoo.2
-    · filter_upwards [Measure.ae_ne volume (1 : ℝ)] with w hw1 hw
-      rw [uIoc_of_le zero_le_one] at hw
-      exact (div_eq_mul_inv (w ^ (a - 1) - 1) (1 - w) ▸
-        ((hasSum_geometric_of_lt_one hw.1.le (lt_of_le_of_ne hw.2 hw1)).mul_left _).congr_fun
-          fun k ↦ hrpow_mul hw.1 k).tendsto_sum_nat
-  have hfin (N : ℕ) :
-      ∫ w in (0 : ℝ)..1, F N w =
-        ∑ k ∈ Finset.range N, (1 / ((k : ℝ) + a) - 1 / ((k : ℝ) + 1)) := by
-    have h1 := TauCeti.integral_finset_rpow_zero_one (Finset.range N)
-      (fun k ↦ (k : ℝ) + a - 1) fun k _ ↦ by linarith [k.cast_nonneg (α := ℝ)]
-    simp only [sub_add_cancel] at h1
-    have h2 := TauCeti.integral_finset_rpow_zero_one (Finset.range N)
-      (fun k ↦ (k : ℝ)) fun k _ ↦ by linarith [k.cast_nonneg (α := ℝ)]
-    have hi1 : IntervalIntegrable (fun w : ℝ ↦ ∑ k ∈ Finset.range N, w ^ ((k : ℝ) + a - 1))
-        volume 0 1 :=
-      (IntervalIntegrable.sum (Finset.range N) fun k _ ↦
-        intervalIntegral.intervalIntegrable_rpow' (r := (k : ℝ) + a - 1)
-          (by linarith [k.cast_nonneg (α := ℝ)])).congr
-        fun w _ ↦ Finset.sum_apply w _ _
-    have hi2 : IntervalIntegrable (fun w : ℝ ↦ ∑ k ∈ Finset.range N, w ^ (k : ℕ)) volume 0 1 :=
-      Continuous.intervalIntegrable (by fun_prop) 0 1
-    have h2' : ∫ w in (0 : ℝ)..1, ∑ k ∈ Finset.range N, w ^ (k : ℕ) =
-        ∑ k ∈ Finset.range N, 1 / ((k : ℝ) + 1) := by
-      rw [← h2]
-      refine intervalIntegral.integral_congr fun w hw ↦ Finset.sum_congr rfl fun k _ ↦ ?_
-      rw [uIcc_of_le zero_le_one] at hw
-      exact (rpow_natCast w k).symm
-    have hsub : ∫ w in (0 : ℝ)..1,
-          (∑ k ∈ Finset.range N, w ^ ((k : ℝ) + a - 1) - ∑ k ∈ Finset.range N, w ^ (k : ℕ)) =
-        ∑ k ∈ Finset.range N, (1 / ((k : ℝ) + a) - 1 / ((k : ℝ) + 1)) := by
-      rw [intervalIntegral.integral_sub hi1 hi2, h1, h2', ← Finset.sum_sub_distrib]
-    simpa only [F, Finset.sum_sub_distrib] using hsub
-  simp_rw [hfin] at hdct
+  -- Pass the geometric-series expansion under the integral by dominated convergence,
+  -- evaluate each finite sum termwise, and identify the limit via Gauss's digamma series.
+  have hdct := tendsto_integral_finset_range_rpow_sub_pow ha
+  simp_rw [integral_finset_range_rpow_sub_pow ha] at hdct
   have hd := digamma_eq_gaussSeries (x := a) fun m ↦ by linarith [m.cast_nonneg (α := ℝ)]
   have hgauss := (summable_gaussSeries a).hasSum.neg
   rw [(by rw [digamma_one]; linarith :
