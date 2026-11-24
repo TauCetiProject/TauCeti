@@ -372,7 +372,7 @@ So the class in `H²(G, M)` is an invariant of the extension, and by
 `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv` the extension is recovered from any one of
 these factor sets. -/
 theorem cohomologyClass_factorSet_eq (σ σ' : S.Section) (hσ : σ 1 = 1) (hσ' : σ' 1 = 1)
-    (hact : InducesAction S) :
+    (hact : S.InducesAction) :
     (factorSet σ hσ hact).cohomologyClass = (factorSet σ' hσ' hact).cohomologyClass :=
   (FactorSet.cohomologyClass_eq_iff _ _).2 (isMulCoboundary₂_div σ σ' hσ hσ' hact)
 
@@ -387,7 +387,7 @@ sections it is read from. The backward direction is
 `TauCeti.FactorSet.nonempty_groupExtensionEquiv`, carried across the two identifications
 `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv`. -/
 theorem nonempty_equiv_iff_cohomologyClass_factorSet_eq (σ : S.Section) (σ' : S'.Section)
-    (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : InducesAction S) (hact' : InducesAction S') :
+    (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : S.InducesAction) (hact' : S'.InducesAction) :
     Nonempty (S.Equiv S') ↔
       (factorSet σ hσ hact).cohomologyClass = (factorSet σ' hσ' hact').cohomologyClass := by
   constructor

@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
+public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # The canonical `Spinᶜ` lift of the unitary group

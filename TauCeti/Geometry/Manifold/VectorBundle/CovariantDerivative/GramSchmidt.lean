@@ -91,10 +91,8 @@ theorem apply_gramSchmidt_eq_zero (hcov : cov.IsMetricCompatible) (j : ι)
         (fun y ↦ inner ℝ (w i y) (v j y) / inner ℝ (w i y) (w i y)) • w i)) x := by
       simpa only [Finset.sum_apply] using MDifferentiableAt.sum_section
         (fun i hi ↦ ht i (Finset.mem_Iio.mp hi))
-    rw [hformula, cov.isCovariantDerivativeOnUniv.sub
-      (hv j le_rfl) hsum,
-      TauCeti.Manifold.covariantDerivative_sum cov.isCovariantDerivativeOnUniv (Set.mem_univ x)
-        (fun i hi ↦ ht i (Finset.mem_Iio.mp hi)), hzero j le_rfl]
+    rw [hformula, cov.isCovariantDerivativeOnUniv.sub (hv j le_rfl) hsum,
+      cov.isCovariantDerivativeOnUniv.sum (fun i hi ↦ ht i (Finset.mem_Iio.mp hi)), hzero j le_rfl]
     rw [Finset.sum_eq_zero (fun i hi ↦ hz i (Finset.mem_Iio.mp hi)), sub_zero]
 
 /-- Normalized Gram–Schmidt preserves a family's being parallel at a point for a metric
