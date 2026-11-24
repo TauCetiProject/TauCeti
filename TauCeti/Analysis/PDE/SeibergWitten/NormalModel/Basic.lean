@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.FlatLimit
-public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+public import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 import TauCeti.Analysis.Calculus.DifferentialForm.Curl
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -103,6 +103,8 @@ vanishes at a point exactly when `N` and `P` do (`flatDeformation_familyNormalMo
 A family constant along the base has vanishing base couplings, and the results for
 base-independent variations are this special case (`familyNormalModelConnection_comp_snd`,
 `familyNormalModelSpinor_comp_snd`).
+The integrated squared norms of `N` and `P` are computed in
+`TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Energy`.
 
 ## References
 
@@ -679,6 +681,20 @@ theorem pairedBaseCoupling_apply_two (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 
 @[simp]
 theorem pairedBaseCoupling_apply_three (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
     pairedBaseCoupling D 3 = D 1 3 + D I 2 := (rfl)
+
+/-- `normalBaseCoupling D = D 1 - J' (D i)`, for the complex structure
+`J' = TauCeti.Vortex.targetComplexStructure` on the target of the gauge-fixed operator. -/
+theorem normalBaseCoupling_apply (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
+    normalBaseCoupling D = D 1 - Vortex.targetComplexStructure (D I) := by
+  ext i
+  fin_cases i <;> simp
+
+/-- `pairedBaseCoupling D = D 1 + J (D i)`, for the complex structure
+`J = TauCeti.Vortex.variationComplexStructure` on variations of plane vortex fields. -/
+theorem pairedBaseCoupling_apply (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
+    pairedBaseCoupling D = D 1 + Vortex.variationComplexStructure (D I) := by
+  ext i
+  fin_cases i <;> simp <;> ring
 
 end Coupling
 
