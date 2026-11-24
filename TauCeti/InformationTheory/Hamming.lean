@@ -162,6 +162,12 @@ theorem hammingNorm_add_le {β : ι → Type*} [Fintype ι] [∀ i, AddZeroClass
   simp only [Finset.mem_union, Finset.mem_filter_univ, Pi.add_apply]
   grind [add_zero]
 
+/-- The Hamming weight of a difference is at most the sum of the weights. -/
+theorem hammingNorm_sub_le {β : ι → Type*} [Fintype ι] [∀ i, SubtractionMonoid (β i)]
+    [∀ i, DecidableEq (β i)] (x y : ∀ i, β i) :
+    hammingNorm (x - y) ≤ hammingNorm x + hammingNorm y := by
+  simpa only [sub_eq_add_neg, hammingNorm_neg] using hammingNorm_add_le x (-y)
+
 section AddZeroClass
 
 variable [Fintype ι] [AddZeroClass A] [DecidableEq A]

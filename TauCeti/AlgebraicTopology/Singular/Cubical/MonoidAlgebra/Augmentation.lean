@@ -24,7 +24,8 @@ through its augmentation.
 
 The point chain `[y]` of a point `y` (`TauCeti.cubicalChainModulePoint`) is a cycle of augmentation
 `1` in degree `0`, and for a left action the point chain of `g` takes it to `[g • y]`
-(`TauCeti.cubicalChainPoint_smul_cubicalChainModulePoint`).
+(`TauCeti.cubicalChainPoint_smul_cubicalChainModulePoint`); for a right action it takes it to
+`[y · g]` (`TauCeti.op_cubicalChainPoint_smul_cubicalChainModulePoint`).
 
 A homotopy `H` from a constant map at `v` to the identity of `Y` gives, through the cone on cubical
 chains (`TauCeti.NormalizedCubicalChain.cone`), an `R`-linear contracting homotopy `K` of the
@@ -59,6 +60,8 @@ so it also applies to the chains of a space with a left action alone.
 * `TauCeti.cubicalChainModuleAugmentation_surjective`: `ε` is onto when `Y` has a point.
 * `TauCeti.cubicalChainPoint_smul_cubicalChainModulePoint`: for a left action,
   `[g] · [y] = [g • y]`.
+* `TauCeti.op_cubicalChainPoint_smul_cubicalChainModulePoint`: for a right action,
+  `[y] · [g] = [y · g]`.
 * `TauCeti.cubicalChainModuleDifferential_cone_add_cone_differential`:
   `d (K m) + K (d m) = ε(m) • [v] - m`.
 * `TauCeti.cubicalChainModuleDifferential_cone_cubicalChainModulePoint`: `d (K [y]) = [v] - [y]`.
@@ -220,6 +223,24 @@ theorem cubicalChainPoint_smul_cubicalChainModulePoint (g : G) (y : Y) :
     lof_smul_cubicalChainModuleLof, leftAct_ofCube_point]
 
 end LeftAction
+
+section RightAction
+
+open MulOpposite
+
+variable {G Y : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] [TopologicalSpace Y]
+  [MulAction Gᵐᵒᵖ Y] [ContinuousSMul Gᵐᵒᵖ Y] {R : Type*} [CommRing R]
+
+/-- **Points act on point chains through the action, on the right**: the point chain of `g` takes
+the point chain `[y]` to `[y · g]`. -/
+@[simp]
+theorem op_cubicalChainPoint_smul_cubicalChainModulePoint (g : G) (y : Y) :
+    op (cubicalChainPoint G R g) • cubicalChainModulePoint Y G R y =
+      cubicalChainModulePoint Y G R (op g • y) := by
+  rw [cubicalChainPoint_def, cubicalChainModulePoint_def, cubicalChainModulePoint_def,
+    op_lof_smul_cubicalChainModuleLof, act_ofCube_point]
+
+end RightAction
 
 section Cone
 

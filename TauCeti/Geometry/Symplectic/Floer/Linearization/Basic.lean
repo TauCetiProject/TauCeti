@@ -338,6 +338,14 @@ noncomputable def floerLinearizationCoeff (ω : SymplecticForm V)
     fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z) -
     (J z (u z)).comp (fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z))
 
+/-- The zeroth-order part of the linearized operator at `z` depends on the Floer data `J`, `Ks`,
+`Kt` only through their values at `z`, as functions of the target point. -/
+theorem floerLinearizationCoeff_congr_data (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V)
+    {z : ℝ × ℝ} (hJ : J z = J' z) (hKs : Ks z = Ks' z) (hKt : Kt z = Kt' z) :
+    ω.floerLinearizationCoeff J Ks Kt u z = ω.floerLinearizationCoeff J' Ks' Kt' u z := by
+  rw [floerLinearizationCoeff, floerLinearizationCoeff, hJ, hKs, hKt]
+
 /-- The zeroth-order part of the linearized Floer operator, evaluated on a vector. -/
 theorem floerLinearizationCoeff_apply (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) (v : V) :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Topology.Maps.Proper.Basic
 import Mathlib.Topology.SeparatedMap
 
 /-!
@@ -23,6 +24,8 @@ subtype-topology convergence API for continuous maps on subtypes.
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
+* `Setoid.isClosedMap_quotient_mk_of_isClosed`: on a compact space, the quotient map by a relation
+  that is closed in `X × X` is a closed map.
 * `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`: the projections of the
   fibre product are continuous.
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
@@ -79,6 +82,23 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     refine isOpen_image_quotient_mk s (hU.isOpenMap_subtypeVal W hW) ?_
     rintro _ y ⟨x, hx, rfl⟩ hxy
     exact hfix x.property hxy ▸ mem_image_of_mem _ hx
+
+/-- On a compact space, the quotient map by an equivalence relation that is closed in `X × X` is a
+closed map. -/
+theorem isClosedMap_quotient_mk_of_isClosed [CompactSpace X]
+    (hs : IsClosed {p : X × X | s p.1 p.2}) : IsClosedMap (Quotient.mk s) := by
+  intro C hC
+  -- The saturation of `C` is the projection to the second factor of the closed set of pairs
+  -- `(x, y)` with `x ∈ C` and `s x y`; the projection is closed because `X` is compact.
+  have hsat : Quotient.mk s ⁻¹' (Quotient.mk s '' C) =
+      Prod.snd '' (Prod.fst ⁻¹' C ∩ {p : X × X | s p.1 p.2}) := by
+    ext y
+    simp only [mem_preimage, mem_image, mem_inter_iff, mem_ofPred_eq, Prod.exists,
+      exists_eq_right]
+    exact exists_congr fun x => and_congr_right fun _ => Quotient.eq
+  have hq : IsQuotientMap (Quotient.mk s) := isQuotientMap_quotient_mk'
+  rw [← hq.isClosed_preimage, hsat]
+  exact isClosedMap_snd_of_compactSpace _ ((hC.preimage continuous_fst).inter hs)
 
 end Setoid
 
