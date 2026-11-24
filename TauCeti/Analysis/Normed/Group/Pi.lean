@@ -14,8 +14,8 @@ public import Mathlib.Data.Fin.VecNotation
 The norm on a nonempty finite product of seminormed groups is the maximum of the coordinate norms,
 so it is attained at some coordinate (`Pi.exists_norm_apply_eq_norm`). Hence for every positive
 exponent `n` its `n`-th power is at most the sum of the `n`-th powers of the coordinate norms
-(`Pi.norm_pow_le_sum_norm_pow`), and prepending an entry or forming a pair gives the coordinate
-maximum (`Pi.norm_vecCons`, `Pi.norm_pair`). Replacing a coordinate of a point of the closed ball
+(`Pi.norm_pow_le_sum_norm_pow`), and prepending an entry gives the coordinate
+maximum (`Pi.norm_vecCons`). Replacing a coordinate of a point of the closed ball
 of radius `R` about `0` by an element of norm at most `R` stays in that ball (`Pi.norm_update_le`).
 
 Over an arbitrary index type, every coordinate of `Pi.single i c` has norm at most `‖c‖`
@@ -43,12 +43,6 @@ theorem Pi.norm_pow_le_sum_norm_pow {ι : Type*} [Fintype ι] {E : ι → Type*}
   exact Finset.single_le_sum (f := fun i ↦ ‖f i‖ ^ n) (fun _ _ ↦ by positivity)
     (Finset.mem_univ i)
 
-/-- The norm on a finite product indexed by an empty type is `0`. -/
-@[simp]
-theorem Pi.norm_of_isEmpty {ι : Type*} [Fintype ι] [IsEmpty ι] {E : ι → Type*}
-    [∀ i, SeminormedAddGroup (E i)] (f : ∀ i, E i) : ‖f‖ = 0 :=
-  norm_of_subsingleton f
-
 /-- The norm of prepending an entry `a` to `v : Fin n → E` in the product sup-norm is
 `max ‖a‖ ‖v‖`. -/
 @[simp]
@@ -61,11 +55,6 @@ theorem Pi.norm_vecCons {n : ℕ} {E : Type*} [SeminormedAddGroup E] (a : E) (v 
   intro k
   refine Fin.cases (le_max_left _ _) (fun i ↦ ?_) k
   simpa using le_max_of_le_right (norm_le_pi_norm v i)
-
-/-- The norm of a two-entry vector `![a, b]` in the product sup-norm is `max ‖a‖ ‖b‖`. -/
-theorem Pi.norm_pair {E : Type*} [SeminormedAddGroup E] (a b : E) :
-    ‖![a, b]‖ = max ‖a‖ ‖b‖ := by
-  simp
 
 /-- Every coordinate of `Pi.single i c` has norm at most `‖c‖`, over any index type. -/
 theorem Pi.norm_single_apply_le {ι : Type*} [DecidableEq ι] {E : ι → Type*}

@@ -13,7 +13,9 @@ public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Scha
 
 import Mathlib.Analysis.InnerProductSpace.SingularValues
 import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
+import TauCeti.Analysis.InnerProductSpace.Polar.Finite
 import TauCeti.Analysis.InnerProductSpace.SingularValues
+import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
 /-!
@@ -26,8 +28,9 @@ for `0 < p`. Star invariance holds for all `p`; faithfulness, complex homogeneit
 comparison, and the two-sided ideal bounds hold for `0 < p`; for `1 ≤ p`, agreement with
 `UnitarilyInvariantSeminorm.schatten` gives subadditivity and `matrixLpSeminorm`. At `p = 1`, we
 prove trace-norm duality. We also expose the column stacking map `columnEuclideanLM`, its
-modulus identification `operatorAbs_columnEuclideanLM`, and the Schatten realizations of
-`columnSquare` and `rowSquare`.
+modulus identification `operatorAbs_columnEuclideanLM`, the Schatten realizations, subadditivity,
+homogeneity, and restriction bounds of `columnSquare` and `rowSquare`, and their trace-pairing
+duality at `p = 1`.
 
 ## Main declarations
 
@@ -42,9 +45,17 @@ modulus identification `operatorAbs_columnEuclideanLM`, and the Schatten realiza
   `TauCeti.exists_norm_le_one_and_trace_mul_eq_matrixLpGauge_one`
 * `TauCeti.columnEuclideanLM`, `TauCeti.norm_columnSquare_apply_sq_eq`,
   `TauCeti.norm_rowSquare_apply_sq_eq`, `TauCeti.matrixLpGauge_columnSquare_eq_schatten`,
-  `TauCeti.matrixLpGauge_rowSquare_eq_schatten`, `TauCeti.matrixLpGauge_two_columnSquare_sq`,
+  `TauCeti.matrixLpGauge_rowSquare_eq_schatten`, `TauCeti.matrixLpGauge_columnSquare_add_le`,
+  `TauCeti.matrixLpGauge_columnSquare_smul`, `TauCeti.matrixLpGauge_rowSquare_add_le`,
+  `TauCeti.matrixLpGauge_rowSquare_smul`, `TauCeti.matrixLpGauge_columnSquare_comp_le`,
+  `TauCeti.matrixLpGauge_rowSquare_comp_le`, `TauCeti.matrixLpGauge_two_columnSquare_sq`,
   `TauCeti.matrixLpGauge_two_rowSquare_sq`, `TauCeti.star_toEuclideanCLM_symm_rankOne_mul_self`,
   `TauCeti.matrixLpGauge_columnSquare_rankOne`
+* `TauCeti.exists_mul_columnSquare_and_norm_columnSquare_le_one`,
+  `TauCeti.norm_sum_trace_mul_le_norm_rowSquare_mul_matrixLpGauge_one_columnSquare`,
+  `TauCeti.norm_sum_trace_mul_le_norm_columnSquare_mul_matrixLpGauge_one_rowSquare`,
+  `TauCeti.norm_rowSquare_le_of_forall_norm_sum_trace_mul_le`,
+  `TauCeti.norm_columnSquare_le_of_forall_norm_sum_trace_mul_le`
 
 ## References
 
@@ -484,6 +495,64 @@ theorem matrixLpGauge_rowSquare_eq_schatten [Fintype ι] (p : ℝ≥0) [Fact (1 
     UnitarilyInvariantSeminorm.schatten_apply_adjoint]
 
 omit [DecidableEq m] in
+/-- Subadditivity of `b ↦ matrixLpGauge p (columnSquare b)` for `1 ≤ p`. -/
+theorem matrixLpGauge_columnSquare_add_le [Fintype ι] {p : ℝ≥0} (hp : 1 ≤ p)
+    (b₁ b₂ : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge p (columnSquare (b₁ + b₂)) ≤
+      matrixLpGauge p (columnSquare b₁) + matrixLpGauge p (columnSquare b₂) := by
+  classical
+  let : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hp⟩
+  simp only [matrixLpGauge_columnSquare_eq_schatten p, map_add]; exact map_add_le_add _ _ _
+
+omit [DecidableEq m] in
+/-- Absolute homogeneity of `b ↦ matrixLpGauge p (columnSquare b)` for `0 < p`. -/
+theorem matrixLpGauge_columnSquare_smul [Fintype ι] {p : ℝ≥0} (hp : 0 < p) (c : ℂ)
+    (b : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge p (columnSquare (c • b)) = ‖c‖ * matrixLpGauge p (columnSquare b) := by
+  rw [columnSquare_smul, ← Complex.coe_smul, matrixLpGauge_smul hp, Complex.norm_real,
+    Real.norm_of_nonneg (norm_nonneg c)]
+
+omit [DecidableEq m] in
+/-- Subadditivity of `c ↦ matrixLpGauge p (rowSquare c)` for `1 ≤ p`. -/
+theorem matrixLpGauge_rowSquare_add_le [Fintype ι] {p : ℝ≥0} (hp : 1 ≤ p)
+    (c₁ c₂ : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge p (rowSquare (c₁ + c₂)) ≤
+      matrixLpGauge p (rowSquare c₁) + matrixLpGauge p (rowSquare c₂) := by
+  simp only [rowSquare_eq_columnSquare_star, ← Pi.star_def, star_add]
+  exact matrixLpGauge_columnSquare_add_le hp _ _
+
+omit [DecidableEq m] in
+/-- Absolute homogeneity of `c ↦ matrixLpGauge p (rowSquare c)` for `0 < p`. -/
+theorem matrixLpGauge_rowSquare_smul [Fintype ι] {p : ℝ≥0} (hp : 0 < p) (z : ℂ)
+    (c : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge p (rowSquare (z • c)) = ‖z‖ * matrixLpGauge p (rowSquare c) := by
+  rw [rowSquare_smul, ← Complex.coe_smul, matrixLpGauge_smul hp, Complex.norm_real,
+    Real.norm_of_nonneg (norm_nonneg z)]
+
+omit [DecidableEq m] in
+/-- Restricting a family along an injection does not increase `matrixLpGauge p (columnSquare ·)`
+for `0 < p`. -/
+theorem matrixLpGauge_columnSquare_comp_le [Fintype ι] {κ : Type*} [Fintype κ] {f : κ → ι}
+    (hf : Function.Injective f) {p : ℝ≥0} (hp : 0 < p) (b : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge p (columnSquare (b ∘ f)) ≤ matrixLpGauge p (columnSquare b) := by
+  classical
+  refine (matrixLpGauge_le_mul_of_norm_apply_le hp zero_le_one fun ξ => ?_).trans_eq (one_mul _)
+  rw [one_mul, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _),
+    norm_columnSquare_apply_sq_eq, norm_columnSquare_apply_sq_eq]
+  exact (Finset.sum_image (f := fun i => ‖CStarMatrix.toEuclideanCLM (b i) ξ‖ ^ 2)
+    fun _ _ _ _ h => hf h).symm.trans_le
+    (Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun _ _ _ => sq_nonneg _)
+
+omit [DecidableEq m] in
+/-- Restricting a family along an injection does not increase `matrixLpGauge p (rowSquare ·)` for
+`0 < p`. -/
+theorem matrixLpGauge_rowSquare_comp_le [Fintype ι] {κ : Type*} [Fintype κ] {f : κ → ι}
+    (hf : Function.Injective f) {p : ℝ≥0} (hp : 0 < p) (c : ι → CStarMatrix m m ℂ) :
+    matrixLpGauge p (rowSquare (c ∘ f)) ≤ matrixLpGauge p (rowSquare c) := by
+  rw [rowSquare_eq_columnSquare_star, rowSquare_eq_columnSquare_star]
+  exact matrixLpGauge_columnSquare_comp_le hf hp (fun i => star (c i))
+
+omit [DecidableEq m] in
 /-- At `p = 2`, the squared Schatten gauge of `columnSquare a` equals
 `∑ k, matrixLpGauge 2 (a k) ^ 2`. -/
 theorem matrixLpGauge_two_columnSquare_sq [Fintype ι] (a : ι → CStarMatrix m m ℂ) :
@@ -553,6 +622,109 @@ theorem matrixLpGauge_columnSquare_rankOne [Fintype ι] {p : ℝ≥0} (hp : 0 < 
     rw [matrixLpGauge_of_isStarProjection hp hP, htrP, Complex.one_re, Real.one_rpow]
   rw [hcol, ← algebraMap_smul ℂ s P, Complex.coe_algebraMap, matrixLpGauge_smul hp,
     Complex.norm_real, Real.norm_of_nonneg hs_nonneg, hP_gauge, mul_one]
+
+omit [DecidableEq m] in
+/-- Polar decomposition through `columnSquare`: `b k = u k * columnSquare b` with
+`‖columnSquare u‖ ≤ 1`. -/
+theorem exists_mul_columnSquare_and_norm_columnSquare_le_one [Fintype ι]
+    (b : ι → CStarMatrix m m ℂ) :
+    ∃ u : ι → CStarMatrix m m ℂ, (∀ k, b k = u k * columnSquare b) ∧ ‖columnSquare u‖ ≤ 1 := by
+  classical
+  set A := columnEuclideanLM b
+  let U := A.polarFactor
+  let u : ι → CStarMatrix m m ℂ := fun k => CStarMatrix.toEuclideanCLM.symm
+    ((PiLp.projₗ 2 (fun _ : ι => EuclideanSpace ℂ m) k).comp U).toContinuousLinearMap
+  have hu_eq : columnEuclideanLM u = U := columnEuclideanLM_projₗ U
+  have hu (k : ι) (v : EuclideanSpace ℂ m) :
+      CStarMatrix.toEuclideanCLM (u k) v = (U v).ofLp k := by
+    rw [← columnEuclideanLM_apply u v k, hu_eq]
+  have hgram : CStarMatrix.toEuclideanCLM (∑ k, star (u k) * u k) =
+      (U.adjoint ∘ₗ U).toContinuousLinearMap := by
+    apply ContinuousLinearMap.coe_inj.mp
+    rw [LinearMap.coe_toContinuousLinearMap, ← hu_eq, adjoint_comp_columnEuclideanLM u]
+  refine ⟨u, fun k => EquivLike.injective CStarMatrix.toEuclideanCLM <|
+      ContinuousLinearMap.ext fun v => ?_, ?_⟩
+  · have hpol := congrArg (fun w : PiLp 2 fun _ : ι => EuclideanSpace ℂ m => w.ofLp k)
+      (A.polarFactor_operatorAbs_apply v)
+    rw [operatorAbs_columnEuclideanLM, columnEuclideanLM_apply] at hpol
+    rw [map_mul, mul_apply_eq_comp, hu]; exact hpol.symm
+  · rw [norm_columnSquare, Real.sqrt_le_one, ← CStarMatrix.norm_toEuclideanCLM, hgram]
+    exact (LinearMap.isStarProjection_toContinuousLinearMap_iff.mpr
+      A.isPartialIsometry_polarFactor.isStarProjection_adjoint_comp_self).norm_le
+
+omit [DecidableEq m] in
+/-- **Column-row trace-pairing Hölder inequality**:
+`‖∑ k, tr(x k * b k)‖ ≤ ‖rowSquare x‖ * matrixLpGauge 1 (columnSquare b)`. -/
+theorem norm_sum_trace_mul_le_norm_rowSquare_mul_matrixLpGauge_one_columnSquare [Fintype ι]
+    (x b : ι → CStarMatrix m m ℂ) :
+    ‖∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * b k))‖ ≤
+      ‖rowSquare x‖ * matrixLpGauge 1 (columnSquare b) := by
+  obtain ⟨u, hbu, hu_norm⟩ := exists_mul_columnSquare_and_norm_columnSquare_le_one b
+  have htr : ∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * b k)) =
+      Matrix.trace (CStarMatrix.ofMatrix.symm ((∑ k, x k * u k) * columnSquare b)) := by
+    simp only [hbu, ← mul_assoc, ← CStarMatrix.traceLinearMap_apply (R := ℂ), Finset.sum_mul,
+      map_sum]
+  rw [htr]
+  exact (norm_trace_mul_le_norm_mul_matrixLpGauge_one _ _).trans <|
+    mul_le_mul_of_nonneg_right ((norm_sum_mul_le_norm_rowSquare_mul_norm_columnSquare x u).trans
+      (mul_le_of_le_one_right (norm_nonneg _) hu_norm)) (matrixLpGauge_nonneg 1 _)
+
+omit [DecidableEq m] in
+/-- **Row-column trace-pairing Hölder inequality**:
+`‖∑ k, tr(x k * c k)‖ ≤ ‖columnSquare x‖ * matrixLpGauge 1 (rowSquare c)`. -/
+theorem norm_sum_trace_mul_le_norm_columnSquare_mul_matrixLpGauge_one_rowSquare [Fintype ι]
+    (x c : ι → CStarMatrix m m ℂ) :
+    ‖∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * c k))‖ ≤
+      ‖columnSquare x‖ * matrixLpGauge 1 (rowSquare c) := by
+  simpa only [CStarMatrix.norm_sum_trace_star_mul_star, ← rowSquare_eq_columnSquare_star,
+    ← columnSquare_eq_rowSquare_star] using
+    norm_sum_trace_mul_le_norm_rowSquare_mul_matrixLpGauge_one_columnSquare
+      (fun k => star (x k)) (fun k => star (c k))
+
+omit [DecidableEq m] in
+/-- **Converse trace-pairing bound (row norm)**: if
+`‖∑ k, tr(x k * b k)‖ ≤ C * matrixLpGauge 1 (columnSquare b)` for all `b`, then `‖rowSquare x‖ ≤ C`.
+-/
+theorem norm_rowSquare_le_of_forall_norm_sum_trace_mul_le [Fintype ι]
+    {x : ι → CStarMatrix m m ℂ} {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ b : ι → CStarMatrix m m ℂ,
+      ‖∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * b k))‖ ≤
+        C * matrixLpGauge 1 (columnSquare b)) : ‖rowSquare x‖ ≤ C := by
+  classical
+  set R := CStarMatrix.toEuclideanCLM (rowSquare x)
+  rw [← CStarMatrix.norm_toEuclideanCLM]
+  refine ContinuousLinearMap.opNorm_le_of_unit_norm hC fun ξ hξ => ?_
+  let η (k : ι) := CStarMatrix.toEuclideanCLM (star (x k)) ξ
+  let b := fun k => CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ (η k) ξ)
+  have hR_sq : ‖R ξ‖ ^ 2 = ∑ k, ‖η k‖ ^ 2 := norm_rowSquare_apply_sq_eq x ξ
+  have hpair : ∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * b k)) =
+      ((‖R ξ‖ ^ 2 : ℝ) : ℂ) := by
+    rw [hR_sq, Complex.ofReal_sum]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [← CStarMatrix.trace_toEuclideanCLM]
+    simp only [b, map_mul, StarAlgEquiv.apply_symm_apply, ContinuousLinearMap.toLinearMap_mul,
+      InnerProductSpace.trace_mul_rankOne]
+    rw [← ContinuousLinearMap.adjoint_inner_left]
+    simp [η, ← ContinuousLinearMap.star_eq_adjoint, ← map_star]
+  have hbound := h b
+  rw [hpair, matrixLpGauge_columnSquare_rankOne zero_lt_one η hξ, ← hR_sq,
+    Real.sqrt_sq (norm_nonneg _), Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _),
+    sq] at hbound
+  exact (norm_nonneg (R ξ)).eq_or_lt.elim (fun h0 => by linarith) (le_of_mul_le_mul_right hbound)
+
+omit [DecidableEq m] in
+/-- **Converse trace-pairing bound (column norm)**: if
+`‖∑ k, tr(x k * c k)‖ ≤ C * matrixLpGauge 1 (rowSquare c)` for all `c`, then `‖columnSquare x‖ ≤ C`.
+-/
+theorem norm_columnSquare_le_of_forall_norm_sum_trace_mul_le [Fintype ι]
+    {x : ι → CStarMatrix m m ℂ} {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ c : ι → CStarMatrix m m ℂ,
+      ‖∑ k, Matrix.trace (CStarMatrix.ofMatrix.symm (x k * c k))‖ ≤
+        C * matrixLpGauge 1 (rowSquare c)) : ‖columnSquare x‖ ≤ C := by
+  rw [columnSquare_eq_rowSquare_star]
+  refine norm_rowSquare_le_of_forall_norm_sum_trace_mul_le hC fun b => ?_
+  simpa only [← CStarMatrix.norm_sum_trace_star_mul_star x (fun k => star (b k)), star_star,
+    rowSquare_eq_columnSquare_star] using h (fun k => star (b k))
 
 end ColumnRow
 

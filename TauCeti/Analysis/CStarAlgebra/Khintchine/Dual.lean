@@ -356,8 +356,9 @@ theorem exists_rademacherCoeff_eq_and_norm_le (x : ι → A) :
       rw [CStarMatrix.sum_apply]
       simp_rw [hX_sq]; fin_cases p <;> fin_cases q <;> simp
   have hX_norm : √‖∑ i, X i * X i‖ = max ‖columnSquare x‖ ‖rowSquare x‖ := by
-    rw [hX_sum_sq, CStarMatrix.norm_ofMatrix_diagonal, Pi.norm_pair, Real.sqrt_monotone.map_max,
-      max_comm, ← norm_columnSquare, ← norm_rowSquare]
+    rw [hX_sum_sq, CStarMatrix.norm_ofMatrix_diagonal]
+    simp only [Pi.norm_vecCons, norm_of_subsingleton, max_eq_left (norm_nonneg _),
+      Real.sqrt_monotone.map_max, max_comm, ← norm_columnSquare, ← norm_rowSquare]
   obtain ⟨Ψ, _, hΨ_avg, hΨ_norm⟩ := exists_isSelfAdjoint_rademacherCoeff_eq_and_norm_le hX_sa
   refine ⟨fun ε => Ψ ε 0 1, funext fun i => ?_, fun ε =>
     CStarMatrix.norm_entry_le_norm.trans ((hΨ_norm ε).trans_eq (by rw [hX_norm]))⟩

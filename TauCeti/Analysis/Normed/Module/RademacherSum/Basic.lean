@@ -10,7 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 import TauCeti.Algebra.Ring.Int.Units
 
 /-!
-# Second moments of finite Rademacher sums
+# Rademacher Fourier coefficients and second moments of finite Rademacher sums
 
 The Rademacher second moment `R₂(y) = (𝔼_ε ‖∑ i, εᵢ yᵢ‖²)^(1/2)` of a finite family `y` in a
 seminormed group is the quadratic mean of the norms of its signed sums, the signs `ε : ι → ℤˣ`
@@ -18,10 +18,19 @@ being averaged uniformly over the finite sign cube. It agrees with `TauCeti.rade
 and is the quantity in which Rademacher type and cotype are defined. Being a finite average, it
 needs neither completeness, nor scalars, nor a measure space.
 
-The file opens with the sign-cube averages of products of signs: two signs average to `1` on the
-diagonal and to `0` off it, and four signs average to the number of ways their indices match in
-pairs, corrected when all four agree. The first computes second moments; the second computes the
-fourth moments of Rademacher sums with noncommuting coefficients.
+The file opens with the sign-cube averages and orthogonality identities: flipping a single sign
+(`TauCeti.sum_eq_zero_of_mulSingle_neg`) yields `TauCeti.sum_units_smul_units_smul`, two signs
+average to `1` on the diagonal and to `0` off it, and four signs average to the number of ways
+their indices match in pairs, corrected when all four agree. The two-sign identity computes second
+moments; the four-sign identity yields the pairing expansion of fourth moments of Rademacher sums
+with noncommuting coefficients (`TauCeti.sum_sum_units_smul_mul_self_mul_mul_self`).
+
+From sign-cube orthogonality we define the first Rademacher Fourier coefficient linear map
+`TauCeti.rademacherCoeff` sending `Φ : (ι → ℤˣ) → M` to `k ↦ |ι → ℤˣ|⁻¹ • ∑ ε, ε k • Φ ε`.
+It recovers `x` from `ε ↦ ∑ j, ε j • x j`, commutes with linear maps and `star`, and satisfies the
+bilinear transfer identity (`TauCeti.sum_bilinear_rademacherCoeff`,
+`TauCeti.sum_bilinear_rademacherCoeff_eq_expect`) equating `∑ k, B (rademacherCoeff 𝕜 Φ k) (b k)`
+to the sign-cube average of `B (Φ ε) (∑ k, ε k • b k)`.
 
 We record the specialization of the general moment API to `R₂` — absolute homogeneity, invariance
 under reindexing and zero-padding, comparison along bounded additive maps, and the summand bounds
@@ -31,13 +40,18 @@ the family; in particular `n` copies of a vector `y` of a real normed space have
 
 ## Main declarations
 
+* `TauCeti.sum_units_smul_units_smul` and `TauCeti.sum_units_smul_sum_units_smul`: sign-cube
+  orthogonality for module actions.
 * `TauCeti.expect_units_apply_mul_apply` and
   `TauCeti.expect_units_apply_mul_apply_mul_apply_mul_apply`: the sign-cube averages of products
   of two and of four Rademacher signs; `TauCeti.sum_units_apply_mul_apply_mul_apply_mul_apply`
   is the integer sum form of the latter.
 * `TauCeti.sum_sum_units_smul_mul_self_mul_mul_self`: in a non-unital ring, the pairing expansion
   of the fourth power of a Rademacher sum, summed over the sign cube.
-* `TauCeti.rademacherCoeff`: the first Rademacher Fourier coefficient linear map.
+* `TauCeti.rademacherCoeff` and `TauCeti.rademacherCoeff_sum_units_smul`: the first Rademacher
+  Fourier coefficient linear map and recovery of coefficients from a Rademacher sum.
+* `TauCeti.sum_bilinear_rademacherCoeff` and `TauCeti.sum_bilinear_rademacherCoeff_eq_expect`:
+  bilinear coefficient transfer over the sign cube.
 * `TauCeti.rademacherSecondMoment`: the Rademacher second moment `R₂(y)`.
 * `TauCeti.rademacherMoment_two`: `rademacherMoment 2 y = rademacherSecondMoment y`.
 * `TauCeti.rademacherSecondMoment_comp_equiv`: invariance under reindexing.
