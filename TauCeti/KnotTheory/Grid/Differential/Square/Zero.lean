@@ -53,6 +53,9 @@ the constant terms of `∂⁻` over `ZMod 2`.
 * `TauCeti.GridDiagram.unblockedDifferential_comp_self_eq_zero`: `∂⁻ ∘ ∂⁻ = 0`.
 * `TauCeti.GridDiagram.simplyBlockedDifferential_comp_self_eq_zero`: the same for the
   specialization at `V_i = 0`.
+* `TauCeti.GridDiagram.restrictScalars_unblockedDifferential_comp_self_eq_zero` and
+  `TauCeti.GridDiagram.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero`: the same for
+  both maps viewed as linear maps over the ground semiring.
 * `TauCeti.GridDiagram.fullyBlockedDecompositionCount_eq_zero`,
   `TauCeti.GridDiagram.fullyBlockedDifferential_comp_self_eq_zero`: the same for the fully blocked
   differential, the specialization at every `V_i = 0`.
@@ -220,6 +223,20 @@ theorem simplyBlockedDifferential_comp_self_eq_zero (i : Fin n) :
   rw [hsingle, ← G.simplyBlockedSpecialization_unblockedDifferential R i,
     ← G.simplyBlockedSpecialization_unblockedDifferential R i]
   rw [G.unblockedDifferential_sq_single_eq_zero R x, map_zero]
+
+/-- Viewed as a linear map over the ground semiring, the unblocked grid differential squares to
+zero in characteristic two. -/
+theorem restrictScalars_unblockedDifferential_comp_self_eq_zero :
+    (G.unblockedDifferential R).restrictScalars R ∘ₗ (G.unblockedDifferential R).restrictScalars R =
+      0 :=
+  LinearMap.ext fun c => congr($(G.unblockedDifferential_comp_self_eq_zero R) c)
+
+/-- Viewed as a linear map over the ground semiring, the simply blocked grid map squares to zero
+in characteristic two. -/
+theorem restrictScalars_simplyBlockedDifferential_comp_self_eq_zero (i : Fin n) :
+    (G.simplyBlockedDifferential R i).restrictScalars R ∘ₗ
+        (G.simplyBlockedDifferential R i).restrictScalars R = 0 :=
+  LinearMap.ext fun c => congr($(G.simplyBlockedDifferential_comp_self_eq_zero R i) c)
 
 /-- Every fully blocked two-step decomposition count is even.
 

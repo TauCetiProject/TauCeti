@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Algebra.Lie.Cohomology.ChevalleyEilenberg
+public import TauCeti.Algebra.Lie.Cohomology.FiniteDimensional
 public import TauCeti.Algebra.Lie.InvariantForm.Basic
 
 /-!
@@ -31,7 +32,10 @@ trivially.
 * Its interior products are exact: `ι_x ω = -d(B x)`, the coboundary of the one-cochain `B x`
   (`LinearMap.BilinMap.curryLeft_cartanThreeForm`).
 * Hence it is a Chevalley–Eilenberg cocycle, `d ω = 0` (`LinearMap.BilinMap.d_cartanThreeForm`),
-  by Cartan's formula `ι_x d ω = ⁅x, ω⁆ - d ι_x ω`.
+  by Cartan's formula `ι_x d ω = ⁅x, ω⁆ - d ι_x ω`. On a finite-dimensional topological Lie
+  algebra the same holds for the Cartan three-form read as a continuous form, for the
+  differential `TauCeti.LieModule.Cohomology.trivialD` that computes the exterior derivative of
+  left-invariant forms on a Lie group (`LinearMap.BilinMap.trivialD_cartanThreeForm`).
 * It is natural under pullback along Lie algebra morphisms
   (`LinearMap.BilinMap.cartanThreeForm_compl₁₂`), the pulled-back form being again invariant
   (`LinearMap.BilinMap.compl₁₂_lieInvariant`).
@@ -52,6 +56,7 @@ trivially.
 * `LinearMap.BilinMap.lie_cartanThreeForm`: the Cartan three-form is `L`-invariant.
 * `LinearMap.BilinMap.curryLeft_cartanThreeForm`: its interior products are coboundaries.
 * `LinearMap.BilinMap.d_cartanThreeForm`: it is a Chevalley–Eilenberg cocycle.
+* `LinearMap.BilinMap.trivialD_cartanThreeForm`: so is its continuous version.
 * `LinearMap.BilinMap.cartanThreeForm_compl₁₂`: naturality under Lie algebra morphisms.
 * `LinearMap.BilinMap.cartanThreeForm_eq_zero_iff`: for an anisotropic form, it vanishes exactly
   on abelian Lie algebras.
@@ -163,5 +168,35 @@ theorem d_cartanThreeForm : d R L M 3 (B.cartanThreeForm hB) = 0 := by
   simp [curryLeft_cartanThreeForm]
 
 end Trivial
+
+section Continuous
+
+variable {𝕜 L N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [LieRing L] [LieAlgebra 𝕜 L] [TopologicalSpace L] [IsTopologicalAddGroup L]
+  [ContinuousSMul 𝕜 L] [T2Space L] [FiniteDimensional 𝕜 L]
+  [AddCommGroup N] [Module 𝕜 N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+  [ContinuousSMul 𝕜 N] {B : LinearMap.BilinMap 𝕜 L N} {hB : ∀ x y z : L, B ⁅x, y⁆ z = -B y ⁅x, z⁆}
+
+/-- **The continuous Cartan three-form is closed.** On a finite-dimensional Hausdorff topological
+Lie algebra, the Cartan three-form, read as a continuous alternating form, is a cocycle for the
+Chevalley–Eilenberg differential `trivialD` with trivial coefficients. -/
+@[simp]
+theorem trivialD_cartanThreeForm :
+    trivialD 𝕜 L N 3 (AlternatingMap.toContinuousAlternatingMap (B.cartanThreeForm hB)) = 0 := by
+  -- Transport `B` to the trivial Lie module `TrivialLieModule 𝕜 L N`, where `d_cartanThreeForm`
+  -- applies.
+  let e := TrivialLieModule.equiv 𝕜 L N
+  have hB' : ∀ x y z : L, B.compr₂ e.symm.toLinearMap ⁅x, y⁆ z =
+      -B.compr₂ e.symm.toLinearMap y ⁅x, z⁆ := fun x y z ↦ by simp [hB]
+  have h : e.alternatingMapCongrRight.symm (B.cartanThreeForm hB) =
+      cartanThreeForm (B.compr₂ e.symm.toLinearMap) hB' := by
+    ext v
+    simp
+  ext v
+  rw [trivialD_apply, ← AlternatingMap.toContinuousAlternatingMap_symm_apply,
+    LinearEquiv.symm_apply_apply, h, d_cartanThreeForm]
+  simp
+
+end Continuous
 
 end LinearMap.BilinMap

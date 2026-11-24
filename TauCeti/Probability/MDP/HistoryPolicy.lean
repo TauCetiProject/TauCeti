@@ -106,6 +106,13 @@ def ofStationary (π : S → PMF A) : HistoryPolicy S A := ofMarkov fun _ => π
 theorem ofStationary_eq_ofMarkov (π : S → PMF A) :
     ofStationary π = ofMarkov (fun _ => π) := by rfl
 
+/-- The initial kernel of a stationary policy is its PMF kernel. -/
+theorem ofStationary_first (π : S → PMF A) : (ofStationary π).first = Kernel.ofPMF π := (rfl)
+
+/-- A stationary policy discards the past and applies its PMF kernel at the current state. -/
+theorem ofStationary_next (π : S → PMF A) (n : ℕ) :
+    (ofStationary π).next n = (Kernel.ofPMF π).comap Prod.snd measurable_snd := (rfl)
+
 /-- The initial action measure of a stationary policy. -/
 @[simp]
 theorem ofStationary_first_apply (π : S → PMF A) (s : S) :

@@ -32,7 +32,10 @@ The construction uses Mathlib's `Scheme.Hom.liftCoborder`, `IsOpenImmersion.lift
 
 For a quasi-compact immersion `i`, the ideal sheaf of the closed immersion `i.liftCoborder` into
 the open `i.coborderRange` is the restriction of the ideal sheaf `ker i`
-(`Scheme.Hom.ker_liftCoborder`).
+(`Scheme.Hom.ker_liftCoborder`). For a closed immersion, this open is all of `Y`
+(`Scheme.Hom.coborderRange_eq_top`). A pullback square of closed immersions therefore gives a
+pullback square of the closed immersions `liftCoborder` (`Scheme.Hom.isPullback_liftCoborder`),
+along the induced morphism of opens `Scheme.Hom.coborderRangeMap`.
 -/
 
 public section
@@ -86,6 +89,51 @@ theorem ker_liftCoborder (i : Z ⟶ Y) [IsImmersion i] [QuasiCompact i] :
   rw [← (IsImmersion.isPullback_toImage_liftCoborder i).flip.isoPullback_hom_fst,
     ker_comp_of_isIso, IdealSheafData.ker_fst_of_isClosedImmersion, imageι,
     IdealSheafData.ker_subschemeι]
+
+/-- The open `i.coborderRange` of a closed immersion `i : Z ⟶ Y` is all of `Y`. -/
+theorem coborderRange_eq_top (i : Z ⟶ Y) [IsClosedImmersion i] : i.coborderRange = ⊤ :=
+  -- The underlying set of `i.coborderRange` is `coborder (Set.range i)` by definition.
+  TopologicalSpace.Opens.ext (coborder_eq_univ_iff.mpr i.isClosedEmbedding.isClosed_range)
+
+/-- The inclusion of the open `i.coborderRange` of a closed immersion `i` is an isomorphism. -/
+instance isIso_coborderRange_ι (i : Z ⟶ Y) [IsClosedImmersion i] : IsIso i.coborderRange.ι := by
+  rw [coborderRange_eq_top, ← Scheme.topIso_hom]
+  infer_instance
+
+section Pullback
+
+variable {X' Y' : Scheme.{u}} {i : X ⟶ Y} {i' : X' ⟶ Y'} {g : X' ⟶ X} {f : Y' ⟶ Y}
+  [IsClosedImmersion i] [IsClosedImmersion i']
+
+/-- For a closed immersion `i'`, the open `i'.coborderRange` is all of `Y'`; the morphism
+`i'.coborderRange ⟶ i.coborderRange` induced by `f : Y' ⟶ Y` through these identifications. -/
+noncomputable def coborderRangeMap (i : X ⟶ Y) [IsClosedImmersion i] (i' : X' ⟶ Y')
+    [IsClosedImmersion i'] (f : Y' ⟶ Y) : (i'.coborderRange : Scheme.{u}) ⟶ i.coborderRange :=
+  i'.coborderRange.ι ≫ f ≫ inv i.coborderRange.ι
+
+/-- The morphism `coborderRangeMap i i' f` is the inclusion of `i'.coborderRange`, followed by `f`
+and the inverse of the inclusion of `i.coborderRange`. -/
+theorem coborderRangeMap_def (i : X ⟶ Y) [IsClosedImmersion i] (i' : X' ⟶ Y')
+    [IsClosedImmersion i'] (f : Y' ⟶ Y) :
+    coborderRangeMap i i' f = i'.coborderRange.ι ≫ f ≫ inv i.coborderRange.ι :=
+  (rfl)
+
+/-- The morphism `coborderRangeMap i i' f`, followed by the inclusion of `i.coborderRange`, is
+the inclusion of `i'.coborderRange` followed by `f`. -/
+@[reassoc (attr := simp)]
+theorem coborderRangeMap_ι (f : Y' ⟶ Y) :
+    coborderRangeMap i i' f ≫ i.coborderRange.ι = i'.coborderRange.ι ≫ f := by
+  simp [coborderRangeMap]
+
+/-- A pullback square of closed immersions gives a pullback square of the closed immersions
+`liftCoborder` into the opens `coborderRange`, which are isomorphic to the targets. -/
+theorem isPullback_liftCoborder (h : IsPullback i' g f i) :
+    IsPullback i'.liftCoborder g (coborderRangeMap i i' f) i.liftCoborder :=
+  h.of_iso (Iso.refl _) (asIso i'.coborderRange.ι).symm (Iso.refl _)
+    (asIso i.coborderRange.ι).symm (by simp [← cancel_mono i'.coborderRange.ι]) (by simp)
+    (by simp [← cancel_mono i.coborderRange.ι]) (by simp [← cancel_mono i.coborderRange.ι])
+
+end Pullback
 
 end AlgebraicGeometry.Scheme.Hom
 

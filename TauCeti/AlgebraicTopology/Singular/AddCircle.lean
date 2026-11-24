@@ -37,6 +37,13 @@ Hurewicz map. The homological convention is the class of the loop itself. The or
 product of two circuit classes gives the class of a product of period quotients; for positive
 periods this is the positively oriented parameter torus.
 
+The circuit class is the class of the singular `1`-simplex of the circuit
+(`AddCircle.circuitSimplex`, `AddCircle.fundamentalClass_eq_homologyπ`). The class of the
+parameter torus `AddCircle p × AddCircle q` is therefore the class of the shuffle product of the
+two circuit simplices (`TauCeti.addCircleProdFundamentalClass_eq_homologyπ`), the difference of
+the two singular `2`-simplices which, in the coordinates `(y₀, y₁)` of the standard `2`-simplex,
+are `y ↦ ([(y₀ + y₁) p], [y₁ q])` and `y ↦ ([y₁ p], [(y₀ + y₁) q])`.
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 1.1 and Theorem 2A.1.
@@ -45,6 +52,7 @@ periods this is the positively oriented parameter torus.
 public noncomputable section
 
 open CategoryTheory TauCeti TauCeti.HurewiczOne Multiplicative
+open scoped Simplicial
 
 namespace AddCircle
 
@@ -59,6 +67,40 @@ def fundamentalClass : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homo
 theorem fundamentalClass_def :
     fundamentalClass p = H₁AddEquivHomology ℤ _
       (loopClass ℤ (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1)) := (rfl)
+
+/-- The singular `1`-simplex of the circuit `t ↦ [t * p]` of `AddCircle p`. -/
+def circuitSimplex : (TopCat.toSSet.obj (TopCat.of (AddCircle p))) _⦋1⦌ :=
+  TopCat.simplex₁ (zsmulLoop p 0 1).toContinuousMap
+
+/-- The circuit simplex is the singular `1`-simplex of the circuit `t ↦ [t * p]`. -/
+theorem circuitSimplex_def :
+    circuitSimplex p = TopCat.simplex₁ (zsmulLoop p 0 1).toContinuousMap := (rfl)
+
+/-- The circuit simplex sends the point of the standard `1`-simplex at parameter `t` of the unit
+interval to `[p t]`. -/
+theorem toSSetObjEquiv_circuitSimplex_apply (t : Convexity.StdSimplex ℝ (Fin 2)) :
+    (TopCat.of (AddCircle p)).toSSetObjEquiv _ (circuitSimplex p) t =
+      ((p * (Convexity.StdSimplex.homeomorphI t : ℝ) : ℝ) : AddCircle p) := by
+  rw [circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply,
+    Path.coe_toContinuousMap, zsmulLoop_zero_apply_eq_coe, Int.cast_one, one_mul,
+    ContinuousMap.coe_ofClass]
+
+/-- The chain of the circuit simplex is a cycle: the circuit is a loop. -/
+theorem singularChains_d_circuitSimplex :
+    ((singularChains ℤ).obj (TopCat.of (AddCircle p))).d 1 0
+      (simplexChain (circuitSimplex p) 1) = 0 := by
+  rw [circuitSimplex_def, singularChains_d_simplexChain (n := 0), Fin.sum_univ_two,
+    TopCat.δ_zero_simplex₁, TopCat.δ_one_simplex₁]
+  simp
+
+/-- The circuit class of `AddCircle p` is the class of any cycle lying over the chain of the
+circuit simplex. -/
+theorem fundamentalClass_eq_homologyπ
+    (z : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).cycles 1)
+    (hz : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).iCycles 1 z =
+      simplexChain (circuitSimplex p) 1) :
+    fundamentalClass p = ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homologyπ 1 z :=
+  H₁AddEquivHomology_loopClass _ z hz
 
 /-- Winding `a + b` times around a circle is homologous to winding `a` times and then `b` times:
 in the universal cover the two paths have the same endpoints. -/
@@ -240,5 +282,30 @@ theorem addCircleProdFundamentalClass_def (p q : ℝ) :
     addCircleProdFundamentalClass p q =
       TopCat.singularHomologyCrossBilinear ℤ (TopCat.of (AddCircle p)) (TopCat.of (AddCircle q))
         1 1 2 rfl (AddCircle.fundamentalClass p) (AddCircle.fundamentalClass q) := (rfl)
+
+/-- The shuffle product of the circuit simplices of `AddCircle p` and `AddCircle q` is a cycle of
+the torus `AddCircle p × AddCircle q`. -/
+theorem singularChains_d_shuffleChainOneOne_circuitSimplex (p q : ℝ) :
+    ((singularChains ℤ).obj (TopCat.of (AddCircle p × AddCircle q))).d 2 1
+      (TopCat.shuffleChainOneOne (AddCircle.circuitSimplex p) (AddCircle.circuitSimplex q)) = 0 :=
+  TopCat.singularChains_d_shuffleChainOneOne (AddCircle.singularChains_d_circuitSimplex p)
+    (AddCircle.singularChains_d_circuitSimplex q)
+
+/-- **The class of the parameter torus is the class of the shuffled circuits.** Any cycle of
+`AddCircle p × AddCircle q` lying over the shuffle product of the circuit simplices of the two
+circles represents the cross product of their circuit classes. -/
+theorem addCircleProdFundamentalClass_eq_homologyπ (p q : ℝ)
+    (c : ((singularChains ℤ).obj (TopCat.of (AddCircle p × AddCircle q))).cycles 2)
+    (hc : ((singularChains ℤ).obj (TopCat.of (AddCircle p × AddCircle q))).iCycles 2 c =
+      TopCat.shuffleChainOneOne (AddCircle.circuitSimplex p) (AddCircle.circuitSimplex q)) :
+    addCircleProdFundamentalClass p q =
+      ((singularChains ℤ).obj (TopCat.of (AddCircle p × AddCircle q))).homologyπ 2 c := by
+  have hz := HomologicalComplex.iCycles_moduleCatCyclesMk (hm := ChainComplex.next_nat_succ 0)
+    (hx := AddCircle.singularChains_d_circuitSimplex p)
+  have hz' := HomologicalComplex.iCycles_moduleCatCyclesMk (hm := ChainComplex.next_nat_succ 0)
+    (hx := AddCircle.singularChains_d_circuitSimplex q)
+  rw [addCircleProdFundamentalClass_def, AddCircle.fundamentalClass_eq_homologyπ p _ hz,
+    AddCircle.fundamentalClass_eq_homologyπ q _ hz']
+  exact TopCat.singularHomologyCrossBilinear_homologyπ_one_one _ hz _ hz' c hc
 
 end TauCeti

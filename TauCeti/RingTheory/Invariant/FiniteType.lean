@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.MvPolynomial.Coeff
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
+import Mathlib.Data.Nat.Factorial.NatCast
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.MvPolynomial.Coeff
 
 /-!
@@ -142,7 +144,7 @@ private theorem sum_smul_prod_pow_mem_adjoin_of_finite [Finite ι] (x : ι → A
   have hmem (k : ℕ) : ∑ g, y g ^ k ∈ T := by
     rw [← hps]
     refine s.sum_map_pow_mem_of_sum_map_pow_mem
-      (TauCeti.isUnit_natCast_of_ne_zero (Nat.factorial_ne_zero _)) (fun j _ hj ↦ ?_) k
+      (IsUnit.natCast_factorial_of_algebra ℚ _) (fun j _ hj ↦ ?_) k
     rw [hps, hT]
     intro e
     rw [hcoeff]
@@ -152,7 +154,7 @@ private theorem sum_smul_prod_pow_mem_adjoin_of_finite [Finite ι] (x : ι → A
   -- Compare the coefficients of `u ^ d` and divide by the multinomial coefficient.
   have hd := (hT _).1 (hmem d.degree) d
   simp only [hcoeff, ↓reduceIte] at hd
-  refine (B.natCast_mul_mem_iff (TauCeti.isUnit_natCast_of_ne_zero ?_)).1 hd
+  refine (B.natCast_mul_mem_iff (TauCeti.isUnit_natCast_of_ne_zero ℚ ?_)).1 hd
   rw [Finsupp.multinomial_eq]
   exact (Nat.multinomial_pos _ _).ne'
 
@@ -200,7 +202,7 @@ theorem subalgebra_eq_adjoin_sum_smul_prod_pow (x : ι → A)
       rw [aeval_monomial, ← Algebra.smul_def, smul_sum]
       exact sum_congr rfl fun g _ ↦ smul_comm g (P.coeff d) _
     rw [← Subalgebra.natCast_mul_mem_iff _
-        (TauCeti.isUnit_natCast_of_ne_zero (Fintype.card_ne_zero (α := G))),
+        (TauCeti.isUnit_natCast_of_ne_zero ℚ (Fintype.card_ne_zero (α := G))),
       ← hsum, P.as_sum, map_sum]
     simp_rw [smul_sum]
     rw [sum_comm]
