@@ -114,22 +114,40 @@ theorem mem_boundary_annulus_iff {p : Annulus} :
 
 /-! ### Twists of the annulus -/
 
+section Rotation
+
+variable {E H B : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {J : ModelWithCorners ℝ E H} [TopologicalSpace B] [ChartedSpace H B]
+
+/-- The level-preserving diffeomorphism `(b, θ) ↦ (b, θ + ρ b)` of `B × ℝ/ℤ` for a smooth
+`ρ : B → ℝ`, the common construction behind the twists and the twist diffeotopy. -/
+private def prodRotation (ρ : B → ℝ) (hρ : ContMDiff J 𝓘(ℝ) ∞ ρ) :
+    (B × AddCircle (1 : ℝ)) ≃ₘ^∞⟮J.prod 𝓘(ℝ), J.prod 𝓘(ℝ)⟯ B × AddCircle (1 : ℝ) :=
+  AddCircle.prodDiffeomorphOfLift (L := fun p : ℝ × ℝ ↦ p.2 + p.1) (by fun_prop) (by simp)
+    (fun _ _ ↦ by ring) (fun _ _ ↦ by simp) ρ hρ
+
+private theorem prodRotation_apply {ρ : B → ℝ} (hρ : ContMDiff J 𝓘(ℝ) ∞ ρ)
+    (p : B × AddCircle (1 : ℝ)) :
+    prodRotation ρ hρ p = (p.1, p.2 + (ρ p.1 : AddCircle (1 : ℝ))) := by
+  obtain ⟨b, θ⟩ := p
+  induction θ using QuotientAddGroup.induction_on with
+  | H x => exact AddCircle.prodDiffeomorphOfLift_apply_coe _ _ _ _ _ _ b x
+
+end Rotation
+
 variable {κ κ' : I → ℝ}
 
 /-- The **twist** of the annulus by a smooth function `κ` on `[0, 1]`: the diffeomorphism
 `(t, θ) ↦ (t, θ + κ t)`, which rotates the circle at radius `t` by `κ t`. -/
 def annulusTwist (κ : I → ℝ) (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) :
     Diff ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus ∞ :=
-  AddCircle.prodDiffeomorphOfLift (L := fun p : ℝ × ℝ ↦ p.2 + p.1) (by fun_prop) (by simp)
-    (fun _ _ ↦ by ring) (fun _ _ ↦ by simp) κ hκ
+  prodRotation κ hκ
 
 /-- The twist by `κ` rotates the circle at radius `t` by `κ t`. -/
 @[simp]
 theorem annulusTwist_apply (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) (p : Annulus) :
-    annulusTwist κ hκ p = (p.1, p.2 + (κ p.1 : AddCircle (1 : ℝ))) := by
-  obtain ⟨t, θ⟩ := p
-  induction θ using QuotientAddGroup.induction_on with
-  | H x => exact AddCircle.prodDiffeomorphOfLift_apply_coe _ _ _ _ _ _ t x
+    annulusTwist κ hκ p = (p.1, p.2 + (κ p.1 : AddCircle (1 : ℝ))) :=
+  prodRotation_apply hκ p
 
 /-- Twists compose by adding their profiles. -/
 @[simp]
@@ -163,8 +181,8 @@ theorem annulusTwist_inv (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) :
 /-- The inverse diffeomorphism of a twist is the twist by the opposite profile. -/
 @[simp]
 theorem annulusTwist_symm (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) :
-    (annulusTwist κ hκ).symm = annulusTwist (-κ) hκ.neg :=
-  annulusTwist_inv hκ
+    (annulusTwist κ hκ).symm = annulusTwist (-κ) hκ.neg := by
+  rw [← Diffeomorph.inv_def, annulusTwist_inv]
 
 /-- The integer powers of a twist are the twists by the integer multiples of its profile. -/
 @[simp]
@@ -212,24 +230,18 @@ def annulusTwistDiffeotopy (κ : I → ℝ) (hκ : ContMDiff (𝓡∂ 1) 𝓘(�
     Diffeotopy ((𝓡∂ 1).prod 𝓘(ℝ)) ∞ Annulus where
   toDiffeomorph :=
     (Diffeomorph.prodAssocOfModels (𝓡∂ 1) (𝓡∂ 1) 𝓘(ℝ) I I (AddCircle (1 : ℝ)) ∞).symm.trans
-      ((AddCircle.prodDiffeomorphOfLift (L := fun p : ℝ × ℝ ↦ p.2 + p.1) (by fun_prop) (by simp)
-        (fun _ _ ↦ by ring) (fun _ _ ↦ by simp) (fun p : I × I ↦ (p.1 : ℝ) * κ p.2)
+      ((prodRotation (fun p : I × I ↦ (p.1 : ℝ) * κ p.2)
         ((contMDiff_subtypeVal_Icc.comp contMDiff_fst).mul (hκ.comp contMDiff_snd))).trans
         (Diffeomorph.prodAssocOfModels (𝓡∂ 1) (𝓡∂ 1) 𝓘(ℝ) I I (AddCircle (1 : ℝ)) ∞))
-  fst_apply p := by simp
-  snd_apply_zero' p := by
-    obtain ⟨t, θ⟩ := p
-    induction θ using QuotientAddGroup.induction_on with
-    | H x => simp
+  fst_apply p := by simp [prodRotation_apply]
+  snd_apply_zero' p := by simp [prodRotation_apply]
 
 /-- At time `s` the twist diffeotopy rotates the circle at radius `t` by `s κ t`. -/
 @[simp]
 theorem annulusTwistDiffeotopy_apply (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) (s : I) (p : Annulus) :
     annulusTwistDiffeotopy κ hκ (s, p) =
       (p.1, p.2 + ((s * κ p.1 : ℝ) : AddCircle (1 : ℝ))) := by
-  obtain ⟨t, θ⟩ := p
-  induction θ using QuotientAddGroup.induction_on with
-  | H x => simp [annulusTwistDiffeotopy]
+  simp [annulusTwistDiffeotopy, prodRotation_apply]
 
 /-- The twist diffeotopy ends at the twist. -/
 @[simp]
@@ -346,12 +358,17 @@ private theorem displacementLift_one (x : ℝ) :
     (fun a a' ↦ by simp [coe_displacementLift]) x 0
 
 /-- The value of the lift on the outer boundary circle is an integer. -/
-private theorem displacementLift_one_eq_round :
-    displacementLift f (1, 0) = round (displacementLift f (1, 0)) := by
+private theorem exists_displacementLift_one_eq_intCast :
+    ∃ k : ℤ, displacementLift f (1, 0) = k := by
   obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff (1 : ℝ)).mp
     ((coe_displacementLift f (1, 0)).trans (by simp))
-  simp only [zsmul_eq_mul, mul_one] at hk
-  rw [← hk, round_intCast]
+  exact ⟨k, by simpa using hk.symm⟩
+
+/-- The value of the lift on the outer boundary circle is the integer it rounds to. -/
+private theorem displacementLift_one_eq_round :
+    displacementLift f (1, 0) = round (displacementLift f (1, 0)) := by
+  obtain ⟨k, hk⟩ := exists_displacementLift_one_eq_intCast f
+  rw [hk, round_intCast]
 
 /-- Lifts of displacements compose: the displacement of `f ∘ g` is that of `g` followed by that
 of `f` at the image point. -/
@@ -389,9 +406,10 @@ def annulusTwistNumber :
   map_mul' f g := by
     have hg : g.val (1, ((0 : ℝ) : AddCircle (1 : ℝ))) = (1, ((0 : ℝ) : AddCircle (1 : ℝ))) :=
       RelativeDiff.apply_eq g (by simp)
-    rw [← ofAdd_add, displacementLift_mul, hg, displacementLift_one,
-      displacementLift_one_eq_round f, displacementLift_one_eq_round g, ← Int.cast_add,
-      round_intCast, round_intCast, round_intCast]
+    obtain ⟨a, ha⟩ := exists_displacementLift_one_eq_intCast f
+    obtain ⟨b, hb⟩ := exists_displacementLift_one_eq_intCast g
+    rw [displacementLift_mul, hg, displacementLift_one, ha, hb]
+    simp [← ofAdd_add]
 
 private theorem annulusTwistNumber_apply :
     annulusTwistNumber f = .ofAdd (round (displacementLift f (1, 0))) :=
