@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
+public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
 public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.HomotopyGroup
 
 /-!
@@ -86,29 +87,6 @@ attribute [reassoc (attr := simp)] map_comp δ_zero_map δ_succ_map
 
 end DeltaStruct
 
-/-- The faces of a face: `δ j ≫ δ 0 = δ 0 ≫ δ j.succ`. -/
-@[reassoc]
-private lemma δ_comp_δ_zero {n : ℕ} (j : Fin (n + 2)) :
-    stdSimplex.{u}.δ j ≫ stdSimplex.δ 0 = stdSimplex.δ 0 ≫ stdSimplex.δ j.succ := by
-  simpa using (stdSimplex.{u}.δ_comp_δ (Fin.zero_le j)).symm
-
-/-- A family of `(n + 1)`-simplices indexed by the nonzero `j : Fin (n + 3)` whose faces other than
-the `0`th are constant is compatible on the horn `Λ[n + 2, 0]`. -/
-private lemma isCompatible_of_δ_succ {n : ℕ} {X : SSet.{u}} {x : X _⦋0⦌}
-    {f : ∀ j : Fin (n + 3), j ≠ 0 → (Δ[n + 1] ⟶ X)}
-    (hf : ∀ j hj (l : Fin (n + 1)), stdSimplex.δ l.succ ≫ f j hj = const x) :
-    horn.IsCompatible f := by
-  have hf' (j hj) (m : Fin (n + 2)) (hm : m ≠ 0) : stdSimplex.δ m ≫ f j hj = const x := by
-    obtain ⟨l, rfl⟩ := Fin.eq_succ_of_ne_zero hm
-    exact hf j hj l
-  rw [horn.isCompatible_iff]
-  intro j k hj hk hjk
-  rw [hf' j hj _ (fun h ↦ ?_), hf' k hk _ (fun h ↦ ?_)]
-  · exact hj (by simpa using congrArg Fin.castSucc h)
-  · rw [Fin.pred_eq_iff_eq_succ] at h
-    subst h
-    exact hj (Fin.ext (by simpa [Fin.lt_def] using hjk))
-
 private lemma val_two {n : ℕ} : ((2 : Fin (n + 3)) : ℕ) = 2 := by
   simp
 
@@ -149,7 +127,7 @@ lemma exists_deltaStruct {n : ℕ} (s : B.PtSimplex (n + 1) b) :
   have hf : horn.IsCompatible (i := (0 : Fin (n + 2))) fun _ _ ↦ (const e : Δ[n] ⟶ E) := by
     obtain _ | n := n
     · simp
-    · exact isCompatible_of_δ_succ fun _ _ _ ↦ comp_const _ _
+    · exact horn.IsCompatible.of_δ_succ fun _ _ _ ↦ comp_const _ _
   obtain ⟨τ, hτ, hτp⟩ := hf.exists_lift p s.map (fun j _ ↦ by simp [he])
   refine ⟨{ map := fiber.lift (stdSimplex.δ 0 ≫ τ) p b (by simp [hτp]), comm := ?_ }, ⟨{
     map := τ
@@ -159,7 +137,7 @@ lemma exists_deltaStruct {n : ℕ} (s : B.PtSimplex (n + 1) b) :
   obtain _ | n := n
   · exact boundary.hom_ext₀
   · refine boundary.hom_ext fun j ↦ ?_
-    simp [δ_comp_δ_zero_assoc, hτ _ (Fin.succ_ne_zero j)]
+    simp [stdSimplex.δ_comp_δ_zero_assoc, hτ _ (Fin.succ_ne_zero j)]
 
 /-- Two `DeltaStruct`s for pointed simplices related by `RelStruct · · 1` have fiber components
 related by `RelStruct₀`: lift the `RelStruct` from the horn `Λ[n + 2, 0]` whose faces `1` and `2`
@@ -173,7 +151,7 @@ private lemma nonempty_relStruct₀ {n : ℕ} {s s' : B.PtSimplex (n + 1) b}
   have hf₂ : f 2 two_ne_zero = h'.map := by simp [f, one_ne_two.symm]
   have hf (j : Fin (n + 3)) (hj) (hj₁ : j ≠ 1) (hj₂ : j ≠ 2) : f j hj = const e := by
     simp [f, hj₁, hj₂]
-  obtain ⟨Φ, hΦ, hΦp⟩ := (isCompatible_of_δ_succ (f := f) (x := e) fun j hj l ↦ by
+  obtain ⟨Φ, hΦ, hΦp⟩ := (horn.IsCompatible.of_δ_succ (f := f) (x := e) fun j hj l ↦ by
     dsimp only [f]
     split_ifs <;> simp).exists_lift p r.map fun j hj ↦ by
       by_cases hj₁ : j = 1
@@ -195,9 +173,9 @@ private lemma nonempty_relStruct₀ {n : ℕ} {s s' : B.PtSimplex (n + 1) b}
       ← h.δ_zero_map, ← hf₁, ← hΦ 1 (by simp)]
     simpa using stdSimplex.δ_comp_δ_self_assoc (i := (0 : Fin (n + 2))) Φ
   · rw [← cancel_mono (fiber p b).ι, Category.assoc, fiber.lift_ι, Fin.succ_zero_eq_one,
-      δ_comp_δ_zero_assoc, ← h'.δ_zero_map, hΦ _ (Fin.succ_ne_zero _)]
+      stdSimplex.δ_comp_δ_zero_assoc, ← h'.δ_zero_map, hΦ _ (Fin.succ_ne_zero _)]
     simp [hf₂]
-  · rw [← cancel_mono (fiber p b).ι, Category.assoc, fiber.lift_ι, δ_comp_δ_zero_assoc,
+  · rw [← cancel_mono (fiber p b).ι, Category.assoc, fiber.lift_ι, stdSimplex.δ_comp_δ_zero_assoc,
       hΦ _ (Fin.succ_ne_zero _), hf _ _ ?_ ?_]
     · simp
     all_goals exact Fin.ne_of_val_ne (by
@@ -472,7 +450,7 @@ private lemma exists_lift_of_mulStruct {n : ℕ} {s₀₁ s₁₂ s₀₂ : B.Pt
   have hf (j : Fin (n + 4)) (hj) (h : j.val ≤ n) : f j hj = const e := by
     simp [f, show j.val ≠ n + 1 by omega, show j.val ≠ n + 2 by omega,
       show j.val ≠ n + 3 by omega]
-  obtain ⟨Φ, hΦ, hΦp⟩ := (isCompatible_of_δ_succ (f := f) (x := e) fun j hj l ↦ by
+  obtain ⟨Φ, hΦ, hΦp⟩ := (horn.IsCompatible.of_δ_succ (f := f) (x := e) fun j hj l ↦ by
     dsimp only [f]
     split_ifs <;> simp).exists_lift p hs.map fun j hj ↦ by
       by_cases h₁ : j.val = n + 1
@@ -512,7 +490,7 @@ lemma δ_mul {n : ℕ} (x y : π (n + 2) B b) :
   have hface (j : Fin (n + 3)) :
       stdSimplex.δ j ≫ fiber.lift (stdSimplex.δ 0 ≫ Φ) p b hΦ₀ ≫ (fiber p b).ι =
         stdSimplex.δ 0 ≫ stdSimplex.δ j.succ ≫ Φ := by
-    rw [fiber.lift_ι, δ_comp_δ_zero_assoc]
+    rw [fiber.lift_ι, stdSimplex.δ_comp_δ_zero_assoc]
   exact ⟨{
     map := fiber.lift (stdSimplex.δ 0 ≫ Φ) p b hΦ₀
     δ_castSucc_castSucc_map := by

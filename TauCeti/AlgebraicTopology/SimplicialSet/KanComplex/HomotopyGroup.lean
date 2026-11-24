@@ -142,16 +142,7 @@ lemma mk_eq_mk_iff {p q : X.PtSimplex n x} :
     induction r with
     | rel p q h =>
       obtain ⟨h⟩ := h
-      refine (π₀.sound (PtSimplex.RelStruct₀.equiv₀ (f := q) (g := p)
-        { map := prodStdSimplex₁.ι 0 ≫ h.h
-          δ_castSucc_map := ?_
-          δ_succ_map := ?_
-          δ_map_of_lt := fun j hj ↦ absurd hj (Fin.not_lt_zero _)
-          δ_map_of_gt := fun j hj ↦ absurd hj (not_lt.2 (Fin.le_last j)) })).symm
-      · rw [prodStdSimplex₁.δ_castSucc_ι_assoc, Fin.castSucc_zero,
-          prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_zero, h.h₁]
-      · rw [prodStdSimplex₁.δ_succ_ι_assoc]
-        exact (prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_last (p := 0) =≫ h.h).trans h.h₀
+      exact (π₀.sound (PtSimplex.RelStruct₀.equiv₀ (PtSimplex.Homotopy.relStruct₀Zero h))).symm
     | refl p => rfl
     | symm _ _ _ h => exact h.symm
     | trans _ _ _ _ _ h₁ h₂ => exact h₂.trans h₁
