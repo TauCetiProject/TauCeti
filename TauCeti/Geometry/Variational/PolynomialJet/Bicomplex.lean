@@ -100,6 +100,13 @@ theorem horizontalForm_def (i : ι) :
     horizontalForm R α i = ExteriorAlgebra.ι _ (KaehlerDifferential.D R _ (X (Sum.inl i))) :=
   (rfl)
 
+/-- The simp normal form of `dxⁱ` is `horizontalForm`: this folds the raw form
+`ι (D xⁱ)` produced by the de Rham simp lemmas such as `extDeriv_algebraMap`. -/
+@[simp]
+theorem ι_D_X_base (i : ι) :
+    ExteriorAlgebra.ι _ (KaehlerDifferential.D R _ (X (Sum.inl i))) = horizontalForm R α i :=
+  (rfl)
+
 /-- The horizontal coframe form `dxⁱ` is the exterior derivative of the base coordinate. -/
 theorem extDeriv_algebraMap_X_base (i : ι) :
     extDeriv R (PolynomialJet R ι α) (algebraMap (PolynomialJet R ι α) (Forms R ι α)
@@ -208,7 +215,7 @@ theorem contactForm_mul_self (a : α) (I : ι →₀ ℕ) : contactForm R a I * 
   have h : contactForm R a I = ExteriorAlgebra.ι _ (KaehlerDifferential.D R _ (X (Sum.inr (a, I))) -
       ∑ i, (X (Sum.inr (a, I + Finsupp.single i 1)) : PolynomialJet R ι α) •
         KaehlerDifferential.D R _ (X (Sum.inl i))) := by
-    simp [contactForm, horizontalForm_def]
+    simp only [contactForm_def, map_sub, map_sum, LinearMap.map_smul, ι_D_X_base]
   rw [h, ExteriorAlgebra.ι_sq_zero]
 
 /-- Contact forms have exterior degree one. -/
@@ -289,7 +296,8 @@ theorem horizontalDiff_horizontalDiff (ω : Forms R ι α) :
 /-- **The horizontal differential anticommutes with the exterior derivative**. -/
 theorem extDeriv_horizontalDiff (ω : Forms R ι α) :
     extDeriv R _ (horizontalDiff R ι α ω) = -horizontalDiff R ι α (extDeriv R _ ω) := by
-  simp [horizontalDiff_apply, extDeriv_mul, horizontalForm_def, extDeriv_totalLieDeriv]
+  simp [horizontalDiff_apply, extDeriv_mul, horizontalForm_def, extDeriv_totalLieDeriv,
+    -ι_D_X_base]
 
 /-! ### The vertical differential -/
 
@@ -362,7 +370,7 @@ theorem verticalDiff_algebraMap_X_base (i : ι) :
     verticalDiff R ι α (algebraMap (PolynomialJet R ι α) (Forms R ι α) (X (Sum.inl i))) =
       0 := by
   classical
-  simp [verticalDiff_apply, totalDeriv_X_base, horizontalForm_def]
+  simp [verticalDiff_apply, totalDeriv_X_base]
 
 /-- The vertical differential of a field coordinate is its contact form, `d_V uᵃ_I = θᵃ_I`. -/
 @[simp]
