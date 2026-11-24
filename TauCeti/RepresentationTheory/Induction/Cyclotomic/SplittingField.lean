@@ -12,7 +12,6 @@ import Mathlib.Data.Fintype.Shrink
 import TauCeti.RepresentationTheory.CharacterTable.CoefficientAction
 import TauCeti.RepresentationTheory.Induction.Brauer.Induction
 import TauCeti.RepresentationTheory.Induction.Monomial
-public import TauCeti.NumberTheory.Cyclotomic.Adjoin
 
 /-!
 # Cyclotomic splitting fields for finite groups
@@ -176,7 +175,7 @@ theorem _root_.FDRep.exists_simple_nonempty_iso_baseChange_adjoin_of_isPrimitive
     ∃ V : FDRep (IntermediateField.adjoin ℚ {ζ}) G,
       Simple V ∧ Module.finrank (IntermediateField.adjoin ℚ {ζ}) (V ⟶ V) = 1 ∧
         Nonempty (FDRep.of (Representation.baseChange ℂ V.ρ) ≅ W) := by
-  have := hζ.isCyclotomicExtension_adjoin_singleton (K := ℚ)
+  have := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
   exact W.exists_simple_nonempty_iso_baseChange_of_isCyclotomicExtension
 
 end TauCeti

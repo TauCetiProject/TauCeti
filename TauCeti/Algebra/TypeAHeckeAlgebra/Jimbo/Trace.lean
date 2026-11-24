@@ -12,6 +12,7 @@ public import TauCeti.KnotTheory.Jimbo.Trace
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.KnotTheory.Jimbo.Stabilization
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # The Turaev–Jimbo weighted trace on the type-A Hecke algebra
@@ -145,8 +146,8 @@ theorem commute_jimboEnhancement_jimbo (N : ℕ) (q : Rˣ) {n : ℕ} (x : TypeAH
     Commute (KnotTheory.jimboEnhancement (N := N) q) (jimbo (Fin N) q x) := by
   have hx : jimbo (Fin N) q x ∈
       Algebra.adjoin R (Set.range (jimbo (Fin N) q ∘ T (n := n) q)) := by
-    rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
-    exact ⟨x, trivial, rfl⟩
+    rw [Set.range_comp, Algebra.adjoin_image_eq_range _ adjoin_range_T]
+    exact AlgHom.mem_range_self _ x
   refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx ?_
   rintro _ ⟨i, rfl⟩
   simpa only [Function.comp_apply, jimbo_T] using
@@ -208,6 +209,14 @@ theorem jimboWeightedTrace_algebraMap (N : ℕ) (q : Rˣ) (n : ℕ) (r : R) :
     jimboWeightedTrace N q n (algebraMap R _ r) =
       r * (∑ a : Fin N, KnotTheory.jimboWeight q a) ^ n := by
   rw [Algebra.algebraMap_eq_smul_one, map_smul, jimboWeightedTrace_one, smul_eq_mul]
+
+/-- At `q = 1`, the enhancement is the identity, so the weighted trace is the ordinary trace of
+the permutation action on words. -/
+@[simp]
+theorem jimboWeightedTrace_one_parameter (N n : ℕ) (x : TypeAHeckeAlgebra R (1 : Rˣ) n) :
+    jimboWeightedTrace N (1 : Rˣ) n x =
+      LinearMap.trace R ((Fin n → Fin N) →₀ R) (jimbo (Fin N) (1 : Rˣ) x) := by
+  simp [jimboWeightedTrace_apply]
 
 /-- Adding an uncrossed strand multiplies `jimboWeightedTrace` by the quantum dimension. -/
 @[simp]
@@ -365,6 +374,17 @@ theorem jimboWeightedTrace_div_pow_eq_ocneanuTrace {K : Type*} [Field K] {N : �
   have hc : (∑ a : Fin N, KnotTheory.jimboWeight q a)⁻¹ *
       ∑ a : Fin N, KnotTheory.jimboWeight q a = 1 := inv_mul_cancel₀ hδ
   rw [div_eq_inv_mul, ← inv_pow, mul_pow_jimboWeightedTrace_eq_ocneanuTrace hc, inv_mul_eq_div]
+
+/-- Over a field where the quantum dimension is nonzero, `jimboWeightedTrace` equals the `n`-th
+power of the quantum dimension times the Ocneanu trace at `q ^ N / δ_N`. -/
+theorem jimboWeightedTrace_eq_pow_mul_ocneanuTrace_div {K : Type*} [Field K] {N : ℕ} {q : Kˣ}
+    (hδ : (∑ a : Fin N, KnotTheory.jimboWeight q a) ≠ 0) (n : ℕ)
+    (x : TypeAHeckeAlgebra K q n) :
+    jimboWeightedTrace N q n x =
+      (∑ a : Fin N, KnotTheory.jimboWeight q a) ^ n *
+        InfiniteTypeAHeckeAlgebra.ocneanuTrace K q
+          (↑(q ^ N) / ∑ a : Fin N, KnotTheory.jimboWeight q a) (toInfinite K q n x) := by
+  rw [← jimboWeightedTrace_div_pow_eq_ocneanuTrace hδ n x, mul_div_cancel₀ _ (pow_ne_zero n hδ)]
 
 /-- With `N = 1` colour, the weighted trace on `n` strands is the index character `T i ↦ q`. -/
 @[simp]

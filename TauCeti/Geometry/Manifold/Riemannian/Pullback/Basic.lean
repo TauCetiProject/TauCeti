@@ -297,6 +297,20 @@ theorem orthonormal_pullback_iff {ι : Type*} [DecidableEq ι]
     ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
   simp only [orthonormal_iff_ite, inner_riemannianBundle, pullback_inner]
 
+/-- Pulling back the installed target metric computes its inner product on differentials. -/
+theorem pullback_ofIsContMDiffRiemannianBundle_inner
+    [RiemannianBundle (TangentSpace J : N → Type _)]
+    [IsContMDiffRiemannianBundle J n F (TangentSpace J : N → Type _)]
+    (f : M → N) (hf : ContMDiff I J (n + 1) f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (x : M)
+    (v w : TangentSpace I x) :
+    ((ofIsContMDiffRiemannianBundle (IB := J) (n := n) (F := F)
+      (V := (TangentSpace J : N → Type _))).pullback f hf hinj).inner x v w =
+      Inner.inner ℝ (mfderiv I J f x v) (mfderiv I J f x w) := by
+  rw [pullback_inner, ofIsContMDiffRiemannianBundle_inner]
+  -- The fiber inner product is defined by the installed Riemannian bundle's metric.
+  rfl
+
 /-- Pulling back along equal maps gives equal metrics, whatever the regularity and injectivity
 proofs supplied. -/
 theorem pullback_congr

@@ -43,6 +43,8 @@ varies the coefficients.
   `Scheme.Modules.finiteDimensional_cohomology_X₁`: `Hⁱ⁺¹(X, M₁)` is finite-dimensional when
   `Hⁱ(X, M₃)` and `Hⁱ⁺¹(X, M₂)` are, and `Scheme.Modules.finiteDimensional_cohomology_zero_of_mono`:
   `H⁰(X, M)` is finite-dimensional when `H⁰(X, N)` is, for a monomorphism `M ⟶ N`;
+* `Scheme.Modules.finite_cohomology_X₃`: over a base ring, `Hⁱ(X, M₃)` is finitely generated when
+  `Hⁱ(X, M₂)` is finitely generated and `Hⁱ⁺¹(X, M₁)` is Noetherian;
 * `Scheme.Modules.exact_sections` and `Scheme.Modules.sections_injective`: global sections are
   left exact, and `Scheme.Modules.sections_surjective`: they are exact on the right as soon as
   `H¹(X, M₁)` vanishes. This last statement is the form in which the sequence is normally used;
@@ -328,6 +330,17 @@ theorem exact_cohomologyMapBaseLinear_cohomologyδBaseLinear (hS : S.ShortExact)
   rw [coe_cohomologyδBaseLinear R X hS, coe_cohomologyMapBaseLinear R X]
   exact exact_cohomologyMap_cohomologyδ hS i (i + 1) rfl
 
+/-- `Hⁿ⁰(X, M₃)` sits in the exact sequence `Hⁿ⁰(X, M₂) ⟶ Hⁿ⁰(X, M₃) ⟶ Hⁿ¹(X, M₁)`, where
+`n₀ + 1 = n₁`, so it is finitely generated over the base ring as soon as `Hⁿ⁰(X, M₂)` is finitely
+generated and `Hⁿ¹(X, M₁)` is Noetherian; over a Noetherian base ring, as soon as both are finitely
+generated. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_cohomology_X₃ (hS : S.ShortExact)
+    (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) [Module.Finite R (Cohomology S.X₂ n₀)]
+    [_root_.IsNoetherian R (Cohomology S.X₁ n₁)] :
+    Module.Finite R (Cohomology S.X₃ n₀) := by
+  subst h
+  exact (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear R X hS n₀).moduleFinite
+
 end Base
 
 section Field
@@ -345,7 +358,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
       (cohomologyMapBaseLinear k X S.g i) := by
     rw [coe_cohomologyMapBaseLinear, coe_cohomologyMapBaseLinear]
     exact exact_cohomologyMap_cohomologyMap hS i
-  exact finiteDimensional_of_exact hex
+  exact hex.moduleFinite
 
 /-- `Hⁿ¹(X, M₁)` is squeezed by the exact sequence between `Hⁿ⁰(X, M₃)` and `Hⁿ¹(X, M₂)`, where
 `n₀ + 1 = n₁`, so it is finite-dimensional as soon as those two are. -/
@@ -357,7 +370,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
       (cohomologyMapBaseLinear k X S.f n₁) := by
     simpa only [coe_cohomologyδBaseLinear, coe_cohomologyMapBaseLinear] using
       exact_cohomologyδ_cohomologyMap hS n₀ n₁ h
-  exact finiteDimensional_of_exact hex
+  exact hex.moduleFinite
 
 /-- A monomorphism `M ⟶ N` embeds `H⁰(X, M)` into `H⁰(X, N)`, so `H⁰(X, M)` is
 finite-dimensional as soon as `H⁰(X, N)` is. -/

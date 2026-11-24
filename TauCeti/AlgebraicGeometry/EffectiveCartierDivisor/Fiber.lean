@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative.Basic
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Stalk
 import TauCeti.AlgebraicGeometry.Noetherian

@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Lie.Current.Topology
 public import TauCeti.Algebra.Lie.Loop.Cocycle
 -- Non-public: used only inside proofs.
 import TauCeti.Algebra.Lie.Killing.Basic
-import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
 # Continuous cochains on formal currents

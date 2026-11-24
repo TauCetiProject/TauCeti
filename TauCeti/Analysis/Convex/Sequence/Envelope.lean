@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Order.Bounds.Image
 public import Mathlib.Order.ConditionallyCompleteLattice.Basic
 public import TauCeti.Analysis.Convex.Sequence.Basic
+import TauCeti.Algebra.Order.WithTop.Untop0
 
 /-!
 # Lower convex envelopes of height sequences

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Group.Submodule
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Expand
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
+public import TauCeti.Topology.MetricSpace.Algebra
 
 /-!
 # `q`-adic expansion components in coefficient submodules

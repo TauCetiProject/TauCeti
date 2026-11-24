@@ -28,8 +28,9 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   factor is replaced by a two-term correction, telescopes.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
+* `TauCeti.negOnePowCast_smul_mem`: the ground-ring signs preserve every additive subgroup.
 * `TauCeti.map_negOnePowCast_smul`: additive homomorphisms commute with the ground-ring signs.
-* `TauCeti.negOnePow_smul_negOnePow_smul`, `TauCeti.neg_one_pow_smul_neg_one_pow_smul`: the
+* `Int.negOnePow_smul_negOnePow_smul`, `TauCeti.neg_one_pow_smul_neg_one_pow_smul`: the
   unit-valued sign and the power `(-1) ^ n` act as involutions.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
@@ -100,6 +101,12 @@ theorem negOnePow_smul_eq_negOnePowCast_smul (e : ℤ) (a : A) :
     e.negOnePow • a = negOnePowCast R e • a := by
   rw [negOnePowCast, Units.smul_def, ← Int.cast_smul_eq_zsmul R]
 
+/-- A ground-ring sign `(-1) ^ e` preserves every additive subgroup. -/
+theorem negOnePowCast_smul_mem {S : AddSubgroup A} (e : ℤ) {a : A} (ha : a ∈ S) :
+    negOnePowCast R e • a ∈ S := by
+  rw [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def]
+  exact S.zsmul_mem ha _
+
 /-- Additive homomorphisms between modules commute with the ground-ring signs `(-1) ^ e`. -/
 theorem map_negOnePowCast_smul {B F : Type*} [AddCommGroup B] [Module R B] [FunLike F A B]
     [AddMonoidHomClass F A B] (f : F) (e : ℤ) (a : A) :
@@ -130,7 +137,8 @@ variable {A : Type uA} [AddGroup A]
 
 /-- The sign `(-1) ^ e`, acting through the units of `ℤ`, acts as an involution. -/
 @[simp]
-theorem negOnePow_smul_negOnePow_smul (e : ℤ) (a : A) : e.negOnePow • e.negOnePow • a = a := by
+theorem _root_.Int.negOnePow_smul_negOnePow_smul (e : ℤ) (a : A) :
+    e.negOnePow • e.negOnePow • a = a := by
   rw [smul_smul, Int.units_mul_self, one_smul]
 
 /-- The sign `(-1) ^ n`, acting through any monoid with a distributive negation, acts as an

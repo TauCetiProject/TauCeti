@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.AlgebraicGeometry.Birational.KrullDimension
 import TauCeti.AlgebraicGeometry.Cohomology.Cech.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.Spec
-import TauCeti.AlgebraicGeometry.Curves.Cohomology
+import TauCeti.AlgebraicGeometry.Curves.Cohomology.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Modification.Finite
 import TauCeti.AlgebraicGeometry.Morphisms.Separated
 import TauCeti.AlgebraicGeometry.Normalization.Regular
@@ -270,13 +270,13 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   have : Mono φ := f.mono_unitToPushforwardObjUnit
   have hS := TauCeti.cokernelSequence_shortExact φ
-  let eCech (m : ℕ) := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY m
+  let ePush (m : ℕ) := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY m
   have hY_eq : eulerCharBelow k Y (InvertibleSheaf.trivial Y).obj 2 =
       eulerCharBelow k X ((pushforward f).obj OY) 2 := by
     rw [eulerCharBelow_two, eulerCharBelow_two,
       (trivialCohomologyBaseLinearEquiv k Y 0).finrank_eq,
       (trivialCohomologyBaseLinearEquiv k Y 1).finrank_eq,
-      ← (eCech 0).finrank_eq, ← (eCech 1).finrank_eq]
+      ← (ePush 0).finrank_eq, ← (ePush 1).finrank_eq]
   have hX_eq : eulerCharBelow k X (InvertibleSheaf.trivial X).obj 2 =
       eulerCharBelow k X OX 2 := by
     rw [eulerCharBelow_two, eulerCharBelow_two,
@@ -285,7 +285,7 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
   have hpush_fd (m : ℕ) : FiniteDimensional k (Cohomology ((pushforward f).obj OY) m) := by
     have : FiniteDimensional k (Cohomology OY m) :=
       Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k Y m)
-    exact Module.Finite.equiv (eCech m).symm
+    exact Module.Finite.equiv (ePush m).symm
   have hadd := eulerCharBelow_eq_add k hS 2
     (fun i _ _ ↦ Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X i))
     (fun i _ ↦ hpush_fd i)
@@ -310,12 +310,12 @@ theorem genus_le_of_isModification [X.IsCurveOver k] [Y.IsCurveOver k]
   have : FiniteDimensional k (Cohomology OX 1) :=
     Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X 1)
   have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  let eCech := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY 1
+  let ePush := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY 1
   let φ : OX ⟶ (pushforward f).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   let ψ : Cohomology OX 1 →ₗ[k] Cohomology OY 1 :=
-    eCech.toLinearMap.comp (cohomologyMapBaseLinear k X φ 1)
-  have hsurj : Function.Surjective ψ := eCech.surjective.comp (by
+    ePush.toLinearMap.comp (cohomologyMapBaseLinear k X φ 1)
+  have hsurj : Function.Surjective ψ := ePush.surjective.comp (by
     rw [coe_cohomologyMapBaseLinear]
     exact f.cohomologyMap_unitToPushforwardObjUnit_one_surjective hdim)
   rw [Scheme.genus_def, Scheme.genus_def, (trivialCohomologyBaseLinearEquiv k Y 1).finrank_eq,

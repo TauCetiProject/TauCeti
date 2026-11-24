@@ -51,6 +51,10 @@ their unfolding, restriction and monotonicity lemmas with the class for surfaces
   interior is a local Sobolev map up to the boundary, with the same order and exponent. The
   coordinate expressions in a bordered holomorphic chart are those in its restriction to the
   interior, read in `ℂ` through the open upper half-plane.
+  `TauCeti.MemWkpLocMap.memWkpLocMapOnBordered_borderedInterior` is the version for the whole
+  interior.
+* `TauCeti.extend_chartAt_target_inter_preimage_halfDisc`: in any chart of the closed upper
+  half-plane the closed upper half-disc reads as `ball 0 1 ∩ {z | 0 ≤ z.im}`.
 * `TauCeti.not_memWkpLocMapOnBordered_sqrt_im`: on the closed upper half-disc, `z ↦ √(Im z)` is
   continuous but is not in the class of order `1` for any `p ≥ 2`, since the boundary chart
   tests its derivative `(2 √(Im z))⁻¹` on compact sets reaching the real axis.
@@ -60,10 +64,12 @@ their unfolding, restriction and monotonicity lemmas with the class for surfaces
 As for `TauCeti.MemWkpLocMapOn`, the charts tested are those of the maximal atlases and the
 definitions carry no manifold hypotheses; they are meant for
 `HasGroupoid X borderedHolomorphicGroupoid` and `IsManifold I ∞ M`. That it suffices to test one
-atlas of `X` near the boundary needs the change of variables for the half-disc classes along
-bordered holomorphic chart changes, which are smooth only up to the real axis, and is not part of
-this file. Neither is the converse of the comparison with the interior class, which tests charts
-of the interior with values anywhere in `ℂ`.
+atlas of `X` near the boundary, and the converse of the comparison with the interior class, are
+proved for orders `k ≤ 1` in `TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Atlas`:
+`TauCeti.memWkpLocMapOnBordered_iff_of_subset_maximalAtlas` changes variables along bordered
+holomorphic chart changes through their Schwarz reflection, and
+`TauCeti.MemWkpLocMapOnBordered.memWkpLocMapOn_preimage` restricts to the interior. Orders
+`k ≥ 2` remain open.
 
 ## References
 
@@ -205,9 +211,39 @@ theorem MemWkpLocMapOn.memWkpLocMapOnBordered_image [CompleteSpace F]
     hψ).mono fun z hz ↦ (hmem z hz).1).congr_ae
       ((ae_restrict_iff' hVm).2 (Eventually.of_forall fun z hz ↦ (hmem z hz).2))
 
+/-- A local Sobolev map for the Riemann surface structure of the interior of a Riemann surface with
+boundary is a local Sobolev map up to the boundary on the interior, with the same order and
+exponent. -/
+theorem MemWkpLocMap.memWkpLocMapOnBordered_borderedInterior [CompleteSpace F]
+    (hu : MemWkpLocMap I p k (u ∘ ((↑) : borderedInterior X → X))) :
+    MemWkpLocMapOnBordered I p k u (borderedInterior X) := by
+  simpa using MemWkpLocMapOn.memWkpLocMapOnBordered_image (memWkpLocMapOnGroupoid_univ.mpr hu)
+    isOpen_univ
+
 end Interior
 
 /-! ### A square-root profile on the closed upper half-disc -/
+
+/-- In the chart of `ClosedUpperHalfPlane` at any point, extended to `ℂ`, the closed upper
+half-disc `{z | ‖z‖ < 1}` reads as `ball 0 1 ∩ {z | 0 ≤ z.im}`. -/
+theorem extend_chartAt_target_inter_preimage_halfDisc (x : ClosedUpperHalfPlane) :
+    ((chartAt ClosedUpperHalfPlane x).extend closedUpperHalfPlaneModel).target ∩
+        ((chartAt ClosedUpperHalfPlane x).extend closedUpperHalfPlaneModel).symm ⁻¹'
+          {z : ClosedUpperHalfPlane | ‖(z : ℂ)‖ < 1} =
+      Metric.ball (0 : ℂ) 1 ∩ {z | 0 ≤ z.im} := by
+  ext z
+  simp only [chartAt_self_eq, OpenPartialHomeomorph.extend_target,
+    OpenPartialHomeomorph.extend_coe_symm, OpenPartialHomeomorph.refl_target,
+    OpenPartialHomeomorph.refl_symm, OpenPartialHomeomorph.refl_apply,
+    range_closedUpperHalfPlaneModel, preimage_univ, univ_inter, mem_inter_iff, mem_preimage,
+    mem_ofPred_eq, Function.comp_apply, id_eq, Metric.mem_ball, dist_zero_right]
+  constructor
+  · rintro ⟨hz, hzn⟩
+    rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz] at hzn
+    exact ⟨hzn, hz⟩
+  · rintro ⟨hzn, hz⟩
+    rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz]
+    exact ⟨hz, hzn⟩
 
 /-- On the closed upper half-disc `{z | ‖z‖ < 1}` of `ClosedUpperHalfPlane`, the map
 `z ↦ √(Im z)` is continuous, but it is not a local Sobolev map up to the boundary of order `1`
@@ -221,27 +257,8 @@ theorem not_memWkpLocMapOnBordered_sqrt_im (hp : 2 ≤ p) :
   have hφ := borderedHolomorphicGroupoid.chart_mem_maximalAtlas (ClosedUpperHalfPlane.ofReal 0)
   have hψ := (contDiffGroupoid ∞ 𝓘(ℝ)).chart_mem_maximalAtlas (0 : ℝ)
   have hc := h.memWkpLoc_chart hφ hψ
-  have hset : ((chartAt ClosedUpperHalfPlane (ClosedUpperHalfPlane.ofReal 0)).extend
-      closedUpperHalfPlaneModel).target ∩
-      ((chartAt ClosedUpperHalfPlane (ClosedUpperHalfPlane.ofReal 0)).extend
-        closedUpperHalfPlaneModel).symm ⁻¹' ({z : ClosedUpperHalfPlane | ‖(z : ℂ)‖ < 1} ∩
-        (fun z : ClosedUpperHalfPlane ↦ √(z : ℂ).im) ⁻¹' (chartAt ℝ (0 : ℝ)).source) =
-      Metric.ball (0 : ℂ) 1 ∩ {z | 0 ≤ z.im} := by
-    ext z
-    simp only [chartAt_self_eq, OpenPartialHomeomorph.extend_target,
-      OpenPartialHomeomorph.extend_coe_symm, OpenPartialHomeomorph.refl_target,
-      OpenPartialHomeomorph.refl_symm, OpenPartialHomeomorph.refl_source,
-      OpenPartialHomeomorph.refl_apply, range_closedUpperHalfPlaneModel, preimage_univ,
-      inter_univ, mem_inter_iff, mem_preimage, mem_ofPred_eq, Function.comp_apply, id_eq,
-      Metric.mem_ball, dist_zero_right, mem_univ, true_and]
-    constructor
-    · rintro ⟨hz, hzn⟩
-      rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz] at hzn
-      exact ⟨hzn, hz⟩
-    · rintro ⟨hzn, hz⟩
-      rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz]
-      exact ⟨hz, hzn⟩
-  rw [hset] at hc
+  rw [chartAt_self_eq (H := ℝ), OpenPartialHomeomorph.refl_source, preimage_univ, inter_univ,
+    extend_chartAt_target_inter_preimage_halfDisc] at hc
   have hc' : MemWkpLoc p (Metric.ball (0 : ℂ) 1 ∩ {z | 0 ≤ z.im}) 1 (fun z : ℂ ↦ √z.im) := by
     refine hc.congr_ae ((ae_restrict_iff' Metric.isOpen_ball.measurableSet_inter_setOf_im_nonneg).2
       (Eventually.of_forall fun z hz ↦ ?_))

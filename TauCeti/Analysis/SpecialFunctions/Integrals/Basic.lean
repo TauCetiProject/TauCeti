@@ -11,7 +11,8 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Elementary interval integrals
@@ -20,6 +21,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 `Mathlib/Analysis/SpecialFunctions/Integrals/Basic.lean`.
 
 ## Main declarations
+
+* `TauCeti.integral_div_pow`: `∫ s in 0..c, (s / c)^m = c / (m + 1)` for every real `c`.
 
 * `TauCeti.intervalIntegrable_sub_const_rpow`: the weight `(x - c)^r` is interval integrable on
   every interval, for `r > -1`;
@@ -43,11 +46,18 @@ Interval integrals of elementary functions in closed form or as series, continui
   `Jₙ = ∫ x in -1..1, xⁿ √(1 - x²)` satisfy `(n + 4) Jₙ₊₂ = (n + 1) Jₙ`.
 * `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
   `c ≠ 0`, the real counterpart of Mathlib's `integral_exp_mul_complex`.
+* `TauCeti.integral_exp_mul_pos`, `TauCeti.integral_exp_mul_le`: the exponential integral
+  `E_λ(T) = ∫₀ᵀ e^{λr} dr` is positive for `T > 0` and at most `T e^{|λ|T}`;
+  `TauCeti.hasDerivAt_integral_exp_mul_sub`: `z ↦ E_λ(z - t)` has derivative `1` at `t`.
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.norm_integral_cexp_le`, `TauCeti.norm_integral_cexp_le_of_ne_zero`: the integral
+  `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`, and at most `2 / |u|` for `u ≠ 0`.
+* `TauCeti.tendsto_average_integral_cexp`: the averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to
+  `1` at `u = 0` and to `0` elsewhere as `T → ∞`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
 * `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
@@ -61,8 +71,10 @@ Interval integrals of elementary functions in closed form or as series, continui
   sum of the termwise integrals of the exponential series of `e^{z cos θ}`, for complex `z`.
 * `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_cexp`: for integer `n`, the same
   integral as the series `∑ₗ 2π (z / 2) ^ (2 l + |n|) / (l! (l + |n|)!)`.
-* `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
-  from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
+* `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`,
+  `TauCeti.integral_comp_sin_sq_int_mul_pi`: the integral from `0` of an integrand
+  `θ ↦ G (sin² θ)` (with `G` valued in a normed space) is odd and quasi-periodic in its upper
+  limit.
 -/
 
 public section
@@ -70,6 +82,18 @@ public section
 open scoped Nat
 
 namespace TauCeti
+
+/-- The normalized integer power integrates to `c / (m + 1)` from zero to `c`,
+including a zero or negative endpoint. -/
+theorem integral_div_pow (c : ℝ) (m : ℕ) :
+    (∫ s in 0..c, (s / c) ^ m) = c / (m + 1 : ℝ) := by
+  by_cases hc : c = 0
+  · simp [hc]
+  simp_rw [div_pow]
+  rw [intervalIntegral.integral_div, integral_pow]
+  simp only [zero_pow (Nat.succ_ne_zero _), sub_zero, pow_succ]
+  field_simp [hc]
+
 
 /-- The weight `(x - c)^r`, singular at `x = c`, is interval integrable between `a` and `b` for
 `r > -1`, wherever `c` lies. -/
@@ -282,6 +306,37 @@ theorem integral_exp_mul {a b c : ℝ} (hc : c ≠ 0) :
   rw [intervalIntegral.integral_comp_mul_left (f := Real.exp) hc, integral_exp, smul_eq_mul,
     inv_mul_eq_div]
 
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` is positive for `T > 0`. -/
+theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
+    0 < ∫ r in 0..T, Real.exp (lam * r) :=
+  intervalIntegral.intervalIntegral_pos_of_pos_on
+    ((by fun_prop : Continuous fun r ↦ Real.exp (lam * r)).intervalIntegrable _ _)
+    (fun _ _ ↦ Real.exp_pos _) hT
+
+/-- The map `z ↦ ∫ r in 0..(z - t), exp (lam * r)` has derivative `1` at `t`. -/
+theorem hasDerivAt_integral_exp_mul_sub (lam t : ℝ) :
+    HasDerivAt (fun z ↦ ∫ r in 0..(z - t), Real.exp (lam * r)) 1 t := by
+  simpa using ((by fun_prop : Continuous fun r ↦ Real.exp (lam * r)).integral_hasStrictDerivAt
+    0 (t - t)).hasDerivAt.comp_sub_const t t
+
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}`. -/
+theorem integral_exp_mul_le (lam T : ℝ) :
+    ∫ r in 0..T, Real.exp (lam * r) ≤ T * Real.exp (|lam| * T) := by
+  have hc : Continuous fun r ↦ Real.exp (lam * r) := by fun_prop
+  rcases le_total 0 T with hT | hT
+  · have := intervalIntegral.integral_mono_on (g := fun _ ↦ Real.exp (|lam| * T)) hT
+      (hc.intervalIntegrable _ _) (intervalIntegrable_const (μ := MeasureTheory.volume))
+      fun r hr ↦ Real.exp_le_exp.2 <| by
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+    simpa using this
+  · rw [intervalIntegral.integral_symm]
+    have := intervalIntegral.integral_mono_on (f := fun _ ↦ Real.exp (|lam| * T)) hT
+      (intervalIntegrable_const (μ := MeasureTheory.volume)) (hc.intervalIntegrable _ _)
+      fun r hr ↦ Real.exp_le_exp.2 <| by
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+    simp only [intervalIntegral.integral_const, smul_eq_mul, zero_sub] at this
+    linarith
+
 /-- The integral of `σ ↦ 1 / (σ (1 + C σ))` between positive limits, for `C ≥ 0`: an
 antiderivative is `σ ↦ log (σ / (1 + C σ))`. -/
 theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC : 0 ≤ C) :
@@ -315,6 +370,47 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
       Complex.exp_eq_exp_iff_exists_int.mpr ⟨k, by push_cast; ring⟩
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
+
+/-- The interval integral `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`. -/
+theorem norm_integral_cexp_le (u a b : ℝ) :
+    ‖∫ t in a..b, Complex.exp (↑(t * u) * Complex.I)‖ ≤ |b - a| := by
+  have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b) (C := 1)
+    (f := fun t ↦ Complex.exp (↑(t * u) * Complex.I))
+    fun t _ ↦ (Complex.norm_exp_ofReal_mul_I _).le
+  rwa [one_mul] at h
+
+/-- For `u ≠ 0` the interval integral `∫ t in a..b, exp (t u i)` has modulus at most `2 / |u|`,
+uniformly in `a` and `b`. -/
+theorem norm_integral_cexp_le_of_ne_zero {u : ℝ} (hu : u ≠ 0) (a b : ℝ) :
+    ‖∫ t in a..b, Complex.exp (↑(t * u) * Complex.I)‖ ≤ 2 / |u| := by
+  have hc : (u : ℂ) * Complex.I ≠ 0 := mul_ne_zero (Complex.ofReal_ne_zero.2 hu) Complex.I_ne_zero
+  have h : ∫ t in a..b, Complex.exp (↑(t * u) * Complex.I) =
+      (Complex.exp (↑(b * u) * Complex.I) - Complex.exp (↑(a * u) * Complex.I)) /
+        (u * Complex.I) := by
+    simp_rw [show ∀ t : ℝ, (↑(t * u) : ℂ) * Complex.I = u * Complex.I * t from fun t ↦ by
+      push_cast; ring]
+    rw [integral_exp_mul_complex hc]
+  rw [h, norm_div, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs]
+  gcongr
+  exact (norm_sub_le _ _).trans (by simp_rw [Complex.norm_exp_ofReal_mul_I]; norm_num)
+
+open Filter Topology in
+/-- The averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to `1` at `u = 0` and to `0` elsewhere as
+`T → ∞`. -/
+theorem tendsto_average_integral_cexp (u : ℝ) :
+    Tendsto (fun T : ℝ ↦ (T : ℂ)⁻¹ * ∫ t in (0 : ℝ)..T, Complex.exp (↑(t * u) * Complex.I))
+      atTop (𝓝 (({0} : Set ℝ).indicator 1 u)) := by
+  rcases eq_or_ne u 0 with rfl | hu
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ne_atTop 0] with T hT
+    simp [hT]
+  · rw [Set.indicator_of_notMem (by simpa using hu)]
+    refine squeeze_zero_norm' ?_ ((tendsto_inv_atTop_zero.const_mul (2 / |u|)).trans
+      (by rw [mul_zero]))
+    filter_upwards [eventually_gt_atTop 0] with T hT
+    rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hT.le, mul_comm]
+    gcongr
+    exact norm_integral_cexp_le_of_ne_zero hu 0 T
 
 /-- The binomial expansion of `cosᵏ θ exp (n θ i)` into the Fourier characters
 `exp ((2m - k + n) θ i)`. -/
@@ -414,55 +510,36 @@ A function of the form `θ ↦ G (sin θ ^ 2)` is even and `π`-periodic, which 
 quasi-periodicity of its integral from `0`. -/
 
 /-- The integral from `0` of an integrand depending only on `sin² θ` is odd in its upper limit. -/
-theorem integral_comp_sin_sq_neg (G : ℝ → ℝ) (x : ℝ) :
-    ∫ θ in (0 : ℝ)..-x, G (Real.sin θ ^ 2) = -∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2) := by
-  have h := intervalIntegral.integral_comp_neg (a := 0) (b := x) fun θ ↦ G (Real.sin θ ^ 2)
-  simp only [Real.sin_neg, neg_sq, neg_zero] at h
-  rw [h, intervalIntegral.integral_symm]
+theorem integral_comp_sin_sq_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (G : ℝ → E)
+    (x : ℝ) :
+    ∫ θ in (0 : ℝ)..-x, G (Real.sin θ ^ 2) = -∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2) :=
+  intervalIntegral.integral_zero_neg_of_even (g := fun θ ↦ G (Real.sin θ ^ 2))
+    (fun θ ↦ by simp only [Real.sin_neg, neg_sq]) x
 
-/-- The integral of a continuous integrand depending only on `sin² θ` over a half-period
-`[-π/2, π/2]` is twice its integral over `[0, π/2]`. -/
-theorem integral_comp_sin_sq_neg_pi_div_two (G : ℝ → ℝ)
-    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) :
-    ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) =
-      2 * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hG.intervalIntegrable _ _)
-    (hG.intervalIntegrable _ _), intervalIntegral.integral_symm 0 (-(Real.pi / 2)),
-    integral_comp_sin_sq_neg G, neg_neg]
-  ring
-
-/-- **Quasi-periodicity** of the integral from `0` of a continuous integrand depending only on
+open MeasureTheory in
+/-- **Quasi-periodicity** of the integral from `0` of an integrand depending only on
 `sin² θ`: adding `n` half-turns to the upper limit adds `2 n` times the integral over
 `[0, π/2]`. -/
-theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
-    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) (x : ℝ) (n : ℤ) :
+theorem integral_comp_sin_sq_add_int_mul_pi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (G : ℝ → E)
+    (hG : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume 0 (Real.pi / 2)) (x : ℝ) (n : ℤ) :
     ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2) =
       (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-        2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-  have hper : Function.Periodic (fun θ ↦ G (Real.sin θ ^ 2)) Real.pi := fun θ ↦ by
-    simp only [Real.sin_add_pi, neg_sq]
-  have hint : ∀ a b : ℝ, IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) MeasureTheory.volume a b :=
-    fun a b ↦ hG.intervalIntegrable a b
-  -- Split off `[x, x + n π]`, which consists of `n` periods; each period integral equals the
-  -- one over the half-period `[-π/2, π/2]`, which is twice the integral over `[0, π/2]`.
-  calc ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2)
-      = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          ∫ θ in x..x + n * Real.pi, G (Real.sin θ ^ 2) :=
-        (intervalIntegral.integral_add_adjacent_intervals (hint 0 x) (hint x _)).symm
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          n * ∫ θ in x..x + Real.pi, G (Real.sin θ ^ 2) := by
-        simpa only [zsmul_eq_mul] using
-          congrArg (_ + ·) (hper.intervalIntegral_add_zsmul_eq n x hint)
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          n * ∫ θ in -(Real.pi / 2)..-(Real.pi / 2) + Real.pi, G (Real.sin θ ^ 2) := by
-        rw [hper.intervalIntegral_add_eq x (-(Real.pi / 2))]
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          n * ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-        ring_nf
-    _ = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
-          2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-        rw [integral_comp_sin_sq_neg_pi_div_two G hG]
-        ring
+        (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) :=
+  Function.Periodic.intervalIntegral_add_int_mul_eq_add_of_even
+    (f := fun θ ↦ G (Real.sin θ ^ 2))
+    (fun θ ↦ by simp only [Real.sin_add_pi, neg_sq])
+    (fun θ ↦ by simp only [Real.sin_neg, neg_sq]) hG 0 x n
+
+/-- The integral from `0` to `n π` of an integrand depending only on `sin² θ` is `2 n` times its
+integral over `[0, π/2]`, without any integrability assumption. -/
+theorem integral_comp_sin_sq_int_mul_pi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (G : ℝ → E) (n : ℤ) :
+    ∫ θ in (0 : ℝ)..n * Real.pi, G (Real.sin θ ^ 2) =
+      (2 * (n : ℝ)) • ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+  simpa only [zero_add] using Function.Periodic.intervalIntegral_add_int_mul_eq_of_even
+    (f := fun θ ↦ G (Real.sin θ ^ 2)) (fun θ ↦ by simp only [Real.sin_add_pi, neg_sq])
+    (fun θ ↦ by simp only [Real.sin_neg, neg_sq]) 0 n
 
 /-- For `S < -1`, the integral of `(r + s) ^ S` over `[0, β]` is at most `r ^ (S + 1) / -(S + 1)`,
 uniformly in `β`. -/

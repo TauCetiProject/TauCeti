@@ -22,6 +22,9 @@ resolvent `(A - z)⁻¹`, before their asymptotic summation.
 * `TauCeti.ParameterSymbol.sharpTerm b a k`: the parameter-dependent symbol
   `((-i)ᵏ / k!) ∑_{|w| = k} ∂_ξ^w b ∘ ∂_x^w a` of order `m' + m - k`, summed over the words `w` of
   length `k` in the coordinate directions (`TauCeti.ParameterSymbol.coefficient_sharpTerm`).
+* `TauCeti.ParameterSymbol.coefficient_sharpTerm_eq_zero_of_coordinateDeriv_eq_zero`: if `b` is
+  polynomial of degree less than `d` in the frequency, the terms `sharpTerm b a k` with `k ≥ d`
+  vanish.
 * `TauCeti.ParameterSymbol.leftInverseTerms`, `TauCeti.ParameterSymbol.rightInverseTerms`:
   for a symbol `a` of order `m` elliptic with parameter, symbols `bⱼ` of order `-m - j` with
   `b₀ = a⁻¹` that solve the formal composition equations
@@ -160,6 +163,19 @@ theorem sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero (b : ParameterSymbol n Λ
     {a : ParameterSymbol n Λ V W m} (ha : ∀ v, a.spatialDeriv v = 0) (k : ℕ) :
     b.sharpTerm a (k + 1) = 0 := by
   simp [sharpTerm_succ, ha]
+
+/-- If `b` is polynomial of degree less than `d` in the frequency, that is, its frequency
+derivatives along all words of length `d` vanish, then the composition terms `sharpTerm b a k`
+with `k ≥ d` vanish. -/
+theorem coefficient_sharpTerm_eq_zero_of_coordinateDeriv_eq_zero {b : ParameterSymbol n Λ W U m'}
+    {d : ℕ} (hb : ∀ x, ∀ z ∈ Λ, ∀ w : List (Fin n), w.length = d →
+      coordinateDeriv w (fun η => b.coefficient ((x, η), z)) = 0)
+    (a : ParameterSymbol n Λ V W m) {k : ℕ} (hk : d ≤ k) (x ξ : CoordinateSpace n) {z : ℂ}
+    (hz : z ∈ Λ) : (b.sharpTerm a k).coefficient ((x, ξ), z) = 0 := by
+  rw [coefficient_sharpTerm b a k x ξ hz, Finset.sum_eq_zero fun w _ => ?_, smul_zero]
+  rw [← List.take_append_drop (k - d) (List.ofFn w), coordinateDeriv_append,
+    hb x z hz _ (by simp; omega), coordinateDeriv_zero, Pi.zero_apply,
+    ContinuousLinearMap.zero_comp]
 
 /-! ### The formal parametrix -/
 

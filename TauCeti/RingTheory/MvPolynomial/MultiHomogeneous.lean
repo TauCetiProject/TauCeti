@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Division
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
+import TauCeti.Data.Finsupp.MapDomain
 
 import TauCeti.Algebra.MvPolynomial.Division
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
@@ -37,6 +38,8 @@ conditions of the construction be imposed on derivatives.
 
 * `MvPolynomial.IsMultiHomogeneous d P`: `P` is homogeneous of degree `d h` in block `h`, for every
   block `h`.
+* `MvPolynomial.multiHomogeneousSubmodule R ι d`: the submodule of multihomogeneous polynomials of
+  multidegree `d`.
 * `MvPolynomial.multiMons d`: the finite set of exponent vectors of multidegree `d`.
 
 ## Main results
@@ -47,6 +50,8 @@ conditions of the construction be imposed on derivatives.
   elements.
 * `MvPolynomial.IsMultiHomogeneous.mul`, `.pow`, `.prod`, `.add`, `.sum`: multidegrees add
   under products and are preserved by sums.
+* `MvPolynomial.IsHomogeneous.isMultiHomogeneous_rename`: a form of degree `m` written in the
+  variables of block `h` is multihomogeneous of multidegree `Pi.single h m`.
 * `MvPolynomial.IsMultiHomogeneous.isHomogeneous`: a multihomogeneous polynomial is homogeneous of
   total degree `∑ h, d h`, and `MvPolynomial.IsMultiHomogeneous.degreeOf_le` bounds the degree in
   each variable of block `h` by `d h`.
@@ -192,6 +197,41 @@ theorem IsMultiHomogeneous.prod {α : Type*} (s : Finset α) (φ : α → MvPoly
 theorem IsMultiHomogeneous.inj_right (hP₀ : P ≠ 0) (hd : IsMultiHomogeneous d P)
     (he : IsMultiHomogeneous e P) : d = e :=
   funext fun h ↦ (hd h).inj_right hP₀ (he h)
+
+section Submodule
+
+variable (R ι) in
+/-- The submodule of polynomials in the variables `X (h, i)`, grouped into blocks indexed by
+`h : κ`, that are multihomogeneous of multidegree `d`. -/
+noncomputable def multiHomogeneousSubmodule (d : κ → ℕ) : Submodule R (MvPolynomial (κ × ι) R) :=
+  ⨅ h, weightedHomogeneousSubmodule R (fun p : κ × ι ↦ if p.1 = h then 1 else 0) (d h)
+
+@[simp]
+theorem mem_multiHomogeneousSubmodule :
+    P ∈ multiHomogeneousSubmodule R ι d ↔ IsMultiHomogeneous d P := by
+  simp [multiHomogeneousSubmodule, isMultiHomogeneous_iff_forall_isWeightedHomogeneous]
+
+end Submodule
+
+/-- A form of degree `m` written in the variables `X (h, i)` of block `h` is multihomogeneous of
+multidegree `Pi.single h m`. -/
+theorem IsHomogeneous.isMultiHomogeneous_rename {p : MvPolynomial ι R} {m : ℕ}
+    (hp : p.IsHomogeneous m) (h : κ) :
+    IsMultiHomogeneous (Pi.single h m) (rename (Prod.mk h) p) := by
+  rw [isMultiHomogeneous_iff_forall_isWeightedHomogeneous]
+  intro h' s hs
+  obtain ⟨u, rfl, hu⟩ := coeff_rename_ne_zero _ _ _ hs
+  rw [Finsupp.weight_mapDomain]
+  by_cases hh : h = h'
+  · subst hh
+    have hw : (fun p : κ × ι ↦ if p.1 = h then 1 else 0) ∘ Prod.mk h = 1 := by
+      ext; simp
+    rw [hw, Pi.single_eq_same]
+    exact hp hu
+  · have hw : (fun p : κ × ι ↦ if p.1 = h' then 1 else 0) ∘ Prod.mk h = 0 := by
+      ext; simp [hh]
+    rw [hw, Pi.single_eq_of_ne' hh]
+    simp [Finsupp.weight_apply]
 
 section Ring
 

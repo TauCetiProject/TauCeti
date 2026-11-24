@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
-public import TauCeti.AlgebraicGeometry.Curves.Cohomology
+public import TauCeti.AlgebraicGeometry.Curves.Cohomology.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
@@ -479,10 +479,7 @@ theorem vectorBundleDegree_baseChange
     [CompactSpace X] [QuasiSeparatedSpace X] (E : FixedRank X r) :
     vectorBundleDegree K ((pullback g).obj E) = vectorBundleDegree k E := by
   -- The pullback of the structure sheaf `𝒪_X` is the structure sheaf `𝒪_Y`.
-  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
-      (InvertibleSheaf.trivial Y).obj :=
-    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
-      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  let e := InvertibleSheaf.pullbackTrivialObjIso g
   rw [vectorBundleDegree_def, vectorBundleDegree_def, pullback_obj_obj,
     FiniteLocallyFreeSheaf.pullback_obj_obj, ← eulerCharBelow_congr K e 2,
     eulerCharBelow_pullback_eq_of_isPullback H, eulerCharBelow_pullback_eq_of_isPullback H]

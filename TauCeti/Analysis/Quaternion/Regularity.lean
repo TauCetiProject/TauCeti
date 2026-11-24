@@ -440,8 +440,7 @@ theorem LeftFueterOn.hasFPowerSeriesOnBall_affine
     mem_pi_Ioo_of_norm_dq_sub_lt (a := 0) (b := 1) (p := p) L.toLinearMap
       (fun i ↦ (hx₀ i (mem_univ i)).1) (fun i ↦ (hx₀ i (mem_univ i)).2)
       (by simpa using hδ) (by simpa using hlt)
-  rw [left_cauchyFueter_affine (x₀ := x) hL hc
-    (fun u hu _ ↦ leftFueterOn_iff.mp hf _ (mem_image_of_mem _ (mem_image_of_mem _ hu))) hmem]
+  rw [left_cauchyFueter_affine (x₀ := x) hL hc (hf.mono sdiff_subset) hmem]
   simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
     mul_assoc, ContinuousLinearEquiv.coe_coe]
 
@@ -479,8 +478,7 @@ theorem RightFueterOn.hasFPowerSeriesOnBall_affine
     mem_pi_Ioo_of_norm_dq_sub_lt (a := 0) (b := 1) (p := p) L.toLinearMap
       (fun i ↦ (hx₀ i (mem_univ i)).1) (fun i ↦ (hx₀ i (mem_univ i)).2)
       (by simpa using hδ) (by simpa using hlt)
-  rw [right_cauchyFueter_affine (x₀ := x) hL hc
-    (fun u hu _ ↦ rightFueterOn_iff.mp hf _ (mem_image_of_mem _ (mem_image_of_mem _ hu))) hmem]
+  rw [right_cauchyFueter_affine (x₀ := x) hL hc (hf.mono sdiff_subset) hmem]
   simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
     ContinuousLinearEquiv.coe_coe]
 

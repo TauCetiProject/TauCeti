@@ -15,6 +15,7 @@ import TauCeti.Analysis.AbsoluteValue.LinearForms
 import TauCeti.Analysis.ExteriorPower.Plucker
 import TauCeti.LinearAlgebra.ExteriorPower.Hyperplane
 import TauCeti.NumberTheory.Height.FundamentalInequality
+import TauCeti.NumberTheory.Height.NumberField
 import TauCeti.NumberTheory.Height.Primitive
 import TauCeti.NumberTheory.Height.WedgeForms
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic

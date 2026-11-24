@@ -15,7 +15,7 @@ import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Uniqueness
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 import TauCeti.Topology.EMetricSpace.Basic
 import TauCeti.Topology.VectorBundle.Riemannian.Basic

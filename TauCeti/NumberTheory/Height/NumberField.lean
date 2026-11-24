@@ -9,6 +9,8 @@ public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Mult
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
 import Mathlib.RingTheory.Ideal.Norm.RelNorm
+import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # Relative and absolute heights in extensions of number fields
@@ -25,7 +27,9 @@ different characteristic-zero fields with the same rational minimal polynomial h
 absolute height; in particular the absolute height is invariant under field embeddings.
 
 For a nonzero tuple of algebraic integers the finite places contribute at most one to the height,
-so archimedean bounds on the coordinates bound the height.
+so archimedean bounds on the coordinates bound the height. More generally, for a nonzero tuple
+integral outside a finite set of finite places, only those places and the infinite places
+contribute more than one.
 
 ## Main results
 
@@ -46,6 +50,9 @@ so archimedean bounds on the coordinates bound the height.
 * `NumberField.absMulHeight₁_inv`: `H(x⁻¹) = H(x)`.
 * `NumberField.mulHeight_le_pow_finrank_of_forall_le`: a nonzero tuple of algebraic integers
   whose coordinates are at most `c` at every infinite place has height at most `c ^ [K : ℚ]`.
+* `NumberField.mulHeight_le_prod_of_forall_le_one`: the height of a nonzero tuple with absolute
+  value at most `1` at every finite place outside a finite set `S₀` is at most the product of its
+  local sup norms over the infinite places and `S₀`.
 
 ## References
 
@@ -116,6 +123,20 @@ theorem mulHeight_le_pow_finrank_of_forall_le {y : ι → 𝓞 K} (hy : y ≠ 0)
     fun w _ ↦ pow_le_pow_left₀ (hM w) (ciSup_le fun i ↦ hc i w) _
 
 variable [Finite ι]
+
+/-- **The height of a nonzero tuple integral outside a finite set `S₀` of finite places is at most
+the product of its local sup norms over the infinite places and the places of `S₀`.** It is
+stated with `S₀` given as finite places, and integrality through their absolute values;
+`NumberField.mulHeight_le_prod` is the form for height one primes and `S`-integers. -/
+theorem mulHeight_le_prod_of_forall_le_one {x : ι → K} (S₀ : Finset (FinitePlace K))
+    (hx : x ≠ 0) (hxS₀ : ∀ v : FinitePlace K, v ∉ S₀ → ∀ i, v (x i) ≤ 1) :
+    mulHeight x ≤ (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult) * ∏ v ∈ S₀, ⨆ i, v (x i) := by
+  rw [NumberField.mulHeight_eq hx]
+  gcongr
+  · exact Finset.prod_nonneg fun v _ ↦ pow_nonneg (Real.iSup_nonneg fun i ↦ apply_nonneg _ _) _
+  · exact Finset.finprod_le_prod_of_le_one₀ S₀ (FinitePlace.hasFiniteMulSupport_iSup hx)
+      (fun v ↦ Real.iSup_nonneg fun i ↦ apply_nonneg _ _)
+      fun v hv ↦ Real.iSup_le (hxS₀ v hv) zero_le_one
 
 /-- The degree formula for a tuple of algebraic integers. -/
 private theorem mulHeight_algebraMap_coe (y : ι → 𝓞 K) :

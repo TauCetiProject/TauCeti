@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
+public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
+public import TauCeti.AlgebraicGeometry.IdealSheaf.TensorProduct
 
 /-!
 # Tensoring the exact sequence of a closed subscheme
@@ -62,3 +64,46 @@ theorem surjective_tensorRestriction_of_subsingleton_cohomology_one (E : X.Modul
   exact hsurj.comp hunitor
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open MonoidalClosed TauCeti TauCeti.AlgebraicGeometry
+open TauCeti.AlgebraicGeometry.Scheme.Modules
+
+noncomputable section
+
+variable {X : Scheme.{u}}
+
+/-- Tensoring a finite locally free sheaf with an ideal strictly lowers the dimension of
+global sections if the ideal support meets the nonvanishing locus of a dual functional. -/
+theorem finrank_cohomology_zero_tensorIdeal_lt (k : Type u) [Field k]
+    [X.Over (Spec (.of k))] (M : X.Modules) [M.IsLocallyFree] [M.IsFiniteType]
+    [FiniteDimensional k (Cohomology M 0)]
+    (I : X.IdealSheafData) (φ : (ihom M).obj (𝟙_ X.Modules) ⟶ 𝟙_ X.Modules)
+    (x : X) (hxI : x ∈ I.support) (hxφ : x ∉ φ.imageIdealSheaf.support) :
+    Module.finrank k (Cohomology (M ⊗ I.sheaf) 0) < Module.finrank k (Cohomology M 0) := by
+  let j : M ⊗ I.sheaf ⟶ M := M ◁ I.sheafι ≫ (ρ_ M).hom
+  have : Mono j := by
+    have hmono := (I.shortExact_tensor_toPushforwardSubscheme M).mono_f
+    have : Mono (M ◁ I.sheafι) := hmono
+    exact inferInstanceAs (Mono (M ◁ I.sheafι ≫ (ρ_ M).hom))
+  let j₀ := cohomologyMapBaseLinear k X j 0
+  have hjinj : Function.Injective j₀ := by
+    dsimp only [j₀]
+    simpa only [coe_cohomologyMapBaseLinear] using cohomologyMap_injective j
+  have hjnot : ¬Function.Surjective j₀ := by
+    intro hj
+    apply not_surjective_app_tensorIdeal M I φ x hxI hxφ
+    intro s
+    obtain ⟨a, ha⟩ := hj ((cohomologyZeroBaseLinearEquiv k X M).symm s)
+    refine ⟨cohomologyZeroBaseLinearEquiv k X (M ⊗ I.sheaf) a, ?_⟩
+    rw [← cohomologyZeroBaseLinearEquiv_naturality, ha]
+    exact (cohomologyZeroBaseLinearEquiv k X M).apply_symm_apply s
+  have hrange : j₀.range < ⊤ := lt_top_iff_ne_top.mpr fun h ↦
+    hjnot (LinearMap.range_eq_top.mp h)
+  have h := Submodule.finrank_lt_finrank_of_lt hrange
+  rwa [finrank_top, LinearMap.finrank_range_of_inj hjinj] at h
+
+end
+
+end AlgebraicGeometry.Scheme.Modules

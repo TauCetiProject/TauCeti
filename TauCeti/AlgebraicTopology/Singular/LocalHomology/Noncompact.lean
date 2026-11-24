@@ -344,7 +344,7 @@ theorem isZero_singularHomology_of_isOpen_ne_univ [PreconnectedSpace M] (hn : fi
     {U : Set M} (hUo : IsOpen U) (hU : U ≠ univ) {k : ℕ} (hk : n ≤ k) :
     IsZero (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of U)) := by
   rcases isEmpty_or_nonempty U with _ | _
-  · exact isZero_singularHomologyFunctor_of_isEmpty N (of U) k
+  · exact isZero_singularHomology_of_isEmpty N (of U) k
   · let _ : ChartedSpace E U := TopologicalSpace.Opens.instChartedSpace ⟨U, hUo⟩
     have := ChartedSpace.locallyPathConnectedSpace E U
     refine isZero_singularHomology_of_forall_not_isCompact_connectedComponent (E := E) N hn

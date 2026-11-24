@@ -18,7 +18,9 @@ finite-dimensional space whose dimensions sum to more than the ambient dimension
 nontrivially, as do three subspaces whose dimensions sum to more than twice the ambient dimension,
 and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
-`m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
+`m`-dimensional space has codimension at most the codimension of `W`; without finiteness, the
+codimension (the rank of the quotient) of a preimage is at most that of the submodule, and the
+codimension of an intersection is at most the sum of the codimensions. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
 of rank at least `k` contains a subspace of rank exactly `k`. Two disjoint subspaces of a
 finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
@@ -113,6 +115,15 @@ theorem finrank_add_finrank_le_finrank_comap_add_finrank {M N : Type*} [AddCommG
   have h₃ := W.finrank_quotient_add_finrank
   rw [hker] at h₁
   omega
+
+/-- The codimension of an intersection is at most the sum of the codimensions:
+`E ⧸ (p ⊓ q)` embeds into `(E ⧸ p) × (E ⧸ q)`. No finiteness is assumed. -/
+theorem rank_quotient_inf_le (p q : Submodule 𝕜 E) :
+    Module.rank 𝕜 (E ⧸ (p ⊓ q)) ≤ Module.rank 𝕜 (E ⧸ p) + Module.rank 𝕜 (E ⧸ q) := by
+  have hker : LinearMap.ker (p.mkQ.prod q.mkQ) = p ⊓ q := by
+    rw [LinearMap.ker_prod, ker_mkQ, ker_mkQ]
+  rw [← rank_prod', ← hker, (p.mkQ.prod q.mkQ).quotKerEquivRange.rank_eq]
+  exact Submodule.rank_le _
 
 /-- A set spans a subspace of dimension at least `n` exactly when it contains `n` linearly
 independent vectors. -/
@@ -211,6 +222,35 @@ theorem lift_rank_le_of_disjoint_ker [Ring 𝕜] {M : Type u} {N : Type v}
     Cardinal.lift.{v} (Module.rank 𝕜 V) ≤ Cardinal.lift.{u} f.rank := by
   apply (f.rangeRestrict.domRestrict V).lift_rank_le_of_injective
   simpa only [LinearMap.injective_domRestrict_iff, LinearMap.ker_rangeRestrict] using h
+
+/-- The preimage of a submodule has codimension at most that of the submodule:
+`M ⧸ p.comap f` embeds into `N ⧸ p`. No finiteness is assumed. -/
+theorem lift_rank_quotient_comap_le [Ring 𝕜] {M : Type u} {N : Type v}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    (p : Submodule 𝕜 N) (f : M →ₗ[𝕜] N) :
+    Cardinal.lift.{v} (Module.rank 𝕜 (M ⧸ p.comap f)) ≤
+      Cardinal.lift.{u} (Module.rank 𝕜 (N ⧸ p)) := by
+  apply LinearMap.lift_rank_le_of_injective ((p.comap f).mapQ p f le_rfl)
+  rw [← LinearMap.ker_eq_bot, ker_mapQ, mkQ_map_self]
+
+/-- The preimage of a submodule of codimension at most `n` has codimension at most `n`. -/
+theorem rank_quotient_comap_le_of_le [Ring 𝕜] {M : Type u} {N : Type v}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    {p : Submodule 𝕜 N} {n : ℕ} (hp : Module.rank 𝕜 (N ⧸ p) ≤ n) (f : M →ₗ[𝕜] N) :
+    Module.rank 𝕜 (M ⧸ p.comap f) ≤ n :=
+  Cardinal.lift_le_nat_iff.mp ((p.lift_rank_quotient_comap_le f).trans
+    (Cardinal.lift_le_nat_iff.mpr hp))
+
+/-- A submodule of rank greater than `n` contains a nonzero vector of the kernel of every linear
+map `f` of rank at most `n`. -/
+theorem exists_mem_ker_ne_zero_of_rank_lt [Ring 𝕜] {M : Type u} {N : Type v}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    {V : Submodule 𝕜 M} {f : M →ₗ[𝕜] N} {n : ℕ} (hV : n < Module.rank 𝕜 V) (hf : f.rank ≤ n) :
+    ∃ x ∈ V, x ∈ LinearMap.ker f ∧ x ≠ 0 := by
+  by_contra! h
+  have hle := (lift_rank_le_of_disjoint_ker (disjoint_def.mpr h)).trans (Cardinal.lift_le.mpr hf)
+  rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
+  exact hle.not_gt hV
 
 /-- The rank of a product of free submodules is the sum of their ranks. -/
 theorem rank_prod [Semiring 𝕜] [StrongRankCondition 𝕜] {M : Type u} {N : Type v}

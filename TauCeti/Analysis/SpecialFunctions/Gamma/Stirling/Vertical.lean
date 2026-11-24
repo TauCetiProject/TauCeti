@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
+import Mathlib.Analysis.Asymptotics.Prod
 import Mathlib.Analysis.Complex.Liouville
+import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
@@ -42,10 +45,12 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
 ## Main declarations
 
 * `TauCeti.abs_log_norm_Gamma_vertical_sub_le`: the explicit bound
-  `(2 / (1 - cos (π / 4)) ^ 3 + |σ - 1/2| |σ| + σ ^ 2) / |t|` at every `s = σ + i t` with `t ≠ 0`
-  and `|σ| ≤ |t|`.
+  `(1 / (8 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|` at every `s = σ + i t` with
+  `t ≠ 0` and `|σ| ≤ |t|`.
 * `TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le`: one constant and one threshold for all `s`
   with `Re s ∈ [a, b]`.
+* `TauCeti.exists_abs_log_norm_Gamma_add_vertical_sub_le`: the same for `Γ(s + μ)` with a fixed
+  shift `μ`, measured against `log |Im s|` and `|Im s|` up to a bounded error.
 * `TauCeti.isBigO_log_norm_Gamma_vertical_sub`: the uniform `O(1 / |t|)` form in `(σ, t)` along
   `𝓟 (Icc a b) ×ˢ cocompact ℝ`.
 * `TauCeti.isBigO_log_norm_Gamma_vertical_strip_sub`: the same as a function of `s : ℂ`, along
@@ -58,11 +63,21 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
   `TauCeti.exists_norm_Gamma_sub_I_le`: uniform upper bounds
   `C (1 + |t|) ^ (σ - 1/2) exp (-π |t| / 2)` and `C (1 + |y|) ^ (Re w - 1/2) exp (-π |y| / 2)` on
   pole-free vertical lines.
+* `TauCeti.exists_norm_Gamma_le_rpow`: `‖Γ(x + i y)‖ ≤ C (1 + |y|) ^ (x - 1/2) exp (-π |y| / 2)`
+  at all heights on a strip `u ≤ x ≤ v`, at the points keeping a distance `η > 0` from every pole
+  (the strip bound with `δ = 1`, and compactness below height `1`).
+* `TauCeti.exists_norm_Gamma_le`: the same with one natural exponent `K` in place of `x - 1/2`.
+* `TauCeti.exists_norm_Gamma_le_of_pos`: the sharp bound at all heights on a strip
+  `0 < u ≤ x ≤ v`.
 * `TauCeti.exists_norm_inv_Gamma_vertical_strip_le`,
   `TauCeti.exists_norm_deriv_inv_Gamma_vertical_strip_le`,
   `TauCeti.exists_norm_inv_Gamma_and_deriv_ball_add_I_le`: uniform upper bounds for `‖(Γ s)⁻¹‖`
   and `‖deriv (Γ ·)⁻¹ s‖` across the strip `Re s ∈ [a, b]` and on shifted vertical lines over unit
   balls.
+
+The statements of `TauCeti.exists_norm_Gamma_le` and `TauCeti.exists_norm_Gamma_le_of_pos` follow
+the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Gamma/VerticalStrips.lean`.
 -/
 
 public section
@@ -104,15 +119,15 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
     (hσt : |σ| ≤ t) :
     |Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2)| ≤
-      (2 / (1 - Real.cos (π / 4)) ^ 3 + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
+      (1 / (8 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
   set s : ℂ := σ + t * I
-  set K : ℝ := 2 / (1 - Real.cos (π / 4)) ^ 3
+  set K : ℝ := 1 / (8 * Real.sin (π / 8) ^ 2)
   have hre : s.re = σ := by simp [s]
   have him : s.im = t := by simp [s]
   rw [abs_of_pos ht]
   have hs0 : s ≠ 0 := fun h ↦ ht.ne' (by rw [← him, h, zero_im])
   have hts : t ≤ ‖s‖ := by simpa [him, abs_of_pos ht] using abs_im_le_norm s
-  have hK : 0 ≤ K := div_nonneg zero_le_two (pow_nonneg (sub_nonneg.2 (Real.cos_le_one _)) 3)
+  have hK : 0 ≤ K := by positivity
   -- the angle: `arg s = π / 2 - arctan (σ / t)` with `|arctan (σ / t)| ≤ π / 4`
   have harg := arg_eq_pi_div_two_sub_arctan_of_im_pos (w := s) (by rwa [him])
   rw [hre, him] at harg
@@ -127,9 +142,8 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
     obtain ⟨h1, h2⟩ := abs_le.1 hatan_le
     constructor <;> linarith [Real.pi_pos]
   -- Stirling on the sector `|arg s| ≤ 3π/4`
-  have hS := abs_log_norm_Gamma_sub_stirling_le (by positivity) (by linarith [Real.pi_pos])
-    hsector hs0
-  rw [hre, him, ← div_div] at hS
+  have hS := abs_log_norm_Gamma_sub_stirling_le (by positivity) hsector hs0
+  rw [hre, him, show π / 4 / 2 = π / 8 by ring, ← div_div] at hS
   have hS' : K / ‖s‖ ≤ K / t := div_le_div_of_nonneg_left hK ht hts
   -- the modulus term
   have hA : |(σ - 1 / 2) * (Real.log ‖s‖ - Real.log t)| ≤ |σ - 1 / 2| * |σ| / t := by
@@ -152,7 +166,7 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_ne_zero {σ t : ℝ} (ht :
     (hσt : |σ| ≤ |t|) :
     |Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2)| ≤
-      (2 / (1 - Real.cos (π / 4)) ^ 3 + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
+      (1 / (8 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
   rcases ht.lt_or_gt with ht | ht
   · have hpos := abs_log_norm_Gamma_vertical_sub_le_of_pos (σ := σ) (neg_pos.2 ht)
       (by rwa [abs_of_neg ht] at hσt)
@@ -165,11 +179,11 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_ne_zero {σ t : ℝ} (ht :
 /-- **Stirling's formula on vertical strips**, explicit form: for `s = σ + i t` with `t ≠ 0` and
 `|σ| ≤ |t|`,
 `|log ‖Γ(s)‖ - ((σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2)| ≤
-(2 / (1 - cos (π / 4)) ^ 3 + |σ - 1/2| |σ| + σ ^ 2) / |t|`. -/
+(1 / (8 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|`. -/
 theorem abs_log_norm_Gamma_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre : |s.re| ≤ |s.im|) :
     |Real.log ‖Complex.Gamma s‖ -
         ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2)| ≤
-      (2 / (1 - Real.cos (π / 4)) ^ 3 + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
+      (1 / (8 * Real.sin (π / 8) ^ 2) + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
   simpa only [re_add_im] using abs_log_norm_Gamma_vertical_sub_le_of_ne_zero hs hre
 
 /-- Stirling's formula on vertical strips, with one constant and one threshold for the whole
@@ -181,7 +195,7 @@ theorem exists_abs_log_norm_Gamma_vertical_sub_le (a b : ℝ) :
           ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2)| ≤
         C / |s.im| := by
   set M := max |a| |b|
-  refine ⟨2 / (1 - Real.cos (π / 4)) ^ 3 + (M + 1 / 2) * M + M ^ 2, M + 1,
+  refine ⟨1 / (8 * Real.sin (π / 8) ^ 2) + (M + 1 / 2) * M + M ^ 2, M + 1,
     fun s hs ht ↦ ?_⟩
   have hσM : |s.re| ≤ M := abs_le_max_abs_abs hs.1 hs.2
   have hM : 0 ≤ M := (abs_nonneg _).trans hσM
@@ -198,6 +212,65 @@ theorem exists_abs_log_norm_Gamma_vertical_sub_le (a b : ℝ) :
     exact pow_le_pow_left₀ (abs_nonneg _) hσM 2
   linarith
 
+/-- Stirling's formula on vertical strips for a shifted argument, measured against `log |t|`:
+for every compact interval `[a, b]` and every shift `μ`, there are `C` and `X` such that
+`|log ‖Γ(s + μ)‖ - ((σ + Re μ - 1/2) log |t| - π |t| / 2)| ≤ C` for `s = σ + i t` with
+`σ ∈ [a, b]` and `X ≤ |t|`. The constant `log (2π) / 2` and the effect of the shift on
+`log |t|` and `|t|` are absorbed into `C`; this is the form in which the estimate adds up over
+the shifted factors of an archimedean gamma factor. -/
+theorem exists_abs_log_norm_Gamma_add_vertical_sub_le (a b : ℝ) (μ : ℂ) :
+    ∃ C X : ℝ, ∀ s : ℂ, s.re ∈ Icc a b → X ≤ |s.im| →
+      |Real.log ‖Complex.Gamma (s + μ)‖ -
+          ((s.re + μ.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2)| ≤ C := by
+  obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gamma_vertical_sub_le (a + μ.re) (b + μ.re)
+  set M := max |a| |b|
+  refine ⟨|C| + (M + |μ.re| + 1 / 2) + π * |μ.im| / 2 + |Real.log (2 * π) / 2|,
+    2 * (max T 1 + |μ.im|), fun s hs ht ↦ ?_⟩
+  set τ := s.im with hτ_def
+  set v := τ + μ.im with hv_def
+  have hT1 : 1 ≤ max T 1 := le_max_right _ _
+  have hvτ : |v - τ| ≤ |μ.im| := by simp [v]
+  have hvabs := abs_abs_sub_abs_le_abs_sub v τ
+  have hv : max T 1 ≤ |v| := by linarith [abs_le.1 (hvabs.trans hvτ)]
+  have hv0 : 0 < |v| := by linarith
+  have hτ0 : 0 < |τ| := by linarith [abs_nonneg μ.im]
+  -- Stirling at `s + μ`, whose imaginary part is `v`.
+  have hE := h (s + μ) (by simpa [add_re] using ⟨hs.1, hs.2⟩)
+    (by simpa [add_im, v] using (le_max_left T 1).trans hv)
+  simp only [add_re, add_im] at hE
+  rw [← hτ_def, ← hv_def] at hE
+  have hCv : C / |v| ≤ |C| :=
+    (div_le_div_of_nonneg_right (le_abs_self C) hv0.le).trans
+      (div_le_self (abs_nonneg C) (hT1.trans hv))
+  -- The comparison `|log |v| - log |τ|| ≤ 1`, since `|τ| / 2 ≤ |v| ≤ 2 |τ|`.
+  have hlog : |Real.log (|v|) - Real.log (|τ|)| ≤ 1 :=
+    (Real.abs_log_sub_log_le_log hv0 hτ0 (c := 2) (by linarith [abs_le.1 hvabs])
+      (by linarith [abs_le.1 hvabs])).trans (Real.log_two_lt_d9.le.trans (by norm_num))
+  have hcoef : |s.re + μ.re - 1 / 2| ≤ M + |μ.re| + 1 / 2 := by
+    have hσμ : |s.re + μ.re| ≤ M + |μ.re| :=
+      (abs_add_le _ _).trans (by gcongr; exact abs_le_max_abs_abs hs.1 hs.2)
+    exact abs_le.2 ⟨by linarith [abs_le.1 hσμ], by linarith [abs_le.1 hσμ]⟩
+  have hprod :
+      |(s.re + μ.re - 1 / 2) * (Real.log (|v|) - Real.log (|τ|))| ≤ M + |μ.re| + 1 / 2 := by
+    rw [abs_mul]
+    nlinarith [abs_nonneg (s.re + μ.re - 1 / 2), abs_nonneg (Real.log (|v|) - Real.log (|τ|))]
+  have hdist : |π * (|v| - |τ|) / 2| ≤ π * |μ.im| / 2 := by
+    rw [abs_div, abs_mul, abs_of_pos pi_pos, abs_two]
+    exact div_le_div_of_nonneg_right
+      (mul_le_mul_of_nonneg_left (hvabs.trans hvτ) pi_pos.le) two_pos.le
+  have key : Real.log ‖Complex.Gamma (s + μ)‖ -
+        ((s.re + μ.re - 1 / 2) * Real.log |τ| - π * |τ| / 2) =
+      (Real.log ‖Complex.Gamma (s + μ)‖ -
+          ((s.re + μ.re - 1 / 2) * Real.log |v| - π * |v| / 2 + Real.log (2 * π) / 2)) +
+        (s.re + μ.re - 1 / 2) * (Real.log |v| - Real.log |τ|) - π * (|v| - |τ|) / 2 +
+        Real.log (2 * π) / 2 := by ring
+  rw [key]
+  have e1 := abs_le.1 (hE.trans hCv)
+  have e2 := abs_le.1 hprod
+  have e3 := abs_le.1 hdist
+  exact abs_le.2 ⟨by linarith [neg_abs_le (Real.log (2 * π) / 2)],
+    by linarith [le_abs_self (Real.log (2 * π) / 2)]⟩
+
 /-- **Stirling's formula on vertical strips** ([DLMF 5.11.9](https://dlmf.nist.gov/5.11.E9)):
 `log ‖Γ(σ + i t)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` uniformly for
 `σ ∈ [a, b]` as `|t| → ∞`. -/
@@ -206,13 +279,8 @@ theorem isBigO_log_norm_Gamma_vertical_sub (a b : ℝ) :
         ((p.1 - 1 / 2) * Real.log |p.2| - π * |p.2| / 2 + Real.log (2 * π) / 2))
       =O[𝓟 (Icc a b) ×ˢ cocompact ℝ] fun p ↦ |p.2|⁻¹ := by
   obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gamma_vertical_sub_le a b
-  refine IsBigO.of_bound C ?_
-  have hT : ∀ᶠ t : ℝ in cocompact ℝ, T ≤ |t| := by
-    filter_upwards [(tendsto_norm_cocompact_atTop (E := ℝ)).eventually_ge_atTop T] with t ht
-    rwa [Real.norm_eq_abs] at ht
-  filter_upwards [(eventually_principal.2 fun _ hσ ↦ hσ).prod_mk hT] with p hp
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_inv, abs_abs, ← div_eq_mul_inv]
-  simpa using h (p.1 + p.2 * I) (by simpa using hp.1) (by simpa using hp.2)
+  refine isBigO_inv_vertical_of_exists ⟨C, T, fun p hσ ht ↦ ?_⟩
+  simpa using h (p.1 + p.2 * I) (by simpa using hσ) (by simpa using ht)
 
 /-- **Stirling's formula on vertical strips** as a function of `s = σ + i t`:
 `log ‖Γ(s)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` as `s → ∞` in the strip
@@ -222,15 +290,8 @@ theorem isBigO_log_norm_Gamma_vertical_strip_sub (a b : ℝ) :
         ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2))
       =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun s ↦ |s.im|⁻¹ := by
   obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gamma_vertical_sub_le a b
-  refine IsBigO.of_bound C ?_
-  have hT : ∀ᶠ s : ℂ in cocompact ℂ, T + max |a| |b| ≤ ‖s‖ :=
-    (tendsto_norm_cocompact_atTop (E := ℂ)).eventually_ge_atTop _
-  filter_upwards [hT.filter_mono inf_le_left,
-    (eventually_principal.2 fun _ hs ↦ hs).filter_mono inf_le_right] with s hs hre
-  have hM : |s.re| ≤ max |a| |b| := abs_le_max_abs_abs hre.1 hre.2
-  have hnorm := norm_le_abs_re_add_abs_im s
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_inv, abs_abs, ← div_eq_mul_inv]
-  exact h s hre (by linarith)
+  exact isBigO_inv_vertical_strip_of_exists (Metric.isBounded_Icc a b)
+    ⟨C, T, fun s hs ht ↦ by simpa using h s hs ht⟩
 
 /-- Stirling's formula on a single vertical line `Re s = σ`:
 `log ‖Γ(σ + i t)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` as `|t| → ∞`. -/
@@ -238,8 +299,7 @@ theorem isBigO_log_norm_Gamma_vertical_line_sub (σ : ℝ) :
     (fun t : ℝ ↦ Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2))
       =O[cocompact ℝ] fun t ↦ |t|⁻¹ :=
-  (isBigO_log_norm_Gamma_vertical_sub σ σ).comp_tendsto
-    ((tendsto_principal.2 (Eventually.of_forall fun _ ↦ left_mem_Icc.2 le_rfl)).prodMk tendsto_id)
+  (isBigO_log_norm_Gamma_vertical_sub σ σ).fiberwise_right (left_mem_Icc.2 le_rfl)
 
 /-- Continuity of the Stirling comparison weight `(1 + |Im z|) ^ (p z) * exp (q z)`. -/
 private lemma continuous_stirlingWeight {p q : ℂ → ℝ} (hp : Continuous p) (hq : Continuous q) :
@@ -379,6 +439,84 @@ theorem exists_norm_Gamma_sub_I_le {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
         C * (1 + |y|) ^ (w.re - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
   obtain ⟨C, hC, hbnd⟩ := exists_norm_Gamma_add_I_le hw
   exact ⟨C, hC, fun y ↦ by simpa [sub_eq_add_neg] using hbnd (-y)⟩
+
+/-- On a bounded part of the strip, away from the poles, `Γ` is bounded by a multiple of the
+positive Stirling weight `(1 + |Im s|) ^ (Re s - 1/2) exp (-π |Im s| / 2)`: the admissible
+points form a compact set on which `Γ` and the weight are continuous, and the weight does not
+vanish. -/
+private theorem exists_norm_Gamma_le_weight_of_mem_reProdIm {u v η : ℝ} (hη : 0 < η) (T : ℝ) :
+    ∃ M, ∀ s ∈ Icc u v ×ℂ Icc (-T) T, (∀ n : ℕ, η ≤ ‖s + n‖) →
+      ‖Complex.Gamma s‖ ≤
+        M * ((1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2))) := by
+  set S : Set ℂ := (Icc u v ×ℂ Icc (-T) T) ∩ ⋂ n : ℕ, {s | η ≤ ‖s + n‖}
+  have hS : IsCompact S :=
+    (isCompact_Icc.reProdIm isCompact_Icc).inter_right
+      (isClosed_iInter fun n ↦ isClosed_le continuous_const (by fun_prop))
+  have hc : ContinuousOn Complex.Gamma S := fun s hs ↦
+    (Complex.continuousAt_Gamma s fun m hm ↦ by
+      have := mem_iInter.1 hs.2 m
+      simp only [mem_ofPred_eq, hm, neg_add_cancel, norm_zero] at this
+      linarith).continuousWithinAt
+  let w : ℂ → ℝ := fun s ↦ (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2))
+  have hw_pos (s : ℂ) : 0 < w s := mul_pos (Real.rpow_pos_of_pos (by positivity) _) (Real.exp_pos _)
+  have hw : ContinuousOn (fun s : ℂ ↦ (w s : ℂ)) S :=
+    (continuous_stirlingWeight (by fun_prop) (by fun_prop)).continuousOn
+  have hO : Complex.Gamma =O[𝓟 S] fun s ↦ (w s : ℂ) :=
+    (hc.isBigO_principal hS (c := (1 : ℂ)) (by norm_num)).trans
+      (hw.isBigO_rev_principal hS (fun s _ ↦ ofReal_ne_zero.mpr (hw_pos s).ne') 1)
+  obtain ⟨M, hM⟩ := Asymptotics.isBigO_principal.1 hO
+  refine ⟨M, fun s hs hsep ↦ ?_⟩
+  simpa only [Complex.norm_real, Real.norm_of_nonneg (hw_pos s).le] using
+    hM s ⟨hs, mem_iInter.2 hsep⟩
+
+/-- **The Gamma function on vertical strips, sharp form.** For real `u`, `v` and `η > 0` there
+is `C > 0` such that `‖Γ(x + i y)‖ ≤ C (1 + |y|) ^ (x - 1/2) exp (-π |y| / 2)` whenever
+`u ≤ x ≤ v` and `‖x + i y + n‖ ≥ η` for every `n : ℕ`: the strip bound
+`TauCeti.exists_norm_Gamma_vertical_strip_le` at heights `|y| ≥ 1`, and compactness below. -/
+theorem exists_norm_Gamma_le_rpow {u v η : ℝ} (hη : 0 < η) :
+    ∃ C > 0, ∀ x y : ℝ, u ≤ x → x ≤ v → (∀ n : ℕ, η ≤ ‖(x : ℂ) + y * I + n‖) →
+      ‖Complex.Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
+  obtain ⟨C, hC, hlarge⟩ := exists_norm_Gamma_vertical_strip_le u v one_pos
+  obtain ⟨M, hsmall⟩ := exists_norm_Gamma_le_weight_of_mem_reProdIm (u := u) (v := v) hη 1
+  refine ⟨C + |M|, by positivity, fun x y hux hxv hsep ↦ ?_⟩
+  have hB : 0 ≤ (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by positivity
+  have hre : (x + y * I : ℂ).re = x := by simp
+  have him : (x + y * I : ℂ).im = y := by simp
+  rw [mul_assoc]
+  rcases le_total 1 |y| with hy | hy
+  · have h := hlarge (x + y * I) (by rw [hre]; exact ⟨hux, hxv⟩) (by rw [him]; exact hy)
+    rw [hre, him, mul_assoc] at h
+    exact h.trans (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (abs_nonneg M)) hB)
+  · have h := hsmall (x + y * I) (by simpa [mem_reProdIm] using ⟨⟨hux, hxv⟩, abs_le.1 hy⟩) hsep
+    rw [hre, him] at h
+    exact h.trans (mul_le_mul_of_nonneg_right
+      ((le_abs_self M).trans (le_add_of_nonneg_left hC.le)) hB)
+
+/-- **The Gamma function on vertical strips.** For real `u`, `v` and `η > 0` there are `C > 0`
+and `K : ℕ` such that `‖Γ(x + i y)‖ ≤ C (1 + |y|) ^ K exp (-π |y| / 2)` whenever `u ≤ x ≤ v`
+and `‖x + i y + n‖ ≥ η` for every `n : ℕ`; one may take `K = ⌈v - 1/2⌉₊` in
+`TauCeti.exists_norm_Gamma_le_rpow`. -/
+theorem exists_norm_Gamma_le {u v η : ℝ} (hη : 0 < η) :
+    ∃ C > 0, ∃ K : ℕ, ∀ x y : ℝ, u ≤ x → x ≤ v → (∀ n : ℕ, η ≤ ‖(x : ℂ) + y * I + n‖) →
+      ‖Complex.Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ K * Real.exp (-(π * |y|) / 2) := by
+  obtain ⟨C, hC, h⟩ := exists_norm_Gamma_le_rpow (u := u) (v := v) hη
+  refine ⟨C, hC, ⌈v - 1 / 2⌉₊, fun x y hux hxv hsep ↦ (h x y hux hxv hsep).trans ?_⟩
+  rw [neg_div, ← Real.rpow_natCast]
+  gcongr
+  · linarith [abs_nonneg y]
+  · linarith [Nat.le_ceil (v - 1 / 2)]
+
+/-- On a closed strip `0 < u ≤ x ≤ v` in the right half-plane the sharp bound of
+`TauCeti.exists_norm_Gamma_le_rpow` holds at all heights. -/
+theorem exists_norm_Gamma_le_of_pos {u v : ℝ} (hu : 0 < u) :
+    ∃ C > 0, ∀ x y : ℝ, u ≤ x → x ≤ v →
+      ‖Complex.Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
+  obtain ⟨C, hC, h⟩ := exists_norm_Gamma_le_rpow (u := u) (v := v) hu
+  refine ⟨C, hC, fun x y hux hxv ↦ h x y hux hxv fun n ↦ ?_⟩
+  have hre : ((x : ℂ) + y * I + n).re = x + n := by simp
+  refine le_trans ?_ (abs_re_le_norm _)
+  rw [hre]
+  exact le_abs.2 (Or.inl (by linarith [n.cast_nonneg (α := ℝ)]))
 
 /-- Uniform upper bound for the reciprocal Gamma function across an entire vertical strip
 `a ≤ Re s ≤ b` (including at poles, where `(Γ s)⁻¹ = 0`):

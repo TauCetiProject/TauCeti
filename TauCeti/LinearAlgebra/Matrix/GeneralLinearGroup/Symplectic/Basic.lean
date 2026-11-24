@@ -15,7 +15,6 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
-import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The symplectic group as a subgroup of the general linear group
@@ -286,10 +285,11 @@ def JFin : Matrix (Fin (m + m)) (Fin (m + m)) R :=
   (J (Fin m) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm
 
 variable {R} in
-/-- Entrywise application of a ring morphism carries the transported alternating form to the
-transported alternating form. -/
+/-- Entrywise application of a ring morphism, or of any map preserving addition and `1`, carries
+the transported alternating form to the transported alternating form. -/
 @[simp]
-theorem JFin_map {S : Type*} [CommRing S] (f : R →+* S) : (JFin m R).map f = JFin m S := by
+theorem JFin_map {S F : Type*} [CommRing S] [FunLike F R S] [AddMonoidHomClass F R S]
+    [OneHomClass F R S] (f : F) : (JFin m R).map f = JFin m S := by
   have h := Matrix.map_J (l := Fin m) (R := R) (S := S) f
   ext i j
   simpa [JFin] using congrFun (congrFun h (finSumFinEquiv.symm i)) (finSumFinEquiv.symm j)
@@ -354,10 +354,11 @@ theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
   rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
     Matrix.vecMul_neg, dotProduct_neg, neg_neg]
 
-/-- The transported alternating form is a unit, since `JFin_mul_self` gives
-`JFin m R * JFin m R = -1`. -/
-theorem isUnit_JFin : IsUnit (JFin m R) :=
-  Matrix.isUnit_of_mul_self_eq_neg_one (JFin_mul_self m R)
+/-- The transported alternating form is invertible. -/
+theorem isUnit_JFin : IsUnit (JFin m R) := by
+  -- Mathlib's `Matrix.isUnit_J` read through `JFin_eq_submatrix`.
+  rw [JFin_eq_submatrix, Matrix.isUnit_submatrix_equiv]
+  exact Matrix.isUnit_J (Fin m) R
 
 variable {m R} in
 /-- A matrix preserving the transported alternating form is a symplectic matrix in Mathlib's
@@ -778,11 +779,12 @@ theorem differenceShortRoot_second_indices_ne {i j : Fin m} (hij : i ≠ j) :
     (Sum.inr_injective.ne hij.symm)
 
 /-- In sum coordinates, the two elementary matrices defining a difference-root element form a
-block-diagonal pair of transvections. -/
-theorem coe_differenceShortRootTransvectionUnits {i j : Fin m} (hij : i ≠ j) (c : R) :
+block-diagonal pair of transvections, over any finite index type. -/
+theorem coe_differenceShortRootTransvectionUnits {l : Type*} [Fintype l] [DecidableEq l]
+    {i j : l} (hij : i ≠ j) (c : R) :
     ((transvectionUnit (Sum.inl_injective.ne hij) c *
         transvectionUnit (Sum.inr_injective.ne hij.symm) (-c) :
-          GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) =
+          GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) =
       Matrix.fromBlocks (Matrix.transvection i j c) 0 0
         (Matrix.transvection j i (-c)) := by
   simp only [Units.val_mul, coe_transvectionUnit, Matrix.transvection, Matrix.mul_add,

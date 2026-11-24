@@ -49,6 +49,7 @@ the wall-crossing formula for Seiberg–Witten invariants of four-manifolds with
   in particular `(-u)^[k] = (-1) ^ k • u^[k]`.
 * `TauCeti.factorial_smul_pairDividedPower`: `k ! • u^[k] = u ^ k`.
 * `TauCeti.pairDividedPower_mul`: `u^[m] * u^[n] = (m + n).choose m • u^[m + n]`.
+* `TauCeti.succ_nsmul_pairDividedPower_succ`: the recursion `(k + 1) • u^[k + 1] = u * u^[k]`.
 * `TauCeti.noncommProd_smul_mul_eq_zero_of_not_nodup`: the product over `t` vanishes when the
   endpoints of the pairs in `t` are not distinct.
 * `TauCeti.pairDividedPower_eq_sum_filter_nodup`: `u^[k]` is the sum over the `k`-element sets of
@@ -173,6 +174,14 @@ theorem pairDividedPower_mul (a : ι × ι → R) (P : Finset (ι × ι)) (m n :
   Finset.sum_noncommProd_powersetCard_mul_of_pairwise_commute_of_mul_self_eq_zero P _
     (pairwise_commute_smul_mul hν a)
     (fun p _ ↦ smul_mul_mul_self_eq_zero hν hν₀ (a p) p.1 p.2) m n
+
+/-- **The recursion of the divided powers.** `(k + 1) • u^[k + 1] = u * u^[k]` for the quadratic
+element `u = ∑_{p ∈ P} a p • (ν p.1 * ν p.2)`; with `u^[0] = 1` it determines the divided powers
+in a torsion-free ring. -/
+theorem succ_nsmul_pairDividedPower_succ (a : ι × ι → R) (P : Finset (ι × ι)) (k : ℕ) :
+    (k + 1) • pairDividedPower hν a P (k + 1) =
+      (∑ p ∈ P, a p • (ν p.1 * ν p.2)) * pairDividedPower hν a P k := by
+  rw [← pairDividedPower_one hν, pairDividedPower_mul hν hν₀, Nat.choose_one_right, add_comm 1 k]
 
 /-- Left multiplication by `ν i` kills the product over a set `t` of pairs as soon as `i` is an
 endpoint of a pair in `t`. -/

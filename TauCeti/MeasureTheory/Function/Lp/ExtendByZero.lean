@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Restrict
+public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Function.ContinuousMapDense
 
 /-!
 # Extension by zero between restricted `Lᵖ` spaces
@@ -42,6 +44,14 @@ against `μ`, hence against every restriction of `μ`.
   and through pointwise postcomposition by a map fixing `0`.
 * `TauCeti.setIntegral_extendByZeroLpₗᵢ`: integrating against the extension over `t` is
   integrating against the original function over `s`.
+* `MeasureTheory.MemLp.of_restrict_of_support_subset`: the unbundled form for the whole space, a
+  function supported in `s` and in `Lᵖ(s)` is in `Lᵖ`.
+* `TauCeti.LpToLpRestrictCLM_castLpₗᵢ_extendByZeroLpₗᵢ` and
+  `TauCeti.castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM_of_ae_compl_eq_zero`: extension by zero to
+  the whole space and restriction (`LpToLpRestrictCLM`) undo each other, the second on functions
+  vanishing off `s`.
+* `TauCeti.tendsto_sub_castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM`: along a directed monotone
+  open cover `U k` of a locally compact space, `f - 1_{U k} f → 0` in `Lᵖ` for `p < ∞`.
 -/
 
 public section
@@ -191,5 +201,89 @@ theorem setIntegral_extendByZeroLpₗᵢ {E : Type*} [NormedAddCommGroup E] [Nor
     _ = ∫ x in s, L x (f x) ∂μ := by
         rw [integral_indicator₀ (hs.mono Measure.restrict_le_self),
           Measure.restrict_restrict_of_subset hst]
+
+omit 𝕜 in
+/-- A function supported in a null-measurable set `s` and in `Lᵖ(s)` is in `Lᵖ` of the whole
+space: its extension by zero is itself. -/
+theorem _root_.MeasureTheory.MemLp.of_restrict_of_support_subset {f : α → F}
+    (hs : NullMeasurableSet s μ) (hf : MemLp f p (μ.restrict s)) (hfs : Function.support f ⊆ s) :
+    MemLp f p μ := by
+  rw [← indicator_eq_self.2 hfs, memLp_indicator_iff_restrict hs]
+  exact hf
+
+/-- **The extension by zero to the whole space is the indicator of the original representative.**
+The extension lands in `Lᵖ(μ.restrict univ)`, which `TauCeti.castLpₗᵢ` identifies with `Lᵖ(μ)`. -/
+theorem coeFn_castLpₗᵢ_extendByZeroLpₗᵢ [Fact (1 ≤ p)] (hs : NullMeasurableSet s μ)
+    (f : Lp F p (μ.restrict s)) :
+    (castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ (extendByZeroLpₗᵢ 𝕜 μ hs (subset_univ s) f) :
+      α → F) =ᵐ[μ] s.indicator (f : α → F) :=
+  .trans (.of_forall fun x => coeFn_castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ _ x)
+    ((coeFn_extendByZeroLpₗᵢ 𝕜 hs (subset_univ s) f).filter_mono
+      (ae_mono Measure.restrict_univ.ge))
+
+/-- **Restricting the extension by zero to the whole space gives back the function.** -/
+theorem LpToLpRestrictCLM_castLpₗᵢ_extendByZeroLpₗᵢ [Fact (1 ≤ p)] (hs : NullMeasurableSet s μ)
+    (f : Lp F p (μ.restrict s)) :
+    LpToLpRestrictCLM α F 𝕜 μ p s
+      (castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ (extendByZeroLpₗᵢ 𝕜 μ hs (subset_univ s) f)) = f :=
+  Lp.ext <| (LpToLpRestrictCLM_coeFn 𝕜 s _).trans <|
+    ((coeFn_castLpₗᵢ_extendByZeroLpₗᵢ 𝕜 hs f).filter_mono (ae_mono Measure.restrict_le_self)).trans
+      (indicator_ae_eq_restrict hs)
+
+/-- **A function vanishing off `s` is the extension by zero of its restriction to `s`.** -/
+theorem castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM_of_ae_compl_eq_zero [Fact (1 ≤ p)]
+    (hs : NullMeasurableSet s μ) {f : Lp F p μ} (hf : ∀ᵐ x ∂μ, x ∉ s → f x = 0) :
+    castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
+      (extendByZeroLpₗᵢ 𝕜 μ hs (subset_univ s) (LpToLpRestrictCLM α F 𝕜 μ p s f)) = f := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_castLpₗᵢ_extendByZeroLpₗᵢ 𝕜 hs (LpToLpRestrictCLM α F 𝕜 μ p s f),
+    (ae_eq_restrict_iff_indicator_ae_eq₀ hs).1 (LpToLpRestrictCLM_coeFn 𝕜 s f), hf]
+    with x h1 h2 h3
+  rw [h1, h2]
+  by_cases hx : x ∈ s
+  · rw [indicator_of_mem hx]
+  · rw [indicator_of_notMem hx, h3 hx]
+
+/-- **Exhaustion in `Lᵖ`.** Along a monotone family of open sets `U k`, indexed by a directed
+order, that covers a locally compact space, the part `f - 1_{U k} f` of `f ∈ Lᵖ(μ)` outside `U k`
+tends to `0` for `p < ∞`: a compactly supported approximation of `f` lies in some `U k`. -/
+theorem tendsto_sub_castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM [TopologicalSpace α]
+    [NormalSpace α] [R1Space α] [WeaklyLocallyCompactSpace α] [BorelSpace α] [μ.Regular]
+    [NormedSpace ℝ F] [Fact (1 ≤ p)] (hp : p ≠ ∞) {κ : Type*} [Preorder κ] [IsDirectedOrder κ]
+    [Nonempty κ] {U : κ → Set α} (hU : ∀ k, IsOpen (U k)) (hmono : Monotone U)
+    (hcover : ⋃ k, U k = univ) (f : Lp F p μ) :
+    Filter.Tendsto (fun k => f - castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
+      (extendByZeroLpₗᵢ 𝕜 μ (hU k).nullMeasurableSet (subset_univ _)
+        (LpToLpRestrictCLM α F 𝕜 μ p (U k) f))) Filter.atTop (nhds 0) := by
+  refine Metric.tendsto_nhds.2 fun ε hε => ?_
+  -- Approximate `f` within `ε / 3` by a compactly supported `g`; its support lies in some `U k₀`.
+  obtain ⟨g, hgc, hgle, -, hgmem⟩ := (Lp.memLp f).exists_hasCompactSupport_eLpNorm_sub_le hp
+    (ε := ENNReal.ofReal (ε / 3)) (by simp [hε])
+  obtain ⟨k₀, hk₀⟩ := hgc.isCompact.elim_directed_cover U hU (by rw [hcover]; exact subset_univ _)
+    (fun i j => (directed_of (· ≤ ·) i j).imp fun _ hk => ⟨hmono hk.1, hmono hk.2⟩)
+  have hfg : ‖f - hgmem.toLp g‖ ≤ ε / 3 := by
+    rw [Lp.norm_def, eLpNorm_congr_ae ((Lp.coeFn_sub _ _).trans
+      (Filter.EventuallyEq.rfl.sub hgmem.coeFn_toLp))]
+    exact ENNReal.toReal_le_of_le_ofReal (by positivity) hgle
+  filter_upwards [Filter.eventually_ge_atTop k₀] with k hk
+  set J := (castLpₗᵢ (𝕜 := 𝕜) (E := F) (p := p) Measure.restrict_univ).toLinearIsometry.comp
+    (extendByZeroLpₗᵢ 𝕜 μ (hU k).nullMeasurableSet (subset_univ _))
+  have hg : J (LpToLpRestrictCLM α F 𝕜 μ p (U k) (hgmem.toLp g)) = hgmem.toLp g := by
+    refine castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM_of_ae_compl_eq_zero 𝕜 _ ?_
+    filter_upwards [hgmem.coeFn_toLp] with x hx hxU
+    rw [hx]
+    exact image_eq_zero_of_notMem_tsupport fun h => hxU (hmono hk (hk₀ h))
+  have hsplit : f - J (LpToLpRestrictCLM α F 𝕜 μ p (U k) f) = (f - hgmem.toLp g) -
+      J (LpToLpRestrictCLM α F 𝕜 μ p (U k) (f - hgmem.toLp g)) := by
+    rw [map_sub, map_sub, hg]
+    abel
+  simp only [J, LinearIsometry.coe_comp, LinearIsometryEquiv.coe_toLinearIsometry,
+    Function.comp_apply] at hsplit
+  rw [dist_zero_right, hsplit]
+  calc _ ≤ ‖f - hgmem.toLp g‖ + ‖LpToLpRestrictCLM α F 𝕜 μ p (U k) (f - hgmem.toLp g)‖ := by
+        refine (norm_sub_le _ _).trans_eq ?_
+        rw [LinearIsometryEquiv.norm_map, LinearIsometry.norm_map]
+    _ ≤ ε / 3 + ε / 3 := add_le_add hfg ((norm_Lp_toLp_restrict_le _ _).trans hfg)
+    _ < ε := by linarith
 
 end TauCeti

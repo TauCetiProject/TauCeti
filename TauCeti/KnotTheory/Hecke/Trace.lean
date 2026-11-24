@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 public import TauCeti.KnotTheory.Markov.Basic
 public import TauCeti.RingTheory.AdjoinRoot.Basic
+import TauCeti.Algebra.Group.Units.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -55,6 +56,11 @@ or geometric Markov theorem is used.
   `TauCeti.IsHeckeNormalization.sq_mul_eq_sub`, `TauCeti.isHeckeNormalization_iff`, and
   `TauCeti.injective_algebraMap_and_exists_isHeckeNormalization`: consequences of the
   normalization equations and the quadratic coefficient extension supplying the root `l`.
+* `TauCeti.MarkovBraid.heckeTrace_stabilize_eq_mul` and
+  `TauCeti.MarkovBraid.heckeTrace_stabilizeInv_eq_mul`: general positive and negative stabilization
+  formulas before imposing the normalization equations.
+* `TauCeti.MarkovEquiv.heckeTrace_eq_of_sq_mul`: Markov invariance when `z` is a unit `a` and
+  `l ^ 2 * z = z - (q - q⁻¹)`.
 
 ## References
 
@@ -121,22 +127,38 @@ theorem heckeTrace_conj (htr : ∀ x y, τ (x * y) = τ (y * x)) (C : R) (l : R�
   rw [map_braidHom_conj htr]
   simp [map_mul, map_inv]
 
+/-- Positive Markov stabilization multiplies the normalized Hecke trace by `C * l * z`. -/
+theorem heckeTrace_stabilize_eq_mul (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+    (b : BraidGroup (n + 1)) :
+    heckeTrace ⟨n + 1, BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n)⟩ τ C l =
+      C * (l : R) * z * heckeTrace ⟨n, b⟩ τ C l := by
+  simp only [heckeTrace_def]
+  rw [hτ.map_braidHom_stabilize]
+  simp only [map_mul,
+    BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
+    toAdd_mul, toAdd_ofAdd, zpow_add, zpow_one, Units.val_mul, pow_succ]
+  ring
+
+/-- Negative Markov stabilization multiplies the normalized Hecke trace by
+`C * l⁻¹ * (z - (q - q⁻¹))`. -/
+theorem heckeTrace_stabilizeInv_eq_mul (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+    (b : BraidGroup (n + 1)) :
+    heckeTrace ⟨n + 1, BraidGroup.strandIncl b * (BraidGroup.sigma (Fin.last n))⁻¹⟩ τ C l =
+      C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) * heckeTrace ⟨n, b⟩ τ C l := by
+  simp only [heckeTrace_def]
+  rw [hτ.map_braidHom_stabilizeInv]
+  simp only [map_mul, map_inv,
+    BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
+    toAdd_mul, toAdd_inv, toAdd_ofAdd, zpow_add, zpow_neg_one, Units.val_mul, pow_succ]
+  ring
+
 /-- Positive Markov stabilization preserves the normalized Hecke trace when
 `C * l * z = 1`. -/
 theorem heckeTrace_stabilize (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     (hpos : C * (l : R) * z = 1) (b : BraidGroup (n + 1)) :
     heckeTrace ⟨n + 1, BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n)⟩ τ C l =
       heckeTrace ⟨n, b⟩ τ C l := by
-  simp only [heckeTrace_def]
-  rw [hτ.map_braidHom_stabilize]
-  simp only [map_mul,
-    BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
-    toAdd_mul, toAdd_ofAdd, zpow_add, zpow_one, Units.val_mul, pow_succ]
-  calc
-    _ = (C * (l : R) * z) *
-        (C ^ n * ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ b)) *
-          τ (braidHom R q (n + 1) b)) := by ring
-    _ = _ := by rw [hpos, one_mul]
+  rw [heckeTrace_stabilize_eq_mul hτ, hpos, one_mul]
 
 /-- Negative Markov stabilization preserves the normalized Hecke trace when
 `C * l⁻¹ * (z - (q - q⁻¹)) = 1`. -/
@@ -145,16 +167,7 @@ theorem heckeTrace_stabilizeInv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     (b : BraidGroup (n + 1)) :
     heckeTrace ⟨n + 1, BraidGroup.strandIncl b * (BraidGroup.sigma (Fin.last n))⁻¹⟩ τ C l =
       heckeTrace ⟨n, b⟩ τ C l := by
-  simp only [heckeTrace_def]
-  rw [hτ.map_braidHom_stabilizeInv]
-  simp only [map_mul, map_inv,
-    BraidGroup.exponentSum_strandIncl, BraidGroup.exponentSum_sigma,
-    toAdd_mul, toAdd_inv, toAdd_ofAdd, zpow_add, zpow_neg_one, Units.val_mul, pow_succ]
-  calc
-    _ = (C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹))) *
-        (C ^ n * ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ b)) *
-          τ (braidHom R q (n + 1) b)) := by ring
-    _ = _ := by rw [hneg, one_mul]
+  rw [heckeTrace_stabilizeInv_eq_mul hτ, hneg, one_mul]
 
 /-- The two-strand unlink closure `⟨1, 1⟩` has normalized Hecke trace `C`. -/
 theorem heckeTrace_two_strand_one (h₁ : τ 1 = 1) (C : R) (l : Rˣ) :
@@ -357,5 +370,14 @@ theorem injective_algebraMap_and_exists_isHeckeNormalization (a b : Rˣ) (ha : (
       simp [qS, AdjoinRoot.algebraMap_eq]
     exact (isHeckeNormalization_iff (q := qS)
       (z := algebraMap R (AdjoinRoot g) z)).mpr ⟨hpos, hsq⟩
+
+/-- Markov invariance of `MarkovBraid.heckeTrace` for `C = (l * a)⁻¹` whenever `(a : R) = z` and
+`l ^ 2 * z = z - (q - q⁻¹)`. -/
+theorem MarkovEquiv.heckeTrace_eq_of_sq_mul {β γ : MarkovBraid} (h : MarkovEquiv β γ)
+    (hτ : IsMarkovTrace z τ) (a l : Rˣ) (ha : (a : R) = z)
+    (hl : (l : R) ^ 2 * z = z - ((q : R) - ↑q⁻¹)) :
+    β.heckeTrace τ ↑(l * a)⁻¹ l = γ.heckeTrace τ ↑(l * a)⁻¹ l :=
+  h.heckeTrace_eq hτ ↑(l * a)⁻¹ l (Units.val_inv_mul_mul_mul_eq_one a l ha)
+    (Units.val_inv_mul_mul_inv_mul_eq_one a l ha hl)
 
 end TauCeti

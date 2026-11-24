@@ -52,9 +52,11 @@ and HOMFLY braid invariants:
   `TauCeti.MarkovBraid.eval₂_reducedHomfly_eq_heckeTrace`, and
   `TauCeti.MarkovBraid.eval₂_homfly_eq_mul_heckeTrace`: comparison with `reducedHomfly` and
   `homfly`.
-* `TauCeti.isHeckeNormalization_jimbo` and
+* `TauCeti.isHeckeNormalization_jimbo`,
+  `TauCeti.heckeBraidInvariant_ocneanuTrace_mk_eq_mul_jimboTrace`, and
   `TauCeti.heckeBraidInvariant_ocneanuTrace_mk_eq_jimboReducedTrace`: the finite-colour parameters
-  satisfy `TauCeti.IsHeckeNormalization`, and the descended invariant is `jimboReducedTrace`.
+  satisfy `TauCeti.IsHeckeNormalization`, and the descended invariant is `c * jimboTrace` over
+  any commutative ring and `jimboReducedTrace` over a field.
 * `TauCeti.MarkovBraid.heckeTrace_ocneanuTrace_eq_eval₂_jimboReducedLaurent`,
   `TauCeti.MarkovBraid.heckeTrace_ocneanuTrace_one_eq_pow_componentCount`, and
   `TauCeti.MarkovBraid.heckeTrace_ocneanuTrace_neg_one_eq_pow_componentCount`: regular comparison
@@ -296,6 +298,19 @@ theorem heckeTrace_ocneanuTrace_sigma_two_inv_eq_mul_jimboTrace
       (isHeckeNormalization_jimbo hc).stabilizeInv, hjimbo, hc]
 
 end MarkovBraid
+
+/-- On `Quot MarkovEquiv`, `heckeBraidInvariant` of the Ocneanu trace at `c * q ^ N` agrees with
+`c * β.jimboTrace q` whenever `c` inverts the `N`-colour quantum dimension, over any commutative
+ring. -/
+theorem heckeBraidInvariant_ocneanuTrace_mk_eq_mul_jimboTrace (β : MarkovBraid)
+    (hc : c * ∑ a : Fin N, jimboWeight q a = 1) :
+    heckeBraidInvariant (isMarkovTrace_ocneanuTrace (q := q) (c * ↑(q ^ N)))
+        (∑ a : Fin N, jimboWeight q a) ((q ^ N)⁻¹)
+        (isHeckeNormalization_jimbo hc).stabilize
+        (isHeckeNormalization_jimbo hc).stabilizeInv
+        (Quot.mk MarkovEquiv β) =
+      c * β.jimboTrace (N := N) q :=
+  (heckeBraidInvariant_mk _ _ _ _ _ β).trans (β.mul_jimboTrace_eq_heckeTrace hc).symm
 
 /-- On the quotient `Quot MarkovEquiv`, the descended finite-colour Ocneanu braid invariant agrees
 with `MarkovBraid.jimboReducedTrace` whenever `[N]_q ≠ 0`. -/

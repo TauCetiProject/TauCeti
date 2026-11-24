@@ -12,9 +12,12 @@ public import Mathlib.CategoryTheory.Comma.Over.StrictInitial
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
+import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
+import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.AlgebraicGeometry.RationalPoint.Affine
+import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.RingTheory.TotallySplit
 
 /-!
@@ -47,7 +50,8 @@ Now let `f : X ⟶ Spec K` be a finite morphism to the spectrum of a field. A fi
 When `X` has at least that many points over `Spec K`, its coordinate ring is a finite product of
 copies of `K` (`Algebra.IsFiniteSplit.of_finrank_le_card_algHom`), so `f` is étale. Conversely,
 over a separably closed field a finite étale `K`-algebra is a finite product of copies of `K`, so a
-finite étale scheme over `Spec K` has exactly as many points over `Spec K` as its rank.
+finite étale scheme over `Spec K` has exactly as many points over `Spec K` as its rank, and as many
+points of its underlying set.
 
 Points over `Spec K` are written as morphisms `𝟙_ (Over (Spec K)) ⟶ Over.mk f` of the cartesian
 monoidal category `Over (Spec K)`, as for the points of group schemes over `Spec K`.
@@ -57,6 +61,12 @@ Finally, let `A` be a local ring with residue field `κ` and `B` an `A`-algebra 
 point factors through `κ`, so the base change `L ⊗[A] B` is the base change of `κ ⊗[A] B` along
 `κ → L`; hence the base change of `Spec B ⟶ Spec A` to `Spec L` is finite étale of rank
 `dim_κ (κ ⊗[A] B)`.
+
+Étaleness of a morphism is local on the target
+(`TauCeti.AlgebraicGeometry.isZariskiLocalAtTarget_etale`); this is recorded as an instance because
+instance search does not derive it from Mathlib's ring-map description of `Etale`.
+Since étaleness is also local on the source, a morphism out of a binary coproduct is étale when its
+restrictions to both summands are (`TauCeti.AlgebraicGeometry.etale_coprodDesc`).
 
 ## Main results
 
@@ -70,12 +80,17 @@ point factors through `κ`, so the base change `L ⊗[A] B` is the base change o
   `Spec.algebraMap R A` is étale.
 * `TauCeti.AlgebraicGeometry.etaleSpecAlgebraMapHomEquiv`: morphisms in `(Spec (.of R)).Etale`
   between affine étale `R`-schemes `Spec A` and `Spec B` correspond to `B →ₐ[R] A`.
+* `TauCeti.AlgebraicGeometry.etale_coprodDesc`: `coprod.desc f g` is étale when `f` and `g` are.
 * `AlgebraicGeometry.Scheme.etaleEquivOfIsEmpty`: equivalence `X.Etale ≌ Discrete PUnit` when `X`
   is empty.
 * `AlgebraicGeometry.Scheme.Hom.etale_of_finrank_le_natCard`: a finite morphism `f : X ⟶ Spec K`
   with at least `f.finrank s` points of `X` over `Spec K` is étale.
 * `AlgebraicGeometry.Scheme.Hom.natCard_eq_finrank_of_etale`: over a separably closed field `K`,
   a finite étale morphism `f : X ⟶ Spec K` has exactly `f.finrank s` points of `X` over `Spec K`.
+* `AlgebraicGeometry.Scheme.Hom.natCard_source_eq_finrank_of_etale` and
+  `AlgebraicGeometry.Scheme.Hom.natCard_preimage_singleton_eq_finrank`: the underlying set of such
+  an `X` has `f.finrank s` elements, and a finite étale morphism has `f.finrank y` points over
+  each point `y` with separably closed residue field.
 * `TauCeti.AlgebraicGeometry.etale_isFinite_finrank_of_isPullback_SpecMap`: for a local ring `A`
   and an `A`-algebra `B` whose closed fibre is finite étale, the base change of
   `Spec B ⟶ Spec A` along a field-valued point of the closed point is finite étale of the same
@@ -163,6 +178,38 @@ theorem Scheme.Hom.natCard_eq_finrank_of_etale [IsSepClosed K] (f : X ⟶ Spec (
   have := congr($hij (e.symm (Pi.single i 1)))
   by_contra hne
   simp [hne] at this
+
+/-- **A finite étale scheme over a separably closed field has as many points as its degree.** Let
+`K` be separably closed and `f : X ⟶ Spec K` finite étale. Then the underlying set of `X` has
+exactly `f.finrank s` elements: its coordinate ring is the product of copies of `K` indexed by
+its prime ideals. -/
+theorem Scheme.Hom.natCard_source_eq_finrank_of_etale [IsSepClosed K]
+    (f : X ⟶ Spec (.of K)) [IsFinite f] [Etale f] (s : Spec (.of K)) :
+    Nat.card X = f.finrank s := by
+  have : IsAffine X := isAffine_of_isAffineHom f
+  let := ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom.toAlgebra
+  have hf : algebraMap K Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom := rfl
+  have : Module.Finite K Γ(X, ⊤) := f.moduleFinite_appTop hf
+  have : Algebra.Etale K Γ(X, ⊤) := (f.etale_iff_algebraEtale hf).1 ‹_›
+  have : IsArtinianRing Γ(X, ⊤) := isArtinian_of_tower K inferInstance
+  have := Fintype.ofFinite (PrimeSpectrum Γ(X, ⊤))
+  rw [f.finrank_eq_finrank_of_field hf s,
+    (Algebra.FormallyEtale.equivPiOfIsSepClosed K Γ(X, ⊤)).toLinearEquiv.finrank_eq,
+    Module.finrank_pi, Nat.card_congr X.isoSpec.hom.homeomorph.toEquiv]
+  exact Nat.card_eq_fintype_card (α := PrimeSpectrum Γ(X, ⊤))
+
+/-- **The fibres of a finite étale morphism over separably closed points.** If `f` is finite étale
+and the residue field of `y` is separably closed, then exactly `f.finrank y` points of `X` lie
+over `y`. -/
+theorem Scheme.Hom.natCard_preimage_singleton_eq_finrank {Y : Scheme.{u}} (f : X ⟶ Y)
+    [IsFinite f] [Etale f] (y : Y) [IsSepClosed (Y.residueField y)] :
+    Nat.card (f ⁻¹' {y}) = f.finrank y := by
+  let g : f.fiber y ⟶ Spec (.of (Y.residueField y)) := f.fiberToSpecResidueField y
+  obtain ⟨s⟩ : Nonempty (Spec (Y.residueField y)) := inferInstance
+  rw [← Nat.card_congr (f.fiberHomeo y).toEquiv, g.natCard_source_eq_finrank_of_etale s]
+  exact (Scheme.Hom.finrank_of_isPullback _ _ _ _
+    (IsPullback.of_hasPullback f (Y.fromSpecResidueField y)) s).trans
+      (by rw [Scheme.fromSpecResidueField_apply])
 
 end AlgebraicGeometry
 
@@ -253,6 +300,20 @@ theorem spec_map_etaleSpecAlgebraMapHomEquiv {R A B : Type u} [CommRing R] [Comm
         (CommRingCat.ofHom (etaleSpecAlgebraMapHomEquiv R A B f : B →+* A)) =
       f.left := by
   rw [← etaleSpecAlgebraMapHomEquiv_symm_apply_left, Equiv.symm_apply_apply]
+
+/-- Étaleness of a morphism of schemes is local on the target. Instance search does not find
+this from Mathlib's ring-map description of `Etale`, so it is recorded here. -/
+instance isZariskiLocalAtTarget_etale :
+    AlgebraicGeometry.IsZariskiLocalAtTarget @AlgebraicGeometry.Etale.{u} :=
+  AlgebraicGeometry.HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
+
+/-- A morphism out of a binary coproduct is étale when its restrictions to both summands are. -/
+instance etale_coprodDesc {A B Y : _root_.AlgebraicGeometry.Scheme.{u}} (f : A ⟶ Y) (g : B ⟶ Y)
+    [_root_.AlgebraicGeometry.Etale f] [_root_.AlgebraicGeometry.Etale g] :
+    _root_.AlgebraicGeometry.Etale (CategoryTheory.Limits.coprod.desc f g) :=
+  have : _root_.AlgebraicGeometry.IsZariskiLocalAtSource @_root_.AlgebraicGeometry.Etale.{u} :=
+    _root_.AlgebraicGeometry.HasRingHomProperty.instIsZariskiLocalAtSource (Q := RingHom.Etale)
+  _root_.AlgebraicGeometry.IsZariskiLocalAtSource.coprodDesc ‹_› ‹_›
 
 section ClosedFibre
 

@@ -40,10 +40,17 @@ restriction of coefficients `comap K.subtype` to `K` satisfies the projection fo
 finite-index subgroup of exponents, these maps compare the Novikov rings of a finite abelian
 covering and of its base.
 
+A character `χ : Multiplicative H →* R` twists Novikov series by multiplying the coefficient at
+`h` by `χ h`. Since `χ (u + v) = χ u * χ v`, the twist `TauCeti.NovikovSeries.twist χ` is a ring
+endomorphism. For `H ≃ F × T` with `T` finite, twisting by `h ↦ e^(t-component of h)` in `R[T]`
+and pushing forward to `F` rewrites a Novikov series on `H` as one on `F` with coefficients in
+the group ring `R[T]`.
+
 ## Main definitions
 
 * `TauCeti.NovikovSeries.mapRingHom`: the pushforward `P_(ρ,φ)` along a ring homomorphism of
   coefficients, as a ring homomorphism.
+* `TauCeti.NovikovSeries.twist`: the twist of Novikov series by a character of the exponents.
 * `TauCeti.NovikovSeries.mapAlgHom`: the pushforward along an algebra homomorphism of
   coefficients, as an algebra homomorphism.
 * `TauCeti.NovikovSeries.mapNonnegSubring`: the restriction of `mapRingHom` to the nonnegative
@@ -228,6 +235,12 @@ theorem mapRingHom_comp (ρ' : S →+* T) (φ' : H' →+ H'')
     (mapRingHom ρ' φ' hφ').comp (mapRingHom ρ φ hφ) =
       mapRingHom (ρ'.comp ρ) (φ'.comp φ) (exists_period_rescale_comp hφ hφ') :=
   RingHom.ext <| map_map (ρ : R →+ S) φ hφ (ρ' : S →+ T) φ' hφ'
+
+/-- The pushforward ring homomorphism along injective coefficient and exponent maps is
+injective. -/
+theorem mapRingHom_injective (hρ : Function.Injective ρ) (hinj : Function.Injective φ) :
+    Function.Injective (mapRingHom ρ φ hφ) :=
+  map_injective (ρ : R →+ S) φ hφ hρ hinj
 
 end RingHom
 
@@ -533,6 +546,60 @@ theorem comap_subtype_algebraMap_mul (b : NovikovSeries R K (N.comp K.subtype))
   · simp only [coeff_algebraMap_addSubgroup_coe, coeff_mul, coeff_comap, AddSubgroup.subtype_apply]
 
 end Subgroup
+
+section Twist
+
+variable [AddMonoid H] {N : H →+ ℝ} [CommSemiring R]
+
+/-- The twist of Novikov series by a character `χ : Multiplicative H →* R`: the coefficient at
+each exponent `h` is multiplied by `χ h`. Since `χ (u + v) = χ u * χ v`, every term of a
+convolution product is multiplied by the same value, so the twist is a ring endomorphism. -/
+def twist (χ : Multiplicative H →* R) : NovikovSeries R H N →+* NovikovSeries R H N where
+  toFun a :=
+    { coeff h := χ (.ofAdd h) * a.coeff h
+      finite_lt C := (a.finite_lt C).subset fun _ hh => ⟨right_ne_zero_of_mul hh.1, hh.2⟩ }
+  map_one' := by
+    ext h
+    classical
+    simp only [one_def, coeff_single, Pi.single_apply]
+    split_ifs with hh <;> simp [hh]
+  map_mul' a b := by
+    ext h
+    set s := (finite_setOf_add_eq a b h).toFinset
+    have hs : ∀ p ∈ s, p.1 + p.2 = h := fun p hp => ((Set.Finite.mem_toFinset _).1 hp).1
+    rw [coeff_mul_eq_sum (a := ⟨_, _⟩) (b := ⟨_, _⟩) hs fun u v huv hu hv =>
+      (Set.Finite.mem_toFinset _).2 ⟨huv, right_ne_zero_of_mul hu, right_ne_zero_of_mul hv⟩]
+    dsimp only
+    rw [coeff_mul_eq_sum hs fun u v huv hu hv => (Set.Finite.mem_toFinset _).2 ⟨huv, hu, hv⟩,
+      Finset.mul_sum]
+    refine Finset.sum_congr rfl fun p hp => ?_
+    rw [← hs p hp, ofAdd_add, _root_.map_mul]
+    ring
+  map_zero' := by
+    ext h
+    exact mul_zero _
+  map_add' a b := by
+    ext h
+    exact mul_add _ _ _
+
+variable (χ : Multiplicative H →* R)
+
+@[simp]
+theorem coeff_twist (a : NovikovSeries R H N) (h : H) :
+    (twist χ a).coeff h = χ (.ofAdd h) * a.coeff h :=
+  (rfl)
+
+/-- The twist multiplies the coefficient of a monomial by the value of the character at its
+exponent. -/
+@[simp]
+theorem twist_single (g : H) (r : R) :
+    twist χ (single g r : NovikovSeries R H N) = single g (χ (.ofAdd g) * r) := by
+  classical
+  ext h
+  simp only [coeff_twist, coeff_single, Pi.single_apply]
+  split_ifs with hh <;> simp [hh]
+
+end Twist
 
 end NovikovSeries
 

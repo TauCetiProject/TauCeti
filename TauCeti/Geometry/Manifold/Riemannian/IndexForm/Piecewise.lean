@@ -35,6 +35,10 @@ interior jumps also vanish.
   `TauCeti.Manifold.IsJacobiFieldOn.indexForm_eq_inner_sub_inner_of_isPiecewiseContMDiffOn`.
 * `TauCeti.Manifold.piecewiseIndexForm`, `TauCeti.Manifold.endpointZeroIndexForm`, and `@[simp]`
   lemmas eliminating `extendByZero` on `ofPiecewise`, `ofContMDiffOn`, and `restrict`.
+* `TauCeti.Manifold.IsJacobiFieldOn.piecewiseIndexForm_eq_inner_sub_inner` and
+  `TauCeti.Manifold.IsJacobiFieldOn.piecewiseIndexForm_eq_zero_of_mem_endpointZero`: a Jacobi
+  field pairs with a bundled section through the boundary term, which vanishes on
+  `PiecewiseContMDiffSectionAlong.endpointZero`.
 
 ## References
 
@@ -480,6 +484,38 @@ theorem piecewiseIndexForm_add_adjacent_intervals {c : ℝ} (hac : a < c) (hcb :
       (hW1.mono le_rfl hac hcb.le))
     ((hV1.mono hac.le hcb le_rfl).intervalIntegrable_indexFormIntegrand
       (hW1.mono hac.le hcb le_rfl))
+
+/-- **Jacobi integration by parts on piecewise smooth sections.** If the bundled section `U` is
+given on `[a, b]` by a Jacobi field `V` on a set containing `[a, b]`, then for every bundled section
+`W`, `I(U, W) = ⟪D_t V(b), W(b)⟫ - ⟪D_t V(a), W(a)⟫`. -/
+theorem IsJacobiFieldOn.piecewiseIndexForm_eq_inner_sub_inner (h : IsJacobiFieldOn I γ V s)
+    (hsub : Icc a b ⊆ s) {U : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ}
+    (hU : ∀ t : Icc a b, V t = U.val t)
+    (W : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ) :
+    piecewiseIndexForm hγ hn U W =
+      inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s b)
+          (W.val ⟨b, hγ.lt.le, le_rfl⟩) -
+        inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s a)
+          (W.val ⟨a, le_rfl, hγ.lt.le⟩) := by
+  rw [piecewiseIndexForm_eq_indexForm_of_eqOn_Ioo hγ hn U W
+      (fun t ht ↦ hU ⟨t, Ioo_subset_Icc_self ht⟩)
+      (fun t ht ↦ W.extendByZero_apply_of_mem (Ioo_subset_Icc_self ht)),
+    h.indexForm_eq_inner_sub_inner_of_isPiecewiseContMDiffOn
+      (W.isPiecewiseContMDiffOn_extendByZero.of_le hn) hsub,
+    W.extendByZero_apply_of_mem ⟨hγ.lt.le, le_rfl⟩,
+    W.extendByZero_apply_of_mem ⟨le_rfl, hγ.lt.le⟩]
+
+/-- **Jacobi fields are orthogonal to the fixed-endpoint sections.** If the bundled section `U` is
+given on `[a, b]` by a Jacobi field on a set containing `[a, b]`, then `I(U, W) = 0` for every
+bundled section `W` vanishing at `a` and `b`. -/
+theorem IsJacobiFieldOn.piecewiseIndexForm_eq_zero_of_mem_endpointZero
+    (h : IsJacobiFieldOn I γ V s) (hsub : Icc a b ⊆ s)
+    {U W : PiecewiseContMDiffSectionAlong (F := E) (V := TangentSpace I) hγ}
+    (hU : ∀ t : Icc a b, V t = U.val t) (hW : W ∈ PiecewiseContMDiffSectionAlong.endpointZero) :
+    piecewiseIndexForm hγ hn U W = 0 := by
+  rw [PiecewiseContMDiffSectionAlong.mem_endpointZero_iff] at hW
+  rw [h.piecewiseIndexForm_eq_inner_sub_inner hγ hn hsub hU, hW.1, hW.2, inner_zero_right,
+    inner_zero_right, sub_zero]
 
 /-- The Riemannian index form restricted to `PiecewiseContMDiffSectionAlong.endpointZero`. -/
 def endpointZeroIndexForm :

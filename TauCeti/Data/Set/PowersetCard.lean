@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Set.PowersetCard
 import Mathlib.Data.Fintype.CardEmbedding
+
+import TauCeti.Algebra.BigOperators.Finset.Powerset
+import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
 # Maps, coercions and enumerations of fixed-cardinality subsets
 
-`Set.powersetCard.map_injective` shows that vertex embeddings induce injective maps on
+`Set.powersetCard.map_injective` shows that embeddings induce injective maps on
 fixed-cardinality subsets. `Set.powersetCard.map_refl` and `Set.powersetCard.map_map` show that
 these induced maps respect identities and composition of embeddings.
 
@@ -26,14 +30,22 @@ of a finite type, and `Set.powersetCard.subsingleton_of_card_eq` together with t
 For `p + 1 = Fintype.card α`, `Set.powersetCard.omitOne` is the equivalence sending `a : α` to the
 `p`-element subset `Finset.univ.erase a` omitting `a`.
 
+`Set.powersetCard.val_ofFinEmb_fin_three` lists the three elements of the subset enumerated by an
+embedding of `Fin 3`.
+
+`Set.powersetCard.fintypeCard` counts the `n`-element subsets of a finite type, and
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
 
+`Set.powersetCard.prod_prod` and `Set.powersetCard.sum_sum` count over the `n`-element subsets of
+a finite type: each element lies in `(card α - 1).choose (n - 1)` of them.
+
 When the source is `Fin r`, the embeddings `Fin r ↪ β` whose unordered image
 `Set.powersetCard.ofFinEmb r β` equals a prescribed `r`-element subset `t` correspond to the
-embeddings `Fin r ↪ t.val` (`Set.powersetCard.ofFinEmbFiberEquiv`), so there are `r!` of them
-without any finiteness assumption on `β` (`Set.powersetCard.natCard_ofFinEmb_eq`). Precomposing an
-embedding or injective `r`-tuple by a permutation of `Fin r` leaves its unordered image unchanged
+embeddings `Fin r ↪ t.val` (`Set.powersetCard.ofFinEmbFiberEquiv`), and there are `r!` of them
+without any finiteness assumption on `β` (`Set.powersetCard.natCard_ofFinEmb_eq`, the case `Fin r`
+of `TauCeti.natCard_embedding_map_univ_eq_factorial`). Precomposing an embedding or injective
+`r`-tuple by a permutation of `Fin r` leaves its unordered image unchanged
 (`Set.powersetCard.ofFinEmb_trans_perm`, `Set.powersetCard.ofFinEmb_comp_perm`), and two embeddings
 `Fin r ↪ β` have the same unordered image precisely when they differ by a permutation of `Fin r`
 (`Set.powersetCard.ofFinEmb_eq_iff_exists_perm`).
@@ -45,10 +57,8 @@ namespace Set.powersetCard
 
 /-- An embedding induces an injective map on fixed-cardinality subsets. -/
 theorem map_injective {α β : Type*} (n : ℕ) (f : α ↪ β) :
-    Function.Injective (map n f) := by
-  intro s t h
-  apply Subtype.ext
-  simpa only [val_map, Finset.map_inj] using congrArg Subtype.val h
+    Function.Injective (map n f) := fun s t h ↦
+  Subtype.ext <| Finset.map_injective f <| by simpa only [val_map] using congrArg Subtype.val h
 
 /-- The identity embedding induces the identity map on fixed-cardinality subsets. -/
 @[simp]
@@ -197,11 +207,33 @@ theorem omitOne_symm_notMem (hm : p + 1 = Fintype.card α) (s : powersetCard α 
 
 end OmitOne
 
+/-- The three-element subset enumerated by an embedding `f : Fin 3 ↪ α` is `{f 0, f 1, f 2}`. -/
+theorem val_ofFinEmb_fin_three {α : Type*} [DecidableEq α] (f : Fin 3 ↪ α) :
+    (ofFinEmb 3 α f : Finset α) = {f 0, f 1, f 2} := by
+  ext v
+  simp [val_ofFinEmb, Fin.exists_fin_succ, eq_comm]
+
+/-- The number of `n`-element subsets of a finite type `α` is `(card α).choose n`. -/
+theorem fintypeCard {α : Type*} [Fintype α] (n : ℕ) :
+    Fintype.card (powersetCard α n) = (Fintype.card α).choose n := by
+  rw [← Nat.card_eq_fintype_card, powersetCard.card, Nat.card_eq_fintype_card]
+
 /-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
 noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
-  Fintype.equivFinOfCardEq <| by
-    rw [← Nat.card_eq_fintype_card, powersetCard.card, Nat.card_eq_fintype_card,
-      Fintype.card_fin]
+  Fintype.equivFinOfCardEq <| by rw [fintypeCard, Fintype.card_fin]
+
+/-- **Double counting over the `n`-element subsets of a finite type**: for `0 < n`, the product
+over the `n`-element subsets of the products over their elements is
+`(∏ i, f i) ^ (card α - 1).choose (n - 1)`. -/
+@[to_additive /-- **Double counting over the `n`-element subsets of a finite type**: for `0 < n`,
+the sum over the `n`-element subsets of the sums over their elements is
+`(card α - 1).choose (n - 1) • ∑ i, f i`. -/]
+theorem prod_prod {α β : Type*} [CommMonoid β] [Fintype α] {n : ℕ} (hn : 0 < n) (f : α → β) :
+    ∏ t : powersetCard α n, ∏ i ∈ (t : Finset α), f i =
+      (∏ i, f i) ^ (Fintype.card α - 1).choose (n - 1) := by
+  rw [← Finset.card_univ, ← Finset.prod_powersetCard_prod hn]
+  exact (Finset.prod_subtype (Finset.univ.powersetCard n)
+    (fun _ ↦ Finset.mem_powersetCard_univ.trans mem_iff.symm) fun t ↦ ∏ i ∈ t, f i).symm
 
 variable {β : Type*} {r : ℕ}
 
@@ -210,28 +242,23 @@ into `t`. -/
 def ofFinEmbFiberEquiv (t : Set.powersetCard β r) :
     {f : Fin r ↪ β // ofFinEmb r β f = t} ≃ (Fin r ↪ t.val) where
   toFun f :=
-    ⟨fun i ↦ ⟨f.val i, by
-        have h := congrArg Subtype.val f.property
-        rw [val_ofFinEmb] at h
-        exact h ▸ Finset.mem_map_of_mem f.val (Finset.mem_univ i)⟩,
+    ⟨fun i ↦ ⟨f.val i, by rcases f with ⟨f, rfl⟩; simp⟩,
       fun _ _ h ↦ f.val.injective (congrArg Subtype.val h)⟩
   invFun g :=
-    ⟨g.trans (Function.Embedding.subtype _), Subtype.ext <| by
-      rw [val_ofFinEmb]
-      refine Finset.eq_of_subset_of_card_le (fun b hb ↦ ?_) (by simp [card_eq])
-      obtain ⟨i, -, rfl⟩ := Finset.mem_map.1 hb
+    ⟨g.trans (Function.Embedding.subtype _), eq_iff_subset.2 fun b hb ↦ by
+      obtain ⟨i, rfl⟩ := (mem_ofFinEmb_iff_mem_range r β _ b).1 (mem_coe_iff.1 hb)
       exact (g i).property⟩
   left_inv _ := Subtype.ext (Function.Embedding.ext fun _ ↦ rfl)
   right_inv _ := Function.Embedding.ext fun _ ↦ Subtype.ext rfl
 
-/-- Applying `ofFinEmbFiberEquiv t` preserves vertex values. -/
+/-- The embedding `ofFinEmbFiberEquiv t f` takes the same values as `f`. -/
 @[simp]
 theorem ofFinEmbFiberEquiv_apply_coe (t : Set.powersetCard β r)
     (f : {f : Fin r ↪ β // ofFinEmb r β f = t}) (i : Fin r) :
     (ofFinEmbFiberEquiv t f i : β) = f.val i :=
   (rfl)
 
-/-- Applying `(ofFinEmbFiberEquiv t).symm` preserves vertex values. -/
+/-- The embedding `(ofFinEmbFiberEquiv t).symm g` takes the same values as `g`. -/
 @[simp]
 theorem ofFinEmbFiberEquiv_symm_apply_coe (t : Set.powersetCard β r)
     (g : Fin r ↪ t.val) (i : Fin r) :
@@ -242,9 +269,9 @@ theorem ofFinEmbFiberEquiv_symm_apply_coe (t : Set.powersetCard β r)
 image. -/
 theorem natCard_ofFinEmb_eq (t : Set.powersetCard β r) :
     Nat.card {f : Fin r ↪ β // ofFinEmb r β f = t} = r.factorial := by
-  rw [Nat.card_congr (ofFinEmbFiberEquiv t), Nat.card_eq_fintype_card,
-    Fintype.card_embedding_eq, Fintype.card_fin, Fintype.card_coe, card_eq,
-    Nat.descFactorial_self]
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun f ↦ by rw [Subtype.ext_iff, val_ofFinEmb]),
+    TauCeti.natCard_embedding_map_univ_eq_factorial (by rw [t.prop, Fintype.card_fin]),
+    Fintype.card_fin]
 
 /-- Precomposing an embedding `Fin r ↪ β` with a permutation of `Fin r` leaves its unordered
 image unchanged. -/
@@ -270,22 +297,12 @@ permutation of `Fin r`. -/
 theorem ofFinEmb_eq_iff_exists_perm (f g : Fin r ↪ β) :
     ofFinEmb r β f = ofFinEmb r β g ↔ ∃ σ : Equiv.Perm (Fin r), ⇑f = ⇑g ∘ σ := by
   refine ⟨fun h ↦ ?_, ?_⟩
-  · set t := ofFinEmb r β g
-    let f' := ofFinEmbFiberEquiv t ⟨f, h⟩
-    let g' := ofFinEmbFiberEquiv t ⟨g, rfl⟩
-    have hcard : Fintype.card (Fin r) = Fintype.card t.val := by simp [card_eq]
-    let ef := Equiv.ofBijective f' ((Fintype.bijective_iff_injective_and_card f').2
-      ⟨f'.injective, hcard⟩)
-    let eg := Equiv.ofBijective g' ((Fintype.bijective_iff_injective_and_card g').2
-      ⟨g'.injective, hcard⟩)
-    refine ⟨ef.trans eg.symm, funext fun i ↦ ?_⟩
-    calc
-      f i = (ef i : β) := by
-        simp only [ef, f', Equiv.ofBijective_apply, ofFinEmbFiberEquiv_apply_coe]
-      _ = (eg (eg.symm (ef i)) : β) := (congrArg Subtype.val (eg.apply_symm_apply (ef i))).symm
-      _ = (g ∘ ⇑(ef.trans eg.symm)) i := by
-        simp only [Function.comp_apply, Equiv.trans_apply, eg, g', Equiv.ofBijective_apply,
-          ofFinEmbFiberEquiv_apply_coe]
+  · have hfg : Set.range f = Set.range g := by rw [← coe_ofFinEmb, h, coe_ofFinEmb]
+    -- `σ i` is the unique preimage under `g` of `f i`, which lies in `Set.range g`.
+    refine ⟨(Equiv.ofInjective f f.injective).trans <| (Set.equivOfEq hfg).trans
+      (Equiv.ofInjective g g.injective).symm, funext fun i ↦ ?_⟩
+    simp only [Equiv.coe_trans, Function.comp_apply, Equiv.ofInjective_apply,
+      Set.equivOfEq_apply, Equiv.apply_ofInjective_symm]
   · rintro ⟨σ, hfg⟩
     have htr : f = σ.toEmbedding.trans g := Function.Embedding.ext (congrFun hfg)
     rw [htr, ofFinEmb_trans_perm]

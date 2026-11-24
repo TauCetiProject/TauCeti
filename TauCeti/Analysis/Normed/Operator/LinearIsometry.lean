@@ -20,7 +20,9 @@ its image consists precisely of the operators whose values lie in the range of `
 (`LinearIsometry.range_postcomp`). Consequently, if the range of `i` is closed, the
 postcomposition operator also has closed range (`LinearIsometry.isClosed_range_postcomp`).
 This lets regularity of an operator-valued map be checked after a closed isometric embedding
-of the codomain, for instance of alternating maps into multilinear maps.
+of the codomain, for instance of alternating maps into multilinear maps. We also record
+submodule codomain restriction (`LinearIsometry.codRestrict`) and dense-range surjectivity for
+complete domains (`LinearIsometry.surjective_of_denseRange`, `LinearIsometry.equivOfDenseRange`).
 
 Dually, precomposition with a linear isometric equivalence `e : E ≃ₗᵢ[𝕜] F` is a linear isometric
 equivalence `LinearIsometryEquiv.precomp G e : (F →L[𝕜] G) ≃ₗᵢ[𝕜] (E →L[𝕜] G)` for any seminormed
@@ -72,6 +74,12 @@ variable {𝕜 𝕜₂ 𝕜₃ D E F : Type*}
     (i : E →ₛₗᵢ[σ₂₃] F) (f : D →SL[σ₁₂] E) (x : D) :
     postcomp (σ₁₂ := σ₁₂) (σ₁₃ := σ₁₃) i f x = i (f x) := rfl
 
+/-- Postcomposition by a linear isometry is composition with its underlying continuous linear
+map. -/
+theorem postcomp_eq_comp [SeminormedAddCommGroup E] [NormedSpace 𝕜₂ E]
+    (i : E →ₛₗᵢ[σ₂₃] F) (f : D →SL[σ₁₂] E) :
+    postcomp (σ₁₂ := σ₁₂) (σ₁₃ := σ₁₃) i f = i.toContinuousLinearMap.comp f := rfl
+
 variable [NormedAddCommGroup E] [NormedSpace 𝕜₂ E]
 
 /-- The range of postcomposition by a linear isometry consists exactly of the continuous linear
@@ -98,6 +106,38 @@ theorem isClosed_range_postcomp (i : E →ₛₗᵢ[σ₂₃] F) (hi : IsClosed 
     hi.preimage (continuous_eval_const (F := D →SL[σ₁₃] F) x) using 1
   ext g
   simp only [range_postcomp, mem_ofPred_eq, mem_iInter, mem_preimage]
+
+section CodRestrict
+variable {R R₂ E F : Type*} [Semiring R] [Ring R₂] {σ₁₂ : R →+* R₂}
+  [SeminormedAddCommGroup E] [Module R E] [SeminormedAddCommGroup F] [Module R₂ F]
+
+/-- Restrict the codomain of a (semilinear) isometry to a submodule containing its values. -/
+def codRestrict (i : E →ₛₗᵢ[σ₁₂] F) (p : Submodule R₂ F) (h : ∀ x, i x ∈ p) : E →ₛₗᵢ[σ₁₂] p :=
+  ⟨i.toLinearMap.codRestrict p h, fun x ↦ by simp [← Submodule.norm_coe]⟩
+
+@[simp] theorem coe_codRestrict_apply (i : E →ₛₗᵢ[σ₁₂] F) (p : Submodule R₂ F) (h : ∀ x, i x ∈ p)
+    (x : E) : (i.codRestrict p h x : F) = i x := (rfl)
+end CodRestrict
+
+section DenseRange
+variable {R R₂ E F : Type*} [Semiring R] [Semiring R₂] {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R}
+  [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+  [NormedAddCommGroup E] [Module R E] [CompleteSpace E] [NormedAddCommGroup F] [Module R₂ F]
+
+/-- A (semilinear) isometry from a complete normed module is surjective when its range is dense. -/
+theorem surjective_of_denseRange (i : E →ₛₗᵢ[σ₁₂] F) (hi : DenseRange i) :
+    Function.Surjective i :=
+  range_eq_univ.1 <| i.isometry.isUniformInducing.isComplete_range.isClosed.closure_eq ▸
+    hi.closure_eq
+
+/-- A (semilinear) isometry from a complete normed module with dense range upgrades to a linear
+isometric equivalence. -/
+noncomputable def equivOfDenseRange (i : E →ₛₗᵢ[σ₁₂] F) (hi : DenseRange i) : E ≃ₛₗᵢ[σ₁₂] F :=
+  .ofSurjective i (i.surjective_of_denseRange hi)
+
+@[simp] theorem coe_equivOfDenseRange (i : E →ₛₗᵢ[σ₁₂] F) (hi : DenseRange i) :
+    ⇑(i.equivOfDenseRange hi) = i := (rfl)
+end DenseRange
 
 end LinearIsometry
 

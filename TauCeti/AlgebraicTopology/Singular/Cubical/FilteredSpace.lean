@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
-public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Comparison
 import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Comparison
 
 /-!
@@ -33,9 +33,18 @@ object of every page, from the first page on
 (`TauCeti.isIso_singularToCubicalSpectralSequenceMap_hom_f`). So statements about the pages of
 the spectral sequence of a filtered space on simplicial chains, such as the description of its
 first page or its vanishing regions, transfer to cubical chains through these isomorphisms. The
-abutment is identified with the cubical homology `Hₙ(Y)` separately, and its filtration is not
-compared with the simplicial one here. Over the skeletal filtration of a Serre fibration this is
-the Serre spectral sequence on cubical chains.
+abutment is identified with the cubical homology `Hₙ(Y)` separately. Over the skeletal filtration
+of a Serre fibration this is the Serre spectral sequence on cubical chains.
+
+In the other direction, the natural comparison map `TauCeti.cubicalToSingular` from normalized
+cubical to simplicial singular chains is a quasi-isomorphism on every space, so it induces an
+isomorphism of spectral sequences, on every page
+(`TauCeti.filteredSpaceCubicalSpectralSequenceIso`), with no boundedness or exhaustiveness
+assumption on the filtration. Under the identifications of the first pages with relative
+homology, it is the map in homology of the relative comparison map `TopPair.cubicalToSingularRel`
+(`TauCeti.filteredSpaceCubicalSpectralSequenceIso_hom_two_f_comp`), and on the abutments the
+comparison is the map in homology of `TauCeti.cubicalToSingular`
+(`TauCeti.spectralObjectMap_cubicalToSingular_abutment_comp`).
 
 ## Main definitions
 
@@ -43,6 +52,8 @@ the Serre spectral sequence on cubical chains.
   the normalized cubical chains of `Y` by those of the `X q`.
 * `TauCeti.singularToCubicalSpectralSequenceMap k hX`: the induced morphism of spectral
   sequences.
+* `TauCeti.filteredSpaceCubicalSpectralSequenceIso k hX`: the isomorphism of spectral sequences
+  induced by `TauCeti.cubicalToSingular`.
 
 ## Main results
 
@@ -50,11 +61,14 @@ the Serre spectral sequence on cubical chains.
   every page `r ≥ 2`.
 * `TauCeti.singularCubicalSpectralSequencePageXIso`: the resulting isomorphism of the objects
   of the two spectral sequences.
+* `TauCeti.filteredSpaceCubicalSpectralSequenceIso_hom_two_f_comp`,
+  `TauCeti.spectralObjectMap_cubicalToSingular_abutment_comp`: the comparison on the first page
+  and on the abutment.
 
 ## References
 
-* W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapter VII (the comparison of
-  cubical and simplicial chains).
+* W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapters II and VII (the
+  comparison of cubical and simplicial chains).
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   425–505, Chapter II (the spectral sequence of a fibration on cubical chains).
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
@@ -136,5 +150,63 @@ lemma singularCubicalSpectralSequencePageXIso_hom (r : ℤ) (hr : 2 ≤ r) (pq :
     (singularCubicalSpectralSequencePageXIso k hX r hr pq).hom =
       ((singularToCubicalSpectralSequenceMap k hX).hom r hr).f pq :=
   (rfl)
+
+/-! ### The isomorphism induced by the comparison from cubical to simplicial chains -/
+
+/-- **The cubical and simplicial spectral sequences of a filtered space are isomorphic.** The
+natural comparison map `TauCeti.cubicalToSingular` from normalized cubical to simplicial singular
+chains induces an isomorphism, on every page, between the spectral sequence of the filtration of
+the normalized cubical chains of `Y` by those of the `X q` and the spectral sequence of the
+filtration of the simplicial singular chains of `Y` by those of the `X q`. -/
+def filteredSpaceCubicalSpectralSequenceIso :
+    cubicalFilteredSpaceSpectralSequence k hX ≅
+      filteredSpaceSpectralSequence (ModuleCat.of k k) hX :=
+  chainFiltrationSpectralSequenceIso (cubicalToSingular k) hX
+
+/-- The isomorphism between the cubical and simplicial spectral sequences of a filtered space is
+the morphism of spectral sequences induced by the morphism of filtrations along
+`TauCeti.cubicalToSingular`. -/
+@[simp]
+lemma filteredSpaceCubicalSpectralSequenceIso_hom :
+    (filteredSpaceCubicalSpectralSequenceIso k hX).hom =
+      Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
+        (CochainComplex.spectralObjectMap
+          (chainFiltrationMap (cubicalToSingular k) hX hX (𝟙 Y) fun _ _ hx ↦ hx)) :=
+  chainFiltrationSpectralSequenceIso_hom (cubicalToSingular k) hX
+
+/-- **The comparison of the cubical and simplicial spectral sequences on the first page.** Under
+the identifications of the objects of the first pages with the homology of the cokernel of the map
+of cubical chains of a pair and with relative simplicial homology, the isomorphism
+`TauCeti.filteredSpaceCubicalSpectralSequenceIso` is the map in homology of the relative
+comparison map `TopPair.cubicalToSingularRel`, an isomorphism by
+`TopPair.quasiIso_cubicalToSingularRel`. -/
+@[reassoc]
+lemma filteredSpaceCubicalSpectralSequenceIso_hom_two_f_comp (pq : ℤ × ℤ) (a b : ℤ)
+    (ha : a = pq.2) (hb : b = pq.2 + 1) (m : ℤ) (hm : m = pq.1 + pq.2) (n : ℕ) (hn : m = -n) :
+    ((filteredSpaceCubicalSpectralSequenceIso k hX).hom.hom 2 le_rfl).f pq ≫
+        (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of k k) hX pq a b ha hb m hm n
+          hn).hom =
+      (chainFiltrationSpectralSequenceFirstPageXIso (normalizedCubicalChainComplex k) hX pq a b ha
+          hb m hm n hn).hom ≫
+        homologyMap (TopPair.cubicalToSingularRel k (TopPair.ofInclusion (hX (by lia : a ≤ b))))
+          n := by
+  rw [filteredSpaceCubicalSpectralSequenceIso_hom, filteredSpaceSpectralSequenceFirstPageXIso_hom,
+    ← TopPair.cokernel_map_cubicalToSingular_comp, homologyMap_comp]
+  exact spectralSequenceMap_chainFiltrationMap_two_f_comp_assoc (cubicalToSingular k) hX
+    pq a b ha hb m hm n hn _
+
+/-- **The comparison of the cubical and simplicial abutments.** Under the identifications of the
+abutments in degree `-n` with the cubical and the simplicial homology `Hₙ(Y)`, the morphism of
+spectral objects induced by the morphism of filtrations along `TauCeti.cubicalToSingular` is the
+map in homology of the comparison map `TauCeti.cubicalToSingular` of `Y`. -/
+@[reassoc]
+lemma spectralObjectMap_cubicalToSingular_abutment_comp (n : ℕ) :
+    ((CochainComplex.spectralObjectMap
+        (chainFiltrationMap (cubicalToSingular k) hX hX (𝟙 Y) fun _ _ hx ↦ hx)).hom (-n)).app
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (chainFiltrationAbutmentIso (singularChains k) hX n).hom =
+      (chainFiltrationAbutmentIso (normalizedCubicalChainComplex k) hX n).hom ≫
+        homologyMap ((cubicalToSingular k).app Y) n :=
+  spectralObjectMap_chainFiltrationMap_abutment_comp (cubicalToSingular k) hX n
 
 end TauCeti

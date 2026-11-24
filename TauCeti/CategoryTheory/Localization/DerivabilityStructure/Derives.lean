@@ -15,7 +15,9 @@ When a localizer morphism `Φ : LocalizerMorphism W₁ W₂` is a left derivabil
 `h : Φ.Derives F` holds (meaning `Φ.functor ⋙ F` inverts `W₁`), any left derived functor `(LF, α)`
 of `F` is computed pointwise on `Φ.functor.obj X₁`, so it remains a left derived functor of
 `F ⋙ G` after postcomposition with any functor `G : H ⥤ E`
-(`CategoryTheory.LocalizerMorphism.Derives.isLeftDerivedFunctor_comp`). Specializing to product
+(`CategoryTheory.LocalizerMorphism.Derives.isLeftDerivedFunctor_comp`); dually, right derived
+functors obtained from a right derivability structure are absolute
+(`CategoryTheory.LocalizerMorphism.Derives.isRightDerivedFunctor_comp`). Specializing to product
 localizers yields two-variable postcomposition absoluteness for
 `CategoryTheory.Functor.IsLeftDerivedFunctor₂`
 (`CategoryTheory.LocalizerMorphism.Derives.isLeftDerivedFunctor₂_comp`), as well as one-variable
@@ -60,6 +62,20 @@ lemma isLeftDerivedFunctor_comp (h : Φ.Derives F) [Φ.IsLeftDerivabilityStructu
   intro X₁
   have := h.isIso' α X₁
   dsimp
+  infer_instance
+
+/-- **Absoluteness under postcomposition**, right-derived version. If `Φ` is a right derivability
+structure deriving `F : C₂ ⥤ H`, then postcomposing any right derived functor `(RF, α)` of `F` with
+an arbitrary functor `G : H ⥤ E` yields a right derived functor of `F ⋙ G`. -/
+lemma isRightDerivedFunctor_comp (h : Φ.Derives F) [Φ.IsRightDerivabilityStructure]
+    {L₂ : C₂ ⥤ D₂} [L₂.IsLocalization W₂] {RF : D₂ ⥤ H}
+    (α : F ⟶ L₂ ⋙ RF) [RF.IsRightDerivedFunctor α W₂] (G : H ⥤ E) :
+    (RF ⋙ G).IsRightDerivedFunctor
+      (Functor.whiskerRight α G ≫ (Functor.associator L₂ RF G).hom) W₂ := by
+  refine (h.comp G).isRightDerivedFunctor_of_isIso _ fun X₁ ↦ ?_
+  have : IsIso (α.app (Φ.functor.obj X₁)) := h.isIso_of_isRightDerivedFunctor α X₁
+  dsimp
+  rw [Category.comp_id]
   infer_instance
 
 end OneVariable

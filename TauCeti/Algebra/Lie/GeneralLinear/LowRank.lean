@@ -180,7 +180,7 @@ theorem nonempty_lieModuleEquiv_glIrreducible_of_sl2Std {M : Type u} [AddCommGro
     Nonempty (M ≃ₗ⁅K, Matrix (Fin 2) (Fin 2) K⁆ glIrreducible 2 mu) := by
   obtain ⟨e⟩ := e
   obtain ⟨e'⟩ := nonempty_lieModuleEquiv_glIrreducible_sl2Std hn
-  exact gl_equiv_of_sl_equiv_of_central_scalar _ hM
+  exact gl_equiv_of_sl_equiv_of_central_scalar (fun h => Nat.cast_ne_zero.mpr h) _ hM
     (one_lie_glIrreducible_fin_two (isGlDominantIntegral_fin_two_iff.mpr ⟨n, hn⟩))
     ⟨e.trans e'.symm⟩
 

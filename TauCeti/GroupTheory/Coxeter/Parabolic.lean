@@ -83,6 +83,8 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
   multiplication by a simple reflection keeps a minimal coset representative minimal when it
   shortens it, and in general either keeps it minimal or stays in the same coset.
 * `CoxeterSystem.parabolic_le_iff`: the universal property of a standard parabolic subgroup.
+* `CoxeterSystem.parabolic_hom_ext`: homomorphisms out of a standard parabolic subgroup are
+  determined by the simple reflections it contains.
 * `CoxeterSystem.length_mul_of_forall_not_isLeftDescent` and
   `CoxeterSystem.existsUnique_mem_parabolic_mul`: the same length additivity and unique
   factorization, on the other side, with the left-descent form of the minimality condition;
@@ -185,6 +187,14 @@ theorem mem_parabolic_iff_exists_wordProd_eq {J : Set B} {w : W} :
     w ∈ cs.parabolic J ↔ ∃ ω : List B, (∀ i ∈ ω, i ∈ J) ∧ π ω = w :=
   ⟨cs.exists_wordProd_eq_of_mem_parabolic,
     fun ⟨_, hω, hp⟩ => hp ▸ cs.wordProd_mem_parabolic hω⟩
+
+/-- **Homomorphisms out of a standard parabolic subgroup are determined by the simple reflections
+it contains.** -/
+theorem parabolic_hom_ext {G : Type*} [Monoid G] {J : Set B} {φ ψ : cs.parabolic J →* G}
+    (h : ∀ i (hi : i ∈ J), φ ⟨s i, cs.simple_mem_parabolic hi⟩ =
+      ψ ⟨s i, cs.simple_mem_parabolic hi⟩) : φ = ψ :=
+  MonoidHom.eq_of_eqOn_dense Subgroup.closure_closure_coe_preimage
+    (by rintro ⟨_, _⟩ ⟨i, hi, rfl⟩; exact h i hi)
 
 /-- The word of `CoxeterSystem.mem_parabolic_iff_exists_wordProd_eq` may be taken reduced: every
 element of a standard parabolic subgroup is spelled by a reduced word with letters in the defining
