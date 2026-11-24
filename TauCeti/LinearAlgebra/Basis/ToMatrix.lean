@@ -29,6 +29,8 @@ can be computed in the localized basis.
 * `Module.Basis.mulVecLin_toMatrix`: multiplication by `b.toMatrix y` is the linear combination
   map of `y` followed by the coordinates in `b`.
 * `Module.Basis.ker_mulVecLin_toMatrix`: its kernel is the space of linear relations among `y`.
+* `Module.Basis.range_mulVecLin_toMatrix`: its range is the image of the span of `y` in
+  coordinates.
 * `Module.Basis.linearIndependent_row_toMatrix_iff`: over a field, its rows are linearly
   independent if and only if `y` spans `M`.
 * `Module.Basis.toMatrix_localizationLocalization`: coordinates in a localized basis.
@@ -73,6 +75,13 @@ theorem ker_mulVecLin_toMatrix (b : Basis ι R M) (y : κ → M) :
     LinearMap.ker (b.toMatrix y).mulVecLin = LinearMap.ker (Fintype.linearCombination R y) := by
   rw [mulVecLin_toMatrix, LinearEquiv.ker_comp]
 
+/-- The range of multiplication by the coordinate matrix `b.toMatrix y` is the image of the span
+of the vectors `y a` under the coordinate isomorphism of `b`. -/
+theorem range_mulVecLin_toMatrix (b : Basis ι R M) (y : κ → M) :
+    LinearMap.range (b.toMatrix y).mulVecLin =
+      (span R (Set.range y)).map b.equivFun.toLinearMap := by
+  rw [mulVecLin_toMatrix, LinearMap.range_comp, Fintype.range_linearCombination]
+
 end CommRing
 
 /-- Over a field, the rows of the coordinate matrix `b.toMatrix y` are linearly independent if and
@@ -82,9 +91,11 @@ theorem linearIndependent_row_toMatrix_iff [Finite ι] [Finite κ] [Field R] [Ad
     LinearIndependent R (b.toMatrix y).row ↔ span R (Set.range y) = ⊤ := by
   have := Fintype.ofFinite ι
   have := Fintype.ofFinite κ
+  -- Independent rows mean full row rank, that is, multiplication by the matrix is onto.
   rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank, finrank_span_range_row, eq_comm,
-    ← mulVec_surjective_iff_rank_eq_card, ← coe_mulVecLin, ← LinearMap.range_eq_top,
-    mulVecLin_toMatrix, LinearMap.range_comp, ← Fintype.range_linearCombination]
+    ← mulVec_surjective_iff_rank_eq_card]
+  -- Its range is the image of the span of `y` under the coordinate isomorphism.
+  rw [← coe_mulVecLin, ← LinearMap.range_eq_top, range_mulVecLin_toMatrix]
   exact Submodule.map_eq_top_iff
 
 end Module.Basis

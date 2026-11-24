@@ -48,6 +48,8 @@ equations for a number field.
 
 ## Main results
 
+* `Algebra.norm_det_embeddingsMatrixReindex_sq`: the determinant of the embeddings matrix of a
+  `ℚ`-basis `b` of `K` has squared absolute value `|disc b|`.
 * `Module.Basis.det_conjTranspose_mul_self_embeddingsMatrix`: the Gram–discriminant identity for a
   `ℚ`-basis `b` of `K`.
 * `Module.Basis.det_conjTranspose_mul_self_embeddingsMatrix_ringOfIntegers`: the same for a
@@ -69,6 +71,19 @@ public section
 
 open Module Matrix Submodule
 open scoped NumberField
+
+namespace Algebra
+
+variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The determinant of the matrix of the values `σ (b i)` of a `ℚ`-basis `b` of a number field `K`
+under the embeddings `σ : K →ₐ[ℚ] ℂ` has squared absolute value `|disc b|`. -/
+theorem norm_det_embeddingsMatrixReindex_sq (b : Basis ι ℚ K) (e : ι ≃ (K →ₐ[ℚ] ℂ)) :
+    ‖(embeddingsMatrixReindex ℚ ℂ b e).det‖ ^ 2 = |(discr ℚ b : ℝ)| := by
+  rw [← norm_pow, ← discr_eq_det_embeddingsMatrixReindex_pow_two]
+  simp
+
+end Algebra
 
 namespace Module.Basis
 
@@ -99,13 +114,11 @@ theorem det_conjTranspose_mul_self_embeddingsMatrix (b : Basis ι ℚ K) (y : κ
     ext i j
     simp [hP, Matrix.mul_apply]
   rw [← det_submatrix_equiv_self e, hsub, det_mul, det_mul, det_conjTranspose]
-  have hdisc := Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two ℚ ℂ b e
   have hBB : (B * Bᵀ).det = algebraMap ℚ ℂ (b.toMatrix y * (b.toMatrix y)ᵀ).det := by
     rw [RingHom.map_det, RingHom.mapMatrix_apply, Matrix.map_mul, transpose_map]
   have hnorm : star P.det * P.det = ((|Algebra.discr ℚ b| : ℚ) : ℂ) := by
-    rw [mul_comm, Complex.star_def, Complex.mul_conj, Complex.normSq_eq_norm_sq, ← norm_pow,
-      ← hdisc]
-    simp only [eq_ratCast, Complex.norm_ratCast]
+    rw [Complex.star_def, Complex.conj_mul', ← Complex.ofReal_pow,
+      Algebra.norm_det_embeddingsMatrixReindex_sq]
     norm_cast
   rw [hBB, mul_right_comm, hnorm, Rat.cast_mul, eq_ratCast]
 
