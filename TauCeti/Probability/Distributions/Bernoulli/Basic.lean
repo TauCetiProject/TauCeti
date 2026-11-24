@@ -21,6 +21,7 @@ This file computes the elementary moments and transforms of the real-valued Bern
 
 ## Main results
 
+* `bernoulliMeasure_eq_smul_add_smul`: the law `Ber(x, y, p)` is affine in its parameter `p`;
 * `integral_id_bernoulliMeasure` and `variance_id_bernoulliMeasure` give the mean and variance;
 * `integral_of_hasLaw_bernoulliMeasure` and `variance_of_hasLaw_bernoulliMeasure` give the
   corresponding random-variable statements;
@@ -52,6 +53,23 @@ theorem bernoulliMeasure_singleton_zero_lt_one {α : Type*} [MeasurableSpace α]
   rw [bernoulliMeasure_apply_of_notMem_of_mem p (measurableSet_singleton 0)
     (by simpa using ha) rfl]
   exact_mod_cast sub_lt_self (1 : ℝ) hp
+
+/-- The Bernoulli law is affine in its parameter: for weights `s + t = 1`, the law with
+parameter `s p + t q` is the mixture `s • Ber(x, y, p) + t • Ber(x, y, q)`. -/
+theorem bernoulliMeasure_eq_smul_add_smul {α : Type*} [MeasurableSpace α] (x y : α)
+    {p q r : I} {s t : NNReal} (hst : s + t = 1) (hr : (r : ℝ) = s * p + t * q) :
+    bernoulliMeasure x y r = s • bernoulliMeasure x y p + t • bernoulliMeasure x y q := by
+  have hst' : (s : ℝ) + t = 1 := by exact_mod_cast hst
+  have h₁ : unitInterval.toNNReal r = s * unitInterval.toNNReal p + t * unitInterval.toNNReal q :=
+    by ext; simp [hr]
+  have h₂ : unitInterval.toNNReal (σ r) =
+      s * unitInterval.toNNReal (σ p) + t * unitInterval.toNNReal (σ q) := by
+    ext
+    simp only [unitInterval.coe_toNNReal, unitInterval.coe_symm_eq, hr, NNReal.coe_add,
+      NNReal.coe_mul]
+    linear_combination -hst'
+  simp only [bernoulliMeasure_def, h₁, h₂, add_smul, mul_smul, smul_add]
+  abel
 
 /-- The probability-generating function of a Bernoulli distribution. -/
 @[simp]

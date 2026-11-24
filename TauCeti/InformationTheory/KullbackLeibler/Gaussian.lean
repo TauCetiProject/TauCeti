@@ -35,9 +35,9 @@ real Gaussian laws of variance `v`, transported along `WithLp.toLp 2`
 under that measurable equivalence and tensorizes over finite products (`TauCeti.klDiv_pi`), so the
 divergence is the sum of the coordinate divergences, `‖a - b‖ ^ 2 / (2 v)`.
 
-The Gaussian sequence laws `⊗ⱼ N(θⱼ, ε²)` and `⊗ⱼ N(θ'ⱼ, ε²)` with `θ - θ'` finitely
-supported have the same factors off the support, so their divergence is the finite sum of the
-coordinate divergences over the support (`TauCeti.klDiv_infinitePi`).
+The Gaussian sequence laws `⊗ⱼ N(θⱼ, ε²)` and `⊗ⱼ N(θ'ⱼ, ε²)` with `ε ≠ 0` and `θ - θ'`
+finitely supported have the same factors off the support, so their divergence is the finite sum
+of the coordinate divergences over the support (`TauCeti.klDiv_infinitePi`).
 
 ## Main statements
 
@@ -46,7 +46,7 @@ coordinate divergences over the support (`TauCeti.klDiv_infinitePi`).
 * `TauCeti.klDiv_multivariateGaussian`: the relative entropy between isotropic Gaussian laws on
   Euclidean space with a common variance.
 * `TauCeti.klDiv_infinitePi_gaussianReal`: the relative entropy between Gaussian sequence laws
-  whose means differ in finitely many coordinates.
+  with nonzero noise level `ε` whose means differ in finitely many coordinates.
 
 ## References
 
@@ -111,8 +111,10 @@ theorem klDiv_multivariateGaussian {ι : Type*} [Fintype ι] [DecidableEq ι]
     Finset.sum_div]
   simp
 
-/-- The relative entropy between two Gaussian sequence laws `⊗ⱼ N(θⱼ, ε²)` and `⊗ⱼ N(θ'ⱼ, ε²)`
-whose means differ in finitely many coordinates is `∑ⱼ (θⱼ - θ'ⱼ) ^ 2 / (2 ε ^ 2)`. -/
+/-- For `ε ≠ 0`, the relative entropy between two Gaussian sequence laws `⊗ⱼ N(θⱼ, ε²)` and
+`⊗ⱼ N(θ'ⱼ, ε²)` whose means differ in finitely many coordinates is
+`∑ⱼ (θⱼ - θ'ⱼ) ^ 2 / (2 ε ^ 2)`. (For `ε = 0` and `θ ≠ θ'` the laws are distinct Dirac masses
+and the divergence is infinite.) -/
 theorem klDiv_infinitePi_gaussianReal {ι : Type*} (θ θ' : ι → ℝ) {ε : ℝ} (hε : ε ≠ 0)
     (hθ : (Function.support (θ - θ')).Finite) :
     klDiv (Measure.infinitePi fun j ↦ gaussianReal (θ j) (ε ^ 2).toNNReal)

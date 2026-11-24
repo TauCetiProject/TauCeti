@@ -11,16 +11,21 @@ public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import Mathlib.Probability.Distributions.Bernoulli
 
 import Mathlib.InformationTheory.KullbackLeibler.DataProcessing
+import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.InformationTheory.KullbackLeibler.Convex
 import TauCeti.InformationTheory.KullbackLeibler.Finite
+import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 /-!
 # The binary Kullback–Leibler divergence
 
 The binary divergence `klBin a b = a log (a / b) + (1 - a) log ((1 - a) / (1 - b))` is the
 relative entropy of the Bernoulli law with mass `a` at one point from the Bernoulli law with
-mass `b` there, for `a ∈ [0, 1]` and `b ∈ (0, 1)`. Outside `b ∈ (0, 1)` it takes the junk value
-coming from `Real.log 0 = 0` where the divergence is infinite.
+mass `b` there, for `a ∈ [0, 1]` and `b ∈ (0, 1)`. At `b ∈ {0, 1}` with `a ≠ b` the divergence
+is infinite, and `klBin a b` takes the junk value coming from `Real.log 0 = 0`
+(`TauCeti.klBin_zero_right`, `TauCeti.klBin_one_right`). Parameters outside `[0, 1]` have no
+Bernoulli interpretation; there `klBin` is just the formula, with `Real.log` of a negative number
+equal to the logarithm of its absolute value.
 
 It is jointly convex on `[0, 1] × (0, 1)`: the Bernoulli law is affine in its parameter, and
 relative entropy is jointly convex (`TauCeti.klDiv_smul_add_smul_smul_add_smul_le`). Data
@@ -30,9 +35,12 @@ divergence of the two laws, and the binary entropy bound `h(a) ≤ log 2` gives 
 
 ## Main definitions and statements
 
-* `TauCeti.klBin`: the binary Kullback–Leibler divergence, as a real number.
+* `TauCeti.klBin`: the binary Kullback–Leibler divergence, as a real number, with the
+  simplification lemmas `TauCeti.klBin_self`, `TauCeti.klBin_zero_right` and
+  `TauCeti.klBin_one_right`.
 * `TauCeti.klDiv_bernoulliMeasure`: `klBin a b` is the divergence of `Ber(x, y, a)` from
-  `Ber(x, y, b)` for `x ≠ y`, `a ∈ [0, 1]` and `b ∈ (0, 1)`.
+  `Ber(x, y, b)` when some measurable set contains `x` but not `y`, for `a ∈ [0, 1]` and
+  `b ∈ (0, 1)`.
 * `TauCeti.convexOn_klBin`: joint convexity on `[0, 1] × (0, 1)`.
 * `TauCeti.neg_mul_log_sub_log_two_le_klBin`, `TauCeti.mul_log_sub_log_two_le_klBin`:
   `-a log b - log 2 ≤ klBin a b`, in particular `a log M - log 2 ≤ klBin a (1 / M)`.
@@ -65,6 +73,30 @@ junk value given by `Real.log 0 = 0`. -/
 noncomputable def klBin (a b : ℝ) : ℝ :=
   a * log (a / b) + (1 - a) * log ((1 - a) / (1 - b))
 
+/-- The defining formula of the binary divergence. -/
+theorem klBin_def (a b : ℝ) :
+    klBin a b = a * log (a / b) + (1 - a) * log ((1 - a) / (1 - b)) := by
+  rw [klBin]
+
+/-- The binary divergence of a parameter from itself vanishes, for every real `a`. -/
+@[simp]
+theorem klBin_self (a : ℝ) : klBin a a = 0 := by
+  have h (x : ℝ) : x * log (x / x) = 0 := by
+    rcases eq_or_ne x 0 with rfl | hx <;> simp [*]
+  rw [klBin_def, h, h, add_zero]
+
+/-- At the reference endpoint `b = 0` the binary divergence takes the junk value
+`(1 - a) log (1 - a)`, from `Real.log 0 = 0`. -/
+@[simp]
+theorem klBin_zero_right (a : ℝ) : klBin a 0 = (1 - a) * log (1 - a) := by
+  simp [klBin_def]
+
+/-- At the reference endpoint `b = 1` the binary divergence takes the junk value `a log a`,
+from `Real.log 0 = 0`. -/
+@[simp]
+theorem klBin_one_right (a : ℝ) : klBin a 1 = a * log a := by
+  simp [klBin_def]
+
 /-- The binary divergence as the `klFun` form of relative entropy, weighted by the reference
 masses `b` and `1 - b`. -/
 theorem klBin_eq_mul_klFun_add_mul_klFun {a b : ℝ} (hb₀ : b ≠ 0) (hb₁ : b ≠ 1) :
@@ -81,17 +113,10 @@ theorem klBin_nonneg {a b : ℝ} (ha : a ∈ Icc 0 1) (hb : b ∈ Ioo 0 1) : 0 �
   exact add_nonneg (mul_nonneg hb.1.le (klFun_nonneg (div_nonneg ha.1 hb.1.le)))
     (mul_nonneg hb'.le (klFun_nonneg (div_nonneg (sub_nonneg.mpr ha.2) hb'.le)))
 
-/-- `x log (x / y) = x log x - x log y` for `y ≠ 0`, including `x = 0`. -/
-private theorem mul_log_div_eq {x y : ℝ} (hy : y ≠ 0) :
-    x * log (x / y) = x * log x - x * log y := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  · rw [log_div hx hy, mul_sub]
-
 /-- The binary divergence in terms of the binary entropy, for `b ∉ {0, 1}`. -/
 theorem klBin_eq_neg_binEntropy_sub {a b : ℝ} (hb₀ : b ≠ 0) (hb₁ : b ≠ 1) :
     klBin a b = -binEntropy a - a * log b - (1 - a) * log (1 - b) := by
-  rw [klBin, mul_log_div_eq hb₀, mul_log_div_eq (sub_ne_zero.mpr hb₁.symm),
+  rw [klBin, mul_log_div _ hb₀, mul_log_div _ (sub_ne_zero.mpr hb₁.symm),
     binEntropy_eq_negMulLog_add_negMulLog_one_sub]
   simp only [negMulLog]
   ring
@@ -107,10 +132,10 @@ theorem neg_mul_log_sub_log_two_le_klBin {a b : ℝ} (ha : a ∈ Icc 0 1) (hb : 
   have h₁ : 0 ≤ -(1 - a) * log (1 - a) :=
     negMulLog_nonneg (sub_nonneg.mpr ha.2) (sub_le_self 1 ha.1)
   rcases hb.1.eq_or_lt with rfl | hb₀
-  · simp only [klBin, div_zero, log_zero, mul_zero, sub_zero, div_one, zero_add, neg_zero]
+  · simp only [klBin_zero_right, log_zero, mul_zero, neg_zero]
     linarith
   rcases hb.2.eq_or_lt with rfl | hb₁
-  · simp only [klBin, div_one, sub_self, div_zero, log_zero, mul_zero, add_zero, log_one]
+  · simp only [klBin_one_right, log_one, mul_zero, neg_zero]
     linarith
   rw [klBin_eq_neg_binEntropy_sub hb₀.ne' hb₁.ne, binEntropy_eq_negMulLog_add_negMulLog_one_sub]
   simp only [negMulLog]
@@ -144,40 +169,25 @@ private theorem klDiv_bernoulliMeasure_bool {a b : ℝ} (ha : a ∈ Icc 0 1) (hb
   rw [klDiv_eq_ofReal_sum_log_singleton hν, Fintype.sum_bool]
   simp [klBin, add_comm]
 
-/-- The Bernoulli law is affine in its parameter. -/
-private theorem bernoulliMeasure_eq_smul_add_smul (x y : X) {p q r : I} {s t : ℝ≥0}
-    (hst : s + t = 1) (hr : (r : ℝ) = s * p + t * q) :
-    bernoulliMeasure x y r = s • bernoulliMeasure x y p + t • bernoulliMeasure x y q := by
-  have hst' : (s : ℝ) + t = 1 := by exact_mod_cast hst
-  have h₁ : unitInterval.toNNReal r = s * unitInterval.toNNReal p + t * unitInterval.toNNReal q :=
-    by ext; simp [hr]
-  have h₂ : unitInterval.toNNReal (σ r) =
-      s * unitInterval.toNNReal (σ p) + t * unitInterval.toNNReal (σ q) := by
-    ext
-    simp only [unitInterval.coe_toNNReal, coe_symm_eq, hr, NNReal.coe_add, NNReal.coe_mul]
-    linear_combination -hst'
-  simp only [bernoulliMeasure_def, h₁, h₂, add_smul, mul_smul, smul_add]
-  abel
-
-/-- **Divergence of Bernoulli laws.** For `x ≠ y`, `a ∈ [0, 1]` and `b ∈ (0, 1)`, the
-divergence of `Ber(x, y, a)` from `Ber(x, y, b)` (the laws with mass `a` and `b` at `x`) is
-`klBin a b`. -/
-theorem klDiv_bernoulliMeasure [MeasurableSingletonClass X] {x y : X} (hxy : x ≠ y) {a b : ℝ}
-    (ha : a ∈ Icc 0 1) (hb : b ∈ Ioo 0 1) :
+/-- **Divergence of Bernoulli laws.** If a measurable set `s` contains `x` but not `y` (for
+instance `s = {x}` when `x ≠ y` and singletons are measurable), then for `a ∈ [0, 1]` and
+`b ∈ (0, 1)` the divergence of `Ber(x, y, a)` from `Ber(x, y, b)` (the laws with mass `a` and
+`b` at `x`) is `klBin a b`. -/
+theorem klDiv_bernoulliMeasure {x y : X} {s : Set X} (hs : MeasurableSet s) (hx : x ∈ s)
+    (hy : y ∉ s) {a b : ℝ} (ha : a ∈ Icc 0 1) (hb : b ∈ Ioo 0 1) :
     klDiv (bernoulliMeasure x y ⟨a, ha⟩) (bernoulliMeasure x y ⟨b, Ioo_subset_Icc_self hb⟩) =
       ENNReal.ofReal (klBin a b) := by
   classical
   rw [← klDiv_bernoulliMeasure_bool ha hb]
   set f : Bool → X := fun c ↦ cond c x y
-  set g : X → Bool := fun z ↦ decide (z = x)
+  set g : X → Bool := fun z ↦ decide (z ∈ s)
   have hf : Measurable f := measurable_of_countable f
-  have hg : Measurable g := measurable_to_bool <| by
-    simp [g, Set.preimage, Set.ofPred_eq_eq_singleton]
+  have hg : Measurable g := measurable_to_bool <| by simpa [g, Set.preimage] using hs
   have hfp (p : I) : (bernoulliMeasure true false p).map f = bernoulliMeasure x y p :=
     map_bernoulliMeasure' _ _ hf p
   have hgp (p : I) : (bernoulliMeasure x y p).map g = bernoulliMeasure true false p := by
     rw [map_bernoulliMeasure' _ _ hg p]
-    simp [g, hxy.symm]
+    simp [g, hx, hy]
   refine le_antisymm ?_ ?_
   · simpa only [hfp] using klDiv_map_le (μ := bernoulliMeasure true false ⟨a, ha⟩)
       (ν := bernoulliMeasure true false ⟨b, Ioo_subset_Icc_self hb⟩) hf
@@ -196,21 +206,26 @@ theorem convexOn_klBin : ConvexOn ℝ (Icc 0 1 ×ˢ Ioo 0 1) fun p : ℝ × ℝ 
   lift s to ℝ≥0 using hs
   lift t to ℝ≥0 using ht
   have hst' : s + t = 1 := by exact_mod_cast hst
-  have htf : true ≠ false := by decide
+  -- The Bernoulli laws of the mixed parameters are the mixtures of the Bernoulli laws.
+  have hμ := Probability.bernoulliMeasure_eq_smul_add_smul true false (p := ⟨a₁, ha₁⟩)
+    (q := ⟨a₂, ha₂⟩) (r := ⟨_, ha⟩) hst' rfl
+  have hν := Probability.bernoulliMeasure_eq_smul_add_smul true false
+    (p := ⟨b₁, Ioo_subset_Icc_self hb₁⟩) (q := ⟨b₂, Ioo_subset_Icc_self hb₂⟩)
+    (r := ⟨_, Ioo_subset_Icc_self hb⟩) hst' rfl
   have key := klDiv_smul_add_smul_smul_add_smul_le
     (μ₁ := bernoulliMeasure true false ⟨a₁, ha₁⟩) (μ₂ := bernoulliMeasure true false ⟨a₂, ha₂⟩)
     (ν₁ := bernoulliMeasure true false ⟨b₁, Ioo_subset_Icc_self hb₁⟩)
     (ν₂ := bernoulliMeasure true false ⟨b₂, Ioo_subset_Icc_self hb₂⟩) s t
-  rw [← bernoulliMeasure_eq_smul_add_smul _ _ (r := ⟨_, ha⟩) hst' rfl,
-    ← bernoulliMeasure_eq_smul_add_smul _ _ (r := ⟨_, Ioo_subset_Icc_self hb⟩) hst' rfl,
-    klDiv_bernoulliMeasure htf ha hb, klDiv_bernoulliMeasure htf ha₁ hb₁,
-    klDiv_bernoulliMeasure htf ha₂ hb₂, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_coe_nnreal,
-    ← ENNReal.ofReal_mul s.coe_nonneg, ← ENNReal.ofReal_mul t.coe_nonneg,
-    ← ENNReal.ofReal_add (mul_nonneg s.coe_nonneg (klBin_nonneg ha₁ hb₁))
-      (mul_nonneg t.coe_nonneg (klBin_nonneg ha₂ hb₂)),
-    ENNReal.ofReal_le_ofReal_iff (add_nonneg (mul_nonneg s.coe_nonneg (klBin_nonneg ha₁ hb₁))
-      (mul_nonneg t.coe_nonneg (klBin_nonneg ha₂ hb₂)))] at key
-  exact key
+  rw [← hμ, ← hν, klDiv_bernoulliMeasure_bool ha hb, klDiv_bernoulliMeasure_bool ha₁ hb₁,
+    klDiv_bernoulliMeasure_bool ha₂ hb₂] at key
+  -- `key` is now the convexity inequality in `ℝ≥0∞`; move it to `ℝ`.
+  have hsmul (r : ℝ≥0) (u : ℝ) :
+      (r : ℝ≥0∞) * ENNReal.ofReal u = ENNReal.ofReal (r * u) := by
+    rw [ENNReal.ofReal_mul r.coe_nonneg, ENNReal.ofReal_coe_nnreal]
+  have h₁ : 0 ≤ (s : ℝ) * klBin a₁ b₁ := mul_nonneg s.coe_nonneg (klBin_nonneg ha₁ hb₁)
+  have h₂ : 0 ≤ (t : ℝ) * klBin a₂ b₂ := mul_nonneg t.coe_nonneg (klBin_nonneg ha₂ hb₂)
+  rwa [hsmul s, hsmul t,
+    ← ENNReal.ofReal_add h₁ h₂, ENNReal.ofReal_le_ofReal_iff (add_nonneg h₁ h₂)] at key
 
 /-- **Data processing to an event.** For probability measures `P`, `Q` and any set `A`, the
 binary divergence of the masses of `A` is at most the divergence of `P` from `Q`. The set need
@@ -235,20 +250,22 @@ theorem ofReal_klBin_le_klDiv {X : Type*} [MeasurableSpace X] (P Q : Measure X)
   set p := P.real H
   set q := Q.real H
   have hp : p ∈ Icc 0 1 := ⟨measureReal_nonneg, measureReal_le_one⟩
-  rcases (show 0 ≤ q from measureReal_nonneg).eq_or_lt with hq₀ | hq₀
+  have hq : q ∈ Icc 0 1 := ⟨measureReal_nonneg, measureReal_le_one⟩
+  rcases hq.1.eq_or_lt with hq₀ | hq₀
   · refine le_of_eq_of_le (ENNReal.ofReal_of_nonpos ?_) zero_le
     have : 0 ≤ -(1 - p) * log (1 - p) := negMulLog_nonneg (sub_nonneg.mpr hp.2) (sub_le_self 1 hp.1)
-    simp only [klBin, ← hq₀, div_zero, log_zero, mul_zero, sub_zero, div_one, zero_add]
+    rw [← hq₀, klBin_zero_right]
     linarith
-  rcases (show q ≤ 1 from measureReal_le_one).eq_or_lt with hq₁ | hq₁
+  rcases hq.2.eq_or_lt with hq₁ | hq₁
   · refine le_of_eq_of_le (ENNReal.ofReal_of_nonpos ?_) zero_le
     have : 0 ≤ -p * log p := negMulLog_nonneg hp.1 hp.2
-    simp only [klBin, hq₁, div_one, sub_self, div_zero, log_zero, mul_zero, add_zero]
+    rw [hq₁, klBin_one_right]
     linarith
   have hlaw (R : Measure X) [IsProbabilityMeasure R] :=
     (hasLaw_indicator_one_bernoulliMeasure (M := ℝ) (P := R) hH.nullMeasurableSet).map_eq
   have hmeas : Measurable (H.indicator (1 : X → ℝ)) := measurable_one.indicator hH
   have hle := klDiv_map_le (μ := P) (ν := Q) hmeas
-  rwa [hlaw P, hlaw Q, klDiv_bernoulliMeasure (one_ne_zero : (1 : ℝ) ≠ 0) hp ⟨hq₀, hq₁⟩] at hle
+  rwa [hlaw P, hlaw Q, klDiv_bernoulliMeasure (measurableSet_singleton (1 : ℝ)) rfl
+    (by norm_num) hp ⟨hq₀, hq₁⟩] at hle
 
 end TauCeti
