@@ -83,7 +83,7 @@ theorem isClosedEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
       (presentationLimitMap (P := P) (hVW k)).hom.val x := by
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
   -- Extract the coordinate ring `B ≃ presentationLimit W` and `B_k ≃ presentationLimit (V k)`.
-  obtain ⟨pW, isoW⟩ := rationalLimitRingIso P hAplus hW
+  obtain ⟨pW, ⟨isoW⟩⟩ := exists_presentationLimit_iso_completionLoc P hAplus hW
   let _ := locUniformSpace P pW.num pW.den _ pW.hasDenominatorPower
   have _ := isUniformAddGroup_locUniformSpace P pW.num pW.den _ pW.hasDenominatorPower
   have _ := isTopologicalRing_locUniformSpace P pW.num pW.den _ pW.hasDenominatorPower
@@ -91,8 +91,7 @@ theorem isClosedEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
   have _ := isTateRing_completion_locTopology_of_isTateRing P pW.num pW.den _
     pW.hasDenominatorPower
   let B := UniformSpace.Completion (Localization.Away pW.den)
-  let dataV (k : κ) := rationalLimitRingIso P hAplus (hV k)
-  let pV (k : κ) : Presentation P := (dataV k).1
+  choose pV hIsoV using fun k : κ ↦ exists_presentationLimit_iso_completionLoc P hAplus (hV k)
   let uV (k : κ) := locUniformSpace P (pV k).num (pV k).den _ (pV k).hasDenominatorPower
   have gV (k : κ) :=
     isUniformAddGroup_locUniformSpace P (pV k).num (pV k).den _ (pV k).hasDenominatorPower
@@ -101,7 +100,7 @@ theorem isClosedEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
   have hHuberV (k : κ) :=
     isHuberRing_completion_locTopology P (pV k).num (pV k).den _ (pV k).hasDenominatorPower
   let Bk (k : κ) := UniformSpace.Completion (Localization.Away (pV k).den)
-  let isoV (k : κ) := (dataV k).2
+  let isoV (k : κ) := (hIsoV k).some
   have uCountV (k : κ) : (uniformity (Bk k)).IsCountablyGenerated :=
     have := hHuberV k
     IsUniformAddGroup.uniformity_countably_generated

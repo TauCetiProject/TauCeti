@@ -45,8 +45,6 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
   `A⟨T/s⟩ ⟶ A⟨T'/s'⟩` of a containment `R(T'/s') ⊆ R(T/s)`.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso` : the isomorphism
   `presentationLimit Aplus R(T/s) ≅ A⟨T/s⟩` for an admissible presentation `(T, s)`.
-* `TauCeti.ValuationSpectrum.rationalLimitRingIso` : witness presentation and isomorphism
-  `presentationLimit Aplus U ≅ A⟨p⟩` in `TopCommRingCat` for `U ∈ spaRationalOpens Aplus`.
 * `TauCeti.ValuationSpectrum.presentationLimitPresheafInCommRingCat` : the underlying
   `CommRingCat`-valued presheaf after forgetting the topology on sections.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIsoInCommRingCat` : the underlying
@@ -67,6 +65,9 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
   are in bijection with `A⟨p⟩`, read through the isomorphism and the equality transport.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso_inv_comp_map_comp_hom` : between rational
   opens, the restriction maps of `presentationLimitPresheaf` are the comparison morphisms.
+* `TauCeti.ValuationSpectrum.exists_presentationLimit_iso_completionLoc` : existence of an
+  admissible presentation `p` and isomorphism `presentationLimit Aplus U ≅ A⟨p⟩` in
+  `TopCommRingCat` for `U ∈ spaRationalOpens Aplus`.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIsoInCommRingCat_inv_comp_map_comp_hom` :
   the same comparison compatibility in `CommRingCat`.
 
@@ -328,30 +329,25 @@ theorem presentationLimitRationalIso_inv_comp_map_comp_hom
     reassoc_of% presentationLimitRationalIso_inv_comp_π]
   exact homOfRationalSubsetSubset_comp_eqToHom hAplus (presentationIndexRestrict_obj_pres h _) _ _ _
 
-/-- Helper packaging a rational open `U ∈ spaRationalOpens Aplus` with a concrete admissible
-presentation `p : Presentation P` and the isomorphism `presentationLimit Aplus U ≅ A⟨p⟩` in
-`TopCommRingCat`. -/
-noncomputable def rationalLimitRingIso (P : PairOfDefinition A)
+/-- Existence of an admissible presentation `p : Presentation P` and an isomorphism
+`presentationLimit Aplus U ≅ A⟨p⟩` in `TopCommRingCat` for `U ∈ spaRationalOpens Aplus`. -/
+theorem exists_presentationLimit_iso_completionLoc (P : PairOfDefinition A)
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     {U : Opens ↥(spa Aplus)} (hU : U ∈ spaRationalOpens Aplus) :
-    Σ (p : Presentation P),
+    ∃ (p : Presentation P),
       letI := locUniformSpace P p.num p.den (Localization.Away p.den) p.hasDenominatorPower
       letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
       letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-      (presentationLimit (P := P) Aplus U).obj ≅
-        TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) := by
+      Nonempty ((presentationLimit (P := P) Aplus U).obj ≅
+        TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den))) := by
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  have hex := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hU
-  let T := hex.choose
-  let s := hex.choose_spec.choose
-  have hT : IsOpen (Ideal.span (T : Set A) : Set A) := hex.choose_spec.choose_spec.1
-  have hUeq : U = spaBasicOpen Aplus T s := hex.choose_spec.choose_spec.2
+  obtain ⟨T, s, hT, hUeq⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hU
   let p : Presentation P :=
     ⟨T, s, hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT⟩
   let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
   let _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
   let _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  refine ⟨p, ?_⟩
+  refine ⟨p, ⟨?_⟩⟩
   exact TopCommRingCat.isCompleteSeparated.ι.mapIso
     (eqToIso (congrArg (presentationLimit (P := P) Aplus) hUeq) ≪≫
       presentationLimitRationalIso Aplus hAplus p hT) ≪≫

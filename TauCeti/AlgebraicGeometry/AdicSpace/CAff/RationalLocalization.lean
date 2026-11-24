@@ -599,6 +599,24 @@ theorem comp_isoCanonical_inv {X Y : CAff.{u}} {φ : X ⟶ Y} {T : Finset X.ring
     φ ≫ hφ.isoCanonical.inv = X.rationalLocalizationHom T s hφ.isOpen_span :=
   comp_iso_inv _ hφ
 
+private theorem spaComap_eq_spaComapLoc {X Y : CAff.{u}} {φ : X ⟶ Y}
+    {T : Finset X.ring} {s : X.ring} (hφ : IsRationalLocalization φ T s)
+    (y : ValuationSpectrum.spa Y.pair.plus) :
+    let P := X.pairOfDefinition
+    let hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hφ.isOpen_span
+    letI := locUniformSpace P T s (Localization.Away s) hden
+    letI := isUniformAddGroup_locUniformSpace P T s (Localization.Away s) hden
+    letI := isTopologicalRing_locUniformSpace P T s (Localization.Away s) hden
+    φ.spaComap y = spaComapLoc P X.pair.plus T s (Localization.Away s) hden
+      ⟨(hφ.isoCanonical.hom.spaComap y).val,
+        rationalLocalization_plus X T s hφ.isOpen_span ▸
+          (hφ.isoCanonical.hom.spaComap y).property⟩ := by
+  have hc := congrFun (comp_spaComap
+    (X.rationalLocalizationHom T s hφ.isOpen_span) hφ.isoCanonical.hom) y
+  rw [rationalLocalizationHom_comp_isoCanonical_hom] at hc
+  exact hc.trans (spaComap_rationalLocalizationHom X T s hφ.isOpen_span
+    (hφ.isoCanonical.hom.spaComap y))
+
 private theorem isOpenEmbedding_and_range_spaComap {X Y : CAff.{u}} {φ : X ⟶ Y}
     {T : Finset X.ring} {s : X.ring} (hφ : IsRationalLocalization φ T s) :
     IsOpenEmbedding φ.spaComap ∧
@@ -618,14 +636,8 @@ private theorem isOpenEmbedding_and_range_spaComap {X Y : CAff.{u}} {φ : X ⟶ 
       ↥(ValuationSpectrum.spa (X.rationalLocalization T s hφ.isOpen_span).pair.plus) :=
     TopCat.homeoOfIso (spa.mapIso hφ.isoCanonical.op)
   have hcomp : φ.spaComap =
-      spaComapLoc P X.pair.plus T s (Localization.Away s) hden ∘ (⇑ePlus ∘ ⇑he) := by
-    funext w
-    have hc := congrFun (comp_spaComap
-      (X.rationalLocalizationHom T s hφ.isOpen_span) hφ.isoCanonical.hom) w
-    rw [rationalLocalizationHom_comp_isoCanonical_hom] at hc
-    change φ.spaComap w =
-      (X.rationalLocalizationHom T s hφ.isOpen_span).spaComap (he w) at hc
-    exact hc.trans (spaComap_rationalLocalizationHom X T s hφ.isOpen_span (he w))
+      spaComapLoc P X.pair.plus T s (Localization.Away s) hden ∘ (⇑ePlus ∘ ⇑he) :=
+    funext fun w ↦ hφ.spaComap_eq_spaComapLoc w
   refine ⟨?_, ?_⟩
   · rw [hcomp]
     exact (isOpenEmbedding_spaComapLoc P X.pair.plus X.ringOfDefinition_le_plus T s
@@ -764,13 +776,7 @@ theorem exists_comp {X Y Z : CAff.{u}} {φ : X ⟶ Y} {ψ : Y ⟶ Z}
           (completedPlusSubring P X.pair.plus T₁ s₁ (Localization.Away s₁) hden) :=
         ⟨(eIso.hom.spaComap y).val,
           rationalLocalization_plus X T₁ s₁ hφ.isOpen_span ▸ (eIso.hom.spaComap y).property⟩
-      have hcomp : φ.spaComap y =
-          spaComapLoc P X.pair.plus T₁ s₁ (Localization.Away s₁) hden w' := by
-        have hc := congrFun (comp_spaComap
-          (X.rationalLocalizationHom T₁ s₁ hφ.isOpen_span) eIso.hom) y
-        rw [rationalLocalizationHom_comp_isoCanonical_hom] at hc
-        exact hc.trans
-          (spaComap_rationalLocalizationHom X T₁ s₁ hφ.isOpen_span (eIso.hom.spaComap y))
+      have hcomp := hφ.spaComap_eq_spaComapLoc y
       have hy' : w' ∈ locOpensComap P X.pair.plus T₁ s₁ (Localization.Away s₁) hden
           (spaBasicOpen X.pair.plus T' s') := by
         refine (mem_locOpensComap P X.pair.plus T₁ s₁ (Localization.Away s₁) hden _ _).mpr ?_
@@ -805,14 +811,7 @@ theorem exists_comp {X Y Z : CAff.{u}} {φ : X ⟶ Y} {ψ : Y ⟶ Z}
         rw [hloc]
         exact mem_spaBasicOpen.mpr hmem
       have hres := (mem_locOpensComap P X.pair.plus T₁ s₁ (Localization.Away s₁) hden _ _).mp hy'
-      have hcomp : φ.spaComap y =
-          spaComapLoc P X.pair.plus T₁ s₁ (Localization.Away s₁) hden w' := by
-        have hc := congrFun (comp_spaComap
-          (X.rationalLocalizationHom T₁ s₁ hφ.isOpen_span) eIso.hom) y
-        rw [rationalLocalizationHom_comp_isoCanonical_hom] at hc
-        exact hc.trans
-          (spaComap_rationalLocalizationHom X T₁ s₁ hφ.isOpen_span (eIso.hom.spaComap y))
-      rw [← hcomp] at hres
+      rw [← hφ.spaComap_eq_spaComapLoc y] at hres
       exact mem_spaBasicOpen.mp hres
   exact ⟨T', s', him, hφ.comp_of_spaComap_image hψ hT' him⟩
 

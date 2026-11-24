@@ -109,7 +109,8 @@ private theorem presentationLimitRationalEquiv_top (Y : CAff.{u})
       (presentationLimitTopIso (P := P) Y.pair.plus hAplus).inv.hom.val
         ((eqToIso (CompleteSeparatedTopCommRingCat.of_obj Y.ring).symm).hom.val b) := rfl
   rw [htop, presentationLimitTopIso_inv]
-  exact (rationalIso_map_top_apply Y.pair.plus hAplus q hT₀
+  exact (presentationLimitRationalIso_hom_presentationLimitMap_top_toPresentationLimit_apply
+      Y.pair.plus hAplus q hT₀
       ((eqToIso (CompleteSeparatedTopCommRingCat.of_obj Y.ring).symm).hom.val b)).trans
     (congrArg (toCompletionLoc P q.num q.den _ q.hasDenominatorPower)
       ((eqToIso (CompleteSeparatedTopCommRingCat.of_obj Y.ring).symm).hom_inv_id_apply b))

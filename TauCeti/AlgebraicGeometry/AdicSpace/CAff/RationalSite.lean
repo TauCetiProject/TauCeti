@@ -338,8 +338,8 @@ theorem generate_rationalCoverPresieve_mem_ratTopology {X : CAff.{u}} {ι : Type
       refine Set.eq_univ_of_forall fun w ↦ Set.mem_iUnion.mpr ?_
       obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (hcov ▸ Set.mem_univ w)
       exact ⟨i, mem_spaBasicOpen.mpr hi⟩
-  obtain ⟨t, ht⟩ := TopologicalSpace.Opens.exists_finite_subcover_of_isCompact
-    (isCompact_of_mem_spaRationalFamily (univ_mem_spaRationalFamily X.pair.plus)) hsup
+  obtain ⟨t, ht⟩ := exists_finite_subcover_spaRationalOpens
+    (top_mem_spaRationalOpens X.pair.plus) hsup
   have hcov_sub : IsRationalCovering X (fun k : ↥t ↦ T k.val) (fun k : ↥t ↦ s k.val) :=
     { isOpen_span := fun k ↦ hT k.val
       iUnion_eq_univ := Set.eq_univ_of_forall fun w ↦ by

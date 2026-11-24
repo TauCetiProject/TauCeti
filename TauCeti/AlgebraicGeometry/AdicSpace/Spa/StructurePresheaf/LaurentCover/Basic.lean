@@ -159,7 +159,8 @@ private theorem presentationLimitMap_apply_toPresentationLimit_apply_eq_iff (p :
         (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
           ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z) :=
   (bijective_presentationLimitRationalIso_hom Aplus hAplus p hp).1.eq_iff.symm.trans
-    (rationalIso_map_top_apply Aplus hAplus p hp c).congr_left
+    (presentationLimitRationalIso_hom_presentationLimitMap_top_toPresentationLimit_apply
+      Aplus hAplus p hp c).congr_left
 
 end Top
 
@@ -238,7 +239,9 @@ theorem injective_presentationLimitMap_laurentCoverOpen_of_injective_toCompletio
     Function.RightInverse.surjective (asIso (toPresentationLimit Aplus ⊤)).inv_hom_id_apply
   have key (b : Bool) :=
     ((presentationLimitMap_apply_toPresentationLimit_apply_eq_iff hAplus (p b) (hp b)).1
-      (congrFun hcd b)).trans (rationalIso_map_top_apply Aplus hAplus (p b) (hp b) d)
+      (congrFun hcd b)).trans
+      (presentationLimitRationalIso_hom_presentationLimitMap_top_toPresentationLimit_apply
+        Aplus hAplus (p b) (hp b) d)
   exact injective_eqToHom _ <| hinj (p false).hasDenominatorPower <| Prod.ext (key true) (key false)
 
 /-- **The topology of Laurent restriction transported to the presentation-limit presheaf.**
@@ -301,7 +304,8 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
   obtain ⟨c, rfl⟩ : ∃ c, (toPresentationLimit (P := P) Aplus ⊤).hom.val c = x :=
     Function.RightInverse.surjective
       (asIso (toPresentationLimit (P := P) Aplus ⊤)).inv_hom_id_apply x
-  -- The source comparison cancels on `c`; the target comparisons are `rationalIso_map_top_apply`.
+  -- The source comparison cancels on `c`; the target comparisons are
+  -- `presentationLimitRationalIso_hom_presentationLimitMap_top_toPresentationLimit_apply`.
   have hd : d ((toPresentationLimit (P := P) Aplus ⊤).hom.val c) =
       (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val c := by
     rw [d_apply]
@@ -311,8 +315,12 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
   simp only [Function.comp_apply, RingHom.prod_apply, Homeomorph.coe_prodCongr]
   rw [hd]
   exact Prod.ext
-    ((E_apply true _).trans (rationalIso_map_top_apply Aplus hAplus (p true) (hp true) c))
-    ((E_apply false _).trans (rationalIso_map_top_apply Aplus hAplus (p false) (hp false) c))
+    ((E_apply true _).trans
+      (presentationLimitRationalIso_hom_presentationLimitMap_top_toPresentationLimit_apply
+        Aplus hAplus (p true) (hp true) c))
+    ((E_apply false _).trans
+      (presentationLimitRationalIso_hom_presentationLimitMap_top_toPresentationLimit_apply
+        Aplus hAplus (p false) (hp false) c))
 
 -- Sections over the two Laurent pieces that agree on their overlap are, read through
 -- `presentationLimitRationalIso`, the images of one `c : A` under the structure maps `A → A⟨p b⟩`,

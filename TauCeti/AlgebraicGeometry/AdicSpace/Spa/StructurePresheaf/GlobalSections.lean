@@ -226,7 +226,8 @@ theorem presentationLimitTopIso_inv (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPow
 
 /-- Under `presentationLimitRationalIso`, restriction from the whole spectrum to `R(p)` is the
 structure map `A → A⟨p⟩`. -/
-theorem rationalIso_map_top_apply (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+theorem presentationLimitRationalIso_hom_presentationLimitMap_top_toPresentationLimit_apply
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
     (c : CompleteSeparatedTopCommRingCat.of A) :
     (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
