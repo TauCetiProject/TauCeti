@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.DerivedTensor
-public import TauCeti.AlgebraicTopology.DGLocalSystem.SphereResolution
+public import TauCeti.Algebra.Homology.DG.Module.Augmentation
+public import TauCeti.AlgebraicTopology.DGLocalSystem.CellResolution
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel
 
 /-!
-# Brown models of one cell attached along a cycle, and of the spheres
+# Brown models of one cell attached along a cycle
 
 For an `n`-cycle `x` of the chains `C_*(Ω_b B; R)` on the Moore loops at `b`, the free module
 
@@ -30,34 +31,19 @@ quasi-isomorphism as soon as `K` resolves `R`
 augmentations are then quasi-isomorphisms onto `R`, the based path space being contractible. So
 `K` with this comparison is a Brown model (`TauCeti.cycleCellBrownModel`).
 
-For the sphere `Sⁿ`, `n = m + 2`, with one `0`-cell at the pole and one `n`-cell, the chain `c` is
-the path cube `TauCeti.spherePathCube` of Moore paths from the pole along the top cell
-(`TauCeti.spherePathChain`), whose boundary is the image of the attaching cycle `x` of the top cell
-(`TauCeti.cubicalChainModuleDifferential_spherePathChain`). The module of
-`TauCeti.sphereCellCocycle` resolves the ground ring
-(`TauCeti.exists_sphereCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`), so it is a
-Brown model of `C_*(P_b Sⁿ; k)` (`TauCeti.sphereBrownModel`), and it computes the derived tensor
-product with the ground ring
-(`TauCeti.nonempty_sphereCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`):
-for every DG local system `𝓕` on `Sⁿ`, the twisted complex `𝓕 e₀ ⊕ 𝓕 e₁` with `D e₁ = x e₀` has
-cohomology `Tor^{C_*(Ω_b Sⁿ; k)}(𝓕, k)`. For `S²` the attaching cycle has dimension `1`.
+The circle (`TauCeti.loopCellBrownModel`) and the spheres (`TauCeti.sphereBrownModel`) are the
+instances of this construction.
 
 ## Main definitions
 
 * `TauCeti.cycleCellPathComparison`: the map `K → C_*(P_b B; R)`, `e₀ ↦ [b]`, `e₁ ↦ c`.
 * `TauCeti.cycleCellBrownModel`: `K` with this comparison, as a Brown model, when `K` resolves `R`.
-* `TauCeti.spherePathChain`: the path cube of the top cell of a sphere, in `C_*(P_b Sⁿ; k)`.
-* `TauCeti.sphereBrownModel`: Brown's model of the chains on the based paths of a sphere.
 
 ## Main results
 
 * `TauCeti.cycleCellPathComparison_differential`: the comparison commutes with the differentials.
 * `TauCeti.exists_cycleCellCocycle_differential_eq_and_cycleCellPathComparison_add_eq`: when `K`
   resolves `R`, the comparison is a quasi-isomorphism.
-* `TauCeti.cubicalChainModuleDifferential_spherePathChain`: the boundary of the path cube of a
-  sphere is the attaching cycle acting on the point chain of the pole.
-* `TauCeti.nonempty_sphereCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`:
-  Brown's resolution of a sphere computes the derived tensor product with the ground ring.
 
 ## References
 
@@ -70,13 +56,9 @@ cohomology `Tor^{C_*(Ω_b Sⁿ; k)}(𝓕, k)`. For `S²` the attaching cycle has
 
 public noncomputable section
 
-open AlgebraicTopology CategoryTheory Metric
-
-universe uM
+open AlgebraicTopology
 
 namespace TauCeti
-
-open NormalizedCubicalChain
 
 /-! ### The comparison of one cell attached along a cycle -/
 
@@ -178,10 +160,7 @@ cycle of `K` whose augmentation vanishes is a boundary, as for a sphere
 `(n + 1)`-chain of paths bounding `x · [b]`. Then the comparison
 `TauCeti.cycleCellPathComparison` from `K` to `C_*(P_b B; R)` is a quasi-isomorphism: every
 relative cycle `(u, w)`, with `D u = 0` and `g(u) = d w`, is a relative boundary
-`(D u', g(u') + d w')`.
-
-Both augmentations are quasi-isomorphisms onto `R`, the comparison commutes with them, and `e₀`
-is a cycle of augmentation `1` (`TauCeti.exists_differential_eq_and_add_eq_of_augmentation`). -/
+`(D u', g(u') + d w')`. -/
 theorem exists_cycleCellCocycle_differential_eq_and_cycleCellPathComparison_add_eq
     (hcm : c ∈ cubicalChainModuleGrading (MoorePathFrom B b) H R (-((n : ℤ) + 1)))
     (hc : cubicalChainModuleDifferential (MoorePathFrom B b) H R c =
@@ -207,6 +186,8 @@ theorem exists_cycleCellCocycle_differential_eq_and_cycleCellPathComparison_add_
         (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m
           u' = u ∧
       cycleCellPathComparison H R c u' + cubicalChainModuleDifferential _ H R w' = w :=
+  -- Both augmentations are quasi-isomorphisms onto `R`, the comparison commutes with them, and
+  -- `e₀` is a cycle of augmentation `1`.
   exists_differential_eq_and_add_eq_of_augmentation
     (f := (cycleCellPathComparison H R c).restrictScalars R)
     (cycleCellPathComparison_differential hc)
@@ -269,6 +250,18 @@ variable {H} {hx : x ∈ cubicalChainGrading (MooreLoopSpace B b) R (-(n : ℤ))
 theorem cycleCellBrownModel_cocycle (hcm hc hK) :
     (cycleCellBrownModel H hx hdx c hcm hc hK).cocycle = cycleCellCocycle R n x hx hdx := (rfl)
 
+/-- The Brown model of a cell attached along `x` sends the generator `e₀` of the `0`-cell to the
+point chain `[b]` of the constant path. -/
+@[simp]
+theorem cycleCellBrownModel_comparison_inl (hcm hc hK) (y : Unit) :
+    (cycleCellBrownModel H hx hdx c hcm hc hK).comparison (Sum.inl y) =
+      cubicalChainModulePoint (MoorePathFrom B b) H R (MoorePathFrom.refl B b) := (rfl)
+
+/-- The Brown model of a cell attached along `x` sends the generator `e₁` of the cell to `c`. -/
+@[simp]
+theorem cycleCellBrownModel_comparison_inr (hcm hc hK) (y : Unit) :
+    (cycleCellBrownModel H hx hdx c hcm hc hK).comparison (Sum.inr y) = c := (rfl)
+
 /-- The comparison of the Brown model of a cell attached along `x` is
 `TauCeti.cycleCellPathComparison`. -/
 @[simp]
@@ -278,100 +271,5 @@ theorem linearCombination_cycleCellBrownModel_comparison (hcm hc hK) :
       cycleCellPathComparison H R c := (rfl)
 
 end Model
-
-/-! ### The sphere -/
-
-section Sphere
-
-variable {ι : Type} [Fintype ι] {m : ℕ} (h : Fintype.card ι = m + 3) (H : Type*) (k : Type)
-  [CommRing k]
-
-local notation "Sph" => sphere (0 : EuclideanSpace ℝ ι) 1
-
-/-- **The path cube of the top cell of a sphere**, as a chain on the based path space: the singular
-`(m + 2)`-cube `TauCeti.spherePathCube` of Moore paths from the pole along the top cell of `Sⁿ`,
-`n = m + 2`, in `C_*(P_b Sⁿ; k)`. It is the image of the generator of the top cell in Brown's model
-of the sphere. -/
-def spherePathChain : cubicalChainModule (MoorePathFrom Sph (spherePolePoint h)) H k :=
-  cubicalChainModuleLof _ H k (m + 1 + 1)
-    (ofCube (MoorePathFrom Sph (spherePolePoint h)) k (spherePathCube h))
-
-/-- The path cube of a sphere `Sⁿ`, `n = m + 2`, has dimension `n`. -/
-theorem spherePathChain_mem :
-    spherePathChain h H k ∈ cubicalChainModuleGrading (MoorePathFrom Sph (spherePolePoint h)) H k
-      (-(((m + 1 : ℕ) : ℤ) + 1)) :=
-  mem_cubicalChainModuleGrading_iff.2 (Or.inr ⟨m + 1 + 1, _, by push_cast; ring, rfl⟩)
-
-/-- **The boundary of the path cube of a sphere** is the attaching cycle `x` of the top cell acting
-on the point chain `[b]` of the constant path at the pole: `d σ = x · [b]`. -/
-theorem cubicalChainModuleDifferential_spherePathChain :
-    cubicalChainModuleDifferential (MoorePathFrom Sph (spherePolePoint h)) H k
-        (spherePathChain h H k) =
-      sphereAttachingChain h k • cubicalChainModulePoint (MoorePathFrom Sph (spherePolePoint h)) H k
-        (MoorePathFrom.refl Sph (spherePolePoint h)) := by
-  -- A chain `z` of loops acts on `[b]` as its push-forward to the based paths.
-  have key (z : NormalizedCubicalChain (MooreLoopSpace Sph (spherePolePoint h)) k (m + 1)) :
-      cubicalChainLof _ k (m + 1) z • cubicalChainModulePoint
-          (MoorePathFrom Sph (spherePolePoint h)) H k (MoorePathFrom.refl Sph (spherePolePoint h)) =
-        cubicalChainModuleLof _ H k (m + 1) (map k MooreLoopSpace.toMoorePathFrom (m + 1) z) := by
-    rw [cubicalChainModulePoint_def, lof_smul_cubicalChainModuleLof,
-      leftAct_ofCube_point_right _ _ _ MooreLoopSpace.toMoorePathFrom_eq_smul_refl]
-  rw [spherePathChain, cubicalChainModuleDifferential_lof_succ, boundary_ofCube_spherePathCube,
-    sphereAttachingChain_def]
-  exact (key _).symm
-
-/-- **Brown's model of a sphere.** For the sphere `Sⁿ`, `n = m + 2`, with one `0`-cell at the
-pole and one `n`-cell attached along the attaching cycle `x` of its top cell, the semi-free
-resolution `C_*(Ω_b Sⁿ; k) e₀ ⊕ C_*(Ω_b Sⁿ; k) e₁` with `D e₁ = x e₀` of
-`TauCeti.sphereCellCocycle h k`, with the comparison sending `e₀` to the point chain `[b]` of the
-pole and `e₁` to the path cube `TauCeti.spherePathChain` of the top cell, is a Brown model of the
-chains `C_*(P_b Sⁿ; k)` on the based paths. -/
-def sphereBrownModel :
-    BrownModel Sph (spherePolePoint h) H k (Unit ⊕ Unit)
-      (Sum.elim (fun _ ↦ 0) (fun _ ↦ ((m + 1 : ℕ) : ℤ) + 1)) :=
-  cycleCellBrownModel H (sphereAttachingChain_mem h k)
-    (cubicalChainDifferential_sphereAttachingChain h k) (spherePathChain h H k)
-    (spherePathChain_mem h H k) (cubicalChainModuleDifferential_spherePathChain h H k)
-    (exists_sphereCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero h k)
-
-/-- The cocycle of Brown's model of a sphere is `TauCeti.sphereCellCocycle`. -/
-@[simp]
-theorem sphereBrownModel_cocycle : (sphereBrownModel h H k).cocycle = sphereCellCocycle h k :=
-  (rfl)
-
-/-- The comparison of Brown's model of a sphere sends `e₀` to the point chain of the pole and `e₁`
-to the path cube of the top cell. -/
-@[simp]
-theorem linearCombination_sphereBrownModel_comparison :
-    Finsupp.linearCombination (loopChainAlgebra Sph (spherePolePoint h) k)
-        (sphereBrownModel h H k).comparison =
-      cycleCellPathComparison H k (spherePathChain h H k) := (rfl)
-
-/-- **Brown's resolution of a sphere computes the derived tensor product with the ground ring.**
-For the sphere `Sⁿ`, `n = m + 2`, based at the pole, tensoring DG right modules `𝓕` over
-`C_*(Ω_b Sⁿ; k)` with the free module of `TauCeti.sphereCellCocycle`, which gives the twisted
-complex `𝓕 e₀ ⊕ 𝓕 e₁` with `D e₁ = x e₀` for the attaching cycle `x` of the top cell, induces on
-any localizations at the quasi-isomorphisms a functor isomorphic to the derived tensor product
-`- ⊗^L k` with the ground ring. -/
-theorem nonempty_sphereCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation
-    {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
-    (L₁ : DGRightModuleCat.{0, 0, uM} (loopChain_isDGAlgebra Sph (spherePolePoint h) k) ⥤ D₁)
-    [L₁.IsLocalization
-      (DGRightModuleCat.quasiIsos (loopChain_isDGAlgebra Sph (spherePolePoint h) k))]
-    (L₂ : CochainComplex (ModuleCat.{uM} k) ℤ ⥤ D₂)
-    [L₂.IsLocalization (HomologicalComplex.quasiIso _ (ComplexShape.up ℤ))] :
-    Nonempty (((sphereCellCocycle h k).coefficientLocalizerMorphism
-        (loopChain_isDGAlgebra Sph (spherePolePoint h) k)
-        (wellFounded_mem_support_cycleCellCocycle _ _)).localizedFunctor L₁ L₂ ≅
-      (derivedTensorLocalizerMorphism (loopChain_isDGAlgebra Sph (spherePolePoint h) k)
-        (loopChainAugmentation Sph (spherePolePoint h) k).bimoduleGrading
-        (loopChainAugmentation Sph (spherePolePoint h) k).bimoduleDifferential).localizedFunctor
-          L₁ L₂) := by
-  -- The chains on the based paths may be taken over any monoid, since the localized functors do
-  -- not involve them.
-  have h := (sphereBrownModel h PUnit.{1} k).nonempty_localizedFunctor_iso_derivedTensor L₁ L₂
-  simpa only [sphereBrownModel_cocycle] using h
-
-end Sphere
 
 end TauCeti

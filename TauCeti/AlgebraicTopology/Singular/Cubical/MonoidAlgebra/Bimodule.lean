@@ -127,6 +127,9 @@ theorem leftAct_ofCube_point_right {p : ℕ} (a : NormalizedCubicalChain G R p) 
       (ContinuousMap.prodMk (ContinuousMap.id G) (ContinuousMap.const G y)) = f := by
     ext g
     simp [hf]
+  -- Crossing with the point `y` is the push-forward along `g ↦ (g, y)`
+  -- (`crossProduct_point_right`, up to the cast along `p + 0 = p`), so `a · [y]` is the
+  -- push-forward along the action map composed with it, which is `f`.
   rw [← h, map_comp, LinearMap.comp_apply, ← crossProduct_point_right, map_cast, cast_rfl,
     leftAct_def]
 

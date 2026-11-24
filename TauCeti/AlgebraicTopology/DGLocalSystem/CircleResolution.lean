@@ -105,6 +105,22 @@ section Cocycle
 
 variable {B : Type*} [TopologicalSpace B] {b : B} (R : Type*) [CommRing R]
 
+variable {R} in
+/-- The difference `[γ] - [1]` of the point chain of a Moore loop and the unit of `C_*(Ω_b B; R)`
+lies in degree `0`. -/
+theorem cubicalChainPoint_sub_one_mem (γ : MooreLoopSpace B b) :
+    cubicalChainPoint (MooreLoopSpace B b) R γ - 1 ∈ cubicalChainGrading (MooreLoopSpace B b) R 0 :=
+  sub_mem (cubicalChainPoint_mem γ)
+    (SetLike.one_mem_graded (cubicalChainGrading (MooreLoopSpace B b) R))
+
+variable {R} in
+/-- The difference `[γ] - [1]` of the point chain of a Moore loop and the unit of `C_*(Ω_b B; R)`
+is a cycle. -/
+theorem cubicalChainDifferential_cubicalChainPoint_sub_one (γ : MooreLoopSpace B b) :
+    cubicalChainDifferential (MooreLoopSpace B b) R
+      (cubicalChainPoint (MooreLoopSpace B b) R γ - 1) = 0 := by
+  simp [(loopChain_isDGAlgebra B b R).map_one_eq_zero]
+
 /-- **The twisting cocycle of one `1`-cell attached along a loop.** On the generators
 `Unit ⊕ Unit`, the `0`-cell `e₀ = Sum.inl ()` of index `0` has zero row, and the `1`-cell
 `e₁ = Sum.inr ()` of index `1` is attached along the cycle `([γ] - [1]) e₀`: the difference of the
@@ -116,12 +132,21 @@ def loopCellCocycle (γ : MooreLoopSpace B b) :
       (cubicalChainGrading (MooreLoopSpace B b) R) (cubicalChainDifferential (MooreLoopSpace B b) R)
       (Unit ⊕ Unit) (Sum.elim (fun _ ↦ 0) (fun _ ↦ 1)) :=
   cycleCellCocycle R 0 (cubicalChainPoint (MooreLoopSpace B b) R γ - 1)
-    (by
-      simpa using sub_mem (cubicalChainPoint_mem γ)
-        (SetLike.one_mem_graded (cubicalChainGrading (MooreLoopSpace B b) R)))
-    (by simp [(loopChain_isDGAlgebra B b R).map_one_eq_zero])
+    (by simpa using cubicalChainPoint_sub_one_mem (R := R) γ)
+    (cubicalChainDifferential_cubicalChainPoint_sub_one (R := R) γ)
 
 variable {R}
+
+/-- `TauCeti.loopCellCocycle R γ` is the cocycle `TauCeti.cycleCellCocycle R 0 ([γ] - [1])` of a
+cell attached along a `0`-cycle. -/
+theorem loopCellCocycle_eq_cycleCellCocycle (γ : MooreLoopSpace B b)
+    {hx : cubicalChainPoint (MooreLoopSpace B b) R γ - 1 ∈
+      cubicalChainGrading (MooreLoopSpace B b) R (-((0 : ℕ) : ℤ))}
+    {hdx : cubicalChainDifferential (MooreLoopSpace B b) R
+      (cubicalChainPoint (MooreLoopSpace B b) R γ - 1) = 0} :
+    loopCellCocycle R γ =
+      cycleCellCocycle R 0 (cubicalChainPoint (MooreLoopSpace B b) R γ - 1) hx hdx :=
+  (rfl)
 
 @[simp]
 theorem loopCellCocycle_m_inl (γ : MooreLoopSpace B b) :
