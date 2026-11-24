@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 import Mathlib.Data.Fin.Tuple.Sort
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Modular
@@ -43,7 +44,8 @@ pairing; if some self-pairing `B(x, x)` has the same valuation, `x` splits off a
 (`LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd`), and if none does, `u` and `w`
 span a `B(u, w)`-modular plane which splits off a binary block
 (`LinearMap.BilinForm.IsModular.isCompl_orthogonal`). In the second case `2` cannot be a unit,
-since otherwise `B(u + w, u + w)` would have the valuation of `B(u, w)`.
+since otherwise `B(u + w, u + w)` would have the valuation of `B(u, w)`. This is the proof of
+correctness of Voight's Algorithm 3.12 in *Identifying the matrix ring*.
 
 ## Main definitions
 
@@ -51,7 +53,7 @@ since otherwise `B(u + w, u + w)` would have the valuation of `B(u, w)`.
 
 ## Main results
 
-* `QuadraticMap.isAtomic_binaryQuadraticForm`: when `2` is not a unit, the binary forms
+* `TauCeti.isAtomic_binaryQuadraticForm`: when `2` is not a unit, the binary forms
   `a x² + x y + c y²` with `a ∣ c`, among them the hyperbolic plane `x y`, are atomic.
 * `QuadraticMap.IsAtomic.exists_eq_mul_sq_of_isUnit_two`: when `2` is a unit, atomic forms are
   unary.
@@ -61,6 +63,9 @@ since otherwise `B(u + w, u + w)` would have the valuation of `B(u, w)`.
 
 * J. Voight, *Quaternion algebras*, Graduate Texts in Mathematics 288, Springer, 2021,
   Definition 9.8.1, Example 9.8.2 and Proposition 9.8.4.
+* J. Voight, *Identifying the matrix ring: algorithms for quaternion algebras and quadratic
+  forms*, in *Quadratic and higher degree forms*, Developments in Mathematics 31, Springer, 2013,
+  §3, Proposition 3.10, and Algorithm 3.12 with its proof of correctness.
 -/
 
 public section
@@ -83,6 +88,14 @@ def IsAtomic (Q : QuadraticForm R M) : Prop :=
       (IsUnit a ∨ IsUnit b) ∧ ∀ x, Q x = a * e x 0 ^ 2 + b * e x 0 * e x 1 + c * e x 1 ^ 2
 
 variable {Q : QuadraticForm R M}
+
+/-- The defining unary-or-binary presentation of an atomic form. -/
+theorem isAtomic_iff : Q.IsAtomic ↔
+    (∃ (a : R) (e : M ≃ₗ[R] R), IsUnit a ∧ ∀ x, Q x = a * e x ^ 2) ∨
+      ¬IsUnit (2 : R) ∧ ∃ (a b c : R) (e : M ≃ₗ[R] Fin 2 → R),
+        addVal R b < addVal R (2 * a) ∧ addVal R (2 * a) ≤ addVal R (2 * c) ∧
+        (IsUnit a ∨ IsUnit b) ∧ ∀ x, Q x = a * e x 0 ^ 2 + b * e x 0 * e x 1 + c * e x 1 ^ 2 :=
+  Iff.rfl
 
 /-- A unary form `a x²` with `a` a unit is atomic. -/
 theorem IsAtomic.of_unary {a : R} (e : M ≃ₗ[R] R) (ha : IsUnit a) (h : ∀ x, Q x = a * e x ^ 2) :
@@ -124,7 +137,7 @@ theorem IsAtomic.comp (hQ : Q.IsAtomic) (f : N ≃ₗ[R] M) :
 /-- When `2` is not a unit, the binary form `a x² + x y + c y²` with `a ∣ c` is atomic. This
 includes the hyperbolic plane `x y` (`a = c = 0`), which has no orthogonal basis over `ℤ₂`, and
 the form `x² + x y + y²`. -/
-theorem isAtomic_binaryQuadraticForm (h2 : ¬IsUnit (2 : R)) {a c : R} (hac : a ∣ c) :
+theorem _root_.TauCeti.isAtomic_binaryQuadraticForm (h2 : ¬IsUnit (2 : R)) {a c : R} (hac : a ∣ c) :
     (TauCeti.binaryQuadraticForm R a c).IsAtomic := by
   refine .of_binary h2 (b := 1) (LinearEquiv.refl R _) ?_
     (addVal_le_iff_dvd.mpr (mul_dvd_mul_left 2 hac)) (.inr isUnit_one) fun x ↦ ?_
@@ -179,6 +192,12 @@ private theorem HasAtomicDecomposition.prod {M₁ M₂ : Type*} [AddCommGroup M�
         (LinearEquiv.sumArrowLequivProdArrow κ₁ κ₂ R R).symm,
     fun | .inl i => hb₁ i | .inr i => hb₂ i, fun x ↦ ?_⟩
   rw [hf, he₁, he₂, Fintype.sum_sum_type]
+  -- At `.inl i` and `.inr j` the block coordinates of `x` are, by definition of
+  -- `LinearEquiv.sumPiEquivProdPi`, those of `e₁ (f x).1` at `i` and of `e₂ (f x).2` at `j`, and
+  -- `blocks` and `Sum.elim exponent₁ exponent₂` reduce to `blocks₁`, `exponent₁`, `blocks₂` and
+  -- `exponent₂`. The block types `Fin (size (.inl i)) → R` and `Fin (size₁ i) → R` agree only after
+  -- unfolding the local `size`, which prevents `simp` from rewriting with the apply lemmas of the
+  -- composite equivalence, so the identification is by `rfl`.
   rfl
 
 /-- Decompositions of the restrictions of a form to two complementary orthogonal submodules
@@ -210,13 +229,30 @@ private theorem HasAtomicDecomposition.exists_monotone {q : QuadraticForm R M}
     Tuple.monotone_sort (exponent ∘ g), fun i ↦ ?_, fun i ↦ hb (σ i), fun x ↦ ?_⟩
   · simpa using (hb (σ i)).finrank_eq_one_or_two
   · rw [he, ← Equiv.sum_comp σ]
-    rfl
+    simp only [LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, LinearEquiv.piCongrLeft,
+      LinearEquiv.symm_symm, LinearEquiv.piCongrLeft'_apply, Equiv.symm_symm, Function.comp_apply]
 
 /-! ### Splitting off a block -/
 
 section Split
 
 variable {q : QuadraticForm R M}
+
+omit [IsDomain R] [IsDiscreteValuationRing R] in
+/-- An element of the span of a linearly independent family is the sum of its coordinates in the
+basis `Basis.span` times the family. -/
+private theorem coe_eq_sum_span_equivFun {ι : Type*} [Fintype ι] {v : ι → M}
+    (hv : LinearIndependent R v) (y : Submodule.span R (Set.range v)) :
+    (y : M) = ∑ i, (Basis.span hv).equivFun y i • v i := by
+  conv_lhs => rw [← (Basis.span hv).sum_equivFun y]
+  simp only [Submodule.coe_sum, Submodule.coe_smul, Basis.span_apply]
+
+omit [IsDomain R] [IsDiscreteValuationRing R] in
+/-- Vectors of a submodule are orthogonal for the polar pairing to vectors of its orthogonal
+complement. -/
+private theorem polar_eq_zero_of_mem_orthogonal {S : Submodule R M} {x y : M} (hx : x ∈ S)
+    (hy : y ∈ LinearMap.BilinForm.orthogonal q.polarBilin S) : polar q x y = 0 :=
+  LinearMap.BilinForm.mem_orthogonal_iff.mp hy x hx
 
 /-- The restriction of `q` to the line spanned by a linearly independent vector `v` is a unary
 atomic block or zero. -/
@@ -225,19 +261,17 @@ private theorem hasAtomicDecomposition_span_singleton (hπ : Irreducible π) {v 
     HasAtomicDecomposition π (q.comp (Submodule.span R (Set.range ![v])).subtype) := by
   let b := Basis.span hv
   have hy (y : Submodule.span R (Set.range ![v])) : (y : M) = b.equivFun y 0 • v := by
-    conv_lhs => rw [← b.sum_equivFun y]
-    simp [b, Basis.span_apply]
+    rw [coe_eq_sum_span_equivFun hv y, Fin.sum_univ_one, Matrix.cons_val_zero]
   by_cases hq : q v = 0
   · exact .of_forall_eq_zero π b fun y ↦ by
-      simp [hy y, QuadraticMap.map_smul, hq]
+      rw [comp_apply, Submodule.subtype_apply, hy y, QuadraticMap.map_smul, hq, smul_zero]
   obtain ⟨m, u, hu⟩ := eq_unit_mul_pow_irreducible hq hπ
   refine .of_isAtomic (Q := QuadraticMap.weightedSumSquares R ![(u : R)])
     (.of_unary (LinearEquiv.funUnique (Fin 1) R R) u.isUnit fun x ↦ ?_) b.equivFun m fun y ↦ ?_
-  · simp [QuadraticMap.weightedSumSquares_apply]
-    ring
-  · simp only [QuadraticMap.comp_apply, Submodule.subtype_apply, hy y, QuadraticMap.map_smul, hu,
-      QuadraticMap.weightedSumSquares_apply, Fin.sum_univ_one, smul_eq_mul]
-    simp
+  · rw [weightedSumSquares_apply, Fin.sum_univ_one, Matrix.cons_val_zero, smul_eq_mul,
+      LinearEquiv.funUnique_apply, Function.eval, Fin.default_eq_zero, pow_two]
+  · rw [comp_apply, Submodule.subtype_apply, hy y, QuadraticMap.map_smul, hu,
+      weightedSumSquares_apply, Fin.sum_univ_one, Matrix.cons_val_zero, smul_eq_mul, smul_eq_mul]
     ring
 
 /-- `q` splits off a nonzero summand `S`, orthogonal to a complement `S'`, on which it has an
@@ -245,6 +279,17 @@ atomic decomposition. -/
 private def SplitsOff (π : R) (q : QuadraticForm R M) : Prop :=
   ∃ S S' : Submodule R M, IsCompl S S' ∧ S ≠ ⊥ ∧ (∀ x ∈ S, ∀ y ∈ S', polar q x y = 0) ∧
     HasAtomicDecomposition π (q.comp S.subtype)
+
+/-- The span of a nonempty linearly independent family splits off `q` once it has an orthogonal
+complement and an atomic decomposition. -/
+private theorem SplitsOff.of_linearIndependent {k : ℕ} {v : Fin (k + 1) → M}
+    (hv : LinearIndependent R v) {S' : Submodule R M}
+    (hc : IsCompl (Submodule.span R (Set.range v)) S')
+    (horth : ∀ x ∈ Submodule.span R (Set.range v), ∀ y ∈ S', polar q x y = 0)
+    (h : HasAtomicDecomposition π (q.comp (Submodule.span R (Set.range v)).subtype)) :
+    SplitsOff π q :=
+  ⟨_, S', hc, fun h0 ↦ hv.ne_zero 0 (Submodule.span_eq_bot.mp h0 _ (Set.mem_range_self 0)),
+    horth, h⟩
 
 /-- A vector `x` with a nonzero self-pairing dividing all its pairings spans a unary block which
 splits off `q` orthogonally. -/
@@ -258,10 +303,8 @@ private theorem splitsOff_of_apply_self_dvd (hπ : Irreducible π) {x : M}
       (LinearMap.BilinForm.orthogonal q.polarBilin (Submodule.span R (Set.range ![x]))) := by
     simpa using LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd q.polarBilin
       (mem_nonZeroDivisors_of_ne_zero hx) (by simpa using hdvd)
-  refine ⟨_, _, hc, fun h0 ↦ hli.ne_zero 0 ?_, fun _ ha _ hb ↦ by
-    simpa using (LinearMap.BilinForm.mem_orthogonal_iff.mp hb) _ ha,
-    hasAtomicDecomposition_span_singleton hπ hli⟩
-  exact (Submodule.eq_bot_iff _).mp h0 _ (Submodule.subset_span (Set.mem_range_self 0))
+  exact .of_linearIndependent hli hc (fun _ ha _ hb ↦ polar_eq_zero_of_mem_orthogonal ha hb)
+    (hasAtomicDecomposition_span_singleton hπ hli)
 
 /-- Let `u, w` have a nonzero mutual pairing `β` dividing every value of the polar pairing, with
 self-pairings `β s` and `β t` for a nonunit `s`, and let `q u ∣ q w`. When `2` is not a unit,
@@ -274,15 +317,13 @@ private theorem splitsOff_of_apply_pair (hπ : Irreducible π) (h2 : ¬IsUnit (2
     (u := u) (w := w) (mem_nonZeroDivisors_of_ne_zero hd) rfl hs ht
     (fun h ↦ hs' (isUnit_of_mul_isUnit_left h))
   have hc := hmod.isCompl_orthogonal (mem_nonZeroDivisors_of_ne_zero hd) (by simpa using hdvd)
-  refine ⟨_, _, hc, fun h0 ↦ hli.ne_zero 0 ?_, fun _ ha _ hb ↦ by
-    simpa using (LinearMap.BilinForm.mem_orthogonal_iff.mp hb) _ ha,
-    ?_⟩
-  · exact (Submodule.eq_bot_iff _).mp h0 _ (Submodule.subset_span (Set.mem_range_self 0))
+  refine .of_linearIndependent hli hc (fun _ ha _ hb ↦ polar_eq_zero_of_mem_orthogonal ha hb) ?_
   -- Normalize the coefficients `[q u, polar q u w, q w]` by their content `g = ε π ^ m`.
   obtain ⟨g, a₀, b₀, hg, ha₀, hb₀, hunit⟩ : ∃ g a₀ b₀ : R,
       g ≠ 0 ∧ q u = g * a₀ ∧ polar q u w = g * b₀ ∧ (IsUnit a₀ ∨ IsUnit b₀) := by
     rcases ValuationRing.dvd_total (q u) (polar q u w) with ⟨k, hk⟩ | ⟨k, hk⟩
-    · exact ⟨q u, 1, k, fun h0 ↦ hd (by simp [hk, h0]), (mul_one _).symm, hk, .inl isUnit_one⟩
+    · exact ⟨q u, 1, k, fun h0 ↦ hd (by rw [hk, h0, zero_mul]), (mul_one _).symm, hk,
+        .inl isUnit_one⟩
     · exact ⟨polar q u w, k, 1, hd, hk, (mul_one _).symm, .inr isUnit_one⟩
   obtain ⟨k, hk⟩ := huw
   obtain ⟨m, ε, hε⟩ := eq_unit_mul_pow_irreducible hg hπ
@@ -295,8 +336,8 @@ private theorem splitsOff_of_apply_pair (hπ : Irreducible π) (h2 : ¬IsUnit (2
   let b := Basis.span hli
   have hy (y : Submodule.span R (Set.range ![u, w])) :
       (y : M) = b.equivFun y 0 • u + b.equivFun y 1 • w := by
-    conv_lhs => rw [← b.sum_equivFun y]
-    simp [b, Basis.span_apply, Fin.sum_univ_two]
+    rw [coe_eq_sum_span_equivFun hli y, Fin.sum_univ_two, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_zero]
   refine .of_isAtomic (m := m) (Q := QuadraticMap.weightedSumSquares R ![ε * a₀, ε * (a₀ * k)] +
       (ε * b₀) • QuadraticMap.linMulLin (LinearMap.proj 0) (LinearMap.proj 1))
     (.of_binary h2 (a := ε * a₀) (b := ε * b₀) (c := ε * (a₀ * k)) (LinearEquiv.refl R _)
@@ -309,7 +350,9 @@ private theorem splitsOff_of_apply_pair (hπ : Irreducible π) (h2 : ¬IsUnit (2
     linear_combination -hr
   · exact addVal_le_iff_dvd.mpr ⟨k, by ring⟩
   · exact hunit.imp ε.isUnit.mul ε.isUnit.mul
-  · simp [QuadraticMap.weightedSumSquares_apply, Fin.sum_univ_two]
+  · simp only [add_apply, weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
+      Matrix.cons_val_one, smul_eq_mul, smul_apply, linMulLin_apply, LinearMap.coe_proj,
+      Function.eval, LinearEquiv.refl_apply]
     ring
   · simp only [QuadraticMap.comp_apply, Submodule.subtype_apply, hy y, QuadraticMap.map_add,
       QuadraticMap.map_smul, QuadraticMap.polar_smul_left, QuadraticMap.polar_smul_right]
@@ -330,15 +373,16 @@ private theorem splitsOff_of_forall_polar_eq_zero (hπ : Irreducible π) {k : �
     rfl
   have hc := b.linearIndependent.isCompl_span_image b.span_eq (isCompl_compl (x := {0}))
   rw [Set.image_singleton, ← Matrix.range_cons_empty (b 0) ![]] at hc
-  refine ⟨_, _, hc, fun h0 ↦ hli.ne_zero 0 ?_, fun x _ y _ ↦ hT x y,
-    hasAtomicDecomposition_span_singleton hπ hli⟩
-  exact (Submodule.eq_bot_iff _).mp h0 _ (Submodule.subset_span (Set.mem_range_self 0))
+  exact .of_linearIndependent hli hc (fun x _ y _ ↦ hT x y)
+    (hasAtomicDecomposition_span_singleton hπ hli)
 
 /-- If the polar pairing of `q` does not vanish, a unary or a binary atomic block splits off `q`
-orthogonally. A pairing `β = polar q u w` of basis vectors of minimal valuation divides every
-value of the pairing. If some self-pairing is `β` times a unit, its vector spans a unary block;
-this happens for `u`, `w` or `u + w` whenever `2` is a unit. Otherwise `u` and `w` span a binary
-block. -/
+orthogonally, following the proof of correctness of Voight's Algorithm 3.12 in *Identifying the
+matrix ring*. A pairing `β = polar q u w` of basis vectors of minimal valuation divides every
+value of the pairing. If some self-pairing divides `β`, its vector spans a unary block; when `2`
+is a unit, such a vector exists by
+`LinearMap.BilinForm.IsSymm.exists_forall_apply_self_dvd_of_forall_dvd`. Otherwise `u` and `w`
+span a binary block. -/
 private theorem splitsOff_of_polar_ne_zero [Free R M] [Module.Finite R M] (hπ : Irreducible π)
     {x₀ y₀ : M} (hxy₀ : polar q x₀ y₀ ≠ 0) : SplitsOff π q := by
   let b := Free.chooseBasis R M
@@ -352,29 +396,20 @@ private theorem splitsOff_of_polar_ne_zero [Free R M] [Module.Finite R M] (hπ :
     simpa using LinearMap.BilinForm.dvd_apply_of_forall_dvd_basis (B := q.polarBilin) b
       (d := polar q u w) (fun k l ↦ by simpa using hij (k, l))
   have hd : polar q u w ≠ 0 := fun h0 ↦ hxy₀ (zero_dvd_iff.mp (h0 ▸ hdvd x₀ y₀))
+  -- A vector whose self-pairing divides `β` spans a unary block.
+  have unary (x : M) (hx : polar q x x ∣ polar q u w) : SplitsOff π q :=
+    splitsOff_of_apply_self_dvd hπ (fun h0 ↦ hd (zero_dvd_iff.mp (h0 ▸ hx)))
+      fun y ↦ hx.trans (hdvd x y)
+  by_cases h2 : IsUnit (2 : R)
+  · obtain ⟨x, hx⟩ := q.isSymm_polarBilin.exists_forall_apply_self_dvd_of_forall_dvd h2
+      (u := u) (w := w) (by simpa using hdvd)
+    exact unary x (by simpa using hx u w)
   obtain ⟨s, hs⟩ := hdvd u u
   obtain ⟨t, ht⟩ := hdvd w w
-  have unary (x : M) (r : R) (hr : IsUnit r) (hx : polar q x x = polar q u w * r) :
-      SplitsOff π q := by
-    refine splitsOff_of_apply_self_dvd hπ (by rw [hx]; exact mul_ne_zero hd hr.ne_zero)
-      fun y ↦ ?_
-    rw [hx, ← hr.unit_spec, Units.mul_right_dvd]
-    exact hdvd x y
   by_cases hsu : IsUnit s
-  · exact unary u s hsu hs
+  · exact unary u (hs ▸ (Units.mul_right_dvd (u := hsu.unit)).mpr dvd_rfl)
   by_cases htu : IsUnit t
-  · exact unary w t htu ht
-  by_cases h2 : IsUnit (2 : R)
-  · have hst : ¬IsUnit (s + t) := fun h ↦
-      (IsLocalRing.isUnit_or_isUnit_of_isUnit_add h).elim hsu htu
-    refine unary (u + w) (s + t + 2) ?_ ?_
-    · refine (IsLocalRing.isUnit_or_isUnit_of_isUnit_add (b := -(s + t)) ?_).resolve_right
-        (by rwa [IsUnit.neg_iff])
-      convert h2 using 1
-      ring
-    · rw [QuadraticMap.polar_add_left, QuadraticMap.polar_add_right,
-        QuadraticMap.polar_add_right]
-      linear_combination hs + ht + polar_comm q w u
+  · exact unary w (ht ▸ (Units.mul_right_dvd (u := htu.unit)).mpr dvd_rfl)
   rcases ValuationRing.dvd_total (q u) (q w) with huw | hwu
   · exact splitsOff_of_apply_pair hπ h2 hd hdvd hs ht hsu huw
   · have hcomm : polar q w u = polar q u w := polar_comm q w u
@@ -408,7 +443,9 @@ private theorem hasAtomicDecomposition (hπ : Irreducible π) (n : ℕ) {M : Typ
 /-- **Atomic normal form.** Every quadratic form `q` on a finite projective module over a discrete
 valuation ring with uniformizer `π`, of any characteristic, is an orthogonal sum
 `π^{e₁} Q₁ ⊥ ⋯ ⊥ π^{e_s} Q_s ⊥ 0` of uniformizer powers of atomic forms of rank one or two, with
-`e₁ ≤ ⋯ ≤ e_s`, and of a summand of rank `z` on which `q` vanishes. -/
+`e₁ ≤ ⋯ ≤ e_s`, and of a summand of rank `z` on which `q` vanishes. This is Voight's
+Proposition 3.10 in *Identifying the matrix ring*, proved by induction on the rank following his
+Algorithm 3.12. -/
 theorem exists_atomic_normal_form [Module.Finite R M] [Module.Projective R M]
     (q : QuadraticForm R M) {π : R} (hπ : Irreducible π) :
     ∃ (s z : ℕ) (size exponent : Fin s → ℕ)
