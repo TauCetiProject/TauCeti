@@ -47,6 +47,10 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
   composed with `Fin.cons` is integrable on the head-tail product.
 * `TauCeti.integrable_pi_succ`: the integrability counterpart of `TauCeti.integral_pi_succ`.
 * `TauCeti.integral_integral_update_pi`: the one-coordinate Fubini identity.
+* `TauCeti.ae_integrable_comp_update`, `TauCeti.ae_forall_integrable_comp_update_eval`,
+  `TauCeti.integrable_integral_update`, `TauCeti.integral_integral_update`: for an integrable
+  function, almost every section through one coordinate is integrable, and the partial integral
+  over the other coordinates is integrable with the same integral.
 * `TauCeti.integral_mul_comp_eval_eq`: Fubini for a function times a function of one coordinate,
   integrated against the partial integrals over the other coordinates.
 * `TauCeti.integral_comp_eval_mul_comp_eval`: functions of two distinct coordinates factorise.
@@ -145,6 +149,42 @@ theorem integral_mul_comp_eval_eq (P : ∀ i, Measure (α i)) [∀ i, SigmaFinit
   rw [← hmp.hasLaw.integral_comp hTh.aestronglyMeasurable,
     integral_prod_symm _ (hmp.integrable_comp_of_integrable hTh)]
   simp [integral_mul_const]
+
+/-- For an integrable function `T` on a product of σ-finite measures whose `i`-th factor is a
+probability measure, almost every section `y ↦ T (update y i a)` is integrable. -/
+theorem ae_integrable_comp_update (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)] (i : ι)
+    [IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] {T : (∀ i, α i) → E}
+    (hT : Integrable T (Measure.pi P)) :
+    ∀ᵐ a ∂(P i), Integrable (fun y ↦ T (update y i a)) (Measure.pi P) :=
+  ((measurePreserving_update_prod_pi P i).integrable_comp_of_integrable hT).prod_left_ae
+
+/-- For an integrable function `T` on a product of probability measures, almost every `x` has
+integrable sections `y ↦ T (update y i (x i))` through every coordinate `i`. -/
+theorem ae_forall_integrable_comp_update_eval (P : ∀ i, Measure (α i))
+    [∀ i, IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] {T : (∀ i, α i) → E}
+    (hT : Integrable T (Measure.pi P)) :
+    ∀ᵐ x ∂(Measure.pi P), ∀ i, Integrable (fun y ↦ T (update y i (x i))) (Measure.pi P) :=
+  ae_all_iff.2 fun i ↦ (measurePreserving_eval P i).quasiMeasurePreserving.ae
+    (ae_integrable_comp_update P i hT)
+
+/-- The partial integral `a ↦ ∫ y, T (update y i a)` of an integrable function `T`, which
+integrates out every coordinate but the `i`-th, is integrable under `P i`. -/
+theorem integrable_integral_update (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)] (i : ι)
+    [IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {T : (∀ i, α i) → E} (hT : Integrable T (Measure.pi P)) :
+    Integrable (fun a ↦ ∫ y, T (update y i a) ∂(Measure.pi P)) (P i) :=
+  ((measurePreserving_update_prod_pi P i).integrable_comp_of_integrable hT).integral_prod_right
+
+/-- **The tower property for one coordinate.** Integrating the partial integral
+`a ↦ ∫ y, T (update y i a)` of an integrable `T` against `P i` gives the integral of `T`. -/
+theorem integral_integral_update (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)] (i : ι)
+    [IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {T : (∀ i, α i) → E} (hT : Integrable T (Measure.pi P)) :
+    ∫ a, ∫ y, T (update y i a) ∂(Measure.pi P) ∂(P i) = ∫ x, T x ∂(Measure.pi P) := by
+  have hmp := measurePreserving_update_prod_pi P i
+  rw [← hmp.hasLaw.integral_comp hT.aestronglyMeasurable,
+    integral_prod_symm _ (hmp.integrable_comp_of_integrable hT)]
+  rfl
 
 omit [DecidableEq ι] in
 /-- Two functions of distinct coordinates `j ≠ i` of a product of probability measures are

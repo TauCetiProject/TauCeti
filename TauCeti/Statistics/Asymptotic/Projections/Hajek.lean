@@ -30,6 +30,12 @@ projection statement needs a nonempty index type; the orthogonality holds in all
 
 * `TauCeti.hajekProjection`: the Hájek projection.
 * `TauCeti.hajekProjection_eq_integral_add_sum`: `T̂ = E T + ∑ᵢ (E(T | Xᵢ) - E T)`.
+* `TauCeti.hajekProjection_const`, `TauCeti.hajekProjection_const_mul`: the projection of a
+  constant, and homogeneity in the statistic.
+* `TauCeti.hajekProjection_add`, `TauCeti.hajekProjection_sub`, `TauCeti.hajekProjection_sub_const`:
+  additivity on integrable statistics, almost everywhere (the partial integrals at a point are
+  integrals of sections, which are integrable only almost everywhere).
+* `TauCeti.integral_hajekProjection`: `E T̂ = E T` for integrable `T`.
 * `TauCeti.hajekProjection_sum_comp_eval`: a sum of integrable functions of one coordinate each
   is its own Hájek projection.
 * `TauCeti.integral_hajekProjection_mul_comp_eval`: `T` and `T̂` have the same inner product with
@@ -53,7 +59,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*} [∀ i, 
 /-- The **Hájek projection** of a statistic `T` of independent coordinates with laws `P i`:
 `T̂ x = ∑ᵢ E(T | Xᵢ = xᵢ) - (|ι| - 1) E T`, where `E(T | Xᵢ = a)` is the integral of
 `y ↦ T (Function.update y i a)` under `Measure.pi P`. -/
-@[expose] noncomputable def hajekProjection (P : ∀ i, Measure (α i)) (T : (∀ i, α i) → ℝ)
+noncomputable def hajekProjection (P : ∀ i, Measure (α i)) (T : (∀ i, α i) → ℝ)
     (x : ∀ i, α i) : ℝ :=
   ∑ i, ∫ y, T (update y i (x i)) ∂(Measure.pi P) -
     (Fintype.card ι - 1 : ℝ) * ∫ y, T y ∂(Measure.pi P)
@@ -62,7 +68,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*} [∀ i, 
 theorem hajekProjection_def (P : ∀ i, Measure (α i)) (T : (∀ i, α i) → ℝ) (x : ∀ i, α i) :
     hajekProjection P T x = ∑ i, ∫ y, T (update y i (x i)) ∂(Measure.pi P) -
       (Fintype.card ι - 1 : ℝ) * ∫ y, T y ∂(Measure.pi P) :=
-  rfl
+  (rfl)
 
 /-- The centred form of the Hájek projection: `T̂ = E T + ∑ᵢ (E(T | Xᵢ) - E T)`. -/
 theorem hajekProjection_eq_integral_add_sum (P : ∀ i, Measure (α i)) (T : (∀ i, α i) → ℝ)
@@ -78,6 +84,70 @@ theorem hajekProjection_eq_integral_add_sum (P : ∀ i, Measure (α i)) (T : (�
 theorem hajekProjection_of_isEmpty [IsEmpty ι] (P : ∀ i, Measure (α i)) (T : (∀ i, α i) → ℝ)
     (x : ∀ i, α i) : hajekProjection P T x = ∫ y, T y ∂(Measure.pi P) := by
   simp [hajekProjection_eq_integral_add_sum]
+
+/-- The Hájek projection of a constant `c` is the constant `∫ c d(Measure.pi P)`; under
+probability laws this is `c`. -/
+@[simp]
+theorem hajekProjection_const (P : ∀ i, Measure (α i)) (c : ℝ) (x : ∀ i, α i) :
+    hajekProjection P (fun _ ↦ c) x = (Measure.pi P).real Set.univ * c := by
+  simp only [hajekProjection_def, integral_const, smul_eq_mul, Finset.sum_const,
+    Finset.card_univ, nsmul_eq_mul]
+  ring
+
+/-- The Hájek projection commutes with multiplication by a constant. -/
+@[simp]
+theorem hajekProjection_const_mul (P : ∀ i, Measure (α i)) (c : ℝ) (T : (∀ i, α i) → ℝ)
+    (x : ∀ i, α i) : hajekProjection P (fun y ↦ c * T y) x = c * hajekProjection P T x := by
+  simp only [hajekProjection_def, integral_const_mul, ← Finset.mul_sum]
+  ring
+
+/-- The Hájek projection is additive, almost everywhere, on integrable statistics. -/
+theorem hajekProjection_add (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)]
+    {T S : (∀ i, α i) → ℝ} (hT : Integrable T (Measure.pi P)) (hS : Integrable S (Measure.pi P)) :
+    hajekProjection P (T + S) =ᵐ[Measure.pi P] hajekProjection P T + hajekProjection P S := by
+  filter_upwards [ae_forall_integrable_comp_update_eval P hT,
+    ae_forall_integrable_comp_update_eval P hS] with x hxT hxS
+  simp only [hajekProjection_def, Pi.add_apply, integral_add hT hS, integral_add (hxT _) (hxS _),
+    Finset.sum_add_distrib]
+  ring
+
+/-- The Hájek projection is subtractive, almost everywhere, on integrable statistics. -/
+theorem hajekProjection_sub (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)]
+    {T S : (∀ i, α i) → ℝ} (hT : Integrable T (Measure.pi P)) (hS : Integrable S (Measure.pi P)) :
+    hajekProjection P (T - S) =ᵐ[Measure.pi P] hajekProjection P T - hajekProjection P S := by
+  filter_upwards [ae_forall_integrable_comp_update_eval P hT,
+    ae_forall_integrable_comp_update_eval P hS] with x hxT hxS
+  simp only [hajekProjection_def, Pi.sub_apply, integral_sub hT hS, integral_sub (hxT _) (hxS _),
+    Finset.sum_sub_distrib]
+  ring
+
+/-- Centring an integrable statistic by a constant `c` centres its Hájek projection by `c`, almost
+everywhere: the Hájek projection of `Uₙ - θ` is that of `Uₙ`, minus `θ`. -/
+theorem hajekProjection_sub_const (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)]
+    {T : (∀ i, α i) → ℝ} (hT : Integrable T (Measure.pi P)) (c : ℝ) :
+    hajekProjection P (fun y ↦ T y - c) =ᵐ[Measure.pi P] fun x ↦ hajekProjection P T x - c := by
+  filter_upwards [hajekProjection_sub P hT (integrable_const c)] with x hx
+  rw [Pi.sub_apply, hajekProjection_const, probReal_univ, one_mul] at hx
+  exact hx
+
+/-- **The mean of the Hájek projection.** For an integrable statistic `T` of independent
+coordinates, `E T̂ = E T`. -/
+theorem integral_hajekProjection (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)]
+    {T : (∀ i, α i) → ℝ} (hT : Integrable T (Measure.pi P)) :
+    ∫ x, hajekProjection P T x ∂(Measure.pi P) = ∫ x, T x ∂(Measure.pi P) := by
+  have hc (i : ι) : Integrable (fun x : ∀ i, α i ↦ ∫ y, T (update y i (x i)) ∂(Measure.pi P))
+      (Measure.pi P) :=
+    (measurePreserving_eval P i).integrable_comp_of_integrable (integrable_integral_update P i hT)
+  -- Each conditional expectation `E(T | Xᵢ)` has mean `E T`.
+  have hmean (i : ι) : ∫ x, ∫ y, T (update y i (x i)) ∂(Measure.pi P) ∂(Measure.pi P) =
+      ∫ x, T x ∂(Measure.pi P) := by
+    rw [integral_comp_eval (integrable_integral_update P i hT).aestronglyMeasurable,
+      integral_integral_update P i hT]
+  rw [funext (hajekProjection_def P T), integral_sub (integrable_finsetSum _ fun i _ ↦ hc i)
+    (integrable_const _), integral_finsetSum _ fun i _ ↦ hc i]
+  simp only [hmean, integral_const, probReal_univ, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul, smul_eq_mul]
+  ring
 
 /-- A sum of integrable functions of one coordinate each is its own Hájek projection. -/
 theorem hajekProjection_sum_comp_eval (P : ∀ i, Measure (α i))
@@ -140,12 +210,9 @@ theorem integral_hajekProjection_mul_comp_eval (P : ∀ i, Measure (α i))
   have hdg : ∀ j, Integrable (fun x ↦ d j (x j) * g (x i)) μ := fun j ↦
     (hdx j).integrable_mul hgx
   -- Each conditional expectation has mean `E T`, so the `d j` are centred.
-  have hdmean : ∀ j, ∫ a, d j a ∂(P j) = 0 := by
-    intro j
-    have h := integral_mul_comp_eval_eq P j (h := fun _ ↦ (1 : ℝ))
-      (by simpa using hT.integrable one_le_two)
-    simp only [mul_one] at h
-    rw [hd, integral_sub ((hcL j).integrable one_le_two) (integrable_const m), ← h]
+  have hdmean : ∀ j, ∫ a, d j a ∂(P j) = 0 := fun j ↦ by
+    rw [hd, integral_sub ((hcL j).integrable one_le_two) (integrable_const m),
+      integral_integral_update P j (hT.integrable one_le_two)]
     simp [m, μ]
   -- Only the term `j = i` of `∑ⱼ d j (xⱼ)` correlates with `g (xᵢ)`.
   have hsum : ∫ x, ∑ j, d j (x j) * g (x i) ∂μ =

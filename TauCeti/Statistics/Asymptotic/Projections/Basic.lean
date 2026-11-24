@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.Variance
-import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # The projection theorem for standardized statistics
