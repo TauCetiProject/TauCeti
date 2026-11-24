@@ -35,6 +35,8 @@ a restricted one.
 * `ContinuousLinearMap.cofg_range_add_of_surjective_of_isCompactOperator`: Schwartz's lemma.
 * `ContinuousLinearMap.isClosed_range_add_of_surjective_of_isCompactOperator`: the range of a
   compact perturbation of a surjection is closed.
+* `ContinuousLinearMap.exists_finset_forall_eq_add_sub_of_surjective_of_isCompactOperator`: the
+  same finiteness elementwise, as finitely many vectors spanning modulo the range.
 * `ContinuousLinearMap.cofg_range_right_of_surjective_coprod_of_isCompactOperator_left` and
   `ContinuousLinearMap.isClosed_range_right_of_surjective_coprod_of_isCompactOperator_left`: the
   cohomological form.
@@ -110,6 +112,20 @@ theorem isClosed_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] 
     IsClosed ((T + K).range : Set F) := by
   have := cofg_range_add_of_surjective_of_isCompactOperator T K hT hK
   exact (T + K).isClosed_range_of_finite_coker
+
+/-- **Schwartz's lemma, spanning form.** If `T` is a surjection and `K` a compact operator
+between Banach spaces over a complete nontrivially normed field, finitely many vectors span `F`
+modulo the range of `T - K`: every `y` is `b + (T x - K x)` with `b` in their span. -/
+theorem exists_finset_forall_eq_add_sub_of_surjective_of_isCompactOperator [CompleteSpace E]
+    [CompleteSpace F] (T K : E →L[𝕜] F) (hT : Function.Surjective T) (hK : IsCompactOperator K) :
+    ∃ s : Finset F, ∀ y, ∃ b ∈ Submodule.span 𝕜 (s : Set F), ∃ x, y = b + (T x - K x) := by
+  have hS := cofg_range_add_of_surjective_of_isCompactOperator T (-K) hT hK.neg
+  obtain ⟨B, hB⟩ := Submodule.exists_isCompl (T + -K).range
+  obtain ⟨s, rfl⟩ := hS.fg_of_isCompl hB
+  refine ⟨s, fun y ↦ ?_⟩
+  obtain ⟨_, ⟨x, rfl⟩, b, hb, rfl⟩ :=
+    Submodule.mem_sup.mp (hB.sup_eq_top ▸ Submodule.mem_top (x := y))
+  exact ⟨b, hb, x, by simp [add_comm, sub_eq_add_neg]⟩
 
 open UniformSpace in
 /-- **Schwartz's lemma, cohomological form.** Let `δ : E →L[𝕜] F` be a continuous linear map
