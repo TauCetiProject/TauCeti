@@ -85,9 +85,9 @@ lemma sectionsAlgHom_restrictSections {A B : CommMon X.Modules}
     (f : A ⟶ B) {U V : X.Opens} (i : V ⟶ U) (x : Γ(A.X, U)) :
     CommMon.sectionsAlgHom f V (A.restrictSections i x) =
       B.restrictSections i (CommMon.sectionsAlgHom f U x) := by
-  rw [CommMon.sectionsAlgHom_apply, CommMon.sectionsAlgHom_apply, CommMon.restrictSections_apply]
-  exact (PresheafOfModules.naturality_apply f.hom.hom.val i.op x).trans
-    (B.restrictSections_apply i _).symm
+  rw [CommMon.restrictSections_apply, CommMon.restrictSections_apply]
+  exact (congrArg (Mon.sectionsAlgHom f.hom V) (A.toMon.restrictSections_apply i x)).symm.trans
+    ((Mon.sectionsAlgHom_restrictSections f.hom i x).trans (B.toMon.restrictSections_apply i _))
 
 /-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
 sections. -/

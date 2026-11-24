@@ -96,6 +96,21 @@ def unit : SheafAlgebra X := ⟨Mon.trivial X.Modules, isQuasicoherent_unit X⟩
 lemma unit_obj_X : (unit X).obj.X = 𝟙_ X.Modules :=
   (rfl)
 
+/-- The unit of the scalar algebra `𝒪_X` is the identity, transported along `unit_obj_X`. -/
+@[simp]
+lemma unit_obj_one : η[(unit X).obj.X] = eqToHom (unit_obj_X (X := X)).symm :=
+  (rfl)
+
+/-- The multiplication of the scalar algebra `𝒪_X` is the left unitor, transported along
+`unit_obj_X`. -/
+@[simp]
+lemma unit_obj_mul : μ[(unit X).obj.X] =
+    (eqToHom unit_obj_X ⊗ₘ eqToHom unit_obj_X) ≫ (λ_ (𝟙_ X.Modules)).hom ≫
+      eqToHom (unit_obj_X (X := X)).symm :=
+  -- The transports are identities here, where `unit` unfolds.
+  (by simp : (𝟙 (𝟙_ X.Modules) ⊗ₘ 𝟙 (𝟙_ X.Modules)) ≫ (λ_ (𝟙_ X.Modules)).hom ≫ 𝟙 _ =
+    (λ_ (𝟙_ X.Modules)).hom).symm
+
 variable (X) in
 /-- Commutative quasi-coherent algebras are quasi-coherent sheaves of algebras. -/
 def ofQuasicoherentAlgebra : QuasicoherentAlgebra X ⥤ SheafAlgebra X :=
@@ -105,6 +120,24 @@ def ofQuasicoherentAlgebra : QuasicoherentAlgebra X ⥤ SheafAlgebra X :=
 lemma ofQuasicoherentAlgebra_obj_obj_X (A : QuasicoherentAlgebra X) :
     ((ofQuasicoherentAlgebra X).obj A).obj.X = A.obj.X :=
   (rfl)
+
+/-- The unit of the image of a commutative algebra is its unit, transported along
+`ofQuasicoherentAlgebra_obj_obj_X`. -/
+@[simp]
+lemma ofQuasicoherentAlgebra_obj_obj_one (A : QuasicoherentAlgebra X) :
+    η[((ofQuasicoherentAlgebra X).obj A).obj.X] =
+      η[A.obj.X] ≫ eqToHom (ofQuasicoherentAlgebra_obj_obj_X A).symm :=
+  (Category.comp_id (obj := X.Modules) _).symm
+
+/-- The multiplication of the image of a commutative algebra is its multiplication, transported
+along `ofQuasicoherentAlgebra_obj_obj_X`. -/
+@[simp]
+lemma ofQuasicoherentAlgebra_obj_obj_mul (A : QuasicoherentAlgebra X) :
+    μ[((ofQuasicoherentAlgebra X).obj A).obj.X] =
+      (eqToHom (ofQuasicoherentAlgebra_obj_obj_X A) ⊗ₘ eqToHom (ofQuasicoherentAlgebra_obj_obj_X A))
+        ≫ μ[A.obj.X] ≫ eqToHom (ofQuasicoherentAlgebra_obj_obj_X A).symm :=
+  -- The transports are identities here, where `ofQuasicoherentAlgebra` unfolds.
+  (by simp : (𝟙 A.obj.X ⊗ₘ 𝟙 A.obj.X) ≫ μ[A.obj.X] ≫ 𝟙 _ = μ[A.obj.X]).symm
 
 /-- The underlying morphism of modules of the image of a morphism of commutative algebras is
 the original one, transported along `ofQuasicoherentAlgebra_obj_obj_X`. -/
@@ -270,6 +303,10 @@ theorem pullbackComp_inv_app_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : SheafAlgeb
   -- The inverse of the underlying module isomorphism, computed from the forward component.
   refine Iso.inv_ext (f := (ObjectProperty.ι _ ⋙ Mon.forget X.Modules).mapIso
     ((pullbackComp f g).app A)) ?_
+  -- The image of a morphism under `ObjectProperty.ι _ ⋙ Mon.forget X.Modules` is its underlying
+  -- module morphism by definition; `change` states the goal with it, in `X.Modules`. Rewriting
+  -- with `Functor.mapIso_hom`, `Functor.comp_map`, `Mon.forget_map`, `ObjectProperty.ι_map` and
+  -- `Iso.app_hom` instead leaves a cancellation of `eqToHom` composites that `simp` does not close.
   change ((pullbackComp f g).hom.app A).hom.hom ≫ _ = 𝟙 _
   rw [pullbackComp_hom_app_hom_hom]
   simp

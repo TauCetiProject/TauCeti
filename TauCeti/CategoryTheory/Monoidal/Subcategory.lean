@@ -105,13 +105,10 @@ def monFullSubcategoryEquivalence :
         apply Mon.Hom.ext
         apply ObjectProperty.hom_ext
         exact Mon.comp_hom f.hom g.hom }
-  unitIso := NatIso.ofComponents (fun (A : Mon P.FullSubcategory) ↦ Mon.mkIso (Iso.refl _)
-    (Category.comp_id _) ((Category.comp_id _).trans ((congrArg (· ≫ μ[A.X])
-      (id_tensorHom_id _ _)).trans (Category.id_comp _)).symm)) fun _ ↦ Mon.Hom.ext (by cat_disch)
-  counitIso := NatIso.ofComponents (fun A ↦ ObjectProperty.isoMk _ (Mon.mkIso (Iso.refl _)
-    (Category.comp_id _) ((Category.comp_id _).trans ((congrArg (· ≫ μ[A.obj.X])
-      (id_tensorHom_id _ _)).trans (Category.id_comp _)).symm))) fun _ ↦
-        ObjectProperty.hom_ext _ (Mon.Hom.ext (by cat_disch))
+  unitIso := NatIso.ofComponents (fun (A : Mon P.FullSubcategory) ↦ Mon.mkIso (Iso.refl _))
+    fun _ ↦ Mon.Hom.ext (by cat_disch)
+  counitIso := NatIso.ofComponents (fun A ↦ ObjectProperty.isoMk _ (Mon.mkIso (Iso.refl _)))
+    fun _ ↦ ObjectProperty.hom_ext _ (Mon.Hom.ext (by cat_disch))
   functor_unitIso_comp _ := ObjectProperty.hom_ext _ (Mon.Hom.ext (by simp))
 
 variable {P}
