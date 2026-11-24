@@ -121,8 +121,8 @@ variable {α : SmoothForm I M ℝ 1} {ω : SmoothForm I M ℝ 2}
 /-- The kernel condition of a stable Hamiltonian structure, elementwise: a vector `v` with
 `ω(v, ·) = 0` also satisfies `dα(v, ·) = 0`. -/
 theorem IsStableHamiltonian.mextDeriv_eq_zero (h : α.IsStableHamiltonian ω) {x : M}
-    {v : TangentSpace I x} (hv : ∀ w, ω.1 x ![v, w] = 0) (w : TangentSpace I x) :
-    mextDeriv α.1 x ![v, w] = 0 :=
+    {v : TangentSpace I x} (hv : ∀ w, ω.val x ![v, w] = 0) (w : TangentSpace I x) :
+    mextDeriv α.val x ![v, w] = 0 :=
   mem_ker_bilinFormAt_mextDerivₗ_iff.1 (h.ker_le_ker x (mem_ker_bilinFormAt_iff.2 hv)) w
 
 /-- **Stable Hamiltonian structures, elementwise.** `(α, ω)` is a stable Hamiltonian structure
@@ -132,15 +132,15 @@ is `ω`-orthogonal to all of `ker α` is zero, and every vector `v` with `ω(v, 
 theorem isStableHamiltonian_iff :
     α.IsStableHamiltonian ω ↔
       ω.IsClosed ∧
-        (∀ x, (∃ v : TangentSpace I x, α.1 x ![v] ≠ 0) ∧
-          ∀ v : TangentSpace I x, α.1 x ![v] = 0 →
-            (∀ w : TangentSpace I x, α.1 x ![w] = 0 → ω.1 x ![v, w] = 0) → v = 0) ∧
-        ∀ x (v : TangentSpace I x), (∀ w, ω.1 x ![v, w] = 0) →
-          ∀ w, mextDeriv α.1 x ![v, w] = 0 := by
+        (∀ x, (∃ v : TangentSpace I x, α.val x ![v] ≠ 0) ∧
+          ∀ v : TangentSpace I x, α.val x ![v] = 0 →
+            (∀ w : TangentSpace I x, α.val x ![w] = 0 → ω.val x ![v, w] = 0) → v = 0) ∧
+        ∀ x (v : TangentSpace I x), (∀ w, ω.val x ![v, w] = 0) →
+          ∀ w, mextDeriv α.val x ![v, w] = 0 := by
   have hcontact : ∀ x, Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
-      (ω.bilinFormAt x) ↔ (∃ v : TangentSpace I x, α.1 x ![v] ≠ 0) ∧
-        ∀ v : TangentSpace I x, α.1 x ![v] = 0 →
-          (∀ w : TangentSpace I x, α.1 x ![w] = 0 → ω.1 x ![v, w] = 0) → v = 0 := fun x ↦ by
+      (ω.bilinFormAt x) ↔ (∃ v : TangentSpace I x, α.val x ![v] ≠ 0) ∧
+        ∀ v : TangentSpace I x, α.val x ![v] = 0 →
+          (∀ w : TangentSpace I x, α.val x ![w] = 0 → ω.val x ![v, w] = 0) → v = 0 := fun x ↦ by
     rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
     simp only [degreeOneEquiv_coe_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply, ne_eq,
       LinearMap.ext_iff, LinearMap.zero_apply, not_forall]
@@ -150,7 +150,7 @@ theorem isStableHamiltonian_iff :
       mem_ker_bilinFormAt_mextDerivₗ_iff.2 (hker x v (mem_ker_bilinFormAt_iff.1 hv))⟩⟩
 
 /-- The one-form of a stable Hamiltonian structure vanishes nowhere. -/
-theorem IsStableHamiltonian.apply_ne_zero (h : α.IsStableHamiltonian ω) (x : M) : α.1 x ≠ 0 :=
+theorem IsStableHamiltonian.apply_ne_zero (h : α.IsStableHamiltonian ω) (x : M) : α.val x ≠ 0 :=
   fun h0 ↦ (h.isContact x).ne_zero <| LinearMap.ext fun v ↦ by
     simp [degreeOneEquiv_coe_apply, h0]
 
@@ -169,7 +169,7 @@ at `x`. -/
 theorem apply_characteristicVectorField
     (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
       (ω.bilinFormAt x)) :
-    α.1 x ![α.characteristicVectorField ω x] = 1 := by
+    α.val x ![α.characteristicVectorField ω x] = 1 := by
   rw [← degreeOneEquiv_coe_apply]
   exact hc.apply_reebVector
 
@@ -179,7 +179,7 @@ of `ω_x`. -/
 theorem apply_characteristicVectorField_left
     (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
       (ω.bilinFormAt x)) (w : TangentSpace I x) :
-    ω.1 x ![α.characteristicVectorField ω x, w] = 0 :=
+    ω.val x ![α.characteristicVectorField ω x, w] = 0 :=
   mem_ker_bilinFormAt_iff.1 (hc.reebVector_mem_ker (isAlt_bilinFormAt _ x)) w
 
 /-- If `α_x` is contact for `ω_x`, then `ω_x` vanishes when its second argument is the
@@ -188,7 +188,7 @@ characteristic vector field at `x`. -/
 theorem apply_characteristicVectorField_right
     (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
       (ω.bilinFormAt x)) (w : TangentSpace I x) :
-    ω.1 x ![w, α.characteristicVectorField ω x] = 0 := by
+    ω.val x ![w, α.characteristicVectorField ω x] = 0 := by
   have := hc.apply_reebVector_right (isAlt_bilinFormAt _ x) w
   rwa [bilinFormAt_apply, SmoothBundleForm.eval₂_apply] at this
 
@@ -197,7 +197,7 @@ point. -/
 theorem interior_characteristicVectorField
     (hc : ∀ x, Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
       (ω.bilinFormAt x)) :
-    RoughForm.interior (α.characteristicVectorField ω) ω.1 = 0 :=
+    RoughForm.interior (α.characteristicVectorField ω) ω.val = 0 :=
   RoughForm.interior_eq_zero_iff.2 fun x ↦ apply_characteristicVectorField_left (hc x)
 
 /-- **Characterization of the characteristic vector field**: if `α_x` is contact for `ω_x`, then
@@ -206,7 +206,7 @@ theorem eq_characteristicVectorField_iff
     (hc : Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
       (ω.bilinFormAt x)) {v : TangentSpace I x} :
     v = α.characteristicVectorField ω x ↔
-      α.1 x ![v] = 1 ∧ ∀ w : TangentSpace I x, ω.1 x ![v, w] = 0 := by
+      α.val x ![v] = 1 ∧ ∀ w : TangentSpace I x, ω.val x ![v, w] = 0 := by
   rw [characteristicVectorField_def, hc.eq_reebVector_iff_of_isAlt (isAlt_bilinFormAt _ x),
     degreeOneEquiv_coe_apply, LinearMap.ext_iff]
   simp only [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, LinearMap.zero_apply]
@@ -249,7 +249,7 @@ theorem isCompl_kerDistribution_span_characteristicVectorField
 @[simp]
 theorem IsStableHamiltonian.mextDeriv_characteristicVectorField_left
     (h : α.IsStableHamiltonian ω) (x : M) (w : TangentSpace I x) :
-    mextDeriv α.1 x ![α.characteristicVectorField ω x, w] = 0 :=
+    mextDeriv α.val x ![α.characteristicVectorField ω x, w] = 0 :=
   h.mextDeriv_eq_zero (apply_characteristicVectorField_left (h.isContact x)) w
 
 /-- The characteristic vector field of a stable Hamiltonian structure lies in the kernel of `dα`:
@@ -257,7 +257,7 @@ theorem IsStableHamiltonian.mextDeriv_characteristicVectorField_left
 @[simp]
 theorem IsStableHamiltonian.mextDeriv_characteristicVectorField_right
     (h : α.IsStableHamiltonian ω) (x : M) (w : TangentSpace I x) :
-    mextDeriv α.1 x ![w, α.characteristicVectorField ω x] = 0 := by
+    mextDeriv α.val x ![w, α.characteristicVectorField ω x] = 0 := by
   have := h.mextDeriv_characteristicVectorField_left x w
   rw [mextDeriv_eq_bilinFormAt] at this ⊢
   rw [← (isAlt_bilinFormAt _ x).neg_eq, this, neg_zero]
@@ -265,7 +265,7 @@ theorem IsStableHamiltonian.mextDeriv_characteristicVectorField_right
 /-- The equation `ι_R dα = 0` as an identity of one-forms. -/
 theorem IsStableHamiltonian.interior_mextDeriv_characteristicVectorField
     (h : α.IsStableHamiltonian ω) :
-    (mextDeriv α.1).interior (α.characteristicVectorField ω) = 0 :=
+    (mextDeriv α.val).interior (α.characteristicVectorField ω) = 0 :=
   RoughForm.interior_eq_zero_iff.2 h.mextDeriv_characteristicVectorField_left
 
 /-- **Stable Hamiltonian structures via the characteristic vector field.** `(α, ω)` is a stable
@@ -276,7 +276,8 @@ theorem isStableHamiltonian_iff_mextDeriv_characteristicVectorField :
       ω.IsClosed ∧
         (∀ x, Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
           (ω.bilinFormAt x)) ∧
-        ∀ x (w : TangentSpace I x), mextDeriv α.1 x ![α.characteristicVectorField ω x, w] = 0 := by
+        ∀ x (w : TangentSpace I x), mextDeriv α.val x ![α.characteristicVectorField ω x, w] = 0
+            := by
   refine ⟨fun h ↦ ⟨h.isClosed, h.isContact, h.mextDeriv_characteristicVectorField_left⟩,
     fun ⟨hω, hc, hR⟩ ↦ ⟨hω, hc, fun x v hv ↦ ?_⟩⟩
   rw [ker_bilinFormAt_eq_span_characteristicVectorField (hc x)] at hv

@@ -51,7 +51,7 @@ private def doubleBoundaryLift (l : Manifold.OrientationLift (𝓡 1) B (Fin 1))
   card_eq := l.card_eq
   sign a x := l.sign (foldBoundary a) ⟨foldBoundary x.val, foldBoundary_mem_chart_source x.property⟩
   locallyConstant_sign a := (l.locallyConstant_sign (foldBoundary a)).comp_continuous
-    ((continuous_id.sumElim continuous_id).comp continuous_subtype_val |>.subtype_mk _)
+    ((continuous_id.sumElim continuous_id).comp continuous_subtypeVal |>.subtype_mk _)
   compatible a b x ha hb := by
     cases a <;> cases b <;> cases x
     all_goals
@@ -138,11 +138,11 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
     let f : B ⊕ B → ℂ := Sum.elim (fun x : B ↦ x.val.val) (fun x : B ↦ x.val.val)
     IntegrableTopForm (mpullback (𝓡 1) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)) ∧
       CurveIntegrable (oneForm P Q)
-        (unitDiskBoundaryLoop.map (continuous_subtype_val.comp continuous_subtype_val)) ∧
+        (unitDiskBoundaryLoop.map (continuous_subtypeVal.comp continuous_subtypeVal)) ∧
       integralTopForm twoDiskBoundaryOrientation
         (mpullback (𝓡 1) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)) =
         2 * curveIntegral (oneForm P Q)
-          (unitDiskBoundaryLoop.map (continuous_subtype_val.comp continuous_subtype_val)) := by
+          (unitDiskBoundaryLoop.map (continuous_subtypeVal.comp continuous_subtypeVal)) := by
   classical
   let l := diskOrientationLift.boundary
   let f : B ⊕ B → ℂ := Sum.elim (fun x : B ↦ x.val.val) (fun x : B ↦ x.val.val)
@@ -234,7 +234,7 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
       simpa only [Manifold.Orientation.orientationAt_mk] using (he i z hz).2)
   have hmap (i : Bool) : curveIntegral (oneForm P Q) ((q i).map hf.continuous) =
       curveIntegral (oneForm P Q)
-        (unitDiskBoundaryLoop.map (continuous_subtype_val.comp continuous_subtype_val)) := by
+        (unitDiskBoundaryLoop.map (continuous_subtypeVal.comp continuous_subtypeVal)) := by
     cases i <;> rfl
   refine ⟨hr.1, ?_, ?_⟩
   · convert! hr.2.1 false using 1

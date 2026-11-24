@@ -147,7 +147,7 @@ theorem matrixCochainExtension_mem_cyclicCochains
     {R : Type*} [Semiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
     [AddCommGroup M] [Module R M] [SMulCommClass R R M]
     (ι : Type*) [Fintype ι] (n : ℕ) (φ : cyclicCochains R A M n) :
-    matrixCochainExtension ι n φ.1 ∈ cyclicCochains R (Matrix ι ι A) M n := by
+    matrixCochainExtension ι n φ.val ∈ cyclicCochains R (Matrix ι ι A) M n := by
   rw [mem_cyclicCochains_iff]
   intro a
   rw [matrixCochainExtension_rotate]
@@ -172,7 +172,7 @@ theorem coe_matrixCyclicCochainExtension_apply
     (ι : Type*) [Fintype ι] (n : ℕ) (φ : cyclicCochains R A M n) :
     (matrixCyclicCochainExtension ι n φ :
       MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => Matrix ι ι A) M) =
-      matrixCochainExtension ι n φ.1 := (rfl)
+      matrixCochainExtension ι n φ.val := (rfl)
 
 /-- On a one-by-one matrix algebra, matrix extension is the original cochain. -/
 @[simp] theorem matrixCochainExtension_unique (ι : Type*) [Fintype ι] [Unique ι] (n : ℕ)
@@ -518,7 +518,7 @@ noncomputable def matrixExtension :
 theorem matrixExtension_mk (φ : cyclicCocycles R A M n) :
     matrixExtension M ι n (mk R A M n φ) =
       mk R (Matrix ι ι A) M n ⟨matrixCyclicCochainExtension ι n φ,
-        matrixCyclicCochainExtension_mem_cyclicCocycles φ.2⟩ :=
+        matrixCyclicCochainExtension_mem_cyclicCocycles φ.property⟩ :=
   desc_mk _ _ _ φ
 
 variable (M) in
@@ -535,9 +535,9 @@ noncomputable def matrixRestriction (r : ι) (n : ℕ) :
 /-- `matrixRestriction` sends `[φ]` to the class of its `(r, r)` corner restriction. -/
 @[simp] theorem matrixRestriction_mk (r : ι) (φ : cyclicCocycles R (Matrix ι ι A) M n) :
     matrixRestriction M r n (mk R (Matrix ι ι A) M n φ) =
-      mk R A M n ⟨cyclicCochainsMap M (Matrix.singleLinearMap R r r) n φ.1,
+      mk R A M n ⟨cyclicCochainsMap M (Matrix.singleLinearMap R r r) n φ.val,
         Matrix.singleNonUnitalAlgHom_toLinearMap (R := R) (A := A) r ▸
-          cyclicCochainsMap_mem_cyclicCocycles (Matrix.singleNonUnitalAlgHom R r) φ.2⟩ :=
+          cyclicCochainsMap_mem_cyclicCocycles (Matrix.singleNonUnitalAlgHom R r) φ.property⟩ :=
   desc_mk _ _ _ φ
 /-- Corner restriction is a left inverse to matrix extension on cyclic cohomology. -/
 @[simp] theorem matrixRestriction_matrixExtension (r : ι) (n : ℕ) (c : cyclicCohomology R A M n) :
@@ -562,7 +562,7 @@ theorem matrixExtension_map {B : Type _} [Ring B] [Algebra R B] (f : A →ₐ[R]
   -- definitionally `f.toLinearMap` and its entrywise extension `LinearMap.mapMatrix f.toLinearMap`,
   -- the linear maps in `matrixCochainExtension_compLinearMap`. Mathlib has no simp lemma for the
   -- underlying function of `NonUnitalAlgHomClass.toNonUnitalAlgHom`, so this is closed by `exact`.
-  exact matrixCochainExtension_compLinearMap ι n (f : A →ₗ[R] B) φ.1.1
+  exact matrixCochainExtension_compLinearMap ι n (f : A →ₗ[R] B) φ.val.val
 
 end cyclicCohomology
 

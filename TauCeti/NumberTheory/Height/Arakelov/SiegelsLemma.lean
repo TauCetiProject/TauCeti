@@ -297,9 +297,7 @@ theorem exists_ne_zero_mulVec_eq_zero_height2_le_of_card_lt [Fintype m] [Fintype
         √(Fintype.card ι : ℝ) * |(discr K : ℝ)| ^ (2 * finrank ℚ K : ℝ)⁻¹ *
           (∏ i, height2 (A.row i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
   let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  have hrank_le : A.rank ≤ Fintype.card m := by
-    simpa only [Matrix.rank, Module.finrank_fintype_fun_eq_card] using
-      Submodule.finrank_le (LinearMap.range A.mulVecLin)
+  have hrank_le : A.rank ≤ Fintype.card m := A.rank_le_card_height
   have hrank_lt : A.rank < Fintype.card ι := hrank_le.trans_lt hm
   obtain ⟨x, hx0, hAx, hxle⟩ := exists_ne_zero_mulVec_eq_zero_height2_le_sqrt hrank_lt
   refine ⟨x, hx0, hAx, hxle.trans ?_⟩

@@ -508,7 +508,7 @@ theorem IsMorse.exists_joined_of_isOpenEmbedding (hj : IsOpenEmbedding j) (hF : 
     ha_reg hb_reg (fun p hp ↦ hindex p hp.1) hn ⟨x, (hFb x).le⟩
   rw [sublevelInclusion_eq_inclusion] at hy
   obtain ⟨a₀, ha₀⟩ := hW.exists_joined (ContinuousMap.inclusion haW y)
-  exact ⟨a₀, (ha₀.map continuous_subtype_val).trans (hy.map continuous_subtype_val)⟩
+  exact ⟨a₀, (ha₀.map continuous_subtypeVal).trans (hy.map continuous_subtypeVal)⟩
 
 /-- **Surjectivity of `π_k(A, a₀) → π_k(X, a₀)` for `k < n` on a compactified pair.** -/
 theorem IsMorse.surjective_homotopyGroupMap_subtypeVal_of_isOpenEmbedding

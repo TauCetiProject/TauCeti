@@ -36,6 +36,8 @@ open IsNilpotent
 
 namespace Module.End
 
+section Semiring
+
 variable {R V : Type*} [Semiring R] [AddCommGroup V] [Module R V] [Module ℚ V]
 
 /-- Exponentiation preserves every kernel in the nilpotent filtration. -/
@@ -77,9 +79,12 @@ theorem range_pow_log (u : End R V) (hu : IsNilpotent (u - 1)) (k : ℕ) :
     LinearMap.range (log u ^ k) = LinearMap.range ((u - 1) ^ k) := by
   simpa only [exp_log u hu] using (range_pow_exp_sub_one (log u) (isNilpotent_log hu) k).symm
 
+end Semiring
+
 section FiniteDimensional
 
-variable {K : Type*} [Field K] [Module K V] [FiniteDimensional K V]
+variable {V : Type*} [AddCommGroup V] [Module ℚ V] {K : Type*} [Field K] [Module K V]
+  [FiniteDimensional K V]
 
 /-- The unipotent exponential of a nilpotent endomorphism has the same Jordan block sizes:
 the nilpotent endomorphisms `exp f - 1` and `f` have equal Jordan partitions. -/

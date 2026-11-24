@@ -42,17 +42,24 @@ with unital domain is `‖φ 1‖`.
 * `TauCeti.IsNPositive.eq_zero_of_map_one_eq_zero`: an `n`-positive map with `0 < n` on a unital
   C⋆-algebra that vanishes at `1` is zero.
 * `TauCeti.IsNPositive.star_map_mul_map_le`: the Kadison–Schwarz inequality
-  `φ(a)⋆ φ(a) ≤ ‖φ 1‖ • φ(a⋆a)` for `2`-positive maps, and
+  `φ(a)⋆ φ(a) ≤ ‖φ 1‖ • φ(a⋆a)` for `2`-positive maps,
+  `TauCeti.IsNPositive.star_map_mul_map_le_of_map_one_le` for subunital (`φ 1 ≤ 1`) ones, and
   `TauCeti.IsNPositive.star_map_mul_map_le_of_map_one` for unital ones.
 * `TauCeti.IsNPositive.norm_apply_le`: `‖φ a‖ ≤ ‖φ 1‖ * ‖a‖` for `2`-positive maps, and
   `TauCeti.IsNPositive.opNorm_eq_norm_map_one`: `‖ψ‖ = ‖ψ 1‖` for continuous ones.
 * `CompletelyPositiveMapClass.star_map_mul_map_le`,
+  `CompletelyPositiveMapClass.star_map_mul_map_le_of_map_one_le`,
   `CompletelyPositiveMapClass.star_map_mul_map_le_of_map_one` and
   `CompletelyPositiveMapClass.opNorm_ofClass_eq_norm_map_one`: the Schwarz inequality for
   completely positive maps, and `‖φ‖ = ‖φ 1‖`.
+* `CompletelyPositiveMap.mapCStarMatrix`: the amplification `φₙ : M_n(A) → M_n(B)` of a completely
+  positive map is completely positive, since `M_k(M_n(A))` and `M_{k × n}(A)` are star isomorphic
+  (`CStarMatrix.compStarAlgEquiv`).
 
 ## References
 
+* M.-D. Choi, *A Schwarz inequality for positive linear maps on C*-algebras*, Illinois J. Math. 18
+  (1974), 565–574.
 * B. Blackadar, *Operator Algebras*, II.6.9.4 and II.6.9.14.
 * V. Paulsen, *Completely Bounded Maps and Operator Algebras*, Proposition 3.3 and
   Exercise 3.4.
@@ -192,6 +199,11 @@ theorem IsNPositive.toLinearMap_toPositiveLinearMap {n : ℕ} {φ : A →ₗ[ℂ
     (hφ : IsNPositive n φ) (hn : 0 < n) : (hφ.toPositiveLinearMap hn).toLinearMap = φ :=
   (rfl)
 
+/-- An `n`-positive map with `0 < n` is continuous. -/
+theorem IsNPositive.continuous {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hn : 0 < n) :
+    Continuous φ :=
+  map_continuous (hφ.toPositiveLinearMap hn)
+
 /-- An `n`-positive map with `0 < n` preserves `star`. -/
 theorem IsNPositive.map_star {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) (hn : 0 < n)
     (a : A) : φ (star a) = star (φ a) :=
@@ -258,16 +270,6 @@ private theorem IsNPositive.quadratic_nonneg (hφ : IsNPositive 2 φ) (a : A) (x
     hφ.map_star two_pos a,
     add_assoc] using this
 
-/-- **Kadison–Schwarz inequality** for a unital `2`-positive map: `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
-theorem IsNPositive.star_map_mul_map_le_of_map_one (hφ : IsNPositive 2 φ) (h1 : φ 1 = 1)
-    (a : A) : star (φ a) * φ a ≤ φ (star a * a) := by
-  have := hφ.quadratic_nonneg a 1 (-φ a)
-  rw [← sub_nonneg]
-  convert this using 1
-  simp only [star_one, one_mul, mul_one, mul_neg, star_neg, neg_mul, h1, neg_neg,
-    neg_add_cancel_right]
-  abel
-
 /-- The Kadison–Schwarz inequality `φ(a)⋆ φ(a) ≤ ‖φ 1‖ • φ(a⋆a)` for a `2`-positive map with
 unital domain and codomain. -/
 private theorem IsNPositive.star_map_mul_map_le_of_unital (hφ : IsNPositive 2 φ) (a : A) :
@@ -295,9 +297,28 @@ private theorem IsNPositive.star_map_mul_map_le_of_unital (hφ : IsNPositive 2 �
   rw [smul_smul, inv_mul_cancel₀ hpos.ne', one_smul, sub_nonneg] at this
   exact this
 
+/-- **Kadison–Schwarz inequality** (subunital form) for a `2`-positive map: if `φ 1 ≤ 1`, then
+`φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
+theorem IsNPositive.star_map_mul_map_le_of_map_one_le (hφ : IsNPositive 2 φ) (h1 : φ 1 ≤ 1)
+    (a : A) : star (φ a) * φ a ≤ φ (star a * a) := by
+  have hnorm : ‖φ 1‖ ≤ 1 :=
+    (CStarAlgebra.norm_le_one_iff_of_nonneg (φ 1) (hφ.map_nonneg two_pos zero_le_one)).mpr h1
+  calc star (φ a) * φ a
+      ≤ ‖φ 1‖ • φ (star a * a) := hφ.star_map_mul_map_le_of_unital a
+    _ ≤ (1 : ℝ) • φ (star a * a) :=
+        smul_le_smul_of_nonneg_right hnorm (hφ.map_nonneg two_pos (star_mul_self_nonneg a))
+    _ = φ (star a * a) := one_smul ℝ _
+
+/-- **Kadison–Schwarz inequality** for a unital `2`-positive map: `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
+theorem IsNPositive.star_map_mul_map_le_of_map_one (hφ : IsNPositive 2 φ) (h1 : φ 1 = 1)
+    (a : A) : star (φ a) * φ a ≤ φ (star a * a) :=
+  hφ.star_map_mul_map_le_of_map_one_le h1.le a
+
 end Unital
 
 section UnitalDomain
+
+open scoped ComplexOrder
 
 variable [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
@@ -314,7 +335,7 @@ private theorem IsNPositive.inr {n : ℕ} (hφ : IsNPositive n φ) :
 theorem IsNPositive.star_map_mul_map_le (hφ : IsNPositive 2 φ) (a : A) :
     star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) := by
   have := hφ.inr.star_map_mul_map_le_of_unital a
-  rw [← Unitization.inr_le_inr_iff]
+  rw [← Unitization.inr_le_inr_iff ℂ]
   simpa [Unitization.norm_inr, Unitization.inr_smul] using this
 
 /-- A `2`-positive map with unital domain is bounded by `‖φ 1‖`. -/
@@ -374,11 +395,44 @@ theorem opNorm_ofClass_eq_norm_map_one (φ : F) :
 
 end NonUnital
 
+/-- **Kadison–Schwarz inequality** (subunital form) for a completely positive map: if `φ 1 ≤ 1`,
+then `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
+theorem star_map_mul_map_le_of_map_one_le [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    [FunLike F A B] [LinearMapClass F ℂ A B] [CompletelyPositiveMapClass F A B] (φ : F)
+    (hφ : φ 1 ≤ 1) (a : A) : star (φ a) * φ a ≤ φ (star a * a) :=
+  (isNPositive φ 2).star_map_mul_map_le_of_map_one_le hφ a
+
 /-- **Kadison–Schwarz inequality** for a unital completely positive map:
 `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
 theorem star_map_mul_map_le_of_map_one [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
     [FunLike F A B] [LinearMapClass F ℂ A B] [CompletelyPositiveMapClass F A B] (φ : F)
     (hφ : φ 1 = 1) (a : A) : star (φ a) * φ a ≤ φ (star a * a) :=
-  (isNPositive φ 2).star_map_mul_map_le_of_map_one hφ a
+  star_map_mul_map_le_of_map_one_le φ hφ.le a
 
 end CompletelyPositiveMapClass
+
+namespace CompletelyPositiveMap
+
+variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+
+/-- The amplification `φₙ : M_n(A) → M_n(B)` of a completely positive map `φ : A → B`, applying
+`φ` entrywise, is completely positive. -/
+def mapCStarMatrix (φ : A →CP B) (n : Type*) [Fintype n] :
+    CStarMatrix n n A →CP CStarMatrix n n B where
+  toLinearMap := CStarMatrix.mapₗ φ.toLinearMap
+  map_cstarMatrix_nonneg' k M hM := by
+    let eA := CStarMatrix.compStarAlgEquiv ℂ (Fin k) n A
+    let eB := CStarMatrix.compStarAlgEquiv ℂ (Fin k) n B
+    have hM' : 0 ≤ eA M := by simpa using (map_le_map_iff eA).mpr hM
+    have h : eB (M.map (CStarMatrix.mapₗ φ.toLinearMap)) = (eA M).map φ :=
+      CStarMatrix.compStarAlgEquiv_map M φ
+    rw [← map_le_map_iff eB, map_zero, h]
+    exact φ.map_cstarMatrix_nonneg _ hM'
+
+@[simp]
+theorem mapCStarMatrix_apply (φ : A →CP B) {n : Type*} [Fintype n] (x : CStarMatrix n n A) :
+    mapCStarMatrix φ n x = x.map φ :=
+  (rfl)
+
+end CompletelyPositiveMap

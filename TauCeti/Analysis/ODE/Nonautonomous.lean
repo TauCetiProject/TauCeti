@@ -43,6 +43,7 @@ produces a bounded-in-time field whose global solutions agree on `(-min R₁ R�
   interval and global uniqueness.
 * `ODE.nonautonomousSolution_eq_of_eqOn`: finite-interval congruence in the vector field.
 * `ODE.nonautonomousSolution_trans`: two-time evolution composition law.
+* `ODE.nonautonomousSolution_neg`: time reversal.
 * `ODE.dist_nonautonomousSolution_le`: two-sided exponential Grönwall bound in the initial state.
 * `ODE.continuous_nonautonomousSolution`: joint continuity in `(t₀, x, t)`.
 
@@ -208,7 +209,7 @@ private noncomputable def clampedField (v : ℝ → E → E) {R : ℝ} (hR : 0 �
 
 private noncomputable def clampedFieldAt {R : ℝ} (x : E) : Icc (-R) R →ᵇ E :=
   BoundedContinuousFunction.mkOfCompact
-    ⟨fun t : Icc (-R) R ↦ v t x, (hvc x).comp continuous_subtype_val⟩
+    ⟨fun t : Icc (-R) R ↦ v t x, (hvc x).comp continuous_subtypeVal⟩
 
 omit [NormedSpace ℝ E] [CompleteSpace E] in
 private theorem norm_clampedField_le {R : ℝ} (hR : 0 ≤ R) (x : E) (s : ℝ) :
@@ -223,7 +224,7 @@ private noncomputable def clampedSolution {R : ℝ} (hR : 0 ≤ R) (x : E) : ℝ
   boundedTimeSolution
     (continuous_prod_of_continuous_lipschitzWith' (Function.uncurry (clampedField v hR)) K
       (fun s ↦ hv (Set.projIcc (-R) R (neg_le_self hR) s))
-      fun y ↦ (hvc y).comp (continuous_subtype_val.comp continuous_projIcc))
+      fun y ↦ (hvc y).comp (continuous_subtypeVal.comp continuous_projIcc))
     (fun s ↦ hv (Set.projIcc (-R) R (neg_le_self hR) s))
     (norm_clampedField_le hvc hR x)
 
@@ -395,6 +396,20 @@ theorem continuous_nonautonomousSolution :
   dsimp only [Function.comp_apply]
   rw [← nonautonomousSolution_trans v hvc hv t₀ p.1 p.2.2 x]
   exact dist_nonautonomousSolution_le v hvc hv p.1 _ p.2.1 p.2.2
+
+/-- **Time reversal.** Reflecting time around `0` turns the solution of `γ' t = v t (γ t)` into
+the solution of the time-reversed negated field `(u, z) ↦ -v (-u) z` started at time `-t₀`. -/
+theorem nonautonomousSolution_neg (t₀ : ℝ) (x : E) (t : ℝ) :
+    nonautonomousSolution v hvc hv t₀ x (-t) =
+      nonautonomousSolution (fun u z ↦ -v (-u) z) (fun z ↦ ((hvc z).comp continuous_neg).neg)
+        (fun u ↦ (hv (-u)).neg) (-t₀) x t := by
+  have hγ : ∀ u, HasDerivAt (fun q ↦ nonautonomousSolution v hvc hv t₀ x (-q))
+      (-v (-u) (nonautonomousSolution v hvc hv t₀ x (-u))) u := fun u ↦ by
+    simpa only [Function.comp_def, neg_smul, one_smul] using
+      (hasDerivAt_nonautonomousSolution v hvc hv t₀ x (-u)).scomp u (hasDerivAt_neg u)
+  have heq := congrFun (eq_nonautonomousSolution (fun u z ↦ -v (-u) z)
+    (fun z ↦ ((hvc z).comp continuous_neg).neg) (fun u ↦ (hv (-u)).neg) hγ (-t₀)) t
+  simpa using heq
 
 end API
 

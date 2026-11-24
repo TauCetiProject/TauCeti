@@ -126,7 +126,7 @@ theorem IsGroebnerBasis.exists_finset_comparisons (h : m.IsGroebnerBasis G I)
   classical
   let := hG.fintype
   have hc (p : G × G) :=
-    (h.isRemainder_sPolynomial_zero p.1.2 p.2.2).exists_finset_comparisons hG
+    (h.isRemainder_sPolynomial_zero p.1.property p.2.property).exists_finset_comparisons hG
   choose C hCm hCn using hc
   let D := Finset.univ.biUnion C
   refine ⟨D, fun p hp ↦ ?_, fun n hn ↦ ?_⟩
@@ -166,7 +166,7 @@ theorem IsGroebnerBasis.exists_pos_weight_preserving (h : m.IsGroebnerBasis G I)
           Ideal.span (m.leadingTerm '' (I : Set (MvPolynomial σ R))) := by
   obtain ⟨C, hCm, hCn⟩ := h.exists_finset_comparisons hG hu
   obtain ⟨w, hw, hcomp⟩ := m.exists_pos_weight_lt
-    (a := fun p : C ↦ p.1.1) (b := fun p : C ↦ p.1.2) fun p ↦ hCm p p.2
+    (a := fun p : C ↦ p.val.1) (b := fun p : C ↦ p.val.2) fun p ↦ hCm p p.property
   exact ⟨w, hw, fun n hn ↦ hCn n fun p hp ↦ hn _ _ (hcomp ⟨p, hp⟩)⟩
 
 end CommRing

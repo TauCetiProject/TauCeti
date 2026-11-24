@@ -46,12 +46,12 @@ theorem eLpNorm_restrict_le_of_forall_isCompact {U : Set α} (hU : IsOpen U) {f 
     rw [← image_iUnion, K.iUnion_eq, image_univ, Subtype.range_coe]
   have hdir : Directed (· ⊆ ·) fun n => ((↑) '' K n : Set α) :=
     Monotone.directed_le fun m n hmn => image_mono (K.subset hmn)
-  have hsub : ∀ n, ((↑) '' K n : Set α) ⊆ U := fun n => image_subset_iff.2 fun x _ => x.2
+  have hsub : ∀ n, ((↑) '' K n : Set α) ⊆ U := fun n => image_subset_iff.2 fun x _ => x.property
   have hpos : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hf, one_div, ENNReal.rpow_inv_le_iff hpos,
     ← hunion, setLIntegral_iUnion_of_directed _ hdir]
   refine iSup_le fun n => ?_
-  have hn := h _ (hsub n) ((K.isCompact n).image continuous_subtype_val)
+  have hn := h _ (hsub n) ((K.isCompact n).image continuous_subtypeVal)
   rwa [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (hf.mono_measure
     (Measure.restrict_mono (hsub n) le_rfl)), one_div, ENNReal.rpow_inv_le_iff hpos] at hn
 

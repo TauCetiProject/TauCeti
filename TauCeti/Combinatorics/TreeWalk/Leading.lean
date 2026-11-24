@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.TreeWalk.Basic
 public import TauCeti.Combinatorics.TreeWalk.Canonical
 public import TauCeti.Combinatorics.TreeWalk.Relabeling
 public import TauCeti.Combinatorics.TraceWord.Counting
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Leading trace words as canonical tree walks
@@ -73,8 +74,7 @@ theorem cyclicPath_apply {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin (k + 1
 
 @[simp] theorem cyclicPath_succ {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin k) :
     cyclicPath w i.succ = w (finRotate k i) := by
-  apply congrArg w
-  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+  rw [cyclicPath_apply, Fin.val_succ, ← Fin.finRotate_ofNat, Fin.ofNat_val_eq_self]
 
 @[simp] theorem cyclicPath_zero {k : ℕ} [NeZero k] (w : Fin k → α) :
     cyclicPath w 0 = w 0 := by
@@ -140,13 +140,13 @@ theorem card_edge_fiber_cyclicPath [NeZero m] (w : Fin (2 * m) → α)
 /-- Every closed tree walk is already in first-visit canonical form. -/
 @[simp]
 theorem canonicalWalk_closedTreeWalk (c : ClosedTreeWalk m) :
-    canonicalWalk (fun i : Fin (2 * m + 1) ↦ c.1 i) = c.1 := by
-  set p : Fin (2 * m + 1) → ℕ := fun i ↦ c.1 i
+    canonicalWalk (fun i : Fin (2 * m + 1) ↦ c.val i) = c.val := by
+  set p : Fin (2 * m + 1) → ℕ := fun i ↦ c.val i
   funext i
   by_cases hi : i < 2 * m + 1
-  · set j := c.1 i
-    have hj : j < 2 * m + 1 := (c.2.1.le_self i (by omega)).trans_lt hi
-    have hpj : p ⟨j, hj⟩ = p ⟨i, hi⟩ := c.2.1.idem (by omega)
+  · set j := c.val i
+    have hj : j < 2 * m + 1 := (c.property.1.le_self i (by omega)).trans_lt hi
+    have hpj : p ⟨j, hj⟩ = p ⟨i, hi⟩ := c.property.1.idem (by omega)
     have heq : canonicalWalk p i = canonicalWalk p j :=
       (canonicalWalk_eq_iff p ⟨i, hi⟩ ⟨j, hj⟩).mpr hpj.symm
     set r := canonicalWalk p j
@@ -155,17 +155,17 @@ theorem canonicalWalk_closedTreeWalk (c : ClosedTreeWalk m) :
     have hpr : p ⟨r, hr⟩ = p ⟨j, hj⟩ :=
       (canonicalWalk_eq_iff p ⟨r, hr⟩ ⟨j, hj⟩).mp (canonicalWalk_idem p j)
     have hj_le : j ≤ r := by
-      have hcr : c.1 r = j := by simpa only [p, j] using hpr.trans (c.2.1.idem (by omega))
-      exact hcr ▸ c.2.1.le_self r (by omega)
+      have hcr : c.val r = j := by simpa only [p, j] using hpr.trans (c.property.1.idem (by omega))
+      exact hcr ▸ c.property.1.le_self r (by omega)
     exact heq.trans (le_antisymm hr_le hj_le)
-  · rw [canonicalWalk_eq_zero p (by omega), c.2.2 i (by omega)]
+  · rw [canonicalWalk_eq_zero p (by omega), c.property.2 i (by omega)]
 
 /-- The restriction of `c : ClosedTreeWalk m` to `Fin (2 * m + 1)` visits `m + 1` vertices. -/
 @[simp]
 theorem card_image_closedTreeWalk (c : ClosedTreeWalk m) :
-    #(univ.image fun i : Fin (2 * m + 1) ↦ c.1 i) = m + 1 := by
+    #(univ.image fun i : Fin (2 * m + 1) ↦ c.val i) = m + 1 := by
   rw [← card_fixed_canonicalWalk, canonicalWalk_closedTreeWalk]
-  exact c.2.1.card_vertices
+  exact c.property.1.card_vertices
 
 /-- A closed path with `m + 1` vertices and each unordered edge traversed twice becomes a tree
 walk after first-visit relabeling. No order on the original vertex type is needed. -/
@@ -230,14 +230,15 @@ theorem card_isTreeWalk_canonicalWalk [Finite α] (m : ℕ) :
     Nat.card {v : Fin (2 * m + 1) → α // IsTreeWalk m (canonicalWalk v)} =
       catalan m * (Nat.card α).descFactorial (m + 1) := by
   let shape : {v : Fin (2 * m + 1) → α // IsTreeWalk m (canonicalWalk v)} → ClosedTreeWalk m :=
-    fun v ↦ ⟨canonicalWalk v.1, v.2, fun _ hi ↦ canonicalWalk_eq_zero v.1 hi⟩
+    fun v ↦ ⟨canonicalWalk v.val, v.property, fun _ hi ↦ canonicalWalk_eq_zero v.val hi⟩
   have hfib (c : ClosedTreeWalk m) :
       {v : {v : Fin (2 * m + 1) → α // IsTreeWalk m (canonicalWalk v)} // shape v = c} ≃
-        {u : Fin (2 * m + 1) → α // canonicalWalk u = canonicalWalk (fun i ↦ c.1 i)} :=
+        {u : Fin (2 * m + 1) → α // canonicalWalk u = canonicalWalk (fun i ↦ c.val i)} :=
     { toFun := fun v ↦
-        ⟨v.1.1, (congrArg Subtype.val v.2).trans (canonicalWalk_closedTreeWalk c).symm⟩
-      invFun := fun u ↦ ⟨⟨u.1, by rw [u.2, canonicalWalk_closedTreeWalk]; exact c.2.1⟩,
-        Subtype.ext (u.2.trans (canonicalWalk_closedTreeWalk c))⟩
+        ⟨v.val.val, (congrArg Subtype.val v.property).trans (canonicalWalk_closedTreeWalk c).symm⟩
+      invFun := fun u ↦ ⟨⟨u.val, by rw [u.property, canonicalWalk_closedTreeWalk]; exact
+          c.property.1⟩,
+        Subtype.ext (u.property.trans (canonicalWalk_closedTreeWalk c))⟩
       left_inv := fun _ ↦ Subtype.ext (Subtype.ext rfl)
       right_inv := fun _ ↦ Subtype.ext rfl }
   rw [← Nat.card_congr (Equiv.sigmaFiberEquiv shape), Nat.card_sigma]
@@ -254,15 +255,15 @@ def leadingCyclicWordEquiv [NeZero m] :
       (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
         #(univ.image w) = m + 1} ≃
       {v : Fin (2 * m + 1) → α // IsTreeWalk m (canonicalWalk v)} where
-  toFun w := ⟨cyclicPath w.1, (isTreeWalk_canonicalWalk_cyclic_iff w.1).mpr w.2⟩
+  toFun w := ⟨cyclicPath w.val, (isTreeWalk_canonicalWalk_cyclic_iff w.val).mpr w.property⟩
   invFun v :=
-    have hcompat : cyclicPath (fun t : Fin (2 * m) ↦ v.1 t.castSucc) = v.1 :=
-      cyclicPath_castSucc_eq ((isTreeWalk_canonicalWalk_iff v.1).mp v.2).1
-    ⟨fun t ↦ v.1 t.castSucc,
-      (isTreeWalk_canonicalWalk_cyclic_iff _).mp (hcompat.symm ▸ v.2)⟩
-  left_inv w := Subtype.ext <| funext (cyclicPath_castSucc w.1)
+    have hcompat : cyclicPath (fun t : Fin (2 * m) ↦ v.val t.castSucc) = v.val :=
+      cyclicPath_castSucc_eq ((isTreeWalk_canonicalWalk_iff v.val).mp v.property).1
+    ⟨fun t ↦ v.val t.castSucc,
+      (isTreeWalk_canonicalWalk_cyclic_iff _).mp (hcompat.symm ▸ v.property)⟩
+  left_inv w := Subtype.ext <| funext (cyclicPath_castSucc w.val)
   right_inv v := Subtype.ext <|
-    cyclicPath_castSucc_eq ((isTreeWalk_canonicalWalk_iff v.1).mp v.2).1
+    cyclicPath_castSucc_eq ((isTreeWalk_canonicalWalk_iff v.val).mp v.property).1
 
 /-- The forward map of `leadingCyclicWordEquiv` extends the cyclic word by `cyclicPath`. -/
 @[simp]
@@ -270,14 +271,14 @@ theorem leadingCyclicWordEquiv_apply_coe [NeZero m]
     (w : {w : Fin (2 * m) → α //
       (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
         #(univ.image w) = m + 1}) :
-    (leadingCyclicWordEquiv w).1 = cyclicPath w.1 :=
+    (leadingCyclicWordEquiv w).val = cyclicPath w.val :=
   (rfl)
 
 /-- The inverse of `leadingCyclicWordEquiv` drops the terminal vertex of the closed path. -/
 @[simp]
 theorem leadingCyclicWordEquiv_symm_apply_coe [NeZero m]
     (v : {v : Fin (2 * m + 1) → α // IsTreeWalk m (canonicalWalk v)}) :
-    (leadingCyclicWordEquiv.symm v).1 = fun t : Fin (2 * m) ↦ v.1 t.castSucc :=
+    (leadingCyclicWordEquiv.symm v).val = fun t : Fin (2 * m) ↦ v.val t.castSucc :=
   (rfl)
 
 /-- On a finite vertex set `α` and for `m ≠ 0`, there are

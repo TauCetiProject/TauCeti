@@ -86,9 +86,9 @@ theorem closure_image_inclusionInDoubleDualWeak_closedBall (x : E) (r : ℝ) :
   refine (closure_minimal hS (WeakDual.isClosed_closedBall _ _)).antisymm fun φ hφ ↦ ?_
   -- A point `φ` of the bidual ball outside the weak-star closure is separated from it by
   -- Hahn–Banach, through a weak-star continuous functional, which is evaluation at some `f` in
-  -- the dual. `StrongDual.re_apply_add_mul_norm_le` bounds `re (f x) + r * ‖f‖` by the separating
-  -- constant, while `φ` lying in the ball bounds `re (φ f)` by `re (f x) + r * ‖f‖`, which
-  -- contradicts the separation.
+  -- the dual. `StrongDual.re_apply_add_mul_norm_le_iff` bounds `re (f x) + r * ‖f‖` by the
+  -- separating constant, while `φ` lying in the ball bounds `re (φ f)` by `re (f x) + r * ‖f‖`,
+  -- which contradicts the separation.
   by_contra hφS
   have hconv : Convex ℝ S := by
     simp only [S, Set.image_image]
@@ -103,7 +103,7 @@ theorem closure_image_inclusionInDoubleDualWeak_closedBall (x : E) (r : ℝ) :
     have := (hl _ (subset_closure ⟨_, ⟨y, hy, rfl⟩, rfl⟩)).le
     rwa [hf, inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
       StrongDual.toWeakDual_apply, dual_def] at this
-  have hfx := StrongDual.re_apply_add_mul_norm_le (dist_nonneg.trans hφ) hfu
+  have hfx := (StrongDual.re_apply_add_mul_norm_le_iff (dist_nonneg.trans hφ)).2 hfu
   -- On the other hand `re (φ f) ≤ re (f x) + ‖φ - J x‖ * ‖f‖ ≤ re (f x) + r * ‖f‖`.
   have hφf : re (φ f) ≤ re (f x) + r * ‖f‖ := by
     have hφ' := (mem_closedBall_iff_norm (E := StrongDual 𝕜 (StrongDual 𝕜 E))).1 hφ
@@ -227,7 +227,7 @@ theorem exists_neBot_eventually_norm_le_and_forall_tendsto
     (TauCeti.exists_neBot_tendsto_iff_forall_finset_dist_lt (p := fun x : E ↦ ‖x‖ ≤ r)
       (F := fun k x ↦ ‖S k x - z k‖) (x := fun _ ↦ (0 : ℝ))).2 fun s ε hε ↦ by
     obtain ⟨x, hx, happrox⟩ := Φ.exists_norm_le_and_forall_norm_sub_lt
-      (fun k : s ↦ S k.1) (fun k : s ↦ z k.1) (fun k ↦ hz k.1) hr hε
+      (fun k : s ↦ S k.val) (fun k : s ↦ z k.val) (fun k ↦ hz k.val) hr hε
     exact ⟨x, hx, fun k hk ↦ by
       simpa only [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)] using happrox ⟨k, hk⟩⟩
   exact ⟨l, hl, hle, fun k ↦ tendsto_iff_norm_sub_tendsto_zero.2 (ht k)⟩

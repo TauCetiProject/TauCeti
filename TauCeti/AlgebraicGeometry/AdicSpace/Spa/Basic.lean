@@ -140,7 +140,7 @@ theorem valuation_units_eq_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : 
     v.valuation (u : A) = 1 :=
   Valuation.Integers.one_of_isUnit' (O := Aplus) (x := ⟨u, hu⟩)
     ⟨⟨⟨u, hu⟩, ⟨_, hu'⟩, by ext; simp, by ext; simp⟩, rfl⟩
-    fun x ↦ valuation_le_one_of_mem_spa hv x.2
+    fun x ↦ valuation_le_one_of_mem_spa hv x.property
 
 /-- Enlarging the plus ring shrinks the adic spectrum. -/
 theorem spa_antitone : Antitone (spa (A := A)) := fun _ _ hle ↦ by
@@ -219,12 +219,12 @@ theorem trivialSection_mem_spa_iff (Aplus : Subring A) (p : PrimeSpectrum A) :
 vanish, that is `f ∉ supp v`, form an open subset. -/
 theorem isOpen_setOf_notMem_supp {A : Type*} [CommRing A] [TopologicalSpace A]
     (Aplus : Subring A) (f : A) :
-    IsOpen {v : spa Aplus | f ∉ supp v.1} := by
-  have : {v : spa Aplus | f ∉ supp v.1} = Subtype.val ⁻¹' basicOpen f f := by
+    IsOpen {v : spa Aplus | f ∉ supp v.val} := by
+  have : {v : spa Aplus | f ∉ supp v.val} = Subtype.val ⁻¹' basicOpen f f := by
     ext v
     simp [ValuativeRel.vle_refl]
   rw [this]
-  exact (isOpen_basicOpen f f).preimage continuous_subtype_val
+  exact (isOpen_basicOpen f f).preimage continuous_subtypeVal
 
 section SeparatelyContinuousAdd
 

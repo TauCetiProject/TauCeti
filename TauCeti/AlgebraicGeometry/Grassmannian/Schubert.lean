@@ -133,16 +133,17 @@ theorem schemeSchubertLocus_le_iff [Nontrivial R] (b : Basis (Fin n) R M) {p p' 
   obtain ⟨m, hm⟩ := Ideal.exists_maximal R
   let _ := Ideal.Quotient.field m
   let c := (schubertCellEquiv b hp' hnk (R ⧸ m)).symm 0
-  have hc' : schemeSchubertLocus k b p' ≤ (toSchemeHom c.1.1).ker := by
+  have hc' : schemeSchubertLocus k b p' ≤ (toSchemeHom c.val.val).ker := by
     rw [schemeSchubertLocus_def, schemeRankLocus_le_ker_toSchemeHom_iff]
-    exact c.2
-  have hc : ∀ i, c.1.1.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥ := by
+    exact c.property
+  have hc : ∀ i, c.val.val.rankLocus (b.flag (p i).succ) ((p i : ℕ) - i) = ⊥ := by
     have hker := h.trans hc'
     rwa [schemeSchubertLocus_def, schemeRankLocus_le_ker_toSchemeHom_iff] at hker
   obtain ⟨p₁, hp₁, hpiv₁, hle₁⟩ :=
-    (forall_rankLocus_eq_bot_iff_exists_flagPivots b hp hnk c.1.1).mp hc
-  have hpiv' : (b.baseChange (R ⧸ m)).flagPivots c.1.1.toSubmodule = univ.image p' :=
-    (mem_chart_and_rankLocus_eq_bot_iff_flagPivots b hp' hnk c.1.1).mp ⟨c.1.2, c.2⟩
+    (forall_rankLocus_eq_bot_iff_exists_flagPivots b hp hnk c.val.val).mp hc
+  have hpiv' : (b.baseChange (R ⧸ m)).flagPivots c.val.val.toSubmodule = univ.image p' :=
+    (mem_chart_and_rankLocus_eq_bot_iff_flagPivots b hp' hnk c.val.val).mp ⟨c.val.property,
+        c.property⟩
   have heq : p' = p₁ := (hp'.range_inj_of_wellFoundedLT hp₁).mp <| by
     simpa only [Finset.coe_image, Finset.coe_univ, Set.image_univ] using
       congrArg (↑· : Finset (Fin n) → Set (Fin n)) (hpiv'.symm.trans hpiv₁)
@@ -218,7 +219,7 @@ theorem schubertCellι_toSpec :
 @[simp]
 theorem toSchemeHom_schubertCellHomEquiv {A : Type u} [CommRing A] [Algebra R A]
     (g : MvPolynomial (Finset.univ.image p).echelonFreeEntries R →ₐ[R] A) :
-    toSchemeHom (schubertCellHomEquiv b hp hnk A g).1.1 =
+    toSchemeHom (schubertCellHomEquiv b hp hnk A g).val.val =
       Spec.map (CommRingCat.ofHom (g : _ →+* A)) ≫ schubertCellι b hp hnk := by
   rw [← chartHomEquiv_comp_schubertChartAlgHom, toSchemeHom_chartHomEquiv,
     ← schubertCellToChart_chartι, schubertCellToChart_def, ← Spec.map_comp_assoc,
@@ -285,10 +286,11 @@ theorem exists_comp_schubertCellι_eq_toSchemeHom_iff {A : Type u} [CommRing A] 
           toSchemeHom_toSpec]
     let g : MvPolynomial (Finset.univ.image p).echelonFreeEntries R →ₐ[R] A :=
       { φ.hom with commutes' := fun r ↦ congr(($hR).hom r) }
-    have hN : N = (schubertCellHomEquiv b hp hnk A g).1.1 :=
+    have hN : N = (schubertCellHomEquiv b hp hnk A g).val.val :=
       toSchemeHom_injective (hf.symm.trans (toSchemeHom_schubertCellHomEquiv b hp hnk g).symm)
     rw [hN]
-    exact ⟨(schubertCellHomEquiv b hp hnk A g).1.2, (schubertCellHomEquiv b hp hnk A g).2⟩
+    exact ⟨(schubertCellHomEquiv b hp hnk A g).val.property, (schubertCellHomEquiv b hp hnk A
+        g).property⟩
   · rintro ⟨hchart, hrank⟩
     let g := (schubertCellHomEquiv b hp hnk A).symm ⟨⟨N, hchart⟩, hrank⟩
     refine ⟨Spec.map (CommRingCat.ofHom (g : _ →+* A)), ?_⟩

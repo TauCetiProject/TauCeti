@@ -82,23 +82,23 @@ variable {K F : Type*} [Field K] [Field F] [NumberField K] [NumberField F] [Alge
 
 /-- An absolute value of a finite extension lying over a finite place is at most `1` on the ring
 of integers. -/
-private theorem apply_le_one_of_liesOver (v : FinitePlace K) [w.LiesOver v.1] (y : 𝓞 F) :
+private theorem apply_le_one_of_liesOver (v : FinitePlace K) [w.LiesOver v.val] (y : 𝓞 F) :
     w (y : F) ≤ 1 :=
-  (isNonarchimedean_of_liesOver (u := v.1) v.add_le).apply_le_one_of_isIntegral_int
+  (isNonarchimedean_of_liesOver (u := v.val) v.add_le).apply_le_one_of_isIntegral_int
     (RingOfIntegers.isIntegral_coe y)
 
 /-- An element of the ring of integers of `K` lies in `𝔭` if and only if an absolute value lying
 over `FinitePlace.mk 𝔭` is less than `1` on it. -/
-private theorem apply_algebraMap_lt_one_iff [w.LiesOver (FinitePlace.mk 𝔭).1] (a : 𝓞 K) :
+private theorem apply_algebraMap_lt_one_iff [w.LiesOver (FinitePlace.mk 𝔭).val] (a : 𝓞 K) :
     w (algebraMap (𝓞 K) (𝓞 F) a : F) < 1 ↔ a ∈ 𝔭.asIdeal := by
   rw [RingOfIntegers.coe_eq_algebraMap, ← IsScalarTower.algebraMap_apply,
-    IsScalarTower.algebraMap_apply (𝓞 K) K F, LiesOver.apply_algebraMap (FinitePlace.mk 𝔭).1,
+    IsScalarTower.algebraMap_apply (𝓞 K) K F, LiesOver.apply_algebraMap (FinitePlace.mk 𝔭).val,
     ← FinitePlace.coe_apply, FinitePlace.mk_apply, FinitePlace.norm_lt_one_iff_mem]
 
 variable (𝔭 w) in
 /-- The prime of `𝓞 F` attached to an absolute value `w` lying over `FinitePlace.mk 𝔭`: the
 integers at which `w` is less than `1`. -/
-private noncomputable def primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).1] :
+private noncomputable def primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).val] :
     HeightOneSpectrum (𝓞 F) where
   asIdeal :=
     { carrier := {y | w (y : F) < 1}
@@ -127,12 +127,12 @@ private noncomputable def primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).1] :
       exact (apply_algebraMap_lt_one_iff a).mpr ha
     simp_all
 
-private theorem mem_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).1] {y : 𝓞 F} :
+private theorem mem_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).val] {y : 𝓞 F} :
     y ∈ (primeOfLiesOver 𝔭 w).asIdeal ↔ w (y : F) < 1 :=
   Iff.rfl
 
 /-- The prime attached to an absolute value lying over `FinitePlace.mk 𝔭` lies over `𝔭`. -/
-private theorem liesOver_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).1] :
+private theorem liesOver_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).val] :
     (primeOfLiesOver 𝔭 w).asIdeal.LiesOver 𝔭.asIdeal :=
   ⟨Ideal.ext fun a ↦ by
     rw [Ideal.under_def, Ideal.mem_comap, mem_primeOfLiesOver,
@@ -140,8 +140,8 @@ private theorem liesOver_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).1] :
 
 /-- An absolute value lying over `FinitePlace.mk 𝔭` is equivalent to the finite place of its
 prime. -/
-private theorem isEquiv_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).1] :
-    (FinitePlace.mk (primeOfLiesOver 𝔭 w)).1.IsEquiv w := by
+private theorem isEquiv_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).val] :
+    (FinitePlace.mk (primeOfLiesOver 𝔭 w)).val.IsEquiv w := by
   set 𝔓 := primeOfLiesOver 𝔭 w
   have hle := apply_le_one_of_liesOver (w := w) (FinitePlace.mk 𝔭)
   refine isEquiv_of_lt_one_imp ?_ fun x hx ↦ ?_
@@ -175,7 +175,7 @@ end RootOfFinitePlace
 
 /-- An absolute value lying over `FinitePlace.mk 𝔭` is the root `FinitePlace.mk 𝔓 ^ (e * f)⁻¹` of
 the finite place of its prime `𝔓`. -/
-private theorem relativeAbsValue_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).1] :
+private theorem relativeAbsValue_primeOfLiesOver [w.LiesOver (FinitePlace.mk 𝔭).val] :
     (FinitePlace.mk (primeOfLiesOver 𝔭 w)).relativeAbsValue K = w := by
   have : (FinitePlace.mk (primeOfLiesOver 𝔭 w)).LiesOver (FinitePlace.mk 𝔭) :=
     (FinitePlace.mk_liesOver_mk_iff _ _).mpr liesOver_primeOfLiesOver
@@ -189,14 +189,14 @@ private theorem relativeAbsValue_primeOfLiesOver [w.LiesOver (FinitePlace.mk �
     exact ((FinitePlace.norm_lt_one_iff_mem K 𝔭 a).mpr ha).ne
   · rw [FinitePlace.relativeAbsValue_algebraMap (FinitePlace.mk (primeOfLiesOver 𝔭 w))
       (FinitePlace.mk 𝔭),
-      LiesOver.apply_algebraMap (FinitePlace.mk 𝔭).1,
+      LiesOver.apply_algebraMap (FinitePlace.mk 𝔭).val,
       FinitePlace.coe_apply]
 
 /-- **Absolute values over a finite place.** Let `F / K` be a finite extension of number fields.
 An absolute value `w` of `F` lying over the finite place `FinitePlace.mk 𝔭` of `K` is
 `y ↦ FinitePlace.mk 𝔓 y ^ (e * f)⁻¹` for a unique prime `𝔓` of `𝓞 F` over `𝔭`, where `e` and `f`
 are the ramification index and the inertia degree of `𝔓` over `𝔭`. -/
-theorem existsUnique_finitePlace_rpow_inv_eq_of_liesOver [w.LiesOver (FinitePlace.mk 𝔭).1] :
+theorem existsUnique_finitePlace_rpow_inv_eq_of_liesOver [w.LiesOver (FinitePlace.mk 𝔭).val] :
     ∃! 𝔓 : HeightOneSpectrum (𝓞 F), 𝔓.asIdeal.LiesOver 𝔭.asIdeal ∧ ∀ y, w y =
       FinitePlace.mk 𝔓 y ^
         ((𝔓.asIdeal.ramificationIdx (𝓞 K) : ℝ) * 𝔓.asIdeal.inertiaDeg (𝓞 K))⁻¹ := by
@@ -219,7 +219,7 @@ An absolute value `w` of `F` lies over the finite place `FinitePlace.mk 𝔭` of
 is `y ↦ FinitePlace.mk 𝔓 y ^ (e * f)⁻¹` for a prime `𝔓` of `𝓞 F` over `𝔭`, where `e` and `f` are
 the ramification index and the inertia degree of `𝔓` over `𝔭`. -/
 theorem liesOver_finitePlace_mk_iff :
-    w.LiesOver (FinitePlace.mk 𝔭).1 ↔ ∃ 𝔓 : HeightOneSpectrum (𝓞 F),
+    w.LiesOver (FinitePlace.mk 𝔭).val ↔ ∃ 𝔓 : HeightOneSpectrum (𝓞 F),
       𝔓.asIdeal.LiesOver 𝔭.asIdeal ∧ ∀ y, w y = FinitePlace.mk 𝔓 y ^
         ((𝔓.asIdeal.ramificationIdx (𝓞 K) : ℝ) * 𝔓.asIdeal.inertiaDeg (𝓞 K))⁻¹ := by
   refine ⟨fun _ ↦ existsUnique_finitePlace_rpow_inv_eq_of_liesOver.exists, ?_⟩
@@ -234,7 +234,7 @@ theorem liesOver_finitePlace_mk_iff :
 
 /-- The integers at which an absolute value lying over `FinitePlace.mk 𝔭` is less than `1` form a
 prime of `𝓞 F` lying over `𝔭`. -/
-theorem exists_liesOver_forall_mem_iff_apply_lt_one [w.LiesOver (FinitePlace.mk 𝔭).1] :
+theorem exists_liesOver_forall_mem_iff_apply_lt_one [w.LiesOver (FinitePlace.mk 𝔭).val] :
     ∃ 𝔓 : HeightOneSpectrum (𝓞 F), 𝔓.asIdeal.LiesOver 𝔭.asIdeal ∧
       ∀ y : 𝓞 F, y ∈ 𝔓.asIdeal ↔ w y < 1 :=
   ⟨primeOfLiesOver 𝔭 w, liesOver_primeOfLiesOver, fun _ ↦ mem_primeOfLiesOver⟩
@@ -242,7 +242,7 @@ theorem exists_liesOver_forall_mem_iff_apply_lt_one [w.LiesOver (FinitePlace.mk 
 /-- An absolute value lying over `FinitePlace.mk 𝔭` is determined by the integers at which it is
 less than `1`. -/
 theorem eq_of_liesOver_of_forall_apply_lt_one_iff {w' : AbsoluteValue F ℝ}
-    [w.LiesOver (FinitePlace.mk 𝔭).1] [w'.LiesOver (FinitePlace.mk 𝔭).1]
+    [w.LiesOver (FinitePlace.mk 𝔭).val] [w'.LiesOver (FinitePlace.mk 𝔭).val]
     (h : ∀ y : 𝓞 F, w y < 1 ↔ w' y < 1) : w = w' := by
   have : primeOfLiesOver 𝔭 w = primeOfLiesOver 𝔭 w' :=
     HeightOneSpectrum.ext (Ideal.ext fun y ↦ by rw [mem_primeOfLiesOver, mem_primeOfLiesOver, h])
@@ -254,7 +254,7 @@ variable (w) in
 An absolute value `w` of `F` lying over a finite place `v` of `K` is `y ↦ FinitePlace.mk 𝔓 y ^ t`
 for a prime `𝔓` of `𝓞 F` and an exponent `0 < t ≤ 1`, namely `t = (e * f)⁻¹` as in
 `NumberField.existsUnique_finitePlace_rpow_inv_eq_of_liesOver`. -/
-theorem exists_finitePlace_rpow_inv_eq_of_liesOver (v : FinitePlace K) [w.LiesOver v.1] :
+theorem exists_finitePlace_rpow_inv_eq_of_liesOver (v : FinitePlace K) [w.LiesOver v.val] :
     ∃ (𝔓 : HeightOneSpectrum (𝓞 F)) (t : ℝ), 0 < t ∧ t ≤ 1 ∧
       ∀ y, w y = FinitePlace.mk 𝔓 y ^ t := by
   obtain ⟨𝔭, rfl⟩ : ∃ 𝔭, FinitePlace.mk 𝔭 = v := ⟨_, v.mk_maximalIdeal⟩
@@ -268,14 +268,14 @@ extension. The exponents are positive and at most `1`. This permits comparing pr
 factors without counting an extension place twice. -/
 theorem exists_injective_finitePlace_rpow_eq_of_liesOver
     (S : Set (FinitePlace K)) (w : S → AbsoluteValue F ℝ)
-    (hw : ∀ v, (w v).LiesOver v.val.1) :
+    (hw : ∀ v, (w v).LiesOver v.val.val) :
     ∃ (V : S → FinitePlace F) (t : S → ℝ), Function.Injective V ∧
       ∀ v, 0 < t v ∧ t v ≤ 1 ∧ ∀ x, w v x = V v x ^ t v := by
   classical
   have hclass (v : S) := by
-    have hmk : (FinitePlace.mk v.val.maximalIdeal).1 = v.val.1 :=
+    have hmk : (FinitePlace.mk v.val.maximalIdeal).val = v.val.val :=
       congrArg Subtype.val v.val.mk_maximalIdeal
-    let : (w v).LiesOver (FinitePlace.mk v.val.maximalIdeal).1 := hmk ▸ hw v
+    let : (w v).LiesOver (FinitePlace.mk v.val.maximalIdeal).val := hmk ▸ hw v
     exact (existsUnique_finitePlace_rpow_inv_eq_of_liesOver
       (𝔭 := v.val.maximalIdeal) (w := w v)).exists
   choose P hP hroot using hclass
@@ -300,9 +300,9 @@ variable (F 𝔭)
 /-- A finite extension of number fields has only finitely many absolute values lying over a given
 finite place of the base. -/
 theorem finite_setOf_liesOver_finitePlace_mk :
-    {w : AbsoluteValue F ℝ | w.LiesOver (FinitePlace.mk 𝔭).1}.Finite := by
+    {w : AbsoluteValue F ℝ | w.LiesOver (FinitePlace.mk 𝔭).val}.Finite := by
   refine (Set.finite_range fun 𝔓 : {𝔓 : HeightOneSpectrum (𝓞 F) // 𝔓.asIdeal.LiesOver 𝔭.asIdeal} ↦
-    (FinitePlace.mk 𝔓.1).relativeAbsValue K).subset fun w (hw : w.LiesOver _) ↦ ?_
+    (FinitePlace.mk 𝔓.val).relativeAbsValue K).subset fun w (hw : w.LiesOver _) ↦ ?_
   obtain ⟨𝔓, h𝔓, hw⟩ := liesOver_finitePlace_mk_iff.mp hw
   exact ⟨⟨𝔓, h𝔓⟩, ext fun y ↦ by
     simpa only [FinitePlace.relativeAbsValue_apply, FinitePlace.localDegree_def,
@@ -311,7 +311,7 @@ theorem finite_setOf_liesOver_finitePlace_mk :
 /-- Every finite place of the base has an absolute value of a finite extension of number fields
 lying over it. -/
 theorem nonempty_setOf_liesOver_finitePlace_mk :
-    {w : AbsoluteValue F ℝ | w.LiesOver (FinitePlace.mk 𝔭).1}.Nonempty := by
+    {w : AbsoluteValue F ℝ | w.LiesOver (FinitePlace.mk 𝔭).val}.Nonempty := by
   obtain ⟨𝔓, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 F) 𝔭
   have : (FinitePlace.mk 𝔓).LiesOver (FinitePlace.mk (𝔓.under (𝓞 K))) :=
     (FinitePlace.mk_liesOver_mk_iff _ _).mpr inferInstance
@@ -320,16 +320,16 @@ theorem nonempty_setOf_liesOver_finitePlace_mk :
 /-- A finite extension of number fields `F / K` has only finitely many absolute values lying over a
 given finite place `v` of `K`. -/
 theorem finite_setOf_liesOver_finitePlace (v : FinitePlace K) :
-    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Finite := by
-  have hv : (FinitePlace.mk v.maximalIdeal).1 = v.1 :=
+    {w : AbsoluteValue F ℝ | w.LiesOver v.val}.Finite := by
+  have hv : (FinitePlace.mk v.maximalIdeal).val = v.val :=
     congrArg Subtype.val v.mk_maximalIdeal
   simpa only [hv] using finite_setOf_liesOver_finitePlace_mk F v.maximalIdeal
 
 /-- Every finite place `v` of `K` has an absolute value of a finite extension of number fields
 `F / K` lying over it. -/
 theorem nonempty_setOf_liesOver_finitePlace (v : FinitePlace K) :
-    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Nonempty := by
-  have hv : (FinitePlace.mk v.maximalIdeal).1 = v.1 :=
+    {w : AbsoluteValue F ℝ | w.LiesOver v.val}.Nonempty := by
+  have hv : (FinitePlace.mk v.maximalIdeal).val = v.val :=
     congrArg Subtype.val v.mk_maximalIdeal
   simpa only [hv] using nonempty_setOf_liesOver_finitePlace_mk F v.maximalIdeal
 

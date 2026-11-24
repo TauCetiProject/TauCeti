@@ -76,7 +76,7 @@ theorem padicInt_coe_apply_eq_exp_smul_log [ContinuousMul E] [TopologicalSpace V
   have hL : IsNilpotent L := isNilpotent_log hu
   obtain ⟨b, hb⟩ := hL
   let c : ℤ_[ℓ] → E := fun y ↦ algebraMap ℚ_[ℓ] E y
-  have hc : Continuous c := (continuous_algebraMap ℚ_[ℓ] E).comp continuous_subtype_val
+  have hc : Continuous c := (continuous_algebraMap ℚ_[ℓ] E).comp continuous_subtypeVal
   have hpow (y : ℤ_[ℓ]) : (c y • L) ^ b = 0 := by rw [smul_pow, hb, smul_zero]
   have hexp (y : ℤ_[ℓ]) (v : V) : exp (c y • L) v =
       ∑ i ∈ Finset.range b, (i.factorial : ℚ)⁻¹ • (c y ^ i • (L ^ i) v) := by

@@ -457,9 +457,9 @@ private theorem orbit_stabilizer_eq_secondOrbit :
   · rintro ⟨g, rfl⟩
     apply (mem_secondOrbit _).2
     have hfix : (g : Equiv.Perm (Fin 100)) 0 = 0 := by
-      simpa only [Equiv.Perm.smul_def] using mem_stabilizer_iff.mp g.2.2
+      simpa only [Equiv.Perm.smul_def] using mem_stabilizer_iff.mp g.property.2
     simpa only [Subgroup.smul_def, Equiv.Perm.smul_def, hfix] using
-      (orbital_apply g.2.1 0 1).trans (by decide +kernel)
+      (orbital_apply g.property.1 0 1).trans (by decide +kernel)
   · intro hx
     have hw := pairWord_spec x hx
     have hfix : word (pairWord x) ∈ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100) := by
@@ -753,16 +753,16 @@ theorem orbit_stabilizerChain_three :
   ext x
   constructor
   · rintro ⟨g, rfl⟩
-    have hgJ := ((Subgroup.mem_stabilizerChain_iff J2 basePoint).mp g.2).1
+    have hgJ := ((Subgroup.mem_stabilizerChain_iff J2 basePoint).mp g.property).1
     have hfixed : ∀ z ∈ ([0, 1, 2] : List (Fin 100)), (g : Equiv.Perm (Fin 100)) z = z := by
       intro z hz
-      apply apply_eq_self_of_mem_stabilizerChain g.2
+      apply apply_eq_self_of_mem_stabilizerChain g.property
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hz
       rcases hz with rfl | rfl | rfl <;> decide
     have hcand := fourthOrbit_candidates ((g : Equiv.Perm (Fin 100)) 3)
       (relationProfile_apply (g : Equiv.Perm (Fin 100)).injective (orbital_apply hgJ) hfixed 3)
       (commonNeighborCount_apply (orbital_apply hgJ) hfixed 3)
-    exact hcand.resolve_right (not_mem_oddCandidates g.2)
+    exact hcand.resolve_right (not_mem_oddCandidates g.property)
   · intro hx
     simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx
     rcases hx with rfl | rfl | rfl | rfl

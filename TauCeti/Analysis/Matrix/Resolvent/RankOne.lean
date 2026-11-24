@@ -18,9 +18,12 @@ The denominator is nonzero at every non-real `z`: both shifted Hermitian matrice
 invertible, and the rank-one invertibility criterion applies. In particular, no extra
 nonvanishing hypothesis is needed for the update.
 
-The matrix, entrywise and trace identities apply also to negative `c`, zero vectors and empty
-index types. Trace updates are used when adding or removing one sample in a Gram matrix in the
-resolvent method for sample-covariance spectral laws.
+The matrix, entrywise, trace and quadratic-form identities apply also to negative `c`, zero
+vectors and empty index types. The quadratic form of the updated resolvent along `u` is
+`q / (1 + c q)`, where `q = uᴴ R u`. For positive semidefinite `A` and `c ≥ 0` the denominator
+satisfies `|(1 + c q)⁻¹| ≤ |z| / |Im z|`.
+Trace updates and these quadratic forms are used when adding or removing one sample in a Gram
+matrix in the resolvent method for sample-covariance spectral laws.
 
 ## References
 
@@ -33,6 +36,8 @@ resolvent method for sample-covariance spectral laws.
 public section
 
 noncomputable section
+
+open scoped ComplexOrder
 
 namespace Matrix.IsHermitian
 
@@ -98,4 +103,50 @@ theorem trace_inv_add_smul_vecMulVec_sub_smul_one (c : ℝ) (u : n → 𝕜) {z 
     dotProduct_comm ((A - z • 1)⁻¹ *ᵥ u) (star u ᵥ* (A - z • 1)⁻¹),
     ← dotProduct_mulVec, mulVec_mulVec, smul_eq_mul]
 
+/-- **Quadratic form of a rank-one updated resolvent.** Along the update direction `u`, the
+updated resolvent has quadratic form `q / (1 + c q)`, where `q = uᴴ (A - z • 1)⁻¹ u`. -/
+theorem dotProduct_inv_add_smul_vecMulVec_sub_smul_one_mulVec (c : ℝ) (u : n → 𝕜) {z : 𝕜}
+    (hz : RCLike.im z ≠ 0) :
+    star u ⬝ᵥ ((A + (c : 𝕜) • vecMulVec u (star u) - z • 1)⁻¹ *ᵥ u) =
+      star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u) /
+        (1 + (c : 𝕜) * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u))) := by
+  have hden := hA.one_add_mul_dotProduct_inv_sub_smul_one_ne_zero c u hz
+  rw [hA.inv_add_smul_vecMulVec_sub_smul_one c u hz, sub_mulVec, smul_mulVec, vecMulVec_mulVec,
+    dotProduct_sub, dotProduct_smul, dotProduct_smul, ← dotProduct_mulVec]
+  generalize star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u) = q at hden ⊢
+  simp only [MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, smul_eq_mul]
+  rw [eq_div_iff hden, sub_mul, div_mul_eq_mul_div, div_mul_eq_mul_div,
+    mul_div_cancel_right₀ _ hden]
+  ring
+
 end Matrix.IsHermitian
+
+namespace Matrix.PosSemidef
+
+variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
+
+/-- For positive semidefinite `A` and `c ≥ 0`, the inverse of the denominator `1 + c uᴴ R u` of a
+rank-one resolvent update is bounded by `|z| / |Im z|`, uniformly in `A`, `c` and `u`. -/
+theorem norm_inv_one_add_mul_dotProduct_inv_sub_smul_one_mulVec_le (hA : A.PosSemidef)
+    {c : ℝ} (hc : 0 ≤ c) (u : n → 𝕜) {z : 𝕜} (hz : RCLike.im z ≠ 0) :
+    ‖(1 + (c : 𝕜) * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u)))⁻¹‖ ≤ ‖z‖ / |RCLike.im z| := by
+  have hden := hA.isHermitian.one_add_mul_dotProduct_inv_sub_smul_one_ne_zero c u hz
+  have him := hA.isHermitian.im_mul_dotProduct_inv_sub_smul_one_mulVec u z
+  have hr := (RCLike.nonneg_iff.mp (hA.dotProduct_mulVec_nonneg ((A - z • 1)⁻¹ *ᵥ u))).1
+  generalize star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u) = q at hden him
+  generalize RCLike.re (star ((A - z • 1)⁻¹ *ᵥ u) ⬝ᵥ (A *ᵥ ((A - z • 1)⁻¹ *ᵥ u))) = r at hr him
+  -- `Im (z (1 + c q)) = Im z (1 + c r)` with `1 + c r ≥ 1`, so `|Im z| ≤ |z| |1 + c q|`.
+  have hzD : RCLike.im (z * (1 + c * q)) = RCLike.im z * (1 + c * r) := by
+    rw [mul_add, mul_one, mul_left_comm, map_add, RCLike.im_ofReal_mul, him]
+    ring
+  have hle : |RCLike.im z| ≤ ‖z‖ * ‖1 + (c : 𝕜) * q‖ :=
+    calc |RCLike.im z| ≤ |RCLike.im z| * (1 + c * r) :=
+          le_mul_of_one_le_right (abs_nonneg _) (by nlinarith)
+      _ = |RCLike.im (z * (1 + c * q))| := by
+          rw [hzD, abs_mul, abs_of_nonneg (by positivity : 0 ≤ 1 + c * r)]
+      _ ≤ ‖z * (1 + c * q)‖ := RCLike.abs_im_le_norm _
+      _ = ‖z‖ * ‖1 + (c : 𝕜) * q‖ := norm_mul _ _
+  rw [norm_inv, le_div_iff₀ (abs_pos.mpr hz), inv_mul_le_iff₀ (norm_pos_iff.mpr hden)]
+  linarith [mul_comm ‖z‖ ‖1 + (c : 𝕜) * q‖]
+
+end Matrix.PosSemidef

@@ -95,22 +95,19 @@ theorem mem_iff {g : SL(2, R)} :
 @[simp]
 theorem apply_one_zero (g : SL2Borel R) :
     (g : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 :=
-  mem_iff.mp g.2
+  mem_iff.mp g.property
 
 /-- The upper-triangular determinant-one matrix with diagonal entries `a`, `a⁻¹` and
 upper-right entry `b`. -/
 def mk (a : Rˣ) (b : R) : SL2Borel R :=
-  let M : Matrix (Fin 2) (Fin 2) R := !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)]
-  have hdet : M.det = 1 := by
-    rw [Matrix.det_fin_two]
-    simp [M]
-  ⟨⟨M, hdet⟩, mem_iff.mpr (by simp [M])⟩
+  ⟨.mk !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)] (by simp [Matrix.det_fin_two_of]),
+    mem_iff.mpr (by simp)⟩
 
 /-- The matrix underlying `mk a b`. -/
 @[simp]
 theorem coe_mk (a : Rˣ) (b : R) :
     (mk a b : Matrix (Fin 2) (Fin 2) R) = !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)] := by
-  rw [mk]
+  rw [mk, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- Apply a ring homomorphism entrywise to an upper-triangular determinant-one matrix. -/
 def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S :=
@@ -124,7 +121,7 @@ def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S
 of its underlying matrix. -/
 @[simp]
 theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R) :
-    (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 := by
+    (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.val := by
   simp only [map, MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply]
 
 /-- The `(i, j)` entry of the entrywise map of `g` is the image under `phi` of the `(i, j)`
@@ -166,7 +163,7 @@ def toGL2Borel : SL2Borel R →* GL2Borel R :=
 general linear matrix. -/
 @[simp]
 theorem coe_toGL2Borel (g : SL2Borel R) :
-    (toGL2Borel g : GL (Fin 2) R) = Matrix.SpecialLinearGroup.toGL g.1 :=
+    (toGL2Borel g : GL (Fin 2) R) = Matrix.SpecialLinearGroup.toGL g.val :=
   MonoidHom.subgroupComap_apply_coe _ _ g
 
 /-- The inclusion from the `SL₂` Borel to the `GL₂` Borel is injective. -/
@@ -207,7 +204,7 @@ theorem upperRight_mk (a : Rˣ) (b : R) : upperRight (mk a b) = b := by
 /-- Every `SL₂` Borel matrix is recovered from its diagonal and upper-right parameters. -/
 @[simp]
 theorem mk_diag_upperRight (g : SL2Borel R) : mk (diag g) (upperRight g) = g := by
-  have hdet := g.1.2
+  have hdet := g.val.property
   rw [Matrix.det_fin_two, apply_one_zero, mul_zero, sub_zero] at hdet
   have hinv : (((diag g)⁻¹ : Rˣ) : R) = (g : Matrix (Fin 2) (Fin 2) R) 1 1 := by
     apply Units.inv_eq_of_mul_eq_one_right
@@ -265,9 +262,9 @@ private theorem isUnit_apply_one_zero_of_mem_doubleCoset_modularGroup_S {g : SL(
   have hx10 : x 1 0 = 0 := mem_iff.mp hx
   have hy10 : y 1 0 = 0 := mem_iff.mp hy
   have hxdet : x 0 0 * x 1 1 = 1 := by
-    simpa only [Matrix.det_fin_two, hx10, mul_zero, sub_zero] using x.2
+    simpa only [Matrix.det_fin_two, hx10, mul_zero, sub_zero] using x.property
   have hydet : y 0 0 * y 1 1 = 1 := by
-    simpa only [Matrix.det_fin_two, hy10, mul_zero, sub_zero] using y.2
+    simpa only [Matrix.det_fin_two, hy10, mul_zero, sub_zero] using y.property
   rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
     TauCeti.Matrix.SpecialLinearGroup.coe_modularGroup_S]
   simpa only [Matrix.mul_apply, Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val_one,
@@ -282,7 +279,7 @@ theorem mk_mul_modularGroup_S_mul_mk (g : SL(2, R)) (c : Rˣ) (hc : (c : R) = g 
     (mk 1 (g 0 0 * ((c⁻¹ : Rˣ) : R)) : SL(2, R)) *
       ((ModularGroup.S : SL(2, ℤ)) : SL(2, R)) * mk c (g 1 1) = g := by
   symm
-  have hdet := g.2
+  have hdet := g.property
   rw [Matrix.det_fin_two] at hdet
   have hcg : ((c⁻¹ : Rˣ) : R) * g 1 0 = 1 := by
     rw [← hc]
@@ -306,7 +303,7 @@ private theorem mem_doubleCoset_modularGroup_S_of_isUnit_apply_one_zero {g : SL(
       (SL2Borel R : Set SL(2, R)) (SL2Borel R : Set SL(2, R)) := by
   obtain ⟨c, hc⟩ := hg
   exact DoubleCoset.mem_doubleCoset.mpr
-    ⟨mk 1 (g 0 0 * ((c⁻¹ : Rˣ) : R)), (mk _ _).2, mk c (g 1 1), (mk _ _).2,
+    ⟨mk 1 (g 0 0 * ((c⁻¹ : Rˣ) : R)), (mk _ _).property, mk c (g 1 1), (mk _ _).property,
       (mk_mul_modularGroup_S_mul_mk g c hc).symm⟩
 
 /-- **The lower-left entry detects the big cell.** An element of `SL₂(R)` lies in the double

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Unitary polar decomposition and near-isometries in finite dimension
@@ -98,7 +98,7 @@ theorem norm_operatorAbs_apply_sub_le (M : E →ₗ[𝕜] F) {δ : ℝ}
     have := hM v
     rw [hnorm, ← sub_one_mul, abs_mul, abs_of_pos hv0] at this
     exact le_of_mul_le_mul_right this hv0
-  exact Real.abs_sqrt_sub_one_le_abs_sub_one.trans hμ1
+  exact (Real.abs_sqrt_sub_one_le_abs_sub_one μ).trans hμ1
 
 /-- **Near-isometry polar-factor bound.** If `|‖M x‖² - ‖x‖²| ≤ δ ‖x‖²` for every `x` and
 `U` is a linear isometry with `U |M| = M`, then `‖M x - U x‖ ≤ δ ‖x‖` for every `x`. -/

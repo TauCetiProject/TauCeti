@@ -174,7 +174,7 @@ def blockHardyEquiv (r : ℕ) : ↥(blockHardySubmodule r) ≃ₗᵢ[ℂ] BlockH
 /-- Coordinatewise evaluation of `blockHardyEquiv r` in circle `L²`. -/
 @[simp] theorem coe_blockHardyEquiv_apply {r : ℕ} (f : ↥(blockHardySubmodule r)) (i : Fin r) :
     (blockHardyEquiv r f i : Lp ℂ 2 (haarAddCircle (T := 1))) =
-      Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (haarAddCircle (T := 1)) f.1 i :=
+      Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (haarAddCircle (T := 1)) f.val i :=
   LinearIsometryEquiv.coe_submodulePiLp_apply _ _ _ _ f i
 
 /-- Coordinatewise evaluation of `(blockHardyEquiv r).symm` under `Lp.piLpEquiv`. -/
@@ -252,7 +252,7 @@ def blockHardyOrthogonalEquiv (r : ℕ) :
 /-- Coordinatewise evaluation of `blockHardyOrthogonalEquiv r` in circle `L²`. -/
 @[simp] theorem coe_blockHardyOrthogonalEquiv_apply {r : ℕ} (f : ↥(blockHardySubmodule r)ᗮ)
     (i : Fin r) : (blockHardyOrthogonalEquiv r f i : Lp ℂ 2 (haarAddCircle (T := 1))) =
-      Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (haarAddCircle (T := 1)) f.1 i :=
+      Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (haarAddCircle (T := 1)) f.val i :=
   LinearIsometryEquiv.coe_submodulePiLp_apply _ _ _ _ f i
 
 /-- Coordinatewise evaluation of `(blockHardyOrthogonalEquiv r).symm` under `Lp.piLpEquiv`. -/

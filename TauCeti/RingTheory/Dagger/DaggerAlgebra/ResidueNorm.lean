@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Completion
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Completion
 public import TauCeti.RingTheory.Dagger.ClosedIdeal
+
+import TauCeti.Analysis.Normed.Algebra.Completion
 
 /-!
 # The residue norm of a dagger algebra and its completion
@@ -17,8 +20,9 @@ algebra, presented by `φ : W_n ↠ A`. The *residue seminorm* of the presentati
 ideal of `W_n` is closed for the Gauss norm, so the quotient seminorm is definite, and in fact
 the infimum is attained. This file transports it to a norm on `A` along the chosen minimal
 presentation, shows that the completion map `τ : A → Â = T_n ⧸ I T_n` of
-`TauCeti.Dagger.toCompletion` is an isometry with dense image, so that `Â` is a metric
-completion of `A`.
+`TauCeti.Dagger.toCompletion` is an isometry with dense image, and constructs the isometric
+`K`-algebra equivalence `UniformSpace.Completion A ≃ₐ[K] completion K A` identifying `Â` with the
+metric completion of `A`.
 
 This is the completion comparison of Grosse-Klönne, *Rigid analytic spaces with overconvergent
 structure sheaf*, §1, Proposition 1.6: `A` is to its completion `Â` as `W_n` is to `T_n`, with the
@@ -31,9 +35,9 @@ of arbitrary `K`-algebra homomorphisms of dagger algebras, which is established 
 The isometry `isometry_toCompletion` compares the residue norm transported along the chosen
 minimal presentation with the quotient Gauss norm on `completion K A`. The residue norm is
 carried explicitly by `residueNormedCommRing` and the local `letI` declarations in the results,
-rather than by a global instance. With these structures installed locally, one can formulate
-an algebra equivalence from `UniformSpace.Completion A` to `completion K A`; this file provides
-the isometry and dense range used for that comparison, but does not construct the equivalence.
+rather than by a global instance. With these structures installed locally,
+`residueCompletionAlgEquiv` identifies `UniformSpace.Completion A` isometrically as a `K`-algebra
+with `completion K A`.
 
 ## Main definitions
 
@@ -44,6 +48,8 @@ the isometry and dense range used for that comparison, but does not construct th
   presentation.
 * `TauCeti.Dagger.residueContinuousAlgEquiv`: promotes `TauCeti.Dagger.residueAlgEquiv` to a
   topological `K`-algebra isomorphism for `TauCeti.Dagger.residueNormedCommRing`.
+* `TauCeti.Dagger.residueCompletionAlgEquiv`: the isometric `K`-algebra equivalence
+  `UniformSpace.Completion A ≃ₐ[K] completion K A`.
 
 ## Main results
 
@@ -54,7 +60,12 @@ the isometry and dense range used for that comparison, but does not construct th
 * `TauCeti.Dagger.norm_toCompletion`, `TauCeti.Dagger.isometry_toCompletion`: the completion
   map `τ : A → Â` is an isometry for the residue norm and the quotient Gauss norm of `Â`.
   Its image is dense (`TauCeti.Dagger.denseRange_toCompletion`), so `Â` is a metric
-  completion of the residue-normed `A`.
+  completion of the residue-normed `A` (`TauCeti.Dagger.isometry_residueCompletionAlgEquiv`).
+* `TauCeti.Dagger.residueNormedCommRing_toUniformSpace_eq_comap`,
+  `TauCeti.Dagger.residueNormedCommRing_toUniformSpace_eq`, and
+  `TauCeti.Dagger.residueNormedCommRing_toTopologicalSpace_eq_induced`: the uniformity and
+  topology of `residueNormedCommRing K A` are pulled back from `completion K A` along
+  `toCompletion K A`.
 
 ## References
 
@@ -82,6 +93,13 @@ local notation "I" => RingHom.ker (presentation K A)
 `W_n ⧸ ker (presentation K A)` of the chosen minimal presentation. -/
 noncomputable def residueAlgEquiv : A ≃ₐ[K] W ⧸ I :=
   (Ideal.quotientKerAlgEquivOfSurjective (presentation_surjective K A)).symm
+
+/-- `residueAlgEquiv K A` is the inverse of the first isomorphism theorem for the chosen
+presentation `presentation K A`. -/
+theorem residueAlgEquiv_def :
+    residueAlgEquiv K A =
+      (Ideal.quotientKerAlgEquivOfSurjective (presentation_surjective K A)).symm :=
+  (rfl)
 
 /-- The residue isomorphism sends the image of a series to its quotient class. -/
 @[simp] theorem residueAlgEquiv_presentation (f : W) :
@@ -222,5 +240,92 @@ theorem isometry_toCompletion :
   (AddMonoidHomClass.isometry_iff_norm (E := A) (F := completion K A)
     (toCompletion K A)).mpr
     fun a ↦ norm_toCompletion K A a
+
+/-- The uniformity of `residueNormedCommRing K A` is pulled back from `completion K A` along
+`toCompletion K A`. -/
+theorem residueNormedCommRing_toUniformSpace_eq_comap :
+    (residueNormedCommRing K A).toUniformSpace =
+      UniformSpace.comap (toCompletion K A) inferInstance :=
+  letI := residueNormedCommRing K A
+  (isometry_toCompletion K A).isUniformInducing.comap_uniformSpace.symm
+
+/-- The topology of `residueNormedCommRing K A` is induced from `completion K A` along
+`toCompletion K A`. -/
+theorem residueNormedCommRing_toTopologicalSpace_eq_induced :
+    (residueNormedCommRing K A).toUniformSpace.toTopologicalSpace =
+      TopologicalSpace.induced (toCompletion K A) inferInstance := by
+  rw [residueNormedCommRing_toUniformSpace_eq_comap, UniformSpace.toTopologicalSpace_comap]
+  rfl
+
+/-- **Metric completion comparison** (Grosse-Klönne, Proposition 1.6 (1)). With the residue norm
+`residueNormedCommRing K A`, the metric completion `UniformSpace.Completion A` is isomorphic as a
+`K`-algebra to `completion K A`. -/
+noncomputable def residueCompletionAlgEquiv :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    Completion A ≃ₐ[K] completion K A :=
+  letI := residueNormedCommRing K A
+  letI := residueNormedAlgebra K A
+  AlgHom.completionAlgEquiv (R := K) (A := A) (B := completion K A)
+    (toCompletion K A) (isometry_toCompletion K A) denseRange_toCompletion
+
+/-- `residueCompletionAlgEquiv K A` extends `toCompletion K A` on elements of `A`. -/
+@[simp↓]
+theorem residueCompletionAlgEquiv_coe (a : A) :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    residueCompletionAlgEquiv K A (a : Completion A) = toCompletion K A a :=
+  letI := residueNormedCommRing K A
+  letI := residueNormedAlgebra K A
+  by
+    exact AlgHom.completionAlgEquiv_coe (R := K) (A := A) (B := completion K A)
+      (toCompletion K A) (isometry_toCompletion K A) denseRange_toCompletion a
+
+/-- The inverse of `residueCompletionAlgEquiv K A` recovers the completion class of `a : A`. -/
+@[simp↓]
+theorem residueCompletionAlgEquiv_symm_toCompletion (a : A) :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    (residueCompletionAlgEquiv K A).symm (toCompletion K A a) = (a : Completion A) :=
+  letI := residueNormedCommRing K A
+  letI := residueNormedAlgebra K A
+  by
+    exact AlgHom.completionAlgEquiv_symm_apply (R := K) (A := A) (B := completion K A)
+      (toCompletion K A) (isometry_toCompletion K A) denseRange_toCompletion a
+
+/-- `residueCompletionAlgEquiv K A` is an isometry for the completed residue norm and the quotient
+Gauss norm on `completion K A`. -/
+theorem isometry_residueCompletionAlgEquiv :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    Isometry (residueCompletionAlgEquiv K A) :=
+  letI := residueNormedCommRing K A
+  letI := residueNormedAlgebra K A
+  by
+    unfold residueCompletionAlgEquiv
+    exact AlgHom.isometry_completionAlgEquiv _ _ _
+
+/-- `residueCompletionAlgEquiv K A` preserves norms. -/
+@[simp↓]
+theorem norm_residueCompletionAlgEquiv :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    ∀ x : Completion A, ‖residueCompletionAlgEquiv K A x‖ = ‖x‖ :=
+  letI := residueNormedCommRing K A
+  letI := residueNormedAlgebra K A
+  by
+    intro x
+    rw [← dist_zero_right (residueCompletionAlgEquiv K A x),
+      ← map_zero (residueCompletionAlgEquiv K A),
+      (isometry_residueCompletionAlgEquiv K A).dist_eq, dist_zero_right]
+
+variable {K A} in
+/-- Any uniform additive group structure on `A` for which `toCompletion K A` is topologically
+inducing coincides with the uniformity of `residueNormedCommRing K A`. -/
+theorem residueNormedCommRing_toUniformSpace_eq [UniformSpace A] [IsUniformAddGroup A]
+    (hA : Topology.IsInducing (toCompletion K A)) :
+    (residueNormedCommRing K A).toUniformSpace = ‹UniformSpace A› :=
+  (residueNormedCommRing_toUniformSpace_eq_comap K A).trans
+    (AddMonoidHom.isUniformInducing_of_isInducing hA).comap_uniformSpace
 
 end TauCeti.Dagger

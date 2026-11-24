@@ -32,12 +32,16 @@ system.
 * `TauCeti.NormalizedCubicalChain.leftAct G Y R p q`: the action
   `C^□_p(G; R) ⊗ C^□_q(Y; R) → C^□_{p + q}(Y; R)`.
 * The `Module (normalizedCubicalChainAlgebra G R) (cubicalChainModule Y H R)` instance.
+* `TauCeti.cubicalChainModuleLeftPhantomEquiv G Y H H' R`: the change of phantom monoid, linear
+  over the chains of `G`.
 
 ## Main results
 
 * `TauCeti.NormalizedCubicalChain.leftAct_assoc`, `TauCeti.NormalizedCubicalChain.one_leftAct`:
   the left action is strictly associative and unital.
-* `TauCeti.NormalizedCubicalChain.boundary_leftAct`: the Leibniz rule.
+* `TauCeti.NormalizedCubicalChain.boundary_leftAct`: the Leibniz rule, and
+  `TauCeti.NormalizedCubicalChain.boundary_leftAct_of_boundary_eq_zero` its form for the action of
+  a cycle.
 * `TauCeti.NormalizedCubicalChain.leftAct_act`: the left and right actions commute.
 * `TauCeti.NormalizedCubicalChain.augment_leftAct`: the augmentation is multiplicative on the left
   action of `0`-chains.
@@ -145,6 +149,28 @@ theorem boundary_leftAct_zero_left {q : ℕ} (a : NormalizedCubicalChain G R 0)
   simp only [leftAct_def]
   rw [← map_cast, ← LinearMap.comp_apply (boundary Y R q), ← map_boundary, LinearMap.comp_apply,
     boundary_crossProduct_zero_left, map_cast]
+
+/-- **The Leibniz rule for the left action of a cycle**: acting by a `q`-cycle `a` commutes with the
+boundary up to the sign `(-1) ^ q`, `∂ (a · c) = (-1) ^ q • (a · ∂ c)`. In degree `0` every chain is
+a cycle; in positive degree `a` is a cycle when its boundary vanishes, which `ha` states up to the
+reindexing of `q` as `p + 1`. -/
+theorem boundary_leftAct_of_boundary_eq_zero {q n : ℕ} (a : NormalizedCubicalChain G R q)
+    (ha : ∀ p (hp : q = p + 1), boundary G R p (cast R hp a) = 0)
+    (c : NormalizedCubicalChain Y R (n + 1)) :
+    boundary Y R (q + n) (leftAct G Y R q (n + 1) a c) =
+      (-1 : R) ^ q • leftAct G Y R q n a (boundary Y R n c) := by
+  cases q with
+  | zero =>
+    have := (boundary_cast (X := Y) (R := R) (h := Nat.zero_add n)
+      (leftAct G Y R 0 (n + 1) a c)).symm.trans (boundary_leftAct_zero_left a c)
+    simpa using cast_injective R (Nat.zero_add n) this
+  | succ p =>
+    have h0 := ha p rfl
+    rw [cast_rfl] at h0
+    have := (boundary_cast (X := Y) (R := R) (h := show p + 1 + n = p + n + 1 by omega)
+      (leftAct G Y R (p + 1) (n + 1) a c)).symm.trans (boundary_leftAct a c)
+    rw [h0, map_zero, LinearMap.zero_apply, zero_add, ← map_smul] at this
+    exact cast_injective R _ this
 
 variable {Y' : Type*} [TopologicalSpace Y'] [SMul G Y'] [ContinuousSMul G Y']
 
@@ -437,9 +463,49 @@ theorem cubicalChainModuleLinearMap_smul_map [Monoid G'] [TopologicalSpace G'] [
 theorem cubicalChainModuleLinearMap_smul [MulAction G Y'] [ContinuousSMul G Y'] (f : C(Y, Y'))
     (hf : ∀ (g : G) (y : Y), f (g • y) = g • f y) (a : normalizedCubicalChainAlgebra G R)
     (x : cubicalChainModule Y H R) :
-    cubicalChainModuleLinearMap (G' := H) R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
+    cubicalChainModuleLinearMap (G' := H') R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
   rw [cubicalChainModuleLinearMap_smul_map f (ContinuousMap.id G) hf, cubicalChainSumMap_id,
     LinearMap.id_apply]
+
+variable (G Y H H' R) in
+/-- The change of phantom monoid `TauCeti.cubicalChainModulePhantomEquiv`, as an equivalence of
+left modules over the chains of `G`. -/
+def cubicalChainModuleLeftPhantomEquiv :
+    cubicalChainModule Y H R ≃ₗ[normalizedCubicalChainAlgebra G R] cubicalChainModule Y H' R :=
+  { cubicalChainModulePhantomEquiv Y H H' R with
+    map_smul' a x := by
+      rw [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, cubicalChainModulePhantomEquiv_apply,
+        cubicalChainModulePhantomEquiv_apply]
+      exact cubicalChainModuleLinearMap_smul (ContinuousMap.id Y) (fun _ _ ↦ rfl) a x }
+
+/-- The change of phantom monoid over the chains of `G` is the one over `R`. -/
+theorem cubicalChainModuleLeftPhantomEquiv_apply (x : cubicalChainModule Y H R) :
+    cubicalChainModuleLeftPhantomEquiv G Y H H' R x = cubicalChainModulePhantomEquiv Y H H' R x :=
+  (rfl)
+
+/-- The inverse of the change of phantom monoid over the chains of `G` is the change back. -/
+@[simp]
+theorem cubicalChainModuleLeftPhantomEquiv_symm :
+    (cubicalChainModuleLeftPhantomEquiv G Y H H' R).symm =
+      cubicalChainModuleLeftPhantomEquiv G Y H' H R :=
+  LinearEquiv.ext fun x ↦ by
+    rw [LinearEquiv.symm_apply_eq, cubicalChainModuleLeftPhantomEquiv_apply,
+      cubicalChainModuleLeftPhantomEquiv_apply,
+      ← cubicalChainModulePhantomEquiv_symm (G := H) (G' := H'), LinearEquiv.apply_symm_apply]
+
+/-- The change of phantom monoid over the chains of `G` commutes with the differentials. -/
+theorem cubicalChainModuleDifferential_leftPhantomEquiv (x : cubicalChainModule Y H R) :
+    cubicalChainModuleDifferential Y H' R (cubicalChainModuleLeftPhantomEquiv G Y H H' R x) =
+      cubicalChainModuleLeftPhantomEquiv G Y H H' R (cubicalChainModuleDifferential Y H R x) := by
+  rw [cubicalChainModuleLeftPhantomEquiv_apply, cubicalChainModuleLeftPhantomEquiv_apply,
+    cubicalChainModuleDifferential_phantomEquiv]
+
+/-- The change of phantom monoid over the chains of `G` preserves the grading. -/
+theorem cubicalChainModuleLeftPhantomEquiv_mem {i : ℤ} {x : cubicalChainModule Y H R}
+    (hx : x ∈ cubicalChainModuleGrading Y H R i) :
+    cubicalChainModuleLeftPhantomEquiv G Y H H' R x ∈ cubicalChainModuleGrading Y H' R i := by
+  rw [cubicalChainModuleLeftPhantomEquiv_apply]
+  exact cubicalChainModulePhantomEquiv_mem hx
 
 end LeftMap
 

@@ -84,7 +84,7 @@ noncomputable def frobeniusRootRestrictedEquiv (p : ℕ) [ExpChar K p] (e : ℕ)
     ⟨MvPowerSeries.map (FrobeniusRoot.root K p e) (f : _root_.MvPowerSeries σ K), by
       have hq : 0 < (((p ^ e : ℕ) : ℝ)⁻¹) :=
         inv_pos.mpr (Nat.cast_pos.mpr (pow_pos (expChar_pos K p) e))
-      have hlim := (Real.continuousAt_rpow_const 0 _ (Or.inr hq.le)).tendsto.comp f.2
+      have hlim := (Real.continuousAt_rpow_const 0 _ (Or.inr hq.le)).tendsto.comp f.property
       rw [Real.zero_rpow hq.ne'] at hlim
       refine hlim.congr fun μ ↦ ?_
       simp only [Function.comp_apply, Real.mul_rpow (norm_nonneg _) (prod_pow_pos μ).le,
@@ -94,7 +94,7 @@ noncomputable def frobeniusRootRestrictedEquiv (p : ℕ) [ExpChar K p] (e : ℕ)
         (g : _root_.MvPowerSeries σ (FrobeniusRoot K p e)), by
       have hq : (0 : ℝ) < (p ^ e : ℕ) := Nat.cast_pos.mpr (pow_pos (expChar_pos K p) e)
       have hr_nn (i : σ) : 0 ≤ r i := hr i ▸ Real.rpow_nonneg (Fact.out : 0 < c i).le _
-      have hlim := (Real.continuousAt_rpow_const 0 _ (Or.inr hq.le)).tendsto.comp g.2
+      have hlim := (Real.continuousAt_rpow_const 0 _ (Or.inr hq.le)).tendsto.comp g.property
       rw [Real.zero_rpow hq.ne'] at hlim
       refine hlim.congr fun μ ↦ ?_
       have hprod : 0 ≤ μ.prod (r · ^ ·) := Finset.prod_nonneg fun i _ ↦ pow_nonneg (hr_nn i) _
@@ -107,8 +107,8 @@ noncomputable def frobeniusRootRestrictedEquiv (p : ℕ) [ExpChar K p] (e : ℕ)
       rw [hr, Real.rpow_inv_rpow (Fact.out : 0 < c i).le hq.ne']⟩
   left_inv _ := Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
   right_inv _ := Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
-  map_mul' f g := Subtype.ext (map_mul (MvPowerSeries.map (FrobeniusRoot.root K p e)) f.1 g.1)
-  map_add' f g := Subtype.ext (map_add (MvPowerSeries.map (FrobeniusRoot.root K p e)) f.1 g.1)
+  map_mul' f g := Subtype.ext (map_mul (MvPowerSeries.map (FrobeniusRoot.root K p e)) f.val g.val)
+  map_add' f g := Subtype.ext (map_add (MvPowerSeries.map (FrobeniusRoot.root K p e)) f.val g.val)
 
 @[simp]
 theorem coe_frobeniusRootRestrictedEquiv (p : ℕ) [ExpChar K p] (e : ℕ) {c r : σ → ℝ}

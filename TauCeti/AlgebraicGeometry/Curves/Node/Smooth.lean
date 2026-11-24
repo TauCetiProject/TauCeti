@@ -50,25 +50,25 @@ theorem exists_etale_nodeAlgebra_zero_of_smoothOfRelativeDimension_one
     TauCeti.AlgebraicGeometry.exists_isStandardSmoothOfRelativeDimension R
       (X := X) 1 x
   let : Algebra R Γ(X, V) :=
-    ((X.baseRingToStructurePresheaf R).app (op V.1)).hom.toAlgebra
+    ((X.baseRingToStructurePresheaf R).app (op V.val)).hom.toAlgebra
   have : Algebra.IsStandardSmoothOfRelativeDimension 1 R Γ(X, V) :=
     (RingHom.isStandardSmoothOfRelativeDimension_algebraMap 1).mp hV
-  let p := V.2.primeIdealOf ⟨x, hxV⟩
+  let p := V.property.primeIdealOf ⟨x, hxV⟩
   obtain ⟨t, ht, φ, hφ, hu, hv⟩ :=
     Ideal.exists_notMem_etale_nodeAlgebra_hom_of_isStandardSmoothOfRelativeDimension_one
-      R p.asIdeal p.2.ne_top
+      R p.asIdeal p.isPrime.ne_top
   let T := Localization.Away t
   have hd : Disjoint (Submonoid.powers t : Set Γ(X, V)) p.asIdeal :=
-    (Ideal.disjoint_powers_iff_notMem _ p.2.isRadical).mpr ht
+    (Ideal.disjoint_powers_iff_notMem _ p.isPrime.isRadical).mpr ht
   let Q := p.asIdeal.map (algebraMap Γ(X, V) T)
-  have : Q.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ T _ p.2 hd
+  have : Q.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ T _ p.isPrime hd
   let y : Spec (.of T) := ⟨Q, inferInstance⟩
   have hy : Spec.algebraMap Γ(X, V) T y = p := by
     rw [Spec.map_apply, CommRingCat.hom_ofHom]
     apply PrimeSpectrum.ext
     rw [PrimeSpectrum.comap_asIdeal, ← Ideal.under_def]
-    exact IsLocalization.under_map_of_isPrime_disjoint _ T p.2 hd
-  have hVbase : V.2.fromSpec ≫ (X ↘ Spec (.of R)) =
+    exact IsLocalization.under_map_of_isPrime_disjoint _ T p.isPrime hd
+  have hVbase : V.property.fromSpec ≫ (X ↘ Spec (.of R)) =
       Spec.algebraMap R Γ(X, V) := by
     have := TauCeti.AlgebraicGeometry.isOver_fromSpec R X V
     rwa [Scheme.Hom.isOver_iff, specOverSpec_over] at this
@@ -77,11 +77,11 @@ theorem exists_etale_nodeAlgebra_zero_of_smoothOfRelativeDimension_one
       (RingHom.etale_algebraMap.mpr (Algebra.Etale.of_isLocalizationAway t))
   have : Etale (Spec.map (CommRingCat.ofHom φ.toRingHom)) :=
     (HasRingHomProperty.Spec_iff (P := @Etale)).mpr hφ
-  have := V.2.isOpenImmersion_fromSpec
-  refine ⟨T, inferInstance, Spec.algebraMap Γ(X, V) T ≫ V.2.fromSpec,
+  have := V.property.isOpenImmersion_fromSpec
+  refine ⟨T, inferInstance, Spec.algebraMap Γ(X, V) T ≫ V.property.fromSpec,
     Spec.map (CommRingCat.ofHom φ.toRingHom), y, inferInstance, inferInstance, ?_, ?_, ?_, ?_⟩
   · rw [Scheme.Hom.comp_apply, hy]
-    exact V.2.fromSpec_primeIdealOf ⟨x, hxV⟩
+    exact V.property.fromSpec_primeIdealOf ⟨x, hxV⟩
   · have hψ : Spec.map (CommRingCat.ofHom φ.toRingHom) ≫
         Spec.algebraMap R (TauCeti.NodeAlgebra R 0) = Spec.algebraMap R T := by
       rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, AlgHom.toRingHom_eq_coe, φ.comp_algebraMap]

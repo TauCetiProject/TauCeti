@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Liouville
 public import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
+import TauCeti.NumberTheory.LSeries.Convergence
 
 /-!
 # The Dirichlet series of the Liouville function
@@ -48,9 +49,9 @@ theorem LSeriesSummable_liouville_iff {s : ℂ} :
 
 /-- The abscissa of absolute convergence of the Liouville Dirichlet series is one. -/
 theorem abscissaOfAbsConv_liouville :
-    _root_.LSeries.abscissaOfAbsConv (fun n ↦ (liouville n : ℂ)) = 1 := by
-  simpa [_root_.LSeries.abscissaOfAbsConv, LSeriesSummable_liouville_iff,
-    Set.Ioi_def, EReal.image_coe_Ioi] using csInf_Ioo (EReal.coe_lt_top 1)
+    _root_.LSeries.abscissaOfAbsConv (fun n ↦ (liouville n : ℂ)) = 1 :=
+  (LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff fun _ ↦
+    LSeriesSummable_liouville_iff).trans EReal.coe_one
 
 
 /-- The Liouville Dirichlet series has sum `ζ(2s) / ζ(s)` on `Re s > 1`. -/

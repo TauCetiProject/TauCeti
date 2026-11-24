@@ -82,6 +82,7 @@ identifies `(T, A)` with the attachment, to which the results above apply.
   of the disc-sphere pair.
 * `TauCeti.exists_isIso_singularCohomologyMap_of_homotopyRel_attach_discBundle`: the same in
   cohomology.
+* `TauCeti.exists_isIso_of_homotopyRel_attach_discBundle`: both, through a single map of pairs.
 * `TauCeti.isColimitCofanSingularHomologyOfAttachGaugeDiscBundle`: attaching finitely many disc
   bundles `D_ρₐ(Eₐ)` along their sphere bundles with disjoint images gives
   `Hₙ(Z, X) ≅ ∐ₐ Hₙ(D_ρₐ(Eₐ), S_ρₐ(Eₐ))`.
@@ -137,7 +138,7 @@ private lemma range_gaugeDiscSpherePair_map_subset_outerCollar :
   norm_num)
 
 private lemma isOpen_outerCollar (hρ : Continuous ρ) : IsOpen (outerCollar ρ) :=
-  isOpen_lt continuous_const (hρ.comp continuous_subtype_val)
+  isOpen_lt continuous_const (hρ.comp continuous_subtypeVal)
 
 variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b, AddCommGroup (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
@@ -147,13 +148,13 @@ variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b,
 bundle: at time one it pushes every vector of gauge at least `1/2` out to the sphere bundle and
 doubles the smaller ones. -/
 private def discCollar : C(I × gaugeDiscBundle ρ, gaugeDiscBundle ρ) where
-  toFun p := ⟨TotalSpace.mk' F p.2.1.proj (radialPushScale 2⁻¹ p.1 (ρ p.2) • p.2.1.2), by
+  toFun p := ⟨TotalSpace.mk' F p.2.val.proj (radialPushScale 2⁻¹ p.1 (ρ p.2) • p.2.val.snd), by
     rw [mem_gaugeDiscBundle, hρ.smul_of_nonneg (radialPushScale_nonneg _ _ (hρ.nonneg _)),
       ← radialPush_eq_radialPushScale_mul _ (hρ.nonneg _)]
-    exact radialPush_le_one _ (mem_gaugeDiscBundle.1 p.2.2)⟩
+    exact radialPush_le_one _ (mem_gaugeDiscBundle.1 p.2.property)⟩
   continuous_toFun := by
     have hv : Continuous fun p : I × gaugeDiscBundle ρ ↦ (p.2 : TotalSpace F E) :=
-      continuous_subtype_val.comp continuous_snd
+      continuous_subtypeVal.comp continuous_snd
     -- The collar rescales each vector by a factor in `[0, 3]`, continuous off the zero section.
     refine Continuous.subtype_mk
       (hv.smul_totalSpace_of_norm_le (C := 3) (fun p ↦ ?_) fun p hp ↦ ?_) _
@@ -164,7 +165,7 @@ private def discCollar : C(I × gaugeDiscBundle ρ, gaugeDiscBundle ρ) where
 
 private lemma coe_discCollar (t : I) (v : gaugeDiscBundle ρ) :
     (discCollar hρ (t, v) : TotalSpace F E) =
-      TotalSpace.mk' F v.1.proj (radialPushScale 2⁻¹ t (ρ v) • v.1.2) :=
+      TotalSpace.mk' F v.val.proj (radialPushScale 2⁻¹ t (ρ v) • v.val.snd) :=
   rfl
 
 /-- The gauge of the collar deformation is the radial push of the gauge. -/
@@ -178,7 +179,7 @@ private lemma discCollar_mem_outerCollar (t : I) {v : gaugeDiscBundle ρ} (hv : 
     discCollar hρ (t, v) ∈ outerCollar ρ := by
   rw [mem_outerCollar, apply_discCollar hρ]
   exact hv.trans_le
-    (le_radialPush (by norm_num) (by norm_num) t (hρ.nonneg _) (mem_gaugeDiscBundle.1 v.2))
+    (le_radialPush (by norm_num) (by norm_num) t (hρ.nonneg _) (mem_gaugeDiscBundle.1 v.property))
 
 /-- At time one the collar deformation pushes the outer collar onto the sphere bundle. -/
 private lemma discCollar_one_mem_range {v : gaugeDiscBundle ρ} (hv : v ∈ outerCollar ρ) :
@@ -281,7 +282,7 @@ private lemma exists_isIso_attach_discBundle_subset
       ∀ {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
         (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ),
         IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) ψ n) := by
-  have hgZ (v : gaugeDiscBundle ρ) : g v ∈ Z := hDZ (hgD ▸ mem_image_of_mem g v.2)
+  have hgZ (v : gaugeDiscBundle ρ) : g v ∈ Z := hDZ (hgD ▸ mem_image_of_mem g v.property)
   -- The corestriction `φ` of `g` attaches the disc bundle to `A` inside `Z`.
   let φ : C(gaugeDiscBundle ρ, Z) := ⟨fun v ↦ ⟨g v, hgZ v⟩, hg.continuous.subtype_mk _⟩
   have hmem {x : Z} (hx : (x : Y) ∈ D) : ∃ v : gaugeDiscBundle ρ, φ v = x := by
@@ -290,13 +291,14 @@ private lemma exists_isIso_attach_discBundle_subset
   have hφ : IsClosedEmbedding φ := by
     refine (isClosedEmbedding_iff _).2 ⟨(IsEmbedding.subtypeVal.of_comp_iff).1 hg.isEmbedding, ?_⟩
     have hrange : range φ = Subtype.val ⁻¹' D :=
-      Subset.antisymm (range_subset_iff.2 fun v ↦ hgD ▸ mem_image_of_mem g v.2) fun _ hx ↦ hmem hx
+      Subset.antisymm (range_subset_iff.2 fun v ↦ hgD ▸ mem_image_of_mem g v.property) fun _ hx ↦
+          hmem hx
     rw [hrange]
     have hD : IsClosed D := hgD ▸ range_domRestrict g _ ▸ hg.isClosed_range
-    exact hD.preimage continuous_subtype_val
+    exact hD.preimage continuous_subtypeVal
   have hφA (v : gaugeDiscBundle ρ) (hv : (v : TotalSpace F E) ∈ gaugeSphereBundle ρ) :
       (φ v : Y) ∈ A :=
-    (hgA v v.2).2 hv
+    (hgA v v.property).2 hv
   let ψ := TopPair.ofInclusionMap (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of Y)
     (gaugeSphereBundle_subset_gaugeDiscBundle ρ) hAZ φ hφA
   have hψ (v : gaugeDiscBundle ρ) : TopPair.Hom.fst ψ v = φ v :=
@@ -312,21 +314,21 @@ private lemma exists_isIso_attach_discBundle_subset
   have hf : IsClosedEmbedding (TopPair.Hom.fst (ψ ≫ e.inv)) := by rw [hfst]; exact hφ
   have hfX (v : gaugeDiscBundle ρ) (hv : TopPair.Hom.fst (ψ ≫ e.inv) v ∈ Subtype.val ⁻¹' A) :
       (v : TotalSpace F E) ∈ gaugeSphereBundle ρ :=
-    (hgA v v.2).1 (by rw [hfst] at hv; exact hv)
+    (hgA v v.property).1 (by rw [hfst] at hv; exact hv)
   have hfcover : Subtype.val ⁻¹' A ∪ range (TopPair.Hom.fst (ψ ≫ e.inv)) = univ := by
     rw [hfst]
-    exact eq_univ_of_forall fun x ↦ (hZ x.2).imp id fun hx ↦ hmem hx
+    exact eq_univ_of_forall fun x ↦ (hZ x.property).imp id fun hx ↦ hmem hx
   have hψe : ψ = (ψ ≫ e.inv) ≫ e.hom := by simp
   have he₁ : TopPair.Homotopy (e.hom ≫ e.inv) (𝟙 _) := by rw [Iso.hom_inv_id]; exact .refl _
   have he₂ : TopPair.Homotopy (e.inv ≫ e.hom) (𝟙 _) := by rw [Iso.inv_hom_id]; exact .refl _
   refine ⟨ψ, fun v ↦ congrArg Subtype.val (hψ v), fun R n ↦ ?_, fun R k _ _ M n ↦ ?_⟩
   · have := isIso_singularHomologyMap_of_attach_gaugeDiscBundle (f := ψ ≫ e.inv) hρ
-      (hA.preimage continuous_subtype_val) R n hf hfX hfcover
+      (hA.preimage continuous_subtypeVal) R n hf hfX hfcover
     have := TopPair.isIso_singularHomologyMap e.hom e.inv he₁ he₂ R n
     rw [hψe, TopPair.singularHomologyMap_comp]
     infer_instance
   · have := isIso_singularCohomologyMap_of_attach_gaugeDiscBundle (f := ψ ≫ e.inv) hρ
-      (hA.preimage continuous_subtype_val) R n k M hf hfX hfcover
+      (hA.preimage continuous_subtypeVal) R n k M hf hfX hfcover
     have := TopPair.isIso_singularCohomologyMap e.hom e.inv he₁ he₂ R k M n
     rw [hψe, TopPair.singularCohomologyMap_comp]
     infer_instance
@@ -339,9 +341,12 @@ variable (hρ : IsFiberGauge ρ) (hAT : A ⊆ T) (hA : IsClosed A)
     {x | (x : Y) ∈ A ∪ D})
 
 include hρ hA hg hgD hDT hgA G in
-/-- A space which strong deformation retracts onto a subset with a disc bundle attached has the
-relative homology and cohomology of the disc-sphere pair, through a single map of pairs. -/
-private lemma exists_isIso_of_homotopyRel_attach_discBundle :
+/-- **A deformation retract onto a disc bundle attachment, in homology and cohomology.** Under the
+hypotheses of `TauCeti.exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle`, `g`
+induces a single map of pairs `(D_ρ(E), S_ρ(E)) ⟶ (T, A)` which is an isomorphism on relative
+singular homology and on relative singular cohomology, with arbitrary coefficients, in every
+degree. -/
+theorem exists_isIso_of_homotopyRel_attach_discBundle :
     ∃ ψ : gaugeDiscSpherePair ρ ⟶ TopPair.ofInclusion (X := TopCat.of Y) hAT,
       (∀ v : gaugeDiscBundle ρ, Subtype.val (TopPair.Hom.fst ψ v) = g v) ∧
       (∀ {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ),
@@ -360,7 +365,7 @@ private lemma exists_isIso_of_homotopyRel_attach_discBundle :
   -- `ψ₁` induces isomorphisms since `T` deformation retracts onto `A ∪ D`.
   have hset : {x : ↥T | (x : Y) ∈ T ∩ (A ∪ D)} = {x : ↥T | (x : Y) ∈ A ∪ D} := by
     ext x
-    exact ⟨And.right, fun h ↦ ⟨x.2, h⟩⟩
+    exact ⟨And.right, fun h ↦ ⟨x.property, h⟩⟩
   refine ⟨ψ₀ ≫ ψ₁, fun v ↦ ?_, fun R n ↦ ?_, fun R k _ _ M n ↦ ?_⟩
   · have h₁ := TopPair.ofInclusionMap_fst_apply (X := TopCat.of Y) (Y := TopCat.of Y)
       (hst := hAZ) (hst' := hAT) (ContinuousMap.inclusion hZT) (fun _ hx ↦ hx)

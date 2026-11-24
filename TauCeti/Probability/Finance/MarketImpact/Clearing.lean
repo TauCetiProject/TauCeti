@@ -191,7 +191,8 @@ theorem lipschitzOnWith_invFunOn_clearingMap (hδ : 0 < δ) :
   refine AntilipschitzWith.of_le_mul_dist fun x₁ x₂ ↦ ?_
   simp only [Real.coe_toNNReal _ (inv_nonneg.2 hδ.le), Subtype.dist_eq, domRestrict_apply,
     Real.dist_eq]
-  exact (le_inv_mul_iff₀ hδ).2 (mul_abs_sub_le_abs_clearingMap_sub hH hmargin x₂.2 x₁.2)
+  exact (le_inv_mul_iff₀ hδ).2 (mul_abs_sub_le_abs_clearingMap_sub hH hmargin x₂.property
+      x₁.property)
 
 /-- Under a strictly positive clearing-derivative margin, the clearing map tends to infinity with
 the price. -/

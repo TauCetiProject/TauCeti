@@ -111,7 +111,8 @@ theorem brouwerFixedPoint_topCatDisk (n : ℕ) (f : TopCat.disk.{w} n ⟶ TopCat
   -- The boundary inclusion keeps the underlying point of the sphere.
   have hs : (e (TopCat.diskBoundaryInclusion n s) : EuclideanSpace ℝ (Fin n)) = eS s :=
     TopCat.coe_diskBoundaryInclusion_apply_down n s
-  exact Subtype.ext ((g.closedBallRayRetraction_apply_of_mem_sphere hg (hs ▸ (eS s).2)).trans hs)
+  exact Subtype.ext ((g.closedBallRayRetraction_apply_of_mem_sphere hg (hs ▸
+      (eS s).property)).trans hs)
 
 section CompactConvex
 
@@ -167,6 +168,6 @@ theorem brouwerFixedPoint_compactConvex_continuousOn {E : Type*} [NormedAddCommG
     (hfC : MapsTo f C C) : ∃ x ∈ C, IsFixedPt f x := by
   obtain ⟨x, hx⟩ := brouwerFixedPoint_compactConvex_finiteSpan (Submodule.span ℝ C)
     Submodule.subset_span hC hconv hne ⟨hfC.restrict f C C, hf.mapsToRestrict hfC⟩
-  exact ⟨x, x.2, congrArg Subtype.val hx⟩
+  exact ⟨x, x.property, congrArg Subtype.val hx⟩
 
 end TauCeti

@@ -59,14 +59,14 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
       (X.presheaf.stalk x)).map_units s
   surj y := by
     obtain ⟨V, hxV, m, rfl⟩ := M.presheaf.exists_germ_eq y
-    obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ x.2
+    obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ x.property
     -- The powers of `f` avoid the prime ideal of `x`, since `x ∈ D(f)`.
     have hf : Submonoid.powers f ≤ (hU.primeIdealOf x).asIdeal.primeCompl := Submonoid.powers_le.2
       (Ideal.mem_primeCompl_iff.2 ((hU.mem_basicOpen_iff_notMem_primeIdealOf x f).1 hxf))
     have := M.isLocalizedModule_basicOpenRestrict hU f
     obtain ⟨⟨a, c⟩, hac⟩ := IsLocalizedModule.surj (Submonoid.powers f) (M.basicOpenRestrict f)
       (M.presheaf.map (homOfLE hfV).op m)
-    refine ⟨⟨a, ⟨c, hf c.2⟩⟩, ?_⟩
+    refine ⟨⟨a, ⟨c, hf c.property⟩⟩, ?_⟩
     -- Take germs at `x` of the equation `c • m|_{D(f)} = a|_{D(f)}` over `D(f)`.
     have h := congrArg (M.presheaf.germ (X.basicOpen f) x hxf) hac
     rw [basicOpenRestrict_apply, M.presheaf.germ_res_apply, Submonoid.smul_def,
@@ -76,8 +76,8 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
     exact h
   exists_of_eq {a b} h := by
     rw [germₗ_apply, germₗ_apply] at h
-    obtain ⟨W, hxW, iU, iU', hab⟩ := M.presheaf.germ_eq x x.2 x.2 a b h
-    obtain ⟨f, hfW, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxW⟩ x.2
+    obtain ⟨W, hxW, iU, iU', hab⟩ := M.presheaf.germ_eq x x.property x.property a b h
+    obtain ⟨f, hfW, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxW⟩ x.property
     -- The powers of `f` avoid the prime ideal of `x`, since `x ∈ D(f)`.
     have hf : Submonoid.powers f ≤ (hU.primeIdealOf x).asIdeal.primeCompl := Submonoid.powers_le.2
       (Ideal.mem_primeCompl_iff.2 ((hU.mem_basicOpen_iff_notMem_primeIdealOf x f).1 hxf))
@@ -89,7 +89,7 @@ theorem isLocalizedModule_germₗ [M.IsQuasicoherent] (hU : IsAffineOpen U) :
         Subsingleton.elim (homOfLE hfW ≫ i) (homOfLE (X.basicOpen_le f))]
     obtain ⟨c, hc⟩ := IsLocalizedModule.exists_of_eq (S := Submonoid.powers f)
       (f := M.basicOpenRestrict f) (x₁ := a) (x₂ := b) (by rw [hres iU, hres iU', hab])
-    exact ⟨⟨c, hf c.2⟩, hc⟩
+    exact ⟨⟨c, hf c.property⟩, hc⟩
 
 /-- **Stalks of quasi-coherent modules by base change.** For a quasi-coherent `𝒪_X`-module `M`
 and a point `x` of an affine open `U`, the germ map `Γ(M, U) → M_x` exhibits `M_x` as the base

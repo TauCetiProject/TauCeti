@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Analysis.InnerProductSpace.Reflection
+import Mathlib.Analysis.InnerProductSpace.NormDet
 
 /-!
 # Rotations of an isometrically embedded complex plane
@@ -36,6 +37,7 @@ unit sphere of `E` along itself; this is how knotted arcs are slid along a great
   the plane.
 * `LinearIsometry.planeRotation_neg_one`: the rotation by `-1` is the reflection across that
   complement.
+* `LinearIsometry.det_planeRotation`: the rotation has determinant `1`.
 * `LinearIsometry.contMDiff_planeRotation`: the rotation is smooth in the angle and the point.
 * `Continuous.planeRotation`: the rotation depends continuously on the plane and the angle.
 -/
@@ -177,6 +179,23 @@ theorem planeRotation_neg_one : ι.planeRotation (-1) = ι.rangeᗮ.reflection :
     reflection_orthogonal_range_apply, Submodule.reflection_mem_subspace_eq_self hq,
     Circle.coe_neg, Circle.coe_one, neg_one_mul, map_neg]
 
+/-- **A rotation of the plane `ι ℂ` has determinant `1`.** -/
+@[simp]
+theorem det_planeRotation (c : Circle) : LinearMap.det (ι.planeRotation c).toLinearMap = 1 := by
+  -- The rotation by `c` is the square of the rotation by a square root `d` of `c`, and a linear
+  -- isometry has determinant `±1`.
+  obtain ⟨d, rfl⟩ : ∃ d : Circle, d * d = c :=
+    ⟨Circle.exp (arg c / 2), by rw [← Circle.exp_add, add_halves, Circle.exp_arg]⟩
+  have habs : |LinearMap.det (ι.planeRotation d).toLinearMap| = 1 := by
+    by_cases hE : FiniteDimensional ℝ E
+    · rw [← LinearMap.normDet_eq_abs_det]
+      exact (ι.planeRotation d).toLinearIsometry.normDet_eq_one
+    · rw [LinearMap.det_eq_one_of_not_module_finite hE, abs_one]
+  have hmul : (ι.planeRotation (d * d)).toLinearMap =
+      (ι.planeRotation d).toLinearMap ∘ₗ (ι.planeRotation d).toLinearMap :=
+    LinearMap.ext fun x ↦ by simp [map_mul]
+  rw [hmul, LinearMap.det_comp, ← abs_mul_abs_self, habs, one_mul]
+
 /-- **The rotation is smooth in the angle and the point**: the map `(c, x) ↦ planeRotation ι c x`
 from `Circle × E` to `E` is analytic. -/
 theorem contMDiff_planeRotation {m : ℕ∞ω} :
@@ -204,14 +223,14 @@ theorem _root_.Continuous.planeRotation {X : Type*} [TopologicalSpace X] {ι : X
   have hinner (w a : ℂ) : Continuous fun x ↦ (innerSL ℝ (ι x w)).smulRight a := by
     have hw : Continuous fun x ↦ ι x w := by
       simpa only [coe_toContinuousLinearMap] using hι.clm_apply continuous_const
-    exact ((ContinuousLinearMap.smulRightL ℝ E ℂ).continuous.comp
+    exact ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ E ℂ).continuous.comp
       ((innerSL ℝ).continuous.comp hw)).clm_apply continuous_const
   have hcoord : Continuous fun x ↦ planeCoord (ι x) := by
     unfold planeCoord
     exact (hinner 1 1).add (hinner I I)
   have hmul : Continuous fun x ↦ ContinuousLinearMap.mul ℝ ℂ ((c x : ℂ) - 1) :=
     (ContinuousLinearMap.mul ℝ ℂ).continuous.comp
-      ((continuous_subtype_val.comp hc).sub continuous_const)
+      ((continuous_subtypeVal.comp hc).sub continuous_const)
   refine ((continuous_const (y := ContinuousLinearMap.id ℝ E)).add
     (hι.clm_comp (hmul.clm_comp hcoord))).congr fun x ↦ ?_
   ext y

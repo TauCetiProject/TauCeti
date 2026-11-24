@@ -72,6 +72,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `morseTrajectoryRecords`: the trajectories from `p` to `r`, recorded on the levels `c`.
 * `morseBrokenTrajectoryRecords`: the broken trajectories from `p` to `r`, recorded on the
   levels `c`.
+* `antitone_apply_of_chain`: `f` decreases along a chain of critical points joined by
+  trajectories.
+* `value_le_of_mem_morseBrokenTrajectoryRecords`: so a broken trajectory from `p` to `r` ends at
+  a level not above that of `p`.
 * `morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords`: unbroken trajectories are broken
   trajectories with one component.
 * `exists_tendsto_mem_morseBrokenTrajectoryRecords`: broken convergence of trajectories gives
@@ -142,6 +146,22 @@ theorem mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → 
         (∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) ∧
         ∀ i, f (w i) = c i ∧ ∃ j t, hX.flow t (z j) = w i :=
   Iff.rfl
+
+/-- **`f` decreases along a chain joined by trajectories.** If each `x j` is joined to `x (j + 1)`
+by a trajectory, then `f (x (j + 1)) ≤ f (x j)` for all `j`. -/
+theorem antitone_apply_of_chain {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
+    (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) :
+    Antitone fun j ↦ f (x j) :=
+  Fin.antitone_iff_succ_le.2 fun j ↦
+    (hX.mem_Icc_of_mem_unstableSet_inter_stableSet (hz j)).1.trans
+      (hX.mem_Icc_of_mem_unstableSet_inter_stableSet (hz j)).2
+
+/-- **The function decreases along a broken trajectory.** If there is a broken trajectory from `p`
+to `r`, recorded on any levels, then `f r ≤ f p`. -/
+theorem value_le_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
+    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) : f r ≤ f p := by
+  obtain ⟨k, x, z, rfl, rfl, -, -, hz, -⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
+  exact hX.antitone_apply_of_chain hz (Fin.zero_le _)
 
 /-- **Unbroken trajectories are broken trajectories with one component.** -/
 theorem morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords {p r : M}
@@ -219,10 +239,11 @@ theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : 
   have hg : Continuous fun (y : S) i ↦ hX.flow (τ i y) (y : M) :=
     continuous_pi fun i ↦ hX.flow.continuous ((Flow.continuousOn_levelCrossingTime
       hX.mdifferentiable.continuous.continuousOn hanti (hex i)).comp_continuous
-      continuous_subtype_val fun y ↦ y.2.1) continuous_subtype_val
+      continuous_subtypeVal fun y ↦ y.property.1) continuous_subtypeVal
   -- The point on the level `c i₀` is the point itself.
   have hτ₀ (y : S) : τ i₀ y = 0 :=
-    (Flow.levelCrossingTime_eq_zero_iff (hanti y y.2.1) (hex i₀ y y.2.1)).2 y.2.2
+    (Flow.levelCrossingTime_eq_zero_iff (hanti y y.property.1)
+        (hex i₀ y y.property.1)).2 y.property.2
   -- The point of a record on the level `c i₀` lies in the slice, and determines the record.
   have hmem : ∀ w ∈ hX.morseTrajectoryRecords p r c, w i₀ ∈ S := by
     rintro w ⟨y, hy, hw⟩
@@ -239,11 +260,12 @@ theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : 
       (Flow.eq_levelCrossingTime_iff (hanti _ hC) (hex i _ hC)).2 (by rw [hflow]; exact hwi)
     rw [← hτi, hflow]
   refine ⟨
-    { toFun w := ⟨w.1 i₀, hmem w.1 w.2⟩
-      invFun y := ⟨fun i ↦ hX.flow (τ i y) y, y, y.2.1, fun i ↦ ⟨hτ' i y y.2.1, τ i y, rfl⟩⟩
-      left_inv w := Subtype.ext (funext (hrec w.1 w.2))
+    { toFun w := ⟨w.val i₀, hmem w.val w.property⟩
+      invFun y := ⟨fun i ↦ hX.flow (τ i y) y, y, y.property.1, fun i ↦ ⟨hτ' i y y.property.1, τ i y,
+          rfl⟩⟩
+      left_inv w := Subtype.ext (funext (hrec w.val w.property))
       right_inv y := Subtype.ext (by simp only [hτ₀, Flow.map_zero_apply])
-      continuous_toFun := ((continuous_apply i₀).comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := ((continuous_apply i₀).comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := hg.subtype_mk _ }, fun w ↦ rfl⟩
 
 /-- **The records of unbroken trajectories form the space of unparametrized trajectories.** For a

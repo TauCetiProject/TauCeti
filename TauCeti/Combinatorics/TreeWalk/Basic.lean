@@ -846,21 +846,21 @@ abbrev ClosedTreeWalk (k : ℕ) : Type := {w : ℕ → ℕ // IsTreeWalk k w ∧
 /-- Closed tree walks traversing every edge twice correspond to Dyck words: the Dyck word
 records which steps discover a new vertex. -/
 def closedTreeWalkEquiv (k : ℕ) : ClosedTreeWalk k ≃ {p : DyckWord // p.semilength = k} where
-  toFun w := ⟨dyckWordOf w.2.1.isDyckPattern_upSteps, semilength_dyckWordOf _⟩
+  toFun w := ⟨dyckWordOf w.property.1.isDyckPattern_upSteps, semilength_dyckWordOf _⟩
   invFun p :=
-    have hs : IsDyckPattern k (stepsOf p.1.toList) := by
-      have h := isDyckPattern_stepsOf p.1
-      rwa [p.2] at h
-    ⟨walkOf (stepsOf p.1.toList), isTreeWalk_walkOf hs, fun _ hi => hs.walkOf_eq_zero hi.le⟩
+    have hs : IsDyckPattern k (stepsOf p.val.toList) := by
+      have h := isDyckPattern_stepsOf p.val
+      rwa [p.property] at h
+    ⟨walkOf (stepsOf p.val.toList), isTreeWalk_walkOf hs, fun _ hi => hs.walkOf_eq_zero hi.le⟩
   left_inv w := by
     refine Subtype.ext (funext fun i => ?_)
-    have hs := w.2.1.isDyckPattern_upSteps
+    have hs := w.property.1.isDyckPattern_upSteps
     -- Unfold the equivalence's function and subtype projections to expose the walk equality.
-    change walkOf (stepsOf (dyckWordOf hs).toList) i = w.1 i
+    change walkOf (stepsOf (dyckWordOf hs).toList) i = w.val i
     rw [stepsOf_dyckWordOf hs]
     rcases le_or_gt i (2 * k) with hi | hi
-    · exact w.2.1.walkOf_upSteps i hi
-    · rw [hs.walkOf_eq_zero hi.le, w.2.2 i hi]
+    · exact w.property.1.walkOf_upSteps i hi
+    · rw [hs.walkOf_eq_zero hi.le, w.property.2 i hi]
   right_inv := by
     rintro ⟨p, rfl⟩
     refine Subtype.ext ?_
@@ -872,15 +872,15 @@ def closedTreeWalkEquiv (k : ℕ) : ClosedTreeWalk k ≃ {p : DyckWord // p.semi
 
 /-- The Dyck word corresponding to a closed tree walk is the word of its up-step pattern. -/
 @[simp] theorem closedTreeWalkEquiv_apply_coe (k : ℕ) (w : ClosedTreeWalk k) :
-    ((closedTreeWalkEquiv k w).1).toList =
-      List.ofFn fun i : Fin (2 * k) => if upSteps k w.1 i then DyckStep.U else DyckStep.D := by
+    ((closedTreeWalkEquiv k w).val).toList =
+      List.ofFn fun i : Fin (2 * k) => if upSteps k w.val i then DyckStep.U else DyckStep.D := by
   simp [closedTreeWalkEquiv, dyckWordOf]
 
 /-- The closed tree walk corresponding to a Dyck word is the walk of its step pattern. -/
 @[simp] theorem closedTreeWalkEquiv_symm_apply_coe (k : ℕ)
     (p : {p : DyckWord // p.semilength = k}) :
-    ((closedTreeWalkEquiv k).symm p).1 =
-      walkOf (fun j => decide (p.1.toList[j]? = some DyckStep.U)) := by
+    ((closedTreeWalkEquiv k).symm p).val =
+      walkOf (fun j => decide (p.val.toList[j]? = some DyckStep.U)) := by
   simp only [closedTreeWalkEquiv]
   apply congrArg walkOf
   funext j

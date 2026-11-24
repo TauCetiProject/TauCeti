@@ -102,7 +102,7 @@ theorem exists_finset_inclusion_mul {M : Type*} [MulOneClass M] {S T : Submonoid
   classical
   obtain ⟨F, hF_sub, hF_mul⟩ := hF
   refine ⟨F.subtype (· ∈ T), fun x => ?_⟩
-  obtain ⟨z, hz, s, hs, hxz⟩ := hF_mul x.1 x.2
+  obtain ⟨z, hz, s, hs, hxz⟩ := hF_mul x.val x.property
   exact ⟨⟨z, hF_sub hz⟩, Finset.mem_subtype.mpr hz, ⟨s, hs⟩, Subtype.ext hxz⟩
 
 /-- If `T` is a finitely generated submonoid contained in `S.powSaturation`, there is a finite
@@ -116,14 +116,14 @@ theorem FG.exists_finset_subset_forall_exists_mul {M : Type*} [CommMonoid M]
   classical
   obtain ⟨s, rfl⟩ := Submonoid.isMulFG_iff.mp hT
   choose d hd_pos hd_mem using fun a : s ↦
-    Submonoid.mem_powSaturation.mp (hTS (Submonoid.subset_closure a.2))
+    Submonoid.mem_powSaturation.mp (hTS (Submonoid.subset_closure a.property))
   have : ∀ a : s, NeZero (d a) := fun a ↦ ⟨(hd_pos a).ne'⟩
   let F : Finset M :=
     Finset.univ.image fun r : (∀ a : s, Fin (d a)) ↦ ∏ a : s, (a : M) ^ (r a : ℕ)
   refine ⟨F, ?_, fun x hx ↦ ?_⟩
   · intro _ h
     obtain ⟨r, -, rfl⟩ := Finset.mem_image.mp h
-    exact Submonoid.prod_mem _ fun a _ ↦ pow_mem (Submonoid.subset_closure a.2) _
+    exact Submonoid.prod_mem _ fun a _ ↦ pow_mem (Submonoid.subset_closure a.property) _
   · obtain ⟨c, -, rfl⟩ := Submonoid.mem_closure_finset.mp hx
     let r : ∀ a : s, Fin (d a) := fun a ↦ ⟨c a % d a, Nat.mod_lt _ (hd_pos a)⟩
     refine ⟨∏ a : s, (a : M) ^ (r a : ℕ), Finset.mem_image_of_mem _ (Finset.mem_univ r),
@@ -159,10 +159,10 @@ theorem FG.exists_finset_subset_nsmulSaturation_add {S : AddSubmonoid L} (hS : S
     simp only [J, Finset.mem_biUnion, Finset.mem_univ, true_and, Finsupp.mem_support_iff,
       not_exists, not_not] at hi
     simp [B, hi]
-  let box : Finset (J → ℤ) := Fintype.piFinset fun i => Finset.Icc (-B i.1) (B i.1)
+  let box : Finset (J → ℤ) := Fintype.piFinset fun i => Finset.Icc (-B i.val) (B i.val)
   have hfin : {z : L | z ∈ S.nsmulSaturation ∧ ∀ i, |b.repr z i| ≤ B i}.Finite := by
-    refine box.finite_toSet.of_injOn (f := fun z (i : J) => b.repr z i.1)
-      (fun z hz => Fintype.mem_piFinset.mpr fun i => Finset.mem_Icc.mpr (abs_le.mp (hz.2 i.1)))
+    refine box.finite_toSet.of_injOn (f := fun z (i : J) => b.repr z i.val)
+      (fun z hz => Fintype.mem_piFinset.mpr fun i => Finset.mem_Icc.mpr (abs_le.mp (hz.2 i.val)))
       fun z₁ hz₁ z₂ hz₂ heq => b.repr.injective <| Finsupp.ext fun i => ?_
     by_cases hi : i ∈ J
     · exact congrFun heq ⟨i, hi⟩

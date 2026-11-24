@@ -154,7 +154,7 @@ the real and imaginary parts of the complexified fibre give the two summands. On
 isomorphism is the identity of `Fin (A.rank + A.rank) → ℝ`. -/
 noncomputable def realifyComplexifyIso (A : FiniteRankBundleCore ℝ B) :
     (realify B).obj ((complexify B).obj A) ≅ whitneySum A A :=
-  constIso (fun _ => (Set.inter_self _).symm) (ContinuousLinearEquiv.refl ℝ _)
+  constIso (fun _ => (Set.inter_self _).ge) (ContinuousLinearEquiv.refl ℝ _)
     -- Both transitions are the block-diagonal doubling of the transition of `A`.
     fun i j x _ _ => ContinuousLinearMap.ext fun v => congrArg (fun S => S v)
       (ContinuousLinearMap.realifyCoords_complexifyCoords (A.core.coordChange i j x))

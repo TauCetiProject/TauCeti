@@ -60,7 +60,7 @@ variable {α β : Type*} [LinearOrder α] [Preorder β]
 @[expose, simps]
 def equivSubtypeStrictMono : (α ↪o β) ≃ {f : α → β // StrictMono f} where
   toFun f := ⟨f, f.strictMono⟩
-  invFun f := ofStrictMono f.1 f.2
+  invFun f := ofStrictMono f.val f.property
   left_inv _ := DFunLike.coe_injective (coe_ofStrictMono _)
   right_inv _ := Subtype.ext (coe_ofStrictMono _)
 

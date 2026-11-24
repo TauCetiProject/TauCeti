@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Sites.GlobalSections
+
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Colimit
 public import TauCeti.Topology.Sheaves.Cech.Basic
 public import TauCeti.Topology.Sheaves.CoverSystems
@@ -115,5 +117,38 @@ theorem cechCohomologyZeroIso_hom_naturality {G : Sheaf (Opens.grothendieckTopol
     f.hom.app (op ⊤) ≫ (cechCohomologyZeroIso G).hom =
       (cechCohomologyZeroIso F).hom ≫ (cechCohomology X A 0).map f.hom :=
   TauCeti.CategoryTheory.cechCohomologyZeroIso_hom_naturality _ _ isTerminalTop F.obj f.hom _ _
+
+section GlobalSections
+
+variable [HasWeakSheafify (Opens.grothendieckTopology X) A]
+
+/-- Global sections are degree-zero native Čech cohomology, in the original coefficient
+category and without a relation between the base and coefficient universes. -/
+def sectionsIsoCechZero :
+    (Sheaf.Γ (Opens.grothendieckTopology X) A).obj F ≅
+      (cechCohomology X A 0).obj F.obj :=
+  (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).app F ≪≫ cechCohomologyZeroIso F
+
+/-- The global-section comparison is the native section evaluation followed by the Čech
+augmentation isomorphism. -/
+@[reassoc]
+lemma sectionsIsoCechZero_hom :
+    (sectionsIsoCechZero F).hom =
+      (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).hom.app F ≫
+        (cechCohomologyZeroIso F).hom := by
+  rw [sectionsIsoCechZero, Iso.trans_hom, Iso.app_hom]
+
+variable {F} in
+/-- The native degree-zero identification is natural in the sheaf. -/
+@[reassoc]
+lemma sectionsIsoCechZero_hom_naturality {G : Sheaf (Opens.grothendieckTopology X) A}
+    (f : F ⟶ G) :
+    (Sheaf.Γ (Opens.grothendieckTopology X) A).map f ≫ (sectionsIsoCechZero G).hom =
+      (sectionsIsoCechZero F).hom ≫ (cechCohomology X A 0).map f.hom := by
+  simp only [sectionsIsoCechZero_hom, Category.assoc,
+    ← cechCohomologyZeroIso_hom_naturality F f]
+  exact (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).hom.naturality_assoc f _
+
+end GlobalSections
 
 end TauCeti.Topology

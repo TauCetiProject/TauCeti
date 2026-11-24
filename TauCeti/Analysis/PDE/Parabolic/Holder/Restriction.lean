@@ -85,7 +85,7 @@ private def restrict (hab' : a' < b') (f : ParabolicC2HolderSpace α E F hab) :
       have h := (f.hasTimeDerivWithinAt x (inclusion (Icc_subset_Icc ha hb) t)).mono
         (Icc_subset_Icc ha hb)
       rw [HolderSpace.compLipschitzL_apply, inclusion_slabMk]
-      refine h.congr_of_mem (fun s hs ↦ ?_) t.2
+      refine h.congr_of_mem (fun s hs ↦ ?_) t.property
       simp [ContinuousMap.inclusion, timeExtension_def, projIcc_of_mem hab'.le hs,
         projIcc_of_mem hab.le (Icc_subset_Icc ha hb hs)])
 
@@ -156,17 +156,24 @@ theorem timeDerivL_restrictL (f : ParabolicC2HolderSpace α E F hab)
 
 variable (ha hb hab') in
 /-- Restriction to a smaller slab does not increase the norm. -/
-theorem norm_restrictL_le :
+theorem norm_restrictL_le_one :
     ‖restrictL (α := α) (E := E) (F := F) (hab := hab) ha hb hab'‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb hab' f
 
-/-- The restriction of a map to a smaller slab has at most its norm. -/
-theorem norm_restrictL_apply_le (f : ParabolicC2HolderSpace α E F hab) :
+variable (ha hb hab') in
+/-- Restriction to a smaller slab does not increase the norm, applied form. -/
+theorem norm_restrictL_le (f : ParabolicC2HolderSpace α E F hab) :
     ‖restrictL ha hb hab' f‖ ≤ ‖f‖ := by
   rw [restrictL_eq_restrict]
   exact norm_restrict_le ha hb hab' f
+
+/-- Restriction to a smaller slab does not increase the supremum norm of the value. -/
+theorem norm_valueL_restrictL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueL (restrictL ha hb hab' f)‖ ≤ ‖valueL f‖ :=
+  (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
+    simpa using (valueL f).norm_coe_le_norm _
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
@@ -203,19 +210,19 @@ private def reverse (f : ParabolicC2HolderSpace α E F hab) :
     (-HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith (timeDerivL f))
     (fun t x ↦ by
       simpa [iccTimeReverse_apply] using
-        f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+        f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩ x)
     (fun t x ↦ by
       simpa [iccTimeReverse_apply] using
-        f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+        f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩ x)
     (fun x t ↦ by
       have h := HasDerivWithinAt.scomp (t : ℝ)
-        (f.hasTimeDerivWithinAt x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩)
+        (f.hasTimeDerivWithinAt x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩)
         ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T)
         (fun s hs ↦ sub_mem_Icc_of_eq_sub T ha hb hs)
       rw [neg_one_smul] at h
       rw [HolderSpace.neg_apply, HolderSpace.compLipschitzL_apply, slabTimeReverse_slabMk,
         iccTimeReverse_apply]
-      refine h.congr_of_mem (fun s hs ↦ ?_) t.2
+      refine h.congr_of_mem (fun s hs ↦ ?_) t.property
       simp [timeExtension_def, iccTimeReverse_apply,
         projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
         projIcc_of_mem hab.le (sub_mem_Icc_of_eq_sub T ha hb hs)])
@@ -404,10 +411,17 @@ theorem spatialFDerivL_restrictL (f : ParabolicC1HolderSpace α E F a b)
 
 variable (ha hb) in
 /-- Restriction to a smaller slab does not increase the norm. -/
-theorem norm_restrictL_le : ‖restrictL (α := α) (E := E) (F := F) ha hb‖ ≤ 1 :=
+theorem norm_restrictL_le_one : ‖restrictL (α := α) (E := E) (F := F) ha hb‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb f
+
+variable (ha hb) in
+/-- Restriction to a smaller slab does not increase the norm, applied form. -/
+theorem norm_restrictL_le (f : ParabolicC1HolderSpace α E F a b) :
+    ‖restrictL ha hb f‖ ≤ ‖f‖ := by
+  rw [restrictL_eq_restrict]
+  exact norm_restrict_le ha hb f
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]

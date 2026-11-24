@@ -102,8 +102,8 @@ def stiefelSphereFamilyFiber :
 /-- The based sphere map of a frame sends the north pole of `S²` to `p`. -/
 @[simp]
 theorem stiefelSphereFamilyFiber_apply_north (x : stiefel (ℝ ∙ (p : E))ᗮ 2) :
-    (stiefelSphereFamilyFiber p x).1 Sphere2.north = p :=
-  (stiefelSphereFamilyFiber p x).2
+    (stiefelSphereFamilyFiber p x).val Sphere2.north = p :=
+  (stiefelSphereFamilyFiber p x).property
 
 /-- Under `Map_*(S², Sⁿ) ≃ₜ Ω^[2] Sⁿ`, the family `σ_p` is the family of double loops
 `σ_{p,u,v}`. -/
@@ -120,7 +120,7 @@ the loop of loops. -/
 @[simp]
 theorem stiefelSphereFamilyFiber_apply_sphereCollapse (x : stiefel (ℝ ∙ (p : E))ᗮ 2)
     (z : Fin 2 → I) :
-    (stiefelSphereFamilyFiber p x).1 (sphereCollapse 2 Sphere2.north z) =
+    (stiefelSphereFamilyFiber p x).val (sphereCollapse 2 Sphere2.north z) =
       stiefelDoubleLoop p x (z 0) (z 1) := by
   have h := iteratedLoopSpaceHomeomorph_basedMapSphereHomeomorphIteratedLoopSpace 2
     ⟨sphere (0 : E) 1, p⟩ Sphere2.north (stiefelSphereFamilyFiber p x)
@@ -135,7 +135,7 @@ theorem _root_.LinearMap.map_stiefelSphereFamilyFiber {F : Type u} [NormedAddCom
     {x : stiefel (ℝ ∙ (p : E))ᗮ 2} {y : stiefel (ℝ ∙ (q : F))ᗮ 2}
     (hy : ∀ i, ((y : Fin 2 → (ℝ ∙ (q : F))ᗮ) i : F) = L ((x : Fin 2 → (ℝ ∙ (p : E))ᗮ) i))
     (w : Sphere2) :
-    L ((stiefelSphereFamilyFiber p x).1 w) = ((stiefelSphereFamilyFiber q y).1 w : F) := by
+    L ((stiefelSphereFamilyFiber p x).val w) = ((stiefelSphereFamilyFiber q y).val w : F) := by
   obtain ⟨z, rfl⟩ := sphereCollapse_surjective 2 Sphere2.north w
   rw [stiefelSphereFamilyFiber_apply_sphereCollapse, stiefelSphereFamilyFiber_apply_sphereCollapse]
   exact L.map_stiefelDoubleLoop hq hy _ _
@@ -170,7 +170,7 @@ private theorem coe_standardFrame_one :
 a map `S² → S²`. Its coordinates are the coefficients of every two-sphere `σ_{p,u,v}` in the frame
 `(p, u, v)` (`TauCeti.coe_stiefelSphereFamily_apply`). -/
 def standardStiefelSphereMap : C(Sphere2, Sphere2) :=
-  (stiefelSphereFamilyFiber Sphere2.north standardFrame).1
+  (stiefelSphereFamilyFiber Sphere2.north standardFrame).val
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -182,14 +182,15 @@ standard basis to `(p, u, v)` (`Orthonormal.synthesisMapIsometry`). -/
 def stiefelSphereFamily : C(stiefel E 3, C(Sphere2, sphere (0 : E) 1)) :=
   ContinuousMap.curry
     { toFun := fun q =>
-        (mem_stiefel_iff.1 q.1.2).synthesisMapIsometry.unitSphereMap (standardStiefelSphereMap q.2)
+        (mem_stiefel_iff.1 q.1.property).synthesisMapIsometry.unitSphereMap
+            (standardStiefelSphereMap q.2)
       continuous_toFun := continuous_induced_rng.2 <| by
         simp only [Function.comp_def, LinearIsometry.coe_unitSphereMap_apply,
           Orthonormal.synthesisMapIsometry_apply]
         refine continuous_finsetSum _ fun i _ => Continuous.smul ?_ ?_
-        · exact (PiLp.continuous_apply 2 _ i).comp (continuous_subtype_val.comp
+        · exact (PiLp.continuous_apply 2 _ i).comp (continuous_subtypeVal.comp
             (standardStiefelSphereMap.continuous.comp continuous_snd))
-        · exact (continuous_apply i).comp (continuous_subtype_val.comp continuous_fst) }
+        · exact (continuous_apply i).comp (continuous_subtypeVal.comp continuous_fst) }
 
 /-- The two-sphere `σ_{p,u,v}` is the image of the standard double loop under the linear map
 `ℝ³ → E` sending the standard basis to `(p, u, v)`: the linear combination of `p`, `u` and `v`
@@ -235,7 +236,7 @@ theorem _root_.LinearMap.map_stiefelSphereFamily {F : Type*} [NormedAddCommGroup
 @[simp]
 theorem stiefelSphereFamily_stiefelFrameIncl (p : sphere (0 : E) 1)
     (y : stiefel (ℝ ∙ (p : E))ᗮ 2) :
-    stiefelSphereFamily (stiefelFrameIncl p 2 y) = (stiefelSphereFamilyFiber p y).1 := by
+    stiefelSphereFamily (stiefelFrameIncl p 2 y) = (stiefelSphereFamilyFiber p y).val := by
   ext w
   obtain ⟨z, rfl⟩ := sphereCollapse_surjective 2 Sphere2.north w
   rw [stiefelSphereFamilyFiber_apply_sphereCollapse, coe_stiefelSphereFamily_apply,

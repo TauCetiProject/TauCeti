@@ -126,12 +126,12 @@ theorem residueField_toAlgAut_surjective :
   intro τ
   obtain ⟨σ, hσ⟩ := Ideal.Quotient.stabilizerHom_surjective
     (L ≃ₐ[K] L) 𝓂[K] 𝓂[L] τ
-  refine ⟨σ.1, ?_⟩
+  refine ⟨σ.val, ?_⟩
   ext x
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
   have hx := DFunLike.congr_fun hσ (IsLocalRing.residue 𝒪[L] x)
   -- Identify the quotient in `stabilizerHom` with the local ring's residue field.
-  change IsLocalRing.residue 𝒪[L] (σ.1 • x) =
+  change IsLocalRing.residue 𝒪[L] (σ.val • x) =
     τ (IsLocalRing.residue 𝒪[L] x) at hx
   rw [IsLocalRing.ResidueField.residue_smul] at hx
   rw [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply]

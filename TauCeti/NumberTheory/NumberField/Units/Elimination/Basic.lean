@@ -47,7 +47,7 @@ polynomial of an integral primitive element of `K`. -/
 def UnitCandidateEliminationCertificate (K : Type*) [Field K] [NumberField K] (B : ℝ) : Prop :=
   ∀ f ∈ unitCandidates K B,
     (∀ x ∈ Set.Ioo (1 : ℝ) B, aeval x f ≠ 0) ∨
-      ∀ θ : IntegralPrimitiveElement K, minpoly ℤ θ.1 ≠ f
+      ∀ θ : IntegralPrimitiveElement K, minpoly ℤ θ.val ≠ f
 
 /-- The two possible proofs carried by an elimination certificate for each candidate. -/
 @[simp]
@@ -55,7 +55,7 @@ theorem unitCandidateEliminationCertificate_iff (B : ℝ) :
     UnitCandidateEliminationCertificate K B ↔
       ∀ f ∈ unitCandidates K B,
         (∀ x ∈ Set.Ioo (1 : ℝ) B, aeval x f ≠ 0) ∨
-          ∀ θ : IntegralPrimitiveElement K, minpoly ℤ θ.1 ≠ f :=
+          ∀ θ : IntegralPrimitiveElement K, minpoly ℤ θ.val ≠ f :=
   (Iff.rfl)
 
 namespace UnitCandidateEliminationCertificate
@@ -111,7 +111,7 @@ theorem log_le_regulator {B : ℝ} (h : UnitCandidateEliminationCertificate K B)
   have hpos : 0 < |Real.log (w u)| := hreg ▸ regulator_pos K
   have hne : w u ≠ 1 := fun h1 ↦ by simp [h1] at hpos
   obtain ⟨ε, δ, -, hlo, hhi⟩ := exists_normalized_unit_between B u w hw hB hne hlt
-  exact h.no_unit_between_real hr hw ⟨ε.1 * δ, hlo, hhi⟩
+  exact h.no_unit_between_real hr hw ⟨ε.val * δ, hlo, hhi⟩
 
 /-- **Soundness of unit-candidate elimination.** A unit expanding at a real place generates
 modulo torsion if every candidate below its absolute value has been eliminated. -/

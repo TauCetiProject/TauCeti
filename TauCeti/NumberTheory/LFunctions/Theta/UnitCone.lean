@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
 import Mathlib.MeasureTheory.Group.FundamentalDomain
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import TauCeti.Algebra.Group.TypeTags.Countable
+import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 
 /-!
@@ -90,7 +91,7 @@ private theorem unitScale_symm_torsionProd (ζ : Units.torsion K)
     (g : Multiplicative (Fin (Units.rank K) → ℤ)) (y : realSpace K) :
     unitScale ((unitsMulEquivTorsionProdMultiplicative K).symm (ζ, g)) y = g • y := by
   rw [unitsMulEquivTorsionProdMultiplicative_symm_apply, ← freeUnitHom_apply, ← unitScale_unitScale,
-    unitScale_eq_self_of_mem_torsion ζ.2, freeUnits_smul_def]
+    unitScale_eq_self_of_mem_torsion ζ.property, freeUnits_smul_def]
 
 /-- The cone over a unit fundamental domain is a fundamental domain for the free part of `(𝓞 K)ˣ`
 with respect to `archHaar K`. -/

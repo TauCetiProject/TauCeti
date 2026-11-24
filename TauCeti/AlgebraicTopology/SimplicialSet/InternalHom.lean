@@ -151,6 +151,12 @@ lemma ihomObj₀Equiv_apply (v : ((ihom X).obj Z) _⦋0⦌) :
     ← Category.id_comp (curry (fst X X ≫ f)), lift_curry_ihom_ev_app, lift_fst_assoc,
     Category.id_comp]
 
+/-- The map corresponding to the image of a vertex `y` under `b : Y ⟶ Fun(X, Z)` is the
+restriction of the uncurried form of `b` to `X ⊗ {y}`. -/
+lemma ihomObj₀Equiv_app {Y : SSet.{u}} (b : Y ⟶ (ihom X).obj Z) (y : Y _⦋0⦌) :
+    ihomObj₀Equiv X Z (b.app _ y) = lift (𝟙 X) (const y) ≫ uncurry b := by
+  rw [ihomObj₀Equiv_apply, uncurry_eq, lift_whiskerLeft_assoc, const_comp]
+
 /-- The vertex of `Fun(X, Z)` corresponding to a map `f : X ⟶ Z` is adjoint to
 `X ⊗ Δ[0] ⟶ X ⟶ Z`. -/
 lemma yonedaEquiv_symm_ihomObj₀Equiv_symm (f : X ⟶ Z) :
@@ -245,7 +251,7 @@ lemma sHomObj₀Iso_inv_app_zero (X : SSet.{u}) (x : X _⦋0⦌) :
 /-- The function complex `Fun(Δ[0], X)` out of the point is connected when `X` is connected. -/
 instance (X : SSet.{u}) [X.IsConnected] : (sHom (Δ[0] : SSet.{u}) X).IsConnected := by
   rw [isConnected_iff_nonempty_unique]
-  exact ⟨(Equiv.uniqueCongr (π₀Functor.mapIso (sHomObj₀Iso X)).toEquiv).2
+  exact ⟨(Equiv.uniqueCongr (π₀Functor.mapIso (sHomObj₀Iso X)).toEquiv).invFun
     ((isConnected_iff_nonempty_unique X).1 inferInstance).some⟩
 
 end MappingSpace
@@ -299,25 +305,25 @@ namespace ihomOver
 def homEquiv {Z : SSet.{u}} :
     (Z ⟶ ihomOver p f) ≃ {g : K ⊗ Z ⟶ E // g ≫ p = fst K Z ≫ f} where
   toFun φ := ⟨uncurry (φ ≫ (ihomOver p f).ι), (range_le_ihomOver_iff _).1
-    (by rintro _ _ ⟨z, rfl⟩; exact (φ.app _ z).2)⟩
-  invFun g := Subcomplex.lift (curry g.1)
-    ((range_le_ihomOver_iff _).2 (by rw [uncurry_curry]; exact g.2))
+    (by rintro _ _ ⟨z, rfl⟩; exact (φ.app _ z).property)⟩
+  invFun g := Subcomplex.lift (curry g.val)
+    ((range_le_ihomOver_iff _).2 (by rw [uncurry_curry]; exact g.property))
   left_inv φ := (cancel_mono (ihomOver p f).ι).1 (by simp)
   right_inv g := Subtype.ext (by simp)
 
 lemma homEquiv_apply_coe {Z : SSet.{u}} (φ : Z ⟶ ihomOver p f) :
-    (homEquiv φ).1 = uncurry (φ ≫ (ihomOver p f).ι) :=
+    (homEquiv φ).val = uncurry (φ ≫ (ihomOver p f).ι) :=
   (rfl)
 
 @[reassoc (attr := simp)]
 lemma homEquiv_symm_apply_ι {Z : SSet.{u}} (g : {g : K ⊗ Z ⟶ E // g ≫ p = fst K Z ≫ f}) :
-    homEquiv.symm g ≫ (ihomOver p f).ι = curry g.1 :=
+    homEquiv.symm g ≫ (ihomOver p f).ι = curry g.val :=
   (rfl)
 
 /-- The universal property is natural in the source. -/
 @[simp]
 lemma homEquiv_comp_coe {Z Z' : SSet.{u}} (h : Z' ⟶ Z) (φ : Z ⟶ ihomOver p f) :
-    (homEquiv (h ≫ φ)).1 = K ◁ h ≫ (homEquiv φ).1 := by
+    (homEquiv (h ≫ φ)).val = K ◁ h ≫ (homEquiv φ).val := by
   rw [homEquiv_apply_coe, homEquiv_apply_coe, Category.assoc, uncurry_natural_left]
 
 /-- **The relative simplex description of `Fun_B(K, E)`**: its `n`-simplices are the maps
@@ -329,7 +335,7 @@ def objEquiv {n : ℕ} :
 
 @[simp]
 lemma objEquiv_apply_coe {n : ℕ} (σ : (ihomOver p f : SSet) _⦋n⦌) :
-    dsimp% (objEquiv σ).1 = ihomObjEquiv K E σ.1 :=
+    dsimp% (objEquiv σ).val = ihomObjEquiv K E σ.val :=
   (rfl)
 
 /-- The vertices of `Fun_B(K, E)` are the maps `K ⟶ E` over `f`. -/
@@ -338,7 +344,7 @@ def obj₀Equiv : (ihomOver p f : SSet) _⦋0⦌ ≃ {g : K ⟶ E // g ≫ p = f
 
 @[simp]
 lemma obj₀Equiv_apply_coe (σ : (ihomOver p f : SSet) _⦋0⦌) :
-    dsimp% (obj₀Equiv σ).1 = ihomObj₀Equiv K E σ.1 :=
+    dsimp% (obj₀Equiv σ).val = ihomObj₀Equiv K E σ.val :=
   (rfl)
 
 /-- The functors over the base form a quasicategory when `p` is an inner fibration. -/
@@ -353,7 +359,7 @@ variable (f) in
 /-- There is exactly one functor over `f` to the base itself: `Fun_B(K, B)` is terminal. -/
 def isTerminalId : IsTerminal (ihomOver (𝟙 B) f : SSet.{u}) :=
   IsTerminal.ofUniqueHom (fun Z ↦ homEquiv.symm ⟨fst K Z ≫ f, Category.comp_id _⟩)
-    fun _ φ ↦ homEquiv.injective (Subtype.ext (by simpa using (homEquiv φ).2))
+    fun _ φ ↦ homEquiv.injective (Subtype.ext (by simpa using (homEquiv φ).property))
 
 variable (f) in
 /-- For the projection `B ⊗ C ⟶ B` of a product, the functors from `K` to `B ⊗ C` over `f` are
@@ -362,7 +368,7 @@ def fstIso (C : SSet.{u}) : (ihomOver (fst B C) f : SSet) ≅ (ihom K).obj C whe
   hom := (ihomOver (fst B C) f).ι ≫ (ihom K).map (snd B C)
   inv := homEquiv.symm ⟨lift (fst K _ ≫ f) ((ihom.ev K).app C), lift_fst _ _⟩
   hom_inv_id := homEquiv.injective <| Subtype.ext <| by
-    have h := (homEquiv (𝟙 (ihomOver (fst B C) f : SSet))).2
+    have h := (homEquiv (𝟙 (ihomOver (fst B C) f : SSet))).property
     refine CartesianMonoidalCategory.hom_ext _ _ ?_ ?_
     · rw [h, homEquiv_comp_coe, Equiv.apply_symm_apply, Category.assoc, lift_fst,
         whiskerLeft_fst_assoc]
@@ -383,7 +389,7 @@ lemma fstIso_hom (C : SSet.{u}) :
 whose components are the projection to `K` followed by `f`, and the evaluation map. -/
 @[simp]
 lemma homEquiv_fstIso_inv_coe (C : SSet.{u}) :
-    (homEquiv (fstIso f C).inv).1 = lift (fst K _ ≫ f) ((ihom.ev K).app C) := by
+    (homEquiv (fstIso f C).inv).val = lift (fst K _ ≫ f) ((ihom.ev K).app C) := by
   simp [fstIso]
 
 /-- The comparison `Fun(K, C) ⟶ Fun_B(K, B ⊗ C)`, followed by the inclusion into

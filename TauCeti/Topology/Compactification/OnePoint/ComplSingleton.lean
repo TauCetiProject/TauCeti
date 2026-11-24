@@ -38,7 +38,7 @@ noncomputable def onePointComplSingletonHomeomorph (x₀ : K) : OnePoint {x : K 
 /-- `onePointComplSingletonHomeomorph x₀` sends a finite point `x` to `x.1`. -/
 @[simp]
 theorem onePointComplSingletonHomeomorph_apply_coe (x₀ : K) (x : {x : K // x ≠ x₀}) :
-    onePointComplSingletonHomeomorph x₀ x = x.1 := (rfl)
+    onePointComplSingletonHomeomorph x₀ x = x.val := (rfl)
 
 /-- `onePointComplSingletonHomeomorph x₀` sends `∞` to `x₀`. -/
 @[simp]
@@ -63,8 +63,8 @@ theorem onePointComplSingletonHomeomorph_symm_apply_of_ne {x₀ x : K} (hx : x �
 recovers `x`. -/
 @[simp]
 theorem onePointComplSingletonHomeomorph_symm_apply_coe (x₀ : K) (x : {x : K // x ≠ x₀}) :
-    (onePointComplSingletonHomeomorph x₀).symm x.1 = x :=
-  onePointComplSingletonHomeomorph_symm_apply_of_ne x.2
+    (onePointComplSingletonHomeomorph x₀).symm x.val = x :=
+  onePointComplSingletonHomeomorph_symm_apply_of_ne x.property
 
 end Hausdorff
 

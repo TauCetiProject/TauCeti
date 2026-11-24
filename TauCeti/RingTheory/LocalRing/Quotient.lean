@@ -18,9 +18,10 @@ an element of `Q` maps into `𝔪_A²` exactly when it lies in `ker π + 𝔪_Q�
 lifts to `Q` of a basis of the cotangent space `𝔪_A / 𝔪_A²` span `𝔪_Q` modulo `ker π + 𝔪_Q²`,
 and they are linearly independent modulo it.
 
-For a local homomorphism `R → S` with `S` local and an ideal `J` of `R`, the induced map
-`R ⧸ J → S ⧸ J S` is again local. Dividing both sides of a local homomorphism by an ideal of the
-base, as in inductions on the dimension of the base, therefore stays among local homomorphisms.
+The quotient of a local ring by a proper ideal is again local. For a local homomorphism `R → S`
+with `S` local and an ideal `J` of `R`, the induced map `R ⧸ J → S ⧸ J S` is again local.
+Dividing both sides of a local homomorphism by an ideal of the base, as in inductions on the
+dimension of the base, therefore stays among local homomorphisms.
 When `J` is the maximal ideal of `R` and generates the maximal ideal of `S`, this map is the
 residue field extension, whose degree is then the rank of a finite free `S`.
 
@@ -34,11 +35,16 @@ residue field extension, whose degree is then the rank of a finite free `S`.
   of the `yⱼ` generate the maximal ideal of `Q ⧸ J`.
 * `TauCeti.IsLocalRing.exists_lift_finBasis_cotangentSpace`: lifts to `Q` of a basis of the
   cotangent space of `A`.
+* `TauCeti.isLocalRing_quotient`: the quotient of a local ring by a proper ideal is local.
 * `Ideal.Quotient.isLocalHom_algebraMap_quotient_map_quotient`: `R ⧸ J → S ⧸ J S` is a local
   homomorphism when `R → S` is one and `S` is local.
 * `TauCeti.IsLocalRing.finrank_residueField_eq_finrank`: if `S` is finite free over `R` and
   `𝔪_R S = 𝔪_S`, the residue field extension has degree `[S : R]`, by Mathlib's
   `IsLocalRing.finrank_quotient_map`.
+* `TauCeti.IsLocalRing.isLocalRing_quotient_maximalIdeal_pow`: the truncation `R ⧸ 𝔪_R ^ (n + 1)`
+  of a local ring is a local ring.
+* `TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_ker`: a local homomorphism to an Artinian local
+  ring kills a power of the maximal ideal of the source.
 -/
 
 public section
@@ -111,7 +117,7 @@ theorem exists_lift_finBasis_cotangentSpace (hfg : (maximalIdeal Q).FG) {π : Q 
   choose y hy using fun j ↦ hπ (m j : A)
   have hy𝔪 (j : Fin e) : y j ∈ maximalIdeal Q := by
     rw [← maximalIdeal_comap π, Ideal.mem_comap, hy]
-    exact (m j).2
+    exact (m j).property
   have hsum𝔪 (c : Fin e → Q) : π (∑ j, c j * y j) ∈ maximalIdeal A :=
     hπ𝔪 ▸ Ideal.mem_map_of_mem π (Ideal.sum_mem _ fun j _ ↦ Ideal.mul_mem_left _ _ (hy𝔪 j))
   have hcot (c : Fin e → Q) : (maximalIdeal A).toCotangent ⟨_, hsum𝔪 c⟩ =
@@ -150,6 +156,16 @@ theorem exists_lift_finBasis_cotangentSpace (hfg : (maximalIdeal Q).FG) {π : Q 
   exact ⟨y, hy𝔪, fun a ha ↦ hcov a ha, hind⟩
 
 end TauCeti.IsLocalRing
+
+namespace TauCeti
+
+/-- The quotient of a commutative local ring by a proper ideal is a local ring. -/
+theorem isLocalRing_quotient {A : Type*} [CommRing A] [IsLocalRing A] {I : Ideal A} (hI : I ≠ ⊤) :
+    IsLocalRing (A ⧸ I) :=
+  have : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
+  .of_surjective' _ Ideal.Quotient.mk_surjective
+
+end TauCeti
 
 namespace Ideal.Quotient
 
@@ -201,5 +217,40 @@ theorem finrank_residueField_eq_finrank [Module.Free R S] [Module.Finite R S]
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
   rfl
+
+end TauCeti.IsLocalRing
+
+namespace TauCeti.IsLocalRing
+
+open _root_.IsLocalRing
+
+variable {R : Type*} [CommRing R] [IsLocalRing R]
+
+/-- A positive power of the maximal ideal of a local ring is a proper ideal, so the quotient by it
+is a nontrivial ring. No Noetherian or completeness hypothesis is needed. -/
+instance nontrivial_quotient_maximalIdeal_pow (n : ℕ) :
+    Nontrivial (R ⧸ maximalIdeal R ^ (n + 1)) :=
+  Ideal.Quotient.nontrivial_iff.mpr
+    ((Ideal.pow_le_self n.succ_ne_zero).trans_lt (maximalIdeal.isMaximal R).ne_top.lt_top).ne
+
+/-- The quotient of a local ring by a positive power of its maximal ideal is a local ring. No
+Noetherian or completeness hypothesis is needed. -/
+instance isLocalRing_quotient_maximalIdeal_pow (n : ℕ) :
+    IsLocalRing (R ⧸ maximalIdeal R ^ (n + 1)) :=
+  .of_surjective' _ Ideal.Quotient.mk_surjective
+
+/-- A local homomorphism from a local ring `R` to an Artinian local ring kills a power of the
+maximal ideal of `R`, as the maximal ideal of the target is nilpotent. So it factors through a
+truncation `R ⧸ 𝔪_R ^ (n + 1)`. -/
+theorem exists_maximalIdeal_pow_le_ker {S : Type*} [CommRing S] [IsLocalRing S] [IsArtinianRing S]
+    (f : R →+* S) [IsLocalHom f] : ∃ n, maximalIdeal R ^ (n + 1) ≤ RingHom.ker f := by
+  obtain ⟨n, hn⟩ : IsNilpotent (maximalIdeal S) := by
+    rw [← ringJacobson_eq_maximalIdeal]
+    exact IsArtinianRing.isNilpotent_jacobson _
+  refine ⟨n, (Ideal.pow_le_pow_right n.le_succ).trans ?_⟩
+  calc maximalIdeal R ^ n
+      ≤ ((maximalIdeal S).comap f) ^ n := Ideal.pow_right_mono (maximalIdeal_comap f).ge n
+    _ ≤ (maximalIdeal S ^ n).comap f := Ideal.le_comap_pow _ n
+    _ = RingHom.ker f := by rw [hn, Ideal.zero_eq_bot, RingHom.ker_eq_comap_bot]
 
 end TauCeti.IsLocalRing

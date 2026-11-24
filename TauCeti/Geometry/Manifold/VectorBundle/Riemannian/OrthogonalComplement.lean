@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The orthogonal complement of a nowhere-zero section or an orthonormal family
@@ -167,7 +167,7 @@ theorem contMDiff_trivialProdOrthogonalSpan_sum :
     ContMDiff (IB.prod 𝓘(ℝ, ℂ × (Fin k → ℂ))) (IB.prod 𝓘(ℝ, F)) n
       (fun v : TotalSpace (ℂ × (Fin k → ℂ))
           (Bundle.Trivial B ℂ ×ᵇ fun x ↦ g.orthogonalSpan hI s x) ↦
-        (⟨v.proj, (v.2.1 : ℂ) • s v.proj + (v.2.2 : V v.proj)⟩ : TotalSpace F V)) := by
+        (⟨v.proj, (v.snd.1 : ℂ) • s v.proj + (v.snd.2 : V v.proj)⟩ : TotalSpace F V)) := by
   let := hV.fiberBundle
   let := hV.vectorBundle
   let := VectorBundle.restrictScalars ℝ ℂ (Fin k → ℂ) fun x ↦ g.orthogonalSpan hI s x
@@ -180,14 +180,14 @@ theorem contMDiff_trivialProdOrthogonalSpan_sum :
   -- identity of `ℂ`; so it is literally the smoothness of the first fibre coordinate.
   have ha' : ContMDiffAt (IB.prod 𝓘(ℝ, ℂ × (Fin k → ℂ))) 𝓘(ℝ, ℂ) n
       (fun y : TotalSpace (ℂ × (Fin k → ℂ))
-        (Bundle.Trivial B ℂ ×ᵇ fun x ↦ g.orthogonalSpan hI s x) ↦ (y.2.1 : ℂ)) v := ha
+        (Bundle.Trivial B ℂ ×ᵇ fun x ↦ g.orthogonalSpan hI s x) ↦ (y.snd.1 : ℂ)) v := ha
   have h₁ := ha'.smul_totalSpace (g := fun y ↦ (⟨y.proj, s y.proj⟩ : TotalSpace F V))
     ((hs v.proj).comp v hpr)
-  have h₂ := (hV.contMDiff_totalSpace_inclusion ⟨v.proj, v.2.2⟩).comp v hc.2
+  have h₂ := (hV.contMDiff_totalSpace_inclusion ⟨v.proj, v.snd.2⟩).comp v hc.2
   exact ContMDiffAt.add_sectionAlong
     (b := fun y : TotalSpace (ℂ × (Fin k → ℂ))
       (Bundle.Trivial B ℂ ×ᵇ fun x ↦ g.orthogonalSpan hI s x) ↦ y.proj)
-    (s := fun y ↦ (y.2.1 : ℂ) • s y.proj) (t := fun y ↦ (y.2.2 : V y.proj)) h₁ h₂
+    (s := fun y ↦ (y.snd.1 : ℂ) • s y.proj) (t := fun y ↦ (y.snd.2 : V y.proj)) h₁ h₂
 
 include hs hne in
 /-- The decomposition of `v ∈ V x` into its coefficient `‖s x‖⁻² ⟪s x, v⟫` along `s x` and its
@@ -197,8 +197,8 @@ theorem contMDiff_orthogonalSpan_decompose :
     letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
     letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
     ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, ℂ × (Fin k → ℂ))) n
-      (fun p : TotalSpace F V ↦ (⟨p.proj, ((‖s p.proj‖ ^ 2)⁻¹ • ⟪s p.proj, p.2⟫_ℂ,
-        ⟨(ℂ ∙ s p.proj)ᗮ.starProjection p.2, g.starProjection_mem_orthogonalSpan hI s _ _⟩)⟩ :
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ((‖s p.proj‖ ^ 2)⁻¹ • ⟪s p.proj, p.snd⟫_ℂ,
+        ⟨(ℂ ∙ s p.proj)ᗮ.starProjection p.snd, g.starProjection_mem_orthogonalSpan hI s _ _⟩)⟩ :
         TotalSpace (ℂ × (Fin k → ℂ)) (Bundle.Trivial B ℂ ×ᵇ fun x ↦ g.orthogonalSpan hI s x))) := by
   let := hV.fiberBundle
   let := hV.vectorBundle
@@ -237,9 +237,9 @@ def trivialProdOrthogonalSpanDiffeomorph :
   let : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
   have hnorm (x : B) : (‖s x‖ ^ 2 : ℝ) ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.mpr (hne x))
   refine
-    { toFun := fun v ↦ ⟨v.proj, (v.2.1 : ℂ) • s v.proj + (v.2.2 : V v.proj)⟩
-      invFun := fun p ↦ ⟨p.proj, ((‖s p.proj‖ ^ 2)⁻¹ • ⟪s p.proj, p.2⟫_ℂ,
-        ⟨(ℂ ∙ s p.proj)ᗮ.starProjection p.2, g.starProjection_mem_orthogonalSpan hI s _ _⟩)⟩
+    { toFun := fun v ↦ ⟨v.proj, (v.snd.1 : ℂ) • s v.proj + (v.snd.2 : V v.proj)⟩
+      invFun := fun p ↦ ⟨p.proj, ((‖s p.proj‖ ^ 2)⁻¹ • ⟪s p.proj, p.snd⟫_ℂ,
+        ⟨(ℂ ∙ s p.proj)ᗮ.starProjection p.snd, g.starProjection_mem_orthogonalSpan hI s _ _⟩)⟩
       left_inv := ?_
       right_inv := ?_
       contMDiff_toFun := g.contMDiff_trivialProdOrthogonalSpan_sum hI s hs hV
@@ -271,7 +271,7 @@ theorem trivialProdOrthogonalSpanDiffeomorph_apply
     (v : TotalSpace (ℂ × (Fin k → ℂ)) (Bundle.Trivial B ℂ ×ᵇ fun x ↦ g.orthogonalSpan hI s x)) :
     letI := hV.fiberBundle
     g.trivialProdOrthogonalSpanDiffeomorph hI s hs hne hV v =
-      ⟨v.proj, (v.2.1 : ℂ) • s v.proj + (v.2.2 : V v.proj)⟩ :=
+      ⟨v.proj, (v.snd.1 : ℂ) • s v.proj + (v.snd.2 : V v.proj)⟩ :=
   (rfl)
 
 /-- The inverse smooth splitting sends `v ∈ V x` to its coefficient `‖s x‖⁻² ⟪s x, v⟫` along
@@ -282,8 +282,8 @@ theorem trivialProdOrthogonalSpanDiffeomorph_symm_apply (p : TotalSpace F V) :
     letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
     letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
     (g.trivialProdOrthogonalSpanDiffeomorph hI s hs hne hV).symm p =
-      ⟨p.proj, ((‖s p.proj‖ ^ 2)⁻¹ • ⟪s p.proj, p.2⟫_ℂ,
-        ⟨(ℂ ∙ s p.proj)ᗮ.starProjection p.2, g.starProjection_mem_orthogonalSpan hI s _ _⟩)⟩ :=
+      ⟨p.proj, ((‖s p.proj‖ ^ 2)⁻¹ • ⟪s p.proj, p.snd⟫_ℂ,
+        ⟨(ℂ ∙ s p.proj)ᗮ.starProjection p.snd, g.starProjection_mem_orthogonalSpan hI s _ _⟩)⟩ :=
   (rfl)
 
 end Bundle.ContMDiffRiemannianMetric
@@ -399,16 +399,16 @@ theorem contMDiff_sub_sum_inner_smul :
     letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
     ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F)) n
       (fun p : TotalSpace F V ↦
-        (⟨p.proj, p.2 - ∑ i, ⟪s i p.proj, p.2⟫_ℂ • s i p.proj⟩ : TotalSpace F V)) := by
+        (⟨p.proj, p.snd - ∑ i, ⟪s i p.proj, p.snd⟫_ℂ • s i p.proj⟩ : TotalSpace F V)) := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
   have hb := Bundle.contMDiff_proj V (F := F) (IB := IB) (n := n)
   have hsp (i : ι) := (hs i).comp hb
   have hc (i : ι) := (g.contMDiff_hermitianPairing hI (hsp i) contMDiff_id).neg
   have hsum := ContMDiff.sum_sectionAlong (b := TotalSpace.proj) Finset.univ
-    (fun i (p : TotalSpace F V) ↦ (-⟪s i p.proj, p.2⟫_ℂ) • s i p.proj) hb
+    (fun i (p : TotalSpace F V) ↦ (-⟪s i p.proj, p.snd⟫_ℂ) • s i p.proj) hb
     (fun i _ ↦ (hc i).smul_totalSpace (hsp i))
-  apply (ContMDiff.add_sectionAlong (b := TotalSpace.proj) (s := fun p ↦ p.2) contMDiff_id
+  apply (ContMDiff.add_sectionAlong (b := TotalSpace.proj) (s := fun p ↦ p.snd) contMDiff_id
     hsum).congr
   intro p
   apply congrArg (TotalSpace.mk p.proj)
@@ -452,7 +452,7 @@ theorem contMDiff_trivialProdOrthogonalSpanFamily_sum :
     ContMDiff (IB.prod 𝓘(ℝ, (ι → ℂ) × (Fin r → ℂ))) (IB.prod 𝓘(ℝ, F)) n
       (fun v : TotalSpace ((ι → ℂ) × (Fin r → ℂ))
           (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x) ↦
-        (⟨v.proj, ∑ i, (v.2.1 : ι → ℂ) i • s i v.proj + (v.2.2 : V v.proj)⟩ :
+        (⟨v.proj, ∑ i, (v.snd.1 : ι → ℂ) i • s i v.proj + (v.snd.2 : V v.proj)⟩ :
           TotalSpace F V)) := by
   let := hV.fiberBundle
   let := hV.vectorBundle
@@ -467,19 +467,19 @@ theorem contMDiff_trivialProdOrthogonalSpanFamily_sum :
   have ha' : ContMDiffAt (IB.prod 𝓘(ℝ, (ι → ℂ) × (Fin r → ℂ))) 𝓘(ℝ, ι → ℂ) n
       (fun y : TotalSpace ((ι → ℂ) × (Fin r → ℂ))
         (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x) ↦
-          (y.2.1 : ι → ℂ)) v := ha
+          (y.snd.1 : ι → ℂ)) v := ha
   have h₁ := ContMDiffAt.sum_sectionAlong
     (b := fun y : TotalSpace ((ι → ℂ) × (Fin r → ℂ))
       (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x) ↦ y.proj)
-    Finset.univ (fun i y ↦ (y.2.1 : ι → ℂ) i • s i y.proj) hpr fun i _ ↦
+    Finset.univ (fun i y ↦ (y.snd.1 : ι → ℂ) i • s i y.proj) hpr fun i _ ↦
       ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ
         |>.contMDiff.contMDiffAt.comp v ha').smul_totalSpace
         (g := fun y ↦ (⟨y.proj, s i y.proj⟩ : TotalSpace F V)) ((hs i v.proj).comp v hpr)
-  have h₂ := (hV.contMDiff_totalSpace_inclusion ⟨v.proj, v.2.2⟩).comp v hc.2
+  have h₂ := (hV.contMDiff_totalSpace_inclusion ⟨v.proj, v.snd.2⟩).comp v hc.2
   exact ContMDiffAt.add_sectionAlong
     (b := fun y : TotalSpace ((ι → ℂ) × (Fin r → ℂ))
       (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x) ↦ y.proj)
-    (s := fun y ↦ ∑ i, (y.2.1 : ι → ℂ) i • s i y.proj) (t := fun y ↦ (y.2.2 : V y.proj)) h₁ h₂
+    (s := fun y ↦ ∑ i, (y.snd.1 : ι → ℂ) i • s i y.proj) (t := fun y ↦ (y.snd.2 : V y.proj)) h₁ h₂
 
 include hs in
 /-- For an orthonormal family, the decomposition of `v ∈ V x` into its coefficients `⟪s i x, v⟫`
@@ -492,8 +492,8 @@ theorem contMDiff_orthogonalSpanFamily_decompose
     letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
     letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
     ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, (ι → ℂ) × (Fin r → ℂ))) n
-      (fun p : TotalSpace F V ↦ (⟨p.proj, (fun i ↦ ⟪s i p.proj, p.2⟫_ℂ,
-        ⟨p.2 - ∑ i, ⟪s i p.proj, p.2⟫_ℂ • s i p.proj,
+      (fun p : TotalSpace F V ↦ (⟨p.proj, (fun i ↦ ⟪s i p.proj, p.snd⟫_ℂ,
+        ⟨p.snd - ∑ i, ⟪s i p.proj, p.snd⟫_ℂ • s i p.proj,
           g.sub_sum_inner_smul_mem_orthogonalSpanFamily hI s (hon _) _⟩)⟩ :
         TotalSpace ((ι → ℂ) × (Fin r → ℂ))
           (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x))) := by
@@ -531,9 +531,9 @@ def trivialProdOrthogonalSpanFamilyDiffeomorph
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
   refine
-    { toFun := fun v ↦ ⟨v.proj, ∑ i, (v.2.1 : ι → ℂ) i • s i v.proj + (v.2.2 : V v.proj)⟩
-      invFun := fun p ↦ ⟨p.proj, (fun i ↦ ⟪s i p.proj, p.2⟫_ℂ,
-        ⟨p.2 - ∑ i, ⟪s i p.proj, p.2⟫_ℂ • s i p.proj,
+    { toFun := fun v ↦ ⟨v.proj, ∑ i, (v.snd.1 : ι → ℂ) i • s i v.proj + (v.snd.2 : V v.proj)⟩
+      invFun := fun p ↦ ⟨p.proj, (fun i ↦ ⟪s i p.proj, p.snd⟫_ℂ,
+        ⟨p.snd - ∑ i, ⟪s i p.proj, p.snd⟫_ℂ • s i p.proj,
           g.sub_sum_inner_smul_mem_orthogonalSpanFamily hI s (hon _) _⟩)⟩
       left_inv := ?_
       right_inv := ?_
@@ -563,7 +563,7 @@ theorem trivialProdOrthogonalSpanFamilyDiffeomorph_apply
       (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x)) :
     letI := hV.fiberBundle
     g.trivialProdOrthogonalSpanFamilyDiffeomorph hI s hs hV hon v =
-      ⟨v.proj, ∑ i, (v.2.1 : ι → ℂ) i • s i v.proj + (v.2.2 : V v.proj)⟩ :=
+      ⟨v.proj, ∑ i, (v.snd.1 : ι → ℂ) i • s i v.proj + (v.snd.2 : V v.proj)⟩ :=
   (rfl)
 
 /-- The inverse smooth splitting sends `v ∈ V x` to its coefficients `⟪s i x, v⟫` and to
@@ -578,8 +578,8 @@ theorem trivialProdOrthogonalSpanFamilyDiffeomorph_symm_apply
     letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
     letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
     (g.trivialProdOrthogonalSpanFamilyDiffeomorph hI s hs hV hon).symm p =
-      ⟨p.proj, (fun i ↦ ⟪s i p.proj, p.2⟫_ℂ,
-        ⟨p.2 - ∑ i, ⟪s i p.proj, p.2⟫_ℂ • s i p.proj,
+      ⟨p.proj, (fun i ↦ ⟪s i p.proj, p.snd⟫_ℂ,
+        ⟨p.snd - ∑ i, ⟪s i p.proj, p.snd⟫_ℂ • s i p.proj,
           g.sub_sum_inner_smul_mem_orthogonalSpanFamily hI s (hon _) _⟩)⟩ :=
   (rfl)
 

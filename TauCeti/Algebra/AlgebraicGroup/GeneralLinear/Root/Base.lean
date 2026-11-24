@@ -33,6 +33,8 @@ to the standard maximal torus of `GL_(n+1)` carries the expected Bourbaki-number
 
 * `TauCeti.GeneralLinear.diagonalSimpleRootIndex`: the root index of `e_i - e_(i+1)`.
 * `TauCeti.GeneralLinear.diagonalRootBase`: the consecutive coordinate roots as a base.
+* `TauCeti.GeneralLinear.bijOn_diagonalSimpleRootIndex`: the consecutive-root indices biject
+  onto the support of this base.
 * `TauCeti.GeneralLinear.diagonalRootBase_isPos_iff`: positive diagonal roots are exactly
   the coordinate differences `e_i - e_j` with `i < j`.
 * `TauCeti.GeneralLinear.hasCartanType_diagonalRootDatum`: this base has Cartan type `A_n`.
@@ -43,8 +45,8 @@ to the standard maximal torus of `GL_(n+1)` carries the expected Bourbaki-number
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Section 12.1.
 
 The support and telescoping organization follows
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A`, adapted here to the character and
-cocharacter lattices of the diagonal torus in `GL_(n+1)`.
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic`, adapted here to the character
+and cocharacter lattices of the diagonal torus in `GL_(n+1)`.
 -/
 
 public section
@@ -123,19 +125,19 @@ def diagonalSimpleRootIndex (n : ℕ) (i : Fin n) : DiagonalRootIndex (n + 1) :=
 /-- The first coordinate of the `i`-th diagonal simple-root index is `i`. -/
 @[simp]
 theorem diagonalSimpleRootIndex_fst (n : ℕ) (i : Fin n) :
-    (diagonalSimpleRootIndex n i).1.1 = ULift.up i.castSucc := by
+    (diagonalSimpleRootIndex n i).val.1 = ULift.up i.castSucc := by
   rw [diagonalSimpleRootIndex]
 
 /-- The second coordinate of the `i`-th diagonal simple-root index is `i + 1`. -/
 @[simp]
 theorem diagonalSimpleRootIndex_snd (n : ℕ) (i : Fin n) :
-    (diagonalSimpleRootIndex n i).1.2 = ULift.up i.succ := by
+    (diagonalSimpleRootIndex n i).val.2 = ULift.up i.succ := by
   rw [diagonalSimpleRootIndex]
 
 /-- Distinct nodes give distinct diagonal simple-root indices. -/
 theorem diagonalSimpleRootIndex_injective (n : ℕ) : Injective (diagonalSimpleRootIndex n) := by
   intro i j h
-  have := congrArg (fun p : DiagonalRootIndex (n + 1) => p.1.1.down) h
+  have := congrArg (fun p : DiagonalRootIndex (n + 1) => p.val.1.down) h
   exact Fin.castSucc_injective n this
 
 /-- The periodic coordinate character used to telescope diagonal roots. -/
@@ -224,6 +226,14 @@ theorem diagonalRootDatum_coroot_diagonalSimpleRootIndex (n : ℕ) (i : Fin n) :
   simp only [diagonalSimpleRootIndex_fst, diagonalSimpleRootIndex_snd, ULift.down_up]
   exact diagonalCoroot_eq_coordinateCoroot i.castSucc i.succ
 
+/-- In coordinates, the coroot at the `i`-th diagonal simple-root index is `e_i - e_(i+1)`. -/
+theorem diagonalRootDatum_coroot_diagonalSimpleRootIndex_apply (n : ℕ) (i : Fin n)
+    (j : Fin (n + 1)) :
+    (diagonalRootDatum.{u} (n + 1)).coroot (diagonalSimpleRootIndex n i) (ULift.up j) =
+      (Pi.single i.castSucc 1 - Pi.single i.succ 1 : Fin (n + 1) → ℤ) j := by
+  rw [diagonalRootDatum_coroot_diagonalSimpleRootIndex, SplitTorus.coordinateCoroot_apply]
+  simp [Pi.single_apply, ULift.ext_iff]
+
 /-- The support consisting of consecutive coordinate-root indices. -/
 private abbrev diagonalSimpleSupport (n : ℕ) : Finset (DiagonalRootIndex (n + 1)) :=
   simpleSupport (diagonalSimpleRootIndex_injective n)
@@ -264,16 +274,16 @@ noncomputable def diagonalRootBase (n : ℕ) : (diagonalRootDatum.{u} (n + 1)).B
     exact linearIndependent_diagonalSimpleCoroot n
   root_mem_or_neg_mem p := by
     rw [image_root_diagonalSimpleSupport, range_diagonalSimpleRoot, diagonalRootDatum_root,
-      diagonalRoot_eq_coordinateRoot p.1.1.down p.1.2.down,
-      coordinateRoot_eq_coordinate_sub n p.1.1.down p.1.2.down]
+      diagonalRoot_eq_coordinateRoot p.val.1.down p.val.2.down,
+      coordinateRoot_eq_coordinate_sub n p.val.1.down p.val.2.down]
     exact sub_mem_or_neg_mem_closure (diagonalCharacterCoordinate n)
-      (Nat.lt_succ_iff.mp p.1.1.down.isLt) (Nat.lt_succ_iff.mp p.1.2.down.isLt)
+      (Nat.lt_succ_iff.mp p.val.1.down.isLt) (Nat.lt_succ_iff.mp p.val.2.down.isLt)
   coroot_mem_or_neg_mem p := by
     rw [image_coroot_diagonalSimpleSupport, range_diagonalSimpleCoroot, diagonalRootDatum_coroot,
-      diagonalCoroot_eq_coordinateCoroot p.1.1.down p.1.2.down,
-      coordinateCoroot_eq_coordinate_sub n p.1.1.down p.1.2.down]
+      diagonalCoroot_eq_coordinateCoroot p.val.1.down p.val.2.down,
+      coordinateCoroot_eq_coordinate_sub n p.val.1.down p.val.2.down]
     exact sub_mem_or_neg_mem_closure (diagonalCocharacterCoordinate n)
-      (Nat.lt_succ_iff.mp p.1.1.down.isLt) (Nat.lt_succ_iff.mp p.1.2.down.isLt)
+      (Nat.lt_succ_iff.mp p.val.1.down.isLt) (Nat.lt_succ_iff.mp p.val.2.down.isLt)
 
 /-- The support of the diagonal base is the image of the consecutive-root index map. -/
 theorem diagonalRootBase_support (n : ℕ) :
@@ -288,6 +298,15 @@ theorem mem_diagonalRootBase_support (n : ℕ) (p : DiagonalRootIndex (n + 1)) :
     p ∈ (diagonalRootBase.{u} n).support ↔ ∃ i : Fin n, diagonalSimpleRootIndex n i = p := by
   rw [diagonalRootBase_support, mem_simpleSupport]
 
+/-- The consecutive-root indices biject onto the support of the diagonal base. -/
+theorem bijOn_diagonalSimpleRootIndex (n : ℕ) :
+    BijOn (diagonalSimpleRootIndex n) univ
+      ((diagonalRootBase.{u} n).support : Set (DiagonalRootIndex.{u} (n + 1))) := by
+  refine ⟨fun i _ ↦ ?_, (diagonalSimpleRootIndex_injective n).injOn, fun p hp ↦ ?_⟩
+  · simp
+  · obtain ⟨i, hi⟩ := (mem_diagonalRootBase_support n p).1 hp
+    exact ⟨i, trivial, hi⟩
+
 /-- The diagonal root index attached to an ordered pair of distinct matrix coordinates. -/
 private def diagonalRootIndexOfNe {n : ℕ} (i j : Fin n) (hij : i ≠ j) :
     DiagonalRootIndex n :=
@@ -295,12 +314,12 @@ private def diagonalRootIndexOfNe {n : ℕ} (i j : Fin n) (hij : i ≠ j) :
 
 @[simp]
 private theorem diagonalRootIndexOfNe_fst {n : ℕ} (i j : Fin n) (hij : i ≠ j) :
-    (diagonalRootIndexOfNe i j hij).1.1 = ULift.up i := by
+    (diagonalRootIndexOfNe i j hij).val.1 = ULift.up i := by
   rfl
 
 @[simp]
 private theorem diagonalRootIndexOfNe_snd {n : ℕ} (i j : Fin n) (hij : i ≠ j) :
-    (diagonalRootIndexOfNe i j hij).1.2 = ULift.up j := by
+    (diagonalRootIndexOfNe i j hij).val.2 = ULift.up j := by
   rfl
 
 private theorem diagonalRootIndexOfNe_isPos_of_lt (n : ℕ) (i j : Fin (n + 1))
@@ -321,13 +340,13 @@ strictly smaller than its column index. -/
 @[simp]
 theorem diagonalRootBase_isPos_iff (n : ℕ)
     (p : DiagonalRootIndex.{u} (n + 1)) :
-    (diagonalRootBase.{u} n).IsPos p ↔ p.1.1.down < p.1.2.down := by
+    (diagonalRootBase.{u} n).IsPos p ↔ p.val.1.down < p.val.2.down := by
   constructor
   · intro hp
     by_contra hlt
-    have hrev : p.1.2.down < p.1.1.down := by
-      exact lt_of_le_of_ne (not_lt.mp hlt) fun h ↦ p.2 (ULift.down_injective h.symm)
-    let q := diagonalRootIndexOfNe p.1.2.down p.1.1.down hrev.ne
+    have hrev : p.val.2.down < p.val.1.down := by
+      exact lt_of_le_of_ne (not_lt.mp hlt) fun h ↦ p.property (ULift.down_injective h.symm)
+    let q := diagonalRootIndexOfNe p.val.2.down p.val.1.down hrev.ne
     have hq : (diagonalRootBase.{u} n).IsPos q :=
       diagonalRootIndexOfNe_isPos_of_lt n _ _ hrev
     let _ := (diagonalRootDatum.{u} (n + 1)).indexNeg
@@ -340,7 +359,7 @@ theorem diagonalRootBase_isPos_iff (n : ℕ)
       (hneg.symm ▸ hq)
     exact this hp
   · intro hij
-    convert diagonalRootIndexOfNe_isPos_of_lt n p.1.1.down p.1.2.down hij using 1
+    convert diagonalRootIndexOfNe_isPos_of_lt n p.val.1.down p.val.2.down hij using 1
     apply Subtype.ext
     simp [diagonalRootIndexOfNe]
 

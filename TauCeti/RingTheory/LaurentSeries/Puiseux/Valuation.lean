@@ -176,8 +176,8 @@ theorem hasBasis_nhds_zero :
       fun q ↦ {x | (q : WithTop ℚ) ≤ addVal K x} := by
   refine ⟨fun s ↦ ⟨fun hs ↦ ?_, fun ⟨q, _, hq⟩ ↦ ?_⟩⟩
   · obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp hs
-    obtain ⟨k, hk⟩ : ∃ k : ℚ, MonoidWithZeroHom.ValueGroup₀.embedding γ.1 = exp (-k) :=
-      ⟨-log (MonoidWithZeroHom.ValueGroup₀.embedding γ.1), by
+    obtain ⟨k, hk⟩ : ∃ k : ℚ, MonoidWithZeroHom.ValueGroup₀.embedding γ.val = exp (-k) :=
+      ⟨-log (MonoidWithZeroHom.ValueGroup₀.embedding γ.val), by
         rw [neg_neg, exp_log (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)]⟩
     refine ⟨k + 1, trivial, fun x hx ↦ hγ ?_⟩
     rw [Set.mem_ofPred_eq, Valued.v.restrict_lt_iff_lt_embedding, hk, v_eq_valuation,
@@ -350,7 +350,7 @@ theorem not_tendsto_sum_single {e : ℕ → ℚ} (he : Function.Injective e)
       sub_eq_zero] at h0
     simp_rw [coe_single, coeff_single, he.eq_iff] at h0
     simp [← h0, hjN]
-  obtain ⟨n, hn⟩ := mem_puiseuxField_iff_exists_den_dvd.mp x.2
+  obtain ⟨n, hn⟩ := mem_puiseuxField_iff_exists_den_dvd.mp x.property
   obtain ⟨j, hj⟩ := hden n
   exact hj (hn (e j) (by rw [mem_support, hcoeff j]; exact hc j))
 

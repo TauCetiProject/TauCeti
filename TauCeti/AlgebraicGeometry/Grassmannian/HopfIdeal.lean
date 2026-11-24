@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import TauCeti.AlgebraicGeometry.Grassmannian.BaseChange
+public import TauCeti.AlgebraicGeometry.Grassmannian.IdealLocus
 public import TauCeti.RingTheory.Grassmannian.HopfIdeal
 
 import TauCeti.AlgebraicGeometry.Grassmannian.Proper
@@ -127,8 +127,8 @@ by the inclusion into the Grassmannian scheme, is the morphism classifying `N`. 
 @[reassoc (attr := simp)]
 theorem schemeHopfIdealLocusHomEquiv_apply_comp_subschemeι {A : Type u} [CommRing A] [Algebra R A]
     (N : {N : G(k, A ⊗[R] H; A) // N.hopfIdealLocus = ⊥}) :
-    (schemeHopfIdealLocusHomEquiv R H k A N).1 ≫ (schemeHopfIdealLocus R H k).subschemeι =
-      toSchemeHom N.1 :=
+    (schemeHopfIdealLocusHomEquiv R H k A N).val ≫ (schemeHopfIdealLocus R H k).subschemeι =
+      toSchemeHom N.val :=
   schemeIdealLocusHomEquiv_apply_comp_subschemeι (R := R) (M := H) (k := k)
     (fun N ↦ N.hopfIdealLocus) hopfIdealLocus_map N
 
@@ -139,8 +139,8 @@ theorem toSchemeHom_schemeHopfIdealLocusHomEquiv_symm_apply {A : Type u} [CommRi
     [Algebra R A] (h : {h : Spec (.of A) ⟶ (schemeHopfIdealLocus R H k).subscheme //
       h ≫ (schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k =
         Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
-    toSchemeHom ((schemeHopfIdealLocusHomEquiv R H k A).symm h).1 =
-      h.1 ≫ (schemeHopfIdealLocus R H k).subschemeι :=
+    toSchemeHom ((schemeHopfIdealLocusHomEquiv R H k A).symm h).val =
+      h.val ≫ (schemeHopfIdealLocus R H k).subschemeι :=
   toSchemeHom_schemeIdealLocusHomEquiv_symm_apply (R := R) (M := H) (k := k)
     (fun N ↦ N.hopfIdealLocus) hopfIdealLocus_map h
 

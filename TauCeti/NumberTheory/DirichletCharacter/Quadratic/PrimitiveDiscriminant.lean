@@ -31,7 +31,8 @@ under lifting `χ` to a nonzero multiple of `N` via `DirichletCharacter.changeLe
 At an odd natural number `n` coprime to `N`, `χ n` is the Jacobi symbol `jacobiSym D n` (and
 `jacobiSym d n`); at an odd prime `p ∤ N`, `χ p` is `legendreSym p D = legendreSym p d`. Over a
 ring with `2 ≠ 0`, a value `χ n = -1` at an odd natural number `n` forces `n.Coprime N` and
-certifies that `D` (hence `d`) is not a square modulo `n`.
+certifies that `D` (hence `d`) is not a square modulo `n`; at an odd prime `p ∤ N` the converse
+holds as well.
 
 ## Main results
 
@@ -53,6 +54,10 @@ certifies that `D` (hence `d`) is not a square modulo `n`.
   `DirichletCharacter.apply_natCast_eq_legendreSym_of_forall_isCoprime`,
   `DirichletCharacter.not_isSquare_of_apply_natCast_eq_neg_one`: Jacobi/Legendre evaluation at odd
   coprime arguments and the nonsquare criterion from `χ n = -1` at an odd natural number `n`.
+* `MulChar.IsQuadratic.apply_natCast_eq_legendreSym_conductor_ite`,
+  `DirichletCharacter.apply_natCast_eq_neg_one_iff_not_isSquare`: at an odd prime `p ∤ N`, `χ p` is
+  the Legendre symbol of the signed conductor, and `χ p = -1` exactly when `D` is not a square
+  modulo `p`.
 
 ## References
 
@@ -233,6 +238,30 @@ theorem apply_natCast_eq_legendreSym_of_forall_isCoprime {N : ℕ}
   rw [apply_natCast_eq_jacobiSym_of_forall_isCoprime hval (hp.odd_of_ne_two hp2)
     (hp.coprime_iff_not_dvd.mpr hpN), jacobiSym.legendreSym.to_jacobiSym]
 
+/-- At an odd prime `p ∤ N`, a quadratic Dirichlet character `χ` of nonzero level `N` evaluates to
+the cast of the Legendre symbol modulo `p` of its primitive discriminant, the signed conductor
+`if χ (-1) = 1 then χ.conductor else -χ.conductor`. -/
+theorem _root_.MulChar.IsQuadratic.apply_natCast_eq_legendreSym_conductor_ite
+    {N : ℕ} [NeZero N] {χ : DirichletCharacter R N} [Decidable (χ (-1) = 1)]
+    (hχ : χ.IsQuadratic) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hpN : ¬ p ∣ N) :
+    χ p = legendreSym p (if χ (-1) = 1 then (χ.conductor : ℤ) else -(χ.conductor : ℤ)) :=
+  apply_natCast_eq_legendreSym_of_forall_isCoprime (hD := hχ.isFundamentalDiscr_conductor_ite)
+    (fun _ hn ↦ hχ.apply_eq_fundamentalDiscriminantCharCast_conductor_ite hn) hp2 hpN
+
+/-- **Nonsquare dictionary at odd primes.** Over a ring with `2 ≠ 0`, if `χ` agrees on the
+integers prime to `N` with the character of a fundamental discriminant `D`, then at an odd prime
+`p ∤ N`, `χ p = -1` holds if and only if `D` is not a square modulo `p`. -/
+theorem apply_natCast_eq_neg_one_iff_not_isSquare [NeZero (2 : R)] {N : ℕ}
+    {χ : DirichletCharacter R N} {D : ℤ} {hD : Int.IsFundamentalDiscr D}
+    (hval : ∀ m : ℤ, IsCoprime m N → χ m = fundamentalDiscriminantCharCast R D hD m)
+    {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) (hpN : ¬ p ∣ N) :
+    χ p = -1 ↔ ¬ IsSquare (D : ZMod p) := by
+  have hcop : IsCoprime (p : ℤ) N :=
+    Nat.isCoprime_iff_coprime.mpr ((Fact.out : p.Prime).coprime_iff_not_dvd.mpr hpN)
+  have h := hval p hcop
+  rw [Int.cast_natCast, Int.cast_natCast] at h
+  rw [h, fundamentalDiscriminantCharCast_natCast_eq_neg_one_iff hD hp2]
+
 /-- **Nonsquare criterion from a character value `-1` at an odd natural number.** Over a ring with
 `2 ≠ 0`, if `χ` agrees on the integers prime to `N` with the character of a fundamental
 discriminant `D`, and `χ n = -1` at an odd natural number `n`, then `D` is not a square modulo `n`.
@@ -257,6 +286,42 @@ theorem not_isSquare_of_apply_natCast_eq_neg_one [NeZero (2 : R)] {N : ℕ}
 end CommRing
 
 /-! ### Concrete checks -/
+
+-- Fundamental discriminants `1, -4, 8, -8, 5, -3, 12`, and `-12` as a non-fundamental
+-- discriminant (`-12 = 4 · (-3)` with `-3 ≡ 1 (mod 4)`).
+example : Int.IsFundamentalDiscr 1 ∧ Int.IsFundamentalDiscr (-4) ∧ Int.IsFundamentalDiscr 8 ∧
+    Int.IsFundamentalDiscr (-8) ∧ Int.IsFundamentalDiscr 5 ∧ Int.IsFundamentalDiscr (-3) ∧
+    Int.IsFundamentalDiscr 12 ∧ ¬ Int.IsFundamentalDiscr (-12) := by
+  have h5 : Int.IsFundamentalDiscr 5 :=
+    Int.isFundamentalDiscr_iff_squarefree.mpr
+      (Or.inl ⟨by norm_num, Int.squarefree_natAbs.mp Nat.prime_five.squarefree⟩)
+  have h3 : Int.IsFundamentalDiscr (-3) :=
+    Int.isFundamentalDiscr_iff_squarefree.mpr
+      (Or.inl ⟨by norm_num, Int.squarefree_natAbs.mp Nat.prime_three.squarefree⟩)
+  have h12 : Int.IsFundamentalDiscr 12 :=
+    (Int.isFundamentalDiscr_four_mul (m := 3)).mpr
+      ⟨Int.squarefree_natAbs.mp Nat.prime_three.squarefree, by norm_num⟩
+  have hneg12 : ¬ Int.IsFundamentalDiscr (-12) := fun h ↦ by
+    have := ((Int.isFundamentalDiscr_iff_squarefree.mp h).resolve_left (by omega)).right.right
+    omega
+  exact ⟨Int.isFundamentalDiscr_one, isPrimeDiscriminant_neg_four.isFundamentalDiscr,
+    isPrimeDiscriminant_eight.isFundamentalDiscr, isPrimeDiscriminant_neg_eight.isFundamentalDiscr,
+    h5, h3, h12, hneg12⟩
+
+-- At conductor `8`, `χ₈` and `χ₈'` have the same `|D| = 8` and are distinguished by their values
+-- at `-1`, yielding `D = 8` and `D = -8`.
+example :
+    let ψ : DirichletCharacter ℂ 8 := ZMod.χ₈.ringHomComp (Int.castRingHom ℂ)
+    let ψ' : DirichletCharacter ℂ 8 := ZMod.χ₈'.ringHomComp (Int.castRingHom ℂ)
+    (if ψ (-1) = 1 then (ψ.conductor : ℤ) else -(ψ.conductor : ℤ)) = 8 ∧
+      (if ψ' (-1) = 1 then (ψ'.conductor : ℤ) else -(ψ'.conductor : ℤ)) = -8 := by
+  intro ψ ψ'
+  have h8 : ZMod.χ₈ (-1 : ZMod 8) = 1 := by decide
+  have h8' : ZMod.χ₈' (-1 : ZMod 8) = -1 := by decide
+  have h1 : ψ (-1) = 1 := by simp [ψ, h8]
+  have h2 : ψ' (-1) = -1 := by simp [ψ', h8']
+  have hne : (-1 : ℂ) ≠ 1 := by norm_num
+  simp [ψ, ψ', conductor_χ₈_ringHomComp, conductor_χ₈'_ringHomComp, h1, h2, hne]
 
 -- The principal character at level `6` has conductor `1`, primitive discriminant `D = 1`,
 -- and squarefree radicand `d = 1`.
@@ -367,5 +432,17 @@ example [Fact (Nat.Prime 2)] :
   refine ⟨?_, by norm_num, ⟨1, rfl⟩⟩
   rw [fundamentalDiscriminantChar_two]
   decide
+
+-- Odd-prime dictionary: `D = 12` has squarefree radicand `d = 3`; at `p = 5` both Legendre
+-- symbols are `-1`, through `12 = 2² · 3`; at `p = 3`, which divides `D`, both are `0`.
+-- `D = -4` has squarefree radicand `d = -1`.
+example [Fact (Nat.Prime 5)] :
+    Squarefree (3 : ℤ) ∧ fundamentalDiscriminant 3 = 12 ∧
+      legendreSym 5 12 = legendreSym 5 2 ∧ legendreSym 5 2 = -1 ∧ legendreSym 5 3 = -1 ∧
+      legendreSym 3 12 = 0 ∧ legendreSym 3 3 = 0 ∧
+      Squarefree (-1 : ℤ) ∧ fundamentalDiscriminant (-1) = -4 := by
+  refine ⟨Int.prime_three.squarefree, ?_, by norm_num,
+    by norm_num, by norm_num, by norm_num, by norm_num, isUnit_neg_one.squarefree, ?_⟩ <;>
+  rw [fundamentalDiscriminant_of_mod_four_ne_one (by decide)] <;> norm_num
 
 end DirichletCharacter

@@ -10,11 +10,11 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.SModEq.Basic
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Ideal
 import Mathlib.NumberTheory.LegendreSymbol.Complex
-import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.JacobiSum.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.MulChar.Basic
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Embeddings
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.IntegralClosure.Map
 
@@ -60,8 +60,8 @@ the Eisenstein reciprocity law.
   integers, in particular for every automorphism of `K`.
 * `Ideal.apply_stickelbergerPhi_eq_gaussSum_pow`: `σ (Φ(P)) = g(χ_P ^ c, ψ)^m` for an automorphism
   `σ` of `𝓞 K` raising the `m`-th roots of unity to the power `c`.
-* `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`: `Φ(P) σ(Φ(P)) = N(P)^m` for an automorphism
-  `σ` inverting the `m`-th roots of unity.
+* `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`: `Φ(A) σ(Φ(A)) = N(A)^m` for an ideal `A`
+  whose norm is prime to `m` and an automorphism `σ` inverting the `m`-th roots of unity.
 * `Ideal.stickelbergerPhi_modEq`: `Φ(P) ≡ -1 (mod m)` for `m` prime and every maximal ideal `P`
   whose norm is prime to `m`.
 * `Ideal.stickelbergerPhi_modEq_neg_one_pow`: `Φ(A) ≡ (-1)^r (mod m)` for `m` prime and every ideal
@@ -297,19 +297,15 @@ theorem apply_stickelbergerPhi_eq_gaussSum_pow (P : Ideal (𝓞 K)) [P.IsMaximal
   rw [MulChar.ringHomComp_apply, MulChar.ringHomComp_apply, RingHom.comp_apply,
     RingEquiv.coe_toRingHom, hσ _ hu, MulChar.pow_apply_coe]
 
-/-- **`Φ(P)` times its conjugate.** Let `σ` be a ring automorphism of `𝓞 K` inverting every
-`m`-th root of unity, such as complex conjugation on a cyclotomic field. If `m ≥ 2` and the norm
-of the maximal ideal `P` is prime to `m`, then `Φ(P) σ(Φ(P)) = N(P)^m`. -/
-theorem stickelbergerPhi_mul_apply_eq_absNorm_pow (P : Ideal (𝓞 K)) [P.IsMaximal]
-    (hP : (absNorm P).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
+/-- The case of a maximal ideal in `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`. -/
+private theorem stickelbergerPhi_mul_apply_eq_absNorm_pow_of_isMaximal (P : Ideal (𝓞 K))
+    [P.IsMaximal] (hP : (absNorm P).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
     (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ (m - 1)) :
     stickelbergerPhi P m * σ (stickelbergerPhi P m) = (absNorm P : 𝓞 K) ^ m := by
   let _ := Ideal.Quotient.field P
   let _ := Fintype.ofFinite (𝓞 K ⧸ P)
   -- Read both factors as Gauss sum powers in `ℂ`.
-  let f := (Classical.arbitrary (K →+* ℂ)).comp (algebraMap (𝓞 K) K)
-  have hf : Function.Injective f :=
-    (Classical.arbitrary (K →+* ℂ)).injective.comp (FaithfulSMul.algebraMap_injective _ _)
+  obtain ⟨f, hf⟩ := RingOfIntegers.exists_injective_ringHom_complex K
   have hψ := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive (𝓞 K ⧸ P)
   have h₁ := stickelbergerPhi_prime P hP hm hf hψ
   have h₂ := apply_stickelbergerPhi_eq_gaussSum_pow P hP hm σ hσ hf hψ
@@ -327,6 +323,27 @@ theorem stickelbergerPhi_mul_apply_eq_absNorm_pow (P : Ideal (𝓞 K)) [P.IsMaxi
   rw [map_mul, h₁, h₂, ← mul_pow, h, mul_pow, ← MulChar.pow_apply' χ (NeZero.ne m),
     ← hχ, pow_orderOf_eq_one, MulChar.one_apply (isUnit_one.neg), one_mul, map_pow, map_natCast,
     absNorm_eq_natCard, Nat.card_eq_fintype_card]
+
+/-- **`Φ(A)` times its conjugate.** Let `σ` be a ring automorphism of `𝓞 K` inverting every
+`m`-th root of unity, such as complex conjugation on a cyclotomic field. If `m ≥ 2` and the norm
+of the ideal `A` is prime to `m`, then `Φ(A) σ(Φ(A)) = N(A)^m`. -/
+theorem stickelbergerPhi_mul_apply_eq_absNorm_pow {A : Ideal (𝓞 K)}
+    (hA : (absNorm A).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
+    (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ (m - 1)) :
+    stickelbergerPhi A m * σ (stickelbergerPhi A m) = (absNorm A : 𝓞 K) ^ m := by
+  induction A using induction_on_prime with
+  | h₁ =>
+    rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hA
+    lia
+  | h₂ A hA' =>
+    rw [isUnit_iff.mp hA', stickelbergerPhi_top, absNorm_top]
+    simp
+  | h₃ A P hA₀ hP ih =>
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP.ne_zero
+    rw [map_mul, Nat.coprime_mul_iff_left] at hA
+    rw [stickelbergerPhi_mul hP.ne_zero hA₀, map_mul, map_mul, Nat.cast_mul, mul_pow,
+      ← stickelbergerPhi_mul_apply_eq_absNorm_pow_of_isMaximal P hA.1 hm σ hσ, ← ih hA.2]
+    ring
 
 /-- **`Φ(P)` is `-1` modulo `m`.** If `m` is prime and `P` is a maximal ideal whose norm is prime
 to `m`, then `Φ(P) ≡ -1` modulo `m 𝓞 K`. -/
@@ -365,7 +382,7 @@ theorem stickelbergerPhi_modEq [Fact m.Prime] (P : Ideal (𝓞 K)) [P.IsMaximal]
     have hfσ (x : 𝓞 K) : (f x : ℂ) = σ x := rfl
     simpa [hfσ] using (congrArg Subtype.val hy).symm
   obtain ⟨z, hz'⟩ := IsIntegralClosure.isIntegral_iff (A := 𝓞 K) |>.mp <|
-    (isIntegral_algHom_iff σ.toIntAlgHom σ.injective).mp (hz ▸ y.2)
+    (isIntegral_algHom_iff σ.toIntAlgHom σ.injective).mp (hz ▸ y.property)
   rw [SModEq.sub_mem, sub_neg_eq_add, mem_span_singleton']
   refine ⟨z, RingOfIntegers.coe_injective ?_⟩
   rw [map_mul, hz', map_natCast, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hm.ne_zero)]

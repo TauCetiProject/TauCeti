@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.JamesReducedProduct
+public import TauCeti.AlgebraicTopology.JamesReducedProduct.Basic
 public import TauCeti.Topology.Category.TopPair.FatWedge
 public import TauCeti.Topology.Category.TopPair.Quotient
 
@@ -103,7 +103,7 @@ theorem filtrationMk_surjective {r : ℕ} :
     Function.Surjective (filtrationMk x₀ : (Fin r → X) → filtration X x₀ r) := fun w => by
   obtain ⟨v, hv⟩ : (w : JamesReducedProduct X x₀) ∈ range (mk : (Fin r → X) → _) := by
     rw [range_mk]
-    exact w.2
+    exact w.property
   exact ⟨v, Subtype.ext hv⟩
 
 /-! ### The topology of the stages of the filtration -/
@@ -164,7 +164,7 @@ theorem isQuotientMap_filtrationMk (h : IsClosed ({x₀} : Set X)) {r : ℕ}
   refine isQuotientMap_iff_isClosed.2 ⟨filtrationMk_surjective, fun s =>
     ⟨fun hs => hs.preimage continuous_filtrationMk, fun hs => ?_⟩⟩
   rw [(isClosed_filtration h r).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed,
-    isClosed_iff_of_subset_filtration h (image_subset_iff.2 fun w _ => w.2)]
+    isClosed_iff_of_subset_filtration h (image_subset_iff.2 fun w _ => w.property)]
   intro S g
   have hpre : (fun t => (mk (g t) : JamesReducedProduct X x₀)) ⁻¹' (Subtype.val '' s) =
       g ⁻¹' (filtrationMk x₀ ⁻¹' s) := by

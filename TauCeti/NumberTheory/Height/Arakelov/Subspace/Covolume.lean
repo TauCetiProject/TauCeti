@@ -317,18 +317,18 @@ omit [NumberField K] in
 private theorem det_realPlaceGramMatrix {W : Submodule K (ι → K)} {p : ℕ} (b : Basis (Fin p) K W)
     (w : {w : InfinitePlace K // w.IsReal}) :
     LinearMap.det (Matrix.toLin' (realPlaceGramMatrix b w)) =
-      (∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.1.mult := by
-  let xr : Fin p → ι → ℝ := fun k i ↦ embedding_of_isReal w.2 ((b k : ι → K) i)
+      (∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.val.mult := by
+  let xr : Fin p → ι → ℝ := fun k i ↦ embedding_of_isReal w.property ((b k : ι → K) i)
   have hmat : realPlaceGramMatrix b w = Matrix.of xr * (Matrix.of xr).transpose := by
     ext k₂ k₁
     simp [realPlaceGramMatrix, xr, Matrix.mul_apply]
   rw [LinearMap.det_toLin', hmat, det_mul_transpose_eq_sum_plucker_mul, mult_isReal, pow_one]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  have hp : plucker xr s = embedding_of_isReal w.2 (plucker (fun k ↦ (b k : ι → K)) s) :=
-    plucker_map (embedding_of_isReal w.2) _ s
+  have hp : plucker xr s = embedding_of_isReal w.property (plucker (fun k ↦ (b k : ι → K)) s) :=
+    plucker_map (embedding_of_isReal w.property) _ s
   have hnorm :
-      ‖embedding_of_isReal w.2 (plucker (fun k ↦ (b k : ι → K)) s)‖ =
-        ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ := by
+      ‖embedding_of_isReal w.property (plucker (fun k ↦ (b k : ι → K)) s)‖ =
+        ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ := by
     rw [norm_embedding_of_isReal, norm_embedding_eq]
   rw [hp, ← hnorm, Real.norm_eq_abs, sq_abs, sq]
 
@@ -338,8 +338,8 @@ omit [NumberField K] in
 private theorem det_restrictScalars_complexPlaceGramMatrix {W : Submodule K (ι → K)} {p : ℕ}
     (b : Basis (Fin p) K W) (w : {w : InfinitePlace K // w.IsComplex}) :
     LinearMap.det ((Matrix.toLin' (complexPlaceGramMatrix b w)).restrictScalars ℝ) =
-      (∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.1.mult := by
-  let xc : Fin p → ι → ℂ := fun k i ↦ w.1.embedding ((b k : ι → K) i)
+      (∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.val.mult := by
+  let xc : Fin p → ι → ℂ := fun k i ↦ w.val.embedding ((b k : ι → K) i)
   have hmat :
       complexPlaceGramMatrix b w = (Matrix.of xc * (Matrix.of xc).conjTranspose).transpose := by
     ext k₂ k₁
@@ -349,11 +349,11 @@ private theorem det_restrictScalars_complexPlaceGramMatrix {W : Submodule K (ι 
     Complex.normSq_eq_norm_sq, mult_isComplex]
   have hsum :
       (∑ s, plucker xc s * star (plucker xc s)) =
-        ((∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2 : ℝ) : ℂ) := by
+        ((∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2 : ℝ) : ℂ) := by
     push_cast
     refine Finset.sum_congr rfl fun s _ ↦ ?_
-    have hp : plucker xc s = w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s) :=
-      plucker_map w.1.embedding _ s
+    have hp : plucker xc s = w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s) :=
+      plucker_map w.val.embedding _ s
     rw [hp, RCLike.star_def, Complex.mul_conj, Complex.normSq_eq_norm_sq, Complex.ofReal_pow]
   rw [hsum, Complex.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)]
 
@@ -369,9 +369,9 @@ private theorem det_archimedeanGramEndo {W : Submodule K (ι → K)} {p : ℕ} (
   simp_rw [det_realPlaceGramMatrix, det_restrictScalars_complexPlaceGramMatrix]
   have hcomp :
       (∏ w : {w : InfinitePlace K // ¬w.IsReal},
-        (∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.1.mult) =
+        (∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.val.mult) =
       ∏ w : {w : InfinitePlace K // w.IsComplex},
-        (∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.1.mult :=
+        (∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.val.mult :=
     Fintype.prod_equiv (Equiv.subtypeEquivRight fun _ ↦ not_isReal_iff_isComplex) _ _ fun _ ↦ rfl
   rw [← hcomp]
   exact Fintype.prod_subtype_mul_prod_subtype IsReal fun w : InfinitePlace K ↦

@@ -26,7 +26,7 @@ namespace Fin
 
 /-- Reading a family of tuples at equal indices, through casts of the coordinate to the lengths of
 the tuples, gives the same value. -/
-theorem apply_cast_eq_apply_cast {ι α : Type*} {f : ι → ℕ} (x : ∀ i, Fin (f i) → α) {a b : ι}
+theorem apply_cast_eq_apply_cast {ι α : Sort*} {f : ι → ℕ} (x : ∀ i, Fin (f i) → α) {a b : ι}
     (hab : a = b) {n : ℕ} (ha : n = f a) (hb : n = f b) (j : Fin n) :
     x a (Fin.cast ha j) = x b (Fin.cast hb j) := by
   subst hab

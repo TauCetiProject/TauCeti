@@ -135,7 +135,7 @@ theorem map_rootIntMatrix (k : Fin (n + 1) ⊕ Fin (n + 1)) :
 private theorem rootIntMatrix_mul_JFin_add_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootIntMatrix n k * TauCeti.JFin (n + 1) ℤ +
       TauCeti.JFin (n + 1) ℤ * (rootIntMatrix n k)ᵀ = 0 := by
-  have key := mul_J_add_J_mul_transpose_eq_zero (rootGenerator n k).2
+  have key := mul_J_add_J_mul_transpose_eq_zero (rootGenerator n k).property
   have hJ : TauCeti.JFin (n + 1) ℚ =
       (Matrix.J (Fin (n + 1)) ℚ).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := by
     rw [← TauCeti.JFin_submatrix (n + 1) (R := ℚ), Matrix.submatrix_submatrix]

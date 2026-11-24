@@ -224,6 +224,14 @@ theorem map_subtype_injective_of_coprime_natCard {A : Rep.{u} k G}
     Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
   map_subtype_injective_of_coprime S (fun _ ↦ card_nsmul_eq_zero') hcop n
 
+omit [S.FiniteIndex] in
+/-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` when the underlying
+additive group of `A` is a `p`-group (possibly infinite) and `p` is coprime to `[G : S]`. -/
+theorem map_subtype_injective_of_isAddPGroup {p : ℕ} {A : Rep.{u} k G}
+    (hA : IsAddPGroup p A) (hcop : p.Coprime S.index) (n : ℕ) :
+    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
+  map_subtype_injective_of_bijective_nsmul S (hA.nsmulEquiv hcop).bijective n
+
 /-- Corestriction from a finite-index subgroup commutes with the connecting maps of
 any short exact sequence of representations, in every ordinary cohomological degree. -/
 @[reassoc]
@@ -278,11 +286,11 @@ private theorem res_map_restrictCoind_comp_counit :
     (Equiv.symm_apply_apply _ _)
 
 private theorem evalOne_hom_apply (f : coindComp φ₁ φ₂ M) :
-    (evalOne φ₁ φ₂ M).hom f = f.1 1 :=
+    (evalOne φ₁ φ₂ M).hom f = f.val 1 :=
   rfl
 
 private theorem restrictCoind_hom_apply_coe (f : coindComp φ₁ φ₂ M) (b : B) :
-    ((restrictCoind φ₁ φ₂ M).hom f).1 b = f.1 (φ₂ b) := by
+    ((restrictCoind φ₁ φ₂ M).hom f).val b = f.val (φ₂ b) := by
   have h := congrArg
     (fun g : res φ₁.range.subtype (res φ₂ (coindComp φ₁ φ₂ M)) ⟶
         res φ₁.range.subtype (res φ₂ M) =>
@@ -305,7 +313,7 @@ private noncomputable def traceRestrict [φ₁.range.FiniteIndex] :
 private noncomputable def traceRestrictRange [φ₁.range.FiniteIndex] :
     res φ₂.range.subtype (coindComp φ₁ φ₂ M) ⟶ res φ₂.range.subtype M :=
   Rep.ofHom ⟨(traceRestrict φ₁ φ₂ M).hom.toLinearMap, fun s => by
-    obtain ⟨b, hb⟩ := s.2
+    obtain ⟨b, hb⟩ := s.property
     ext v
     have := hom_comm_apply (traceRestrict φ₁ φ₂ M) b v
     simp only [res_obj_ρ, MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype, ← hb,
@@ -330,8 +338,9 @@ private theorem res_map_coindTrace_comp_counit [φ₁.range.FiniteIndex] :
 
 open scoped Classical in
 private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindComp φ₁ φ₂ M)
-    (c : C) : ((coindTrace φ₁ φ₂ M).hom f).1 c =
-      ∑ q : Quotient (QuotientGroup.rightRel φ₁.range), M.ρ (φ₂ q.out)⁻¹ (f.1 (φ₂ q.out * c)) := by
+    (c : C) : ((coindTrace φ₁ φ₂ M).hom f).val c =
+      ∑ q : Quotient (QuotientGroup.rightRel φ₁.range), M.ρ (φ₂ q.out)⁻¹ (f.val (φ₂ q.out * c))
+          := by
   have h := congrArg
     (fun g : res φ₂.range.subtype (coindComp φ₁ φ₂ M) ⟶
         res φ₂.range.subtype M => g.hom ((coindComp φ₁ φ₂ M).ρ c f))
@@ -339,7 +348,7 @@ private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindCom
   rw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply,
     hom_comm_apply, Rep.resCoindAdjunction_counit_app_hom_apply,
     traceRestrictRange_hom_apply] at h
-  have h' : ((coindTrace φ₁ φ₂ M).hom f).1 c =
+  have h' : ((coindTrace φ₁ φ₂ M).hom f).val c =
       (traceRestrict φ₁ φ₂ M).hom ((coindComp φ₁ φ₂ M).ρ c f) := by
     simpa only [Rep.of_ρ, Representation.coind_apply_coe_apply, one_mul] using h
   rw [h', traceRestrict, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
@@ -365,13 +374,13 @@ private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.Fi
   rw [Subgroup.coindResAdjunction_counit_app_hom_apply,
     Subgroup.coindResAdjunction_counit_app_hom_apply]
   -- The summand `c ↦ c⁻¹ • f c` of the trace is constant on the cosets of `(φ₂.comp φ₁).range`.
-  let F : C → M := fun c => M.ρ c⁻¹ (f.1 c)
+  let F : C → M := fun c => M.ρ c⁻¹ (f.val c)
   have hF (x : C) :
       F x = F (Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) x).out := by
     obtain ⟨_, ⟨a, rfl⟩, hs⟩ :=
       Subgroup.exists_mul_out_eq (φ₂.comp φ₁).range x
     conv_lhs => rw [← hs]
-    have := f.2 ⟨(φ₂.comp φ₁) a, MonoidHom.mem_range.2 ⟨a, rfl⟩⟩
+    have := f.property ⟨(φ₂.comp φ₁) a, MonoidHom.mem_range.2 ⟨a, rfl⟩⟩
       (Quotient.mk (QuotientGroup.rightRel (φ₂.comp φ₁).range) x).out
     simp only [F, Subgroup.coe_subtype] at this ⊢
     rw [this]
@@ -576,20 +585,20 @@ theorem H0Iso_inv_comp_corestriction_comp_H0Iso_hom (M : Rep.{u} k G)
   let f := (groupCohomology.H0Iso (coind H.subtype (res H.subtype M))).hom y
   let x := (groupCohomology.H0Iso (res H.subtype M)).hom
     ((groupCohomology.coindIso (res H.subtype M) 0).hom y)
-  have hx : (x : M) = f.1.1 1 := by
+  have hx : (x : M) = f.val.val 1 := by
     have h := groupCohomology.map_H0Iso_hom_f_apply H.subtype
       ((resCoindAdjunction k H.subtype).counit.app (res H.subtype M)) y
     rw [← TauCeti.groupCohomology.coindIso_hom] at h
     exact h
-  have hf (g : G) : f.1.1 g = f.1.1 1 := by
-    have h := congrArg (fun a : coind H.subtype (res H.subtype M) => a.1 1)
-      ((Representation.mem_invariants _ _).mp f.2 g)
+  have hf (g : G) : f.val.val g = f.val.val 1 := by
+    have h := congrArg (fun a : coind H.subtype (res H.subtype M) => a.val 1)
+      ((Representation.mem_invariants _ _).mp f.property g)
     convert h using 1
-    exact congrArg f.1.1 (one_mul g).symm
+    exact congrArg f.val.val (one_mul g).symm
   -- Both maps on invariants are restrictions of their underlying linear maps.
   apply Subtype.ext
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
-  suffices heq : ((coindResAdjunction.{u, u, u} k H).counit.app M).hom f.1 =
+  suffices heq : ((coindResAdjunction.{u, u, u} k H).counit.app M).hom f.val =
       Representation.relNorm M.ρ H x by
     exact heq.trans (Representation.coe_relNormInvariants (ρ := M.ρ) (H := H) x).symm
   rw [Subgroup.coindResAdjunction_counit_app_hom_apply, Representation.relNorm_apply]
@@ -601,7 +610,7 @@ theorem H0Iso_inv_comp_corestriction_comp_H0Iso_hom (M : Rep.{u} k G)
     fun q => ?_
   rw [hf, ← hx]
   apply M.ρ.apply_eq_apply_of_quotientGroup_mk_eq
-    ((Representation.mem_invariants _ _).1 x.2)
+    ((Representation.mem_invariants _ _).1 x.property)
   calc ((q.out⁻¹ : G) : G ⧸ H) =
       QuotientGroup.quotientRightRelEquivQuotientLeftRel H q :=
         congrArg (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) q.out_eq

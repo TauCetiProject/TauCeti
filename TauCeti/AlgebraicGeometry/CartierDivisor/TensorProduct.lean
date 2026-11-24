@@ -141,8 +141,9 @@ def tensorPresheafHom :
     (fun r s t ↦ sectionsMul_smul_right r s t)
   naturality f := ModuleCat.MonoidalCategory.tensor_ext fun s t ↦ sectionsMul_map f.unop s t
 
-/-- The morphism on an open subset is the multiplication map on tensor products of sections. -/
-@[simp]
+/-- The morphism on an open subset is the multiplication map on tensor products of sections.
+This is not a `simp` lemma: the two sides are linear maps over syntactically different (but
+defeq) rings, so `simp` could rewrite with it but not close the resulting goal. -/
 lemma tensorPresheafHom_app :
     ModuleCat.Hom.hom (R := X.sheaf.obj.obj (op U)) ((tensorPresheafHom D E).app (op U)) =
       sectionsMulLift D E U :=

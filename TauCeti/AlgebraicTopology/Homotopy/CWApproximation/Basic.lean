@@ -49,6 +49,8 @@ path component gives `TauCeti.sigmaCWApproximation`.
 * `TauCeti.cwApproximation X x`: its colimit, with the map `TauCeti.cwApproximationMap X x` to `X`
   and the base point `TauCeti.cwApproximationBasepoint X x`, which the map sends to `x`.
 * `TauCeti.cwApproximationCWComplex X x`: the categorical CW structure of the colimit.
+* `TauCeti.cwApproximationHomotopyGroupMulEquiv X x j`: for `j ≥ 1`, the isomorphism of `πⱼ` of
+  the colimit at its base point with `πⱼ(X, x)` induced by the map to `X`.
 
 ## Main results
 
@@ -268,7 +270,6 @@ lemma cwApproximationMap_cwApproximationBasepoint :
 /-- The first stage, a single `0`-cell, is a point. -/
 private instance instSubsingletonCWApproximationStageZero :
     Subsingleton (cwApproximationStage X x 0).1 := by
-  have : Subsingleton (TopCat.disk.{u} 0) := (diskHomeomorphCube.{u} 0).injective.subsingleton
   -- Every point lies in the cell, since the old space is empty.
   have h := (cellAttachmentAttachCells
     cwApproximationVertexAttachingMap).compl_range_eq_iUnion_image_cell
@@ -359,6 +360,24 @@ theorem bijective_homotopyGroupMap_cwApproximationMap (k : ℕ) (p : cwApproxima
       (hcomp ▸ injective_homotopyGroupMap_cwApproximationStage X x k _) hsurj,
     Function.Surjective.of_comp
       (hcomp ▸ surjective_homotopyGroupMap_cwApproximationStage_succ X x k _)⟩
+
+/-- For `j ≥ 1`, the map `TauCeti.cwApproximationMap X x` identifies `πⱼ` of the CW approximation
+at its base point with `πⱼ(X, x)`, whether or not `X` is path-connected. -/
+def cwApproximationHomotopyGroupMulEquiv (j : ℕ) [NeZero j] :
+    π_ j (cwApproximation X x) (cwApproximationBasepoint X x) ≃* π_ j X x :=
+  MulEquiv.ofBijective (HomotopyGroup.mapHom (cwApproximationMap X x).hom
+    (cwApproximationMap_cwApproximationBasepoint X x)) <| by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne j)
+    exact (HomotopyGroup.bijective_map_congr rfl rfl _).1
+      (bijective_homotopyGroupMap_cwApproximationMap X x k _)
+
+@[simp]
+theorem cwApproximationHomotopyGroupMulEquiv_apply (j : ℕ) [NeZero j]
+    (c : π_ j (cwApproximation X x) (cwApproximationBasepoint X x)) :
+    cwApproximationHomotopyGroupMulEquiv X x j c =
+      HomotopyGroup.map (cwApproximationMap X x).hom
+        (cwApproximationMap_cwApproximationBasepoint X x) c :=
+  HomotopyGroup.mapHom_apply _ _ c
 
 /-- **CW approximation** (Hatcher, Proposition 4.13). For a path-connected space `X`, the map
 `TauCeti.cwApproximationMap X x` from the CW complex `TauCeti.cwApproximation X x` to `X` is a weak

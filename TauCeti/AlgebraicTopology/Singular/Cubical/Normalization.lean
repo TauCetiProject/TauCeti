@@ -183,7 +183,7 @@ theorem normalize_sub_mem_degenerate {n : ℕ} (f : CubicalChain X R n) :
     rw [normalize_single, ← Finset.add_sum_erase _ _ (Finset.mem_univ ∅), Finset.card_empty,
       pow_zero, one_smul, zeroOn_empty, ContinuousMap.comp_id, add_sub_cancel_left]
     refine Submodule.sum_mem _ fun S hS ↦ Submodule.smul_mem _ _ ?_
-    obtain ⟨j, hj⟩ := Finset.nonempty_iff_ne_empty.2 (Finset.ne_of_mem_erase hS)
+    obtain ⟨j, hj⟩ := Finset.ne_empty_iff_nonempty.1 (Finset.ne_of_mem_erase hS)
     exact single_mem_degenerate R (isDegenerateAt_comp_zeroOn c hj).isDegenerate a
 
 end CubicalChain

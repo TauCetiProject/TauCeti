@@ -39,7 +39,11 @@ zeroth Witt coordinate is divisible by `ϖ`; so these results apply to every pri
 * `WittVector.IsDistinguished.span_pair_teichmuller_eq`: `(ξ, [ϖ]) = (p, [ϖ])` when `ϖ ∣ ξ₀`.
 * `WittVector.IsDistinguished.map_span_p_teichmuller`: the image of `(p, [ϖ])` in `A⁺` is
   `([ϖ])`.
+* `WittVector.IsDistinguished.exists_mk_teichmuller_dvd_natCast_pow`: `[ϖ]` divides a power of
+  `p` in `A⁺`.
 * `WittVector.IsDistinguished.isAdicComplete_quotient_natCast`: `A⁺` is `p`-adically complete.
+* `WittVector.IsDistinguished.exists_mk_teichmuller_sub_mem`: `a ↦ [a]` is uniformly continuous
+  from the `ϖ`-adic topology on `S` to the `[ϖ]`-adic topology on `A⁺`.
 * `WittVector.IsDistinguished.quotientTeichmullerEquiv`: `A⁺ ⧸ ([ϖ]) ≃+* S ⧸ (ϖ)`.
 * `WittVector.IsDistinguished.comap_map_algebraMap`: `ξ 𝕎 S [1/[ϖ]] ∩ 𝕎 S = ξ 𝕎 S`.
 
@@ -96,13 +100,13 @@ theorem map_span_p_teichmuller (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.co
   rw [← hξ.span_pair_teichmuller_eq hξ₀, map_span, Set.image_pair, Ideal.Quotient.mk_singleton_self,
     span_insert_zero]
 
-/-- **The quotient by a distinguished element is `p`-adically complete.** Over a perfect ring `S`
-of characteristic `p` which is `ϖ`-adically complete, if `ξ` is distinguished with zeroth Witt
-coordinate in the radical of `(ϖ)`, then `𝕎 S ⧸ (ξ)` is `p`-adically complete and separated. -/
-theorem isAdicComplete_quotient_natCast (hξ : ξ.IsDistinguished)
-    (hξ₀ : ξ.coeff 0 ∈ (span {ϖ}).radical) [IsAdicComplete (span {ϖ}) S] :
-    IsAdicComplete (span {(p : 𝕎 S ⧸ span {ξ})}) (𝕎 S ⧸ span {ξ}) := by
-  have := hξ.isAdicComplete_quotient hξ₀
+/-- **A power of `p` is divisible by `[ϖ]` modulo a distinguished element.** If `ξ = [ξ₀] + p u`
+is distinguished with `ξ₀` in the radical of `(ϖ)`, then in `𝕎 S ⧸ (ξ)` the class of `[ϖ]` divides
+a power `p ^ (m + 1)`: there `p u = -[ξ₀]`, and `[ϖ]` divides `[ξ₀] ^ (m + 1)` once `ϖ` divides
+`ξ₀ ^ m`. -/
+theorem exists_mk_teichmuller_dvd_natCast_pow (hξ : ξ.IsDistinguished)
+    (hξ₀ : ξ.coeff 0 ∈ (span {ϖ}).radical) :
+    ∃ m : ℕ, Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ) ∣ (p : 𝕎 S ⧸ span {ξ}) ^ (m + 1) := by
   obtain ⟨m, hm⟩ := hξ₀
   obtain ⟨c, hc⟩ := mem_span_singleton.mp hm
   obtain ⟨u, hu⟩ := isDistinguished_iff_exists_unit.mp hξ
@@ -112,25 +116,56 @@ theorem isAdicComplete_quotient_natCast (hξ : ξ.IsDistinguished)
       -((p : 𝕎 S ⧸ span {ξ}) * Ideal.Quotient.mk (span {ξ}) ↑u) := by
     rw [eq_neg_iff_add_eq_zero, ← map_natCast (Ideal.Quotient.mk (span {ξ})), ← map_mul, ← map_add,
       ← hu, Ideal.Quotient.mk_singleton_self]
-  have hdvd : Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ) ∣ (p : 𝕎 S ⧸ span {ξ}) ^ (m + 1) := by
-    refine ⟨(-Ideal.Quotient.mk (span {ξ}) ↑u⁻¹) ^ (m + 1) *
-      Ideal.Quotient.mk (span {ξ}) (teichmuller p (ξ.coeff 0 * c)), ?_⟩
-    have hϖ : Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ) *
-        Ideal.Quotient.mk (span {ξ}) (teichmuller p (ξ.coeff 0 * c)) =
-        Ideal.Quotient.mk (span {ξ}) (teichmuller p (ξ.coeff 0)) ^ (m + 1) := by
-      rw [← map_mul, ← map_mul, ← map_pow, ← map_pow, pow_succ, hc]
-      congr 2
-      ring
-    have hu' : Ideal.Quotient.mk (span {ξ}) ↑u⁻¹ * Ideal.Quotient.mk (span {ξ}) ↑u = 1 := by
-      rw [← map_mul, u.inv_mul, map_one]
-    rw [mul_left_comm, hϖ, hξ', ← mul_pow]
-    congr 1
-    linear_combination -(p : 𝕎 S ⧸ span {ξ}) * hu'
+  refine ⟨m, (-Ideal.Quotient.mk (span {ξ}) ↑u⁻¹) ^ (m + 1) *
+    Ideal.Quotient.mk (span {ξ}) (teichmuller p (ξ.coeff 0 * c)), ?_⟩
+  have hϖ : Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ) *
+      Ideal.Quotient.mk (span {ξ}) (teichmuller p (ξ.coeff 0 * c)) =
+      Ideal.Quotient.mk (span {ξ}) (teichmuller p (ξ.coeff 0)) ^ (m + 1) := by
+    rw [← map_mul, ← map_mul, ← map_pow, ← map_pow, pow_succ, hc]
+    congr 2
+    ring
+  have hu' : Ideal.Quotient.mk (span {ξ}) ↑u⁻¹ * Ideal.Quotient.mk (span {ξ}) ↑u = 1 := by
+    rw [← map_mul, u.inv_mul, map_one]
+  rw [mul_left_comm, hϖ, hξ', ← mul_pow]
+  congr 1
+  linear_combination -(p : 𝕎 S ⧸ span {ξ}) * hu'
+
+/-- **The quotient by a distinguished element is `p`-adically complete.** Over a perfect ring `S`
+of characteristic `p` which is `ϖ`-adically complete, if `ξ` is distinguished with zeroth Witt
+coordinate in the radical of `(ϖ)`, then `𝕎 S ⧸ (ξ)` is `p`-adically complete and separated. -/
+theorem isAdicComplete_quotient_natCast (hξ : ξ.IsDistinguished)
+    (hξ₀ : ξ.coeff 0 ∈ (span {ϖ}).radical) [IsAdicComplete (span {ϖ}) S] :
+    IsAdicComplete (span {(p : 𝕎 S ⧸ span {ξ})}) (𝕎 S ⧸ span {ξ}) := by
+  have := hξ.isAdicComplete_quotient hξ₀
+  obtain ⟨m, hdvd⟩ := hξ.exists_mk_teichmuller_dvd_natCast_pow hξ₀
   have : IsAdicComplete (span {(p : 𝕎 S ⧸ span {ξ})} ^ (m + 1)) (𝕎 S ⧸ span {ξ}) := by
     rw [span_singleton_pow]
     exact .span_singleton_of_dvd hdvd
   exact .of_pow_le_of_pow_le (k := m + 1) le_rfl
     ((pow_one _).trans_le (Ideal.pow_le_self m.succ_ne_zero))
+
+/-- **The Teichmüller map `S → 𝕎 S ⧸ (ξ)` is uniformly continuous** from the `ϖ`-adic to the
+`[ϖ]`-adic topology, for `ξ` distinguished with zeroth Witt coordinate in the radical of `(ϖ)`:
+`[a] ≡ [b]` modulo `[ϖ]ⁿ` as soon as `a ≡ b` modulo a suitable power of `ϖ`. Indeed `[a] - [b]`
+lies in `(p, [ϖ]) ^ (k + 1)` when `ϖ ^ p ^ k` divides `a - b`, and modulo `ξ` a power of
+`(p, [ϖ])` lies in `([ϖ])`. -/
+theorem exists_mk_teichmuller_sub_mem (hξ : ξ.IsDistinguished)
+    (hξ₀ : ξ.coeff 0 ∈ (span {ϖ}).radical) (n : ℕ) :
+    ∃ N : ℕ, ∀ a b : S, ϖ ^ N ∣ a - b →
+      Ideal.Quotient.mk (span {ξ}) (teichmuller p a - teichmuller p b) ∈
+        span {Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ)} ^ n := by
+  obtain ⟨m, hm⟩ := hξ.exists_mk_teichmuller_dvd_natCast_pow hξ₀
+  -- The image of `(p, [ϖ]) ^ (m + 2)` modulo `ξ` lies in `([ϖ])`.
+  have hI : (span {(p : 𝕎 S), teichmuller p ϖ}).map (Ideal.Quotient.mk (span {ξ})) ^ (m + 1 + 1) ≤
+      span {Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ)} := by
+    rw [map_span, Set.image_pair, map_natCast, span_insert]
+    refine sup_pow_add_le_pow_sup_pow.trans (sup_le ?_ (pow_one _).le)
+    rwa [span_singleton_pow, span_singleton_le_span_singleton]
+  refine ⟨p ^ ((m + 1 + 1) * n), fun a b hab ↦ ?_⟩
+  have h := mem_map_of_mem (Ideal.Quotient.mk (span {ξ}))
+    (pow_le_pow_right (Nat.le_succ _) (teichmuller_sub_teichmuller_mem_span_p_teichmuller_pow hab))
+  rw [Ideal.map_pow, pow_mul] at h
+  exact pow_right_mono hI n h
 
 private theorem span_le_ker_mk_comp_constantCoeff (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0) :
     span {ξ} ≤ RingHom.ker ((Ideal.Quotient.mk (span {ϖ})).comp (constantCoeff : 𝕎 S →+* S)) := by

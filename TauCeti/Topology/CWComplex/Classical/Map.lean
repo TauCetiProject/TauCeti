@@ -40,8 +40,8 @@ variable {X Y Z : Type w} [TopologicalSpace X] [T2Space X]
 filtration. In particular, it sends the base (stage zero) into the target base. -/
 abbrev IsCellular (f : TopCat.of C ⟶ TopCat.of C') : Prop :=
   ∀ n : ℕ, Set.MapsTo f
-    {x : C | x.1 ∈ skeletonLT C (n : ℕ∞)}
-    {y : C' | y.1 ∈ skeletonLT C' (n : ℕ∞)}
+    {x : C | x.val ∈ skeletonLT C (n : ℕ∞)}
+    {y : C' | y.val ∈ skeletonLT C' (n : ℕ∞)}
 
 /-- The identity map preserves every skeleton. -/
 lemma isCellular_id : IsCellular C C (𝟙 (TopCat.of C)) := fun _ _ h ↦ h
@@ -56,12 +56,12 @@ lemma IsCellular.comp {C'' : Set Z} [RelCWComplex C'' F]
 every cell onto the characteristic map of a cell of the same dimension, on the closed unit ball,
 is cellular. -/
 lemma isCellular_of_map_eq {f : TopCat.of C ⟶ TopCat.of C'}
-    (hD : ∀ x : C, x.1 ∈ D → (f x).1 ∈ E)
+    (hD : ∀ x : C, x.val ∈ D → (f x).val ∈ E)
     (hf : ∀ (n : ℕ) (i : cell C n), ∃ i' : cell C' n, ∀ x ∈ closedBall (0 : Fin n → ℝ) 1,
-      ∀ hx : map n i x ∈ C, (f ⟨map n i x, hx⟩).1 = map n i' x) :
+      ∀ hx : map n i x ∈ C, (f ⟨map n i x, hx⟩).val = map n i' x) :
     IsCellular C C' f := by
   rintro n ⟨x, hxC⟩ (hx : x ∈ skeletonLT C n)
-  change (f ⟨x, hxC⟩).1 ∈ skeletonLT C' n  -- the membership of a subtype point in a set
+  change (f ⟨x, hxC⟩).val ∈ skeletonLT C' n  -- the membership of a subtype point in a set
   rw [RelCWComplex.mem_skeletonLT_iff] at hx ⊢
   obtain hxD | ⟨m, hm, i, y, hy, rfl⟩ := hx
   · exact Or.inl (hD _ hxD)
@@ -77,7 +77,7 @@ theorem isCellular_univ_iff [RelCWComplex (Set.univ : Set X) D] [RelCWComplex (S
       ∀ n : ℕ, Set.MapsTo f (skeletonLT (Set.univ : Set X) (n : ℕ∞))
         (skeletonLT (Set.univ : Set Y) (n : ℕ∞)) := by
   rw [TopCat.ofHom_restrictPreimage_univ_eq]
-  exact forall_congr' fun _ ↦ ⟨fun hf x hx ↦ @hf ⟨x, trivial⟩ hx, fun hf x hx ↦ @hf x.1 hx⟩
+  exact forall_congr' fun _ ↦ ⟨fun hf x hx ↦ @hf ⟨x, trivial⟩ hx, fun hf x hx ↦ @hf x.val hx⟩
 
 /-- A continuous map between relative CW structures on `Set.univ` carrying the base into the base
 and each characteristic map onto one of the same dimension on the closed ball is cellular. -/
@@ -106,8 +106,8 @@ variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
 /-- The restriction of a cellular map to the `n`-th stage of the skeletal filtration. -/
 def skeletonMap (n : ℕ) : skeletonObj C n ⟶ skeletonObj C' n :=
-  TopCat.ofHom ⟨fun x ↦ ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1,
-    hf n x.2⟩, by fun_prop⟩
+  TopCat.ofHom ⟨fun x ↦ ⟨(f ⟨x.val, (skeletonLT C (n : ℕ∞)).subset_complex x.property⟩).val,
+    hf n x.property⟩, by fun_prop⟩
 
 /-- Skeletal restrictions of equal cellular maps are equal. -/
 lemma skeletonMap_congr {f₁ f₂ : TopCat.of C ⟶ TopCat.of C'} (h : f₁ = f₂)
@@ -118,7 +118,7 @@ lemma skeletonMap_congr {f₁ f₂ : TopCat.of C ⟶ TopCat.of C'} (h : f₁ = f
 @[simp]
 lemma skeletonMap_apply (n : ℕ) (x : skeletonObj C n) :
     (skeletonMap C C' hf n).hom.toFun x =
-      ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1, hf n x.2⟩ := by
+      ⟨(f ⟨x.val, (skeletonLT C (n : ℕ∞)).subset_complex x.property⟩).val, hf n x.property⟩ := by
   simp [skeletonMap]
 
 /-- Restriction of a cellular map commutes with inclusions of skeleta. -/
@@ -200,6 +200,6 @@ theorem skeletonMap_univ_comm {X₁ X₂ Y₁ Y₂ : Type w}
   rw [TopCat.ofHom_restrictPreimage_univ_eq, TopCat.ofHom_restrictPreimage_univ_eq,
     TopCat.ofHom_restrictPreimage_univ_eq, TopCat.ofHom_restrictPreimage_univ_eq]
   refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
-  simpa [TopCat.ofHom_apply] using hcomm x.1
+  simpa [TopCat.ofHom_apply] using hcomm x.val
 
 end TauCeti

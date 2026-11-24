@@ -54,10 +54,10 @@ theorem measurableSet_exists_tendsto_nhdsGT [IsCompletelyPseudoMetrizableSpace E
     TopologicalSpace.exists_countable_subset_tendsto_nhdsGT_iff (E := E) hf
   have := hSc.to_subtype
   convert StronglyMeasurable.measurableSet_exists_tendsto
-    (l := comap (Subtype.val : S → ι) (𝓝 a)) (fun s : S ↦ (hSs s.2).1) using 1
+    (l := comap (Subtype.val : S → ι) (𝓝 a)) (fun s : S ↦ (hSs s.property).1) using 1
   ext x
   refine exists_congr fun c ↦ ?_
-  rw [hiff (hrc x), nhdsWithin, ← subtype_coe_map_comap, tendsto_map'_iff]
+  rw [hiff (hrc x), nhdsWithin, ← subtypeVal_map_comap, tendsto_map'_iff]
   rfl
 
 /-- If `f r : X → E` into a nonempty completely metrizable space is eventually strongly measurable
@@ -74,17 +74,17 @@ protected theorem limUnder_nhdsGT [Nonempty E] [IsCompletelyMetrizableSpace E]
     TopologicalSpace.exists_countable_subset_tendsto_nhdsGT_iff (E := E) hf
   have := hSc.to_subtype
   let l : Filter S := comap Subtype.val (𝓝 a)
-  have : l.NeBot := (Filter.map_neBot_iff _).1 (by rwa [subtype_coe_map_comap, ← nhdsWithin, hSne])
-  convert StronglyMeasurable.limUnder (l := l) (fun s : S ↦ (hSs s.2).1) using 1
+  have : l.NeBot := (Filter.map_neBot_iff _).1 (by rwa [subtypeVal_map_comap, ← nhdsWithin, hSne])
+  convert StronglyMeasurable.limUnder (l := l) (fun s : S ↦ (hSs s.property).1) using 1
   ext x
   have hiff' (c : E) : Tendsto (f · x) (𝓝[>] a) (𝓝 c) ↔
-      Tendsto (fun s : S ↦ f s.1 x) l (𝓝 c) := by
-    rw [hiff (hrc x), nhdsWithin, ← subtype_coe_map_comap, tendsto_map'_iff]
+      Tendsto (fun s : S ↦ f s.val x) l (𝓝 c) := by
+    rw [hiff (hrc x), nhdsWithin, ← subtypeVal_map_comap, tendsto_map'_iff]
     rfl
   by_cases hconv : ∃ c, Tendsto (f · x) (𝓝[>] a) (𝓝 c)
   · obtain ⟨c, hc⟩ := hconv
     rw [hc.limUnder_eq, ((hiff' c).1 hc).limUnder_eq]
-  · have hconv' : ¬ ∃ c, Tendsto (fun s : S ↦ f s.1 x) l (𝓝 c) :=
+  · have hconv' : ¬ ∃ c, Tendsto (fun s : S ↦ f s.val x) l (𝓝 c) :=
       fun ⟨c, hc⟩ ↦ hconv ⟨c, (hiff' c).2 hc⟩
     rw [limUnder_of_not_tendsto hconv, limUnder_of_not_tendsto hconv']
 

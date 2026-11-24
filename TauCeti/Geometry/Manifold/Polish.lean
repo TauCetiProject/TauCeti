@@ -66,7 +66,7 @@ theorem MeasurableSet.image_of_continuousOn_injOn_chartAt {Φ : M → N} {α : M
   have hes : MeasurableSet (e '' s) := by
     rw [← Set.inter_eq_left.mpr hsα, ← Set.image_domRestrict]
     exact e.isOpenEmbedding_restrict.measurableEmbedding.measurableSet_image'
-      (measurable_subtype_coe hs)
+      (measurable_subtypeVal hs)
   have himage : g '' (e '' s) = e' '' (Φ '' s) := by
     simp only [g, Set.image_image]
     exact Set.image_congr fun x hx ↦ by simp only [Function.comp_apply, e.left_inv (hsα hx)]
@@ -80,7 +80,7 @@ theorem MeasurableSet.image_of_continuousOn_injOn_chartAt {Φ : M → N} {α : M
     e'.symm_image_image_of_subset_source hsβ.image_subset
   rw [← hback, ← Set.inter_eq_left.mpr htarget', ← Set.image_domRestrict]
   exact e'.symm.isOpenEmbedding_restrict.measurableEmbedding.measurableSet_image'
-    (measurable_subtype_coe hgs)
+    (measurable_subtypeVal hgs)
 
 variable (H H') in
 include H H' in

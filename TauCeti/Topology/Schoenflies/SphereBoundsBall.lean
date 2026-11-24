@@ -104,7 +104,7 @@ theorem IsLocallyFlat.exists_isClosedEmbedding_disk_sphere
   refine ⟨⟨g₀ ∘ eD, hg₀_emb.continuous.comp eD.continuous⟩,
     hg₀_emb.comp eD.isClosedEmbedding, ContinuousMap.ext fun s ↦ ?_, ?_⟩
   · have hs : eD ((TopCat.diskBoundaryInclusion (n + 1)).hom s) =
-        ⟨(eS s : E), sphere_subset_closedBall (eS s).2⟩ :=
+        ⟨(eS s : E), sphere_subset_closedBall (eS s).property⟩ :=
       Subtype.ext (TopCat.coe_diskBoundaryInclusion_apply_down (n + 1) s)
     simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, Function.comp_apply,
       hs, hg₀_bdry (eS s)]
@@ -177,7 +177,7 @@ theorem IsLocallyFlat.exists_isClosedEmbedding_disk_filledHull
   refine ⟨⟨g₀ ∘ eD, hg₀_emb.continuous.comp eD.continuous⟩,
     hg₀_emb.comp eD.isClosedEmbedding, ContinuousMap.ext fun s ↦ ?_, ?_⟩
   · have hs : eD ((TopCat.diskBoundaryInclusion (n + 1)).hom s) =
-        ⟨(eS s : E), sphere_subset_closedBall (eS s).2⟩ := by
+        ⟨(eS s : E), sphere_subset_closedBall (eS s).property⟩ := by
       apply Subtype.ext
       dsimp only [eD, eS]
       exact congrArg L.unitBallHomeomorph (TopCat.coe_diskBoundaryInclusion_apply_down (n + 1) s)

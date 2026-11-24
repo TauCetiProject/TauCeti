@@ -163,13 +163,13 @@ On each fibre it is the normal map induced by the ambient differential. -/
 def normalBundleMap (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f = g ∘ u)
     (p : Bundle.TotalSpace K (fun x => f.NormalSpace x hn)) :
     Bundle.TotalSpace K' (fun x => g.NormalSpace x hm) :=
-  ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.2⟩
+  ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.snd⟩
 
 /-- The induced total map applies the normal map in each fibre. -/
 @[simp] theorem normalBundleMap_apply (hn : n ≠ 0) (hm : m ≠ 0) (h : v ∘ f = g ∘ u)
     (p : Bundle.TotalSpace K (fun x => f.NormalSpace x hn)) :
     f.normalBundleMap (K' := K') g hn hm h p =
-      ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.2⟩ :=
+      ⟨u p.proj, f.normalMap g hn hm (EventuallyEq.of_eq h) p.snd⟩ :=
   (rfl)
 
 /-- The identity square induces the identity of the normal bundle. -/
@@ -230,7 +230,7 @@ theorem normalBundleMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
   simp only [Function.comp_apply, normalBundleMap_apply]
   have hc := f.normalMap_comp g q hn hm hr (hv (f p.proj)) (hv' (g (u p.proj)))
     (EventuallyEq.of_eq h) (EventuallyEq.of_eq h')
-  exact congrArg (Bundle.TotalSpace.mk (u' (u p.proj))) (congrArg (fun L => L p.2) hc)
+  exact congrArg (Bundle.TotalSpace.mk (u' (u p.proj))) (congrArg (fun L => L p.snd) hc)
 
 end Composition
 
@@ -258,10 +258,11 @@ def normalSpaceEquiv (hn : n ≠ 0) (hm : m ≠ 0) (hv : (mfderiv J J' v (f x)).
     f.NormalSpace x hn ≃L[𝕜] g.NormalSpace (u x) hm :=
   -- The range hypothesis `map_tangentRange_mfderiv` is stated for the linear map underlying
   -- `tangentSpaceCast ∘L mfderiv`. It is the one underlying the equivalence below by definition,
-  -- since `ContinuousLinearEquiv.equivOfInverse'` applies `mfderiv` (see
-  -- `ContinuousLinearEquiv.equivOfInverse'_apply`) and the cast then follows it.
+  -- since `ContinuousLinearEquiv.ofContinuousLinearMap` applies `mfderiv` (see
+  -- `ContinuousLinearEquiv.coe_ofContinuousLinearMap`) and the cast then follows it.
   f.normalSpaceEquivOfMapTangentRange g x (u x) hn hm
-    ((ContinuousLinearEquiv.equivOfInverse' _ _ hv.self_comp_inverse hv.inverse_comp_self).trans
+    ((ContinuousLinearEquiv.ofContinuousLinearMap _ _ hv.self_comp_inverse
+      hv.inverse_comp_self).trans
       (tangentSpaceCast J' (v (f x)) (g (u x))))
     (f.map_tangentRange_mfderiv g hn hm (mdifferentiableAt_of_isInvertible_mfderiv hv) h hsurj)
 
@@ -275,7 +276,7 @@ theorem normalSpaceEquiv_toContinuousLinearMap (hn : n ≠ 0) (hm : m ≠ 0)
   obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
   rw [ContinuousLinearEquiv.coe_apply, normalMap_normalClass]
   refine (f.normalSpaceEquivOfMapTangentRange_normalClass g x (u x) hn hm _ _ w).trans ?_
-  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.equivOfInverse'_apply]
+  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 /-- On representatives, the normal-fibre equivalence applies the ambient differential. -/
 @[simp]

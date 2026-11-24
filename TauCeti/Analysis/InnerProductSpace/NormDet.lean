@@ -510,7 +510,8 @@ theorem normDet_eq_mul_normDet_orthogonal (f : E →ₗ[𝕜] F) (K : Submodule 
         rw [normDet_comp_of_finrank_eq Ψ.toLinearIsometry.toLinearMap f Ψ.toLinearEquiv.finrank_eq,
           Ψ.toLinearIsometry.normDet_eq_one, mul_one]
     _ = (f ∘ₗ K.subtype).normDet * (f ∘ₗ Kᗮ.subtype).normDet := by
-        rw [hcomp, normDet_coprod_of_orthogonal _ _ fun u w ↦ horth u.1 u.2 w.1 w.2]
+        rw [hcomp, normDet_coprod_of_orthogonal _ _ fun u w ↦ horth u.val u.property w.val
+            w.property]
 
 /-- **Splitting `normDet` along a nonzero vector and its orthogonal complement.** If `u ≠ 0` and
 `f u` is orthogonal to `f w` for every `w ∈ (𝕜 ∙ u)ᗮ`, then `f.normDet` is the radial stretch
@@ -525,7 +526,7 @@ theorem normDet_eq_div_mul_normDet_orthogonal (f : E →ₗ[𝕜] F) {u : E} (hu
   have hline : (f ∘ₗ (𝕜 ∙ u).subtype).normDet = ‖f u‖ / ‖u‖ := by
     have hscale : ∀ x : 𝕜 ∙ u, ‖(f ∘ₗ (𝕜 ∙ u).subtype) x‖ = (‖f u‖ / ‖u‖) * ‖x‖ := by
       intro x
-      obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp x.2
+      obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp x.property
       have hxu : (x : E) = a • u := ha.symm
       simp only [comp_apply, Submodule.coe_subtype, ← Submodule.norm_coe, hxu, map_smul, norm_smul]
       field_simp [norm_ne_zero_iff.mpr hu]

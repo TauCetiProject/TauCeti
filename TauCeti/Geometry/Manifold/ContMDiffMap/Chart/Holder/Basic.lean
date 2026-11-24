@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Banach
 public import Mathlib.Topology.MetricSpace.HolderNorm
+import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -52,6 +53,8 @@ completeness theorem also apply to manifolds with boundary and corners.
 * `TauCeti.CompactChartAtlas.CkHolderSpace.norm_chartIteratedFDeriv_sub_le`: the Hölder estimate
   of the `k`th coordinate derivatives by the norm.
 * `TauCeti.CompactChartAtlas.CkHolderSpace.instCompleteSpace`: completeness.
+* `TauCeti.CompactChartAtlas.CkHolderSpace.continuous_of_coe_eq`: a linear map between Hölder
+  spaces that is the identity on underlying maps is continuous, by the closed graph theorem.
 
 ## References
 
@@ -216,7 +219,7 @@ theorem holderWith_restrict_chartIteratedFDeriv_of_tendsto {β : Type*} {l : Fil
     (hC : ∀ᶠ b in l, chartHolderNorm x K k hk α (u b) ≤ C) :
     HolderWith C α ⇑((chartIteratedFDeriv g x k hk).restrict K) :=
   HolderWith.of_tendsto (u := fun b ↦ ⇑((chartIteratedFDeriv (u b) x k hk).restrict K))
-    (fun z ↦ hu z z.2) ((hmem.and hC).mono fun _ hb ↦ hb.1.holderWith.mono hb.2)
+    (fun z ↦ hu z z.property) ((hmem.and hC).mono fun _ hb ↦ hb.1.holderWith.mono hb.2)
 
 /-- A pointwise limit on `K` of `k`th coordinate derivatives that are eventually `α`-Hölder on `K`
 with bounded seminorms is `α`-Hölder on `K`. -/
@@ -313,7 +316,7 @@ theorem toContMDiffMap_injective :
 theorem memChartHolder (f : A.CkHolderSpace k α F) (i : A.ι) :
     ContMDiffMap.MemChartHolder (A.center i) (A.piece i) k le_rfl α
       (toContMDiffMap A k α F f) :=
-  f.2 i
+  f.property i
 
 /-- An element of `C^{k,α}(M, F)` from a `C^k` map whose `k`th coordinate derivatives are
 `α`-Hölder on the pieces. -/
@@ -603,6 +606,20 @@ instance instCompleteSpace : CompleteSpace (A.CkHolderSpace k α F) := by
     _ = ε / 2 + Fintype.card A.ι * C := by
           rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
     _ < ε := by linarith
+
+/-- **Closed graph theorem for Hölder spaces.** When the model space is locally compact and `F`
+is complete, a linear map between Hölder spaces of compact chart atlases that is the identity on
+underlying maps is continuous: both spaces are Banach, and evaluation at each point is continuous
+on both. -/
+theorem continuous_of_coe_eq {B : CompactChartAtlas I M} {k' : ℕ} {β : ℝ≥0} [IsManifold I k' M]
+    (L : A.CkHolderSpace k α F →ₗ[𝕜] B.CkHolderSpace k' β F) (hL : ∀ f, ⇑(L f) = f) :
+    Continuous L := by
+  refine L.continuous_of_seq_closed_graph fun u f g hu hg ↦ ext fun y ↦ ?_
+  have hg' : Tendsto (fun n ↦ u n y) atTop (𝓝 (g y)) := by
+    simpa [Function.comp_def, hL] using ((evalCLM B k' β F y).continuous.tendsto g).comp hg
+  have hf' : Tendsto (fun n ↦ u n y) atTop (𝓝 (f y)) := by
+    simpa [Function.comp_def] using ((evalCLM A k α F y).continuous.tendsto f).comp hu
+  simpa [hL] using tendsto_nhds_unique hg' hf'
 
 end Complete
 

@@ -164,7 +164,7 @@ theorem relIndex_inf_span_eq_natCard_range (b c : Basis ι ℚ V) {p : ℕ} [NeZ
     ext x
     rw [AddSubgroup.mem_addSubgroupOf, Submodule.mem_toAddSubgroup, Submodule.mem_inf,
       AddMonoidHom.mem_ker, b.mem_span_iff_repr_mem (R := ℤ), funext_iff]
-    refine (and_iff_left x.2).trans <| forall_congr' fun i ↦ ?_
+    refine (and_iff_left x.property).trans <| forall_congr' fun i ↦ ?_
     rw [Pi.zero_apply, hψ, ZMod.intCast_zmod_eq_zero_iff_dvd]
     have hp₀ : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne p)
     constructor

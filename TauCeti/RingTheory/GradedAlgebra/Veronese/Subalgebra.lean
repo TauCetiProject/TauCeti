@@ -157,9 +157,9 @@ theorem iSup_veroneseGrading_eq_top : ⨆ k, veroneseGrading 𝒜 d k = ⊤ := b
 /-- The degree-zero part of the Veronese subalgebra is the degree-zero part `𝒜 0` of `A`, as
 rings. -/
 def veroneseGradingZeroEquiv : veroneseGrading 𝒜 d 0 ≃+* 𝒜 0 where
-  toFun a := ⟨a, by simpa only [mul_zero] using mem_veroneseGrading.1 a.2⟩
-  invFun b := ⟨⟨b, mem_veronese_of_mem (k := 0) (by simpa only [mul_zero] using b.2)⟩,
-    mem_veroneseGrading.2 (by simpa only [mul_zero] using b.2)⟩
+  toFun a := ⟨a, by simpa only [mul_zero] using mem_veroneseGrading.1 a.property⟩
+  invFun b := ⟨⟨b, mem_veronese_of_mem (k := 0) (by simpa only [mul_zero] using b.property)⟩,
+    mem_veroneseGrading.2 (by simpa only [mul_zero] using b.property)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl
@@ -225,8 +225,9 @@ theorem isInternal_veroneseGrading (hd : d ≠ 0) : IsInternal (veroneseGrading 
     | of j x =>
       rw [DirectSum.coeAddMonoidHom_of]
       obtain rfl | hjk := eq_or_ne j k
-      · rw [decompose_of_mem_same 𝒜 (mem_veroneseGrading.1 x.2), of_eq_same]
-      · rw [decompose_of_mem_ne 𝒜 (mem_veroneseGrading.1 x.2) ((mul_right_injective₀ hd).ne hjk),
+      · rw [decompose_of_mem_same 𝒜 (mem_veroneseGrading.1 x.property), of_eq_same]
+      · rw [decompose_of_mem_ne 𝒜 (mem_veroneseGrading.1 x.property) ((mul_right_injective₀ hd).ne
+          hjk),
           of_eq_of_ne _ _ _ hjk.symm, ZeroMemClass.coe_zero, ZeroMemClass.coe_zero]
     | add y z hy hz => simp [hy, hz]
   refine ⟨fun y z h ↦ DirectSum.ext fun k ↦ Subtype.ext <| Subtype.ext ?_, fun x ↦ ?_⟩
@@ -314,7 +315,7 @@ theorem irrelevant_le_map_veroneseMap [NeZero d] (f : 𝒜 →+*ᵍ ℬ)
       convert J.mul_mem_left ((veroneseGradingZeroEquiv ℬ d).symm c : veronese ℬ d) hx using 1
       refine Subtype.ext ?_
       rw [Algebra.smul_def]
-      exact coe_decompose_mul_of_left_mem_zero ℬ c.2
+      exact coe_decompose_mul_of_left_mem_zero ℬ c.property
   rw [← toIdeal_le_toIdeal_iff, HomogeneousIdeal.toIdeal_map,
     HomogeneousIdeal.toIdeal_irrelevant_le]
   intro k hk x (hx : x ∈ veroneseGrading ℬ d k)
