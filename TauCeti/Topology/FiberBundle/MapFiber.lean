@@ -36,7 +36,7 @@ When `G` is a group with a right action on `P` (an action of `Gᵐᵒᵖ`) prese
 of the atlas intertwines it with right multiplication on `G`, the bundle of fibres is a principal
 `G`-bundle (`TauCeti.MapFiber.Atlas.principalBundle`), and likewise for a family of fibres
 identified with `P` by an equivariant homeomorphism
-(`TauCeti.MapFiber.Atlas.principalBundleOfHomeomorph`).
+(`TauCeti.MapFiber.Atlas.principalBundle_of_homeomorph`).
 
 ## Main definitions
 
@@ -54,7 +54,7 @@ identified with `P` by an equivariant homeomorphism
 
 ## Main results
 
-* `TauCeti.MapFiber.Atlas.principalBundleOfHomeomorph`, `TauCeti.MapFiber.Atlas.principalBundle`:
+* `TauCeti.MapFiber.Atlas.principalBundle_of_homeomorph`, `TauCeti.MapFiber.Atlas.principalBundle`:
   equivariant trivializations make the bundle of fibres a principal bundle.
 
 ## References
@@ -339,7 +339,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [MulAction Gᵐᵒᵖ P] {pr
 family of fibres `Q` whose total space is identified with `P` over `B` by the equivariant
 homeomorphism `h`, and let every trivialization of the atlas `A` intertwine the action on `P` with
 right multiplication on `G`. Then `Q` is a principal `G`-bundle. -/
-theorem Atlas.principalBundleOfHomeomorph (A : Atlas G proj) {Q : B → Type*}
+theorem Atlas.principalBundle_of_homeomorph (A : Atlas G proj) {Q : B → Type*}
     [TopologicalSpace (TotalSpace G Q)] [∀ b, TopologicalSpace (Q b)] [∀ b, MulAction Gᵐᵒᵖ (Q b)]
     (h : TotalSpace G Q ≃ₜ P) (hh : ∀ x, proj (h x) = x.proj)
     (hQ : ∀ b, IsInducing (TotalSpace.mk b : Q b → TotalSpace G Q))
@@ -368,7 +368,7 @@ theorem Atlas.principalBundle (A : Atlas G proj)
     letI := mulAction hproj
     PrincipalBundle G (MapFiber proj) :=
   letI := mulAction hproj
-  A.principalBundleOfHomeomorph _ _ _ (fun _ _ _ ↦ rfl) hA
+  A.principalBundle_of_homeomorph _ _ _ (fun _ _ _ ↦ rfl) hA
 
 end MapFiber
 

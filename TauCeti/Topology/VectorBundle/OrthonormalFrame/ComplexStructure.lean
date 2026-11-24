@@ -308,7 +308,7 @@ theorem unitaryFrameLift_P :
 @[simp]
 theorem unitaryFrameLift_toFrame
     (p : TotalSpace (Subgroup.centralizer {J₀}) (ReductionFiber (unitaryFrames F J J₀))) :
-    (unitaryFrameLift hJ hJ₂ hJ₀ hF).toFrame p = ⟨p.proj, p.snd.frame⟩ :=
+    (unitaryFrameLift hJ hJ₂ hJ₀ hF).toFrame p = ⟨p.proj, p.snd.val.frame⟩ :=
   (rfl)
 
 end Lift
