@@ -167,6 +167,10 @@ noncomputable def localization : DeltaRing p B :=
     delta_add x y := by simpa only [hd] using d.delta_add x y
     delta_mul x y := by simpa only [hd] using d.delta_mul x y }
 
+private theorem delta_localization (x : B) :
+    (localization h).delta x = (localizationWittSection h x).coeff 1 :=
+  rfl
+
 private theorem wittSection_localization :
     @wittSection p B _ _ (localization h) = localizationWittSection h := by
   let := localization h
@@ -174,7 +178,7 @@ private theorem wittSection_localization :
   fin_cases i
   · simpa [constantCoeff_apply] using
       congr($(constantCoeff_comp_localizationWittSection h) x).symm
-  · exact wittSection_coeff_one p B x
+  · exact (wittSection_coeff_one p B x).trans (delta_localization h x)
 
 /-- The structure map of a localization is a `δ`-map for the localized `δ`-structure. -/
 theorem isDeltaMap_algebraMap_localization :
