@@ -20,12 +20,10 @@ with the affine quotient is an isomorphism, then multiplication is an isomorphis
 R_u(G) ⋊ T ≅ G.
 ```
 
-This is the semidirect-product half of the structure theorem for smooth connected solvable
-groups over an algebraically closed field, `G = G_u ⋊ T` for a maximal torus `T` (Milne,
-Theorem 16.33(d)): it reduces that decomposition to the statement that `T` maps isomorphically
-onto the quotient `G ⧸ G_u`, which is a torus
-(`TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical`). That `T` maps
-isomorphically onto it is not yet proved; here it is a hypothesis.
+For a smooth connected solvable group over an algebraically closed field, whose quotient
+`G ⧸ G_u` is a torus (`TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical`),
+this criterion yields the decomposition `G = G_u ⋊ T` of Milne, Theorem 16.33(d), for every
+maximal torus `T` that maps isomorphically onto `G ⧸ G_u`.
 
 The proof applies the split-extension criterion
 `TauCeti.CommHopfAlgCat.isIso_productMapOfNormal_of_isIso` to the quotient map, whose kernel is

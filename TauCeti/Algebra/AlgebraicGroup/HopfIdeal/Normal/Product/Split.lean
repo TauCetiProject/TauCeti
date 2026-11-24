@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Product.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 
@@ -30,12 +29,10 @@ a product `u t`.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.bijective_mapPointsFunctor_productMapOfNormal_app_of_isIso`: on
-  points over every commutative algebra, multiplication `N ⋊ T → G` is bijective.
+* `TauCeti.CommHopfAlgCat.bijective_mapPointsFunctor_productMapOfNormal_app`: over a commutative
+  algebra `A` with `T(A) → Q(A)` bijective, multiplication `N(A) ⋊ T(A) → G(A)` is bijective.
 * `TauCeti.CommHopfAlgCat.isIso_productMapOfNormal_of_isIso`: multiplication `N ⋊ T → G` is an
   isomorphism of affine groups.
-* `TauCeti.CommHopfAlgCat.normalSemidirectProductIsoOfIsIso`: the resulting isomorphism of
-  coordinate Hopf algebras.
 
 ## References
 
@@ -60,13 +57,11 @@ variable {R : Type u} [CommRing R]
 variable {H K : _root_.CommHopfAlgCat.{u} R} (I J : HopfIdeal R H) (hI : I.IsNormal)
   (π : K ⟶ H)
 
-/-- **Split extensions are semidirect products, on points.** Let `I` be a normal Hopf ideal of
-`H` and `π : K ⟶ H` a Hopf-algebra morphism with kernel Hopf ideal `I`, so that `π` represents a
-homomorphism `G → Q` with kernel `N`. If the closed subgroup `T` cut out by `J` maps
-isomorphically to `Q`, then over every commutative algebra `A`, multiplication
-`N(A) ⋊ T(A) → G(A)` is bijective. -/
-theorem bijective_mapPointsFunctor_productMapOfNormal_app_of_isIso
-    (hπ : kernelHopfIdeal π = I) [IsIso (π ≫ mkQuotient H J)] (A : CommAlgCat.{u} R) :
+/-- The composite of multiplication `N ⋊ T → G` with the comparison isomorphism of
+`normalSemidirectProduct` is bijective on points over `A`, when `T(A) → Q(A)` is. -/
+private theorem bijective_mapPointsFunctor_productMapOfNormal_comp_app
+    (hπ : kernelHopfIdeal π = I) (A : CommAlgCat.{u} R)
+    (hbij : Function.Bijective ((mapPointsFunctor (π ≫ mkQuotient H J)).app A)) :
     Function.Bijective
       ((mapPointsFunctor (productMapOfNormal H I J hI ≫
         (normalSemidirectProductIso H I J hI).hom)).app A) := by
@@ -80,13 +75,10 @@ theorem bijective_mapPointsFunctor_productMapOfNormal_app_of_isIso
   have hmul (q) : (mapPointsFunctor φ).app A (e q) =
       ιI (a (q ≫ fst _ _)) * ιJ (b (q ≫ snd _ _)) :=
     mapPointsFunctor_productMapOfNormal_app_grpObjPointsMulEquiv H I J hI A q
-  have hker (u) : p (ιI u) = 1 := mapDomain_quotientPointsHom_eq_one π hπ A u
+  have hker (u) : p (ιI u) = 1 := mapDomain_quotientPointsHom_eq_one π hπ.le A u
   -- On the acting factor, `π` is the bijective point map of `π ≫ mkQuotient H J`.
   have hcomp (t) : p (ιJ t) = (mapPointsFunctor (π ≫ mkQuotient H J)).app A t :=
     (mapPointsFunctor_comp_app_apply π (mkQuotient H J) A t).symm
-  have hbij : Function.Bijective ((mapPointsFunctor (π ≫ mkQuotient H J)).app A) :=
-    ConcreteCategory.bijective_of_isIso
-      (((pointsFunctor (R := R)).map (π ≫ mkQuotient H J).op).app A)
   constructor
   · intro x y hxy
     obtain ⟨q, rfl⟩ := e.surjective x
@@ -120,33 +112,41 @@ theorem bijective_mapPointsFunctor_productMapOfNormal_app_of_isIso
     refine ⟨e q, (hmul q).trans ?_⟩
     rw [hq₁, hq₂, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply, hu, inv_mul_cancel_right]
 
+/-- **Split extensions are semidirect products, on points.** Let `I` be a normal Hopf ideal of
+`H` and `π : K ⟶ H` a Hopf-algebra morphism with kernel Hopf ideal `I`, so that `π` represents a
+homomorphism `G → Q` with kernel `N`. If the closed subgroup `T` cut out by `J` maps bijectively
+to `Q` on points over a commutative algebra `A`, then multiplication `N(A) ⋊ T(A) → G(A)` is
+bijective. -/
+theorem bijective_mapPointsFunctor_productMapOfNormal_app (hπ : kernelHopfIdeal π = I)
+    (A : CommAlgCat.{u} R)
+    (hbij : Function.Bijective ((mapPointsFunctor (π ≫ mkQuotient H J)).app A)) :
+    Function.Bijective ((mapPointsFunctor (productMapOfNormal H I J hI)).app A) := by
+  have hiso : Function.Bijective
+      ((mapPointsFunctor (normalSemidirectProductIso H I J hI).hom).app A) :=
+    ConcreteCategory.bijective_of_isIso
+      (((pointsFunctor (R := R)).map (normalSemidirectProductIso H I J hI).hom.op).app A)
+  have hcomp : (mapPointsFunctor (productMapOfNormal H I J hI ≫
+      (normalSemidirectProductIso H I J hI).hom)).app A =
+      (mapPointsFunctor (productMapOfNormal H I J hI)).app A ∘
+        (mapPointsFunctor (normalSemidirectProductIso H I J hI).hom).app A :=
+    funext fun x ↦ mapPointsFunctor_comp_app_apply _ _ A x
+  have h := bijective_mapPointsFunctor_productMapOfNormal_comp_app I J hI π hπ A hbij
+  rw [hcomp] at h
+  exact (Function.Bijective.of_comp_iff _ hiso).1 h
+
 /-- **Split extensions are semidirect products.** Let `I` be a normal Hopf ideal of `H` and
 `π : K ⟶ H` a Hopf-algebra morphism with kernel Hopf ideal `I`, so that `π` represents a
 homomorphism `G → Q` with kernel `N`. If the closed subgroup `T` cut out by `J` maps
 isomorphically to `Q`, then multiplication `N ⋊ T → G` is an isomorphism of affine groups. -/
 theorem isIso_productMapOfNormal_of_isIso (hπ : kernelHopfIdeal π = I)
     [IsIso (π ≫ mkQuotient H J)] : IsIso (productMapOfNormal H I J hI) := by
-  let φ := productMapOfNormal H I J hI ≫ (normalSemidirectProductIso H I J hI).hom
-  have : IsIso (mapPointsFunctor.{u, u, u} φ) := by
+  have : IsIso (mapPointsFunctor.{u, u, u} (productMapOfNormal H I J hI)) := by
     rw [NatTrans.isIso_iff_isIso_app]
     exact fun A ↦ (ConcreteCategory.isIso_iff_bijective _).2
-      (bijective_mapPointsFunctor_productMapOfNormal_app_of_isIso I J hI π hπ A)
-  have : IsIso φ := isIso_of_isIso_mapPointsFunctor φ
-  exact IsIso.of_isIso_comp_right _ (normalSemidirectProductIso H I J hI).hom
-
-/-- The isomorphism `G ≅ N ⋊ T` of a split extension, as an isomorphism of coordinate Hopf
-algebras whose forward morphism is dual to multiplication. -/
-noncomputable def normalSemidirectProductIsoOfIsIso (hπ : kernelHopfIdeal π = I)
-    [IsIso (π ≫ mkQuotient H J)] : H ≅ normalSemidirectProduct H I J hI :=
-  have := isIso_productMapOfNormal_of_isIso I J hI π hπ
-  asIso (productMapOfNormal H I J hI)
-
-/-- The forward morphism of `normalSemidirectProductIsoOfIsIso` is dual to multiplication. -/
-@[simp]
-theorem normalSemidirectProductIsoOfIsIso_hom (hπ : kernelHopfIdeal π = I)
-    [IsIso (π ≫ mkQuotient H J)] :
-    (normalSemidirectProductIsoOfIsIso I J hI π hπ).hom = productMapOfNormal H I J hI := by
-  rw [normalSemidirectProductIsoOfIsIso, asIso_hom]
+      (bijective_mapPointsFunctor_productMapOfNormal_app I J hI π hπ A
+        (ConcreteCategory.bijective_of_isIso
+          (((pointsFunctor (R := R)).map (π ≫ mkQuotient H J).op).app A)))
+  exact isIso_of_isIso_mapPointsFunctor _
 
 end
 
