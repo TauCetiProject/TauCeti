@@ -26,6 +26,8 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
   (`eq_zero_iff_of_toFilterGerm_eq`);
 * `toFilterGerm_ringEquivCast`: transporting a germ along an equality of points with
   `RingEquiv.cast` keeps its representative;
+* `continuousAt_of_toFilterGerm_eq`: a function with the same germ along `𝓝 x` as a holomorphic
+  germ is continuous at `x`;
 * `toFilterGerm_nhdsNE_injective`: when `x` is not isolated, it is even determined by its
   germ along the punctured neighbourhoods `𝓝[≠] x`, by continuity;
 * `exists_toFilterGerm_nhds_eq_iff`: the image of the comparison along `𝓝 x` consists of the
@@ -217,14 +219,22 @@ theorem toFilterGerm_ringEquivCast {x y : X} (h : x = y)
   subst h
   exact hs
 
+/-- Any function with the same germ along `𝓝 x` as a holomorphic germ is continuous at `x`. -/
+theorem continuousAt_of_toFilterGerm_eq {x : X}
+    {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {f : X → ℂ}
+    (h : toFilterGerm I X x (𝓝 x) le_rfl s = f) : ContinuousAt f x := by
+  obtain ⟨g, hg, hgs⟩ := exists_toFilterGerm_eq x s
+  rw [hgs, Germ.coe_eq] at h
+  exact hg.self_of_nhds.continuousAt.congr h
+
 /-- At a point which is not isolated, a holomorphic germ is determined by its germ on the
 punctured neighbourhoods of the point, by continuity. -/
 theorem toFilterGerm_nhdsNE_injective (x : X) [(𝓝[≠] x).NeBot] :
     Injective (toFilterGerm I X x (𝓝[≠] x) nhdsWithin_le_nhds) := by
   rw [injective_iff_map_eq_zero]
   intro s hs
-  obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq x s
-  have hc : ContinuousAt f x := hf.self_of_nhds.continuousAt
+  obtain ⟨f, -, hfs⟩ := exists_toFilterGerm_eq x s
+  have hc : ContinuousAt f x := continuousAt_of_toFilterGerm_eq (hfs _ le_rfl)
   rw [hfs, ← Germ.coe_zero, Germ.coe_eq] at hs
   refine (eq_zero_iff_of_toFilterGerm_eq (hfs _ le_rfl)).2 ?_
   exact (hc.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE (g := fun _ ↦ 0) continuousAt_const).1 hs
