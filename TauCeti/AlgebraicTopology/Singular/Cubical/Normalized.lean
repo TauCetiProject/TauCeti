@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Chains
+import Mathlib.Topology.CompactOpen
 
 /-!
 # Normalized cubical chains
@@ -34,6 +35,8 @@ inverse.
 * `TauCeti.NormalizedCubicalChain.cast R h`: reindexing along an equality of dimensions.
 * `TauCeti.NormalizedCubicalChain.desc g hg`: the linear map determined by its values on cubes,
   vanishing on the degenerate ones.
+* `TauCeti.NormalizedCubicalChain.zeroEquiv X R`: the normalized `0`-chains are the formal
+  combinations of points.
 
 ## Main results
 
@@ -282,6 +285,25 @@ theorem desc_ofCube {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ} (g : Sin
     (hg : ∀ c, SingularCube.IsDegenerate c → g c = 0) (c : SingularCube X n) :
     desc g hg (ofCube X R c) = g c := by
   simp [desc, ofCube_def]
+
+variable (X) in
+/-- **The normalized `0`-chains are the formal combinations of points**: no `0`-cube is
+degenerate, and a `0`-cube is the constant cube at its value. -/
+def zeroEquiv : NormalizedCubicalChain X R 0 ≃ₗ[R] (X →₀ R) :=
+  Submodule.quotEquivOfEqBot _ (CubicalChain.degenerate_zero (X := X) (R := R)) ≪≫ₗ
+    Finsupp.domLCongr (Homeomorph.continuousMapOfUnique (X := Fin 0 → I) (Y := X)).symm.toEquiv
+
+/-- The class of the `0`-cube at a point is the indicator of that point. -/
+@[simp]
+theorem zeroEquiv_ofCube_point (x : X) :
+    zeroEquiv X R (ofCube X R (SingularCube.point x)) = Finsupp.single x 1 := by
+  simp [zeroEquiv, ofCube_def]
+
+/-- The indicator of a point is the class of the `0`-cube at that point. -/
+@[simp]
+theorem zeroEquiv_symm_single (x : X) (r : R) :
+    (zeroEquiv X R).symm (Finsupp.single x r) = r • ofCube X R (SingularCube.point x) := by
+  rw [LinearEquiv.symm_apply_eq, map_smul, zeroEquiv_ofCube_point, Finsupp.smul_single_one]
 
 variable (X) in
 /-- The boundary of normalized cubical chains, induced by the boundary of the unnormalized ones. -/
