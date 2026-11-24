@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.MeasureTheory.Group.Measure
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
@@ -24,7 +25,8 @@ Indeed a matrix is invertible exactly when its reduction modulo the maximal idea
 (`Matrix.isUnit_map_iff`), so `GL_n(R)` is the preimage of `GL_n(F_q)` under reduction. The fibres
 of reduction are the cosets of its kernel, which all have the same measure by translation
 invariance (`MeasureTheory.measure_preimage_addMonoidHom`), and there are `q^{n²}` of them. The
-count `#GL_n(F_q) = ∏_{i=0}^{n-1} (q^n - q^i)` is Mathlib's `Matrix.card_GL_field`.
+count `#GL_n(F_q) = ∏_{i=0}^{n-1} (q^n - q^i)` is Mathlib's `Matrix.card_GL_field`, and
+`TauCeti.prod_range_pow_sub_pow_div_pow` rewrites `#GL_n(F_q) / q^{n²}` as a product.
 
 ## Main results
 
@@ -39,20 +41,6 @@ open MeasureTheory Set IsLocalRing
 open scoped ENNReal
 
 namespace Matrix
-
-/-- In a field, `∏_{i=0}^{n-1} (q^n - q^i) / q^{n²} = ∏_{i=1}^n (1 - q^{-i})` for `q ≠ 0`. -/
-private theorem prod_pow_sub_pow_div_pow {K : Type*} [Field K] {q : K} (hq : q ≠ 0) (n : ℕ) :
-    (∏ i ∈ Finset.range n, (q ^ n - q ^ i)) / q ^ (n * n) =
-      ∏ i ∈ Finset.range n, (1 - q⁻¹ ^ (i + 1)) := calc
-  _ = ∏ i ∈ Finset.range n, (q ^ n - q ^ i) / q ^ n := by
-    rw [Finset.prod_div_distrib, Finset.prod_const, Finset.card_range, ← pow_mul]
-  _ = ∏ i ∈ Finset.range n, (1 - q⁻¹ ^ (n - i)) := Finset.prod_congr rfl fun i hi => by
-    rw [inv_pow, ← pow_sub_mul_pow q (Finset.mem_range.1 hi).le]
-    field_simp
-  _ = ∏ i ∈ Finset.range n, (1 - q⁻¹ ^ (i + 1)) := by
-    rw [← Finset.prod_range_reflect (fun i => 1 - q⁻¹ ^ (i + 1)) n]
-    exact Finset.prod_congr rfl fun i hi => by
-      rw [show n - 1 - i + 1 = n - i by have := Finset.mem_range.1 hi; omega]
 
 variable {R : Type*} [CommRing R] [IsLocalRing R] [MeasurableSpace R] [MeasurableAdd R]
   [Finite (ResidueField R)] (n : ℕ)
@@ -111,6 +99,6 @@ theorem measureReal_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
     rw [Nat.cast_sub (Nat.pow_le_pow_right Nat.card_pos i.isLt.le), Nat.cast_pow, Nat.cast_pow]
   simp only [ENNReal.toReal_natCast]
   rw [hcast, Nat.cast_pow, Fin.prod_univ_eq_prod_range (fun i => (q : ℝ) ^ n - (q : ℝ) ^ i),
-    prod_pow_sub_pow_div_pow hq]
+    TauCeti.prod_range_pow_sub_pow_div_pow hq]
 
 end Matrix
