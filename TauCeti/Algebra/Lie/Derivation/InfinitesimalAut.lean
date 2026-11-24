@@ -5,254 +5,191 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DualNumber
-public import TauCeti.Algebra.Lie.Derivation.BaseChange
-public import TauCeti.Algebra.Lie.Derivation.FirstOrder
+public import TauCeti.Algebra.DualNumber.Basic
+public import TauCeti.Algebra.Lie.Derivation.Basic
+public import TauCeti.RingTheory.Derivation.DualNumber
 
 /-!
-# Infinitesimal automorphisms are derivations
+# Infinitesimal automorphisms of an algebra are its derivations
 
-Let `A` be an `R`-algebra and `A[ε] = R[ε] ⊗[R] A` its trivial first-order deformation over the
-dual numbers `R[ε]`. An **infinitesimal automorphism** of `A` is an `R[ε]`-algebra automorphism
-of `A[ε]` that reduces to the identity modulo `ε`. Every derivation `D` of `A` gives one, namely
-`1 + ε D`, the first-order automorphism `TauCeti.derivationLieAlgebra.firstOrderAlgEquiv` of the
-extension of `D` to `A[ε]`. Conversely, an infinitesimal automorphism `σ` sends `1 ⊗ a` to
-`1 ⊗ a + ε ⊗ D a` for a unique `D a ∈ A`; multiplicativity of `σ` is the Leibniz rule for `D`.
-So `D ↦ 1 + ε D` is an isomorphism from the additive group of derivations of `A` onto the group
-of infinitesimal automorphisms.
+Let `A` be an `R`-algebra, not necessarily commutative. An automorphism of `A[ε]` over `R` that
+fixes `ε` and reduces to the identity modulo `ε` (an element of
+`TauCeti.infinitesimalDualNumberAut R A`) is uniquely of the form `a + b ε ↦ a + (b + D a) ε` for
+a derivation `D` of `A` in the sense of `TauCeti.derivationLieAlgebra`, and composition of
+automorphisms is addition of derivations.
 
-For `A` commutative, this is the affine case of the infinitesimal automorphisms of
-`Spec A` over `Spec R`: automorphisms of `Spec A ×_R Spec R[ε]` over `Spec R[ε]` restricting to the
-identity of `Spec A`.
+This generalises the commutative statement: for commutative `A`, Mathlib's `Derivation R A A` is
+`TauCeti.derivationLieAlgebra R A` through `TauCeti.derivationEquivDerivationLieAlgebra`, and
+`TauCeti.derivationEquivInfinitesimalDualNumberAut` is obtained by composing with it.
+The infinitesimal automorphisms of the base change `R[ε] ⊗[R] A` over `R[ε]` correspond to these
+by conjugation with `TauCeti.dualNumberAlgebraTensorAlgEquiv`.
 
 ## Main definitions
 
-* `TauCeti.dualNumberTensorReduce`: reduction modulo `ε`, the `R`-algebra map
-  `R[ε] ⊗[R] A → A`, `s ⊗ a ↦ s₀ a`.
-* `TauCeti.dualNumberTensorEpsCoeff`: the `ε`-coefficient, the `R`-linear map
-  `R[ε] ⊗[R] A → A`, `s ⊗ a ↦ s₁ a`, where `s = s₀ + s₁ ε`.
-* `TauCeti.infinitesimalAlgAut R A`: the subgroup of `R[ε]`-algebra automorphisms of
-  `R[ε] ⊗[R] A` that reduce to the identity modulo `ε`.
-* `TauCeti.derivationLieAlgebra.infinitesimalAlgAutEquiv`: the isomorphism
-  `D ↦ 1 + ε D` from the additive group of derivations onto `infinitesimalAlgAut R A`.
-
-## Main results
-
-* `TauCeti.dualNumberTensor_eq`: every element of `R[ε] ⊗[R] A` is `1 ⊗ x + ε ⊗ y`, with `x` its
-  reduction and `y` its `ε`-coefficient.
-* `TauCeti.derivationLieAlgebra.infinitesimalAlgAutEquiv_apply_tmul`: the automorphism attached to
-  `D` sends `1 ⊗ a` to `1 ⊗ a + ε ⊗ D a`.
+* `TauCeti.derivationLieAlgebra.toDualNumberAut`: the automorphism `a + b ε ↦ a + (b + D a) ε`.
+* `TauCeti.derivationLieAlgebra.equivInfinitesimalDualNumberAut`: derivations, with addition
+  written multiplicatively, are the infinitesimal automorphisms of `A[ε]`.
+* `TauCeti.derivationEquivInfinitesimalDualNumberAut`: the commutative case, for Mathlib's
+  `Derivation R A A`.
 
 ## References
 
 * R. Hartshorne, *Deformation Theory*, Graduate Texts in Mathematics 257, Springer, 2010,
-  Chapter 1, for first-order deformations over the dual numbers.
+  Chapter 1, for infinitesimal automorphisms as derivations.
 -/
 
 public section
 
-open scoped TensorProduct DualNumber
-open TensorProduct
+open TrivSqZeroExt DualNumber
 
 namespace TauCeti
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-universe u v
-
-variable (R : Type u) (A : Type v) [CommRing R] [Ring A] [Algebra R A]
-
-/-- **Reduction modulo `ε`**: the `R`-algebra map `R[ε] ⊗[R] A → A`, `s ⊗ a ↦ s₀ a` for
-`s = s₀ + s₁ ε`. -/
-noncomputable def dualNumberTensorReduce : R[ε] ⊗[R] A →ₐ[R] A :=
-  (Algebra.TensorProduct.lid R A).toAlgHom.comp
-    (Algebra.TensorProduct.map (TrivSqZeroExt.fstHom R R R) (AlgHom.id R A))
-
-/-- **The `ε`-coefficient**: the `R`-linear map `R[ε] ⊗[R] A → A`, `s ⊗ a ↦ s₁ a` for
-`s = s₀ + s₁ ε`. -/
-noncomputable def dualNumberTensorEpsCoeff : R[ε] ⊗[R] A →ₗ[R] A :=
-  TensorProduct.lid R A ∘ₗ LinearMap.rTensor A (TrivSqZeroExt.sndHom R R)
-
-variable {R A}
-
-/-- Reduction modulo `ε` of a pure tensor. -/
-@[simp]
-theorem dualNumberTensorReduce_tmul (s : R[ε]) (a : A) :
-    dualNumberTensorReduce R A (s ⊗ₜ[R] a) = TrivSqZeroExt.fst s • a := by
-  simp [dualNumberTensorReduce]
-
-/-- The `ε`-coefficient of a pure tensor. -/
-@[simp]
-theorem dualNumberTensorEpsCoeff_tmul (s : R[ε]) (a : A) :
-    dualNumberTensorEpsCoeff R A (s ⊗ₜ[R] a) = TrivSqZeroExt.snd s • a := by
-  simp [dualNumberTensorEpsCoeff]
-
-/-- Reduction modulo `ε` takes scalars of `R[ε]` to their constant terms. -/
-theorem dualNumberTensorReduce_smul (s : R[ε]) (x : R[ε] ⊗[R] A) :
-    dualNumberTensorReduce R A (s • x) = TrivSqZeroExt.fst s • dualNumberTensorReduce R A x := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => rw [TensorProduct.smul_add, map_add, map_add, hx, hy, smul_add]
-  | tmul t a => rw [smul_tmul', dualNumberTensorReduce_tmul, dualNumberTensorReduce_tmul,
-      smul_eq_mul, TrivSqZeroExt.fst_mul, mul_smul]
-
-/-- **Coordinates on `R[ε] ⊗[R] A`**: every element is `1 ⊗ x + ε ⊗ y`, where `x` is its
-reduction modulo `ε` and `y` its `ε`-coefficient. -/
-theorem dualNumberTensor_eq (x : R[ε] ⊗[R] A) :
-    x = 1 ⊗ₜ[R] dualNumberTensorReduce R A x + ε ⊗ₜ[R] dualNumberTensorEpsCoeff R A x := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy =>
-    conv_lhs => rw [hx, hy]
-    simp only [map_add, tmul_add]
-    abel
-  | tmul s a =>
-    rw [dualNumberTensorReduce_tmul, dualNumberTensorEpsCoeff_tmul, ← smul_tmul, ← smul_tmul,
-      ← add_tmul]
-    congr 1
-    ext <;> simp
-
-@[simp]
-theorem dualNumberTensorReduce_one_tmul_add_eps_tmul (x y : A) :
-    dualNumberTensorReduce R A (1 ⊗ₜ[R] x + ε ⊗ₜ[R] y) = x := by
-  simp
-
-@[simp]
-theorem dualNumberTensorEpsCoeff_one_tmul_add_eps_tmul (x y : A) :
-    dualNumberTensorEpsCoeff R A (1 ⊗ₜ[R] x + ε ⊗ₜ[R] y) = y := by
-  simp
-
-/-- `a ↦ ε ⊗ a` is injective: the `ε`-coefficient recovers `a`. -/
-theorem eps_tmul_injective : Function.Injective fun a : A => (ε : R[ε]) ⊗ₜ[R] a := fun a b h => by
-  simpa using congrArg (dualNumberTensorEpsCoeff R A) h
-
-/-- Scalars of `R` act on `R[ε] ⊗[R] A` through the constants `R → R[ε]`. -/
-theorem one_tmul_smul_eq_inl_smul (r : R) (a : A) :
-    (1 : R[ε]) ⊗ₜ[R] (r • a) = (TrivSqZeroExt.inl r : R[ε]) • ((1 : R[ε]) ⊗ₜ[R] a) := by
-  rw [smul_tmul', smul_eq_mul, mul_one, ← smul_tmul]
-  congr 1
-  ext <;> simp
-
-/-- The `ε`-coefficient is linear over the constants of `R[ε]`. -/
-theorem dualNumberTensorEpsCoeff_inl_smul (r : R) (x : R[ε] ⊗[R] A) :
-    dualNumberTensorEpsCoeff R A ((TrivSqZeroExt.inl r : R[ε]) • x) =
-      r • dualNumberTensorEpsCoeff R A x := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy =>
-    rw [TensorProduct.smul_add, map_add, map_add, hx, hy, smul_add]
-  | tmul t a =>
-    rw [smul_tmul', dualNumberTensorEpsCoeff_tmul, dualNumberTensorEpsCoeff_tmul, smul_eq_mul,
-      ← smul_assoc]
-    simp
-
-variable (R A)
-
-/-- **The infinitesimal automorphisms** of an `R`-algebra `A`: the `R[ε]`-algebra automorphisms
-of its trivial first-order deformation `R[ε] ⊗[R] A` that reduce to the identity modulo `ε`. -/
-def infinitesimalAlgAut : Subgroup (R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A) where
-  carrier := {σ | ∀ x, dualNumberTensorReduce R A (σ x) = dualNumberTensorReduce R A x}
-  mul_mem' hσ hτ x := by rw [AlgEquiv.mul_apply, hσ, hτ]
-  one_mem' x := rfl
-  inv_mem' {σ} hσ x := by
-    rw [← hσ, AlgEquiv.aut_inv, AlgEquiv.apply_symm_apply]
-
-variable {R A}
-
-theorem mem_infinitesimalAlgAut {σ : R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A} :
-    σ ∈ infinitesimalAlgAut R A ↔
-      ∀ x, dualNumberTensorReduce R A (σ x) = dualNumberTensorReduce R A x :=
-  Iff.rfl
-
-/-- An infinitesimal automorphism sends `1 ⊗ a` to `1 ⊗ a + ε ⊗ y`, where `y` is the
-`ε`-coefficient of the image. -/
-theorem infinitesimalAlgAut_apply_one_tmul {σ : R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A}
-    (hσ : σ ∈ infinitesimalAlgAut R A) (a : A) :
-    σ (1 ⊗ₜ[R] a) = 1 ⊗ₜ[R] a + ε ⊗ₜ[R] dualNumberTensorEpsCoeff R A (σ (1 ⊗ₜ[R] a)) := by
-  conv_lhs => rw [dualNumberTensor_eq (σ (1 ⊗ₜ[R] a))]
-  rw [hσ, dualNumberTensorReduce_tmul]
-  simp
-
 namespace derivationLieAlgebra
 
-/-- The first-order automorphism `1 + ε D` of the extension of a derivation `D` to
-`R[ε] ⊗[R] A`. -/
-noncomputable abbrev dualNumberAlgEquiv (D : derivationLieAlgebra R A) :
-    R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A :=
-  firstOrderAlgEquiv (ε : R[ε]) DualNumber.eps_mul_eps (baseChange R[ε] D)
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 
-/-- The automorphism `1 + ε D` sends `1 ⊗ a` to `1 ⊗ a + ε ⊗ D a`. -/
-theorem dualNumberAlgEquiv_one_tmul (D : derivationLieAlgebra R A) (a : A) :
-    dualNumberAlgEquiv D (1 ⊗ₜ[R] a) = 1 ⊗ₜ[R] a + ε ⊗ₜ[R] (D : Module.End R A) a := by
-  rw [firstOrderAlgEquiv_apply, baseChange_tmul, smul_tmul', smul_eq_mul, mul_one]
+/-- The algebra map `a ↦ a + (D a) ε` attached to a derivation; its multiplicativity is the
+Leibniz rule. -/
+private def toDualNumberAlgHom (D : derivationLieAlgebra R A) : A →ₐ[R] A[ε] where
+  toFun a := inl a + inr ((D : Module.End R A) a)
+  map_one' := by ext <;> simp
+  map_mul' a b := by ext <;> simp [add_comm]
+  map_zero' := by ext <;> simp
+  map_add' a b := by ext <;> simp [add_add_add_comm]
+  commutes' r := by ext <;> simp [algebraMap_eq_inl']
 
-/-- The automorphism `1 + ε D` reduces to the identity modulo `ε`. -/
-theorem dualNumberAlgEquiv_mem_infinitesimalAlgAut (D : derivationLieAlgebra R A) :
-    dualNumberAlgEquiv D ∈ infinitesimalAlgAut R A := fun x => by
-  rw [firstOrderAlgEquiv_apply, map_add, dualNumberTensorReduce_smul, DualNumber.fst_eps,
-    zero_smul, add_zero]
+private def dualNumberEnd (D : derivationLieAlgebra R A) : A[ε] →ₐ[R] A[ε] :=
+  DualNumber.lift ⟨(toDualNumberAlgHom D, ε), eps_mul_eps, fun a ↦ by
+    ext <;> simp [toDualNumberAlgHom]⟩
 
-/-- The derivation underlying an infinitesimal automorphism `σ`: `a` goes to the `ε`-coefficient
-of `σ (1 ⊗ a)`. -/
-noncomputable def ofInfinitesimalAlgAut (σ : infinitesimalAlgAut R A) :
+private theorem dualNumberEnd_fst (D : derivationLieAlgebra R A) (z : A[ε]) :
+    (dualNumberEnd D z).fst = z.fst := by
+  simp [dualNumberEnd, DualNumber.lift_apply_apply, toDualNumberAlgHom]
+
+private theorem dualNumberEnd_snd (D : derivationLieAlgebra R A) (z : A[ε]) :
+    (dualNumberEnd D z).snd = z.snd + (D : Module.End R A) z.fst := by
+  simp [dualNumberEnd, DualNumber.lift_apply_apply, toDualNumberAlgHom, add_comm]
+
+/-- The infinitesimal automorphism `a + b ε ↦ a + (b + D a) ε` attached to a derivation `D`.
+Its inverse is the automorphism attached to `-D`. -/
+def toDualNumberAut (D : derivationLieAlgebra R A) : A[ε] ≃ₐ[R] A[ε] :=
+  AlgEquiv.ofAlgHom (dualNumberEnd D) (dualNumberEnd (-D))
+    (by ext z <;> simp [dualNumberEnd_fst, dualNumberEnd_snd])
+    (by ext z <;> simp [dualNumberEnd_fst, dualNumberEnd_snd])
+
+/-- An infinitesimal automorphism leaves the scalar part unchanged. -/
+@[simp]
+theorem toDualNumberAut_fst (D : derivationLieAlgebra R A) (z : A[ε]) :
+    (toDualNumberAut D z).fst = z.fst :=
+  dualNumberEnd_fst D z
+
+/-- The infinitesimal part changes by the derivation of the scalar part. -/
+@[simp]
+theorem toDualNumberAut_snd (D : derivationLieAlgebra R A) (z : A[ε]) :
+    (toDualNumberAut D z).snd = z.snd + (D : Module.End R A) z.fst :=
+  dualNumberEnd_snd D z
+
+/-- An infinitesimal automorphism fixes `ε`. -/
+@[simp]
+theorem toDualNumberAut_eps (D : derivationLieAlgebra R A) : toDualNumberAut D ε = ε := by
+  ext <;> simp
+
+/-- Addition of derivations corresponds to composition of infinitesimal automorphisms. -/
+@[simp]
+theorem toDualNumberAut_add (D E : derivationLieAlgebra R A) :
+    toDualNumberAut (D + E) = toDualNumberAut D * toDualNumberAut E := by
+  ext z <;> simp [add_left_comm, add_comm]
+
+/-- The derivation `a ↦ (e a).snd` read off an infinitesimal automorphism `e`; multiplicativity
+of `e` is its Leibniz rule. -/
+private def ofInfinitesimalDualNumberAut (e : infinitesimalDualNumberAut R A) :
     derivationLieAlgebra R A :=
-  ⟨{ toFun := fun a => dualNumberTensorEpsCoeff R A
-         ((σ : R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A) (1 ⊗ₜ[R] a))
-     map_add' := fun a b => by rw [tmul_add, map_add, map_add]
-     map_smul' := fun r a => by
-       rw [one_tmul_smul_eq_inl_smul, map_smul, dualNumberTensorEpsCoeff_inl_smul,
-         RingHom.id_apply] },
-    mem_derivationLieAlgebra.2 fun x y => by
-      have hx := infinitesimalAlgAut_apply_one_tmul σ.property x
-      have hy := infinitesimalAlgAut_apply_one_tmul σ.property y
-      have hxy : (σ : R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A) (1 ⊗ₜ[R] (x * y)) =
-          (σ : R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A) (1 ⊗ₜ[R] x) *
-            (σ : R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A) (1 ⊗ₜ[R] y) := by
-        rw [← map_mul]
-        congr 1
-        simp only [Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-      change dualNumberTensorEpsCoeff R A _ = dualNumberTensorEpsCoeff R A _ * y +
-        x * dualNumberTensorEpsCoeff R A _
-      rw [hxy]
-      conv_lhs => rw [hx, hy]
-      simp only [add_mul, mul_add, Algebra.TensorProduct.tmul_mul_tmul, one_mul, mul_one,
-        DualNumber.eps_mul_eps, zero_tmul, add_zero, map_add, dualNumberTensorEpsCoeff_tmul,
-        TrivSqZeroExt.snd_one, DualNumber.snd_eps, zero_smul, one_smul, zero_add]⟩
+  ⟨{ toFun := fun a ↦ (e.val (inl a)).snd
+     map_add' := fun a b ↦ by simp
+     map_smul' := fun r a ↦ by simp [inl_smul] }, mem_derivationLieAlgebra.2 fun x y ↦ by
+    have hfst (a : A) : (e.val (inl a)).fst = a := ((mem_infinitesimalDualNumberAut _).1 e.prop).1 _
+    have h := congrArg snd (map_mul e.val (inl x) (inl y))
+    rw [← inl_mul, DualNumber.snd_mul, hfst, hfst] at h
+    simpa [add_comm] using h⟩
 
-/-- The derivation of `σ` sends `a` to the `ε`-coefficient of `σ (1 ⊗ a)`. -/
-theorem ofInfinitesimalAlgAut_apply (σ : infinitesimalAlgAut R A) (a : A) :
-    (ofInfinitesimalAlgAut σ : Module.End R A) a =
-      dualNumberTensorEpsCoeff R A ((σ : R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A) (1 ⊗ₜ[R] a)) :=
+/-- **Infinitesimal automorphisms are derivations**: derivations of `A`, with addition written
+multiplicatively, are the automorphisms of `A[ε]` over `R` that fix `ε` and reduce to the identity
+modulo `ε`. The inverse reads off the coefficient of `ε` in the image of a constant. -/
+def equivInfinitesimalDualNumberAut :
+    Multiplicative (derivationLieAlgebra R A) ≃* infinitesimalDualNumberAut R A where
+  toFun D := ⟨toDualNumberAut D.toAdd, by simp⟩
+  invFun e := Multiplicative.ofAdd (ofInfinitesimalDualNumberAut e)
+  left_inv D := by
+    apply Multiplicative.toAdd.injective
+    ext a
+    simp [ofInfinitesimalDualNumberAut]
+  right_inv e := by
+    obtain ⟨hfst, heps⟩ := (mem_infinitesimalDualNumberAut _).1 e.prop
+    apply Subtype.ext
+    ext z
+    · simpa only [toDualNumberAut_fst] using (hfst z).symm
+    · have h : e.val z = e.val (inl z.fst) + e.val (inl z.snd) * e.val ε :=
+        AlgHom.apply_dualNumber e.val.toAlgHom z
+      rw [heps] at h
+      rw [h, toDualNumberAut_snd]
+      simp [ofInfinitesimalDualNumberAut, hfst, add_comm]
+  map_mul' D E := Subtype.ext (toDualNumberAut_add D.toAdd E.toAdd)
+
+/-- The automorphism corresponding to a derivation is `toDualNumberAut`. -/
+@[simp]
+theorem equivInfinitesimalDualNumberAut_apply_coe
+    (D : Multiplicative (derivationLieAlgebra R A)) :
+    (equivInfinitesimalDualNumberAut D : A[ε] ≃ₐ[R] A[ε]) = toDualNumberAut D.toAdd :=
   (rfl)
 
-/-- **Infinitesimal automorphisms are derivations**: `D ↦ 1 + ε D` is an isomorphism from the
-additive group of derivations of the `R`-algebra `A` onto the group of `R[ε]`-algebra
-automorphisms of `R[ε] ⊗[R] A` that reduce to the identity modulo `ε`. -/
-noncomputable def infinitesimalAlgAutEquiv :
-    Multiplicative (derivationLieAlgebra R A) ≃* infinitesimalAlgAut R A where
-  toFun D := ⟨dualNumberAlgEquiv D.toAdd, dualNumberAlgEquiv_mem_infinitesimalAlgAut _⟩
-  invFun σ := Multiplicative.ofAdd (ofInfinitesimalAlgAut σ)
-  left_inv D := by
-    refine congrArg Multiplicative.ofAdd (ext fun a => ?_)
-    rw [ofInfinitesimalAlgAut_apply]
-    simp only [dualNumberAlgEquiv_one_tmul, dualNumberTensorEpsCoeff_one_tmul_add_eps_tmul]
-    rfl
-  right_inv σ := by
-    refine Subtype.ext (AlgEquiv.ext fun x => ?_)
-    induction x using TensorProduct.inductionOn with
-    | add x y hx hy => rw [map_add, map_add, hx, hy]
-    | tmul s a =>
-      have hs : s ⊗ₜ[R] a = s • (1 : R[ε]) ⊗ₜ[R] a := by rw [smul_tmul', smul_eq_mul, mul_one]
-      rw [hs, map_smul, map_smul, dualNumberAlgEquiv_one_tmul, toAdd_ofAdd,
-        ofInfinitesimalAlgAut_apply,
-        ← infinitesimalAlgAut_apply_one_tmul σ.property]
-  map_mul' D E := Subtype.ext <| by
-    simp only [dualNumberAlgEquiv, toAdd_mul, baseChange_add, firstOrderAlgEquiv_add]
-    rfl
-
-/-- The infinitesimal automorphism attached to `D` sends `1 ⊗ a` to `1 ⊗ a + ε ⊗ D a`. -/
-theorem infinitesimalAlgAutEquiv_apply_tmul (D : derivationLieAlgebra R A) (a : A) :
-    (infinitesimalAlgAutEquiv (Multiplicative.ofAdd D) : R[ε] ⊗[R] A ≃ₐ[R[ε]] R[ε] ⊗[R] A)
-      (1 ⊗ₜ[R] a) = 1 ⊗ₜ[R] a + ε ⊗ₜ[R] (D : Module.End R A) a :=
-  dualNumberAlgEquiv_one_tmul D a
+/-- Recover a derivation by taking the infinitesimal part of the image of each constant. -/
+@[simp]
+theorem equivInfinitesimalDualNumberAut_symm_apply (e : infinitesimalDualNumberAut R A) (a : A) :
+    ((equivInfinitesimalDualNumberAut.symm e).toAdd : Module.End R A) a = (e.val (inl a)).snd :=
+  (rfl)
 
 end derivationLieAlgebra
+
+section Commutative
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- For commutative `A`, the automorphism attached to a Mathlib derivation agrees with the one
+attached to the corresponding element of `derivationLieAlgebra R A`. -/
+@[simp]
+theorem derivationLieAlgebra.toDualNumberAut_derivationEquivDerivationLieAlgebra
+    (d : Derivation R A A) :
+    derivationLieAlgebra.toDualNumberAut (derivationEquivDerivationLieAlgebra d) =
+      d.toDualNumberAut := by
+  ext z <;> simp
+
+/-- Derivations, with addition written multiplicatively, are the infinitesimal
+automorphisms of the dual numbers: the commutative case of
+`TauCeti.derivationLieAlgebra.equivInfinitesimalDualNumberAut`. -/
+def derivationEquivInfinitesimalDualNumberAut :
+    Multiplicative (Derivation R A A) ≃* infinitesimalDualNumberAut R A :=
+  (AddEquiv.toMultiplicative derivationEquivDerivationLieAlgebra.toLinearEquiv.toAddEquiv).trans
+    derivationLieAlgebra.equivInfinitesimalDualNumberAut
+
+/-- The automorphism corresponding to a derivation is `Derivation.toDualNumberAut`. -/
+@[simp]
+theorem derivationEquivInfinitesimalDualNumberAut_apply_coe
+    (d : Multiplicative (Derivation R A A)) :
+    (derivationEquivInfinitesimalDualNumberAut d : A[ε] ≃ₐ[R] A[ε]) =
+      d.toAdd.toDualNumberAut :=
+  derivationLieAlgebra.toDualNumberAut_derivationEquivDerivationLieAlgebra d.toAdd
+
+/-- Recover a derivation by taking the infinitesimal part of the image of each constant. -/
+@[simp]
+theorem derivationEquivInfinitesimalDualNumberAut_symm_apply
+    (e : infinitesimalDualNumberAut R A) (a : A) :
+    ((derivationEquivInfinitesimalDualNumberAut (R := R) (A := A)).symm e).toAdd a =
+      (e.val (inl a)).snd :=
+  -- the inverse of the composite is the inverse of `derivationEquivDerivationLieAlgebra`
+  -- applied after that of `equivInfinitesimalDualNumberAut`
+  (derivationEquivDerivationLieAlgebra_symm_apply _ a).trans
+    (derivationLieAlgebra.equivInfinitesimalDualNumberAut_symm_apply e a)
+
+end Commutative
 
 end TauCeti

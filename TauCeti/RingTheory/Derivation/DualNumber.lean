@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Derivation.TrivSqZeroExt
-public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.DualNumber.Map
 
 /-!
@@ -24,6 +23,10 @@ amounts to a vanishing condition on the derivation.
 
 The construction uses `TauCeti.derivationToTrivSqZeroExtEquivLift` for the correspondence
 between derivations and lifts, and `DualNumber.lift` to extend a lift to the dual numbers.
+The group isomorphism `TauCeti.derivationEquivInfinitesimalDualNumberAut` between derivations
+and the subgroup `TauCeti.infinitesimalDualNumberAut` is obtained in
+`TauCeti.Algebra.Lie.Derivation.InfinitesimalAut` as the commutative case of the statement for
+noncommutative algebras.
 
 ## References
 
@@ -151,50 +154,5 @@ and preservation of `ε`. -/
 theorem mem_infinitesimalDualNumberAut (e : A[ε] ≃ₐ[R] A[ε]) :
     e ∈ infinitesimalDualNumberAut R A ↔ (∀ z, (e z).fst = z.fst) ∧ e ε = ε :=
   Iff.rfl
-
-variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
-
-/-- Derivations, with addition written multiplicatively, are the infinitesimal
-automorphisms of the dual numbers. The inverse reads off the coefficient of `ε`
-in the image of a constant. -/
-def derivationEquivInfinitesimalDualNumberAut :
-    Multiplicative (Derivation R A A) ≃* infinitesimalDualNumberAut R A where
-  toFun d := ⟨d.toAdd.toDualNumberAut, by simp⟩
-  invFun e := Multiplicative.ofAdd <|
-    (derivationToTrivSqZeroExtEquivLift R A A).symm
-      ⟨e.val.toAlgHom.comp (inlAlgHom R A A), AlgHom.ext fun a ↦ e.prop.1 (inl a)⟩
-  left_inv d := by
-    apply Multiplicative.toAdd.injective
-    ext a
-    simp
-  right_inv e := by
-    apply Subtype.ext
-    ext z
-    · simpa only [Derivation.toDualNumberAut_fst] using (e.prop.1 z).symm
-    · simp only [Derivation.toDualNumberAut_snd]
-      have h : e.val z = e.val (inl z.fst) + e.val (inl z.snd) * e.val ε :=
-        AlgHom.apply_dualNumber e.val.toAlgHom z
-      rw [e.prop.2] at h
-      rw [h]
-      simp [e.prop.1, add_comm]
-  map_mul' d e := by
-    apply Subtype.ext
-    exact Derivation.toDualNumberAut_add d.toAdd e.toAdd
-
-/-- The automorphism corresponding to a derivation is `Derivation.toDualNumberAut`. -/
-@[simp]
-theorem derivationEquivInfinitesimalDualNumberAut_apply_coe
-    (d : Multiplicative (Derivation R A A)) :
-    (derivationEquivInfinitesimalDualNumberAut d : A[ε] ≃ₐ[R] A[ε]) =
-      d.toAdd.toDualNumberAut :=
-  (rfl)
-
-/-- Recover a derivation by taking the infinitesimal part of the image of each constant. -/
-@[simp]
-theorem derivationEquivInfinitesimalDualNumberAut_symm_apply
-    (e : infinitesimalDualNumberAut R A) (a : A) :
-    ((derivationEquivInfinitesimalDualNumberAut (R := R) (A := A)).symm e).toAdd a =
-      (e.val (inl a)).snd :=
-  derivationToTrivSqZeroExtEquivLift_symm_apply _ _
 
 end TauCeti
