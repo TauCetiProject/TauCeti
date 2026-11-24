@@ -105,6 +105,7 @@ theorem toSymmetricAlgebra_differential_pow (n : ℕ) (X : Module.End R M) (k : 
       Function.iterate_succ_apply']
 
 /-- **The Leibniz formula**: `d Symⁿ(X)` sends `v₁ ⋯ vₙ` to `∑ⱼ v₁ ⋯ (X vⱼ) ⋯ vₙ`. -/
+@[simp]
 theorem differential_tprod (n : ℕ) (X : Module.End R M) (v : Fin n → M) :
     differential R M n X (⨂ₛ[R] i, v i) =
       ∑ j, ⨂ₛ[R] i, Function.update v j (X (v j)) i := by
@@ -113,12 +114,8 @@ theorem differential_tprod (n : ℕ) (X : Module.End R M) (v : Fin n → M) :
     Derivation.leibniz_prod]
   refine sum_congr rfl fun j _ ↦ ?_
   rw [toSymmetricAlgebra_tprod, SymmetricAlgebra.derivationOfEnd_ι, smul_eq_mul, mul_comm]
-  have h : (fun i ↦ SymmetricAlgebra.ι R M (Function.update v j (X (v j)) i)) =
-      Function.update (fun i ↦ SymmetricAlgebra.ι R M (v i)) j
-        (SymmetricAlgebra.ι R M (X (v j))) := by
-    funext i
-    rcases eq_or_ne i j with rfl | hij <;> simp [*]
-  rw [h, prod_update_of_mem (mem_univ j), sdiff_singleton_eq_erase]
+  simp_rw [Function.apply_update (fun _ ↦ SymmetricAlgebra.ι R M)]
+  rw [prod_update_of_mem (mem_univ j), sdiff_singleton_eq_erase]
 
 /-- **Nilpotency of the differential**: if `X ^ k = 0`, then
 `d Symⁿ(X) ^ (n * (k - 1) + 1) = 0`. -/
@@ -126,7 +123,7 @@ theorem differential_pow_eq_zero (n : ℕ) {X : Module.End R M} {k : ℕ} (hX : 
     differential R M n X ^ (n * (k - 1) + 1) = 0 := by
   refine SymmetricPower.ext fun v ↦ toSymmetricAlgebra_injective n ?_
   rw [toSymmetricAlgebra_differential_pow, toSymmetricAlgebra_tprod,
-    SymmetricAlgebra.iterate_derivationOfEnd_prod_ι hX v (Nat.lt_succ_self _)]
+    SymmetricAlgebra.iterate_derivationOfEnd_prod_ι_eq_zero hX v (Nat.lt_succ_self _)]
   simp
 
 /-- The differential of a nilpotent endomorphism is nilpotent. -/
@@ -147,7 +144,8 @@ theorem map_exp [Algebra ℚ R] [Module ℚ M] [Module ℚ (Sym[R]^n M)]
   let : Algebra ℚ (SymmetricAlgebra R M) :=
     ((algebraMap R (SymmetricAlgebra R M)).comp (algebraMap ℚ R)).toAlgebra
   refine SymmetricPower.ext fun v ↦ toSymmetricAlgebra_injective n ?_
-  have hv := SymmetricAlgebra.iterate_derivationOfEnd_prod_ι hk v (Nat.lt_succ_self _)
+  have hv :=
+    SymmetricAlgebra.iterate_derivationOfEnd_prod_ι_eq_zero hk v (Nat.lt_succ_self _)
   rw [IsNilpotent.exp_eq_sum (differential_pow_eq_zero n hk), LinearMap.sum_apply, map_sum,
     toSymmetricAlgebra_map, ← SymmetricAlgebra.taylorExp_derivationOfEnd ⟨k, hk⟩,
     toSymmetricAlgebra_tprod, Derivation.taylorExp_apply_eq_sum _ _ hv]

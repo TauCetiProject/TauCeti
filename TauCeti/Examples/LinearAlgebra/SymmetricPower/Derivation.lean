@@ -62,17 +62,10 @@ theorem differential_nilpotentTwo_monomialTwo {n j : ℕ} (hj : j + 1 ≤ n) :
     differential R _ n (nilpotentTwo R) (monomialTwo R n (j + 1)) =
       (j + 1) • monomialTwo R n j := by
   apply toSymmetricAlgebra_injective n
-  have ha : SymmetricAlgebra.derivationOfEnd R _ (nilpotentTwo R)
-      (SymmetricAlgebra.ι R _ (Pi.single 0 1)) = 0 := by
-    simp
-  have hb : SymmetricAlgebra.derivationOfEnd R _ (nilpotentTwo R)
-      (SymmetricAlgebra.ι R _ (Pi.single 1 1)) = SymmetricAlgebra.ι R _ (Pi.single 0 1) := by
-    simp
+  obtain ⟨m, rfl⟩ : ∃ m, n = j + 1 + m := ⟨n - (j + 1), by omega⟩
   rw [toSymmetricAlgebra_differential, map_nsmul, toSymmetricAlgebra_monomialTwo hj,
-    toSymmetricAlgebra_monomialTwo (by omega), Derivation.leibniz, Derivation.leibniz_pow,
-    Derivation.leibniz_pow, ha, hb, show n - j = n - (j + 1) + 1 by omega, pow_succ]
-  simp only [smul_eq_mul, nsmul_eq_mul, Nat.add_sub_cancel]
-  push_cast
+    toSymmetricAlgebra_monomialTwo (by omega)]
+  simp [Derivation.leibniz, Derivation.leibniz_pow, show j + 1 + m - j = m + 1 by omega]
   ring
 
 /-- `N² = 0`. -/
@@ -108,8 +101,6 @@ example : differential (ZMod 3) _ 3 (nilpotentTwo (ZMod 3)) (monomialTwo (ZMod 3
 
 /-- `d Sym³(N)` kills `e₁³`. -/
 example : differential R _ 3 (nilpotentTwo R) (monomialTwo R 3 0) = 0 := by
-  rw [differential_tprod]
-  refine Finset.sum_eq_zero fun j _ ↦ ?_
   simp
 
 /-- Over `ℚ`, `d Sym³(N)` does not kill `e₂³`. -/

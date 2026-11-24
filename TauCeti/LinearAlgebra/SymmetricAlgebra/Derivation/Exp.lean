@@ -33,8 +33,8 @@ polynomial functions Chevalley's restriction theorem describes.
 
 * `SymmetricAlgebra.exists_iterate_derivationOfEnd_eq_zero`: `D_f` is locally nilpotent when `f`
   is nilpotent.
-* `SymmetricAlgebra.iterate_derivationOfEnd_prod_ι`: if `f ^ k = 0`, then `D_f` kills every product
-  of `n` generators after `n * (k - 1) + 1` iterations.
+* `SymmetricAlgebra.iterate_derivationOfEnd_prod_ι_eq_zero`: if `f ^ k = 0`, then `D_f` kills
+  every product of `n` generators after `n * (k - 1) + 1` iterations.
 * `SymmetricAlgebra.taylorExp_derivationOfEnd`: `exp D_f = map (exp f)`.
 * `SymmetricAlgebra.map_exp_apply_of_derivationOfEnd_eq_zero`: an element killed by `D_f` is
   fixed by `map (exp f)`.
@@ -70,8 +70,8 @@ theorem exists_iterate_derivationOfEnd_eq_zero {f : Module.End R M} (hf : IsNilp
 
 /-- **Nilpotency on products of generators**: if `f ^ k = 0`, then the derivation induced by `f`
 kills every product of `n` generators after `n * (k - 1) + 1` iterations. -/
-theorem iterate_derivationOfEnd_prod_ι {f : Module.End R M} {k : ℕ} (hf : f ^ k = 0) {n : ℕ}
-    (v : Fin n → M) {j : ℕ} (hj : n * (k - 1) < j) :
+theorem iterate_derivationOfEnd_prod_ι_eq_zero {f : Module.End R M} {k : ℕ} (hf : f ^ k = 0)
+    {n : ℕ} (v : Fin n → M) {j : ℕ} (hj : n * (k - 1) < j) :
     (derivationOfEnd R M f)^[j] (∏ i, ι R M (v i)) = 0 := by
   induction n generalizing j with
   | zero =>
