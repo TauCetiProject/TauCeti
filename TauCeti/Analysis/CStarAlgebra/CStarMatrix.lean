@@ -449,8 +449,7 @@ theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
 /-- The `1 × 1` C⋆-matrix associated to `a` has norm `‖a‖`. -/
 @[simp]
 theorem norm_toOneByOne {ι : Type*} [Unique ι] (a : A) : ‖toOneByOne ι ℂ A a‖ = ‖a‖ :=
-  NonUnitalStarAlgHom.norm_map (toOneByOne ι ℂ A).toNonUnitalStarAlgHom
-    (toOneByOne ι ℂ A).injective a
+  StarAlgEquiv.norm_map (toOneByOne ι ℂ A) a
 
 omit [PartialOrder A] [StarOrderedRing A] in
 /-- Reindexing a square matrix does not change the norm of its entrywise image under a linear
