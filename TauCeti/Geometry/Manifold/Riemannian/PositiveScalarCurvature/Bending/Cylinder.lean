@@ -311,10 +311,9 @@ theorem scalarCurvature_eq_of_forall_inner_eq_cylinder [I.Boundaryless] [FiniteD
   -- The coefficients involving the `ℝ`-direction are constant near the centre of the chart.
   have hw₁ : (extChartAt I x x, t) ∈ (extChartAt I x).target ×ˢ (univ : Set ℝ) := ⟨hz₀, trivial⟩
   have hz (a a' : ι ⊕ Unit) (h : (bb a).1 = 0 ∨ (bb a').1 = 0) (u v : E × ℝ) :=
-    And.intro (DFunLike.congr_fun (TauCeti.fderiv_eq_zero_of_eqOn_const ℝ hU
-        (eqOn_chartMetric_apply_of_forall_inner_eq_cylinder hG x t (bb a) (bb a') h) hw₁) u)
-      (DFunLike.congr_fun (TauCeti.fderiv_fderiv_apply_eq_zero_of_eqOn_const ℝ hU
-        (eqOn_chartMetric_apply_of_forall_inner_eq_cylinder hG x t (bb a) (bb a') h) hw₁ u) v)
+    have hc := eqOn_chartMetric_apply_of_forall_inner_eq_cylinder hG x t (bb a) (bb a') h
+    And.intro (DFunLike.congr_fun (TauCeti.fderiv_eq_zero_of_eqOn_const ℝ hU hc hw₁) u)
+      (DFunLike.congr_fun (TauCeti.fderiv_fderiv_apply_eq_zero_of_eqOn_const ℝ hU hc hw₁ u) v)
   have e₁ (u v w : E) := (fderiv_chartMetric_apply_of_forall_inner_eq_cylinder hG x t hz₀ u 0 v w).1
   have e₂ (u u' v w : E) :=
     (fderiv_chartMetric_apply_of_forall_inner_eq_cylinder hG x t hz₀ u u' v w).2
