@@ -22,6 +22,8 @@ Pulling a flat form back along a preferred chart and reading it in the same char
 flat form on the chart target, which is how flat constructions in a chart are moved to the
 manifold; conversely, evaluating a form `φ` on the chart source agrees with evaluating
 `φ.inChartAt α` on `mvfderiv I (extChartAt I α)` (`TauCeti.RoughForm.apply_eq_inChartAt_mvfderiv`).
+On the interior of the model range, the coordinate expression is the pullback along the inverse
+chart (`TauCeti.RoughForm.mpullback_extChartAt_symm_eq_inChartAt`).
 Near time `t`, the pullback along a family of maps which sends `y` into the chart at `y` at time `t`
 is the flat pullback along the family read in the chart at `y`
 (`TauCeti.RoughForm.eventuallyEq_mpullback_compContinuousLinearMap`).
@@ -60,6 +62,16 @@ theorem inChartAt_mpullback (ω : RoughForm I' M' F k) (f : M → M') (α : M) {
   have he := congrArg (fun L : E →L[ℝ] TangentSpace I' (f ((extChartAt I α).symm z)) ↦
     ω (f ((extChartAt I α).symm z)) (fun i ↦ L (v i))) hd
   exact he.symm
+
+omit [IsManifold I 1 M] in
+/-- On the interior of the model range, where the within-range derivative is the ordinary one,
+the pullback of a form along the inverse chart is its coordinate expression in that chart. -/
+theorem mpullback_extChartAt_symm_eq_inChartAt (φ : RoughForm I M F k) (α : M) {z : E}
+    (hz : z ∈ interior (Set.range I)) :
+    mpullback 𝓘(ℝ, E) I (extChartAt I α).symm φ z = φ.inChartAt α z := by
+  ext v
+  refine (mpullback_apply _ φ z v).trans (Eq.trans ?_ (inChartAt_apply φ α z v).symm)
+  rw [mfderivWithin_of_mem_nhds (mem_interior_iff_mem_nhds.mp hz)]
 
 /-- The within-set pullback of a form along a map `f` from a normed space, at a point `w` sent into
 the preferred chart at `c`, is the flat pullback of the coordinate expression of the form in that

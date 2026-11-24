@@ -169,6 +169,37 @@ theorem IsFrobeniusLift.mk_eq {f : A →+* A} (hf : IsFrobeniusLift p f) (x : A)
       Ideal.Quotient.mk (Ideal.span {(p : A)}) (x ^ p) :=
   (isFrobeniusLift_iff_mk_eq f).mp hf x
 
+/-- A ring endomorphism is a Frobenius lift as soon as it lifts the `p`-th power map modulo `p`
+on a set generating its source as a ring: the elements `x` with `p ∣ f x - x ^ p` form a
+subring, by the binomial theorem modulo `p`. -/
+theorem isFrobeniusLift_of_closure_eq_top [hp : Fact p.Prime] {s : Set A}
+    (hs : Subring.closure s = ⊤) (f : A →+* A) (h : ∀ x ∈ s, (p : A) ∣ f x - x ^ p) :
+    IsFrobeniusLift p f := by
+  refine ⟨fun x => ?_⟩
+  induction (hs ▸ Subring.mem_top x : x ∈ Subring.closure s) using Subring.closure_induction with
+  | mem x hx => exact h x hx
+  | zero => simp [zero_pow hp.out.ne_zero]
+  | one => simp
+  | add x y _ _ hx hy =>
+    obtain ⟨a, ha⟩ := hx
+    obtain ⟨b, hb⟩ := hy
+    refine ⟨a + b + addCorrection p x y, ?_⟩
+    rw [map_add]
+    linear_combination ha + hb - natCast_mul_addCorrection (p := p) x y
+  | neg x _ hx =>
+    obtain ⟨a, ha⟩ := hx
+    refine ⟨-a - addCorrection p x (-x), ?_⟩
+    have h0 := natCast_mul_addCorrection (p := p) x (-x)
+    rw [add_neg_cancel, zero_pow hp.out.ne_zero, sub_zero] at h0
+    rw [map_neg]
+    linear_combination -ha + h0
+  | mul x y _ _ hx hy =>
+    obtain ⟨a, ha⟩ := hx
+    obtain ⟨b, hb⟩ := hy
+    refine ⟨a * f y + x ^ p * b, ?_⟩
+    rw [map_mul]
+    linear_combination f y * ha + x ^ p * hb
+
 /-- If `x` lies in an ideal `I`, so does `addCorrection p x y`: each of its monomials
 `x ^ i * y ^ (p - i)` has `0 < i`. -/
 theorem addCorrection_mem_of_mem_left {I : Ideal A} {x : A} (y : A) (hx : x ∈ I) :
@@ -290,6 +321,20 @@ theorem eq_of_isDeltaMap_of_surjective {f : A →+* B} (hf : Function.Surjective
   obtain ⟨x, rfl⟩ := hf y
   exact (@IsDeltaMap.map_delta p A _ B _ _ δ₁ f h₁ x).symm.trans
     (@IsDeltaMap.map_delta p A _ B _ _ δ₂ f h₂ x)
+
+/-- A ring homomorphism is a `δ`-map as soon as it commutes with `δ` on a set generating its
+source as a ring: the elements on which it commutes with `δ` form a subring, by the sum and
+product rules of `δ`. -/
+theorem isDeltaMap_of_closure_eq_top {s : Set A} (hs : Subring.closure s = ⊤) (f : A →+* B)
+    (h : ∀ x ∈ s, f (delta p x) = delta p (f x)) : IsDeltaMap p f := by
+  refine ⟨fun x => ?_⟩
+  induction (hs ▸ Subring.mem_top x : x ∈ Subring.closure s) using Subring.closure_induction with
+  | mem x hx => exact h x hx
+  | zero => simp
+  | one => simp
+  | add x y _ _ hx hy => simp [delta_add, hx, hy]
+  | neg x _ hx => simp [delta_neg, hx]
+  | mul x y _ _ hx hy => simp [delta_mul, hx, hy]
 
 end IsDeltaMap
 

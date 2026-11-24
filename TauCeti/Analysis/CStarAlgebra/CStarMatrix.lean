@@ -39,8 +39,8 @@ Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
-the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)` and the
-diagonal embedding `b ↦ diag(b, …, b)`.
+the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the
+diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_n(ℂ)`.
 
 ## Main declarations
 
@@ -66,8 +66,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   image under a linear map.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
 * `CStarMatrix.matrixUnit`: the matrix units `e_ij` of `M_n(ℂ)`, with
-  `CStarMatrix.star_matrixUnit`, `CStarMatrix.matrixUnit_mul_matrixUnit` and
-  `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
+  `CStarMatrix.ofMatrix_symm_matrixUnit`, `CStarMatrix.star_matrixUnit`,
+  `CStarMatrix.matrixUnit_mul_matrixUnit`, `CStarMatrix.isStarProjection_matrixUnit` (`e_ii` is a
+  projection) and `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
@@ -409,6 +410,12 @@ variable {n : Type*} [DecidableEq n]
 def matrixUnit (i j : n) : CStarMatrix n n ℂ :=
   ofMatrix (Matrix.single i j 1)
 
+/-- Reading `e_ij` as an ordinary matrix gives `Matrix.single i j 1`. -/
+@[simp]
+theorem ofMatrix_symm_matrixUnit (i j : n) :
+    ofMatrix.symm (matrixUnit i j) = Matrix.single i j 1 :=
+  (rfl)
+
 /-- The entries of `e_ij`. -/
 theorem matrixUnit_apply (i j k l : n) :
     matrixUnit i j k l = if i = k ∧ j = l then 1 else 0 := by
@@ -451,12 +458,16 @@ theorem matrixUnit_mul_matrixUnit_of_ne (i : n) {j k : n} (l : n) (h : j ≠ k) 
   rw [matrixUnit_eq_ofMatrixStarAlgEquiv, matrixUnit_eq_ofMatrixStarAlgEquiv, ← map_mul,
     single_mul_single_of_ne _ _ _ _ h, map_zero]
 
+/-- The diagonal matrix unit `e_ii` is a self-adjoint idempotent. -/
+theorem isStarProjection_matrixUnit (i : n) : IsStarProjection (matrixUnit i i) :=
+  ⟨matrixUnit_mul_matrixUnit i i i, star_matrixUnit i i⟩
+
 open scoped ComplexOrder in
 /-- A matrix unit has norm one: `e_jj` is a nonzero projection and `e_ij⋆ e_ij = e_jj`. -/
 @[simp]
 theorem norm_matrixUnit (i j : n) : ‖matrixUnit i j‖ = 1 := by
   have hp : ‖matrixUnit j j‖ = 1 :=
-    IsStarProjection.norm_eq_one ⟨matrixUnit_mul_matrixUnit j j j, star_matrixUnit j j⟩
+    (isStarProjection_matrixUnit j).norm_eq_one
       fun h0 => by simpa using congrFun (congrFun h0 j) j
   have h := CStarRing.norm_star_mul_self (x := matrixUnit i j)
   rw [star_matrixUnit, matrixUnit_mul_matrixUnit, hp] at h
