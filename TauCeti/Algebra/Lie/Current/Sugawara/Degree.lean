@@ -92,9 +92,10 @@ local notation "ιK[" x ", " m "]" =>
   toCompletedEnveloping Φ hΦ hΦs a
     (envelopingι (twoCocycleOfBilinear K L Φ hΦ hΦs) a (HahnSeries.single m (1 : K) ⊗ₜ[K] x))
 
-/-- **The Sugawara degree element** `D_κ = -L₀` in `Û`, attached to `Φ = c • κ_L` away from the
-critical level `1 - 2 a c = 0`. It acts on current modes by `[D_κ, z_k] = k z_k` and implements the
-completed degree derivation `t d/dt` as an inner derivation of `Û`. -/
+/-- **The Sugawara degree element** `D_κ = -L₀ = -(1 - 2 a c)⁻¹ S₀` in `Û` (totalised to `0` at the
+critical parameter `1 - 2 a c = 0`). When `Φ = c • κ_L` and `1 - 2 a c ≠ 0`, it acts on current
+modes by `[D_κ, z_k] = k z_k` and implements the completed degree derivation `t d/dt` as an inner
+derivation of `Û`. -/
 def sugawaraDegree (c : K) : Û :=
   -sugawaraVirasoro Φ hΦ hΦs a c 0
 
@@ -163,8 +164,8 @@ theorem sugawaraMode_mul_sub_mul_of_eq_smul_killingForm {c : K}
   simpa only [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def, SetLike.val_smul,
     LinearMap.smul_apply] using hd
 
-/-- **Away from the critical level, `Lₘ` implements the completed Witt vector field `-t^{m+1} d/dt`
-as an inner derivation of `Û`.** -/
+/-- **For `Φ = c • κ_L` away from the critical level (`1 - 2 a c ≠ 0`), `Lₘ` implements the
+completed Witt vector field `-t^{m+1} d/dt` as an inner derivation of `Û`.** -/
 theorem innerDerivation_sugawaraVirasoro {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (m : ℤ) :
     innerDerivation K (sugawaraVirasoro Φ hΦ hΦs a c m) =
@@ -172,8 +173,8 @@ theorem innerDerivation_sugawaraVirasoro {c : K}
   rw [sugawaraVirasoro_def, map_smul, innerDerivation_sugawaraMode_of_eq_smul_killingForm h,
     smul_smul, inv_mul_cancel₀ hc, one_smul]
 
-/-- **Away from the critical level, the Sugawara degree element `D_κ = -L₀` implements the completed
-degree derivation `t d/dt` as an inner derivation of `Û`.** -/
+/-- **For `Φ = c • κ_L` away from the critical level (`1 - 2 a c ≠ 0`), the Sugawara degree element
+`D_κ = -L₀` implements the completed degree derivation `t d/dt` as an inner derivation of `Û`.** -/
 theorem innerDerivation_sugawaraDegree {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) :
     innerDerivation K (sugawaraDegree Φ hΦ hΦs a c) =
@@ -181,20 +182,20 @@ theorem innerDerivation_sugawaraDegree {c : K}
   rw [sugawaraDegree, map_neg, innerDerivation_sugawaraVirasoro h hc, zero_add,
     vectorFieldCompletedEnvelopingDerivation_neg, neg_neg]
 
-/-- **Commutator form of Sugawara degree implementation**: away from the critical level,
-`[D_κ, x] = (t d/dt)(x)` for every element `x` of the completed enveloping algebra `Û`. -/
+/-- **Commutator form of Sugawara degree implementation**: for `Φ = c • κ_L` away from the critical
+level (`1 - 2 a c ≠ 0`), `[D_κ, x] = (t d/dt)(x)` for every element `x` of the completed enveloping
+algebra `Û`. -/
 theorem sugawaraDegree_mul_sub_mul {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (x : Û) :
     sugawaraDegree Φ hΦ hΦs a c * x - x * sugawaraDegree Φ hΦ hΦs a c =
       (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single 1 1) :
         Module.End K Û) x := by
-  rw [sugawaraDegree_def, sugawaraVirasoro_def, neg_mul, mul_neg, sub_neg_eq_add, neg_add_eq_sub,
-    ← neg_sub, smul_mul_assoc, mul_smul_comm, ← smul_sub,
-    sugawaraMode_mul_sub_mul_of_eq_smul_killingForm h 0 x, smul_smul, inv_mul_cancel₀ hc, one_smul,
-    zero_add, vectorFieldCompletedEnvelopingDerivation_neg, NegMemClass.coe_neg,
-    LinearMap.neg_apply, neg_neg]
+  have hd := congrArg (fun D : derivationLieAlgebra K Û ↦ (D : Module.End K Û) x)
+    (innerDerivation_sugawaraDegree h hc)
+  simpa only [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def] using hd
 
-/-- **The Sugawara degree element acts on current modes by `[D_κ, z_k] = k z_k`.** -/
+/-- **The Sugawara degree element acts on current modes by `[D_κ, z_k] = k z_k`**, whenever
+`Φ = c • κ_L` and `1 - 2 a c ≠ 0`. -/
 theorem sugawaraDegree_mul_toCompletedEnveloping_sub_mul {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (z : L) (k : ℤ) :
     sugawaraDegree Φ hΦ hΦs a c * ιK[z, k] - ιK[z, k] * sugawaraDegree Φ hΦ hΦs a c =
@@ -213,8 +214,9 @@ theorem sugawaraDegree_mul_sugawaraVirasoro_sub_mul {c : K}
   rw [sugawaraDegree_mul_sub_mul h hc,
     vectorFieldCompletedEnvelopingDerivation_single_one_sugawaraVirasoro, Int.cast_smul_eq_zsmul]
 
-/-- **Away from the critical level, the completed center `Z(Û)` is killed by the degree derivation
-`t d/dt`**, because `t d/dt` is the inner derivation `ad(D_κ)`. -/
+/-- **For `Φ = c • κ_L` away from the critical level (`1 - 2 a c ≠ 0`), the completed center
+`Z(Û)` is killed by the degree derivation `t d/dt`**, because `t d/dt` is the inner derivation
+`ad(D_κ)`. -/
 theorem vectorFieldCompletedEnvelopingDerivation_single_one_eq_zero_of_mem_center {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) {z : Û}
     (hz : z ∈ Subalgebra.center K Û) :

@@ -46,11 +46,12 @@ ordered modes, current generators and a central term
 (`TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_normalOrderedMode_sub_mul`):
 
 `[z_k, :x y:_n] = :⁅z, x⁆ y:_{n+k} + :x ⁅z, y⁆:_{n+k} + k ⁅⁅z, x⁆, y⁆_{n+k}
-  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`.
+  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`,
 
-The term `k ⁅⁅z, x⁆, y⁆_{n+k}` and the last central term come from moving the cut of the normal
-ordering of `:⁅z, x⁆ y:` from `k` back to `0`. This is the formula from which the commutators of
-currents with the quadratic Segal--Sugawara modes are computed.
+where `k (k - 1) / 2` is computed in `ℤ` before casting to the base ring `R`. The term
+`k ⁅⁅z, x⁆, y⁆_{n+k}` and the last central term come from moving the cut of the normal ordering of
+`:⁅z, x⁆ y:` from `k` back to `0`. This is the formula from which the commutators of currents with
+the quadratic Segal--Sugawara modes are computed.
 
 The modes `:x y:_n` are bilinear in `x` and `y`, and the completed level comparison
 `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv`, which is the identity on currents, carries
@@ -379,10 +380,11 @@ private theorem envelopingι_mul_normalOrderedSummand_sub_mul (z x y : L) (k n m
 generator `z_k` of the mode `z ⊗ tᵏ`,
 
 `[z_k, :x y:_n] = :⁅z, x⁆ y:_{n+k} + :x ⁅z, y⁆:_{n+k} + k ⁅⁅z, x⁆, y⁆_{n+k}
-  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`.
+  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`,
 
-Here `Φ` has Mathlib's positive-residue convention, so that
-`[xₘ, yₙ] = ⁅x, y⁆_{m+n} - a m δ_{m+n, 0} Φ(x, y)`; for the affine level form `κ` take `Φ = -κ`. -/
+where `k (k - 1) / 2` is computed in `ℤ` before casting to `R`. Here `Φ` has Mathlib's
+positive-residue convention, so that `[xₘ, yₙ] = ⁅x, y⁆_{m+n} - a m δ_{m+n, 0} Φ(x, y)`; for the
+affine level form `κ` take `Φ = -κ`. -/
 theorem toCompletedEnveloping_mul_normalOrderedMode_sub_mul (z x y : L) (k n : ℤ) :
     toC ι[z, k] * normalOrderedMode Φ hΦ hΦs a n x y -
         normalOrderedMode Φ hΦ hΦs a n x y * toC ι[z, k] =

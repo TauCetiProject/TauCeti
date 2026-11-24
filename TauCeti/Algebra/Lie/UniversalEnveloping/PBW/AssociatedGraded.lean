@@ -80,6 +80,15 @@ abbrev PBWGradedPiece (R : Type u) (L : Type v) [CommRing R] [LieRing L]
     (_root_.UniversalEnvelopingAlgebra.ι R :
       L →ₗ⁅R⁆ _root_.UniversalEnvelopingAlgebra R L).toLinearMap k
 
+/-- A filtered element's class in the degree-`k` PBW graded piece vanishes exactly when the
+element lies in the preceding PBW filtration step. -/
+theorem pbwGradedPiece_mk_eq_zero_iff {k : ℕ} {u : U} (hu : u ∈ pbwFiltration R L k) :
+    (Submodule.Quotient.mk (⟨u, (pbwFiltration_def R L k).symm ▸ hu⟩ : wordFiltration
+        (_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U).toLinearMap k) :
+        PBWGradedPiece R L k) = 0 ↔
+      u ∈ pbwFiltrationPrevious R L k := by
+  rw [gradedPiece_mk_eq_zero_iff, pbwFiltrationPrevious_def]
+
 /-- The associated graded of the PBW filtration of `U(L)`. -/
 abbrev PBWAssociatedGraded (R : Type u) (L : Type v) [CommRing R] [LieRing L]
     [LieAlgebra R L] : Type max u v :=

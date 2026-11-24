@@ -101,9 +101,10 @@ local notation "hV" => smoothModules_natCast_vacuumModule Φ hΦ hΦs a
 local notation "ι[" x ", " m "]" => envelopingι c₀ a (HahnSeries.single m (1 : K) ⊗ₜ[K] x)
 
 /-- **The quadratic Segal--Sugawara vector** `S₋₂ |0⟩` in the vacuum module `V = U / I₀`, defined at
-every level `Φ` and central value `a`. Away from the critical level, rescaling by `(1 - 2 a c)⁻¹`
-gives the Virasoro conformal vector `L₋₂ |0⟩`; at the critical level `2 a Φ = κ_L`, it is a
-quadratic `L[[t]]`-singular vector in `V`. -/
+every level `Φ` and central value `a`. When `Φ = c • κ_L` and `1 - 2 a c ≠ 0`, rescaling by
+`(1 - 2 a c)⁻¹` gives the normalised quadratic state `L₋₂ |0⟩` (the candidate Virasoro
+conformal vector); at the critical level `2 a Φ = κ_L`, it is a quadratic `L[[t]]`-singular
+vector in `V`. -/
 def sugawaraVacuum : V :=
   ModuleTower.limSmul hV (sugawaraMode Φ hΦ hΦs a (-2)) (vacuum Φ hΦ hΦs a)
 

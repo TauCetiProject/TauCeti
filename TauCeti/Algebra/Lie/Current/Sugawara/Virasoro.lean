@@ -30,14 +30,18 @@ weights `(1 - 2 a c) (m - l)` and a family ordered at the cut `0` with scalar we
 of `Û`. Moving the cut of the first family back to `0` combines the two infinite series into
 `(1 - 2 a c) (m - n) :x y:_{m+n}`, while the finite window between `0` and `m` contributes
 `(1 - 2 a c) (m (m + 1) / 2) ⁅x, y⁆_{m+n}` and the signed sum of `l (m - l)` between `0` and `m`,
-which is `(m ^ 3 - m) / 6`. Summing over Killing-dual bases kills the bracket term by
-`∑ᵢ ⁅xᵢ, yᵢ⁆ = 0` and contracts `∑ᵢ Φ(xᵢ, yᵢ) = c · dim L`, yielding the unnormalised commutator
+which is `(m ^ 3 - m) / 6`. Both quotients `m (m + 1) / 2` and `(m ^ 3 - m) / 6` are exact integer
+divisions computed in `ℤ` before casting to `K`, so summing over Killing-dual bases kills the
+bracket term by `∑ᵢ ⁅xᵢ, yᵢ⁆ = 0` and contracts `∑ᵢ Φ(xᵢ, yᵢ) = c · dim L`, yielding the
+unnormalised commutator
 
 `[Sₘ, Sₙ] = (1 - 2 a c) (m - n) S_{m+n} - δ_{m+n, 0} ((m ^ 3 - m) / 6) (1 - 2 a c) a c · dim L`
 
-over every field `K`, at every level including the critical level `1 - 2 a c = 0` and `a = 0`.
+over every field `K` (including characteristics `2` and `3`, where `(m ^ 3 - m) / 6` is still
+evaluated in `ℤ` before casting to `K`), at every level including the critical level `1 - 2 a c = 0`
+and `a = 0`.
 
-Away from the critical level, the **Segal--Sugawara Virasoro modes**
+Away from the critical level (`1 - 2 a c ≠ 0`), the **Segal--Sugawara Virasoro modes**
 `Lₘ = (1 - 2 a c)⁻¹ Sₘ` (`TauCeti.CurrentAlgebra.sugawaraVirasoro`) satisfy, when `2` and `3` are
 invertible in `K`, the Virasoro commutation relations
 
@@ -148,7 +152,8 @@ private theorem hasSum_smul_normalOrderedSummand (p N : ℤ) (w : ℤ → K) (x 
     (summable_normalOrderedSummand Φ hΦ hΦs a p N x y) (fun l : ℤ ↦ algebraMap K UK (w l))).hasSum
 
 /-- **The commutator of a Segal--Sugawara mode with a normally ordered mode**, for `Φ = c • κ_L`
-over any field `K`. -/
+over any field `K` (with `m (m + 1) / 2` and `(m ^ 3 - m) / 6` computed in `ℤ` before casting to
+`K`). -/
 theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K}
     (h : Φ = c • killingForm K L) (x y : L) (m n : ℤ) :
     sugawaraMode Φ hΦ hΦs a m * normalOrderedMode Φ hΦ hΦs a n x y -
@@ -197,7 +202,9 @@ theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K
 /-- **The commutator of two Segal--Sugawara modes**, for `Φ = c • κ_L` over any field `K` and at
 every level, including the critical level `1 - 2 a c = 0` and `a = 0`:
 
-`[Sₘ, Sₙ] = (1 - 2 a c) (m - n) S_{m+n} - δ_{m+n, 0} ((m ^ 3 - m) / 6) (1 - 2 a c) a c · dim L`. -/
+`[Sₘ, Sₙ] = (1 - 2 a c) (m - n) S_{m+n} - δ_{m+n, 0} ((m ^ 3 - m) / 6) (1 - 2 a c) a c · dim L`,
+
+where `(m ^ 3 - m) / 6` is computed in `ℤ` before casting to `K`. -/
 theorem sugawaraMode_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm {c : K}
     (h : Φ = c • killingForm K L) (m n : ℤ) :
     sugawaraMode Φ hΦ hΦs a m * sugawaraMode Φ hΦ hΦs a n -

@@ -25,9 +25,10 @@ When `2 ≠ 0` in `K` and `L` is nontrivial, injectivity of the PBW map and of `
 shows that this PBW preimage does not lie in filtration degree `1`
 (`TauCeti.CurrentAlgebra.vacuumPBWEquiv_symm_sugawaraVacuum_notMem_pbwFiltration_one`). Therefore
 `S₋₂ |0⟩` does not lie in the `K`-span of `|0⟩` at any level, including the critical level and
-`a = 0` (`TauCeti.CurrentAlgebra.sugawaraVacuum_notMem_span_vacuum`). In particular `S₋₂` is never
-a scalar in `Û` (`TauCeti.CurrentAlgebra.sugawaraMode_neg_two_notMem_bot`), so at the critical
-level the completed center `Z(Û)` is strictly larger than the scalars
+`a = 0` (`TauCeti.CurrentAlgebra.sugawaraVacuum_notMem_span_vacuum`). In particular, when `2 ≠ 0` in
+`K` and `L` is nontrivial, `S₋₂` is never a scalar in `Û` at any level or central value
+(`TauCeti.CurrentAlgebra.sugawaraMode_neg_two_notMem_bot`), so at the critical level the completed
+center `Z(Û)` is strictly larger than the scalars
 (`TauCeti.CurrentAlgebra.center_completedEnveloping_ne_bot`).
 
 ## Main results
@@ -103,36 +104,26 @@ theorem mk_vacuumPBWEquiv_symm_sugawaraVacuum_eq_pbwHomogeneousComponentMap :
         ⟨SymmetricAlgebra.map K (negativeSingle Φ hΦ hΦs neg_one_lt_zero) (symmetricCasimir K L),
           TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
             (symmetricCasimir_mem_homogeneousSubmodule K L)⟩ := by
-  -- Expand both sides in `b = Module.finBasis K L`: each basis summand `p i` maps to `mk2 (q i)`
-  -- by `pbwHomogeneousComponentMap_prod_map_ι`, and summing recovers the PBW preimage of `S₋₂ |0⟩`.
+  -- Expand both sides in `b = Module.finBasis K L`, apply `pbwHomogeneousComponentMap_ι_mul_ι`
+  -- termwise, and sum to recover the PBW preimage of `S₋₂ |0⟩`.
   set b := Module.finBasis K L
   set e := negativeSingle Φ hΦ hΦs (neg_one_lt_zero : (-1 : ℤ) < 0)
-  let p (i : Fin (Module.finrank K L)) :
-      TauCeti.SymmetricAlgebra.homogeneousSubmodule K Nneg 2 :=
-    ⟨([e (b i), e (killingDualBasis b i)].map (SymmetricAlgebra.ι K Nneg)).prod,
-      TauCeti.SymmetricAlgebra.prod_map_ι_mem_homogeneousSubmodule K Nneg
-        [e (b i), e (killingDualBasis b i)]⟩
-  let q (i : Fin (Module.finrank K L)) :
-      TauCeti.Algebra.wordFiltration
-        (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2 :=
-    ⟨([e (b i), e (killingDualBasis b i)].map (_root_.UniversalEnvelopingAlgebra.ι K)).prod,
-      TauCeti.Algebra.prod_map_mem_wordFiltration _ le_rfl⟩
-  let mk2 := Submodule.mkQ
-    (TauCeti.Algebra.wordFiltration.previousRestricted
-      (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2)
-  trans ∑ i, mk2 (q i)
-  · rw [← map_sum mk2 q Finset.univ, Submodule.mkQ_apply]
-    refine congrArg (Submodule.Quotient.mk : _ → PBWGradedPiece K Nneg 2) (Subtype.ext ?_)
-    simp only [Submodule.coe_sum, q, e, vacuumPBWEquiv_symm_sugawaraVacuum b,
-      List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
-  · trans pbwHomogeneousComponentMap K Nneg 2 (∑ i, p i)
-    · rw [map_sum]
-      exact (Finset.sum_congr rfl fun i _ ↦
-        pbwHomogeneousComponentMap_prod_map_ι K Nneg [e (b i), e (killingDualBasis b i)]).symm
-    · refine congrArg _ (Subtype.ext ?_)
-      simp only [Submodule.coe_sum, p, symmetricCasimir_eq_sum b, map_sum, map_mul,
-        SymmetricAlgebra.map_apply_ι, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
-        mul_one]
+  have hp :
+      (⟨SymmetricAlgebra.map K e (symmetricCasimir K L),
+          TauCeti.SymmetricAlgebra.map_mem_homogeneousSubmodule _
+            (symmetricCasimir_mem_homogeneousSubmodule K L)⟩ :
+          TauCeti.SymmetricAlgebra.homogeneousSubmodule K Nneg 2) =
+        ∑ i, ⟨SymmetricAlgebra.ι K Nneg (e (b i)) *
+            SymmetricAlgebra.ι K Nneg (e (killingDualBasis b i)),
+          SetLike.mul_mem_graded
+            (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule K Nneg _)
+            (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule K Nneg _)⟩ :=
+    Subtype.ext (by simp [symmetricCasimir_eq_sum b])
+  rw [hp, map_sum]
+  simp_rw [pbwHomogeneousComponentMap_ι_mul_ι]
+  refine (congrArg (Submodule.mkQ _) (Subtype.ext ?_)).trans
+    (map_sum (Submodule.mkQ _) _ Finset.univ)
+  simp only [Submodule.coe_sum, e, vacuumPBWEquiv_symm_sugawaraVacuum b]
 
 /-- **Away from characteristic two, the PBW preimage of `S₋₂ |0⟩` for a nontrivial Lie algebra does
 not lie in PBW filtration degree `1`** (it has exact PBW degree `2`). -/
@@ -141,13 +132,13 @@ theorem vacuumPBWEquiv_symm_sugawaraVacuum_notMem_pbwFiltration_one
     (vacuumPBWEquiv Φ hΦ hΦs a).symm (sugawaraVacuum Φ hΦ hΦs a) ∉ pbwFiltration K Nneg 1 := by
   intro hmem
   have hprev : (vacuumPBWEquiv Φ hΦ hΦs a).symm (sugawaraVacuum Φ hΦ hΦs a) ∈
-      TauCeti.Algebra.wordFiltrationPrevious
-        (_root_.UniversalEnvelopingAlgebra.ι K : Nneg →ₗ⁅K⁆ Uneg).toLinearMap 2 := by
-    rwa [← pbwFiltrationPrevious_def, pbwFiltrationPrevious_succ]
+      pbwFiltrationPrevious K Nneg 2 := by
+    rwa [pbwFiltrationPrevious_succ]
   have hmk :=
     (mk_vacuumPBWEquiv_symm_sugawaraVacuum_eq_pbwHomogeneousComponentMap
       (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)).symm.trans
-      ((TauCeti.Algebra.wordFiltration.gradedPiece_mk_eq_zero_iff _ _).2 hprev)
+      ((pbwGradedPiece_mk_eq_zero_iff K Nneg
+        vacuumPBWEquiv_symm_sugawaraVacuum_mem_pbwFiltration_two).2 hprev)
   have hsym := pbwHomogeneousComponentMap_injective K Nneg 2
     (hmk.trans (map_zero (pbwHomogeneousComponentMap K Nneg 2)).symm)
   have hmap : SymmetricAlgebra.map K (negativeSingle Φ hΦ hΦs neg_one_lt_zero)
@@ -175,8 +166,9 @@ theorem sugawaraVacuum_ne_zero [NeZero (2 : K)] [Nontrivial L] :
     sugawaraVacuum Φ hΦ hΦs a ≠ 0 :=
   fun h0 ↦ sugawaraVacuum_notMem_span_vacuum (h0 ▸ Submodule.zero_mem _)
 
-/-- **Away from characteristic two and the critical level, the Virasoro conformal vector
-`L₋₂ |0⟩` is not a scalar multiple of `|0⟩`** when `L` is nontrivial. -/
+/-- **Away from characteristic two and when `1 - 2 a c ≠ 0`, the normalised quadratic state
+`L₋₂ |0⟩` (which serves as the candidate Virasoro conformal vector when `Φ = c • κ_L`) is not a
+scalar multiple of `|0⟩`** when `L` is nontrivial. -/
 theorem limSmul_sugawaraVirasoro_neg_two_vacuum_notMem_span_vacuum
     [NeZero (2 : K)] [Nontrivial L] {c : K} (hc : 1 - 2 * a * c ≠ 0) :
     ModuleTower.limSmul hV (sugawaraVirasoro Φ hΦ hΦs a c (-2)) (vacuum Φ hΦ hΦs a) ∉

@@ -180,7 +180,8 @@ private theorem sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul_of_fn (w : �
   rw [sub_sub_sub_comm, ← sub_smul, ← sub_smul]
 
 /-- The commutators `[x_j, y_{n-j}]` for `0 ≤ j < k`, minus those for `k ≤ j < 0`, sum to
-`k ⁅x, y⁆_n` minus the central term `(k (k - 1) / 2) a Φ(x, y)` at `n = 0`. -/
+`k ⁅x, y⁆_n` minus the central term `(k (k - 1) / 2) a Φ(x, y)` at `n = 0`, where `k (k - 1) / 2`
+is computed in `ℤ` before casting to `R`. -/
 theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : ℤ) :
     ∑ j ∈ Finset.Ico 0 k, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
         ∑ j ∈ Finset.Ico k 0, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
@@ -198,7 +199,8 @@ theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : ℤ) :
   split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
 
 /-- The signed sum of `(m - l) • [x_l, y_{n-l}]` between `0` and `m` evaluates to
-`(m (m + 1) / 2) ⁅x, y⁆_n` minus the central term `((m ^ 3 - m) / 6) a Φ(x, y)` at `n = 0`. -/
+`(m (m + 1) / 2) ⁅x, y⁆_n` minus the central term `((m ^ 3 - m) / 6) a Φ(x, y)` at `n = 0`, where
+both `m (m + 1) / 2` and `(m ^ 3 - m) / 6` are computed in `ℤ` before casting to `R`. -/
 theorem sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul (x y : L) (m n : ℤ) :
     ∑ l ∈ Finset.Ico 0 m, ((m - l : ℤ) : R) • (ι[x, l] * ι[y, n - l] -
         ι[y, n - l] * ι[x, l]) -
