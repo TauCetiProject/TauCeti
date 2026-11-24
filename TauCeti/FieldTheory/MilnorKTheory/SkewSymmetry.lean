@@ -134,7 +134,7 @@ theorem symbol_self_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
   rw [mul_assoc (symbol l₁), ofUnit_mul_self, ← mul_assoc]
 
 /-- A Milnor symbol containing two adjacent opposite entries `a, -a` vanishes. -/
-@[simp] theorem symbol_neg_self_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
+theorem symbol_neg_self_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
     symbol (l₁ ++ a :: (-a) :: l₂) = 0 := by
   simp only [symbol_append, symbol_cons, ← mul_assoc]
   rw [mul_assoc (symbol l₁), ofUnit_mul_neg_self, mul_zero, zero_mul]

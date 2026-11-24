@@ -61,6 +61,14 @@ theorem eq_zero_of_isCyclic_of_exists_odd_add_eq_one {c : Fˣ → Fˣ → A}
   obtain ⟨k, hk⟩ := hm.mul hn
   rwa [hk, add_zsmul, one_zsmul, mul_comm (2 : ℤ) k, mul_zsmul, h2, smul_zero, zero_add] at hmn
 
+private theorem exists_odd_zpow_eq_of_not_isSquare {F : Type*} [Field F] {g : Fˣ}
+    (hg : ∀ u : Fˣ, u ∈ Subgroup.zpowers g) {x : F} (hx : ¬IsSquare x) :
+    ∃ m : ℤ, Odd m ∧ ((g ^ m : Fˣ) : F) = x := by
+  have hx0 : x ≠ 0 := by rintro rfl; exact hx IsSquare.zero
+  obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.mp (hg (Units.mk0 x hx0))
+  refine ⟨m, Int.not_even_iff_odd.mp fun heven => ?_, by simp [hm]⟩
+  exact hx (by simpa [hm] using (heven.isSquare_zpow g).map (Units.coeHom F))
+
 /-- **Steinberg pairings on finite fields vanish**: every Steinberg pairing on a finite field is
 identically zero. -/
 theorem eq_zero_of_finite [Finite F] {c : Fˣ → Fˣ → A} (hc : IsSteinbergPairing c)
@@ -70,18 +78,10 @@ theorem eq_zero_of_finite [Finite F] {c : Fˣ → Fˣ → A} (hc : IsSteinbergPa
     exact hc.eq_zero_of_isCyclic_of_charTwo a b
   · obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := Fˣ)
     obtain ⟨x, hx, hx'⟩ := TauCeti.FiniteField.exists_not_isSquare_and_not_isSquare_one_sub hF
-    have hx0 : x ≠ 0 := by rintro rfl; exact hx IsSquare.zero
-    have hx1 : 1 - x ≠ 0 := by intro h; rw [h] at hx'; exact hx' IsSquare.zero
-    obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.mp (hg (Units.mk0 x hx0))
-    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp (hg (Units.mk0 (1 - x) hx1))
-    have hm_odd : Odd m := Int.not_even_iff_odd.mp fun heven =>
-      hx (by simpa [hm] using (heven.isSquare_zpow g).map (Units.coeHom F))
-    have hn_odd : Odd n := Int.not_even_iff_odd.mp fun heven =>
-      hx' (by simpa [hn] using (heven.isSquare_zpow g).map (Units.coeHom F))
-    have hadd : ((g ^ m : Fˣ) : F) + (g ^ n : Fˣ) = 1 := by
-      rw [hm, hn]
-      simp
-    exact hc.eq_zero_of_isCyclic_of_exists_odd_add_eq_one hg hm_odd hn_odd hadd a b
+    obtain ⟨m, hm_odd, hm⟩ := exists_odd_zpow_eq_of_not_isSquare hg hx
+    obtain ⟨n, hn_odd, hn⟩ := exists_odd_zpow_eq_of_not_isSquare hg hx'
+    exact hc.eq_zero_of_isCyclic_of_exists_odd_add_eq_one hg hm_odd hn_odd
+      (by rw [hm, hn, add_sub_cancel]) a b
 
 end IsSteinbergPairing
 

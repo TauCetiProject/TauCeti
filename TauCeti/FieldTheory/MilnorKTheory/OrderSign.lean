@@ -112,8 +112,6 @@ theorem orderSign_mul (a b : Rˣ) : orderSign (a * b) = orderSign a + orderSign 
 /-- The product of order signs is a Steinberg pairing on any linearly ordered ring: two negative
 elements cannot sum to `1 ≥ 0`. -/
 theorem isSteinbergPairing_orderSignPairing : IsSteinbergPairing (orderSignPairing (R := R)) where
-  map_one_left _ := by simp [orderSignPairing_def]
-  map_one_right _ := by simp [orderSignPairing_def]
   map_mul_left _ _ _ := by simp only [orderSignPairing_def, orderSign_mul, add_mul]
   map_mul_right _ _ _ := by simp only [orderSignPairing_def, orderSign_mul, mul_add]
   steinberg a b hab := by
@@ -207,10 +205,11 @@ noncomputable def gradedOrderSignPoly :
       LinearMap.range (Polynomial.monomial n : ZMod 2 →ₗ[ZMod 2] Polynomial (ZMod 2)) where
   toRingHom := orderSignPolyHom R
   map_mem {n x} hx := by
-    refine ⟨(orderSignPolyHom R x).coeff n, AddMonoidAlgebra.ext_iff.mpr (Finsupp.ext fun k => ?_)⟩
+    refine ⟨(orderSignPolyHom R x).coeff n, ?_⟩
+    ext k
     simp only [Polynomial.coeff_monomial_apply]
     split_ifs with hkn
-    · subst hkn; rfl
+    · rw [hkn]
     · exact (coeff_orderSignPolyHom_of_mem_degree_ne (Ne.symm hkn) hx).symm
 
 variable (R) in

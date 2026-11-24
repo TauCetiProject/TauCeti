@@ -14,15 +14,13 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basic
 # Bilinear Steinberg pairings and the degree-two symbol group
 
 A **Steinberg pairing** (`TauCeti.IsSteinbergPairing`) on a semiring `R` with values in an additive
-commutative monoid `A` is a bimultiplicative map `c : Rˣ → Rˣ → A` vanishing whenever
-`(a : R) + b = 1`. Over a field `F`, every Steinberg pairing into an additive commutative group
-satisfies `c a (-a) = 0`, `c a b = -c b a`, `c a a = c a (-1)`, and `2 • c a a = 0`, plus
-`c a a = 0` in characteristic two.
+commutative group `A` is a bimultiplicative map `c : Rˣ → Rˣ → A` vanishing whenever
+`(a : R) + b = 1`. Over a field `F`, every Steinberg pairing satisfies `c a (-a) = 0`,
+`c a b = -c b a`, `c a a = c a (-1)`, and `2 • c a a = 0`, plus `c a a = 0` in characteristic two.
 
 For any commutative semiring `R`, the quotient `TauCeti.SymbolGroup R` of
 `Additive Rˣ ⊗[ℤ] Additive Rˣ` by `TauCeti.steinbergRelations R` is the universal target of
-Steinberg pairings (`SymbolGroup.lift`, `liftEquiv`, `liftAddMonoidHomEquiv`) and is functorial
-via `SymbolGroup.map`.
+Steinberg pairings (`SymbolGroup.lift`, `liftEquiv`) and is functorial via `SymbolGroup.map`.
 
 ## References
 
@@ -41,14 +39,10 @@ universe u v
 
 /-! ### Bilinear Steinberg pairings -/
 
-/-- A map `c : Rˣ → Rˣ → A` is a **Steinberg pairing** if it is bimultiplicative (including
-normalization at `1`) and vanishes on pairs of units whose ambient values sum to `1`. -/
-structure IsSteinbergPairing {R : Type u} {A : Type v} [Semiring R] [AddCommMonoid A]
+/-- A map `c : Rˣ → Rˣ → A` is a **Steinberg pairing** if it is bimultiplicative and vanishes on
+pairs of units whose ambient values sum to `1`. -/
+structure IsSteinbergPairing {R : Type u} {A : Type v} [Semiring R] [AddCommGroup A]
     (c : Rˣ → Rˣ → A) : Prop where
-  /-- Normalization in the first argument. -/
-  map_one_left (b : Rˣ) : c 1 b = 0
-  /-- Normalization in the second argument. -/
-  map_one_right (a : Rˣ) : c a 1 = 0
   /-- Multiplicativity in the first argument. -/
   map_mul_left (a b d : Rˣ) : c (a * b) d = c a d + c b d
   /-- Multiplicativity in the second argument. -/
@@ -60,12 +54,10 @@ namespace IsSteinbergPairing
 
 section Semiring
 
-variable {R S A B : Type*} [Semiring R] [Semiring S] [AddCommMonoid A] [AddCommMonoid B]
+variable {R S A B : Type*} [Semiring R] [Semiring S] [AddCommGroup A] [AddCommGroup B]
 
 /-- The zero map is a Steinberg pairing. -/
 theorem zero : IsSteinbergPairing (fun _ _ : Rˣ => (0 : A)) where
-  map_one_left _ := rfl
-  map_one_right _ := rfl
   map_mul_left _ _ _ := (add_zero 0).symm
   map_mul_right _ _ _ := (add_zero 0).symm
   steinberg _ _ _ := rfl
@@ -73,8 +65,6 @@ theorem zero : IsSteinbergPairing (fun _ _ : Rˣ => (0 : A)) where
 /-- Post-composing a Steinberg pairing with an additive homomorphism gives a Steinberg pairing. -/
 theorem comp_addMonoidHom {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (f : A →+ B) :
     IsSteinbergPairing (fun a b => f (c a b)) where
-  map_one_left _ := by rw [hc.map_one_left, map_zero]
-  map_one_right _ := by rw [hc.map_one_right, map_zero]
   map_mul_left _ _ _ := by rw [hc.map_mul_left, map_add]
   map_mul_right _ _ _ := by rw [hc.map_mul_right, map_add]
   steinberg _ _ h := by rw [hc.steinberg _ _ h, map_zero]
@@ -82,14 +72,16 @@ theorem comp_addMonoidHom {c : Rˣ → Rˣ → A} (hc : IsSteinbergPairing c) (f
 /-- Pulling back a Steinberg pairing along a ring homomorphism gives a Steinberg pairing. -/
 theorem comp_ringHom {c : Sˣ → Sˣ → A} (hc : IsSteinbergPairing c) (f : R →+* S) :
     IsSteinbergPairing (fun a b => c (Units.map f.toMonoidHom a) (Units.map f.toMonoidHom b)) where
-  map_one_left _ := by simpa only [map_one] using hc.map_one_left _
-  map_one_right _ := by simpa only [map_one] using hc.map_one_right _
   map_mul_left _ _ _ := by rw [map_mul, hc.map_mul_left]
   map_mul_right _ _ _ := by rw [map_mul, hc.map_mul_right]
   steinberg _ _ h := hc.steinberg _ _ (by simp [← map_add, h])
 
 variable {c : Rˣ → Rˣ → A}
 
+theorem map_one_left (hc : IsSteinbergPairing c) (b : Rˣ) : c 1 b = 0 :=
+  left_eq_add.mp (by rw [← hc.map_mul_left, one_mul])
+theorem map_one_right (hc : IsSteinbergPairing c) (a : Rˣ) : c a 1 = 0 :=
+  left_eq_add.mp (by rw [← hc.map_mul_right, one_mul])
 theorem map_pow_left (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℕ) : c (a ^ n) b = n • c a b := by
   induction n with
   | zero => simp [hc.map_one_left]
@@ -98,13 +90,6 @@ theorem map_pow_right (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℕ) : c a (b
   induction n with
   | zero => simp [hc.map_one_right]
   | succ n ih => rw [pow_succ, hc.map_mul_right, ih, succ_nsmul]
-
-end Semiring
-
-section AddCommGroup
-
-variable {R A : Type*} [Semiring R] [AddCommGroup A] {c : Rˣ → Rˣ → A}
-
 theorem map_inv_left (hc : IsSteinbergPairing c) (a b : Rˣ) : c a⁻¹ b = -c a b :=
   eq_neg_of_add_eq_zero_left <| by rw [← hc.map_mul_left, inv_mul_cancel, hc.map_one_left]
 theorem map_inv_right (hc : IsSteinbergPairing c) (a b : Rˣ) : c a b⁻¹ = -c a b :=
@@ -119,7 +104,7 @@ theorem map_zpow_right (hc : IsSteinbergPairing c) (a b : Rˣ) (n : ℤ) :
   | ofNat n => simpa using hc.map_pow_right a b n
   | negSucc n => rw [zpow_negSucc, hc.map_inv_right, hc.map_pow_right, negSucc_zsmul]
 
-end AddCommGroup
+end Semiring
 
 /-! ### Integral symbol identities over a field -/
 
@@ -204,15 +189,13 @@ theorem symbol_def (a b : Rˣ) :
 
 /-- The canonical pairing `(a, b) ↦ symbol a b` is a Steinberg pairing. -/
 theorem isSteinbergPairing_symbol : IsSteinbergPairing (symbol (R := R)) where
-  map_one_left _ := by simp [symbol_def]
-  map_one_right _ := by simp [symbol_def]
   map_mul_left _ _ _ := by simp [symbol_def, TensorProduct.add_tmul]
   map_mul_right _ _ _ := by simp [symbol_def, TensorProduct.tmul_add]
   steinberg a b h := (Submodule.Quotient.mk_eq_zero _).mpr (Submodule.subset_span ⟨a, b, h, rfl⟩)
 
-theorem symbol_mul_left (a b d : Rˣ) : symbol (a * b) d = symbol a d + symbol b d :=
+@[simp] theorem symbol_mul_left (a b d : Rˣ) : symbol (a * b) d = symbol a d + symbol b d :=
   isSteinbergPairing_symbol.map_mul_left a b d
-theorem symbol_mul_right (a b d : Rˣ) : symbol a (b * d) = symbol a b + symbol a d :=
+@[simp] theorem symbol_mul_right (a b d : Rˣ) : symbol a (b * d) = symbol a b + symbol a d :=
   isSteinbergPairing_symbol.map_mul_right a b d
 theorem symbol_eq_zero_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) : symbol a b = 0 :=
   isSteinbergPairing_symbol.steinberg a b h
@@ -224,13 +207,13 @@ theorem symbol_eq_zero_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) : symbol 
   isSteinbergPairing_symbol.map_inv_left a b
 @[simp] theorem symbol_inv_right (a b : Rˣ) : symbol a b⁻¹ = -symbol a b :=
   isSteinbergPairing_symbol.map_inv_right a b
-theorem symbol_pow_left (a b : Rˣ) (n : ℕ) : symbol (a ^ n) b = n • symbol a b :=
+@[simp] theorem symbol_pow_left (a b : Rˣ) (n : ℕ) : symbol (a ^ n) b = n • symbol a b :=
   isSteinbergPairing_symbol.map_pow_left a b n
-theorem symbol_pow_right (a b : Rˣ) (n : ℕ) : symbol a (b ^ n) = n • symbol a b :=
+@[simp] theorem symbol_pow_right (a b : Rˣ) (n : ℕ) : symbol a (b ^ n) = n • symbol a b :=
   isSteinbergPairing_symbol.map_pow_right a b n
-theorem symbol_zpow_left (a b : Rˣ) (n : ℤ) : symbol (a ^ n) b = n • symbol a b :=
+@[simp] theorem symbol_zpow_left (a b : Rˣ) (n : ℤ) : symbol (a ^ n) b = n • symbol a b :=
   isSteinbergPairing_symbol.map_zpow_left a b n
-theorem symbol_zpow_right (a b : Rˣ) (n : ℤ) : symbol a (b ^ n) = n • symbol a b :=
+@[simp] theorem symbol_zpow_right (a b : Rˣ) (n : ℤ) : symbol a (b ^ n) = n • symbol a b :=
   isSteinbergPairing_symbol.map_zpow_right a b n
 
 section FieldSymbols
@@ -298,9 +281,6 @@ def lift : SymbolGroup R →ₗ[ℤ] A :=
   exact (Submodule.liftQ_apply (steinbergRelations R) _ _).trans (TensorProduct.lift.tmul _ _)
 theorem lift_unique (f : SymbolGroup R →ₗ[ℤ] A) (hf : ∀ a b : Rˣ, f (symbol a b) = c a b) :
     f = lift c hc := hom_ext fun a b => (hf a b).trans (lift_symbol c hc a b).symm
-theorem lift_toAddMonoidHom_unique (f : SymbolGroup R →+ A)
-    (hf : ∀ a b : Rˣ, f (symbol a b) = c a b) : f = (lift c hc).toAddMonoidHom :=
-  addMonoidHom_ext fun a b => (hf a b).trans (lift_symbol c hc a b).symm
 end Lift
 
 /-- Equivalence between Steinberg pairings `Rˣ → Rˣ → A` and `ℤ`-linear maps
@@ -317,19 +297,6 @@ def liftEquiv : {c : Rˣ → Rˣ → A // IsSteinbergPairing c} ≃ (SymbolGroup
 @[simp] theorem liftEquiv_symm_apply_val (f : SymbolGroup R →ₗ[ℤ] A) (a b : Rˣ) :
     (liftEquiv.symm f).val a b = f (symbol a b) := by rfl
 
-/-- Equivalence between Steinberg pairings `Rˣ → Rˣ → A` and additive homomorphisms
-`SymbolGroup R →+ A`. -/
-def liftAddMonoidHomEquiv : {c : Rˣ → Rˣ → A // IsSteinbergPairing c} ≃ (SymbolGroup R →+ A) where
-  toFun c := (lift c.val c.property).toAddMonoidHom
-  invFun f := ⟨fun a b => f (symbol a b), isSteinbergPairing_symbol.comp_addMonoidHom f⟩
-  left_inv c := Subtype.ext (funext fun a => funext fun b => lift_symbol c.val c.property a b)
-  right_inv f := (lift_toAddMonoidHom_unique _ _ f fun _ _ => rfl).symm
-
-@[simp] theorem liftAddMonoidHomEquiv_apply (c : {c : Rˣ → Rˣ → A // IsSteinbergPairing c}) :
-    liftAddMonoidHomEquiv c = (lift c.val c.property).toAddMonoidHom := by rfl
-@[simp] theorem liftAddMonoidHomEquiv_symm_apply_val (f : SymbolGroup R →+ A) (a b : Rˣ) :
-    (liftAddMonoidHomEquiv.symm f).val a b = f (symbol a b) := by rfl
-
 end Universal
 
 /-- Functorial map on `SymbolGroup` induced by a ring homomorphism `f : R →+* S`. -/
@@ -344,8 +311,9 @@ def map {S : Type*} [CommSemiring S] (f : R →+* S) : SymbolGroup R →ₗ[ℤ]
 @[simp] theorem map_comp {S T : Type*} [CommSemiring S] [CommSemiring T] (g : S →+* T)
     (f : R →+* S) : map (g.comp f) = (map g).comp (map f) :=
   hom_ext fun a b => by
-    simp only [LinearMap.comp_apply, map_symbol]
-    rfl
+    have hcomp : (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
+      MonoidHom.ext fun x => RingHom.comp_apply g f x
+    simp only [LinearMap.comp_apply, map_symbol, hcomp, Units.map_comp, MonoidHom.comp_apply]
 
 end SymbolGroup
 

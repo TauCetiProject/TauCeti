@@ -83,13 +83,13 @@ theorem ofUnitHom_apply (u : Additive Rˣ) : ofUnitHom R u = ofUnit (Additive.to
     quotient R (TensorAlgebra.ι ℤ u) = ofUnit (Additive.toMul u) := by rfl
 @[simp] theorem ofUnit_one : ofUnit (1 : Rˣ) = 0 := by
   rw [← ofUnitHom_ofMul, ofMul_one, map_zero]
-theorem ofUnit_mul (a b : Rˣ) : ofUnit (a * b) = ofUnit a + ofUnit b := by
+@[simp] theorem ofUnit_mul (a b : Rˣ) : ofUnit (a * b) = ofUnit a + ofUnit b := by
   rw [← ofUnitHom_ofMul, ofMul_mul, map_add, ofUnitHom_ofMul, ofUnitHom_ofMul]
 @[simp] theorem ofUnit_inv (a : Rˣ) : ofUnit a⁻¹ = -ofUnit a := by
   rw [← ofUnitHom_ofMul, ofMul_inv, map_neg, ofUnitHom_ofMul]
-theorem ofUnit_pow (a : Rˣ) (n : ℕ) : ofUnit (a ^ n) = n • ofUnit a := by
+@[simp] theorem ofUnit_pow (a : Rˣ) (n : ℕ) : ofUnit (a ^ n) = n • ofUnit a := by
   rw [← ofUnitHom_ofMul, ofMul_pow, map_nsmul, ofUnitHom_ofMul]
-theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a := by
+@[simp] theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a := by
   rw [← ofUnitHom_ofMul, ofMul_zpow, map_zsmul, ofUnitHom_ofMul]
 
 end Semiring
@@ -115,8 +115,6 @@ theorem ofUnit_mul_ofUnit_eq_zero {a b : Rˣ} (h : (a : R) + b = 1) : ofUnit a *
 /-- The degree-two product `(a, b) ↦ ofUnit a * ofUnit b` is a Steinberg pairing. -/
 theorem isSteinbergPairing_ofUnit_mul :
     IsSteinbergPairing (fun a b : Rˣ => ofUnit a * ofUnit b) where
-  map_one_left _ := by simp
-  map_one_right _ := by simp
   map_mul_left _ _ _ := by rw [ofUnit_mul, add_mul]
   map_mul_right _ _ _ := by rw [ofUnit_mul, mul_add]
   steinberg _ _ h := ofUnit_mul_ofUnit_eq_zero h
@@ -130,12 +128,12 @@ theorem symbol_def (l : List Rˣ) : symbol l = (l.map ofUnit).prod := by rfl
 @[simp] theorem symbol_nil : symbol ([] : List Rˣ) = 1 := by rfl
 @[simp] theorem symbol_cons (a : Rˣ) (l : List Rˣ) : symbol (a :: l) = ofUnit a * symbol l := by
   simp [symbol_def]
-theorem symbol_append (l₁ l₂ : List Rˣ) : symbol (l₁ ++ l₂) = symbol l₁ * symbol l₂ := by
+@[simp] theorem symbol_append (l₁ l₂ : List Rˣ) : symbol (l₁ ++ l₂) = symbol l₁ * symbol l₂ := by
   simp [symbol_def]
 theorem symbol_mul_middle (l₁ : List Rˣ) (a b : Rˣ) (l₂ : List Rˣ) :
     symbol (l₁ ++ (a * b) :: l₂) = symbol (l₁ ++ a :: l₂) + symbol (l₁ ++ b :: l₂) := by
   simp only [symbol_append, symbol_cons, ofUnit_mul, add_mul, mul_add]
-@[simp] theorem symbol_one_middle (l₁ l₂ : List Rˣ) : symbol (l₁ ++ 1 :: l₂) = 0 := by
+theorem symbol_one_middle (l₁ l₂ : List Rˣ) : symbol (l₁ ++ 1 :: l₂) = 0 := by
   simp [symbol_append]
 theorem symbol_inv_middle (l₁ : List Rˣ) (a : Rˣ) (l₂ : List Rˣ) :
     symbol (l₁ ++ a⁻¹ :: l₂) = -symbol (l₁ ++ a :: l₂) := by
@@ -268,7 +266,10 @@ def map {S : Type*} [CommSemiring S] (f : R →+* S) : MilnorK R →+* MilnorK S
 @[simp] theorem map_id : map (RingHom.id R) = RingHom.id (MilnorK R) := ringHom_ext fun _ => by simp
 @[simp] theorem map_comp {S T : Type*} [CommSemiring S] [CommSemiring T] (g : S →+* T)
     (f : R →+* S) : map (g.comp f) = (map g).comp (map f) :=
-  ringHom_ext fun _ => by simp only [RingHom.comp_apply, map_ofUnit]; congr 1
+  ringHom_ext fun _ => by
+    have hcomp : (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
+      MonoidHom.ext fun x => RingHom.comp_apply g f x
+    simp only [RingHom.comp_apply, map_ofUnit, hcomp, Units.map_comp, MonoidHom.comp_apply]
 
 end
 
