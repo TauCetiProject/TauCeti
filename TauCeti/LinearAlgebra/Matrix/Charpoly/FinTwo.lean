@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
 
 /-!
-# The homogeneous characteristic form of a `2 × 2` matrix
+# The characteristic polynomial of a `2 × 2` matrix
 
 Mathlib's `Matrix.charpoly_fin_two` records the characteristic polynomial of a `2 × 2` matrix as
 `X ^ 2 - C M.trace * X + C M.det`. This file records the *homogeneous* two-variable form of the
@@ -21,16 +21,17 @@ same fact, evaluated directly as a determinant rather than through `Polynomial`:
 The two are close. Applying `charpoly_fin_two` to `r • M`, evaluating at `s` with
 `Matrix.eval_charpoly`, and simplifying the resulting `Matrix.trace_smul` and `Matrix.det_smul`
 does prove the identity below — in about twice the lines, and only over a `[Nontrivial R]`, which
-`charpoly_fin_two` requires and the statement here does not. What this file adds is therefore the
-*name* and the `Polynomial`-free form: an equation between two ring elements over any `CommRing`,
-which is the shape a caller with matrix data in hand wants to rewrite with.
-
-Conversely, the characteristic polynomial of a `2 × 2` matrix is determined by its trace and
-determinant, which its coefficients recover over any commutative ring.
+`charpoly_fin_two` requires and the statement here does not. For this identity, what the file
+adds is therefore the *name* and the `Polynomial`-free form: an equation between two ring elements
+over any `CommRing`, which is the shape a caller with matrix data in hand wants to rewrite with.
 
 Read as a binary quadratic form in `(r, s)`, the right-hand side has leading coefficient `M.det`,
 middle coefficient `-M.trace` and constant coefficient `1`, so its discriminant is
 `M.trace ^ 2 - 4 * M.det` — which is Mathlib's `Matrix.discr` by `Matrix.discr_fin_two`.
+
+Conversely, the characteristic polynomial itself is determined by the trace and determinant, which
+its coefficients recover over any commutative ring. This file states that as an equivalence between
+equal characteristic polynomials and equal (trace, determinant), with no `[Nontrivial R]`.
 
 ## Main results
 
