@@ -205,6 +205,12 @@ theorem pglEquivIsometryEquiv_apply (c : PGL(2, ℝ)) (z : ℍ) :
     pglEquivIsometryEquiv c z = c • z := by
   simp [pglEquivIsometryEquiv]
 
+/-- The inverse of the isometry `pglEquivIsometryEquiv c` is the action of `c⁻¹` on `ℍ`. -/
+@[simp]
+theorem pglEquivIsometryEquiv_symm_apply (c : PGL(2, ℝ)) (z : ℍ) :
+    (pglEquivIsometryEquiv c).symm z = c⁻¹ • z := by
+  rw [IsometryEquiv.symm_apply_eq, pglEquivIsometryEquiv_apply, smul_inv_smul]
+
 /-- The element of `PGL(2, ℝ)` attached to an isometry acts on `ℍ` as that isometry. -/
 @[simp]
 theorem pglEquivIsometryEquiv_symm_smul (f : ℍ ≃ᵢ ℍ) (z : ℍ) :
