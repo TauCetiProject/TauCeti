@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Dynamics.Billiard.Inverse
 public import TauCeti.Dynamics.Billiard.PeriodicPolygon
+public import TauCeti.Dynamics.Billiard.RotationNumber
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Order.Filter.Extr
 import TauCeti.Topology.Circle.Metric
@@ -23,13 +26,17 @@ The circle of radius `R > 0` about the origin of `ℂ`, parametrized countercloc
 `χ(s) = R e^{i s / R}` with length `L = 2 π R`, is a strictly convex billiard table
 (`TauCeti.StrictConvexBilliardTable.circle`). Its dynamics is explicit, and this file computes it
 as a test of the general billiard API of `TauCeti.Dynamics.Billiard.NextCollision`,
-`TauCeti.Dynamics.Billiard.Inverse` and `TauCeti.Dynamics.Billiard.PeriodicPolygon`.
+`TauCeti.Dynamics.Billiard.Inverse`, `TauCeti.Dynamics.Billiard.PeriodicPolygon` and
+`TauCeti.Dynamics.Billiard.RotationNumber`.
 
 * **The billiard map.** A ball leaving `χ(s)` with tangential component `v = cos α`, `0 < α < π`,
   travels along the chord subtending the arc `2 α` and leaves the next collision point with the same
   tangential component, so the billiard map on `AddCircle L × (-1, 1)` is the rotation
   `β(s, v) = (s + 2 R arccos v mod L, v)`
   (`TauCeti.StrictConvexBilliardTable.billiardMap_circle_coe`).
+* **Rotation numbers.** The constant graphs `v = cos α` are invariant graphs of the billiard map
+  (`TauCeti.StrictConvexBilliardTable.isInvariantGraph_circle`) with rotation number `α / π`
+  (`TauCeti.StrictConvexBilliardTable.rotationNumber_circle`).
 * **Periodic states.** A state returns after `n` bounces exactly when `n arccos v` is a multiple of
   `π` (`TauCeti.StrictConvexBilliardTable.isPeriodicPt_billiardMap_circle_iff`), so the periodic
   states are those whose angle `arccos v` is a rational multiple of `π`
@@ -153,6 +160,12 @@ theorem circle_apply (s : ℝ) : circle hR s = circleMap 0 R (s / R) :=
 @[simp]
 theorem period_circle : (circle hR).period = 2 * π * R :=
   (rfl)
+
+/-- The parametrization `s ↦ R e^{i s / R}` of the circular table is smooth. -/
+theorem contDiff_circle {n : WithTop ℕ∞} : ContDiff ℝ n (circle hR) := by
+  convert (contDiff_circleMap 0 R).comp (contDiff_id.div_const R) using 1
+  funext s
+  exact circle_apply s
 
 /-- The unit tangent of the circle table at `χ(s)` is `i e^{i s / R}`. -/
 @[simp]
@@ -502,6 +515,38 @@ theorem isMaxOn_inscribedPerimeter_circle_iff_add_add_eq_zero {s : ZMod 3 → �
   rw [isMaxOn_univ_iff_eq
       (inscribedPerimeter_le_three_mul_sqrt_three fun t ↦ (norm_circle t).le) hd,
     inscribedPerimeter_eq_three_mul_sqrt_three_iff norm_circle]
+
+/-! ### Rotation numbers -/
+
+section RotationNumber
+
+variable (hR)
+
+/-- On the circular table every constant graph `v = c`, `c ∈ (-1, 1)`, is invariant. -/
+theorem isInvariantGraph_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
+    (circle hR).IsInvariantGraph fun _ ↦ c where
+  continuous := continuous_const
+  periodic _ := rfl
+  mem_Ioo _ := hc
+  nextTangential_eq s := nextTangential_circle hc s
+
+/-- **The rotation numbers of the circular table.** The constant graph `v = cos α`, `α ∈ (0, π)`,
+of the circular table has rotation number `α / π`. -/
+@[simp]
+theorem rotationNumber_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
+    (isInvariantGraph_circle hR hc).rotationNumber contDiff_circle =
+      Real.arccos c / Real.pi := by
+  have : (isInvariantGraph_circle hR hc).circleLift contDiff_circle =
+      (CircleDeg1Lift.translate (Multiplicative.ofAdd (Real.arccos c / Real.pi)) :
+        CircleDeg1Lift) :=
+    CircleDeg1Lift.ext fun x ↦ by
+      rw [IsInvariantGraph.circleLift_apply, graphLift_def, nextParam_circle hc,
+        CircleDeg1Lift.translate_apply, period_circle]
+      field_simp
+      ring
+  rw [IsInvariantGraph.rotationNumber_def, this, CircleDeg1Lift.translationNumber_translate]
+
+end RotationNumber
 
 end StrictConvexBilliardTable
 
