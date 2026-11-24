@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Exhaustion
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.SublevelTopology
+public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Topology
 import TauCeti.Geometry.Manifold.Sard.Basic
 
 /-!
