@@ -29,12 +29,13 @@ be used wherever a probability law is expected, that pulling a left- or right-in
 back along a group homomorphism, in particular to a subgroup, keeps it left- or right-invariant
 without any measurability hypotheses (for subgroups as typeclass instances), and that restricting
 an inversion-invariant measure to a symmetric set, or weighting it by an even density, keeps it
-inversion-invariant. Finally, for an inner regular measure whose right translations are
-quasi-measure-preserving—in particular any inner regular Haar measure on a locally compact
-group—if an open set `U` lies up to a null set inside a null-measurable set `V` satisfying
-`V * s ⊆ V`, then `U * s` (such as the subgroup saturation
-`(QuotientGroup.mk : G → G ⧸ N) ⁻¹' (QuotientGroup.mk '' U) = U * N`) also lies in `V` up to a
-null set.
+inversion-invariant. A surjective homomorphism onto a finite group with measurable kernel splits
+a left-invariant measure evenly among its fibres, the translates of the kernel. Finally, for an
+inner regular measure whose right translations are quasi-measure-preserving—in particular any
+inner regular Haar measure on a locally compact group—if an open set `U` lies up to a null set
+inside a null-measurable set `V` satisfying `V * s ⊆ V`, then `U * s` (such as the subgroup
+saturation `(QuotientGroup.mk : G → G ⧸ N) ⁻¹' (QuotientGroup.mk '' U) = U * N`) also lies in `V`
+up to a null set.
 
 ## Main results
 
@@ -67,6 +68,9 @@ null set.
   addition) by `s`, then `μ ((U * s) \ V) = 0` (or `μ ((U + s) \ V) = 0`) for any inner regular
   measure with quasi-measure-preserving right translations, and in particular for any inner
   regular Haar measure on a locally compact group.
+* `measure_preimage_monoidHom`, `measure_preimage_addMonoidHom`: for a surjective homomorphism
+  `φ : G → F` onto a finite group with measurable kernel and a left-invariant measure `μ` on `G`,
+  the preimage of `T ⊆ F` has measure `#T / #F · μ G`.
 -/
 
 public section
@@ -286,6 +290,48 @@ theorem isInvInvariant_withDensity [μ.IsInvInvariant] {f : G → ℝ≥0∞} (h
 end InvolutiveInv
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- **Measure of a preimage under a homomorphism onto a finite group.** If `φ : G →* F` is
+surjective onto a finite group and has measurable kernel, then for every left-invariant measure `μ`
+on `G` the preimage of `T ⊆ F` has measure `#T / #F · μ univ`: the fibres of `φ` are the
+translates of its kernel, which all have the same measure. -/
+@[to_additive /-- **Measure of a preimage under an additive homomorphism onto a finite group.** If
+`φ : G →+ F` is surjective onto a finite group and has measurable kernel, then for every
+left-invariant measure `μ` on `G` the preimage of `T ⊆ F` has measure `#T / #F · μ univ`: the
+fibres of `φ` are the translates of its kernel, which all have the same measure. -/]
+theorem measure_preimage_monoidHom {G F : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+    [Group F] [Finite F] (μ : Measure G) [μ.IsMulLeftInvariant] (φ : G →* F)
+    (hφ : Function.Surjective φ) (hker : MeasurableSet (φ.ker : Set G)) (T : Set F) :
+    μ (φ ⁻¹' T) = Nat.card T / Nat.card F * μ univ := by
+  classical
+  have : Fintype F := Fintype.ofFinite F
+  have hfib (t : F) : ∃ a, φ ⁻¹' {t} = (fun h => a⁻¹ * h) ⁻¹' (φ.ker : Set G) := by
+    obtain ⟨a, rfl⟩ := hφ t
+    exact ⟨a, by ext x; simp only [mem_preimage, mem_singleton_iff, SetLike.mem_coe,
+      MonoidHom.mem_ker, map_mul, map_inv, inv_mul_eq_one]; exact eq_comm⟩
+  have hfibm (t : F) : MeasurableSet (φ ⁻¹' {t}) := by
+    obtain ⟨a, ha⟩ := hfib t
+    rw [ha]
+    exact hker.preimage (measurable_const_mul _)
+  have hfibμ (t : F) : μ (φ ⁻¹' {t}) = μ φ.ker := by
+    obtain ⟨a, ha⟩ := hfib t
+    rw [ha, measure_preimage_mul]
+  have hpre (S : Set F) : μ (φ ⁻¹' S) = Nat.card S * μ φ.ker := by
+    have hS : φ ⁻¹' S = ⋃ t ∈ S.toFinset, φ ⁻¹' {t} := by ext; simp
+    rw [hS, measure_biUnion_finset (fun s _ t _ hst => (disjoint_singleton.2 hst).preimage φ)
+      fun t _ => hfibm t]
+    simp [hfibμ]
+  have hindex : φ.ker.index = Nat.card F := by
+    rw [Subgroup.index_ker, MonoidHom.range_eq_top.2 hφ, Subgroup.card_top]
+  have : φ.ker.FiniteIndex := ⟨by rw [hindex]; exact Nat.card_pos.ne'⟩
+  have huniv := Subgroup.index_mul_measure φ.ker hker μ
+  rw [hindex] at huniv
+  have hF0 : (Nat.card F : ℝ≥0∞) ≠ 0 := by exact_mod_cast Nat.card_pos.ne'
+  rw [hpre, ← huniv, ← mul_assoc, ENNReal.div_mul_cancel hF0 (ENNReal.natCast_ne_top _)]
+
+end MeasureTheory
 
 section MulSdiff
 
