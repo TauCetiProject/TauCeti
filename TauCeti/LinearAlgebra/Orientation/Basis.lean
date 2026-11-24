@@ -206,12 +206,12 @@ theorem Orientation.signBasis_mul_units_mul_det_pos
 @[simp]
 theorem TauCeti.orientation_basisSingleton_neg {R V ι : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] [AddCommGroup V] [Module R V] [Unique ι] [Fintype ι] [DecidableEq ι]
-    (hV : Module.finrank R V = 1) {v : V} (hv : v ≠ 0) :
-    (FiniteDimensional.basisSingleton ι hV (-v) (neg_ne_zero.2 hv)).orientation =
-      -(FiniteDimensional.basisSingleton ι hV v hv).orientation := by
+    (hV : Module.finrank R V = 1) {v : V} (hv : -v ≠ 0) :
+    (FiniteDimensional.basisSingleton ι hV (-v) hv).orientation =
+      -(FiniteDimensional.basisSingleton ι hV v (neg_ne_zero.1 hv)).orientation := by
   -- The basis `(-v)` is the basis `(v)` with its vector multiplied by the unit `-1`.
   convert Module.Basis.orientation_neg_single
-    (FiniteDimensional.basisSingleton ι hV v hv) default using 2
+    (FiniteDimensional.basisSingleton ι hV v (neg_ne_zero.1 hv)) default using 2
   refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
   rw [Module.Basis.unitsSMul_apply, Unique.eq_default i, Function.update_self]
   simp [FiniteDimensional.basisSingleton_apply]

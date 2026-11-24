@@ -85,5 +85,5 @@ theorem TauCeti.eq_of_orientation_basisSingleton_eq {V ι : Type*} [NormedAddCom
     w = v := by
   refine (eq_or_eq_neg_of_norm_eq_of_finrank_eq_one hV hn).resolve_right fun hwv ↦ ?_
   subst hwv
-  rw [TauCeti.orientation_basisSingleton_neg hV hv] at h
+  rw [TauCeti.orientation_basisSingleton_neg hV hw] at h
   exact Module.Ray.ne_neg_self _ h.symm

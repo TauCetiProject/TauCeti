@@ -196,9 +196,58 @@ theorem nonempty_vectorBundleOrientation_of_continuous {f : K} (hf : ContMDiff I
   exact ⟨VectorBundleOrientation.ofContinuousNonvanishingSection
     (fun x ↦ finrank_orthogonalNormalSpace_eq_one (hinj x) hr) hσ hne⟩
 
+/-- Near a point `x₀`, the unit normal vectors `w x` that are positive for an orientation `o` of
+`ν_f` are the values of a local unit normal field `τ` whose value at `x₀` is positive for `o x₀`:
+the set where `τ x` is positive for `o x` is open. -/
+private theorem eventually_eq_of_orientation {f : K} (hf : ContMDiff I J n f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n)
+    (hr : finrank ℝ V = finrank ℝ E + 1) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    ∀ (o : VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) (Fin 1))
+      (w : ∀ x, orthogonalNormalSpace I J f x) (hw₀ : ∀ x, w x ≠ 0), (∀ x, ‖w x‖ = 1) →
+      (∀ x, (FiniteDimensional.basisSingleton (Fin 1)
+        (finrank_orthogonalNormalSpace_eq_one (hinj x) hr) (w x) (hw₀ x)).orientation = o x) →
+      ∀ {U : Set M} {τ : ∀ x, TangentSpace J (f x)} {x₀ : M}, IsOpen U → x₀ ∈ U →
+      ContMDiffOn I (I.prod 𝓘(ℝ, V)) m
+        (fun x ↦ (⟨x, τ x⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) U →
+      (∀ x, τ x ∈ orthogonalNormalSpace I J f x) → (∀ x ∈ U, ‖τ x‖ = 1) →
+      ∀ (v : orthogonalNormalSpace I J f x₀) (hv : v ≠ 0), (v : TangentSpace J (f x₀)) = τ x₀ →
+      (FiniteDimensional.basisSingleton (Fin 1)
+        (finrank_orthogonalNormalSpace_eq_one (hinj x₀) hr) v hv).orientation = o x₀ →
+      ∀ᶠ x in 𝓝 x₀, (w x : TangentSpace J (f x)) = τ x := by
+  let := orthogonalNormalFiberBundle hf hinj hm hr
+  let := orthogonalNormalVectorBundle hf hinj hm hr
+  intro o w hw₀ hw₁ hwo U τ x₀ hU hx₀ hτ hτf hτ₁ v hv hvτ hvo
+  obtain rfl : v = ⟨τ x₀, hτf x₀⟩ := Subtype.ext hvτ
+  have hline (x : M) := finrank_orthogonalNormalSpace_eq_one (hinj x) hr
+  have hτ₀ {x : M} (hx : x ∈ U) : (⟨τ x, hτf x⟩ : orthogonalNormalSpace I J f x) ≠ 0 :=
+    norm_ne_zero_iff.1 ((hτ₁ x hx).trans_ne one_ne_zero)
+  -- The orientations given by `τ` on `U`, as a continuous map into the orientation cover.
+  let g : U → VectorBundleOrientationCover (Fin 1 → ℝ)
+      (fun x ↦ orthogonalNormalSpace I J f x) (Fin 1) := fun x ↦
+    ⟨x, (FiniteDimensional.basisSingleton (Fin 1) (hline x) _ (hτ₀ x.property)).orientation⟩
+  have hg : Continuous g := by
+    have hσ : ContinuousOn (fun x ↦ (⟨x, ⟨τ x, hτf x⟩⟩ :
+        TotalSpace (Fin 1 → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) U :=
+      ((contMDiffOn_orthogonalNormalSpace_mk_iff hf hinj hm hr le_rfl (b := id) (w := τ)
+        hτf).2 hτ).continuousOn
+    exact VectorBundleOrientationCover.continuous_mk_basis_orientation continuous_subtypeVal
+      _ fun i ↦ by
+        simp only [FiniteDimensional.basisSingleton_apply]
+        exact continuousOn_iff_continuous_domRestrict.1 hσ
+  have hA := (VectorBundleOrientation.isOpen_setOf_orientation_eq o).preimage hg
+  filter_upwards [(hU.isOpenMap_subtypeVal _ hA).mem_nhds ⟨⟨x₀, hx₀⟩,
+    by simpa only [mem_preimage, mem_ofPred_eq, g] using hvo, rfl⟩]
+  rintro _ ⟨x, hx, rfl⟩
+  simp only [mem_preimage, mem_ofPred_eq, g] at hx
+  exact congrArg Subtype.val (eq_of_orientation_basisSingleton_eq (hline x)
+    ((hw₁ x).trans (hτ₁ x x.property).symm) (hτ₀ x.property) (hw₀ x)
+    ((hwo x).trans hx.symm))
+
 /-- Near a point, the unit normal vectors `w x` that are positive for an orientation `o` of
-`ν_f` are the values of a local unit normal field `τ`, or their opposites: the set where `τ x` is
-positive for `o x`, and the set where `-τ x` is, are open. -/
+`ν_f` are the values of a local unit normal field `τ`, or their opposites, according to the
+orientation given by `τ` where it is read. -/
 private theorem eventually_eq_or_eq_neg_of_orientation {f : K} (hf : ContMDiff I J n f)
     (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n)
     (hr : finrank ℝ V = finrank ℝ E + 1) :
@@ -217,45 +266,15 @@ private theorem eventually_eq_or_eq_neg_of_orientation {f : K} (hf : ContMDiff I
   let := orthogonalNormalFiberBundle hf hinj hm hr
   let := orthogonalNormalVectorBundle hf hinj hm hr
   intro o w hw₀ hw₁ hwo U τ x₀ hU hx₀ hτ hτf hτ₁
-  have hline (x : M) := finrank_orthogonalNormalSpace_eq_one (hinj x) hr
-  have hτ₀ {x : M} (hx : x ∈ U) : (⟨τ x, hτf x⟩ : orthogonalNormalSpace I J f x) ≠ 0 :=
-    norm_ne_zero_iff.1 ((hτ₁ x hx).trans_ne one_ne_zero)
-  -- The orientations given by `τ` on `U`, as a continuous map into the orientation cover.
-  let g : U → VectorBundleOrientationCover (Fin 1 → ℝ)
-      (fun x ↦ orthogonalNormalSpace I J f x) (Fin 1) := fun x ↦
-    ⟨x, (FiniteDimensional.basisSingleton (Fin 1) (hline x) _ (hτ₀ x.property)).orientation⟩
-  have hg : Continuous g := by
-    have hσ : ContinuousOn (fun x ↦ (⟨x, ⟨τ x, hτf x⟩⟩ :
-        TotalSpace (Fin 1 → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) U :=
-      ((contMDiffOn_orthogonalNormalSpace_mk_iff hf hinj hm hr le_rfl (b := id) (w := τ)
-        hτf).2 hτ).continuousOn
-    exact VectorBundleOrientationCover.continuous_mk_basis_orientation continuous_subtypeVal
-      _ fun i ↦ by
-        simp only [FiniteDimensional.basisSingleton_apply]
-        exact continuousOn_iff_continuous_domRestrict.1 hσ
-  have hA := (VectorBundleOrientation.isOpen_setOf_orientation_eq o).preimage hg
-  have hB := ((VectorBundleOrientation.isOpen_setOf_orientation_eq o).preimage
-    VectorBundleOrientationCover.deck.continuous).preimage hg
-  rcases Module.Basis.orientation_eq_or_eq_neg
-    (FiniteDimensional.basisSingleton (Fin 1) (hline x₀) _ (hτ₀ hx₀)) (o x₀) with h | h
-  · refine .inl ?_
-    filter_upwards [(hU.isOpenMap_subtypeVal _ hA).mem_nhds ⟨⟨x₀, hx₀⟩,
-      by simpa only [mem_preimage, mem_ofPred_eq, g] using h.symm, rfl⟩]
-    rintro _ ⟨x, hx, rfl⟩
-    simp only [mem_preimage, mem_ofPred_eq, g] at hx
-    exact congrArg Subtype.val (eq_of_orientation_basisSingleton_eq (hline x)
-      ((hw₁ x).trans (hτ₁ x x.property).symm) (hτ₀ x.property) (hw₀ x)
-      ((hwo x).trans hx.symm))
-  · refine .inr ?_
-    filter_upwards [(hU.isOpenMap_subtypeVal _ hB).mem_nhds ⟨⟨x₀, hx₀⟩,
-      by simpa only [mem_preimage, mem_ofPred_eq, g, VectorBundleOrientationCover.deck_apply]
-        using h.symm, rfl⟩]
-    rintro _ ⟨x, hx, rfl⟩
-    simp only [mem_preimage, mem_ofPred_eq, g, VectorBundleOrientationCover.deck_apply] at hx
-    rw [← orientation_basisSingleton_neg] at hx
-    exact congrArg Subtype.val (eq_of_orientation_basisSingleton_eq (hline x)
-      ((hw₁ x).trans ((norm_neg _).trans (hτ₁ x x.property)).symm) _ (hw₀ x)
-      ((hwo x).trans hx.symm))
+  have hv : (⟨τ x₀, hτf x₀⟩ : orthogonalNormalSpace I J f x₀) ≠ 0 :=
+    norm_ne_zero_iff.1 ((hτ₁ x₀ hx₀).trans_ne one_ne_zero)
+  rcases Module.Basis.orientation_eq_or_eq_neg (FiniteDimensional.basisSingleton (Fin 1)
+    (finrank_orthogonalNormalSpace_eq_one (hinj x₀) hr) _ hv) (o x₀) with h | h
+  · exact .inl (eventually_eq_of_orientation hf hinj hm hr o w hw₀ hw₁ hwo hU hx₀ hτ hτf hτ₁ _ hv
+      rfl h.symm)
+  · exact .inr (eventually_eq_of_orientation hf hinj hm hr o w hw₀ hw₁ hwo hU hx₀
+      hτ.neg_section (fun x ↦ neg_mem (hτf x)) (fun x hx ↦ (norm_neg _).trans (hτ₁ x hx)) _
+      (neg_ne_zero.2 hv) (Submodule.coe_neg _ _) (by rw [orientation_basisSingleton_neg, h]))
 
 /-- An orientation of the normal bundle `ν_f` of an immersion of codimension one gives a `C^m`
 unit normal field: at `x`, the unit vector of `ν_f x` that is positive for the orientation.
@@ -305,6 +324,20 @@ theorem isTwoSidedHypersurface_of_vectorBundleOrientation {f : K} (hf : ContMDif
         congrArg (fun v ↦ (⟨x, v⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) hx)
   exact (Pullback.contMDiffAt_lift (E := TangentSpace J) f (hf' x₀)).comp x₀ hsec
 
+/-- A continuous unit normal field of an immersion of codimension one orients its normal bundle
+`ν_f`. -/
+private theorem nonempty_vectorBundleOrientation_of_unit {f : K} (hf : ContMDiff I J n f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n)
+    (hr : finrank ℝ V = finrank ℝ E + 1) {ν : ∀ x, TangentSpace J (f x)}
+    (hν : Continuous fun x ↦ (⟨f x, ν x⟩ : TangentBundle J N))
+    (hν' : ∀ x, ‖ν x‖ = 1 ∧ ν x ∈ orthogonalNormalSpace I J f x) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    Nonempty (VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ orthogonalNormalSpace I J f x)
+      (Fin 1)) :=
+  nonempty_vectorBundleOrientation_of_continuous hf hinj hm hr hν
+    (fun x ↦ norm_ne_zero_iff.1 ((hν' x).1.trans_ne one_ne_zero)) fun x ↦ (hν' x).2
+
 /-- **Two-sidedness is orientability of the normal bundle.** An immersion of codimension one is
 two-sided, with a `C^m` unit normal field, exactly when its normal bundle `ν_f` is orientable. -/
 theorem isTwoSidedHypersurface_iff_nonempty_vectorBundleOrientation {f : K}
@@ -315,8 +348,7 @@ theorem isTwoSidedHypersurface_iff_nonempty_vectorBundleOrientation {f : K}
     IsTwoSidedHypersurface I J m f ↔
       Nonempty (VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ orthogonalNormalSpace I J f x)
         (Fin 1)) :=
-  ⟨fun ⟨_, hν, hν'⟩ ↦ nonempty_vectorBundleOrientation_of_continuous hf hinj hm hr hν.continuous
-    (fun x ↦ norm_ne_zero_iff.1 ((hν' x).1.trans_ne one_ne_zero)) fun x ↦ (hν' x).2,
+  ⟨fun ⟨_, hν, hν'⟩ ↦ nonempty_vectorBundleOrientation_of_unit hf hinj hm hr hν.continuous hν',
     fun ⟨o⟩ ↦ isTwoSidedHypersurface_of_vectorBundleOrientation hf hinj hm hr o⟩
 
 /-- **A continuous unit normal field can be made smooth.** An immersion of codimension one with a
@@ -330,8 +362,7 @@ theorem isTwoSidedHypersurface_iff_exists_continuous {f : M → N} (hf : ContMDi
   refine ⟨fun ⟨ν, hν, hν'⟩ ↦ ⟨ν, hν.continuous, hν'⟩, fun ⟨ν, hν, hν'⟩ ↦ ?_⟩
   -- The normal bundle is built for a bundled continuous map.
   let g : C(M, N) := ⟨f, hf.continuous⟩
-  obtain ⟨o⟩ := nonempty_vectorBundleOrientation_of_continuous (f := g) hf hinj hm hr hν
-    (fun x ↦ norm_ne_zero_iff.1 ((hν' x).1.trans_ne one_ne_zero)) fun x ↦ (hν' x).2
+  obtain ⟨o⟩ := nonempty_vectorBundleOrientation_of_unit (f := g) hf hinj hm hr hν hν'
   exact isTwoSidedHypersurface_of_vectorBundleOrientation (f := g) hf hinj hm hr o
 
 end General
@@ -351,6 +382,17 @@ variable {E H G N K : Type*} {V M : Type u}
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)] [IsManifold J (m + 1) N]
   [FunLike K M N] [ContinuousMapClass K M N]
 
+omit [FiniteDimensional ℝ V] [IsManifold I 1 M] [IsManifold J (m + 1) N] [FunLike K M N]
+  [ContinuousMapClass K M N] in
+include m in
+/-- For a `C^m` metric, the fibre norm of the normal spaces of a map is continuous on their total
+space. -/
+private theorem continuous_norm_orthogonalNormalSpace_of_contMDiff (P : Type*) (f : M → N) :
+    Continuous fun v : TotalSpace P (fun x ↦ orthogonalNormalSpace I J f x) ↦ ‖v.snd‖ :=
+  have : IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := m)
+  continuous_norm_orthogonalNormalSpace P f
+
 /-- **The unit normal double cover.** The unit normal vectors of an immersion of codimension
 one, the unit sphere bundle `S(ν_f)` of its normal bundle, form a two-sheeted covering of the
 source. -/
@@ -362,9 +404,8 @@ theorem isCoveringMap_sphereBundleProj_orthogonalNormalSpace {f : K} (hf : ContM
     IsCoveringMap (sphereBundleProj (Fin 1 → ℝ) fun x ↦ orthogonalNormalSpace I J f x) := by
   let := orthogonalNormalFiberBundle hf hinj hm hr
   let := orthogonalNormalVectorBundle hf hinj hm hr
-  have : IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := m)
-  exact isCoveringMap_sphereBundleProj _ _ (continuous_norm_orthogonalNormalSpace _ f)
+  exact isCoveringMap_sphereBundleProj _ _
+    (continuous_norm_orthogonalNormalSpace_of_contMDiff (m := m) _ f)
     (Module.finrank_fin_fun ℝ)
 
 /-- An immersion of codimension one is two-sided exactly when its unit normal double cover
@@ -380,10 +421,8 @@ theorem isTwoSidedHypersurface_iff_exists_section_sphereBundle {f : K}
   let := orthogonalNormalFiberBundle hf hinj hm hr
   let := orthogonalNormalVectorBundle hf hinj hm hr
   rw [isTwoSidedHypersurface_iff_nonempty_vectorBundleOrientation hf hinj hm hr]
-  have : IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := m)
   exact nonempty_vectorBundleOrientation_iff_exists_section_sphereBundle
-    (continuous_norm_orthogonalNormalSpace _ f) (Module.finrank_fin_fun ℝ)
+    (continuous_norm_orthogonalNormalSpace_of_contMDiff (m := m) _ f) (Module.finrank_fin_fun ℝ)
 
 /-- An immersion of codimension one from a connected manifold is one-sided exactly when its unit
 normal double cover `S(ν_f)` is connected. -/
@@ -396,12 +435,10 @@ theorem not_isTwoSidedHypersurface_iff_connectedSpace_sphereBundle [ConnectedSpa
       ConnectedSpace (sphereBundle (Fin 1 → ℝ) (fun x ↦ orthogonalNormalSpace I J f x)) := by
   let := orthogonalNormalFiberBundle hf hinj hm hr
   let := orthogonalNormalVectorBundle hf hinj hm hr
-  have : IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := m)
   rw [isTwoSidedHypersurface_iff_nonempty_vectorBundleOrientation hf hinj hm hr, ← not_iff_not,
     not_not]
   exact nonempty_vectorBundleOrientation_iff_not_connectedSpace_sphereBundle
-    (continuous_norm_orthogonalNormalSpace _ f) (Module.finrank_fin_fun ℝ)
+    (continuous_norm_orthogonalNormalSpace_of_contMDiff (m := m) _ f) (Module.finrank_fin_fun ℝ)
 
 end SphereBundle
 
