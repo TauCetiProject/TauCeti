@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Wave.DAlembert
+public import TauCeti.Analysis.PDE.Wave.DAlembert.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Partial
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Calculus.Deriv.Second
@@ -28,8 +28,8 @@ The second term, `dAlembertDuhamel G`, superposes d'Alembert's formulas with zer
 velocity `G(s, ·)`, started at each time `s` (`TauCeti.PDE.dAlembertDuhamel_eq_integral_dAlembert`);
 it is the integral of `G / 2` over the characteristic triangle with apex `(t, x)` and base the
 interval between `x - t` and `x + t` at time `0`, for either sign of `t`. The conventions are
-those of `TauCeti.Analysis.PDE.Wave.DAlembert`: functions take the time first, take values in a
-real Banach space, and classical solutions are `C²` on the whole space-time plane.
+those of `TauCeti.Analysis.PDE.Wave.DAlembert.Basic`: functions take the time first, take values
+in a real Banach space, and classical solutions are `C²` on the whole space-time plane.
 
 * **Existence.** For `G` continuous with a continuous spatial derivative, `dAlembertDuhamel G` is
   `C²`, solves `∂ₜ²u = ∂ₓ²u + G` and has zero initial data; together with d'Alembert's formula it
@@ -48,7 +48,7 @@ real Banach space, and classical solutions are `C²` on the whole space-time pla
 Writing `P(s, z) = ∫_0^z G(s, y) dy`, Duhamel's formula is half the integral
 `∫_0^t (P(s, x + (t - s)) - P(s, x - (t - s))) ds` along the two characteristics through
 `(t, x)`. Both its integrand and its upper limit depend on `t`, and the Leibniz integral rule
-(`intervalIntegral.hasDerivAt_integral_of_hasDerivAt`) differentiates such integrals of the form
+(`intervalIntegral.hasDerivAt_parametric_primitive_comp`) differentiates such integrals of the form
 `∫_0^t (k(s, x + (t - s)) + c k(s, x - (t - s))) ds`. The derivatives are integrals of the same
 form, with `k` replaced by its spatial derivative and, in time, the boundary term
 `(1 + c) k(t, x)`. Applied to `P` and then to `G`, this gives
@@ -82,8 +82,8 @@ All declarations are in the `TauCeti.PDE` namespace.
   `deriv_dAlembert_zero`, `dAlembertDuhamel_time_zero` and `deriv_dAlembertDuhamel_zero`.
 * `eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq`: every classical solution is given by
   these formulas.
-* `eq_of_deriv_deriv_eq_add_of_eqOn`, `eq_of_deriv_deriv_eq_add_of_eq_initial`: the domain of
-  dependence and uniqueness.
+* `eq_of_deriv_deriv_eq_add_of_eqOn_initial`, `eq_of_deriv_deriv_eq_add_of_eq_initial`: the
+  domain of dependence and uniqueness.
 * `norm_dAlembertDuhamel_le`: the bound `t² K / 2`.
 
 ## References
@@ -241,7 +241,7 @@ private theorem hasDerivAt_charIntegral_time (c : ℝ) (hk : Continuous (uncurry
     have h₂ : HasDerivAt (fun r ↦ x - (r - s)) (-1) r := ((hasDerivAt_id r).sub_const s).const_sub x
     exact (((hd s _).scomp r h₁).add (((hd s _).scomp r h₂).const_smul c)).congr_deriv
       (by module)
-  have h := hasDerivAt_integral_of_hasDerivAt
+  have h := hasDerivAt_parametric_primitive_comp
     (f := fun r s ↦ k s (x + (r - s)) + c • k s (x - (r - s)))
     (f' := fun r s ↦ k' s (x + (r - s)) + (-c) • k' s (x - (r - s))) 0
     ((continuous_charIntegrand c hk).comp (by fun_prop :
@@ -263,7 +263,7 @@ private theorem hasDerivAt_charIntegral_space (c : ℝ) (hk : Continuous (uncurr
     have h₂ : HasDerivAt (fun y ↦ y - (t - s)) 1 y := (hasDerivAt_id y).sub_const _
     exact (((hd s _).scomp y h₁).add (((hd s _).scomp y h₂).const_smul c)).congr_deriv
       (by module)
-  have h := hasDerivAt_integral_of_hasDerivAt (c := fun _ ↦ t)
+  have h := hasDerivAt_parametric_primitive_comp (c := fun _ ↦ t)
     (f := fun y s ↦ k s (y + (t - s)) + c • k s (y - (t - s)))
     (f' := fun y s ↦ k' s (y + (t - s)) + c • k' s (y - (t - s))) 0
     ((continuous_charIntegrand c hk).comp (by fun_prop :
@@ -547,7 +547,7 @@ private theorem hasDerivAt_spatialPrimitive_time (hu : ContDiff ℝ 1 (uncurry u
       t := by
   have hU1 : Differentiable ℝ (uncurry u) := hu.differentiable one_ne_zero
   have hD : Continuous (fderiv ℝ (uncurry u)) := hu.continuous_fderiv one_ne_zero
-  simpa using hasDerivAt_integral_of_hasDerivAt (c := fun _ ↦ x) (c' := 0) (f := u)
+  simpa using hasDerivAt_parametric_primitive_comp (c := fun _ ↦ x) (c' := 0) (f := u)
     (f' := fun r y ↦ fderiv ℝ (uncurry u) (r, y) (1, 0)) 0 hu.continuous
     (fun r y ↦ hasDerivAt_parameterCurve_uncurry (hU1 (r, y))) (hD.clm_apply continuous_const)
     (hasDerivAt_const t x)
@@ -571,7 +571,7 @@ private theorem deriv_deriv_spatialPrimitive (hu : ContDiff ℝ 2 (uncurry u))
     funext fun s ↦ (hasDerivAt_spatialPrimitive_time (hu.of_le one_le_two) s x).deriv
   have h₂ : HasDerivAt (fun s ↦ ∫ y in 0..x, D (s, y) (1, 0))
       (∫ y in 0..x, fderiv ℝ D (t, y) (1, 0) (1, 0)) t := by
-    simpa using hasDerivAt_integral_of_hasDerivAt (c := fun _ ↦ x) (c' := 0)
+    simpa using hasDerivAt_parametric_primitive_comp (c := fun _ ↦ x) (c' := 0)
       (f := fun r y ↦ D (r, y) (1, 0)) (f' := fun r y ↦ fderiv ℝ D (r, y) (1, 0) (1, 0)) 0
       (hDc.clm_apply continuous_const) (fun r y ↦ hasDerivAt_fderiv_apply_fst (hD _) _)
       ((hD2.clm_apply continuous_const).clm_apply continuous_const) (hasDerivAt_const t x)
@@ -642,7 +642,7 @@ theorem eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq (hu : ContDiff ℝ 2
 `x - t` and `x + t`, and the forcings agree on the characteristic triangle with apex `(t, x)` and
 base at time `0`, then `u` and `v` agree at `(t, x)`: forced waves also propagate with speed at most
 one. No regularity of `G` or `G'` is needed. -/
-theorem eq_of_deriv_deriv_eq_add_of_eqOn (hu : ContDiff ℝ 2 (uncurry u))
+theorem eq_of_deriv_deriv_eq_add_of_eqOn_initial (hu : ContDiff ℝ 2 (uncurry u))
     (hv : ContDiff ℝ 2 (uncurry v))
     (hwu : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
     (hwv : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ v r x) s) t = deriv (deriv (v t)) x + G' t x)
@@ -663,7 +663,7 @@ theorem eq_of_deriv_deriv_eq_add_of_eq_initial (hu : ContDiff ℝ 2 (uncurry u))
     (hwu : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
     (hwv : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ v r x) s) t = deriv (deriv (v t)) x + G t x)
     (h0 : u 0 = v 0) (h1 : ∀ y, deriv (fun s ↦ u s y) 0 = deriv (fun s ↦ v s y) 0) : u = v :=
-  funext fun _ ↦ funext fun _ ↦ eq_of_deriv_deriv_eq_add_of_eqOn hu hv hwu hwv
+  funext fun _ ↦ funext fun _ ↦ eq_of_deriv_deriv_eq_add_of_eqOn_initial hu hv hwu hwv
     (fun y _ ↦ congrFun h0 y) (fun y _ ↦ h1 y) (fun _ _ _ _ ↦ rfl)
 
 end CauchyProblem

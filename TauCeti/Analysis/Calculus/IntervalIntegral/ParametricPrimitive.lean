@@ -34,8 +34,8 @@ The file also differentiates parametric primitives when the integrand is only co
 jointly continuous derivative in the parameter
 (`intervalIntegral.hasStrictFDerivAt_parametric_primitive`).
 This is the **Leibniz integral rule** with a variable upper limit
-(`intervalIntegral.hasFDerivAt_integral_of_hasFDerivAt`, and
-`intervalIntegral.hasDerivAt_integral_of_hasDerivAt` for a real parameter):
+(`intervalIntegral.hasFDerivAt_parametric_primitive_comp`, and
+`intervalIntegral.hasDerivAt_parametric_primitive_comp` for a real parameter):
 
 `d/dx ∫ t in a₀..c x, f x t = c'(x) f(x, c x) + ∫ t in a₀..c x, ∂ₓf(x, t)`.
 
@@ -117,7 +117,7 @@ continuous and differentiable in its first variable, with derivative `f' x t` jo
 `(x, t)`, and let the upper limit `c` have derivative `c'` at `x₀`. Then
 `x ↦ ∫ t in a₀..c x, f x t` has derivative `(∫ t in a₀..c x₀, f' x₀ t) + c'.smulRight (f x₀ (c x₀))`
 at `x₀`. -/
-theorem hasFDerivAt_integral_of_hasFDerivAt [CompleteSpace E] {f : H → ℝ → E}
+theorem hasFDerivAt_parametric_primitive_comp [CompleteSpace E] {f : H → ℝ → E}
     {f' : H → ℝ → H →L[ℝ] E} {c : H → ℝ} {c' : H →L[ℝ] ℝ} {x₀ : H} (a₀ : ℝ)
     (hf : Continuous (Function.uncurry f)) (hf' : ∀ x t, HasFDerivAt (f · t) (f' x t) x)
     (hf'c : Continuous (Function.uncurry f')) (hc : HasFDerivAt c c' x₀) :
@@ -131,7 +131,7 @@ theorem hasFDerivAt_integral_of_hasFDerivAt [CompleteSpace E] {f : H → ℝ →
 `f : ℝ → ℝ → E` be jointly continuous and differentiable in its first variable, with derivative
 `f' x t` jointly continuous in `(x, t)`, and let the upper limit `c` have derivative `c'` at `x₀`.
 Then `d/dx ∫ t in a₀..c x, f x t = c' • f x₀ (c x₀) + ∫ t in a₀..c x₀, f' x₀ t` at `x₀`. -/
-theorem hasDerivAt_integral_of_hasDerivAt [CompleteSpace E] {f f' : ℝ → ℝ → E} {c : ℝ → ℝ}
+theorem hasDerivAt_parametric_primitive_comp [CompleteSpace E] {f f' : ℝ → ℝ → E} {c : ℝ → ℝ}
     {c' x₀ : ℝ} (a₀ : ℝ) (hf : Continuous (Function.uncurry f))
     (hf' : ∀ x t, HasDerivAt (f · t) (f' x t) x) (hf'c : Continuous (Function.uncurry f'))
     (hc : HasDerivAt c c' x₀) :
@@ -139,7 +139,7 @@ theorem hasDerivAt_integral_of_hasDerivAt [CompleteSpace E] {f f' : ℝ → ℝ 
       x₀ := by
   have hL : Continuous fun q : ℝ × ℝ ↦ ContinuousLinearMap.toSpanSingleton ℝ (f' q.1 q.2) :=
     (ContinuousLinearMap.toSpanSingletonLIE ℝ E).continuous.comp hf'c
-  have h := (hasFDerivAt_integral_of_hasFDerivAt a₀ hf (fun x t ↦ (hf' x t).hasFDerivAt) hL
+  have h := (hasFDerivAt_parametric_primitive_comp a₀ hf (fun x t ↦ (hf' x t).hasFDerivAt) hL
     hc.hasFDerivAt).hasDerivAt
   have hint : IntervalIntegrable (fun t ↦ ContinuousLinearMap.toSpanSingleton ℝ (f' x₀ t)) volume
       a₀ (c x₀) :=
