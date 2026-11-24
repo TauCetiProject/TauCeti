@@ -14,6 +14,7 @@ import Mathlib.Topology.Instances.NNReal.Lemmas
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
+import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
@@ -294,9 +295,7 @@ theorem congr_integrand [SFinite P] (hI : IsItoIntegral ℱ P W H I)
   exists_approx t := by
     obtain ⟨n, τ, a, hτ, ha, henergy, hlim⟩ := hI.exists_approx t
     have hsec : ∀ᵐ ω ∂P, (fun s ↦ H s ω) =ᵐ[timeMeasure t] (fun s ↦ K s ω) :=
-      Measure.ae_ae_of_ae_prod
-        ((Measure.measurePreserving_swap (μ := P) (ν := timeMeasure t)).quasiMeasurePreserving
-          |>.ae_eq_comp (hHK t))
+      Measure.ae_ae_eq_flip_of_ae_eq_uncurry (hHK t)
     refine ⟨n, τ, a, hτ, ha, fun ε hε ↦ ?_, hlim⟩
     have hcongr (k : ℕ) :
         P {ω | ε ≤ ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - K s ω‖ₑ ^ 2

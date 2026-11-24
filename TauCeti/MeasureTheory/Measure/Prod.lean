@@ -61,7 +61,9 @@ invariant (`MeasureTheory.Measure.map_div_prod_eq_map_div_abs`).
 
 A coupling that moves almost every point by less than `r` and is carried in its second marginal
 by a set `s` gives no first-marginal mass to a point at distance at least `r` from every point of
-`s` (`MeasureTheory.measure_fst_singleton_eq_zero_of_ae_edist_lt`).
+`s` (`MeasureTheory.measure_fst_singleton_eq_zero_of_ae_edist_lt`). For product-almost-everywhere
+equal binary functions, swapping factors gives section-wise almost-everywhere equality in the first
+argument (`MeasureTheory.Measure.ae_ae_eq_flip_of_ae_eq_uncurry`).
 -/
 
 public section
@@ -383,6 +385,16 @@ theorem map_prod_swap_apply_eq {Z Y β : Type*} [MeasurableSpace Z] [MeasurableS
     Measure.map_prod_map _ _ hsw measurable_id,
     Measure.map_map hF' (hsw.prodMap measurable_id), hfun,
     ← Measure.map_map (hsw.prodMap measurable_swap) hF, hJ]
+
+/-- Swapping factors in `MeasureTheory.Measure.ae_ae_eq_of_ae_eq_uncurry`: if `Function.uncurry f`
+agrees with `Function.uncurry g` `μ.prod ν`-almost everywhere, then for `ν`-almost every `y`, the
+sections `x ↦ f x y` and `x ↦ g x y` agree `μ`-almost everywhere. -/
+theorem ae_ae_eq_flip_of_ae_eq_uncurry {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {ν : Measure β} [SFinite μ] [SFinite ν] {f g : α → β → γ}
+    (h : Function.uncurry f =ᵐ[μ.prod ν] Function.uncurry g) :
+    ∀ᵐ y ∂ν, (fun x ↦ f x y) =ᵐ[μ] fun x ↦ g x y :=
+  ae_ae_eq_of_ae_eq_uncurry
+    ((measurePreserving_swap (μ := ν) (ν := μ)).quasiMeasurePreserving.ae_eq_comp h)
 
 end MeasureTheory.Measure
 

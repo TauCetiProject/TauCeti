@@ -19,8 +19,9 @@ finite expected square energy on every finite horizon (`TauCeti.BrownianIntegrab
 constructs the Itô integral of `H` against `W`, identifies it with the terminal `L²` integral
 `TauCeti.Probability.IsFilteredPreBrownianReal.l2Integral`, and proves the Itô isometry.
 
-* `TauCeti.Probability.IsFilteredPreBrownianReal.ae_eq_l2Integral_of_isItoIntegral`: any Itô
-  integral of `H` agrees almost surely at each finite horizon `T` with `hW.l2Integral T`.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.ae_eq_l2Integral_of_isItoIntegral` and
+  `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_iff_ae_eq_l2Integral`: L²
+  characterization identifying Itô integrals of `H` with `hW.l2Integral T`.
 * `TauCeti.BrownianIntegrable.exists_isItoIntegral`: when `W` has almost surely continuous paths,
   `H` has an Itô integral which is a predictable martingale.
 * `TauCeti.Probability.IsItoIntegral.martingale`: every adapted Itô integral of `H` is a
@@ -73,6 +74,23 @@ theorem IsFilteredPreBrownianReal.ae_eq_l2Integral_of_isItoIntegral
   obtain ⟨n, τ, a, -, hmem, hτ, ha, -, -, -, -, hE, hLp⟩ := hW.exists_simpleHolding_approx hH
   exact hI.ae_eq_of_tendstoInMeasure hW hτ ha (hE T)
     ((tendstoInMeasure_of_tendsto_Lp (hLp T)).congr_left fun k ↦ (hmem k T).coeFn_toLp)
+
+/-- **L² characterization of Itô integrals.** For a Brownian-integrable integrand `H`, an almost
+surely continuous process `I` is an Itô integral of `H` if and only if `I T` agrees almost surely
+with the terminal `L²` integral `hW.l2Integral T` at every horizon `T`. Path continuity of `W` is
+not required. -/
+theorem IsFilteredPreBrownianReal.isItoIntegral_iff_ae_eq_l2Integral
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
+    (hIcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ I t ω)) :
+    IsItoIntegral ℱ P W H I ↔
+      ∀ T : ℝ≥0, I T =ᵐ[P]
+        hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) := by
+  refine ⟨fun hI T ↦ hW.ae_eq_l2Integral_of_isItoIntegral hH hI T, fun hT ↦ ?_⟩
+  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, -, -, -, hE, hLp⟩ := hW.exists_simpleHolding_approx hH
+  refine ⟨hH.isStronglyPredictable, hIcont, fun T ↦
+    ⟨n, τ, a, hτ, ha, hE T,
+      (tendstoInMeasure_of_tendsto_Lp (hLp T)).congr
+        (fun k ↦ (hmem k T).coeFn_toLp) (hT T).symm⟩⟩
 
 /-- **Existence of the Itô integral for square-integrable integrands.** Against a pre-Brownian
 motion relative to the filtration with almost surely continuous paths, every predictable

@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Integral.Indicator
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
+import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 import TauCeti.Probability.BrownianMotion.Integral.Locality
 import TauCeti.Probability.BrownianMotion.Integral.Restriction
@@ -177,15 +178,6 @@ theorem IsItoIntegral.of_stoppedProcess [IsFiniteMeasure P]
         exact hk.le.trans (hIU ▸ hω)
       · exact Or.inr (Or.inl hGω)
 
-private theorem ite_Ioc_eq_sub_ite_le_apply {a b x : WithTop ℝ≥0} (hab : a ≤ b) (r : ℝ) :
-    (if a < x ∧ x ≤ b then r else 0) =
-      (if x ≤ b then r else 0) - (if x ≤ a then r else 0) := by
-  by_cases h1 : x ≤ a <;> by_cases h2 : x ≤ b
-  · simp [h1, h1.not_gt, h2]
-  · exact False.elim (h2 (h1.trans hab))
-  · simp [h1, lt_of_not_ge h1, h2]
-  · simp [h1, h2]
-
 /-- **Adjacent stochastic-interval concatenation for Itô integrals.** For ordered random times
 `σ ≤ τ ≤ ρ`, summing Itô integrals of the restrictions `1_{(σ, τ]} H` and `1_{(τ, ρ]} H` yields
 an Itô integral of `1_{(σ, ρ]} H`. Neither stopping-time properties nor path continuity of `W` is
@@ -205,8 +197,8 @@ theorem IsItoIntegral.ite_Ioc_add {σ τ ρ : Ω → WithTop ℝ≥0} (hστ : �
         (if σ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) +
           (if τ ω < (t : WithTop ℝ≥0) ∧ (t : WithTop ℝ≥0) ≤ ρ ω then H t ω else 0) := by
     ext t ω
-    rw [ite_Ioc_eq_sub_ite_le_apply ((hστ.trans hτρ) ω), ite_Ioc_eq_sub_ite_le_apply (hστ ω),
-      ite_Ioc_eq_sub_ite_le_apply (hτρ ω)]
+    rw [TauCeti.ite_Ioc_eq_sub_ite_le ((hστ.trans hτρ) ω),
+      TauCeti.ite_Ioc_eq_sub_ite_le (hστ ω), TauCeti.ite_Ioc_eq_sub_ite_le (hτρ ω)]
     ring
   rw [hint_eq]
   exact hJ₁.add hJ₂
@@ -224,17 +216,11 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
       stoppedProcess I (fun ω ↦ dyadicCeilTime m (τ ω)) T := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime m (τ ω)
   let N : ℕ := ⌈T * 2 ^ m⌉₊
-  let t : ℕ → ℝ≥0 := fun k ↦ min ((k : ℝ≥0) / 2 ^ m) T
-  let A : ℕ → Set Ω := fun k ↦ {ω | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < σ ω}
-  have ht_mono : Monotone t := fun _ _ h ↦
-    min_le_min_right T (div_le_div_of_nonneg_right (Nat.cast_le.mpr h) (by positivity))
+  let t : ℕ → ℝ≥0 := dyadicGridClip m T
+  let A : ℕ → Set Ω := dyadicCellEvent m τ
+  have ht_mono : Monotone t := monotone_dyadicGridClip m T
   let fH := (hH.memLp_predictableMeasure T).toLp (Function.uncurry H)
-  let piece (k : ℕ) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
-    ((Lp.memLp fH).indicator
-      (measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet).toLp
-      ((Ioc (t k) (t (k + 1)) ×ˢ A k).indicator fH)
   -- Split the dyadic cutoff integrand into a finite sum of predictable cell integrals.
   rw [hH.toLp_ite_le_dyadicCeilTime_eq_sum hτ m T, map_sum]
   have hresH {u : ℝ≥0} (hu : u ≤ T) :
@@ -245,12 +231,12 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
         ((hH.memLp_predictableMeasure T).coeFn_toLp)).trans
         (hH.memLp_predictableMeasure u).coeFn_toLp.symm)
   -- Identify each cell integral with `1_{A k} * (I (t (k + 1)) - I (t k))` via event locality.
-  have heach : ∀ k ∈ Finset.range N, (hW.l2Integral T (piece k) : Ω → ℝ) =ᵐ[P]
+  have heach : ∀ k ∈ Finset.range N, (hW.l2Integral T (hH.dyadicCellLp hτ m T k) : Ω → ℝ) =ᵐ[P]
       (A k).indicator (fun ω ↦ I (t (k + 1)) ω - I (t k) ω) := fun k hk ↦ by
     have hk' := Finset.mem_range.mp hk
     have hloc := hW.coeFn_l2Integral_indicator_Ioc_prod T (t k) (t (k + 1))
       (hτ.measurableSet_gt_dyadicCeilTime m hk') fH
-    have hbT : t (k + 1) ≤ T := min_le_right _ _
+    have hbT : t (k + 1) ≤ T := dyadicGridClip_le m T (k + 1)
     rw [ℱ.indicator_Ioc_prod_eq_predictableMeasureExtendLp_sub P (𝕜 := ℝ) fH
         (ht_mono k.le_succ) hbT,
       map_sub, hW.l2Integral_predictableMeasureExtendLp hbT,
@@ -262,14 +248,14 @@ private theorem ae_eq_stoppedProcess_dyadicCeilTime_of_brownianIntegrable
       hW.ae_eq_l2Integral_of_isItoIntegral hH hI (t (k + 1)),
       hW.ae_eq_l2Integral_of_isItoIntegral hH hI (t k)] with ω h1 h2 hI1 hI0
     dsimp only [g1, g0] at h1 h2
-    rw [show piece k = _ from rfl, h1]
+    dsimp only [BrownianIntegrable.dyadicCellLp]
+    rw [h1]
     by_cases hω : ω ∈ A k
-    · dsimp only [A, σ] at hω ⊢
-      rw [indicator_of_mem hω, indicator_of_mem hω, h2, Pi.sub_apply, hI1, hI0]
-    · dsimp only [A, σ] at hω ⊢
-      rw [indicator_of_notMem hω, indicator_of_notMem hω]
+    · rw [indicator_of_mem hω, indicator_of_mem hω, h2, Pi.sub_apply, hI1, hI0]
+    · rw [indicator_of_notMem hω, indicator_of_notMem hω]
   -- Telescope the cell increments into `stoppedProcess I σ T`.
-  filter_upwards [Lp.coeFn_finsetSum (s := Finset.range N) (fun k ↦ hW.l2Integral T (piece k)),
+  filter_upwards [Lp.coeFn_finsetSum (s := Finset.range N)
+      (fun k ↦ hW.l2Integral T (hH.dyadicCellLp hτ m T k)),
     eventuallyEq_sum heach, hI.eval_zero_ae_eq_zero] with ω hω hsumω hI0
   rw [hω, hsumω, Finset.sum_apply]
   exact TauCeti.sum_indicator_stopped_sub_eq_stoppedProcess I τ m T ω hI0
@@ -413,29 +399,16 @@ theorem exists_isItoIntegral_of_isStronglyProgressive (hW : IsFilteredPreBrownia
         Locally (fun Y ↦ Martingale Y ℱ P) ℱ I P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨G, hGpred, hGH_real⟩ := hH.exists_isStronglyPredictable_ae_prod P
-  have hmp (T : ℝ≥0) :
-      MeasurePreserving ((↑) : ℝ≥0 → ℝ) (timeMeasure T) (volume.restrict (Ioc 0 (T : ℝ))) := by
-    refine ⟨NNReal.isClosedEmbedding_coe.measurableEmbedding.measurable, ?_⟩
-    have hsub : Ioc 0 (T : ℝ) ⊆ Set.range ((↑) : ℝ≥0 → ℝ) := fun x hx ↦ ⟨⟨x, hx.1.le⟩, rfl⟩
-    rw [timeMeasure_def, ← NNReal.comap_volume_restrict_Ioc,
-      NNReal.isClosedEmbedding_coe.measurableEmbedding.map_comap,
-      Measure.restrict_restrict
-        NNReal.isClosedEmbedding_coe.measurableEmbedding.measurableSet_range,
-      inter_eq_self_of_subset_right hsub]
   have hGH (T : ℝ≥0) :
       Function.uncurry G =ᵐ[(timeMeasure T).prod P] Function.uncurry H :=
-    (((hmp T).prod (MeasurePreserving.id P)).quasiMeasurePreserving.ae_eq_comp
-      (hGH_real T)).mono fun ⟨s, ω⟩ hp ↦ by
+    ((((measurePreserving_coe_timeMeasure T).prod (MeasurePreserving.id P)).quasiMeasurePreserving
+      |>.ae_eq_comp (hGH_real T))).mono fun ⟨s, ω⟩ hp ↦ by
       simpa only [Function.uncurry_apply_pair, Function.comp_apply, Prod.map_apply, id_eq,
         Real.toNNReal_coe] using hp
   have hG_loc : LocallyBrownianIntegrable ℱ P G := by
     refine locallyBrownianIntegrable_iff_nat.2 ⟨hGpred, fun n ↦ ?_⟩
-    have hsec : ∀ᵐ ω ∂P, (fun t ↦ H t ω) =ᵐ[timeMeasure n] fun t ↦ G t ω := by
-      filter_upwards [Measure.ae_ae_of_ae_prod
-        ((Measure.measurePreserving_swap (μ := P) (ν := timeMeasure n)).quasiMeasurePreserving
-          |>.ae_eq_comp (hGH n))] with ω heq
-      exact heq.mono fun t ht ↦ by
-        simpa only [Function.comp_apply, Prod.swap, Function.uncurry_apply_pair] using ht.symm
+    have hsec : ∀ᵐ ω ∂P, (fun t ↦ H t ω) =ᵐ[timeMeasure n] fun t ↦ G t ω :=
+      (Measure.ae_ae_eq_flip_of_ae_eq_uncurry (hGH n)).mono fun _ h ↦ h.symm
     filter_upwards [hHmem, hsec] with ω hω heq
     rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
     exact (hω n).ae_eq heq
@@ -496,7 +469,7 @@ theorem isItoIntegral_ite_Ioc_stoppedProcess_sub (hW : IsFilteredPreBrownianReal
         (if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) -
           (if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0) := by
     ext t ω
-    exact ite_Ioc_eq_sub_ite_le_apply (hστ ω) _
+    exact TauCeti.ite_Ioc_eq_sub_ite_le (hστ ω) _
   rw [hint_eq]
   exact (hW.isItoIntegral_ite_le_stoppedProcess hcont hI hτ).sub
     (hW.isItoIntegral_ite_le_stoppedProcess hcont hI hσ)

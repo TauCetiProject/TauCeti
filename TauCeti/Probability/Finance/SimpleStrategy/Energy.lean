@@ -80,10 +80,11 @@ theorem lintegral_enorm_sq_simpleHolding_timeMeasure {τ : ℕ → ℝ≥0}
 
 /-- Under finite-horizon Lebesgue time, the pathwise Bochner square integral of a simple
 holding equals the finite-grid sum of squared heights times clipped interval lengths. -/
-theorem simpleHolding_energy_eq_integral_sq {τ : ℕ → ℝ≥0}
+theorem integral_sq_simpleHolding_timeMeasure {τ : ℕ → ℝ≥0}
     (hτ : MonotoneOn τ (Set.Iic n)) (t : ℝ≥0) (ω : Ω) :
-    (∑ j ∈ range n, a j ω ^ 2 * (↑(min (τ (j + 1)) t) - ↑(min (τ j) t))) =
-      ∫ s, simpleHolding τ n a s ω ^ 2 ∂TauCeti.Probability.timeMeasure t := by
+    ∫ s, simpleHolding τ n a s ω ^ 2 ∂TauCeti.Probability.timeMeasure t =
+      ∑ j ∈ range n, a j ω ^ 2 * (↑(min (τ (j + 1)) t) - ↑(min (τ j) t)) := by
+  symm
   rw [MeasureTheory.integral_sq_eq_toReal_lintegral_enorm
       (measurable_simpleHolding (fun _ _ ↦ measurableSet_Ioc) ω).aestronglyMeasurable,
     lintegral_enorm_sq_simpleHolding_timeMeasure hτ,

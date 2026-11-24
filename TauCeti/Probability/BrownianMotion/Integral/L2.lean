@@ -280,18 +280,10 @@ theorem eLpNorm_l2Integral
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   calc eLpNorm (hW.l2Integral T (hHm.toLp H)) 2 P
       = edist (hW.l2Integral T (hHm.toLp H)) 0 := by
-        rw [Lp.edist_def]
-        refine eLpNorm_congr_ae ?_
-        filter_upwards [Lp.coeFn_zero (E := ℝ) (p := 2) (μ := P)] with ω hω
-        rw [Pi.sub_apply, hω, Pi.zero_apply, sub_zero]
+        rw [← Lp.edist_toLp_zero _ (Lp.memLp _), Lp.toLp_coeFn]
     _ = edist (hHm.toLp H) 0 := by
         simpa only [map_zero] using (hW.l2Integral T).isometry.edist_eq (hHm.toLp H) 0
-    _ = eLpNorm H 2 (ℱ.predictableMeasure P T) := by
-        rw [Lp.edist_def]
-        refine eLpNorm_congr_ae ?_
-        filter_upwards [hHm.coeFn_toLp,
-          Lp.coeFn_zero (E := ℝ) (p := 2) (μ := ℱ.predictableMeasure P T)] with p hp h0
-        rw [Pi.sub_apply, hp, h0, Pi.zero_apply, sub_zero]
+    _ = eLpNorm H 2 (ℱ.predictableMeasure P T) := Lp.edist_toLp_zero H hHm
     _ = eLpNorm H 2 ((timeMeasure T).prod P) := by
         rw [ℱ.predictableMeasure_def]
         exact eLpNorm_trim ℱ.predictable_le_prod hHp
@@ -310,10 +302,8 @@ theorem eLpNorm_l2Integral_sub
   calc eLpNorm (fun ω ↦ hW.l2Integral T (hH₁m.toLp H₁) ω - hW.l2Integral T (hH₂m.toLp H₂) ω) 2 P
       = edist (hW.l2Integral T (hH₁m.toLp H₁)) (hW.l2Integral T (hH₂m.toLp H₂)) := by
         rw [Lp.edist_def, Pi.sub_def]
-    _ = eLpNorm (⇑(hH₁m.toLp H₁) - ⇑(hH₂m.toLp H₂)) 2 (ℱ.predictableMeasure P T) := by
-        rw [(hW.l2Integral T).isometry.edist_eq, Lp.edist_def]
-    _ = eLpNorm (H₁ - H₂) 2 (ℱ.predictableMeasure P T) :=
-        eLpNorm_congr_ae (hH₁m.coeFn_toLp.sub hH₂m.coeFn_toLp)
+    _ = edist (hH₁m.toLp H₁) (hH₂m.toLp H₂) := (hW.l2Integral T).isometry.edist_eq _ _
+    _ = eLpNorm (H₁ - H₂) 2 (ℱ.predictableMeasure P T) := Lp.edist_toLp_toLp H₁ H₂ hH₁m hH₂m
     _ = eLpNorm (H₁ - H₂) 2 ((timeMeasure T).prod P) := by
         rw [ℱ.predictableMeasure_def]
         exact eLpNorm_trim ℱ.predictable_le_prod (hH₁p.sub hH₂p)

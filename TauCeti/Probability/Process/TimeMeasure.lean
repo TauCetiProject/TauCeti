@@ -13,7 +13,8 @@ public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 # Lebesgue time measure on a finite nonnegative horizon
 
 `TauCeti.Probability.timeMeasure T` is Lebesgue measure on `(0,T]` in nonnegative real
-time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`.
+time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`, which is
+measure-preserving onto `volume.restrict (Ioc 0 (T : ℝ))` (`measurePreserving_coe_timeMeasure`).
 The origin has zero mass. Interval masses, monotonicity in the horizon and restriction to
 shorter horizons are recorded explicitly for time-product measures used in stochastic
 integration.
@@ -104,9 +105,19 @@ theorem timeMeasure_singleton (T t : ℝ≥0) : timeMeasure T {t} = 0 := by
   exact (Set.subsingleton_singleton.image _ |>.anti
     (Set.image_mono inter_subset_left)).measure_zero _
 
-/-- The initial time carries no mass, independently of the horizon. -/
-theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 :=
-  timeMeasure_singleton T 0
+/-- Coercion from `ℝ≥0` to `ℝ` is measure-preserving from `timeMeasure T` to real Lebesgue
+measure restricted to `(0, (T : ℝ)]`. -/
+theorem measurePreserving_coe_timeMeasure (T : ℝ≥0) :
+    MeasurePreserving ((↑) : ℝ≥0 → ℝ) (timeMeasure T) (volume.restrict (Ioc 0 (T : ℝ))) := by
+  refine ⟨NNReal.isClosedEmbedding_coe.measurableEmbedding.measurable, ?_⟩
+  have hsub : Ioc 0 (T : ℝ) ⊆ Set.range ((↑) : ℝ≥0 → ℝ) := fun x hx ↦ ⟨⟨x, hx.1.le⟩, rfl⟩
+  have hcomap : (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) = timeMeasure T := by
+    rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_restrict, timeMeasure_def]
+    congr 1
+  rw [← hcomap, NNReal.isClosedEmbedding_coe.measurableEmbedding.map_comap,
+    Measure.restrict_restrict
+      NNReal.isClosedEmbedding_coe.measurableEmbedding.measurableSet_range,
+    inter_eq_self_of_subset_right hsub]
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

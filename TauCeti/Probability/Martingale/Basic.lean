@@ -261,33 +261,15 @@ theorem Martingale.setIntegral_sub_sq (hY : Martingale Y ℱ μ) {i j : ι} (hij
   by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
   · have hi : MemLp (Y i) 2 μ :=
       (hj.condExp (m := ℱ i) one_le_two).ae_eq (hY.condExp_ae_eq hij)
-    have hcross : ∫ ω in A, Y i ω * Y j ω ∂μ = ∫ ω in A, Y i ω ^ 2 ∂μ := by
-      have hmul : Integrable (A.indicator (Y i) * Y j) μ :=
-        (hi.indicator (ℱ.le i A hA).nullMeasurableSet).integrable_mul hj
-      have hce : μ[A.indicator (Y i) * Y j | ℱ i] =ᵐ[μ] A.indicator (Y i) * Y i :=
-        (condExp_mul_of_stronglyMeasurable_left ((hY.stronglyAdapted i).indicator hA) hmul
-          (hY.integrable j)).trans (EventuallyEq.mul EventuallyEq.rfl (hY.condExp_ae_eq hij))
-      have h1 := (integral_condExp (ℱ.le i)).symm.trans (integral_congr_ae hce)
-      simpa only [Pi.mul_apply, ← Set.indicator_mul_left,
-        integral_indicator (ℱ.le i A hA), ← sq] using h1
-    have hj2 : IntegrableOn (fun ω ↦ Y j ω ^ 2) A μ := hj.integrable_sq.integrableOn
-    have hi2 : IntegrableOn (fun ω ↦ Y i ω ^ 2) A μ := hi.integrable_sq.integrableOn
-    have hij_on : IntegrableOn (fun ω ↦ Y i ω * Y j ω) A μ := (hi.integrable_mul hj).integrableOn
-    have hexp : (fun ω ↦ (Y j ω - Y i ω) ^ 2) =
-        fun ω ↦ (Y j ω ^ 2 - Y i ω ^ 2) - 2 * (Y i ω * Y j ω - Y i ω ^ 2) := by
-      ext ω; ring
-    have hsub1 : ∫ ω in A, (Y j ω - Y i ω) ^ 2 ∂μ =
-        ∫ ω in A, (Y j ω ^ 2 - Y i ω ^ 2) ∂μ -
-          ∫ ω in A, 2 * (Y i ω * Y j ω - Y i ω ^ 2) ∂μ := by
-      rw [hexp]
-      exact integral_sub (hj2.sub hi2) ((hij_on.sub hi2).const_mul 2)
-    have hsub2 : ∫ ω in A, 2 * (Y i ω * Y j ω - Y i ω ^ 2) ∂μ = 0 := by
-      rw [integral_const_mul]
-      have hdiff : ∫ ω in A, (Y i ω * Y j ω - Y i ω ^ 2) ∂μ =
-          ∫ ω in A, Y i ω * Y j ω ∂μ - ∫ ω in A, Y i ω ^ 2 ∂μ :=
-        integral_sub hij_on hi2
-      rw [hdiff, hcross, sub_self, mul_zero]
-    rw [hsub1, hsub2, sub_zero]
+    have hj2 : Integrable (fun ω ↦ Y j ω ^ 2) μ := hj.integrable_sq
+    have hi2 : Integrable (fun ω ↦ Y i ω ^ 2) μ := hi.integrable_sq
+    have hdiff2 : Integrable (fun ω ↦ (Y j ω - Y i ω) ^ 2) μ := (hj.sub hi).integrable_sq
+    have hint := setIntegral_congr_ae (ℱ.le i A hA)
+      ((hY.condExp_sq hij hj).mono fun _ hω _ ↦ hω)
+    rw [setIntegral_condExp (ℱ.le i) hj2 hA,
+      integral_add hi2.integrableOn integrable_condExp.integrableOn,
+      setIntegral_condExp (ℱ.le i) hdiff2 hA] at hint
+    rw [integral_sub hj2.integrableOn hi2.integrableOn, hint, add_sub_cancel_left]
   · have hc := hY.condExp_ae_eq hij
     rw [condExp_of_not_sigmaFinite (ℱ.le i) hμ] at hc
     have hcongr : ∀ g : Ω → ℝ, (∀ ω, Y i ω = 0 → g ω = Y j ω ^ 2) →

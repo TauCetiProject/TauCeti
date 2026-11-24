@@ -149,4 +149,12 @@ theorem setLIntegral_ite_le_eq_stoppedProcess (f : ι → Ω → ℝ≥0∞)
     rw [he, lintegral_indicator measurableSet_Iic, Measure.restrict_restrict measurableSet_Iic,
       Iic_inter_Ioc_of_le hut]
 
+/-- Restricting a value to a half-open interval `(a, b]` equals subtracting its initial cutoff at
+`a` from its initial cutoff at `b`, whenever `a ≤ b`. -/
+theorem ite_Ioc_eq_sub_ite_le {α G : Type*} [LinearOrder α] [AddGroup G]
+    {a b x : α} (hab : a ≤ b) (r : G) :
+    (if a < x ∧ x ≤ b then r else 0) = (if x ≤ b then r else 0) - (if x ≤ a then r else 0) := by
+  have h1 := congrFun (Set.indicator_sdiff (Iic_subset_Iic.mpr hab) (fun _ : α ↦ r)) x
+  simpa only [Iic_sdiff_Iic, Set.indicator_apply, mem_Ioc, mem_Iic, Pi.sub_apply] using h1
+
 end TauCeti

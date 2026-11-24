@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Expected and pathwise square-energy domains
@@ -255,10 +256,7 @@ theorem LocallyBrownianIntegrable.congr_prod [SFinite P] (h : LocallyBrownianInt
       ((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P]
         Function.uncurry K) : LocallyBrownianIntegrable ℱ P K := by
   refine locallyBrownianIntegrable_iff_nat.2 ⟨hK, fun n ↦ ?_⟩
-  have heq' := Measure.ae_ae_of_ae_prod
-    ((Measure.measurePreserving_swap (μ := P) (ν := _)).quasiMeasurePreserving.ae_eq_comp
-      (heq n))
-  filter_upwards [h.ae_memLp, heq'] with ω hω heqω
+  filter_upwards [h.ae_memLp, Measure.ae_ae_eq_flip_of_ae_eq_uncurry (heq n)] with ω hω heqω
   exact (hω n).ae_eq heqω
 
 /-- A time-constant finite random variable belongs to the pathwise domain exactly when it

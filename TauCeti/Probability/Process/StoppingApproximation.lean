@@ -239,40 +239,80 @@ theorem tendsto_stoppedProcess_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E
       (τ := fun ω => min (t : WithTop ℝ≥0) (τ ω)) (ω := ω) hfinite hmin
       (Eventually.of_forall fun n => min_le_min_left _ (le_dyadicCeilTime n _)) hX
 
+/-- The `k`-th dyadic grid point of mesh `2⁻ⁿ`, clipped at horizon `T`. -/
+@[expose] def dyadicGridClip (n : ℕ) (T : ℝ≥0) (k : ℕ) : ℝ≥0 :=
+  min ((k : ℝ≥0) / 2 ^ n) T
+
+/-- The defining formula for the clipped dyadic grid point. -/
+theorem dyadicGridClip_def (n : ℕ) (T : ℝ≥0) (k : ℕ) :
+    dyadicGridClip n T k = min ((k : ℝ≥0) / 2 ^ n) T := rfl
+
+/-- The clipped dyadic grid starts at zero. -/
+@[simp]
+theorem dyadicGridClip_zero (n : ℕ) (T : ℝ≥0) : dyadicGridClip n T 0 = 0 := by
+  simp [dyadicGridClip]
+
+/-- The clipped dyadic grid is monotone in the cell index. -/
+theorem monotone_dyadicGridClip (n : ℕ) (T : ℝ≥0) : Monotone (dyadicGridClip n T) :=
+  fun _ _ h ↦ min_le_min_right T (div_le_div_of_nonneg_right (Nat.cast_le.mpr h) (by positivity))
+
+/-- Every clipped dyadic grid point is at most the horizon `T`. -/
+theorem dyadicGridClip_le (n : ℕ) (T : ℝ≥0) (k : ℕ) : dyadicGridClip n T k ≤ T :=
+  min_le_right _ _
+
+/-- Every clipped dyadic grid point is at most the unclipped grid point `k / 2 ^ n`. -/
+theorem dyadicGridClip_le_div (n : ℕ) (T : ℝ≥0) (k : ℕ) :
+    dyadicGridClip n T k ≤ (k : ℝ≥0) / 2 ^ n :=
+  min_le_left _ _
+
 /-- Any dyadic index strictly below `⌈T * 2 ^ m⌉₊` gives a grid point strictly before `T`. -/
 theorem dyadic_div_lt_of_lt_ceil {m k : ℕ} {T : ℝ≥0} (hk : k < ⌈T * 2 ^ m⌉₊) :
     (k : ℝ≥0) / 2 ^ m < T :=
   (div_lt_iff₀ (by positivity)).mpr (Nat.lt_ceil.mp hk)
 
-/-- Clipping a dyadic grid point strictly below `⌈T * 2 ^ m⌉₊` at `T` leaves it unchanged. -/
-theorem min_dyadic_div_eq_left {m k : ℕ} {T : ℝ≥0} (hk : k < ⌈T * 2 ^ m⌉₊) :
-    min ((k : ℝ≥0) / 2 ^ m) T = (k : ℝ≥0) / 2 ^ m :=
+/-- A clipped dyadic grid point strictly below `⌈T * 2 ^ m⌉₊` equals the unclipped grid point. -/
+theorem dyadicGridClip_of_lt_ceil {m k : ℕ} {T : ℝ≥0} (hk : k < ⌈T * 2 ^ m⌉₊) :
+    dyadicGridClip m T k = (k : ℝ≥0) / 2 ^ m :=
   min_eq_left (dyadic_div_lt_of_lt_ceil hk).le
 
-/-- The terminal clipped dyadic grid point at `⌈T * 2 ^ m⌉₊` equals the horizon `T`. -/
-theorem min_dyadic_ceil_div_eq_right (m : ℕ) (T : ℝ≥0) :
-    min ((⌈T * 2 ^ m⌉₊ : ℝ≥0) / 2 ^ m) T = T :=
-  min_eq_right ((le_div_iff₀ (by positivity)).mpr (Nat.le_ceil _))
+/-- Any clipped dyadic grid point at or beyond `⌈T * 2 ^ m⌉₊` equals the horizon `T`. -/
+theorem dyadicGridClip_of_ceil_le {m k : ℕ} {T : ℝ≥0} (hk : ⌈T * 2 ^ m⌉₊ ≤ k) :
+    dyadicGridClip m T k = T :=
+  min_eq_right ((le_div_iff₀ (by positivity)).mpr (Nat.ceil_le.mp hk))
 
-/-- On a path where `I 0 ω = 0`, summing the clipped dyadic increments over cells whose left
-endpoint lies strictly below `dyadicCeilTime m (τ ω)` equals the stopped value
-`stoppedProcess I (fun ω' ↦ dyadicCeilTime m (τ ω')) T ω`. -/
+/-- The terminal clipped dyadic grid point at `⌈T * 2 ^ m⌉₊` equals the horizon `T`. -/
+@[simp]
+theorem dyadicGridClip_ceil (m : ℕ) (T : ℝ≥0) : dyadicGridClip m T ⌈T * 2 ^ m⌉₊ = T :=
+  dyadicGridClip_of_ceil_le le_rfl
+
+/-- The event that `dyadicCeilTime n τ` strictly exceeds the `k`-th dyadic grid point. -/
+def dyadicCellEvent {Ω : Type*} (n : ℕ) (τ : Ω → WithTop ℝ≥0) (k : ℕ) : Set Ω :=
+  {ω | (((k : ℝ≥0) / 2 ^ n : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime n (τ ω)}
+
+/-- Membership in `dyadicCellEvent n τ k` holds iff `dyadicCeilTime n (τ ω)` exceeds
+`k / 2 ^ n`. -/
+@[simp]
+theorem mem_dyadicCellEvent {Ω : Type*} (n : ℕ) (τ : Ω → WithTop ℝ≥0) (k : ℕ) (ω : Ω) :
+    ω ∈ dyadicCellEvent n τ k ↔
+      (((k : ℝ≥0) / 2 ^ n : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime n (τ ω) :=
+  Iff.rfl
+
+/-- On a path where `I 0 ω = 0`, summing the clipped dyadic increments over the cell events
+`dyadicCellEvent m τ k` equals `stoppedProcess I (fun ω' ↦ dyadicCeilTime m (τ ω')) T ω`. -/
 theorem sum_indicator_stopped_sub_eq_stoppedProcess {Ω E : Type*} [AddCommGroup E]
     (I : ℝ≥0 → Ω → E) (τ : Ω → WithTop ℝ≥0) (m : ℕ) (T : ℝ≥0) (ω : Ω) (hI0 : I 0 ω = 0) :
     (∑ k ∈ Finset.range ⌈T * 2 ^ m⌉₊,
-      {ω' | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime m (τ ω')}.indicator
-        (fun ω' ↦ I (min (((k + 1 : ℕ) : ℝ≥0) / 2 ^ m) T) ω' -
-          I (min ((k : ℝ≥0) / 2 ^ m) T) ω') ω) =
+      (dyadicCellEvent m τ k).indicator
+        (fun ω' ↦ I (dyadicGridClip m T (k + 1)) ω' - I (dyadicGridClip m T k) ω') ω) =
       stoppedProcess I (fun ω' ↦ dyadicCeilTime m (τ ω')) T ω := by
-  let t : ℕ → ℝ≥0 := fun k ↦ min ((k : ℝ≥0) / 2 ^ m) T
-  let A : ℕ → Set Ω := fun k ↦
-    {ω' | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime m (τ ω')}
+  let t : ℕ → ℝ≥0 := dyadicGridClip m T
+  let A : ℕ → Set Ω := dyadicCellEvent m τ
   let σ : Ω → WithTop ℝ≥0 := fun ω' ↦ dyadicCeilTime m (τ ω')
   let d : ℕ → ℝ≥0 := fun k ↦ (k : ℝ≥0) / 2 ^ m
   let N : ℕ := ⌈T * 2 ^ m⌉₊
   have h2pos : (0 : ℝ≥0) < 2 ^ m := by positivity
-  have ht0 : t 0 = 0 := by simp [t]
-  have htN : t N = T := min_dyadic_ceil_div_eq_right m T
+  have ht0 : t 0 = 0 := dyadicGridClip_zero m T
+  have htN : t N = T := dyadicGridClip_ceil m T
   rcases le_or_gt (T : WithTop ℝ≥0) (σ ω) with hTσ | hTσ
   · have hsum : (∑ k ∈ Finset.range N,
           (A k).indicator (fun ω' ↦ I (t (k + 1)) ω' - I (t k) ω') ω) =
@@ -296,14 +336,13 @@ theorem sum_indicator_stopped_sub_eq_stoppedProcess {Ω E : Type*} [AddCommGroup
         dsimp only [σ] at hdyad
         rw [← Finset.sum_subset (Finset.range_mono hqN.le)]
         · exact Finset.sum_congr rfl fun k hk ↦ indicator_of_mem (by
-            dsimp only [A]
-            rw [mem_ofPred_eq, hdyad, WithTop.coe_lt_coe]
+            simp only [A, mem_dyadicCellEvent, hdyad, WithTop.coe_lt_coe]
             exact div_lt_div_of_pos_right (Nat.cast_lt.mpr (Finset.mem_range.mp hk)) h2pos) _
         · exact fun k _ hk ↦ indicator_of_notMem (fun h ↦ hk <| Finset.mem_range.mpr <| by
-            dsimp only [A] at h
-            rwa [mem_ofPred_eq, hdyad, WithTop.coe_lt_coe,
-              div_lt_div_iff_of_pos_right h2pos, Nat.cast_lt] at h) _
-      have htq : t q = d q := min_dyadic_div_eq_left hqN
+            simp only [A, mem_dyadicCellEvent, hdyad, d, WithTop.coe_lt_coe,
+              div_lt_div_iff_of_pos_right h2pos, Nat.cast_lt] at h
+            exact h) _
+      have htq : t q = d q := dyadicGridClip_of_lt_ceil hqN
       have huntop : (σ ω).untopA = d q := by
         rw [hdyad]; exact WithTop.untopD_coe _ _
       rw [hsum, Finset.sum_range_sub (fun k ↦ I (t k) ω) q, htq, ht0, hI0, sub_zero,
@@ -325,15 +364,15 @@ theorem dyadicCeilTime (hτ : IsStoppingTime ℱ τ) (n : ℕ) :
     rw [div_le_iff₀ (by positivity)]
     exact Nat.floor_le (by positivity)) _ (hτ _)
 
-/-- For any dyadic cell index strictly below `⌈T * 2 ^ m⌉₊`, the event that
-`dyadicCeilTime m τ` strictly exceeds the left endpoint is measurable at the clipped left
-endpoint `min (k / 2 ^ m) T`. -/
+/-- For any dyadic cell index strictly below `⌈T * 2 ^ m⌉₊`, the cell event
+`TauCeti.dyadicCellEvent m τ k` is measurable at the clipped left endpoint
+`TauCeti.dyadicGridClip m T k`. -/
 theorem measurableSet_gt_dyadicCeilTime (hτ : IsStoppingTime ℱ τ)
     (m : ℕ) {T : ℝ≥0} {k : ℕ} (hk : k < ⌈T * 2 ^ m⌉₊) :
-    MeasurableSet[ℱ (min ((k : ℝ≥0) / 2 ^ m) T)]
-      {ω | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < TauCeti.dyadicCeilTime m (τ ω)} := by
-  rw [TauCeti.min_dyadic_div_eq_left hk]
-  simpa only [compl_ofPred, not_le] using (hτ.dyadicCeilTime m ((k : ℝ≥0) / 2 ^ m)).compl
+    MeasurableSet[ℱ (TauCeti.dyadicGridClip m T k)] (TauCeti.dyadicCellEvent m τ k) := by
+  rw [TauCeti.dyadicGridClip_of_lt_ceil hk]
+  simpa only [TauCeti.dyadicCellEvent, compl_ofPred, not_le] using
+    (hτ.dyadicCeilTime m ((k : ℝ≥0) / 2 ^ m)).compl
 
 /-- At any stopping time `τ` on a raw filtration indexed by `ℝ≥0`, the restarted increment path
 `t ↦ stoppedValue X (fun ω' ↦ τ ω' + t) ω - stoppedValue X τ ω` of an almost-surely

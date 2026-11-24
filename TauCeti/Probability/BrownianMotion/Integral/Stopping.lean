@@ -103,62 +103,65 @@ theorem BrownianIntegrable.tendsto_eLpNorm_ite_le_sub
     filter_upwards [hp.eventually (eventually_gt_nhds (WithTop.coe_lt_top p.1))] with n hn
     exact (ite_eq_left hn.le).symm
 
-/-- Every clipped dyadic cell intersected with the event that the dyadic stopping time exceeds
-its left endpoint is predictable, including cells beyond the horizon (which are empty). -/
+/-- Every clipped dyadic cell intersected with `dyadicCellEvent m τ k` is predictable, including
+cells beyond the horizon (which are empty). -/
 theorem measurableSet_predictable_Ioc_dyadicCeilTime (hτ : IsStoppingTime ℱ τ)
     (m : ℕ) (T : ℝ≥0) (k : ℕ) :
     MeasurableSet[ℱ.predictable]
-      (Ioc (min ((k : ℝ≥0) / 2 ^ m) T) (min (((k + 1 : ℕ) : ℝ≥0) / 2 ^ m) T) ×ˢ
-        {ω | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime m (τ ω)}) := by
+      (Ioc (dyadicGridClip m T k) (dyadicGridClip m T (k + 1)) ×ˢ dyadicCellEvent m τ k) := by
   by_cases hk : k < ⌈T * 2 ^ m⌉₊
   · exact measurableSet_predictable_Ioc_prod _ _ (hτ.measurableSet_gt_dyadicCeilTime m hk)
-  · have hT : T ≤ (k : ℝ≥0) / 2 ^ m :=
-      (le_div_iff₀ (by positivity)).mpr (Nat.ceil_le.mp (le_of_not_gt hk))
-    simp [min_eq_right hT]
+  · simp [dyadicGridClip_of_ceil_le (le_of_not_gt hk),
+      dyadicGridClip_of_ceil_le ((le_of_not_gt hk).trans k.le_succ)]
+
+/-- The predictable `L²` cell restriction of a Brownian-integrable integrand `H` onto the `k`-th
+clipped dyadic cell `(dyadicGridClip m T k, dyadicGridClip m T (k + 1)] × dyadicCellEvent m τ k`. -/
+@[expose] noncomputable def BrownianIntegrable.dyadicCellLp
+    (hH : BrownianIntegrable ℱ P H) (hτ : IsStoppingTime ℱ τ) (m : ℕ) (T : ℝ≥0) (k : ℕ) :
+    Lp ℝ 2 (ℱ.predictableMeasure P T) :=
+  ((Lp.memLp ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))).indicator
+    ((measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet
+      (m0 := ℱ.predictable))).toLp
+    ((Ioc (dyadicGridClip m T k) (dyadicGridClip m T (k + 1)) ×ˢ
+      dyadicCellEvent m τ k).indicator
+      ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)))
 
 /-- Rounding a stopping time to the dyadic grid of mesh `2 ^ (-m)` splits the finite-horizon
-predictable `L²` class of the cutoff integrand into a finite sum of predictable-cell
-restrictions. -/
+predictable `L²` class of the cutoff integrand into the finite sum of `dyadicCellLp` terms. -/
 theorem BrownianIntegrable.toLp_ite_le_dyadicCeilTime_eq_sum [SFinite P]
     (hH : BrownianIntegrable ℱ P H) {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ)
     (m : ℕ) (T : ℝ≥0) :
     ((hH.ite_le (hτ.dyadicCeilTime m)).memLp_predictableMeasure T).toLp _ =
-      ∑ k ∈ Finset.range ⌈T * 2 ^ m⌉₊,
-        ((Lp.memLp ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))).indicator
-          ((measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet
-            (m0 := ℱ.predictable))).toLp
-          ((Ioc (min ((k : ℝ≥0) / 2 ^ m) T) (min (((k + 1 : ℕ) : ℝ≥0) / 2 ^ m) T) ×ˢ
-            {ω | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) <
-              dyadicCeilTime m (τ ω)}).indicator
-            ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))) := by
+      ∑ k ∈ Finset.range ⌈T * 2 ^ m⌉₊, hH.dyadicCellLp hτ m T k := by
   let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime m (τ ω)
   let d : ℕ → ℝ≥0 := fun k ↦ (k : ℝ≥0) / 2 ^ m
-  let t : ℕ → ℝ≥0 := fun k ↦ min (d k) T
-  let A : ℕ → Set Ω := fun k ↦ {ω | ((d k : ℝ≥0) : WithTop ℝ≥0) < σ ω}
+  let t : ℕ → ℝ≥0 := dyadicGridClip m T
+  let A : ℕ → Set Ω := dyadicCellEvent m τ
   let N : ℕ := ⌈T * 2 ^ m⌉₊
   let fH := (hH.memLp_predictableMeasure T).toLp (Function.uncurry H)
   have h2pos : (0 : ℝ≥0) < 2 ^ m := by positivity
-  let piece (k : ℕ) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
-    ((Lp.memLp fH).indicator
-      ((measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet
-        (m0 := ℱ.predictable))).toLp
-      ((Ioc (t k) (t (k + 1)) ×ˢ A k).indicator fH)
   -- Identify each cell's `Lp` representative with the pointwise indicator of `H`.
-  have hterms : ∀ k ∈ Finset.range N, (piece k : ℝ≥0 × Ω → ℝ) =ᵐ[ℱ.predictableMeasure P T]
-      (Ioc (t k) (t (k + 1)) ×ˢ A k).indicator (Function.uncurry H) := by
+  have hterms : ∀ k ∈ Finset.range N,
+      (hH.dyadicCellLp hτ m T k : ℝ≥0 × Ω → ℝ) =ᵐ[ℱ.predictableMeasure P T]
+        (Ioc (t k) (t (k + 1)) ×ˢ A k).indicator (Function.uncurry H) := by
     intro k _
     filter_upwards [((Lp.memLp fH).indicator
       ((measurableSet_predictable_Ioc_dyadicCeilTime hτ m T k).nullMeasurableSet
         (m0 := ℱ.predictable))).coeFn_toLp,
       (hH.memLp_predictableMeasure T).coeFn_toLp] with p hp hHp
-    dsimp only [piece, t, d, A, σ, fH] at hp ⊢
-    simp only [hp, indicator_apply, hHp]
+    dsimp only [BrownianIntegrable.dyadicCellLp, fH, t, A] at hp ⊢
+    rw [hp]
+    by_cases hmem : p ∈ Ioc (dyadicGridClip m T k) (dyadicGridClip m T (k + 1)) ×ˢ
+        dyadicCellEvent m τ k
+    · rw [indicator_of_mem hmem, indicator_of_mem hmem, hHp]
+    · rw [indicator_of_notMem hmem, indicator_of_notMem hmem]
   -- Evaluate both sides on `(0, T] × Ω`, where a single dyadic cell `k₀ = ⌈s * 2^m⌉₊ - 1`
   -- covers `s`.
   apply Lp.ext
   have hL_ae := ((hH.ite_le (hτ.dyadicCeilTime m)).memLp_predictableMeasure T).coeFn_toLp
   filter_upwards [hL_ae, ℱ.ae_mem_Ioc_prod_predictableMeasure P T,
-    Lp.coeFn_finsetSum (s := Finset.range N) piece, eventuallyEq_sum hterms]
+    Lp.coeFn_finsetSum (s := Finset.range N) (hH.dyadicCellLp hτ m T),
+    eventuallyEq_sum hterms]
     with ⟨s, ω⟩ hL hsT hsum htms
   rw [hL, hsum, htms]
   simp only [Finset.sum_apply, Function.uncurry_apply_pair]
@@ -175,20 +178,22 @@ theorem BrownianIntegrable.toLp_ite_le_dyadicCeilTime_eq_sum [SFinite P]
   · -- Inside cell `k₀`, `s ≤ dyadicCeilTime m (τ ω)` holds iff `ω ∈ A k₀`.
     have hst : s ∈ Ioc (t k₀) (t (k₀ + 1)) := by
       dsimp only [t]
-      exact ⟨(min_dyadic_div_eq_left (Finset.mem_range.mp hk₀)).symm ▸ hsk₀.left,
+      exact ⟨(dyadicGridClip_of_lt_ceil (Finset.mem_range.mp hk₀)).symm ▸ hsk₀.left,
         le_min hsk₀.right hsT.left.right⟩
     have hiff := coe_le_dyadicCeilTime_iff_gt_dyadic m k₀ hsk₀ (τ ω)
     by_cases hc : (s : WithTop ℝ≥0) ≤ σ ω
-    · rw [ite_eq_left hc, indicator_of_mem (mem_prod.mpr ⟨hst, hiff.mp hc⟩),
+    · rw [ite_eq_left hc, indicator_of_mem
+          (mem_prod.mpr ⟨hst, (mem_dyadicCellEvent _ _ _ _).mpr (hiff.mp hc)⟩),
         Function.uncurry_apply_pair]
-    · rw [ite_eq_right hc, indicator_of_notMem (fun h ↦ hc (hiff.mpr (mem_prod.mp h).right))]
+    · rw [ite_eq_right hc, indicator_of_notMem
+        (fun h ↦ hc (hiff.mpr ((mem_dyadicCellEvent _ _ _ _).mp (mem_prod.mp h).right)))]
   · -- All other cells `k ≠ k₀` are disjoint from `s`.
     intro k hk hne
     refine indicator_of_notMem (f := Function.uncurry H) fun h ↦ ?_
     rcases lt_or_gt_of_ne hne with hlt | hlt
-    · exact ((mem_prod.mp h).left.right.trans <| (min_le_left _ _).trans <|
+    · exact ((mem_prod.mp h).left.right.trans <| (dyadicGridClip_le_div _ _ _).trans <|
         div_le_div_of_nonneg_right (Nat.cast_le.mpr hlt) h2pos.le).not_gt hsk₀.left
-    · have htk : t k = d k := min_dyadic_div_eq_left (Finset.mem_range.mp hk)
+    · have htk : t k = d k := dyadicGridClip_of_lt_ceil (Finset.mem_range.mp hk)
       exact (hsk₀.right.trans <| htk ▸
         div_le_div_of_nonneg_right (Nat.cast_le.mpr hlt) h2pos.le).not_gt
           (mem_prod.mp h).left.left

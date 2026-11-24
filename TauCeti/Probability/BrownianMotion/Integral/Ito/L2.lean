@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 import TauCeti.Probability.BrownianMotion.Integral.Restriction
 import TauCeti.Probability.BrownianMotion.Integral.Simple
 import TauCeti.Probability.BrownianMotion.Integral.Square
+import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Martingale.LpLimit
 import TauCeti.Probability.Martingale.MaximalInequality.Basic
@@ -21,14 +22,13 @@ import TauCeti.Probability.Process.AccumulatedEnergy
 /-!
 # L² theory of the Itô stochastic integral
 
-For a `TauCeti.BrownianIntegrable` integrand `H` and a filtered pre-Brownian motion `W`, any
-Itô integral `I` satisfying `TauCeti.Probability.IsItoIntegral ℱ P W H I` agrees almost surely at
-each finite horizon `T` with the terminal `L²` integral `hW.l2Integral T`. This characterization
-yields:
+For a `TauCeti.BrownianIntegrable` integrand `H` and a filtered pre-Brownian motion `W`, the
+characterization in `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry` identifies any Itô
+integral `I` satisfying `TauCeti.Probability.IsItoIntegral ℱ P W H I` almost surely at each finite
+horizon `T` with the terminal `L²` integral `hW.l2Integral T`. This characterization yields:
 
-* `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_iff_ae_eq_l2Integral`,
-  `integral_eq_zero_of_isItoIntegral`, `integral_mul_of_isItoIntegral`: L² characterization,
-  zero mean, and cross-isometry.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.integral_eq_zero_of_isItoIntegral` and
+  `integral_mul_of_isItoIntegral`: zero mean and cross-isometry.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.ae_eq_mul_sub_of_isItoIntegral_indicator_Ioc` and
   `indist_mul_sub_of_isItoIntegral_indicator_Ioc`: the `ℱ s`-measurable multiplier rule on `(s, u]`.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.tendsto_eLpNorm_sub_of_isItoIntegral` and
@@ -68,23 +68,7 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
   {W H K I J : ℝ≥0 → Ω → ℝ}
 
-/-! ### Characterization, moments, and multiplier rule -/
-
-/-- **L² characterization of Itô integrals.** For a Brownian-integrable integrand `H`, an almost
-surely continuous process `I` is an Itô integral of `H` if and only if `I T` agrees almost surely
-with the terminal `L²` integral `hW.l2Integral T` at every horizon `T`. Path continuity of `W` is
-not required. -/
-theorem isItoIntegral_iff_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hIcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ I t ω)) :
-    IsItoIntegral ℱ P W H I ↔
-      ∀ T : ℝ≥0, I T =ᵐ[P]
-        hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) := by
-  refine ⟨fun hI T ↦ hW.ae_eq_l2Integral_of_isItoIntegral hH hI T, fun hT ↦ ?_⟩
-  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, -, -, -, hE, hLp⟩ := hW.exists_simpleHolding_approx hH
-  refine ⟨hH.isStronglyPredictable, hIcont, fun T ↦
-    ⟨n, τ, a, hτ, ha, hE T,
-      (tendstoInMeasure_of_tendsto_Lp (hLp T)).congr
-        (fun k ↦ (hmem k T).coeFn_toLp) (hT T).symm⟩⟩
+/-! ### Moments and multiplier rule -/
 
 /-- Every Itô integral of a Brownian-integrable process has expectation zero at each horizon. -/
 theorem integral_eq_zero_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -290,16 +274,10 @@ theorem tendsto_measure_exists_le_simpleGains_sub_lt (hW : IsFilteredPreBrownian
       P {ω | ∃ t ≤ T, (ε : ℝ) < |Finance.simpleGains (τ k) (n k) (a k) W t ω - J t ω|} :=
     measure_congr <| hIJ.mono fun ω hω ↦ by simp [hω]
   simp_rw [hset_congr]
-  have hMmart (k : ℕ) : Martingale (Finance.simpleGains (τ k) (n k) (a k) W) ℱ P := by
-    have hsum : Finance.simpleGains (τ k) (n k) (a k) W = ∑ j ∈ Finset.range (n k),
-        fun t ω ↦ a k j ω * (W (min (τ k (j + 1)) t) ω - W (min (τ k j) t) ω) := by
-      ext t ω; simp [Finance.simpleGains_def, Finset.sum_apply]
-    rw [hsum]
-    refine Finset.sum_induction _ (Martingale · ℱ P) (fun _ _ ↦ Martingale.add)
-      (martingale_zero _ ℱ P) fun j hj ↦ ?_
-    have hj' := Finset.mem_range.mp hj
-    exact hW.martingale_mul_sub_min (hτ k hj'.le hj' (Nat.le_succ j)) (ha k j hj')
-      ((ha₂ k j hj').integrable one_le_two)
+  have hMmart (k : ℕ) : Martingale (Finance.simpleGains (τ k) (n k) (a k) W) ℱ P :=
+    hW.martingale.simpleGains (hτ k) (ha k) fun j hj t ↦
+      (hW.martingale_mul_sub_min (hτ k hj.le hj (Nat.le_succ j)) (ha k j hj)
+        ((ha₂ k j hj).integrable one_le_two)).integrable t
   have hL2 : Tendsto (fun k ↦ eLpNorm (Finance.simpleGains (τ k) (n k) (a k) W T - J T) 2 P)
       atTop (𝓝 0) := by
     refine hlim.congr fun k ↦ ?_
@@ -349,7 +327,7 @@ private theorem exists_martingale_sq_sub_ae_eq (hW : IsFilteredPreBrownianReal �
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (TauCeti.tendsto_eLpNorm_sq_sub_one (hH.memLp_timeMeasure t).eLpNorm_ne_top (hlim t))
       (fun _ ↦ zero_le) fun k ↦ ?_
-    simp_rw [B, Finance.simpleHolding_energy_eq_integral_sq (hτ k) t]
+    simp_rw [B, ← Finance.integral_sq_simpleHolding_timeMeasure (hτ k) t]
     have hKmem (ω : Ω) : Integrable (fun s ↦ Finance.simpleHolding (τ k) (n k) (a k) s ω ^ 2)
         (timeMeasure t) := by
       simp only [Finance.simpleHolding_def]
