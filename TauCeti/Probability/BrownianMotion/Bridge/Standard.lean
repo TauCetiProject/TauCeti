@@ -11,10 +11,10 @@ public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Moments.Covariance
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Probability.BrownianMotion.Bridge.Basic
+public import TauCeti.Probability.BrownianMotion.WienerMeasure
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import TauCeti.MeasureTheory.Measure.ContinuousMap
-import TauCeti.Probability.BrownianMotion.WienerMeasure
 import TauCeti.Probability.Distributions.Gaussian.IsGaussianProcess
 
 /-!
@@ -36,11 +36,15 @@ distribution function `F`.
 
 ## Main definitions
 
+* `TauCeti.standardBrownianBridgePath`: the continuous map `ω ↦ (t ↦ ω t - t ω 1)` from paths
+  on `ℝ≥0` to paths on `unitInterval`.
 * `TauCeti.standardBrownianBridgeMeasure`: the law of the standard Brownian bridge on
   `C(unitInterval, ℝ)`.
 
 ## Main results
 
+* `TauCeti.hasLaw_standardBrownianBridgePath`: under `wienerMeasure`,
+  `standardBrownianBridgePath` has law `standardBrownianBridgeMeasure`.
 * `TauCeti.isGaussianProcess_eval_standardBrownianBridgeMeasure`: the coordinate process is a
   Gaussian process.
 * `TauCeti.integral_eval_standardBrownianBridgeMeasure`,
@@ -72,16 +76,19 @@ namespace TauCeti
 
 /-- The standard Brownian bridge path built from a path `ω` on `ℝ≥0`: `t ↦ ω t - t ω 1` on
 `[0, 1]`. -/
-private noncomputable def bridgePath (ω : C(ℝ≥0, ℝ)) : C(I, ℝ) :=
+noncomputable def standardBrownianBridgePath (ω : C(ℝ≥0, ℝ)) : C(I, ℝ) :=
   ⟨fun t ↦ brownianBridge (fun t (ω : C(ℝ≥0, ℝ)) ↦ ω t) 1 (toNNReal t) ω,
     (continuous_brownianBridge ω.continuous).comp toNNReal_continuous⟩
 
-private lemma bridgePath_apply (ω : C(ℝ≥0, ℝ)) (t : I) :
-    bridgePath ω t = brownianBridge (fun t (ω : C(ℝ≥0, ℝ)) ↦ ω t) 1 (toNNReal t) ω := (rfl)
+@[simp]
+theorem standardBrownianBridgePath_apply (ω : C(ℝ≥0, ℝ)) (t : I) :
+    standardBrownianBridgePath ω t =
+      brownianBridge (fun t (ω : C(ℝ≥0, ℝ)) ↦ ω t) 1 (toNNReal t) ω := (rfl)
 
-private lemma measurable_bridgePath : Measurable bridgePath :=
+@[fun_prop]
+theorem measurable_standardBrownianBridgePath : Measurable standardBrownianBridgePath :=
   ContinuousMap.measurable_iff_eval.2 fun t ↦ by
-    simp only [bridgePath_apply]
+    simp only [standardBrownianBridgePath_apply]
     exact measurable_brownianBridge (ContinuousMap.measurable_eval _)
       (ContinuousMap.measurable_eval _)
 
@@ -91,16 +98,22 @@ private lemma measurable_bridgePath : Measurable bridgePath :=
 whose finite-dimensional marginals are the centred Gaussian laws with covariance
 `min s t - s t`. -/
 noncomputable def standardBrownianBridgeMeasure : Measure C(I, ℝ) :=
-  wienerMeasure.map bridgePath
+  wienerMeasure.map standardBrownianBridgePath
+
+/-- Under `wienerMeasure`, the standard Brownian bridge path has law
+`standardBrownianBridgeMeasure`. -/
+theorem hasLaw_standardBrownianBridgePath :
+    HasLaw standardBrownianBridgePath standardBrownianBridgeMeasure wienerMeasure :=
+  ⟨measurable_standardBrownianBridgePath.aemeasurable, rfl⟩
 
 instance : IsProbabilityMeasure standardBrownianBridgeMeasure :=
-  (Measure.isProbabilityMeasure_map_iff measurable_bridgePath.aemeasurable).2 inferInstance
+  hasLaw_standardBrownianBridgePath.isProbabilityMeasure_iff.1 inferInstance
 
 /-- The bridge of the coordinate process of `wienerMeasure`, read at the times of `[0, 1]`, is a
 Gaussian process. -/
-private lemma isGaussianProcess_bridgePath :
-    IsGaussianProcess (fun t ω ↦ bridgePath ω t) wienerMeasure := by
-  simp only [bridgePath_apply]
+private lemma isGaussianProcess_standardBrownianBridgePath :
+    IsGaussianProcess (fun t ω ↦ standardBrownianBridgePath ω t) wienerMeasure := by
+  simp only [standardBrownianBridgePath_apply]
   exact (isPreBrownianReal_eval_wienerMeasure.isGaussianProcess_brownianBridge 1).comp_right
     toNNReal
 
@@ -108,17 +121,18 @@ private lemma isGaussianProcess_bridgePath :
 theorem isGaussianProcess_eval_standardBrownianBridgeMeasure :
     IsGaussianProcess (fun t (x : C(I, ℝ)) ↦ x t) standardBrownianBridgeMeasure where
   hasGaussianLaw J := by
-    have hJ := (isGaussianProcess_bridgePath.hasGaussianLaw J).isGaussian_map
+    have hJ := (isGaussianProcess_standardBrownianBridgePath.hasGaussianLaw J).isGaussian_map
     refine ⟨(ContinuousMap.measurable_finsetRestrict J).aemeasurable, ?_⟩
-    rwa [standardBrownianBridgeMeasure,
-      Measure.map_map (ContinuousMap.measurable_finsetRestrict J) measurable_bridgePath]
+    rwa [standardBrownianBridgeMeasure, Measure.map_map (ContinuousMap.measurable_finsetRestrict J)
+      measurable_standardBrownianBridgePath]
 
 /-- The standard Brownian bridge is centred. -/
 @[simp]
 theorem integral_eval_standardBrownianBridgeMeasure (t : I) :
     ∫ x : C(I, ℝ), x t ∂standardBrownianBridgeMeasure = 0 := by
-  rw [standardBrownianBridgeMeasure, integral_map measurable_bridgePath.aemeasurable
-    (ContinuousMap.measurable_eval t).aestronglyMeasurable]
+  rw [standardBrownianBridgeMeasure,
+    integral_map measurable_standardBrownianBridgePath.aemeasurable
+      (ContinuousMap.measurable_eval t).aestronglyMeasurable]
   exact isPreBrownianReal_eval_wienerMeasure.integral_brownianBridge 1 (toNNReal t)
 
 /-- The covariance of the standard Brownian bridge: `cov[x s, x t] = min s t - s t`. -/
@@ -128,8 +142,9 @@ theorem covariance_eval_standardBrownianBridgeMeasure (s t : I) :
       min (s : ℝ) t - s * t := by
   rw [standardBrownianBridgeMeasure, covariance_map_fun
     (ContinuousMap.measurable_eval s).aestronglyMeasurable
-    (ContinuousMap.measurable_eval t).aestronglyMeasurable measurable_bridgePath.aemeasurable]
-  simp only [bridgePath_apply]
+    (ContinuousMap.measurable_eval t).aestronglyMeasurable
+    measurable_standardBrownianBridgePath.aemeasurable]
+  simp only [standardBrownianBridgePath_apply]
   rw [isPreBrownianReal_eval_wienerMeasure.covariance_brownianBridge
     (by exact_mod_cast s.property.2) (by exact_mod_cast t.property.2)]
   simp
@@ -158,17 +173,17 @@ theorem hasLaw_eval_standardBrownianBridgeMeasure (t : I) :
 /-- Almost every path of the standard Brownian bridge starts at `0`. -/
 theorem ae_eval_zero_standardBrownianBridgeMeasure :
     ∀ᵐ x ∂standardBrownianBridgeMeasure, x 0 = 0 := by
-  rw [standardBrownianBridgeMeasure, ae_map_iff measurable_bridgePath.aemeasurable
+  rw [standardBrownianBridgeMeasure, ae_map_iff measurable_standardBrownianBridgePath.aemeasurable
     (measurableSet_eq_fun (ContinuousMap.measurable_eval 0) measurable_const)]
   filter_upwards [ae_eval_zero_wienerMeasure] with ω hω
-  simp [bridgePath_apply, hω]
+  simp [hω]
 
 /-- Almost every path of the standard Brownian bridge ends at `0`. -/
 theorem ae_eval_one_standardBrownianBridgeMeasure :
     ∀ᵐ x ∂standardBrownianBridgeMeasure, x 1 = 0 := by
-  rw [standardBrownianBridgeMeasure, ae_map_iff measurable_bridgePath.aemeasurable
+  rw [standardBrownianBridgeMeasure, ae_map_iff measurable_standardBrownianBridgePath.aemeasurable
     (measurableSet_eq_fun (ContinuousMap.measurable_eval 1) measurable_const)]
-  exact Filter.Eventually.of_forall fun ω ↦ by simp [bridgePath_apply]
+  exact Filter.Eventually.of_forall fun ω ↦ by simp
 
 /-- The finite-dimensional marginals of the standard Brownian bridge: at times `s i`, not
 necessarily distinct, the values form a centred Gaussian vector with covariance matrix
@@ -217,7 +232,13 @@ theorem map_standardBrownianBridgeMeasure_eq_brownianBridgeMeasure :
     Measurable.of_eval fun _ ↦ ContinuousMap.measurable_eval _
   have hm : AEMeasurable (fun (ω : C(ℝ≥0, ℝ)) (t : Set.Iic (1 : ℝ≥0)) ↦ ω t) wienerMeasure :=
     (Measurable.of_eval fun _ ↦ ContinuousMap.measurable_eval _).aemeasurable
-  rw [standardBrownianBridgeMeasure, Measure.map_map hR measurable_bridgePath]
+  have hcomp : (fun (x : C(I, ℝ)) (t : Set.Iic (1 : ℝ≥0)) ↦
+        x ⟨t, t.val.property, by exact_mod_cast t.property⟩) ∘ standardBrownianBridgePath =
+      fun ω (t : Set.Iic (1 : ℝ≥0)) ↦ brownianBridge (fun t (ω : C(ℝ≥0, ℝ)) ↦ ω t) 1 t ω := by
+    funext ω t
+    simp [toNNReal_mk]
+  rw [standardBrownianBridgeMeasure, Measure.map_map hR measurable_standardBrownianBridgePath,
+    hcomp]
   exact (isPreBrownianReal_eval_wienerMeasure.hasLaw_brownianBridgeMeasure hm).map_eq
 
 end TauCeti
