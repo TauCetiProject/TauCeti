@@ -142,10 +142,16 @@ theorem ordinaryProjection_apply_of_mem_periodicPts {x : M} (hx : x ∈ periodic
   rw [ordinaryProjection, pow_apply_eq_iterate]
   exact isPeriodicPt_factorial_of_card_le le_rfl hx
 
+/-- The ordinary projector fixes its own values: `e_U (e_U x) = e_U x`. -/
+@[simp]
+theorem ordinaryProjection_ordinaryProjection_apply (x : M) :
+    U.ordinaryProjection (U.ordinaryProjection x) = U.ordinaryProjection x :=
+  ordinaryProjection_apply_of_mem_periodicPts <|
+    mem_range_ordinaryProjection_iff.mp (mem_range_self _ x)
+
 /-- On a finite module, the ordinary projector is idempotent: `e_U * e_U = e_U`. -/
 theorem isIdempotentElem_ordinaryProjection : IsIdempotentElem U.ordinaryProjection :=
-  LinearMap.ext fun x ↦ ordinaryProjection_apply_of_mem_periodicPts <|
-    mem_range_ordinaryProjection_iff.mp (mem_range_self _ x)
+  LinearMap.ext ordinaryProjection_ordinaryProjection_apply
 
 /-- The ordinary part is the image of `U ^ Nat.card M`. -/
 theorem range_ordinaryProjection : range U.ordinaryProjection = range (U ^ Nat.card M) := by
@@ -214,7 +220,7 @@ theorem invOn_range_ordinaryProjection :
 
 /-- `U` restricted to the ordinary part, as a linear automorphism of it. Its inverse is the
 restriction of `U ^ ((Nat.card M)! - 1)` (`coe_ordinaryEquiv_symm_apply`). -/
-@[expose] noncomputable def ordinaryEquiv (U : Module.End R M) :
+noncomputable def ordinaryEquiv (U : Module.End R M) :
     range U.ordinaryProjection ≃ₗ[R] range U.ordinaryProjection where
   toLinearMap := U.restrict U.range_ordinaryProjection_mem_invtSubmodule
   invFun x := ⟨(U ^ ((Nat.card M)! - 1)) x, by
@@ -228,12 +234,12 @@ restriction of `U ^ ((Nat.card M)! - 1)` (`coe_ordinaryEquiv_symm_apply`). -/
 @[simp]
 theorem coe_ordinaryEquiv_apply (x : range U.ordinaryProjection) :
     (U.ordinaryEquiv x : M) = U x :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem coe_ordinaryEquiv_symm_apply (x : range U.ordinaryProjection) :
     (U.ordinaryEquiv.symm x : M) = (U ^ ((Nat.card M)! - 1)) x :=
-  rfl
+  (rfl)
 
 /-- The ordinary projector is the identity exactly when `U` is invertible. -/
 theorem ordinaryProjection_eq_one_iff : U.ordinaryProjection = 1 ↔ IsUnit U := by
