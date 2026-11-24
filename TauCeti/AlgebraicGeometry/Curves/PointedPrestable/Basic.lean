@@ -37,6 +37,8 @@ prestable family.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.reindex`: reindexing the markings.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.ofSmooth`: a smooth proper relative curve with
   geometrically connected fibres and pairwise disjoint sections.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.markingPoint`: the point of a pointed
+  prestable curve over a field at a marking, as a point of the smooth locus.
 
 ## Main results
 
@@ -99,6 +101,11 @@ instance instOverTotal : P.total.Over S :=
 @[simp]
 theorem over_eq_toBase : P.total ↘ S = P.toBase :=
   (rfl)
+
+/-- The total space of a pointed prestable family, as a scheme over the base, is a prestable
+family. -/
+instance prestableFamily_over : PrestableFamily (P.total ↘ S) :=
+  P.prestableFamily
 
 /-- The total space of a pointed prestable family over a quasi-compact base is quasi-compact,
 the structure morphism being proper. -/
@@ -211,6 +218,25 @@ def ofSmooth {X : Scheme.{u}} (f : X ⟶ S) [IsProper f] [SmoothOfRelativeDimens
   range_marking_subset_smoothLocus _ := by
     have := SmoothOfRelativeDimension.smooth 1 f
     simp [Scheme.Hom.smoothLocus_eq_top]
+
+/-- The point of a pointed prestable curve over a field at its `i`th marking, as a point of the
+smooth locus. -/
+def markingPoint {K : Type u} [Field K] (P : PointedPrestableFamily (Spec (.of K)) n) (i : Fin n) :
+    (P.total ↘ Spec (.of K)).smoothLocus :=
+  ⟨P.marking i default, P.range_marking_subset_smoothLocus i ⟨default, rfl⟩⟩
+
+/-- The point at the `i`th marking is the value of the `i`th section at the point of `Spec K`. -/
+@[simp]
+theorem coe_markingPoint {K : Type u} [Field K] (P : PointedPrestableFamily (Spec (.of K)) n)
+    (i : Fin n) : (P.markingPoint i : P.total) = P.marking i default :=
+  (rfl)
+
+/-- The points at the markings of a reindexed pointed prestable curve are the points at the
+reindexed markings. -/
+@[simp]
+theorem markingPoint_reindex {K : Type u} [Field K] (P : PointedPrestableFamily (Spec (.of K)) n)
+    (e : Fin m ↪ Fin n) (i : Fin m) : (P.reindex e).markingPoint i = P.markingPoint (e i) :=
+  (rfl)
 
 end PointedPrestableFamily
 

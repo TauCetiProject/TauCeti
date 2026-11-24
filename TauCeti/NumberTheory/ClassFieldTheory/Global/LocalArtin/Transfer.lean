@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Abelianization.Transfer
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Reciprocity
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
+import TauCeti.GroupTheory.GroupAction.Orbit.Card
 import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Frobenius
 import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
@@ -109,8 +110,6 @@ private lemma minimalPeriod_smul_coset_eq_inertiaDeg
     .of_liesOver (𝓞 K) ((c.out⁻¹ • Q₀).under (𝓞 E)) (c.out⁻¹ • Q₀)
   have hzpow : Subgroup.zpowers σ = stabilizer Gal(L/K) Q₀ :=
     Ideal.zpowers_eq_stabilizer_of_isArithFrobAt Q₀ hσ
-  have h1 : Nat.card (orbit (Subgroup.zpowers σ) c) = Function.minimalPeriod (σ • ·) c :=
-    (Nat.card_congr (orbitZPowersEquiv σ c)).trans (Nat.card_zmod _)
   have hc := Ideal.card_orbit_stabilizer_coset v.asIdeal Q₀ H (𝓞 E) c
   have hcoset :
       (Ideal.primesOverOfCoset v.asIdeal Q₀ H (𝓞 E) c).val = (c.out⁻¹ • Q₀).under (𝓞 E) := by
@@ -121,8 +120,7 @@ private lemma minimalPeriod_smul_coset_eq_inertiaDeg
       orbit (stabilizer Gal(L/K) Q₀) c := by
     ext y
     simp only [mem_orbit_iff, Subtype.exists, Subgroup.mk_smul, hzpow]
-  rw [horb, hc] at h1
-  exact h1.symm
+  rw [← natCard_orbit_zpowers, horb, hc]
 
 omit [NumberField K] [NumberField E] [IsGalois E L] in
 /-- Given an arithmetic Frobenius `σ ∈ Gal(L/K)` at `Q₀` and a coset `c ∈ Gal(L/K) ⧸ Gal(L/E)`

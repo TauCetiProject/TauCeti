@@ -22,7 +22,7 @@ formal pattern of TauCeti's `PositiveLinearMap.gnsEquiv`
 (`TauCeti.Analysis.CStarAlgebra.GNS.Uniqueness`).
 
 We also relate scalar positive functionals (`H = ℂ`) to their GNS representation
-(`PositiveLinearMap.gnsStinespringEquiv`, using `PositiveLinearMap.toCompletelyPositiveMapCLM`) and
+(`PositiveLinearMap.gnsStinespringEquiv`, using `PositiveLinearMap.toCompletelyPositiveMapOfId`) and
 contrast the minimal dilation `(H, id, 1)` of `id_{B(H)}` with the non-minimal doubled dilation on
 `H ⊕ H`.
 
@@ -296,9 +296,9 @@ section Unital
 variable {D : Type u} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D] (ω : D →ₚ[ℂ] ℂ)
 
 /-- `(ω.GNS, ω.gnsStarAlgHom, toSpanSingleton ℂ ω.gnsVector)` dilates
-`ω.toCompletelyPositiveMapCLM`. -/
+`ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)`. -/
 theorem gns_dilation_eq (a : D) :
-    ω.toCompletelyPositiveMapCLM a =
+    (ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)) a =
       (ContinuousLinearMap.toSpanSingleton ℂ ω.gnsVector).adjoint.comp
         ((ω.gnsStarAlgHom a).comp (ContinuousLinearMap.toSpanSingleton ℂ ω.gnsVector)) := by
   refine ContinuousLinearMap.ext fun z => ?_
@@ -318,23 +318,26 @@ theorem gns_dilation_minimal :
 
 /-- The canonical Stinespring dilation of `ω : D →ₚ[ℂ] ℂ` (`H = ℂ`) is unitarily equivalent to
 GNS. -/
-noncomputable def gnsStinespringEquiv : ω.toCompletelyPositiveMapCLM.Stinespring ≃ₗᵢ[ℂ] ω.GNS :=
-  ω.toCompletelyPositiveMapCLM.stinespringEquiv ω.gnsStarAlgHom.toNonUnitalStarAlgHom
-    (ContinuousLinearMap.toSpanSingleton ℂ ω.gnsVector) ω.gns_dilation_eq ω.gns_dilation_minimal
+noncomputable def gnsStinespringEquiv :
+    (ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)).Stinespring ≃ₗᵢ[ℂ] ω.GNS :=
+  (ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)).stinespringEquiv
+    ω.gnsStarAlgHom.toNonUnitalStarAlgHom (ContinuousLinearMap.toSpanSingleton ℂ ω.gnsVector)
+    ω.gns_dilation_eq ω.gns_dilation_minimal
 
 @[simp↓] theorem gnsStinespringEquiv_intertwines (a : D)
-    (x : ω.toCompletelyPositiveMapCLM.Stinespring) :
-    ω.gnsStinespringEquiv (ω.toCompletelyPositiveMapCLM.stinespringStarAlgHom a x) =
+    (x : (ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)).Stinespring) :
+    ω.gnsStinespringEquiv ((ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)).stinespringStarAlgHom a x) =
       ω.gnsStarAlgHom a (ω.gnsStinespringEquiv x) := by
   simpa only [gnsStinespringEquiv, CompletelyPositiveMap.coe_stinespringStarAlgHom,
     StarAlgHom.coe_toNonUnitalStarAlgHom] using
-    ω.toCompletelyPositiveMapCLM.stinespringEquiv_intertwines
+    (ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)).stinespringEquiv_intertwines
       ω.gnsStarAlgHom.toNonUnitalStarAlgHom (ContinuousLinearMap.toSpanSingleton ℂ ω.gnsVector)
       ω.gns_dilation_eq ω.gns_dilation_minimal a x
 
 @[simp] theorem gnsStinespringEquiv_stinespringOp (z : ℂ) :
-    ω.gnsStinespringEquiv (ω.toCompletelyPositiveMapCLM.stinespringOp z) = z • ω.gnsVector :=
-  ω.toCompletelyPositiveMapCLM.stinespringEquiv_stinespringOp
+    ω.gnsStinespringEquiv ((ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)).stinespringOp z) =
+      z • ω.gnsVector :=
+  (ω.toCompletelyPositiveMapOfId (ℂ →L[ℂ] ℂ)).stinespringEquiv_stinespringOp
     ω.gnsStarAlgHom.toNonUnitalStarAlgHom (ContinuousLinearMap.toSpanSingleton ℂ ω.gnsVector)
     ω.gns_dilation_eq ω.gns_dilation_minimal z
 
