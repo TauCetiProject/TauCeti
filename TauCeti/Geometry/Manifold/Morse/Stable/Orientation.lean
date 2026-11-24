@@ -63,8 +63,6 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   of the stable manifold.
 * `reindex_unstableFrameOrientation_eq_orientationAt_iff`: along the unstable manifold, the frame
   orientation agrees with `o` everywhere or nowhere.
-* `reindex_unstableFrameOrientation_neg_eq_orientationAt_iff`: reversing the orientation of `V⁻`
-  makes the frame orientation agree with `o` exactly where it did not.
 * `reindex_stableNormalOrientation_eq_orientationAt_iff`: the same along the stable manifold.
 * `stableNormalOrientation_self`: at the critical point the two frame orientations differ by
   `(-1) ^ (ind_f x * ind_{-f} x)`, the sign of exchanging the two factors.
@@ -447,26 +445,6 @@ theorem reindex_unstableFrameOrientation_eq_orientationAt_iff
   have hxu := hX.mem_unstableSet_self hx.mem_criticalPoints
   (reindex_unstableFrameOrientation_eq_orientationAt_iff_self hφ hf hx o e op op' hxu hy₁).trans
     (reindex_unstableFrameOrientation_eq_orientationAt_iff_self hφ hf hx o e op op' hxu hy₂).symm
-
-/-- **Reversing the orientation of the unstable coordinates.** At a point `y` of `W^u(x)`, the frame
-orientation built from `-op` is the orientation of `o` exactly when the one built from `op` is not:
-the two frame orientations are opposite, and `o` gives one of the two orientations of `T_y M`. -/
-theorem reindex_unstableFrameOrientation_neg_eq_orientationAt_iff
-    (hf : IsMorse 𝓘(ℝ, E) f) (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
-    (o : Manifold.Orientation 𝓘(ℝ, E) M ι)
-    (e : Fin (manifoldMorseIndex 𝓘(ℝ, E) f x + manifoldMorseIndex 𝓘(ℝ, E) (-f) x) ≃ ι)
-    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
-    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
-      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
-    {y : M} (hy : y ∈ hX.flow.unstableSet x) :
-    Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx (-op) op' hy) =
-        o.orientationAt y ↔
-      Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx op op' hy) ≠
-        o.orientationAt y := by
-  rw [unstableFrameOrientation_def, unstableFrameOrientation_def, Orientation.ofExact_neg_left,
-    Orientation.reindex_neg]
-  exact neg_eq_iff_eq_neg.trans (Orientation.ne_iff_eq_neg _ _
-    (Nat.card_eq_fintype_card.trans (o.finrank_tangentSpace_eq y).symm)).symm
 
 /-- **The frame orientations along the stable manifold.** Let `o` be an orientation of `M`, and
 orient the coordinates of positive weight of a Morse chart `φ` at `x`, in which `X` is linear, by

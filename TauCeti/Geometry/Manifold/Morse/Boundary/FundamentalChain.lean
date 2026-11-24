@@ -163,6 +163,14 @@ theorem fundamentalSign_of_morseIndex_eq {p : criticalPoints 𝓘(ℝ, E) f}
       if hX.unstableOrientation 𝔬 hp = oM.orientationAt p then 1 else -1 :=
   dite_eq_left hp
 
+/-- At a critical point of top index, the fundamental sign is `1` exactly when the unstable
+orientation is the orientation of `M`. -/
+theorem fundamentalSign_eq_one_iff {p : criticalPoints 𝓘(ℝ, E) f}
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
+    hX.fundamentalSign 𝔬 oM p = 1 ↔ hX.unstableOrientation 𝔬 hp = oM.orientationAt p := by
+  rw [fundamentalSign_of_morseIndex_eq hp]
+  split_ifs with h <;> simp [h]
+
 /-- The fundamental sign vanishes at the critical points of index less than `dim M`. -/
 @[simp]
 theorem fundamentalSign_of_morseIndex_ne {p : criticalPoints 𝓘(ℝ, E) f}
