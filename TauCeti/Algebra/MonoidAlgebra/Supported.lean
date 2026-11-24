@@ -89,7 +89,7 @@ theorem supportedMap_id (f : supported R R s) : supportedMap s (RingHom.id R) f 
 
 @[simp]
 theorem supportedMap_comp (φ : R →+* S) (ψ : S →+* T) (f : supported R R s) :
-    supportedMap s (ψ.comp φ) f = supportedMap s ψ (supportedMap s φ f) := by
+    supportedMap s ψ (supportedMap s φ f) = supportedMap s (ψ.comp φ) f := by
   apply Subtype.ext
   ext m
   simp
@@ -172,24 +172,32 @@ section Translate
 
 variable [Semiring R] [AddCommGroup M] (P : AddSubmonoid M) {s : Set M} {m : M}
 
+/-- A translate of an additive submonoid is stable under adding elements of the submonoid. -/
+theorem _root_.AddSubmonoid.add_subset_of_eq_vadd (hs : s = m +ᵥ (P : Set M)) :
+    (P : Set M) + s ⊆ s := by
+  rw [hs]
+  refine Set.add_subset_iff.2 fun p hp v hv ↦ ?_
+  obtain ⟨q, hq, rfl⟩ := hv
+  exact ⟨p + q, P.add_mem hp hq, by simp only [vadd_eq_add]; ac_rfl⟩
+
+private theorem single_mul_single_neg {G : Type*} [AddGroup G] (g : G) :
+    (single g (1 : R) : R[G]) * single (-g) 1 = 1 := by
+  simp [single_mul_single, one_def]
+
 /-- Multiplying by the monomial at `m` identifies the submonoid algebra with the module
 supported on its translate by `m`. -/
-noncomputable def supportedVAddEquiv (h : (P : Set M) + s ⊆ s)
-    (hs : s = m +ᵥ (P : Set M)) :
-    letI := supportedModule (R := R) P h
+noncomputable def supportedVAddEquiv (hs : s = m +ᵥ (P : Set M)) :
+    letI := supportedModule (R := R) P (P.add_subset_of_eq_vadd hs)
     AddMonoidAlgebra R P ≃ₗ[AddMonoidAlgebra R P] supported R R s := by
-  letI := supportedModule (R := R) P h
+  letI := supportedModule (R := R) P (P.add_subset_of_eq_vadd hs)
   have hm : m ∈ s := by rw [hs]; simpa using Set.vadd_mem_vadd_set (a := m) P.zero_mem
   refine LinearEquiv.ofBijective (LinearMap.toSpanSingleton _ _ (basisSupported s ⟨m, hm⟩)) ?_
-  have hinv : (single (-m) (1 : R) : R[M]) * single m 1 = 1 := by
-    simp [single_mul_single, one_def]
   refine ⟨?_, ?_⟩
   · intro g k hgk
     apply mapDomain_injective (R := R) (f := P.subtype) P.subtype_injective
     have hprod := congrArg (fun f : supported R R s ↦ f.val * single (-m) 1) hgk
     simpa only [LinearMap.toSpanSingleton_apply, coe_smul_supportedModule, coe_basisSupported,
-      mul_assoc, single_mul_single, add_neg_cancel, mul_one, ← one_def, mapDomainRingHom_apply]
-      using hprod
+      mul_assoc, single_mul_single_neg, mul_one, mapDomainRingHom_apply] using hprod
   · intro f
     have hsub : s + {-m} ⊆ (P : Set M) := by
       refine Set.add_subset_iff.2 fun v hv w hw ↦ ?_
@@ -201,18 +209,33 @@ noncomputable def supportedVAddEquiv (h : (P : Set M) + s ⊆ s)
         Finsupp.single_mem_supported R (1 : R) (Set.mem_singleton (-m))
     obtain ⟨g, hg⟩ := (mem_range_mapDomainRingHom_subtype P).2
       (mul_mem_supported_of_add_subset hsub f.property hsingle)
+    have hinv : (single (-m) (1 : R) : R[M]) * single m 1 = 1 := by
+      simpa only [neg_neg] using single_mul_single_neg (R := R) (-m)
     refine ⟨g, Subtype.ext ?_⟩
     rw [LinearMap.toSpanSingleton_apply, coe_smul_supportedModule, coe_basisSupported, hg,
       mul_assoc, hinv, mul_one]
 
 /-- The translate frame sends a scalar to its product with the frame monomial. -/
 @[simp]
-theorem coe_supportedVAddEquiv (h : (P : Set M) + s ⊆ s)
-    (hs : s = m +ᵥ (P : Set M)) (g : AddMonoidAlgebra R P) :
-    (supportedVAddEquiv P h hs g : R[M]) = mapDomainRingHom R P.subtype g * single m 1 := by
+theorem coe_supportedVAddEquiv (hs : s = m +ᵥ (P : Set M)) (g : AddMonoidAlgebra R P) :
+    (supportedVAddEquiv P hs g : R[M]) = mapDomainRingHom R P.subtype g * single m 1 := by
   rw [supportedVAddEquiv]
+  -- The defining map uses a local module instance. Matching the application lemma against it
+  -- requires the higher transparency of `erw`.
   erw [LinearEquiv.ofBijective_apply]
   rw [LinearMap.toSpanSingleton_apply, coe_smul_supportedModule, coe_basisSupported]
+
+/-- The inverse frame recovers the submonoid-algebra coordinate by multiplying by the
+inverse monomial in the ambient algebra. -/
+@[simp]
+theorem mapDomain_supportedVAddEquiv_symm (hs : s = m +ᵥ (P : Set M))
+    (f : supported R R s) :
+    mapDomain Subtype.val ((supportedVAddEquiv P hs).symm f) = f.val * single (-m) 1 := by
+  calc
+    _ = (supportedVAddEquiv P hs ((supportedVAddEquiv P hs).symm f)).val * single (-m) 1 := by
+      rw [coe_supportedVAddEquiv P hs, mul_assoc, single_mul_single_neg, mul_one,
+        mapDomainRingHom_apply, AddSubmonoid.coe_subtype]
+    _ = _ := by rw [LinearEquiv.apply_symm_apply]
 
 end Translate
 
@@ -236,7 +259,7 @@ theorem coe_supportedMul (h : s + t ⊆ u) (f : supported R R s) (g : supported 
 
 /-- Coefficient change commutes with convolution on supported submodules. -/
 @[simp]
-theorem supportedMap_mul [CommSemiring S] (φ : R →+* S) (h : s + t ⊆ u)
+theorem supportedMap_supportedMul [CommSemiring S] (φ : R →+* S) (h : s + t ⊆ u)
     (f : supported R R s) (g : supported R R t) :
     supportedMap u φ (supportedMul h f g) =
       supportedMul h (supportedMap s φ f) (supportedMap t φ g) := by

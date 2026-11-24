@@ -161,6 +161,19 @@ theorem coe_divisorSectionsMul {a b : Phi.Ray → ℤ}
     (divisorSectionsMul a b f g : AddMonoidAlgebra R (N →+ ℤ)) = f.val * g.val :=
   coe_supportedMul _ _ _
 
+/-- The chart section modules multiply by addition of divisors, with the unit in the zero
+divisor's module. -/
+instance instGradedMonoidConeDivisorSections (sigma : Phi.cones) :
+    SetLike.GradedMonoid (Phi.coneDivisorSections R sigma) where
+  one_mem := by
+    have hzero : 0 ∈ Phi.coneDivisorWeights sigma 0 := by
+      rw [coneDivisorWeights_zero]
+      exact (dualSemigroup Phi.lattice sigma.val).zero_mem
+    simpa only [mem_supported, one_def, coeff_single, Finsupp.mem_supported] using
+      Finsupp.single_mem_supported R (1 : R) hzero
+  mul_mem _ _ _ _ hf hg :=
+    mul_mem_supported_of_add_subset (Phi.coneDivisorWeights_add_subset sigma _ _) hf hg
+
 /-- Convolution on one chart adds the ray coefficients of the divisors. -/
 def coneDivisorSectionsMul (sigma : Phi.cones) (a b : Phi.Ray → ℤ) :
     Phi.coneDivisorSections R sigma a →ₗ[R] Phi.coneDivisorSections R sigma b →ₗ[R]
@@ -175,7 +188,7 @@ theorem coe_coneDivisorSectionsMul {sigma : Phi.cones} {a b : Phi.Ray → ℤ}
 
 /-- Restriction to a chart commutes with convolution of monomial sections. -/
 @[simp]
-theorem divisorSectionsRestrict_mul (sigma : Phi.cones) {a b : Phi.Ray → ℤ}
+theorem divisorSectionsRestrict_divisorSectionsMul (sigma : Phi.cones) {a b : Phi.Ray → ℤ}
     (f : Phi.divisorSections R a) (g : Phi.divisorSections R b) :
     divisorSectionsRestrict sigma (a + b) (divisorSectionsMul a b f g) =
       coneDivisorSectionsMul sigma a b (divisorSectionsRestrict sigma a f)
@@ -185,7 +198,7 @@ theorem divisorSectionsRestrict_mul (sigma : Phi.cones) {a b : Phi.Ray → ℤ}
 
 /-- Face restriction commutes with convolution of monomial sections. -/
 @[simp]
-theorem coneDivisorSectionsRestrict_mul {sigma tau : Phi.cones} (h : tau ≤ sigma)
+theorem coneDivisorSectionsRestrict_coneDivisorSectionsMul {sigma tau : Phi.cones} (h : tau ≤ sigma)
     {a b : Phi.Ray → ℤ} (f : Phi.coneDivisorSections R sigma a)
     (g : Phi.coneDivisorSections R sigma b) :
     coneDivisorSectionsRestrict h (a + b) (coneDivisorSectionsMul sigma a b f g) =
@@ -210,8 +223,7 @@ def coneDivisorSectionsCartierEquiv {sigma : Phi.cones} {a : Phi.Ray → ℤ} {m
     AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val) ≃ₗ[
       AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val)]
       Phi.coneDivisorSections R sigma a :=
-  supportedVAddEquiv _ (dualSemigroup_add_coneDivisorWeights_subset sigma a)
-    (coneDivisorWeights_eq_vadd hm)
+  supportedVAddEquiv _ (coneDivisorWeights_eq_vadd hm)
 
 /-- The Cartier frame sends a chart function to its product with the frame monomial. -/
 @[simp]
@@ -221,7 +233,7 @@ theorem coe_coneDivisorSectionsCartierEquiv
     (g : AddMonoidAlgebra R (dualSemigroup Phi.lattice sigma.val)) :
     (coneDivisorSectionsCartierEquiv hm g : AddMonoidAlgebra R (N →+ ℤ)) =
       mapDomainRingHom R (dualSemigroup Phi.lattice sigma.val).subtype g * single m 1 :=
-  coe_supportedVAddEquiv _ _ _ g
+  coe_supportedVAddEquiv _ _ g
 
 /-- The inverse Cartier frame recovers the chart coordinate by multiplying by the inverse
 monomial in the character algebra. -/
@@ -231,13 +243,8 @@ theorem mapDomain_coneDivisorSectionsCartierEquiv_symm
     (hm : ∀ rho : Phi.Ray, rho.toCone ≤ sigma → m rho.primitiveGenerator = -a rho)
     (f : Phi.coneDivisorSections R sigma a) :
     mapDomain Subtype.val
-        ((coneDivisorSectionsCartierEquiv hm).symm f) = f.val * single (-m) 1 := by
-  calc
-    _ = (coneDivisorSectionsCartierEquiv hm ((coneDivisorSectionsCartierEquiv hm).symm f)).val *
-        single (-m) 1 := by
-      simp only [coe_coneDivisorSectionsCartierEquiv, mul_assoc, single_mul_single, add_neg_cancel,
-        mul_one, ← one_def, mapDomainRingHom_apply, AddSubmonoid.coe_subtype]
-    _ = _ := by rw [LinearEquiv.apply_symm_apply]
+        ((coneDivisorSectionsCartierEquiv hm).symm f) = f.val * single (-m) 1 :=
+  mapDomain_supportedVAddEquiv_symm _ _ f
 
 /-! ### Clearing denominators on a face -/
 
