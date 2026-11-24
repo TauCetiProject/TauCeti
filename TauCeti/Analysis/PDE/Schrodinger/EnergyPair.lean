@@ -97,7 +97,7 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
   refine ⟨K.toNNReal * C, fun F G hF hG hSF hSG ↦ ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hK]
   exact enorm_integral_setIntegral_Iio_inner_phasePropagator_sub_le_eLpNorm_one hp
-    ENNReal.coe_ne_top hC hF hG hSF hSG
+    ENNReal.coe_ne_top (fun G hG _ ↦ hC G hG) hF hG hSF hSG
 
 /-- **The energy bound for the inhomogeneous Schrödinger equation with forcing in a dual
 Strichartz space**, in every dimension `n`: solution measured along the energy pair `(∞, 2)` and
@@ -120,7 +120,8 @@ theorem exists_enorm_setIntegral_schrodingerPropagator_sub_le (hq : 2 < q)
         C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p (volume.restrict I) := by
   obtain ⟨C, hC⟩ := exists_enorm_integral_schrodingerPropagator_neg_le (E := E) (r' := r') hq hpq
     hqr
-  exact ⟨C, fun F I hI hF hSF t ↦ enorm_setIntegral_phasePropagator_sub_le hC hI hF hSF t⟩
+  exact ⟨C, fun F I hI hF hSF t ↦
+    enorm_setIntegral_phasePropagator_sub_le (fun F hF _ ↦ hC F hF) hI hF hSF t⟩
 
 /-- **The energy bound for Duhamel's formula with forcing in a dual Strichartz space**, in every
 dimension `n`, along a non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`,
