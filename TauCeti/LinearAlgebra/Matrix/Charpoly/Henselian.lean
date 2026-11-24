@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.RingTheory.Henselian
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
@@ -20,8 +21,14 @@ reduction `(X - u) (X - v)` for distinct `u v ∈ k`, has two residually simple 
 lifts them to roots `α β ∈ A` of `P`, which are distinct eigenvalues of `M`, so `M` is conjugate in
 `GL₂(K)` to `diag(α, β)`.
 
+The trace of such a matrix needs no henselian hypothesis: it is integral, with residue `u + v`,
+over any local ring `A` and any commutative `A`-algebra `K`.
+
 ## Main results
 
+* `TauCeti.exists_algebraMap_eq_trace`: a `2 × 2` matrix whose characteristic polynomial comes
+  from `P` over a local ring, with reduction `(X - u) (X - v)`, has integral trace with residue
+  `u + v`.
 * `TauCeti.exists_conj_eq_diagonal_of_henselian`: a `2 × 2` matrix with integral characteristic
   polynomial and residually distinct eigenvalues is conjugate to a diagonal matrix whose entries
   are integral lifts of the residual eigenvalues.
@@ -32,6 +39,31 @@ public section
 open Polynomial IsLocalRing Matrix
 
 namespace TauCeti
+
+section Trace
+
+variable {A K : Type*} [CommRing A] [IsLocalRing A] [CommRing K] [Algebra A K]
+
+/-- The trace of a `2 × 2` matrix whose characteristic polynomial comes from `P` over `A` is
+integral, and its residue is the sum of the residual roots of `P`. -/
+theorem exists_algebraMap_eq_trace {M : Matrix (Fin 2) (Fin 2) K} {P : A[X]}
+    {u v : ResidueField A} (hP : P.map (algebraMap A K) = M.charpoly)
+    (hPr : P.map (residue A) = (X - C u) * (X - C v)) :
+    ∃ t : A, algebraMap A K t = M.trace ∧ residue A t = u + v := by
+  rw [show (X - C u) * (X - C v) = X ^ 2 - C (u + v) * X + C (u * v) by
+    simp only [C_add, C_mul]; ring] at hPr
+  refine ⟨-P.coeff 1, ?_, ?_⟩
+  · nontriviality K
+    have h := congrArg (fun p => p.coeff 1) hP
+    simp only [coeff_map, charpoly_fin_two] at h
+    rw [map_neg, h]
+    simp [coeff_C]
+  · have h := congrArg (fun p => p.coeff 1) hPr
+    simp only [coeff_map] at h
+    rw [map_neg, h]
+    simp [coeff_C]
+
+end Trace
 
 variable {A K : Type*} [CommRing A] [IsLocalRing A] [HenselianRing A (maximalIdeal A)] [Field K]
   [Algebra A K] [FaithfulSMul A K]

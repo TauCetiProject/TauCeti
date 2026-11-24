@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Henselian
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Order.Compact
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Henselian
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.LineHyperplane
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
@@ -61,24 +62,6 @@ namespace TauCeti
 
 variable {A K : Type*} [CommRing A] [IsLocalRing A] [NormedField K] [Algebra A K]
 
-/-- The trace of a `2 × 2` matrix whose characteristic polynomial comes from `P` over `A` is
-integral, and its residue is the sum of the residual roots of `P`. -/
-private theorem exists_algebraMap_eq_trace {M : Matrix (Fin 2) (Fin 2) K} {P : A[X]}
-    {u v : ResidueField A} (hP : P.map (algebraMap A K) = M.charpoly)
-    (hPr : P.map (residue A) = (X - C u) * (X - C v)) :
-    ∃ t : A, algebraMap A K t = M.trace ∧ residue A t = u + v := by
-  rw [show (X - C u) * (X - C v) = X ^ 2 - C (u + v) * X + C (u * v) by
-    simp only [C_add, C_mul]; ring] at hPr
-  refine ⟨-P.coeff 1, ?_, ?_⟩
-  · have h := congrArg (fun p => p.coeff 1) hP
-    simp only [coeff_map, charpoly_fin_two] at h
-    rw [map_neg, h]
-    simp [coeff_C]
-  · have h := congrArg (fun p => p.coeff 1) hPr
-    simp only [coeff_map] at h
-    rw [map_neg, h]
-    simp [coeff_C]
-
 variable {G : Type*} [Group G]
 
 /-- If `N g₀` is diagonal with integral, residually distinct entries, then the diagonal entries of
@@ -121,18 +104,6 @@ private theorem exists_diagonal_entries (N : G →* (Matrix (Fin 2) (Fin 2) K)ˣ
 
 variable [FaithfulSMul A K]
 
-/-- Conjugating by `diag(1, c⁻¹)` multiplies the upper right entry of a `2 × 2` matrix by `c⁻¹`
-and the lower left entry by `c`. -/
-private theorem exists_conj_eq_scale {c : K} (hc : c ≠ 0) :
-    ∃ D : (Matrix (Fin 2) (Fin 2) K)ˣ, ∀ M : Matrix (Fin 2) (Fin 2) K,
-      (↑D⁻¹ : Matrix (Fin 2) (Fin 2) K) * M * D = !![M 0 0, M 0 1 * c⁻¹; c * M 1 0, M 1 1] := by
-  refine ⟨⟨diagonal ![1, c⁻¹], diagonal ![1, c], ?_, ?_⟩, fun M => ?_⟩
-  · rw [diagonal_mul_diagonal, ← diagonal_one]; congr 1; ext i; fin_cases i <;> simp [hc]
-  · rw [diagonal_mul_diagonal, ← diagonal_one]; congr 1; ext i; fin_cases i <;> simp [hc]
-  · ext i j
-    fin_cases i <;> fin_cases j <;> simp [diagonal_mul, mul_diagonal]
-    field_simp
-
 /-- The rescaling step of Ribet's lemma. Suppose the diagonal entries of the matrices `N g` are
 integral with residues `χ g` and `ψ g`, that `N g₀` is upper right zero with `χ g₀ ≠ ψ g₀`, and that
 the upper right entry of `N g₁` is nonzero of maximal norm. Rescaling the second basis vector by
@@ -165,14 +136,14 @@ private theorem exists_conj_lift_nonsplit
     ring
   have hbcr (g h : G) : residue A (x (g * h) - x g * x h) = 0 := by
     rw [map_sub, map_mul, hxr, hxr, hxr, map_mul, Units.val_mul, sub_self]
-  obtain ⟨D, hD⟩ := exists_conj_eq_scale hb₁
+  let D : (Matrix (Fin 2) (Fin 2) K)ˣ := ⟨diagonal ![1, b₁⁻¹], diagonal ![1, b₁],
+    by simp [funext_iff, Fin.forall_fin_two, hb₁], by simp [funext_iff, Fin.forall_fin_two, hb₁]⟩
   set N' := (MulAut.conj D⁻¹).toMonoidHom.comp N
   have hN' (g : G) : (N' g : Matrix (Fin 2) (Fin 2) K) =
-      (↑D⁻¹ : Matrix (Fin 2) (Fin 2) K) * N g * D := by
-    simp [N']
+      diagonal ![1, b₁] * N g * diagonal ![1, b₁⁻¹] := rfl
   have hint (g : G) (i j : Fin 2) :
       ∃ z : A, algebraMap A K z = (N' g : Matrix (Fin 2) (Fin 2) K) i j := by
-    rw [hN', hD]
+    rw [hN', diagonal_vec2_one_mul_mul_diagonal_vec2_one_inv hb₁]
     fin_cases i <;> fin_cases j <;>
       simp only [Fin.zero_eta, Fin.mk_one, of_apply, cons_val_zero, cons_val_one]
     · exact ⟨x g, hx g⟩
@@ -189,8 +160,8 @@ private theorem exists_conj_lift_nonsplit
   have hρA' (g : G) (i j : Fin 2) : algebraMap A K ((ρA g : Matrix (Fin 2) (Fin 2) A) i j) =
       !![(N g : Matrix (Fin 2) (Fin 2) K) 0 0, (N g : Matrix (Fin 2) (Fin 2) K) 0 1 * b₁⁻¹;
         b₁ * (N g : Matrix (Fin 2) (Fin 2) K) 1 0, (N g : Matrix (Fin 2) (Fin 2) K) 1 1] i j := by
-    rw [hρA, hN', hD]
-  refine ⟨D, ρA, fun g i j => (hρA g i j).trans (by rw [hN']), fun g => ⟨?_, ?_, ?_⟩, ?_⟩
+    rw [hρA, hN', diagonal_vec2_one_mul_mul_diagonal_vec2_one_inv hb₁]
+  refine ⟨D, ρA, hρA, fun g => ⟨?_, ?_, ?_⟩, ?_⟩
   · rw [hinj ((hρA' g 0 0).trans (hx g).symm), hxr]
   · rw [hinj ((hρA' g 1 1).trans (hy g).symm), hyr]
   · rw [hinj ((hρA' g 1 0).trans (hbc g₁ g)), hbcr]
