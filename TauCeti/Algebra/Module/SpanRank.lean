@@ -64,7 +64,7 @@ theorem FG.spanFinrank_le_iff_exists_fin_generating_family {p : Submodule R M}
       by_cases hi : ∃ a, e a = i
       · obtain ⟨a, rfl⟩ := hi
         rw [e.injective.extend_apply]
-        exact subset_span a.2
+        exact subset_span a.property
       · rw [Function.extend_apply' _ _ _ hi]
         exact zero_mem _
     · exact fun x hx ↦ ⟨e ⟨x, hx⟩, e.injective.extend_apply _ _ _⟩

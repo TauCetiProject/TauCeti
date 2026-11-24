@@ -40,8 +40,9 @@ theorem exists_mem_mul_eq_of_isLocalization (f : 𝒜 →+*ᵍ ℬ) {M : Submono
   have := hloc
   -- the algebra map of `f.toRingHom.toAlgebra` is `f`
   obtain ⟨⟨a, m⟩, h : b * f m = f a⟩ := IsLocalization.surj M b
-  have hfa : f a ∈ ℬ k := h ▸ by simpa using SetLike.mul_mem_graded hb (Graded.map_mem f (hM _ m.2))
-  refine ⟨_, (DirectSum.decompose 𝒜 a k).2, m, h.trans ?_⟩
+  have hfa : f a ∈ ℬ k := h ▸ by simpa using SetLike.mul_mem_graded hb (Graded.map_mem f
+      (hM _ m.property))
+  refine ⟨_, (DirectSum.decompose 𝒜 a k).property, m, h.trans ?_⟩
   rw [f.map_directSumDecompose, DirectSum.decompose_of_mem_same ℬ hfa]
 
 end GradedRingHom

@@ -70,7 +70,7 @@ Neither a tactic proof nor `Set.mapsTo_univ` avoids the ascription. -/
 /-- The normalized `Lᵖ` dilation of a test-function gradient is the gradient of the test function
 `r ^ (1 - n / p) • φ (r⁻¹ • ·)`. -/
 private theorem dilateLp_gradientTestFunctionLp (hr : 0 < r) (phi : 𝓓((⊤ : Opens E), ℝ)) :
-    (mu.restrict (⊤ : Opens E)).dilateLp p r hr (gradientTestFunctionLp p phi) =
+    (mu.restrict (⊤ : Opens E)).dilateLp ℝ p r hr (gradientTestFunctionLp p phi) =
       gradientTestFunctionLp p (r ^ (1 - (finrank ℝ E : ℝ) / p.toReal) •
         dilateTestFunction hr.ne' (show MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)
           from fun _ _ ↦ Opens.mem_top _) phi) := by
@@ -82,8 +82,8 @@ private theorem dilateLp_gradientTestFunctionLp (hr : 0 < r) (phi : 𝓓((⊤ : 
 /-- Normalized dilation preserves the closed subspace of whole-space test-function gradients. -/
 theorem dilateLp_mem_d1p0Submodule (hr : 0 < r) {u : Lp E p (mu.restrict (⊤ : Opens E))}
     (hu : u ∈ (d1p0Submodule mu ⊤ p : Set _)) :
-    (mu.restrict (⊤ : Opens E)).dilateLp p r hr u ∈ (d1p0Submodule mu ⊤ p : Set _) :=
-  mapsTo_d1p0Submodule ((mu.restrict (⊤ : Opens E)).dilateLp p r hr).continuous
+    (mu.restrict (⊤ : Opens E)).dilateLp ℝ p r hr u ∈ (d1p0Submodule mu ⊤ p : Set _) :=
+  mapsTo_d1p0Submodule ((mu.restrict (⊤ : Opens E)).dilateLp ℝ p r hr).continuous
     (fun phi ↦ ⟨_, dilateLp_gradientTestFunctionLp hr phi⟩) hu
 
 namespace D1p0
@@ -97,7 +97,7 @@ isometric equivalence. It sends the recorded gradient `∇u` to the normalized `
 represented function in the same way (`TauCeti.D1p0.sobolevEmbeddingL_dilate`). Its inverse is
 the dilation by `r⁻¹`. -/
 def dilate (r : ℝ) (hr : 0 < r) : D1p0 mu ⊤ p ≃ₗᵢ[ℝ] D1p0 mu ⊤ p :=
-  ofLpEquiv ((mu.restrict (⊤ : Opens E)).dilateLp p r hr)
+  ofLpEquiv ((mu.restrict (⊤ : Opens E)).dilateLp ℝ p r hr)
     (fun _ ↦ dilateLp_mem_d1p0Submodule hr) <| by
       rw [Measure.dilateLp_symm]
       exact fun _ ↦ dilateLp_mem_d1p0Submodule (inv_pos.2 hr)
@@ -110,7 +110,7 @@ dilation of the recorded gradient. -/
 @[simp↓]
 theorem coe_dilate (hr : 0 < r) (u : D1p0 mu ⊤ p) :
     (dilate mu p r hr u : Lp E p (mu.restrict (⊤ : Opens E))) =
-      (mu.restrict (⊤ : Opens E)).dilateLp p r hr u :=
+      (mu.restrict (⊤ : Opens E)).dilateLp ℝ p r hr u :=
   coe_ofLpEquiv _ _ _ u
 
 /-- On test functions, the homogeneous Sobolev dilation is `φ ↦ r ^ (1 - n / p) • φ (r⁻¹ • ·)`. -/
@@ -151,7 +151,7 @@ theorem sobolevEmbeddingL_dilate {pstar : ENNReal} (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (hr : 0 < r) (u : D1p0 mu ⊤ p) :
     letI := Fact.mk (one_le_of_inv_add_eq_inv hexp)
     sobolevEmbeddingL hexp (dilate mu p r hr u) =
-      (mu.restrict (⊤ : Opens E)).dilateLp pstar r hr (sobolevEmbeddingL hexp u) := by
+      (mu.restrict (⊤ : Opens E)).dilateLp ℝ pstar r hr (sobolevEmbeddingL hexp u) := by
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
   have hexp' := natCast_div_toReal_add_one_of_inv_add_inv_eq_inv
     (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hexp
@@ -160,7 +160,7 @@ theorem sobolevEmbeddingL_dilate {pstar : ENNReal} (hpstar : pstar ≠ ∞)
     ring
   refine (denseRange_ofTestFunctionₗ (mu := mu) (Omega := ⊤) (p := p)).induction_on u
     (isClosed_eq ((sobolevEmbeddingL hexp).continuous.comp (dilate mu p r hr).continuous)
-      (((mu.restrict (⊤ : Opens E)).dilateLp pstar r hr).continuous.comp
+      (((mu.restrict (⊤ : Opens E)).dilateLp ℝ pstar r hr).continuous.comp
         (sobolevEmbeddingL hexp).continuous)) fun phi ↦ ?_
   rw [dilate_ofTestFunctionₗ hr, sobolevEmbeddingL_ofTestFunctionₗ hpstar,
     sobolevEmbeddingL_ofTestFunctionₗ hpstar, testFunctionLp_smul,

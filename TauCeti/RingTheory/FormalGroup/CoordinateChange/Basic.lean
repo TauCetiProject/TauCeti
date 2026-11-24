@@ -12,7 +12,9 @@ public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.FormalGroup.AddInv
+import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.ZSMul
+import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -47,6 +49,10 @@ representable by a polynomial ring over the Lazard ring.
   substitutable `x, y`.
 * `FormalGroup.subst_toPowerSeries_eq_subst_smul_toPowerSeries`: `φ` is a homomorphism from `F`
   to `φ • F`, that is `φ(F(X, Y)) = (φ • F)(φ(X), φ(Y))`.
+* `FormalGroup.subst_inv_smul_toPowerSeries` and `FormalGroup.subst_inv_smul_𝔾ₐ_toPowerSeries`:
+  `φ((φ⁻¹ • F)(X, Y)) = F(φ(X), φ(Y))`, and in particular `φ((φ⁻¹ • 𝔾ₐ)(X, Y)) = φ(X) + φ(Y)`.
+* `FormalGroup.le_order_inv_smul_sub`: if `f, g` and `F, G` agree below degree `M`, then `f⁻¹ • F`
+  and `g⁻¹ • G` agree below degree `M`.
 * `FormalGroup.isStrict_smulIso_iff`: the isomorphism `φ` is strict exactly when its linear
   coefficient is `1`.
 * `TauCeti.FormalGroupHom.smul_eq`: if `φ` is a homomorphism from `F` to `G`, then `φ • F = G`.
@@ -61,9 +67,6 @@ representable by a polynomial ring over the Lazard ring.
   additive law along `X + e X^(n + 1)` gives `X + Y + e ((X + Y)^(n + 1) - X^(n + 1) - Y^(n + 1))`.
 * `FormalGroup.nsmulSeries_ofStrictCoeffs_single_smul_𝔾ₐ`: if `e² = 0`, multiplication by `k` on
   that law is `k X + e (k^(n + 1) - k) X^(n + 1)`.
-* `FormalGroup.le_order_sub_of_smul_eq`, `FormalGroup.homogeneousComponent_sub_of_smul_eq`: if
-  `η • F = G` and `η ≡ X` below degree `m`, then `F ≡ G` below degree `m` with degree-`m`
-  component `-c ((X + Y)ᵐ - Xᵐ - Yᵐ)`.
 
 ## References
 
@@ -221,6 +224,76 @@ noncomputable instance instMulActionFormalCoordinate :
       FormalCoordinate.subst_toPowerSeries_mul _ _ (hX 1),
       FormalCoordinate.subst_toPowerSeries_mul _ _
         (F.hasSubst_subst_pair (ψ⁻¹.hasSubst_subst (hφ 0)) (ψ⁻¹.hasSubst_subst (hφ 1)))]
+
+/-- Applying `φ` to the transported formal group law `φ⁻¹ • F` recovers `F(φ(X), φ(Y))`. -/
+theorem subst_inv_smul_toPowerSeries (φ : FormalCoordinate R) (F : FormalGroup R) :
+    PowerSeries.subst (φ⁻¹ • F).toPowerSeries φ.toPowerSeries =
+      F.toPowerSeries.subst
+        ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ.toPowerSeries,
+          PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ.toPowerSeries] := by
+  rw [subst_toPowerSeries_eq_subst_smul_toPowerSeries, smul_inv_smul]
+
+/-- Applying `φ` to the transported additive law `φ⁻¹ • 𝔾ₐ` recovers `φ(X) + φ(Y)`. -/
+theorem subst_inv_smul_𝔾ₐ_toPowerSeries (φ : FormalCoordinate R) :
+    PowerSeries.subst (φ⁻¹ • (𝔾ₐ : FormalGroup R)).toPowerSeries φ.toPowerSeries =
+      PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ.toPowerSeries +
+        PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ.toPowerSeries := by
+  have hX : HasSubst
+      ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ.toPowerSeries,
+        PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ.toPowerSeries] :=
+    hasSubst_of_constantCoeff_zero <| Fin.forall_fin_two.mpr
+      ⟨PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 0) _ φ.constantCoeff_toPowerSeries,
+       PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X 1) _ φ.constantCoeff_toPowerSeries⟩
+  rw [subst_inv_smul_toPowerSeries, 𝔾ₐ_toPowerSeries, subst_add hX, subst_X hX, subst_X hX]
+  simp
+
+/-- If formal coordinates `f` and `g` agree below degree `M`, and formal group laws `F` and `G`
+agree below degree `M`, then the transported laws `f⁻¹ • F` and `g⁻¹ • G` agree below degree
+`M`. -/
+theorem le_order_inv_smul_sub {f g : FormalCoordinate R} {F G : FormalGroup R} {M : ℕ}
+    (hfg : (M : ℕ∞) ≤ (f.toPowerSeries - g.toPowerSeries).order)
+    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order) :
+    (M : ℕ∞) ≤ ((f⁻¹ • F).toPowerSeries - (g⁻¹ • G).toPowerSeries).order := by
+  set F' := f⁻¹ • F
+  set G' := g⁻¹ • G
+  have hsub (u : MvPowerSeries (Fin 2) R) (hu : constantCoeff u = 0) :
+      (M : ℕ∞) ≤
+        (PowerSeries.subst u f.toPowerSeries - PowerSeries.subst u g.toPowerSeries).order := by
+    rw [← PowerSeries.subst_sub (.of_constantCoeff_zero hu)]
+    exact hfg.trans (PowerSeries.le_order_subst_left hu)
+  have hsplit : PowerSeries.subst F'.toPowerSeries f.toPowerSeries -
+        PowerSeries.subst G'.toPowerSeries f.toPowerSeries =
+      (F.toPowerSeries.subst ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) f.toPowerSeries,
+          PowerSeries.subst (X 1) f.toPowerSeries] -
+        G.toPowerSeries.subst ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) g.toPowerSeries,
+          PowerSeries.subst (X 1) g.toPowerSeries]) -
+        (PowerSeries.subst G'.toPowerSeries f.toPowerSeries -
+          PowerSeries.subst G'.toPowerSeries g.toPowerSeries) := by
+    rw [subst_inv_smul_toPowerSeries f F, subst_inv_smul_toPowerSeries g G]
+    ring
+  have hord : (M : ℕ∞) ≤
+      (PowerSeries.subst F'.toPowerSeries f.toPowerSeries -
+        PowerSeries.subst G'.toPowerSeries f.toPowerSeries).order := by
+    rw [hsplit]
+    have hc (i : Fin 2) (φ : FormalCoordinate R) :=
+      PowerSeries.constantCoeff_subst_eq_zero (constantCoeff_X (R := R) i) _
+        φ.constantCoeff_toPowerSeries
+    exact le_order_sub
+      (le_order_subst_pair_sub hFG (hc 0 f) (hc 1 f) (hc 0 g) (hc 1 g)
+        (hsub (X 0) (constantCoeff_X 0)) (hsub (X 1) (constantCoeff_X 1)))
+      (hsub G'.toPowerSeries G'.zero_constantCoeff)
+  have hF₀ := PowerSeries.constantCoeff_subst_eq_zero F'.zero_constantCoeff _
+    f.constantCoeff_toPowerSeries
+  have hG₀ := PowerSeries.constantCoeff_subst_eq_zero G'.zero_constantCoeff _
+    f.constantCoeff_toPowerSeries
+  have hinv := MvPowerSeries.le_order_subst_sub_subst (H := f⁻¹.toPowerSeries) (k := 1)
+    (one_le_order_iff_constCoeff_eq_zero.mpr f⁻¹.constantCoeff_toPowerSeries)
+    (hasSubst_of_constantCoeff_zero fun _ : Unit ↦ hF₀)
+    (hasSubst_of_constantCoeff_zero fun _ : Unit ↦ hG₀)
+    (fun _ ↦ hF₀) (fun _ ↦ hG₀) (fun _ ↦ hord)
+  rwa [Nat.add_sub_cancel, ← PowerSeries.subst_def, ← PowerSeries.subst_def,
+    f.subst_inv_subst (.of_constantCoeff_zero F'.zero_constantCoeff),
+    f.subst_inv_subst (.of_constantCoeff_zero G'.zero_constantCoeff)] at hinv
 
 /-- **Changing coordinates preserves commutativity.** -/
 instance instIsCommSMul (φ : FormalCoordinate R) (F : FormalGroup R) [F.IsComm] :
@@ -382,44 +455,5 @@ theorem nsmulSeries_ofStrictCoeffs_single_smul_𝔾ₐ (n : ℕ+) {e : R} (he : 
   rw [hkψ, mul_add_mul_pow_of_mul_eq_zero hC]
   simp only [map_neg, map_mul, map_sub, map_pow]
   ring
-
-/-- If `η • F = G` and `η ≡ X` below degree `m`, then `F ≡ G` below degree `m`. -/
-theorem le_order_sub_of_smul_eq {F G : FormalGroup R} {η : FormalCoordinate R}
-    (hsmul : η • F = G) {m : ℕ} (hη : (m : ℕ∞) ≤ (η.toPowerSeries - PowerSeries.X).order) :
-    (m : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order := by
-  have hdef_η : F.homDefect G η.toPowerSeries = 0 := by
-    rw [← hsmul, homDefect_eq_sub_subst_pair, subst_toPowerSeries_eq_subst_smul_toPowerSeries,
-      sub_self]
-  have h := F.le_order_homDefect_sub (G := G) PowerSeries.constantCoeff_X hη
-  rwa [hdef_η, zero_sub, order_neg, homDefect_X] at h
-
-/-- If `η • F = G` and `η ≡ X` below degree `m ≠ 0`, then the degree-`m` homogeneous component of
-`F - G` is `-c ((X + Y)ᵐ - Xᵐ - Yᵐ)`, where `c` is the degree-`m` coefficient of `η - X`. -/
-theorem homogeneousComponent_sub_of_smul_eq {F G : FormalGroup R} {η : FormalCoordinate R}
-    (hsmul : η • F = G) {m : ℕ} (hm : m ≠ 0)
-    (hη : (m : ℕ∞) ≤ (η.toPowerSeries - PowerSeries.X).order) :
-    homogeneousComponent m (F.toPowerSeries - G.toPowerSeries) =
-      -((PowerSeries.coeff m (η.toPowerSeries - PowerSeries.X) •
-          ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ m - MvPolynomial.X 0 ^ m -
-            MvPolynomial.X 1 ^ m) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
-  set c := PowerSeries.coeff m (η.toPowerSeries - PowerSeries.X)
-  have hdef_η : F.homDefect G η.toPowerSeries = 0 := by
-    rw [← hsmul, homDefect_eq_sub_subst_pair, subst_toPowerSeries_eq_subst_smul_toPowerSeries,
-      sub_self]
-  have hη_approx : ((m + 1 : ℕ) : ℕ∞) ≤
-      (η.toPowerSeries - (PowerSeries.X + c • PowerSeries.X ^ m)).order :=
-    PowerSeries.nat_le_order _ _ fun k hk ↦ by
-      rw [sub_add_eq_sub_sub, map_sub, PowerSeries.coeff_smul, PowerSeries.coeff_X_pow]
-      rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hk) with hlt | rfl
-      · rw [PowerSeries.coeff_of_lt_order k ((Nat.cast_lt.mpr hlt).trans_le hη),
-          ite_eq_right hlt.ne, smul_zero, sub_zero]
-      · simp [c]
-  have hdef_step := F.le_order_homDefect_sub (G := G) (by simp [hm]) hη_approx
-  rw [hdef_η, zero_sub, order_neg] at hdef_step
-  have hhom0 : homogeneousComponent m (F.homDefect G (PowerSeries.X + c • PowerSeries.X ^ m)) = 0 :=
-    homogeneousComponent_of_lt_order_eq_zero
-      ((Nat.cast_lt.mpr (Nat.lt_succ_self m)).trans_le hdef_step)
-  have hlead := F.homogeneousComponent_homDefect_add_sub (G := G) PowerSeries.constantCoeff_X hm c
-  rwa [map_sub, hhom0, homDefect_X, zero_sub, neg_eq_iff_eq_neg] at hlead
 
 end FormalGroup

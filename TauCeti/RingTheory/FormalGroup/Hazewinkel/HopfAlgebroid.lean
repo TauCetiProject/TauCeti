@@ -16,6 +16,8 @@ import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.MvPolynomial.Lift
+import TauCeti.RingTheory.FormalGroup.Hazewinkel.LeadingDifference
+import TauCeti.RingTheory.FormalGroup.Hazewinkel.NSMul
 import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 
 /-!
@@ -170,7 +172,7 @@ theorem map_rightUnit :
   have hX : ⇑(rightUnit p) ∘ X = _ := MvPolynomial.homEquiv.right_inv _
   rw [map_universalHazewinkelIntegralFormalGroup, hX,
     ← (existsUnique_pTypicalStrictCoordinate_smul_hazewinkelIntegralFormalGroup p
-      (C ∘ (X : ℕ+ → MvPolynomial ℕ+ ℤ)) X).choose_spec.1,
+      (C ∘ (X : ℕ+ → MvPolynomial ℕ+ ℤ)) X).choose_spec.left,
     universalStrictCoordinate, map_universalHazewinkelIntegralFormalGroup]
 
 theorem map_comp_rightUnit (f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :
@@ -214,20 +216,20 @@ end Counit
 isomorphisms between Hazewinkel formal group laws over `R`. -/
 def strictIsoEquiv (hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     {q : (ℕ+ → R) × (ℕ+ → R) × (FormalCoordinate.linearCoeff (R := R)).ker //
-      q.2.2.1 • hazewinkelIntegralFormalGroup p q.1 = hazewinkelIntegralFormalGroup p q.2.1} ≃
+      q.2.2.val • hazewinkelIntegralFormalGroup p q.1 = hazewinkelIntegralFormalGroup p q.2.1} ≃
       (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) where
-  toFun q := coordinateChangeLift (q.1.1, (existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p
-    hlocal (MonoidHom.mem_ker.mp q.1.2.2.2) q.2).choose)
+  toFun q := coordinateChangeLift (q.val.1, (existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p
+    hlocal (MonoidHom.mem_ker.mp q.val.2.2.property) q.property).choose)
   invFun f := ⟨(f.comp C ∘ X, f.comp (rightUnit p) ∘ X,
     ⟨FormalCoordinate.map f (universalStrictCoordinate p),
       map_universalStrictCoordinate_mem_ker p f⟩), by
     simpa only [map_universalHazewinkelIntegralFormalGroup] using (map_comp_rightUnit p f).symm⟩
   left_inv := fun ⟨⟨v, w, φ⟩, hsmul⟩ ↦ by
     have ht := (existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p hlocal
-      (MonoidHom.mem_ker.mp φ.2) hsmul).choose_spec.1
+      (MonoidHom.mem_ker.mp φ.property) hsmul).choose_spec.left
     set f := coordinateChangeLift (v, _)
     have hv : ⇑(f.comp C) ∘ X = v := funext (coordinateChangeLift_C_X _)
-    have hφ : FormalCoordinate.map f (universalStrictCoordinate p) = φ.1 := by
+    have hφ : FormalCoordinate.map f (universalStrictCoordinate p) = φ.val := by
       rw [map_coordinateChangeLift_universalStrictCoordinate, ← ht]
     refine Subtype.ext (Prod.ext hv (Prod.ext (hazewinkelIntegralFormalGroup_injective p <| by
       simpa only [map_universalHazewinkelIntegralFormalGroup, hv, hφ, hsmul] using
@@ -236,21 +238,22 @@ def strictIsoEquiv (hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)
     have h := (map_comp_rightUnit p f).symm
     rw [map_universalHazewinkelIntegralFormalGroup, map_universalHazewinkelIntegralFormalGroup] at h
     have ht := ((existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p hlocal
-      (MonoidHom.mem_ker.mp (map_universalStrictCoordinate_mem_ker p f)) h).choose_spec.2 (f ∘ X)
-      (by rw [map_universalStrictCoordinate, map_universalHazewinkelIntegralFormalGroup])).symm
+      (MonoidHom.mem_ker.mp (map_universalStrictCoordinate_mem_ker p f)) h).choose_spec.right
+      (f ∘ X) (by rw [map_universalStrictCoordinate,
+        map_universalHazewinkelIntegralFormalGroup])).symm
     dsimp only; rw [ht]; exact coordinateChangeLift.right_inv f
 
 @[simp] theorem strictIsoEquiv_symm_fst (hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
     (f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :
-    ((strictIsoEquiv p hlocal).symm f).1.1 = f.comp C ∘ X := (rfl)
+    ((strictIsoEquiv p hlocal).symm f).val.1 = f.comp C ∘ X := (rfl)
 
 @[simp] theorem strictIsoEquiv_symm_snd_fst (hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
     (f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :
-    ((strictIsoEquiv p hlocal).symm f).1.2.1 = f.comp (rightUnit p) ∘ X := (rfl)
+    ((strictIsoEquiv p hlocal).symm f).val.2.1 = f.comp (rightUnit p) ∘ X := (rfl)
 
 @[simp] theorem strictIsoEquiv_symm_snd_snd (hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
     (f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :
-    ((strictIsoEquiv p hlocal).symm f).1.2.2.1 =
+    ((strictIsoEquiv p hlocal).symm f).val.2.2.val =
       FormalCoordinate.map f (universalStrictCoordinate p) := (rfl)
 
 /-- **Representability of `BP_*BP` over `ℤ_(p)`**: for any localization `A` of `ℤ` at `(p)`,
@@ -259,7 +262,7 @@ isomorphisms over `R`. -/
 def strictIsoAlgEquiv (A : Type*) [CommRing A]
     [IsLocalization.AtPrime A (Ideal.span {(p : ℤ)})] [Algebra A R] :
     {q : (ℕ+ → R) × (ℕ+ → R) × (FormalCoordinate.linearCoeff (R := R)).ker //
-      q.2.2.1 • hazewinkelIntegralFormalGroup p q.1 = hazewinkelIntegralFormalGroup p q.2.1} ≃
+      q.2.2.val • hazewinkelIntegralFormalGroup p q.1 = hazewinkelIntegralFormalGroup p q.2.1} ≃
       (MvPolynomial ℕ+ (MvPolynomial ℕ+ A) →ₐ[A] R) :=
   (strictIsoEquiv p fun q hq hqp ↦ by
     have hqA : IsUnit (q : A) := by
@@ -284,12 +287,12 @@ def strictIsoAlgEquiv (A : Type*) [CommRing A]
 @[simp] theorem strictIsoAlgEquiv_symm_fst (A : Type*) [CommRing A]
     [IsLocalization.AtPrime A (Ideal.span {(p : ℤ)})] [Algebra A R]
     (g : MvPolynomial ℕ+ (MvPolynomial ℕ+ A) →ₐ[A] R) (i : ℕ+) :
-    ((strictIsoAlgEquiv p A).symm g).1.1 i = g (C (X i)) := by simp [strictIsoAlgEquiv]
+    ((strictIsoAlgEquiv p A).symm g).val.1 i = g (C (X i)) := by simp [strictIsoAlgEquiv]
 
 @[simp] theorem strictIsoAlgEquiv_symm_snd_snd (A : Type*) [CommRing A]
     [IsLocalization.AtPrime A (Ideal.span {(p : ℤ)})] [Algebra A R]
     (g : MvPolynomial ℕ+ (MvPolynomial ℕ+ A) →ₐ[A] R) :
-    ((strictIsoAlgEquiv p A).symm g).1.2.2.1 =
+    ((strictIsoAlgEquiv p A).symm g).val.2.2.val =
       FormalCoordinate.map (g.toRingHom.comp (map (map (Int.castRingHom A))))
         (universalStrictCoordinate p) := (rfl)
 
@@ -297,7 +300,7 @@ def strictIsoAlgEquiv (A : Type*) [CommRing A]
 isomorphisms between Hazewinkel formal group laws. -/
 def strictIsoEquivOfCharP [CharP R p] :
     {q : (ℕ+ → R) × (ℕ+ → R) × (FormalCoordinate.linearCoeff (R := R)).ker //
-      q.2.2.1 • hazewinkelIntegralFormalGroup p q.1 = hazewinkelIntegralFormalGroup p q.2.1} ≃
+      q.2.2.val • hazewinkelIntegralFormalGroup p q.1 = hazewinkelIntegralFormalGroup p q.2.1} ≃
       (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :=
   strictIsoEquiv p fun _ hq hqp ↦
     (CharP.isUnit_natCast_iff (R := R) hp.out).mpr fun hdvd ↦
@@ -305,18 +308,18 @@ def strictIsoEquivOfCharP [CharP R p] :
 
 @[simp] theorem strictIsoEquivOfCharP_symm_fst [CharP R p]
     (f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :
-    ((strictIsoEquivOfCharP p).symm f).1.1 = f.comp C ∘ X := (rfl)
+    ((strictIsoEquivOfCharP p).symm f).val.1 = f.comp C ∘ X := (rfl)
 
 @[simp] theorem strictIsoEquivOfCharP_symm_snd_fst [CharP R p]
     (f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :
-    ((strictIsoEquivOfCharP p).symm f).1.2.1 = f.comp (rightUnit p) ∘ X := (rfl)
+    ((strictIsoEquivOfCharP p).symm f).val.2.1 = f.comp (rightUnit p) ∘ X := (rfl)
 
 @[simp] theorem strictIsoEquivOfCharP_symm_snd_snd [CharP R p]
     (f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :
-    ((strictIsoEquivOfCharP p).symm f).1.2.2.1 =
+    ((strictIsoEquivOfCharP p).symm f).val.2.2.val =
       FormalCoordinate.map f (universalStrictCoordinate p) := (rfl)
 
-/-! ### The tensor square, integral descent, coproduct, and conjugation -/
+/-! ### The tensor square, coproduct, and conjugation -/
 
 /-- **The universal property of `Γ_p ⊗_V Γ_p`**, modeled as `MvPolynomial ℕ+ Γ_p` via left factor
 `C` and right factor `MvPolynomial.map (rightUnit p)`. Instantiates
@@ -331,14 +334,14 @@ def tensorLift :
 /-- The left component of `(tensorLift p).symm k` is its restriction along `C`. -/
 @[simp] theorem tensorLift_symm_apply_fst
     (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) →+* R) :
-    ((tensorLift p).symm k).1.1 = k.comp C :=
+    ((tensorLift p).symm k).val.1 = k.comp C :=
   MvPolynomial.pushoutEquiv_symm_apply_fst (rightUnit p) k
 
 /-- The right component of `(tensorLift p).symm k` is its restriction along
 `MvPolynomial.map (rightUnit p)`. -/
 @[simp] theorem tensorLift_symm_apply_snd
     (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) →+* R) :
-    ((tensorLift p).symm k).1.2 = k.comp (map (rightUnit p)) :=
+    ((tensorLift p).symm k).val.2 = k.comp (map (rightUnit p)) :=
   MvPolynomial.pushoutEquiv_symm_apply_snd (rightUnit p) k
 
 section TensorSimp
@@ -346,28 +349,28 @@ section TensorSimp
 variable (fg : {fg : (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) ×
     (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) // fg.1.comp (rightUnit p) = fg.2.comp C})
 
-/-- `tensorLift p fg` restricts to `fg.1.1` on the left factor `C`. -/
-@[simp] theorem tensorLift_comp_C : (tensorLift p fg).comp C = fg.1.1 :=
+/-- `tensorLift p fg` restricts to `fg.val.1` on the left factor `C`. -/
+@[simp] theorem tensorLift_comp_C : (tensorLift p fg).comp C = fg.val.1 :=
   MvPolynomial.pushoutEquiv_comp_C (rightUnit p) fg
 
-/-- `tensorLift p fg` restricts to `fg.1.2` on the right factor
+/-- `tensorLift p fg` restricts to `fg.val.2` on the right factor
 `MvPolynomial.map (rightUnit p)`. -/
 @[simp] theorem tensorLift_comp_map_rightUnit :
-    (tensorLift p fg).comp (map (rightUnit p)) = fg.1.2 :=
+    (tensorLift p fg).comp (map (rightUnit p)) = fg.val.2 :=
   MvPolynomial.pushoutEquiv_comp_map (rightUnit p) fg
 
-/-- `tensorLift p fg` agrees with `fg.1.1` on the left factor. -/
+/-- `tensorLift p fg` agrees with `fg.val.1` on the left factor. -/
 @[simp] theorem tensorLift_C (x : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) :
-    tensorLift p fg (C x) = fg.1.1 x :=
+    tensorLift p fg (C x) = fg.val.1 x :=
   MvPolynomial.pushoutEquiv_C (rightUnit p) fg x
 
-/-- `tensorLift p fg` agrees with `fg.1.2` on the right factor. -/
+/-- `tensorLift p fg` agrees with `fg.val.2` on the right factor. -/
 @[simp] theorem tensorLift_map_rightUnit (x : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) :
-    tensorLift p fg (map (rightUnit p) x) = fg.1.2 x :=
+    tensorLift p fg (map (rightUnit p) x) = fg.val.2 x :=
   MvPolynomial.pushoutEquiv_map (rightUnit p) fg x
 
-/-- `tensorLift p fg` agrees with `fg.1.2` on the generators of the right factor. -/
-@[simp] theorem tensorLift_X (i : ℕ+) : tensorLift p fg (X i) = fg.1.2 (X i) :=
+/-- `tensorLift p fg` agrees with `fg.val.2` on the generators of the right factor. -/
+@[simp] theorem tensorLift_X (i : ℕ+) : tensorLift p fg (X i) = fg.val.2 (X i) :=
   MvPolynomial.pushoutEquiv_X (rightUnit p) fg i
 
 end TensorSimp
@@ -377,59 +380,6 @@ theorem tensor_ringHom_ext {k k' : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolyn
     (h₁ : k.comp C = k'.comp C) (h₂ : k.comp (map (rightUnit p)) = k'.comp (map (rightUnit p))) :
     k = k' :=
   MvPolynomial.ringHom_ext_comp_map (rightUnit p) h₁ h₂
-
-private theorem pTypicalParams_mem_range_of_injective
-    {A B : Type*} [CommRing A] [CommRing B] {ι : A →+* B} (v : ℕ+ → A) (φ : FormalCoordinate A)
-    {tB : ℕ+ → B}
-    (hcurveB : (FormalCoordinate.map ι φ)⁻¹.toPowerSeries =
-      ((hazewinkelIntegralFormalGroup p (ι ∘ v)).pTypicalStrictCurve p tB).toPowerSeries) :
-    ∀ n (i : ℕ+), (i : ℕ) ≤ n → tB i ∈ ι.range := fun n ↦ by
-  induction n with
-  | zero => intro i hi; have := i.pos; omega
-  | succ n ih =>
-    intro i hi; rcases lt_or_eq_of_le hi with hlt | heq
-    · exact ih i (Nat.lt_succ_iff.mp hlt)
-    · obtain rfl : i = n.succPNat := PNat.coe_injective heq
-      let t_trunc : ℕ+ → A := fun j ↦ if hj : (j : ℕ) ≤ n then (ih j hj).choose else 0
-      have hsub := (hazewinkelIntegralFormalGroup p (ι ∘ v)).coeff_pow_succ_pTypicalStrictCurve_sub
-        hp.out.one_lt (t := tB) (t' := ι ∘ t_trunc) (n := n) fun j hj ↦ by
-          dsimp only [t_trunc, Function.comp_apply]; rw [dite_eq_left hj]
-          exact (ih j hj).choose_spec.symm
-      rw [(by simp [t_trunc] : (ι ∘ t_trunc) n.succPNat = 0), sub_zero, ← hcurveB, ← map_inv,
-        FormalCoordinate.toPowerSeries_map, ← map_hazewinkelIntegralFormalGroup,
-        ← FormalGroup.map_pTypicalStrictCurve, FormalGroup.Curve.toPowerSeries_map,
-        ← map_sub (PowerSeries.map ι), PowerSeries.coeff_map] at hsub
-      exact ⟨_, hsub⟩
-
-/-- **Integral descent of `p`-typical strict coordinates** along an injection into a ring `B` in
-which every prime `q ≠ p` is a unit. -/
-theorem existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq_of_injective
-    {A B : Type*} [CommRing A] [CommRing B] {ι : A →+* B}
-    (hι : Function.Injective ι) (hlocalB : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : B))
-    {v w : ℕ+ → A} {φ : FormalCoordinate A} (hφ : FormalCoordinate.linearCoeff φ = 1)
-    (hsmul : φ • hazewinkelIntegralFormalGroup p v = hazewinkelIntegralFormalGroup p w) :
-    ∃! t : ℕ+ → A, φ = (hazewinkelIntegralFormalGroup p v).pTypicalStrictCoordinate p t := by
-  obtain ⟨tB, htB, _⟩ := existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p hlocalB
-    (φ := FormalCoordinate.map ι φ)
-    (by ext; rw [FormalCoordinate.val_linearCoeff, FormalCoordinate.toPowerSeries_map,
-      PowerSeries.coeff_map, ← FormalCoordinate.val_linearCoeff, hφ, Units.val_one, map_one,
-      Units.val_one])
-    (by simpa only [FormalGroup.map_smul, map_hazewinkelIntegralFormalGroup] using
-      congrArg (fun F : FormalGroup A ↦ F.map ι) hsmul)
-  have hmem := pTypicalParams_mem_range_of_injective p v φ
-    (by rw [htB, FormalGroup.toPowerSeries_inv_pTypicalStrictCoordinate])
-  let tA : ℕ+ → A := fun i ↦ (hmem i.val i le_rfl).choose
-  have htA : φ = (hazewinkelIntegralFormalGroup p v).pTypicalStrictCoordinate p tA := by
-    have hmap : FormalCoordinate.map ι φ = FormalCoordinate.map ι
-        ((hazewinkelIntegralFormalGroup p v).pTypicalStrictCoordinate p tA) := by
-      rw [htB, FormalGroup.map_pTypicalStrictCoordinate, map_hazewinkelIntegralFormalGroup]
-      exact congrArg _ (funext fun i ↦ (hmem i.val i le_rfl).choose_spec.symm)
-    ext1; refine PowerSeries.ext fun k ↦ hι ?_
-    simpa only [FormalCoordinate.toPowerSeries_map, PowerSeries.coeff_map] using
-      congrArg (fun ψ : FormalCoordinate B ↦ PowerSeries.coeff k ψ.toPowerSeries) hmap
-  exact ⟨tA, htA, fun t' ht' ↦
-    (hazewinkelIntegralFormalGroup p v).pTypicalStrictCoordinate_injective hp.out.one_lt
-      (ht'.symm.trans htA)⟩
 
 private theorem existsUnique_coproduct_params :
     ∃! t : ℕ+ → MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)),
@@ -471,7 +421,7 @@ def coproduct :
       FormalCoordinate.map (map (rightUnit p)) (universalStrictCoordinate p) *
         FormalCoordinate.map C (universalStrictCoordinate p) := by
   rw [coproduct, map_coordinateChangeLift_universalStrictCoordinate,
-    ← (existsUnique_coproduct_params p).choose_spec.1]
+    ← (existsUnique_coproduct_params p).choose_spec.left]
 
 theorem map_comp_coproduct_universalStrictCoordinate
     (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) →+* R) :
@@ -580,7 +530,7 @@ def conjugation : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* MvPolynomial �
     FormalCoordinate.map (conjugation p) (universalStrictCoordinate p) =
       (universalStrictCoordinate p)⁻¹ := by
   rw [conjugation, map_coordinateChangeLift_universalStrictCoordinate,
-    ← (existsUnique_conjugation_params p).choose_spec.1]
+    ← (existsUnique_conjugation_params p).choose_spec.left]
 
 @[simp] theorem conjugation_comp_rightUnit : (conjugation p).comp (rightUnit p) = C :=
   hom_ext p <| by

@@ -29,6 +29,8 @@ The trace-class family is the `p = 1` member of the Schatten scale.
 
 * `TauCeti.OperatorIdealFamily.traceClass`: the trace-class operator-ideal family.
 * `TauCeti.OperatorIdealFamily.gauge_traceClass`: its gauge is the nuclear gauge.
+* `TauCeti.OperatorIdealFamily.mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top`:
+  membership in the ideal is finiteness of the nuclear gauge.
 * `TauCeti.OperatorIdealFamily.mem_finiteSubmodule_traceClass_iff`: membership in the ideal is
   summability of the approximation numbers.
 * `TauCeti.OperatorIdealFamily.traceClass_isComplete`: its normed carriers are complete.
@@ -73,12 +75,16 @@ variable {E : Type v} {F : Type w}
 theorem gauge_traceClass (T : E →L[𝕜] F) :
     (traceClass.{u, v, w} 𝕜).gauge T = T.nuclearENorm := (rfl)
 
+/-- An operator is trace class exactly when its nuclear gauge is finite. -/
+theorem mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top (T : E →L[𝕜] F) :
+    T ∈ ((traceClass.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule ↔ T.nuclearENorm ≠ ∞ := by
+  rw [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply, gauge_traceClass, lt_top_iff_ne_top]
+
 /-- An operator is trace class exactly when its approximation numbers are summable. -/
 theorem mem_finiteSubmodule_traceClass_iff (T : E →L[𝕜] F) :
     T ∈ ((traceClass.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule ↔
       Summable T.singularValue := by
-  rw [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply, gauge_traceClass, lt_top_iff_ne_top,
-    T.nuclearENorm_ne_top_iff_summable]
+  rw [mem_finiteSubmodule_traceClass_iff_nuclearENorm_ne_top, T.nuclearENorm_ne_top_iff_summable]
 
 /-- The trace-class operator-ideal family has complete normed carriers. -/
 instance traceClass_isComplete : (traceClass.{u, v, w} 𝕜).IsComplete :=

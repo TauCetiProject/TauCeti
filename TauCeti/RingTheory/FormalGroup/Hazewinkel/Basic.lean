@@ -78,9 +78,6 @@ the coefficient of `X^k` to be `m_(log_p k)` when `k` is a power of `p` and `0` 
   `f`.
 * `TauCeti.existsUnique_eq_hazewinkelFormalGroup`: a formal group law whose logarithm is supported
   in the degrees `pⁿ` is `F_v` for a unique `v`.
-* `TauCeti.hazewinkelLogCoeff_eq_of_forall_le`, `TauCeti.hazewinkelLogCoeff_succ_sub_of_forall_le`,
-  `TauCeti.exists_hazewinkelLog_eq_add_X_pow_mul`: congruence of `mₙ(v)` and `f_v`.
-* `TauCeti.hazewinkelLog_zero`, `TauCeti.hazewinkelFormalGroup_zero`: specialization at `v = 0`.
 
 ## References
 
@@ -126,13 +123,6 @@ theorem hazewinkelLogCoeff_succ (n : ℕ) :
 theorem hazewinkelLogCoeff_one : hazewinkelLogCoeff p v 1 = (p : ℚ)⁻¹ • v 1 := by
   simp [hazewinkelLogCoeff_succ, show Nat.succPNat 0 = 1 from PNat.eq (Nat.succPNat_coe 0)]
 
-/-- At `v = 0`, all positive-index Hazewinkel logarithm coefficients vanish. -/
-@[simp] theorem hazewinkelLogCoeff_zero_succ (n : ℕ) :
-    hazewinkelLogCoeff p (0 : ℕ+ → K) (n + 1) = 0 := by
-  rcases eq_or_ne p 0 with rfl | hp
-  · simp [hazewinkelLogCoeff_succ]
-  · simp [hazewinkelLogCoeff_succ, zero_pow (pow_ne_zero _ hp)]
-
 /-- **The recursion for Hazewinkel's logarithm coefficients**:
 `p mₙ₊₁ = ∑_{i ≤ n} mᵢ v_(n + 1 - i)^(pⁱ)`. -/
 theorem natCast_mul_hazewinkelLogCoeff_succ (hp : p ≠ 0) (n : ℕ) :
@@ -160,34 +150,6 @@ theorem map_hazewinkelLogCoeff (φ : K →+* L) (n : ℕ) :
     · rw [hazewinkelLogCoeff_succ, hazewinkelLogCoeff_succ, map_rat_smul, map_sum]
       refine congrArg _ (sum_congr rfl fun i hi ↦ ?_)
       rw [map_mul, map_pow, ih i (by grind), Function.comp_apply]
-
-/-- If `v` and `w` agree on indices `i ≤ n`, then `m_m(v) = m_m(w)` for all `m ≤ n`. -/
-theorem hazewinkelLogCoeff_eq_of_forall_le {v w : ℕ+ → K} {n : ℕ}
-    (hvw : ∀ i : ℕ+, (i : ℕ) ≤ n → v i = w i) {m : ℕ} (hm : m ≤ n) :
-    hazewinkelLogCoeff p v m = hazewinkelLogCoeff p w m := by
-  induction m using Nat.strong_induction_on with
-  | _ m ih =>
-    rcases m with _ | m
-    · simp
-    · rw [hazewinkelLogCoeff_succ, hazewinkelLogCoeff_succ]
-      refine congrArg _ (sum_congr rfl fun i hi ↦ ?_)
-      have := mem_range.mp hi
-      rw [ih i (by omega) (by omega), hvw _ (by simp; omega)]
-
-/-- If `v` and `w` agree on indices `i ≤ n`, then
-`m_(n + 1)(v) - m_(n + 1)(w) = p⁻¹ • (v_(n + 1) - w_(n + 1))`. -/
-theorem hazewinkelLogCoeff_succ_sub_of_forall_le {v w : ℕ+ → K} {n : ℕ}
-    (hvw : ∀ i : ℕ+, (i : ℕ) ≤ n → v i = w i) :
-    hazewinkelLogCoeff p v (n + 1) - hazewinkelLogCoeff p w (n + 1) =
-      (p : ℚ)⁻¹ • (v n.succPNat - w n.succPNat) := by
-  rw [hazewinkelLogCoeff_succ, hazewinkelLogCoeff_succ, sum_range_succ', sum_range_succ',
-    hazewinkelLogCoeff_zero, hazewinkelLogCoeff_zero, pow_zero, pow_one, one_mul, one_mul,
-    Nat.sub_zero, ← smul_sub]
-  congr 1
-  rw [sum_congr rfl fun i hi ↦ by
-    have := mem_range.mp hi
-    rw [hazewinkelLogCoeff_eq_of_forall_le hvw (by omega), hvw _ (by simp; omega)]]
-  ring
 
 /-- Applying the `i`-th iterate of a coefficient Frobenius lift to a logarithm
 coefficient replaces each generator by its `pⁱ`-th power. -/
@@ -278,7 +240,9 @@ theorem exists_hazewinkelLogCoeff_eq (hp : p ≠ 0) {ℓ : ℕ → K} (h₀ : �
   have hv (n : ℕ) : v n.succPNat = p * ℓ (n + 1) -
       ∑ i ∈ range n, ℓ (i + 1) * v (n - (i + 1)).succPNat ^ p ^ (i + 1) := by
     simp only [v, Nat.natPred_succPNat]
-    rw [coeffsOfHazewinkelLogCoeff, Fin.sum_univ_eq_sum_range
+    rw [coeffsOfHazewinkelLogCoeff]
+    dsimp only
+    rw [Fin.sum_univ_eq_sum_range
       (fun i ↦ ℓ (i + 1) * coeffsOfHazewinkelLogCoeff p ℓ (n - (i + 1)) ^ p ^ (i + 1))]
   refine ⟨v, funext fun n ↦ ?_⟩
   induction n using Nat.strong_induction_on with
@@ -323,45 +287,6 @@ theorem coeff_one_hazewinkelLog : coeff 1 (hazewinkelLog p v).toPowerSeries = 1 
 theorem linearCoeff_hazewinkelLog : FormalCoordinate.linearCoeff (hazewinkelLog p v) = 1 :=
   Units.ext (by simp)
 
-/-- At `v = 0`, Hazewinkel's logarithm is the identity coordinate `1`. -/
-@[simp] theorem hazewinkelLog_zero : hazewinkelLog p (0 : ℕ+ → K) = 1 := by
-  ext k
-  rcases eq_or_ne k 1 with rfl | hk1
-  · simp
-  · rw [FormalCoordinate.toPowerSeries_one, coeff_X, ite_eq_right hk1, hazewinkelLog, coeff_mk]
-    split_ifs with h
-    · cases hlog : Nat.log p k with
-      | zero => simp [hlog] at h; exact absurd h.symm hk1
-      | succ n => exact hazewinkelLogCoeff_zero_succ n
-    · rfl
-
-/-- If `v` and `w` agree on indices `i ≤ n` and `1 < p`, then `hazewinkelLog p v` and
-`hazewinkelLog p w` agree below degree `p ^ (n + 1)`, with degree-`p ^ (n + 1)` difference
-`p⁻¹ • (v_(n + 1) - w_(n + 1))`. -/
-theorem exists_hazewinkelLog_eq_add_X_pow_mul (hp : 1 < p) {v w : ℕ+ → K} {n : ℕ}
-    (hvw : ∀ i : ℕ+, (i : ℕ) ≤ n → v i = w i) :
-    ∃ r : PowerSeries K,
-      (hazewinkelLog p v).toPowerSeries =
-        (hazewinkelLog p w).toPowerSeries + PowerSeries.X ^ p ^ (n + 1) * r ∧
-      PowerSeries.constantCoeff r = (p : ℚ)⁻¹ • (v n.succPNat - w n.succPNat) := by
-  obtain ⟨r, hr⟩ : PowerSeries.X ^ p ^ (n + 1) ∣
-      (hazewinkelLog p v).toPowerSeries - (hazewinkelLog p w).toPowerSeries :=
-    PowerSeries.X_pow_dvd_iff.mpr fun k hk ↦ by
-      rw [map_sub]
-      by_cases hpow : ∃ m, p ^ m = k
-      · obtain ⟨m, rfl⟩ := hpow
-        have hm : m ≤ n := Nat.lt_succ_iff.mp ((Nat.pow_lt_pow_iff_right hp).mp hk)
-        rw [coeff_hazewinkelLog_pow v hp, coeff_hazewinkelLog_pow w hp,
-          hazewinkelLogCoeff_eq_of_forall_le hvw hm, sub_self]
-      · push Not at hpow
-        rw [coeff_hazewinkelLog_eq_zero v hpow, coeff_hazewinkelLog_eq_zero w hpow, sub_self]
-  refine ⟨r, eq_add_of_sub_eq' hr, ?_⟩
-  have hcoeff := congrArg (PowerSeries.coeff (p ^ (n + 1))) hr
-  rw [map_sub, coeff_hazewinkelLog_pow v hp, coeff_hazewinkelLog_pow w hp,
-    hazewinkelLogCoeff_succ_sub_of_forall_le hvw, PowerSeries.coeff_X_pow_mul', ite_eq_left le_rfl,
-    Nat.sub_self, PowerSeries.coeff_zero_eq_constantCoeff_apply] at hcoeff
-  exact hcoeff.symm
-
 /-- Hazewinkel's logarithm commutes with ring homomorphisms of `ℚ`-algebras. -/
 @[simp]
 theorem map_hazewinkelLog (φ : K →+* L) :
@@ -379,11 +304,6 @@ noncomputable def hazewinkelFormalGroup : FormalGroup K :=
 /-- Hazewinkel's formal group is the additive law transported by the inverse logarithm. -/
 theorem hazewinkelFormalGroup_def :
     hazewinkelFormalGroup p v = (hazewinkelLog p v)⁻¹ • FormalGroup.𝔾ₐ := (rfl)
-
-/-- At `v = 0`, `hazewinkelFormalGroup p 0` is the additive formal group law `𝔾ₐ`. -/
-@[simp] theorem hazewinkelFormalGroup_zero :
-    hazewinkelFormalGroup p (0 : ℕ+ → K) = FormalGroup.𝔾ₐ := by
-  rw [hazewinkelFormalGroup_def, hazewinkelLog_zero, inv_one, one_smul]
 
 instance : (hazewinkelFormalGroup p v).IsComm :=
   FormalGroup.instIsCommSMul _ _

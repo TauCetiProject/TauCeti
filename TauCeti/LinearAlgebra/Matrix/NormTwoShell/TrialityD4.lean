@@ -113,7 +113,7 @@ theorem natCard_positiveRoots :
         simpa only [rootEquiv_apply, coe_root, Bool.false_eq_true, ↓reduceIte] using hval
       exact (Prod.mk.inj (rootEquiv.injective hroot)).2
     · intro a
-      obtain ⟨i, hi⟩ := (mem_range_positiveRoot_iff a.1).mpr a.2
+      obtain ⟨i, hi⟩ := (mem_range_positiveRoot_iff a.val).mpr a.property
       exact ⟨i, Subtype.ext hi⟩
   rw [← Nat.card_congr (Equiv.ofBijective f hf)]
   exact Nat.card_fin 12

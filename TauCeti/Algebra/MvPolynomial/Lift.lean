@@ -74,47 +74,47 @@ map distinct from `C` (such as the right unit of a Hopf algebroid). -/
 noncomputable def pushoutEquiv (η : A →+* B) :
     {p : (B →+* R) × (MvPolynomial σ A →+* R) // p.1.comp η = p.2.comp C} ≃
       (MvPolynomial σ B →+* R) where
-  toFun p := eval₂Hom p.1.1 (p.1.2 ∘ X)
+  toFun p := eval₂Hom p.val.1 (p.val.2 ∘ X)
   invFun k := ⟨(k.comp C, k.comp (map η)), by ext a; simp⟩
   left_inv p := by
-    have hC : (eval₂Hom p.1.1 (p.1.2 ∘ X)).comp C = p.1.1 := RingHom.ext (eval₂Hom_C _ _)
+    have hC : (eval₂Hom p.val.1 (p.val.2 ∘ X)).comp C = p.val.1 := RingHom.ext (eval₂Hom_C _ _)
     refine Subtype.ext (Prod.ext hC (ringHom_ext' ?_ fun _ ↦ by simp))
     ext a
-    simpa [RingHom.comp_apply] using RingHom.congr_fun p.2 a
+    simpa [RingHom.comp_apply] using RingHom.congr_fun p.property a
   right_inv k := ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun _ ↦ by simp
 
 /-- The left component of `(pushoutEquiv η).symm k` is the restriction of `k` along `C`. -/
 @[simp]
 theorem pushoutEquiv_symm_apply_fst (η : A →+* B) (k : MvPolynomial σ B →+* R) :
-    ((pushoutEquiv η).symm k).1.1 = k.comp C :=
+    ((pushoutEquiv η).symm k).val.1 = k.comp C :=
   (rfl)
 
 /-- The right component of `(pushoutEquiv η).symm k` is the restriction of `k` along
 `MvPolynomial.map η`. -/
 @[simp]
 theorem pushoutEquiv_symm_apply_snd (η : A →+* B) (k : MvPolynomial σ B →+* R) :
-    ((pushoutEquiv η).symm k).1.2 = k.comp (map η) :=
+    ((pushoutEquiv η).symm k).val.2 = k.comp (map η) :=
   (rfl)
 
 /-- `pushoutEquiv η (f, g)` restricts to `f` along `C`. -/
 @[simp]
 theorem pushoutEquiv_comp_C (η : A →+* B)
     (p : {p : (B →+* R) × (MvPolynomial σ A →+* R) // p.1.comp η = p.2.comp C}) :
-    (pushoutEquiv η p).comp C = p.1.1 :=
-  congrArg (fun q ↦ q.1.1) ((pushoutEquiv η).left_inv p)
+    (pushoutEquiv η p).comp C = p.val.1 :=
+  congrArg (fun q ↦ q.val.1) ((pushoutEquiv η).left_inv p)
 
 /-- `pushoutEquiv η (f, g)` restricts to `g` along `MvPolynomial.map η`. -/
 @[simp]
 theorem pushoutEquiv_comp_map (η : A →+* B)
     (p : {p : (B →+* R) × (MvPolynomial σ A →+* R) // p.1.comp η = p.2.comp C}) :
-    (pushoutEquiv η p).comp (map η) = p.1.2 :=
-  congrArg (fun q ↦ q.1.2) ((pushoutEquiv η).left_inv p)
+    (pushoutEquiv η p).comp (map η) = p.val.2 :=
+  congrArg (fun q ↦ q.val.2) ((pushoutEquiv η).left_inv p)
 
 /-- `pushoutEquiv η (f, g)` agrees with `f` on constants `C b`. -/
 @[simp]
 theorem pushoutEquiv_C (η : A →+* B)
     (p : {p : (B →+* R) × (MvPolynomial σ A →+* R) // p.1.comp η = p.2.comp C}) (b : B) :
-    pushoutEquiv η p (C b) = p.1.1 b :=
+    pushoutEquiv η p (C b) = p.val.1 b :=
   RingHom.congr_fun (pushoutEquiv_comp_C η p) b
 
 /-- `pushoutEquiv η (f, g)` agrees with `g` on the image of `MvPolynomial.map η`. -/
@@ -122,14 +122,14 @@ theorem pushoutEquiv_C (η : A →+* B)
 theorem pushoutEquiv_map (η : A →+* B)
     (p : {p : (B →+* R) × (MvPolynomial σ A →+* R) // p.1.comp η = p.2.comp C})
     (x : MvPolynomial σ A) :
-    pushoutEquiv η p (map η x) = p.1.2 x :=
+    pushoutEquiv η p (map η x) = p.val.2 x :=
   RingHom.congr_fun (pushoutEquiv_comp_map η p) x
 
 /-- `pushoutEquiv η (f, g)` agrees with `g` on the variables `X i`. -/
 @[simp]
 theorem pushoutEquiv_X (η : A →+* B)
     (p : {p : (B →+* R) × (MvPolynomial σ A →+* R) // p.1.comp η = p.2.comp C}) (i : σ) :
-    pushoutEquiv η p (X i) = p.1.2 (X i) := by
+    pushoutEquiv η p (X i) = p.val.2 (X i) := by
   simpa using pushoutEquiv_map η p (X i)
 
 /-- A ring homomorphism out of `MvPolynomial σ B` is uniquely determined by its restrictions along

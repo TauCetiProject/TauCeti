@@ -104,14 +104,14 @@ def tensorLift :
 left factor `C`. -/
 @[simp]
 theorem tensorLift_symm_apply_fst (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
-    (tensorLift.symm k).1.1 = k.comp C :=
+    (tensorLift.symm k).val.1 = k.comp C :=
   MvPolynomial.pushoutEquiv_symm_apply_fst rightUnit k
 
 /-- The right component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
 right factor `MvPolynomial.map η_R`. -/
 @[simp]
 theorem tensorLift_symm_apply_snd (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
-    (tensorLift.symm k).1.2 = k.comp (map rightUnit) :=
+    (tensorLift.symm k).val.2 = k.comp (map rightUnit) :=
   MvPolynomial.pushoutEquiv_symm_apply_snd rightUnit k
 
 /-- `tensorLift (f, g)` restricts to `f` on the left factor. -/
@@ -119,7 +119,7 @@ theorem tensorLift_symm_apply_snd (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ Laza
 theorem tensorLift_comp_C
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) :
-    (tensorLift p).comp C = p.1.1 :=
+    (tensorLift p).comp C = p.val.1 :=
   MvPolynomial.pushoutEquiv_comp_C rightUnit p
 
 /-- `tensorLift (f, g)` restricts to `g` on the right factor. -/
@@ -127,7 +127,7 @@ theorem tensorLift_comp_C
 theorem tensorLift_comp_map_rightUnit
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) :
-    (tensorLift p).comp (map rightUnit) = p.1.2 :=
+    (tensorLift p).comp (map rightUnit) = p.val.2 :=
   MvPolynomial.pushoutEquiv_comp_map rightUnit p
 
 /-- `tensorLift (f, g)` agrees with `f` on the left factor. -/
@@ -135,7 +135,7 @@ theorem tensorLift_comp_map_rightUnit
 theorem tensorLift_C
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
-    tensorLift p (C x) = p.1.1 x :=
+    tensorLift p (C x) = p.val.1 x :=
   MvPolynomial.pushoutEquiv_C rightUnit p x
 
 /-- `tensorLift (f, g)` agrees with `g` on the right factor. -/
@@ -143,7 +143,7 @@ theorem tensorLift_C
 theorem tensorLift_map_rightUnit
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
-    tensorLift p (map rightUnit x) = p.1.2 x :=
+    tensorLift p (map rightUnit x) = p.val.2 x :=
   MvPolynomial.pushoutEquiv_map rightUnit p x
 
 /-- `tensorLift (f, g)` agrees with `g` on the generators of the right factor. -/
@@ -151,7 +151,7 @@ theorem tensorLift_map_rightUnit
 theorem tensorLift_X
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (i : ℕ+) :
-    tensorLift p (X i) = p.1.2 (X i) :=
+    tensorLift p (X i) = p.val.2 (X i) :=
   MvPolynomial.pushoutEquiv_X rightUnit p i
 
 /-- A ring homomorphism out of `Γ ⊗_L Γ` is determined by its restrictions to both factors. -/
@@ -267,21 +267,10 @@ theorem coproduct_coassoc :
       RingHom.comp_assoc, coproduct_comp_C, RingHom.comp_assoc]
   · -- Both sides are the triple composite `χ₃ * χ₂ * χ₁` of the strict coordinates of the three
     -- factors.
-    rw [map_comp_coproduct_universalStrictCoordinate, map_comp_coproduct_universalStrictCoordinate,
-      tensorLift_comp_map_rightUnit, tensorLift_comp_C, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C,
-      map_comp_coproduct_universalStrictCoordinate
-        (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing))) C,
-      map_comp_coproduct_universalStrictCoordinate
-        (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)))
-        (map (map (σ := ℕ+) rightUnit))]
-    -- Reduce the projections `p.1.1`, `p.1.2` of the explicit pairs passed to `tensorLift`, so
-    -- that the rewrites below see the factor maps themselves.
-    dsimp only
     have h : (map (map (σ := ℕ+) rightUnit)).comp (map (σ := ℕ+) rightUnit) =
         map ((map rightUnit).comp rightUnit) :=
       RingHom.ext fun p ↦ map_map rightUnit (map rightUnit) p
-    rw [map_comp_C (map (σ := ℕ+) rightUnit), mul_assoc, h]
+    simp [map_comp_coproduct_universalStrictCoordinate, mul_assoc, h]
 
 /-! ### The conjugation -/
 
