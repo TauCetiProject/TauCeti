@@ -26,8 +26,6 @@ For the blowup `Bl_I S ⟶ S` along a centre `V(I)` disjoint from the image of `
 strict transform of `X` with respect to `U = S ∖ V(I)` is the zero ideal sheaf on
 `X ×_S Bl_I S`, and the projection `X ×_S Bl_I S ⟶ X` is an isomorphism: the strict transform
 is `X` itself.
-
-These are Checks of §4.11 of the SchemeAndStackFoundations roadmap.
 -/
 
 public section
@@ -49,11 +47,12 @@ def origin : Spec (CommRingCat.of R) ⟶ Spec (CommRingCat.of R[X]) :=
 /-- The preimage of `𝔾_m = D(t)` under the origin is empty. -/
 theorem origin_preimage_basicOpen_X :
     origin R ⁻¹ᵁ (PrimeSpectrum.basicOpen (X : R[X])) = ⊥ := by
-  refine le_bot_iff.1 fun x (hx : x ∈ origin R ⁻¹ᵁ PrimeSpectrum.basicOpen (X : R[X])) ↦ ?_
-  have hx' : PrimeSpectrum.comap (evalRingHom (0 : R)) x ∈ PrimeSpectrum.basicOpen (X : R[X]) :=
-    hx
-  simp only [PrimeSpectrum.mem_basicOpen] at hx'
-  exact (hx' (show evalRingHom (0 : R) X ∈ x.asIdeal by simp)).elim
+  refine le_bot_iff.1 fun x hx ↦ ?_
+  have hx' := (origin R).mem_preimage.mp hx
+  rw [origin, Spec.map_apply] at hx'
+  -- The points and opens of `Spec R[X]` are by definition those of `PrimeSpectrum R[X]`
+  -- (`Spec_carrier`), so `PrimeSpectrum.mem_basicOpen` applies to `hx'`.
+  exact (PrimeSpectrum.mem_basicOpen _ _).mp hx' (Ideal.mem_comap.mpr (by simp))
 
 /-- With the witness `U = 𝔸¹`, the strict transform of the origin along the identity is the zero
 ideal sheaf. -/
@@ -74,9 +73,6 @@ theorem strictTransform_blowupToBase_of_preimage_eq_top {X S : Scheme.{u}} (f : 
     f.strictTransform I.blowupToBase I.support.compl = ⊥ ∧
       IsIso (pullback.fst f I.blowupToBase) :=
   ⟨Scheme.Hom.strictTransform_eq_bot_of_preimage_eq_top _ _ _ h,
-    Scheme.Hom.isIso_pullbackFst_of_preimage_eq_top _ _ _ h
-      (I.isIso_blowupToBase_restrict_of_disjoint_support (by
-        rw [TopologicalSpace.Closeds.coe_compl]
-        exact disjoint_compl_left))⟩
+    f.isIso_pullbackFst_of_preimage_eq_top _ h inferInstance⟩
 
 end TauCeti.StrictTransformExamples

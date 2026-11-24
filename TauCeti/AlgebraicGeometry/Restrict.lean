@@ -37,6 +37,8 @@ global functions of the base change.
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_pullbackFst_morphismRestrict`: being an isomorphism over an
   open is preserved by base change.
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackFst_of_preimage_eq_top`: if `f⁻¹(U)` is all of `X`
+  and `φ` is an isomorphism over `U`, the base change `X ×_Y S' ⟶ X` is an isomorphism.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
   attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
 * `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
@@ -114,6 +116,14 @@ theorem Scheme.Hom.isIso_pullbackFst_morphismRestrict {S' : Scheme.{u}} (φ : S'
     (IsPullback.of_hasPullback f φ).flip
   rw [← morphismRestrict_ι] at s
   exact (s.of_right' (isPullback_morphismRestrict φ U).flip).isIso_snd_of_isIso
+
+/-- If `f⁻¹(U)` is all of `X` and `φ : S' ⟶ Y` is an isomorphism over `U`, then the projection
+`X ×_Y S' ⟶ X` is an isomorphism. -/
+theorem Scheme.Hom.isIso_pullbackFst_of_preimage_eq_top {S' : Scheme.{u}} (φ : S' ⟶ Y)
+    {U : Y.Opens} (h : f ⁻¹ᵁ U = ⊤) (hU : IsIso (φ ∣_ U)) : IsIso (Limits.pullback.fst f φ) := by
+  have := f.isIso_pullbackFst_morphismRestrict φ hU
+  exact IsZariskiLocalAtTarget.of_iSup_eq_top (P := MorphismProperty.isomorphisms Scheme)
+    (fun _ : Unit ↦ f ⁻¹ᵁ U) (by simp [h]) fun _ ↦ this
 
 /-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
 ring-hom property `Q`. Then `P` holds for the restriction `V ⟶ U` of `f` iff `Q` holds for
