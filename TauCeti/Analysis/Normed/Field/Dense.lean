@@ -212,7 +212,7 @@ closed field over a dense subfield `K` of a complete nonarchimedean field `L` in
 theorem separableClosure_le_adjoin_range_of_denseRange (hK : DenseRange (algebraMap K L))
     (ι : Kbar →ₐ[K] Ω) : separableClosure L Ω ≤ adjoin L (Set.range ι) :=
   (adjoin_separableClosure_eq_of_denseRange hK).ge.trans <| adjoin.mono L _ _ fun _ hy ↦
-    AlgHom.mem_fieldRange.mp (separableClosure_le_fieldRange ι hy)
+    AlgHom.mem_fieldRange.mp (ι.separableClosure_le_fieldRange hy)
 
 /-- **The global closure generates the local closure.** If `ι : Kbar →ₐ[K] Ω` embeds a separably
 closed field over a dense subfield `K` of a complete nonarchimedean field `L` into a separable
@@ -233,7 +233,7 @@ theorem eqOn_separableClosure_of_isSepClosed_of_denseRange (hK : DenseRange (alg
   rw [← adjoin_separableClosure_eq_of_denseRange hK, ← coe_toSubalgebra,
     adjoin_toSubalgebra_of_isAlgebraic halg, AlgHom.eqOn_adjoin_iff]
   intro y hy
-  obtain ⟨b, rfl⟩ := AlgHom.mem_fieldRange.mp (separableClosure_le_fieldRange ι hy)
+  obtain ⟨b, rfl⟩ := AlgHom.mem_fieldRange.mp (ι.separableClosure_le_fieldRange hy)
   exact h b
 
 /-- Two `L`-algebra maps out of a separable extension `Ω` of a complete nonarchimedean field `L`
@@ -262,7 +262,7 @@ theorem _root_.IntermediateField.exists_eq_adjoin_simple_of_denseRange
     [FiniteDimensional L E] [Algebra.IsSeparable L E] : ∃ b : Kbar, E = L⟮ι b⟯ := by
   obtain ⟨y, hy, hE⟩ := exists_isSeparable_eq_adjoin_simple_of_denseRange hK E
   obtain ⟨b, rfl⟩ :=
-    AlgHom.mem_fieldRange.mp (separableClosure_le_fieldRange ι (mem_separableClosure_iff.mpr hy))
+    AlgHom.mem_fieldRange.mp (ι.separableClosure_le_fieldRange (mem_separableClosure_iff.mpr hy))
   exact ⟨b, hE⟩
 
 end TauCeti.IntermediateField

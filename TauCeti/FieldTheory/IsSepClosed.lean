@@ -40,7 +40,7 @@ solution.
 ## Separable elements and embeddings of separably closed fields
 
 The elements of a field `Ω` over `k` separable over `k` lie in the image of every embedding over
-`k` of a separably closed field (`TauCeti.separableClosure_le_fieldRange`).
+`k` of a separably closed field (`AlgHom.separableClosure_le_fieldRange`).
 
 ## Separable closures in a tower
 
@@ -97,6 +97,16 @@ theorem IsSepClosed.of_ringEquiv {k K : Type*} [Field k] [Field K] [IsSepClosed 
     simpa [Polynomial.map_map] using
       IsSepClosed.splits_domain (f := (e : k →+* K)) _ (hp.map (f := (e.symm : K →+* k)))
 
+/-- **Separable elements come from any separably closed field.** In a field `Ω` over `k`, the
+elements separable over `k` lie in the image of any embedding over `k` of a separably closed
+field: the minimal polynomial of such an element is separable, so it splits in that field. -/
+theorem AlgHom.separableClosure_le_fieldRange {k Ω Kbar : Type*} [Field k] [Field Ω]
+    [Algebra k Ω] [Field Kbar] [Algebra k Kbar] [IsSepClosed Kbar] (ι : Kbar →ₐ[k] Ω) :
+    separableClosure k Ω ≤ ι.fieldRange := fun y hy ↦
+  have hy : IsSeparable k y := mem_separableClosure_iff.mp hy
+  AlgHom.mem_fieldRange.mpr <| (AlgHom.mem_range ι).mp <|
+    hy.isIntegral.mem_range_algHom_of_minpoly_splits (IsSepClosed.splits_codomain _ hy) ι
+
 namespace TauCeti
 
 /-- **A quadratic with a nonvanishing derivative has a root in a separably closed field.** The
@@ -119,16 +129,6 @@ separability over `L`. -/
 theorem isSepClosure_tower_top (K L E : Type*) [Field K] [Field L] [Field E] [Algebra K L]
     [Algebra K E] [Algebra L E] [IsScalarTower K L E] [IsSepClosure K E] : IsSepClosure L E :=
   ⟨IsSepClosure.sep_closed K, Algebra.isSeparable_tower_top_of_isSeparable K L E⟩
-
-/-- **Separable elements come from any separably closed field.** In a field `Ω` over `k`, the
-elements separable over `k` lie in the image of any embedding over `k` of a separably closed
-field: the minimal polynomial of such an element is separable, so it splits in that field. -/
-theorem separableClosure_le_fieldRange {k Ω Kbar : Type*} [Field k] [Field Ω] [Algebra k Ω]
-    [Field Kbar] [Algebra k Kbar] [IsSepClosed Kbar] (ι : Kbar →ₐ[k] Ω) :
-    separableClosure k Ω ≤ ι.fieldRange := fun y hy ↦
-  have hy : IsSeparable k y := mem_separableClosure_iff.mp hy
-  AlgHom.mem_fieldRange.mpr <| (AlgHom.mem_range ι).mp <|
-    hy.isIntegral.mem_range_algHom_of_minpoly_splits (IsSepClosed.splits_codomain _ hy) ι
 
 end TauCeti
 
