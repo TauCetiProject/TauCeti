@@ -22,8 +22,8 @@ approximates it uniformly on a compact interval. Together with the density of co
 in `L¹`, this gives approximation of an integrable function by interval step functions.
 
 A step function of the integer ceiling, `t ↦ g ⌈t⌉` for an arbitrary `g : ℤ → E`, is bounded on
-every bounded interval, so it is interval integrable between any two points
-(`intervalIntegrable_comp_ceil`).
+every bounded interval, so it is interval integrable between any two points for every locally finite
+measure (`intervalIntegrable_comp_ceil`).
 -/
 
 public section
@@ -64,9 +64,10 @@ theorem integrableOn_intervalStep (a b δ : ℝ) (g : ℝ → E) :
 
 variable [NormedAddCommGroup E] in
 /-- A step function `t ↦ g ⌈t⌉` of the integer ceiling, for an arbitrary `g : ℤ → E`, is interval
-integrable between any two points: on a bounded interval it takes only finitely many values. -/
-theorem intervalIntegrable_comp_ceil (g : ℤ → E) (a b : ℝ) :
-    IntervalIntegrable (fun t ↦ g ⌈t⌉) volume a b := by
+integrable between any two points for every locally finite measure: on a bounded interval it takes
+only finitely many values. -/
+theorem intervalIntegrable_comp_ceil {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] (g : ℤ → E)
+    (a b : ℝ) : IntervalIntegrable (fun t ↦ g ⌈t⌉) μ a b := by
   rw [intervalIntegrable_iff, uIoc]
   refine IntegrableOn.of_bound measure_Ioc_lt_top
     ((StronglyMeasurable.of_discrete.comp_measurable Int.measurable_ceil).aestronglyMeasurable)
