@@ -42,7 +42,7 @@ variable {R : Type*} [Ring R] [StarRing R] {p q : R}
 `p * q + (1 - p) * (1 - q)` in the opposite direction. -/
 theorem star_intertwiner (hp : IsStarProjection p) (hq : IsStarProjection q) :
     star (intertwiner p q) = intertwiner q p := by
-  simp [intertwiner, star_sub, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
+  simp [intertwiner_def, star_sub, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
 
 /-- For the intertwiner `z = q * p + (1 - q) * (1 - p)`, `star z * z = 1 - (p - q) ^ 2`. -/
 theorem star_intertwiner_mul_intertwiner (hp : IsStarProjection p) (hq : IsStarProjection q) :
@@ -62,8 +62,8 @@ theorem star_intertwiner_mul_intertwiner (hp : IsStarProjection p) (hq : IsStarP
     rw [mul_assoc, ← mul_assoc q, hq.mul_one_sub_self, zero_mul, mul_zero]
   have hc₂ : (1 - p) * (1 - q) * (q * p) = 0 := by
     rw [mul_assoc, ← mul_assoc (1 - q), hq.one_sub_mul_self, zero_mul, mul_zero]
-  rw [hp.star_intertwiner hq, intertwiner, intertwiner, add_mul, mul_add, mul_add, hpq, hpq₁, hc₁,
-    hc₂, add_zero, zero_add, h₁, h₂]
+  rw [hp.star_intertwiner hq, intertwiner_def, intertwiner_def, add_mul, mul_add, mul_add, hpq,
+    hpq₁, hc₁, hc₂, add_zero, zero_add, h₁, h₂]
   noncomm_ring
 
 /-- For the intertwiner `z = q * p + (1 - q) * (1 - p)`, `z * star z = 1 - (p - q) ^ 2`. -/
@@ -77,7 +77,7 @@ theorem intertwiner_mul_star_intertwiner (hp : IsStarProjection p) (hq : IsStarP
 /-- For the intertwiner `z = q * p + (1 - q) * (1 - p)`, `z + star z = 2 * (1 - (p - q) ^ 2)`. -/
 theorem intertwiner_add_star_intertwiner (hp : IsStarProjection p) (hq : IsStarProjection q) :
     intertwiner p q + star (intertwiner p q) = 2 * (1 - (p - q) ^ 2) := by
-  rw [hp.star_intertwiner hq, intertwiner, intertwiner,
+  rw [hp.star_intertwiner hq, intertwiner_def, intertwiner_def,
     hp.isIdempotentElem.sub_sq hq.isIdempotentElem]
   noncomm_ring
 

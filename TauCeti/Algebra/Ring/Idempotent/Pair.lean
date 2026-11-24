@@ -33,8 +33,13 @@ namespace TauCeti
 /-- The intertwiner `q * p + (1 - q) * (1 - p)` of two elements `p` and `q` of a ring. When `p` and
 `q` are idempotents it carries `p` to `q`, `intertwiner p q * p = q * intertwiner p q`
 (`IsIdempotentElem.intertwiner_mul`). -/
-@[expose] def intertwiner {R : Type*} [Ring R] (p q : R) : R :=
+def intertwiner {R : Type*} [Ring R] (p q : R) : R :=
   q * p + (1 - q) * (1 - p)
+
+/-- The defining formula of the intertwiner. -/
+theorem intertwiner_def {R : Type*} [Ring R] (p q : R) :
+    intertwiner p q = q * p + (1 - q) * (1 - p) :=
+  (rfl)
 
 end TauCeti
 
@@ -77,7 +82,7 @@ theorem commute_sub_sq_right (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
 idempotent `q`. -/
 theorem intertwiner_mul (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
     intertwiner p q * p = q * intertwiner p q := by
-  rw [intertwiner, add_mul, mul_add, mul_assoc, hp.eq, mul_assoc, hp.one_sub_mul_self,
+  rw [intertwiner_def, add_mul, mul_add, mul_assoc, hp.eq, mul_assoc, hp.one_sub_mul_self,
     ← mul_assoc, hq.eq, ← mul_assoc, hq.mul_one_sub_self, mul_zero, zero_mul]
 
 end IsIdempotentElem

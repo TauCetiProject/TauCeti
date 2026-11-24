@@ -147,7 +147,7 @@ theorem exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjec
     ∃ u ∈ unitary A, u * p * star u = q ∧ ‖u - 1‖ ≤ √2 * ‖p - q‖ := by
   -- `h = (p - q) ^ 2` commutes with `p` and `q`, and `z` intertwines `p` with `q`.
   set h := (p - q) ^ 2
-  set z := TauCeti.intertwiner p q
+  set z := TauCeti.intertwiner p q with hz
   have hp' := hp.isIdempotentElem
   have hq' := hq.isIdempotentElem
   have hh : IsSelfAdjoint h := (hp.isSelfAdjoint.sub hq.isSelfAdjoint).pow 2
@@ -163,8 +163,10 @@ theorem exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjec
   have hcp : Commute c p := Commute.cfc_real (hp'.commute_sub_sq_left hq').symm _
   have hcq : Commute c q := Commute.cfc_real (hp'.commute_sub_sq_right hq').symm _
   have hc₁ : Commute c (1 - h) := (Commute.one_right c).sub_right (Commute.cfc_real (.refl h) _)
-  have hcz : Commute c z := (hcq.mul_right hcp).add_right
-    (((Commute.one_right c).sub_right hcq).mul_right ((Commute.one_right c).sub_right hcp))
+  have hcz : Commute c z := by
+    rw [hz, TauCeti.intertwiner_def]
+    exact (hcq.mul_right hcp).add_right
+      (((Commute.one_right c).sub_right hcq).mul_right ((Commute.one_right c).sub_right hcp))
   have hcz' : Commute c (star z) := hc ▸ hcz.star_star
   -- The unitary `u = z * c`, the unitary part of the polar decomposition of `z`.
   have hu₁ : star (z * c) * (z * c) = 1 := by

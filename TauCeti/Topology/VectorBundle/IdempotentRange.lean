@@ -123,6 +123,7 @@ noncomputable def rangeTrivialization :
     rintro ⟨x, w⟩ (hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)))
     refine congrArg (TotalSpace.mk x) (Subtype.ext ?_)
     simp only [ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearMap.coe_codRestrict_apply]
+    rw [← TauCeti.intertwiner_def] at hx ⊢
     rw [← coe_rangeEquiv_symm_apply (hidem x₀) (hidem x) hx, apply_coe_range (hidem x₀),
       ← coe_rangeEquiv_apply (hidem x₀) (hidem x) hx, apply_coe_range (hidem x),
       ContinuousLinearEquiv.apply_symm_apply]
@@ -130,6 +131,7 @@ noncomputable def rangeTrivialization :
     rintro ⟨x, v⟩ ⟨hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)), -⟩
     simp only [TotalSpace.mk', ContinuousLinearMap.coe_codRestrict_apply]
     refine Prod.ext rfl ((φ.symm_apply_eq).mpr (Subtype.ext ?_))
+    rw [← TauCeti.intertwiner_def] at hx ⊢
     rw [← coe_rangeEquiv_apply (hidem x₀) (hidem x) hx, apply_coe_range (hidem x),
       ← coe_rangeEquiv_symm_apply (hidem x₀) (hidem x) hx, ContinuousLinearEquiv.symm_apply_apply]
     exact apply_coe_range (hidem x₀) (φ v)

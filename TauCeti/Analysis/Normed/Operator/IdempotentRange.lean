@@ -75,7 +75,8 @@ theorem eventually_nonempty_continuousLinearEquiv_range (hp : Continuous p)
   filter_upwards [(isOpen_setOf_isUnit_intertwiner hp x₀).mem_nhds
     (ContinuousLinearMap.IsIdempotentElem.isUnit_mul_self_add_one_sub_mul_one_sub (hidem x₀))]
     with x (hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)))
-  exact ⟨ContinuousLinearMap.IsIdempotentElem.rangeEquiv (hidem x₀) (hidem x) hx⟩
+  exact ⟨ContinuousLinearMap.IsIdempotentElem.rangeEquiv (hidem x₀) (hidem x)
+    (by rwa [TauCeti.intertwiner_def])⟩
 
 /-- **The rank of a continuous family of projections is locally constant.** -/
 theorem isLocallyConstant_finrank_range (hp : Continuous p)

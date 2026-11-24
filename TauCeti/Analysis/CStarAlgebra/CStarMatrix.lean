@@ -261,10 +261,23 @@ lemma isSelfAdjoint_ofMatrix_iff [Star A] {M : Matrix n n A} :
     IsSelfAdjoint (ofMatrix M) ↔ IsSelfAdjoint M :=
   Iff.rfl
 
+/-- A C⋆-matrix is self-adjoint exactly when the underlying matrix is. -/
+@[simp]
+lemma isSelfAdjoint_ofMatrix_symm_iff [Star A] {M : CStarMatrix n n A} :
+    IsSelfAdjoint (ofMatrix.symm M) ↔ IsSelfAdjoint M :=
+  Iff.rfl
+
 /-- A matrix is unitary exactly when it is unitary as a C⋆-matrix. -/
 @[simp]
 lemma ofMatrix_mem_unitary_iff [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
     {M : Matrix n n A} : ofMatrix M ∈ unitary (CStarMatrix n n A) ↔ M ∈ unitary (Matrix n n A) :=
+  Iff.rfl
+
+/-- A C⋆-matrix is unitary exactly when the underlying matrix is. -/
+@[simp]
+lemma ofMatrix_symm_mem_unitary_iff [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
+    {M : CStarMatrix n n A} :
+    ofMatrix.symm M ∈ unitary (Matrix n n A) ↔ M ∈ unitary (CStarMatrix n n A) :=
   Iff.rfl
 
 /-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
