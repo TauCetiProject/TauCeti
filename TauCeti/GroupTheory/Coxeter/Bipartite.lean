@@ -32,13 +32,14 @@ Coxeter graph is connected, a colouring by `Bool` is unique up to exchanging the
 (`SimpleGraph.Coloring.eq_or_eq_recolorOfEquiv_boolNot`), so the bipartite Coxeter element is
 determined by the Coxeter system up to inversion, and in particular up to conjugacy.
 
-A diagram automorphism `e` of `M` (`CoxeterSystem.diagramAut`) permutes the indices, so it either
-preserves the colour of every index or exchanges the two colours, the latter only when it carries
-each colour class onto the other; on a connected Coxeter graph one of the two always happens
-(`SimpleGraph.Coloring.forall_apply_eq_or_forall_apply_eq_not`). A colour-preserving diagram
-automorphism fixes the bipartite Coxeter element, and a colour-exchanging one inverts it: it turns
-each word listing one colour class and then the other into a word listing the classes in the
-opposite order.
+A diagram automorphism `e` of `M` (`CoxeterSystem.diagramAut`) is an automorphism of the Coxeter
+graph (`CoxeterMatrix.graphIso`), so it carries the bipartite Coxeter element of a colouring to that
+of the colouring transported along `e`. Hence a colour-preserving diagram automorphism fixes the
+bipartite Coxeter element, and a colour-exchanging one, which carries each colour class onto the
+other, inverts it: it turns each word listing one colour class and then the other into a word
+listing the classes in the opposite order. On a connected Coxeter graph every diagram automorphism
+does one of the two (`SimpleGraph.Coloring.forall_apply_eq_or_forall_apply_eq_not`); on a
+disconnected one it may preserve the colours on some components and exchange them on others.
 
 The bipartite Coxeter element is the standard choice of Coxeter element in the study of the
 eigenvalues of Coxeter elements of finite reflection groups, because it is a product of two
@@ -65,8 +66,9 @@ involutions.
   Coxeter element, and the inverse is conjugate to it.
 * `CoxeterSystem.isConj_bipartiteCoxeterElement`: on a connected Coxeter graph, the bipartite
   Coxeter elements of any two colourings are conjugate.
-* `CoxeterSystem.diagramAut_colorClassProd`: a diagram automorphism carrying one colour class onto
-  another carries the product over the first to the product over the second.
+* `CoxeterSystem.diagramAut_colorClassProd`, `CoxeterSystem.diagramAut_bipartiteCoxeterElement`: a
+  diagram automorphism carries the colour-class products and the bipartite Coxeter element of a
+  colouring to those of the colouring transported along it.
 * `CoxeterSystem.diagramAut_bipartiteCoxeterElement_of_forall_eq` and
   `CoxeterSystem.diagramAut_bipartiteCoxeterElement_of_forall_eq_not`: a colour-preserving diagram
   automorphism fixes the bipartite Coxeter element, and a colour-exchanging one inverts it.
@@ -219,49 +221,59 @@ section DiagramAut
 
 variable (e : B ≃ B) (he : ∀ i i', M (e i) (e i') = M i i')
 
-/-- A diagram automorphism carrying the colour class `x` onto the colour class `y` carries the
-product of the simple reflections of colour `x` to the product of those of colour `y`. -/
-theorem diagramAut_colorClassProd {x y : Bool} (h : ∀ i, c (e i) = y ↔ c i = x) :
-    cs.diagramAut e he (cs.colorClassProd c x) = cs.colorClassProd c y := by
+/-- **A diagram automorphism transports the colour-class products**: it carries the product of the
+simple reflections of colour `x` to the product over the indices of colour `x` for the colouring
+transported along `e`, which colours `e i` as `c` colours `i`. -/
+theorem diagramAut_colorClassProd (x : Bool) :
+    cs.diagramAut e he (cs.colorClassProd c x) =
+      cs.colorClassProd (c.comp (M.graphIso e he).symm.toHom) x := by
   classical
   let l := (Finset.univ.filter fun i ↦ c i = x).toList
   have hmem (i : B) : i ∈ l ↔ c i = x := by simp [l]
   rw [← cs.wordProd_eq_colorClassProd c (Finset.nodup_toList _) hmem, diagramAut_wordProd]
-  refine cs.wordProd_eq_colorClassProd c ((Finset.nodup_toList _).map e.injective) fun j ↦ ?_
+  refine cs.wordProd_eq_colorClassProd _ ((Finset.nodup_toList _).map e.injective) fun j ↦ ?_
   rw [List.mem_map]
   constructor
   · rintro ⟨i, hi, rfl⟩
-    exact (h i).mpr ((hmem i).mp hi)
+    simpa using (hmem i).mp hi
   · intro hj
-    exact ⟨e.symm j, (hmem _).mpr ((h _).mp (by rwa [Equiv.apply_symm_apply])),
-      Equiv.apply_symm_apply e j⟩
+    exact ⟨e.symm j, (hmem _).mpr (by simpa using hj), e.apply_symm_apply j⟩
+
+/-- **A diagram automorphism transports the bipartite Coxeter element**: it carries the bipartite
+Coxeter element of `c` to that of the colouring transported along `e`. -/
+theorem diagramAut_bipartiteCoxeterElement :
+    cs.diagramAut e he (cs.bipartiteCoxeterElement c) =
+      cs.bipartiteCoxeterElement (c.comp (M.graphIso e he).symm.toHom) := by
+  rw [bipartiteCoxeterElement, bipartiteCoxeterElement, map_mul, diagramAut_colorClassProd,
+    diagramAut_colorClassProd]
 
 /-- **A colour-preserving diagram automorphism fixes the bipartite Coxeter element.** -/
 theorem diagramAut_bipartiteCoxeterElement_of_forall_eq (h : ∀ i, c (e i) = c i) :
     cs.diagramAut e he (cs.bipartiteCoxeterElement c) = cs.bipartiteCoxeterElement c := by
-  rw [bipartiteCoxeterElement, map_mul,
-    cs.diagramAut_colorClassProd c e he fun i ↦ by rw [h],
-    cs.diagramAut_colorClassProd c e he fun i ↦ by rw [h]]
+  rw [diagramAut_bipartiteCoxeterElement]
+  congr 1
+  ext i
+  simpa using (h (e.symm i)).symm
 
 /-- **A colour-exchanging diagram automorphism inverts the bipartite Coxeter element**: it sends the
 word listing the simple reflections coloured `true` and then those coloured `false` to a word
 listing those coloured `false` first. -/
 theorem diagramAut_bipartiteCoxeterElement_of_forall_eq_not (h : ∀ i, c (e i) = !c i) :
     cs.diagramAut e he (cs.bipartiteCoxeterElement c) = (cs.bipartiteCoxeterElement c)⁻¹ := by
-  rw [bipartiteCoxeterElement, map_mul, mul_inv_rev, colorClassProd_inv, colorClassProd_inv,
-    cs.diagramAut_colorClassProd c e he (x := true) (y := false) fun i ↦ by simp [h],
-    cs.diagramAut_colorClassProd c e he (x := false) (y := true) fun i ↦ by simp [h]]
+  rw [diagramAut_bipartiteCoxeterElement, ← bipartiteCoxeterElement_recolorOfEquiv_boolNot]
+  congr 1
+  ext i
+  have hi := h (e.symm i)
+  simp only [Equiv.apply_symm_apply] at hi
+  simp [hi]
 
 /-- **On a connected Coxeter graph a diagram automorphism fixes or inverts the bipartite Coxeter
 element**, according as it preserves or exchanges the two colours. -/
 theorem diagramAut_bipartiteCoxeterElement_eq_or_eq_inv (hM : M.graph.Preconnected) :
     cs.diagramAut e he (cs.bipartiteCoxeterElement c) = cs.bipartiteCoxeterElement c ∨
       cs.diagramAut e he (cs.bipartiteCoxeterElement c) = (cs.bipartiteCoxeterElement c)⁻¹ := by
-  let f : M.graph →g M.graph := ⟨e, fun {i i'} h ↦ M.graph_adj.mpr
-    ⟨e.injective.ne (M.graph_adj.mp h).1, by rw [he]; exact (M.graph_adj.mp h).2⟩⟩
-  rcases c.forall_apply_eq_or_forall_apply_eq_not hM f with h | h
-  · exact Or.inl (cs.diagramAut_bipartiteCoxeterElement_of_forall_eq c e he h)
-  · exact Or.inr (cs.diagramAut_bipartiteCoxeterElement_of_forall_eq_not c e he h)
+  rw [diagramAut_bipartiteCoxeterElement]
+  exact cs.bipartiteCoxeterElement_eq_or_eq_inv c hM _
 
 end DiagramAut
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.GroupTheory.Coxeter.Bipartite
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 
@@ -31,9 +32,13 @@ bijection between the two classes, so they have the same size; this rules it out
 and five nodes. Conversely, for `n` odd a rotation of the cycle `Aₙ` by one step and the reversal
 `TauCeti.AffineDynkinType.reverseD` of `Dₙ` exchange the colours. Hence a valid affine diagram has
 a colour-exchanging automorphism exactly when it is `Aₙ` or `Dₙ` with `n` odd
-(`TauCeti.AffineDynkinType.exists_iso_forall_apply_eq_not_iff`). On the cycle the classification
-of the individual automorphisms is by parity: one preserves the colours exactly when it moves the
-node `0` an even number of steps (`SimpleGraph.Coloring.forall_apply_eq_iff_even_val_apply_zero`).
+(`TauCeti.AffineDynkinType.exists_iso_forall_coloring_eq_not_iff`). On the cycle the
+classification of the individual automorphisms is by parity: one preserves the colours exactly when
+it moves the node `0` an even number of steps
+(`SimpleGraph.Coloring.cycleGraph_forall_apply_eq_iff_even_val_apply_zero`), and exchanges them
+exactly when it moves `0` an odd number of steps
+(`SimpleGraph.Coloring.cycleGraph_forall_apply_eq_not_iff_odd_val_apply_zero`); the reversal of
+`Dₙ` preserves the colours exactly when `n` is even and exchanges them exactly when `n` is odd.
 
 Third, what this does to the bipartite Coxeter element of a Coxeter system whose Coxeter graph is
 the affine diagram, such as the affine Weyl group. A diagram automorphism sends the word listing
@@ -43,7 +48,8 @@ exchanges them, so it inverts the element
 (`CoxeterSystem.diagramAut_bipartiteCoxeterElement_of_forall_eq` and
 `CoxeterSystem.diagramAut_bipartiteCoxeterElement_of_forall_eq_not`). Outside `Aₙ` and `Dₙ` with `n`
 odd, every diagram automorphism therefore fixes it
-(`TauCeti.AffineDynkinType.diagramAut_bipartiteCoxeterElement`).
+(`TauCeti.AffineDynkinType.diagramAut_bipartiteCoxeterElement`), for a Coxeter matrix on any finite
+index type whose Coxeter graph is isomorphic to the diagram.
 
 ## Main definitions
 
@@ -55,12 +61,13 @@ odd, every diagram automorphism therefore fixes it
   is odd.
 * `TauCeti.AffineDynkinType.isBipartite_graph_iff`: a valid affine diagram is bipartite exactly
   when it is not a cycle `A₂ₘ`.
-* `TauCeti.AffineDynkinType.forall_apply_reverseD_eq_iff`: the reversal of `Dₙ` preserves the
-  colours exactly when `n` is even.
-* `TauCeti.AffineDynkinType.exists_iso_forall_apply_eq_not_iff`: a valid affine diagram has a
+* `TauCeti.AffineDynkinType.forall_coloring_reverseD_eq_iff`,
+  `TauCeti.AffineDynkinType.forall_coloring_reverseD_eq_not_iff`: the reversal of `Dₙ` preserves
+  the colours exactly when `n` is even and exchanges them exactly when `n` is odd.
+* `TauCeti.AffineDynkinType.exists_iso_forall_coloring_eq_not_iff`: a valid affine diagram has a
   colour-exchanging automorphism exactly when it is `Aₙ` or `Dₙ` with `n` odd, and
-  `TauCeti.AffineDynkinType.forall_apply_iso_eq` says that otherwise every automorphism preserves
-  the colours.
+  `TauCeti.AffineDynkinType.coloring_iso_eq` says that otherwise every automorphism preserves the
+  colours.
 * `TauCeti.AffineDynkinType.diagramAut_bipartiteCoxeterElement`: outside those cases every diagram
   automorphism fixes the bipartite Coxeter element.
 
@@ -84,13 +91,9 @@ open SimpleGraph Finset
 `n + 1` of nodes. -/
 theorem isBipartite_graph_A_iff {n : ℕ} (hn : 1 ≤ n) : (A n).graph.IsBipartite ↔ Odd n := by
   rw [graph_A]
-  constructor
-  · intro h
-    by_contra hodd
-    have h3 := chromaticNumber_cycleGraph_of_odd (n + 1) (by omega) (Nat.odd_add_one.mpr hodd)
-    exact absurd (h3.symm.trans_le h.chromaticNumber_le) (by decide)
-  · intro h
-    exact IsBipartite.cycleGraph_of_even (Nat.even_add_one.mpr (Nat.not_even_iff_odd.mpr h))
+  refine isBipartite_cycleGraph_iff.trans ?_
+  rw [Nat.even_add_one, Nat.not_even_iff_odd]
+  exact or_iff_left (by omega)
 
 /-- **The bipartite affine simply-laced diagrams**: a valid affine diagram is bipartite exactly
 when it is not a cycle `A₂ₘ` with an odd number of nodes. -/
@@ -147,7 +150,7 @@ private theorem adj_reverseDFun {n : ℕ} (hn : 4 ≤ n) {i j : Fin (D n).nodes}
 /-- **The reversal of `Dₙ`**: the graph automorphism reversing the path `0 - 1 - ⋯ - (n-2)` and
 exchanging the leaf `n - 1` at node `1` with the leaf `n` at node `n - 3`. It exchanges the two
 ends of the diagram, and it preserves the colours of a two-colouring exactly when `n` is even
-(`TauCeti.AffineDynkinType.forall_apply_reverseD_eq_iff`). -/
+(`TauCeti.AffineDynkinType.forall_coloring_reverseD_eq_iff`). -/
 def reverseD {n : ℕ} (hn : 4 ≤ n) : (D n).graph ≃g (D n).graph where
   toEquiv := (reverseDFun_involutive hn).toPerm
   map_rel_iff' {i j} := by
@@ -168,6 +171,17 @@ theorem reverseD_reverseD {n : ℕ} (hn : 4 ≤ n) (i : Fin (D n).nodes) :
     reverseD hn (reverseD hn i) = i :=
   reverseDFun_involutive hn i
 
+/-- The reversal of `Dₙ` is its own inverse. -/
+@[simp]
+theorem reverseD_symm {n : ℕ} (hn : 4 ≤ n) : (reverseD hn).symm = reverseD hn :=
+  RelIso.ext fun i ↦ (reverseD hn).symm_apply_eq.mpr (reverseD_reverseD hn i).symm
+
+/-- The reversal of `Dₙ` composed with itself is the identity. -/
+@[simp]
+theorem reverseD_trans_reverseD {n : ℕ} (hn : 4 ≤ n) :
+    (reverseD hn).trans (reverseD hn) = .refl _ :=
+  RelIso.ext fun i ↦ reverseD_reverseD hn i
+
 /-- Colours alternate along the path `0 - 1 - ⋯ - (n-2)` of `Dₙ`. -/
 private theorem apply_eq_apply_zero_iff_even_D {n : ℕ} (hn : 4 ≤ n)
     (c : (D n).graph.Coloring Bool) :
@@ -185,7 +199,7 @@ private theorem apply_eq_apply_zero_iff_even_D {n : ℕ} (hn : 4 ≤ n)
 /-- **The reversal of `Dₙ` preserves the colours exactly when `n` is even**: it sends the end node
 `0` of the path to the other end node `n - 2`, an even number of steps away exactly when `n` is
 even. Otherwise it exchanges the two colours. -/
-theorem forall_apply_reverseD_eq_iff {n : ℕ} (hn : 4 ≤ n) (c : (D n).graph.Coloring Bool) :
+theorem forall_coloring_reverseD_eq_iff {n : ℕ} (hn : 4 ≤ n) (c : (D n).graph.Coloring Bool) :
     (∀ i, c (reverseD hn i) = c i) ↔ Even n := by
   have h0 : reverseD hn ⟨0, by simp⟩ = ⟨n - 2, by simp only [nodes_D]; omega⟩ :=
     Fin.ext (by rw [val_reverseD hn]; simp)
@@ -196,6 +210,23 @@ theorem forall_apply_reverseD_eq_iff {n : ℕ} (hn : 4 ≤ n) (c : (D n).graph.C
     simp [Nat.even_add]
   exact ⟨fun h ↦ hev.mp (hpath.mp (h _)), fun h ↦ c.forall_apply_eq_of_apply_eq
     (graph_connected (valid_D.mpr hn)).preconnected (reverseD hn).toHom (hpath.mpr (hev.mpr h))⟩
+
+/-- **The reversal of `Dₙ` exchanges the colours exactly when `n` is odd.** -/
+theorem forall_coloring_reverseD_eq_not_iff {n : ℕ} (hn : 4 ≤ n) (c : (D n).graph.Coloring Bool) :
+    (∀ i, c (reverseD hn i) = !c i) ↔ Odd n := by
+  constructor
+  · intro h
+    rw [← Nat.not_even_iff_odd, ← forall_coloring_reverseD_eq_iff hn c]
+    intro h'
+    have h0 := h ⟨0, by simp⟩
+    rw [h'] at h0
+    simp at h0
+  · intro hodd
+    have h := (forall_coloring_reverseD_eq_iff hn c).not.mpr (Nat.not_even_iff_odd.mpr hodd)
+    push Not at h
+    obtain ⟨i, hi⟩ := h
+    exact c.forall_apply_eq_not_of_apply_ne (graph_connected (valid_D.mpr hn)).preconnected
+      (reverseD hn).toHom hi
 
 /-! ## Colour-exchanging automorphisms -/
 
@@ -211,15 +242,15 @@ private def coloringE7 : E7.graph.Coloring Bool :=
 
 /-- **The affine diagrams with a colour-exchanging automorphism**: a valid affine simply-laced
 diagram with a two-colouring has a graph automorphism exchanging the two colour classes exactly
-when it is `Aₙ` or `Dₙ` with `n` odd. For `Aₙ` the rotation by one step is one, and for `Dₙ` the
-reversal `TauCeti.AffineDynkinType.reverseD`. -/
-theorem exists_iso_forall_apply_eq_not_iff {t : AffineDynkinType} (ht : t.Valid)
+when it is `Aₙ` or `Dₙ` with `n` odd. For `Aₙ` the rotation `TauCeti.cycleGraphAddRightIso 1` by
+one step is one, and for `Dₙ` the reversal `TauCeti.AffineDynkinType.reverseD`. -/
+theorem exists_iso_forall_coloring_eq_not_iff {t : AffineDynkinType} (ht : t.Valid)
     (c : t.graph.Coloring Bool) :
     (∃ φ : t.graph ≃g t.graph, ∀ i, c (φ i) = !c i) ↔ ∃ n, Odd n ∧ (t = A n ∨ t = D n) := by
   constructor
   · rintro ⟨φ, hφ⟩
     -- An exchanging automorphism matches the two colour classes, which partition the nodes.
-    have htot := c.two_mul_card_filter_eq_true φ.toEquiv hφ
+    have htot := two_mul_card_filter_eq_true c φ.toEquiv hφ
     rw [Fintype.card_fin] at htot
     cases t with
     | A n =>
@@ -244,51 +275,34 @@ theorem exists_iso_forall_apply_eq_not_iff {t : AffineDynkinType} (ht : t.Valid)
       have hG := graph_A (m + 1)
       generalize (A (m + 1)).graph = G at c hG ⊢
       subst hG
-      let φ : cycleGraph (m + 2) ≃g cycleGraph (m + 2) :=
-        { toEquiv := Equiv.addRight 1
-          map_rel_iff' := by simp [cycleGraph_adj'] }
-      refine ⟨φ, fun i ↦ ?_⟩
-      have h := c.apply_add_eq_iff_even_val i 1
-      rw [Fin.val_one, iff_false_intro Nat.not_even_one] at h
-      exact Bool.eq_not_iff.mpr h.mp
-    · have hn4 := valid_D.mp ht
-      refine ⟨reverseD hn4, ?_⟩
-      have h := (forall_apply_reverseD_eq_iff hn4 c).not.mpr (Nat.not_even_iff_odd.mpr hn)
-      push Not at h
-      obtain ⟨i, hi⟩ := h
-      exact c.forall_apply_eq_not_of_apply_ne (graph_connected ht).preconnected
-        (reverseD hn4).toHom hi
+      exact ⟨cycleGraphAddRightIso 1, fun i ↦ (congrArg c (cycleGraphAddRightIso_apply 1 i)).trans
+        ((c.cycleGraph_apply_add_eq_not_iff_odd_val i 1).mpr (by simp))⟩
+    · exact ⟨reverseD (valid_D.mp ht), (forall_coloring_reverseD_eq_not_iff _ c).mpr hn⟩
 
 /-- **Outside `Aₙ` and `Dₙ` with `n` odd, every automorphism of a valid affine diagram preserves
 the colours of a two-colouring.** -/
-theorem forall_apply_iso_eq {t : AffineDynkinType} (ht : t.Valid)
+theorem coloring_iso_eq {t : AffineDynkinType} (ht : t.Valid)
     (h : ¬∃ n, Odd n ∧ (t = A n ∨ t = D n)) (c : t.graph.Coloring Bool) (φ : t.graph ≃g t.graph)
     (i : Fin t.nodes) : c (φ i) = c i :=
   (c.forall_apply_eq_or_forall_apply_eq_not (graph_connected ht).preconnected φ.toHom).resolve_right
-    (fun hφ ↦ h ((exists_iso_forall_apply_eq_not_iff ht c).mp ⟨φ, hφ⟩)) i
+    (fun hφ ↦ h ((exists_iso_forall_coloring_eq_not_iff ht c).mp ⟨φ, hφ⟩)) i
 
 /-! ## The bipartite Coxeter element -/
 
 /-- **Diagram automorphisms fix the bipartite Coxeter element outside `Aₙ` and `Dₙ` with `n`
-odd.** Let `M` be a Coxeter matrix whose Coxeter graph is a valid affine diagram other than these,
-as for the affine Weyl group of that type. Every diagram automorphism of `M` preserves the colours
-of a two-colouring, so it fixes the bipartite Coxeter element; for `Aₙ` and `Dₙ` with `n` odd, a
-colour-exchanging one inverts it instead
+odd.** Let `M` be a Coxeter matrix on any finite index type whose Coxeter graph is isomorphic to a
+valid affine diagram other than these, as for the affine Weyl group of that type. Every diagram
+automorphism of `M` preserves the colours of a two-colouring, so it fixes the bipartite Coxeter
+element; for `Aₙ` and `Dₙ` with `n` odd, a colour-exchanging one inverts it instead
 (`CoxeterSystem.diagramAut_bipartiteCoxeterElement_of_forall_eq_not`). -/
 theorem diagramAut_bipartiteCoxeterElement {t : AffineDynkinType} (ht : t.Valid)
-    (h : ¬∃ n, Odd n ∧ (t = A n ∨ t = D n)) {M : CoxeterMatrix (Fin t.nodes)}
-    (hM : M.graph = t.graph) {W : Type*} [Group W] (cs : CoxeterSystem M W)
-    (c : M.graph.Coloring Bool) (e : Fin t.nodes ≃ Fin t.nodes)
-    (he : ∀ i i', M (e i) (e i') = M i i') :
+    (h : ¬∃ n, Odd n ∧ (t = A n ∨ t = D n)) {B : Type*} [Fintype B] {M : CoxeterMatrix B}
+    (ψ : M.graph ≃g t.graph) {W : Type*} [Group W] (cs : CoxeterSystem M W)
+    (c : M.graph.Coloring Bool) (e : B ≃ B) (he : ∀ i i', M (e i) (e i') = M i i') :
     cs.diagramAut e he (cs.bipartiteCoxeterElement c) = cs.bipartiteCoxeterElement c := by
-  -- Transport the colouring and the diagram automorphism from the Coxeter graph to the diagram.
-  let c' : t.graph.Coloring Bool := Coloring.mk c fun {i j} hij ↦ c.valid (hM ▸ hij)
-  let φ : t.graph ≃g t.graph :=
-    { toEquiv := e
-      map_rel_iff' := by
-        intro i j
-        rw [← hM, CoxeterMatrix.graph_adj, CoxeterMatrix.graph_adj, ne_eq, ne_eq,
-          e.injective.eq_iff, he] }
-  exact cs.diagramAut_bipartiteCoxeterElement_of_forall_eq c e he (forall_apply_iso_eq ht h c' φ)
+  refine cs.diagramAut_bipartiteCoxeterElement_of_forall_eq c e he fun i ↦ ?_
+  -- Transport the colouring and the graph automorphism underlying `e` to the diagram along `ψ`.
+  simpa using coloring_iso_eq ht h (c.comp ψ.symm.toHom)
+    ((ψ.symm.trans (M.graphIso e he)).trans ψ) (ψ i)
 
 end TauCeti.AffineDynkinType
