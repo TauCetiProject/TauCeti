@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.Local
 public import TauCeti.Condensed.Light.NullSequence.Basic
 public import TauCeti.Condensed.Light.InternalHom.Basic
 
-import Mathlib.CategoryTheory.Adjunction.Additive
+import TauCeti.CategoryTheory.Monoidal.Closed.Preadditive
 import TauCeti.Condensed.Light.Basic
 
 /-!
@@ -123,10 +123,8 @@ private lemma uncurry_comp_lightSolidDifference {Z M : LightCondMod R}
     (g : Z ⟶ (nullSeq R ⟶[LightCondMod R] M)) :
     MonoidalClosed.uncurry (g ≫ lightSolidDifference M) =
       (𝟙 _ - nullShift R ▷ Z) ≫ MonoidalClosed.uncurry g := by
-  rw [lightSolidDifference_def, Preadditive.comp_sub, Preadditive.sub_comp, comp_id, id_comp,
-    ← MonoidalClosed.uncurry_pre_app, ← MonoidalClosed.homEquiv_symm_apply_eq,
-    ← MonoidalClosed.homEquiv_symm_apply_eq, ← MonoidalClosed.homEquiv_symm_apply_eq,
-    (ihom.adjunction (nullSeq R)).homAddEquiv_symm_sub]
+  rw [lightSolidDifference_def, Preadditive.comp_sub, comp_id, uncurry_sub,
+    MonoidalClosed.uncurry_pre_app, Preadditive.sub_comp, id_comp]
 
 /-- Solidity is equivalent to unique solvability of the difference equation on maps out of
 `nullSeq R ⊗ Z`, for every light condensed module `Z`. -/
@@ -152,15 +150,39 @@ def nullSeqTest : MorphismProperty (LightCondMod R) :=
     𝟙 (nullSeq R ⊗ (free R).obj S.toCondensed) - nullShift R ▷ (free R).obj S.toCondensed
 
 variable (R) in
+/-- The characteristic equation of the null-sequence test maps. -/
+lemma nullSeqTest_def : nullSeqTest R = MorphismProperty.ofHoms fun S : LightProfinite.{u} ↦
+    𝟙 (nullSeq R ⊗ (free R).obj S.toCondensed) - nullShift R ▷ (free R).obj S.toCondensed :=
+  (rfl)
+
+variable (R) in
+/-- The test map indexed by a light profinite set `S` is a null-sequence test map. -/
+lemma nullSeqTest_mk (S : LightProfinite.{u}) :
+    nullSeqTest R
+      (𝟙 (nullSeq R ⊗ (free R).obj S.toCondensed) - nullShift R ▷ (free R).obj S.toCondensed) := by
+  rw [nullSeqTest_def]
+  exact MorphismProperty.ofHoms.mk S
+
+/-- A morphism is a null-sequence test map exactly when it is isomorphic, as an arrow, to the
+test map indexed by some light profinite set. -/
+lemma nullSeqTest_iff {X Y : LightCondMod R} (f : X ⟶ Y) :
+    nullSeqTest R f ↔ ∃ S : LightProfinite.{u}, Arrow.mk f =
+      Arrow.mk (𝟙 (nullSeq R ⊗ (free R).obj S.toCondensed) -
+        nullShift R ▷ (free R).obj S.toCondensed) := by
+  rw [nullSeqTest_def, MorphismProperty.ofHoms_iff]
+
+variable (R) in
 /-- Solid modules are the local objects for the null-sequence test maps. -/
 theorem isLightSolid_eq_isLocal : IsLightSolid (R := R) = (nullSeqTest R).isLocal := by
   ext M
   rw [isLightSolid_iff_bijective, MorphismProperty.isLocal_iff]
   constructor
-  · rintro h _ _ _ ⟨S⟩
+  · intro h _ _ _ hf
+    rw [nullSeqTest_def] at hf
+    obtain ⟨S⟩ := hf
     simpa only [Preadditive.sub_comp, id_comp] using h S
   · intro h S
-    simpa only [Preadditive.sub_comp, id_comp] using h _ (MorphismProperty.ofHoms.mk S)
+    simpa only [Preadditive.sub_comp, id_comp] using h _ (nullSeqTest_mk R S)
 
 /-- Solid modules are closed under all limits. -/
 instance (J : Type*) [Category* J] : (IsLightSolid (R := R)).IsClosedUnderLimitsOfShape J := by
