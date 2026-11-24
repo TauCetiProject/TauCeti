@@ -68,19 +68,10 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 
 ## Main definitions
 
-* `TauCeti.thomPair`: the Thom pair `(E, E₀)`.
-* `TauCeti.thomPairModelIso`, `TauCeti.subbundleThomPairModelIso`: changing the phantom model-fibre
-  parameter of a Thom pair (or of a subbundle Thom pair) without changing the total-space topology.
-* `TauCeti.thomPairOver`: the Thom pair `(E|_W, E₀|_W)` of the restriction to a subset `W` of the
-  base; over the whole base it is the Thom pair `(E, E₀)` (`TauCeti.thomPairOverUnivIso`).
-* `TauCeti.thomPairOverMap`: the restriction map `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` for
-  `W ⊆ W'`.
 * `TauCeti.fiberThomPairMap`, `TauCeti.fiberThomPairOverMap`: the inclusions of the fibre pair
   `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`; over a
   subsingleton base, `fiberThomPairMap` is an isomorphism
   (`TauCeti.isIso_fiberThomPairMap_of_subsingleton`).
-* `TauCeti.thomPairMapOfNeZero`: a continuous map `f : X → E` taking nonzero values off a set `S`,
-  as a map of pairs `(X, X ∖ S) ⟶ (E, E₀)`.
 * `TauCeti.thomPairProj`, `TauCeti.thomPairOverProj`: the projection of the total space to the base,
   and its restriction over `W ⊆ B`, as morphisms out of the ambient spaces of the Thom pairs.
 * `TauCeti.zeroSectionComplProj`: the restriction `π₀ : E₀ → B` of the projection to the
