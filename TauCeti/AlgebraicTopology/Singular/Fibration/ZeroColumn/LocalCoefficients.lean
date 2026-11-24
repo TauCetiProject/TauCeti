@@ -254,19 +254,6 @@ private lemma map_diskPathClass_comp_cellPath :
   exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
     ((congrArg (_ ≫ ·) ((eqToHom_trans _ _).trans (eqToHom_refl _ _))).trans (Category.comp_id _))))
 
-omit [T2Space B] in
-/-- Transport of fibre homology along a path, read in the local system of fibre homology. -/
-private lemma objIso_hom_comp_fiberHomologyTransport_comp {b₀ b₁ : B} (γ : Path b₀ b₁)
-    {Z : ModuleCat.{u} R}
-    (r : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-      (ModuleCat.of R R)).obj (p.fiber b₁) ⟶ Z) :
-    (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q (FundamentalGroupoid.mk b₀)).hom ≫
-        fiberHomologyTransport hp (ModuleCat.of R R) q γ ≫ r =
-      (serreFiberLocalSystem hp (ModuleCat.of R R) q).map (Path.Homotopic.Quotient.mk γ) ≫
-        (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q (FundamentalGroupoid.mk b₁)).hom ≫
-          r := by
-  simp
-
 /-- **One end point of the edge formula.** A term of the cellular differential of a `1`-cell `j`
 with coefficients in the fibre homology, at an end point `s` of `D¹` that the characteristic map
 sends to the point `y` of the `0`-skeleton, is transport in the base along the image of the path
@@ -341,8 +328,10 @@ private lemma twistedCellularDifferential_zero_eq :
   -- The implicit objects of the goal still mention the pulled-back system on the disk pair, which
   -- is not type-correct at instance transparency, so `rw` cannot abstract the composites; `erw`
   -- rewrites at default transparency.
-  erw [Category.assoc, objIso_hom_comp_fiberHomologyTransport_comp, ← Functor.map_comp_assoc,
-    Category.assoc, map_diskPathClass_comp_cellPath]
+  erw [← map_diskPathClass_comp_cellPath, Functor.map_comp_assoc, Functor.map_comp_assoc,
+    serreFiberLocalSystem_map_mk hp _ q (cellPath C j), Category.assoc, Category.assoc,
+    Iso.inv_hom_id_assoc, Functor.map_comp_assoc]
+  rfl
 
 end Edge
 
