@@ -155,9 +155,8 @@ theorem mpullback_mk_timeForm (t : ℝ) :
     SmoothForm.mpullback (mk φ t) (contMDiff_mk φ t) (timeForm φ) = 0 := by
   have hconst : proj φ ∘ mk φ t = fun _ ↦ (t : UnitAddCircle) := funext fun x ↦ proj_mk φ t x
   rw [timeForm, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-  refine Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [SmoothForm.coe_mpullback, mpullback_apply, hconst, mfderiv_const]
-  exact (AddCircle.timeForm 1).val _ |>.map_coord_zero 0 rfl
+  refine Subtype.ext ?_
+  rw [SmoothForm.coe_mpullback, hconst, mpullback_const one_ne_zero, ZeroMemClass.coe_zero]
 
 /-! ### Fiber forms -/
 

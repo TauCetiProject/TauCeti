@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
+public import TauCeti.AlgebraicGeometry.Scheme.SpecAlgHom
 public import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 
 /-!
@@ -415,15 +416,6 @@ variable (R : Type u) {K L : Type u} [CommRing R] [CommRing K] [CommRing L]
 variable [Algebra R K] [Algebra R L] (φ : K →ₐ[R] L)
 variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
 
-/-- The structure morphism `Spec L ⟶ Spec R` factors through `Spec φ : Spec L ⟶ Spec K` for an
-`R`-algebra map `φ : K → L`. -/
-lemma SpecMap_algebraMap_eq_SpecMap_comp_SpecMap_algebraMap :
-    Spec.map (CommRingCat.ofHom (algebraMap R L)) =
-      Spec.map (CommRingCat.ofHom φ.toRingHom) ≫
-        Spec.map (CommRingCat.ofHom (algebraMap R K)) := by
-  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  exact congrArg (fun ψ ↦ Spec.map (CommRingCat.ofHom ψ)) φ.comp_algebraMap.symm
-
 /-- The comparison map from the scalar extension to `L` to the scalar extension to `K` along an
 `R`-algebra map `φ : K → L`: the identity on the total space and `Spec φ` on the base. -/
 noncomputable def genericFiberMap :
@@ -431,7 +423,7 @@ noncomputable def genericFiberMap :
   pullback.map toBase (Spec.map (CommRingCat.ofHom (algebraMap R L))) toBase
     (Spec.map (CommRingCat.ofHom (algebraMap R K))) (𝟙 X)
     (Spec.map (CommRingCat.ofHom φ.toRingHom)) (𝟙 _) (by simp)
-    (by rw [Category.comp_id, SpecMap_algebraMap_eq_SpecMap_comp_SpecMap_algebraMap R φ])
+    (by simp)
 
 /-- The comparison map of scalar extensions commutes with the projections to the total space. -/
 @[reassoc (attr := simp)]
@@ -455,8 +447,8 @@ lemma isPullback_genericFiberMap :
     IsPullback (genericFiberMap R φ toBase) (genericFiber R L toBase).hom
       (genericFiber R K toBase).hom (Spec.map (CommRingCat.ofHom φ.toRingHom)) :=
   IsPullback.of_right (by
-      rw [genericFiberMap_genericFiberι,
-        ← SpecMap_algebraMap_eq_SpecMap_comp_SpecMap_algebraMap R φ]
+      rw [genericFiberMap_genericFiberι, AlgHom.toRingHom_eq_coe,
+        Spec.map_algHom_comp_map_algebraMap φ]
       exact isPullback_genericFiber R L toBase)
     (genericFiberMap_snd R φ toBase) (isPullback_genericFiber R K toBase)
 

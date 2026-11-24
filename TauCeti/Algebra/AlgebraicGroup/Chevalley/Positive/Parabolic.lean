@@ -51,8 +51,7 @@ every commutative ring `A`, including characteristics two and three.
 
 public section
 
-open CategoryTheory TensorProduct
-open TauCeti.UniversalEnvelopingAlgebra
+open CategoryTheory TensorProduct TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 

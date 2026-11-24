@@ -29,8 +29,8 @@ symmetry that underlies the mean-value property and the construction of radial h
 * `TauCeti.harmonicAt_comp_linearIsometryEquiv_right_iff`,
   `TauCeti.harmonicOnNhd_comp_linearIsometryEquiv_right_iff`: harmonicity is invariant
   under linear isometric changes of variable.
-* `TauCeti.harmonicAt_comp_add_right_iff`, `TauCeti.harmonicOnNhd_comp_add_right_iff`:
-  harmonicity is invariant under translation.
+* `TauCeti.harmonicAt_comp_add_right_iff`, `TauCeti.harmonicAt_comp_sub_right_iff`,
+  `TauCeti.harmonicOnNhd_comp_add_right_iff`: harmonicity is invariant under translation.
 -/
 
 public section
@@ -97,6 +97,12 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
     exact (Filter.eventuallyEq_map (f := 𝓝 x) (m := Homeomorph.addRight a) (f₁ := Δ f)
       (f₂ := (0 : E → F))).symm
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
+
+/-- **Harmonicity is invariant under translation.** The function `y ↦ f (y - a)` is harmonic
+at `x` iff `f` is harmonic at `x - a`. -/
+theorem harmonicAt_comp_sub_right_iff {f : E → F} {x a : E} :
+    HarmonicAt (fun y ↦ f (y - a)) x ↔ HarmonicAt f (x - a) := by
+  simpa only [sub_eq_add_neg] using harmonicAt_comp_add_right_iff (f := f) (x := x) (a := -a)
 
 /-- **Harmonicity is invariant under affine isometries.** For an affine isometry equivalence
 `e`, the function `f ∘ e` is harmonic at `x` iff `f` is harmonic at `e x`. -/
