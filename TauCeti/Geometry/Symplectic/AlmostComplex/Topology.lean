@@ -143,16 +143,11 @@ theorem Tames.eventually_of_continuousAt {X : Type*} [TopologicalSpace X] {ω : 
     {J : X → AlmostComplexStructure V} {x : X}
     (hJ : ContinuousAt (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) x)
     (h : ω.Tames (J x)) : ∀ᶠ y in 𝓝 x, ω.Tames (J y) := by
-  let ωc := ω.toBilinForm.toContinuousBilinearMap
-  -- The forms `ω(·, A ·)` depend continuously on the operator `A`, and positivity is open.
-  have hc : Continuous fun A : V →L[ℝ] V => (ContinuousLinearMap.compL ℝ V V ℝ).flip A ∘L ωc := by
-    fun_prop
-  have hA : ∀ᶠ A in 𝓝 (LinearMap.toContinuousLinearMap (J x).toLinearMap),
-      ∀ v, v ≠ 0 → 0 < ((ContinuousLinearMap.compL ℝ V V ℝ).flip A ∘L ωc) v v :=
-    hc.continuousAt.preimage_mem_nhds (isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds
-      fun v hv => by simpa [ωc] using h v hv)
-  filter_upwards [hJ.eventually hA] with y hy v hv
-  simpa [ωc] using hy v hv
+  -- The endomorphisms tamed by the fixed form `ω` form an open set.
+  filter_upwards [hJ.eventually ((isOpen_setOf_forall_endomorphism_pos
+    ω.toBilinForm.toContinuousBilinearMap).mem_nhds fun v hv ↦ by simpa using h v hv)]
+    with y hy v hv
+  simpa using hy v hv
 
 omit [FiniteDimensional ℝ V] in
 /-- A uniform lower bound `c ‖v‖² ≤ ω(v, J v)` with `c > 0` makes `J` tame. Conversely, a family
