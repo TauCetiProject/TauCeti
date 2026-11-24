@@ -33,14 +33,15 @@ and null-homology adapters for the finitely connected Jordan region
 ## Main results
 
 * `TauCeti.Contour.PiecewiseC1ClosedCurve.positivelyOrient_positivelyOrient`,
-  `positivelyOrient_symm`, `uIcc_positivelyOrient`, `exists_lt_injOn_of_ne`,
-  `jordanSign_ne_zero_of_ne`, `jordanSign_positivelyOrient`: algebraic and orientation properties
-  of `positivelyOrient`.
+  `positivelyOrient_symm`, `uIcc_positivelyOrient`, `lt_and_injOn_or_symm_lt_and_injOn_of_ne`,
+  `induction_on_lt`, `jordanSign_ne_zero_of_ne`, `jordanSign_positivelyOrient`: algebraic and
+  orientation properties of `positivelyOrient`.
 * `TauCeti.Contour.Cycle.windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff`: a
   positively oriented simple closed piecewise-`C¹` curve has winding number `1` on its inside.
-* `TauCeti.Contour.Cycle.trace_jordanBoundaryCycle`, `windingNumber_jordanBoundaryCycle`,
+* `TauCeti.Contour.isOpen_jordanRegion`, `TauCeti.Contour.Cycle.trace_jordanBoundaryCycle`,
+  `notMem_trace_jordanBoundaryCycle_of_mem`, `windingNumber_jordanBoundaryCycle`,
   `windingWeight_jordanBoundaryCycle`, `isIn_jordanBoundaryCycle`,
-  `isNullHomologous_jordanBoundaryCycle`: trace, winding, and null-homology adapters.
+  `isNullHomologous_jordanBoundaryCycle`: openness, trace, winding, and null-homology adapters.
 
 ## References
 
@@ -142,7 +143,7 @@ theorem image_positivelyOrient (γ : PiecewiseC1ClosedCurve) :
 /-- Every simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
 `InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has either `γ` or `γ.symm` with increasing
 endpoints `a < b` and `InjOn` on `Ico a b`. -/
-theorem exists_lt_injOn_of_ne {γ : PiecewiseC1ClosedCurve} (hab : γ.a ≠ γ.b)
+theorem lt_and_injOn_or_symm_lt_and_injOn_of_ne {γ : PiecewiseC1ClosedCurve} (hab : γ.a ≠ γ.b)
     (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
     (γ.a < γ.b ∧ InjOn γ (Ico γ.a γ.b)) ∨
       (γ.symm.a < γ.symm.b ∧ InjOn γ.symm (Ico γ.symm.a γ.symm.b)) := by
@@ -152,46 +153,50 @@ theorem exists_lt_injOn_of_ne {γ : PiecewiseC1ClosedCurve} (hab : γ.a ≠ γ.b
   · rw [min_eq_right hlt.le, max_eq_left hlt.le] at hinj
     exact Or.inr ⟨by simpa using hlt, by simpa using hinj⟩
 
+/-- Reduce a property of a simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
+`InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) to the increasing-endpoint case `η.a < η.b` with
+`InjOn η (Ico η.a η.b)`, provided the property passes from `γ.symm` to `γ`. -/
+theorem induction_on_lt {P : PiecewiseC1ClosedCurve → Prop} {γ : PiecewiseC1ClosedCurve}
+    (hab : γ.a ≠ γ.b) (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b)))
+    (hlt : ∀ {η : PiecewiseC1ClosedCurve}, η.a < η.b → InjOn η (Ico η.a η.b) → P η)
+    (hsymm : P γ.symm → P γ) : P γ := by
+  rcases lt_and_injOn_or_symm_lt_and_injOn_of_ne hab hinj with ⟨h, h'⟩ | ⟨h, h'⟩
+  · exact hlt h h'
+  · exact hsymm (hlt h h')
+
 /-- Every simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
 `InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has nonzero `jordanSign`. -/
 theorem jordanSign_ne_zero_of_ne {γ : PiecewiseC1ClosedCurve} (hab : γ.a ≠ γ.b)
     (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
-    jordanSign γ γ.a γ.b ≠ 0 := by
-  rcases exists_lt_injOn_of_ne hab hinj with ⟨hlt, hinj'⟩ | ⟨hlt, hinj'⟩
-  · exact γ.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_ne_zero
-      hlt γ.source_eq_target hinj'
-  · rw [← neg_ne_zero, ← jordanSign_symm]
-    exact γ.symm.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_ne_zero
-      hlt γ.symm.source_eq_target hinj'
+    jordanSign γ γ.a γ.b ≠ 0 :=
+  induction_on_lt hab hinj (P := fun η ↦ jordanSign η η.a η.b ≠ 0)
+    (fun {η} hlt hinj' ↦ η.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_ne_zero
+      hlt η.source_eq_target hinj')
+    fun h ↦ by rwa [← neg_ne_zero, ← jordanSign_symm]
 
 /-- After `positivelyOrient`, every simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
 `InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has `jordanSign` equal to `1`. -/
 theorem jordanSign_positivelyOrient {γ : PiecewiseC1ClosedCurve} (hab : γ.a ≠ γ.b)
     (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
     jordanSign γ.positivelyOrient γ.positivelyOrient.a γ.positivelyOrient.b = 1 := by
-  have hlt_case : ∀ {η : PiecewiseC1ClosedCurve}, η.a < η.b → InjOn η (Ico η.a η.b) →
-      jordanSign η.positivelyOrient η.positivelyOrient.a η.positivelyOrient.b = 1 := by
-    intro η hη hηinj
-    rcases η.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_eq_one_or_neg_one
-        hη η.source_eq_target hηinj with h | h
-    · rwa [positivelyOrient_of_jordanSign_eq_one h]
-    · rw [positivelyOrient_of_jordanSign_eq_neg_one h, jordanSign_symm, h, neg_neg]
-  rcases exists_lt_injOn_of_ne hab hinj with ⟨hlt, hinj'⟩ | ⟨hlt, hinj'⟩
-  · exact hlt_case hlt hinj'
-  · rw [← positivelyOrient_symm (jordanSign_ne_zero_of_ne hab hinj)]
-    exact hlt_case hlt hinj'
+  refine induction_on_lt hab hinj
+    (P := fun η ↦ jordanSign η.positivelyOrient η.positivelyOrient.a η.positivelyOrient.b = 1)
+    (fun {η} hη hηinj ↦ ?_)
+    fun h ↦ by rwa [← positivelyOrient_symm (jordanSign_ne_zero_of_ne hab hinj)]
+  rcases η.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_eq_one_or_neg_one
+      hη η.source_eq_target hηinj with h | h
+  · rwa [positivelyOrient_of_jordanSign_eq_one h]
+  · rw [positivelyOrient_of_jordanSign_eq_neg_one h, jordanSign_symm, h, neg_neg]
 
 /-- A simple closed piecewise-`C¹` curve (`γ.a ≠ γ.b`,
 `InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has a Jordan curve as its interval image. -/
 theorem isJordanCurve_image_of_ne (γ : PiecewiseC1ClosedCurve) (hab : γ.a ≠ γ.b)
     (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
-    TauCeti.IsJordanCurve (γ '' uIcc γ.a γ.b) := by
-  rcases exists_lt_injOn_of_ne hab hinj with ⟨hlt, hinj'⟩ | ⟨hlt, hinj'⟩
-  · exact γ.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
-      hlt γ.source_eq_target hinj'
-  · rw [← γ.image_symm]
-    exact γ.symm.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
-      hlt γ.symm.source_eq_target hinj'
+    TauCeti.IsJordanCurve (γ '' uIcc γ.a γ.b) :=
+  induction_on_lt hab hinj (P := fun η ↦ TauCeti.IsJordanCurve (η '' uIcc η.a η.b))
+    (fun {η} hlt hinj' ↦ η.isPiecewiseC1On.absolutelyContinuousOnInterval.isJordanCurve_image_uIcc
+      hlt η.source_eq_target hinj')
+    fun h ↦ by rwa [← γ.image_symm]
 
 end PiecewiseC1ClosedCurve
 
@@ -251,24 +256,23 @@ theorem windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff
     (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) {z : ℂ}
     (hz : z ∈ filledHull (γ '' uIcc γ.a γ.b) \ (γ '' uIcc γ.a γ.b)) :
     windingNumber z (FreeAddCommGroup.of γ.positivelyOrient) = 1 := by
-  have hlt_case : ∀ {η : PiecewiseC1ClosedCurve}, η.a < η.b → InjOn η (Ico η.a η.b) →
-      z ∈ filledHull (η '' uIcc η.a η.b) \ (η '' uIcc η.a η.b) →
-      windingNumber z (FreeAddCommGroup.of η.positivelyOrient) = 1 := by
-    intro η hη hηinj hzη
-    have hw := η.isPiecewiseC1On.absolutelyContinuousOnInterval
-      |>.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff hη η.source_eq_target hηinj hzη
-    rcases η.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_eq_one_or_neg_one
-        hη η.source_eq_target hηinj with h | h
-    · rw [PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_one h, windingNumber_of, hw, h,
-        Int.cast_one]
-    · rw [PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_neg_one h,
-        windingNumber_of_symm η hzη.2, windingNumber_of, hw, h, Int.cast_neg, Int.cast_one,
-        neg_neg]
-  rcases PiecewiseC1ClosedCurve.exists_lt_injOn_of_ne hab hinj with ⟨hlt, hinj'⟩ | ⟨hlt, hinj'⟩
-  · exact hlt_case hlt hinj' hz
-  · rw [← PiecewiseC1ClosedCurve.positivelyOrient_symm
-      (PiecewiseC1ClosedCurve.jordanSign_ne_zero_of_ne hab hinj)]
-    exact hlt_case hlt hinj' (by simpa only [γ.image_symm] using hz)
+  refine PiecewiseC1ClosedCurve.induction_on_lt hab hinj
+    (P := fun η ↦ z ∈ filledHull (η '' uIcc η.a η.b) \ (η '' uIcc η.a η.b) →
+      windingNumber z (FreeAddCommGroup.of η.positivelyOrient) = 1)
+    (fun {η} hη hηinj hzη ↦ ?_)
+    (fun h hz' ↦ by
+      rw [← PiecewiseC1ClosedCurve.positivelyOrient_symm
+        (PiecewiseC1ClosedCurve.jordanSign_ne_zero_of_ne hab hinj)]
+      exact h (by simpa only [γ.image_symm] using hz')) hz
+  have hw := η.isPiecewiseC1On.absolutelyContinuousOnInterval
+    |>.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff hη η.source_eq_target hηinj hzη
+  rcases η.isPiecewiseC1On.absolutelyContinuousOnInterval.jordanSign_eq_one_or_neg_one
+      hη η.source_eq_target hηinj with h | h
+  · rw [PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_one h, windingNumber_of, hw, h,
+      Int.cast_one]
+  · rw [PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_neg_one h,
+      windingNumber_of_symm η hzη.2, windingNumber_of, hw, h, Int.cast_neg, Int.cast_one,
+      neg_neg]
 
 end Cycle
 
@@ -322,6 +326,19 @@ theorem jordanBoundaryCycle_of_jordanSign_eq_one {γ₀ : PiecewiseC1ClosedCurve
   rw [jordanBoundaryCycle, PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_one h₀]
   exact congrArg _ (Finset.sum_congr rfl fun i hi ↦ by
     rw [PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_one (h i hi)])
+
+/-- A finitely connected Jordan region `(filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)`
+bounded by simple closed piecewise-`C¹` curves `C₀ := γ₀ '' uIcc γ₀.a γ₀.b` and
+`C i := γ i '' uIcc (γ i).a (γ i).b` (`i ∈ s`) is open. -/
+theorem isOpen_jordanRegion {γ₀ : PiecewiseC1ClosedCurve} {s : Finset ι}
+    {γ : ι → PiecewiseC1ClosedCurve} (hab₀ : γ₀.a ≠ γ₀.b)
+    (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
+    (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
+    (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b))) :
+    IsOpen ((filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
+      ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) :=
+  (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).isClosed.isOpen_filledHull_sdiff_biUnion s
+    fun i hi ↦ ((γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)).isClosed
 
 namespace Cycle
 
@@ -411,6 +428,22 @@ theorem trace_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
     (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).frontier_filledHull_sdiff_biUnion
       (fun i hi ↦ (γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)) hsub hdisj]
 
+/-- Any point of a finitely connected Jordan region `Δ` lies off the trace of
+`jordanBoundaryCycle γ₀ s γ`. -/
+theorem notMem_trace_jordanBoundaryCycle_of_mem (hab₀ : γ₀.a ≠ γ₀.b)
+    (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
+    (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
+    (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b)))
+    (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
+      filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
+    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
+    {z : ℂ} (hz : z ∈ (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
+      ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) :
+    z ∉ trace (jordanBoundaryCycle γ₀ s γ) := by
+  rw [trace_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj]
+  exact Set.disjoint_right.mp
+    (disjoint_frontier_iff_isOpen.mpr (isOpen_jordanRegion hab₀ hinj₀ hab hinj)) hz
+
 open scoped Classical in
 /-- **Winding-number adapter for `jordanBoundaryCycle`.** Off its trace `frontier Δ`, the oriented
 boundary cycle of a finitely connected Jordan region `Δ` has winding number `1` on `Δ` and `0`
@@ -463,14 +496,11 @@ theorem windingWeight_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
   classical
   set Δ := (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
     ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)
-  have hΔ_open : IsOpen Δ :=
-    (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).isClosed.isOpen_filledHull_sdiff_biUnion s fun i hi ↦
-      ((γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)).isClosed
   ext z
   by_cases htr : z ∈ trace (jordanBoundaryCycle γ₀ s γ)
-  · rw [windingWeight_eq_zero_of_mem _ htr]
-    rw [trace_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj] at htr
-    rw [indicator_of_notMem fun hzΔ ↦ htr.2 (hΔ_open.interior_eq.symm ▸ hzΔ)]
+  · rw [windingWeight_eq_zero_of_mem _ htr,
+      indicator_of_notMem fun hzΔ ↦
+        notMem_trace_jordanBoundaryCycle_of_mem hab₀ hinj₀ hab hinj hsub hdisj hzΔ htr]
   · rw [windingWeight_eq_of_notMem _ htr,
       windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj htr]
     by_cases hzΔ : z ∈ Δ <;> simp [Δ, hzΔ]

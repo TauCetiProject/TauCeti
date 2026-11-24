@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Green.Cycle
-public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Normed.Module.Dual
-import TauCeti.Analysis.Complex.Wirtinger.Green
 
 /-!
 # Complex Green–Stokes formulas on contour cycles
@@ -28,10 +26,7 @@ convention (`MeasureTheory.integral_of_not_completeSpace`).
 
 Applying the scalar `dz` formula to `conj ∘ F` and conjugating yields the dual `F dbar z`
 circulation formula on contour cycles (under the same `U`, `C.IsIn U`, `C.IsNullHomologous U`, and
-`ContDiffOn ℝ 1 F U` hypotheses) and, for `R ≥ 0` and `F` real `C¹` on an open neighborhood `U` of
-`closedBall c R`, the circle Stokes formula
-`∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) =`
-`  (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1`.
+`ContDiffOn ℝ 1 F U` hypotheses).
 
 ## Main results
 
@@ -41,8 +36,7 @@ circulation formula on contour cycles (under the same `U`, `C.IsIn U`, `C.IsNull
   `curl_im_re_eq_two_mul_re_conjWirtingerDeriv`
 * `TauCeti.Contour.Cycle.integral_eq_two_mul_I_mul_integral_windingWeight_conjWirtingerDeriv`,
   `TauCeti.Contour.Cycle.integral_eq_two_mul_I_smul_integral_windingWeight_conjWirtingerDeriv`
-* `Contour.Cycle.circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`,
-  `TauCeti.integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv`
+* `Contour.Cycle.circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`
 
 ## References
 
@@ -83,7 +77,9 @@ theorem deriv_mul_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t : �
     deriv γ t * F (γ t) =
       (Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ -(F z).im) γ t : ℂ) +
         I * (Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ (F z).re) γ t : ℂ) := by
-  apply Complex.ext <;> simp [Green.circulationFun] <;> ring
+  apply Complex.ext <;>
+    simp only [Green.circulationFun, add_re, add_im, ofReal_re, ofReal_im, mul_re, mul_im,
+      I_re, I_im] <;> ring
 
 /-- Along any curve `γ`, `F (γ t) * conj (γ' t)` decomposes into the planar circulation integrands
 of `(Re F, Im F)` and `(Im F, -Re F)`, corresponding to
@@ -92,7 +88,9 @@ theorem mul_conj_deriv_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t
     F (γ t) * conj (deriv γ t) =
       (Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ (F z).im) γ t : ℂ) +
         I * (Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ -(F z).re) γ t : ℂ) := by
-  apply Complex.ext <;> simp [Green.circulationFun]; ring
+  apply Complex.ext <;>
+    simp only [Green.circulationFun, add_re, add_im, ofReal_re, ofReal_im, mul_re, mul_im,
+      conj_re, conj_im, I_re, I_im] <;> ring
 
 namespace Contour.Cycle
 
@@ -144,7 +142,10 @@ theorem curl_re_neg_im_eq_neg_two_mul_im_conjWirtingerDeriv {F : ℂ → ℂ} {z
   rw [fderiv_fun_comp z Complex.imCLM.differentiableAt hF,
     fderiv_fun_comp z Complex.reCLM.differentiableAt hF,
     Complex.imCLM.fderiv, Complex.reCLM.fderiv, conjWirtingerDeriv_apply]
-  simp
+  simp only [neg_apply, ContinuousLinearMap.comp_apply, Complex.imCLM_apply,
+    Complex.reCLM_apply, smul_eq_mul, add_im, mul_im, inv_im, re_ofNat, im_ofNat, neg_zero,
+    zero_div, zero_mul, inv_re, normSq_ofNat, div_self_mul_self', add_zero, I_re, I_im, one_mul,
+    mul_one]
   ring
 
 /-- For real-differentiable `F = u + i v`, the curl of `(v, u)` is `2 Re (\bar∂ F)`. -/
@@ -157,7 +158,9 @@ theorem curl_im_re_eq_two_mul_re_conjWirtingerDeriv {F : ℂ → ℂ} {z : ℂ}
   rw [fderiv_fun_comp z Complex.reCLM.differentiableAt hF,
     fderiv_fun_comp z Complex.imCLM.differentiableAt hF,
     Complex.reCLM.fderiv, Complex.imCLM.fderiv, conjWirtingerDeriv_apply]
-  simp
+  simp only [ContinuousLinearMap.comp_apply, Complex.reCLM_apply, Complex.imCLM_apply,
+    smul_eq_mul, add_re, mul_re, inv_re, re_ofNat, normSq_ofNat, inv_im, im_ofNat, neg_zero,
+    zero_div, zero_mul, sub_zero, I_re, I_im, one_mul, mul_one]
   ring
 
 end CurlWirtinger
@@ -306,46 +309,12 @@ theorem circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerD
     refine Finset.sum_congr rfl fun γ _ ↦ ?_
     rw [← mul_neg, ← intervalIntegral.integral_neg]
     refine congrArg _ (intervalIntegral.integral_congr fun t _ ↦ ?_)
-    simp [Green.circulationFun]; ring
+    simp only [Green.circulationFun, conj_re, conj_im]; ring
   rw [← hre, ← him, ← conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
     C hU htrace hnull hF]
   apply Complex.ext <;> simp
 
 end Contour.Cycle
-
-/-- **Complex circle Stokes formula for `F dbar z`.** For `R ≥ 0` and `F` real `C¹` on an open
-neighborhood `U` of `closedBall c R`,
-`∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) =
-  (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1`. -/
-theorem integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv
-    {c : ℂ} {R : ℝ} {U : Set ℂ} {F : ℂ → ℂ} (hR : 0 ≤ R) (hU : IsOpen U)
-    (hball : closedBall c R ⊆ U) (hF : ContDiffOn ℝ 1 F U) :
-    (∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ)) =
-      (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1 := by
-  have hFc : ContDiffOn ℝ 1 (fun z ↦ conj (F z)) U :=
-    (Complex.conjCLE : ℂ →L[ℝ] ℂ).contDiff.comp_contDiffOn hF
-  have hstokes := congrArg conj
-    (integral_ball_conjWirtingerDeriv_eq_circleIntegral (h := fun z ↦ conj (F z)) hR
-      fun z hz ↦ hFc.contDiffAt (hU.mem_nhds (hball hz)))
-  rw [← integral_conj, smul_eq_mul, map_mul, map_inv₀, map_mul, map_ofNat, conj_I,
-    circleIntegral, ← intervalIntegral.intervalIntegral_conj] at hstokes
-  have h_lhs : (∫ z in ball c R, conj (conjWirtingerDeriv (fun z ↦ conj (F z)) z 1)) =
-      ∫ z in ball c R, wirtingerDeriv F z 1 :=
-    setIntegral_congr_fun measurableSet_ball fun z _ ↦ by
-      rw [conjWirtingerDeriv_conj_comp_apply, starRingEnd_self_apply]
-  have h_rhs : (∫ θ in 0..2 * π, conj (deriv (circleMap c R) θ • conj (F (circleMap c R θ)))) =
-      ∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) :=
-    intervalIntegral.integral_congr fun θ _ ↦ by
-      rw [smul_eq_mul, map_mul, starRingEnd_self_apply, mul_comm]
-  rw [h_lhs, h_rhs] at hstokes
-  have htwo : (2 : ℂ) * -I = -2 * I := by ring
-  rw [htwo] at hstokes
-  calc
-    (∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ))
-        = (-2 * I) * ((-2 * I)⁻¹ *
-            ∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ)) := by
-          rw [← mul_assoc, mul_inv_cancel₀ (mul_ne_zero (by norm_num) I_ne_zero), one_mul]
-    _ = (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1 := by rw [hstokes]
 
 end TauCeti
 

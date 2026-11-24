@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Wirtinger.Cycle
+public import TauCeti.Analysis.Complex.Wirtinger.Green
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Probability.Distributions.CircularLaw
 
@@ -17,7 +17,7 @@ This example file cross-checks the complex circle Stokes formula
 against the circular-law disk-moment formula
 `TauCeti.Probability.integral_pow_mul_conj_pow_circularLaw` by evaluating
 `∫ z in ball (0 : ℂ) 1, z ^ m * conj z ^ n`
-(`TauCeti.Examples.Pompeiu.integral_unitBall_pow_mul_conj_pow_stokes`)
+(`TauCeti.Examples.Pompeiu.integral_unitBall_pow_mul_conj_pow`)
 via `∂ (((m + 1)⁻¹) * z ^ (m + 1) * conj z ^ n)` and the unit-circle residue integral.
 -/
 
@@ -42,8 +42,10 @@ private theorem wirtingerDeriv_monomial_div (m n : ℕ) (z : ℂ) :
     (Complex.conjCLE : ℂ →L[ℝ] ℂ).differentiableAt.comp z (hgn.restrictScalars ℝ)
   rw [hconst, wirtingerDeriv_const_smul, smul_apply,
     wirtingerDeriv_smul_apply (hg.restrictScalars ℝ) hh 1,
-    hgn.wirtingerDeriv_conj_comp_eq_zero]
-  simp [(hasDerivAt_pow (m + 1) z).hasFDerivAt.fderiv]
+    hgn.wirtingerDeriv_conj_comp_eq_zero, hg.wirtingerDeriv_eq_fderiv,
+    (hasDerivAt_pow (m + 1) z).hasFDerivAt.fderiv]
+  simp only [zero_apply, smul_eq_mul, mul_zero, zero_add, ContinuousLinearMap.toSpanSingleton_apply,
+    one_mul, Nat.add_sub_cancel, Nat.cast_add, Nat.cast_one, map_pow]
   field_simp [hm1]
 
 private theorem integral_unitCircle_monomial_conj_deriv (m n : ℕ) :
@@ -57,13 +59,9 @@ private theorem integral_unitCircle_monomial_conj_deriv (m n : ℕ) :
   have hw_norm : ‖w‖ = 1 := by simp [w]
   have hw0 : w ≠ 0 := by intro h; simp [h] at hw_norm
   have hpow : w ^ (m + 1) * w⁻¹ ^ n * (w⁻¹ * -I) = -(w * I * w ^ ((m : ℤ) - n - 1)) := by
-    calc
-      w ^ (m + 1) * w⁻¹ ^ n * (w⁻¹ * -I)
-          = -I * (w ^ ((m + 1 : ℕ) : ℤ) * w ^ (-(n : ℤ)) * w ^ (-1 : ℤ)) := by
-            rw [zpow_natCast, zpow_neg, zpow_natCast, inv_pow, zpow_neg_one]; ring
-      _ = -I * (w * w ^ ((m : ℤ) - n - 1)) := by
-            rw [← zpow_add₀ hw0, ← zpow_add₀ hw0, ← zpow_one_add₀ hw0]; congr 2; push_cast; ring
-      _ = -(w * I * w ^ ((m : ℤ) - n - 1)) := by ring
+    rw [zpow_sub₀ hw0, zpow_sub₀ hw0, zpow_one, zpow_natCast, zpow_natCast, inv_pow]
+    field_simp [hw0]
+    ring
   have hdw : deriv (circleMap 0 1) θ = w * I := by simp [deriv_circleMap, w]
   simp only [hdw, map_mul, conj_I, (Complex.inv_eq_conj hw_norm).symm, sub_zero, smul_eq_mul]
   calc
@@ -73,7 +71,7 @@ private theorem integral_unitCircle_monomial_conj_deriv (m n : ℕ) :
 
 /-- Evaluate the unit-disk monomial moment `∫ z in ball (0 : ℂ) 1, z ^ m * conj z ^ n` by the
 complex circle Stokes formula. -/
-theorem integral_unitBall_pow_mul_conj_pow_stokes (m n : ℕ) :
+theorem integral_unitBall_pow_mul_conj_pow (m n : ℕ) :
     (∫ z in ball (0 : ℂ) 1, z ^ m * conj z ^ n) =
       if m = n then (Real.pi : ℂ) / ((m : ℂ) + 1) else 0 := by
   have hm1 : ((m : ℂ) + 1) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero m
@@ -103,7 +101,7 @@ example (m n : ℕ) :
   rw [← TauCeti.Probability.integral_pow_mul_conj_pow_circularLaw,
     TauCeti.Probability.circularLaw_eq_smul_restrict, integral_smul_measure,
     ENNReal.toReal_ofReal (inv_nonneg.mpr Real.pi_pos.le), Complex.real_smul,
-    Complex.ofReal_inv, integral_unitBall_pow_mul_conj_pow_stokes]
+    Complex.ofReal_inv, integral_unitBall_pow_mul_conj_pow]
   split_ifs <;> simp [Real.pi_ne_zero]
 
 end TauCeti.Examples.Pompeiu

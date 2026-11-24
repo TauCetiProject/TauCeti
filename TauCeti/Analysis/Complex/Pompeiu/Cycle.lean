@@ -232,7 +232,8 @@ theorem cauchyPompeiu_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E
       (closedBall_subset_ball (hεδ.trans (half_lt_self hδ))).trans hballδ
     have hpunct := C.integral_sub_circleIntegral_sub_inv_smul_eq hΩ hΔ.measurableSet
       (subset_closure.trans hclosure) htrace hindex hf hε hsub_ε hξtr
-    exact eq_sub_iff_add_eq.mpr ((add_comm _ _).trans (sub_eq_iff_eq_add.mp hpunct).symm)
+    rw [← hpunct]
+    abel
   have heq : (2 * (Real.pi : ℂ) * I) • f ξ =
       C.integral (fun z ↦ (z - ξ)⁻¹ • f z) -
         (2 * I : ℂ) • ∫ z in Δ, (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 :=
@@ -243,7 +244,7 @@ theorem cauchyPompeiu_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E
     field_simp [hpi, I_ne_zero]
   calc
     f ξ = (2 * (Real.pi : ℂ) * I)⁻¹ • ((2 * (Real.pi : ℂ) * I) • f ξ) :=
-          (inv_smul_smul₀ (mul_ne_zero (mul_ne_zero two_ne_zero hpi) I_ne_zero) _).symm
+          (inv_smul_smul₀ Complex.two_pi_I_ne_zero _).symm
     _ = (2 * (Real.pi : ℂ) * I)⁻¹ • C.integral (fun z ↦ (z - ξ)⁻¹ • f z) -
           (Real.pi : ℂ)⁻¹ • ∫ z in Δ, (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 := by
           rw [heq, smul_sub, smul_smul, hcoeff]
@@ -311,20 +312,15 @@ theorem cauchyPompeiu_jordanBoundaryCycle_smul {E : Type*} [NormedAddCommGroup E
         (Contour.jordanBoundaryCycle γ₀ s γ).integral (fun z ↦ (z - ξ)⁻¹ • f z) -
       (Real.pi : ℂ)⁻¹ • ∫ z in (filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
           ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b),
-        (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 := by
-  have hΔ_open : IsOpen ((filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b)) \
-      ⋃ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b)) :=
-    (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).isClosed.isOpen_filledHull_sdiff_biUnion s
-      fun i hi ↦ ((γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)).isClosed
-  have hξtr : ξ ∉ (Contour.jordanBoundaryCycle γ₀ s γ).trace := by
-    rw [Contour.Cycle.trace_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj]
-    exact fun h ↦ h.2 (hΔ_open.interior_eq.symm ▸ hξ)
-  exact cauchyPompeiu_smul hΩ hΔ_open hclosure (Contour.jordanBoundaryCycle γ₀ s γ)
+        (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 :=
+  cauchyPompeiu_smul hΩ (Contour.isOpen_jordanRegion hab₀ hinj₀ hab hinj) hclosure
+    (Contour.jordanBoundaryCycle γ₀ s γ)
     (Contour.Cycle.isIn_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hclosure)
     (fun _ hz ↦ by
       rw [Contour.Cycle.windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hz]
-      congr)
-    f hf hξ hξtr
+      split_ifs <;> rfl)
+    f hf hξ
+      (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hab₀ hinj₀ hab hinj hsub hdisj hξ)
 
 end JordanRegion
 

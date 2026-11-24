@@ -110,10 +110,9 @@ theorem TauCeti.norm_circleIntegral_sub_inv_smul_sub_le [CompleteSpace E] {f : �
     {y : E} {R M : ℝ} (hR : 0 < R) (hf : CircleIntegrable f c R)
     (hM : ∀ z ∈ sphere c R, ‖f z - y‖ ≤ M) :
     ‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • y‖ ≤ 2 * π * M := by
-  have hpi : (2 * π * I : ℂ) ≠ 0 :=
-    mul_ne_zero (mul_ne_zero two_ne_zero (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero)) I_ne_zero
   have hint : ∮ z in C(c, R), (z - c)⁻¹ • f z = (2 * π * I : ℂ) • Real.circleAverage f c R :=
-    (inv_smul_eq_iff₀ hpi).mp (Real.circleAverage_eq_circleIntegral hR.ne').symm
+    (inv_smul_eq_iff₀ Complex.two_pi_I_ne_zero).mp
+      (Real.circleAverage_eq_circleIntegral hR.ne').symm
   have hconst : CircleIntegrable (fun _ ↦ y) c R := circleIntegrable_const y c R
   rw [hint, ← Real.circleAverage_const y c R, ← smul_sub, ← Real.circleAverage_sub hf hconst,
     norm_smul, norm_mul, norm_mul, Complex.norm_two, Complex.norm_real, Real.norm_of_nonneg

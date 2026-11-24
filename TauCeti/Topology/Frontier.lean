@@ -409,7 +409,7 @@ theorem _root_.IsOpen.frontier_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (
   · rw [sdiff_eq]
     exact (frontier_inter_subset U Kᶜ).trans
       (union_subset_union inter_subset_left (inter_subset_right.trans (frontier_compl K).le))
-  · conv_rhs => rw [frontier, (hU.sdiff hK).interior_eq, hU.closure_sdiff_of_isClosed hK hKU]
+  · simp only [frontier, (hU.sdiff hK).interior_eq, hU.closure_sdiff_of_isClosed hK hKU]
     rintro x (⟨hxUcl, hxUint⟩ | ⟨hxKcl, hxKint⟩)
     · have hxU : x ∉ U := hU.interior_eq ▸ hxUint
       exact ⟨⟨hxUcl, fun h ↦ hxU (hKU (interior_subset h))⟩, fun h ↦ hxU h.1⟩
@@ -457,7 +457,9 @@ theorem _root_.IsOpen.frontier_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Fi
   rw [hU.frontier_sdiff_of_isClosed hK_star (iUnion₂_subset hsub)]
   refine congrArg (frontier U ∪ ·) (Subset.antisymm (s.frontier_biUnion_subset K) ?_)
   intro x hxfr
-  obtain ⟨i, hi, hxicl, hxiint⟩ := mem_iUnion₂.mp hxfr
+  obtain ⟨i, hi, hxi_fr⟩ := mem_iUnion₂.mp hxfr
+  rw [frontier] at hxi_fr ⊢
+  obtain ⟨hxicl, hxiint⟩ := hxi_fr
   have hxi : x ∈ K i := (hK i hi).closure_eq ▸ hxicl
   refine ⟨subset_closure (mem_iUnion₂.mpr ⟨i, hi, hxi⟩), fun h ↦ ?_⟩
   rw [interior_biUnion_of_isClosed_of_pairwiseDisjoint hK hdisj] at h

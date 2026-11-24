@@ -302,7 +302,7 @@ theorem IsJordanCurve.closure_filledHull_sdiff_biUnion (hC₀ : IsJordanCurve C�
     (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (C i)) :
     closure ((filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)) =
       filledHull C₀ \ ⋃ i ∈ s, (filledHull (C i) \ C i) := by
-  have hU₀ : IsOpen (filledHull C₀ \ C₀) := hC₀.interior_filledHull ▸ isOpen_interior
+  have hU₀ : IsOpen (filledHull C₀ \ C₀) := hC₀.isClosed.isOpen_filledHull_sdiff
   rw [hU₀.closure_sdiff_biUnion s (fun i hi ↦ (hC i hi).isClosed.isClosed_filledHull) hsub hdisj,
     hC₀.closure_filledHull_sdiff]
   exact congrArg _ (iUnion₂_congr fun i hi ↦ (hC i hi).interior_filledHull)
@@ -316,7 +316,7 @@ theorem IsJordanCurve.frontier_filledHull_sdiff_biUnion (hC₀ : IsJordanCurve C
     (hsub : ∀ i ∈ s, filledHull (C i) ⊆ filledHull C₀ \ C₀)
     (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (C i)) :
     frontier ((filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)) = C₀ ∪ ⋃ i ∈ s, C i := by
-  have hU₀ : IsOpen (filledHull C₀ \ C₀) := hC₀.interior_filledHull ▸ isOpen_interior
+  have hU₀ : IsOpen (filledHull C₀ \ C₀) := hC₀.isClosed.isOpen_filledHull_sdiff
   rw [hU₀.frontier_sdiff_biUnion s (fun i hi ↦ (hC i hi).isClosed.isClosed_filledHull) hsub hdisj,
     hC₀.frontier_filledHull_sdiff]
   exact congrArg (C₀ ∪ ·) (iUnion₂_congr fun i hi ↦ (hC i hi).frontier_filledHull)
