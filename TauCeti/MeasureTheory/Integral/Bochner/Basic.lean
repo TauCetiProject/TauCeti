@@ -1225,6 +1225,22 @@ end TauCeti
 
 namespace MeasureTheory
 
+private theorem integrable_comp_of_dist_le
+    {E Ω : Type*} [MeasurableSpace E] [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : Ω → E} (hX : AEMeasurable X μ) {F : E → ℝ} (hF_meas : Measurable F)
+    {M : ℝ} (hF_bd : ∀ x y, dist (F x) (F y) ≤ M) :
+    Integrable (fun ω ↦ F (X ω)) μ := by
+  rcases isEmpty_or_nonempty E with hE | ⟨⟨x₀⟩⟩
+  · have : IsEmpty Ω := ⟨fun ω ↦ hE.false (X ω)⟩
+    simp [Measure.eq_zero_of_isEmpty μ]
+  · refine Integrable.of_bound
+      (hF_meas.stronglyMeasurable.aestronglyMeasurable.comp_aemeasurable hX)
+      (|F x₀| + M) (ae_of_all _ fun ω ↦ ?_)
+    rw [Real.norm_eq_abs]
+    have h₁ := abs_sub_le (F (X ω)) (F x₀) 0
+    simp only [sub_zero, ← Real.dist_eq] at h₁
+    linarith [h₁, hF_bd (X ω) x₀]
+
 /-- For a bounded `L`-Lipschitz function `F : E → ℝ` and a finite measure `μ`, the difference of
 integrals `|∫ x, F x ∂(μ.map Y) - ∫ x, F x ∂(μ.map X)|` is bounded by
 `L * δ * μ.real Set.univ + M * μ.real {ω | δ ≤ dist (Y ω) (X ω)}` without assuming measurability
@@ -1241,30 +1257,12 @@ theorem abs_integral_map_sub_le_of_lipschitz
   · simp [Measure.eq_zero_of_isEmpty μ]
   have hM_nonneg : 0 ≤ M := dist_nonneg.trans (hF_bd (X ω₀) (X ω₀))
   have hF_meas : Measurable F := hF_lip.continuous.measurable
-  have h_bd (x : E) : ‖F x‖ ≤ |F (X ω₀)| + M := by
-    rw [Real.norm_eq_abs]
-    calc |F x|
-        = |F (X ω₀) + (F x - F (X ω₀))| := by ring_nf
-      _ ≤ |F (X ω₀)| + |F x - F (X ω₀)| := abs_add_le _ _
-      _ ≤ |F (X ω₀)| + M := by
-        linarith [Real.dist_eq (F x) (F (X ω₀)), hF_bd x (X ω₀)]
-  have h_int_Y : Integrable (fun ω ↦ F (Y ω)) μ :=
-    Integrable.of_bound (hF_meas.stronglyMeasurable.aestronglyMeasurable.comp_aemeasurable hY)
-      (|F (X ω₀)| + M) (ae_of_all _ fun ω ↦ h_bd (Y ω))
-  have h_int_X : Integrable (fun ω ↦ F (X ω)) μ :=
-    Integrable.of_bound (hF_meas.stronglyMeasurable.aestronglyMeasurable.comp_aemeasurable hX)
-      (|F (X ω₀)| + M) (ae_of_all _ fun ω ↦ h_bd (X ω))
+  have h_int_Y : Integrable (fun ω ↦ F (Y ω)) μ := integrable_comp_of_dist_le hY hF_meas hF_bd
+  have h_int_X : Integrable (fun ω ↦ F (X ω)) μ := integrable_comp_of_dist_le hX hF_meas hF_bd
   rw [integral_map hY hF_meas.stronglyMeasurable.aestronglyMeasurable,
     integral_map hX hF_meas.stronglyMeasurable.aestronglyMeasurable,
     ← integral_sub h_int_Y h_int_X, ← Real.norm_eq_abs]
-  rcases eq_or_ne L 0 with rfl | hL_ne
-  · have h_zero : ∀ ω, F (Y ω) - F (X ω) = 0 := fun ω ↦ by
-      have := hF_lip.dist_le_mul (Y ω) (X ω)
-      simp only [NNReal.coe_zero, zero_mul, dist_le_zero] at this
-      exact sub_eq_zero.2 this
-    simp only [h_zero, integral_zero, norm_zero, NNReal.coe_zero, zero_mul, zero_add]
-    exact mul_nonneg hM_nonneg measureReal_nonneg
-  have hL : 0 < L := pos_iff_ne_zero.2 hL_ne
+  -- Split `Ω` along the measurable threshold `L * δ < ‖F (Y ω) - F (X ω)‖`.
   let S : Set Ω := {ω | (L : ℝ) * δ < ‖F (Y ω) - F (X ω)‖}
   have hS : NullMeasurableSet S μ :=
     nullMeasurableSet_lt aemeasurable_const
@@ -1273,8 +1271,8 @@ theorem abs_integral_map_sub_le_of_lipschitz
     intro ω hω
     have hlip := hF_lip.dist_le_mul (Y ω) (X ω)
     rw [Real.dist_eq, ← Real.norm_eq_abs] at hlip
-    exact ((mul_lt_mul_iff_right₀ (NNReal.coe_pos.2 hL)).1
-      ((Set.mem_ofPred_eq.mp hω).trans_le hlip)).le
+    exact (lt_of_mul_lt_mul_left ((Set.mem_ofPred_eq.mp hω).trans_le hlip) L.coe_nonneg).le
+  -- Bound the integral separately on `S` (by `M`) and `Sᶜ` (by `L * δ`).
   calc ‖∫ ω, F (Y ω) - F (X ω) ∂μ‖
       = ‖∫ ω in S, F (Y ω) - F (X ω) ∂μ + ∫ ω in Sᶜ, F (Y ω) - F (X ω) ∂μ‖ :=
         congrArg norm (integral_add_compl₀ (f := fun ω ↦ F (Y ω) - F (X ω))
