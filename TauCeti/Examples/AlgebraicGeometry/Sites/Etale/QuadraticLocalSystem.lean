@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.KrullTopology
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.ModuleSheaf
+public import TauCeti.FieldTheory.Galois.Basic
 public import TauCeti.FieldTheory.Galois.Complex
 
 /-!
@@ -41,33 +42,20 @@ open CategoryTheory Limits Opposite AlgebraicGeometry FintypeCatDiscrete Complex
 
 namespace TauCeti.AlgebraicGeometry
 
-private theorem eq_one_or_eq_conjAe (σ : Gal(ℂ/ℝ)) : σ = 1 ∨ σ = conjAe :=
-  (real_algHom_eq_id_or_conj σ).imp
-    (fun h ↦ AlgEquiv.coe_toAlgHom_injective (h.trans AlgEquiv.refl_toAlgHom.symm))
-    fun h ↦ AlgEquiv.coe_toAlgHom_injective h
-
-private theorem conjAe_mul_conjAe : (conjAe * conjAe : Gal(ℂ/ℝ)) = 1 :=
-  AlgEquiv.ext fun z ↦ by simp
-
 private theorem conjAe_ne_one : (conjAe : Gal(ℂ/ℝ)) ≠ 1 := fun h ↦ by
   have := congrArg (· I) h
   norm_num [Complex.ext_iff] at this
 
-open scoped Classical in
 /-- The quadratic character of `Gal(ℂ/ℝ)` as a representation on `ℤ/3`: the identity acts
 trivially and complex conjugation acts by `-1`. -/
-noncomputable def signRepresentation : Representation (ZMod 3) Gal(ℂ/ℝ) (ZMod 3) where
-  toFun σ := if σ = 1 then 1 else -1
-  map_one' := ite_eq_left_iff.2 fun h ↦ (h rfl).elim
-  map_mul' σ τ := by
-    rcases eq_one_or_eq_conjAe σ with rfl | rfl <;>
-      rcases eq_one_or_eq_conjAe τ with rfl | rfl <;>
-      simp only [one_mul, mul_one, conjAe_mul_conjAe, conjAe_ne_one, ↓reduceIte]
-    exact ((neg_one_mul (-1 : Module.End (ZMod 3) (ZMod 3))).trans (neg_neg 1)).symm
+noncomputable def signRepresentation : Representation (ZMod 3) Gal(ℂ/ℝ) (ZMod 3) :=
+  (DistribMulAction.toModuleEnd (ZMod 3) (ZMod 3)).comp
+    (Algebra.IsQuadraticExtension.quadraticCharacter ℝ ℂ)
 
 /-- Complex conjugation acts on `signRepresentation` by `-1`. -/
 theorem signRepresentation_conjAe (m : ZMod 3) : signRepresentation conjAe m = -m := by
-  simp [signRepresentation, conjAe_ne_one]
+  simp [signRepresentation,
+    (Algebra.IsQuadraticExtension.quadraticCharacter_eq_neg_one_iff ℝ ℂ).2 conjAe_ne_one]
 
 /-- The étale sheaf of `ℤ/3`-modules on `Spec ℝ` given by the quadratic character of
 `Gal(ℂ/ℝ)`. -/

@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.Sites.Etale.Localization
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.CategoryTheory.Galois.ModuleSheaf
-public import TauCeti.CategoryTheory.Sites.InducedTopology
 public import TauCeti.RingTheory.Etale.Field
 
 /-!
@@ -114,12 +113,14 @@ theorem galoisTopology_le_jointlySurjectiveTopology :
 /-- The topology on finite étale `K`-schemes induced from the small étale site of `Spec K` is
 subcanonical, as the small étale topology is. -/
 instance subcanonical_fieldTopology : (fieldTopology K).Subcanonical :=
-  Functor.subcanonical_inducedTopology _ _
+  GrothendieckTopology.subcanonical_of_full_of_faithful (toEtale _) _
+    (Scheme.smallEtaleTopology _)
 
 /-- The topology on finite continuous `Gal(Ω/K)`-sets transported from the small étale site of
 `Spec K` is subcanonical. -/
 instance subcanonical_galoisTopology : (galoisTopology K Ω).Subcanonical :=
-  Functor.subcanonical_inducedTopology _ _
+  GrothendieckTopology.subcanonical_of_full_of_faithful (galoisEquivalence K Ω).inverse _
+    (fieldTopology K)
 
 variable {Λ : Type u} [CommRing Λ] {M : Type u} [AddCommGroup M] [Module Λ M]
   (ρ : Representation Λ Gal(Ω/K) M)
