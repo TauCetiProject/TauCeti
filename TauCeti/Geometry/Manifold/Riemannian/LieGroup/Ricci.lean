@@ -82,6 +82,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {cov : CovariantDerivative I E (fun g : G ↦ TangentSpace I g)}
   [ContMDiffCovariantDerivative cov ∞]
 
+/-- A real inner product is a symmetric bilinear form, as the Killing-form positivity lemmas
+require of the inner product at the identity. -/
+private theorem isSymm_innerₗ {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] :
+    LinearMap.BilinForm.IsSymm (innerₗ V) :=
+  LinearMap.BilinForm.isSymm_iff.2 isSymm_inner
+
+/-- A real inner product is a positive-definite bilinear form. -/
+private theorem posDef_innerₗ {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] :
+    (LinearMap.BilinMap.toQuadraticMap (innerₗ V)).PosDef :=
+  fun _ ↦ real_inner_self_pos.2
+
 /-- For an **ad-invariant left-invariant metric** on a Lie group, in particular a bi-invariant
 metric, the Ricci tensor on values of left-invariant fields is `-¼` times the Killing form of the
 Lie algebra: `Ric(X_a g, X_b g) = -¼ B(a, b)`. -/
@@ -137,8 +148,7 @@ theorem ricciTensor_mulInvariantVectorField_self_eq_zero_iff (hcov : cov.IsLeviC
   rw [hcov.ricciTensor_mulInvariantVectorField hL had, mul_eq_zero, neg_eq_zero,
     inv_eq_zero, or_iff_right (by norm_num)]
   exact LinearMap.BilinForm.killingForm_self_eq_zero_iff_of_posDef
-    (innerₗ (TangentSpace I (1 : G)))
-    (LinearMap.BilinForm.isSymm_iff.2 isSymm_inner) (fun _ ↦ real_inner_self_pos.2) had a
+    (innerₗ (TangentSpace I (1 : G))) isSymm_innerₗ posDef_innerₗ had a
 
 /-- An ad-invariant left-invariant metric on a Lie group, in particular a bi-invariant metric, has
 **nonnegative Ricci curvature**. -/
@@ -154,8 +164,7 @@ theorem ricciTensor_self_nonneg (hcov : cov.IsLeviCivitaConnection)
   rw [hcov.ricciTensor_mulInvariantVectorField hL had, neg_mul]
   exact neg_nonneg.2 (mul_nonpos_of_nonneg_of_nonpos (by norm_num)
     (LinearMap.BilinForm.killingForm_self_nonpos_of_posDef
-      (innerₗ (TangentSpace I (1 : G)))
-    (LinearMap.BilinForm.isSymm_iff.2 isSymm_inner) (fun _ ↦ real_inner_self_pos.2) had a))
+      (innerₗ (TangentSpace I (1 : G))) isSymm_innerₗ posDef_innerₗ had a))
 
 /-- For an ad-invariant left-invariant metric on a Lie group, the Ricci tensor is **positive
 definite** at a point `g` exactly when the Lie algebra has trivial centre. In particular it is
@@ -169,17 +178,16 @@ theorem posDef_ricciTensor_iff_center_eq_bot (hcov : cov.IsLeviCivitaConnection)
     (LinearMap.BilinMap.toQuadraticMap (cov.ricciTensor g)).PosDef ↔
       center ℝ (TangentSpace I (1 : G)) = ⊥ := by
   rw [← LinearMap.BilinForm.posDef_neg_killingForm_iff_center_eq_bot_of_posDef
-    (innerₗ (TangentSpace I (1 : G))) (LinearMap.BilinForm.isSymm_iff.2 isSymm_inner)
-    (fun _ ↦ real_inner_self_pos.2) had]
+    (innerₗ (TangentSpace I (1 : G))) isSymm_innerₗ posDef_innerₗ had]
   let e := TauCeti.mulInvariantVectorFieldEquiv I g
   -- Transported to the identity, the Ricci quadratic form at `g` is `¼` of that of `-B`.
   have h (a : TangentSpace I (1 : G)) :
       0 < LinearMap.BilinMap.toQuadraticMap (cov.ricciTensor g) (e a) ↔
         0 < (-killingForm ℝ (TangentSpace I (1 : G))).toQuadraticMap a := by
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.BilinMap.toQuadraticMap_apply,
+    simp only [e, LinearMap.BilinMap.toQuadraticMap_apply,
       TauCeti.mulInvariantVectorFieldEquiv_apply, hcov.ricciTensor_mulInvariantVectorField hL had,
-      LinearMap.neg_apply, LinearMap.neg_apply, neg_mul, ← mul_neg,
-      mul_pos_iff_of_pos_left (by norm_num)]
+      LinearMap.neg_apply]
+    constructor <;> intro <;> linarith
   refine ⟨fun hpos a ha ↦ (h a).1 (hpos (e a) (e.map_ne_zero_iff.2 ha)), fun hpos u hu ↦ ?_⟩
   obtain ⟨a, rfl⟩ := e.surjective u
   exact (h a).2 (hpos a (e.map_ne_zero_iff.1 hu))
@@ -203,9 +211,8 @@ theorem ricciTensor_eq_of_inner_eq_neg_killingForm (hcov : cov.IsLeviCivitaConne
   refine LinearMap.ext₂ fun u v ↦ ?_
   obtain ⟨a, rfl⟩ := (TauCeti.mulInvariantVectorFieldEquiv I g).surjective u
   obtain ⟨b, rfl⟩ := (TauCeti.mulInvariantVectorFieldEquiv I g).surjective v
-  rw [LinearMap.smul_apply, LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul,
-    TauCeti.mulInvariantVectorFieldEquiv_apply, TauCeti.mulInvariantVectorFieldEquiv_apply,
-    hcov.ricciTensor_mulInvariantVectorField hL had, hL, hB]
+  simp only [TauCeti.mulInvariantVectorFieldEquiv_apply, LinearMap.smul_apply, innerₗ_apply_apply,
+    smul_eq_mul, hcov.ricciTensor_mulInvariantVectorField hL had, hL, hB]
   ring
 
 /-- A left-invariant metric whose inner product at the identity is the negative of the Killing
