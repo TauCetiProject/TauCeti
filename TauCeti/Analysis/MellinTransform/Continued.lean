@@ -17,7 +17,8 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 Let `f` be locally integrable on `(0, ∞)`. Its Mellin transform `𝓜f(z) = ∫₀^∞ t^{z-1} f(t) dt`
 converges absolutely only on a vertical strip, whose left edge is set by the behaviour of `f` at
 `0+` and whose right edge by its behaviour at `+∞`. An asymptotic expansion of `f` at either end
-continues `𝓜f` across that edge, with simple poles whose residues are the coefficients.
+continues `𝓜f` across that edge, with simple poles: residue `a_k` at `-α_k` for an expansion at
+`0+`, and residue `-b_k` at `β_k` for an expansion at `+∞`.
 
 If `f(t) ∼ ∑ a_k t^{α_k}` as `t → 0+`, subtracting the first `n` terms on `(0, 1]` and integrating
 them exactly gives (DLMF 2.5.26)
@@ -64,12 +65,8 @@ of integrals `∫₀^∞ f(t) h(xt) dt` (DLMF §2.5(iii)) and of the distributio
   the principal parts `a_k/(z + α_k)` (DLMF 2.5.25) and `-b_k/(z - β_k)` (DLMF 2.5.27).
 * `TauCeti.differentiableAt_mellinContAtZero`, `TauCeti.differentiableAt_mellinContAtTop`:
   holomorphy away from the poles `-α_k` and `β_k`.
-* `TauCeti.re_add_pos_of_mellinConvergent`, `TauCeti.re_lt_of_mellinConvergent`: a nonzero
+* `TauCeti.add_re_pos_of_mellinConvergent`, `TauCeti.re_lt_of_mellinConvergent`: a nonzero
   coefficient bounds the strip of absolute convergence.
-* `TauCeti.integrableOn_Ioc_cpow_smul_of_isBigO`, `TauCeti.integrableOn_Ioi_cpow_smul_of_isBigO`,
-  `TauCeti.differentiableAt_integral_Ioc_cpow_smul_of_isBigO`,
-  `TauCeti.differentiableAt_integral_Ioi_cpow_smul_of_isBigO`: absolute convergence and
-  holomorphy of the Mellin integrals over `(0, 1]` and `(1, ∞)` from power bounds.
 
 ## References
 
@@ -89,94 +86,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-! ### Mellin integrals over `(0, 1]` and `(1, ∞)` -/
-
-section Truncated
-
-variable {g : ℝ → E}
-
-omit [NormedSpace ℂ E] in
-/-- The restriction of `g` to `(0, 1]` keeps the Mellin hypotheses of `g` at `0+` and has every
-power decay at `+∞`. -/
-private theorem indicator_Ioc_mellin_hyp (hg : LocallyIntegrableOn g (Ioi 0)) {b : ℝ}
-    (hg0 : g =O[𝓝[>] 0] (· ^ (-b))) (a : ℝ) :
-    LocallyIntegrableOn ((Ioc 0 1).indicator g) (Ioi 0) ∧
-      (Ioc 0 1).indicator g =O[atTop] (· ^ (-a)) ∧
-      (Ioc 0 1).indicator g =O[𝓝[>] 0] (· ^ (-b)) := by
-  refine ⟨?_, ?_, ?_⟩
-  · rw [locallyIntegrableOn_iff isOpen_Ioi.isLocallyClosed] at hg ⊢
-    exact fun k hk hkc ↦ (hg k hk hkc).indicator measurableSet_Ioc
-  · refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
-    filter_upwards [eventually_gt_atTop 1] with t ht
-    exact (indicator_of_notMem (fun (h : t ∈ Ioc 0 1) ↦ ht.not_ge h.2) g).symm
-  · refine hg0.congr' ?_ EventuallyEq.rfl
-    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-    exact (indicator_of_mem (Ioo_subset_Ioc_self ht) g).symm
-
-omit [NormedSpace ℂ E] in
-/-- The restriction of `g` to `(1, ∞)` keeps the Mellin hypotheses of `g` at `+∞` and has every
-power bound at `0+`. -/
-private theorem indicator_Ioi_mellin_hyp (hg : LocallyIntegrableOn g (Ioi 0)) {a : ℝ}
-    (hg1 : g =O[atTop] (· ^ (-a))) (b : ℝ) :
-    LocallyIntegrableOn ((Ioi 1).indicator g) (Ioi 0) ∧
-      (Ioi 1).indicator g =O[atTop] (· ^ (-a)) ∧
-      (Ioi 1).indicator g =O[𝓝[>] 0] (· ^ (-b)) := by
-  refine ⟨?_, ?_, ?_⟩
-  · rw [locallyIntegrableOn_iff isOpen_Ioi.isLocallyClosed] at hg ⊢
-    exact fun k hk hkc ↦ (hg k hk hkc).indicator measurableSet_Ioi
-  · refine hg1.congr' ?_ EventuallyEq.rfl
-    filter_upwards [eventually_gt_atTop 1] with t ht
-    exact (indicator_of_mem ht g).symm
-  · refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
-    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-    exact (indicator_of_notMem (fun (h : 1 < t) ↦ ht.2.not_gt h) g).symm
-
-/-- The Mellin integral over `(0, 1]` converges absolutely on `b < Re z` when the function is
-locally integrable on `(0, ∞)` and `O(t^{-b})` as `t → 0+`. -/
-theorem integrableOn_Ioc_cpow_smul_of_isBigO (hg : LocallyIntegrableOn g (Ioi 0)) {b : ℝ}
-    (hg0 : g =O[𝓝[>] 0] (· ^ (-b))) {z : ℂ} (hz : b < z.re) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • g t) (Ioc 0 1) := by
-  obtain ⟨h₁, h₂, h₃⟩ := indicator_Ioc_mellin_hyp hg hg0 (z.re + 1)
-  exact (mellinConvergent_indicator_iff_of_subset_Ioi measurableSet_Ioc Ioc_subset_Ioi_self).mp
-    (mellinConvergent_of_isBigO_rpow h₁ h₂ (lt_add_one _) h₃ hz)
-
-/-- The Mellin integral over `(1, ∞)` converges absolutely on `Re z < a` when the function is
-locally integrable on `(0, ∞)` and `O(t^{-a})` as `t → +∞`. -/
-theorem integrableOn_Ioi_cpow_smul_of_isBigO (hg : LocallyIntegrableOn g (Ioi 0)) {a : ℝ}
-    (hg1 : g =O[atTop] (· ^ (-a))) {z : ℂ} (hz : z.re < a) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • g t) (Ioi 1) := by
-  obtain ⟨h₁, h₂, h₃⟩ := indicator_Ioi_mellin_hyp hg hg1 (z.re - 1)
-  exact (mellinConvergent_indicator_iff_of_subset_Ioi measurableSet_Ioi
-    (Ioi_subset_Ioi zero_le_one)).mp (mellinConvergent_of_isBigO_rpow h₁ h₂ hz h₃ (sub_one_lt _))
-
-/-- The Mellin integral over `(0, 1]` is holomorphic on `b < Re z` when the function is locally
-integrable on `(0, ∞)` and `O(t^{-b})` as `t → 0+`. -/
-theorem differentiableAt_integral_Ioc_cpow_smul_of_isBigO (hg : LocallyIntegrableOn g (Ioi 0))
-    {b : ℝ} (hg0 : g =O[𝓝[>] 0] (· ^ (-b))) {z : ℂ} (hz : b < z.re) :
-    DifferentiableAt ℂ (fun w : ℂ ↦ ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (w - 1) • g t) z := by
-  obtain ⟨h₁, h₂, h₃⟩ := indicator_Ioc_mellin_hyp hg hg0 (z.re + 1)
-  have h := mellin_differentiableAt_of_isBigO_rpow h₁ h₂ (lt_add_one _) h₃ hz
-  rwa [show mellin ((Ioc 0 1).indicator g) = _ from
-    funext (mellin_indicator_of_subset_Ioi g measurableSet_Ioc Ioc_subset_Ioi_self)] at h
-
-/-- The Mellin integral over `(1, ∞)` is holomorphic on `Re z < a` when the function is locally
-integrable on `(0, ∞)` and `O(t^{-a})` as `t → +∞`. -/
-theorem differentiableAt_integral_Ioi_cpow_smul_of_isBigO (hg : LocallyIntegrableOn g (Ioi 0))
-    {a : ℝ} (hg1 : g =O[atTop] (· ^ (-a))) {z : ℂ} (hz : z.re < a) :
-    DifferentiableAt ℂ (fun w : ℂ ↦ ∫ t : ℝ in Ioi 1, (t : ℂ) ^ (w - 1) • g t) z := by
-  obtain ⟨h₁, h₂, h₃⟩ := indicator_Ioi_mellin_hyp hg hg1 (z.re - 1)
-  have h := mellin_differentiableAt_of_isBigO_rpow h₁ h₂ hz h₃ (sub_one_lt _)
-  rwa [show mellin ((Ioi 1).indicator g) = _ from
-    funext (mellin_indicator_Ioi g zero_le_one)] at h
-
-end Truncated
-
-/-- On a filter concentrated on `(0, ∞)`, the complex power `t ^ w` is `O(t ^ Re w)`. -/
-private theorem isBigO_ofReal_cpow {l : Filter ℝ} (hl : ∀ᶠ t in l, 0 < t) (w : ℂ) :
-    (fun t : ℝ ↦ (t : ℂ) ^ w) =O[l] fun t ↦ t ^ w.re :=
-  IsBigO.of_bound 1 <| hl.mono fun t ht ↦ by
-    rw [norm_cpow_eq_rpow_re_of_pos ht, Real.norm_of_nonneg (Real.rpow_nonneg ht.le _), one_mul]
-
 /-- The function `t ↦ ∑_{k<n} t^{w_k} c_k` is locally integrable on `(0, ∞)`. -/
 private theorem locallyIntegrableOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ → E) (n : ℕ) :
     LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k) (Ioi 0) :=
@@ -184,28 +93,13 @@ private theorem locallyIntegrableOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ →
     ((continuousAt_ofReal_cpow_const _ _ (Or.inr (ne_of_gt ht))).smul
       continuousAt_const).continuousWithinAt) measurableSet_Ioi
 
-/-- For `0 < Re (z + w)`, the function `t ↦ t^{z-1} t^w c` is integrable on `(0, 1]`. -/
-private theorem integrableOn_Ioc_cpow_smul_cpow_smul {z w : ℂ} (hzw : 0 < (z + w).re) (c : E) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c)) (Ioc 0 1) := by
-  have h := ((mellinConvergent_indicator_iff_of_subset_Ioi measurableSet_Ioc
-    Ioc_subset_Ioi_self).mp (hasMellin_cpow_Ioc w (by rwa [← add_re])).1).smul_const c
-  simpa only [smul_assoc, IntegrableOn] using h
-
-/-- For `0 < Re (z + w)`, `∫₀¹ t^{z-1} t^w c dt = c / (z + w)`. -/
-private theorem integral_Ioc_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ}
-    (hzw : 0 < (z + w).re) (c : E) :
-    ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c) = (z + w)⁻¹ • c := by
-  have h := (hasMellin_cpow_Ioc w (s := z) (by rwa [← add_re])).2
-  rw [mellin_indicator_of_subset_Ioi _ measurableSet_Ioc Ioc_subset_Ioi_self] at h
-  simp_rw [← smul_assoc]
-  rw [integral_smul_const, h, one_div]
-
 /-! ### Continuation through an expansion at `0+` -/
 
 /-- The Mellin transform of `f` continued to the left through the first `n` terms of an expansion
 `f(t) ∼ ∑ a_k t^{α_k}` as `t → 0+` (DLMF 2.5.26):
 `∫₀¹ t^{z-1} (f(t) - ∑_{k<n} a_k t^{α_k}) dt + ∑_{k<n} a_k/(z + α_k) + ∫₁^∞ t^{z-1} f(t) dt`.
-Every `n` gives `mellin f z` where the Mellin integral converges absolutely
+When `a`, `α` form an asymptotic expansion of `f` at `0+` with strictly increasing `Re α_k`, every
+`n` gives `mellin f z` where the Mellin integral converges absolutely
 (`TauCeti.mellinContAtZero_eq_mellin`). -/
 def mellinContAtZero (f : ℝ → E) (a : ℕ → E) (α : ℕ → ℂ) (n : ℕ) (z : ℂ) : E :=
   (∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • (f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ α k • a k)) +
@@ -227,7 +121,7 @@ private theorem isBigO_sub_sum_rpow
       fun t ↦ (t : ℂ) ^ α n) :
     (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ α k • a k) =O[𝓝[>] 0]
       (· ^ (-(-(α n).re))) := by
-  simpa only [neg_neg] using hn.trans (isBigO_ofReal_cpow self_mem_nhdsWithin (α n))
+  simpa only [neg_neg] using hn.trans (isBigO_ofReal_cpow_rpow self_mem_nhdsWithin (α n))
 
 /-- With no terms subtracted, the continued transform is the Mellin integral split at `1`. -/
 theorem mellinContAtZero_zero_eq_mellin (hf : MellinConvergent f z) :
@@ -333,7 +227,7 @@ private theorem eventually_rpow_le_norm_cpow_smul_sub_sum {k : ℕ}
   have hA : 0 < ‖a k‖ := norm_pos_iff.mpr hk
   set g : ℕ → ℝ → E := fun n (t : ℝ) ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ α j • a j with hg
   -- Near `0`, `‖g (k + 1) t‖ ≤ C t ^ Re α_{k+1}`, and `C t ^ (Re α_{k+1} - Re α_k) < ‖a_k‖ / 2`.
-  obtain ⟨C, hC⟩ := (hk1.trans (isBigO_ofReal_cpow self_mem_nhdsWithin (α (k + 1)))).bound
+  obtain ⟨C, hC⟩ := (hk1.trans (isBigO_ofReal_cpow_rpow self_mem_nhdsWithin (α (k + 1)))).bound
   filter_upwards [hC, eventually_mul_rpow_lt_nhdsGT_zero (sub_pos.mpr hα) C (half_pos hA),
     self_mem_nhdsWithin] with t ht₁ ht₂ (ht₀ : 0 < t)
   have hsucc : g k t = g (k + 1) t + (t : ℂ) ^ α k • a k := by
@@ -357,7 +251,7 @@ private theorem eventually_rpow_le_norm_cpow_smul_sub_sum {k : ℕ}
 /-- A nonzero coefficient `a_k` of an expansion of `f` at `0+` with strictly increasing `Re α_k`
 bounds the strip of absolute convergence of the Mellin transform of `f`: if it converges at `z`,
 then `0 < Re (z + α_k)`. -/
-theorem re_add_pos_of_mellinConvergent
+theorem add_re_pos_of_mellinConvergent
     (hexp : HasAsymptoticExpansion (𝓝[>] 0) (fun k (t : ℝ) ↦ (t : ℂ) ^ α k) a f)
     (hα : StrictMono fun k ↦ (α k).re) (hfz : MellinConvergent f z) {k : ℕ} (hk : a k ≠ 0) :
     0 < (z + α k).re := by
@@ -395,7 +289,7 @@ theorem mellinContAtZero_eq_mellin [CompleteSpace E]
   | zero => exact mellinContAtZero_zero_eq_mellin hfz
   | succ n ih =>
     have hpos : ∀ j, a j ≠ 0 → 0 < (z + α j).re := fun j ↦
-      re_add_pos_of_mellinConvergent hexp hα hfz
+      add_re_pos_of_mellinConvergent hexp hα hfz
     rw [mellinContAtZero_succ (integrableOn_Ioc_sub_sum_of_mellinConvergent hfz fun j _ ↦
       hpos j) (or_iff_not_imp_left.mpr (hpos n)), ih]
 
@@ -406,7 +300,8 @@ end AtZero
 /-- The Mellin transform of `f` continued to the right through the first `n` terms of an
 expansion `f(t) ∼ ∑ b_k t^{-β_k}` as `t → +∞` (DLMF 2.5.28):
 `∫₀¹ t^{z-1} f(t) dt + ∫₁^∞ t^{z-1} (f(t) - ∑_{k<n} b_k t^{-β_k}) dt - ∑_{k<n} b_k/(z - β_k)`.
-Every `n` gives `mellin f z` where the Mellin integral converges absolutely
+When `b`, `β` form an asymptotic expansion of `f` at `+∞` with strictly increasing `Re β_k`, every
+`n` gives `mellin f z` where the Mellin integral converges absolutely
 (`TauCeti.mellinContAtTop_eq_mellin`). -/
 def mellinContAtTop (f : ℝ → E) (b : ℕ → E) (β : ℕ → ℂ) (n : ℕ) (z : ℂ) : E :=
   (∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • f t) +
@@ -460,19 +355,19 @@ private theorem hasAsymptoticExpansion_comp_inv
     filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
     simp only [ofReal_inv, inv_cpow_ofReal_nonneg ht.le, cpow_neg, inv_inv]
 
-/-- The Mellin integral of `t ↦ f t⁻¹` converges absolutely at `-z` exactly when that of `f`
-converges absolutely at `z`. -/
-private theorem mellinConvergent_comp_inv_neg_iff :
-    MellinConvergent (fun t ↦ f t⁻¹) (-z) ↔ MellinConvergent f z := by
-  have hz : -z / ((-1 : ℝ) : ℂ) = z := by push_cast; ring
-  simpa only [Real.rpow_neg_one, hz] using
-    MellinConvergent.comp_rpow (f := f) (s := -z) (a := -1) (by norm_num)
+/-- The remainder of an expansion at `+∞` after `n` terms is `O(t ^ (-Re β_n))`. -/
+private theorem isBigO_sub_sum_rpow_atTop
+    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-β n)) :
+    (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
+      (· ^ (-(β n).re)) := by
+  simpa only [neg_re] using hn.trans (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) (-β n))
 
 /-- With no terms subtracted, the continuation at `+∞` is the Mellin integral split at `1`. -/
 theorem mellinContAtTop_zero_eq_mellin (hf : MellinConvergent f z) :
     mellinContAtTop f b β 0 z = mellin f z := by
   rw [mellinContAtTop_eq_mellinContAtZero, mellinContAtZero_zero_eq_mellin
-    (mellinConvergent_comp_inv_neg_iff.mpr hf), mellin_comp_inv, neg_neg]
+    ((mellinConvergent_comp_inv_iff f (-z)).mpr (by rwa [neg_neg])), mellin_comp_inv, neg_neg]
 
 /-- Subtracting one more term leaves the continuation at `+∞` unchanged, provided the remainder
 integral converges and the new term is zero or has convergent Mellin integral over `(1, ∞)`. -/
@@ -497,12 +392,9 @@ theorem mellinContAtTop_eq_of_le [CompleteSpace E] (hf : LocallyIntegrableOn f (
   | base => rfl
   | succ m hnm ih =>
     have hzm : z.re < (β m).re := hz.trans_le (hβ hnm)
-    have hO : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range m, (t : ℂ) ^ (-β k) • b k) =O[atTop]
-        (· ^ (-(β m).re)) := by
-      simpa only [neg_re] using (hexp.isBigO m).trans
-        (isBigO_ofReal_cpow (eventually_gt_atTop 0) (-β m))
     rw [mellinContAtTop_succ (integrableOn_Ioi_cpow_smul_of_isBigO
-      (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b m)) hO hzm) (Or.inr hzm), ih]
+      (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b m))
+      (isBigO_sub_sum_rpow_atTop (hexp.isBigO m)) hzm) (Or.inr hzm), ih]
 
 /-- Adding back the principal parts `b_k/(z - β_k)` leaves a function holomorphic on the whole
 strip `-c < Re z < Re β_n`, for `f = O(t^c)` at `0+` (DLMF 2.5.27). The bound at `+∞` is the
@@ -515,13 +407,11 @@ theorem differentiableOn_mellinContAtTop_add_sum (hf : LocallyIntegrableOn f (Io
       (fun z ↦ mellinContAtTop f b β n z + ∑ k ∈ Finset.range n, (z - β k)⁻¹ • b k)
       {z | -c < z.re ∧ z.re < (β n).re} := by
   intro z hz
-  have hO : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
-      (· ^ (-(β n).re)) := by
-    simpa only [neg_re] using hn.trans (isBigO_ofReal_cpow (eventually_gt_atTop 0) (-β n))
   have h := (differentiableAt_integral_Ioc_cpow_smul_of_isBigO hf
     (by simpa only [neg_neg] using hc) hz.1).add
     (differentiableAt_integral_Ioi_cpow_smul_of_isBigO
-      (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b n)) hO hz.2)
+      (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b n))
+      (isBigO_sub_sum_rpow_atTop hn) hz.2)
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)).differentiableWithinAt
   simp only [mellinContAtTop_def, Pi.add_apply, Pi.sub_apply]
   abel
@@ -551,8 +441,8 @@ theorem re_lt_of_mellinConvergent
     (hexp : HasAsymptoticExpansion atTop (fun k (t : ℝ) ↦ (t : ℂ) ^ (-β k)) b f)
     (hβ : StrictMono fun k ↦ (β k).re) (hfz : MellinConvergent f z) {k : ℕ} (hk : b k ≠ 0) :
     z.re < (β k).re := by
-  have h := re_add_pos_of_mellinConvergent (hasAsymptoticExpansion_comp_inv hexp) hβ
-    (mellinConvergent_comp_inv_neg_iff.mpr hfz) hk
+  have h := add_re_pos_of_mellinConvergent (hasAsymptoticExpansion_comp_inv hexp) hβ
+    ((mellinConvergent_comp_inv_iff f (-z)).mpr (by rwa [neg_neg])) hk
   rw [add_re, neg_re] at h
   linarith
 
@@ -563,8 +453,8 @@ theorem mellinContAtTop_eq_mellin [CompleteSpace E]
     (hβ : StrictMono fun k ↦ (β k).re) (hfz : MellinConvergent f z) (n : ℕ) :
     mellinContAtTop f b β n z = mellin f z := by
   rw [mellinContAtTop_eq_mellinContAtZero, mellinContAtZero_eq_mellin
-    (hasAsymptoticExpansion_comp_inv hexp) hβ (mellinConvergent_comp_inv_neg_iff.mpr hfz) n,
-    mellin_comp_inv, neg_neg]
+    (hasAsymptoticExpansion_comp_inv hexp) hβ
+    ((mellinConvergent_comp_inv_iff f (-z)).mpr (by rwa [neg_neg])) n, mellin_comp_inv, neg_neg]
 
 end AtTop
 
