@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.RingTheory.Huber.Pair
 import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
-import TauCeti.AlgebraicGeometry.AdicSpace.RestrictToIdeal
 import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Center
 import TauCeti.RingTheory.Valuation.Continuous.Horizontal
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
