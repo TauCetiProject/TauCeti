@@ -349,7 +349,7 @@ theorem fiberSumEquiv_apply_point (w : W) (z : (F.sum G).Fiber w) :
   obtain ⟨c | c, x, hx⟩ := z <;> rfl
 
 /-- Extended fiber cardinalities add under disjoint union, including infinite fibers. -/
-theorem enat_card_fiber_sum (w : W) :
+theorem enatCard_fiber_sum (w : W) :
     ENat.card ((F.sum G).Fiber w) = ENat.card (F.Fiber w) + ENat.card (G.Fiber w) := by
   rw [ENat.card_congr (F.fiberSumEquiv G w), ENat.card_sum]
 
@@ -359,8 +359,8 @@ instance (w : W) [Finite (F.Fiber w)] [Finite (G.Fiber w)] :
   Finite.of_equiv _ (F.fiberSumEquiv G w).symm
 
 /-- Natural-number fiber counts add when both fibers over `w` are finite.
-For the unrestricted count, including infinite fibers, see `enat_card_fiber_sum`. -/
-theorem nat_card_fiber_sum (w : W) [Finite (F.Fiber w)] [Finite (G.Fiber w)] :
+For the unrestricted count, including infinite fibers, see `enatCard_fiber_sum`. -/
+theorem natCard_fiber_sum (w : W) [Finite (F.Fiber w)] [Finite (G.Fiber w)] :
     Nat.card ((F.sum G).Fiber w) = Nat.card (F.Fiber w) + Nat.card (G.Fiber w) := by
   rw [Nat.card_congr (F.fiberSumEquiv G w), Nat.card_sum]
 
