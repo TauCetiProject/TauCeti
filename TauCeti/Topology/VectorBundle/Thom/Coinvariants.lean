@@ -67,9 +67,10 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass_hom` describing it step by step.
 * `isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap`: the lift of an orientation-twisted
   cocycle of `(E, E₀)` is semi-invariant for the sign character.
-* `coinvariantsTensorObjExtendIso`: the coinvariants of the shifted chains of `B'` twisted by the
-  sign character are the shifted chains of `B` twisted by `o(E)`, with
-  `coinvariantsTensorObjExtendIso_hom_f_mk` computing it on the class of `1 ⊗ (a ⊗ τ)`.
+* `coinvariantsTensorSingularChainsRepExtendIsoTwisted`: the coinvariants of the shifted chains
+  of `B'` twisted by the sign character are the shifted chains of `B` twisted by `o(E)`, with
+  `coinvariantsTensorSingularChainsRepExtendIsoTwisted_hom_f_mk` computing it on the class of
+  `1 ⊗ (a ⊗ τ)`.
 
 ## References
 
@@ -109,8 +110,8 @@ variable (F E ι) in
 shifted up by `n` are the chains of the base twisted by the orientation local system, shifted up
 by `n`. In degree `q + n`, the class of `1 ⊗ (a ⊗ τ)` goes to the simplex `p ∘ τ` with the
 coefficient of `o(E)` whose value at the initial orientation of `τ` is `a`
-(`coinvariantsTensorObjExtendIso_hom_f_mk`). -/
-def coinvariantsTensorObjExtendIso (n : ℕ) :
+(`coinvariantsTensorSingularChainsRepExtendIsoTwisted_hom_f_mk`). -/
+def coinvariantsTensorSingularChainsRepExtendIsoTwisted (n : ℕ) :
     haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
     (((((tensorLeft (Rep.of (Representation.ofLinearCharacter
         (Units.map (Int.castRingHom k : ℤ →* k))))).mapHomologicalComplex _).obj
@@ -129,15 +130,15 @@ def coinvariantsTensorObjExtendIso (n : ℕ) :
 open scoped Simplicial TensorProduct in
 open LocalCoefficientSystem in
 variable (F E ι) in
-/-- In the degree `q + n` of the shifted complexes, `coinvariantsTensorObjExtendIso` sends the class
-of `1 ⊗ (a ⊗ τ)` to the simplex `p ∘ τ` of `B` with the coefficient of `o(E)` whose value at the
-initial orientation of `τ` is `a`, as `coinvariantsTensorSingularChainsRepIsoTwisted` does in
-degree `q`. -/
-theorem coinvariantsTensorObjExtendIso_hom_f_mk (n : ℕ) {q j : ℕ}
+/-- In the degree `q + n` of the shifted complexes,
+`coinvariantsTensorSingularChainsRepExtendIsoTwisted` sends the class of `1 ⊗ (a ⊗ τ)` to the
+simplex `p ∘ τ` of `B` with the coefficient of `o(E)` whose value at the initial orientation of `τ`
+is `a`, as `coinvariantsTensorSingularChainsRepIsoTwisted` does in degree `q`. -/
+theorem coinvariantsTensorSingularChainsRepExtendIsoTwisted_hom_f_mk (n : ℕ) {q j : ℕ}
     (h : (ComplexShape.embeddingDownNatAdd n).f q = j) (a : k)
     (τ : (TopCat.toSSet.obj (TopCat.of (VectorBundleOrientationCover F E ι))) _⦋q⦌) :
     haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
-    ((coinvariantsTensorObjExtendIso F E ι hι k n).hom.f j).hom
+    ((coinvariantsTensorSingularChainsRepExtendIsoTwisted F E ι hι k n).hom.f j).hom
       ((((Rep.coinvariantsTensor k ℤˣ).obj (Rep.trivial k ℤˣ k)).map
         (((((tensorLeft (Rep.of (Representation.ofLinearCharacter
           (Units.map (Int.castRingHom k : ℤ →* k))))).mapHomologicalComplex _).obj
@@ -153,7 +154,7 @@ theorem coinvariantsTensorObjExtendIso_hom_f_mk (n : ℕ) {q j : ℕ}
                 (initialSheet τ)).symm a))) := by
   have := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
   -- both extensions conjugate the component in degree `q` by `extendXIso`
-  rw [coinvariantsTensorObjExtendIso, Iso.trans_hom, HomologicalComplex.comp_f,
+  rw [coinvariantsTensorSingularChainsRepExtendIsoTwisted, Iso.trans_hom, HomologicalComplex.comp_f,
     HomologicalComplex.mapExtendIso_hom_f _ _ _ h, Functor.mapIso_hom,
     ComplexShape.Embedding.extendFunctor_map, HomologicalComplex.extendMap_f _ _ h,
     Category.assoc, Iso.inv_hom_id_assoc, ← ModuleCat.comp_apply, Iso.inv_hom_id_map_assoc,
@@ -351,7 +352,7 @@ def thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass
       (isQuotientCoveringMap_pullbackThomPairMap_snd hι) hP (Rep.trivial k ℤˣ k)
       ((thomPair F _).singularChainsRepCap (thomPairProj_smul (F := F) (E := E)) _ hφ hP) m ≪≫
     (HomologicalComplex.homologyFunctor _ _ m).mapIso
-      (coinvariantsTensorObjExtendIso F E ι hι k (finrank ℝ F)) ≪≫
+      (coinvariantsTensorSingularChainsRepExtendIsoTwisted F E ι hι k (finrank ℝ F)) ≪≫
     HomologicalComplex.extendHomologyIso _ _ (h ▸ ComplexShape.embeddingDownNatAdd_f _ p)
 
 /-- **The twisted Thom isomorphism over every ring, step by step.** The isomorphism
@@ -359,7 +360,7 @@ def thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass
 relative chains of `(E, E₀)` with constant coefficients, lifts it to the coinvariants of the
 relative chains of `(E', E'₀)`, caps it there with the lift of `ψ` (`TopPair.singularChainsRepCap`),
 and reads the result in the shifted chains of `B` twisted by `o(E)`
-(`coinvariantsTensorObjExtendIso`). -/
+(`coinvariantsTensorSingularChainsRepExtendIsoTwisted`). -/
 theorem thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass_hom
     (ψ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
       (ModuleCat.of k k)).cycles (finrank ℝ F))
@@ -389,7 +390,7 @@ theorem thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass_hom
               (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι k ψ)
               thomPair_map_smul)) m ≫
         HomologicalComplex.homologyMap
-          (coinvariantsTensorObjExtendIso F E ι hι k (finrank ℝ F)).hom m ≫
+          (coinvariantsTensorSingularChainsRepExtendIsoTwisted F E ι hι k (finrank ℝ F)).hom m ≫
         (HomologicalComplex.extendHomologyIso _ _
           (h ▸ ComplexShape.embeddingDownNatAdd_f _ p)).hom := by
   simp only [thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass, Iso.trans_hom, Iso.symm_hom,
