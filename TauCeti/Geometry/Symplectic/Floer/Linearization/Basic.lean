@@ -385,6 +385,35 @@ theorem floerLinearization_fun_smul (ω : SymplecticForm V)
   rw [cauchyRiemann_fun_smul (fun z ↦ J z (u z)) (ω.floerLinearizationCoeff J Ks Kt u) hf hξ,
     map_smul]
 
+/-- **The algebra of a cutoff, pointwise.** If `|c| ≤ 1`, `‖L‖ ≤ M` and `‖y‖ ≤ B ‖x‖`, then
+`‖c A + (L ∂s) x + (L ∂t) y‖² ≤ 2 ‖A‖² + 2 (M (1 + B))² ‖x‖²`. With `c = f z` and `L = df` at `z`,
+this bounds an operator on a cut-off field, as in `norm_floerLinearization_fun_smul_sq_le` and
+`norm_floerLinearizationAdjoint_fun_smul_sq_le`. -/
+theorem _root_.TauCeti.norm_smul_add_smul_add_smul_sq_le {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {c M B : ℝ} {L : ℝ × ℝ →L[ℝ] ℝ} {A x y : E}
+    (hc : |c| ≤ 1) (hL : ‖L‖ ≤ M) (hy : ‖y‖ ≤ B * ‖x‖) :
+    ‖c • A + L stdComplexLineReal • x + L stdComplexLineImag • y‖ ^ 2 ≤
+      2 * ‖A‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖x‖ ^ 2 := by
+  have hM₀ : 0 ≤ M := (norm_nonneg _).trans hL
+  have h₁ : ‖L stdComplexLineReal • x‖ ≤ M * ‖x‖ := by
+    rw [norm_smul]
+    gcongr
+    exact (le_opNorm _ _).trans (by simp [stdComplexLineReal, hL])
+  have h₂ : ‖L stdComplexLineImag • y‖ ≤ M * (B * ‖x‖) := by
+    rw [norm_smul]
+    gcongr
+    exact (le_opNorm _ _).trans (by simp [stdComplexLineImag, hL])
+  have h₀ : ‖c • A‖ ≤ ‖A‖ := by
+    rw [norm_smul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) hc
+  have hsum : ‖c • A + L stdComplexLineReal • x + L stdComplexLineImag • y‖ ≤
+      ‖A‖ + M * (1 + B) * ‖x‖ := by
+    have := norm_add_le (c • A) (L stdComplexLineReal • x)
+    refine (norm_add_le _ _).trans ?_
+    nlinarith
+  calc _ ≤ (‖A‖ + M * (1 + B) * ‖x‖) ^ 2 := by gcongr
+    _ ≤ _ := by nlinarith [sq_nonneg (‖A‖ - M * (1 + B) * ‖x‖), mul_pow (M * (1 + B)) ‖x‖ 2]
+
 /-- **The operator on a cut-off direction, pointwise.** If `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B` at
 `z`, then `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M (1 + B))² ‖ξ‖²` at `z`. -/
 theorem norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
@@ -393,33 +422,8 @@ theorem norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
     (hf₁ : |f z| ≤ 1) {M B : ℝ} (hM : ‖fderiv ℝ f z‖ ≤ M) (hB : ‖J z (u z)‖ ≤ B) :
     ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
       2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖ξ z‖ ^ 2 := by
-  have hM₀ : 0 ≤ M := (norm_nonneg _).trans hM
-  have h₁ : ‖fderiv ℝ f z stdComplexLineReal • ξ z‖ ≤ M * ‖ξ z‖ := by
-    rw [norm_smul]
-    gcongr
-    exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineReal, hM])
-  have h₂ : ‖fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z)‖ ≤ M * (B * ‖ξ z‖) := by
-    rw [norm_smul]
-    gcongr
-    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [stdComplexLineImag, hM])
-    · exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
-  have h₀ : ‖f z • ω.floerLinearization J Ks Kt u ξ z‖ ≤ ‖ω.floerLinearization J Ks Kt u ξ z‖ := by
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) hf₁
-  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ, add_assoc]
-  have h := norm_add_le (f z • ω.floerLinearization J Ks Kt u ξ z)
-    (fderiv ℝ f z stdComplexLineReal • ξ z + fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have h' := norm_add_le (fderiv ℝ f z stdComplexLineReal • ξ z)
-    (fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))
-  have hsum : ‖f z • ω.floerLinearization J Ks Kt u ξ z + (fderiv ℝ f z stdComplexLineReal • ξ z +
-      fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z))‖ ≤
-      ‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖ := by
-    nlinarith
-  calc _ ≤ (‖ω.floerLinearization J Ks Kt u ξ z‖ + M * (1 + B) * ‖ξ z‖) ^ 2 := by
-        gcongr
-    _ ≤ _ := by
-        nlinarith [sq_nonneg (‖ω.floerLinearization J Ks Kt u ξ z‖ - M * (1 + B) * ‖ξ z‖),
-          mul_pow (M * (1 + B)) ‖ξ z‖ 2]
+  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf hξ]
+  exact norm_smul_add_smul_add_smul_sq_le hf₁ hM ((le_opNorm _ _).trans (by gcongr))
 
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`

@@ -272,29 +272,12 @@ theorem norm_floerLinearizationAdjoint_fun_smul_sq_le {f : ℝ × ℝ → ℝ}
     (hM : ‖fderiv ℝ f z‖ ≤ M) (hB : ‖J z (u z)‖ ≤ B) :
     ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ^ 2 ≤
       2 * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖η z‖ ^ 2 := by
-  have hM₀ : 0 ≤ M := (norm_nonneg _).trans hM
-  set A := ω.floerLinearizationAdjoint J Ks Kt u η z
-  have h₁ : ‖fderiv ℝ f z stdComplexLineReal • η z‖ ≤ M * ‖η z‖ := by
-    rw [norm_smul]
-    gcongr
-    exact (le_opNorm _ _).trans (by simp [stdComplexLineReal, hM])
-  have h₂ : ‖fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z))‖ ≤ M * (B * ‖η z‖) := by
-    rw [norm_smul]
-    gcongr
-    · exact (le_opNorm _ _).trans (by simp [stdComplexLineImag, hM])
-    · exact (opNorm_comp_le _ _).trans (by rw [mul_comm]; gcongr)
-  have h₀ : ‖f z • A‖ ≤ ‖A‖ := by
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) hf₁
-  have hsum : ‖f z • A - fderiv ℝ f z stdComplexLineReal • η z -
-      fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z))‖ ≤ ‖A‖ + M * (1 + B) * ‖η z‖ := by
-    have := norm_sub_le (f z • A) (fderiv ℝ f z stdComplexLineReal • η z)
-    refine (norm_sub_le _ _).trans ?_
-    nlinarith
+  have hy : ‖(η z).comp (J z (u z))‖ ≤ B * ‖η z‖ :=
+    (opNorm_comp_le _ _).trans (by rw [mul_comm]; gcongr)
   rw [floerLinearizationAdjoint_fun_smul hf hη hJu]
-  calc _ ≤ (‖A‖ + M * (1 + B) * ‖η z‖) ^ 2 := by gcongr
-    _ ≤ _ := by
-        nlinarith [sq_nonneg (‖A‖ - M * (1 + B) * ‖η z‖), mul_pow (M * (1 + B)) ‖η z‖ 2]
+  simpa only [neg_apply, neg_smul, ← sub_eq_add_neg] using
+    norm_smul_add_smul_add_smul_sq_le (L := -fderiv ℝ f z)
+      (A := ω.floerLinearizationAdjoint J Ks Kt u η z) hf₁ ((norm_neg _).trans_le hM) hy
 
 /-- **Multiplying by a function of `s`.** If `β` has derivative `β'` at `s`, the formal adjoint at
 `z = (s, t)` sends `β(s) η` to `β(s) D^* η - β' η`: the factor only differentiates in the `s`
