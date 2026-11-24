@@ -89,7 +89,7 @@ private theorem quadratic_terms_le {a e d d' S S₁ S₂ B : ℝ≥0∞} (he : e
         add_le_add (add_le_add (mul_le_mul_right he _)
           ((mul_le_mul_right hd _).trans_eq (by ring))) (mul_le_mul_right hd' _)
     _ ≤ a * (S₁ + S₂) * (1 + B) * S + a * (S₁ + S₂) * (1 + B) * S +
-        a * (S₁ + S₂) * (1 + B) * S := by gcongr
+        a * (S₁ + S₂) * (1 + B) * S := add_le_add (add_le_add le_rfl h₁) h₁
     _ = 3 * a * (1 + B) * (S₁ + S₂) * S := by ring
 
 /-- The choice of the radius `δ₁ / (2 (a + 1))` in the `W^{1,p}` estimate makes `a` times the sum of
