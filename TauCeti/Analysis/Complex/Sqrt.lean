@@ -16,6 +16,11 @@ exactly on the slit plane. These facts control the branches in algebraic transfo
 involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
 `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, and packages the principal square
 root of a nonzero complex number as a unit, `Complex.sqrtUnit`.
+
+The real square root `√2`, cast to `ℂ`, is nonzero and squares to `2`
+(`Complex.ofReal_sqrt_two_sq`, `Complex.ofReal_sqrt_two_mul_self`), and so its inverse squares to
+`2⁻¹` (`Complex.ofReal_sqrt_two_inv_mul_self`). Together with `1 + i ≠ 0`
+(`Complex.one_add_I_ne_zero`), these are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`.
 -/
 
 public section
@@ -109,5 +114,25 @@ theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
 /-- The unit principal square root of `z` squares to `z`. -/
 theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
   rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
+
+/-- The real square root `√2`, cast to `ℂ`, is nonzero. -/
+theorem ofReal_sqrt_two_ne_zero : (Real.sqrt 2 : ℂ) ≠ 0 := by
+  exact_mod_cast (Real.sqrt_pos.mpr two_pos).ne'
+
+/-- The real square root `√2`, cast to `ℂ`, squares to `2`. -/
+theorem ofReal_sqrt_two_sq : (Real.sqrt 2 : ℂ) ^ 2 = 2 := by
+  exact_mod_cast Real.sq_sqrt zero_le_two
+
+/-- The real square root `√2`, cast to `ℂ`, times itself is `2`. -/
+theorem ofReal_sqrt_two_mul_self : (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
+  rw [← _root_.sq, ofReal_sqrt_two_sq]
+
+/-- The inverse of the real square root `√2`, cast to `ℂ`, times itself is `2⁻¹`. -/
+theorem ofReal_sqrt_two_inv_mul_self : (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
+  rw [← mul_inv, ofReal_sqrt_two_mul_self]
+
+/-- The complex number `1 + i` is nonzero. -/
+theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by
+  simpa using congrArg re h
 
 end Complex

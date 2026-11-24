@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.TemperleyLieb.EvenClifford.Quotient
 public import TauCeti.KnotTheory.TemperleyLieb
 
+import TauCeti.Analysis.Complex.Sqrt
+
 /-!
 # Braid units in the even Clifford model at `δ = √2`
 
@@ -80,19 +82,6 @@ namespace TauCeti.TemperleyLieb
 
 open BraidGroup (strand strandSucc strand_ne_strandSucc)
 
-private theorem sqrt_two_ne_zero : (Real.sqrt 2 : ℂ) ≠ 0 := by
-  exact_mod_cast (Real.sqrt_pos.mpr two_pos).ne'
-
-private theorem sqrt_two_sq : (Real.sqrt 2 : ℂ) ^ 2 = 2 := by
-  exact_mod_cast Real.sq_sqrt zero_le_two
-
-private theorem inv_sqrt_two_mul_self :
-    (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
-  rw [← mul_inv, ← sq, sqrt_two_sq]
-
-private theorem one_add_I_ne_zero : 1 + Complex.I ≠ 0 := fun h ↦ by
-  simpa using congrArg Complex.re h
-
 /-- `cliffordProjection` written with the crossed strands of `BraidGroup.sigma j`. -/
 private theorem cliffordProjection_eq_strand (m : ℕ) (j : Fin (m - 1)) :
     cliffordProjection m j =
@@ -109,12 +98,12 @@ noncomputable def cliffordBraidUnit (m : ℕ) (j : Fin (m - 1)) :
   val_inv := by
     have hd := majorana_mul_majorana_mul_self_of_ne (strand_ne_strandSucc j)
     simp only [neg_mul_neg, smul_mul_smul_comm, add_mul, mul_sub, one_mul, mul_one, hd,
-      inv_sqrt_two_mul_self]
+      Complex.ofReal_sqrt_two_inv_mul_self]
     module
   inv_val := by
     have hd := majorana_mul_majorana_mul_self_of_ne (strand_ne_strandSucc j)
     simp only [neg_mul_neg, smul_mul_smul_comm, sub_mul, mul_add, one_mul, mul_one, hd,
-      inv_sqrt_two_mul_self]
+      Complex.ofReal_sqrt_two_inv_mul_self]
     module
 
 /-- The value of the Clifford braid unit. -/
@@ -161,10 +150,10 @@ theorem coe_evenCliffordHom_crossing_eq_cliffordBraidUnit (m : ℕ) (j : Fin (m 
         (crossing (Real.sqrt 2 : ℂ) (-((1 + Complex.I) / Real.sqrt 2)) Complex.I j) :
         CliffordAlgebra (cliffordForm m)) = cliffordBraidUnit m j := by
   rw [coe_evenCliffordHom_crossing, cliffordProjection_eq_strand, cliffordBraidUnit_val]
-  have hs := sqrt_two_ne_zero
+  have hs := Complex.ofReal_sqrt_two_ne_zero
   match_scalars <;> field_simp
-  · linear_combination Complex.I * sqrt_two_sq
-  · linear_combination Complex.I ^ 2 * sqrt_two_sq + 2 * Complex.I_sq
+  · linear_combination Complex.I * Complex.ofReal_sqrt_two_sq
+  · linear_combination Complex.I ^ 2 * Complex.ofReal_sqrt_two_sq + 2 * Complex.I_sq
 
 /-- The Clifford braid unit in terms of the Clifford projection:
 `g_j = u • ((1 + i) • p_j - 1)` with `u = (1 + i) / √2 = exp (π i / 4)`. -/
@@ -172,7 +161,7 @@ theorem cliffordBraidUnit_val_eq_smul_cliffordProjection (m : ℕ) (j : Fin (m -
     (cliffordBraidUnit m j : CliffordAlgebra (cliffordForm m)) =
       ((1 + Complex.I) / Real.sqrt 2) • ((1 + Complex.I) • cliffordProjection m j - 1) := by
   rw [cliffordProjection_eq_strand, cliffordBraidUnit_val]
-  have hs := sqrt_two_ne_zero
+  have hs := Complex.ofReal_sqrt_two_ne_zero
   match_scalars <;> field_simp
   · linear_combination -Complex.I_sq
   · linear_combination (-2 - Complex.I) * Complex.I_sq
@@ -204,7 +193,7 @@ theorem cliffordBraidUnit_mul_self (m : ℕ) (j : Fin (m - 1)) :
       majorana m (strand j) * majorana m (strandSucc j) := by
   have hd := majorana_mul_majorana_mul_self_of_ne (strand_ne_strandSucc j)
   simp only [cliffordBraidUnit_val, neg_mul_neg, smul_mul_smul_comm, add_mul, mul_add, one_mul,
-    mul_one, hd, inv_sqrt_two_mul_self]
+    mul_one, hd, Complex.ofReal_sqrt_two_inv_mul_self]
   module
 
 /-- The fourth power of a Clifford braid unit is `-1`. -/
@@ -253,9 +242,9 @@ theorem cliffordBraidUnit_braid (m : ℕ) {i j : Fin (m - 1)}
   ext
   have hpoly : Complex.I * ((-((1 + Complex.I) / Real.sqrt 2)) ^ 2 +
       -((1 + Complex.I) / Real.sqrt 2) * Complex.I * Real.sqrt 2 + Complex.I ^ 2) = 0 := by
-    have hs := sqrt_two_ne_zero
+    have hs := Complex.ofReal_sqrt_two_ne_zero
     field_simp
-    linear_combination -Complex.I ^ 2 * sqrt_two_sq + Complex.I * Complex.I_sq
+    linear_combination -Complex.I ^ 2 * Complex.ofReal_sqrt_two_sq + Complex.I * Complex.I_sq
   have := congrArg (fun x ↦ (evenCliffordHom m x : CliffordAlgebra (cliffordForm m)))
     (crossing_braid (δ := (Real.sqrt 2 : ℂ)) hpoly h)
   simpa only [map_mul, Subalgebra.coe_mul, coe_evenCliffordHom_crossing_eq_cliffordBraidUnit,
@@ -381,7 +370,8 @@ theorem exists_cliffordBraidRep_mul_majorana_mul_inv (m : ℕ) (b : BraidGroup m
             Units.val_mul, mul_comm]
   | inv b hb =>
     obtain ⟨ε, hε⟩ := hb ((BraidGroup.permHom m b)⁻¹ k)
-    rw [Equiv.Perm.eq_inv_iff_eq.mp rfl] at hε
+    have hπ : BraidGroup.permHom m b ((BraidGroup.permHom m b)⁻¹ k) = k := by simp
+    rw [hπ] at hε
     refine ⟨ε, ?_⟩
     have hk : majorana m k = ↑(cliffordBraidRep m b) *
         ((ε : ℤ) • majorana m ((BraidGroup.permHom m b)⁻¹ k)) * ↑(cliffordBraidRep m b)⁻¹ := by
@@ -396,11 +386,11 @@ theorem exists_cliffordBraidRep_mul_majorana_mul_inv (m : ℕ) (b : BraidGroup m
 theorem jonesDelta_eq_sqrt_two {a : ℂˣ}
     (ha : (a : ℂ) ^ 2 = Complex.I * ((1 + Complex.I) / Real.sqrt 2)) :
     jonesDelta a = Real.sqrt 2 := by
-  have hs := sqrt_two_ne_zero
-  have hI := one_add_I_ne_zero
+  have hs := Complex.ofReal_sqrt_two_ne_zero
+  have hI := Complex.one_add_I_ne_zero
   rw [jonesDelta_def, Units.val_inv_eq_inv_val, inv_pow, ha]
   field_simp
-  linear_combination (-1 - Complex.I - Complex.I ^ 2) * sqrt_two_sq -
+  linear_combination (-1 - Complex.I - Complex.I ^ 2) * Complex.ofReal_sqrt_two_sq -
     (Complex.I ^ 2 + 2 * Complex.I + 2) * Complex.I_sq
 
 /-- If `a² = i u` with `u = (1 + i) / √2`, then `evenCliffordHom` sends the Kauffman crossing
@@ -412,8 +402,8 @@ theorem coe_evenCliffordHom_crossing_eq_smul_cliffordBraidUnit (m : ℕ) {a : �
     (evenCliffordHom m (crossing (Real.sqrt 2 : ℂ) a ↑a⁻¹ j) : CliffordAlgebra (cliffordForm m)) =
       (-(a : ℂ) / ((1 + Complex.I) / Real.sqrt 2)) • (cliffordBraidUnit m j :
         CliffordAlgebra (cliffordForm m)) := by
-  have hs := sqrt_two_ne_zero
-  have hI := one_add_I_ne_zero
+  have hs := Complex.ofReal_sqrt_two_ne_zero
+  have hI := Complex.one_add_I_ne_zero
   rw [← coe_evenCliffordHom_crossing_eq_cliffordBraidUnit, coe_evenCliffordHom_crossing,
     coe_evenCliffordHom_crossing, Units.val_inv_eq_inv_val]
   match_scalars <;> field_simp
