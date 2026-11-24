@@ -134,34 +134,35 @@ lemma homMulEquiv_apply {A B : AbelianScheme S} [IsCommMonObj B.toOver] (f : A �
     homMulEquiv A B f = f.hom :=
   (rfl)
 
+/-- `toOverHom` coincides definitionally with the underlying `Over S` morphism of
+`homMulEquiv`. -/
+private lemma toOverHom_eq_homMulEquiv {A B : AbelianScheme S} [IsCommMonObj B.toOver]
+    (f : A ⟶ B) :
+    toOverHom f = (homMulEquiv A B f).hom.hom :=
+  (rfl)
+
 @[simp]
 lemma toOverHom_one {A B : AbelianScheme S} [IsCommMonObj B.toOver] :
     toOverHom (1 : A ⟶ B) = 1 := by
-  change (homMulEquiv A B 1).hom.hom = 1
-  rw [map_one]
+  rw [toOverHom_eq_homMulEquiv, map_one]
   simp only [Grp.Hom.hom_one, Mon.Hom.hom_one]
 
 @[simp]
 lemma toOverHom_mul {A B : AbelianScheme S} [IsCommMonObj B.toOver] (f g : A ⟶ B) :
     toOverHom (f * g) = toOverHom f * toOverHom g := by
-  change (homMulEquiv A B (f * g)).hom.hom =
-    (homMulEquiv A B f).hom.hom * (homMulEquiv A B g).hom.hom
-  rw [map_mul]
+  rw [toOverHom_eq_homMulEquiv, toOverHom_eq_homMulEquiv, toOverHom_eq_homMulEquiv, map_mul]
   simp only [Grp.Hom.hom_mul, Mon.Hom.hom_mul]
 
 @[simp]
 lemma toOverHom_inv {A B : AbelianScheme S} [IsCommMonObj B.toOver] (f : A ⟶ B) :
     toOverHom f⁻¹ = (toOverHom f)⁻¹ := by
-  change (homMulEquiv A B f⁻¹).hom.hom = (homMulEquiv A B f).hom.hom⁻¹
-  rw [map_inv]
+  rw [toOverHom_eq_homMulEquiv, toOverHom_eq_homMulEquiv, map_inv]
   simp only [Grp.Hom.hom_hom_inv]
 
 @[simp]
 lemma toOverHom_div {A B : AbelianScheme S} [IsCommMonObj B.toOver] (f g : A ⟶ B) :
     toOverHom (f / g) = toOverHom f / toOverHom g := by
-  change (homMulEquiv A B (f / g)).hom.hom =
-    (homMulEquiv A B f).hom.hom / (homMulEquiv A B g).hom.hom
-  rw [map_div]
+  rw [toOverHom_eq_homMulEquiv, toOverHom_eq_homMulEquiv, toOverHom_eq_homMulEquiv, map_div]
   simp only [Grp.Hom.hom_hom_div]
 
 @[simp]

@@ -83,10 +83,8 @@ theorem isLocallyConstant_relativeDimension (A : AbelianScheme S) :
 /-- The fibre of `A` over `s` is smooth over `Spec κ(s)` of relative dimension
 `A.relativeDimension s`. -/
 theorem smoothOfRelativeDimension_fiber (A : AbelianScheme S) (s : S) :
-    SmoothOfRelativeDimension (A.relativeDimension s) (A.toOver.hom.fiberToSpecResidueField s) := by
-  have : Smooth (A.toOver.hom.fiberToSpecResidueField s) :=
-    inferInstanceAs (Smooth (pullback.snd A.toOver.hom (S.fromSpecResidueField s)))
-  exact smoothOfRelativeDimension_of_topologicalKrullDim_eq (k := S.residueField s)
+    SmoothOfRelativeDimension (A.relativeDimension s) (A.toOver.hom.fiberToSpecResidueField s) :=
+  smoothOfRelativeDimension_of_topologicalKrullDim_eq (k := S.residueField s)
     (A.toOver.hom.fiberToSpecResidueField s) (topologicalKrullDim_fiber A s)
 
 /-- If every fibre of `A` has relative dimension `g`, then `A.toOver.hom` is smooth of relative
@@ -102,9 +100,6 @@ point `s : S`. -/
 theorem relativeDimension_eq_of_smoothOfRelativeDimension (A : AbelianScheme S) (g : ℕ)
     [SmoothOfRelativeDimension g A.toOver.hom] (s : S) :
     A.relativeDimension s = g := by
-  have hsm : SmoothOfRelativeDimension g (A.toOver.hom.fiberToSpecResidueField s) :=
-    inferInstanceAs
-      (SmoothOfRelativeDimension g (pullback.snd A.toOver.hom (S.fromSpecResidueField s)))
   rw [relativeDimension_eq_iff]
   exact topologicalKrullDim_eq_of_smoothOfRelativeDimension (k := S.residueField s)
     (A.toOver.hom.fiberToSpecResidueField s)
@@ -157,8 +152,6 @@ theorem relativeDimension_baseChange (A : AbelianScheme S) (f : T ⟶ S) (t : T)
         (Spec.map (CommRingCat.ofHom
           (algebraMap (S.residueField (f t)) (T.residueField t)))) :=
     hpb.isoPullback
-  have hloc : LocallyOfFiniteType (A.toOver.hom.fiberToSpecResidueField (f t)) :=
-    inferInstanceAs (LocallyOfFiniteType (pullback.snd A.toOver.hom (S.fromSpecResidueField (f t))))
   exact ((e₁.trans e₂).hom.homeomorph.isHomeomorph.topologicalKrullDim_eq).trans
     (topologicalKrullDim_pullback_Spec_map_of_field (K := S.residueField (f t))
       (L := T.residueField t) (A.toOver.hom.fiberToSpecResidueField (f t)))

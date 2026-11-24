@@ -110,23 +110,13 @@ theorem mapPullbackAdj_homEquiv_left {X Y : C} (s : Y ⟶ X) [HasPullbacksAlong 
   · rw [pullback.lift_snd]
     exact Over.w ((mapPullbackAdj s).homEquiv T G p)
 
-/-- Mate identity for inverse hom equivalences: transporting a morphism along the conjugate of `α`
-agrees with precomposing by `α` on the left-adjoint side. -/
-private lemma conjugateEquiv_homEquiv_symm {C' D' : Type*} [Category C'] [Category D']
-    {L₁ L₂ : C' ⥤ D'} {R₁ R₂ : D' ⥤ C'} (adj₁ : L₁ ⊣ R₁) (adj₂ : L₂ ⊣ R₂) (α : L₂ ⟶ L₁)
-    {c : C'} {d : D'} (p : c ⟶ R₁.obj d) :
-    (adj₂.homEquiv c d).symm (p ≫ (conjugateEquiv adj₁ adj₂ α).app d) =
-      α.app c ≫ (adj₁.homEquiv c d).symm p := by
-  apply (adj₂.homEquiv c d).injective
-  rw [Equiv.apply_symm_apply, ← Adjunction.homEquiv_conjugateEquiv adj₁ adj₂ α,
-    Equiv.apply_symm_apply]
-
 /-- The adjunction equivalence for `Over.pullback (𝟙 X)` agrees with `Over.pullbackId`. -/
 theorem mapPullbackAdj_id_homEquiv_symm {X : C} (G T : Over X)
     (p : T ⟶ (pullback (𝟙 X)).obj G) :
     (mapId X).inv.app T ≫ ((mapPullbackAdj (𝟙 X)).homEquiv T G).symm p =
       p ≫ (pullbackId (X := X)).hom.app G := by
-  have h := conjugateEquiv_homEquiv_symm (mapPullbackAdj (𝟙 X)) Adjunction.id (mapId X).inv p
+  have h := Adjunction.homEquiv_symm_conjugateEquiv
+    (mapPullbackAdj (𝟙 X)) Adjunction.id (mapId X).inv p
   rw [Adjunction.homEquiv_counit] at h
   simpa [pullbackId, Adjunction.id] using h.symm
 
@@ -138,7 +128,7 @@ theorem mapPullbackAdj_comp_homEquiv_symm {X Y Z : C} (s₁ : Z ⟶ Y) (s₂ : Y
         (((mapPullbackAdj s₁).homEquiv T ((pullback s₂).obj G)).symm
           (p ≫ (pullbackComp s₁ s₂).hom.app G)) =
       (mapComp s₁ s₂).inv.app T ≫ ((mapPullbackAdj (s₁ ≫ s₂)).homEquiv T G).symm p := by
-  have h := conjugateEquiv_homEquiv_symm (mapPullbackAdj (s₁ ≫ s₂))
+  have h := Adjunction.homEquiv_symm_conjugateEquiv (mapPullbackAdj (s₁ ≫ s₂))
     ((mapPullbackAdj s₁).comp (mapPullbackAdj s₂)) (mapComp s₁ s₂).inv p
   simpa only [pullbackComp, conjugateIsoEquiv_apply_hom, Iso.symm_hom,
     Adjunction.comp_homEquiv, Equiv.symm_trans_apply] using h

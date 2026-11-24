@@ -118,9 +118,8 @@ noncomputable def mulBy (A : AbelianScheme S) (n : ℤ) : A.toOver ⟶ A.toOver 
 
 /-- `A.mulBy n` is `GrpObj.zpowMap A.toOver n`. -/
 lemma mulBy_eq_zpowMap (A : AbelianScheme S) (n : ℤ) :
-    A.mulBy n = GrpObj.zpowMap A.toOver n := by
-  unfold mulBy
-  rfl
+    A.mulBy n = GrpObj.zpowMap A.toOver n :=
+  (rfl)
 
 /-- Multiplication by `n` is the `n`-th power of the identity morphism in `End A.toOver`. -/
 lemma mulBy_eq_zpow (A : AbelianScheme S) (n : ℤ) :
@@ -143,21 +142,25 @@ lemma mulBy_neg_one (A : AbelianScheme S) : A.mulBy (-1) = ι[A.toOver] :=
   GrpObj.zpowMap_neg_one A.toOver
 
 /-- Multiplication by a sum is the pointwise product of the multiplication maps. -/
+@[simp]
 lemma mulBy_add (A : AbelianScheme S) (m n : ℤ) :
     A.mulBy (m + n) = A.mulBy m * A.mulBy n :=
   GrpObj.zpowMap_add A.toOver m n
 
-/-- Multiplication by `-n` is the pointwise inverse of multiplication by `n`. -/
+/-- Multiplication by `-n` is the pointwise inverse of multiplication by `n`. Not a simp lemma,
+as it conflicts with `mulBy_neg_one`. -/
 lemma mulBy_neg (A : AbelianScheme S) (n : ℤ) :
     A.mulBy (-n) = (A.mulBy n)⁻¹ :=
   GrpObj.zpowMap_neg A.toOver n
 
 /-- Multiplication by a difference is the pointwise quotient of the multiplication maps. -/
+@[simp]
 lemma mulBy_sub (A : AbelianScheme S) (m n : ℤ) :
     A.mulBy (m - n) = A.mulBy m / A.mulBy n :=
   GrpObj.zpowMap_sub A.toOver m n
 
 /-- Multiplication by a product of integers is the composition of the multiplication maps. -/
+@[simp]
 lemma mulBy_mul (A : AbelianScheme S) (m n : ℤ) :
     A.mulBy (m * n) = A.mulBy n ≫ A.mulBy m :=
   GrpObj.zpowMap_mul A.toOver m n
@@ -226,7 +229,7 @@ noncomputable def isTerminalIdentityToOver (S : Scheme.{u}) : IsTerminal (identi
 /-- Every integer multiplication map on the identity abelian scheme is the identity. -/
 @[simp]
 lemma identity_mulBy (S : Scheme.{u}) (n : ℤ) : (identity S).mulBy n = 𝟙 (identity S).toOver :=
-  (isTerminalIdentityToOver S).hom_ext _ _
+  (mulBy_eq_zpowMap _ n).trans (GrpObj.zpowMap_eq_id_of_isTerminal (isTerminalIdentityToOver S) n)
 
 /-! ### Homomorphisms -/
 

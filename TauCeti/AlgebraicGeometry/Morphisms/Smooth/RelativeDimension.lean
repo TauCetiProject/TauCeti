@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 public import TauCeti.RingTheory.Smooth.KrullDimension
 public import TauCeti.Topology.KrullDimension.Irreducible
+import TauCeti.RingTheory.RingHom.StandardSmooth
 
 /-!
 # The relative dimension of smooth morphisms
@@ -69,17 +70,27 @@ public section
 
 open CategoryTheory Limits AlgebraicGeometry Order RingHom
 
-namespace TauCeti.AlgebraicGeometry
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
-/-- A standard smooth ring homomorphism is standard smooth of some relative dimension. -/
-private lemma exists_isStandardSmoothOfRelativeDimension_of_isStandardSmooth
-    {R S : Type u} [CommRing R] [CommRing S] {g : R →+* S} (hg : g.IsStandardSmooth) :
-    ∃ m : ℕ, g.IsStandardSmoothOfRelativeDimension m := by
-  let := g.toAlgebra
-  obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := hg
-  exact ⟨P.dimension, _, _, _, ‹_›, P, rfl⟩
+/-- Every scheme-theoretic fibre of a smooth morphism is smooth over the residue field. -/
+instance smooth_fiberToSpecResidueField {X Y : Scheme.{u}} (f : X ⟶ Y) [Smooth f] (y : Y) :
+    Smooth (f.fiberToSpecResidueField y) :=
+  inferInstanceAs (Smooth (pullback.snd f (Y.fromSpecResidueField y)))
+
+/-- Every scheme-theoretic fibre of a morphism smooth of relative dimension `n` is smooth of
+relative dimension `n` over the residue field. -/
+instance smoothOfRelativeDimension_fiberToSpecResidueField {X Y : Scheme.{u}} {n : ℕ}
+    (f : X ⟶ Y) [SmoothOfRelativeDimension n f] (y : Y) :
+    SmoothOfRelativeDimension n (f.fiberToSpecResidueField y) :=
+  inferInstanceAs (SmoothOfRelativeDimension n (pullback.snd f (Y.fromSpecResidueField y)))
+
+end AlgebraicGeometry.Scheme.Hom
+
+namespace TauCeti.AlgebraicGeometry
+
+universe u
 
 section Field
 
@@ -125,7 +136,7 @@ theorem smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq (n : ℕ) :
     -- The only nonempty open of `Spec k` is `⊤`.
     obtain rfl : U = ⊤ := eq_top_iff.mpr fun z _ ↦ Subsingleton.elim (f x) z ▸ e hxV
     -- The chart is standard smooth of some relative dimension `m`.
-    obtain ⟨m, hm⟩ := exists_isStandardSmoothOfRelativeDimension_of_isStandardSmooth hst
+    obtain ⟨m, hm⟩ := hst.exists_isStandardSmoothOfRelativeDimension
     -- Comparing with a closed point of `X` in the chart shows `m = n`.
     have : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace f
     obtain ⟨y, hyV, hy⟩ := nonempty_inter_closedPoints ⟨x, hxV⟩ V.isOpen.isLocallyClosed
@@ -198,32 +209,14 @@ section IrreducibleFibers
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
-/-- On an affine open `V` mapping into an affine open `U` such that the induced ring map is
-standard smooth of relative dimension `m`, `V.ι ≫ f` is smooth of relative dimension `m`. -/
-private lemma smoothOfRelativeDimension_open_of_isStandardSmoothOfRelativeDimension
-    {U : Y.Opens} (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V)
-    (e : V ≤ f ⁻¹ᵁ U) {m : ℕ}
-    (hm : (f.appLE U V e).hom.IsStandardSmoothOfRelativeDimension m) :
-    SmoothOfRelativeDimension m (V.ι ≫ f) := by
-  have : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension m)]
-    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hm
-  have hcomp : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e) ≫ hU.fromSpec) :=
-    inferInstanceAs (SmoothOfRelativeDimension (m + 0) _)
-  rw [IsAffineOpen.SpecMap_appLE_fromSpec f hU hV] at hcomp
-  have hVι : V.ι ≫ f = hV.isoSpec.hom ≫ hV.fromSpec ≫ f := by
-    rw [← Category.assoc, IsAffineOpen.isoSpec_hom_fromSpec]
-  rw [hVι, ← Nat.zero_add m]
-  exact inferInstance
-
 /-- Around any point of the source of a smooth morphism, there is an open neighbourhood on which
 the morphism is smooth of some relative dimension `m`. -/
 theorem exists_smoothOfRelativeDimension_open_of_smooth [Smooth f] (x : X) :
     ∃ (V : X.Opens) (m : ℕ), x ∈ V ∧ SmoothOfRelativeDimension m (V.ι ≫ f) := by
   obtain ⟨U, hU, V, hV, hxV, e, hst⟩ := Smooth.exists_isStandardSmooth f x
-  obtain ⟨m, hm⟩ := exists_isStandardSmoothOfRelativeDimension_of_isStandardSmooth hst
+  obtain ⟨m, hm⟩ := hst.exists_isStandardSmoothOfRelativeDimension
   exact ⟨V, m, hxV,
-    smoothOfRelativeDimension_open_of_isStandardSmoothOfRelativeDimension f hU hV e hm⟩
+    SmoothOfRelativeDimension.comp_ι_of_isStandardSmoothOfRelativeDimension f hU hV e hm⟩
 
 /-- If an open subset `V` of `X` meets an irreducible fibre `f.fiber y` and `f` is smooth of
 relative dimension `m` on `V`, then `f.fiber y` has Krull dimension `m`. -/
@@ -236,14 +229,9 @@ private lemma topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open [Sm
     change f (V.ι ⟨x, hxV⟩) = y
     simpa using hfx
   have hne : Nonempty ((V.ι ≫ f).fiber y) := ⟨((V.ι ≫ f).fiberHomeo y).symm ⟨⟨x, hxV⟩, hmem⟩⟩
-  have hsm : SmoothOfRelativeDimension m ((V.ι ≫ f).fiberToSpecResidueField y) :=
-    inferInstanceAs
-      (SmoothOfRelativeDimension m (pullback.snd (V.ι ≫ f) (Y.fromSpecResidueField y)))
   have hdimV : topologicalKrullDim ((V.ι ≫ f).fiber y) = m :=
     topologicalKrullDim_eq_of_smoothOfRelativeDimension (k := Y.residueField y)
       ((V.ι ≫ f).fiberToSpecResidueField y)
-  have hloc : LocallyOfFiniteType (f.fiberToSpecResidueField y) :=
-    inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Y.fromSpecResidueField y)))
   have hemb : Topology.IsOpenEmbedding
       (((f.fiberHomeo y).symm ∘ (f ⁻¹' {y}).restrictPreimage V.ι) ∘ ((V.ι ≫ f).fiberHomeo y)) :=
     (isOpenEmbedding_fiber V.ι f y).comp ((V.ι ≫ f).fiberHomeo y).isOpenEmbedding
@@ -285,9 +273,9 @@ theorem smoothOfRelativeDimension_of_forall_topologicalKrullDim_fiber_eq [Smooth
     SmoothOfRelativeDimension n f where
   exists_isStandardSmoothOfRelativeDimension x := by
     obtain ⟨U, hU, V, hV, hxV, e, hst⟩ := Smooth.exists_isStandardSmooth f x
-    obtain ⟨m, hm⟩ := exists_isStandardSmoothOfRelativeDimension_of_isStandardSmooth hst
+    obtain ⟨m, hm⟩ := hst.exists_isStandardSmoothOfRelativeDimension
     have : SmoothOfRelativeDimension m (V.ι ≫ f) :=
-      smoothOfRelativeDimension_open_of_isStandardSmoothOfRelativeDimension f hU hV e hm
+      SmoothOfRelativeDimension.comp_ι_of_isStandardSmoothOfRelativeDimension f hU hV e hm
     have hmn : m = n := by
       exact_mod_cast (topologicalKrullDim_fiber_eq_of_smoothOfRelativeDimension_open f (m := m) hxV
         rfl).symm.trans (h (f x))

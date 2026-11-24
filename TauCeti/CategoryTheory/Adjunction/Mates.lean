@@ -44,7 +44,8 @@ the top and the bottom by the conjugate transformations, agree.
 ## Main declarations
 
 * `CategoryTheory.mateEquiv_adjunction_id`;
-* `CategoryTheory.Adjunction.homEquiv_conjugateEquiv`;
+* `CategoryTheory.Adjunction.homEquiv_conjugateEquiv` and
+  `CategoryTheory.Adjunction.homEquiv_symm_conjugateEquiv`;
 * `CategoryTheory.Adjunction.whiskerLeft_eq_whiskerRight_iff_mateEquiv`;
 * `CategoryTheory.Adjunction.app_comp_map_app_eq_app_of_mateEquiv`: compatibility with a
   comparison of the left adjoint with the identity functor;
@@ -90,6 +91,14 @@ theorem homEquiv_conjugateEquiv (α : L₂ ⟶ L₁) {c : C} {d : D} (a : L₁.o
       adj₂.homEquiv c d (α.app c ≫ a) := by
   rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit, Functor.map_comp, ← Category.assoc,
     ← unit_conjugateEquiv, Category.assoc, Category.assoc, NatTrans.naturality]
+
+/-- Inverse mate identity: transposing `p ≫ (conjugateEquiv adj₁ adj₂ α).app d` back along `adj₂`
+agrees with precomposing `adj₁`'s inverse transpose of `p` by `α.app c`. -/
+theorem homEquiv_symm_conjugateEquiv (α : L₂ ⟶ L₁) {c : C} {d : D} (p : c ⟶ R₁.obj d) :
+    (adj₂.homEquiv c d).symm (p ≫ (conjugateEquiv adj₁ adj₂ α).app d) =
+      α.app c ≫ (adj₁.homEquiv c d).symm p := by
+  apply (adj₂.homEquiv c d).injective
+  rw [Equiv.apply_symm_apply, ← homEquiv_conjugateEquiv adj₁ adj₂ α, Equiv.apply_symm_apply]
 
 end Adjunction
 

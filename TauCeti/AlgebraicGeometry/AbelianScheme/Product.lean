@@ -75,32 +75,30 @@ lemma prod_toScheme (A B : AbelianScheme S) :
 
 namespace prod
 
+private instance isMonHom_eqToHom_prod_toOver (A B : AbelianScheme S) :
+    IsMonHom (eqToHom (prod_toOver A B)) :=
+  -- `prod_toOver A B` is `rfl`, so `eqToHom (prod_toOver A B)` is defeq to `𝟙 _`.
+  inferInstanceAs (IsMonHom (𝟙 (A.toOver ⊗ B.toOver)))
+
+private instance isMonHom_eqToHom_prod_toOver_symm (A B : AbelianScheme S) :
+    IsMonHom (eqToHom (prod_toOver A B).symm) :=
+  -- `(prod_toOver A B).symm` is `rfl`, so `eqToHom ...` is defeq to `𝟙 _`.
+  inferInstanceAs (IsMonHom (𝟙 (A.toOver ⊗ B.toOver)))
+
 /-- The first projection from a product of abelian schemes. -/
 def fst (A B : AbelianScheme S) : prod A B ⟶ A :=
   let f := eqToHom (prod_toOver A B) ≫ CartesianMonoidalCategory.fst A.toOver B.toOver
-  haveI : IsMonHom (eqToHom (prod_toOver A B)) := by
-    change IsMonHom (eqToHom (rfl : A.toOver ⊗ B.toOver = A.toOver ⊗ B.toOver))
-    rw [eqToHom_refl]
-    infer_instance
   homMk f (IsMonHom.one_hom f) (IsMonHom.mul_hom f)
 
 /-- The second projection from a product of abelian schemes. -/
 def snd (A B : AbelianScheme S) : prod A B ⟶ B :=
   let f := eqToHom (prod_toOver A B) ≫ CartesianMonoidalCategory.snd A.toOver B.toOver
-  haveI : IsMonHom (eqToHom (prod_toOver A B)) := by
-    change IsMonHom (eqToHom (rfl : A.toOver ⊗ B.toOver = A.toOver ⊗ B.toOver))
-    rw [eqToHom_refl]
-    infer_instance
   homMk f (IsMonHom.one_hom f) (IsMonHom.mul_hom f)
 
 /-- Pair two homomorphisms with a common source into a homomorphism into a product. -/
 def lift {A B C : AbelianScheme S} (f : C ⟶ A) (g : C ⟶ B) : C ⟶ prod A B :=
   let h := CartesianMonoidalCategory.lift (toOverHom f) (toOverHom g) ≫
     eqToHom (prod_toOver A B).symm
-  haveI : IsMonHom (eqToHom (prod_toOver A B).symm) := by
-    change IsMonHom (eqToHom (rfl : A.toOver ⊗ B.toOver = A.toOver ⊗ B.toOver))
-    rw [eqToHom_refl]
-    infer_instance
   homMk h (IsMonHom.one_hom h) (IsMonHom.mul_hom h)
 
 @[simp]
@@ -160,11 +158,7 @@ private abbrev grpBinaryFan (A B : AbelianScheme S) :
 
 private def grpBinaryFanIsLimit (A B : AbelianScheme S) :
     IsLimit (grpBinaryFan A B) :=
-  haveI : IsMonHom (eqToIso (prod_toOver A B)).hom := by
-    rw [eqToIso.hom]
-    change IsMonHom (eqToHom (rfl : A.toOver ⊗ B.toOver = A.toOver ⊗ B.toOver))
-    rw [eqToHom_refl]
-    infer_instance
+  haveI : IsMonHom (eqToIso (prod_toOver A B)).hom := isMonHom_eqToHom_prod_toOver A B
   IsLimit.ofIsoLimit
     (CartesianMonoidalCategory.tensorProductIsBinaryProduct (Grp.mk A.toOver) (Grp.mk B.toOver))
     (BinaryFan.ext (Grp.mkIso' (eqToIso (prod_toOver A B))).symm

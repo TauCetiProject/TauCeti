@@ -66,9 +66,8 @@ noncomputable def zpowMap (G : C) [GrpObj G] (n : ℤ) : G ⟶ G :=
 
 /-- `zpowMap G n` is the `n`-th power of `𝟙 G` in `G ⟶ G`. -/
 @[to_additive /-- `zsmulMap G n` is `n • 𝟙 G` in `G ⟶ G`. -/]
-theorem zpowMap_eq_zpow (G : C) [GrpObj G] (n : ℤ) : zpowMap G n = 𝟙 G ^ n := by
-  unfold zpowMap
-  rfl
+theorem zpowMap_eq_zpow (G : C) [GrpObj G] (n : ℤ) : zpowMap G n = 𝟙 G ^ n :=
+  (rfl)
 
 /-- Postcomposing a point `x : X ⟶ G` with `zpowMap G n` raises `x` to the `n`-th power. -/
 @[to_additive (attr := reassoc (attr := simp))]

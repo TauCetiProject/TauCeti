@@ -28,6 +28,9 @@ It also records that smoothness on an open subscheme `U ⊆ X` yields standard s
   sections of the affine target.
 * `SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_of_comp_ι`: standard
   smooth charts of `f` inside an open `U ⊆ X` on which `f` is smooth.
+* `SmoothOfRelativeDimension.comp_ι_of_isStandardSmoothOfRelativeDimension`: conversely, an
+  affine chart on which `f` is standard smooth of relative dimension `m` makes `V.ι ≫ f` smooth
+  of relative dimension `m`.
 
 ## References
 
@@ -96,6 +99,24 @@ theorem exists_isStandardSmoothOfRelativeDimension_of_comp_ι {X Y : Scheme.{u}}
     rw [Scheme.Hom.appIso_hom', Scheme.Hom.appLE_comp_appLE]
   rw [heq] at h
   exact (isStandardSmoothOfRelativeDimension_respectsIso (n := n)).cancel_right_isIso _ _ |>.mp h
+
+/-- On an affine open `V` mapping into an affine open `U` such that the induced ring map is
+standard smooth of relative dimension `m`, `V.ι ≫ f` is smooth of relative dimension `m`. -/
+theorem comp_ι_of_isStandardSmoothOfRelativeDimension {X Y : Scheme.{u}} (f : X ⟶ Y)
+    {U : Y.Opens} (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V)
+    (e : V ≤ f ⁻¹ᵁ U) {m : ℕ}
+    (hm : (f.appLE U V e).hom.IsStandardSmoothOfRelativeDimension m) :
+    SmoothOfRelativeDimension m (V.ι ≫ f) := by
+  have : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e)) := by
+    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension m)]
+    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hm
+  have hcomp : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e) ≫ hU.fromSpec) :=
+    inferInstanceAs (SmoothOfRelativeDimension (m + 0) _)
+  rw [IsAffineOpen.SpecMap_appLE_fromSpec f hU hV] at hcomp
+  have hVι : V.ι ≫ f = hV.isoSpec.hom ≫ hV.fromSpec ≫ f := by
+    rw [← Category.assoc, IsAffineOpen.isoSpec_hom_fromSpec]
+  rw [hVι, ← Nat.zero_add m]
+  exact inferInstance
 
 end AlgebraicGeometry.SmoothOfRelativeDimension
 

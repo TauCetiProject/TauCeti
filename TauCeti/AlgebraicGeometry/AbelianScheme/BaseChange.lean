@@ -117,6 +117,8 @@ lemma toSchemeHom_baseChangeFunctor_map {A B : AbelianScheme S} (f : T ⟶ S) (�
 lemma baseChange_mulBy (A : AbelianScheme S) (f : T ⟶ S) (n : ℤ) :
     (A.baseChange f).mulBy n = (Over.pullback f).map (A.mulBy n) := by
   rw [mulBy_eq_zpowMap, mulBy_eq_zpowMap, Functor.map_zpowMap]
+  -- `(A.baseChange f).toOver` is defeq to `(Over.pullback f).obj A.toOver`
+  -- with its `Functor.grpObjObj` instance.
   rfl
 
 /-! ### Identity, composition, and trivial base-change isomorphisms -/
