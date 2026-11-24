@@ -9,6 +9,7 @@ public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import Mathlib.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Fourier.LpSpace
@@ -29,8 +30,9 @@ pseudodifferential operators, therefore extend uniquely to bounded operators on 
 For `p = 2` and values in a complex Hilbert space `F`, the norm is computed on the Fourier side by
 Plancherel's theorem: the `H^s` norm of `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, and more generally
 an element of `H^s` whose weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` is represented by `G ∈ L²`
-has norm `‖G‖`. The weighted Fourier transform of a Schwartz function lies in every `L^q` for any
-normed complex `F`.
+has norm `‖G‖`. Changing the order `s` of the space that carries a tempered distribution
+multiplies the `L²` Fourier transform of its `L²` part by the corresponding weight. The weighted
+Fourier transform of a Schwartz function lies in every `L^q` for any normed complex `F`.
 
 ## Main declarations
 
@@ -55,6 +57,10 @@ normed complex `F`.
   function.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
   norm is the `L²` norm of the weighted Fourier transform.
+* `BesselPotentialSpace.fourier_toLp_ae_eq_of_toDistr_eq`: elements of `H^s` and `H^t` with the
+  same tempered distribution have `L²` Fourier transforms differing by the weight `⟨ξ⟩ ^ (t - s)`,
+  and `BesselPotentialSpace.memLp_smul_fourier_toLp_of_toDistr_eq`: the weighted Fourier transform
+  `⟨ξ⟩ ^ (s - t) 𝓕 v.toLp` of `v ∈ H^t` is square integrable when `v` lies in `H^s`.
 * `BesselPotentialSpace.fourier_toLp_ae_eq`: for `h ∈ H^{s,2}` whose tempered distribution has the
   Fourier transform `v ∈ L^q`, the `L²` Fourier transform of `J^s h` is `(1 + ‖ξ‖²)^{s/2} v`.
 * `BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq`: Plancherel's identity
@@ -130,6 +136,14 @@ theorem coeFn_toLp_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
       fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u := by
   rw [toLp_toBesselPotentialSpaceCLM]
   exact coeFn_toLp _ p volume
+
+/-- The `H^{s,p}` norm of a Schwartz function `u` is the `Lᵖ` norm of the Schwartz function
+`J^s u`. -/
+theorem norm_toBesselPotentialSpaceCLM_eq_eLpNorm (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM s p u‖ =
+      (eLpNorm (fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u) p
+        volume).toReal := by
+  rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM, norm_toLp]
 
 @[simp]
 theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
@@ -473,6 +487,37 @@ theorem norm_eq_of_smulLeftCLM_fourier_eq {u : H^{s}(E, F)} {G : Lp F 2 (volume 
     (h : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) = G) :
     ‖u‖ = ‖G‖ := by
   rw [← norm_fourier_toLp_eq, fourier_toLp_eq_of_smulLeftCLM_fourier_eq h]
+
+/-- **Changing the order of the carrier.** If `u ∈ H^s` and `v ∈ H^t` have the same tempered
+distribution, the `L²` Fourier transforms of their `L²` parts differ by the weight `⟨ξ⟩ ^ (t - s)`:
+`𝓕 v.toLp = ⟨ξ⟩ ^ (t - s) 𝓕 u.toLp` almost everywhere. -/
+theorem fourier_toLp_ae_eq_of_toDistr_eq {t : ℝ} {u : H^{s}(E, F)} {v : H^{t}(E, F)}
+    (h : u.toDistr = v.toDistr) :
+    (𝓕 v.toLp : Lp F 2 (volume : Measure E)) =ᵐ[volume] fun ξ ↦
+      (((1 + ‖ξ‖ ^ 2) ^ ((t - s) / 2) : ℝ) : ℂ) • (𝓕 u.toLp : Lp F 2 (volume : Measure E)) ξ := by
+  have hw (r : ℝ) : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)).HasTemperateGrowth :=
+    Complex.ofRealCLM.hasTemperateGrowth.comp
+      (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _)
+  refine Lp.ae_eq_of_toTemperedDistribution_apply_eq _
+    ((Lp.memLp _).locallyIntegrable one_le_two |>.continuous_smul (hw (t - s)).1.continuous)
+    fun φ ↦ ?_
+  rw [← Lp.smulLeftCLM_toTemperedDistribution_apply (hw (t - s)),
+    toTemperedDistribution_fourier_toLp, toTemperedDistribution_fourier_toLp,
+    smulLeftCLM_smulLeftCLM_apply (hw s) (hw (t - s)), h]
+  congr 3
+  funext x
+  rw [Pi.mul_apply, ← Complex.ofReal_mul, ← TauCeti.one_add_norm_sq_rpow_add, add_sub_cancel]
+
+/-- If the tempered distribution of `v ∈ H^t` lies in `H^s`, then the weighted Fourier transform
+`⟨ξ⟩ ^ (s - t) 𝓕 v.toLp = ⟨ξ⟩ ^ s 𝓕 v` of its `L²` part is square integrable. -/
+theorem memLp_smul_fourier_toLp_of_toDistr_eq {t : ℝ} {u : H^{s}(E, F)} {v : H^{t}(E, F)}
+    (h : u.toDistr = v.toDistr) :
+    MemLp (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((s - t) / 2) : ℝ) : ℂ) •
+      (𝓕 v.toLp : Lp F 2 (volume : Measure E)) ξ) 2 volume := by
+  refine (Lp.memLp (𝓕 u.toLp)).ae_eq ?_
+  filter_upwards [fourier_toLp_ae_eq_of_toDistr_eq h] with ξ hξ
+  rw [hξ, smul_smul, ← Complex.ofReal_mul, ← TauCeti.one_add_norm_sq_rpow_add, sub_add_sub_cancel',
+    sub_self, zero_div, Real.rpow_zero, Complex.ofReal_one, one_smul]
 
 open scoped LineDeriv Real in
 /-- **Plancherel's identity for `H^{1,2}`.** Let `b` be an orthonormal basis of `E` and let

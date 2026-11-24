@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Second
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Variance
 import Mathlib.Analysis.PSeries
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Almost-sure convergence of Wigner spectral moments
@@ -111,8 +112,8 @@ theorem ae_tendsto_second_spectralMoment {V σ2 : ℝ}
     have hξi : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P := fun ij ↦
       Integrable.of_integral_ne_zero (by rw [hξ ij]; exact one_ne_zero)
     have hηi (i : ℕ) : Integrable (fun ω ↦ η i ω ^ 2) P := by
-      exact ((hmem i (.inl ⟨i, Nat.lt_succ_self i⟩)).integrable (by norm_num)).congr
-        (ae_of_all P (fun ω ↦ wignerCoordinateSquare_inl (i + 1) ⟨i, Nat.lt_succ_self i⟩ ω))
+      exact ((hmem i (.inr ⟨i, Nat.lt_succ_self i⟩)).integrable (by norm_num)).congr
+        (ae_of_all P (fun ω ↦ wignerCoordinateSquare_inr (i + 1) ⟨i, Nat.lt_succ_self i⟩ ω))
     have h := integral_re_trace_wignerMatrix_mul_self hξi hξ hηi hη (n + 1)
     have heq (ω : Ω) :
         (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
@@ -167,9 +168,9 @@ theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
   have hmem (n : ℕ) : MemLp (fun ω ↦ ∫ x, x ^ k
       ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) 2 P :=
-    memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2)
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp)
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp) n
+    memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2) (fun _ ↦ inferInstance) n
+      (fun ij _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp ij)
+      (fun i _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp i)
   have hs : Summable fun n : ℕ ↦ 2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2 := by
     simpa only [Nat.cast_add, Nat.cast_one, div_eq_mul_inv] using
       ((summable_nat_add_iff 1).2
@@ -224,10 +225,12 @@ theorem ae_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
   have hmean := tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
     (fun _ ↦ hindep) (fun _ ↦ hξzero) (fun _ ↦ hηzero)
     (fun _ ij ↦ (hξp ij).mono_exponent hle) (fun _ i ↦ (hηp i).mono_exponent hle)
-    (fun _ ij ↦ (hξp ij).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-      (Real.sqrt_le_sqrt (hξ ij)))
-    (fun _ i ↦ (hηp i).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-      (Real.sqrt_le_sqrt (hη i)))
+    (fun _ ij ↦ ((hξp ij).integrable_norm_pow'
+      |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
+        (Real.sqrt_le_sqrt (hξ ij)))
+    (fun _ i ↦ ((hηp i).integrable_norm_pow'
+      |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
+        (Real.sqrt_le_sqrt (hη i)))
   filter_upwards [ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
     hindep hξzero hηzero hξp hηp hξ hη] with ω hω
   simpa only [sub_add_cancel, zero_add] using hω.add hmean

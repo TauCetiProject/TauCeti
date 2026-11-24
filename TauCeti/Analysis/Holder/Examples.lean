@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import TauCeti.MeasureTheory.Function.Campanato
 public import Mathlib.Basic.Real.Sign
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic

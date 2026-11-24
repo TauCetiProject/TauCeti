@@ -51,6 +51,8 @@ embeddings sending some increasing `m`-tuple into a prescribed set `T` of `m`-tu
 * `Nat.card_embedding_mem_eq_prod_of_injective`: for distinct disjoint cells, the count is the
   product of the cell sizes.
 * `Nat.card_embedding_mem_le_prod`: the count never exceeds the product of the cell sizes.
+* `TauCeti.natCard_embedding_map_univ_eq_factorial`: an `n`-element type maps onto a prescribed
+  `n`-element finset by exactly `n!` embeddings.
 * `Function.Embedding.natCard_embedding_comp_eq_le`: at most `card V ^ (card β - card α)`
   embeddings `f : β ↪ V` satisfy `f ∘ e = x`.
 * `Finset.natCard_embedding_exists_comp_mem_le`: at most
@@ -191,6 +193,25 @@ theorem card_embedding_mem_le_prod [Fintype ι] (c : ι → Finset V) :
     Subtype.ext (Embedding.ext (congrFun (congrArg Subtype.val h)))
 
 end Nat
+
+namespace TauCeti
+
+/-- An `n`-element type maps onto a prescribed `n`-element finset by exactly `n!` embeddings. -/
+theorem natCard_embedding_map_univ_eq_factorial {α β : Type*} [Fintype α] {t : Finset β}
+    (ht : #t = Fintype.card α) :
+    Nat.card {f : α ↪ β // univ.map f = t} = (Fintype.card α).factorial := by
+  classical
+  -- An embedding maps the elements of `α` onto `t` exactly when it maps them into `t`.
+  have h (f : α ↪ β) : univ.map f = t ↔ ∀ a, f a ∈ t :=
+    ⟨fun hf a ↦ hf ▸ mem_map_of_mem f (mem_univ a), fun hf ↦ eq_of_subset_of_card_le
+      (fun x hx ↦ by obtain ⟨a, -, rfl⟩ := mem_map.1 hx; exact hf a)
+      (by rw [card_map, card_univ, ht])⟩
+  -- These are the embeddings of `α` into `t`.
+  rw [Nat.card_congr ((Equiv.subtypeEquivRight h).trans (Equiv.codRestrict α (t : Set β))),
+    Nat.card_eq_fintype_card, Fintype.card_embedding_eq]
+  simp [ht, Nat.descFactorial_self]
+
+end TauCeti
 
 namespace Function.Embedding
 

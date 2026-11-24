@@ -19,7 +19,9 @@ only knows its summands. Over a division ring every summand is free, so this is 
 dimension count for vector spaces.
 
 `TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep` is the same count for an independent family
-whose supremum need not be the whole module.
+whose supremum need not be the whole module, and
+`TauCeti.finrank_biSup_eq_sum_finrank_of_iSupIndep` for the members of such a family indexed by a
+finite set.
 
 `TauCeti.finsum_finrank_eq_finrank_of_isInternal` is the same count for a decomposition indexed by
 an arbitrary type in which all but finitely many summands vanish, written with `finsum`. A graded
@@ -70,6 +72,14 @@ theorem finrank_iSup_eq_sum_finrank_of_iSupIndep [Fintype ι] (h : iSupIndep V) 
   rw [← DirectSum.range_coeLinearMap,
     LinearMap.finrank_range_of_inj (f := DirectSum.coeLinearMap V) h.dfinsupp_lsum_injective,
     Module.finrank_directSum]
+
+/-- **The rank of the supremum of a finite part of an independent family of submodules is the sum
+of their ranks.** -/
+theorem finrank_biSup_eq_sum_finrank_of_iSupIndep (h : iSupIndep V) (s : Finset ι) :
+    finrank R ↥(⨆ i ∈ s, V i) = ∑ i ∈ s, finrank R (V i) := by
+  rw [iSup_subtype', ← Finset.sum_coe_sort s]
+  exact finrank_iSup_eq_sum_finrank_of_iSupIndep (V := fun i : s ↦ V i)
+    (h.comp Subtype.val_injective)
 
 /-- **The ranks of the summands of an internal direct sum add up**, for a decomposition indexed by
 an arbitrary type in which only finitely many summands are nonzero. -/

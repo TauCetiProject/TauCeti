@@ -264,7 +264,7 @@ theorem IsIsolatingRank.exists_gt_of_not_hasVaughtDichotomy
     ∃ c ∈ modelsOf (V := ℕ) φ, β < ρ c := by
   by_contra! hle
   have hcount : Countable (Quotient (isoSetoidOn ℕ φ)) := by
-    rw [isoSetoidOn, hρ.comap_isoSetoid_eq_bfEquivSetoid hle]
+    rw [isoSetoidOn, classIso, hρ.comap_isoSetoid_eq_bfEquivSetoid hle]
     exact (bfScattered_modelsOf_of_not_hasVaughtDichotomy h).countable_quotient hβ
   exact not_countable_quotient_isoSetoidOn_nat_of_not_hasVaughtDichotomy h hcount
 

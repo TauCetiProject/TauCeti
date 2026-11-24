@@ -16,14 +16,16 @@ import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 Let `h : M → N` be a smooth diffeomorphism whose differential carries a distribution `D` on `M`
 onto a distribution `D'` on `N`: a tangent vector `v` at `x` lies in `D x` exactly when `dh_x v`
 lies in `D' (h x)`. Then the cotangent lift of `h`, which sends a covector `p` at `x` to
-`p ∘ (dh_x)⁻¹` at `h x`, carries covectors annihilating `D` to covectors annihilating `D'`. This
-file restricts the cotangent lift to the annihilators:
+`p ∘ (dh_x)⁻¹` at `h x`, carries covectors annihilating `D` exactly to covectors
+annihilating `D'` (`Diffeomorph.cotangent_snd_mem_annihilatorSpace_iff`). This file restricts
+the cotangent lift to the annihilators:
 
 * `Diffeomorph.annihilatorMap h P hDD'` is the map `D⁰ → D'⁰`, `(x, p) ↦ (h x, p ∘ (dh_x)⁻¹)`,
   between the total spaces of the annihilators (`TauCeti.CotangentBundle.annihilatorSpace`). Under
   the inclusions of the annihilators into the cotangent bundles it is the cotangent lift
   `Diffeomorph.cotangent` (`Diffeomorph.annihilatorInclusion_annihilatorMap`). It respects the
-  pairing of covectors with tangent vectors, preserves the zero section and its complement, and
+  pairing of covectors with tangent vectors, is linear on fibres
+  (`Diffeomorph.annihilatorMap_mk_smul`), preserves the zero section and its complement, and
   is functorial: the lifts of the identity, of a composite and of the inverse are the identity, the
   composite and the inverse.
 * For smooth distributions of the same corank `r` on finite-dimensional manifolds, whose
@@ -94,6 +96,21 @@ theorem comp_mfderiv_symm_mem_annihilatorSpace (h : M ≃ₘ⟮I, J⟯ N)
   rw [← h.mfderiv_apply_mfderiv_symm_apply (by simp) x w] at hw
   exact hw
 
+/-- **Cotangent lifts preserve annihilators.** If the differential of `h` carries `D` onto `D'`,
+then the cotangent lift of `h` sends a covector into the annihilator of `D'` exactly when the
+covector lies in the annihilator of `D`. -/
+theorem cotangent_snd_mem_annihilatorSpace_iff [IsManifold I 2 M] [IsManifold J 2 N]
+    (h : M ≃ₘ⟮I, J⟯ N) (hDD' : ∀ x v, v ∈ D x ↔ mfderiv I J h x v ∈ D' (h x))
+    {z : CotangentBundle I M} :
+    (h.cotangent z).snd ∈ annihilatorSpace J D' (h z.proj) ↔
+      z.snd ∈ annihilatorSpace I D z.proj := by
+  refine ⟨fun hz ↦ mem_annihilatorSpace_iff.2 fun v hv ↦ ?_,
+    fun hz ↦ mem_annihilatorSpace_iff.2 fun w hw ↦ ?_⟩
+  · exact (cotangent_snd_apply_mfderiv h z v).symm.trans
+      (mem_annihilatorSpace_iff.1 hz _ ((hDD' _ v).1 hv))
+  · refine (cotangent_snd_apply h z w).trans (mem_annihilatorSpace_iff.1 hz _ ?_)
+    rwa [h.mem_iff_mfderiv_symm_apply_mem (by simp) hDD', h.symm_apply_apply] at hw
+
 /-- The **lift of a diffeomorphism to annihilators.** If the differential of `h` carries `D` onto
 `D'`, the covector `p` annihilating `D` at `x` goes to the covector `p ∘ (dh_x)⁻¹` annihilating `D'`
 at `h x`, the inverse differential being the differential of `h.symm` at `h x`. This is the
@@ -159,6 +176,13 @@ theorem annihilatorMap_snd_eq_zero_iff {z : TotalSpace P fun x ↦ annihilatorSp
 theorem annihilatorMap_zeroSection (x : M) :
     h.annihilatorMap P hDD' (zeroSection P (fun x ↦ annihilatorSpace I D x) x) =
       zeroSection P (fun y ↦ annihilatorSpace J D' y) (h x) :=
+  totalSpace_annihilatorSpace_ext rfl fun _ ↦ rfl
+
+/-- **The lift of `h` to annihilators is linear on fibres:** rescaling a covector before lifting it
+rescales the lifted covector by the same scalar. -/
+theorem annihilatorMap_mk_smul (z : TotalSpace P fun x ↦ annihilatorSpace I D x) (c : 𝕜) :
+    h.annihilatorMap P hDD' (TotalSpace.mk' P z.proj (c • z.snd)) =
+      TotalSpace.mk' P (h.annihilatorMap P hDD' z).proj (c • (h.annihilatorMap P hDD' z).snd) :=
   totalSpace_annihilatorSpace_ext rfl fun _ ↦ rfl
 
 /-- Lifting `h` and then `h⁻¹` to annihilators returns the original covector. -/
