@@ -209,8 +209,8 @@ theorem
 end Cylinder
 
 /-- Heat subsolutions lie below supersolutions on a compact spatial domain. -/
-theorem compactDomain_heat_comparison [I.Boundaryless] [T2Space M]
-    (g : ℝ → ContMDiffRiemannianMetric I 1 E (TangentSpace I : M → Type _))
+theorem compactDomain_heat_comparison [I.Boundaryless] [T2Space M] {n : ℕ∞ω}
+    (g : ℝ → ContMDiffRiemannianMetric I n E (TangentSpace I : M → Type _)) (hn : 1 ≤ n)
     {a b : ℝ} {U C : Set M}
     (hU : IsOpen U) (hC : IsCompact C) (hCU : C ⊆ U)
     (u v f w : ℝ → M → ℝ)
@@ -226,9 +226,11 @@ theorem compactDomain_heat_comparison [I.Boundaryless] [T2Space M]
     (hboundary : ∀ t ∈ Icc a b, ∀ x ∈ C \ interior C, u t x ≤ f t x)
     (hevol : ∀ t ∈ Ioo a b, ∀ x ∈ interior C,
       let : RiemannianBundle (TangentSpace I : M → Type _) := ⟨(g t).toRiemannianMetric⟩
+      let : IsContMDiffRiemannianBundle I 1 E (TangentSpace I : M → Type _) :=
+        IsContMDiffRiemannianBundle.of_le hn
       v t x - laplaceBeltrami I (u t) x ≤ w t x - laplaceBeltrami I (f t) x) :
     ∀ t ∈ Icc a b, ∀ x ∈ C, u t x ≤ f t x := fun t ht x hx ↦
-  le_of_deriv_sub_laplaceBeltrami_sub_mvfderiv_sub_le_of_le_parabolicBoundary (g := g) le_rfl
+  le_of_deriv_sub_laplaceBeltrami_sub_mvfderiv_sub_le_of_le_parabolicBoundary (g := g) hn
     (b := fun _ _ ↦ 0) (F := fun _ _ _ ↦ 0) (L := 0) hC hu hf
     (fun t ht x hx ↦ (hus t ht).contMDiffAt (hU.mem_nhds (hCU (interior_subset hx))))
     (fun t ht x hx ↦ (hfs t ht).contMDiffAt (hU.mem_nhds (hCU (interior_subset hx))))
