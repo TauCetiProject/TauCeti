@@ -102,7 +102,7 @@ therefore makes every shifted tail integrable.
   forms for a measure on pairs of real variables;
 * `TauCeti.setLIntegral_ofReal_max_sub_rpow_le_tsum` — a dyadic layer-cake bound for a power of
   a positive part, through its superlevel sets at the heights `m + 2^{k+1}`, `k ∈ ℤ`;
-* `TauCeti.integral_exp_neg_le_add_sum_measureReal_setOf_lt` — a layer-cake bound for
+* `Filter.EventuallyLE.integral_exp_neg_le_add_sum_measureReal_setOf_lt` — a layer-cake bound for
   `∫ exp (-f)` through the sublevel sets of `f` at the integer heights `j + 1`, `j < N`;
 * `TauCeti.integral_indicator_Iio_sub_indicator_Iio_zero` — the signed layer-cake representation
   `a = ∫ (1_{t < a} - 1_{t < 0}) dt` of a real number, with
@@ -680,8 +680,8 @@ theorem setLIntegral_ofReal_max_sub_rpow_le_tsum {ν : Measure α} {Ω : Set α}
 /-- **A discrete layer-cake bound for `exp (-f)`.** For a finite measure `ν`, a function `f`
 with `0 ≤ f` almost everywhere and `N : ℕ`,
 `∫ x, exp (-f x) ∂ν ≤ exp (-N) ν(univ) + ∑_{j < N} exp (-j) ν {x | f x < j + 1}`. -/
-theorem integral_exp_neg_le_add_sum_measureReal_setOf_lt {ν : Measure α} [IsFiniteMeasure ν]
-    {f : α → ℝ} (hf0 : 0 ≤ᵐ[ν] f) (N : ℕ) :
+theorem _root_.Filter.EventuallyLE.integral_exp_neg_le_add_sum_measureReal_setOf_lt
+    {ν : Measure α} [IsFiniteMeasure ν] {f : α → ℝ} (hf0 : 0 ≤ᵐ[ν] f) (N : ℕ) :
     ∫ x, Real.exp (-f x) ∂ν ≤ Real.exp (-(N : ℝ)) * ν.real univ +
       ∑ j ∈ Finset.range N, Real.exp (-(j : ℝ)) * ν.real {x | f x < j + 1} := by
   by_cases hint : Integrable (fun x => Real.exp (-f x)) ν
@@ -711,7 +711,9 @@ theorem integral_exp_neg_le_add_sum_measureReal_setOf_lt {ν : Measure α} [IsFi
     have hsum0 : 0 ≤ ∑ j ∈ Finset.range N, (S j).indicator (fun _ => Real.exp (-(j : ℝ))) x :=
       Finset.sum_nonneg fun j _ => indicator_nonneg (fun _ _ => (Real.exp_pos _).le) _
     rcases lt_or_ge (g x) N with h | h
-    · have hxS : x ∈ S ⌊g x⌋₊ := Nat.lt_floor_add_one (g x)
+    · have hxS : x ∈ S ⌊g x⌋₊ := by
+        simp only [S, mem_ofPred_eq]
+        exact Nat.lt_floor_add_one (g x)
       calc Real.exp (-g x) ≤ Real.exp (-(⌊g x⌋₊ : ℝ)) :=
             Real.exp_le_exp.2 (neg_le_neg (Nat.floor_le hx))
         _ = (S ⌊g x⌋₊).indicator (fun _ => Real.exp (-(⌊g x⌋₊ : ℝ))) x :=

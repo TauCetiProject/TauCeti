@@ -26,10 +26,12 @@ points of a box is `exp (t R²)` times the `n`-th power of a one-dimensional Gau
 bound.
 
 Rounding the coordinates of a real vector `x` gives an integer point at squared distance at most
-`(1 / 8) * ∑ k, (1 - cos (2π x k))` from `x`. A product of moduli of characteristic functions is
-bounded by the exponential of minus such a sum, so it is large only at frequencies whose dilation
-is close to the integer lattice. This is how small-ball estimates reach the arithmetic structure of
-the coefficients.
+`(1 / 8) * ∑ k, (1 - cos (2π x k))` from `x`, so `x` is close to the integer lattice wherever this
+sum is small. In small-ball estimates, a product of moduli of characteristic functions is bounded
+by an average, over a symmetrization variable `w`, of the exponential of minus such a sum. For each
+fixed `w`, the frequencies at which the sum is small are therefore those whose dilation is close to
+the integer lattice. This is how small-ball estimates reach the arithmetic structure of the
+coefficients.
 
 ## Main definitions
 
@@ -40,8 +42,8 @@ the coefficients.
 * `TauCeti.finite_setOf_norm_latticePoint_le`: a closed ball contains finitely many lattice
   points.
 * `TauCeti.card_le_of_forall_norm_latticePoint_le`: the bound `(e (1 + √π R / √n))ⁿ`.
-* `TauCeti.eight_mul_norm_sub_latticePoint_round_sq_le_sum_one_sub_cos`: the distance to the
-  rounded integer point through `∑ k, (1 - cos (2π x k))`.
+* `EuclideanSpace.eight_mul_norm_sub_latticePoint_round_sq_le_sum_one_sub_cos`: the distance to
+  the rounded integer point through `∑ k, (1 - cos (2π x k))`.
 
 ## References
 
@@ -82,7 +84,8 @@ variable {ι : Type*} [Fintype ι]
 `latticePoint fun k ↦ round (x k)`, at squared distance at most
 `(1 / 8) * ∑ k, (1 - cos (2π x k))` from `x`. So `x` is close to an integer point wherever this
 trigonometric sum is small. -/
-theorem eight_mul_norm_sub_latticePoint_round_sq_le_sum_one_sub_cos (x : EuclideanSpace ℝ ι) :
+theorem _root_.EuclideanSpace.eight_mul_norm_sub_latticePoint_round_sq_le_sum_one_sub_cos
+    (x : EuclideanSpace ℝ ι) :
     8 * ‖x - latticePoint fun k ↦ round (x k)‖ ^ 2 ≤ ∑ k, (1 - cos (2 * π * x k)) := by
   rw [EuclideanSpace.real_norm_sq_eq, Finset.mul_sum]
   refine Finset.sum_le_sum fun k _ ↦ ?_

@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.HasLaw
-public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.LeastCommonDenominator
 import Mathlib.Algebra.Order.Field.GeomSum
-import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Analysis.Bochner.CharFun.Basic
 import TauCeti.MeasureTheory.Integral.LayerCake
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Modulus
@@ -18,8 +17,8 @@ import TauCeti.Probability.Independence.CharacteristicFunction
 /-!
 # Small-ball probabilities through the least common denominator
 
-Let `ξ k` be independent real random variables with a common law `μ` satisfying the Lévy
-concentration bound `μ (closedBall v 1) ≤ 1 - b` for every `v`, and let `a` be a nonzero real
+Let `ξ k` be independent real random variables with a common law `μ` satisfying the
+concentration bound `μ (ball v 1) ≤ 1 - b` for every `v`, and let `a` be a nonzero real
 vector. If the essential least common denominator `LCD_{α,γ}(a)` of `a`
 (`TauCeti.leastCommonDenominator`) is at least `L > 0`, then for every `ε ≥ 0` and every `v`,
 
@@ -27,9 +26,9 @@ vector. If the essential least common denominator `LCD_{α,γ}(a)` of `a`
 
 (`iIndepFun.measureReal_abs_sum_mul_sub_le_le_of_ofReal_le_leastCommonDenominator`).
 So the less arithmetic structure the coefficients have, the more spread out the weighted sum is:
-for `ε ≥ L⁻¹` the small-ball probability is of order `ε / (γ ‖a‖ √b)`, up to the error
-`exp (1 - α² b / 2)`, which is exponentially small in `n` for `α` of order `√n`. For an
-incompressible unit vector `a`,
+for `ε ≥ L⁻¹` the small-ball probability is at most of order `ε / (γ ‖a‖ √b)`, up to the error
+`exp (1 - α² b / 2)`, which is exponentially small in `n` for `α` of order `√n` when `b` is
+bounded below by a positive constant. For an incompressible unit vector `a`,
 `TauCeti.IsIncompressibleVector.ofReal_sqrt_div_two_le_leastCommonDenominator` provides `L` of
 order `√n`. Applied to the coordinates of a random vector against a unit normal of an independent
 random hyperplane, this is how Rudelson and Vershynin bound the distance from a random vector to
@@ -38,9 +37,10 @@ random matrix.
 
 The proof combines Esseen's inequality
 (`ProbabilityTheory.iIndepFun.measureReal_abs_sum_mul_sub_le_le_integral_prod_norm_charFun`) with
-the conditioning bound `TauCeti.prod_norm_charFun_le_setAverage_exp`, applied on the set of
-`|w| ≥ 1`, which carries mass at least `b` for the symmetrized law of `μ`. For a fixed `w` with
-`|w| ≥ 1`, the frequencies `t` at which `∑ k, (1 - cos (a k * t * w))` is small bring the dilation
+the conditioning bound `Finset.prod_norm_charFun_le_setAverage_exp`, applied on the set of
+`|w| ≥ 1`, which carries mass at least `b` for the symmetrized law of `μ`
+(`TauCeti.le_measureReal_map_sub_prod_setOf_le_abs`). For a fixed `w` with `|w| ≥ 1`, the
+frequencies `t` at which `∑ k, (1 - cos (a k * t * w))` is small bring the dilation
 `(t w / (2π)) • a` close to an integer point, and the recurrence bound
 `TauCeti.volume_setOf_mem_Icc_exists_norm_smul_sub_le_le` controls their measure through the LCD.
 
@@ -48,7 +48,8 @@ the conditioning bound `TauCeti.prod_norm_charFun_le_setAverage_exp`, applied on
 
 * M. Rudelson and R. Vershynin, *Smallest singular value of a random rectangular matrix*,
   Comm. Pure Appl. Math. 62 (2009), Theorem 3.3, here in dimension `m = 1` and with explicit
-  constants. Their condition `ε ≥ 1 / LCD_{α,γ}(a)` is replaced by the term `L⁻¹` of the bound.
+  constants. Their condition `ε ≥ 1 / LCD_{α,γ}(a)` is replaced by the term `L⁻¹` of the bound,
+  and their concentration hypothesis on closed balls is weakened to open balls.
 * O. Friedland and S. Sodin, *Bounds on the concentration function in terms of Diophantine
   approximation*, C. R. Math. Acad. Sci. Paris 345 (2007), 513–518. Rudelson and Vershynin follow
   an argument communicated to them by Friedland and Sodin, and so does the proof here.
@@ -88,11 +89,12 @@ private theorem volume_setOf_mul_sum_one_sub_cos_lt_inter_Ioc_le {ε c w r : ℝ
   have hsub : {t | c * ∑ k, (1 - cos (a k * t * w)) < r} ∩ Ioc (-ε⁻¹) ε⁻¹ ⊆
       (· * d) ⁻¹' {θ ∈ Icc (-T) T | ∃ p : ι → ℤ, ‖θ • a - latticePoint p‖ ≤ s} := by
     rintro t ⟨hlt, ht⟩
-    replace hlt : c * ∑ k, (1 - cos (a k * t * w)) < r := hlt
+    rw [mem_ofPred_eq] at hlt
     refine ⟨?_, fun k ↦ round (((t * d) • a) k), ?_⟩
     · rw [mem_Icc, ← abs_le, abs_mul, hT, div_eq_inv_mul]
       exact mul_le_mul_of_nonneg_right (abs_le.2 ⟨ht.1.le, ht.2⟩) (abs_nonneg d)
-    have h8 := eight_mul_norm_sub_latticePoint_round_sq_le_sum_one_sub_cos ((t * d) • a)
+    have h8 :=
+      EuclideanSpace.eight_mul_norm_sub_latticePoint_round_sq_le_sum_one_sub_cos ((t * d) • a)
     have hsum : ∑ k, (1 - cos (2 * π * ((t * d) • a) k)) = ∑ k, (1 - cos (a k * t * w)) :=
       Finset.sum_congr rfl fun k _ ↦ by
         rw [PiLp.smul_apply, smul_eq_mul, hd]
@@ -122,15 +124,17 @@ private theorem volume_setOf_mul_sum_one_sub_cos_lt_inter_Ioc_le {ε c w r : ℝ
         div_le_iff₀ (by positivity)]
       nlinarith [pi_pos]
 
-/-- For `1 ≤ |w|`, `c > 0` and `j + 1 < 2 c α²`, the frequencies `t ∈ (-ε⁻¹, ε⁻¹]` at which
+/-- For `1 ≤ |w|` and `j + 1 < 2 c α²`, the frequencies `t ∈ (-ε⁻¹, ε⁻¹]` at which
 `c * ∑ k, (1 - cos (a k * t * w)) < j + 1` form a set of measure at most
 `(4 / (ε L) + 2π) / (γ ‖a‖ √(2c)) * (3 / 2) ^ j`, where `L > 0` is at most the LCD of `a`. -/
 private theorem measureReal_setOf_mul_sum_one_sub_cos_lt_inter_Ioc_le {ε c w : ℝ} (hL : 0 < L)
     (hγ : 0 < γ) (ha : a ≠ 0) (hLa : ENNReal.ofReal L ≤ leastCommonDenominator α γ a)
-    (hε : 0 < ε) (hc : 0 < c) (hw : 1 ≤ |w|) (hα : 0 < α) {j : ℕ}
+    (hε : 0 < ε) (hw : 1 ≤ |w|) (hα : 0 < α) {j : ℕ}
     (hj : (j : ℝ) + 1 < 2 * c * α ^ 2) :
     volume.real ({t | c * ∑ k, (1 - cos (a k * t * w)) < j + 1} ∩ Ioc (-ε⁻¹) ε⁻¹) ≤
       (4 / (ε * L) + 2 * π) / (γ * ‖a‖ * √(2 * c)) * (3 / 2) ^ j := by
+  -- `c > 0`, since `2 c α² > j + 1 > 0`.
+  have hc : 0 < c := by nlinarith [sq_nonneg α, (Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
   -- `√(j + 1) ≤ (3 / 2) ^ j`, since `j + 1 ≤ (9 / 4) ^ j` by Bernoulli's inequality.
   have hsqrt : √(((j : ℝ) + 1) / (2 * c)) ≤ (3 / 2) ^ j / √(2 * c) := by
     rw [sqrt_div' _ (by positivity)]
@@ -166,11 +170,9 @@ private theorem setIntegral_exp_neg_mul_sum_one_sub_cos_le {ε c w : ℝ} (hL : 
   have hfm : Measurable f := by fun_prop
   have hexp : ∀ j : ℕ, exp (-(j : ℝ)) ≤ (1 / 2) ^ j := fun j ↦ by
     rw [← mul_neg_one, exp_natCast_mul]
-    refine pow_le_pow_left₀ (exp_pos _).le ?_ j
-    rw [exp_neg, inv_le_comm₀ (exp_pos _) (by norm_num)]
-    linarith [add_one_le_exp (1 : ℝ)]
+    exact pow_le_pow_left₀ (exp_pos _).le exp_neg_one_lt_half.le j
   -- The layer-cake bound at the heights `j + 1 ≤ ⌊c α²⌋₊`, each below `2 c α²`.
-  have hlc := integral_exp_neg_le_add_sum_measureReal_setOf_lt
+  have hlc := Filter.EventuallyLE.integral_exp_neg_le_add_sum_measureReal_setOf_lt
     (ν := volume.restrict (Ioc (-ε⁻¹) ε⁻¹)) (ae_of_all _ hf0) N
   rw [measureReal_restrict_apply_univ, volume_real_Ioc_of_le (by linarith [inv_pos.2 hε])] at hlc
   refine hlc.trans ?_
@@ -188,7 +190,7 @@ private theorem setIntegral_exp_neg_mul_sum_one_sub_cos_le {ε c w : ℝ} (hL : 
         calc exp (-(j : ℝ)) * volume.real ({t | f t < j + 1} ∩ Ioc (-ε⁻¹) ε⁻¹) ≤
               (1 / 2) ^ j * (K * (3 / 2) ^ j) :=
               mul_le_mul (hexp j) (measureReal_setOf_mul_sum_one_sub_cos_lt_inter_Ioc_le hL hγ ha
-                hLa hε hc hw hα hj') measureReal_nonneg (by positivity)
+                hLa hε hw hα hj') measureReal_nonneg (by positivity)
           _ = K * (3 / 4) ^ j := by rw [mul_comm, mul_assoc, ← mul_pow]; norm_num
     _ ≤ exp (1 - c * α ^ 2) * (2 / ε) + K * 4 := by
         rw [← Finset.mul_sum, Finset.range_eq_Ico]
@@ -217,12 +219,9 @@ private theorem intervalIntegral_prod_norm_charFun_le {μ : Measure ℝ} [IsProb
   have hρA : ρ A ≠ 0 := fun h ↦ by simp [p, Measure.real, h] at hp
   set g : ℝ → ℝ → ℝ := fun t w ↦ exp (-(p / 2 * ∑ k, (1 - cos (a k * t * w))))
   have hgI : Integrable (Function.uncurry g) ((volume.restrict I).prod (ρ.restrict A)) :=
-    (integrable_const (1 : ℝ)).mono
-      (by fun_prop : Continuous (Function.uncurry g)).aestronglyMeasurable (ae_of_all _ fun x ↦ by
-        rw [norm_one, Function.uncurry_apply_pair, Real.norm_of_nonneg (exp_pos _).le,
-          exp_le_one_iff, neg_nonpos]
-        exact mul_nonneg (div_nonneg measureReal_nonneg zero_le_two)
-          (Finset.sum_nonneg fun k _ ↦ sub_nonneg.2 (cos_le_one _)))
+    Integrable.of_bound (by fun_prop : Continuous (Function.uncurry g)).aestronglyMeasurable 1
+      (ae_of_all _ fun _ ↦ (Real.norm_of_nonneg (exp_pos _).le).trans_le
+        (Finset.univ.exp_neg_mul_sum_one_sub_cos_le_one _ (half_pos hp).le))
   -- For each `w` with `|w| ≥ 1`, the inner integral is at most `B`.
   have hw : ∀ w ∈ A, ∫ t in I, g t w ≤ B := by
     intro w hw
@@ -233,7 +232,7 @@ private theorem intervalIntegral_prod_norm_charFun_le {μ : Measure ℝ} [IsProb
         setIntegral_mono
           (by fun_prop : Continuous fun t ↦ ∏ k, ‖charFun μ (a k * t)‖).integrableOn_Ioc
           (hgI.integral_prod_left.const_mul _) fun t ↦
-            (prod_norm_charFun_le_setAverage_exp Finset.univ (fun k ↦ a k * t) hρA).trans_eq
+            (Finset.univ.prod_norm_charFun_le_setAverage_exp (fun k ↦ a k * t) hρA).trans_eq
               (by rw [setAverage_eq, smul_eq_mul])
     _ = p⁻¹ * ∫ t in I, ∫ w in A, g t w ∂ρ := integral_const_mul _ _
     _ = p⁻¹ * ∫ w in A, (∫ t in I, g t w) ∂ρ := by rw [integral_integral_swap hgI]
@@ -242,14 +241,14 @@ private theorem intervalIntegral_prod_norm_charFun_le {μ : Measure ℝ} [IsProb
           (setIntegral_mono_on hgI.integral_prod_right integrableOn_const hA hw)
           (inv_nonneg.2 hp.le)
     _ = B := by
-        rw [setIntegral_const, smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hp.ne', one_mul]
+        simpa only [setAverage_eq, smul_eq_mul, p] using setAverage_const hρA (measure_ne_top ρ A) B
 
 /-- The small-ball bound of
 `ProbabilityTheory.iIndepFun.measureReal_abs_sum_mul_sub_le_le_of_ofReal_le_leastCommonDenominator`
 for `ε > 0`, `b > 0` and `α > 0`. -/
 private theorem measureReal_abs_sum_mul_sub_le_le_of_pos {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {ξ : ι → Ω → ℝ} {μ : Measure ℝ} (hξ : iIndepFun ξ P)
-    (hμ : ∀ k, HasLaw (ξ k) μ P) {b : ℝ} (hb : ∀ v, μ.real (closedBall v 1) ≤ 1 - b)
+    (hμ : ∀ k, HasLaw (ξ k) μ P) {b : ℝ} (hb : ∀ v, μ.real (ball v 1) ≤ 1 - b)
     (hb0 : 0 < b) (ha : a ≠ 0) (hγ : 0 < γ) (hL : 0 < L)
     (hLa : ENNReal.ofReal L ≤ leastCommonDenominator α γ a) (hα : 0 < α) (v : ℝ) {ε : ℝ}
     (hε : 0 < ε) :
@@ -262,22 +261,7 @@ private theorem measureReal_abs_sum_mul_sub_le_le_of_pos {Ω : Type*} [Measurabl
     exact ha (by ext k; exact isEmptyElim k)
   have : IsProbabilityMeasure μ := (hμ k₀).isProbabilityMeasure_iff.1 ‹_›
   set ρ := (μ.prod μ).map fun p : ℝ × ℝ ↦ p.1 - p.2
-  have hA : MeasurableSet {w : ℝ | 1 ≤ |w|} :=
-    measurableSet_le measurable_const continuous_abs.measurable
-  -- The symmetrized law gives `|w| < 1` mass at most `1 - b`, slice by slice.
-  have hAc : ρ.real {w : ℝ | 1 ≤ |w|}ᶜ ≤ 1 - b := by
-    have hb1 : 0 ≤ 1 - b := measureReal_nonneg.trans (hb 0)
-    refine ENNReal.toReal_le_of_le_ofReal hb1 ?_
-    rw [Measure.map_apply measurable_sub hA.compl, Measure.prod_apply (measurable_sub hA.compl)]
-    refine (lintegral_mono fun x ↦ ?_).trans_eq (by rw [lintegral_const, measure_univ, mul_one])
-    refine (measure_mono fun y hy ↦ ?_).trans
-      ((ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hb1).2 (hb x))
-    simp only [mem_preimage, mem_compl_iff, mem_ofPred_eq, not_le] at hy
-    rw [mem_closedBall, Real.dist_eq, abs_sub_comm]
-    exact hy.le
-  have hpb : b ≤ ρ.real {w : ℝ | 1 ≤ |w|} := by
-    rw [probReal_compl_eq_one_sub hA] at hAc
-    linarith
+  have hpb : b ≤ ρ.real {w : ℝ | 1 ≤ |w|} := le_measureReal_map_sub_prod_setOf_le_abs hb
   have hmap : ∀ k, P.map (ξ k) = μ := fun k ↦ (hμ k).map_eq
   have hE := hξ.measureReal_abs_sum_mul_sub_le_le_integral_prod_norm_charFun
     (fun k ↦ (hμ k).aemeasurable) (fun k ↦ a k) v hε
@@ -309,13 +293,13 @@ open TauCeti
 variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω}
 
 /-- **Small-ball probabilities through the least common denominator** (Rudelson–Vershynin).
-Let `ξ k` be independent real random variables with a common law `μ` whose closed balls of radius
+Let `ξ k` be independent real random variables with a common law `μ` whose open balls of radius
 `1` have mass at most `1 - b`. If `L > 0` is at most the least common denominator
 `LCD_{α,γ}(a)` of a nonzero vector `a` with `γ > 0`, then for every `ε ≥ 0` and every `v`,
 `P (|∑ k, a k * ξ k - v| ≤ ε) ≤ 16 π (ε + L⁻¹) / (γ ‖a‖ √b) + 4 exp (1 - α² b / 2)`. -/
 theorem iIndepFun.measureReal_abs_sum_mul_sub_le_le_of_ofReal_le_leastCommonDenominator
     {ξ : ι → Ω → ℝ} {μ : Measure ℝ} (hξ : iIndepFun ξ P) (hμ : ∀ k, HasLaw (ξ k) μ P) {b : ℝ}
-    (hb : ∀ v, μ.real (closedBall v 1) ≤ 1 - b) {a : EuclideanSpace ℝ ι} (ha : a ≠ 0)
+    (hb : ∀ v, μ.real (ball v 1) ≤ 1 - b) {a : EuclideanSpace ℝ ι} (ha : a ≠ 0)
     {α : ℝ≥0} {γ L : ℝ} (hγ : 0 < γ) (hL : 0 < L)
     (hLa : ENNReal.ofReal L ≤ leastCommonDenominator α γ a) (v : ℝ) {ε : ℝ} (hε : 0 ≤ ε) :
     P.real {ω | |∑ k, a k * ξ k ω - v| ≤ ε} ≤
