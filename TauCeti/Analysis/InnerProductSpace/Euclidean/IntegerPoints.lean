@@ -25,6 +25,12 @@ points of a box is `exp (t R²)` times the `n`-th power of a one-dimensional Gau
 `Real.sum_exp_neg_mul_int_sq_le` bounds by `1 + √(π / t)`. The choice `t = n / R²` gives the
 bound.
 
+Rounding the coordinates of a real vector `x` gives an integer point at squared distance at most
+`(1 / 8) * ∑ k, (1 - cos (2π x k))` from `x`. A product of moduli of characteristic functions is
+bounded by the exponential of minus such a sum, so it is large only at frequencies whose dilation
+is close to the integer lattice. This is how small-ball estimates reach the arithmetic structure of
+the coefficients.
+
 ## Main definitions
 
 * `TauCeti.latticePoint j`: the point of `EuclideanSpace ℝ ι` with integer coordinates `j`.
@@ -34,6 +40,8 @@ bound.
 * `TauCeti.finite_setOf_norm_latticePoint_le`: a closed ball contains finitely many lattice
   points.
 * `TauCeti.card_le_of_forall_norm_latticePoint_le`: the bound `(e (1 + √π R / √n))ⁿ`.
+* `TauCeti.eight_mul_norm_sub_latticePoint_round_sq_le_sum_one_sub_cos`: the distance to the
+  rounded integer point through `∑ k, (1 - cos (2π x k))`.
 
 ## References
 
@@ -69,6 +77,26 @@ theorem latticePoint_eq_sum {ι : Type*} [Fintype ι] (j : ι → ℤ) :
   simp [EuclideanSpace.basisFun_apply, Pi.single_apply]
 
 variable {ι : Type*} [Fintype ι]
+
+/-- Rounding the coordinates of a real vector `x` gives the integer point
+`latticePoint fun k ↦ round (x k)`, at squared distance at most
+`(1 / 8) * ∑ k, (1 - cos (2π x k))` from `x`. So `x` is close to an integer point wherever this
+trigonometric sum is small. -/
+theorem eight_mul_norm_sub_latticePoint_round_sq_le_sum_one_sub_cos (x : EuclideanSpace ℝ ι) :
+    8 * ‖x - latticePoint fun k ↦ round (x k)‖ ^ 2 ≤ ∑ k, (1 - cos (2 * π * x k)) := by
+  rw [EuclideanSpace.real_norm_sq_eq, Finset.mul_sum]
+  refine Finset.sum_le_sum fun k _ ↦ ?_
+  have hx : |2 * π * (x k - round (x k))| ≤ π := by
+    rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 2 * π)]
+    nlinarith [abs_sub_round (x k), pi_pos]
+  have h := cos_le_one_sub_mul_cos_sq hx
+  have h8 : 2 / π ^ 2 * (2 * π * (x k - round (x k))) ^ 2 = 8 * (x k - round (x k)) ^ 2 := by
+    field_simp
+    ring
+  have hshift : 2 * π * (x k - round (x k)) = 2 * π * x k - round (x k) * (2 * π) := by ring
+  rw [h8, hshift, cos_sub_int_mul_two_pi] at h
+  simp only [PiLp.sub_apply, latticePoint_apply]
+  linarith
 
 /-- The coordinates of a lattice point of the closed ball of radius `R` about the origin lie in
 `[-⌈R⌉₊, ⌈R⌉₊]`. -/
