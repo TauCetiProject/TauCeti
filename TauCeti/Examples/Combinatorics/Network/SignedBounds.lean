@@ -315,9 +315,29 @@ arrow. -/
 noncomputable def push : Assignment (ResidualHom Hom) ℤ :=
   Assignment.single (Sum.inl () : ResidualHom Hom false true) 2
 
+@[simp]
+theorem push_inl_false_true (e : Hom false true) : push (Sum.inl e : ResidualHom Hom _ _) = 2 :=
+  Assignment.single_apply_self _ _
+
+@[simp]
+theorem push_inl_true_false (e : Hom true false) : push (Sum.inl e : ResidualHom Hom _ _) = 0 :=
+  Assignment.single_apply_of_ne _ _ (by simp)
+
+@[simp]
+theorem push_inl_false_false (e : Hom false false) : push (Sum.inl e : ResidualHom Hom _ _) = 0 :=
+  Assignment.single_apply_of_ne _ _ (by simp)
+
+@[simp]
+theorem push_inl_true_true (e : Hom true true) : push (Sum.inl e : ResidualHom Hom _ _) = 0 :=
+  Assignment.single_apply_of_ne _ _ (by simp)
+
+/-- `push` vanishes on every reverse residual arrow. -/
+@[simp]
+theorem push_inr {v w : Bool} (e : Hom w v) : push (Sum.inr e : ResidualHom Hom v w) = 0 :=
+  Assignment.single_apply_of_ne _ _ (by simp)
+
 theorem push_mem_Icc : push ∈ Set.Icc 0 (residualCapacity lower upper circulation) := by
-  constructor <;> intro x y a <;> rcases a with ⟨⟩ | ⟨⟩ <;> cases x <;> cases y <;>
-    simp [push, Assignment.single_apply]
+  constructor <;> intro x y a <;> rcases a with ⟨⟩ | ⟨⟩ <;> cases x <;> cases y <;> simp
 
 /-- The residual update of the forced circulation by `push`: `1` on `false → true`, `-1` on
 `true → false` and `-2` on both loops. -/
@@ -328,9 +348,13 @@ noncomputable def reference : ExcessFlow lower upper demand :=
       excessAt_single]
     cases v <;> simp⟩
 
+@[simp]
+theorem reference_val : reference.val = residualUpdate circulation push :=
+  (rfl)
+
 -- The reference sends one unit along `false → true`.
 example : reference.val (x := false) (y := true) () = 1 := by
-  simp [reference, push, Assignment.single_apply]
+  simp
 
 /-- A second solution of the same prescribed-excess problem: `0` on `false → true`, `-2` on
 `true → false` and `-2` on both loops. -/
@@ -348,6 +372,10 @@ def otherFlow : ExcessFlow lower upper demand :=
     · simp [excessAt_false, other]
     · simp [excessAt_true, other]⟩
 
+@[simp]
+theorem otherFlow_val : otherFlow.val = other :=
+  (rfl)
+
 -- Shifting by the feasible reference turns the problem with excess `demand` into a circulation
 -- problem. The reference becomes the zero circulation.
 example : (ExcessFlow.circulationEquiv reference reference).val = 0 := by
@@ -360,7 +388,6 @@ example :
       (ExcessFlow.circulationEquiv reference otherFlow).val (x := true) (y := false) () = -1 ∧
       (ExcessFlow.circulationEquiv reference otherFlow).val (x := false) (y := false) () = 0 ∧
       (ExcessFlow.circulationEquiv reference otherFlow).val (x := true) (y := true) () = 0 := by
-  simp only [ExcessFlow.circulationEquiv_apply_val]
-  simp [reference, push, otherFlow, other, Assignment.single_apply]
+  simp [other]
 
 end TauCeti.Examples.SignedBounds
