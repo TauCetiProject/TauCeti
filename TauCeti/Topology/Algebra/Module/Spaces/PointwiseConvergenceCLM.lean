@@ -11,9 +11,11 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 # Basic facts on the topology of pointwise convergence
 
 Scalar multiplication on `E →SLₚₜ[σ] F` is jointly continuous whenever it is on `F`, since it is
-computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition evaluates as
-`postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`), and
-post-composition by the identity is the identity (`PointwiseConvergenceCLM.postcomp_id`). For
+computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition and
+pre-composition evaluate pointwise as `postcomp E L f x = L (f x)`
+(`PointwiseConvergenceCLM.postcomp_apply_apply`) and `precomp G L f x = f (L x)`
+(`PointwiseConvergenceCLM.precomp_apply_apply`), and post-composition by the identity is the
+identity (`PointwiseConvergenceCLM.postcomp_id`). For
 seminormed codomains, closure in the topology of pointwise convergence is characterized by
 simultaneous norm approximation on finite sets of vectors
 (`PointwiseConvergenceCLM.mem_closure_iff`,
@@ -47,6 +49,17 @@ theorem postcomp_apply_apply {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedFiel
     [ContinuousConstSMul 𝕜₃ G] (L : F →SL[τ] G) (f : E →SLₚₜ[σ] F) (x : E) :
     postcomp E L f x = L (f x) :=
   DFunLike.congr_fun (postcomp_apply E L f) x
+
+/-- Evaluating `PointwiseConvergenceCLM.precomp` on a map and a vector applies the map to the
+image under the inner operator. -/
+theorem precomp_apply_apply {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂]
+    [NormedField 𝕜₃] {σ : 𝕜₁ →+* 𝕜₂} {τ : 𝕜₂ →+* 𝕜₃} {ρ : 𝕜₁ →+* 𝕜₃} [RingHomCompTriple σ τ ρ]
+    [AddCommGroup E] [TopologicalSpace E] [AddCommGroup F] [TopologicalSpace F]
+    [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [Module 𝕜₁ E] [Module 𝕜₂ F] [Module 𝕜₃ G] [ContinuousConstSMul 𝕜₃ G]
+    (L : E →SL[σ] F) (f : F →SLₚₜ[τ] G) (x : E) :
+    precomp G L f x = f (L x) :=
+  DFunLike.congr_fun (precomp_apply G L f) x
 
 /-- Post-composition by the identity is the identity. -/
 @[simp]

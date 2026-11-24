@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
 import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Amplification and operator matrices on a finite Hilbert sum
@@ -243,10 +244,8 @@ single-entry vector supported at `j`. -/
 theorem piLpEntryCLM_apply (i j : ι)
     (T : PiLp 2 (fun _ : ι => H) →Lₚₜ[𝕜] PiLp 2 (fun _ : ι => H)) (h : H) :
     piLpEntryCLM 𝕜 H i j T h = T (PiLp.single 2 j h) i := by
-  rw [← PiLp.singleCLM_apply (p := 2) (𝕜 := 𝕜) (β := fun _ : ι => H) j h]
-  -- `PointwiseConvergenceCLM.postcomp`/`precomp` compose via `ContinuousLinearMap.comp`
-  -- definitionally, and `PiLp.proj` evaluates the coordinate definitionally.
-  rfl
+  rw [piLpEntryCLM, ContinuousLinearMap.comp_apply, postcomp_apply_apply, precomp_apply_apply,
+    PiLp.singleCLM_apply, PiLp.proj_apply]
 
 /-- On the image of `toPointwiseConvergenceCLM`, `piLpEntryCLM` agrees with
 `ContinuousLinearMap.piLpEntry`. -/

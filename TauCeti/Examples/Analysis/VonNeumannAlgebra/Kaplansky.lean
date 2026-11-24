@@ -149,8 +149,20 @@ theorem closure_inter_Icc_zero_one_finiteRankPlusScalars :
         ((finiteRankPlusScalars H : Set (H →L[ℂ] H)) ∩ Icc 0 1)) =
       ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) H H ''
         Icc (0 : H →L[ℂ] H) 1 := by
-  simpa [centralizer_centralizer_coe_finiteRankPlusScalars] using
-    (finiteRankPlusScalars H).closure_image_toPointwiseConvergenceCLM_inter_Icc_zero_one
+  have h1 : (finiteRankPlusScalars H : Set (H →L[ℂ] H)) ∩ Icc 0 1 =
+      {x : H →L[ℂ] H | x ∈ finiteRankPlusScalars H ∧ 0 ≤ x ∧ ‖x‖ ≤ 1} := by
+    ext x
+    simp only [Set.mem_inter_iff, SetLike.mem_coe, CStarAlgebra.mem_Icc_iff_norm_le_one,
+      Set.mem_ofPred_eq]
+  have h2 : Icc (0 : H →L[ℂ] H) 1 =
+      {x : H →L[ℂ] H |
+        x ∈ (finiteRankPlusScalars H : Set (H →L[ℂ] H)).centralizer.centralizer ∧
+          0 ≤ x ∧ ‖x‖ ≤ 1} := by
+    ext x
+    simp only [centralizer_centralizer_coe_finiteRankPlusScalars, Set.mem_univ, true_and,
+      CStarAlgebra.mem_Icc_iff_norm_le_one, Set.mem_ofPred_eq]
+  rw [h1, h2]
+  exact (finiteRankPlusScalars H).closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer
 
 end FiniteRankPlusScalars
 
