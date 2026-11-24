@@ -13,8 +13,6 @@ import TauCeti.Algebra.Group.Pi.Pairing
 import TauCeti.Algebra.Module.ZMod.Annihilator
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Finiteness
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
-import TauCeti.NumberTheory.LocalField.Generation.AbsoluteGaloisGroup
-import TauCeti.NumberTheory.NumberField.LocalGlobal.FinitePadicExtension
 
 /-!
 # Weak global duality for the Selmer groups of an isogeny and its dual
@@ -167,17 +165,6 @@ private theorem localPairing_eq_zero_of_mem_ker (v : HeightOneSpectrum (𝓞 K))
     (φ.baseChange (v.adicCompletion K)).kerH1WeilPairing_eq_zero_of_mem_ker _ ha hb, map_zero,
     map_zero, map_zero]
 
-/-- The first cohomology of the kernel of an isogeny over a completion at a finite place is
-finite. -/
-private theorem finite_H1_kerCoeff (v : HeightOneSpectrum (𝓞 K))
-    {V₁ V₂ : WeierstrassCurve (v.adicCompletion K)} [V₁.IsElliptic] [V₂.IsElliptic]
-    (ψ : Isogeny V₁.toAffine V₂.toAffine) :
-    Finite (H1 (AbsoluteGaloisGroup (v.adicCompletion K)) (ofIsogeny ψ).KerCoeff) := by
-  let := v.finitePadicExtension
-  exact (ofIsogeny ψ).finite_H1_kerCoeff_of_isTopologicallyFinitelyGenerated (ofIsogeny_ne_zero _)
-    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup
-      (Rat.HeightOneSpectrum.primesEquiv (v.under (𝓞 ℚ))) (v.adicCompletion K))
-
 /-! ### Selmer groups relaxed at `S` -/
 
 section Selmer
@@ -233,7 +220,8 @@ private theorem selmerGroup_eq_inf_comap :
       exact hc.1 ⟨w, hw⟩
 
 /-- The embedding of separable closures at a finite place `v`, from a family indexed by all
-places, read over the adic completion `K_v`. -/
+places, read over the adic completion `K_v`. It is `τ (.inl v)`, retyped so that it can be passed
+to global reciprocity. -/
 private def finEmb (v : HeightOneSpectrum (𝓞 K)) :
     SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K) :=
   τ (.inl v)
@@ -258,19 +246,19 @@ private theorem pointRes_infEmb {W : WeierstrassCurve K} (w : InfinitePlace K)
 private theorem sum_localPairing_eq_zero {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
     (ha : a ∈ φ.selmerGroup fun w : {w : GlobalNumberFields.Place K // ∀ v ∈ S, w ≠ .inl v} ↦ τ w)
     {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff} (hb : b ∈ φ.dual.selmerGroup τ) :
-    ∑ v : S, localPairing φ v.val (φ.kerRes (finEmb τ v.val) a)
-      (φ.dualKerRes (finEmb τ v.val) b) = 0 := by
+    AddMonoidHom.piPairing (fun v : S ↦ localPairing φ v.val)
+      (φ.kerResPi S (fun v ↦ τ (.inl v)) a) (φ.dualKerResPi S (fun v ↦ τ (.inl v)) b) = 0 := by
   have : NeZero φ.degree := ⟨φ.degree_ne_zero⟩
   rw [mem_selmerGroup_iff, mem_shafarevichTateGroup_iff] at ha hb
   apply ZMod.toRatAddCircle_injective φ.degree
-  rw [map_sum, map_zero]
-  simp only [localPairing_apply, ZMod.toRatAddCircle_ringEquivCongr]
-  rw [Finset.sum_coe_sort S (fun v ↦ ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
-    ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-      (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
-      (φ.kerRes (finEmb τ v) a) (φ.dualKerRes (finEmb τ v) b)))]
-  refine φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero a b (finEmb τ) (infEmb τ) S
-    (fun v hv ↦ ?_) (fun v _ ↦ ?_) (fun w ↦ ?_) (fun w ↦ ?_)
+  rw [AddMonoidHom.piPairing_apply, map_sum, map_zero]
+  simp only [kerResPi_apply, dualKerResPi_apply, localPairing_apply,
+    ZMod.toRatAddCircle_ringEquivCongr]
+  -- Reciprocity takes the family `finEmb τ`, which unfolds to the family `fun v ↦ τ (.inl v)` of
+  -- the statement.
+  refine (Finset.sum_coe_sort S _).trans <|
+    φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero a b (finEmb τ) (infEmb τ) S
+      (fun v hv ↦ ?_) (fun v _ ↦ ?_) (fun w ↦ ?_) (fun w ↦ ?_)
   · rw [pointRes_finEmb]
     exact ha ⟨.inl v, fun v' hv' h ↦ hv (Sum.inl_injective h ▸ hv')⟩
   · rw [pointRes_finEmb]
@@ -286,20 +274,19 @@ private theorem piPairing_eq_zero
     {x : ∀ v : S, H1 (AbsoluteGaloisGroup (v.val.adicCompletion K))
       (ofIsogeny (φ.baseChange (v.val.adicCompletion K))).KerCoeff}
     (hx : x ∈ (φ.selmerGroup fun w : {w : GlobalNumberFields.Place K // ∀ v ∈ S, w ≠ .inl v} ↦
-      τ w).map (φ.kerResPi S (finEmb τ)) ⊔ localConditionPi φ S)
+      τ w).map (φ.kerResPi S fun v ↦ τ (.inl v)) ⊔ localConditionPi φ S)
     {y : ∀ v : S, H1 (AbsoluteGaloisGroup (v.val.adicCompletion K))
       (ofIsogeny (φ.baseChange (v.val.adicCompletion K)).dual).KerCoeff}
-    (hy : y ∈ (φ.dual.selmerGroup τ).map (φ.dualKerResPi S (finEmb τ))) :
+    (hy : y ∈ (φ.dual.selmerGroup τ).map (φ.dualKerResPi S fun v ↦ τ (.inl v))) :
     AddMonoidHom.piPairing (fun v : S ↦ localPairing φ v.val) x y = 0 := by
   obtain ⟨_, ⟨a, ha, rfl⟩, z, hz, rfl⟩ := AddSubgroup.mem_sup.1 hx
   obtain ⟨b, hb, rfl⟩ := hy
-  rw [_root_.map_add, AddMonoidHom.add_apply, AddMonoidHom.piPairing_apply]
-  simp only [kerResPi_apply, dualKerResPi_apply]
-  rw [φ.sum_localPairing_eq_zero S τ ha hb, zero_add, AddMonoidHom.piPairing_apply]
+  rw [_root_.map_add, AddMonoidHom.add_apply, φ.sum_localPairing_eq_zero S τ ha hb, zero_add,
+    AddMonoidHom.piPairing_apply]
   refine Finset.sum_eq_zero fun v _ ↦ localPairing_eq_zero_of_mem_ker φ v.val
     (hz v (Set.mem_univ v)) ?_
   rw [SetLike.mem_coe, mem_selmerGroup_iff, mem_shafarevichTateGroup_iff] at hb
-  rw [AddMonoidHom.mem_ker, dualKerResPi_apply, ← pointRes_dualKerCoeffIncl, pointRes_finEmb]
+  rw [AddMonoidHom.mem_ker, dualKerResPi_apply, ← pointRes_dualKerCoeffIncl]
   exact hb (.inl v.val)
 
 end Selmer
@@ -331,12 +318,12 @@ private theorem relIndex_selmerGroup_mul_natCard_localConditionPi
         (φ.selmerGroup fun w : {w : GlobalNumberFields.Place K // ∀ v ∈ S, w ≠ .inl v} ↦ τ w) *
       Nat.card (localConditionPi φ S) =
     Nat.card ((φ.selmerGroup fun w : {w : GlobalNumberFields.Place K // ∀ v ∈ S, w ≠ .inl v} ↦
-      τ w).map (φ.kerResPi S (finEmb τ)) ⊔ localConditionPi φ S :) := by
+      τ w).map (φ.kerResPi S fun v ↦ τ (.inl v)) ⊔ localConditionPi φ S :) := by
   rw [φ.selmerGroup_eq_inf_comap S τ, AddSubgroup.inf_relIndex_left, AddSubgroup.relIndex_comap,
     ← AddSubgroup.relIndex_sup_right]
   have h := AddSubgroup.relIndex_mul_card (localConditionPi φ S)
     ((φ.selmerGroup fun w : {w : GlobalNumberFields.Place K // ∀ v ∈ S, w ≠ .inl v} ↦
-      τ w).map (φ.kerResPi S (finEmb τ)) ⊔ localConditionPi φ S)
+      τ w).map (φ.kerResPi S fun v ↦ τ (.inl v)) ⊔ localConditionPi φ S)
   rwa [inf_of_le_left le_sup_right] at h
 
 /-- **Weak global duality for the Selmer groups of an isogeny and its dual.** Let `φ : E₁ → E₂`
@@ -366,17 +353,18 @@ theorem relIndex_selmerGroup_mul_relIndex_ker_le_prod_index
     have h := (φ.baseChange (v.val.adicCompletion K)).dual.degree_nsmul_kerCoeff_eq_zero Q
     rwa [degree_dual, degree_baseChange] at h
   have : NeZero φ.degree := ⟨φ.degree_ne_zero⟩
-  have := fun v : S ↦ finite_H1_kerCoeff v.val (φ.baseChange (v.val.adicCompletion K)).dual
+  have := fun v : S ↦ finite_H1_kerCoeff_adicCompletion v.val _
+    (ofIsogeny_ne_zero (φ.baseChange (v.val.adicCompletion K)).dual)
   have hle := AddMonoidHom.natCard_mul_natCard_le_of_forall_eq_zero_zmod _
     (AddMonoidHom.injective_piPairing _ fun v : S ↦ injective_localPairing φ v.val) hN
     (fun x hx y hy ↦ φ.piPairing_eq_zero S τ hx hy)
   rw [← φ.relIndex_selmerGroup_mul_natCard_localConditionPi S τ,
     ← AddSubgroup.relIndex_ker, natCard_pi_H1_kerCoeff_dual] at hle
   have : Finite (localConditionPi φ S) := by
-    have := fun v : S ↦ finite_H1_kerCoeff v.val (φ.baseChange (v.val.adicCompletion K))
+    have := fun v : S ↦ finite_H1_kerCoeff_adicCompletion v.val _
+      (ofIsogeny_ne_zero (φ.baseChange (v.val.adicCompletion K)))
     infer_instance
-  -- `finEmb τ` is by definition the family `fun v ↦ τ (.inl v)` of the statement.
-  rw [show finEmb τ = fun v ↦ τ (.inl v) from rfl, mul_right_comm, mul_comm _ (∏ v ∈ S, _)] at hle
+  rw [mul_right_comm, mul_comm _ (∏ v ∈ S, _)] at hle
   exact Nat.le_of_mul_le_mul_right hle (Nat.card_pos_iff.2 ⟨⟨0⟩, ‹_›⟩)
 
 end TauCeti.Isogeny

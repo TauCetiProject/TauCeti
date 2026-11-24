@@ -30,8 +30,10 @@ the local duality between the local conditions of `Sel_φ` and `Sel_φ̂` in Cas
 these Selmer groups. In particular `H¹(K, E₁[φ])` and `H¹(K, E₂[φ̂])` have the same
 order (`TauCeti.Isogeny.natCard_H1_kerCoeff_dual`). The image of the Kummer map
 `E(K) → H¹(K, E[m])` is isotropic for the first pairing
-(`WeierstrassCurve.localTateWeilPairing_kummerMap_kummerMap_eq_zero`); orthogonality of the Kummer
-images of an isogeny and of its dual is a further result.
+(`WeierstrassCurve.localTateWeilPairing_kummerMap_kummerMap_eq_zero`). The Kummer images of an
+isogeny and of its dual, the local conditions of `Sel_φ` and `Sel_φ̂`, are orthogonal already for
+the cup product before the local invariant (`TauCeti.Isogeny.kerH1WeilPairing_eq_zero_of_mem_ker`),
+hence for the second pairing.
 
 No assumption that `K` contains the torsion or the roots of unity is required. In mixed
 characteristic, `m` and `n` may be divisible by the residue characteristic.
