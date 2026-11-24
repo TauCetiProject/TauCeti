@@ -128,6 +128,7 @@ theorem complexSplitCoordinateMap_apply
 /-- **`K_h` from the complexified split map.** The rational coordinate kernel of `h` is the
 kernel of the complexified split map `H → ℂ[z₁^{±1}, z₂^{±1}]`, because `O(S) → ℂ ⊗[ℝ] O(S)` is
 injective. -/
+@[simp]
 theorem ker_complexSplitCoordinateMap
     (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S) :
     RingHom.ker (complexSplitCoordinateMap h) = rationalCoordinateKernel h := by

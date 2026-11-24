@@ -72,6 +72,7 @@ theorem hopfIdealOrderIsoClosedSubgroup_symm_apply_mumfordTateClosedSubgroup
 
 /-- `MT(h)` lies in the closed subgroup scheme cut out by a Hopf ideal `I` exactly when every
 function in `I` vanishes on `h(S)`. -/
+@[simp]
 theorem mumfordTateClosedSubgroup_le_quotientClosedSubgroup_iff
     {h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S} {I : HopfIdeal ℚ H} :
     mumfordTateClosedSubgroup h ≤ quotientClosedSubgroup H I ↔
