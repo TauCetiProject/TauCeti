@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Dynamics.Billiard.NextCollision
 public import Mathlib.Topology.Instances.AddCircle.Defs
+public import TauCeti.Topology.JordanCurve.Basic
 import TauCeti.Algebra.Order.ToIntervalMod
+import TauCeti.Topology.JordanCurve.Interval
 
 /-!
 # Time reversal and the inverse of the billiard map
@@ -38,7 +40,10 @@ collision states `AddCircle L × (-1, 1)`. This is the billiard map `β`
 (`TauCeti.StrictConvexBilliardTable.billiardMap_symm_coe`). Boundary parameters give the same
 boundary point exactly when they agree in `AddCircle L`
 (`TauCeti.StrictConvexBilliardTable.apply_eq_apply_iff`), so a collision state and its image under
-`β` have distinct base points (`TauCeti.StrictConvexBilliardTable.fst_billiardMap_ne`).
+`β` have distinct base points (`TauCeti.StrictConvexBilliardTable.fst_billiardMap_ne`). So `χ`
+descends to a homeomorphism of `AddCircle L` onto its image
+(`TauCeti.StrictConvexBilliardTable.isClosedEmbedding_circleParam`), and that image is a Jordan
+curve (`TauCeti.StrictConvexBilliardTable.isJordanCurve_range`).
 
 The continuity and smoothness of `B` and of its inverse are not treated here.
 
@@ -48,6 +53,8 @@ The continuity and smoothness of `B` and of its inverse are not treated here.
   `ℝ × (-1, 1)`.
 * `TauCeti.StrictConvexBilliardTable.billiardMap`: the billiard map, a bijection of
   `AddCircle L × (-1, 1)`.
+* `TauCeti.StrictConvexBilliardTable.circleParam`: the parametrization of the boundary by
+  `AddCircle L`.
 
 ## Main results
 
@@ -61,6 +68,9 @@ The continuity and smoothness of `B` and of its inverse are not treated here.
 * `TauCeti.StrictConvexBilliardTable.billiardMap_coe`,
   `TauCeti.StrictConvexBilliardTable.billiardMap_symm_coe`: the billiard map is induced by the
   next-collision map, and its inverse is `ι ∘ β ∘ ι`.
+* `TauCeti.StrictConvexBilliardTable.isClosedEmbedding_circleParam`,
+  `TauCeti.StrictConvexBilliardTable.isJordanCurve_range`: the boundary is homeomorphic to
+  `AddCircle L` and is a Jordan curve.
 
 ## References
 
@@ -74,7 +84,7 @@ public section
 
 noncomputable section
 
-open Function Set
+open Function Set Topology
 open scoped RealInnerProductSpace
 
 namespace TauCeti
@@ -236,6 +246,39 @@ theorem billiardMap_coe (s : ℝ) (v : Ioo (-1 : ℝ) 1) :
 period `L`. -/
 theorem apply_eq_apply_iff {s t : ℝ} : χ s = χ t ↔ (s : AddCircle χ.period) = t :=
   (χ.periodic.lift_injective χ.period_pos χ.injOn).eq_iff (a := s) (b := t)
+
+/-! ### The boundary as a circle -/
+
+/-- The parametrization of the boundary by the circle `AddCircle L`, induced by the `L`-periodic
+map `χ`. -/
+def circleParam : AddCircle χ.period → E := χ.periodic.lift
+
+@[simp]
+theorem circleParam_coe (s : ℝ) : χ.circleParam s = χ s := χ.periodic.lift_coe s
+
+@[simp]
+theorem range_circleParam : range χ.circleParam = range χ := by
+  rw [← QuotientAddGroup.mk_surjective.range_comp]
+  exact congrArg range (funext χ.circleParam_coe)
+
+theorem circleParam_injective : Injective χ.circleParam :=
+  χ.periodic.lift_injective χ.period_pos χ.injOn
+
+theorem continuous_circleParam : Continuous χ.circleParam :=
+  (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 <| by
+    simpa only [comp_def, circleParam_coe] using χ.continuous
+
+/-- The boundary parametrization descends to a homeomorphism of the circle `AddCircle L` onto its
+image. -/
+theorem isClosedEmbedding_circleParam : IsClosedEmbedding χ.circleParam :=
+  χ.continuous_circleParam.isClosedEmbedding χ.circleParam_injective
+
+/-- **The boundary of a strictly convex billiard table is a Jordan curve**: it is the image of one
+period `[0, L]`, on which the parametrization is continuous, closed and injective on `[0, L)`. -/
+theorem isJordanCurve_range : IsJordanCurve (range χ) := by
+  rw [← χ.periodic.image_Icc χ.period_pos 0]
+  exact isJordanCurve_image_Icc (by simpa using χ.period_pos) χ.continuous.continuousOn
+    (χ.periodic 0).symm (by simpa using χ.injOn)
 
 /-- A collision state and its image under the billiard map have distinct base points. -/
 theorem fst_billiardMap_ne (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :

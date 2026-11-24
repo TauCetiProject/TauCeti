@@ -15,10 +15,8 @@ public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.Analysis.Calculus.DerivativeTest
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Algebra.Order.ToIntervalMod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Complex.Circle.Basic
-import TauCeti.Topology.JordanCurve.Interval
 
 /-!
 # Convex billiard tables of class `C^k`
@@ -49,9 +47,10 @@ in this sense are the tables on which the billiard ball map of a convex billiard
 
 * `TauCeti.ConvexTable.apply_eq_apply_iff`: `γ s = γ t` exactly when `s ≡ t` modulo `ℓ`.
 * `TauCeti.ConvexTable.isClosedEmbedding_circleParam`, `TauCeti.ConvexTable.isJordanCurve_range`:
-  `γ` descends to a homeomorphism of `AddCircle ℓ` onto its image, which is a Jordan curve. The
-  latter holds for every strictly convex billiard table
-  (`TauCeti.StrictConvexBilliardTable.isJordanCurve_range`).
+  `γ` descends to a homeomorphism of `AddCircle ℓ` onto its image, which is a Jordan curve. Both
+  hold for every strictly convex billiard table
+  (`TauCeti.StrictConvexBilliardTable.isClosedEmbedding_circleParam`,
+  `TauCeti.StrictConvexBilliardTable.isJordanCurve_range`).
 * `TauCeti.ConvexTable.deriv_deriv`: the unit tangent of a table satisfies `τ' = i κ τ`.
 * `TauCeti.ConvexTable.curvature_nonneg`: the curvature of a table is nonnegative.
 * `TauCeti.ConvexTable.curvature_shift`, `TauCeti.ConvexTable.curvature_rigidMotion`: the
@@ -77,15 +76,6 @@ open Function Set Filter Topology Complex
 open scoped ComplexConjugate
 
 namespace TauCeti
-
-/-- **The boundary of a strictly convex billiard table is a Jordan curve**: it is the image of one
-period `[0, L]`, on which the parametrization is continuous, closed and injective on `[0, L)`. -/
-theorem StrictConvexBilliardTable.isJordanCurve_range {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [Fact (Module.finrank ℝ E = 2)] {o : Orientation ℝ E (Fin 2)}
-    (χ : StrictConvexBilliardTable o) : IsJordanCurve (range χ) := by
-  rw [← χ.periodic.image_Icc χ.period_pos 0]
-  exact isJordanCurve_image_Icc (by simpa using χ.period_pos) χ.continuous.continuousOn
-    (χ.periodic 0).symm (by simpa using χ.injOn)
 
 /-- A **convex billiard table** of class `C^k` (`1 ≤ k`) with perimeter `ℓ > 0`: an arclength
 parametrisation `γ : ℝ → ℂ` of class `C^k`, `ℓ`-periodic, of unit speed, such that every point
@@ -171,31 +161,6 @@ theorem im_conj_deriv_mul_sub_pos {s t : ℝ} (h : (s : AddCircle ℓ) ≠ t) :
 theorem injOn_Ico (a : ℝ) : InjOn T (Ico a (a + ℓ)) := fun _ hs _ ht hst => by_contra fun h => by
   simpa [hst] using T.im_conj_deriv_mul_sub_pos
     (mt (AddCircle.coe_eq_coe_iff_of_mem_Ico hs ht).1 h)
-
-/-! ### The parametrisation by the circle -/
-
-/-- The parametrisation of the boundary of a table by the circle `AddCircle ℓ`, induced by the
-`ℓ`-periodic map `γ`. -/
-def circleParam : AddCircle ℓ → ℂ := T.periodic.lift
-
-@[simp]
-theorem circleParam_coe (s : ℝ) : T.circleParam s = T s := T.periodic.lift_coe s
-
-@[simp]
-theorem range_circleParam : range T.circleParam = range T := by
-  rw [← QuotientAddGroup.mk_surjective.range_comp]
-  exact congrArg range (funext T.circleParam_coe)
-
-theorem circleParam_injective : Injective T.circleParam :=
-  T.periodic.lift_injective Fact.out (by simpa using T.injOn_Ico 0)
-
-theorem continuous_circleParam : Continuous T.circleParam :=
-  (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 <| by
-    simpa only [comp_def, circleParam_coe] using T.continuous
-
-/-- A table descends to a homeomorphism of the circle `AddCircle ℓ` onto its image. -/
-theorem isClosedEmbedding_circleParam : IsClosedEmbedding T.circleParam :=
-  T.continuous_circleParam.isClosedEmbedding T.circleParam_injective
 
 /-! ### Curvature -/
 
@@ -434,7 +399,7 @@ def toStrictConvexBilliardTable : StrictConvexBilliardTable Complex.orientation 
   injOn := by simpa using T.injOn_Ico 0
   areaForm_pos s t h := by
     rw [Complex.areaForm]
-    exact T.im_conj_deriv_mul_sub_pos fun h' => h (by rw [← circleParam_coe, ← h', circleParam_coe])
+    exact T.im_conj_deriv_mul_sub_pos fun h' => h (by simpa using congrArg T.periodic.lift h'.symm)
 
 @[simp]
 theorem coe_toStrictConvexBilliardTable : ⇑T.toStrictConvexBilliardTable = T := (rfl)
@@ -446,6 +411,28 @@ theorem toStrictConvexBilliardTable_period : T.toStrictConvexBilliardTable.perio
 they agree modulo `ℓ`. -/
 theorem apply_eq_apply_iff {s t : ℝ} : T s = T t ↔ (s : AddCircle ℓ) = t :=
   T.toStrictConvexBilliardTable.apply_eq_apply_iff
+
+/-- The parametrisation of the boundary of a table by the circle `AddCircle ℓ`, induced by the
+`ℓ`-periodic map `γ` (`TauCeti.StrictConvexBilliardTable.circleParam`). -/
+def circleParam : AddCircle ℓ → ℂ := T.toStrictConvexBilliardTable.circleParam
+
+@[simp]
+theorem circleParam_coe (s : ℝ) : T.circleParam s = T s :=
+  T.toStrictConvexBilliardTable.circleParam_coe s
+
+@[simp]
+theorem range_circleParam : range T.circleParam = range T :=
+  T.toStrictConvexBilliardTable.range_circleParam
+
+theorem circleParam_injective : Injective T.circleParam :=
+  T.toStrictConvexBilliardTable.circleParam_injective
+
+theorem continuous_circleParam : Continuous T.circleParam :=
+  T.toStrictConvexBilliardTable.continuous_circleParam
+
+/-- A table descends to a homeomorphism of the circle `AddCircle ℓ` onto its image. -/
+theorem isClosedEmbedding_circleParam : IsClosedEmbedding T.circleParam :=
+  T.toStrictConvexBilliardTable.isClosedEmbedding_circleParam
 
 /-- **The boundary of a table is a Jordan curve.** -/
 theorem isJordanCurve_range : IsJordanCurve (range T) :=
