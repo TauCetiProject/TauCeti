@@ -93,9 +93,6 @@ private theorem apply_self_crossingEquiv (s : Fin n → Bool) (i : Fin n) :
     s ((ResolutionEquiv.resolveCrossingReidemeisterOneSelf D h b).crossingEquiv i) = s i := by
   simp
 
-variable (t : Bool) (E : D.ResolutionEquiv ((D.reidemeisterOne h b).resolveCrossing (Fin.last n) t))
-  (hE : E.crossingEquiv = Equiv.refl _)
-
 /-- The circles of `D` smoothed at the vertex `S`, together with the loop of the kink, as the
 circles of the kink diagram at the vertex over `S` on the face `b`, where the smoothing of the new
 crossing cuts off the loop. -/
@@ -109,13 +106,14 @@ private def kinkLoopCircleEquiv (S : Finset (Fin n)) :
       ((D.reidemeisterOne h b).resolveCrossingCubeCircleEquiv (Fin.last n) b S))
 
 /-- The circles of `D` smoothed at the vertex `S`, as the circles of the kink diagram at the vertex
-over `S` on the face `t`, identified with the smoothings of `D` by `E`. For `t = !b`, the
-smoothing of the new crossing runs along the kink. -/
+over `S` on the face `!b`, where the smoothing of the new crossing runs along the kink. -/
 private def kinkCircleEquiv (S : Finset (Fin n)) :
     D.ResolvedCircle (cubeState S) ≃
-      (D.reidemeisterOne h b).ResolvedCircle (cubeState (resolveCrossingVertex (Fin.last n) t S)) :=
-  ((E.smoothingEquiv fun i ↦ by rw [hE, Equiv.refl_apply]).resolvedCircleCongr).trans
-    ((D.reidemeisterOne h b).resolveCrossingCubeCircleEquiv (Fin.last n) t S)
+      (D.reidemeisterOne h b).ResolvedCircle
+        (cubeState (resolveCrossingVertex (Fin.last n) (!b) S)) :=
+  (((ResolutionEquiv.resolveCrossingReidemeisterOneNot D h b).smoothingEquiv fun i ↦ by
+      simp).resolvedCircleCongr).trans
+    ((D.reidemeisterOne h b).resolveCrossingCubeCircleEquiv (Fin.last n) (!b) S)
 
 /-- The loop of the kink passes through the new crossing. -/
 private theorem kinkLoopCircleEquiv_inr (S : Finset (Fin n)) :
@@ -144,16 +142,15 @@ private theorem cubeState_resolveCrossingVertex_last_eq (S : Finset (Fin n)) (t 
   obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq hj
   simp [cubeState_resolveCrossingVertex]
 
-include E hE in
 /-- On the face `b`, where the loop of the kink is cut off, two circles pass through the new
 crossing: the loop and the circle of the arc carrying the kink. -/
 private theorem card_circlesAt_kink (S : Finset (Fin n)) :
     #((D.reidemeisterOne h b).circlesAt (cubeState (resolveCrossingVertex (Fin.last n) b S))
       (Fin.last n)) = 2 := by
   have hloop := (D.reidemeisterOne h b).stateLoopCount_add_card_circlesAt
-    (cubeState_resolveCrossingVertex_last_eq S b t)
+    (cubeState_resolveCrossingVertex_last_eq S b (!b))
   have h₁ := Fintype.card_congr (D.kinkLoopCircleEquiv h b S)
-  have h₂ := Fintype.card_congr (D.kinkCircleEquiv h b t E hE S)
+  have h₂ := Fintype.card_congr (D.kinkCircleEquiv h b S)
   have e : Fintype.card (D.ResolvedCircle (cubeState S) ⊕ Unit) =
       D.stateLoopCount (cubeState S) + 1 := by
     rw [Fintype.card_sum, card_resolvedCircle, Fintype.card_unit]
@@ -162,17 +159,17 @@ private theorem card_circlesAt_kink (S : Finset (Fin n)) :
   have := (D.reidemeisterOne h b).card_circlesAt_le_two
     (cubeState (resolveCrossingVertex (Fin.last n) b S)) (Fin.last n)
   have := ((D.reidemeisterOne h b).circlesAt_nonempty
-    (cubeState (resolveCrossingVertex (Fin.last n) t S)) (Fin.last n)).card_pos
+    (cubeState (resolveCrossingVertex (Fin.last n) (!b) S)) (Fin.last n)).card_pos
   omega
 
-/-- The saddle correspondence at the new crossing, from the face `b` to the face `t`, is
+/-- The saddle correspondence at the new crossing, from the face `b` to the face `!b`, is
 injective on the circles of `D`: it only merges the loop of the kink into the circle of its
 arc. -/
 private theorem injective_saddleResolvedCircleMap_kinkLoopCircleEquiv_inl (S : Finset (Fin n))
     (hst : ∀ j, j ≠ Fin.last n → cubeState (resolveCrossingVertex (Fin.last n) b S) j =
-      cubeState (resolveCrossingVertex (Fin.last n) t S) j)
+      cubeState (resolveCrossingVertex (Fin.last n) (!b) S) j)
     (ht : #((D.reidemeisterOne h b).circlesAt
-      (cubeState (resolveCrossingVertex (Fin.last n) t S)) (Fin.last n)) = 1) :
+      (cubeState (resolveCrossingVertex (Fin.last n) (!b) S)) (Fin.last n)) = 1) :
     Function.Injective ((D.reidemeisterOne h b).saddleResolvedCircleMap hst ht ∘
       D.kinkLoopCircleEquiv h b S ∘ Sum.inl) := by
   intro x y hxy
@@ -190,21 +187,21 @@ private theorem injective_saddleResolvedCircleMap_kinkLoopCircleEquiv_inl (S : F
 /-- The circles of `D` at `S`, carried across the saddle at the new crossing and back. -/
 private def kinkSaddleCircleMap (S : Finset (Fin n))
     (hst : ∀ j, j ≠ Fin.last n → cubeState (resolveCrossingVertex (Fin.last n) b S) j =
-      cubeState (resolveCrossingVertex (Fin.last n) t S) j)
+      cubeState (resolveCrossingVertex (Fin.last n) (!b) S) j)
     (ht : #((D.reidemeisterOne h b).circlesAt
-      (cubeState (resolveCrossingVertex (Fin.last n) t S)) (Fin.last n)) = 1) :
+      (cubeState (resolveCrossingVertex (Fin.last n) (!b) S)) (Fin.last n)) = 1) :
     D.ResolvedCircle (cubeState S) → D.ResolvedCircle (cubeState S) :=
-  (D.kinkCircleEquiv h b t E hE S).symm ∘ (D.reidemeisterOne h b).saddleResolvedCircleMap hst ht ∘
+  (D.kinkCircleEquiv h b S).symm ∘ (D.reidemeisterOne h b).saddleResolvedCircleMap hst ht ∘
     D.kinkLoopCircleEquiv h b S ∘ Sum.inl
 
 private theorem bijective_kinkSaddleCircleMap (S : Finset (Fin n))
     (hst : ∀ j, j ≠ Fin.last n → cubeState (resolveCrossingVertex (Fin.last n) b S) j =
-      cubeState (resolveCrossingVertex (Fin.last n) t S) j)
+      cubeState (resolveCrossingVertex (Fin.last n) (!b) S) j)
     (ht : #((D.reidemeisterOne h b).circlesAt
-      (cubeState (resolveCrossingVertex (Fin.last n) t S)) (Fin.last n)) = 1) :
-    Function.Bijective (D.kinkSaddleCircleMap h b t E hE S hst ht) :=
-  Finite.injective_iff_bijective.1 <| (D.kinkCircleEquiv h b t E hE S).symm.injective.comp
-    (D.injective_saddleResolvedCircleMap_kinkLoopCircleEquiv_inl h b t S hst ht)
+      (cubeState (resolveCrossingVertex (Fin.last n) (!b) S)) (Fin.last n)) = 1) :
+    Function.Bijective (D.kinkSaddleCircleMap h b S hst ht) :=
+  Finite.injective_iff_bijective.1 <| (D.kinkCircleEquiv h b S).symm.injective.comp
+    (D.injective_saddleResolvedCircleMap_kinkLoopCircleEquiv_inl h b S hst ht)
 
 end Circles
 
@@ -282,11 +279,27 @@ section Kink
 
 variable (hD : D.IsPlanar) (R : Type u) [CommRing R]
 
-private theorem hc_true (S : Finset (Fin n)) :
-    cubeState (resolveCrossingVertex (Fin.last n) true S) (Fin.last n) ≠
-      cubeState (resolveCrossingVertex (Fin.last n) false S) (Fin.last n) := by
+private theorem hc (S : Finset (Fin n)) :
+    cubeState (resolveCrossingVertex (Fin.last n) b S) (Fin.last n) ≠
+      cubeState (resolveCrossingVertex (Fin.last n) (!b) S) (Fin.last n) := by
   rw [cubeState_resolveCrossingVertex, cubeState_resolveCrossingVertex]
-  simp
+  cases b <;> simp
+
+/-- On the face `!b`, where the smoothing of the new crossing runs along the kink, one circle
+passes through the new crossing. -/
+private theorem ht (S : Finset (Fin n)) :
+    #((D.reidemeisterOne h b).circlesAt (cubeState (resolveCrossingVertex (Fin.last n) (!b) S))
+      (Fin.last n)) = 1 :=
+  (D.reidemeisterOne h b).card_circlesAt_eq_one_of_card_circlesAt_eq_two
+    (cubeState_resolveCrossingVertex_last_eq S b (!b)) (hc b S) (D.card_circlesAt_kink h b S)
+
+/-- The cube of `D` as the cube of the resolution `!b` of the kink `D.reidemeisterOne h b`, which
+runs along the kink. -/
+private def kinkNotIso (k : ℤ) :
+    D.resolutionCube hD R k ≅
+      ((D.reidemeisterOne h b).resolveCrossing (Fin.last n) (!b)).resolutionCube
+        (((isPlanar_reidemeisterOne D h b).2 hD).resolveCrossing _ _ (!b)) R k :=
+  (ResolutionEquiv.resolveCrossingReidemeisterOneNot D h b).resolutionCubeNatIso (by simp) hD _ R k
 
 /-- The cube of `D` with an adjoined circle as the cube of the resolution `b` of the kink
 `D.reidemeisterOne h b`, which cuts off the loop. -/
@@ -337,55 +350,33 @@ section Merge
 
 variable (hD : D.IsPlanar) (R : Type u) [CommRing R] (j : ℤ)
 
-/-- The identification of all smoothings of `D` with those of the `B`-resolution of the kink
-`D.reidemeisterOne h true`, which runs along the kink. -/
-private def kinkNotTrue :
-    D.ResolutionEquiv ((D.reidemeisterOne h true).resolveCrossing (Fin.last n) false) :=
-  ResolutionEquiv.resolveCrossingReidemeisterOneNot D h true
-
-private theorem kinkNotTrue_crossingEquiv : (D.kinkNotTrue h).crossingEquiv = Equiv.refl _ :=
-  ResolutionEquiv.resolveCrossingReidemeisterOneNot_crossingEquiv D h true
-
-private theorem ht_true (S : Finset (Fin n)) :
-    #((D.reidemeisterOne h true).circlesAt (cubeState (resolveCrossingVertex (Fin.last n) false S))
-      (Fin.last n)) = 1 :=
-  (D.reidemeisterOne h true).card_circlesAt_eq_one_of_card_circlesAt_eq_two
-    (cubeState_resolveCrossingVertex_last_eq S true false) (hc_true S)
-    (D.card_circlesAt_kink h true false (D.kinkNotTrue h) (D.kinkNotTrue_crossingEquiv h) S)
-
-/-- The cube of `D` as the cube of the `B`-resolution of the kink. -/
-private def kinkNotIsoTrue :
-    D.resolutionCube hD R j ≅
-      ((D.reidemeisterOne h true).resolveCrossing (Fin.last n) false).resolutionCube
-        (((isPlanar_reidemeisterOne D h true).2 hD).resolveCrossing _ _ false) R j :=
-  (D.kinkNotTrue h).resolutionCubeNatIso (D.kinkNotTrue_crossingEquiv h) hD _ R j
-
 /-- The saddle at the kink, restricted to the summand with the loop labelled `1` and read on the
 cube of `D`. -/
 private def kinkMergeTrue : D.resolutionCube hD R (j - 1) ⟶ D.resolutionCube hD R (j - 1) :=
   D.adjoinCircleCubeInsert hD R false (j := j) (j' := j - 1) (by simp) ≫
     (D.kinkSelfIso h true hD R j).hom ≫
       (D.reidemeisterOne h true).resolveCrossingSaddle (Fin.last n)
-        ((isPlanar_reidemeisterOne D h true).2 hD) R j ≫ (D.kinkNotIsoTrue h hD R (j - 1)).inv
+        ((isPlanar_reidemeisterOne D h true).2 hD) R j ≫ (D.kinkNotIso h true hD R (j - 1)).inv
 
 private theorem kinkMergeTrue_app_comp_resolutionCubeι (S : Finset (Fin n)) :
     (D.kinkMergeTrue h hD R j).app S ≫ D.resolutionCubeι hD R (j - 1) S =
       D.resolutionCubeι hD R (j - 1) S ≫ ModuleCat.ofHom
-        (fiberwiseMul (A := fun _ ↦ R[ε]) (D.kinkSaddleCircleMap h true false (D.kinkNotTrue h)
-          (D.kinkNotTrue_crossingEquiv h) S (cubeState_resolveCrossingVertex_last_eq S true false)
-          (D.ht_true h S))).toLinearMap := by
-  have hs :=
-    D.card_circlesAt_kink h true false (D.kinkNotTrue h) (D.kinkNotTrue_crossingEquiv h) S
+        (fiberwiseMul (A := fun _ ↦ R[ε]) (D.kinkSaddleCircleMap h true S
+          (cubeState_resolveCrossingVertex_last_eq S true false) (D.ht h true S))).toLinearMap := by
+  have hs := D.card_circlesAt_kink h true S
   have hsad := (D.reidemeisterOne h true).resolveCrossingSaddle_app_comp_resolutionCubeι
     (Fin.last n) ((isPlanar_reidemeisterOne D h true).2 hD) R j S
-    (cubeState_resolveCrossingVertex_last_eq S true false) (hc_true S) (Or.inl hs)
+    (cubeState_resolveCrossingVertex_last_eq S true false) (hc true S) (Or.inl hs)
   rw [resolutionEdgeMap_eq_resolutionMergeMap _ _ _ _ _ hs, resolutionMergeMap_def] at hsad
   unfold kinkMergeTrue
   simp only [NatTrans.comp_app, Category.assoc]
-  rw [kinkNotIsoTrue, ResolutionEquiv.resolutionCubeNatIso_inv_app_comp_resolutionCubeι _ _ _ _ _ _
-    _ (by simp [kinkNotTrue_crossingEquiv]), ofHom_reindex_eq_comp
-      ((D.reidemeisterOne h true).resolveCrossingCubeCircleEquiv (Fin.last n) false S),
-    reassoc_of% hsad, kinkSelfIso,
+  rw [kinkNotIso, ResolutionEquiv.resolutionCubeNatIso_inv_app_comp_resolutionCubeι _ _ _ _ _ _
+    _ (by simp), ofHom_reindex_eq_comp
+      ((D.reidemeisterOne h true).resolveCrossingCubeCircleEquiv (Fin.last n) (!true) S)]
+  -- `kinkNotIso` lands in the resolution `!true`, which the saddle writes as `false`; the two
+  -- agree only definitionally, through the inferred objects of the composite.
+  erw [reassoc_of% hsad]
+  rw [kinkSelfIso,
     ResolutionEquiv.resolutionCubeNatIso_hom_app_comp_resolutionCubeι_assoc _ _ _ _ _ _ _
       (by simp), adjoinCircleCubeInsert_app_comp_resolutionCubeι_assoc]
   congr 1
@@ -397,9 +388,8 @@ private theorem kinkMergeTrue_app_comp_resolutionCubeι (S : Finset (Fin n)) :
 
 private instance isIso_kinkMergeTrue : IsIso (D.kinkMergeTrue h hD R j) :=
   isIso_of_app_comp_resolutionCubeι _
-    (fun S ↦ Equiv.ofBijective _ (D.bijective_kinkSaddleCircleMap h true false (D.kinkNotTrue h)
-      (D.kinkNotTrue_crossingEquiv h) S (cubeState_resolveCrossingVertex_last_eq S true false)
-      (D.ht_true h S)))
+    (fun S ↦ Equiv.ofBijective _ (D.bijective_kinkSaddleCircleMap h true S
+      (cubeState_resolveCrossingVertex_last_eq S true false) (D.ht h true S)))
     fun S ↦ by
       rw [kinkMergeTrue_app_comp_resolutionCubeι, ← toLinearMap_fiberwiseMul_equiv]
 
@@ -408,7 +398,7 @@ private theorem kinkBicone_inl_comp_resolveCrossingSaddle_true :
     (D.kinkBicone h true hD R (sub_add_cancel j 1).symm (add_sub_cancel_right j 1).symm).inl ≫
         (D.reidemeisterOne h true).resolveCrossingSaddle (Fin.last n)
           ((isPlanar_reidemeisterOne D h true).2 hD) R j =
-      D.kinkMergeTrue h hD R j ≫ (D.kinkNotIsoTrue h hD R (j - 1)).hom := by
+      D.kinkMergeTrue h hD R j ≫ (D.kinkNotIso h true hD R (j - 1)).hom := by
   simp [kinkBicone, kinkMergeTrue]
 
 private instance isIso_kinkBicone_inl_comp_resolveCrossingSaddle_true :
@@ -460,33 +450,10 @@ section Split
 
 variable (hD : D.IsPlanar) (R : Type u) [CommRing R] (j : ℤ)
 
-/-- The identification of all smoothings of `D` with those of the `A`-resolution of the kink
-`D.reidemeisterOne h false`, which runs along the kink. -/
-private def kinkNotFalse :
-    D.ResolutionEquiv ((D.reidemeisterOne h false).resolveCrossing (Fin.last n) true) :=
-  ResolutionEquiv.resolveCrossingReidemeisterOneNot D h false
-
-private theorem kinkNotFalse_crossingEquiv : (D.kinkNotFalse h).crossingEquiv = Equiv.refl _ :=
-  ResolutionEquiv.resolveCrossingReidemeisterOneNot_crossingEquiv D h false
-
-private theorem ht_false (S : Finset (Fin n)) :
-    #((D.reidemeisterOne h false).circlesAt (cubeState (resolveCrossingVertex (Fin.last n) true S))
-      (Fin.last n)) = 1 :=
-  (D.reidemeisterOne h false).card_circlesAt_eq_one_of_card_circlesAt_eq_two
-    (cubeState_resolveCrossingVertex_last_eq S false true) (hc_true S).symm
-    (D.card_circlesAt_kink h false true (D.kinkNotFalse h) (D.kinkNotFalse_crossingEquiv h) S)
-
-/-- The cube of `D` as the cube of the `A`-resolution of the kink. -/
-private def kinkNotIsoFalse :
-    D.resolutionCube hD R j ≅
-      ((D.reidemeisterOne h false).resolveCrossing (Fin.last n) true).resolutionCube
-        (((isPlanar_reidemeisterOne D h false).2 hD).resolveCrossing _ _ true) R j :=
-  (D.kinkNotFalse h).resolutionCubeNatIso (D.kinkNotFalse_crossingEquiv h) hD _ R j
-
 /-- The saddle at the kink, followed by the coefficient of the label `X` on the loop, read on the
 cube of `D`. -/
 private def kinkSplitFalse : D.resolutionCube hD R j ⟶ D.resolutionCube hD R j :=
-  (D.kinkNotIsoFalse h hD R j).hom ≫
+  (D.kinkNotIso h false hD R j).hom ≫
     (D.reidemeisterOne h false).resolveCrossingSaddle (Fin.last n)
       ((isPlanar_reidemeisterOne D h false).2 hD) R j ≫
       (D.kinkSelfIso h false hD R (j - 1)).inv ≫
@@ -495,14 +462,12 @@ private def kinkSplitFalse : D.resolutionCube hD R j ⟶ D.resolutionCube hD R j
 private theorem kinkSplitFalse_app_comp_resolutionCubeι (S : Finset (Fin n)) :
     (D.kinkSplitFalse h hD R j).app S ≫ D.resolutionCubeι hD R j S =
       D.resolutionCubeι hD R j S ≫ ModuleCat.ofHom
-        (Khovanov.fiberwiseSplit (D.kinkSaddleCircleMap h false true (D.kinkNotFalse h)
-          (D.kinkNotFalse_crossingEquiv h) S (cubeState_resolveCrossingVertex_last_eq S false true)
-          (D.ht_false h S))) := by
-  have hs :=
-    D.card_circlesAt_kink h false true (D.kinkNotFalse h) (D.kinkNotFalse_crossingEquiv h) S
+        (Khovanov.fiberwiseSplit (D.kinkSaddleCircleMap h false S
+          (cubeState_resolveCrossingVertex_last_eq S false true) (D.ht h false S))) := by
+  have hs := D.card_circlesAt_kink h false S
   have hsad := (D.reidemeisterOne h false).resolveCrossingSaddle_app_comp_resolutionCubeι
     (Fin.last n) ((isPlanar_reidemeisterOne D h false).2 hD) R j S
-    (cubeState_resolveCrossingVertex_last_eq S true false) (hc_true S) (Or.inr hs)
+    (cubeState_resolveCrossingVertex_last_eq S true false) (hc true S) (Or.inr hs)
   rw [resolutionEdgeMap_eq_resolutionSplitMap _ _ _ _ _ hs, resolutionSplitMap_def] at hsad
   unfold kinkSplitFalse
   simp only [NatTrans.comp_app, Category.assoc]
@@ -510,26 +475,30 @@ private theorem kinkSplitFalse_app_comp_resolutionCubeι (S : Finset (Fin n)) :
     ResolutionEquiv.resolutionCubeNatIso_inv_app_comp_resolutionCubeι_assoc _ _ _ _ _ _ _
       (by simp), ofHom_reindex_eq_comp
       ((D.reidemeisterOne h false).resolveCrossingCubeCircleEquiv (Fin.last n) false S),
-    Category.assoc, reassoc_of% hsad, kinkNotIsoFalse,
-    ResolutionEquiv.resolutionCubeNatIso_hom_app_comp_resolutionCubeι_assoc _ _ _ _ _ _ _
-      (by simp [kinkNotFalse_crossingEquiv])]
+    Category.assoc, reassoc_of% hsad, kinkNotIso]
+  -- `kinkNotIso` starts from the resolution `!false`, which the saddle writes as `true`; the two
+  -- agree only definitionally, through the inferred objects of the composite.
+  erw [ResolutionEquiv.resolutionCubeNatIso_hom_app_comp_resolutionCubeι_assoc _ _ _ _ _ _ _
+    (by simp)]
   congr 1
   refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
   simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
   rw [kinkSaddleCircleMap, ← deleteCircle_reindex_fiberwiseSplit_reindex]
   simp [kinkCircleEquiv, kinkLoopCircleEquiv, adjoinCircleDelete_apply, ← reindex_reindex]
+  -- The two sides now differ only in writing the face of the saddle as `true` (from `hsad`) and
+  -- as `!false` (from `kinkCircleEquiv`), which agree definitionally.
+  rfl
 
 private instance isIso_kinkSplitFalse : IsIso (D.kinkSplitFalse h hD R j) :=
   isIso_of_app_comp_resolutionCubeι _
-    (fun S ↦ (Equiv.ofBijective _ (D.bijective_kinkSaddleCircleMap h false true (D.kinkNotFalse h)
-      (D.kinkNotFalse_crossingEquiv h) S (cubeState_resolveCrossingVertex_last_eq S false true)
-      (D.ht_false h S))).symm)
+    (fun S ↦ (Equiv.ofBijective _ (D.bijective_kinkSaddleCircleMap h false S
+      (cubeState_resolveCrossingVertex_last_eq S false true) (D.ht h false S))).symm)
     fun S ↦ by
       rw [kinkSplitFalse_app_comp_resolutionCubeι, ← Khovanov.fiberwiseSplit_equiv]
 
 /-- On the summand with the loop labelled `X`, the saddle at the kink is `kinkSplitFalse`. -/
-private theorem kinkNotIsoFalse_hom_comp_resolveCrossingSaddle_comp_kinkBicone_snd :
-    (D.kinkNotIsoFalse h hD R j).hom ≫
+private theorem kinkNotIso_hom_comp_resolveCrossingSaddle_comp_kinkBicone_snd :
+    (D.kinkNotIso h false hD R j).hom ≫
         (D.reidemeisterOne h false).resolveCrossingSaddle (Fin.last n)
           ((isPlanar_reidemeisterOne D h false).2 hD) R j ≫
             (D.kinkBicone h false hD R (sub_one_eq_sub_two_add_one j) rfl).snd =
@@ -540,13 +509,13 @@ private instance isIso_resolveCrossingSaddle_comp_kinkBicone_snd_false :
     IsIso ((D.reidemeisterOne h false).resolveCrossingSaddle (Fin.last n)
       ((isPlanar_reidemeisterOne D h false).2 hD) R j ≫
         (D.kinkBicone h false hD R (sub_one_eq_sub_two_add_one j) rfl).snd) := by
-  have : IsIso ((D.kinkNotIsoFalse h hD R j).hom ≫
+  have : IsIso ((D.kinkNotIso h false hD R j).hom ≫
       (D.reidemeisterOne h false).resolveCrossingSaddle (Fin.last n)
         ((isPlanar_reidemeisterOne D h false).2 hD) R j ≫
           (D.kinkBicone h false hD R (sub_one_eq_sub_two_add_one j) rfl).snd) := by
-    rw [kinkNotIsoFalse_hom_comp_resolveCrossingSaddle_comp_kinkBicone_snd]
+    rw [kinkNotIso_hom_comp_resolveCrossingSaddle_comp_kinkBicone_snd]
     infer_instance
-  exact IsIso.of_isIso_comp_left (D.kinkNotIsoFalse h hD R j).hom _
+  exact IsIso.of_isIso_comp_left (D.kinkNotIso h false hD R j).hom _
 
 /-- The skein sequence at the kink, split at the cube level by the summand with the loop
 labelled `X`. -/
