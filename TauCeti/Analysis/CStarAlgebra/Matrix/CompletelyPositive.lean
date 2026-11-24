@@ -15,8 +15,8 @@ import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 # Completely positive contractions from matrices to `M₁`
 
 A positive linear functional `ω` on a C⋆-algebra gives the completely positive map `a ↦ ω a • 1`
-into the one-by-one matrices `M₁ = CStarMatrix Unit Unit ℂ`
-(`PositiveLinearMap.toCompletelyPositiveMapOfId`), whose norm at `a` is `‖ω a‖`. Its
+into the matrices `M_m = CStarMatrix m m ℂ` (`PositiveLinearMap.toCompletelyPositiveMapOfId`),
+whose norm at `a` is `‖ω a‖`. For nonempty `m` (for instance `M₁ = CStarMatrix Unit Unit ℂ`) its
 multiplicativity defects are scalar:
 `d₂(ω, a) = Re ω(a⋆a) - |ω a|²` and `‖ω(ab) - ω(a)ω(b)‖₂ = |ω(ab) - ω(a)ω(b)|`
 (`PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId`,
@@ -47,10 +47,11 @@ open scoped CStarAlgebra ComplexOrder
 namespace PositiveLinearMap
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {m : Type*} [Fintype m] [DecidableEq m] [Nonempty m]
 
 /-- The 2-norm defect of `a ↦ ω a • 1` is `Re ω(a⋆a) - |ω a|²`. -/
 theorem twoNormDefect_toCompletelyPositiveMapOfId (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    (ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ)).twoNormDefect a =
+    (ω.toCompletelyPositiveMapOfId (CStarMatrix m m ℂ)).twoNormDefect a =
       (ω (star a * a)).re - ‖ω a‖ ^ 2 := by
   simp only [CompletelyPositiveMap.twoNormDefect_def, toCompletelyPositiveMapOfId_apply,
     star_smul, star_one, smul_mul_smul, mul_one, ← sub_smul, CStarMatrix.normalizedTrace_smul,
@@ -59,7 +60,7 @@ theorem twoNormDefect_toCompletelyPositiveMapOfId (ω : A →ₚ[ℂ] ℂ) (a : 
 
 /-- The norm defect of `a ↦ ω a • 1` is `|ω(a⋆a) - |ω a|²|`. -/
 theorem normDefect_toCompletelyPositiveMapOfId (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    (ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ)).normDefect a =
+    (ω.toCompletelyPositiveMapOfId (CStarMatrix m m ℂ)).normDefect a =
       ‖ω (star a * a) - star (ω a) * ω a‖ := by
   simp only [CompletelyPositiveMap.normDefect_def, toCompletelyPositiveMapOfId_apply,
     star_smul, star_one, smul_mul_smul, mul_one, ← sub_smul, norm_smul, norm_one]
@@ -67,9 +68,9 @@ theorem normDefect_toCompletelyPositiveMapOfId (ω : A →ₚ[ℂ] ℂ) (a : A) 
 /-- The 2-norm of the multiplicativity error of `a ↦ ω a • 1` is `|ω(ab) - ω(a)ω(b)|`. -/
 theorem normalizedTwoNorm_toCompletelyPositiveMapOfId_mul_sub (ω : A →ₚ[ℂ] ℂ) (a b : A) :
     CStarMatrix.normalizedTwoNorm
-        (ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) (a * b) -
-          ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) a *
-            ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) b) =
+        (ω.toCompletelyPositiveMapOfId (CStarMatrix m m ℂ) (a * b) -
+          ω.toCompletelyPositiveMapOfId (CStarMatrix m m ℂ) a *
+            ω.toCompletelyPositiveMapOfId (CStarMatrix m m ℂ) b) =
       ‖ω (a * b) - ω a * ω b‖ := by
   simp only [toCompletelyPositiveMapOfId_apply, smul_mul_smul, mul_one, ← sub_smul,
     CStarMatrix.normalizedTwoNorm_smul, CStarMatrix.normalizedTwoNorm_one]
