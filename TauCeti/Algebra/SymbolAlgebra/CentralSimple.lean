@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.RingTheory.IsAdjoinRoot
 import TauCeti.Algebra.BrauerGroup.Trivial
+import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
 # Cyclic algebras are central simple
@@ -25,14 +26,14 @@ Brauer group, and shows that the class is trivial when `b = 1`.
 Both structural proofs compare coordinates in the monomial basis `x ^ i * y ^ j`, `i, j < n`.
 Conjugation by the unit `x` multiplies `x ^ i * y ^ j` by `ζ ^ j`, and conjugation by `y`
 multiplies it by `ζ ^ i`; since `ζ` is a primitive `n`-th root of unity these two characters
-separate the `n ^ 2` monomials.
+separate the `n ^ 2` monomials, so the monomial basis jointly diagonalizes the two conjugations
+with pairwise distinct joint eigenvalues.
 
-* **Simplicity**: a nonzero element `z` of a two-sided ideal with two distinct monomials `p ≠ q`
-  in its support gives the element `φ z - c_q • z` of the ideal, where `φ` is a conjugation whose
-  characters `c` separate `p` from `q`. It is nonzero with a smaller support. An element of minimal
-  support is therefore a nonzero multiple of a monomial, which is a unit.
+* **Simplicity**: a two-sided ideal is invariant under both conjugations, so it contains every
+  monomial occurring in one of its elements (`Module.Basis.self_mem_of_repr_ne_zero_of_forall`);
+  a nonzero ideal therefore contains a monomial, which is a unit.
 * **Centrality**: a central element is fixed by both conjugations, so all its coordinates off the
-  monomial `1` vanish.
+  monomial `1` vanish (`Module.Basis.repr_eq_zero_of_weight_ne`).
 
 For `b = 1`, the representation `TauCeti.SymbolAlgebra.toEndAdjoinRoot` of `(a, 1)_ζ` on the
 `n`-dimensional space `K[X]/(X ^ n - a)` is injective because the algebra is simple, hence an
@@ -67,19 +68,6 @@ namespace TauCeti
 namespace SymbolAlgebra
 
 variable {K : Type*} [Field K] {n : ℕ} [NeZero n] {ζ a b : K}
-
-/-- If the monomials are eigenvectors of a linear map `φ`, the coordinates of `φ z` are those of `z`
-multiplied by the eigenvalues. -/
-private theorem repr_apply_of_eigen (hζ : ζ ^ n = 1)
-    (φ : SymbolAlgebra n ζ a b →ₗ[K] SymbolAlgebra n ζ a b) (c : Fin n × Fin n → K)
-    (h : ∀ r, φ (basis hζ r) = c r • basis hζ r) (z : SymbolAlgebra n ζ a b) (r : Fin n × Fin n) :
-    (basis hζ).repr (φ z) r = c r * (basis hζ).repr z r := by
-  classical
-  have : (basis hζ).coord r ∘ₗ φ = c r • (basis hζ).coord r := (basis hζ).ext fun s => by
-    by_cases hsr : s = r
-    · subst hsr; simp [h, -basis_apply]
-    · simp [h, hsr, -basis_apply]
-  simpa using congr($this z)
 
 /-- The generator `x` as a unit, for `a ≠ 0`. -/
 private noncomputable def unitX (ha : a ≠ 0) : (SymbolAlgebra n ζ a b)ˣ :=
@@ -139,63 +127,24 @@ private theorem conjY_mem (hb : b ≠ 0) (I : TwoSidedIdeal (SymbolAlgebra n ζ 
   rw [conjY_apply]
   exact I.mul_mem_left _ _ (I.mul_mem_right _ _ hz)
 
-/-- Two distinct monomials are separated by one of the two conjugations: one of them preserves every
-two-sided ideal and has the monomials as eigenvectors with different eigenvalues at `p` and `q`. -/
-private theorem exists_conj_separating (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : b ≠ 0)
-    {p q : Fin n × Fin n} (hpq : p ≠ q) :
-    ∃ (φ : SymbolAlgebra n ζ a b →ₗ[K] SymbolAlgebra n ζ a b) (c : Fin n × Fin n → K),
-      (∀ r, φ (basis hζ.pow_eq_one r) = c r • basis hζ.pow_eq_one r) ∧
-      (∀ I : TwoSidedIdeal (SymbolAlgebra n ζ a b), ∀ z ∈ I, φ z ∈ I) ∧ c p ≠ c q := by
-  by_cases h2 : p.2 = q.2
-  · have h1 : p.1 ≠ q.1 := fun h1 => hpq (Prod.ext h1 h2)
-    exact ⟨conjY hb, fun r => ζ ^ (r.1 : ℕ), conjY_basis _ hb, fun I _ hz => conjY_mem hb I hz,
-      fun h => h1 (Fin.ext (hζ.pow_inj p.1.isLt q.1.isLt h))⟩
-  · exact ⟨conjX ha, fun r => ζ ^ (r.2 : ℕ), conjX_basis _ ha, fun I _ hz => conjX_mem ha I hz,
-      fun h => h2 (Fin.ext (hζ.pow_inj p.2.isLt q.2.isLt h))⟩
+/-- The two conjugations act diagonally on the monomial basis: conjugation by `x` scales
+`x ^ i * y ^ j` by `ζ ^ j` and conjugation by `y` scales it by `ζ ^ i`. -/
+private theorem conj_basis (hζ : ζ ^ n = 1) (ha : a ≠ 0) (hb : b ≠ 0) (p : Fin n × Fin n)
+    (j : Fin 2) :
+    ![conjX (b := b) ha, conjY (a := a) hb] j (basis hζ p) =
+      ![ζ ^ (p.2 : ℕ), ζ ^ (p.1 : ℕ)] j • basis hζ p := by
+  fin_cases j
+  exacts [conjX_basis hζ ha p, conjY_basis hζ hb p]
 
-/-- A nonzero element of a two-sided ideal whose support has at most `k` monomials yields a
-monomial in the ideal. -/
-private theorem exists_basis_mem (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : b ≠ 0)
-    (I : TwoSidedIdeal (SymbolAlgebra n ζ a b)) (k : ℕ) :
-    ∀ z ∈ I, z ≠ 0 → ((basis hζ.pow_eq_one).repr z).support.card ≤ k →
-      ∃ p, basis hζ.pow_eq_one p ∈ I := by
-  set B := basis (a := a) (b := b) hζ.pow_eq_one
-  induction k with
-  | zero =>
-    intro z _ hz hcard
-    simp_all
-  | succ k ih =>
-    classical
-    intro z hzI hz hcard
-    have hpos : 0 < (B.repr z).support.card := by simp_all
-    rcases (Nat.succ_le_of_lt hpos).eq_or_lt with h1 | h1
-    · -- a single monomial `c • B p` with `c ≠ 0`
-      obtain ⟨p, c, hc, hp⟩ := Finsupp.card_support_eq_one'.1 h1.symm
-      refine ⟨p, ?_⟩
-      have hz' : z = c • B p := by rw [← B.repr_symm_single, ← hp, LinearEquiv.symm_apply_apply]
-      have := I.mul_mem_left (algebraMap K _ c⁻¹) _ hzI
-      rwa [hz', ← Algebra.smul_def, smul_smul, inv_mul_cancel₀ hc, one_smul] at this
-    · -- two distinct monomials `p ≠ q`, separated by a conjugation `φ`
-      obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.1 h1
-      obtain ⟨φ, c, hφ, hφI, hc⟩ := exists_conj_separating hζ ha hb hpq
-      have hrepr : ∀ r, B.repr (φ z - c q • z) r = (c r - c q) * B.repr z r := fun r => by
-        rw [map_sub, Finsupp.sub_apply, repr_apply_of_eigen _ φ c hφ, map_smul, Finsupp.smul_apply,
-          smul_eq_mul, sub_mul]
-      refine ih (φ z - c q • z) (I.sub_mem (hφI I z hzI) ?_) ?_ ?_
-      · rw [Algebra.smul_def]
-        exact I.mul_mem_left _ _ hzI
-      · intro h0
-        have := hrepr p
-        rw [h0, map_zero, Finsupp.zero_apply] at this
-        exact mul_ne_zero (sub_ne_zero.2 hc) (Finsupp.mem_support_iff.1 hp) this.symm
-      · have hsub : (B.repr (φ z - c q • z)).support ⊆ (B.repr z).support.erase q := fun r hr => by
-          rw [Finsupp.mem_support_iff, hrepr] at hr
-          refine Finset.mem_erase.2 ⟨?_, Finsupp.mem_support_iff.2 (right_ne_zero_of_mul hr)⟩
-          rintro rfl
-          simp at hr
-        have := Finset.card_le_card hsub
-        rw [Finset.card_erase_of_mem hq] at this
-        omega
+omit [NeZero n] in
+/-- The joint eigenvalues of the two conjugations separate the monomials. -/
+private theorem injective_conjWeight (hζ : IsPrimitiveRoot ζ n) :
+    Function.Injective fun p : Fin n × Fin n => (![ζ ^ (p.2 : ℕ), ζ ^ (p.1 : ℕ)] : Fin 2 → K) := by
+  intro p q h
+  have h0 : ζ ^ (p.2 : ℕ) = ζ ^ (q.2 : ℕ) := by simpa using congr_fun h 0
+  have h1 : ζ ^ (p.1 : ℕ) = ζ ^ (q.1 : ℕ) := by simpa using congr_fun h 1
+  exact Prod.ext (Fin.ext (hζ.pow_inj p.1.isLt q.1.isLt h1))
+    (Fin.ext (hζ.pow_inj p.2.isLt q.2.isLt h0))
 
 /-- **The cyclic algebra `(a, b)_ζ` is a simple ring** when `ζ` is a primitive `n`-th root of unity
 and `a, b ≠ 0`. -/
@@ -204,8 +153,20 @@ theorem isSimpleRing (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : b ≠ 0) 
   have := nontrivial (a := a) (b := b) hζ.pow_eq_one
   .of_eq_bot_or_eq_top fun I => or_iff_not_imp_left.2 fun hI => by
     obtain ⟨z, hzI, hz : z ≠ 0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.2 hI)
-    obtain ⟨p, hp⟩ := exists_basis_mem hζ ha hb I _ z hzI hz le_rfl
-    obtain ⟨u, hu⟩ : IsUnit (basis (a := a) (b := b) hζ.pow_eq_one p) := by
+    set B := basis (a := a) (b := b) hζ.pow_eq_one
+    obtain ⟨p, hpz⟩ := Finsupp.ne_iff.1 (B.repr.map_ne_zero_iff.2 hz)
+    -- `I` is invariant under both conjugations, which jointly separate the monomials, so it
+    -- contains every monomial in the support of `z`
+    have hp : B p ∈ I := by
+      have := B.self_mem_of_repr_ne_zero_of_forall (W := I.asIdeal.restrictScalars K)
+        (conj_basis _ ha hb) (injective_conjWeight hζ)
+        (fun j v hv => by
+          rw [Submodule.restrictScalars_mem, TwoSidedIdeal.mem_asIdeal] at hv ⊢
+          fin_cases j
+          exacts [conjX_mem ha I hv, conjY_mem hb I hv])
+        (by rwa [Submodule.restrictScalars_mem, TwoSidedIdeal.mem_asIdeal]) hpz
+      rwa [Submodule.restrictScalars_mem, TwoSidedIdeal.mem_asIdeal] at this
+    obtain ⟨u, hu⟩ : IsUnit (B p) := by
       rw [basis_apply]
       exact ((isUnit_x (Ne.isUnit ha)).pow _).mul ((isUnit_y (Ne.isUnit hb)).pow _)
     apply I.one_mem_iff.1
@@ -220,24 +181,16 @@ theorem isCentral (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : b ≠ 0) :
     classical
     set B := basis (a := a) (b := b) hζ.pow_eq_one
     rw [Subalgebra.mem_center_iff] at hz
-    -- a coordinate whose eigenvalue under a conjugation fixing `z` is not `1` vanishes
-    have hfix : ∀ (φ : SymbolAlgebra n ζ a b →ₗ[K] SymbolAlgebra n ζ a b)
-        (c : Fin n × Fin n → K), (∀ r, φ (B r) = c r • B r) → φ z = z →
-        ∀ r, c r ≠ 1 → B.repr z r = 0 := fun φ c hφ hφz r hr => by
-      have h := repr_apply_of_eigen _ φ c hφ z r
-      rw [hφz] at h
-      exact (mul_eq_zero.1 (by linear_combination -h)).resolve_left (sub_ne_zero.2 hr)
     have hx : conjX (b := b) ha z = z := by
       rw [conjX_apply, ← hz, Units.inv_mul_cancel_left]
     have hy : conjY (a := a) hb z = z := by
       rw [conjY_apply, ← mul_assoc, hz, Units.mul_inv_cancel_right]
-    have h0 : ∀ r : Fin n × Fin n, r ≠ 0 → B.repr z r = 0 := fun r hr => by
-      by_cases h2 : r.2 = 0
-      · refine hfix _ _ (conjY_basis _ hb) hy r fun h => ?_
-        have h1 : r.1 = 0 := Fin.ext (hζ.pow_inj r.1.isLt (NeZero.pos n) (by simp [h]))
-        exact hr (Prod.ext h1 h2)
-      · exact hfix _ _ (conjX_basis _ ha) hx r fun h =>
-          h2 (Fin.ext (hζ.pow_inj r.2.isLt (NeZero.pos n) (by simp [h])))
+    -- `z` is fixed by both conjugations, so its coordinates off the monomial `1`, whose joint
+    -- eigenvalue is not `(1, 1)`, vanish
+    have h0 : ∀ r : Fin n × Fin n, r ≠ 0 → B.repr z r = 0 := fun r hr =>
+      B.repr_eq_zero_of_weight_ne (conj_basis _ ha hb) (c := fun _ => 1)
+        (fun j => by fin_cases j <;> simp [hx, hy])
+        fun h => hr (injective_conjWeight hζ (h.trans (by funext j; fin_cases j <;> simp)))
     have hz1 : z = B.repr z 0 • B 0 := B.repr.injective <| Finsupp.ext fun r => by
       rw [map_smul, B.repr_self, Finsupp.smul_apply, Finsupp.single_apply]
       by_cases hr : (0 : Fin n × Fin n) = r
