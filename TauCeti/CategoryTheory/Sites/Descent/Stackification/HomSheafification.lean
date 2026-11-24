@@ -76,13 +76,19 @@ instance instEnrichedCategoryHomEnriched (U : C) :
   comp M N P := presheafHomComp M N P
   id_comp M N := by
     ext T f
-    exact Category.id_comp f
+    exact (presheafHomComp_app_apply M M N T (_, f)).trans
+      ((congrArg (· ≫ f) (presheafHomId_app_apply M T _)).trans (Category.id_comp f))
   comp_id M N := by
     ext T f
-    exact Category.comp_id f
+    exact (presheafHomComp_app_apply M N N T (f, _)).trans
+      ((congrArg (f ≫ ·) (presheafHomId_app_apply N T _)).trans (Category.comp_id f))
   assoc M N P Q := by
     ext T ⟨f, g, h⟩
-    exact Category.assoc f g h
+    exact (presheafHomComp_app_apply M P Q T (_, h)).trans
+      ((congrArg (· ≫ h) (presheafHomComp_app_apply M N P T (f, g))).trans
+        ((Category.assoc f g h).trans
+          (congrArg (f ≫ ·) (presheafHomComp_app_apply N P Q T (g, h))).symm)) |>.trans
+      (presheafHomComp_app_apply M N Q T (f, _)).symm
 
 section
 
@@ -223,17 +229,20 @@ lemma Fiber.homMk_comp {M N P : Fiber J F U}
   ext
   rw [Fiber.homEquiv_comp, ConcreteCategory.comp_apply, Fiber.homEquiv_homMk,
     Fiber.homEquiv_homMk, Fiber.homEquiv_homMk, μ_toSheafifySections]
-  exact (ConcreteCategory.congr_hom ((toSheafifySections J U).naturality
+  refine (ConcreteCategory.congr_hom ((toSheafifySections J U).naturality
     (presheafHomComp M.obj N.obj P.obj))
-    ((x, y) : (F.presheafHom M.obj N.obj ⊗ F.presheafHom N.obj P.obj).obj _)).symm
+    ((x, y) : (F.presheafHom M.obj N.obj ⊗ F.presheafHom N.obj P.obj).obj _)).symm.trans ?_
+  exact congrArg ((toSheafifySections J U).app _)
+    (presheafHomComp_app_apply M.obj N.obj P.obj _ (x, y))
 
 lemma Fiber.homMk_id (M : Fiber J F U) : Fiber.homMk (𝟙 _) = 𝟙 M := by
   ext
   rw [Fiber.homEquiv_homMk, Fiber.homEquiv_id, ConcreteCategory.comp_apply,
     Subsingleton.elim (ε (sheafifySections J U) PUnit.unit)
       ((toSheafifySections J U).app (𝟙_ ((Over U)ᵒᵖ ⥤ Type v')) PUnit.unit)]
-  exact ConcreteCategory.congr_hom ((toSheafifySections J U).naturality
-    (presheafHomId M.obj)) _
+  exact (congrArg ((toSheafifySections J U).app _)
+    (presheafHomId_app_apply M.obj _ PUnit.unit)).symm.trans
+    (ConcreteCategory.congr_hom ((toSheafifySections J U).naturality (presheafHomId M.obj)) _)
 
 variable (J F U) in
 /-- The comparison functor from the fibre of `F` over `U` to the fibre of its

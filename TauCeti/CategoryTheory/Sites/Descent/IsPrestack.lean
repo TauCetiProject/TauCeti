@@ -157,9 +157,7 @@ lemma pullHom_id_self ⦃X : C⦄ ⦃M : F.obj (.mk (op X))⦄ ⦃Y : C⦄ (f : 
 
 open MonoidalCategory in
 /-- Composition of local morphisms, as a morphism of presheaves on `Over S`. -/
--- This and `presheafHomId` are exposed so that their components compute by definition, which the
--- enriched category built from them in `Stackification/HomSheafification.lean` relies on.
-@[expose] def presheafHomComp (M N P : F.obj (.mk (op S))) :
+def presheafHomComp (M N P : F.obj (.mk (op S))) :
     F.presheafHom M N ⊗ F.presheafHom N P ⟶ F.presheafHom M P where
   app T := TypeCat.ofHom fun p ↦ p.1 ≫ p.2
   naturality T T' g := by
@@ -168,7 +166,7 @@ open MonoidalCategory in
 
 open MonoidalCategory in
 /-- Identities of local morphisms, as a morphism of presheaves on `Over S`. -/
-@[expose] def presheafHomId (M : F.obj (.mk (op S))) :
+def presheafHomId (M : F.obj (.mk (op S))) :
     𝟙_ ((Over S)ᵒᵖ ⥤ Type _) ⟶ F.presheafHom M M where
   app T := TypeCat.ofHom fun _ ↦ 𝟙 _
   naturality T T' g := by
