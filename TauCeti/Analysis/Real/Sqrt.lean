@@ -93,6 +93,7 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq`: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`.
+* `Real.div_sqrt_two_sq`: `(x / √2)² = x² / 2`.
 * `Real.add_sqrt_sq_add_pos`, `Real.image_add_sqrt_sq_add_eq_Ioi`: for `p > 0`, the substitution
   `t ↦ t + √(t² + p)` is positive and maps `ℝ` onto `(0, ∞)`.
 * `Real.strictMonoOn_mul_sqrt_sq_add_sub`: for `c > 0`, `y ↦ y (√(y² + c) − y)` is strictly
@@ -426,6 +427,10 @@ theorem abs_mul_inv_sqrt_sq_mul_mul {d c : ℝ} (hd : d ≠ 0) (hc : 0 ≤ c) (p
 /-- The vector `((√2)⁻¹, (√2)⁻¹)` has unit length: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`. -/
 theorem inv_sqrt_two_sq_add_inv_sqrt_two_sq : (√2)⁻¹ ^ 2 + (√2)⁻¹ ^ 2 = (1 : ℝ) := by
   rw [inv_pow, sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
+
+/-- Dividing by `√2` halves the square: `(x / √2)² = x² / 2`. -/
+theorem div_sqrt_two_sq (x : ℝ) : (x / √2) ^ 2 = x ^ 2 / 2 := by
+  rw [div_pow, sq_sqrt zero_le_two]
 
 /-- For `0 < p`, `t + √(t² + p)` is positive. -/
 theorem add_sqrt_sq_add_pos {p : ℝ} (hp : 0 < p) (t : ℝ) : 0 < t + √(t ^ 2 + p) := by

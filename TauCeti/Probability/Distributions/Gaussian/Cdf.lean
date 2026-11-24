@@ -10,6 +10,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Erf.Inequalities
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.MeasureTheory.Measure.Tail
 import TauCeti.Probability.Distributions.Gaussian.PDF
@@ -59,6 +60,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   densities at the bounds (`TauCeti.Probability.gaussianPDFRealEReal`) as derivative.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
   `TauCeti.Real.erfc`.
+* `TauCeti.Probability.one_sub_cdf_gaussianReal_eq_erfc` — the standard Gaussian upper tail
+  `1 − Φ(r) = erfc (r/√2)/2`, the `erfc` counterpart of `cdf_gaussianReal_zero_one`.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf` and
   `TauCeti.Probability.measureReal_Ici_gaussianReal_eq_cdf` — the open and closed upper tails in
   terms of the standard Gaussian cdf, together with closed-ray positivity
@@ -427,14 +430,10 @@ theorem measureReal_gaussianReal_abs_sub_ge_le (m : ℝ) (v : ℝ≥0) {t : ℝ}
 
 /-- The upper tail of the standard Gaussian law is half the complementary error function at
 `r/√2`. -/
-private theorem one_sub_cdf_gaussianReal_eq_erfc (r : ℝ) :
+theorem one_sub_cdf_gaussianReal_eq_erfc (r : ℝ) :
     1 - cdf (gaussianReal 0 1) r = Real.erfc (r / √2) / 2 := by
   rw [← Measure.measureReal_Ioi_eq_one_sub_cdf, measureReal_Ioi_gaussianReal 0 one_ne_zero]
   norm_num
-
-/-- The exponent of the `erfc` bounds at `r/√2` is the Gaussian exponent `-r²/2`. -/
-private theorem neg_div_sqrt_two_sq (r : ℝ) : -(r / √2) ^ 2 = -r ^ 2 / 2 := by
-  rw [div_pow, Real.sq_sqrt zero_le_two, neg_div]
 
 /-- **Mills' ratio bound** for the standard Gaussian law: for `r > 0`, the upper tail
 `1 − Φ(r)` is strictly smaller than `φ(r)/r`. This is `TauCeti.Real.erfc_lt_exp_neg_sq_div` at
@@ -442,7 +441,7 @@ private theorem neg_div_sqrt_two_sq (r : ℝ) : -(r / √2) ^ 2 = -r ^ 2 / 2 := 
 theorem one_sub_cdf_gaussianReal_lt_gaussianPDFReal_div {r : ℝ} (hr : 0 < r) :
     1 - cdf (gaussianReal 0 1) r < gaussianPDFReal 0 1 r / r := by
   have h := Real.erfc_lt_exp_neg_sq_div (div_pos hr (by positivity : (0 : ℝ) < √2))
-  rw [neg_div_sqrt_two_sq] at h
+  rw [Real.div_sqrt_two_sq, ← neg_div] at h
   have h2 : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   simp only [one_sub_cdf_gaussianReal_eq_erfc, gaussianPDFReal_def, NNReal.coe_one, mul_one,
     sub_zero]
@@ -459,7 +458,7 @@ theorem one_sub_cdf_gaussianReal_lt_gaussianPDFReal_div {r : ℝ} (hr : 0 < r) :
 theorem one_sub_cdf_gaussianReal_le_exp_div_two {r : ℝ} (hr : 0 ≤ r) :
     1 - cdf (gaussianReal 0 1) r ≤ Real.exp (-r ^ 2 / 2) / 2 := by
   have h := Real.erfc_le_exp_neg_sq (div_nonneg hr (Real.sqrt_nonneg 2))
-  rw [neg_div_sqrt_two_sq] at h
+  rw [Real.div_sqrt_two_sq, ← neg_div] at h
   rw [one_sub_cdf_gaussianReal_eq_erfc]
   gcongr
 
@@ -467,7 +466,7 @@ theorem one_sub_cdf_gaussianReal_le_exp_div_two {r : ℝ} (hr : 0 ≤ r) :
 theorem one_sub_cdf_gaussianReal_lt_exp_div_two {r : ℝ} (hr : 0 < r) :
     1 - cdf (gaussianReal 0 1) r < Real.exp (-r ^ 2 / 2) / 2 := by
   have h := Real.erfc_lt_exp_neg_sq (div_pos hr (by positivity : (0 : ℝ) < √2))
-  rw [neg_div_sqrt_two_sq] at h
+  rw [Real.div_sqrt_two_sq, ← neg_div] at h
   rw [one_sub_cdf_gaussianReal_eq_erfc]
   gcongr
 
