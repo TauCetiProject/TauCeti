@@ -188,7 +188,7 @@ model space of the fibre as complement: in the preferred charts of the total spa
 it is the first projection. -/
 theorem isSubmersionOfComplement_proj :
     Manifold.IsSubmersionOfComplement EF (IB.prod IF) IB n
-      fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj := by
+      (proj : ManifoldTotalSpace F E → B) := by
   refine Manifold.isSubmersionOfComplement_iff.mpr fun x ↦ ?_
   obtain ⟨x, rfl⟩ := (homeomorph F E).surjective x
   refine .mk_of_continuousAt (contMDiff_proj n F E IB IF).continuous.continuousAt
@@ -201,8 +201,7 @@ theorem isSubmersionOfComplement_proj :
 variable (n F E IB IF) in
 /-- The projection of a `C^n` fibre bundle with a manifold fibre is a `C^n` submersion. -/
 theorem isSubmersion_proj :
-    Manifold.IsSubmersion (IB.prod IF) IB n
-      fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj :=
+    Manifold.IsSubmersion (IB.prod IF) IB n (proj : ManifoldTotalSpace F E → B) :=
   (isSubmersionOfComplement_proj n F E IB IF).isSubmersion
 
 end Submersion
@@ -211,15 +210,14 @@ variable (IB IF) in
 /-- Every point of the total space is a regular point of the bundle projection.
 Smoothness of the bundle's coordinate changes is not needed. -/
 theorem isRegularPoint_proj (x : ManifoldTotalSpace F E) :
-    TauCeti.IsRegularPoint (IB.prod IF) IB
-      (fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj) x := by
+    TauCeti.IsRegularPoint (IB.prod IF) IB (proj : ManifoldTotalSpace F E → B) x := by
   obtain ⟨x, rfl⟩ := (homeomorph F E).surjective x
   let e := trivializationAt F E x.proj
   let s := fun b ↦ homeomorph F E (e.toOpenPartialHomeomorph.symm (b, (e x).2))
   have hx : x.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E x.proj
   have hsx : s x.proj = homeomorph F E x :=
     congrArg (homeomorph F E) (e.symm_apply_mk_proj (e.mem_source.2 hx))
-  have hps : (fun b ↦ ((homeomorph F E).symm (s b)).proj) =ᶠ[𝓝 x.proj] id := by
+  have hps : (fun b ↦ (s b).proj) =ᶠ[𝓝 x.proj] id := by
     filter_upwards [e.open_baseSet.mem_nhds hx] with b hb
     simpa [s] using e.proj_symm_apply' hb
   have hs : ContMDiffAt IB (IB.prod IF) 1 s x.proj :=
@@ -238,8 +236,7 @@ variable (F E IB IF) in
 /-- Every base point is a regular value of the bundle projection, including when its fibre is
 empty. Smoothness of the bundle's coordinate changes is not needed. -/
 theorem isRegularValue_proj (b : B) :
-    TauCeti.IsRegularValue (IB.prod IF) IB
-      (fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj) b := by
+    TauCeti.IsRegularValue (IB.prod IF) IB (proj : ManifoldTotalSpace F E → B) b := by
   rw [TauCeti.isRegularValue_iff]
   exact fun x _ ↦ isRegularPoint_proj IB IF x
 

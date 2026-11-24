@@ -169,7 +169,7 @@ def diffeomorphOfEquivariant :
     (equivOfEquivariant_smul ρ hρ φ hφ) <| by
     have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
     intro x₀
-    let b₀ := ((homeomorph H (Extend P ρ hρ)).symm x₀).proj
+    let b₀ := x₀.proj
     let eP := trivializationAt G P b₀
     have hπ := contMDiff_proj n H (Extend P ρ hρ) IB IH x₀
     refine ((contMDiffAt_section_comp 1 hφc.contMDiffAt hπ).totalSpaceMk_smul
@@ -180,7 +180,9 @@ def diffeomorphOfEquivariant :
     have hbP : b ∈ eP.baseSet := by simpa using hy
     obtain ⟨h, rfl⟩ := (mk_bijective ρ hρ (eP.symm b 1)).surjective z
     rw [fiberwiseMap_homeomorph]
-    dsimp only [Function.comp_def]; rw [Homeomorph.symm_apply_apply]
+    dsimp only [Function.comp_def]; rw [proj_homeomorph, Homeomorph.symm_apply_apply,
+      homeomorph_symm_proj]
+    dsimp only [TotalSpace.proj]
     exact congrArg (fun w ↦ homeomorph H Q ⟨b, w⟩) <| by
       rw [equivOfEquivariant_mk, trivializationAt_mk_snd ρ hρ hbP,
         congrArg Prod.snd (eP.apply_mk_symm hbP 1), map_one, one_mul]

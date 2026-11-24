@@ -279,7 +279,8 @@ theorem contMDiffOn_trivializationOfSection [LieGroup IG n G]
       ((ManifoldTotalSpace.homeomorph G P).symm ⁻¹' (π G P ⁻¹' U)) :=
     ContMDiffOn.division (hσ'.comp hproj fun _ hx ↦ hx)
       (contMDiffOn_id.congr fun x _ ↦ by rw [TotalSpace.eta, Homeomorph.apply_symm_apply, id_eq])
-  simpa only [trivializationOfSection_apply] using hproj.prodMk hdiv
+  simpa only [trivializationOfSection_apply, ManifoldTotalSpace.homeomorph_symm_proj] using
+    hproj.prodMk hdiv
 
 /-- The inverse of the equivariant trivialization determined by a section `σ` that is `C^n` on an
 open set `U` is `C^n` on its target `U ×ˢ univ`, as a map from `B × G` to the total space, charted

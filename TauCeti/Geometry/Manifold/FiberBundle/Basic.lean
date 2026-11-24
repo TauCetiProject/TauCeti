@@ -527,10 +527,9 @@ protected theorem contMDiffAt_iff {f : M → TotalSpace F E} {x₀ : M} :
   exact ManifoldTotalSpace.contMDiffWithinAt_iff
 
 variable (n F E IB IF) in
-/-- The projection of the total space to the base is `C^n`. Because `ManifoldTotalSpace.proj` is
-`@[expose]`, this theorem also applies directly to `ManifoldTotalSpace.proj`. -/
+/-- The projection of the total space to the base is `C^n`. -/
 theorem contMDiff_proj :
-    ContMDiff (IB.prod IF) IB n fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj :=
+    ContMDiff (IB.prod IF) IB n (proj : ManifoldTotalSpace F E → B) :=
   fun x ↦ (ManifoldTotalSpace.contMDiffAt_iff.1 (contMDiffAt_id (x := x).congr_of_eventuallyEq
     (.of_forall (homeomorph F E).apply_symm_apply))).1
 
