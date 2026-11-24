@@ -16,6 +16,7 @@ import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Polynomial.Sobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.CompactFamily
 import TauCeti.Analysis.Sobolev.BesselPotential.Exp
+import TauCeti.Analysis.Sobolev.BesselPotential.SmoothFamily
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
@@ -178,21 +179,8 @@ private theorem normalizedVortex_apply_two_add_three (c : Fin m → ℂ) (z : �
     (normalizedVortex c z 2 : ℂ) + normalizedVortex c z 3 * I =
       bgSection c z * Real.exp (redSol c z) := by
   rw [normalizedVortex, gaugeTransform_apply, polynomialVortex_def, bgSection]
-  simp only [amplitudeField_apply_two, amplitudeField_apply_three]
-  simp only [Matrix.cons_val, Real.exp_add]
-  apply Complex.ext
-  · simp only [exp_backgroundAmplitude, ofReal_sub, ofReal_mul, ofReal_div, ofReal_inv, ofReal_exp,
-      ofReal_ofNat, ofReal_add, add_re, sub_re, mul_re, ofReal_re, div_ofNat_re, inv_re,
-      normSq_ofReal, div_self_mul_self', inv_im, ofReal_im, neg_zero, zero_div, exp_ofReal_im,
-      mul_zero, sub_zero, mul_im, zero_mul, add_zero, div_ofNat_im, I_re, add_im, I_im, mul_one,
-      sub_self]
-    ring
-  · simp only [exp_backgroundAmplitude, ofReal_sub, ofReal_mul, ofReal_div, ofReal_inv, ofReal_exp,
-      ofReal_ofNat, ofReal_add, add_im, sub_im, mul_im, ofReal_re, div_ofNat_im, mul_re, inv_re,
-      normSq_ofReal, div_self_mul_self', inv_im, ofReal_im, neg_zero, zero_div, exp_ofReal_im,
-      mul_zero, sub_zero, zero_mul, add_zero, div_ofNat_re, sub_self, add_re, I_im, mul_one, I_re,
-      zero_add]
-    ring
+  simp only [amplitudeField_apply_two, amplitudeField_apply_three, Matrix.cons_val, Real.exp_add]
+  apply Complex.ext <;> simp <;> ring
 
 /-! ### The background field outside a disc -/
 
@@ -597,6 +585,18 @@ private theorem contDiff_bgSection_uncurry :
 
 /-! ### The logarithmic ratio as a smooth family in `H^(k+1)` -/
 
+/-- Multiplication by a smooth real function `g` with bounded derivatives, on `H^N(ℂ)`. -/
+private theorem exists_realMulCLM {g : ℂ → ℝ} (hg : ContDiff ℝ ∞ g)
+    (hbd : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C) (N : ℕ) :
+    ∃ M : H^{(N : ℝ)}(ℂ) →L[ℂ] H^{(N : ℝ)}(ℂ), ∀ u, ⇑(inclusionLp N.cast_nonneg (M u)) =ᵐ[volume]
+      fun z ↦ (g z : ℂ) * inclusionLp N.cast_nonneg u z := by
+  have hbd' (n : ℕ) : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (g z : ℂ)) z‖ ≤ C :=
+    ofRealCLM.exists_bound_iteratedFDeriv_comp_left (hg.of_le (by exact_mod_cast le_top))
+      (fun i _ ↦ hbd i) n le_rfl
+  exact ⟨smulLeftCLMOfNormIteratedFDerivLe (by norm_num) (by norm_num) fun n _ ↦ hbd' n,
+    coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq (by norm_num) (by norm_num)
+      (fun n _ ↦ hbd' n) (.of_norm_iteratedFDeriv_le (ofRealCLM.contDiff.comp hg) hbd')⟩
+
 private theorem contDiff_ratioSubOne {c₀ : Fin m → ℂ} {R₀ : ℝ}
     (hq : ∀ z, innerCut R₀ z * defect c₀ z ≤ 1 / 2) (c : Fin m → ℂ) :
     ContDiff ℝ ∞ (ratioSubOne c₀ R₀ c) :=
@@ -612,12 +612,9 @@ private theorem exists_ratioSubOne_family (hm : 0 < m) (k : ℕ) (c₀ : Fin m �
   have hdeg (c : Fin m → ℂ) : 0 < (monicOfCoeff c).natDegree := by rwa [natDegree_monicOfCoeff]
   set φS : (Fin m → ℂ) → H^{((k + 1 : ℕ) : ℝ)}(ℂ) := fun c ↦
     sobolevBackgroundDefect (hdeg c) (Nat.cast_nonneg _)
-  -- Multiplication by the weight, whose complexification has bounded derivatives.
-  have hμ (n : ℕ) : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (weight c₀ R₀ z : ℂ)) z‖ ≤ C :=
-    ofRealCLM.exists_bound_iteratedFDeriv_comp_left ((contDiff_weight fun z ↦ (hq z).2).of_le
-      (by exact_mod_cast le_top)) (fun i _ ↦ exists_bound_iteratedFDeriv_weight hm hq i) n le_rfl
-  set μ : H^{((k + 1 : ℕ) : ℝ)}(ℂ) →L[ℂ] H^{((k + 1 : ℕ) : ℝ)}(ℂ) :=
-    smulLeftCLMOfNormIteratedFDerivLe (by norm_num) (by norm_num) fun n _ ↦ hμ n
+  -- Multiplication by the weight, which has bounded derivatives.
+  obtain ⟨μ, hμ⟩ := exists_realMulCLM (contDiff_weight fun z ↦ (hq z).2)
+    (exists_bound_iteratedFDeriv_weight hm hq) (k + 1)
   set ι : H^{((k + 1 : ℕ) : ℝ)}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ) :=
     BesselPotentialSpace.inclusion (Nat.cast_succ k).ge
   refine ⟨fun c ↦ ι (μ (φS c₀ - φS c)), (ι.restrictScalars ℝ).contDiff.comp
@@ -625,13 +622,10 @@ private theorem exists_ratioSubOne_family (hm : 0 < m) (k : ℕ) (c₀ : Fin m �
       (contDiff_sobolevBackgroundDefect_monicOfCoeff hm (Nat.cast_nonneg _)))), by simp,
     fun c ↦ ?_⟩
   rw [inclusionLp_inclusion]
-  filter_upwards [coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq (by norm_num)
-    (by norm_num) (fun n _ ↦ hμ n)
-    (.of_norm_iteratedFDeriv_le (ofRealCLM.contDiff.comp (contDiff_weight fun z ↦ (hq z).2)) hμ)
-    (φS c₀ - φS c),
+  filter_upwards [hμ (φS c₀ - φS c),
     coeFn_inclusionLp_sub_ae_eq _ (coeFn_inclusionLp_sobolevBackgroundDefect (hdeg c₀) _)
       (coeFn_inclusionLp_sobolevBackgroundDefect (hdeg c) _)] with z h₁ h₂
-  rw [h₁, h₂, smul_eq_mul, ← ofReal_sub, ← ofReal_mul]
+  rw [h₁, h₂, ← ofReal_sub, ← ofReal_mul]
 
 /-- **The logarithmic ratio `V_c` is a smooth family in `H^(k+1)` near `c₀`.** There is a family of
 elements of `H^(k+1)(ℂ)`, smooth at `c₀`, whose `L²` function near `c₀` is `log (1 + U_c)`, where
@@ -687,52 +681,39 @@ private theorem exists_logRatio_family (hm : 0 < m) {k : ℕ} (hk : 2 ≤ k) (c�
 
 /-! ### Families of real functions that are smooth in `H^s` at a point -/
 
-/-- The family of real functions `F c` is smooth in `H^s(ℂ)` at `c₀`: some family of elements of
-`H^s(ℂ)`, smooth at `c₀`, has `L²` function `F c` for `c` near `c₀`. -/
-private def IsSmoothAt (s : ℝ) (hs : 0 ≤ s) (c₀ : Fin m → ℂ) (F : (Fin m → ℂ) → ℂ → ℝ) : Prop :=
-  ∃ D : (Fin m → ℂ) → H^{s}(ℂ), ContDiffAt ℝ ∞ D c₀ ∧
-    ∀ᶠ c in 𝓝 c₀, ⇑(inclusionLp hs (D c)) =ᵐ[volume] fun z ↦ (F c z : ℂ)
+/-- The family of real functions `F c` is smooth in `H^s(ℂ)` at `c₀`
+(`BesselPotentialSpace.IsSmoothFamilyAt`). -/
+private abbrev IsSmoothAt (s : ℝ) (hs : 0 ≤ s) (c₀ : Fin m → ℂ) (F : (Fin m → ℂ) → ℂ → ℝ) :
+    Prop :=
+  IsSmoothFamilyAt s 2 hs c₀ fun c z ↦ (F c z : ℂ)
 
 section IsSmoothAt
 
 variable {s : ℝ} {hs : 0 ≤ s} {c₀ : Fin m → ℂ} {F G : (Fin m → ℂ) → ℂ → ℝ}
 
 private theorem IsSmoothAt.congr (hF : IsSmoothAt s hs c₀ F) (h : ∀ᶠ c in 𝓝 c₀, F c = G c) :
-    IsSmoothAt s hs c₀ G := by
-  obtain ⟨D, hD, hDF⟩ := hF
-  refine ⟨D, hD, ?_⟩
-  filter_upwards [hDF, h] with c h₁ h₂
-  simpa [h₂] using h₁
+    IsSmoothAt s hs c₀ G :=
+  IsSmoothFamilyAt.congr hF (h.mono fun c hc ↦ by rw [hc])
 
 private theorem IsSmoothAt.add (hF : IsSmoothAt s hs c₀ F) (hG : IsSmoothAt s hs c₀ G) :
-    IsSmoothAt s hs c₀ fun c z ↦ F c z + G c z := by
-  obtain ⟨D, hD, hDF⟩ := hF
-  obtain ⟨E, hE, hEG⟩ := hG
-  refine ⟨D + E, hD.add hE, ?_⟩
-  filter_upwards [hDF, hEG] with c h₁ h₂
-  simpa using coeFn_inclusionLp_add_ae_eq hs h₁ h₂
+    IsSmoothAt s hs c₀ fun c z ↦ F c z + G c z :=
+  (IsSmoothFamilyAt.add hF hG).congr (.of_forall fun _ ↦ funext fun _ ↦ (ofReal_add _ _).symm)
 
 private theorem IsSmoothAt.sub (hF : IsSmoothAt s hs c₀ F) (hG : IsSmoothAt s hs c₀ G) :
-    IsSmoothAt s hs c₀ fun c z ↦ F c z - G c z := by
-  obtain ⟨D, hD, hDF⟩ := hF
-  obtain ⟨E, hE, hEG⟩ := hG
-  refine ⟨D - E, hD.sub hE, ?_⟩
-  filter_upwards [hDF, hEG] with c h₁ h₂
-  simpa using coeFn_inclusionLp_sub_ae_eq hs h₁ h₂
+    IsSmoothAt s hs c₀ fun c z ↦ F c z - G c z :=
+  (IsSmoothFamilyAt.sub hF hG).congr (.of_forall fun _ ↦ funext fun _ ↦ (ofReal_sub _ _).symm)
 
 private theorem IsSmoothAt.const_mul (a : ℝ) (hF : IsSmoothAt s hs c₀ F) :
-    IsSmoothAt s hs c₀ fun c z ↦ a * F c z := by
-  obtain ⟨D, hD, hDF⟩ := hF
-  refine ⟨fun c ↦ (a : ℂ) • D c, hD.const_smul _, ?_⟩
-  filter_upwards [hDF] with c h
-  simpa using coeFn_inclusionLp_smul_ae_eq hs (a : ℂ) h
+    IsSmoothAt s hs c₀ fun c z ↦ a * F c z :=
+  (IsSmoothFamilyAt.smul (γ := fun _ ↦ (a : ℂ)) contDiffAt_const hF).congr
+    (.of_forall fun _ ↦ funext fun _ ↦ (ofReal_mul _ _).symm)
 
 /-- Products, in the algebra `H^s(ℂ)`, `s > 1`. -/
 private theorem IsSmoothAt.mul (hs' : (finrank ℝ ℂ : ℝ) < 2 * s) (hF : IsSmoothAt s hs c₀ F)
     (hG : IsSmoothAt s hs c₀ G) : IsSmoothAt s hs c₀ fun c z ↦ F c z * G c z := by
-  obtain ⟨D, hD, hDF⟩ := hF
-  obtain ⟨E, hE, hEG⟩ := hG
-  refine ⟨fun c ↦ mulCLM hs' (D c) (E c),
+  obtain ⟨D, hD, hDF⟩ := isSmoothFamilyAt_iff.1 hF
+  obtain ⟨E, hE, hEG⟩ := isSmoothFamilyAt_iff.1 hG
+  refine isSmoothFamilyAt_iff.2 ⟨fun c ↦ mulCLM hs' (D c) (E c),
     ((mulCLM hs').isBoundedBilinearMap.contDiff.restrict_scalars ℝ).contDiffAt.comp c₀
       (hD.prodMk hE), ?_⟩
   filter_upwards [hDF, hEG] with c h₁ h₂
@@ -742,8 +723,8 @@ private theorem IsSmoothAt.mul (hs' : (finrank ℝ ℂ : ℝ) < 2 * s) (hF : IsS
 /-- Exponentials, in the algebra `H^s(ℂ)`, `s > 1`. -/
 private theorem IsSmoothAt.exp_sub_one (hs' : (finrank ℝ ℂ : ℝ) < 2 * s)
     (hF : IsSmoothAt s hs c₀ F) : IsSmoothAt s hs c₀ fun c z ↦ Real.exp (F c z) - 1 := by
-  obtain ⟨D, hD, hDF⟩ := hF
-  refine ⟨fun c ↦ expSubOne hs' (D c),
+  obtain ⟨D, hD, hDF⟩ := isSmoothFamilyAt_iff.1 hF
+  refine isSmoothFamilyAt_iff.2 ⟨fun c ↦ expSubOne hs' (D c),
     ((contDiff_expSubOne hs').restrict_scalars ℝ).contDiffAt.comp c₀ hD, ?_⟩
   filter_upwards [hDF] with c h
   have he := coeFn_toLp_inclusion_expSubOne hs' hs (D c)
@@ -751,48 +732,29 @@ private theorem IsSmoothAt.exp_sub_one (hs' : (finrank ℝ ℂ : ℝ) < 2 * s)
   filter_upwards [he, h] with z h₁ h₂
   rw [h₁, h₂, ofReal_sub, ofReal_exp, ofReal_one]
 
-/-- Lowering the order. -/
-private theorem IsSmoothAt.mono {t : ℝ} {ht : 0 ≤ t} (hF : IsSmoothAt t ht c₀ F) (hst : s ≤ t) :
-    IsSmoothAt s hs c₀ F := by
-  obtain ⟨D, hD, hDF⟩ := hF
-  refine ⟨fun c ↦ BesselPotentialSpace.inclusion hst (D c),
-    ((BesselPotentialSpace.inclusion hst).restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
-  filter_upwards [hDF] with c h
-  rwa [inclusionLp_inclusion]
-
 /-- Multiplication by a fixed real function with bounded derivatives, at an integer order. -/
 private theorem IsSmoothAt.realMul {N : ℕ} {g : ℂ → ℝ} (hg : ContDiff ℝ ∞ g)
     (hbd : ∀ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C)
     (hF : IsSmoothAt N N.cast_nonneg c₀ F) :
     IsSmoothAt N N.cast_nonneg c₀ fun c z ↦ g z * F c z := by
-  obtain ⟨D, hD, hDF⟩ := hF
-  have hbd' (n : ℕ) : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ (g z : ℂ)) z‖ ≤ C :=
-    ofRealCLM.exists_bound_iteratedFDeriv_comp_left (hg.of_le (by exact_mod_cast le_top))
-      (fun i _ ↦ hbd i) n le_rfl
-  set M : H^{(N : ℝ)}(ℂ) →L[ℂ] H^{(N : ℝ)}(ℂ) :=
-    smulLeftCLMOfNormIteratedFDerivLe (by norm_num) (by norm_num) fun n _ ↦ hbd' n
-  refine ⟨fun c ↦ M (D c), (M.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
+  obtain ⟨D, hD, hDF⟩ := isSmoothFamilyAt_iff.1 hF
+  obtain ⟨M, hM⟩ := exists_realMulCLM hg hbd N
+  refine isSmoothFamilyAt_iff.2 ⟨fun c ↦ M (D c),
+    (M.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
   filter_upwards [hDF] with c h
-  filter_upwards [coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq (by norm_num)
-    (by norm_num) (fun n _ ↦ hbd' n)
-    (.of_norm_iteratedFDeriv_le (ofRealCLM.contDiff.comp hg) hbd') (D c), h] with z h₁ h₂
-  rw [h₁, h₂, smul_eq_mul, ofReal_mul]
+  filter_upwards [hM (D c), h] with z h₁ h₂
+  rw [h₁, h₂, ofReal_mul]
 
 /-- Directional derivatives, from `H^(s+1)` to `H^s`. -/
 private theorem IsSmoothAt.fderiv_apply (hF : IsSmoothAt (s + 1) (by linarith) c₀ F)
     (hF1 : ∀ᶠ c in 𝓝 c₀, ContDiff ℝ 1 (F c)) (v : ℂ) :
     IsSmoothAt s hs c₀ fun c z ↦ fderiv ℝ (F c) z v := by
-  obtain ⟨D, hD, hDF⟩ := hF
+  obtain ⟨D, hD, hDF⟩ := isSmoothFamilyAt_iff.1 hF
   set Dv := lineDerivCLM (E := ℂ) (F := ℂ) (s := s) ENNReal.one_lt_two ENNReal.ofNat_ne_top v
-  refine ⟨fun c ↦ Dv (D c), (Dv.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
+  refine isSmoothFamilyAt_iff.2 ⟨fun c ↦ Dv (D c),
+    (Dv.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD, ?_⟩
   filter_upwards [hDF, hF1] with c h₁ h₂
   exact coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two ENNReal.ofNat_ne_top hs h₂ h₁ v
-
-/-- A smooth family of elements of `H^s(ℂ)`. -/
-private theorem isSmoothAt_of_contDiff {D : (Fin m → ℂ) → H^{s}(ℂ)} (hD : ContDiff ℝ ∞ D)
-    (hDF : ∀ c, ⇑(inclusionLp hs (D c)) =ᵐ[volume] fun z ↦ (F c z : ℂ)) :
-    IsSmoothAt s hs c₀ F :=
-  ⟨D, hD.contDiffAt, .of_forall hDF⟩
 
 end IsSmoothAt
 
@@ -808,18 +770,18 @@ private theorem isSmoothAt_core {F : (Fin m → ℂ) → ℂ → ℝ}
       ((contDiff_innerCut (R₀ + 2)).comp contDiff_snd)).mul hF)
   obtain ⟨D, hD, hDF⟩ := exists_contDiff_inclusionLp_ae_eq_of_forall_le_norm hj
     (R := |R₀ + 2| + 1) (fun c z hz ↦ by simp [innerCut_eq_one hz]) k.cast_nonneg
-  exact isSmoothAt_of_contDiff hD hDF
+  exact IsSmoothFamilyAt.of_contDiff hD hDF
 
 /-- The reduced solution `w_c` is smooth in every `H^s`. -/
 private theorem isSmoothAt_redSol {s : ℝ} (hs : 0 ≤ s) (c₀ : Fin m → ℂ) :
     IsSmoothAt s hs c₀ fun c z ↦ redSol c z :=
-  isSmoothAt_of_contDiff (contDiff_ofRealSobolevFunction_reducedSolution hs)
+  IsSmoothFamilyAt.of_contDiff (contDiff_ofRealSobolevFunction_reducedSolution hs)
     fun _ ↦ coeFn_inclusionLp_ofRealSobolevFunction hs _
 
 /-- The difference `w_c - w_{c₀}` is smooth in every `H^s`. -/
 private theorem isSmoothAt_redSol_sub {s : ℝ} (hs : 0 ≤ s) (c₀ : Fin m → ℂ) :
     IsSmoothAt s hs c₀ fun c z ↦ redSol c z - redSol c₀ z :=
-  (isSmoothAt_redSol hs c₀).sub (isSmoothAt_of_contDiff (D := fun _ ↦ ofRealSobolevFunction hs
+  (isSmoothAt_redSol hs c₀).sub (.of_contDiff (D := fun _ ↦ ofRealSobolevFunction hs
     (reducedSolution_mem_realSobolevFunctions (monicOfCoeff c₀) s)) contDiff_const
     fun _ ↦ coeFn_inclusionLp_ofRealSobolevFunction hs _)
 
@@ -850,7 +812,8 @@ private theorem exists_radius_isSmoothAt_logRatio (hm : 0 < m) {k : ℕ} (hk : 2
   obtain ⟨R₀, -, hR, hR'⟩ := exists_radius hm c₀
   obtain ⟨V, hV, hVev⟩ := exists_logRatio_family hm hk c₀ hR'
   have hq := innerCut_mul_defect_le hR'
-  refine ⟨R₀, hR, ⟨V, hV, hVev.mono fun c h ↦ h.2⟩, hVev.mono fun c h ↦ ?_⟩
+  refine ⟨R₀, hR, isSmoothFamilyAt_iff.2 ⟨V, hV, hVev.mono fun c h ↦ h.2⟩,
+    hVev.mono fun c h ↦ ?_⟩
   exact (((contDiff_const.add (contDiff_ratioSubOne (fun z ↦ (hq z).2) c)).log
     fun z ↦ (h.1 z).ne').of_le (by simp))
 
@@ -890,7 +853,7 @@ private theorem isSmoothAt_normalizedVortex_sub_section (hm : 0 < m) {k : ℕ} (
   have hw := (isSmoothAt_redSol k.cast_nonneg c₀).exp_sub_one hk0
   have hEW := (isSmoothAt_redSol_sub k.cast_nonneg c₀).exp_sub_one hk0
   have hEV : IsSmoothAt k k.cast_nonneg c₀ fun c z ↦ Real.exp (1 / 2 * logRatio c₀ R₀ c z) - 1 :=
-    ((hV.const_mul (1 / 2)).exp_sub_one hk1).mono (by linarith)
+    IsSmoothFamilyAt.mono ((hV.const_mul (1 / 2)).exp_sub_one hk1) (by linarith)
   have hy := contDiff_normalizedVortex_apply c₀ j
   have hyb := exists_bound_iteratedFDeriv_normalizedVortex hm c₀ j
   have h₁ := hK.add (hK.mul hk0 hw)
@@ -943,12 +906,14 @@ theorem contDiff_subRef_normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ
   refine contDiff_pi.2 fun j ↦ contDiff_iff_contDiffAt.2 fun c₀ ↦ ?_
   set k := max 2 ⌈s⌉₊
   have hsk : s ≤ k := (Nat.le_ceil s).trans (by exact_mod_cast le_max_right _ _)
-  obtain ⟨D, hD, hDF⟩ := isSmoothAt_normalizedVortex_sub hm (le_max_left 2 ⌈s⌉₊) c₀ j
+  obtain ⟨D, hD, hDF⟩ :=
+    isSmoothFamilyAt_iff.1 (isSmoothAt_normalizedVortex_sub hm (le_max_left 2 ⌈s⌉₊) c₀ j)
   set ι : H^{(k : ℝ)}(ℂ) →L[ℂ] H^{s}(ℂ) := BesselPotentialSpace.inclusion hsk
   refine (contDiffAt_const (c := (normalizedVortex hm f s c₀).subRef j).add
     ((ι.restrictScalars ℝ).contDiff.contDiffAt.comp c₀ hD)).congr_of_eventuallyEq ?_
   filter_upwards [hDF] with c hc
   -- `y_c - x_m = (y_{c₀} - x_m) + (y_c - y_{c₀})`.
+  change _ = (normalizedVortex hm f s c₀).subRef j + ι (D c)
   refine (subRef_eq_iff hs _ j _).2 ?_
   have h₀ := (subRef_eq_iff hs (normalizedVortex hm f s c₀) j _).1 rfl
   rw [toLp_inclusion] at h₀ ⊢
@@ -956,9 +921,10 @@ theorem contDiff_subRef_normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ
       ((Vortex.normalizedVortex c z j - Vortex.normalizedVortex c₀ z j : ℝ) : ℂ) := by
     rw [inclusionLp_inclusion]
     exact hc
-  filter_upwards [coeFn_inclusionLp_add_ae_eq hs h₀ h₁] with z hz
-  simpa only [map_add, AddSubgroup.coe_add, coe_normalizedVortex, ofReal_sub, sub_add_sub_cancel',
-    ContinuousLinearMap.coe_restrictScalars', Function.comp_apply] using hz
+  refine (coeFn_inclusionLp_add_ae_eq hs h₀ h₁).trans (.of_forall fun z ↦ ?_)
+  simp only [coe_normalizedVortex]
+  push_cast
+  ring
 
 /-- The normalized vortices depend continuously on their divisor coefficients in `A_m^s`. -/
 theorem continuous_normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ)) {s : ℝ}

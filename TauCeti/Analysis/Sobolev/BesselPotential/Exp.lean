@@ -189,13 +189,13 @@ theorem contDiff_expSubOne (hs : finrank ℝ E < 2 * s) : ContDiff ℂ ∞ (expS
     exact contDiff_succ_iff_hasFDerivAt.2 ⟨_, contDiff_const.add ((mulCLM hs).contDiff.comp ih),
       hasFDerivAt_expSubOne hs⟩
 
-/-- **A smooth logarithm near `0` in `H^s(E)`.** The derivative of `expSubOne hs` at `0` is the
-identity, so by the inverse function theorem it has a local inverse `L`, a logarithm
-`u ↦ log (1 + u)` near `0`: `L` is `C^∞` over `ℂ` at `0`, `L 0 = 0`, and `exp (L u) - 1 = u` for
-`u` near `0`. -/
+/-- **A smooth logarithm near `0` in `H^s(E)`.** The map `expSubOne hs` has a local inverse `L`
+near `0`, a logarithm `u ↦ log (1 + u)`: `L` is `C^∞` over `ℂ` at `0`, `L 0 = 0`, and
+`exp (L u) - 1 = u` for `u` near `0`. -/
 theorem exists_contDiffAt_expSubOne_eq (hs : finrank ℝ E < 2 * s) :
     ∃ L : H^{s}(E) → H^{s}(E), ContDiffAt ℂ ∞ L 0 ∧ L 0 = 0 ∧
       ∀ᶠ u in 𝓝 0, expSubOne hs (L u) = u := by
+  -- The derivative of `expSubOne hs` at `0` is the identity: apply the inverse function theorem.
   have hf : ContDiffAt ℂ ∞ (expSubOne (E := E) hs) 0 := (contDiff_expSubOne hs).contDiffAt
   have hf' : HasFDerivAt (expSubOne (E := E) hs)
       ((ContinuousLinearEquiv.refl ℂ H^{s}(E) : H^{s}(E) →L[ℂ] H^{s}(E))) 0 := by

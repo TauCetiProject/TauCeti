@@ -15,7 +15,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 
 Let `X` be a finite-dimensional real normed space of parameters and `F : X → E → ℂ` a family of
 functions on a finite-dimensional real inner product space `E`, jointly smooth in the parameter and
-the point, and supported in one closed ball `‖x‖ ≤ R` for every parameter. Then `c ↦ F c` is a
+the point, and vanishing wherever `‖x‖ ≥ R`, for one `R` and every parameter. Then `c ↦ F c` is a
 smooth map into every Bessel-potential space `H^s(E)`, `s ≥ 0`
 (`BesselPotentialSpace.exists_contDiff_inclusionLp_ae_eq_of_forall_le_norm`).
 
@@ -158,9 +158,9 @@ private theorem exists_contDiff_inclusionLp_natCast (k : ℕ) {F : X → E → �
     exact hΦF c
 
 /-- **Compactly supported smooth families are smooth in every `H^s`.** Let `F : X → E → ℂ` be
-jointly smooth in the parameter `c ∈ X` and the point `x ∈ E`, and let every `F c` vanish outside
-the closed ball of radius `R`. Then for every `s ≥ 0` there is a smooth map `Φ : X → H^s(E)` whose
-`L²` function at `c` is `F c`. -/
+jointly smooth in the parameter `c ∈ X` and the point `x ∈ E`, and let every `F c` vanish wherever
+`‖x‖ ≥ R`. Then for every `s ≥ 0` there is a smooth map `Φ : X → H^s(E)` whose `L²` function at
+`c` is `F c`. -/
 theorem exists_contDiff_inclusionLp_ae_eq_of_forall_le_norm {F : X → E → ℂ}
     (hF : ContDiff ℝ ∞ (Function.uncurry F)) {R : ℝ} (hR : ∀ c x, R ≤ ‖x‖ → F c x = 0) {s : ℝ}
     (hs : 0 ≤ s) :
