@@ -22,9 +22,10 @@ for some `c ≥ 0` and some Poisson-finite measure `ν` on `ℝ`, where `P[ν]` 
 `TauCeti.upperHalfPlanePoissonIntegral`
 (`TauCeti.exists_eq_mul_im_add_upperHalfPlanePoissonIntegral`).
 
-The proof goes through holomorphic functions. A harmonic `u` on `ℂ₊` is `Im F` for a holomorphic
-`F` on `ℂ₊`, since `ℂ₊` is convex and hence simply connected
-(`InnerProductSpace.HarmonicOnNhd.exists_differentiableOn_im_eq_of_isSimplyConnected`).
+The proof goes through holomorphic functions. A harmonic `u` on `ℂ₊` is `Re G` for an analytic
+`G` on `ℂ₊`, since `ℂ₊` is convex and hence simply connected
+(`InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_re_eq_of_isSimplyConnected`), so `u = Im F`
+for the holomorphic `F = i G`.
 Since `Im F ≥ 0`, the Herglotz representation `TauCeti.exists_eq_subtractedResolventKernel_add`
 applies to `F`, and its imaginary part is the representation of `u`, because the imaginary part of
 the Schwarz kernel is `π` times the Poisson kernel
@@ -73,9 +74,13 @@ theorem exists_eq_mul_im_add_upperHalfPlanePoissonIntegral {u : ℂ → ℝ}
     (hu : HarmonicOnNhd u upperHalfPlaneSet) (hpos : ∀ z ∈ upperHalfPlaneSet, 0 ≤ u z) :
     ∃ (c : ℝ) (ν : Measure ℝ), 0 ≤ c ∧ IsPoissonFinite ν ∧
       ∀ z ∈ upperHalfPlaneSet, u z = c * z.im + upperHalfPlanePoissonIntegral ν z := by
-  obtain ⟨F, hF, hFu⟩ := hu.exists_differentiableOn_im_eq_of_isSimplyConnected
+  obtain ⟨G, hG, hGu⟩ := hu.exists_analyticOnNhd_re_eq_of_isSimplyConnected
     UpperHalfPlane.isOpen_upperHalfPlaneSet
     ((convex_halfSpace_im_gt 0).isSimplyConnected ⟨I, by simp⟩)
+  set F : ℂ → ℂ := fun z ↦ I * G z
+  have hF : DifferentiableOn ℂ F upperHalfPlaneSet := hG.differentiableOn.const_mul I
+  have hFu : EqOn (fun z ↦ (F z).im) u upperHalfPlaneSet := fun z hz ↦ by
+    simpa [F] using hGu hz
   obtain ⟨b, ν, hb, hν, hrep⟩ := exists_eq_subtractedResolventKernel_add hF
     fun z hz ↦ (hFu hz).trans_ge (hpos z hz)
   refine ⟨b, ENNReal.ofReal π • ν, hb, ?_, fun z hz ↦ ?_⟩

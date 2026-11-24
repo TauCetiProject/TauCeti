@@ -13,23 +13,23 @@ import TauCeti.Analysis.Complex.HasPrimitives.SimplyConnected
 /-!
 # Harmonic conjugates on simply connected domains
 
-A harmonic function `u` on a simply connected open set `U ⊆ ℂ` is the imaginary part of a
-holomorphic function on `U`
-(`InnerProductSpace.HarmonicOnNhd.exists_differentiableOn_im_eq_of_isSimplyConnected`).
+A harmonic function `u` on a simply connected open set `U ⊆ ℂ` is the real part of an analytic
+function on `U`
+(`InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_re_eq_of_isSimplyConnected`).
 
 The complex partial `∂ₓu - i ∂ᵧu` of `u` is holomorphic on `U`
 (`HarmonicAt.differentiableAt_complex_partial`), so it has a primitive there
 (`DifferentiableOn.isExactOn_of_isSimplyConnected`); the real part of the primitive has the
-gradient of `u`, and `i` times the primitive, suitably normalized, is a holomorphic `F` with
-`Im F = u`. The proof adapts Mathlib's
-`InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_ball_re_eq` (the same statement for the real
-part on a ball), replacing the primitive on a ball (`DifferentiableOn.isExactOn_ball`) by the
-primitive on a simply connected domain.
+gradient of `u`, so the primitive, suitably normalized, is an analytic `F` with `Re F = u`. This
+generalizes Mathlib's `InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_ball_re_eq` and
+`InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_univ_re_eq` (the same statement on a ball
+and on `ℂ`), and its proof adapts the ball case, replacing the primitive on a ball
+(`DifferentiableOn.isExactOn_ball`) by the primitive on a simply connected domain.
 
 ## Main results
 
-* `InnerProductSpace.HarmonicOnNhd.exists_differentiableOn_im_eq_of_isSimplyConnected`: a harmonic
-  function on a simply connected open set is the imaginary part of a holomorphic function there.
+* `InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_re_eq_of_isSimplyConnected`: a harmonic
+  function on a simply connected open set is the real part of an analytic function there.
 -/
 
 public section
@@ -40,14 +40,13 @@ open Complex Set InnerProductSpace
 
 namespace InnerProductSpace.HarmonicOnNhd
 
-/-- **A harmonic function on a simply connected domain is the imaginary part of a holomorphic
-function.** The proof adapts Mathlib's
-`InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_ball_re_eq`, with the primitive on a simply
-connected open set (`DifferentiableOn.isExactOn_of_isSimplyConnected`) in place of the primitive
-on a ball. -/
-theorem exists_differentiableOn_im_eq_of_isSimplyConnected {u : ℂ → ℝ} {U : Set ℂ}
+/-- **A harmonic function on a simply connected domain is the real part of an analytic function.**
+This generalizes Mathlib's `InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_ball_re_eq` and
+`InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_univ_re_eq` from a ball and `ℂ` to any
+simply connected open set. -/
+theorem exists_analyticOnNhd_re_eq_of_isSimplyConnected {u : ℂ → ℝ} {U : Set ℂ}
     (hu : HarmonicOnNhd u U) (hU : IsOpen U) (hUc : IsSimplyConnected U) :
-    ∃ F : ℂ → ℂ, DifferentiableOn ℂ F U ∧ EqOn (fun z ↦ (F z).im) u U := by
+    ∃ F : ℂ → ℂ, AnalyticOnNhd ℂ F U ∧ EqOn (fun z ↦ (F z).re) u U := by
   -- the complex partial `∂ₓu - i ∂ᵧu`, and its primitive `G`
   let g : ℂ → ℂ := fun z ↦ fderiv ℝ u z 1 - I * fderiv ℝ u z I
   have hg : DifferentiableOn ℂ g U := fun z hz ↦
@@ -72,9 +71,9 @@ theorem exists_differentiableOn_im_eq_of_isSimplyConnected {u : ℂ → ℝ} {U 
         map_smul]
       simp [g]
     rw [hGre.fderiv, hu'.fderiv]
-  refine ⟨fun z ↦ I * (G z + c), (hGd.add_const _).const_mul I, fun z hz ↦ ?_⟩
+  refine ⟨fun z ↦ G z + c, (hGd.add_const _).analyticOnNhd hU, fun z hz ↦ ?_⟩
   have := hre hz
-  simp only [mul_im, I_re, zero_mul, I_im, one_mul, zero_add, add_re, ofReal_re] at this ⊢
+  simp only [add_re, ofReal_re] at this ⊢
   linarith
 
 end InnerProductSpace.HarmonicOnNhd
