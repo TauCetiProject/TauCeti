@@ -44,12 +44,12 @@ private noncomputable def radialEnergyDensity (ε δ : ℝ) (L : ℝ → ℝ) (t
   deriv (logCutoffProfile ε δ) t ^ 2 * L t
 
 private theorem intervalIntegrable_radialEnergyDensity
-    (hε : 0 < ε) (hδ : 0 < δ) (hL : ContinuousOn L (Icc 0 δ))
+    (hδ : δ ≠ 0) (hL : ContinuousOn L (Icc 0 δ))
     {a b : ℝ} (ha : a ∈ Icc 0 δ) (hb : b ∈ Icc 0 δ) :
     IntervalIntegrable (radialEnergyDensity ε δ L) volume a b := by
   unfold radialEnergyDensity
   simpa only [Pi.mul_def, Pi.pow_def] using
-    ((((contDiff_logCutoffProfile hε hδ).continuous_deriv (by simp)).pow 2).continuousOn.mul
+    ((((contDiff_logCutoffProfile hδ).continuous_deriv (by simp)).pow 2).continuousOn.mul
       hL |>.mono (uIcc_subset_Icc ha hb)).intervalIntegrable
 
 private theorem integral_radialEnergyDensity_split
@@ -61,7 +61,7 @@ private theorem integral_radialEnergyDensity_split
   have hδ : 0 < δ := by linarith
   have h2εδ : 2 * ε ≤ δ := by linarith
   have hfi {a b : ℝ} (ha : a ∈ Icc 0 δ) (hb : b ∈ Icc 0 δ) :=
-    intervalIntegrable_radialEnergyDensity hε hδ hL ha hb
+    intervalIntegrable_radialEnergyDensity (ε := ε) hδ.ne' hL ha hb
   have h0 : (0 : ℝ) ∈ Icc 0 δ := ⟨le_rfl, hδ.le⟩
   have h1 : ε ∈ Icc 0 δ := ⟨hε.le, by linarith⟩
   have h2 : 2 * ε ∈ Icc 0 δ := ⟨by linarith, by linarith⟩
@@ -73,8 +73,7 @@ private theorem integral_radialEnergyDensity_split
         apply intervalIntegral.integral_congr
         intro t ht
         rw [uIcc_of_le hε.le] at ht
-        simp [radialEnergyDensity, deriv_logCutoffProfile_eq_zero_of_le hε
-          h2εδ ht.2]
+        simp [radialEnergyDensity, deriv_logCutoffProfile_eq_zero_of_le h2εδ ht.2]
       _ = 0 := intervalIntegral.integral_zero
   rw [← integral_add_adjacent_intervals (hfi h0 h3) (hfi h3 h4),
     ← integral_add_adjacent_intervals (hfi h0 h2) (hfi h2 h3),
@@ -92,12 +91,12 @@ private theorem abs_integral_radialEnergyDensity_le
   have hinv := (intervalIntegrable_inv_iff (a := a) (b := b)).mpr
     (.inr (by rw [uIcc_of_le hab]; exact fun h ↦ ha0.not_ge h.1))
   refine intervalIntegral.integral_mono_on hab
-    (intervalIntegrable_radialEnergyDensity hε (by linarith) hL ha hb).abs
+    (intervalIntegrable_radialEnergyDensity (by linarith) hL ha hb).abs
     (hinv.const_mul _) fun t ht ↦ ?_
   have ht0 : 0 < t := ha0.trans_le ht.1
   have h2εδ : 2 * ε ≤ δ := by linarith
   have hd0 := deriv_logCutoffProfile_nonneg hε h2εδ t
-  have hd := deriv_logCutoffProfile_le hε hεδ ht0
+  have hd := deriv_logCutoffProfile_le hε hεδ ht0.le
   rw [radialEnergyDensity, abs_mul, abs_of_nonneg (sq_nonneg _)]
   calc
     deriv (logCutoffProfile ε δ) t ^ 2 * |L t| ≤
@@ -117,7 +116,7 @@ private theorem abs_integral_radialEnergyDensity_middle_sub_le
   have hδ : 0 < δ := by linarith
   have h2 : 2 * ε ∈ Icc 0 δ := ⟨by linarith, by linarith⟩
   have h3 : δ / 2 ∈ Icc 0 δ := ⟨by linarith, by linarith⟩
-  have hfi := intervalIntegrable_radialEnergyDensity hε hδ hL h2 h3
+  have hfi := intervalIntegrable_radialEnergyDensity (ε := ε) hδ.ne' hL h2 h3
   have hmid_eq :
       (∫ t in 2 * ε..δ / 2, radialEnergyDensity ε δ L t) -
         2 * π * (Λ - 2 * Real.log 2) / Λ ^ 2 =
