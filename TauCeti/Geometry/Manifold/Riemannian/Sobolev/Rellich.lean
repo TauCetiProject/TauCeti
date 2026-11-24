@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Embedding
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
-import TauCeti.Analysis.Normed.Operator.Compact.Pi
+import TauCeti.Analysis.Normed.Operator.Compact.Domination
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
@@ -41,9 +41,8 @@ local Rellich–Kondrachov theorem (`TauCeti.W1p.isCompactOperator_valueL_restri
 density of the Riemannian volume is bounded on the compact closure of `V`, the `L²` norm of an
 element of `H¹(M)` on the corresponding open set `U ∋ p` of `M` is bounded by a multiple of the
 `L²(V)` norm of its chart reading. Finitely many such sets `U` cover `M`, so the `L²(M)` norm is
-dominated by the norm of a compact operator into a finite product of `L²` spaces
-(`IsCompactOperator.pi`), and an operator dominated by a compact one is compact
-(`IsCompactOperator.of_norm_le_mul_rpow_mul_rpow`).
+dominated by the sum of the norms of finitely many compact operators, and an operator so dominated
+is compact (`IsCompactOperator.of_enorm_le_mul_sum`).
 
 ## Main results
 
@@ -172,14 +171,10 @@ theorem isCompactOperator_toLp :
   have hcov : univ ⊆ ⋃ p : t, U p := fun x _ ↦ by
     obtain ⟨p, hp, hx⟩ := mem_iUnion₂.1 (ht (mem_univ x))
     exact mem_iUnion.2 ⟨⟨p, hp⟩, hx⟩
-  -- The finitely many local compact operators, as one compact operator into a product.
-  let R' : SobolevH1 I M →L[ℝ] (∀ p : t, Lp ℝ 2 (volume.restrict (V p))) :=
-    ContinuousLinearMap.pi fun p ↦ R p
-  have hR' : IsCompactOperator R' := IsCompactOperator.pi fun p ↦ hR p
   set D := ∑ p : t, C p
-  have hD : D ≠ ⊤ := ENNReal.sum_ne_top.2 fun p _ ↦ hC p
-  -- The `L²(M)` norm is dominated by the norm of `R'`.
-  have hle (w : SobolevH1 I M) : ‖toLp w‖ₑ ^ (2 : ℝ) ≤ D * ‖R' w‖ₑ ^ (2 : ℝ) := by
+  -- The `L²(M)` norm is dominated by the sum of the norms of the local compact operators.
+  have hle (w : SobolevH1 I M) :
+      ‖toLp w‖ₑ ^ (2 : ℝ) ≤ D * (∑ p : t, ‖R p w‖ₑ) ^ (2 : ℝ) := by
     rw [Lp.eNorm_rpow_two_eq_lintegral, ← setLIntegral_univ, Finset.sum_mul]
     calc ∫⁻ x in univ, ‖toLp w x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M
         ≤ ∫⁻ x in ⋃ p : t, U p, ‖toLp w x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M :=
@@ -187,21 +182,18 @@ theorem isCompactOperator_toLp :
       _ ≤ ∑' p : t, ∫⁻ x in U p, ‖toLp w x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M :=
           lintegral_iUnion_le _ _
       _ = ∑ p : t, ∫⁻ x in U p, ‖toLp w x‖ₑ ^ (2 : ℝ) ∂riemannianVolume I M := tsum_fintype _
-      _ ≤ ∑ p : t, C p * ‖R' w‖ₑ ^ (2 : ℝ) := Finset.sum_le_sum fun p _ ↦ by
+      _ ≤ ∑ p : t, C p * (∑ q : t, ‖R q w‖ₑ) ^ (2 : ℝ) := Finset.sum_le_sum fun p _ ↦ by
           refine (hRle p w).trans ?_
-          have h : ‖R p w‖ₑ ≤ ‖R' w‖ₑ := by
-            rw [← ofReal_norm, ← ofReal_norm]
-            exact ENNReal.ofReal_le_ofReal (norm_le_pi_norm (R' w) p)
+          have h : ‖R p w‖ₑ ≤ ∑ q : t, ‖R q w‖ₑ :=
+            Finset.single_le_sum (f := fun q : t ↦ ‖R q w‖ₑ) (fun _ _ ↦ zero_le) (Finset.mem_univ p)
           gcongr
-  refine IsCompactOperator.of_norm_le_mul_rpow_mul_rpow (T₀ := R'.toLinearMap) hR' R'
-    (T := (toLp : SobolevH1 I M →L[ℝ] Lp ℝ 2 (riemannianVolume I M)).toLinearMap)
-    (C := (D ^ (2⁻¹ : ℝ)).toReal) le_rfl zero_lt_one fun w ↦ ?_
-  simp only [ContinuousLinearMap.coe_coe, sub_zero, Real.rpow_one, Real.rpow_zero, mul_one]
-  have h : ‖toLp w‖ₑ ≤ D ^ (2⁻¹ : ℝ) * ‖R' w‖ₑ := by
-    rw [← ENNReal.rpow_le_rpow_iff two_pos, ENNReal.mul_rpow_of_nonneg _ _ zero_le_two,
-      ENNReal.rpow_inv_rpow two_ne_zero]
-    exact hle w
-  simpa only [ENNReal.toReal_mul, toReal_eNorm] using ENNReal.toReal_mono (by finiteness) h
+  refine IsCompactOperator.of_enorm_le_mul_sum
+    (toLp : SobolevH1 I M →L[ℝ] Lp ℝ 2 (riemannianVolume I M)).toLinearMap (fun p : t ↦ R p)
+    (fun p ↦ hR p) (C := D ^ (2⁻¹ : ℝ))
+    (ENNReal.rpow_ne_top_of_nonneg (by norm_num) (ENNReal.sum_ne_top.2 fun p _ ↦ hC p)) fun w ↦ ?_
+  rw [ContinuousLinearMap.coe_coe, ← ENNReal.rpow_le_rpow_iff two_pos,
+    ENNReal.mul_rpow_of_nonneg _ _ zero_le_two, ENNReal.rpow_inv_rpow two_ne_zero]
+  exact hle w
 
 /-- **Compact Sobolev embeddings on a closed manifold.** On a compact manifold without boundary of
 dimension `n > 2` with a continuous Riemannian metric, the Sobolev embedding `H¹(M) → L^q(M)` is a
