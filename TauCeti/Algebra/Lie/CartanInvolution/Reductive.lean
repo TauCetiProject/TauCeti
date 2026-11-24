@@ -209,12 +209,12 @@ theorem IsCartanInvolution.isReductiveCartanInvolution [IsStrictOrderedRing K] {
   refine ⟨by rw [hθ.center_eq_bot, hθ.derivedSeries_one_eq_top]; exact isCompl_bot_top,
     hθ.involutive, ?_⟩
   let e₁ : L ≃ₗ⁅K⁆ (⊤ : LieSubalgebra K L) := (LieSubalgebra.topEquiv (R := K) (L := L)).symm
-  let e₂ : (⊤ : LieSubalgebra K L) ≃ₗ⁅K⁆ (derivedSeries K L 1).toLieSubalgebra :=
-    LieEquiv.ofEq (⊤ : LieSubalgebra K L) (derivedSeries K L 1).toLieSubalgebra
+  let e₂ : (⊤ : LieSubalgebra K L) ≃ₗ⁅K⁆ derivedSeries K L 1 :=
+    LieEquiv.ofSubalgebraEqIdeal (⊤ : LieSubalgebra K L) (derivedSeries K L 1)
       (by rw [hθ.derivedSeries_one_eq_top, LieIdeal.top_toLieSubalgebra])
   let e : L ≃ₗ⁅K⁆ derivedSeries K L 1 := e₁.trans e₂
   have he (y : L) : (e y : L) = y := by
-    rw [show e y = e₂ (e₁ y) from rfl, LieEquiv.ofEq_apply, ← LieSubalgebra.topEquiv_apply]
+    rw [LieEquiv.trans_apply, LieEquiv.coe_ofSubalgebraEqIdeal, ← LieSubalgebra.topEquiv_apply]
     exact (LieSubalgebra.topEquiv (R := K) (L := L)).apply_symm_apply y
   exact hθ.of_intertwines e fun y ↦ Subtype.ext (by simp [he])
 

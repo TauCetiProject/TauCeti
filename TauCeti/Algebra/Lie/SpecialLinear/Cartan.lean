@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.TraceForm
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 import Mathlib.Algebra.Lie.Killing
+import TauCeti.Algebra.Lie.Equiv
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Killing
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
@@ -95,12 +96,10 @@ domain. -/
 theorem killingForm_apply (X Y : sl n R) :
     killingForm R (sl n R) X Y =
       2 * Fintype.card n * ((X : Matrix n n R) * Y).trace := by
-  let e : sl n R ≃ₗ⁅R⁆ TauCeti.slIdeal R n :=
-    LieEquiv.ofEq (sl n R) (TauCeti.slIdeal R n).toLieSubalgebra
-      (congrArg SetLike.coe (TauCeti.slIdeal_toLieSubalgebra_eq_sl (R := R) (n := n)).symm)
-  have he (Z : sl n R) : (e Z : Matrix n n R) = Z := LieEquiv.ofEq_apply _ _ _ Z
+  let e := LieEquiv.ofSubalgebraEqIdeal (sl n R) (TauCeti.slIdeal R n)
+    (TauCeti.slIdeal_toLieSubalgebra_eq_sl (R := R) (n := n))
   have h2 : killingForm R (TauCeti.slIdeal R n) (e X) (e Y) = killingForm R (Matrix n n R) X Y := by
-    simpa [he] using (congrArg (fun B ↦ B (e X) (e Y))
+    simpa [e] using (congrArg (fun B ↦ B (e X) (e Y))
       (LieIdeal.killingForm_eq (R := R) (L := Matrix n n R) (I := TauCeti.slIdeal R n))).trans
       (LinearMap.domRestrict₁₂_apply (killingForm R (Matrix n n R)) _ _ (e X) (e Y))
   rw [← killingForm_of_equiv_apply e X Y, h2, Matrix.killingForm_apply,

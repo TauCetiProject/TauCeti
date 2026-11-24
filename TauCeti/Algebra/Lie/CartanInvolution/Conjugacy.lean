@@ -60,7 +60,8 @@ private theorem exists_basis_eigenvector_sq_trans {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   refine ⟨b, lam, hbP, fun i ↦ ?_⟩
   have hNne : N (b i) ≠ 0 := fun h0 ↦ b.ne_zero i (N.injective (h0.trans (map_zero N).symm))
   have hpos : 0 < θ.twistedKillingForm (P (b i)) (b i) := by
-    rw [show P (b i) = N (N (b i)) from rfl, hN_symm (N (b i)) (b i)]
+    simp only [P, trans_apply]
+    rw [hN_symm (N (b i)) (b i)]
     exact hθ.twistedKillingForm_self_pos hNne
   rw [hbP i, map_smul, LinearMap.smul_apply, smul_eq_mul] at hpos
   exact pos_of_mul_pos_left hpos (hθ.twistedKillingForm_self_pos (b.ne_zero i)).le

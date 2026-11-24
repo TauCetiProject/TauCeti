@@ -311,7 +311,13 @@ theorem eq_of_commute {θ' : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInvolution)
   refine sub_eq_zero.mp (by_contra fun hne ↦ ?_)
   have hpos := hθ.twistedKillingForm_self_pos hne
   have hsum := lt_of_lt_of_le hpos (le_add_of_nonneg_right hpos.le)
-  rw [← map_add, h2, map_zero] at hsum
+  -- `K` is ordered, so `B_θ(a, a) + B_θ(a, a) = B_θ(a, a + a) = 0` contradicts `0 < B_θ(a, a)`.
+  have hadd : θ.twistedKillingForm (θ x - θ' x) ((θ x - θ' x) + (θ x - θ' x)) =
+      θ.twistedKillingForm (θ x - θ' x) (θ x - θ' x) +
+        θ.twistedKillingForm (θ x - θ' x) (θ x - θ' x) :=
+    map_add _ _ _
+  rw [h2, map_zero] at hadd
+  rw [← hadd] at hsum
   exact lt_irrefl 0 hsum
 
 /-- On a compact Lie algebra (negative definite Killing form), the identity is the unique Cartan

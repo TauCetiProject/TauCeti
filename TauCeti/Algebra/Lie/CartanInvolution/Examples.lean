@@ -77,12 +77,10 @@ theorem isReductiveCartanInvolution_negTransposeLieEquiv {n : Type*} [Fintype n]
     rw [LieEquiv.isReductiveCartanInvolution_iff]
     refine ⟨LieSubmodule.isCompl_toSubmodule.mp
         (isCompl_center_derivedSeries_one_matrix (R := K) (n := n)), fun _ ↦ by simp, ?_⟩
-    let e : SpecialLinear.sl n K ≃ₗ⁅K⁆ derivedSeries K (Matrix n n K) 1 :=
-      LieEquiv.ofEq (SpecialLinear.sl n K) (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
-        (congrArg SetLike.coe (derivedSeries_one_toLieSubalgebra_eq_sl (R := K) (n := n)).symm)
-    have he (X : SpecialLinear.sl n K) : (e X : Matrix n n K) = X := LieEquiv.ofEq_apply _ _ _ X
+    let e := LieEquiv.ofSubalgebraEqIdeal (SpecialLinear.sl n K)
+      (derivedSeries K (Matrix n n K) 1) (derivedSeries_one_toLieSubalgebra_eq_sl (R := K) (n := n))
     exact (SpecialLinear.isCartanInvolution_cartanInvolution (K := K)).of_intertwines e fun X ↦
-      Subtype.ext (by simp [he])
+      Subtype.ext (by simp [e])
   · have : IsEmpty n := not_nonempty_iff.mp hn
     have : IsLieAbelian (Matrix n n K) := ⟨fun _ _ ↦ Subsingleton.elim _ _⟩
     exact LieEquiv.isReductiveCartanInvolution_iff_involutive_of_isLieAbelian.mpr fun _ ↦ by simp
