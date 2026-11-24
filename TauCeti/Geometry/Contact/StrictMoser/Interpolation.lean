@@ -335,7 +335,7 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq [SigmaCompactSpace M]
   exact exists_partialDiffeomorph_mpullback_eq_of_isOpen hι himm hind hclosed hdim (hN.inter hV)
     (fun x hx ↦ hcN x hx.1) (fun s hs ↦ htrV s hs.1 hs.2) (fun x hx ↦ ⟨hKN hx, hKV hx⟩) hKι hval
 
-/-! ### Forms agreeing to first order on the contact hyperplanes along a tangent slice -/
+/-! ### A segment of forms contact along a tangent slice -/
 
 omit [I.Boundaryless] [T2Space M] in
 /-- At the points of an open set `N` on which all interpolations `α₀ + u (α₁ - α₀)`,
