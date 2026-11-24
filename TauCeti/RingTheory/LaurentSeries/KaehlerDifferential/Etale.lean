@@ -805,7 +805,10 @@ algebraic Kähler lift `δ.liftKaehlerDifferential ω`. -/
 theorem continuousLift_mk [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X⸩ L))
     (δ : Derivation K L M) (hδ : Continuous δ) (ω : Ω[L⁄K]) :
     continuousLift hL δ hδ (mk K L ω) = δ.liftKaehlerDifferential ω :=
-  (rfl)
+  withContinuousSMul M hL <| by
+    dsimp only [continuousLift, withContinuousSMul]
+    rw [ContinuousLinearMap.coe_mk']
+    exact lift_mk δ (hδ.comp hL) ω
 
 /-- Evaluating `continuousLift hL δ hδ` on `d x` recovers `δ x`. -/
 @[simp]

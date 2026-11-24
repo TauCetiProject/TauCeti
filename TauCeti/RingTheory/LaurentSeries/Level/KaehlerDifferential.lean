@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Residue
 public import TauCeti.RingTheory.LaurentSeries.Level.Trace
 
+import TauCeti.RingTheory.Derivation.Basic
+
 /-!
 # Continuous one-forms of a ramified level and their trace
 
@@ -240,8 +242,9 @@ noncomputable def D : Derivation K (Level K d) (Level.ContinuousKaehlerDifferent
 theorem equivLevel_D (x : Level K d) :
     equivLevel K d (D K d x) =
       (ringEquivLaurentSeries K d).symm (derivative K (ringEquivLaurentSeries K d x)) := by
+  rw [D, LinearMap.compDer_apply, LinearEquiv.coe_toLinearMap, LinearEquiv.apply_symm_apply]
   apply (ringEquivLaurentSeries K d).injective
-  simp [D]
+  rw [ringEquivLaurentSeries_derivation, RingEquiv.apply_symm_apply]
 
 /-- In the level variable `u`, `D K d` is the continuous differential of `K⸨X⸩`. -/
 @[simp]
