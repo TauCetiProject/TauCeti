@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Subpath
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Group
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
+import TauCeti.Topology.UnitInterval
 
 /-!
 # Base-point change for relative homotopy groups
@@ -79,7 +80,7 @@ noncomputable section
 
 universe u v
 
-open CategoryTheory Set
+open Set
 open scoped unitInterval Topology Topology.Homotopy
 
 namespace TauCeti
@@ -125,7 +126,7 @@ instance {γ : Path X.basepoint b} {p : RelGenLoop N X} {q : RelGenLoop N ⟨X.p
 def refl (p : RelGenLoop N X) : HomotopyAlong (Path.refl X.basepoint) p p where
   toHomotopy := ContinuousMap.Homotopy.refl _
   apply_zero_mem_range _ z := RelGenLoop.apply_zero_mem_range p z
-  apply_eq_path _ s z h := (mem_iff.1 p.2).2 s z h
+  apply_eq_path _ s z h := (mem_iff.1 p.property).2 s z h
 
 /-- Reversing a homotopy along `γ` in time gives a homotopy along the reversed path. -/
 def symm {γ : Path X.basepoint b} {p : RelGenLoop N X} {q : RelGenLoop N ⟨X.pair, b⟩}
@@ -237,14 +238,14 @@ end HomotopyAlong
 
 /-- The fold `u ↦ |2u - 1|` of the unit interval onto itself. -/
 private def foldI (u : I) : I :=
-  ⟨|2 * (u : ℝ) - 1|, abs_nonneg _, abs_le.2 ⟨by linarith [u.2.1], by linarith [u.2.2]⟩⟩
+  ⟨|2 * (u : ℝ) - 1|, abs_nonneg _, unitInterval.abs_two_mul_sub_one_le_one u⟩
 
 private theorem continuous_foldI : Continuous foldI :=
   Continuous.subtype_mk (by fun_prop) _
 
 /-- The affine map `s ↦ (1 + s) / 2` of the unit interval onto its upper half. -/
 private def unfoldI (s : I) : I :=
-  ⟨(1 + s) / 2, by linarith [s.2.1], by linarith [s.2.2]⟩
+  ⟨(1 + s) / 2, by linarith [s.property.1], by linarith [s.property.2]⟩
 
 private theorem continuous_unfoldI : Continuous unfoldI :=
   Continuous.subtype_mk (by fun_prop) _
@@ -252,7 +253,7 @@ private theorem continuous_unfoldI : Continuous unfoldI :=
 private theorem foldI_unfoldI (s : I) : foldI (unfoldI s) = s := by
   apply Subtype.ext
   simp only [foldI, unfoldI]
-  rw [abs_of_nonneg (by linarith [s.2.1])]
+  rw [abs_of_nonneg (by linarith [s.property.1])]
   ring
 
 private theorem foldI_eq_one {u : I} (hu : u = 0 ∨ u = 1) : foldI u = 1 := by
@@ -352,7 +353,7 @@ private theorem ite_double_unfoldCube_zero_mem_range (p : RelGenLoop N X) {r : �
 private theorem relCollarHomotopy_zero_mem_range (γ : Path X.basepoint b) (p : RelGenLoop N X)
     (t : I) (z : I^N) : relCollarHomotopy γ p (t, (0, z)) ∈ Set.range X.pair.map := by
   rw [relCollarHomotopy_apply, GenLoop.collarHomotopy_apply]
-  exact ite_double_unfoldCube_zero_mem_range p (by linarith [t.2.2]) z ⟨γ _, rfl⟩
+  exact ite_double_unfoldCube_zero_mem_range p (by linarith [t.property.2]) z ⟨γ _, rfl⟩
 
 /-- **A relative cube transported along a path in the subspace**: the end of the collar homotopy
 of its doubling, restricted to the upper half of the cube. -/
@@ -399,7 +400,7 @@ theorem homotopic_transport_of_path_homotopic {γ γ' : Path X.basepoint b} (h :
   let G' : C(I × I, X.pair.fst) := X.pair.map.hom.comp G.toContinuousMap
   let K := collar (ContinuousMap.const I (1 / 2 : ℝ))
     ((double p : C(I^(Option N), X.pair.fst)).comp ContinuousMap.snd) G' (fun _ => le_rfl)
-    fun s v hv => by simp [G', (double p).2 v hv]
+    fun s v hv => by simp [G', (double p).property v hv]
   have hK (s : I) (y : I × (I^N)) : K (s, unfoldCube y) =
       if cubeRadius (unfoldCube y) ≤ 1 / 2 then double p (cubeScale (1 / (1 / 2)) (unfoldCube y))
       else X.pair.map (G (s, projIcc 0 1 zero_le_one
@@ -432,24 +433,24 @@ continuous function of the pair `(t, q)` with `q 1 = γ t`. -/
 private def concatTail (γ : Path X.basepoint b) :
     C({x : I × C(I, X.pair.fst) // x.2 1 = X.pair.map (γ x.1)}, C(I, X.pair.fst)) :=
   ContinuousMap.curry ⟨↿fun x : {x : I × C(I, X.pair.fst) // x.2 1 = X.pair.map (γ x.1)} =>
-      (⟨x.1.2, rfl, x.2⟩ : Path (x.1.2 0) _).trans
-        ((γ.map X.pair.map.hom.continuous).subpath x.1.1 1),
+      (⟨x.val.2, rfl, x.property⟩ : Path (x.val.2 0) _).trans
+        ((γ.map X.pair.map.hom.continuous).subpath x.val.1 1),
     Path.trans_continuous_family _
       (continuous_eval.comp
-        ((continuous_snd.comp (continuous_subtype_val.comp continuous_fst)).prodMk continuous_snd))
+        ((continuous_snd.comp (continuous_subtypeVal.comp continuous_fst)).prodMk continuous_snd))
       _ ((γ.map X.pair.map.hom.continuous).subpath_continuous_family.comp
-        ((continuous_fst.comp (continuous_subtype_val.comp continuous_fst)).prodMk
+        ((continuous_fst.comp (continuous_subtypeVal.comp continuous_fst)).prodMk
           (continuous_const.prodMk continuous_snd)))⟩
 
 private theorem concatTail_apply (γ : Path X.basepoint b)
     (x : {x : I × C(I, X.pair.fst) // x.2 1 = X.pair.map (γ x.1)}) (s : I) :
-    concatTail γ x s = if (s : ℝ) ≤ 1 / 2 then x.1.2 (projIcc 0 1 zero_le_one (2 * s))
-      else X.pair.map (γ (Icc.convexComb x.1.1 1 (projIcc 0 1 zero_le_one (2 * s - 1)))) :=
+    concatTail γ x s = if (s : ℝ) ≤ 1 / 2 then x.val.2 (projIcc 0 1 zero_le_one (2 * s))
+      else X.pair.map (γ (Icc.convexComb x.val.1 1 (projIcc 0 1 zero_le_one (2 * s - 1)))) :=
   (rfl)
 
 private theorem concatTail_mem (γ : Path X.basepoint b)
     (x : {x : I × C(I, X.pair.fst) // x.2 1 = X.pair.map (γ x.1)})
-    (hx : x.1.2 0 ∈ Set.range X.pair.map) :
+    (hx : x.val.2 0 ∈ Set.range X.pair.map) :
     concatTail γ x ∈ BasedTopPair.pathSpace ⟨X.pair, b⟩ := by
   refine (BasedTopPair.mem_pathSpace_iff _).2 ⟨?_, ?_⟩
   · simpa [concatTail_apply] using hx
@@ -458,16 +459,16 @@ private theorem concatTail_mem (γ : Path X.basepoint b)
 private theorem pathSpace_apply_one_eq (γ : Path X.basepoint b) (q : BasedTopPair.pathSpace X) :
     (q : C(I, X.pair.fst)) 1 = X.pair.map (γ 0) := by
   rw [γ.source]
-  exact ((BasedTopPair.mem_pathSpace_iff _).1 q.2).2
+  exact ((BasedTopPair.mem_pathSpace_iff _).1 q.property).2
 
 /-- Following each path from `A` to `a` by `γ`, a map from the paths from `A` to `a` to the paths
 from `A` to `b`. -/
 private def pathSpaceConcat (γ : Path X.basepoint b) :
     C(BasedTopPair.pathSpace X, BasedTopPair.pathSpace ⟨X.pair, b⟩) where
-  toFun q := ⟨concatTail γ ⟨(0, q.1), pathSpace_apply_one_eq γ q⟩,
-    concatTail_mem γ _ ((BasedTopPair.mem_pathSpace_iff _).1 q.2).1⟩
+  toFun q := ⟨concatTail γ ⟨(0, q.val), pathSpace_apply_one_eq γ q⟩,
+    concatTail_mem γ _ ((BasedTopPair.mem_pathSpace_iff _).1 q.property).1⟩
   continuous_toFun := Continuous.subtype_mk ((concatTail γ).continuous.comp
-    (Continuous.subtype_mk (continuous_const.prodMk continuous_subtype_val) _)) _
+    (Continuous.subtype_mk (continuous_const.prodMk continuous_subtypeVal) _)) _
 
 /-- The path `t ↦ c_{γ t} ⋆ γ.subpath t 1` in the space of paths from `A` to `b`, from the image of
 the constant path at `a` under `pathSpaceConcat γ` to the constant path at `b`. -/
@@ -501,7 +502,7 @@ private def squash (q : RelGenLoop N ⟨X.pair, b⟩) : RelGenLoop N ⟨X.pair, 
   mk ((q : C(I × (I^N), X.pair.fst)).comp
       ⟨fun y => (projIcc 0 1 zero_le_one (2 * y.1), y.2),
         (continuous_projIcc.comp (continuous_const.mul
-          (continuous_subtype_val.comp continuous_fst))).prodMk continuous_snd⟩)
+          (continuous_subtypeVal.comp continuous_fst))).prodMk continuous_snd⟩)
     (fun z => by simpa using apply_zero_mem_range q z)
     fun s z h => by
       simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, coe_coe]
@@ -531,7 +532,7 @@ private theorem homotopic_squash (q : RelGenLoop N ⟨X.pair, b⟩) : Homotopic 
          refine mem_iff.2 ⟨fun z => by simpa using apply_zero_mem_range q z, fun s z h => ?_⟩
          rcases h with rfl | hz
          · simp only [ContinuousMap.coe_mk, Set.Icc.coe_one, mul_one]
-           rw [projIcc_of_right_le _ (by linarith [r.2.1])]
+           rw [projIcc_of_right_le _ (by linarith [r.property.1])]
            exact apply_one q z
          · exact apply_of_mem_boundary q _ hz }⟩
 
@@ -706,11 +707,13 @@ def equivOfPath (γ : Path X.basepoint b) :
   left_inv := transport_symm_transport γ
   right_inv := transport_transport_symm γ
 
+/-- `equivOfPath γ` is the base-point change map `transport γ`. -/
 @[simp]
 theorem equivOfPath_apply (γ : Path X.basepoint b) (x : RelHomotopyGroup N X) :
     equivOfPath γ x = transport γ x :=
   (rfl)
 
+/-- The inverse of `equivOfPath γ` is the base-point change map `transport` along `γ.symm`. -/
 @[simp]
 theorem equivOfPath_symm_apply (γ : Path X.basepoint b) (x : RelHomotopyGroup N ⟨X.pair, b⟩) :
     (equivOfPath γ).symm x = transport (X := ⟨X.pair, b⟩) γ.symm x :=
@@ -811,11 +814,13 @@ def mulEquivOfPath (γ : Path X.basepoint b) :
   toEquiv := equivOfPath γ
   map_mul' := transport_mul γ
 
+/-- `mulEquivOfPath γ` is the base-point change map `transport γ`. -/
 @[simp]
 theorem mulEquivOfPath_apply (γ : Path X.basepoint b) (x : RelHomotopyGroup N X) :
     mulEquivOfPath γ x = transport γ x :=
   (rfl)
 
+/-- The inverse of `mulEquivOfPath γ` is the base-point change map `transport` along `γ.symm`. -/
 @[simp]
 theorem mulEquivOfPath_symm_apply (γ : Path X.basepoint b)
     (x : RelHomotopyGroup N ⟨X.pair, b⟩) :

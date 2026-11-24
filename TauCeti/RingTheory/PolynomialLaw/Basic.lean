@@ -38,8 +38,6 @@ noncomputable section
 
 universe u
 
-open TensorProduct
-
 namespace LinearMap
 
 variable {R : Type u} [CommSemiring R] {M N P : Type*} [AddCommMonoid M] [Module R M]
@@ -49,12 +47,10 @@ variable {R : Type u} [CommSemiring R] {M N P : Type*} [AddCommMonoid M] [Module
 commutative `R`-algebra `S` is the base change `u.baseChange S : S ⊗[R] M → S ⊗[R] N`. -/
 def toPolynomialLaw (u : M →ₗ[R] N) : M →ₚₗ[R] N where
   toFun' S _ _ := u.baseChange S
-  isCompat' φ := by
-    ext x
-    induction x using TensorProduct.inductionOn with
-    | tmul s m => simp
-    | add x y hx hy => simp_all
+  isCompat' φ := funext fun x ↦ rTensor_baseChange φ x u
 
+/-- The component of `u.toPolynomialLaw` at an `R`-algebra in the universe of `R` is the base
+change of `u`; `LinearMap.toPolynomialLaw_toFun` extends this to all universes. -/
 theorem toPolynomialLaw_toFun' (u : M →ₗ[R] N) (S : Type u) [CommSemiring S] [Algebra R S] :
     u.toPolynomialLaw.toFun' S = u.baseChange S :=
   (rfl)
@@ -67,9 +63,7 @@ theorem toPolynomialLaw_toFun (u : M →ₗ[R] N) (S : Type*) [CommSemiring S] [
   ext x
   obtain ⟨n, ψ, p, rfl⟩ := PolynomialLaw.exists_lift x
   rw [← PolynomialLaw.isCompat_apply, ← PolynomialLaw.toFun'_eq_toFun, toPolynomialLaw_toFun']
-  induction p using TensorProduct.inductionOn with
-  | tmul s m => simp
-  | add x y hx hy => simp_all
+  exact rTensor_baseChange ψ p u
 
 /-- The ground map of the polynomial law of a linear map `u` is `u`. -/
 @[simp]

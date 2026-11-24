@@ -27,6 +27,10 @@ Only the second measure needs to be s-finite.
   almost-everywhere strongly measurable, function;
 * `TauCeti.eLpNorm_prod_eq_eLpNorm_eLpNorm` — the `Lᵖ(μ ⊗ ν)` seminorm of `f` is the `Lᵖ(μ)`
   seminorm of its section seminorms.
+* `TauCeti.lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq` — the squared `L²(μ ⊗ ν)` seminorm
+  is the iterated integral of the squared extended norm, integrating over `μ` first.
+* `TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm` — convergence to zero in
+  `L²(μ ⊗ ν)` makes the section square energies over `μ` converge to zero in `ν`-measure.
 * `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
 * `MeasureTheory.MemLp.ae_memLp_prod_right` — for `f ∈ Lᵖ(μ ⊗ ν)`, almost every section is in
@@ -176,6 +180,36 @@ theorem eLpNorm_prod_eq_eLpNorm_eLpNorm [SFinite ν] {f : α × β → ε}
   refine lintegral_congr fun x ↦ ?_
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (hsec x)]
   simp only [eNorm_eq_self, one_div, ENNReal.rpow_inv_rpow hr]
+
+/-- The squared `L²(μ ⊗ ν)` seminorm of an a.e. strongly measurable function is its iterated
+square energy, integrating over the first factor `μ` first. -/
+theorem lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq [SFinite μ] [SFinite ν]
+    {f : α × β → ε} (hf : AEStronglyMeasurable f (μ.prod ν)) :
+    ∫⁻ y, ∫⁻ x, ‖f (x, y)‖ₑ ^ 2 ∂μ ∂ν = eLpNorm f 2 (μ.prod ν) ^ 2 := by
+  rw [eLpNorm_two_sq_eq_lintegral hf, lintegral_prod_symm _ (hf.eNorm.pow_const 2)]
+
+/-- **Markov's inequality for section energies.** If `f k → 0` in `L²(μ ⊗ ν)`, then the section
+square energies `y ↦ ∫⁻ x, ‖f k (x, y)‖ₑ ^ 2 ∂μ` converge to zero in `ν`-measure: for each
+`δ > 0`, the `ν`-measure of the set where the energy is at least `δ` tends to zero. -/
+theorem tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm [SFinite μ] [SFinite ν]
+    {ι : Type*} {l : Filter ι} {f : ι → α × β → ε}
+    (hf : ∀ k, AEStronglyMeasurable (f k) (μ.prod ν))
+    (h : Tendsto (fun k ↦ eLpNorm (f k) 2 (μ.prod ν)) l (𝓝 0)) {δ : ℝ≥0∞} (hδ : 0 < δ) :
+    Tendsto (fun k ↦ ν {y | δ ≤ ∫⁻ x, ‖f k (x, y)‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
+  -- Markov's inequality at the finite level `min δ 1`.
+  set c := min δ 1
+  have hc : c ≠ 0 := (lt_min hδ one_pos).ne'
+  have hc' : c ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+  have hbound (k : ι) : ν {y | δ ≤ ∫⁻ x, ‖f k (x, y)‖ₑ ^ 2 ∂μ} ≤
+      eLpNorm (f k) 2 (μ.prod ν) ^ 2 / c := by
+    rw [← lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq (hf k)]
+    exact (measure_mono fun y hy ↦ (min_le_left δ 1).trans hy).trans
+      (meas_ge_le_lintegral_div ((hf k).eNorm.pow_const 2).lintegral_prod_left' hc hc')
+  have hlim : Tendsto (fun k ↦ eLpNorm (f k) 2 (μ.prod ν) ^ 2 / c) l (𝓝 0) := by
+    simpa using ENNReal.Tendsto.div_const (((ENNReal.continuous_pow 2).tendsto 0).comp h)
+      (Or.inr hc)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ bot_le)
+    hbound
 
 /-- **The `Lᵖ` seminorm of a tensor product.** The `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y`
 is the product of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`, for every

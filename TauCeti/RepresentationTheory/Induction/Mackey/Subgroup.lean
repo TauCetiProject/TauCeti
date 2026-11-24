@@ -304,7 +304,7 @@ theorem stabilizer_eq_mackeySubgroup_subgroupOf (s : G) (H K : Subgroup G) :
   rw [Subgroup.mem_subgroupOf, mem_mackeySubgroup_iff, mem_stabilizer_iff,
     Subgroup.smul_def, ← mem_stabilizer_iff,
     stabilizer_quotientGroup_mk, mem_conj_smul]
-  exact ⟨fun hg => ⟨g.2, hg⟩, fun hg => hg.2⟩
+  exact ⟨fun hg => ⟨g.property, hg⟩, fun hg => hg.2⟩
 
 /-- If `H` has finite index in `G` then the Mackey subgroup has finite index in `K`, so the Mackey
 summand attached to `s` is induced along a finite-index inclusion. -/
@@ -343,7 +343,7 @@ theorem stabilizer_smul_eq_mackeySubgroup_subgroupOf (s : G) (Γ : Subgroup G) (
   ext g
   rw [Subgroup.mem_subgroupOf, mem_mackeySubgroup_iff, mem_stabilizer_iff, Subgroup.smul_def,
     mem_stabilizer_iff, mul_smul, mul_smul]
-  exact ⟨fun hg => ⟨g.2, inv_smul_eq_iff.mpr hg⟩, fun hg => inv_smul_eq_iff.mp hg.2⟩
+  exact ⟨fun hg => ⟨g.property, inv_smul_eq_iff.mpr hg⟩, fun hg => inv_smul_eq_iff.mp hg.2⟩
 
 end Translate
 

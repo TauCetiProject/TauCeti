@@ -5,46 +5,50 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Mass
-public import TauCeti.Geometry.Manifold.Riemannian.Pullback.WithMetric
+public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Flux
+public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.WithMetric
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.InnerProductSpace.NormPow
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# Conformally Euclidean asymptotically Euclidean ends
+# Conformally Euclidean asymptotically Euclidean ends and the Schwarzschild model
 
-Given a `C^k` positive conformal factor `w : ℝⁿ → ℝ` whose deviation `w - 1` decays at order `t`
-up to second derivatives outside `{x : ‖x‖ ≤ r}`, rescaling the standard Euclidean metric by `w`
-on `WithMetric` produces an asymptotically Euclidean end of order `t` and a one-ended
-`FiniteEndedAE` manifold. Specializing to a smoothly cut-off version of
-`(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2))` (`3 ≤ n`) yields a smooth globally positive Schwarzschild
-model manifold of decay order `n - 2` (non-flat for `c ≠ 0`) with ADM mass `2 c`. The generic
-`WithMetric` coordinate pullback formulas used here live in
-`TauCeti.Geometry.Manifold.Riemannian.Pullback.WithMetric`.
+Given a `C^k` (`2 ≤ k`) positive conformal factor `w : ℝⁿ → ℝ` (`0 < n`) whose deviation `w - 1`
+decays at order `t` up to second derivatives on the exterior `(closedBall 0 R)ᶜ`, rescaling the
+standard Euclidean metric by `w` on `TauCeti.WithMetric` produces an asymptotically Euclidean end of
+order `t` (`TauCeti.isAsymptoticallyEuclideanEnd_toWithMetric_rescale`) and a one-ended
+finite-ended asymptotically Euclidean manifold
+(`TauCeti.isFiniteEndedAsymptoticallyEuclidean_toWithMetric_rescale`).
+
+Specializing to a smoothly cut-off version of `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2))` (`3 ≤ n`)
+yields a smooth globally positive Schwarzschild model metric `TauCeti.schwarzschildModelMetric` on
+`ℝⁿ` (non-flat for `c ≠ 0`), defining a finite-ended asymptotically Euclidean manifold of decay
+order `n - 2` whose ADM coordinate flux converges to `2 c`.
 
 ## Main definitions
 
-* `TauCeti.AsymptoticallyEuclideanEnd.conformalEuclidean`,
-  `TauCeti.FiniteEndedAE.conformalEuclidean`: conformally Euclidean ends and one-ended manifolds on
-  `WithMetric` from a positive `C^k` scalar conformal factor with `w - 1 = O_2(‖x‖ ^ (-t))`.
-* `TauCeti.schwarzschildModelFactor`, `TauCeti.schwarzschildModelMetric`,
-  `TauCeti.schwarzschildModelEnd`, `TauCeti.schwarzschildModelAE`: smooth globally positive
-  conformal model on `ℝⁿ` (`3 ≤ n`) agreeing outside a ball with
-  `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2)) • g_eucl`, giving an end of order `n - 2` (non-flat for
-  `c ≠ 0`).
+* `TauCeti.schwarzschildModelFactor` and `TauCeti.schwarzschildModelMetric`: smooth globally
+  positive conformal model on `ℝⁿ` (`3 ≤ n`) agreeing outside a ball with
+  `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2)) • g_eucl` (non-flat for `c ≠ 0`).
 
 ## Main results
 
+* `TauCeti.isAsymptoticallyEuclideanEnd_toWithMetric_rescale` and
+  `TauCeti.isFiniteEndedAsymptoticallyEuclidean_toWithMetric_rescale`: conformally Euclidean ends
+  and one-ended structures on `WithMetric` from a positive `C^k` (`2 ≤ k`) conformal factor with
+  `w - 1 = O_2(‖x‖ ^ (-t))`.
 * `TauCeti.contDiff_schwarzschildModelFactor`, `TauCeti.schwarzschildModelFactor_pos`,
   `TauCeti.schwarzschildModelFactor_of_norm_le`, and `TauCeti.schwarzschildModelFactor_of_lt`:
   global smoothness, positivity, interior value `1`, and exterior formula for
   `schwarzschildModelFactor`.
-* `TauCeti.tendsto_normalizedCoordinateFlux_schwarzschildModelEnd`: the ADM mass of
-  `schwarzschildModelEnd hn c` (`3 ≤ n`) is `2 c`.
+* `TauCeti.isAsymptoticallyEuclideanEnd_schwarzschildModelMetric`,
+  `TauCeti.isFiniteEndedAsymptoticallyEuclidean_schwarzschildModelMetric`, and
+  `TauCeti.tendsto_normalizedCoordinateFlux_schwarzschildModelMetric`: the Schwarzschild model
+  manifold (`3 ≤ n`) is asymptotically Euclidean of order `n - 2` with ADM mass `2 c`.
 
 ## References
 
@@ -63,125 +67,87 @@ namespace TauCeti
 
 /-! ### General conformally Euclidean ends on `WithMetric` -/
 
-section ConformalEuclidean
+/-- Any `C^k` (`2 ≤ k`) positive conformal factor `w : ℝⁿ → ℝ` (`0 < n`) satisfying
+`‖D^m(w - 1)(x)‖ ≤ C ‖x‖ ^ (-t - m)` (`m ≤ 2`) outside `closedBall 0 R` (`R > 0`) defines an
+asymptotically Euclidean end of order `t` on `WithMetric (w • g_eucl)`. -/
+theorem isAsymptoticallyEuclideanEnd_toWithMetric_rescale {n : ℕ} (hn : 0 < n) {k : ℕ∞ω}
+    (hk : 2 ≤ k) {t R : ℝ} (hR : 0 < R) {w : EuclideanSpace ℝ (Fin n) → ℝ}
+    (hw : ContDiff ℝ k w) (hw_pos : ∀ x, 0 < w x)
+    (hdecay : ∃ C : ℝ, ∀ m ≤ 2, ∀ x ∈ (closedBall 0 R)ᶜ,
+      ‖iteratedFDeriv ℝ m (fun y ↦ w y - 1) x‖ ≤ C * ‖x‖ ^ (-t - m)) :
+    IsAsymptoticallyEuclideanEnd 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) t R
+      (WithMetric.toWithMetric
+        (((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := k)
+          le_top).rescale w hw.contMDiff hw_pos)) := by
+  let g := ((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := k)
+    le_top).rescale w hw.contMDiff hw_pos
+  have hg_coeff (y : EuclideanSpace ℝ (Fin n)) :
+      pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (WithMetric.toWithMetric g) y =
+        w y • 1 :=
+    pullbackMetricCoeff_toWithMetric_rescale hw.contMDiff hw_pos y
+  have hg_ij (i j : Fin n) :
+      (pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (WithMetric.toWithMetric g) · i j) =
+        if i = j then w else 0 := by
+    ext y
+    rw [hg_coeff]
+    split_ifs <;> simp [*]
+  obtain ⟨C, hC⟩ := hdecay
+  refine
+    { radius_pos := hR
+      dim_pos := hn
+      contMDiffOn := WithMetric.contMDiff_toWithMetric.contMDiffOn
+      injOn := (WithMetric.toWithMetric_injective g).injOn
+      isInvertible_mfderiv := fun x _ ↦ by
+        rw [WithMetric.mfderiv_toWithMetric]
+        exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
+      contDiffOn_pullbackMetricCoeff := fun i j ↦ by
+        rw [hg_ij]
+        split_ifs
+        · exact (hw.of_le hk).contDiffOn
+        · exact contDiffOn_const
+      exists_norm_iteratedFDeriv_le := ⟨max C 0, fun m hm i j x hx ↦ ?_⟩ }
+  have hx0 : 0 ≤ ‖x‖ := norm_nonneg x
+  by_cases hij : i = j
+  · subst hij
+    have hcoeff : (fun y ↦ (pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
+        (WithMetric.toWithMetric g) y - 1) i i) = fun y ↦ w y - 1 := by
+      ext y; rw [Matrix.sub_apply, hg_coeff]; simp
+    rw [hcoeff]
+    exact (hC m hm x hx).trans
+      (mul_le_mul_of_nonneg_right (le_max_left C 0) (Real.rpow_nonneg hx0 _))
+  · have hcoeff : (fun y ↦ (pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
+        (WithMetric.toWithMetric g) y - 1) i j) = 0 := by
+      ext y; rw [Matrix.sub_apply, hg_coeff]; simp [hij]
+    rw [hcoeff, iteratedFDeriv_zero]
+    simp only [Pi.zero_apply, norm_zero]
+    exact mul_nonneg (le_max_right C 0) (Real.rpow_nonneg hx0 _)
 
-variable {n : ℕ} {k : ℕ∞ω} {t r : ℝ} (hr : 0 < r) {w : EuclideanSpace ℝ (Fin n) → ℝ}
-  (hw : ContDiff ℝ k w) (hw_pos : ∀ x, 0 < w x)
-  (hdecay : ∃ C : ℝ, ∀ x : EuclideanSpace ℝ (Fin n), r < ‖x‖ →
-    |w x - 1| ≤ C * ‖x‖ ^ (-t) ∧
-    ‖fderiv ℝ w x‖ ≤ C * ‖x‖ ^ (-t - 1) ∧
-    ‖fderiv ℝ (fderiv ℝ w) x‖ ≤ C * ‖x‖ ^ (-t - 2))
-include hr hdecay
-
-/-- Package any `C^k` positive conformal factor `w : ℝⁿ → ℝ` satisfying `w - 1 = O_2(‖x‖ ^ (-t))`
-on `{x | r < ‖x‖}` as an `AsymptoticallyEuclideanEnd` on
-`WithMetric (((riemannianMetricVectorSpace _).ofLE le_top).rescale w hw.contMDiff hw_pos)`. -/
-def AsymptoticallyEuclideanEnd.conformalEuclidean :
-    AsymptoticallyEuclideanEnd n
-      (WithMetric
-        (((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := k) le_top).rescale
-          w hw.contMDiff hw_pos)) t :=
-  let g := ((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := k) le_top).rescale
-    w hw.contMDiff hw_pos
-  AsymptoticallyEuclideanEnd.ofFun r hr (WithMetric.toWithMetric g)
-    WithMetric.contMDiff_toWithMetric.contMDiffOn
-    (WithMetric.toWithMetric_injective g).injOn
-    (by
-      rw [← WithMetric.coe_homeomorph_symm g]
-      exact (WithMetric.homeomorph g).symm.isOpenMap _ (isOpen_lt continuous_const continuous_norm))
-    (fun x _ ↦ by
-      rw [WithMetric.mfderiv_toWithMetric]
-      exact (ContinuousLinearEquiv.refl ℝ _).bijective)
-    (by
-      obtain ⟨C, hC⟩ := hdecay
-      refine ⟨max C 0, fun x hx i j ↦ ?_⟩
-      have hx0 : 0 ≤ ‖x‖ := norm_nonneg x
-      obtain ⟨h0, h1, h2⟩ := hC x hx
-      by_cases hij : i = j
-      · subst hij
-        have hcoeff : (fun y ↦ pullbackMetricCoeff (WithMetric.toWithMetric g) y i i) = w := by
-          ext y; dsimp only [g]; rw [pullbackMetricCoeff_toWithMetric_rescale]; simp
-        rw [congrFun hcoeff x, hcoeff]; simp only [↓reduceIte]
-        exact ⟨h0.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.rpow_nonneg hx0 _)),
-          h1.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.rpow_nonneg hx0 _)),
-          h2.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.rpow_nonneg hx0 _))⟩
-      · have hcoeff : (fun y ↦ pullbackMetricCoeff (WithMetric.toWithMetric g) y i j) = 0 := by
-          ext y; dsimp only [g]; rw [pullbackMetricCoeff_toWithMetric_rescale]; simp [hij]
-        rw [congrFun hcoeff x, hcoeff]
-        simp only [hij, ↓reduceIte, Pi.zero_apply, sub_zero, abs_zero, fderiv_zero,
-          ContinuousLinearMap.opNorm_zero]
-        exact ⟨mul_nonneg (le_max_right _ _) (Real.rpow_nonneg hx0 _),
-          mul_nonneg (le_max_right _ _) (Real.rpow_nonneg hx0 _),
-          mul_nonneg (le_max_right _ _) (Real.rpow_nonneg hx0 _)⟩)
-
-/-- Excision radius of `AsymptoticallyEuclideanEnd.conformalEuclidean`. -/
-@[simp]
-theorem AsymptoticallyEuclideanEnd.conformalEuclidean_radius :
-    (AsymptoticallyEuclideanEnd.conformalEuclidean hr hw hw_pos hdecay).radius = r := by
-  rw [AsymptoticallyEuclideanEnd.conformalEuclidean, AsymptoticallyEuclideanEnd.ofFun_radius]
-
-/-- On `{x | r < ‖x‖}`, `AsymptoticallyEuclideanEnd.conformalEuclidean` acts by
-`WithMetric.toWithMetric`. -/
-@[simp]
-theorem AsymptoticallyEuclideanEnd.conformalEuclidean_toFun_of_lt
-    {x : EuclideanSpace ℝ (Fin n)} (hx : r < ‖x‖) :
-    (AsymptoticallyEuclideanEnd.conformalEuclidean hr hw hw_pos hdecay).toFun x =
-      WithMetric.toWithMetric _ x := by
-  rw [AsymptoticallyEuclideanEnd.conformalEuclidean]
-  exact AsymptoticallyEuclideanEnd.ofFun_toFun_of_lt hr _ _ _ _ _ _ hx
-
-/-- End image of `AsymptoticallyEuclideanEnd.conformalEuclidean`. -/
-@[simp]
-theorem AsymptoticallyEuclideanEnd.conformalEuclidean_image :
-    (AsymptoticallyEuclideanEnd.conformalEuclidean hr hw hw_pos hdecay).image =
-      WithMetric.toWithMetric _ '' {x | r < ‖x‖} := by
-  rw [AsymptoticallyEuclideanEnd.conformalEuclidean, AsymptoticallyEuclideanEnd.ofFun_image]
-
-/-- On `{x | r < ‖x‖}`, the pulled-back metric coefficients of
-`AsymptoticallyEuclideanEnd.conformalEuclidean` equal `w x * δ_ij`. -/
-theorem AsymptoticallyEuclideanEnd.conformalEuclidean_pullbackMetricCoeff_of_lt
-    {x : EuclideanSpace ℝ (Fin n)} (hx : r < ‖x‖) (i j : Fin n) :
-    pullbackMetricCoeff
-      (AsymptoticallyEuclideanEnd.conformalEuclidean hr hw hw_pos hdecay).toFun x i j =
-      w x * if i = j then 1 else 0 := by
-  rw [AsymptoticallyEuclideanEnd.conformalEuclidean,
-    AsymptoticallyEuclideanEnd.ofFun_pullbackMetricCoeff_of_lt _ _ _ _ _ _ _ hx,
-    pullbackMetricCoeff_toWithMetric_rescale]
-
-/-- Package a `C^k` positive conformal factor `w : ℝⁿ → ℝ` with `w - 1 = O_2(‖x‖ ^ (-t))` as a
-one-ended `FiniteEndedAE` structure on `WithMetric`. -/
-def FiniteEndedAE.conformalEuclidean :
-    FiniteEndedAE n
-      (WithMetric
-        (((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := k) le_top).rescale
-          w hw.contMDiff hw_pos)) t :=
-  let g := ((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := k) le_top).rescale
-    w hw.contMDiff hw_pos
-  FiniteEndedAE.ofSingleEnd
-    (AsymptoticallyEuclideanEnd.conformalEuclidean hr hw hw_pos hdecay) <| by
-      rw [AsymptoticallyEuclideanEnd.conformalEuclidean_image, ← WithMetric.coe_homeomorph_symm g,
-        ← Set.image_compl_eq (WithMetric.homeomorph g).symm.bijective]
-      convert (isCompact_closedBall (0 : EuclideanSpace ℝ (Fin n)) r).image
-        (WithMetric.homeomorph g).symm.continuous using 2
-      ext x
-      simp
-
-/-- Number of ends of `FiniteEndedAE.conformalEuclidean`. -/
-@[simp]
-theorem FiniteEndedAE.conformalEuclidean_numEnds :
-    (FiniteEndedAE.conformalEuclidean hr hw hw_pos hdecay).numEnds = 1 :=
-  FiniteEndedAE.ofSingleEnd_numEnds _ _
-
-/-- The unique end of `FiniteEndedAE.conformalEuclidean` is
-`AsymptoticallyEuclideanEnd.conformalEuclidean`. -/
-@[simp]
-theorem FiniteEndedAE.conformalEuclidean_ends
-    (a : Fin (FiniteEndedAE.conformalEuclidean hr hw hw_pos hdecay).numEnds) :
-    (FiniteEndedAE.conformalEuclidean hr hw hw_pos hdecay).ends a =
-      AsymptoticallyEuclideanEnd.conformalEuclidean hr hw hw_pos hdecay :=
-  FiniteEndedAE.ofSingleEnd_ends _ _ a
-
-end ConformalEuclidean
+/-- Any `C^k` (`2 ≤ k`) positive conformal factor `w : ℝⁿ → ℝ` (`0 < n`) satisfying
+`‖D^m(w - 1)(x)‖ ≤ C ‖x‖ ^ (-t - m)` (`m ≤ 2`) outside `closedBall 0 R` (`R > 0`) makes
+`WithMetric (w • g_eucl)` a one-ended finite-ended asymptotically Euclidean manifold of order
+`t`. -/
+theorem isFiniteEndedAsymptoticallyEuclidean_toWithMetric_rescale {n : ℕ} (hn : 0 < n) {k : ℕ∞ω}
+    (hk : 2 ≤ k) {t R : ℝ} (hR : 0 < R) {w : EuclideanSpace ℝ (Fin n) → ℝ}
+    (hw : ContDiff ℝ k w) (hw_pos : ∀ x, 0 < w x)
+    (hdecay : ∃ C : ℝ, ∀ m ≤ 2, ∀ x ∈ (closedBall 0 R)ᶜ,
+      ‖iteratedFDeriv ℝ m (fun y ↦ w y - 1) x‖ ≤ C * ‖x‖ ^ (-t - m)) :
+    IsFiniteEndedAsymptoticallyEuclidean 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) t
+      (fun _ : Unit ↦ R)
+      (fun _ ↦ WithMetric.toWithMetric
+        (((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := k)
+          le_top).rescale w hw.contMDiff hw_pos)) where
+  finite := inferInstance
+  nonempty := inferInstance
+  isAsymptoticallyEuclideanEnd _ :=
+    isAsymptoticallyEuclideanEnd_toWithMetric_rescale hn hk hR hw hw_pos hdecay
+  pairwise_disjoint e e' hee' := (hee' (Subsingleton.elim e e')).elim
+  isCompact_compl_iUnion := by
+    let g := ((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := k)
+      le_top).rescale w hw.contMDiff hw_pos
+    rw [iUnion_const, ← WithMetric.coe_homeomorph_symm g,
+      ← image_compl_eq (WithMetric.homeomorph g).symm.bijective, compl_compl]
+    exact (isCompact_closedBall (0 : EuclideanSpace ℝ (Fin n)) R).image
+      (WithMetric.homeomorph g).symm.continuous
 
 /-! ### Smooth Schwarzschild model manifold of order `n - 2` (`3 ≤ n`) -/
 
@@ -302,7 +268,8 @@ private theorem hasFDerivAt_conformal_rpow {n : ℕ} (hn : 3 ≤ n) (c p : ℝ)
       ((p * (1 + c * ‖y‖ ^ (2 - (n : ℝ))) ^ (p - 1) * c) •
         fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ (2 - (n : ℝ))) y) y := by
   have hy0 : y ≠ 0 := norm_pos_iff.1 ((zero_lt_one.trans_le (le_max_left _ _)).trans hy)
-  have hvy : 0 < 1 + c * ‖y‖ ^ (2 - (n : ℝ)) := by linarith [(mul_norm_rpow_mem_Icc hn c hy).1]
+  have hvy : 0 < 1 + c * ‖y‖ ^ (2 - (n : ℝ)) := by
+    linarith [(mul_norm_rpow_mem_Icc hn c hy).left]
   have hin : HasFDerivAt (fun z : EuclideanSpace ℝ (Fin n) ↦ 1 + c * ‖z‖ ^ (2 - (n : ℝ)))
       (c • fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ (2 - (n : ℝ))) y) y :=
     (((hasFDerivAt_norm_rpow_of_ne (2 - (n : ℝ)) hy0).differentiableAt.hasFDerivAt).const_smul c
@@ -318,10 +285,10 @@ private theorem exists_conformal_rpow_zero_first_decay {n : ℕ} (hn : 3 ≤ n) 
   set q : ℝ := 2 - (n : ℝ)
   set B₁ : ℝ := |p| * (2 : ℝ) ^ |p - 1|
   have hM₁ : ∀ s ∈ Icc (-1 / 2 : ℝ) (1 / 2), |p * (1 + s) ^ (p - 1)| ≤ B₁ := fun s hs ↦ by
-    have hpos : 0 < 1 + s := by linarith [hs.1]
+    have hpos : 0 < 1 + s := by linarith [hs.left]
     rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos hpos _)]
-    exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_abs hpos (by linarith [hs.2])
-      (by rw [inv_le_iff_one_le_mul₀ hpos]; linarith [hs.1]) _) (abs_nonneg p)
+    exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_abs hpos.le (by linarith [hs.right])
+      (by rw [inv_le_iff_one_le_mul₀ hpos]; linarith [hs.left]) _) (abs_nonneg p)
   refine ⟨B₁ * |c| * (1 + |q|), fun x hx ↦ ?_⟩
   have hx0 : x ≠ 0 := norm_pos_iff.1 ((zero_lt_one.trans_le (le_max_left _ _)).trans hx)
   have hsK : c * ‖x‖ ^ q ∈ Icc (-1 / 2 : ℝ) (1 / 2) := mul_norm_rpow_mem_Icc hn c hx
@@ -330,7 +297,7 @@ private theorem exists_conformal_rpow_zero_first_decay {n : ℕ} (hn : 3 ≤ n) 
   have hmvt := (convex_Icc (-1 / 2 : ℝ) (1 / 2)).norm_image_sub_le_of_norm_hasDerivWithin_le
     (f := fun s : ℝ ↦ (1 + s) ^ p) (f' := fun s : ℝ ↦ p * (1 + s) ^ (p - 1)) (C := B₁)
     (fun s hs ↦ ((((hasDerivAt_id' s).const_add 1).rpow_const (p := p)
-      (Or.inl (by linarith [hs.1]))).congr_deriv (by ring)).hasDerivWithinAt)
+      (Or.inl (by linarith [hs.left]))).congr_deriv (by ring)).hasDerivWithinAt)
     (fun s hs ↦ by simpa [Real.norm_eq_abs] using hM₁ s hs) h0K hsK
   have h0 : |(1 + c * ‖x‖ ^ q) ^ p - 1| ≤ B₁ * |c| * ‖x‖ ^ q := by
     simpa [Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg x) q),
@@ -393,10 +360,10 @@ private theorem exists_conformal_rpow_second_decay {n : ℕ} (hn : 3 ≤ n) (c p
   have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx1)
   have hs := mul_norm_rpow_mem_Icc hn c hx
   have hpow (a r : ℝ) : |a * (1 + c * ‖x‖ ^ q) ^ r| ≤ |a| * (2 : ℝ) ^ |r| := by
-    have hpos : 0 < 1 + c * ‖x‖ ^ q := by linarith [hs.1]
+    have hpos : 0 < 1 + c * ‖x‖ ^ q := by linarith [hs.left]
     rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos hpos _)]
-    exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_abs hpos (by linarith [hs.2])
-      (by rw [inv_le_iff_one_le_mul₀ hpos]; linarith [hs.1]) r) (abs_nonneg a)
+    exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_abs hpos.le (by linarith [hs.right])
+      (by rw [inv_le_iff_one_le_mul₀ hpos]; linarith [hs.left]) r) (abs_nonneg a)
   rw [fderiv_fderiv_conformal_rpow hn c p hx]
   have ht1 : ‖(((p * (p - 1) * (1 + c * ‖x‖ ^ q) ^ (p - 2) * c ^ 2) •
         fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x)).smulRight
@@ -433,32 +400,39 @@ private theorem exists_conformal_rpow_second_decay {n : ℕ} (hn : 3 ≤ n) (c p
   exact (ContinuousLinearMap.opNorm_add_le _ _).trans (add_le_add ht2 ht1)
 
 private theorem exists_schwarzschildModelFactor_decay {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
-    ∃ C : ℝ, ∀ x : EuclideanSpace ℝ (Fin n), max 1 (2 * |c|) + 1 < ‖x‖ →
-      |schwarzschildModelFactor n c x - 1| ≤ C * ‖x‖ ^ (-((n : ℝ) - 2)) ∧
-      ‖fderiv ℝ (schwarzschildModelFactor n c) x‖ ≤ C * ‖x‖ ^ (-((n : ℝ) - 2) - 1) ∧
-      ‖fderiv ℝ (fderiv ℝ (schwarzschildModelFactor n c)) x‖ ≤
-        C * ‖x‖ ^ (-((n : ℝ) - 2) - 2) := by
+    ∃ C : ℝ, ∀ m ≤ 2, ∀ x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) (max 1 (2 * |c|) + 1))ᶜ,
+      ‖iteratedFDeriv ℝ m (fun y ↦ schwarzschildModelFactor n c y - 1) x‖ ≤
+        C * ‖x‖ ^ (-((n : ℝ) - 2) - m) := by
   obtain ⟨C₀, hC₀⟩ := exists_conformal_rpow_zero_first_decay hn c (4 / ((n : ℝ) - 2))
   obtain ⟨C₂, hC₂⟩ := exists_conformal_rpow_second_decay hn c (4 / ((n : ℝ) - 2))
   have hU : IsOpen {y : EuclideanSpace ℝ (Fin n) | max 1 (2 * |c|) + 1 < ‖y‖} :=
     isOpen_lt continuous_const continuous_norm
-  refine ⟨max C₀ C₂, fun x hx ↦ ?_⟩
+  refine ⟨max C₀ C₂, fun m hm x hx ↦ ?_⟩
+  have hx_lt : max 1 (2 * |c|) + 1 < ‖x‖ := by simpa using hx
   have hx' : max 1 (2 * |c|) < ‖x‖ := by linarith
   have hev : schwarzschildModelFactor n c =ᶠ[𝓝 x]
       fun y ↦ (1 + c * ‖y‖ ^ (2 - (n : ℝ))) ^ (4 / ((n : ℝ) - 2)) :=
-    Filter.eventuallyEq_of_mem (hU.mem_nhds hx) fun _ hy ↦ schwarzschildModelFactor_of_lt n c hy
-  rw [hev.eq_of_nhds, hev.fderiv_eq, hev.fderiv.fderiv_eq]
+    Filter.eventuallyEq_of_mem (hU.mem_nhds hx_lt) fun _ hy ↦ schwarzschildModelFactor_of_lt n c hy
   obtain ⟨h0, h1⟩ := hC₀ x hx'
-  have hnn (k : ℝ) : 0 ≤ ‖x‖ ^ k := Real.rpow_nonneg (norm_nonneg x) k
-  exact ⟨h0.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (hnn _)),
-    h1.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (hnn _)),
-    (hC₂ x hx').trans (mul_le_mul_of_nonneg_right (le_max_right _ _) (hnn _))⟩
+  have hnn (s : ℝ) : 0 ≤ ‖x‖ ^ s := Real.rpow_nonneg (norm_nonneg x) s
+  have hsub : fderiv ℝ (fun y ↦ schwarzschildModelFactor n c y - 1) =
+      fderiv ℝ (schwarzschildModelFactor n c) :=
+    funext fun _ ↦ fderiv_sub_const (1 : ℝ)
+  interval_cases m
+  · rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, hev.eq_of_nhds, Nat.cast_zero, sub_zero]
+    exact h0.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (hnn _))
+  · rw [norm_iteratedFDeriv_one, hsub, hev.fderiv_eq, Nat.cast_one]
+    exact h1.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (hnn _))
+  · rw [show (2 : ℕ) = 1 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hsub, norm_iteratedFDeriv_one,
+      hev.fderiv.fderiv_eq, Nat.cast_add, Nat.cast_one, show (1 : ℝ) + 1 = 2 by norm_num]
+    exact (hC₂ x hx').trans (mul_le_mul_of_nonneg_right (le_max_right _ _) (hnn _))
 
 /-- The smooth conformally Euclidean Riemannian metric `schwarzschildModelFactor n c • g_eucl` on
 `ℝⁿ` (`3 ≤ n`), equal outside a ball to `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2)) • g_eucl`. -/
 def schwarzschildModelMetric {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
-    ContMDiffRiemannianMetric (𝓡 n) ∞ (EuclideanSpace ℝ (Fin n))
-      (fun x : EuclideanSpace ℝ (Fin n) ↦ TangentSpace (𝓡 n) x) :=
+    ContMDiffRiemannianMetric 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ∞ (EuclideanSpace ℝ (Fin n))
+      (fun x : EuclideanSpace ℝ (Fin n) ↦
+        TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :=
   ((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := ∞) le_top).rescale
     (schwarzschildModelFactor n c) (contDiff_schwarzschildModelFactor hn c).contMDiff
     (schwarzschildModelFactor_pos hn c)
@@ -475,85 +449,59 @@ theorem schwarzschildModelMetric_def {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
 the standard Euclidean inner product. -/
 @[simp]
 theorem schwarzschildModelMetric_inner {n : ℕ} (hn : 3 ≤ n) (c : ℝ)
-    (x : EuclideanSpace ℝ (Fin n)) (v w : TangentSpace (𝓡 n) x) :
+    (x : EuclideanSpace ℝ (Fin n))
+    (v w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :
     (schwarzschildModelMetric hn c).inner x v w =
-      schwarzschildModelFactor n c x * ⟪v, w⟫ := by
+      schwarzschildModelFactor n c x *
+        ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫ := by
   rw [schwarzschildModelMetric_def, ContMDiffRiemannianMetric.rescale_inner,
-    ContMDiffRiemannianMetric.ofLE_inner, ← ContMDiffRiemannianMetric.inner_riemannianBundle]
+    ContMDiffRiemannianMetric.ofLE_inner, riemannianMetricVectorSpace_inner]
 
-/-- The conformally Euclidean end of order `n - 2` (`3 ≤ n`) associated with
-`schwarzschildModelMetric hn c` (non-flat for `c ≠ 0`). -/
-def schwarzschildModelEnd {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
-    AsymptoticallyEuclideanEnd n (WithMetric (schwarzschildModelMetric hn c)) ((n : ℝ) - 2) :=
-  AsymptoticallyEuclideanEnd.conformalEuclidean
-    (r := max 1 (2 * |c|) + 1) (by linarith [le_max_left (1 : ℝ) (2 * |c|)])
-    (contDiff_schwarzschildModelFactor hn c) (schwarzschildModelFactor_pos hn c)
-    (exists_schwarzschildModelFactor_decay hn c)
+/-- In dimension `3 ≤ n`, `WithMetric.toWithMetric (schwarzschildModelMetric hn c)` is an
+asymptotically Euclidean end of order `n - 2` outside `closedBall 0 (max 1 (2 |c|) + 1)`
+(non-flat for `c ≠ 0`). -/
+theorem isAsymptoticallyEuclideanEnd_schwarzschildModelMetric {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
+    IsAsymptoticallyEuclideanEnd 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ((n : ℝ) - 2)
+      (max 1 (2 * |c|) + 1) (WithMetric.toWithMetric (schwarzschildModelMetric hn c)) :=
+  isAsymptoticallyEuclideanEnd_toWithMetric_rescale (by omega) (by simp)
+    (by linarith [le_max_left (1 : ℝ) (2 * |c|)]) (contDiff_schwarzschildModelFactor hn c)
+    (schwarzschildModelFactor_pos hn c) (exists_schwarzschildModelFactor_decay hn c)
 
-/-- Excision radius of `schwarzschildModelEnd`. -/
-@[simp]
-theorem schwarzschildModelEnd_radius {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
-    (schwarzschildModelEnd hn c).radius = max 1 (2 * |c|) + 1 := by
-  rw [schwarzschildModelEnd, AsymptoticallyEuclideanEnd.conformalEuclidean_radius]
+/-- In dimension `3 ≤ n`, `WithMetric (schwarzschildModelMetric hn c)` is a one-ended finite-ended
+asymptotically Euclidean manifold of order `n - 2`. -/
+theorem isFiniteEndedAsymptoticallyEuclidean_schwarzschildModelMetric {n : ℕ} (hn : 3 ≤ n)
+    (c : ℝ) :
+    IsFiniteEndedAsymptoticallyEuclidean 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ((n : ℝ) - 2)
+      (fun _ : Unit ↦ max 1 (2 * |c|) + 1)
+      (fun _ ↦ WithMetric.toWithMetric (schwarzschildModelMetric hn c)) :=
+  isFiniteEndedAsymptoticallyEuclidean_toWithMetric_rescale (by omega) (by simp)
+    (by linarith [le_max_left (1 : ℝ) (2 * |c|)]) (contDiff_schwarzschildModelFactor hn c)
+    (schwarzschildModelFactor_pos hn c) (exists_schwarzschildModelFactor_decay hn c)
 
-/-- On `{x | max 1 (2 |c|) + 1 < ‖x‖}`, `schwarzschildModelEnd hn c` acts by
-`WithMetric.toWithMetric (schwarzschildModelMetric hn c)`. -/
-@[simp]
-theorem schwarzschildModelEnd_toFun_of_lt {n : ℕ} (hn : 3 ≤ n) (c : ℝ)
-    {x : EuclideanSpace ℝ (Fin n)} (hx : max 1 (2 * |c|) + 1 < ‖x‖) :
-    (schwarzschildModelEnd hn c).toFun x =
-      WithMetric.toWithMetric (schwarzschildModelMetric hn c) x := by
-  rw [schwarzschildModelEnd]
-  exact AsymptoticallyEuclideanEnd.conformalEuclidean_toFun_of_lt _ _ _ _ hx
-
-/-- End image of `schwarzschildModelEnd`. -/
-@[simp]
-theorem schwarzschildModelEnd_image {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
-    (schwarzschildModelEnd hn c).image =
-      WithMetric.toWithMetric (schwarzschildModelMetric hn c) ''
-        {x | max 1 (2 * |c|) + 1 < ‖x‖} :=
-  AsymptoticallyEuclideanEnd.conformalEuclidean_image _ _ _ _
-
-/-- Outside `{x | ‖x‖ ≤ max 1 (2 |c|) + 1}`, the pulled-back metric coefficients of
-`schwarzschildModelEnd hn c` equal `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2)) * δ_ij`. -/
-theorem pullbackMetricCoeff_schwarzschildModelEnd {n : ℕ} (hn : 3 ≤ n) (c : ℝ)
-    {x : EuclideanSpace ℝ (Fin n)} (hx : max 1 (2 * |c|) + 1 < ‖x‖) (i j : Fin n) :
-    pullbackMetricCoeff (schwarzschildModelEnd hn c).toFun x i j =
-      (1 + c * ‖x‖ ^ (2 - (n : ℝ))) ^ (4 / ((n : ℝ) - 2)) * if i = j then 1 else 0 :=
-  (AsymptoticallyEuclideanEnd.conformalEuclidean_pullbackMetricCoeff_of_lt _ _ _ _ hx i j).trans
-    (by rw [schwarzschildModelFactor_of_lt n c hx])
-
-/-- The one-ended `FiniteEndedAE` manifold structure of order `n - 2` (`3 ≤ n`) on
-`WithMetric (schwarzschildModelMetric hn c)`. -/
-def schwarzschildModelAE {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
-    FiniteEndedAE n (WithMetric (schwarzschildModelMetric hn c)) ((n : ℝ) - 2) :=
-  FiniteEndedAE.conformalEuclidean
-    (r := max 1 (2 * |c|) + 1) (by linarith [le_max_left (1 : ℝ) (2 * |c|)])
-    (contDiff_schwarzschildModelFactor hn c) (schwarzschildModelFactor_pos hn c)
-    (exists_schwarzschildModelFactor_decay hn c)
-
-/-- Number of ends of `schwarzschildModelAE`. -/
-@[simp]
-theorem schwarzschildModelAE_numEnds {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
-    (schwarzschildModelAE hn c).numEnds = 1 :=
-  FiniteEndedAE.conformalEuclidean_numEnds _ _ _ _
-
-/-- The unique end of `schwarzschildModelAE hn c` is `schwarzschildModelEnd hn c`. -/
-@[simp]
-theorem schwarzschildModelAE_ends {n : ℕ} (hn : 3 ≤ n) (c : ℝ)
-    (a : Fin (schwarzschildModelAE hn c).numEnds) :
-    (schwarzschildModelAE hn c).ends a = schwarzschildModelEnd hn c :=
-  FiniteEndedAE.conformalEuclidean_ends _ _ _ _ a
+/-- Outside `{x | ‖x‖ ≤ max 1 (2 |c|) + 1}`, the pulled-back metric coefficient matrix of
+`schwarzschildModelMetric hn c` equals `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2)) • 1`. -/
+theorem pullbackMetricCoeff_toWithMetric_schwarzschildModelMetric_of_lt {n : ℕ} (hn : 3 ≤ n)
+    (c : ℝ) {x : EuclideanSpace ℝ (Fin n)} (hx : max 1 (2 * |c|) + 1 < ‖x‖) :
+    pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
+      (WithMetric.toWithMetric (schwarzschildModelMetric hn c)) x =
+      (1 + c * ‖x‖ ^ (2 - (n : ℝ))) ^ (4 / ((n : ℝ) - 2)) • 1 := by
+  rw [schwarzschildModelMetric_def, pullbackMetricCoeff_toWithMetric_rescale,
+    schwarzschildModelFactor_of_lt n c hx]
 
 /-- **Schwarzschild model manifold ADM mass check.** For every `3 ≤ n` and `c : ℝ`, the smooth
-conformally Euclidean end `schwarzschildModelEnd hn c` of order `n - 2` (non-flat for `c ≠ 0`) has
-ADM mass `2 c`. -/
-theorem tendsto_normalizedCoordinateFlux_schwarzschildModelEnd {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
+conformally Euclidean manifold `WithMetric (schwarzschildModelMetric hn c)` of order `n - 2`
+(non-flat for `c ≠ 0`) has ADM mass `2 c`. -/
+theorem tendsto_normalizedCoordinateFlux_schwarzschildModelMetric {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
     Tendsto
-      (normalizedCoordinateFlux n (pullbackMetricCoeff (schwarzschildModelEnd hn c).toFun))
-      atTop (𝓝 (2 * c)) :=
-  (tendsto_normalizedCoordinateFlux_iff_of_eqOn_exterior fun _ hx ↦
-    pullbackMetricCoeff_schwarzschildModelEnd hn c hx).2
-    (tendsto_normalizedCoordinateFlux_conformal_rpow hn c)
+      (normalizedCoordinateFlux
+        (pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
+          (WithMetric.toWithMetric (schwarzschildModelMetric hn c))))
+      atTop (𝓝 (2 * c)) := by
+  refine (tendsto_normalizedCoordinateFlux_conformal_one_add_mul_rpow hn c).congr' ?_
+  refine (normalizedCoordinateFlux_eventuallyEq_of_eqOn (R := max 1 (2 * |c|) + 1) ?_).symm
+  intro x hx
+  ext i j
+  rw [pullbackMetricCoeff_toWithMetric_schwarzschildModelMetric_of_lt hn c hx]
+  simp [Matrix.one_apply]
 
 end TauCeti

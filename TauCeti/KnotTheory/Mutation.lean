@@ -507,7 +507,7 @@ private def ellipseCoord :
     · simp [field]
     · simp [field]
     · simp
-    · simpa using (mem_orthogonal_northPole.1 y.2).symm
+    · simpa using (mem_orthogonal_northPole.1 y.property).symm
 
 private theorem norm_sq_ellipseCoord (w : EuclideanSpace ℝ (Fin 3)) :
     ‖(ellipseCoord w : EuclideanSpace ℝ (Fin 4))‖ ^ 2 = 2 * w 0 ^ 2 + 6 * w 1 ^ 2 + w 2 ^ 2 := by

@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Range
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.FullCover
 public import Mathlib.Basic.Real.Basic
+import Mathlib.FieldTheory.IsRealClosed.Real
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
 import TauCeti.FieldTheory.SquareClassGroup.Real
+import TauCeti.Algebra.Order.Ring.Square
 
 /-!
 # The orthogonal image of the real Pin group
@@ -47,6 +50,8 @@ of the normalized full Clifford cover covers all of `SO(Q)` in every signature
 * `CliffordAlgebra.pinToOrthogonal_surjective_iff` and
   `CliffordAlgebra.pinToOrthogonal_surjective_of_negDef`: the Pin action is onto `O(Q)` exactly
   when `Q` takes no positive value, in particular for a negative definite form.
+* `CliffordAlgebra.pinToCliffordFullCover_surjective_iff`: in the same way, the Pin group is the
+  whole normalized full Clifford cover exactly when `Q` takes no positive value.
 * `CliffordAlgebra.range_pinToOrthogonal_eq_specialOrthogonalWithin_of_posDef` and
   `CliffordAlgebra.pinGroup_eq_spinGroup_of_posDef`: for a positive definite form the Pin image is
   `SO(Q)` and the Pin group is the Spin group.
@@ -153,5 +158,22 @@ theorem pinGroup_eq_spinGroup_of_posDef (Q : QuadraticForm ℝ V) (hQ : Q.PosDef
     exact ⟨_, rfl⟩
   exact mem_even_of_det_pinToOrthogonal_eq_one Q ⟨x, hx⟩
     (QuadraticMap.mem_specialOrthogonalWithin_iff.mp hdet)
+
+/-- **The Pin group is the whole full cover** of a nondegenerate real quadratic space exactly when
+the form takes no positive value. -/
+theorem pinToCliffordFullCover_surjective_iff (Q : QuadraticForm ℝ V) (hQ : Q.Nondegenerate) :
+    Function.Surjective (pinToCliffordFullCover Q) ↔ ∀ v, Q v ≤ 0 := by
+  rw [← pinToOrthogonal_surjective_iff Q hQ, ← MonoidHom.range_eq_top, ← MonoidHom.range_eq_top,
+    ← comap_range_pinToOrthogonal hQ not_isSquare_neg_one]
+  constructor
+  · intro h
+    rw [eq_top_iff]
+    intro g _
+    obtain ⟨x, rfl⟩ :=
+      cliffordFullCoverToOrthogonal_surjective hQ IsRealClosed.isSquare_or_isSquare_neg g
+    rw [← Subgroup.mem_comap, h]
+    exact Subgroup.mem_top x
+  · intro h
+    rw [h, Subgroup.comap_top]
 
 end CliffordAlgebra
