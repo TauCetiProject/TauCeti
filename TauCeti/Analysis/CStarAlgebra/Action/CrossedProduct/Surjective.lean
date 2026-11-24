@@ -69,8 +69,8 @@ private theorem mul_mem_range_fullCrossedProductMap_left (φ : Hom α β)
         (coefficientMultiplier β μ (g.ofConv s) *
           (groupMultiplier β μ s : 𝓜(ℂ, FullCrossedProduct β μ))).fst y ∈ R := by
       obtain ⟨a, ha⟩ := hsurj (g.ofConv s)
-      obtain ⟨x, rfl⟩ := (φ.fullCrossedProductMap μ).mem_range.1 hy
-      exact (φ.fullCrossedProductMap μ).mem_range.2
+      obtain ⟨x, rfl⟩ := (φ.fullCrossedProductMap μ).mem_range.mp hy
+      exact (φ.fullCrossedProductMap μ).mem_range.mpr
         ⟨(coefficientMultiplier α μ a).fst
           ((groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ)).fst x),
           by simp [ha, DoubleCentralizer.mul_fst]⟩
@@ -80,7 +80,7 @@ private theorem mul_mem_range_fullCrossedProductMap_left (φ : Hom α β)
     have hint := R.toSubmodule.subtypeₗᵢ.integral_comp_comm (μ := μ) F
     simp only [Submodule.coe_subtypeₗᵢ, Submodule.subtype_apply, F] at hint
     rw [integral_coefficientMultiplier_mul_groupMultiplier_fst] at hint
-    exact hint ▸ (∫ s, F s ∂μ).2
+    exact hint ▸ (∫ s, F s ∂μ).property
 
 /-- A dense-range equivariant coefficient homomorphism induces a surjective full
 crossed-product homomorphism. For a surjective coefficient map, use `hφ.denseRange`. -/
@@ -104,26 +104,27 @@ theorem surjective_fullCrossedProductMap (φ : Hom α β) (hφ : DenseRange φ) 
     simp only [NonUnitalStarAlgHom.comp_apply]
     exact (NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_dense_span_comp
       (φ := DoubleCentralizer.coeHom (𝕜 := ℂ))
-      (TwoSidedIdeal.Quotient.mkStarAlgHom_surjective J).denseRange).1
+      (TwoSidedIdeal.Quotient.mkStarAlgHom_surjective J).denseRange).mp
       NonUnitalStarAlgHom.isMultiplierNondegenerate_coeHom
   let M := ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ).toCovariantMultiplierHom hΦ
   have hM0 : M.coefficient = 0 := by
     refine NonUnitalStarAlgHom.ext fun b => ?_
     obtain ⟨a, rfl⟩ := hsurj b
-    refine ((M.forall_mem_range_fullCrossedProductMap_integratedFull_eq_zero_iff μ φ).1
+    refine ((M.forall_mem_range_fullCrossedProductMap_integratedFull_eq_zero_iff μ φ).mp
       fun y hy => ?_) a
-    have hyJ : y ∈ J := SetLike.mem_coe.1 (hJ.symm ▸ SetLike.mem_coe.2 hy)
+    have hyJ : y ∈ J := SetLike.mem_coe.mp (hJ.symm ▸ SetLike.mem_coe.mpr hy)
     have hψy : ψ y = 0 := (TwoSidedIdeal.Quotient.mkStarAlgHom_apply J y).trans
-      (TwoSidedIdeal.Quotient.eq_zero_iff_mem.2 hyJ)
+      (TwoSidedIdeal.Quotient.eq_zero_iff_mem.mpr hyJ)
     simp [M, hψy]
-  have hzero : M.integratedFull μ = 0 := M.integratedFull_eq_zero_iff.2 hM0
+  have hzero : M.integratedFull μ = 0 := M.integratedFull_eq_zero_iff.mpr hM0
   rw [NonUnitalStarAlgHom.integratedFull_toCovariantMultiplierHom] at hzero
   intro y
   have hy : ψ y = 0 :=
     DoubleCentralizer.coe_injective (𝕜 := ℂ) (by simpa using DFunLike.congr_fun hzero y)
-  have hyJ : y ∈ J := TwoSidedIdeal.Quotient.eq_zero_iff_mem.1
+  have hyJ : y ∈ J := TwoSidedIdeal.Quotient.eq_zero_iff_mem.mp
     ((TwoSidedIdeal.Quotient.mkStarAlgHom_apply J y).symm.trans hy)
-  exact (φ.fullCrossedProductMap μ).mem_range.1 (SetLike.mem_coe.1 (hJ ▸ SetLike.mem_coe.2 hyJ))
+  exact (φ.fullCrossedProductMap μ).mem_range.mp
+    (SetLike.mem_coe.mp (hJ ▸ SetLike.mem_coe.mpr hyJ))
 
 end Hom
 

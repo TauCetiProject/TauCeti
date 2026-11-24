@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Hom
 public import TauCeti.Analysis.CStarAlgebra.Action.Quotient
-public import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
 # Invariant closed ideals and concrete quotient C⋆-actions
@@ -90,7 +89,7 @@ def restrictIdealEquiv {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
 @[simp]
 theorem restrictIdealEquiv_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (g : G) (x : I) :
-    hI.restrictIdealEquiv g x = ⟨α g x, hI.apply_mem g x.2⟩ := by
+    hI.restrictIdealEquiv g x = ⟨α g x, hI.apply_mem g x.property⟩ := by
   simp [restrictIdealEquiv]
 
 /-- Restrict a C⋆-action to a closed invariant two-sided ideal. -/
@@ -102,7 +101,7 @@ def restrictIdeal {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
 @[simp]
 theorem restrictIdeal_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (g : G) (x : I) :
-    hI.restrictIdeal g x = ⟨α g x, hI.apply_mem g x.2⟩ := by
+    hI.restrictIdeal g x = ⟨α g x, hI.apply_mem g x.property⟩ := by
   simp [restrictIdeal]
 
 @[norm_cast]
@@ -364,68 +363,6 @@ theorem conjugate_quotientKerEquivOfSurjective (f : Hom α β) (hf : Function.Su
       (NonUnitalStarAlgHom.quotientKerEquivOfSurjective (φ := f.toNonUnitalStarAlgHom) hf) = β :=
   (StarAlgEquiv.isEquivariant_iff_conjugate_eq _).mp
     (f.isEquivariant_quotientKerEquivOfSurjective hf)
-
-/-- Restrict the codomain of an equivariant homomorphism `f : Hom α β` to its closed invariant
-`⋆`-subalgebra range. -/
-def rangeRestrict (f : Hom α β) : Hom α (IsInvariant.range f).restrict where
-  toNonUnitalStarAlgHom := f.toNonUnitalStarAlgHom.rangeRestrict
-  map_action' g a := Subtype.ext <| by simp
-
-@[simp]
-theorem rangeRestrict_toNonUnitalStarAlgHom (f : Hom α β) :
-    f.rangeRestrict.toNonUnitalStarAlgHom = f.toNonUnitalStarAlgHom.rangeRestrict :=
-  (rfl)
-
-@[simp]
-theorem coe_rangeRestrict_apply (f : Hom α β) (a : A) : (f.rangeRestrict a : B) = f a :=
-  (rfl)
-
-@[simp]
-theorem subtypeHom_comp_rangeRestrict (f : Hom α β) :
-    (IsInvariant.range f).subtypeHom.comp f.rangeRestrict = f := by
-  ext a
-  simp
-
-theorem rangeRestrict_surjective (f : Hom α β) : Function.Surjective f.rangeRestrict :=
-  f.toNonUnitalStarAlgHom.rangeRestrict_surjective
-
-/-- For an injective equivariant homomorphism `f : Hom α β`, the inverse `⋆`-isomorphism from its
-closed invariant range back to `A` is equivariant. -/
-def rangeRestrictInv (f : Hom α β) (hf : Function.Injective f) :
-    Hom (IsInvariant.range f).restrict α where
-  toNonUnitalStarAlgHom :=
-    (StarAlgEquiv.ofInjective' f.toNonUnitalStarAlgHom hf).symm.toNonUnitalStarAlgHom
-  map_action' g x := by
-    obtain ⟨a, rfl⟩ := f.rangeRestrict_surjective x
-    let e := StarAlgEquiv.ofInjective' f.toNonUnitalStarAlgHom hf
-    have he : ∀ z : A, e z = f.rangeRestrict z :=
-      fun z => Subtype.ext (StarAlgEquiv.ofInjective'_apply _ hf z)
-    have happ : ∀ z : A, e.symm (f.rangeRestrict z) = z :=
-      fun z => he z ▸ e.symm_apply_apply z
-    have hact : (IsInvariant.range f).restrict g (f.rangeRestrict a) =
-        f.rangeRestrict (α g a) := Subtype.ext <| by simp
-    rw [hact]
-    exact (happ (α g a)).trans (congrArg (α g) (happ a).symm)
-
-@[simp]
-theorem rangeRestrictInv_rangeRestrict_apply (f : Hom α β) (hf : Function.Injective f) (a : A) :
-    f.rangeRestrictInv hf (f.rangeRestrict a) = a := by
-  let e := StarAlgEquiv.ofInjective' f.toNonUnitalStarAlgHom hf
-  have he : e a = f.rangeRestrict a := Subtype.ext (StarAlgEquiv.ofInjective'_apply _ hf a)
-  exact he ▸ e.symm_apply_apply a
-
-@[simp]
-theorem rangeRestrictInv_comp_rangeRestrict (f : Hom α β) (hf : Function.Injective f) :
-    (f.rangeRestrictInv hf).comp f.rangeRestrict = Hom.id α := by
-  ext a
-  simp
-
-@[simp]
-theorem rangeRestrict_comp_rangeRestrictInv (f : Hom α β) (hf : Function.Injective f) :
-    f.rangeRestrict.comp (f.rangeRestrictInv hf) = Hom.id (IsInvariant.range f).restrict := by
-  ext x
-  obtain ⟨a, rfl⟩ := f.rangeRestrict_surjective x
-  simp
 
 end Hom
 

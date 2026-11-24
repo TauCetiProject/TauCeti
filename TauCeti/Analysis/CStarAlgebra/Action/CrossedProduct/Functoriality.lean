@@ -44,6 +44,7 @@ public section
 noncomputable section
 
 open MeasureTheory UniformSpace
+open scoped CStarAlgebra
 
 namespace TauCeti.CStarAction
 
@@ -122,7 +123,6 @@ theorem fullCrossedProductMap_fullCrossedProductMap_eq_zero (ψ : Hom β γ)
     ψ.fullCrossedProductMap μ (φ.fullCrossedProductMap μ x) = 0 :=
   DFunLike.congr_fun (φ.fullCrossedProductMap_comp_fullCrossedProductMap_eq_zero μ ψ h) x
 
-open scoped CStarAlgebra in
 /-- A closed nonunital star subalgebra of `FullCrossedProduct β μ` contains the range of
 `φ.fullCrossedProductMap μ` precisely when it contains the image of every compactly supported
 element under `φ.convolutionMap μ`. -/
@@ -131,10 +131,10 @@ theorem range_fullCrossedProductMap_le_iff
     (hJ : IsClosed (J : Set (FullCrossedProduct β μ))) :
     (φ.fullCrossedProductMap μ).range ≤ J ↔
       ∀ f : ConvolutionAlgebra α μ, of β μ (φ.convolutionMap μ f) ∈ J := by
-  refine ⟨fun h f => h ((φ.fullCrossedProductMap μ).mem_range.2
+  refine ⟨fun h f => h ((φ.fullCrossedProductMap μ).mem_range.mpr
       ⟨of α μ f, φ.fullCrossedProductMap_of μ f⟩),
     fun h y hy => ?_⟩
-  obtain ⟨x, rfl⟩ := (φ.fullCrossedProductMap μ).mem_range.1 hy
+  obtain ⟨x, rfl⟩ := (φ.fullCrossedProductMap μ).mem_range.mp hy
   clear hy
   induction x using FullCrossedProduct.induction_on with
   | hp => exact hJ.preimage (map_continuous (φ.fullCrossedProductMap μ))
@@ -146,9 +146,9 @@ theorem range_fullCrossedProductMap_le_topologicalClosure :
     (φ.fullCrossedProductMap μ).range ≤
       ((of β μ).comp (φ.convolutionMap μ)).range.topologicalClosure :=
   (φ.range_fullCrossedProductMap_le_iff μ
-    ((of β μ).comp (φ.convolutionMap μ)).range.isClosed_topologicalClosure).2 fun f =>
+    ((of β μ).comp (φ.convolutionMap μ)).range.isClosed_topologicalClosure).mpr fun f =>
     NonUnitalStarSubalgebra.le_topologicalClosure _
-      (((of β μ).comp (φ.convolutionMap μ)).mem_range.2 ⟨f, rfl⟩)
+      (((of β μ).comp (φ.convolutionMap μ)).mem_range.mpr ⟨f, rfl⟩)
 
 end Hom
 

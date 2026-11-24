@@ -420,7 +420,7 @@ theorem map_descend (q : Hom α β) (hq : Function.Surjective q)
     {ψ : C →⋆ₙₐ[ℂ] 𝓜(ℂ, D)} (hψ : ψ.IsMultiplierNondegenerate) :
     (M.descend q hq hker).map hψ =
       (M.map hψ).descend q hq (fun a ha => by simp [hker a ha]) :=
-  ((M.map hψ).eq_descend_iff q hq _).2 <| by rw [← map_comap, M.comap_descend]
+  ((M.map hψ).eq_descend_iff q hq _).mpr <| by rw [← map_comap, M.comap_descend]
 
 /-- Extending to a Hilbert space via a nondegenerate representation commutes with `descend`. -/
 @[simp]
@@ -430,7 +430,7 @@ theorem toCovariantRepresentation_descend (q : Hom α β) (hq : Function.Surject
     (hρ : ρ.IsNondegenerate) :
     (M.descend q hq hker).toCovariantRepresentation hρ =
       (M.toCovariantRepresentation hρ).descend q hq (fun a ha => by simp [hker a ha]) :=
-  ((M.toCovariantRepresentation hρ).eq_descend_iff q hq _).2 <| by
+  ((M.toCovariantRepresentation hρ).eq_descend_iff q hq _).mpr <| by
     rw [← toCovariantRepresentation_comap, M.comap_descend]
 
 /-- Descend a covariant multiplier homomorphism `M` vanishing on a closed `α`-invariant two-sided
