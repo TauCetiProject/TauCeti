@@ -7,8 +7,9 @@ module
 
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
-public import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Compatibility
+public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Henselian
 
 /-!
 # The completions of `ℚ` at its finite places are `p`-adic fields
@@ -18,8 +19,8 @@ Let `v` be a finite place of `ℚ`, a height-one prime of `𝓞 ℚ`, and let `p
 continuous `ℚ`-algebra isomorphism (`Rat.HeightOneSpectrum.adicCompletion.padicEquiv`). Through
 its inverse, `ℚ_v` becomes a `ℚ_p`-algebra of degree one, so a finite extension of `ℚ_p` in the
 sense of `TauCeti.FinitePadicExtension`. The valuative relation of `ℚ_v`, induced by its adic
-valuation, needs no separate comparison: every algebraic extension of nonarchimedean local fields
-is a valuative extension (`ValuativeExtension.of_isAlgebraic`).
+valuation, needs no separate comparison: every integral extension of nonarchimedean local fields
+is a valuative extension (`ValuativeExtension.of_isIntegral`).
 
 This makes the results stated over an abstract finite extension of `ℚ_p` apply at the finite places
 of `ℚ`, for instance local Tate duality, Tate's local Euler characteristic formula and the
@@ -58,9 +59,7 @@ instance instFinitePadicExtensionAdicCompletion :
     Module.Finite.of_surjective (Algebra.linearMap ℚ_[natGenerator v] (v.adicCompletion ℚ))
       e.symm.surjective
   haveI : Nontrivial ℚ_[natGenerator v] := DivisionRing.toNontrivial
-  haveI : Algebra.IsAlgebraic ℚ_[natGenerator v] (v.adicCompletion ℚ) :=
-    Algebra.IsIntegral.isAlgebraic
   { algebra := inferInstance
-    toValuativeExtension := ValuativeExtension.of_isAlgebraic _ _ }
+    toValuativeExtension := ValuativeExtension.of_isIntegral _ _ }
 
 end Rat.HeightOneSpectrum
