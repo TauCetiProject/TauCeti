@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
+import TauCeti.Data.Int.GCD
 
 /-!
 # Normalising a real angle into `[0, 2π)`
@@ -33,11 +34,12 @@ the order of the rank-two rotations in the geometric representation of a Coxeter
   differ by an integer.
 * `Real.cos_two_mul_pi_div_eq_one_iff_dvd`: for integers `m ≠ 0` and `n`,
   `cos (2 n (π / m)) = 1` exactly when `m ∣ n`.
-* `TauCeti.coprime_of_mul_eq_mul_pi` and `TauCeti.eq_pi_div_of_cos_two_mul_eq_one`: a positive
-  angle `θ` whose `2h`-th multiple is a multiple of `2π` minimally, with no `2nθ + qπ` in `(0, θ)`,
-  equals `π / h`.
-* `TauCeti.toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos` and
-  `TauCeti.eq_of_cos_pos_of_cos_add_one_nonpos`: a sampled sinusoid `cos (α₀ + 2π k / h)` passes
+* `Real.natAbs_coprime_of_mul_eq_mul_pi_of_cos_ne_one`: if `h * θ = m * π` with `cos (2 h' θ) ≠ 1`
+  for all `0 < h' < h`, then `m.natAbs.Coprime h`.
+* `Real.eq_pi_div_of_cos_two_mul_eq_one`: a positive angle `θ` whose `2h`-th multiple is a multiple
+  of `2π` minimally, with no `2nθ + qπ` in `(0, θ)`, equals `π / h`.
+* `Real.toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos` and
+  `Real.eq_of_cos_pos_of_cos_add_one_nonpos`: a sampled sinusoid `cos (α₀ + 2π k / h)` passes
   from strictly positive to nonpositive at most once on `Fin h`.
 * `Real.Angle.toIcoMod_eq_toIcoMod_iff_coe_eq`: two reals have the same `[0, 2π)` representative
   exactly when they are equal in `Real.Angle`.
@@ -140,11 +142,11 @@ theorem Real.cos_two_mul_pi_div_eq_one_iff_dvd {m n : ℤ} (hm : m ≠ 0) :
   have hnj : (n : ℝ) = m * j := by rw [hjn]; field_simp
   exact_mod_cast hnj
 
-namespace TauCeti
+namespace Real
 
 /-- If `h > 0` satisfies `h * θ = m * π` while `cos (2 h' θ) ≠ 1` for all `0 < h' < h`, then
 `|m|` and `h` are coprime. -/
-theorem coprime_of_mul_eq_mul_pi {h : ℕ} (hh : 0 < h) {θ : ℝ} {m : ℤ}
+theorem natAbs_coprime_of_mul_eq_mul_pi_of_cos_ne_one {h : ℕ} (hh : 0 < h) {θ : ℝ} {m : ℤ}
     (hmθ : (h : ℝ) * θ = (m : ℝ) * Real.pi)
     (hmin : ∀ h' : ℕ, 0 < h' → h' < h → Real.cos (2 * (h' : ℝ) * θ) ≠ 1) :
     m.natAbs.Coprime h := by
@@ -163,17 +165,6 @@ theorem coprime_of_mul_eq_mul_pi {h : ℕ} (hh : 0 < h) {θ : ℝ} {m : ℤ}
   exact hmin (h / d) (Nat.div_pos (Nat.le_of_dvd hh hd_h) hd0)
     (Nat.div_lt_self hh (Nat.lt_of_le_of_ne hd0 (Ne.symm hne1))) hcos_div
 
-/-- Given `a : ℤ` and `b : ℕ` with `0 < b`, Bézout's identity yields a nonnegative coefficient
-`n : ℕ` for `a` (reducing `Int.gcdA a b` modulo `b`) and an integer coefficient `q : ℤ` for `b`
-with `a * n + b * q = a.gcd b`. -/
-private theorem exists_nat_mul_add_int_mul_eq_gcd (a : ℤ) {b : ℕ} (hb : 0 < b) :
-    ∃ (n : ℕ) (q : ℤ), a * n + b * q = a.gcd b := by
-  have hbz : (b : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hb.ne'
-  refine ⟨(Int.gcdA a b % b).toNat, Int.gcdB a b + a * (Int.gcdA a b / b), ?_⟩
-  linear_combination -Int.gcd_eq_gcd_ab a (b : ℤ) +
-    a * Int.mul_ediv_add_emod (Int.gcdA a b) b +
-    a * Int.toNat_of_nonneg (Int.emod_nonneg _ hbz)
-
 /-- If `θ > 0` has `h > 0` as the least positive natural with `cos (2 h θ) = 1`, and no angle
 `2 n θ + q π` (`n : ℕ`, `q : ℤ`) falls inside `(0, θ)`, then `θ = π / h`. -/
 theorem eq_pi_div_of_cos_two_mul_eq_one {h : ℕ} (hh : 0 < h) {θ : ℝ} (hθpos : 0 < θ)
@@ -188,7 +179,7 @@ theorem eq_pi_div_of_cos_two_mul_eq_one {h : ℕ} (hh : 0 < h) {θ : ℝ} (hθpo
   have hmθ : (h : ℝ) * θ = (m : ℝ) * Real.pi := by linarith
   have hmpos : 0 < m :=
     Int.cast_pos.mp (pos_of_mul_pos_left (hmθ ▸ mul_pos hhpos hθpos) Real.pi_pos.le)
-  have hcop := coprime_of_mul_eq_mul_pi hh hmθ hmin
+  have hcop := natAbs_coprime_of_mul_eq_mul_pi_of_cos_ne_one hh hmθ hmin
   suffices m = 1 by rw [this, Int.cast_one, one_mul] at hmθ; rw [eq_div_iff hhpos.ne']; linarith
   -- Phase 2: assuming `m ≠ 1`, bound `g = gcd (2 * m) h` strictly below `m`.
   by_contra hm1
@@ -203,7 +194,7 @@ theorem eq_pi_div_of_cos_two_mul_eq_one {h : ℕ} (hh : 0 < h) {θ : ℝ} (hθpo
       (hg2 ▸ hg_h) (by simpa [hm2] using hcop)
     omega
   -- Phase 3: apply Bézout to place `2 * n * θ + q * π = (g / h) * π` inside `(0, θ)`.
-  obtain ⟨n, q, hbez⟩ := exists_nat_mul_add_int_mul_eq_gcd (2 * m) hh
+  obtain ⟨n, q, hbez⟩ := (2 * m).exists_nat_mul_add_mul_eq_gcd hh
   have hcr : 2 * (m : ℝ) * n + h * q = g := by exact_mod_cast hbez
   have hcomb : (h : ℝ) * (2 * (n : ℝ) * θ + (q : ℝ) * Real.pi) = (g : ℝ) * Real.pi := by
     linear_combination 2 * (n : ℝ) * hmθ + Real.pi * hcr
@@ -257,7 +248,7 @@ theorem eq_of_cos_pos_of_cos_add_one_nonpos {h : ℕ} {α₀ : ℝ} {k₁ k₂ :
     simpa using Int.natAbs_dvd_natAbs.mpr (⟨m₂ - m₁, by rw [mul_comm]; omega⟩ : (h : ℤ) ∣ k₂ - k₁)
   have := Nat.eq_zero_of_dvd_of_lt hdvd (by omega); exact Fin.ext (by omega)
 
-end TauCeti
+end Real
 
 /-- If the oriented angles `θ` and `α` add up to `β ∈ (0, 2π)`, where `|θ| = α`,
 then `β = 2α`: the other possibility `θ = -α` would force `β` to be a multiple of `2π`. -/

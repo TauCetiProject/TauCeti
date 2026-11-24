@@ -34,6 +34,9 @@ congruence.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_ofReal_mulVec`: multiplying `A.map (↑)` by a coerced real vector gives the coerced
   product `(A *ᵥ u)`.
+* `Matrix.map_intCast_complex_eq_map_ofReal` and `Matrix.map_intCast_mulVec_ofReal`: casting an
+  integer matrix to `ℂ` factors through `ℝ`, and its action on a coerced real vector agrees with
+  the real action.
 * `Matrix.map_ofReal_mulVec_of_rotation`: for a real rotation pair `(e₁, e₂)`,
   `(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (an `exp (α I)`-eigenvector when
   `(e₁, e₂) ≠ 0`).
@@ -87,6 +90,20 @@ theorem map_ofReal_mulVec [Fintype n] (A : Matrix m n ℝ) (u : n → ℝ) :
     (A.map ((↑) : ℝ → ℂ)) *ᵥ (fun i ↦ (u i : ℂ)) = fun i ↦ ((A *ᵥ u) i : ℂ) := funext fun i ↦ by
   simpa [funext Complex.ofRealHom_eq_coe, Function.comp_def] using
     (Complex.ofRealHom.map_mulVec A u i).symm
+
+/-- Casting an integer matrix to `ℂ` agrees with casting to `ℝ` and then coercing entrywise to
+`ℂ`. -/
+theorem map_intCast_complex_eq_map_ofReal (G : Matrix m n ℤ) :
+    G.map (Int.castRingHom ℂ) = (G.map (Int.castRingHom ℝ)).map ((↑) : ℝ → ℂ) := by
+  ext; simp
+
+/-- Multiplying the complex image `G.map (Int.castRingHom ℂ)` of an integer matrix `G` by a real
+vector coerced entrywise to `ℂ` yields the entrywise coercion of
+`(G.map (Int.castRingHom ℝ)) *ᵥ u`. -/
+theorem map_intCast_mulVec_ofReal [Fintype n] (G : Matrix m n ℤ) (u : n → ℝ) :
+    (G.map (Int.castRingHom ℂ)) *ᵥ (fun i ↦ (u i : ℂ)) =
+      fun i ↦ (((G.map (Int.castRingHom ℝ)) *ᵥ u) i : ℂ) := by
+  rw [map_intCast_complex_eq_map_ofReal, Matrix.map_ofReal_mulVec]
 
 /-- If a real matrix `A` rotates `(e₁, e₂)` by `-α` (`A *ᵥ e₁ = cos α • e₁ - sin α • e₂` and
 `A *ᵥ e₂ = sin α • e₁ + cos α • e₂`), then `e₁ + I • e₂` satisfies the eigenspace identity

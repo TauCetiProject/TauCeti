@@ -6,37 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
-public import Mathlib.LinearAlgebra.Matrix.Irreducible.Defs
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.GroupTheory.Coxeter.CoxeterElement
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.CorootEval
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Bipartite
-public import TauCeti.RepresentationTheory.BaseChange
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 import TauCeti.Data.List.Pairwise
 import TauCeti.LinearAlgebra.Matrix.OfReal
-import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Irreducible
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Perron
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
 /-!
-# Coleman's Coxeter plane and regular primitive-root eigenvectors
+# Coleman's Coxeter plane and matrix-level regular primitive-root eigenvectors
 
 For a base `b` of a finite, reduced, irreducible, crystallographic root pairing `P` over a
 characteristic-zero domain (or a finite, reduced, crystallographic pairing whose Cartan matrix is of
 finite type with preconnected Dynkin diagram) and a Coxeter element `c = wordProd P b l` of order
-`h = orderOf c`, we construct Coleman's real Coxeter plane (rank ≥ 2) and Steinberg's regular
-`exp (2πi / h)`-eigenvector with trivial Weyl stabilizer (`[Nonempty ι]` in coordinate/finite-type
-forms). On `span {e₁, e₂}`, the bipartite Coxeter matrix `W` rotates by `-2π / h` (`Winv` by
-`+2π / h`), sending `(0, π / h)` into the open dominant cone.
+`h = orderOf c`, we construct Coleman's real Coxeter plane (rank ≥ 2) and a matrix-level regular
+`exp (2πi / h)`-eigenvector in `b.support → ℂ` with trivial Weyl stabilizer. On `span {e₁, e₂}`,
+the bipartite Coxeter matrix `W` rotates by `-2π / h` (`Winv` by `+2π / h`), sending `(0, π / h)`
+into the open dominant cone.
 
 ## Main results
-* `RootPairing.Base.isIrreducible_two_smul_one_sub_transpose_cartanMatrix` / `_of_preconnected`
 * `RootPairing.Base.exists_coxeterPlane_bipartiteCoxeterElement` / `_of_isFiniteType`
 * `RootPairing.Base.exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd` / `_of_isFiniteType`
-* `RootPairing.Base.exists_eigenvector_baseChange_weylGroupRootRep_wordProd` / `_of_isFiniteType`
-* `RootPairing.Base.exists_isRegularWeight_eigenvector_wordProd` / `_of_isFiniteType`
 
 ## References
 * A. J. Coleman, *The Betti numbers of the simple Lie groups*, Canad. J. Math. **10** (1958).
@@ -47,39 +41,9 @@ forms). On `span {e₁, e₂}`, the bipartite Coxeter matrix `W` rotates by `-2�
 
 public section
 
-open Matrix Submodule TauCeti TensorProduct
+open Matrix TauCeti
 
 namespace RootPairing.Base
-
-/-! ### Irreducibility of `(2 : ℝ) • 1 - Aᵀ` -/
-
-section MatrixIrreducibility
-
-variable {ι R M N : Type*} [DecidableEq ι] [CommRing R] [CharZero R] [IsDomain R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic]
-
-/-- When the Dynkin diagram of a base `b` of rank at least two is preconnected, the nonnegative
-real matrix `(2 : ℝ) • 1 - Aᵀ` is irreducible. -/
-theorem isIrreducible_two_smul_one_sub_transpose_cartanMatrix_of_preconnected
-    (b : P.Base) [Nontrivial b.support] (hconn : (diagramGraph b.cartanMatrix).Preconnected) :
-    ((2 : ℝ) • (1 : Matrix b.support b.support ℝ) -
-      (b.cartanMatrixᵀ).map (Int.castRingHom ℝ)).IsIrreducible :=
-  Matrix.isIrreducible_of_preconnected (fun i j ↦ (eq_or_ne i j).elim (by rintro rfl; simp) fun h ↦
-    by simpa [h] using b.cartanMatrix_le_zero_of_ne j i h.symm) hconn fun {i j} h ↦ by
-    rw [diagramGraph_adj] at h
-    simpa [h.1] using lt_of_le_of_ne (b.cartanMatrix_le_zero_of_ne j i h.1.symm) h.2.2
-
-/-- **For an irreducible reduced crystallographic root pairing of rank at least two, the nonnegative
-real matrix `(2 : ℝ) • 1 - Aᵀ` is irreducible.** -/
-theorem isIrreducible_two_smul_one_sub_transpose_cartanMatrix [P.IsReduced] [P.IsIrreducible]
-    (b : P.Base) [Nontrivial b.support] :
-    ((2 : ℝ) • (1 : Matrix b.support b.support ℝ) -
-      (b.cartanMatrixᵀ).map (Int.castRingHom ℝ)).IsIrreducible :=
-  b.isIrreducible_two_smul_one_sub_transpose_cartanMatrix_of_preconnected
-    (preconnected_diagramGraph_cartanMatrix b)
-
-end MatrixIrreducibility
 
 /-! ### Coleman's Coxeter plane and the exact rotation angle `2π / h` -/
 
@@ -250,8 +214,9 @@ private theorem coxeterPlane_angle_eq_pi_div_orderOf [Nontrivial b.support]
   have hcos : Real.cos (2 * (h : ℝ) * θ) = 1 :=
     cos_eq_one_of_planePoint_eq_zero b col hconn hx hsinθ <| by
       have hrot := hWinv_pow h 0; rw [hWinv_h, one_mulVec, zero_add] at hrot; exact hrot.symm
-  refine eq_pi_div_of_cos_two_mul_eq_one (orderOf_pos c) hθpos hcos (fun h' hh'0 hh'lt hcos' ↦ ?_)
-    fun n q ⟨h0, hlt⟩ ↦ let ⟨j, hj⟩ := coxeterPlane_exists_corootEval_zero b col hxC hμ_eq hconn n q
+  refine Real.eq_pi_div_of_cos_two_mul_eq_one (orderOf_pos c) hθpos hcos
+    (fun h' hh'0 hh'lt hcos' ↦ ?_) fun n q ⟨h0, hlt⟩ ↦
+      let ⟨j, hj⟩ := coxeterPlane_exists_corootEval_zero b col hxC hμ_eq hconn n q
       b.corootEval_ne_zero_of_forall_pos
         (coxeterPlane_corootEval_pos b col hxC hμ_eq hx hθlt hsinθ h0 hlt) j hj
   obtain ⟨m', hm'⟩ := (Real.cos_eq_one_iff (2 * (h' : ℝ) * θ)).mp hcos'
@@ -334,15 +299,6 @@ end CoxeterPlane
 /-! ### Regular primitive-root eigenvectors of arbitrary Coxeter elements -/
 
 section RegularEigenvector
-
-private theorem map_intCast_complex_eq_map_ofReal {m n : Type*} (G : Matrix m n ℤ) :
-    G.map (Int.castRingHom ℂ) = (G.map (Int.castRingHom ℝ)).map ((↑) : ℝ → ℂ) := by ext; simp
-
-private theorem map_intCast_mulVec_ofReal {m : Type*} [Fintype m]
-    (G : Matrix m m ℤ) (u : m → ℝ) :
-    (G.map (Int.castRingHom ℂ)) *ᵥ (fun i ↦ (u i : ℂ)) =
-      fun i ↦ (((G.map (Int.castRingHom ℝ)) *ᵥ u) i : ℂ) := by
-  rw [map_intCast_complex_eq_map_ofReal, Matrix.map_ofReal_mulVec]
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic]
@@ -475,161 +431,6 @@ theorem exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd
     (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall hW
 
 end RegularEigenvector
-
-/-! ### Complexified weight-space regular primitive-root eigenvector -/
-
-section BaseChangeWeightSpace
-
-variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [Algebra R ℂ]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
-
-private theorem exists_eigenvector_baseChange_isEmpty [P.IsIrreducible] [IsEmpty ι] (b : P.Base)
-    (l : List b.support) :
-    let c := wordProd P b l
-    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
-    ∃ v : ℂ ⊗[R] M,
-      v ≠ 0 ∧ P.weylGroupRootRep.baseChange ℂ c v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
-      (∀ j : ι, LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.coroot' j) v ≠ 0) ∧
-      (∀ g : P.weylGroup, P.weylGroupRootRep.baseChange ℂ g v = v → g = 1) := by
-  dsimp only; have : IsEmpty b.support := ⟨(IsEmpty.false ·.val)⟩
-  have := IsIrreducible.nontrivial (P := P); obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
-  obtain ⟨n₀, hr₀⟩ : ∃ n₀ : N, P.toLinearMap m₀ n₀ ≠ 0 := by
-    by_contra! h; exact hm₀ ((LinearMap.IsPerfPair.bijective_left P.toLinearMap).injective
-      (by ext n; simp [h]))
-  set r₀ := P.toLinearMap m₀ n₀
-  have hS_top : LinearMap.range (LinearMap.lsmul R M r₀) = ⊤ :=
-    IsIrreducible.eq_top_of_invtSubmodule_reflection (P := P) _ (fun i ↦ (IsEmpty.false i).elim)
-      fun hbot ↦ hr₀ <| mul_self_eq_zero.mp (by
-        simpa [r₀] using congrArg (fun f : N →ₗ[R] R ↦ f n₀) (congrArg P.toLinearMap
-          ((Submodule.mem_bot R).mp (hbot.le (LinearMap.mem_range_self _ m₀)))))
-  obtain ⟨m₁, hm₁⟩ : ∃ m₁ : M, r₀ • m₁ = m₀ := LinearMap.mem_range.mp (hS_top ▸ Submodule.mem_top)
-  have hp₁ : P.toLinearMap m₁ n₀ = 1 := mul_left_cancel₀ hr₀ <| by
-    simpa [hm₁] using (congrArg (fun f ↦ f n₀) (P.toLinearMap.map_smul r₀ m₁)).symm
-  have hl_nil (lg : List b.support) : lg = [] := List.eq_nil_iff_forall_not_mem.mpr (by simp)
-  refine ⟨1 ⊗ₜ[R] m₁, fun hv0 ↦ one_ne_zero (α := ℂ) <| by simpa [hp₁] using (congrArg
-      (LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.toLinearMap.flip n₀)) hv0).symm,
-    by simp [hl_nil l], by simp [hl_nil l], fun j ↦ (IsEmpty.false j).elim,
-    fun g _ ↦ by obtain ⟨lg, rfl⟩ := exists_wordProd_eq P b g; simp [hl_nil lg]⟩
-
-omit [CharZero R] [IsDomain R] [Finite ι] [P.IsReduced] in
-private theorem sum_tmul_root_injective_of_isFiniteType (b : P.Base)
-    (hft : IsFiniteType b.cartanMatrix) :
-    Function.Injective (fun u : b.support → ℂ ↦ ∑ i : b.support, u i ⊗ₜ[R] P.root i) := by
-  classical
-  refine fun u₁ u₂ h ↦ Matrix.mulVec_injective_of_isUnit
-    ((Matrix.isUnit_iff_isUnit_det (b.cartanMatrixᵀ.map (Int.castRingHom ℂ))).mpr <|
-      isUnit_iff_ne_zero.mpr <| by
-        rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_transpose]
-        exact Int.cast_ne_zero (α := ℂ).mpr hft.det_ne_zero)
-    (funext fun k ↦ by
-      have hk := congrArg (LinearMap.liftBaseChange ℂ
-        (Algebra.linearMap R ℂ ∘ₗ P.coroot' (k : ι))) h
-      simp only [b.liftBaseChange_coroot'_sum_tmul_root, corootEval_coe_support] at hk
-      simpa [mulVec, dotProduct] using hk)
-
-/-- **Complexified weight-space regular primitive-root eigenvector** (Cartan-matrix form): for a
-base `b` of a nonempty finite crystallographic reduced root pairing over a char-0 domain `R` with
-`[Algebra R ℂ]`, when `b.cartanMatrix` is of finite type with preconnected Dynkin diagram, every
-`c = wordProd P b l` of order `h = orderOf c` has a nonzero `exp (2πi / h)`-eigenvector
-`v : ℂ ⊗[R] M` lying outside every complexified coroot hyperplane with trivial Weyl stabilizer. -/
-theorem exists_eigenvector_baseChange_weylGroupRootRep_wordProd_of_isFiniteType
-    [Nonempty ι] (b : P.Base) (hft : IsFiniteType b.cartanMatrix)
-    (hconn : (diagramGraph b.cartanMatrix).Preconnected)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    let c := wordProd P b l
-    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
-    ∃ v : ℂ ⊗[R] M,
-      v ≠ 0 ∧ P.weylGroupRootRep.baseChange ℂ c v = ζ • v ∧
-      IsPrimitiveRoot ζ (orderOf c) ∧
-      (∀ j : ι, LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.coroot' j) v ≠ 0) ∧
-      (∀ g : P.weylGroup, P.weylGroupRootRep.baseChange ℂ g v = v → g = 1) := by
-  classical
-  dsimp only; set c := wordProd P b l; have hW := b.actsBy_wordProd l
-  obtain ⟨y, -, hy_eig, hprim, hy_reg, hy_stab⟩ :=
-    b.exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType hft hconn hnd hall hW
-  let v : ℂ ⊗[R] M := ∑ i : b.support, y i ⊗ₜ[R] P.root i; obtain ⟨j₀⟩ := ‹Nonempty ι›
-  refine ⟨v, fun hv0 ↦ hy_reg j₀ ((b.liftBaseChange_coroot'_sum_tmul_root j₀ y).symm.trans <|
-      (congrArg _ hv0).trans (map_zero _)),
-    by rw [Representation.baseChange_apply, hW.baseChange_weylGroupRootRep_sum_tmul_root y, hy_eig]
-       simp [c, v, Finset.smul_sum, smul_tmul'],
-    hprim, fun j ↦ b.liftBaseChange_coroot'_sum_tmul_root j y ▸ hy_reg j, fun g hg ↦ ?_⟩
-  obtain ⟨lg, rfl⟩ := exists_wordProd_eq P b g; have hG := b.actsBy_wordProd lg
-  rw [Representation.baseChange_apply, hG.baseChange_weylGroupRootRep_sum_tmul_root y] at hg
-  exact hy_stab _ _ hG (b.sum_tmul_root_injective_of_isFiniteType hft hg)
-
-/-- **Complexified weight-space regular primitive-root eigenvector**: for any finite, reduced,
-irreducible, crystallographic root pairing `P` over a char-0 domain `R` with `[Algebra R ℂ]`, every
-`c = wordProd P b l` of order `h = orderOf c` has a nonzero `exp (2πi / h)`-eigenvector
-`v : ℂ ⊗[R] M` lying outside every complexified coroot hyperplane with trivial Weyl stabilizer. -/
-theorem exists_eigenvector_baseChange_weylGroupRootRep_wordProd [P.IsIrreducible] (b : P.Base)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    let c := wordProd P b l
-    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
-    ∃ v : ℂ ⊗[R] M,
-      v ≠ 0 ∧ P.weylGroupRootRep.baseChange ℂ c v = ζ • v ∧
-      IsPrimitiveRoot ζ (orderOf c) ∧
-      (∀ j : ι, LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.coroot' j) v ≠ 0) ∧
-      (∀ g : P.weylGroup, P.weylGroupRootRep.baseChange ℂ g v = v → g = 1) := by
-  by_cases hne : Nonempty ι
-  · have : NeZero (2 : R) := ⟨by norm_num⟩
-    exact b.exists_eigenvector_baseChange_weylGroupRootRep_wordProd_of_isFiniteType
-      (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
-  · have : IsEmpty ι := not_nonempty_iff.mp hne; exact exists_eigenvector_baseChange_isEmpty b l
-
-end BaseChangeWeightSpace
-
-section ComplexRootSystem
-
-variable {ι M N : Type*} [AddCommGroup M] [Module ℂ M] [AddCommGroup N] [Module ℂ N]
-  {P : RootPairing ι ℂ M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
-
-omit [Finite ι] [P.IsCrystallographic] [P.IsReduced] in
-private theorem exists_isRegularWeight_eigenvector_of_baseChange {c : P.weylGroup} {ζ : ℂ}
-    (hex : ∃ v : ℂ ⊗[ℂ] M,
-      v ≠ 0 ∧ P.weylGroupRootRep.baseChange ℂ c v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
-      (∀ j : ι, LinearMap.liftBaseChange ℂ (Algebra.linearMap ℂ ℂ ∘ₗ P.coroot' j) v ≠ 0) ∧
-      (∀ g : P.weylGroup, P.weylGroupRootRep.baseChange ℂ g v = v → g = 1)) :
-    ∃ v : M, v ≠ 0 ∧ c • v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
-      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
-  obtain ⟨v₀, hv₀_ne, hv₀_eig, hprim, hv₀_reg, hv₀_stab⟩ := hex; let e := TensorProduct.lid ℂ M
-  have he_act (g : P.weylGroup) (x : ℂ ⊗[ℂ] M) :
-      e (P.weylGroupRootRep.baseChange ℂ g x) = g • e x :=
-    TensorProduct.inductionOn x
-      (fun _ _ ↦ by simp [e, Representation.baseChange_apply, weylGroupRootRep_apply, smul_comm])
-      fun _ _ hx hy ↦ by rw [map_add, map_add, map_add, smul_add, hx, hy]
-  refine ⟨e v₀, fun h ↦ hv₀_ne (e.map_eq_zero_iff.mp h), by rw [← he_act, hv₀_eig, map_smul],
-    hprim, (isRegularWeight_iff P (e v₀)).mpr fun j ↦ LinearMap.congr_fun (TensorProduct.ext'
-      fun _ _ ↦ by simp [e] : LinearMap.liftBaseChange ℂ (Algebra.linearMap ℂ ℂ ∘ₗ P.coroot' j) =
-        P.coroot' j ∘ₗ e.toLinearMap) v₀ ▸ hv₀_reg j,
-    eq_bot_iff.mpr fun g hg ↦ hv₀_stab g (e.injective (he_act g v₀ ▸ hg))⟩
-
-/-- **Regular primitive-root eigenvector in `M`** (Cartan-matrix form): for a base `b` of a nonempty
-finite complex crystallographic reduced root pairing whose Cartan matrix is of finite type with
-preconnected Dynkin diagram, every Coxeter element `c = wordProd P b l` of order `h = orderOf c`
-has a regular `exp (2πi / h)`-eigenvector in `M` with trivial Weyl stabilizer. -/
-theorem exists_isRegularWeight_eigenvector_wordProd_of_isFiniteType [Nonempty ι] (b : P.Base)
-    (hft : IsFiniteType b.cartanMatrix) (hconn : (diagramGraph b.cartanMatrix).Preconnected)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    let c := wordProd P b l
-    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
-    ∃ v : M, v ≠ 0 ∧ c • v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
-      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ :=
-  exists_isRegularWeight_eigenvector_of_baseChange
-    (b.exists_eigenvector_baseChange_weylGroupRootRep_wordProd_of_isFiniteType hft hconn hnd hall)
-
-/-- **Every Coxeter element of an irreducible finite complex crystallographic reduced root pairing
-has a regular primitive-root eigenvector with trivial Weyl stabilizer.** -/
-theorem exists_isRegularWeight_eigenvector_wordProd [P.IsIrreducible] (b : P.Base)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    let c := wordProd P b l
-    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
-    ∃ v : M, v ≠ 0 ∧ c • v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
-      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ :=
-  exists_isRegularWeight_eigenvector_of_baseChange
-    (b.exists_eigenvector_baseChange_weylGroupRootRep_wordProd hnd hall)
-
-end ComplexRootSystem
 
 end RootPairing.Base
 

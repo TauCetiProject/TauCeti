@@ -30,6 +30,8 @@ interacts with `gcd(c, n)`.
   `TauCeti.Int.exists_dvd_mul_sub_mul_add_mul_of_gcd_dvd`: writing `n = g m`, `c = g c₁` and
   `c' = g c₁'`, the congruence holds for some `j` exactly when `gcd(g, m) ∣ c₁ d' - c₁' d`
   (the converse needing `c₁` and `c₁'` prime to `m`).
+* `Int.exists_nat_mul_add_mul_eq_gcd`: Bézout's identity with a nonnegative coefficient for the
+  first integer.
 
 Their consumers are the cusp counts of `Γ₀(N)` and `Γ₁(N)` in
 `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/`.
@@ -103,3 +105,18 @@ theorem exists_dvd_mul_sub_mul_add_mul_of_gcd_dvd {n : ℤ} {g m : ℕ} {c c₁ 
   linear_combination (g : ℤ) * hw + g * w * he - g ^ 2 * Nat.gcdA g m * w * huv
 
 end TauCeti.Int
+
+namespace Int
+
+/-- Given `a : ℤ` and `b : ℕ` with `0 < b`, Bézout's identity yields a nonnegative coefficient
+`n : ℕ` for `a` (reducing `Int.gcdA a b` modulo `b`) and an integer coefficient `q : ℤ` for `b`
+with `a * n + b * q = a.gcd b`. -/
+theorem exists_nat_mul_add_mul_eq_gcd (a : ℤ) {b : ℕ} (hb : 0 < b) :
+    ∃ (n : ℕ) (q : ℤ), a * n + b * q = a.gcd b := by
+  have hbz : (b : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hb.ne'
+  refine ⟨(Int.gcdA a b % b).toNat, Int.gcdB a b + a * (Int.gcdA a b / b), ?_⟩
+  linear_combination -Int.gcd_eq_gcd_ab a (b : ℤ) +
+    a * Int.mul_ediv_add_emod (Int.gcdA a b) b +
+    a * Int.toNat_of_nonneg (Int.emod_nonneg _ hbz)
+
+end Int

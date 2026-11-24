@@ -27,15 +27,17 @@ import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 /-!
 # Orbits of a Coxeter element on the roots and `|Φ| = r · h`
 
-1. **General fixed-point-free orbit bounds (`TauCeti`)**: if `w` fixes no nonzero vector, heights
-   over a `⟨w⟩`-period sum to zero (`TauCeti.exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions`),
-   giving `|Φ| ≤ orderOf w * #inversions(w)` (`TauCeti.natCard_le_orderOf_mul_ncard_inversions`) and
+1. **General fixed-point-free orbit bounds (`TauCeti`)**: if `w` fixes no nonzero vector, every
+   root reaches an inversion within `orderOf w` steps
+   (`TauCeti.exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions`), giving
+   `|Φ| ≤ orderOf w * #inversions(w)` (`TauCeti.natCard_le_orderOf_mul_ncard_inversions`) and
    `|Φ| ≤ orderOf c * l.length` (`TauCeti.natCard_le_orderOf_wordProd_mul_length`).
 
 2. **Steinberg's free Coxeter orbits and `|Φ| = r · h` (`RootPairing.Base`)**: for a finite,
    reduced, crystallographic root pairing `P` with base `b` of rank `r` whose Cartan matrix is of
-   finite type with preconnected diagram (or `[P.IsIrreducible]`) and any `c = wordProd P b l` of
-   order `h` (without assuming root spanning):
+   finite type with preconnected diagram (or `[P.IsIrreducible]`) and any Coxeter element
+   `c = wordProd P b l` (with `l` duplicate-free and containing every simple root) of order `h`
+   (without assuming root spanning):
    - **Free cyclic orbits** (`weylGroupToPerm_wordProd_pow_apply_eq_self_iff`,
      `minimalPeriod_weylGroupToPerm_wordProd`, `ncard_setOf_sameCycle_weylGroupToPerm_wordProd`).
    - **Unique inversion per orbit & `|Φ| = r · h`**
@@ -138,7 +140,7 @@ private theorem subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType
     obtain ⟨hp, hn⟩ := (mem_inversions P b c₀ _).mp hm
     rw [← Equiv.Perm.mul_apply, ← map_mul, ← pow_succ', hisPos_iff] at hn
     exact ⟨(hisPos_iff m).mp hp, by push_cast at hn; exact not_lt.mp hn⟩
-  exact eq_of_cos_pos_of_cos_add_one_nonpos
+  exact Real.eq_of_cos_pos_of_cos_add_one_nonpos
     (hstep m₁ hm₁).1 (hstep m₁ hm₁).2 (hstep m₂ hm₂).1 (hstep m₂ hm₂).2
 
 private theorem card_quotient_sameCycle_bipartite_of_isFiniteType
