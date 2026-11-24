@@ -81,21 +81,6 @@ namespace AffinoidSubdomain
 
 /-! ### Classical traces of rational opens -/
 
-omit [CompleteSpace A] in
-/-- Every rational open of `Spa(A, A°)` has a presentation `R(T/s)` with `s ∈ T` and `T`
-generating the unit ideal. -/
-private theorem exists_spaBasicOpen [IsTateRing A] {V : Opens (spa (powerBoundedSubring A))}
-    (hV : V ∈ spaRationalOpens (powerBoundedSubring A)) :
-    ∃ T : Finset A, ∃ s ∈ T, Ideal.span (T : Set A) = ⊤ ∧
-      V = spaBasicOpen (powerBoundedSubring A) T s := by
-  classical
-  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hV
-  refine ⟨insert s T, s, Finset.mem_insert_self s T, top_le_iff.mp ?_, ?_⟩
-  · rw [← IsTateRing.eq_top_of_isOpen hT]
-    exact Ideal.span_mono (by simp)
-  · ext v
-    simp only [SetLike.mem_coe, mem_spaBasicOpen, rationalSubset_insert_self]
-
 /-- An enumeration of the elements of a finite set, used as the numerators of a rational fraction
 algebra. -/
 private noncomputable def enum (T : Finset A) : Fin T.card → A := fun i ↦ (T.equivFin.symm i : A)
@@ -129,7 +114,7 @@ private theorem exists_pres {V : Opens (spa (powerBoundedSubring A))}
     ∃ T : Finset A, ∃ s ∈ T, Ideal.span (T : Set A) = ⊤ ∧
       V = spaBasicOpen (powerBoundedSubring A) T s :=
   have := IsTateRing.of_normedAlgebra K A
-  exists_spaBasicOpen hV
+  exists_spaBasicOpen_of_mem_spaRationalOpens hV
 
 variable (K) in
 include K in
@@ -204,7 +189,7 @@ noncomputable def ofSpaRationalOpen {V : Opens (spa (powerBoundedSubring A))}
   carrier := maximalSpectrumToSpa K hA.out.isTopologicallyFiniteType ⁻¹' V
   exists_representation := by
     have := IsTateRing.of_normedAlgebra K A
-    obtain ⟨T, s, hs, hT, rfl⟩ := exists_spaBasicOpen hV
+    obtain ⟨T, s, hs, hT, rfl⟩ := exists_spaBasicOpen_of_mem_spaRationalOpens hV
     refine ⟨CommAlgCat.of K (RationalFraction s (enum T)), IsScalarTower.toAlgHom K A _, ?_⟩
     rw [preimage_spaBasicOpen]
     exact RationalFraction.isAffinoidSubdomainMap hA.out (by rwa [insert_range_enum hs])
@@ -233,7 +218,10 @@ theorem ofSpaRationalOpen_inf {V W : Opens (spa (powerBoundedSubring A))}
     (hW : W ∈ spaRationalOpens (powerBoundedSubring A))
     (hVW : V ⊓ W ∈ spaRationalOpens (powerBoundedSubring A)) :
     ofSpaRationalOpen (K := K) hVW = ofSpaRationalOpen hV ⊓ ofSpaRationalOpen hW :=
-  SetLike.coe_injective rfl
+  SetLike.coe_injective <| by
+    rw [coe_inf]
+    ext
+    simp
 
 /-- The classical trace of the whole adic spectrum is the whole classical spectrum. -/
 @[simp]
@@ -241,7 +229,8 @@ theorem ofSpaRationalOpen_top (h : ⊤ ∈ spaRationalOpens (powerBoundedSubring
     ofSpaRationalOpen (K := K) h = ⊤ := by
   refine SetLike.coe_injective ?_
   rw [coe_top]
-  rfl
+  ext
+  simp
 
 private theorem isAffinoidSubdomainMap_pres {V : Opens (spa (powerBoundedSubring A))}
     (hV : V ∈ spaRationalOpens (powerBoundedSubring A)) :
@@ -316,47 +305,11 @@ private theorem toSectionsAdic_comp_map {V W : Opens (spa (powerBoundedSubring A
     (h : W ≤ V) :
     toSectionsAdic P V ≫ (F).map (presentationLimitMap (P := P) h) = toSectionsAdic P W := by
   unfold toSectionsAdic
-  -- The source `CommRingCat.of A` is only definitionally the image of `TopCommRingCat.of A`,
-  -- so the composites are reassociated by `exact` rather than by rewriting.
+  -- The source `CommRingCat.of A` is only definitionally the image of `TopCommRingCat.of A`, so
+  -- `rw [Category.assoc]` finds no instance of its pattern; the composites are reassociated by
+  -- `exact` instead.
   exact (Category.assoc _ _ _).trans <| congrArg _ (((F).map_comp _ _).symm.trans
     (congrArg (F).map (toPresentationLimit_comp_presentationLimitMap _ h)))
-
-/-- The structure map `A → A⟨p⟩`, followed by the comparison of `A⟨p⟩` with its object in
-`CompleteSeparatedTopCommRingCat`, is the structure morphism of the presentation `p`. -/
-private theorem ofHom_toCompletionLoc_comp_inv (p : Presentation P) :
-    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-    CommRingCat.ofHom (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) ≫
-        p.completionLocObjCommRingCatIso.inv =
-      (forget₂ _root_.TopCommRingCat CommRingCat).map
-          (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm) ≫
-        (F).map p.toCompletionLocObjHom := by
-  simp only [Presentation.completionLocObjCommRingCatIso_inv, Functor.comp_map,
-    ObjectProperty.ι_map, Presentation.toCompletionLocObjHom_hom, Functor.map_comp]
-  simp only [← Functor.map_comp_assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  -- Both sides are now the same morphism up to the transport
-  -- `CompleteSeparatedTopCommRingCat.of_obj`, which holds by `rfl`.
-  rfl
-
-/-- The structure morphism of a presentation `p`, read in the sections over `R(p)`, is the
-canonical map from `A`. -/
-private theorem toCompletionLocObjHom_comp_presentationLimitRationalIso_inv
-    (p : Presentation P) (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
-    p.toCompletionLocObjHom ≫ (presentationLimitRationalIso (powerBoundedSubring A)
-        (fun _ ha ↦ mem_powerBoundedSubring.mp ha) p hp).inv =
-      toPresentationLimit (P := P) (powerBoundedSubring A)
-        (spaBasicOpen (powerBoundedSubring A) p.num p.den) := by
-  rw [Iso.comp_inv_eq]
-  simp
-
-private theorem toPresentationLimit_comp_eqToHom {W W' : Opens (spa (powerBoundedSubring A))}
-    (e : W = W') :
-    toPresentationLimit (P := P) (powerBoundedSubring A) W ≫
-        eqToHom (congrArg (presentationLimit (P := P) (powerBoundedSubring A)) e) =
-      toPresentationLimit (P := P) (powerBoundedSubring A) W' := by
-  subst e
-  simp
 
 /-- The identification of sections over a rational open commutes with the maps from `A`. -/
 private theorem toSections_comp_sectionsIso_hom {V : Opens (spa (powerBoundedSubring A))}
@@ -387,10 +340,14 @@ private theorem toSections_comp_sectionsIso_hom {V : Opens (spa (powerBoundedSub
         (eq_spaBasicOpen (K := K) hV).symm)) =
       (F).map (toPresentationLimit (P := P) (powerBoundedSubring A) V) := by
     rw [← Functor.map_comp, ← Functor.map_comp,
-      reassoc_of% toCompletionLocObjHom_comp_presentationLimitRationalIso_inv,
-      toPresentationLimit_comp_eqToHom P (eq_spaBasicOpen (K := K) hV).symm]
+      toCompletionLocObjHom_comp_presentationLimitRationalIso_inv_assoc,
+      toPresentationLimit_comp_eqToHom _ (eq_spaBasicOpen (K := K) hV).symm]
   simp only [sectionsIso, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom, eqToIso.hom]
-  rw [reassoc_of% h₁, reassoc_of% (ofHom_toCompletionLoc_comp_inv P (pres K P hV))]
+  rw [reassoc_of% h₁,
+    reassoc_of% (Presentation.ofHom_toCompletionLoc_comp_completionLocObjCommRingCatIso_inv
+      (pres K P hV))]
+  -- As in `toSectionsAdic_comp_map`, the objects agree only definitionally, so `Category.assoc`
+  -- is applied by `exact` rather than by rewriting.
   exact (Category.assoc _ _ _).trans (congrArg _ h₂)
 
 /-- **Naturality of the identification of sections.** Under the identifications of sections
@@ -485,15 +442,22 @@ private noncomputable def addCommGrpIso :
     fun {V W} f ↦ by
       have hcl : ((OrderHom.ofClass (traceHom K (A := A))).toFunctor.op ⋙ presheaf ⋙ Ab).map f =
           (Ab').map (CommRingCat.ofHom (restrict (ofSpaRationalOpen_mono (K := K)
-            (hV := V.unop.property) (hW := W.unop.property) (leOfHom f.unop))).toRingHom) := rfl
+            (hV := V.unop.property) (hW := W.unop.property) (leOfHom f.unop))).toRingHom) := by
+        -- `presheaf ⋙ Ab` acts on `f` by `restrict` between the traces. This is definitional
+        -- but not available by rewriting: `presheaf_map_hom` is stated for `homOfLE` rather than
+        -- for the image of `f` under `traceHom`, and the traces `traceHom K V` unfold to
+        -- `ofSpaRationalOpen V.property` only through the definition of `traceHom`.
+        rfl
       have N₁ := congrArg (Ab').map
         (sectionsIso_hom_naturality (K := K) P V.unop.property W.unop.property (leOfHom f.unop))
       rw [Functor.map_comp, Functor.map_comp] at N₁
       have N₂ := adicIso_naturality P
         ((OrderHom.ofClass (inclHom (A := A))).toFunctor.map f.unop)
       rw [hcl]
-      exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) N₁.symm).trans
-        ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) N₂).trans (Category.assoc _ _ _).symm)))
+      -- The objects of the two composites agree only definitionally, so the associativity moves
+      -- are made by `exact` through the reassociated forms of `N₁` and `N₂`.
+      exact ((reassoc_of% N₁) _).symm.trans
+        ((congrArg (_ ≫ ·) N₂).trans (Category.assoc _ _ _).symm)
 
 end Huber
 
