@@ -7,13 +7,18 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
+import Mathlib.Order.Cofinal
+
 /-!
 # Measurability and measure extensionality on ordered Borel spaces
 
-A lower semicontinuous function into a second-countable linear order is Borel measurable
-(`LowerSemicontinuous.measurable`). The same holds when lower semicontinuity fails at countably
-many points: each superlevel set `{f > y}` is the union of its interior, which contains every
-superlevel point where `f` is lower semicontinuous, and of a countable set.
+Let `α` be a second-countable linear order with its order topology and Borel σ-algebra. A lower
+semicontinuous function `f : δ → α` on a topological space `δ` whose open sets are measurable is
+measurable (`LowerSemicontinuous.measurable`). If moreover the singletons of `δ` are measurable,
+the same holds when lower semicontinuity fails at countably many points: the restriction of `f`
+to the complement of these points is lower semicontinuous, hence measurable, and with measurable
+singletons a function measurable off a countable set is measurable
+(`measurable_of_measurable_on_compl_countable`).
 
 Such functions arise, for instance, as the perimeter of the superlevel sets `{u > t}` of a
 function `u` as a function of the level `t`, which is lower semicontinuous at every level whose
@@ -21,8 +26,9 @@ level set is null, hence off a countable set.
 
 ## Main results
 
-* `TauCeti.measurable_of_countable_not_lowerSemicontinuousAt`: a function that is lower
-  semicontinuous at all but countably many points is measurable.
+* `TauCeti.measurable_of_countable_not_lowerSemicontinuousAt`: a function, on a space whose open
+  sets and singletons are measurable, that is lower semicontinuous at all but countably many
+  points is measurable.
 * `MeasureTheory.Measure.ext_of_Iic'`: measures finite on initial intervals are determined by
   their masses on those intervals, without a finite-total-mass assumption.
 -/
@@ -38,18 +44,15 @@ variable {α δ : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSpace 
   [LinearOrder α] [OrderTopology α] [SecondCountableTopology α]
   [TopologicalSpace δ] [MeasurableSpace δ] [OpensMeasurableSpace δ] [MeasurableSingletonClass δ]
 
-/-- A function that is lower semicontinuous at all but countably many points is measurable. -/
+/-- Let `δ` be a topological space whose open sets and singletons are measurable, and `α` a
+second-countable linear order with its order topology and Borel σ-algebra. A function `f : δ → α`
+that is lower semicontinuous at all but countably many points is measurable. -/
 theorem measurable_of_countable_not_lowerSemicontinuousAt {f : δ → α}
     (hf : {x | ¬LowerSemicontinuousAt f x}.Countable) : Measurable f := by
-  refine measurable_of_Ioi fun y => ?_
-  -- A superlevel point where `f` is lower semicontinuous is an interior point.
-  have hsub : f ⁻¹' Ioi y ⊆
-      interior (f ⁻¹' Ioi y) ∪ (f ⁻¹' Ioi y ∩ {x | ¬LowerSemicontinuousAt f x}) := fun x hx => by
-    by_cases hlsc : LowerSemicontinuousAt f x
-    · exact Or.inl (mem_interior_iff_mem_nhds.2 (hlsc y hx))
-    · exact Or.inr ⟨hx, hlsc⟩
-  rw [subset_antisymm hsub (union_subset interior_subset inter_subset_left)]
-  exact isOpen_interior.measurableSet.union (hf.mono inter_subset_right).measurableSet
+  -- Off the countable exceptional set, `f` is lower semicontinuous, hence measurable.
+  refine measurable_of_measurable_on_compl_countable _ hf
+    (lowerSemicontinuous_restrict_iff.2 fun x hx => ?_).measurable
+  exact (not_not.1 hx).lowerSemicontinuousWithinAt _
 
 end TauCeti
 
@@ -61,20 +64,16 @@ theorem ext_of_Iic' {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
     [SecondCountableTopology α] [LinearOrder α] [OrderTopology α] [BorelSpace α]
     (μ ν : Measure α) (hμ : ∀ a, μ (Iic a) ≠ ∞)
     (h : ∀ a, μ (Iic a) = ν (Iic a)) : μ = ν := by
+  -- This follows Mathlib's `Measure.ext_of_Ico'`: the intervals `Iic a` with `a` in a countable
+  -- dense set `s` form a countable cover of `α` by sets of finite mass, so
+  -- `Measure.ext_of_generateFrom_of_cover_subset` applies.
   obtain ⟨s, hs, hd, -, htop⟩ := exists_countable_dense_bot_top α
-  apply ext_of_generateFrom_of_cover_subset
-    (S := range (Iic : α → Set α)) (T := Iic '' s)
-    (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic (α := α))) isPiSystem_Iic
-  · rintro _ ⟨a, -, rfl⟩
-    exact mem_range_self _
-  · exact hs.image _
-  · apply sUnion_eq_univ_iff.2
-    intro x
-    obtain ⟨a, ha, hxa⟩ := hd.exists_ge' htop x
-    exact ⟨Iic a, mem_image_of_mem _ ha, hxa⟩
-  · rintro _ ⟨a, -, rfl⟩
-    exact hμ a
-  · rintro _ ⟨a, rfl⟩
-    exact h a
+  -- `IsCofinal s` unfolds to `∀ x, ∃ y ∈ s, x ≤ y`, which `Dense.exists_ge'` provides.
+  have hcof : IsCofinal s := fun x => hd.exists_ge' htop x
+  exact ext_of_generateFrom_of_cover_subset (T := Iic '' s)
+    (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic α)) isPiSystem_Iic
+    (image_subset_range _ _) (hs.image _)
+    ((sUnion_image _ _).trans (isCofinal_iff_iUnion_Iic_eq_univ.1 hcof))
+    (forall_mem_image.2 fun a _ => hμ a) (forall_mem_range.2 h)
 
 end MeasureTheory.Measure
