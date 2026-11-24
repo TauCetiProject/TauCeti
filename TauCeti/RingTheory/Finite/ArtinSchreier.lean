@@ -96,17 +96,8 @@ theorem exists_sq_add_self_eq_iff_trace_eq_zero {k : Type*} [Field k] [Finite k]
     rw [AddMonoidHom.mem_ker, hφ, hT, map_add, hfr, CharTwo.add_self_eq_zero]
   -- The trace is onto `ZMod 2`, so its kernel has index two, like the range of `φ`.
   have hTindex : T.ker.index = 2 := by
-    obtain ⟨x, hx⟩ : ∃ x, T x ≠ 0 := by
-      by_contra! h
-      exact Algebra.trace_ne_zero (ZMod 2) k (LinearMap.ext h)
-    have htop : T.range = ⊤ := by
-      refine eq_top_iff.mpr fun y _ ↦ ?_
-      rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) y with rfl | rfl
-      · exact T.range.zero_mem
-      · rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) (T x) with h | h
-        · exact absurd h hx
-        · exact ⟨x, h⟩
-    rw [AddSubgroup.index_ker, htop, AddSubgroup.card_top, Nat.card_zmod]
+    rw [AddSubgroup.index_ker, AddMonoidHom.range_eq_top.mpr (Algebra.trace_surjective (ZMod 2) k),
+      AddSubgroup.card_top, Nat.card_zmod]
   have heq : φ.range = T.ker := by
     refine AddSubgroup.eq_of_le_of_card_ge hle ?_
     have h₁ := φ.range.card_mul_index

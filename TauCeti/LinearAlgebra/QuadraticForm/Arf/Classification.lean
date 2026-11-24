@@ -34,9 +34,9 @@ polar form:
 3. **Quadratic Lagrangian characterization of `Q.arf = 0`.** A finite-dimensional quadratic space
    `(V, Q)` over `ZMod 2` with nondegenerate polar form satisfies `Q.arf = 0` if and only if `V`
    contains a `Q`-totally-isotropic subspace equal to its own polar orthogonal complement,
-   equivalently of half the ambient dimension. The half-dimension form is the case `k = ZMod 2` of
-   `QuadraticMap.traceArf_eq_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq` over a finite
-   field `k` of characteristic two.
+   equivalently of half the ambient dimension. These criteria, and the hyperbolic normal form for
+   `Q.arf = 0`, are the case `k = ZMod 2` of their `QuadraticMap.traceArf` versions over a finite
+   field `k` of characteristic two in `TauCeti.LinearAlgebra.QuadraticForm.Arf.FiniteField`.
 
 ## Main definitions
 
@@ -261,15 +261,8 @@ theorem arf_eq_zero_iff_equivalent_pi_binaryQuadraticForm_zero [FiniteDimensiona
     (hdim : Module.finrank (ZMod 2) V = 2 * m) :
     Q.arf = 0 ↔
       Q.Equivalent (QuadraticMap.pi fun _ : Fin m ↦ binaryQuadraticForm (ZMod 2) 0 0) := by
-  refine ⟨fun harf ↦ ?_, fun h ↦ h.arf_eq.trans (arf_pi_binaryQuadraticForm_zero m)⟩
-  obtain ⟨b, hb⟩ := Q.exists_basis_toMatrix_polarBilin_eq_J_of_finrank_eq hQ hdim
-  let c : Fin m → ZMod 2 := fun i ↦ Q (b (Sum.inl i)) * Q (b (Sum.inr i))
-  have hc_sum : ∑ i, c i = 0 := by
-    rw [← Q.arf_eq_sum_of_toMatrix_polarBilin_eq_J hb, harf]
-  obtain ⟨enorm⟩ := (normalForm_pi_binaryQuadraticForm m c).1 hc_sum
-  exact ⟨((Q.isometryEquivPiBinaryQuadraticForm b hb).trans
-    (IsometryEquiv.pi fun i ↦
-      isometryEquivBinaryQuadraticFormMul (Q (b (Sum.inl i))) (Q (b (Sum.inr i))))).trans enorm⟩
+  rw [← traceArf_eq_arf]
+  exact traceArf_eq_zero_iff_equivalent_pi_binaryQuadraticForm_zero hQ hdim
 
 /-- **Anisotropic normal form (`Q.arf = 1`).** A quadratic space over `ZMod 2` with
 `Module.finrank (ZMod 2) V = 2 * m` has `Q.arf = 1` if and only if `m = k + 1` and `Q` is isometric
@@ -354,8 +347,8 @@ theorem arf_eq_zero_iff_exists_isTotallyIsotropic_finrank_eq [FiniteDimensional 
     (hdim : Module.finrank (ZMod 2) V = 2 * m) :
     Q.arf = 0 ↔
       ∃ U : Submodule (ZMod 2) V, Q.IsTotallyIsotropic U ∧ Module.finrank (ZMod 2) U = m := by
-  rw [Q.arf_eq_zero_iff_equivalent_pi_binaryQuadraticForm_zero hQ hdim,
-    Q.equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_finrank_eq hQ hdim]
+  rw [← traceArf_eq_arf]
+  exact traceArf_eq_zero_iff_exists_isTotallyIsotropic_finrank_eq hQ hdim
 
 /-- **Quadratic Lagrangian criterion for `Q.arf = 0` (self-orthogonal form).** For a
 finite-dimensional quadratic space over `ZMod 2` with nondegenerate polar form, `Q.arf = 0` if and
@@ -366,10 +359,8 @@ theorem arf_eq_zero_iff_exists_isTotallyIsotropic_orthogonal_eq [FiniteDimension
     Q.arf = 0 ↔
       ∃ U : Submodule (ZMod 2) V,
         Q.IsTotallyIsotropic U ∧ LinearMap.BilinForm.orthogonal Q.polarBilin U = U := by
-  obtain ⟨m, hm⟩ := Q.even_finrank_of_nondegenerate_polarBilin hQ
-  have hdim : Module.finrank (ZMod 2) V = 2 * m := by omega
-  rw [Q.arf_eq_zero_iff_equivalent_pi_binaryQuadraticForm_zero hQ hdim,
-    Q.equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_orthogonal_eq hQ hdim]
+  rw [← traceArf_eq_arf]
+  exact traceArf_eq_zero_iff_exists_isTotallyIsotropic_orthogonal_eq hQ
 
 /-- **Quadratic Lagrangian criterion for `Q.arf = 0` (ambient dimension form).** For a
 finite-dimensional quadratic space over `ZMod 2` with nondegenerate polar form, `Q.arf = 0` if and

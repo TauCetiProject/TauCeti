@@ -34,6 +34,11 @@ Lagrangian.
   orthogonal sum of binary forms `[aᵢ, bᵢ]` with `Tr (∑ aᵢ bᵢ) = 0` has a quadratic Lagrangian.
 * `QuadraticMap.traceArf_eq_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq`:
   `Q.traceArf = 0` exactly when `Q` vanishes on a subspace of half the dimension.
+* `QuadraticMap.traceArf_eq_zero_iff_equivalent_pi_binaryQuadraticForm_zero`,
+  `QuadraticMap.traceArf_eq_zero_iff_exists_isTotallyIsotropic_finrank_eq`,
+  `QuadraticMap.traceArf_eq_zero_iff_exists_isTotallyIsotropic_orthogonal_eq`: equivalently, `Q`
+  is a sum of hyperbolic planes, or has a totally isotropic subspace of dimension `m` in dimension
+  `2 * m`, or one equal to its own polar orthogonal complement.
 * `QuadraticMap.traceArf_eq_traceArf_iff_exists_isTotallyIsotropic_two_mul_finrank_eq_prod`,
   `QuadraticMap.trace_sum_mul_eq_iff_exists_isTotallyIsotropic_two_mul_finrank_eq_prod`: two forms
   have equal invariants, equivalently equal absolute traces of their symplectic-basis sums, exactly
@@ -203,6 +208,45 @@ theorem traceArf_eq_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq [Finit
       rw [traceArf_pi fun _ ↦ nondegenerate_polarBilin_binaryQuadraticForm (0 : k) 0]
       simp
     exact hequiv.traceArf_eq.trans h0
+
+/-- **Hyperbolic normal form (`Q.traceArf = 0`).** Over a finite field `k` of characteristic two,
+a finite-dimensional quadratic form `Q` of dimension `2 * m` with nondegenerate polar form has
+`Q.traceArf = 0` if and only if it is isometric to the orthogonal sum of `m` hyperbolic planes
+`binaryQuadraticForm k 0 0`. -/
+theorem traceArf_eq_zero_iff_equivalent_pi_binaryQuadraticForm_zero [FiniteDimensional k V]
+    {Q : QuadraticForm k V} (hQ : Q.polarBilin.Nondegenerate) {m : ℕ}
+    (hdim : Module.finrank k V = 2 * m) :
+    Q.traceArf = 0 ↔
+      Q.Equivalent (QuadraticMap.pi fun _ : Fin m ↦ binaryQuadraticForm k 0 0) := by
+  rw [traceArf_eq_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq hQ,
+    equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq hQ
+      hdim]
+
+/-- **Quadratic Lagrangian criterion for `Q.traceArf = 0` (fixed half-dimension `m`).** Over a
+finite field `k` of characteristic two, a finite-dimensional quadratic form `Q` of dimension
+`2 * m` with nondegenerate polar form has `Q.traceArf = 0` if and only if `V` contains an
+`m`-dimensional `Q`-totally-isotropic subspace. -/
+theorem traceArf_eq_zero_iff_exists_isTotallyIsotropic_finrank_eq [FiniteDimensional k V]
+    {Q : QuadraticForm k V} (hQ : Q.polarBilin.Nondegenerate) {m : ℕ}
+    (hdim : Module.finrank k V = 2 * m) :
+    Q.traceArf = 0 ↔
+      ∃ U : Submodule k V, Q.IsTotallyIsotropic U ∧ Module.finrank k U = m := by
+  rw [traceArf_eq_zero_iff_equivalent_pi_binaryQuadraticForm_zero hQ hdim,
+    equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_finrank_eq hQ hdim]
+
+/-- **Quadratic Lagrangian criterion for `Q.traceArf = 0` (self-orthogonal form).** Over a finite
+field `k` of characteristic two, a finite-dimensional quadratic form `Q` with nondegenerate polar
+form has `Q.traceArf = 0` if and only if `V` contains a `Q`-totally-isotropic subspace equal to its
+own `Q.polarBilin`-orthogonal complement. -/
+theorem traceArf_eq_zero_iff_exists_isTotallyIsotropic_orthogonal_eq [FiniteDimensional k V]
+    {Q : QuadraticForm k V} (hQ : Q.polarBilin.Nondegenerate) :
+    Q.traceArf = 0 ↔
+      ∃ U : Submodule k V,
+        Q.IsTotallyIsotropic U ∧ LinearMap.BilinForm.orthogonal Q.polarBilin U = U := by
+  obtain ⟨m, hm⟩ := Q.even_finrank_of_nondegenerate_polarBilin hQ
+  have hdim : Module.finrank k V = 2 * m := by omega
+  rw [traceArf_eq_zero_iff_equivalent_pi_binaryQuadraticForm_zero hQ hdim,
+    equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_orthogonal_eq hQ hdim]
 
 /-- **Classification by the absolute-trace Arf invariant.** Over a finite field `k` of
 characteristic two, two finite-dimensional quadratic forms with nondegenerate polar forms have the
