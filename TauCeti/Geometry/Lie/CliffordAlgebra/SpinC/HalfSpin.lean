@@ -281,16 +281,9 @@ instance : ContinuousSMul SpinC (SpinCHalfSpinor o hQ b ρ ε) :=
 half-spin representation at `g`. -/
 theorem det_toLinearMap (g : SpinC) :
     LinearMap.det (DistribSMul.toLinearMap ℂ (SpinCHalfSpinor o hQ b ρ ε) g) =
-      LinearMap.det (realSpinCHalfSpinSmoothHom o hQ b ρ ε g).toLinearMap := by
-  have h : (linearEquiv o hQ b ρ ε).toLinearMap ∘ₗ
-      DistribSMul.toLinearMap ℂ (SpinCHalfSpinor o hQ b ρ ε) g ∘ₗ
-        (linearEquiv o hQ b ρ ε).symm.toLinearMap =
-      (realSpinCHalfSpinSmoothHom o hQ b ρ ε g).toLinearMap := by
-    refine LinearMap.ext fun ψ ↦ ?_
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-      DistribSMul.toLinearMap_apply, linearEquiv_smul, LinearEquiv.apply_symm_apply,
-      ContinuousLinearMap.coe_coe]
-  rw [← h, LinearMap.det_conj]
+      LinearMap.det (realSpinCHalfSpinSmoothHom o hQ b ρ ε g).toLinearMap :=
+  LinearMap.det_eq_of_comp_eq (linearEquiv o hQ b ρ ε)
+    (LinearMap.ext fun ψ ↦ linearEquiv_smul o hQ b ρ ε g ψ)
 
 /-- If the half-spinor model is two-dimensional, every alternating two-form on it with values
 in the model determinant fiber is `Spinᶜ(4)`-equivariant: the half-spin action has determinant
