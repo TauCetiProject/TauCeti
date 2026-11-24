@@ -109,7 +109,7 @@ variable (S : Finset (HeightOneSpectrum (𝓞 ℚ)))
 def primeUnit (v : S) : (S : Set (HeightOneSpectrum (𝓞 ℚ))).unit ℚ :=
   ⟨Units.mk0 (natGenerator (v : HeightOneSpectrum (𝓞 ℚ)) : ℚ)
       (Nat.cast_ne_zero.mpr (prime_natGenerator _).ne_zero),
-    fun _ hw ↦ valuation_natGenerator_of_ne fun h ↦ hw (h ▸ v.2)⟩
+    fun _ hw ↦ valuation_natGenerator_of_ne fun h ↦ hw (h ▸ v.property)⟩
 
 @[simp]
 theorem coe_primeUnit (v : S) :
@@ -171,13 +171,13 @@ places of `S`. For `S = {2}` it is `log 2`. -/
 theorem regulator_rat_eq_prod_log : regulator S = ∏ v ∈ S, Real.log (natGenerator v) := by
   classical
   let w' := Rat.infinitePlace
-  have : IsEmpty {w : InfinitePlace ℚ // w ≠ w'} := ⟨fun w ↦ w.2 (Subsingleton.elim _ _)⟩
+  have : IsEmpty {w : InfinitePlace ℚ // w ≠ w'} := ⟨fun w ↦ w.property (Subsingleton.elim _ _)⟩
   rw [regulator_eq_abs_det (closure_range_primeUnit_sup_torsion_eq_top S) w'
     (Equiv.emptySum _ _).symm]
   -- The matrix of the determinant formula is diagonal, with entries `log |p_v|_v = -log p_v`.
   have hdiag : (Matrix.of fun i k ↦ Sum.elim (fun w : {w // w ≠ w'} ↦
-      (w.1.mult : ℝ) * Real.log (w.1 ((primeUnit S i : ℚˣ) : ℚ)))
-      (fun v : S ↦ Real.log (FinitePlace.mk v.1 ((primeUnit S i : ℚˣ) : ℚ)))
+      (w.val.mult : ℝ) * Real.log (w.val ((primeUnit S i : ℚˣ) : ℚ)))
+      (fun v : S ↦ Real.log (FinitePlace.mk v.val ((primeUnit S i : ℚˣ) : ℚ)))
       ((Equiv.emptySum _ _).symm k)) =
       Matrix.diagonal fun v : S ↦ -Real.log (natGenerator (v : HeightOneSpectrum (𝓞 ℚ))) := by
     ext i k

@@ -64,7 +64,7 @@ variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ
 restricted at a positive polyradius `c`. -/
 noncomputable def restrictedPDeriv (i : σ) :
     Derivation R (IsRestricted.subring (R := R) c) (IsRestricted.subring (R := R) c) where
-  toFun f := ⟨pderiv i (f : MvPowerSeries σ R), f.2.pderiv (Fact.out : 0 < c i).ne'⟩
+  toFun f := ⟨pderiv i (f : MvPowerSeries σ R), f.property.pderiv (Fact.out : 0 < c i).ne'⟩
   map_add' f g := Subtype.ext (map_add (pderiv i) (f : MvPowerSeries σ R) g)
   map_smul' a f := Subtype.ext (by simp)
   map_one_eq_zero' := Subtype.ext (pderiv_one (R := R))

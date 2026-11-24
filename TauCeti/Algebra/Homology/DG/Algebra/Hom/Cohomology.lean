@@ -35,6 +35,8 @@ cohomology of the comparison between differential graded algebras and `A∞` alg
   of its image.
 * `TauCeti.DGAlgHom.cohomologyMap_id` and `TauCeti.DGAlgHom.cohomologyMap_comp`: passage to
   cohomology preserves identities and composition.
+* `TauCeti.DGAlgHom.bijective_cohomologyMap_iff_forall_cycles`: the quasi-isomorphism condition
+  expressed directly on cycles and boundaries.
 
 ## References
 
@@ -67,7 +69,7 @@ def cyclesMap (f : DGAlgHom hA hB) : hA.cyclesDeg →ₐᵍ[R] hB.cyclesDeg wher
     calc
       dB ((f.toGradedAlgHom.toAlgHom.comp hA.cycles.val) z) =
           f (dA (z : A)) := f.map_d (z : A)
-      _ = 0 := by rw [hA.mem_cycles.mp z.2, map_zero]
+      _ = 0 := by rw [hA.mem_cycles.mp z.property, map_zero]
   map_mem hz :=
     hB.mem_cyclesDeg.mpr (f.toGradedAlgHom.map_mem (hA.mem_cyclesDeg.mp hz))
 
@@ -149,6 +151,20 @@ theorem cohomologyMap_comp (g : DGAlgHom hB hC) (f : DGAlgHom hA hB) :
   intro x
   obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x
   simp only [cohomologyMap_mk, GradedAlgHom.comp_apply, cyclesMap_comp]
+
+/-- A DG algebra morphism induces a bijection on cohomology algebras if and only if every target
+cycle agrees modulo target boundaries with the image of a source cycle, and every source cycle
+mapped to a target boundary is already a source boundary. -/
+theorem bijective_cohomologyMap_iff_forall_cycles (f : DGAlgHom hA hB) :
+    Function.Bijective f.cohomologyMap ↔
+      (∀ y ∈ hB.cycles, ∃ x ∈ hA.cycles, f x - y ∈ LinearMap.range dB) ∧
+        (∀ x ∈ hA.cycles, f x ∈ LinearMap.range dB → x ∈ LinearMap.range dA) := by
+  rw [Function.Bijective, injective_iff_map_eq_zero, Function.Surjective,
+    Ideal.Quotient.mk_surjective.forall, Ideal.Quotient.mk_surjective.forall, and_comm]
+  simp only [Ideal.Quotient.mk_surjective.exists, f.cohomologyMap_mk,
+    ← sub_eq_zero (b := Ideal.Quotient.mk _ _), ← map_sub, hA.quotientMk_eq_zero_iff,
+    hB.quotientMk_eq_zero_iff, hA.mem_boundaries, hB.mem_boundaries, Subalgebra.coe_sub,
+    f.cyclesMap_apply_coe, Subtype.forall, Subtype.exists, exists_prop]
 
 end DGAlgHom
 

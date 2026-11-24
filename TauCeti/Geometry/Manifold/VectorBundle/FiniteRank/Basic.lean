@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CoordinateHom
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 
 /-!
 # Smooth local fibre coordinates and intertwining maps of finite-rank bundle cores
@@ -29,11 +30,17 @@ intertwined by a fixed continuous linear map:
 * `FiniteRankBundleCore.contMDiffOn_inChartCoordinates_of_coordChange_comp` and
   `FiniteRankBundleCore.contMDiffOn_inChartCoordinates_of_comp_coordChange` establish `C^n`
   regularity of chart operators when the target or source core is `C^n`;
+* `FiniteRankBundleCore.contMDiff_totalSpaceMap_iff_inChartCoordinates` shows that a bundle map
+  between `C^n` cores has a `C^n` total-space map if and only if every chart operator is `C^n`,
+  without completeness of `𝕜`, and `FiniteRankBundleCore.isoToDiffeomorph` turns an isomorphism
+  with `C^n` forward and inverse total-space maps into a `C^n` diffeomorphism;
 * `FiniteRankBundleCore.isContMDiff_trivial`,
-  `FiniteRankBundleCore.contMDiff_totalSpaceMap_constHom`, and
-  `FiniteRankBundleCore.constIsoDiffeomorph` show that trivial cores are `C^n` and that constant
-  intertwining maps and equivalences (`constHom`, `constIso`) between `C^n` cores induce `C^n` maps
-  and diffeomorphisms of total spaces without completeness assumptions on the scalar field.
+  `FiniteRankBundleCore.contMDiff_totalSpaceMap_constHom`,
+  `FiniteRankBundleCore.constIsoDiffeomorph`, and
+  `FiniteRankBundleCore.contMDiff_totalSpaceMap_isoTrivialOfCoordChangeEqId_hom` show that trivial
+  cores are `C^n` and that constant intertwining maps and identity-transition trivializations
+  induce `C^n` maps and diffeomorphisms of total spaces without completeness assumptions on the
+  scalar field.
 
 ## References
 
@@ -153,6 +160,8 @@ theorem contMDiffOn_inChartCoordinates_of_comp_coordChange {E E' : FiniteRankBun
 instance isContMDiff_trivial (r : ℕ) : (trivial 𝕜 B r).core.IsContMDiff I n where
   contMDiffOn_coordChange _ _ := contMDiffOn_const
 
+section IsContMDiff
+
 variable {A D : FiniteRankBundleCore 𝕜 B}
   [A.core.IsContMDiff I n] [D.core.IsContMDiff I n]
 
@@ -185,8 +194,8 @@ noncomputable def constIsoDiffeomorph
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     A.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.rank → 𝕜),
       I.prod 𝓘(𝕜, Fin D.rank → 𝕜)⟯ D.core.TotalSpace where
-  toFun := (constIso hbase e he).hom.totalSpaceMap
-  invFun := (constIso hbase e he).inv.totalSpaceMap
+  toFun := (constIso (fun i ↦ (hbase i).le) e he).hom.totalSpaceMap
+  invFun := (constIso (fun i ↦ (hbase i).le) e he).inv.totalSpaceMap
   left_inv := fun ⟨x, v⟩ ↦ by
     simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constIso_hom, fiberMap_constIso_inv]
     exact congrArg (fun w : Fin A.rank → 𝕜 ↦ (⟨x, w⟩ : A.core.TotalSpace))
@@ -202,7 +211,9 @@ noncomputable def constIsoDiffeomorph
         rfl
   contMDiff_invFun :=
     (contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).ge)
-      e.symm.toContinuousLinearMap (coordChange_intertwines_symm hbase e he)).congr fun p ↦ by
+      e.symm.toContinuousLinearMap fun i j x hi hj ↦
+        coordChange_intertwines_symm e he i j x ((hbase i).ge hi) ((hbase j).ge hj)).congr
+      fun p ↦ by
         simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constHom, fiberMap_constIso_inv]
         rfl
 
@@ -215,7 +226,7 @@ theorem coe_constIsoDiffeomorph
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he) =
-      (constIso hbase e he).hom.totalSpaceMap := (rfl)
+      (constIso (fun i ↦ (hbase i).le) e he).hom.totalSpaceMap := (rfl)
 
 /-- The inverse smooth comparison is the inverse of the original core isomorphism. -/
 @[simp]
@@ -226,6 +237,124 @@ theorem coe_constIsoDiffeomorph_symm
       (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he).symm =
-      (constIso hbase e he).inv.totalSpaceMap := (rfl)
+      (constIso (fun i ↦ (hbase i).le) e he).inv.totalSpaceMap := (rfl)
+
+/-- For a morphism between `C^n` finite-rank cores, `C^n` regularity of the glued total-space map
+implies `C^n` regularity of every chart operator, without completeness of the scalar field. -/
+theorem contMDiffOn_inChartCoordinates_of_contMDiff_totalSpaceMap (f : A ⟶ D)
+    (hf : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+      f.totalSpaceMap) (i j : B) :
+    ContMDiffOn I 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
+      (fun x ↦ A.core.inChartCoordinates D.core i j x (f.fiberMap x))
+      (A.core.baseSet i ∩ D.core.baseSet j) := by
+  have : MemTrivializationAtlas (A.core.localTriv i) := ⟨⟨i, rfl⟩⟩
+  have : MemTrivializationAtlas (D.core.localTriv j) := ⟨⟨j, rfl⟩⟩
+  set U := A.core.baseSet i ∩ D.core.baseSet j
+  have hU : IsOpen U := (A.core.isOpen_baseSet i).inter (D.core.isOpen_baseSet j)
+  -- Each column is obtained by feeding a constant standard basis section in chart `i` into
+  -- `f.totalSpaceMap` and reading the image in chart `j`.
+  have hcol (k : Fin A.rank) : ContMDiffOn I 𝓘(𝕜, Fin D.rank → 𝕜) n
+      (fun x ↦ A.core.inChartCoordinates D.core i j x (f.fiberMap x) (Pi.single k 1)) U := by
+    have hs := (A.core.localTriv i).contMDiffOn_section_symm (IB := I) (n := n) hU
+      inter_subset_left (contMDiffOn_const (c := Pi.single k (1 : 𝕜)))
+    have hfs : ContMDiffOn I (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+        (fun x ↦ TotalSpace.mk' (Fin D.rank → 𝕜) (E := D.core.Fiber) x
+          (f.fiberMap x ((A.core.localTriv i).symm x (Pi.single k 1)))) U :=
+      (hf.comp_contMDiffOn hs).congr fun x _ ↦ (f.totalSpaceMap_mk x _).symm
+    refine (((D.core.localTriv j).contMDiffOn_section_iff hU inter_subset_right).mp hfs).congr
+      fun x hx ↦ ?_
+    simp only [VectorBundleCore.inChartCoordinates_apply, D.core.localTriv_apply,
+      A.core.localTriv_symm_apply i hx.1]
+  let Φ : (Fin A.rank → Fin D.rank → 𝕜) → (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜) :=
+    fun g ↦ ∑ k : Fin A.rank,
+      ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)
+        (ContinuousLinearMap.proj k) (g k)
+  have hΦ : ContDiff 𝕜 n Φ :=
+    ContDiff.sum fun k _ ↦
+      (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)
+        (ContinuousLinearMap.proj k)).contDiff.comp (contDiff_apply 𝕜 _ k)
+  refine (hΦ.contMDiff.comp_contMDiffOn (contMDiffOn_pi_module_iff.mpr hcol)).congr fun x _ ↦ ?_
+  ext v m
+  have hv : (∑ k : Fin A.rank, v k • Pi.single k (1 : 𝕜)) = v := by
+    ext l; simp [Finset.sum_apply, Pi.single_apply]
+  symm
+  calc
+    (Φ fun k ↦ A.core.inChartCoordinates D.core i j x (f.fiberMap x) (Pi.single k 1)) v m
+      = (∑ k : Fin A.rank,
+          A.core.inChartCoordinates D.core i j x (f.fiberMap x) (v k • Pi.single k 1)) m := by
+        simp only [Φ, sum_apply, ContinuousLinearMap.smulRightL_apply_apply,
+          ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.proj_apply, _root_.map_smul]
+    _ = A.core.inChartCoordinates D.core i j x (f.fiberMap x) v m := by rw [← map_sum, hv]
+
+/-- For a morphism between `C^n` finite-rank cores, the glued map of total spaces is `C^n`
+if and only if every chart operator is `C^n` on its domain, without completeness of `𝕜`. -/
+theorem contMDiff_totalSpaceMap_iff_inChartCoordinates (f : A ⟶ D) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n f.totalSpaceMap ↔
+      ∀ i j, ContMDiffOn I 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
+        (fun x ↦ A.core.inChartCoordinates D.core i j x (f.fiberMap x))
+        (A.core.baseSet i ∩ D.core.baseSet j) :=
+  ⟨contMDiffOn_inChartCoordinates_of_contMDiff_totalSpaceMap f, f.contMDiff_totalSpaceMap⟩
+
+end IsContMDiff
+
+/-- An isomorphism of finite-rank cores whose forward and inverse maps are `C^n` on total spaces
+induces a `C^n` diffeomorphism of total spaces, without completeness or smoothness of
+transitions. -/
+def isoToDiffeomorph {A D : FiniteRankBundleCore 𝕜 B} (e : A ≅ D)
+    (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+      e.hom.totalSpaceMap)
+    (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
+      e.inv.totalSpaceMap) :
+    A.core.TotalSpace ≃ₘ^n⟮I.prod 𝓘(𝕜, Fin A.rank → 𝕜),
+      I.prod 𝓘(𝕜, Fin D.rank → 𝕜)⟯ D.core.TotalSpace :=
+  CoordinateHom.toDiffeomorphOfInv e.hom e.inv e.hom_inv_id e.inv_hom_id he_hom he_inv
+
+@[simp] theorem coe_isoToDiffeomorph {A D : FiniteRankBundleCore 𝕜 B} (e : A ≅ D)
+    (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+      e.hom.totalSpaceMap)
+    (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
+      e.inv.totalSpaceMap) :
+    ⇑(isoToDiffeomorph e he_hom he_inv) = e.hom.totalSpaceMap :=
+  CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
+
+@[simp] theorem coe_isoToDiffeomorph_symm {A D : FiniteRankBundleCore 𝕜 B} (e : A ≅ D)
+    (he_hom : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+      e.hom.totalSpaceMap)
+    (he_inv : ContMDiff (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
+      e.inv.totalSpaceMap) :
+    ⇑(isoToDiffeomorph e he_hom he_inv).symm = e.inv.totalSpaceMap :=
+  CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
+
+/-- The forward total-space map of `isoTrivialOfCoordChangeEqId` is `C^n` at every regularity. -/
+theorem contMDiff_totalSpaceMap_isoTrivialOfCoordChangeEqId_hom
+    (A : FiniteRankBundleCore 𝕜 B) {r : ℕ}
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin r → 𝕜))
+    (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin (trivial 𝕜 B r).rank → 𝕜)) n
+      (isoTrivialOfCoordChangeEqId A e h).hom.totalSpaceMap := by
+  have : A.core.IsContMDiff I n :=
+    ⟨fun i j ↦ contMDiffOn_const.congr fun x hx ↦ h i j x hx.1 hx.2⟩
+  let c : (Fin A.rank → 𝕜) →L[𝕜] Fin (trivial 𝕜 B r).rank → 𝕜 := e.toContinuousLinearMap
+  exact CoordinateHom.contMDiff_totalSpaceMap _ fun i j ↦
+    (contMDiffOn_const (c := c)).congr fun x hx ↦
+      (CoordinateHom.operator_eq (isoTrivialOfCoordChangeEqId A e h).hom i j ⟨x, hx⟩).symm.trans
+        (operator_isoTrivialOfCoordChangeEqId_hom A e h i j ⟨x, hx⟩)
+
+/-- The inverse total-space map of `isoTrivialOfCoordChangeEqId` is `C^n` at every regularity. -/
+theorem contMDiff_totalSpaceMap_isoTrivialOfCoordChangeEqId_inv
+    (A : FiniteRankBundleCore 𝕜 B) {r : ℕ}
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin r → 𝕜))
+    (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin (trivial 𝕜 B r).rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
+      (isoTrivialOfCoordChangeEqId A e h).inv.totalSpaceMap := by
+  have : A.core.IsContMDiff I n :=
+    ⟨fun i j ↦ contMDiffOn_const.congr fun x hx ↦ h i j x hx.1 hx.2⟩
+  let c : (Fin (trivial 𝕜 B r).rank → 𝕜) →L[𝕜] Fin A.rank → 𝕜 := e.symm.toContinuousLinearMap
+  exact CoordinateHom.contMDiff_totalSpaceMap _ fun i j ↦
+    (contMDiffOn_const (c := c)).congr fun x hx ↦
+      (CoordinateHom.operator_eq (isoTrivialOfCoordChangeEqId A e h).inv i j ⟨x, hx⟩).symm.trans
+        (operator_isoTrivialOfCoordChangeEqId_inv A e h i j ⟨x, hx⟩)
 
 end TauCeti.FiniteRankBundleCore

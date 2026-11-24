@@ -98,7 +98,7 @@ theorem hasPGroupSolutions_iff :
 such a kernel is a `p`-group. -/
 theorem HasPGroupSolutions.hasElementaryAbelianSolutions (h : HasPGroupSolutions p G) :
     HasElementaryAbelianSolutions p G := hasElementaryAbelianSolutions_iff.mpr fun P hpow _ ↦
-  h P fun x ↦ ⟨1, Subtype.ext <| by simpa using hpow x x.2⟩
+  h P fun x ↦ ⟨1, Subtype.ext <| by simpa using hpow x x.property⟩
 
 /-- **Lifting through a commutative kernel killed by `p`.** If every finite embedding problem for
 `G` with commutative kernel killed by `p` has a solution, then a homomorphism `β : G → F` with open

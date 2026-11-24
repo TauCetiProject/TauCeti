@@ -98,13 +98,13 @@ theorem signCell_subset_intrinsicInterior_weakSignCell
     | neg =>
       have hlt : g j x < 0 := sign_eq_neg_one_iff.mp (by simpa [hs] using hxj)
       have he : ContinuousAt (fun y : A => g j y) xA :=
-        ((g j).continuous.comp continuous_subtype_val).continuousAt
+        ((g j).continuous.comp continuous_subtypeVal).continuousAt
       filter_upwards [he.eventually (gt_mem_nhds hlt)] with y hy
       simp [hy.le]
     | pos =>
       have hlt : 0 < g j x := sign_eq_one_iff.mp (by simpa [hs] using hxj)
       have he : ContinuousAt (fun y : A => g j y) xA :=
-        ((g j).continuous.comp continuous_subtype_val).continuousAt
+        ((g j).continuous.comp continuous_subtypeVal).continuousAt
       filter_upwards [he.eventually (lt_mem_nhds hlt)] with y hy
       simp [hy.le]
   filter_upwards [Filter.eventually_all.mpr hrows] with y hy

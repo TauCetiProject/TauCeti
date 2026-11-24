@@ -11,7 +11,8 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
 /-!
 # Homotopy groups and universe lifts
 
-Universe lifting does not change the positive homotopy groups of a Kan complex.
+Universe lifting does not change the positive homotopy groups of a Kan complex, nor the path
+components `π 0` of any simplicial set.
 The comparison is induced by the bijection on pointed simplices and preserves products.
 This allows mapping spaces in a large universe to be compared with complexes of modules
 in a smaller universe.
@@ -138,6 +139,30 @@ lemma PtSimplex.MulStruct.unlift_map
     h.unlift.map = uliftFunctorHomEquiv X ⦋n + 1⦌ h.map := (rfl)
 
 namespace KanComplex.π
+
+/-- Path components, as the pointed set `π 0`, are unchanged by universe lifting. Unlike the
+positive-degree comparison `SSet.KanComplex.π.uliftEquiv`, no Kan condition is needed. -/
+def uliftEquivZero (x : (uliftFunctor.{v}.obj X) _⦋0⦌) :
+    π 0 (uliftFunctor.{v}.obj X) x ≃ π 0 X x.down where
+  toFun := lift (fun p ↦ mk (PtSimplex.uliftEquiv p))
+    (fun _ _ h ↦ mk_eq_mk_of_homotopy (PtSimplex.RelStruct₀.homotopy h.relStruct₀Zero.unlift))
+  invFun := lift (fun p ↦ mk (PtSimplex.uliftEquiv.symm p))
+    (fun _ _ h ↦
+      mk_eq_mk_of_homotopy (PtSimplex.RelStruct₀.homotopy (h.relStruct₀Zero.ulift (x := x))))
+  left_inv a := by
+    induction a with | mk p => simp
+  right_inv a := by
+    induction a with | mk p => simp
+
+@[simp]
+lemma uliftEquivZero_mk (p : (uliftFunctor.{v}.obj X).PtSimplex 0 x) :
+    uliftEquivZero x (mk p) = mk (PtSimplex.uliftEquiv p) := by
+  exact lift_mk _ _ _
+
+@[simp]
+lemma uliftEquivZero_symm_mk (p : X.PtSimplex 0 x.down) :
+    (uliftEquivZero.{u, v} x).symm (mk p) = mk (PtSimplex.uliftEquiv.symm p) := by
+  exact lift_mk _ _ _
 
 variable [KanComplex X]
 

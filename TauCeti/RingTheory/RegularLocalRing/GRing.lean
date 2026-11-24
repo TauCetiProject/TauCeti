@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.RegularLocalRing.RegularAlgebraMap
+public import TauCeti.RingTheory.RegularLocalRing.RegularAlgebraMap.Basic
+import TauCeti.Algebra.DualNumber.Basic
 import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.RingTheory.PowerSeries.Inverse
@@ -134,14 +135,7 @@ example (k : Type u) [Field k] : IsGRing k := inferInstance
 example (k : Type u) [Field k] : IsGRing (k ⧸ (⊤ : Ideal k)) := inferInstance
 
 /-- The dual numbers `k[ε]/(ε²)` are a G-ring: being a G-ring does not require reducedness. -/
-example (k : Type u) [Field k] : IsGRing (TrivSqZeroExt k k) :=
-  have : Module.Finite k (TrivSqZeroExt k k) := inferInstanceAs (Module.Finite k (k × k))
-  -- The `k`-module structure of `TrivSqZeroExt k k` is the product one, which is not reducibly
-  -- the one induced by the `k`-algebra structure, so the scalar tower is checked by hand.
-  have : IsScalarTower k (TrivSqZeroExt k k) (TrivSqZeroExt k k) :=
-    ⟨fun a b c ↦ by ext <;> simp <;> ring⟩
-  have : IsArtinianRing (TrivSqZeroExt k k) := .of_finite k _
-  inferInstance
+example (k : Type u) [Field k] : IsGRing (TrivSqZeroExt k k) := inferInstance
 
 /-- The power series ring `k⟦X⟧` over a field, a complete discrete valuation ring, is a G-ring. -/
 example (k : Type u) [Field k] : IsGRing k⟦X⟧ :=

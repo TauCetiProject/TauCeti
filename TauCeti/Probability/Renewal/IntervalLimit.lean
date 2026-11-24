@@ -16,11 +16,13 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 Convergence of interval masses implies convergence of convolution against monotone
 forcing truncated to a bounded age interval. The forcing may have jumps and need not
 have either sign. Uniform-mesh Darboux bounds preserve the half-open endpoint conventions
-even when the integrating measure has atoms. The measure need only be finite on bounded
-intervals; it need not be a renewal measure.
+even when the integrating measure has atoms. When the interval masses tend to zero, mere
+boundedness on `[0, A)` suffices without monotonicity or measurability. The measure need
+only be finite on bounded intervals; it need not be a renewal measure.
 
 For a renewal measure, uniform tail truncation extends this to every nonnegative decreasing
-Lebesgue-integrable forcing function. This is the analytic transfer in the key renewal
+Lebesgue-integrable forcing function, and hence to every measurable, locally bounded solution
+of the renewal equation `g = h + g ∗ F`. This is the analytic transfer in the key renewal
 theorem. The interval limit is an explicit hypothesis: this file does not establish
 Blackwell's theorem, nor infer a nonlattice renewal limit from the local bound alone.
 
@@ -156,6 +158,32 @@ theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc
       (hbounds n).2] with t ht hle
     exact hle.trans_lt ht
 
+/-- If the forward interval masses `μ.real (Ioc t (t + A))` tend to zero, convolution with any
+forcing function bounded on `[0, A)` and cut off at age `A` tends to zero at infinity. Neither
+monotonicity, measurability, nor any hypothesis at `A` is required. -/
+theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc_nhds_zero
+    (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] {A : ℝ≥0}
+    (hlim : Tendsto (fun t : ℝ≥0 ↦ μ.real (Ioc t (t + A))) atTop (𝓝 0))
+    {h : ℝ≥0 → ℝ} {C : ℝ} (hC : ∀ s < A, |h s| ≤ C) :
+    Tendsto (renewalConv ((Iio A).indicator h) μ) atTop (𝓝 0) := by
+  have ht : Tendsto (fun t : ℝ≥0 ↦ t - A) atTop atTop := by
+    refine tendsto_atTop.2 fun c ↦ ?_
+    filter_upwards [eventually_ge_atTop (c + A)] with t hct
+    exact le_tsub_of_add_le_right hct
+  have href : Tendsto (fun t : ℝ≥0 ↦ μ.real (Ioc (t - A) t)) atTop (𝓝 0) := by
+    refine (hlim.comp ht).congr' ?_
+    filter_upwards [eventually_ge_atTop A] with t hAt
+    simp [tsub_add_cancel_of_le hAt]
+  refine squeeze_zero_norm' (a := fun t ↦ max C 0 * μ.real (Ioc (t - A) t)) ?_
+    (by simpa using href.const_mul (max C 0))
+  filter_upwards [eventually_ge_atTop A] with t hAt
+  have he : Iio A = Ico 0 A := by ext s; simp
+  rw [he, renewalConv_indicator_Ico zero_le hAt, tsub_zero]
+  refine norm_setIntegral_le_of_norm_le_const measure_Ioc_lt_top fun s hs ↦ ?_
+  have hts : t - s < A := ((NNReal.mem_Ioc_tsub_iff s zero_le hAt).1 (by simpa using hs)).2.2
+  rw [Real.norm_eq_abs]
+  exact (hC _ hts).trans (le_max_left C 0)
+
 /-- The analytic implication from Blackwell interval limits to the key renewal limit.
 The nonlattice hypothesis and the identification of `r` must be supplied by the interval-limit
 theorem; neither is assumed implicitly. Zero increments and infinite increment mean are allowed. -/
@@ -169,9 +197,7 @@ theorem tendsto_renewalConv_of_tendsto_measureReal_Ioc
     Tendsto (renewalConv h μ.renewalMeasure) atTop
       (𝓝 (r * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) := by
   have := isLocallyFiniteMeasure_renewalMeasure μ hμ
-  have hbound : ∀ x : ℝ≥0, |h x| ≤ h 0 := fun x => by
-    rw [abs_of_nonneg (h₀ x)]
-    exact hh bot_le
+  have hbound : ∀ x : ℝ≥0, |h x| ≤ h 0 := fun x => (abs_of_nonneg (h₀ x)).trans_le (hh bot_le)
   have hintconv (t : ℝ≥0) : IntegrableOn (fun s => h (t - s)) (Iic t)
       μ.renewalMeasure :=
     integrableOn_Iic_sub hh.measurable (fun s _ => hbound s) measure_Iic_lt_top.ne
@@ -226,11 +252,9 @@ theorem tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
     simpa only [Function.comp_def, Real.toNNReal_coe, id_eq] using
       (hf.tendsto_zero_of_integrableOn_Ioi hint (fun x _ => h₀ x.toNNReal)).comp
         (NNReal.tendsto_coe_atTop.2 tendsto_id)
-  have hmeasure : μ.renewalMeasure - dirac 0 = μ ∗ μ.renewalMeasure := by
-    conv_lhs => rw [renewalMeasure_eq_dirac_add_conv, add_comm, Measure.add_sub_cancel]
   have he (t : ℝ≥0) : renewalConv h (μ.renewalMeasure - dirac 0) t =
       renewalConv h μ.renewalMeasure t - h t := by
-    rw [hmeasure]
+    rw [renewalMeasure_sub_dirac]
     have heq := renewalConv_renewalMeasure_eq_add_conv (μ := μ) hh.measurable
       (t := t) (C := h 0) (fun s _ => by
         rw [abs_of_nonneg (h₀ s)]
@@ -241,3 +265,26 @@ theorem tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
     (μ.tendsto_renewalConv_of_tendsto_measureReal_Ioc hμ hlim hh h₀ hint).sub hhlim
 
 end MeasureTheory.Measure
+
+namespace TauCeti.Probability
+
+/-- For a probability measure `F` on `ℝ≥0` with `F {0} < 1` whose renewal measure satisfies
+Blackwell interval limits with rate `r`, and `h : ℝ≥0 → ℝ` nonnegative, nonincreasing, and
+Lebesgue-integrable, every measurable, locally bounded solution `g` of `g = h + g ∗ F` converges
+as `t → ∞` to `r * ∫ x in Ioi 0, h x.toNNReal`. -/
+theorem tendsto_of_eq_add_renewalConv_of_tendsto_measureReal_Ioc
+    {F : Measure ℝ≥0} [IsProbabilityMeasure F] (hF : F {0} < 1) {r : ℝ}
+    (hlim : ∀ d : ℝ≥0,
+      Tendsto (fun t : ℝ≥0 => F.renewalMeasure.real (Ioc t (t + d))) atTop (𝓝 (r * d)))
+    {h g : ℝ≥0 → ℝ} (hh : Antitone h) (h₀ : ∀ x, 0 ≤ h x)
+    (hint : IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0))
+    (hg : Measurable g) (hgb : ∀ t, ∃ C, ∀ s ≤ t, |g s| ≤ C)
+    (hgeq : g = h + renewalConv g F) :
+    Tendsto g atTop (𝓝 (r * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) := by
+  let : IsLocallyFiniteMeasure F.renewalMeasure := F.isLocallyFiniteMeasure_renewalMeasure hF
+  have hhb : ∀ t, ∃ C, ∀ s ≤ t, |h s| ≤ C := fun _ =>
+    ⟨h 0, fun s _ => (abs_of_nonneg (h₀ s)).trans_le (hh bot_le)⟩
+  rw [eq_renewalConv_renewalMeasure hh.measurable hhb hg hgb hgeq]
+  exact F.tendsto_renewalConv_of_tendsto_measureReal_Ioc hF hlim hh h₀ hint
+
+end TauCeti.Probability

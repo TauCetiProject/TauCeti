@@ -126,6 +126,19 @@ theorem restrictedProductCongr_trans (U U' U'' : ∀ i, Subgroup (G i))
   ext x i
   simp
 
+/-- Pulling a coordinate box back along `restrictedProductCongr` yields the coordinate box with the
+same factors. -/
+@[to_additive (attr := simp) preimage_addRestrictedProductCongr_box
+/-- Pulling a coordinate box back along `addRestrictedProductCongr` yields the coordinate box with
+the same factors. -/]
+theorem preimage_restrictedProductCongr_box (U U' : ∀ i, Subgroup (G i))
+    (h : ∀ᶠ i in cofinite, U i = U' i) (C : ∀ i, Set (G i)) :
+    restrictedProductCongr U U' h ⁻¹'
+      (RestrictedProduct.box C : Set (Πʳ i, [G i, (U' i : Set (G i))])) =
+      (RestrictedProduct.box C : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
+  ext x
+  simp
+
 /-- Naturality of the change-of-family equivalence with respect to componentwise maps: changing
 the family before or after applying a componentwise map gives the same homomorphism. -/
 @[to_additive addRestrictedProductCongr_naturality]

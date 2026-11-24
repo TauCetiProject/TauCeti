@@ -208,7 +208,8 @@ theorem _root_.LinearMap.projective_ker_of_surjective {N : Type*} [AddCommGroup 
     [Module.Projective R N] (f : P →ₗ[R] N) (hf : Function.Surjective f) :
     Module.Projective R (ker f) :=
   have : Module.Projective R (ker (id : N →ₗ[R] N)) :=
-    .of_split (0 : _ →ₗ[R] PUnit.{1}) 0 (LinearMap.ext fun x ↦ Subtype.ext (mem_ker.mp x.2).symm)
+    .of_split (0 : _ →ₗ[R] PUnit.{1}) 0 (LinearMap.ext fun x ↦ Subtype.ext
+        (mem_ker.mp x.property).symm)
   f.projective_ker_of_projective_ker hf id Function.surjective_id
 
 end Kernel

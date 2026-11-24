@@ -15,6 +15,7 @@ For a subspace `W` of a vector space `F` over a field `𝕜`, a `Submodule.LineE
 subspace `W' = W ⊕ 𝕜v` of one more dimension, together with a functional `φ` on `W'` whose kernel
 is `W` and a vector `v ∈ W'` with `φ v = 1`. Every proper subspace of a finite-dimensional space
 admits one (`Submodule.nonempty_lineExtension`); `Submodule.lineExtension` is a chosen one.
+`Submodule.LineExtension.extension` is a chosen extension of `φ` to `F`.
 
 Over a linearly ordered field, for any extension `ψ` of `φ` to `F` (`LinearMap.exists_extend`),
 the complements of the two closed half-subspaces `{x ∈ W' | ψ x ≤ 0}` and `{x ∈ W' | 0 ≤ ψ x}`,
@@ -62,7 +63,7 @@ lemma nonempty_lineExtension [FiniteDimensional 𝕜 F] {W : Submodule 𝕜 F} (
   refine ⟨⟨W ⊔ 𝕜 ∙ v, ((f v)⁻¹ • f).comp (W ⊔ 𝕜 ∙ v).subtype, ⟨v, hvW'⟩, ?_, le_sup_left,
     fun x ↦ ⟨fun hφx ↦ ?_, fun hx ↦ ?_⟩, ?_⟩⟩
   · simp [inv_mul_cancel₀ hfv]
-  · obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.1 x.2
+  · obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.1 x.property
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hz
     have ha : a = 0 := by simpa [← hyz, hfW y hy, hfv] using hφx
     simpa [← hyz, ha] using hy
@@ -75,6 +76,26 @@ noncomputable def lineExtension [FiniteDimensional 𝕜 F] (W : Submodule 𝕜 F
   (nonempty_lineExtension hW).some
 
 namespace LineExtension
+
+section Extension
+
+variable {W : Submodule 𝕜 F} (s : LineExtension W)
+
+/-- A chosen extension to `F` of the functional `φ` of an extension by a line
+(`LinearMap.exists_extend`). -/
+noncomputable def extension : F →ₗ[𝕜] 𝕜 :=
+  (LinearMap.exists_extend s.φ).choose
+
+/-- The chosen functional `Submodule.LineExtension.extension s` extends the functional of `s`. -/
+lemma extension_comp : s.extension ∘ₗ s.W'.subtype = s.φ :=
+  (LinearMap.exists_extend s.φ).choose_spec
+
+/-- The chosen functional `Submodule.LineExtension.extension s` is one on the vector of `s`. -/
+@[simp]
+lemma extension_apply_v : s.extension s.v = 1 :=
+  (LinearMap.congr_fun s.extension_comp s.v).trans s.apply_v
+
+end Extension
 
 variable [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {W : Submodule 𝕜 F} (s : LineExtension W)
   {ψ : F →ₗ[𝕜] 𝕜}

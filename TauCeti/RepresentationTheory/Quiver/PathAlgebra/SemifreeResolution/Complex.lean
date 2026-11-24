@@ -246,7 +246,7 @@ theorem shortExact_standardResolutionSequence :
       have hxdeg : x ∈ (arrowTensorGrading k Q wt).piece n := by
         rw [mem_arrowTensorGrading_piece_iff, hx]
         exact (mem_vertexTensorGrading_piece_iff k Q wt).mp
-          (gradedCochainComplexXEquiv n y).2
+          (gradedCochainComplexXEquiv n y).property
       refine ⟨(gradedCochainComplexXEquiv n).symm ⟨x, hxdeg⟩, ?_⟩
       apply (gradedCochainComplexXEquiv n).injective
       apply Subtype.ext
@@ -263,7 +263,8 @@ theorem shortExact_standardResolutionSequence :
       (fun z ↦ (gradedCochainComplexXEquiv n z : vertexTensorBimodule k Q)) h
   · -- Multiplication is onto in each degree.
     intro x
-    obtain ⟨z, hz⟩ := exists_vertexTensorMul_eq_of_mem k Q wt (gradedCochainComplexXEquiv n x).2
+    obtain ⟨z, hz⟩ := exists_vertexTensorMul_eq_of_mem k Q wt (gradedCochainComplexXEquiv n
+        x).property
     refine ⟨(gradedCochainComplexXEquiv n).symm z, ?_⟩
     apply (gradedCochainComplexXEquiv n).injective
     apply Subtype.ext

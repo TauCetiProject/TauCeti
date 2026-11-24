@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import Mathlib.Probability.Process.Predictable
+public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.Probability.Martingale.Basic
 public import TauCeti.Order.Interval.Set.Subdivision
 import TauCeti.Algebra.Order.Group.MinMax
@@ -33,8 +33,7 @@ monotone along monotone price paths when holdings are nonnegative
 (`TauCeti.Finance.monotone_simpleGains_of_monotoneOn`, `TauCeti.Finance.monotone_simpleGains`),
 an adapted process when `X` is adapted and each `a j` is `ℱ (τ j)`-measurable
 (`TauCeti.Finance.stronglyAdapted_simpleGains`), strongly progressive when `X` is strongly
-progressive (`TauCeti.Finance.isStronglyProgressive_simpleGains`) or strongly adapted with
-continuous paths (`TauCeti.Finance.isStronglyProgressive_simpleGains_of_continuous`), and a
+progressive (`TauCeti.Finance.isStronglyProgressive_simpleGains`), and a
 martingale when moreover `X` is a martingale and each trade has integrable gains at every time
 (`MeasureTheory.Martingale.simpleGains`), in particular when the positions are bounded
 (`MeasureTheory.Martingale.simpleGains_of_bdd`). At a rebalancing date the gains are the discrete
@@ -42,7 +41,10 @@ transform `∑_{i < j} a i · (X (τ (i + 1)) - X (τ i))`
 (`TauCeti.Finance.simpleGains_apply_eq_sum`); so they are known at that date when `X` is known at
 each trading date (`TauCeti.Finance.stronglyMeasurable_simpleGains`), and integrable when each
 trade has integrable gains (`TauCeti.Finance.integrable_simpleGains`). After the last date they
-stay at their terminal value (`TauCeti.Finance.simpleGains_of_ge`). When a real-time price path
+stay at their terminal value (`TauCeti.Finance.simpleGains_of_ge`); at any time `t` they are the
+discrete transform over the grid clipped at `t` (`TauCeti.Finance.simpleGains_eq_sum_ite_le`),
+and they have continuous paths along continuous price paths
+(`TauCeti.Finance.continuous_simpleGains`). When a real-time price path
 is the indefinite integral of a rate `X'`, as a deterministic bond is, the gains are the time
 integral `∫ a_u X'_u du` (`TauCeti.Finance.simpleGains_eq_integral`).
 
@@ -133,6 +135,22 @@ theorem simpleGains_def (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X 
       ∑ j ∈ range n, a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) :=
   (rfl)
 
+/-- An order embedding of the time axis preserves elementary holdings at embedded times. -/
+@[simp]
+theorem simpleHolding_map {κ : Type*} [LinearOrder κ]
+    (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (e : ι ↪o κ) (t : ι) (ω : Ω) :
+    simpleHolding (fun j ↦ e (τ j)) n a (e t) ω = simpleHolding τ n a t ω := by
+  simp [simpleHolding_def, Set.indicator_apply]
+
+/-- A monotone change of time preserves elementary gains after pulling back the price path. -/
+@[simp]
+theorem simpleGains_map {κ : Type*} [LinearOrder κ]
+    (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X : κ → Ω → ℝ) (e : ι → κ)
+    (he : Monotone e) (t : ι) (ω : Ω) :
+    simpleGains (fun j ↦ e (τ j)) n a X (e t) ω =
+      simpleGains τ n a (fun u ↦ X (e u)) t ω := by
+  simp only [simpleGains_def, he.map_min]
+
 /-- Elementary gains only inspect the price at the clipped endpoints of the grid.
 No order condition on the grid is needed for this identity. -/
 theorem simpleGains_congr_price {X Y : ι → Ω → ℝ} (ω : Ω)
@@ -160,6 +178,17 @@ theorem simpleHolding_of_notMem_Ioc (hτ : MonotoneOn τ (Set.Iic n))
   exact Set.Ioc_subset_Ioc (hτ (Nat.zero_le n) (mem_range.1 hi).le (Nat.zero_le i))
     (hτ (mem_range.1 hi) Set.self_mem_Iic (mem_range.1 hi)) hit
 
+/-- Over a partition monotone up to `n`, a simple strategy whose positions are bounded in norm
+by `C` at a sample point `ω` holds at most `max C 0` there at every time. -/
+theorem norm_simpleHolding_le (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω : Ω) {C : ℝ}
+    (haC : ∀ j < n, ‖a j ω‖ ≤ C) :
+    ‖simpleHolding τ n a t ω‖ ≤ max C 0 := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, htj⟩ := TauCeti.exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj htj]
+    exact (haC j hj).trans (le_max_left _ _)
+  · simp [simpleHolding_of_notMem_Ioc hτ ht]
+
 /-- The gains over a partition monotone up to `n` vanish up to its first date. -/
 @[simp]
 theorem simpleGains_of_le (hτ : MonotoneOn τ (Set.Iic n)) (ht : t ≤ τ 0) (X : ι → Ω → ℝ)
@@ -177,6 +206,28 @@ theorem simpleGains_of_ge (hτ : MonotoneOn τ (Set.Iic n)) (ht : τ n ≤ t) (X
   have h₀ : τ i ≤ τ n := hτ (mem_range.1 hi).le Set.self_mem_Iic (mem_range.1 hi).le
   have h₁ : τ (i + 1) ≤ τ n := hτ (mem_range.1 hi) Set.self_mem_Iic (mem_range.1 hi)
   simp [h₀, h₁, h₀.trans ht, h₁.trans ht]
+
+/-- At time `t`, the gains over a partition monotone up to `n` are the discrete transform over
+the grid clipped at `t`, with the positions on intervals starting after `t` discarded. -/
+theorem simpleGains_eq_sum_ite_le (hτ : MonotoneOn τ (Set.Iic n)) (X : ι → Ω → ℝ) (t : ι)
+    (ω : Ω) :
+    simpleGains τ n a X t ω = ∑ i ∈ range n, (if τ i ≤ t then a i else 0) ω *
+      (X (min (τ (i + 1)) t) ω - X (min (τ i) t) ω) := by
+  refine sum_congr rfl fun i hi ↦ ?_
+  by_cases hit : τ i ≤ t
+  · simp only [hit, ↓reduceIte]
+  · have h₀ : min (τ i) t = t := min_eq_right (not_le.mp hit).le
+    have h₁ : min (τ (i + 1)) t = t := min_eq_right ((not_le.mp hit).le.trans
+      (hτ (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i)))
+    simp only [hit, ↓reduceIte, Pi.zero_apply, h₀, h₁, sub_self, mul_zero]
+
+/-- The gains along a continuous price path are continuous in time. -/
+theorem continuous_simpleGains [TopologicalSpace ι] [OrderClosedTopology ι] {ω : Ω}
+    (hX : Continuous fun t ↦ X t ω) : Continuous fun t ↦ simpleGains τ n a X t ω := by
+  simp only [simpleGains_def]
+  exact continuous_finsetSum _ fun j _ ↦ continuous_const.mul
+    ((hX.comp (continuous_const.min continuous_id)).sub
+      (hX.comp (continuous_const.min continuous_id)))
 
 /-- The gains from trading a constant price vanish. -/
 @[simp]
@@ -244,17 +295,6 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
 
-/-- Elementary gains along a continuous price path are continuous. -/
-theorem continuous_simpleGains [TopologicalSpace ι] [ContinuousInf ι] (τ : ℕ → ι) (n : ℕ)
-    (a : ℕ → Ω → ℝ) {X : ι → Ω → ℝ} {ω : Ω} (hX : Continuous (X · ω)) :
-    Continuous (simpleGains τ n a X · ω) := by
-  rw [show (simpleGains τ n a X · ω) =
-      fun t ↦ ∑ j ∈ range n, a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) from
-    funext fun t ↦ simpleGains_def τ n a X t ω]
-  exact continuous_finsetSum _ fun j _ ↦ continuous_const.mul
-    ((hX.comp (continuous_const.inf continuous_id)).sub
-      (hX.comp (continuous_const.inf continuous_id)))
-
 /-- Elementary gains with nonnegative holdings along a price path monotone on `[τ 0, τ n]` are
 monotone. -/
 theorem monotone_simpleGains_of_monotoneOn (hτ : MonotoneOn τ (Set.Iic n)) {ω : Ω}
@@ -275,6 +315,16 @@ theorem monotone_simpleGains (hτ : MonotoneOn τ (Set.Iic n)) {ω : Ω}
     Monotone (simpleGains τ n a X · ω) :=
   monotone_simpleGains_of_monotoneOn hτ ha (hX.monotoneOn _)
 
+/-- Applying a function fixing zero to each height applies that function to the holding
+process, because the trading intervals are disjoint. No continuity of the function is needed. -/
+theorem simpleHolding_comp {f : ℝ → ℝ} (hf : f 0 = 0)
+    (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω : Ω) :
+    simpleHolding τ n (fun j ω ↦ f (a j ω)) t ω = f (simpleHolding τ n a t ω) := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, ht⟩ := exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj ht, simpleHolding_of_mem_Ioc hτ hj ht]
+  · rw [simpleHolding_of_notMem_Ioc hτ ht, simpleHolding_of_notMem_Ioc hτ ht, hf]
+
 /-! ### Measurability -/
 
 section Measurability
@@ -290,20 +340,8 @@ theorem isStronglyPredictable_simpleHolding [OrderBot ι]
       ∑ j ∈ range n, (Set.Ioc (τ j) (τ (j + 1))).indicator (fun _ ↦ a j p.2) p.1 :=
     funext fun p ↦ simpleHolding_def τ n a p.1 p.2
   rw [IsStronglyPredictable, huncurry]
-  refine Finset.stronglyMeasurable_fun_sum _ fun j hj ↦ Measurable.stronglyMeasurable ?_
-  intro B hB
-  have hA : MeasurableSet[ℱ (τ j)] (a j ⁻¹' B) := (ha j (mem_range.1 hj)).measurable hB
-  have hI : MeasurableSet[ℱ.predictable] (Set.Ioc (τ j) (τ (j + 1)) ×ˢ (a j ⁻¹' B)) :=
-    measurableSet_predictable_Ioc_prod _ _ hA
-  have hU : MeasurableSet[ℱ.predictable] (Set.Ioc (τ j) (τ (j + 1)) ×ˢ (Set.univ : Set Ω)) :=
-    measurableSet_predictable_Ioc_prod _ _ MeasurableSet.univ
-  by_cases h0 : (0 : ℝ) ∈ B
-  · convert hI.union hU.compl using 1
-    ext ⟨s, ω⟩
-    by_cases hs : s ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [hs, h0]
-  · convert hI using 1
-    ext ⟨s, ω⟩
-    by_cases hs : s ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [hs, h0]
+  exact Finset.stronglyMeasurable_fun_sum _ fun j hj ↦
+    ℱ.stronglyMeasurable_indicator_Ioc_predictable _ _ (ha j (mem_range.1 hj))
 
 /-- The gains of a simple strategy over a partition monotone up to `n`, with each position chosen
 at the start of its interval, are adapted when the price is. -/
@@ -333,8 +371,9 @@ theorem isStronglyProgressive_simpleGains [MeasurableSpace ι] [MeasurableInf ι
   let : MeasurableSpace Ω := ℱ t
   have hmin (c : ι) : StronglyMeasurable (fun p : Set.Iic t × Ω ↦ X (min c p.1) p.2) :=
     (hX t).comp_measurable
-      ((Measurable.subtype_mk (measurable_subtype_coe.const_inf c) :
-          Measurable fun s : Set.Iic t ↦ (⟨min c s.1, min_le_of_right_le s.2⟩ : Set.Iic t)).prodMap
+      ((Measurable.subtype_mk (measurable_subtypeVal.const_inf c) :
+          Measurable fun s : Set.Iic t ↦
+            (⟨min c s.val, min_le_of_right_le s.property⟩ : Set.Iic t)).prodMap
         measurable_id)
   refine Finset.stronglyMeasurable_fun_sum _ fun j hj ↦ ?_
   by_cases hjt : τ j ≤ t
@@ -343,20 +382,9 @@ theorem isStronglyProgressive_simpleGains [MeasurableSpace ι] [MeasurableInf ι
   · have ht : t ≤ τ j := (not_le.1 hjt).le
     convert stronglyMeasurable_const (b := (0 : ℝ)) using 1
     ext ⟨s, ω⟩
-    have hs : (s : ι) ≤ τ j := s.2.trans ht
+    have hs : (s : ι) ≤ τ j := s.property.trans ht
     rw [min_eq_right (hs.trans (hτ (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))),
       min_eq_right hs, sub_self, mul_zero]
-
-/-- The gains of a simple strategy over a partition monotone up to `n`, with each position chosen
-at the start of its interval, are strongly progressive when the price process is strongly adapted
-with continuous paths. -/
-theorem isStronglyProgressive_simpleGains_of_continuous [TopologicalSpace ι] [MetrizableSpace ι]
-    [SecondCountableTopology ι] [ContinuousInf ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
-    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (hX : StronglyAdapted ℱ X) (hXc : ∀ ω, Continuous (X · ω)) :
-    IsStronglyProgressive ℱ (simpleGains τ n a X) :=
-  (stronglyAdapted_simpleGains hτ ha hX).isStronglyProgressive_of_continuous fun _ ↦
-    continuous_simpleGains τ n a (hXc _)
 
 /-- The gains of a simple strategy up to a trading date `τ m` are known at `τ m` when the traded
 price is known at each trading date and the holdings `a j` are chosen at `τ j`. -/
@@ -370,6 +398,16 @@ theorem stronglyMeasurable_simpleGains {m : ℕ} (hτ : MonotoneOn τ (Set.Iic n
   have him : i + 1 ≤ m := mem_range.1 hi
   exact ((ha i (him.trans hm)).mono (hle i (by omega))).mul
     (((hXm _ (him.trans hm)).mono (hle _ him)).sub ((hXm i (by omega)).mono (hle i (by omega))))
+
+/-- A position chosen at `τ j` and discarded when its interval starts after `t` is known at the
+clipped date `min (τ j) t`. -/
+theorem stronglyMeasurable_ite_le_min (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (t : ι) (hj : j < n) :
+    StronglyMeasurable[ℱ (min (τ j) t)] (if τ j ≤ t then a j else 0) := by
+  by_cases hjt : τ j ≤ t
+  · rw [min_eq_left hjt]
+    simpa only [hjt, ↓reduceIte] using ha j hj
+  · simpa only [hjt, ↓reduceIte] using stronglyMeasurable_zero
 
 /-- The gains of a simple strategy at a trading date are integrable when each of its trades has
 integrable gains. -/

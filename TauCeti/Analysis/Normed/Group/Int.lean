@@ -13,7 +13,8 @@ public import Mathlib.Analysis.Normed.Group.Int
 
 The norm on `ℤ` is the restriction of the norm on `ℝ` (`Int.norm_cast_real`). Coordinatewise, the
 sup norm of an integer vector `z : ι → ℤ` is the sup norm of the real vector with the same
-coordinates (`TauCeti.pi_norm_intCast_real`).
+coordinates (`TauCeti.pi_norm_intCast_real`). A nonzero integer vector has sup norm at least `1`
+(`TauCeti.one_le_pi_norm_of_ne_zero`).
 -/
 
 public section
@@ -28,5 +29,13 @@ theorem pi_norm_intCast_real {ι : Type*} [Fintype ι] (z : ι → ℤ) :
       (Int.norm_cast_real (z i)).trans_le (norm_le_pi_norm z i))
     ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦
       (Int.norm_cast_real (z i)).symm.trans_le (norm_le_pi_norm (fun i ↦ (z i : ℝ)) i))
+
+/-- A nonzero integer vector has sup norm at least `1`. -/
+theorem one_le_pi_norm_of_ne_zero {ι : Type*} [Fintype ι] {z : ι → ℤ} (hz : z ≠ 0) :
+    1 ≤ ‖z‖ := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp hz
+  refine le_trans ?_ (norm_le_pi_norm z i)
+  rw [Int.norm_eq_abs]
+  exact_mod_cast Int.one_le_abs hi
 
 end TauCeti

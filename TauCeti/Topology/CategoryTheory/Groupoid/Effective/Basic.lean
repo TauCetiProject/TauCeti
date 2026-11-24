@@ -210,10 +210,9 @@ theorem isIsomorphic_toEffectiveQuotient_obj_iff {x y : C} :
 theorem isomorphismClasses_map_toEffectiveQuotient_bijective :
     Function.Bijective (α := _root_.Quotient (isIsomorphicSetoid C))
       (β := _root_.Quotient (isIsomorphicSetoid (EffectiveQuotient C)))
-      (isomorphismClasses.map (toEffectiveQuotient C).toCatHom) := by
-  refine ⟨(toEffectiveQuotient C).isomorphismClasses_map_injective, fun q ↦ ?_⟩
-  induction q using _root_.Quotient.inductionOn with
-  | h x => exact ⟨_root_.Quotient.mk _ ((EffectiveQuotient.objEquiv C).symm x), rfl⟩
+      (isomorphismClasses.map (toEffectiveQuotient C).toCatHom) :=
+  ⟨(toEffectiveQuotient C).isomorphismClasses_map_injective,
+    (toEffectiveQuotient C).isomorphismClasses_map_surjective⟩
 
 variable [TopologicalSpace C]
 

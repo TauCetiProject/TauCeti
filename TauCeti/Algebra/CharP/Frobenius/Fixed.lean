@@ -10,6 +10,8 @@ public import Mathlib.Algebra.CharP.Subring
 public import Mathlib.Algebra.Field.Subfield.Basic
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
+public import Mathlib.SetTheory.Cardinal.Order
+import Mathlib.Algebra.Polynomial.Roots
 
 /-!
 # The subring and subfield fixed by an iterated Frobenius
@@ -23,9 +25,11 @@ its elementary properties. Over a field the equalizer is closed under inverses a
 For `p` prime, `0 < n` and `A` an algebraic closure of `ZMod p` this subring is the field of `q`
 elements sitting inside `A`, which is why the construction is the ring-theoretic half of "the fixed
 points of the `q`-power Frobenius are the `𝔽_q`-points"; at `n = 0` it is instead the whole of `A`,
-since `q = 1`. Nothing about finiteness or about the field of `q` elements is proved here: the
-subring statements below are about an arbitrary commutative ring of exponential characteristic `p`
-and the subfield ones about an arbitrary field of exponential characteristic `p`.
+since `q = 1`. Nothing about the field of `q` elements is proved here: the subring statements
+below are about an arbitrary commutative ring of exponential characteristic `p` and the subfield
+ones about an arbitrary field of exponential characteristic `p`. The one counting statement is
+that in a domain the fixed elements are roots of `X ^ q - X`, so an iterate with `1 < q` moves some
+element of every domain, finite or infinite, with more than `q` elements.
 
 ## Main definitions
 
@@ -34,9 +38,13 @@ and the subfield ones about an arbitrary field of exponential characteristic `p`
 
 ## Main results
 
-* `TauCeti.mem_frobeniusFixedSubring`: membership is the equation `a ^ p ^ n = a`.
+* `TauCeti.mem_frobeniusFixedSubring`: membership is the equation `a ^ p ^ n = a`, and
+  `TauCeti.mem_frobeniusFixedSubring_one` is its form `a ^ p = a` at `n = 1`.
 * `TauCeti.mem_frobeniusFixedSubring_mul_iff_iterate_eq`: at exponent `m * k`, membership is being
   fixed by the `k`-th iterate of the `p ^ m`-power Frobenius.
+* `TauCeti.exists_iterateFrobenius_ne`: on a domain of exponential characteristic `p` with more
+  than `p ^ n` elements, finite or infinite, the iterate `x ↦ x ^ p ^ n` moves some element when
+  `1 < p ^ n`.
 * `TauCeti.frobeniusFixedSubring_zero` and `TauCeti.frobeniusFixedSubfield_zero`: the zeroth
   iterate fixes everything.
 * `TauCeti.frobeniusFixedSubring_le_of_dvd` and `TauCeti.frobeniusFixedSubfield_le_of_dvd`: the
@@ -80,12 +88,31 @@ variable {A p n}
 theorem mem_frobeniusFixedSubring {a : A} :
     a ∈ frobeniusFixedSubring A p n ↔ a ^ p ^ n = a := Iff.rfl
 
+/-- Membership in the subring fixed by the `p`-power Frobenius is the equation `a ^ p = a`. -/
+theorem mem_frobeniusFixedSubring_one {a : A} :
+    a ∈ frobeniusFixedSubring A p 1 ↔ a ^ p = a := by
+  rw [mem_frobeniusFixedSubring, pow_one]
+
 /-- At an exponent `m * k`, being fixed by the `p ^ (m * k)`-power Frobenius is being fixed by the
 `k`-th iterate of the `p ^ m`-power one, since that iterate *is* the `p ^ (m * k)`-power
 Frobenius. -/
 theorem mem_frobeniusFixedSubring_mul_iff_iterate_eq {m k : ℕ} {a : A} :
     a ∈ frobeniusFixedSubring A p (m * k) ↔ (iterateFrobenius A p m)^[k] a = a := by
   rw [mem_frobeniusFixedSubring, ← iterateFrobenius_def, iterateFrobenius_mul_apply]
+
+/-- **An iterated Frobenius moves some element of a large domain.** On a domain of exponential
+characteristic `p` with more than `p ^ n` elements, finite or infinite, the iterate
+`x ↦ x ^ p ^ n` is not the identity, provided `1 < p ^ n`: its fixed elements are roots of
+`X ^ p ^ n - X`, of which there are at most `p ^ n`. The witness is a point where this polynomial
+does not vanish, supplied by Mathlib's `Polynomial.exists_eval_ne_zero_of_natDegree_lt_card`. -/
+theorem exists_iterateFrobenius_ne [IsDomain A] (hq : 1 < p ^ n)
+    (hA : (p ^ n : ℕ) < Cardinal.mk A) : ∃ s : A, iterateFrobenius A p n s ≠ s := by
+  -- A point where `X ^ p ^ n - X` does not vanish is one that the iterate moves.
+  obtain ⟨s, hs⟩ := Polynomial.exists_eval_ne_zero_of_natDegree_lt_card _
+    (Polynomial.X_pow_sub_X_ne_zero (R := A) hq) (by rwa [Polynomial.natDegree_X_pow_sub_X hq])
+  refine ⟨s, fun h ↦ hs ?_⟩
+  rw [iterateFrobenius_def] at h
+  simp only [Polynomial.eval_sub, Polynomial.eval_pow, Polynomial.eval_X, h, sub_self]
 
 variable (A p n)
 

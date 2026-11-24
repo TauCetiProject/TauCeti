@@ -194,7 +194,7 @@ private theorem exists_mem_thickPart_dist_eq [DiscreteTopology Γ] (σ : PSL(2, 
           (γ : PSL(2, ℝ))⁻¹) * σ := by
       group
     rw [hc]
-    rcases conj_eq_or_conj_eq_inv_of_dist_le hmem γ.2 hfix hdist.le hlt.le with h | h <;>
+    rcases conj_eq_or_conj_eq_inv_of_dist_le hmem γ.property hfix hdist.le hlt.le with h | h <;>
       [left; right] <;> rw [h] <;> group
   have hγ : (γ : PSL(2, ℝ)) = σ * (σ⁻¹ * γ * σ) * σ⁻¹ := by group
   rw [hγ, dist_conj_smul, inv_smul_smul] at hlt
@@ -207,7 +207,7 @@ private theorem exists_mem_thickPart_dist_eq [DiscreteTopology Γ] (σ : PSL(2, 
       apply hγ₁
       rw [← Subtype.coe_inj, hγ]
       simp
-    exact (hyt t (hmin _ (abs_pos.2 ht0) (conj_dilation_abs_mem γ.2 hγ ht0))).not_gt hlt
+    exact (hyt t (hmin _ (abs_pos.2 ht0) (conj_dilation_abs_mem γ.property hγ ht0))).not_gt hlt
   · -- `γ` exchanges the ends of the axis, and so moves `σ • y` at least `1 / 4`
     rw [← hX, pslMk_smul] at hlt
     exact (hyX X h₀₀ h₁₁).not_gt hlt

@@ -77,7 +77,7 @@ variable [Finite ι]
 arbitrary. -/
 theorem piTensorHomMap_bijective_of_basis {κ : ι → Type uκ} [∀ i, Finite (κ i)]
     (b : ∀ i, Basis (κ i) R (M i)) :
-    Function.Bijective (piTensorHomMap (R := R) (s := M) (t := N)) := by
+    Function.Bijective (piTensorHomMap (σ₁₂ := RingHom.id R) (s := M) (t := N)) := by
   classical
   have : Fintype ι := Fintype.ofFinite ι
   have : ∀ i, Fintype (κ i) := fun i => Fintype.ofFinite (κ i)
@@ -87,7 +87,7 @@ theorem piTensorHomMap_bijective_of_basis {κ : ι → Type uκ} [∀ i, Finite 
     PiTensorProduct.congr (fun i => ((b i).constr R).symm ≪≫ₗ
       DFinsupp.linearEquivFunOnFintype.symm) ≪≫ₗ ofDFinsuppEquiv ≪≫ₗ
       DFinsupp.linearEquivFunOnFintype ≪≫ₗ (Basis.piTensorProduct b).constr R
-  have he : piTensorHomMap (R := R) (s := M) (t := N) = e.toLinearMap :=
+  have he : piTensorHomMap (σ₁₂ := RingHom.id R) (s := M) (t := N) = e.toLinearMap :=
     PiTensorProduct.ext <| MultilinearMap.ext fun f =>
       (Basis.piTensorProduct b).ext fun p => by
         -- `Basis.constr_basis` has to fire before the tensored basis vector is unfolded.
@@ -107,7 +107,7 @@ variable [∀ i, Module.Projective R (M i)] [∀ i, Module.Finite R (M i)]
 /-- **The comparison map `⨂ᵢ (Mᵢ →ₗ Nᵢ) → (⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ)` is bijective** over a finite index
 type when every `Mᵢ` is finite projective; the `Nᵢ` are arbitrary. -/
 theorem piTensorHomMap_bijective :
-    Function.Bijective (piTensorHomMap (R := R) (s := M) (t := N)) := by
+    Function.Bijective (piTensorHomMap (σ₁₂ := RingHom.id R) (s := M) (t := N)) := by
   -- Each `Mᵢ` is a retract `fᵢ ∘ₗ gᵢ = id` of a finite free module `Fᵢ`, where the comparison map
   -- is bijective. Precomposition with the `fᵢ` and the `gᵢ` intertwines the two comparison maps.
   -- This adapts the retract argument of Mathlib's `dualTensorHom_bijective`
@@ -152,7 +152,7 @@ theorem piTensorHomEquiv_apply (x : ⨂[R] i, M i →ₗ[R] N i) :
 
 /-- The equivalence and the comparison map have the same underlying function. -/
 theorem coe_piTensorHomEquiv :
-    ⇑(piTensorHomEquiv R M N) = ⇑(piTensorHomMap (R := R) (s := M) (t := N)) :=
+    ⇑(piTensorHomEquiv R M N) = ⇑(piTensorHomMap (σ₁₂ := RingHom.id R) (s := M) (t := N)) :=
   (rfl)
 
 /-- On a pure tensor of linear maps the equivalence is `PiTensorProduct.map`. -/

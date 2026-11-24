@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.AlgebraicGeometry.Limits
 public import TauCeti.CategoryTheory.Comma.Over
+import Mathlib.AlgebraicGeometry.PullbackCarrier
 
 /-!
 # Base change of a section of a scheme morphism
@@ -23,7 +24,9 @@ its base change `x₀'` agree under `T ×_S X ≅ T ×_{S'} X'`
 (`baseChangeSection_comp_pullbackRightPullbackFstIso_inv`).
 
 Over an open `U` of `S`, a section `σ` of `g : Z ⟶ S` restricts functions on `g⁻¹ U` to `U`,
-giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`).
+giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`). More generally, a
+morphism `f : X ⟶ Y` over `S` induces a `Γ(S, ⊤)`-algebra homomorphism
+`Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)` (`Scheme.Hom.appTopAlgHom`).
 -/
 
 public section
@@ -116,6 +119,26 @@ lemma baseChangeSection_snd (T : Over S) :
     baseChangeSection f x₀ hx₀ T ≫ pullback.snd T.hom f = T.hom ≫ x₀ :=
   graphSection_snd _
 
+/-- Over a scheme with at most one point, a point of a base change that projects into the image
+of a section is the value of the base-changed section. -/
+lemma baseChangeSection_eq_of_snd_eq {T : Scheme.{u}} [Subsingleton T] (g : T ⟶ S)
+    (t : T) {y : (pullback g f : Scheme.{u})} {s : S}
+    (hy : (pullback.snd g f : _ ⟶ X) y = x₀ s) :
+    baseChangeSection f x₀ hx₀ (Over.mk g) t = y := by
+  have : IsIso (x₀ ≫ f) := by rw [hx₀]; infer_instance
+  have : Subsingleton (pullback (pullback.snd g f) x₀ : Scheme.{u}) :=
+    ((pullbackLeftPullbackSndIso g f x₀).hom ≫ pullback.fst _ _).homeomorph.subsingleton
+  have image_mem (z : (pullback g f : Scheme.{u}))
+      (hz : (pullback.snd g f : _ ⟶ X) z ∈ Set.range x₀) :
+      z ∈ Set.range (pullback.fst (pullback.snd g f) x₀ : _ ⟶ _) := by
+    rw [Scheme.Pullback.range_fst]
+    exact hz
+  obtain ⟨y', hy'⟩ := image_mem y ⟨s, hy.symm⟩
+  obtain ⟨z', hz'⟩ := image_mem (baseChangeSection f x₀ hx₀ (Over.mk g) t) ⟨g t, by
+    simpa only [Over.mk_hom, Scheme.Hom.comp_apply] using
+      congrArg (fun m : T ⟶ X ↦ m t) (baseChangeSection_snd f x₀ hx₀ (Over.mk g)).symm⟩
+  rw [← hy', ← hz', Subsingleton.elim y' z']
+
 /-- The base-changed sections are compatible with the morphisms `T' ×_S X ⟶ T ×_S X` induced by
 morphisms `T' ⟶ T` over `S`. -/
 @[reassoc]
@@ -191,6 +214,36 @@ noncomputable def sectionAlgHom (U : S.Opens) :
 theorem sectionAlgHom_apply (U : S.Opens) (b : Γ(Z, g ⁻¹ᵁ U)) :
     sectionAlgHom g hσ U b = σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge b :=
   (rfl)
+
+/-- On global sections, `sectionAlgHom g hσ ⊤` applies `σ.appTop`. -/
+theorem sectionAlgHom_top_apply (b : Γ(Z, ⊤)) :
+    sectionAlgHom g hσ ⊤ b = σ.appTop b :=
+  (sectionAlgHom_apply g hσ ⊤ b).trans congr($(σ.appLE_eq_app).hom b)
+
+/-- A morphism `f : X ⟶ Y` over `S` (`f ≫ g = h`) induces `Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)`. -/
+noncomputable def _root_.AlgebraicGeometry.Scheme.Hom.appTopAlgHom {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) :
+    letI := g.appTop.hom.toAlgebra; letI := h.appTop.hom.toAlgebra
+    Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤) :=
+  letI := g.appTop.hom.toAlgebra; letI := h.appTop.hom.toAlgebra
+  { f.appTop.hom with
+    commutes' r := congr($((Scheme.Hom.comp_appTop f g).symm.trans
+      (congrArg Scheme.Hom.appTop hfg)).hom r) }
+
+/-- Evaluating `f.appTopAlgHom hfg` applies `f.appTop`. -/
+@[simp] theorem _root_.AlgebraicGeometry.Scheme.Hom.appTopAlgHom_apply {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) (u : Γ(Y, ⊤)) :
+    f.appTopAlgHom hfg u = f.appTop u := (rfl)
+
+/-- The underlying function of `f.appTopAlgHom hfg` is `f.appTop`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.coe_appTopAlgHom {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) : ⇑(f.appTopAlgHom hfg) = f.appTop :=
+  (rfl)
+
+/-- Coercing `f.appTopAlgHom hfg` to a ring homomorphism recovers `f.appTop.hom`. -/
+@[simp, norm_cast] theorem _root_.AlgebraicGeometry.Scheme.Hom.toRingHom_appTopAlgHom
+    {X Y S : Scheme.{u}} (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) :
+    (f.appTopAlgHom hfg : Γ(Y, ⊤) →+* Γ(X, ⊤)) = f.appTop.hom := (rfl)
 
 end SectionAlgHom
 

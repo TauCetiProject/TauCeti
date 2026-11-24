@@ -19,25 +19,14 @@ import TauCeti.Topology.EMetricSpace.BoundedVariation
 /-!
 # Quadratic variation and covariation of filtered Brownian motion
 
-This file connects `TauCeti.Probability.IsFilteredPreBrownianReal` and `TauCeti.Finance.simpleGains`
-to `TauCeti.Probability.IsQuadraticVariation` and `TauCeti.Probability.IsCovariation`:
-
-* **Single Brownian motion**: `IsFilteredPreBrownianReal.isQuadraticVariation` (`[B]_t = t` without
-  continuity or usual conditions) and `IsFilteredPreBrownianReal.indist_of_isQuadraticVariation`.
-* **Elementary Brownian integrals**: `IsFilteredPreBrownianReal.isQuadraticVariation_simpleGains`
-  and `IsFilteredPreBrownianReal.isCovariation_simpleGains`.
-* **Independent Brownian motions and linear combinations**:
-  `IsFilteredPreBrownianReal.martingale_mul_of_indep_sub`,
-  `IsFilteredPreBrownianReal.isCovariation_zero_of_indep_sub`,
-  `isCovariation_sum_mul_of_martingale_mul`, and
-  `OrthonormalBasis.isCovariation_inner_of_martingale_mul`.
+Connects `IsFilteredPreBrownianReal` and `Finance.simpleGains` to `IsQuadraticVariation` and
+`IsCovariation`: `[B]_t = t`, elementary Brownian integrals, independent Brownian coordinates,
+finite linear combinations, and orthonormal-basis inner-product projections.
 
 ## References
 
-* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, 2nd ed., Springer, 1991,
-  §1.5 and §3.2.
-* D. Revuz and M. Yor, *Continuous Martingales and Brownian Motion*, 3rd ed., Springer, 1999,
-  Chapter IV, §1.
+* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, 1991, §1.5, §3.2.
+* D. Revuz and M. Yor, *Continuous Martingales and Brownian Motion*, 3rd ed., 1999, Ch. IV, §1.
 -/
 
 public section
@@ -54,8 +43,7 @@ namespace IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {B B₁ B₂ W : ℝ≥0 → Ω → ℝ}
 
-/-- A real pre-Brownian motion relative to `ℱ` has quadratic variation `t ↦ t`. Neither path
-continuity nor usual conditions on `ℱ` are required. -/
+/-- A real pre-Brownian motion relative to `ℱ` has quadratic variation `t ↦ t`. -/
 theorem isQuadraticVariation (hB : IsFilteredPreBrownianReal ℱ B P) :
     IsQuadraticVariation ℱ P B (fun t _ ↦ (t : ℝ)) :=
   IsQuadraticVariation.mk (NNReal.continuous_coe.stronglyMeasurable.isStronglyProgressive ℱ)
@@ -63,16 +51,14 @@ theorem isQuadraticVariation (hB : IsFilteredPreBrownianReal ℱ B P) :
     (ae_of_all P fun _ ↦ NNReal.coe_zero)
     (Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P) hB.martingale_sq_sub_sq_zero_sub)
 
-/-- Any quadratic variation of an almost-surely continuous filtered Brownian motion is
-indistinguishable from `t ↦ t`. -/
+/-- Any quadratic variation of an a.s. continuous filtered Brownian motion is indistinguishable
+from `t ↦ t`. -/
 theorem indist_of_isQuadraticVariation (hB : IsFilteredPreBrownianReal ℱ B P)
     (hcB : ∀ᵐ ω ∂P, Continuous (B · ω)) {A : ℝ≥0 → Ω → ℝ} (hA : IsQuadraticVariation ℱ P B A) :
     A ≡ᵐ[P] fun t _ ↦ (t : ℝ) := by
   have := hB.isGaussianProcess.isProbabilityMeasure; exact hA.indist hB.isQuadraticVariation hcB
 
-/-- **Quadratic variation of an elementary Brownian integral.** For square-integrable heights known
-at the left endpoints of a monotone grid, `Finance.simpleGains τ n a W` has quadratic variation
-equal to its elapsed pathwise square energy. -/
+/-- **Quadratic variation of an elementary Brownian integral** with `L²` adapted heights. -/
 theorem isQuadraticVariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
     {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Set.Iic n))
     (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
@@ -83,7 +69,7 @@ theorem isQuadraticVariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P
     NNReal.continuous_coe.stronglyMeasurable.isStronglyProgressive ℱ
   have hprog := Finance.isStronglyProgressive_simpleGains hτ (fun i hi ↦ (ha i hi).pow 2) htime
   convert IsQuadraticVariation.mk hprog
-    (ae_of_all P fun _ ↦ Finance.continuous_simpleGains τ n _ NNReal.continuous_coe)
+    (ae_of_all P fun _ ↦ Finance.continuous_simpleGains NNReal.continuous_coe)
     (ae_of_all P fun _ ↦ Finance.monotone_simpleGains hτ (fun _ _ ↦ sq_nonneg _) NNReal.coe_mono)
     (ae_of_all P fun _ ↦ by simp [Finance.simpleGains_def])
     (Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P)
@@ -93,9 +79,7 @@ theorem isQuadraticVariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P
         fun _ ↦ .of_forall fun _ ↦ by simp [Finance.simpleGains_def])) using 1
   ext t ω; exact (Finance.simpleGains_def τ n (fun i ω ↦ a i ω ^ 2) (fun u _ ↦ (u : ℝ)) t ω).symm
 
-/-- **Covariation of two elementary Brownian integrals.** On a common monotone grid with
-square-integrable left-endpoint heights, the covariation of `Finance.simpleGains τ n a W` and
-`Finance.simpleGains τ n b W` is their elapsed mutual energy. -/
+/-- **Covariation of two elementary Brownian integrals** on a common monotone grid. -/
 theorem isCovariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
     {τ : ℕ → ℝ≥0} {n : ℕ} {a b : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Set.Iic n))
     (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
@@ -107,21 +91,19 @@ theorem isCovariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
   let C := Finance.simpleGains τ n (fun i ω ↦ a i ω * b i ω) (fun t _ ↦ (t : ℝ))
   have htime : IsStronglyProgressive ℱ (fun t (_ : Ω) ↦ (t : ℝ)) :=
     NNReal.continuous_coe.stronglyMeasurable.isStronglyProgressive ℱ
-  rw [show (fun t ω ↦ ∑ i ∈ Finset.range n,
-      a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) = C from
+  have hC : (fun t ω ↦ ∑ i ∈ Finset.range n,
+      a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) = C :=
     funext₂ fun t ω ↦ (Finance.simpleGains_def τ n (fun i ω ↦ a i ω * b i ω)
-      (fun u _ ↦ (u : ℝ)) t ω).symm]
-  refine IsCovariation.mk
+      (fun u _ ↦ (u : ℝ)) t ω).symm
+  rw [hC]; refine IsCovariation.mk
     (Finance.isStronglyProgressive_simpleGains hτ (fun i hi ↦ (ha i hi).mul (hb i hi)) htime)
-    (ae_of_all P fun _ ↦ Finance.continuous_simpleGains τ n _ NNReal.continuous_coe)
-    (ae_of_all P fun ω ↦ ?_)
-    (ae_of_all P fun _ ↦ by simp [C, Finance.simpleGains_def]) ?_
+    (ae_of_all P fun _ ↦ Finance.continuous_simpleGains NNReal.continuous_coe)
+    (ae_of_all P fun ω ↦ ?_) (ae_of_all P fun _ ↦ by simp [C, Finance.simpleGains_def]) ?_
   · have hmono (c : ℕ → Ω → ℝ) : LocallyBoundedVariationOn
-        (Finance.simpleGains τ n (fun i ω ↦ c i ω ^ 2) (fun u _ ↦ (u : ℝ)) · ω) Set.univ := by
-      have hm : Monotone
-          (Finance.simpleGains τ n (fun i ω ↦ c i ω ^ 2) (fun u _ ↦ (u : ℝ)) · ω) :=
-        Finance.monotone_simpleGains hτ (fun _ _ ↦ sq_nonneg _) NNReal.coe_mono
-      exact (hm.monotoneOn Set.univ).locallyBoundedVariationOn
+        (Finance.simpleGains τ n (fun i ω ↦ c i ω ^ 2) (fun u _ ↦ (u : ℝ)) · ω) Set.univ :=
+      ((Finance.monotone_simpleGains (a := fun i ω ↦ c i ω ^ 2) (X := fun (u : ℝ≥0) _ ↦ (u : ℝ))
+        (ω := ω) hτ (fun _ _ ↦ sq_nonneg _) NNReal.coe_mono).monotoneOn
+        Set.univ).locallyBoundedVariationOn
     refine ((lipschitzWith_smul (4⁻¹ : ℝ)).comp_locallyBoundedVariationOn
       ((hmono (a + b)).sub (hmono (a - b)))).congr fun t _ ↦ ?_
     simp only [C, Finance.simpleGains_def, Function.comp_apply, Pi.sub_apply, Pi.add_apply,
@@ -134,12 +116,11 @@ theorem isCovariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
 private theorem condExp_mul_sub_eq_zero (hB₁ : IsFilteredPreBrownianReal ℱ B₁ P)
     (hB₂ : IsFilteredPreBrownianReal ℱ B₂ P) {s t : ℝ≥0}
     (hindep_past : Indep (.comap (fun ω ↦ (B₁ t ω - B₁ s ω, B₂ t ω - B₂ s ω)) inferInstance)
-      (ℱ s) P)
-    (hindep_inc : IndepFun (B₁ t - B₁ s) (B₂ t - B₂ s) P) :
-    P[fun ω ↦ (B₁ t ω - B₁ s ω) * (B₂ t ω - B₂ s ω) | ℱ s] =ᵐ[P] 0 := by
+      (ℱ s) P) (hindep_inc : IndepFun (B₁ t - B₁ s) (B₂ t - B₂ s) P) :
+    P[(B₁ t - B₁ s) * (B₂ t - B₂ s) | ℱ s] =ᵐ[P] 0 := by
   have := hB₁.isGaussianProcess.isProbabilityMeasure
   let pair (ω : Ω) : ℝ × ℝ := (B₁ t ω - B₁ s ω, B₂ t ω - B₂ s ω)
-  have hcond : P[fun ω ↦ (B₁ t ω - B₁ s ω) * (B₂ t ω - B₂ s ω) | ℱ s] =ᵐ[P]
+  have hcond : P[(B₁ t - B₁ s) * (B₂ t - B₂ s) | ℱ s] =ᵐ[P]
       fun _ ↦ ∫ ω, (B₁ t ω - B₁ s ω) * (B₂ t ω - B₂ s ω) ∂P :=
     condExp_indep_eq ((hB₁.adapted.measurable.sub hB₁.adapted.measurable).prodMk
       (hB₂.adapted.measurable.sub hB₂.adapted.measurable)).comap_le (ℱ.le s)
@@ -154,9 +135,8 @@ private theorem condExp_mul_sub_eq_zero (hB₁ : IsFilteredPreBrownianReal ℱ B
       (hB₂.adapted.measurable.sub hB₂.adapted.measurable).aestronglyMeasurable
   simpa only [hint_zero, Pi.zero_def] using hcond
 
-/-- **Product martingale of independent filtered Brownian motions.** If two filtered pre-Brownian
-motions have pair increments independent of `ℱ s` and mutually independent increments over every
-`[s, t]`, then their pointwise product `B₁ * B₂` is a martingale on `ℱ`. -/
+/-- **Product martingale of independent filtered Brownian motions** with past-independent and
+mutually independent increments. -/
 theorem martingale_mul_of_indep_sub (hB₁ : IsFilteredPreBrownianReal ℱ B₁ P)
     (hB₂ : IsFilteredPreBrownianReal ℱ B₂ P)
     (hindep_past : ∀ ⦃s t⦄, s ≤ t →
@@ -177,16 +157,16 @@ theorem martingale_mul_of_indep_sub (hB₁ : IsFilteredPreBrownianReal ℱ B₁ 
     simpa only [min_self, min_eq_left hst, min_eq_right hst, sub_self, mul_zero,
       Pi.mul_def, Pi.sub_def, Pi.zero_def] using (hV.martingale_mul_sub_min hst
         (hU.adapted s).stronglyMeasurable (hU.integrable_eval s)).condExp_ae_eq hst
-  rw [show (B₁ * B₂) t = B₁ s * B₂ s + (Δ₁ * Δ₂ + (B₁ s * Δ₂ + B₂ s * Δ₁)) by
-    ext; simp only [Pi.mul_apply, Pi.add_apply, Pi.sub_apply, Δ₁, Δ₂]; ring]
+  have hsplit : (B₁ * B₂) t = B₁ s * B₂ s + (Δ₁ * Δ₂ + (B₁ s * Δ₂ + B₂ s * Δ₁)) := by
+    ext; simp only [Pi.mul_apply, Pi.add_apply, Pi.sub_apply, Δ₁, Δ₂]; ring
+  rw [hsplit]
   have hbase := condExp_of_stronglyMeasurable (ℱ.le s)
     ((hB₁.adapted s).mul (hB₂.adapted s)).stronglyMeasurable hi₀
-  have hc₁ : P[Δ₁ * Δ₂ | ℱ s] =ᵐ[P] 0 :=
-    condExp_mul_sub_eq_zero hB₁ hB₂ (hindep_past hst) (hindep_inc hst)
   filter_upwards [condExp_add hi₀ (hi₁.add (hi₂.add hi₃)) (ℱ s),
     condExp_add hi₁ (hi₂.add hi₃) (ℱ s), condExp_add hi₂ hi₃ (ℱ s),
-    hc₁, hcross hB₁ hB₂, hcross hB₂ hB₁] with ω h1 h2 h3 z1 z2 z3
-  dsimp only [Δ₁, Δ₂] at h1 h2 h3 z1 ⊢
+    condExp_mul_sub_eq_zero hB₁ hB₂ (hindep_past hst) (hindep_inc hst),
+    hcross hB₁ hB₂, hcross hB₂ hB₁] with ω h1 h2 h3 z1 z2 z3
+  dsimp only [Δ₁, Δ₂] at h1 h2 h3 ⊢
   simp only [Pi.add_apply, Pi.zero_apply] at h1 h2 h3 z1 z2 z3 ⊢
   rw [h1, hbase, h2, h3, z1, z2, z3]; simp
 
@@ -194,13 +174,11 @@ private theorem martingale_mul_sub_zero (hB₁ : IsFilteredPreBrownianReal ℱ B
     (hB₂ : IsFilteredPreBrownianReal ℱ B₂ P) (hmul : Martingale (B₁ * B₂) ℱ P) :
     Martingale (fun t ω ↦ B₁ t ω * B₂ t ω - B₁ 0 ω * B₂ 0 ω) ℱ P :=
   hmul.congr (fun t ↦ ((hB₁.adapted t).stronglyMeasurable.mul
-      (hB₂.adapted t).stronglyMeasurable).sub
-    (((hB₁.adapted 0).stronglyMeasurable.mul
+      (hB₂.adapted t).stronglyMeasurable).sub (((hB₁.adapted 0).stronglyMeasurable.mul
       (hB₂.adapted 0).stronglyMeasurable).mono (ℱ.mono bot_le)))
     fun _ ↦ hB₁.eval_zero_ae_eq_zero.mono fun _ h0 ↦ by simp [h0]
 
-/-- If the pointwise product `B₁ * B₂` of two filtered pre-Brownian motions is a martingale, then
-their covariation vanishes. -/
+/-- Filtered pre-Brownian motions whose product `B₁ * B₂` is a martingale have zero covariation. -/
 theorem isCovariation_zero_of_martingale_mul (hB₁ : IsFilteredPreBrownianReal ℱ B₁ P)
     (hB₂ : IsFilteredPreBrownianReal ℱ B₂ P) (hmul : Martingale (B₁ * B₂) ℱ P) :
     IsCovariation ℱ P B₁ B₂ 0 := by
@@ -209,8 +187,7 @@ theorem isCovariation_zero_of_martingale_mul (hB₁ : IsFilteredPreBrownianReal 
   simpa only [Pi.zero_apply, sub_zero] using Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P)
     (hB₁.martingale_mul_sub_zero hB₂ hmul)
 
-/-- Independent filtered Brownian motions (with pair increments independent of the past and
-mutually independent) have zero covariation. -/
+/-- Independent filtered Brownian motions have zero covariation. -/
 theorem isCovariation_zero_of_indep_sub (hB₁ : IsFilteredPreBrownianReal ℱ B₁ P)
     (hB₂ : IsFilteredPreBrownianReal ℱ B₂ P)
     (hindep_past : ∀ ⦃s t⦄, s ≤ t →
@@ -221,8 +198,6 @@ theorem isCovariation_zero_of_indep_sub (hB₁ : IsFilteredPreBrownianReal ℱ B
     (hB₁.martingale_mul_of_indep_sub hB₂ hindep_past hindep_inc)
 
 end IsFilteredPreBrownianReal
-
-section LinearCombinations
 
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
 
@@ -236,10 +211,7 @@ private theorem martingale_mul_sub_mul_zero_sub_ite {B : ι → ℝ≥0 → Ω �
   · subst hij; simpa only [↓reduceIte, sq] using hBi.martingale_sq_sub_sq_zero_sub
   · simpa only [hij, ↓reduceIte, sub_zero] using hBi.martingale_mul_sub_zero hBj (horth hij)
 
-/-- **Covariation of linear combinations of pairwise-orthogonal filtered Brownian motions.**
-For any finite family `B` of filtered pre-Brownian motions whose distinct products `B i * B j` are
-martingales, and any coefficient vectors `u, v`, the covariation of `∑ i ∈ s, u i * B i` and
-`∑ j ∈ s, v j * B j` is `t ↦ (∑ i ∈ s, u i * v i) * t`. -/
+/-- **Covariation of linear combinations of pairwise-orthogonal filtered Brownian motions.** -/
 theorem isCovariation_sum_mul_of_martingale_mul (s : Finset ι) (u v : ι → ℝ)
     {B : ι → ℝ≥0 → Ω → ℝ} (hB : ∀ i ∈ s, IsFilteredPreBrownianReal ℱ (B i) P)
     (horth : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → Martingale (B i * B j) ℱ P) :
@@ -270,26 +242,20 @@ theorem isCovariation_sum_mul_of_martingale_mul (s : Finset ι) (u v : ι → �
   have hmul (r : ℝ≥0) : ∑ x ∈ s, ∑ y ∈ s, u x * v y * (B x r ω * B y r ω) =
       ∑ x ∈ s, ∑ y ∈ s, u x * B x r ω * (v y * B y r ω) :=
     Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-  rw [hmul t, hmul 0, show ∑ x ∈ s, ∑ y ∈ s, u x * v y * (if x = y then (t : ℝ) else 0) =
-      c * (t : ℝ) by
-    simp only [c, Finset.sum_mul]; refine Finset.sum_congr rfl fun x hx ↦ ?_
-    simp [mul_ite, hx]]
+  have hdiag : ∑ x ∈ s, ∑ y ∈ s, u x * v y * (if x = y then (t : ℝ) else 0) = c * (t : ℝ) := by
+    simp only [c, Finset.sum_mul]; refine Finset.sum_congr rfl fun x hx ↦ ?_; simp [mul_ite, hx]
+  rw [hmul t, hmul 0, hdiag]
 
-/-- **Quadratic variation of a linear combination of pairwise-orthogonal filtered Brownian
-motions.** Under the hypotheses of `isCovariation_sum_mul_of_martingale_mul`, the process
-`∑ i ∈ s, u i * B i` has quadratic variation `t ↦ (∑ i ∈ s, u i ^ 2) * t`. -/
+/-- **Quadratic variation of a linear combination of pairwise-orthogonal Brownian motions.** -/
 theorem isQuadraticVariation_sum_mul_of_martingale_mul (s : Finset ι) (u : ι → ℝ)
     {B : ι → ℝ≥0 → Ω → ℝ} (hB : ∀ i ∈ s, IsFilteredPreBrownianReal ℱ (B i) P)
     (horth : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → Martingale (B i * B j) ℱ P) :
     IsQuadraticVariation ℱ P (fun t ω ↦ ∑ i ∈ s, u i * B i t ω)
       (fun t _ ↦ (∑ i ∈ s, u i ^ 2) * (t : ℝ)) := by
   have hcov := isCovariation_sum_mul_of_martingale_mul s u u hB horth
-  rw [show (∑ i ∈ s, u i * u i) = ∑ i ∈ s, u i ^ 2 from
-    Finset.sum_congr rfl fun _ _ ↦ (sq _).symm] at hcov
+  simp_rw [← sq] at hcov
   exact hcov.isQuadraticVariation_of_ae_monotone <| ae_of_all P fun _ _ _ hst ↦
     mul_le_mul_of_nonneg_left (NNReal.coe_le_coe.2 hst) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
-
-end LinearCombinations
 
 end TauCeti.Probability
 
@@ -300,10 +266,7 @@ open TauCeti.Probability
 variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
   [Fintype ι] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- **Covariation of inner-product projections of vector Brownian noise.** If the coordinates of a
-process `W : ℝ≥0 → Ω → E` along an orthonormal basis `b` of `E` are filtered pre-Brownian motions
-whose off-diagonal products are martingales, then for every `u, v : E`,
-`[⟨u, W⟩, ⟨v, W⟩]_t = ⟨u, v⟩ t`. -/
+/-- **Covariation of inner-product projections** `[⟨u, W⟩, ⟨v, W⟩]_t = ⟨u, v⟩ t`. -/
 theorem isCovariation_inner_of_martingale_mul (b : OrthonormalBasis ι ℝ E) {W : ℝ≥0 → Ω → E}
     (hW : ∀ i, IsFilteredPreBrownianReal ℱ (fun t ω ↦ ⟪b i, W t ω⟫_ℝ) P)
     (horth : ∀ i j, i ≠ j → Martingale (fun t ω ↦ ⟪b i, W t ω⟫_ℝ * ⟪b j, W t ω⟫_ℝ) ℱ P) (u v : E) :
@@ -316,9 +279,7 @@ theorem isCovariation_inner_of_martingale_mul (b : OrthonormalBasis ι ℝ E) {W
   simpa only [hexp, hinner] using isCovariation_sum_mul_of_martingale_mul Finset.univ
     (fun i ↦ ⟪u, b i⟫_ℝ) (fun j ↦ ⟪v, b j⟫_ℝ) (fun i _ ↦ hW i) fun i _ j _ hij ↦ horth i j hij
 
-/-- **Quadratic variation of an inner-product projection of vector Brownian noise.** Under the
-hypotheses of `OrthonormalBasis.isCovariation_inner_of_martingale_mul`, for any `u : E` the scalar
-projection `⟨u, W⟩` has quadratic variation `t ↦ ‖u‖² t`. -/
+/-- **Quadratic variation of an inner-product projection** `[⟨u, W⟩]_t = ‖u‖² t`. -/
 theorem isQuadraticVariation_inner_of_martingale_mul (b : OrthonormalBasis ι ℝ E) {W : ℝ≥0 → Ω → E}
     (hW : ∀ i, IsFilteredPreBrownianReal ℱ (fun t ω ↦ ⟪b i, W t ω⟫_ℝ) P)
     (horth : ∀ i j, i ≠ j → Martingale (fun t ω ↦ ⟪b i, W t ω⟫_ℝ * ⟪b j, W t ω⟫_ℝ) ℱ P) (u : E) :

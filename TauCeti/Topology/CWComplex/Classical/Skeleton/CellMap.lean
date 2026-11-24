@@ -38,7 +38,8 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} {C : Set X} [
 def cellDiskHom (j : cell C n) : TopCat.disk.{w} n ⟶ skeletonObj C (n + 1) :=
   TopCat.ofHom
     { toFun z := ⟨map n j (diskHomeomorphClosedBall n z),
-        map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).2)⟩
+        map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1
+            (diskHomeomorphClosedBall n z).property)⟩
       continuous_toFun := ((continuous_map_closedBall j).comp
         (diskHomeomorphClosedBall n).continuous).subtype_mk _ }
 

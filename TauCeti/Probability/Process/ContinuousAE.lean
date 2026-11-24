@@ -9,33 +9,30 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Probability.Process.Indistinguishable
 
 /-!
-# Continuous processes, indistinguishability, and time-product identities
+# Continuous processes and time-product almost-everywhere identities
 
-On a separable index space with values in a Hausdorff space, two processes with almost-surely
-continuous paths that agree almost everywhere at each fixed time are indistinguishable
-(`ProbabilityTheory.Indistinguishable.of_ae_eq_eval`). Finite sums and products of processes with
-almost-surely continuous paths remain almost-surely continuous (`Finset.ae_continuous_sum`,
-`Finset.ae_continuous_prod`). Similarly, a time-product almost-everywhere identity between processes
-with almost surely continuous paths holds simultaneously on `[a, b)`, including the left endpoint,
-and recovers equality of continuous fields at a deterministic initial state (`ae_ae_of_ae_prod`,
-`Measure.eqOn_Ico_of_ae_eq`).
+A time-product almost-everywhere identity between processes with almost surely continuous
+paths holds simultaneously at all times of a half-open interval. The left endpoint is
+included, even though it has zero Lebesgue measure. No continuity at the excluded right
+endpoint is needed.
+
+For continuous fields evaluated along a process with a deterministic starting point, this
+recovers equality of the fields at that point. This is useful when an identity first obtained
+almost everywhere along trajectories must be evaluated at the initial state.
+
+Over a separable time domain, processes with almost surely continuous paths which agree
+almost surely at each fixed time are indistinguishable. This identifies continuous versions,
+for instance of stochastic integrals determined separately at each time. Finite products and
+sums of processes with almost surely continuous paths also remain almost surely continuous
+(`Finset.ae_continuous_prod`, `Finset.ae_continuous_sum`).
+
+The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod` and
+`Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure dense subset.
 -/
 
 public section
 
 open MeasureTheory Set
-
-/-- Two processes on a separable index space into a Hausdorff space with almost-surely continuous
-paths are indistinguishable if they agree almost everywhere at every fixed index. -/
-theorem ProbabilityTheory.Indistinguishable.of_ae_eq_eval
-    {ι Ω E : Type*} [TopologicalSpace ι] [TopologicalSpace.SeparableSpace ι]
-    {_ : MeasurableSpace Ω} {P : Measure Ω} [TopologicalSpace E] [T2Space E] {X Y : ι → Ω → E}
-    (hcX : ∀ᵐ ω ∂P, Continuous (X · ω)) (hcY : ∀ᵐ ω ∂P, Continuous (Y · ω))
-    (h : ∀ t, X t =ᵐ[P] Y t) : X ≡ᵐ[P] Y := by
-  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense ι
-  have : Countable D := hDc.to_subtype
-  filter_upwards [hcX, hcY, ae_all_iff.2 fun q : D ↦ h q] with ω hXω hYω hω
-  exact funext_iff.1 (hDd.denseRange_val.equalizer hXω hYω (funext fun q ↦ hω q))
 
 /-- A finite product of processes with almost-surely continuous paths has almost-surely continuous
 paths. -/
@@ -86,5 +83,17 @@ theorem eq_of_ae_eq_along_process [TopologicalSpace E] [NeZero P]
     exact hG.comp (hS.prodMk continuousOn_id) hD
   obtain ⟨ω, heq, hstart⟩ := ((ae_eqOn_Ico_of_ae_eq_prod hf hg hfg).and hstart).exists
   simpa only [hstart] using heq (left_mem_Ico.mpr hab)
+
+omit [SFinite P] in
+/-- Processes with almost surely continuous paths over a separable time domain are
+indistinguishable once they agree almost surely at each fixed time. Only a countable dense
+set of times is used, so no measurability of the paths is required. -/
+theorem indist_of_forall_ae_eq {ι : Type*} [TopologicalSpace ι] [TopologicalSpace.SeparableSpace ι]
+    {X X' : ι → Ω → Y} (hX : ∀ᵐ ω ∂P, Continuous fun t ↦ X t ω)
+    (hX' : ∀ᵐ ω ∂P, Continuous fun t ↦ X' t ω) (h : ∀ t, X t =ᵐ[P] X' t) :
+    ProbabilityTheory.Indistinguishable P X X' := by
+  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense ι
+  filter_upwards [hX, hX', (ae_ball_iff hDc).2 fun t _ ↦ h t] with ω hω hω' hD
+  exact congr_fun (Continuous.ext_on hDd hω hω' fun t ht ↦ hD t ht)
 
 end TauCeti

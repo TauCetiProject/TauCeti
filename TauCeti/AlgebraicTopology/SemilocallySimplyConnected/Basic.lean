@@ -130,9 +130,9 @@ theorem SemilocallySimplyConnectedSpace.of_locallyContractibleSpace
   semilocallySimplyConnectedAt x := by
     obtain ⟨V, hVU, hV, hnull⟩ := h x Set.univ Filter.univ_mem
     -- The inclusion `↥V → X` (factoring through `↥univ`) is null-homotopic.
-    let j : C(V, X) := ⟨Subtype.val, continuous_subtype_val⟩
+    let j : C(V, X) := ⟨Subtype.val, continuous_subtypeVal⟩
     have hnj : j.Nullhomotopic :=
-      hnull.comp_right (⟨Subtype.val, continuous_subtype_val⟩ : C((Set.univ : Set X), X))
+      hnull.comp_right (⟨Subtype.val, continuous_subtypeVal⟩ : C((Set.univ : Set X), X))
     refine semilocallySimplyConnectedAt_def.mpr ⟨V, hV, fun γ hγ => ?_⟩
     exact Path.Homotopic.refl_of_forall_mem_of_nullhomotopic hnj γ (Set.range_subset_iff.mp hγ)
 

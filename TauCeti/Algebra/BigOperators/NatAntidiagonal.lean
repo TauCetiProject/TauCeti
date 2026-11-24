@@ -28,7 +28,10 @@ derivation `D` acts on one factor at a time, into a recursion for the degree-`k`
 double product, as in generating-function arguments.
 
 The sum over all antidiagonals `i + j = k` with `k < N` is the sum over the triangle `i < N`,
-`j < N - i`, so that the inner sum can be evaluated for each fixed `i`.
+`j < N - i`, so that the inner sum can be evaluated for each fixed `i`. A sum over a rectangle
+`i < N`, `j < K` is the sum over the antidiagonals below any `L ≤ min N K` plus the terms with
+`i + j ≥ L`; when the antidiagonal sums are `e` at `0` and `0` beyond, as in the order-by-order
+equations of a formal inverse, the first part is `e`.
 
 ## Main results
 
@@ -38,6 +41,10 @@ The sum over all antidiagonals `i + j = k` with `k < N` is the sum over the tria
   `i + j = k + 1`.
 * `Finset.Nat.sum_range_sum_antidiagonal`: the sum over the antidiagonals below `N` as a sum over a
   triangle.
+* `Finset.Nat.sum_range_sum_range_sub_eq`: the sum over a triangle when the antidiagonal sums
+  vanish beyond the first.
+* `Finset.Nat.sum_range_sum_range_eq_add`: the split of a sum over a rectangle into the
+  antidiagonals below `L` and the remaining terms.
 -/
 
 public section
@@ -84,5 +91,30 @@ theorem sum_range_sum_antidiagonal [AddCommMonoid M] (g : ℕ → ℕ → M) (N 
       ∑ i ∈ range N, ∑ j ∈ range (N - i), g i j := by
   simp_rw [sum_antidiagonal_eq_sum_range_succ g]
   exact sum_range_diag_flip N g
+
+/-- If the sum over the antidiagonal `i + j = k` is `e` for `k = 0` and `0` otherwise, then the sum
+over the triangle `i < N`, `j < N - i` is `e` for every `N ≠ 0`. -/
+theorem sum_range_sum_range_sub_eq [AddCommMonoid M] {g : ℕ → ℕ → M} {e : M}
+    (hg : ∀ k, ∑ i ∈ range (k + 1), g i (k - i) = if k = 0 then e else 0) {N : ℕ} (hN : N ≠ 0) :
+    ∑ i ∈ range N, ∑ j ∈ range (N - i), g i j = e := by
+  rw [← sum_range_diag_flip, sum_congr rfl fun k _ ↦ hg k]
+  simp [Nat.pos_of_ne_zero hN]
+
+/-- A sum over the rectangle `i < N`, `j < K` splits into the sum over the antidiagonals below
+`L ≤ min N K`, written as the triangle `i < L`, `j < L - i`, and the remaining terms, written as
+`j = L - i + l` for `l < K - (L - i)`. -/
+theorem sum_range_sum_range_eq_add [AddCommMonoid M] (g : ℕ → ℕ → M) {N K L : ℕ} (hN : L ≤ N)
+    (hK : L ≤ K) :
+    ∑ i ∈ range N, ∑ j ∈ range K, g i j =
+      ∑ i ∈ range L, ∑ j ∈ range (L - i), g i j +
+        ∑ i ∈ range N, ∑ l ∈ range (K - (L - i)), g i (L - i + l) := by
+  have hsplit (i : ℕ) : ∑ j ∈ range K, g i j =
+      ∑ j ∈ range (L - i), g i j + ∑ l ∈ range (K - (L - i)), g i (L - i + l) := by
+    rw [← sum_range_add, Nat.add_sub_cancel' (by omega)]
+  have hlow : ∑ i ∈ range N, ∑ j ∈ range (L - i), g i j =
+      ∑ i ∈ range L, ∑ j ∈ range (L - i), g i j := by
+    rw [← Nat.add_sub_cancel' hN, sum_range_add]
+    simp
+  rw [sum_congr rfl fun i _ ↦ hsplit i, sum_add_distrib, hlow]
 
 end Finset.Nat

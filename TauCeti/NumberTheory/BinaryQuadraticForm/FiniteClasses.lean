@@ -69,15 +69,15 @@ theorem finite_orbitRel_quotient_of_forall_discrim_eq {D : ℤ} (hD : D ≠ 0)
     Finite (orbitRel.Quotient SL(2, ℤ) s) := by
   obtain ⟨S, hS⟩ := exists_finset_forall_exists_smul_mem hD
   -- the members of `s` in `S` form a finite set meeting every class
-  let R := {f : s // f.1 ∈ S}
+  let R := {f : s // f.val ∈ S}
   have : Finite R :=
-    .of_injective (fun f : R ↦ (⟨f.1.1, f.2⟩ : S)) fun f g h ↦ by
+    .of_injective (fun f : R ↦ (⟨f.val.val, f.property⟩ : S)) fun f g h ↦ by
       apply Subtype.ext
       apply Subtype.ext
       simpa using congrArg Subtype.val h
-  refine .of_surjective (fun f : R ↦ (Quotient.mk'' f.1 : orbitRel.Quotient SL(2, ℤ) s))
+  refine .of_surjective (fun f : R ↦ (Quotient.mk'' f.val : orbitRel.Quotient SL(2, ℤ) s))
     (Quotient.ind' fun f ↦ ?_)
-  obtain ⟨γ, hγ⟩ := hS f.1 (hs f.1 f.2)
+  obtain ⟨γ, hγ⟩ := hS f.val (hs f.val f.property)
   exact ⟨⟨γ • f, hγ⟩, Quotient.sound' ⟨γ, rfl⟩⟩
 
 /-- There are finitely many proper equivalence classes of primitive integral binary quadratic
@@ -90,8 +90,8 @@ instance finite_orbitRel_quotient_primitiveForms {D : ℤ} :
     refine .of_surjective (fun u : ℤˣ ↦
       Quotient.mk'' (⟨splitTriangularForm 0 u, by simp [isCoprime_zero_left]⟩ : primitiveForms 0))
       (Quotient.ind' fun f ↦ ?_)
-    obtain ⟨hd, hp⟩ := (mem_primitiveForms 0 f.1).1 f.2
-    obtain ⟨γ, c, hγ, hc⟩ := exists_smul_eq_splitTriangularForm f.1 0 (by simpa using hd) hp
+    obtain ⟨hd, hp⟩ := (mem_primitiveForms 0 f.val).1 f.property
+    obtain ⟨γ, c, hγ, hc⟩ := exists_smul_eq_splitTriangularForm f.val 0 (by simpa using hd) hp
     exact ⟨(isCoprime_zero_left.mp hc).unit, Quotient.sound' ⟨γ, Subtype.ext hγ⟩⟩
   · exact finite_orbitRel_quotient_of_forall_discrim_eq hD _ fun f hf ↦
       ((mem_primitiveForms D f).1 hf).1

@@ -6,26 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Martingale.Basic
-public import TauCeti.Probability.Martingale.ContinuousStopping
+public import TauCeti.Probability.Martingale.Local.Stability
 public import TauCeti.Probability.Martingale.Local.Version
+import TauCeti.Probability.Martingale.ContinuousStopping
 import TauCeti.Probability.Process.ContinuousAE
+import TauCeti.Probability.Process.LocalProperty
 import TauCeti.Probability.Process.Stopping
 
 /-!
 # Linear combinations of local martingales on raw filtrations
 
-Continuous real-linear maps, deterministic scalar multiples, negations, and perturbations by
-strongly progressive processes indistinguishable from zero (`martingale_add_of_indist_zero`,
-`martingale_sub_of_indist_right`) preserve native local martingales (`ProbabilityTheory.Locally`)
-on linearly ordered time indices with a bottom element. On `ℝ≥0` under a finite measure,
-predictable versions and continuous-time stopping show that strongly progressive processes
-indistinguishable from sums, differences, finite sums, or stopped processes of almost-surely
-continuous native local martingales remain native local martingales on the same raw filtration.
-
-## References
-
-* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, 2nd ed., Springer, 1991,
-  Chapter 1, §5.
+Continuous real-linear maps, scalar multiples, negations, and strongly progressive perturbations
+indistinguishable from zero (`martingale_add_of_indist_zero`, `martingale_sub_of_indist_right`)
+preserve native local martingales (`ProbabilityTheory.Locally`). On `ℝ≥0` under a finite measure,
+predictable versions and continuous-time stopping extend this to sums and finite sums of a.s.
+continuous native local martingales.
 -/
 
 public section
@@ -42,8 +37,7 @@ variable {ι Ω E F : Type*} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {X : ι → Ω → E}
 
-/-- Applying a continuous real-linear map preserves native local martingales, without any path
-regularity, progressivity, or finite-measure assumption. -/
+/-- Applying a continuous real-linear map preserves native local martingales. -/
 theorem ContinuousLinearMap.comp_locally_martingale (L : E →L[ℝ] F)
     (hX : Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P) :
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun t ω ↦ L (X t ω)) P := by
@@ -64,7 +58,7 @@ theorem martingale_neg (hX : Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P) :
   (-ContinuousLinearMap.id ℝ E).comp_locally_martingale hX
 
 /-- Perturbing a native local martingale by a strongly progressive process indistinguishable from
-zero preserves native locality, with no regularity or finiteness assumption on `X` or `P`. -/
+zero preserves native locality. -/
 theorem martingale_add_of_indist_zero
     [SecondCountableTopology ι] [TopologicalSpace.PseudoMetrizableSpace ι]
     [MeasurableSpace ι] [BorelSpace ι] {D : ι → Ω → E}
@@ -73,25 +67,18 @@ theorem martingale_add_of_indist_zero
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ (X + D) P := by
   have hloc := hX.isLocalizingSequence_localSeq
   refine ⟨hX.localSeq, hloc, fun n ↦ (hX.stoppedProcess_localSeq n).congr (fun t ↦ ?_) fun t ↦ ?_⟩
-  · have hτ := hloc.isStoppingTime n
-    have h2 : StronglyMeasurable[ℱ t] (stoppedProcess
-        (fun s ↦ {ω | (⊥ : WithTop ι) < hX.localSeq n ω}.indicator (D s)) (hX.localSeq n) t) := by
-      rw [stoppedProcess_indicator_comm']
-      exact ((hD.stoppedProcess hτ).stronglyAdapted t).indicator
-        (ℱ.mono bot_le _ (hτ.measurableSet_gt ⊥))
-    convert ((hX.stoppedProcess_localSeq n).stronglyAdapted t).add h2 using 1
+  · convert ((hX.stoppedProcess_localSeq n).stronglyAdapted t).add
+      ((ℱ.isStable_isStronglyProgressive D hD _ (hloc.isStoppingTime n)).stronglyAdapted t) using 1
     ext; simp only [Pi.add_apply, stoppedProcess_indicator_pos_apply]; split_ifs <;> simp
   · exact hD0.mono fun _ hω ↦ by simp [stoppedProcess_indicator_pos_apply, hω _]
 
 /-- Replacing the subtrahend `A` of a native local martingale `X - A` by an indistinguishable
-strongly progressive process `A'` preserves native locality, with no regularity or finiteness
-assumption on `X` or `P`. -/
+strongly progressive process `A'` preserves native locality. -/
 theorem martingale_sub_of_indist_right
     [SecondCountableTopology ι] [TopologicalSpace.PseudoMetrizableSpace ι]
     [MeasurableSpace ι] [BorelSpace ι] {A A' : ι → Ω → E}
     (hXA : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (X - A) P)
-    (hA : IsStronglyProgressive ℱ A) (hA' : IsStronglyProgressive ℱ A')
-    (hAA' : A ≡ᵐ[P] A') :
+    (hA : IsStronglyProgressive ℱ A) (hA' : IsStronglyProgressive ℱ A') (hAA' : A ≡ᵐ[P] A') :
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ (X - A') P := by
   convert hXA.martingale_add_of_indist_zero (hA.sub hA')
     (hAA'.mono fun _ hω t ↦ sub_eq_zero.2 (hω t)) using 1
@@ -115,11 +102,12 @@ private theorem locally_martingale_add_progressive
   have hτ := hX.isLocalizingSequence_localSeq; have hσ := hY.isLocalizingSequence_localSeq
   refine ⟨min hX.localSeq hY.localSeq, hτ.min hσ, fun n ↦ ?_⟩
   convert ((hX.stoppedProcess_localSeq n).stoppedProcess_indicator_of_ae_isRightContinuous
-      (hXprog.stoppedProcess_indicator_pos (hτ.isStoppingTime n))
-      (hcX.mono fun _ ↦ IsRightContinuous.stoppedProcess_indicator) (hσ.isStoppingTime n)).add
+      (ℱ.isStable_isStronglyProgressive X hXprog _ (hτ.isStoppingTime n))
+      (ℱ.isStable_ae_isRightContinuous P X hcX _ (hτ.isStoppingTime n)) (hσ.isStoppingTime n)).add
     ((hY.stoppedProcess_localSeq n).stoppedProcess_indicator_of_ae_isRightContinuous
-      (hYprog.stoppedProcess_indicator_pos (hσ.isStoppingTime n))
-      (hcY.mono fun _ ↦ IsRightContinuous.stoppedProcess_indicator) (hτ.isStoppingTime n)) using 1
+      (ℱ.isStable_isStronglyProgressive Y hYprog _ (hσ.isStoppingTime n))
+      (ℱ.isStable_ae_isRightContinuous P Y hcY _ (hσ.isStoppingTime n)) (hτ.isStoppingTime n))
+    using 1
   simp only [stoppedProcess_indicator_comm', stoppedProcess_stoppedProcess]
   ext _ ω; by_cases h1 : 0 < hX.localSeq n ω <;> by_cases h2 : 0 < hY.localSeq n ω <;>
     simp [stoppedProcess, Pi.inf_apply, lt_min_iff, inf_comm, h1, h2]
@@ -191,20 +179,5 @@ theorem IsStronglyProgressive.locally_martingale_sum {ι : Type*} {s : Finset ι
         (fun i hi ↦ hc i (Finset.mem_insert_of_mem hi)))
       (hc a (Finset.mem_insert_self a s)) hcs using 1
     ext; simp [Finset.sum_insert ha]
-
-/-- Stopping a strongly progressive, almost-surely right-continuous native local martingale at an
-arbitrary stopping time preserves native locality on the same raw filtration. -/
-theorem IsStronglyProgressive.locally_martingale_stoppedProcess
-    (hXprog : IsStronglyProgressive ℱ X) (hX : Locally (fun U ↦ Martingale U ℱ P) ℱ X P)
-    (hcX : ∀ᵐ ω ∂P, IsRightContinuous (X · ω)) {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) :
-    Locally (fun U ↦ Martingale U ℱ P) ℱ (MeasureTheory.stoppedProcess X τ) P := by
-  have hloc := hX.isLocalizingSequence_localSeq
-  refine ⟨hX.localSeq, hloc, fun n ↦ ?_⟩
-  convert (hX.stoppedProcess_localSeq n).stoppedProcess_of_ae_isRightContinuous
-    (hXprog.stoppedProcess_indicator_pos (hloc.isStoppingTime n))
-    (hcX.mono fun _ ↦ IsRightContinuous.stoppedProcess_indicator) hτ using 1
-  simp only [stoppedProcess_indicator_comm', stoppedProcess_stoppedProcess]
-  ext _ ω; by_cases hpos : 0 < hX.localSeq n ω <;>
-    simp [MeasureTheory.stoppedProcess, inf_comm, hpos]
 
 end MeasureTheory
