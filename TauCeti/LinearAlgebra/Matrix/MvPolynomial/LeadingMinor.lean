@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Subst
+public import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.LinearAlgebra.Matrix.Block
-import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.RingTheory.MvPolynomial.DeterminantalIdeal
 
 /-!
@@ -268,12 +268,12 @@ theorem mvPolynomialMatrixRep_leadingMinorProd {g : GL ι R × GL ι R}
 unitriangular `g₂` fix every product of leading principal minors. -/
 theorem mvPolynomialMatrixRep_leadingMinorProd_of_unitriangular {g : GL ι R × GL ι R}
     (h₁ : (g.1 : Matrix ι ι R).IsLowerTriangular) (h₁' : ∀ j, g.1 j j = 1)
-    (h₂ : (g.2 : Matrix ι ι R).IsUpperTriangular) (h₂' : ∀ j, g.2 j j = 1) (m : ι → ℕ) :
+    (h₂ : (g.2 : Matrix ι ι R).IsUpperUnitriangular) (m : ι → ℕ) :
     mvPolynomialMatrixRep R ι g (leadingMinorProd R m) = leadingMinorProd R m := by
   have hdiag (j : ι) : (g.1⁻¹ : GL ι R) j j = 1 := by
     rw [coe_units_inv]
     exact inv_apply_diag_of_isLowerTriangular h₁ (h₁' j)
-  simp [mvPolynomialMatrixRep_leadingMinorProd h₁ h₂, hdiag, h₂']
+  simp [mvPolynomialMatrixRep_leadingMinorProd h₁ h₂.isUpperTriangular, hdiag, h₂.apply_diag]
 
 /-- **The torus weight of `Δ_λ`.** The diagonal torus acts on `Δ_λ` through the weight
 `(-c, c)`: `(diag t₁, diag t₂) • Δ_λ = ∏ⱼ (t₁ⱼ⁻¹ t₂ⱼ) ^ cⱼ • Δ_λ`. -/
