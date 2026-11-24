@@ -45,8 +45,8 @@ Integrating by parts against this pairing gives the **formal adjoint**
   the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
 * **Weights.** Multiplying `η` by a function `β(s)` gives `β D^* η - β' η`
   (`floerLinearizationAdjoint_smul_fst`); for a function `f` of both variables the derivative of
-  `f` in `t` also enters, through `η ∘ J` (`floerLinearizationAdjoint_fun_smul`), so a cutoff
-  costs at most `2 (M (1 + B))² ‖η‖²` in `‖D^* (f η)‖²`
+  `f` in `t` also enters, through `η ∘ J` (`floerLinearizationAdjoint_fun_smul`), so for
+  `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`, `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²`
   (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). In particular the weight `e^{δ s}` shifts
   the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
   `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`

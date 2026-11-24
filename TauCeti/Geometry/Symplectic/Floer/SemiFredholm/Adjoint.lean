@@ -75,7 +75,7 @@ In the namespace `TauCeti.SymplecticForm`:
 * `exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint`: the estimate on the
   end at `+∞` of a map asymptotic there to a nondegenerate orbit, for covector fields supported far
   out on that end, for the datum `K = H_t dt`.
-* `exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint`: the
+* `exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add`: the
   `L²` estimate `∫_K (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C ∫_K (‖D_u^* η‖² + ‖η‖²)` for covector fields
   supported in a compact set `K` along which `J` is compatible, with no asymptotic condition. After
   the reflection, it is the `L²` estimate of
@@ -371,12 +371,25 @@ end EndLoop
 
 /-! ### Transferring the estimate through `ω` and the reflection -/
 
+/-- The reflection `ρ` preserves integrals: the integral of `g ∘ ρ` over `ρ⁻¹ s` is the integral
+of `g` over `s`. -/
+private theorem setIntegral_preimage_reflectL (g : ℝ × ℝ → ℝ) (s : Set (ℝ × ℝ)) :
+    ∫ w in reflectL ⁻¹' s, g (reflectL w) = ∫ z in s, g z := by
+  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
+    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
+  exact hmp.setIntegral_preimage_emb
+    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) g s
+
 /-- The reflection `ρ` carries `[-b, -a] × [0, 1]` onto `[a, b] × [0, 1]`, preserving
 integrals. -/
 private theorem setIntegral_comp_reflectL (g : ℝ × ℝ → ℝ) (a b : ℝ) :
     ∫ z in Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1, g (reflectL z) =
       ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, g z := by
-  simpa [reflectL_apply] using (setIntegral_Icc_neg_prod_eq g (-b) (-a) (Icc 0 1)).symm
+  have h : reflectL ⁻¹' (Icc a b ×ˢ Icc (0 : ℝ) 1) = Icc (-b) (-a) ×ˢ Icc 0 1 := by
+    ext z
+    simp only [mem_preimage, reflectL_apply, mem_prod, mem_Icc, le_neg, neg_le]
+    tauto
+  rw [← h, setIntegral_preimage_reflectL]
 
 /-- Pointwise, the `W^{1,2}` density of a covector field `η` at `ρ w` is at most `‖ω♭‖²` times
 that of the reflected vector field `ζ = ω♭⁻¹ ∘ η ∘ ρ` at `w`. -/
@@ -915,15 +928,6 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint
 
 /-! ### The estimate on compact parts of the domain -/
 
-/-- The reflection `ρ` preserves integrals: the integral of `g ∘ ρ` over `ρ⁻¹ s` is the integral
-of `g` over `s`. -/
-private theorem setIntegral_preimage_reflectL (g : ℝ × ℝ → ℝ) (s : Set (ℝ × ℝ)) :
-    ∫ w in reflectL ⁻¹' s, g (reflectL w) = ∫ z in s, g z := by
-  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
-    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
-  exact hmp.setIntegral_preimage_emb
-    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) g s
-
 private theorem reflectL_reflectL (z : ℝ × ℝ) : reflectL (reflectL z) = z := by
   simp [reflectL_apply]
 
@@ -1017,7 +1021,7 @@ for the formal adjoint `D_u^*` of the linearized Floer operator. This is the adj
 after the reflection `ρ (s, t) = (-s, t)` and `ω`, `D_u^*` is a real Cauchy–Riemann operator with
 the compatible leading coefficient `J(ρ w, u (ρ w))`, to which the `L²` estimate of
 `TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure` applies. -/
-theorem exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint
+theorem exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} (hK : IsCompact K)
     (hJ : ∀ z ∈ K, ContDiffAt ℝ 1
