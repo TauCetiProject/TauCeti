@@ -193,7 +193,7 @@ lemma principalPartMapOfMul_mk (D : SchemeWeilDivisor X) (x : CodimensionOnePoin
     (f : X.functionField) :
     principalPartMapOfMul g D x (Submodule.Quotient.mk f) =
       Submodule.Quotient.mk (((Additive.toMul g : X.functionFieldˣ) : X.functionField) * f) :=
-  (rfl)
+  (Submodule.mapQ_apply (x := f) ..).trans (congrArg _ (LinearMap.mulLeft_apply ..))
 
 /-- Multiplication by a nonzero rational function `g`, as a morphism of principal-parts sheaves
 `principalParts D ⟶ principalParts (D - div g)`. It is the map induced on the cokernels of the

@@ -18,7 +18,8 @@ sheaf of a canonical divisor. A separating rational function `t` gives the ratio
 `dt`; its Weil divisor `K` identifies a regular differential `f dt` with a section `f` of
 `𝒪_X(K)`. The isomorphism is characterized by this rational-coordinate formula, and changing
 the separating function from `t` to `t'` composes it with multiplication by `dt/dt'`
-(`relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι`). The
+(`relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι`); the divisor of `dt'` is
+`K - div (dt/dt')` (`eq_sub_principalDivisor_derivativeOfSeparating`). The
 codimension-one points need not be rational, and the constant field need not be perfect: the
 local comparison only uses that the differentials of each codimension-one local ring are free of
 rank one, which follows from invertibility of the differential sheaf. In particular this applies
@@ -215,6 +216,20 @@ variable {t' : X.functionField} (ht' : Transcendental k t')
     weilDifferentialOrder hF hk
       (weilDifferentialOfSeparating hF ht').property
       (coe_weilDifferentialOfSeparating_ne_zero hF ht') (X.toPlace (k := k) (y : X)))
+
+include hK hK' in
+omit [IsLocallyNoetherian X] [SheafOfModules.isInvertible X (X.relativeDifferentials k)] in
+/-- The divisors of `dt` and of `dt'` differ by the principal divisor of `dt/dt'`:
+`K' = K - div (dt/dt')`, by the chain rule `dt = (dt/dt') dt'`. -/
+lemma eq_sub_principalDivisor_derivativeOfSeparating [IsNoetherian X] :
+    K' = K - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
+      (Additive.ofMul (Units.mk0 (derivativeOfSeparating ht' t)
+        (derivativeOfSeparating_ne_zero ht'))) := by
+  ext y
+  rw [hK', SchemeWeilDivisor.coeff_sub_principalDivisor, hK, toMul_ofMul, Units.val_mk0,
+    ← CodimensionOnePoint.toPlace_ord (k := k),
+    Place.ord_derivativeOfSeparating_eq_sub _ hF hk ht' ht]
+  ring
 
 /-- **Change of separating function.** Reading a differential in the basis `dt'` instead of
 `dt` multiplies its rational coefficient by `dt/dt'`: going from `𝒪_X(K)` back to `Ω_{X/k}`

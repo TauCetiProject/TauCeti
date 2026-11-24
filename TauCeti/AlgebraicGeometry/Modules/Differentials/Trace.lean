@@ -214,20 +214,6 @@ variable {t' : X.functionField} (ht' : Transcendental k t')
     weilDifferentialOrder hF hk (weilDifferentialOfSeparating hF ht').property
       (coe_weilDifferentialOfSeparating_ne_zero hF ht') (X.toPlace (k := k) (y : X)))
 
-include hK hK' in
-omit [X.IsSeparated] [SheafOfModules.isInvertible X (X.relativeDifferentials k)] in
-/-- The divisors of `dt` and of `dt'` differ by the principal divisor of `dt/dt'`:
-`K' = K - div (dt/dt')`, by the chain rule `dt = (dt/dt') dt'`. -/
-lemma eq_sub_principalDivisor_derivativeOfSeparating :
-    K' = K - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
-      (Additive.ofMul (Units.mk0 (derivativeOfSeparating ht' t)
-        (derivativeOfSeparating_ne_zero ht'))) := by
-  ext y
-  rw [hK', SchemeWeilDivisor.coeff_sub_principalDivisor, hK, toMul_ofMul, Units.val_mk0,
-    ← CodimensionOnePoint.toPlace_ord (k := k),
-    Place.ord_derivativeOfSeparating_eq_sub _ hF hk ht' ht]
-  ring
-
 /-- **Change of separating function on differential repartitions.** The class of the repartition
 `(a_P dt)_P` is the class of `((dt/dt') a_P dt')_P`, since `dt = (dt/dt') dt'`. -/
 theorem repartitionToRelativeDifferentialsCohomologyOne_eq_repartitionMul
