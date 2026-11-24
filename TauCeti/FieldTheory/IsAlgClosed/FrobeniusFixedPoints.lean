@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Perfect
+import TauCeti.FieldTheory.IsAlgClosed.PolynomialFixedPoint
 import TauCeti.LinearAlgebra.LinearIndependent.Iterate
 import TauCeti.LinearAlgebra.LinearMap.FixedPoints
 
@@ -94,25 +95,16 @@ private theorem exists_ne_zero_sum_pow_eq_self {q : ℕ} (hq : 1 < q) (a : ℕ �
     · intro h
       simp only [mem_range] at h
       omega
-  obtain ⟨h, hgh⟩ : X ^ 2 ∣ g := by
+  have h2 : X ^ 2 ∣ g := by
     rw [X_pow_dvd_iff]
     intro d hd
     rw [hcoeff]
     refine Finset.sum_eq_zero fun i _ ↦ ite_eq_right_iff.2 fun heq ↦ ?_
     have : q ≤ q ^ (n - i + 1) := Nat.le_self_pow (by omega) q
     omega
-  have hh : h ≠ 0 := by
-    rintro rfl
-    exact hg (by rw [hgh, mul_zero])
-  have hdeg : (X * h - 1).natDegree = h.natDegree + 1 := by
-    rw [natDegree_sub_eq_left_of_natDegree_lt] <;> simp [hh]
-  obtain ⟨t, ht⟩ := exists_root (X * h - 1)
-    (degree_ne_of_natDegree_ne (by rw [hdeg]; exact Nat.succ_ne_zero _))
-  have ht' : t * h.eval t = 1 := by simpa [sub_eq_zero] using ht
-  refine ⟨t, fun h0 ↦ by simp [h0] at ht', ?_⟩
-  have := congrArg (Polynomial.eval t) hgh
-  simp only [hg_def, eval_finsetSum, eval_mul, eval_C, eval_pow, eval_X] at this
-  rw [this, sq, mul_assoc, ht', mul_one]
+  obtain ⟨t, ht0, ht⟩ := exists_ne_zero_eval_eq_self hg h2
+  refine ⟨t, ht0, ?_⟩
+  simpa only [hg_def, eval_finsetSum, eval_mul, eval_C, eval_pow, eval_X] using ht
 
 end IsAlgClosed
 
