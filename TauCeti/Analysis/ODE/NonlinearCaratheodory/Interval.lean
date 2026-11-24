@@ -48,6 +48,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {F : ℝ → E �
 
 variable {I : Set ℝ}
 
+/-- For `t₀` and `t` in an interval `I`, the closed interval between them contains both and lies
+in `I`. -/
+private theorem mem_Icc_min_max (hI : I.OrdConnected) (ht₀ : t₀ ∈ I) {t : ℝ} (ht : t ∈ I) :
+    t₀ ∈ Icc (min t₀ t) (max t₀ t) ∧ t ∈ Icc (min t₀ t) (max t₀ t) ∧
+      Icc (min t₀ t) (max t₀ t) ⊆ I := by
+  rw [Icc_min_max]
+  exact ⟨left_mem_uIcc, right_mem_uIcc, hI.uIcc_subset ht₀ ht⟩
+
 variable (hF : ∀ x, LocallyIntegrableOn (fun t ↦ F t x) I)
   (hL : LocallyIntegrableOn (fun t ↦ (L t : ℝ)) I)
   (hLip : ∀ᵐ t ∂volume.restrict I, LipschitzWith (L t) (F t))
@@ -85,26 +93,19 @@ theorem exists_continuousOn_forall_mem_eq_picard_of_lipschitzWith [CompleteSpace
       (hL.integrableOn_compact_subset hab isCompact_Icc)
       (ae_restrict_of_ae_restrict_of_subset hab hLip) h₀ x₀
   choose! y hyc hye using hex
-  have hJ {t : ℝ} (ht : t ∈ I) : t₀ ∈ Icc (min t₀ t) (max t₀ t) ∧
-      Icc (min t₀ t) (max t₀ t) ⊆ I := by
-    rw [Icc_min_max]
-    exact ⟨left_mem_uIcc, hI.uIcc_subset ht₀ ht⟩
-  have htJ (t : ℝ) : t ∈ Icc (min t₀ t) (max t₀ t) := by
-    rw [Icc_min_max]
-    exact right_mem_uIcc
   -- the solution on any compact subinterval agrees with `x` there
   have hagree {a b : ℝ} (h₀ : t₀ ∈ Icc a b) (hab : Icc a b ⊆ I) {t : ℝ} (ht : t ∈ Icc a b) :
       y (min t₀ t) (max t₀ t) t = y a b t := by
-    have ht' := hJ (hab ht)
-    refine eqOn_inter_of_Icc_subset hF hL hLip ht'.2 ht'.1 h₀ (hyc _ _ ht'.1 ht'.2)
-      (hyc _ _ h₀ hab) (hye _ _ ht'.1 ht'.2) (hye _ _ h₀ hab) ⟨htJ t, ht⟩
+    obtain ⟨h₀', htJ, hsub⟩ := mem_Icc_min_max hI ht₀ (hab ht)
+    refine eqOn_inter_of_Icc_subset hF hL hLip hsub h₀' h₀ (hyc _ _ h₀' hsub)
+      (hyc _ _ h₀ hab) (hye _ _ h₀' hsub) (hye _ _ h₀ hab) ⟨htJ, ht⟩
   refine ⟨fun t ↦ y (min t₀ t) (max t₀ t) t, fun t ht ↦ ?_, fun t ht ↦ ?_⟩
   · obtain ⟨c, d, hcd, h₀, htcd, hnhds⟩ := hI.exists_Icc_mem_nhdsWithin ht₀ ht
     refine (((hyc c d h₀ hcd) t htcd).mono_of_mem_nhdsWithin hnhds).congr_of_eventuallyEq
       (Filter.mem_of_superset hnhds fun s hs ↦ hagree h₀ hcd hs) (hagree h₀ hcd htcd)
-  · obtain ⟨h₀, hsub⟩ := hJ ht
+  · obtain ⟨h₀, htJ, hsub⟩ := mem_Icc_min_max hI ht₀ ht
     dsimp only
-    rw [hye _ _ h₀ hsub t (htJ t), ODE.picard_apply, ODE.picard_apply]
+    rw [hye _ _ h₀ hsub t htJ, ODE.picard_apply, ODE.picard_apply]
     congr 1
     refine integral_congr fun s hs ↦ ?_
     have hs' : s ∈ Icc (min t₀ t) (max t₀ t) := by rwa [Icc_min_max]
@@ -119,12 +120,7 @@ theorem eqOn_of_forall_mem_eq_picard_of_lipschitzWith (hI : I.OrdConnected) (ht�
     (h₂ : ∀ t ∈ I, x₂ t = ODE.picard F t₀ x₀ x₂ t) :
     EqOn x₁ x₂ I := by
   intro t ht
-  obtain ⟨h₀, hsub⟩ : t₀ ∈ Icc (min t₀ t) (max t₀ t) ∧ Icc (min t₀ t) (max t₀ t) ⊆ I := by
-    rw [Icc_min_max]
-    exact ⟨left_mem_uIcc, hI.uIcc_subset ht₀ ht⟩
-  have htJ : t ∈ Icc (min t₀ t) (max t₀ t) := by
-    rw [Icc_min_max]
-    exact right_mem_uIcc
+  obtain ⟨h₀, htJ, hsub⟩ := mem_Icc_min_max hI ht₀ ht
   exact eqOn_inter_of_Icc_subset hF hL hLip hsub h₀ h₀ (hx₁.mono hsub) (hx₂.mono hsub)
     (fun s hs ↦ h₁ s (hsub hs)) (fun s hs ↦ h₂ s (hsub hs)) ⟨htJ, htJ⟩
 
