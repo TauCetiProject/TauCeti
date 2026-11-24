@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Data.Matrix.Pullback
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
+public import TauCeti.RingTheory.LocalRing.Pullback
 
 /-!
 # Invertible matrices and algebraic `K₁` of a fibre product of rings
@@ -74,35 +75,16 @@ variable {R S T : Type*} [Ring R] [Ring S] [Semiring T] (f : R →+* T) (g : S �
 
 /-- **Invertible matrices over a fibre product.** `GLₙ(R ×_T S)` is isomorphic to the subgroup of
 pairs `(u₁, u₂)` in `GLₙ(R) × GLₙ(S)` whose images in `GLₙ(T)` agree, by sending an invertible
-matrix to its two entrywise projections. -/
+matrix to its two entrywise projections. This is `RingHom.pullbackUnitsEquiv` for the matrix
+rings, transported along `RingHom.pullbackMatrixEquiv`. -/
 def pullbackGLEquiv :
     GL n (f.pullback g) ≃*
       ((Units.map (f.mapMatrix (m := n) : Matrix n n R →* Matrix n n T)).comp
           (MonoidHom.fst (GL n R) (GL n S))).eqLocus
         ((Units.map (g.mapMatrix (m := n) : Matrix n n S →* Matrix n n T)).comp
-          (MonoidHom.snd (GL n R) (GL n S))) where
-  toFun u := ⟨(Units.map
-        ((f.pullbackFst g).mapMatrix (m := n) : Matrix n n (f.pullback g) →* Matrix n n R) u,
-      Units.map
-        ((f.pullbackSnd g).mapMatrix (m := n) : Matrix n n (f.pullback g) →* Matrix n n S) u),
-    by ext i j; exact ((u : Matrix n n (f.pullback g)) i j).property⟩
-  invFun v :=
-    { val := (pullbackMatrixEquiv f g).symm
-        ⟨((v.val.1 : Matrix n n R), (v.val.2 : Matrix n n S)), congrArg Units.val v.property⟩
-      inv := (pullbackMatrixEquiv f g).symm
-        ⟨(((v.val.1⁻¹ : GL n R) : Matrix n n R), ((v.val.2⁻¹ : GL n S) : Matrix n n S)), by
-          have h := congrArg Inv.inv v.property
-          rw [← map_inv, ← map_inv] at h
-          exact congrArg Units.val h⟩
-      val_inv := by
-        rw [← map_mul, RingEquiv.symm_apply_eq, map_one]
-        exact Subtype.ext (Prod.ext v.val.1.mul_inv v.val.2.mul_inv)
-      inv_val := by
-        rw [← map_mul, RingEquiv.symm_apply_eq, map_one]
-        exact Subtype.ext (Prod.ext v.val.1.inv_mul v.val.2.inv_mul) }
-  left_inv u := by ext i j <;> simp
-  right_inv v := by ext i j <;> simp
-  map_mul' u v := Subtype.ext (Prod.ext (map_mul _ u v) (map_mul _ u v))
+          (MonoidHom.snd (GL n R) (GL n S))) :=
+  (Units.mapEquiv (pullbackMatrixEquiv f g (n := n)).toMulEquiv).trans
+    ((f.mapMatrix (m := n)).pullbackUnitsEquiv (g.mapMatrix (m := n)))
 
 variable {n}
 
@@ -111,16 +93,18 @@ variable {n}
 theorem coe_pullbackGLEquiv_apply_fst (u : GL n (f.pullback g)) :
     ((pullbackGLEquiv f g n u : GL n R × GL n S).1 : GL n R) =
       Units.map
-        ((f.pullbackFst g).mapMatrix (m := n) : Matrix n n (f.pullback g) →* Matrix n n R) u :=
-  (rfl)
+        ((f.pullbackFst g).mapMatrix (m := n) : Matrix n n (f.pullback g) →* Matrix n n R) u := by
+  ext i j
+  simp [pullbackGLEquiv]
 
 /-- The second component of `pullbackGLEquiv` is the entrywise second projection. -/
 @[simp]
 theorem coe_pullbackGLEquiv_apply_snd (u : GL n (f.pullback g)) :
     ((pullbackGLEquiv f g n u : GL n R × GL n S).2 : GL n S) =
       Units.map
-        ((f.pullbackSnd g).mapMatrix (m := n) : Matrix n n (f.pullback g) →* Matrix n n S) u :=
-  (rfl)
+        ((f.pullbackSnd g).mapMatrix (m := n) : Matrix n n (f.pullback g) →* Matrix n n S) u := by
+  ext i j
+  simp [pullbackGLEquiv]
 
 /-- The invertible matrix over `R ×_T S` glued from a compatible pair `(u₁, u₂)` projects to `u₁`
 over `R`. -/
