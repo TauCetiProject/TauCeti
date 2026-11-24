@@ -514,6 +514,8 @@ theorem quotient_hom_ext {B : ArtinLocalAlg Λ k} {g g' : A.quotient I hI ⟶ B}
   obtain ⟨a, rfl⟩ := A.toQuotient_surjective I hI x
   simpa only [comp_hom_left_hom_apply] using congrArg (fun φ ↦ φ.hom.left.hom a) h
 
+variable (hI)
+
 /-- A morphism `f : A ⟶ B` of `C_Λ` whose kernel contains `I` factors through `A ⧸ I`. -/
 def quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B) (hf : I ≤ RingHom.ker f.hom.left.hom) :
     A.quotient I hI ⟶ B :=
@@ -522,23 +524,23 @@ def quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B) (hf : I ≤ RingHom.ker 
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
     exact augmentation_hom_apply f a
 
-/-- The factorisation `quotientLift f hf` sends the class of `a` to `f a`. -/
+/-- The factorisation `quotientLift hI f hf` sends the class of `a` to `f a`. -/
 @[simp]
 theorem quotientLift_hom_left_hom_apply {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
     (hf : I ≤ RingHom.ker f.hom.left.hom) (a : A.obj.left) :
-    (quotientLift (hI := hI) f hf).hom.left.hom (Ideal.Quotient.mk I a) = f.hom.left.hom a :=
+    (quotientLift hI f hf).hom.left.hom (Ideal.Quotient.mk I a) = f.hom.left.hom a :=
   (rfl)
 
-/-- The factorisation `quotientLift f hf` composed with the quotient morphism is `f`. -/
+/-- The factorisation `quotientLift hI f hf` composed with the quotient morphism is `f`. -/
 @[reassoc (attr := simp)]
 theorem toQuotient_comp_quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
-    (hf : I ≤ RingHom.ker f.hom.left.hom) : A.toQuotient I hI ≫ quotientLift f hf = f :=
+    (hf : I ≤ RingHom.ker f.hom.left.hom) : A.toQuotient I hI ≫ quotientLift hI f hf = f :=
   (rfl)
 
 /-- The factorisation of a surjective morphism through `A ⧸ I` is surjective. -/
 theorem quotientLift_surjective {B : ArtinLocalAlg Λ k} {f : A ⟶ B}
     (hf : I ≤ RingHom.ker f.hom.left.hom) (hsurj : Function.Surjective f.hom.left.hom) :
-    Function.Surjective (quotientLift (hI := hI) f hf).hom.left.hom :=
+    Function.Surjective (quotientLift hI f hf).hom.left.hom :=
   fun b ↦ let ⟨a, ha⟩ := hsurj b
     ⟨(A.toQuotient I hI).hom.left.hom a, by rwa [← comp_hom_left_hom_apply,
       toQuotient_comp_quotientLift]⟩
@@ -546,7 +548,7 @@ theorem quotientLift_surjective {B : ArtinLocalAlg Λ k} {f : A ⟶ B}
 /-- The kernel of the factorisation of `f` through `A ⧸ I` is the image of the kernel of `f`. -/
 theorem ker_quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
     (hf : I ≤ RingHom.ker f.hom.left.hom) :
-    RingHom.ker (quotientLift (hI := hI) f hf).hom.left.hom =
+    RingHom.ker (quotientLift hI f hf).hom.left.hom =
       (RingHom.ker f.hom.left.hom).map (A.toQuotient I hI).hom.left.hom :=
   Ideal.ker_quotient_lift _ hf
 

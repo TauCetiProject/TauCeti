@@ -107,9 +107,9 @@ morphism `B ⧸ J ⟶ A` is a small extension: its kernel `ker f ⧸ J` is a min
 theorem isSmallExtension_quotientLift {A B : ArtinLocalAlg Λ k} {f : B ⟶ A}
     (hf : Function.Surjective f.hom.left.hom) {J : Ideal B.obj.left}
     (hJ : J ⋖ RingHom.ker f.hom.left.hom) :
-    IsSmallExtension (quotientLift (hI := hJ.lt.ne_top) f hJ.le) := by
+    IsSmallExtension (quotientLift hJ.lt.ne_top f hJ.le) := by
   rw [isSmallExtension_iff_isAtom_ker, ker_quotientLift, toQuotient_hom_left_hom]
-  exact ⟨quotientLift_surjective _ hf, (Ideal.isAtom_map_mk_iff_covBy hJ.le).mpr hJ⟩
+  exact ⟨quotientLift_surjective _ _ hf, (Ideal.isAtom_map_mk_iff_covBy hJ.le).mpr hJ⟩
 
 variable (Λ k) in
 /-- The class of small extensions, as a morphism property of `C_Λ`. -/
@@ -136,7 +136,7 @@ theorem multiplicativeClosure_smallExtension {A B : ArtinLocalAlg Λ k} (f : B �
   obtain rfl | hJ0 := eq_or_ne J ⊥
   · exact .of _ ((isSmallExtension_iff_isAtom_ker f).mpr ⟨hf, bot_covBy_iff.mp hJ⟩)
   · -- `f` factors as `B ⟶ B ⧸ J`, of kernel `J < ker f`, followed by a small extension.
-    rw [← toQuotient_comp_quotientLift (hI := hJ.lt.ne_top) f hJ.le]
+    rw [← toQuotient_comp_quotientLift hJ.lt.ne_top f hJ.le]
     exact .comp_of _ _ (ih J hJ.lt _ (toQuotient_surjective _ _ _)
       (by rwa [ker_toQuotient]) (ker_toQuotient _ _ _)) (isSmallExtension_quotientLift hf hJ)
 
