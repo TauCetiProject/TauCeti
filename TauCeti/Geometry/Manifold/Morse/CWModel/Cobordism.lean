@@ -40,9 +40,9 @@ the inclusion there.
 ## Main results
 
 * `TauCeti.IsMorse.exists_relCWComplex_homotopyEquiv_band`: **the relative CW model of a regular
-  cobordism.** `f⁻¹[a, b]` is homotopy equivalent to a CW complex relative to a copy of `f⁻¹(a)`
-  with one `m`-cell for each critical point of index `m` in the band, by a homotopy equivalence
-  restricting to the inclusion on `f⁻¹(a)`.
+  cobordism.** `f⁻¹[a, b]` is homotopy equivalent to a finite CW complex relative to a copy of
+  `f⁻¹(a)` with one `m`-cell for each critical point of index `m` in the band, by a homotopy
+  equivalence restricting to the inclusion on `f⁻¹(a)`.
 * `TauCeti.IsMorse.exists_relCWComplex_homotopyEquiv_upperBand`: the relative CW model of
   `f⁻¹[a, b]` relative to its outgoing boundary `f⁻¹(b)`, with one `m`-cell for each critical
   point of index `dim M - m` in the band.
@@ -75,23 +75,36 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
 regular values of `f` with compact band `f⁻¹[a, b]`. Then the band is homotopy equivalent to a CW
 complex `X` relative to a copy of its incoming boundary `f⁻¹(a)`, with one `m`-cell for each
 critical point of index `m` with value in `(a, b]`: there are a closed embedding
-`j : f⁻¹(a) → X`, a relative CW structure on `X` with base the image of `j`, and a homotopy
+`j : f⁻¹(a) → X`, a finite relative CW structure on `X` with base the image of `j`, and a homotopy
 equivalence `h : X ≃ₕ f⁻¹[a, b]` such that `h ∘ j` is the inclusion `f⁻¹(a) ⊆ f⁻¹[a, b]`. -/
 theorem IsMorse.exists_relCWComplex_homotopyEquiv_band (hf : IsMorse I f) {a b : ℝ}
     (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
     (hb : IsRegularValue I 𝓘(ℝ) f b) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (j : C(f ⁻¹' {a}, X))
       (_ : RelCWComplex (univ : Set X) (range j)) (h : X ≃ₕ f ⁻¹' Icc a b),
-      IsClosedEmbedding j ∧ (∀ x, (h (j x) : M) = x) ∧
+      IsClosedEmbedding j ∧ RelCWComplex.Finite (univ : Set X) ∧ (∀ x, (h (j x) : M) = x) ∧
       Nonempty (∀ m, cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}) := by
+  -- Only finitely many critical points lie in the compact band, so a model with one cell for each
+  -- of them is finite.
+  have hS : (criticalPoints I f ∩ f ⁻¹' Ioc a b).Finite :=
+    (hf.finite_criticalPoints_inter hcompact).subset
+      (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))
+  have := finite_sigma_criticalPoints_inter hS
+  suffices ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (j : C(f ⁻¹' {a}, X))
+      (_ : RelCWComplex (univ : Set X) (range j)) (h : X ≃ₕ f ⁻¹' Icc a b),
+      IsClosedEmbedding j ∧ (∀ x, (h (j x) : M) = x) ∧ Nonempty (∀ m, cell (univ : Set X) m ≃
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}) by
+    obtain ⟨X, _, _, j, _, h, hj, hh, ⟨e⟩⟩ := this
+    exact ⟨X, _, ‹_›, j, ‹_›, h, hj,
+      RelCWComplex.finite_of_finite_cells (.of_equiv _ (Equiv.sigmaCongrRight e).symm), hh, ⟨e⟩⟩
   have hfc : Continuous f := hf.contMDiff.continuous
   rcases hab.eq_or_lt with rfl | hab'
   · -- A band of width zero is its level, a CW complex relative to itself with no cells.
     let := relCWComplexSelf (univ : Set (f ⁻¹' {a})) isClosed_univ
     have (m : ℕ) : IsEmpty ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a a |
         manifoldMorseIndex I f x = m} :=
-      ⟨fun x ↦ (lt_irrefl a) (x.2.1.2.1.trans_le x.2.1.2.2)⟩
+      ⟨fun x ↦ (lt_irrefl a) (x.property.1.2.1.trans_le x.property.1.2.2)⟩
     refine ⟨f ⁻¹' {a}, _, inferInstance, .id _, ?_⟩
     rw [ContinuousMap.coe_id, range_id]
     exact ⟨‹_›, (Homeomorph.setCongr (by rw [Icc_self])).toHomotopyEquiv, .id,
@@ -139,12 +152,12 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_band (hf : IsMorse I f) {a b :
   let c (i : ℕ) : ↥{y ∈ criticalPoints I (f ∘ Subtype.val : V → ℝ) ∩
         (f ∘ Subtype.val) ⁻¹' Ioc s b | manifoldMorseIndex I (f ∘ Subtype.val) y = i} ≃
       ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i} :=
-    { toFun y := ⟨y.1, ⟨mem_criticalPoints_comp_subtypeVal.1 y.2.1.1,
-        has.trans y.2.1.2.1, y.2.1.2.2⟩,
-        (hidx _ (mem_criticalPoints_comp_subtypeVal.1 y.2.1.1)).symm.trans y.2.2⟩
-      invFun x := ⟨⟨x.1, x.2.1.2.1⟩, ⟨mem_criticalPoints_comp_subtypeVal.2 x.2.1.1,
-        lt_of_not_ge fun h ↦ hcrit x x.2.1.1 ⟨x.2.1.2.1.le, h⟩, x.2.1.2.2⟩,
-        (hidx ⟨x.1, x.2.1.2.1⟩ x.2.1.1).trans x.2.2⟩
+    { toFun y := ⟨y.val, ⟨mem_criticalPoints_comp_subtypeVal.1 y.property.1.1,
+        has.trans y.property.1.2.1, y.property.1.2.2⟩,
+        (hidx _ (mem_criticalPoints_comp_subtypeVal.1 y.property.1.1)).symm.trans y.property.2⟩
+      invFun x := ⟨⟨x.val, x.property.1.2.1⟩, ⟨mem_criticalPoints_comp_subtypeVal.2 x.property.1.1,
+        lt_of_not_ge fun h ↦ hcrit x x.property.1.1 ⟨x.property.1.2.1.le, h⟩, x.property.1.2.2⟩,
+        (hidx ⟨x.val, x.property.1.2.1⟩ x.property.1.1).trans x.property.2⟩
       left_inv y := rfl
       right_inv x := rfl }
   refine ⟨X, _, ‹_›, ι, ‹_›, h'.trans k, hι, fun x ↦ ?_,
@@ -162,32 +175,32 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_band (hf : IsMorse I f) {a b :
 a Morse function on a manifold of dimension `n`, and `a ≤ b` regular values of `f` with compact
 band `f⁻¹[a, b]`. Then the band is homotopy equivalent to a CW complex `X` relative to a copy of
 its outgoing boundary `f⁻¹(b)`, with one `m`-cell for each critical point of index `n - m` with
-value in `[a, b)`: there are a closed embedding `j : f⁻¹(b) → X`, a relative CW structure on `X`
-with base the image of `j`, and a homotopy equivalence `h : X ≃ₕ f⁻¹[a, b]` such that `h ∘ j` is
-the inclusion `f⁻¹(b) ⊆ f⁻¹[a, b]`. This is the model of the same band for `-f`, relative to its
-incoming boundary `(-f)⁻¹(-b) = f⁻¹(b)`. -/
+value in `[a, b)`: there are a closed embedding `j : f⁻¹(b) → X`, a finite relative CW structure
+on `X` with base the image of `j`, and a homotopy equivalence `h : X ≃ₕ f⁻¹[a, b]` such that
+`h ∘ j` is the inclusion `f⁻¹(b) ⊆ f⁻¹[a, b]`. This is the model of the same band for `-f`,
+relative to its incoming boundary `(-f)⁻¹(-b) = f⁻¹(b)`. -/
 theorem IsMorse.exists_relCWComplex_homotopyEquiv_upperBand (hf : IsMorse I f) {a b : ℝ}
     (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
     (hb : IsRegularValue I 𝓘(ℝ) f b) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (j : C(f ⁻¹' {b}, X))
       (_ : RelCWComplex (univ : Set X) (range j)) (h : X ≃ₕ f ⁻¹' Icc a b),
-      IsClosedEmbedding j ∧ (∀ x, (h (j x) : M) = x) ∧
+      IsClosedEmbedding j ∧ RelCWComplex.Finite (univ : Set X) ∧ (∀ x, (h (j x) : M) = x) ∧
       Nonempty (∀ m, cell (univ : Set X) m ≃ ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b |
         manifoldMorseIndex I f x + m = Module.finrank ℝ E}) := by
-  obtain ⟨X, _, _, j, C, h, hj, hh, ⟨e⟩⟩ := hf.neg.exists_relCWComplex_homotopyEquiv_band
-    (neg_le_neg hab) (by rwa [preimage_neg_Icc_neg]) (isRegularValue_neg_iff.2 (by rwa [neg_neg]))
-    (isRegularValue_neg_iff.2 (by rwa [neg_neg]))
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := hf.neg_band hcompact ha hb
+  obtain ⟨X, _, _, j, C, h, hj, hfin, hh, ⟨e⟩⟩ :=
+    h₁.exists_relCWComplex_homotopyEquiv_band (neg_le_neg hab) h₂ h₃ h₄
   -- The outgoing boundary of the band is the incoming boundary of the band of `-f`.
   have hL : f ⁻¹' {b} = (-f) ⁻¹' {-b} := by
     ext
     simp
   let j' : C(f ⁻¹' {b}, X) := j.comp ⟨_, (Homeomorph.setCongr hL).continuous⟩
   have hr : range j = range j' := ((Homeomorph.setCongr hL).surjective.range_comp j).symm
-  generalize hD : range j = D at C e
+  generalize hD : range j = D at C hfin e
   obtain rfl : D = range j' := hD.symm.trans hr
   exact ⟨X, _, ‹_›, j', C,
     h.trans (Homeomorph.setCongr (preimage_neg_Icc_neg f a b)).toHomotopyEquiv,
-    hj.comp (Homeomorph.setCongr hL).isClosedEmbedding, fun x ↦ hh _,
+    hj.comp (Homeomorph.setCongr hL).isClosedEmbedding, hfin, fun x ↦ hh _,
     ⟨fun m ↦ (e m).trans (Set.equivOfEq (hf.setOf_neg_band_eq a b m))⟩⟩
 
 end TauCeti

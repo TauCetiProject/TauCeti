@@ -51,6 +51,8 @@ assumption.
 * `TauCeti.AlmostComplexStructure.bilin_eq_zero_of_finrank_le_two` and
   `TauCeti.AlmostComplexStructure.bilin_eq_zero_of_finrank_eq_two`: in real dimension at most two, a
   bilinear map vanishing on every `(v, v)` and `(v, J v)` is zero.
+* `TauCeti.AlmostComplexStructure.bilin_apply_apply_eq_of_finrank_le_two`: in real dimension at
+  most two, `J` preserves every alternating bilinear map.
 * `TauCeti.AlmostComplexStructure.finrank_eq_complexFinrank_of_isMaximalTotallyReal`: a maximal
   totally real subspace has real dimension equal to the complex dimension of the ambient space.
   This is the statement that the totally real tori `T_α`, `T_β` in the symmetric product
@@ -161,6 +163,17 @@ theorem span_pair_eq_top_of_finrank_eq_two (J : AlmostComplexStructure V)
   simpa [Matrix.range_cons_cons_empty, Set.pair_comm] using
     (J.linearIndependent_pair hv).span_eq_top_of_card_eq_finrank (by simpa using hV.symm)
 
+/-- A nonzero real covector on a complex line is nonzero on the complex span of every
+nonzero vector. -/
+theorem sq_apply_add_sq_ne_zero_of_finrank_eq_two (J : AlmostComplexStructure V)
+    (hV : Module.finrank ℝ V = 2) (ℓ : V →ₗ[ℝ] ℝ) (hℓ : ℓ ≠ 0)
+    {v : V} (hv : v ≠ 0) : ℓ (J v) ^ 2 + ℓ v ^ 2 ≠ 0 := by
+  intro h
+  obtain ⟨hJv, hv'⟩ := sq_add_sq_eq_zero.1 h
+  apply hℓ
+  apply LinearMap.ext_on (J.span_pair_eq_top_of_finrank_eq_two hV hv)
+  rintro w (rfl | rfl) <;> simp [hv', hJv]
+
 /-- On a finite-dimensional real module of dimension at most two carrying an almost complex
 structure `J`, every nonzero vector `v` and its image `J v` span the module. -/
 theorem span_pair_eq_top_of_finrank_le_two [FiniteDimensional ℝ V] (J : AlmostComplexStructure V)
@@ -182,6 +195,17 @@ theorem bilin_eq_zero_of_finrank_le_two [FiniteDimensional ℝ V] (J : AlmostCom
   · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1
       ((J.span_pair_eq_top_of_finrank_le_two hV hv).symm ▸ Submodule.mem_top (x := w))
     simp [hself v, hJ v]
+
+/-- **In real dimension at most two, an almost complex structure preserves every alternating
+bilinear map.** If `B` is alternating, then `B (J v) (J w) = B v w`: the defect
+`B (J v) (J w) - B v w` vanishes on `(v, v)` and on `(v, J v)`, hence identically. -/
+theorem bilin_apply_apply_eq_of_finrank_le_two [FiniteDimensional ℝ V]
+    (J : AlmostComplexStructure V) (hV : Module.finrank ℝ V ≤ 2) {W : Type*} [AddCommGroup W]
+    [Module ℝ W] {B : V →ₗ[ℝ] V →ₗ[ℝ] W} (hB : B.IsAlt) (v w : V) : B (J v) (J w) = B v w := by
+  have h := J.bilin_eq_zero_of_finrank_le_two hV
+    (B := B.compl₁₂ J.toLinearMap J.toLinearMap - B) (fun u ↦ by simp [hB.self_eq_zero])
+    (fun u ↦ by simp [← hB.neg u (J u)])
+  simpa [sub_eq_zero] using LinearMap.congr_fun₂ h v w
 
 /-- On a two-dimensional real module carrying an almost complex structure `J`, any bilinear map
 vanishing on `(v, v)` and `(v, J v)` for every `v` vanishes identically. -/

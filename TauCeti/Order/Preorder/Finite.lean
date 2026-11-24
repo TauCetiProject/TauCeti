@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Card
+import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Order.Preorder.Finite
 
 /-!
@@ -14,7 +15,9 @@ import Mathlib.Order.Preorder.Finite
 In a finite preorder `I`, the number `#{k | k < i}` of elements strictly below `i` is a rank
 function: it strictly increases along `<` (`TauCeti.card_filter_lt_lt_card_filter_lt`) and is
 smaller than the cardinality of `I` (`TauCeti.card_filter_lt_lt_card`). Hence every strictly
-increasing chain of `I` has fewer than `Fintype.card I` steps.
+increasing chain of `I` has fewer than `Fintype.card I` steps, and any map from a finite type into
+a preorder admits an injective ranking into `ℕ` strictly increasing along `<`
+(`TauCeti.exists_injective_nat_lt_of_apply_lt`).
 
 A nonzero function on a finite preorder has a maximal point of its support: an index `a` with
 `v a ≠ 0` past which `v` vanishes (`TauCeti.exists_ne_zero_forall_gt_eq_zero`).
@@ -41,6 +44,27 @@ theorem card_filter_lt_lt_card_filter_lt {i j : I} (h : i < j) :
 theorem card_filter_lt_lt_card (i : I) : #{k | k < i} < Fintype.card I := by
   rw [← Finset.card_univ]
   exact Finset.card_lt_card (Finset.filter_ssubset.2 ⟨i, Finset.mem_univ _, lt_irrefl i⟩)
+
+/-- A finite type with a map `f` into a preorder admits an injective ranking into `ℕ` that
+strictly increases along `f i < f j`: order by the number of indices strictly below along `f`,
+breaking ties via `Fintype.equivFin`. -/
+theorem exists_injective_nat_lt_of_apply_lt {ι α : Type*} [Finite ι] [Preorder α] (f : ι → α) :
+    ∃ g : ι → ℕ, Function.Injective g ∧ ∀ i j, f i < f j → g i < g j := by
+  classical
+  have := Fintype.ofFinite ι
+  let : Preorder ι := Preorder.lift f
+  let e := Fintype.equivFin ι
+  let r (i : ι) : Fin (Fintype.card ι) := ⟨#{j | j < i}, card_filter_lt_lt_card i⟩
+  let g (i : ι) : ℕ := finProdFinEquiv (r i, e i)
+  refine ⟨g, fun i j hij ↦ e.injective <| congrArg Prod.snd <|
+    finProdFinEquiv.injective <| Fin.val_injective hij, fun i j hij ↦ ?_⟩
+  have hrank : #{k | k < i} < #{k | k < j} := card_filter_lt_lt_card_filter_lt hij
+  have hmul : Fintype.card ι * (#{k | k < i} + 1) ≤ Fintype.card ι * #{k | k < j} :=
+    Nat.mul_le_mul_left _ hrank
+  rw [Nat.mul_succ] at hmul
+  have hi := (e i).isLt
+  simp only [g, r, finProdFinEquiv_apply_val]
+  omega
 
 /-- A nonzero function on a finite preorder has a maximal point of its support: some `a` with
 `v a ≠ 0` and `v b = 0` for every `b > a`. -/

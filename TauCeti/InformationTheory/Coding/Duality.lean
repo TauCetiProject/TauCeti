@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Matrix.DotProduct
 public import TauCeti.InformationTheory.Coding.DirectSum
 public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.InformationTheory.Coding.EuclideanDual
@@ -141,7 +140,7 @@ theorem euclideanDual_puncture (C : LinearCode F ι) :
     euclideanDual (puncture C s) = shorten (euclideanDual C) s := by
   ext y
   rw [mem_shorten_iff_extend_mem, mem_euclideanDual, mem_euclideanDual]
-  simp only [Subtype.val_injective.dotProduct_extend_zero, mem_puncture]
+  simp only [dotProduct_extend_zero Subtype.val_injective, mem_puncture]
   constructor
   · exact fun h x hx ↦ h _ ⟨x, hx, fun _ ↦ rfl⟩
   · rintro h z ⟨x, hx, hxz⟩
@@ -314,9 +313,9 @@ by taking contragredients. -/
 def monomialAutEquivEuclideanDual (C : Submodule K (ι → K)) :
     monomialAut C ≃* monomialAut (euclideanDual C) where
   toFun f := ⟨(f : (ι → K) ≃ₗ[K] (ι → K)).dotProductContragredient,
-    dotProductContragredient_mem_monomialAut_euclideanDual f.2⟩
+    dotProductContragredient_mem_monomialAut_euclideanDual f.property⟩
   invFun f := ⟨(f : (ι → K) ≃ₗ[K] (ι → K)).dotProductContragredient,
-    mem_monomialAut_euclideanDual_iff.1 f.2⟩
+    mem_monomialAut_euclideanDual_iff.1 f.property⟩
   left_inv f := Subtype.ext <|
     (f : (ι → K) ≃ₗ[K] (ι → K)).dotProductContragredient_dotProductContragredient
   right_inv f := Subtype.ext <|

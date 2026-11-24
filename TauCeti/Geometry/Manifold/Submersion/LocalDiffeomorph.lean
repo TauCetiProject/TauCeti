@@ -9,9 +9,8 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.Submersion.Basic
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # Composing submersions with local diffeomorphisms
@@ -39,16 +38,14 @@ lift of the map to the covering manifold.
 * `IsLocalDiffeomorphAt.isSubmersionAtOfComplement_comp`,
   `IsLocalDiffeomorphAt.comp_isSubmersionAtOfComplement`: the pointwise normal form with a
   fixed complement survives composing with a local diffeomorphism on the source or on the target.
+* `IsLocalDiffeomorph.isSubmersion_comp`, `IsLocalDiffeomorph.comp_isSubmersion`: the global
+  statements, for composing with a local diffeomorphism everywhere.
+* `Manifold.IsSubmersion.isLocalDiffeomorph_iff_finrank_eq`: a submersion with boundaryless
+  source is a local diffeomorphism exactly when source and target have the same dimension.
 * `IsLocalDiffeomorphAt.isSubmersionAtOfComplement_comp_iff`: precomposing with a local
   diffeomorphism at `x` neither creates nor destroys the normal form at `x`.
 * `IsLocalDiffeomorphAt.isSubmersionAt_comp_iff`,
   `IsLocalDiffeomorphAt.comp_isSubmersionAt`: the same statements for `IsSubmersionAt`.
-* `IsLocalDiffeomorph.isSubmersion_comp`, `IsLocalDiffeomorph.comp_isSubmersion`,
-  `TauCeti.isSubmersion_isLocalDiffeomorphAt_comp`, `IsLocalDiffeomorph.isSubmersion`: global
-  composition of submersions with local diffeomorphisms, and every local diffeomorphism is a
-  submersion.
-* `Manifold.IsSubmersion.isLocalDiffeomorph`: a submersion of a finite-dimensional boundaryless
-  manifold onto a manifold modelled on a space of the same dimension is a local diffeomorphism.
 
 ## References
 
@@ -193,15 +190,14 @@ theorem comp_isSubmersionAt [IsManifold J n P] {k : N → P} {x : M}
 
 end IsLocalDiffeomorphAt
 
-section Global
+namespace IsLocalDiffeomorph
 
-open Manifold Set Topology
+open Manifold
 open scoped Manifold ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -210,95 +206,55 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {P : Type*} [TopologicalSpace P] [ChartedSpace G P]
   {n : ℕ∞ω} {f : M → N}
 
-/-- Postcomposing a submersion with a fixed complement by a map which is a local diffeomorphism at
-every point of its image gives a submersion with the same complement. -/
-theorem TauCeti.isSubmersionOfComplement_isLocalDiffeomorphAt_comp [IsManifold J n P] {k : N → P}
-    (hk : ∀ x, IsLocalDiffeomorphAt J J n k (f x)) (h : IsSubmersionOfComplement F I J n f) :
-    IsSubmersionOfComplement F I J n (k ∘ f) :=
-  isSubmersionOfComplement_iff.mpr fun x ↦
-    (hk x).comp_isSubmersionAtOfComplement (h.isSubmersionAt x)
+/-- Precomposing a submersion with a local diffeomorphism of the source gives a submersion. -/
+theorem isSubmersion_comp [IsManifold I n M'] {g : M' → M} (hg : IsLocalDiffeomorph I I n g)
+    (h : IsSubmersion I J n f) : IsSubmersion I J n (f ∘ g) :=
+  (isSubmersionOfComplement_iff.mpr fun x ↦ (hg x).isSubmersionAtOfComplement_comp
+    (h.isSubmersionOfComplement_complement.isSubmersionAt (g x))).isSubmersion
 
-/-- Postcomposing a submersion with a map which is a local diffeomorphism at every point of its
-image gives a submersion. -/
-theorem TauCeti.isSubmersion_isLocalDiffeomorphAt_comp [IsManifold J n P] {k : N → P}
-    (hk : ∀ x, IsLocalDiffeomorphAt J J n k (f x)) (h : IsSubmersion I J n f) :
-    IsSubmersion I J n (k ∘ f) :=
-  (TauCeti.isSubmersionOfComplement_isLocalDiffeomorphAt_comp hk
-    h.isSubmersionOfComplement_complement).isSubmersion
-
-namespace IsLocalDiffeomorph
-
-/-- Precomposing a submersion with a fixed complement by a local diffeomorphism gives a submersion
-with the same complement. -/
-theorem isSubmersionOfComplement_comp [IsManifold I n M'] {g : M' → M}
-    (hg : IsLocalDiffeomorph I I n g) (h : IsSubmersionOfComplement F I J n f) :
-    IsSubmersionOfComplement F I J n (f ∘ g) :=
-  isSubmersionOfComplement_iff.mpr fun x ↦
-    (hg x).isSubmersionAtOfComplement_comp (h.isSubmersionAt (g x))
-
-/-- Precomposing a submersion with a local diffeomorphism gives a submersion. -/
-theorem isSubmersion_comp [IsManifold I n M'] {g : M' → M}
-    (hg : IsLocalDiffeomorph I I n g) (h : IsSubmersion I J n f) :
-    IsSubmersion I J n (f ∘ g) :=
-  (hg.isSubmersionOfComplement_comp h.isSubmersionOfComplement_complement).isSubmersion
-
-/-- Postcomposing a submersion with a fixed complement by a local diffeomorphism gives a submersion
-with the same complement. -/
-theorem comp_isSubmersionOfComplement [IsManifold J n P] {k : N → P}
-    (hk : IsLocalDiffeomorph J J n k) (h : IsSubmersionOfComplement F I J n f) :
-    IsSubmersionOfComplement F I J n (k ∘ f) :=
-  TauCeti.isSubmersionOfComplement_isLocalDiffeomorphAt_comp (fun x ↦ hk (f x)) h
-
-/-- Postcomposing a submersion with a local diffeomorphism gives a submersion. -/
-theorem comp_isSubmersion [IsManifold J n P] {k : N → P}
-    (hk : IsLocalDiffeomorph J J n k) (h : IsSubmersion I J n f) :
-    IsSubmersion I J n (k ∘ f) :=
-  TauCeti.isSubmersion_isLocalDiffeomorphAt_comp (fun x ↦ hk (f x)) h
-
-/-- Every local diffeomorphism between `C^n` manifolds is a `C^n` submersion. -/
-theorem isSubmersion [IsManifold I n M] [IsManifold I n M'] {g : M' → M}
-    (hg : IsLocalDiffeomorph I I n g) : IsSubmersion I I n g :=
-  hg.isSubmersion_comp IsSubmersion.id
+/-- Postcomposing a submersion with a local diffeomorphism of the target gives a submersion. -/
+theorem comp_isSubmersion [IsManifold J n P] {k : N → P} (hk : IsLocalDiffeomorph J J n k)
+    (h : IsSubmersion I J n f) : IsSubmersion I J n (k ∘ f) :=
+  (isSubmersionOfComplement_iff.mpr fun x ↦ (hk (f x)).comp_isSubmersionAtOfComplement
+    (h.isSubmersionOfComplement_complement.isSubmersionAt x)).isSubmersion
 
 end IsLocalDiffeomorph
 
-section InverseFunctionTheorem
+namespace Manifold.IsSubmersion
 
-variable {𝕂 : Type*} [RCLike 𝕂] {F₀ : Type*} [NormedAddCommGroup F₀] [NormedSpace 𝕂 F₀]
-  [FiniteDimensional 𝕂 F₀] {K : ModelWithCorners 𝕂 F₀ H}
-  {F₀' : Type*} [NormedAddCommGroup F₀'] [NormedSpace 𝕂 F₀']
-  {K' : ModelWithCorners 𝕂 F₀' G}
-  {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
-  {Y : Type*} [TopologicalSpace Y] [ChartedSpace G Y]
-  [IsManifold K n X] [IsManifold K' n Y] [BoundarylessManifold K X]
+open Module
+open scoped Manifold ContDiff
 
-/-- A submersion of a finite-dimensional boundaryless manifold onto a manifold modelled on a space
-of the same dimension is a local diffeomorphism. -/
-theorem Manifold.IsSubmersion.isLocalDiffeomorph {g : X → Y} (hg : IsSubmersion K K' n g)
-    (hd : Module.finrank 𝕂 F₀ = Module.finrank 𝕂 F₀') (hn : 1 ≤ n) :
-    IsLocalDiffeomorph K K' n g := by
-  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
-  · exact fun x ↦ isEmptyElim x
-  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  -- The tangent space of `Y` at `g x₀` is a quotient of that of `X`, so `F₀'` is
-  -- finite-dimensional.
-  have : FiniteDimensional 𝕂 (TangentSpace K' (g x₀)) :=
-    Module.Finite.of_surjective (mfderiv K K' g x₀).toLinearMap (hg.surjective_mfderiv hn0 x₀)
-  have : FiniteDimensional 𝕂 F₀' :=
-    (tangentSpaceCastModel K' (g x₀)).toLinearEquiv.finiteDimensional
-  have := FiniteDimensional.completeSpace 𝕂 F₀
-  have := FiniteDimensional.completeSpace 𝕂 F₀'
-  refine TauCeti.isLocalDiffeomorph_of_mfderiv_eq hg.contMDiff hn fun y ↦ ?_
-  let L := (mfderiv K K' g y : TangentSpace K y →ₗ[𝕂] TangentSpace K' (g y))
-  have hsurj : Function.Surjective L := hg.surjective_mfderiv hn0 y
-  have hdim : Module.finrank 𝕂 (TangentSpace K y) = Module.finrank 𝕂 (TangentSpace K' (g y)) := by
-    rw [TauCeti.finrank_tangentSpace, TauCeti.finrank_tangentSpace, hd]
-  have hinj : Function.Injective L :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mpr hsurj
-  exact ⟨(LinearEquiv.ofInjectiveOfFinrankEq L hinj hdim).toContinuousLinearEquiv,
-    ContinuousLinearMap.ext fun v ↦
-      LinearMap.congr_fun (LinearEquiv.coe_ofInjectiveOfFinrankEq L hinj hdim) v⟩
+variable {𝕂 : Type*} [RCLike 𝕂]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E] [FiniteDimensional 𝕂 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F] [FiniteDimensional 𝕂 F]
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N] {f : M → N}
 
-end InverseFunctionTheorem
+/-- A `C^n` submersion, `1 ≤ n`, with boundaryless source between manifolds modelled on spaces of
+the same finite dimension is a `C^n` local diffeomorphism: its surjective differentials are
+injective. -/
+theorem isLocalDiffeomorph_of_finrank_eq (h : IsSubmersion I J n f) (hn : 1 ≤ n)
+    (hdim : finrank 𝕂 E = finrank 𝕂 F) : IsLocalDiffeomorph I J n f := fun x ↦ by
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕂 E
+  have hinj : Function.Injective (mfderiv I J f x) :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (f := (mfderiv I J f x).toLinearMap) hdim).2
+      (h.surjective_mfderiv (zero_lt_one.trans_le hn).ne' x)
+  exact TauCeti.isLocalDiffeomorphAt_of_injective_mfderiv (s := Set.univ) h.contMDiff.contMDiffOn
+    isOpen_univ (Set.mem_univ x) BoundarylessManifold.isInteriorPoint hn hinj hdim
 
-end Global
+/-- A `C^n` submersion, `1 ≤ n`, out of a nonempty boundaryless manifold with finite-dimensional
+model is a `C^n` local diffeomorphism exactly when the source and target models have the same
+dimension. -/
+theorem isLocalDiffeomorph_iff_finrank_eq [Nonempty M] (h : IsSubmersion I J n f) (hn : 1 ≤ n) :
+    IsLocalDiffeomorph I J n f ↔ finrank 𝕂 E = finrank 𝕂 F := by
+  refine ⟨fun hf ↦ ?_, h.isLocalDiffeomorph_of_finrank_eq hn⟩
+  obtain ⟨x⟩ := ‹Nonempty M›
+  exact ((hf x).mfderivToContinuousLinearEquiv
+    (zero_lt_one.trans_le hn).ne').toLinearEquiv.finrank_eq
+
+end Manifold.IsSubmersion

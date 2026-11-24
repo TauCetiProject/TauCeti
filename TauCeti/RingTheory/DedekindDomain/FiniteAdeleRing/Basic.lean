@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import Mathlib.Topology.Algebra.Algebra
+public import TauCeti.Topology.Algebra.Algebra.Subalgebra
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
@@ -52,7 +53,8 @@ approximates `a`.
 ## Main results
 
 * `IsDedekindDomain.FiniteAdeleRing.integralAdeles`: the `R`-subalgebra of integral finite adeles,
-  with `isOpen_integralAdeles`, `isClosed_integralAdeles`, and `isCompact_integralAdeles`.
+  with `isOpen_integralAdeles`, `isClosed_integralAdeles`, `isCompact_integralAdeles`, and the
+  instance `compactSpace_integralAdeles`.
 * `IsDedekindDomain.FiniteAdeleRing.integralEmbedding`: the continuous embedding of the product of
   the local integer rings into the finite adeles, with range `integralAdeles`.
 * `IsDedekindDomain.FiniteAdeleRing.one_apply`, `add_apply`, `sub_apply`, and `mul_apply`: the
@@ -209,6 +211,12 @@ theorem isCompact_integralAdeles
   rw [← range_integralEmbedding]
   exact isCompact_range (continuous_integralEmbedding (R := R) (K := K))
 
+/-- The integral finite adeles form a compact space when every local integer ring is compact. -/
+instance compactSpace_integralAdeles
+    [∀ v : HeightOneSpectrum R, CompactSpace (v.adicCompletionIntegers K)] :
+    CompactSpace (integralAdeles R K) :=
+  isCompact_iff_compactSpace.mp isCompact_integralAdeles
+
 /-! ### `S`-integral finite adeles -/
 
 variable (R K) in
@@ -306,7 +314,8 @@ would say that the whole finite adele ring carries the product topology. -/
 theorem isEmbedding_coe_sIntegralAdeles {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
     Topology.IsEmbedding fun a : sIntegralAdeles R K S ↦ ⇑(a : FiniteAdeleRing R K) :=
   TauCeti.isEmbedding_restrictedProduct_coe_comp
-    (Filter.le_principal_iff.mpr hS.compl_mem_cofinite) Topology.IsEmbedding.subtypeVal fun a ↦ a.2
+    (Filter.le_principal_iff.mpr hS.compl_mem_cofinite) Topology.IsEmbedding.subtypeVal fun a ↦
+        a.property
 
 /-- The diagonal image of an element of `K` in the finite adele ring is `S`-integral exactly when
 the element is an `S`-integer: the `S`-integral finite adeles meet `K` in `S.integer K`. It takes
@@ -353,7 +362,8 @@ theorem mul_nonZeroDivisor_mem_integralAdeles (a : FiniteAdeleRing R K) :
     ∃ b ∈ nonZeroDivisors R, a * algebraMap R (FiniteAdeleRing R K) b ∈ integralAdeles R K := by
   classical
   -- `a` is integral outside a finite set of places, and each of those has its own denominator
-  have hT : {v | a v ∉ v.adicCompletionIntegers K}.Finite := Filter.eventually_cofinite.mp a.2
+  have hT : {v | a v ∉ v.adicCompletionIntegers K}.Finite := Filter.eventually_cofinite.mp
+      a.property
   choose b hb0 hb using fun v ↦
     adicCompletion.mul_nonZeroDivisor_mem_adicCompletionIntegers v (a v)
   refine ⟨∏ v ∈ hT.toFinset, b v, prod_mem fun v _ ↦ hb0 v, mem_integralAdeles.mpr fun v ↦ ?_⟩

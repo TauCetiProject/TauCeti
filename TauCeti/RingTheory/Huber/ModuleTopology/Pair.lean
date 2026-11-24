@@ -156,9 +156,9 @@ noncomputable def finiteAlgebra.homEquiv (χ : Hom S V) (hχ : χ.toRingHom = al
     {ψ : Hom (S.finiteAlgebra B) V // ψ.comp (finiteAlgebra.algebraHom S B) = χ} ≃
       (B →ₐ[A] D) where
   toFun ψ :=
-    { ψ.1.toRingHom with
+    { ψ.val.toRingHom with
       commutes' a := by
-        have h := congrArg (fun g : Hom S V ↦ g.toRingHom a) ψ.2
+        have h := congrArg (fun g : Hom S V ↦ g.toRingHom a) ψ.property
         simpa [hχ] using h }
   invFun f := ⟨finiteAlgebra.lift χ hχ f, finiteAlgebra.lift_comp_algebraHom χ hχ f⟩
   left_inv ψ := Subtype.ext <| Hom.ext (rfl)
@@ -168,14 +168,14 @@ noncomputable def finiteAlgebra.homEquiv (χ : Hom S V) (hχ : χ.toRingHom = al
 @[simp]
 theorem finiteAlgebra.homEquiv_apply (χ : Hom S V) (hχ : χ.toRingHom = algebraMap A D)
     (ψ : {ψ : Hom (S.finiteAlgebra B) V // ψ.comp (finiteAlgebra.algebraHom S B) = χ}) (b : B) :
-    finiteAlgebra.homEquiv χ hχ ψ b = ψ.1.toRingHom b :=
+    finiteAlgebra.homEquiv χ hχ ψ b = ψ.val.toRingHom b :=
   (rfl)
 
 /-- The inverse of `finiteAlgebra.homEquiv` is `finiteAlgebra.lift`. -/
 @[simp]
 theorem finiteAlgebra.homEquiv_symm_apply (χ : Hom S V) (hχ : χ.toRingHom = algebraMap A D)
     (f : B →ₐ[A] D) :
-    ((finiteAlgebra.homEquiv χ hχ).symm f).1 = finiteAlgebra.lift χ hχ f :=
+    ((finiteAlgebra.homEquiv χ hχ).symm f).val = finiteAlgebra.lift χ hχ f :=
   (rfl)
 
 end FiniteAlgebra
