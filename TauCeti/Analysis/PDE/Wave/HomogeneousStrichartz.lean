@@ -130,13 +130,9 @@ theorem exists_enorm_integral_inner_halfWavePropagator_le_tsum (hq : 2 < q)
         C * eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume *
           ENNReal.ofReal (((2 : ℝ) ^ k) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) := fun k ↦ by
-    have hint : Integrable
-        (fun t ↦ halfWavePropagator ℂ (-t) (Lp.fourierMultiplierCLM ℂ (m k) (G t))) :=
-      ((Lp.fourierMultiplierCLM ℂ (m k)).integrable_comp hWG).congr
-        (Filter.Eventually.of_forall fun t ↦ fourierMultiplierCLM_halfWavePropagator_apply _ _ _)
     rw [← ContinuousLinearMap.integral_comp_comm _ hWG]
     simp only [fourierMultiplierCLM_halfWavePropagator_apply]
-    refine (hC k (m k) (hm k) G hG hint).trans_eq ?_
+    refine (hC k (m k) (hm k) G hG).trans_eq ?_
     ring
   rw [hpair]
   refine (hK m hm f _ _ hblock).trans_eq ?_

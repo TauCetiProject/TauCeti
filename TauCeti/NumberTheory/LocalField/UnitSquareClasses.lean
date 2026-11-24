@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.SquareClass
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 

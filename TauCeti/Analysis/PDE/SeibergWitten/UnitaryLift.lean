@@ -11,8 +11,9 @@ public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # The canonical `Spinᶜ` lift of the unitary group
@@ -51,6 +52,15 @@ of the rotations of that oriented plane
 (`TauCeti.SeibergWitten.unitaryLift_toSpecialOrthogonal_spinCCircle`): on the canonical line
 `c(e₀) c(e₁)` acts by `-i`, where `spinCCircle` has weight one.
 
+**Charge conjugation.** A conjugate-linear isomorphism `j : W → W'` of Clifford modules commuting
+with Clifford multiplication, such as the quaternionic structure of the spinors, exchanges the
+`-2i`- and `2i`-eigenspaces of `c₂(ω)` and intertwines `x` with its charge conjugate
+`spinCGroup.chargeConj x`. So if `x` fixes the canonical line, its charge conjugate fixes the
+complementary line of `W'⁺` and acts on the canonical line of `W'⁺` by `(det x)⁻¹`. For the
+canonical lift this is the representation-level form of the identification of the conjugate of
+the canonical `Spinᶜ` structure, with positive spinors `Λ⁰'⁰ ⊕ Λ⁰'²`, with its twist by the
+canonical line `K = (Λ⁰'²)⁻¹`.
+
 The subgroup fixing the canonical line is defined through the given spin module `W`.
 
 **Continuity.** For the quotient topology on `Spinᶜ(4)` and the topology of `U(V, J)` as a
@@ -75,6 +85,12 @@ an injective map from `V` to the negative half-spinors which turns `J` into `i` 
 a `ℂ`-linear isomorphism conjugating `A` to the canonical lift, and the canonical lift acts on the
 negative half-spinors with determinant its determinant character
 (`CliffordAlgebra.det_spinCGroupHalfSpinRep`).
+
+On the positive half-spinors, the canonical lift sends `c(v) c(w) u` to `c(A v) c(A w) u`
+(`TauCeti.SeibergWitten.coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq`). With the formula
+for `c(v) c(w) u` in `TauCeti.LinearAlgebra.CliffordAlgebra.Kahler`
+(`TauCeti.AlmostComplexStructure.ι_apply_ι_apply_of_bivectorExterior_apply`), this gives the
+Clifford algebra behind the splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` of the canonical `Spinᶜ` structure.
 
 ## Main definitions
 
@@ -105,11 +121,19 @@ negative half-spinors with determinant its determinant character
 * `TauCeti.SeibergWitten.spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul`: Clifford
   multiplication on the canonical line intertwines `A` with its canonical lift acting on the
   negative half-spinors.
+* `TauCeti.SeibergWitten.coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq`: on the positive
+  half-spinors, the canonical lift sends `c(v) c(w) u` to `c(A v) c(A w) u` for `u` on the
+  canonical line.
 * `TauCeti.SeibergWitten.det_unitaryLift`: the determinant character of the canonical lift is the
   complex determinant.
 * `TauCeti.SeibergWitten.isClosed_canonicalLineFixingSubgroup` and
   `TauCeti.SeibergWitten.continuous_unitaryLift`: the subgroup fixing the canonical line is closed,
   and the canonical lift is continuous.
+* `spinCGroupHalfSpinRep_chargeConj_apply_eq_self_of_mem_canonicalLineFixingSubgroup` and
+  `spinCGroupHalfSpinRep_chargeConj_apply_eq_inv_det_smul_of_mem_canonicalLineFixingSubgroup`:
+  for a conjugate-linear Clifford intertwiner `j : W → W'`, the charge conjugate of an element
+  fixing the canonical line fixes the complementary line of `W'⁺` and acts on its canonical line
+  by the inverse determinant character.
 
 ## References
 
@@ -202,6 +226,57 @@ theorem spinCCircle_mem_canonicalLineFixingSubgroup (z : Circle) :
   exact Subtype.ext
     (coe_spinCGroupHalfSpinRep_one_spinCCircle_apply_of_eq_neg_I_smul hQ₀ e hQ he ρ z h)
 
+/-! ### Charge conjugation -/
+
+section ChargeConjugation
+
+open scoped ComplexConjugate
+
+variable {W' : Type*} [AddCommGroup W'] [Module ℂ W']
+  {ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W'} (j : W ≃ₗ⋆[ℂ] W')
+  (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+
+include hj in
+/-- A conjugate-linear Clifford intertwiner `j : W ≃ W'` carries a positive half-spinor of `W'` in
+the `μ`-eigenspace of `c₂(ω)` back to a positive half-spinor of `W` in the `conj μ`-eigenspace. -/
+private theorem exists_symm_apply_eq_of_bivectorExterior_apply {μ : ℂ}
+    {β : eigenspace (ρ' (chirality Q o)) 1}
+    (hβ : ρ' (bivectorExterior Q J.kahlerForm) β = μ • (β : W')) :
+    ∃ ψ : eigenspace (ρ (chirality Q o)) 1, (ψ : W) = j.symm β ∧
+      ρ (bivectorExterior Q J.kahlerForm) ψ = conj μ • (ψ : W) := by
+  have hj' : ∀ v w, j.symm (ρ' (ι Q v) w) = ρ (ι Q v) (j.symm w) := fun v w ↦ by
+    rw [j.symm_apply_eq, hj, j.apply_symm_apply]
+  have hmem := map_mem_eigenspace_chirality (fun r ↦ Complex.conj_ofReal r)
+    (U := j.symm.toLinearMap) hj' β.property
+  rw [map_one] at hmem
+  refine ⟨⟨j.symm β, hmem⟩, rfl, ?_⟩
+  have h := map_apply_of_forall_ιₛₗ (fun r ↦ Complex.conj_ofReal r)
+    (U := j.symm.toLinearMap) hj' (bivectorExterior Q J.kahlerForm) β
+  simp only [LinearEquiv.coe_coe, hβ, map_smulₛₗ] at h
+  exact h.symm
+
+include hj in
+/-- **The charge conjugate of an element fixing the canonical line fixes the complementary
+line.** Let `j : W → W'` be a conjugate-linear isomorphism of Clifford modules commuting with
+Clifford multiplication. If `x ∈ Spinᶜ(4)` fixes the canonical line of `W⁺`, the
+`-2i`-eigenspace of `c₂(ω)`, then its charge conjugate `spinCGroup.chargeConj x` fixes the
+`2i`-eigenspace of `c₂(ω)` in `W'⁺`: `j` exchanges the two eigenspaces and intertwines `x` with its
+charge conjugate. -/
+theorem spinCGroupHalfSpinRep_chargeConj_apply_eq_self_of_mem_canonicalLineFixingSubgroup
+    {x : spinCGroup Q hQ₀} (hx : x ∈ canonicalLineFixingSubgroup o ρ J hQ₀)
+    {β : eigenspace (ρ' (chirality Q o)) 1}
+    (hβ : ρ' (bivectorExterior Q J.kahlerForm) β = (2 * Complex.I) • (β : W')) :
+    spinCGroupHalfSpinRep o ρ' 1 hQ₀ (spinCGroup.chargeConj Q hQ₀ x) β = β := by
+  obtain ⟨ψ, hψj, hψ⟩ := exists_symm_apply_eq_of_bivectorExterior_apply j hj hβ
+  have hψ' : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • (ψ : W) := by
+    simpa [map_ofNat] using hψ
+  refine Subtype.ext ?_
+  rw [← map_coe_spinCGroupHalfSpinRep_apply o ρ 1 hQ₀ (j := j.toLinearMap) hj x (ψ := ψ) (ψ' := β)
+    (by simp [hψj]), hx ψ hψ']
+  simp [hψj]
+
+end ChargeConjugation
+
 end FixingSubgroup
 
 /-! ### The subgroup fixing the canonical line is closed -/
@@ -267,13 +342,12 @@ with `J`. -/
 theorem toSpecialOrthogonal_mem_unitaryGroup_of_mem_canonicalLineFixingSubgroup
     {x : spinCGroup Q hQ₀} (hx : x ∈ canonicalLineFixingSubgroup o ρ J hQ₀) :
     spinCGroup.toSpecialOrthogonal Q hQ₀ x ∈ J.unitaryGroup Q := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   obtain ⟨u, hu₀, hu, -⟩ :=
     exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_self_forall_eq_smul hQ he h₀ h₂ hW
   set u' := positiveHalfSpinorsEquiv o ρ u
   have hxu : spinCGroupHalfSpinRep o ρ 1 hQ₀ x u' = u' :=
     hx u' (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu)
-  have hcl := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu
+  have hcl := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu
   rw [AlmostComplexStructure.mem_unitaryGroup_iff]
   intro v
   set A := (spinCGroup.toSpecialOrthogonal Q hQ₀ x : V ≃ₗ[ℝ] V)
@@ -534,6 +608,43 @@ theorem unitaryLift_toSpecialOrthogonal_spinCCircle (z : Circle) :
 
 end Circle
 
+/-! ### Charge conjugation of the canonical lift -/
+
+section ChargeConjugation
+
+variable (hQ₀ : Q ≠ 0) {W' : Type*} [AddCommGroup W'] [Module ℂ W']
+  {ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W'} (j : W ≃ₗ⋆[ℂ] W')
+  (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+
+include hQ he h₀ h₂ hj in
+/-- **The charge conjugate of an element fixing the canonical line acts on the canonical line by
+the inverse determinant.** Let `j : W → W'` be a conjugate-linear isomorphism of Clifford modules
+commuting with Clifford multiplication, with `W⁺` of complex dimension two. If `x ∈ Spinᶜ(4)`
+fixes the canonical line of `W⁺`, then `spinCGroup.chargeConj x` acts on the `-2i`-eigenspace of
+`c₂(ω)` in `W'⁺` by `(det x)⁻¹`, the conjugate of the scalar `det x` by which `x` acts on the
+complementary line of `W⁺`. By
+`spinCGroupHalfSpinRep_chargeConj_apply_eq_self_of_mem_canonicalLineFixingSubgroup`, it fixes
+the `2i`-eigenline of `W'⁺`. So for `x` the canonical lift of a unitary rotation, the charge
+conjugate acts on `W'⁺` as on `K ⊕ Λ⁰'⁰`, with `K = (Λ⁰'²)⁻¹`: the canonical representation
+`Λ⁰'⁰ ⊕ Λ⁰'²` tensored with `K`. -/
+theorem spinCGroupHalfSpinRep_chargeConj_apply_eq_inv_det_smul_of_mem_canonicalLineFixingSubgroup
+    (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2) {x : spinCGroup Q hQ₀}
+    (hx : x ∈ canonicalLineFixingSubgroup o ρ J hQ₀) {u : eigenspace (ρ' (chirality Q o)) 1}
+    (hu : ρ' (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W')) :
+    spinCGroupHalfSpinRep o ρ' 1 hQ₀ (spinCGroup.chargeConj Q hQ₀ x) u =
+      (((spinCGroup.det Q hQ₀ x)⁻¹ : Circle) : ℂ) • u := by
+  obtain ⟨ψ, hψj, hψ⟩ := exists_symm_apply_eq_of_bivectorExterior_apply j hj hu
+  have hψ' : ρ (bivectorExterior Q J.kahlerForm) ψ = (2 * Complex.I) • (ψ : W) := by
+    simpa [map_ofNat] using hψ
+  refine Subtype.ext ?_
+  rw [← map_coe_spinCGroupHalfSpinRep_apply o ρ 1 hQ₀ (j := j.toLinearMap) hj x (ψ := ψ) (ψ' := u)
+    (by simp [hψj]),
+    spinCGroupHalfSpinRep_apply_eq_det_smul_of_mem_canonicalLineFixingSubgroup_of_bivectorExterior
+      hQ he h₀ h₂ hQ₀ hW hx hψ']
+  simp [hψj, ← Circle.coe_inv_eq_conj]
+
+end ChargeConjugation
+
 /-! ### The determinant character is the complex determinant -/
 
 section ComplexDeterminant
@@ -541,7 +652,8 @@ section ComplexDeterminant
 variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
   (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 
-include hQ he h₀ h₂ in
+omit [FiniteDimensional ℂ W] in
+include hQ h₀ h₂ in
 /-- On a vector `u` of the canonical line, Clifford multiplication turns the complex scalar
 `a + b i`, acting on `V` by `a + b J`, into the scalar `a + b i` on the negative half-spinors:
 `c(a v + b J v) u = (a + b i) c(v) u`. -/
@@ -549,11 +661,8 @@ private theorem halfSpinCliffordMul_smul_add_smul_apply {u : eigenspace (ρ (chi
     (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W)) (a b : ℝ) (v : V) :
     halfSpinCliffordMul o ρ 1 (a • v + b • J v) u =
       ((a : ℂ) + b * Complex.I) • halfSpinCliffordMul o ρ 1 v u := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   have hJ := halfSpinCliffordMul_apply_eq_smul (ψ := u)
-    (ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂
-      (cliffordProjection_apply_eq_self_of_bivectorExterior_apply o ρ
-        (ψ := (positiveHalfSpinorsEquiv o ρ).symm u) hu) v)
+    (AlmostComplexStructure.ι_apply_apply_of_bivectorExterior_apply hQ h₀ h₂ hu v)
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hJ]
   module
 
@@ -576,6 +685,36 @@ theorem spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul
     (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) v u
   rw [hxu, toSpecialOrthogonal_unitaryLift] at h
   exact Subtype.ext (by simpa using h.symm)
+
+omit [FiniteDimensional ℂ W] in
+/-- The vector `x ψ` of `W` depends only on the vector `ψ` of `W`, not on the eigenspace of the
+chirality in which `ψ` is regarded. -/
+private theorem coe_spinCGroupHalfSpinRep_apply_congr (x : spinCGroup Q hQ₀) {ε ε' : ℂ}
+    (h : ε = ε')
+    {ψ : eigenspace (ρ (chirality Q o)) ε} {ψ' : eigenspace (ρ (chirality Q o)) ε'}
+    (hψ : (ψ : W) = ψ') :
+    (spinCGroupHalfSpinRep o ρ ε hQ₀ x ψ : W) = spinCGroupHalfSpinRep o ρ ε' hQ₀ x ψ' := by
+  subst h
+  rw [Subtype.ext hψ]
+
+include hQ he h₀ h₂ hW in
+/-- **The canonical lift on products `c(v) c(w) u`**: for `u` on the canonical line, the canonical
+lift of `A` sends the positive half-spinor `c(v) c(w) u` to `c(A v) c(A w) u`. -/
+theorem coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq
+    {u : eigenspace (ρ (chirality Q o)) 1}
+    (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W))
+    (A : J.unitaryGroup Q) {v w : V} {φ : eigenspace (ρ (chirality Q o)) 1}
+    (hφ : (φ : W) = ρ (ι Q v) (ρ (ι Q w) u)) :
+    (spinCGroupHalfSpinRep o ρ 1 hQ₀ (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) φ : W) =
+      ρ (ι Q (((A : TauCeti.QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v))
+        (ρ (ι Q (((A : TauCeti.QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) w)) u) := by
+  have h := ι_apply_spinCGroupHalfSpinRep_apply o ρ (-1) hQ₀
+    (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) v (halfSpinCliffordMul o ρ 1 w u)
+  rw [toSpecialOrthogonal_unitaryLift,
+    spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul hQ he h₀ h₂ hQ₀ hW hρ hu A,
+    coe_halfSpinCliffordMul_apply_apply] at h
+  rw [h]
+  exact coe_spinCGroupHalfSpinRep_apply_congr hQ₀ _ (neg_neg 1).symm (by simp [hφ])
 
 include hQ he h₀ h₂ hW in
 /-- **The determinant character of the canonical lift is the complex determinant.** The canonical
@@ -609,7 +748,7 @@ theorem det_unitaryLift (A : J.unitaryGroup Q) :
     { E with
       map_smul' z v := by
         simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe, hE]
-        rw [J.complexModule_smul_def, halfSpinCliffordMul_smul_add_smul_apply hQ he h₀ h₂ hb,
+        rw [J.complexModule_smul_def, halfSpinCliffordMul_smul_add_smul_apply hQ h₀ h₂ hb,
           Complex.re_add_im, RingHom.id_apply] }
   have hTe (v : V) : Te v = halfSpinCliffordMul o ρ 1 v u := hE v
   -- By the intertwining lemma, the canonical lift acts on the negative half-spinors as

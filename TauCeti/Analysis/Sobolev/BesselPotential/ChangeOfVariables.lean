@@ -63,14 +63,16 @@ complex interpolation space `[H^{⌊s⌋,p}, H^{⌊s⌋+1,p}]_θ` with `θ = s -
 (`TauCeti.CompatibleCouple.besselPotentialSpaceComplexMethodContinuousLinearEquiv`). A continuous
 linear map of tempered distributions preserving both endpoint spaces therefore preserves
 `H^{s,p}` (`TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`).
+In particular the real `H^{s,p}` functions of every real order are invariant under linear
+automorphisms of `E`.
 
 ## Main results
 
 * `TemperedDistribution.comp_mem_realSobolevFunctions_natCast`: precomposition with a change of
   variables of order `k` preserves the real elements of `H^{k,p}`.
 * `TemperedDistribution.comp_add_mem_realSobolevFunctions_natCast`: translations.
-* `TemperedDistribution.comp_continuousLinearEquiv_mem_realSobolevFunctions_natCast`: linear
-  automorphisms.
+* `TemperedDistribution.comp_continuousLinearEquiv_mem_realSobolevFunctions`: linear
+  automorphisms, at every real order.
 * `TemperedDistribution.MemSobolev.compCLM_of_norm_fderiv_symm_le`: the pullback preserves
   `H^{0,p} = Lᵖ`, for `1 ≤ p ≤ ∞`.
 * `TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv_le`,
@@ -138,15 +140,6 @@ theorem comp_add_mem_realSobolevFunctions_natCast (hp : 1 < p) (hp_top : p ≠ �
   comp_mem_realSobolevFunctions_natCast hp hp_top
     (Wkp.IsChangeOfVariables.add_const a (Set.mapsTo_univ _ _)) hf
 
-/-- For `1 < p < ∞` and a natural order `k`, the real Bessel-potential functions of order `k` are
-invariant under linear automorphisms of `E`. -/
-theorem comp_continuousLinearEquiv_mem_realSobolevFunctions_natCast (hp : 1 < p)
-    (hp_top : p ≠ ∞) {k : ℕ} (e : E ≃L[ℝ] E) {f : E → ℝ}
-    (hf : f ∈ realSobolevFunctions E k p) :
-    (fun x ↦ f (e x)) ∈ realSobolevFunctions E k p :=
-  comp_mem_realSobolevFunctions_natCast hp hp_top
-    (Wkp.IsChangeOfVariables.continuousLinearEquiv e (Set.mapsTo_univ _ _)) hf
-
 /-! ### Pullback of tempered distributions in `H^{s,p}` -/
 
 section Pullback
@@ -208,8 +201,7 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : p �
       obtain ⟨A, -, hAy⟩ := b.exists_clm_norm_le_one_and_repr_eq i
       simp only [hAy]
       exact fun n hn ↦ ⟨_, hΦ.1.norm_iteratedFDeriv_clm_fderiv_apply_le (by simp) A hL v n hn⟩
-    exact MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
-      (hΦ.basis_repr_fderiv_apply b.toBasis v i) hc
+    exact MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hc
       (ih (fun n h₁ h₂ ↦ hΦb n h₁ (by omega)) (by simpa using hT'.2 (b i)))
 
 /-- **Pullback on `H^{-k,p}`.** Let `1 < p < ∞` and let `Φ` be a bijection such that `Φ` and
@@ -256,11 +248,11 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_top : 
           (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) (b i)) j : ℝ) : ℂ))
           (compCLM F Φ hΦ hΨ (w i)), ?_, fun j ↦ ?_, ?_⟩
     · exact (ih' hu).sub (MemSobolev.sum fun j _ ↦ MemSobolev.sum fun i _ ↦
-        MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top ((hct _ _).fderiv_apply _)
+        MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top
           ((hct _ _).1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) (hcb _ _) _)
           (ih' (hw i)))
     · exact MemSobolev.sum fun i _ ↦ MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top
-        (hct _ _) (fun n hn ↦ hcb _ _ n (by omega)) (ih' (hw i))
+        (fun n hn ↦ hcb _ _ n (by omega)) (ih' (hw i))
     · simp only [map_add, map_sum, compCLM_lineDerivOp_eq_sum_sub b.toBasis hΦ hΨ,
         OrthonormalBasis.coe_toBasis, LineDeriv.lineDerivOp_sum]
       conv_lhs => rw [Finset.sum_comm]
@@ -324,6 +316,35 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_natCeil (hp : 1 < p) (hp_to
       (fun n hn₁ hn₂ ↦ hΦb n hn₁ (hn₂.trans h₁)) (fun n hn₁ hn₂ ↦ hΨb n hn₁ (by omega))) hT
 
 end Pullback
+
+/-- For `1 < p < ∞` and every real order `s`, the real Bessel-potential functions of order `s` are
+invariant under linear automorphisms of `E`. -/
+theorem comp_continuousLinearEquiv_mem_realSobolevFunctions (hp : 1 < p) (hp_top : p ≠ ∞)
+    {s : ℝ} (e : E ≃L[ℝ] E) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s p) :
+    (fun x ↦ f (e x)) ∈ realSobolevFunctions E s p := by
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hf
+  -- `e` and its inverse are linear changes of variables of every order.
+  have hcv (A : E ≃L[ℝ] E) (k : ℕ) :=
+    Wkp.IsChangeOfVariables.continuousLinearEquiv (k := k) (U := ⊤) (V := ⊤) A
+      (Set.mapsTo_univ _ _)
+  have hb (A : E ≃L[ℝ] E) (k : ℕ) :
+      ∀ n, 1 ≤ n → n ≤ k → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (A.toEquiv : E → E) x‖ ≤ C :=
+    fun n h₁ h₂ ↦ ⟨_, fun x ↦ (hcv A k).norm_iteratedFDeriv_le n h₁ h₂ x trivial⟩
+  have hΦ : (e.toEquiv : E → E).HasTemperateGrowth := (e : E →L[ℝ] E).hasTemperateGrowth
+  have hΨ : (e.toEquiv.symm : E → E).HasTemperateGrowth := (e.symm : E →L[ℝ] E).hasTemperateGrowth
+  -- Pull back the complexification of `u` and recover a real representative of `f ∘ e`.
+  obtain ⟨v, hv, hvu, -⟩ := exists_compCLM_toTemperedDistribution_eq_and_norm_le volume hΦ hΨ
+    (hcv e 0).pos (fun x ↦ (hcv e 0).le_abs_det x trivial) (Complex.ofRealCLM.compLp u)
+  refine mem_realSobolevFunctions_of_ae_eq_ofReal (v := v) ?_ ?_
+  · rw [← hv]
+    exact hu.compCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top hΦ hΨ (hb e _) (hb e.symm _)
+  · have hqmp := Measure.ContinuousLinearMap.quasiMeasurePreserving (volume : Measure E) e
+      e.toLinearEquiv.isUnit_det'.ne_zero
+    filter_upwards [hvu, hqmp.ae_eq_comp (Complex.ofRealCLM.coeFn_compLp (p := p) u),
+      hqmp.ae_eq_comp huf] with x h₁ h₂ h₃
+    simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe] at h₁ h₂ h₃
+    rw [h₁]
+    exact h₂.trans (by rw [Complex.ofRealCLM_apply, h₃])
 
 end TemperedDistribution
 

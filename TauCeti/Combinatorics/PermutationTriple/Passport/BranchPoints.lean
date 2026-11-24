@@ -194,6 +194,14 @@ theorem op_smul_mem_classSet_reindexBranchPoints_iff (ρ : Perm (Fin 3))
     MulOpposite.op ρ • c ∈ (P.reindexBranchPoints ρ).classSet ↔ c ∈ P.classSet := by
   simp only [mem_classSet, ConnectedIsoClass.hasPassport_op_smul_reindexBranchPoints_iff]
 
+/-- The branch-point action preserves membership of classes in passports: an isomorphism class
+lies in a passport exactly when its image under a reordering lies in the reordered passport. -/
+theorem smul_mem_classSet_smul_iff (ρ : (Perm (Fin 3))ᵐᵒᵖ) (c : ConnectedIsoClass n)
+    (P : PassportSpec n) : ρ • c ∈ (ρ • P).classSet ↔ c ∈ P.classSet := by
+  induction ρ using MulOpposite.rec' with | h ρ => ?_
+  rw [smul_eq_reindexBranchPoints, MulOpposite.unop_op]
+  exact op_smul_mem_classSet_reindexBranchPoints_iff ρ c P
+
 /-- The classes of a reordered passport are the reordered classes of the passport. -/
 theorem mem_classSet_reindexBranchPoints_iff (ρ : Perm (Fin 3)) (c : ConnectedIsoClass n)
     (P : PassportSpec n) :

@@ -1,0 +1,263 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Module.SnakeLemma
+public import TauCeti.Algebra.Module.AuslanderReiten.HomCokernel
+public import TauCeti.Algebra.Module.AuslanderReiten.Defect.Basic
+public import TauCeti.Algebra.Module.AuslanderReiten.Morphism
+public import TauCeti.Algebra.Module.LinearMap.Defs
+public import TauCeti.Algebra.Module.Injective.Hom
+public import TauCeti.LinearAlgebra.Exact
+
+/-!
+# Auslander's defect formula
+
+Let `A` be an algebra over a commutative ring `k`, let `E` be an injective `k`-module, and write
+`D = Hom_k(-, E)`. For an exact sequence `δ : 0 → M₁ → M₂ → M₃ → 0` of `A`-modules, with maps
+`φ : M₁ → M₂` and `ψ : M₂ → M₃`, the **contravariant defect** at `X` and the **covariant
+defect** at `Y` are the cokernels
+
+* `δ^*(X) = coker (Hom_A(X, ψ) : Hom_A(X, M₂) → Hom_A(X, M₃))`,
+* `δ_*(Y) = coker (Hom_A(φ, Y) : Hom_A(M₂, Y) → Hom_A(M₁, Y))`.
+
+**Auslander's defect formula** says that for a module `X` with a projective presentation
+`P₁ → P₀ → X → 0` by finitely generated projectives,
+`D δ^*(X) ≅ δ_*(D Tr X)`, where `Tr X` is the transpose of the presentation.
+
+We follow Krause's short proof. For a module `N`, let `H(N)` be the cokernel of
+`Hom_A(P₀, N) → Hom_A(P₁, N)`. The presentation gives exact rows
+`0 → Hom_A(X, N) → Hom_A(P₀, N) → Hom_A(P₁, N) → H(N) → 0`, and `δ` gives left exact columns,
+right exact at `P₀` since `P₀` is projective. The snake lemma identifies `δ^*(X)` with the kernel
+of `H(φ) : H(M₁) → H(M₂)` (`LinearMap.homCokernelMap`); only projectivity of `P₀` is used here.
+As `E` is injective, `D` turns this kernel into the cokernel of `D H(φ)`
+(`LinearMap.cokernelEquivDualKer`). Finally `D H(N) ≅ Hom_A(N, D Tr X)` naturally in `N`
+(`LinearMap.auslanderReitenHomCokernelDualEquiv`), so the cokernel of `D H(φ)` is `δ_*(D Tr X)`.
+
+No finiteness of `k` or `A`, and no minimality of the presentation, is needed. The snake lemma is
+Mathlib's `SnakeLemma.δ'`, in its module form.
+
+The formula is natural in the exact sequence. A morphism `(a₁, a₂, a₃)` of exact sequences induces
+`δ^*(X) → δ'^*(X)` (postcomposition with `a₃`) and `δ'_*(Y) → δ_*(Y)` (precomposition with `a₁`),
+and the defect formula carries the dual of the first to the second. Each step of the proof is
+natural: the snake map, because a lift for `δ` composed with `a₂` and `a₁` is a lift for `δ'`, and
+`D H(N) ≅ Hom_A(N, D Tr X)`, by `LinearMap.auslanderReitenHomCokernelDualEquiv_map`.
+
+The formula is also natural in the presented module. A map `t : X → X'` lifted to the
+presentations by `(t₀, t₁)` induces `δ^*(X') → δ^*(X)` (precomposition with `t`) and
+`δ_*(D Tr X) → δ_*(D Tr X')` (postcomposition with `D Tr(t)`), and the defect formula carries the
+dual of the first to the second: the snake map is natural because lifts for `X'` composed with
+`(t₀, t₁)` are lifts for `X`, and `D H(N) ≅ Hom_A(N, D Tr X)` is natural in the presentation.
+
+The defects and the maps between them are defined in
+`TauCeti/Algebra/Module/AuslanderReiten/Defect/Basic.lean`.
+
+## Main definitions
+
+* `Function.Exact.contravariantDefectEquivKer`: `δ^*(X) ≅ ker H(φ)`, from the snake lemma.
+* `Function.Exact.dualContravariantDefectEquivCovariantDefect`: **Auslander's defect formula**
+  `D δ^*(X) ≅ δ_*(D Tr X)`.
+* `Function.Exact.contravariantDefectEquivKer_mk`: the snake map on representatives.
+* `Function.Exact.dualContravariantDefectEquivCovariantDefect_naturality`: naturality of the
+  defect formula in the exact sequence.
+* `Function.Exact.dualContravariantDefectEquivCovariantDefect_comap`: naturality of the defect
+  formula in the presented module, from `Function.Exact.contravariantDefectEquivKer_comap` and
+  `LinearMap.auslanderReitenHomCokernelDualEquiv_comap`.
+
+## References
+
+* H. Krause, *A short proof for Auslander's defect formula*, Linear Algebra Appl. **365** (2003),
+  267–270.
+* M. Auslander, *Functors and morphisms determined by objects*, in: Representation Theory of
+  Algebras (Philadelphia, 1976), Marcel Dekker (1978), 1–244, Theorem III.4.1.
+-/
+
+public section
+
+universe w
+
+namespace Function.Exact
+
+open LinearMap TauCeti
+
+section Defect
+
+variable {k A : Type*} [CommRing k] [Ring A] [Algebra k A]
+  {P₀ P₁ X : Type*} [AddCommGroup P₀] [Module A P₀] [AddCommGroup P₁] [Module A P₁]
+  [AddCommGroup X] [Module A X]
+  {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module A M₁] [Module k M₁] [IsScalarTower k A M₁]
+  [AddCommGroup M₂] [Module A M₂] [Module k M₂] [IsScalarTower k A M₂]
+  [AddCommGroup M₃] [Module A M₃] [Module k M₃] [IsScalarTower k A M₃]
+
+variable [Module.Projective A P₀]
+
+/-- **The snake lemma for the defect.** For a cokernel presentation `P₁ → P₀ → X → 0` with `P₀`
+projective and an exact sequence `0 → M₁ → M₂ → M₃ → 0`, the contravariant defect `δ^*(X)` is
+the kernel of `H(φ) : H(M₁) → H(M₂)`. -/
+noncomputable def contravariantDefectEquivKer {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X}
+    (hfp : Exact f p) (hp : Surjective p) {φ : M₁ →ₗ[A] M₂} {ψ : M₂ →ₗ[A] M₃}
+    (hφ : Injective φ) (hψ : Surjective ψ) (hφψ : Exact φ ψ) :
+    contravariantDefect k ψ X ≃ₗ[k] ker (homCokernelMap k f φ) :=
+  let δ := SnakeLemma.δ' (f.lcomp k M₁) (f.lcomp k M₂) (f.lcomp k M₃)
+    (φ.compRight k) (ψ.compRight k) (hφψ.compRight_of_injective (T := k) P₀ hφ)
+    (φ.compRight k) (ψ.compRight k) (hφψ.compRight_of_injective (T := k) P₁ hφ) rfl rfl
+    (p.lcomp k M₃) (hfp.lcomp_of_surjective (T := k) M₃ hp) (range (f.lcomp k M₁)).mkQ
+    (exact_map_mkQ_range _)
+    (fun g ↦ Module.projective_lifting_property ψ g hψ)
+    (fun _ _ hgh ↦ LinearMap.ext fun x ↦ hφ (LinearMap.congr_fun hgh x))
+  have h₁ : Exact (ψ.compRight k : (X →ₗ[A] M₂) →ₗ[k] (X →ₗ[A] M₃)) δ :=
+    SnakeLemma.exact_δ'_right _ _ _ _ _ _ _ _ _ _ _ (p.lcomp k M₂)
+      (hfp.lcomp_of_surjective (T := k) M₂ hp) _ _ _ _ _ _ _ rfl
+      (lcomp_injective_of_surjective p hp)
+  have h₂ : Exact δ (homCokernelMap k f φ) :=
+    SnakeLemma.exact_δ'_left _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (range (f.lcomp k M₂)).mkQ
+      (exact_map_mkQ_range _) _ _ _ (homCokernelMap_comp_mkQ k f φ) (Submodule.mkQ_surjective _)
+  Submodule.quotEquivOfEq _ _ h₁.linearMap_ker_eq.symm ≪≫ₗ δ.quotKerEquivRange ≪≫ₗ
+    LinearEquiv.ofEq _ _ h₂.linearMap_ker_eq.symm
+
+variable {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X} {φ : M₁ →ₗ[A] M₂} {ψ : M₂ →ₗ[A] M₃}
+
+/-- **The snake map on representatives.** If `y : P₀ → M₂` lifts `g ∘ p` along `ψ` and
+`z : P₁ → M₁` lifts `y ∘ f` along `φ`, then `δ^*(X) ≅ ker H(φ)` sends the class of `g` to the
+class of `z`. -/
+theorem contravariantDefectEquivKer_mk (hfp : Exact f p) (hp : Surjective p) (hφ : Injective φ)
+    (hψ : Surjective ψ) (hφψ : Exact φ ψ) (g : X →ₗ[A] M₃) (y : P₀ →ₗ[A] M₂)
+    (hy : ψ ∘ₗ y = g ∘ₗ p) (z : P₁ →ₗ[A] M₁) (hz : φ ∘ₗ z = y ∘ₗ f) :
+    (contravariantDefectEquivKer (k := k) hfp hp hφ hψ hφψ (Submodule.Quotient.mk g) :
+      (P₁ →ₗ[A] M₁) ⧸ range (f.lcomp k M₁)) = Submodule.Quotient.mk z := by
+  simp only [contravariantDefectEquivKer, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearEquiv.coe_ofEq_apply, LinearMap.quotKerEquivRange_apply_mk]
+  exact SnakeLemma.δ'_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ g y
+    (by rw [compRight_apply, lcomp_apply']; exact hy) z
+    (by rw [compRight_apply, lcomp_apply']; exact hz)
+
+variable {M₁' M₂' M₃' : Type*}
+  [AddCommGroup M₁'] [Module A M₁'] [Module k M₁'] [IsScalarTower k A M₁']
+  [AddCommGroup M₂'] [Module A M₂'] [Module k M₂'] [IsScalarTower k A M₂']
+  [AddCommGroup M₃'] [Module A M₃'] [Module k M₃'] [IsScalarTower k A M₃']
+  {φ' : M₁' →ₗ[A] M₂'} {ψ' : M₂' →ₗ[A] M₃'} {a₁ : M₁ →ₗ[A] M₁'} {a₂ : M₂ →ₗ[A] M₂'}
+  {a₃ : M₃ →ₗ[A] M₃'}
+
+/-- **Naturality of the snake lemma for the defect.** A morphism `(a₁, a₂, a₃)` of exact sequences
+`0 → M₁ → M₂ → M₃ → 0` carries `δ^*(X) ≅ ker H(φ)` to `δ'^*(X) ≅ ker H(φ')`: postcomposition
+with `a₃` on the left corresponds to `H(a₁)` on the right. -/
+theorem contravariantDefectEquivKer_naturality (hfp : Exact f p) (hp : Surjective p)
+    (hφ : Injective φ) (hψ : Surjective ψ) (hφψ : Exact φ ψ) (hφ' : Injective φ')
+    (hψ' : Surjective ψ') (hφψ' : Exact φ' ψ') (h₁ : a₂ ∘ₗ φ = φ' ∘ₗ a₁)
+    (h₂ : a₃ ∘ₗ ψ = ψ' ∘ₗ a₂) (x : contravariantDefect k ψ X) :
+    (contravariantDefectEquivKer hfp hp hφ' hψ' hφψ' (contravariantDefectMap k h₂ X x) :
+      (P₁ →ₗ[A] M₁') ⧸ range (f.lcomp k M₁')) =
+      homCokernelMap k f a₁ (contravariantDefectEquivKer hfp hp hφ hψ hφψ x) := by
+  obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  obtain ⟨y, hy⟩ := Module.projective_lifting_property ψ (g ∘ₗ p) hψ
+  obtain ⟨z, hz⟩ := (hφψ.compRight_of_injective (T := k) P₁ hφ (y ∘ₗ f)).mp (by
+    rw [compRight_apply, ← LinearMap.comp_assoc, hy, LinearMap.comp_assoc,
+      hfp.linearMap_comp_eq_zero, LinearMap.comp_zero])
+  rw [compRight_apply] at hz
+  rw [contravariantDefectMap_mk, contravariantDefectEquivKer_mk hfp hp hφ hψ hφψ g y hy z hz,
+    contravariantDefectEquivKer_mk hfp hp hφ' hψ' hφψ' (a₃ ∘ₗ g) (a₂ ∘ₗ y)
+      (comp_comp_eq_comp_comp_of_comp_eq h₂ hy) (a₁ ∘ₗ z)
+      (comp_comp_eq_comp_comp_of_comp_eq h₁ hz), homCokernelMap_mk]
+
+variable {P₀' P₁' X' : Type*} [AddCommGroup P₀'] [Module A P₀'] [Module.Projective A P₀']
+  [AddCommGroup P₁'] [Module A P₁'] [AddCommGroup X'] [Module A X'] {f' : P₁' →ₗ[A] P₀'}
+  {p' : P₀' →ₗ[A] X'} {t : X →ₗ[A] X'} {t₀ : P₀ →ₗ[A] P₀'} {t₁ : P₁ →ₗ[A] P₁'}
+
+/-- **Naturality of the snake lemma for the defect in the presented module.** For a map
+`t : X → X'` lifted to presentations by `(t₀, t₁)`, precomposition with `t` on `δ^*` corresponds to
+the map of Hom cokernels induced by the lift. -/
+theorem contravariantDefectEquivKer_comap (hfp : Exact f p) (hp : Surjective p)
+    (hfp' : Exact f' p') (hp' : Surjective p') (hφ : Injective φ) (hψ : Surjective ψ)
+    (hφψ : Exact φ ψ) (ht₀ : p' ∘ₗ t₀ = t ∘ₗ p) (ht₁ : t₀ ∘ₗ f = f' ∘ₗ t₁)
+    (x : contravariantDefect k ψ X') :
+    (contravariantDefectEquivKer hfp hp hφ hψ hφψ (contravariantDefectComap k ψ t x) :
+      (P₁ →ₗ[A] M₁) ⧸ range (f.lcomp k M₁)) =
+      covariantDefectMap k ht₁ M₁ (contravariantDefectEquivKer hfp' hp' hφ hψ hφψ x) := by
+  obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  obtain ⟨y, hy⟩ := Module.projective_lifting_property ψ (g ∘ₗ p') hψ
+  obtain ⟨z, hz⟩ := (hφψ.compRight_of_injective (T := k) P₁' hφ (y ∘ₗ f')).mp (by
+    rw [compRight_apply, ← LinearMap.comp_assoc, hy, LinearMap.comp_assoc,
+      hfp'.linearMap_comp_eq_zero, LinearMap.comp_zero])
+  rw [compRight_apply] at hz
+  rw [contravariantDefectComap_mk, contravariantDefectEquivKer_mk hfp' hp' hφ hψ hφψ g y hy z hz,
+    contravariantDefectEquivKer_mk hfp hp hφ hψ hφψ (g ∘ₗ t) (y ∘ₗ t₀)
+      (by rw [← LinearMap.comp_assoc, hy, LinearMap.comp_assoc, ht₀, ← LinearMap.comp_assoc])
+      (z ∘ₗ t₁)
+      (by rw [← LinearMap.comp_assoc, hz, LinearMap.comp_assoc, ← ht₁, ← LinearMap.comp_assoc]),
+    covariantDefectMap_mk]
+
+variable [Module.Finite A P₀] [Module.Finite A P₁] [Module.Projective A P₁]
+  {E : Type w} [AddCommGroup E] [Module k E] [Small.{w} k] [Module.Injective k E]
+
+/-- **Auslander's defect formula.** Let `A` be a `k`-algebra, `E` an injective `k`-module and
+`D = Hom_k(-, E)`. For an exact sequence `0 → M₁ → M₂ → M₃ → 0` of `A`-modules and a module `X`
+with a presentation `P₁ → P₀ → X → 0` by finitely generated projectives,
+`D δ^*(X) ≅ δ_*(D Tr X)`, where `Tr X` is the transpose of the presentation. -/
+noncomputable def dualContravariantDefectEquivCovariantDefect {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X}
+    (hfp : Exact f p) (hp : Surjective p) {φ : M₁ →ₗ[A] M₂} {ψ : M₂ →ₗ[A] M₃} (hφ : Injective φ)
+    (hψ : Surjective ψ) (hφψ : Exact φ ψ) :
+    (contravariantDefect k ψ X →ₗ[k] E) ≃ₗ[k]
+      covariantDefect k φ (MatlisDual k E (AuslanderReitenTranspose f)) :=
+  LinearEquiv.arrowCongr (contravariantDefectEquivKer hfp hp hφ hψ hφψ) (LinearEquiv.refl k E) ≪≫ₗ
+    (cokernelEquivDualKer (homCokernelMap k f φ)).symm ≪≫ₗ
+      Submodule.Quotient.equiv _ _ (auslanderReitenHomCokernelDualEquiv f) (by
+        ext g
+        simp only [Submodule.mem_map, mem_range, lcomp_apply']
+        constructor
+        · rintro ⟨_, ⟨u, rfl⟩, rfl⟩
+          exact ⟨auslanderReitenHomCokernelDualEquiv f u,
+            (auslanderReitenHomCokernelDualEquiv_map f φ u).symm⟩
+        · rintro ⟨v, rfl⟩
+          obtain ⟨u, rfl⟩ := (auslanderReitenHomCokernelDualEquiv f).surjective v
+          exact ⟨_, ⟨u, rfl⟩, auslanderReitenHomCokernelDualEquiv_map f φ u⟩)
+
+/-- **Naturality of Auslander's defect formula** in the exact sequence. For a morphism
+`(a₁, a₂, a₃)` from `0 → M₁ → M₂ → M₃ → 0` to `0 → M₁' → M₂' → M₃' → 0`, the isomorphisms
+`D δ^*(X) ≅ δ_*(D Tr X)` and `D δ'^*(X) ≅ δ'_*(D Tr X)` commute with the dual of postcomposition
+by `a₃` and with precomposition by `a₁`. -/
+theorem dualContravariantDefectEquivCovariantDefect_naturality (hfp : Exact f p)
+    (hp : Surjective p) (hφ : Injective φ) (hψ : Surjective ψ) (hφψ : Exact φ ψ)
+    (hφ' : Injective φ') (hψ' : Surjective ψ') (hφψ' : Exact φ' ψ') (h₁ : a₂ ∘ₗ φ = φ' ∘ₗ a₁)
+    (h₂ : a₃ ∘ₗ ψ = ψ' ∘ₗ a₂) (χ : contravariantDefect k ψ' X →ₗ[k] E) :
+    dualContravariantDefectEquivCovariantDefect hfp hp hφ hψ hφψ
+        (χ ∘ₗ contravariantDefectMap k h₂ X) =
+      covariantDefectMap k h₁ _
+        (dualContravariantDefectEquivCovariantDefect hfp hp hφ' hψ' hφψ' χ) := by
+  simp only [dualContravariantDefectEquivCovariantDefect, LinearEquiv.trans_apply]
+  -- Represent the class attached to `χ` by a functional `v` on `H(M₁')`.
+  obtain ⟨v, hv⟩ := Submodule.Quotient.mk_surjective _
+    ((cokernelEquivDualKer (S := k) (homCokernelMap k f φ')).symm
+      ((contravariantDefectEquivKer hfp hp hφ' hψ' hφψ').arrowCongr (LinearEquiv.refl k E) χ))
+  rw [cokernelEquivDualKer_symm_arrowCongr_comp _ _
+    (contravariantDefectEquivKer_naturality hfp hp hφ hψ hφψ hφ' hψ' hφψ' h₁ h₂) hv, ← hv]
+  simp [Submodule.Quotient.equiv_apply]
+
+variable [Module.Finite A P₀'] [Module.Finite A P₁'] [Module.Projective A P₁']
+
+/-- **Naturality of Auslander's defect formula in the presented module.** For a map `t : X → X'`
+lifted by `(t₀, t₁)` to the presentations, the isomorphisms `D δ^*(X) ≅ δ_*(D Tr X)` and
+`D δ^*(X') ≅ δ_*(D Tr X')` carry the dual of precomposition with `t` to postcomposition with the
+dual `D Tr(t) : D Tr X → D Tr X'` of the map of transposes. -/
+theorem dualContravariantDefectEquivCovariantDefect_comap (hfp : Exact f p) (hp : Surjective p)
+    (hfp' : Exact f' p') (hp' : Surjective p') (hφ : Injective φ) (hψ : Surjective ψ)
+    (hφψ : Exact φ ψ) (ht₀ : p' ∘ₗ t₀ = t ∘ₗ p) (ht₁ : t₀ ∘ₗ f = f' ∘ₗ t₁)
+    (χ : contravariantDefect k ψ X →ₗ[k] E) :
+    dualContravariantDefectEquivCovariantDefect hfp' hp' hφ hψ hφψ
+        (χ ∘ₗ contravariantDefectComap k ψ t) =
+      homCokernelMap k φ (MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht₁))
+        (dualContravariantDefectEquivCovariantDefect hfp hp hφ hψ hφψ χ) := by
+  simp only [dualContravariantDefectEquivCovariantDefect, LinearEquiv.trans_apply]
+  -- Represent the class attached to `χ` by a functional `v` on `H(M₁)`.
+  obtain ⟨v, hv⟩ := Submodule.Quotient.mk_surjective _
+    ((cokernelEquivDualKer (S := k) (homCokernelMap k f φ)).symm
+      ((contravariantDefectEquivKer hfp hp hφ hψ hφψ).arrowCongr (LinearEquiv.refl k E) χ))
+  rw [cokernelEquivDualKer_symm_arrowCongr_comp _ _
+    (contravariantDefectEquivKer_comap hfp hp hfp' hp' hφ hψ hφψ ht₀ ht₁) hv, ← hv]
+  simp [Submodule.Quotient.equiv_apply, auslanderReitenHomCokernelDualEquiv_comap]
+
+end Defect
+
+end Function.Exact
