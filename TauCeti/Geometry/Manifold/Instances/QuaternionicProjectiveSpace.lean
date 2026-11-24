@@ -30,7 +30,7 @@ manifold of dimension `4n`.
 ## References
 
 * The atlas follows Tau Ceti's complex manifold structure on complex projective space in
-  `TauCeti/Geometry/Manifold/Instances/ComplexProjectiveSpace.lean`.
+  `TauCeti/Geometry/Manifold/Instances/ComplexProjectiveSpace/Basic.lean`.
 -/
 
 public section

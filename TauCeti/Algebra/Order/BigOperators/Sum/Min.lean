@@ -39,6 +39,7 @@ reindexing; this is the counting step in the uniqueness of elementary divisors.
   pointwise minima equals their `L¹` distance.
 * `Finset.sub_sum_min_eq_sum_abs_div_two`: for two families with common sum `S`, `S` minus the sum
   of their pointwise minima is half their `L¹` distance.
+* `Finset.sum_min_add_one`: the first-difference identity for truncated sums.
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
 * `Fintype.exists_equiv_of_forall_sum_min_eq`: two finite families of positive natural numbers
   with the same truncated sums agree up to a bijection of their index types.
@@ -60,6 +61,13 @@ theorem sum_min_add_sum_tsub {M : Type*} [AddCommMonoid M] [LinearOrder M]
     [CanonicallyOrderedAdd M] [Sub M] [OrderedSub M] (s : Finset ι) (f g : ι → M) :
     ∑ x ∈ s, min (f x) (g x) + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
   simp_rw [← sum_add_distrib, add_comm (min _ _), tsub_add_min]
+
+/-- Raising the truncation level of `∑ l, min k (c l)` by one adds the number of members of the
+family `c` exceeding `k`, the length of the `k`-th column of its Young diagram. -/
+theorem sum_min_add_one (u : Finset α) (c : α → ℕ) (k : ℕ) :
+    ∑ l ∈ u, min (k + 1) (c l) = ∑ l ∈ u, min k (c l) + #{l ∈ u | k < c l} := by
+  rw [card_filter, ← sum_add_distrib]
+  exact sum_congr rfl fun l _ => by split_ifs <;> omega
 
 /-- For `p < q`, the second differences of the truncated sums `∑ l, min k (c l)` at `p` and `q`
 count the members of the family `c` strictly between `p` and `q`. -/

@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.FiniteOrder
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
@@ -50,8 +52,8 @@ proof writes `T = (1 + ‖y‖ ^ 2) ^ K S` with `S` of finite Sobolev order
 coordinate factor through `Op(r)` with the commutator rule
 `y_j Op(r) U = Op(r) (y_j U) + i Op(∂_{ξ_j} r) U` (`TauCeti.Symbol.smulLeftCLM_quantizeTempered`):
 `y_j Op(r) U` equals `(ψ y_j) Op(r) U` for a cutoff `ψ` equal to `1` on the spatial support of `r`
-(`TauCeti.Symbol.smulLeftCLM_quantizeTempered_of_eq_one`), and multiplication by the Schwartz
-function `ψ y_j` preserves every `H^t`.
+(`TauCeti.Symbol.HasCompactSpatialSupport.exists_smulLeftCLM_quantizeTempered_eq`), and
+multiplication by the Schwartz function `ψ y_j` preserves every `H^t`.
 
 ## Main results
 
@@ -64,6 +66,11 @@ function `ψ y_j` preserves every `H^t`.
   compact spatial support, `Op(r) T` lies in every `H^t` for every tempered distribution `T`.
 * `TauCeti.Symbol.IsSmoothing.exists_contDiff_quantizeTempered_apply_eq_integral`: hence
   `Op(r) T` is a smooth function.
+* `TauCeti.Symbol.IsSmoothing.exists_hasCompactSupport_quantizeTempered_eq`: in fact `Op(r) T` is a
+  compactly supported Schwartz function, since it is not changed by a compactly supported cutoff
+  equal to `1` on the spatial support of `r`.
+* `TauCeti.Symbol.IsSmoothing.memBesov_quantizeTempered`: hence `Op(r) T` lies in every Besov
+  space `B^s_{p,q}`, `q ≠ 0`.
 
 ## References
 
@@ -80,7 +87,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TemperedDistribution
-open scoped SchwartzMap BesselPotentialSpace ContDiff
+open scoped SchwartzMap BesselPotentialSpace ContDiff ENNReal
 
 namespace TauCeti
 
@@ -255,13 +262,8 @@ private theorem SmoothedBy.smulLeftCLM_coord {U : 𝓢'(CoordinateSpace n, ℂ)}
   rw [eq_sub_of_add_eq (smulLeftCLM_quantizeTempered r hr.isUniform j U).symm]
   refine TemperedDistribution.MemSobolev.sub ?_
     ((hU _ _ (hsm.frequencyDeriv j) (hr.frequencyDeriv j) t).smul Complex.I)
-  obtain ⟨K, hK, hKr⟩ := hasCompactSpatialSupport_iff.1 hr
-  obtain ⟨ψ, -, -, hψ⟩ := hK.exists_schwartzMap_cutoff isOpen_univ (Set.subset_univ K)
-  have hψ1 (x : CoordinateSpace n) (ξ : CoordinateSpace n) (hx : r.coefficient (x, ξ) ≠ 0) :
-      ψ x = 1 := by
-    by_contra hψx
-    exact hx (hKr x (fun hxK ↦ hψx (hψ.self_of_nhdsSet x hxK)) ξ)
-  rw [← smulLeftCLM_quantizeTempered_of_eq_one hr.isUniform ψ.hasTemperateGrowth hψ1,
+  obtain ⟨ψ, -, hψ⟩ := hr.exists_smulLeftCLM_quantizeTempered_eq (F := ℂ)
+  rw [← hψ,
     TemperedDistribution.smulLeftCLM_smulLeftCLM_apply ψ.hasTemperateGrowth
       (hasTemperateGrowth_coord j), mul_comm (ψ : CoordinateSpace n → ℂ)]
   exact (hU m r hsm hr t).smulLeftCLM_mul (hasTemperateGrowth_coord j) ψ
@@ -337,6 +339,36 @@ theorem IsSmoothing.exists_contDiff_quantizeTempered_apply_eq_integral (hsm : r.
       ∀ φ : 𝓢(CoordinateSpace n, ℂ), quantizeTempered ℂ r hr.isUniform T φ = ∫ x, φ x • g x :=
   TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev
     (hsm.memSobolev_quantizeTempered hr T)
+
+/-- A smoothing symbol `r` with compact spatial support maps every tempered distribution `T` to a
+Schwartz function: `Op(r) T` is the tempered distribution of a smooth compactly supported
+function. -/
+theorem IsSmoothing.exists_hasCompactSupport_quantizeTempered_eq (hsm : r.IsSmoothing)
+    (hr : r.HasCompactSpatialSupport) (T : 𝓢'(CoordinateSpace n, ℂ)) :
+    ∃ f : 𝓢(CoordinateSpace n, ℂ), HasCompactSupport f ∧
+      quantizeTempered ℂ r hr.isUniform T = f := by
+  obtain ⟨g, hg, hgT⟩ := hsm.exists_contDiff_quantizeTempered_apply_eq_integral hr T
+  obtain ⟨ψ, hψc, hψ⟩ := hr.exists_smulLeftCLM_quantizeTempered_eq (F := ℂ)
+  have hc : HasCompactSupport fun x ↦ ψ x • g x := hψc.smul_right
+  set f := hc.toSchwartzMap ((ψ.smooth ⊤).smul hg)
+  have hf : ⇑f = fun x ↦ ψ x • g x := funext (hc.toSchwartzMap_toFun _)
+  refine ⟨f, hf ▸ hc, ?_⟩
+  rw [← hψ T]
+  ext χ
+  rw [smulLeftCLM_apply_apply, hgT, SchwartzMap.coe_apply, hf]
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  simp only [SchwartzMap.smulLeftCLM_apply_apply ψ.hasTemperateGrowth, smul_eq_mul]
+  ring
+
+/-- **Smoothing operators on Besov spaces.** A smoothing symbol `r` with compact spatial support
+maps every tempered distribution `T`, of any order and growth, into every Besov space
+`B^s_{p,q}`, `q ≠ 0`. -/
+theorem IsSmoothing.memBesov_quantizeTempered (hsm : r.IsSmoothing)
+    (hr : r.HasCompactSpatialSupport) (T : 𝓢'(CoordinateSpace n, ℂ))
+    (φ : ContDiffBump (0 : CoordinateSpace n)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] {q : ℝ≥0∞}
+    (hq : q ≠ 0) : (quantizeTempered ℂ r hr.isUniform T).MemBesov φ s p q := by
+  obtain ⟨f, -, hf⟩ := hsm.exists_hasCompactSupport_quantizeTempered_eq hr T
+  exact hf ▸ f.memBesov φ s p hq
 
 end Tempered
 

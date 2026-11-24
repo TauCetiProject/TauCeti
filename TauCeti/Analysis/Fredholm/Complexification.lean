@@ -136,7 +136,11 @@ theorem isFredholm_complexify_iff {T : X →L[ℝ] Y} :
 operator has the same index as the operator. No Fredholm hypothesis is needed. -/
 @[simp]
 theorem index_complexify (T : X →L[ℝ] Y) : T.complexify.index = T.index := by
-  rw [index_def, index_def, coe_complexify, LinearMap.index_equiv_comp,
+  have h : (T : X →ₗ[ℝ] Y).complexify = (tensorEquivComplexification Y).toLinearMap ∘ₗ
+      (T : X →ₗ[ℝ] Y).baseChange ℂ ∘ₗ (tensorEquivComplexification X).symm.toLinearMap := by
+    rw [← LinearMap.arrowCongr_tensorEquivComplexification_baseChange]
+    exact LinearMap.ext fun z ↦ LinearEquiv.arrowCongr_apply _ _ _ z
+  rw [index_def, index_def, coe_complexify, h, LinearMap.index_equiv_comp,
     LinearMap.index_comp_equiv, LinearMap.index_baseChange]
 
 end Complexify

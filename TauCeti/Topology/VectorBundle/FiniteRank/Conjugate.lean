@@ -103,7 +103,7 @@ theorem conjugate_map {A D : FiniteRankBundleCore ℂ B} (f : A ⟶ D) :
 /-- Double conjugation is isomorphic to the original bundle by the identity on every fibre. -/
 noncomputable def doubleConjugateIso (A : FiniteRankBundleCore ℂ B) :
     (conjugate B).obj ((conjugate B).obj A) ≅ A :=
-  constIso (fun _ => rfl) (ContinuousLinearEquiv.refl ℂ _) fun i j x _ _ => by
+  constIso (fun _ => subset_rfl) (ContinuousLinearEquiv.refl ℂ _) fun i j x _ _ => by
     -- Work on standard coordinate spaces, rather than the inherited core-fibre instances.
     have h : (ContinuousLinearMap.id ℂ (Fin A.rank → ℂ)).comp
         (star (toConv (star (toConv (A.core.coordChange i j x))).ofConv)).ofConv =
@@ -186,7 +186,7 @@ variable {X : Type v} [TopologicalSpace X]
 /-- Conjugation commutes with pullback, by the identity in every coordinate fibre. -/
 noncomputable def conjugatePullbackIso (A : FiniteRankBundleCore ℂ B) (f : C(X, B)) :
     (conjugate X).obj (A.pullback f) ≅ ((conjugate B).obj A).pullback f :=
-  constIso (fun _ => rfl) (ContinuousLinearEquiv.refl ℂ _) fun i j x _ _ => by
+  constIso (fun _ => subset_rfl) (ContinuousLinearEquiv.refl ℂ _) fun i j x _ _ => by
     simp only [coordChange_conjugate_obj, coordChange_pullback]
     -- State the identity on standard coordinates to fix the inherited fibre instances.
     have h : (ContinuousLinearMap.id ℂ (Fin A.rank → ℂ)).comp
