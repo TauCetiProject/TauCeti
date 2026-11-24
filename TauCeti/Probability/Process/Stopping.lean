@@ -83,6 +83,24 @@ theorem piecewise_top {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
 
 end IsStoppingTime
 
+/-- A half-open stochastic interval `[σ, τ)` restricted to an event `A` is the difference of the
+closed stochastic ray `[σ, ∞)` restricted to `A` and the closed stochastic ray `[τ, ∞)`. -/
+theorem setOf_le_and_lt_and_mem_eq_sdiff {ι Ω : Type*} [LinearOrder ι]
+    (σ τ : Ω → WithTop ι) (A : Set Ω) :
+    {p : ι × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) < τ p.2 ∧ p.2 ∈ A} =
+      {p : ι × Ω | σ p.2 ≤ p.1 ∧ p.2 ∈ A} \ {p : ι × Ω | τ p.2 ≤ p.1} := by
+  ext p
+  simp only [Set.mem_ofPred_eq, Set.mem_sdiff, not_le]
+  tauto
+
+/-- A half-open stochastic interval `[σ, τ)` is the difference of the closed stochastic rays
+`[σ, ∞)` and `[τ, ∞)`. -/
+theorem setOf_le_and_lt_eq_sdiff {ι Ω : Type*} [LinearOrder ι]
+    (σ τ : Ω → WithTop ι) :
+    {p : ι × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ι) < τ p.2} =
+      {p : ι × Ω | σ p.2 ≤ p.1} \ {p : ι × Ω | τ p.2 ≤ p.1} := by
+  simpa using setOf_le_and_lt_and_mem_eq_sdiff σ τ Set.univ
+
 end MeasureTheory
 
 /-- The finite supremum of stopping times is a stopping time.
