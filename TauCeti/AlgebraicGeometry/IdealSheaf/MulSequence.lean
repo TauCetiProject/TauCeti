@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.MayerVietoris
 public import TauCeti.AlgebraicGeometry.IdealSheaf.TensorProduct
+import Mathlib.CategoryTheory.Abelian.DiagramLemmas.Four
 
 /-!
 # The exact sequence of a product of ideal sheaves
@@ -57,7 +58,8 @@ private abbrev tensorIdealSequence : ShortComplex X.Modules :=
   (ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft J.sheaf)
 
 private lemma tensorIdealSequence_f :
-    (tensorIdealSequence I J).f = J.sheaf ◁ I.sheafιUnit :=
+    (tensorIdealSequence I J).f = J.sheaf ◁ I.sheafιUnit := by
+  rw [sheafιUnit_def]
   rfl
 
 private lemma tensorIdealSequence_g :
@@ -157,30 +159,27 @@ lemma mulSequence_g :
     (mulSequence I J).g = pushforwardSubschemeMap (mul_le_of_le_one_left bot_le le_top) :=
   rfl
 
-/-- Multiplication `J ⊗ ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(I * J)}` is a monomorphism: a function on `V(I)`
-whose product with `J` vanishes on `V(I * J)` vanishes on `V(I)`. -/
+/-- Multiplication `J ⊗ ι_* 𝒪_{V(I)} ⟶ ι_* 𝒪_{V(I * J)}` is a monomorphism, that is, the
+induced map `J ⧸ I J ⟶ 𝒪_X ⧸ I J` is injective. It is the map of cokernels in the morphism from
+`J ⊗ I ⟶ J ⊗ 𝒪_X ⟶ J ⊗ ι_* 𝒪_{V(I)}` to `I * J ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(I * J)}` given by
+multiplication, whose first component is an epimorphism (`epi_sheafMul`) and second a
+monomorphism. -/
 instance mono_mulPushforwardSubscheme : Mono (I.mulPushforwardSubscheme J) := by
-  have hIJ := (I * J).shortExact_toPushforwardSubscheme
   have := epi_tensorIdealSequence_g I J
   have := epi_sheafMul I J
-  refine Preadditive.mono_of_cancel_zero _ fun {T} x hx ↦ ?_
-  -- Lift `x` to `J ⊗ 𝒪_X` after refining its source.
-  obtain ⟨T₁, π₁, _, u, hu⟩ := surjective_up_to_refinements_of_epi (tensorIdealSequence I J).g x
-  -- Its product with `J` restricts to zero on `V(I * J)`, so it is a section of `I * J` ...
-  have hu' : (u ≫ tensorMul J) ≫ (I * J).toPushforwardSubscheme = 0 := by
-    have h := u ≫= whiskerLeft_toPushforwardSubscheme_mulPushforwardSubscheme I J
-    rw [← Category.assoc, ← tensorIdealSequence_g, ← hu, Category.assoc, hx, comp_zero] at h
-    simpa only [Category.assoc] using h.symm
-  -- ... which, after a further refinement, is a product of sections of `J` and of `I`.
-  obtain ⟨T₂, π₂, _, w, hw⟩ := surjective_up_to_refinements_of_epi (sheafMul I J)
-    (hIJ.exact.lift _ hu')
-  have hwu : (w ≫ (β_ J.sheaf I.sheaf).inv) ≫ (tensorIdealSequence I J).f = π₂ ≫ u := by
-    rw [← cancel_mono (tensorMul J), Category.assoc, Category.assoc,
-      ← braiding_sheafMul_sheafιUnit, Iso.inv_hom_id_assoc, ← Category.assoc, ← hw,
-      Category.assoc, Category.assoc]
-    exact congrArg (π₂ ≫ ·) (hIJ.exact.lift_f _ hu')
-  rw [← cancel_epi π₁, ← cancel_epi π₂, comp_zero, comp_zero, hu, ← Category.assoc, ← hwu,
-    Category.assoc, (tensorIdealSequence I J).zero, comp_zero]
+  let φ : tensorIdealSequence I J ⟶ ShortComplex.mk _ _ (I * J).sheafι_toPushforwardSubscheme :=
+    { τ₁ := (β_ J.sheaf I.sheaf).hom ≫ sheafMul I J
+      τ₂ := tensorMul J
+      τ₃ := I.mulPushforwardSubscheme J
+      comm₁₂ := by
+        have h := braiding_sheafMul_sheafιUnit I J
+        rw [sheafιUnit_def] at h
+        rw [Category.assoc]
+        exact h
+      comm₂₃ := (whiskerLeft_toPushforwardSubscheme_mulPushforwardSubscheme I J).symm }
+  exact ShortComplex.mono_of_epi_of_epi_of_mono φ
+    (I * J).shortExact_toPushforwardSubscheme.exact inferInstance inferInstance
+    (inferInstanceAs (Mono ((ρ_ J.sheaf).hom ≫ J.sheafιUnit)))
 
 /-- The sequence of a product of ideal sheaves is exact in the middle: a function on `V(I * J)`
 vanishing on `V(J)` is, locally, a local function of `J`. -/
@@ -197,7 +196,8 @@ private lemma exact_mulSequence : (mulSequence I J).Exact := by
     rw [← toPushforwardSubscheme_pushforwardSubschemeMap (I := I * J) (J := J)
       (mul_le_of_le_one_left bot_le le_top), ← Category.assoc, ← ha, Category.assoc]
     exact (congrArg (π₁ ≫ ·) hy).trans comp_zero
-  obtain ⟨c, hc⟩ : ∃ c : A₁ ⟶ J.sheaf, c ≫ J.sheafιUnit = a := ⟨_, hJs.exact.lift_f a ha'⟩
+  obtain ⟨c, hc⟩ : ∃ c : A₁ ⟶ J.sheaf, c ≫ J.sheafιUnit = a :=
+    ⟨_, by rw [sheafιUnit_def]; exact hJs.exact.lift_f a ha'⟩
   refine ⟨A₁, π₁, inferInstance, c ≫ (ρ_ J.sheaf).inv ≫ J.sheaf ◁ I.toPushforwardSubscheme, ?_⟩
   rw [ha, Category.assoc, Category.assoc,
     whiskerLeft_toPushforwardSubscheme_mulPushforwardSubscheme, Iso.inv_hom_id_assoc,

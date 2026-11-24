@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.IdealSheaf.MulSequence
 public import TauCeti.AlgebraicGeometry.IdealSheaf.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
 
@@ -73,118 +72,6 @@ noncomputable section
 
 variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
   (I : X.IdealSheafData) {J : X.IdealSheafData} (hJ : J.IsEffectiveCartier)
-
-namespace InvertibleSheaf
-
-variable (L : InvertibleSheaf X)
-
-/-- The exact sequence of the sum of divisors `V(I * J)`, twisted by `L`. -/
-private abbrev twistedMulSequence (J : X.IdealSheafData) : ShortComplex X.Modules :=
-  (mulSequence I J).map (tensorLeft L.obj)
-
-private lemma shortExact_twistedMulSequence (J : X.IdealSheafData) :
-    (twistedMulSequence I L J).ShortExact :=
-  Scheme.Modules.shortExact_map_tensorLeft L.obj (shortExact_mulSequence I J)
-
-/-- The first term of the twisted sequence is `(L ⊗ J) ⊗ ι_* 𝒪_{V(I)}`. -/
-private def twistedMulSequenceX₁Iso : (twistedMulSequence I L J).X₁ ≅
-    (L.tensorProduct hJ.toInvertibleSheaf).obj ⊗ I.pushforwardSubscheme :=
-  (α_ L.obj J.sheaf I.pushforwardSubscheme).symm ≪≫
-    whiskerRightIso (whiskerLeftIso L.obj (eqToIso hJ.toInvertibleSheaf_obj.symm) ≪≫
-      (tensorProductObjIso L hJ.toInvertibleSheaf).symm) _
-
-/-- The vector bundle of rank one underlying `M` is `M`. -/
-private lemma toFixedRankOne_obj_obj_obj (M : InvertibleSheaf X) :
-    ((toFixedRankOne X).obj M).obj.obj = M.obj := by
-  rw [toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj]
-
-variable {I} in
-/-- `H^i(X, M ⊗ ι_* 𝒪_{V(I)})` is finite-dimensional exactly when `H^i(V(I), M|_{V(I)})` is. -/
-private lemma finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff (M : InvertibleSheaf X)
-    (i : ℕ) : FiniteDimensional k (Cohomology (M.obj ⊗ I.pushforwardSubscheme) i) ↔
-      FiniteDimensional k (Cohomology ((pullback I.subschemeι).obj M).obj i) := by
-  have h := I.finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k
-    ((toFixedRankOne X).obj M).obj i
-  rwa [toFixedRankOne_obj_obj_obj, pullback_toFixedRankOne_obj_obj] at h
-
-variable {I} in
-/-- `χ(X, M ⊗ ι_* 𝒪_{V(I)}) = χ(V(I), M|_{V(I)})`. -/
-private lemma eulerCharBelow_tensor_pushforwardSubscheme (M : InvertibleSheaf X) (n : ℕ) :
-    eulerCharBelow k X (M.obj ⊗ I.pushforwardSubscheme) n =
-      eulerCharBelow k I.subscheme ((pullback I.subschemeι).obj M).obj n := by
-  have h := I.eulerCharBelow_tensor_pushforwardSubscheme k ((toFixedRankOne X).obj M).obj n
-  rwa [toFixedRankOne_obj_obj_obj, pullback_toFixedRankOne_obj_obj] at h
-
-variable {I} in
-include k in
-/-- `H^i(X, M ⊗ ι_* 𝒪_{V(I)})` vanishes exactly when `H^i(V(I), M|_{V(I)})` does. -/
-private lemma subsingleton_cohomology_tensor_pushforwardSubscheme_iff (M : InvertibleSheaf X)
-    (i : ℕ) : Subsingleton (Cohomology (M.obj ⊗ I.pushforwardSubscheme) i) ↔
-      Subsingleton (Cohomology ((pullback I.subschemeι).obj M).obj i) := by
-  have h := ((cohomologyBaseLinearEquivOfIso k
-    (I.tensorPushforwardSubschemeIso ((toFixedRankOne X).obj M).obj) i).toEquiv.trans
-      (cohomologyPushforwardIso I.subschemeι _ i).addCommGroupIsoToAddEquiv.toEquiv)
-  replace h := h.subsingleton_congr
-  rwa [toFixedRankOne_obj_obj_obj, pullback_toFixedRankOne_obj_obj] at h
-
-variable (hI : ∀ i < 2, FiniteDimensional k
-    (Cohomology ((pullback I.subschemeι).obj (L.tensorProduct hJ.toInvertibleSheaf)).obj i))
-  (hJL : ∀ i < 2, FiniteDimensional k (Cohomology ((pullback J.subschemeι).obj L).obj i))
-
-include hI hJL in
-private lemma finiteDimensional_cohomology_twistedMulSequence_X₂ {i : ℕ} (hi : i < 2) :
-    FiniteDimensional k (Cohomology (twistedMulSequence I L J).X₂ i) := by
-  have : FiniteDimensional k (Cohomology (twistedMulSequence I L J).X₁ i) :=
-    (finiteDimensional_cohomology_congr k (twistedMulSequenceX₁Iso I hJ L) i).mpr
-      ((finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k _ i).mpr (hI i hi))
-  have : FiniteDimensional k (Cohomology (twistedMulSequence I L J).X₃ i) :=
-    (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k L i).mpr (hJL i hi)
-  exact finiteDimensional_cohomology_X₂ k X (shortExact_twistedMulSequence I L J) i
-
-include hI hJL in
-/-- **Finiteness of cohomology on a sum of divisors.** If the restrictions of `L` to `V(J)` and of
-`L ⊗ J` to `V(I)` have finite-dimensional `H⁰` and `H¹`, where `J` is the ideal sheaf of an
-effective Cartier divisor, then so does the restriction of `L` to `V(I * J)`. -/
-theorem finiteDimensional_cohomology_pullback_subschemeι_mul {i : ℕ} (hi : i < 2) :
-    FiniteDimensional k (Cohomology ((pullback (I * J).subschemeι).obj L).obj i) :=
-  (finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k L i).mp
-    (finiteDimensional_cohomology_twistedMulSequence_X₂ k I hJ L hI hJL hi)
-
-include hI hJL in
-/-- **Euler characteristics on a sum of divisors.** Let `J` be the ideal sheaf of an effective
-Cartier divisor on a scheme `X` over `k` and `I` an ideal sheaf. If the restrictions of `L` to
-`V(J)` and of `L ⊗ J` to `V(I)` have finite-dimensional `H⁰` and `H¹`, and `H²` of the restriction
-of `L ⊗ J` to `V(I)` vanishes, then
-`χ(L|_{V(I * J)}) = χ(L|_{V(J)}) + χ((L ⊗ J)|_{V(I)})`, with `χ = dim H⁰ - dim H¹`. -/
-theorem eulerCharBelow_pullback_subschemeι_mul
-    (hI₂ : Subsingleton
-      (Cohomology ((pullback I.subschemeι).obj (L.tensorProduct hJ.toInvertibleSheaf)).obj 2)) :
-    eulerCharBelow k (I * J).subscheme ((pullback (I * J).subschemeι).obj L).obj 2 =
-      eulerCharBelow k J.subscheme ((pullback J.subschemeι).obj L).obj 2 +
-        eulerCharBelow k I.subscheme
-          ((pullback I.subschemeι).obj (L.tensorProduct hJ.toInvertibleSheaf)).obj 2 := by
-  have hS := shortExact_twistedMulSequence I L J
-  have h₁ (i : ℕ) (hi : i < 2) (_ : 0 < i) :
-      FiniteDimensional k (Cohomology (twistedMulSequence I L J).X₁ i) :=
-    (finiteDimensional_cohomology_congr k (twistedMulSequenceX₁Iso I hJ L) i).mpr
-      ((finiteDimensional_cohomology_tensor_pushforwardSubscheme_iff k _ i).mpr (hI i hi))
-  have hvan : Subsingleton (Cohomology (twistedMulSequence I L J).X₁ 2) :=
-    (cohomologyBaseLinearEquivOfIso k (twistedMulSequenceX₁Iso I hJ L)
-      2).toEquiv.subsingleton_congr.mpr
-        ((subsingleton_cohomology_tensor_pushforwardSubscheme_iff k _ 2).mpr hI₂)
-  have h := eulerCharBelow_eq_add k hS 2 h₁
-    (fun i hi ↦ finiteDimensional_cohomology_twistedMulSequence_X₂ k I hJ L hI hJL hi) hvan
-  rw [eulerCharBelow_congr k (twistedMulSequenceX₁Iso I hJ L) 2] at h
-  -- The other two terms are `(tensorLeft L).obj` of `ι_* 𝒪_{V(I * J)}` and `ι_* 𝒪_{V(J)}`, which
-  -- unfold to `L ⊗ ι_* 𝒪_{V(I * J)}` and `L ⊗ ι_* 𝒪_{V(J)}`; `change` displays them in this form
-  -- for the projection formula.
-  change eulerCharBelow k X (L.obj ⊗ (I * J).pushforwardSubscheme) 2 = _ + eulerCharBelow k X
-    (L.obj ⊗ J.pushforwardSubscheme) 2 at h
-  rw [eulerCharBelow_tensor_pushforwardSubscheme, eulerCharBelow_tensor_pushforwardSubscheme,
-    eulerCharBelow_tensor_pushforwardSubscheme] at h
-  rw [h, add_comm]
-
-end InvertibleSheaf
 
 namespace LineBundleClass
 
@@ -261,19 +148,6 @@ theorem intersectionNumber_subschemeι_mul_of_isIntegral [IsIntegral I.subscheme
     (fun _ _ hi ↦ InvertibleSheaf.finiteDimensional_cohomology_of_isIntegral k _ hi) hI₂
     (intersectionNumber_mul_of_isIntegral k I.subschemeι) hJ' a
 
-/-- On the empty closed subscheme `V(⊤)` every sheaf of modules has trivial cohomology. -/
-private lemma subsingleton_cohomology_top (M : (⊤ : X.IdealSheafData).subscheme.Modules)
-    (i : ℕ) : Subsingleton (Cohomology M i) := by
-  have hM : IsZero M := by
-    rw [IsZero.iff_id_eq_zero]
-    refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
-    obtain rfl : U = ⊥ := TopologicalSpace.Opens.ext (Set.eq_empty_of_isEmpty _)
-    have : Subsingleton Γ(M, ⊥) := (AddCommGrpCat.isZero_iff_subsingleton).mp
-      (TopCat.Sheaf.isTerminalOfEmpty ((Scheme.Modules.toSheaf _).obj M)).isZero
-    ext
-    exact Subsingleton.elim _ _
-  exact (AddCommGrpCat.isZero_iff_subsingleton).mp ((cohomologyFunctor _ i).map_isZero hM)
-
 /-- On the empty closed subscheme `V(⊤)` line bundles have finite-dimensional cohomology and every
 class has degree zero. -/
 private lemma intersectionNumber_subschemeι_top :
@@ -281,7 +155,7 @@ private lemma intersectionNumber_subschemeι_top :
       (Cohomology ((InvertibleSheaf.pullback (⊤ : X.IdealSheafData).subschemeι).obj L).obj j)) ∧
     ∀ a : LineBundleClass X, intersectionNumber k (⊤ : X.IdealSheafData).subschemeι a = 0 := by
   have (M : (⊤ : X.IdealSheafData).subscheme.Modules) (j : ℕ) :=
-    subsingleton_cohomology_top M j
+    subsingleton_cohomology_subscheme_top M j
   refine ⟨fun _ _ _ ↦ inferInstance, fun a ↦ ?_⟩
   obtain ⟨L, rfl⟩ := mk_surjective a
   rw [intersectionNumber_mk, InvertibleSheaf.eulerDegree_eq_finrank_sub]
@@ -313,7 +187,7 @@ private lemma intersectionNumber_subschemeι_pow_mul (hI : I.IsEffectiveCartier)
     have hJn := TauCeti.isEffectiveCartier_mul (TauCeti.isEffectiveCartier_pow hI n) hJ
     rw [pow_succ', mul_assoc]
     refine ⟨fun L i hi ↦ L.finiteDimensional_cohomology_pullback_subschemeι_mul k I hJn
-      (hIfin _) (ih.1 L) hi, fun a ↦ ?_⟩
+      (hIfin _ i hi) (ih.1 L i hi), fun a ↦ ?_⟩
     rw [intersectionNumber_subschemeι_mul_eq_add k I hJn hIfin hI₂ hIadd ih.1, ih.2]
     push_cast
     ring

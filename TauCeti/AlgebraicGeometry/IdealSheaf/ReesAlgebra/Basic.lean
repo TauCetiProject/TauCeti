@@ -124,21 +124,24 @@ def reesMul (i j : ℕ) : I.reesComponent i ⊗ I.reesComponent j ⟶ I.reesComp
   sheafMul (I ^ i) (I ^ j) ≫ eqToHom (congrArg sheaf (pow_add I i j).symm)
 
 /-- The multiplication of the Rees algebra, followed by the inclusion `Iⁱ⁺ʲ ⟶ 𝒪_X`, is the
-inclusion `Iⁱ ⊗ Iʲ ⟶ 𝒪_X ⊗ 𝒪_X` followed by the multiplication of `𝒪_X`. -/
-@[reassoc]
-theorem reesMul_sheafι (i j : ℕ) :
-    I.reesMul i j ≫ (I ^ (i + j)).sheafι =
-      ((I ^ i).sheafι ⊗ₘ (I ^ j).sheafι) ≫ (λ_ (𝟙_ X.Modules)).hom :=
-  (Category.assoc _ _ _).trans
-    ((congrArg (sheafMul (I ^ i) (I ^ j) ≫ ·) (eqToHom_sheafιUnit (pow_add I i j).symm)).trans
-      (sheafMul_sheafι (I ^ i) (I ^ j)))
-
-/-- `reesMul_sheafι`, stated with the inclusions read as morphisms to the monoidal unit. -/
+inclusion `Iⁱ ⊗ Iʲ ⟶ 𝒪_X ⊗ 𝒪_X` followed by the multiplication of `𝒪_X`, with the inclusions read
+as morphisms to the monoidal unit. -/
 @[reassoc]
 lemma reesMul_sheafιUnit (i j : ℕ) :
     I.reesMul i j ≫ (I ^ (i + j)).sheafιUnit =
       ((I ^ i).sheafιUnit ⊗ₘ (I ^ j).sheafιUnit) ≫ (λ_ (𝟙_ X.Modules)).hom :=
-  I.reesMul_sheafι i j
+  (Category.assoc _ _ _).trans
+    ((congrArg (sheafMul (I ^ i) (I ^ j) ≫ ·) (eqToHom_sheafιUnit (pow_add I i j).symm)).trans
+      (sheafMul_sheafιUnit (I ^ i) (I ^ j)))
+
+/-- The multiplication of the Rees algebra, followed by the inclusion `Iⁱ⁺ʲ ⟶ 𝒪_X`, is the
+inclusion `Iⁱ ⊗ Iʲ ⟶ 𝒪_X ⊗ 𝒪_X` followed by the multiplication of `𝒪_X`. -/
+@[reassoc]
+theorem reesMul_sheafι (i j : ℕ) :
+    I.reesMul i j ≫ (I ^ (i + j)).sheafι =
+      ((I ^ i).sheafι ⊗ₘ (I ^ j).sheafι) ≫ (λ_ (𝟙_ X.Modules)).hom := by
+  have h := I.reesMul_sheafιUnit i j
+  rwa [sheafιUnit_def, sheafιUnit_def, sheafιUnit_def] at h
 
 /-- The unit `𝒪_X ⟶ I⁰` of the Rees algebra of `I`: every regular function is a section of
 `I⁰ = 𝒪_X`. -/
@@ -154,8 +157,9 @@ theorem reesOne_sheafι : I.reesOne ≫ (I ^ 0).sheafι = 𝟙 _ :=
 
 /-- `reesOne_sheafι`, stated with the inclusion read as a morphism to the monoidal unit. -/
 @[reassoc]
-lemma reesOne_sheafιUnit : I.reesOne ≫ (I ^ 0).sheafιUnit = 𝟙 _ :=
-  I.reesOne_sheafι
+lemma reesOne_sheafιUnit : I.reesOne ≫ (I ^ 0).sheafιUnit = 𝟙 _ := by
+  rw [sheafιUnit_def]
+  exact I.reesOne_sheafι
 
 /-- The unit of the Rees algebra is a left identity for its multiplication. -/
 private lemma reesOne_whiskerRight_reesMul (n : ℕ) :

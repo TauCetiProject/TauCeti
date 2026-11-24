@@ -301,7 +301,7 @@ open MonoidalCategory
 
 /-- The inclusion `I ⟶ 𝒪_X`, read as a morphism to the monoidal unit of `X.Modules`, so that
 composites with morphisms out of tensor products are formed in a single category. -/
-@[expose] def sheafιUnit (J : X.IdealSheafData) : J.sheaf ⟶ 𝟙_ X.Modules :=
+def sheafιUnit (J : X.IdealSheafData) : J.sheaf ⟶ 𝟙_ X.Modules :=
   J.sheafι
 
 /-- The inclusion `J ⟶ 𝒪_X`, read as a morphism to the monoidal unit, is `sheafι`. -/
