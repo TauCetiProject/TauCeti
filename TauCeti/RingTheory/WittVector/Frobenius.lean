@@ -87,9 +87,10 @@ variable (p R) in
 `p` divides `φ x - x ^ p`, as the zeroth Witt coordinate of `φ x - x ^ p` vanishes. -/
 theorem isFrobeniusLift_frobenius [PerfectRing R p] :
     TauCeti.DeltaRing.IsFrobeniusLift p (frobenius : WittVector p R →+* WittVector p R) :=
+  -- `(p)` is the kernel of the ring hom `constantCoeff`, which commutes with `-` and `^`.
   ⟨fun x => Ideal.mem_span_singleton.1 <| by
-    rw [mem_span_p_iff_coeff_zero_eq_zero, ← constantCoeff_apply, map_sub, map_pow,
-      constantCoeff_apply, constantCoeff_apply, coeff_frobenius_charP, sub_self]⟩
+    rw [← ker_constantCoeff, RingHom.mem_ker, map_sub, map_pow, constantCoeff_apply,
+      constantCoeff_apply, coeff_frobenius_charP, sub_self]⟩
 
 end WittVector
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Valuation.Integers
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.DeltaRing.Basic
+public import TauCeti.RingTheory.Valuation.Basic
 
 /-!
 # Fontaine's filtered truncation of a valuation ring
@@ -41,14 +42,16 @@ no hypothesis; their membership lemmas hold once `p` is prime and `(p : E) ≠ 0
 * `Valuation.PeriodTruncation v p r`: the truncated ring `A = v.integer ⧸ 𝔟`.
 * `Valuation.periodFiltrationIdeal v p i`: the ideal `{x | v x ^ p ≤ v p ^ i}` of `v.integer`.
 * `Valuation.periodFiltration v p r i`: its image `Filⁱ A` in the truncation.
-* `Valuation.periodFrobenius v p r i`: the divided Frobenius `φᵢ : Filⁱ A → A`.
+* `Valuation.periodFrobenius v p r i`: the divided Frobenius `φᵢ : Filⁱ A → A`, bundled as an
+  additive map by `Valuation.periodFrobeniusAddHom`.
 * `Valuation.PeriodTruncation.map`: the ring map of truncations induced by a field map `E → E'`
   along which the two valuations are equivalent.
 
 ## Main results
 
-* `Valuation.mem_periodIdeal`, `Valuation.mk_eq_mk_iff`: two integral representatives have the
-  same class exactly when their difference `d` satisfies `v d ^ (p - 1) < v p ^ r`.
+* `Valuation.mem_periodIdeal`, `Valuation.periodTruncation_mk_eq_mk_iff`: two integral
+  representatives have the same class exactly when their difference `d` satisfies
+  `v d ^ (p - 1) < v p ^ r`.
 * `Valuation.natCast_mem_periodIdeal`, `Valuation.charP_periodTruncation`: `p ∈ 𝔟`, so the
   truncation factors through `𝒪 ⧸ p` and has characteristic `p`.
 * `Valuation.mem_periodFiltration`, `Valuation.periodFiltration_zero`,
@@ -106,18 +109,6 @@ variable {v p r}
 
 /-! ### Valuation estimates -/
 
-private lemma valuation_natCast_le_one : v (p : E) ≤ 1 := by
-  have h := (v.mem_integer_iff _).1 (p : v.integer).property
-  rwa [SubringClass.coe_natCast] at h
-
-private lemma valuation_add_pow_le (x y : E) (n : ℕ) :
-    v (x + y) ^ n ≤ max (v x ^ n) (v y ^ n) := by
-  rcases le_total (v x) (v y) with h | h
-  · exact (pow_le_pow_left₀ zero_le ((v.map_add x y).trans (max_le h le_rfl)) n).trans
-      (le_max_right _ _)
-  · exact (pow_le_pow_left₀ zero_le ((v.map_add x y).trans (max_le le_rfl h)) n).trans
-      (le_max_left _ _)
-
 private lemma valuation_mul_pow_le (a x : v.integer) (n : ℕ) :
     v ((a * x : v.integer) : E) ^ n ≤ v (x : E) ^ n := by
   rw [Subring.coe_mul, map_mul]
@@ -142,12 +133,12 @@ theorem mem_periodIdeal [hp : Fact p.Prime] (hp0 : (p : E) ≠ 0) {x : v.integer
     rw [ZeroMemClass.coe_zero, map_zero, zero_pow (by have := hp.out.two_le; omega)]
     exact pow_pos (valuation_natCast_pos hp0) r
   | add x y _ _ hx hy =>
-    exact (valuation_add_pow_le _ _ _).trans_lt (max_lt hx hy)
+    exact (v.map_add_pow_le_max _ _ _).trans_lt (max_lt hx hy)
   | smul a x _ hx => exact (valuation_mul_pow_le a x _).trans_lt hx
 
 /-- Two integral representatives have the same class in the truncation exactly when their
 difference `d` satisfies `v d ^ (p - 1) < v p ^ r`, that is `v₀ d > r / (p - 1)`. -/
-theorem mk_eq_mk_iff [Fact p.Prime] (hp0 : (p : E) ≠ 0) {x y : v.integer} :
+theorem periodTruncation_mk_eq_mk_iff [Fact p.Prime] (hp0 : (p : E) ≠ 0) {x y : v.integer} :
     Ideal.Quotient.mk (v.periodIdeal p r) x = Ideal.Quotient.mk _ y ↔
       v ((x : E) - y) ^ (p - 1) < v (p : E) ^ r := by
   rw [Ideal.Quotient.eq, mem_periodIdeal hp0, AddSubgroupClass.coe_sub]
@@ -161,7 +152,7 @@ theorem natCast_mem_periodIdeal (hp0 : (p : E) ≠ 0) (hp1 : v (p : E) < 1)
 /-- The period ideal is proper: `1` has valuation `1`, which is not below `v p ^ r ≤ 1`. -/
 theorem periodIdeal_ne_top [Fact p.Prime] (hp0 : (p : E) ≠ 0) : v.periodIdeal p r ≠ ⊤ := by
   rw [Ne, Ideal.eq_top_iff_one, mem_periodIdeal hp0]
-  simpa using pow_le_one₀ zero_le (valuation_natCast_le_one (v := v))
+  simpa using pow_le_one₀ zero_le (v.map_natCast_le_one p)
 
 /-- The truncated ring has characteristic `p`. -/
 theorem charP_periodTruncation [hp : Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : E) < 1)
@@ -182,7 +173,7 @@ theorem mem_periodFiltrationIdeal [hp : Fact p.Prime] {i : ℕ} {x : v.integer} 
   induction hx using Submodule.span_induction with
   | mem _ hx => exact hx
   | zero => simp [zero_pow hp.out.ne_zero]
-  | add x y _ _ hx hy => exact (valuation_add_pow_le _ _ _).trans (max_le hx hy)
+  | add x y _ _ hx hy => exact (v.map_add_pow_le_max _ _ _).trans (max_le hx hy)
   | smul a x _ hx => exact (valuation_mul_pow_le a x _).trans hx
 
 /-- An element of the truncation lies in `Filⁱ A` exactly when it is the class of an integer `x`
@@ -202,7 +193,7 @@ theorem periodFiltration_zero : v.periodFiltration p r 0 = ⊤ := by
 /-- The ideals `{x | v x ^ p ≤ v p ^ i}` decrease in `i`. -/
 theorem periodFiltrationIdeal_antitone : Antitone (v.periodFiltrationIdeal p) := fun _ _ hij =>
   Ideal.span_mono fun _ hx =>
-    Set.mem_ofPred.2 (hx.trans (pow_le_pow_right_of_le_one' valuation_natCast_le_one hij))
+    Set.mem_ofPred.2 (hx.trans (pow_le_pow_right_of_le_one' (v.map_natCast_le_one p) hij))
 
 /-- The filtration `Filⁱ A` is decreasing in `i`. -/
 theorem periodFiltration_antitone : Antitone (v.periodFiltration p r) := fun _ _ hij =>
@@ -219,7 +210,7 @@ theorem periodIdeal_le_periodFiltrationIdeal [hp : Fact p.Prime] {i : ℕ} (hi :
   have h₂ := pow_lt_pow_left₀ hx zero_le hp.out.ne_zero
   rw [← pow_mul, ← pow_mul, mul_comm p] at h₁
   rw [← pow_mul, ← pow_mul] at h₂
-  exact (h₁.trans h₂).not_ge (pow_le_pow_right_of_le_one' valuation_natCast_le_one
+  exact (h₁.trans h₂).not_ge (pow_le_pow_right_of_le_one' (v.map_natCast_le_one p)
     (by nlinarith [Nat.sub_le p 1]))
 
 /-- The ideal `{x | v x ^ p ≤ v p ^ i}` lies in the period ideal for `r < i`, as
@@ -248,20 +239,22 @@ theorem periodFiltration_eq_bot [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p
 
 /-! ### The divided Frobenius -/
 
-private lemma dvd_of_mem_periodFiltrationIdeal [Fact p.Prime] {i k : ℕ} (hk : k ≤ p)
+private lemma dvd_of_mem_periodFiltrationIdeal [hp : Fact p.Prime] {i k : ℕ} (hk : k ≤ p)
     {x y : v.integer} (hx : x ∈ v.periodFiltrationIdeal p i)
     (hy : y ∈ v.periodFiltrationIdeal p i) :
     (-(p : v.integer)) ^ i ∣ x ^ k * y ^ (p - k) := by
   rw [mem_periodFiltrationIdeal] at hx hy
+  -- The `p`-th power of the bound follows from `v x ^ p ≤ v p ^ i` and `v y ^ p ≤ v p ^ i`.
+  have key : (v (x : E) ^ k * v (y : E) ^ (p - k)) ^ p ≤ (v (p : E) ^ i) ^ p :=
+    calc (v (x : E) ^ k * v (y : E) ^ (p - k)) ^ p
+        = (v (x : E) ^ p) ^ k * (v (y : E) ^ p) ^ (p - k) := by
+          rw [mul_pow, pow_right_comm _ k, pow_right_comm _ (p - k)]
+      _ ≤ (v (p : E) ^ i) ^ k * (v (p : E) ^ i) ^ (p - k) :=
+          mul_le_mul' (pow_le_pow_left₀ zero_le hx k) (pow_le_pow_left₀ zero_le hy _)
+      _ = (v (p : E) ^ i) ^ p := by rw [← pow_add, Nat.add_sub_cancel' hk]
   refine (integer.integers v).dvd_of_le ?_
-  change v ((x : E) ^ k * (y : E) ^ (p - k)) ≤ v ((-(p : E)) ^ i)
-  rw [map_mul, map_pow, map_pow, map_pow, map_neg, ← pow_le_pow_iff_left₀ zero_le zero_le
-    (Fact.out : p.Prime).ne_zero, mul_pow, ← pow_mul, ← pow_mul, mul_comm k, mul_comm (p - k),
-    pow_mul, pow_mul _ p (p - k)]
-  calc (v (x : E) ^ p) ^ k * (v (y : E) ^ p) ^ (p - k)
-      ≤ (v (p : E) ^ i) ^ k * (v (p : E) ^ i) ^ (p - k) :=
-        mul_le_mul' (pow_le_pow_left₀ zero_le hx k) (pow_le_pow_left₀ zero_le hy _)
-    _ = (v (p : E) ^ i) ^ p := by rw [← pow_add, Nat.add_sub_cancel' hk]
+  simpa [Algebra.algebraMap_ofSubsemiring_apply] using
+    (pow_le_pow_iff_left₀ zero_le zero_le hp.out.ne_zero).1 key
 
 open Classical in
 variable (p) in
@@ -319,7 +312,7 @@ private lemma frobLift_mem_periodIdeal [hp : Fact p.Prime] (hp0 : (p : E) ≠ 0)
         rw [← pow_mul, ← pow_add]; congr 1; have := hp.out.one_le; zify [this]; ring
     _ ≤ v (p : E) ^ r * (v (p : E) ^ i) ^ (p - 1) := by
         rw [← pow_mul]
-        exact mul_le_mul_right (pow_le_pow_right_of_le_one' valuation_natCast_le_one
+        exact mul_le_mul_right (pow_le_pow_right_of_le_one' (v.map_natCast_le_one p)
           (Nat.mul_le_mul_right _ hi)) _
     _ = (v (p : E) ^ i) ^ (p - 1) * v (p : E) ^ r := mul_comm _ _
 
@@ -332,6 +325,10 @@ private lemma frobLift_sub_mem [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p 
   have h := add_mem (frobLift_add_sub_mem hp0 hp1 hr hx' hd) (frobLift_mem_periodIdeal hp0 hi hxx')
   rwa [add_sub_cancel, sub_add_cancel] at h
 
+private lemma exists_mk_eq {i : ℕ} (a : v.periodFiltration p r i) :
+    ∃ x ∈ v.periodFiltrationIdeal p i, Ideal.Quotient.mk _ x = (a : v.PeriodTruncation p r) :=
+  (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).1 a.property
+
 variable (v p r) in
 /-- **The divided Frobenius** `φᵢ : Filⁱ A → A` of the truncation, `φᵢ [x] = [x ^ p / (-p) ^ i]`
 for a representative `x` with `v x ^ p ≤ v p ^ i`, and `φᵢ = 0` for `r < i`, where
@@ -339,14 +336,7 @@ for a representative `x` with `v x ^ p ≤ v p ^ i`, and `φᵢ = 0` for `r < i`
 (`Valuation.periodFrobenius_eq_mk`); the sign `(-p) ^ i` is Fontaine's normalisation. -/
 noncomputable def periodFrobenius (i : ℕ) (a : v.periodFiltration p r i) :
     v.PeriodTruncation p r :=
-  if i ≤ r then
-    Ideal.Quotient.mk _ (frobLift p i
-      ((Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).1 a.property).choose)
-  else 0
-
-private lemma exists_mk_eq {i : ℕ} (a : v.periodFiltration p r i) :
-    ∃ x ∈ v.periodFiltrationIdeal p i, Ideal.Quotient.mk _ x = (a : v.PeriodTruncation p r) :=
-  (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).1 a.property
+  if i ≤ r then Ideal.Quotient.mk _ (frobLift p i (exists_mk_eq a).choose) else 0
 
 /-- The divided Frobenius on a representative: if `v x ^ p ≤ v p ^ i` and
 `(-p) ^ i * y = x ^ p`, then `φᵢ [x] = [y]`, for `i ≤ r`. -/
@@ -362,7 +352,7 @@ theorem periodFrobenius_eq_mk [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p :
   exact frobLift_sub_mem hp0 hp1 hr hi hx' hx (Ideal.Quotient.eq.1 (hx'a.trans hxa.symm))
 
 /-- `φᵢ = 0` for `r < i`. -/
-theorem periodFrobenius_of_lt {i : ℕ} (hi : r < i) (a : v.periodFiltration p r i) :
+theorem periodFrobenius_eq_zero_of_lt {i : ℕ} (hi : r < i) (a : v.periodFiltration p r i) :
     v.periodFrobenius p r i a = 0 := by
   simp [periodFrobenius, hi.not_ge]
 
@@ -379,7 +369,7 @@ theorem periodFrobenius_add [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : E
       periodFrobenius_eq_mk hp0 hp1 hr hi hy hyb (frobLift_spec hy), ← map_add,
       Ideal.Quotient.eq, ← sub_sub]
     exact frobLift_add_sub_mem hp0 hp1 hr hx hy
-  · simp [periodFrobenius_of_lt hi]
+  · simp [periodFrobenius_eq_zero_of_lt hi]
 
 /-- The divided Frobenius is `p`-semilinear over the truncation: `φᵢ (c • a) = c ^ p * φᵢ a`. -/
 theorem periodFrobenius_smul [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : E) < 1)
@@ -392,13 +382,22 @@ theorem periodFrobenius_smul [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : 
         (by rw [map_mul, hxa, Submodule.coe_smul, smul_eq_mul])
         (y := c ^ p * frobLift p i x) (by rw [mul_left_comm, frobLift_spec hx, mul_pow]),
       periodFrobenius_eq_mk hp0 hp1 hr hi hx hxa (frobLift_spec hx), map_mul, map_pow]
-  · simp [periodFrobenius_of_lt hi]
+  · simp [periodFrobenius_eq_zero_of_lt hi]
 
 /-- `φᵢ 0 = 0`. -/
 @[simp]
 theorem periodFrobenius_zero [hp : Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : E) < 1)
     (hr : r + 1 < p) {i : ℕ} : v.periodFrobenius p r i 0 = 0 := by
   simpa [zero_pow hp.out.ne_zero] using periodFrobenius_smul hp0 hp1 hr 0 0 (i := i)
+
+variable (v p r) in
+/-- The divided Frobenius `φᵢ : Filⁱ A → A` bundled as an additive map. -/
+@[expose, simps]
+noncomputable def periodFrobeniusAddHom [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : E) < 1)
+    (hr : r + 1 < p) (i : ℕ) : v.periodFiltration p r i →+ v.PeriodTruncation p r where
+  toFun := v.periodFrobenius p r i
+  map_zero' := periodFrobenius_zero hp0 hp1 hr
+  map_add' := periodFrobenius_add hp0 hp1 hr
 
 /-- The divided Frobenius vanishes on `Filⁱ⁺¹ A`: for `[x]` with `v x ^ p ≤ v p ^ (i + 1)`, the
 quotient `x ^ p / (-p) ^ i` is divisible by `p`. This is the relation `φᵢ = p φᵢ₊₁` on `Filⁱ⁺¹ A`
@@ -413,7 +412,7 @@ theorem periodFrobenius_eq_zero_of_mem_succ [Fact p.Prime] (hp0 : (p : E) ≠ 0)
       (y := -(p : v.integer) * frobLift p (i + 1) x)
       (by rw [← mul_assoc, ← pow_succ, frobLift_spec hx]), Ideal.Quotient.eq_zero_iff_mem]
     exact Ideal.mul_mem_right _ _ (neg_mem (natCast_mem_periodIdeal hp0 hp1 hr))
-  · exact periodFrobenius_of_lt hi a
+  · exact periodFrobenius_eq_zero_of_lt hi a
 
 /-- The divided Frobenius is `σ`-semilinear over any ring `Λ` with a Frobenius lift `σ`, acting
 through a ring map `f : Λ → v.integer`: `φᵢ ([f w] • a) = [f (σ w)] * φᵢ a`. For the Witt vectors
@@ -443,6 +442,14 @@ private lemma map_mem_integer {g : E →+* E'} (hg : (v'.comap g).IsEquiv v) {x 
     (hx : x ∈ v.integer) : g x ∈ v'.integer :=
   hg.le_one_iff_le_one.2 hx
 
+private lemma pow_lt_pow_iff_of_isEquiv {g : E →+* E'} (hg : (v'.comap g).IsEquiv v) (x : E)
+    (n m : ℕ) : v' (g x) ^ n < v' (p : E') ^ m ↔ v x ^ n < v (p : E) ^ m := by
+  simpa using hg.lt_iff_lt (x := x ^ n) (y := (p : E) ^ m)
+
+private lemma pow_le_pow_iff_of_isEquiv {g : E →+* E'} (hg : (v'.comap g).IsEquiv v) (x : E)
+    (n m : ℕ) : v' (g x) ^ n ≤ v' (p : E') ^ m ↔ v x ^ n ≤ v (p : E) ^ m := by
+  simpa using hg.le_iff_le (x := x ^ n) (y := (p : E) ^ m)
+
 variable (p r) in
 /-- The ring map of truncations `A(E) → A(E')` induced by a field map `g : E → E'` along which
 the valuations are equivalent, `v' ∘ g ∼ v`; for instance a `K`-embedding of algebraic extensions
@@ -450,8 +457,8 @@ of `K` inside an algebraic closure carrying an extended valuation. -/
 noncomputable def map (g : E →+* E') (hg : (v'.comap g).IsEquiv v) :
     v.PeriodTruncation p r →+* v'.PeriodTruncation p r :=
   Ideal.quotientMap _ (g.restrict v.integer v'.integer fun _ => map_mem_integer hg) <|
-    Ideal.span_le.2 fun x (hx : _ < _) => Ideal.subset_span
-      (by simpa using (hg.lt_iff_lt (x := (x : E) ^ (p - 1)) (y := (p : E) ^ r)).2 (by simpa))
+    Ideal.span_le.2 fun _ (hx : _ < _) =>
+      Ideal.subset_span ((pow_lt_pow_iff_of_isEquiv hg _ _ _).2 hx)
 
 @[simp]
 theorem map_mk {g : E →+* E'} (hg : (v'.comap g).IsEquiv v) (x : v.integer) :
@@ -478,8 +485,7 @@ theorem periodFiltration_le_comap_map {g : E →+* E'} (hg : (v'.comap g).IsEqui
     Ideal.span_le]
   intro x (hx : _ ≤ _)
   rw [SetLike.mem_coe, Ideal.mem_comap, RingHom.comp_apply, map_mk]
-  exact Ideal.mem_map_of_mem _ (Ideal.subset_span
-    (by simpa using (hg.le_iff_le (x := (x : E) ^ p) (y := (p : E) ^ i)).2 (by simpa)))
+  exact Ideal.mem_map_of_mem _ (Ideal.subset_span ((pow_le_pow_iff_of_isEquiv hg _ _ _).2 hx))
 
 /-- The truncation map commutes with the divided Frobenius maps. -/
 theorem map_periodFrobenius [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : E) < 1)
@@ -494,12 +500,12 @@ theorem map_periodFrobenius [Fact p.Prime] (hp0 : (p : E) ≠ 0) (hp1 : v (p : E
     have hx' : (⟨g x, map_mem_integer hg x.property⟩ : v'.integer) ∈
         v'.periodFiltrationIdeal p i := by
       rw [mem_periodFiltrationIdeal] at hx ⊢
-      simpa using (hg.le_iff_le (x := (x : E) ^ p) (y := (p : E) ^ i)).2 (by simpa)
+      exact (pow_le_pow_iff_of_isEquiv hg _ _ _).2 hx
     rw [periodFrobenius_eq_mk hp0 hp1 hr hi hx hxa (frobLift_spec hx), map_mk,
       periodFrobenius_eq_mk hp0' hp1' hr hi hx' (by rw [← map_mk hg, hxa])]
     ext
     simpa using congrArg (fun z : v.integer => g z) (frobLift_spec hx)
-  · simp [periodFrobenius_of_lt hi]
+  · simp [periodFrobenius_eq_zero_of_lt hi]
 
 end PeriodTruncation
 
