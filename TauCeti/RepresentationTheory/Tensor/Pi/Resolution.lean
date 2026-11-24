@@ -75,15 +75,13 @@ noncomputable def smoothPiTensorProductDifferential :
       isIntertwining' g := by
         ext z
         exact (congrArg (PiTensorProduct.slotSum I (fun i ↦ (d i).toLinearMap))
-          ((DiscreteRep.piTensorProduct_ρ_apply M g z).trans
-            (LinearMap.congr_fun (Representation.piTensorProduct_apply _ g) z))).trans <|
+          (DiscreteRep.piTensorProduct_ρ_apply M g z)).trans <|
           (LinearMap.congr_fun (PiTensorProduct.slotSum_comp_map
           (g := fun i ↦ (M i).ρ g)
           (f := fun i ↦ (d i).toLinearMap)
           (f' := fun i ↦ (d i).toLinearMap)
           (fun i ↦ LinearMap.ext fun z ↦ (d i).isIntertwining _ _ g z)) z).trans
-            ((DiscreteRep.piTensorProduct_ρ_apply M g _).trans
-              (LinearMap.congr_fun (Representation.piTensorProduct_apply _ g) _)).symm }
+            (DiscreteRep.piTensorProduct_ρ_apply M g _).symm }
 
 omit [IsTopologicalGroup G] in
 /-- The differential is the slot sum on the native tensor carrier. -/
@@ -109,8 +107,7 @@ theorem piTensorProduct_totalDegreePiece_ρ_mem (n : ℤ) (g : G)
       PiTensorProduct.totalDegreePiece I ℳ n := by
   have he : (((toSmoothDiscrete R G).obj (DiscreteRep.piTensorProduct M)).obj.ρ g) z =
       PiTensorProduct.map (fun i ↦ (M i).ρ g) z :=
-    (DiscreteRep.piTensorProduct_ρ_apply M g z).trans
-      (LinearMap.congr_fun (Representation.piTensorProduct_apply _ g) z)
+    DiscreteRep.piTensorProduct_ρ_apply M g z
   have hf : ∀ i, LinearMap.IsHomogeneous ((M i).ρ g) (ℳ i) (ℳ i) 0 :=
     fun i ↦ LinearMap.isHomogeneous_def.2 fun p v hv ↦ by
       rw [add_zero]
@@ -183,6 +180,15 @@ theorem isHomogeneous_piTensorProductSlotHomotopy :
     · rw [LinearMap.comp_apply, hπ i p hp v hv, map_zero]
       exact zero_mem _
 
+omit [DiscreteTopology R] [IsTopologicalGroup G] [Fintype I] [LinearOrder I] in
+include hh hneg in
+/-- A factor homotopy kills degree zero, since it lowers degree into `ℳ i (-1) = ⊥`. -/
+theorem factorHomotopy_eq_zero_of_mem_zero (i : I) {v : (M i).V} (hv : v ∈ ℳ i 0) :
+    h i v = 0 := by
+  have hv' := (hh i).map_mem hv
+  rw [zero_add, hneg i (-1) (by decide)] at hv'
+  exact (Submodule.mem_bot R).mp hv'
+
 /-- The finite dependent tensor product of contracted graded smooth discrete representations is
 contracted onto the tensor product of their coefficients. The tensor augmentation and retraction
 are factorwise, and the homotopy is the ordered slot homotopy. No equivariance is required of the
@@ -205,10 +211,6 @@ noncomputable def smoothPiTensorProductContraction :
     (toSmoothDiscrete_map_hom_hom_apply R G
       ((DiscreteRep.piTensorProductFunctor R G I).map a) z).trans
         (LinearMap.congr_fun (DiscreteRep.piTensorProductFunctor_map_toLinearMap a) z)
-  have hh₀ (i : I) (v : (M i).V) (hv : v ∈ ℳ i 0) : h i v = 0 := by
-    have hv' := (hh i).map_mem hv
-    rw [zero_add, hneg i (-1) (by decide)] at hv'
-    exact (Submodule.mem_bot R).mp hv'
   exact TopRep.ResolutionContraction.ofGraded.{u, v, max u w x} _ A
     (fun z ↦ (hA z).symm ▸ PiTensorProduct.map_mem_totalDegreePiece_zero ha z)
     (PiTensorProduct.map π)
@@ -224,7 +226,8 @@ noncomputable def smoothPiTensorProductContraction :
             (LinearMap.congr_fun PiTensorProduct.map_id z)))
     (fun n _ hz ↦ PiTensorProduct.map_eq_zero_of_mem_totalDegreePiece_of_pos hπ
       (Int.natCast_pos.2 n.succ_pos) hz)
-    (fun _ hz ↦ PiTensorProduct.slotHomotopy_eq_zero_of_mem_totalDegreePiece_zero hneg hh₀ hz)
+    (fun _ hz ↦ PiTensorProduct.slotHomotopy_eq_zero_of_mem_totalDegreePiece_zero hneg
+      (fun i _ ↦ factorHomotopy_eq_zero_of_mem_zero M ℳ h hh hneg i) hz)
     (fun z ↦ by
       -- A differential commutes with its contraction projector because its square vanishes.
       have hde (i : I) : (d i).toLinearMap ∘ₗ ((a i).toLinearMap ∘ₗ π i) =

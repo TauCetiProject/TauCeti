@@ -91,15 +91,10 @@ noncomputable def smoothPiTensorProductLexPairing :
     exact continuous_of_discreteTopology
   equivariant g a b := by
     -- On each tensor product, `g` acts by the factorwise map.
-    have hρ {I : Type x} [Fintype I] (Y : I → DiscreteRep.{u, v, max v w} R G)
-        (z : ((toSmoothDiscrete R G).obj (DiscreteRep.piTensorProduct Y)).obj.V) :
-        ((toSmoothDiscrete R G).obj (DiscreteRep.piTensorProduct Y)).obj.ρ g z =
-          PiTensorProduct.map (fun i ↦ (Y i).ρ g) z :=
-      (DiscreteRep.piTensorProduct_ρ_apply Y g z).trans
-        (LinearMap.congr_fun (Representation.piTensorProduct_apply _ g) z)
     exact (congrArg₂ (fun a b ↦ PiTensorProduct.tmulLex R (fun i ↦ (X i).V) a b)
-      (hρ _ a) (hρ _ b)).trans
-      ((PiTensorProduct.map_tmulLex (fun i ↦ (X i).ρ g) a b).symm.trans (hρ _ _).symm)
+      (DiscreteRep.piTensorProduct_ρ_apply _ g a) (DiscreteRep.piTensorProduct_ρ_apply _ g b)).trans
+      ((PiTensorProduct.map_tmulLex (fun i ↦ (X i).ρ g) a b).symm.trans
+        (DiscreteRep.piTensorProduct_ρ_apply _ g _).symm)
 
 omit [IsTopologicalGroup G] in
 /-- The block pairing is the lexicographic tensor of the two blocks. -/
@@ -207,7 +202,7 @@ private theorem smoothPiTensorProductContraction_proj_lexPairing (x)
   refine (LinearMap.congr_fun (PiTensorProduct.map_comp _ _) x).symm.trans ?_
   rw [show (fun i ↦ π (.inl i) ∘ₗ (a (.inl i)).toLinearMap) = fun _ ↦ LinearMap.id from
     funext fun i ↦ LinearMap.ext (hπa (.inl i)), PiTensorProduct.map_id]
-  rfl
+  exact LinearMap.id_apply _
 
 /-- The homotopy of the tensor contraction over `I₁ ⊕ₗ I₂` commutes with the block pairing with an
 augmented tensor on the left. -/
@@ -218,10 +213,6 @@ private theorem smoothPiTensorProductContraction_hom_lexPairing (n : ℕ) (x)
       PiTensorProduct.totalDegreePiece (I₁ ⊕ₗ I₂) (fun k ↦ ℳ (ofLex k)) (n + 1 : ℕ)) :
     ((c₃).hom n ⟨(smoothPiTensorProductLexPairing M).bil ((c₁).ι.hom x).val w, hxw⟩).val =
       (smoothPiTensorProductLexPairing M).bil ((c₁).ι.hom x).val ((c₂).hom n ⟨w, hw⟩).val := by
-  have hh₀ (i : I₁ ⊕ I₂) (v : (M i).V) (hv : v ∈ ℳ i 0) : h i v = 0 := by
-    have hv' := (hh i).map_mem hv
-    rw [zero_add, hneg i (-1) (by decide)] at hv'
-    exact (Submodule.mem_bot R).mp hv'
   -- The homotopies are ordered slot homotopies, and the augmentation of `x` is factorwise.
   refine (smoothPiTensorProductContraction_hom_apply ..).trans <| Eq.trans ?_
     (congrArg ((smoothPiTensorProductLexPairing M).bil ((c₁).ι.hom x).val)
@@ -239,7 +230,7 @@ private theorem smoothPiTensorProductContraction_hom_lexPairing (n : ℕ) (x)
       (fun i ↦ (a (.inl i)).toLinearMap ∘ₗ π (.inl i)) (fun i ↦ h (.inl i))
       (PiTensorProduct.map (fun i ↦ (a (.inl i)).toLinearMap) x) = 0 :=
     PiTensorProduct.slotHomotopy_eq_zero_of_mem_totalDegreePiece_zero
-      (fun i ↦ hneg (.inl i)) (fun i ↦ hh₀ (.inl i))
+      (fun i ↦ hneg (.inl i)) (fun i _ ↦ factorHomotopy_eq_zero_of_mem_zero M ℳ h hh hneg (.inl i))
       (PiTensorProduct.map_mem_totalDegreePiece_zero (fun i ↦ ha (.inl i)) x)
   have h₁ : PiTensorProduct.map (fun i ↦ (a (.inl i)).toLinearMap ∘ₗ π (.inl i))
       (PiTensorProduct.map (fun i ↦ (a (.inl i)).toLinearMap) x) =
