@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 /-!
 # Sobolev regularity of weak cokernel elements of the linearized Floer operator
 
-Let `u : ℝ × ℝ → V` be a `C¹` map into a finite-dimensional symplectic vector space `V`, and let
+Let `u : ℝ × ℝ → V` be a map into a finite-dimensional symplectic vector space `V`, and let
 `D_u ξ = ∂ₛξ + J(z, u) ∂ₜξ + C(z) ξ` be the linearized Floer operator at `u`
 (`TauCeti.SymplecticForm.floerLinearization`, written in this form by
 `TauCeti.SymplecticForm.floerLinearization_eq_add`). The transversality argument of
@@ -23,8 +23,9 @@ Let `u : ℝ × ℝ → V` be a `C¹` map into a finite-dimensional symplectic v
 annihilating the range of the universal linearized operator vanishes. A cokernel element of a
 Sobolev realization of `D_u` is a priori only an `L^q` covector field annihilating `D_u ξ` for every
 test map `ξ`, so before that argument applies it has to be shown to be regular. This file proves
-the first step of that regularity: such an `η` is in `W^{1,r}_loc` for every finite `r > 1`
-(`TauCeti.SymplecticForm.memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero`).
+that regularity: such an `η` gains as many derivatives as the data allow
+(`TauCeti.SymplecticForm.memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero`), and
+for `C²` data it agrees almost everywhere with a `C¹` covector field.
 
 The Sobolev classes `W^{k,r}_loc` of Tau Ceti live on `ℂ`, so the statement reads the domain
 through `e = Complex.equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ`, `s + i t ↦ (s, t)`, which carries Lebesgue
@@ -34,28 +35,33 @@ measure to Lebesgue measure: it is Mathlib's measure-preserving `Complex.measura
 On an open set `Ω ⊆ ℂ`, a test function `φ` on `Ω` gives the test map `ξ = φ ∘ e⁻¹` on
 `ℝ × ℝ`, and `D_u ξ (e w) = ∂ₛφ(w) + J_c(w) ∂ₜφ(w) + S_c(w) φ(w)` with `J_c(w) = J(e w, u(e w))`
 and `S_c(w) = C(e w)` (`TauCeti.SymplecticForm.floerLinearization_comp_equivRealProdCLM_symm`).
-These coefficients are `C¹` and continuous, so `η ∘ e` annihilates a real Cauchy–Riemann operator
-with `C¹` coefficients, and the regularity of such annihilators
-(`TauCeti.memWkpLoc_one_of_forall_integral_apply_cauchyRiemann_eq_zero`) applies. No inner
-product on `V` is needed.
+These coefficients are as regular as the data allow: `J_c` is `Cᵏ⁺¹` and `S_c` is `Cᵏ` when `u`
+and `J` are `Cᵏ⁺¹` and the Hamiltonians `Cᵏ⁺²`
+(`TauCeti.SymplecticForm.contDiffAt_floerLinearizationCoeff`). So `η ∘ e` annihilates a real
+Cauchy–Riemann operator with smooth coefficients, and the regularity of such annihilators
+(`TauCeti.memWkpLoc_succ_of_forall_integral_apply_cauchyRiemann_eq_zero`) puts it in
+`W^{k+1,r}_loc` for every finite `r`. No inner product on `V` is needed.
 
 By Morrey's embedding (`r > 2`), `η ∘ e` then has a continuous representative, which is the
 regularity taken by the pointwise detection lemmas of
-`TauCeti.Geometry.Symplectic.Floer.Transversality.AlmostComplexVariation`. Higher regularity, and
-in particular the `C¹` regularity used by unique continuation in the transversality argument,
-follows by the induction on the order of differentiability of McDuff and Salamon
-(Proposition B.4.9), from the differentiated equation; it is not carried out here.
+`TauCeti.Geometry.Symplectic.Floer.Transversality.AlmostComplexVariation`. For `C²` data `u`, `J`
+and `C³` Hamiltonians, `η ∘ e` is in `W^{2,r}_loc` for `r > 2`, so this representative is `C¹`
+(`TauCeti.MemWkpLoc.contDiffOn_one_of_continuousOn`): this is the regularity that unique
+continuation for the formal adjoint uses in the transversality argument.
 
 ## Main results
 
 * `TauCeti.SymplecticForm.floerLinearization_comp_equivRealProdCLM_symm`: the linearized Floer
   operator of `φ ∘ e⁻¹` in the coordinate of `ℂ`.
-* `TauCeti.SymplecticForm.memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero`:
-  a locally `L^q` (`q > 1`) covector field annihilating `D_u` on test maps is in `W^{1,r}_loc` for
-  every finite `r > 1`.
+* `TauCeti.SymplecticForm.memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero`:
+  a locally `L^q` (`q > 1`) covector field annihilating `D_u` on test maps is in
+  `W^{k+1,r}_loc` for every finite `r`, for `Cᵏ⁺¹` data `u`, `J` and `Cᵏ⁺²` Hamiltonians.
 * `continuousOn_preciseRepresentative_of_forall_integral_apply_floerLinearization_eq_zero`, in
   the namespace `TauCeti.SymplecticForm`: by Morrey's embedding, such a covector field has a
   continuous representative.
+* `contDiffOn_preciseRepresentative_of_forall_integral_apply_floerLinearization_eq_zero`, in
+  the namespace `TauCeti.SymplecticForm`: for `C²` data and `C³` Hamiltonians this
+  representative is `C¹`.
 
 ## References
 
@@ -92,17 +98,20 @@ theorem floerLinearization_comp_equivRealProdCLM_symm (ω : SymplecticForm V)
     ContinuousLinearEquiv.symm_apply_apply, comp_apply, equivRealProdCLM_symm_stdComplexLineReal,
     equivRealProdCLM_symm_stdComplexLineImag]
 
-/-- **Weak cokernel elements of the linearized Floer operator are `W^{1,r}_loc`.** Let `Ω ⊆ ℂ`
-be open and `e = Complex.equivRealProdCLM`. Suppose that over `e '' Ω` the map `u` is `C¹`, the
-almost complex structure `J` is `C¹` and squares to `-1` along `u`, and the Hamiltonians `Ks`,
-`Kt` are `C²`. Let `η` be a covector field with `η ∘ e` locally `L^q` on `Ω` for some `q > 1`,
-annihilating `D_u ξ` under the pairing `∫ η(·)` for every smooth compactly supported `ξ` supported
-over `Ω`. Then `η ∘ e` is in `W^{1,r}_loc(Ω)` for every finite `r > 1`. -/
-theorem memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero {Ω : Opens ℂ}
-    (hJ : ∀ w ∈ Ω, ContDiffAt ℝ 1 (uncurry J) (equivRealProdCLM w, u (equivRealProdCLM w)))
-    (hKs : ∀ w ∈ Ω, ContDiffAt ℝ 2 (uncurry Ks) (equivRealProdCLM w, u (equivRealProdCLM w)))
-    (hKt : ∀ w ∈ Ω, ContDiffAt ℝ 2 (uncurry Kt) (equivRealProdCLM w, u (equivRealProdCLM w)))
-    (hu : ∀ w ∈ Ω, ContDiffAt ℝ 1 u (equivRealProdCLM w))
+/-- **Weak cokernel elements of the linearized Floer operator gain `k + 1` derivatives.** Let
+`Ω ⊆ ℂ` be open and `e = Complex.equivRealProdCLM`. Suppose that over `e '' Ω` the map `u` is
+`Cᵏ⁺¹`, the almost complex structure `J` is `Cᵏ⁺¹` and squares to `-1` along `u`, and the
+Hamiltonians `Ks`, `Kt` are `Cᵏ⁺²`. Let `η` be a covector field with `η ∘ e` locally `L^q` on `Ω`
+for some `q > 1`, annihilating `D_u ξ` under the pairing `∫ η(·)` for every smooth compactly
+supported `ξ` supported over `Ω`. Then `η ∘ e` is in `W^{k+1,r}_loc(Ω)` for every finite `r`. -/
+theorem memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero {Ω : Opens ℂ} {k : ℕ}
+    (hJ : ∀ w ∈ Ω,
+      ContDiffAt ℝ (k + 1) (uncurry J) (equivRealProdCLM w, u (equivRealProdCLM w)))
+    (hKs : ∀ w ∈ Ω,
+      ContDiffAt ℝ (k + 2) (uncurry Ks) (equivRealProdCLM w, u (equivRealProdCLM w)))
+    (hKt : ∀ w ∈ Ω,
+      ContDiffAt ℝ (k + 2) (uncurry Kt) (equivRealProdCLM w, u (equivRealProdCLM w)))
+    (hu : ∀ w ∈ Ω, ContDiffAt ℝ (k + 1) u (equivRealProdCLM w))
     (hJ2 : ∀ w ∈ Ω, J (equivRealProdCLM w) (u (equivRealProdCLM w)) *
       J (equivRealProdCLM w) (u (equivRealProdCLM w)) = -1)
     {η : ℝ × ℝ → V →L[ℝ] ℝ} {q : ℝ≥0∞} (hq : 1 < q)
@@ -110,19 +119,19 @@ theorem memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero {Ω : 
     (hηD : ∀ ξ : ℝ × ℝ → V, ContDiff ℝ (⊤ : ℕ∞) ξ → HasCompactSupport ξ →
       tsupport ξ ⊆ equivRealProdCLM.symm ⁻¹' Ω →
         ∫ z, η z (ω.floerLinearization J Ks Kt u ξ z) = 0)
-    {r : ℝ≥0∞} (hr : 1 < r) (hr_top : r ≠ ⊤) :
-    MemWkpLoc r Ω 1 fun w ↦ η (equivRealProdCLM w) := by
+    {r : ℝ≥0∞} (hr_top : r ≠ ⊤) :
+    MemWkpLoc r Ω (k + 1) fun w ↦ η (equivRealProdCLM w) := by
   set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM
   -- The coefficients of `D_u` in the coordinate of `ℂ`.
-  have hJc : ContDiffOn ℝ 1 (fun w ↦ J (e w) (u (e w))) Ω := fun w hw ↦ by
-    have hg : ContDiffAt ℝ 1 (fun w ↦ (e w, u (e w))) w :=
+  have hJc : ContDiffOn ℝ (k + 1) (fun w ↦ J (e w) (u (e w))) Ω := fun w hw ↦ by
+    have hg : ContDiffAt ℝ (k + 1) (fun w ↦ (e w, u (e w))) w :=
       e.contDiff.contDiffAt.prodMk ((hu w hw).comp w e.contDiff.contDiffAt)
     exact ((hJ w hw).comp w hg).contDiffWithinAt
-  have hSc : ContinuousOn (fun w ↦ ω.floerLinearizationCoeff J Ks Kt u (e w)) Ω := fun w hw ↦
-    ((continuousAt_floerLinearizationCoeff ω (hJ w hw) (hKs w hw) (hKt w hw)
-      (hu w hw)).comp e.continuous.continuousAt).continuousWithinAt
-  refine memWkpLoc_one_of_forall_integral_apply_cauchyRiemann_eq_zero hJc hSc hJ2 hq hη
-    (fun φ ↦ ?_) hr hr_top
+  have hSc : ContDiffOn ℝ k (fun w ↦ ω.floerLinearizationCoeff J Ks Kt u (e w)) Ω := fun w hw ↦
+    ((contDiffAt_floerLinearizationCoeff ω (hJ w hw) (hKs w hw) (hKt w hw)
+      (hu w hw)).comp w e.contDiff.contDiffAt).contDiffWithinAt
+  refine memWkpLoc_succ_of_forall_integral_apply_cauchyRiemann_eq_zero hJc hSc hJ2 hq hη
+    (fun φ ↦ ?_) hr_top
   -- A test function `φ` on `Ω` gives the test map `φ ∘ e⁻¹` supported over `Ω`.
   set U : Opens (ℝ × ℝ) := ⟨e.symm ⁻¹' Ω, Ω.isOpen.preimage e.symm.continuous⟩
   have hmaps : MapsTo e Ω U := fun w hw ↦ by simpa [U] using hw
@@ -137,8 +146,8 @@ theorem memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero {Ω : 
 
 /-- **Weak cokernel elements of the linearized Floer operator are continuous.** Under the
 hypotheses of
-`TauCeti.SymplecticForm.memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero`, the
-precise representative of `η ∘ e`, which agrees with `η ∘ e` almost everywhere on `Ω`
+`TauCeti.SymplecticForm.memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero` with
+`k = 0`, the precise representative of `η ∘ e`, which agrees with `η ∘ e` almost everywhere on `Ω`
 (`TauCeti.MemLpLoc.ae_eq_preciseRepresentative`), is continuous on `Ω`. -/
 theorem continuousOn_preciseRepresentative_of_forall_integral_apply_floerLinearization_eq_zero
     {Ω : Opens ℂ}
@@ -154,7 +163,39 @@ theorem continuousOn_preciseRepresentative_of_forall_integral_apply_floerLineari
       tsupport ξ ⊆ equivRealProdCLM.symm ⁻¹' Ω →
         ∫ z, η z (ω.floerLinearization J Ks Kt u ξ z) = 0) :
     ContinuousOn (MeasureTheory.preciseRepresentative volume fun w ↦ η (equivRealProdCLM w)) Ω :=
-  (memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero hJ hKs hKt hu hJ2 hq hη hηD
-    (r := 3) (by norm_num) (by simp)).continuousOn_preciseRepresentative (by norm_num)
+  (memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero (k := 0)
+    (by simpa using hJ) (by simpa using hKs) (by simpa using hKt) (by simpa using hu) hJ2 hq hη
+    hηD (r := 3) (by simp)).continuousOn_preciseRepresentative (by norm_num)
+
+/-- **Weak cokernel elements of the linearized Floer operator are `C¹`.** Suppose that over
+`e '' Ω`, for `e = Complex.equivRealProdCLM`, the map `u` and the almost complex structure `J` are
+`C²`, `J` squares to `-1` along `u`, and the Hamiltonians `Ks`, `Kt` are `C³`. Let `η` be a
+covector field with `η ∘ e` locally `L^q` on `Ω` for some `q > 1`, annihilating `D_u ξ` under the
+pairing `∫ η(·)` for every smooth compactly supported `ξ` supported over `Ω`. Then the precise
+representative of `η ∘ e`, which agrees with `η ∘ e` almost everywhere on `Ω`
+(`TauCeti.MemLpLoc.ae_eq_preciseRepresentative`), is `C¹` on `Ω`. -/
+theorem contDiffOn_preciseRepresentative_of_forall_integral_apply_floerLinearization_eq_zero
+    {Ω : Opens ℂ}
+    (hJ : ∀ w ∈ Ω, ContDiffAt ℝ 2 (uncurry J) (equivRealProdCLM w, u (equivRealProdCLM w)))
+    (hKs : ∀ w ∈ Ω, ContDiffAt ℝ 3 (uncurry Ks) (equivRealProdCLM w, u (equivRealProdCLM w)))
+    (hKt : ∀ w ∈ Ω, ContDiffAt ℝ 3 (uncurry Kt) (equivRealProdCLM w, u (equivRealProdCLM w)))
+    (hu : ∀ w ∈ Ω, ContDiffAt ℝ 2 u (equivRealProdCLM w))
+    (hJ2 : ∀ w ∈ Ω, J (equivRealProdCLM w) (u (equivRealProdCLM w)) *
+      J (equivRealProdCLM w) (u (equivRealProdCLM w)) = -1)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} {q : ℝ≥0∞} (hq : 1 < q)
+    (hη : MemLpLoc q Ω fun w ↦ η (equivRealProdCLM w))
+    (hηD : ∀ ξ : ℝ × ℝ → V, ContDiff ℝ (⊤ : ℕ∞) ξ → HasCompactSupport ξ →
+      tsupport ξ ⊆ equivRealProdCLM.symm ⁻¹' Ω →
+        ∫ z, η z (ω.floerLinearization J Ks Kt u ξ z) = 0) :
+    ContDiffOn ℝ 1 (MeasureTheory.preciseRepresentative volume fun w ↦ η (equivRealProdCLM w))
+      Ω := by
+  -- `η ∘ e` is in `W^{2,3}_loc`, and so is its precise representative, which is continuous.
+  have h3 : (1 : WithTop ℕ∞) + 2 = 3 := by norm_num
+  have h2 := memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero (k := 1)
+    (by simpa [one_add_one_eq_two] using hJ) (by simpa [h3] using hKs) (by simpa [h3] using hKt)
+    (by simpa [one_add_one_eq_two] using hu) hJ2 hq hη hηD (r := 3) (by simp)
+  exact (h2.congr_ae (h2.memLpLoc.ae_eq_preciseRepresentative (by norm_num)))
+    |>.contDiffOn_one_of_continuousOn (by norm_num)
+      (h2.of_succ.continuousOn_preciseRepresentative (by norm_num))
 
 end TauCeti.SymplecticForm

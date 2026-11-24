@@ -53,9 +53,10 @@ finite. A compactly supported direction has a compactly supported image
 `β` with values in `[0, 1]` bounds `‖D_u (β ξ)‖²` in `L²` by `2 ‖D_u ξ‖²` plus a multiple of `‖ξ‖²`
 over a compact set off which `dβ` vanishes (`exists_integral_norm_floerLinearization_smul_sq_le`).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
-(`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
-(`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`); so two
-linearized operators differ pointwise by the differences of their coefficients
+(`floerLinearization_eq_add`), whose coefficient is `Cⁿ` in `z` where `J` and `u` are `Cⁿ⁺¹` and
+the Hamiltonians `Cⁿ⁺²` (`contDiffAt_floerLinearizationCoeff`), in particular continuous where the
+data are `C¹` (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`); so
+two linearized operators differ pointwise by the differences of their coefficients
 (`norm_floerLinearization_sub_floerLinearization_le`). Translating the data and the direction
 translates the operator (`floerLinearization_comp_add_right`).
 For jointly continuous `J` and jointly `C¹` Hamiltonians, the Floer operator of an almost
@@ -465,6 +466,38 @@ theorem floerLinearization_exp_smul (ω : SymplecticForm V)
   simpa only [mul_one] using
     ω.floerLinearization_exp_neg_smul J Ks Kt u ξ ((hasDerivAt_id' z.1).const_mul δ) hξ
 
+/-- **Smoothness of the zeroth-order part.** The zeroth-order part of the linearized Floer operator
+is `Cⁿ` at `z` when the data `J` are `Cⁿ⁺¹` and the Hamiltonians `Cⁿ⁺²` at `(z, u z)`, jointly in
+the domain and target point, and `u` is `Cⁿ⁺¹` at `z`: it involves first derivatives of `J` and
+`u` and second derivatives of the Hamiltonians. -/
+theorem contDiffAt_floerLinearizationCoeff (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
+    {n : WithTop ℕ∞} (hJ : ContDiffAt ℝ (n + 1) (Function.uncurry J) (z, u z))
+    (hKs : ContDiffAt ℝ (n + 2) (Function.uncurry Ks) (z, u z))
+    (hKt : ContDiffAt ℝ (n + 2) (Function.uncurry Kt) (z, u z)) (hu : ContDiffAt ℝ (n + 1) u z) :
+    ContDiffAt ℝ n (ω.floerLinearizationCoeff J Ks Kt u) z := by
+  have hn : n ≤ n + 1 := le_self_add
+  have hu₀ : ContDiffAt ℝ n u z := hu.of_le hn
+  have hgraph : ContDiffAt ℝ n (fun z ↦ (z, u z)) z := contDiffAt_id.prodMk hu₀
+  have h2 : n + 1 + 1 = n + 2 := by rw [add_assoc, one_add_one_eq_two]
+  have hXs := ω.contDiffAt_hamiltonianVectorField_uncurry (n := n + 1) (h2 ▸ hKs)
+  have hXt := ω.contDiffAt_hamiltonianVectorField_uncurry (n := n + 1) (h2 ▸ hKt)
+  have hdJ : ContDiffAt ℝ n (fun z ↦ fderiv ℝ (J z) (u z)) z :=
+    hJ.fderiv (f := fun z y ↦ J z y) hu₀ le_rfl
+  have hdXs : ContDiffAt ℝ n (fun z ↦ fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z)) z :=
+    hXs.fderiv (f := fun z y ↦ ω.hamiltonianVectorField (Ks z) y) hu₀ le_rfl
+  have hdXt : ContDiffAt ℝ n (fun z ↦ fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z)) z :=
+    hXt.fderiv (f := fun z y ↦ ω.hamiltonianVectorField (Kt z) y) hu₀ le_rfl
+  have hut : ContDiffAt ℝ n (fun z ↦ fderiv ℝ u z stdComplexLineImag) z :=
+    (hu.fderiv_right le_rfl).clm_apply contDiffAt_const
+  have hXtu : ContDiffAt ℝ n (fun z ↦ ω.hamiltonianVectorField (Kt z) (u z)) z :=
+    (hXt.of_le hn).comp (f := fun z ↦ (z, u z)) z hgraph
+  have hJu : ContDiffAt ℝ n (fun z ↦ J z (u z)) z :=
+    (hJ.of_le hn).comp (f := fun z ↦ (z, u z)) z hgraph
+  have hflip : ContDiffAt ℝ n (fun z ↦ (fderiv ℝ (J z) (u z)).flip) z :=
+    (flipₗᵢ ℝ V V V).contDiff.contDiffAt.comp z hdJ
+  exact ((hflip.clm_apply (hut.sub hXtu)).sub hdXs).sub (hJu.clm_comp hdXt)
+
 /-- The zeroth-order part of the linearized Floer operator is continuous at `z` when the data are
 `C¹` (and the Hamiltonians `C²`) at `(z, u z)`, and `u` is `C¹` at `z`. -/
 theorem continuousAt_floerLinearizationCoeff (ω : SymplecticForm V)
@@ -472,26 +505,9 @@ theorem continuousAt_floerLinearizationCoeff (ω : SymplecticForm V)
     (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
     (hKs : ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
     (hKt : ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiffAt ℝ 1 u z) :
-    ContinuousAt (ω.floerLinearizationCoeff J Ks Kt u) z := by
-  have hu₀ : ContDiffAt ℝ 0 u z := hu.of_le (by norm_num)
-  have hgraph : ContinuousAt (fun z ↦ (z, u z)) z := continuousAt_id.prodMk hu₀.continuousAt
-  have hXs := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hKs
-  have hXt := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hKt
-  have hdJ : ContinuousAt (fun z ↦ fderiv ℝ (J z) (u z)) z :=
-    (hJ.fderiv (f := fun z y ↦ J z y) hu₀ le_rfl).continuousAt
-  have hdXs : ContinuousAt (fun z ↦ fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z)) z :=
-    (hXs.fderiv (f := fun z y ↦ ω.hamiltonianVectorField (Ks z) y) hu₀ le_rfl).continuousAt
-  have hdXt : ContinuousAt (fun z ↦ fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z)) z :=
-    (hXt.fderiv (f := fun z y ↦ ω.hamiltonianVectorField (Kt z) y) hu₀ le_rfl).continuousAt
-  have hut : ContinuousAt (fun z ↦ fderiv ℝ u z stdComplexLineImag) z :=
-    (hu.fderiv_right (m := 0) le_rfl).continuousAt.clm_apply continuousAt_const
-  have hXtu : ContinuousAt (fun z ↦ ω.hamiltonianVectorField (Kt z) (u z)) z :=
-    hXt.continuousAt.comp (f := fun z ↦ (z, u z)) hgraph
-  have hJu : ContinuousAt (fun z ↦ J z (u z)) z :=
-    hJ.continuousAt.comp (f := fun z ↦ (z, u z)) hgraph
-  have hflip : ContinuousAt (fun z ↦ (fderiv ℝ (J z) (u z)).flip) z :=
-    (flipₗᵢ ℝ V V V).continuous.continuousAt.comp hdJ
-  exact ((hflip.clm_apply (hut.sub hXtu)).sub hdXs).sub (hJu.clm_comp hdXt)
+    ContinuousAt (ω.floerLinearizationCoeff J Ks Kt u) z :=
+  (ω.contDiffAt_floerLinearizationCoeff (n := 0) (by simpa using hJ) (by simpa using hKs)
+    (by simpa using hKt) (by simpa using hu)).continuousAt
 
 /-- The zeroth-order part of the linearized Floer operator is continuous on `K` when the data are
 `C¹` (and the Hamiltonians `C²`) at the points `(z, u z)` with `z ∈ K`, and `u` is `C¹` on `K`. -/
