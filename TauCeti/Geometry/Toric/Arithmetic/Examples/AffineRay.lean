@@ -14,16 +14,17 @@ public import TauCeti.Geometry.Toric.Arithmetic.Fan
 This is the cone system at a cusp of a modular curve, for the component of the upper half-plane:
 the positivity cone is the open positive ray `ℝ_{>0}`, its rational closure is the closed ray
 `ℝ_{≥0}`, and the faces of the closed ray form an arithmetic cone system for the trivial group.
-It is complete, because its support is the closed ray. The same cones form an arithmetic cone
-system whose rational closure is the whole line, and that system is not complete: completeness
-is measured against the rational closure of the positivity cone, not against the ambient space.
+It is complete, because its support is the closed ray. Since `ArithmeticFan` takes the set
+`Cstar` as a parameter, the same cones also form an arithmetic cone system for `Cstar = ℝ`. The
+whole line is not the rational closure of `ℝ_{>0}`, and that system is not complete: the example
+only shows that completeness is measured against the parameter `Cstar`, not the ambient space.
 
 ## Main declarations
 
 * `TauCeti.Toric.affineRayArithmeticFan`: the faces of the positive ray, as an arithmetic cone
-  system for any rational closure containing the closed ray.
-* `TauCeti.Toric.isComplete_affineRayArithmeticFan_iff`: this system is complete exactly when the
-  rational closure is the closed positive ray.
+  system for any parameter `Cstar` containing the closed ray.
+* `TauCeti.Toric.isComplete_affineRayArithmeticFan_iff`: this system is complete exactly when
+  `Cstar` is the closed positive ray, the rational closure of the open positive ray.
 -/
 
 public section
@@ -31,7 +32,8 @@ public section
 namespace TauCeti.Toric
 
 /-- The faces of the positive ray, as an arithmetic cone system for the trivial group, the open
-positive ray as positivity cone, and any rational closure `Cstar` containing the closed ray. -/
+positive ray as positivity cone, and any set `Cstar` containing the closed ray in place of the
+rational closure. The rational closure of the open positive ray is the closed positive ray. -/
 def affineRayArithmeticFan {Cstar : Set (Fin 1 → ℝ)} (h : (affineRayCone : Set _) ⊆ Cstar) :
     ArithmeticFan ((Int.castAddHom ℝ).compLeft (Fin 1)) ⊥ {x | 0 < x 0} Cstar :=
   affineRayFan.toArithmeticFan affineRayFan.map_mem_of_mem_bot (support_affineRayFan ▸ h)
@@ -49,9 +51,9 @@ theorem support_affineRayArithmeticFan {Cstar : Set (Fin 1 → ℝ)}
     (affineRayArithmeticFan h).support = affineRayCone := by
   rw [affineRayArithmeticFan, Fan.support_toArithmeticFan, support_affineRayFan]
 
-/-- The positive-ray system is complete exactly when the rational closure of the positivity cone
-is the closed positive ray. In particular it is complete for `Cstar = ℝ_{≥0}`, and not complete
-for `Cstar = ℝ`. -/
+/-- The positive-ray system is complete exactly when `Cstar` is the closed positive ray, which is
+the rational closure of the positivity cone. In particular it is complete for `Cstar = ℝ_{≥0}`,
+and not complete for `Cstar = ℝ`, which is not the rational closure of the positivity cone. -/
 theorem isComplete_affineRayArithmeticFan_iff {Cstar : Set (Fin 1 → ℝ)}
     (h : (affineRayCone : Set _) ⊆ Cstar) :
     (affineRayArithmeticFan h).IsComplete ↔ Cstar = affineRayCone := by
@@ -62,7 +64,9 @@ theorem isComplete_affineRayArithmeticFan :
     (affineRayArithmeticFan subset_rfl).IsComplete :=
   (isComplete_affineRayArithmeticFan_iff _).2 rfl
 
-/-- The positive-ray system for the whole line is not complete. -/
+/-- The positive-ray system with `Cstar` the whole line is not complete. The whole line is not
+the rational closure of the positivity cone: this only shows that completeness is relative to the
+parameter `Cstar`, not to the ambient space. -/
 theorem not_isComplete_affineRayArithmeticFan_univ :
     ¬ (affineRayArithmeticFan (Set.subset_univ _)).IsComplete := by
   rw [isComplete_affineRayArithmeticFan_iff]
