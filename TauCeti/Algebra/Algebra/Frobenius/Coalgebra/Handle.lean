@@ -196,20 +196,20 @@ taking the counit of a Frobenius coalgebra are mutually inverse bijections. -/
 def perfPairTraceEquivFrobeniusCoalgebra :
     {ε : A →ₗ[R] R // ((LinearMap.mul R A).compr₂ ε).IsPerfPair} ≃
       {c : Coalgebra R A // letI := c; Coalgebra.IsFrobenius R A} where
-  toFun ε := letI := ε.2; ⟨ε.1.frobeniusCoalgebra, ε.1.frobeniusCoalgebra_isFrobenius⟩
-  invFun c := letI := c.1; letI := c.2; ⟨c.1.counit, inferInstance⟩
-  left_inv ε := Subtype.ext <| by let := ε.2; exact ε.1.frobeniusCoalgebra_counit
+  toFun ε := letI := ε.property; ⟨ε.val.frobeniusCoalgebra, ε.val.frobeniusCoalgebra_isFrobenius⟩
+  invFun c := letI := c.val; letI := c.property; ⟨c.val.counit, inferInstance⟩
+  left_inv ε := Subtype.ext <| by let := ε.property; exact ε.val.frobeniusCoalgebra_counit
   right_inv c := Subtype.ext <| by
-    let := c.1; let := c.2; exact c.1.counit.frobeniusCoalgebra_eq c.1 rfl c.2
+    let := c.val; let := c.property; exact c.val.counit.frobeniusCoalgebra_eq c.val rfl c.property
 
 @[simp] theorem perfPairTraceEquivFrobeniusCoalgebra_apply_coe
     (ε : {ε : A →ₗ[R] R // ((LinearMap.mul R A).compr₂ ε).IsPerfPair}) :
     (perfPairTraceEquivFrobeniusCoalgebra R A ε : Coalgebra R A) =
-      (letI := ε.2; ε.1.frobeniusCoalgebra) := (rfl)
+      (letI := ε.property; ε.val.frobeniusCoalgebra) := (rfl)
 
 @[simp] theorem perfPairTraceEquivFrobeniusCoalgebra_symm_apply_coe
     (c : {c : Coalgebra R A // letI := c; Coalgebra.IsFrobenius R A}) :
-    ((perfPairTraceEquivFrobeniusCoalgebra R A).symm c : A →ₗ[R] R) = c.1.counit := (rfl)
+    ((perfPairTraceEquivFrobeniusCoalgebra R A).symm c : A →ₗ[R] R) = c.val.counit := (rfl)
 
 end TauCeti
 

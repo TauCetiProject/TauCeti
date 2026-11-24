@@ -59,7 +59,7 @@ def exchangeableLawConvexComb {a b : ℝ≥0∞} (hab : a + b = 1)
     {ρ : ProbabilityMeasure (ℕ → α) // ExchangeableLaw (ρ : Measure (ℕ → α))} :=
   ⟨ProbabilityMeasure.convexComb hab ρ₁ ρ₂, by
     rw [ProbabilityMeasure.toMeasure_convexComb]
-    exact ρ₁.2.smul_add_smul ρ₂.2 a b⟩
+    exact ρ₁.property.smul_add_smul ρ₂.property a b⟩
 
 /-- The underlying measure of a convex combination of exchangeable laws. -/
 @[simp]

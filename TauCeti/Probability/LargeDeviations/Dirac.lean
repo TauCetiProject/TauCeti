@@ -11,7 +11,7 @@ public import TauCeti.Probability.LargeDeviations.Basic
 /-!
 # The large deviation principle for a constant family of Dirac masses
 
-The constant family `δ_{x₀}` satisfies the large deviation principle at every speed that is
+The constant family `δ_{x₀}` satisfies the large deviation principle at every inverse speed that is
 eventually positive along the filter, with the rate function that is `0` at `x₀` and `∞` elsewhere.
 The case of a point not in a closed set `F` shows why logarithms must be extended-real: `log 0 = ⊥`,
 not `0`.
@@ -31,7 +31,7 @@ namespace TauCeti.Probability
 variable {ι X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [T1Space X] [DecidableEq X]
 
-/-- The constant family `δ_{x₀}` satisfies a large deviation principle at any speed that is
+/-- The constant family `δ_{x₀}` satisfies a large deviation principle at any inverse speed that is
 eventually positive along `l`, with rate `0` at `x₀` and `∞` elsewhere. -/
 theorem hasLDP_dirac (l : Filter ι) [l.NeBot] {ε : ι → ℝ≥0}
     (hε : ∀ᶠ i in l, 0 < ε i) (x₀ : X) :

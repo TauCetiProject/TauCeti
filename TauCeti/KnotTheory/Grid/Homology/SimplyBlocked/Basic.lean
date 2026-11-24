@@ -37,6 +37,9 @@ every grid diagram as `GridDiagram.simplyBlockedComplex`.
 
 * `TauCeti.GridDiagram.oneVariableSpecializationHomologyClass`: the cycle-class map of the
   one-variable specialization for arbitrary grids.
+* `TauCeti.GridDiagram.oneVariableSpecializationHomologyEquivLinearMapHomology`: the homology of
+  the one-variable specialization, over the coefficient ring, is the homology of the simply blocked
+  differential as a square-zero linear map.
 * `TauCeti.GridDiagram.oneVariableSpecializationCyclesMapOfIntertwining` and
   `TauCeti.GridDiagram.oneVariableSpecializationHomologyMapOfIntertwining`: descent of an
   intertwining semilinear map on explicit chains.
@@ -168,7 +171,7 @@ theorem mem_range_moduleCatToCycles_simplyBlockedComplex_iff (i : Fin n)
   -- restricted to the cycles, so its underlying chain is the differential by definition.
   have hd (w : (G.simplyBlockedComplex R i).X ()) :
       G.simplyBlockedChainEquiv R i
-          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles w).1 =
+          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles w).val =
         G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i w) :=
     G.simplyBlockedChainEquiv_d R i w
   constructor
@@ -178,6 +181,74 @@ theorem mem_range_moduleCatToCycles_simplyBlockedComplex_iff (i : Fin n)
     refine ⟨(G.simplyBlockedChainEquiv R i).symm w, Subtype.ext ?_⟩
     apply (G.simplyBlockedChainEquiv R i).injective
     rw [hd, LinearEquiv.apply_symm_apply, hw]
+
+/-! ### The homology of the simply blocked differential as a linear map -/
+
+section LinearMapHomology
+
+variable (i : Fin n)
+
+/-- The homology of the one-variable specialization at `V_i = 0`, viewed over the coefficient ring,
+is the homology of the simply blocked differential as a square-zero linear map. It is the
+composite of `HomologicalComplex.moduleCatHomologyIso`, the transport
+`LinearEquiv.homologyEquiv` along `simplyBlockedChainEquiv`, and
+`LinearMap.homologyRestrictScalarsEquiv`. -/
+noncomputable def oneVariableSpecializationHomologyEquivLinearMapHomology :
+    (ModuleCat.restrictScalars (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj
+        ((G.simplyBlockedComplex R i).homology ()) ≃ₗ[R]
+      ((G.simplyBlockedDifferential R i).restrictScalars R).homology
+        (G.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero R i) :=
+  letI : Module R ((G.simplyBlockedComplex R i).homology ()) :=
+    Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
+  haveI : IsScalarTower R (MvPolynomial {c : Fin n // c ≠ i} R)
+      ((G.simplyBlockedComplex R i).homology ()) :=
+    IsScalarTower.of_compHom R _ _
+  (((G.simplyBlockedComplex R i).moduleCatHomologyIso.toLinearEquiv.trans
+      ((G.simplyBlockedChainEquiv R i).homologyEquiv
+        (G.simplyBlockedComplex R i).hom_d_comp_hom_d
+        (G.simplyBlockedDifferential_comp_self_eq_zero R i)
+        (LinearMap.ext (G.simplyBlockedChainEquiv_d R i)))).restrictScalars R).trans
+    ((G.simplyBlockedDifferential R i).homologyRestrictScalarsEquiv R
+      (G.simplyBlockedDifferential_comp_self_eq_zero R i)).symm
+
+/-- The identification sends the class of a cycle `z` of the categorical complex to the class of
+the corresponding cycle of the simply blocked differential. -/
+theorem
+    oneVariableSpecializationHomologyEquivLinearMapHomology_oneVariableSpecializationHomologyClass
+    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
+    G.oneVariableSpecializationHomologyEquivLinearMapHomology R i
+        (G.oneVariableSpecializationHomologyClass R i z) =
+      Submodule.Quotient.mk ⟨G.simplyBlockedChainEquiv R i z, by
+        rw [LinearMap.mem_ker, LinearMap.restrictScalars_apply]
+        exact (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.property⟩ := by
+  -- Unfold the composite, forgetting the restriction of scalars of its first two factors.
+  change ((G.simplyBlockedDifferential R i).homologyRestrictScalarsEquiv R
+      (G.simplyBlockedDifferential_comp_self_eq_zero R i)).symm
+    ((G.simplyBlockedChainEquiv R i).homologyEquiv (G.simplyBlockedComplex R i).hom_d_comp_hom_d
+      (G.simplyBlockedDifferential_comp_self_eq_zero R i)
+      (LinearMap.ext (G.simplyBlockedChainEquiv_d R i))
+      ((G.simplyBlockedComplex R i).moduleCatHomologyIso.hom
+        (G.oneVariableSpecializationHomologyClass R i z))) = _
+  rw [HomologicalComplex.moduleCatHomologyIso_hom_moduleCatKerHomologyClass,
+    LinearMap.homologyπ_apply, LinearEquiv.homologyEquiv_mk,
+    LinearMap.homologyRestrictScalarsEquiv_symm_mk]
+
+/-- The inverse identification sends the class of a cycle `c` of the simply blocked differential
+to the class of the corresponding cycle of the categorical complex. -/
+@[simp]
+theorem oneVariableSpecializationHomologyEquivLinearMapHomology_symm_mk {c : GridChainHat R n i}
+    (hc : c ∈ LinearMap.ker ((G.simplyBlockedDifferential R i).restrictScalars R)) :
+    (G.oneVariableSpecializationHomologyEquivLinearMapHomology R i).symm
+        (Submodule.Quotient.mk ⟨c, hc⟩) =
+      G.oneVariableSpecializationHomologyClass R i ⟨(G.simplyBlockedChainEquiv R i).symm c, by
+        rw [G.mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
+        exact hc⟩ := by
+  refine (LinearEquiv.symm_apply_eq _).mpr (Eq.trans ?_ (Eq.symm <|
+    oneVariableSpecializationHomologyEquivLinearMapHomology_oneVariableSpecializationHomologyClass
+      G R i _))
+  exact congrArg _ (Subtype.ext (LinearEquiv.apply_symm_apply _ _).symm)
+
+end LinearMapHomology
 
 section Intertwining
 

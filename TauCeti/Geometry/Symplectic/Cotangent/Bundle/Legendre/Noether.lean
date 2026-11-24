@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.MomentMap
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Pullback
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Integrable
 
 /-!
 # Noether's theorem for Lagrangians with a configuration symmetry
@@ -47,8 +48,10 @@ are the velocity curves of the motions
 For a hyperregular Lagrangian the Hamiltonian `H = E_L ∘ FL⁻¹` is invariant under the
 cotangent-lifted action (`TauCeti.IsHyperregularLagrangian.hamiltonian_smul`), so the moment map
 `μ` is conserved along the Hamiltonian motions in `T*M`
-(`TauCeti.IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn`). This is the same
-conservation law: the Legendre map carries the Lagrangian motions to the Hamiltonian ones
+(`TauCeti.IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn`); moreover, every
+component of `μ` Poisson-commutes with `H`
+(`TauCeti.IsHyperregularLagrangian.isFirstIntegral_momentMap`). This is the same conservation
+law: the Legendre map carries the Lagrangian motions to the Hamiltonian ones
 (`TauCeti.IsHyperregularLagrangian.isMIntegralCurve_legendreMap_comp_iff`), and `J = μ ∘ FL`.
 
 The flat version, for configuration spaces that are normed spaces and symmetries with a gauge
@@ -68,8 +71,10 @@ cotangent moment map of the Legendre image (`TauCeti.noetherCharge_eq_cotangentM
 * `TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurveOn`,
   `TauCeti.momentMap_legendreMap_eq_of_isMIntegralCurve`: **Noether's theorem**, the Noether
   charges are conserved along the integral curves of a Lagrangian vector field.
-* `TauCeti.IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn`: the moment map is
-  conserved along the Hamiltonian motions of an invariant hyperregular Lagrangian.
+* `TauCeti.IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn`,
+  `TauCeti.IsHyperregularLagrangian.isFirstIntegral_momentMap`: the moment map is conserved along
+  the Hamiltonian motions of an invariant hyperregular Lagrangian, and its components are first
+  integrals of the Hamiltonian.
 
 ## References
 
@@ -153,12 +158,12 @@ evaluated on the fundamental vector field `ξ_{TM}` of the tangent-lifted action
 charge `⟨μ(FL v), ξ⟩ = FL(v)(ξ_M(π v))`. -/
 theorem cartanForm_apply_fundamentalVectorField {L : TangentBundle I M → ℝ}
     (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (ξ : GroupLieAlgebra IG G) (v : TangentBundle I M) :
-    (cartanForm L hL).1 v ![fundamentalVectorField I.tangent ξ v] =
+    (cartanForm L hL).val v ![fundamentalVectorField I.tangent ξ v] =
       CotangentBundle.momentMap IG G (legendreMap L v) ξ := by
   rw [cartanForm_apply, Matrix.cons_val_zero, TangentBundle.mfderiv_proj_fundamentalVectorField,
     CotangentBundle.momentMap_apply]
   -- The Legendre map covers the identity, `π (FL v) = π v`.
-  exact congrArg (legendreMap L v).2
+  exact congrArg (legendreMap L v).snd
     (congrArg (fundamentalVectorField I ξ) (proj_legendreMap L v).symm)
 
 end Charge
@@ -235,6 +240,20 @@ theorem IsHyperregularLagrangian.momentMap_eq_of_isMIntegralCurveOn
   CotangentBundle.isEquivariantMomentMap_momentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant
     (fun g ↦ hLh.hamiltonian_smul (hLG g)) hX hs hγ
     (fun t _ ↦ (hLh.contMDiff_hamiltonian hL).mdifferentiableAt (by simp)) ht₀ ht
+
+/-- **The moment map is a first integral of the Hamiltonian.** For a hyperregular Lagrangian `L`
+invariant under the tangent lift of a smooth action of `G`, every component `μ_ξ` of the
+cotangent-lift moment map Poisson-commutes with the Hamiltonian `H = E_L ∘ FL⁻¹` for the
+canonical symplectic form of `T*M`. -/
+theorem IsHyperregularLagrangian.isFirstIntegral_momentMap (hLh : IsHyperregularLagrangian L)
+    (hLG : ∀ (g : G) v, L (g • v) = L v) (ξ : GroupLieAlgebra IG G) :
+    (CotangentBundle.symplecticForm I M).IsFirstIntegral hLh.hamiltonian
+      fun p ↦ CotangentBundle.momentMap IG G p ξ :=
+  SmoothTwoForm.isFirstIntegral_iff.2 <| congrFun <|
+    CotangentBundle.isEquivariantMomentMap_momentMap.toIsMomentMap
+      |>.poissonBracket_eq_zero_of_smul_invariant
+        CotangentBundle.isSymplectic_symplecticForm.isNondegenerate
+        (fun g ↦ hLh.hamiltonian_smul (hLG g)) ξ
 
 end Noether
 

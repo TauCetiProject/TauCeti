@@ -41,6 +41,10 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
   `TwoSidedIdeal.Quotient.liftUnitalStarAlgHom`.
 * `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
   `⋆`-algebra homomorphism between C⋆-algebras is closed.
+* `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
+  of another is dominated by it in norm.
+* `NonUnitalStarAlgHom.exists_mem_comap_norm_sub_lt`: the distance from `a` to the preimage of a
+  closed ideal `J` under `φ` is at most `‖φ a - x‖` for every `x ∈ J`.
 * `NonUnitalStarAlgHom.quotientKerEquivRange`, `NonUnitalStarAlgHom.quotientKerEquivOfSurjective`,
   and `NonUnitalStarAlgHom.surjective_of_denseRange` (plus `StarAlgHom` counterparts): isometric
   first `⋆`-isomorphism theorem and surjectivity from dense range.
@@ -148,7 +152,7 @@ instance instCStarRing : CStarRing (A ⧸ I) where
     -- `TauCeti.CStarAlgebra.norm_sub_mul_sq_le` for the positive contraction `e`.
     have hmk_eq : mk I a = mk I (a - a * (e : A)) := by
       rw [map_sub, eq_zero_iff_mem.mpr
-        (I.mul_mem_left a (e : A) (I.mem_toNonUnitalStarSubalgebra.mp e.2)), sub_zero]
+        (I.mul_mem_left a (e : A) (I.mem_toNonUnitalStarSubalgebra.mp e.property)), sub_zero]
     calc
       ‖mk I a‖ ^ 2 ≤ ‖a - a * (e : A)‖ ^ 2 := by
         rw [hmk_eq]
@@ -470,6 +474,62 @@ noncomputable def quotientKerEquivOfSurjective {φ : A →⋆ₙₐ[ℂ] B} (hφ
 theorem quotientKerEquivOfSurjective_mk {φ : A →⋆ₙₐ[ℂ] B} (hφ : Function.Surjective φ) (a : A) :
     quotientKerEquivOfSurjective hφ (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a) = φ a :=
   φ.quotientKerHom_mk a
+
+end NonUnitalStarAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {F G A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  [NonUnitalCStarAlgebra C] [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
+  [FunLike G A C] [NonUnitalAlgHomClass G ℂ A C] [StarHomClass G A C]
+
+/-- If every element killed by `φ` is killed by a `⋆`-homomorphism `ψ` between C⋆-algebras, then
+`ψ` is dominated in norm by `φ`: `‖ψ a‖ ≤ ‖φ a‖`. -/
+theorem norm_apply_le_norm_apply_of_ker_le {φ : F} {ψ : G}
+    (h : TwoSidedIdeal.ker φ ≤ TwoSidedIdeal.ker ψ) (a : A) : ‖ψ a‖ ≤ ‖φ a‖ := by
+  -- `ψ` factors contractively through `A ⧸ ker φ`, which `φ` embeds isometrically
+  let φ' : A →⋆ₙₐ[ℂ] B := ofClass φ
+  let q := TwoSidedIdeal.Quotient.liftStarAlgHom (TwoSidedIdeal.ker φ') (ofClass ψ) fun b hb =>
+    (TwoSidedIdeal.mem_ker ψ).1 (h hb)
+  -- `ofClass φ` and `ofClass ψ` agree with `φ` and `ψ` definitionally
+  calc ‖ψ a‖ = ‖q (TwoSidedIdeal.Quotient.mk _ a)‖ :=
+        congrArg norm (TwoSidedIdeal.Quotient.liftStarAlgHom_mk _ (ofClass ψ) _ a).symm
+    _ ≤ ‖TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ') a‖ :=
+        NonUnitalStarAlgHom.norm_apply_le q _
+    _ = ‖φ a‖ := (φ'.isometry_quotientKerHom.norm_map_of_map_zero (map_zero _) _).symm.trans
+        (congrArg norm (φ'.quotientKerHom_mk a))
+
+/-- **Distance to the preimage of an ideal.** If `x` lies in a closed two-sided ideal `J` of `B`,
+then for every `a ∈ A` and `ε > 0` there is `b` in the preimage of `J` under `φ` with
+`‖a - b‖ < ‖φ a - x‖ + ε`. -/
+theorem exists_mem_comap_norm_sub_lt (φ : F) (J : TwoSidedIdeal B) [IsClosed (J : Set B)]
+    {x : B} (hx : x ∈ J) (a : A) {ε : ℝ} (hε : 0 < ε) :
+    ∃ b ∈ J.comap φ, ‖a - b‖ < ‖φ a - x‖ + ε := by
+  have : IsClosed (J.comap φ : Set A) := J.isClosed_comap (map_continuous φ) ‹_›
+  let χ := (TwoSidedIdeal.Quotient.mkStarAlgHom J).comp (ofClass φ)
+  let ψ := TwoSidedIdeal.Quotient.mkStarAlgHom (J.comap φ)
+  have hker : TwoSidedIdeal.ker χ ≤ TwoSidedIdeal.ker ψ := fun c hc => by
+    rw [TwoSidedIdeal.mem_ker] at hc ⊢
+    simp only [χ, ψ, NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_ofClass,
+      TwoSidedIdeal.Quotient.mkStarAlgHom_apply, TwoSidedIdeal.Quotient.eq_zero_iff_mem,
+      TwoSidedIdeal.mem_comap] at hc ⊢
+    exact hc
+  -- `‖mk (J.comap φ) a‖ ≤ ‖mk J (φ a)‖ = ‖mk J (φ a - x)‖ ≤ ‖φ a - x‖`
+  have hle : ‖ψ a‖ ≤ ‖φ a - x‖ := by
+    refine (norm_apply_le_norm_apply_of_ker_le hker a).trans ?_
+    have hχ : χ a = TwoSidedIdeal.Quotient.mk J (φ a - x) := by
+      simp only [χ, NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.coe_ofClass,
+        TwoSidedIdeal.Quotient.mkStarAlgHom_apply, map_sub,
+        TwoSidedIdeal.Quotient.eq_zero_iff_mem.2 hx, sub_zero]
+    rw [hχ]
+    exact TwoSidedIdeal.Quotient.norm_mk_le J _
+  obtain ⟨a', ha', hlt⟩ := TwoSidedIdeal.Quotient.exists_norm_mk_lt (ψ a) hε
+  refine ⟨a - a', ?_, ?_⟩
+  · have h0 : ψ (a - a') = 0 := by
+      rw [map_sub, TwoSidedIdeal.Quotient.mkStarAlgHom_apply _ a', ha', sub_self]
+    exact TwoSidedIdeal.Quotient.eq_zero_iff_mem.1 (by simpa [ψ] using h0)
+  · rw [sub_sub_cancel]
+    linarith
 
 end NonUnitalStarAlgHom
 

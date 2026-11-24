@@ -99,8 +99,8 @@ theorem isKostantPartitionOn_iff (S : Finset ι) (ν : M) (c : ι → ℕ) :
 finite cardinality. -/
 instance instFiniteSubtypeIsKostantPartitionOn (S : Finset ι) (ν : M) :
     Finite {c : ι → ℕ // IsKostantPartitionOn P b S ν c} :=
-  Finite.of_injective (fun c ↦ (⟨c.1, c.2.1⟩ : {c : ι → ℕ // IsKostantPartition P b ν c}))
-    fun _ _ h ↦ Subtype.ext congr(($h).1)
+  Finite.of_injective (fun c ↦ (⟨c.val, c.property.1⟩ : {c : ι → ℕ // IsKostantPartition P b ν c}))
+    fun _ _ h ↦ Subtype.ext congr(($h).val)
 
 /-- **The Kostant partition function of a set of positive roots** `P_S(ν)`: the number of ways of
 writing `ν` as a sum, with multiplicity, of the positive roots indexed by `S`. -/
@@ -144,10 +144,10 @@ open Classical in
   split_ifs with hν
   · rw [Nat.card_eq_one_iff_unique]
     refine ⟨⟨fun x y ↦ Subtype.ext ?_⟩, ⟨⟨0, (isKostantPartitionOn_empty_iff P b).mpr ⟨rfl, hν⟩⟩⟩⟩
-    exact ((isKostantPartitionOn_empty_iff P b).mp x.2).1.trans
-      ((isKostantPartitionOn_empty_iff P b).mp y.2).1.symm
+    exact ((isKostantPartitionOn_empty_iff P b).mp x.property).1.trans
+      ((isKostantPartitionOn_empty_iff P b).mp y.property).1.symm
   · have : IsEmpty {c : ι → ℕ // IsKostantPartitionOn P b (∅ : Finset ι) ν c} :=
-      ⟨fun x ↦ hν ((isKostantPartitionOn_empty_iff P b).mp x.2).2⟩
+      ⟨fun x ↦ hν ((isKostantPartitionOn_empty_iff P b).mp x.property).2⟩
     exact Nat.card_of_isEmpty
 
 /-! ## The recursion in the set of allowed roots -/
@@ -223,16 +223,16 @@ theorem kostantPartitionOn_eq_erase_add_sub_root [DecidableEq ι] {S : Finset ι
   -- Raising the multiplicity of `αᵢ` is a bijection onto the partitions that use it.
   have hbij : Function.Bijective
       (fun c : {c : ι → ℕ // IsKostantPartitionOn P b S (ν - P.root i) c} ↦
-        (⟨c.1 + Pi.single i 1, isKostantPartitionOn_add_single hiS hi c.2, by simp⟩ :
+        (⟨c.val + Pi.single i 1, isKostantPartitionOn_add_single hiS hi c.property, by simp⟩ :
           {c : ι → ℕ // IsKostantPartitionOn P b S ν c ∧ c i ≠ 0})) :=
-    ⟨fun c d h ↦ Subtype.ext (add_right_cancel congr(($h).1)), fun x ↦ by
-      obtain ⟨c, hc, hcx⟩ := exists_add_single_eq hi x.2.1 x.2.2
+    ⟨fun c d h ↦ Subtype.ext (add_right_cancel congr(($h).val)), fun x ↦ by
+      obtain ⟨c, hc, hcx⟩ := exists_add_single_eq hi x.property.1 x.property.2
       exact ⟨⟨c, hc⟩, Subtype.ext hcx⟩⟩
   -- Splitting the partitions supported in `S` according to whether they use `αᵢ`.
   have esplit : {c : ι → ℕ // IsKostantPartitionOn P b S ν c} ≃
       {c : ι → ℕ // IsKostantPartitionOn P b (S.erase i) ν c} ⊕
         {c : ι → ℕ // IsKostantPartitionOn P b S (ν - P.root i) c} :=
-    (Equiv.sumCompl fun c : {c : ι → ℕ // IsKostantPartitionOn P b S ν c} ↦ c.1 i = 0).symm.trans
+    (Equiv.sumCompl fun c : {c : ι → ℕ // IsKostantPartitionOn P b S ν c} ↦ c.val i = 0).symm.trans
       (Equiv.sumCongr
         ((Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans (Equiv.subtypeEquivRight herase))
         ((Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans (Equiv.ofBijective _ hbij).symm))

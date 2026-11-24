@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import Mathlib.Topology.ContinuousMap.Compact
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Germ
@@ -29,18 +28,21 @@ Multiplicativity uses two nested grid cycles, not a connectedness assumption on 
 spectrum. The zero algebra and its empty spectrum are included. No normalization of
 the norm of the identity is assumed.
 
-This file also establishes the core algebraic and functorial properties directly from the contour
-definition:
+This file also establishes the core algebraic and functorial properties—commutation, naturality,
+and scalar specialization from the contour definition, character evaluation from naturality and
+scalar point evaluation (`AlgHom.map_holomorphicCalculus_eq_eval`), and resolvent/rational
+evaluation formulas as algebraic consequences of coordinate evaluation (via
+`AlgHom.map_holomorphicGermsOfFun_*`):
 * **Commutation**: every element commuting with `a` commutes with `f(a)`, and values of the
   calculus at commuting elements commute with one another.
 * **Naturality**: continuous unital complex-algebra homomorphisms and equivalences commute with
   `holomorphicCalculusOn` and `holomorphicCalculus`.
-* **Resolvent kernels and rational functions**: any unital complex-algebra homomorphism on
-  `holomorphicGerms (spectrum ℂ a)` sending the coordinate germ to `a` maps `(w - ·)⁻¹` to
-  `resolvent a w`; in particular `holomorphicCalculus a` evaluates `(w - ·)⁻¹` to `resolvent a w`
-  and rational functions `p(z) / q(z)` (with `q` nonvanishing on `spectrum ℂ a`) to
-  `p(a) q(a)⁻¹`.
-* **Scalar specialization**: on `ℂ`, the calculus is point evaluation.
+* **Resolvent kernels and rational functions**: `holomorphicCalculus a` evaluates `(w - ·)⁻¹` to
+  `resolvent a w` for `w ∉ spectrum ℂ a` (and `holomorphicCalculusOn a U ha` does so for `w ∉ U`),
+  and sends reciprocals, quotients `f(z) / g(z)`, and rational functions `p(z) / q(z)` (with
+  denominator nonvanishing on `spectrum ℂ a`) to `f(a)⁻¹`, `f(a) g(a)⁻¹`, and `p(a) q(a)⁻¹`.
+* **Scalar specialization**: on `ℂ`, the calculus is point evaluation, so any complex character on
+  a Banach algebra evaluates the calculus by point evaluation at the character value.
 
 ## References
 
@@ -72,7 +74,7 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 private def calculusValue (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
     (f : holomorphicFunctions U) : A :=
   (2 * π * I)⁻¹ • Cycle.integral (fun z => extend f z • resolvent a z)
-    ((spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha).choose
+    ((spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha).choose
 
 private theorem calculusValue_eq_integral (a : A) (U : Opens ℂ)
     (ha : spectrum ℂ a ⊆ U) (f : holomorphicFunctions U) (Γ : Cycle)
@@ -81,7 +83,7 @@ private theorem calculusValue_eq_integral (a : A) (U : Opens ℂ)
     calculusValue a U ha f =
       (2 * π * I)⁻¹ • Cycle.integral (fun z => extend f z • resolvent a z) Γ := by
   obtain ⟨hΓ', hn', hw'⟩ :=
-    ((spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha).choose_spec
+    ((spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha).choose_spec
   exact congrArg ((2 * π * I)⁻¹ • ·)
     (Cycle.integral_smul_resolvent_eq_of_windingNumber_eq U.isOpen
       (differentiableOn_extend f) hΓ' hΓ hn' hn fun z hz => (hw' z hz).trans (hw z hz).symm)
@@ -91,7 +93,7 @@ private theorem calculusValue_congr (a : A) {U V : Opens ℂ}
     (f : holomorphicFunctions U) (g : holomorphicFunctions V) (hVU : V ≤ U)
     (hfg : ∀ z : V, f.val (Set.inclusion hVU z) = g.val z) :
     calculusValue a U hU f = calculusValue a V hV g := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one V.isOpen hV
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one V.isOpen hV
   rw [calculusValue_eq_integral a V hV g Γ hΓ hn hw,
     calculusValue_eq_integral a U hU f Γ
       (Cycle.isIn_iff.mpr fun z hz => ⟨hVU (Cycle.isIn_iff.mp hΓ hz).1,
@@ -118,7 +120,7 @@ private theorem continuousOn_calculusIntegrand {a : A} {U : Opens ℂ}
 private theorem calculusValue_add (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
     (f g : holomorphicFunctions U) :
     calculusValue a U ha (f + g) = calculusValue a U ha f + calculusValue a U ha g := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   rw [calculusValue_eq_integral a U ha (f + g) Γ hΓ hn hw,
     calculusValue_eq_integral a U ha f Γ hΓ hn hw,
     calculusValue_eq_integral a U ha g Γ hΓ hn hw]
@@ -133,7 +135,7 @@ private theorem calculusValue_mul (a : A) (U : Opens ℂ) (ha : spectrum ℂ a �
     (f g : holomorphicFunctions U) :
     calculusValue a U ha (f * g) = calculusValue a U ha f * calculusValue a U ha g := by
   obtain ⟨Γ₁, Γ₂, h₁, h₂, hn₁, hn₂, hw₁, hw₂, hd, hw₁₂, hw₂₁⟩ :=
-    (spectrum.isCompact a).exists_nested_cycles_windingNumber_eq_one U.isOpen ha
+    (spectrum.isCompact ℂ a).exists_nested_cycles_windingNumber_eq_one U.isOpen ha
   rw [calculusValue_eq_integral a U ha (f * g) Γ₁ h₁ hn₁ hw₁,
     calculusValue_eq_integral a U ha f Γ₁ h₁ hn₁ hw₁,
     calculusValue_eq_integral a U ha g Γ₂ h₂ hn₂ hw₂, smul_mul_smul_comm,
@@ -153,7 +155,7 @@ private theorem calculusValue_polynomial (a : A) (U : Opens ℂ) (ha : spectrum 
     (p : Polynomial ℂ) :
     calculusValue a U ha (of U (fun z => p.eval z) p.differentiable.differentiableOn) =
       Polynomial.aeval a p := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   rw [calculusValue_eq_integral a U ha _ Γ hΓ hn hw,
     Cycle.integral_congr (g := fun z => p.eval z • resolvent a z) (fun z hz => by
       rw [extend_apply _ ⟨z, (Cycle.isIn_iff.mp hΓ hz).1⟩, of_apply]),
@@ -213,7 +215,7 @@ theorem norm_holomorphicCalculusOn_le (a : A) (U : Opens ℂ) (ha : spectrum ℂ
     {M R : ℝ} (hM : ∀ z ∈ Cycle.trace Γ, ‖extend f z‖ ≤ M)
     (hR : ∀ z ∈ Cycle.trace Γ, ‖resolvent a z‖ ≤ R) :
     ‖holomorphicCalculusOn a U ha f‖ ≤ ‖(2 * π * I)⁻¹‖ *
-      ((∑ γ ∈ FreeAbelianGroup.support Γ, |(FreeAbelianGroup.coeff γ Γ : ℝ)| *
+      ((∑ γ ∈ FreeAddCommGroup.support Γ, |(FreeAddCommGroup.coeff γ Γ : ℝ)| *
         ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * (M * R)) := by
   rw [holomorphicCalculusOn_eq_integral a U ha f Γ hΓ hn hw, norm_smul]
   gcongr
@@ -228,21 +230,21 @@ for uniform convergence on compact subsets. -/
 @[continuity]
 theorem continuous_holomorphicCalculusOn (a : A) (U : Opens ℂ)
     (ha : spectrum ℂ a ⊆ U) : Continuous (holomorphicCalculusOn a U ha) := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   let := isCompact_iff_compactSpace.mp (Cycle.isCompact_trace Γ)
   let j : C(Cycle.trace Γ, U) :=
     ⟨fun z => ⟨z, (Cycle.isIn_iff.mp hΓ z.property).1⟩,
-      continuous_subtype_val.subtype_mk _⟩
+      continuous_subtypeVal.subtype_mk _⟩
   let ρ : holomorphicFunctions U →ₐ[ℂ] C(Cycle.trace Γ, ℂ) :=
     (ContinuousMap.compRightAlgHom ℂ ℂ j).comp (holomorphicFunctions U).val
   have hρ : Continuous ρ :=
-    (ContinuousMap.compRightAlgHom_continuous ℂ ℂ j).comp continuous_subtype_val
+    (ContinuousMap.compRightAlgHom_continuous ℂ ℂ j).comp continuous_subtypeVal
   have hρ_apply (f : holomorphicFunctions U) (z : Cycle.trace Γ) :
       ρ f z = f.val ⟨z, (Cycle.isIn_iff.mp hΓ z.property).1⟩ := rfl
   have hres := Cycle.continuousOn_resolvent (isIn_resolventSet hΓ)
   obtain ⟨R, hR⟩ := (Cycle.isCompact_trace Γ).exists_bound_of_continuousOn hres
   let C := ‖(2 * π * I)⁻¹‖ *
-    (∑ γ ∈ FreeAbelianGroup.support Γ, |(FreeAbelianGroup.coeff γ Γ : ℝ)| *
+    (∑ γ ∈ FreeAddCommGroup.support Γ, |(FreeAddCommGroup.coeff γ Γ : ℝ)| *
       ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * R
   let : IsTopologicalAddGroup (holomorphicFunctions U) :=
     IsInducing.subtypeVal.isTopologicalAddGroup
@@ -296,22 +298,21 @@ theorem holomorphicCalculus_ofFun_eq_integral (a : A) {U : Set ℂ} (hU : IsOpen
   exact Cycle.integral_congr fun z hz => by
     rw [extend_apply _ ⟨z, (Cycle.isIn_iff.mp hΓ hz).1⟩, of_apply]
 
+/-- The coordinate germ is sent to the specified algebra element. -/
+@[simp]
+theorem holomorphicCalculus_id (a : A) :
+    holomorphicCalculus a (holomorphicGerms.ofFun id analyticOnNhd_id) = a := by
+  rw [← toGerm_of (U := ⊤) (subset_univ _) id differentiableOn_id, holomorphicCalculus_toGerm]
+  exact holomorphicCalculusOn_id a ⊤ (subset_univ _)
+
 /-- The germ calculus agrees with polynomial evaluation. -/
 @[simp]
 theorem holomorphicCalculus_polynomial (a : A) (p : Polynomial ℂ) :
     holomorphicCalculus a
       (holomorphicGerms.ofFun (fun z => p.eval z)
         ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))) = Polynomial.aeval a p := by
-  rw [← toGerm_of (U := ⊤) (subset_univ _) _ p.differentiable.differentiableOn,
-    holomorphicCalculus_toGerm]
-  exact holomorphicCalculusOn_polynomial a ⊤ (subset_univ _) p
-
-/-- The coordinate germ is sent to the specified algebra element. -/
-@[simp]
-theorem holomorphicCalculus_id (a : A) :
-    holomorphicCalculus a (holomorphicGerms.ofFun id analyticOnNhd_id) = a := by
-  have hid : (fun z : ℂ => Polynomial.eval z Polynomial.X) = id := by ext z; simp
-  simpa only [hid, Polynomial.aeval_X] using holomorphicCalculus_polynomial a Polynomial.X
+  rw [holomorphicGerms.ofFun_eval_polynomial, ← Polynomial.aeval_algHom_apply,
+    holomorphicCalculus_id]
 
 end TauCeti
 
@@ -325,7 +326,7 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 theorem Commute.holomorphicCalculusOn_right {a b : A} (hb : Commute b a) (U : Opens ℂ)
     (ha : spectrum ℂ a ⊆ U) (f : holomorphicFunctions U) :
     Commute b (holomorphicCalculusOn a U ha f) := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   rw [holomorphicCalculusOn_eq_integral a U ha f Γ hΓ hn hw]
   exact (hb.integral_smul_resolvent_right
     ((differentiableOn_extend f).continuousOn.mono fun _ hz ↦ (Cycle.isIn_iff.mp hΓ hz).1)
@@ -361,7 +362,7 @@ theorem map_holomorphicCalculusOn {F A B : Type*} [NormedRing A] [NormedAlgebra 
   let L : A →L[ℂ] B := { (AlgHom.ofClass φ).toLinearMap with cont := hφ }
   have hL : ∀ x, L x = φ x := fun _ ↦ rfl
   have hsub : spectrum ℂ (φ a) ⊆ spectrum ℂ a := AlgHom.spectrum_apply_subset φ a
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   have hΓB : Γ.IsIn (U \ spectrum ℂ (φ a)) := Cycle.isIn_iff.mpr fun z hz ↦
     ⟨(Cycle.isIn_iff.mp hΓ hz).1, fun hzB ↦ (Cycle.isIn_iff.mp hΓ hz).2 (hsub hzB)⟩
   have hR : Γ.IsIn (resolventSet ℂ a) :=
@@ -442,47 +443,6 @@ theorem map_holomorphicCalculus (φ : A ≃A[ℂ] B) (a : A)
 
 end ContinuousAlgEquiv
 
-namespace AlgHom
-
-open TauCeti
-
-/-- Any unital complex-algebra homomorphism on `holomorphicGerms (spectrum ℂ a)` sending the
-coordinate germ to `a` maps the Cauchy kernel `(w - ·)⁻¹` to `resolvent a w`. -/
-theorem ofFun_sub_inv_eq_resolvent {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
-    (Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A)
-    (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
-    {w : ℂ} (hf : AnalyticOnNhd ℂ (fun z ↦ (w - z)⁻¹) (spectrum ℂ a)) :
-    Φ (holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹) hf) = resolvent a w := by
-  have hw : w ∈ resolventSet ℂ a :=
-    spectrum.notMem_iff.mp fun hwσ ↦ by
-      have hcont : ContinuousAt (fun z : ℂ ↦ (w - z)⁻¹) (w - 0) := by
-        rw [sub_zero]
-        exact (hf w hwσ).continuousAt
-      have h0 : ContinuousAt (Inv.inv : ℂ → ℂ) 0 := by
-        simpa only [Function.comp_def, sub_sub_cancel] using
-          hcont.comp (continuousAt_const.sub continuousAt_id)
-      exact NormedField.continuousAt_inv.mp h0 rfl
-  let k := holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹) hf
-  have hmul : (algebraMap ℂ (holomorphicGerms (spectrum ℂ a)) w -
-      holomorphicGerms.ofFun id analyticOnNhd_id) * k = 1 := by
-    rw [← holomorphicGerms.ofFun_const w, ← holomorphicGerms.ofFun_sub,
-      ← holomorphicGerms.ofFun_mul, ← holomorphicGerms.ofFun_one,
-      holomorphicGerms.ofFun_eq_iff]
-    refine eventually_nhdsSet_iff_forall.mpr fun z hz ↦ ?_
-    have hne : w - z ≠ 0 := sub_ne_zero.mpr fun (h : w = z) ↦
-      spectrum.mem_iff.mp (h ▸ hz) (spectrum.mem_resolventSet_iff.mp hw)
-    filter_upwards [(continuousAt_const.sub continuousAt_id).eventually_ne hne] with u hu
-    exact mul_inv_cancel₀ hu
-  have hΦ := congrArg Φ hmul
-  rw [map_mul, map_sub, AlgHom.commutes, hid, map_one] at hΦ
-  calc Φ k = 1 * Φ k := (one_mul _).symm
-    _ = (resolvent a w * (algebraMap ℂ A w - a)) * Φ k := by
-        rw [resolvent, Ring.inverse_mul_cancel _ (spectrum.mem_resolventSet_iff.mp hw)]
-    _ = resolvent a w * ((algebraMap ℂ A w - a) * Φ k) := mul_assoc _ _ _
-    _ = resolvent a w := by rw [hΦ, mul_one]
-
-end AlgHom
-
 namespace TauCeti
 
 open Contour HolomorphicFunctions
@@ -491,20 +451,40 @@ section ResolventAndRational
 
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
-/-- The holomorphic germ calculus maps `(w - ·)⁻¹` to `resolvent a w`. -/
+/-- For `w ∉ spectrum ℂ a` (witnessed by analyticity of `z ↦ (w - z)⁻¹` near `spectrum ℂ a`),
+the holomorphic germ calculus maps `(w - ·)⁻¹` to `resolvent a w`. -/
 @[simp]
 theorem holomorphicCalculus_sub_inv (a : A) (w : ℂ)
     (hf : AnalyticOnNhd ℂ (fun z ↦ (w - z)⁻¹) (spectrum ℂ a)) :
     holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹) hf) = resolvent a w :=
-  (holomorphicCalculus a).ofFun_sub_inv_eq_resolvent (holomorphicCalculus_id a) hf
+  (holomorphicCalculus a).map_holomorphicGermsOfFun_sub_inv_eq_resolvent
+    (holomorphicCalculus_id a) hf
 
-/-- On an open neighbourhood `U` of `spectrum ℂ a`, `holomorphicCalculusOn` maps `(w - ·)⁻¹` to
-`resolvent a w`. -/
+/-- On an open neighbourhood `U` of `spectrum ℂ a` avoiding `w` (witnessed by differentiability of
+`z ↦ (w - z)⁻¹` on `U`), `holomorphicCalculusOn` maps `(w - ·)⁻¹` to `resolvent a w`. -/
 @[simp]
 theorem holomorphicCalculusOn_sub_inv (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
     (w : ℂ) (hf : DifferentiableOn ℂ (fun z ↦ (w - z)⁻¹) U) :
     holomorphicCalculusOn a U ha (of U (fun z ↦ (w - z)⁻¹) hf) = resolvent a w := by
   rw [← holomorphicCalculus_toGerm, toGerm_of, holomorphicCalculus_sub_inv]
+
+/-- The calculus sends the reciprocal of a function without zeros on the spectrum to the inverse
+of its value. -/
+theorem holomorphicCalculus_ofFun_inv (a : A) (f : ℂ → ℂ)
+    (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) (hne : ∀ x ∈ spectrum ℂ a, f x ≠ 0) :
+    holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne)) =
+      Ring.inverse (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) :=
+  (holomorphicCalculus a).map_holomorphicGermsOfFun_inv hf hne
+
+/-- The calculus sends a quotient by a function with no zero on the spectrum to the product with
+the inverse of the denominator's value. -/
+theorem holomorphicCalculus_ofFun_div (a : A) {f g : ℂ → ℂ}
+    (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) (hg : AnalyticOnNhd ℂ g (spectrum ℂ a))
+    (hne : ∀ z ∈ spectrum ℂ a, g z ≠ 0) :
+    holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ f z / g z) (hf.div hg hne)) =
+      holomorphicCalculus a (holomorphicGerms.ofFun f hf) *
+        Ring.inverse (holomorphicCalculus a (holomorphicGerms.ofFun g hg)) :=
+  (holomorphicCalculus a).map_holomorphicGermsOfFun_div hf hg hne
 
 /-- **Rational functions in the holomorphic calculus.** If `p, q : Polynomial ℂ` and `q` has no
 zeros on `spectrum ℂ a`, then the holomorphic calculus sends `z ↦ p(z) / q(z)` to
@@ -516,30 +496,10 @@ theorem holomorphicCalculus_div_polynomial (a : A) (p q : Polynomial ℂ)
         (((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)).div
           ((AnalyticOnNhd.eval_polynomial q).mono (subset_univ _)) hq)) =
       Polynomial.aeval a p * Ring.inverse (Polynomial.aeval a q) := by
-  have hp_ana : AnalyticOnNhd ℂ (fun z ↦ p.eval z) (spectrum ℂ a) :=
-    (AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)
-  have hq_ana : AnalyticOnNhd ℂ (fun z ↦ q.eval z) (spectrum ℂ a) :=
-    (AnalyticOnNhd.eval_polynomial q).mono (subset_univ _)
-  have hunit : IsUnit (Polynomial.aeval a q) := by
-    rw [← holomorphicCalculus_polynomial a q]
-    exact ((holomorphicGerms.isUnit_iff _).mpr (by simpa using hq)).map (holomorphicCalculus a)
-  have hmul : holomorphicGerms.ofFun (fun z ↦ p.eval z / q.eval z) (hp_ana.div hq_ana hq) *
-      holomorphicGerms.ofFun (fun z ↦ q.eval z) hq_ana =
-      holomorphicGerms.ofFun (fun z ↦ p.eval z) hp_ana := by
-    rw [← holomorphicGerms.ofFun_mul, holomorphicGerms.ofFun_eq_iff]
-    refine eventually_nhdsSet_iff_forall.mpr fun z hz ↦ ?_
-    filter_upwards [q.continuous.continuousAt.eventually_ne (hq z hz)] with u hu
-    exact div_mul_cancel₀ _ hu
-  have hcalc := congrArg (holomorphicCalculus a) hmul
-  rw [map_mul, holomorphicCalculus_polynomial, holomorphicCalculus_polynomial] at hcalc
-  calc holomorphicCalculus a
-        (holomorphicGerms.ofFun (fun z ↦ p.eval z / q.eval z) (hp_ana.div hq_ana hq))
-      = holomorphicCalculus a
-          (holomorphicGerms.ofFun (fun z ↦ p.eval z / q.eval z) (hp_ana.div hq_ana hq)) *
-          (Polynomial.aeval a q * Ring.inverse (Polynomial.aeval a q)) := by
-          rw [Ring.mul_inverse_cancel _ hunit, mul_one]
-    _ = Polynomial.aeval a p * Ring.inverse (Polynomial.aeval a q) := by
-          rw [← mul_assoc, hcalc]
+  rw [(holomorphicCalculus a).map_holomorphicGermsOfFun_div
+      ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))
+      ((AnalyticOnNhd.eval_polynomial q).mono (subset_univ _)) hq,
+    holomorphicCalculus_polynomial, holomorphicCalculus_polynomial]
 
 /-- On an open neighbourhood `U` of `spectrum ℂ a` where `q` does not vanish, the calculus sends
 `z ↦ p(z) / q(z)` to `p(a) q(a)⁻¹`. -/
@@ -562,7 +522,7 @@ theorem holomorphicCalculusOn_complex (c : ℂ) (U : Opens ℂ) (hc : spectrum �
     (f : holomorphicFunctions U) :
     holomorphicCalculusOn c U hc f = f.val ⟨c, hc (by simp [spectrum.mem_iff])⟩ := by
   have hc_mem : c ∈ spectrum ℂ c := by simp [spectrum.mem_iff]
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact c).exists_cycle_windingNumber_eq_one U.isOpen hc
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ c).exists_cycle_windingNumber_eq_one U.isOpen hc
   have hΓU : Γ.IsIn U := Cycle.isIn_iff.mpr fun _ hz ↦ (Cycle.isIn_iff.mp hΓ hz).1
   have hoff : c ∉ Cycle.trace Γ := fun hcΓ ↦ (Cycle.isIn_iff.mp hΓ hcΓ).2 hc_mem
   rw [holomorphicCalculusOn_eq_integral c U hc f Γ hΓ hn hw,
@@ -583,3 +543,20 @@ theorem holomorphicCalculus_complex (c : ℂ) (g : holomorphicGerms (spectrum �
 end Scalar
 
 end TauCeti
+
+namespace AlgHom
+
+open TauCeti HolomorphicFunctions
+
+/-- Any complex character on a unital complex Banach algebra `B` evaluates the holomorphic germ
+calculus by point evaluation at `φ b`. -/
+theorem map_holomorphicCalculus_eq_eval {F B : Type*} [NormedRing B] [NormedAlgebra ℂ B]
+    [CompleteSpace B] [FunLike F B ℂ] [AlgHomClass F ℂ B ℂ] (φ : F) (b : B)
+    (g : holomorphicGerms (spectrum ℂ b)) :
+    φ (holomorphicCalculus b g) =
+      holomorphicGerms.eval (φ b) (AlgHom.apply_mem_spectrum φ b) g := by
+  rw [AlgHom.map_holomorphicCalculus φ (map_continuous φ), holomorphicCalculus_complex]
+  obtain ⟨U, hbU, f, rfl⟩ := holomorphicGerms.exists_toGerm_eq g
+  simp
+
+end AlgHom

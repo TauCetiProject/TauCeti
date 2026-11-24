@@ -89,11 +89,11 @@ private theorem contMDiff_contactFlat_add_smul_sub (α₀ α₁ : SmoothForm I M
 /-- **Interpolations of forms agreeing to first order at a contact point are contact there.** If
 `α₀` is contact at `x`, `α₁ x = α₀ x`, and `dα₁ x` agrees with `dα₀ x` on the hyperplane
 `ker α₀ x`, then every form `α₀ + s (α₁ - α₀)` is contact at `x`. -/
-theorem isContactFormAt_add_smul_sub {x : M} (hc : IsContactFormAt α₀.1 x)
-    (hval : α₁.1 x = α₀.1 x)
-    (hd : ∀ v ∈ RoughForm.ker α₀.1 x, ∀ w ∈ RoughForm.ker α₀.1 x,
-      mextDeriv α₁.1 x ![v, w] = mextDeriv α₀.1 x ![v, w]) (s : ℝ) :
-    IsContactFormAt (α₀ + s • (α₁ - α₀)).1 x := by
+theorem isContactFormAt_add_smul_sub {x : M} (hc : IsContactFormAt α₀.val x)
+    (hval : α₁.val x = α₀.val x)
+    (hd : ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
+      mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) (s : ℝ) :
+    IsContactFormAt (α₀ + s • (α₁ - α₀)).val x := by
   refine (isContactFormAt_congr ?_ fun v hv w hw ↦ ?_).2 hc
   · simp [hval]
   · rw [← mextDerivₗ_apply I 1 (α₀ + s • (α₁ - α₀)), map_add, map_smul, map_sub]
@@ -106,11 +106,11 @@ every point of `K`, and let `α₁` agree with `α₀` at the points of `K`, wit
 `dα₀` on the hyperplanes `ker α₀`. Then there is an open neighbourhood of `K` on which every
 interpolation `α₀ + s (α₁ - α₀)`, `s ∈ [0, 1]`, is contact. The set `K` need not be compact. -/
 theorem exists_isOpen_forall_isContactFormAt_add_smul_sub {K : Set M}
-    (hc : ∀ x ∈ K, IsContactFormAt α₀.1 x) (hval : ∀ x ∈ K, α₁.1 x = α₀.1 x)
-    (hd : ∀ x ∈ K, ∀ v ∈ RoughForm.ker α₀.1 x, ∀ w ∈ RoughForm.ker α₀.1 x,
-      mextDeriv α₁.1 x ![v, w] = mextDeriv α₀.1 x ![v, w]) :
+    (hc : ∀ x ∈ K, IsContactFormAt α₀.val x) (hval : ∀ x ∈ K, α₁.val x = α₀.val x)
+    (hd : ∀ x ∈ K, ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
+      mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) :
     ∃ N, IsOpen N ∧ K ⊆ N ∧ ∀ x ∈ N, ∀ s ∈ Icc (0 : ℝ) 1,
-      IsContactFormAt (α₀ + s • (α₁ - α₀)).1 x := by
+      IsContactFormAt (α₀ + s • (α₁ - α₀)).val x := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
   · exact ⟨∅, isOpen_empty, empty_subset _, by simp⟩
   -- A contact point makes the model space odd-dimensional.
@@ -142,10 +142,10 @@ a set `K`. Then there is a smooth partial diffeomorphism `φ` of `M`, whose sour
 open neighbourhoods of `K`, which fixes every point of `K` and pulls `α₁` back to a positive
 multiple of `α₀` on its source. Neither `K` nor `M` need be compact. -/
 theorem exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt {K : Set M}
-    (hc : ∀ x, ∀ s ∈ Icc (0 : ℝ) 1, IsContactFormAt (α₀ + s • (α₁ - α₀)).1 x)
-    (hval : ∀ x ∈ K, α₁.1 x = α₀.1 x) :
+    (hc : ∀ x, ∀ s ∈ Icc (0 : ℝ) 1, IsContactFormAt (α₀ + s • (α₁ - α₀)).val x)
+    (hval : ∀ x ∈ K, α₁.val x = α₀.val x) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
-      ∀ x ∈ φ.source, ∃ g : ℝ, 0 < g ∧ TauCeti.mpullback I I φ α₁.1 x = g • α₀.1 x := by
+      ∀ x ∈ φ.source, ∃ g : ℝ, 0 < g ∧ TauCeti.mpullback I I φ α₁.val x = g • α₀.val x := by
   -- The segment, reparametrized by the smooth step function, is a smooth family of contact forms.
   have hcα (t : ℝ) : (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
       (lineMapFamily α₀ α₁ (Real.smoothTransition.contDiff (n := ⊤)))).IsContactForm := by
@@ -170,46 +170,32 @@ of `M`, whose source and target are open neighbourhoods of `K`, which fixes ever
 pulls `α₁` back to a positive multiple of `α₀` on its source. Neither `K` nor `M` need be compact.
 Only `α₀` is assumed contact, and only at the points of `K`. -/
 theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
-    (hc : ∀ x ∈ K, IsContactFormAt α₀.1 x) (hval : ∀ x ∈ K, α₁.1 x = α₀.1 x)
-    (hd : ∀ x ∈ K, ∀ v ∈ RoughForm.ker α₀.1 x, ∀ w ∈ RoughForm.ker α₀.1 x,
-      mextDeriv α₁.1 x ![v, w] = mextDeriv α₀.1 x ![v, w]) :
+    (hc : ∀ x ∈ K, IsContactFormAt α₀.val x) (hval : ∀ x ∈ K, α₁.val x = α₀.val x)
+    (hd : ∀ x ∈ K, ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
+      mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
-      ∀ x ∈ φ.source, ∃ g : ℝ, 0 < g ∧ TauCeti.mpullback I I φ α₁.1 x = g • α₀.1 x := by
-  rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · -- For empty `K`, the partial diffeomorphism with empty source will do.
-    refine ⟨(Diffeomorph.refl I M ∞).toPartialDiffeomorph.restrOpen ∅ isOpen_empty, by simp,
-      by simp, by simp, fun x hx ↦ ?_⟩
-    simp at hx
+      ∀ x ∈ φ.source, ∃ g : ℝ, 0 < g ∧ TauCeti.mpullback I I φ α₁.val x = g • α₀.val x := by
   -- Restrict both forms to an open neighbourhood `W` of `K` on which the segment is contact.
   obtain ⟨N, hN, hKN, hcN⟩ := exists_isOpen_forall_isContactFormAt_add_smul_sub hc hval hd
   set W : TopologicalSpace.Opens M := ⟨N, hN⟩
-  have hW : Nonempty W := ⟨⟨x₀, hKN hx₀⟩⟩
   set res : SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I W ℝ 1 :=
-    mpullback (Subtype.val : W → M) contMDiff_subtype_val
+    mpullback (Subtype.val : W → M) contMDiff_subtypeVal
   have hcW (y : W) (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) :
-      IsContactFormAt (res α₀ + s • (res α₁ - res α₀)).1 y := by
-    rw [← map_sub, ← map_smul, ← map_add, coe_mpullback,
-      isContactFormAt_mpullback_iff contMDiff_subtype_val.contMDiffAt
-        ((α₀ + s • (α₁ - α₀)).contMDiff.of_le (by simp) y)
-        (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
-    exact hcN y y.2 s hs
+      IsContactFormAt (res α₀ + s • (res α₁ - res α₀)).val y := by
+    rw [← map_sub, ← map_smul, ← map_add]
+    exact (isContactFormAt_mpullback_subtype_val_iff _ y).2 (hcN y y.property s hs)
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt (K := Subtype.val ⁻¹' K)
       hcW fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm)
   -- Read `φ` in `M`.
-  refine ⟨φ.liftOpens hW hW, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [PartialDiffeomorph.liftOpens_source]
-    exact ⟨⟨x, hKN hx⟩, hsrc hx, rfl⟩
-  · rw [PartialDiffeomorph.liftOpens_target]
-    exact ⟨⟨x, hKN hx⟩, htgt hx, rfl⟩
-  · exact (φ.liftOpens_apply_coe hW hW ⟨x, hKN hx⟩).trans
-      (congrArg Subtype.val (hfix ⟨x, hKN hx⟩ hx))
-  rw [PartialDiffeomorph.liftOpens_source] at hx
-  obtain ⟨y, hy, rfl⟩ := hx
+  obtain ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, hΦ⟩ :=
+    exists_partialDiffeomorph_mpullback_apply_eq_of_opens (by simp) hKN φ hsrc htgt hfix
+  refine ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, fun x hx ↦ ?_⟩
+  obtain ⟨y, hy, rfl, hΦy⟩ := hΦ x hx
   obtain ⟨g, hg, hφy⟩ := hφ y hy
-  refine ⟨g, hg, (mpullback_liftOpens_apply_coe φ (by simp) hW hW α₁.1 hy).trans ?_⟩
+  refine ⟨g, hg, (hΦy α₁.val).trans ?_⟩
   rw [coe_mpullback, coe_mpullback] at hφy
-  exact hφy.trans (congrArg (g • ·) (mpullback_subtype_val_apply α₀.1 y))
+  exact hφy.trans (congrArg (g • ·) (mpullback_subtype_val_apply α₀.val y))
 
 end TauCeti.SmoothForm

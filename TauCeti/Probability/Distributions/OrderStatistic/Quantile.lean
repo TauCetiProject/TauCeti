@@ -96,7 +96,7 @@ this includes source laws unbounded below. -/
 theorem tendsto_quantile_map_orderStatistic_pi_nhdsGT_zero (k : Fin n) :
     Tendsto
       (fun u ↦ (((Measure.pi fun _ : Fin n => μ).map (orderStatistic k)).quantile u : EReal))
-      (𝓝[>] 0) (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
+      (𝓝[>] 0) (𝓝 (⨅ x : μ.support, (x.val : EReal))) := by
   have ha : (0 : ℝ) < (k : ℝ) + 1 := by positivity
   have hb : (0 : ℝ) < (n : ℝ) - k := sub_pos.mpr (by exact_mod_cast k.isLt)
   have hbeta : Tendsto
@@ -117,7 +117,7 @@ this includes source laws unbounded above. -/
 theorem tendsto_quantile_map_orderStatistic_pi_nhdsLT_one (k : Fin n) :
     Tendsto
       (fun u ↦ (((Measure.pi fun _ : Fin n => μ).map (orderStatistic k)).quantile u : EReal))
-      (𝓝[<] 1) (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
+      (𝓝[<] 1) (𝓝 (⨆ x : μ.support, (x.val : EReal))) := by
   have ha : (0 : ℝ) < (k : ℝ) + 1 := by positivity
   have hb : (0 : ℝ) < (n : ℝ) - k := sub_pos.mpr (by exact_mod_cast k.isLt)
   have hbeta : Tendsto

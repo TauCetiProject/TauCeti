@@ -303,6 +303,15 @@ theorem mem_rationalSubset_singleton_one_iff {Aplus : Subring A} {v : Spv A} (hv
   exact ⟨And.left, fun h ↦ ⟨h, fun h0 ↦ v.toValuativeRel.not_vle_one_zero
     (v.toValuativeRel.vle_trans h h0)⟩⟩
 
+/-- For `a ∈ A⁺`, the trace of `R({1}/a)` on `spa A⁺` is the locus `{v : v(a) = 1}`. -/
+theorem val_preimage_rationalSubset_singleton_one {Aplus : Subring A} (a : Aplus) :
+    (Subtype.val ⁻¹' rationalSubset Aplus {1} (a : A) : Set (spa Aplus)) =
+      {v : spa Aplus | (v : Spv A).valuation a = 1} := by
+  ext v
+  rw [Set.mem_preimage, mem_rationalSubset_singleton_one_iff v.property, ← valuation_le_iff,
+    map_one, Set.mem_ofPred_eq]
+  exact ⟨(valuation_le_one_of_mem_spa v.property a.property).antisymm, Eq.ge⟩
+
 /-- On the subtype `spa A⁺`, the preimage of `R(T/s)` is the preimage of the ambient basic
 open `Spv(A)(T/s)`: the `spa A⁺` condition is automatic from the subtype. This is the form used
 to compare the rational bases of `Spa(A,A⁺)` and `Spv(A,I)`. -/
@@ -317,7 +326,7 @@ subset is relatively open in the adic spectrum. -/
 theorem isOpen_val_preimage_rationalSubset (Aplus : Subring A) (T : Finset A) (s : A) :
     IsOpen (Subtype.val ⁻¹' rationalSubset Aplus T s : Set (spa Aplus)) := by
   rw [val_preimage_rationalSubset]
-  exact (isOpen_basicOpenFinset T s).preimage continuous_subtype_val
+  exact (isOpen_basicOpenFinset T s).preimage continuous_subtypeVal
 
 /-- **The basic open `R(T/s)`, as an `Opens` of `spa A⁺`.** This packages
 `rationalSubset` with its openness; it is a *rational* subset in Wedhorn's sense exactly when

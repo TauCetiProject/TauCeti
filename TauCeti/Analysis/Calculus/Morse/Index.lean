@@ -9,8 +9,10 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.Analysis.Calculus.Morse.Basic
+public import TauCeti.LinearAlgebra.Matrix.Signature
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -53,8 +55,8 @@ Morse complex.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
 * `TauCeti.morseIndex_slice_right`: along a critical zero section of a function on a product, the
   Morse index is the index of the restriction to the fibre.
-* `TauCeti.eventually_morseIndex_le`: in finite dimensions the Morse index of a `C²` function is
-  lower semicontinuous, also at degenerate and noncritical points.
+* `TauCeti.eventually_morseIndex_le`: the Morse index of a `C²` function is lower
+  semicontinuous, also at degenerate and noncritical points.
 * `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
   `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
   `ℓ ∘ φ`, for `ℓ` a continuous linear functional, computed from a spanning family of functionals,
@@ -69,6 +71,11 @@ Morse complex.
 * `TauCeti.morseIndex_eq_zero_of_posDef`: a positive-definite Hessian forces index zero.
 * `TauCeti.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank`: in finite dimensions, full
   index characterizes a negative-definite Hessian at every point.
+* `TauCeti.isHermitian_toMatrix_toBilinForm_fderiv_fderiv`,
+  `TauCeti.IsNondegenerateCriticalPoint.isUnit_det_toMatrix_toBilinForm_fderiv_fderiv` and
+  `TauCeti.IsNondegenerateCriticalPoint.signature_toMatrix_toBilinForm_fderiv_fderiv`: in any
+  basis, the Hessian matrix is symmetric, and at a nondegenerate critical point it is invertible
+  with signature `dim E - 2 ind_x(f)`.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_hessianQuadraticForm_equivalent_weightedSumSquares`:
   the Hessian has a diagonal `±1` normal form.
 * `TauCeti.exists_continuousLinearEquiv_inv_two_mul_fderiv_fderiv_eq_sum`: an invertible Hessian
@@ -131,6 +138,20 @@ theorem hessianQuadraticForm_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt �
   ext v
   simpa [iteratedFDeriv_two_apply] using
     congr($(iteratedFDeriv_add_apply (i := 2) hf hg) ![v, v])
+
+/-- Adding a constant to a function does not change its Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_const_add (c : ℝ) (f : E → ℝ) (x : E) :
+    hessianQuadraticForm (fun y ↦ c + f y) x = hessianQuadraticForm f x := by
+  rw [hessianQuadraticForm, hessianQuadraticForm,
+    funext fun y ↦ (fderiv_const_add c : fderiv ℝ (fun z ↦ c + f z) y = _)]
+
+/-- Adding a constant to a function does not change its Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_add_const (f : E → ℝ) (c : ℝ) (x : E) :
+    hessianQuadraticForm (fun y ↦ f y + c) x = hessianQuadraticForm f x := by
+  rw [hessianQuadraticForm, hessianQuadraticForm,
+    funext fun y ↦ (fderiv_add_const c : fderiv ℝ (fun z ↦ f z + c) y = _)]
 
 /-- Negating a function negates its Hessian quadratic form. -/
 @[simp]
@@ -203,15 +224,35 @@ theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_left_apply (ℓ : F
   rw [hessianQuadraticForm_apply, fderiv_fderiv_comp_apply ℓ.contDiff.contDiffAt hφ]
   simp [hℓ]
 
+/-- Along the kernel of the differential of a `C²` map `φ` at `x`, the Hessian of `h ∘ φ` only
+involves the differential of `h` at `φ x`: on a vector `v` with `Dφ(x) v = 0` it agrees with the
+Hessian of `Dh(φ x) ∘ φ`. -/
+theorem hessianQuadraticForm_comp_apply_of_fderiv_apply_eq_zero {h : F → ℝ} {φ : E → F}
+    (hh : ContDiffAt ℝ 2 h (φ x)) (hφ : ContDiffAt ℝ 2 φ x) {v : E} (hv : fderiv ℝ φ x v = 0) :
+    hessianQuadraticForm (h ∘ φ) x v = hessianQuadraticForm (fderiv ℝ h (φ x) ∘ φ) x v := by
+  rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ, hessianQuadraticForm_apply,
+    fderiv_fderiv_comp_apply hh hφ, hv]
+  simp
+
+/-- Along the kernel of the differential of a `C²` map `φ` at `x`, the Hessian of `ℓ ∘ g ∘ φ`, for
+a `C²` map `g` and a continuous linear functional `ℓ`, only involves the differential of `g` at
+`φ x`: on a vector `v` with `Dφ(x) v = 0` it agrees with the Hessian of `(ℓ ∘ Dg(φ x)) ∘ φ`. -/
+theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (ℓ : G →L[ℝ] ℝ) {g : F → G} {φ : E → F}
+    (hg : ContDiffAt ℝ 2 g (φ x)) (hφ : ContDiffAt ℝ 2 φ x) {v : E} (hv : fderiv ℝ φ x v = 0) :
+    hessianQuadraticForm (ℓ ∘ g ∘ φ) x v =
+      hessianQuadraticForm (ℓ.comp (fderiv ℝ g (φ x)) ∘ φ) x v := by
+  rw [← Function.comp_assoc, hessianQuadraticForm_comp_apply_of_fderiv_apply_eq_zero
+    (ℓ.contDiff.contDiffAt.comp _ hg) hφ hv, fderiv_comp _ ℓ.differentiableAt
+    (hg.differentiableAt (by norm_num)), ℓ.fderiv]
+
 /-- At a critical point `x` of a `C²` map `φ`, the Hessian of `h ∘ φ` only involves the
 differential of `h` at `φ x`: it is the Hessian of `Dh(φ x) ∘ φ`. -/
 theorem hessianQuadraticForm_comp_eq_fderiv_comp {h : F → ℝ} {φ : E → F}
     (hh : ContDiffAt ℝ 2 h (φ x)) (hφ : ContDiffAt ℝ 2 φ x) (hc : fderiv ℝ φ x = 0) :
     hessianQuadraticForm (h ∘ φ) x = hessianQuadraticForm (fderiv ℝ h (φ x) ∘ φ) x := by
   ext v
-  rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ, hessianQuadraticForm_apply,
-    fderiv_fderiv_comp_apply hh hφ, hc]
-  simp
+  exact hessianQuadraticForm_comp_apply_of_fderiv_apply_eq_zero hh hφ (by simp [hc])
 
 /-- At a `C²` point of `φ`, the Hessians of all the functions `ℓ ∘ φ`, for `ℓ` a continuous linear
 functional, span the same space as the Hessians of the `L i ∘ φ`, for any family `L` spanning the
@@ -266,20 +307,13 @@ theorem range_hessianQuadraticForm_comp {G : Type*} [NormedAddCommGroup G] [Norm
   -- The Hessian of `ℓ ∘ g ∘ φ` is that of `(ℓ ∘ Dg) ∘ φ`, and every functional on `F` is of the
   -- form `ℓ ∘ Dg`.
   have hℓ : ∀ ℓ : G →L[ℝ] ℝ, hessianQuadraticForm (ℓ ∘ g ∘ φ) x =
-      hessianQuadraticForm ((ℓ.comp (fderiv ℝ g (φ x))) ∘ φ) x := by
-    intro ℓ
-    rw [← Function.comp_assoc, hessianQuadraticForm_comp_eq_fderiv_comp
-      (ℓ.contDiff.contDiffAt.comp _ hg) hφ hc, fderiv_comp _ ℓ.differentiableAt
-      (hg.differentiableAt (by norm_num)), ℓ.fderiv]
+      hessianQuadraticForm ((ℓ.comp (fderiv ℝ g (φ x))) ∘ φ) x := fun ℓ ↦ by
+    ext v
+    exact ℓ.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hφ (by simp [hc])
   simp only [hℓ]
-  refine le_antisymm (by rintro _ ⟨ℓ, rfl⟩; exact ⟨_, rfl⟩) ?_
-  rintro _ ⟨ℓ, rfl⟩
-  obtain ⟨h, hh⟩ := (fderiv ℝ g (φ x) : F →ₗ[ℝ] G).exists_leftInverse_of_injective
-    (LinearMap.ker_eq_bot.2 hinj)
-  have hℓ' : (ℓ.comp (LinearMap.toContinuousLinearMap h)).comp (fderiv ℝ g (φ x)) = ℓ := by
-    ext w
-    simpa using congr(ℓ ($hh w))
-  exact ⟨ℓ.comp (LinearMap.toContinuousLinearMap h), by beta_reduce; rw [hℓ']⟩
+  rw [← (ContinuousLinearMap.surjective_compL_flip_of_injective hinj).range_comp
+    fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x]
+  simp only [Function.comp_def, ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply]
 
 /-- The **Morse index** of `f` at `x` is the negative index of inertia of its Hessian quadratic
 form.  In finite dimensions it is equivalently the maximal dimension of a subspace on which the
@@ -337,11 +371,12 @@ theorem morseIndex_slice_right [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
   rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero,
     zero_add]
 
-/-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
-at every point near `x` the Morse index of `f` is at least its Morse index at `x`. The point `x`
-need not be critical, nor nondegenerate: a degenerate Hessian can acquire new negative directions
-under perturbation, but negative directions are never lost. -/
-theorem eventually_morseIndex_le [FiniteDimensional ℝ E] (hf : ContDiffAt ℝ 2 f x) :
+/-- **The Morse index is lower semicontinuous.** If `f` is `C²` at `x`, then at every point near
+`x` the Morse index of `f` is at least its Morse index at `x`. The point `x` need not be critical,
+nor nondegenerate: a degenerate Hessian can acquire new negative directions under perturbation,
+but negative directions are never lost. In infinite dimensions every Morse index is `0` by
+convention. -/
+theorem eventually_morseIndex_le (hf : ContDiffAt ℝ 2 f x) :
     ∀ᶠ y in 𝓝 x, morseIndex f x ≤ morseIndex f y := by
   have hc : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
     (hf.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)
@@ -438,6 +473,40 @@ theorem neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank [FiniteDimensi
   rw [QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot, QuadraticMap.radical_neg,
     sigNeg_neg, ← Submodule.finrank_eq_zero (R := ℝ), morseIndex_def]
   omega
+
+section Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- In any basis, the matrix of the second derivative of a function which is `C²` at `x` is
+symmetric. -/
+theorem isHermitian_toMatrix_toBilinForm_fderiv_fderiv (b : Basis ι ℝ E)
+    (hf : ContDiffAt ℝ 2 f x) :
+    (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ f) x).toBilinForm).IsHermitian :=
+  Matrix.isHermitian_iff_isSymm.2 <| (LinearMap.BilinForm.isSymm_toMatrix_iff_isSymm b).2 <|
+    ContinuousLinearMap.isSymm_toBilinForm_iff.2 (hf.isSymmSndFDerivAt (by norm_num))
+
+/-- At a nondegenerate critical point, the matrix of the second derivative in any basis is
+invertible. -/
+theorem IsNondegenerateCriticalPoint.isUnit_det_toMatrix_toBilinForm_fderiv_fderiv
+    (b : Basis ι ℝ E) (h : IsNondegenerateCriticalPoint f x) :
+    IsUnit (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ f) x).toBilinForm).det := by
+  have := Module.Finite.of_basis b
+  exact isUnit_iff_ne_zero.2 ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).1
+    (LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft h.separatingLeft))
+
+/-- At a nondegenerate critical point, the matrix of the second derivative in any basis has
+signature `dim E - 2 ind_x(f)`, since the positive index of the Hessian and the Morse index add up
+to the dimension. -/
+theorem IsNondegenerateCriticalPoint.signature_toMatrix_toBilinForm_fderiv_fderiv
+    (b : Basis ι ℝ E) (h : IsNondegenerateCriticalPoint f x) :
+    Matrix.signature (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ f) x).toBilinForm) =
+      Module.finrank ℝ E - 2 * morseIndex f x := by
+  have hsum := h.sigPos_hessianQuadraticForm_add_morseIndex_eq_finrank
+  rw [LinearMap.BilinForm.signature_toMatrix, ← hessianQuadraticForm_def, ← morseIndex_def]
+  omega
+
+end Matrix
 
 /-- At a nondegenerate critical point, the Hessian quadratic form has a diagonal normal form with
 every weight equal to `-1` or `1`.  The returned equivalence can be passed to

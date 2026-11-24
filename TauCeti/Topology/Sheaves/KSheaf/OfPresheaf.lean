@@ -55,7 +55,9 @@ The first two axioms only use that `X` is Hausdorff. Local compactness is needed
 a point without compact neighbourhoods has an empty diagram of compact neighbourhoods.
 
 The converse construction, from K-presheaves to presheaves through limits over the compact subsets
-of an open set, and the equivalence between sheaves and K-sheaves are not treated here.
+of an open set, is `TopCat.KPresheaf.toPresheaf` in `TauCeti.Topology.Sheaves.KSheaf.ToPresheaf`,
+and the equivalence between sheaves and K-sheaves is `TopCat.sheafEquivKSheaf` in
+`TauCeti.Topology.Sheaves.KSheaf.Equivalence`.
 
 ## References
 
@@ -123,8 +125,9 @@ noncomputable def kGermCocone (P : Presheaf C X) (K : Compacts X) :
     Cocone (P.openNhdsDiagram K) where
   pt := P.toKPresheaf.obj (op K)
   ι :=
-    { app U := P.kGerm K U.unop.1 U.unop.2
-      naturality _ V i := (P.kGerm_res K i.unop.le.hom V.unop.2).trans (Category.comp_id _).symm }
+    { app U := P.kGerm K U.unop.val U.unop.property
+      naturality _ V i := (P.kGerm_res K i.unop.le.hom V.unop.property).trans
+          (Category.comp_id _).symm }
 
 /-- The value of `P.toKPresheaf` on a compact set `K` is the colimit of the values of `P` on the
 open neighbourhoods of `K`, with the germs as colimit insertions. -/
@@ -139,7 +142,7 @@ theorem toKPresheaf_hom_ext (P : Presheaf C X) {K : Compacts X} {Z : C}
     (h : ∀ (U : Opens X) (hU : (K : Set X) ⊆ U), P.kGerm K U hU ≫ f = P.kGerm K U hU ≫ g) :
     f = g :=
   (P.isColimitKGermCocone K).hom_ext fun U ↦
-    h U.unop.1 U.unop.2
+    h U.unop.val U.unop.property
 
 /-- The morphism of K-presheaves induced by a morphism of presheaves: on each compact set `K` it
 sends the germ along `K` of a section to the germ of its image. -/
@@ -188,7 +191,7 @@ section over an open neighbourhood of `K`. -/
 theorem exists_kGerm_apply_eq {K : Compacts X} (x : P.toKPresheaf.obj (op K)) :
     ∃ (U : Opens X) (hU : (K : Set X) ⊆ U) (s : P.obj (op U)), P.kGerm K U hU s = x := by
   obtain ⟨⟨U⟩, s, rfl⟩ := Types.jointly_surjective_of_isColimit (P.isColimitKGermCocone K) x
-  exact ⟨U.1, U.2, s, rfl⟩
+  exact ⟨U.val, U.property, s, rfl⟩
 
 /-- Two sections of a presheaf of types have the same germ along `K` exactly when they agree on an
 open neighbourhood of `K`. -/
@@ -200,9 +203,20 @@ theorem kGerm_apply_eq_kGerm_apply_iff {K : Compacts X} {U V : Opens X} (hU : (K
   refine (Types.FilteredColimit.isColimit_eq_iff _ (P.isColimitKGermCocone K)
     (i := op ⟨U, hU⟩) (j := op ⟨V, hV⟩)).trans ⟨?_, ?_⟩
   · rintro ⟨⟨W⟩, iU, iV, h⟩
-    exact ⟨W.1, W.2, homOfLE iU.unop.le, homOfLE iV.unop.le, h⟩
+    exact ⟨W.val, W.property, homOfLE iU.unop.le, homOfLE iV.unop.le, h⟩
   · rintro ⟨W, hW, iU, iV, h⟩
     exact ⟨op ⟨W, hW⟩, (homOfLE iU.le).op, (homOfLE iV.le).op, h⟩
+
+/-- Two sections of a presheaf of types with the same germ along `K` agree on every open subset of
+`K` on which both are defined. -/
+theorem map_eq_map_of_kGerm_apply_eq {K : Compacts X} {U V W : Opens X} {hU : (K : Set X) ⊆ U}
+    {hV : (K : Set X) ⊆ V} {s : P.obj (op U)} {t : P.obj (op V)}
+    (h : P.kGerm K U hU s = P.kGerm K V hV t) (hW : (W : Set X) ⊆ K) (iU : W ⟶ U) (iV : W ⟶ V) :
+    P.map iU.op s = P.map iV.op t := by
+  obtain ⟨O, hO, iU', iV', hst⟩ := (P.kGerm_apply_eq_kGerm_apply_iff hU hV s t).1 h
+  rw [Subsingleton.elim iU (homOfLE (hW.trans hO) ≫ iU'),
+    Subsingleton.elim iV (homOfLE (hW.trans hO) ≫ iV'), op_comp, op_comp, P.map_comp, P.map_comp,
+    ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hst]
 
 /-- On a locally compact Hausdorff space, the value on a compact set `K` of the K-presheaf of a
 presheaf of types is the colimit of its values on the compact neighbourhoods of `K`. -/
@@ -221,11 +235,11 @@ noncomputable def isColimitToKPresheafCoconeOfCompacts [T2Space X] [LocallyCompa
     obtain ⟨V', hKV', hV'L⟩ := Compacts.exists_open_set_nhds_of_compactsNhds L.unop
     obtain ⟨L', hL', hKL', hL'W⟩ := exists_compact_between K.isCompact (W ⊓ V').isOpen
       (subset_inter hKW hKV')
-    have hL'L : (L' : Set X) ⊆ L.unop.1 := fun x hx ↦ hV'L (hL'W hx).2
+    have hL'L : (L' : Set X) ⊆ L.unop.val := fun x hx ↦ hV'L (hL'W hx).2
     refine ⟨op (Compacts.compactNhdsOfSubsetInterior ⟨L', hL'⟩ hKL'),
       (homOfLE (show _ ≤ L.unop from hL'L)).op, ?_⟩
     have hL'W' : (L' : Set X) ⊆ W := fun x hx ↦ (hL'W hx).1
-    let f : op L.unop.1 ⟶ op ⟨L', hL'⟩ := (homOfLE (show _ ≤ L.unop.1 from hL'L)).op
+    let f : op L.unop.val ⟶ op ⟨L', hL'⟩ := (homOfLE (show _ ≤ L.unop.val from hL'L)).op
     calc _ = P.kGerm ⟨L', hL'⟩ U (hL'L.trans hLU) s := P.kGerm_toKPresheaf_map_apply f U hLU s
       _ = P.kGerm ⟨L', hL'⟩ W hL'W' (P.map iU.op s) := (P.kGerm_res_apply _ iU hL'W' s).symm
       _ = P.kGerm ⟨L', hL'⟩ W hL'W' (P.map iV.op t) := by rw [hst]
@@ -342,7 +356,7 @@ theorem toKPresheaf_hom_ext_of_preservesColimits {K : Compacts X} {Z : D}
       G.map (P.kGerm K U hU) ≫ f = G.map (P.kGerm K U hU) ≫ g) :
     f = g :=
   (isColimitOfPreserves G (P.isColimitKGermCocone K)).hom_ext fun U ↦
-    h U.unop.1 U.unop.2
+    h U.unop.val U.unop.property
 
 /-- Taking K-presheaves commutes with a functor that preserves filtered colimits. -/
 noncomputable def toKPresheafCompIso : P.toKPresheaf ⋙ G ≅ toKPresheaf (P ⋙ G) :=
@@ -395,10 +409,7 @@ theorem IsSheaf.isKSheaf_toKPresheaf [T2Space X] [LocallyCompactSpace X]
       reflectsLimitsOfShape_of_reflectsIsomorphisms
     exact IsPullback.of_map (forget C) (by rw [← Functor.map_comp, ← Functor.map_comp]; congr 1)
       (h.isPullback sq)
-  · have : Nonempty K.compactNhds := by
-      obtain ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
-      exact ⟨Compacts.compactNhdsOfSubsetInterior ⟨L, hL⟩ hKL⟩
-    have : ReflectsColimitsOfShape (↥K.compactNhds)ᵒᵖ (forget C) :=
+  · have : ReflectsColimitsOfShape (↥K.compactNhds)ᵒᵖ (forget C) :=
       reflectsColimitsOfShape_of_reflectsIsomorphisms
     exact ⟨isColimitOfReflects (forget C) (h.nonempty_isColimit_coconeOfCompacts K).some⟩
 

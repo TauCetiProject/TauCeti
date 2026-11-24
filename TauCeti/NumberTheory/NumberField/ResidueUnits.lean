@@ -53,8 +53,8 @@ primes of `𝓞 K` above `p`. -/
 theorem card_units_quotient_span_natCast_mul_prod_absNorm {p : ℕ} [hp : Fact p.Prime]
     [Fintype ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K))] :
     Nat.card (𝓞 K ⧸ span {(p : 𝓞 K)})ˣ *
-        ∏ 𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K), absNorm 𝔭.1 =
-      p ^ finrank ℚ K * ∏ 𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K), (absNorm 𝔭.1 - 1) := by
+        ∏ 𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K), absNorm 𝔭.val =
+      p ^ finrank ℚ K * ∏ 𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K), (absNorm 𝔭.val - 1) := by
   have hp0 : (p : ℤ) ≠ 0 := by exact_mod_cast hp.out.ne_zero
   have hspan : (span {(p : ℤ)} : Ideal ℤ) ≠ 0 := by simpa using hp0
   have : Finite (𝓞 K ⧸ span {(p : 𝓞 K)}) :=
@@ -66,7 +66,7 @@ theorem card_units_quotient_span_natCast_mul_prod_absNorm {p : ℕ} [hp : Fact p
     simp [Ideal.map_span]
   -- The primes dividing `p 𝓞 K` are the primes of `𝓞 K` above `p`.
   have hreindex (g : Ideal (𝓞 K) → ℕ) : ∏ v ∈ primesDividing K p hp0, g v.asIdeal =
-      ∏ 𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K), g 𝔭.1 := by
+      ∏ 𝔭 : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K), g 𝔭.val := by
     have hmem' (v : HeightOneSpectrum (𝓞 K)) : v ∈ primesDividing K p hp0 ↔
         v.asIdeal ∣ (span {(p : ℤ)} : Ideal ℤ).map (algebraMap ℤ (𝓞 K)) := by
       rw [hmap, hmem]

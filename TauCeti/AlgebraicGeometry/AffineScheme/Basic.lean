@@ -1,14 +1,16 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
+import Mathlib.AlgebraicGeometry.QuasiAffine
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Tower
 
@@ -55,6 +57,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
   `R → Γ(X, U)` it induces.
 * `AlgebraicGeometry.IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map`: for affine opens
   `V ≤ U`, restriction induces an open immersion `Spec Γ(X, V) ⟶ Spec Γ(X, U)`.
+* `AlgebraicGeometry.IsAffineOpen.SpecMap_presheaf_map_comp_isoSpec_inv` and
+  `AlgebraicGeometry.IsAffineOpen.isPullback_SpecMap_presheaf_map_isoSpec_inv`: for affine opens
+  `V ≤ U`, restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)` corresponds to the inclusion `V ⟶ U`.
 * `AlgebraicGeometry.IsAffineOpen.exists_SpecMap_comp_fromSpec_eq`: a morphism `Spec R ⟶ X` with
   image in an affine open `U` is the spectrum of a ring map `Γ(X, U) ⟶ R` followed by
   `Spec Γ(X, U) ⟶ X`.
@@ -63,6 +68,12 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE`: the map `Γ(B, V) ⟶ Γ(U, T)`
   induced by the structure morphism of an open subscheme `U` of `Z` over an affine open `V` of `B`
   is `k.appLE` followed by restriction to `T`.
+* `AlgebraicGeometry.Scheme.ΓSpecIso_appIso_hom_map_eq_restrict`: for open immersions
+  `ι : Spec A ⟶ X` and `Spec.map φ`, reading a function on the image of `ι` in `A` and mapping it
+  along `φ` is restricting it to the image of `Spec A'` and reading it in `A'`.
+* `AlgebraicGeometry.Scheme.ΓSpecIso_appIso_hom_appLE`: for an open immersion `ι : Spec A ⟶ X`
+  over `Spec R` given by `φ : R ⟶ A`, a function pulled back from `Spec R` reads as its image
+  under `φ` in `A`.
 * `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
   affine opens of `S'` lying over affine opens of `S` form a basis.
 * `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal_eq_smul`: for this action, the prime ideal of
@@ -70,6 +81,8 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.Scheme.Hom.span_range_appTop_sub_eq_top_iff`: for an endomorphism `f` of an
   affine scheme, the elements `f^*(a) - a` generate the unit ideal if and only if every point of
   `X` fixed by `f` has values in an empty scheme.
+* `AlgebraicGeometry.isIso_SpecMap_morphismRestrict_basicOpen_iff`: a spectral map is an
+  isomorphism over a basic open exactly when the corresponding localization map is bijective.
 * `AlgebraicGeometry.isIso_SpecMap_morphismRestrict_basicOpen_of_injective`: for an `R`-algebra `B`
   embedded in a localization of `R` away from `a`, the morphism `Spec B ⟶ Spec R` restricts to an
   isomorphism over `D(a)`.
@@ -83,6 +96,13 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective`: when `S` is
   recovered from its sections over an open `W` of `Spec S`, the sections of a scheme identified
   with `W` over `Spec R` are `S`, compatibly with the maps from `R`.
+* `TauCeti.AlgebraicGeometry.Spec.isLocalization_away_of_eq_basicOpen`: the functions on an open
+  `D(t)` of `Spec A` form the localization `A_t`.
+* `TauCeti.AlgebraicGeometry.Spec.isPullback_toSpecΓ_of_isPushout`: a scheme affine over a
+  quasi-compact open `U` of `Spec R` whose ring of functions is `Γ(U, ⊤) ⊗[R] B` is the
+  restriction of `Spec B` to `U`.
+* `TauCeti.AlgebraicGeometry.commSq_SpecMap_ofHom`: a commutative square of commutative rings
+  gives a commutative square of their spectra.
 * `TauCeti.AlgebraicGeometry.exists_affine_pair_comp_eq`: for a morphism `f : T' ⟶ T` of affine
   `S`-schemes, the affine `S`-scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)] Γ(T', 𝒪))` carries two maps to
   `T'` that agree after composing with `f` and induce the two tensor factor inclusions.
@@ -207,6 +227,24 @@ theorem IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map {X : Scheme.{u}} {U V 
     infer_instance
   exact IsOpenImmersion.of_comp _ hU.fromSpec
 
+/-- On affine opens `V ≤ U` of a scheme, the isomorphisms `U ≅ Spec Γ(X, U)` and
+`V ≅ Spec Γ(X, V)` carry the restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)` to the inclusion `V ⟶ U`. -/
+theorem IsAffineOpen.SpecMap_presheaf_map_comp_isoSpec_inv {X : Scheme.{u}} {U V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (h : V ≤ U) :
+    Spec.map (X.presheaf.map (homOfLE h).op) ≫ hU.isoSpec.inv = hV.isoSpec.inv ≫ X.homOfLE h := by
+  rw [← cancel_mono U.ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι,
+    IsAffineOpen.isoSpec_inv_ι, IsAffineOpen.isoSpec_inv_ι]
+  exact IsAffineOpen.map_fromSpec hU hV (homOfLE h).op
+
+/-- On affine opens `V ≤ U` of a scheme, the square relating the restriction
+`Spec Γ(X, V) ⟶ Spec Γ(X, U)` to the inclusion `V ⟶ U` through `U ≅ Spec Γ(X, U)` and
+`V ≅ Spec Γ(X, V)` is a pullback square, as its vertical sides are isomorphisms. -/
+theorem IsAffineOpen.isPullback_SpecMap_presheaf_map_isoSpec_inv {X : Scheme.{u}}
+    {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V) (h : V ≤ U) :
+    CategoryTheory.IsPullback (Spec.map (X.presheaf.map (homOfLE h).op)) hV.isoSpec.inv
+      hU.isoSpec.inv (X.homOfLE h) :=
+  CategoryTheory.IsPullback.of_vert_isIso ⟨hU.SpecMap_presheaf_map_comp_isoSpec_inv hV h⟩
+
 /-- A morphism `f : Spec R ⟶ X` whose image lies in an affine open `U` of `X` is the spectrum of a
 ring map `Γ(X, U) ⟶ R` followed by `Spec Γ(X, U) ⟶ X`. -/
 theorem IsAffineOpen.exists_SpecMap_comp_fromSpec_eq {X : Scheme.{u}} {R : CommRingCat.{u}}
@@ -251,12 +289,70 @@ lemma Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : 
         rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
           Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
 
+/-- Reading a function on an affine open chart `ι : Spec A ⟶ X` as an element of `A` and
+mapping it along `φ : A ⟶ A'` is the same as restricting it to the image `V` of `Spec A'` and
+reading it as an element of `A'`. -/
+theorem Scheme.ΓSpecIso_appIso_hom_map_eq_restrict {X : Scheme.{u}} {A A' : CommRingCat.{u}}
+    (φ : A ⟶ A') (ι : Spec A ⟶ X) (j : Spec A' ⟶ X) [IsOpenImmersion ι]
+    [IsOpenImmersion (Spec.map φ)] [IsOpenImmersion j] (h : Spec.map φ ≫ ι = j) {V : X.Opens}
+    (hle : V ≤ ι ''ᵁ ⊤) (hV : j ''ᵁ ⊤ = V) (a : Γ(X, ι ''ᵁ ⊤)) :
+    φ ((Scheme.ΓSpecIso A).hom ((ι.appIso ⊤).hom a)) =
+      (Scheme.ΓSpecIso A').hom ((j.appIso ⊤).hom
+        (X.presheaf.map (eqToHom hV).op (X.presheaf.map (homOfLE hle).op a))) := by
+  subst h hV
+  simp only [← CommRingCat.comp_apply, Category.assoc]
+  congr 2
+  rw [← Scheme.ΓSpecIso_naturality, Scheme.Hom.comp_appIso]
+  simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, eqToIso.hom, Category.assoc,
+    ← Functor.map_comp_assoc]
+  -- The opens of `X` form a thin category, so whatever composite of restrictions `subst` and
+  -- `comp_appIso` leave here is the restriction along `ι ''ᵁ (Spec.map φ ''ᵁ ⊤) ≤ ι ''ᵁ ⊤`.
+  rw [show ∀ g : Opposite.op (ι ''ᵁ ⊤) ⟶ Opposite.op (ι ''ᵁ (Spec.map φ ''ᵁ ⊤)),
+      X.presheaf.map g = X.presheaf.map (ι.opensFunctor.map (homOfLE le_top)).op from
+    fun _ ↦ congrArg _ (Subsingleton.elim _ _)]
+  -- Restricting along `ι` commutes with the inclusion of the image of `Spec A'` into `⊤`.
+  have := Scheme.Hom.appIso_hom_naturality ι (homOfLE (le_top : Spec.map φ ''ᵁ ⊤ ≤ ⊤)).op
+  rw [Quiver.Hom.unop_op] at this
+  rw [reassoc_of% this]
+  congr 1
+  -- `appTop` abbreviates `app ⊤`, which is `appLE ⊤ (Spec.map φ ⁻¹ᵁ ⊤)` by `app_eq_appLE`;
+  -- rewriting that preimage to `⊤` with `preimage_top` matches the right-hand side, the two `appLE`
+  -- terms then differing only in their (irrelevant) proofs.
+  rw [Scheme.Hom.appIso_hom', ← Category.assoc, Scheme.Hom.map_appLE, Scheme.Hom.appTop,
+    Scheme.Hom.app_eq_appLE]
+  simp only [Scheme.Hom.preimage_top]
+
+/-- On an affine open chart `ι : Spec A ⟶ X` lying over `Spec R` through `φ : R ⟶ A`, a function on
+`Spec R` pulled back along `f : X ⟶ Spec R` and read as an element of `A` is its image under
+`φ`. -/
+theorem Scheme.ΓSpecIso_appIso_hom_appLE {X : Scheme.{u}} {R A : CommRingCat.{u}}
+    (ι : Spec A ⟶ X) [IsOpenImmersion ι] (f : X ⟶ Spec R) (φ : R ⟶ A) (h : ι ≫ f = Spec.map φ)
+    (a : Γ(Spec R, ⊤)) :
+    (Scheme.ΓSpecIso A).hom ((ι.appIso ⊤).hom (f.appLE ⊤ (ι ''ᵁ ⊤) le_top a)) =
+      φ ((Scheme.ΓSpecIso R).hom a) := by
+  suffices h' : f.appLE ⊤ (ι ''ᵁ ⊤) le_top ≫ (ι.appIso ⊤).hom ≫ (Scheme.ΓSpecIso A).hom =
+      (Scheme.ΓSpecIso R).hom ≫ φ from congr($h' a)
+  rw [← cancel_epi (Scheme.ΓSpecIso R).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
+    reassoc_of% Scheme.Hom.appLE_comp_appLE ι f ⊤ (ι ''ᵁ ⊤) ⊤ le_top
+    (Scheme.Hom.preimage_image_eq _ _).ge]
+  -- The proof that `⊤` lies over `⊤` has to be generalized before rewriting `ι ≫ f`.
+  generalize_proofs e
+  revert e
+  rw [h]
+  intro e
+  -- `Spec.map φ ⁻¹ᵁ ⊤ = ⊤` holds by `rfl` (`Scheme.Hom.preimage_top`), and `appTop` is an
+  -- abbreviation for `app ⊤`, so this `appLE` is `appTop` by `Scheme.Hom.appLE_eq_app`. A plain
+  -- `rw [Scheme.Hom.appLE_eq_app]` cannot match its `⊤` against the preimage, so the `show`
+  -- states the instance.
+  rw [show Scheme.Hom.appLE _ ⊤ ⊤ e = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
+    Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+
 /-- For a morphism `g : S' ⟶ S`, the affine opens of `S'` contained in the preimage of an affine
 open of `S` form a basis of the topology of `S'`. -/
 theorem Scheme.Hom.isBasis_range_affineOpens_le_preimage {S S' : Scheme.{u}} (g : S' ⟶ S) :
     TopologicalSpace.Opens.IsBasis (Set.range fun i :
       {p : S'.affineOpens × S.affineOpens // (p.1 : S'.Opens) ≤ g ⁻¹ᵁ p.2} ↦
-        (i.1.1 : S'.Opens)) := by
+        (i.val.1 : S'.Opens)) := by
   refine TopologicalSpace.Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, -⟩ :=
     S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (g x)) isOpen_univ
@@ -345,6 +441,15 @@ theorem Scheme.toSpecΓ_apply_asIdeal_eq_smul {X : Scheme.{u}} {G : Type*} [Grou
   rw [h, Spec.map_apply, hc, Ideal.mem_comap, Ideal.mem_pointwise_smul_iff_inv_smul_mem,
     Scheme.globalSectionsMulSemiringAction_smul_def, inv_inv]
 
+/-- For arbitrary commutative rings, a spectral map is an isomorphism over `D(r)` exactly
+when the induced map between the localizations away from `r` and its image is bijective. -/
+theorem isIso_SpecMap_morphismRestrict_basicOpen_iff {R S : CommRingCat.{u}}
+    (f : R ⟶ S) (r : R) :
+    IsIso (Spec.map f ∣_ PrimeSpectrum.basicOpen r) ↔
+      Function.Bijective (Localization.awayMap f.hom r) :=
+  ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
+    (SpecMapRestrictBasicOpenIso f r)).trans isIso_SpecMap_iff
+
 /-- **`Spec` of an intermediate ring of a localization.** Let `S` be a localization of `R` away
 from `a`, and let `B` be an `R`-algebra whose map to `S` is injective, for instance an
 `R`-subalgebra of `S`. Then `Spec B ⟶ Spec R` restricts to an isomorphism over the basic open
@@ -354,13 +459,9 @@ theorem isIso_SpecMap_morphismRestrict_basicOpen_of_injective {R B : Type u} {S 
     [IsScalarTower R B S] (a : R) [IsLocalization.Away a S]
     (h : Function.Injective (algebraMap B S)) :
     IsIso (Spec.map (CommRingCat.ofHom (algebraMap R B)) ∣_ PrimeSpectrum.basicOpen a) := by
-  -- Over `D(a)`, the morphism is `Spec` of the isomorphism `R_a ≅ B_a`.
-  have : IsIso (CommRingCat.ofHom (Localization.awayMap (algebraMap R B) a)) :=
-    (RingEquiv.ofBijective _
-      (IsLocalization.Away.bijective_awayMap_of_injective a h)).toCommRingCatIso.isIso_hom
-  exact ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
-    (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (algebraMap R B)) a)).mpr
-    (inferInstanceAs (IsIso (Spec.map _)))
+  exact (isIso_SpecMap_morphismRestrict_basicOpen_iff
+    (CommRingCat.ofHom (algebraMap R B)) a).mpr
+    (IsLocalization.Away.bijective_awayMap_of_injective a h)
 
 /-- On an affine open `U`, the basic open of `f ∈ Γ(X, U)` is covered by the basic opens of a set
 `s` of functions on `U` iff `f` lies in the radical of the ideal generated by `s`. -/
@@ -424,8 +525,8 @@ theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing 
     (e : A) (u : Spec ↧R) (v : Spec ↧A)
     (huniq : ∀ P'' : Ideal A, P''.IsPrime → P''.LiesOver u.asIdeal → e ∉ P'' → P'' = v.asIdeal)
     (hv : g v ∈ g ''ᵁ PrimeSpectrum.basicOpen e) (w : g ''ᵁ PrimeSpectrum.basicOpen e)
-    (hw : p w.1 = u) : w = ⟨g v, hv⟩ := by
-  obtain ⟨z, hz, hzw⟩ := w.2
+    (hw : p w.val = u) : w = ⟨g v, hv⟩ := by
+  obtain ⟨z, hz, hzw⟩ := w.property
   have hzu : Spec.map (CommRingCat.ofHom (algebraMap R A)) z = u := by
     rw [← hgp, Scheme.Hom.comp_apply]
     exact hzw.symm ▸ hw
@@ -439,6 +540,16 @@ end AlgebraicGeometry
 namespace TauCeti.AlgebraicGeometry
 
 open _root_.AlgebraicGeometry
+
+/-- A commutative square of commutative rings `b ∘ a = d ∘ c` gives a commutative square of their
+spectra, `Spec b ≫ Spec a = Spec d ≫ Spec c`. -/
+lemma commSq_SpecMap_ofHom {R S T U : Type u} [CommRing R] [CommRing S] [CommRing T]
+    [CommRing U] {a : R →+* S} {b : S →+* T} {c : R →+* U} {d : U →+* T}
+    (h : b.comp a = d.comp c) :
+    CommSq (Spec.map (CommRingCat.ofHom b)) (Spec.map (CommRingCat.ofHom d))
+      (Spec.map (CommRingCat.ofHom a)) (Spec.map (CommRingCat.ofHom c)) :=
+  ⟨by rw [← Spec.map_comp, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp,
+    h]⟩
 
 /-- Let `j : T ⟶ S` be a morphism to an affine scheme, `Y` a scheme over `S` and `Y'` an affine
 scheme over `S`. If restriction of global sections `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism,
@@ -499,6 +610,45 @@ theorem Spec.exists_isIso_appTop_eq_comp_of_bijective {R S : CommRingCat.{u}} (f
   refine ⟨(Scheme.ΓSpecIso S).inv ≫ W.ι.appTop ≫ e.hom.appTop, inferInstance, ?_⟩
   simp only [← he, Scheme.Hom.comp_appTop, Category.assoc, Scheme.ΓSpecIso_inv_naturality_assoc]
 
+/-- If an open subscheme `U` of `Spec A` is the basic open `D(t)`, its ring of functions is the
+localization `A_t`, as an `A`-algebra through restriction from `Spec A`. -/
+theorem Spec.isLocalization_away_of_eq_basicOpen {A : Type u} [CommRing A]
+    {U : (Spec (.of A)).Opens} {t : A} (ht : U = PrimeSpectrum.basicOpen t) :
+    letI := ((Scheme.ΓSpecIso (.of A)).inv ≫ U.ι.appTop).hom.toAlgebra
+    IsLocalization.Away t Γ(U.toScheme, ⊤) := by
+  let : Algebra Γ(Spec (.of A), ⊤) Γ(Spec (.of A), U.ι ''ᵁ ⊤) :=
+    ((Spec (.of A)).presheaf.map (homOfLE le_top : U.ι ''ᵁ ⊤ ⟶ ⊤).op).hom.toAlgebra
+  -- Over `Γ(Spec A, ⊤)`, this is the localization of an affine scheme at a basic open.
+  have : IsLocalization.Away ((Scheme.ΓSpecIso (.of A)).inv t) Γ(Spec (.of A), U.ι ''ᵁ ⊤) :=
+    (isAffineOpen_top (Spec (.of A))).isLocalization_of_eq_basicOpen _ (homOfLE le_top)
+      (by rw [Scheme.Opens.ι_image_top, basicOpen_eq_of_affine]; exact ht)
+  -- Transport the base ring along `Γ(Spec A, ⊤) ≅ A`.
+  have := IsLocalization.isLocalization_of_base_ringEquiv
+    (.powers ((Scheme.ΓSpecIso (.of A)).inv t)) Γ(Spec (.of A), U.ι ''ᵁ ⊤)
+    (Scheme.ΓSpecIso (.of A)).commRingCatIsoToRingEquiv
+  have he : (Scheme.ΓSpecIso (.of A)).commRingCatIsoToRingEquiv
+      ((Scheme.ΓSpecIso (.of A)).inv t) = t := (Scheme.ΓSpecIso (.of A)).inv_hom_id_apply t
+  -- The transported algebra structure is restriction precomposed with `(ΓSpecIso A).inv`, which is
+  -- the algebra structure of the statement by definition.
+  rwa [Submonoid.map_powers, he] at this
+
+/-- Let `U` be a quasi-compact open subscheme of `Spec R` and `f : V ⟶ U` an affine morphism. If
+an `R`-algebra `B` with a map `h : B ⟶ Γ(V, ⊤)` exhibits `Γ(V, ⊤)` as the pushout
+`Γ(U, ⊤) ⊗[R] B`, then `V` is the restriction of `Spec B` to `U`, with `V ⟶ Spec B` induced by
+`h`. -/
+theorem Spec.isPullback_toSpecΓ_of_isPushout {R : CommRingCat.{u}} {U : (Spec R).Opens}
+    [CompactSpace U] {V : Scheme.{u}} (f : V ⟶ U) [IsAffineHom f] {B : CommRingCat.{u}}
+    {g : R ⟶ B} {h : B ⟶ Γ(V, ⊤)}
+    (H : IsPushout ((Scheme.ΓSpecIso R).inv ≫ U.ι.appTop) g f.appTop h) :
+    IsPullback f (V.toSpecΓ ≫ Spec.map h) U.ι (Spec.map g) := by
+  have : U.toScheme.IsQuasiAffine := Scheme.IsQuasiAffine.of_isImmersion U.ι
+  -- `V` is the restriction of `Spec Γ(V, ⊤)` to `U`, and `Spec Γ(V, ⊤)` that of `Spec B`.
+  have hU : U.toScheme.toSpecΓ ≫ Spec.map ((Scheme.ΓSpecIso R).inv ≫ U.ι.appTop) = U.ι := by
+    rw [Spec.map_comp, ← Category.assoc, ← Scheme.toSpecΓ_naturality, Category.assoc,
+      toSpecΓ_SpecMap_ΓSpecIso_inv, Category.comp_id]
+  simpa only [hU] using
+    (Scheme.isPullback_toSpecΓ_toSpecΓ f).paste_vert (isPullback_SpecMap_of_isPushout _ _ _ _ H)
+
 open TensorProduct in
 /-- For a morphism `f : T' ⟶ T` of affine `S`-schemes, the scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)]
 Γ(T', 𝒪))` is an affine `S`-scheme with two maps `g₁`, `g₂` to `T'` that agree after composing
@@ -541,3 +691,49 @@ theorem exists_affine_pair_comp_eq {S : Scheme.{u}} {T T' : Over S} (f : T' ⟶ 
   exact ⟨Z, this, g₁, g₂, κ, Over.OverMorphism.ext hι, hκ χ₁, hκ χ₂⟩
 
 end TauCeti.AlgebraicGeometry
+
+open scoped AlgebraicGeometry
+
+/-- A finite subset of an affine open has a basic-open neighbourhood contained in any
+prescribed open containing the subset. -/
+theorem AlgebraicGeometry.IsAffineOpen.exists_basicOpen_superset_le
+    {X : AlgebraicGeometry.Scheme} {V W : X.Opens} (hV : AlgebraicGeometry.IsAffineOpen V)
+    {s : Set X} (hs : s.Finite) (hsV : s ⊆ V) (hsW : s ⊆ W) :
+    ∃ r : Γ(X, V), s ⊆ X.basicOpen r ∧ X.basicOpen r ≤ W := by
+  classical
+  let _ := hs.fintype
+  let primes : s → Ideal Γ(X, V) := fun x ↦ (hV.primeIdealOf ⟨x.val, hsV x.property⟩).asIdeal
+  let sections : Set Γ(X, V) := {r | X.basicOpen r ≤ W}
+  have hnot : ¬ (Ideal.span sections : Set Γ(X, V)) ⊆
+      ⋃ P ∈ Set.range primes, (P : Set Γ(X, V)) := by
+    rw [Ideal.subset_union_prime_finite (Set.finite_range primes) ⊤ ⊤ (by
+      rintro _ ⟨x, rfl⟩ _ _
+      exact (hV.primeIdealOf ⟨x.val, hsV x.property⟩).isPrime)]
+    rintro ⟨P, ⟨x, rfl⟩, hle⟩
+    obtain ⟨r, hrW, hrx⟩ := hV.exists_basicOpen_le ⟨x.val, hsW x.property⟩ (hsV x.property)
+    exact (hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨x.val, hsV x.property⟩ r).mp hrx
+      (hle (Ideal.subset_span hrW))
+  obtain ⟨r, hrI, hr⟩ := Set.not_subset.mp hnot
+  refine ⟨r, ?_, ?_⟩
+  · intro x hx
+    apply (hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨x, hsV hx⟩ r).mpr
+    intro h
+    apply hr
+    exact Set.mem_iUnion.mpr ⟨primes ⟨x, hx⟩,
+      Set.mem_iUnion.mpr ⟨Set.mem_range_self _, h⟩⟩
+  · exact (hV.basicOpen_le_iSup_basicOpen_iff.mpr
+      (Ideal.le_radical hrI)).trans (iSup₂_le fun r hr ↦ hr)
+
+/-- An affine morphism transfers a finite affine neighbourhood from the target, and the source
+neighbourhood can be chosen inside any prescribed open containing the finite set. -/
+theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isAffineHom
+    {X Y : AlgebraicGeometry.Scheme} (f : X ⟶ Y) [AlgebraicGeometry.IsAffineHom f]
+    {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W)
+    (hY : ∃ V : Y.Opens, AlgebraicGeometry.IsAffineOpen V ∧ f '' s ⊆ V) :
+    ∃ U : X.Opens, AlgebraicGeometry.IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
+  obtain ⟨V, hV, hsV⟩ := hY
+  have hpre := hV.preimage f
+  have hsPre : s ⊆ f ⁻¹ᵁ V := fun x hx ↦ f.mem_preimage.mpr
+    (hsV (Set.mem_image_of_mem f hx))
+  obtain ⟨r, hsr, hrW⟩ := hpre.exists_basicOpen_superset_le hs hsPre hsW
+  exact ⟨X.basicOpen r, hpre.basicOpen r, hsr, hrW⟩

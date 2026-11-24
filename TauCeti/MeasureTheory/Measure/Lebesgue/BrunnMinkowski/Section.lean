@@ -309,7 +309,7 @@ theorem volume_hyperplaneSection_rpow_mul_volume_hyperplaneSection_rpow_le (e : 
       volume {y : (ℝ ∙ e)ᗮ | (y : E) + ((1 - θ) * s + θ * t) • e ∈ (1 - θ) • K + θ • L} := by
   -- The section of `L` at height `t` is the preimage of `L` under a continuous map.
   have hsec : MeasurableSet {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ L} :=
-    hL.preimage (continuous_subtype_val.add continuous_const).measurable
+    hL.preimage (continuous_subtypeVal.add continuous_const).measurable
   exact (volume_rpow_mul_volume_rpow_le hsec.nullMeasurableSet hθ₀ hθ₁).trans (measure_mono
     (smul_hyperplaneSection_add_smul_hyperplaneSection_subset e K L (1 - θ) θ s t))
 

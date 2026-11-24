@@ -85,7 +85,7 @@ private def ψ (a : k) :
     { toFun s := Multiplicative.ofAdd (θ S a s)
       map_one' := by simp [θ]
       map_mul' s t := by
-        simp only [Subgroup.coe_mul, θ_mul a s.2, ofAdd_add] }
+        simp only [Subgroup.coe_mul, θ_mul a s.property, ofAdd_add] }
 
 private theorem ψ_of (a : k) (s : S) : ψ S a (Group.Abelianization.of s) = .ofAdd (θ S a s) := by
   simp [ψ]
@@ -106,10 +106,12 @@ private theorem H0π_relTransfer_augElt [S.FiniteIndex] (a : k) (h : G) :
   simp_rw [ψ_of, toAdd_ofAdd]
   rw [sub_eq_iff_eq_add, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
-  -- `(h q).out⁻¹ h = s q.out⁻¹` with `s = (h q).out⁻¹ h q.out ∈ S`, and `θ` is additive in the
+  -- `(h q).out⁻¹ h = s q.out⁻¹` with `s = outCocycle h q ∈ S`, and `θ` is additive in the
   -- `S`-factor.
-  have hs : (h • q).out⁻¹ * (h * q.out) ∈ S := QuotientGroup.eq.mp (QuotientGroup.mk_out_smul h q)
-  rw [MulAction.toPerm_apply, ← θ_mul a hs, mul_assoc, mul_assoc, mul_inv_cancel, mul_one]
+  have hs : (h • q).out⁻¹ * (h * q.out) = (QuotientGroup.outCocycle h q : G) := by
+    rw [QuotientGroup.coe_outCocycle, mul_assoc]
+  rw [MulAction.toPerm_apply, hs, ← θ_mul a (QuotientGroup.outCocycle h q).property,
+    QuotientGroup.coe_outCocycle, mul_inv_cancel_right]
 
 private theorem δ_res_mkH1OfIsTrivial_ofAbelianization
     (hAug : (ShortComplex.mk (augmentationι k G) (augmentation k G)

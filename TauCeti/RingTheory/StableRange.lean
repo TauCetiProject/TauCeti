@@ -24,7 +24,8 @@ for `n ≥ s`, and `GLₙ(R) / Eₙ(R) ≃* K₁(R)` for `n ≥ s + 1`.
 
 This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * Only subsingleton rings have stable range at most `0`, while every possibly noncommutative local
-  ring (in particular every division ring and field) has stable range at most `1`.
+  ring (in particular every division ring and field) has stable range at most `1`. The ring `ℤ`
+  does not have stable range at most `1`, witnessed by the unimodular row `(2, 5)`.
 * **Vaserstein's first theorem:** `HasStableRangeLE R s` allows shortening the final coordinate of
   a unimodular row `(a, d)` on `ι ⊕ Unit` into any chosen finite subset of `ι` of cardinality at
   least `s`. Consequently `HasStableRangeLE R s` is monotone in `s` and equivalent to shortening
@@ -42,6 +43,7 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 
 * `TauCeti.hasStableRangeLE_zero_iff`: `HasStableRangeLE R 0 ↔ Subsingleton R`.
 * `TauCeti.hasStableRangeLE_one_of_isLocalRing`: a local ring has stable range at most `1`.
+* `TauCeti.not_hasStableRangeLE_one_int`: `ℤ` does not have stable range at most `1`.
 * `TauCeti.HasStableRangeLE.exists_isUnimodular_add_mul_of_subset`: shortening into any finite
   subset of cardinality at least `s`.
 * `TauCeti.hasStableRangeLE_iff_forall_le`: equivalence with shortening all rows of length at least
@@ -138,6 +140,14 @@ theorem hasStableRangeLE_one_of_isLocalRing (R : Type*) [Ring R] [IsLocalRing R]
     have hu : IsUnit (a 1 + a 0) := isUnit_add_of_isUnit_of_not_isUnit ha1 ha0
     simpa [add_comm] using hu
 
+/-- **`ℤ` does not have stable range at most `1`**: the row `(2, 5)` is unimodular, since
+`2 * 3 + 5 * (-1) = 1`, but no `2 + 5 * c` is a unit of `ℤ`, since `2 + 5 * c` is never `±1`. -/
+theorem not_hasStableRangeLE_one_int : ¬ HasStableRangeLE ℤ 1 := fun h ↦ by
+  obtain ⟨c, d, hcd⟩ := hasStableRangeLE_iff_exists_sum_eq_one.mp h ![2, 5] ![3, -1]
+    (by simp [Fin.sum_univ_two])
+  have h25 : (2 + 5 * c 0) * d 0 = 1 := by simpa using hcd
+  rcases Int.eq_one_or_neg_one_of_mul_eq_one h25 with h1 | h1 <;> omega
+
 /-! ## Subset shortening and longer rows (Vaserstein's first theorem) -/
 
 /-- Zero out coordinates in `T` and extend by `0` on `Unit`. -/
@@ -172,7 +182,7 @@ private theorem sumElim_eq_sum_single_add_compl {R ι : Type*} [Semiring R] [Dec
         exact fun h ↦ (hx (Subtype.ext (by simpa using h.symm))).elim
     · have hzero : (∑ k : Fin s, if i = (e k : ι) then a (e k) else 0) = 0 :=
         Finset.sum_eq_zero fun k _ ↦ by
-          have hne : i ≠ (e k : ι) := fun h ↦ hi (h ▸ (e k).2)
+          have hne : i ≠ (e k : ι) := fun h ↦ hi (h ▸ (e k).property)
           simp [hne]
       simp [hi, hzero]
   · simp [sumElimComplLinearMap]
@@ -236,14 +246,14 @@ coordinates `{i : ι // i ≠ i₀}`. -/
 theorem HasStableRangeLE.exists_isUnimodular_add_mul_subtype_ne {R ι : Type*} [Ring R] [Fintype ι]
     {s : ℕ} (hR : HasStableRangeLE R s) (hι : s + 1 ≤ Fintype.card ι) {a : ι → R}
     (ha : Module.IsUnimodular R a) (i₀ : ι) :
-    ∃ c : {i : ι // i ≠ i₀} → R, Module.IsUnimodular R (fun i ↦ a i.1 + a i₀ * c i) := by
+    ∃ c : {i : ι // i ≠ i₀} → R, Module.IsUnimodular R (fun i ↦ a i.val + a i₀ * c i) := by
   classical
   have hcard : s ≤ Fintype.card {i : ι // i ≠ i₀} := by
     rw [Fintype.card_subtype_compl, Fintype.card_subtype_eq]
     omega
   have ha' : Module.IsUnimodular R
-      (Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.1) (fun _ : Unit ↦ a i₀)) := by
-    have hcomp : Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.1) (fun _ : Unit ↦ a i₀) =
+      (Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.val) (fun _ : Unit ↦ a i₀)) := by
+    have hcomp : Sum.elim (fun i : {i : ι // i ≠ i₀} ↦ a i.val) (fun _ : Unit ↦ a i₀) =
         LinearEquiv.funCongrLeft R R (Equiv.subtypeNeSumPUnit.{0} i₀) a := by
       ext (i | ⟨⟩) <;> rfl
     rw [hcomp, LinearEquiv.isUnimodular_apply_iff]

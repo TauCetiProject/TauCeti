@@ -15,7 +15,8 @@ subgroups (required to be elliptic). An `(𝒜, ℋ)`-tree is a minimal `G`-tree
 `ℋ`: `T.IsMinimal` and `T.IsRelative 𝒜 ℋ`. Following Guirardel and Levitt:
 
 * a subgroup is *universally elliptic* when it is elliptic in every `(𝒜, ℋ)`-tree, and a tree is
-  universally elliptic when its dart stabilizers are;
+  universally elliptic when its dart stabilizers are, that is when it is elliptic with respect to
+  every `(𝒜, ℋ)`-tree;
 * a *JSJ tree* is a universally elliptic `(𝒜, ℋ)`-tree dominating every universally elliptic
   `(𝒜, ℋ)`-tree;
 * a vertex is *rigid* when its stabilizer is universally elliptic and *flexible* otherwise.
@@ -181,11 +182,11 @@ theorem IsUniversallyElliptic.isUniversallyEllipticSubgroup_stabilizer
   hT e
 
 /-- A tree is universally elliptic exactly when it is elliptic with respect to every minimal
-relative tree: its dart stabilizers are elliptic in each of them. -/
-theorem isUniversallyElliptic_iff_forall_isEllipticSubgroup :
-    T.IsUniversallyElliptic 𝒜 ℋ ↔ ∀ T' : GTree.{u, v} G, T'.IsMinimal → T'.IsRelative 𝒜 ℋ →
-      ∀ e : T.E, T'.IsEllipticSubgroup (stabilizer G e) :=
-  ⟨fun h T' hm hr e => h e T' hm hr, fun h e T' hm hr => h T' hm hr e⟩
+relative tree. -/
+theorem isUniversallyElliptic_iff_forall_isEllipticWith : T.IsUniversallyElliptic 𝒜 ℋ ↔
+    ∀ T' : GTree.{u, v} G, T'.IsMinimal → T'.IsRelative 𝒜 ℋ → T.IsEllipticWith T' :=
+  ⟨fun h _ hm hr => isEllipticWith_iff.mpr fun e => h e _ hm hr,
+    fun h e T' hm hr => isEllipticWith_iff.mp (h T' hm hr) e⟩
 
 /-- The dart stabilizers of a universally elliptic tree are elliptic in every minimal relative
 tree. -/
@@ -193,6 +194,12 @@ theorem IsUniversallyElliptic.isEllipticSubgroup_stabilizer (hT : T.IsUniversall
     (hm : T'.IsMinimal) (hr : T'.IsRelative 𝒜 ℋ) (e : T.E) :
     T'.IsEllipticSubgroup (stabilizer G e) :=
   hT e T' hm hr
+
+/-- A universally elliptic tree is elliptic with respect to every minimal tree relative to the
+same families. -/
+theorem IsUniversallyElliptic.isEllipticWith (hT : T.IsUniversallyElliptic 𝒜 ℋ) (hm : T'.IsMinimal)
+    (hr : T'.IsRelative 𝒜 ℋ) : T.IsEllipticWith T' :=
+  isEllipticWith_iff.mpr (hT.isEllipticSubgroup_stabilizer hm hr)
 
 /-- Universal ellipticity of a tree is antitone in the family of edge stabilizers and monotone in
 the family of subgroups required to be elliptic. -/

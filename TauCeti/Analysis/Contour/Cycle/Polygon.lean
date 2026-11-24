@@ -39,6 +39,8 @@ become a contour cycle.
 ## Main results
 
 * `Polygon.trace_contourCycle`: the trace is the boundary of the polygon.
+* `Polygon.integral_contourCycle_eq_integral_boundaryParam`: the cycle integral of any function
+  equals the raw contour integral along `Polygon.boundaryParam` over `[0, n]`.
 * `Polygon.integral_contourCycle`: the integral of a function continuous on the boundary is the
   sum of its integrals along the edges.
 * `Polygon.windingNumber_contourCycle`: off the boundary, the winding number is the sum of the
@@ -158,16 +160,24 @@ theorem _root_.Polygon.contourCurve_apply {t : ℝ} (ht : t ∈ Icc (0 : ℝ) n)
 /-- The closed polygonal curve of a polygon `poly` with `n ≠ 0` vertices, as a one-generator
 contour cycle. -/
 def _root_.Polygon.contourCycle : Cycle :=
-  FreeAbelianGroup.of poly.contourCurve
+  FreeAddCommGroup.of poly.contourCurve
 
 /-- The cycle of a polygon is the single generator given by its polygonal curve. -/
 theorem _root_.Polygon.contourCycle_def :
-    poly.contourCycle = FreeAbelianGroup.of poly.contourCurve := (rfl)
+    poly.contourCycle = FreeAddCommGroup.of poly.contourCurve := (rfl)
 
 /-- The trace of the cycle of a polygon is the boundary of the polygon. -/
 @[simp]
 theorem _root_.Polygon.trace_contourCycle : Cycle.trace poly.contourCycle = poly.boundary ℝ := by
   rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.trace_of_raw, Polygon.image_boundaryParam]
+
+/-- Integrating over the contour cycle of a polygon equals the raw contour integral along its
+boundary parametrization on `[0, n]`. -/
+theorem _root_.Polygon.integral_contourCycle_eq_integral_boundaryParam {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] (f : ℂ → E) :
+    Cycle.integral f poly.contourCycle =
+      ∫ t in (0 : ℝ)..n, deriv poly.boundaryParam t • f (poly.boundaryParam t) := by
+  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.integral_of_raw]
 
 /-- **The integral over a polygon** of a function continuous on its boundary is the sum over the
 edges `[v, w]` of `(w - v) • ∫ t in 0..1, f (v + t (w - v))`. -/
@@ -178,7 +188,7 @@ theorem _root_.Polygon.integral_contourCycle {E : Type*} [NormedAddCommGroup E] 
   have hγ := poly.isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
   have hint := hγ.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
     (mapsTo_iff_image_subset.2 poly.image_boundaryParam.subset)
-  rw [Polygon.contourCycle, Polygon.contourCurve, Cycle.integral_of_raw]
+  rw [poly.integral_contourCycle_eq_integral_boundaryParam]
   -- Split the integral over `[0, n]` into the integrals over the cells `[i, i + 1]`.
   have hsplit := intervalIntegral.sum_integral_adjacent_intervals (a := fun k : ℕ ↦ (k : ℝ))
     (n := n) (μ := volume) (f := fun t ↦ deriv poly.boundaryParam t • f (poly.boundaryParam t))
@@ -258,7 +268,7 @@ theorem exists_windingNumber_integral_eq_sum_segments {E : Finset (ℂ × ℂ)}
     intro z hz
     obtain ⟨i, hi⟩ := mem_iUnion.1 hz
     rw [Polygon.edgeSet_eq_image_edgePath, hedge, ← segment_eq_image_lineMap] at hi
-    exact mem_biUnion (σ^[i] e).2 hi
+    exact mem_biUnion (σ^[i] e).property hi
   -- The cycle is the sum of the polygons of the orbits; sums over the segments are computed orbit
   -- by orbit.
   refine ⟨∑ q : Quotient (Equiv.Perm.SameCycle.setoid σ), (P q.out).contourCycle,

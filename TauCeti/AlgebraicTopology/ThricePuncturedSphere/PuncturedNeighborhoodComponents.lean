@@ -12,7 +12,7 @@ public import TauCeti.Topology.Homotopy.Monodromy.BasepointChange
 public import TauCeti.Topology.Homotopy.Monodromy.PreimageComponents
 
 import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The components of a cover over the punctured neighborhoods of the punctures
@@ -98,11 +98,11 @@ sheets lie in the same cycle of the monodromy of `g` exactly when the endpoints 
 private theorem sameCycle_iff_of_transport
     (hσ : σ = ν.permCongr (hp.monodromyPerm basePt g))
     (hg : (FundamentalGroup.fundamentalGroupMulEquivOfPath α).symm
-      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨y, hy⟩ c) = g)
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨y, hy⟩ c) = g)
     (i j : Fin n) :
     σ.SameCycle i j ↔
       (hp.monodromyPerm y
-          (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨y, hy⟩ c)).SameCycle
+          (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨y, hy⟩ c)).SameCycle
         (hp.monodromy (.mk α) (ν.symm i)) (hp.monodromy (.mk α) (ν.symm j)) := by
   subst hσ hg
   rw [hp.monodromyPerm_fundamentalGroupMulEquivOfPath_symm, sameCycle_permCongr_iff,
@@ -112,7 +112,7 @@ include hy in
 /-- The endpoint of a lift of a path from the basepoint into `S` lies over `S`. -/
 private theorem monodromy_mem_preimage (e : p ⁻¹' {basePt}) :
     (hp.monodromy (.mk α) e : E) ∈ p ⁻¹' S := by
-  rw [Set.mem_preimage, (hp.monodromy (.mk α) e).2]
+  rw [Set.mem_preimage, (hp.monodromy (.mk α) e).property]
   exact hy
 
 include hp in
@@ -128,7 +128,7 @@ transport of a generator of `π₁(S, y)`. -/
 private def sameCycleQuotientEquivConnectedComponents (hS : IsOpen S) (hS' : IsPathConnected S)
     (hc : Subgroup.zpowers c = ⊤) (hσ : σ = ν.permCongr (hp.monodromyPerm basePt g))
     (hg : (FundamentalGroup.fundamentalGroupMulEquivOfPath α).symm
-      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨y, hy⟩ c) = g) :
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨y, hy⟩ c) = g) :
     Quotient (SameCycle.setoid σ) ≃ ConnectedComponents (p ⁻¹' S) :=
   haveI := locallyPathConnectedSpace_preimage hp hS
   ((Quotient.congr (ν.symm.trans (coveringFiberEquiv hp (.mk α))) fun i j => by
@@ -142,7 +142,7 @@ private theorem sameCycleQuotientEquivConnectedComponents_mk (hS : IsOpen S)
     (hS' : IsPathConnected S) (hc : Subgroup.zpowers c = ⊤)
     (hσ : σ = ν.permCongr (hp.monodromyPerm basePt g))
     (hg : (FundamentalGroup.fundamentalGroupMulEquivOfPath α).symm
-      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨y, hy⟩ c) = g) (i : Fin n) :
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨y, hy⟩ c) = g) (i : Fin n) :
     sameCycleQuotientEquivConnectedComponents hp ν hy hS hS' hc hσ hg (Quotient.mk _ i) =
       ConnectedComponents.mk
         ⟨hp.monodromy (.mk α) (ν.symm i), monodromy_mem_preimage hp hy (ν.symm i)⟩ := by
@@ -165,10 +165,10 @@ punctured neighborhood of `0`. -/
 theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σ0_iff (i j : Fin n) :
     (hp.monodromyTriple ν).σ0.SameCycle i j ↔
       (hp.monodromyPerm (zeroBasePt : ThricePuncturedSphere)
-          (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ zeroBasePt
+          (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ zeroBasePt
             (FundamentalGroup.fromPath (.mk δZero)))).SameCycle
         (hp.monodromy (.mk αZero) (ν.symm i)) (hp.monodromy (.mk αZero) (ν.symm j)) :=
-  sameCycle_iff_of_transport hp ν zeroBasePt.2 (hp.monodromyTriple_σ0 ν)
+  sameCycle_iff_of_transport hp ν zeroBasePt.property (hp.monodromyTriple_σ0 ν)
     transport_δZero_eq_periph0 i j
 
 /-- **Cycles of `σ0` are the components over `0`, pointwise.** Two sheets lie in the same cycle of
@@ -179,12 +179,12 @@ theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σ0_iff_joinedIn (i j : F
       JoinedIn (p ⁻¹' puncturedNeighborhoodZero)
         (hp.monodromy (.mk αZero) (ν.symm i) : E) (hp.monodromy (.mk αZero) (ν.symm j)) := by
   rw [hp.sameCycle_monodromyTriple_σ0_iff,
-    hp.sameCycle_monodromyPerm_iff_joinedIn_preimage zeroBasePt.2 zpowers_δZero]
+    hp.sameCycle_monodromyPerm_iff_joinedIn_preimage zeroBasePt.property zpowers_δZero]
 
 /-- The endpoint of a lift of `αZero` lies over the punctured neighborhood of `0`. -/
 theorem _root_.IsCoveringMap.monodromy_αZero_mem_preimage (e : p ⁻¹' {basePt}) :
     (hp.monodromy (.mk αZero) e : E) ∈ p ⁻¹' puncturedNeighborhoodZero :=
-  monodromy_mem_preimage hp zeroBasePt.2 e
+  monodromy_mem_preimage hp zeroBasePt.property e
 
 /-- **One sheet over `0` gives a single cycle.** If the preimage of the punctured neighborhood
 of `0` is path connected, then any two sheets lie in the same cycle of `σ0`. -/
@@ -202,7 +202,8 @@ the endpoint of the lift of `αZero` starting at the point numbered `i`
 def _root_.IsCoveringMap.sameCycleQuotientσ0EquivConnectedComponents :
     Quotient (SameCycle.setoid (hp.monodromyTriple ν).σ0) ≃
       ConnectedComponents (p ⁻¹' puncturedNeighborhoodZero) :=
-  sameCycleQuotientEquivConnectedComponents hp ν zeroBasePt.2 isOpen_puncturedNeighborhoodZero
+  sameCycleQuotientEquivConnectedComponents hp ν zeroBasePt.property
+      isOpen_puncturedNeighborhoodZero
     isPathConnected_puncturedNeighborhoodZero zpowers_δZero (hp.monodromyTriple_σ0 ν)
     transport_δZero_eq_periph0
 
@@ -213,7 +214,8 @@ theorem _root_.IsCoveringMap.sameCycleQuotientσ0EquivConnectedComponents_mk (i 
     hp.sameCycleQuotientσ0EquivConnectedComponents ν (Quotient.mk _ i) =
       ConnectedComponents.mk
         ⟨hp.monodromy (.mk αZero) (ν.symm i), hp.monodromy_αZero_mem_preimage (ν.symm i)⟩ :=
-  sameCycleQuotientEquivConnectedComponents_mk hp ν zeroBasePt.2 isOpen_puncturedNeighborhoodZero
+  sameCycleQuotientEquivConnectedComponents_mk hp ν zeroBasePt.property
+      isOpen_puncturedNeighborhoodZero
     isPathConnected_puncturedNeighborhoodZero zpowers_δZero (hp.monodromyTriple_σ0 ν)
     transport_δZero_eq_periph0 i
 
@@ -226,10 +228,10 @@ punctured neighborhood of `1`. -/
 theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σ1_iff (i j : Fin n) :
     (hp.monodromyTriple ν).σ1.SameCycle i j ↔
       (hp.monodromyPerm (oneBasePt : ThricePuncturedSphere)
-          (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ oneBasePt
+          (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ oneBasePt
             (FundamentalGroup.fromPath (.mk δOne)))).SameCycle
         (hp.monodromy (.mk αOne) (ν.symm i)) (hp.monodromy (.mk αOne) (ν.symm j)) :=
-  sameCycle_iff_of_transport hp ν oneBasePt.2 (hp.monodromyTriple_σ1 ν)
+  sameCycle_iff_of_transport hp ν oneBasePt.property (hp.monodromyTriple_σ1 ν)
     transport_δOne_eq_periph1 i j
 
 /-- **Cycles of `σ1` are the components over `1`, pointwise.** Two sheets lie in the same cycle of
@@ -240,12 +242,12 @@ theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σ1_iff_joinedIn (i j : F
       JoinedIn (p ⁻¹' puncturedNeighborhoodOne)
         (hp.monodromy (.mk αOne) (ν.symm i) : E) (hp.monodromy (.mk αOne) (ν.symm j)) := by
   rw [hp.sameCycle_monodromyTriple_σ1_iff,
-    hp.sameCycle_monodromyPerm_iff_joinedIn_preimage oneBasePt.2 zpowers_δOne]
+    hp.sameCycle_monodromyPerm_iff_joinedIn_preimage oneBasePt.property zpowers_δOne]
 
 /-- The endpoint of a lift of `αOne` lies over the punctured neighborhood of `1`. -/
 theorem _root_.IsCoveringMap.monodromy_αOne_mem_preimage (e : p ⁻¹' {basePt}) :
     (hp.monodromy (.mk αOne) e : E) ∈ p ⁻¹' puncturedNeighborhoodOne :=
-  monodromy_mem_preimage hp oneBasePt.2 e
+  monodromy_mem_preimage hp oneBasePt.property e
 
 /-- **One sheet over `1` gives a single cycle.** If the preimage of the punctured neighborhood
 of `1` is path connected, then any two sheets lie in the same cycle of `σ1`. -/
@@ -263,7 +265,7 @@ the endpoint of the lift of `αOne` starting at the point numbered `i`
 def _root_.IsCoveringMap.sameCycleQuotientσ1EquivConnectedComponents :
     Quotient (SameCycle.setoid (hp.monodromyTriple ν).σ1) ≃
       ConnectedComponents (p ⁻¹' puncturedNeighborhoodOne) :=
-  sameCycleQuotientEquivConnectedComponents hp ν oneBasePt.2 isOpen_puncturedNeighborhoodOne
+  sameCycleQuotientEquivConnectedComponents hp ν oneBasePt.property isOpen_puncturedNeighborhoodOne
     isPathConnected_puncturedNeighborhoodOne zpowers_δOne (hp.monodromyTriple_σ1 ν)
     transport_δOne_eq_periph1
 
@@ -274,7 +276,8 @@ theorem _root_.IsCoveringMap.sameCycleQuotientσ1EquivConnectedComponents_mk (i 
     hp.sameCycleQuotientσ1EquivConnectedComponents ν (Quotient.mk _ i) =
       ConnectedComponents.mk
         ⟨hp.monodromy (.mk αOne) (ν.symm i), hp.monodromy_αOne_mem_preimage (ν.symm i)⟩ :=
-  sameCycleQuotientEquivConnectedComponents_mk hp ν oneBasePt.2 isOpen_puncturedNeighborhoodOne
+  sameCycleQuotientEquivConnectedComponents_mk hp ν oneBasePt.property
+      isOpen_puncturedNeighborhoodOne
     isPathConnected_puncturedNeighborhoodOne zpowers_δOne (hp.monodromyTriple_σ1 ν)
     transport_δOne_eq_periph1 i
 
@@ -287,10 +290,10 @@ punctured neighborhood of `∞`. -/
 theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σinf_iff (i j : Fin n) :
     (hp.monodromyTriple ν).σinf.SameCycle i j ↔
       (hp.monodromyPerm pPlus
-          (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ infBasePt
+          (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ infBasePt
             (FundamentalGroup.fromPath (.mk δInf)))).SameCycle
         (hp.monodromy (.mk αPlus) (ν.symm i)) (hp.monodromy (.mk αPlus) (ν.symm j)) :=
-  sameCycle_iff_of_transport hp ν infBasePt.2 (hp.monodromyTriple_σinf ν)
+  sameCycle_iff_of_transport hp ν infBasePt.property (hp.monodromyTriple_σinf ν)
     transport_δInf_eq_periphInf i j
 
 /-- **Cycles of `σinf` are the components over `∞`, pointwise.** Two sheets lie in the same cycle of
@@ -301,12 +304,12 @@ theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σinf_iff_joinedIn (i j :
       JoinedIn (p ⁻¹' puncturedNeighborhoodInf)
         (hp.monodromy (.mk αPlus) (ν.symm i) : E) (hp.monodromy (.mk αPlus) (ν.symm j)) := by
   rw [hp.sameCycle_monodromyTriple_σinf_iff,
-    hp.sameCycle_monodromyPerm_iff_joinedIn_preimage infBasePt.2 zpowers_δInf]
+    hp.sameCycle_monodromyPerm_iff_joinedIn_preimage infBasePt.property zpowers_δInf]
 
 /-- The endpoint of a lift of `αPlus` lies over the punctured neighborhood of `∞`. -/
 theorem _root_.IsCoveringMap.monodromy_αPlus_mem_preimage (e : p ⁻¹' {basePt}) :
     (hp.monodromy (.mk αPlus) e : E) ∈ p ⁻¹' puncturedNeighborhoodInf :=
-  monodromy_mem_preimage hp infBasePt.2 e
+  monodromy_mem_preimage hp infBasePt.property e
 
 /-- **One sheet over `∞` gives a single cycle.** If the preimage of the punctured neighborhood
 of `∞` is path connected, then any two sheets lie in the same cycle of `σinf`. -/
@@ -324,7 +327,7 @@ the endpoint of the lift of `αPlus` starting at the point numbered `i`
 def _root_.IsCoveringMap.sameCycleQuotientσinfEquivConnectedComponents :
     Quotient (SameCycle.setoid (hp.monodromyTriple ν).σinf) ≃
       ConnectedComponents (p ⁻¹' puncturedNeighborhoodInf) :=
-  sameCycleQuotientEquivConnectedComponents hp ν infBasePt.2 isOpen_puncturedNeighborhoodInf
+  sameCycleQuotientEquivConnectedComponents hp ν infBasePt.property isOpen_puncturedNeighborhoodInf
     isPathConnected_puncturedNeighborhoodInf zpowers_δInf (hp.monodromyTriple_σinf ν)
     transport_δInf_eq_periphInf
 
@@ -335,7 +338,8 @@ theorem _root_.IsCoveringMap.sameCycleQuotientσinfEquivConnectedComponents_mk (
     hp.sameCycleQuotientσinfEquivConnectedComponents ν (Quotient.mk _ i) =
       ConnectedComponents.mk
         ⟨hp.monodromy (.mk αPlus) (ν.symm i), hp.monodromy_αPlus_mem_preimage (ν.symm i)⟩ :=
-  sameCycleQuotientEquivConnectedComponents_mk hp ν infBasePt.2 isOpen_puncturedNeighborhoodInf
+  sameCycleQuotientEquivConnectedComponents_mk hp ν infBasePt.property
+      isOpen_puncturedNeighborhoodInf
     isPathConnected_puncturedNeighborhoodInf zpowers_δInf (hp.monodromyTriple_σinf ν)
     transport_δInf_eq_periphInf i
 

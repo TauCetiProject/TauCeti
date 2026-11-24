@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Morphism
 public import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 public import TauCeti.RingTheory.SimpleModule.Isotypic
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Trivial
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
 /-!
 # Simple coefficient spaces are isotypic components
@@ -36,10 +37,16 @@ coefficient spaces label the isomorphism classes of simple comodules.
 ## Main declarations
 
 * `matrixCoefficientSubmodule_eq_isotypicComponent`: the coefficient/isotypic comparison.
+* `hom_eq_zero_of_matrixCoefficientSubmodule_ne`: simple comodules with distinct coefficient
+  spaces admit no nonzero comodule morphism between them.
 * `iSupIndep_matrixCoefficientSubmodule`: coefficient spaces of pairwise non-isomorphic simple
   comodules are independent.
 * `matrixCoefficientSubmodule_eq_iff`: two simple comodules, projective over the ground ring,
   have the same coefficient space exactly when there is a nonzero morphism between them.
+* `exists_simple_family_pairwise_complete`: a family of simple comodules containing exactly one
+  representative of each simple right coideal up to isomorphism, indexed by the distinct simple
+  coefficient spaces.
+* `finite_of_mem_simpleCoefficientSubmodules`: simple coefficient spaces are finite-dimensional.
 * `sSupIndep_simpleCoefficientSubmodules`: independence of the distinct simple blocks.
 * `isInternal_of_sSup_simpleCoefficientSubmodules_eq_top`: a coalgebra over a field spanned by its
   distinct simple coefficient spaces is their internal direct sum.
@@ -116,6 +123,16 @@ theorem matrixCoefficientSubmodule_eq_of_ne_zero [IsSimpleOrder (Subcomodule R C
   rw [matrixCoefficientSubmodule_eq_isotypicComponent,
     matrixCoefficientSubmodule_eq_isotypicComponent,
     (LinearEquiv.ofBijective _ (LinearMap.bijective_of_ne_zero hf')).isotypicComponent_eq]
+
+/-- Simple comodules with distinct coefficient spaces have no nonzero comodule morphism between
+them. -/
+theorem hom_eq_zero_of_matrixCoefficientSubmodule_ne [IsSimpleOrder (Subcomodule R C M)]
+    [IsSimpleOrder (Subcomodule R C N)]
+    (hne : matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≠
+      matrixCoefficientSubmodule (R := R) (C := C) (M := N))
+    (f : Hom R C M N) : f = 0 := by
+  by_contra hf
+  exact hne (matrixCoefficientSubmodule_eq_of_ne_zero hf)
 
 /-- If the only comodule morphism from a nonzero comodule `M` to `N` is zero, then `M` and `N`
 are not isomorphic as modules over the convolution dual. -/
@@ -236,19 +253,48 @@ theorem matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules
   obtain ⟨T, hT, hTeq⟩ :=
     isotypicComponent_convolution_mem_isotypicComponents (k := k) (C := C) (M := M)
   let S : Subcomodule k C C := T.toSubcomodule
-  have : IsSimpleModule D S := S.isSimpleModule_convolution_iff_isAtom.mpr <| by
+  have : IsSimpleOrder (Subcomodule k C S) := Subcomodule.isSimpleOrder_of_isAtom <| by
     simpa [S] using ((Subcomodule.convolutionSubmoduleOrderIso (R := k) (C := C)
       (M := C)).symm.isAtom_iff T).mpr (isSimpleModule_iff_isAtom.mp hT)
-  have : IsSimpleOrder (Subcomodule k C S) := isSimpleModule_convolution_iff.mp inferInstance
   let g : S →ₗ[D] T := S.subtype.toConvolutionLinearMap.codRestrict T fun x ↦ by
-    simpa using (T.mem_toSubcomodule x.1).mp x.2
+    simpa using (T.mem_toSubcomodule x.val).mp x.property
   have hg : Function.Bijective g :=
     ⟨fun x y h ↦ Subtype.ext (by simpa [g] using congrArg Subtype.val h),
-      fun y ↦ ⟨⟨y.1, (T.mem_toSubcomodule y.1).mpr y.2⟩, Subtype.ext (by simp [g])⟩⟩
+      fun y ↦ ⟨⟨y.val, (T.mem_toSubcomodule y.val).mpr y.property⟩, Subtype.ext (by simp [g])⟩⟩
   rw [matrixCoefficientSubmodule_eq_isotypicComponent (M := M), hTeq,
     ← (LinearEquiv.ofBijective g hg).isotypicComponent_eq,
     ← matrixCoefficientSubmodule_eq_isotypicComponent (M := S)]
   exact ⟨ComoduleCat.of k C S, inferInstance, rfl⟩
+
+/-- **Representatives of the simple comodules.** Over any field there is a family of simple
+comodules, indexed in the universe of the coalgebra, with no nonzero morphism between distinct
+members, such that every simple right coideal of `C` admits a nonzero morphism, necessarily an
+isomorphism, to one of them. The family is indexed by the distinct simple coefficient spaces. -/
+theorem exists_simple_family_pairwise_complete :
+    ∃ (ι : Type v) (M : ι → ComoduleCat.{u, v, v} k C),
+      (∀ i, IsSimpleOrder (Subcomodule k C (M i))) ∧
+      (Pairwise fun i j ↦ ∀ f : Hom k C (M i) (M j), f = 0) ∧
+      ∀ S : Subcomodule k C C, IsAtom S → ∃ i, ∃ f : Hom k C S (M i), f ≠ 0 := by
+  choose M hM hMeq using fun P : simpleCoefficientSubmodules k C ↦
+    mem_simpleCoefficientSubmodules.mp P.property
+  refine ⟨simpleCoefficientSubmodules k C, M, hM, fun P Q hPQ ↦ ?_, fun S hS ↦ ?_⟩
+  · have := hM P
+    have := hM Q
+    refine hom_eq_zero_of_matrixCoefficientSubmodule_ne fun h ↦ hPQ (Subtype.ext ?_)
+    rw [hMeq P, hMeq Q, h]
+  · have := Subcomodule.isSimpleOrder_of_isAtom hS
+    let P : simpleCoefficientSubmodules k C :=
+      ⟨_, matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules (C := C) (M := S)⟩
+    have := hM P
+    exact ⟨P, matrixCoefficientSubmodule_eq_iff.mp (hMeq P)⟩
+
+/-- A simple coefficient space is finite-dimensional. -/
+theorem finite_of_mem_simpleCoefficientSubmodules {P : Submodule k C}
+    (hP : P ∈ simpleCoefficientSubmodules k C) : Module.Finite k P := by
+  obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
+  have := hM
+  have : Module.Finite k M := finite_of_isSimpleOrder (C := C)
+  infer_instance
 
 /-- Zero is not a simple coefficient space. -/
 @[simp]
@@ -264,7 +310,7 @@ and does not require that the coalgebra be linearly reductive. -/
 theorem sSupIndep_simpleCoefficientSubmodules :
     sSupIndep (simpleCoefficientSubmodules k C) := by
   let D := WithConv (C →ₗ[k] k)
-  have hind : iSupIndep fun P : isotypicComponents D C ↦ P.1.restrictScalars k := fun P ↦ by
+  have hind : iSupIndep fun P : isotypicComponents D C ↦ P.val.restrictScalars k := fun P ↦ by
     simpa only [← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
       using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents D C) P
   apply hind.sSupIndep_range.mono
@@ -277,7 +323,7 @@ theorem sSupIndep_simpleCoefficientSubmodules :
 internal direct sum. -/
 theorem isInternal_of_sSup_simpleCoefficientSubmodules_eq_top
     (hspan : sSup (simpleCoefficientSubmodules k C) = ⊤) :
-    DirectSum.IsInternal (fun P : simpleCoefficientSubmodules k C ↦ (P.1 : Submodule k C)) := by
+    DirectSum.IsInternal (fun P : simpleCoefficientSubmodules k C ↦ (P.val : Submodule k C)) := by
   apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
   · exact (sSupIndep_iff _).mp sSupIndep_simpleCoefficientSubmodules
   · rwa [← sSup_eq_iSup']

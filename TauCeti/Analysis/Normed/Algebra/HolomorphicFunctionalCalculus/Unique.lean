@@ -29,14 +29,12 @@ converge to the contour integral defining `holomorphicCalculusOn a U ha f`.
 
 ## Main results
 
-* `AlgHom.toGerm_cauchyKernel`, `TauCeti.holomorphicCalculusOn_cauchyKernel`, and
-  `AlgHom.toGerm_cauchyRiemannSum`: any unital algebra homomorphism sending the coordinate
-  germ to `a` (and in particular `holomorphicCalculusOn a V haV`) maps Cauchy kernels outside `V` to
-  resolvents of `a` and Cauchy Riemann sums on `V` to resolvent Riemann sums.
-* `AlgHom.tendsto_toGerm_cauchyRiemannSum`: those resolvent Riemann sums converge in `A` to
-  `holomorphicCalculusOn a U ha f`.
+* `AlgHom.tendsto_toGerm_cauchyRiemannSum`: the images of Cauchy Riemann sums under `Φ ∘ toGerm`
+  converge in `A` to `holomorphicCalculusOn a U ha f`.
 * `AlgHom.eq_holomorphicCalculus_of_forall_continuous` and
   `TauCeti.existsUnique_holomorphicCalculus`: uniqueness of `holomorphicCalculus a`.
+* `TauCeti.holomorphicCalculusOn_cauchyKernel`: `holomorphicCalculusOn a V haV` sends Cauchy
+  kernels outside `V` to resolvents of `a`.
 
 ## References
 
@@ -52,36 +50,6 @@ open scoped Real
 namespace AlgHom
 
 open TauCeti TauCeti.Contour TauCeti.HolomorphicFunctions
-
-section Algebraic
-
-/-- Any unital complex-algebra homomorphism on `holomorphicGerms (spectrum ℂ a)` sending the
-coordinate germ to `a` maps the germ of `cauchyKernel V w hw` (on `spectrum ℂ a ⊆ V`) to
-`resolvent a w`. -/
-theorem toGerm_cauchyKernel {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
-    (Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A)
-    (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
-    {V : Opens ℂ} (haV : spectrum ℂ a ⊆ V) {w : ℂ} (hw : w ∉ (V : Set ℂ)) :
-    Φ (toGerm haV (cauchyKernel V w hw)) = resolvent a w := by
-  rw [HolomorphicFunctions.toGerm_cauchyKernel, Φ.ofFun_sub_inv_eq_resolvent hid]
-
-/-- Image of `cauchyRiemannSum` under `Φ ∘ toGerm haV` for any unital complex-algebra homomorphism
-`Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A` sending the coordinate germ to `a`: every Cauchy
-kernel term evaluates to the corresponding resolvent of `a`. -/
-theorem toGerm_cauchyRiemannSum {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
-    (Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A)
-    (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
-    {V : Opens ℂ} (haV : spectrum ℂ a ⊆ V) (g : ℂ → ℂ) (E : Finset (ℂ × ℂ))
-    (hEV : Disjoint (⋃ e ∈ E, segment ℝ e.1 e.2) (V : Set ℂ)) (N : ℕ) :
-    Φ (toGerm haV (cauchyRiemannSum V g E hEV N)) =
-      (2 * π * I)⁻¹ • ∑ e ∈ E, ((e.2 - e.1) / (N + 1 : ℂ)) •
-        ∑ k ∈ Finset.range (N + 1),
-          g (AffineMap.lineMap (k := ℝ) e.1 e.2 ((k : ℝ) / (N + 1 : ℝ))) •
-            resolvent a (AffineMap.lineMap (k := ℝ) e.1 e.2 ((k : ℝ) / (N + 1 : ℝ))) :=
-  map_cauchyRiemannSum (Φ.comp (toGerm haV)) g E hEV (resolvent a)
-    (fun _ hw ↦ Φ.toGerm_cauchyKernel hid haV (hEV.notMem_of_mem_left hw)) N
-
-end Algebraic
 
 section BanachAlgebra
 
@@ -151,7 +119,7 @@ theorem eq_holomorphicCalculus_of_forall_continuous {a : A}
   apply holomorphicGerms.algHom_ext
   intro U haU f
   obtain ⟨V, E, Γ, hV, haV, hVU, hEU, hEV, hΓ, hn, hw, hint⟩ :=
-    (spectrum.isCompact a).exists_open_segments_cycle_windingNumber_eq_one.{u} U.isOpen haU
+    (spectrum.isCompact ℂ a).exists_open_segments_cycle_windingNumber_eq_one.{u} U.isOpen haU
   let V' : Opens ℂ := ⟨V, hV⟩
   have h1 : Tendsto (fun N ↦ Φ (toGerm (U := V') haV (cauchyRiemannSum V' (extend f) E hEV N)))
       atTop (𝓝 (Φ (toGerm haU f))) := by

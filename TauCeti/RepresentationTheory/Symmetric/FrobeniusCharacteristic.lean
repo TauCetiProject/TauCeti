@@ -108,20 +108,20 @@ theorem schurPolyBasis_repr_frobeniusCharacteristic (h : n ≤ Fintype.card σ)
     (f : ClassFunction ℂ (Equiv.Perm (Fin n)))
     (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     (schurPolyBasis σ ℂ n).repr (frobeniusCharacteristic σ n h f) μ =
-      ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ.1).ρ) f := by
+      ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ.val).ρ) f := by
   let e := partitionEquivSchurIndex σ n h
-  have hμ : e μ.1 = μ := by
+  have hμ : e μ.val = μ := by
     apply Subtype.ext
-    exact partitionEquivSchurIndex_apply σ n h μ.1
+    exact partitionEquivSchurIndex_apply σ n h μ.val
   conv_lhs => rw [← hμ]
   rw [frobeniusCharacteristic]
   have hrepr := Module.Basis.repr_reindex_apply (schurPolyBasis σ ℂ n)
-    ((spechtCharacterBasis n).equiv (schurPolyBasis σ ℂ n) e f) e.symm μ.1
+    ((spechtCharacterBasis n).equiv (schurPolyBasis σ ℂ n) e f) e.symm μ.val
   simp only [Equiv.symm_symm] at hrepr
   rw [← hrepr]
   rw [← Module.Basis.map_equiv (spechtCharacterBasis n) (schurPolyBasis σ ℂ n) e]
   simp only [Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
-  exact spechtCharacterBasis_repr f μ.1
+  exact spechtCharacterBasis_repr f μ.val
 
 /-- The Schur coefficient of a class function under the Frobenius characteristic is its
 character pairing with the corresponding Specht character. This gives an explicit formula for
@@ -275,7 +275,7 @@ the Hall inner product, over every commutative ring.  This is Frobenius's formul
 theorem hallInner_psumPart_schurPolyBasis (ρ : n.Partition)
     (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     hallInner σ R n ⟨psumPart σ R ρ, psumPart_mem_symmetricHomogeneousSubmodule R ρ⟩
-      (schurPolyBasis σ R n μ) = spechtCharValue μ.1 ρ := by
+      (schurPolyBasis σ R n μ) = spechtCharValue μ.val ρ := by
   rw [hallInner_schurPolyBasis_right]
   refine schurPolyBasis_repr_of_coe_eq_sum (c := fun l => (spechtCharValue l ρ : R)) ?_ μ
   simp only [Int.cast_smul_eq_zsmul]
@@ -296,7 +296,7 @@ theorem hallInner_psumPart (h : n ≤ Fintype.card σ) (ρ ρ' : n.Partition) :
   rw [hallInner_apply]
   simp only [← hallInner_schurPolyBasis_right, hallInner_psumPart_schurPolyBasis]
   rw [Fintype.sum_equiv (Equiv.subtypeUnivEquiv hcard)
-    (fun μ => (spechtCharValue μ.1 ρ : R) * spechtCharValue μ.1 ρ')
+    (fun μ => (spechtCharValue μ.val ρ : R) * spechtCharValue μ.val ρ')
     (fun μ => (spechtCharValue μ ρ : R) * spechtCharValue μ ρ') fun _ => rfl]
   have hc := congrArg (Int.cast : ℤ → R) (symmetricCharacterTable_column_orthogonality ρ ρ')
   push_cast [symmetricCharacterTable_apply] at hc

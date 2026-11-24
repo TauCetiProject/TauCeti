@@ -62,11 +62,11 @@ variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [Nontri
 /-- Every von Neumann bounded set of continuous semilinear maps from a barrelled space into a
 polynormable space is uniformly equicontinuous. -/
 protected theorem IsVonNBounded.uniformEquicontinuous {S : Set (E →SL[σ₁₂] F)}
-    (hS : IsVonNBounded 𝕜₂ S) : UniformEquicontinuous fun f : S ↦ (f.1 : E → F) := by
-  refine PolynormableSpace.banach_steinhaus (𝓕 := fun f : S ↦ f.1) fun x ↦ ?_
+    (hS : IsVonNBounded 𝕜₂ S) : UniformEquicontinuous fun f : S ↦ (f.val : E → F) := by
+  refine PolynormableSpace.banach_steinhaus (𝓕 := fun f : S ↦ f.val) fun x ↦ ?_
   refine (ContinuousLinearMap.isVonNBounded_image2_apply hS (isVonNBounded_singleton x)).subset ?_
   rintro _ ⟨f, rfl⟩
-  exact ⟨f.1, f.2, x, Set.mem_singleton x, rfl⟩
+  exact ⟨f.val, f.property, x, Set.mem_singleton x, rfl⟩
 
 end Uniform
 
@@ -81,7 +81,7 @@ variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [Nontri
 /-- Every von Neumann bounded set of continuous semilinear maps from a barrelled topological
 vector space into a uniformly topologized polynormable space is equicontinuous. -/
 protected theorem IsVonNBounded.equicontinuous {S : Set (E →SL[σ₁₂] F)}
-    (hS : IsVonNBounded 𝕜₂ S) : Equicontinuous fun f : S ↦ (f.1 : E → F) := by
+    (hS : IsVonNBounded 𝕜₂ S) : Equicontinuous fun f : S ↦ (f.val : E → F) := by
   let _ : UniformSpace E := IsTopologicalAddGroup.rightUniformSpace E
   have _ : IsUniformAddGroup E := isUniformAddGroup_of_addCommGroup
   exact hS.uniformEquicontinuous.equicontinuous

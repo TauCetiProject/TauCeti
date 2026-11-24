@@ -208,7 +208,7 @@ theorem tames_puncturedSphereAlmostComplex (h₀ : ω.Compatible J₀) (w : ℂ)
     ω.Tames (puncturedSphereAlmostComplex h₀ c a J Jout w x) := by
   rw [puncturedSphereAlmostComplex_def]
   split_ifs
-  exacts [(h₀.cayleyEquiv.symm _).2, h₀.tames]
+  exacts [(h₀.cayleyEquiv.symm _).property, h₀.tames]
 
 /-- Where the Cayley coordinate lies in the Cayley ball, it is the Cayley transform of the
 structure. -/

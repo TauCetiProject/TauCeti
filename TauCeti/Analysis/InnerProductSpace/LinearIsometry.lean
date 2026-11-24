@@ -98,7 +98,7 @@ of `v` to the orthogonal complement of its image `w`. -/
 def orthogonalComplementSingletonMap (f : E →ₗᵢ[𝕜] F) {v : E} {w : F} (hw : f v = w) :
     (𝕜 ∙ v)ᗮ →ₗᵢ[𝕜] (𝕜 ∙ w)ᗮ where
   toLinearMap := (f.toLinearMap.domRestrict (𝕜 ∙ v)ᗮ).codRestrict (𝕜 ∙ w)ᗮ fun y ↦
-    f.map_mem_orthogonal_singleton hw y.2
+    f.map_mem_orthogonal_singleton hw y.property
   norm_map' y := f.norm_map y
 
 @[simp]

@@ -69,13 +69,11 @@ private theorem diagonalStraightening_mul_graphFrame_eq_mul {A : Matrix (n ⊕ n
     diagonalStraightening n * graphFrame A =
       (1 + Complex.I • (symplecticCayley A).map ((↑) : ℝ → ℂ)) *
         ((√2 : ℝ)⁻¹ • (1 + A)).map ((↑) : ℝ → ℂ) := by
-  have hmul : ((symplecticCayley A * (1 + A)).map ((↑) : ℝ → ℂ)) =
-      (symplecticCayley A).map (↑) * (1 + A).map (↑) := Matrix.map_mul (f := Complex.ofRealHom)
   have hsmul : ((√2 : ℝ)⁻¹ • (1 + A)).map ((↑) : ℝ → ℂ) =
       ((√2 : ℝ) : ℂ)⁻¹ • (1 + A).map ((↑) : ℝ → ℂ) := by
     ext i j
     simp [mul_add]
-  rw [diagonalStraightening_mul_graphFrame, ← symplecticCayley_mul_one_add h, hmul, hsmul,
+  rw [diagonalStraightening_mul_graphFrame, ← symplecticCayley_mul_one_add h, map_ofReal_mul, hsmul,
     Matrix.mul_smul, Matrix.add_mul, Matrix.one_mul, Matrix.smul_mul]
 
 namespace GLSymplectic
@@ -91,13 +89,13 @@ theorem coe_souriau_graphUnitaryFrame_eq_cayley {A : GLSymplectic n ℝ}
       cayley ((symplecticCayley ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map (↑)) := by
   set M : Matrix (n ⊕ n) (n ⊕ n) ℝ := ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
   have hC : (symplecticCayley M).IsHermitian :=
-    isHermitian_iff_isSymm.2 (isSymm_symplecticCayley (mem_iff_mem_symplecticGroup.1 A.2) h)
+    isHermitian_iff_isSymm.2 (isSymm_symplecticCayley (mem_iff_mem_symplecticGroup.1 A.property) h)
   set N : Matrix (n ⊕ n) (n ⊕ n) ℝ :=
     ((graphFrame M)ᴴ * graphFrame M).map Complex.re ^ (-(1 / 2) : ℝ)
   refine souriau_eq_cayley_of_coe_eq_mul hC (M := (√2 : ℝ)⁻¹ • (1 + M) * N) ?_
   rw [coe_graphUnitaryFrame, diagonalStraightening_mul_graphFrame_eq_mul h, Matrix.mul_assoc]
   exact congrArg ((1 + Complex.I • (symplecticCayley M).map ((↑) : ℝ → ℂ)) * ·)
-    (Matrix.map_mul (f := Complex.ofRealHom)).symm
+    (map_ofReal_mul _ _).symm
 
 /-- **The Conley–Zehnder index away from `-1`.** For a path `γ` of symplectic matrices none of
 which has the eigenvalue `-1`, the Conley–Zehnder index is minus half the change of the signature
@@ -110,7 +108,7 @@ theorem conleyZehnderIndex_eq_neg_signature_symplecticCayley_sub_div_two {A B : 
         signature (symplecticCayley ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) : ℝ) /
           2 := by
   set m : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t => ((γ t : GL (n ⊕ n) ℝ) : _)
-  have hmc : Continuous m := Units.continuous_val.comp (continuous_subtype_val.comp γ.continuous)
+  have hmc : Continuous m := Units.continuous_val.comp (continuous_subtypeVal.comp γ.continuous)
   have hc : Continuous fun t => symplecticCayley (m t) := by
     simp only [symplecticCayley_def]
     refine continuous_iff_continuousAt.2 fun t => ?_
@@ -119,7 +117,7 @@ theorem conleyZehnderIndex_eq_neg_signature_symplecticCayley_sub_div_two {A B : 
     exact ((continuous_const.mul (continuous_const.sub hmc)).continuousAt).mul hinv
   rw [conleyZehnderIndex_def, maslovIndex_eq_signature_sub_of_souriau_eq_cayley _ hc
     (fun t => isHermitian_iff_isSymm.2
-      (isSymm_symplecticCayley (mem_iff_mem_symplecticGroup.1 (γ t).2) (hγ t)))
+      (isSymm_symplecticCayley (mem_iff_mem_symplecticGroup.1 (γ t).property) (hγ t)))
     (fun t => coe_souriau_graphUnitaryFrame_eq_cayley (hγ t))]
   simp only [m, Path.source, Path.target]
   ring

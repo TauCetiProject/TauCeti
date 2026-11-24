@@ -35,8 +35,8 @@ example {m : ℕ} [NeZero m] (G : SimpleGraph (Fin m)) [DecidableRel G.Adj] :
     ∃ P : Finpartition (univ : Finset (Fin m)),
       #P.parts ≤ 16 ∧
         cutDist (finiteGraphGraphon G)
-          (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.1 B.1)
-            (fun A B => G.edgeDensityIcc_comm A.1 B.1)) ≤ 3 / 4 := by
+          (stepGraphonOfFinpartition P (fun A B => G.edgeDensityIcc A.val B.val)
+            (fun A B => G.edgeDensityIcc_comm A.val B.val)) ≤ 3 / 4 := by
   obtain ⟨P, hcard, -, hdist⟩ :=
     G.frieze_kannan_stepGraphonOfFinpartition (ε := 3 / 4) (by norm_num)
   have hceil : ⌈(1 : ℝ) / (3 / 4) ^ 2⌉₊ = 2 := by
