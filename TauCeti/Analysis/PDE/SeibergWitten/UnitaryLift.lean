@@ -14,7 +14,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # The canonical `Spinᶜ` lift of the unitary group
