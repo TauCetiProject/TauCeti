@@ -167,7 +167,7 @@ of variables it classifies. -/
 theorem strictArrowRing_ringHom_ext {k k' : StrictArrowRing →+* R}
     (h₁ : k.comp strictLeftUnit = k'.comp strictLeftUnit)
     (h₂ : HeisenbergGroup.map k strictChange = HeisenbergGroup.map k' strictChange) : k = k' :=
-  (strictArrowEquiv R).injective (Prod.ext (by rw [strictArrowEquiv_apply, h₁]; rfl) h₂)
+  (strictArrowEquiv R).injective (Prod.ext (by simp only [strictArrowEquiv_apply, h₁]) h₂)
 
 /-! ### The strict right unit -/
 
@@ -335,6 +335,16 @@ theorem strictCoproduct_comp_strictRightUnit :
     map_comp_strictRightUnit, heisenbergGroupMap_strictCoproduct_strictChange, map_mul, mul_smul,
     strictCoproduct_comp_strictLeftUnit]
 
+@[simp]
+theorem strictCoproduct_strictLeftUnit (a : MvPolynomial Coeff ℤ) :
+    strictCoproduct (strictLeftUnit a) = strictLeft (strictLeftUnit a) :=
+  RingHom.congr_fun strictCoproduct_comp_strictLeftUnit a
+
+@[simp]
+theorem strictCoproduct_strictRightUnit (a : MvPolynomial Coeff ℤ) :
+    strictCoproduct (strictRightUnit a) = strictRight (strictRightUnit a) :=
+  RingHom.congr_fun strictCoproduct_comp_strictRightUnit a
+
 /-- `Δa = a` on the coefficients. -/
 @[simp]
 theorem strictCoproduct_X_inl (i : Coeff) : strictCoproduct (X (.inl i)) = X (.inl i) := by
@@ -365,7 +375,7 @@ theorem strictCoproduct_X_inr_two :
   simp only [HeisenbergGroup.map_apply, HeisenbergGroup.mul_z, strictChange_x, strictChange_y,
     strictChange_z] at this
   rw [this]
-  simp
+  simp only [strictRight_X_inr, strictLeft_X, Sum.map_inr]
   ring
 
 /-- The map `ε ⊗ id : A[r, s, t] ⊗_A A[r, s, t] →+* A[r, s, t]`, forgetting the first arrow by
@@ -378,23 +388,49 @@ sending its coordinates to `0`. -/
 def strictCounitRight : StrictPairRing →+* StrictArrowRing :=
   (aeval (Sum.elim (fun i ↦ X (.inl i)) (Sum.elim (fun j ↦ X (.inr j)) 0))).toRingHom
 
+@[simp]
+theorem strictCounitLeft_X_inl (i : Coeff) : strictCounitLeft (X (.inl i)) = X (.inl i) := by
+  simp [strictCounitLeft]
+
+@[simp]
+theorem strictCounitLeft_X_inr_inl (j : Fin 3) : strictCounitLeft (X (.inr (.inl j))) = 0 := by
+  simp [strictCounitLeft]
+
+@[simp]
+theorem strictCounitLeft_X_inr_inr (j : Fin 3) :
+    strictCounitLeft (X (.inr (.inr j))) = X (.inr j) := by
+  simp [strictCounitLeft]
+
+@[simp]
+theorem strictCounitRight_X_inl (i : Coeff) : strictCounitRight (X (.inl i)) = X (.inl i) := by
+  simp [strictCounitRight]
+
+@[simp]
+theorem strictCounitRight_X_inr_inl (j : Fin 3) :
+    strictCounitRight (X (.inr (.inl j))) = X (.inr j) := by
+  simp [strictCounitRight]
+
+@[simp]
+theorem strictCounitRight_X_inr_inr (j : Fin 3) : strictCounitRight (X (.inr (.inr j))) = 0 := by
+  simp [strictCounitRight]
+
 /-- `(ε ⊗ id)` restricts to `η_L ε` on the left factor. -/
 theorem strictCounitLeft_comp_strictLeft :
     strictCounitLeft.comp strictLeft = strictLeftUnit.comp strictCounit :=
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
-    rcases i with i | j <;> simp [strictCounitLeft]
+    rcases i with i | j <;> simp
 
 /-- `(ε ⊗ id)` restricts to the identity on the right factor. -/
 theorem strictCounitLeft_comp_strictRight : strictCounitLeft.comp strictRight = RingHom.id _ :=
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
     rcases i with i | j
     · simpa using RingHom.congr_fun strictCounitLeft_comp_strictLeft (strictRightUnit (X i))
-    · simp [strictCounitLeft]
+    · simp
 
 /-- `(id ⊗ ε)` restricts to the identity on the left factor. -/
 theorem strictCounitRight_comp_strictLeft : strictCounitRight.comp strictLeft = RingHom.id _ :=
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
-    rcases i with i | j <;> simp [strictCounitRight]
+    rcases i with i | j <;> simp
 
 /-- `(id ⊗ ε)` restricts to `η_R ε` on the right factor. -/
 theorem strictCounitRight_comp_strictRight :
@@ -402,16 +438,16 @@ theorem strictCounitRight_comp_strictRight :
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
     rcases i with i | j
     · simpa using RingHom.congr_fun strictCounitRight_comp_strictLeft (strictRightUnit (X i))
-    · simp [strictCounitRight]
+    · simp
 
 /-- **The left counit law** `(ε ⊗ id) Δ = id`. -/
 theorem strictCounitLeft_comp_strictCoproduct :
     strictCounitLeft.comp strictCoproduct = RingHom.id _ :=
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
     rcases i with i | j
-    · simp [strictCounitLeft]
+    · simp
     · fin_cases j <;>
-        simp [strictCounitLeft, strictCoproduct_X_inr_zero, strictCoproduct_X_inr_one,
+        simp [strictCoproduct_X_inr_zero, strictCoproduct_X_inr_one,
           strictCoproduct_X_inr_two]
 
 /-- **The right counit law** `(id ⊗ ε) Δ = id`. -/
@@ -419,9 +455,9 @@ theorem strictCounitRight_comp_strictCoproduct :
     strictCounitRight.comp strictCoproduct = RingHom.id _ :=
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
     rcases i with i | j
-    · simp [strictCounitRight]
+    · simp
     · fin_cases j <;>
-        simp [strictCounitRight, strictCoproduct_X_inr_zero, strictCoproduct_X_inr_one,
+        simp [strictCoproduct_X_inr_zero, strictCoproduct_X_inr_one,
           strictCoproduct_X_inr_two]
 
 /-! ### Coassociativity -/
@@ -446,15 +482,46 @@ def strictCoproductRight : StrictPairRing →+* StrictTripleRing :=
   (aeval (Sum.elim (fun i ↦ X (.inl i)) (Sum.elim (fun j ↦ X (.inr (.inl j)))
     fun j ↦ rename (Sum.map id Sum.inr) (strictCoproduct (X (.inr j)))))).toRingHom
 
+@[simp]
+theorem strictCoproductLeft_X_inl (i : Coeff) : strictCoproductLeft (X (.inl i)) = X (.inl i) := by
+  simp [strictCoproductLeft]
+
+@[simp]
+theorem strictCoproductLeft_X_inr_inl (j : Fin 3) :
+    strictCoproductLeft (X (.inr (.inl j))) =
+      rename (Sum.map id (Sum.map id Sum.inl)) (strictCoproduct (X (.inr j))) := by
+  simp [strictCoproductLeft]
+
+@[simp]
+theorem strictCoproductLeft_X_inr_inr (j : Fin 3) :
+    strictCoproductLeft (X (.inr (.inr j))) = X (.inr (.inr (.inr j))) := by
+  simp [strictCoproductLeft]
+
+@[simp]
+theorem strictCoproductRight_X_inl (i : Coeff) :
+    strictCoproductRight (X (.inl i)) = X (.inl i) := by
+  simp [strictCoproductRight]
+
+@[simp]
+theorem strictCoproductRight_X_inr_inl (j : Fin 3) :
+    strictCoproductRight (X (.inr (.inl j))) = X (.inr (.inl j)) := by
+  simp [strictCoproductRight]
+
+@[simp]
+theorem strictCoproductRight_X_inr_inr (j : Fin 3) :
+    strictCoproductRight (X (.inr (.inr j))) =
+      rename (Sum.map id Sum.inr) (strictCoproduct (X (.inr j))) := by
+  simp [strictCoproductRight]
+
 /-- **Coassociativity** `(Δ ⊗ id) Δ = (id ⊗ Δ) Δ`: composition of strict arrows is associative.
 On `t` both sides are `t₁ + t₂ + t₃ + s₁r₂ + s₁r₃ + s₂r₃`. -/
 theorem strictCoproduct_coassoc :
     strictCoproductLeft.comp strictCoproduct = strictCoproductRight.comp strictCoproduct :=
   MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
     rcases i with i | j
-    · simp [strictCoproductLeft, strictCoproductRight]
+    · simp
     · fin_cases j <;>
-        simp [strictCoproductLeft, strictCoproductRight, strictCoproduct_X_inr_zero,
+        simp [strictCoproduct_X_inr_zero,
           strictCoproduct_X_inr_one, strictCoproduct_X_inr_two] <;> ring
 
 /-! ### The strict conjugation -/
@@ -509,6 +576,26 @@ theorem strictCounit_comp_strictConjugation :
       heisenbergGroupMap_strictConjugation_strictChange, map_inv,
       heisenbergGroupMap_strictCounit_strictChange, inv_one]
 
+@[simp]
+theorem strictConjugation_strictLeftUnit (a : MvPolynomial Coeff ℤ) :
+    strictConjugation (strictLeftUnit a) = strictRightUnit a :=
+  RingHom.congr_fun strictConjugation_comp_strictLeftUnit a
+
+@[simp]
+theorem strictConjugation_strictRightUnit (a : MvPolynomial Coeff ℤ) :
+    strictConjugation (strictRightUnit a) = strictLeftUnit a :=
+  RingHom.congr_fun strictConjugation_comp_strictRightUnit a
+
+@[simp]
+theorem strictConjugation_strictConjugation (x : StrictArrowRing) :
+    strictConjugation (strictConjugation x) = x :=
+  RingHom.congr_fun strictConjugation_comp_strictConjugation x
+
+@[simp]
+theorem strictCounit_strictConjugation (x : StrictArrowRing) :
+    strictCounit (strictConjugation x) = strictCounit x :=
+  RingHom.congr_fun strictCounit_comp_strictConjugation x
+
 /-- `c(r) = -r`. -/
 theorem strictConjugation_X_inr_zero : strictConjugation (X (.inr 0)) = -X (.inr 0) := by
   simpa using congrArg HeisenbergGroup.x heisenbergGroupMap_strictConjugation_strictChange
@@ -553,32 +640,33 @@ theorem isWeightedHomogeneous_strictRightUnit_X (i : Coeff) :
 to an element of weight `k` of `A[r, s, t]`. -/
 theorem isWeightedHomogeneous_strictRightUnit {k : ℕ} {f : MvPolynomial Coeff ℤ}
     (hf : f.IsWeightedHomogeneous coefficientWeight k) :
-    (strictRightUnit f).IsWeightedHomogeneous strictWeight k := by
-  have h : strictRightUnit f = aeval (fun i ↦ strictRightUnit (X i)) f :=
-    DFunLike.congr_fun (aeval_unique strictRightUnit.toIntAlgHom) f
-  rw [h]
-  exact hf.aeval isWeightedHomogeneous_strictRightUnit_X
+    (strictRightUnit f).IsWeightedHomogeneous strictWeight k :=
+  have := WeightedHomogeneousSubmodule.gradedMonoid (R := ℤ) (w := strictWeight)
+  (WeightedHomogeneousSubmodule.map_mem_iff coefficientWeight
+    (weightedHomogeneousSubmodule ℤ strictWeight) (.id ℕ) strictRightUnit).2
+      isWeightedHomogeneous_strictRightUnit_X hf
 
 /-- The strict counit is graded. -/
 theorem isWeightedHomogeneous_strictCounit {k : ℕ} {f : StrictArrowRing}
     (hf : f.IsWeightedHomogeneous strictWeight k) :
     (strictCounit f).IsWeightedHomogeneous coefficientWeight k := by
-  rw [strictCounit, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-  refine hf.aeval fun i ↦ ?_
+  have := WeightedHomogeneousSubmodule.gradedMonoid (R := ℤ) (w := coefficientWeight)
+  refine (WeightedHomogeneousSubmodule.map_mem_iff strictWeight
+    (weightedHomogeneousSubmodule ℤ coefficientWeight) (.id ℕ) strictCounit).2 (fun i ↦ ?_) hf
   rcases i with i | j
-  · exact isWeightedHomogeneous_X ℤ coefficientWeight i
-  · exact isWeightedHomogeneous_zero ℤ coefficientWeight _
+  · simpa [strictWeight] using isWeightedHomogeneous_X ℤ coefficientWeight i
+  · simp
 
 /-- **The strict coproduct is graded**: it carries an element of weight `k` of `A[r, s, t]` to an
 element of weight `k` of `A[r₁, s₁, t₁, r₂, s₂, t₂]`. -/
 theorem isWeightedHomogeneous_strictCoproduct {k : ℕ} {f : StrictArrowRing}
     (hf : f.IsWeightedHomogeneous strictWeight k) :
     (strictCoproduct f).IsWeightedHomogeneous strictPairWeight k := by
-  have h : strictCoproduct f = aeval (fun i ↦ strictCoproduct (X i)) f :=
-    DFunLike.congr_fun (aeval_unique strictCoproduct.toIntAlgHom) f
-  rw [h]
-  refine hf.aeval fun i ↦
-    isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq (pow_right_injective₀ two_pos (by norm_num)) ?_
+  have := WeightedHomogeneousSubmodule.gradedMonoid (R := ℤ) (w := strictPairWeight)
+  refine (WeightedHomogeneousSubmodule.map_mem_iff strictWeight
+    (weightedHomogeneousSubmodule ℤ strictPairWeight) (.id ℕ) strictCoproduct).2 (fun i ↦
+      isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq (pow_right_injective₀ two_pos (by norm_num))
+        ?_) hf
   rcases i with i | j
   · simp [strictWeight, strictPairWeight]
   · fin_cases j <;>
@@ -589,13 +677,12 @@ theorem isWeightedHomogeneous_strictCoproduct {k : ℕ} {f : StrictArrowRing}
 theorem isWeightedHomogeneous_strictConjugation {k : ℕ} {f : StrictArrowRing}
     (hf : f.IsWeightedHomogeneous strictWeight k) :
     (strictConjugation f).IsWeightedHomogeneous strictWeight k := by
-  have h : strictConjugation f = aeval (fun i ↦ strictConjugation (X i)) f :=
-    DFunLike.congr_fun (aeval_unique strictConjugation.toIntAlgHom) f
-  rw [h]
-  refine hf.aeval fun i ↦ ?_
+  have := WeightedHomogeneousSubmodule.gradedMonoid (R := ℤ) (w := strictWeight)
+  refine (WeightedHomogeneousSubmodule.map_mem_iff strictWeight
+    (weightedHomogeneousSubmodule ℤ strictWeight) (.id ℕ) strictConjugation).2 (fun i ↦ ?_) hf
   rcases i with i | j
-  · have := RingHom.congr_fun strictConjugation_comp_strictLeftUnit (X i)
-    simp only [RingHom.comp_apply, strictLeftUnit_apply, rename_X] at this
+  · have := strictConjugation_strictLeftUnit (X i)
+    rw [strictLeftUnit_X] at this
     rw [this]
     exact isWeightedHomogeneous_strictRightUnit_X i
   · refine isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq
@@ -617,6 +704,11 @@ theorem toStrict_comp_algebraMap :
     toStrict.comp (algebraMap (MvPolynomial Coeff ℤ) ArrowRing) = strictLeftUnit :=
   lift_comp_algebraMap _
 
+@[simp]
+theorem toStrict_algebraMap (a : MvPolynomial Coeff ℤ) :
+    toStrict (algebraMap (MvPolynomial Coeff ℤ) ArrowRing a) = strictLeftUnit a :=
+  RingHom.congr_fun toStrict_comp_algebraMap a
+
 /-- `toStrict` sends the universal change of variables `(u, r, s, t)` to `(1, r, s, t)`. -/
 @[simp]
 theorem universalChange_map_toStrict :
@@ -631,6 +723,11 @@ theorem toStrict_comp_rightUnit : toStrict.comp rightUnit = strictRightUnit := b
   rw [map_comp_rightUnit, universalChange_map_toStrict, toStrict_comp_algebraMap,
     map_strictRightUnit]
 
+@[simp]
+theorem toStrict_rightUnit (a : MvPolynomial Coeff ℤ) :
+    toStrict (rightUnit a) = strictRightUnit a :=
+  RingHom.congr_fun toStrict_comp_rightUnit a
+
 /-- `toStrict` intertwines the counits. -/
 @[simp]
 theorem strictCounit_comp_toStrict : strictCounit.comp toStrict = counit := by
@@ -640,6 +737,10 @@ theorem strictCounit_comp_toStrict : strictCounit.comp toStrict = counit := by
   · rw [← VariableChange.map_map, universalChange_map_toStrict,
       WeierstrassCurve.VariableChange.map_heisenbergHom,
       heisenbergGroupMap_strictCounit_strictChange, map_one, universalChange_map_counit]
+
+@[simp]
+theorem strictCounit_toStrict (x : ArrowRing) : strictCounit (toStrict x) = counit x :=
+  RingHom.congr_fun strictCounit_comp_toStrict x
 
 /-- `toStrict` intertwines the conjugations. -/
 @[simp]
@@ -699,13 +800,19 @@ theorem toStrictPair_comp_coproduct :
     rw [← h₁, ← h₂]
     ext <;> simp [VariableChange.mul_def]
 
+/-- `toStrict` sends the coordinates `u, r, s, t` of the universal change of variables to
+`1, r, s, t`. -/
+@[simp]
+theorem toStrict_algebraMap_X (i : Fin 4) :
+    toStrict (algebraMap (MvPolynomial (Fin 4) (MvPolynomial Coeff ℤ)) ArrowRing (X i)) =
+      ![1, X (.inr 0), X (.inr 1), X (.inr 2)] i := by
+  fin_cases i <;> simp [toStrict]
+
 /-- `toStrict` sends the scaling coordinate `u` to `1`: the character `u⁻ᵏ` of the Hodge line
 `ω^k` is invisible in `A[r, s, t]` and is recorded instead by the weight `k`. -/
 theorem toStrict_universalChange_u :
     toStrict ((universalChange (MvPolynomial Coeff ℤ)).u : ArrowRing) = 1 := by
-  simpa [-universalChange_map_toStrict] using
-    congrArg (fun C : VariableChange StrictArrowRing ↦ (C.u : StrictArrowRing))
-      universalChange_map_toStrict
+  simp
 
 /-- `toStrict` sends `u⁻¹` to `1`. -/
 @[simp]
@@ -720,11 +827,31 @@ def ofStrict : StrictArrowRing →+* ArrowRing :=
     ![(universalChange (MvPolynomial Coeff ℤ)).r, (universalChange (MvPolynomial Coeff ℤ)).s,
       (universalChange (MvPolynomial Coeff ℤ)).t])).toRingHom
 
+@[simp]
+theorem ofStrict_X_inl (i : Coeff) :
+    ofStrict (X (.inl i)) = algebraMap (MvPolynomial Coeff ℤ) ArrowRing (X i) := by
+  simp [ofStrict]
+
+@[simp]
+theorem ofStrict_X_inr_zero :
+    ofStrict (X (.inr 0)) = (universalChange (MvPolynomial Coeff ℤ)).r := by
+  simp [ofStrict]
+
+@[simp]
+theorem ofStrict_X_inr_one :
+    ofStrict (X (.inr 1)) = (universalChange (MvPolynomial Coeff ℤ)).s := by
+  simp [ofStrict]
+
+@[simp]
+theorem ofStrict_X_inr_two :
+    ofStrict (X (.inr 2)) = (universalChange (MvPolynomial Coeff ℤ)).t := by
+  simp [ofStrict]
+
 /-- `ofStrict` restricts to the left unit of `Γ` on the coefficients. -/
 @[simp]
 theorem ofStrict_comp_strictLeftUnit :
     ofStrict.comp strictLeftUnit = algebraMap (MvPolynomial Coeff ℤ) ArrowRing :=
-  MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by simp [ofStrict]
+  MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by simp
 
 /-- `ofStrict` sends the universal strict change to the coordinates `(r, s, t)` of the universal
 change of variables. -/
@@ -732,7 +859,7 @@ theorem heisenbergGroupMap_ofStrict_strictChange :
     HeisenbergGroup.map ofStrict strictChange =
       ⟨(universalChange (MvPolynomial Coeff ℤ)).r, (universalChange (MvPolynomial Coeff ℤ)).s,
         (universalChange (MvPolynomial Coeff ℤ)).t⟩ := by
-  ext <;> simp [ofStrict]
+  ext <;> simp
 
 /-- `ofStrict` is a section of `toStrict`. -/
 @[simp]
@@ -742,15 +869,15 @@ theorem toStrict_comp_ofStrict : toStrict.comp ofStrict = RingHom.id _ := by
       RingHom.id_comp]
   · rw [HeisenbergGroup.map_comp, MonoidHom.comp_apply, heisenbergGroupMap_ofStrict_strictChange,
       HeisenbergGroup.map_id, MonoidHom.id_apply]
-    have := universalChange_map_toStrict
-    refine HeisenbergGroup.ext ?_ ?_ ?_
-    · simpa [-universalChange_map_toStrict] using congrArg VariableChange.r this
-    · simpa [-universalChange_map_toStrict] using congrArg VariableChange.s this
-    · simpa [-universalChange_map_toStrict] using congrArg VariableChange.t this
+    ext <;> simp
+
+@[simp]
+theorem toStrict_ofStrict (x : StrictArrowRing) : toStrict (ofStrict x) = x :=
+  RingHom.congr_fun toStrict_comp_ofStrict x
 
 /-- `toStrict` is surjective: `A[r, s, t]` is the quotient of `Γ` by `u - 1`. -/
 theorem toStrict_surjective : Function.Surjective toStrict :=
-  fun x ↦ ⟨ofStrict x, RingHom.congr_fun toStrict_comp_ofStrict x⟩
+  fun x ↦ ⟨ofStrict x, toStrict_ofStrict x⟩
 
 /-- **The right unit of `Γ` through the strict right unit.** For `f` weighted homogeneous of weight
 `k`, `η_R(f) = u⁻ᵏ η_R'(f)`, where `η_R'` is the strict right unit followed by `ofStrict`. This is
@@ -784,7 +911,7 @@ theorem rightUnit_eq_of_isWeightedHomogeneous {k : ℕ} {f : MvPolynomial Coeff 
   have hscale {S : Type} [CommRing S] (W' : _root_.WeierstrassCurve S) (v : Sˣ) :
       ((⟨v, 0, 0, 0⟩ : VariableChange S) • W').specialize f = ↑v⁻¹ ^ k * W'.specialize f := by
     rw [specialize_mk_smul, hf.aeval_pow_mul]
-    exact congrArg _ (DFunLike.congr_fun (aeval_unique W'.specialize.toIntAlgHom) f).symm
+    exact congrArg _ (eval₂Hom_X _ W'.specialize f)
   rw [hR, hC, WeierstrassCurve.VariableChange.scaling_apply, hscale, ← RingHom.comp_apply,
     hstrict]
 
