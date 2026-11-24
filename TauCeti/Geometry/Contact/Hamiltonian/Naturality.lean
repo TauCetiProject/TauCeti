@@ -75,15 +75,6 @@ variable {E HM M F H' N : Type*}
   {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
   {α : SmoothForm J N ℝ 1} {β : SmoothForm I M ℝ 1} {f : M → N} {u : M → ℝ}
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [IsManifold J ∞ N] in
-/-- Dividing a function differentiable on `N`, composed with `f`, by a nowhere-zero `C¹`
-multiplier gives a differentiable function. -/
-private theorem mdifferentiable_comp_div (hf : MDifferentiable I J f)
-    (hu : ContMDiff I 𝓘(ℝ) 1 u) (hu₀ : ∀ x, u x ≠ 0) {H : N → ℝ}
-    (hH : MDifferentiable J 𝓘(ℝ) H) : MDifferentiable I 𝓘(ℝ) ((H ∘ f) / u) := by
-  rw [div_eq_mul_inv]
-  exact (hH.comp hf).mul ((hu.mdifferentiable one_ne_zero).inv hu₀)
-
 omit [TopologicalSpace M] [TopologicalSpace N] in
 /-- Multiplying back by the nowhere-zero multiplier recovers the composite. -/
 private theorem mul_comp_div (hu₀ : ∀ x, u x ≠ 0) (H : N → ℝ) : u * ((H ∘ f) / u) = H ∘ f :=
@@ -148,7 +139,8 @@ theorem mfderiv_contactHamiltonianVectorField_comp_div {H : N → ℝ}
       α.contactHamiltonianVectorField H (f x) := by
   have hβ := (isContactForm_iff_of_eq_smul hu hu₀ hfα).1 (hα.mpullback f hf hdf)
   rw [← hβ.contactHamiltonianVectorField_of_eq_smul hu hu₀ hfα
-      (mdifferentiable_comp_div (hf.mdifferentiable (by simp)) hu hu₀ hH), mul_comp_div hu₀]
+      ((hH.comp (hf.mdifferentiable (by simp))).div (hu.mdifferentiable one_ne_zero) hu₀),
+    mul_comp_div hu₀]
   exact hα.mfderiv_contactHamiltonianVectorField_mpullback hf hdf (hH (f x))
 
 /-- Let `f` be a smooth map with bijective differentials pulling a contact form `α` back to
@@ -169,8 +161,9 @@ theorem jacobiBracket_comp_div {g h : N → ℝ} (hg : MDifferentiable J 𝓘(�
     β.jacobiBracket ((g ∘ f) / u) ((h ∘ f) / u) x = α.jacobiBracket g h (f x) / u x := by
   have hβ := (isContactForm_iff_of_eq_smul hu hu₀ hfα).1 (hα.mpullback f hf hdf)
   have hfd : MDifferentiable I J f := hf.mdifferentiable (by simp)
-  have h := hβ.jacobiBracket_of_eq_smul hu hu₀ hfα (mdifferentiable_comp_div hfd hu hu₀ hg)
-    (mdifferentiable_comp_div hfd hu hu₀ hh) x
+  have hu' := hu.mdifferentiable one_ne_zero
+  have h := hβ.jacobiBracket_of_eq_smul hu hu₀ hfα ((hg.comp hfd).div hu' hu₀)
+    ((hh.comp hfd).div hu' hu₀) x
   rw [mul_comp_div hu₀, mul_comp_div hu₀,
     hα.jacobiBracket_mpullback hf hdf (hg (f x)) (hh (f x))] at h
   rw [h, mul_div_cancel_left₀ _ (hu₀ x)]
@@ -260,7 +253,7 @@ theorem mfderiv_reebVectorField_innerProductContactForm_of_coe_eq {c : ℝ} (hc 
       c • (innerProductContactForm V).reebVectorField (e x) :=
   (isContactForm_innerProductContactForm V).mfderiv_reebVectorField_of_mpullback_eq_const_smul
     e.contMDiff (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) hc (fun y ↦ by
-      rw [SmoothForm.coe_mpullback, he, mpullback_innerProductContactForm_smul,
-        SmoothForm.smul_toRoughForm, Pi.smul_apply]) x
+      rw [mpullback_innerProductContactForm_of_coe_eq he, SmoothForm.smul_toRoughForm,
+        Pi.smul_apply]) x
 
 end TauCeti
