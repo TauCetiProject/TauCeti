@@ -157,9 +157,9 @@ def closedNonnegCone (he : IsOrderUnitNorm e) : AddSubmonoid (OrderUnitCompletio
 
 private theorem mem_closedNonnegCone_iff {x : OrderUnitCompletion he} :
     x ∈ closedNonnegCone he ↔ x ∈ closure (coe he '' {a : E | 0 ≤ a}) := by
-  rw [closedNonnegCone, ← SetLike.mem_coe, AddSubmonoid.coe_topologicalClosure,
-    AddSubmonoid.coe_map, AddSubmonoid.coe_nonneg]
-  rfl
+  simp only [closedNonnegCone, ← SetLike.mem_coe, AddSubmonoid.coe_topologicalClosure,
+    AddSubmonoid.coe_map, AddSubmonoid.coe_nonneg, Set.Ici_def, LinearMap.toAddMonoidHom_coe,
+    LinearIsometry.coe_toLinearMap]
 
 private theorem coe_mem_closedNonnegCone {a : E} (ha : 0 ≤ a) :
     coe he a ∈ closedNonnegCone he :=
@@ -239,13 +239,14 @@ theorem le_iff (x y : OrderUnitCompletion he) :
     x ≤ y ↔ y.toCompletion - x.toCompletion ∈
       closure (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) := by
   rw [le_iff_mem_closedNonnegCone, mem_closedNonnegCone_iff]
-  have himg : (toCompletionₗᵢ he).toHomeomorph '' (coe he '' {a : E | 0 ≤ a}) =
+  have hcl :=
+    (toCompletionₗᵢ he).isometry.isUniformInducing.isInducing.closure_eq_preimage_closure_image
+      (coe he '' {a : E | 0 ≤ a})
+  have himg : (toCompletionₗᵢ he) '' (coe he '' {a : E | 0 ≤ a}) =
       (((↑) : E → UniformSpace.Completion E) '' {a : E | 0 ≤ a}) := by
-    ext z
-    simp [toCompletion_coe]
-  rw [← himg, ← Homeomorph.image_closure,
-    ← (toCompletionₗᵢ he).toHomeomorph.injective.mem_set_image,
-    LinearIsometryEquiv.coe_toHomeomorph, toCompletionₗᵢ_apply, toCompletion_sub]
+    simp [Set.image_image]
+  rw [hcl, himg]
+  simp
 
 instance : IsOrderedAddMonoid (OrderUnitCompletion he) where
   add_le_add_left x y h z := by

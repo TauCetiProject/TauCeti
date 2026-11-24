@@ -403,51 +403,79 @@ end IsOrderUnitNorm
 
 namespace OrderUnitCompletion
 
+private theorem monotone_coe_toContinuousLinearMap {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
+    Monotone (coe he).toContinuousLinearMap :=
+  fun _ _ h => (coe_le_coe_iff _ _).mpr h
+
+private def stateRestrict {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
+    OrderUnit.stateSpace (coe he e) → OrderUnit.stateSpace e :=
+  OrderUnit.statePullback (coe he).toContinuousLinearMap
+    (monotone_coe_toContinuousLinearMap he) rfl
+
+private theorem stateRestrict_apply {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
+    (φ : OrderUnit.stateSpace (coe he e)) (a : E) :
+    (stateRestrict he φ).1 a = φ.1 (coe he a) :=
+  OrderUnit.statePullback_apply _ _ _ φ a
+
+private def stateExtend {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
+    (φ : OrderUnit.stateSpace e) : OrderUnit.stateSpace (coe he e) :=
+  ⟨WeakDual.toStrongDual.symm (extend he (WeakDual.toStrongDual φ.1)),
+    monotone_extend φ.2.1, by simp [φ.2.2]⟩
+
+private theorem stateExtend_apply_coe {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
+    (φ : OrderUnit.stateSpace e) (a : E) :
+    (stateExtend he φ).1 (coe he a) = φ.1 a :=
+  extend_coe (WeakDual.toStrongDual φ.1) a
+
+private theorem stateExtend_stateRestrict {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
+    Function.LeftInverse (stateExtend he) (stateRestrict he) := by
+  intro φ
+  apply Subtype.ext
+  apply WeakDual.toStrongDual.injective
+  dsimp only [stateExtend]
+  rw [WeakDual.toStrongDual.apply_symm_apply]
+  exact (extend_unique _ (S := WeakDual.toStrongDual φ.1) fun a =>
+    (stateRestrict_apply he φ a).symm).symm
+
+private theorem stateRestrict_stateExtend {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
+    Function.RightInverse (stateExtend he) (stateRestrict he) := fun φ =>
+  Subtype.ext (DFunLike.ext _ _ fun a =>
+    (stateRestrict_apply he (stateExtend he φ) a).trans (stateExtend_apply_coe he φ a))
+
 /-- Restriction along `coe he` and unique continuous extension define a weak-star homeomorphism
 between the states of `OrderUnitCompletion he` and the states of `E`. -/
 def stateHomeomorph {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Preorder E]
     [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
-    OrderUnit.stateSpace (coe he e) ≃ₜ OrderUnit.stateSpace e := by
-  haveI : CompactSpace (OrderUnit.stateSpace (coe he e)) :=
-    isCompact_iff_compactSpace.mp (isOrderUnitNorm he).isCompact_stateSpace
-  have hmono : Monotone (coe he).toContinuousLinearMap := fun _ _ h => (coe_le_coe_iff _ _).mpr h
-  have hunit : (coe he).toContinuousLinearMap e = coe he e := rfl
-  let toFun : OrderUnit.stateSpace (coe he e) → OrderUnit.stateSpace e :=
-    OrderUnit.statePullback (coe he).toContinuousLinearMap hmono hunit
-  let invFun : OrderUnit.stateSpace e → OrderUnit.stateSpace (coe he e) := fun φ =>
-    ⟨WeakDual.toStrongDual.symm (extend he (WeakDual.toStrongDual φ.1)),
-      monotone_extend φ.2.1, by simp [φ.2.2]⟩
-  have hleft : Function.LeftInverse invFun toFun := by
-    intro φ
-    apply Subtype.ext
-    apply WeakDual.toStrongDual.injective
-    dsimp only [invFun]
-    rw [WeakDual.toStrongDual.apply_symm_apply]
-    exact (extend_unique _ (S := WeakDual.toStrongDual φ.1) fun a => by
-      simp [toFun, OrderUnit.statePullback_apply]).symm
-  have hright : Function.RightInverse invFun toFun := fun φ =>
-    Subtype.ext (DFunLike.ext _ _ fun a => by
-      simp [toFun, invFun, OrderUnit.statePullback_apply, extend_coe])
-  exact Continuous.homeoOfEquivCompactToT2
-    (f := { toFun := toFun, invFun := invFun, left_inv := hleft, right_inv := hright })
-    (OrderUnit.continuous_statePullback (coe he).toContinuousLinearMap hmono hunit)
+    OrderUnit.stateSpace (coe he e) ≃ₜ OrderUnit.stateSpace e :=
+  @Continuous.homeoOfEquivCompactToT2 _ _ _ _
+    (isCompact_iff_compactSpace.mp (isOrderUnitNorm he).isCompact_stateSpace) _
+    { toFun := stateRestrict he
+      invFun := stateExtend he
+      left_inv := stateExtend_stateRestrict he
+      right_inv := stateRestrict_stateExtend he }
+    (OrderUnit.continuous_statePullback (coe he).toContinuousLinearMap
+      (monotone_coe_toContinuousLinearMap he) rfl)
 
 @[simp]
 theorem stateHomeomorph_apply {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
     [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
     (φ : OrderUnit.stateSpace (coe he e)) (a : E) :
-    (stateHomeomorph he φ).1 a = φ.1 (coe he a) := by
-  simp only [stateHomeomorph, ← Homeomorph.coe_toEquiv, Continuous.toEquiv_homeoOfEquivCompactToT2,
-    Equiv.coe_fn_mk]
-  exact OrderUnit.statePullback_apply (coe he).toContinuousLinearMap
-    (fun _ _ h => (coe_le_coe_iff _ _).mpr h) rfl φ a
+    (stateHomeomorph he φ).1 a = φ.1 (coe he a) :=
+  stateRestrict_apply he φ a
 
 @[simp]
 theorem stateHomeomorph_symm_apply_coe {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
     [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
     (φ : OrderUnit.stateSpace e) (a : E) :
     ((stateHomeomorph he).symm φ).1 (coe he a) = φ.1 a :=
-  extend_coe (WeakDual.toStrongDual φ.1) a
+  stateExtend_apply_coe he φ a
 
 end OrderUnitCompletion
 
@@ -548,6 +576,23 @@ section CStarStates
 
 variable (A : Type*) [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
+private theorem im_apply_eq_zero_of_mem_stateSpace {A : Type*} [CStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] {ψ : WeakDual ℂ A} (hψ : ψ ∈ TauCeti.stateSpace A) {a : A}
+    (ha : IsSelfAdjoint a) : (ψ a).im = 0 := by
+  let ψp : A →P[ℂ] ℂ :=
+    { toContinuousLinearMap := WeakDual.toStrongDual ψ
+      monotone' := WeakDual.monotone_toStrongDual_of_map_nonneg
+        fun _ => map_nonneg_of_mem_stateSpace hψ }
+  have hsa : IsSelfAdjoint (ψp.toContinuousLinearMap a) := by
+    rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap]
+    exact ha.map ψp
+  exact (Complex.im_eq_zero_iff_isSelfAdjoint (ψ a)).mpr hsa
+
+private theorem ofReal_re_apply_of_mem_stateSpace {A : Type*} [CStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] {ψ : WeakDual ℂ A} (hψ : ψ ∈ TauCeti.stateSpace A) {a : A}
+    (ha : IsSelfAdjoint a) : ((ψ a).re : ℂ) = ψ a :=
+  Complex.ext rfl (by simp [im_apply_eq_zero_of_mem_stateSpace hψ ha])
+
 /-- Restrict a C⋆-algebra state on `A` (with compatible star order `PartialOrder A` and
 `StarOrderedRing A`) to a real order-unit state on `selfAdjoint A`. -/
 def cstarStateRestrict (ψ : TauCeti.stateSpace A) : OrderUnit.stateSpace (1 : selfAdjoint A) :=
@@ -562,11 +607,12 @@ def cstarStateRestrict (ψ : TauCeti.stateSpace A) : OrderUnit.stateSpace (1 : s
   have hf (x : selfAdjoint A) : f x = (ψ.1 x).re := rfl
   ⟨WeakDual.toStrongDual.symm f,
     fun a b hab => by
-      have hpos : 0 ≤ ψ.1 ((b : A) - (a : A)) :=
-        map_nonneg_of_mem_stateSpace ψ.2 (sub_nonneg.mpr hab)
-      have hre : 0 ≤ (ψ.1 b - ψ.1 a).re := by
-        simpa only [map_sub, Complex.zero_re] using (Complex.le_def.mp hpos).1
-      simpa [hf, sub_nonneg] using hre,
+      have hle : ψ.1 (a : A) ≤ ψ.1 (b : A) :=
+        WeakDual.monotone_toStrongDual_of_map_nonneg
+          (fun _ => map_nonneg_of_mem_stateSpace ψ.2) hab
+      rw [← ofReal_re_apply_of_mem_stateSpace ψ.2 a.2,
+        ← ofReal_re_apply_of_mem_stateSpace ψ.2 b.2, Complex.real_le_real] at hle
+      simpa [hf] using hle,
     by simp [hf, map_one_of_mem_stateSpace ψ.2]⟩
 
 @[simp]
@@ -627,21 +673,12 @@ def cstarStateSpaceHomeomorph :
     apply Subtype.ext
     apply DFunLike.ext
     intro a
-    let ψp : A →ₚ[ℂ] ℂ :=
-      PositiveLinearMap.mk₀ (WeakDual.toStrongDual ψ.1 : A →ₗ[ℂ] ℂ)
-        fun _ ha => map_nonneg_of_mem_stateSpace ψ.2 ha
-    -- `PositiveLinearMap.mk₀` has no evaluation lemma; it evaluates as `ψ.1` by definition.
-    have hψp (y : A) : ψp y = ψ.1 y := rfl
-    have him_sa : ∀ x : selfAdjoint A, (ψ.1 x).im = 0 := fun x => by
-      have h : star (ψp x) = ψp x := by rw [← map_star ψp, x.2.star_eq]
-      rw [hψp] at h
-      exact Complex.conj_eq_iff_im.mp (by simpa [Complex.star_def] using h)
-    have hreal : ∀ x : selfAdjoint A, ((ψ.1 x).re : ℂ) = ψ.1 x := fun x =>
-      Complex.ext rfl (by simp [him_sa x])
     have hdecomp : ψ.1 a = ψ.1 (ℜ a) + Complex.I * ψ.1 (ℑ a) := by
       simpa only [map_add, map_smul, smul_eq_mul] using
         congrArg ψ.1 (realPart_add_I_smul_imaginaryPart a).symm
-    simp only [cstarStateExtend_apply, cstarStateRestrict_apply, hreal, hdecomp]
+    simp only [cstarStateExtend_apply, cstarStateRestrict_apply,
+      ofReal_re_apply_of_mem_stateSpace ψ.2 (ℜ a).2,
+      ofReal_re_apply_of_mem_stateSpace ψ.2 (ℑ a).2, hdecomp]
   right_inv φ := by
     apply Subtype.ext
     apply DFunLike.ext
