@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
+public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 
 /-!
 # The stabilizer of an isotropic subspace in a symplectic group
@@ -117,19 +118,17 @@ def isotropicSubmodule : Submodule R (ι ⊕ κ ⊕ ι → R) :=
 
 variable (ι) in
 /-- The stabilizer `P` of the isotropic subspace `TauCeti.IsotropicParabolic.isotropicSubmodule`
-in the symplectic monoid of `TauCeti.IsotropicParabolic.form ι J₀`: the matrices `g` with
-`gᵀ Ω g = Ω` mapping the first block into itself. -/
+in the symplectic monoid `Matrix.isometryMatrices` of `TauCeti.IsotropicParabolic.form ι J₀`: the
+matrices `g` with `gᵀ Ω g = Ω` mapping the first block into itself. -/
 def stabilizer [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] (J₀ : Matrix κ κ R) :
     Submonoid (Matrix (ι ⊕ κ ⊕ ι) (ι ⊕ κ ⊕ ι) R) where
-  carrier := {g | gᵀ * form ι J₀ * g = form ι J₀ ∧
+  carrier := {g | g ∈ isometryMatrices (form ι J₀) ∧
     (isotropicSubmodule R ι κ).map g.mulVecLin ≤ isotropicSubmodule R ι κ}
   mul_mem' {g h} hg hh := by
-    refine ⟨?_, ?_⟩
-    · rw [transpose_mul, show hᵀ * gᵀ * form ι J₀ * (g * h) = hᵀ * (gᵀ * form ι J₀ * g) * h by
-        simp only [Matrix.mul_assoc], hg.1, hh.1]
-    · rw [mulVecLin_mul, Submodule.map_comp]
-      exact (Submodule.map_mono hh.2).trans hg.2
-  one_mem' := by simp
+    refine ⟨(isometryMatrices _).mul_mem hg.1 hh.1, ?_⟩
+    rw [mulVecLin_mul, Submodule.map_comp]
+    exact (Submodule.map_mono hh.2).trans hg.2
+  one_mem' := ⟨(isometryMatrices _).one_mem, by simp⟩
 
 end Definitions
 
@@ -193,7 +192,7 @@ variable [DecidableEq κ]
 /-- A matrix lies in the stabilizer exactly when it preserves the form and its lower left block
 vanishes. -/
 theorem mem_stabilizer_iff {J₀ : Matrix κ κ R} {g : Matrix (ι ⊕ κ ⊕ ι) (ι ⊕ κ ⊕ ι) R} :
-    g ∈ stabilizer ι J₀ ↔ gᵀ * form ι J₀ * g = form ι J₀ ∧ g.toBlocks₂₁ = 0 := by
+    g ∈ stabilizer ι J₀ ↔ g ∈ isometryMatrices (form ι J₀) ∧ g.toBlocks₂₁ = 0 := by
   rw [← map_mulVecLin_le_isotropicSubmodule_iff]
   rfl
 
@@ -223,7 +222,7 @@ private theorem block_eqs {J₀ : Matrix κ κ R} {a : Matrix ι ι R}
     (hg : fromBlocks a (fromCols b c) 0 (fromBlocks e f h k) ∈ stabilizer ι J₀) :
     h = 0 ∧ aᵀ * k = 1 ∧ k * aᵀ = 1 ∧ eᵀ * J₀ * e = J₀ ∧ kᵀ * b = fᵀ * J₀ * e ∧
       cᵀ * k + fᵀ * J₀ * f - kᵀ * c = 0 := by
-  have hg := (mem_stabilizer_iff.1 hg).1
+  have hg := mem_isometryMatrices.1 (mem_stabilizer_iff.1 hg).1
   rw [transpose_mul_form_mul_fromBlocks, form] at hg
   simp only [fromBlocks_inj, fromCols_ext_iff, fromRows_ext_iff] at hg
   obtain ⟨-, ⟨h₁, h₂⟩, -, h₃, -, h₄, h₅⟩ := hg
@@ -294,13 +293,14 @@ private theorem transpose_mul_form_mul_unipotent_eq_iff {J₀ : Matrix κ κ R} 
 /-- The unipotent matrix `u(Y, Z)` lies in the stabilizer exactly when `Z - Zᵀ = Yᵀ J₀ Y`. -/
 theorem unipotent_mem_stabilizer_iff {J₀ : Matrix κ κ R} (hJ₀ : J₀ᵀ = -J₀) {Y : Matrix κ ι R}
     {Z : Matrix ι ι R} : unipotent J₀ Y Z ∈ stabilizer ι J₀ ↔ Z - Zᵀ = Yᵀ * J₀ * Y := by
-  rw [mem_stabilizer_iff, transpose_mul_form_mul_unipotent_eq_iff hJ₀]
+  rw [mem_stabilizer_iff, mem_isometryMatrices, transpose_mul_form_mul_unipotent_eq_iff hJ₀]
   simp [unipotent]
 
 /-- The Levi matrix `l(A, D)` lies in the stabilizer exactly when `Dᵀ J₀ D = J₀`. -/
 theorem levi_mem_stabilizer_iff {J₀ : Matrix κ κ R} {A : GL ι R} {D : Matrix κ κ R} :
     levi A D ∈ stabilizer ι J₀ ↔ Dᵀ * J₀ * D = J₀ := by
-  rw [mem_stabilizer_iff, levi, ← fromCols_zero, transpose_mul_form_mul_fromBlocks, form]
+  rw [mem_stabilizer_iff, mem_isometryMatrices, levi, ← fromCols_zero,
+    transpose_mul_form_mul_fromBlocks, form]
   simp [fromBlocks_inj, ← transpose_mul, Matrix.mul_assoc]
 
 /-! ### The Levi decomposition of the stabilizer -/
