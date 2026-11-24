@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.InnerProductSup
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Probability.Distributions.Gaussian.L2
 
 /-!
@@ -233,10 +234,7 @@ theorem norm_sum_sum_mul_inner_le_sixteen_mul {E : Type*} [NormedAddCommGroup E]
     ring
   have hIv (j : κ) : ‖(RCLike.I : 𝕜) • v j‖ ≤ 1 := by
     rw [norm_smul]
-    have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := by
-      rw [RCLike.norm_I]
-      split_ifs <;> norm_num
-    exact (mul_le_mul hI (hv j) (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
+    exact (mul_le_mul RCLike.norm_I_le_one (hv j) (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
   have h₁ := abs_sum_sum_mul_inner_le_eight_mul (fun i j ↦ RCLike.re (ω * a i j))
     (fun s t hs ht ↦ by
       simpa using a.abs_sum_sum_map_mul_mul_mul_le h hω RCLike.reCLM RCLike.abs_re_le_norm

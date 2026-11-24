@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # Smooth maps into direct-sum bundles
@@ -16,7 +17,9 @@ into its total space is smooth (or differentiable) exactly when its two componen
 smooth (or differentiable), with the same base projection. This criterion needs no finite rank,
 completeness or manifold hypothesis.
 In particular the projections of a direct-sum bundle onto its summands, and the inclusions of the
-summands, are smooth maps of total spaces.
+summands, are smooth maps of total spaces, and the total space of the direct sum of a bundle with a
+trivial bundle `B × F` is diffeomorphic to the product of the total space of the first summand
+with `F` (`Bundle.Prod.diffeomorphProdTrivial`).
 -/
 
 public section
@@ -42,9 +45,9 @@ theorem Bundle.contMDiffWithinAt_totalSpace_prod_iff
     {f : M → TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)} {s : Set M} {x : M} :
     ContMDiffWithinAt J (I.prod 𝓘(𝕜, F₁ × F₂)) n f s x ↔
       ContMDiffWithinAt J (I.prod 𝓘(𝕜, F₁)) n
-        (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) s x ∧
+        (fun y ↦ (⟨(f y).proj, (f y).snd.1⟩ : TotalSpace F₁ E₁)) s x ∧
       ContMDiffWithinAt J (I.prod 𝓘(𝕜, F₂)) n
-        (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) s x := by
+        (fun y ↦ (⟨(f y).proj, (f y).snd.2⟩ : TotalSpace F₂ E₂)) s x := by
   rw [Bundle.contMDiffWithinAt_totalSpace_iff, Bundle.contMDiffWithinAt_totalSpace_iff,
     Bundle.contMDiffWithinAt_totalSpace_iff]
   simp only [FiberBundle.prod_trivializationAt', contMDiffWithinAt_prod_module_iff]
@@ -58,9 +61,9 @@ theorem Bundle.contMDiffWithinAt_totalSpace_prod_iff
 theorem Bundle.contMDiffAt_totalSpace_prod_iff {f : M → TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)} {x : M} :
     ContMDiffAt J (I.prod 𝓘(𝕜, F₁ × F₂)) n f x ↔
       ContMDiffAt J (I.prod 𝓘(𝕜, F₁)) n
-        (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) x ∧
+        (fun y ↦ (⟨(f y).proj, (f y).snd.1⟩ : TotalSpace F₁ E₁)) x ∧
       ContMDiffAt J (I.prod 𝓘(𝕜, F₂)) n
-        (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) x := by
+        (fun y ↦ (⟨(f y).proj, (f y).snd.2⟩ : TotalSpace F₂ E₂)) x := by
   simp only [← contMDiffWithinAt_univ]
   exact Bundle.contMDiffWithinAt_totalSpace_prod_iff
 
@@ -87,13 +90,13 @@ namespace Bundle.Prod
 /-- The projection of a direct-sum bundle onto its first summand is smooth on total spaces. -/
 theorem contMDiff_fst :
     ContMDiff (I.prod 𝓘(𝕜, F₁ × F₂)) (I.prod 𝓘(𝕜, F₁)) n
-      (fun v : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂) ↦ TotalSpace.mk' F₁ v.proj v.2.1) :=
+      (fun v : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂) ↦ TotalSpace.mk' F₁ v.proj v.snd.1) :=
   fun _ ↦ (contMDiffAt_totalSpace_prod_iff.1 contMDiffAt_id).1
 
 /-- The projection of a direct-sum bundle onto its second summand is smooth on total spaces. -/
 theorem contMDiff_snd :
     ContMDiff (I.prod 𝓘(𝕜, F₁ × F₂)) (I.prod 𝓘(𝕜, F₂)) n
-      (fun v : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂) ↦ TotalSpace.mk' F₂ v.proj v.2.2) :=
+      (fun v : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂) ↦ TotalSpace.mk' F₂ v.proj v.snd.2) :=
   fun _ ↦ (contMDiffAt_totalSpace_prod_iff.1 contMDiffAt_id).2
 
 end Bundle.Prod
@@ -111,7 +114,7 @@ omit [∀ x, Module 𝕜 (E₁ x)] [VectorBundle 𝕜 F₁ E₁] in
 theorem contMDiff_inl :
     ContMDiff (I.prod 𝓘(𝕜, F₁)) (I.prod 𝓘(𝕜, F₁ × F₂)) n
       (fun v : TotalSpace F₁ E₁ ↦
-        TotalSpace.mk' (F₁ × F₂) (E := E₁ ×ᵇ E₂) v.proj ((v.2, 0) : E₁ v.proj × E₂ v.proj)) :=
+        TotalSpace.mk' (F₁ × F₂) (E := E₁ ×ᵇ E₂) v.proj ((v.snd, 0) : E₁ v.proj × E₂ v.proj)) :=
   fun v ↦ contMDiffAt_totalSpace_prod_iff.2
     ⟨contMDiffAt_id, ((contMDiff_zeroSection 𝕜 E₂).comp (contMDiff_proj E₁)) v⟩
 
@@ -120,9 +123,46 @@ omit [∀ x, Module 𝕜 (E₂ x)] [VectorBundle 𝕜 F₂ E₂] in
 theorem contMDiff_inr :
     ContMDiff (I.prod 𝓘(𝕜, F₂)) (I.prod 𝓘(𝕜, F₁ × F₂)) n
       (fun v : TotalSpace F₂ E₂ ↦
-        TotalSpace.mk' (F₁ × F₂) (E := E₁ ×ᵇ E₂) v.proj ((0, v.2) : E₁ v.proj × E₂ v.proj)) :=
+        TotalSpace.mk' (F₁ × F₂) (E := E₁ ×ᵇ E₂) v.proj ((0, v.snd) : E₁ v.proj × E₂ v.proj)) :=
   fun v ↦ contMDiffAt_totalSpace_prod_iff.2
     ⟨((contMDiff_zeroSection 𝕜 E₁).comp (contMDiff_proj E₂)) v, contMDiffAt_id⟩
+
+end Bundle.Prod
+
+namespace Bundle.Prod
+
+variable (I E₁ F₂ n)
+
+/-- The total space of the direct sum of a bundle `E₁` with the trivial bundle `B × F₂` is
+`C^n`-diffeomorphic to the product of the total space of `E₁` with `F₂`, by
+`⟨x, (v, c)⟩ ↦ (⟨x, v⟩, c)`. -/
+def diffeomorphProdTrivial :
+    TotalSpace (F₁ × F₂) (E₁ ×ᵇ Trivial B F₂)
+      ≃ₘ^n⟮I.prod 𝓘(𝕜, F₁ × F₂), (I.prod 𝓘(𝕜, F₁)).prod 𝓘(𝕜, F₂)⟯ TotalSpace F₁ E₁ × F₂ where
+  toFun p := (⟨p.proj, p.snd.1⟩, p.snd.2)
+  invFun q := ⟨q.1.proj, (q.1.snd, q.2)⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  contMDiff_toFun := contMDiff_fst.prodMk (Trivial.contMDiff_mk_iff.1 contMDiff_snd).2
+  contMDiff_invFun := by
+    have h : ContMDiff ((I.prod 𝓘(𝕜, F₁)).prod 𝓘(𝕜, F₂)) (I.prod 𝓘(𝕜, F₂)) n
+        (fun q : TotalSpace F₁ E₁ × F₂ ↦ TotalSpace.mk' F₂ (E := Trivial B F₂) q.1.proj q.2) :=
+      Trivial.contMDiff_mk_iff.2
+        ⟨(contMDiff_proj E₁).comp _root_.contMDiff_fst, _root_.contMDiff_snd⟩
+    exact fun q ↦ contMDiffAt_totalSpace_prod_iff.2 ⟨contMDiffAt_fst, h q⟩
+
+/-- Forward formula for `Bundle.Prod.diffeomorphProdTrivial`. -/
+@[simp]
+theorem diffeomorphProdTrivial_apply (p : TotalSpace (F₁ × F₂) (E₁ ×ᵇ Trivial B F₂)) :
+    diffeomorphProdTrivial I F₂ E₁ n p = (⟨p.proj, p.snd.1⟩, p.snd.2) :=
+  (rfl)
+
+/-- Inverse formula for `Bundle.Prod.diffeomorphProdTrivial`. -/
+@[simp]
+theorem diffeomorphProdTrivial_symm_apply (q : TotalSpace F₁ E₁ × F₂) :
+    (diffeomorphProdTrivial I F₂ E₁ n).symm q =
+      TotalSpace.mk' (F₁ × F₂) (E := E₁ ×ᵇ Trivial B F₂) q.1.proj (q.1.snd, q.2) :=
+  (rfl)
 
 end Bundle.Prod
 
@@ -132,9 +172,9 @@ theorem Bundle.mdifferentiableWithinAt_totalSpace_prod_iff
     {f : M → TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)} {s : Set M} {x : M} :
     MDifferentiableWithinAt J (I.prod 𝓘(𝕜, F₁ × F₂)) f s x ↔
       MDifferentiableWithinAt J (I.prod 𝓘(𝕜, F₁))
-        (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) s x ∧
+        (fun y ↦ (⟨(f y).proj, (f y).snd.1⟩ : TotalSpace F₁ E₁)) s x ∧
       MDifferentiableWithinAt J (I.prod 𝓘(𝕜, F₂))
-        (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) s x := by
+        (fun y ↦ (⟨(f y).proj, (f y).snd.2⟩ : TotalSpace F₂ E₂)) s x := by
   rw [mdifferentiableWithinAt_totalSpace, mdifferentiableWithinAt_totalSpace,
     mdifferentiableWithinAt_totalSpace]
   simp only [FiberBundle.prod_trivializationAt', mdifferentiableWithinAt_prod_module_iff]
@@ -150,9 +190,9 @@ theorem Bundle.mdifferentiableAt_totalSpace_prod_iff
     {f : M → TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)} {x : M} :
     MDifferentiableAt J (I.prod 𝓘(𝕜, F₁ × F₂)) f x ↔
       MDifferentiableAt J (I.prod 𝓘(𝕜, F₁))
-        (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) x ∧
+        (fun y ↦ (⟨(f y).proj, (f y).snd.1⟩ : TotalSpace F₁ E₁)) x ∧
       MDifferentiableAt J (I.prod 𝓘(𝕜, F₂))
-        (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) x := by
+        (fun y ↦ (⟨(f y).proj, (f y).snd.2⟩ : TotalSpace F₂ E₂)) x := by
   simp only [← mdifferentiableWithinAt_univ]
   exact Bundle.mdifferentiableWithinAt_totalSpace_prod_iff
 

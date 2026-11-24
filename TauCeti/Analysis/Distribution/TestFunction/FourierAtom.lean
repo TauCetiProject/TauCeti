@@ -6,9 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 public import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
+import TauCeti.Analysis.Distribution.TestFunction.Frechet
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # Test functions cut off by a Fourier atom
@@ -19,11 +24,19 @@ Multiplying a complex test function `φ` by the Fourier atom `e_η x = 𝐞 (-�
 distribution with it is the localized Fourier transform `Distribution.localFourier`. This file
 records the product rule for its directional derivatives,
 
-`∂_v (φ e_η) = (∂_v φ) e_η - 2πi ⟪v, η⟫ φ e_η`.
+`∂_v (φ e_η) = (∂_v φ) e_η - 2πi ⟪v, η⟫ φ e_η`,
+
+and, viewing `φ e_η` as a Schwartz function, that modulation is translation in frequency:
+the Fourier transform of `φ e_η` is `𝓕 φ (· + η)`.
 
 ## Main declarations
 
 * `TestFunction.lineDerivOp_bilinLeftCLM_fourierAtom`: the directional derivative of `φ e_η`.
+* `TestFunction.exists_forall_norm_iteratedFDeriv_bilinLeftCLM_fourierAtom_le`: the derivatives of
+  `φ e_η` grow at most polynomially in `η`.
+* `TestFunction.fourierAtomMulSchwartzMap`: `φ e_η` as a Schwartz function.
+* `TestFunction.fourier_fourierAtomMulSchwartzMap`: the Fourier transform of `φ e_η` is
+  `𝓕 φ (· + η)`.
 -/
 
 public section
@@ -31,7 +44,7 @@ public section
 noncomputable section
 
 open Complex LineDeriv Real TopologicalSpace
-open scoped Distributions FourierTransform RealInnerProductSpace
+open scoped Distributions FourierTransform RealInnerProductSpace SchwartzMap
 
 namespace TestFunction
 
@@ -62,5 +75,64 @@ theorem lineDerivOp_bilinLeftCLM_fourierAtom (φ : 𝓓(Ω, ℂ)) (v η : E) :
   rw [(hφ.hasLineDerivAt v).lineDeriv]
   simp [TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply, hL, real_inner_comm v η]
   ring
+
+/-- The derivatives of order at most `r` of the modulated cutoffs `g e_ζ` grow at most polynomially
+in the frequency `ζ`, with a constant independent of `ζ`. -/
+theorem exists_forall_norm_iteratedFDeriv_bilinLeftCLM_fourierAtom_le (g : 𝓓(Ω, ℂ))
+    (r : ℕ) : ∃ A : ℝ, 0 ≤ A ∧ ∀ ζ : E, ∀ i ≤ r, ∀ y, ‖iteratedFDeriv ℝ i
+      (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom ζ) g) y‖ ≤
+        A * (1 + 2 * Real.pi * ‖ζ‖) ^ r := by
+  let K : Compacts E := ⟨tsupport g, g.hasCompactSupport⟩
+  let gK : 𝓓_{K}(E, ℂ) :=
+    ContDiffMapSupportedIn.of_support_subset g.contDiff (subset_tsupport _)
+  refine ⟨ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r gK, apply_nonneg _ _,
+    fun ζ i hi y ↦ ?_⟩
+  -- `g e_ζ` is the modulation of `g` by `-ζ`.
+  have hcoe : ⇑(bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom ζ) g) =
+      gK.modulate (-ζ) := by
+    ext x
+    simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
+      ContDiffMapSupportedIn.modulate_apply, gK, ContDiffMapSupportedIn.coe_of_support_subset,
+      TauCeti.fourierAtom_apply, inner_neg_right, smul_eq_mul]
+    -- Both sides are `g x` times the exponential of the same phase, up to sign placement.
+    rw [mul_comm]
+    congr 2
+    push_cast
+    ring
+  have hsup : ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K i gK ≤
+      ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r gK :=
+    Seminorm.le_def.1 (ContDiffMapSupportedIn.supSeminorm_mono hi) gK
+  rw [hcoe]
+  calc ‖iteratedFDeriv ℝ i (gK.modulate (-ζ)) y‖ ≤ N[ℂ]_{K, i} (gK.modulate (-ζ)) :=
+        ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℂ
+    _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K i gK * (1 + 2 * Real.pi * ‖-ζ‖) ^ i :=
+        ContDiffMapSupportedIn.seminorm_modulate_le gK (-ζ) i
+    _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K r gK * (1 + 2 * Real.pi * ‖ζ‖) ^ r := by
+        rw [norm_neg]
+        gcongr
+        · exact le_add_of_nonneg_right (by positivity)
+
+/-- The modulated cutoff `x ↦ φ x e_η x`, the product of `φ` with the Fourier atom
+`e_η x = 𝐞 (-⟪x, η⟫)` (`TauCeti.fourierAtom η`), as a Schwartz function. Pairing a distribution
+with it is the localized Fourier transform `Distribution.localFourier`. -/
+def fourierAtomMulSchwartzMap (φ : 𝓓(Ω, ℂ)) (η : E) : 𝓢(E, ℂ) :=
+  toSchwartzMapCLM ℂ (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
+
+@[simp]
+theorem fourierAtomMulSchwartzMap_apply (φ : 𝓓(Ω, ℂ)) (η x : E) :
+    φ.fourierAtomMulSchwartzMap η x = φ x * TauCeti.fourierAtom η x := by
+  simp [fourierAtomMulSchwartzMap, bilinLeftCLM_apply]
+
+/-- **Modulation is translation in frequency.** The Fourier transform of `φ e_η` is
+`ξ ↦ 𝓕 φ (ξ + η)`. -/
+theorem fourier_fourierAtomMulSchwartzMap [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (φ : 𝓓(Ω, ℂ)) (η ξ : E) :
+    𝓕 (φ.fourierAtomMulSchwartzMap η) ξ = 𝓕 (toSchwartzMapCLM ℂ φ) (ξ + η) := by
+  have hmod : ⇑(φ.fourierAtomMulSchwartzMap η) = fun y ↦ 𝐞 ⟪y, -η⟫ • toSchwartzMapCLM ℂ φ y := by
+    ext y
+    rw [fourierAtomMulSchwartzMap_apply, toSchwartzMapCLM_apply, TauCeti.fourierAtom_eq_fourierChar,
+      inner_neg_right, Circle.smul_def, smul_eq_mul, mul_comm]
+  rw [SchwartzMap.fourier_coe, hmod, TauCeti.fourier_fourierChar_smul, sub_neg_eq_add,
+    SchwartzMap.fourier_coe]
 
 end TestFunction

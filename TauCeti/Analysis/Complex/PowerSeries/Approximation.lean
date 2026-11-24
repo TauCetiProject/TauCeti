@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Analytic.ConvergenceRadius
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
@@ -12,13 +13,16 @@ import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
-# Approximating holomorphic functions on a disc by Taylor partial sums and entire functions
+# Approximating holomorphic functions on a disc or bounded set by Taylor polynomials
 
 A holomorphic function on an open disc `ball c s` in `ℂ`, with values in a complex Banach space,
 is the uniform limit on every smaller closed disc `closedBall c r`, `r < s`, of the partial sums of
 its Taylor series at `c` (`DifferentiableOn.exists_partialSum_norm_sub_lt`). These partial sums are
 polynomial in `z - c`, hence entire, so the function is uniformly approximated on `closedBall c r`
-by entire functions (`DifferentiableOn.exists_differentiable_norm_sub_lt`).
+by entire functions (`DifferentiableOn.exists_differentiable_norm_sub_lt`) and, for scalar targets,
+by complex polynomials (`DifferentiableOn.exists_polynomial_norm_sub_lt`). In particular, every
+entire function `f : ℂ → ℂ` is uniformly approximated by `Polynomial ℂ` on every bounded set
+`K ⊆ ℂ` (`Differentiable.exists_polynomial_norm_sub_lt`).
 
 This is the disc case of Runge's approximation theorem. It is the correction step in the
 solution of the inhomogeneous Cauchy–Riemann equation on a disc by exhaustion, where local
@@ -28,20 +32,26 @@ approximations of their holomorphic differences.
 ## Main results
 
 * `DifferentiableOn.exists_partialSum_norm_sub_lt`: uniform approximation on `closedBall c r`
-  (`r < s`) by partial sums of a formal multilinear series centred at `c`.
+  (`r < s`) by partial sums of a formal multilinear power series centred at `c`.
 * `DifferentiableOn.exists_differentiable_norm_sub_lt`: uniform approximation on `closedBall c r`
-  (`r < s`) by entire functions.
+  (`r < s`) by entire Banach-valued functions.
+* `DifferentiableOn.exists_polynomial_norm_sub_lt`: uniform approximation on `closedBall c r`
+  (`r < s`) of a scalar holomorphic function on `ball c s` by `Polynomial ℂ`.
+* `Differentiable.exists_polynomial_norm_sub_lt`: uniform approximation of an entire scalar
+  function on any bounded subset of `ℂ` by `Polynomial ℂ`.
 
 ## References
 
 * O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
   proof of Theorem 13.2.
+* A. Rainer, *Advanced Complex Analysis*, proof of Theorem 11.1.
+* W. Rudin, *Real and Complex Analysis*, 3rd ed., Theorem 10.16.
 -/
 
 public section
 
-open Metric
-open scoped NNReal
+open Metric Polynomial
+open scoped NNReal ENNReal
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
 
@@ -70,7 +80,7 @@ theorem DifferentiableOn.exists_partialSum_norm_sub_lt {h : ℂ → W} {c : ℂ}
   have hz' : ‖z - c‖ < t' := by
     rw [ht']
     linarith [show ‖z - c‖ ≤ r by simpa [dist_eq_norm] using hz]
-  simpa [dist_eq_norm] using hN (z - c) (by simpa using hz')
+  simpa [dist_eq_norm, norm_sub_rev] using hN (z - c) (by simpa using hz')
 
 /-- A holomorphic function on an open disc `ball c s` is approximated uniformly on every smaller
 closed disc `closedBall c r`, `r < s`, by entire functions. -/
@@ -84,3 +94,29 @@ theorem DifferentiableOn.exists_differentiable_norm_sub_lt {h : ℂ → W} {c : 
     ((p k).contDiff.differentiable one_ne_zero).comp
       (differentiable_pi.2 fun _ ↦ differentiable_id)
   exact (Differentiable.fun_sum fun k _ ↦ hd k).comp (differentiable_id.sub_const c)
+
+/-- A scalar holomorphic function `h : ℂ → ℂ` on an open disc `ball c s` is approximated uniformly
+on every smaller closed disc `closedBall c r`, `r < s`, by complex polynomials. -/
+theorem DifferentiableOn.exists_polynomial_norm_sub_lt {h : ℂ → ℂ} {c : ℂ} {r s ε : ℝ}
+    (hh : DifferentiableOn ℂ h (ball c s)) (hrs : r < s) (hε : 0 < ε) :
+    ∃ p : Polynomial ℂ, ∀ z ∈ closedBall c r, ‖h z - p.eval z‖ < ε := by
+  obtain ⟨q, N, hN⟩ := hh.exists_partialSum_norm_sub_lt hrs hε
+  refine ⟨∑ k ∈ Finset.range N, C (q.coeff k) * (X - C c) ^ k, fun z hz ↦ ?_⟩
+  have heval : (∑ k ∈ Finset.range N, C (q.coeff k) * (X - C c) ^ k).eval z =
+      q.partialSum N (z - c) := by
+    simp only [eval_finsetSum, eval_mul, eval_C, eval_pow, eval_sub, eval_X,
+      FormalMultilinearSeries.partialSum, FormalMultilinearSeries.apply_eq_pow_smul_coeff,
+      smul_eq_mul]
+    exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
+  rw [heval]
+  exact hN z hz
+
+/-- Every entire function `f : ℂ → ℂ` can be approximated uniformly on any bounded set `K ⊆ ℂ` by
+polynomials in `Polynomial ℂ`. -/
+theorem Differentiable.exists_polynomial_norm_sub_lt {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    {K : Set ℂ} (hK : Bornology.IsBounded K) {ε : ℝ} (hε : 0 < ε) :
+    ∃ p : Polynomial ℂ, ∀ z ∈ K, ‖f z - p.eval z‖ < ε := by
+  obtain ⟨R, hR⟩ := hK.subset_closedBall 0
+  obtain ⟨p, hp⟩ := hf.differentiableOn.exists_polynomial_norm_sub_lt
+    (c := 0) (r := R) (s := R + 1) (lt_add_one R) hε
+  exact ⟨p, fun z hz ↦ hp z (hR hz)⟩
