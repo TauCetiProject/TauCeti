@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Gluing.Coefficient
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 public import TauCeti.Analysis.Sobolev.GraphStep.Translation
+public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
 /-!
@@ -22,8 +23,8 @@ negative end of `A₂` along a neck of length `2 R` gives the coefficient
 
 `A_R(s) = A₁(s + R)` for `s < 0`, and `A_R(s) = A₂(s - R)` for `s ≥ 0`
 
-(`TauCeti.gluedCoeff`). Near `-R` the glued operator `D_{A_R}` is `D_{A₁}` translated by `-R`, and
-near `R` it is `D_{A₂}` translated by `R`.
+(`TauCeti.gluedCoeff`). Near `-R` the glued operator `D_{A_R}` is `D_{A₁}` recentred at `-R`, its
+coefficient being `A₁(· + R)`, and near `R` it is `D_{A₂}` recentred at `R`.
 
 The main theorem
 (`TauCeti.WeakDerivStep.exists_forall_ge_exists_rightInverse_trajectoryOperator_gluedCoeff`) is
@@ -50,7 +51,6 @@ operator is the linear input of the Newton iteration that glues broken trajector
 
 ## Main declarations
 
-* `TauCeti.gluedCoeff`: the coefficient of two operators glued along a neck of length `2 R`.
 * `TauCeti.WeakDerivStep.exists_forall_ge_exists_rightInverse_trajectoryOperator_gluedCoeff`: the
   glued operator has right inverses bounded uniformly in the neck length.
 
@@ -70,20 +70,6 @@ open Filter MeasureTheory Set TopologicalSpace Topology
 open scoped ENNReal ContDiff
 
 namespace TauCeti
-
-/-- **The glued coefficient.** The coefficient obtained by gluing the positive end of `A₁` to the
-negative end of `A₂` along a neck of length `2 R`: it is `A₁` translated by `-R` on `(-∞, 0)` and
-`A₂` translated by `R` on `[0, ∞)`. -/
-def gluedCoeff {X : Type*} (A₁ A₂ : ℝ → X) (R s : ℝ) : X :=
-  if s < 0 then A₁ (s + R) else A₂ (s - R)
-
-theorem gluedCoeff_of_neg {X : Type*} (A₁ A₂ : ℝ → X) (R : ℝ) {s : ℝ} (hs : s < 0) :
-    gluedCoeff A₁ A₂ R s = A₁ (s + R) := by
-  simp [gluedCoeff, hs]
-
-theorem gluedCoeff_of_nonneg {X : Type*} (A₁ A₂ : ℝ → X) (R : ℝ) {s : ℝ} (hs : 0 ≤ s) :
-    gluedCoeff A₁ A₂ R s = A₂ (s - R) := by
-  simp [gluedCoeff, not_lt.2 hs]
 
 namespace WeakDerivStep
 
@@ -119,27 +105,9 @@ local instance gluingNormedAddCommGroupCLM [CompleteSpace F] :
 
 /-! ### Cutoffs -/
 
-/-- The cutoff `s ↦ ψ (1 + a s)` built from the smooth transition `ψ`. -/
-private def neckCutoff (a s : ℝ) : ℝ :=
-  Real.smoothTransition (1 + a * s)
-
 private theorem contDiffOn_neckCutoff (a : ℝ) :
     ContDiffOn ℝ ∞ (neckCutoff a) ((⊤ : Opens ℝ) : Set ℝ) :=
-  (Real.smoothTransition.contDiff.comp (by fun_prop)).contDiffOn
-
-private theorem abs_neckCutoff_le_one (a s : ℝ) : |neckCutoff a s| ≤ 1 :=
-  Real.smoothTransition.abs_le_one _
-
-private theorem hasDerivAt_neckCutoff (a s : ℝ) :
-    HasDerivAt (neckCutoff a) (deriv Real.smoothTransition (1 + a * s) * a) s := by
-  unfold neckCutoff
-  simpa using (((hasDerivAt_id s).const_mul a).const_add 1).smoothTransition
-
-private theorem abs_deriv_neckCutoff_le {L : ℝ}
-    (hL : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ L) (a s : ℝ) :
-    |deriv (neckCutoff a) s| ≤ |a| * L := by
-  rw [(hasDerivAt_neckCutoff a s).deriv, abs_mul, mul_comm]
-  exact mul_le_mul_of_nonneg_left (hL _) (abs_nonneg a)
+  (contDiff_neckCutoff a).contDiffOn
 
 private theorem exists_norm_neckCutoff_le (a : ℝ) :
     ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖neckCutoff a x‖ ≤ C :=
@@ -151,21 +119,6 @@ private theorem exists_norm_fderiv_neckCutoff_le (a : ℝ) :
   exact ⟨|a| * L, fun x _ ↦ by
     rw [← norm_deriv_eq_norm_fderiv]
     exact abs_deriv_neckCutoff_le hL a x⟩
-
-private theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
-  Real.smoothTransition.one_of_one_le (by linarith)
-
-private theorem neckCutoff_left_eq_one {R : ℝ} (hR : 0 < R) :
-    ∀ s ∈ Iio (0 : ℝ), neckCutoff (-(2 / R)) s = 1 := fun s hs ↦
-  neckCutoff_eq_one (mul_nonneg_of_nonpos_of_nonpos (neg_nonpos.2 (by positivity))
-    (mem_Iio.1 hs).le)
-
-private theorem neckCutoff_right_eq_one {R : ℝ} (hR : 0 < R) :
-    ∀ s ∈ (Iio (0 : ℝ))ᶜ, neckCutoff (2 / R) s = 1 := fun s hs ↦
-  neckCutoff_eq_one (mul_nonneg (by positivity) (not_lt.1 hs))
-
-private theorem neckCutoff_eq_zero {a s : ℝ} (h : 1 + a * s ≤ 0) : neckCutoff a s = 0 :=
-  Real.smoothTransition.zero_of_nonpos h
 
 /-! ### The error on the neck -/
 
@@ -211,9 +164,7 @@ private theorem ae_neck_bound_left {A : F →L[ℝ] F} {A₁ A₂ : ℝ → F �
     rw [gluedCoeff_of_nonneg _ _ _ h0]
     exact norm_sub_le_of_dist_lt (hT₂ _ (by linarith)) (hT₁ _ (by linarith))
   · left
-    refine neckCutoff_eq_zero ?_
-    rw [neg_mul, div_mul_eq_mul_div, ← sub_eq_add_neg, sub_nonpos, le_div_iff₀ hR]
-    linarith
+    exact neckCutoff_neg_two_div_eq_zero hR hR2
 
 /-- The error weight of the right piece is small: on `[0, ∞)` the glued coefficient is `A₂(· - R)`
 exactly, on `(-R/2, 0)` both coefficients are close to `A`, and below `-R/2` the cutoff
@@ -241,9 +192,7 @@ private theorem ae_neck_bound_right {A : F →L[ℝ] F} {A₁ A₂ : ℝ → F �
     rw [gluedCoeff_of_neg _ _ _ h0]
     exact norm_sub_le_of_dist_lt (hT₁ _ (by linarith)) (hT₂ _ (by linarith))
   · left
-    refine neckCutoff_eq_zero ?_
-    rw [div_mul_eq_mul_div, ← le_neg_iff_add_nonpos_left, div_le_iff₀ hR]
-    linarith
+    exact neckCutoff_two_div_eq_zero hR hR2
 
 variable [CompleteSpace F]
 
@@ -489,11 +438,11 @@ private theorem norm_trajectoryOperator_splicedInverse_sub_le {A : F →L[ℝ] F
     add_nonneg (mul_nonneg (by positivity) ((norm_nonneg _).trans (hL 0))) (by positivity)
   have e₁ := norm_trajectoryOperator_piece_sub_le (contDiffOn_neckCutoff _)
     (exists_norm_neckCutoff_le _) (exists_norm_fderiv_neckCutoff_le _) R measurableSet_Iio
-    (neckCutoff_left_eq_one hR) hA₁L hδ0 (ae_neck_bound_left hε hT₁ hT₂ hR hRT₁ hRT₂ hL hAL)
-    Q₁ hQ₁ f
+    (fun s hs ↦ neckCutoff_neg_two_div_eq_one hR.le (mem_Iio.1 hs).le) hA₁L hδ0
+    (ae_neck_bound_left hε hT₁ hT₂ hR hRT₁ hRT₂ hL hAL) Q₁ hQ₁ f
   have e₂ := norm_trajectoryOperator_piece_sub_le (contDiffOn_neckCutoff _)
     (exists_norm_neckCutoff_le _) (exists_norm_fderiv_neckCutoff_le _) (-R)
-    measurableSet_Iio.compl (neckCutoff_right_eq_one hR) hA₂L hδ0
+    measurableSet_Iio.compl (fun s hs ↦ neckCutoff_two_div_eq_one hR.le (not_lt.1 hs)) hA₂L hδ0
     (ae_neck_bound_right hε hT₁ hT₂ hR hRT₁ hRT₂ hL hAL) Q₂ hQ₂ f
   have hsplit := Lp.multiplicationOperator_linftyIndicator_add_compl (s := Iio (0 : ℝ))
     measurableSet_Iio f
@@ -525,19 +474,12 @@ private theorem exists_rightInverse_of_splicedInverse {R L : ℝ} (hR : 0 < R)
     ContinuousLinearMap.opNorm_le_bound _ (by norm_num) fun f ↦ by
       rw [sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
       exact happrox f
-  obtain ⟨Q, hQ, hQn⟩ := (trajectoryOperator AL).exists_rightInverse_of_norm_comp_sub_id_lt
-    (splicedInverse R Q₁ Q₂) (by linarith)
-  refine ⟨Q, hQ, hQn.trans ?_⟩
   have hQ₀ : ‖splicedInverse R Q₁ Q₂‖ ≤ (√2 + 1) * (‖Q₁‖ + ‖Q₂‖) :=
     ContinuousLinearMap.opNorm_le_bound _ (by positivity)
       (norm_splicedInverse_apply_le hR hL hRL Q₁ Q₂)
-  have hinv : (1 - ‖(trajectoryOperator AL).comp (splicedInverse R Q₁ Q₂) -
-      ContinuousLinearMap.id ℝ _‖)⁻¹ ≤ 2 := by
-    rw [inv_le_comm₀ (by linarith) (by norm_num)]
-    linarith
-  calc _ ≤ ((√2 + 1) * (‖Q₁‖ + ‖Q₂‖)) * 2 :=
-        mul_le_mul hQ₀ hinv (inv_nonneg.2 (by linarith)) (by positivity)
-    _ = 2 * ((√2 + 1) * (‖Q₁‖ + ‖Q₂‖)) := by ring
+  obtain ⟨Q, hQ, hQn⟩ :=
+    (trajectoryOperator AL).exists_rightInverse_of_norm_comp_sub_id_le_half _ hE
+  exact ⟨Q, hQ, hQn.trans (mul_le_mul_of_nonneg_left hQ₀ zero_le_two)⟩
 
 /-! ### The glued operator -/
 

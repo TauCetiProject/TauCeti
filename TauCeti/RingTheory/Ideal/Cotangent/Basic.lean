@@ -15,7 +15,8 @@ over `R ⧸ I`. Conversely, elements of an ideal `I` of `A` whose images span th
 `I ⧸ I ^ 2` over `A` generate `I` modulo `I ^ 2`. For a surjective `R`-algebra homomorphism
 `f : A →ₐ[R] S` onto a module-finite `R`-algebra, if the kernel of `f` is finitely generated over
 `A`, then its cotangent space is finite over `R`. The main case is an augmentation
-`f : A →ₐ[R] R`, whose kernel is the augmentation ideal.
+`f : A →ₐ[R] R`, whose kernel is the augmentation ideal. A square-zero ideal `I` is isomorphic to
+its cotangent space, which makes `I` a module over `R ⧸ I`.
 
 ## Main declarations
 
@@ -23,6 +24,7 @@ over `R ⧸ I`. Conversely, elements of an ideal `I` of `A` whose images span th
   `R ⧸ I`.
 * `Ideal.le_span_sup_sq_of_span_toCotangent_eq_top`: elements whose images span the cotangent
   space generate the ideal modulo its square.
+* `Ideal.toCotangentEquivOfSqEqBot`: a square-zero ideal is isomorphic to its cotangent space.
 * `AlgHom.finite_cotangent_ker_of_fg`: finite generation of the kernel gives finiteness of its
   cotangent space over the base.
 * `AlgHom.finite_cotangent_ker`: the noetherian specialization.
@@ -77,6 +79,29 @@ theorem le_span_sup_sq_of_span_toCotangent_eq_top (I : Ideal A) {ι : Type*} {f 
   exact J.sub_mem hzJ (mem_sup_right hz)
 
 end
+
+section SqEqBot
+
+variable {R : Type*} [CommRing R] (I : Ideal R)
+
+/-- For a square-zero ideal `I`, the quotient map `I → I ⧸ I²` is an isomorphism of `R`-modules.
+Through it a square-zero ideal is a module over `R ⧸ I`. -/
+noncomputable def toCotangentEquivOfSqEqBot (hI : I ^ 2 = ⊥) : I ≃ₗ[R] I.Cotangent :=
+  .ofBijective I.toCotangent
+    ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ by
+      simpa [hI] using (I.toCotangent_eq_zero x).mp hx, I.toCotangent_surjective⟩
+
+@[simp]
+theorem toCotangentEquivOfSqEqBot_apply (hI : I ^ 2 = ⊥) (x : I) :
+    I.toCotangentEquivOfSqEqBot hI x = I.toCotangent x :=
+  LinearEquiv.ofBijective_apply _ _
+
+@[simp]
+theorem toCotangentEquivOfSqEqBot_symm_apply (hI : I ^ 2 = ⊥) (x : I) :
+    (I.toCotangentEquivOfSqEqBot hI).symm (I.toCotangent x) = x :=
+  (LinearEquiv.symm_apply_eq _).mpr (by simp)
+
+end SqEqBot
 
 end Ideal
 
