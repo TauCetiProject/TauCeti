@@ -19,11 +19,18 @@ the left endpoint of its interval, since every position contributing to it was c
 `simpleHolding_eq_sum_indicator_Ioc` and `simpleGains_eq_sum_mul_sub` give the holdings and
 integrals on a supplied grid. `exists_simpleHolding_simpleGains_eq_sum` constructs one grid for
 any finite family, preserving both holdings and gains against every price path. It starts at the
-bottom time and has strictly increasing dates, including when some input intervals are empty or
-reversed. The new heights are bounded pointwise by the sum of the original absolute heights;
-thus boundedness and Lᵖ control survive refinement without additional moment assumptions.
+bottom time, increases strictly on its finite prefix, and uses only the bottom time and input
+endpoints. Empty and reversed input intervals are allowed. The new heights are bounded pointwise
+by the sum of the original absolute heights; thus boundedness and Lᵖ control survive refinement
+without additional moment assumptions.
 `exists_simpleHolding_simpleGains_eq_sub` specializes this to the difference of two simple
 strategies on monotone grids, subtracting both their holdings and their gains.
+
+A finite family of elementary predictable holdings can also be refined simultaneously while
+preserving each holding and its gains separately, not just their sum. Tagging each strategy with
+its own sample-space coordinate reduces this to scalar refinement. Evaluating each refined
+holding at the new right endpoints preserves its individual almost-sure uniform bound. This lets
+one compare bounded elementary stochastic-integral approximations on a common grid.
 
 This bridges finite sums of predictable rectangles and finite-grid trading strategies. In
 particular, differences of elementary stochastic-integral approximants can be evaluated on one
@@ -34,6 +41,8 @@ including at trading dates, with no regularity assumption on the price path.
 
 * P. E. Protter, *Stochastic Integration and Differential Equations*, 2nd ed., Springer, 2005,
   §II.2.
+* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
+  Springer, 1991, §§3.2 and 3.5.
 -/
 
 public section
@@ -108,14 +117,18 @@ theorem simpleGains_eq_sum_mul_sub (s : Finset κ) (τ : ℕ → ι) (n : ℕ)
 /-- A finite family of left-measurable interval positions has one strictly increasing common
 grid, preserving holdings and gains against every price path. Its heights are bounded by the
 sum of the original absolute heights, so refinement preserves boundedness and Lᵖ control.
-The grid starts at the bottom time. Empty or reversed intervals contribute no holdings or gains;
-for a reversed interval the displayed increment must therefore be suppressed. -/
+The grid starts at the bottom time and is nondecreasing globally, using only the bottom time
+and input endpoints. Heights are measurable at their left endpoints and zero beyond the active
+cells. Empty or reversed intervals contribute no holdings or gains; for a reversed interval the
+displayed increment must therefore be suppressed. -/
 theorem exists_simpleHolding_simpleGains_eq_sum [OrderBot ι] {mΩ : MeasurableSpace Ω}
     (ℱ : Filtration ι mΩ) (s : Finset κ) (l u : κ → ι) (a : κ → Ω → ℝ)
     (ha : ∀ i ∈ s, StronglyMeasurable[ℱ (l i)] (a i)) :
     ∃ (n : ℕ) (τ : ℕ → ι) (b : ℕ → Ω → ℝ),
-      τ 0 = ⊥ ∧ StrictMonoOn τ (Set.Iic n) ∧
-      (∀ j < n, StronglyMeasurable[ℱ (τ j)] (b j)) ∧
+      τ 0 = ⊥ ∧ StrictMonoOn τ (Set.Iic n) ∧ Monotone τ ∧
+      (∀ j, τ j ∈ insert ⊥ (s.image l ∪ s.image u)) ∧
+      (∀ j, StronglyMeasurable[ℱ (τ j)] (b j)) ∧
+      (∀ j, n ≤ j → b j = 0) ∧
       (∀ j < n, ∀ ω, ‖b j ω‖ ≤ ∑ i ∈ s, ‖a i ω‖) ∧
       (∀ t ω, simpleHolding τ n b t ω =
         ∑ i ∈ s, (Set.Ioc (l i) (u i)).indicator (fun _ ↦ a i ω) t) ∧
@@ -125,17 +138,14 @@ theorem exists_simpleHolding_simpleGains_eq_sum [OrderBot ι] {mΩ : MeasurableS
   classical
   -- Sort the distinct endpoints, including the initial time.
   let d := insert ⊥ (s.image l ∪ s.image u)
-  obtain ⟨τ, -, hτ, -, himage, -⟩ :=
+  obtain ⟨τ, hmono, hτ, hmem, himage, -⟩ :=
     d.exists_strictMonoOn_Iic_surj ⟨⊥, mem_insert_self _ _⟩
   let n := d.card - 1
-  have hsurj (x : ι) (hx : x ∈ d) : ∃ j ≤ n, τ j = x := by
-    have hximage : x ∈ τ '' Set.Iic n := by
-      rw [himage]
-      exact hx
-    exact hximage
+  have hsurj (x : ι) (hx : x ∈ d) : ∃ j ≤ n, τ j = x :=
+    (Set.mem_image τ (Set.Iic n) x).mp (himage.symm ▸ hx)
   have hzero : τ 0 = ⊥ := by
-    obtain ⟨j, hj, heq⟩ := hsurj ⊥ (mem_insert_self _ _)
-    exact le_bot_iff.mp (heq ▸ hτ.monotoneOn (Nat.zero_le n) hj (Nat.zero_le j))
+    obtain ⟨j, -, heq⟩ := hsurj ⊥ (mem_insert_self _ _)
+    exact le_bot_iff.mp (heq ▸ hmono (Nat.zero_le j))
   -- Locate each old endpoint on the new grid.
   have hleft : ∀ i ∈ s, ∃ j ≤ n, τ j = l i := by
     intro i hi
@@ -151,15 +161,16 @@ theorem exists_simpleHolding_simpleGains_eq_sum [OrderBot ι] {mΩ : MeasurableS
     simpa [U, hi] using (hright i hi).choose_spec
   -- Only positions already chosen at the new left endpoint contribute to its height.
   let b (j : ℕ) (ω : Ω) := ∑ i ∈ s, if L i ≤ j ∧ j < U i then a i ω else 0
-  refine ⟨n, τ, b, hzero, hτ, ?_, ?_, ?_, ?_⟩
-  · intro j hj
+  refine ⟨n, τ, b, hzero, hτ, hmono, hmem, ?_, ?_, ?_, ?_, ?_⟩
+  · intro j
     refine Finset.stronglyMeasurable_fun_sum _ fun i hi ↦ ?_
     by_cases hij : L i ≤ j ∧ j < U i
-    · have hle : l i ≤ τ j := (hL i hi).2 ▸
-        hτ.monotoneOn (hL i hi).1 hj.le hij.1
+    · have hle : l i ≤ τ j := (hL i hi).2 ▸ hmono hij.1
       simpa [hij] using (ha i hi).mono (ℱ.mono hle)
-    · simpa [hij] using (stronglyMeasurable_const (b := (0 : ℝ)) :
-        StronglyMeasurable[ℱ (τ j)] (fun _ : Ω ↦ (0 : ℝ)))
+    · simpa only [ite_eq_right hij] using stronglyMeasurable_const (b := (0 : ℝ))
+  · intro j hj
+    funext ω
+    exact sum_eq_zero fun i hi ↦ ite_eq_right (not_lt_of_ge ((hU i hi).1.trans hj) ∘ And.right)
   · intro j _ ω
     exact (norm_sum_le _ _).trans (sum_le_sum fun i _ ↦ by
       split_ifs <;> simp)
@@ -189,13 +200,13 @@ theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableS
       (∀ t ω, simpleHolding ρ N c t ω = simpleHolding τ n a t ω - simpleHolding σ m b t ω) ∧
       ∀ (X : ι → Ω → ℝ) t ω, simpleGains ρ N c X t ω =
         simpleGains τ n a X t ω - simpleGains σ m b X t ω := by
-  obtain ⟨N, ρ, c, hρ₀, hρ, hc, -, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
-    ((range n).disjSum (range m)) (Sum.elim τ σ) (Sum.elim (fun j ↦ τ (j + 1)) fun j ↦ σ (j + 1))
-    (Sum.elim a fun j ω ↦ -b j ω) (by
-      rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
-      · exact ha j hj
-      · exact (hb j hj).neg)
-  refine ⟨N, ρ, c, hρ₀, hρ, hc, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
+  obtain ⟨N, ρ, c, hρ₀, hρ, -, -, hc, -, -, hhold, hgain⟩ :=
+    exists_simpleHolding_simpleGains_eq_sum ℱ ((range n).disjSum (range m)) (Sum.elim τ σ)
+      (Sum.elim (fun j ↦ τ (j + 1)) fun j ↦ σ (j + 1)) (Sum.elim a fun j ω ↦ -b j ω) (by
+        rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
+        · exact ha j hj
+        · exact (hb j hj).neg)
+  refine ⟨N, ρ, c, hρ₀, hρ, fun j _ ↦ hc j, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
   · rw [hhold, sum_disjSum, simpleHolding_def, simpleHolding_def, sub_eq_add_neg,
       ← sum_neg_distrib]
     simp only [Sum.elim_inl, Sum.elim_inr]
@@ -233,3 +244,108 @@ theorem exists_simpleHolding_simpleGains_eq_add [OrderBot ι] {mΩ : MeasurableS
     rw [hgain, hbneg, sub_neg_eq_add]
 
 end TauCeti.Finance
+
+namespace MeasureTheory.Filtration
+
+open TauCeti.Finance
+
+variable {Ω ι κ : Type*} [LinearOrder ι] [OrderBot ι] [Finite κ]
+
+/-- Several elementary predictable holdings can be put on one strictly increasing grid,
+with their individual gains unchanged against every price path.
+The grid is nondecreasing globally, uses only the bottom time and active input dates, and has
+left-endpoint measurable heights that vanish beyond the active cells. Empty grids, repeated
+original dates and nonzero original initial dates are allowed. -/
+theorem exists_strictMonoOn_forall_simpleHolding_simpleGains_eq {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) (n : κ → ℕ) (τ : κ → ℕ → ι) (a : κ → ℕ → Ω → ℝ)
+    (hτ : ∀ k, MonotoneOn (τ k) (Set.Iic (n k)))
+    (ha : ∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) :
+    ∃ (N : ℕ) (σ : ℕ → ι) (b : κ → ℕ → Ω → ℝ),
+      σ 0 = ⊥ ∧ StrictMonoOn σ (Set.Iic N) ∧ Monotone σ ∧
+      (∀ j, σ j = ⊥ ∨ ∃ k, 0 < n k ∧ ∃ i ≤ n k, σ j = τ k i) ∧
+      (∀ k j, StronglyMeasurable[ℱ (σ j)] (b k j)) ∧
+      (∀ k j, N ≤ j → b k j = 0) ∧
+      (∀ k t ω, simpleHolding σ N (b k) t ω = simpleHolding (τ k) (n k) (a k) t ω) ∧
+      ∀ k (X : ι → Ω → ℝ) t ω,
+        simpleGains σ N (b k) X t ω = simpleGains (τ k) (n k) (a k) X t ω := by
+  classical
+  let := Fintype.ofFinite κ
+  let : MeasurableSpace κ := ⊤
+  let 𝒢 : Filtration ι (inferInstance : MeasurableSpace (κ × Ω)) :=
+    ⟨fun t ↦ (⊤ : MeasurableSpace κ).prod (ℱ t),
+      fun _ _ h ↦ MeasurableSpace.prod_mono le_rfl (ℱ.mono h),
+      fun t ↦ MeasurableSpace.prod_mono le_rfl (ℱ.le t)⟩
+  let s : Finset (Σ _ : κ, ℕ) := univ.sigma fun k ↦ range (n k)
+  let c (i : Σ _ : κ, ℕ) (p : κ × Ω) := if p.1 = i.1 then a i.1 i.2 p.2 else 0
+  obtain ⟨N, σ, b, hzero, hσ, hmono, hdate, hb, htail, -, hhold, hgain⟩ :=
+    exists_simpleHolding_simpleGains_eq_sum 𝒢 s
+      (fun i ↦ τ i.1 i.2) (fun i ↦ τ i.1 (i.2 + 1)) c (by
+        intro i hi
+        exact ((ha i.1 i.2 (by simpa [s] using hi)).comp_measurable measurable_snd).ite
+          ((MeasurableSet.of_discrete : MeasurableSet {k : κ | k = i.1}).preimage measurable_fst)
+          stronglyMeasurable_const)
+  refine ⟨N, σ, fun k j ω ↦ b j (k, ω), hzero, hσ, hmono, ?_,
+    fun k j ↦ (hb j).comp_measurable (measurable_const.prodMk measurable_id),
+    fun k j hj ↦ funext fun ω ↦ congrFun (htail j hj) (k, ω), ?_, ?_⟩
+  · simp only [mem_insert, mem_union, mem_image, s, mem_sigma, mem_univ, true_and,
+      mem_range] at hdate
+    intro j
+    rcases hdate j with h | ⟨i, hi, h⟩ | ⟨i, hi, h⟩
+    · exact Or.inl h
+    · exact Or.inr ⟨i.1, (Nat.zero_le _).trans_lt hi, i.2, hi.le, h.symm⟩
+    · exact Or.inr ⟨i.1, (Nat.zero_le _).trans_lt hi, i.2 + 1, hi, h.symm⟩
+  · intro k t ω
+    calc
+      _ = ∑ i ∈ s, (Set.Ioc (τ i.1 i.2) (τ i.1 (i.2 + 1))).indicator
+          (fun _ ↦ c i (k, ω)) t := by
+        simpa only [simpleHolding_def] using hhold t (k, ω)
+      _ = _ := by
+        simp only [s, sum_sigma]
+        rw [sum_eq_single_of_mem k (mem_univ _)]
+        · simp [c, simpleHolding_def]
+        · exact fun l _ hl ↦ sum_eq_zero fun j _ ↦ by simp [c, Ne.symm hl]
+  · intro k X t ω
+    calc
+      _ = ∑ i ∈ s, if τ i.1 i.2 ≤ τ i.1 (i.2 + 1) then
+          c i (k, ω) * (X (min (τ i.1 (i.2 + 1)) t) ω - X (min (τ i.1 i.2) t) ω)
+          else 0 := by
+        simpa only [simpleGains_def] using hgain (fun t p ↦ X t p.2) t (k, ω)
+      _ = _ := by
+        simp only [s, sum_sigma]
+        rw [sum_eq_single_of_mem k (mem_univ _), simpleGains_def]
+        · refine sum_congr rfl fun j hj ↦ ?_
+          simp [c, hτ k (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
+        · exact fun l _ hl ↦ sum_eq_zero fun j _ ↦ by simp [c, Ne.symm hl]
+
+/-- Simultaneous refinement preserves separate almost-sure uniform bounds, including bounds
+that depend on the strategy and the sample. The bound holds for every new height, including
+zero heights beyond the active cells; no hypothesis is made on unused original heights. -/
+theorem exists_strictMonoOn_forall_ae_abs_le_simpleHolding_simpleGains_eq_of_bound
+    {mΩ : MeasurableSpace Ω} (ℱ : Filtration ι mΩ) (P : Measure Ω) (n : κ → ℕ)
+    (τ : κ → ℕ → ι) (a : κ → ℕ → Ω → ℝ) (K : κ → Ω → ℝ)
+    (hτ : ∀ k, MonotoneOn (τ k) (Set.Iic (n k)))
+    (ha : ∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j))
+    (hK : ∀ k, ∀ᵐ ω ∂P, ∀ t, |simpleHolding (τ k) (n k) (a k) t ω| ≤ K k ω) :
+    ∃ (N : ℕ) (σ : ℕ → ι) (b : κ → ℕ → Ω → ℝ),
+      σ 0 = ⊥ ∧ StrictMonoOn σ (Set.Iic N) ∧ Monotone σ ∧
+      (∀ j, σ j = ⊥ ∨ ∃ k, 0 < n k ∧ ∃ i ≤ n k, σ j = τ k i) ∧
+      (∀ k j, StronglyMeasurable[ℱ (σ j)] (b k j)) ∧
+      (∀ k j, N ≤ j → b k j = 0) ∧
+      (∀ k, ∀ᵐ ω ∂P, ∀ j, |b k j ω| ≤ K k ω) ∧
+      (∀ k t ω, simpleHolding σ N (b k) t ω = simpleHolding (τ k) (n k) (a k) t ω) ∧
+      ∀ k (X : ι → Ω → ℝ) t ω,
+        simpleGains σ N (b k) X t ω = simpleGains (τ k) (n k) (a k) X t ω := by
+  obtain ⟨N, σ, b, hzero, hσ, hmono, hdate, hb, htail, hhold, hgain⟩ :=
+    ℱ.exists_strictMonoOn_forall_simpleHolding_simpleGains_eq n τ a hτ ha
+  refine ⟨N, σ, b, hzero, hσ, hmono, hdate, hb, htail, ?_, hhold, hgain⟩
+  intro k
+  filter_upwards [hK k] with ω hω j
+  by_cases hj : j < N
+  · have heq := hhold k (σ (j + 1)) ω
+    rw [simpleHolding_of_mem_Ioc hσ.monotoneOn hj
+      ⟨hσ hj.le hj (Nat.lt_succ_self j), le_rfl⟩] at heq
+    exact heq.symm ▸ hω (σ (j + 1))
+  · rw [htail k j (Nat.le_of_not_lt hj), Pi.zero_apply, abs_zero]
+    exact (abs_nonneg _).trans (hω ⊥)
+
+end MeasureTheory.Filtration

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import Mathlib.GroupTheory.GroupAction.Ring
 public import Mathlib.RingTheory.FiniteType
@@ -29,6 +30,8 @@ additional structures such as filtrations, bialgebras, or antipodes.
   `U(L)` acts on a Lie module by a map commuting with the Lie action.
 * `TauCeti.UniversalEnvelopingAlgebra.mem_center_iff_forall_lie_ι`: centrality in `U(L)` is
   detected on the canonical Lie generators alone.
+* `TauCeti.UniversalEnvelopingAlgebra.ι_mem_center_of_mem_center`: the canonical generator of a
+  central element of `L` is central in `U(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.ad_ι_pow_apply_ι`: iterating the commutator with a Lie
   generator reproduces, on the Lie generators, the iterated adjoint action of `L`.
 * `TauCeti.UniversalEnvelopingAlgebra.mul_sub_mul_eq_map_ι_lie`: the image of a Lie bracket
@@ -282,6 +285,13 @@ theorem mem_center_iff_forall_lie_ι {u : U} :
     exact sub_eq_zero.mp <| (LieRing.of_associative_ring_bracket _ _).symm.trans (h x)
 
 variable {R L}
+
+/-- The canonical generator of a central element of `L` is central in `U(L)`. -/
+theorem ι_mem_center_of_mem_center {y : L} (hy : y ∈ LieAlgebra.center R L) :
+    _root_.UniversalEnvelopingAlgebra.ι R y ∈ Subalgebra.center R U :=
+  (mem_center_iff_forall_lie_ι R L).mpr fun x => by
+    rw [← LieHom.map_lie, ← lie_skew, (LieModule.mem_maxTrivSubmodule R L L y).mp hy x,
+      neg_zero, map_zero]
 
 /-- **The iterated commutator with a Lie generator, read on the Lie generators.**  Bracketing
 `n` times with `ι x` inside `U(L)` sends `ι y` to the image of the `n`-fold adjoint action of `x`

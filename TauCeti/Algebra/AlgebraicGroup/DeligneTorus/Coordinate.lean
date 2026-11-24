@@ -60,6 +60,8 @@ of the fact that complex conjugation of `S(ℂ)` exchanges the two factors
 * `TauCeti.DeligneTorus.liftEquiv_splittingBialgEquiv_symm_single`: read through the inverse, a
   point of `S` sends `X^{(p,q)}` to its character `(p, q)`.
 * `TauCeti.DeligneTorus.conjSwap_comp_splittingPoint`: `conjSwap` fixes `splittingPoint`.
+* `TauCeti.DeligneTorus.splittingBialgEquiv_map_conj`: through the splitting, complex
+  conjugation of the scalars of `ℂ ⊗[ℝ] S` is `conjSwap`.
 
 ## References
 
@@ -91,6 +93,18 @@ theorem complexSplitting_splittingPoint :
       ((MonoidAlgebra.of ℂ (Multiplicative (ℤ × ℤ))).toHomUnits (.ofAdd (1, 0)),
         (MonoidAlgebra.of ℂ (Multiplicative (ℤ × ℤ))).toHomUnits (.ofAdd (0, 1))) :=
   MulEquiv.apply_symm_apply _ _
+
+/-- Under `ℂ ⊗[ℝ] ℂ[ℤ²] ≃ ℂ[ℤ²] × ℂ[ℤ²]`, the unit `splittingPoint` of `ℂ ⊗[ℝ] ℂ[ℤ²]` is the
+pair of coordinates `(z₁, z₂) = (X^{(1,0)}, X^{(0,1)})`. -/
+theorem complexTensorProductEquivProd_pointsMulEquiv_splittingPoint :
+    complexTensorProductEquivProd _
+        (pointsMulEquiv _ splittingPoint : ℂ ⊗[ℝ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) =
+      (MonoidAlgebra.single (Multiplicative.ofAdd ((1 : ℤ), (0 : ℤ))) (1 : ℂ),
+        MonoidAlgebra.single (Multiplicative.ofAdd ((0 : ℤ), (1 : ℤ))) (1 : ℂ)) := by
+  have h₁ := coe_complexSplitting_fst splittingPoint
+  have h₂ := coe_complexSplitting_snd splittingPoint
+  rw [complexSplitting_splittingPoint] at h₁ h₂
+  exact Prod.ext (h₁.symm.trans (by simp)) (h₂.symm.trans (by simp))
 
 /-- **The character `(p, q)` of `splittingPoint` is `X^{(p,q)}`.** -/
 @[simp]
@@ -365,16 +379,32 @@ theorem conjSwap_comp_splittingPoint :
     apply (complexTensorProductEquivProd _).injective
     rw [Units.coe_map, MonoidHom.coe_ofClass,
       complexTensorProductEquivProd_lTensor_of_map_smul _ conjSwap_smul]
-    have hu : complexTensorProductEquivProd _
-          (pointsMulEquiv _ splittingPoint : ℂ ⊗[ℝ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) =
-        (MonoidAlgebra.single (Multiplicative.ofAdd ((1 : ℤ), (0 : ℤ))) (1 : ℂ),
-          MonoidAlgebra.single (Multiplicative.ofAdd ((0 : ℤ), (1 : ℤ))) (1 : ℂ)) := by
-      have h₁ := coe_complexSplitting_fst splittingPoint
-      have h₂ := coe_complexSplitting_snd splittingPoint
-      rw [complexSplitting_splittingPoint] at h₁ h₂
-      exact Prod.ext (h₁.symm.trans (by simp)) (h₂.symm.trans (by simp))
-    rw [hu]
+    rw [complexTensorProductEquivProd_pointsMulEquiv_splittingPoint]
     simp
   simpa using congrArg ofConv key
+
+/-- **Complex conjugation of `ℂ ⊗[ℝ] S` is `conjSwap`**: through the splitting
+`ℂ ⊗[ℝ] S ≃ ℂ[ℤ²]`, conjugating the scalars becomes `conjSwap`. -/
+@[simp]
+theorem splittingBialgEquiv_map_conj (z : ℂ ⊗[ℝ] S) :
+    splittingBialgEquiv (TensorProduct.map Complex.conjAe.toLinearMap LinearMap.id z) =
+      conjSwap (splittingBialgEquiv z) := by
+  -- `conjSwap` as a map that is semilinear for complex conjugation.
+  let g : MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) →ₛₗ[Complex.conjAe.toRingHom]
+      MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
+    { toFun := conjSwap
+      map_add' := map_add conjSwap
+      map_smul' c x := by
+        rw [conjSwap_smul, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+          AlgEquiv.coe_toRingEquiv, Complex.conjAe_coe] }
+  let F : ℂ ⊗[ℝ] S →ₗ[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
+    (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+  have hF (s : S) : g (F (1 ⊗ₜ s)) = F (1 ⊗ₜ s) := by
+    simp only [g, F, LinearMap.coe_mk, AddHom.coe_mk, BialgHom.coe_toLinearMap,
+      BialgEquiv.coe_toBialgHom, splittingBialgEquiv_one_tmul]
+    exact congrArg (fun φ ↦ φ s) conjSwap_comp_splittingPoint
+  simpa only [g, F, LinearMap.coe_mk, AddHom.coe_mk, BialgHom.coe_toLinearMap,
+    BialgEquiv.coe_toBialgHom, ScalarAut.tensorProductMap_eq_smul] using
+    ScalarAut.map_smul_eq_of_forall_one_tmul Complex.conjAe F g hF z
 
 end TauCeti.DeligneTorus
