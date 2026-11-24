@@ -169,7 +169,7 @@ theorem cohomologyMap_eq (h : Homotopy f g) : f.cohomologyMap = g.cohomologyMap 
   obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective MM.differential.boundariesInKer c
   rw [Submodule.mkQ_apply, cohomologyMap_mk, cohomologyMap_mk, Submodule.Quotient.eq]
   exact ⟨h.linearHomotopy x, by
-    simpa only [Submodule.subtype_apply, Submodule.coe_sub, LinearMap.mem_ker.mp x.2,
+    simpa only [Submodule.subtype_apply, Submodule.coe_sub, LinearMap.mem_ker.mp x.property,
       map_zero, add_zero] using (h.linearPart_sub_linearPart x).symm⟩
 
 /-- Homotopic bimodule morphisms are quasi-isomorphisms together. -/

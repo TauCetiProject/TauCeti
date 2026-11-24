@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.PDCode.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.Perm.Cycle.Reversal
 import TauCeti.GroupTheory.Perm.SumCongr
 
 /-! # Components of PD-codes
@@ -20,9 +21,11 @@ The orbits of `componentPermOutgoing` correspond to the crossing-bearing compone
 unrestricted `componentPerm` preserves orientation and therefore has separate incoming and
 outgoing orbits for each such component. Conjugating `componentPerm` by `crossingTurn` inverts it
 (`TauCeti.PDCode.crossingTurn_permCongr_componentPerm`), carrying each directed orbit to the
-reversed orbit (`TauCeti.PDCode.sameCycle_componentPerm_crossingTurn_iff`) with no half-edge in the
-same directed orbit as its opposite-slot partner
-(`TauCeti.PDCode.not_sameCycle_componentPerm_crossingTurn`).
+reversed orbit (`TauCeti.PDCode.sameCycle_componentPerm_crossingTurn_iff`,
+`TauCeti.PDCode.componentCycleReversal`) with no half-edge in the same directed orbit as its
+opposite-slot partner (`TauCeti.PDCode.not_sameCycle_componentPerm_crossingTurn`). Conversely,
+every unoriented `PDCode` admits a consistent orientation on its crossing-bearing components
+together with any prescribed crossing-free circle orientations (`TauCeti.PDCode.orient`).
 
 The traversal follows M. Mastin, *Links and Planar Diagram Codes*, Definitions 2–3.
 -/
@@ -192,6 +195,51 @@ theorem not_sameCycle_componentPerm_crossingTurn (D : PDCode n) (x : Fin (4 * n)
     exact h.trans hedge.symm
   exact D.isPerfectMatching_crossingTurn.not_sameCycle_self_apply D.edgePair.prop x hself
 
+private def componentOrbitEquiv (D : PDCode n) :
+    Quotient (SameCycle.setoid (D.crossingTurn * D.edgePair.val)) ≃
+      Quotient (SameCycle.setoid D.componentPerm) :=
+  Quotient.congr (Equiv.refl _) fun _ _ ↦ by rw [componentPerm_def]; rfl
+
+private theorem componentOrbitEquiv_mk (D : PDCode n) (x : Fin (4 * n)) :
+    D.componentOrbitEquiv ⟦x⟧ = ⟦x⟧ :=
+  rfl
+
+private theorem componentOrbitEquiv_symm_mk (D : PDCode n) (x : Fin (4 * n)) :
+    D.componentOrbitEquiv.symm ⟦x⟧ = ⟦x⟧ :=
+  (Equiv.symm_apply_eq _).mpr rfl
+
+/-- **Reversal of the directed component orbits**: following the other end of an arc carries each
+directed traversal orbit of `D.componentPerm` to the opposite traversal of the same component. -/
+def componentCycleReversal (D : PDCode n) :
+    Perm (Quotient (SameCycle.setoid D.componentPerm)) :=
+  D.componentOrbitEquiv.permCongr
+    (D.isPerfectMatching_crossingTurn.involutive.cycleReversal D.edgePair.apply_apply)
+
+/-- Reversal sends the directed orbit of a half-edge to that of the other end of its arc. -/
+@[simp] theorem componentCycleReversal_mk (D : PDCode n) (x : Fin (4 * n)) :
+    D.componentCycleReversal ⟦x⟧ = ⟦D.edgePair.val x⟧ :=
+  -- Term proof: `rw` rejects `D.edgePair.val` before unfolding `PerfectMatching` at implicit
+  -- transparency, as in `TauCeti.PDCode.stateCycleReversal_mk`.
+  (Equiv.permCongr_apply _ _ _).trans <|
+    (congrArg _ ((congrArg _ (D.componentOrbitEquiv_symm_mk x)).trans
+      (Function.Involutive.cycleReversal_mk _ _ x))).trans (D.componentOrbitEquiv_mk _)
+
+/-- Reversal also sends the directed orbit of a half-edge to that of its opposite crossing slot. -/
+theorem componentCycleReversal_mk_eq_crossingTurn (D : PDCode n) (x : Fin (4 * n)) :
+    D.componentCycleReversal ⟦x⟧ = ⟦D.crossingTurn x⟧ := by
+  rw [componentCycleReversal_mk]
+  apply Quotient.sound
+  have h : D.componentPerm (D.edgePair.val x) = D.crossingTurn x :=
+    (D.componentPerm_apply (D.edgePair.val x)).trans
+      (congrArg D.crossingTurn (D.edgePair.apply_apply x))
+  exact ⟨(1 : ℕ), by rw [zpow_natCast, pow_one]; exact h⟩
+
+/-- Reversal of directed component orbits is a fixed-point-free involution. -/
+theorem isPerfectMatching_componentCycleReversal (D : PDCode n) :
+    IsPerfectMatching D.componentCycleReversal :=
+  PerfectMatching.isPerfectMatching_permCongr _
+    (D.isPerfectMatching_crossingTurn.isPerfectMatching_cycleReversal D.edgePair.prop)
+
 /-- The number of crossing-bearing components is half the number of directed traversal orbits. -/
 theorem crossingComponentCount_def (D : PDCode n) :
     D.crossingComponentCount = orbitCount D.componentPerm / 2 := (rfl)
@@ -272,6 +320,111 @@ theorem crossingComponentCount_kink : kink.crossingComponentCount = 1 := by
       orbitCount_oppositeCrossingSlot_mul_slotSmoothing]
     simp
   rw [crossingComponentCount_def, h]
+
+/-! ### Orienting an arbitrary PD-code -/
+
+/-- The undirected step relation joining each half-edge to its arc partner and to its opposite
+crossing-slot partner. -/
+private abbrev UndirectedComponentStep (P : PDCode n) (x y : Fin (4 * n)) : Prop :=
+  y = P.edgePair.val x ∨ y = P.crossingTurn x
+
+/-- A chosen representative half-edge in the undirected component of `x`. -/
+private noncomputable def undirectedComponentRep (P : PDCode n) (x : Fin (4 * n)) : Fin (4 * n) :=
+  (⟦x⟧ : Quotient (Relation.EqvGen.setoid P.UndirectedComponentStep)).out
+
+private theorem undirectedComponentRep_edgePair (P : PDCode n) (x : Fin (4 * n)) :
+    P.undirectedComponentRep (P.edgePair.val x) = P.undirectedComponentRep x :=
+  congrArg Quotient.out (Quotient.sound (.symm _ _ (.rel _ _ (Or.inl rfl))))
+
+private theorem undirectedComponentRep_crossingTurn (P : PDCode n) (x : Fin (4 * n)) :
+    P.undirectedComponentRep (P.crossingTurn x) = P.undirectedComponentRep x :=
+  congrArg Quotient.out (Quotient.sound (.symm _ _ (.rel _ _ (Or.inr rfl))))
+
+private theorem sameCycle_undirectedComponentRep_or (P : PDCode n) (x : Fin (4 * n)) :
+    P.componentPerm.SameCycle (P.undirectedComponentRep x) x ∨
+      P.componentPerm.SameCycle (P.edgePair.val (P.undirectedComponentRep x)) x := by
+  have hout : Relation.EqvGen P.UndirectedComponentStep (P.undirectedComponentRep x) x :=
+    Quotient.exact (Quotient.out_eq (⟦x⟧ : Quotient (Relation.EqvGen.setoid _)))
+  rw [P.componentPerm_def]
+  exact (P.isPerfectMatching_crossingTurn.involutive.eqvGen_iff_sameCycle
+    P.edgePair.prop.involutive).mp hout
+
+private theorem not_sameCycle_undirectedComponentRep_and (P : PDCode n) (x : Fin (4 * n)) :
+    ¬(P.componentPerm.SameCycle (P.undirectedComponentRep x) x ∧
+      P.componentPerm.SameCycle (P.edgePair.val (P.undirectedComponentRep x)) x) := by
+  rintro ⟨h₁, h₂⟩
+  have h := h₁.trans h₂.symm
+  rw [P.componentPerm_def] at h
+  exact P.isPerfectMatching_crossingTurn.not_sameCycle_self_apply P.edgePair.prop _ h
+
+private theorem sameCycle_undirectedComponentRep_edgePair_iff (P : PDCode n) (x : Fin (4 * n)) :
+    P.componentPerm.SameCycle (P.undirectedComponentRep x) (P.edgePair.val x) ↔
+      ¬P.componentPerm.SameCycle (P.undirectedComponentRep x) x := by
+  have hrev : P.componentPerm.SameCycle (P.undirectedComponentRep x) (P.edgePair.val x) ↔
+      P.componentPerm.SameCycle (P.edgePair.val (P.undirectedComponentRep x)) x := by
+    rw [P.componentPerm_def,
+      ← P.isPerfectMatching_crossingTurn.involutive.sameCycle_apply_apply_iff
+        P.edgePair.prop.involutive,
+      P.edgePair.apply_apply]
+  have hor := P.sameCycle_undirectedComponentRep_or x
+  have hand := P.not_sameCycle_undirectedComponentRep_and x
+  tauto
+
+private theorem sameCycle_undirectedComponentRep_crossingTurn_iff (P : PDCode n)
+    (x : Fin (4 * n)) :
+    P.componentPerm.SameCycle (P.undirectedComponentRep x) (P.crossingTurn x) ↔
+      ¬P.componentPerm.SameCycle (P.undirectedComponentRep x) x := by
+  have hturn : P.crossingTurn x = P.componentPerm (P.edgePair.val x) := by
+    simp [P.edgePair.apply_apply]
+  rw [hturn, sameCycle_apply_right]
+  exact P.sameCycle_undirectedComponentRep_edgePair_iff x
+
+/-- Equip an arbitrary unoriented PD-code `P` with a consistent orientation on every component:
+each undirected crossing-bearing component splits into two opposite directed orbits of
+`P.componentPerm`, one of which is selected as outgoing, and crossing-free circles are oriented by
+`crossingless`. -/
+noncomputable def orient (P : PDCode n) (crossingless : Multiset Bool)
+    (hcard : crossingless.card = P.crossinglessComponentCount) : OrientedPDCode n where
+  toPDCode := P
+  orientation h :=
+    @decide (P.componentPerm.SameCycle (P.undirectedComponentRep h) h) (Classical.dec _)
+  orientation_edgePair h := by
+    classical
+    simp only [undirectedComponentRep_edgePair]
+    by_cases hc : P.componentPerm.SameCycle (P.undirectedComponentRep h) h
+    · have hnc := (P.sameCycle_undirectedComponentRep_edgePair_iff h).not.mpr (not_not.mpr hc)
+      simp [hc, hnc]
+    · have hc' := (P.sameCycle_undirectedComponentRep_edgePair_iff h).mpr hc
+      simp [hc, hc']
+  orientation_oppositeCrossingSlot i slot := by
+    classical
+    have hslot : P.halfEdge (crossingSlotEquiv n (i, oppositeCrossingSlot slot)) =
+        P.crossingTurn (P.halfEdge (crossingSlotEquiv n (i, slot))) := by
+      rw [P.crossingTurn_crossing, P.crossing_apply]
+    set h := P.halfEdge (crossingSlotEquiv n (i, slot))
+    rw [hslot, undirectedComponentRep_crossingTurn]
+    by_cases hc : P.componentPerm.SameCycle (P.undirectedComponentRep h) h
+    · have hnc := (P.sameCycle_undirectedComponentRep_crossingTurn_iff h).not.mpr (not_not.mpr hc)
+      simp [hc, hnc]
+    · have hc' := (P.sameCycle_undirectedComponentRep_crossingTurn_iff h).mpr hc
+      simp [hc, hc']
+  crossinglessComponents := crossingless
+  card_crossinglessComponents := hcard
+
+/-- Forgetting the chosen orientation of `P.orient` recovers `P`. -/
+@[simp] theorem toPDCode_orient (P : PDCode n) (crossingless : Multiset Bool)
+    (hcard : crossingless.card = P.crossinglessComponentCount) :
+    (P.orient crossingless hcard).toPDCode = P := (rfl)
+
+/-- `P.orient` equips the crossing-free circles with the prescribed orientations `crossingless`. -/
+@[simp] theorem crossinglessComponents_orient (P : PDCode n) (crossingless : Multiset Bool)
+    (hcard : crossingless.card = P.crossinglessComponentCount) :
+    (P.orient crossingless hcard).crossinglessComponents = crossingless := (rfl)
+
+/-- Every unoriented PD-code admits at least one compatible orientation. -/
+theorem exists_toPDCode_eq (P : PDCode n) : ∃ D : OrientedPDCode n, D.toPDCode = P :=
+  ⟨P.orient (Multiset.replicate P.crossinglessComponentCount true) (Multiset.card_replicate _ _),
+    rfl⟩
 
 end PDCode
 

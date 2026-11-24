@@ -171,6 +171,10 @@ chooses the `B`-smoothing. -/
 def smoothingChoice (D : PDCode n) (s : Fin n → Bool) (i : Fin n) : Bool :=
   bif s i then D.overPair i else !D.overPair i
 
+/-- Defining conditional formula for `TauCeti.PDCode.smoothingChoice`. -/
+theorem smoothingChoice_def (D : PDCode n) (s : Fin n → Bool) (i : Fin n) :
+    D.smoothingChoice s i = (bif s i then D.overPair i else !D.overPair i) := (rfl)
+
 /-- Where a state is `true` it selects the `A`-smoothing, the one built from the code's own
 over-pair indicator. -/
 @[simp] theorem smoothingChoice_of_true (D : PDCode n) {s : Fin n → Bool} {i : Fin n}

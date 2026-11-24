@@ -30,7 +30,9 @@ input for their Eilenberg--Zilber chain homotopies.
 * `TopCat.shuffle_def`: its factorization through the simplicial shuffle map.
 * `TopCat.ιChainComplex_tensorHom_ιChainComplex_shuffle_f`: its value on a pair of singular
   simplices, `TopCat.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_snd` on a singular vertex and
-  a singular simplex followed by the projection to the second factor, and
+  a singular simplex followed by the projection to the second factor,
+  `TopCat.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_fst` on a singular simplex and a
+  singular vertex followed by the projection to the first factor, and
   `TopCat.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_one_one` on two singular `1`-simplices.
 * `TopCat.shuffle_naturality`: naturality in both spaces.
 * `TopCat.shuffle_coefficient_naturality`: naturality in both coefficient objects.
@@ -134,6 +136,19 @@ lemma ιChainComplex_tensorHom_ιChainComplex_shuffle_f_snd {X Y : TopCat.{w}} (
       (toSSet.obj Y).ιChainComplex y := by
   rw [shuffle_def, HomologicalComplex.comp_f, Category.assoc, chainComplexMap_f_comp, μ_snd,
     SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_snd]
+
+/-- In bidegree `(p, 0)`, the singular shuffle map followed by the projection `X × Y ⟶ X` sends the
+summand of a singular `p`-simplex `x` of `X` and a singular vertex `y` of `Y` to the summand of
+`x`. -/
+@[reassoc]
+lemma ιChainComplex_tensorHom_ιChainComplex_shuffle_f_fst {X Y : TopCat.{w}} (R S : C) {p : ℕ}
+    (x : (toSSet.obj X) _⦋p⦌) (y : (toSSet.obj Y) _⦋0⦌) :
+    ((toSSet.obj X).ιChainComplex x ⊗ₘ (toSSet.obj Y).ιChainComplex y) ≫
+        ιTensorObj _ _ p 0 p (add_zero p) ≫ (shuffle X Y R S).f p ≫
+          (SSet.chainComplexMap (toSSet.map (fst X Y)) (R ⊗ S)).f p =
+      (toSSet.obj X).ιChainComplex x := by
+  rw [shuffle_def, HomologicalComplex.comp_f, Category.assoc, chainComplexMap_f_comp, μ_fst,
+    SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_fst]
 
 /-- In bidegree `(1, 1)`, the singular shuffle map sends a pair of singular `1`-simplices
 `(x, y)` to `(s₁ x, s₀ y) - (s₀ x, s₁ y)`, read as singular `2`-simplices of the product. -/

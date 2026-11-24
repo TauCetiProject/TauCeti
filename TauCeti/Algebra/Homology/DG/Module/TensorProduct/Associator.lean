@@ -81,13 +81,14 @@ theorem assoc_comp_differential :
       | add n n' hn hn' => simp [tmul_add, add_tmul, map_add, hn, hn']
       | @homogeneous r n =>
         have hmn : tmul R B (m : M) (n : N) ∈ (GMN).piece (q + r) :=
-          tmul_mem_grading G H (by simpa only [InternalGrading.ofDecomposition_piece] using m.2)
-            (by simpa only [InternalGrading.ofDecomposition_piece] using n.2)
+          tmul_mem_grading G H (by simpa only [InternalGrading.ofDecomposition_piece] using
+              m.property)
+            (by simpa only [InternalGrading.ofDecomposition_piece] using n.property)
         simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
         rw [differential_tmul_of_mem _ hP hmn,
-          differential_tmul_of_mem hM hN.toIsDGLeftModule m.2,
-          assoc_tmul, differential_tmul_of_mem hM _ m.2,
-          differential_tmul_of_mem hN.isDGRightModule hP n.2]
+          differential_tmul_of_mem hM hN.toIsDGLeftModule m.property,
+          assoc_tmul, differential_tmul_of_mem hM _ m.property,
+          differential_tmul_of_mem hN.isDGRightModule hP n.property]
         simp only [add_tmul, tmul_add, smul_tmul, tmul_smul, map_add, map_smul,
           assoc_tmul, Int.negOnePow_add, Units.val_mul, Int.cast_mul, smul_add, smul_smul]
         module
