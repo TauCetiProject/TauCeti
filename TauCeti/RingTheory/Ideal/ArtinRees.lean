@@ -160,19 +160,18 @@ theorem exists_mem_pow_smul_top_of_range_le [IsNoetherianRing R] [Module.Finite 
   -- Restriction along a surjection `Rᵇ → M` embeds `Hom(M, N)` into the finite module `Hom(Rᵇ, N)`.
   obtain ⟨b, π, hπ⟩ := Module.Finite.exists_fin' R M
   let Ψ : (M →ₗ[R] N) →ₗ[R] (Fin b → R) →ₗ[R] N := LinearMap.lcomp R N π
-  obtain ⟨k, hk⟩ := I.exists_pow_inf_eq_pow_smul (LinearMap.range Ψ)
+  obtain ⟨k, hk⟩ := TauCeti.ArtinRees.exists_controlled_lift I (LinearMap.range Ψ)
   refine ⟨k, fun n f hf ↦ ?_⟩
-  have hΨf : Ψ f ∈ I ^ (n + k) • ⊤ ⊓ LinearMap.range Ψ :=
-    ⟨(Pi.basisFun R (Fin b)).mem_smul_top_linearMap_iff.mpr fun _ ↦ by
-      simpa only [Ψ, LinearMap.lcomp_apply] using hf (LinearMap.mem_range_self f _), ⟨f, rfl⟩⟩
-  -- Artin–Rees in `Hom(Rᵇ, N)` brings `Ψ f` into `I ^ n • range Ψ`, the image of `I ^ n • ⊤`.
-  rw [hk _ (Nat.le_add_left k n), Nat.add_sub_cancel] at hΨf
-  have : Ψ f ∈ (I ^ n • ⊤ : Submodule R (M →ₗ[R] N)).map Ψ := by
-    rw [Submodule.map_smul'', Submodule.map_top]
-    exact Submodule.smul_mono le_rfl inf_le_right hΨf
-  obtain ⟨g, hg, hgf⟩ := this
+  have hΨf : Ψ f ∈ (I ^ (n + k) • ⊤ : Submodule R ((Fin b → R) →ₗ[R] N)) :=
+    (Pi.basisFun R (Fin b)).mem_smul_top_linearMap_iff.mpr fun _ ↦ by
+      simpa only [Ψ, LinearMap.lcomp_apply] using hf (LinearMap.mem_range_self f _)
+  -- The controlled lift through `Hom(M, N) → range Ψ` gives `g ∈ I ^ n • ⊤` with `Ψ g = Ψ f`.
+  obtain ⟨g, hg, hgf⟩ := hk Ψ.rangeRestrict (LinearMap.surjective_rangeRestrict Ψ) n
+    ⟨Ψ f, f, rfl⟩ hΨf
   -- `Ψ` is injective because `π` is surjective.
-  have hgf' : g ∘ₗ π = f ∘ₗ π := by simpa only [Ψ, LinearMap.lcomp_apply'] using hgf
+  have hgf' : g ∘ₗ π = f ∘ₗ π := by
+    simpa only [Ψ, LinearMap.codRestrict_apply, LinearMap.lcomp_apply'] using
+      congrArg Subtype.val hgf
   exact (LinearMap.cancel_right hπ).mp hgf' ▸ hg
 
 /-- **Artin–Rees for `Hom`, cokernel half.** For finite modules `M` and `N` over a noetherian ring
