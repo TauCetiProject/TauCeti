@@ -386,6 +386,7 @@ theorem ofReal_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoisson
     simp [ENNReal.ofReal_of_nonpos, hP]
 
 /-- The extended Poisson integral of Lebesgue measure is `1` on the upper half-plane. -/
+@[simp]
 theorem upperHalfPlanePoissonLIntegral_volume {z : ℂ} (hz : 0 < z.im) :
     upperHalfPlanePoissonLIntegral volume z = 1 := by
   rw [← ofReal_upperHalfPlanePoissonIntegral isPoissonFinite_volume,

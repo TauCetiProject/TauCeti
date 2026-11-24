@@ -36,12 +36,16 @@ cake formula bounds its integral against `|g|` by the Hardy–Littlewood maximal
 ## Main results
 
 * `TauCeti.upperHalfPlanePoissonKernel_le_mul_of_mem_nontangentialCone`: the cone comparison of
-  Poisson kernels.
+  Poisson kernels, and `TauCeti.upperHalfPlanePoissonKernel_le_three_mul_of_mem_nontangentialCone`
+  its form with constant `3` for aperture one.
 * `TauCeti.upperHalfPlanePoissonLIntegral_withDensity_le_maximalFunction`: the Poisson integral of
   `|g| dx` at a pole `z` is at most `M g(Re z)`.
 * `TauCeti.nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le` and
   `TauCeti.nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le`: the maximal bound
-  `M^α_h P[|g| dx] ≤ max 2 (1 + 2 α ^ 2) · M g`.
+  `M^α_h P[|g| dx] ≤ max 2 (1 + 2 α ^ 2) · M g`, and their forms
+  `M_h P[|g| dx] ≤ 3 M g` for aperture one,
+  `TauCeti.nontangentialMaximalFunction_one_upperHalfPlanePoissonLIntegral_le` and
+  `TauCeti.nontangentialMaximalFunction_one_upperHalfPlanePoissonIntegral_le`.
 
 ## References
 
@@ -138,6 +142,13 @@ theorem upperHalfPlanePoissonKernel_le_mul_of_mem_nontangentialCone {α : ℝ} {
       ≤ y * (π * (max 2 (1 + 2 * α ^ 2) * ((s - a) ^ 2 + y ^ 2))) := by gcongr
     _ = max 2 (1 + 2 * α ^ 2) * y * (π * ((s - a) ^ 2 + y ^ 2)) := by ring
 
+/-- **The cone comparison for aperture one.** For `z = x' + iy` in the cone `Γ_h(x)`, the Poisson
+kernel with pole `z` is at most `3` times the Poisson kernel with pole `x + iy`. -/
+theorem upperHalfPlanePoissonKernel_le_three_mul_of_mem_nontangentialCone {h : ℝ≥0∞} {x : ℝ}
+    {z : ℂ} (hz : z ∈ nontangentialCone 1 h x) (s : ℝ) :
+    upperHalfPlanePoissonKernel z s ≤ 3 * upperHalfPlanePoissonKernel (x + z.im * I) s :=
+  (upperHalfPlanePoissonKernel_le_mul_of_mem_nontangentialCone hz s).trans_eq (by norm_num)
+
 variable {F : Type*} [ENorm F]
 
 /-- **The Poisson integral is dominated by the maximal function.** At every pole `z`, the
@@ -205,5 +216,24 @@ theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le (α : ℝ)
   (nontangentialMaximalFunction_mono_fun fun z hz => by
       simpa using enorm_upperHalfPlanePoissonIntegral_le _ hz.1.le).trans
     (nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α h g x)
+
+/-- **The nontangential maximal bound for aperture one.** The nontangential maximal function of
+the Poisson integral of `‖g‖ dx`, over cones of aperture one and any height, is at most `3` times
+the Hardy–Littlewood maximal function of `g`. -/
+theorem nontangentialMaximalFunction_one_upperHalfPlanePoissonLIntegral_le (h : ℝ≥0∞)
+    (g : ℝ → F) (x : ℝ) :
+    nontangentialMaximalFunction 1 h
+        (upperHalfPlanePoissonLIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x ≤
+      3 * maximalFunction volume g x :=
+  (nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le 1 h g x).trans_eq (by norm_num)
+
+/-- **The nontangential maximal bound for aperture one.** The nontangential maximal function of
+the Poisson integral `P[‖g‖ dx]`, over cones of aperture one and any height, is at most `3 M g`. -/
+theorem nontangentialMaximalFunction_one_upperHalfPlanePoissonIntegral_le (h : ℝ≥0∞)
+    (g : ℝ → F) (x : ℝ) :
+    nontangentialMaximalFunction 1 h
+        (upperHalfPlanePoissonIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x ≤
+      3 * maximalFunction volume g x :=
+  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le 1 h g x).trans_eq (by norm_num)
 
 end TauCeti
