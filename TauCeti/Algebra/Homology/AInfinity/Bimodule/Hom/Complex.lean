@@ -161,7 +161,7 @@ def toComoduleHom (F : homCochains MM NN p) :
       ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B)
       ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B) where
   toLinearMap := F
-  map_coact := (mem_homCochains_iff.mp F.2).1
+  map_coact := (mem_homCochains_iff.mp F.property).1
 
 @[simp]
 theorem toComoduleHom_toLinearMap (F : homCochains MM NN p) :
@@ -170,7 +170,7 @@ theorem toComoduleHom_toLinearMap (F : homCochains MM NN p) :
 /-- A cochain raises total suspended degree by its cochain degree. -/
 theorem isHomogeneous (F : homCochains MM NN p) :
     LinearMap.IsHomogeneous (F : _ →ₗ[R] _) (barGrading AA BB MM.grading).piece
-      (barGrading AA BB NN.grading).piece p := (mem_homCochains_iff.mp F.2).2.2
+      (barGrading AA BB NN.grading).piece p := (mem_homCochains_iff.mp F.property).2.2
 
 /-- The left coaction passes a cochain with the Koszul twist on the left word. -/
 theorem leftCoact_comp (F : homCochains MM NN p) :
@@ -178,7 +178,8 @@ theorem leftCoact_comp (F : homCochains MM NN p) :
         (Comodule.leftCofreeCoact R (TensorWords R A) N) ∘ₗ (F : _ →ₗ[R] _) =
       TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist p)
         (F : _ →ₗ[R] _) ∘ₗ Comodule.leftCoactRTensor (TensorWords R B)
-          (Comodule.leftCofreeCoact R (TensorWords R A) M) := (mem_homCochains_iff.mp F.2).2.1
+          (Comodule.leftCofreeCoact R (TensorWords R A) M) :=
+              (mem_homCochains_iff.mp F.property).2.1
 
 /-- The two-counit component of a homogeneous bimodule cochain. -/
 noncomputable def taylor (F : homCochains MM NN p) :
@@ -454,12 +455,12 @@ noncomputable def equivZeroCocycles :
   toFun f := ⟨⟨f.barMap, f.barMap_mem_homCochains⟩,
     (homDifferential_zero_eq_zero_iff _).2 f.barDifferential_comp_barMap⟩
   invFun F :=
-    { barHom := homCochains.toComoduleHom F.1
+    { barHom := homCochains.toComoduleHom F.val
       leftCoact_comp_barMap := by
         simpa only [InternalGrading.koszulTwist_zero, ← LinearMap.lTensor_def,
-          homCochains.toComoduleHom_toLinearMap] using homCochains.leftCoact_comp F.1
-      isHomogeneous_barMap := homCochains.isHomogeneous F.1
-      barDifferential_comp_barMap := (homDifferential_zero_eq_zero_iff F.1).1 F.2 }
+          homCochains.toComoduleHom_toLinearMap] using homCochains.leftCoact_comp F.val
+      isHomogeneous_barMap := homCochains.isHomogeneous F.val
+      barDifferential_comp_barMap := (homDifferential_zero_eq_zero_iff F.val).1 F.property }
   left_inv _ := (rfl)
   right_inv _ := (rfl)
 

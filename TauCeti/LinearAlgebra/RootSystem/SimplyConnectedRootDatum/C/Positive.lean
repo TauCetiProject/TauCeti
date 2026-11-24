@@ -42,7 +42,7 @@ local notation "b" => typeCSimplyConnectedBase n
 
 private def simpleEquiv (n : ℕ) : Fin n ≃ (typeCSimplyConnectedBase n).support where
   toFun i := ⟨typeCSimpleIndex n i, by simp⟩
-  invFun j := ⟨j, mem_support_typeCSimplyConnectedBase.mp j.2⟩
+  invFun j := ⟨j, mem_support_typeCSimplyConnectedBase.mp j.property⟩
   left_inv _ := Fin.ext (by simp)
   right_inv _ := Subtype.ext (Fin.ext (by simp))
 

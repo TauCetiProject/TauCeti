@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
+public import Mathlib.MeasureTheory.MeasurableSpace.Embedding
 public import Mathlib.MeasureTheory.SetSemiring
 
 /-!
@@ -20,12 +20,19 @@ countable. Countability is what makes this work: every subset `s` of the product
 union of the measurable rectangles `{a} ×ˢ (Prod.mk a ⁻¹' s)` over the points `a` of the first
 factor. No hypothesis on the second factor is needed.
 
+## Main definitions
+
+* `TauCeti.prodProdSndComm`: measurable equivalence `((a, b), (a', b')) ↦ ((a, b'), (a', b))`
+  exchanging the second coordinates of two pairs.
+
 ## Main results
 
 * `TauCeti.MeasureTheory.isSetSemiring_measurable_prod`: measurable rectangles form a semiring
   of sets.
 * `TauCeti.MeasureTheory.prod_top_eq_top_of_countable`: the product of the discrete σ-algebras on
   a countable type and an arbitrary type is discrete.
+* `TauCeti.prodProdSndComm_apply` and `TauCeti.prodProdSndComm_symm`: coordinate formula and
+  involution simp lemmas for `TauCeti.prodProdSndComm`.
 -/
 
 public section
@@ -71,3 +78,31 @@ theorem prod_top_eq_top_of_countable (α β : Type*) [Countable α] :
   exact measurable_from_prod_countable_right fun _ => measurable_from_top
 
 end TauCeti.MeasureTheory
+
+namespace TauCeti
+
+variable {α β α' β' : Type*} [MeasurableSpace α] [MeasurableSpace β]
+  [MeasurableSpace α'] [MeasurableSpace β']
+
+/-- The measurable equivalence exchanging the second coordinates of two pairs:
+`((a, b), (a', b')) ↦ ((a, b'), (a', b))`. -/
+def prodProdSndComm : (α × β) × (α' × β') ≃ᵐ (α × β') × (α' × β) where
+  toFun q := ((q.1.1, q.2.2), (q.2.1, q.1.2))
+  invFun q := ((q.1.1, q.2.2), (q.2.1, q.1.2))
+  left_inv _ := rfl
+  right_inv _ := rfl
+  measurable_toFun := by dsimp; fun_prop
+  measurable_invFun := by dsimp; fun_prop
+
+/-- `prodProdSndComm` exchanges the second coordinates of two pairs. -/
+@[simp]
+theorem prodProdSndComm_apply (q : (α × β) × (α' × β')) :
+    prodProdSndComm q = ((q.1.1, q.2.2), (q.2.1, q.1.2)) := (rfl)
+
+/-- The inverse of `prodProdSndComm` is `prodProdSndComm` with the second-coordinate types
+exchanged. -/
+@[simp]
+theorem prodProdSndComm_symm :
+    (prodProdSndComm (α := α) (β := β) (α' := α') (β' := β')).symm = prodProdSndComm := (rfl)
+
+end TauCeti

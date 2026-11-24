@@ -215,7 +215,7 @@ theorem macbeathHom_surjective_of_locallyFinite [ConnectedSpace X]
     · intro hx hxA
       obtain ⟨g, hxg⟩ := mem_iUnion.1 hx
       obtain ⟨h, hxh⟩ := mem_iUnion.1 hxA
-      exact g.2 (hmem h.2 ⟨x, hxh, hxg⟩)
+      exact g.property (hmem h.property ⟨x, hxh, hxg⟩)
   have hAo : IsOpen A := by
     rw [← isClosed_compl_iff, hAB]
     exact hBc
@@ -231,7 +231,7 @@ theorem macbeathHom_surjective_of_locallyFinite [ConnectedSpace X]
   intro g _
   obtain ⟨x, hxg⟩ := hP.smul_set (a := g)
   obtain ⟨h, hxh⟩ := mem_iUnion.1 (hA ▸ mem_univ x)
-  exact hmem h.2 ⟨x, hxh, hxg⟩
+  exact hmem h.property ⟨x, hxh, hxg⟩
 
 end Topological
 

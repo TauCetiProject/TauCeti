@@ -64,37 +64,37 @@ local notation "F" => ZMod 2
 homology: the center component shifts the bidegree by `(1, 1)` and the off-center component
 preserves it. -/
 theorem fullyBlockedHomologyStabilizeXEquivProd_bigradedFullyBlockedHomologyProjection (g : ℤ × ℤ)
-    (y : (G.stabilizeX s).1.fullyBlockedHomology) :
-    G.1.fullyBlockedHomologyStabilizeXEquivProd s
+    (y : (G.stabilizeX s).val.fullyBlockedHomology) :
+    G.val.fullyBlockedHomologyStabilizeXEquivProd s
         ((G.stabilizeX s).bigradedFullyBlockedHomologyProjection g y) =
       (G.bigradedFullyBlockedHomologyProjection (g + (1, 1))
-          (G.1.fullyBlockedHomologyStabilizeXEquivProd s y).1,
+          (G.val.fullyBlockedHomologyStabilizeXEquivProd s y).1,
         G.bigradedFullyBlockedHomologyProjection g
-          (G.1.fullyBlockedHomologyStabilizeXEquivProd s y).2) := by
+          (G.val.fullyBlockedHomologyStabilizeXEquivProd s y).2) := by
   induction y using Submodule.Quotient.induction_on with
   | H z =>
     -- The ascription states the computation lemma at `(G.stabilizeX s).1`, the diagram `z` lives
     -- over; it is only definitionally the one in the lemma, so `rw` cannot match it unannotated.
     rw [bigradedFullyBlockedHomologyProjection_mk,
-      show G.1.fullyBlockedHomologyStabilizeXEquivProd s
-          (Submodule.Quotient.mk z : (G.stabilizeX s).1.fullyBlockedHomology) = _ from
-        G.1.fullyBlockedHomologyStabilizeXEquivProd_mk s z]
-    refine (G.1.fullyBlockedHomologyStabilizeXEquivProd_mk s _).trans ?_
+      show G.val.fullyBlockedHomologyStabilizeXEquivProd s
+          (Submodule.Quotient.mk z : (G.stabilizeX s).val.fullyBlockedHomology) = _ from
+        G.val.fullyBlockedHomologyStabilizeXEquivProd_mk s z]
+    refine (G.val.fullyBlockedHomologyStabilizeXEquivProd_mk s _).trans ?_
     simp only [bigradedFullyBlockedHomologyProjection_mk, Prod.mk.injEq]
     constructor <;> congr 1 <;> ext1
-    · refine (G.1.coe_fst_fullyBlockedStabilizeXCycles s _).trans
+    · refine (G.val.coe_fst_fullyBlockedStabilizeXCycles s _).trans
         ((G.fst_fullyBlockedStabilizeXMap_bigradedChainInclusion s g z).trans ?_)
-      simp only [G.1.coe_fst_fullyBlockedStabilizeXCycles s z]
-    · refine (G.1.coe_snd_fullyBlockedStabilizeXCycles s _).trans
+      simp only [G.val.coe_fst_fullyBlockedStabilizeXCycles s z]
+    · refine (G.val.coe_snd_fullyBlockedStabilizeXCycles s _).trans
         ((G.snd_fullyBlockedStabilizeXMap_bigradedChainInclusion s g z).trans ?_)
-      simp only [G.1.coe_snd_fullyBlockedStabilizeXCycles s z]
+      simp only [G.val.coe_snd_fullyBlockedStabilizeXCycles s z]
 
 /-- The center component of the stabilization comparison sends the bidegree-`g` piece into the
 bidegree-`(g + (1, 1))` piece. -/
 theorem fst_fullyBlockedHomologyStabilizeXEquivProd_mem {g : ℤ × ℤ}
-    {y : (G.stabilizeX s).1.fullyBlockedHomology}
+    {y : (G.stabilizeX s).val.fullyBlockedHomology}
     (hy : y ∈ (G.stabilizeX s).bigradedFullyBlockedHomologyPiece g) :
-    (G.1.fullyBlockedHomologyStabilizeXEquivProd s y).1 ∈
+    (G.val.fullyBlockedHomologyStabilizeXEquivProd s y).1 ∈
       G.bigradedFullyBlockedHomologyPiece (g + (1, 1)) := by
   rw [← (mem_bigradedFullyBlockedHomologyPiece_iff _).mp hy,
     fullyBlockedHomologyStabilizeXEquivProd_bigradedFullyBlockedHomologyProjection]
@@ -103,9 +103,9 @@ theorem fst_fullyBlockedHomologyStabilizeXEquivProd_mem {g : ℤ × ℤ}
 /-- The off-center component of the stabilization comparison preserves the bidegree-`g`
 piece. -/
 theorem snd_fullyBlockedHomologyStabilizeXEquivProd_mem {g : ℤ × ℤ}
-    {y : (G.stabilizeX s).1.fullyBlockedHomology}
+    {y : (G.stabilizeX s).val.fullyBlockedHomology}
     (hy : y ∈ (G.stabilizeX s).bigradedFullyBlockedHomologyPiece g) :
-    (G.1.fullyBlockedHomologyStabilizeXEquivProd s y).2 ∈
+    (G.val.fullyBlockedHomologyStabilizeXEquivProd s y).2 ∈
       G.bigradedFullyBlockedHomologyPiece g := by
   rw [← (mem_bigradedFullyBlockedHomologyPiece_iff _).mp hy,
     fullyBlockedHomologyStabilizeXEquivProd_bigradedFullyBlockedHomologyProjection]
@@ -115,27 +115,27 @@ theorem snd_fullyBlockedHomologyStabilizeXEquivProd_mem {g : ℤ × ℤ}
 private noncomputable def fullyBlockedStabilizeXHomologyPieceMap (g : ℤ × ℤ) :
     (G.stabilizeX s).bigradedFullyBlockedHomologyPiece g →ₗ[F]
       G.bigradedFullyBlockedHomologyPiece (g + (1, 1)) × G.bigradedFullyBlockedHomologyPiece g :=
-  (((LinearMap.fst F _ _ ∘ₗ (G.1.fullyBlockedHomologyStabilizeXEquivProd s).toLinearMap) ∘ₗ
+  (((LinearMap.fst F _ _ ∘ₗ (G.val.fullyBlockedHomologyStabilizeXEquivProd s).toLinearMap) ∘ₗ
       ((G.stabilizeX s).bigradedFullyBlockedHomologyPiece g).subtype).codRestrict _ fun y =>
-      G.fst_fullyBlockedHomologyStabilizeXEquivProd_mem s y.2).prod
-    (((LinearMap.snd F _ _ ∘ₗ (G.1.fullyBlockedHomologyStabilizeXEquivProd s).toLinearMap) ∘ₗ
+      G.fst_fullyBlockedHomologyStabilizeXEquivProd_mem s y.property).prod
+    (((LinearMap.snd F _ _ ∘ₗ (G.val.fullyBlockedHomologyStabilizeXEquivProd s).toLinearMap) ∘ₗ
       ((G.stabilizeX s).bigradedFullyBlockedHomologyPiece g).subtype).codRestrict _ fun y =>
-      G.snd_fullyBlockedHomologyStabilizeXEquivProd_mem s y.2)
+      G.snd_fullyBlockedHomologyStabilizeXEquivProd_mem s y.property)
 
 private theorem fullyBlockedStabilizeXHomologyPieceMap_bijective (g : ℤ × ℤ) :
     Function.Bijective (G.fullyBlockedStabilizeXHomologyPieceMap s g) := by
   constructor
   · intro y y' h
-    have h₁ := congrArg (fun p => (p.1 : G.1.fullyBlockedHomology)) h
-    have h₂ := congrArg (fun p => (p.2 : G.1.fullyBlockedHomology)) h
-    exact Subtype.ext ((G.1.fullyBlockedHomologyStabilizeXEquivProd s).injective (Prod.ext h₁ h₂))
+    have h₁ := congrArg (fun p => (p.1 : G.val.fullyBlockedHomology)) h
+    have h₂ := congrArg (fun p => (p.2 : G.val.fullyBlockedHomology)) h
+    exact Subtype.ext ((G.val.fullyBlockedHomologyStabilizeXEquivProd s).injective (Prod.ext h₁ h₂))
   · rintro ⟨u, v⟩
-    let y := (G.1.fullyBlockedHomologyStabilizeXEquivProd s).symm (u, v)
+    let y := (G.val.fullyBlockedHomologyStabilizeXEquivProd s).symm (u, v)
     refine ⟨⟨(G.stabilizeX s).bigradedFullyBlockedHomologyProjection g y,
       bigradedFullyBlockedHomologyProjection_mem _ _ _⟩, ?_⟩
     have h := G.fullyBlockedHomologyStabilizeXEquivProd_bigradedFullyBlockedHomologyProjection s g y
-    rw [LinearEquiv.apply_symm_apply, (mem_bigradedFullyBlockedHomologyPiece_iff G).mp u.2,
-      (mem_bigradedFullyBlockedHomologyPiece_iff G).mp v.2] at h
+    rw [LinearEquiv.apply_symm_apply, (mem_bigradedFullyBlockedHomologyPiece_iff G).mp u.property,
+      (mem_bigradedFullyBlockedHomologyPiece_iff G).mp v.property] at h
     exact Prod.ext (Subtype.ext (congrArg Prod.fst h)) (Subtype.ext (congrArg Prod.snd h))
 
 /-- **The bigraded stabilization factor.** The fully blocked stabilization comparison identifies
@@ -152,9 +152,9 @@ comparison. -/
 @[simp]
 theorem coe_fst_fullyBlockedStabilizeXHomologyPieceEquiv_apply (g : ℤ × ℤ)
     (y : (G.stabilizeX s).bigradedFullyBlockedHomologyPiece g) :
-    ((G.fullyBlockedStabilizeXHomologyPieceEquiv s g y).1 : G.1.fullyBlockedHomology) =
-      (G.1.fullyBlockedHomologyStabilizeXEquivProd s
-        (y : (G.stabilizeX s).1.fullyBlockedHomology)).1 :=
+    ((G.fullyBlockedStabilizeXHomologyPieceEquiv s g y).1 : G.val.fullyBlockedHomology) =
+      (G.val.fullyBlockedHomologyStabilizeXEquivProd s
+        (y : (G.stabilizeX s).val.fullyBlockedHomology)).1 :=
   (rfl)
 
 /-- The second component of the piece equivalence is the off-center component of the
@@ -162,9 +162,9 @@ stabilization comparison. -/
 @[simp]
 theorem coe_snd_fullyBlockedStabilizeXHomologyPieceEquiv_apply (g : ℤ × ℤ)
     (y : (G.stabilizeX s).bigradedFullyBlockedHomologyPiece g) :
-    ((G.fullyBlockedStabilizeXHomologyPieceEquiv s g y).2 : G.1.fullyBlockedHomology) =
-      (G.1.fullyBlockedHomologyStabilizeXEquivProd s
-        (y : (G.stabilizeX s).1.fullyBlockedHomology)).2 :=
+    ((G.fullyBlockedStabilizeXHomologyPieceEquiv s g y).2 : G.val.fullyBlockedHomology) =
+      (G.val.fullyBlockedHomologyStabilizeXEquivProd s
+        (y : (G.stabilizeX s).val.fullyBlockedHomology)).2 :=
   (rfl)
 
 /-- The dimension of a homogeneous piece of the fully blocked homology of the stabilized diagram

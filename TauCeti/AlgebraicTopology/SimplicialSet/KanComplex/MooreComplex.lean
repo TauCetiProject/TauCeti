@@ -61,8 +61,9 @@ to `p`.
   (`CategoryTheory.SimplicialObject.piAddEquivAlternatingFaceMapComplexHomology_mk`) and its
   naturality (`CategoryTheory.SimplicialObject.piAddEquivAlternatingFaceMapComplexHomology_map`).
 * `CategoryTheory.SimplicialObject.piAddEquivNormalizedMooreComplexHomology`: the isomorphism
-  `π_{n+1}(G, 0) ≃+ H_{n+1}(N(G))` and its naturality
-  (`CategoryTheory.SimplicialObject.piAddEquivNormalizedMooreComplexHomology_map`).
+  `π_{n+1}(G, 0) ≃+ H_{n+1}(N(G))`, with its value on a class represented by a normalized cycle
+  (`CategoryTheory.SimplicialObject.piAddEquivNormalizedMooreComplexHomology_mk`) and its
+  naturality (`CategoryTheory.SimplicialObject.piAddEquivNormalizedMooreComplexHomology_map`).
 * `CategoryTheory.SimplicialObject.piZeroEquivAlternatingFaceMapComplexHomology`,
   `CategoryTheory.SimplicialObject.piZeroEquivNormalizedMooreComplexHomology`: the bijections in
   degree zero, with their naturality.
@@ -120,11 +121,11 @@ def ptSimplexEquiv :
     exact (stdSimplex.yonedaEquiv_δ_comp p.map i).symm.trans
       ((congrArg SSet.yonedaEquiv (p.δ_map i)).trans (yonedaEquiv_const_zero G n))⟩
   invFun g :=
-    { map := (SSet.yonedaEquiv.symm g.1 : Δ[n + 1] ⟶ G ⋙ forget (ModuleCat R))
+    { map := (SSet.yonedaEquiv.symm g.val : Δ[n + 1] ⟶ G ⋙ forget (ModuleCat R))
       comm := by
         ext i : 1
         simp only [boundary.ι_ι_assoc]
-        exact δ_comp_yonedaEquiv_symm_eq_const G ((Submodule.mem_iInf _).1 g.2 i) }
+        exact δ_comp_yonedaEquiv_symm_eq_const G ((Submodule.mem_iInf _).1 g.property i) }
   left_inv p := by ext : 1; simp
   right_inv g := by ext : 1; simp
 
@@ -139,14 +140,14 @@ lemma coe_ptSimplexEquiv_apply
 @[simp]
 lemma ptSimplexEquiv_symm_apply_map (g : ↥(⨅ i : Fin (n + 2), LinearMap.ker (G.δ i).hom)) :
     ((ptSimplexEquiv G).symm g).map =
-      (SSet.yonedaEquiv.symm g.1 : Δ[n + 1] ⟶ G ⋙ forget (ModuleCat R)) :=
+      (SSet.yonedaEquiv.symm g.val : Δ[n + 1] ⟶ G ⋙ forget (ModuleCat R)) :=
   (rfl)
 
 /-- The faces of the element of `G_{n+1}` corresponding to a pointed simplex vanish. -/
 lemma δ_ptSimplexEquiv
     (p : SSet.PtSimplex (G ⋙ forget (ModuleCat R)) (n + 1) (0 : G _⦋0⦌)) (i : Fin (n + 2)) :
     G.δ i (ptSimplexEquiv G p) = 0 :=
-  (Submodule.mem_iInf _).1 (ptSimplexEquiv G p).2 i
+  (Submodule.mem_iInf _).1 (ptSimplexEquiv G p).property i
 
 /-- In the homotopy group of a simplicial module, the product of the classes of two pointed
 simplices is the class of their sum. -/
@@ -155,8 +156,8 @@ lemma mk_mul_mk_eq_mk_add
     KanComplex.π.mk p * KanComplex.π.mk q =
       KanComplex.π.mk ((ptSimplexEquiv G).symm (ptSimplexEquiv G p + ptSimplexEquiv G q)) := by
   -- The product is witnessed by the `(n + 2)`-simplex `s_{n+1} p + s_n q`.
-  set x : G _⦋n + 1⦌ := (ptSimplexEquiv G p).1
-  set y : G _⦋n + 1⦌ := (ptSimplexEquiv G q).1
+  set x : G _⦋n + 1⦌ := (ptSimplexEquiv G p).val
+  set y : G _⦋n + 1⦌ := (ptSimplexEquiv G q).val
   have hx (i : Fin (n + 2)) : G.δ i x = 0 := δ_ptSimplexEquiv p i
   have hy (i : Fin (n + 2)) : G.δ i y = 0 := δ_ptSimplexEquiv q i
   set w : G _⦋n + 2⦌ := G.σ (Fin.last (n + 1)) x + G.σ (Fin.last n).castSucc y
@@ -218,7 +219,7 @@ private def mooreCyclesHomologyClass :
     (Submodule.subtype _) fun z ↦ by
     rw [alternatingFaceMapComplex_d_apply]
     exact Finset.sum_eq_zero fun i _ ↦ by
-      simp [LinearMap.mem_ker.1 ((Submodule.mem_iInf _).1 z.2 i)]
+      simp [LinearMap.mem_ker.1 ((Submodule.mem_iInf _).1 z.property i)]
 
 /-- Two pointed simplices related by `SSet.PtSimplex.RelStruct₀` have the same homology class:
 if `y` has faces `p`, `q`, `0`, …, `0`, then `p - q` is the boundary of `y`. -/
@@ -521,6 +522,23 @@ lemma homologyMap_inclusionOfMooreComplexMap_piAddEquivNormalizedMooreComplexHom
       piAddEquivAlternatingFaceMapComplexHomology G n a :=
   homologyMap_inclusionOfMooreComplexMap_toNormalizedMooreComplexHomology _
 
+/-- The isomorphism `π_{n+1}(G, 0) ≃+ H_{n+1}(N(G))` sends the class of a pointed simplex
+represented by a normalized cycle to the homology class of that cycle. -/
+lemma piAddEquivNormalizedMooreComplexHomology_mk
+    (p : SSet.PtSimplex (G ⋙ forget (ModuleCat R)) (n + 1) (0 : G _⦋0⦌))
+    (c : ((normalizedMooreComplex (ModuleCat R)).obj G).cycles (n + 1))
+    (hc : (inclusionOfMooreComplexMap G).f (n + 1)
+        (((normalizedMooreComplex (ModuleCat R)).obj G).iCycles (n + 1) c) =
+      SSet.yonedaEquiv p.map) :
+    piAddEquivNormalizedMooreComplexHomology G n (.ofMul (KanComplex.π.mk p)) =
+      ((normalizedMooreComplex (ModuleCat R)).obj G).homologyπ (n + 1) c := by
+  apply homologyMap_inclusionOfMooreComplexMap_injective
+  rw [homologyMap_inclusionOfMooreComplexMap_piAddEquivNormalizedMooreComplexHomology,
+    piAddEquivAlternatingFaceMapComplexHomology_mk p
+      (HomologicalComplex.cyclesMap (inclusionOfMooreComplexMap G) (n + 1) c)
+      (by simpa only [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i] using hc),
+    HomologicalComplex.moduleCat_homologyMap_homologyπ]
+
 /-- The isomorphism `π_{n+1}(G, 0) ≃+ H_{n+1}(N(G))` is natural in the simplicial module `G`. -/
 lemma piAddEquivNormalizedMooreComplexHomology_map {G' : SimplicialObject (ModuleCat.{u} R)}
     (f : G ⟶ G') (a : KanComplex.π (n + 1) (G ⋙ forget (ModuleCat R)) (0 : G _⦋0⦌)) :
@@ -550,6 +568,23 @@ lemma homologyMap_inclusionOfMooreComplexMap_piZeroEquivNormalizedMooreComplexHo
         (piZeroEquivNormalizedMooreComplexHomology G a) =
       piZeroEquivAlternatingFaceMapComplexHomology G a :=
   homologyMap_inclusionOfMooreComplexMap_toNormalizedMooreComplexHomology _
+
+/-- The isomorphism `π₀(G, 0) ≃ H₀(N(G))` sends the class of a vertex represented by a
+normalized cycle to the homology class of that cycle. -/
+lemma piZeroEquivNormalizedMooreComplexHomology_mk
+    (p : SSet.PtSimplex (G ⋙ forget (ModuleCat R)) 0 (0 : G _⦋0⦌))
+    (c : ((normalizedMooreComplex (ModuleCat R)).obj G).cycles 0)
+    (hc : (inclusionOfMooreComplexMap G).f 0
+        (((normalizedMooreComplex (ModuleCat R)).obj G).iCycles 0 c) =
+      SSet.yonedaEquiv p.map) :
+    piZeroEquivNormalizedMooreComplexHomology G (KanComplex.π.mk p) =
+      ((normalizedMooreComplex (ModuleCat R)).obj G).homologyπ 0 c := by
+  apply homologyMap_inclusionOfMooreComplexMap_injective
+  rw [homologyMap_inclusionOfMooreComplexMap_piZeroEquivNormalizedMooreComplexHomology,
+    piZeroEquivAlternatingFaceMapComplexHomology_mk p
+      (HomologicalComplex.cyclesMap (inclusionOfMooreComplexMap G) 0 c)
+      (by simpa only [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i] using hc),
+    HomologicalComplex.moduleCat_homologyMap_homologyπ]
 
 /-- The isomorphism `π₀(G, 0) ≃ H₀(N(G))` is natural in the simplicial module `G`. -/
 lemma piZeroEquivNormalizedMooreComplexHomology_map {G' : SimplicialObject (ModuleCat.{u} R)}

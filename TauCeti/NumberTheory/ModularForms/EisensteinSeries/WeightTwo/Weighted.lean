@@ -16,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
+import Mathlib.Algebra.BigOperators.Balance
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
 
@@ -80,6 +81,8 @@ how `G₂^W` is compared with series built from Mathlib's `EisensteinSeries.G2`.
   `TauCeti.EisensteinSeries.weightedG2_single_slash` for a single residue.
 * `TauCeti.EisensteinSeries.weightedG2_comp_neg`: the series is unchanged when the residues are
   negated.
+* `TauCeti.EisensteinSeries.mdifferentiable_weierstrassP_periodPair_div`: the division values
+  `z ↦ ℘((b₀ z + b₁) / N; ℤ z + ℤ)` are holomorphic on `ℍ`.
 * `TauCeti.EisensteinSeries.weightedG2_mdifferentiable`: holomorphy on `ℍ`.
 * `TauCeti.EisensteinSeries.isBoundedAtImInfty_weightedG2_slash`: every `SL(2, ℤ)`-translate is
   bounded at `i∞`.
@@ -120,7 +123,7 @@ open EisensteinSeries
 open TauCeti.UpperHalfPlane (rowSum rowSum_zero hasSum_rowSum summable_one_div_add_intCast_sq
   norm_rowSum_le_of_le_abs_im tendsto_rowSum_atImInfty)
 
-open scoped MatrixGroups Topology Manifold Real
+open scoped BigOperators MatrixGroups Topology Manifold Real
 
 namespace TauCeti.EisensteinSeries
 
@@ -398,10 +401,15 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
   exact mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow_of_nonpos (by positivity) hl (by norm_num)) (by positivity)
 
-/-- Each division value of `℘` is holomorphic on `ℍ`. -/
-private lemma mdifferentiable_weierstrassP_divisionPoint (b : Fin 2 → ℤ) :
-    MDiff (fun z : ℍ ↦ ℘[z.periodPair] (divisionPoint N b z)) :=
-  TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
+omit [NeZero N] in
+/-- **The division values of `℘` are holomorphic**: for `b ∈ ℤ²`, the function
+`z ↦ ℘((b₀ z + b₁) / N; ℤ z + ℤ)` is holomorphic on `ℍ`. -/
+theorem mdifferentiable_weierstrassP_periodPair_div (b : Fin 2 → ℤ) :
+    MDiff fun z : ℍ ↦ ℘[z.periodPair] (((b 0 : ℂ) * z + b 1) / N) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simpa [PeriodPair.weierstrassP_zero] using mdifferentiable_const
+  have : NeZero N := ⟨hN⟩
+  exact TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
     (tendstoLocallyUniformly_weierstrassP_divisionPoint b) (Eventually.of_forall fun _ ↦
       UpperHalfPlane.mdifferentiable_iff.mpr (DifferentiableOn.fun_sum fun y _ ↦
         ((eisSummand_extension_differentiableOn 2 _).const_mul _).sub
@@ -409,8 +417,8 @@ private lemma mdifferentiable_weierstrassP_divisionPoint (b : Fin 2 → ℤ) :
 
 /-- **The weighted weight-two series is holomorphic on `ℍ`.** -/
 theorem weightedG2_mdifferentiable (W : (Fin 2 → ZMod N) → ℂ) : MDiff (weightedG2 W) := by
-  have h (a : Fin 2 → ZMod N) := mdifferentiable_weierstrassP_divisionPoint (N := N) (lift a)
-  simp only [divisionPoint_lift] at h
+  have h (a : Fin 2 → ZMod N) := mdifferentiable_weierstrassP_periodPair_div (N := N) (lift a)
+  simp only [lift_eq, Int.cast_natCast] at h
   have hsum : MDiff fun z : ℍ ↦ ∑ a, W a *
       ℘[z.periodPair] (((a 0).val * (z : ℂ) + (a 1).val) / N) := by
     convert MDifferentiable.sum (t := Finset.univ)
@@ -782,6 +790,17 @@ theorem weightedG2_eq_zero_of_forall_vecMul_eq {W : (Fin 2 → ZMod N) → ℂ}
     ((rank_zero_iff_forall_zero.mp _root_.ModularForm.levelOne_weight_two_rank_zero) f)
   rwa [ModularForm.coe_ofSlashInvariant, coe_weightedG2MF] at hf
 
+/-- Subtracting a constant from a weight does not change its series: a constant weight is
+invariant under `SL(2, ℤ)`, so its series vanishes. -/
+theorem weightedG2_sub_const (W : (Fin 2 → ZMod N) → ℂ) (m : ℂ) :
+    weightedG2 (fun a ↦ W a - m) = weightedG2 W := by
+  have h := weightedG2_add (fun a ↦ W a - m) fun _ ↦ m
+  rw [weightedG2_eq_zero_of_forall_vecMul_eq (W := fun _ ↦ m) fun _ _ ↦ rfl, add_zero] at h
+  rw [← h]
+  congr 1
+  ext a
+  simp
+
 /-! ### Changing the level -/
 
 variable {M : ℕ} [NeZero M]
@@ -849,21 +868,11 @@ private lemma weightedG2_comp_castHom_of_sum_eq_zero (h : M ∣ N) {W : (Fin 2 �
 `M` and of the weight `c ↦ W(c mod M)` modulo `N` agree. -/
 theorem weightedG2_comp_castHom (h : M ∣ N) (W : (Fin 2 → ZMod M) → ℂ) :
     weightedG2 (fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom h (ZMod M) ∘ c)) = weightedG2 W := by
-  -- split off a constant weight, whose series vanishes at every level
-  set m : ℂ := (∑ a, W a) / (M : ℂ) ^ 2
-  have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
-  have hmass : ∑ a, (W a - m) = 0 := by
-    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card,
-      Fintype.card_fin, nsmul_eq_mul]
-    push_cast
-    rw [show (M : ℂ) ^ 2 * m = ∑ a, W a from mul_div_cancel₀ _ (pow_ne_zero 2 hM), sub_self]
-  have hconst {L : ℕ} [NeZero L] : weightedG2 (fun _ : Fin 2 → ZMod L ↦ m) = 0 :=
-    weightedG2_eq_zero_of_forall_vecMul_eq fun _ _ ↦ rfl
-  have hsplit {L : ℕ} [NeZero L] (V : (Fin 2 → ZMod L) → ℂ) :
-      weightedG2 V = weightedG2 fun a ↦ V a - m := by
-    conv_lhs => rw [show V = (fun a ↦ V a - m) + fun _ ↦ m by ext; simp]
-    rw [weightedG2_add, hconst, add_zero]
-  rw [hsplit, hsplit W]
+  -- split off the mean of `W`, a constant weight whose series vanishes at every level
+  set m : ℂ := 𝔼 a, W a
+  have hmass : ∑ a, (W a - m) = 0 := Fintype.sum_balance W
+  rw [← weightedG2_sub_const (fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom h (ZMod M) ∘ c)) m,
+    ← weightedG2_sub_const W m]
   exact weightedG2_comp_castHom_of_sum_eq_zero h (W := fun a ↦ W a - m) hmass
 
 /-! ### Common division points -/
@@ -1044,24 +1053,13 @@ undone. -/
 theorem tsum_weightedG2Row (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
     ∑' c, weightedG2Row W z c = weightedG2 W z + ((N : ℂ) ^ 2)⁻¹ * (∑ a, W a) * G2 z := by
   set m : ℂ := ((N : ℂ) ^ 2)⁻¹ * ∑ a, W a
-  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have hmass : ∑ a, (W a - m) = 0 := by
-    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card,
-      Fintype.card_fin, nsmul_eq_mul]
-    push_cast
-    simp only [m]
-    field_simp
-    ring
+  -- `m` is the mean of `W`, so `W - m` has total mass zero
+  have hm : 𝔼 a, W a = m := by
+    rw [Fintype.expect_eq_sum_div_card, Fintype.card_fun, ZMod.card, Fintype.card_fin,
+      Nat.cast_pow, div_eq_inv_mul]
+  have hmass : ∑ a, (W a - m) = 0 := hm ▸ Fintype.sum_balance W
   -- split off a constant weight, whose series vanishes and whose rows are those of `G₂`
-  have hconst : weightedG2 (fun _ : Fin 2 → ZMod N ↦ m) = 0 :=
-    weightedG2_eq_zero_of_forall_vecMul_eq fun _ _ ↦ rfl
-  have hG : weightedG2 (fun a ↦ W a - m) = weightedG2 W := by
-    have h := weightedG2_add (fun a ↦ W a - m) fun _ ↦ m
-    rw [hconst, add_zero] at h
-    rw [← h]
-    congr 1
-    ext a
-    simp
+  have hG := weightedG2_sub_const W m
   have h1 (c : ℤ) : weightedG2Row (1 : (Fin 2 → ZMod N) → ℂ) z c = e2Summand c z := by
     simp [weightedG2Row_def, e2Summand]
   have he2 : Summable fun c ↦ e2Summand c z := (summable_weightedG2Row 1 z).congr h1

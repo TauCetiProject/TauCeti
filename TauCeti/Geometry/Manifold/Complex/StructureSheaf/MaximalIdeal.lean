@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Coordinate
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Analytic.Hadamard
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
@@ -61,7 +62,7 @@ def holomorphicLinearCoordinateSection (ℓ : StrongDual ℂ E) (z : E) :
     (holomorphicStructureSheaf 𝓘(ℂ, E) X).obj.obj (op ⟨e.source, e.open_source⟩) :=
   ofContMDiff (fun y ↦ ℓ (e y - z)) fun y ↦
     ℓ.contMDiffAt.comp y ((((contMDiffOn_of_mem_maximalAtlas he).contMDiffAt
-      (e.open_source.mem_nhds y.2)).comp y contMDiff_subtype_val.contMDiffAt).sub
+      (e.open_source.mem_nhds y.property)).comp y contMDiff_subtypeVal.contMDiffAt).sub
         contMDiffAt_const)
 
 /-- The translated linear coordinate section evaluates at `y` to `ℓ (e y - z)`. -/
@@ -93,6 +94,14 @@ theorem toFilterGerm_holomorphicLinearCoordinateGerm (ℓ : StrongDual ℂ E) (h
     toFilterGerm 𝓘(ℂ, E) X x l hl (holomorphicLinearCoordinateGerm e he x ℓ hx) =
       (fun y ↦ ℓ (e y - e x) : X → ℂ) :=
   toFilterGerm_germ hl hx _ _ fun y ↦ holomorphicLinearCoordinateSection_apply e he ℓ (e x) y
+
+/-- The zero functional gives the zero coordinate germ. -/
+@[simp]
+theorem holomorphicLinearCoordinateGerm_zero (hx : x ∈ e.source) :
+    holomorphicLinearCoordinateGerm e he x 0 hx = 0 := by
+  apply toFilterGerm_nhds_injective x
+  rw [toFilterGerm_holomorphicLinearCoordinateGerm, map_zero]
+  rfl
 
 /-- The centered linear coordinate germs vanish at their center. -/
 @[simp]
@@ -237,5 +246,23 @@ theorem mem_ker_eval_sq_iff (hx : x ∈ e.source)
   exact sum_mem fun i _ ↦ Ideal.mul_mem_mul
     (RingHom.mem_ker.2 (eval_holomorphicLinearCoordinateGerm e he x _ hx))
     (RingHom.mem_ker.2 ((hq i).trans (by simp [hdφ])))
+
+section Curves
+
+variable {C : Type} [TopologicalSpace C] [ChartedSpace ℂ C] [IsManifold 𝓘(ℂ) 1 C]
+  (e : OpenPartialHomeomorph C ℂ) (he : e ∈ maximalAtlas 𝓘(ℂ) ω C)
+  (x : C) (hx : x ∈ e.source)
+
+/-- On a curve, the identity functional recovers the centered chart coordinate germ. -/
+@[simp]
+theorem holomorphicLinearCoordinateGerm_id :
+    e.holomorphicLinearCoordinateGerm he x (.id ℂ ℂ) hx =
+      e.holomorphicCoordinateGerm (maximalAtlas_subset_of_le le_top he) x hx := by
+  apply toFilterGerm_nhds_injective x
+  rw [toFilterGerm_holomorphicLinearCoordinateGerm, holomorphicCoordinateGerm_def]
+  exact (toFilterGerm_germ le_rfl hx _ _ (fun y ↦
+    e.holomorphicCoordinateSection_apply (maximalAtlas_subset_of_le le_top he) (e x) y)).symm
+
+end Curves
 
 end OpenPartialHomeomorph

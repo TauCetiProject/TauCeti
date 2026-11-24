@@ -253,7 +253,7 @@ theorem latticeDifferential_eq_zero_of_isEmpty [IsEmpty V]
   simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, LinearMap.zero_apply]
   rw [latticeDifferential_single, latticeDifferentialOnGenerator_def]
   have hattach : C.directions.attach = ∅ :=
-    Finset.eq_empty_iff_forall_notMem.mpr fun v _ => isEmptyElim v.1
+    Finset.eq_empty_iff_forall_notMem.mpr fun v _ => isEmptyElim v.val
   rw [hattach]
   simp
 

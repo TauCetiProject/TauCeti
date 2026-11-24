@@ -5,17 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
 import Mathlib.RingTheory.Etale.Descent
 
 /-!
-# Smoothness of closed subgroups under faithfully flat base change
+# Smoothness of affine groups and closed subgroups under base change
 
-A closed subgroup cut out by a Hopf ideal `J` is smooth exactly when the closed subgroup cut out
-by its base change `J_K` along a faithfully flat extension `k → K` is smooth. The coordinate
-quotient of `J_K` is identified with the base change of the coordinate quotient of `J` by
-`CommHopfAlgCat.quotientBaseChangeIso`. Smoothness is preserved by base change, and descends
+Smoothness of a bundled finite-type coordinate Hopf algebra after base change gives smoothness of
+its underlying tensor-product algebra (`FiniteTypeCommHopfAlgCat.smooth_baseChange_obj`), matching
+the hypothesis of faithfully flat smoothness descent.
+
+Likewise, a closed subgroup cut out by a Hopf ideal `J` is smooth exactly when the closed subgroup
+cut out by its base change `J_K` along a faithfully flat extension `k → K` is smooth. The
+coordinate quotient of `J_K` is identified with the base change of the coordinate quotient of `J`
+by `CommHopfAlgCat.quotientBaseChangeIso`. Smoothness is preserved by base change, and descends
 along the faithfully flat extension by Mathlib's
 `Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat`.
 
@@ -23,15 +28,24 @@ along the faithfully flat extension by Mathlib's
 
 * `TauCeti.smoothCommHopfAlgProperty_quotient_baseChange_iff`: smoothness of a closed subgroup is
   equivalent to smoothness of its faithfully flat base change.
+* `TauCeti.FiniteTypeCommHopfAlgCat.smooth_baseChange_obj`: smoothness of `baseChange H` gives
+  smoothness of `K ⊗[k] H.obj`.
+
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), §1.g.
 -/
 
 public section
 
 open CategoryTheory
+open scoped TensorProduct
 
 namespace TauCeti
 
 universe u v w
+
+section Quotient
 
 variable {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
 variable {H : _root_.CommHopfAlgCat.{v} k}
@@ -58,5 +72,21 @@ theorem smoothCommHopfAlgProperty_quotient_baseChange_iff [Module.FaithfullyFlat
     let _ : Algebra.Smooth k (CommHopfAlgCat.quotient H J) :=
       (smoothCommHopfAlgProperty_iff _).mp hJ
     exact (smoothCommHopfAlgProperty_iff _).mpr inferInstance
+
+end Quotient
+
+namespace FiniteTypeCommHopfAlgCat
+
+variable {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
+
+/-- Smoothness of the bundled finite-type base change `K ⊗[k] H` gives smoothness of the underlying
+tensor-product `K`-algebra `K ⊗[k] H.obj`. -/
+theorem smooth_baseChange_obj {H : FiniteTypeCommHopfAlgCat.{u, v} k}
+    (hH : Algebra.Smooth K (baseChange (K := K) H)) :
+    Algebra.Smooth K (K ⊗[k] H.obj) := by
+  let _ : Algebra.Smooth K (CommHopfAlgCat.baseChange (K := K) H.obj) := hH
+  exact Algebra.Smooth.of_equiv (CommHopfAlgCat.baseChangeAlgEquiv (K := K) H.obj)
+
+end FiniteTypeCommHopfAlgCat
 
 end TauCeti

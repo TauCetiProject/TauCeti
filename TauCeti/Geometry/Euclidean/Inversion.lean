@@ -235,8 +235,8 @@ theorem lt_dist_inversion_center_iff {c x : P} {R : ℝ} (hR : 0 < R) (hx : x �
 its centre. -/
 noncomputable def inversionHomeomorph (c : P) {R : ℝ} (hR : R ≠ 0) :
     ({c}ᶜ : Set P) ≃ₜ ({c}ᶜ : Set P) where
-  toFun x := ⟨inversion c R x, (inversion_eq_center hR).not.2 x.2⟩
-  invFun x := ⟨inversion c R x, (inversion_eq_center hR).not.2 x.2⟩
+  toFun x := ⟨inversion c R x, (inversion_eq_center hR).not.2 x.property⟩
+  invFun x := ⟨inversion c R x, (inversion_eq_center hR).not.2 x.property⟩
   left_inv x := Subtype.ext (inversion_inversion c hR x)
   right_inv x := Subtype.ext (inversion_inversion c hR x)
   continuous_toFun :=

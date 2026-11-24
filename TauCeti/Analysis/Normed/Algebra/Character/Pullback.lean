@@ -174,3 +174,52 @@ theorem characterPullback_eq_compContinuousMap (Φ : A →⋆ₐ[𝕜] B) :
   rfl
 
 end StarAlgHom
+
+namespace AlgEquiv
+
+variable {𝕜 A B C : Type*} [NontriviallyNormedField 𝕜]
+  [NormedRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A]
+  [NormedRing B] [NormedAlgebra 𝕜 B] [CompleteSpace B]
+  [NormedRing C] [NormedAlgebra 𝕜 C] [CompleteSpace C]
+
+/-- An algebra equivalence `e : A ≃ₐ[𝕜] B` between unital Banach algebras induces a weak-star
+homeomorphism `characterSpace 𝕜 B ≃ₜ characterSpace 𝕜 A` by character pullback. -/
+noncomputable def characterSpaceHomeomorph (e : A ≃ₐ[𝕜] B) :
+    characterSpace 𝕜 B ≃ₜ characterSpace 𝕜 A where
+  toFun := e.toAlgHom.characterPullback
+  invFun := e.symm.toAlgHom.characterPullback
+  left_inv φ := by ext b; simp
+  right_inv χ := by ext a; simp
+  continuous_toFun := map_continuous _
+  continuous_invFun := map_continuous _
+
+@[simp]
+theorem characterSpaceHomeomorph_apply (e : A ≃ₐ[𝕜] B) (φ : characterSpace 𝕜 B) (a : A) :
+    e.characterSpaceHomeomorph φ a = φ (e a) :=
+  e.toAlgHom.characterPullback_apply φ a
+
+@[simp]
+theorem characterSpaceHomeomorph_symm (e : A ≃ₐ[𝕜] B) :
+    e.characterSpaceHomeomorph.symm = e.symm.characterSpaceHomeomorph := (rfl)
+
+@[simp]
+theorem coe_characterSpaceHomeomorph (e : A ≃ₐ[𝕜] B) :
+    (e.characterSpaceHomeomorph : C(characterSpace 𝕜 B, characterSpace 𝕜 A)) =
+      e.toAlgHom.characterPullback := by
+  ext φ a
+  simp
+
+@[simp]
+theorem characterSpaceHomeomorph_refl :
+    (AlgEquiv.refl : A ≃ₐ[𝕜] A).characterSpaceHomeomorph =
+      Homeomorph.refl (characterSpace 𝕜 A) := by
+  ext φ a
+  rfl
+
+theorem characterSpaceHomeomorph_trans (e₁ : A ≃ₐ[𝕜] B) (e₂ : B ≃ₐ[𝕜] C) :
+    (e₁.trans e₂).characterSpaceHomeomorph =
+      e₂.characterSpaceHomeomorph.trans e₁.characterSpaceHomeomorph := by
+  ext φ a
+  rfl
+
+end AlgEquiv

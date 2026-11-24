@@ -8,9 +8,9 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 
 import TauCeti.InformationTheory.KullbackLeibler.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.MeasureTheory.Measure.Decomposition.Prod
 import TauCeti.MeasureTheory.Measure.Prod
-import TauCeti.Probability.Density
 
 /-!
 # Four-point cyclic perturbations of Schrödinger minimizers
@@ -283,7 +283,7 @@ private theorem isCoupling_withDensity_add_mul_fourPointDelta
       Measure.withDensity_rnDeriv_eq R P hRμν,
       withDensity_congr_ae ((Measure.rnDeriv_lt_top γ R).mono fun _ h ↦ ENNReal.ofReal_toReal h.ne),
       Measure.withDensity_rnDeriv_eq γ R hγR]
-  have hp_int : Integrable p P := Probability.integrable_of_eq_withDensity hγ_P.symm
+  have hp_int : Integrable p P := MeasureTheory.integrable_of_eq_withDensity hγ_P.symm
     (by fun_prop) (ae_of_all _ fun _ ↦ mul_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg)
   have hΔ_int : Integrable (fourPointDelta μ ν W) P := integrable_fourPointDelta hW hWB
   have hpt_int : Integrable (fun z ↦ p z + t * fourPointDelta μ ν W z) P :=

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Regular
 public import Mathlib.Algebra.Regular.Pow
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -32,9 +31,9 @@ namespace LaurentPolynomial
 
 open AddMonoidAlgebra
 
-variable {R S : Type*}
-
 section QuotientRegularity
+
+variable {R S : Type*}
 
 /-- Unit highest coefficient stays regular after any coefficient map followed by an arbitrary
 two-sided ideal quotient. Neither principality nor commutativity is required. -/
@@ -48,7 +47,9 @@ theorem isRegular_mapRingHom_quotientMk_mapRingHom_of_isUnit_leadingCoeff
 
 end QuotientRegularity
 
-variable [CommRing S]
+section CommRing
+
+variable {S : Type*} [CommRing S]
 
 /-- The coefficient quotient by `f` kills exactly the multiples of the constant Laurent
 polynomial `C f`. -/
@@ -121,7 +122,11 @@ theorem span_C_inf_span_prod_pow_eq_span_mul {ι : Type*} (s : Finset ι) (f : S
     (isRegular_mapRingHom_of_isUnit_leadingCoeff
       (Ideal.Quotient.mk (Ideal.span {f})) (hg i hi)).pow (n i)
 
-variable [Semiring R]
+end CommRing
+
+section MapRingHom
+
+variable {R S : Type*} [CommRing S] [Semiring R]
 
 /-- Coefficient images of unit-highest-coefficient factors satisfy the intrinsic intersection
 identity. For `S = R[S±]` and `φ = C`, the factors depend on separate Laurent variables. -/
@@ -159,5 +164,7 @@ theorem span_C_inf_span_prod_mapRingHom_pow_eq_span_mul {ι : Type*} (s : Finset
     Ideal.span {C f * ∏ i ∈ s, (mapRingHom ℤ φ (g i)) ^ n i} :=
   span_C_inf_span_prod_pow_eq_span_mul s f _ n fun i hi ↦
     isUnit_leadingCoeff_mapRingHom WithBot.coe_injective φ (hg i hi)
+
+end MapRingHom
 
 end LaurentPolynomial

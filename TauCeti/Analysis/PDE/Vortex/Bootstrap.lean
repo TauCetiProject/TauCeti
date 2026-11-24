@@ -11,6 +11,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 
 /-!
 # Elliptic bootstrap for gauge-fixed plane vortices
@@ -35,10 +36,10 @@ classical expression `L₀ y` is the tempered vacuum operator applied to `y`. Co
 **The gauge-fixed vortex map.** At a field `x ∈ A_m^n`, `n ≥ 2`, the operator `L_x` differs from
 `L₀` by a zeroth-order term whose coefficients are the coordinates of `x - vacuumField`. These are
 reference coordinates, smooth with bounded derivatives, plus an `H^n` tail, so the difference maps
-`H^n` to `H^n` (`TauCeti.Vortex.gaugeFixedOperator_sub_mem_sobolevFields`). Let `x₀ ∈ A_m^(k+1)` be
-a `C¹` base field, for instance the reference field itself, and let `x ∈ A_m^k`, `k ≥ 2`, be
-a `C¹` field. Write `y = x - x_m`. The exact quadratic expansion of the equation about the
-reference field gives
+`H^n` to `H^n` (`TauCeti.Vortex.gaugeFixedOperator_sub_mem_sobolevFields`, in
+`TauCeti.Analysis.PDE.Vortex.EquationMap`). Let `x₀ ∈ A_m^(k+1)` be a `C¹` base field, for
+instance the reference field itself, and let `x ∈ A_m^k`, `k ≥ 2`, be a `C¹` field. Write
+`y = x - x_m`. The exact quadratic expansion of the equation about the reference field gives
 
 `L_(x_m) y = (d₀*_(x_m) y, equation x - equation x_m - quadraticTerm y)`.
 
@@ -64,7 +65,6 @@ All in the namespace `TauCeti.Vortex`:
 
 * `mem_sobolevFields_add_one_of_gaugeFixedOperator`: a `C¹` field `y ∈ H^s`, `s ≥ 1`, with
   `L₀ y ∈ H^s` lies in `H^(s+1)`.
-* `gaugeFixedOperator_sub_mem_sobolevFields`: `L_x - L₀` maps `H^n` to `H^n` for `x ∈ A_m^n`.
 * `mem_framedFieldSpace_add_one_of_equation`: a `C¹` field of `A_m^k`, `k ≥ 2`, whose equation
   defect and Coulomb defect relative to a base field of `A_m^(k+1)` lie in `H^k` lies in
   `A_m^(k+1)`.
@@ -166,40 +166,6 @@ theorem mem_sobolevFields_add_one_of_gaugeFixedOperator {s : ℝ} (hs : 1 ≤ s)
   -- The vacuum operator is a bijection `H^(s+1) → H^s` on tempered fields.
   have hY := memSobolev_temperedVacuumOperator_iff.1 hLY
   exact mem_sobolevFields.2 fun i ↦ mem_realSobolevFunctions.2 ⟨u i, huy i, hY i⟩
-
-/-! ### The gauge-fixed operator at a framed field -/
-
-/-- **`L_x - L₀` has order zero.** For a field `x ∈ A_m^n`, `n ≥ 2`, the gauge-fixed operators at
-`x` and at the vacuum differ on `y ∈ H^n` by a field in `H^n`: their difference is multiplication of
-`y` by the coordinates of `x - vacuumField`. -/
-theorem gaugeFixedOperator_sub_mem_sobolevFields {f : ContDiffBump (0 : ℝ)} {m n : ℕ}
-    (hn : 1 < n) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m n)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields n) :
-    gaugeFixedOperator x y - gaugeFixedOperator vacuumField y ∈ sobolevFields n := by
-  have hp (a b : Fin 4) : (fun z ↦ x z a * y z b) ∈ realSobolevFunctions ℂ n 2 :=
-    mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn hx a (mem_sobolevFields.1 hy b)
-  have hc (b : Fin 4) : (fun z ↦ (1 / 2 : ℝ) * y z b) ∈ realSobolevFunctions ℂ n 2 :=
-    Submodule.smul_mem _ (1 / 2 : ℝ) (mem_sobolevFields.1 hy b)
-  refine mem_sobolevFields.2 fun i ↦ ?_
-  fin_cases i
-  · convert sub_mem (sub_mem (hp 2 3) (hp 3 2)) (hc 3) using 1
-    ext z
-    simp [gaugeAdjoint_def, vacuumField_apply]
-    ring
-  · convert sub_mem (add_mem (hp 2 2) (hp 3 3)) (hc 2) using 1
-    ext z
-    simp [vacuumField_apply]
-    ring
-  · convert add_mem (neg_mem (add_mem (add_mem (add_mem (hp 0 3) (hp 3 0)) (hp 1 2)) (hp 2 1)))
-      (hc 1) using 1
-    ext z
-    simp [vacuumField_apply]
-    ring
-  · convert sub_mem (sub_mem (sub_mem (add_mem (hp 0 2) (hp 2 0)) (hp 1 3)) (hp 3 1)) (hc 0)
-      using 1
-    ext z
-    simp [vacuumField_apply]
-    ring
 
 /-! ### The bootstrap -/
 

@@ -89,7 +89,7 @@ theorem torsion_eq_one_or_neg_one_of_isReal {w : InfinitePlace K} (hw : w.IsReal
     exact absurd (IsPrimitiveRoot.nrRealPlaces_eq_zero_of_two_lt hc (IsPrimitiveRoot.orderOf _))
       hpos
   · interval_cases hi : orderOf (x : (𝓞 K)ˣ)
-    · exact absurd hi (orderOf_pos_iff.2 ((CommGroup.mem_torsion x.1).1 x.2)).ne'
+    · exact absurd hi (orderOf_pos_iff.2 ((CommGroup.mem_torsion x.val).1 x.property)).ne'
     · exact Or.inl (orderOf_eq_one_iff.1 hi)
     · rw [← orderOf_units, CharP.orderOf_eq_two_iff 0 (by decide)] at hi
       simp [← Units.val_inj, Units.val_neg, Units.val_one, hi]
@@ -110,7 +110,7 @@ omit [NumberField K] in
 theorem torsion_eq_one_or_neg_one_of_torsionOrder_eq_two (h : torsionOrder K = 2)
     (x : torsion K) : (x : (𝓞 K)ˣ) = 1 ∨ (x : (𝓞 K)ˣ) = -1 := by
   have hx : ((x : (𝓞 K)ˣ) : 𝓞 K) * ((x : (𝓞 K)ˣ) : 𝓞 K) = 1 := by
-    rw [← Units.val_mul, ← sq, ← h, pow_torsionOrder_eq_one K x.2, Units.val_one]
+    rw [← Units.val_mul, ← sq, ← h, pow_torsionOrder_eq_one K x.property, Units.val_one]
   rcases mul_self_eq_one_iff.mp hx with hx | hx
   · exact .inl (Units.ext hx)
   · exact .inr (Units.ext hx)

@@ -5,15 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Prod
+public import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
 public import Mathlib.Data.Set.Prod
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Interval.Set.Disjoint
 
 /-!
-# Unions of interval products
+# Products with intervals
 
 A sequence tending to `atTop` exhausts each upper ray by bounded half-open intervals.
 Taking products with a fixed set preserves this union.
+
+A product `Ioi c ×ˢ s` of an upper ray with a set is stable under translation by `(a, 0)` with
+`0 ≤ a` (`Set.add_mk_zero_mem_Ioi_prod`).
 -/
 
 public section
@@ -29,5 +34,11 @@ theorem iUnion_Ioc_prod_eq_Ioi_prod {ι Ω : Type*} [LinearOrder ι] {u : ℕ �
     (⋃ n, Ioc s (u n) ×ˢ A) = Ioi s ×ˢ A := by
   rw [← iUnion_prod_const, iUnion_Ioc_eq_Ioi_self_iff.mpr
     (fun x _ => (hu.eventually (eventually_ge_atTop x)).exists)]
+
+/-- Translating a point of `Ioi c ×ˢ s` by `(a, 0)` with `0 ≤ a` stays in `Ioi c ×ˢ s`. -/
+theorem add_mk_zero_mem_Ioi_prod {α β : Type*} [AddZeroClass α] [Preorder α] [AddLeftMono α]
+    [AddZeroClass β] {c a : α} {s : Set β} {z : α × β} (hz : z ∈ Ioi c ×ˢ s) (ha : 0 ≤ a) :
+    z + (a, 0) ∈ Ioi c ×ˢ s := by
+  simpa using And.intro (lt_add_of_lt_of_nonneg (mem_Ioi.1 hz.1) ha) hz.2
 
 end Set

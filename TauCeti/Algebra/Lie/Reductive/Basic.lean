@@ -194,6 +194,23 @@ end Normalizer
 
 /-! ### The Killing form sees only the centre -/
 
+section KillingComplDerivedSeries
+
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
+
+/-- An element orthogonal to the derived ideal brackets into the radical of the Killing form: this
+is the invariance `κ ⁅x, y⁆ z = κ x ⁅y, z⁆` read from right to left. -/
+theorem lie_mem_killingCompl_top_of_mem_killingCompl_derivedSeries {x : L}
+    (hx : x ∈ LieIdeal.killingCompl K L (derivedSeries K L 1)) (y : L) :
+    ⁅y, x⁆ ∈ LieIdeal.killingCompl K L ⊤ := by
+  refine (LieIdeal.mem_killingCompl K L ⊤).2 fun z _ ↦ ?_
+  have hyz : ⁅z, y⁆ ∈ derivedSeries K L 1 := LieAlgebra.lie_mem_derivedSeries_one z y
+  have hinv := LieModule.traceForm_apply_lie_apply K L L z y x
+  rw [← hinv]
+  exact (LieIdeal.mem_killingCompl K L _).1 hx _ hyz
+
+end KillingComplDerivedSeries
+
 section KillingCompl
 
 variable (K : Type u) (L : Type v) [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
@@ -209,22 +226,6 @@ theorem killingCompl_top_eq_center :
   · refine (LieIdeal.mem_killingCompl K L ⊤).2 fun y _ ↦ ?_
     rw [LieModule.traceForm_comm, killingForm_apply_apply, LieAlgebra.ad_eq_zero_iff.mpr hz]
     simp
-
-variable {K L}
-
-omit [CharZero K] [FiniteDimensional K L] [LieAlgebra.HasCentralRadical K L] in
-/-- An element orthogonal to the derived ideal brackets into the radical of the Killing form: this
-is the invariance `κ ⁅x, y⁆ z = κ x ⁅y, z⁆` read from right to left. -/
-theorem lie_mem_killingCompl_top_of_mem_killingCompl_derivedSeries {x : L}
-    (hx : x ∈ LieIdeal.killingCompl K L (derivedSeries K L 1)) (y : L) :
-    ⁅y, x⁆ ∈ LieIdeal.killingCompl K L ⊤ := by
-  refine (LieIdeal.mem_killingCompl K L ⊤).2 fun z _ ↦ ?_
-  have hyz : ⁅z, y⁆ ∈ derivedSeries K L 1 := LieAlgebra.lie_mem_derivedSeries_one z y
-  have hinv := LieModule.traceForm_apply_lie_apply K L L z y x
-  rw [← hinv]
-  exact (LieIdeal.mem_killingCompl K L _).1 hx _ hyz
-
-variable (K L)
 
 /-- **The derived ideal of a reductive Lie algebra has the centre as its orthogonal complement.**
 Nothing beyond the radical of the Killing form is orthogonal to the derived ideal: an element
@@ -499,10 +500,11 @@ section Modules
 
 variable (K : Type u) (L : Type v) [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [LieAlgebra.HasCentralRadical K L]
-variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
-variable {N : Type w'} [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
+section Equiv
 
-omit [LieModule K L M] [LieModule K L N] in
+variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M]
+variable {N : Type w'} [AddCommGroup N] [Module K N] [LieRingModule L N]
+
 /-- **Equivariance is tested on the centre and on the derived ideal.** A linear map between
 `L`-modules commuting with the action of every central element and of every element of `⁅L, L⁆`
 commutes with the action of `L`, because those two ideals span
@@ -526,7 +528,6 @@ def lieModuleEquivOfCenterOfDerivedSeries (e : M ≃ₗ[K] N)
   map_lie' {x m} :=
     map_lie_of_forall_center_of_forall_derivedSeries K L (e : M →ₗ[K] N) hZ hD x m
 
-omit [LieModule K L M] [LieModule K L N] in
 @[simp]
 theorem lieModuleEquivOfCenterOfDerivedSeries_apply (e : M ≃ₗ[K] N)
     (hZ : ∀ z ∈ LieAlgebra.center K L, ∀ m : M, e ⁅z, m⁆ = ⁅z, e m⁆)
@@ -534,7 +535,6 @@ theorem lieModuleEquivOfCenterOfDerivedSeries_apply (e : M ≃ₗ[K] N)
     lieModuleEquivOfCenterOfDerivedSeries K L e hZ hD m = e m :=
   (rfl)
 
-omit [LieModule K L M] [LieModule K L N] in
 @[simp]
 theorem lieModuleEquivOfCenterOfDerivedSeries_symm_apply (e : M ≃ₗ[K] N)
     (hZ : ∀ z ∈ LieAlgebra.center K L, ∀ m : M, e ⁅z, m⁆ = ⁅z, e m⁆)
@@ -542,7 +542,10 @@ theorem lieModuleEquivOfCenterOfDerivedSeries_symm_apply (e : M ≃ₗ[K] N)
     (lieModuleEquivOfCenterOfDerivedSeries K L e hZ hD).symm n = e.symm n :=
   (rfl)
 
-variable (M) [IsAlgClosed K] [FiniteDimensional K M] [LieModule.IsIrreducible K L M]
+end Equiv
+
+variable (M : Type w) [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  [IsAlgClosed K] [FiniteDimensional K M] [LieModule.IsIrreducible K L M]
 
 /-- **The semisimple part acts irreducibly.** A finite-dimensional irreducible module over a
 reductive Lie algebra, over an algebraically closed field, restricts to an irreducible module over

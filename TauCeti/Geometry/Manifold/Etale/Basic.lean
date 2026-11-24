@@ -70,7 +70,7 @@ theorem exists_contMDiff_isotropy_action_of_proper_source_target [T2Space (Quive
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C))
     (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      p.1.1.comp p.1.2 p.2)
+      p.val.1.comp p.val.2 p.property)
     (x : C) :
     ∃ (U : TopologicalSpace.Opens C) (hxU : x ∈ U) (_ : MulAction (Aut x) U)
       (F : ActionCategory (Aut x) U ⥤ C),
@@ -223,7 +223,7 @@ theorem isLocalDiffeomorph_composablePairs_snd
     (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total D → D)) :
     letI := composablePairsChartedSpace (H' := H') hs
     IsLocalDiffeomorph J J n
-      (fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦ p.1.2) :=
+      (fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦ p.val.2) :=
   (((isLocalHomeomorph_source_iff_target D).mp hs).pullback_snd
     continuous_source).isLocalDiffeomorph_chartedSpaceComap
 
@@ -236,7 +236,7 @@ theorem contMDiff_composablePairs_iff
     {f : N → {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left}}
     (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total D → D)) :
     letI := composablePairsChartedSpace (H' := H') hs
-    ContMDiff I'' J n f ↔ Continuous f ∧ ContMDiff I'' J n (fun z ↦ (f z).1.2) :=
+    ContMDiff I'' J n f ↔ Continuous f ∧ ContMDiff I'' J n (fun z ↦ (f z).val.2) :=
   (((isLocalHomeomorph_source_iff_target D).mp hs).pullback_snd
     continuous_source).contMDiff_chartedSpaceComap_iff
 
@@ -247,14 +247,14 @@ theorem isLocalDiffeomorph_composablePairs_fst
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total D → D)) :
     letI := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
     IsLocalDiffeomorph J J n
-      (fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦ p.1.1) := by
+      (fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦ p.val.1) := by
   let := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
-  refine fun p ↦ IsLocalDiffeomorphAt.of_comp_left ?_ (ht p.1.1)
-    (continuous_fst.comp continuous_subtype_val).continuousAt
+  refine fun p ↦ IsLocalDiffeomorphAt.of_comp_left ?_ (ht p.val.1)
+    (continuous_fst.comp continuous_subtypeVal).continuousAt
   simpa only [Function.comp_def, funext fun q : {q : Quiver.Total D × Quiver.Total D //
-    q.1.right = q.2.left} ↦ q.2] using
+    q.1.right = q.2.left} ↦ q.property] using
     (isLocalDiffeomorph_composablePairs_snd (J := J) (n := n) hs.isLocalHomeomorph p).comp
-      (hg := hs p.1.2)
+      (hg := hs p.val.2)
 
 /-- Composition of composable pairs is a `C^n` local diffeomorphism when source and target are `C^n`
 local diffeomorphisms. -/
@@ -264,11 +264,11 @@ theorem isLocalDiffeomorph_comp
     letI := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
     IsLocalDiffeomorph J J n
       fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦
-        p.1.1.comp p.1.2 p.2 := by
+        p.val.1.comp p.val.2 p.property := by
   let := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
   refine fun p ↦ IsLocalDiffeomorphAt.of_comp_left ?_ (hs _) continuous_comp.continuousAt
   simpa only [Function.comp_def, Quiver.Total.comp_left] using
-    (isLocalDiffeomorph_composablePairs_fst hs ht p).comp (hg := hs p.1.1)
+    (isLocalDiffeomorph_composablePairs_fst hs ht p).comp (hg := hs p.val.1)
 
 /-- Composition of composable pairs is `C^n` when source and target are `C^n` local
 diffeomorphisms. -/
@@ -278,7 +278,7 @@ theorem contMDiff_comp
     letI := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
     ContMDiff J J n
       fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦
-        p.1.1.comp p.1.2 p.2 :=
+        p.val.1.comp p.val.2 p.property :=
   letI := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
   (isLocalDiffeomorph_comp hs ht).contMDiff
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
-public import TauCeti.AlgebraicGeometry.Morphisms.Finite.FlatDegree
+public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
 import TauCeti.AlgebraicGeometry.Noetherian
 

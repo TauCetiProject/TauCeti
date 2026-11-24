@@ -51,8 +51,9 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {η : SmoothForm
 /-- **A `(1,0)`-form on the plane is a multiple of `dz`.** At every point it is complex-linear,
 so its value on a tangent vector `v` is `v` times its coefficient, its value on `1`. -/
 theorem IsOfType.apply_eq_smul (hη : η.IsOfType (ofComplexManifold ℂ ℂ) 1 0) (z v : ℂ) :
-    η.1 z ![v] = v • η.1 z ![(1 : ℂ)] := by
-  have h : (η.1 z : ℂ [⋀^Fin 1]→L[ℝ] F).IsOfType (Complex.I • ContinuousLinearMap.id ℝ ℂ) 1 0 := by
+    η.val z ![v] = v • η.val z ![(1 : ℂ)] := by
+  have h : (η.val z : ℂ [⋀^Fin 1]→L[ℝ] F).IsOfType (Complex.I • ContinuousLinearMap.id ℝ ℂ) 1 0
+      := by
     simpa only [toEndomorphism_ofComplexManifold] using hη.apply z
   have h' := h.map_smul_complex (U := ℂ) v (1 : ℂ)
   rw [smul_eq_mul, mul_one] at h'
@@ -62,11 +63,11 @@ theorem IsOfType.apply_eq_smul (hη : η.IsOfType (ofComplexManifold ℂ ℂ) 1 
 `w • dc(v) - v • dc(w)`, where `c` is the coefficient of the `(1,0)`-form. -/
 private theorem IsOfType.mextDerivₗ_apply_vecCons (hη : η.IsOfType (ofComplexManifold ℂ ℂ) 1 0)
     (z v w : ℂ) :
-    (mextDerivₗ 𝓘(ℝ, ℂ) 1 η).1 z ![v, w] =
-      w • fderiv ℝ (fun y ↦ η.1 y ![(1 : ℂ)]) z v -
-        v • fderiv ℝ (fun y ↦ η.1 y ![(1 : ℂ)]) z w := by
+    (mextDerivₗ 𝓘(ℝ, ℂ) 1 η).val z ![v, w] =
+      w • fderiv ℝ (fun y ↦ η.val y ![(1 : ℂ)]) z v -
+        v • fderiv ℝ (fun y ↦ η.val y ![(1 : ℂ)]) z w := by
   -- Read `η` as a map into the alternating forms on the model space `ℂ`.
-  let Θ : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F := fun y ↦ η.1 y
+  let Θ : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F := fun y ↦ η.val y
   have hd : ContDiff ℝ ∞ Θ := isSmoothForm_modelSpace_iff.1 η.isSmoothForm
   have hc : DifferentiableAt ℝ (fun y ↦ Θ y ![(1 : ℂ)]) z :=
     (ContinuousAlternatingMap.apply ℝ ℂ F ![(1 : ℂ)]).differentiableAt.comp z
@@ -78,7 +79,7 @@ private theorem IsOfType.mextDerivₗ_apply_vecCons (hη : η.IsOfType (ofComple
   -- restates it through `Θ` so that rewriting sees well-typed terms.
   change _ = w • fderiv ℝ (fun y ↦ Θ y ![(1 : ℂ)]) z v - v • fderiv ℝ (fun y ↦ Θ y ![(1 : ℂ)]) z w
   rw [TauCeti.mextDerivₗ_apply]
-  refine (congrArg (fun A ↦ A ![v, w]) (mextDeriv_eq_extDeriv η.1 z)).trans
+  refine (congrArg (fun A ↦ A ![v, w]) (mextDeriv_eq_extDeriv η.val z)).trans
     ((extDeriv_apply_pair_of_differentiableAt
       (hd.differentiable (by simp) z : DifferentiableAt ℝ Θ z) v w).trans ?_)
   rw [hcoeff, hcoeff, fderiv_fun_const_smul hc, fderiv_fun_const_smul hc]
@@ -88,11 +89,11 @@ private theorem IsOfType.mextDerivₗ_apply_vecCons (hη : η.IsOfType (ofComple
 `∂bar`-closed at `z` exactly when its coefficient `c` is complex differentiable at `z`. -/
 theorem IsOfType.delBar_apply_eq_zero_iff (hη : η.IsOfType (ofComplexManifold ℂ ℂ) 1 0)
     (z : ℂ) :
-    ((ofComplexManifold ℂ ℂ).delBar η).1 z = 0 ↔
-      DifferentiableAt ℂ (fun y ↦ η.1 y ![(1 : ℂ)]) z := by
+    ((ofComplexManifold ℂ ℂ).delBar η).val z = 0 ↔
+      DifferentiableAt ℂ (fun y ↦ η.val y ![(1 : ℂ)]) z := by
   -- Read `η` and `dη` at `z` through the model space `ℂ`, with `J = L` multiplication by `i`.
-  let Θ : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F := fun y ↦ η.1 y
-  let β : ℂ [⋀^Fin 2]→L[ℝ] F := (mextDerivₗ 𝓘(ℝ, ℂ) 1 η).1 z
+  let Θ : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F := fun y ↦ η.val y
+  let β : ℂ [⋀^Fin 2]→L[ℝ] F := (mextDerivₗ 𝓘(ℝ, ℂ) 1 η).val z
   let L : ℂ →L[ℝ] ℂ := Complex.I • ContinuousLinearMap.id ℝ ℂ
   have hd : ContDiff ℝ ∞ Θ := isSmoothForm_modelSpace_iff.1 η.isSmoothForm
   have hc : DifferentiableAt ℝ (fun y ↦ Θ y ![(1 : ℂ)]) z :=
@@ -102,7 +103,7 @@ theorem IsOfType.delBar_apply_eq_zero_iff (hη : η.IsOfType (ofComplexManifold 
   have hβ (v w : ℂ) : β ![v, w] = w • D v - v • D w := hη.mextDerivₗ_apply_vecCons z v w
   have hL (v : ℂ) : L (L v) = -v := by simp [L, ← mul_assoc]
   -- `∂bar η` is the type-`(1,1)` component of `dη`; the structure of `ℂ` is `L` at every point.
-  have hδ : ((ofComplexManifold ℂ ℂ).delBar η).1 z = L.typeProjection 1 1 β := by
+  have hδ : ((ofComplexManifold ℂ ℂ).delBar η).val z = L.typeProjection 1 1 β := by
     rw [hη.delBar_eq, coe_typeProjection]
     exact congrArg (fun A : ℂ →L[ℝ] ℂ ↦ A.typeProjection 1 1 β)
       (toEndomorphism_ofComplexManifold (E := ℂ) z)
@@ -133,7 +134,7 @@ theorem IsOfType.delBar_apply_eq_zero_iff (hη : η.IsOfType (ofComplexManifold 
 /-- **Holomorphic one-forms on the plane.** A `(1,0)`-form `c dz` on `ℂ` is `∂bar`-closed exactly
 when its coefficient `c` is an entire function. -/
 theorem IsOfType.delBar_eq_zero_iff (hη : η.IsOfType (ofComplexManifold ℂ ℂ) 1 0) :
-    (ofComplexManifold ℂ ℂ).delBar η = 0 ↔ Differentiable ℂ (fun y ↦ η.1 y ![(1 : ℂ)]) := by
+    (ofComplexManifold ℂ ℂ).delBar η = 0 ↔ Differentiable ℂ (fun y ↦ η.val y ![(1 : ℂ)]) := by
   refine ⟨fun h z ↦ (hη.delBar_apply_eq_zero_iff z).1 (by rw [h]; rfl), fun h ↦ ?_⟩
   exact Subtype.ext (funext fun z ↦ (hη.delBar_apply_eq_zero_iff z).2 (h z))
 

@@ -46,8 +46,9 @@ and more generally instantiates the `n` bound positions of a formula at a tuple 
 * `FirstOrder.Language.SentenceInf.realize_inst_of_realize_all` and
   `FirstOrder.Language.SentenceInf.realize_inst_of_realize_equal`: a universal sentence implies its
   instances, and equal closed terms can be exchanged in an instance.
-* `FirstOrder.Language.LHom.onBoundedFormulaInf_substBounds`: language maps commute with bound
-  substitution.
+* `FirstOrder.Language.LHom.onBoundedFormulaInf_substBounds` and
+  `FirstOrder.Language.LHom.onBoundedFormulaInf_inst`: language maps commute with bound
+  substitution and single-slot instantiation.
 * `FirstOrder.Language.BoundedFormulaInf.relationsIn_substBounds`,
   `FirstOrder.Language.BoundedFormulaInf.functionsIn_subset_functionsIn_substBounds` and
   `FirstOrder.Language.BoundedFormulaInf.functionsIn_substBounds_subset`: bound substitution keeps
@@ -487,6 +488,13 @@ theorem onBoundedFormulaInf_substBounds (g : L →ᴸ L') : ∀ {m k : ℕ}
   | all φ ih => simp only [substBounds_all, onBoundedFormulaInf_all, ih, hlift]
   | iSup φs ih => simp [ih]
   | iInf φs ih => simp [ih]
+
+/-- A language map commutes with instantiating the single bound position of a formula at a term. -/
+@[simp]
+theorem onBoundedFormulaInf_inst (g : L →ᴸ L') (φ : L.BoundedFormulaInf ι α 1)
+    (t : L.Term (α ⊕ Fin 0)) :
+    g.onBoundedFormulaInf (φ.inst t) = (g.onBoundedFormulaInf φ).inst (g.onTerm t) := by
+  rw [inst_def, inst_def, onBoundedFormulaInf_substBounds]
 
 end LHom
 

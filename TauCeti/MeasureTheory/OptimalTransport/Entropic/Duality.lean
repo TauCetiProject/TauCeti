@@ -9,8 +9,9 @@ public import TauCeti.Data.Matrix.Scaling.Basic
 public import TauCeti.InformationTheory.KullbackLeibler.Variational
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.SchroedingerSystem
 
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.MeasureTheory.OptimalTransport.Entropic.Potentials
-import TauCeti.Probability.Density
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Duality for entropic optimal transport
@@ -55,6 +56,10 @@ uniformly bounded potentials.
 * `TauCeti.aemeasurable_entropicGibbsFactor`: almost everywhere measurability of the Gibbs factor
   for `μ`- and `ν`-almost everywhere measurable potentials and a `μ ⊗ ν`-almost everywhere
   measurable cost.
+* `TauCeti.continuous_entropicGibbsKernel`, `TauCeti.continuous_of_continuous_entropicGibbsKernel`,
+  and `TauCeti.exists_le_of_continuous_entropicGibbsKernel`: continuity of a finite-valued cost at
+  positive temperature is equivalent to continuity of its Gibbs kernel, and on compact spaces gives
+  a finite upper bound on the cost.
 * `TauCeti.IsCoupling.ofReal_entropicDualValue_le_lintegral_add_mul_klDiv` and
   `TauCeti.ofReal_entropicDualValue_le_entropicTransportCost`: weak duality, for a finite source
   measure and an almost everywhere measurable cost.
@@ -270,6 +275,30 @@ theorem continuous_entropicGibbsKernel [TopologicalSpace X] [TopologicalSpace Y]
     funext fun z ↦ entropicGibbsKernel_of_ne_top (hfin z)
   rw [h]
   exact ((ENNReal.continuousOn_toReal.comp_continuous hc hfin).neg.div_const _).rexp
+
+/-- When `c` avoids `∞` and `ε ≠ 0`, continuity of the Gibbs kernel `exp (-c / ε)` forces `c`
+itself to be continuous. -/
+theorem continuous_of_continuous_entropicGibbsKernel [TopologicalSpace X] [TopologicalSpace Y]
+    (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
+    (hkc : Continuous (Function.uncurry (entropicGibbsKernel c ε))) : Continuous c := by
+  have hne : ∀ z : X × Y, Function.uncurry (entropicGibbsKernel c ε) z ≠ 0 := fun z ↦ by
+    rw [Function.uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z)]
+    exact (Real.exp_pos _).ne'
+  have hc_eq : c = fun z ↦
+      ENNReal.ofReal (-(ε : ℝ) * Real.log (Function.uncurry (entropicGibbsKernel c ε) z)) :=
+    funext fun z ↦ by
+      rw [Function.uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z), Real.log_exp,
+        neg_div, neg_mul_neg, mul_div_cancel₀ _ (NNReal.coe_ne_zero.2 hε),
+        ENNReal.ofReal_toReal (hfin z)]
+  rw [hc_eq]
+  exact ENNReal.continuous_ofReal.comp (continuous_const.mul (hkc.log hne))
+
+/-- On compact spaces, a finite-valued cost whose Gibbs kernel is continuous at positive
+temperature is bounded above by a finite `ℝ≥0` constant. -/
+theorem exists_le_of_continuous_entropicGibbsKernel [TopologicalSpace X] [CompactSpace X]
+    [TopologicalSpace Y] [CompactSpace Y] (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
+    (hkc : Continuous (Function.uncurry (entropicGibbsKernel c ε))) : ∃ B : ℝ≥0, ∀ z, c z ≤ B :=
+  (continuous_of_continuous_entropicGibbsKernel hfin hε hkc).exists_forall_le_coe_of_ne_top hfin
 
 end TauCeti
 
@@ -637,7 +666,7 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost_of_lintegral_ne
   have hψ_int : Integrable ψ ν := hψ₀_int.const_mul _
   have := hπ.isProbabilityMeasure
   have hgibbs_int : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν) :=
-    Probability.integrable_of_eq_withDensity hπ_gibbs
+    MeasureTheory.integrable_of_eq_withDensity hπ_gibbs
       (aemeasurable_entropicGibbsFactor hc hφ_meas.aemeasurable hψ_meas.aemeasurable)
       (ae_of_all _ entropicGibbsFactor_nonneg)
   refine ⟨φ, ψ, hφ_meas, hψ_meas, hφ_int, hψ_int, hgibbs_int, ?_⟩

@@ -17,6 +17,9 @@ linear endomorphism multiplies that coefficient by its determinant. Pullback alo
 linear map `A : E → F` multiplies it by the determinant of `C⁻¹ ∘ A` for any continuous linear
 equivalence `C : E ≃ F`, the target coefficient being taken in the transported basis. Above the
 top degree, continuous alternating maps on a finite-dimensional space over a division ring vanish.
+A top-degree form on a product `V × W` that agrees with a product of top-degree forms on `V` and
+`W` on one block basis `((B₁, 0), (0, B₂))` agrees with it on every block family
+`((u, 0), (0, w))`.
 No compatibility between the topology and the module structure is required for those statements.
 -/
 
@@ -87,5 +90,45 @@ theorem eq_zero_of_finrank_lt [Module.Finite K E] [Fintype ι] (f : E [⋀^ι]�
   exact f.toAlternatingMap.map_linearDependent v fun hv ↦ hv.fintype_card_le_finrank.not_gt h
 
 end AboveTopDegree
+
+section Prod
+
+variable {V W : Type*} [AddCommGroup V] [Module R V] [TopologicalSpace V] [AddCommGroup W]
+  [Module R W] [TopologicalSpace W] {k l K : ℕ}
+
+/-- **Top-degree forms on a product are multiplicative on block families once they are on one
+block basis.** Let `Φ`, `Φ₁` and `Φ₂` be top-degree forms on `V × W`, `V` and `W`. If
+`Φ((B₁, 0), (0, B₂)) = Φ₁(B₁) · Φ₂(B₂)` for bases `B₁` of `V` and `B₂` of `W`, then
+`Φ((u, 0), (0, w)) = Φ₁(u) · Φ₂(w)` for all families `u` in `V` and `w` in `W`: these are the
+images of the bases under linear maps `f₁` and `f₂`, and the block family is their image under
+`f₁ × f₂`, of determinant `det f₁ · det f₂`. -/
+theorem apply_append_eq_mul_of_apply_basis (hK : K = k + l) (Φ : (V × W) [⋀^Fin K]→L[R] R)
+    (Φ₁ : V [⋀^Fin k]→L[R] R) (Φ₂ : W [⋀^Fin l]→L[R] R) (B₁ : Module.Basis (Fin k) R V)
+    (B₂ : Module.Basis (Fin l) R W) (B : Module.Basis (Fin K) R (V × W))
+    (hB : ⇑B = fun r ↦ Fin.append (fun i ↦ (B₁ i, (0 : W))) (fun j ↦ ((0 : V), B₂ j))
+      (Fin.cast hK r))
+    (h : Φ B = Φ₁ B₁ * Φ₂ B₂) (u : Fin k → V) (w : Fin l → W) :
+    Φ (fun r ↦ Fin.append (fun i ↦ (u i, (0 : W))) (fun j ↦ ((0 : V), w j)) (Fin.cast hK r)) =
+      Φ₁ u * Φ₂ w := by
+  have := Module.Free.of_basis B₁
+  have := Module.Free.of_basis B₂
+  have := Module.Finite.of_basis B₁
+  have := Module.Finite.of_basis B₂
+  set f₁ := B₁.constr R u
+  set f₂ := B₂.constr R w
+  have hu : u = f₁ ∘ B₁ := funext fun i ↦ (B₁.constr_basis R u i).symm
+  have hw : w = f₂ ∘ B₂ := funext fun j ↦ (B₂.constr_basis R w j).symm
+  have happ : (fun r ↦ Fin.append (fun i ↦ (u i, (0 : W))) (fun j ↦ ((0 : V), w j))
+      (Fin.cast hK r)) = (f₁.prodMap f₂) ∘ B := by
+    rw [hB]
+    funext r
+    simp only [Function.comp_apply]
+    refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) (Fin.cast hK r) <;> simp [f₁, f₂]
+  rw [happ, apply_eq_det_mul Φ B, h, B.det_comp, B.det_self, LinearMap.det_prodMap, hu, hw,
+    apply_eq_det_mul Φ₁ B₁ (f₁ ∘ B₁), B₁.det_comp, B₁.det_self, apply_eq_det_mul Φ₂ B₂ (f₂ ∘ B₂),
+    B₂.det_comp, B₂.det_self]
+  ring
+
+end Prod
 
 end ContinuousAlternatingMap

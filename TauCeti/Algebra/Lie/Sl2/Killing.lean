@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Lie.CartanCriterion
 public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.Sl2.Basic
+public import TauCeti.Algebra.Lie.Sl2.DiagonalCartan
+public import TauCeti.Algebra.Lie.Weights.InvariantForm
 
 /-!
 # The Killing form of `sl₂`
@@ -16,13 +18,18 @@ public import TauCeti.Algebra.Lie.Sl2.Basic
 The Killing form of `sl (Fin 2) R` is four times the trace form of the standard representation, so
 on the standard basis `e = E₀₁`, `f = E₁₀`, `h = E₀₀ - E₁₁` its nonzero values are `κ(e, f) = 4` and
 `κ(h, h) = 8`. Over a field of characteristic zero the basis dual to `(e, f, h)` is therefore
-`(f / 4, e / 4, h / 8)`; this fixes the normalization of the Casimir element of `sl₂`.
+`(f / 4, e / 4, h / 8)`; this fixes the normalization of the Casimir element of `sl₂`. On the
+diagonal Cartan, the Killing form identifies `h` with the weight `8`, so in the coordinate
+`t = λ(h)` the invariant form on weights is `⟨s, t⟩ = s t / 8`.
 
 ## Main results
 
 * `TauCeti.killingForm_slFinTwo_apply`: `κ(x, y) = 4 tr(x y)`.
 * `TauCeti.killingForm_slFinTwoBasis`: the values of the Killing form on the standard basis.
 * `TauCeti.killingDualBasis_slFinTwoBasis`: the Killing-dual of the standard basis.
+* `TauCeti.cartanEquivDual_slTwoCartanGenerator`: the Killing form identifies `h` with the
+  weight `8`.
+* `TauCeti.invForm_slTwoWeight`: the invariant form on weights is `⟨s, t⟩ = s t / 8`.
 
 ## References
 
@@ -86,6 +93,32 @@ theorem killingDualBasis_slFinTwoBasis :
   · simpa using (eq_inv_smul_iff₀ (OfNat.ofNat_ne_zero (R := K) 4)).mpr h₀
   · simpa using (eq_inv_smul_iff₀ (OfNat.ofNat_ne_zero (R := K) 4)).mpr h₁
   · simpa using (eq_inv_smul_iff₀ (OfNat.ofNat_ne_zero (R := K) 8)).mpr h₂
+
+/-! ### The invariant form on the weights of the diagonal Cartan -/
+
+/-- **The Killing form identifies `h` with the weight `8`**: `κ(h, x) = 8 · x₀₀` on the diagonal
+Cartan, since `κ(h, h) = 8`. -/
+theorem cartanEquivDual_slTwoCartanGenerator :
+    IsKilling.cartanEquivDual (slTwoDiagonalCartan K) (slTwoCartanGenerator K) =
+      slTwoWeight 8 := by
+  refine dual_ext_slTwoCartanGenerator ?_
+  rw [cartanEquivDual_apply_apply_eq_killingForm, coe_slTwoCartanGenerator, ← slFinTwoBasis_two,
+    killingForm_slFinTwoBasis, slTwoWeight_slTwoCartanGenerator]
+  simp
+
+/-- **The invariant form on the weights of `sl₂`** is `⟨s, t⟩ = s t / 8` in the coordinate
+`t = λ(h)`. In particular the simple root, the weight `2`, has `⟨α, α⟩ = 1/2`. -/
+@[simp]
+theorem invForm_slTwoWeight (s t : K) :
+    invForm (slTwoWeight s) (slTwoWeight t) = s * t / 8 := by
+  have hs : slTwoWeight s =
+      (s / 8) • IsKilling.cartanEquivDual (slTwoDiagonalCartan K) (slTwoCartanGenerator K) := by
+    rw [cartanEquivDual_slTwoCartanGenerator]
+    refine dual_ext_slTwoCartanGenerator ?_
+    simp
+  rw [hs, map_smul, LinearMap.smul_apply, invForm_cartanEquivDual_left,
+    slTwoWeight_slTwoCartanGenerator, smul_eq_mul]
+  ring
 
 end Field
 

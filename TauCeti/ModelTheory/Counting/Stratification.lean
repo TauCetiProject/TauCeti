@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.BackAndForth.ExtensionSpectrum
-public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
-public import TauCeti.ModelTheory.Scott.Height
+public import TauCeti.ModelTheory.RelationalConfiguration.ScottHeight
 public import TauCeti.SetTheory.Cardinal.AlephOne
 
 /-!
@@ -140,12 +139,12 @@ theorem exists_unbounded_of_not_countable (h : IsIsolatingRank ρ)
   have hτ (c : K) : τ c = f (Quotient.mk _ c) :=
     congrArg (fun q => (f q : Ordinal.{0})) (Function.leftInverse_invFun hg (Quotient.mk _ c))
   refine ⟨ρ ⊔ τ, h.of_le le_sup_left (fun c d hcd => ?_)
-    (fun c => max_lt (h.lt_omega_one c) (f _).2), le_sup_left, fun β hβ => ?_⟩
+    (fun c => max_lt (h.lt_omega_one c) (f _).property), le_sup_left, fun β hβ => ?_⟩
   · simp only [Pi.sup_apply, τ, h.iso_invariant hcd, Quotient.sound hcd]
   · obtain ⟨q, hq⟩ := hf ⟨β, hβ⟩
     induction q using Quotient.inductionOn with
     | h c =>
-      refine ⟨c, c.2, le_sup_of_le_right ?_⟩
+      refine ⟨c, c.property, le_sup_of_le_right ?_⟩
       rw [hτ, hq]
 
 /-- On a set where the rank is bounded by `α`, isomorphism equals equivalence at level `α`.
@@ -157,7 +156,7 @@ theorem comap_isoSetoid_eq_bfEquivSetoid (h : IsIsolatingRank ρ)
       (bfEquivSetoid L ℕ α).comap (Subtype.val : K → _) := by
   ext c d
   exact ⟨fun hcd => isoSetoid_le_bfEquivSetoid α hcd,
-    fun hcd => h.isolates_of_le (hK c c.2) hcd⟩
+    fun hcd => h.isolates_of_le (hK c c.property) hcd⟩
 
 /-- A rank stratum of isomorphism classes injects into the quotient at that level.
 This is the step that makes it possible to count classes stratum by stratum. -/
@@ -167,11 +166,11 @@ theorem exists_injective_rank_fiber (h : IsIsolatingRank ρ)
       Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)), Function.Injective f := by
   let f : (rankOnIsoClasses h.iso_invariant K ⁻¹' {α}) →
       Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)) :=
-    fun q => Quotient.mk _ q.1.out
+    fun q => Quotient.mk _ q.val.out
   refine ⟨f, fun q r heq => Subtype.ext ?_⟩
-  have hq : ρ q.1.out.val = α := by
-    rw [← rankOnIsoClasses_mk h.iso_invariant K q.1.out, Quotient.out_eq]
-    exact q.2
+  have hq : ρ q.val.out.val = α := by
+    rw [← rankOnIsoClasses_mk h.iso_invariant K q.val.out, Quotient.out_eq]
+    exact q.property
   have hqr := Quotient.exact
     (s := (bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)) heq
   have hiso := h.isolates_of_le hq.le hqr
@@ -205,9 +204,7 @@ theorem isIsolatingRank_scottHeight :
     obtain ⟨e⟩ := isoSetoid_apply.1 hcd
     exact @Language.Equiv.scottHeight_eq L _ ℕ c.toStructure ℕ d.toStructure e
   lt_omega_one c := @scottHeight_lt_omega_one L _ ℕ c.toStructure _
-  isolates c d hcd := isoSetoid_apply.2
-    (@nonempty_equiv_of_bfEquiv_of_scottHeight_le L _ ℕ c.toStructure _ ℕ d.toStructure _ _ le_rfl
-      (bfEquivSetoid_apply.1 hcd))
+  isolates c d hcd := (isoSetoid_iff_bfEquivSetoid_of_scottHeight_le le_rfl).2 hcd
 
 variable (L) in
 /-- Every relational language has an isolating rank on its configurations on `ℕ`. -/
@@ -258,20 +255,11 @@ theorem exists_comap_isoSetoid_eq_bfEquivSetoid (K : Set (RelationalConfiguratio
 set `K` of configurations on `ℕ` are small level by level (`TauCeti.BFSmall`), then `K` meets at
 most `ℵ₁` isomorphism classes. -/
 theorem BFSmall.mk_isoClasses_le_aleph_one {K : Set (RelationalConfiguration L ℕ)}
-    (h : @BFSmall L _ K (fun _ => ℕ) fun c => c.1.toStructure) :
+    (h : @BFSmall L _ K (fun _ => ℕ) fun c => c.val.toStructure) :
     #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ := by
   refine mk_isoClasses_le_aleph_one_of_countable_levels K fun α hα => ?_
-  have := @BFSmall.countable_quotient L _ K (fun _ => ℕ) (fun c => c.1.toStructure) h α hα 0
-  -- At arity `0` both relations compare the empty tuples of the decoded structures, so the
-  -- level-`α` relation on `K` is the pullback of the depth-`α` relation of the family.
-  have hcomap : (bfEquivSetoid L ℕ α).comap (Subtype.val : K → _) =
-      (@bfTupleSetoid L _ K (fun _ => ℕ) (fun c => c.1.toStructure) α 0).comap
-        fun c => ⟨c, Fin.elim0⟩ :=
-    Setoid.ext fun c d => by
-      simp only [Setoid.comap_rel]
-      exact bfEquivSetoid_apply.trans (@bfTupleSetoid_apply L _ K (fun _ => ℕ)
-        (fun c => c.1.toStructure) α 0 ⟨c, Fin.elim0⟩ ⟨d, Fin.elim0⟩).symm
-  rw [hcomap]
+  have := @BFSmall.countable_quotient L _ K (fun _ => ℕ) (fun c => c.val.toStructure) h α hα 0
+  rw [comap_bfEquivSetoid_eq_comap_bfTupleSetoid]
   exact Countable.of_equiv _ (Setoid.comapQuotientEquiv _ _).symm
 
 end TauCeti

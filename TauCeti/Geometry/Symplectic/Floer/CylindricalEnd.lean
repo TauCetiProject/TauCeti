@@ -15,12 +15,11 @@ import TauCeti.Analysis.Complex.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Algebra.Order.Floor.Ring
-import TauCeti.Geometry.Symplectic.Floer.Breaking
-import TauCeti.Geometry.Symplectic.Floer.Graph
+import TauCeti.Geometry.Symplectic.Floer.Breaking.Basic
+import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.ContinuousMap.Ascoli
 
@@ -84,8 +83,8 @@ subsequence `φ` and a `1`-periodic orbit `x` of `X_{H_t}` such that the transla
 uniformly on `ℝ × ℝ`. On each band `[-m, m] × ℝ` the translates are eventually uniformly
 Lipschitz with values in `K`, so the Arzelà–Ascoli theorem along exhausting bands
 (`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`) gives a convergent
-subsequence, and `TauCeti.Geometry.Symplectic.Floer.Breaking` identifies every such limit as a
-stationary cylinder over a Hamiltonian orbit. This is the behaviour of a sequence of Floer
+subsequence, and `TauCeti.Geometry.Symplectic.Floer.Breaking.Basic` identifies every such limit
+as a stationary cylinder over a Hamiltonian orbit. This is the behaviour of a sequence of Floer
 cylinders of bounded energy along its necks, between the levels at which its energy concentrates.
 For a single finite-energy half-cylinder translated along its end it is **breaking off an orbit
 at the end**
@@ -678,8 +677,9 @@ private theorem exists_complexCoordinate (hH : ContDiff ℝ 3 (uncurry H)) (hHpe
     fun z hz ↦ by simpa [heq hz, heapp] using huK _ hz z.im, fun z hz ↦ ?_, fun p hp ↦ ?_,
     fun A hA hAS ↦ ?_⟩
   · rw [hderiv z hz, heq hz]
-    simpa [Jc, heapp] using ω.fderiv_comp_equivRealProdCLM_I_sub (J := fun w x ↦ J w.2 x)
-      (hfloer' (e z) (hmaps hz))
+    simpa [Jc, heapp] using
+      (ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub
+        (J := fun w x ↦ J w.2 x)).1 (hfloer' (e z) (hmaps hz))
   · rw [hderiv z hz, fderiv_comp_equivRealProdCLM_one, heapp, stdComplexLineReal_eq]
   · -- Near `p`, `u` is `v` read back through `e`.
     have hre (y : ℝ × ℝ) : (e.symm y).re = y.1 := by simp [he]
@@ -1013,62 +1013,25 @@ theorem exists_subseq_periodic_hasDerivAt_tendstoLocallyUniformly_of_tendsto_set
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ x : ℝ → V, Periodic x 1 ∧
       (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
       TendstoLocallyUniformly (fun n z ↦ u (φ n) (z + (σ (φ n), 0))) (fun z ↦ x z.2) atTop := by
-  have hzσ (y : ℝ × ℝ) (c : ℝ) : y + (c, 0) = (y.1 + c, y.2) := by ext <;> simp
   obtain ⟨B, hband⟩ := exists_forall_eventually_lipschitzOnWith_comp_add hH hHper hW hJ hJper hK
     hKW hJt hS hu hper huK hfloer hσ hen
   -- A subsequence `φ` has the bound on `[-n, n] × ℝ` at its `n`-th term, and Arzelà–Ascoli gives a
   -- further subsequence `ψ` converging locally uniformly.
   obtain ⟨φ, hφ, hφP⟩ := Filter.extraction_forall_of_eventually hband
   obtain ⟨ψ, hψ, g, htr⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK
-    (R := fun n ↦ (n : ℝ)) (fun n ↦ Nat.cast_nonneg n) tendsto_natCast_atTop_atTop
+    (R := fun n ↦ (n : ℝ)) tendsto_natCast_atTop_atTop
     (fun n ↦ (hφP n).1) fun n ↦ (hφP n).2
   have hχ : Tendsto (fun n ↦ φ (ψ n)) atTop atTop := (hφ.comp hψ).tendsto_atTop
-  -- The limit is periodic in `t`, since the translates eventually are at each point.
-  have hgper (z : ℝ × ℝ) : g (z.1, z.2 + 1) = g z := by
-    refine tendsto_nhds_unique ?_ (htr.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z))
-    refine (htr.tendstoLocallyUniformlyOn.tendsto_at (mem_univ (z.1, z.2 + 1))).congr' ?_
-    filter_upwards [hχ.eventually (hσ z.1 z.1)] with n hn
-    simp only [hzσ]
-    exact hper _ _ (hn ⟨le_rfl, le_rfl⟩) z.2
   -- The limit is a stationary cylinder over a Hamiltonian orbit.
   obtain ⟨c, hc, M, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hK
     (hJ.continuousOn.mono hKW) hJper hJt
-  have hU : IsOpen (S ×ˢ (univ : Set ℝ)) := hS.prod isOpen_univ
-  have hEU : S ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ univ := prod_mono le_rfl (subset_univ _)
-  have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le (by norm_num)
-  have hu1 (n : ℕ) : ContDiffOn ℝ 1 (u (φ (ψ n))) (S ×ˢ univ) := (hu _).of_le (by norm_num)
-  have hJc (n : ℕ) : ∀ z ∈ S ×ˢ Icc (0 : ℝ) 1, ∀ v,
-      c * ‖v‖ ^ 2 ≤ ω v (J z.2 (u (φ (ψ n)) z) v) :=
-    fun z hz v ↦ (hcM z.2 _ (huK _ z.1 hz.1 z.2) v).1
-  have hJM (n : ℕ) : ∀ z ∈ S ×ˢ Icc (0 : ℝ) 1, ∀ v, ‖J z.2 (u (φ (ψ n)) z) v‖ ≤ M * ‖v‖ :=
-    fun z hz v ↦ (hcM z.2 _ (huK _ z.1 hz.1 z.2) v).2
-  have hwin (α β : ℝ) : ∀ᶠ n in atTop,
-      Icc (α + σ (φ (ψ n))) (β + σ (φ (ψ n))) ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ Icc 0 1 :=
-    (hχ.eventually (hσ α β)).mono fun n hn ↦ prod_mono hn le_rfl
-  have hv := htr.tendstoLocallyUniformlyOn (s := univ ×ˢ Icc 0 1)
-  have hstat := eq_of_tendstoLocallyUniformlyOn_comp_add hU hu1 hEU hc hJc hJM
-    (fun n ↦ hfloer _) hwin (fun α β ↦ (hen α β).comp hχ) hv
-  have hder := hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add hH1 hU hu1 hEU hc hJc hJM
-    (fun n ↦ hfloer _) hwin (fun α β ↦ (hen α β).comp hχ) hv
-  set x : ℝ → V := fun t ↦ g (0, t)
-  have hxper : Periodic x 1 := fun t ↦ hgper (0, t)
-  have hxc : Continuous x := g.continuous.comp (continuous_const.prodMk continuous_id)
-  have hgx : (g : ℝ × ℝ → V) = fun z ↦ x z.2 := funext fun z ↦
-    calc g z = g (z.1, Int.fract z.2) :=
-          (Periodic.apply_fract (f := fun t ↦ g (z.1, t)) (fun t ↦ hgper (z.1, t)) z.2).symm
-      _ = x (Int.fract z.2) := hstat z.1 _ ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
-      _ = x z.2 := hxper.apply_fract z.2
-  -- `x' = X_{H_t}(x)` on `[0, 1]` and periodicity give the equation on all of `ℝ`.
-  set Y : ℝ → V := fun t ↦ ω.hamiltonianVectorField (H t) (x t)
-  have hY : Continuous Y :=
-    (ω.continuous_uncurry_hamiltonianVectorField hH1).comp (continuous_id.prodMk hxc)
-  have hYper : Periodic Y 1 := fun t ↦ by simp only [Y, hHper t, hxper t]
-  have hint : ∀ t ∈ Icc (0 : ℝ) 1, x t - x 0 = ∫ τ in 0..t, Y τ := fun t ht ↦
-    (intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le ht.1 hxc.continuousOn
-      (fun τ hτ ↦ (hder τ ⟨hτ.1.le, hτ.2.le.trans ht.2⟩).hasDerivAt
-        (Icc_mem_nhds hτ.1 (hτ.2.trans_le ht.2))) (hY.intervalIntegrable _ _)).symm
-  exact ⟨fun n ↦ φ (ψ n), hφ.comp hψ, x, hxper,
-    hasDerivAt_of_periodic_of_sub_eq_integral one_pos hxper hY hYper hint, hgx ▸ htr⟩
+  obtain ⟨x, hxper, hxd, -, hgx⟩ := exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add
+    (J := fun n z ↦ J z.2 (u (φ (ψ n)) z)) (s := fun n ↦ σ (φ (ψ n))) (hH.of_le (by norm_num))
+    hHper hK.isClosed hS (fun n ↦ (hu _).of_le (by norm_num)) (fun n ↦ hper _) (fun n ↦ huK _) hc
+    (fun n z hz v ↦ (hcM z.2 _ (huK _ z.1 hz.1 z.2) v).1)
+    (fun n z hz v ↦ (hcM z.2 _ (huK _ z.1 hz.1 z.2) v).2) (fun n ↦ hfloer _)
+    (fun α β ↦ hχ.eventually (hσ α β)) (fun α β ↦ (hen α β).comp hχ) htr
+  exact ⟨fun n ↦ φ (ψ n), hφ.comp hψ, x, hxper, hxd, hgx ▸ htr⟩
 
 /-- **A finite-energy Floer half-cylinder breaks off an orbit along every sequence.** Under the
 hypotheses of `TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`, let `σ_n → ∞`.
