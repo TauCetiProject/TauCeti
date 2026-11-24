@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Birational.Composition
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Birational.RationalMap
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.GraphClosure
-public import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
 # The correspondence of a composite of rational maps
@@ -22,14 +22,14 @@ with `X ×_S Y ×_S Z` written as `X ×_S (Y ×_S Z)`. It is Tau Ceti's graph cl
 `TauCeti.AlgebraicGeometry.graphClosure` of `(f_U, (g ∘ f)_U) : U → Y ×_S Z`, so the graph
 closure API applies to it.
 
-For `X` Noetherian and integral, `W_{f,g}` is integral: instance search finds this through the
-graph closure, from `AlgebraicGeometry.Scheme.Hom.isIntegral_image`. For `X` reduced, restricting
-`(ι_U, f_U, (g ∘ f)_U)` to a dense open `V ⊆ U` gives the graph of the restriction of
+For `X` locally Noetherian and integral, `W_{f,g}` is integral: instance search finds this
+through the graph closure, from `AlgebraicGeometry.Scheme.Hom.isIntegral_image`. For `X` reduced,
+restricting `(ι_U, f_U, (g ∘ f)_U)` to a dense open `V ⊆ U` gives the graph of the restriction of
 `compositeLift` to `V` (`TauCeti.AlgebraicGeometry.homOfLE_comp_opensGraph`), which has the same
 kernel, hence the same scheme-theoretic image `W_{f,g}`
 (`TauCeti.AlgebraicGeometry.ker_opensGraph_homOfLE_comp`).
-Over a field `K`, for `X` Noetherian and integral and `X`, `Y`, `Z` locally of finite type,
-`W_{f,g}` has the dimension of `X`.
+Over a field `K`, for `X` integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has the
+dimension of `X`.
 
 ## Main definitions
 
@@ -45,8 +45,8 @@ Over a field `K`, for `X` Noetherian and integral and `X`, `Y`, `Z` locally of f
 ## Main results
 
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_compositeCorrespondence`: over a
-  field, for `X` Noetherian and integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has
-  the dimension of `X`.
+  field, for `X` integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has the dimension
+  of `X`.
 
 ## References
 
@@ -99,16 +99,29 @@ instance nonempty_compositeDomain [Nonempty X] : Nonempty (compositeDomain f g) 
   (dense_compositeDomain f g).nonempty.to_subtype
 
 /-- The restriction `f_U` of the representative of `f` on its domain to `U`. -/
-@[expose]
 def compositeToY : (compositeDomain f g).toScheme ⟶ Y :=
   (f.toPartialMap.restrict (compositeDomain f g) (dense_compositeDomain f g)
     ((compositeDomain_le_domain f g).trans_eq f.toPartialMap_domain.symm)).hom
 
 /-- The restriction `(g ∘ f)_U` of the representative of `g ∘ f` on its domain to `U`. -/
-@[expose]
 def compositeToZ : (compositeDomain f g).toScheme ⟶ Z :=
   ((f.comp g).toPartialMap.restrict (compositeDomain f g) (dense_compositeDomain f g)
     ((compositeDomain_le_domain_comp f g).trans_eq (f.comp g).toPartialMap_domain.symm)).hom
+
+omit [Z.IsSeparated] in
+/-- `f_U` is the representative of `f` on its domain, precomposed with the inclusion of `U`. -/
+theorem compositeToY_eq :
+    compositeToY f g = X.homOfLE ((compositeDomain_le_domain f g).trans_eq
+      f.toPartialMap_domain.symm) ≫ f.toPartialMap.hom :=
+  PartialMap.restrict_hom _ _ _ _
+
+omit [Y.IsSeparated] in
+/-- `(g ∘ f)_U` is the representative of `g ∘ f` on its domain, precomposed with the inclusion of
+`U`. -/
+theorem compositeToZ_eq :
+    compositeToZ f g = X.homOfLE ((compositeDomain_le_domain_comp f g).trans_eq
+      (f.comp g).toPartialMap_domain.symm) ≫ (f.comp g).toPartialMap.hom :=
+  PartialMap.restrict_hom _ _ _ _
 
 section Over
 
@@ -117,13 +130,13 @@ variable [S.IsSeparated] [f.IsOver sX sY] [(f.comp g).IsOver sX sZ]
 omit [Z.IsSeparated] in
 /-- `f_U` is a morphism over `S`. -/
 theorem compositeToY_comp : compositeToY f g ≫ sY = (compositeDomain f g).ι ≫ sX := by
-  rw [compositeToY, PartialMap.restrict_hom, Category.assoc, f.toPartialMap.over sX sY,
+  rw [compositeToY_eq, Category.assoc, f.toPartialMap.over sX sY,
     Scheme.homOfLE_ι_assoc]
 
 omit [Y.IsSeparated] in
 /-- `(g ∘ f)_U` is a morphism over `S`. -/
 theorem compositeToZ_comp : compositeToZ f g ≫ sZ = (compositeDomain f g).ι ≫ sX := by
-  rw [compositeToZ, PartialMap.restrict_hom, Category.assoc, (f.comp g).toPartialMap.over sX sZ,
+  rw [compositeToZ_eq, Category.assoc, (f.comp g).toPartialMap.over sX sZ,
     Scheme.homOfLE_ι_assoc]
 
 /-- The morphism `(f_U, (g ∘ f)_U) : U → Y ×_S Z`. -/
@@ -197,15 +210,15 @@ section Field
 
 variable {K : Type u} [Field K] (sX : X ⟶ Spec (.of K)) (sY : Y ⟶ Spec (.of K))
   (sZ : Z ⟶ Spec (.of K)) [f.IsOver sX sY] [(f.comp g).IsOver sX sZ]
-  [NoetherianSpace X] [IsIntegral X]
+  [IsIntegral X]
   [LocallyOfFiniteType sX] [LocallyOfFiniteType sY] [LocallyOfFiniteType sZ]
 
-/-- **The dimension of the correspondence.** Over a field `K`, for `X` Noetherian and integral and
-`X`, `Y`, `Z` locally of finite type over `K`, `W_{f,g}` has the same topological Krull dimension
-as `X`. -/
+/-- **The dimension of the correspondence.** Over a field `K`, for `X` integral and `X`, `Y`, `Z`
+locally of finite type over `K`, `W_{f,g}` has the same topological Krull dimension as `X`. -/
 theorem topologicalKrullDim_compositeCorrespondence :
-    topologicalKrullDim (compositeCorrespondence sX sY sZ f g) = topologicalKrullDim X :=
-  topologicalKrullDim_graphClosure (compositeLift_comp sX sY sZ f g)
+    topologicalKrullDim (compositeCorrespondence sX sY sZ f g) = topologicalKrullDim X := by
+  have := LocallyOfFiniteType.isLocallyNoetherian sX
+  exact topologicalKrullDim_graphClosure (compositeLift_comp sX sY sZ f g)
 
 end Field
 
