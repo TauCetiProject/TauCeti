@@ -22,8 +22,9 @@ isomorphism `Graph.Iso.bridgeForestIso` between the bridge forests `G.bridgeFore
 `H.bridgeForest`.
 
 These constructions respect identity, inversion, and composition, and commute with walk
-projection (`Graph.Walk.toBridgeForest`), path lifting (`Graph.Walk.liftBridgeForest`), and the
-component correspondence `Graph.connectedComponentEquivBridgeForest`. No finiteness hypotheses are
+projection (`Graph.Walk.toBridgeForest`) and the component correspondence
+`Graph.connectedComponentEquivBridgeForest`; for path lifting (`Graph.Walk.liftBridgeForest`),
+projecting the transported lift recovers the transported forest path. No finiteness hypotheses are
 required.
 -/
 
