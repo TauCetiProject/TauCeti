@@ -68,6 +68,7 @@ taking invariants under it.
   action of the monoid algebra, not only with that of the group elements.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
   the dual representations.
+* `Representation.Equiv.ker_eq`: equivalent representations have the same kernel.
 * `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
   generating set of the group.
 * `AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top`: equivariance under a monoid
@@ -431,6 +432,25 @@ theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
   (rfl)
 
 end Dual
+
+section Kernel
+
+variable {A G V W : Type*} [Semiring A] [Group G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- Equivalent representations have the same kernel. -/
+theorem ker_eq (e : Equiv ρ σ) : ρ.ker = σ.ker := by
+  ext g
+  have he := IntertwiningMap.isIntertwining ρ σ e.toIntertwiningMap g
+  simp only [coe_toIntertwiningMap] at he
+  simp only [MonoidHom.mem_ker, LinearMap.ext_iff, one_apply_eq_self]
+  refine ⟨fun h w ↦ ?_, fun h v ↦ EquivLike.injective e ?_⟩
+  · obtain ⟨v, rfl⟩ := EquivLike.surjective e w
+    rw [← he, h]
+  · rw [he, h]
+
+end Kernel
 
 section Congr
 
