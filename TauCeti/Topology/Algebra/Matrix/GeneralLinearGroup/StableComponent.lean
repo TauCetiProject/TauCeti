@@ -396,11 +396,8 @@ theorem ker_toStableComponentGroup :
     (toStableComponentGroup A).ker =
       (StableGeneralLinearGroup.identityComponent A).map Group.Abelianization.of := by
   -- The abelianization map is surjective, so the kernel is the image of its preimage.
-  have hof : Function.Surjective
-      (Group.Abelianization.of : StableGeneralLinearGroup A →* AlgebraicK1 A) := fun x ↦ by
-    obtain ⟨n, u, rfl⟩ := exists_mk x
-    exact ⟨_, (mk_apply n u).symm⟩
-  rw [← Subgroup.map_comap_eq_self_of_surjective hof (toStableComponentGroup A).ker,
+  rw [← Subgroup.map_comap_eq_self_of_surjective (Group.Abelianization.surjective_of _)
+      (toStableComponentGroup A).ker,
     MonoidHom.comap_ker, toStableComponentGroup_comp_of, QuotientGroup.ker_mk']
 
 /-- The comparison of algebraic `K₁` with the stable component group is natural for continuous
