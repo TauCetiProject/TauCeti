@@ -18,7 +18,7 @@ For a cube root of unity `ν`, the functions `z ↦ Ai(νz)` and `z ↦ Bi(νz)`
 
 ## Main results
 
-* `TauCeti.airy_ode_comp_mul_left`: if `w″ = z w` and `ν³ = 1`, then `z ↦ w(νz)` solves the same
+* `TauCeti.airy_ode_comp_mul_left`: if `w'' = z w` and `ν³ = 1`, then `z ↦ w(νz)` solves the same
   equation;
 * `TauCeti.airyAi_ode_comp_mul_left`, `TauCeti.airyBi_ode_comp_mul_left`: `z ↦ Ai(νz)` and
   `z ↦ Bi(νz)` solve Airy's equation (DLMF 9.2.2);
@@ -54,7 +54,7 @@ open scoped Real
 
 namespace TauCeti
 
-/-- **Rotation symmetry** of Airy's equation: if `w″ = z w` and `ν³ = 1`, then `z ↦ w(νz)` solves
+/-- **Rotation symmetry** of Airy's equation: if `w'' = z w` and `ν³ = 1`, then `z ↦ w(νz)` solves
 the same equation. No differentiability of `w` is needed. -/
 theorem airy_ode_comp_mul_left {w : ℂ → ℂ} {ν : ℂ} (hw : ∀ z, deriv^[2] w z = z * w z)
     (hν : ν ^ 3 = 1) (z : ℂ) :
