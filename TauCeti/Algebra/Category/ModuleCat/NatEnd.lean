@@ -39,7 +39,11 @@ namespace CategoryTheory.Functor
 
 universe w v u u'
 
-variable {D : Type u} [Category.{v} D] {R : Type u'} [CommRing R] (F : D ⥤ ModuleCat.{w} R)
+variable {D : Type u} [Category.{v} D]
+
+section Ring
+
+variable {R : Type u'} [Ring R] (F : D ⥤ ModuleCat.{w} R)
 
 /-- The natural endomorphisms of `F` act on each value `F.obj Y` through their components. This
 `Module` structure is meant as a local instance. -/
@@ -59,10 +63,6 @@ theorem natEndModule_smul {Y : D} (η : End F) (y : F.obj Y) :
     η • y = (η.asHom.app Y).hom y :=
   (rfl)
 
-/-- The action of natural endomorphisms extends the action of `R`. -/
-instance natEndModule_isScalarTower (Y : D) : IsScalarTower R (End F) (F.obj Y) where
-  smul_assoc c η y := by simp
-
 /-- The lift of `F` to modules over its ring of natural endomorphisms: `F.obj Y` with the action
 of `End F` through components. Each `F.map f` is `End F`-linear by naturality. -/
 @[expose] noncomputable def toNatEndModule : D ⥤ ModuleCat.{w} (End F) where
@@ -74,6 +74,12 @@ of `End F` through components. Each `F.map f` is `End F`-linear by naturality. -
         simp only [natEndModule_smul, RingHom.id_apply]
         exact congrArg (fun φ ↦ φ.hom y) (η.asHom.naturality f).symm }
 
+/-- The value of `F.toNatEndModule` at `Y` is `F.obj Y` with the action of `End F` through
+components. -/
+@[simp]
+theorem toNatEndModule_obj (Y : D) : F.toNatEndModule.obj Y = ModuleCat.of (End F) (F.obj Y) :=
+  (rfl)
+
 /-- The `End F`-linear map underlying `F.toNatEndModule.map f` is `F.map f`. -/
 @[simp]
 theorem toNatEndModule_map_hom_apply {Y Y' : D} (f : Y ⟶ Y') (y : F.obj Y) :
@@ -84,5 +90,19 @@ theorem toNatEndModule_map_hom_apply {Y Y' : D} (f : Y ⟶ Y') (y : F.obj Y) :
 instance [F.Faithful] : F.toNatEndModule.Faithful where
   map_injective h := F.map_injective (ModuleCat.hom_ext (LinearMap.ext fun y ↦
     congrArg (fun φ ↦ φ.hom y) h))
+
+end Ring
+
+section CommRing
+
+variable {R : Type u'} [CommRing R] (F : D ⥤ ModuleCat.{w} R)
+
+attribute [local instance] natEndModule
+
+/-- The action of natural endomorphisms extends the action of `R`. -/
+instance natEndModule_isScalarTower (Y : D) : IsScalarTower R (End F) (F.obj Y) where
+  smul_assoc c η y := by simp
+
+end CommRing
 
 end CategoryTheory.Functor
