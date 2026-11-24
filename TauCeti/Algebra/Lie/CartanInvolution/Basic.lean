@@ -49,6 +49,8 @@ over `ℝ`, `ad x` is diagonalizable for `x ∈ 𝔭`.
   (`LieEquiv.IsCartanInvolution.finiteDimensional`) and semisimple.
 * `LieEquiv.IsCartanInvolution.orthogonal_fixedSubalgebra_eq_cartanP`: `𝔭` is the
   Killing-orthogonal complement of `𝔨`.
+* `LieEquiv.IsCartanInvolution.disjoint_fixedSubalgebra_cartanP`: `𝔨₁` and `𝔭₂` are disjoint for
+  any two Cartan involutions.
 * `LieEquiv.IsCartanInvolution.eq_of_fixedSubalgebra_eq`,
   `LieEquiv.IsCartanInvolution.eq_of_commute`: a Cartan involution is determined by `𝔨`, and
   commuting Cartan involutions are equal.
@@ -126,17 +128,13 @@ theorem twistedKillingForm_self_pos (hθ : θ.IsCartanInvolution) {x : L} (hx : 
 
 /-- A Lie algebra admitting a Cartan involution has trivial centre. -/
 theorem center_eq_bot (hθ : θ.IsCartanInvolution) : center K L = ⊥ := by
-  rw [eq_bot_iff]
-  intro x hx
-  rw [LieSubmodule.mem_bot]
-  by_contra hx0
-  have hpos := hθ.twistedKillingForm_self_pos hx0
+  refine eq_bot_iff.mpr fun x hx ↦ (LieSubmodule.mem_bot x).mpr (by_contra fun hx0 ↦ ?_)
   have had : ad K L x = 0 := LinearMap.ext fun z ↦ by
     rw [ad_apply, ← lie_skew, (LieModule.mem_maxTrivSubmodule K L L x).mp hx z, neg_zero,
       LinearMap.zero_apply]
-  have hz : killingForm K L x (θ x) = 0 := by
-    rw [killingForm_apply_apply, had, LinearMap.zero_comp, map_zero]
-  rw [twistedKillingForm_apply, hz, neg_zero] at hpos
+  have hpos := hθ.twistedKillingForm_self_pos hx0
+  rw [twistedKillingForm_apply, killingForm_apply_apply, had, LinearMap.zero_comp, map_zero,
+    neg_zero] at hpos
   exact lt_irrefl 0 hpos
 
 /-- Conjugating a Cartan involution by a Lie algebra equivalence yields a Cartan involution. -/
@@ -278,32 +276,39 @@ theorem eq_of_fixedSubalgebra_eq {θ' : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInv
       (LieHom.mem_fixedSubalgebra.mp (h ▸ (LieSubalgebra.mem_toSubmodule _).mp hk)).symm)
     fun p hp' ↦ (mem_cartanP.mp hp').trans (mem_cartanP.mp (hp ▸ hp')).symm
 
+/-- The fixed subalgebra `𝔨₁` of one Cartan involution and the `-1`-eigenspace `𝔭₂` of another
+are disjoint, because the Killing form is negative definite on `𝔨₁` and positive definite on
+`𝔭₂`. -/
+theorem disjoint_fixedSubalgebra_cartanP {θ' : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInvolution)
+    (hθ' : θ'.IsCartanInvolution) :
+    Disjoint θ.toLieHom.fixedSubalgebra.toSubmodule θ'.cartanP :=
+  Submodule.disjoint_def.mpr fun _ hz₁ hz₂ ↦ by_contra fun hne ↦
+    (hθ.killingForm_apply_self_neg_of_mem_fixedSubalgebra
+      ((LieSubalgebra.mem_toSubmodule _).mp hz₁) hne).not_gt
+      (hθ'.killingForm_apply_self_pos_of_mem_cartanP hz₂ hne)
+
 /-- **Two commuting Cartan involutions are equal.** -/
 theorem eq_of_commute {θ' : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInvolution)
     (hθ' : θ'.IsCartanInvolution) (hcomm : ∀ x, θ (θ' x) = θ' (θ x)) : θ = θ' := by
-  have hzero {θ₁ θ₂ : L ≃ₗ⁅K⁆ L} (h₁ : θ₁.IsCartanInvolution) (h₂ : θ₂.IsCartanInvolution)
-      {z : L} (hz₁ : z ∈ θ₁.toLieHom.fixedSubalgebra) (hz₂ : z ∈ θ₂.cartanP) : z = 0 := by
-    by_contra hne
-    exact (h₁.killingForm_apply_self_neg_of_mem_fixedSubalgebra hz₁ hne).not_gt
-      (h₂.killingForm_apply_self_pos_of_mem_cartanP hz₂ hne)
   ext x
   have hfix : (x + θ x) - θ' (x + θ x) ∈ θ.toLieHom.fixedSubalgebra := by
-    have h1 : θ (x + θ x) = x + θ x :=
-      LieHom.mem_fixedSubalgebra.mp (add_apply_mem_fixedSubalgebra hθ.involutive x)
-    rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_sub, hcomm, h1]
-  have hu := hzero hθ hθ' hfix (sub_apply_mem_cartanP hθ'.involutive (x + θ x))
+    rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_sub, hcomm, map_add, hθ.involutive x,
+      add_comm]
+  have hu : (x + θ x) - θ' (x + θ x) = 0 :=
+    Submodule.disjoint_def.mp (hθ.disjoint_fixedSubalgebra_cartanP hθ') _ hfix
+      (sub_apply_mem_cartanP hθ'.involutive (x + θ x))
   have hP : (x - θ x) + θ' (x - θ x) ∈ θ.cartanP := by
-    have h1 := mem_cartanP.mp (sub_apply_mem_cartanP hθ.involutive x)
-    rw [mem_cartanP, map_add, hcomm, h1, map_neg, neg_add]
-  have hw := hzero hθ' hθ (add_apply_mem_fixedSubalgebra hθ'.involutive (x - θ x)) hP
+    rw [mem_cartanP, map_add, hcomm, mem_cartanP.mp (sub_apply_mem_cartanP hθ.involutive x),
+      map_neg, neg_add]
+  have hw : (x - θ x) + θ' (x - θ x) = 0 :=
+    Submodule.disjoint_def.mp (hθ'.disjoint_fixedSubalgebra_cartanP hθ) _
+      (add_apply_mem_fixedSubalgebra hθ'.involutive (x - θ x)) hP
   have h2 : (θ x - θ' x) + (θ x - θ' x) = 0 := by
     have hcalc : (θ x - θ' x) + (θ x - θ' x) =
         ((x + θ x) - θ' (x + θ x)) - ((x - θ x) + θ' (x - θ x)) := by
-      simp only [map_add, map_sub]
-      abel
+      simp only [map_add, map_sub]; abel
     rw [hcalc, hu, hw, sub_self]
-  refine sub_eq_zero.mp ?_
-  by_contra hne
+  refine sub_eq_zero.mp (by_contra fun hne ↦ ?_)
   have hpos := hθ.twistedKillingForm_self_pos hne
   have hsum := lt_of_lt_of_le hpos (le_add_of_nonneg_right hpos.le)
   rw [← map_add, h2, map_zero] at hsum

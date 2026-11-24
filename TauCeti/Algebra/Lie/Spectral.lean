@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.LinearAlgebra.Basis.Bilinear
+import TauCeti.Algebra.Lie.DiagonalBasis
 import TauCeti.Algebra.Lie.Hom
 import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis.Real
 
@@ -36,53 +37,19 @@ public section
 
 namespace LieEquiv
 
-attribute [local instance 100] LieRing.ofAssociativeRing
-
 open LieAlgebra
 
-private theorem diagMap_lie_basis {R ι L : Type*} [CommRing R] [IsCancelMulZero R] [LieRing L]
-    [LieAlgebra R L] (P : L →ₗ⁅R⁆ L) (b : Module.Basis ι R L) {lam : ι → R}
-    (hb : ∀ i, P (b i) = lam i • b i) (F : R → R) (i j : ι) :
-    b.diagMap (F ∘ lam) ⁅b i, b j⁆ = F (lam i * lam j) • ⁅b i, b j⁆ :=
-  b.apply_eq_smul_of_apply_eq_smul (f := P.toLinearMap) hb (fun k hk ↦ by simp [hk])
-    (P.map_lie_of_apply_eq_smul (hb i) (hb j))
-
-private theorem diagMap_map_lie {R ι L : Type*} [CommRing R] [IsCancelMulZero R] [LieRing L]
-    [LieAlgebra R L] (P : L →ₗ⁅R⁆ L) (b : Module.Basis ι R L) {lam : ι → R}
-    (hb : ∀ i, P (b i) = lam i • b i) (F : R → R)
-    (hF : ∀ i j, F (lam i * lam j) = F (lam i) * F (lam j)) (x y : L) :
-    b.diagMap (F ∘ lam) ⁅x, y⁆ = ⁅b.diagMap (F ∘ lam) x, b.diagMap (F ∘ lam) y⁆ := by
-  let f := b.diagMap (F ∘ lam)
-  have hbil : (LinearMap.llcomp R L L L f).comp (LieAlgebra.ad R L).toLinearMap =
-      ((LieAlgebra.ad R L).toLinearMap.compl₂ f).comp f := by
-    refine LinearMap.ext_basis b b fun i j ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.llcomp_apply, LinearMap.compl₂_apply,
-      LieHom.coe_toLinearMap, ad_apply, f, diagMap_lie_basis P b hb F i j, hF i j,
-      Function.comp_apply, b.diagMap_apply_basis, smul_lie, lie_smul, smul_smul, mul_comm]
-  exact LinearMap.congr_fun (LinearMap.congr_fun hbil x) y
-
-private theorem diagMap_leibniz {R ι L : Type*} [CommRing R] [IsCancelMulZero R] [LieRing L]
-    [LieAlgebra R L] (P : L →ₗ⁅R⁆ L) (b : Module.Basis ι R L) {lam : ι → R}
-    (hb : ∀ i, P (b i) = lam i • b i) (F : R → R)
-    (hF : ∀ i j, F (lam i * lam j) = F (lam i) + F (lam j)) (x y : L) :
-    b.diagMap (F ∘ lam) ⁅x, y⁆ = ⁅x, b.diagMap (F ∘ lam) y⁆ - ⁅y, b.diagMap (F ∘ lam) x⁆ := by
-  let f := b.diagMap (F ∘ lam)
-  rw [sub_eq_add_neg, lie_skew (f x) y, add_comm]
-  have hbil : (LinearMap.llcomp R L L L f).comp (LieAlgebra.ad R L).toLinearMap =
-      (LieAlgebra.ad R L).toLinearMap.comp f + (LieAlgebra.ad R L).toLinearMap.compl₂ f := by
-    refine LinearMap.ext_basis b b fun i j ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.llcomp_apply, LinearMap.add_apply,
-      LinearMap.compl₂_apply, LieHom.coe_toLinearMap, ad_apply, f, diagMap_lie_basis P b hb F i j,
-      hF i j, Function.comp_apply, b.diagMap_apply_basis, add_smul, smul_lie, lie_smul]
-  exact LinearMap.congr_fun (LinearMap.congr_fun hbil x) y
-
 variable {ι L : Type*} [LieRing L] [LieAlgebra ℝ L]
+
+section Eigenbasis
+
+variable (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
+  (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i)
 
 /-- **Real power of a positive-eigenbasis Lie automorphism**: if `P : L ≃ₗ⁅ℝ⁆ L` acts on a basis
 `b` by strictly positive eigenvalues `lam i > 0`, then extending `b i ↦ lam i ^ s • b i` linearly
 yields a Lie algebra automorphism `P.rpow b hb hlam s`. -/
-noncomputable def rpow (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) (s : ℝ) : L ≃ₗ⁅ℝ⁆ L :=
+noncomputable def rpow (s : ℝ) : L ≃ₗ⁅ℝ⁆ L :=
   let f : ℝ → L →ₗ[ℝ] L := fun t ↦ b.diagMap fun i ↦ lam i ^ t
   have hinv (u v : ℝ) (h : u + v = 0) (x : L) : f v (f u x) = x := by
     rw [← LinearMap.comp_apply]; dsimp only [f]
@@ -91,21 +58,73 @@ noncomputable def rpow (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {la
     left_inv := hinv s (-s) (add_neg_cancel s), right_inv := hinv (-s) s (neg_add_cancel s)
     map_add' := (f s).map_add, map_smul' := (f s).map_smul
     map_lie' := fun {x y} ↦
-      diagMap_map_lie P.toLieHom b hb (· ^ s)
+      b.diagMap_map_lie P.toLieHom hb (· ^ s)
         (fun i j ↦ Real.mul_rpow (hlam i).le (hlam j).le) x y }
 
 /-- On each eigenbasis vector `b i`, `P.rpow b hb hlam s` acts by `lam i ^ s`. -/
 @[simp]
-theorem rpow_apply_basis (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) (s : ℝ) (i : ι) :
+theorem rpow_apply_basis (s : ℝ) (i : ι) :
     P.rpow b hb hlam s (b i) = lam i ^ s • b i := b.diagMap_apply_basis (fun j ↦ lam j ^ s) i
 
 /-- On every `μ`-eigenvector of `P`, `P.rpow b hb hlam s` acts by `μ ^ s`. -/
-theorem rpow_apply_of_eigenvector (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) (s : ℝ)
-    {v : L} {μ : ℝ} (hv : P v = μ • v) : P.rpow b hb hlam s v = μ ^ s • v :=
+theorem rpow_apply_of_eigenvector (s : ℝ) {v : L} {μ : ℝ} (hv : P v = μ • v) :
+    P.rpow b hb hlam s v = μ ^ s • v :=
   b.apply_eq_smul_of_apply_eq_smul (f := (P : L →ₗ[ℝ] L)) (g := (P.rpow b hb hlam s : L →ₗ[ℝ] L))
     hb (fun i hi ↦ by rw [LinearEquiv.coe_coe, coe_toLinearEquiv, rpow_apply_basis, hi]) hv
+
+/-- The zeroth power `P^0` is the identity automorphism. -/
+@[simp]
+theorem rpow_zero : P.rpow b hb hlam 0 = LieEquiv.refl :=
+  LieEquiv.ext (LinearMap.congr_fun (b.ext fun i ↦ by simp))
+
+/-- The first power `P^1` is `P` itself. -/
+@[simp]
+theorem rpow_one : P.rpow b hb hlam 1 = P :=
+  LieEquiv.ext (LinearMap.congr_fun (b.ext fun i ↦ by simp [hb i]))
+
+/-- Real powers of `P` satisfy `(P^s).trans (P^t) = P^(s + t)`. -/
+theorem rpow_trans (s t : ℝ) :
+    (P.rpow b hb hlam s).trans (P.rpow b hb hlam t) = P.rpow b hb hlam (s + t) :=
+  LieEquiv.ext fun x ↦ LinearMap.congr_fun (b.diagMap_rpow_comp hlam s t) x
+
+/-- The inverse of `P^s` is `P^(-s)`. -/
+@[simp]
+theorem rpow_symm (s : ℝ) : (P.rpow b hb hlam s).symm = P.rpow b hb hlam (-s) := by
+  ext x; rw [symm_apply_eq]; simp [← trans_apply, rpow_trans]
+
+/-- **Spectral logarithm of a positive-eigenbasis Lie automorphism**: extending
+`b i ↦ Real.log (lam i) • b i` linearly defines a Lie derivation of `L`. -/
+noncomputable def logDerivation : LieDerivation ℝ L L where
+  toLinearMap := b.diagMap (Real.log ∘ lam)
+  leibniz' := b.diagMap_leibniz P.toLieHom hb Real.log
+    (fun i j ↦ Real.log_mul (hlam i).ne' (hlam j).ne')
+
+/-- On each eigenbasis vector `b i`, `P.logDerivation b hb hlam` scales by `Real.log (lam i)`. -/
+@[simp]
+theorem logDerivation_apply_basis (i : ι) :
+    P.logDerivation b hb hlam (b i) = Real.log (lam i) • b i :=
+  b.diagMap_apply_basis (fun j ↦ Real.log (lam j)) i
+
+/-- On every `μ`-eigenvector of `P`, `P.logDerivation b hb hlam` scales by `Real.log μ`. -/
+theorem logDerivation_apply_of_eigenvector {v : L} {μ : ℝ} (hv : P v = μ • v) :
+    P.logDerivation b hb hlam v = Real.log μ • v :=
+  b.apply_eq_smul_of_apply_eq_smul (f := (P : L →ₗ[ℝ] L))
+    (g := (P.logDerivation b hb hlam : L →ₗ[ℝ] L)) hb
+    (fun i hi ↦ by rw [LieDerivation.coeFn_coe, logDerivation_apply_basis, hi]) hv
+
+/-- If a linear map `σ` conjugates `P` to `P⁻¹` (`σ (P x) = P.symm (σ x)`), then `log P`
+anticommutes with `σ`. -/
+theorem logDerivation_apply_conj (σ : L →ₗ[ℝ] L) (hσ : ∀ x, σ (P x) = P.symm (σ x)) (y : L) :
+    P.logDerivation b hb hlam (σ y) = -σ (P.logDerivation b hb hlam y) := by
+  have hlin : (P.logDerivation b hb hlam : L →ₗ[ℝ] L).comp σ =
+      -(σ.comp (P.logDerivation b hb hlam : L →ₗ[ℝ] L)) := b.ext fun i ↦ by
+    have hPi := P.toLinearEquiv.apply_eq_inv_smul_of_conj σ hσ (hlam i).ne' (hb i)
+    rw [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.comp_apply,
+      LieDerivation.coeFn_coe, logDerivation_apply_of_eigenvector P b hb hlam hPi, Real.log_inv,
+      logDerivation_apply_basis, map_smul, neg_smul]
+  simpa using LinearMap.congr_fun hlin y
+
+end Eigenbasis
 
 /-- `P.rpow` does not depend on the choice of positive eigenbasis. -/
 theorem rpow_eq_of_basis {ι₁ ι₂ : Type*} (P : L ≃ₗ⁅ℝ⁆ L)
@@ -116,56 +135,6 @@ theorem rpow_eq_of_basis {ι₁ ι₂ : Type*} (P : L ≃ₗ⁅ℝ⁆ L)
   LieEquiv.ext (LinearMap.congr_fun (b₁.ext fun i ↦ by
     simp [rpow_apply_of_eigenvector P b₂ hb₂ hlam₂ s (hb₁ i)]))
 
-/-- The zeroth power `P^0` is the identity automorphism. -/
-@[simp]
-theorem rpow_zero (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) :
-    P.rpow b hb hlam 0 = LieEquiv.refl :=
-  LieEquiv.ext (LinearMap.congr_fun (b.ext fun i ↦ by simp))
-
-/-- The first power `P^1` is `P` itself. -/
-@[simp]
-theorem rpow_one (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) :
-    P.rpow b hb hlam 1 = P :=
-  LieEquiv.ext (LinearMap.congr_fun (b.ext fun i ↦ by simp [hb i]))
-
-/-- Real powers of `P` satisfy `(P^s).trans (P^t) = P^(s + t)`. -/
-theorem rpow_trans (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) (s t : ℝ) :
-    (P.rpow b hb hlam s).trans (P.rpow b hb hlam t) = P.rpow b hb hlam (s + t) :=
-  LieEquiv.ext fun x ↦ LinearMap.congr_fun (b.diagMap_rpow_comp hlam s t) x
-
-/-- The inverse of `P^s` is `P^(-s)`. -/
-@[simp]
-theorem rpow_symm (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) (s : ℝ) :
-    (P.rpow b hb hlam s).symm = P.rpow b hb hlam (-s) := by
-  ext x; rw [symm_apply_eq]; simp [← trans_apply, rpow_trans]
-
-/-- **Spectral logarithm of a positive-eigenbasis Lie automorphism**: extending
-`b i ↦ Real.log (lam i) • b i` linearly defines a Lie derivation of `L`. -/
-noncomputable def logDerivation (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) : LieDerivation ℝ L L where
-  toLinearMap := b.diagMap (Real.log ∘ lam)
-  leibniz' := diagMap_leibniz P.toLieHom b hb Real.log
-    (fun i j ↦ Real.log_mul (hlam i).ne' (hlam j).ne')
-
-/-- On each eigenbasis vector `b i`, `P.logDerivation b hb hlam` scales by `Real.log (lam i)`. -/
-@[simp]
-theorem logDerivation_apply_basis (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i) (i : ι) :
-    P.logDerivation b hb hlam (b i) = Real.log (lam i) • b i :=
-  b.diagMap_apply_basis (fun j ↦ Real.log (lam j)) i
-
-/-- On every `μ`-eigenvector of `P`, `P.logDerivation b hb hlam` scales by `Real.log μ`. -/
-theorem logDerivation_apply_of_eigenvector (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i)
-    {v : L} {μ : ℝ} (hv : P v = μ • v) : P.logDerivation b hb hlam v = Real.log μ • v :=
-  b.apply_eq_smul_of_apply_eq_smul (f := (P : L →ₗ[ℝ] L))
-    (g := (P.logDerivation b hb hlam : L →ₗ[ℝ] L)) hb
-    (fun i hi ↦ by rw [LieDerivation.coeFn_coe, logDerivation_apply_basis, hi]) hv
-
 /-- `P.logDerivation` does not depend on the choice of positive eigenbasis. -/
 theorem logDerivation_eq_of_basis {ι₁ ι₂ : Type*} (P : L ≃ₗ⁅ℝ⁆ L)
     (b₁ : Module.Basis ι₁ ℝ L) {lam₁ : ι₁ → ℝ} (hb₁ : ∀ i, P (b₁ i) = lam₁ i • b₁ i)
@@ -174,19 +143,5 @@ theorem logDerivation_eq_of_basis {ι₁ ι₂ : Type*} (P : L ≃ₗ⁅ℝ⁆ L
     P.logDerivation b₁ hb₁ hlam₁ = P.logDerivation b₂ hb₂ hlam₂ :=
   LieDerivation.ext (LinearMap.congr_fun (b₁.ext fun i ↦ by
     simp [LieDerivation.coeFn_coe, logDerivation_apply_of_eigenvector P b₂ hb₂ hlam₂ (hb₁ i)]))
-
-/-- If a linear map `σ` conjugates `P` to `P⁻¹` (`σ (P x) = P.symm (σ x)`), then `log P`
-anticommutes with `σ`. -/
-theorem logDerivation_apply_conj (P : L ≃ₗ⁅ℝ⁆ L) (b : Module.Basis ι ℝ L) {lam : ι → ℝ}
-    (hb : ∀ i, P (b i) = lam i • b i) (hlam : ∀ i, 0 < lam i)
-    (σ : L →ₗ[ℝ] L) (hσ : ∀ x, σ (P x) = P.symm (σ x)) (y : L) :
-    P.logDerivation b hb hlam (σ y) = -σ (P.logDerivation b hb hlam y) := by
-  have hlin : (P.logDerivation b hb hlam : L →ₗ[ℝ] L).comp σ =
-      -(σ.comp (P.logDerivation b hb hlam : L →ₗ[ℝ] L)) := b.ext fun i ↦ by
-    have hPi := P.toLinearEquiv.apply_eq_inv_smul_of_conj σ hσ (hlam i).ne' (hb i)
-    rw [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.comp_apply,
-      LieDerivation.coeFn_coe, logDerivation_apply_of_eigenvector P b hb hlam hPi, Real.log_inv,
-      logDerivation_apply_basis, map_smul, neg_smul]
-  simpa using LinearMap.congr_fun hlin y
 
 end LieEquiv

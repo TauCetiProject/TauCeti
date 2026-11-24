@@ -29,6 +29,8 @@ commutativity. What a normalising automorphism does to the root spaces of `H` is
   `H`, maps `H` onto `K`.
 * `LieSubalgebra.map_symm_eq_iff`: the inverse of an equivalence maps `K` onto `H` exactly when
   the equivalence maps `H` onto `K`.
+* `LieSubalgebra.orderIsoMapComap`: order isomorphism on Lie subalgebras induced by a Lie
+  equivalence.
 * `LieEquiv.ofSubalgebras_symm`: restricting the inverse gives the inverse of Mathlib's
   restriction.
 * `LieSubalgebra.map_eq_self_of_involutive`: an involutive automorphism mapping a subalgebra into
@@ -59,6 +61,39 @@ theorem map_eq_of_mem (h_mem : ∀ x ∈ H, e x ∈ K) (h_symm : ∀ y ∈ K, e.
 `H` onto `K`. -/
 theorem map_symm_eq_iff : K.map e.symm = H ↔ H.map e = K := by
   constructor <;> rintro rfl <;> ext <;> simp
+
+/-- A Lie algebra equivalence `e : L₁ ≃ₗ⁅R⁆ L₂` induces an order isomorphism between the Lie
+subalgebras of `L₁` and those of `L₂`, sending `H` to `H.map e` and `K` to `K.comap e`. -/
+def orderIsoMapComap : LieSubalgebra R L₁ ≃o LieSubalgebra R L₂ where
+  toFun H := H.map e
+  invFun K := K.comap e
+  left_inv H := by ext x; simp
+  right_inv K := by
+    ext y
+    exact ⟨by rintro ⟨_, hx, rfl⟩; exact hx,
+      fun hy ↦ ⟨e.symm y, by simpa using hy, e.apply_symm_apply y⟩⟩
+  map_rel_iff' {H₁ H₂} := by
+    simp only [Equiv.coe_fn_mk, LieSubalgebra.map_le_iff_le_comap]
+    exact ⟨fun h x hx ↦ by simpa using h hx, fun h x hx ↦ by simpa using h hx⟩
+
+/-- Applying `LieSubalgebra.orderIsoMapComap e` to `H` gives `H.map e`. -/
+@[simp]
+theorem orderIsoMapComap_apply (H : LieSubalgebra R L₁) :
+    orderIsoMapComap e H = H.map e :=
+  (rfl)
+
+/-- Applying `(LieSubalgebra.orderIsoMapComap e).symm` to `K` gives `K.comap e`. -/
+@[simp]
+theorem orderIsoMapComap_symm_apply (K : LieSubalgebra R L₂) :
+    (orderIsoMapComap e).symm K = K.comap e :=
+  (rfl)
+
+/-- Pulling back a Lie subalgebra along a Lie equivalence `e` equals pushing it forward along
+`e.symm`. -/
+theorem orderIsoMapComap_symm_apply' (K : LieSubalgebra R L₂) :
+    (orderIsoMapComap e).symm K = K.map e.symm := by
+  ext x
+  simp [LieEquiv.symm_apply_eq]
 
 end LieSubalgebra
 

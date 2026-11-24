@@ -47,14 +47,10 @@ variable (n R)
 def cartanInvolution : sl n R ≃ₗ⁅R⁆ sl n R :=
   (TauCeti.negTransposeLieEquiv n R).ofSubalgebras (sl n R) (sl n R) (by
     ext X
-    constructor
+    refine ⟨?_, fun hX ↦ ⟨-Xᵀ, ?_, by simp⟩⟩
     · rintro ⟨Y, hY, rfl⟩
-      rw [LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, TauCeti.negTransposeLieEquiv_apply,
-        mem_sl_iff, trace_neg, trace_transpose, mem_sl_iff.mp hY, neg_zero]
-    · intro hX
-      have hneg : -Xᵀ ∈ sl n R := by
-        rw [mem_sl_iff, trace_neg, trace_transpose, mem_sl_iff.mp hX, neg_zero]
-      exact ⟨-Xᵀ, hneg, by simp⟩)
+      simp [mem_sl_iff.mp hY]
+    · simp [mem_sl_iff.mp hX])
 
 variable {n R}
 
@@ -103,13 +99,12 @@ theorem killingForm_apply (X Y : sl n R) :
     LieEquiv.ofEq (sl n R) (TauCeti.slIdeal R n).toLieSubalgebra
       (congrArg SetLike.coe (TauCeti.slIdeal_toLieSubalgebra_eq_sl (R := R) (n := n)).symm)
   have he (Z : sl n R) : (e Z : Matrix n n R) = Z := LieEquiv.ofEq_apply _ _ _ Z
-  have h1 := (killingForm_of_equiv_apply e X Y).symm
   have h2 : killingForm R (TauCeti.slIdeal R n) (e X) (e Y) = killingForm R (Matrix n n R) X Y := by
-    have hres := (congrArg (fun B ↦ B (e X) (e Y))
+    simpa [he] using (congrArg (fun B ↦ B (e X) (e Y))
       (LieIdeal.killingForm_eq (R := R) (L := Matrix n n R) (I := TauCeti.slIdeal R n))).trans
       (LinearMap.domRestrict₁₂_apply (killingForm R (Matrix n n R)) _ _ (e X) (e Y))
-    simpa only [he] using hres
-  rw [h1, h2, Matrix.killingForm_apply, mem_sl_iff.mp X.property, mem_sl_iff.mp Y.property]
+  rw [← killingForm_of_equiv_apply e X Y, h2, Matrix.killingForm_apply,
+    mem_sl_iff.mp X.property, mem_sl_iff.mp Y.property]
   ring
 
 /-- The Killing form of `sl n R` twisted by `θ Y = -Yᵀ`:

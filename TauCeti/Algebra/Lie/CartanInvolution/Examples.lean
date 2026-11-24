@@ -50,15 +50,11 @@ theorem not_isCartanInvolution_refl {n : Type*} [Fintype n] [DecidableEq n] [Non
   obtain ⟨i, j, hij⟩ := exists_pair_ne n
   let H : sl n K := singleSubSingle i j 1
   have hHne : H ≠ 0 := fun h0 ↦ by
-    have hval := congrArg (fun M : sl n K ↦ (M : Matrix n n K) i i) h0
-    simp [H, val_singleSubSingle, hij.symm] at hval
+    simpa [H, val_singleSubSingle, hij.symm] using
+      congrArg (fun M : sl n K ↦ (M : Matrix n n K) i i) h0
   have hsq : ((H : Matrix n n K) * (H : Matrix n n K)).trace = 2 := by
-    have hmul : (H : Matrix n n K) * (H : Matrix n n K) =
-        Matrix.single i i 1 + Matrix.single j j 1 := by
-      simp [H, val_singleSubSingle, sub_mul, mul_sub, Matrix.single_mul_single_same,
-        Matrix.single_mul_single_of_ne _ _ _ _ hij,
-        Matrix.single_mul_single_of_ne _ _ _ _ hij.symm]
-    rw [hmul, Matrix.trace_add, Matrix.trace_single_eq_same, Matrix.trace_single_eq_same,
+    simp [H, val_singleSubSingle, sub_mul, mul_sub, Matrix.single_mul_single_same,
+      Matrix.single_mul_single_of_ne _ _ _ _ hij, Matrix.single_mul_single_of_ne _ _ _ _ hij.symm,
       one_add_one_eq_two]
   have hpos : 0 < killingForm K (sl n K) H H := by
     rw [killingForm_apply, hsq]

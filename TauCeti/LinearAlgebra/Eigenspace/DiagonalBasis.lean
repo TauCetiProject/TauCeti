@@ -37,8 +37,8 @@ algebraic closedness, and the answer names the basis vectors involved.
 ## Main results
 
 * `Module.Basis.diagMap`, `Module.Basis.diagMap_apply_basis`, `Module.Basis.diagMap_comp`,
-  `Module.Basis.diagMap_one`: diagonal endomorphisms scaling each basis vector by prescribed
-  coefficients, and their composition and identity laws.
+  `Module.Basis.diagMap_one`, `Module.Basis.repr_diagMap`: diagonal endomorphisms scaling each
+  basis vector by prescribed coefficients, and their coordinate, composition, and identity laws.
 * `Module.Basis.repr_apply_of_apply_basis`: the coordinates of `f w` are those of `w` scaled by
   the eigenvalues.
 * `Module.Basis.repr_eq_zero_of_weight_ne`: a joint eigenvector has zero coordinate at a basis
@@ -111,6 +111,12 @@ theorem _root_.Module.Basis.repr_apply_of_apply_basis (b : Module.Basis ι K V)
     · simp [hf j]
     · simp [hf j, hj]
   simpa using LinearMap.congr_fun key w
+
+/-- The `i`-th coordinate of `b.diagMap c v` in the basis `b` is `c i * b.repr v i`. -/
+@[simp]
+theorem _root_.Module.Basis.repr_diagMap (b : Module.Basis ι K V) (c : ι → K) (v : V) (i : ι) :
+    b.repr (b.diagMap c v) i = c i * b.repr v i :=
+  b.repr_apply_of_apply_basis (b.diagMap_apply_basis c) v i
 
 end CommSemiring
 
@@ -292,13 +298,11 @@ theorem _root_.Module.Basis.apply_eq_smul_of_apply_eq_smul (b : Module.Basis ι 
   classical
   have hrepr : v = ∑ i ∈ (b.repr v).support, b.repr v i • b i := by
     conv_lhs => rw [← b.linearCombination_repr v, Finsupp.linearCombination_apply, Finsupp.sum]
-  calc
-    g v = ∑ i ∈ (b.repr v).support, b.repr v i • g (b i) := by
-      conv_lhs => rw [hrepr]; simp [map_sum]
-    _ = ∑ i ∈ (b.repr v).support, ν • (b.repr v i • b i) := Finset.sum_congr rfl fun i hi ↦ by
-      rw [hg i (b.eq_of_apply_eq_smul_of_repr_ne_zero hf hv (Finsupp.mem_support_iff.mp hi)),
-        smul_comm]
-    _ = ν • v := by rw [← Finset.smul_sum, ← hrepr]
+  conv_lhs => rw [hrepr]
+  simp only [map_sum, map_smul]
+  rw [Finset.sum_congr rfl fun i hi ↦ by
+    rw [hg i (b.eq_of_apply_eq_smul_of_repr_ne_zero hf hv (Finsupp.mem_support_iff.mp hi)),
+      smul_comm], ← Finset.smul_sum, ← hrepr]
 
 end CancelMulZero
 
@@ -340,25 +344,29 @@ section Semiring
 
 variable [Semiring K] [AddCommMonoid V] [Module K V]
 
+section Involutive
+
+variable (θ θ' : V ≃ₗ[K] V) (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
+include hθ hθ'
+
 /-- For two involutive linear equivalences `θ` and `θ'`, `(θ'.trans θ).symm x = θ' (θ x)`. -/
-theorem _root_.LinearEquiv.involutive_trans_symm (θ θ' : V ≃ₗ[K] V)
-    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+theorem _root_.LinearEquiv.involutive_trans_symm (x : V) :
     (θ'.trans θ).symm x = θ' (θ x) := by
   rw [LinearEquiv.symm_apply_eq, LinearEquiv.trans_apply, hθ', hθ]
 
 /-- For two involutive linear equivalences `θ` and `θ'`, `θ` conjugates `θ'.trans θ` to its
 inverse. -/
-theorem _root_.LinearEquiv.involutive_trans_conj_left (θ θ' : V ≃ₗ[K] V)
-    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+theorem _root_.LinearEquiv.involutive_trans_conj_left (x : V) :
     θ ((θ'.trans θ) x) = (θ'.trans θ).symm (θ x) := by
   rw [LinearEquiv.involutive_trans_symm θ θ' hθ hθ', LinearEquiv.trans_apply, hθ, hθ]
 
 /-- For two involutive linear equivalences `θ` and `θ'`, `θ'` conjugates `θ'.trans θ` to its
 inverse. -/
-theorem _root_.LinearEquiv.involutive_trans_conj_right (θ θ' : V ≃ₗ[K] V)
-    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x : V) :
+theorem _root_.LinearEquiv.involutive_trans_conj_right (x : V) :
     θ' ((θ'.trans θ) x) = (θ'.trans θ).symm (θ' x) := by
   rw [LinearEquiv.involutive_trans_symm θ θ' hθ hθ', LinearEquiv.trans_apply]
+
+end Involutive
 
 /-- If a linear map `σ` conjugates `N` to `N.symm`, then `σ` conjugates `N.trans N` to
 `(N.trans N).symm`. -/
@@ -398,11 +406,8 @@ variable [DivisionRing K] [AddCommGroup V] [Module K V]
 theorem _root_.LinearEquiv.apply_eq_inv_smul_of_conj (P : V ≃ₗ[K] V) (σ : V →ₗ[K] V)
     (hσ : ∀ x, σ (P x) = P.symm (σ x)) {v : V} {μ : K} (hμ : μ ≠ 0) (hv : P v = μ • v) :
     P (σ v) = μ⁻¹ • σ v := by
-  have h := congrArg P (hσ v)
-  rw [P.apply_symm_apply, hv, map_smul, map_smul] at h
-  calc
-    P (σ v) = μ⁻¹ • (μ • P (σ v)) := by rw [smul_smul, inv_mul_cancel₀ hμ, one_smul]
-    _ = μ⁻¹ • σ v := congrArg (μ⁻¹ • ·) h
+  have h := congrArg (μ⁻¹ • ·) (congrArg P (hσ v))
+  rwa [P.apply_symm_apply, hv, map_smul, map_smul, smul_smul, inv_mul_cancel₀ hμ, one_smul] at h
 
 /-- For two involutive linear equivalences `θ` and `θ'`, both `θ` and `θ'` map every
 `μ`-eigenvector of `(θ' ∘ θ)²` (with `μ ≠ 0`) to a `μ⁻¹`-eigenvector. -/
@@ -410,11 +415,10 @@ theorem _root_.LinearEquiv.sq_trans_apply_inv_of_eigenvector (θ θ' : V ≃ₗ[
     (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') {v : V} {μ : K} (hμ : μ ≠ 0)
     (hv : ((θ'.trans θ).trans (θ'.trans θ)) v = μ • v) :
     ((θ'.trans θ).trans (θ'.trans θ)) (θ v) = μ⁻¹ • θ v ∧
-      ((θ'.trans θ).trans (θ'.trans θ)) (θ' v) = μ⁻¹ • θ' v := by
-  let P := (θ'.trans θ).trans (θ'.trans θ)
-  exact ⟨P.apply_eq_inv_smul_of_conj θ.toLinearMap
+      ((θ'.trans θ).trans (θ'.trans θ)) (θ' v) = μ⁻¹ • θ' v :=
+  ⟨_root_.LinearEquiv.apply_eq_inv_smul_of_conj _ θ.toLinearMap
       (LinearEquiv.involutive_sq_trans_conj_left θ θ' hθ hθ') hμ hv,
-    P.apply_eq_inv_smul_of_conj θ'.toLinearMap
+    _root_.LinearEquiv.apply_eq_inv_smul_of_conj _ θ'.toLinearMap
       (LinearEquiv.involutive_sq_trans_conj_right θ θ' hθ hθ') hμ hv⟩
 
 end DivisionRing

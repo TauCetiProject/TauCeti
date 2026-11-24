@@ -398,59 +398,46 @@ end LieHom
 
 namespace LieEquiv
 
+section
+
+variable {R L₁ L₂ M₁ M₂ N₁ N₂ : Type*} [CommRing R]
+  [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
+  [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
+  [LieRing N₁] [LieAlgebra R N₁] [LieRing N₂] [LieAlgebra R N₂]
+
 /-- Product of two Lie algebra equivalences. -/
-def prodCongr {R L₁ L₂ M₁ M₂ : Type*} [CommRing R]
-    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
-    [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
-    (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) : (L₁ × L₂) ≃ₗ⁅R⁆ (M₁ × M₂) where
+def prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) : (L₁ × L₂) ≃ₗ⁅R⁆ (M₁ × M₂) where
   __ := LinearEquiv.prodCongr e₁.toLinearEquiv e₂.toLinearEquiv
   map_lie' {p q} := Prod.ext (e₁.map_lie p.1 q.1) (e₂.map_lie p.2 q.2)
 
 @[simp, grind =]
-theorem prodCongr_apply {R L₁ L₂ M₁ M₂ : Type*} [CommRing R]
-    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
-    [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
-    (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) (p : L₁ × L₂) :
-    prodCongr e₁ e₂ p = (e₁ p.1, e₂ p.2) :=
-  (rfl)
+theorem prodCongr_apply (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) (p : L₁ × L₂) :
+    prodCongr e₁ e₂ p = (e₁ p.1, e₂ p.2) := (rfl)
 
 @[simp]
-theorem prodCongr_symm {R L₁ L₂ M₁ M₂ : Type*} [CommRing R]
-    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
-    [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
-    (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
-    (prodCongr e₁ e₂).symm = prodCongr e₁.symm e₂.symm :=
-  (rfl)
+theorem prodCongr_symm (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
+    (prodCongr e₁ e₂).symm = prodCongr e₁.symm e₂.symm := (rfl)
 
 @[simp]
-theorem prodCongr_refl {R L₁ L₂ : Type*} [CommRing R]
-    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂] :
+theorem prodCongr_refl :
     prodCongr (LieEquiv.refl : L₁ ≃ₗ⁅R⁆ L₁) (LieEquiv.refl : L₂ ≃ₗ⁅R⁆ L₂) = LieEquiv.refl :=
   (rfl)
 
 @[simp]
-theorem prodCongr_trans_prodCongr {R L₁ L₂ M₁ M₂ N₁ N₂ : Type*} [CommRing R]
-    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
-    [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
-    [LieRing N₁] [LieAlgebra R N₁] [LieRing N₂] [LieAlgebra R N₂]
-    (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) (f₁ : M₁ ≃ₗ⁅R⁆ N₁) (f₂ : M₂ ≃ₗ⁅R⁆ N₂) :
-    (prodCongr e₁ e₂).trans (prodCongr f₁ f₂) = prodCongr (e₁.trans f₁) (e₂.trans f₂) :=
-  (rfl)
+theorem prodCongr_trans_prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) (f₁ : M₁ ≃ₗ⁅R⁆ N₁)
+    (f₂ : M₂ ≃ₗ⁅R⁆ N₂) :
+    (prodCongr e₁ e₂).trans (prodCongr f₁ f₂) = prodCongr (e₁.trans f₁) (e₂.trans f₂) := (rfl)
 
 @[simp]
-theorem toLinearEquiv_prodCongr {R L₁ L₂ M₁ M₂ : Type*} [CommRing R]
-    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
-    [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
-    (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
+theorem toLinearEquiv_prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
     (prodCongr e₁ e₂).toLinearEquiv = LinearEquiv.prodCongr e₁.toLinearEquiv e₂.toLinearEquiv :=
   (rfl)
 
 @[simp]
-theorem toLieHom_prodCongr {R L₁ L₂ M₁ M₂ : Type*} [CommRing R]
-    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
-    [LieRing M₁] [LieAlgebra R M₁] [LieRing M₂] [LieAlgebra R M₂]
-    (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
+theorem toLieHom_prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ M₁) (e₂ : L₂ ≃ₗ⁅R⁆ M₂) :
     (prodCongr e₁ e₂ : (L₁ × L₂) →ₗ⁅R⁆ (M₁ × M₂)) = LieHom.prodMap e₁.toLieHom e₂.toLieHom :=
   (rfl)
+
+end
 
 end LieEquiv

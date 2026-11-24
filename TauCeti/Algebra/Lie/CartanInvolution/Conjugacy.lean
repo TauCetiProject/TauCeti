@@ -39,14 +39,6 @@ section Helpers
 
 variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
 
-/-- For two involutive automorphisms `θ` and `θ'`, `θ ∘ θ'` is self-adjoint for
-`θ.twistedKillingForm`. -/
-private theorem twistedKillingForm_trans_left {θ θ' : L ≃ₗ⁅ℝ⁆ L}
-    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x y : L) :
-    θ.twistedKillingForm (θ (θ' x)) y = θ.twistedKillingForm x (θ (θ' y)) := by
-  simp only [twistedKillingForm_apply, hθ (θ' y)]
-  rw [killingForm_of_equiv_apply θ (θ' x) y, ← killingForm_of_equiv_apply θ' x (θ' y), hθ' y]
-
 /-- Diagonalizing `P = (θ ∘ θ')²` with respect to `B_θ`: produces a basis of `P`-eigenvectors
 with strictly positive eigenvalues. -/
 private theorem exists_basis_eigenvector_sq_trans {θ θ' : L ≃ₗ⁅ℝ⁆ L}
@@ -57,8 +49,8 @@ private theorem exists_basis_eigenvector_sq_trans {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   have := hθ.finiteDimensional
   let N : L ≃ₗ⁅ℝ⁆ L := θ'.trans θ
   let P : L ≃ₗ⁅ℝ⁆ L := N.trans N
-  have hN_symm (x y : L) : θ.twistedKillingForm (N x) y = θ.twistedKillingForm x (N y) :=
-    twistedKillingForm_trans_left hθ.involutive hθ'.involutive x y
+  have hN_symm : θ.twistedKillingForm.IsSelfAdjoint N :=
+    isSelfAdjoint_twistedKillingForm_trans hθ.involutive hθ'.involutive
   have hP_self : θ.twistedKillingForm.IsSelfAdjoint (P : L →ₗ[ℝ] L) := fun x y ↦ by
     simpa only [P, LinearEquiv.coe_coe, coe_toLinearEquiv, trans_apply] using
       (hN_symm (N x) y).trans (hN_symm x (N y))
@@ -68,7 +60,8 @@ private theorem exists_basis_eigenvector_sq_trans {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   refine ⟨b, lam, hbP, fun i ↦ ?_⟩
   have hNne : N (b i) ≠ 0 := fun h0 ↦ b.ne_zero i (N.injective (h0.trans (map_zero N).symm))
   have hpos : 0 < θ.twistedKillingForm (P (b i)) (b i) := by
-    simpa only [P, trans_apply, hN_symm] using hθ.twistedKillingForm_self_pos hNne
+    rw [show P (b i) = N (N (b i)) from rfl, hN_symm (N (b i)) (b i)]
+    exact hθ.twistedKillingForm_self_pos hNne
   rw [hbP i, map_smul, LinearMap.smul_apply, smul_eq_mul] at hpos
   exact pos_of_mul_pos_left hpos (hθ.twistedKillingForm_self_pos (b.ne_zero i)).le
 
@@ -88,20 +81,9 @@ private theorem exists_mem_cartanP_ad_basis {ι : Type*}
   have hD_anti (y : L) : D (θ y) = -θ (D y) := P.logDerivation_apply_conj b hb hlam θ
     (LinearEquiv.involutive_sq_trans_conj_left θ.toLinearEquiv θ'.toLinearEquiv
       hθ.involutive hθ') y
-  have hZ₀P : Z₀ ∈ θ.cartanP := by
-    have hcent : θ Z₀ + Z₀ ∈ center ℝ L := (LieModule.mem_maxTrivSubmodule _ _ _ _).mpr fun w ↦ by
-      have hθZ₀ : θ ⁅Z₀, θ w⁆ = ⁅θ Z₀, w⁆ := calc
-        θ ⁅Z₀, θ w⁆ = ⁅θ Z₀, θ (θ w)⁆ := θ.map_lie Z₀ (θ w)
-        _ = ⁅θ Z₀, w⁆ := by rw [hθ.involutive w]
-      have hanti : ⁅θ Z₀, w⁆ = -⁅Z₀, w⁆ := calc
-        ⁅θ Z₀, w⁆ = θ ⁅Z₀, θ w⁆ := hθZ₀.symm
-        _ = θ (D (θ w)) := by rw [hZ₀_apply]
-        _ = θ (-θ (D w)) := by rw [hD_anti]
-        _ = -D w := by rw [map_neg, hθ.involutive]
-        _ = -⁅Z₀, w⁆ := by rw [hZ₀_apply]
-      rw [← lie_skew, add_lie, hanti, neg_add_cancel, neg_zero]
-    rw [hθ.center_eq_bot, LieSubmodule.mem_bot] at hcent
-    exact mem_cartanP.mpr (eq_neg_of_add_eq_zero_left hcent)
+  have hZ₀P : Z₀ ∈ θ.cartanP :=
+    mem_cartanP_of_center_eq_bot hθ.involutive hθ.center_eq_bot fun y ↦ by
+      rw [hZ₀_apply, hD_anti, hZ₀_apply]
   refine ⟨(-(1 / 4 : ℝ)) • Z₀, θ.cartanP.smul_mem _ hZ₀P, fun i ↦ ?_⟩
   rw [smul_lie, hZ₀_apply, P.logDerivation_apply_basis b hb hlam i, smul_smul]
 
@@ -133,13 +115,9 @@ private theorem conj_rpow_eq {ι : Type*}
   have hcomm_basis (i : ι) : θ₁ (θ' (b i)) = θ' (θ₁ (b i)) := by
     rw [hθ₁_eig (inv_pos.mpr (hlam i)) (hPinv (hlam i).ne' (hb i)).right,
       hθ₁_eig (hlam i) (hb i), map_smul, Real.inv_rpow (hlam i).le, ← Real.rpow_neg (hlam i).le]
-    have hNN : N (N (b i)) = lam i • b i := by rw [← trans_apply]; exact hb i
-    have hN : N (b i) = lam i • N.symm (b i) := by
-      simpa only [symm_apply_apply, map_smul] using congrArg N.symm hNN
-    have hNs : N.symm (b i) = θ' (θ (b i)) :=
-      LinearEquiv.involutive_trans_symm θ.toLinearEquiv θ'.toLinearEquiv
-        hθ.involutive hθ'.involutive (b i)
-    have hθθ' : θ (θ' (b i)) = lam i • θ' (θ (b i)) := by simpa only [N, trans_apply, hNs] using hN
+    have hθθ' : θ (θ' (b i)) = lam i • θ' (θ (b i)) := by
+      simpa only [trans_apply, hθ.involutive _, hθ'.involutive _, map_smul] using
+        congrArg (fun v ↦ θ' (θ v)) (hb i)
     rw [hθθ', smul_smul, ← Real.rpow_add_one (hlam i).ne']
     norm_num
   have hlin : (θ₁ : L →ₗ[ℝ] L).comp (θ' : L →ₗ[ℝ] L) = (θ' : L →ₗ[ℝ] L).comp (θ₁ : L →ₗ[ℝ] L) :=
@@ -170,8 +148,8 @@ theorem IsCartanInvolution.exists_mem_cartanP_conj_eq
     (f := ad ℝ L Z) (g := (φ : L →ₗ[ℝ] L)) hZb
     (fun i hi ↦ by rw [LinearEquiv.coe_coe, coe_toLinearEquiv, rpow_apply_basis,
       Real.rpow_def_of_pos (hlam i), mul_comm, ← hi]) hv⟩
-  simpa only [φ, P, trans_apply, symm_apply_apply] using congrArg (fun e : L ≃ₗ⁅ℝ⁆ L ↦ e (φ y))
-    hconj.symm
+  simpa only [φ, P, trans_apply, symm_apply_apply] using
+    congrArg (fun e : L ≃ₗ⁅ℝ⁆ L ↦ e (φ y)) hconj.symm
 
 /-- **Operator-exponential conjugacy of Cartan involutions**: under any linear identification
 `e : L ≃ₗ[ℝ] E` with a finite-dimensional normed real vector space `E` (specializing to
