@@ -81,18 +81,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 /-! ### Ricci curvature and pairs of bivectors -/
 
 omit [FiniteDimensional ℝ V] in
-/-- A nonzero vector `u`, normalised, is a unit vector. -/
-private theorem norm_inv_norm_smul_eq_one {u : V} (hu : u ≠ 0) : ‖‖u‖⁻¹ • u‖ = 1 := by
-  simpa using norm_smul_inv_norm (𝕜 := ℝ) hu
-
-omit [FiniteDimensional ℝ V] in
-/-- A nonzero vector `u` of a three-dimensional space, normalised, is the first vector of an
-orthonormal basis indexed by `Fin 3`. -/
-private theorem exists_orthonormalBasis_apply_zero_eq_inv_norm_smul (hV : finrank ℝ V = 3)
-    {u : V} (hu : u ≠ 0) : ∃ b : OrthonormalBasis (Fin 3) ℝ V, b 0 = ‖u‖⁻¹ • u :=
-  exists_orthonormalBasis_fin_apply_zero_eq (n := 2) hV (norm_inv_norm_smul_eq_one hu)
-
-omit [FiniteDimensional ℝ V] in
 /-- The vectors of an orthonormal basis indexed by `Fin 3`, listed as `![b 0, b 1, b 2]`, are
 orthonormal. -/
 private theorem orthonormal_vecCons_orthonormalBasis (b : OrthonormalBasis (Fin 3) ℝ V) :
@@ -156,7 +144,8 @@ theorem exists_norm_eq_one_inner_curvatureEndomorphism_add_inner_eq_ricci_of_ant
   -- starts an orthonormal basis `b` of `V`; then `b₀ ∧ b₁` and `b₀ ∧ b₂` are orthogonal to `ω₃`.
   obtain ⟨u, hu₀, hu⟩ := exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank
     (f := twoVectorContraction ω₃) (inner_twoVectorContraction_apply_left _) (by rw [hV]; decide)
-  obtain ⟨b, hbu⟩ := exists_orthonormalBasis_apply_zero_eq_inv_norm_smul hV hu₀
+  obtain ⟨b, hbu⟩ := exists_orthonormalBasis_fin_apply_zero_eq (n := 2) hV
+    (show ‖‖u‖⁻¹ • u‖ = 1 by simpa using norm_smul_inv_norm (𝕜 := ℝ) hu₀)
   have hb₃ : twoVectorContraction ω₃ (b 0) = 0 := by simp [hbu, hu]
   have hperp (j : Fin 3) : ⟪ω₃, exteriorPower.ιMulti ℝ 2 ![b 0, b j]⟫ = 0 := by
     rw [← inner_twoVectorContraction_apply, hb₃, inner_zero_left]
@@ -193,7 +182,7 @@ theorem forall_inner_curvatureEndomorphism_add_inner_nonneg_iff_forall_ricci_non
     · simp
     obtain ⟨ω₁, ω₂, hω, he⟩ :=
       exists_orthonormal_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂
-        (norm_inv_norm_smul_eq_one hu)
+        (show ‖‖u‖⁻¹ • u‖ = 1 by simpa using norm_smul_inv_norm (𝕜 := ℝ) hu)
     rw [ricci_apply_self_eq_norm_sq_mul r hu, ← he]
     exact mul_nonneg (sq_nonneg _) (h ω₁ ω₂ hω)
   · obtain ⟨e, -, he⟩ :=
@@ -213,7 +202,7 @@ theorem forall_inner_curvatureEndomorphism_add_inner_pos_iff_forall_ricci_pos_of
   refine ⟨fun h u hu ↦ ?_, fun h ω₁ ω₂ hω ↦ ?_⟩
   · obtain ⟨ω₁, ω₂, hω, he⟩ :=
       exists_orthonormal_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm hV h₁ h₂
-        (norm_inv_norm_smul_eq_one hu)
+        (show ‖‖u‖⁻¹ • u‖ = 1 by simpa using norm_smul_inv_norm (𝕜 := ℝ) hu)
     rw [ricci_apply_self_eq_norm_sq_mul r hu, ← he]
     exact mul_pos (pow_pos (norm_pos_iff.mpr hu) 2) (h ω₁ ω₂ hω)
   · obtain ⟨e, he₁, he⟩ :=
@@ -261,7 +250,8 @@ theorem IsAlgebraicCurvature.ricci_reactionTensor_apply_self_nonneg_of_ricci_app
     (he : ricci r e e = 0) : 0 ≤ ricci (FourTensor.reactionTensor r) e e := by
   rcases eq_or_ne e 0 with rfl | he₀
   · simp
-  obtain ⟨b, hb⟩ := exists_orthonormalBasis_apply_zero_eq_inv_norm_smul hV he₀
+  obtain ⟨b, hb⟩ := exists_orthonormalBasis_fin_apply_zero_eq (n := 2) hV
+    (show ‖‖e‖⁻¹ • e‖ = 1 by simpa using norm_smul_inv_norm (𝕜 := ℝ) he₀)
   have hb₀ : ricci r (b 0) (b 0) = 0 := by
     rw [ricci_apply_self_eq_norm_sq_mul r he₀] at he
     rw [hb]
