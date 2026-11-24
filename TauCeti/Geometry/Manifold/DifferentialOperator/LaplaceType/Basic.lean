@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
-public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local

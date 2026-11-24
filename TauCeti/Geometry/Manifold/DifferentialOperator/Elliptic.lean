@@ -56,6 +56,8 @@ elliptic at an interior point exactly when they do.
   fibre, an elliptic operator of order at most `m + 1` does not have order at most `m`.
 * `TauCeti.isSectionEllipticAt_add_iff`: ellipticity is unchanged by perturbations of lower order.
 * `TauCeti.IsSectionEllipticAt.comp`: the composition of elliptic operators is elliptic.
+* `TauCeti.IsSectionEllipticAt.restrictSectionDifferentialOperators`: the restriction of an
+  operator elliptic at a point of an open subset is elliptic there.
 * `LinearMap.IsFormalAdjoint.isSectionEllipticAt_iff`: a formal adjoint of `P` is elliptic exactly
   when `P` is.
 * `TauCeti.IsSectionLaplaceType.isSectionElliptic`: operators of Laplace type are elliptic.
@@ -297,6 +299,36 @@ theorem IsSectionElliptic.comp
   fun x ↦ (hP x).comp (hQ x)
 
 end Comp
+
+section Restrict
+
+variable [FiniteDimensional ℝ F'] [ContMDiffVectorBundle ∞ F' W I] {U : TopologicalSpace.Opens M}
+
+/-- **Restriction to open subsets.** If `P` is elliptic at a point `y` of an open subset `U`, then
+so is its restriction to `U`: the principal symbol of the restriction at `ξ ∘ ι` is that of `P` at
+`ξ`, where `ι : T_y U ≃ T_y M` identifies the tangent spaces. -/
+theorem IsSectionEllipticAt.restrictSectionDifferentialOperators {y : U}
+    (hP : IsSectionEllipticAt P y) :
+    IsSectionEllipticAt (U.restrictSectionDifferentialOperators m P) y := by
+  intro hy ξ hξ
+  have hy' : I.IsInteriorPoint (y : M) := I.isInteriorPoint_iff_isInteriorPoint_val.mp hy
+  set ι := Manifold.tangentSpaceOpenEquiv (I := I) y
+  have hη : ξ = (ξ.comp (ι.symm : TangentSpace I (y : M) →L[ℝ] TangentSpace I y)).comp
+      ι.toContinuousLinearMap := by
+    ext v
+    simp
+  rw [hη, sectionPrincipalSymbol_restrictSectionDifferentialOperators hy']
+  refine hP.sectionPrincipalSymbol_bijective hy' fun h ↦ hξ ?_
+  rw [hη, h, ContinuousLinearMap.zero_comp]
+
+/-- **Restriction to open subsets.** The restriction of an elliptic operator to an open subset is
+elliptic. -/
+theorem IsSectionElliptic.restrictSectionDifferentialOperators (hP : IsSectionElliptic P)
+    (U : TopologicalSpace.Opens M) :
+    IsSectionElliptic (U.restrictSectionDifferentialOperators m P) :=
+  fun y ↦ (hP y).restrictSectionDifferentialOperators
+
+end Restrict
 
 /-! ### Operators of Laplace type -/
 

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict.Section
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import Mathlib.Topology.VectorBundle.Riemannian
 
 /-!
@@ -40,6 +42,9 @@ covector.
   determined by the operator as soon as some fibre over an interior point is nonzero.
 * `TauCeti.IsSectionLaplaceType.sectionPrincipalSymbol_bijective`: operators of Laplace type are
   elliptic.
+* `TauCeti.IsSectionLaplaceType.restrictSectionDifferentialOperators`: the restriction of an
+  operator of Laplace type to an open subset, with the inherited metric, is of Laplace type with the
+  same constant.
 
 ## References
 
@@ -51,7 +56,7 @@ covector.
 
 public section
 
-open Bundle
+open Bundle TopologicalSpace
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -145,5 +150,27 @@ theorem IsSectionLaplaceType.sectionPrincipalSymbol_bijective (hP : IsSectionLap
   rw [hP.sectionPrincipalSymbol_eq hx]
   exact ⟨fun v w h ↦ smul_right_injective (V x) hc h, fun v ↦ ⟨(-(c * ‖ξ‖ ^ 2))⁻¹ • v, by
     rw [LinearMap.smul_apply, LinearMap.id_apply, smul_smul, mul_inv_cancel₀ hc, one_smul]⟩⟩
+
+/-- **Restriction to open subsets.** For the Riemannian metric that an open subset `U` inherits
+from `M`, the restriction to `U` of an operator of Laplace type with constant `c` is of Laplace type
+with constant `c`. -/
+theorem IsSectionLaplaceType.restrictSectionDifferentialOperators (hP : IsSectionLaplaceType P c)
+    (U : Opens M) : IsSectionLaplaceType (U.restrictSectionDifferentialOperators 2 P) c := by
+  refine ⟨hP.pos, fun x hx ξ ↦ ?_⟩
+  have hx' : I.IsInteriorPoint (x : M) := I.isInteriorPoint_iff_isInteriorPoint_val.mp hx
+  -- Write `ξ` as `η ∘ ι` for the identification `ι : T_x U ≃ T_x M` of the tangent spaces, which
+  -- is a linear isometric equivalence for the inherited metric, so `η` has the norm of `ξ`.
+  have hξ : ξ = (ξ.comp ((Manifold.tangentSpaceOpenLinearIsometryEquiv (I := I) U x).symm :
+      TangentSpace I (x : M) →L[ℝ] TangentSpace I x)).comp
+      (Manifold.tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
+    ext v
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_coe, ← Manifold.coe_tangentSpaceOpenLinearIsometryEquiv,
+      LinearIsometryEquiv.symm_apply_apply]
+  conv_lhs => rw [hξ]
+  rw [sectionPrincipalSymbol_restrictSectionDifferentialOperators hx',
+    hP.sectionPrincipalSymbol_eq hx', ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+  -- The identity of the fibre of `V` over `x` is that of the fibre of `V|_U`.
+  rfl
 
 end TauCeti
