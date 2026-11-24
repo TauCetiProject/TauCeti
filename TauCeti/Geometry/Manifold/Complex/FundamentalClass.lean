@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Complex.UnitDisc.Subdisc
 public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Deriv
 
 /-!
@@ -197,9 +198,11 @@ the source of a holomorphic chart `e`, is pulled back from the canonical homolog
 of `ℂ` along `e`. -/
 theorem comap_complexHomologicalOrientation_of_mem_maximalAtlas {e : OpenPartialHomeomorph M ℂ}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, ℂ) 1 M) {U : TopologicalSpace.Opens M}
-    (hU : (U : Set M) ⊆ e.source) (hj : IsOpenEmbedding (e ∘ Subtype.val : U → ℂ)) :
-    (complexHomologicalOrientation ℂ).comap hj = complexHomologicalOrientation U :=
-  comap_complexHomologicalOrientation (k := 1) hj fun u ↦
+    (hU : (U : Set M) ⊆ e.source) :
+    (complexHomologicalOrientation ℂ).comap
+        (e.isOpenEmbedding_comp U.isOpenEmbedding' (by simpa using hU)) =
+      complexHomologicalOrientation U :=
+  comap_complexHomologicalOrientation (k := 1) _ fun u ↦
     IsLocalDiffeomorphAt.comp (K := 𝓘(ℂ, ℂ)) (P := ℂ) (isLocalDiffeomorph_subtype_val u)
       (e.isLocalDiffeomorphAt_of_mem_maximalAtlas he (hU u.property))
 

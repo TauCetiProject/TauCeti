@@ -18,13 +18,19 @@ A map `f : X → Y` between Riemann surfaces has two kinds of multiplicities. Th
 count preimages with their orders of vanishing: the local multiplicity
 `TauCeti.RiemannSurface.localMultiplicity f x` is the order of vanishing of `f - f x` read in
 holomorphic charts, and the fibre sum `TauCeti.RiemannSurface.fiberMultiplicitySum f y` adds them
-over the fibre of `y`, which for a map from a compact surface to a connected one is the degree
+over the fibre of `y`. For a map from a compact surface to a connected one which is holomorphic
+everywhere and constant near no point, every fibre sum is the degree
 `TauCeti.RiemannSurface.degree f`. The topological ones come from local homology, for the
 canonical homological orientations `TauCeti.complexHomologicalOrientation` of the complex
 structures: the local index `TauCeti.HomologicalOrientation.localIndex` of `f` at an isolated
 point of its fibre, the local degree `TauCeti.HomologicalOrientation.localDegree` at a point with
-compact fibre, and the degree `TauCeti.HomologicalOrientation.degree` of a proper map, which
-computes the image `f_*[X]` of the fundamental class. This file shows that they agree.
+compact fibre, and the degree `TauCeti.HomologicalOrientation.degree` of a proper map to a
+connected surface. The degree is characterized by `f_*[X]_{f⁻¹(K)} = deg f • [Y]_K`, for the
+fundamental classes relative to compact subsets `K ⊆ Y` and their preimages
+(`TauCeti.HomologicalOrientation.localHomologyMap_fundamentalClassOn_preimage`); for compact `X`
+and `Y` it gives `f_*[X] = deg f • [Y]` in ordinary homology
+(`TauCeti.HomologicalOrientation.mapFundamentalClass_eq_degree_smul`). This file shows that the
+analytic and topological multiplicities agree.
 
 * At a point near which `f` is holomorphic, the local index of `f` is its local multiplicity
   (`TauCeti.RiemannSurface.localIndex_complexHomologicalOrientation`). So the local index of a
@@ -53,8 +59,8 @@ statements then follow by summing local indices over a fibre
 
 The topological degree is defined for continuous maps and is invariant under proper homotopies,
 so these identities let a count of holomorphic preimages with multiplicities be computed from
-homology, and conversely let the homological degree of a holomorphic map be read off from a single
-fibre.
+homology, and conversely let the homological degree of a proper map to a connected surface be read
+off from a single fibre near whose points the map is holomorphic and not constant.
 
 ## Main results
 
@@ -115,9 +121,9 @@ theorem localIndex_complexHomologicalOrientation (f : C(X, Y)) {x : X}
     V.isOpenEmbedding' (f := g) (g := f) (x := x') (.of_forall fun _ ↦ rfl)
   rw [comap_subtypeVal_complexHomologicalOrientation,
     comap_subtypeVal_complexHomologicalOrientation,
-    ← comap_complexHomologicalOrientation_of_mem_maximalAtlas (chart_mem_maximalAtlas x) hU hj,
+    ← comap_complexHomologicalOrientation_of_mem_maximalAtlas (chart_mem_maximalAtlas x) hU,
     ← comap_complexHomologicalOrientation_of_mem_maximalAtlas (chart_mem_maximalAtlas (f x))
-      subset_rfl hk,
+      (U := V) subset_rfl,
     (complexHomologicalOrientation ℂ).localIndex_comap_eq_analyticOrderNatAt_sub hj hk
       (φ := fun z ↦ c' (f (c.symm z))) ?_ ?_] at h
   · simpa [x', c.left_inv (mem_chart_source ℂ x)] using h.symm

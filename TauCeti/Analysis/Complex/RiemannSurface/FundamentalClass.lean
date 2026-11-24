@@ -40,17 +40,17 @@ holomorphic map from a compact surface is proper, and holomorphic and constant n
 its topological degree is the number of preimages of any point counted with local multiplicities
 (`TauCeti.RiemannSurface.degree_complexHomologicalOrientation`), which is the analytic degree
 (`TauCeti.RiemannSurface.fiberMultiplicitySum_eq_degree`). Since the degree is a natural number,
-`f_* : H₂(X; ℤ) → H₂(Y; ℤ)` is bijective exactly when `deg f = 1`
+when `X` and `Y` are both compact and connected, `f_* : H₂(X; ℤ) → H₂(Y; ℤ)` is bijective
+exactly when `deg f = 1`
 (`TauCeti.RiemannSurface.FiniteHolomorphicMap.bijective_singularHomologyMap_iff_degree_eq_one`);
 a finite holomorphic map of degree one is a biholomorphism
 (`TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`).
 
-At a point of local multiplicity one, `f` has a nonzero complex derivative, so it is a local
-biholomorphism by the inverse function theorem
-(`TauCeti.RiemannSurface.localMultiplicity_eq_one_iff_isLocalDiffeomorphAt`). A local
-biholomorphism preserves the canonical orientations
-(`IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOrientation`), so its local index
-there is `1` (`IsLocalDiffeomorphAt.localIndex_complexHomologicalOrientation_eq_one`).
+A local biholomorphism has local multiplicity one
+(`TauCeti.RiemannSurface.localMultiplicity_eq_one_iff_isLocalDiffeomorphAt`), so its local index
+for the canonical orientations, which is its local multiplicity
+(`TauCeti.RiemannSurface.localIndex_complexHomologicalOrientation`), is `1`
+(`IsLocalDiffeomorphAt.localIndex_complexHomologicalOrientation_eq_one`).
 
 ## Main results
 
@@ -58,8 +58,8 @@ there is `1` (`IsLocalDiffeomorphAt.localIndex_complexHomologicalOrientation_eq_
   has local index `1` for the canonical orientations.
 * `FiniteHolomorphicMap.degree_complexHomologicalOrientation`: the topological degree of a finite
   holomorphic map is its analytic degree.
-* `FiniteHolomorphicMap.bijective_singularHomologyMap_iff_degree_eq_one`: `f_*` is bijective on
-  `H₂(-; ℤ)` exactly when `deg f = 1`.
+* `FiniteHolomorphicMap.bijective_singularHomologyMap_iff_degree_eq_one`: for compact connected
+  `X` and `Y`, `f_*` is bijective on `H₂(-; ℤ)` exactly when `deg f = 1`.
 * `FiniteHolomorphicMap.mapFundamentalClass_complexHomologicalOrientation`: `f_*[X] = deg f • [Y]`.
 * `FiniteHolomorphicMap.mapFundamentalClass_complexHomologicalOrientation_comp`:
   `(u ∘ f)_*[X] = deg f • u_*[Y]`.
@@ -91,16 +91,10 @@ structures, the local index of a local biholomorphism at `x` is `1`. -/
 theorem _root_.IsLocalDiffeomorphAt.localIndex_complexHomologicalOrientation_eq_one
     {f : C(X, Y)} {x : X} (hf : IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) 1 f x) :
     (complexHomologicalOrientation X).localIndex (complexHomologicalOrientation Y) f x = 1 := by
-  have hR : IsLocalDiffeomorphAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 f x := hf.restrictScalars ℝ
-  obtain ⟨L, hL, hmap⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1
-    (hf.isOrientationPreservingAt_complexManifoldOrientation 1)
-  rw [complexHomologicalOrientation_def, complexHomologicalOrientation_def,
-    Manifold.Orientation.localIndex_toHomologicalOrientation (f := f)
-      (hf := hR.isInvertible_mfderiv one_ne_zero)]
-  refine Manifold.Orientation.orientationSign_of_isOrientationPreservingAt
-    ((Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).2 ⟨L, hL, ?_⟩)
-  rw [Manifold.Orientation.orientationAt_reindex, Manifold.Orientation.orientationAt_reindex,
-    Orientation.map_reindex, hmap]
+  have hd : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y :=
+    hf.eventually.mono fun _ hy ↦ hy.mdifferentiableAt one_ne_zero
+  rw [localIndex_complexHomologicalOrientation f hd,
+    (localMultiplicity_eq_one_iff_isLocalDiffeomorphAt hd).2 hf, Nat.cast_one]
 
 namespace FiniteHolomorphicMap
 
