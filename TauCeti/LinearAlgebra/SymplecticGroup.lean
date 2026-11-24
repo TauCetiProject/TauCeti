@@ -88,6 +88,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   alternating `E` with entries in `I`, without dividing by two.
 * `Matrix.one_add_mul_mul_J_mul_transpose_sub_J`: correcting `M` by such an `X` leaves the
   defect `X * E + E * Xᵀ + X * J * Xᵀ + X * E * Xᵀ`, quadratic in `X` and `E`.
+* `Matrix.mul_J_mul_transpose_sub_J_mem_of_sub_mem`: a matrix congruent modulo an ideal `𝔞` to
+  one whose defect has entries in `𝔞` has defect with entries in `𝔞`.
 * `Matrix.one_add_mul_mem_symplecticGroup`: over a square-zero ideal `I`, correcting `M` by
   `1 + X`, where `X` has entries in `I` and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix
   when `M * J * Mᵀ - J = E`.
@@ -425,6 +427,26 @@ theorem one_add_mul_mul_J_mul_transpose_sub_J {M E X : Matrix (l ⊕ l) (l ⊕ l
           (X * E + E * Xᵀ + X * J l R * Xᵀ + X * E * Xᵀ) := by
         noncomm_ring
     _ = _ := by rw [hX, zero_add]
+
+/-- **The symplectic defect modulo an ideal.** If `L` is congruent entrywise to `M` modulo `𝔞`
+and the defect `M * J * Mᵀ - J` has entries in `𝔞`, so does the defect of `L`. -/
+theorem mul_J_mul_transpose_sub_J_mem_of_sub_mem {𝔞 : Ideal R}
+    {L M : Matrix (l ⊕ l) (l ⊕ l) R} (hLM : ∀ i j, (L - M) i j ∈ 𝔞)
+    (hM : ∀ i j, (M * J l R * Mᵀ - J l R) i j ∈ 𝔞) (i j : l ⊕ l) :
+    (L * J l R * Lᵀ - J l R) i j ∈ 𝔞 := by
+  set D := L - M
+  have hL : L = M + D := by simp [D]
+  have hD : ∀ i j, (D * J l R) i j ∈ 𝔞 := mul_apply_mem_right hLM (J l R)
+  have hDt : ∀ i j, Dᵀ i j ∈ 𝔞 := fun i j ↦ hLM j i
+  have h : L * J l R * Lᵀ - J l R = (M * J l R * Mᵀ - J l R) + D * J l R * Mᵀ +
+      M * J l R * Dᵀ + D * J l R * Dᵀ := by
+    rw [hL, Matrix.transpose_add]
+    noncomm_ring
+  rw [h]
+  simp only [Matrix.add_apply]
+  exact 𝔞.add_mem (𝔞.add_mem (𝔞.add_mem (hM i j)
+    (mul_apply_mem_right hD Mᵀ i j)) (mul_apply_mem_left hDt (M * J l R) i j))
+    (mul_apply_mem_left hDt (D * J l R) i j)
 
 /-- Correcting a matrix `M` with `M * J * Mᵀ - J = E` by `1 + X`, where `X` has entries in a
 square-zero ideal and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix. -/

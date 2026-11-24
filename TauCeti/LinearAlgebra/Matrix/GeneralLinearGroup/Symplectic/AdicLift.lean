@@ -81,25 +81,6 @@ theorem exists_sub_mem_pow_and_mul_J_mul_transpose_sub_J_mem_pow_succ (I : Ideal
   · exact hle (mul_apply_mem_mul (mul_apply_mem_right hX_mem (J l R)) hXt i j)
   · exact hle (mul_apply_mem_mul (mul_apply_mem_right hX_mem E) hXt i j)
 
-/-- The defect of a matrix congruent entrywise to one with small defect. -/
-private theorem mul_J_mul_transpose_sub_J_mem_of_sub_mem {I : Ideal R} {n : ℕ}
-    {L M : Matrix (l ⊕ l) (l ⊕ l) R} (hLM : ∀ i j, (L - M) i j ∈ I ^ n)
-    (hM : ∀ i j, (M * J l R * Mᵀ - J l R) i j ∈ I ^ n) (i j : l ⊕ l) :
-    (L * J l R * Lᵀ - J l R) i j ∈ I ^ n := by
-  set D := L - M
-  have hL : L = M + D := by simp [D]
-  have hD : ∀ i j, (D * J l R) i j ∈ I ^ n := mul_apply_mem_right hLM (J l R)
-  have hDt : ∀ i j, Dᵀ i j ∈ I ^ n := fun i j ↦ hLM j i
-  have h : L * J l R * Lᵀ - J l R = (M * J l R * Mᵀ - J l R) + D * J l R * Mᵀ +
-      M * J l R * Dᵀ + D * J l R * Dᵀ := by
-    rw [hL, Matrix.transpose_add]
-    noncomm_ring
-  rw [h]
-  simp only [Matrix.add_apply]
-  exact Ideal.add_mem _ (Ideal.add_mem _ (Ideal.add_mem _ (hM i j)
-    (mul_apply_mem_right hD Mᵀ i j)) (mul_apply_mem_left hDt (M * J l R) i j))
-    (mul_apply_mem_left hDt (D * J l R) i j)
-
 /-- A matrix over an `I`-adically complete ring that is symplectic modulo `I` is congruent modulo
 `I` to a symplectic matrix. -/
 theorem exists_mem_symplecticGroup_sub_mem (I : Ideal R) [IsAdicComplete I R]
