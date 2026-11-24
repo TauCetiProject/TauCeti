@@ -139,6 +139,11 @@ theorem cyclotomicXiTilde_eq_cyclotomicXi_pow (ε : S) :
     cyclotomicXiTilde p ε = cyclotomicXi p (ε ^ p) := by
   rw [cyclotomicXiTilde_eq_sum, cyclotomicXi_def, frobeniusEquiv_symm_pow]
 
+/-- In a perfect ring of characteristic `p`, `ε ^ (1 / p) - 1` is a `p`-th root of `ε - 1`. -/
+private theorem frobeniusEquiv_symm_sub_one_pow (ε : S) :
+    ((_root_.frobeniusEquiv S p).symm ε - 1) ^ p = ε - 1 := by
+  rw [sub_pow_char, one_pow, frobeniusEquiv_symm_pow_p]
+
 /-- For `ε = 1`, the period element `ξ = ∑_{j < p} [1] ^ j` is `p`. -/
 @[simp]
 theorem cyclotomicXi_one : cyclotomicXi p (1 : S) = p := by
@@ -164,8 +169,8 @@ theorem map_cyclotomicXi_eq_natCast [IsReduced T] {f : S →+* T} {ε : S} (hε 
   have h : f ((_root_.frobeniusEquiv S p).symm ε) = 1 := by
     rw [← sub_eq_zero]
     refine IsReduced.eq_zero _ ⟨p, ?_⟩
-    rw [← map_one f, ← map_sub, ← map_pow, sub_pow_char, frobeniusEquiv_symm_pow_p, one_pow,
-      map_sub, hε, map_one, sub_self]
+    rw [← map_one f, ← map_sub, ← map_pow, frobeniusEquiv_symm_sub_one_pow]
+    simp [hε]
   simp [cyclotomicXi_def, map_sum, map_teichmuller, h]
 
 section Natural
@@ -231,7 +236,7 @@ theorem isDistinguished_cyclotomicXi {ε : S} (hε : ε - 1 ∈ Ring.jacobson S)
   -- `x - 1` is a `p`-th root of `ε - 1`, and the Jacobson radical is a radical ideal
   have hx : x - 1 ∈ Ring.jacobson S := by
     rw [← Ideal.jacobson_bot] at hε ⊢
-    exact Ideal.isRadical_jacobson ⊥ ⟨p, by rwa [sub_pow_char, one_pow, frobeniusEquiv_symm_pow_p]⟩
+    exact Ideal.isRadical_jacobson ⊥ ⟨p, by rwa [frobeniusEquiv_symm_sub_one_pow]⟩
   let q := Ideal.Quotient.mk (Ring.jacobson S)
   have : IsLocalHom q := isLocalHom_of_le_jacobson le_rfl
   have hq : map q (cyclotomicXi p ε) = p := by

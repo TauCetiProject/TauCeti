@@ -50,6 +50,7 @@ variable {p : ℕ} [Fact p.Prime] {R S : Type*} [CommRing R] [CommRing S]
 
 /-- The Witt-vector Frobenius is natural: `W(f) (φ x) = φ (W(f) x)` for every ring homomorphism
 `f : R →+* S`. -/
+@[simp]
 theorem map_frobenius (f : R →+* S) (x : WittVector p R) :
     map f (frobenius x) = frobenius (map f x) := by
   ext n
