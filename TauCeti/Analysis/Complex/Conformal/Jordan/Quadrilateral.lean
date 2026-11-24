@@ -82,18 +82,8 @@ private theorem exists_homeomorph_squareBoundary {a b c d : ℂ}
     else right p.2
   have hf_top (s : I) : f (s, 0) = top s := by simp [f]
   have hf_bot (s : I) : f (s, 1) = bot s := by simp [f]
-  have hf_left (t : I) : f (0, t) = left t := by
-    by_cases h0 : t = 0
-    · subst h0; simp [f]
-    · by_cases h1 : t = 1
-      · subst h1; simp [f]
-      · simp [f, h0, h1]
-  have hf_right (t : I) : f (1, t) = right t := by
-    by_cases h0 : t = 0
-    · subst h0; simp [f]
-    · by_cases h1 : t = 1
-      · subst h1; simp [f]
-      · simp [f, h0, h1]
+  have hf_left (t : I) : f (0, t) = left t := by simp only [f]; split_ifs <;> simp_all
+  have hf_right (t : I) : f (1, t) = right t := by simp only [f]; split_ifs <;> simp_all
   let S : Fin 4 → Set (I × I)
     | 0 => {p | p.1 = 0}
     | 1 => {p | p.1 = 1}

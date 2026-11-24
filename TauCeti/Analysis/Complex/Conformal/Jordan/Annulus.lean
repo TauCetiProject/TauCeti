@@ -93,10 +93,11 @@ has a last intersection point at some radius `t ∈ (0, 1)`, giving an injective
 `s` to that point lying in `closedBall 0 1` and meeting `sphere 0 1` and `C` only at its
 endpoints. -/
 private theorem exists_signed_radial_segment {C : Set ℂ} (hC : IsJordanCurve C)
-    (hCb : C ⊆ ball 0 1) (h0 : (0 : ℂ) ∈ filledHull C \ C) {s : ℝ} (hs : s = 1 ∨ s = -1) :
-    ∃ (t : ℝ) (p : ℂ) (J : Path (s : ℂ) p),
+    (hCb : C ⊆ ball 0 1) (h0 : (0 : ℂ) ∈ filledHull C \ C)
+    {s : ℝ} {s₀ : ℂ} (hs : s = 1 ∨ s = -1) (hs₀ : (s : ℂ) = s₀) :
+    ∃ (t : ℝ) (p : ℂ) (J : Path s₀ p),
       0 < t ∧ t < 1 ∧ p = ((s * t : ℝ) : ℂ) ∧ p ∈ C ∧ Injective J ∧
-      range J ⊆ closedBall 0 1 ∧ range J ∩ sphere 0 1 = {(s : ℂ)} ∧
+      range J ⊆ closedBall 0 1 ∧ range J ∩ sphere 0 1 = {s₀} ∧
       range J ∩ C = {p} ∧ ∀ z ∈ range J, t ≤ s * z.re := by
   -- Last-hit radius on the ray `{s * r | r ≥ 0}` via compactness and connectedness.
   have hsabs : |s| = 1 := by rcases hs with rfl | rfl <;> norm_num
@@ -133,40 +134,42 @@ private theorem exists_signed_radial_segment {C : Set ℂ} (hC : IsJordanCurve C
   have htmax' : ∀ r : ℝ, t < r → f r ∉ C := fun r hr hmem => by
     have hle : r ≤ t := htmax ⟨htpos.le.trans hr.le, hmem⟩
     linarith
-  -- Define the radial segment `J` from `s` to `p = s * t` and evaluate it.
+  -- Define the radial segment `J` from `s₀` to `p = s * t` and evaluate it.
   set p : ℂ := f t
-  have hp_ne : (s : ℂ) ≠ p := fun h => by
+  have hp_ne : s₀ ≠ p := fun h => by
+    rw [← hs₀] at h
     have hre := congrArg (fun z : ℂ => s * z.re) h
     simp only [p, f, Complex.ofReal_re, ← mul_assoc, hssq, one_mul] at hre
     linarith
-  set J : Path (s : ℂ) p := Path.segment (s : ℂ) p
+  set J : Path s₀ p := Path.segment s₀ p
   have hJ_eval (r : I) : J r = ((s * ((1 - (r : ℝ)) + (r : ℝ) * t) : ℝ) : ℂ) := by
-    simp only [J, Path.segment, Path.coe_mk_mk, AffineMap.lineMap_apply, p, f,
+    simp only [J, Path.segment, Path.coe_mk_mk, AffineMap.lineMap_apply, ← hs₀, p, f,
       vsub_eq_sub, vadd_eq_add, Complex.real_smul]
     push_cast
     ring
-  -- `J` lies in `closedBall 0 1`, stays on the ray beyond `t`, and meets `sphere 0 1` at `s`.
+  -- `J` lies in `closedBall 0 1`, stays on the ray beyond `t`, and meets `sphere 0 1` at `s₀`.
   have hJ_cb : range J ⊆ closedBall 0 1 := by
     rw [Path.range_segment]
     refine (convex_closedBall (0 : ℂ) 1).segment_subset ?_ (ball_subset_closedBall (hCb hpC))
+    rw [← hs₀]
     simp [Complex.norm_real, Real.norm_eq_abs, hsabs]
   have hJ_re {z : ℂ} (hz : z ∈ range J) : t ≤ s * z.re := by
     rcases hz with ⟨r, rfl⟩
     rw [hJ_eval, Complex.ofReal_re, ← mul_assoc, hssq, one_mul]
     nlinarith [r.property.1, r.property.2]
-  have hJ_S : range J ∩ sphere 0 1 = {(s : ℂ)} := by
+  have hJ_S : range J ∩ sphere 0 1 = {s₀} := by
     refine Subset.antisymm ?_
-      (singleton_subset_iff.mpr ⟨J.source_mem_range, by simp [hsabs]⟩)
+      (singleton_subset_iff.mpr ⟨J.source_mem_range, by rw [← hs₀]; simp [hsabs]⟩)
     rintro z ⟨hzJ, hzS⟩
     rw [Path.range_segment] at hzJ
-    by_cases hzs : z = (s : ℂ)
+    by_cases hzs : z = s₀
     · exact mem_singleton_iff.mpr hzs
     have hzp : z ≠ p := fun h =>
       sphere_disjoint_ball.notMem_of_mem_left hzS (h ▸ hCb hpC)
     have hz_open := mem_openSegment_of_ne_left_right (Ne.symm hzs) (Ne.symm hzp) hzJ
     have hball : z ∈ ball (0 : ℂ) 1 :=
-      openSegment_subset_ball_of_ne (by simp [hsabs]) (ball_subset_closedBall (hCb hpC)) hp_ne
-        hz_open
+      openSegment_subset_ball_of_ne (by rw [← hs₀]; simp [hsabs])
+        (ball_subset_closedBall (hCb hpC)) hp_ne hz_open
     exact (sphere_disjoint_ball.notMem_of_mem_left hzS hball).elim
   -- By maximality of `t`, `J` meets `C` only at `p`.
   have hJ_C : range J ∩ C = {p} := by
@@ -181,6 +184,123 @@ private theorem exists_signed_radial_segment {C : Set ℂ} (hC : IsJordanCurve C
       exact (htmax' _ hgt (by dsimp only [f]; rw [← hJ_eval r]; exact hzC)).elim
   exact ⟨t, p, J, htpos, htlt, rfl, hpC, Path.segment_injective_of_ne hp_ne, hJ_cb, hJ_S, hJ_C,
     fun _ => hJ_re⟩
+
+/-- Combining the positive and negative radial segments gives disjoint segments `J₁ : Path 1 p₁`
+and `J₂ : Path p₂ (-1)` meeting `C` and `sphere 0 1` only at their endpoints. -/
+private theorem exists_radial_segments {C : Set ℂ} (hC : IsJordanCurve C)
+    (hCb : C ⊆ ball 0 1) (h0 : (0 : ℂ) ∈ filledHull C \ C) :
+    ∃ (p₁ p₂ : ℂ) (J₁ : Path (1 : ℂ) p₁) (J₂ : Path p₂ (-1 : ℂ)),
+      p₁ ≠ p₂ ∧ p₁ ∈ C ∧ p₂ ∈ C ∧ Injective J₁ ∧ Injective J₂ ∧
+      Disjoint (range J₁) (range J₂) ∧
+      range J₁ ⊆ closedBall 0 1 ∧ range J₂ ⊆ closedBall 0 1 ∧
+      range J₁ ∩ sphere 0 1 = {1} ∧ range J₂ ∩ sphere 0 1 = {-1} ∧
+      range J₁ ∩ C = {p₁} ∧ range J₂ ∩ C = {p₂} := by
+  obtain ⟨t₁, p₁, J₁, ht₁pos, _, hp₁_eq, hp₁C, hJ₁_inj, hJ₁_cb, hJ₁S, hJ₁C, hJ₁_re⟩ :=
+    exists_signed_radial_segment hC hCb h0 (Or.inl rfl) Complex.ofReal_one
+  obtain ⟨t₂, p₂, J₂₀, ht₂pos, _, hp₂_eq, hp₂C, hJ₂₀_inj, hJ₂₀_cb, hJ₂₀S, hJ₂₀C, hJ₂₀_re⟩ :=
+    exists_signed_radial_segment hC hCb h0 (Or.inr rfl) (s₀ := (-1 : ℂ)) (by simp)
+  have hp₁₂ : p₁ ≠ p₂ := fun h => by
+    have hre := congrArg Complex.re h
+    simp only [hp₁_eq, hp₂_eq, Complex.ofReal_re, one_mul, neg_one_mul] at hre
+    linarith
+  have hJ₁J₂ : Disjoint (range J₁) (range J₂₀.symm) := Set.disjoint_left.mpr fun z hz₁ hz₂ => by
+    have h1 := hJ₁_re z hz₁
+    have h2 := hJ₂₀_re z (by rwa [Path.symm_range] at hz₂)
+    linarith
+  exact ⟨p₁, p₂, J₁, J₂₀.symm, hp₁₂, hp₁C, hp₂C, hJ₁_inj, Path.injective_symm_iff.mpr hJ₂₀_inj,
+    hJ₁J₂, hJ₁_cb, by rwa [Path.symm_range], hJ₁S, by rwa [Path.symm_range],
+    hJ₁C, by rwa [Path.symm_range]⟩
+
+/-- The concatenated path `(J₁.trans γ₁).trans J₂` is a crosscut of `ball 0 1`. -/
+private theorem isCrosscut_radial_arc_radial {C : Set ℂ} {p₁ p₂ : ℂ}
+    {J₁ : Path (1 : ℂ) p₁} {J₂ : Path p₂ (-1 : ℂ)} {γ₁ : Path p₁ p₂}
+    (hJ₁_inj : Injective J₁) (hJ₂_inj : Injective J₂) (hγ₁_inj : Injective γ₁)
+    (hJ₁J₂ : Disjoint (range J₁) (range J₂))
+    (hJ₁_cb : range J₁ ⊆ closedBall 0 1) (hJ₂_cb : range J₂ ⊆ closedBall 0 1)
+    (hJ₁S : range J₁ ∩ sphere 0 1 = {1}) (hJ₂S : range J₂ ∩ sphere 0 1 = {-1})
+    (hJ₁C : range J₁ ∩ C = {p₁}) (hJ₂C : range J₂ ∩ C = {p₂})
+    (hCb : C ⊆ ball 0 1) (hγ₁C : range γ₁ ⊆ C) :
+    ((J₁.trans γ₁).trans J₂).IsCrosscut (ball 0 1) := by
+  set κ₁ : Path (1 : ℂ) (-1 : ℂ) := (J₁.trans γ₁).trans J₂
+  have hJ₁γ₁ : range J₁ ∩ range γ₁ = {p₁} :=
+    Set.inter_eq_singleton_of_subset hJ₁C.subset hγ₁C J₁.target_mem_range γ₁.source_mem_range
+  have hγ₁J₂ : range γ₁ ∩ range J₂ = {p₂} := by
+    rw [inter_comm]
+    exact Set.inter_eq_singleton_of_subset hJ₂C.subset hγ₁C J₂.source_mem_range γ₁.target_mem_range
+  have hκ₁_inj : Injective κ₁ :=
+    Path.injective_trans_trans hJ₁_inj hγ₁_inj hJ₂_inj hJ₁γ₁ hγ₁J₂ hJ₁J₂
+  have hκ₁_range : range κ₁ = range J₁ ∪ range γ₁ ∪ range J₂ := by simp [κ₁, Path.trans_range]
+  have hκ₁_cb : range κ₁ ⊆ closedBall 0 1 := by
+    rw [hκ₁_range]
+    exact union_subset (union_subset hJ₁_cb (hγ₁C.trans (hCb.trans ball_subset_closedBall))) hJ₂_cb
+  have hκ₁_S : range κ₁ ∩ sphere 0 1 = {1, -1} := by
+    rw [hκ₁_range]
+    refine Subset.antisymm ?_ ?_
+    · rintro z ⟨((hz | hz) | hz), hzS⟩
+      · exact Or.inl (mem_singleton_iff.mp (hJ₁S ▸ ⟨hz, hzS⟩))
+      · exact (sphere_disjoint_ball.notMem_of_mem_left hzS (hCb (hγ₁C hz))).elim
+      · exact Or.inr (mem_singleton_iff.mp (hJ₂S ▸ ⟨hz, hzS⟩))
+    · rintro z (rfl | rfl)
+      · exact ⟨Or.inl (Or.inl J₁.source_mem_range), by simp⟩
+      · exact ⟨Or.inr J₂.target_mem_range, by simp⟩
+  have hfr_ball : frontier (ball (0 : ℂ) 1) = sphere (0 : ℂ) 1 := frontier_ball 0 one_ne_zero
+  refine Path.isCrosscut_def.mpr ⟨hκ₁_inj, by rw [hfr_ball]; simp, by rw [hfr_ball]; simp, ?_⟩
+  intro t ht
+  obtain ⟨hmem, hnot⟩ := (Path.image_Ioo_eq_range_sdiff_endpoints hκ₁_inj).subset
+    (mem_image_of_mem κ₁ ht)
+  have hnotS : κ₁ t ∉ sphere (0 : ℂ) 1 := fun hS => hnot (hκ₁_S ▸ ⟨hmem, hS⟩)
+  rw [mem_ball_zero_iff]
+  exact lt_of_le_of_ne (mem_closedBall_zero_iff.mp (hκ₁_cb hmem))
+    (by simpa [mem_sphere_zero_iff_norm] using hnotS)
+
+/-- Complementary boundary arc `β₂ = (J₁.symm.trans σ_b).trans J₂.symm` of the half-disc `W_b`:
+it is injective, covers `range J₁ ∪ range σ_b ∪ range J₂`, lies in `range κ₁ ∪ range σ_b`, and
+meets `range γ₁` precisely at `{p₁, p₂}`. -/
+private theorem complementary_boundary_arc_spec {C : Set ℂ} {p₁ p₂ : ℂ}
+    {J₁ : Path (1 : ℂ) p₁} {J₂ : Path p₂ (-1 : ℂ)}
+    {γ₁ : Path p₁ p₂} {σ_b : Path (1 : ℂ) (-1 : ℂ)}
+    (hJ₁ : Injective J₁) (hJ₂ : Injective J₂) (hσ_b : Injective σ_b)
+    (hJ₁J₂ : Disjoint (range J₁) (range J₂))
+    (hJ₁C : range J₁ ∩ C = {p₁}) (hJ₂C : range J₂ ∩ C = {p₂})
+    (hJ₁S : range J₁ ∩ sphere 0 1 = {1}) (hJ₂S : range J₂ ∩ sphere 0 1 = {-1})
+    (hCb : C ⊆ ball 0 1) (hγ₁C : range γ₁ ⊆ C) (hσ_bS : range σ_b ⊆ sphere 0 1) :
+    let β₂ : Path p₁ p₂ := (J₁.symm.trans σ_b).trans J₂.symm
+    Injective β₂ ∧ range β₂ = range J₁ ∪ range σ_b ∪ range J₂ ∧
+      range β₂ ⊆ range ((J₁.trans γ₁).trans J₂) ∪ range σ_b ∧
+      range γ₁ ∩ range β₂ = {p₁, p₂} := by
+  have hJ₁_σb : range J₁.symm ∩ range σ_b = {1} := by
+    rw [Path.symm_range]
+    exact Set.inter_eq_singleton_of_subset
+      hJ₁S.subset hσ_bS J₁.source_mem_range σ_b.source_mem_range
+  have hσb_J₂ : range σ_b ∩ range J₂.symm = {-1} := by
+    rw [Path.symm_range, inter_comm]
+    exact Set.inter_eq_singleton_of_subset
+      hJ₂S.subset hσ_bS J₂.target_mem_range σ_b.target_mem_range
+  set β₂ : Path p₁ p₂ := (J₁.symm.trans σ_b).trans J₂.symm
+  have hβ₂_inj : Injective β₂ :=
+    Path.injective_trans_trans (Path.injective_symm_iff.mpr hJ₁) hσ_b
+      (Path.injective_symm_iff.mpr hJ₂) hJ₁_σb hσb_J₂
+      (by rw [Path.symm_range, Path.symm_range]; exact hJ₁J₂)
+  have hβ₂_range : range β₂ = range J₁ ∪ range σ_b ∪ range J₂ := by
+    simp [β₂, Path.trans_range]
+  have hβ₂_sub : range β₂ ⊆ range ((J₁.trans γ₁).trans J₂) ∪ range σ_b := by
+    rw [hβ₂_range, Path.trans_range, Path.trans_range]
+    rintro z ((hz | hz) | hz)
+    · exact Or.inl (Or.inl (Or.inl hz))
+    · exact Or.inr hz
+    · exact Or.inl (Or.inr hz)
+  have hγ₁_β₂ : range γ₁ ∩ range β₂ = {p₁, p₂} := by
+    rw [hβ₂_range]
+    refine Subset.antisymm ?_ ?_
+    · rintro z ⟨hz₁, ((hz | hz) | hz)⟩
+      · exact Or.inl (mem_singleton_iff.mp (hJ₁C ▸ ⟨hz, hγ₁C hz₁⟩))
+      · exact (sphere_disjoint_ball.notMem_of_mem_left (hσ_bS hz)
+          (hCb (hγ₁C hz₁))).elim
+      · exact Or.inr (mem_singleton_iff.mp (hJ₂C ▸ ⟨hz, hγ₁C hz₁⟩))
+    · rintro z (rfl | rfl)
+      · exact ⟨γ₁.source_mem_range, Or.inl (Or.inl J₁.target_mem_range)⟩
+      · exact ⟨γ₁.target_mem_range, Or.inr J₂.source_mem_range⟩
+  exact ⟨hβ₂_inj, hβ₂_range, hβ₂_sub, hγ₁_β₂⟩
 
 /-- Second crosscut decomposition: given the first crosscut `κ₁ = (J₁.trans γ₁).trans J₂` splitting
 `closedBall 0 1` into `Dₐ` (bounded by `κ₁` and `σₐ`) and `D_b` (bounded by `κ₁` and `σ_b`), if the
@@ -235,41 +355,13 @@ private theorem split_second_half {C : Set ℂ} {p₁ p₂ : ℂ}
   have hp₂Jb : p₂ ∈ J_b := Or.inl (hκ₁_range ▸ Or.inl (Or.inr γ₁.target_mem_range))
   have hγ₂_cut : γ₂.IsCrosscut W_b := Path.isCrosscut_def.mpr
     ⟨hγ₂, hW_fr.symm ▸ hp₁Jb, hW_fr.symm ▸ hp₂Jb, fun t ht => hγ₂in (mem_image_of_mem γ₂ ht)⟩
-  -- Build the complementary boundary path `β₂ = (J₁.symm.trans σ_b).trans J₂.symm` of `W_b`.
-  have hJ₁_σb : range J₁.symm ∩ range σ_b = {1} :=
-    Path.symm_range J₁ ▸
-      Set.inter_eq_singleton_of_subset hJ₁S.subset hσ_bS J₁.source_mem_range σ_b.source_mem_range
-  have hσb_J₂ : range σ_b ∩ range J₂.symm = {-1} :=
-    Path.symm_range J₂ ▸ inter_comm (range J₂) (range σ_b) ▸
-      Set.inter_eq_singleton_of_subset hJ₂S.subset hσ_bS J₂.target_mem_range σ_b.target_mem_range
-  set β₂ : Path p₁ p₂ := (J₁.symm.trans σ_b).trans J₂.symm
-  have hβ₂_inj : Injective β₂ :=
-    Path.injective_trans_trans (Path.injective_symm_iff.mpr hJ₁) hσ_b
-      (Path.injective_symm_iff.mpr hJ₂) hJ₁_σb hσb_J₂
-      (by rw [Path.symm_range, Path.symm_range]; exact hJ₁J₂)
-  have hβ₂_range : range β₂ = range J₁ ∪ range σ_b ∪ range J₂ := by
-    simp [β₂, Path.trans_range]
+  let β₂ : Path p₁ p₂ := (J₁.symm.trans σ_b).trans J₂.symm
+  obtain ⟨hβ₂_inj, hβ₂_range, hβ₂_Jb, hγ₁_β₂⟩ := complementary_boundary_arc_spec
+    hJ₁ hJ₂ hσ_b hJ₁J₂ hJ₁C hJ₂C hJ₁S hJ₂S hCb hγ₁C hσ_bS
   have hγ₁_fr : range γ₁ ⊆ frontier W_b := by
-    rintro z hz
     rw [hW_fr]
-    exact Or.inl (hκ₁_range ▸ Or.inl (Or.inr hz))
-  have hβ₂_fr : range β₂ ⊆ frontier W_b := by
-    rw [hW_fr, hβ₂_range]
-    rintro z ((hz | hz) | hz)
-    · exact Or.inl (hκ₁_range ▸ Or.inl (Or.inl hz))
-    · exact Or.inr hz
-    · exact Or.inl (hκ₁_range ▸ Or.inr hz)
-  have hγ₁_β₂ : range γ₁ ∩ range β₂ = {p₁, p₂} := by
-    rw [hβ₂_range]
-    refine Subset.antisymm ?_ ?_
-    · rintro z ⟨hz₁, ((hz | hz) | hz)⟩
-      · exact Or.inl (mem_singleton_iff.mp (hJ₁C ▸ ⟨hz, hγ₁C hz₁⟩))
-      · exact (sphere_disjoint_ball.notMem_of_mem_left (hσ_bS hz)
-          (hCb (hγ₁C hz₁))).elim
-      · exact Or.inr (mem_singleton_iff.mp (hJ₂C ▸ ⟨hz, hγ₁C hz₁⟩))
-    · rintro z (rfl | rfl)
-      · exact ⟨γ₁.source_mem_range, Or.inl (Or.inl J₁.target_mem_range)⟩
-      · exact ⟨γ₁.target_mem_range, Or.inr J₂.source_mem_range⟩
+    exact (hκ₁_range ▸ subset_union_right.trans subset_union_left).trans subset_union_left
+  have hβ₂_fr : range β₂ ⊆ frontier W_b := by rw [hW_fr]; exact hβ₂_Jb
   -- Apply the second crosscut decomposition to `W_b` along `γ₂`.
   have hC_eq : range γ₂ ∪ range γ₁ = C := by rw [union_comm, hγu]
   have hD_b_union : filledHull C ∪ filledHull (range γ₂ ∪ range β₂) = filledHull J_b := by
@@ -289,7 +381,7 @@ private theorem split_second_half {C : Set ℂ} {p₁ p₂ : ℂ}
     simp only [Jₐ, hκ₁_range, Path.symm_range]
     ext z; simp only [mem_union]; tauto
   have hJ_b'_eq : range γ₂ ∪ range β₂ = range σ_b ∪ range γ₂ ∪ range J₁ ∪ range J₂.symm := by
-    simp only [hβ₂_range, Path.symm_range]
+    simp only [β₂, hβ₂_range, Path.symm_range]
     ext z; simp only [mem_union]; tauto
   dsimp only
   rw [← hJₐ_eq, ← hJ_b'_eq]
@@ -519,6 +611,37 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
         rw [hΦ_coe, hH_lower (u := ⟨lowerSemicirclePath s, _⟩) (lowerSemicirclePath_im_nonpos s),
           circleParam_lowerSemicirclePath, hΦm_bot]
 
+/-- Parametrize one half-annulus `filledHull (range arc ∪ range α ∪ range J₁ ∪ range J₂.symm)` by
+the unit square `I × I`, sending the four sides to `arc`, `α`, `J₁`, and `J₂.symm`. -/
+private theorem exists_homeomorph_unitInterval_prod_halfAnnulus {C : Set ℂ} {p₁ p₂ : ℂ}
+    {J₁ : Path (1 : ℂ) p₁} {J₂ : Path p₂ (-1 : ℂ)}
+    {arc : Path (1 : ℂ) (-1 : ℂ)} {α : Path p₁ p₂}
+    (hJ₁_inj : Injective J₁) (hJ₂_inj : Injective J₂)
+    (harc : Injective arc) (hα : Injective α)
+    (hJ₁J₂ : Disjoint (range J₁) (range J₂))
+    (hJ₁S : range J₁ ∩ sphere 0 1 = {1}) (hJ₂S : range J₂ ∩ sphere 0 1 = {-1})
+    (hJ₁C : range J₁ ∩ C = {p₁}) (hJ₂C : range J₂ ∩ C = {p₂})
+    (hCb : C ⊆ ball 0 1) (harcS : range arc ⊆ sphere 0 1) (hαC : range α ⊆ C) :
+    ∃ Φ : I × I ≃ₜ filledHull (range arc ∪ range α ∪ range J₁ ∪ range J₂.symm),
+      (∀ s : I, (Φ (s, 0) : ℂ) = arc s) ∧
+      (∀ s : I, (Φ (s, 1) : ℂ) = α s) ∧
+      (∀ t : I, (Φ (0, t) : ℂ) = J₁ t) ∧
+      (∀ t : I, (Φ (1, t) : ℂ) = J₂.symm t) := by
+  refine (exists_homeomorph_unitInterval_prod_filledHull harc hα hJ₁_inj
+    (Path.injective_symm_iff.mpr hJ₂_inj)
+    (sphere_disjoint_ball.mono harcS (hαC.trans hCb))
+    (by rwa [Path.symm_range]) ?_ ?_ ?_ ?_).2
+  · rw [inter_comm]
+    exact Set.inter_eq_singleton_of_subset
+      hJ₁S.subset harcS J₁.source_mem_range arc.source_mem_range
+  · rw [Path.symm_range, inter_comm]
+    exact Set.inter_eq_singleton_of_subset
+      hJ₂S.subset harcS J₂.target_mem_range arc.target_mem_range
+  · rw [inter_comm]
+    exact Set.inter_eq_singleton_of_subset hJ₁C.subset hαC J₁.target_mem_range α.source_mem_range
+  · rw [Path.symm_range, inter_comm]
+    exact Set.inter_eq_singleton_of_subset hJ₂C.subset hαC J₂.source_mem_range α.target_mem_range
+
 /-- **Normalized planar annulus theorem.** If `C ⊆ ball (0 : ℂ) 1` is a Jordan curve with
 `0 ∈ filledHull C \ C`, then `closedBall (0 : ℂ) 1 \ (filledHull C \ C)` is homeomorphic to
 `sphere (0 : ℂ) 1 × I` by a homeomorphism fixing the outer boundary `sphere (0 : ℂ) 1` pointwise at
@@ -528,77 +651,24 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
     ∃ Φ : sphere (0 : ℂ) 1 × I ≃ₜ ↥(closedBall (0 : ℂ) 1 \ (filledHull C \ C)),
       (∀ u : sphere (0 : ℂ) 1, (Φ (u, 0) : ℂ) = u) ∧
       (fun p => (Φ p : ℂ)) '' (univ ×ˢ {1}) = C := by
-  -- Step 1: Two disjoint radial segments `J₁` and `J₂` joining `±1` to `C`.
-  obtain ⟨t₁, p₁, J₁₀, ht₁pos, _, hp₁_eq, hp₁C, hJ₁₀_inj, hJ₁₀_cb, hJ₁₀S, hJ₁₀C, hJ₁₀_re⟩ :=
-    exists_signed_radial_segment hC hCb h0 (Or.inl rfl)
-  obtain ⟨t₂, p₂, J₂₀, ht₂pos, _, hp₂_eq, hp₂C, hJ₂₀_inj, hJ₂₀_cb, hJ₂₀S, hJ₂₀C, hJ₂₀_re⟩ :=
-    exists_signed_radial_segment hC hCb h0 (Or.inr rfl)
-  have h1c : ((1 : ℝ) : ℂ) = 1 := Complex.ofReal_one
-  have hm1c : ((-1 : ℝ) : ℂ) = -1 := by simp
-  let J₁ : Path (1 : ℂ) p₁ := J₁₀.cast h1c.symm rfl
-  let J₂₀' : Path (-1 : ℂ) p₂ := J₂₀.cast hm1c.symm rfl
-  let J₂ : Path p₂ (-1 : ℂ) := J₂₀'.symm
-  have hJ₁_coe : (J₁ : I → ℂ) = J₁₀ := Path.cast_coe J₁₀ h1c.symm rfl
-  have hJ₂₀'_coe : (J₂₀' : I → ℂ) = J₂₀ := Path.cast_coe J₂₀ hm1c.symm rfl
-  have hJ₁_range : range J₁ = range J₁₀ := by rw [hJ₁_coe]
-  have hJ₂_range : range J₂ = range J₂₀ := by rw [Path.symm_range, hJ₂₀'_coe]
-  have hJ₁_inj : Injective J₁ := by rw [hJ₁_coe]; exact hJ₁₀_inj
-  have hJ₁_cb : range J₁ ⊆ closedBall 0 1 := hJ₁_range ▸ hJ₁₀_cb
-  have hJ₁S : range J₁ ∩ sphere 0 1 = {1} := by rw [hJ₁_range, hJ₁₀S, h1c]
-  have hJ₁C : range J₁ ∩ C = {p₁} := hJ₁_range ▸ hJ₁₀C
-  have hJ₂_inj : Injective J₂ := by rw [Path.injective_symm_iff, hJ₂₀'_coe]; exact hJ₂₀_inj
-  have hJ₂_cb : range J₂ ⊆ closedBall 0 1 := hJ₂_range ▸ hJ₂₀_cb
-  have hJ₂S : range J₂ ∩ sphere 0 1 = {-1} := by rw [hJ₂_range, hJ₂₀S, hm1c]
-  have hJ₂C : range J₂ ∩ C = {p₂} := hJ₂_range ▸ hJ₂₀C
-  have hp₁₂ : p₁ ≠ p₂ := fun h => by
-    have hre := congrArg Complex.re h
-    simp only [hp₁_eq, hp₂_eq, Complex.ofReal_re, one_mul, neg_one_mul] at hre
-    linarith
-  have hJ₁J₂ : Disjoint (range J₁) (range J₂) := Set.disjoint_left.mpr fun z hz₁ hz₂ => by
-    have h1 := hJ₁₀_re z (hJ₁_range ▸ hz₁)
-    have h2 := hJ₂₀_re z (hJ₂_range ▸ hz₂)
-    linarith
+  -- Step 1: Two disjoint radial segments `J₁ : Path 1 p₁` and `J₂ : Path p₂ (-1)`.
+  obtain ⟨p₁, p₂, J₁, J₂, hp₁₂, hp₁C, hp₂C, hJ₁_inj, hJ₂_inj, hJ₁J₂,
+    hJ₁_cb, hJ₂_cb, hJ₁S, hJ₂S, hJ₁C, hJ₂C⟩ := exists_radial_segments hC hCb h0
   -- Step 2: Split `C` at `p₁, p₂` into `γ₁, γ₂` and form the crosscut `κ₁ = J₁ · γ₁ · J₂`.
   obtain ⟨γ₁, γ₂, hγ₁_inj, hγ₂_inj, hγu, hγi⟩ :=
     hC.exists_injective_path_range_union_eq_and_inter_eq_pair hp₁C hp₂C hp₁₂
   have hγ₁C : range γ₁ ⊆ C := hγu ▸ subset_union_left
   have hγ₂C : range γ₂ ⊆ C := hγu ▸ subset_union_right
-  have hJ₁γ₁ : range J₁ ∩ range γ₁ = {p₁} :=
-    Set.inter_eq_singleton_of_subset hJ₁C.subset hγ₁C J₁.target_mem_range γ₁.source_mem_range
-  have hγ₁J₂ : range γ₁ ∩ range J₂ = {p₂} :=
-    inter_comm (range J₂) (range γ₁) ▸
-      Set.inter_eq_singleton_of_subset hJ₂C.subset hγ₁C J₂.source_mem_range γ₁.target_mem_range
   set κ₁ : Path (1 : ℂ) (-1 : ℂ) := (J₁.trans γ₁).trans J₂
-  have hκ₁_inj : Injective κ₁ :=
-    Path.injective_trans_trans hJ₁_inj hγ₁_inj hJ₂_inj hJ₁γ₁ hγ₁J₂ hJ₁J₂
   have hκ₁_range : range κ₁ = range J₁ ∪ range γ₁ ∪ range J₂ := by simp [κ₁, Path.trans_range]
-  have hκ₁_cb : range κ₁ ⊆ closedBall 0 1 := by
-    rw [hκ₁_range]
-    exact union_subset (union_subset hJ₁_cb (hγ₁C.trans (hCb.trans ball_subset_closedBall))) hJ₂_cb
-  have hκ₁_S : range κ₁ ∩ sphere 0 1 = {1, -1} := by
-    rw [hκ₁_range]
-    refine Subset.antisymm ?_ ?_
-    · rintro z ⟨((hz | hz) | hz), hzS⟩
-      · exact Or.inl (mem_singleton_iff.mp (hJ₁S ▸ ⟨hz, hzS⟩))
-      · exact (sphere_disjoint_ball.notMem_of_mem_left hzS (hCb (hγ₁C hz))).elim
-      · exact Or.inr (mem_singleton_iff.mp (hJ₂S ▸ ⟨hz, hzS⟩))
-    · rintro z (rfl | rfl)
-      · exact ⟨Or.inl (Or.inl J₁.source_mem_range), by simp⟩
-      · exact ⟨Or.inr J₂.target_mem_range, by simp⟩
-  have hfr_ball : frontier (ball (0 : ℂ) 1) = sphere (0 : ℂ) 1 := frontier_ball 0 one_ne_zero
-  have hκ₁_cut : κ₁.IsCrosscut (ball 0 1) := Path.isCrosscut_def.mpr
-    ⟨hκ₁_inj, by rw [hfr_ball]; simp, by rw [hfr_ball]; simp, fun t ht => by
-      obtain ⟨hmem, hnot⟩ := (Path.image_Ioo_eq_range_sdiff_endpoints hκ₁_inj).subset
-        (mem_image_of_mem κ₁ ht)
-      have hnotS : κ₁ t ∉ sphere (0 : ℂ) 1 := fun hS => hnot (hκ₁_S ▸ ⟨hmem, hS⟩)
-      rw [mem_ball_zero_iff]
-      exact lt_of_le_of_ne (mem_closedBall_zero_iff.mp (hκ₁_cb hmem))
-        (by simpa [mem_sphere_zero_iff_norm] using hnotS)⟩
+  have hκ₁_cut : κ₁.IsCrosscut (ball 0 1) := isCrosscut_radial_arc_radial
+    hJ₁_inj hJ₂_inj hγ₁_inj hJ₁J₂ hJ₁_cb hJ₂_cb hJ₁S hJ₂S hJ₁C hJ₂C hCb hγ₁C
   -- Step 3: Locate `γ₂ '' Ioo 0 1` on one side of `κ₁`, and split that side along `γ₂`.
   have hσpS : range upperSemicirclePath ⊆ sphere 0 1 :=
     range_subset_iff.mpr upperSemicirclePath_mem_sphere
   have hσmS : range lowerSemicirclePath ⊆ sphere 0 1 :=
     range_subset_iff.mpr lowerSemicirclePath_mem_sphere
+  have hfr_ball : frontier (ball (0 : ℂ) 1) = sphere (0 : ℂ) 1 := frontier_ball 0 one_ne_zero
   obtain ⟨hWdisj, hWunion⟩ := hκ₁_cut.disjoint_and_union_filledHull_sdiff isOpen_ball isBounded_ball
     (hfr_ball.symm ▸ isJordanCurve_sphere 0 one_pos) upperSemicirclePath_injective
     lowerSemicirclePath_injective (hfr_ball.symm ▸ hσpS) (hfr_ball.symm ▸ hσmS)
@@ -657,30 +727,12 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
   have hαpC : range αp ⊆ C := hαu ▸ subset_union_left
   have hαmC : range αm ⊆ C := hαu ▸ subset_union_right
   -- Step 4: Parametrize both four-sided domains by `I × I` and glue them along `J₁` and `J₂.symm`.
-  have hmkSquare {arc : Path (1 : ℂ) (-1 : ℂ)} {α : Path p₁ p₂}
-      (harc : Injective arc) (hα : Injective α)
-      (harcS : range arc ⊆ sphere 0 1) (hαC : range α ⊆ C) :
-      ∃ Φ : I × I ≃ₜ filledHull (range arc ∪ range α ∪ range J₁ ∪ range J₂.symm),
-        (∀ s : I, (Φ (s, 0) : ℂ) = arc s) ∧
-        (∀ s : I, (Φ (s, 1) : ℂ) = α s) ∧
-        (∀ t : I, (Φ (0, t) : ℂ) = J₁ t) ∧
-        (∀ t : I, (Φ (1, t) : ℂ) = J₂.symm t) := by
-    refine (exists_homeomorph_unitInterval_prod_filledHull harc hα hJ₁_inj
-      (Path.injective_symm_iff.mpr hJ₂_inj)
-      (sphere_disjoint_ball.mono harcS (hαC.trans hCb))
-      (by rwa [Path.symm_range]) ?_ ?_ ?_ ?_).2
-    · exact inter_comm (range J₁) (range arc) ▸
-        Set.inter_eq_singleton_of_subset hJ₁S.subset harcS J₁.source_mem_range arc.source_mem_range
-    · exact Path.symm_range J₂ ▸ inter_comm (range J₂) (range arc) ▸
-        Set.inter_eq_singleton_of_subset hJ₂S.subset harcS J₂.target_mem_range arc.target_mem_range
-    · exact inter_comm (range J₁) (range α) ▸
-        Set.inter_eq_singleton_of_subset hJ₁C.subset hαC J₁.target_mem_range α.source_mem_range
-    · exact Path.symm_range J₂ ▸ inter_comm (range J₂) (range α) ▸
-        Set.inter_eq_singleton_of_subset hJ₂C.subset hαC J₂.source_mem_range α.target_mem_range
   obtain ⟨Φp, hΦp_top, hΦp_bot, hΦp_left, hΦp_right⟩ :=
-    hmkSquare upperSemicirclePath_injective hαp_inj hσpS hαpC
+    exists_homeomorph_unitInterval_prod_halfAnnulus hJ₁_inj hJ₂_inj upperSemicirclePath_injective
+      hαp_inj hJ₁J₂ hJ₁S hJ₂S hJ₁C hJ₂C hCb hσpS hαpC
   obtain ⟨Φm, hΦm_top, hΦm_bot, hΦm_left, hΦm_right⟩ :=
-    hmkSquare lowerSemicirclePath_injective hαm_inj hσmS hαmC
+    exists_homeomorph_unitInterval_prod_halfAnnulus hJ₁_inj hJ₂_inj lowerSemicirclePath_injective
+      hαm_inj hJ₁J₂ hJ₁S hJ₂S hJ₁C hJ₂C hCb hσmS hαmC
   exact glue_upper_lower_squares hαu hA_union hA_inter Φp Φm hΦp_top hΦp_bot hΦp_left hΦp_right
     hΦm_top hΦm_bot hΦm_left hΦm_right
 
