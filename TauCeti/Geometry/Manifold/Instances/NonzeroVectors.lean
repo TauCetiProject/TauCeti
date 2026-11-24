@@ -32,6 +32,11 @@ discontinuous groups of dilations are the Hopf manifolds.
   units of `𝕜`, and every subgroup of them, act by analytic maps.
 * `TauCeti.instConnectedSpaceNonZero`: the nonzero vectors of a nontrivial complex normed space are
   connected.
+* `Units.norm_coe_zpow_smul`, `Units.exists_zpow_smul_mem_annulus`: the dilation by `cᵏ`
+  multiplies norms by `‖c‖ ^ k`, so for `1 < ‖c‖` every orbit meets the closed annulus
+  `1 ≤ ‖v‖ ≤ ‖c‖`.
+* `Units.coe_zpow_smul_of_eq_algebraMap`: a unit that is the image of a real `r` acts by powers
+  of `r`.
 -/
 
 public noncomputable section
@@ -110,3 +115,43 @@ instance instContinuousConstSMulSubgroupNonZero (S : Subgroup 𝕜ˣ) :
   IsScalarTower.continuousConstSMul S 𝕜ˣ _
 
 end TauCeti
+
+namespace Units
+
+section Norm
+
+/-! ### Norms of dilated nonzero vectors -/
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
+
+/-- The dilation by `cᵏ` multiplies the norm of a nonzero vector by `‖c‖ ^ k`. -/
+theorem norm_coe_zpow_smul (c : 𝕜ˣ) (k : ℤ) (v : {v : E // v ≠ 0}) :
+    ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ = ‖(c : 𝕜)‖ ^ k * ‖(v : E)‖ := by
+  rw [Units.smul_coe, Units.smul_def, norm_smul, Units.val_zpow_eq_zpow_val, norm_zpow]
+
+/-- For `1 < ‖c‖` every nonzero vector has a multiple by a power of `c` in the closed annulus
+`1 ≤ ‖v‖ ≤ ‖c‖`. -/
+theorem exists_zpow_smul_mem_annulus {c : 𝕜ˣ} (hc : 1 < ‖(c : 𝕜)‖) (v : {v : E // v ≠ 0}) :
+    ∃ k : ℤ, 1 ≤ ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ ∧
+      ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ ≤ ‖(c : 𝕜)‖ := by
+  obtain ⟨m, hm₁, hm₂⟩ := exists_mem_Ico_zpow (norm_pos_iff.mpr v.property) hc
+  have hpos : 0 < ‖(c : 𝕜)‖ ^ m := zpow_pos (one_pos.trans hc) m
+  have hnorm : ‖((c ^ (-m) • v : {v : E // v ≠ 0}) : E)‖ = ‖(v : E)‖ / ‖(c : 𝕜)‖ ^ m := by
+    rw [norm_coe_zpow_smul, zpow_neg, inv_mul_eq_div]
+  refine ⟨-m, ?_, ?_⟩ <;> rw [hnorm]
+  · exact (one_le_div hpos).mpr hm₁
+  · rw [div_le_iff₀ hpos, ← zpow_one_add₀ (norm_ne_zero_iff.mpr c.ne_zero), add_comm]
+    exact hm₂.le
+
+/-- A power of a unit of a normed `ℝ`-algebra `𝕜` that is the image of a real `r` acts on
+nonzero vectors as the real scalar `r ^ k`. -/
+theorem coe_zpow_smul_of_eq_algebraMap [NormedAlgebra ℝ 𝕜] [NormedSpace ℝ E]
+    [IsScalarTower ℝ 𝕜 E] {c : 𝕜ˣ} {r : ℝ} (hc : (c : 𝕜) = algebraMap ℝ 𝕜 r) (k : ℤ)
+    (v : {v : E // v ≠ 0}) : ((c ^ k • v : {v : E // v ≠ 0}) : E) = (r ^ k) • (v : E) := by
+  rw [Units.smul_coe, Units.smul_def, Units.val_zpow_eq_zpow_val, hc, ← map_zpow₀,
+    algebraMap_smul]
+
+end Norm
+
+end Units

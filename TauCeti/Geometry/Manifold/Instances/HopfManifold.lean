@@ -33,7 +33,7 @@ nontrivial locally compact `E`, `TauCeti.instIsManifoldQuotient` makes the Hopf 
 Hausdorff analytic manifold modelled on `E`, with the orbit projection `TauCeti.HopfManifold.mk`
 an analytic local diffeomorphism. If `E` is proper, for instance finite-dimensional over `ℝ` or
 `ℂ`, the Hopf manifold is compact: every orbit meets the closed annulus `1 ≤ ‖v‖ ≤ ‖c‖` when
-`1 < ‖c‖` (`TauCeti.HopfManifold.exists_zpow_smul_mem_annulus`).
+`1 < ‖c‖` (`Units.exists_zpow_smul_mem_annulus`).
 
 The hypothesis `‖c‖ ≠ 1` cannot be dropped. If `‖c‖ = 1` the dilations preserve the norm, which
 then descends to an unbounded continuous function on the quotient, so the quotient is not compact;
@@ -106,11 +106,6 @@ namespace HopfManifold
 
 variable {c : 𝕜ˣ}
 
-/-- The dilation by `cᵏ` multiplies the norm of a nonzero vector by `‖c‖ ^ k`. -/
-theorem norm_coe_zpow_smul (c : 𝕜ˣ) (k : ℤ) (v : {v : E // v ≠ 0}) :
-    ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ = ‖(c : 𝕜)‖ ^ k * ‖(v : E)‖ := by
-  rw [Units.smul_coe, Units.smul_def, norm_smul, Units.val_zpow_eq_zpow_val, norm_zpow]
-
 /-- For `‖c‖ ≠ 1` the powers of `c` act properly discontinuously on the nonzero vectors: only
 finitely many of them move a compact set of nonzero vectors to meet another compact set. -/
 instance instProperlyDiscontinuousSMul [Fact (‖(c : 𝕜)‖ ≠ 1)] :
@@ -135,7 +130,7 @@ instance instProperlyDiscontinuousSMul [Fact (‖(c : 𝕜)‖ ≠ 1)] :
       Subgroup.mem_zpowers_iff.mp (hdc.symm ▸ g.property : (g : 𝕜ˣ) ∈ Subgroup.zpowers d)
     refine ⟨k, ?_, Subtype.ext hk⟩
     have hnorm : ‖((g • v : {v : E // v ≠ 0}) : E)‖ = ‖(d : 𝕜)‖ ^ k * ‖(v : E)‖ := by
-      rw [Subgroup.smul_def, ← hk, norm_coe_zpow_smul]
+      rw [Subgroup.smul_def, ← hk, Units.norm_coe_zpow_smul]
     have hψv : ψ (g • v, v) = k * Real.log ‖(d : 𝕜)‖ := by
       simp only [ψ, hnorm]
       rw [Real.log_mul (zpow_ne_zero _ (by positivity)) (norm_ne_zero_iff.mpr v.property),
@@ -144,20 +139,6 @@ instance instProperlyDiscontinuousSMul [Fact (‖(c : 𝕜)‖ ≠ 1)] :
     have hCk := hC _ ⟨(g • v, v), ⟨hgv, hv⟩, rfl⟩
     rw [hψv, Real.norm_eq_abs, abs_mul, abs_of_pos hlog, ← le_div_iff₀ hlog] at hCk
     simpa using hCk
-
-/-- For `1 < ‖c‖` every nonzero vector has a multiple by a power of `c` in the closed annulus
-`1 ≤ ‖v‖ ≤ ‖c‖`. -/
-theorem exists_zpow_smul_mem_annulus (hc : 1 < ‖(c : 𝕜)‖) (v : {v : E // v ≠ 0}) :
-    ∃ k : ℤ, 1 ≤ ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ ∧
-      ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ ≤ ‖(c : 𝕜)‖ := by
-  obtain ⟨m, hm₁, hm₂⟩ := exists_mem_Ico_zpow (norm_pos_iff.mpr v.property) hc
-  have hpos : 0 < ‖(c : 𝕜)‖ ^ m := zpow_pos (one_pos.trans hc) m
-  have hnorm : ‖((c ^ (-m) • v : {v : E // v ≠ 0}) : E)‖ = ‖(v : E)‖ / ‖(c : 𝕜)‖ ^ m := by
-    rw [norm_coe_zpow_smul, zpow_neg, inv_mul_eq_div]
-  refine ⟨-m, ?_, ?_⟩ <;> rw [hnorm]
-  · exact (one_le_div hpos).mpr hm₁
-  · rw [div_le_iff₀ hpos, ← zpow_one_add₀ (norm_ne_zero_iff.mpr c.ne_zero), add_comm]
-    exact hm₂.le
 
 variable (E c) in
 /-- The orbit projection from the nonzero vectors of `E` onto the Hopf manifold. -/
@@ -225,7 +206,7 @@ instance instCompactSpace [ProperSpace E] : CompactSpace (HopfManifold E c) := b
     exact (isCompact_closedBall 0 _).inter_left (isClosed_le continuous_const continuous_norm)
   have hA' : mk E c '' A = univ := eq_univ_of_forall fun x ↦ by
     obtain ⟨v, rfl⟩ := mk_surjective x
-    obtain ⟨k, hk₁, hk₂⟩ := exists_zpow_smul_mem_annulus hd v
+    obtain ⟨k, hk₁, hk₂⟩ := Units.exists_zpow_smul_mem_annulus hd v
     obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp (hdc ▸ zpow_mem (Subgroup.mem_zpowers d) k)
     exact ⟨d ^ k • v, ⟨hk₁, hk₂⟩, mk_eq_mk_iff.mpr ⟨j, by rw [hj]⟩⟩
   exact ⟨hA' ▸ hA.image continuous_mk⟩
@@ -274,25 +255,19 @@ private theorem continuous_polar : Continuous (polar (E := E) r) := by
   exact .prodMk ((AddCircle.continuous_mk' _).comp ((continuous_subtypeVal.comp h.snd).log
     fun v ↦ (homeomorphUnitSphereProd E ⟨v, v.property⟩).2.property.out.ne')) h.fst
 
-/-- A power of the dilation by the image of a real `r` acts on vectors as the real scalar
-`r ^ k`. -/
-private theorem coe_zpow_smul (hc : (c : 𝕜) = algebraMap ℝ 𝕜 r) (k : ℤ)
-    (v : {v : E // v ≠ 0}) : ((c ^ k • v : {v : E // v ≠ 0}) : E) = (r ^ k) • (v : E) := by
-  rw [Units.smul_coe, Units.smul_def, Units.val_zpow_eq_zpow_val, hc, ← map_zpow₀,
-    algebraMap_smul]
-
 private theorem polar_zpow_smul (hr : 0 < r) (hc : (c : 𝕜) = algebraMap ℝ 𝕜 r) (k : ℤ)
     (v : {v : E // v ≠ 0}) : polar r (c ^ k • v) = polar r v := by
   have hv : ‖(v : E)‖ ≠ 0 := norm_ne_zero_iff.mpr v.property
   have hrk : 0 < r ^ k := zpow_pos hr k
   have hnorm : ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ = r ^ k * ‖(v : E)‖ := by
-    rw [coe_zpow_smul hc, norm_smul, Real.norm_of_nonneg hrk.le]
+    rw [Units.coe_zpow_smul_of_eq_algebraMap hc, norm_smul, Real.norm_of_nonneg hrk.le]
   refine Prod.ext ?_ (Subtype.ext ?_)
   · simp only [polar_fst, hnorm]
     rw [Real.log_mul hrk.ne' hv, Real.log_zpow, AddCircle.coe_add, add_eq_right,
       AddCircle.coe_eq_zero_iff]
     exact ⟨k, zsmul_eq_mul _ _⟩
-  · simp only [coe_polar_snd, coe_zpow_smul hc, smul_smul, norm_smul, Real.norm_of_nonneg hrk.le]
+  · simp only [coe_polar_snd, Units.coe_zpow_smul_of_eq_algebraMap hc, smul_smul, norm_smul,
+      Real.norm_of_nonneg hrk.le]
     congr 1
     field_simp
 
@@ -314,8 +289,8 @@ private theorem exists_zpow_smul_eq_of_polar_eq (hr : 1 < r) (hc : (c : 𝕜) = 
   have hdir : ‖(v : E)‖⁻¹ • (v : E) = ‖(w : E)‖⁻¹ • (w : E) := by
     rw [← coe_polar_snd (r := r), ← coe_polar_snd (r := r), h₂]
   refine ⟨k, Subtype.ext ?_⟩
-  rw [coe_zpow_smul hc, ← smul_inv_smul₀ hv.ne' (v : E), hdir, smul_smul, hnorm,
-    mul_inv_cancel_right₀ hw.ne']
+  rw [Units.coe_zpow_smul_of_eq_algebraMap hc, ← smul_inv_smul₀ hv.ne' (v : E), hdir, smul_smul,
+    hnorm, mul_inv_cancel_right₀ hw.ne']
 
 private theorem surjective_polar : Function.Surjective (polar (E := E) r) := by
   rintro ⟨θ, u⟩
@@ -423,5 +398,14 @@ theorem HopfSurface.coe_homeomorphAddCircleProdSphere_mk_snd
         EuclideanSpace ℂ (Fin 2)) =
       ‖(v : EuclideanSpace ℂ (Fin 2))‖⁻¹ • (v : EuclideanSpace ℂ (Fin 2)) :=
   HopfManifold.coe_homeomorphAddCircleProdSphere_mk_snd _ _ v
+
+/-- The inverse map sends `(t mod log 2, u)` in `S¹ × S³` to the class of `exp t • u`. -/
+@[simp]
+theorem HopfSurface.homeomorphAddCircleProdSphere_symm_apply (t : ℝ)
+    (u : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :
+    HopfSurface.homeomorphAddCircleProdSphere.symm ((t : AddCircle (Real.log 2)), u) =
+      HopfManifold.mk _ _ ⟨Real.exp t • (u : EuclideanSpace ℂ (Fin 2)),
+        smul_ne_zero (Real.exp_ne_zero t) (ne_zero_of_mem_unit_sphere u)⟩ :=
+  HopfManifold.homeomorphAddCircleProdSphere_symm_apply _ _ t u
 
 end TauCeti
