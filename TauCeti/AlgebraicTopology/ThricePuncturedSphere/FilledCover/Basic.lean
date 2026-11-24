@@ -173,7 +173,7 @@ private theorem exists_isFillingChart (i : FilledPoint p) : ∃ φ, IsFillingCha
   -- The fibres of `f` are finite, being contained in fibres of `p`.
   have hffin (w : 𝔻*) : (f ⁻¹' {w}).Finite := by
     let z : ThricePuncturedSphere := (sigmaEquiv p i).1.coord.symm w
-    have := hp.finite_fiber_of_finite_fiber hfin z
+    have := finite_fiber_of_finite_fiber hp hfin z
     refine (Set.toFinite (p ⁻¹' {z})).preimage Subtype.val_injective.injOn |>.subset fun z hz ↦ ?_
     exact congrArg Subtype.val ((sigmaEquiv p i).1.coord.eq_symm_apply.2 hz)
   have hcov : IsCoveringMap ((component p i).domRestrict f) :=

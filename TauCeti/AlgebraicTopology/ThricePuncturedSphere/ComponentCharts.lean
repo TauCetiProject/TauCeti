@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborh
 public import TauCeti.Topology.Covering.PuncturedDisc
 
 import TauCeti.GroupTheory.Perm.Partition
-import TauCeti.Topology.Covering.Degree
+import TauCeti.Topology.Covering.Finite.Basic
 import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
@@ -147,7 +147,7 @@ private theorem exists_homeomorph_puncturedDiscPow_iff_minimalPeriod (hy : y ∈
   -- The fibres of `p` are finite, being in bijection with the numbered fibre over `basePt`.
   have hfin (w : ↥(ball (0 : ℂ) 1 \ {0})) :
       ((κ ∘ S.restrictPreimage p) ⁻¹' {w}).Finite := by
-    have := hp.finite_fiber_of_finite_fiber (Finite.of_equiv _ ν.symm)
+    have := finite_fiber_of_finite_fiber hp (Finite.of_equiv _ ν.symm)
       (κ.symm w : ThricePuncturedSphere)
     refine (Set.toFinite (p ⁻¹' {(κ.symm w : ThricePuncturedSphere)})).preimage
       Subtype.val_injective.injOn |>.subset fun z hz ↦ ?_

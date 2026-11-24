@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoodComponents
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
 
-import TauCeti.Topology.Covering.Degree
+import TauCeti.Topology.Covering.Finite.Basic
 
 /-!
 # Points of the filled cover
@@ -395,7 +395,7 @@ theorem indexEquiv_symm_inr_inr (hp : IsCoveringMap p) {n : ℕ}
 numbering of the fibre over `1/2`, which is finite as soon as one fibre is. -/
 theorem finite_filledPoint (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere}
     (hfin : Finite (p ⁻¹' {z₀})) : Finite (FilledPoint p) :=
-  have := hp.finite_fiber_of_finite_fiber hfin basePt
+  have := finite_fiber_of_finite_fiber hp hfin basePt
   FilledPoint.finite p hp (Finite.equivFin _)
 
 end FilledCover

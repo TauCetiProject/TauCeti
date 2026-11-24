@@ -39,21 +39,6 @@ theorem isLocallyConstant_cardinalMk_fiber (hp : IsCoveringMap p) :
   have h : IsEvenlyCovered p b' (p ⁻¹' {b}) := ⟨hdisc, U, hb', hU, hpU, H, hH⟩
   exact (Cardinal.mk_congr h.fiberHomeomorph.toEquiv).symm
 
-/-- Finiteness of a covering fibre propagates throughout its connected component. -/
-theorem finite_fiber_of_mem_connectedComponent (hp : IsCoveringMap p) {x y : B}
-    (hxy : x ∈ connectedComponent y) (hfin : Finite (p ⁻¹' {y})) :
-    Finite (p ⁻¹' {x}) := by
-  apply Cardinal.mk_lt_aleph0_iff.mp
-  rw [hp.isLocallyConstant_cardinalMk_fiber.apply_eq_of_isPreconnected
-    isPreconnected_connectedComponent hxy mem_connectedComponent]
-  exact Cardinal.mk_lt_aleph0_iff.mpr hfin
-
-/-- Over a preconnected base, a covering map with one finite fibre has all fibres finite. -/
-theorem finite_fiber_of_finite_fiber [PreconnectedSpace B] (hp : IsCoveringMap p) {x₀ : B}
-    (h : Finite ↥(p ⁻¹' {x₀})) (x : B) : Finite ↥(p ⁻¹' {x}) :=
-  hp.finite_fiber_of_mem_connectedComponent
-    (by simp only [PreconnectedSpace.connectedComponent_eq_univ, Set.mem_univ]) h
-
 /-- Fibre cardinality is locally constant for a covering, without connectedness or
 surjectivity assumptions. Infinite fibres have `Nat.card` equal to zero. -/
 theorem isLocallyConstant_natCard_fiber (hp : IsCoveringMap p) :

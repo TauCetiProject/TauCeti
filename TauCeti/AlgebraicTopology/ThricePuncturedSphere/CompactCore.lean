@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
-public import TauCeti.Topology.Covering.Degree
+public import TauCeti.Topology.Covering.Finite.Basic
 public import TauCeti.Topology.Covering.Proper
 
 /-!
@@ -187,7 +187,7 @@ is compact. -/
 theorem _root_.IsCoveringMap.isCompact_preimage_compactCore {E : Type*} [TopologicalSpace E]
     {p : E → ThricePuncturedSphere} (hp : IsCoveringMap p) {z₀ : ThricePuncturedSphere}
     (hfin : Finite (p ⁻¹' {z₀})) (ρ : ℝ) : IsCompact (p ⁻¹' compactCore ρ) :=
-  (hp.isProperMap (hp.finite_fiber_of_finite_fiber hfin)).isCompact_preimage
+  (hp.isProperMap (finite_fiber_of_finite_fiber hp hfin)).isCompact_preimage
     (isCompact_compactCore ρ)
 
 end TauCeti
