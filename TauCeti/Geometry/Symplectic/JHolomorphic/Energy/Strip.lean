@@ -26,7 +26,8 @@ transversality hypothesis on the two boundary subspaces.
 When the boundary subspaces are disjoint, a transverse-boundary Poincaré estimate also controls
 the map values. The resulting estimate bounds the full value and directional derivative energy
 by the defect with a constant independent of the map. This is an estimate on the smooth compactly
-supported core; no Sobolev completion or Fredholm assertion is made here.
+supported core; it passes to the Sobolev completion in
+`TauCeti.Geometry.Symplectic.JHolomorphic.StripSobolev`.
 
 The boundary calculation uses
 `ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc`.

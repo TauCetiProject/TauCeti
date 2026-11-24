@@ -455,7 +455,7 @@ Such a subgroup sits inside the 2-torsion `{g | g² = 1}`, which is equinumerous
 theorem card_le_card_elementaryTwoQuotient_of_forall_sq_eq_one {H : Subgroup G}
     (hH : ∀ x ∈ H, x ^ 2 = 1) : Nat.card H ≤ Nat.card (ElementaryTwoQuotient G) := by
   rw [card_elementaryTwoQuotient_eq_card_twoTorsion]
-  exact Nat.card_le_card_of_injective (fun x => ⟨(x : G), hH x x.2⟩)
+  exact Nat.card_le_card_of_injective (fun x => ⟨(x : G), hH x x.property⟩)
     fun _ _ hxy => Subtype.ext (by simpa using hxy)
 
 /-- **A subgroup of exponent dividing two and order `2 ^ r` forces the 2-rank to be at least `r`.**
@@ -491,7 +491,9 @@ theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv (e : G ≃* H) :
 theorem twoRank_eq_of_mulEquiv (e : G ≃* H) : twoRank G = twoRank H :=
   finrank_elementaryTwoQuotient_eq_of_mulEquiv e
 
-/-- A surjective homomorphism of commutative groups does not increase the 2-rank. -/
+/-- A surjective homomorphism of commutative groups does not increase the 2-rank, provided the
+source quotient `G / G²` is finite-dimensional over `ZMod 2` (without it `twoRank G` is `0` by
+convention). -/
 theorem twoRank_le_twoRank_of_surjective [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)]
     (f : G →* H) (hf : Function.Surjective f) : twoRank H ≤ twoRank G :=
   LinearMap.finrank_le_finrank_of_surjective (elementaryTwoQuotientMap_surjective f hf)
@@ -521,10 +523,10 @@ theorem _root_.MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker (f : G �
     Nat.card (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ Nat.card (MonoidHom.ker f) :=
   Nat.card_le_card_of_surjective
     (fun g => ⟨elementaryTwoQuotientMk (g : G), by
-      have hg : f (g : G) = 1 := g.2
+      have hg : f (g : G) = 1 := g.property
       rw [LinearMap.mem_ker, elementaryTwoQuotientMap_mk, hg, elementaryTwoQuotientMk_one]⟩)
     fun x => by
-      obtain ⟨g, hg, hgx⟩ := f.exists_mem_ker_elementaryTwoQuotientMk_eq hf x.2
+      obtain ⟨g, hg, hgx⟩ := f.exists_mem_ker_elementaryTwoQuotientMk_eq hf x.property
       exact ⟨⟨g, hg⟩, Subtype.ext hgx⟩
 
 /-- **A surjection with a small kernel barely drops the 2-rank.** If `f : G →* H` is surjective
@@ -558,8 +560,8 @@ theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
     exact Nat.zero_le _
 
 /-- **A surjection keeps the 2-rank exactly when its kernel consists of squares.** For a
-surjective `f : G →* H`, the groups `G` and `H` have the same 2-rank if and only if every element
-of `ker f` is a square in `G`. -/
+surjective `f : G →* H` with `G / G²` finite-dimensional over `ZMod 2`, the groups `G` and `H`
+have the same 2-rank if and only if every element of `ker f` is a square in `G`. -/
 theorem _root_.MonoidHom.twoRank_eq_twoRank_iff_ker_le_square
     [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] (f : G →* H)
     (hf : Function.Surjective f) :

@@ -30,7 +30,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space M] [SigmaCompactSpace M]
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
+    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
 
 /-- Stokes' theorem for a compactly supported C1 form on an oriented smooth manifold with
 boundary. The boundary carries its outward-first orientation. -/

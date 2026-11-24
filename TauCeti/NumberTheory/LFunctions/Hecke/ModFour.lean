@@ -88,7 +88,7 @@ theorem unitaryCancelling_toUnitaryIdealWeight_ratModFourChar :
 
 /-- The pointwise square of `ratModFourChar.toUnitaryIdealWeight` is trivial on its good ideals. -/
 theorem isTrivialOnGood_toUnitaryIdealWeight_ratModFourChar_sq :
-    (ratModFourChar.toUnitaryIdealWeight ^ 2).1.IsTrivialOnGood := by
+    (ratModFourChar.toUnitaryIdealWeight ^ 2).val.IsTrivialOnGood := by
   have hsq : ratModFourChar.toUnitaryIdealWeight ^ 2 =
       (1 : RayClassCharacter (ratModulus 4 four_ne_zero)).toUnitaryIdealWeight := by
     rw [← (RayClassCharacter.isUnitaryCharacterFamily_toUnitaryIdealWeight _).map_sq,
@@ -114,7 +114,7 @@ theorem continuedLFunctionOfWeight_toUnitaryIdealWeight_ratModFourChar_ne_zero {
 witnessing that the identity member of a unitary character family satisfies `w 1 I = 1` only on its
 good ideals. -/
 theorem toUnitaryIdealWeight_one_ratModulus_four_apply_span_two :
-    (1 : RayClassCharacter (ratModulus 4 four_ne_zero)).toUnitaryIdealWeight.1
+    (1 : RayClassCharacter (ratModulus 4 four_ne_zero)).toUnitaryIdealWeight.val
       (Ideal.span {(2 : 𝓞 ℚ)}) = 0 := by
   obtain ⟨𝔭, h𝔭⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq Nat.prime_two
   have hspan : Ideal.span {(2 : 𝓞 ℚ)} = 𝔭.asIdeal := by

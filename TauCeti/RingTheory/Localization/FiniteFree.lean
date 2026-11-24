@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.Norm.NonZeroDivisors
 
@@ -34,6 +35,8 @@ index.
   its localizations at the non-zero-divisors of `R`.
 * `IsFractionRing.isArtinianRing_of_free`: if the total ring of fractions of `R` is Artinian, so is
   that of `S`.
+* `IsFractionRing.free_of_free`, `IsFractionRing.finite_of_free`: with compatible algebra
+  structures, the total ring of fractions of `S` is finite free over that of `R`.
 -/
 
 public section
@@ -76,5 +79,27 @@ theorem isArtinianRing_of_free [IsArtinianRing (FractionRing R)] [IsFractionRing
     ((Module.Free.chooseBasis R S).localizationLocalization (FractionRing R) R⁰ Sₘ)
   have := IsArtinianRing.of_finite (FractionRing R) Sₘ
   exact (IsLocalization.algEquiv S⁰ Sₘ T).toRingEquiv.isArtinianRing
+
+section Tower
+
+variable (S) (QR : Type*) [CommRing QR] [Algebra R QR] [IsFractionRing R QR] [IsFractionRing S T]
+  [Algebra QR T] [Algebra R T] [IsScalarTower R QR T] [IsScalarTower R S T]
+
+include R S in
+/-- With compatible algebra structures, the total ring of fractions of an algebra `S`, finite
+free over `R`, is free over the total ring of fractions of `R`: a basis of `S` over `R` is a basis
+of it. -/
+theorem free_of_free : Module.Free QR T :=
+  have := (isLocalization_algebraMapSubmonoid_iff (S := S) R T).mpr inferInstance
+  .of_basis ((Module.Free.chooseBasis R S).localizationLocalization QR R⁰ T)
+
+include R S in
+/-- With compatible algebra structures, the total ring of fractions of an algebra `S`, finite
+free over `R`, is finite over the total ring of fractions of `R`. -/
+theorem finite_of_free : Module.Finite QR T :=
+  have := (isLocalization_algebraMapSubmonoid_iff (S := S) R T).mpr inferInstance
+  .of_isLocalization R S R⁰
+
+end Tower
 
 end IsFractionRing

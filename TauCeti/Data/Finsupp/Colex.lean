@@ -79,9 +79,9 @@ theorem wellFoundedOn_setOf_degree_le_toColex_gt [WellFoundedGT α] (n : ℕ) :
     -- A nonzero exponent is recorded by its largest index `m`, the exponent at `m`, and the
     -- remaining exponent of smaller degree; colex ascents increase this triple lexicographically.
     let F : {x : α →₀ ℕ // x ≠ 0} → α × ℕ × (α →₀ ℕ) := fun x ↦
-      (x.1.support.max' (support_nonempty_iff.2 x.2),
-        x.1 (x.1.support.max' (support_nonempty_iff.2 x.2)),
-        x.1.erase (x.1.support.max' (support_nonempty_iff.2 x.2)))
+      (x.val.support.max' (support_nonempty_iff.2 x.property),
+        x.val (x.val.support.max' (support_nonempty_iff.2 x.property)),
+        x.val.erase (x.val.support.max' (support_nonempty_iff.2 x.property)))
     have hbdd : WellFounded fun e e' : ℕ ↦ e' < e ∧ e ≤ n + 1 :=
       (wellFounded_lt.onFun (f := fun e : ℕ ↦ n + 1 - e)).mono fun e e' h ↦ by
         simp only [Function.onFun]; omega
@@ -94,7 +94,7 @@ theorem wellFoundedOn_setOf_degree_le_toColex_gt [WellFoundedGT α] (n : ℕ) :
       omega
     have hacc (y : {x : α →₀ ℕ // x ≠ 0}) :
         Acc (fun a b ↦ toColex b < toColex a ∧ a ∈ {a : α →₀ ℕ | a.degree ≤ n + 1} ∧
-          b ∈ {a : α →₀ ℕ | a.degree ≤ n + 1}) y.1 := by
+          b ∈ {a : α →₀ ℕ | a.degree ≤ n + 1}) y.val := by
       induction y using hwf.induction with
       | _ y ihy =>
         refine ⟨_, fun x ⟨hxy, hx, hy⟩ ↦ ?_⟩
@@ -102,14 +102,14 @@ theorem wellFoundedOn_setOf_degree_le_toColex_gt [WellFoundedGT α] (n : ℕ) :
         refine ihy ⟨x, hx0⟩ ?_
         simp only [Set.mem_ofPred_eq] at hx hy
         have hxm := x.support.max'_mem (support_nonempty_iff.2 hx0)
-        have hym := y.1.support.max'_mem (support_nonempty_iff.2 y.2)
+        have hym := y.val.support.max'_mem (support_nonempty_iff.2 y.property)
         rcases max'_lt_or_of_toColex_lt _ _ hxy with hm | ⟨hm, he | ⟨he, hr⟩⟩
         · exact Prod.Lex.left _ _ hm
         · simp only [InvImage, F, hm]
           refine Prod.Lex.right _ (Prod.Lex.left _ _ ⟨hm ▸ he, ?_⟩)
           exact (le_degree _ _).trans hx
         · have hdx := hdeg x _ hxm
-          have hdy := hdeg y.1 _ hym
+          have hdy := hdeg y.val _ hym
           rw [hm] at he hr hdy
           simp only [InvImage, F, hm, he]
           exact Prod.Lex.right _ (Prod.Lex.right _ ⟨hr, by simp only [Set.mem_ofPred_eq]; omega,

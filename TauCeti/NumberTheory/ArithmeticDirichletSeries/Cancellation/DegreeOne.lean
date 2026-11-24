@@ -56,7 +56,7 @@ for `k ≥ 1` forces its period sum `∑ k ∈ Icc 1 N, normCoeff K χ k` to van
 theorem HasCancellation.sum_Icc_normCoeff_eq_zero_of_finrank_eq_one {χ : UnitaryIdealWeight K}
     (hK : Module.finrank ℚ K = 1) (hχ : HasCancellation χ) {N : ℕ}
     (hper : ∀ k, 1 ≤ k →
-      χ.1 (Ideal.span {((k + N : ℕ) : 𝓞 K)}) = χ.1 (Ideal.span {(k : 𝓞 K)})) :
+      χ.val (Ideal.span {((k + N : ℕ) : 𝓞 K)}) = χ.val (Ideal.span {(k : 𝓞 K)})) :
     ∑ k ∈ Finset.Icc 1 N, normCoeff K χ.toIdealArithmeticFunction k = 0 := by
   have hbdd : (fun n : ℕ ↦ ∑ k ∈ Finset.Icc 1 n, normCoeff K χ.toIdealArithmeticFunction k)
       =O[atTop] (1 : ℕ → ℝ) := by
@@ -74,7 +74,7 @@ for `k ≥ 1`, then `UnitaryIdealWeight.normTwist z hz χ` has cancellation for 
 theorem HasCancellation.normTwist_of_finrank_eq_one {χ : UnitaryIdealWeight K}
     (hK : Module.finrank ℚ K = 1) (hχ : HasCancellation χ) {N : ℕ} (hN : N ≠ 0)
     (hper : ∀ k, 1 ≤ k →
-      χ.1 (Ideal.span {((k + N : ℕ) : 𝓞 K)}) = χ.1 (Ideal.span {(k : 𝓞 K)}))
+      χ.val (Ideal.span {((k + N : ℕ) : 𝓞 K)}) = χ.val (Ideal.span {(k : 𝓞 K)}))
     (z : ℂ) (hz : z.re = 0) :
     HasCancellation (UnitaryIdealWeight.normTwist z hz χ) := by
   have hsum := hχ.sum_Icc_normCoeff_eq_zero_of_finrank_eq_one hK hper
@@ -100,7 +100,7 @@ every `z : ℂ` with `z.re = 0`. -/
 theorem HasCancellation.normTwist_of_periodic_span_natCast {χ : UnitaryIdealWeight K}
     (hχ : HasCancellation χ) {N : ℕ} (hN : N ≠ 0)
     (hper : ∀ k, 1 ≤ k →
-      χ.1 (Ideal.span {((k + N : ℕ) : 𝓞 K)}) = χ.1 (Ideal.span {(k : 𝓞 K)}))
+      χ.val (Ideal.span {((k + N : ℕ) : 𝓞 K)}) = χ.val (Ideal.span {(k : 𝓞 K)}))
     (z : ℂ) (hz : z.re = 0) :
     HasCancellation (UnitaryIdealWeight.normTwist z hz χ) := by
   have hpos : 1 ≤ Module.finrank ℚ K := Module.finrank_pos

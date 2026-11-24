@@ -124,14 +124,14 @@ variable [IsManifold I ∞ M] [IsManifold J ∞ N]
 Positivity of `f` follows from preservation. Neither invertibility of `F` nor homogeneity
 of the map is assumed. -/
 theorem eq_symplectizationLift_of_mpullback_eq {F : M → N}
-    (hF : ContMDiff I J ∞ F) {f : M → ℝ} (hα₀ : ∀ x, α.1 x ≠ 0)
-    (hα : ∀ x, (mpullback F hF β).1 x = f x • α.1 x)
+    (hF : ContMDiff I J ∞ F) {f : M → ℝ} (hα₀ : ∀ x, α.val x ≠ 0)
+    (hα : ∀ x, (mpullback F hF β).val x = f x • α.val x)
     {Ψ : ℝ × M → ℝ × N} (hΨ : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) ∞ Ψ)
     (hcover : ∀ p, (Ψ p).2 = F p.2)
     (hpres : mpullback Ψ hΨ β.symplectization = α.symplectization) :
     Ψ = TauCeti.symplectizationLift F f := by
   funext p
-  obtain ⟨u, hu⟩ : ∃ u : TangentSpace I p.2, α.1 p.2 ![u] ≠ 0 := by
+  obtain ⟨u, hu⟩ : ∃ u : TangentSpace I p.2, α.val p.2 ![u] ≠ 0 := by
     by_contra! h
     apply hα₀ p.2
     ext v
@@ -166,7 +166,7 @@ open TauCeti.SmoothForm
 multiplier. -/
 theorem mpullback_symplectizationLift_symplectization (e : M ≃ₘ⟮I, J⟯ N) {f : M → ℝ}
     (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, 0 < f x)
-    (hα : ∀ x, (mpullback e e.contMDiff β).1 x = f x • α.1 x) :
+    (hα : ∀ x, (mpullback e e.contMDiff β).val x = f x • α.val x) :
     mpullback (e.symplectizationLift f hf fun x ↦ (hf₀ x).ne')
       (e.symplectizationLift f hf fun x ↦ (hf₀ x).ne').contMDiff β.symplectization =
         α.symplectization := by
@@ -177,7 +177,7 @@ theorem mpullback_symplectizationLift_symplectization (e : M ≃ₘ⟮I, J⟯ N)
 is contact. -/
 theorem mpullback_symplectizationLift_mextDerivₗ_symplectization (e : M ≃ₘ⟮I, J⟯ N)
     {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, 0 < f x)
-    (hα : ∀ x, (mpullback e e.contMDiff β).1 x = f x • α.1 x) :
+    (hα : ∀ x, (mpullback e e.contMDiff β).val x = f x • α.val x) :
     mpullback (e.symplectizationLift f hf fun x ↦ (hf₀ x).ne')
       (e.symplectizationLift f hf fun x ↦ (hf₀ x).ne').contMDiff
         (mextDerivₗ (𝓘(ℝ).prod J) 1 β.symplectization) =
@@ -188,8 +188,8 @@ theorem mpullback_symplectizationLift_mextDerivₗ_symplectization (e : M ≃ₘ
 `β` to a positive multiple of the nowhere vanishing form `α` has exactly one lift preserving
 the tautological forms. -/
 theorem existsUnique_mpullback_symplectization_eq (e : M ≃ₘ⟮I, J⟯ N) {f : M → ℝ}
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, 0 < f x) (hα₀ : ∀ x, α.1 x ≠ 0)
-    (hα : ∀ x, (mpullback e e.contMDiff β).1 x = f x • α.1 x) :
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, 0 < f x) (hα₀ : ∀ x, α.val x ≠ 0)
+    (hα : ∀ x, (mpullback e e.contMDiff β).val x = f x • α.val x) :
     ∃! Ψ : (ℝ × M) ≃ₘ⟮𝓘(ℝ).prod I, 𝓘(ℝ).prod J⟯ (ℝ × N),
       (∀ p, (Ψ p).2 = e p.2) ∧ mpullback Ψ Ψ.contMDiff β.symplectization =
         α.symplectization := by

@@ -258,7 +258,7 @@ theorem encard_totallyRamifiedOfDegree_two_padicTwo :
 /-- **Serre's mass formula for the quadratic extensions of `ℚ_2`**:
 `∑_{L ∈ σ_{ℚ_2}(2)} 2 ^ (-c(L)) = 2 · 2⁻¹ + 4 · 2⁻² = 2`. -/
 theorem tsum_one_div_pow_wildExponent_two_padicTwo :
-    ∑' L : totallyRamifiedOfDegree ℚ_[2] 2, 1 / (2 : ℝ≥0∞) ^ L.1.wildExponent = 2 := by
+    ∑' L : totallyRamifiedOfDegree ℚ_[2] 2, 1 / (2 : ℝ≥0∞) ^ L.val.wildExponent = 2 := by
   classical
   choose y hy using fun i : Fin 8 ↦ IsSepClosed.exists_pow_nat_eq
     (algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) (padicTwoSquareClassRep i)) 2

@@ -129,26 +129,27 @@ variable [Finite G]
 /-- Two points of the chart `Spec Γ(X, U)` of an invariant affine open have the same image in the
 affine invariant quotient exactly when their images in `X` lie in the same `G`-orbit. -/
 lemma affineProjection_eq_iff_exists_fromSpec_eq (U : InvariantAffineOpens σ)
-    (p q : Spec Γ(X, U.1)) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    projection Γ(X, U.1) G p = projection Γ(X, U.1) G q ↔
-      ∃ g : G, U.2.1.fromSpec q = (σ g).asIso.hom (U.2.1.fromSpec p) := by
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
-  refine (projection_eq_iff_exists_smul Γ(X, U.1) G p q).trans (exists_congr fun g ↦ ?_)
-  rw [← Scheme.Hom.comp_apply, ← specAction_fromSpec U.2.1 U.2.2, Scheme.Hom.comp_apply]
+    (p q : Spec Γ(X, U.val)) :
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    projection Γ(X, U.val) G p = projection Γ(X, U.val) G q ↔
+      ∃ g : G, U.property.1.fromSpec q = (σ g).asIso.hom (U.property.1.fromSpec p) := by
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
+  refine (projection_eq_iff_exists_smul Γ(X, U.val) G p q).trans (exists_congr fun g ↦ ?_)
+  rw [← Scheme.Hom.comp_apply, ← specAction_fromSpec U.property.1 U.property.2,
+      Scheme.Hom.comp_apply]
   exact ⟨fun h ↦ by rw [h]; exact congrArg _ (specAction_apply _ _ g p).symm,
-    fun h ↦ (U.2.1.fromSpec.isOpenEmbedding.injective h).trans (specAction_apply _ _ g p)⟩
+    fun h ↦ (U.property.1.fromSpec.isOpenEmbedding.injective h).trans (specAction_apply _ _ g p)⟩
 
 omit [Finite G] in
 /-- A point of the chart `Spec Γ(X, U)` lies over the basic open `D(r)` of an invariant section `r`
 in the affine invariant quotient exactly when its image in `X` lies in `X.basicOpen r`. -/
 lemma affineProjection_mem_basicOpen_iff (U : InvariantAffineOpens σ)
-    (r : letI := Scheme.sectionsMulSemiringAction σ U.2.2; FixedPoints.subring Γ(X, U.1) G)
-    (p : Spec Γ(X, U.1)) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    projection Γ(X, U.1) G p ∈ PrimeSpectrum.basicOpen r ↔
-      U.2.1.fromSpec p ∈ X.basicOpen (r : Γ(X, U.1)) := by
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
+    (r : letI := Scheme.sectionsMulSemiringAction σ U.property.2; FixedPoints.subring Γ(X, U.val) G)
+    (p : Spec Γ(X, U.val)) :
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    projection Γ(X, U.val) G p ∈ PrimeSpectrum.basicOpen r ↔
+      U.property.1.fromSpec p ∈ X.basicOpen (r : Γ(X, U.val)) := by
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
   rw [← Scheme.Hom.mem_preimage, IsAffineOpen.fromSpec_preimage_basicOpen]
   -- `projection_base_apply` is stated for points of `PrimeSpectrum`, not of the scheme `Spec`.
   erw [projection_base_apply]
@@ -160,32 +161,32 @@ lemma affineProjection_mem_basicOpen_iff (U : InvariantAffineOpens σ)
 affine open `U` lying in an invariant open `W` has a neighbourhood `X.basicOpen r ≤ W` with `r` an
 invariant section over `U`. -/
 theorem exists_basicOpen_le (U : InvariantAffineOpens σ) {W : X.Opens} (hW : W.IsInvariant σ)
-    {x : X} (hxU : x ∈ U.1) (hxW : x ∈ W) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    ∃ r : FixedPoints.subring Γ(X, U.1) G,
-      x ∈ X.basicOpen (r : Γ(X, U.1)) ∧ X.basicOpen (r : Γ(X, U.1)) ≤ W := by
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
-  set π := projection Γ(X, U.1) G
-  set p := U.2.1.fromSpec
+    {x : X} (hxU : x ∈ U.val) (hxW : x ∈ W) :
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    ∃ r : FixedPoints.subring Γ(X, U.val) G,
+      x ∈ X.basicOpen (r : Γ(X, U.val)) ∧ X.basicOpen (r : Γ(X, U.val)) ≤ W := by
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
+  set π := projection Γ(X, U.val) G
+  set p := U.property.1.fromSpec
   -- The image `S` of the preimage of `W` is open, as the projection is a quotient map.
-  set S : Set (quotient Γ(X, U.1) G) := π '' (p ⁻¹' W)
-  have hsat (y : Spec Γ(X, U.1)) (hy : π y ∈ S) : p y ∈ W := by
+  set S : Set (quotient Γ(X, U.val) G) := π '' (p ⁻¹' W)
+  have hsat (y : Spec Γ(X, U.val)) (hy : π y ∈ S) : p y ∈ W := by
     obtain ⟨w, hw, hwy⟩ := hy
     obtain ⟨g, hg⟩ := (affineProjection_eq_iff_exists_fromSpec_eq U w y).mp hwy
     rw [hg, hW.apply_mem_iff]
     exact hw
   have hS : IsOpen S := by
-    rw [← (isQuotientMap_projection Γ(X, U.1) G).isOpen_preimage]
+    rw [← (isQuotientMap_projection Γ(X, U.val) G).isOpen_preimage]
     convert (W.isOpen.preimage p.continuous) using 1
     exact Set.Subset.antisymm (fun y hy ↦ hsat y hy) (Set.subset_preimage_image _ _)
-  obtain ⟨x, rfl⟩ : x ∈ Set.range p := by rwa [U.2.1.range_fromSpec]
+  obtain ⟨x, rfl⟩ : x ∈ Set.range p := by rwa [U.property.1.range_fromSpec]
   obtain ⟨_, ⟨r, rfl⟩, hxr, hrS⟩ :=
     PrimeSpectrum.isTopologicalBasis_basic_opens.exists_subset_of_mem_open
       (Set.mem_image_of_mem π hxW) hS
-  have hmem (y : Spec Γ(X, U.1)) := affineProjection_mem_basicOpen_iff U r y
+  have hmem (y : Spec Γ(X, U.val)) := affineProjection_mem_basicOpen_iff U r y
   refine ⟨r, (hmem x).mp hxr, fun y hy ↦ ?_⟩
   obtain ⟨y, rfl⟩ : y ∈ Set.range p := by
-    rw [U.2.1.range_fromSpec]
+    rw [U.property.1.range_fromSpec]
     exact X.basicOpen_le _ hy
   exact hsat y (hrS ((hmem y).mpr hy))
 
@@ -203,7 +204,7 @@ noncomputable def resFixedPoints {U V : X.Opens} (hU : U.IsInvariant σ) (hV : V
   letI := Scheme.sectionsMulSemiringAction σ hV
   ((X.presheaf.map (homOfLE h).op).hom.comp (FixedPoints.subring Γ(X, U) G).subtype).codRestrict _
     fun a g ↦ by
-      rw [RingHom.comp_apply, Subring.coe_subtype, ← Scheme.presheaf_map_smul hU hV h, a.2 g]
+      rw [RingHom.comp_apply, Subring.coe_subtype, ← Scheme.presheaf_map_smul hU hV h, a.property g]
 
 /-- The restriction of an invariant section is its restriction as a section. -/
 @[simp]
@@ -219,57 +220,61 @@ variable (σ) in
 and reducible so that its objects are, by definition and for instance search, the affine invariant
 quotients, and the affine API applies to them directly. -/
 @[expose, reducible] noncomputable def chartDiagram : InvariantAffineOpens σ ⥤ Scheme.{u} where
-  obj U := letI := Scheme.sectionsMulSemiringAction σ U.2.2; quotient Γ(X, U.1) G
-  map {V U} f := Spec.map (CommRingCat.ofHom (resFixedPoints U.2.2 V.2.2 (leOfHom f)))
+  obj U := letI := Scheme.sectionsMulSemiringAction σ U.property.2; quotient Γ(X, U.val) G
+  map {V U} f := Spec.map (CommRingCat.ofHom (resFixedPoints U.property.2 V.property.2 (leOfHom f)))
   map_id U := by
     rw [← Spec.map_id]
     congr 1
     ext a
-    exact congr(($(X.presheaf.map_id (op U.1))).hom a.1)
+    exact congr(($(X.presheaf.map_id (op U.val))).hom a.val)
   map_comp {W V U} f g := by
     rw [← Spec.map_comp]
     congr 1
     ext a
-    exact congr(($(X.presheaf.map_comp (homOfLE (leOfHom g : V.1 ≤ U.1)).op
-      (homOfLE (leOfHom f : W.1 ≤ V.1)).op)).hom a.1)
+    exact congr(($(X.presheaf.map_comp (homOfLE (leOfHom g : V.val ≤ U.val)).op
+      (homOfLE (leOfHom f : W.val ≤ V.val)).op)).hom a.val)
 
 /-- The transition maps of the chart diagram are the spectra of restriction of invariant
 sections. -/
 lemma chartDiagram_map {U V : InvariantAffineOpens σ} (f : V ⟶ U) :
     (chartDiagram σ).map f =
-      Spec.map (CommRingCat.ofHom (resFixedPoints U.2.2 V.2.2 (leOfHom f))) :=
+      Spec.map (CommRingCat.ofHom (resFixedPoints U.property.2 V.property.2 (leOfHom f))) :=
   (rfl)
 
 /-- Restriction of sections commutes with the projections to the affine invariant quotients. -/
 @[reassoc]
 lemma specMap_map_projection {U V : InvariantAffineOpens σ} (f : V ⟶ U) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    letI := Scheme.sectionsMulSemiringAction σ V.2.2
-    Spec.map (X.presheaf.map (homOfLE (leOfHom f)).op) ≫ projection Γ(X, U.1) G =
-      projection Γ(X, V.1) G ≫ (chartDiagram σ).map f := by
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
-  let := Scheme.sectionsMulSemiringAction σ V.2.2
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    letI := Scheme.sectionsMulSemiringAction σ V.property.2
+    Spec.map (X.presheaf.map (homOfLE (leOfHom f)).op) ≫ projection Γ(X, U.val) G =
+      projection Γ(X, V.val) G ≫ (chartDiagram σ).map f := by
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
+  let := Scheme.sectionsMulSemiringAction σ V.property.2
   rw [projection_def, projection_def, ← Spec.map_comp, ← Spec.map_comp]
   exact congrArg Spec.map
-    (CommRingCat.hom_ext (RingHom.ext fun a ↦ (coe_resFixedPoints U.2.2 V.2.2 (leOfHom f) a).symm))
+    (CommRingCat.hom_ext (RingHom.ext fun a ↦ (coe_resFixedPoints U.property.2 V.property.2
+        (leOfHom f) a).symm))
 
 /-- The basic open of an invariant section over an invariant affine open, as an invariant affine
 open. -/
 noncomputable def InvariantAffineOpens.basicOpen (U : InvariantAffineOpens σ)
-    (r : letI := Scheme.sectionsMulSemiringAction σ U.2.2; FixedPoints.subring Γ(X, U.1) G) :
+    (r : letI := Scheme.sectionsMulSemiringAction σ U.property.2; FixedPoints.subring Γ(X,
+        U.val) G) :
     InvariantAffineOpens σ :=
-  ⟨X.basicOpen (r : Γ(X, U.1)), U.2.1.basicOpen _, U.2.2.basicOpen _ r.2⟩
+  ⟨X.basicOpen (r : Γ(X, U.val)), U.property.1.basicOpen _, U.property.2.basicOpen _ r.property⟩
 
 /-- The underlying open of `U.basicOpen r` is the basic open of `r`. -/
 @[simp]
 lemma InvariantAffineOpens.coe_basicOpen (U : InvariantAffineOpens σ)
-    (r : letI := Scheme.sectionsMulSemiringAction σ U.2.2; FixedPoints.subring Γ(X, U.1) G) :
-    (U.basicOpen r).1 = X.basicOpen (r : Γ(X, U.1)) :=
+    (r : letI := Scheme.sectionsMulSemiringAction σ U.property.2; FixedPoints.subring Γ(X,
+        U.val) G) :
+    (U.basicOpen r).val = X.basicOpen (r : Γ(X, U.val)) :=
   (rfl)
 
 /-- The basic open of an invariant section over `U` lies in `U`. -/
 lemma InvariantAffineOpens.basicOpen_le (U : InvariantAffineOpens σ)
-    (r : letI := Scheme.sectionsMulSemiringAction σ U.2.2; FixedPoints.subring Γ(X, U.1) G) :
+    (r : letI := Scheme.sectionsMulSemiringAction σ U.property.2; FixedPoints.subring Γ(X,
+        U.val) G) :
     U.basicOpen r ≤ U :=
   X.basicOpen_le _
 
@@ -300,8 +305,8 @@ theorem isLocalization_resFixedPoints {U V : X.Opens} (hU : IsAffineOpen U)
       letI := Scheme.sectionsMulSemiringAction σ hW
       a ∈ Set.range (algebraMap (FixedPoints.subring Γ(X, W) G) Γ(X, W)) ↔
         ∀ g : G, MulSemiringAction.toRingHom G Γ(X, W) g a = a :=
-    ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.2, fun ha ↦ ⟨⟨a, ha⟩, rfl⟩⟩
-  exact TauCeti.FixedPoints.isLocalization_of_mem_range_iff _ (MulSemiringAction.toRingHom G _)
+    ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.property, fun ha ↦ ⟨⟨a, ha⟩, rfl⟩⟩
+  exact TauCeti.FixedPoints.isLocalization_of_mem_range_iff (MulSemiringAction.toRingHom G _)
     (MulSemiringAction.toRingHom G _) (fun g a ↦ (Scheme.presheaf_map_smul hUσ hVσ h g a).symm)
     Subtype.val_injective (hfix hUσ) Subtype.val_injective (hfix hVσ) fun _ ↦ rfl
 
@@ -309,23 +314,23 @@ theorem isLocalization_resFixedPoints {U V : X.Opens} (hU : IsAffineOpen U)
 section is an open immersion. -/
 theorem isOpenImmersion_chartDiagram_map_of_eq_basicOpen {U V : InvariantAffineOpens σ}
     (f : V ⟶ U)
-    (r : letI := Scheme.sectionsMulSemiringAction σ U.2.2; FixedPoints.subring Γ(X, U.1) G)
-    (hV : V.1 = X.basicOpen (r : Γ(X, U.1))) :
+    (r : letI := Scheme.sectionsMulSemiringAction σ U.property.2; FixedPoints.subring Γ(X, U.val) G)
+    (hV : V.val = X.basicOpen (r : Γ(X, U.val))) :
     IsOpenImmersion ((chartDiagram σ).map f) := by
-  let := (resFixedPoints U.2.2 V.2.2 (leOfHom f)).toAlgebra
-  have := isLocalization_resFixedPoints U.2.1 U.2.2 V.2.2 (leOfHom f) r hV
+  let := (resFixedPoints U.property.2 V.property.2 (leOfHom f)).toAlgebra
+  have := isLocalization_resFixedPoints U.property.1 U.property.2 V.property.2 (leOfHom f) r hV
   exact IsOpenImmersion.of_isLocalization r
 
 /-- The image of the transition map along the inclusion of the basic open of an invariant section
 `r` is the basic open of `r` in the affine invariant quotient. -/
 theorem range_chartDiagram_map_of_eq_basicOpen {U V : InvariantAffineOpens σ} (f : V ⟶ U)
-    (r : letI := Scheme.sectionsMulSemiringAction σ U.2.2; FixedPoints.subring Γ(X, U.1) G)
-    (hV : V.1 = X.basicOpen (r : Γ(X, U.1))) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
+    (r : letI := Scheme.sectionsMulSemiringAction σ U.property.2; FixedPoints.subring Γ(X, U.val) G)
+    (hV : V.val = X.basicOpen (r : Γ(X, U.val))) :
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
     Set.range ((chartDiagram σ).map f) =
-      (PrimeSpectrum.basicOpen r : Set (PrimeSpectrum (FixedPoints.subring Γ(X, U.1) G))) := by
-  let := (resFixedPoints U.2.2 V.2.2 (leOfHom f)).toAlgebra
-  have := isLocalization_resFixedPoints U.2.1 U.2.2 V.2.2 (leOfHom f) r hV
+      (PrimeSpectrum.basicOpen r : Set (PrimeSpectrum (FixedPoints.subring Γ(X, U.val) G))) := by
+  let := (resFixedPoints U.property.2 V.property.2 (leOfHom f)).toAlgebra
+  have := isLocalization_resFixedPoints U.property.1 U.property.2 V.property.2 (leOfHom f) r hV
   exact PrimeSpectrum.localization_away_comap_range _ r
 
 end BasicOpen
@@ -333,11 +338,11 @@ end BasicOpen
 /-- The transition maps of the chart diagram send projections of points to projections of their
 images under restriction. -/
 lemma chartDiagram_map_projection_apply {U V : InvariantAffineOpens σ} (f : V ⟶ U)
-    (p : Spec Γ(X, V.1)) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    letI := Scheme.sectionsMulSemiringAction σ V.2.2
-    (chartDiagram σ).map f (projection Γ(X, V.1) G p) =
-      projection Γ(X, U.1) G (Spec.map (X.presheaf.map (homOfLE (leOfHom f)).op) p) := by
+    (p : Spec Γ(X, V.val)) :
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    letI := Scheme.sectionsMulSemiringAction σ V.property.2
+    (chartDiagram σ).map f (projection Γ(X, V.val) G p) =
+      projection Γ(X, U.val) G (Spec.map (X.presheaf.map (homOfLE (leOfHom f)).op) p) := by
   exact congr($(specMap_map_projection (σ := σ) f) p).symm
 
 variable [Finite G]
@@ -346,24 +351,24 @@ variable [Finite G]
 invariant quotient of a larger invariant affine open exactly when their images in `X` lie in the
 same `G`-orbit. -/
 lemma chartDiagram_map_affineProjection_eq_iff {T₁ T₂ V : InvariantAffineOpens σ} (i : T₁ ⟶ V)
-    (j : T₂ ⟶ V) (p : Spec Γ(X, T₁.1)) (q : Spec Γ(X, T₂.1)) :
-    letI := Scheme.sectionsMulSemiringAction σ T₁.2.2
-    letI := Scheme.sectionsMulSemiringAction σ T₂.2.2
-    (chartDiagram σ).map i (projection Γ(X, T₁.1) G p) =
-        (chartDiagram σ).map j (projection Γ(X, T₂.1) G q) ↔
-      ∃ g : G, T₂.2.1.fromSpec q = (σ g).asIso.hom (T₁.2.1.fromSpec p) := by
+    (j : T₂ ⟶ V) (p : Spec Γ(X, T₁.val)) (q : Spec Γ(X, T₂.val)) :
+    letI := Scheme.sectionsMulSemiringAction σ T₁.property.2
+    letI := Scheme.sectionsMulSemiringAction σ T₂.property.2
+    (chartDiagram σ).map i (projection Γ(X, T₁.val) G p) =
+        (chartDiagram σ).map j (projection Γ(X, T₂.val) G q) ↔
+      ∃ g : G, T₂.property.1.fromSpec q = (σ g).asIso.hom (T₁.property.1.fromSpec p) := by
   rw [chartDiagram_map_projection_apply, chartDiagram_map_projection_apply,
-    affineProjection_eq_iff_exists_fromSpec_eq, V.2.1.map_fromSpec_apply T₂.2.1,
-    V.2.1.map_fromSpec_apply T₁.2.1]
+    affineProjection_eq_iff_exists_fromSpec_eq, V.property.1.map_fromSpec_apply T₂.property.1,
+    V.property.1.map_fromSpec_apply T₁.property.1]
 
 /-- The transition maps of the chart diagram are injective on points: the points of the affine
 invariant quotients are the orbits in the invariant affine opens. -/
 lemma chartDiagram_map_injective {U V : InvariantAffineOpens σ} (f : V ⟶ U) :
     Function.Injective ((chartDiagram σ).map f) := by
-  let := Scheme.sectionsMulSemiringAction σ V.2.2
+  let := Scheme.sectionsMulSemiringAction σ V.property.2
   intro y₁ y₂ hy
-  obtain ⟨p₁, rfl⟩ := Surjective.surj (f := projection Γ(X, V.1) G) y₁
-  obtain ⟨p₂, rfl⟩ := Surjective.surj (f := projection Γ(X, V.1) G) y₂
+  obtain ⟨p₁, rfl⟩ := Surjective.surj (f := projection Γ(X, V.val) G) y₁
+  obtain ⟨p₂, rfl⟩ := Surjective.surj (f := projection Γ(X, V.val) G) y₂
   exact (affineProjection_eq_iff_exists_fromSpec_eq V p₁ p₂).mpr
     ((chartDiagram_map_affineProjection_eq_iff f f p₁ p₂).mp hy)
 
@@ -372,15 +377,15 @@ the inclusion `V ≤ U` restricts to the inclusion of an invariant basic open of
 whose transition map is a localization. -/
 instance isOpenImmersion_chartDiagram_map {U V : InvariantAffineOpens σ} (f : V ⟶ U) :
     IsOpenImmersion ((chartDiagram σ).map f) := by
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
-  let := Scheme.sectionsMulSemiringAction σ V.2.2
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
+  let := Scheme.sectionsMulSemiringAction σ V.property.2
   refine IsOpenImmersion.of_forall_source_exists _ (chartDiagram_map_injective f) fun y ↦ ?_
-  obtain ⟨p, rfl⟩ := Surjective.surj (f := projection Γ(X, V.1) G) y
-  have hpV : V.2.1.fromSpec p ∈ V.1 := V.2.1.range_fromSpec.le ⟨p, rfl⟩
-  obtain ⟨r, hpr, hrV⟩ := exists_basicOpen_le U V.2.2 (leOfHom f hpV) hpV
+  obtain ⟨p, rfl⟩ := Surjective.surj (f := projection Γ(X, V.val) G) y
+  have hpV : V.property.1.fromSpec p ∈ V.val := V.property.1.range_fromSpec.le ⟨p, rfl⟩
+  obtain ⟨r, hpr, hrV⟩ := exists_basicOpen_le U V.property.2 (leOfHom f hpV) hpV
   let fT : U.basicOpen r ⟶ V := homOfLE hrV
-  have hT : (U.basicOpen r).1 =
-      X.basicOpen (resFixedPoints U.2.2 V.2.2 (leOfHom f) r : Γ(X, V.1)) := by
+  have hT : (U.basicOpen r).val =
+      X.basicOpen (resFixedPoints U.property.2 V.property.2 (leOfHom f) r : Γ(X, V.val)) := by
     rw [coe_resFixedPoints, Scheme.basicOpen_res, InvariantAffineOpens.coe_basicOpen,
       inf_eq_right.mpr hrV]
   refine ⟨_, (chartDiagram σ).map fT, isOpenImmersion_chartDiagram_map_of_eq_basicOpen fT _ hT,
@@ -396,33 +401,34 @@ instance isOpenImmersion_chartDiagram_map {U V : InvariantAffineOpens σ} (f : V
 /-- The chart diagram is locally directed: two charts meeting in a chart meet in a third one. -/
 instance : (chartDiagram σ ⋙ Scheme.forget).IsLocallyDirected where
   cond {T₁ T₂ V} f₁ f₂ y₁ y₂ hy := by
-    let := Scheme.sectionsMulSemiringAction σ T₁.2.2
-    let := Scheme.sectionsMulSemiringAction σ T₂.2.2
-    obtain ⟨p₁, rfl⟩ := Surjective.surj (f := projection Γ(X, T₁.1) G) y₁
-    obtain ⟨p₂, rfl⟩ := Surjective.surj (f := projection Γ(X, T₂.1) G) y₂
+    let := Scheme.sectionsMulSemiringAction σ T₁.property.2
+    let := Scheme.sectionsMulSemiringAction σ T₂.property.2
+    obtain ⟨p₁, rfl⟩ := Surjective.surj (f := projection Γ(X, T₁.val) G) y₁
+    obtain ⟨p₂, rfl⟩ := Surjective.surj (f := projection Γ(X, T₂.val) G) y₂
     -- The hypothesis is an equation in the underlying types of the charts.
-    have hy : (chartDiagram σ).map f₁ (projection Γ(X, T₁.1) G p₁) =
-        (chartDiagram σ).map f₂ (projection Γ(X, T₂.1) G p₂) := hy
+    have hy : (chartDiagram σ).map f₁ (projection Γ(X, T₁.val) G p₁) =
+        (chartDiagram σ).map f₂ (projection Γ(X, T₂.val) G p₂) := hy
     obtain ⟨g, hg'⟩ := (chartDiagram_map_affineProjection_eq_iff f₁ f₂ p₁ p₂).mp hy
     -- The image `x` of `p₁` in `X` lies in both `T₁` and `T₂`.
-    set x := T₁.2.1.fromSpec p₁
-    have hx₁ : x ∈ T₁.1 := T₁.2.1.range_fromSpec.le ⟨p₁, rfl⟩
-    have hx₂ : x ∈ T₂.1 :=
-      (T₂.2.2.apply_mem_iff g).mp (hg' ▸ T₂.2.1.range_fromSpec.le ⟨p₂, rfl⟩)
-    obtain ⟨r, hxr, hrT⟩ := exists_basicOpen_le V (T₁.2.2.inf T₂.2.2)
+    set x := T₁.property.1.fromSpec p₁
+    have hx₁ : x ∈ T₁.val := T₁.property.1.range_fromSpec.le ⟨p₁, rfl⟩
+    have hx₂ : x ∈ T₂.val :=
+      (T₂.property.2.apply_mem_iff g).mp (hg' ▸ T₂.property.1.range_fromSpec.le ⟨p₂, rfl⟩)
+    obtain ⟨r, hxr, hrT⟩ := exists_basicOpen_le V (T₁.property.2.inf T₂.property.2)
       (leOfHom f₁ hx₁) ⟨hx₁, hx₂⟩
     let T := V.basicOpen r
-    obtain ⟨p, hp⟩ : x ∈ Set.range T.2.1.fromSpec := T.2.1.range_fromSpec.ge hxr
-    let := Scheme.sectionsMulSemiringAction σ T.2.2
+    obtain ⟨p, hp⟩ : x ∈ Set.range T.property.1.fromSpec := T.property.1.range_fromSpec.ge hxr
+    let := Scheme.sectionsMulSemiringAction σ T.property.2
     let i₁ : T ⟶ T₁ := homOfLE (hrT.trans inf_le_left)
     let i₂ : T ⟶ T₂ := homOfLE (hrT.trans inf_le_right)
-    refine ⟨T, i₁, i₂, projection Γ(X, T.1) G p, ?_, ?_⟩
+    refine ⟨T, i₁, i₂, projection Γ(X, T.val) G p, ?_, ?_⟩
     · refine (chartDiagram_map_projection_apply i₁ p).trans (congrArg _ ?_)
-      exact T₁.2.1.fromSpec.isOpenEmbedding.injective
-        ((T₁.2.1.map_fromSpec_apply T.2.1 _ p).trans hp)
+      exact T₁.property.1.fromSpec.isOpenEmbedding.injective
+        ((T₁.property.1.map_fromSpec_apply T.property.1 _ p).trans hp)
     · refine (chartDiagram_map_projection_apply i₂ p).trans
         ((affineProjection_eq_iff_exists_fromSpec_eq T₂ _ _).mpr
-          ⟨g, hg'.trans (congrArg _ ((T₂.2.1.map_fromSpec_apply T.2.1 _ p).trans hp).symm)⟩)
+          ⟨g, hg'.trans (congrArg _ ((T₂.property.1.map_fromSpec_apply T.property.1 _ p).trans
+              hp).symm)⟩)
 
 end Diagram
 
@@ -467,7 +473,7 @@ quotient `quotient σ`; it holds when `X` is affine (`hasInvariantAffineCover_of
 `G` acts by automorphisms over a base along an affine morphism
 (`hasInvariantAffineCover_of_isAffineHom`). -/
 def HasInvariantAffineCover : Prop :=
-  ∀ x : X, ∃ U : InvariantAffineOpens σ, x ∈ U.1
+  ∀ x : X, ∃ U : InvariantAffineOpens σ, x ∈ U.val
 
 omit [Finite G] in
 /-- An affine scheme has an invariant affine cover, by the open `⊤`. -/
@@ -488,36 +494,37 @@ variable (σ) in
 @[expose, simps I₀ X f]
 noncomputable def invariantAffineCover (hσ : HasInvariantAffineCover σ) : X.OpenCover where
   I₀ := InvariantAffineOpens σ
-  X U := Spec Γ(X, U.1)
-  f U := U.2.1.fromSpec
+  X U := Spec Γ(X, U.val)
+  f U := U.property.1.fromSpec
   mem₀ := by
     rw [Scheme.presieve₀_mem_precoverage_iff]
     refine ⟨fun x ↦ ?_, inferInstance⟩
     obtain ⟨U, hU⟩ := hσ x
-    exact ⟨U, U.2.1.range_fromSpec.ge hU⟩
+    exact ⟨U, U.property.1.range_fromSpec.ge hU⟩
 
 /-- A point of the intersection of the charts of two invariant affine opens `U` and `V` comes from
 the chart of an invariant affine open contained in both. -/
 private lemma exists_pullback_lift_eq (U V : InvariantAffineOpens σ)
-    (x : (pullback U.2.1.fromSpec V.2.1.fromSpec : Scheme.{u})) :
-    ∃ (T : InvariantAffineOpens σ) (i : T.1 ≤ U.1) (j : T.1 ≤ V.1) (y : Spec Γ(X, T.1)),
+    (x : (pullback U.property.1.fromSpec V.property.1.fromSpec : Scheme.{u})) :
+    ∃ (T : InvariantAffineOpens σ) (i : T.val ≤ U.val) (j : T.val ≤ V.val) (y : Spec Γ(X, T.val)),
       pullback.lift (Spec.map (X.presheaf.map (homOfLE i).op))
         (Spec.map (X.presheaf.map (homOfLE j).op))
-        ((IsAffineOpen.map_fromSpec _ T.2.1 _).trans (IsAffineOpen.map_fromSpec _ T.2.1 _).symm) y =
+        ((IsAffineOpen.map_fromSpec _ T.property.1 _).trans
+            (IsAffineOpen.map_fromSpec _ T.property.1 _).symm) y =
           x := by
   -- The image `z` of `x` in `X` lies in an invariant basic open `T` of `U` contained in `V`.
-  set z := (pullback.fst _ _ ≫ U.2.1.fromSpec) x
-  have hzU : z ∈ U.1 := U.2.1.range_fromSpec.le ⟨_, rfl⟩
-  have hzV : z ∈ V.1 := V.2.1.range_fromSpec.le
-    ⟨pullback.snd U.2.1.fromSpec V.2.1.fromSpec x, by
+  set z := (pullback.fst _ _ ≫ U.property.1.fromSpec) x
+  have hzU : z ∈ U.val := U.property.1.range_fromSpec.le ⟨_, rfl⟩
+  have hzV : z ∈ V.val := V.property.1.range_fromSpec.le
+    ⟨pullback.snd U.property.1.fromSpec V.property.1.fromSpec x, by
       rw [← Scheme.Hom.comp_apply, ← pullback.condition]⟩
-  obtain ⟨r, hzr, hrV⟩ := exists_basicOpen_le U V.2.2 hzU hzV
+  obtain ⟨r, hzr, hrV⟩ := exists_basicOpen_le U V.property.2 hzU hzV
   let T := U.basicOpen r
-  obtain ⟨y, hy⟩ : z ∈ Set.range T.2.1.fromSpec := T.2.1.range_fromSpec.ge hzr
+  obtain ⟨y, hy⟩ : z ∈ Set.range T.property.1.fromSpec := T.property.1.range_fromSpec.ge hzr
   refine ⟨T, U.basicOpen_le r, hrV, y, ?_⟩
-  apply (pullback.fst _ _ ≫ U.2.1.fromSpec).isOpenEmbedding.injective
+  apply (pullback.fst _ _ ≫ U.property.1.fromSpec).isOpenEmbedding.injective
   rw [← Scheme.Hom.comp_apply, pullback.lift_fst_assoc, Scheme.Hom.comp_apply,
-    U.2.1.map_fromSpec_apply T.2.1, hy]
+    U.property.1.map_fromSpec_apply T.property.1, hy]
 
 /-- The indices of the cover by invariant affine opens are ordered by inclusion. -/
 instance (hσ : HasInvariantAffineCover σ) : Preorder (invariantAffineCover σ hσ).I₀ :=
@@ -527,26 +534,26 @@ instance (hσ : HasInvariantAffineCover σ) : Preorder (invariantAffineCover σ 
 induced by restriction of sections. -/
 noncomputable instance (hσ : HasInvariantAffineCover σ) :
     (invariantAffineCover σ hσ).LocallyDirected where
-  trans {V U} f := Spec.map (X.presheaf.map (homOfLE (leOfHom f : V.1 ≤ U.1)).op)
-  trans_id U := (congrArg Spec.map (X.presheaf.map_id (op U.1))).trans (Spec.map_id _)
+  trans {V U} f := Spec.map (X.presheaf.map (homOfLE (leOfHom f : V.val ≤ U.val)).op)
+  trans_id U := (congrArg Spec.map (X.presheaf.map_id (op U.val))).trans (Spec.map_id _)
   trans_comp {W V U} f g :=
-    (congrArg Spec.map (X.presheaf.map_comp (homOfLE (leOfHom g : V.1 ≤ U.1)).op
-      (homOfLE (leOfHom f : W.1 ≤ V.1)).op)).trans (Spec.map_comp _ _)
-  w {V U} f := IsAffineOpen.map_fromSpec U.2.1 V.2.1 _
+    (congrArg Spec.map (X.presheaf.map_comp (homOfLE (leOfHom g : V.val ≤ U.val)).op
+      (homOfLE (leOfHom f : W.val ≤ V.val)).op)).trans (Spec.map_comp _ _)
+  w {V U} f := IsAffineOpen.map_fromSpec U.property.1 V.property.1 _
   directed {U V} x := by
     obtain ⟨T, i, j, y, hy⟩ := exists_pullback_lift_eq U V x
     exact ⟨T, homOfLE i, homOfLE j, y, hy⟩
-  property_trans {V U} f := U.2.1.isOpenImmersion_SpecMap_presheaf_map V.2.1 _
+  property_trans {V U} f := U.property.1.isOpenImmersion_SpecMap_presheaf_map V.property.1 _
 
 /-- The projections of the charts of `X` to the charts of the quotient are compatible with the
 transition maps. -/
 private lemma trans_projection_chartι (hσ : HasInvariantAffineCover σ)
     {V U : (invariantAffineCover σ hσ).I₀} (f : V ⟶ U) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    letI := Scheme.sectionsMulSemiringAction σ V.2.2
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    letI := Scheme.sectionsMulSemiringAction σ V.property.2
     (invariantAffineCover σ hσ).trans f ≫
-        AffineInvariantQuotient.projection Γ(X, U.1) G ≫ chartι σ U =
-      AffineInvariantQuotient.projection Γ(X, V.1) G ≫ chartι σ V := by
+        AffineInvariantQuotient.projection Γ(X, U.val) G ≫ chartι σ U =
+      AffineInvariantQuotient.projection Γ(X, V.val) G ≫ chartι σ V := by
   rw [← chartDiagram_map_chartι f]
   exact specMap_map_projection_assoc f _
 
@@ -555,17 +562,17 @@ variable (σ) in
 `Spec Γ(X, U) ⟶ Spec Γ(X, U)ᴳ` of the invariant affine opens `U`. -/
 noncomputable def projection (hσ : HasInvariantAffineCover σ) : X ⟶ quotient σ :=
   (invariantAffineCover σ hσ).glueMorphismsOfLocallyDirected
-    (fun U ↦ letI := Scheme.sectionsMulSemiringAction σ U.2.2
-      AffineInvariantQuotient.projection Γ(X, U.1) G ≫ chartι σ U)
+    (fun U ↦ letI := Scheme.sectionsMulSemiringAction σ U.property.2
+      AffineInvariantQuotient.projection Γ(X, U.val) G ≫ chartι σ U)
     (trans_projection_chartι hσ)
 
 /-- Over the chart of an invariant affine open `U`, the quotient projection is the affine invariant
 quotient projection of `Γ(X, U)`. -/
 @[reassoc (attr := simp)]
 lemma fromSpec_projection (hσ : HasInvariantAffineCover σ) (U : InvariantAffineOpens σ) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    U.2.1.fromSpec ≫ projection σ hσ =
-      AffineInvariantQuotient.projection Γ(X, U.1) G ≫ chartι σ U :=
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    U.property.1.fromSpec ≫ projection σ hσ =
+      AffineInvariantQuotient.projection Γ(X, U.val) G ≫ chartι σ U :=
   Scheme.OpenCover.map_glueMorphismsOfLocallyDirected (invariantAffineCover σ hσ) _
     (trans_projection_chartι hσ) U
 
@@ -573,7 +580,8 @@ omit [Finite G] in
 /-- Morphisms out of `X` are determined by their restrictions to the charts of the invariant affine
 opens. -/
 lemma hom_ext_fromSpec (hσ : HasInvariantAffineCover σ) {Z : Scheme.{u}} {f₁ f₂ : X ⟶ Z}
-    (h : ∀ U : InvariantAffineOpens σ, U.2.1.fromSpec ≫ f₁ = U.2.1.fromSpec ≫ f₂) : f₁ = f₂ :=
+    (h : ∀ U : InvariantAffineOpens σ, U.property.1.fromSpec ≫ f₁ = U.property.1.fromSpec ≫ f₂) : f₁
+        = f₂ :=
   (invariantAffineCover σ hσ).hom_ext _ _ h
 
 /-- The quotient projection is invariant under the action of `G`. -/
@@ -581,8 +589,8 @@ lemma hom_ext_fromSpec (hσ : HasInvariantAffineCover σ) {Z : Scheme.{u}} {f₁
 lemma asIso_hom_projection (hσ : HasInvariantAffineCover σ) (g : G) :
     (σ g).asIso.hom ≫ projection σ hσ = projection σ hσ := by
   refine hom_ext_fromSpec hσ fun U ↦ ?_
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
-  rw [← specAction_fromSpec_assoc U.2.1 U.2.2, fromSpec_projection,
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
+  rw [← specAction_fromSpec_assoc U.property.1 U.property.2, fromSpec_projection,
     AffineInvariantQuotient.specAction_asIso_hom,
     AffineInvariantQuotient.specComap_projection_assoc]
 
@@ -590,9 +598,9 @@ lemma asIso_hom_projection (hσ : HasInvariantAffineCover σ) (g : G) :
 instance (hσ : HasInvariantAffineCover σ) : Surjective (projection σ hσ) where
   surj z := by
     obtain ⟨U, y, rfl⟩ := Scheme.IsLocallyDirected.ι_jointly_surjective (chartDiagram σ) z
-    let := Scheme.sectionsMulSemiringAction σ U.2.2
-    obtain ⟨p, rfl⟩ := Surjective.surj (f := AffineInvariantQuotient.projection Γ(X, U.1) G) y
-    exact ⟨U.2.1.fromSpec p, congr($(fromSpec_projection hσ U) p)⟩
+    let := Scheme.sectionsMulSemiringAction σ U.property.2
+    obtain ⟨p, rfl⟩ := Surjective.surj (f := AffineInvariantQuotient.projection Γ(X, U.val) G) y
+    exact ⟨U.property.1.fromSpec p, congr($(fromSpec_projection hσ U) p)⟩
 
 /-- **The charts of the quotient.** Over the chart `Spec Γ(X, U)ᴳ` of an invariant affine open `U`,
 the quotient projection `X ⟶ X/G` is the affine invariant quotient projection
@@ -600,30 +608,31 @@ the quotient projection `X ⟶ X/G` is the affine invariant quotient projection
 In particular the preimage of the chart is `U`. -/
 theorem isPullback_projection_fromSpec (hσ : HasInvariantAffineCover σ)
     (U : InvariantAffineOpens σ) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    IsPullback (AffineInvariantQuotient.projection Γ(X, U.1) G) U.2.1.fromSpec (chartι σ U)
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    IsPullback (AffineInvariantQuotient.projection Γ(X, U.val) G) U.property.1.fromSpec (chartι σ U)
       (projection σ hσ) := by
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
   refine IsOpenImmersion.isPullback _ _ _ _ (fromSpec_projection hσ U) ?_
   ext x
   rw [IsAffineOpen.opensRange_fromSpec]
   refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun hx ↦ ?_⟩
   · -- `x` lies in some invariant affine open `V`, and its image is in the charts of `U` and `V`.
     obtain ⟨V, hxV⟩ := hσ x
-    obtain ⟨q, rfl⟩ : x ∈ Set.range V.2.1.fromSpec := V.2.1.range_fromSpec.ge hxV
-    let := Scheme.sectionsMulSemiringAction σ V.2.2
+    obtain ⟨q, rfl⟩ : x ∈ Set.range V.property.1.fromSpec := V.property.1.range_fromSpec.ge hxV
+    let := Scheme.sectionsMulSemiringAction σ V.property.2
     have hq := hy.trans congr($(fromSpec_projection hσ V) q)
     obtain ⟨T, i, j, t, -, ht⟩ := chartι_eq_chartι_iff.mp hq
-    let := Scheme.sectionsMulSemiringAction σ T.2.2
-    obtain ⟨t, rfl⟩ := Surjective.surj (f := AffineInvariantQuotient.projection Γ(X, T.1) G) t
+    let := Scheme.sectionsMulSemiringAction σ T.property.2
+    obtain ⟨t, rfl⟩ := Surjective.surj (f := AffineInvariantQuotient.projection Γ(X, T.val) G) t
     obtain ⟨g, hg⟩ := (chartDiagram_map_affineProjection_eq_iff j (𝟙 V) t q).mp
       -- The identity morphism is the identity on points.
       (by rw [CategoryTheory.Functor.map_id]; exact ht)
-    have hmem : T.2.1.fromSpec t ∈ U.1 := leOfHom i (T.2.1.range_fromSpec.le ⟨t, rfl⟩)
+    have hmem : T.property.1.fromSpec t ∈ U.val := leOfHom i (T.property.1.range_fromSpec.le ⟨t,
+        rfl⟩)
     rw [hg]
-    exact (U.2.2.apply_mem_iff g).mpr hmem
-  · obtain ⟨p, rfl⟩ : x ∈ Set.range U.2.1.fromSpec := U.2.1.range_fromSpec.ge hx
-    exact ⟨AffineInvariantQuotient.projection Γ(X, U.1) G p,
+    exact (U.property.2.apply_mem_iff g).mpr hmem
+  · obtain ⟨p, rfl⟩ : x ∈ Set.range U.property.1.fromSpec := U.property.1.range_fromSpec.ge hx
+    exact ⟨AffineInvariantQuotient.projection Γ(X, U.val) G p,
       congr($(fromSpec_projection hσ U) p).symm⟩
 
 /-- **Fibres of the quotient on field-valued points are orbits.** Two morphisms from the spectrum
@@ -635,21 +644,21 @@ theorem exists_comp_eq_of_comp_projection_eq (hσ : HasInvariantAffineCover σ) 
   -- the chart `Spec Γ(X, U) ⟶ X`, and so does `x₂` by the chart square.
   let pt : Spec (.of K) := default
   obtain ⟨U, hU⟩ := hσ (x₁ pt)
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
   have hpb := isPullback_projection_fromSpec hσ U
-  have hrange : Set.range x₁ ⊆ Set.range U.2.1.fromSpec := by
+  have hrange : Set.range x₁ ⊆ Set.range U.property.1.fromSpec := by
     rintro _ ⟨p, rfl⟩
-    rw [Subsingleton.elim p pt, U.2.1.range_fromSpec]
+    rw [Subsingleton.elim p pt, U.property.1.range_fromSpec]
     exact hU
-  let y₁ := IsOpenImmersion.lift U.2.1.fromSpec x₁ hrange
-  let y₂ := hpb.lift (y₁ ≫ AffineInvariantQuotient.projection Γ(X, U.1) G) x₂
+  let y₁ := IsOpenImmersion.lift U.property.1.fromSpec x₁ hrange
+  let y₂ := hpb.lift (y₁ ≫ AffineInvariantQuotient.projection Γ(X, U.val) G) x₂
     (by rw [Category.assoc, hpb.w, IsOpenImmersion.lift_fac_assoc, h])
   -- The chart points have the same image in the affine invariant quotient.
-  obtain ⟨g, hg⟩ := AffineInvariantQuotient.exists_comp_specComap_eq Γ(X, U.1) G
+  obtain ⟨g, hg⟩ := AffineInvariantQuotient.exists_comp_specComap_eq Γ(X, U.val) G
     (x₁ := y₁) (x₂ := y₂) (hpb.lift_fst _ _ _).symm
   refine ⟨g⁻¹, ?_⟩
-  rw [← IsOpenImmersion.lift_fac U.2.1.fromSpec x₁ hrange, Category.assoc,
-    ← specComap_fromSpec U.2.1 U.2.2, ← Category.assoc, hg]
+  rw [← IsOpenImmersion.lift_fac U.property.1.fromSpec x₁ hrange, Category.assoc,
+    ← specComap_fromSpec U.property.1 U.property.2, ← Category.assoc, hg]
   exact hpb.lift_snd _ _ _
 
 /-- The base change of the quotient projection along the chart of an invariant affine open `U`
@@ -657,10 +666,10 @@ has a property respecting isomorphisms exactly when the affine invariant quotien
 has it, by the chart square. -/
 private lemma pullback_snd_chartι_iff (hσ : HasInvariantAffineCover σ) (U : InvariantAffineOpens σ)
     {P : MorphismProperty Scheme.{u}} [P.RespectsIso] :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
     P (pullback.snd (projection σ hσ) (chartι σ U)) ↔
-      P (AffineInvariantQuotient.projection Γ(X, U.1) G) := by
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
+      P (AffineInvariantQuotient.projection Γ(X, U.val) G) := by
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
   have h := (isPullback_projection_fromSpec hσ U).flip
   calc _ ↔ P (h.isoPullback.hom ≫ pullback.snd _ _) := (P.cancel_left_of_respectsIso _ _).symm
     _ ↔ _ := by rw [h.isoPullback_hom_snd]
@@ -670,8 +679,8 @@ when it holds for the affine invariant quotient projections of all invariant aff
 theorem projection_iff (hσ : HasInvariantAffineCover σ) {P : MorphismProperty Scheme.{u}}
     [IsZariskiLocalAtTarget P] :
     P (projection σ hσ) ↔ ∀ U : InvariantAffineOpens σ,
-      letI := Scheme.sectionsMulSemiringAction σ U.2.2
-      P (AffineInvariantQuotient.projection Γ(X, U.1) G) :=
+      letI := Scheme.sectionsMulSemiringAction σ U.property.2
+      P (AffineInvariantQuotient.projection Γ(X, U.val) G) :=
   (IsZariskiLocalAtTarget.iff_of_openCover (P := P)
     (Scheme.IsLocallyDirected.openCover (chartDiagram σ))).trans
       (forall_congr' fun U ↦ pullback_snd_chartι_iff hσ U)
@@ -681,23 +690,23 @@ as it holds for the affine invariant quotient projections of a family of invaria
 covering `X`. -/
 theorem projection_of_forall_exists (hσ : HasInvariantAffineCover σ)
     {P : MorphismProperty Scheme.{u}} [IsZariskiLocalAtTarget P]
-    (h : ∀ x : X, ∃ U : InvariantAffineOpens σ, x ∈ U.1 ∧
-      letI := Scheme.sectionsMulSemiringAction σ U.2.2
-      P (AffineInvariantQuotient.projection Γ(X, U.1) G)) :
+    (h : ∀ x : X, ∃ U : InvariantAffineOpens σ, x ∈ U.val ∧
+      letI := Scheme.sectionsMulSemiringAction σ U.property.2
+      P (AffineInvariantQuotient.projection Γ(X, U.val) G)) :
     P (projection σ hσ) := by
-  let J := {U : InvariantAffineOpens σ // letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    P (AffineInvariantQuotient.projection Γ(X, U.1) G)}
-  refine IsZariskiLocalAtTarget.of_iSup_eq_top (fun U : J ↦ (chartι σ U.1).opensRange) ?_
+  let J := {U : InvariantAffineOpens σ // letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    P (AffineInvariantQuotient.projection Γ(X, U.val) G)}
+  refine IsZariskiLocalAtTarget.of_iSup_eq_top (fun U : J ↦ (chartι σ U.val).opensRange) ?_
     fun U ↦ (P.arrow_mk_iso_iff (morphismRestrictOpensRange _ _)).mpr
-      ((pullback_snd_chartι_iff hσ U.1).mpr U.2)
+      ((pullback_snd_chartι_iff hσ U.val).mpr U.property)
   -- The charts of the opens of the family cover the quotient, since the projection is surjective.
   refine top_unique fun z _ ↦ ?_
   obtain ⟨x, rfl⟩ := (projection σ hσ).surjective z
   obtain ⟨U, hxU, hU⟩ := h x
-  obtain ⟨p, rfl⟩ : x ∈ Set.range U.2.1.fromSpec := U.2.1.range_fromSpec.ge hxU
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
+  obtain ⟨p, rfl⟩ : x ∈ Set.range U.property.1.fromSpec := U.property.1.range_fromSpec.ge hxU
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
   exact TopologicalSpace.Opens.mem_iSup.mpr ⟨⟨U, hU⟩,
-    AffineInvariantQuotient.projection Γ(X, U.1) G p, congr($(fromSpec_projection hσ U) p).symm⟩
+    AffineInvariantQuotient.projection Γ(X, U.val) G p, congr($(fromSpec_projection hσ U) p).symm⟩
 
 /-- The quotient projection is integral, since sections are integral over invariant sections for
 a finite group. -/
@@ -705,7 +714,7 @@ instance (hσ : HasInvariantAffineCover σ) : IsIntegralHom (projection σ hσ) 
   have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
     @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   refine (projection_iff hσ (P := @IsIntegralHom)).mpr fun U ↦ ?_
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
   infer_instance
 
 /-! ### The universal property of the quotient -/
@@ -719,23 +728,24 @@ omit [Finite G] in
 invariant under the action on the spectrum of the sections. -/
 lemma specComap_fromSpec_comp_eq (f : X ⟶ Z) (hf : ∀ g : G, (σ g).asIso.hom ≫ f = f)
     (U : InvariantAffineOpens σ) (g : G) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    AffineInvariantQuotient.specComap Γ(X, U.1) G g ≫ U.2.1.fromSpec ≫ f = U.2.1.fromSpec ≫ f := by
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    AffineInvariantQuotient.specComap Γ(X, U.val) G g ≫ U.property.1.fromSpec ≫ f =
+        U.property.1.fromSpec ≫ f := by
   rw [specComap_fromSpec_assoc, hf]
 
 /-- The descents of a `G`-invariant morphism to the affine invariant quotients of the invariant
 affine opens are compatible with the transition maps of the chart diagram. -/
 private lemma chartDiagram_map_descOfFinite (f : X ⟶ Z) (hf : ∀ g : G, (σ g).asIso.hom ≫ f = f)
     {U V : InvariantAffineOpens σ} (i : V ⟶ U) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
-    letI := Scheme.sectionsMulSemiringAction σ V.2.2
-    (chartDiagram σ).map i ≫ AffineInvariantQuotient.descOfFinite (U.2.1.fromSpec ≫ f)
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
+    letI := Scheme.sectionsMulSemiringAction σ V.property.2
+    (chartDiagram σ).map i ≫ AffineInvariantQuotient.descOfFinite (U.property.1.fromSpec ≫ f)
         (specComap_fromSpec_comp_eq f hf U) =
-      AffineInvariantQuotient.descOfFinite (V.2.1.fromSpec ≫ f)
+      AffineInvariantQuotient.descOfFinite (V.property.1.fromSpec ≫ f)
         (specComap_fromSpec_comp_eq f hf V) := by
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
-  let := Scheme.sectionsMulSemiringAction σ V.2.2
-  apply AffineInvariantQuotient.hom_ext_of_finite (A := Γ(X, V.1)) (G := G)
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
+  let := Scheme.sectionsMulSemiringAction σ V.property.2
+  apply AffineInvariantQuotient.hom_ext_of_finite (A := Γ(X, V.val)) (G := G)
   rw [AffineInvariantQuotient.projection_descOfFinite, ← Category.assoc,
     ← specMap_map_projection, Category.assoc, AffineInvariantQuotient.projection_descOfFinite,
     IsAffineOpen.map_fromSpec_assoc]
@@ -748,8 +758,8 @@ noncomputable def desc (f : X ⟶ Z) (hf : ∀ g : G, (σ g).asIso.hom ≫ f = f
   colimit.desc (chartDiagram σ)
     { pt := Z
       ι :=
-        { app U := letI := Scheme.sectionsMulSemiringAction σ U.2.2
-            AffineInvariantQuotient.descOfFinite (U.2.1.fromSpec ≫ f)
+        { app U := letI := Scheme.sectionsMulSemiringAction σ U.property.2
+            AffineInvariantQuotient.descOfFinite (U.property.1.fromSpec ≫ f)
               (specComap_fromSpec_comp_eq f hf U)
           naturality _ _ i :=
             (chartDiagram_map_descOfFinite f hf i).trans (Category.comp_id _).symm } }
@@ -759,9 +769,9 @@ restriction of `f` along the affine invariant quotient projection. -/
 @[reassoc (attr := simp)]
 lemma chartι_desc (f : X ⟶ Z) (hf : ∀ g : G, (σ g).asIso.hom ≫ f = f)
     (U : InvariantAffineOpens σ) :
-    letI := Scheme.sectionsMulSemiringAction σ U.2.2
+    letI := Scheme.sectionsMulSemiringAction σ U.property.2
     chartι σ U ≫ desc σ f hf =
-      AffineInvariantQuotient.descOfFinite (U.2.1.fromSpec ≫ f)
+      AffineInvariantQuotient.descOfFinite (U.property.1.fromSpec ≫ f)
         (specComap_fromSpec_comp_eq f hf U) :=
   colimit.ι_desc _ _
 
@@ -770,7 +780,7 @@ lemma chartι_desc (f : X ⟶ Z) (hf : ∀ g : G, (σ g).asIso.hom ≫ f = f)
 lemma projection_desc (hσ : HasInvariantAffineCover σ) (f : X ⟶ Z)
     (hf : ∀ g : G, (σ g).asIso.hom ≫ f = f) : projection σ hσ ≫ desc σ f hf = f := by
   refine hom_ext_fromSpec hσ fun U ↦ ?_
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
   rw [fromSpec_projection_assoc, chartι_desc, AffineInvariantQuotient.projection_descOfFinite]
 
 /-- Morphisms out of the quotient are determined by their composition with the quotient
@@ -778,9 +788,9 @@ projection. -/
 lemma hom_ext (hσ : HasInvariantAffineCover σ) {h₁ h₂ : quotient σ ⟶ Z}
     (e : projection σ hσ ≫ h₁ = projection σ hσ ≫ h₂) : h₁ = h₂ := by
   refine colimit.hom_ext fun U ↦ ?_
-  let := Scheme.sectionsMulSemiringAction σ U.2.2
-  apply AffineInvariantQuotient.hom_ext_of_finite (A := Γ(X, U.1)) (G := G)
-  have := congr(U.2.1.fromSpec ≫ $e)
+  let := Scheme.sectionsMulSemiringAction σ U.property.2
+  apply AffineInvariantQuotient.hom_ext_of_finite (A := Γ(X, U.val)) (G := G)
+  have := congr(U.property.1.fromSpec ≫ $e)
   rwa [fromSpec_projection_assoc, fromSpec_projection_assoc] at this
 
 /-- The quotient projection is an epimorphism of schemes. -/

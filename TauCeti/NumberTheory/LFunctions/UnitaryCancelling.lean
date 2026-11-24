@@ -30,7 +30,8 @@ packages on `TauCeti.UnitaryIdealWeight K`:
   unitary weight `χ`, excluding pure norm twists on the good ideals and allowing the square of each
   imaginary twist either to be a norm twist on its good ideals or to cancel.
   `TauCeti.LFunctions.UnitaryCancelling.continuedLFunctionOfWeight_ne_zero` proves nonvanishing on
-  `Re s ≥ 1` away from boundary points `Re s = 1` where `(χ ^ 2).1.IsNormTwistOnGood (2 * s.im)`.
+  `Re s ≥ 1` away from boundary points `Re s = 1` where
+  `(χ ^ 2).val.IsNormTwistOnGood (2 * s.im)`.
 * `TauCeti.LFunctions.IsUnitaryCharacterFamily`: family package for a group-indexed family
   `w : G → UnitaryIdealWeight K` whose identity member is trivial on its good ideals, which is
   multiplicative and conjugation-compatible, and whose nontrivial members have cancelling imaginary
@@ -72,22 +73,23 @@ theorem imaginaryNormTwist_def (χ : UnitaryIdealWeight K) (t : ℝ) :
       UnitaryIdealWeight.normTwist (-((t : ℂ) * Complex.I)) (by simp) χ := (rfl)
 
 /-- Underlying `MultiplicativeIdealWeight` of `imaginaryNormTwist χ t`. -/
--- Not `@[simp]`: rewriting `(imaginaryNormTwist χ t).1` to `MultiplicativeIdealWeight.normTwist`
--- would take `imaginaryNormTwist_apply`, `badPrimes_imaginaryNormTwist`, and
--- `isNormTwistOnGood_imaginaryNormTwist_iff` out of simp normal form (`simpNF`).
+-- Not `@[simp]`: rewriting `(imaginaryNormTwist χ t).val` to
+-- `MultiplicativeIdealWeight.normTwist` would take `imaginaryNormTwist_apply`,
+-- `badPrimes_imaginaryNormTwist`, and `isNormTwistOnGood_imaginaryNormTwist_iff` out of simp
+-- normal form (`simpNF`).
 theorem val_imaginaryNormTwist (χ : UnitaryIdealWeight K) (t : ℝ) :
-    (imaginaryNormTwist χ t).1 =
-      MultiplicativeIdealWeight.normTwist (-((t : ℂ) * Complex.I)) χ.1 := by
+    (imaginaryNormTwist χ t).val =
+      MultiplicativeIdealWeight.normTwist (-((t : ℂ) * Complex.I)) χ.val := by
   rw [imaginaryNormTwist_def, UnitaryIdealWeight.val_normTwist]
 
 @[simp]
 theorem imaginaryNormTwist_apply (χ : UnitaryIdealWeight K) (t : ℝ) (I : Ideal (𝓞 K)) :
-    (imaginaryNormTwist χ t).1 I = χ.1 I * (Ideal.absNorm I : ℂ) ^ ((t : ℂ) * Complex.I) := by
+    (imaginaryNormTwist χ t).val I = χ.val I * (Ideal.absNorm I : ℂ) ^ ((t : ℂ) * Complex.I) := by
   simp [imaginaryNormTwist_def]
 
 @[simp]
 theorem badPrimes_imaginaryNormTwist (χ : UnitaryIdealWeight K) (t : ℝ) :
-    (imaginaryNormTwist χ t).1.badPrimes = χ.1.badPrimes := by
+    (imaginaryNormTwist χ t).val.badPrimes = χ.val.badPrimes := by
   simp [imaginaryNormTwist_def]
 
 @[simp]
@@ -158,7 +160,7 @@ theorem normCoeff_imaginaryNormTwist (χ : UnitaryIdealWeight K) (t : ℝ) (n : 
 /-- Twisting `χ` by `N(I) ^ (t * I)` shifts a norm-twist parameter on the good ideals by `t`. -/
 @[simp]
 theorem isNormTwistOnGood_imaginaryNormTwist_iff {χ : UnitaryIdealWeight K} {t u : ℝ} :
-    (imaginaryNormTwist χ t).1.IsNormTwistOnGood u ↔ χ.1.IsNormTwistOnGood (u - t) := by
+    (imaginaryNormTwist χ t).val.IsNormTwistOnGood u ↔ χ.val.IsNormTwistOnGood (u - t) := by
   constructor
   · intro h
     have h' := h.normTwist (-t)
@@ -207,7 +209,7 @@ every imaginary norm twist either to be a norm twist on its good ideals (coverin
 characters and their twists) or to have cancellation. -/
 structure UnitaryCancelling (χ : UnitaryIdealWeight K) : Prop where
   /-- `χ` is not a pure imaginary norm twist `N(I) ^ (u * I)` on its good ideals. -/
-  not_normTwist : ∀ u : ℝ, ¬ χ.1.IsNormTwistOnGood u
+  not_normTwist : ∀ u : ℝ, ¬ χ.val.IsNormTwistOnGood u
   /-- `χ` has ideal partial-sum cancellation. -/
   cancellation : HasCancellation χ
   /-- The conjugate weight `χ.conj` has ideal partial-sum cancellation. -/
@@ -217,7 +219,7 @@ structure UnitaryCancelling (χ : UnitaryIdealWeight K) : Prop where
   /-- For every `t`, the square of `imaginaryNormTwist χ t` is either a norm twist on its good
   ideals or itself has cancellation. -/
   square_twist : ∀ t : ℝ,
-    (∃ u : ℝ, (imaginaryNormTwist χ t ^ 2).1.IsNormTwistOnGood u) ∨
+    (∃ u : ℝ, (imaginaryNormTwist χ t ^ 2).val.IsNormTwistOnGood u) ∨
       HasCancellation (imaginaryNormTwist χ t ^ 2)
 
 /-- Smart constructor for `UnitaryCancelling`: `cancellation`, `cancellation_conj`, and
@@ -225,7 +227,7 @@ structure UnitaryCancelling (χ : UnitaryIdealWeight K) : Prop where
 theorem UnitaryCancelling.of_cancellation_normTwist {χ : UnitaryIdealWeight K}
     (hcanc : ∀ t : ℝ, HasCancellation (imaginaryNormTwist χ t))
     (hsq : ∀ t : ℝ,
-      (∃ u : ℝ, (imaginaryNormTwist χ t ^ 2).1.IsNormTwistOnGood u) ∨
+      (∃ u : ℝ, (imaginaryNormTwist χ t ^ 2).val.IsNormTwistOnGood u) ∨
         HasCancellation (imaginaryNormTwist χ t ^ 2)) :
     UnitaryCancelling χ := by
   have h0 : HasCancellation χ := by simpa using hcanc 0
@@ -288,12 +290,12 @@ theorem UnitaryCancelling.restrictAway {χ : UnitaryIdealWeight K} (hχ : Unitar
 
 /-- A weight that is a pure norm twist on its good ideals never satisfies `UnitaryCancelling`. -/
 theorem not_unitaryCancelling_of_isNormTwistOnGood {χ : UnitaryIdealWeight K} {u : ℝ}
-    (hχ : χ.1.IsNormTwistOnGood u) : ¬ UnitaryCancelling χ :=
+    (hχ : χ.val.IsNormTwistOnGood u) : ¬ UnitaryCancelling χ :=
   fun h ↦ h.not_normTwist u hχ
 
 /-- A weight trivial on its good ideals never satisfies `UnitaryCancelling`. -/
 theorem not_unitaryCancelling_of_isTrivialOnGood {χ : UnitaryIdealWeight K}
-    (hχ : χ.1.IsTrivialOnGood) : ¬ UnitaryCancelling χ :=
+    (hχ : χ.val.IsTrivialOnGood) : ¬ UnitaryCancelling χ :=
   not_unitaryCancelling_of_isNormTwistOnGood
     ((MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr hχ)
 
@@ -312,7 +314,7 @@ of a `UnitaryCancelling` weight `χ` does not vanish at `s`, except possibly on 
 `L(χ ^ 2, ·)` has a pole at `2 s - 1 = 1 + 2 i Im s`). -/
 theorem UnitaryCancelling.continuedLFunctionOfWeight_ne_zero {χ : UnitaryIdealWeight K}
     (hχ : UnitaryCancelling χ) {s : ℂ} (hs : 1 ≤ s.re)
-    (hsq : s.re = 1 → ¬ (χ ^ 2).1.IsNormTwistOnGood (2 * s.im)) :
+    (hsq : s.re = 1 → ¬ (χ ^ 2).val.IsNormTwistOnGood (2 * s.im)) :
     continuedLFunctionOfWeight χ s ≠ 0 := by
   rcases hs.lt_or_eq with hs_lt | hs_eq
   · exact continuedLFunctionOfWeight_ne_zero_of_one_lt_re χ hs_lt
@@ -332,14 +334,14 @@ theorem UnitaryCancelling.continuedLFunctionOfWeight_ne_zero {χ : UnitaryIdealW
 `continuedLFunctionOfWeight χ` has no zeros anywhere on `Re s ≥ 1`. -/
 theorem UnitaryCancelling.continuedLFunctionOfWeight_ne_zero_of_not_isNormTwistOnGood_sq
     {χ : UnitaryIdealWeight K} (hχ : UnitaryCancelling χ)
-    (hsq : ∀ u : ℝ, ¬ (χ ^ 2).1.IsNormTwistOnGood u) {s : ℂ} (hs : 1 ≤ s.re) :
+    (hsq : ∀ u : ℝ, ¬ (χ ^ 2).val.IsNormTwistOnGood u) {s : ℂ} (hs : 1 ≤ s.re) :
     continuedLFunctionOfWeight χ s ≠ 0 :=
   hχ.continuedLFunctionOfWeight_ne_zero hs fun _ ↦ hsq (2 * s.im)
 
 /-- If `χ` satisfies `UnitaryCancelling` and `χ ^ 2` is trivial on its good ideals (the quadratic
 case), then `continuedLFunctionOfWeight χ` has no zeros on `Re s ≥ 1` away from `s = 1`. -/
 theorem UnitaryCancelling.continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq
-    {χ : UnitaryIdealWeight K} (hχ : UnitaryCancelling χ) (hsq : (χ ^ 2).1.IsTrivialOnGood)
+    {χ : UnitaryIdealWeight K} (hχ : UnitaryCancelling χ) (hsq : (χ ^ 2).val.IsTrivialOnGood)
     {s : ℂ} (hs : 1 ≤ s.re) (hs1 : s ≠ 1) :
     continuedLFunctionOfWeight χ s ≠ 0 :=
   TauCeti.continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq hχ.cancellation hsq hs hs1
@@ -357,7 +359,7 @@ products and sends inverses to conjugates, and every imaginary norm twist of eve
 member has cancellation. -/
 structure IsUnitaryCharacterFamily (w : G → UnitaryIdealWeight K) : Prop where
   /-- The identity member `w 1` equals `1` on every good ideal (and vanishes off them). -/
-  isTrivialOnGood_one : (w 1).1.IsTrivialOnGood
+  isTrivialOnGood_one : (w 1).val.IsTrivialOnGood
   /-- Pointwise multiplication of weights represents group multiplication. -/
   map_mul : ∀ g h : G, w (g * h) = w g * w h
   /-- Complex conjugation of weights represents group inversion. -/
@@ -370,30 +372,30 @@ namespace IsUnitaryCharacterFamily
 /-- The identity member `w 1` of a unitary character family takes the value `1` on every good
 ideal. -/
 theorem one_apply_eq_one_of_isGood {w : G → UnitaryIdealWeight K} (hw : IsUnitaryCharacterFamily w)
-    {I : Ideal (𝓞 K)} (hI : (w 1).1.IsGood I) : (w 1).1 I = 1 :=
+    {I : Ideal (𝓞 K)} (hI : (w 1).val.IsGood I) : (w 1).val I = 1 :=
   hw.isTrivialOnGood_one.apply_eq_one hI
 
 private theorem badPrimes_eq_of_mul {w : G → UnitaryIdealWeight K}
     (hmul : ∀ g h : G, w (g * h) = w g * w h) (g : G) :
-    (w g).1.badPrimes = (w 1).1.badPrimes := by
+    (w g).val.badPrimes = (w 1).val.badPrimes := by
   apply Set.Subset.antisymm
-  · have h1 : (w 1).1.badPrimes = (w g).1.badPrimes ∪ (w g⁻¹).1.badPrimes := by
+  · have h1 : (w 1).val.badPrimes = (w g).val.badPrimes ∪ (w g⁻¹).val.badPrimes := by
       rw [← MultiplicativeIdealWeight.badPrimes_mul, ← UnitaryIdealWeight.val_mul, ← hmul,
         mul_inv_cancel]
     exact h1 ▸ Set.subset_union_left
-  · have hg : (w g).1.badPrimes = (w g).1.badPrimes ∪ (w 1).1.badPrimes := by
+  · have hg : (w g).val.badPrimes = (w g).val.badPrimes ∪ (w 1).val.badPrimes := by
       rw [← MultiplicativeIdealWeight.badPrimes_mul, ← UnitaryIdealWeight.val_mul, ← hmul,
         mul_one]
     exact hg ▸ Set.subset_union_right
 
 /-- All members of a unitary character family share the same set of bad primes. -/
 theorem badPrimes_eq {w : G → UnitaryIdealWeight K} (hw : IsUnitaryCharacterFamily w) (g : G) :
-    (w g).1.badPrimes = (w 1).1.badPrimes :=
+    (w g).val.badPrimes = (w 1).val.badPrimes :=
   badPrimes_eq_of_mul hw.map_mul g
 
 /-- Smart constructor for `IsUnitaryCharacterFamily`: conjugation compatibility `(w g).conj = w g⁻¹`
 follows automatically from unitarity, `isTrivialOnGood_one`, and `map_mul`. -/
-theorem of_mul {w : G → UnitaryIdealWeight K} (hone : (w 1).1.IsTrivialOnGood)
+theorem of_mul {w : G → UnitaryIdealWeight K} (hone : (w 1).val.IsTrivialOnGood)
     (hmul : ∀ g h : G, w (g * h) = w g * w h)
     (hcanc : ∀ {g : G}, g ≠ 1 → ∀ t : ℝ, HasCancellation (imaginaryNormTwist (w g) t)) :
     IsUnitaryCharacterFamily w := by
@@ -401,18 +403,19 @@ theorem of_mul {w : G → UnitaryIdealWeight K} (hone : (w 1).1.IsTrivialOnGood)
     fun g ↦ Subtype.ext (MultiplicativeIdealWeight.ext_heightOneSpectrum fun 𝔭 ↦ ?_), hcanc⟩
   have hbad_g := badPrimes_eq_of_mul hmul g
   have hbad_inv := badPrimes_eq_of_mul hmul g⁻¹
-  by_cases h𝔭 : 𝔭 ∈ (w 1).1.badPrimes
-  · have hg0 : (w g).1 𝔭.asIdeal = 0 := MultiplicativeIdealWeight.mem_badPrimes.mp (hbad_g ▸ h𝔭)
-    have hginv0 : (w g⁻¹).1 𝔭.asIdeal = 0 :=
+  by_cases h𝔭 : 𝔭 ∈ (w 1).val.badPrimes
+  · have hg0 : (w g).val 𝔭.asIdeal = 0 :=
+      MultiplicativeIdealWeight.mem_badPrimes.mp (hbad_g ▸ h𝔭)
+    have hginv0 : (w g⁻¹).val 𝔭.asIdeal = 0 :=
       MultiplicativeIdealWeight.mem_badPrimes.mp (hbad_inv ▸ h𝔭)
     simp [hg0, hginv0]
-  · have hgood1 : (w 1).1.IsGood 𝔭.asIdeal := Ideal.isPrimeTo_asIdeal_iff.mpr h𝔭
-    have h𝔭g : 𝔭 ∉ (w g).1.badPrimes := hbad_g ▸ h𝔭
-    have hprod : (w g).1 𝔭.asIdeal * (w g⁻¹).1 𝔭.asIdeal = 1 := by
+  · have hgood1 : (w 1).val.IsGood 𝔭.asIdeal := Ideal.isPrimeTo_asIdeal_iff.mpr h𝔭
+    have h𝔭g : 𝔭 ∉ (w g).val.badPrimes := hbad_g ▸ h𝔭
+    have hprod : (w g).val 𝔭.asIdeal * (w g⁻¹).val 𝔭.asIdeal = 1 := by
       rw [← MultiplicativeIdealWeight.mul_apply, ← UnitaryIdealWeight.val_mul, ← hmul,
         mul_inv_cancel, hone.apply_eq_one hgood1]
     rw [UnitaryIdealWeight.val_conj, MultiplicativeIdealWeight.conj_apply,
-      ← Complex.inv_eq_conj ((w g).2 𝔭 h𝔭g), inv_eq_of_mul_eq_one_right hprod]
+      ← Complex.inv_eq_conj ((w g).property 𝔭 h𝔭g), inv_eq_of_mul_eq_one_right hprod]
 
 /-- Positive powers in `G` map to pointwise powers of unitary weights (excluding exponent `0`, where
 `w 1` vanishes at bad primes while `(w g) ^ 0 = 1` does not). -/
@@ -432,7 +435,7 @@ theorem map_sq {w : G → UnitaryIdealWeight K} (hw : IsUnitaryCharacterFamily w
 
 /-- Only the identity member of a unitary character family can be trivial on its good ideals. -/
 theorem eq_one_of_isTrivialOnGood {w : G → UnitaryIdealWeight K} (hw : IsUnitaryCharacterFamily w)
-    {g : G} (hg : (w g).1.IsTrivialOnGood) : g = 1 := by
+    {g : G} (hg : (w g).val.IsTrivialOnGood) : g = 1 := by
   by_contra hne
   exact not_hasCancellation_of_isTrivialOnGood hg (by simpa using hw.cancellation_normTwist hne 0)
 
@@ -442,7 +445,7 @@ theorem injective {w : G → UnitaryIdealWeight K} (hw : IsUnitaryCharacterFamil
   intro g h hgh
   refine mul_inv_eq_one.mp
     (hw.eq_one_of_isTrivialOnGood (MultiplicativeIdealWeight.isTrivialOnGood_iff.mpr fun I hI ↦ ?_))
-  have hIh : (w h).1.IsGood I := by
+  have hIh : (w h).val.IsGood I := by
     rwa [MultiplicativeIdealWeight.IsGood, hw.badPrimes_eq h, ← hw.badPrimes_eq (g * h⁻¹)]
   rw [hw.map_mul, ← hw.conj_eq_map_inv, hgh, UnitaryIdealWeight.val_mul,
     MultiplicativeIdealWeight.mul_apply, UnitaryIdealWeight.val_conj,
@@ -510,7 +513,7 @@ theorem continuedLFunctionOfWeight_ne_zero {w : G → UnitaryIdealWeight K}
     continuedLFunctionOfWeight (w g) s ≠ 0 := by
   rcases eq_or_ne (g ^ 2) 1 with hg2 | hg2
   · have hs1 : s ≠ 1 := hquad.resolve_left (not_not.mpr hg2)
-    have htriv : (w g ^ 2).1.IsTrivialOnGood := by
+    have htriv : (w g ^ 2).val.IsTrivialOnGood := by
       rw [← hw.map_sq, hg2]
       exact hw.isTrivialOnGood_one
     exact (hw.unitaryCancelling hg).continuedLFunctionOfWeight_ne_zero_of_isTrivialOnGood_sq

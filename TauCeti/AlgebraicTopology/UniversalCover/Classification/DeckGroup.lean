@@ -35,6 +35,10 @@ Taking `H = ⊥` recovers the deck group of the universal cover itself; taking `
   attached to `H` is `N(H) ⧸ H`.**
 * `TauCeti.UniversalCover.deckSubgroupQuotientProjEquivOfNormal`: for normal `H` this reads
   `π₁(X, x₀) ⧸ H`.
+* `TauCeti.UniversalCover.deckSubgroupQuotientProjKerEquivRange`: for the kernel of a
+  homomorphism `φ` out of `π₁(X, x₀)` this reads `φ.range`.
+* `TauCeti.UniversalCover.deckSubgroupQuotientProjKerEquivOfSurjective`: for the kernel of a
+  surjective homomorphism `φ : π₁(X, x₀) →* G` this reads `G`.
 
 ## References
 
@@ -71,7 +75,7 @@ to the class of `g • e`. -/
 @[simp]
 theorem deckSubgroupQuotientProjEquiv_mk_apply
     (g : Subgroup.normalizer (H : Set (FundamentalGroup X x₀))) (e : UniversalCover x₀) :
-    (deckSubgroupQuotientProjEquiv x₀ H (QuotientGroup.mk g)).1 (Quotient.mk'' e) =
+    (deckSubgroupQuotientProjEquiv x₀ H (QuotientGroup.mk g)).val (Quotient.mk'' e) =
       Quotient.mk'' ((g : FundamentalGroup X x₀) • e) := by
   simpa [deckSubgroupQuotientProjEquiv] using
     (isQuotientCoveringMap (x₀ := x₀)).normalizerDeckHom_apply
@@ -83,7 +87,7 @@ class of `e` to the class of `g⁻¹ • e`. -/
 @[simp]
 theorem deckSubgroupQuotientProjEquiv_mk_symm_apply
     (g : Subgroup.normalizer (H : Set (FundamentalGroup X x₀))) (e : UniversalCover x₀) :
-    (deckSubgroupQuotientProjEquiv x₀ H (QuotientGroup.mk g)).1.symm (Quotient.mk'' e) =
+    (deckSubgroupQuotientProjEquiv x₀ H (QuotientGroup.mk g)).val.symm (Quotient.mk'' e) =
       Quotient.mk'' ((g : FundamentalGroup X x₀)⁻¹ • e) := by
   simpa [deckSubgroupQuotientProjEquiv] using
     (isQuotientCoveringMap (x₀ := x₀)).normalizerDeckHom_symm_apply
@@ -104,7 +108,7 @@ def deckSubgroupQuotientProjEquivOfNormal [H.Normal] :
 @[simp]
 theorem deckSubgroupQuotientProjEquivOfNormal_mk_apply [H.Normal]
     (g : FundamentalGroup X x₀) (e : UniversalCover x₀) :
-    (deckSubgroupQuotientProjEquivOfNormal x₀ H (QuotientGroup.mk g)).1
+    (deckSubgroupQuotientProjEquivOfNormal x₀ H (QuotientGroup.mk g)).val
         (Quotient.mk'' e) = Quotient.mk'' (g • e) := by
   simpa [deckSubgroupQuotientProjEquivOfNormal] using
     (isQuotientCoveringMap (x₀ := x₀)).deckHomOfNormal_apply
@@ -116,11 +120,68 @@ the class of `e` to the class of `g⁻¹ • e`. -/
 @[simp]
 theorem deckSubgroupQuotientProjEquivOfNormal_mk_symm_apply [H.Normal]
     (g : FundamentalGroup X x₀) (e : UniversalCover x₀) :
-    (deckSubgroupQuotientProjEquivOfNormal x₀ H (QuotientGroup.mk g)).1.symm
+    (deckSubgroupQuotientProjEquivOfNormal x₀ H (QuotientGroup.mk g)).val.symm
         (Quotient.mk'' e) = Quotient.mk'' (g⁻¹ • e) := by
   simpa [deckSubgroupQuotientProjEquivOfNormal] using
     (isQuotientCoveringMap (x₀ := x₀)).deckHomOfNormal_symm_apply
       (isQuotientCoveringMap_subgroupQuotientMap x₀ H)
       (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H) g e
+
+section Ker
+
+variable {G : Type*} [Group G] (φ : FundamentalGroup X x₀ →* G)
+
+/-- **The deck group of the cover attached to the kernel of `φ : π₁(X, x₀) →* G` is the range
+of `φ`**: the deck transformation of the class of `g` is labelled by `φ g`. -/
+def deckSubgroupQuotientProjKerEquivRange : deck (subgroupQuotientProj x₀ φ.ker) ≃* φ.range :=
+  (deckSubgroupQuotientProjEquivOfNormal x₀ φ.ker).symm.trans
+    (QuotientGroup.quotientKerEquivRange φ)
+
+/-- The deck transformation of the class of `g` is labelled by `φ g`. -/
+@[simp]
+theorem deckSubgroupQuotientProjKerEquivRange_deckSubgroupQuotientProjEquivOfNormal_mk
+    (g : FundamentalGroup X x₀) :
+    deckSubgroupQuotientProjKerEquivRange x₀ φ
+        (deckSubgroupQuotientProjEquivOfNormal x₀ φ.ker (QuotientGroup.mk g)) =
+      φ.rangeRestrict g := by
+  simp [deckSubgroupQuotientProjKerEquivRange, Subtype.ext_iff]
+
+/-- The deck transformation labelled by `φ g` sends the class of `e` to the class of `g • e`. -/
+@[simp]
+theorem deckSubgroupQuotientProjKerEquivRange_symm_rangeRestrict_apply_mk
+    (g : FundamentalGroup X x₀) (e : UniversalCover x₀) :
+    ((deckSubgroupQuotientProjKerEquivRange x₀ φ).symm (φ.rangeRestrict g)).val
+        (Quotient.mk'' e) = Quotient.mk'' (g • e) := by
+  rw [← deckSubgroupQuotientProjKerEquivRange_deckSubgroupQuotientProjEquivOfNormal_mk,
+    MulEquiv.symm_apply_apply, deckSubgroupQuotientProjEquivOfNormal_mk_apply]
+
+/-- **The deck group of the cover attached to the kernel of a surjective `φ : π₁(X, x₀) →* G` is
+`G`**: the deck transformation of the class of `g` is labelled by `φ g`. -/
+def deckSubgroupQuotientProjKerEquivOfSurjective (hφ : Function.Surjective φ) :
+    deck (subgroupQuotientProj x₀ φ.ker) ≃* G :=
+  (deckSubgroupQuotientProjEquivOfNormal x₀ φ.ker).symm.trans
+    (QuotientGroup.quotientKerEquivOfSurjective φ hφ)
+
+/-- For surjective `φ`, the deck transformation of the class of `g` is labelled by `φ g`. -/
+@[simp]
+theorem deckSubgroupQuotientProjKerEquivOfSurjective_deckSubgroupQuotientProjEquivOfNormal_mk
+    (hφ : Function.Surjective φ) (g : FundamentalGroup X x₀) :
+    deckSubgroupQuotientProjKerEquivOfSurjective x₀ φ hφ
+        (deckSubgroupQuotientProjEquivOfNormal x₀ φ.ker (QuotientGroup.mk g)) = φ g := by
+  rw [deckSubgroupQuotientProjKerEquivOfSurjective, MulEquiv.trans_apply,
+    MulEquiv.symm_apply_apply, TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+
+/-- For surjective `φ`, the deck transformation labelled by `φ g` sends the class of `e` to the
+class of `g • e`. -/
+@[simp]
+theorem deckSubgroupQuotientProjKerEquivOfSurjective_symm_apply_mk
+    (hφ : Function.Surjective φ) (g : FundamentalGroup X x₀) (e : UniversalCover x₀) :
+    ((deckSubgroupQuotientProjKerEquivOfSurjective x₀ φ hφ).symm (φ g)).val
+        (Quotient.mk'' e) = Quotient.mk'' (g • e) := by
+  rw [← deckSubgroupQuotientProjKerEquivOfSurjective_deckSubgroupQuotientProjEquivOfNormal_mk
+      _ _ hφ,
+    MulEquiv.symm_apply_apply, deckSubgroupQuotientProjEquivOfNormal_mk_apply]
+
+end Ker
 
 end TauCeti.UniversalCover

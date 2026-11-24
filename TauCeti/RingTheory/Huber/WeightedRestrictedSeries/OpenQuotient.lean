@@ -78,7 +78,7 @@ theorem _root_.IsOpenQuotientMap.weightedMap [(𝓝 (0 : A)).IsCountablyGenerate
   -- Correct the restricted lift only at the finitely many coefficients outside the U bound.
   classical
   obtain ⟨L', hL', hL'U, hcoeff⟩ :=
-    (mem_weightedRestrictedSubring.mp L.2).exists_coeff_mem_weightMul U u huU
+    (mem_weightedRestrictedSubring.mp L.property).exists_coeff_mem_weightMul U u huU
   have hL'φ : ∀ ν, φ (MvPowerSeries.coeff ν L') =
       MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) := by
     intro ν

@@ -49,6 +49,9 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
   the common testing step against `ψ² u`, for any right-hand side.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le`: the Caccioppoli
   inequality.
+* `TauCeti.PDE.exists_norm_gradient_restrictL_ball_le`: the homogeneous concentric-ball
+  estimate for additive Haar measures in native Sobolev norms, with multiplier
+  `(2Λ/λ) c / (R - ρ)`, where `c > 0` depends only on the dimension.
 
 ## References
 
@@ -58,6 +61,9 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
   §8.2 and §8.6.
 * M. Giaquinta, L. Martinazzi, *An Introduction to the Regularity Theory for Elliptic Systems,
   Harmonic Maps and Minimal Graphs*, Theorem 4.4.
+* The native Sobolev norm estimate is adapted from Otis Chodosh's formalization,
+  `exists_norm_gradient_restrictL_ball_le` in
+  [`ForTauCeti/Analysis/PDE/Caccioppoli/Norm.lean`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/fe6fa284d9cc53f70c80ba9c9be619cb13ab1b89/ForTauCeti/Analysis/PDE/Caccioppoli/Norm.lean).
 -/
 
 public section
@@ -344,17 +350,19 @@ variable [DecidableEq ι]
 
 /-- **The testing step of the Caccioppoli inequality**, for any right-hand side. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `u ∈ H¹(Ω)`, and let `ψ` be
-smooth and compactly supported in `Ω`. The test function `v = ψ² u` lies in `H¹₀(Ω)`, has
-`∇v = ψ (ψ ∇u + u ∇ψ) + ψ u ∇ψ` almost everywhere, and
+smooth and compactly supported, either with support in `Ω` or with `u ∈ H¹₀(Ω)`. The test function
+`v = ψ² u` lies in `H¹₀(Ω)`, has `∇v = ψ (ψ ∇u + u ∇ψ) + ψ u ∇ψ` almost everywhere, and
 
 `∫_Ω ψ² ‖∇u‖² ≤ (2Λ/λ)² ∫_Ω ‖∇ψ‖² u² + (2/λ) a(u, v)`.
 
-The caller evaluates `a(u, v)` through the weak form of its equation. -/
+The second alternative allows cutoffs whose support meets `∂Ω`, as in estimates up to the boundary
+for solutions of the Dirichlet problem. The caller evaluates `a(u, v)` through the weak form of
+its equation. -/
 theorem UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (u : W1p mu Omega 2)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) ∨ u ∈ w1p0Submodule mu Omega 2) :
     ∃ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, W1p.value (v : W1p mu Omega 2) x = ψ x ^ 2 * W1p.value u x) ∧
       (∀ᵐ x ∂mu.restrict Omega, W1p.gradient (v : W1p mu Omega 2) x =
@@ -369,9 +377,12 @@ theorem UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energy
   -- The test function `ψ² u = ψ (ψ u)`, which lies in `H¹₀(Ω)`.
   set w := W1p.contDiffSMul ψ hψ hM hψM' hgradM' u
   set v := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
-  have hv : v ∈ w1p0Submodule mu Omega 2 :=
-    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM' hcpt
-      hts w
+  have hv : v ∈ w1p0Submodule mu Omega 2 := by
+    rcases hts with hts | hu0
+    · exact W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM'
+        hcpt hts w
+    · exact W1p.contDiffSMul_mem_w1p0Submodule hψ hM hψM' hgradM'
+        (W1p.contDiffSMul_mem_w1p0Submodule hψ hM hψM' hgradM' hu0)
   have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0) (gamma := 0)
     ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) u v
@@ -426,7 +437,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
       (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2 ∂mu
         + 2 / lam * ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu := by
   obtain ⟨v, hvalue, -, hstep⟩ :=
-    h.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha u hψ hcpt hts
+    h.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha u hψ hcpt (.inl hts)
   -- The energy is `∫_Ω ψ² f u`, by the weak equation.
   have hF : energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu := by
@@ -436,6 +447,62 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
     rw [hx]
     ring
   rwa [hF] at hstep
+
+local notation "E" => EuclideanSpace ℝ ι
+
+open Metric in
+/-- **The homogeneous Caccioppoli estimate in native Sobolev norms.** For concentric balls
+`B(p, ρ) ⊆ B(p, R) ⊆ Ω` with `ρ < R`, an additive Haar measure, and a uniformly elliptic
+coefficient field that is a.e. strongly measurable on `Ω`, a homogeneous weak solution satisfies
+
+`‖∇w‖_{L²(B(p, ρ))} ≤ (2Λ/λ) c / (R - ρ) * ‖w‖_{L²(B(p, R))}`.
+
+Here `c > 0` depends only on the dimension. The same constant works for all additive Haar
+measures, coefficient fields satisfying these hypotheses, solutions, domains and radii;
+the full multiplier also contains the ellipticity factor `2Λ/λ`.
+Both norms are those of the native Sobolev restrictions. This is the homogeneous specialization
+of `TauCeti.PDE.UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1`
+and `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff`. -/
+theorem exists_norm_gradient_restrictL_ball_le :
+    ∃ c : ℝ, 0 < c ∧ ∀ {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
+      {a : E → Matrix ι ι ℝ} {lam Lam : ℝ} {w : W1p μ Ω 2} {p : E} {ρ R : ℝ},
+      UniformlyEllipticOn (Ω : Set E) a lam Lam →
+      AEStronglyMeasurable a (μ.restrict Ω) →
+      (∀ v : W1p0 μ Ω 2, energyFormH1 a 0 0 w (v : W1p μ Ω 2) = 0) →
+      ∀ (hρR : ρ < R) (hR : (⟨ball p R, isOpen_ball⟩ : Opens E) ≤ Ω),
+      ‖W1p.gradient (W1p.restrictL (U := ⟨ball p ρ, isOpen_ball⟩)
+        (by
+          apply SetLike.coe_subset_coe.mp
+          simpa only [Opens.coe_mk] using
+            (ball_subset_ball hρR.le).trans (SetLike.coe_subset_coe.mpr hR)) w)‖ ≤
+        (2 * Lam / lam) * c / (R - ρ) * ‖W1p.value (W1p.restrictL hR w)‖ := by
+  classical
+  obtain ⟨c, hc, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
+  refine ⟨c, hc, ?_⟩
+  intro μ _ Ω a lam Lam w p ρ R hell ha hw hρR hR
+  have hbound := hC w (A := (2 * Lam / lam) ^ 2) (B := 0) (x₀ := p)
+    (r := ρ) (R := R) (sq_nonneg _) le_rfl hρR
+    (SetLike.coe_subset_coe.mpr hR) (fun ψ hψ hcpt hts ↦ by
+      obtain ⟨v, -, -, hstep⟩ :=
+        hell.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha w hψ hcpt (.inl hts)
+      simpa only [hw v, mul_zero, add_zero, zero_mul] using hstep)
+  have hinnerLe : (⟨ball p ρ, isOpen_ball⟩ : Opens E) ≤ Ω := by
+    apply SetLike.coe_subset_coe.mp
+    simpa only [Opens.coe_mk] using
+      (ball_subset_ball hρR.le).trans (SetLike.coe_subset_coe.mpr hR)
+  have hinner :=
+    W1p.setIntegral_norm_gradient_rpow_eq_norm_gradient_restrictL_rpow hinnerLe (by simp) w
+  have houter := W1p.setIntegral_norm_value_rpow_eq_norm_value_restrictL_rpow hR (by simp) w
+  simp only [Opens.coe_mk, ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs,
+    sq_abs] at hinner houter
+  rw [hinner, houter] at hbound
+  simp only [add_zero] at hbound
+  have hlam := hell.pos
+  have hLam := hell.upper_nonneg
+  apply (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp
+  calc
+    _ ≤ _ := hbound
+    _ = _ := by ring
 
 end PDE
 

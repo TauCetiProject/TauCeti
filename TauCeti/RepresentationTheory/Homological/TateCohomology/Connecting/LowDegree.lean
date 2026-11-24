@@ -111,7 +111,7 @@ theorem exists_δ_neg_one_eq_H0π {S : ShortComplex (Rep R G)} (hS : S.ShortExac
     have hn := congrArg (fun f : S.X₂ ⟶ S.X₃ => f.hom y) (Rep.norm_comm S.g)
     calc
       _ = S.X₃.ρ.norm (S.g.hom y) := by simpa using hn.symm
-      _ = 0 := by rw [hy]; exact z.2
+      _ = 0 := by rw [hy]; exact z.property
   have he : Function.Exact S.f.hom S.g.hom :=
     (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp
       (hS.exact.map (forget₂ (Rep R G) (ModuleCat R)))

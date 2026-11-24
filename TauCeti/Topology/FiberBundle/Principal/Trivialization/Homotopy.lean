@@ -50,7 +50,7 @@ structure Homotopy (τ υ : GlobalTrivialization G P) where
   map_one : toFun 1 = υ
   /-- Joint continuity of the forward coordinates. -/
   continuous_toFun : Continuous fun x : I × TotalSpace G P ↦
-    (x.2.proj, (toFun x.1).equivAt x.2.proj x.2.2)
+    (x.2.proj, (toFun x.1).equivAt x.2.proj x.2.snd)
   /-- Joint continuity of the inverse coordinates. -/
   continuous_invFun : Continuous fun x : I × (B × G) ↦
     (⟨x.2.1, ((toFun x.1).equivAt x.2.1).symm x.2.2⟩ : TotalSpace G P)
@@ -169,14 +169,14 @@ for any subset of the base, without a closedness assumption. -/
 def homotopyRelEquiv (S : Set B) : HomotopyRel τ υ S ≃
     ContinuousMap.HomotopyRel (ρ.transition τ) (ρ.transition υ) S where
   toFun H :=
-    { toHomotopy := H.1.toGaugeHomotopy ρ
+    { toHomotopy := H.val.toGaugeHomotopy ρ
       prop' t b hb := by
-        exact (Homotopy.toGaugeHomotopy_apply ρ H.1 t b).trans
-          ((H.2 t b hb (ρ.sectionValue b)).trans (transition_apply ρ τ b).symm) }
+        exact (Homotopy.toGaugeHomotopy_apply ρ H.val t b).trans
+          ((H.property t b hb (ρ.sectionValue b)).trans (transition_apply ρ τ b).symm) }
   invFun F := ⟨Homotopy.ofGaugeHomotopy ρ F.toHomotopy, fun t b hb p ↦ by
     rw [Homotopy.equivAt_ofGaugeHomotopy, ContinuousMap.HomotopyWith.coe_toHomotopy,
       F.eq_fst t hb, ← equivAt_gauge, gauge_transition]⟩
-  left_inv H := Subtype.ext ((Homotopy.gaugeEquiv ρ).left_inv H.1)
+  left_inv H := Subtype.ext ((Homotopy.gaugeEquiv ρ).left_inv H.val)
   right_inv F := by
     apply ContinuousMap.HomotopyWith.ext
     intro x
@@ -185,14 +185,14 @@ def homotopyRelEquiv (S : Set B) : HomotopyRel τ υ S ≃
 /-- Relative gauge homotopies read the current coordinates on the reference section. -/
 @[simp]
 theorem homotopyRelEquiv_apply (S : Set B) (H : HomotopyRel τ υ S) (t : I) (b : B) :
-    homotopyRelEquiv ρ τ υ S H (t, b) = (H.1.toFun t).equivAt b (ρ.sectionValue b) :=
+    homotopyRelEquiv ρ τ υ S H (t, b) = (H.val.toFun t).equivAt b (ρ.sectionValue b) :=
   (rfl)
 
 /-- The inverse relative correspondence retains the underlying gauge homotopy. -/
 @[simp]
 theorem homotopyRelEquiv_symm_apply (S : Set B)
     (F : ContinuousMap.HomotopyRel (ρ.transition τ) (ρ.transition υ) S) :
-    ((homotopyRelEquiv ρ τ υ S).symm F).1 = Homotopy.ofGaugeHomotopy ρ F.toHomotopy :=
+    ((homotopyRelEquiv ρ τ υ S).symm F).val = Homotopy.ofGaugeHomotopy ρ F.toHomotopy :=
   (rfl)
 
 /-- Two global trivializations are homotopic through equivariant product coordinates with
