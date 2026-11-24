@@ -28,6 +28,10 @@ gives the polynomial ring over `B` in the same variables
 * `AlgebraicIndependent.one_tmul`: flat scalar extension preserves algebraic independence.
 * `AlgebraicIndependent.adjoinTensorAlgEquiv`: for an algebraically independent set `s`,
   `Algebra.adjoin R s ⊗[R] B ≃ₐ[R] MvPolynomial s B`.
+* `AlgebraicIndependent.adjoinTensorAlgEquiv_tmul`,
+  `AlgebraicIndependent.adjoinTensorAlgEquiv_symm_X`,
+  `AlgebraicIndependent.adjoinTensorAlgEquiv_symm_C`: its values on pure tensors and the values of
+  its inverse on variables and constants.
 -/
 
 public section
@@ -63,5 +67,39 @@ noncomputable def adjoinTensorAlgEquiv {R A : Type*} [CommRing R] [CommRing A] [
       (AlgEquiv.refl : B ≃ₐ[R] B)).trans
     ((Algebra.TensorProduct.comm R (MvPolynomial s R) B).trans
       ((MvPolynomial.algebraTensorAlgEquiv R B).restrictScalars R))
+
+section adjoinTensorAlgEquiv
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] {s : Set A}
+  (hs : AlgebraicIndependent R ((↑) : s → A)) {B : Type*} [CommRing B] [Algebra R B]
+
+/-- `adjoinTensorAlgEquiv` sends `x ⊗ₜ b` to `b` times the polynomial over `R` representing `x`,
+with coefficients mapped into `B`. -/
+theorem adjoinTensorAlgEquiv_tmul (x : Algebra.adjoin R s) (b : B) :
+    hs.adjoinTensorAlgEquiv B (x ⊗ₜ b) =
+      b • MvPolynomial.map (algebraMap R B)
+        (hs.repr (Subalgebra.equivOfEq _ _ (by rw [Subtype.range_coe]) x)) := by
+  simp [adjoinTensorAlgEquiv, repr]
+
+/-- The inverse of `adjoinTensorAlgEquiv` sends the variable `X i` to `i ⊗ₜ 1`. -/
+@[simp]
+theorem adjoinTensorAlgEquiv_symm_X (i : s) :
+    (hs.adjoinTensorAlgEquiv B).symm (MvPolynomial.X i) =
+      ⟨i, Algebra.subset_adjoin i.property⟩ ⊗ₜ 1 := by
+  apply (hs.adjoinTensorAlgEquiv B).injective
+  simp only [AlgEquiv.apply_symm_apply, adjoinTensorAlgEquiv_tmul, one_smul, repr,
+    AlgEquiv.coe_toAlgHom]
+  rw [(AlgEquiv.symm_apply_eq (y := MvPolynomial.X i) _).2 (Subtype.ext (by simp)),
+    MvPolynomial.map_X]
+
+/-- The inverse of `adjoinTensorAlgEquiv` sends the constant `C b` to `1 ⊗ₜ b`. -/
+@[simp]
+theorem adjoinTensorAlgEquiv_symm_C (b : B) :
+    (hs.adjoinTensorAlgEquiv B).symm (MvPolynomial.C b) = 1 ⊗ₜ b := by
+  apply (hs.adjoinTensorAlgEquiv B).injective
+  rw [AlgEquiv.apply_symm_apply, adjoinTensorAlgEquiv_tmul, map_one, map_one, map_one,
+    MvPolynomial.smul_eq_C_mul, mul_one]
+
+end adjoinTensorAlgEquiv
 
 end AlgebraicIndependent
