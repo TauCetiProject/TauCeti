@@ -212,17 +212,20 @@ theorem continuous_nextCollisionEquiv : Continuous χ.nextCollisionEquiv := by
   funext x
   ext <;> simp
 
+/-- The time reversal `v ↦ -v` of tangential components is continuous on `(-1, 1)`. -/
+private theorem continuous_neg_Ioo :
+    Continuous fun v : Ioo (-1 : ℝ) 1 ↦
+      (⟨-v, by linarith [v.property.2], by linarith [v.property.1]⟩ : Ioo (-1 : ℝ) 1) :=
+  continuous_subtypeVal.neg.subtype_mk _
+
 /-- The inverse `τ⁻¹ ∘ ι ∘ B ∘ ι` of the next-collision map is continuous. -/
 theorem continuous_nextCollisionEquiv_symm : Continuous χ.nextCollisionEquiv.symm := by
-  let ι : Ioo (-1 : ℝ) 1 → Ioo (-1 : ℝ) 1 := fun v ↦
-    ⟨-v, by linarith [v.property.2], by linarith [v.property.1]⟩
-  have hι : Continuous ι := continuous_subtypeVal.neg.subtype_mk _
   convert ((continuous_fst.sub (continuous_const (y := χ.period))).prodMk
-    (hι.comp continuous_snd)).comp
-      (χ.continuous_nextCollisionEquiv.comp (continuous_fst.prodMk (hι.comp continuous_snd)))
-    using 1
+    (continuous_neg_Ioo.comp continuous_snd)).comp
+      (χ.continuous_nextCollisionEquiv.comp
+        (continuous_fst.prodMk (continuous_neg_Ioo.comp continuous_snd))) using 1
   funext x
-  ext <;> simp [ι]
+  ext <;> simp
 
 /-- The next-collision map is a homeomorphism of the strip `ℝ × (-1, 1)`. -/
 def nextCollisionHomeomorph : ℝ × Ioo (-1 : ℝ) 1 ≃ₜ ℝ × Ioo (-1 : ℝ) 1 where
@@ -255,14 +258,11 @@ theorem continuous_billiardMap : Continuous χ.billiardMap := by
 
 /-- The inverse `ι ∘ β ∘ ι` of the billiard map is continuous. -/
 theorem continuous_billiardMap_symm : Continuous χ.billiardMap.symm := by
-  let ι : Ioo (-1 : ℝ) 1 → Ioo (-1 : ℝ) 1 := fun v ↦
-    ⟨-v, by linarith [v.property.2], by linarith [v.property.1]⟩
-  have hι : Continuous ι := continuous_subtypeVal.neg.subtype_mk _
-  convert (continuous_id.prodMap hι).comp
-    (χ.continuous_billiardMap.comp (continuous_id.prodMap hι)) using 1
+  convert (continuous_id.prodMap continuous_neg_Ioo).comp
+    (χ.continuous_billiardMap.comp (continuous_id.prodMap continuous_neg_Ioo)) using 1
   funext ⟨θ, v⟩
   induction θ using QuotientAddGroup.induction_on with | H s => ?_
-  ext <;> simp [ι]
+  ext <;> simp
 
 /-- The billiard map is a homeomorphism of the space of collision states
 `AddCircle L × (-1, 1)`. -/

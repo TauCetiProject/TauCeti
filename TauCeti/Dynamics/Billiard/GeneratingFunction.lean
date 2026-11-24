@@ -12,9 +12,9 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Topology.Order.MonotoneContinuity
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.Dynamics.Billiard.Continuous
 
 /-!
 # The generating function of the billiard map
@@ -425,20 +425,9 @@ theorem image_nextParam_Ioo (s : ℝ) : χ.nextParam s '' Ioo (-1) 1 = Ioo s (s 
   exact ⟨_, χ.inner_deriv_chordDir_mem_Ioo s t, χ.nextParam_inner_deriv_chordDir ht⟩
 
 /-- For fixed `s`, the next collision parameter depends continuously on the tangential component. -/
-theorem continuousOn_nextParam (s : ℝ) : ContinuousOn (χ.nextParam s) (Ioo (-1) 1) := by
-  intro v hv
-  have ht := χ.nextParam_mem_Ioo (s := s) hv
-  -- `-nextParam s` is strictly increasing and maps `(-1, 1)` onto an open interval.
-  have hc : ContinuousAt (fun w ↦ -χ.nextParam s w) v := by
-    refine (χ.strictAntiOn_nextParam s).neg.continuousAt_of_image_mem_nhds
-      (Ioo_mem_nhds hv.1 hv.2) (mem_of_superset (Ioo_mem_nhds (neg_lt_neg ht.2)
-        (neg_lt_neg ht.1)) fun y hy ↦ ?_)
-    obtain ⟨w, hw, hwy⟩ : -y ∈ χ.nextParam s '' Ioo (-1) 1 := by
-      rw [χ.image_nextParam_Ioo]
-      exact ⟨by linarith [hy.2], by linarith [hy.1]⟩
-    exact ⟨w, hw, by simp [hwy]⟩
-  have hc' : ContinuousAt (χ.nextParam s) v := by simpa using hc.neg
-  exact hc'.continuousWithinAt
+theorem continuousOn_nextParam (s : ℝ) : ContinuousOn (χ.nextParam s) (Ioo (-1) 1) :=
+  fun _ hv ↦ ((χ.continuousAt_nextParam hv).comp
+    (continuous_const.prodMk continuous_id).continuousAt).continuousWithinAt
 
 /-- The quotient `ℓ / (√(1 - v²) √(1 - w²))` of the chord length by the sines of the angles of the
 chord with the boundary at the state `(s, v)` and at its next collision is positive. -/
