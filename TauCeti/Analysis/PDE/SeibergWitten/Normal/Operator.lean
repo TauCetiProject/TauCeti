@@ -96,7 +96,7 @@ theorem gaugeFixedFlatOperator_normalPerturbation (x : ℂ → EuclideanSpace �
   rw [normalTargetEquiv_apply]
   refine Prod.ext ?_ (Prod.ext ?_ ?_)
   · rw [gaugeFixedFlatOperator_apply]
-    simpa [z] using flatDeformationGauge_normalModel hQ hkl he h₀ h₂₃ hρ hu₀ x hu₀₁ hy hη'
+    simpa [z] using flatDeformationGauge_normalModel hQ h₀ h₂₃ hρ hu₀ x hu₀₁ hy hη'
   · dsimp only
     set c := (gaugeFixedFlatOperator o ρ e hkl (normalConnection e x) (normalModelSpinor e u₀ x 0)
       (normalModelConnection e y (-η)) (normalModelSpinor e u₀ y (-η)) p).2.1
@@ -131,7 +131,7 @@ theorem gaugeFixedFlatOperator_normalPerturbation (x : ℂ → EuclideanSpace �
       normalFrameSelfDual_def]
   · rw [gaugeFixedFlatOperator_apply, normalFrameNegSpinor_def]
     apply Subtype.ext
-    have hdir := flatDeformationDirac_normalModel hQ hkl he h₀ h₂₃ hu₀ x hy hη'
+    have hdir := flatDeformationDirac_normalModel hQ h₀ h₂₃ hu₀ x hy hη'
     rw [normalModelConnection_zero_right] at hdir
     dsimp only
     rw [hdir]

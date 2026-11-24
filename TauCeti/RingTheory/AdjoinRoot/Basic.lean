@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdjoinRoot
+public import Mathlib.RingTheory.Regular.RegularSequence
 
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
+import TauCeti.RingTheory.Regular.Pair
 
 /-!
 # Complements on `AdjoinRoot`
@@ -35,7 +37,9 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   `AdjoinRoot p → AdjoinRoot (p.map f)` is the extension of the kernel of `f`, so that
   `AdjoinRoot (p.map f)` is the reduction of `AdjoinRoot p` modulo `ker f`.
 * `AdjoinRoot.algHomOfDvd_mk`: for `g ∣ f`, the reduction `AdjoinRoot f →ₐ[R] AdjoinRoot g` sends
-  the class of `p` to the class of `p`.
+  the class of `p` to the class of `p`; `AdjoinRoot.algHomOfDvd_algHomOfDvd` and
+  `AdjoinRoot.algHomOfDvd_self`: these reductions compose, and reduction modulo `f` itself is the
+  identity.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
   evaluation of `p` at the image of the root.
 * `AdjoinRoot.algHomEquiv`: over any commutative ring, the algebra maps out of `AdjoinRoot f`
@@ -48,6 +52,8 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
 * `AdjoinRoot.isUnit_root_X_pow_sub_C`: that root is a unit when `a` is a unit and `n ≠ 0`.
 * `AdjoinRoot.isUnit_mk_iff_isCoprime`: the class of `g` is a unit of `AdjoinRoot f` exactly when
   `f` and `g` are coprime.
+* `AdjoinRoot.exists_of_pow_mul_eq_of_C_mul_X_sub_C`: for any `a, g ∈ R`, a power of `a` carries
+  every element of `R[X]/(aX - g)` to the class of a constant, since `aX = g` there.
 * `AdjoinRoot.isUnit_mk_mul_sub_iff_isCoprime`: modulo a product `p * q`, the class of `p - q` is
   a unit exactly when `p` and `q` are coprime.
 * `AdjoinRoot.mk_modByMonic`: for any relator, a polynomial and its remainder have the same
@@ -80,6 +86,8 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   `AdjoinRoot.finrank_quotient_map_mkQ_span_op_root_X_pow_pow`: the same count for the cyclic
   right modules `M_j`, the quotients of the opposite ring by `op (x ^ j)`, and the quotient of
   `M_j` by the image of `x ^ m`, which has rank `min j m`.
+* `RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_adjoinRoot_C_mul_X_sub_C`: for a weakly
+  regular sequence `a, g` on `R`, multiplication by `a` is injective on `R[X]/(aX - g)`.
 * `Polynomial.quotientSpanEquivAdjoinRoot`, `Polynomial.quotientSpanAlgEquivAdjoinRoot`: the cyclic
   polynomial quotient as an `R`-module and as an `R`-algebra is `AdjoinRoot f`; polynomial scalar
   multiplication becomes multiplication by its image. The two quotients agree definitionally, so
@@ -165,6 +173,28 @@ lemma algHomOfDvd_mk [Algebra R S] {f g : S[X]} (h : g ∣ f) (p : S[X]) :
     algHomOfDvd R f g h (mk f p) = mk g p := by
   simp [algHomOfDvd]
 
+/-- Reducing modulo `g ∣ f` and then modulo `k ∣ g` is reducing modulo `k`. -/
+@[simp]
+lemma algHomOfDvd_algHomOfDvd [Algebra R S] {f g k : S[X]} (hgf : g ∣ f) (hkg : k ∣ g)
+    (x : AdjoinRoot f) :
+    algHomOfDvd R g k hkg (algHomOfDvd R f g hgf x) = algHomOfDvd R f k (hkg.trans hgf) x := by
+  induction x using AdjoinRoot.induction_on with
+  | ih p => simp only [algHomOfDvd_mk]
+
+/-- `AdjoinRoot.algHomOfDvd_algHomOfDvd` as an equality of algebra maps. -/
+@[simp]
+lemma algHomOfDvd_comp_algHomOfDvd [Algebra R S] {f g k : S[X]} (hgf : g ∣ f) (hkg : k ∣ g) :
+    (algHomOfDvd R g k hkg).comp (algHomOfDvd R f g hgf) = algHomOfDvd R f k (hkg.trans hgf) :=
+  AlgHom.ext (algHomOfDvd_algHomOfDvd hgf hkg)
+
+/-- Reducing modulo `f` itself is the identity. -/
+@[simp]
+lemma algHomOfDvd_self [Algebra R S] (f : S[X]) (h : f ∣ f) :
+    algHomOfDvd R f f h = AlgHom.id R (AdjoinRoot f) :=
+  AlgHom.ext fun x ↦ by
+    induction x using AdjoinRoot.induction_on with
+    | ih p => simp only [algHomOfDvd_mk, AlgHom.id_apply]
+
 end Map
 
 /-- An algebra map out of `AdjoinRoot g` sends the class of `p` to the evaluation of `p` at the
@@ -231,6 +261,28 @@ theorem isUnit_root_X_pow_sub_C {n : ℕ} {a : R} (ha : IsUnit a) (hn : n ≠ 0)
 theorem isUnit_mk_iff_isCoprime {f g : R[X]} : IsUnit (mk f g) ↔ IsCoprime f g :=
   -- `mk f` is by definition the quotient map `R[X] →+* R[X] ⧸ span {f}`, as in `mk_surjective`.
   Ideal.Quotient.isUnit_mk_iff.trans <| (Ideal.sup_eq_top_iff_isCoprime g f).trans isCoprime_comm
+
+/-- For any `a, g ∈ R`, a power of `a` carries every element of `R[X] ⧸ (aX - g)` to a constant,
+since `aX = g` there. -/
+theorem exists_of_pow_mul_eq_of_C_mul_X_sub_C {a g : R} (x : AdjoinRoot (C a * X - C g)) :
+    ∃ n : ℕ, ∃ r : R, AdjoinRoot.of _ (a ^ n) * x = AdjoinRoot.of _ r := by
+  induction x using AdjoinRoot.induction_on with | ih f => ?_
+  induction f using Polynomial.induction_on' with
+  | add p q hp hq =>
+    obtain ⟨m, r, hr⟩ := hp
+    obtain ⟨n, s, hs⟩ := hq
+    refine ⟨m + n, a ^ n * r + a ^ m * s, ?_⟩
+    simp only [map_add, map_mul, map_pow] at hr hs ⊢
+    linear_combination AdjoinRoot.of _ a ^ n * hr + AdjoinRoot.of _ a ^ m * hs
+  | monomial k r =>
+    refine ⟨k, r * g ^ k, ?_⟩
+    have hroot : AdjoinRoot.of _ a * AdjoinRoot.root (C a * X - C g) = AdjoinRoot.of _ g := by
+      have h := AdjoinRoot.mk_self (f := C a * X - C g)
+      rwa [map_sub, map_mul, AdjoinRoot.mk_C, AdjoinRoot.mk_X, AdjoinRoot.mk_C, sub_eq_zero] at h
+    rw [← C_mul_X_pow_eq_monomial]
+    simp only [map_mul, map_pow, AdjoinRoot.mk_C, AdjoinRoot.mk_X]
+    rw [← hroot]
+    ring
 
 /-- Modulo a product `p * q`, the class of the difference `p - q` is a unit exactly when `p` and
 `q` are coprime. For a relator `p * (X - C x)` with a linear factor, `p - (X - C x)` is the
@@ -528,5 +580,43 @@ theorem quotientSpanAlgEquivAdjoinRoot_symm_root (f : R[X]) :
   rw [← AdjoinRoot.mk_X, quotientSpanAlgEquivAdjoinRoot_symm_mk]
 
 end Polynomial
+
+section IsWeaklyRegular
+
+open RingTheory.Sequence
+
+variable {R : Type*} [CommRing R] {a g : R}
+
+/-- **`a` stays regular on `R[X] ⧸ (aX - g)`.** If `a, g` is a weakly regular sequence on `R`, that
+is, `a` is a nonzerodivisor on `R` and `g` is a nonzerodivisor on `R ⧸ (a)`, then multiplication
+by `a` is injective on `R[X] ⧸ (aX - g)`. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_adjoinRoot_C_mul_X_sub_C
+    (hag : IsWeaklyRegular R [a, g]) : IsSMulRegular (AdjoinRoot (C a * X - C g)) a := by
+  obtain ⟨ha, hg⟩ := (isWeaklyRegular_cons_iff R a [g]).1 hag
+  rw [isWeaklyRegular_singleton_iff, TauCeti.isSMulRegular_quotSMulTop_iff] at hg
+  refine IsSMulRegular.of_right_eq_zero_of_smul fun x hx ↦ ?_
+  induction x using AdjoinRoot.induction_on with | ih f => ?_
+  rw [Algebra.smul_def, AdjoinRoot.algebraMap_eq, ← AdjoinRoot.mk_C, ← map_mul,
+    AdjoinRoot.mk_eq_zero] at hx
+  obtain ⟨k, hk⟩ := hx
+  -- `g k = a (X k - f)`, so every coefficient of `k` is a multiple of `a`.
+  have hgk : C a * (X * k - f) = C g * k := by
+    linear_combination -hk
+  have hka : k ∈ (Ideal.span {a}).map C := by
+    refine Ideal.mem_map_C_iff.mpr fun n ↦ ?_
+    have hn := congr_arg (fun p : R[X] ↦ p.coeff n) hgk
+    simp only [coeff_C_mul] at hn
+    obtain ⟨y, -, hy⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 (hg _ _ hn)
+    exact Ideal.mem_span_singleton'.mpr ⟨y, by rw [← hy, smul_eq_mul, mul_comm]⟩
+  rw [Ideal.map_span, Set.image_singleton] at hka
+  obtain ⟨k', rfl⟩ := Ideal.mem_span_singleton'.mp hka
+  -- Cancelling `a` in `a f = a ((aX - g) k')` gives `f = (aX - g) k'`.
+  have hf : f = (C a * X - C g) * k' := ha.polynomial (by
+    dsimp only
+    rw [smul_eq_C_mul, smul_eq_C_mul, hk]
+    ring)
+  rw [hf, map_mul, AdjoinRoot.mk_self, zero_mul]
+
+end IsWeaklyRegular
 
 end

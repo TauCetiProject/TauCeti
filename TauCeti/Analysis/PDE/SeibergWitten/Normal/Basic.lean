@@ -38,8 +38,8 @@ Clifford multiplication of a complex covector on `β₀` sees only its `∂`-com
 `∑ₖ y_k c(e_k) β₀ = (y₀ - i y₁) c(e₂) u₀ - (y₂ - i y₃) c(e₀) u₀`,
 
 while on `u₀` it sees only the `∂bar`-components
-(`sum_smul_ι_apply_of_cliffordProjection_apply_eq_self`). The polarization `q'` of the quadratic
-map pairs with a two-form `x` as `⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2`
+(`AlmostComplexStructure.sum_smul_ι_apply_of_bivectorExterior_apply`). The polarization `q'` of
+the quadratic map pairs with a two-form `x` as `⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2`
 (`inner_quadraticTwoFormPolar_eq_re_inner`), and on the two lines its coordinates along
 `e₀ ∧ e₁`, `e₀ ∧ e₂`, `e₀ ∧ e₃` are `Re(conj α f) / 2`, `Im(α conj g) / 2` and `Re(α conj g) / 2`
 for `ψ = α u₀`, `φ = f u₀ + g β₀` (`inner_quadraticTwoFormPolar_ιMulti_zero_one` and its
@@ -575,7 +575,7 @@ variable [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] (hQ : ∀ v, Q v =
   {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀)
   (x : ℂ → EuclideanSpace ℝ (Fin 4))
 
-include hQ hkl he h₀ h₂ hρ hu₀ in
+include hQ h₀ h₂ hρ hu₀ in
 /-- **The gauge-fixing row of the normal model of a family**: at the pullback `(b_x, α_x u₀)` of a
 plane field `x`, the gauge-fixing row of the linearized flat limiting equations, applied to the
 normal model of a family `(Ξ, Η)`, is the gauge row of `L_x` on the plane field `Ξ (w, ·)` over the
@@ -590,7 +590,7 @@ theorem flatDeformationGauge_familyNormalModel (hu₀₁ : ‖u₀‖ = 1)
         normalBaseCoupling (fderiv ℝ (fun w ↦ Η (w, normalCoord e y)) (baseCoord e y))) 0 := by
   have hβ : ⟪(u₀ : W), (pairedSpinor e u₀ : W)⟫_ℂ = 0 := by
     rw [← Submodule.coe_inner]
-    exact inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀
+    exact inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hρ hu₀
   have hu : ⟪(u₀ : W), (u₀ : W)⟫_ℂ = 1 := by
     rw [inner_self_eq_norm_sq_to_K, Submodule.norm_coe, hu₀₁]
     simp
@@ -647,7 +647,7 @@ theorem inner_flatDeformationCurvature_familyNormalModel_zero_one (hu₀₁ : �
       (differentiableAt_familyNormalModelConnection hΞ hΗ) _ _
       ((o.hodgeStar_ιMulti_zero_one hkl he).trans (one_smul ℝ _).symm),
     normalModelSpinor_zero_right, familyNormalModelSpinor_apply,
-    inner_quadraticTwoFormPolar_ιMulti_zero_one hQ hkl he h₀ h₂ hρ hu₀ hu₀₁,
+    inner_quadraticTwoFormPolar_ιMulti_zero_one hQ hkl h₀ h₂ hρ hu₀ hu₀₁,
     Vortex.conj_sectionValue_mul_sectionValue_re]
   simp only [fderiv_familyNormalModelConnection_apply_zero hΗ,
     fderiv_familyNormalModelConnection_apply_one hΗ,
@@ -674,7 +674,7 @@ theorem inner_flatDeformationCurvature_familyNormalModel_zero_two (hu₀₁ : �
       (differentiableAt_familyNormalModelConnection hΞ hΗ) _ _
       ((o.hodgeStar_ιMulti_zero_two hkl he).trans (neg_one_smul ℝ _).symm),
     normalModelSpinor_zero_right, familyNormalModelSpinor_apply,
-    inner_quadraticTwoFormPolar_ιMulti_zero_two hQ hkl he h₀ h₂ hρ hu₀ hu₀₁,
+    inner_quadraticTwoFormPolar_ιMulti_zero_two hQ hkl h₀ h₂ hρ hu₀ hu₀₁,
     mul_comm (Vortex.sectionValue x _), Vortex.conj_sectionValue_mul_sectionValue_im]
   simp only [fderiv_familyNormalModelConnection_apply_zero hΗ,
     fderiv_familyNormalModelConnection_apply_one hΗ,
@@ -701,7 +701,7 @@ theorem inner_flatDeformationCurvature_familyNormalModel_zero_three (hu₀₁ : 
       (differentiableAt_familyNormalModelConnection hΞ hΗ) _ _
       ((o.hodgeStar_ιMulti_zero_three hkl he).trans (one_smul ℝ _).symm),
     normalModelSpinor_zero_right, familyNormalModelSpinor_apply,
-    inner_quadraticTwoFormPolar_ιMulti_zero_three hQ hkl he h₀ h₂ hρ hu₀ hu₀₁,
+    inner_quadraticTwoFormPolar_ιMulti_zero_three hQ hkl h₀ h₂ hρ hu₀ hu₀₁,
     mul_comm (Vortex.sectionValue x _), Vortex.conj_sectionValue_mul_sectionValue_re]
   simp only [fderiv_familyNormalModelConnection_apply_zero hΗ,
     fderiv_familyNormalModelConnection_apply_one hΗ,
@@ -745,7 +745,7 @@ private theorem flatDeformationDirac_familyNormalModel_eq_sum
   simp only [map_add, map_smul]
   module
 
-include hQ hkl he h₀ h₂ hu₀ in
+include hQ h₀ h₂ hu₀ in
 /-- **The Dirac row of the normal model of a family**: at the pullback `(b_x, α_x u₀)` of a plane
 field `x`, the Dirac row of the linearized flat limiting equations, applied to the normal model of
 a family `(Ξ, Η)`, is `2 (P₂ + i P₃) c(e₀) u₀ + 2 (N₂ + i N₃) c(e₂) u₀` at the normal coordinate,
@@ -788,8 +788,9 @@ theorem flatDeformationDirac_familyNormalModel
       (normalCoord e y) (normalCoord e (e k)) + I * normalModelConnection e x 0 y (fun _ ↦ e k) *
       Vortex.sectionValue (fun z ↦ Η (baseCoord e y, z)) (normalCoord e y) with hY
   rw [flatDeformationDirac_familyNormalModel_eq_sum x hΞ hΗ,
-    sum_smul_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀,
-    sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀]
+    AlmostComplexStructure.sum_smul_ι_apply_of_bivectorExterior_apply hQ h₀ h₂
+      (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀),
+    sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀]
   have hΞw := hΞ.hasFDerivAt_slice_fst.differentiableAt
   have hΗw := hΗ.hasFDerivAt_slice_fst.differentiableAt
   have hΞz := differentiableAt_euclidean.1 hΞ.hasFDerivAt_slice_snd.differentiableAt
@@ -813,7 +814,7 @@ theorem flatDeformationDirac_familyNormalModel
 /-! The rows of the normal model of base-independent plane fields are the case of a family
 constant along the base, for which both base couplings vanish. -/
 
-include hQ hkl he h₀ h₂ hρ hu₀ in
+include hQ h₀ h₂ hρ hu₀ in
 /-- **The gauge-fixing row of the normal model is the gauge row of `L_x`**: at the pullback
 `(b_x, α_x u₀)` of a plane field `x`, the gauge-fixing row of the linearized flat limiting
 equations, applied to the normal model of `(ξ, η)`, is `d₀* ξ = gaugeAdjoint x ξ` at the normal
@@ -823,7 +824,7 @@ theorem flatDeformationGauge_normalModel (hu₀₁ : ‖u₀‖ = 1)
     flatDeformationGauge e (normalModelConnection e ξ η) (normalModelSpinor e u₀ x 0)
         (normalModelSpinor e u₀ ξ η) y =
       Vortex.gaugeAdjoint x ξ (normalCoord e y) := by
-  simpa using flatDeformationGauge_familyNormalModel hQ hkl he h₀ h₂ hρ hu₀ x
+  simpa using flatDeformationGauge_familyNormalModel hQ h₀ h₂ hρ hu₀ x
     (Ξ := ξ ∘ Prod.snd) (Η := η ∘ Prod.snd) hu₀₁ (differentiableAt_comp_snd_iff.2 hξ)
     (differentiableAt_comp_snd_iff.2 hη)
 
@@ -881,7 +882,7 @@ theorem differentiableAt_normalModelSpinor (hξ : DifferentiableAt ℝ ξ (norma
     ((Vortex.differentiableAt_sectionValue_of_differentiableAt hη).smul_const _)).comp y
       (normalCoord e).differentiableAt
 
-include hQ hkl he h₀ h₂ hu₀ in
+include hQ h₀ h₂ hu₀ in
 /-- **The Dirac row of the normal model is the `∂bar`-row of `L_x` plus that of `L_x*`**: at the
 pullback `(b_x, α_x u₀)` of a plane field `x`, the Dirac row of the linearized flat limiting
 equations, applied to the normal model of `(ξ, η)`, is
@@ -896,7 +897,7 @@ theorem flatDeformationDirac_normalModel (hξ : DifferentiableAt ℝ ξ (normalC
           Vortex.gaugeFixedAdjoint x η (normalCoord e y) 3 * I)) • ρ (ι Q (e 0)) u₀ +
         (2 * ((Vortex.gaugeFixedOperator x ξ (normalCoord e y) 2 : ℂ) +
           Vortex.gaugeFixedOperator x ξ (normalCoord e y) 3 * I)) • ρ (ι Q (e 2)) u₀ := by
-  simpa using flatDeformationDirac_familyNormalModel hQ hkl he h₀ h₂ hu₀ x
+  simpa using flatDeformationDirac_familyNormalModel hQ h₀ h₂ hu₀ x
     (Ξ := ξ ∘ Prod.snd) (Η := η ∘ Prod.snd) (differentiableAt_comp_snd_iff.2 hξ)
     (differentiableAt_comp_snd_iff.2 hη)
 
@@ -938,7 +939,7 @@ theorem flatDeformation_familyNormalModel_eq_zero_iff (x : ℂ → EuclideanSpac
     exact one_ne_zero
   -- The Dirac row vanishes exactly when both of its coefficients do.
   have hD (A B : ℂ) : A • ρ (ι Q (e 0)) u₀ + B • ρ (ι Q (e 2)) u₀ = 0 ↔ A = 0 ∧ B = 0 := by
-    have h := sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂
+    have h := sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ h₀ h₂
       hρ hu₀ ![A, 0, B, 0]
     simpa [Fin.sum_univ_four, hu₀'] using h
   have hC (a b : ℝ) : (2 * ((a : ℂ) + b * I) = 0) ↔ a = 0 ∧ b = 0 := by
@@ -953,13 +954,13 @@ theorem flatDeformation_familyNormalModel_eq_zero_iff (x : ℂ → EuclideanSpac
     refine ⟨fun h ↦ by simp [h], fun ⟨h0, h1, h2, h3⟩ ↦ ?_⟩
     ext i
     fin_cases i <;> simp [h0, h1, h2, h3]
-  rw [flatDeformationGauge_familyNormalModel hQ hkl he h₀ h₂ hρ hu₀ x hu₀₁ hΞ hΗ,
+  rw [flatDeformationGauge_familyNormalModel hQ h₀ h₂ hρ hu₀ x hu₀₁ hΞ hΗ,
     o.eq_zero_iff_of_hodgeStar_eq_self hkl he (hodgeStar_flatDeformationCurvature hkl _ _ _ _),
     inner_flatDeformationCurvature_familyNormalModel_zero_one hQ hkl he h₀ h₂ hρ hu₀ x hu₀₁ hΞ hΗ,
     inner_flatDeformationCurvature_familyNormalModel_zero_two hQ hkl he h₀ h₂ hρ hu₀ x hu₀₁ hΞ hΗ,
     inner_flatDeformationCurvature_familyNormalModel_zero_three hQ hkl he h₀ h₂ hρ hu₀ x hu₀₁ hΞ
       hΗ,
-    flatDeformationDirac_familyNormalModel hQ hkl he h₀ h₂ hu₀ x hΞ hΗ, hD, hC, hC, hvec, hvec,
+    flatDeformationDirac_familyNormalModel hQ h₀ h₂ hu₀ x hΞ hΗ, hD, hC, hC, hvec, hvec,
     neg_eq_zero, neg_eq_zero]
   tauto
 

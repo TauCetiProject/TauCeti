@@ -331,10 +331,9 @@ particular, so is its unit ball. -/
 theorem isCompact_image_ofCLM_inter_closedBall (M : VonNeumannAlgebra H) (A : H →L[ℂ] H)
     (r : ℝ) :
     IsCompact (ContinuousLinearMapWOT.ofCLM ''
-      ((M : Set (H →L[ℂ] H)) ∩ Metric.closedBall A r)) := by
-  rw [Set.image_inter ContinuousLinearMapWOT.ofCLM_injective]
-  exact (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall A r).inter_left
-    M.isClosed_image_ofCLM
+      ((M : Set (H →L[ℂ] H)) ∩ Metric.closedBall A r)) :=
+  ContinuousLinearMapWOT.isCompact_image_ofCLM_inter_closedBall_of_isClosed M.isClosed_image_ofCLM
+    A r
 
 /-- A concrete von Neumann algebra is strong operator closed. -/
 theorem isClosed_image_toPointwiseConvergenceCLM (M : VonNeumannAlgebra H) :

@@ -10,14 +10,18 @@ public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
-# Normed star subgroups, the unit of a C⋆-ring, and compact unitary groups
+# Normed star subgroups, unit and unitary norms, and compact unitary groups
 
-In a C⋆-ring every unitary element has norm at most one
-(`CStarRing.norm_le_one_of_mem_unitary`), and the unitary elements form a closed set. So when the
-closed balls of the ring are compact, as for a finite-dimensional C⋆-algebra such as the
-operators on a finite-dimensional inner product space, its unitary group is compact. In particular
-the orthogonal and unitary groups of a finite-dimensional real or complex inner product space are
-compact.
+In a C⋆-ring, left and right multiplication by a unitary element preserve the norm
+(`CStarRing.norm_coe_unitary_mul`, `CStarRing.norm_mul_coe_unitary`), so unitary conjugation
+`x ↦ u * x * star u` preserves norms and norms of differences (`CStarRing.norm_unitary_conj`,
+`CStarRing.norm_unitary_conj_sub`).
+
+Every unitary element has norm at most one (`CStarRing.norm_le_one_of_mem_unitary`), and the
+unitary elements form a closed set. So when the closed balls of the ring are compact, as for a
+finite-dimensional C⋆-algebra such as the operators on a finite-dimensional inner product space,
+its unitary group is compact. In particular the orthogonal and unitary groups of a
+finite-dimensional real or complex inner product space are compact.
 
 Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the restricted
 `NormedStarGroup` structure.
@@ -30,6 +34,9 @@ Any additive subgroup closed under the involution of a `NormedStarGroup` inherit
   Mathlib's `CStarRing.norm_one` (which needs `Nontrivial`) does not apply.
 * `CStarRing.norm_le_one_of_mem_unitary`: a unitary element has norm at most `1`, also in the
   trivial ring, where Mathlib's `CStarRing.norm_of_mem_unitary` does not apply.
+* `CStarRing.norm_unitary_conj`: unitary conjugation preserves the norm in a C⋆-ring.
+* `CStarRing.norm_unitary_conj_sub`: unitary conjugation preserves the norm of a difference in a
+  C⋆-ring.
 * `CStarRing.isCompact_unitary`: the unitary elements of a proper C⋆-ring form a compact set.
 * `CStarRing.instCompactSpaceUnitary`: the unitary group of a proper C⋆-ring is compact.
 -/
@@ -66,6 +73,18 @@ theorem norm_le_one_of_mem_unitary {U : E} (hU : U ∈ unitary E) : ‖U‖ ≤ 
   rcases subsingleton_or_nontrivial E with hE | hE
   · simp [Subsingleton.elim U 0]
   · exact (norm_of_mem_unitary hU).le
+
+/-- Conjugation by a unitary element in a C⋆-ring preserves the norm. -/
+@[simp]
+theorem norm_unitary_conj (u : unitary E) (x : E) :
+    ‖(u : E) * x * star (u : E)‖ = ‖x‖ := by
+  rw [← Unitary.coe_star, norm_mul_coe_unitary, norm_coe_unitary_mul]
+
+/-- Conjugation by a unitary element in a C⋆-ring preserves the norm of a difference. -/
+@[simp]
+theorem norm_unitary_conj_sub (u : unitary E) (x y : E) :
+    ‖(u : E) * x * star (u : E) - (u : E) * y * star (u : E)‖ = ‖x - y‖ := by
+  rw [← sub_mul, ← mul_sub, norm_unitary_conj]
 
 variable [ProperSpace E]
 

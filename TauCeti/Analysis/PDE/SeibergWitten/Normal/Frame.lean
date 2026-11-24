@@ -313,7 +313,7 @@ variable (o ρ) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
   (hu₀₁ : ‖u₀‖ = 1)
 include hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁
 
-omit h₂ in
+omit hkl he h₂ in
 private theorem normalDomainEquiv_left_inv
     (p : EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) :
     let q := (normalFrameForm e p.fst p.snd, normalFrameSpinor o ρ e u₀ p.fst p.snd)
@@ -323,7 +323,7 @@ private theorem normalDomainEquiv_left_inv
         -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).re / 2,
         -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).im / 2]) = p := by
   have horth :=
-    inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
+    inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ h₀ h₂₃ hρ hu₀
   have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := norm_pairedSpinor_eq_one hQ hρ hu₀₁
   obtain ⟨hure, huim, hvre, hvim⟩ :=
     inner_sub_smul_re_im_of_orthonormal hu₀₁ hβ₀₁ horth
@@ -370,7 +370,7 @@ def normalDomainEquiv :
          !₂[-q.fst (fun _ ↦ e 0), q.fst (fun _ ↦ e 1),
             -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).re / 2,
             -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).im / 2])
-      left_inv := normalDomainEquiv_left_inv o ρ hQ hkl he h₀ h₂₃ hρ hu₀ hu₀₁
+      left_inv := normalDomainEquiv_left_inv o ρ hQ h₀ h₂₃ hρ hu₀ hu₀₁
       right_inv := normalDomainEquiv_right_inv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ }
 
 /-- Pointwise formula for `normalDomainEquiv`. -/
@@ -391,7 +391,7 @@ theorem normalDomainEquiv_symm_apply (q : (V [⋀^Fin 1]→L[ℝ] ℝ) × positi
           -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).im / 2]) :=
   (rfl)
 
-omit h₂ in
+omit hkl he h₂ in
 /-- Weighted component norm identity for `(normalFrameForm e y η, normalFrameSpinor o ρ e u₀ y η)`:
 `‖b‖² + ‖ζ‖² / 4 = ‖y‖² + ‖η‖²`. -/
 theorem alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_four
@@ -399,7 +399,7 @@ theorem alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_f
     alternatingFormInner V 1 (normalFrameForm e y η) (normalFrameForm e y η) +
         ‖normalFrameSpinor o ρ e u₀ y η‖ ^ 2 / 4 = ‖y‖ ^ 2 + ‖η‖ ^ 2 := by
   have horth :=
-    inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
+    inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ h₀ h₂₃ hρ hu₀
   have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := norm_pairedSpinor_eq_one hQ hρ hu₀₁
   have hform : alternatingFormInner V 1 (normalFrameForm e y η) (normalFrameForm e y η) =
       η 0 ^ 2 + η 1 ^ 2 + y 0 ^ 2 + y 1 ^ 2 := by
@@ -460,7 +460,7 @@ private theorem normalTargetEquiv_left_inv
   have hn (i : Fin 4) :
       ‖halfSpinCliffordMul o ρ 1 (e i) (positiveHalfSpinorsEquiv o ρ u₀)‖ = 1 :=
     norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 i) hu₀₁
-  have hw₂₀ := inner_halfSpinCliffordMul_two_zero hQ hkl he h₀ h₂₃ hρ hu₀
+  have hw₂₀ := inner_halfSpinCliffordMul_two_zero hQ h₀ h₂₃ hρ hu₀
   obtain ⟨h2re, h2im, h0re, h0im⟩ :=
     inner_sub_smul_re_im_of_orthonormal (hn 2) (hn 0) hw₂₀
       (p.fst 2) (p.fst 3) (p.snd 2) (p.snd 3)
@@ -567,7 +567,7 @@ theorem sq_add_norm_sq_add_norm_sq_div_four_normalTargetEquiv
           halfSpinCliffordMul o ρ 1 (e 0) (positiveHalfSpinorsEquiv o ρ u₀) := by
     simp only [q, normalTargetEquiv_apply, normalFrameNegSpinor]; module
   rw [hq0, hq1, hq2, norm_smul_add_smul_sq_of_inner_eq_zero (hn 2) (hn 0)
-      (inner_halfSpinCliffordMul_two_zero hQ hkl he h₀ h₂₃ hρ hu₀),
+      (inner_halfSpinCliffordMul_two_zero hQ h₀ h₂₃ hρ hu₀),
     ← normSq_eq_norm_sq, ← normSq_eq_norm_sq, EuclideanSpace.real_norm_sq_eq L,
     EuclideanSpace.real_norm_sq_eq A, Fin.sum_univ_four, Fin.sum_univ_four]
   simp [normSq_apply]; ring

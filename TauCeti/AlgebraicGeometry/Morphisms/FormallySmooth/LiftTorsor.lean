@@ -472,13 +472,12 @@ noncomputable instance instAddTorsor [Nonempty (ThickeningLift i a f h)] :
     simp
 
 /-- **Uniqueness of lifts along a formally étale morphism.** Lifts along a first-order thickening
-through a formally étale morphism are unique, for any `T'`: on an affine open cover of `T'` they
-agree by the lifting property of `f`. -/
-instance instSubsingleton [FormallyEtale f] : Subsingleton (ThickeningLift i a f h) := by
-  refine ⟨fun b b' ↦ ThickeningLift.ext <| Scheme.Cover.hom_ext T'.affineCover _ _ fun j ↦ ?_⟩
-  let p := pullback.snd i (T'.affineCover.f j)
-  refine FormallyEtale.lift_unique f p ?_ (by simp [b.hom_comp, b'.hom_comp])
-  rw [← pullback.condition_assoc, ← pullback.condition_assoc, b.comp_hom, b'.comp_hom]
+through a formally étale morphism are unique, for any `T'`: a formally étale morphism is formally
+unramified, and first-order thickenings have nilpotent ideal sheaf. -/
+instance instSubsingleton [FormallyEtale f] : Subsingleton (ThickeningLift i a f h) :=
+  ⟨fun b b' ↦ ThickeningLift.ext <|
+    FormallyUnramified.hom_ext i (IsFirstOrderThickening.isNilpotent_ker i) f
+      (b.comp_hom.trans b'.comp_hom.symm) (b.hom_comp.trans b'.hom_comp.symm)⟩
 
 end ThickeningLift
 
