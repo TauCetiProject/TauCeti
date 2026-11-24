@@ -28,6 +28,10 @@ smooth functions.
 ## Main results
 
 * `ContMDiffMap.coe_sum`: the coercion of a finite sum of smooth maps is the sum of the coercions.
+* `ContMDiffMap.coe_smul'`: the coercion of a scalar-valued smooth map multiplying a vector-valued
+  one is the pointwise scalar product of their coercions.
+* `ContMDiffMap.restrictMonoidHom_apply` and `ContMDiffMap.restrictAddMonoidHom_apply`: pointwise
+  evaluation of restriction of smooth maps between open subsets.
 * `ContMDiffMap.algebraMap_apply`: the scalars of the algebra of `C^n` functions are the constant
   functions.
 * `ContMDiffMap.iteratedFDeriv_sub_apply`: the iterated derivatives of order at most `n` of a
@@ -38,6 +42,9 @@ smooth functions.
   `C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] A`.
 * `ContMDiffMap.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`: the points of `M` separate the
   scalar `C^n` functions.
+* `ContMDiffMap.instIsReduced`, `ContMDiffMap.instHasUniqueDiv`: the `C^n` maps into a reduced
+  monoid with zero are reduced, and those into an additive monoid with unique division by
+  positive integers inherit this property.
 * `Diffeomorph.compRightAlgEquiv`: precomposition with a diffeomorphism, as an algebra
   isomorphism.
 * `TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap`: the bundled form of a pointwise
@@ -63,6 +70,33 @@ theorem coe_sum {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {ι : Type*} (s : Finset ι) (f : ι → C^n⟮I, N; I', G⟯) :
     ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
   map_sum coeFnAddMonoidHom f s
+
+/-- Coercion to a function for a scalar-valued `C^n` map multiplying a vector-valued one (as
+opposed to `ContMDiffMap.coe_smul`, which is multiplication by a constant scalar). -/
+@[simp]
+theorem coe_smul' {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H N] {n : ℕ∞ω}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    (f : C^n⟮I, N; 𝕜⟯) (g : C^n⟮I, N; 𝓘(𝕜, V), V⟯) :
+    ⇑(f • g) = ⇑f • ⇑g :=
+  rfl
+
+/-- Pointwise evaluation of `ContMDiffMap.restrictMonoidHom`: restricting a `C^n` map from `V` to
+`U ≤ V` evaluates it via `Set.inclusion h`. -/
+@[to_additive (attr := simp) /-- Pointwise evaluation of `ContMDiffMap.restrictAddMonoidHom`:
+restricting a `C^n` map from `V` to `U ≤ V` evaluates it via `Set.inclusion h`. -/]
+theorem restrictMonoidHom_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H N]
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
+    {G : Type*} [Monoid G] [TopologicalSpace G] [ChartedSpace H' G] [ContMDiffMul I' n G]
+    {U V : TopologicalSpace.Opens N} (h : U ≤ V) (f : C^n⟮I, V; I', G⟯) (x : U) :
+    restrictMonoidHom I I' G h f x = f (Set.inclusion h x) :=
+  rfl
 
 /-- The image of a scalar `c` in the algebra of `C^n` functions is the constant function with
 value `algebraMap 𝕜 A c`. -/
@@ -156,6 +190,31 @@ theorem eq_zero_of_forall_mem_ker_evalAlgHom_smul_top {𝕜 : Type*} [Nontrivial
   have := hf x
   rw [Ideal.smul_eq_mul, Ideal.mul_top] at this
   simpa using this
+
+/-- The `C^n` maps with values in a reduced monoid with zero form a reduced monoid with zero: a
+nilpotent map is pointwise nilpotent. -/
+instance instIsReduced {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
+    {R : Type*} [MonoidWithZero R] [TopologicalSpace R] [ChartedSpace H' R] [ContMDiffMul I' n R]
+    [IsReduced R] : IsReduced C^n⟮I, M; I', R⟯ where
+  eq_zero f := fun ⟨k, hk⟩ ↦ ext fun x ↦ IsNilpotent.eq_zero ⟨k, by simpa using congr($hk x)⟩
+
+/-- If division by positive integers is unique in the target, it is unique for `C^n` maps, since an
+equation `k • f = k • g` holds pointwise. -/
+instance instHasUniqueDiv {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
+    {G : Type*} [AddMonoid G] [TopologicalSpace G] [ChartedSpace H' G] [ContMDiffAdd I' n G]
+    [HasUniqueDiv G] : HasUniqueDiv C^n⟮I, M; I', G⟯ where
+  nsmul_right_injective k hk f g h :=
+    ext fun x ↦ nsmul_right_injective hk (by simpa using congr($h x))
 
 end ContMDiffMap
 

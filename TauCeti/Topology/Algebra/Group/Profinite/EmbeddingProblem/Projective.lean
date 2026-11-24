@@ -8,6 +8,8 @@ module
 import Mathlib.Algebra.Group.Shrink
 import Mathlib.Topology.Maps.Proper.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
+import TauCeti.Algebra.Group.Subgroup.Ker
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Lift
@@ -16,13 +18,17 @@ public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Lift
 # Projectivity from finite embedding problems
 
 Closed subgroups of `A × G` that project onto `G` form lift relations. Compactness of
-their fibers preserves surjectivity along decreasing chains. Finite `p`-kernel
-embedding problems refine a relation at any open-normal quotient of `A`.
+their fibers preserves surjectivity along decreasing chains. For a surjection `α : A ↠ B` with
+pro-`p` kernel, finite `p`-kernel embedding problems refine a relation at any open-normal quotient
+of `A`: the elements of the relation over `1 : G` lie in the kernel of `α`, so their images in a
+finite quotient of `A` form a `p`-group.
 
 A minimal relation (`Subgroup.exists_minimal_isClosed_le`) therefore supplies compatible
-finite-level solutions. The existing inverse-limit assembly gives
-`isProjective_of_hasPGroupSolutions`, without finite generation of `G`. Compactness is applied to
-fibers in `A`; the sets of level solutions need not be finite.
+finite-level solutions, and the inverse-limit assembly lifts every continuous homomorphism
+`G → B` through `α` (`HasPGroupSolutions.exists_continuous_lift_of_isProP_ker`), without finite
+generation of `G`. Compactness is applied to fibers in `A`; the sets of level solutions need not be
+finite. Only the kernel of `α` is assumed pro-`p`, not `A` itself; when `A` is pro-`p` this is
+`isProjective_of_hasPGroupSolutions`.
 
 Conversely, a projective pro-`p` group solves every finite embedding problem with `p`-group kernel
 (`hasPGroupSolutions_of_isProjective`): its finite quotients are `p`-groups, so such a problem is a
@@ -37,6 +43,9 @@ on the universes of the groups it quantifies over.
 
 ## Main results
 
+* `TauCeti.HasPGroupSolutions.exists_continuous_lift_of_isProP_ker`: solving the finite
+  embedding problems with `p`-group kernel lifts continuous homomorphisms through every
+  continuous surjection of profinite groups with pro-`p` kernel.
 * `TauCeti.isProjective_of_hasPGroupSolutions`: solving the finite embedding problems with
   `p`-group kernel gives projectivity.
 * `TauCeti.hasPGroupSolutions_of_isProjective`: a projective pro-`p` group solves the finite
@@ -76,14 +85,32 @@ closed subgroup `H` of `A × G` whose projection to `G` is surjective has a quot
 private theorem isQuotientMap_snd_subtype (H : Subgroup (A × G))
     (hclosed : IsClosed (H : Set (A × G))) (hsurj : ∀ g : G, ∃ a : A, (a, g) ∈ H) :
     Topology.IsQuotientMap ((MonoidHom.snd A G).comp H.subtype) :=
-  (isClosedMap_snd_of_compactSpace.comp hclosed.isClosedMap_subtype_val).isQuotientMap
-    (continuous_snd.comp continuous_subtype_val) fun g ↦ by
+  (isClosedMap_snd_of_compactSpace.comp hclosed.isClosedMap_subtypeVal).isQuotientMap
+    (continuous_snd.comp continuous_subtypeVal) fun g ↦ by
       obtain ⟨a, ha⟩ := hsurj g
       exact ⟨⟨(a, g), ha⟩, rfl⟩
 
-/-- A surjective closed relation admits a continuous selection in each finite quotient. -/
+omit [TopologicalSpace G] [IsTopologicalGroup G] [IsTopologicalGroup A] [CompactSpace A] in
+/-- If the elements of a relation `H` over `1 : G` lie in a pro-`p` subgroup `N` of `A`, then the
+reductions modulo an open normal subgroup `U` of the first coordinates of these elements form a
+`p`-group, viewed inside the reduction of the whole relation. -/
+private theorem isPGroup_map_ker_snd {p : ℕ} {N : Subgroup A} (hN : IsProP p N)
+    (H : Subgroup (A × G)) (hHN : ∀ a : A, (a, (1 : G)) ∈ H → a ∈ N) (U : OpenNormalSubgroup A) :
+    IsPGroup p (((MonoidHom.snd A G).comp H.subtype).ker.map
+      ((QuotientGroup.mk' U.toSubgroup).comp
+        ((MonoidHom.fst A G).comp H.subtype)).rangeRestrict) := by
+  rintro ⟨_, x, hx, rfl⟩
+  have hx1 : (x : A × G).2 = 1 := MonoidHom.mem_ker.mp hx
+  have hxN : (x : A × G).1 ∈ N := hHN _ (by rw [← hx1, Prod.mk.eta]; exact x.property)
+  obtain ⟨k, hk⟩ := hN.isPGroup_map_mk' U ⟨_, Subgroup.mem_map_of_mem _ hxN⟩
+  refine ⟨k, Subtype.ext (Subtype.ext ?_)⟩
+  simpa using congrArg Subtype.val hk
+
+/-- A surjective closed relation admits a continuous selection in each finite quotient, provided
+its elements over `1 : G` lie in a pro-`p` subgroup of `A`. -/
 private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutions p G)
-    (hA : IsProP p A) (H : Subgroup (A × G)) (hclosed : IsClosed (H : Set (A × G)))
+    {N : Subgroup A} (hN : IsProP p N) (H : Subgroup (A × G))
+    (hHN : ∀ a : A, (a, (1 : G)) ∈ H → a ∈ N) (hclosed : IsClosed (H : Set (A × G)))
     (hsurj : ∀ g : G, ∃ a : A, (a, g) ∈ H) (U : OpenNormalSubgroup A) :
     ∃ δ : G →ₜ* A ⧸ U.toSubgroup,
       ∀ g : G, ∃ a : A, (a, g) ∈ H ∧ QuotientGroup.mk' U.toSubgroup a = δ g := by
@@ -113,19 +140,20 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
   have hπcont : Continuous π :=
     QuotientGroup.continuous_mk.comp
       ((QuotientGroup.continuous_mk.comp
-        (continuous_fst.comp continuous_subtype_val)).subtype_mk _)
+        (continuous_fst.comp continuous_subtypeVal)).subtype_mk _)
   let β := ContinuousMonoidHom.liftOfIsQuotientMap ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle
   have hβ (h : H) : β (s h) = π h :=
     ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle h
-  -- Stage 4: `K` is a `p`-group inside the `p`-group `A ⧸ U`, so `HasPGroupSolutions` lifts `β`
-  -- through `t.range ↠ t.range ⧸ K` to `γ : G → t.range`; `δ` is `γ` followed by the inclusion.
+  -- Stage 4: `K` is a `p`-group, as its elements are reductions of elements of `N`
+  -- (`isPGroup_map_ker_snd`), so `HasPGroupSolutions` lifts `β` through `t.range ↠ t.range ⧸ K`
+  -- to `γ : G → t.range`; `δ` is `γ` followed by the inclusion.
+  have hK : IsPGroup p K := isPGroup_map_ker_snd hN H hHN U
   obtain ⟨γ, hγ, hγβ⟩ := hG.exists_comp_eq (QuotientGroup.mk' K)
-    (QuotientGroup.mk'_surjective K)
-    (((isProP_iff.mp hA U).to_subgroup t.range).to_subgroup _) β.toMonoidHom
+    (QuotientGroup.mk'_surjective K) (by rwa [QuotientGroup.ker_mk']) β.toMonoidHom
     ((MonoidHom.continuous_iff_isOpen_ker _).mp β.continuous)
   let δ : G →ₜ* A ⧸ U.toSubgroup :=
     ⟨t.range.subtype.comp γ,
-      continuous_subtype_val.comp (γ.continuous_iff_isOpen_ker.mpr hγ)⟩
+      continuous_subtypeVal.comp (γ.continuous_iff_isOpen_ker.mpr hγ)⟩
   refine ⟨δ, fun g ↦ ?_⟩
   -- Stage 5: over `g`, pick `h ∈ H` with `s h = g`; then `τ h` and `γ g` agree modulo
   -- `K = τ (ker s)`, so correcting `h` by an element of `ker s` gives a point of `H` over `g`
@@ -139,8 +167,8 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
   obtain ⟨k, hk, hkτ⟩ := Subgroup.mem_map.mp (QuotientGroup.eq.mp hquot)
   have hsg : s (h * k) = g := by
     rw [map_mul, hh, MonoidHom.mem_ker.mp hk, mul_one]
-  refine ⟨(h * k).1.1, ?_, ?_⟩
-  · have hm := (h * k).2
+  refine ⟨(h * k).val.1, ?_, ?_⟩
+  · have hm := (h * k).property
     rwa [← hsg, hs_apply, Prod.mk.eta]
   · have ht : τ (h * k) = γ g := by
       rw [map_mul, hkτ, mul_inv_cancel_left]
@@ -148,10 +176,11 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
 
 variable {B : Type w} [Group B] [TopologicalSpace B] [IsTopologicalGroup B] [T2Space B]
 
-/-- Finite `p`-kernel solvability supplies compatible level solutions without finite generation. -/
+/-- Finite `p`-kernel solvability supplies compatible level solutions for a surjection with pro-`p`
+kernel, without finite generation. -/
 theorem HasPGroupSolutions.exists_compatible_levelSolutions {p : ℕ}
-    (hG : HasPGroupSolutions p G) (hA : IsProP p A)
-    (α : A →ₜ* B) (hα : Function.Surjective α) (f : G →ₜ* B) :
+    (hG : HasPGroupSolutions p G) (α : A →ₜ* B) (hα : Function.Surjective α)
+    (hker : IsProP p α.toMonoidHom.ker) (f : G →ₜ* B) :
     ∃ β : ∀ U, LevelSolution α hα f U,
       ∀ ⦃V U : OpenNormalSubgroup A⦄ (hVU : V ≤ U),
         levelSolutionMap α hα f hVU (β V) = β U := by
@@ -166,7 +195,8 @@ theorem HasPGroupSolutions.exists_compatible_levelSolutions {p : ℕ}
   have hlevels (U : OpenNormalSubgroup A) :
       ∃ δ : G →ₜ* A ⧸ U.toSubgroup,
         ∀ a g, (a, g) ∈ H → QuotientGroup.mk' U.toSubgroup a = δ g := by
-    obtain ⟨δ, hδ⟩ := exists_quotient_map_in_relation hG hA H hHclosed hHsurj U
+    obtain ⟨δ, hδ⟩ := exists_quotient_map_in_relation hG hker H
+      (fun a ha ↦ by simpa using MonoidHom.mem_eqLocus.mp (hHR ha)) hHclosed hHsurj U
     let K := H ⊓ ((QuotientGroup.mk' U.toSubgroup).comp (MonoidHom.fst A G)).eqLocus
       (δ.toMonoidHom.comp (MonoidHom.snd A G))
     have hKclosed : IsClosed (K : Set (A × G)) :=
@@ -201,14 +231,23 @@ theorem IsProjective.exists_continuous_lift {p : ℕ} (hG : IsProjective.{u, v, 
     ∃ φ : G →ₜ* A, α.comp φ = f :=
   hG A B hA α hα f
 
+/-- **Lifting through a pro-`p` kernel.** If `G` solves every finite embedding problem with
+`p`-group kernel, then every continuous homomorphism `G → B` lifts continuously through a
+continuous surjection `A ↠ B` of profinite groups whose kernel is pro-`p`. Neither `A` nor `G`
+need be pro-`p` or finitely generated. -/
+theorem HasPGroupSolutions.exists_continuous_lift_of_isProP_ker {p : ℕ}
+    (hG : HasPGroupSolutions p G) (α : A →ₜ* B) (hα : Function.Surjective α)
+    (hker : IsProP p α.toMonoidHom.ker) (f : G →ₜ* B) : ∃ φ : G →ₜ* A, α.comp φ = f := by
+  obtain ⟨β, hβ⟩ := hG.exists_compatible_levelSolutions α hα hker f
+  obtain ⟨φ, hφ, _⟩ := exists_continuous_lift_of_compatible_levelSolutions α hα f β hβ
+  exact ⟨φ, hφ⟩
+
 /-- Solving all finite embedding problems with `p`-group kernel implies projectivity,
 with no rank or finite-generation restriction on the source. -/
 theorem isProjective_of_hasPGroupSolutions {p : ℕ} (hG : HasPGroupSolutions p G) :
     IsProjective.{u, v, w} p G := by
   intro A _ _ _ _ _ B _ _ _ _ hA α hα f
-  obtain ⟨β, hβ⟩ := hG.exists_compatible_levelSolutions hA α hα f
-  obtain ⟨φ, hφ, _⟩ := exists_continuous_lift_of_compatible_levelSolutions α hα f β hβ
-  exact ⟨φ, hφ⟩
+  exact hG.exists_continuous_lift_of_isProP_ker α hα (hA.subgroup _) f
 
 universe u'
 

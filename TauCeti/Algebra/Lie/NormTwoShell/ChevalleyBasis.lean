@@ -213,7 +213,8 @@ theorem normalizedRoot_lie_normalizedRoot_of_add_eq_zero (hB : B.PosDef)
   have hb : (b : I → ℤ) = -a := eq_neg_of_add_eq_zero_right h
   have key : normalizationSign B a * normalizationSign B (-a) *
       (B.orderedSignForm a (-a)).negOnePow = 1 := by
-    rw [normalizationSign_mul_normalizationSign_neg hB hev hoff a.2, map_neg, Int.negOnePow_neg,
+    rw [normalizationSign_mul_normalizationSign_neg hB hev hoff a.property, map_neg,
+        Int.negOnePow_neg,
       Int.units_mul_self]
   rw [normalizedRoot_lie_normalizedRoot, rootBracket_of_add_eq_zero h, smul_smul, hb, key,
     one_smul]

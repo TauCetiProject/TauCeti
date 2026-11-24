@@ -71,13 +71,13 @@ theorem IsVertexStrong.inducedHom_compl {X : Finset V}
     have hsZ : (s : V) ∉ Z := by
       rintro hmem
       rcases mem_union.1 hmem with hmem | hmem
-      · exact s.2 hmem
+      · exact s.property hmem
       · obtain ⟨y, hy, hys⟩ := mem_image.1 hmem
         exact hs ((Subtype.ext hys).symm ▸ hy)
     have htZ : (t : V) ∉ Z := by
       rintro hmem
       rcases mem_union.1 hmem with hmem | hmem
-      · exact t.2 hmem
+      · exact t.property hmem
       · obtain ⟨y, hy, hyt⟩ := mem_image.1 hmem
         exact ht ((Subtype.ext hyt).symm ▸ hy)
     have hr := h.2 Z hZ hsZ htZ

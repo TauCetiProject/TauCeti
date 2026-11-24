@@ -63,8 +63,8 @@ namespace MeasureTheory.Measure
 
 section P2Inequality
 
-variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] [RCLike 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] (μ : Measure G) [μ.IsMulLeftInvariant]
+variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] [NormedRing 𝕜]
+  [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (μ : Measure G) [μ.IsMulLeftInvariant]
 
 /-- **$P_2$ squared-density variation bound for left translation.** For `f ∈ L²(G, E; μ)` and
 `g : G`, the `L¹(μ)` variation of `x ↦ ‖f x‖²` under left translation is at most
@@ -83,12 +83,11 @@ end P2Inequality
 
 section AlmostInvariant
 
-variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableSingletonClass G]
-  [MeasurableMul G] [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
 /-- **Hulanicki–Reiter converse.** Almost invariant vectors in `ℓ²(G, E)` yield Følner sets in
 `G`. -/
-theorem hasFoelnerSets_of_hasAlmostInvariantVectors_count_leftRegular
+theorem hasFoelnerSets_of_hasAlmostInvariantVectors_count_leftRegular {G 𝕜 E : Type*} [Group G]
+    [MeasurableSpace G] [MeasurableMul G] [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
     (h : ((count : Measure G).leftRegular 𝕜 E 2).HasAlmostInvariantVectors) :
     TauCeti.HasFoelnerSets G := by
   classical
@@ -97,13 +96,15 @@ theorem hasFoelnerSets_of_hasAlmostInvariantVectors_count_leftRegular
   intro K ε hε
   exact exists_finset_card_smul_symmDiff_lt_of_hasAlmostInvariantVectors_count_koopman h K hε
 
+variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableSingletonClass G]
+  [MeasurableMul G] [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
 /-- **Hulanicki–Reiter characterization of almost invariant vectors in `ℓ²(G, E)`.** The
 vector-valued counting-measure regular representation has almost invariant vectors if and only if
 `E` is nontrivial and `G` has Følner sets. -/
 theorem hasAlmostInvariantVectors_count_leftRegular_iff :
     ((count : Measure G).leftRegular 𝕜 E 2).HasAlmostInvariantVectors ↔
       Nontrivial E ∧ TauCeti.HasFoelnerSets G := by
-  classical
   constructor
   · intro h
     refine ⟨?_, hasFoelnerSets_of_hasAlmostInvariantVectors_count_leftRegular h⟩
@@ -112,31 +113,7 @@ theorem hasAlmostInvariantVectors_count_leftRegular_iff :
     obtain ⟨v, hv⟩ := h.exists_ne_zero
     exact hv (Lp.eq_zero_iff_ae_eq_zero.mpr (ae_of_all _ fun x ↦ Subsingleton.elim (v x) 0))
   · rintro ⟨hE, hG⟩
-    obtain ⟨w, hw⟩ := exists_ne (0 : E)
-    rw [← koopman_eq_leftRegular, ContRepresentation.hasAlmostInvariantVectors_def]
-    intro K ε hε
-    let c : E := (‖w‖⁻¹ : 𝕜) • w
-    have hc : ‖c‖ = 1 := norm_smul_inv_norm hw
-    obtain ⟨F, hF, hboundary⟩ := TauCeti.hasFoelnerSets_iff.mp hG K (ε ^ 2) (sq_pos_of_pos hε)
-    let ξ : Lp E 2 (count : Measure G) := indicatorConstLp 2 F.measurableSet (by simp) c
-    have hnorm : ‖ξ‖ = Real.sqrt (#F : ℝ) := by
-      rw [norm_indicatorConstLp (by simp) (by simp)]
-      simp [hc, measureReal_def, Real.sqrt_eq_rpow]
-    have hcard : (0 : ℝ) < #F := Nat.cast_pos.mpr hF.card_pos
-    have hξ : ξ ≠ 0 := norm_ne_zero_iff.mp (by rw [hnorm]; positivity)
-    refine ⟨(‖ξ‖⁻¹ : 𝕜) • ξ, norm_smul_inv_norm hξ, fun g hg ↦ ?_⟩
-    rw [map_smul, ← smul_sub]
-    have hdisp : ‖(count : Measure G).leftRegular 𝕜 E 2 g ξ - ξ‖ =
-        Real.sqrt (#((g • F) ∆ F) : ℝ) := by
-      rw [← koopman_eq_leftRegular]
-      simpa [hc] using F.norm_count_koopman_sub_indicatorConstLp (G := G) (𝕜 := 𝕜) g c
-    have hroot : Real.sqrt (#((g • F) ∆ F) : ℝ) < ε * Real.sqrt (#F : ℝ) := by
-      apply (sq_lt_sq₀ (Real.sqrt_nonneg _) (by positivity)).mp
-      rw [Real.sq_sqrt (by positivity), mul_pow, Real.sq_sqrt hcard.le]
-      exact hboundary g hg
-    rw [koopman_eq_leftRegular]
-    simpa [norm_smul, hnorm, hdisp, abs_of_nonneg (Real.sqrt_nonneg _)] using
-      (inv_mul_lt_iff₀ (Real.sqrt_pos.mpr hcard)).mpr (by simpa [mul_comm] using hroot)
+    exact hasAlmostInvariantVectors_count_leftRegular hG
 
 /-- Scalar specialization of `hasAlmostInvariantVectors_count_leftRegular_iff`: `ℓ²(G, 𝕜)` has
 almost invariant vectors if and only if `G` has Følner sets. -/
@@ -167,7 +144,7 @@ theorem hasSpectralGap_count_leftRegular_of_not_hasFoelnerSets (hG : ¬ TauCeti.
   rw [← koopman_eq_leftRegular]
   refine hasSpectralGap_count_koopman_of_finite_stabilizer hG fun x _ ↦ ?_
   have : Subsingleton (MulAction.stabilizer G x) :=
-    ⟨fun a b ↦ Subtype.ext (mul_right_cancel (a.2.trans b.2.symm))⟩
+    ⟨fun a b ↦ Subtype.ext (mul_right_cancel (a.property.trans b.property.symm))⟩
   exact Finite.of_subsingleton
 
 /-- **Spectral gap characterization for the regular representation.** The counting-measure regular
@@ -285,16 +262,11 @@ spectral gap. -/
 theorem not_hasSpectralGap_count_leftRegular_of_commGroup {A : Type*} [CommGroup A] [Infinite A]
     [MeasurableSpace A] [MeasurableSingletonClass A] [MeasurableMul A] [Nontrivial E] :
     ¬ ((count : Measure A).leftRegular 𝕜 E 2).HasSpectralGap := by
-  have hF : TauCeti.HasFoelnerSets A := by
-    let : TopologicalSpace A := ⊥
-    have : DiscreteTopology A := ⟨rfl⟩
-    have : IsTopologicalGroup A := {}
-    exact TauCeti.Amenable.hasFoelnerSets
   rw [hasSpectralGap_count_leftRegular_iff]
   rintro (hfin | hsub | hnotF)
   · exact not_finite A
   · exact not_subsingleton E hsub
-  · exact hnotF hF
+  · exact hnotF (.of_commGroup A)
 
 /-- **Failure of spectral gap for `ℤ`.** For any nontrivial Hilbert space `E`, the left regular
 representation of `Multiplicative ℤ` on `ℓ²(Multiplicative ℤ, E)` does not have spectral gap. -/

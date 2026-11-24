@@ -87,7 +87,7 @@ theorem mem_geodesicPaths_iff_isGeodesicSegment :
     γ ∈ geodesicPaths X ↔ IsGeodesicSegment (IccExtend zero_le_one γ) (γ 0) (γ 1) := by
   refine ⟨fun h ↦ ⟨IccExtend_left .., IccExtend_right .., fun s hs t ht ↦ ?_⟩, fun h s t ↦ ?_⟩
   · simpa only [IccExtend_of_mem _ _ hs, IccExtend_of_mem _ _ ht] using h ⟨s, hs⟩ ⟨t, ht⟩
-  · simpa only [IccExtend_val] using h.dist_eq s s.2 t t.2
+  · simpa only [IccExtend_val] using h.dist_eq s s.property t t.property
 
 /-- The restriction to `[0, 1]` of a geodesic segment is a geodesic path. -/
 theorem IsGeodesicSegment.restrict_mem_geodesicPaths {γ : ℝ → X} (h : IsGeodesicSegment γ x y) :
@@ -96,7 +96,7 @@ theorem IsGeodesicSegment.restrict_mem_geodesicPaths {γ : ℝ → X} (h : IsGeo
   have h0 : γ ((0 : I) : ℝ) = x := h.source
   have h1 : γ ((1 : I) : ℝ) = y := h.target
   simp only [ContinuousMap.coe_mk, domRestrict_apply, h0, h1]
-  exact h.dist_eq s s.2 t t.2
+  exact h.dist_eq s s.property t t.property
 
 /-- A path whose Lipschitz constant is the distance between its endpoints is a geodesic path. -/
 theorem mem_geodesicPaths_of_lipschitzWith (hγ : LipschitzWith (dist (γ 0) (γ 1)).toNNReal γ) :

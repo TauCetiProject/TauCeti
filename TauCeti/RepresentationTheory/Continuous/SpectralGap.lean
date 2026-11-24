@@ -238,7 +238,7 @@ theorem HasSpectralGap.subrepresentation {ρ : ContRepresentation 𝕜 G V}
         hproj_inv
     have h2 : ⟪u - W.starProjection u, (x : V)⟫_𝕜 = 0 :=
       inner_eq_zero_symm.mp
-        ((Submodule.mem_orthogonal W _).mp (W.sub_starProjection_mem_orthogonal u) x x.2)
+        ((Submodule.mem_orthogonal W _).mp (W.sub_starProjection_mem_orthogonal u) x x.property)
     calc ⟪u, (x : V)⟫_𝕜
         = ⟪(W.starProjection u : V) + (u - W.starProjection u), (x : V)⟫_𝕜 := by
             rw [add_sub_cancel]

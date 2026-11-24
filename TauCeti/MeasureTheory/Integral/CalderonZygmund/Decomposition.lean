@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Integral.Average
 public import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube
 import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # The Calderón–Zygmund decomposition
@@ -56,6 +57,10 @@ run the same stopping time on functions in `Lᵖ`.
   `TauCeti.biUnion_calderonZygmundCubes_subset`,
   `TauCeti.ae_le_of_forall_notMem_calderonZygmundCubes` and
   `TauCeti.mul_volume_biUnion_calderonZygmundCubes_le`.
+* `TauCeti.volume_biUnion_closedBall_calderonZygmundCubes_le`,
+  `TauCeti.mul_volume_biUnion_closedBall_calderonZygmundCubes_le`: the concentric cubes of `c`
+  times the side have at most `cⁿ` times the total volume, so `t` times their measure is at most
+  `cⁿ` times the integral of `g`.
 * `TauCeti.calderonZygmundBad`, `TauCeti.calderonZygmundGood`: the bad parts and the good part,
   with `TauCeti.calderonZygmundGood_add_tsum_calderonZygmundBad` (the decomposition),
   `TauCeti.integral_calderonZygmundBad`, `TauCeti.lintegral_enorm_calderonZygmundBad_le`,
@@ -298,7 +303,40 @@ theorem mul_volume_biUnion_calderonZygmundCubes_le :
       pairwiseDisjoint_calderonZygmundCubes,
     ← ENNReal.tsum_mul_left]
   exact tsum_le_tsum fun q =>
-    (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.2).le
+    (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.property).le
+
+/-- The concentric cubes of `c` times the side of the Calderón–Zygmund cubes, closed sup-norm
+balls about their centres, have total volume at most `cⁿ` times that of the Calderón–Zygmund
+cubes. -/
+theorem volume_biUnion_closedBall_calderonZygmundCubes_le (c : ℝ) :
+    volume (⋃ q ∈ calderonZygmundCubes g t,
+        Metric.closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
+      ENNReal.ofReal c ^ Fintype.card ι *
+        volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) := by
+  calc _ ≤ ∑' q : calderonZygmundCubes g t, volume (Metric.closedBall
+        (fun i => ((q.val.2 i : ℝ) + 2⁻¹) * 2 ^ q.val.1) (c * (2 ^ q.val.1 / 2))) :=
+        measure_biUnion_le _ (to_countable _) _
+    _ ≤ ∑' q : calderonZygmundCubes g t,
+          ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube q.val.1 q.val.2) :=
+        tsum_le_tsum fun q => volume_closedBall_dyadicCube_le c _ _
+    _ = _ := by
+        rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable _)
+          pairwiseDisjoint_calderonZygmundCubes fun q _ => measurableSet_dyadicCube q.1 q.2]
+
+/-- `t` times the measure of the union of the concentric cubes of `c` times the side of the
+Calderón–Zygmund cubes of `g` at height `t` is at most `cⁿ` times the integral of `g`. -/
+theorem mul_volume_biUnion_closedBall_calderonZygmundCubes_le (c : ℝ) :
+    t * volume (⋃ q ∈ calderonZygmundCubes g t,
+        Metric.closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
+      ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x := by
+  calc _ ≤ t * (ENNReal.ofReal c ^ Fintype.card ι *
+        volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) :=
+        mul_le_mul_right (volume_biUnion_closedBall_calderonZygmundCubes_le c) _
+    _ = ENNReal.ofReal c ^ Fintype.card ι *
+          (t * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) := by ring
+    _ ≤ ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x :=
+        mul_le_mul_right (mul_volume_biUnion_calderonZygmundCubes_le.trans
+          (setLIntegral_le_lintegral _ _)) _
 
 end Cubes
 
@@ -345,7 +383,7 @@ theorem calderonZygmundGood_of_mem (hq : q ∈ calderonZygmundCubes (‖f ·‖�
       calderonZygmundBad f q x := by
     refine tsum_eq_single (f := fun q' : calderonZygmundCubes (‖f ·‖ₑ) t =>
       calderonZygmundBad f q' x) ⟨q, hq⟩ fun q' hne => calderonZygmundBad_of_notMem fun hx' => ?_
-    exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q'.2 hq
+    exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q'.property hq
       fun h => hne (Subtype.ext h)) hx' hx
   rw [calderonZygmundGood, hsum, calderonZygmundBad_of_mem hx, sub_sub_cancel]
 
@@ -416,7 +454,7 @@ theorem lintegral_enorm_calderonZygmundGood_le (f : (ι → ℝ) → E) (t : ℝ
         pairwiseDisjoint_calderonZygmundCubes]
     refine tsum_le_tsum fun q => ?_
     rw [setLIntegral_congr_fun (measurableSet_dyadicCube _ _)
-      fun x hx => by rw [calderonZygmundGood_of_mem q.2 hx], setLIntegral_const, mul_comm]
+      fun x hx => by rw [calderonZygmundGood_of_mem q.property hx], setLIntegral_const, mul_comm]
     exact measure_mul_enorm_setAverage_le _ _ _
   · refine (setLIntegral_congr_fun hΩ.compl fun x hx => ?_).le
     rw [calderonZygmundGood_of_forall_notMem fun q hq hxq => hx (mem_biUnion hq hxq)]
@@ -431,9 +469,9 @@ theorem aestronglyMeasurable_calderonZygmundGood (hf : AEStronglyMeasurable f) (
   refine ⟨?_, ?_⟩
   · simp only [Ω, biUnion_eq_iUnion, aestronglyMeasurable_iUnion_iff]
     refine fun q =>
-      (aestronglyMeasurable_const (b := ⨍ y in dyadicCube q.1.1 q.1.2, f y ∂volume)).congr ?_
-    filter_upwards [ae_restrict_mem (measurableSet_dyadicCube q.1.1 q.1.2)] with x hx
-    rw [calderonZygmundGood_of_mem q.2 hx]
+      (aestronglyMeasurable_const (b := ⨍ y in dyadicCube q.val.1 q.val.2, f y ∂volume)).congr ?_
+    filter_upwards [ae_restrict_mem (measurableSet_dyadicCube q.val.1 q.val.2)] with x hx
+    rw [calderonZygmundGood_of_mem q.property hx]
   · refine hf.restrict.congr ?_
     filter_upwards [ae_restrict_mem hΩ.compl] with x hx
     rw [calderonZygmundGood_of_forall_notMem fun q hq hxq => hx (mem_biUnion hq hxq)]
@@ -460,9 +498,7 @@ theorem sq_eLpNorm_calderonZygmundGood_le [Nonempty ι] (hf : Integrable f) (ht 
     eLpNorm (calderonZygmundGood f t) 2 volume ^ 2 ≤
       2 ^ Fintype.card ι * t * ∫⁻ x, ‖f x‖ₑ := by
   have hg := aestronglyMeasurable_calderonZygmundGood hf.1 t
-  have h := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hg
-  simp only [ENNReal.coe_ofNat, NNReal.coe_ofNat, ENNReal.rpow_two] at h
-  rw [h]
+  rw [eLpNorm_two_sq_eq_lintegral hg]
   calc ∫⁻ x, ‖calderonZygmundGood f t x‖ₑ ^ 2
       ≤ ∫⁻ x, 2 ^ Fintype.card ι * t * ‖calderonZygmundGood f t x‖ₑ := by
         refine lintegral_mono_ae ?_
@@ -496,14 +532,14 @@ theorem subsingleton_support_calderonZygmundBad (f : (ι → ℝ) → E) (t : �
     by_contra fun hx => h (calderonZygmundBad_of_notMem hx)
   intro q hq q' hq'
   by_contra hne
-  exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q.2 q'.2
+  exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q.property q'.property
     fun h => hne (Subtype.ext h)) (hmem hq) (hmem hq')
 
 /-- If `f` and its good part at height `t` are in `Lᵖ` for a finite `p ≥ 1`, then the bad parts sum
 in `Lᵖ` to `f` minus the good part. -/
 theorem hasSum_toLp_calderonZygmundBad {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) (hf : MemLp f p)
     (hg : MemLp (calderonZygmundGood f t) p) :
-    HasSum (fun q : calderonZygmundCubes (‖f ·‖ₑ) t => (memLp_calderonZygmundBad hf q.1).toLp _)
+    HasSum (fun q : calderonZygmundCubes (‖f ·‖ₑ) t => (memLp_calderonZygmundBad hf q.val).toLp _)
       ((hf.sub hg).toLp (f - calderonZygmundGood f t)) := by
   set 𝒬 := calderonZygmundCubes (‖f ·‖ₑ) t
   set F : Finset 𝒬 → (ι → ℝ) → E := fun s x => ∑ q ∈ s, calderonZygmundBad f q x
@@ -519,15 +555,15 @@ theorem hasSum_toLp_calderonZygmundBad {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
   refine (tendsto_eLpNorm_sub_of_ae_tendsto (f := F) (g := f - calderonZygmundGood f t)
     (C := 1) hp (.of_forall fun s => Finset.aestronglyMeasurable_fun_sum s fun q _ =>
-      (memLp_calderonZygmundBad hf q.1).aestronglyMeasurable)
+      (memLp_calderonZygmundBad hf q.val).aestronglyMeasurable)
     (hf.sub hg)
     (.of_forall fun s => .of_forall fun x => by
       simpa [F, hsum x] using (hpt x).enorm_sum_sub_tsum_le s)
     (.of_forall fun x => by
       simpa [F, hsum x, HasSum, SummationFilter.unconditional_filter] using hconv x)).congr
     fun s => eLpNorm_congr_ae ?_
-  filter_upwards [Lp.coeFn_finsetSum s fun q : 𝒬 => (memLp_calderonZygmundBad hf q.1).toLp _,
-    ae_all_iff.2 fun q : 𝒬 => (memLp_calderonZygmundBad hf q.1).coeFn_toLp,
+  filter_upwards [Lp.coeFn_finsetSum s fun q : 𝒬 => (memLp_calderonZygmundBad hf q.val).toLp _,
+    ae_all_iff.2 fun q : 𝒬 => (memLp_calderonZygmundBad hf q.val).coeFn_toLp,
     (hf.sub hg).coeFn_toLp] with x hx hq hfg
   simp only [Pi.sub_apply, F, hx, Finset.sum_apply, hq, hfg]
 

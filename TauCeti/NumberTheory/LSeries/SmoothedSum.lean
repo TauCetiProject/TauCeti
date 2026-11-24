@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.Analysis.MellinInversion
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 
 /-!
 # Exponentially smoothed coefficient sums as Mellin inverses
@@ -63,7 +63,7 @@ theorem hasSum_mellinInv_Gamma_mul {ι : Type*} [Countable ι] {a : ι → ℂ} 
     rcases hp i with h | h
     · simp [g, h]
     simp only [g]
-    rw [ofReal_mul, mul_cpow_ofReal_nonneg h.le hx.le, cpow_neg (p i : ℂ)]
+    rw [ofReal_mul, ofReal_mul_cpow h.le, cpow_neg (p i : ℂ)]
     field_simp
   have hΓ := verticalIntegrable_Gamma (σ := σ) fun n h ↦ by
     linarith [show (0 : ℝ) ≤ n from n.cast_nonneg]

@@ -93,7 +93,7 @@ the elements of the Picard group of the order of discriminant `-n`, each exactly
 theorem picClass_primitiveReducedForms_bijective :
     Function.Bijective fun f : primitiveReducedForms n ↦
       picClass (-n) hn ⟨f, inf_le_right (a := posDef n)
-        (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2)⟩ := by
+        (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property)⟩ := by
   have h := Function.Bijective.comp
     ⟨posDefProperClassToPic_injective n hn, posDefProperClassToPic_surjective n hn⟩
     posDefProperClass_mk_primitiveReducedForms_bijective

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.PointsSubgroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
@@ -79,6 +80,8 @@ a relation between `C` and `Cᵀ`.
   `inclusion_def` exposing the quotient-spectrum presentations.
 * `TauCeti.ConstantForm.mem_definingPointsSubgroup_iff`: an ambient point is cut out exactly
   when its matrix `M` satisfies `M C Mᵀ = C`.
+* `TauCeti.ConstantForm.hopfIdealPointsSubgroup_definingHopfIdeal`: the matrix subgroup cut out
+  by the defining Hopf ideal is `TauCeti.ConstantForm.pointsSubgroup` of `C` read in `A`.
 * `TauCeti.ConstantForm.mul_mul_transpose_of_mem_hopfIdealPointsSubgroup`: every matrix point of
   a subgroup cut out by a Hopf ideal containing the form relations satisfies `M C Mᵀ = C`.
 
@@ -380,7 +383,6 @@ theorem finiteTypeCoordinateHopfAlgebra_obj :
     (finiteTypeCoordinateHopfAlgebra R n C).obj = coordinateHopfAlgebra R n C := by
   rw [finiteTypeCoordinateHopfAlgebra]
 
-
 /-! ### Algebra-valued points -/
 
 section Points
@@ -426,6 +428,18 @@ theorem mem_definingPointsSubgroup_iff
     GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear n g.ofConv
   rw [← hg]
   exact definingHopfIdeal_toIdeal_le_ker_iff R n C g.ofConv
+
+variable (A) in
+/-- **The matrix points of the constant-form group scheme**: the subgroup of `GLₙ(A)` cut out by
+the defining Hopf ideal is the group `ConstantForm.pointsSubgroup` of matrices preserving `C`
+read in `A`. -/
+theorem hopfIdealPointsSubgroup_definingHopfIdeal :
+    GeneralLinear.hopfIdealPointsSubgroup n (definingHopfIdeal R n C) A =
+      pointsSubgroup (C.map (algebraMap R A)) := by
+  ext g
+  have h := mem_definingPointsSubgroup_iff R n C ((GeneralLinear.pointsMulEquiv (R := R) n).symm g)
+  rw [MulEquiv.apply_symm_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at h
+  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff, h, mem_pointsSubgroup_iff]
 
 variable {R n C} in
 /-- **Every matrix point of a subgroup cut out by a Hopf ideal containing the form relations

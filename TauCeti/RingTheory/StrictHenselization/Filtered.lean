@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.StrictHenselization.Neighbourhood
 public import TauCeti.RingTheory.Unramified.Diagonal
 public import Mathlib.CategoryTheory.Filtered.Basic
 
+import TauCeti.RingTheory.TensorProduct.Maps
+
 /-!
 # Filtered pointed étale neighbourhoods
 

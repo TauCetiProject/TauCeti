@@ -51,11 +51,11 @@ subgroup scheme of the base change `(Over.pullback s).mapGrp.obj G` represented 
 of the inclusion of `P`. -/
 noncomputable def baseChange (P : ClosedSubgroupScheme G) :
     ClosedSubgroupScheme ((Over.pullback s).mapGrp.obj G) :=
-  mk ((Over.pullback s).mapGrp.map P.1.arrow)
+  mk ((Over.pullback s).mapGrp.map P.val.arrow)
 
 /-- The base change of `P` is represented by the base change of the inclusion of `P`. -/
 theorem baseChange_def (P : ClosedSubgroupScheme G) :
-    baseChange s P = mk ((Over.pullback s).mapGrp.map P.1.arrow) :=
+    baseChange s P = mk ((Over.pullback s).mapGrp.map P.val.arrow) :=
   (rfl)
 
 /-- The base change of the closed subgroup scheme represented by a closed immersion `i` is

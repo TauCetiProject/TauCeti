@@ -6,40 +6,56 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # Real parts of continuous linear functionals on balls
 
 For a continuous linear functional `f` on a seminormed space over `RCLike` scalars and a radius
-`0 ≤ r`, every upper bound of `re ∘ f` on `closedBall x r` is at least `re (f x) + r * ‖f‖`.
-Hahn–Banach separation arguments use this to turn a separating real-part bound on a ball into a
-bound on the norm of the separating functional. Conversely, for `0 ≤ r < ‖f‖` the real part of
-`f` exceeds `r * ‖x‖` at some point `x`.
+`0 ≤ r`, the upper bounds of `re ∘ f` on `closedBall x r` are exactly the reals that are at least
+`re (f x) + r * ‖f‖`. Hahn–Banach separation arguments use this to turn a separating real-part
+bound on a ball into a bound on the norm of the separating functional. Similarly, for `0 ≤ r`
+the real part of `f` exceeds `r * ‖x‖` at some point `x` if and only if `r < ‖f‖`. Applying
+`re_apply_add_mul_norm_le_iff` on unit balls of two factors gives the `ℓ¹` norm identity
+`‖Ψ ∘ inl‖ + ‖Ψ ∘ inr‖ = ‖Ψ‖` on `ℓ^∞` products `E × F`.
 
 ## Main results
 
-* `StrongDual.re_apply_add_mul_norm_le`: a bound for the real part of a functional on a closed
-  ball of nonnegative radius bounds its value at the centre plus the radius times its norm.
-* `StrongDual.exists_mul_norm_lt_re_apply`: for `0 ≤ r < ‖f‖`, the real part of `f` exceeds
-  `r * ‖x‖` at some point `x`.
+* `StrongDual.re_apply_add_mul_norm_le_iff`: for `0 ≤ r`, the real part of a functional is at
+  most `u` on `closedBall x r` if and only if its value at the centre plus the radius times its
+  norm is at most `u`.
+* `StrongDual.exists_mul_norm_lt_re_apply_iff`: for `0 ≤ r`, the real part of `f` exceeds
+  `r * ‖x‖` at some point `x` if and only if `r < ‖f‖`.
+* `StrongDual.norm_comp_inl_add_norm_comp_inr`: on `E × F` over `RCLike` scalars, the operator
+  norm of `Ψ` equals the sum of the norms of its restrictions `Ψ.comp (.inl 𝕜 E F)` and
+  `Ψ.comp (.inr 𝕜 E F)`.
 -/
 
 public section
 
 open Metric RCLike
 
-variable {𝕜 E : Type*}
+variable {𝕜 E F : Type*}
 
 namespace StrongDual
 
 variable [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- If the real part of a continuous linear functional `f` is at most `u` on the closed ball of
-radius `r ≥ 0` about `x`, then `re (f x) + r * ‖f‖ ≤ u`. -/
-theorem re_apply_add_mul_norm_le {f : StrongDual 𝕜 E} {x : E} {r u : ℝ} (hr : 0 ≤ r)
-    (h : ∀ y ∈ closedBall x r, re (f y) ≤ u) : re (f x) + r * ‖f‖ ≤ u := by
+/-- The real part of a continuous linear functional `f` is at most `u` on the closed ball of
+radius `r ≥ 0` about `x` if and only if `re (f x) + r * ‖f‖ ≤ u`. Thus `re (f x) + r * ‖f‖` is
+the least upper bound of `re ∘ f` on that ball. -/
+theorem re_apply_add_mul_norm_le_iff {f : StrongDual 𝕜 E} {x : E} {r u : ℝ} (hr : 0 ≤ r) :
+    re (f x) + r * ‖f‖ ≤ u ↔ ∀ y ∈ closedBall x r, re (f y) ≤ u := by
+  refine ⟨fun hu y hy ↦ ?_, fun h ↦ ?_⟩
+  · -- `re (f (y - x)) ≤ ‖f‖ * ‖y - x‖ ≤ ‖f‖ * r`, and `f y = f x + f (y - x)`.
+    have hyx : re (f (y - x)) ≤ ‖f‖ * r :=
+      (re_le_norm _).trans <| (f.le_opNorm _).trans <|
+        mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hy) (norm_nonneg f)
+    rw [map_sub, map_sub] at hyx
+    linarith
   have hx : re (f x) ≤ u := h x (mem_closedBall_self hr)
   rcases hr.eq_or_lt with rfl | hr
   · simpa using hx
@@ -57,14 +73,41 @@ theorem re_apply_add_mul_norm_le {f : StrongDual 𝕜 E} {x : E} {r u : ℝ} (hr
   field_simp at hy
   nlinarith
 
-/-- If `0 ≤ r < ‖f‖`, then the real part of `f` exceeds `r * ‖x‖` at some point `x`. -/
-theorem exists_mul_norm_lt_re_apply (f : StrongDual 𝕜 E) {r : ℝ} (hr₀ : 0 ≤ r) (hr : r < ‖f‖) :
-    ∃ x, r * ‖x‖ < re (f x) := by
+/-- For `0 ≤ r`, the real part of `f` exceeds `r * ‖x‖` at some point `x` if and only if
+`r < ‖f‖`. -/
+theorem exists_mul_norm_lt_re_apply_iff (f : StrongDual 𝕜 E) {r : ℝ} (hr₀ : 0 ≤ r) :
+    (∃ x, r * ‖x‖ < re (f x)) ↔ r < ‖f‖ := by
+  refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun hr ↦ ?_⟩
+  · -- `r * ‖x‖ < re (f x) ≤ ‖f‖ * ‖x‖`.
+    exact lt_of_mul_lt_mul_right (hx.trans_le ((re_le_norm _).trans (f.le_opNorm x)))
+      (norm_nonneg x)
   obtain ⟨x, hx⟩ := f.exists_mul_lt_of_lt_opNorm hr₀ hr
   -- Rotate `x` so that `f` takes the nonnegative real value `‖f x‖` on it.
   obtain ⟨a, ha, hax⟩ := exists_norm_eq_mul_self (f x)
   refine ⟨a • x, ?_⟩
   rw [map_smul, smul_eq_mul, ← hax, ofReal_re, norm_smul, ha, one_mul]
   exact hx
+
+/-- On an `ℓ^∞`-normed product `E × F` over `RCLike` scalars, the operator norm of `Ψ` equals the
+sum of the norms of its restrictions to the two factors. -/
+theorem norm_comp_inl_add_norm_comp_inr [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (Ψ : StrongDual 𝕜 (E × F)) :
+    ‖Ψ.comp (ContinuousLinearMap.inl 𝕜 E F)‖ + ‖Ψ.comp (ContinuousLinearMap.inr 𝕜 E F)‖ = ‖Ψ‖ := by
+  set f₀ := Ψ.comp (.inl 𝕜 E F); set f₁ := Ψ.comp (.inr 𝕜 E F)
+  refine le_antisymm ?_
+    ((congrArg norm Ψ.coprod_comp_inl_inr.symm).trans_le (f₀.opNorm_coprod_le f₁))
+  have hball {y₀ : E} (hy₀ : y₀ ∈ closedBall 0 1) {y₁ : F} (hy₁ : y₁ ∈ closedBall 0 1) :
+      re (f₀ y₀) + re (f₁ y₁) ≤ ‖Ψ‖ := by
+    have hnorm : ‖(y₀, y₁)‖ ≤ 1 := by
+      simp [Prod.norm_def, mem_closedBall_zero_iff.1 hy₀, mem_closedBall_zero_iff.1 hy₁]
+    rw [← map_add, Ψ.comp_inl_add_comp_inr (y₀, y₁)]
+    exact (re_le_norm _).trans <|
+      (Ψ.le_opNorm _).trans <| mul_le_of_le_one_right (norm_nonneg Ψ) hnorm
+  have h₁ : ∀ y₁ ∈ closedBall (0 : F) 1, re (f₁ y₁) ≤ ‖Ψ‖ - ‖f₀‖ := fun y₁ hy₁ ↦ by
+    have h0 := (re_apply_add_mul_norm_le_iff (f := f₀) (x := 0) (u := ‖Ψ‖ - re (f₁ y₁))
+      zero_le_one).2 fun y₀ hy₀ ↦ by linarith [hball hy₀ hy₁]
+    rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
+  have h0 := (re_apply_add_mul_norm_le_iff (f := f₁) (x := 0) zero_le_one).2 h₁
+  rw [map_zero, map_zero, zero_add, one_mul] at h0; linarith
 
 end StrongDual
