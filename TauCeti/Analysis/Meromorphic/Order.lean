@@ -44,6 +44,8 @@ meromorphic order to every point of `closedBall c R`.
   at-worst-simple poles has meromorphic order at least `-1` throughout an open set.
 * `AnalyticAt.meromorphicOrderAt_nonpos_iff`: at a point of analyticity the order is at most `0`
   exactly when the value is nonzero.
+* `MeromorphicAt.meromorphicAt_mul_iff_of_meromorphicOrderAt_ne_top`: a meromorphic factor that
+  does not vanish identically does not change whether a function is meromorphic.
 * `MeromorphicAt.meromorphicOrderAt_mul_nonpos`, `MeromorphicAt.meromorphicOrderAt_mul_nonpos_iff`:
   when a product has order at most `0`, in terms of its factors.
 * `MeromorphicAt.meromorphicOrderAt_mul_of_meromorphicOrderAt_eq_zero`: a meromorphic factor of
@@ -155,14 +157,15 @@ theorem AnalyticAt.meromorphicOrderAt_nonpos_iff {E : Type*} [NormedAddCommGroup
   | top => simp
   | coe n => simp
 
-/-- If `g * f` and `g` are meromorphic at `x` and `g` does not vanish identically near `x`, then
-`f` is meromorphic at `x`. -/
-private theorem meromorphicAt_of_mul (hgf : MeromorphicAt (g * f) x) (hg : MeromorphicAt g x)
-    (hg' : meromorphicOrderAt g x ≠ ⊤) : MeromorphicAt f x :=
-  (hgf.mul hg.inv).congr <| by
-    rw [mul_right_comm]
-    exact (((meromorphicOrderAt_ne_top_iff_mul_inv_eventuallyEq hg).1 hg').mul
-      (EventuallyEq.refl _ f)).trans (.of_eq (one_mul f))
+/-- Multiplying by a function `g` that is meromorphic at `x` and does not vanish identically near
+`x` does not change whether a function is meromorphic at `x`. For `g` analytic and nonzero at `x`
+this is Mathlib's `meromorphicAt_mul_iff_of_ne_zero`. -/
+theorem MeromorphicAt.meromorphicAt_mul_iff_of_meromorphicOrderAt_ne_top (hg : MeromorphicAt g x)
+    (hg' : meromorphicOrderAt g x ≠ ⊤) : MeromorphicAt (g * f) x ↔ MeromorphicAt f x := by
+  refine ⟨fun hgf => (hgf.mul hg.inv).congr ?_, fun hf => hg.mul hf⟩
+  rw [mul_right_comm]
+  exact (((meromorphicOrderAt_ne_top_iff_mul_inv_eventuallyEq hg).1 hg').mul
+    (EventuallyEq.refl _ f)).trans (.of_eq (one_mul f))
 
 /-- The product of two functions of order at most `0` at `x`, one of which is meromorphic at `x`,
 has order at most `0` at `x`. If the other factor is not meromorphic at `x`, neither is the
@@ -174,7 +177,8 @@ theorem MeromorphicAt.meromorphicOrderAt_mul_nonpos (hf : MeromorphicAt f x)
   · rw [meromorphicOrderAt_mul hf hg]
     exact add_nonpos hf0 hg0
   · rw [meromorphicOrderAt_of_not_meromorphicAt fun h =>
-      hg (meromorphicAt_of_mul h hf (ne_top_of_le_ne_top WithTop.zero_ne_top hf0))]
+      hg ((hf.meromorphicAt_mul_iff_of_meromorphicOrderAt_ne_top
+        (ne_top_of_le_ne_top WithTop.zero_ne_top hf0)).1 h)]
 
 /-- For `f` and `g` meromorphic at `x`, such that a pole of either at `x` is not a zero of the
 other, the product `f * g` has order at most `0` at `x` exactly when `f` and `g` both do. The two
@@ -203,7 +207,8 @@ theorem MeromorphicAt.meromorphicOrderAt_mul_of_meromorphicOrderAt_eq_zero
   by_cases hf : MeromorphicAt f x
   · rw [meromorphicOrderAt_mul hg hf, hg0, zero_add]
   · rw [meromorphicOrderAt_of_not_meromorphicAt hf, meromorphicOrderAt_of_not_meromorphicAt
-      fun h => hf (meromorphicAt_of_mul h hg (by rw [hg0]; exact WithTop.zero_ne_top))]
+      fun h => hf ((hg.meromorphicAt_mul_iff_of_meromorphicOrderAt_ne_top
+        (by rw [hg0]; exact WithTop.zero_ne_top)).1 h)]
 
 end Mul
 
