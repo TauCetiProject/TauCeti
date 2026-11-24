@@ -23,7 +23,8 @@ of a point (`TauCeti.isIso_singularHomologyMap_isTerminalPUnit_from_iff`). Likew
 connecting morphism of a pair is an isomorphism whenever its ambient space is contractible. For
 `TauCeti.diskBoundaryPair n`, this identifies the relative homology of a disk modulo its boundary
 with the reduced homology of the boundary sphere.  Dually, the quotient map
-`Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism whenever the subspace is contractible; for a point this is
+`Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism whenever the subspace is contractible
+(`TopPair.singularHomologyIsoOfContractibleSpace`); for a point this is
 `TauCeti.singularHomologyIsoOfSubsetSingleton : Hₖ₊₁(X) ≅ Hₖ₊₁(X, {x})`. The connecting morphism
 `Hₖ₊₁(X, A) ⟶ Hₖ(A)` then vanishes (`TopPair.singularHomologyδ_eq_zero_of_contractibleSpace`).
 
@@ -187,8 +188,45 @@ instance isIso_singularHomologyπ_of_contractibleSpace [ContractibleSpace P.snd]
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd (k + 1))
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd k)
 
+/-- If the subspace of a pair is contractible, the quotient map `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)`
+(`TopPair.isIso_singularHomologyπ_of_contractibleSpace`), as an isomorphism from the singular
+homology of `X`. -/
+def singularHomologyIsoOfContractibleSpace [ContractibleSpace P.snd] (k : ℕ) :
+    ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).obj P.fst ≅
+      P.singularHomology R (k + 1) :=
+  -- The source of `singularHomologyπ` is the homology of the singular simplicial set of `P.fst`,
+  -- which is `((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).obj P.fst` by
+  -- definition.
+  @asIso _ _ _ _ (P.singularHomologyπ R (k + 1))
+    (P.isIso_singularHomologyπ_of_contractibleSpace R k)
+
+/-- The forward map of `TopPair.singularHomologyIsoOfContractibleSpace` is the quotient map
+`Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)`. Clients use it to replace the isomorphism by `singularHomologyπ` and apply
+the long exact sequence API of the pair.
+
+Not `@[simp]`: the source of the quotient map agrees with the source of this isomorphism only up
+to unfolding, so rewriting with this lemma inside composites leaves ill-typed motives. -/
+lemma singularHomologyIsoOfContractibleSpace_hom [ContractibleSpace P.snd] (k : ℕ) :
+    (P.singularHomologyIsoOfContractibleSpace R k).hom = P.singularHomologyπ R (k + 1) :=
+  (rfl)
+
+variable {P} in
+/-- **Naturality of `Hₖ₊₁(X) ≅ Hₖ₊₁(X, A)`** for contractible subspaces, in maps of pairs. -/
+@[reassoc]
+lemma singularHomologyIsoOfContractibleSpace_hom_naturality {P' : TopPair.{w}} (f : P ⟶ P')
+    [ContractibleSpace P.snd] [ContractibleSpace P'.snd] (k : ℕ) :
+    ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).map (Hom.fst f) ≫
+        (P'.singularHomologyIsoOfContractibleSpace R k).hom =
+      (P.singularHomologyIsoOfContractibleSpace R k).hom ≫
+        TopPair.singularHomologyMap f R (k + 1) :=
+  -- `singularHomologyFunctor` unfolds to the homology of the singular simplicial set, which is the
+  -- source of the quotient map `singularHomologyπ`, so this is `singularHomologyπ_naturality` up to
+  -- that unfolding.
+  singularHomologyπ_naturality f R (k + 1)
+
 /-- If the subspace of a pair is contractible, the connecting morphism `Hₖ₊₁(X, A) ⟶ Hₖ(A)`
 vanishes. -/
+@[simp]
 theorem singularHomologyδ_eq_zero_of_contractibleSpace [ContractibleSpace P.snd] (k : ℕ) :
     P.singularHomologyδ R (k + 1) k = 0 := by
   rw [← cancel_epi (P.singularHomologyπ R (k + 1)),
@@ -207,12 +245,11 @@ variable {X : Type w} [TopologicalSpace X]
 def singularHomologyIsoOfSubsetSingleton (x : X) :
     ((singularHomologyFunctor C (n + 1)).obj R).obj (TopCat.of X) ≅
       (TopPair.ofSubset ({x} : Set (TopCat.of X))).singularHomology R (n + 1) :=
-  @asIso _ _ _ _ ((TopPair.ofSubset ({x} : Set (TopCat.of X))).singularHomologyπ R (n + 1)) <|
-    -- Instance search does not see through the subspace of `TopPair.ofSubset`, so the
-    -- contractibility of the point is supplied explicitly.
-    @TopPair.isIso_singularHomologyπ_of_contractibleSpace _ _ _ _
-      (TopPair.ofSubset ({x} : Set (TopCat.of X))) R
-      (inferInstanceAs (ContractibleSpace ({x} : Set X))) n
+  -- Instance search does not see through the subspace of `TopPair.ofSubset`, so the
+  -- contractibility of the point is supplied explicitly.
+  @TopPair.singularHomologyIsoOfContractibleSpace _ _ _ _
+    (TopPair.ofSubset ({x} : Set (TopCat.of X))) R
+    (inferInstanceAs (ContractibleSpace ({x} : Set X))) n
 
 -- Not `@[simp]`: the source of the quotient map is the homology of the singular simplicial set,
 -- which agrees with `((singularHomologyFunctor C (n + 1)).obj R).obj (TopCat.of X)` only up to
@@ -231,12 +268,13 @@ lemma singularHomologyIsoOfSubsetSingleton_hom_naturality {Y : Type w} [Topologi
       (singularHomologyIsoOfSubsetSingleton R n x).hom ≫
         TopPair.singularHomologyMap (TopPair.ofSubsetMap (TopCat.ofHom f)
           (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf))) R (n + 1) := by
-  have h := SSetPair.homologyπ_naturality (TopPair.toSSetPair.map (TopPair.ofSubsetMap
-    (TopCat.ofHom f) (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf)))) R (n + 1)
-  rw [TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst] at h
-  -- `singularHomologyFunctor` unfolds to the homology of the singular simplicial set, which is the
-  -- source of the quotient map `singularHomologyπ`, so `h` is the claim up to that unfolding.
-  exact h
+  -- Instance search does not see through the subspaces of `TopPair.ofSubset`, so the
+  -- contractibility of the points is supplied explicitly.
+  have h := @TopPair.singularHomologyIsoOfContractibleSpace_hom_naturality _ _ _ _ _ R _
+    (TopPair.ofSubsetMap (TopCat.ofHom f) (Set.mapsTo_singleton.2 (Set.mem_singleton_iff.2 hf)))
+    (inferInstanceAs (ContractibleSpace ({x} : Set X)))
+    (inferInstanceAs (ContractibleSpace ({y} : Set Y))) n
+  rwa [TopPair.ofSubsetMap_fst] at h
 
 end TauCeti
 

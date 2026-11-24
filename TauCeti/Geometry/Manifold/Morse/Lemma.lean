@@ -42,6 +42,10 @@ stable and unstable manifolds are then studied.
   weight.
 * `TauCeti.MorseChart.splitCoordL`: the split coordinates as a continuous linear equivalence of
   the model.
+* `TauCeti.MorseChart.continuousAt_splitCoord_coord_toChart` and
+  `TauCeti.MorseChart.continuousAt_toChart_symm_coord_symm_splitCoord_symm`: the split coordinates
+  of the points of the chart, and the points of the chart with given split coordinates, depend
+  continuously on each other.
 * `TauCeti.MorseChart.max_norm_fst_norm_snd_splitCoord`: the sup norm of the coordinates is the
   larger of the norms of the two factors of the split coordinates.
 * `TauCeti.MorseChart.apply_toChart_symm_coord_symm_splitCoord_symm`: the Morse normal form in
@@ -356,6 +360,22 @@ theorem splitCoordL_symm_apply
     (w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))) :
     φ.splitCoordL.symm w = φ.coord.symm (φ.splitCoord.symm w) :=
   (rfl)
+
+/-- The split coordinates of a Morse chart are continuous at the points of the chart. -/
+theorem continuousAt_splitCoord_coord_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    ContinuousAt (fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))) y :=
+  (φ.splitCoordL.continuous.continuousAt.comp (φ.toChart.continuousAt hy)).congr
+    (.of_forall fun _ ↦ φ.splitCoordL_apply _)
+
+/-- Reading split coordinates back on `M` through a Morse chart is continuous at the coordinates of
+points of the chart. -/
+theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
+    ContinuousAt (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) z :=
+  (φ.toChart.continuousAt_symm hz).comp (f := fun z ↦ φ.coord.symm (φ.splitCoord.symm z))
+    ((φ.splitCoordL.symm.continuous.continuousAt (x := z)).congr
+      (.of_forall fun _ ↦ φ.splitCoordL_symm_apply _))
 
 end MorseChart
 

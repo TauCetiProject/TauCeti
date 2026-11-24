@@ -21,7 +21,8 @@ Any set becomes invariant under conjugation once its mirror image is added
 (`TauCeti.conj_mem_union_preimage_conj`).
 Conjugation maps the real axis into itself
 (`TauCeti.mapsTo_conj_setOf_im_eq_zero`), whereas the rotation `z ↦ I z` does not
-(`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`).
+(`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`). A function `f : ℂ → ℂ` that commutes with
+conjugation is real on the real line (`TauCeti.ofReal_re_apply_of_forall_conj`).
 
 Conjugation also preserves norms (Mathlib's `Complex.norm_conj`), so the norm of
 `1 - conj w * z` is symmetric in `z` and `w` (`Complex.norm_one_sub_conj_mul_comm`). This
@@ -57,7 +58,9 @@ The canonical embedding of an `RCLike` field into `ℂ` is bundled as
 `TauCeti.toComplexStarAlgHom`, so real star-algebra constructions can be transported to `ℂ`.
 
 Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
-whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
+whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`). If `s + β` vanishes for no natural
+number `s ≥ 1`, then `‖s + β‖ ≥ c s` for some `c > 0` and all `s ≥ 1`
+(`Complex.exists_pos_mul_le_norm_natCast_add`).
 
 The real coordinates `equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` do not increase distances, so they map the
 disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`
@@ -230,6 +233,12 @@ theorem mapsTo_conj_setOf_im_eq_zero :
     Set.MapsTo (conj ·) {z : ℂ | z.im = 0} {z : ℂ | z.im = 0} := fun z hz => by
   simpa using hz
 
+/-- A function that commutes with complex conjugation is real on the real line:
+`f x` is the cast of its real part. -/
+theorem ofReal_re_apply_of_forall_conj {f : ℂ → ℂ} (hf : ∀ w, f (conj w) = conj (f w))
+    (x : ℝ) : ((f x).re : ℂ) = f x :=
+  Complex.conj_eq_iff_re.1 (by rw [← hf, Complex.conj_ofReal])
+
 /-- The rotation `z ↦ I z` does not preserve the real axis, so it is not admissible on
 half-discs. -/
 theorem not_mapsTo_I_mul_setOf_im_eq_zero :
@@ -356,6 +365,32 @@ theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (h
   rw [norm_div, Complex.norm_natCast]
   exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
     (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
+
+/-- If `s + β` never vanishes for natural numbers `s ≥ 1`, then `‖s + β‖` is bounded below by a
+positive multiple of `s` for all `s ≥ 1`. -/
+theorem exists_pos_mul_le_norm_natCast_add {β : ℂ} (hβ : ∀ s : ℕ, 1 ≤ s → (s : ℂ) + β ≠ 0) :
+    ∃ c > 0, ∀ s : ℕ, 1 ≤ s → c * s ≤ ‖(s : ℂ) + β‖ := by
+  -- beyond `N` the bound `c = 1/2` holds; below it, take the least ratio `‖s + β‖ / s`
+  set N := ⌈2 * ‖β‖⌉₊ + 1
+  obtain ⟨s₀, hs₀, hmin⟩ := (Finset.Icc 1 N).exists_min_image (fun s : ℕ ↦ ‖(s : ℂ) + β‖ / s)
+    ⟨1, Finset.mem_Icc.2 ⟨le_rfl, by omega⟩⟩
+  have hs₀1 : (0 : ℝ) < s₀ := by exact_mod_cast (Finset.mem_Icc.1 hs₀).1
+  have hpos : 0 < ‖(s₀ : ℂ) + β‖ / s₀ :=
+    div_pos (norm_pos_iff.2 (hβ s₀ (Finset.mem_Icc.1 hs₀).1)) hs₀1
+  refine ⟨min (1 / 2) (‖(s₀ : ℂ) + β‖ / s₀), lt_min (by norm_num) hpos, fun s hs ↦ ?_⟩
+  have hs' : (0 : ℝ) < s := by exact_mod_cast hs
+  by_cases hsN : s ≤ N
+  · calc min (1 / 2) (‖(s₀ : ℂ) + β‖ / s₀) * s ≤ (‖(s : ℂ) + β‖ / s) * s := by
+          gcongr
+          exact (min_le_right _ _).trans (hmin s (Finset.mem_Icc.2 ⟨hs, hsN⟩))
+      _ = ‖(s : ℂ) + β‖ := div_mul_cancel₀ _ hs'.ne'
+  · have hceil : 2 * ‖β‖ ≤ s := (Nat.le_ceil _).trans (by exact_mod_cast (by omega : _ ≤ s))
+    have htri : (s : ℝ) ≤ ‖(s : ℂ) + β‖ + ‖β‖ := by
+      simpa using norm_sub_le ((s : ℂ) + β) β
+    calc min (1 / 2) (‖(s₀ : ℂ) + β‖ / s₀) * s ≤ 1 / 2 * s := by
+          gcongr
+          exact min_le_left _ _
+      _ ≤ ‖(s : ℂ) + β‖ := by linarith
 
 /-- The real coordinates `equivRealProdCLM` do not increase distances, so they map the disc of
 radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`. -/
