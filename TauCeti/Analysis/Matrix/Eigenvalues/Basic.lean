@@ -34,7 +34,11 @@ Hermitian matrices with the same decreasing eigenvalue list are unitarily conjug
 (`Matrix.IsHermitian.exists_unitary_conj_of_eigenvalues₀_eq`). An antitone `μ` with
 `A.charpoly = ∏ k, (X - μ k)` is the decreasing eigenvalue list of `A`
 (`Matrix.IsHermitian.eigenvalues₀_eq_of_charpoly_eq`); in particular a decreasing list is the
-eigenvalue list of its real diagonal matrix (`Matrix.IsHermitian.eigenvalues₀_diagonal`).
+eigenvalue list of its real diagonal matrix (`Matrix.IsHermitian.eigenvalues₀_diagonal`). For
+`2 × 2` matrices, `Matrix.IsHermitian.eigenvalues₀_eq_of_charpoly_eq_two` reads off the sorted
+eigenvalues `(a, b)` from the factorisation `(X - a)(X - b)`, and
+`Matrix.IsHermitian.eigenvalues₀_diagonal_two` and
+`Matrix.IsHermitian.eigenvalues₀_diagonal_two_swap` evaluate them on `diag(a, b)` and `diag(b, a)`.
 The sorted eigenvalues sum to the real part of the trace
 (`Matrix.IsHermitian.sum_eigenvalues₀_eq_re_trace`), their product is the determinant
 (`Matrix.IsHermitian.det_eq_prod_eigenvalues₀`), and shifting `A` by `t • 1` shifts each of them
@@ -144,6 +148,30 @@ theorem IsHermitian.eigenvalues₀_diagonal {s : Fin (Fintype.card ι) → ℝ} 
     rw [charpoly_diagonal]
     exact Equiv.prod_comp (Fintype.equivOfCardEq (Fintype.card_fin _)).symm
       fun k ↦ Polynomial.X - Polynomial.C (s k : 𝕜)
+
+open Polynomial in
+/-- A `2 × 2` Hermitian matrix with characteristic polynomial `(X - a)(X - b)`, `b ≤ a`, has
+sorted eigenvalues `(a, b)`. -/
+theorem IsHermitian.eigenvalues₀_eq_of_charpoly_eq_two {A : Matrix (Fin 2) (Fin 2) 𝕜}
+    (h : A.IsHermitian) {a b : ℝ} (hab : b ≤ a)
+    (hA : A.charpoly = (X - C (a : 𝕜)) * (X - C (b : 𝕜))) : h.eigenvalues₀ = ![a, b] := by
+  refine h.eigenvalues₀_eq_of_charpoly_eq (antitone_vecEmpty.vecCons hab) ?_
+  rw [hA]
+  -- `Fintype.card (Fin 2)` reduces to `2`, exposing the product to `Fin.prod_univ_two`.
+  change _ = ∏ k : Fin 2, _
+  simp [Fin.prod_univ_two]
+
+/-- The sorted eigenvalues of `diag(a, b)` with `b ≤ a` are `(a, b)`. -/
+theorem IsHermitian.eigenvalues₀_diagonal_two {a b : ℝ} (hab : b ≤ a)
+    (h : (diagonal ![(a : 𝕜), b]).IsHermitian) : h.eigenvalues₀ = ![a, b] :=
+  h.eigenvalues₀_eq_of_charpoly_eq_two hab (by simp [charpoly_diagonal, Fin.prod_univ_two])
+
+/-- The sorted eigenvalues of `diag(b, a)` with `b ≤ a` are `(a, b)`: sorting reorders the
+diagonal. -/
+theorem IsHermitian.eigenvalues₀_diagonal_two_swap {a b : ℝ} (hab : b ≤ a)
+    (h : (diagonal ![(b : 𝕜), a]).IsHermitian) : h.eigenvalues₀ = ![a, b] :=
+  h.eigenvalues₀_eq_of_charpoly_eq_two hab
+    (by simp [charpoly_diagonal, Fin.prod_univ_two, mul_comm])
 
 /-- **The trace is the spectral function of the sum**: the sorted eigenvalues of a Hermitian
 matrix sum to the real part of its trace. -/

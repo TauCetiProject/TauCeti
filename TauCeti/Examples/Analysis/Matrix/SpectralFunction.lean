@@ -36,35 +36,12 @@ spectral functions on diagonal `2 × 2` matrices and test the hypotheses of the 
 
 public section
 
-open Matrix Polynomial
+open Matrix
 open scoped ComplexOrder
 
 namespace TauCeti.SpectralFunctionExamples
 
 variable {𝕜 : Type*} [RCLike 𝕜]
-
-/-- A `2 × 2` Hermitian matrix with characteristic polynomial `(X - a)(X - b)`, `b ≤ a`, has
-sorted eigenvalues `(a, b)`. -/
-private theorem eigenvalues₀_eq_of_charpoly_eq_two {A : Matrix (Fin 2) (Fin 2) 𝕜}
-    (h : A.IsHermitian) {a b : ℝ} (hab : b ≤ a)
-    (hA : A.charpoly = (X - C (a : 𝕜)) * (X - C (b : 𝕜))) : h.eigenvalues₀ = ![a, b] := by
-  refine h.eigenvalues₀_eq_of_charpoly_eq (antitone_vecEmpty.vecCons hab) ?_
-  rw [hA]
-  -- `Fintype.card (Fin 2)` reduces to `2`, exposing the product to `Fin.prod_univ_two`.
-  change _ = ∏ k : Fin 2, _
-  simp [Fin.prod_univ_two]
-
-/-- The sorted eigenvalues of `diag(a, b)` with `b ≤ a` are `(a, b)`. -/
-theorem eigenvalues₀_diagonal_two {a b : ℝ} (hab : b ≤ a)
-    (h : (diagonal ![(a : 𝕜), b]).IsHermitian) : h.eigenvalues₀ = ![a, b] :=
-  eigenvalues₀_eq_of_charpoly_eq_two h hab (by simp [charpoly_diagonal, Fin.prod_univ_two])
-
-/-- The sorted eigenvalues of `diag(b, a)` with `b ≤ a` are `(a, b)`: sorting reorders the
-diagonal. -/
-theorem eigenvalues₀_diagonal_two_swap {a b : ℝ} (hab : b ≤ a)
-    (h : (diagonal ![(b : 𝕜), a]).IsHermitian) : h.eigenvalues₀ = ![a, b] :=
-  eigenvalues₀_eq_of_charpoly_eq_two h hab
-    (by simp [charpoly_diagonal, Fin.prod_univ_two, mul_comm])
 
 /-! ### The geometric mean and `det^{1/n}` -/
 
@@ -91,11 +68,11 @@ theorem geomMean_diagonal_four_one (hA : (diagonal ![((4 : ℝ) : 𝕜), (1 : �
     rw [show (4 : ℝ) = 2 ^ 2 by norm_num]
     simpa using Real.pow_rpow_inv_natCast (x := 2) (n := 2) (by norm_num) two_ne_zero
   refine ⟨?_, ?_, ?_⟩
-  · rw [eigenvalues₀_diagonal_two (by norm_num) hA, geomMean]
+  · rw [hA.eigenvalues₀_diagonal_two (by norm_num), geomMean]
     simpa using h4
-  · rw [eigenvalues₀_diagonal_two_swap (by norm_num) hB, geomMean]
+  · rw [hB.eigenvalues₀_diagonal_two_swap (by norm_num), geomMean]
     simpa using h4
-  · rw [eigenvalues₀_diagonal_two le_rfl hM, geomMean]
+  · rw [hM.eigenvalues₀_diagonal_two le_rfl, geomMean]
     simpa [← sq] using Real.pow_rpow_inv_natCast (x := 5 / 2) (n := 2) (by norm_num) two_ne_zero
 
 /-- The midpoint of `diag(4, 1)` and `diag(1, 4)` is `diag(5/2, 5/2)`. -/
@@ -126,11 +103,11 @@ theorem geomMean_diagonal_one_zero (hA : (diagonal ![((1 : ℝ) : 𝕜), (0 : �
     geomMean hA.eigenvalues₀ = 0 ∧ geomMean hB.eigenvalues₀ = 0 ∧
       geomMean hM.eigenvalues₀ = 1 / 2 := by
   refine ⟨?_, ?_, ?_⟩
-  · rw [eigenvalues₀_diagonal_two (by norm_num) hA, geomMean]
+  · rw [hA.eigenvalues₀_diagonal_two (by norm_num), geomMean]
     simp
-  · rw [eigenvalues₀_diagonal_two_swap (by norm_num) hB, geomMean]
+  · rw [hB.eigenvalues₀_diagonal_two_swap (by norm_num), geomMean]
     simp
-  · rw [eigenvalues₀_diagonal_two le_rfl hM, geomMean]
+  · rw [hM.eigenvalues₀_diagonal_two le_rfl, geomMean]
     simpa [← sq] using Real.pow_rpow_inv_natCast (x := 1 / 2) (n := 2) (by norm_num) two_ne_zero
 
 /-! ### A symmetric cone that is not convex -/
@@ -161,10 +138,10 @@ theorem not_convex_setOf_inNonconvexCone_eigenvalues₀ :
   let B : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℝ) :=
     ⟨diagonal ![1, 1 / 10], isHermitian_diagonal _⟩
   have hA : InNonconvexCone A.property.isHermitian.eigenvalues₀ := by
-    rw [eigenvalues₀_diagonal_two (𝕜 := ℝ) (a := 1) (b := -(2 / 5)) (by norm_num)]
+    rw [IsHermitian.eigenvalues₀_diagonal_two (𝕜 := ℝ) (a := 1) (b := -(2 / 5)) (by norm_num)]
     norm_num [InNonconvexCone]
   have hB : InNonconvexCone B.property.isHermitian.eigenvalues₀ := by
-    rw [eigenvalues₀_diagonal_two (𝕜 := ℝ) (a := 1) (b := 1 / 10) (by norm_num)]
+    rw [IsHermitian.eigenvalues₀_diagonal_two (𝕜 := ℝ) (a := 1) (b := 1 / 10) (by norm_num)]
     norm_num [InNonconvexCone]
   have hM : InNonconvexCone ((1 / 2 : ℝ) • A + (1 / 2 : ℝ) • B).property.isHermitian.eigenvalues₀ :=
     hconv hA hB (by norm_num) (by norm_num) (by norm_num)
@@ -173,7 +150,7 @@ theorem not_convex_setOf_inNonconvexCone_eigenvalues₀ :
     ext i j
     fin_cases i <;> fin_cases j <;> simp [A, B] <;> norm_num
   rw [IsHermitian.eigenvalues₀_congr hmid _ (isHermitian_diagonal _),
-    eigenvalues₀_diagonal_two (𝕜 := ℝ) (a := 1) (b := -(3 / 20)) (by norm_num)] at hM
+    IsHermitian.eigenvalues₀_diagonal_two (𝕜 := ℝ) (a := 1) (b := -(3 / 20)) (by norm_num)] at hM
   norm_num [InNonconvexCone] at hM
 
 /-! ### `min` and `max` -/
@@ -206,8 +183,8 @@ theorem maxPair_minPair_diagonal_one_zero
     (maxPair hA.eigenvalues₀ = 1 ∧ maxPair hB.eigenvalues₀ = 1 ∧ maxPair hM.eigenvalues₀ = 1 / 2) ∧
       (minPair hA.eigenvalues₀ = 0 ∧ minPair hB.eigenvalues₀ = 0 ∧
         minPair hM.eigenvalues₀ = 1 / 2) := by
-  rw [eigenvalues₀_diagonal_two (by norm_num) hA, eigenvalues₀_diagonal_two_swap (by norm_num) hB,
-    eigenvalues₀_diagonal_two le_rfl hM]
+  rw [hA.eigenvalues₀_diagonal_two (by norm_num), hB.eigenvalues₀_diagonal_two_swap (by norm_num),
+    hM.eigenvalues₀_diagonal_two le_rfl]
   norm_num [maxPair, minPair]
 
 /-! ### `log det(1 + T)` -/
@@ -240,8 +217,8 @@ theorem logOneAdd_diagonal (hA : (diagonal ![((-(1 / 2) : ℝ) : 𝕜), (1 : ℝ
       logOneAdd hM.eigenvalues₀ = 2 * Real.log (5 / 4) ∧ 0 < 2 * Real.log (5 / 4) := by
   have h0 : Real.log 2 + Real.log (1 / 2) = 0 := by
     rw [one_div, Real.log_inv, add_neg_cancel]
-  rw [eigenvalues₀_diagonal_two_swap (by norm_num) hA, eigenvalues₀_diagonal_two (by norm_num) hB,
-    eigenvalues₀_diagonal_two le_rfl hM]
+  rw [hA.eigenvalues₀_diagonal_two_swap (by norm_num), hB.eigenvalues₀_diagonal_two (by norm_num),
+    hM.eigenvalues₀_diagonal_two le_rfl]
   refine ⟨?_, ?_, ?_, mul_pos two_pos (Real.log_pos (by norm_num))⟩ <;>
     norm_num [logOneAdd] <;> linarith [h0]
 
