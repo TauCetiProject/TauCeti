@@ -211,7 +211,7 @@ theorem units_map_inclusion_unitEquivUnitsInteger (h : S ⊆ S') (u : S.unit K) 
     Units.map (Subalgebra.inclusion (Set.integer_mono K h) : S.integer K →* S'.integer K)
         (S.unitEquivUnitsInteger K u) =
       S'.unitEquivUnitsInteger K (Subgroup.inclusion (Set.unit_mono K h) u) :=
-  Units.ext <| Subtype.ext <| by simp [Set.unitEquivUnitsInteger]
+  Units.ext <| Subtype.ext <| by simp
 
 end Units
 
