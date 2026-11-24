@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 import Mathlib.LinearAlgebra.Quotient.Pi
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Ideal.Operations.Pi
 import TauCeti.RingTheory.Length
 
@@ -28,7 +29,6 @@ the length of `M` itself, which over a field `A ⧸ I` is its rank.
 
 ## Main results
 
-* `Submodule.comap_subtype_smul`: inside a submodule `N`, the preimage of `I • N` is `I • ⊤`.
 * `TauCeti.length_quotient_smul_eq_length_quotient_smul_top_add`: `M ⧸ I • N` is filtered by
   `N ⧸ I • N` and `M ⧸ N`.
 * `TauCeti.length_quotient_smul_top_congr`: the length of `M ⧸ I • M` is a linear-equivalence
@@ -42,12 +42,6 @@ the length of `M` itself, which over a field `A ⧸ I` is its rank.
 -/
 
 public section
-
-/-- Inside a submodule `N`, the preimage of `I • N` is `I • ⊤`. -/
-theorem Submodule.comap_subtype_smul {A M : Type*} [Ring A] [AddCommGroup M] [Module A M]
-    (I : Ideal A) (N : Submodule A M) : (I • N).comap N.subtype = I • ⊤ := by
-  rw [← Submodule.comap_map_eq_of_injective N.subtype_injective (I • ⊤), Submodule.map_smul'',
-    Submodule.map_top, Submodule.range_subtype]
 
 namespace TauCeti
 

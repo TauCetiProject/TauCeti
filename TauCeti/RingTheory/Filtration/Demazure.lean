@@ -10,9 +10,10 @@ public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
+import Mathlib.RingTheory.Ideal.Colon
 import TauCeti.Algebra.Module.DiscreteValuationRing.ElementaryDivisors
 import TauCeti.Algebra.Order.BigOperators.Sum.Min
-import TauCeti.RingTheory.Ideal.Operations.Pi
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Length.SMulTop
 
@@ -329,12 +330,14 @@ noncomputable def adic (f : M ≃ₗ[A] ∀ j, A ⧸ maximalIdeal A ^ μ j) :
     (fun i hi ↦ by
       rw [stableFiltration_N, ← (Submodule.map_injective_of_injective f.injective).eq_iff,
         Submodule.map_smul'', Submodule.map_top, LinearEquiv.range, Submodule.map_bot]
-      exact Submodule.smul_top_pi_quotient_eq_bot fun j ↦ Ideal.pow_le_pow_right (hi j))
+      refine Submodule.le_annihilator_iff.1 ?_
+      rw [Submodule.annihilator_top, Module.annihilator_pi]
+      exact le_iInf fun j ↦ (Ideal.pow_le_pow_right (hi j)).trans Ideal.annihilator_quotient.ge)
     (fun i ↦ by
       have h :=
         TauCeti.IsDiscreteValuationRing.length_pow_maximalIdeal_smul_top_quotient_smul_top f i
       rw [← Submodule.comap_subtype_smul, ← Submodule.mul_smul, ← pow_succ'] at h
-      -- `stableFiltration ⊤` has `N i = 𝔪 ^ i • ⊤` by definition.
+      rw [stableFiltration_N, stableFiltration_N]
       exact h)
 
 @[simp]
