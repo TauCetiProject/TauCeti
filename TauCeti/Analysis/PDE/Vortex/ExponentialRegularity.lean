@@ -358,7 +358,7 @@ theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_forall_mem_framedField
   exp_mul_smul_mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k
     (contDiff_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hc
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n) hc
     hweak horth hwf
 
 /-! ### The weighted `H¹` estimate -/
