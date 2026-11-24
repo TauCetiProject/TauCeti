@@ -82,6 +82,15 @@ def IsTwoBoundary [Zero R] [One R] (n r s : ℕ) (M : Matrix (Fin (n + 1)) (Fin 
   ∀ i j : Fin (n + 1), M i j ≠ (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j →
     i < j ∧ ((i = 0 ∧ n ≤ (j : ℕ) + s) ∨ (j = Fin.last n ∧ (i : ℕ) ≤ r))
 
+/-- Unfolding of the two-boundary support condition: every entry that differs from the identity
+lies strictly above the diagonal, in row `0` at a column `j ≥ n - s` or in column `n` at a row
+`i ≤ r`. -/
+theorem isTwoBoundary_iff [Zero R] [One R] {M : Matrix (Fin (n + 1)) (Fin (n + 1)) R} :
+    IsTwoBoundary n r s M ↔
+      ∀ i j : Fin (n + 1), M i j ≠ (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j →
+        i < j ∧ ((i = 0 ∧ n ≤ (j : ℕ) + s) ∨ (j = Fin.last n ∧ (i : ℕ) ≤ r)) :=
+  Iff.rfl
+
 /-- Enlarging `r` and `s` weakens the two-boundary support condition. -/
 theorem IsTwoBoundary.mono [Zero R] [One R] {r' s' : ℕ}
     {M : Matrix (Fin (n + 1)) (Fin (n + 1)) R} (hM : IsTwoBoundary n r s M) (hr : r ≤ r')
@@ -470,7 +479,10 @@ private theorem isUpperUnitriangular_one_add_boundaryMatrix (c : R) (a : Fin s �
 
 /-- The element of `P_(r,s)` with corner entry `c`, first-row entries `a k` at `(0, n - s + k)`
 and last-column entries `b k` at `(k + 1, n)`, all other entries above the diagonal being zero.
-For `r, s < n` its coordinates are `c`, `a` and `b` (`twoBoundaryMk_apply_zero_last`,
+Values with no valid position are dropped: `c` when `n = 0` (the corner is then diagonal), the
+`a k` with `k = 0` or `k ≥ n` when `s ≥ n` (diagonal, corner or outside the matrix), and `b (n - 1)`
+when `r ≥ n` (diagonal). For `0 < n` and `r, s < n` nothing is dropped, and the coordinates of
+`twoBoundaryMk c a b` are `c`, `a` and `b` (`twoBoundaryMk_apply_zero_last`,
 `twoBoundaryHom_twoBoundaryMk`). -/
 noncomputable def twoBoundaryMk (c : R) (a : Fin s → R) (b : Fin r → R) :
     twoBoundarySubgroup (R := R) n r s :=
@@ -528,6 +540,14 @@ representative. -/
 theorem twoBoundaryQuotientEquiv_mk (g : twoBoundarySubgroup (R := R) n r s) :
     twoBoundaryQuotientEquiv hr hs (QuotientGroup.mk g) = twoBoundaryHom hr hs g :=
   (rfl)
+
+/-- The inverse of `P_(r,s)/Z ≅ R^s × R^r` sends noncorner coordinates `(a, b)` to the class of
+`twoBoundaryMk 0 a b`, so `twoBoundaryMk 0` is a section of `P_(r,s) → P_(r,s)/Z`. -/
+@[simp]
+theorem twoBoundaryQuotientEquiv_symm_apply (x : Multiplicative ((Fin s → R) × (Fin r → R))) :
+    (twoBoundaryQuotientEquiv hr hs).symm x =
+      QuotientGroup.mk (twoBoundaryMk 0 x.toAdd.1 x.toAdd.2) :=
+  (twoBoundaryQuotientEquiv hr hs).symm_apply_eq.2 (by simp)
 
 end Construction
 
