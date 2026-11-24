@@ -604,7 +604,9 @@ theorem brokenGeodesicLoop_repeatFirstIterate (n : ℕ) (q : Fin (n + 1) → M)
           (Fin.cons (q ⟨(0 : Fin (n + k + 1)) - k, by omega⟩)
             (fun j : Fin (n + k + 1) ↦ q ⟨j - k, by omega⟩))
           (fun i ↦ by rw [← hcons]; exact h' i) := by
-          congr 1
+          -- The tuples agree by `hcons`, and `n + (k + 1)` is `n + k + 1` by definition.
+          simp only [hcons]
+          rfl
       _ = _ := brokenGeodesicLoop_cons hr (n + k) _ hk _
       _ = _ := ih hk
 

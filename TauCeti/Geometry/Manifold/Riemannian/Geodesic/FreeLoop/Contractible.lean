@@ -237,10 +237,15 @@ theorem exists_contractibleCyclicDistanceCutBrokenGeodesic_comp_homotopic
   let e₀ : C(K, contractibleCyclicDistanceCut hr hδ) :=
     ⟨fun γ ↦ ⟨e (φ γ), hmem γ⟩, (continuous_subtypeVal.comp (e.comp φ).continuous).subtype_mk _⟩
   refine ⟨e₀, fun γ ↦ he (φ γ), ?_⟩
-  -- The free homotopy starts at contractible loops, so it runs through contractible loops.
+  -- The free homotopy starts at contractible loops, so it runs through contractible loops. Its
+  -- start is `geoⁿ (e₀ γ)` by the coercion lemma for the restricted broken geodesic, and its end is
+  -- the free loop underlying `γ`, which is `φ γ` read back in `𝓛M`.
   exact ContinuousMap.Homotopic.codRestrict
     (fun _ hγ _ h ↦ mem_contractibleLoops_of_joined hγ h)
-    ⟨(F.compContinuousMap φ).cast (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)⟩
+    ⟨(F.compContinuousMap φ).cast
+      (ContinuousMap.ext fun γ ↦ by
+        simp [e₀, coe_contractibleCyclicDistanceCutBrokenGeodesic_apply])
+      (ContinuousMap.ext fun γ ↦ by simp [φ])⟩
 
 end Compact
 
