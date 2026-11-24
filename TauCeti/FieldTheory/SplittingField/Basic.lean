@@ -23,7 +23,7 @@ soon as `p.Gal` is.
 
 * `Polynomial.IsSplittingField.subfield_eq_top`: a subfield of a splitting field containing the
   base field and the roots is everything.
-* `TauCeti.isSolvable_of_isSplittingField`: the automorphism group of a splitting field of `p` is
+* `Polynomial.isSolvable_of_isSplittingField`: the automorphism group of a splitting field of `p` is
   solvable when `p.Gal` is.
 -/
 
@@ -44,7 +44,7 @@ theorem subfield_eq_top {K L : Type*} [Field K] [Field L] [Algebra K L] (f : K[X
 
 end Polynomial.IsSplittingField
 
-namespace TauCeti
+namespace Polynomial
 
 /-- The automorphism group of a splitting field of `p` is solvable if `p.Gal` is. -/
 theorem isSolvable_of_isSplittingField {F L : Type*} [Field F] [Field L] [Algebra F L]
@@ -55,4 +55,4 @@ theorem isSolvable_of_isSplittingField {F L : Type*} [Field F] [Field L] [Algebr
     (f := (AlgEquiv.autCongr (IsSplittingField.algEquiv L p)).symm.toMonoidHom)
     (MulEquiv.surjective _)
 
-end TauCeti
+end Polynomial

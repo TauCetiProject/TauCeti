@@ -14,7 +14,7 @@ public import TauCeti.FieldTheory.SplittingField.Basic
 Mathlib proves that the Galois group `(X ^ n - C a).Gal` of a binomial is solvable
 (`gal_X_pow_sub_C_isSolvable`), as a statement about the chosen splitting field
 `(X ^ n - C a).SplittingField`. This file transports it to an arbitrary splitting field `L`
-(through `TauCeti.isSolvable_of_isSplittingField`), so that a radical extension presented through
+(through `Polynomial.isSolvable_of_isSplittingField`), so that a radical extension presented through
 `Polynomial.IsSplittingField` has a solvable automorphism group.
 
 ## Main results
@@ -33,6 +33,6 @@ namespace TauCeti
 theorem isSolvable_of_isSplittingField_X_pow_sub_C {F L : Type*} [Field F] [Field L]
     [Algebra F L] (n : ℕ) (a : F) [IsSplittingField F L (X ^ n - C a)] :
     Group.IsSolvable (L ≃ₐ[F] L) :=
-  isSolvable_of_isSplittingField (X ^ n - C a) (gal_X_pow_sub_C_isSolvable n a)
+  (X ^ n - C a).isSolvable_of_isSplittingField (gal_X_pow_sub_C_isSolvable n a)
 
 end TauCeti
