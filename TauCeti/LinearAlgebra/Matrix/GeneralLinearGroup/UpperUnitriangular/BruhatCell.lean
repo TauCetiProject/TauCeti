@@ -476,7 +476,7 @@ theorem unitriangularInversionGroupEquivFun_symm_apply_of_mem_inversions (w : Eq
     (((unitriangularInversionGroupEquivFun R w).symm c : GL ι R) : Matrix ι ι R) i j =
       c ⟨(i, j), h⟩ := by
   rw [unitriangularInversionGroupEquivFun, unitriangularGroupEquivFunOfSupported_symm_apply_coe]
-  exact upperUnitriangularMatrixOfEntries_apply_of_mem _ c
+  exact unitDiagonalMatrixOfEntries_apply_of_mem _ c
     (ne_of_lt (Finset.mem_inversions.mp h).2.2.1) h
 
 /-- The element of `U_w` with coordinates `c` has the diagonal entries `1`. -/
@@ -485,7 +485,7 @@ theorem unitriangularInversionGroupEquivFun_symm_apply_self (w : Equiv.Perm ι)
     (c : Finset.univ.inversions ⇑w.symm → R) (i : ι) :
     (((unitriangularInversionGroupEquivFun R w).symm c : GL ι R) : Matrix ι ι R) i i = 1 := by
   rw [unitriangularInversionGroupEquivFun, unitriangularGroupEquivFunOfSupported_symm_apply_coe,
-    upperUnitriangularMatrixOfEntries_apply_self]
+    unitDiagonalMatrixOfEntries_apply_self]
 
 /-- The element of `U_w` with coordinates `c` has the entry `0` off the diagonal and off the
 inversions of `w⁻¹`. -/
@@ -495,7 +495,7 @@ theorem unitriangularInversionGroupEquivFun_symm_apply_of_notMem_inversions (w :
     (h : (i, j) ∉ Finset.univ.inversions ⇑w.symm) :
     (((unitriangularInversionGroupEquivFun R w).symm c : GL ι R) : Matrix ι ι R) i j = 0 := by
   rw [unitriangularInversionGroupEquivFun, unitriangularGroupEquivFunOfSupported_symm_apply_coe,
-    upperUnitriangularMatrixOfEntries_apply_of_notMem _ _ hij h]
+    unitDiagonalMatrixOfEntries_apply_of_notMem _ _ hij h]
 
 /-- **The number of points of the Bruhat cell**: it is `|R| ^ N`, where `N` is the number of
 inversions of `w⁻¹`. Cardinalities are `Nat.card`, so for an infinite ring and `N > 0` both sides

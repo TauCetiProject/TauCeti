@@ -269,15 +269,15 @@ noncomputable def unitriangularGroupEquivFunOfSupported (H : Subgroup (GL ι R))
     H ≃ ({p : ι × ι // P p} → R) where
   toFun g p := ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2
   invFun c :=
-    ⟨(isUpperUnitriangular_upperUnitriangularMatrixOfEntries P hP c).toGL,
+    ⟨(isUpperUnitriangular_unitDiagonalMatrixOfEntries P hP c).toGL,
       (hH _).mpr ⟨by
         rw [IsUpperUnitriangular.coe_toGL]
-        exact isUpperUnitriangular_upperUnitriangularMatrixOfEntries P hP c, fun i j hij hijP => by
+        exact isUpperUnitriangular_unitDiagonalMatrixOfEntries P hP c, fun i j hij hijP => by
         rw [IsUpperUnitriangular.coe_toGL]
-        exact upperUnitriangularMatrixOfEntries_apply_of_notMem P c (ne_of_lt hij) hijP⟩⟩
+        exact unitDiagonalMatrixOfEntries_apply_of_notMem P c (ne_of_lt hij) hijP⟩⟩
   left_inv g := by
     obtain ⟨hg, hgv⟩ := (hH _).mp g.property
-    have hM := isUpperUnitriangular_upperUnitriangularMatrixOfEntries P hP
+    have hM := isUpperUnitriangular_unitDiagonalMatrixOfEntries P hP
       (fun p => ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2)
     have hN : ((hM.toGL : GL ι R) : Matrix ι ι R).IsUpperUnitriangular := by
       rw [IsUpperUnitriangular.coe_toGL]; exact hM
@@ -286,13 +286,13 @@ noncomputable def unitriangularGroupEquivFunOfSupported (H : Subgroup (GL ι R))
     refine hN.ext hg fun i j hij => ?_
     by_cases hPij : P (i, j)
     · rw [IsUpperUnitriangular.coe_toGL,
-        upperUnitriangularMatrixOfEntries_apply_of_mem P _ (ne_of_lt hij) hPij]
+        unitDiagonalMatrixOfEntries_apply_of_mem P _ (ne_of_lt hij) hPij]
     · rw [IsUpperUnitriangular.coe_toGL,
-        upperUnitriangularMatrixOfEntries_apply_of_notMem P _ (ne_of_lt hij) hPij, hgv i j hij hPij]
+        unitDiagonalMatrixOfEntries_apply_of_notMem P _ (ne_of_lt hij) hPij, hgv i j hij hPij]
   right_inv c := by
     funext p
     simp only [IsUpperUnitriangular.coe_toGL,
-      upperUnitriangularMatrixOfEntries_apply_of_mem P _ (ne_of_lt (hP _ p.property)) p.property]
+      unitDiagonalMatrixOfEntries_apply_of_mem P _ (ne_of_lt (hP _ p.property)) p.property]
 
 /-- The coordinates of `g` are its entries at the pairs satisfying `P`. -/
 @[simp]
@@ -306,7 +306,7 @@ theorem unitriangularGroupEquivFunOfSupported_apply (H : Subgroup (GL ι R)) (P 
   (rfl)
 
 /-- The entries of the element with coordinates `c` are those of the matrix
-`TauCeti.upperUnitriangularMatrixOfEntries P c`. -/
+`TauCeti.unitDiagonalMatrixOfEntries P c`. -/
 @[simp]
 theorem unitriangularGroupEquivFunOfSupported_symm_apply_coe (H : Subgroup (GL ι R))
     (P : ι × ι → Prop) (hP : ∀ p, P p → p.1 < p.2)
@@ -314,9 +314,9 @@ theorem unitriangularGroupEquivFunOfSupported_symm_apply_coe (H : Subgroup (GL �
       ∀ i j, i < j → ¬ P (i, j) → (g : Matrix ι ι R) i j = 0)
     (c : {p : ι × ι // P p} → R) (i j : ι) :
     ((unitriangularGroupEquivFunOfSupported H P hP hH).symm c : GL ι R) i j =
-      upperUnitriangularMatrixOfEntries P c i j := by
+      unitDiagonalMatrixOfEntries P c i j := by
   have h : ((unitriangularGroupEquivFunOfSupported H P hP hH).symm c : GL ι R) =
-      (isUpperUnitriangular_upperUnitriangularMatrixOfEntries P hP c).toGL := (rfl)
+      (isUpperUnitriangular_unitDiagonalMatrixOfEntries P hP c).toGL := (rfl)
   rw [h, IsUpperUnitriangular.coe_toGL]
 
 /-- `Uₙ(R)` is in bijection with the functions on the pairs `i < j` of indices: an
@@ -355,11 +355,11 @@ theorem upperUnitriangularEntries_apply (g : upperUnitriangularGroup ι R)
     upperUnitriangularEntries g p = ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2 := (rfl)
 
 /-- The matrix of `upperUnitriangularOfEntries f` is
-`TauCeti.upperUnitriangularMatrixOfEntries` of `f`. -/
+`TauCeti.unitDiagonalMatrixOfEntries` of `f`. -/
 @[simp]
 theorem coe_upperUnitriangularOfEntries_apply (f : {p : ι × ι // p.1 < p.2} → R) (i j : ι) :
     ((upperUnitriangularOfEntries f : GL ι R) : Matrix ι ι R) i j =
-      upperUnitriangularMatrixOfEntries (fun p : ι × ι => p.1 < p.2) f i j := by
+      unitDiagonalMatrixOfEntries (fun p : ι × ι => p.1 < p.2) f i j := by
   rw [upperUnitriangularOfEntries, upperUnitriangularGroupEquivFun,
     unitriangularGroupEquivFunOfSupported_symm_apply_coe]
 
