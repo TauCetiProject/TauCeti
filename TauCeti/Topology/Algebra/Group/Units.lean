@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.Group.Units
 
 /-!
-# Separation, neighbourhoods, σ-compactness and preconnected sets in a group of units
+# Separation, neighbourhoods, countability and preconnected sets in a group of units
 
 The units `Mˣ` of a topological monoid `M` carry the topology induced by `u ↦ (u, u⁻¹)`.  This
 file records consequences of that definition.
@@ -23,6 +23,8 @@ file records consequences of that definition.
   units of a σ-compact monoid are σ-compact.
 * The units of a totally disconnected monoid form a totally disconnected space, as `Units.val` is
   continuous and injective.
+* Since `u ↦ (u, u⁻¹)` is an embedding, the units of a second-countable monoid are second
+  countable.
 * In a group with zero with continuous inversion away from zero, the coercion `G₀ˣ → G₀` is a
   topological embedding, so a preconnected set of nonzero elements pulls back to a preconnected
   set of units.
@@ -35,6 +37,8 @@ file records consequences of that definition.
 * `Units.instSigmaCompactSpace`: the units of a σ-compact monoid are σ-compact.
 * `Units.instTotallyDisconnectedSpace`: the units of a totally disconnected monoid are totally
   disconnected.
+* `Units.instSecondCountableTopology`: the units of a second-countable monoid are second
+  countable.
 * `IsPreconnected.preimage_units_val`: preconnected sets of nonzero elements pull back to
   preconnected sets of units.
 -/
@@ -94,6 +98,14 @@ instance instTotallyDisconnectedSpace [TotallyDisconnectedSpace M] :
   rw [totallyDisconnectedSpace_iff]
   exact isTotallyDisconnected_of_image Units.continuous_val.continuousOn val_injective
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)
+
+/-- **The units of a second-countable monoid are second countable.** The map `u ↦ (u, u⁻¹)` is an
+embedding of `Mˣ` into `M × Mᵐᵒᵖ`, which is homeomorphic to the second-countable space `M × M`. -/
+@[to_additive /-- The additive units of a second-countable additive monoid are second
+countable. -/]
+instance instSecondCountableTopology [SecondCountableTopology M] : SecondCountableTopology Mˣ :=
+  ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isEmbedding.comp
+    isEmbedding_embedProduct |>.secondCountableTopology
 
 end Units
 

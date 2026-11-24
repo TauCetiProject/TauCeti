@@ -193,9 +193,7 @@ theorem exists_map_castHom_eq_and_det_eq (g : GL (Fin 2) (ZMod n)) {u : (ZMod m)
     simp [hs]
   obtain ⟨γ, hγ⟩ := (range_mapGL_zmod n).ge hs1
   have hγ' : f (mapGL (ZMod m) γ) = s := by
-    rw [← hγ]
-    ext i j
-    simp [f, GeneralLinearGroup.map_apply, -ZMod.castHom_apply]
+    rw [← hγ, map_mapGL_int]
   refine ⟨mapGL (ZMod m) γ * GL2Borel.mk u 1 0, ?_, by simp⟩
   rw [map_mul, hD, hu, hγ', hs, inv_mul_cancel_right]
 

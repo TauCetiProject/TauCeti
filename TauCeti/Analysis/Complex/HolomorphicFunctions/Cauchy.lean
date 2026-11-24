@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Analytic.Constructions
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Basic
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Germ
 public import TauCeti.Analysis.Contour.Cycle.Grid
@@ -19,8 +20,9 @@ This file approximates holomorphic functions near a compact subset `K ⊆ U` on 
 neighbourhood `V` by finite complex-linear combinations of Cauchy kernels `(w - ·)⁻¹` in the
 compact-open topology, without invoking Runge's theorem. Because any algebra homomorphism on
 `holomorphicGerms K` sending the coordinate germ to an element `a` of a Banach algebra is forced to
-send Cauchy kernels to resolvents, these approximations feed uniqueness of continuous algebra
-homomorphisms on `holomorphicGerms K` (such as `holomorphicCalculus`).
+send Cauchy kernels to resolvents, these approximations feed uniqueness of algebra homomorphisms
+on `holomorphicGerms K` (such as `holomorphicCalculus`) whose precomposition with `toGerm` is
+continuous on each open neighbourhood of `K` for the compact-open topology.
 
 For a pole `w` outside an open set `V ⊆ ℂ`, `HolomorphicFunctions.cauchyKernel V w hw` is the
 holomorphic function `z ↦ (w - z)⁻¹` on `V`. Given a finite family `E` of closed segments disjoint
@@ -36,6 +38,11 @@ Combined with `IsCompact.exists_open_segments_cycle_windingNumber_eq_one`, every
 `K ⊆ U` admits a smaller open neighbourhood `V` of `K` with `V ≤ U` and a finite segment family
 `E` in `U \ V` on which these rational Cauchy sums converge to `restrict hVU f` for every
 `f : holomorphicFunctions U`.
+
+Finally, `AlgHom.toGerm_cauchyKernel` and `AlgHom.toGerm_cauchyRiemannSum` show that any unital
+complex-algebra homomorphism `Φ : holomorphicGerms s →ₐ[ℂ] A` sending the coordinate germ to `a`
+evaluates `toGerm hsV (cauchyKernel V w hw)` to `resolvent a w` and
+`toGerm hsV (cauchyRiemannSum V g E hEV N)` to the corresponding resolvent Riemann sum.
 
 ## References
 
@@ -55,15 +62,12 @@ open Contour
 
 /-- The holomorphic Cauchy kernel `z ↦ (w - z)⁻¹` on an open set `V` avoiding `w`. -/
 def cauchyKernel (V : Opens ℂ) (w : ℂ) (hw : w ∉ (V : Set ℂ)) : holomorphicFunctions V :=
-  of V (fun z ↦ (w - z)⁻¹)
-    (((differentiableOn_const w).sub differentiableOn_id).inv fun _ hz ↦
-      sub_ne_zero.mpr fun (h : w = _) ↦ hw (h ▸ hz))
+  of V (fun z ↦ (w - z)⁻¹) (analyticOnNhd_sub_inv_iff.mpr hw).differentiableOn
 
 /-- Express `cauchyKernel` as `HolomorphicFunctions.of` applied to `z ↦ (w - z)⁻¹`. -/
 theorem cauchyKernel_def (V : Opens ℂ) (w : ℂ) (hw : w ∉ (V : Set ℂ)) :
-    cauchyKernel V w hw = of V (fun z ↦ (w - z)⁻¹)
-      (((differentiableOn_const w).sub differentiableOn_id).inv fun _ hz ↦
-        sub_ne_zero.mpr fun (h : w = _) ↦ hw (h ▸ hz)) := (rfl)
+    cauchyKernel V w hw =
+      of V (fun z ↦ (w - z)⁻¹) (analyticOnNhd_sub_inv_iff.mpr hw).differentiableOn := (rfl)
 
 @[simp]
 theorem cauchyKernel_apply (V : Opens ℂ) (w : ℂ) (hw : w ∉ (V : Set ℂ)) (z : V) :
@@ -82,8 +86,7 @@ theorem toGerm_cauchyKernel {s : Set ℂ} {V : Opens ℂ} (hs : s ⊆ V) (w : �
     (hw : w ∉ (V : Set ℂ)) :
     toGerm hs (cauchyKernel V w hw) =
       holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹)
-        (((((differentiableOn_const w).sub differentiableOn_id).inv fun _ hz ↦
-          sub_ne_zero.mpr fun (h : w = _) ↦ hw (h ▸ hz)).analyticOnNhd V.isOpen).mono hs) := by
+        (analyticOnNhd_sub_inv_iff.mpr fun hws ↦ hw (hs hws)) := by
   rw [cauchyKernel_def, toGerm_of]
 
 /-- Normalized `(N + 1)`-point left-endpoint Riemann sum of `w ↦ g w • cauchyKernel V w _` over a
@@ -266,3 +269,35 @@ theorem IsCompact.exists_cauchyRiemannSum_tendsto {K : Set ℂ} (hK : IsCompact 
     hK.exists_open_segments_cycle_windingNumber_eq_one.{0} U.isOpen hKU
   exact ⟨⟨V, hV⟩, hKV, hVU, E, hEU, hEV, fun f ↦
     tendsto_cauchyRiemannSum (V := ⟨V, hV⟩) hVU f E hEU hEV Γ hΓ hn hw hint⟩
+
+namespace AlgHom
+
+open TauCeti TauCeti.HolomorphicFunctions
+
+/-- Any unital complex-algebra homomorphism on `holomorphicGerms s` sending the coordinate germ
+to `a` maps the germ of `cauchyKernel V w hw` (on `s ⊆ V`) to `resolvent a w`. -/
+theorem toGerm_cauchyKernel {s : Set ℂ} {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
+    (Φ : holomorphicGerms s →ₐ[ℂ] A)
+    (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
+    {V : Opens ℂ} (hsV : s ⊆ V) {w : ℂ} (hw : w ∉ (V : Set ℂ)) :
+    Φ (toGerm hsV (cauchyKernel V w hw)) = resolvent a w := by
+  rw [HolomorphicFunctions.toGerm_cauchyKernel,
+    Φ.map_holomorphicGermsOfFun_sub_inv_eq_resolvent hid]
+
+/-- Image of `cauchyRiemannSum` under `Φ ∘ toGerm hsV` for any unital complex-algebra homomorphism
+`Φ : holomorphicGerms s →ₐ[ℂ] A` sending the coordinate germ to `a`: every Cauchy kernel term
+evaluates to the corresponding resolvent of `a`. -/
+theorem toGerm_cauchyRiemannSum {s : Set ℂ} {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
+    (Φ : holomorphicGerms s →ₐ[ℂ] A)
+    (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
+    {V : Opens ℂ} (hsV : s ⊆ V) (g : ℂ → ℂ) (E : Finset (ℂ × ℂ))
+    (hEV : Disjoint (⋃ e ∈ E, segment ℝ e.1 e.2) (V : Set ℂ)) (N : ℕ) :
+    Φ (toGerm hsV (cauchyRiemannSum V g E hEV N)) =
+      (2 * π * I)⁻¹ • ∑ e ∈ E, ((e.2 - e.1) / (N + 1 : ℂ)) •
+        ∑ k ∈ Finset.range (N + 1),
+          g (AffineMap.lineMap (k := ℝ) e.1 e.2 ((k : ℝ) / (N + 1 : ℝ))) •
+            resolvent a (AffineMap.lineMap (k := ℝ) e.1 e.2 ((k : ℝ) / (N + 1 : ℝ))) :=
+  map_cauchyRiemannSum (Φ.comp (toGerm hsV)) g E hEV (resolvent a)
+    (fun _ hw ↦ Φ.toGerm_cauchyKernel hid hsV (hEV.notMem_of_mem_left hw)) N
+
+end AlgHom
