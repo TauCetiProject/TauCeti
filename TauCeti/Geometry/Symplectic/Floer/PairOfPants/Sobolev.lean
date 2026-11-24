@@ -247,6 +247,19 @@ private theorem lintegral_image_endChart (q : Puncture) {P : Set ℝ} (hP : Meas
     (fun z _ ↦ ((contDiff_endChart q 1).differentiable one_ne_zero z).hasFDerivAt.hasFDerivWithinAt)
     ((injOn_endChart_univ_prod_Ico q 0).mono (prod_mono (subset_univ _) (by norm_num))) g
 
+/-- The change of variables along the positive end chart `φ'_q`, on a band `P × [0, 1)` of the
+strip. -/
+theorem lintegral_image_positiveEndChart (q : Puncture) {P : Set ℝ} (hP : MeasurableSet P)
+    (g : ℝ × ℝ → ℝ≥0∞) :
+    ∫⁻ w in positiveEndChart q '' (P ×ˢ Ico 0 1), g w =
+      ∫⁻ ζ in P ×ˢ Ico 0 1,
+        ENNReal.ofReal |(fderiv ℝ (positiveEndChart q) ζ).det| * g (positiveEndChart q ζ) := by
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  refine lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (hP.prod measurableSet_Ico)
+    (fun ζ _ ↦ ((contDiff_positiveEndChart q 1).differentiable one_ne_zero
+      ζ).hasFDerivAt.hasFDerivWithinAt)
+    ((injOn_positiveEndChart q 0).mono (prod_mono (subset_univ _) (by norm_num))) g
+
 /-- **The `W^{1,2}` energy on a band of an end, from the weighted energy.** For a band
 `P × [0, 1)` of the part `±s ≥ 0` of the end `q` and a `ξ` differentiable on the image of the
 band, the `W^{1,2}` energy of `ζ = ξ ∘ φ_q` over the band is at most twice the weighted energy
@@ -322,12 +335,7 @@ theorem lintegral_image_positiveEndChart_le (q : Puncture) {P : Set ℝ} (hP : M
       ENNReal.ofReal (20 * π ^ 2) * ∫⁻ ζ in P ×ˢ Ico 0 1,
         ENNReal.ofReal (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ (1, 0)‖ ^ 2 +
           ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ (0, 1)‖ ^ 2 + ‖ξ (positiveEndChart q ζ)‖ ^ 2) := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (hP.prod measurableSet_Ico)
-    (fun ζ _ ↦ ((contDiff_positiveEndChart q 1).differentiable one_ne_zero
-      ζ).hasFDerivAt.hasFDerivWithinAt)
-    ((injOn_positiveEndChart q 0).mono (prod_mono (subset_univ _) (by norm_num))),
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  rw [lintegral_image_positiveEndChart q hP, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine setLIntegral_mono' (hP.prod measurableSet_Ico) fun ζ hζ ↦ ?_
   rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (by positivity),
     abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
