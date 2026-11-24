@@ -51,7 +51,7 @@ instance connectedSpace_connectedComponentOpen (x : X) :
 /-- The inclusion of a component open is also a closed immersion. -/
 instance isClosedImmersion_connectedComponentOpen_ι (x : X) :
     IsClosedImmersion (connectedComponentOpen X x).ι :=
-  (connectedComponentOpen X x).isClosedImmersion_ι_of_isClosed
+  (connectedComponentOpen X x).isClosedImmersion_ι_iff.mpr
     (by simpa only [coe_connectedComponentOpen] using isClosed_connectedComponent (x := x))
 
 end AlgebraicGeometry.Scheme
@@ -79,6 +79,6 @@ instance connectedSpace_connectedComponentsOpens (C : ConnectedComponents X) :
 /-- The inclusion of a quotient-indexed connected component is a closed immersion. -/
 instance isClosedImmersion_connectedComponentsOpens_ι (C : ConnectedComponents X) :
     IsClosedImmersion (Scheme.Opens.ι C.opens) :=
-  Opens.isClosedImmersion_ι_of_isClosed C.opens C.isClopen_opens.isClosed
+  (Opens.isClosedImmersion_ι_iff C.opens).mpr C.isClopen_opens.isClosed
 
 end AlgebraicGeometry.Scheme
