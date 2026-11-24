@@ -42,7 +42,8 @@ operators have the same range, isomorphic kernels and the same index, and one is
 when the other is. The shears are coherent: the one from a family of cutoffs to itself is the
 identity, they compose, and the inverse of a shear is the shear back. For the same reason the
 space `TauCeti.weightedAsymptoticSolutions` of initial values and free endpoint variables of the
-solutions converging to them does not depend on the cutoffs.
+solutions whose weighted difference from the free variables is square integrable does not depend
+on the cutoffs.
 
 ## Main declarations
 
