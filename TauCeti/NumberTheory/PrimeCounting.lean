@@ -50,6 +50,8 @@ convergence of the cutoffs therefore transports in both directions with this exp
   the first `π n` primes.
 * `Nat.primeCounting_le_self`, `Nat.primeCounting_floor_add_sub_le_add_one`: there are at most
   `n` primes `p ≤ n`, and at most `y + 1` primes in an interval `(x, x + y]`.
+* `Nat.primeCounting_floor_add_sub_le_max`: an interval `(x, x + y]` with `x < 0` contains no
+  more primes than `(0, y]`.
 * `Nat.prod_primesLE_floor_eq_mul_filter_gt`, `Nat.sum_primesLE_floor_eq_add_filter_gt`: splitting
   products and sums over `Nat.primesLE ⌊x⌋₊` at an intermediate cutoff `y ≤ x`.
 * `Nat.tendsto_prod_primesLE_iff`: the ordered products over the primes `p ≤ n` converge exactly
@@ -153,6 +155,18 @@ theorem primeCounting_floor_add_sub_le_add_one {R : Type*} [CommRing R] [LinearO
     exact_mod_cast hπ
   rw [cast_sub hmono] at hπR
   linarith
+
+/-- In an ordered commutative ring with a floor, an interval `(x, x + y]` starting at a negative
+`x` contains no more primes than the interval `(0, y]` of the same length. -/
+theorem primeCounting_floor_add_sub_le_max {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorSemiring R] (x y : R) :
+    (primeCounting ⌊x + y⌋₊ : R) - primeCounting ⌊x⌋₊ ≤
+      (primeCounting ⌊max x 0 + y⌋₊ : R) - primeCounting ⌊max x 0⌋₊ := by
+  rcases le_total 0 x with hx | hx
+  · rw [max_eq_left hx]
+  · rw [max_eq_right hx, floor_of_nonpos hx, zero_add, floor_zero]
+    gcongr
+    exact monotone_primeCounting (floor_mono (by linarith))
 
 /-- The prime counting function at the `k`-th prime, counting from `nth Nat.Prime 0 = 2`,
 is `k + 1`. -/

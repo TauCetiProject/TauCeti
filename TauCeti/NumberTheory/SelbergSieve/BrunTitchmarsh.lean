@@ -53,22 +53,6 @@ open scoped ArithmeticFunction.omega
 
 namespace TauCeti
 
-/-- Primes in `(x, x + y]` with `x < 0` are primes in `(0, y]`. -/
-private theorem primeCounting_floor_add_sub_le_max (x y : ℝ) :
-    (Nat.primeCounting ⌊x + y⌋₊ : ℝ) - Nat.primeCounting ⌊x⌋₊ ≤
-      (Nat.primeCounting ⌊max x 0 + y⌋₊ : ℝ) - Nat.primeCounting ⌊max x 0⌋₊ := by
-  rcases le_total 0 x with hx | hx
-  · rw [max_eq_left hx]
-  · rw [max_eq_right hx, Nat.floor_of_nonpos hx, zero_add, Nat.floor_zero]
-    gcongr
-    exact Nat.monotone_primeCounting (Nat.floor_mono (by linarith))
-
-/-- The prime-counting difference over `(x, x + y]` is the real cast of the natural one. -/
-private theorem primeCounting_floor_add_sub_eq (x y : ℝ) (hy : 0 ≤ y) :
-    (Nat.primeCounting ⌊x + y⌋₊ : ℝ) - Nat.primeCounting ⌊x⌋₊ =
-      ((Nat.primeCounting ⌊x + y⌋₊ - Nat.primeCounting ⌊x⌋₊ : ℕ) : ℝ) :=
-  (Nat.cast_sub (Nat.monotone_primeCounting (Nat.floor_mono (by linarith)))).symm
-
 /-- The Selberg remainder of the interval sieve at level `z` is at most `z² (1 + 2 log z)²`,
 the coefficient-one majorant of `∑_{n ≤ z²} 3^ω(n)`. -/
 private theorem sum_three_pow_mul_abs_rem_primeInterval_le (x y z : ℝ) (hx : 0 ≤ x)
@@ -99,7 +83,7 @@ theorem primeCounting_floor_add_sub_le_div_log_add (x y : ℝ) {z : ℝ} (hy : 0
     (hz : 1 < z) :
     (Nat.primeCounting ⌊x + y⌋₊ : ℝ) - Nat.primeCounting ⌊x⌋₊ ≤
       y / Real.log z + z ^ 2 * (1 + 2 * Real.log z) ^ 2 + (z + 1) := by
-  refine (primeCounting_floor_add_sub_le_max x y).trans ?_
+  refine (Nat.primeCounting_floor_add_sub_le_max x y).trans ?_
   set x' := max x 0
   have hx' : 0 ≤ x' := le_max_right x 0
   set s := BoundingSieve.primeInterval x' y z
@@ -114,7 +98,7 @@ theorem primeCounting_floor_add_sub_le_div_log_add (x y : ℝ) {z : ℝ} (hy : 0
   have hπ : (Nat.primeCounting ⌊z⌋₊ : ℝ) ≤ z + 1 :=
     calc (Nat.primeCounting ⌊z⌋₊ : ℝ) ≤ ⌊z⌋₊ := by exact_mod_cast Nat.primeCounting_le_self _
       _ ≤ z + 1 := by linarith [Nat.floor_le (by linarith : (0 : ℝ) ≤ z)]
-  rw [primeCounting_floor_add_sub_eq x' y hy]
+  rw [← Nat.cast_sub (Nat.monotone_primeCounting (Nat.floor_mono (by linarith : x' ≤ x' + y)))]
   calc _ ≤ s.siftedSum + Nat.primeCounting ⌊z⌋₊ :=
         BoundingSieve.primeCounting_sub_le_primeInterval x' y z
     _ ≤ (s.totalMass / s.diagonalMass z +
