@@ -303,8 +303,9 @@ theorem finrank_eq_add {k M N P : Type*} [DivisionRing k] [AddCommGroup M] [Modu
 
 section Projective
 
-variable {R K X Y : Type*} [Ring R] [AddCommGroup K] [Module R K] [AddCommGroup X] [Module R X]
-  [AddCommGroup Y] [Module R Y] [Module.Projective R Y] {f : K →ₗ[R] X} {g : X →ₗ[R] Y}
+variable {R K X Y : Type*} [Semiring R] [AddCommGroup K] [Module R K] [AddCommGroup X]
+  [Module R X] [AddCommGroup Y] [Module R Y] [Module.Projective R Y] {f : K →ₗ[R] X}
+  {g : X →ₗ[R] Y}
 
 /-- **A short exact sequence onto a projective module splits.** If `0 → K → X → Y → 0` is exact
 and `Y` is projective, then `X ≃ K × Y` compatibly with the inclusion of `K` and the projection

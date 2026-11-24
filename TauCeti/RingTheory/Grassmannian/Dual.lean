@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Dual.BaseChange
 public import TauCeti.RingTheory.Grassmannian.Basic
 
 import TauCeti.LinearAlgebra.Dual.Rank
-import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.Dual.Restrict
 
 /-!
 # Duality of Grassmannians
@@ -77,14 +77,8 @@ section Dual
 /-- Every functional on a point `N` of a Grassmannian extends to the ambient module, since `N` is
 a direct summand. -/
 theorem dualRestrict_surjective (N : G(k, P; A)) :
-    Function.Surjective N.toSubmodule.dualRestrict := by
-  obtain ⟨e, hf, -⟩ :=
-    (LinearMap.exact_subtype_mkQ N.toSubmodule).exists_linearEquiv_prod_of_projective
-      N.toSubmodule.injective_subtype N.toSubmodule.mkQ_surjective
-  intro ψ
-  refine ⟨ψ ∘ₗ LinearMap.fst A _ _ ∘ₗ e.toLinearMap, LinearMap.ext fun n ↦ ?_⟩
-  have hn : (n : P) = e.symm (n, 0) := LinearMap.congr_fun hf n
-  simp [Submodule.dualRestrict_apply, hn]
+    Function.Surjective N.toSubmodule.dualRestrict :=
+  N.toSubmodule.dualRestrict_surjective_of_projective
 
 variable [Module.Finite A P] [Module.Projective A P]
 
@@ -169,6 +163,7 @@ noncomputable def baseChangeDualEquiv (h : ∀ p, rankAtStalk (R := R) M p = k +
 /-- **`baseChangeDualEquiv` on points.** An element `ξ` of `A ⊗[R] M^∨` lies in the point
 corresponding to `N` exactly when it kills `N` under the pairing of `A ⊗[R] M^∨` with
 `A ⊗[R] M`. -/
+@[simp]
 theorem mem_baseChangeDualEquiv_iff (h : ∀ p, rankAtStalk (R := R) M p = k + l)
     (N : G(k, A ⊗[R] M; A)) (ξ : A ⊗[R] Module.Dual R M) :
     ξ ∈ (baseChangeDualEquiv A h N).toSubmodule ↔
@@ -181,6 +176,7 @@ theorem mem_baseChangeDualEquiv_iff (h : ∀ p, rankAtStalk (R := R) M p = k + l
 /-- **The inverse of `baseChangeDualEquiv` on points.** An element `x` of `A ⊗[R] M` lies in the
 point corresponding to `K` exactly when every `ξ ∈ K` kills it under the pairing of `A ⊗[R] M^∨`
 with `A ⊗[R] M`. -/
+@[simp]
 theorem mem_baseChangeDualEquiv_symm_iff (h : ∀ p, rankAtStalk (R := R) M p = k + l)
     (K : G(l, A ⊗[R] Module.Dual R M; A)) (x : A ⊗[R] M) :
     x ∈ ((baseChangeDualEquiv A h).symm K).toSubmodule ↔

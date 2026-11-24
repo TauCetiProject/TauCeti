@@ -273,18 +273,20 @@ end Module
 namespace Function.Exact
 
 /-- **Rank is additive on short exact sequences.** If `0 → K → X → Y → 0` is exact, `X` is finite
-flat and `Y` is finite projective, then the rank of `X` at every prime is the sum of the ranks of
-`K` and `Y`. -/
+flat and `Y` is projective (hence finite, as a quotient of `X`), then the rank of `X` at every
+prime is the sum of the ranks of `K` and `Y`. -/
 theorem rankAtStalk_eq_add {R K X Y : Type*} [CommRing R] [AddCommGroup K] [Module R K]
     [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y] [Module.Finite R X]
-    [Module.Flat R X] [Module.Finite R Y] [Module.Projective R Y] {f : K →ₗ[R] X}
+    [Module.Flat R X] [Module.Projective R Y] {f : K →ₗ[R] X}
     {g : X →ₗ[R] Y} (hfg : Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     Module.rankAtStalk (R := R) X = Module.rankAtStalk K + Module.rankAtStalk Y := by
-  -- The sequence splits, so `K` is a direct summand of `X`.
-  have := hfg.moduleFinite_of_projective hf hg
+  have : Module.Finite R Y := .of_surjective g hg
+  -- The sequence splits, so `K` is a direct summand of `X`, with retraction `π`.
   obtain ⟨e, -, -⟩ := hfg.exists_linearEquiv_prod_of_projective hf hg
-  have : Module.Flat R K := .of_retract (e.symm.toLinearMap ∘ₗ LinearMap.inl R K Y)
-    (LinearMap.fst R K Y ∘ₗ e.toLinearMap) (by ext x; simp)
+  let π : X →ₗ[R] K := LinearMap.fst R K Y ∘ₗ e.toLinearMap
+  have : Module.Finite R K := .of_surjective π (Prod.fst_surjective.comp e.surjective)
+  have : Module.Flat R K := .of_retract (e.symm.toLinearMap ∘ₗ LinearMap.inl R K Y) π
+    (by ext x; simp [π])
   rw [Module.rankAtStalk_eq_of_equiv e, Module.rankAtStalk_prod]
 
 end Function.Exact

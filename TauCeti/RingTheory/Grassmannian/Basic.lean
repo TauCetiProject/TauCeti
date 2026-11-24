@@ -191,28 +191,16 @@ section Subbundle
 /-- **Points of a Grassmannian are maximal under inclusion.** If `N₁, N₂ ∈ G(k, M; R)` and
 `N₁ ≤ N₂`, then `N₁ = N₂`. -/
 theorem eq_of_le {N₁ N₂ : G(k, M; R)} (h : N₁.toSubmodule ≤ N₂.toSubmodule) : N₁ = N₂ := by
-  -- The kernel of the surjection `M ⧸ N₁ → M ⧸ N₂` is a direct summand of `M ⧸ N₁`, hence finite
-  -- projective, of rank `k - k = 0`, hence zero.
-  let g := Submodule.factor h
-  have hg : Function.Surjective g := fun y ↦ by
-    induction y using Submodule.Quotient.induction_on with
-    | H x => exact ⟨Submodule.Quotient.mk x, rfl⟩
-  have hfg := LinearMap.exact_subtype_ker_map g
-  have hf := (LinearMap.ker g).injective_subtype
-  have := hfg.moduleFinite_of_projective hf hg
-  have := Module.Projective.of_isCompl (LinearMap.isComplemented_ker_of_surjective g hg).choose_spec
-  have hK : rankAtStalk (R := R) (LinearMap.ker g) = 0 := by
-    ext p
-    have h₁ := congrFun (hfg.rankAtStalk_eq_add hf hg) p
-    simp only [Pi.add_apply, N₁.rankAtStalk_eq, N₂.rankAtStalk_eq] at h₁
-    simp only [Pi.zero_apply]
-    omega
-  have := rankAtStalk_eq_zero_iff_subsingleton.mp hK
+  -- The surjection `M ⧸ N₁ → M ⧸ N₂` between finite projective modules of the same rank is
+  -- bijective.
+  have hinj := (Module.bijective_of_surjective_of_rankAtStalk_eq (Submodule.factor_surjective h)
+    fun _ _ ↦ by rw [N₁.rankAtStalk_eq, N₂.rankAtStalk_eq]).injective
   refine Grassmannian.ext (le_antisymm h fun x hx ↦ ?_)
-  have hx' : N₁.toSubmodule.mkQ x ∈ LinearMap.ker g := by
-    simpa [g, Submodule.Quotient.mk_eq_zero] using hx
   rw [← Submodule.Quotient.mk_eq_zero]
-  exact congrArg Subtype.val (Subsingleton.elim (⟨_, hx'⟩ : LinearMap.ker g) 0)
+  refine hinj ?_
+  rw [← Submodule.mkQ_apply, Submodule.factor_mk, map_zero, Submodule.mkQ_apply,
+    Submodule.Quotient.mk_eq_zero]
+  exact hx
 
 /-- A point of a Grassmannian of a finite module is a finite module. -/
 instance finite_toSubmodule [Module.Finite R M] (N : G(k, M; R)) :
