@@ -30,8 +30,8 @@ shapes occur.
 Relative openness of `Γ` in `frontier Ω` is not part of the definition: each chart presents `Γ`
 near its centre as the graph over an open base region, so an admissible boundary part is
 automatically relatively open (`Set.IsAdmissibleBoundaryPart.exists_isOpen_frontier_inter_eq`).
-Admissibility is not a property of `closure Γ`: removing one point from an admissible `Γ` keeps
-its closure but destroys the chart description at the removed point.
+Admissibility is not a property of `closure Γ`: when `E` is nontrivial, removing one point from
+an admissible `Γ` keeps its closure but destroys the chart description at the removed point.
 
 ## Main declarations
 
@@ -127,11 +127,10 @@ theorem preimage_add_const (hB : B.IsAdmissibleBaseRegion E') (q : E) :
   obtain rfl | rfl | ⟨f, β, K, hβ, rfl⟩ := hB
   · exact isAdmissibleBaseRegion_univ
   · exact isAdmissibleBaseRegion_empty
-  · -- The translated graph is the graph of the recentred chart of the region above `β`.
+  · -- The translated region lies above the translated graph, which is again `K`-Lipschitz.
     have hβ' : LipschitzWith K fun y => β (y + (f q).snd) - (f q).fst :=
-      ((isLipschitzChart_refl_setOf_lt_fst hβ (by positivity : 0 < |(f q).fst| + 1)
-        (by positivity : 0 < ‖(f q).snd‖ + 1)).trans_constVAdd (f q) one_pos one_pos le_rfl
-        le_rfl).lipschitzWith
+      LipschitzWith.of_dist_le_mul fun y y' => by
+        simpa using hβ.dist_le_mul (y + (f q).snd) (y' + (f q).snd)
     convert isAdmissibleBaseRegion_preimage_setOf_lt_fst f hβ' using 1
     ext y
     simp only [mem_preimage, mem_ofPred_eq, map_add, WithLp.add_fst, WithLp.add_snd]
@@ -145,9 +144,13 @@ theorem smul (hB : B.IsAdmissibleBaseRegion E') {c : ℝ} (hc : 0 < c) :
     exact isAdmissibleBaseRegion_univ
   · rw [smul_set_empty]
     exact isAdmissibleBaseRegion_empty
-  · -- The dilated graph is the graph of the dilated chart of the region above `β`.
-    have hβ' : LipschitzWith K fun y => c * β (c⁻¹ • y) :=
-      ((isLipschitzChart_refl_setOf_lt_fst hβ one_pos one_pos).smul hc).lipschitzWith
+  · -- The dilated region lies above the dilated graph `y ↦ c * β (c⁻¹ • y)`, whose Lipschitz
+    -- constant is `‖c‖₊ * K * ‖c⁻¹‖₊ = K`.
+    have hK : ‖c‖₊ * K * ‖c⁻¹‖₊ = K := by
+      rw [mul_comm, ← mul_assoc, ← nnNorm_mul, inv_mul_cancel₀ hc.ne', nnNorm_one, one_mul]
+    have hβ' : LipschitzWith K fun y => c * β (c⁻¹ • y) := by
+      simpa only [hK, Function.comp_def, smul_eq_mul] using
+        ((lipschitzWith_smul c).comp hβ).comp (lipschitzWith_smul c⁻¹)
     convert isAdmissibleBaseRegion_preimage_setOf_lt_fst f hβ' using 1
     ext y
     simp only [mem_smul_set_iff_inv_smul_mem₀ hc.ne', mem_preimage, mem_ofPred_eq, map_smul,
@@ -433,7 +436,10 @@ theorem isAdmissibleBoundaryPart_setOf_lt_fst {γ : E → ℝ} {K : ℝ≥0} (h�
     frontier_setOf_lt_fst hγ.continuous]
   refine ⟨fun x hx => hx.1, fun x _ => ⟨_, γ, K, |x.fst| + 1, ‖x.snd‖ + 1, B,
     (isLipschitzChart_refl_setOf_lt_fst hγ (by positivity)
-      (by positivity)).isBoundaryPartChart_of_forall_mem_iff fun z _ => Iff.rfl, hB, ?_⟩⟩
+      (by positivity)).isBoundaryPartChart_of_forall_mem_iff
+      -- The inverse of the affine identity reduces definitionally to the identity, so both sides
+      -- of the membership condition agree.
+      fun z _ => Iff.rfl, hB, ?_⟩⟩
   simp only [AffineIsometryEquiv.coe_refl, id_eq, mem_normalCylinder]
   exact ⟨by linarith [neg_abs_le x.fst], by linarith [le_abs_self x.fst], by linarith⟩
 
