@@ -50,6 +50,38 @@ noncomputable def algEquivOfSqrt (D : ℤ) [Fact (¬ IsSquare D)] (δ : K)
   unfold algEquivOfSqrt
   exact AlgEquiv.ofBijective_apply _ _ _
 
+/-- The field identification sends the generator `ω` of the model to the chosen square root. -/
+-- Not `@[simp]`: `simp` proves it from `algEquivOfSqrt_apply`.
+theorem algEquivOfSqrt_apply_omega (D : ℤ) [Fact (¬ IsSquare D)] (δ : K)
+    (hδ : δ ^ 2 = (D : K)) (hK : Module.finrank ℚ K = 2) :
+    algEquivOfSqrt D δ hδ hK ω = δ := by
+  simp [algEquivOfSqrt_apply]
+
+/-- The model `ℚ(√D)`, presented by its generator `ω`, is identified with itself by the identity:
+evaluation at `ω` is the identity map. -/
+@[simp]
+theorem algEquivOfSqrt_omega (D : ℤ) [Fact (¬ IsSquare D)]
+    (hω : (ω : QuadraticAlgebra ℚ (D : ℚ) 0) ^ 2 = (D : _))
+    (hK : Module.finrank ℚ (QuadraticAlgebra ℚ (D : ℚ) 0) = 2) :
+    algEquivOfSqrt D ω hω hK = AlgEquiv.refl := by
+  ext z <;> simp [algEquivOfSqrt_apply, Algebra.smul_def]
+
+/-- A ring homomorphism sends a square root of an integer `D` to a square root of `D`. -/
+theorem sq_map_of_sq_eq_intCast {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) {D : ℤ} {δ : R} (hδ : δ ^ 2 = (D : R)) : f δ ^ 2 = (D : S) := by
+  rw [← map_pow, hδ, map_intCast]
+
+/-- **Composition of model equivalences**: the model equivalence of `K`, followed by a
+`ℚ`-isomorphism `σ : K ≃ₐ[ℚ] L`, is the model equivalence of `L` presented by `σ δ`. -/
+@[simp]
+theorem algEquivOfSqrt_trans {L : Type*} [Field L] [NumberField L] (D : ℤ) [Fact (¬ IsSquare D)]
+    (δ : K) (hδ : δ ^ 2 = (D : K)) (hK : Module.finrank ℚ K = 2) (σ : K ≃ₐ[ℚ] L) :
+    (algEquivOfSqrt D δ hδ hK).trans σ =
+      algEquivOfSqrt D (σ δ) (sq_map_of_sq_eq_intCast σ hδ)
+        (σ.toLinearEquiv.finrank_eq.symm.trans hK) := by
+  ext z
+  simp [algEquivOfSqrt_apply, map_rat_smul]
+
 /-- The same canonical order, embedded in a supplied quadratic number field. -/
 noncomputable def numberFieldOrderOfSqrt (D : ℤ)
     (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)] (δ : K)

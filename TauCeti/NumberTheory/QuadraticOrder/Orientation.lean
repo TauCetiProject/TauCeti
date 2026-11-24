@@ -46,9 +46,9 @@ further choices.
 * `TauCeti.QuadraticOrder.ringHom_eq_complexEmbeddingOfSqrt_or_eq_conjugate`: `ι_K` and its
   conjugate are the two complex embeddings of `K`.
 * `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_algEquivOfSqrt`,
-  `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_omega`,
-  `TauCeti.QuadraticOrder.algEquivOfSqrt_trans`: compatibility with the model equivalences
-  and their composites.
+  `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_omega`: compatibility with the model
+  equivalences, whose composites with `ℚ`-isomorphisms are described by
+  `TauCeti.QuadraticOrder.algEquivOfSqrt_trans`.
 * `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_algEquiv_apply`,
   `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_apply_algEquiv_of_apply_eq`,
   `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_apply_algEquiv_of_apply_eq_neg`: naturality
@@ -69,6 +69,9 @@ open Complex ComplexConjugate Module NumberField QuadraticAlgebra
 namespace TauCeti.QuadraticOrder
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
+
+private theorem sqrt_neg_intCast_pos {d : ℤ} (hd : d < 0) : 0 < √(-(d : ℝ)) :=
+  Real.sqrt_pos.mpr (by simpa using hd)
 
 /-- **The distinguished complex embedding of a presented imaginary quadratic field.** For a
 quadratic number field `K` and a square root `θ ∈ K` of a negative integer `d`, this is the
@@ -109,9 +112,8 @@ the upper half-plane. -/
 theorem complexEmbeddingOfSqrt_apply_sqrt :
     complexEmbeddingOfSqrt d hd θ hθ hK θ = (√(-(d : ℝ)) : ℂ) * I := by
   have : Fact (¬ IsSquare d) := ⟨not_isSquare_of_neg hd⟩
-  have hω : algEquivOfSqrt d θ hθ hK ω = θ := by simp [algEquivOfSqrt_apply]
   have h := complexEmbeddingOfSqrt_algEquivOfSqrt hd hθ hK ω
-  rwa [hω, complexEmbedding_omega, Rat.cast_intCast] at h
+  rwa [algEquivOfSqrt_apply_omega, complexEmbedding_omega, Rat.cast_intCast] at h
 
 /-- **`ι_K` is characterized by its value at `θ`**: a `ℚ`-algebra map `K → ℂ` is `ι_K` exactly
 when it sends `θ` to `√(-d) · i`. -/
@@ -120,7 +122,7 @@ theorem eq_complexEmbeddingOfSqrt_iff (φ : K →ₐ[ℚ] ℂ) :
   have : Fact (¬ IsSquare d) := ⟨not_isSquare_of_neg hd⟩
   refine ⟨fun h ↦ h ▸ complexEmbeddingOfSqrt_apply_sqrt hd hθ hK, fun h ↦ ?_⟩
   set e := algEquivOfSqrt d θ hθ hK
-  have hω : e ω = θ := by simp [e, algEquivOfSqrt_apply]
+  have hω : e ω = θ := algEquivOfSqrt_apply_omega d θ hθ hK
   have hcomp : φ.comp e.toAlgHom = (complexEmbeddingOfSqrt d hd θ hθ hK).comp e.toAlgHom :=
     algHom_ext (by simp [hω, h])
   ext x
@@ -133,7 +135,7 @@ theorem ringHom_eq_complexEmbeddingOfSqrt_iff (φ : K →+* ℂ) :
   have : Fact (¬ IsSquare d) := ⟨not_isSquare_of_neg hd⟩
   have hd' : (d : ℚ) < 0 := by exact_mod_cast hd
   set e := algEquivOfSqrt d θ hθ hK
-  have hω : e ω = θ := by simp [e, algEquivOfSqrt_apply]
+  have hω : e ω = θ := algEquivOfSqrt_apply_omega d θ hθ hK
   have key := ringHom_eq_complexEmbedding_iff hd' (φ.comp (e : QuadraticAlgebra ℚ (d : ℚ) 0 →+* K))
   rw [RingHom.comp_apply, RingHom.coe_coe, hω] at key
   rw [← key]
@@ -151,12 +153,14 @@ embedding of `K` is `ι_K` or its complex conjugate. -/
 theorem ringHom_eq_complexEmbeddingOfSqrt_or_eq_conjugate (φ : K →+* ℂ) :
     φ = (complexEmbeddingOfSqrt d hd θ hθ hK : K →+* ℂ) ∨
       φ = ComplexEmbedding.conjugate (complexEmbeddingOfSqrt d hd θ hθ hK : K →+* ℂ) := by
-  have hpos : 0 < √(-(d : ℝ)) := Real.sqrt_pos.mpr (by simpa using hd)
-  have hsq : φ θ * φ θ = ((√(-(d : ℝ)) : ℂ) * I) * ((√(-(d : ℝ)) : ℂ) * I) := by
-    rw [← map_mul, ← sq, hθ, map_intCast, mul_mul_mul_comm, I_mul_I, ← ofReal_mul,
-      Real.mul_self_sqrt (by simpa using hd.le)]
+  have hpos := sqrt_neg_intCast_pos hd
+  have hφ : φ θ ^ 2 = (d : ℂ) := sq_map_of_sq_eq_intCast φ hθ
+  have hs : ((√(-(d : ℝ)) : ℝ) : ℂ) ^ 2 = -(d : ℂ) := by
+    rw [← ofReal_pow, Real.sq_sqrt (by simpa using hd.le)]
     push_cast
-    ring
+    rfl
+  have hsq : φ θ * φ θ = ((√(-(d : ℝ)) : ℂ) * I) * ((√(-(d : ℝ)) : ℂ) * I) := by
+    linear_combination hφ + hs - ((√(-(d : ℝ)) : ℂ) ^ 2) * I_sq
   rcases mul_self_eq_mul_self_iff.mp hsq with h | h
   · exact Or.inl ((ringHom_eq_complexEmbeddingOfSqrt_iff hd hθ hK φ).mpr (by simpa [h] using hpos))
   · refine Or.inr ?_
@@ -170,14 +174,6 @@ end Basic
 section Model
 
 variable {d : ℤ} [Fact (¬ IsSquare d)]
-
-/-- The model `ℚ(√d)`, presented by its generator `ω`, is identified with itself by the identity:
-evaluation at `ω` is the identity map. -/
-@[simp]
-theorem algEquivOfSqrt_omega (hω : (ω : QuadraticAlgebra ℚ (d : ℚ) 0) ^ 2 = (d : _))
-    (hK : finrank ℚ (QuadraticAlgebra ℚ (d : ℚ) 0) = 2) :
-    algEquivOfSqrt d ω hω hK = AlgEquiv.refl := by
-  ext z <;> simp [algEquivOfSqrt_apply, Algebra.smul_def]
 
 /-- **On the model, `ι_K` is the distinguished embedding**: the model `ℚ(√d)`, presented by its
 generator `ω`, has `ι = QuadraticAlgebra.complexEmbedding`. -/
@@ -196,16 +192,6 @@ section Naturality
 
 variable {d : ℤ} {θ : K} (hθ : θ ^ 2 = (d : K)) (hK : finrank ℚ K = 2)
 
-/-- **Composition of model equivalences**: the model equivalence of `K`, followed by a
-`ℚ`-isomorphism `σ : K ≃ₐ[ℚ] L`, is the model equivalence of `L` presented by `σ θ`. -/
-@[simp]
-theorem algEquivOfSqrt_trans [Fact (¬ IsSquare d)] (σ : K ≃ₐ[ℚ] L) :
-    (algEquivOfSqrt d θ hθ hK).trans σ =
-      algEquivOfSqrt d (σ θ) (by rw [← map_pow, hθ, map_intCast])
-        (σ.toLinearEquiv.finrank_eq.symm.trans hK) := by
-  ext z
-  simp [algEquivOfSqrt_apply, map_rat_smul]
-
 variable (hd : d < 0)
 
 /-- **Naturality of `ι` along an isomorphism**: transporting the presentation `θ` of `K` along a
@@ -213,11 +199,11 @@ variable (hd : d < 0)
 pulls back along `σ` to that of `K`. -/
 @[simp]
 theorem complexEmbeddingOfSqrt_algEquiv_apply (σ : K ≃ₐ[ℚ] L) (x : K) :
-    complexEmbeddingOfSqrt d hd (σ θ) (by rw [← map_pow, hθ, map_intCast])
+    complexEmbeddingOfSqrt d hd (σ θ) (sq_map_of_sq_eq_intCast σ hθ)
         (σ.toLinearEquiv.finrank_eq.symm.trans hK) (σ x) =
       complexEmbeddingOfSqrt d hd θ hθ hK x := by
   have h := (eq_complexEmbeddingOfSqrt_iff hd hθ hK
-    ((complexEmbeddingOfSqrt d hd (σ θ) (by rw [← map_pow, hθ, map_intCast])
+    ((complexEmbeddingOfSqrt d hd (σ θ) (sq_map_of_sq_eq_intCast σ hθ)
       (σ.toLinearEquiv.finrank_eq.symm.trans hK)).comp (σ : K →ₐ[ℚ] L))).mpr (by simp)
   exact AlgHom.congr_fun h x
 
@@ -229,9 +215,9 @@ theorem complexEmbeddingOfSqrt_eq_of_eq_smul_of_pos {e : ℤ} (he : e < 0) {η :
     complexEmbeddingOfSqrt e he η hη hK = complexEmbeddingOfSqrt d hd θ hθ hK := by
   have hde : (e : ℝ) = (u : ℝ) ^ 2 * d := by
     have hK' : ((e : ℚ) : K) = ((u ^ 2 * d : ℚ) : K) := by
-      rw [Rat.cast_intCast, ← hη, h, smul_pow, hθ, Rat.smul_def]
+      rw [h, Rat.smul_def] at hη
       push_cast
-      ring
+      linear_combination -hη + (u : K) ^ 2 * hθ
     have := (Rat.cast_injective (α := K) hK')
     exact_mod_cast this
   have hs : √(-(e : ℝ)) = u * √(-(d : ℝ)) := by
@@ -247,7 +233,7 @@ conjugate of the embedding presented by `θ`. -/
 theorem complexEmbeddingOfSqrt_neg_apply (x : K) :
     complexEmbeddingOfSqrt d hd (-θ) (by rw [neg_sq, hθ]) hK x =
       conj (complexEmbeddingOfSqrt d hd θ hθ hK x) := by
-  have hpos : 0 < √(-(d : ℝ)) := Real.sqrt_pos.mpr (by simpa using hd)
+  have hpos := sqrt_neg_intCast_pos hd
   have h := (ringHom_eq_complexEmbeddingOfSqrt_iff hd (by rw [neg_sq, hθ]) hK
     (ComplexEmbedding.conjugate (complexEmbeddingOfSqrt d hd θ hθ hK : K →+* ℂ))).mpr
     (by simpa [ComplexEmbedding.conjugate_coe_eq] using hpos)
@@ -282,7 +268,7 @@ theorem complexEmbeddingOfSqrt_apply_algEquiv_of_apply_eq_neg (σ : K ≃ₐ[ℚ
     complexEmbeddingOfSqrt d hd η hη hL (σ x) = conj (complexEmbeddingOfSqrt d hd θ hθ hK x) := by
   have hη' : η = -σ θ := by rw [h, neg_neg]
   subst hη'
-  rw [complexEmbeddingOfSqrt_neg_apply (by rw [← map_pow, hθ, map_intCast]) hL hd,
+  rw [complexEmbeddingOfSqrt_neg_apply (sq_map_of_sq_eq_intCast σ hθ) hL hd,
     complexEmbeddingOfSqrt_algEquiv_apply hθ hK hd σ x]
 
 end Naturality
