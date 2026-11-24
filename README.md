@@ -146,7 +146,8 @@ place through fix and rebase pushes, and remove it if verification fails or is i
 The label counts from any author. Admission checks source scope directly; no separate Actions
 receipt is required. Since the label skips PR CI, admission also runs PR CI's diff guards (the
 ones `lake lint` runs) on the exact head, and explains on the PR any head that fails them.
-Reviews on the current head and staging tests still run.
+If a PR build runs on the current head and fails, the label is removed and the PR follows the
+ordinary failed-build path. Reviews on the current head and staging tests still run.
 
 ## Mathlib dependency
 
