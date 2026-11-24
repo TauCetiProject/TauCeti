@@ -6,24 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 public import TauCeti.Analysis.CStarAlgebra.State.Pure
+public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
 # Vector states of matrix algebras
 
 For a vector `ξ : n → ℂ`, the vector functional `a ↦ ⟪ξ, a ξ⟫ = star ξ ⬝ᵥ (a *ᵥ ξ)` on the matrix
 C⋆-algebra `CStarMatrix n n ℂ` is a state when `ξ` is a unit vector. It is pure: the rank-one
-projection `ξ ξ⋆` compresses every matrix `a` to `⟪ξ, a ξ⟫ ξ ξ⋆`, so
-`TauCeti.mem_extremePoints_stateSpace_of_mul_mul_eq_smul` applies.
+projection `ξ ξ⋆ = TauCeti.rankOneHermitianProjector ξ` compresses every matrix `a` to
+`⟪ξ, a ξ⟫ ξ ξ⋆`, so `TauCeti.mem_extremePoints_stateSpace_of_mul_mul_eq_smul` applies. The
+normalized trace is the average of the vector states of the standard basis vectors.
 
 ## Main declarations
 
 * `TauCeti.vectorFunctional`: the vector functional of `ξ`.
-* `TauCeti.vecMulVecStar`: the rank-one matrix `ξ ξ⋆`, the projection onto the line of `ξ` for
-  a unit vector `ξ` (`TauCeti.isStarProjection_vecMulVecStar`).
+* `TauCeti.ofMatrix_rankOneHermitianProjector_mul_mul`: for a unit vector `ξ`, the projection
+  `ξ ξ⋆` compresses `a` to `⟪ξ, a ξ⟫ ξ ξ⋆`.
 * `TauCeti.vectorFunctional_mem_stateSpace`: the vector functional of a unit vector is a state.
 * `TauCeti.vectorFunctional_mem_extremePoints_stateSpace`: it is a pure state.
+* `TauCeti.normalizedTraceState_eq_sum_smul_vectorFunctional`: the normalized trace is the average
+  of the vector states of the standard basis vectors.
 -/
 
 public section
@@ -51,32 +57,20 @@ theorem vectorFunctional_apply (ξ : n → ℂ) (a : CStarMatrix n n ℂ) :
     vectorFunctional ξ a = star ξ ⬝ᵥ (ofMatrix.symm a *ᵥ ξ) :=
   (rfl)
 
-/-- The rank-one matrix `ξ ξ⋆ = vecMulVec ξ (star ξ)`. For a unit vector `ξ` it is the projection
-onto the line of `ξ`, by `TauCeti.isStarProjection_vecMulVecStar`. -/
-def vecMulVecStar {m : Type*} (ξ : m → ℂ) : CStarMatrix m m ℂ := ofMatrix (vecMulVec ξ (star ξ))
+/-- The vector functional of a standard basis vector reads off a diagonal entry. -/
+theorem vectorFunctional_single [DecidableEq n] (i : n) (a : CStarMatrix n n ℂ) :
+    vectorFunctional (Pi.single i 1) a = a i i := by
+  simp
 
-/-- The rank-one matrix `ξ ξ⋆`, read as an ordinary matrix. -/
-@[simp]
-theorem ofMatrix_symm_vecMulVecStar {m : Type*} (ξ : m → ℂ) :
-    ofMatrix.symm (vecMulVecStar ξ) = vecMulVec ξ (star ξ) :=
-  (rfl)
-
-/-- For a unit vector `ξ`, the rank-one matrix `ξ ξ⋆` is a projection. -/
-theorem isStarProjection_vecMulVecStar {ξ : n → ℂ} (hξ : star ξ ⬝ᵥ ξ = 1) :
-    IsStarProjection (vecMulVecStar ξ) where
-  isIdempotentElem := ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_mul, ofMatrix_symm_vecMulVecStar, vecMulVec_mul_vecMulVec, hξ, one_smul]
-  isSelfAdjoint := ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_star, ofMatrix_symm_vecMulVecStar, conjTranspose_vecMulVec, star_star]
-
-/-- The rank-one matrix `ξ ξ⋆` compresses every matrix to a multiple of itself:
-`(ξ ξ⋆) a (ξ ξ⋆) = ⟪ξ, a ξ⟫ ξ ξ⋆`. -/
-theorem vecMulVecStar_mul_mul (ξ : n → ℂ) (a : CStarMatrix n n ℂ) :
-    vecMulVecStar ξ * a * vecMulVecStar ξ = vectorFunctional ξ a • vecMulVecStar ξ := by
+/-- For a unit vector `ξ`, the rank-one projection `ξ ξ⋆ = rankOneHermitianProjector ξ` compresses
+every matrix to a multiple of itself: `(ξ ξ⋆) a (ξ ξ⋆) = ⟪ξ, a ξ⟫ ξ ξ⋆`. -/
+theorem ofMatrix_rankOneHermitianProjector_mul_mul {ξ : n → ℂ} (hξ : star ξ ⬝ᵥ ξ = 1)
+    (a : CStarMatrix n n ℂ) :
+    ofMatrix (rankOneHermitianProjector ξ) * a * ofMatrix (rankOneHermitianProjector ξ) =
+      vectorFunctional ξ a • ofMatrix (rankOneHermitianProjector ξ) := by
   apply ofMatrix.symm.injective
-  simp only [ofMatrix_symm_mul, ofMatrix_symm_smul, ofMatrix_symm_vecMulVecStar,
-    vectorFunctional_apply]
-  rw [vecMulVec_mul, vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, vecMulVec_smul]
+  simp [rankOneHermitianProjector_def, hξ, vecMulVec_mul, vecMul_vecMulVec,
+    dotProduct_mulVec, vecMulVec_smul]
 
 /-- The vector functional of a unit vector is a state. -/
 theorem vectorFunctional_mem_stateSpace {ξ : n → ℂ} (hξ : star ξ ⬝ᵥ ξ = 1) :
@@ -93,8 +87,15 @@ theorem vectorFunctional_mem_extremePoints_stateSpace {ξ : n → ℂ} (hξ : st
     vectorFunctional ξ ∈ Set.extremePoints ℝ (stateSpace (CStarMatrix n n ℂ)) := by
   classical
   refine mem_extremePoints_stateSpace_of_mul_mul_eq_smul (vectorFunctional_mem_stateSpace hξ)
-    (isStarProjection_vecMulVecStar hξ) (vecMulVecStar_mul_mul ξ) ?_
-  rw [vectorFunctional_apply, ofMatrix_symm_vecMulVecStar, vecMulVec_mulVec, hξ,
-    MulOpposite.op_one, one_smul, hξ]
+    ((isStarProjection_rankOneHermitianProjector ξ).map ofMatrixStarAlgEquiv)
+    (ofMatrix_rankOneHermitianProjector_mul_mul hξ) ?_
+  simp [← ofMatrix_eq_ofMatrixStarAlgEquiv, rankOneHermitianProjector_def, hξ, vecMulVec_mulVec]
+
+/-- The normalized trace of `M_n` is the average of the vector states of the standard basis
+vectors. -/
+theorem normalizedTraceState_eq_sum_smul_vectorFunctional [DecidableEq n] :
+    normalizedTraceState n = ∑ i, (Fintype.card n : ℝ)⁻¹ • vectorFunctional (Pi.single i 1) := by
+  refine DFunLike.ext _ _ fun a ↦ ?_
+  simp [_root_.sum_apply, normalizedTrace_eq_sum, Finset.mul_sum, Complex.real_smul]
 
 end TauCeti

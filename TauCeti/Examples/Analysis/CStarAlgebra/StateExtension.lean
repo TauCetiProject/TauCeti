@@ -43,18 +43,13 @@ theorem normalizedTraceState_notMem_extremePoints_stateSpace :
   have he (i : Fin 2) : star (Pi.single i (1 : ℂ)) ⬝ᵥ Pi.single i 1 = 1 := by simp
   intro h
   have hseg : normalizedTraceState (Fin 2) ∈ openSegment ℝ (vectorFunctional (Pi.single 0 1))
-      (vectorFunctional (Pi.single 1 1)) := by
-    refine ⟨1 / 2, 1 / 2, by norm_num, by norm_num, by norm_num, DFunLike.ext _ _ fun a ↦ ?_⟩
-    simp [normalizedTrace_def, Matrix.trace_fin_two, dotProduct, mulVec, Fin.sum_univ_two,
-      Complex.real_smul]
-    ring
+      (vectorFunctional (Pi.single 1 1)) :=
+    ⟨2⁻¹, 2⁻¹, by norm_num, by norm_num, by norm_num,
+      by simp [normalizedTraceState_eq_sum_smul_vectorFunctional, Fin.sum_univ_two]⟩
   have h0 := ((mem_extremePoints.1 h).2 _ (vectorFunctional_mem_stateSpace (he 0)) _
     (vectorFunctional_mem_stateSpace (he 1)) hseg).1
-  have h1 : vectorFunctional (Pi.single 0 1) (ofMatrix (Matrix.single (0 : Fin 2) 0 (1 : ℂ))) =
-      normalizedTraceState (Fin 2) (ofMatrix (Matrix.single 0 0 1)) := by
-    rw [h0]
-  rw [vectorFunctional_apply, normalizedTraceState_apply, normalizedTrace_def,
-    Matrix.trace_fin_two] at h1
-  norm_num [dotProduct, mulVec, Fin.sum_univ_two] at h1
+  have h1 := DFunLike.congr_fun h0 (ofMatrix (Matrix.single (0 : Fin 2) 0 (1 : ℂ)))
+  rw [vectorFunctional_single, normalizedTraceState_apply, normalizedTrace_eq_sum] at h1
+  norm_num [Fin.sum_univ_two] at h1
 
 end TauCeti.StateExtensionExamples

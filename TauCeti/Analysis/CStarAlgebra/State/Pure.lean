@@ -86,7 +86,8 @@ theorem mem_extremePoints_stateSpace_of_mul_mul_eq_smul (hω : ω ∈ stateSpace
   have hφq := map_nonneg_of_mem_stateSpace hφ hq.nonneg
   have hψq := map_nonneg_of_mem_stateSpace hψ hq.nonneg
   have hsum : (s : ℂ) * φ (1 - p) + (t : ℂ) * ψ (1 - p) = 0 := by
-    rw [← hωq, ← h, add_apply, smul_apply, smul_apply, Complex.real_smul, Complex.real_smul]
+    rw [← hωq, ← h]
+    simp [Complex.real_smul]
   -- Both terms are nonnegative, and their sum vanishes.
   obtain ⟨h₁, h₂⟩ := (add_eq_zero_iff_of_nonneg (mul_nonneg (Complex.zero_le_real.2 hs.le) hφq)
     (mul_nonneg (Complex.zero_le_real.2 ht.le) hψq)).1 hsum

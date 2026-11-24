@@ -41,7 +41,8 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
-* `CStarMatrix.instFiniteDimensionalComplex`: `CStarMatrix m m ℂ` is finite-dimensional.
+* `CStarMatrix.instModuleFinite`: `CStarMatrix m n A` is a finite module over finite index
+  types when `A` is finite and free, so `CStarMatrix m n ℂ` is finite-dimensional.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`,
   `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
@@ -169,11 +170,11 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring
     SMulCommClass R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => (mul_smul M r N).symm⟩
 
-/-- The complex matrix algebra `CStarMatrix m m ℂ` over a finite index type is
-finite-dimensional, as for `Matrix`. -/
-instance instFiniteDimensionalComplex {m : Type*} [Finite m] :
-    FiniteDimensional ℂ (CStarMatrix m m ℂ) :=
-  inferInstanceAs (FiniteDimensional ℂ (Matrix m m ℂ))
+/-- Matrices over finite index types with entries in a finite free module form a finite module,
+as for `Matrix`. In particular `CStarMatrix m n ℂ` is finite-dimensional. -/
+instance instModuleFinite {m : Type*} [Finite m] [Finite n] [Semiring R] [AddCommMonoid A]
+    [Module R A] [Module.Free R A] [Module.Finite R A] : Module.Finite R (CStarMatrix m n A) :=
+  inferInstanceAs (Module.Finite R (Matrix m n A))
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
 @[simp]
