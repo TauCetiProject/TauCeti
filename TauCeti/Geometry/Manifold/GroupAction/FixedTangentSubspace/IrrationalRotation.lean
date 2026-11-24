@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.FixedTangentSubspace
 
 import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 

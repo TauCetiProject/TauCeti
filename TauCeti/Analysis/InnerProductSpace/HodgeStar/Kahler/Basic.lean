@@ -59,6 +59,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
+* `twoVectorContraction_kahlerForm`: the contraction by `ω` is `J`, `v ⌟ ω = J v`.
 * `sum_ιMulti_apply_eq_two_smul_kahlerForm`: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω` in every orthonormal basis.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`, so `‖ω‖² = 2` in dimension four
   (`norm_kahlerForm_sq_eq_two`).
@@ -188,6 +189,11 @@ theorem inner_kahlerForm_ιMulti (u w : V) :
     ⟪J.kahlerForm, ιMulti ℝ 2 ![u, w]⟫ = ⟪J u, w⟫ := by
   rw [kahlerForm, real_inner_smul_left, inner_sum_ιMulti_apply hJ]
   ring
+
+/-- **The contraction by the Kähler two-vector is `J`**: `v ⌟ ω = J v`. -/
+@[simp]
+theorem twoVectorContraction_kahlerForm (v : V) : twoVectorContraction J.kahlerForm v = J v :=
+  ext_inner_right ℝ fun w ↦ by rw [inner_twoVectorContraction_apply, inner_kahlerForm_ιMulti hJ]
 
 /-- **The Kähler two-vector in any orthonormal basis**: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω` for an orthogonal
 `J`, as in the definition of `ω` through the standard orthonormal basis. -/

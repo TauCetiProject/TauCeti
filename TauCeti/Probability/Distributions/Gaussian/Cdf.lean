@@ -9,7 +9,10 @@ public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Distributions.Gaussian.Basic
+import TauCeti.Analysis.SpecialFunctions.Erf.Inequalities
 import TauCeti.MeasureTheory.Measure.Real
+import TauCeti.MeasureTheory.Measure.Tail
+import TauCeti.Probability.Distributions.Gaussian.PDF
 import TauCeti.Probability.Cdf.Density
 
 /-!
@@ -64,6 +67,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   for the upper tail to the right of the mean, by the density at a later point.
 * `TauCeti.Probability.gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi` — the corresponding
   lower bound for the upper tail of the absolute value of a standard Gaussian.
+* `TauCeti.Probability.measureReal_gaussianReal_abs_sub_ge_le` — the two-sided tail bound
+  `P(|X - m| ≥ t) ≤ exp (-t² / (2v))`, without the factor `2` of the sub-Gaussian bound.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
 -/
 
@@ -141,8 +146,7 @@ theorem integral_Iic_gaussianPDFReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x :
 /-- The cumulative distribution function of a Gaussian law with nonzero variance. -/
 theorem cdf_gaussianReal_eq (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     cdf (gaussianReal m v) x = (1 + Real.erf ((x - m) / √(2 * (v : ℝ)))) / 2 := by
-  rw [cdf_eq_real, measureReal_def, gaussianReal_apply_eq_integral m hv,
-    ENNReal.toReal_ofReal (integral_nonneg fun t => gaussianPDFReal_nonneg m v t)]
+  rw [cdf_eq_real, measureReal_gaussianReal_eq_setIntegral m hv]
   exact integral_Iic_gaussianPDFReal m hv x
 
 /-- The cumulative distribution function of the standard Gaussian law. -/
@@ -334,9 +338,7 @@ standard Gaussian cumulative distribution function:
 `∫ t in Ioi x, N(m, v)(t) = Φ ((m - x) / √v)`. -/
 theorem integral_Ioi_gaussianPDFReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     ∫ t in Ioi x, gaussianPDFReal m v t = cdf (gaussianReal 0 1) ((m - x) / √(v : ℝ)) := by
-  rw [← measureReal_Ioi_gaussianReal_eq_cdf m hv, measureReal_def,
-    gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
-      (setIntegral_nonneg measurableSet_Ioi fun t _ => gaussianPDFReal_nonneg m v t)]
+  rw [← measureReal_Ioi_gaussianReal_eq_cdf m hv, measureReal_gaussianReal_eq_setIntegral m hv]
 
 /-- A lower bound for the upper tail of a Gaussian law: beyond a point `s` to the right of the
 mean, the interval `(s, s + t]` alone carries mass at least its length `t` times the density at
@@ -358,8 +360,7 @@ theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v
           (fun x hx => antitoneOn_gaussianPDFReal m v (hs.trans hx.1.le) (hs.trans hst) hx.2)
           (integrable_gaussianPDFReal m v).integrableOn
     _ = (gaussianReal m v).real (Ioc s (s + t)) := by
-        rw [measureReal_def, gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
-          (setIntegral_nonneg measurableSet_Ioc fun x _ => gaussianPDFReal_nonneg m v x)]
+        rw [measureReal_gaussianReal_eq_setIntegral m hv]
     _ ≤ (gaussianReal m v).real (Ioi s) := measureReal_mono Ioc_subset_Ioi_self
 
 /-- The absolute value of a standard Gaussian exceeds `s ≥ 0` with probability at least the
@@ -370,6 +371,44 @@ theorem gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi {s : ℝ} (hs : 0 ≤
   rw [one_mul] at h
   rw [map_measureReal_apply continuous_abs.measurable measurableSet_Ioi]
   exact h.trans (measureReal_mono fun x (hx : s < x) => hx.trans_le (le_abs_self x))
+
+/-- **Two-sided Gaussian tail bound.** For `t ≥ 0`, `gaussianReal m v` gives mass at most
+`exp (-t² / (2v))` to `{x | t ≤ |x - m|}`. The two tails are each `erfc (t / √(2v)) / 2`, and
+`erfc y ≤ exp (-y²)` for `y ≥ 0`, so unlike the sub-Gaussian bound there is no factor `2`. -/
+theorem measureReal_gaussianReal_abs_sub_ge_le (m : ℝ) (v : ℝ≥0) {t : ℝ} (ht : 0 ≤ t) :
+    (gaussianReal m v).real {x | t ≤ |x - m|} ≤ Real.exp (-t ^ 2 / (2 * v)) := by
+  rcases ht.eq_or_lt with rfl | ht
+  · simp
+  rcases eq_or_ne v 0 with rfl | hv
+  · have : m ∉ {x | t ≤ |x - m|} := by simpa using ht
+    rw [gaussianReal_zero_var, measureReal_def, Measure.dirac_apply, Set.indicator_of_notMem this]
+    positivity
+  have := nullSingletonClass_gaussianReal (μ := m) hv
+  -- The tails `{t ≤ x - m}` and `{t ≤ -(x - m)}` of `|x - m|` are `Ici (m + t)` and `Iic (m - t)`.
+  have hup_eq : {x : ℝ | t ≤ x - m} = Ici (m + t) := by
+    ext x
+    simp only [mem_ofPred_eq, mem_Ici]
+    constructor <;> intro h <;> linarith
+  have hlow_eq : {x : ℝ | t ≤ -(x - m)} = Iic (m - t) := by
+    ext x
+    simp only [mem_ofPred_eq, mem_Iic]
+    constructor <;> intro h <;> linarith
+  have hup : (gaussianReal m v).real (Ici (m + t)) = Real.erfc (t / √(2 * (v : ℝ))) / 2 := by
+    rw [← measureReal_congr (Ioi_ae_eq_Ici (μ := gaussianReal m v)),
+      measureReal_Ioi_gaussianReal m hv, add_sub_cancel_left]
+  -- By symmetry about the mean, both tails are `Φ (-t / √v)`.
+  have hlow : (gaussianReal m v).real (Iic (m - t)) = (gaussianReal m v).real (Ici (m + t)) := by
+    rw [← cdf_eq_real, cdf_gaussianReal_eq_cdf_zero_one m hv,
+      measureReal_Ici_gaussianReal_eq_cdf m hv, sub_sub_cancel_left, sub_add_cancel_left]
+  calc (gaussianReal m v).real {x | t ≤ |x - m|}
+      ≤ (gaussianReal m v).real {x | t ≤ x - m} + (gaussianReal m v).real {x | t ≤ -(x - m)} :=
+        TauCeti.measureReal_le_abs_le_add
+    _ = Real.erfc (t / √(2 * (v : ℝ))) := by
+      rw [hup_eq, hlow_eq, hlow, hup]
+      ring
+    _ ≤ Real.exp (-t ^ 2 / (2 * v)) := by
+      refine (Real.erfc_le_exp_neg_sq (by positivity)).trans_eq ?_
+      rw [div_pow, Real.sq_sqrt (by positivity), neg_div]
 
 /-- A random variable with a Gaussian law of nonzero variance has the error-function cumulative
 distribution function. -/

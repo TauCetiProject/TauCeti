@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -418,13 +419,7 @@ instance isNegInvariant_toSphere [μ.IsNegInvariant] : μ.toSphere.IsNegInvarian
 /-- The sphere measure of a negation-invariant measure has barycentre zero. -/
 theorem integral_coe_toSphere [μ.IsNegInvariant] :
     ∫ x : sphere (0 : E) 1, (x : E) ∂μ.toSphere = 0 := by
-  have h := integral_map_equiv (μ := μ.toSphere)
-    (MeasurableEquiv.neg (sphere (0 : E) 1)) (fun x : sphere (0 : E) 1 ↦ (x : E))
-  simp only [MeasurableEquiv.neg_apply, Measure.map_neg_eq_self, coe_neg_sphere,
-    integral_neg] at h
-  -- `h` says the integral equals its own negative.
-  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
-  exact self_eq_neg.mp h
+  exact integral_eq_zero_of_odd (Filter.Eventually.of_forall coe_neg_sphere)
 
 /-- In dimension at least two, the points of the sphere are null for the sphere measure. -/
 theorem toSphere_singleton [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
