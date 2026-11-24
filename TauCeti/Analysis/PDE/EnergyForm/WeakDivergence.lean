@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 
-import TauCeti.Analysis.Sobolev.Leibniz
+import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 
 /-!
@@ -37,25 +37,6 @@ public noncomputable section
 
 open MeasureTheory Set TopologicalSpace
 open scoped ContDiff Gradient InnerProductSpace
-
-namespace TauCeti
-
-/-- **First derivatives of an `H²` function lie in `H¹`.** For `U ∈ W^{2,2}(Ω)` with first-order
-part `u` and every direction `v`, there is `d ∈ H¹(Ω)` whose value is `⟪∇u, v⟫` almost
-everywhere on `Ω`. -/
-private theorem Wkp.exists_value_ae_eq_inner_gradient_lowerOrder
-    {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-    {Omega : Opens (EuclideanSpace ℝ ι)} (U : Wkp mu Omega 2 2) (v : EuclideanSpace ℝ ι) :
-    ∃ d : W1p mu Omega 2, W1p.value d =ᵐ[mu.restrict Omega]
-      fun x ↦ ⟪W1p.gradient (Wkp.lowerOrder 1 U) x, v⟫_ℝ := by
-  obtain ⟨d, hd, -⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq U v
-  rw [Wkp.value_succ, Wkp.value_one] at hd
-  refine ⟨d, ?_⟩
-  filter_upwards [hd.ae_eq ((W1p.hasWeakFDerivOn (Wkp.lowerOrder 1 U)).hasWeakLineDerivOn v)]
-    with x hx
-  rw [hx, innerSL_apply_apply]
-
-end TauCeti
 
 namespace TauCeti.PDE
 
@@ -123,20 +104,6 @@ theorem energyFormH1_eq_setIntegral_neg_sum_of_hasWeakLineDerivOn
         filter_upwards [hg] with x hx
         simp only [hx, smul_eq_mul, Finset.sum_neg_distrib, neg_mul, Finset.sum_mul, mul_comm]
 
-omit [mu.IsAddHaarMeasure] in
-/-- A matrix field with continuous entries bounded by `M` on `Ω`, as a principal coefficient
-alone, has an essentially bounded field of pointwise energy forms on `Ω`. -/
-private theorem memLp_energyIntegrand_of_abs_apply_le
-    (ha : ∀ i j, ContinuousOn (fun x ↦ a x i j) Omega) {M : ℝ}
-    (haM : ∀ i j, ∀ x ∈ Omega, |a x i j| ≤ M) :
-    MemLp (fun x ↦ energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
-  memLp_energyIntegrand_of_continuousOn_of_norm_le (b := 0) (c := 0)
-    (continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ ha i j)
-    continuousOn_const continuousOn_const (Lam := ∑ _i : ι, ∑ _j : ι, M)
-    (fun x hx ↦ (norm_matrixBilinearForm_le_sum_abs (a x)).trans
-      (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ haM i j x hx))
-    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
-
 /-- **The weak divergence of an `H²` flux.**
 Let the entries of `a` be `C¹` on `Ω`, with values and gradients bounded by `M`, and let
 `u ∈ H²(Ω)`. Then there are `dᵢ ∈ L²(Ω)` such that, for every `i`, the flux component
@@ -161,7 +128,8 @@ theorem exists_hasWeakLineDerivOn_flux_and_energyFormH1_eq_of_wkp_two
         energyFormH1 a 0 0 (Wkp.lowerOrder 1 U) (v : W1p mu Omega 2) =
           ∫ x in Omega, (-∑ i, d i x) * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   set e := EuclideanSpace.basisFun ι ℝ
-  choose D hDu using fun j ↦ Wkp.exists_value_ae_eq_inner_gradient_lowerOrder U (e j)
+  choose D hD using fun j ↦ Wkp.exists_hasWeakLineDerivOn_value 1 U (e j)
+  simp only [Wkp.value_succ 1, Wkp.value_one] at hD
   set u : W1p mu Omega 2 := Wkp.lowerOrder 1 U
   have hΩ : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   have haLp (i j : ι) : MemLp (fun x ↦ a x i j) ⊤ (mu.restrict Omega) :=
@@ -196,9 +164,8 @@ theorem exists_hasWeakLineDerivOn_flux_and_energyFormH1_eq_of_wkp_two
       (fun x ↦ ∑ j, a x i j * ⟪W1p.gradient u x, e j⟫_ℝ) (d i) (e i) := by
     refine (HasWeakLineDerivOn.sum Finset.univ fun j _ ↦ ?_).congr_ae_deriv
       (hg i).coeFn_toLp.symm
-    have hweak := ((W1p.hasWeakFDerivOn (D j)).hasWeakLineDerivOn (e i)).congr_ae (hDu j)
     simpa only [g, smul_eq_mul, innerSL_apply_apply] using
-      hweak.contDiffOn_smul_of_ne_zero (ha i j) one_ne_zero
+      hasWeakLineDerivOn_smul_inner_gradient ha hD i j
   exact ⟨d, hd, energyFormH1_eq_setIntegral_neg_sum_of_hasWeakLineDerivOn
     (memLp_energyIntegrand_of_abs_apply_le (fun i j ↦ (ha i j).continuousOn)
       fun i j x hx ↦ (haM i j x hx).1) hd⟩

@@ -161,7 +161,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
 /-- The Leibniz rule for the products `Bⁱʲ ∂ⱼu` of the entries of a coefficient field `C¹` on
 `Ω` with the components of the weak gradient of `u`, differentiated in the direction `bᵢ`, when
 `u` has the second weak derivatives `∂ᵢ∂ⱼu = ⟪∇(∂ⱼu), bᵢ⟫`. -/
-private theorem hasWeakLineDerivOn_smul_inner_gradient {B : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+theorem hasWeakLineDerivOn_smul_inner_gradient {B : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     (hB : ∀ i j, ContDiffOn ℝ 1 (fun x => B x i j) Omega) {u : W1p mu Omega 2}
     {D : ι → W1p mu Omega 2}
     (hD : ∀ j, HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value (D j))
