@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborh
 import Mathlib.Topology.Algebra.Module.LocallyConvex
 import TauCeti.Analysis.Convex.SimplyConnected
 import TauCeti.Analysis.Complex.OpenSegment
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The edges of the dessin of a cover of the thrice-punctured sphere

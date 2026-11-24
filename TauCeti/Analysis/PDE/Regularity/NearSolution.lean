@@ -39,8 +39,8 @@ exactly because `γ > 0`.
 The drift is not invariant under dilations, so the constants depend on a bound `σ` for `βR/λ`,
 through the oscillation decay `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift` and
 local boundedness with lower-order terms
-`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder` of the
-homogeneous equation. The estimates without a drift are the case `b = 0`, `σ = 0`.
+`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg`
+of the homogeneous equation. The estimates without a drift are the case `b = 0`, `σ = 0`.
 
 ## Main declarations
 
@@ -96,7 +96,7 @@ almost everywhere on `B`. Then almost everywhere on `B(x₀, R/2)`
 `|u| ≤ D (R^(-n/2) ‖u‖_{L²(B(x₀, R))} + W)`.
 
 For `W = 0` this is
-`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`. -/
+`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg`. -/
 theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le_drift [Nonempty ι] {lam Lam : ℝ}
     (σ : ℝ) :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
@@ -116,7 +116,7 @@ theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le_drift [Nonempty ι] {lam
           W) := by
   set n : ℝ := (Fintype.card ι : ℝ)
   obtain ⟨D₁, hD₁, hbound⟩ :=
-    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
+    exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg (mu := mu)
       (lam := lam) (Lam := Lam)
   set D₀ := D₁ * (1 + σ ^ 2) ^ Fintype.card ι
   set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
