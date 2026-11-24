@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import Mathlib.RingTheory.Flat.Basic
 
 /-!
 # `ℂ` as an algebra over a number field through a complex embedding
@@ -48,6 +49,10 @@ instance : IsScalarTower (𝓞 K) K (Codomain σ) := .of_algebraMap_eq fun _ ↦
 instance : SMulCommClass (𝓞 K) ℂ (Codomain σ) where
   smul_comm a c z := mul_left_comm (G := ℂ) (σ (algebraMap (𝓞 K) K a)) c z
 
+instance : FaithfulSMul (𝓞 K) (Codomain σ) :=
+  (faithfulSMul_iff_algebraMap_injective _ _).mpr
+    (σ.injective.comp (FaithfulSMul.algebraMap_injective (𝓞 K) K))
+
 /-- The identification of `Codomain σ` with `ℂ`, as `ℂ`-algebras. -/
 def equiv : Codomain σ ≃ₐ[ℂ] ℂ := AlgEquiv.refl
 
@@ -65,6 +70,12 @@ theorem tmul_eq_smul {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (c : Codom
   -- `equiv σ` is the identity of `ℂ`, and `ℂ` acts on `Codomain σ` by multiplication.
   rw [TensorProduct.smul_tmul']
   exact congrArg (· ⊗ₜ[𝓞 K] x) (mul_one (M := ℂ) c).symm
+
+/-- A nonzero element of a flat `𝓞 K`-module stays nonzero in the complex fibre at `σ`, since
+`𝓞 K → ℂ` is injective. -/
+theorem one_tmul_ne_zero {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] [Module.Flat (𝓞 K) E]
+    {x : E} (hx : x ≠ 0) : (1 : Codomain σ) ⊗ₜ[𝓞 K] x ≠ 0 := fun h =>
+  hx (Module.Flat.tensorProduct_mk_injective (𝓞 K) E (Codomain σ) (by simpa using h))
 
 end Codomain
 

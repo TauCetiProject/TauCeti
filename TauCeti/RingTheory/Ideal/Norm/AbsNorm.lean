@@ -22,11 +22,16 @@ domain its absolute norm factors as the product over all height-one primes of th
 cardinality raised to the prime multiplicity. Over `ℤ` itself, the absolute norm of the ideal
 `(n)` is `|n|`.
 
+The cardinality of the quotient of a submodule `p` by a submodule `N` of `p` is the index of the
+image of `N` in `p`, as additive subgroups of the ambient module.
+
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
 
 ## Main results
 
+* `Submodule.cardQuot_eq_relIndex_map_subtype`: for a submodule `N` of a submodule `p`,
+  `#(p ⧸ N)` is the index of the image of `N` in `p`.
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
@@ -46,6 +51,22 @@ have nonnegative product generate principal ideals with congruent absolute norms
 -/
 
 public section
+
+namespace Submodule
+
+/-- The cardinality of the quotient of `p` by a submodule `N` of `p` is the index of the image of
+`N` in `p`, as additive subgroups of the ambient module. -/
+theorem cardQuot_eq_relIndex_map_subtype {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (p : Submodule R M) (N : Submodule R p) :
+    N.cardQuot = (N.map p.subtype).toAddSubgroup.relIndex p.toAddSubgroup := by
+  have hp : (⊤ : AddSubgroup p).map (p.subtype : p →+ M) = p.toAddSubgroup := by
+    rw [← AddMonoidHom.range_eq_map]
+    ext x
+    simp
+  rw [cardQuot, ← AddSubgroup.relIndex_top_right, map_toAddSubgroup, ← hp,
+    AddSubgroup.relIndex_map_map_of_injective _ _ p.injective_subtype]
+
+end Submodule
 
 namespace Ideal
 
