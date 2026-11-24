@@ -85,15 +85,14 @@ theorem extendByZero_apply_of_notMem {x : X} (hx : x ∉ U) : extendByZero hU f 
 
 end ExtendByZero
 
-/-- A compactly supported locally constant function on `X` whose support lies in an open set `U`
+/-- A compactly supported locally constant function on `X` whose support lies in a set `U`
 restricts to a compactly supported function on `U`. -/
-theorem hasCompactSupport_comap_subtypeVal_of_support_subset [Zero M] {U : Set X} (hU : IsOpen U)
+theorem hasCompactSupport_comap_subtypeVal_of_support_subset [Zero M] {U : Set X}
     {f : LocallyConstant X M} (hf : HasCompactSupport f) (hsupp : support f ⊆ U) :
     HasCompactSupport (f.comap ⟨Subtype.val, continuous_subtypeVal⟩ : LocallyConstant U M) := by
   rw [hasCompactSupport_iff_isCompact_support, coe_comap, ContinuousMap.coe_mk,
     support_comp_eq_preimage]
-  refine hU.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' ?_
-    (by rwa [Subtype.range_coe])
+  refine IsInducing.subtypeVal.isCompact_preimage' ?_ (by rwa [Subtype.range_coe])
   rw [← tsupport_eq_support]
   exact hf.isCompact
 
@@ -206,7 +205,7 @@ theorem exact_extendByZero_restrict [T2Space X] {U : Set X} (hU : IsOpen U) :
     have hsupp : support (f : LocallyConstant X M) ⊆ U := Function.support_subset_iff'.2 hfU
     let g : LocallyConstant U M := (f : LocallyConstant X M).comap
       ⟨Subtype.val, continuous_subtypeVal⟩
-    have hg : HasCompactSupport g := hasCompactSupport_comap_subtypeVal_of_support_subset hU
+    have hg : HasCompactSupport g := hasCompactSupport_comap_subtypeVal_of_support_subset
       (mem_compactlySupported.1 f.property) hsupp
     exact ⟨⟨g, mem_compactlySupported.2 hg⟩,
       ext_of_mem_of_notMem (U := U) (fun x => by simp [g]) fun x hx => by simp [hx, hfU x hx]⟩
