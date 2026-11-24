@@ -41,7 +41,7 @@ example : twoRhoPairing (![1, 1, 0, 0] : Fin 4 → ℚ) = 4 := by
 
 -- The same value from the minuscule formula `a (n - a) = 2 · 2`.
 example : twoRhoPairing (fun i : Fin 4 ↦ if (i : ℕ) < 2 then (1 : ℚ) else 0) = 4 := by
-  rw [twoRhoPairing_indicator]
+  rw [twoRhoPairing_ite_lt]
   norm_num
 
 -- The basic vector of slope `1/2` is central and pairs to `0`.
@@ -66,10 +66,8 @@ example : ¬ IsNewtonVector (![-1, 0] : Fin 2 → ℚ) := fun h ↦ by
 
 -- The slope `1/2` needs even multiplicity, so `(1/2, 0)` is not a Newton vector.
 example : ¬ IsNewtonVector (![1 / 2, 0] : Fin 2 → ℚ) := fun h ↦ by
-  obtain ⟨z, hz⟩ := h.exists_int_card_mul_eq 0
-  have hcard : #{j | (![1 / 2, 0] : Fin 2 → ℚ) j = ![1 / 2, 0] 0} = 1 :=
-    card_eq_one.mpr ⟨0, by ext j; fin_cases j <;> norm_num⟩
-  rw [hcard] at hz
+  obtain ⟨z, hz⟩ := h.exists_int_eq_of_card_eq_one (i := 0)
+    (card_eq_one.mpr ⟨0, by ext j; fin_cases j <;> norm_num⟩)
   have h₀ : (0 : ℚ) < z := by norm_num at hz; rw [← hz]; norm_num
   have h₁ : (z : ℚ) < 1 := by norm_num at hz; rw [← hz]; norm_num
   have : (0 : ℤ) < z := by exact_mod_cast h₀
