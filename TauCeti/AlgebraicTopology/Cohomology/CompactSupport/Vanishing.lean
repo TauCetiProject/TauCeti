@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.DirectedUnion
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.MayerVietoris
 
 import TauCeti.Order.SupClosed
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Vanishing of cohomology with compact supports on unions of open sets
@@ -89,7 +90,7 @@ theorem isZero_compactSupportCohomology_of_iSup_eq_top {ι : Type*} [Preorder ι
     IsZero (X.compactSupportCohomology R k M n) := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · -- An empty family covers only the empty space.
-    have : IsEmpty X := ⟨fun x ↦ by simpa [← hcover] using Opens.mem_top x⟩
+    have : IsEmpty X := Opens.isEmpty_of_iSup_eq_top hcover
     exact (TauCeti.isZero_singularCohomology_of_isEmpty R k M X n).of_iso
       (compactSupportCohomologyIsoOfCompactSpace n)
   rw [ModuleCat.isZero_iff_subsingleton]

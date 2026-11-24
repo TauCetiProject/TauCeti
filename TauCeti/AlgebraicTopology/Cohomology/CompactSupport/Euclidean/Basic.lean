@@ -40,6 +40,8 @@ orientation of `E`.
 * `TopCat.isIso_compactSupportCohomologyι_singleton`: `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ_c(E)` is an
   isomorphism.
 * `TopCat.compactSupportCohomologyEuclideanIso`: `Hⁿ_c(E) ≅ Hⁿ(E, E ∖ {y})`.
+* `TopCat.isIso_compactSupportCohomologyι_of_starConvex`: `Hⁿ(E, E ∖ K) ⟶ Hⁿ_c(E)` is an
+  isomorphism for a compact `K` containing `y` and star-convex about it.
 * `TopCat.isIso_compactSupportCohomologyExtend_of_starConvex`: `Hⁿ_c(U) ⟶ Hⁿ_c(E)` is an
   isomorphism for a nonempty open subset `U` with star-convex image.
 * `TopCat.isZero_compactSupportCohomology_euclidean`: `Hⁿ_c(E; R, N) = 0` for
@@ -150,6 +152,23 @@ lemma compactSupportCohomologyι_singleton_surjective (y : E) (n : ℕ) :
       (X := of E) n {y}) :=
   (ConcreteCategory.bijective_of_isIso _).2
 
+/-- For a compact subset `K` of a real normed space which contains `y` and is star-convex about
+`y`, the map `Hⁿ(E, E ∖ K) ⟶ Hⁿ_c(E)` is an isomorphism. -/
+theorem isIso_compactSupportCohomologyι_of_starConvex {K : Compacts (of E)} {y : E}
+    (hK : StarConvex ℝ y (K : Set E)) (hy : y ∈ (K : Set E)) (n : ℕ) :
+    IsIso (compactSupportCohomologyι (R := R) (k := k) (M := M) n K) := by
+  -- `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ_c(E)` factors through `Hⁿ(E, E ∖ K)` by a map which is an isomorphism.
+  have hyK : ({y} : Compacts (of E)) ≤ K := Compacts.singleton_le_iff.2 hy
+  have := TauCeti.isIso_singularCohomologyMap_compl_of_starConvex R k M hK hy
+    K.isCompact.isBounded n
+  have : IsIso (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 (of E))
+      (mapsTo_id_compl_compacts hyK)) n ≫
+        compactSupportCohomologyι (R := R) (k := k) (M := M) n K) := by
+    rw [singularCohomologyMap_comp_compactSupportCohomologyι n hyK]
+    infer_instance
+  exact IsIso.of_isIso_comp_left (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+    (TopPair.ofSubsetMap (𝟙 (of E)) (mapsTo_id_compl_compacts hyK)) n) _
+
 /-! ### Star-convex open subsets -/
 
 /-- **Cohomology with compact supports of a star-convex open subset.** For an open embedding
@@ -168,22 +187,11 @@ theorem isIso_compactSupportCohomologyExtend_of_starConvex {U : TopCat.{v}} [Non
     rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n hK₀K] at hx ⊢
     rw [← ConcreteCategory.comp_apply, compactSupportCohomologyι_comp_extend,
       ConcreteCategory.comp_apply] at hx
-    have hyK' : ({y} : Compacts (of E)) ≤ K.map j j.hom.continuous :=
-      Compacts.singleton_le_iff.2 hyK
-    have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-        (TopPair.ofSubsetMap (𝟙 (of E)) (mapsTo_id_compl_compacts hyK')) n) :=
-      TauCeti.isIso_singularCohomologyMap_compl_of_starConvex R k M hKy hyK
-        (K.map j j.hom.continuous).isCompact.isBounded n
-    have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-        (TopPair.ofSubsetMap (𝟙 (of E)) (mapsTo_id_compl_compacts hyK')) n ≫
-          compactSupportCohomologyι n (K.map j j.hom.continuous)) := by
-      rw [singularCohomologyMap_comp_compactSupportCohomologyι n hyK']
-      infer_instance
-    have := IsIso.of_isIso_comp_left (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-      (TopPair.ofSubsetMap (𝟙 (of E)) (mapsTo_id_compl_compacts hyK')) n)
-      (compactSupportCohomologyι n (K.map j j.hom.continuous))
-    rw [(injective_iff_map_eq_zero _).1 (ConcreteCategory.bijective_of_isIso _).1 _
-      ((injective_iff_map_eq_zero _).1 (ConcreteCategory.bijective_of_isIso _).1 _ hx), map_zero]
+    have := isIso_compactSupportCohomologyι_of_starConvex R k M
+      (K := K.map j j.hom.continuous) hKy hyK n
+    -- Both `Hⁿ(E, E ∖ j(K)) ⟶ Hⁿ_c(E)` and `Hⁿ(U, U ∖ K) ≅ Hⁿ(E, E ∖ j(K))` are injective.
+    replace hx := (injective_iff_map_eq_zero _).1 (ConcreteCategory.bijective_of_isIso _).1 _ hx
+    rw [(injective_iff_map_eq_zero _).1 (ConcreteCategory.bijective_of_isIso _).1 _ hx, map_zero]
   · -- Every class of `Hⁿ_c(E)` comes from `Hⁿ(E, E ∖ {y})`, and `y` lies in the image of `j`.
     obtain ⟨a, rfl⟩ := compactSupportCohomologyι_singleton_surjective R k M y n w
     exact exists_compactSupportCohomologyExtend_eq hj
