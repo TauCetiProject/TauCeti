@@ -27,7 +27,7 @@ When `F` is a finite-dimensional complex inner product space and `S` is infinite
 (`Im ⟪S t v, w⟫ + Im ⟪v, S t w⟫ = 0`), `I • loopOperator T S` is `ι`-symmetric and index-`0`
 Fredholm, yielding unconditional injectivity, equivalence of closed range / Fredholmness /
 invertibility with `loopOperator T S` invertibility, the Pythagorean identity and inverse bound
-`√(1 + ‖(loopOperator T S)⁻¹‖²)`, uniform weighted inverses over compact families (adapting
+`max ‖(loopOperator T S)⁻¹‖ 1`, uniform weighted inverses over compact families (adapting
 `TauCeti/Analysis/Sobolev/Circle/LinearODE/Family.lean`), and eigenmode intertwining (`w' + λ w`).
 
 ## References
@@ -173,8 +173,9 @@ theorem norm_cylinderOperator_sq {S : C(AddCircle T, F →L[ℝ] F)}
 theorem injective_cylinderOperator {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     Function.Injective (cylinderOperator T S) :=
-  WeakDerivStep.injective_domainTrajectoryOperator_of_symmetric
-    (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
+  WeakDerivStep.injective_domainTrajectoryOperator_of_ker
+    (real_inner_I_smul_loopOperator_comm T S hS) fun _ hx _ ↦
+      inclusion_injective zero_le_one (hx.trans (map_zero _).symm)
 
 /-- For infinitesimally symplectic `S`, `(cylinderOperator T S).range` is closed iff
 `loopOperator T S` is invertible. -/
@@ -225,12 +226,12 @@ theorem index_cylinderOperator {S : C(AddCircle T, F →L[ℝ] F)}
   WeakDerivStep.index_domainTrajectoryOperator (real_inner_I_smul_loopOperator_comm T S hS)
     ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
 
-/-- Inverse norm bound `‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S).inverse‖²)` for
+/-- Inverse norm bound `‖(cylinderOperator T S).inverse‖ ≤ max ‖(loopOperator T S).inverse‖ 1` for
 infinitesimally symplectic nondegenerate `S`. -/
 theorem norm_inverse_cylinderOperator_le {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) :
-    ‖(cylinderOperator T S).inverse‖ ≤ √(1 + ‖(loopOperator T S).inverse‖ ^ 2) := by
+    ‖(cylinderOperator T S).inverse‖ ≤ max ‖(loopOperator T S).inverse‖ 1 := by
   simpa only [cylinderOperator, ContinuousLinearMap.norm_inverse_I_smul] using
     WeakDerivStep.norm_inverse_domainTrajectoryOperator_le
       (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ)

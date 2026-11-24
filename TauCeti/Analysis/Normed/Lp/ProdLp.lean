@@ -14,6 +14,7 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import TauCeti.Analysis.Normed.Lp.WithLp
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.Prod
+import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -25,6 +26,8 @@ Mathlib bounds each factor of `WithLp p (α × β)` by the whole (`WithLp.norm_f
 the opposite bound, valid for every exponent `1 ≤ p ≤ ∞`: the `ℓ^p` norm of a pair is at most the
 sum of the norms of its two components.  For `p = 1` the bound is an identity for every pair.
 It also records that the `ℓ^p` norm is monotone and positively homogeneous in the component norms.
+An open set containing `K × {0}`, for a compact set `K`, contains a whole tube
+`{(x', y) | dist x' x < δ, ‖y‖ < δ}` around it.
 
 It also records that taking a component of `WithLp p (α × β)` commutes with `Set.indicator`, as
 Mathlib's `norm_indicator_eq_indicator_norm` does for the norm, that an indexed family of pairs in
@@ -50,6 +53,8 @@ linear maps is identified with the product of their sources.
 * `WithLp.prod_norm_le_norm_fst_add_norm_snd` — the bound `‖x‖ ≤ ‖x.fst‖ + ‖x.snd‖`.
 * `WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero`, `WithLp.prod_norm_eq_norm_snd_of_fst_eq_zero` —
   a pair with one vanishing component has the norm of the other.
+* `IsCompact.exists_pos_forall_toLp_mem` — an open set containing `K × {0}`, for a compact set
+  `K`, contains a tube `{(x', y) | dist x' x < δ, ‖y‖ < δ}` around it.
 * `WithLp.prod_norm_nonneg` — the norm of a pair is nonnegative, in possibly noncommutative
   seminormed groups.
 * `WithLp.prod_mul_norm_le_mul_norm` — componentwise bounds `c * ‖x.i‖ ≤ d * ‖y.i‖` give
@@ -122,6 +127,24 @@ theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd [SeminormedAddCommGroup
     _ = ‖x.fst‖ + ‖x.snd‖ := by
         rw [WithLp.idemFst_apply, WithLp.idemSnd_apply, WithLp.norm_toLp_fst,
           WithLp.norm_toLp_snd]
+
+/-- An open set of `WithLp p (α × β)` containing `K × {0}` for a compact set `K` contains a tube
+`{(x', y) | dist x' x < δ, ‖y‖ < δ}` around it. -/
+theorem _root_.IsCompact.exists_pos_forall_toLp_mem [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] {K : Set α} (hK : IsCompact K) {G : Set (WithLp p (α × β))}
+    (hG : IsOpen G) (hKG : ∀ x ∈ K, WithLp.toLp p (x, (0 : β)) ∈ G) :
+    ∃ δ > 0, ∀ x ∈ K, ∀ (x' : α) (y : β), dist x' x < δ → ‖y‖ < δ →
+      WithLp.toLp p (x', y) ∈ G := by
+  have hc : Continuous fun x : α ↦ WithLp.toLp p (x, (0 : β)) :=
+    (WithLp.prod_continuous_toLp p α β).comp (continuous_id.prodMk continuous_const)
+  obtain ⟨ε, hε, hεG⟩ := (hK.image hc).exists_cthickening_subset_open hG
+    (Set.image_subset_iff.2 hKG)
+  refine ⟨ε / 2, half_pos hε, fun x hx x' y hx' hy ↦ hεG ?_⟩
+  refine Metric.mem_cthickening_of_dist_le _ _ _ _ (Set.mem_image_of_mem _ hx) ?_
+  rw [dist_eq_norm, ← WithLp.toLp_sub, Prod.mk_sub_mk, sub_zero]
+  refine (WithLp.prod_norm_le_norm_fst_add_norm_snd _).trans ?_
+  rw [WithLp.toLp_fst, WithLp.toLp_snd, ← dist_eq_norm]
+  linarith
 
 /-- The `ℓ^p` norm of a pair is nonnegative, in any seminormed additive groups, which need not be
 commutative. -/
