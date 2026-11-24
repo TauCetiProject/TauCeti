@@ -212,6 +212,7 @@ theorem residuePairing_toLaurentSeries (f g : R[T;T⁻¹]) :
 
 /-- **Coefficient extension commutes with the residue pairing**: a ring homomorphism
 `φ : R →+* S` sends `Res(f dg)` to the residue pairing of the coefficientwise images. -/
+@[simp]
 theorem map_residuePairing {S : Type*} [CommRing S] (φ : R →+* S) (f g : R⸨X⸩) :
     φ (residuePairing R f g) = residuePairing S (mapRingHom φ f) (mapRingHom φ g) := by
   rw [residuePairing_apply, residuePairing_apply, derivative_mapRingHom, ← map_mul,

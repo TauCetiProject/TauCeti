@@ -329,11 +329,9 @@ theorem eq_smul_logLaurentIndex_of_isAlt {β : LinearMap.BilinForm R (R⸨X⸩ �
     simp
   refine LinearMap.ext₂ fun F G ↦ ?_
   conv_lhs => rw [hdecomp F]
-  rw [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, h, hlog,
-    LinearMap.smul_apply, LinearMap.smul_apply, logLaurentIndex_apply, logLaurentDerivative_apply,
-    mul_add, coeff_add,
-    coeff_neg_one_mul_single_neg_one, LaurentSeries.residuePairing_apply]
-  simp only [smul_eq_mul]
+  rw [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, h, hlog]
+  simp only [LinearMap.smul_apply, logLaurentIndex_apply, logLaurentDerivative_apply, mul_add,
+    coeff_add, coeff_neg_one_mul_single_neg_one, LaurentSeries.residuePairing_apply, smul_eq_mul]
   ring
 
 /-- **Uniqueness of the local index.** An alternating bilinear form on germs with one
@@ -399,10 +397,18 @@ theorem logLaurentDerivative_logLaurentSubst {Λ : K⸨X⸩ × K}
       LaurentSeries.substAlgHom hφ hφ₀ (logLaurentDerivative K F) *
         LaurentSeries.derivative K (φ : K⸨X⸩) := by
   have hφ' : (φ : K⸨X⸩) ≠ 0 := (map_ne_zero_iff _ ofPowerSeries_injective).mpr hφ₀
-  rw [logLaurentSubst_apply, map_add, map_smul, logLaurentDerivative_mk_zero,
-    LaurentSeries.derivative_substAlgHom, logLaurentDerivative_apply F, map_add, add_mul,
-    LaurentSeries.substAlgHom_single, ← hΛ, zpow_neg_one, mul_assoc, inv_mul_cancel_left₀ hφ',
-    HahnSeries.C_mul_eq_smul]
+  -- The Laurent part `f` is differentiated by the chain rule for Laurent series.
+  have hlaurent : logLaurentDerivative K (LaurentSeries.substAlgHom hφ hφ₀ F.1, 0) =
+      LaurentSeries.substAlgHom hφ hφ₀ (LaurentSeries.derivative K F.1) *
+        LaurentSeries.derivative K (φ : K⸨X⸩) := by
+    rw [logLaurentDerivative_mk_zero, LaurentSeries.derivative_substAlgHom]
+  -- The log part: `a X⁻¹ dX` pulls back to `a φ⁻¹ dφ`, which is `a dΛ` by the hypothesis `hΛ`.
+  have hlog : LaurentSeries.substAlgHom hφ hφ₀ (single (-1) F.2) *
+      LaurentSeries.derivative K (φ : K⸨X⸩) = F.2 • logLaurentDerivative K Λ := by
+    rw [LaurentSeries.substAlgHom_single, ← hΛ, zpow_neg_one, mul_assoc,
+      inv_mul_cancel_left₀ hφ', HahnSeries.C_mul_eq_smul]
+  rw [logLaurentSubst_apply, map_add, map_smul, hlaurent, logLaurentDerivative_apply F, map_add,
+    add_mul, hlog]
 
 /-- The logarithmic coefficient of a logarithm of `φ` is the order of `φ`. -/
 theorem snd_eq_order_of_mul_logLaurentDerivative_eq (hφ : PowerSeries.constantCoeff φ = 0)
@@ -438,7 +444,8 @@ theorem logLaurentIndex_logLaurentSubst {Λ : K⸨X⸩ × K}
       φ.order.toNat • logLaurentIndex K F G := by
   have h := eq_smul_logLaurentIndex_of_isAlt
     (β := (logLaurentIndex K).compl₁₂ (logLaurentSubst hφ hφ₀ Λ) (logLaurentSubst hφ hφ₀ Λ))
-    (fun F ↦ logLaurentIndex_self _) (φ.order.toNat : K) fun f G ↦ by
+    (fun F ↦ by rw [LinearMap.compl₁₂_apply]; exact logLaurentIndex_self _)
+    (φ.order.toNat : K) fun f G ↦ by
       rw [LinearMap.compl₁₂_apply, logLaurentSubst_mk_zero, logLaurentIndex_mk_zero_left,
         logLaurentDerivative_logLaurentSubst hΛ, ← mul_assoc, ← map_mul,
         LaurentSeries.coeff_neg_one_substAlgHom_mul_derivative_eq_nsmul, nsmul_eq_mul]
