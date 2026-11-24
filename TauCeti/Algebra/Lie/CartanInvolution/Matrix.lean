@@ -10,7 +10,9 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.Matrix.NegConjTranspose
 public import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.BilinearForm.SkewAdjoint
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # Cartan involutions of matrix Lie algebras
@@ -90,10 +92,10 @@ private theorem killingForm_restrictNegConjTranspose_neg (x : L) (hx : x ∉ cen
     -- `L.toSubmodule.subtype` is the inclusion `Subtype.val` of `L`.
     simp only [P, LinearMap.compl₁₂_apply]
     rfl
-  have hsymm : P.IsSymm := ⟨fun y z ↦ by rw [hP, hP]; exact (isSymm_reTraceForm 𝕜 n n).eq y z⟩
-  have hpos : P.toQuadraticMap.PosDef := fun y hy ↦ by
-    simpa only [LinearMap.BilinMap.toQuadraticMap_apply, hP] using
-      posDef_reTraceForm 𝕜 n n (y : Matrix n n 𝕜) (by simpa using hy)
+  have hsymm : P.IsSymm := (isSymm_reTraceForm 𝕜 n n).compl₁₂ L.toSubmodule.subtype
+  have hpos : P.toQuadraticMap.PosDef :=
+    LinearMap.BilinForm.posDef_toQuadraticMap_compl₁₂ _ (posDef_reTraceForm 𝕜 n n)
+      L.toSubmodule.subtype Subtype.val_injective
   have hadj : LinearMap.IsAdjointPair P P (ad ℝ L x) (ad ℝ L x') := fun y z ↦ by
     simp only [ad_apply, hP, LieSubalgebra.coe_bracket]
     exact reTraceForm_lie_apply _ _ _
