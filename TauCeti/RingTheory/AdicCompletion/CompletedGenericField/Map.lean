@@ -42,7 +42,8 @@ noncomputable def genericLocalRingLift :
     (g := f) fun s ↦ by
       rw [← notMem_maximalIdeal]
       intro hs
-      have hs' : (s : A) ∈ (maximalIdeal (completedGenericIntegers π)).comap f := hs
+      have hs' : (s : A) ∈ (maximalIdeal (completedGenericIntegers π)).comap f :=
+        Ideal.mem_comap.mpr hs
       exact s.property (hf.le hs')
 
 /-- The extension to the generic localization agrees with the original map. -/
@@ -61,12 +62,6 @@ private theorem genericLocalRingLift_le_comap :
       RingHom.ext (genericLocalRingLift_algebraMap π f hf)
     simpa only [heq] using hf.ge
   exact (Localization.AtPrime.map_eq_maximalIdeal (I := Ideal.span {π})).ge.trans hmap
-
-private theorem completedGenericIntegers_isAdicComplete_maximalIdeal :
-    IsAdicComplete (maximalIdeal (completedGenericIntegers π))
-      (completedGenericIntegers π) := by
-  simpa only [maximalIdeal_completedGenericIntegers] using
-    isAdicComplete_completedGenericIntegers π
 
 private noncomputable def genericLocalRingLiftMod (n : ℕ) :
     completedGenericIntegers π →+*
@@ -89,7 +84,7 @@ private theorem genericLocalRingLiftMod_compatible {m n : ℕ} (hle : m ≤ n) :
 /-- The map from the generic local ring extends to its maximal-ideal completion. -/
 noncomputable def completedGenericIntegersLift :
     completedGenericIntegers π →+* completedGenericIntegers π := by
-  letI := completedGenericIntegers_isAdicComplete_maximalIdeal π
+  letI := isAdicComplete_maximalIdeal_completedGenericIntegers π
   exact _root_.IsAdicComplete.liftRingHom (maximalIdeal (completedGenericIntegers π))
     (genericLocalRingLiftMod π f hf) (genericLocalRingLiftMod_compatible π f hf)
 
@@ -99,7 +94,7 @@ theorem completedGenericIntegersLift_algebraMap_local (a : genericLocalRing π) 
     completedGenericIntegersLift π f hf
       (algebraMap (genericLocalRing π) (completedGenericIntegers π) a) =
         genericLocalRingLift π f hf a := by
-  have := completedGenericIntegers_isAdicComplete_maximalIdeal π
+  have := isAdicComplete_maximalIdeal_completedGenericIntegers π
   apply congrFun (IsHausdorff.funext' (maximalIdeal (completedGenericIntegers π))
     (f := fun x ↦ completedGenericIntegersLift π f hf
       (algebraMap (genericLocalRing π) (completedGenericIntegers π) x))
@@ -132,10 +127,8 @@ theorem completedGenericIntegers_ringHom_ext
     [IsLocalHom g] [IsLocalHom h]
     (hgh : ∀ a : A, g (algebraMap A (completedGenericIntegers π) a) =
       h (algebraMap A (completedGenericIntegers π) a)) : g = h := by
-  have := completedGenericIntegers_isAdicComplete_maximalIdeal π
-  have hfg : (maximalIdeal (genericLocalRing π)).FG := by
-    rw [← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_span, Set.image_singleton]
-    exact Submodule.fg_span_singleton _
+  have := isAdicComplete_maximalIdeal_completedGenericIntegers π
+  have hfg := fg_maximalIdeal_genericLocalRing π
   have hlocal : g.comp (algebraMap (genericLocalRing π) (completedGenericIntegers π)) =
       h.comp (algebraMap (genericLocalRing π) (completedGenericIntegers π)) := by
     apply IsLocalization.ringHom_ext (M := (Ideal.span {π}).primeCompl)
@@ -236,40 +229,37 @@ theorem completedGenericFieldLift_valuation
   rw [← IsScalarTower.algebraMap_apply A (completedGenericIntegers π)
     (completedGenericField π hπ), hparam]
 
-/-- Among maps preserving the normalized valuation, the extension to the completed generic
+/-- Among field maps preserving the valuation ring, the extension to the completed generic
 field is uniquely determined by its values on the affine lift. -/
 theorem completedGenericFieldLift_unique
     (g : completedGenericField π hπ →+* completedGenericField π hπ)
-    (hval : ∀ x, Valued.v (g x) = Valued.v x)
+    (hint : ∀ x, Valued.v x ≤ 1 → Valued.v (g x) ≤ 1)
     (hg : ∀ a : A, g (algebraMap A (completedGenericField π hπ) a) =
       algebraMap (completedGenericIntegers π) (completedGenericField π hπ) (f a)) :
     g = completedGenericFieldLift π f hf hπ hzero := by
   have hv := completedGenericField_integers π hπ
-  let e : completedGenericIntegers π ≃+*
-      (Valued.v : Valuation (completedGenericField π hπ) ℤᵐ⁰).integer :=
-    RingEquiv.ofBijective ((algebraMap (completedGenericIntegers π)
-      (completedGenericField π hπ)).codRestrict _ hv.map_le_one)
-      ⟨fun _ _ h ↦ hv.hom_inj (congrArg Subtype.val h), fun x ↦ by
-        obtain ⟨y, hy⟩ := hv.exists_of_le_one x.property
-        exact ⟨y, Subtype.ext hy⟩⟩
+  let e := completedGenericIntegersEquivInteger π hπ
   let g' : completedGenericIntegers π →+* completedGenericIntegers π :=
     e.symm.toRingHom.comp ((g.comp (algebraMap (completedGenericIntegers π)
-      (completedGenericField π hπ))).codRestrict _ fun x ↦ by
-        rw [Valuation.mem_integer_iff, RingHom.comp_apply, hval]
-        exact hv.map_le_one x)
+      (completedGenericField π hπ))).codRestrict _ fun x ↦ hint _ (hv.map_le_one x))
   have heq (x : completedGenericIntegers π) :
       algebraMap (completedGenericIntegers π) (completedGenericField π hπ) (g' x) =
-        g (algebraMap (completedGenericIntegers π) (completedGenericField π hπ) x) :=
-    congrArg Subtype.val (e.apply_symm_apply _)
-  have : IsLocalHom g' := ⟨fun x hx ↦ by
-    apply hv.isUnit_of_one'
-    simpa only [heq, hval] using hv.one_of_isUnit hx⟩
-  have hrestrict : g' = completedGenericIntegersLift π f hf := by
-    apply completedGenericIntegersLift_unique
-    intro a
+        g (algebraMap (completedGenericIntegers π) (completedGenericField π hπ) x) := by
+    rw [← completedGenericIntegersEquivInteger_apply π hπ]
+    exact congrArg Subtype.val (e.apply_symm_apply _)
+  have hbase (a : A) : g' (algebraMap A (completedGenericIntegers π) a) = f a := by
     apply hv.hom_inj
     rw [heq, ← IsScalarTower.algebraMap_apply A (completedGenericIntegers π)
       (completedGenericField π hπ), hg]
+  have : IsLocalHom g' := by
+    apply ((local_hom_tfae _).out 4 1).mp
+    apply (maximalIdeal_completedGenericIntegers π).le.trans
+    rw [Ideal.span_singleton_le_iff_mem]
+    apply Ideal.mem_comap.mpr
+    rw [hbase]
+    exact hf.ge (Ideal.subset_span rfl)
+  have hrestrict : g' = completedGenericIntegersLift π f hf :=
+    completedGenericIntegersLift_unique π f hf g' hbase
   apply IsLocalization.ringHom_ext (M := nonZeroDivisors (completedGenericIntegers π))
   apply RingHom.ext
   intro x

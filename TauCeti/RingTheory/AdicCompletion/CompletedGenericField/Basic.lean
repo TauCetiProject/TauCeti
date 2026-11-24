@@ -50,12 +50,14 @@ abbrev genericLocalRing := Localization.AtPrime (Ideal.span {π})
 abbrev completedGenericIntegers :=
   AdicCompletion (maximalIdeal (genericLocalRing π)) (genericLocalRing π)
 
-private theorem maximalIdeal_genericLocalRing :
+/-- The image of the parameter generates the maximal ideal of the generic local ring. -/
+theorem maximalIdeal_genericLocalRing :
     maximalIdeal (genericLocalRing π) =
       Ideal.span {algebraMap A (genericLocalRing π) π} := by
   rw [← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_span, Set.image_singleton]
 
-private theorem fg_maximalIdeal_genericLocalRing :
+/-- The maximal ideal of the generic local ring is finitely generated. -/
+theorem fg_maximalIdeal_genericLocalRing :
     (maximalIdeal (genericLocalRing π)).FG := by
   rw [maximalIdeal_genericLocalRing]
   exact Submodule.fg_span_singleton _
@@ -80,12 +82,18 @@ theorem maximalIdeal_completedGenericIntegers :
       rw [Ideal.map_span, Set.image_singleton]
       rfl)
 
+/-- The completed generic ring is separated and complete for its maximal-ideal filtration. -/
+theorem isAdicComplete_maximalIdeal_completedGenericIntegers :
+    IsAdicComplete (maximalIdeal (completedGenericIntegers π))
+      (completedGenericIntegers π) :=
+  _root_.AdicCompletion.isAdicComplete_of_fg (fg_maximalIdeal_genericLocalRing π)
+
 /-- The completed generic ring is separated and complete for its `π`-adic filtration. -/
 theorem isAdicComplete_completedGenericIntegers :
     IsAdicComplete (Ideal.span {algebraMap A (completedGenericIntegers π) π})
       (completedGenericIntegers π) := by
   rw [← maximalIdeal_completedGenericIntegers]
-  exact _root_.AdicCompletion.isAdicComplete_of_fg (fg_maximalIdeal_genericLocalRing π)
+  exact isAdicComplete_maximalIdeal_completedGenericIntegers π
 
 /-- The residue field of the completed generic ring is the function field of the original
 special fibre. -/
@@ -226,6 +234,23 @@ theorem completedGenericField_integers (hπ : π ∈ nonZeroDivisors A) :
   exact ⟨IsFractionRing.injective _ _,
     (IsDiscreteValuationRing.maximalIdeal (completedGenericIntegers π)).valuation_le_one,
     fun _ ↦ IsDiscreteValuationRing.exists_lift_of_le_one⟩
+
+/-- The integral completion is canonically the valuation ring of the completed generic field. -/
+noncomputable def completedGenericIntegersEquivInteger (hπ : π ∈ nonZeroDivisors A) :
+    completedGenericIntegers π ≃+*
+      (Valued.v : Valuation (completedGenericField π hπ) ℤᵐ⁰).integer := by
+  let := isRegularLocalRing_completedGenericIntegers π hπ
+  let := isDiscreteValuationRing_completedGenericIntegers π hπ
+  exact _root_.IsDiscreteValuationRing.equivValuationSubring
+    (A := completedGenericIntegers π) (K := completedGenericField π hπ)
+
+/-- The valuation-ring identification evaluates as the canonical map to the generic field. -/
+@[simp]
+theorem completedGenericIntegersEquivInteger_apply (hπ : π ∈ nonZeroDivisors A)
+    (x : completedGenericIntegers π) :
+    (completedGenericIntegersEquivInteger π hπ x : completedGenericField π hπ) =
+      algebraMap (completedGenericIntegers π) (completedGenericField π hπ) x := by
+  rfl
 
 /-- The completed generic field is complete in its discrete valuation topology. -/
 instance (hπ : π ∈ nonZeroDivisors A) : CompleteSpace (completedGenericField π hπ) := by
