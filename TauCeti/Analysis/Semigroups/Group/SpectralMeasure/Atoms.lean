@@ -65,21 +65,19 @@ theorem norm_starProjection_eigenspace_sq_eq_measureReal_singleton [CompleteSpac
       fun T : ℝ ↦
         (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (-(ω * t * Complex.I)) * charFun σ t := by
     funext T
-    have hint : IntervalIntegrable
-        (fun t : ℝ ↦ Complex.exp (-(ω * t * Complex.I)) • U t v) volume 0 T :=
-      ((by fun_prop : Continuous fun t : ℝ ↦ Complex.exp (-(ω * t * Complex.I))).smul
-        (U.continuous_orbit v)).intervalIntegrable 0 T
-    rw [inner_smul_right_eq_smul, Complex.real_smul, Complex.ofReal_inv]
-    congr 1
-    have hcomm := (innerSL ℂ v).intervalIntegral_comp_comm hint
-    simpa only [innerSL_apply_apply, inner_smul_right, hσ] using hcomm.symm
+    have horbit : (fun t : ℝ ↦ Complex.exp (-(ω * t * Complex.I)) • U t v) =
+        fun t : ℝ ↦ U.phaseShift hU.isComplexLinear ω t v :=
+      funext fun t ↦ by rw [U.phaseShift_apply_apply, neg_mul]
+    rw [horbit, inner_smul_right_eq_smul, Complex.real_smul, Complex.ofReal_inv,
+      (U.phaseShift hU.isComplexLinear ω).inner_intervalIntegral_orbit]
+    congr 2
+    ext t
+    rw [phaseShift_apply_apply, neg_mul, inner_smul_right, hσ]
   rw [hfun] at hlim₁
   have heq : ⟪v, P v⟫_ℂ = (σ.real {ω} : ℂ) := tendsto_nhds_unique hlim₁ hlim₂
-  have hre := congrArg Complex.re heq
-  rw [← Submodule.inner_starProjection_left_eq_right, ← RCLike.re_to_complex,
-    Submodule.re_inner_starProjection_eq_normSq, ← Submodule.norm_coe,
-    ← Submodule.starProjection_apply, Complex.ofReal_re] at hre
-  exact hre
+  have hre := congrArg RCLike.re heq
+  simpa [P, ← Submodule.inner_starProjection_left_eq_right,
+    Submodule.re_inner_starProjection_eq_normSq] using hre
 
 /-- **Continuous-time twisted mean ergodic theorem with spectral atomic mass.** For a unitary
 C₀-group `U` on a complete complex Hilbert space `H`, a frequency `a : ℝ`, and `v : H`, the

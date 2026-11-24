@@ -94,14 +94,13 @@ theorem norm_inv_mul_integral_cexp_mul_I_le_one (u T : ℝ) :
     ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ 1 := by
   by_cases hT : T = 0
   · simp [hT]
-  have hnorm : ∀ t ∈ Set.uIoc (0 : ℝ) T, ‖Complex.exp (t * u * Complex.I)‖ ≤ 1 := fun t _ ↦ by
-    rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
   calc ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖
       = |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ := by
         rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_eq_abs]
     _ ≤ |T|⁻¹ * (1 * |T - 0|) := by
         gcongr
-        exact intervalIntegral.norm_integral_le_of_norm_le_const hnorm
+        exact intervalIntegral.norm_integral_le_of_norm_le_const fun t _ ↦ by
+          simp [Complex.norm_exp]
     _ = 1 := by
         rw [sub_zero, one_mul, inv_mul_cancel₀ (abs_ne_zero.mpr hT)]
 
@@ -128,17 +127,14 @@ theorem tendsto_inv_mul_integral_cexp_mul_I (u : ℝ) :
       funext t
       congr 1
       ring
-    have hnorm (x : ℝ) : ‖Complex.exp ((u : ℂ) * Complex.I * x)‖ = 1 := by
-      rw [mul_right_comm, ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
-    rw [heq, integral_exp_mul_complex hc, norm_mul, norm_inv, Complex.norm_real,
-      Real.norm_of_nonneg hT.le, norm_div, norm_mul, Complex.norm_real, Real.norm_eq_abs,
-      Complex.norm_I, mul_one]
+    have hnorm_eq : ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ =
+        T⁻¹ * (‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖ / |u|) := by
+      rw [heq, integral_exp_mul_complex hc]
+      simp [abs_of_pos hT]
+    rw [hnorm_eq]
     gcongr
-    calc ‖Complex.exp ((u : ℂ) * Complex.I * T) - Complex.exp ((u : ℂ) * Complex.I * (0 : ℝ))‖
-        ≤ ‖Complex.exp ((u : ℂ) * Complex.I * T)‖ +
-          ‖Complex.exp ((u : ℂ) * Complex.I * (0 : ℝ))‖ := norm_sub_le _ _
-      _ = 2 := by
-          rw [hnorm T, hnorm 0]
-          norm_num
+    calc ‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖
+        ≤ ‖Complex.exp ((u : ℂ) * Complex.I * T)‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
+      _ = 2 := by simp [Complex.norm_exp, one_add_one_eq_two]
 
 end TauCeti

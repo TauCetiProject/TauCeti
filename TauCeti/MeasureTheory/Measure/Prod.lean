@@ -229,16 +229,21 @@ theorem prod_graph {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] [Me
   have hS : (Function.support fun y : β ↦ ν {y}).Countable := by
     simpa [Function.support, pos_iff_ne_zero] using
       Measure.countable_meas_level_set_pos (μ := ν) (g := id) measurable_id
-  rw [prod_apply hmeas]
   have hsec : ∀ x : α, Prod.mk x ⁻¹' {z : α × β | z.2 = f z.1} = {f x} := fun x ↦ by
     ext y
     simp
-  simp_rw [hsec]
-  rw [show (fun x ↦ ν {f x}) = (fun y : β ↦ ν {y}) ∘ f from rfl,
-    lintegral_comp hν_meas hf, ← setLIntegral_eq_of_support_subset Set.Subset.rfl,
-    lintegral_countable _ hS, tsum_subtype_eq_of_support_subset
-      (Function.support_mul_subset_left (fun y : β ↦ ν {y}) (fun y : β ↦ (μ.map f) {y}))]
-  simp_rw [map_apply hf (measurableSet_singleton _), mul_comm]
+  calc (μ.prod ν) {z : α × β | z.2 = f z.1}
+      = ∫⁻ x : α, ν {f x} ∂μ := by
+        rw [prod_apply hmeas]
+        simp_rw [hsec]
+    _ = ∫⁻ y : β, ν {y} ∂(μ.map f) := by
+        rw [← Function.comp_def (fun y : β ↦ ν {y}) f, lintegral_comp hν_meas hf]
+    _ = ∑' y : β, ν {y} * (μ.map f) {y} := by
+        rw [← setLIntegral_eq_of_support_subset Set.Subset.rfl, lintegral_countable _ hS,
+          tsum_subtype_eq_of_support_subset
+            (Function.support_mul_subset_left (fun y : β ↦ ν {y}) (fun y : β ↦ (μ.map f) {y}))]
+    _ = ∑' y : β, μ (f ⁻¹' {y}) * ν {y} := by
+        simp_rw [map_apply hf (measurableSet_singleton _), mul_comm]
 
 /-- The product measure of the diagonal `Set.diagonal α` is `∑' x, μ {x} * ν {x}`. Only the second
 factor must be s-finite. -/

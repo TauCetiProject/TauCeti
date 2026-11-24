@@ -130,6 +130,9 @@ theorem phaseShift_phaseShift (U : StronglyContinuousGroup X)
     (U.phaseShift hU b).phaseShift (U.isComplexLinear_phaseShift hU b) c =
       U.phaseShift hU (b + c) := by
   apply toSemigroup_injective
+  -- A direct `rw [phaseShift_toSemigroup]` fails with a motive type error because the
+  -- `IsComplexLinear` proof argument depends on `(U.phaseShift hU b).toSemigroup`; once `S` is
+  -- substituted, both `IsComplexLinear` proofs agree by proof irrelevance.
   have hcongr : ∀ {S : StronglyContinuousSemigroup X} (hS : S.IsComplexLinear),
       S = U.toSemigroup.phaseShift hU b →
         S.phaseShift hS c = (U.toSemigroup.phaseShift hU b).phaseShift (hU.phaseShift b) c := by

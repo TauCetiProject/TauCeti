@@ -30,6 +30,8 @@ the shift invariance of the time averages.
 
 * `TauCeti.Semigroups.StronglyContinuousGroup.map_intervalIntegral_orbit`: commuting a C₀-group
   operator past an orbit interval integral shifts the integration bounds.
+* `TauCeti.Semigroups.StronglyContinuousGroup.inner_intervalIntegral_orbit`: commuting an inner
+  product past an orbit interval integral.
 * `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.norm_intervalIntegral_orbit_le`: norm
   bound `‖∫ t in a..b, U t v‖ ≤ ‖v‖ * |b - a|` for unitary C₀-groups.
 * `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.tendsto_average_starProjection`:
@@ -66,6 +68,14 @@ theorem map_intervalIntegral_orbit {X : Type*} [NormedAddCommGroup X] [NormedSpa
     funext t
     rw [← U.map_add_apply, add_comm]
   rw [hcomp, intervalIntegral.integral_comp_add_right (a := a) (b := b) (f := fun t : ℝ ↦ U t v) s]
+
+/-- Commuting an inner product past an interval integral along a C₀-group orbit. -/
+theorem inner_intervalIntegral_orbit {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+    [CompleteSpace H] (U : StronglyContinuousGroup H) (y v : H) (a b : ℝ) :
+    ⟪y, ∫ t in a..b, U t v⟫_ℂ = ∫ t in a..b, ⟪y, U t v⟫_ℂ := by
+  have hint : IntervalIntegrable (fun t : ℝ ↦ U t v) volume a b :=
+    (U.continuous_orbit v).intervalIntegrable a b
+  simpa only [innerSL_apply_apply] using ((innerSL ℂ y).intervalIntegral_comp_comm hint).symm
 
 namespace IsUnitary
 
@@ -158,16 +168,13 @@ private theorem inner_sub_average_eq_zero_of_mem_fixedSubmodule [CompleteSpace H
     {T : ℝ} (hT : 0 < T) :
     ⟪y, v - T⁻¹ • ∫ t in (0 : ℝ)..T, U t v⟫_ℂ = 0 := by
   have hy_fix : ∀ t : ℝ, U t y = y := (mem_fixedSubmodule_iff U hU.isComplexLinear y).mp hy
-  have hint : IntervalIntegrable (fun t : ℝ ↦ U t v) volume 0 T :=
-    (U.continuous_orbit v).intervalIntegrable 0 T
-  have hcomm := (innerSL ℂ y).intervalIntegral_comp_comm hint
-  have hinner_const : (fun t : ℝ ↦ (innerSL ℂ y) (U t v)) = fun _ : ℝ ↦ ⟪y, v⟫_ℂ := by
+  have hinner_const : (fun t : ℝ ↦ ⟪y, U t v⟫_ℂ) = fun _ : ℝ ↦ ⟪y, v⟫_ℂ := by
     funext t
-    rw [innerSL_apply_apply, ← hy_fix t, hU.inner_map_map, hy_fix t]
+    rw [← hy_fix t, hU.inner_map_map, hy_fix t]
   have havg : ⟪y, T⁻¹ • ∫ t in (0 : ℝ)..T, U t v⟫_ℂ = ⟪y, v⟫_ℂ := by
-    rw [inner_smul_right_eq_smul, ← innerSL_apply_apply ℂ y, ← hcomm, hinner_const,
-      intervalIntegral.integral_const, sub_zero, Complex.real_smul, Complex.real_smul,
-      ← mul_assoc, ← Complex.ofReal_mul, inv_mul_cancel₀ hT.ne', Complex.ofReal_one, one_mul]
+    rw [inner_smul_right_eq_smul, U.inner_intervalIntegral_orbit, hinner_const,
+      intervalIntegral.integral_const]
+    simp [Complex.real_smul, hT.ne']
   rw [inner_sub_right, havg, sub_self]
 
 /-- **Continuous-time von Neumann mean ergodic theorem.** For a unitary C₀-group `U` on a complete

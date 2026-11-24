@@ -50,8 +50,8 @@ private theorem average_exp_mul_charFun_eq_integral (σ : Measure ℝ) [IsFinite
   have hint : Integrable
       (fun p : ℝ × ℝ ↦ Complex.exp ((p.1 : ℂ) * ((p.2 - ω : ℝ) : ℂ) * Complex.I))
       ((volume.restrict (Set.Ioc (0 : ℝ) T)).prod σ) := by
-    refine (integrable_const (1 : ℝ)).mono' (by fun_prop) (Eventually.of_forall fun p ↦ ?_)
-    rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
+    refine (integrable_const (1 : ℝ)).mono' (by fun_prop)
+      (Eventually.of_forall fun p ↦ by simp [Complex.norm_exp])
   calc (T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (-(ω * t * Complex.I)) * charFun σ t
       = (T⁻¹ : ℂ) * ∫ t in Set.Ioc (0 : ℝ) T,
           (∫ ξ, Complex.exp ((t : ℂ) * ((ξ - ω : ℝ) : ℂ) * Complex.I) ∂σ) := by
