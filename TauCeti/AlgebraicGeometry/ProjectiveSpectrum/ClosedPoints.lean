@@ -27,7 +27,12 @@ point is the kernel of a `k`-algebra homomorphism `ψ` on it
 ## Main declarations
 
 * `AlgHom.apply_awayMk_eq_lift`: a `k`-algebra homomorphism on the chart of a
-  linear coordinate `φ` evaluates `a / φⁿ` as `a` at the functional `c ↦ ψ (c / φ)`.
+  linear coordinate `φ` evaluates `a / φⁿ` as `a` at any linear map agreeing with
+  `c ↦ ψ (c / φ)`.
+* `AlgHom.chartFunctional`: the functional `c ↦ ψ (c / φ)` of a `k`-algebra homomorphism `ψ` on
+  the chart of a linear coordinate `φ`.
+* `AlgHom.apply_awayMk_eq_lift_chartFunctional`: such a `ψ` evaluates `a / φⁿ` as `a` at its
+  functional.
 * `ProjectiveSpectrum.exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed`: a closed
   point of `Proj (Sym N)` is the vanishing locus of a nonzero functional on `N`.
 
@@ -87,6 +92,41 @@ theorem _root_.AlgHom.apply_awayMk_eq_lift {φ : N}
       simp [Away.val_mk, Localization.mk_mul, pow_succ']
     rw [this, map_mul, iha, map_mul, SymmetricAlgebra.lift_ι_apply, hv]
 
+/-- The linear map `c ↦ ψ (c / φ)` of a `k`-algebra homomorphism `ψ` on the standard chart
+`D₊(φ)` of a linear coordinate `φ`. -/
+noncomputable def _root_.AlgHom.chartFunctional {φ : N}
+    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A) : N →ₗ[k] A :=
+  ψ.toLinearMap ∘ₗ Away.mkLinearMap (ι_mem_homogeneousSubmodule k N φ) 1 ∘ₗ
+    (SymmetricAlgebra.ι k N).codRestrict (homogeneousSubmodule k N (1 • 1)) (fun c ↦ by simp)
+
+/-- The functional of `ψ` sends `c` to `ψ (c / φ)`. -/
+theorem _root_.AlgHom.chartFunctional_apply {φ : N}
+    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A) (c : N) :
+    ψ.chartFunctional c =
+      ψ (Away.mk _ (ι_mem_homogeneousSubmodule k N φ) 1 (SymmetricAlgebra.ι k N c) (by simp)) := by
+  simp [AlgHom.chartFunctional]
+
+/-- The functional of `ψ` takes the value `1` on the chart coordinate `φ`. -/
+@[simp]
+theorem _root_.AlgHom.chartFunctional_self {φ : N}
+    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A) :
+    ψ.chartFunctional φ = 1 := by
+  have h1 : Away.mk _ (ι_mem_homogeneousSubmodule k N φ) 1 (SymmetricAlgebra.ι k N φ)
+      (by simp) = 1 := by
+    apply val_injective
+    simp [Away.val_mk]
+  rw [ψ.chartFunctional_apply, h1, map_one]
+
+/-- On the standard chart `D₊(φ)` of a linear coordinate `φ`, a `k`-algebra homomorphism `ψ`
+evaluates a homogeneous fraction `a / φⁿ` as the polynomial `a` evaluated at its functional
+`c ↦ ψ (c / φ)`. -/
+theorem _root_.AlgHom.apply_awayMk_eq_lift_chartFunctional {φ : N}
+    (ψ : Away (homogeneousSubmodule k N) (SymmetricAlgebra.ι k N φ) →ₐ[k] A)
+    {n : ℕ} {a : SymmetricAlgebra k N} (ha : a ∈ homogeneousSubmodule k N n) :
+    ψ (Away.mk _ (ι_mem_homogeneousSubmodule k N φ) n a (by rwa [smul_eq_mul, mul_one])) =
+      SymmetricAlgebra.lift ψ.chartFunctional a :=
+  ψ.apply_awayMk_eq_lift _ (fun c ↦ (ψ.chartFunctional_apply c).symm) ha
+
 end Chart
 
 end TauCeti.SymmetricAlgebra
@@ -131,19 +171,11 @@ theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed 
     exact hx.preimage (Proj.awayι _ _ hφ one_pos).continuous
   obtain ⟨ψ, rfl⟩ := PrimeSpectrum.exists_kernelPoint_eq_of_isClosed (k := k) y hy
   -- The point is given by the functional `c ↦ ψ (c / φ)` on linear coordinates.
-  let v : Module.Dual k N := ψ.toLinearMap ∘ₗ Away.mkLinearMap hφ 1 ∘ₗ
-    (SymmetricAlgebra.ι k N).codRestrict (homogeneousSubmodule k N (1 • 1))
-      (fun c ↦ by simp)
-  have key {n : ℕ} {a : SymmetricAlgebra k N} (ha : a ∈ homogeneousSubmodule k N n) :=
-    ψ.apply_awayMk_eq_lift v (fun c ↦ by simp [v]) ha
-  refine ⟨v, fun hv ↦ ?_, fun n hn s hs ↦ ?_⟩
+  refine ⟨ψ.chartFunctional, fun hv ↦ ?_, fun n hn s hs ↦ ?_⟩
   · -- The functional takes the value `1` on the chart coordinate `φ`.
-    have h1 : Away.mk _ hφ 1 (SymmetricAlgebra.ι k N φ) (by simp) = 1 := by
-      apply val_injective
-      simp [Away.val_mk]
-    have := key hφ
-    rw [h1, map_one, SymmetricAlgebra.lift_ι_apply, hv, LinearMap.zero_apply] at this
-    exact one_ne_zero this
+    have := ψ.chartFunctional_self
+    rw [hv, LinearMap.zero_apply] at this
+    exact zero_ne_one this
   · -- Read membership in `x` on the chart, where `s` becomes `s / φⁿ`.
     rw [← not_iff_not, ← Proj.mem_basicOpen, ← Scheme.Hom.mem_preimage,
       Proj.awayι_preimage_basicOpen _ hφ one_pos hs hn]
@@ -152,8 +184,8 @@ theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed 
     -- is applied by unification rather than by rewriting.
     refine (PrimeSpectrum.mem_basicOpen (Away.isLocalizationElem hφ hs) _).trans ?_
     rw [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
-    have := key (n := n) (a := s ^ 1) (by simpa using hs)
-    rw [map_pow, pow_one (SymmetricAlgebra.lift v s)] at this
+    have := ψ.apply_awayMk_eq_lift_chartFunctional (n := n) (a := s ^ 1) (by simpa using hs)
+    rw [map_pow, pow_one (SymmetricAlgebra.lift ψ.chartFunctional s)] at this
     exact not_congr (Iff.of_eq (congrArg (· = (0 : k)) this))
 
 end ProjectiveSpectrum

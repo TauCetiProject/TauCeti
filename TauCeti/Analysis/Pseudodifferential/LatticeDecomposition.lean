@@ -11,7 +11,8 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.SmoothSeries
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -449,10 +450,13 @@ private theorem IsBallFamily.exists_norm_pow_mul_norm_fourier_le (N : ℕ) :
       rw [sq_abs]
       ring
     calc ‖η‖ ^ (2 * (N + 1)) * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
-        = ∑ j, ‖η‖ ^ (2 * N) * (η j ^ 2 * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖) :=
-          norm_pow_two_mul_succ_mul_eq_sum η N _
+        = ‖η‖ ^ ENNReal.toReal 2 * (‖η‖ ^ (2 * N) * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖) := by
+          rw [ENNReal.toReal_ofNat, Real.rpow_two]
+          ring
       _ ≤ ∑ j, ((2 * π) ^ 2)⁻¹ * (D j * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
-          Finset.sum_le_sum fun j _ ↦ by
+          PiLp.norm_rpow_mul_le_sum η (by simp) fun j ↦ by
+            rw [ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs, sq_abs]
+            refine (mul_left_comm _ _ _).trans_le ?_
             rw [hj, mul_left_comm]
             exact mul_le_mul_of_nonneg_left (hD j i η ξ) (by positivity)
       _ = _ := by rw [← Finset.mul_sum, ← Finset.sum_mul, mul_assoc]
@@ -471,7 +475,7 @@ theorem IsBallFamily.exists_norm_fourier_le_rpow {c : ι → Symbol n V W m}
   set F := ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
   set w := (1 + ‖ξ‖ ^ 2) ^ (m / 2)
   have hη : 1 ≤ 1 + ‖η‖ ^ 2 := le_add_of_nonneg_right (by positivity)
-  have hF := le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) (hD₀ i η ξ) (hD i η ξ)
+  have hF := Real.le_mul_one_add_sq_pow_inv ‖η‖ (norm_nonneg _) (hD₀ i η ξ) (hD i η ξ)
   have hinv : 0 < ((1 + ‖η‖ ^ 2) ^ N)⁻¹ := by positivity
   -- `((1 + ‖η‖²) ^ N)⁻¹ = (1 + ‖η‖²) ^ (-N) ≤ (1 + ‖η‖²) ^ (-s / 2)` since `N ≥ s / 2`.
   have hN : ((1 + ‖η‖ ^ 2) ^ N)⁻¹ ≤ (1 + ‖η‖ ^ 2) ^ (-s / 2) := by
