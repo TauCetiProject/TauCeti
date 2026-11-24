@@ -12,6 +12,7 @@ public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 public import TauCeti.RepresentationTheory.LinearCharacter.Eigenspace
 public import TauCeti.RingTheory.Idempotents.Module
 public import TauCeti.RingTheory.Idempotents.SquareRootOne
+import TauCeti.Algebra.Ring.Units
 
 /-!
 # Character idempotents of a finite group algebra
@@ -277,7 +278,7 @@ theorem halfOneAdd_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUnit (N
         have hc2 : (χ c) ^ 2 = 1 ^ 2 := by rw [sq, ← map_mul, hc, map_one, one_pow]
         rcases (χ c).eq_or_eq_neg_of_sq_eq_sq 1 hc2 with h1 | hm1
         · simp [h1, ← two_smul O]
-        · simp [hm1, ((isUnit_of_invertible (2 : O)).units_ne_neg_self 1).symm]
+        · simp [hm1, ((1 : Oˣ).ne_neg_self_of_isUnit_two (isUnit_of_invertible (2 : O))).symm]
     _ = ∑ χ : H →* Oˣ with χ c = 1, charIdempotent χ := by rw [Finset.sum_filter]
 
 /-- **Minus idempotent as the sum of odd character idempotents.** When `2` is invertible in `O`
@@ -296,8 +297,8 @@ theorem halfOneAdd_neg_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUni
     refine Finset.sum_congr (Finset.filter_congr fun χ _ ↦ ?_) fun _ _ ↦ rfl
     have hc2 : (χ c) ^ 2 = 1 ^ 2 := by rw [sq, ← map_mul, hc, map_one, one_pow]
     rcases (χ c).eq_or_eq_neg_of_sq_eq_sq 1 hc2 with h1 | hm1
-    · simp [h1, (isUnit_of_invertible (2 : O)).units_ne_neg_self 1]
-    · simp [hm1, ((isUnit_of_invertible (2 : O)).units_ne_neg_self 1).symm]
+    · simp [h1, (1 : Oˣ).ne_neg_self_of_isUnit_two (isUnit_of_invertible (2 : O))]
+    · simp [hm1, ((1 : Oˣ).ne_neg_self_of_isUnit_two (isUnit_of_invertible (2 : O))).symm]
   have hsum : halfOneAdd O (of O H c) + halfOneAdd O (-of O H c) = 1 :=
     halfOneAdd_add_halfOneAdd_neg O (of O H c)
   rw [halfOneAdd_of_eq_sum_charIdempotent hH hc] at hsum
@@ -391,43 +392,6 @@ theorem isInternal_charEigenspace [DecidableEq (H →* kˣ)] (hH : IsUnit (Nat.c
     (Module.End.smul_top_eq_range _).trans (ρ.range_asAlgebraHom_charIdempotent hH χ)
   simpa only [Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hrange] using
     isInternal_smul_top (S := k) (M := V) he
-
-end CommGroup
-
-end Representation
-ion of a representation of a finite commutative group**: when `k` is
-a domain with enough roots of unity and `#H` is a unit in `k`, `V` is the internal direct sum of
-its joint eigenspaces `⨅ a, Eig(ρ(a), χ(a))`. -/
-theorem isInternal_eigenspace [Finite H] [DecidableEq (H →* kˣ)] (hH : IsUnit (Nat.card H : k)) :
-    DirectSum.IsInternal (fun χ : H →* kˣ ↦ ⨅ a, End.eigenspace (ρ a) (χ a : k)) := by
-  let := Fintype.ofFinite H
-  have heq : (fun χ : H →* kˣ ↦ ⨅ a, End.eigenspace (ρ a) (χ a : k)) =
-      fun χ ↦ ρ.asAlgebraHom (charIdempotent χ) • (⊤ : Submodule k V) := by
-    ext χ x
-    rw [← range_asAlgebraHom_charIdempotent ρ hH χ, Submodule.pointwise_smul_def,
-      Submodule.map_top]
-    rfl
-  rw [heq]
-  exact isInternal_smul_top (completeOrthogonalIdempotents_asAlgebraHom_charIdempotent ρ hH)
-=======
-variable {k H V : Type*} [CommRing k] [IsDomain k] [CommGroup H] [Finite H]
-  [HasEnoughRootsOfUnity k (Monoid.exponent H)] [AddCommGroup V] [Module k V]
-  (ρ : Representation k H V)
-
-/-- **The character decomposition of a representation**: for a finite commutative group `H` and a
-domain `k` with enough roots of unity in which `#H` is a unit, `V` is the internal direct sum of
-the eigensubmodules `V^χ` over the characters `χ : H →* kˣ`. The character projectors form a
-complete orthogonal family of idempotents of `End V`, whose images are the `V^χ`. -/
-theorem isInternal_charEigenspace [DecidableEq (H →* kˣ)] (hH : IsUnit (Nat.card H : k)) :
-    DirectSum.IsInternal ρ.charEigenspace := by
-  have : Fintype H := Fintype.ofFinite H
-  have he := (completeOrthogonalIdempotents_charIdempotent hH).map ρ.asAlgebraHom.toRingHom
-  have hrange (χ : H →* kˣ) :
-      (ρ.asAlgebraHom (charIdempotent χ)) • (⊤ : Submodule k V) = ρ.charEigenspace χ :=
-    (Module.End.smul_top_eq_range _).trans (ρ.range_asAlgebraHom_charIdempotent hH χ)
-  simpa only [Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hrange] using
-    isInternal_smul_top (S := k) (M := V) he
->>>>>>> origin/main
 
 end CommGroup
 

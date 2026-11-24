@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.RingHoms
+public import TauCeti.NumberTheory.Padics.Module
 import TauCeti.GroupTheory.Torsion
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -32,11 +33,10 @@ product. On the `p`-primary part, which is killed by `p ^ N`, a `p`-adic scalar 
 truncation modulo `p ^ N`. The inverse uses an integer `c` with `c ≡ 1 (mod p ^ N)` and `m ∣ c`,
 so that `x ↦ c • x` is the projection of `A` onto its `p`-primary component.
 
-In fact, every `p`-primary abelian group `M` carries a canonical (and unique) `ℤ_p`-module
-structure where `a : ℤ_p` acts on an element `x` killed by `p ^ k` as `a.appr k • x`
-(`IsAddPGroup.padicIntModule`), and every additive homomorphism out of a `p`-primary group into a
-`ℤ_p`-module is automatically `ℤ_p`-linear (`IsAddPGroup.map_padicInt_smul`). Consequently the
-comparison `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A` is a natural `ℤ_p`-linear equivalence.
+Since every `p`-primary abelian group carries a canonical `ℤ_p`-module structure and every additive
+homomorphism out of it into a `ℤ_p`-module is `ℤ_p`-linear (`IsAddPGroup.padicIntModule` and
+`IsAddPGroup.map_padicInt_smul` in `TauCeti.NumberTheory.Padics.Module`), the comparison upgrades to
+a natural `ℤ_p`-linear equivalence `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A`.
 
 This is how the discriminant group of a lattice over `ℤ` is compared with the discriminant group
 of its localization at `p`, and how the `p`-primary ideal class group of a number field is
@@ -52,15 +52,10 @@ identified with `ℤ_p ⊗[ℤ] Cl(K)`.
   `p` vanishes in `ℤ_p ⊗[ℤ] A`.
 * `TauCeti.AddCommGroup.tmul_eq_one_tmul_appr`: on an element killed by `p ^ N`, a `p`-adic
   scalar acts through its truncation modulo `p ^ N`.
-* `PadicInt.smul_eq_appr_nsmul`: in any `ℤ_p`-module, `a • x = a.appr k • x` whenever
-  `p ^ k • x = 0`.
-* `IsAddPGroup.padicIntModule`: the canonical `ℤ_p`-module structure on a `p`-primary abelian
-  group.
-* `IsAddPGroup.map_padicInt_smul`: every additive homomorphism from a `p`-primary group to a
-  `ℤ_p`-module is `ℤ_p`-linear.
-* `TauCeti.AddCommGroup.primaryComponentMap`: functoriality of `A[p^∞]` as a `ℤ_p`-linear map.
 * `TauCeti.AddCommGroup.primaryComponentLinearEquivPadicIntTensor`: the natural `ℤ_p`-linear
-  equivalence `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A`.
+  equivalence `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A`, natural with respect to
+  `TauCeti.AddCommGroup.primaryComponentMap`
+  (`TauCeti.AddCommGroup.primaryComponentLinearEquivPadicIntTensor_naturality`).
 
 This is the case of finite `ℤ`-modules of the comparison `Â ⊗ M ≅ M̂` between scalar extension
 to a completion and completion, since the `p`-adic completion of `A` is its `p`-primary component.
@@ -232,152 +227,7 @@ theorem primaryComponentEquivPadicIntTensor_apply (hA : AddMonoid.ExponentExists
     AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply,
     AddSubgroup.coe_subtype]
 
-end TauCeti.AddCommGroup
-
-/-! ### Canonical `ℤ_p`-module structure on `p`-primary abelian groups -/
-
-namespace PadicInt
-
-variable {p : ℕ} [hp : Fact p.Prime] {M : Type*} [AddCommGroup M]
-
-/-- **A `p`-adic scalar acts on a `p`-power torsion element through its truncation.** In any
-`ℤ_p`-module, if `p ^ k • x = 0`, then `a • x = a.appr k • x`. In particular, the `ℤ_p`-module
-structure on a `p`-primary abelian group is unique. -/
-theorem smul_eq_appr_nsmul [Module ℤ_[p] M] {k : ℕ} {x : M} (hx : p ^ k • x = 0) (a : ℤ_[p]) :
-    a • x = a.appr k • x := by
-  obtain ⟨t, ht⟩ := PadicInt.dvd_sub_appr a k
-  have ha : a = (a.appr k : ℤ_[p]) + t * (p : ℤ_[p]) ^ k := by
-    rw [mul_comm]
-    exact eq_add_of_sub_eq' ht
-  conv_lhs => rw [ha]
-  rw [add_smul, Nat.cast_smul_eq_nsmul, mul_smul, ← Nat.cast_pow, Nat.cast_smul_eq_nsmul, hx,
-    smul_zero, add_zero]
-
-end PadicInt
-
-namespace IsAddPGroup
-
-variable {p : ℕ} [hp : Fact p.Prime] {M N : Type*} [AddCommGroup M] [AddCommGroup N]
-
-/-- Any two truncation levels killing `x` yield the same `ℕ`-multiple `a.appr k • x`. -/
-private theorem appr_nsmul_eq_appr_nsmul {m n : ℕ} {x : M} (hm : p ^ m • x = 0)
-    (hn : p ^ n • x = 0) (a : ℤ_[p]) : a.appr m • x = a.appr n • x := by
-  rcases le_total m n with hmn | hnm
-  · exact (nsmul_eq_nsmul_of_modEq (a.appr_modEq hmn) hm).symm
-  · exact nsmul_eq_nsmul_of_modEq (a.appr_modEq hnm) hn
-
-omit hp in
-/-- A higher power of `p` still annihilates an element killed by a lower power of `p`. -/
-private theorem pow_nsmul_eq_zero_of_le {m n : ℕ} {x : M} (hmn : m ≤ n) (hm : p ^ m • x = 0) :
-    p ^ n • x = 0 := by
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hmn
-  rw [pow_add, mul_nsmul, hm, nsmul_zero]
-
-/-- **Every `p`-primary abelian group is canonically a `ℤ_p`-module**, where `a : ℤ_p` acts on an
-element `x` killed by `p ^ k` as `a.appr k • x`. Because `p` is not determined by the type `M`,
-this is a reducible definition rather than a global instance; for `AddCommGroup.primaryComponent`,
-where `p` is part of the type, it is registered as an instance below. -/
-@[instance_reducible]
-noncomputable def padicIntModule (hM : IsAddPGroup p M) : Module ℤ_[p] M :=
-  letI : SMul ℤ_[p] M := ⟨fun a x ↦ a.appr (hM.exists_pow_nsmul_eq_zero x).choose • x⟩
-  { one_smul x := by
-      have hx := (hM.exists_pow_nsmul_eq_zero x).choose_spec
-      have h1 : (1 : ℤ_[p]).appr (hM.exists_pow_nsmul_eq_zero x).choose ≡
-          1 [MOD p ^ (hM.exists_pow_nsmul_eq_zero x).choose] := by
-        simpa using PadicInt.appr_natCast_modEq (p := p) 1 (hM.exists_pow_nsmul_eq_zero x).choose
-      exact (nsmul_eq_nsmul_of_modEq h1 hx).trans (one_nsmul x)
-    mul_smul a b x := by
-      have hx := (hM.exists_pow_nsmul_eq_zero x).choose_spec
-      have hbx : p ^ (hM.exists_pow_nsmul_eq_zero x).choose •
-          (b.appr (hM.exists_pow_nsmul_eq_zero x).choose • x) = 0 := by
-        rw [← mul_nsmul, mul_comm, mul_nsmul, hx, nsmul_zero]
-      exact (nsmul_eq_nsmul_of_modEq (PadicInt.appr_mul_modEq a b _) hx).trans <| by
-        rw [mul_comm, mul_nsmul]
-        exact (appr_nsmul_eq_appr_nsmul (hM.exists_pow_nsmul_eq_zero _).choose_spec hbx a).symm
-    smul_zero a := nsmul_zero _
-    smul_add a x y := by
-      set k := max (hM.exists_pow_nsmul_eq_zero x).choose (hM.exists_pow_nsmul_eq_zero y).choose
-      have hkx : p ^ k • x = 0 :=
-        pow_nsmul_eq_zero_of_le (le_max_left _ _) (hM.exists_pow_nsmul_eq_zero x).choose_spec
-      have hky : p ^ k • y = 0 :=
-        pow_nsmul_eq_zero_of_le (le_max_right _ _) (hM.exists_pow_nsmul_eq_zero y).choose_spec
-      have hkxy : p ^ k • (x + y) = 0 := by rw [nsmul_add, hkx, hky, add_zero]
-      exact (appr_nsmul_eq_appr_nsmul
-          (hM.exists_pow_nsmul_eq_zero (x + y)).choose_spec hkxy a).trans <|
-        (nsmul_add _ _ _).trans <| congrArg₂ (· + ·)
-          (appr_nsmul_eq_appr_nsmul (hM.exists_pow_nsmul_eq_zero x).choose_spec hkx a).symm
-          (appr_nsmul_eq_appr_nsmul (hM.exists_pow_nsmul_eq_zero y).choose_spec hky a).symm
-    add_smul a b x :=
-      (nsmul_eq_nsmul_of_modEq (PadicInt.appr_add_modEq a b _)
-        (hM.exists_pow_nsmul_eq_zero x).choose_spec).trans (add_nsmul _ _ _)
-    zero_smul x := by
-      have h0 : (0 : ℤ_[p]).appr (hM.exists_pow_nsmul_eq_zero x).choose = 0 := by
-        simpa using PadicInt.appr_natCast (p := p) 0 (hM.exists_pow_nsmul_eq_zero x).choose
-      exact (congrArg (· • x) h0).trans (zero_nsmul x) }
-
-/-- **Every additive homomorphism out of a `p`-primary group into a `ℤ_p`-module is
-`ℤ_p`-linear.** Both sides reduce to multiplication by the natural number `a.appr k` for any `k`
-with `p ^ k • x = 0`. -/
-theorem map_padicInt_smul [Module ℤ_[p] M] [Module ℤ_[p] N] (hM : IsAddPGroup p M)
-    (f : M →+ N) (a : ℤ_[p]) (x : M) : f (a • x) = a • f x := by
-  obtain ⟨k, hk⟩ := hM.exists_pow_nsmul_eq_zero x
-  have hfx : p ^ k • f x = 0 := by rw [← map_nsmul, hk, map_zero]
-  rw [PadicInt.smul_eq_appr_nsmul hk, map_nsmul, PadicInt.smul_eq_appr_nsmul hfx]
-
-end IsAddPGroup
-
-namespace AddCommGroup.primaryComponent
-
-variable {p : ℕ} {A : Type*} [AddCommGroup A]
-
-/-- The `p`-primary component of an abelian group is an additive `p`-group. -/
-theorem isAddPGroup (A : Type*) [AddCommGroup A] (p : ℕ) :
-    IsAddPGroup p (AddCommGroup.primaryComponent A p) := fun x ↦
-  (AddCommGroup.mem_primaryComponent.mp x.2).imp fun _ hk ↦ Subtype.ext <| by simpa using hk
-
-/-- The `p`-primary component of an abelian group is canonically a `ℤ_p`-module. -/
-noncomputable instance instModulePadicInt [Fact p.Prime] :
-    Module ℤ_[p] (AddCommGroup.primaryComponent A p) :=
-  (AddCommGroup.primaryComponent.isAddPGroup A p).padicIntModule
-
-end AddCommGroup.primaryComponent
-
-namespace TauCeti.AddCommGroup
-
-variable {p : ℕ} [Fact p.Prime] {A B C : Type*} [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
-
-variable (p) in
-/-- **Functoriality of the `p`-primary component as a `ℤ_p`-linear map.** Every additive
-homomorphism `f : A →+ B` restricts to a `ℤ_p`-linear map `A[p^∞] →ₗ[ℤ_p] B[p^∞]`. -/
-noncomputable def primaryComponentMap (f : A →+ B) :
-    AddCommGroup.primaryComponent A p →ₗ[ℤ_[p]] AddCommGroup.primaryComponent B p :=
-  let g : AddCommGroup.primaryComponent A p →+ AddCommGroup.primaryComponent B p :=
-    (f.comp (AddCommGroup.primaryComponent A p).subtype).codRestrict
-      (AddCommGroup.primaryComponent B p) fun x ↦ by
-        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
-        refine AddCommGroup.mem_primaryComponent.mpr ⟨k, ?_⟩
-        rw [AddMonoidHom.comp_apply, AddSubgroup.coe_subtype, ← map_nsmul, hk, map_zero]
-  { toAddHom := g.toAddHom
-    map_smul' := fun a x ↦
-      (AddCommGroup.primaryComponent.isAddPGroup A p).map_padicInt_smul g a x }
-
-@[simp]
-theorem coe_primaryComponentMap_apply (f : A →+ B) (x : AddCommGroup.primaryComponent A p) :
-    (primaryComponentMap p f x : B) = f (x : A) := by
-  rfl
-
-@[simp]
-theorem primaryComponentMap_id :
-    primaryComponentMap p (AddMonoidHom.id A) = LinearMap.id := by
-  ext x
-  rfl
-
-@[simp]
-theorem primaryComponentMap_comp (g : B →+ C) (f : A →+ B) :
-    primaryComponentMap p (g.comp f) =
-      (primaryComponentMap p g).comp (primaryComponentMap p f) := by
-  ext x
-  rfl
+variable {p : ℕ} [Fact p.Prime] {A B : Type*} [AddCommGroup A] [AddCommGroup B]
 
 variable (p A) in
 /-- **The `ℤ_p`-linear identification `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A`.** For an abelian group `A` of

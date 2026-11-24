@@ -198,17 +198,17 @@ theorem natCard_rootsOfUnity_prime_pow (p r : ℕ) [hp : Fact p.Prime] (hr : r �
   -- Every `(p - 1)`-st root of `1` is a unit, so `rootsOfUnity` has the same size as the solution
   -- subtype `{x // x ^ (p - 1) = 1}`.
   let e₁ : rootsOfUnity (p - 1) (ZMod (p ^ r)) ≃ {x : ZMod (p ^ r) // x ^ (p - 1) = 1} :=
-    { toFun u := ⟨(u.1 : ZMod (p ^ r)), by
-        have hu := (mem_rootsOfUnity' (p - 1) u.1).mp u.2
+    { toFun u := ⟨(u.val : ZMod (p ^ r)), by
+        have hu := (mem_rootsOfUnity' (p - 1) u.val).mp u.property
         simpa using hu⟩
-      invFun x := ⟨toUnit (ZMod (p ^ r)) x.2,
-        (mem_rootsOfUnity' (p - 1) (toUnit (ZMod (p ^ r)) x.2)).mpr x.2⟩
+      invFun x := ⟨toUnit (ZMod (p ^ r)) x.property,
+        (mem_rootsOfUnity' (p - 1) (toUnit (ZMod (p ^ r)) x.property)).mpr x.property⟩
       left_inv u := Subtype.ext (Units.ext rfl)
       right_inv x := Subtype.ext rfl }
   -- Over the field `ZMod p`, every unit satisfies `x ^ (p - 1) = 1` by Fermat's little theorem.
   let e₂ : (ZMod p)ˣ ≃ {x : ZMod p // x ^ (p - 1) = 1} :=
     { toFun u := ⟨(u : ZMod p), pow_card_sub_one_eq_one u.ne_zero⟩
-      invFun x := toUnit (ZMod p) x.2
+      invFun x := toUnit (ZMod p) x.property
       left_inv u := Units.ext rfl
       right_inv x := Subtype.ext rfl }
   have h1 : ((1 : ℤ) : ZMod p) ≠ 0 := by simp
@@ -237,12 +237,12 @@ noncomputable def rootsOfUnityEquivUnitsPrime (p r : ℕ) [hp : Fact p.Prime] (h
       simpa [Nat.sub_add_cancel hp.out.pos] using
         (Nat.coprime_self_add_right (m := p - 1) (n := 1)).mpr (Nat.coprime_one_right _)
     intro u v huv
-    have hker : unitsMap (dvd_pow_self p hr) (u.1 * v.1⁻¹) = 1 := by
+    have hker : unitsMap (dvd_pow_self p hr) (u.val * v.val⁻¹) = 1 := by
       rw [map_mul, map_inv, mul_inv_eq_one]
       exact huv
-    have hpow : (u.1 * v.1⁻¹) ^ (p - 1) = 1 := by
-      rw [mul_pow, inv_pow, (mem_rootsOfUnity (p - 1) u.1).mp u.2,
-        (mem_rootsOfUnity (p - 1) v.1).mp v.2, inv_one, mul_one]
+    have hpow : (u.val * v.val⁻¹) ^ (p - 1) = 1 := by
+      rw [mul_pow, inv_pow, (mem_rootsOfUnity (p - 1) u.val).mp u.property,
+        (mem_rootsOfUnity (p - 1) v.val).mp v.property, inv_one, mul_one]
     have huniq := existsUnique_pow_eq_of_unitsMap_eq_one hp.out hcop (map_one _)
       (h := dvd_pow_self p hr)
     exact Subtype.ext (mul_inv_eq_one.mp (huniq.unique ⟨hker, hpow⟩ ⟨map_one _, one_pow _⟩))
@@ -254,8 +254,8 @@ noncomputable def rootsOfUnityEquivUnitsPrime (p r : ℕ) [hp : Fact p.Prime] (h
 @[simp]
 theorem rootsOfUnityEquivUnitsPrime_apply (p r : ℕ) [Fact p.Prime] (hr : r ≠ 0)
     (u : rootsOfUnity (p - 1) (ZMod (p ^ r))) :
-    rootsOfUnityEquivUnitsPrime p r hr u = unitsMap (dvd_pow_self p hr) u.1 := by
-  rfl
+    rootsOfUnityEquivUnitsPrime p r hr u = unitsMap (dvd_pow_self p hr) u.val :=
+  (rfl)
 
 /-- The `(p - 1)`-st roots of unity in `ZMod (p ^ r)` form a cyclic group for `r ≠ 0`. -/
 theorem isCyclic_rootsOfUnity_prime_pow (p r : ℕ) [Fact p.Prime] (hr : r ≠ 0) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
+import TauCeti.Algebra.Ring.Invertible
 
 /-!
 # `1 + a * b` is a unit exactly when `1 + b * a` is
@@ -27,6 +28,8 @@ its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at 
 * `TauCeti.isUnit_one_add_mul_comm`: `IsUnit (1 + a * b) ↔ IsUnit (1 + b * a)`.
 * `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
   `u - u⁻¹ ≠ 0`.
+* `Units.ne_neg_self_of_isUnit_two`: in a nontrivial ring in which `2` is a unit, no unit equals
+  its additive inverse.
 -/
 
 public section
@@ -50,11 +53,16 @@ end TauCeti
 
 namespace Units
 
-variable {R : Type*} [Ring R] [NoZeroDivisors R]
-
 /-- In a ring without zero divisors, a unit `u ≠ ±1` satisfies `u - u⁻¹ ≠ 0`. -/
-theorem val_sub_val_inv_ne_zero {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :
+theorem val_sub_val_inv_ne_zero {R : Type*} [Ring R] [NoZeroDivisors R] {u : Rˣ}
+    (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :
     (u : R) - ↑u⁻¹ ≠ 0 := fun h ↦
   ((inv_eq_self_iff u).1 (Units.ext (sub_eq_zero.1 h).symm)).elim hu₁ hu₂
+
+/-- In a nontrivial ring in which `2` is a unit, no unit equals its additive inverse. -/
+theorem ne_neg_self_of_isUnit_two {R : Type*} [Ring R] [Nontrivial R] (u : Rˣ)
+    (h2 : IsUnit (2 : R)) : u ≠ -u := fun h ↦
+  u.ne_zero (h2.eq_zero_of_add_self_eq_zero u
+    (add_eq_zero_iff_eq_neg.mpr ((congrArg Units.val h).trans (Units.val_neg u))))
 
 end Units

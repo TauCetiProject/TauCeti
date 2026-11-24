@@ -5,27 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.ClassNumber
+public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
-public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 public import TauCeti.NumberTheory.Padics.TensorPrimaryComponent
 public import TauCeti.RingTheory.ClassGroup.Galois
-import TauCeti.NumberTheory.ClassGroup.Equiv
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 
 /-!
-# The Galois action on cyclotomic ideal class groups
+# The Galois action on the ideal class group of a cyclotomic field
 
-Let `K` be the `m`-th rational cyclotomic field (`IsCyclotomicExtension {m} ℚ K`). Under Mathlib's
-identification `IsCyclotomicExtension.Rat.galEquivZMod m K : Gal(K/ℚ) ≃* (ZMod m)ˣ`, each unit
-`a ∈ (ZMod m)ˣ` corresponds to the automorphism `σ_a` sending every `m`-th root of unity `ζ` to
-`ζ ^ a`. Restricting `σ_a` to the ring of integers `𝓞 K` induces a **covariant** action on the
-ideal class group: `a` sends `[𝔞]` to `[σ_a(𝔞)]` (with no inverse), bundled as
-`TauCeti.cyclotomicClassMulAction m K : (ZMod m)ˣ →* MulAut (ClassGroup (𝓞 K))`.
+Let `K` be the `m`-th cyclotomic field over `ℚ`. Mathlib identifies `Gal(K/ℚ)` with `(ZMod m)ˣ`
+through `IsCyclotomicExtension.Rat.galEquivZMod`, under which a residue `a` corresponds to the
+automorphism `σ_a` with `σ_a ζ = ζ ^ a` on every `m`-th root of unity `ζ`. Transporting `σ_a` to the
+ring of integers and then to ideal classes gives the covariant action `σ_a [𝔞] = [σ_a 𝔞]` of
+`(ZMod m)ˣ` on `ClassGroup (𝓞 K)` (`TauCeti.cyclotomicClassGroupAction m K`). Its scalar extension
+to `R ⊗[ℤ] Additive (ClassGroup (𝓞 K))`, for a ring `R` such as `ℤ_[p]`, is the Galois module
+`TauCeti.cyclotomicClassAction R m K` in which the tame character eigenspaces of the cyclotomic
+class group are cut out and on which Stickelberger elements act.
 
-Base-changing along a commutative ring `R` yields the `R`-linear representation
-`TauCeti.cyclotomicClassRepresentation R m K` of `(ZMod m)ˣ` on
-`R ⊗[ℤ] Additive (ClassGroup (𝓞 K))`. For a prime `p`, the finiteness of `ClassGroup (𝓞 K)` turns
+The action is covariant: no inverse is inserted, so `a` acts through `σ_a` itself and not through
+`σ_a⁻¹`. Both actions are bundled as monoid homomorphisms, so the identity residue acts trivially
+and products of residues act by composition (`map_one`, `map_mul`).
+
+For a prime `p`, the finiteness of `ClassGroup (𝓞 K)` turns
 `TauCeti.AddCommGroup.primaryComponentLinearEquivPadicIntTensor` into a `ℤ_[p]`-linear equivalence
 `TauCeti.numberFieldClassPrimaryEquiv` identifying the `p`-primary subgroup of
 `Additive (ClassGroup (𝓞 K))` with `ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))`, compatibly with the
@@ -39,9 +41,9 @@ composites on `R ⊗[ℤ] Additive (ClassGroup _)` evaluate to `[L : K] • id` 
 
 ## Main definitions
 
-* `TauCeti.cyclotomicClassMulAction`: the covariant action `(ZMod m)ˣ →* MulAut (ClassGroup (𝓞 K))`.
-* `TauCeti.cyclotomicClassRepresentation`: the base-changed representation of `(ZMod m)ˣ` on
-  `R ⊗[ℤ] Additive (ClassGroup (𝓞 K))`.
+* `TauCeti.cyclotomicClassGroupAction m K`: the action `(ZMod m)ˣ →* MulAut (ClassGroup (𝓞 K))`.
+* `TauCeti.cyclotomicClassAction R m K`: its scalar extension
+  `(ZMod m)ˣ →* Module.End R (R ⊗[ℤ] Additive (ClassGroup (𝓞 K)))`.
 * `TauCeti.numberFieldClassPrimaryEquiv`: the `ℤ_[p]`-linear identification between the `p`-primary
   subgroup of `Additive (ClassGroup (𝓞 K))` and `ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))`.
 * `TauCeti.galCyclotomicEquivKerUnitsMap`: the isomorphism `Gal(L/K) ≃* (ZMod.unitsMap hmn).ker`
@@ -49,19 +51,25 @@ composites on `R ⊗[ℤ] Additive (ClassGroup _)` evaluate to `[L : K] • id` 
 
 ## Main results
 
-* `TauCeti.cyclotomicClassMulAction_mk0`: explicit covariant formula on integral ideal classes.
+* `TauCeti.cyclotomicClassGroupAction_mk0`: `σ_a` sends the class of a nonzero ideal `𝔞` to the
+  class of its image `σ_a 𝔞`.
+* `TauCeti.cyclotomicClassAction_tmul`: on a pure tensor, `r ⊗ c ↦ r ⊗ σ_a c`.
 * `TauCeti.numberFieldClassPrimaryEquiv_cyclotomicAction`,
   `TauCeti.numberFieldClassPrimaryEquiv_relNorm`, and
   `TauCeti.numberFieldClassPrimaryEquiv_extended`: compatibility of the `p`-primary equivalence with
   Galois automorphisms, relative norms, and class extensions.
-* `TauCeti.relNorm_cyclotomicClassMulAction`, `TauCeti.extendedHom_cyclotomicClassMulAction`, and
-  `TauCeti.extendedHom_relNorm_cyclotomic`: equivariance and orbit-product formulas in a cyclotomic
-  tower.
-* `TauCeti.relNormBaseChange_cyclotomicClassRepresentation`,
-  `TauCeti.extendedBaseChange_cyclotomicClassRepresentation`,
+* `TauCeti.relNorm_cyclotomicClassGroupAction`, `TauCeti.extendedHom_cyclotomicClassGroupAction`,
+  and `TauCeti.extendedHom_relNorm_cyclotomic`: equivariance and orbit-product formulas in a
+  cyclotomic tower.
+* `TauCeti.relNormBaseChange_cyclotomicClassAction`,
+  `TauCeti.extendedBaseChange_cyclotomicClassAction`,
   `TauCeti.relNormBaseChange_comp_extendedBaseChange_cyclotomic`, and
   `TauCeti.extendedBaseChange_comp_relNormBaseChange_cyclotomic`: base-changed equivariance and
   norm-extension identities.
+
+## References
+
+* R. Sharifi, *Iwasawa theory*, §1.3, Propositions 1.3.1–1.3.2.
 -/
 
 public section
@@ -73,82 +81,64 @@ namespace TauCeti
 
 section Action
 
-variable (m : ℕ) [NeZero m] (K : Type*) [Field K] [NumberField K]
+variable (R : Type*) [Ring R] (m : ℕ) [NeZero m] (K : Type*) [Field K] [NumberField K]
   [IsCyclotomicExtension {m} ℚ K]
 
-/-- **Covariant Galois action on a cyclotomic class group.** The unit `a ∈ (ZMod m)ˣ` acts on
-`ClassGroup (𝓞 K)` by pushing ideal classes forward along the ring-of-integers automorphism
-induced by `σ_a = (galEquivZMod m K).symm a`. -/
-noncomputable def cyclotomicClassMulAction : (ZMod m)ˣ →* MulAut (ClassGroup (𝓞 K)) where
-  toFun a := ClassGroup.mulEquiv
-    (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv)
-  map_one' := by
-    rw [map_one]
-    change ClassGroup.mulEquiv (RingOfIntegers.mapRingEquiv (RingEquiv.refl K)) =
-      MulEquiv.refl (ClassGroup (𝓞 K))
-    rw [RingOfIntegers.mapRingEquiv_refl, ClassGroup.mulEquiv_refl]
-  map_mul' a b := by
-    rw [map_mul]
-    have hmul : (((galEquivZMod m K).symm a * (galEquivZMod m K).symm b).toRingEquiv) =
-        ((galEquivZMod m K).symm b).toRingEquiv.trans ((galEquivZMod m K).symm a).toRingEquiv :=
-      RingEquiv.ext fun _ ↦ rfl
-    rw [hmul, RingOfIntegers.mapRingEquiv_trans, ClassGroup.mulEquiv_trans]
-    rfl
+/-- The covariant action of `(ZMod m)ˣ ≃* Gal(K/ℚ)` on the ideal class group of the `m`-th
+cyclotomic field `K`: the residue `a` acts by the class-group automorphism induced by the
+automorphism `σ_a` of `𝓞 K`, where `σ_a ζ = ζ ^ a` for every `m`-th root of unity `ζ`. It is the
+Galois action `classGroupAction` transported along `galEquivZMod m K`. -/
+noncomputable def cyclotomicClassGroupAction : (ZMod m)ˣ →* MulAut (ClassGroup (𝓞 K)) :=
+  (classGroupAction (K ≃ₐ[ℚ] K) K).comp (galEquivZMod m K).symm.toMonoidHom
 
-theorem cyclotomicClassMulAction_apply (a : (ZMod m)ˣ) (c : ClassGroup (𝓞 K)) :
-    cyclotomicClassMulAction m K a c =
-      ClassGroup.mulEquiv
-        (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv) c := by
-  rfl
+variable {m K} in
+/-- The residue `a` acts on ideal classes through the class-group isomorphism
+`RingEquiv.classGroupEquiv` of the automorphism `σ_a = (galEquivZMod m K).symm a` of `K`. -/
+theorem cyclotomicClassGroupAction_apply (a : (ZMod m)ˣ) (c : ClassGroup (𝓞 K)) :
+    cyclotomicClassGroupAction m K a c =
+      ((galEquivZMod m K).symm a).toRingEquiv.classGroupEquiv c :=
+  DFunLike.congr_fun (classGroupAction_apply _) c
 
-/-- **Covariant ideal-class action formula**: `σ_a` sends the class of a nonzero ideal `I` to the
-class of its forward image `Ideal.map σ_a I`. -/
-theorem cyclotomicClassMulAction_mk0 (a : (ZMod m)ˣ) (I : (Ideal (𝓞 K))⁰) :
-    cyclotomicClassMulAction m K a (ClassGroup.mk0 I) =
-      ClassGroup.mk0 ⟨I.1.map
-        (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv),
-        mem_nonZeroDivisors_iff_ne_zero.mpr <|
-          (Ideal.map_eq_bot_iff_of_injective
-            (RingOfIntegers.mapRingEquiv _).injective).not.mpr
-            (mem_nonZeroDivisors_iff_ne_zero.mp I.2)⟩ :=
-  ClassGroup.mulEquiv_mk0 _ I
-
-/-- **The base-changed cyclotomic class-group representation.** For any commutative ring `R`,
-`(ZMod m)ˣ` acts `R`-linearly on `R ⊗[ℤ] Additive (ClassGroup (𝓞 K))` by base change of the
-covariant action `TauCeti.cyclotomicClassMulAction`. -/
-noncomputable def cyclotomicClassRepresentation (R : Type*) [CommRing R] :
-    Representation R (ZMod m)ˣ (R ⊗[ℤ] Additive (ClassGroup (𝓞 K))) where
-  toFun a := ClassGroup.mulEquivBaseChange R
-    (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv)
-  map_one' := by
-    ext c
-    obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
-    change ClassGroup.mulEquivBaseChange R _ (1 ⊗ₜ[ℤ] Additive.ofMul c) = 1 ⊗ₜ[ℤ] Additive.ofMul c
-    rw [ClassGroup.mulEquivBaseChange_tmul, ← cyclotomicClassMulAction_apply, map_one,
-      MulAut.one_apply]
-  map_mul' a b := by
-    ext c
-    obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
-    change ClassGroup.mulEquivBaseChange R _ (1 ⊗ₜ[ℤ] Additive.ofMul c) =
-      ClassGroup.mulEquivBaseChange R _ (ClassGroup.mulEquivBaseChange R _
-        (1 ⊗ₜ[ℤ] Additive.ofMul c))
-    rw [ClassGroup.mulEquivBaseChange_tmul, ClassGroup.mulEquivBaseChange_tmul,
-      ClassGroup.mulEquivBaseChange_tmul, ← cyclotomicClassMulAction_apply,
-      ← cyclotomicClassMulAction_apply, ← cyclotomicClassMulAction_apply, map_mul]
-    rfl
-
-theorem cyclotomicClassRepresentation_apply (R : Type*) [CommRing R] (a : (ZMod m)ˣ) :
-    cyclotomicClassRepresentation m K R a =
-      ClassGroup.mulEquivBaseChange R
-        (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv) := by
-  rfl
-
+variable {m K} in
+/-- **The action on ideal classes.** The residue `a` sends the class of a nonzero ideal `𝔞` of
+`𝓞 K` to the class of its image `σ_a 𝔞`. -/
 @[simp]
-theorem cyclotomicClassRepresentation_tmul (R : Type*) [CommRing R] (a : (ZMod m)ˣ) (r : R)
-    (c : ClassGroup (𝓞 K)) :
-    cyclotomicClassRepresentation m K R a (r ⊗ₜ[ℤ] Additive.ofMul c) =
-      r ⊗ₜ[ℤ] Additive.ofMul (cyclotomicClassMulAction m K a c) :=
-  ClassGroup.mulEquivBaseChange_tmul R _ r c
+theorem cyclotomicClassGroupAction_mk0 (a : (ZMod m)ˣ) (I : (Ideal (𝓞 K))⁰) :
+    cyclotomicClassGroupAction m K a (ClassGroup.mk0 I) = ClassGroup.mk0
+      ⟨I.val.map (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv),
+        mem_nonZeroDivisors_iff_ne_zero.mpr <|
+          (Ideal.map_eq_bot_iff_of_injective (RingEquiv.injective _)).not.mpr
+            (mem_nonZeroDivisors_iff_ne_zero.mp I.property)⟩ :=
+  (cyclotomicClassGroupAction_apply a _).trans (RingEquiv.classGroupEquiv_mk0 _ I)
+
+/-- **The cyclotomic class action.** The scalar extension, to `R ⊗[ℤ] Additive (ClassGroup (𝓞 K))`,
+of the covariant action `cyclotomicClassGroupAction m K` of `(ZMod m)ˣ` on the ideal class group of
+the `m`-th cyclotomic field `K`. The residue `a` acts by `r ⊗ c ↦ r ⊗ σ_a c`. -/
+noncomputable def cyclotomicClassAction :
+    (ZMod m)ˣ →* Module.End R (R ⊗[ℤ] Additive (ClassGroup (𝓞 K))) where
+  toFun a := LinearMap.baseChange R
+    (cyclotomicClassGroupAction m K a).toAdditive.toAddMonoidHom.toIntLinearMap
+  map_one' := by
+    ext c
+    simp
+  map_mul' a b := by
+    ext c
+    simp
+
+variable {R m K} in
+/-- The cyclotomic class action is the scalar extension of the action on ideal classes. -/
+theorem cyclotomicClassAction_apply (a : (ZMod m)ˣ) :
+    cyclotomicClassAction R m K a = LinearMap.baseChange R
+      (cyclotomicClassGroupAction m K a).toAdditive.toAddMonoidHom.toIntLinearMap :=
+  (rfl)
+
+variable {R m K} in
+/-- **The action on pure tensors.** The residue `a` sends `r ⊗ c` to `r ⊗ σ_a c`. -/
+@[simp]
+theorem cyclotomicClassAction_tmul (a : (ZMod m)ˣ) (r : R) (c : ClassGroup (𝓞 K)) :
+    cyclotomicClassAction R m K a (r ⊗ₜ Additive.ofMul c) =
+      r ⊗ₜ Additive.ofMul (cyclotomicClassGroupAction m K a c) := by
+  simp [cyclotomicClassAction_apply]
 
 end Action
 
@@ -163,7 +153,7 @@ noncomputable def numberFieldClassPrimaryEquiv (K : Type*) [Field K] [NumberFiel
     AddCommGroup.primaryComponent (Additive (ClassGroup (𝓞 K))) p ≃ₗ[ℤ_[p]]
       ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K)) :=
   TauCeti.AddCommGroup.primaryComponentLinearEquivPadicIntTensor p
-    (Additive (ClassGroup (𝓞 K))) (AddMonoid.ExponentExists.of_finite)
+    (Additive (ClassGroup (𝓞 K))) AddMonoid.ExponentExists.of_finite
 
 @[simp]
 theorem numberFieldClassPrimaryEquiv_apply (K : Type*) [Field K] [NumberField K]
@@ -178,8 +168,8 @@ theorem numberFieldClassPrimaryEquiv_cyclotomicAction (m : ℕ) [NeZero m] (K : 
     (x : AddCommGroup.primaryComponent (Additive (ClassGroup (𝓞 K))) p) :
     numberFieldClassPrimaryEquiv p K
         (TauCeti.AddCommGroup.primaryComponentMap p
-          (MonoidHom.toAdditive (cyclotomicClassMulAction m K a).toMonoidHom) x) =
-      cyclotomicClassRepresentation m K ℤ_[p] a (numberFieldClassPrimaryEquiv p K x) := by
+          (cyclotomicClassGroupAction m K a).toAdditive.toAddMonoidHom x) =
+      cyclotomicClassAction ℤ_[p] m K a (numberFieldClassPrimaryEquiv p K x) := by
   obtain ⟨c, hc⟩ := Additive.ofMul.surjective (x : Additive (ClassGroup (𝓞 K)))
   simp [numberFieldClassPrimaryEquiv_apply, ← hc]
 
@@ -226,66 +216,64 @@ theorem galEquivZMod_symm_restrictNormal [Normal ℚ K] (a : (ZMod n)ˣ) :
 a group isomorphism `Gal(L/K) ≃* (ZMod.unitsMap hmn).ker`. -/
 noncomputable def galCyclotomicEquivKerUnitsMap :
     (L ≃ₐ[K] L) ≃* (ZMod.unitsMap hmn).ker := by
-  have hgalK : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
-  let inv : (ZMod.unitsMap hmn).ker → (L ≃ₐ[K] L) := fun u ↦
-    { ((galEquivZMod n L).symm u.1).toRingEquiv with
-      commutes' x := by
-        have hres : ((galEquivZMod n L).symm u.1).restrictNormal K = 1 := by
-          rw [galEquivZMod_symm_restrictNormal hmn K L u.1,
-            MonoidHom.mem_ker.mp u.2, map_one]
-        have hcomm := ((galEquivZMod n L).symm u.1).restrictNormal_commutes K x
-        rw [hres, AlgEquiv.one_apply] at hcomm
-        exact hcomm.symm }
-  refine
-    { toFun σ := ⟨galEquivZMod n L (σ.restrictScalars ℚ), ?_⟩
-      invFun := inv
-      left_inv σ := by
-        ext x
-        change ((galEquivZMod n L).symm (galEquivZMod n L (σ.restrictScalars ℚ))) x = σ x
-        rw [MulEquiv.symm_apply_apply]
-        rfl
-      right_inv u := by
-        apply Subtype.ext
-        change galEquivZMod n L ((inv u).restrictScalars ℚ) = u.1
-        have heq : (inv u).restrictScalars ℚ = (galEquivZMod n L).symm u.1 :=
-          AlgEquiv.ext fun _ ↦ rfl
-        rw [heq, MulEquiv.apply_symm_apply]
-      map_mul' σ τ := by
-        apply Subtype.ext
-        change galEquivZMod n L ((σ * τ).restrictScalars ℚ) =
-          galEquivZMod n L (σ.restrictScalars ℚ) * galEquivZMod n L (τ.restrictScalars ℚ)
-        rw [← map_mul]
-        rfl }
-  · rw [MonoidHom.mem_ker, ← galEquivZMod_restrictNormal_apply n L K hmn]
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
+  refine MulEquiv.ofBijective
+    (((galEquivZMod n L).toMonoidHom.comp (AlgEquiv.restrictScalarsHom ℚ)).codRestrict
+      (ZMod.unitsMap hmn).ker fun σ ↦ ?_) ⟨?_, ?_⟩
+  · rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      AlgEquiv.restrictScalarsHom_apply, ← galEquivZMod_restrictNormal_apply n L K hmn]
     have hres : (σ.restrictScalars ℚ).restrictNormal K = 1 := by
       ext x
       apply (algebraMap K L).injective
       rw [AlgEquiv.restrictNormal_commutes, AlgEquiv.one_apply]
       exact σ.commutes x
     rw [hres, map_one]
+  · intro σ τ hστ
+    have h := congrArg Subtype.val hστ
+    simp only [MonoidHom.codRestrict_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      AlgEquiv.restrictScalarsHom_apply] at h
+    exact AlgEquiv.restrictScalars_injective ℚ ((galEquivZMod n L).injective h)
+  · intro u
+    let σ : L ≃ₐ[K] L :=
+      { ((galEquivZMod n L).symm u.val).toRingEquiv with
+        commutes' x := by
+          have hres : ((galEquivZMod n L).symm u.val).restrictNormal K = 1 := by
+            rw [galEquivZMod_symm_restrictNormal hmn K L u.val,
+              MonoidHom.mem_ker.mp u.property, map_one]
+          have hcomm := ((galEquivZMod n L).symm u.val).restrictNormal_commutes K x
+          rw [hres, AlgEquiv.one_apply] at hcomm
+          exact hcomm.symm }
+    refine ⟨σ, Subtype.ext ?_⟩
+    simp only [MonoidHom.codRestrict_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      AlgEquiv.restrictScalarsHom_apply]
+    have hσ : σ.restrictScalars ℚ = (galEquivZMod n L).symm u.val :=
+      AlgEquiv.ext fun _ ↦ rfl
+    rw [hσ, MulEquiv.apply_symm_apply]
 
 @[simp]
 theorem coe_galCyclotomicEquivKerUnitsMap_apply (σ : L ≃ₐ[K] L) :
     (galCyclotomicEquivKerUnitsMap hmn K L σ : (ZMod n)ˣ) =
-      galEquivZMod n L (σ.restrictScalars ℚ) := by
-  rfl
+      galEquivZMod n L (σ.restrictScalars ℚ) :=
+  (rfl)
 
 /-- **Equivariance of `ClassGroup.relNorm` in a cyclotomic tower.** -/
-theorem relNorm_cyclotomicClassMulAction (a : (ZMod n)ˣ) (c : ClassGroup (𝓞 L)) :
-    ClassGroup.relNorm (𝓞 K) (cyclotomicClassMulAction n L a c) =
-      cyclotomicClassMulAction m K (ZMod.unitsMap hmn a) (ClassGroup.relNorm (𝓞 K) c) := by
+theorem relNorm_cyclotomicClassGroupAction (a : (ZMod n)ˣ) (c : ClassGroup (𝓞 L)) :
+    ClassGroup.relNorm (𝓞 K) (cyclotomicClassGroupAction n L a c) =
+      cyclotomicClassGroupAction m K (ZMod.unitsMap hmn a) (ClassGroup.relNorm (𝓞 K) c) := by
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
-  rw [cyclotomicClassMulAction_apply, cyclotomicClassMulAction_apply,
+  rw [cyclotomicClassGroupAction_apply, cyclotomicClassGroupAction_apply,
+    RingEquiv.classGroupEquiv_def, RingEquiv.classGroupEquiv_def,
     ← ClassGroup.relNorm_mulEquiv_ringOfIntegers (F := ℚ) ((galEquivZMod n L).symm a) c,
     galEquivZMod_symm_restrictNormal hmn K L a]
 
 /-- **Equivariance of `ClassGroup.extendedHom` in a cyclotomic tower.** -/
-theorem extendedHom_cyclotomicClassMulAction (a : (ZMod n)ˣ) (c : ClassGroup (𝓞 K)) :
-    cyclotomicClassMulAction n L a (ClassGroup.extendedHom (𝓞 K) (𝓞 L) c) =
+theorem extendedHom_cyclotomicClassGroupAction (a : (ZMod n)ˣ) (c : ClassGroup (𝓞 K)) :
+    cyclotomicClassGroupAction n L a (ClassGroup.extendedHom (𝓞 K) (𝓞 L) c) =
       ClassGroup.extendedHom (𝓞 K) (𝓞 L)
-        (cyclotomicClassMulAction m K (ZMod.unitsMap hmn a) c) := by
+        (cyclotomicClassGroupAction m K (ZMod.unitsMap hmn a) c) := by
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
-  rw [cyclotomicClassMulAction_apply, cyclotomicClassMulAction_apply,
+  rw [cyclotomicClassGroupAction_apply, cyclotomicClassGroupAction_apply,
+    RingEquiv.classGroupEquiv_def, RingEquiv.classGroupEquiv_def,
     ClassGroup.extendedHom_mulEquiv_ringOfIntegers (F := ℚ) ((galEquivZMod n L).symm a) c,
     galEquivZMod_symm_restrictNormal hmn K L a]
 
@@ -293,49 +281,48 @@ theorem extendedHom_cyclotomicClassMulAction (a : (ZMod n)ˣ) (c : ClassGroup (�
 `ker (ZMod.unitsMap hmn)`. -/
 theorem extendedHom_relNorm_cyclotomic (c : ClassGroup (𝓞 L)) :
     ClassGroup.extendedHom (𝓞 K) (𝓞 L) (ClassGroup.relNorm (𝓞 K) c) =
-      ∏ g : (ZMod.unitsMap hmn).ker, cyclotomicClassMulAction n L g.1 c := by
+      ∏ g : (ZMod.unitsMap hmn).ker, cyclotomicClassGroupAction n L g.val c := by
   have : IsGalois ℚ L := IsCyclotomicExtension.isGalois {n} ℚ L
   have : IsGalois K L := IsGalois.tower_top_of_isGalois ℚ K L
   rw [ClassGroup.extendedHom_relNorm_ringOfIntegers K L c]
   refine Fintype.prod_equiv (galCyclotomicEquivKerUnitsMap hmn K L).toEquiv _ _ fun σ ↦ ?_
-  rw [cyclotomicClassMulAction_apply]
-  change ClassGroup.mulEquiv (RingOfIntegers.mapRingEquiv σ.toRingEquiv) c =
-    ClassGroup.mulEquiv
-      (RingOfIntegers.mapRingEquiv
-        ((galEquivZMod n L).symm (galEquivZMod n L (σ.restrictScalars ℚ))).toRingEquiv) c
-  rw [MulEquiv.symm_apply_apply]
-  rfl
+  rw [cyclotomicClassGroupAction_apply, MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
+    coe_galCyclotomicEquivKerUnitsMap_apply, MulEquiv.symm_apply_apply,
+    RingEquiv.classGroupEquiv_def]
+  have hσ : (σ.restrictScalars ℚ).toRingEquiv = σ.toRingEquiv :=
+    RingEquiv.ext fun _ ↦ rfl
+  rw [hσ]
 
 /-- **Base-changed equivariance of relative norm in a cyclotomic tower.** -/
-theorem relNormBaseChange_cyclotomicClassRepresentation (R : Type*) [CommRing R] (a : (ZMod n)ˣ)
+theorem relNormBaseChange_cyclotomicClassAction (R : Type*) [CommRing R] (a : (ZMod n)ˣ)
     (x : R ⊗[ℤ] Additive (ClassGroup (𝓞 L))) :
-    ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L) (cyclotomicClassRepresentation n L R a x) =
-      cyclotomicClassRepresentation m K R (ZMod.unitsMap hmn a)
+    ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L) (cyclotomicClassAction R n L a x) =
+      cyclotomicClassAction R m K (ZMod.unitsMap hmn a)
         (ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L) x) := by
   have hcomp :
       (ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L)).comp
-          (cyclotomicClassRepresentation n L R a) =
-        (cyclotomicClassRepresentation m K R (ZMod.unitsMap hmn a)).comp
+          (cyclotomicClassAction R n L a) =
+        (cyclotomicClassAction R m K (ZMod.unitsMap hmn a)).comp
           (ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L)) := by
     ext c
     obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
-    simp [relNorm_cyclotomicClassMulAction hmn K L]
+    simp [relNorm_cyclotomicClassGroupAction hmn K L]
   exact LinearMap.congr_fun hcomp x
 
 /-- **Base-changed equivariance of class extension in a cyclotomic tower.** -/
-theorem extendedBaseChange_cyclotomicClassRepresentation (R : Type*) [CommRing R] (a : (ZMod n)ˣ)
+theorem extendedBaseChange_cyclotomicClassAction (R : Type*) [CommRing R] (a : (ZMod n)ˣ)
     (x : R ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :
-    cyclotomicClassRepresentation n L R a (ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L) x) =
+    cyclotomicClassAction R n L a (ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L) x) =
       ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L)
-        (cyclotomicClassRepresentation m K R (ZMod.unitsMap hmn a) x) := by
+        (cyclotomicClassAction R m K (ZMod.unitsMap hmn a) x) := by
   have hcomp :
-      (cyclotomicClassRepresentation n L R a).comp
+      (cyclotomicClassAction R n L a).comp
           (ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L)) =
         (ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L)).comp
-          (cyclotomicClassRepresentation m K R (ZMod.unitsMap hmn a)) := by
+          (cyclotomicClassAction R m K (ZMod.unitsMap hmn a)) := by
     ext c
     obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
-    simp [extendedHom_cyclotomicClassMulAction hmn K L]
+    simp [extendedHom_cyclotomicClassGroupAction hmn K L]
   exact LinearMap.congr_fun hcomp x
 
 /-- **Extend then norm on base-changed cyclotomic class modules is multiplication by `[L : K]`.** -/
@@ -351,7 +338,7 @@ theorem relNormBaseChange_comp_extendedBaseChange_cyclotomic (R : Type*) [CommRi
 theorem extendedBaseChange_comp_relNormBaseChange_cyclotomic (R : Type*) [CommRing R] :
     (ClassGroup.extendedBaseChange R (𝓞 K) (𝓞 L)).comp
         (ClassGroup.relNormBaseChange R (𝓞 K) (𝓞 L)) =
-      ∑ g : (ZMod.unitsMap hmn).ker, cyclotomicClassRepresentation n L R g.1 := by
+      ∑ g : (ZMod.unitsMap hmn).ker, cyclotomicClassAction R n L g.val := by
   ext c
   obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
   simp [extendedHom_relNorm_cyclotomic hmn K L, TensorProduct.tmul_sum]

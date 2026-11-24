@@ -17,8 +17,6 @@ and distributive negation:
 
 * `IsUnit.eq_zero_of_add_self_eq_zero`: if `2` is a unit in a semiring, zero is the only element
   that doubles to zero.
-* `IsUnit.units_ne_neg_self`: if `2` is a unit in a nontrivial ring, no unit equals its additive
-  inverse.
 * `TauCeti.ringInverse_neg`: `Ring.inverse` commutes with negation.
 * `TauCeti.ringInverse_neg_one_pow_mul`: multiplying on the left by `(-1) ^ k` commutes with
   `Ring.inverse`.
@@ -32,12 +30,6 @@ theorem IsUnit.eq_zero_of_add_self_eq_zero {R : Type*} [Semiring R] (h2 : IsUnit
     ∀ x : R, x + x = 0 → x = 0 := by
   intro x hx
   exact h2.mul_right_eq_zero.mp (by rwa [two_mul])
-
-/-- If `2` is a unit in a nontrivial ring, no unit equals its additive inverse. -/
-theorem IsUnit.units_ne_neg_self {R : Type*} [Ring R] [Nontrivial R] (h2 : IsUnit (2 : R))
-    (u : Rˣ) : u ≠ -u := fun h ↦
-  u.ne_zero (h2.eq_zero_of_add_self_eq_zero u
-    (add_eq_zero_iff_eq_neg.mpr (by simpa only [Units.val_neg] using congrArg Units.val h)))
 
 namespace TauCeti
 

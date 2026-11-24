@@ -24,7 +24,7 @@ character `TauCeti.padicTeichmuller p : (ZMod p)ˣ →* ℤ_[p]ˣ` produces the 
 character `TauCeti.tameTeichmullerChar p r hr : Δ_r →* ℤ_[p]ˣ`, whose powers
 `ω ^ i` (`i : ZMod (p - 1)`) exhaust `Hom(Δ_r, ℤ_[p]ˣ)` (`TauCeti.tameCharEquivZMod`).
 
-Acting through `TauCeti.cyclotomicClassRepresentation (p ^ r) K ℤ_[p]` on
+Acting through `TauCeti.cyclotomicClassAction ℤ_[p] (p ^ r) K` on
 `A_r = ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))`, the character idempotent of `ω ^ i` in
 `ℤ_[p][Δ_r]` yields the `i`-th **tame projector**
 `TauCeti.cyclotomicClassProjector p r K hr i` and its image, the `i`-th **tame eigenspace**
@@ -44,7 +44,7 @@ by `(-1) ^ i`, so even eigenspaces are fixed by complex conjugation and odd eige
   `rootsOfUnity (p - 1) (ZMod (p ^ r))`.
 * `TauCeti.tameCharEquivZMod`: the bijection `ZMod (p - 1) ≃ (Δ_r →* ℤ_[p]ˣ)` sending `i` to
   `ω ^ i`.
-* `TauCeti.cyclotomicClassTameRepresentation`: restriction of the cyclotomic class representation to
+* `TauCeti.cyclotomicClassTameRepresentation`: restriction of the cyclotomic class action to
   the tame subgroup `Δ_r`.
 * `TauCeti.cyclotomicClassProjector`: the `i`-th tame character projector `e_i` on `A_r`.
 * `TauCeti.cyclotomicClassEigenspace`: the `i`-th tame eigenspace `A_r^{(i)}`.
@@ -59,8 +59,8 @@ by `(-1) ^ i`, so even eigenspaces are fixed by complex conjugation and odd eige
 * `TauCeti.cyclotomicClassProjector_comp_self`, `TauCeti.cyclotomicClassProjector_comp_of_not_dvd`,
   and `TauCeti.sum_cyclotomicClassProjector`: complete orthogonal idempotent relations.
 * `TauCeti.isInternal_cyclotomicClassEigenspace`: internal direct-sum decomposition of `A_r`.
-* `TauCeti.cyclotomicClassRepresentation_neg_one_of_mem_eigenspace_even` and
-  `TauCeti.cyclotomicClassRepresentation_neg_one_of_mem_eigenspace_odd`: action of `-1` by parity
+* `TauCeti.cyclotomicClassAction_neg_one_of_mem_eigenspace_even` and
+  `TauCeti.cyclotomicClassAction_neg_one_of_mem_eigenspace_odd`: action of `-1` by parity
   for odd `p`.
 * `TauCeti.relNormBaseChange_cyclotomicClassProjector` and
   `TauCeti.extendedBaseChange_cyclotomicClassProjector`: compatibility of tame projectors with
@@ -95,7 +95,7 @@ noncomputable def tameTeichmullerChar :
 @[simp]
 theorem tameTeichmullerChar_apply (a : rootsOfUnity (p - 1) (ZMod (p ^ r))) :
     tameTeichmullerChar p r hr a =
-      padicTeichmuller p (ZMod.unitsMap (dvd_pow_self p hr) a.1) := by
+      padicTeichmuller p (ZMod.unitsMap (dvd_pow_self p hr) a.val) := by
   rw [tameTeichmullerChar, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     ZMod.rootsOfUnityEquivUnitsPrime_apply]
 
@@ -116,7 +116,7 @@ theorem orderOf_tameTeichmullerChar : orderOf (tameTeichmullerChar p r hr) = p -
   have hpow : tameTeichmullerChar p r hr ^ (p - 1) = 1 := by
     refine MonoidHom.ext fun a ↦ ?_
     rw [MonoidHom.pow_apply, MonoidHom.one_apply, ← map_pow]
-    have ha : a ^ (p - 1) = 1 := Subtype.ext ((mem_rootsOfUnity (p - 1) a.1).mp a.2)
+    have ha : a ^ (p - 1) = 1 := Subtype.ext ((mem_rootsOfUnity (p - 1) a.val).mp a.property)
     rw [ha, map_one]
   refine dvd_antisymm (orderOf_dvd_of_pow_eq_one hpow) ?_
   have : IsCyclic (rootsOfUnity (p - 1) (ZMod (p ^ r))) :=
@@ -134,22 +134,15 @@ theorem orderOf_tameTeichmullerChar : orderOf (tameTeichmullerChar p r hr) = p -
 theorem tameTeichmullerChar_zpow_eq_iff (i j : ℤ) :
     tameTeichmullerChar p r hr ^ i = tameTeichmullerChar p r hr ^ j ↔
       ((p - 1 : ℕ) : ℤ) ∣ i - j := by
-  constructor
-  · intro hij
-    have : IsCyclic (rootsOfUnity (p - 1) (ZMod (p ^ r))) :=
-      ZMod.isCyclic_rootsOfUnity_prime_pow p r hr
-    obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := rootsOfUnity (p - 1) (ZMod (p ^ r)))
-    have hord : orderOf (tameTeichmullerChar p r hr g) = p - 1 := by
-      rw [orderOf_injective (tameTeichmullerChar p r hr) (tameTeichmullerChar_injective p r hr) g,
-        orderOf_eq_card_of_forall_mem_zpowers hg, ZMod.natCard_rootsOfUnity_prime_pow p r hr]
-    rw [← hord, orderOf_dvd_iff_zpow_eq_one, zpow_sub, mul_inv_eq_one]
-    simpa only [MonoidHom.zpow_apply] using DFunLike.congr_fun hij g
-  · rintro ⟨k, hk⟩
-    refine MonoidHom.ext fun a ↦ ?_
-    rw [MonoidHom.zpow_apply, MonoidHom.zpow_apply, ← mul_inv_eq_one, ← zpow_sub, hk, zpow_mul,
-      zpow_natCast, ← map_pow]
-    have ha : a ^ (p - 1) = 1 := Subtype.ext ((mem_rootsOfUnity (p - 1) a.1).mp a.2)
-    rw [ha, map_one, one_zpow]
+  -- Bridge `MonoidHom.instZPow` to the `Group` instance's `DivInvMonoid.toZPow`.
+  have hzpow (z : ℤ) :
+      tameTeichmullerChar p r hr ^ z =
+        @HPow.hPow _ _ _ (@instHPow _ _ DivInvMonoid.toZPow.toPow)
+          (tameTeichmullerChar p r hr) z := by
+    obtain ⟨n, rfl | rfl⟩ := z.eq_nat_or_neg <;> refine MonoidHom.ext fun a ↦ ?_ <;>
+      simp [zpow_natCast]
+  rw [hzpow i, hzpow j, ← mul_inv_eq_one, ← zpow_sub, ← orderOf_dvd_iff_zpow_eq_one,
+    orderOf_tameTeichmullerChar]
 
 /-- **Every `ℤ_[p]`-valued character of the tame subgroup is a power of `ω`.** The map
 `i ↦ ω ^ i` gives a bijection `ZMod (p - 1) ≃ (Δ_r →* ℤ_[p]ˣ)`. -/
@@ -179,8 +172,8 @@ noncomputable def tameCharEquivZMod :
 
 @[simp]
 theorem tameCharEquivZMod_apply (i : ZMod (p - 1)) :
-    tameCharEquivZMod p r hr i = tameTeichmullerChar p r hr ^ (i.val : ℤ) := by
-  rfl
+    tameCharEquivZMod p r hr i = tameTeichmullerChar p r hr ^ (i.val : ℤ) :=
+  (rfl)
 
 end TameCharacters
 
@@ -190,21 +183,21 @@ variable (p r : ℕ) [hp : Fact p.Prime]
   (K : Type*) [Field K] [NumberField K] [IsCyclotomicExtension {p ^ r} ℚ K]
 
 /-- **The tame cyclotomic class representation**: restriction of
-`TauCeti.cyclotomicClassRepresentation (p ^ r) K ℤ_[p]` to the tame subgroup
+`TauCeti.cyclotomicClassAction ℤ_[p] (p ^ r) K` to the tame subgroup
 `rootsOfUnity (p - 1) (ZMod (p ^ r))`. -/
 noncomputable def cyclotomicClassTameRepresentation :
     Representation ℤ_[p] (rootsOfUnity (p - 1) (ZMod (p ^ r)))
       (ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :=
   have : NeZero (p ^ r) := ⟨pow_ne_zero r hp.out.ne_zero⟩
-  (cyclotomicClassRepresentation (p ^ r) K ℤ_[p]).comp
+  (cyclotomicClassAction ℤ_[p] (p ^ r) K).comp
     (rootsOfUnity (p - 1) (ZMod (p ^ r))).subtype
 
 @[simp]
 theorem cyclotomicClassTameRepresentation_apply [NeZero (p ^ r)]
     (a : rootsOfUnity (p - 1) (ZMod (p ^ r))) :
     cyclotomicClassTameRepresentation p r K a =
-      cyclotomicClassRepresentation (p ^ r) K ℤ_[p] a.1 := by
-  rfl
+      cyclotomicClassAction ℤ_[p] (p ^ r) K a.val :=
+  (rfl)
 
 variable (hr : r ≠ 0)
 
@@ -221,16 +214,14 @@ open scoped Classical in
 theorem cyclotomicClassProjector_eq [NeZero (p ^ r)] (i : ℤ) :
     cyclotomicClassProjector p r K hr i =
       (cyclotomicClassTameRepresentation p r K).asAlgebraHom
-        (charIdempotent (tameTeichmullerChar p r hr ^ i)) := by
-  rfl
+        (charIdempotent (tameTeichmullerChar p r hr ^ i)) :=
+  (rfl)
 
 /-- **The `i`-th tame eigenspace** `A_r^{(i)}` of `ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))`: the
 joint eigenspace on which every `a ∈ Δ_r` acts by `ω(a) ^ i`. -/
 noncomputable def cyclotomicClassEigenspace (i : ℤ) :
     Submodule ℤ_[p] (ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :=
-  ⨅ a : rootsOfUnity (p - 1) (ZMod (p ^ r)),
-    Module.End.eigenspace (cyclotomicClassTameRepresentation p r K a)
-      (((tameTeichmullerChar p r hr ^ i) a : ℤ_[p]ˣ) : ℤ_[p])
+  (cyclotomicClassTameRepresentation p r K).charEigenspace (tameTeichmullerChar p r hr ^ i)
 
 open scoped Classical in
 /-- **Explicit formula for the `i`-th tame character projector**:
@@ -239,9 +230,9 @@ theorem cyclotomicClassProjector_eq_sum [NeZero (p ^ r)] (i : ℤ) :
     cyclotomicClassProjector p r K hr i =
       Ring.inverse ((p - 1 : ℕ) : ℤ_[p]) •
         ∑ a : rootsOfUnity (p - 1) (ZMod (p ^ r)),
-          (((padicTeichmuller p (ZMod.unitsMap (dvd_pow_self p hr) a.1) ^ (-i) : ℤ_[p]ˣ) :
+          (((padicTeichmuller p (ZMod.unitsMap (dvd_pow_self p hr) a.val) ^ (-i) : ℤ_[p]ˣ) :
               ℤ_[p])) •
-            cyclotomicClassRepresentation (p ^ r) K ℤ_[p] a.1 := by
+            cyclotomicClassAction ℤ_[p] (p ^ r) K a.val := by
   rw [cyclotomicClassProjector, Representation.asAlgebraHom_charIdempotent,
     ZMod.natCard_rootsOfUnity_prime_pow p r hr]
   congr 1
@@ -255,10 +246,10 @@ theorem mem_cyclotomicClassEigenspace_iff [NeZero (p ^ r)] (i : ℤ)
     {x : ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))} :
     x ∈ cyclotomicClassEigenspace p r K hr i ↔
       ∀ a : rootsOfUnity (p - 1) (ZMod (p ^ r)),
-        cyclotomicClassRepresentation (p ^ r) K ℤ_[p] a.1 x =
-          (((padicTeichmuller p (ZMod.unitsMap (dvd_pow_self p hr) a.1) ^ i : ℤ_[p]ˣ) : ℤ_[p])) •
+        cyclotomicClassAction ℤ_[p] (p ^ r) K a.val x =
+          (((padicTeichmuller p (ZMod.unitsMap (dvd_pow_self p hr) a.val) ^ i : ℤ_[p]ˣ) : ℤ_[p])) •
             x := by
-  simp only [cyclotomicClassEigenspace, Submodule.mem_iInf, Module.End.mem_eigenspace_iff,
+  simp only [cyclotomicClassEigenspace, Representation.mem_charEigenspace_iff,
     cyclotomicClassTameRepresentation_apply, MonoidHom.zpow_apply, tameTeichmullerChar_apply]
 
 /-- The `i`-th tame projector takes values in the `i`-th tame eigenspace. -/
@@ -325,15 +316,15 @@ theorem sum_cyclotomicClassProjector [NeZero (p - 1)] :
   have : HasEnoughRootsOfUnity ℤ_[p] (Monoid.exponent (rootsOfUnity (p - 1) (ZMod (p ^ r)))) := by
     rw [ZMod.exponent_rootsOfUnity_prime_pow p r hr]
     exact hasEnoughRootsOfUnity_padicInt p
-  have hsum := (Representation.completeOrthogonalIdempotents_asAlgebraHom_charIdempotent
-    (cyclotomicClassTameRepresentation p r K) (isUnit_card_tame p r hr)).2
+  obtain ⟨-, hsum⟩ := (completeOrthogonalIdempotents_charIdempotent (isUnit_card_tame p r hr)).map
+    (cyclotomicClassTameRepresentation p r K).asAlgebraHom.toRingHom
   have heq : ∑ i : ZMod (p - 1), cyclotomicClassProjector p r K hr i.val =
       ∑ χ : rootsOfUnity (p - 1) (ZMod (p ^ r)) →* ℤ_[p]ˣ,
         (cyclotomicClassTameRepresentation p r K).asAlgebraHom (charIdempotent χ) :=
     Fintype.sum_equiv (tameCharEquivZMod p r hr) _ _ fun i ↦ by
       rw [tameCharEquivZMod_apply, cyclotomicClassProjector]
-  rw [heq, hsum]
-  rfl
+  simp only [Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hsum
+  rw [heq, hsum, Module.End.one_eq_id]
 
 /-- **Internal direct-sum decomposition into tame eigenspaces**:
 `ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K)) = ⨁_{i : ZMod (p - 1)} A_r^{(i)}`. -/
@@ -345,12 +336,13 @@ theorem isInternal_cyclotomicClassEigenspace :
   have : HasEnoughRootsOfUnity ℤ_[p] (Monoid.exponent (rootsOfUnity (p - 1) (ZMod (p ^ r)))) := by
     rw [ZMod.exponent_rootsOfUnity_prime_pow p r hr]
     exact hasEnoughRootsOfUnity_padicInt p
-  have hint := Representation.isInternal_eigenspace (cyclotomicClassTameRepresentation p r K)
+  have hint := Representation.isInternal_charEigenspace (cyclotomicClassTameRepresentation p r K)
     (isUnit_card_tame p r hr)
   rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top] at hint ⊢
+  obtain ⟨hindep, hsup⟩ := hint
   refine ⟨?_, ?_⟩
-  · exact hint.1.comp (tameCharEquivZMod p r hr).injective
-  · exact ((tameCharEquivZMod p r hr).surjective.iSup_comp _).trans hint.2
+  · exact hindep.comp (tameCharEquivZMod p r hr).injective
+  · exact ((tameCharEquivZMod p r hr).surjective.iSup_comp _).trans hsup
 
 /-- **The tame eigenspace decomposition as a `ℤ_[p]`-linear equivalence**:
 `(⨁ i : ZMod (p - 1), A_r^{(i)}) ≃ₗ[ℤ_[p]] A_r`. -/
@@ -361,38 +353,39 @@ noncomputable def cyclotomicClassEigenspaceEquiv :
     (isInternal_cyclotomicClassEigenspace p r K hr)
 
 /-- **Action of `-1` on the `i`-th tame eigenspace** for an odd prime `p`. -/
-theorem cyclotomicClassRepresentation_neg_one_of_mem_eigenspace [NeZero (p ^ r)] (hp2 : p ≠ 2)
+theorem cyclotomicClassAction_neg_one_of_mem_eigenspace [NeZero (p ^ r)] (hp2 : p ≠ 2)
     {i : ℤ} {x : ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))}
     (hx : x ∈ cyclotomicClassEigenspace p r K hr i) :
-    cyclotomicClassRepresentation (p ^ r) K ℤ_[p] (-1) x =
+    cyclotomicClassAction ℤ_[p] (p ^ r) K (-1) x =
       ((((-1 : ℤ_[p]ˣ) ^ i : ℤ_[p]ˣ) : ℤ_[p])) • x := by
-  have h := Submodule.mem_iInf _ |>.mp hx ⟨-1, ZMod.neg_one_mem_rootsOfUnity_prime_pow hp2 r⟩
-  rw [Module.End.mem_eigenspace_iff, cyclotomicClassTameRepresentation_apply, MonoidHom.zpow_apply,
+  have h := (Representation.mem_charEigenspace_iff _ _).mp hx
+    ⟨-1, ZMod.neg_one_mem_rootsOfUnity_prime_pow hp2 r⟩
+  rw [cyclotomicClassTameRepresentation_apply, MonoidHom.zpow_apply,
     tameTeichmullerChar_neg_one p r hr hp2] at h
   exact h
 
 /-- For an odd prime `p`, `-1` acts trivially on every even tame eigenspace. -/
-theorem cyclotomicClassRepresentation_neg_one_of_mem_eigenspace_even [NeZero (p ^ r)]
+theorem cyclotomicClassAction_neg_one_of_mem_eigenspace_even [NeZero (p ^ r)]
     (hp2 : p ≠ 2) {i : ℤ} (hi : Even i) {x : ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))}
     (hx : x ∈ cyclotomicClassEigenspace p r K hr i) :
-    cyclotomicClassRepresentation (p ^ r) K ℤ_[p] (-1) x = x := by
-  rw [cyclotomicClassRepresentation_neg_one_of_mem_eigenspace p r K hr hp2 hx,
+    cyclotomicClassAction ℤ_[p] (p ^ r) K (-1) x = x := by
+  rw [cyclotomicClassAction_neg_one_of_mem_eigenspace p r K hr hp2 hx,
     hi.neg_one_zpow, Units.val_one, one_smul]
 
 /-- For an odd prime `p`, `-1` acts by negation on every odd tame eigenspace. -/
-theorem cyclotomicClassRepresentation_neg_one_of_mem_eigenspace_odd [NeZero (p ^ r)]
+theorem cyclotomicClassAction_neg_one_of_mem_eigenspace_odd [NeZero (p ^ r)]
     (hp2 : p ≠ 2) {i : ℤ} (hi : Odd i) {x : ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))}
     (hx : x ∈ cyclotomicClassEigenspace p r K hr i) :
-    cyclotomicClassRepresentation (p ^ r) K ℤ_[p] (-1) x = -x := by
-  rw [cyclotomicClassRepresentation_neg_one_of_mem_eigenspace p r K hr hp2 hx,
+    cyclotomicClassAction ℤ_[p] (p ^ r) K (-1) x = -x := by
+  rw [cyclotomicClassAction_neg_one_of_mem_eigenspace p r K hr hp2 hx,
     hi.neg_one_zpow, Units.val_neg, Units.val_one, neg_one_smul]
 
 /-- Every `Δ_r`-equivariant `ℤ_[p]`-linear endomorphism commutes with every tame projector. -/
 theorem map_cyclotomicClassProjector_of_comm [NeZero (p ^ r)]
     (f : Module.End ℤ_[p] (ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))))
     (hf : ∀ a : rootsOfUnity (p - 1) (ZMod (p ^ r)),
-      f.comp (cyclotomicClassRepresentation (p ^ r) K ℤ_[p] a.1) =
-        (cyclotomicClassRepresentation (p ^ r) K ℤ_[p] a.1).comp f)
+      f.comp (cyclotomicClassAction ℤ_[p] (p ^ r) K a.val) =
+        (cyclotomicClassAction ℤ_[p] (p ^ r) K a.val).comp f)
     (i : ℤ) (x : ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :
     f (cyclotomicClassProjector p r K hr i x) = cyclotomicClassProjector p r K hr i (f x) := by
   classical
@@ -403,24 +396,20 @@ theorem map_cyclotomicClassProjector_of_comm [NeZero (p ^ r)]
   exact φ.apply_asAlgebraHom (charIdempotent (tameTeichmullerChar p r hr ^ i)) x
 
 /-- Every Galois automorphism `σ_b` (`b ∈ (ZMod (p ^ r))ˣ`) commutes with every tame projector. -/
-theorem cyclotomicClassRepresentation_cyclotomicClassProjector [NeZero (p ^ r)]
+theorem cyclotomicClassAction_cyclotomicClassProjector [NeZero (p ^ r)]
     (b : (ZMod (p ^ r))ˣ) (i : ℤ) (x : ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :
-    cyclotomicClassRepresentation (p ^ r) K ℤ_[p] b (cyclotomicClassProjector p r K hr i x) =
-      cyclotomicClassProjector p r K hr i (cyclotomicClassRepresentation (p ^ r) K ℤ_[p] b x) := by
+    cyclotomicClassAction ℤ_[p] (p ^ r) K b (cyclotomicClassProjector p r K hr i x) =
+      cyclotomicClassProjector p r K hr i (cyclotomicClassAction ℤ_[p] (p ^ r) K b x) := by
   refine map_cyclotomicClassProjector_of_comm p r K hr _ (fun a ↦ ?_) i x
-  change cyclotomicClassRepresentation (p ^ r) K ℤ_[p] b *
-      cyclotomicClassRepresentation (p ^ r) K ℤ_[p] a.1 =
-    cyclotomicClassRepresentation (p ^ r) K ℤ_[p] a.1 *
-      cyclotomicClassRepresentation (p ^ r) K ℤ_[p] b
-  rw [← map_mul, ← map_mul, mul_comm]
+  rw [← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp, ← map_mul, ← map_mul, mul_comm]
 
 /-- Every tame eigenspace is invariant under the full Galois group `(ZMod (p ^ r))ˣ`. -/
-theorem cyclotomicClassRepresentation_mem_cyclotomicClassEigenspace [NeZero (p ^ r)]
+theorem cyclotomicClassAction_mem_cyclotomicClassEigenspace [NeZero (p ^ r)]
     (b : (ZMod (p ^ r))ˣ) {i : ℤ} {x : ℤ_[p] ⊗[ℤ] Additive (ClassGroup (𝓞 K))}
     (hx : x ∈ cyclotomicClassEigenspace p r K hr i) :
-    cyclotomicClassRepresentation (p ^ r) K ℤ_[p] b x ∈ cyclotomicClassEigenspace p r K hr i := by
+    cyclotomicClassAction ℤ_[p] (p ^ r) K b x ∈ cyclotomicClassEigenspace p r K hr i := by
   rw [← cyclotomicClassProjector_apply_of_mem p r K hr hx,
-    cyclotomicClassRepresentation_cyclotomicClassProjector]
+    cyclotomicClassAction_cyclotomicClassProjector]
   exact cyclotomicClassProjector_apply_mem p r K hr i _
 
 end Projectors
@@ -438,12 +427,12 @@ private noncomputable def tameTowerEquiv (hr : r ≠ 0) (hs : s ≠ 0) :
 
 private theorem tameTowerEquiv_coe (hrs : r ≤ s) (hr : r ≠ 0) (hs : s ≠ 0)
     (a : rootsOfUnity (p - 1) (ZMod (p ^ s))) :
-    (tameTowerEquiv (p := p) hr hs a).1 = ZMod.unitsMap (pow_dvd_pow p hrs) a.1 := by
+    (tameTowerEquiv (p := p) hr hs a).val = ZMod.unitsMap (pow_dvd_pow p hrs) a.val := by
   have : NeZero (p ^ r) := ⟨pow_ne_zero r hp.out.ne_zero⟩
   have : NeZero (p ^ s) := ⟨pow_ne_zero s hp.out.ne_zero⟩
-  have hmem : ZMod.unitsMap (pow_dvd_pow p hrs) a.1 ∈ rootsOfUnity (p - 1) (ZMod (p ^ r)) := by
-    rw [mem_rootsOfUnity, ← map_pow, (mem_rootsOfUnity (p - 1) a.1).mp a.2, map_one]
-  suffices tameTowerEquiv (p := p) hr hs a = ⟨ZMod.unitsMap (pow_dvd_pow p hrs) a.1, hmem⟩ by
+  have hmem : ZMod.unitsMap (pow_dvd_pow p hrs) a.val ∈ rootsOfUnity (p - 1) (ZMod (p ^ r)) := by
+    rw [mem_rootsOfUnity, ← map_pow, (mem_rootsOfUnity (p - 1) a.val).mp a.property, map_one]
+  suffices tameTowerEquiv (p := p) hr hs a = ⟨ZMod.unitsMap (pow_dvd_pow p hrs) a.val, hmem⟩ by
     exact congrArg Subtype.val this
   apply (ZMod.rootsOfUnityEquivUnitsPrime p r hr).injective
   simp only [tameTowerEquiv, MulEquiv.trans_apply, MulEquiv.apply_symm_apply,
@@ -461,14 +450,14 @@ theorem relNormBaseChange_cyclotomicClassProjector (hrs : r ≤ s) (hr : r ≠ 0
   have : NeZero (p ^ s) := ⟨pow_ne_zero s hp.out.ne_zero⟩
   rw [cyclotomicClassProjector_eq_sum p s L hs i, cyclotomicClassProjector_eq_sum p r K hr i]
   simp only [LinearMap.smul_apply, LinearMap.coe_sum, Finset.sum_apply, map_smul, map_sum,
-    relNormBaseChange_cyclotomicClassRepresentation (pow_dvd_pow p hrs) K L]
+    relNormBaseChange_cyclotomicClassAction (pow_dvd_pow p hrs) K L]
   congr 1
   exact Fintype.sum_equiv (tameTowerEquiv (p := p) hr hs).toEquiv _ _ fun a ↦ by
-    have ha : ((tameTowerEquiv (p := p) hr hs).toEquiv a).1 =
-        ZMod.unitsMap (pow_dvd_pow p hrs) a.1 :=
+    have ha : ((tameTowerEquiv (p := p) hr hs).toEquiv a).val =
+        ZMod.unitsMap (pow_dvd_pow p hrs) a.val :=
       tameTowerEquiv_coe hrs hr hs a
-    have hmap : ZMod.unitsMap (dvd_pow_self p hr) (ZMod.unitsMap (pow_dvd_pow p hrs) a.1) =
-        ZMod.unitsMap (dvd_pow_self p hs) a.1 := by
+    have hmap : ZMod.unitsMap (dvd_pow_self p hr) (ZMod.unitsMap (pow_dvd_pow p hrs) a.val) =
+        ZMod.unitsMap (dvd_pow_self p hs) a.val := by
       rw [← MonoidHom.comp_apply, ZMod.unitsMap_comp]
     rw [ha, hmap]
 
@@ -483,14 +472,14 @@ theorem extendedBaseChange_cyclotomicClassProjector (hrs : r ≤ s) (hr : r ≠ 
   have : NeZero (p ^ s) := ⟨pow_ne_zero s hp.out.ne_zero⟩
   rw [cyclotomicClassProjector_eq_sum p s L hs i, cyclotomicClassProjector_eq_sum p r K hr i]
   simp only [LinearMap.smul_apply, LinearMap.coe_sum, Finset.sum_apply, map_smul, map_sum,
-    extendedBaseChange_cyclotomicClassRepresentation (pow_dvd_pow p hrs) K L]
+    extendedBaseChange_cyclotomicClassAction (pow_dvd_pow p hrs) K L]
   congr 1
   exact Fintype.sum_equiv (tameTowerEquiv (p := p) hr hs).toEquiv _ _ fun a ↦ by
-    have ha : ((tameTowerEquiv (p := p) hr hs).toEquiv a).1 =
-        ZMod.unitsMap (pow_dvd_pow p hrs) a.1 :=
+    have ha : ((tameTowerEquiv (p := p) hr hs).toEquiv a).val =
+        ZMod.unitsMap (pow_dvd_pow p hrs) a.val :=
       tameTowerEquiv_coe hrs hr hs a
-    have hmap : ZMod.unitsMap (dvd_pow_self p hr) (ZMod.unitsMap (pow_dvd_pow p hrs) a.1) =
-        ZMod.unitsMap (dvd_pow_self p hs) a.1 := by
+    have hmap : ZMod.unitsMap (dvd_pow_self p hr) (ZMod.unitsMap (pow_dvd_pow p hrs) a.val) =
+        ZMod.unitsMap (dvd_pow_self p hs) a.val := by
       rw [← MonoidHom.comp_apply, ZMod.unitsMap_comp]
     rw [ha, hmap]
 

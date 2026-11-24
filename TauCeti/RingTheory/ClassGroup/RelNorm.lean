@@ -37,6 +37,7 @@ descent instead goes through the monoid congruence `Con.ker` and
   `ClassGroup.relNorm_comp_extendedHom` the same statement as an identity of monoid homomorphisms.
   The extension direction is Mathlib's `ClassGroup.extendedHom`; the composite itself is the
   source's `ClassGroup.relNorm_comp_map`, respelt against it.
+* `ClassGroup.relNorm_relNorm`: transitivity of `ClassGroup.relNorm` in a tower `A ⊆ B ⊆ C`.
 
 ## Provenance
 
@@ -162,5 +163,18 @@ theorem relNorm_comp_extendedHom :
     (relNorm R).comp (ClassGroup.extendedHom R S) = powMonoidHom (Module.finrank R S) := by
   ext c
   rw [MonoidHom.comp_apply, powMonoidHom_apply, relNorm_extendedHom]
+
+/-- **Transitivity of the class-group relative norm** in a tower `A ⊆ B ⊆ C` of Dedekind domains. -/
+theorem relNorm_relNorm (A B : Type*) {C : Type*} [CommRing A] [CommRing B] [CommRing C]
+    [IsDedekindDomain A] [IsDedekindDomain B] [IsDedekindDomain C]
+    [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+    [Module.Finite A B] [Module.Finite B C] [Module.Finite A C]
+    [Module.IsTorsionFree A B] [Module.IsTorsionFree B C] [Module.IsTorsionFree A C]
+    (c : ClassGroup C) :
+    ClassGroup.relNorm A (ClassGroup.relNorm B c) = ClassGroup.relNorm A c := by
+  obtain ⟨I, rfl⟩ := ClassGroup.mk0_surjective c
+  rw [ClassGroup.relNorm_mk0, ClassGroup.relNorm_mk0, ClassGroup.relNorm_mk0]
+  congr 1
+  exact Subtype.ext (by simp [Ideal.relNorm_relNorm A B])
 
 end ClassGroup

@@ -56,8 +56,6 @@ norm-extension composites become `finrank • id` and the Galois orbit sum `∑ 
 * `ClassGroup.extendedHom_relNorm_ringOfIntegers`, `ClassGroup.relNorm_mulEquiv_ringOfIntegers`,
   and `ClassGroup.extendedHom_mulEquiv_ringOfIntegers`: specializations to rings of integers of
   number fields, formulated with `NumberField.RingOfIntegers.mapRingEquiv`.
-* `ClassGroup.relNorm_relNorm`: transitivity of the class-group relative norm in a tower of
-  Dedekind domains.
 * `ClassGroup.relNormBaseChange`, `ClassGroup.extendedBaseChange`, and
   `ClassGroup.mulEquivBaseChange`: base-changed `R`-linear maps on `R ⊗[ℤ] Additive (ClassGroup _)`
   together with their norm-extension composites and transitivity
@@ -103,14 +101,15 @@ theorem Algebra.map_intNorm_of_ringEquiv {R S R' S' : Type*}
     have heg : eg (algebraMap S (FractionRing S) (algebraMap R S r)) =
         algebraMap S' (FractionRing S') (g (algebraMap R S r)) :=
       IsFractionRing.ringEquivOfRingEquiv_algebraMap g (algebraMap R S r)
-    change algebraMap (FractionRing R') (FractionRing S') (ef (algebraMap R (FractionRing R) r)) =
-      eg (algebraMap (FractionRing R) (FractionRing S) (algebraMap R (FractionRing R) r))
+    simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe]
     rw [hef, h1, h2, heg, hfg]
   apply IsFractionRing.injective R' (FractionRing R')
   have hnorm := Algebra.norm_eq_of_equiv_equiv ef eg hcomm (algebraMap S (FractionRing S) x)
   have hnorm' : ef (Algebra.norm (FractionRing R) (algebraMap S (FractionRing S) x)) =
       Algebra.norm (FractionRing R') (eg (algebraMap S (FractionRing S) x)) := by
     simpa using congrArg ef hnorm
+  have heg_x : eg (algebraMap S (FractionRing S) x) = algebraMap S' (FractionRing S') (g x) :=
+    IsFractionRing.ringEquivOfRingEquiv_algebraMap g x
   calc algebraMap R' (FractionRing R') (f (Algebra.intNorm R S x))
       = ef (algebraMap R (FractionRing R) (Algebra.intNorm R S x)) :=
         (IsFractionRing.ringEquivOfRingEquiv_algebraMap f _).symm
@@ -118,8 +117,7 @@ theorem Algebra.map_intNorm_of_ringEquiv {R S R' S' : Type*}
         rw [Algebra.algebraMap_intNorm_fractionRing]
     _ = Algebra.norm (FractionRing R') (eg (algebraMap S (FractionRing S) x)) := hnorm'
     _ = Algebra.norm (FractionRing R') (algebraMap S' (FractionRing S') (g x)) := by
-        rw [show eg (algebraMap S (FractionRing S) x) = algebraMap S' (FractionRing S') (g x) from
-          IsFractionRing.ringEquivOfRingEquiv_algebraMap g x]
+        rw [heg_x]
     _ = algebraMap R' (FractionRing R') (Algebra.intNorm R' S' (g x)) := by
         rw [Algebra.algebraMap_intNorm_fractionRing]
 
@@ -163,9 +161,8 @@ theorem relNorm_mulEquiv {R S R' S' : Type*}
   rw [relNorm_mk0, mulEquiv_mk0, mulEquiv_mk0, relNorm_mk0]
   congr 1
   apply Subtype.ext
-  change Ideal.map (f : R →+* R') (Ideal.relNorm0 R I : Ideal R) =
-    (Ideal.relNorm0 R' ⟨Ideal.map (g : S →+* S') I.1, _⟩ : Ideal R')
-  simpa [Ideal.coe_relNorm0] using Ideal.map_relNorm_of_ringEquiv f g hfg I.1
+  simpa only [Ideal.coe_relNorm0, Ideal.map_coe] using
+    Ideal.map_relNorm_of_ringEquiv f g hfg I.val
 
 /-- **Equivariance of `ClassGroup.extendedHom` under commuting ring equivalences.** -/
 theorem extendedHom_mulEquiv {R S R' S' : Type*}
@@ -181,11 +178,9 @@ theorem extendedHom_mulEquiv {R S R' S' : Type*}
   rw [extendedHom_mk0, mulEquiv_mk0, mulEquiv_mk0, extendedHom_mk0]
   congr 1
   apply Subtype.ext
-  change (I.1.map (algebraMap R S)).map (g : S →+* S') =
-    (I.1.map (f : R →+* R')).map (algebraMap R' S')
-  rw [Ideal.map_map, Ideal.map_map]
-  congr 1
-  exact RingHom.ext hfg
+  dsimp only [extendedIdeal]
+  rw [← Ideal.map_coe g, ← Ideal.map_coe f, Ideal.map_map, Ideal.map_map]
+  exact congrArg (Ideal.map · I.val) (RingHom.ext hfg)
 
 end ClassGroup
 
@@ -242,10 +237,12 @@ theorem ClassGroup.extendedHom_relNorm (R K L S : Type*)
   rw [← map_prod]
   congr 1
   apply Subtype.ext
-  change Ideal.map (algebraMap R S) (Ideal.relNorm0 R I : Ideal R) =
-    (Submonoid.subtype (Ideal S)⁰) (∏ σ : L ≃ₐ[K] L, _)
-  rw [Ideal.coe_relNorm0, map_prod]
-  exact Ideal.map_algebraMap_relNorm_eq_prod_galRestrict R K L S I.1
+  have hmap (σ : L ≃ₐ[K] L) :
+      Ideal.map (galRestrict R K L S σ).toRingEquiv I.val =
+        Ideal.map (galRestrict R K L S σ : S →+* S) I.val :=
+    (Ideal.map_coe (galRestrict R K L S σ).toRingEquiv I.val).symm
+  simp only [Ideal.coe_relNorm0, SubmonoidClass.coe_finsetProd, hmap]
+  exact Ideal.map_algebraMap_relNorm_eq_prod_galRestrict R K L S I.val
 
 end GaloisOrbitProduct
 
@@ -280,8 +277,10 @@ theorem relNorm_mulEquiv_ringOfIntegers {F K L : Type*} [Field F] [Field K] [Fie
       ClassGroup.relNorm (𝓞 K)
         (ClassGroup.mulEquiv (RingOfIntegers.mapRingEquiv τ.toRingEquiv) c) :=
   relNorm_mulEquiv _ _ (fun x ↦ RingOfIntegers.ext <| by
-    change τ (algebraMap K L (x : K)) = algebraMap K L (τ.restrictNormal K (x : K))
-    exact (τ.restrictNormal_commutes K (x : K)).symm) c
+    simp only [RingOfIntegers.mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv,
+      RingOfIntegers.coe_eq_algebraMap, ← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 L) L,
+      IsScalarTower.algebraMap_apply (𝓞 K) K L]
+    exact (τ.restrictNormal_commutes K _).symm) c
 
 /-- **Galois equivariance of `ClassGroup.extendedHom` on rings of integers** for a normal
 subextension `K / F` inside `L / F`. -/
@@ -293,8 +292,10 @@ theorem extendedHom_mulEquiv_ringOfIntegers {F K L : Type*} [Field F] [Field K] 
       ClassGroup.extendedHom (𝓞 K) (𝓞 L)
         (ClassGroup.mulEquiv (RingOfIntegers.mapRingEquiv (τ.restrictNormal K).toRingEquiv) c) :=
   extendedHom_mulEquiv _ _ (fun x ↦ RingOfIntegers.ext <| by
-    change τ (algebraMap K L (x : K)) = algebraMap K L (τ.restrictNormal K (x : K))
-    exact (τ.restrictNormal_commutes K (x : K)).symm) c
+    simp only [RingOfIntegers.mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv,
+      RingOfIntegers.coe_eq_algebraMap, ← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 L) L,
+      IsScalarTower.algebraMap_apply (𝓞 K) K L]
+    exact (τ.restrictNormal_commutes K _).symm) c
 
 end ClassGroup
 
@@ -398,19 +399,6 @@ theorem mulEquivBaseChange_comp_extendedBaseChange (R : Type*) [CommRing R] {A B
   ext c
   obtain ⟨c, rfl⟩ := Additive.ofMul.surjective c
   simp [extendedHom_mulEquiv f g hfg]
-
-/-- **Transitivity of the class-group relative norm** in a tower `A ⊆ B ⊆ C` of Dedekind domains. -/
-theorem relNorm_relNorm (A B : Type*) {C : Type*} [CommRing A] [CommRing B] [CommRing C]
-    [IsDedekindDomain A] [IsDedekindDomain B] [IsDedekindDomain C]
-    [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
-    [Module.Finite A B] [Module.Finite B C] [Module.Finite A C]
-    [Module.IsTorsionFree A B] [Module.IsTorsionFree B C] [Module.IsTorsionFree A C]
-    (c : ClassGroup C) :
-    ClassGroup.relNorm A (ClassGroup.relNorm B c) = ClassGroup.relNorm A c := by
-  obtain ⟨I, rfl⟩ := ClassGroup.mk0_surjective c
-  rw [ClassGroup.relNorm_mk0, ClassGroup.relNorm_mk0, ClassGroup.relNorm_mk0]
-  congr 1
-  exact Subtype.ext (by simp [Ideal.relNorm_relNorm A B])
 
 /-- **Transitivity of `ClassGroup.relNormBaseChange`** in a tower `A ⊆ B ⊆ C` of Dedekind
 domains. -/
