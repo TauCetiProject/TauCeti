@@ -63,11 +63,9 @@ theorem condVar_ae_eq_condExp_sq_sub_sq_condExp' (hm : m ≤ m₀) (hX : MemLp X
   refine (isCountablySpanning_spanningSets (μ.trim hm)).null_of_forall_restrict_null ?_ ?_ <;>
     rintro - ⟨n, rfl⟩
   · exact hm _ (measurableSet_spanningSets (μ.trim hm) n)
+  have : IsFiniteMeasure (μ.restrict (spanningSets (μ.trim hm) n)) := inferInstance
   set s := spanningSets (μ.trim hm) n
   have hs : MeasurableSet[m] s := measurableSet_spanningSets _ n
-  have : IsFiniteMeasure (μ.restrict s) := by
-    change IsFiniteMeasure (μ.restrict (spanningSets (μ.trim hm) n))
-    infer_instance
   have hmean := condExp_restrict_ae_eq_restrict hm hs hXi
   have hvar : Var[X; μ.restrict s | m] =ᵐ[μ.restrict s] Var[X; μ | m] := by
     simp only [condVar]
