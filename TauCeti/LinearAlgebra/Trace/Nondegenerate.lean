@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Trace
+import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Nondegeneracy of the trace pairing
@@ -20,6 +21,8 @@ counterpart of `Matrix.ext_iff_trace_mul_right`.
   products with every endomorphism have equal trace.
 * `LinearMap.forall_trace_mul_eq_zero_iff`: an endomorphism is zero exactly when its products
   with every endomorphism have zero trace.
+* `LinearMap.det_trace_mul_ne_zero`: over an integral domain, the Gram matrix of the trace pairing
+  on a basis of the endomorphisms has nonzero determinant.
 -/
 
 public section
@@ -45,5 +48,19 @@ endomorphism have zero trace. -/
 theorem forall_trace_mul_eq_zero_iff {f : Module.End K V} :
     (∀ g : Module.End K V, trace K V (f * g) = 0) ↔ f = 0 := by
   simp [ext_iff_trace_mul_right (g := 0)]
+
+/-- Over an integral domain, the Gram matrix `(trace (bᵢ * bⱼ))` of the trace pairing on a basis
+`b` of the endomorphisms has nonzero determinant. -/
+theorem det_trace_mul_ne_zero {K V : Type*} [CommRing K] [IsDomain K] [AddCommGroup V]
+    [Module K V] [Module.Free K V] [Module.Finite K V] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι K (Module.End K V)) :
+    (Matrix.of fun i j => trace K V (b i * b j)).det ≠ 0 := by
+  let B : LinearMap.BilinForm K (Module.End K V) := (mul K (Module.End K V)).compr₂ (trace K V)
+  have hB : B.Nondegenerate :=
+    ⟨fun f hf => forall_trace_mul_eq_zero_iff.mp hf,
+      fun f hf => forall_trace_mul_eq_zero_iff.mp fun g => trace_mul_comm K f g ▸ hf g⟩
+  convert (BilinForm.nondegenerate_iff_det_ne_zero b).mp hB using 2
+  ext i j
+  simp [B, BilinForm.toMatrix_apply]
 
 end LinearMap

@@ -14,11 +14,6 @@ import Mathlib.Algebra.Polynomial.Roots
 /-!
 # Dot product lemmas
 
-A vector indexed by `n` can be transported along an injective map `f : n → m` by extending it by
-zero off the range of `f`. Its dot product with any vector indexed by `m` then only sees the
-coordinates in the range of `f`. This lets orthogonality on a subset of coordinates be read off
-in the ambient coordinate space.
-
 A nonnegative vector paired with strictly positive weights has dot product zero precisely when
 the vector is zero.
 
@@ -33,8 +28,6 @@ the trace of the rank-one matrix `vecMulVec w v` times `A`.
 
 ## Main results
 
-* `Function.Injective.dotProduct_extend_zero`: the dot product with a vector extended by zero
-  along an injective map is the dot product of the pulled-back vectors.
 * `RingHom.map_dotProduct_mulVec`: a ring homomorphism commutes with the bilinear form
   `v ⬝ᵥ A *ᵥ w`.
 * `Matrix.dotProduct_mulVec_eq_trace_vecMulVec_mul`: the bilinear form `w ⬝ᵥ M *ᵥ v` is the
@@ -52,23 +45,6 @@ the trace of the rank-one matrix `vecMulVec w v` times `A`.
 public section
 
 open scoped Matrix
-
-namespace Function.Injective
-
-variable {m n α : Type*} [Fintype m] [Fintype n] [NonUnitalNonAssocSemiring α]
-
-/-- The dot product with a vector extended by zero along an injective map only sees the
-coordinates in the range of that map. -/
-theorem dotProduct_extend_zero {f : n → m} (hf : f.Injective) (x : m → α) (y : n → α) :
-    x ⬝ᵥ f.extend y 0 = (x ∘ f) ⬝ᵥ y := by
-  classical
-  rw [dotProduct, dotProduct, ← Finset.sum_extend_zero_of_injective _ hf fun _ ↦ Finset.mem_univ _]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rcases em (∃ k, f k = i) with ⟨k, rfl⟩ | hi
-  · simp [hf.extend_apply]
-  · simp [extend_apply' _ _ _ hi]
-
-end Function.Injective
 
 namespace RingHom
 

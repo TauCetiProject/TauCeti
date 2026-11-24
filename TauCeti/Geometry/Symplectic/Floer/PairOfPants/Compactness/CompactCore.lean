@@ -113,7 +113,7 @@ theorem
     (hδt : ContDiff ℝ 3 (fun q : (P × (ℝ × ℝ)) × V ↦ δt q.1.1 q.1.2 q.2))
     {A : Set P} {D U : Set (ℝ × ℝ)} {Q : Set V}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0)
     {J : P → ℝ × ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiffOn ℝ 2
@@ -269,7 +269,7 @@ theorem
       (fun q : (P × (ℝ × ℝ)) × M ↦ δt q.1.1 q.1.2 q.2))
     {A : Set P} {D U : Set (ℝ × ℝ)} {Q : Set M}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0)
     {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJt : ∀ p ∈ A, ∀ z ∈ thricePuncturedSphereReal, ∀ x,

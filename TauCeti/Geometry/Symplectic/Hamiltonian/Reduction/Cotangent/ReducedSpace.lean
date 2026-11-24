@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 public import TauCeti.Topology.FiberBundle.Separation
 
+import TauCeti.Geometry.Lie.Subgroup.Differential
+import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Naturality
 import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 
 /-!
@@ -51,6 +53,12 @@ stabilizer of `0 ∈ 𝔤*`, is all of `G`.
   (`TauCeti.CotangentBundle.finrank_quotientModelSpace_zeroLevel`), so it is a local
   diffeomorphism, and being bijective it is a diffeomorphism.
 
+The same argument works for any submersion `ρ : Q → B` with the properties of the orbit projection
+and any manifold `R` with a nondegenerate form to which the level descends along the `G`-orbits:
+the reduction map then descends to a diffeomorphism `R ≅ T*B` matching the forms
+(`TauCeti.CotangentBundle.exists_diffeomorph_comp_eq_reductionMap_comp`, through the recognition
+of reduced spaces `TauCeti.SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq`).
+
 The reduced space carries the atlas of the Marsden–Weinstein–Meyer theorem, which is built from a
 proof `h` that `μ` is an equivariant moment map, a proof `hreg` that `0` is a regular value, the
 dimension `n = dim T*Q - dim 𝔤` of the level and an embedded Lie subgroup structure `d` on `G_0`.
@@ -74,6 +82,9 @@ The statements take these as arguments, as the Marsden–Weinstein–Meyer theor
   `TauCeti.CotangentBundle`: descent of the tautological forms.
 * `TauCeti.CotangentBundle.finrank_quotientModelSpace_zeroLevel`: the reduced space at zero has
   dimension `2 (dim Q - dim G)`.
+* `TauCeti.CotangentBundle.exists_diffeomorph_comp_eq_reductionMap_comp`: the reduction map along
+  a submersion `ρ : Q → B` descends to a diffeomorphism onto `T*B` from any manifold the level
+  descends to along the `G`-orbits.
 
 ## References
 
@@ -90,6 +101,78 @@ noncomputable section
 
 open Function Manifold Module
 open scoped ContDiff Manifold
+
+/-! ### Cotangent reduction at zero along a submersion -/
+
+namespace TauCeti.CotangentBundle
+
+section Submersion
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [CompleteSpace EG]
+  [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG} {G : Type*} [TopologicalSpace G]
+  [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G]
+  {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] {Q : Type*}
+  [TopologicalSpace Q] [ChartedSpace H Q] [IsManifold I ∞ Q] [MulAction G Q]
+  [ContMDiffSMul IG I ∞ G Q] [ContMDiffConstSMul I ∞ G Q]
+  {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB] [FiniteDimensional ℝ EB]
+  [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} {B : Type*} [TopologicalSpace B]
+  [ChartedSpace HB B] [IsManifold IB ∞ B]
+  {EZ HZ : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
+  {IZ : ModelWithCorners ℝ EZ HZ} [IZ.Boundaryless] {Z : Type*} [TopologicalSpace Z]
+  [ChartedSpace HZ Z] [IsManifold IZ ∞ Z]
+  {ER HR : Type*} [NormedAddCommGroup ER] [NormedSpace ℝ ER] [FiniteDimensional ℝ ER]
+  [TopologicalSpace HR] {IR : ModelWithCorners ℝ ER HR} {R : Type*} [TopologicalSpace R]
+  [ChartedSpace HR R] [IsManifold IR ∞ R] [BoundarylessManifold IR R]
+  {ρ : Q → B} {i : Z → CotangentBundle I Q} {p : Z → R} {η : SmoothTwoForm IR R}
+
+/-- **Cotangent reduction at zero along a submersion.** Let `ρ : Q → B` be a surjective smooth
+submersion whose fibres are the `G`-orbits and whose vertical tangent vectors are the orbit
+directions, as the orbit projection of a free proper action. Let `i : Z → T*Q` be a smooth map
+onto the zero level `μ⁻¹(0)` of the cotangent moment map, and `p : Z → R` a surjective smooth
+submersion onto a manifold of the dimension of `T*B` whose fibres are the preimages of the
+`G`-orbits, carrying a nondegenerate form `η` with `p^* η = i^* ω`. Then the reduction map
+`Ψ : μ⁻¹(0) → T*B` descends to a diffeomorphism `Φ : R → T*B` with `Φ ∘ p = Ψ ∘ i`,
+pulling the canonical symplectic form of `T*B` back to `η` and its Liouville form back to a form
+whose pullback along `p` is `i^* λ`. -/
+theorem exists_diffeomorph_comp_eq_reductionMap_comp
+    (hρ : IsSubmersion I IB ∞ ρ) (hρsurj : Surjective ρ)
+    (hker : ∀ q, (mfderiv I IB ρ q).ker =
+      (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
+    (hfibρ : ∀ q q', ρ q = ρ q' ↔ ∃ g : G, g • q = q')
+    (hi : ContMDiff IZ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ i) (hi0 : ∀ z, momentMap IG G (i z) = 0)
+    (hisurj : ∀ x, momentMap IG G x = 0 → ∃ z, i z = x)
+    (hp : IsSubmersion IZ IR ∞ p) (hpsurj : Surjective p)
+    (hpfib : ∀ z z', p z = p z' ↔ ∃ g : G, g • i z = i z') (hη : η.IsNondegenerate)
+    (hpη : SmoothForm.mpullback p hp.contMDiff η = SmoothForm.mpullback i hi (symplecticForm I Q))
+    (hdim : finrank ℝ ER = finrank ℝ (EB × (EB →L[ℝ] ℝ))) :
+    ∃ Φ : R ≃ₘ⟮IR, IB.prod 𝓘(ℝ, EB →L[ℝ] ℝ)⟯ CotangentBundle IB B,
+      ⇑Φ ∘ p = reductionMap I IB ρ ∘ i ∧
+      SmoothForm.mpullback Φ Φ.contMDiff (symplecticForm IB B) = η ∧
+      SmoothForm.mpullback p hp.contMDiff
+          (SmoothForm.mpullback Φ Φ.contMDiff (liouvilleForm IB B)) =
+        SmoothForm.mpullback i hi (liouvilleForm I Q) := by
+  have hρd (q : Q) : MDifferentiableAt I IB ρ q := (hρ.contMDiff q).mdifferentiableAt (by simp)
+  have hρr := hρ.hasRightInverse_mfderiv (by simp)
+  have hhor (z : Z) := (momentMap_eq_zero_iff_of_ker_eq (hker (i z).proj)).1 (hi0 z)
+  have hΨ := contMDiff_reductionMap_comp hρ hi hhor le_rfl
+  refine (SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq hp hpsurj hη hΨ (fun w ↦ ?_)
+    (fun z z' ↦ ?_) hdim ((mpullback_reductionMap_comp_symplecticForm hρ hi hhor).trans
+      hpη.symm)).imp fun Φ hΦ ↦ ⟨hΦ.1, hΦ.2, ?_⟩
+  · obtain ⟨x, hx, rfl⟩ := exists_momentMap_eq_zero_and_reductionMap_eq hker hρsurj hρr w
+    obtain ⟨z, rfl⟩ := hisurj x hx
+    exact ⟨z, rfl⟩
+  · exact (reductionMap_eq_reductionMap_iff hker hfibρ hρd hρr (hi0 z) (hi0 z')).trans
+      (hpfib z z').symm
+  · rw [SmoothForm.mpullback_mpullback]
+    simp only [hΦ.1]
+    exact mpullback_reductionMap_comp_liouvilleForm hρ hi hhor
+
+end Submersion
+
+end TauCeti.CotangentBundle
 
 namespace TauCeti.CotangentBundle
 
@@ -164,31 +247,32 @@ private theorem bijective_zeroReducedSpaceMap : Bijective (zeroReducedSpaceMap h
   · obtain ⟨z, hz, rfl⟩ := ProperSMul.exists_momentMap_eq_zero_and_reductionMap_eq_quotientMk w
     exact ⟨Quotient.mk _ ⟨z, h.mem_levelSubMulAction.2 hz⟩, rfl⟩
 
-variable (hreg : ∀ z, momentMap IG G z = 0 → Surjective (h.differential z))
-  (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
-  (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0) F)
-
-include hreg hn d in
-/-- **The dimension of the reduced space at zero.** The reduced space `μ⁻¹(0) / G_0` of `T*Q`, with
-the atlas of the Marsden–Weinstein–Meyer theorem, has dimension `2 (dim Q - dim G)`, that of
-`T*(Q ⧸ G)`, as soon as the zero level is nonempty. This is the general formula
-`dim (μ⁻¹(c) / G_c) + dim 𝔤 + dim 𝔤_c = dim T*Q`
-(`finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator` in
-`TauCeti.SmoothTwoForm.IsEquivariantMomentMap`) at `c = 0`, where `𝔤_0 = 𝔤`. -/
-theorem finrank_quotientModelSpace_zeroLevel (z : h.levelSubMulAction 0) :
+omit [I.Boundaryless] [IsManifold I ∞ Q] [MulAction G Q] [ContMDiffSMul IG I ∞ G Q]
+  [ContMDiffConstSMul I ∞ G Q] [IsCancelSMul G Q] [ProperSMul G Q] in
+/-- **The dimension of the reduced space at zero.** The model space `ℝ^(n - dim G_0)` of the
+reduced space `μ⁻¹(0) / G_0` of `T*Q`, where `n = 2 dim Q - dim G` is the dimension of the level
+`μ⁻¹(0)` and `G_0` carries the Lie group structure `d`, has dimension `2 (dim Q - dim G)`, that of
+`T*(Q ⧸ G)`: the coadjoint stabilizer of `0` is all of `G`. -/
+theorem finrank_quotientModelSpace_zeroLevel
+    (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
+    (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0) F) :
     finrank ℝ (ProperSMul.QuotientModelSpace F (Fin n → ℝ)) = 2 * (finrank ℝ E - finrank ℝ EG) := by
-  have := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-  have hred := h.finrank_quotientModelSpace_add_finrank_add_finrank_lieAnnihilator hreg hn d
-    isSymplectic_symplecticForm.isNondegenerate z
-  -- Every element of `𝔤` annihilates `0 ∈ 𝔤*`, so `𝔤_0 = 𝔤`.
-  have hann : finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra IG G)
-      (0 : Module.Dual ℝ (GroupLieAlgebra IG G))) = finrank ℝ EG := by
-    rw [lieAnnihilator_zero]
+  have : T2Space G := IG.t2Space_of_lieGroup ∞
+  have hF : finrank ℝ F = finrank ℝ EG := by
+    rw [d.finrank_eq_finrank_lieSubalgebraOfSubgroup,
+      Lie.finrank_lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation
+        BoundarylessManifold.isInteriorPoint,
+      lieAnnihilator_zero]
     exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
   -- The Lie algebra `GroupLieAlgebra IG G` is by definition the tangent space `EG` at `1`.
   have hG : finrank ℝ (GroupLieAlgebra IG G) = finrank ℝ EG := rfl
-  rw [hann, hG, finrank_prod, ContinuousLinearMap.dual_finrank_eq] at hred
+  rw [ProperSMul.finrank_quotientModelSpace, Module.finrank_fin_fun, hF, ← hn, finrank_prod,
+    ContinuousLinearMap.dual_finrank_eq, hG]
   omega
+
+variable (hreg : ∀ z, momentMap IG G z = 0 → Surjective (h.differential z))
+  (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
+  (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0) F)
 
 /-- The descended reduction map is smooth, since the orbit projection onto the reduced space is a
 surjective submersion and the reduction map is smooth on the embedded zero level. -/
@@ -298,10 +382,9 @@ private theorem isLocalDiffeomorph_zeroReducedSpaceMap :
   -- A map pulling a nondegenerate form back to a nondegenerate form has injective differential.
   have hinj := ((isSymplectic_symplecticForm.isNondegenerate.isNondegenerate_mpullback_iff hΦ).1
     (hΦη ▸ hηs.isNondegenerate)).2 x
-  obtain ⟨z, -⟩ := Quotient.mk_surjective x
   exact isLocalDiffeomorphAt_of_injective_mfderiv hΦ.contMDiffOn isOpen_univ (Set.mem_univ x)
     BoundarylessManifold.isInteriorPoint (by simp) hinj
-    ((finrank_quotientModelSpace_zeroLevel hreg hn d z).trans
+    ((finrank_quotientModelSpace_zeroLevel hn d).trans
       ProperSMul.finrank_quotientModelSpace_prod_dual.symm)
 
 variable (h) in

@@ -17,7 +17,12 @@ public import Mathlib.Topology.LocallyConstant.Basic
 An integral affine equivalence is a real affine equivalence together with an
 isomorphism of the integral lattices compatible with its linear part. Its
 translation is arbitrary. The self-equivalences of a fixed lattice form a group acting on the
-ambient space, and equivalences agreeing on a nonempty open set are equal. Consequently a map
+ambient space. Every isomorphism of integral lattices extends to a linear integral affine
+equivalence (`IntegralAffineEquiv.ofLatticeEquiv`), so the homomorphism
+`IntegralAffineEquiv.latticeEquivHom` from the self-equivalences to the automorphisms of the
+lattice is surjective; its kernel is the group of translations
+(`IntegralAffineEquiv.ker_latticeEquivHom`). Equivalences agreeing on a nonempty open set are
+equal. Consequently a map
 that is locally a global integral affine equivalence on a connected open set agrees there with
 a unique one. Both directions pull
 rational functionals back to rational functionals. In normed spaces the integral lattice supplies
@@ -258,6 +263,134 @@ theorem isRationalLinearMap (e : IntegralAffineEquiv h h') :
     IsRationalLinearMap h h' e.toAffineEquiv.linear.toLinearMap :=
   .of_integral_compatible h h' e.latticeEquiv.toAddMonoidHom
     e.toAffineEquiv.linear.toLinearMap e.map_lattice
+
+/-! ### Lattice automorphisms and translations -/
+
+section LatticeAutomorphisms
+
+variable (h h') in
+/-- The linear integral affine equivalence induced by an isomorphism of integral lattices: its
+real-linear part is the scalar extension `IsIntegralLattice.extend` of the lattice isomorphism,
+and it fixes the origin. -/
+noncomputable def ofLatticeEquiv (T : N ≃+ N') : IntegralAffineEquiv h h' where
+  toAffineEquiv := LinearEquiv.toAffineEquiv <|
+    .ofLinearMap (h.extend i' T.toAddMonoidHom) (h'.extend i T.symm.toAddMonoidHom)
+      ((h'.eq_extend (f := AddMonoidHom.id N') fun n => by simp).trans h'.extend_id)
+      ((h.eq_extend (f := AddMonoidHom.id N) fun n => by simp).trans h.extend_id)
+  latticeEquiv := T
+  map_lattice n := h.extend_apply i' T.toAddMonoidHom n
+
+/-- The induced equivalence acts by the real-linear extension of the lattice isomorphism. -/
+@[simp]
+theorem ofLatticeEquiv_apply (T : N ≃+ N') (x : V) :
+    ofLatticeEquiv h h' T x = h.extend i' T.toAddMonoidHom x := (rfl)
+
+/-- The lattice equivalence of the induced equivalence is the given one. -/
+@[simp]
+theorem ofLatticeEquiv_latticeEquiv (T : N ≃+ N') :
+    (ofLatticeEquiv h h' T).latticeEquiv = T := (rfl)
+
+variable (h) in
+/-- The identity of the lattice induces the identity equivalence. -/
+@[simp]
+theorem ofLatticeEquiv_refl : ofLatticeEquiv h h (AddEquiv.refl N) = refl h := by
+  ext x; simp
+
+variable (h h') in
+/-- Inverting the lattice isomorphism inverts the induced equivalence. -/
+@[simp]
+theorem ofLatticeEquiv_symm (T : N ≃+ N') :
+    (ofLatticeEquiv h h' T).symm = ofLatticeEquiv h' h T.symm := (rfl)
+
+variable (h h' h'') in
+/-- Composing lattice isomorphisms composes the induced equivalences. This is not a simp lemma
+because the intermediate lattice does not occur on the left-hand side. -/
+theorem ofLatticeEquiv_trans (T : N ≃+ N') (T' : N' ≃+ N'') :
+    ofLatticeEquiv h h'' (T.trans T') =
+      (ofLatticeEquiv h h' T).trans (ofLatticeEquiv h' h'' T') := by
+  ext x; simp [← LinearMap.comp_apply]
+
+variable (h) in
+/-- Translation by a vector, acting trivially on the integral lattice. -/
+def constVAdd (v : V) : IntegralAffineEquiv h h where
+  toAffineEquiv := AffineEquiv.constVAdd ℝ V v
+  latticeEquiv := AddEquiv.refl N
+  map_lattice _ := rfl
+
+/-- A translation adds its vector. -/
+theorem constVAdd_apply (v x : V) : constVAdd h v x = v + x := (rfl)
+
+/-- The affine equivalence underlying a translation is Mathlib's `AffineEquiv.constVAdd`. -/
+@[simp]
+theorem constVAdd_toAffineEquiv (v : V) :
+    (constVAdd h v).toAffineEquiv = AffineEquiv.constVAdd ℝ V v := (rfl)
+
+/-- A translation acts as the identity on the integral lattice. -/
+@[simp]
+theorem constVAdd_latticeEquiv (v : V) : (constVAdd h v).latticeEquiv = AddEquiv.refl N := (rfl)
+
+variable (h) in
+/-- Translations as a homomorphism from the additive group of the ambient space to the group of
+integral affine self-equivalences. -/
+def constVAddHom : Multiplicative V →* IntegralAffineEquiv h h where
+  toFun v := constVAdd h v.toAdd
+  map_one' := ext fun x => by simp
+  map_mul' v w := ext fun x => by simp
+
+/-- The homomorphism of translations sends a vector to the translation by it. -/
+@[simp]
+theorem constVAddHom_apply (v : Multiplicative V) : constVAddHom h v = constVAdd h v.toAdd :=
+  (rfl)
+
+/-- Distinct vectors give distinct translations. -/
+theorem constVAddHom_injective : Function.Injective (constVAddHom h) := fun v w hvw => by
+  simpa using congrArg (fun e : IntegralAffineEquiv h h => e 0) hvw
+
+variable (h) in
+/-- The lattice automorphism underlying an integral affine self-equivalence, as a homomorphism to
+the group of `ℤ`-linear automorphisms of the integral lattice. -/
+def latticeEquivHom : IntegralAffineEquiv h h →* (N ≃ₗ[ℤ] N) where
+  toFun e := e.latticeEquiv.toIntLinearEquiv
+  map_one' := by simp [LinearEquiv.one_eq_refl]
+  map_mul' e f := by simp [LinearEquiv.mul_eq_trans]
+
+/-- The lattice automorphism of a self-equivalence is its lattice equivalence. -/
+@[simp]
+theorem latticeEquivHom_apply (e : IntegralAffineEquiv h h) :
+    latticeEquivHom h e = e.latticeEquiv.toIntLinearEquiv := (rfl)
+
+/-- Every automorphism of the integral lattice underlies an integral affine self-equivalence,
+for instance the linear one `ofLatticeEquiv`. -/
+theorem latticeEquivHom_surjective : Function.Surjective (latticeEquivHom h) := fun T =>
+  ⟨ofLatticeEquiv h h T.toAddEquiv, T.toAddEquiv_toIntLinearEquiv⟩
+
+/-- A self-equivalence acting trivially on the integral lattice has the identity as its
+real-linear part, so it is the translation by the image of the origin. -/
+theorem eq_constVAdd_of_latticeEquiv_eq_refl {e : IntegralAffineEquiv h h}
+    (he : e.latticeEquiv = AddEquiv.refl N) : e = constVAdd h (e 0) := by
+  have hlin : e.toAffineEquiv.linear.toLinearMap = LinearMap.id := by
+    rw [e.linear_eq_extend, he]
+    exact h.extend_id
+  ext x
+  have hx := e.toAffineEquiv.map_vadd 0 x
+  rw [vadd_eq_add, add_zero] at hx
+  rw [constVAdd_apply, add_comm]
+  exact hx.trans (congrArg (· + e 0) (LinearMap.congr_fun hlin x))
+
+/-- The kernel of the lattice automorphism homomorphism consists exactly of the translations. -/
+theorem ker_latticeEquivHom : (latticeEquivHom h).ker = (constVAddHom h).range := by
+  ext e
+  rw [MonoidHom.mem_ker, MonoidHom.mem_range]
+  constructor
+  · intro he
+    refine ⟨Multiplicative.ofAdd (e 0), ?_⟩
+    rw [constVAddHom_apply, toAdd_ofAdd]
+    refine (eq_constVAdd_of_latticeEquiv_eq_refl (AddEquiv.ext fun n => ?_)).symm
+    simpa using LinearEquiv.congr_fun he n
+  · rintro ⟨v, rfl⟩
+    simp [LinearEquiv.one_eq_refl]
+
+end LatticeAutomorphisms
 
 end IntegralAffineEquiv
 

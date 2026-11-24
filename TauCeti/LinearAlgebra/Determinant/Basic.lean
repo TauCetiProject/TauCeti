@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Adjugate
+import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
@@ -88,7 +89,11 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   basis `b'` has determinant `b'.det b`.
 * `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
   under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
+* `Module.Basis.det_eq_det_of_det_eq_one`: a basis `b'` with `b.det b' = 1` has the same
+  determinant form as `b`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
+* `LinearMap.injective_of_det_mem_nonZeroDivisors`: an endomorphism of a free module of finite
+  rank whose determinant is a non-zero-divisor is injective.
 * `LinearMap.apply_eq_det_smul_of_finrank_eq_one`: on a free module of rank one, an endomorphism
   is multiplication by its determinant.
 * `LinearMap.det_eq_of_comp_eq`: endomorphisms intertwined by a linear equivalence have the same
@@ -244,6 +249,12 @@ theorem det_comp_eq_mul (b : Basis ι R M) (b' : Basis ι R M') (f : M →ₗ[R]
     b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v :=
   DFunLike.congr_fun (AlternatingMap.eq_smul_basis_det b (b'.det.compLinearMap f)) v
 
+/-- If a basis `b'` has determinant `1` in the basis `b`, then `b` and `b'` have the same
+determinant form. -/
+theorem det_eq_det_of_det_eq_one {b b' : Basis ι R M} (h : b.det b' = 1) : b'.det = b.det := by
+  rw [AlternatingMap.eq_smul_basis_det b b'.det, ← mul_one (b'.det b), ← h, det_mul_det, det_self,
+    one_smul]
+
 end Module.Basis
 
 namespace LinearMap
@@ -335,6 +346,19 @@ theorem det_smul_mem_range {F : Type*} [AddCommGroup F] [Module R F] [Module.Fre
   rw [Matrix.toLin_mul b b b, Matrix.toLin_toMatrix, map_smul, Matrix.toLin_one,
     det_toMatrix] at h
   simpa using h
+
+/-- An endomorphism of a free module of finite rank whose determinant is a non-zero-divisor is
+injective. This is Mathlib's `Matrix.mulVec_injective_of_det_mem_nonZeroDivisors`, read through
+the matrix of the endomorphism in a basis. -/
+theorem injective_of_det_mem_nonZeroDivisors [Module.Free R M] [Module.Finite R M]
+    {f : M →ₗ[R] M} (hf : LinearMap.det f ∈ nonZeroDivisors R) : Function.Injective f := by
+  classical
+  let b := Free.chooseBasis R M
+  intro x y hxy
+  refine b.repr.injective (DFunLike.coe_injective <|
+    Matrix.mulVec_injective_of_det_mem_nonZeroDivisors (M := toMatrix b b f) ?_ ?_)
+  · rwa [det_toMatrix]
+  · simp only [toMatrix_mulVec_repr, hxy]
 
 /-- An endomorphism of a free module of rank one is multiplication by its determinant. -/
 theorem apply_eq_det_smul_of_finrank_eq_one [Module.Free R M] (hM : Module.finrank R M = 1)
