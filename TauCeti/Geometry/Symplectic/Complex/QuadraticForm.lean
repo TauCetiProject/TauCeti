@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Complex.Complexification
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
+-- Private: the symmetry of the polar form is used only in the diagonal pairing proof.
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # Almost complex structures preserving a quadratic form
@@ -129,8 +131,7 @@ theorem polar_holomorphicPart_antiholomorphicPart (hQJ : ∀ v, Q (J v) = Q v) (
 theorem polar_holomorphicPart_antiholomorphicPart_self (hQJ : ∀ v, Q (J v) = Q v) (v : V) :
     polar (Q.baseChange ℂ) (J.holomorphicPart v) (J.antiholomorphicPart v) = Q v := by
   have h0 : polar Q v (J v) = 0 :=
-    J.bilinForm_apply_apply_self_eq_zero (g := Q.polarBilin) ⟨polar_comm Q⟩
-      (J.polar_apply_apply hQJ) v
+    J.bilinForm_apply_apply_self_eq_zero Q.isSymm_polarBilin (J.polar_apply_apply hQJ) v
   rw [J.polar_holomorphicPart_antiholomorphicPart hQJ, h0, polar_self]
   push_cast
   ring

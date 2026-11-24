@@ -118,7 +118,7 @@ is the working form behind `TauCeti.Probability.markovChainLaw_apply_setOf_loopP
 the public loop-mass interface. -/
 private theorem markovChainLaw_map_prefix_apply_singleton_loopPathAt (bs : List (List α)) :
     ((markovChainLaw (Measure.dirac a₀) κ).map
-        fun x (i : Fin (loopSteps bs + 1)) => x i.1) {fun i => loopPathAt a₀ bs i.val}
+        fun x (i : Fin (loopSteps bs + 1)) => x i.val) {fun i => loopPathAt a₀ bs i.val}
       = (bs.map (excursionWeight κ a₀)).prod := by
   rw [markovChainLaw_map_prefix_apply_singleton]
   have hzero : (Measure.dirac a₀) {loopPathAt a₀ bs (0 : Fin (loopSteps bs + 1)).val} = 1 := by
@@ -146,11 +146,11 @@ theorem markovChainLaw_apply_setOf_loopPathAt (bs : List (List α)) :
     markovChainLaw (Measure.dirac a₀) κ {x | ∀ i ≤ loopSteps bs, x i = loopPathAt a₀ bs i}
       = (bs.map (excursionWeight κ a₀)).prod := by
   have hset : {x : ℕ → α | ∀ i ≤ loopSteps bs, x i = loopPathAt a₀ bs i}
-      = (fun (x : ℕ → α) (i : Fin (loopSteps bs + 1)) => x i.1) ⁻¹'
+      = (fun (x : ℕ → α) (i : Fin (loopSteps bs + 1)) => x i.val) ⁻¹'
         {fun i : Fin (loopSteps bs + 1) => loopPathAt a₀ bs i.val} := by
     ext x
     simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff, funext_iff]
-    exact ⟨fun h i => h i.val (Nat.lt_succ_iff.1 i.2), fun h i hi => h ⟨i, Nat.lt_succ_of_le hi⟩⟩
+    exact ⟨fun h i => h i.val (Nat.lt_succ_iff.1 i.isLt), fun h i hi => h ⟨i, Nat.lt_succ_of_le hi⟩⟩
   rw [hset, ← Measure.map_apply (by fun_prop) (measurableSet_singleton _),
     markovChainLaw_map_prefix_apply_singleton_loopPathAt]
 

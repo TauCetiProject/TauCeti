@@ -8,8 +8,10 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Option
 public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Ring.Hom.Defs
 
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Field.Rat
 import Mathlib.Order.Preorder.Finite
 import Mathlib.Tactic.NormNum
@@ -37,7 +39,11 @@ elementary manipulations used to reduce general solutions to nondegenerate ones:
 * `TauCeti.isNondegenerateHomogeneousSolution_option_iff`: dehomogenization, adjoining the term
   `-1 · 1`;
 * `TauCeti.IsNondegenerateHomogeneousSolution.merge`: two proportional unknowns may be merged into
-  one, as in the induction proving finiteness of the ratios `xᵢ / xⱼ`.
+  one, as in the induction proving finiteness of the ratios `xᵢ / xⱼ`;
+* `TauCeti.isNondegenerateSolution_div_of_minimal`: dividing a minimal vanishing subsum by one of
+  its terms gives a nondegenerate solution in fewer unknowns;
+* `TauCeti.IsNondegenerateSolution.merge`: the terms of a nondegenerate solution over a set of
+  indices may be merged into one of them.
 
 ## References
 
@@ -49,6 +55,7 @@ elementary manipulations used to reduce general solutions to nondegenerate ones:
 public section
 
 open Finset
+open scoped Finset
 
 namespace TauCeti
 
@@ -108,6 +115,22 @@ theorem map [Semiring S] (h : IsNondegenerateSolution α x) (φ : R →+* S)
   refine h.subsum_ne_zero hI (hφ ⟨I, rfl⟩ ⟨∅, sum_empty⟩ ?_)
   simpa [map_sum, map_mul] using hφI
 
+/-- Reindexing a nondegenerate solution along an equivalence of index types gives a
+nondegenerate solution. -/
+theorem comp_equiv (h : IsNondegenerateSolution α x) (e : κ ≃ ι) :
+    IsNondegenerateSolution (α ∘ e) (x ∘ e) := by
+  refine ⟨(e.sum_comp fun i ↦ α i * x i).trans h.sum_eq_one, fun J hJ ↦ ?_⟩
+  simpa [sum_map] using h.subsum_ne_zero (hJ.map (f := e.toEmbedding))
+
+/-- An injective ring homomorphism preserves and reflects nondegenerate solutions. This moves
+solutions between a field and a subring containing their coordinates and coefficients. -/
+@[simp]
+theorem _root_.TauCeti.isNondegenerateSolution_map_iff [Semiring S] {φ : R →+* S}
+    (hφ : Function.Injective φ) : IsNondegenerateSolution (φ ∘ α) (φ ∘ x) ↔
+      IsNondegenerateSolution α x := by
+  simp only [isNondegenerateSolution_iff, Function.comp_apply, ← map_mul, ← map_sum,
+    hφ.eq_iff' (map_one φ), ne_eq, map_eq_zero_iff φ hφ]
+
 /-- If a solution of `∑ αᵢ xᵢ = 1` has a vanishing subsum over `I` and no vanishing nonempty
 subsum disjoint from `I`, then its restriction to the complement of `I` is nondegenerate. -/
 theorem restrict [DecidableEq ι] {I : Finset ι} (h : ∑ i, α i * x i = 1)
@@ -119,7 +142,7 @@ theorem restrict [DecidableEq ι] {I : Finset ι} (h : ∑ i, α i * x i = 1)
   · have hdisj : Disjoint (J.map (Function.Embedding.subtype _)) I :=
       disjoint_left.mpr fun i hi ↦ by
         obtain ⟨j, -, rfl⟩ := mem_map.mp hi
-        exact mem_compl.mp j.2
+        exact mem_compl.mp j.property
     simpa [sum_map] using hJ _ hJne.map hdisj
 
 end Semiring
@@ -169,8 +192,7 @@ theorem isNondegenerateSolution_fin_two_iff {α x : Fin 2 → R} :
   · simpa using h0
   · simpa using h1
   · rw [Fin.sum_univ_two, hsum]
-    intro h10
-    exact h0 (by rw [← mul_one (α 0 * x 0), h10, mul_zero])
+    exact fun h10 ↦ h0 (by rw [← mul_one (α 0 * x 0), h10, mul_zero])
 
 end Semiring
 
@@ -191,6 +213,51 @@ theorem ne_zero [Nontrivial ι] (h : IsNondegenerateHomogeneousSolution α x) (i
     α i * x i ≠ 0 := by
   simpa using h.subsum_ne_zero (singleton_nonempty i) (singleton_ne_univ i)
 
+/-- Merging two proportional unknowns: if `x p = β * x q` with `p ≠ q`, dropping the unknown
+`x p` and replacing the coefficient `α q` by `α q + α p * β` gives a nondegenerate homogeneous
+solution in one unknown fewer. -/
+theorem merge [DecidableEq ι] (h : IsNondegenerateHomogeneousSolution α x) {p q : ι}
+    (hpq : p ≠ q) {β : R} (hx : x p = β * x q) :
+    IsNondegenerateHomogeneousSolution
+      (fun i : {i // i ≠ p} ↦ Function.update α q (α q + α p * β) i) (fun i ↦ x i) := by
+  let e : {i // i ≠ p} ↪ ι := Function.Embedding.subtype _
+  let q' : {i // i ≠ p} := ⟨q, hpq.symm⟩
+  -- A subsum of the merged equation is the original subsum over the same indices, together with
+  -- the index `p` exactly when `q` is among them.
+  have key : ∀ J : Finset {i // i ≠ p},
+      ∑ j ∈ J, Function.update α q (α q + α p * β) j * x j =
+        ∑ i ∈ (if q' ∈ J then insert p (J.map e) else J.map e), α i * x i := by
+    intro J
+    have hpJ : p ∉ J.map e := fun hp ↦ by
+      obtain ⟨j, -, hj⟩ := mem_map.mp hp
+      exact j.property hj
+    have hupd : ∀ j : {i // i ≠ p}, Function.update α q (α q + α p * β) j * x j =
+        α j * x j + if j = q' then α p * x p else 0 := by
+      intro j
+      by_cases hj : j = q'
+      · subst hj
+        simp [q', hx, add_mul, mul_assoc]
+      · have hjq : (j : ι) ≠ q := fun hjq ↦ hj (Subtype.ext hjq)
+        simp [Function.update_of_ne hjq, hj]
+    simp only [hupd, sum_add_distrib, sum_ite_eq']
+    split_ifs <;> simp [sum_insert hpJ, sum_map, e, add_comm]
+  refine ⟨?_, fun J hJ hJu ↦ ?_⟩
+  · have hins : insert p ((univ : Finset {i // i ≠ p}).map e) = univ := by
+      rw [univ_map_subtype, filter_ne', insert_erase (mem_univ p)]
+    rw [key]
+    simp only [mem_univ, ↓reduceIte, hins]
+    exact h.sum_eq_zero
+  · obtain ⟨j₀, hj₀⟩ := not_forall.mp (hJu ∘ eq_univ_of_forall)
+    have hj₀' : (j₀ : ι) ∉ insert p (J.map e) := by
+      simp only [mem_insert, mem_map, not_or]
+      exact ⟨j₀.property, fun ⟨j, hj, hjj⟩ ↦ hj₀ (Subtype.ext hjj ▸ hj)⟩
+    rw [key]
+    split_ifs
+    · exact h.subsum_ne_zero (insert_nonempty _ _)
+        fun hu ↦ hj₀' (hu ▸ mem_univ _)
+    · exact h.subsum_ne_zero hJ.map
+        fun hu ↦ hj₀' (mem_insert_of_mem (hu ▸ mem_univ _))
+
 end IsNondegenerateHomogeneousSolution
 
 /-- Rescaling a homogeneous solution by a nonzero scalar preserves nondegeneracy. -/
@@ -209,56 +276,6 @@ variable [CommSemiring R] {α x : ι → R}
 theorem smul [NoZeroDivisors R] (h : IsNondegenerateHomogeneousSolution α x) {c : R}
     (hc : c ≠ 0) : IsNondegenerateHomogeneousSolution α (c • x) :=
   (isNondegenerateHomogeneousSolution_smul_iff hc).mpr h
-
-/-- Merging two proportional unknowns: if `x p = β * x q` with `p ≠ q`, dropping the unknown
-`x p` and replacing the coefficient `α q` by `α q + β * α p` gives a nondegenerate homogeneous
-solution in one unknown fewer. -/
-theorem merge [DecidableEq ι] (h : IsNondegenerateHomogeneousSolution α x) {p q : ι}
-    (hpq : p ≠ q) {β : R} (hx : x p = β * x q) :
-    IsNondegenerateHomogeneousSolution
-      (fun i : {i // i ≠ p} ↦ Function.update α q (α q + β * α p) i) (fun i ↦ x i) := by
-  let e : {i // i ≠ p} ↪ ι := Function.Embedding.subtype _
-  let q' : {i // i ≠ p} := ⟨q, hpq.symm⟩
-  -- A subsum of the merged equation is the original subsum over the same indices, together with
-  -- the index `p` exactly when `q` is among them.
-  have key : ∀ J : Finset {i // i ≠ p},
-      ∑ j ∈ J, Function.update α q (α q + β * α p) j * x j =
-        ∑ i ∈ (if q' ∈ J then insert p (J.map e) else J.map e), α i * x i := by
-    intro J
-    have hpJ : p ∉ J.map e := fun hp ↦ by
-      obtain ⟨j, -, hj⟩ := mem_map.mp hp
-      exact j.2 hj
-    have hupd : ∀ j : {i // i ≠ p}, Function.update α q (α q + β * α p) j * x j =
-        α j * x j + if j = q' then α p * x p else 0 := by
-      intro j
-      by_cases hj : j = q'
-      · subst hj
-        simp [q', hx, add_mul, mul_left_comm, mul_assoc]
-      · have hjq : (j : ι) ≠ q := fun hjq ↦ hj (Subtype.ext hjq)
-        simp [Function.update_of_ne hjq, hj]
-    simp only [hupd, sum_add_distrib, sum_ite_eq']
-    split_ifs <;> simp [sum_insert hpJ, sum_map, e, add_comm]
-  refine ⟨?_, fun J hJ hJu ↦ ?_⟩
-  · have hins : insert p ((univ : Finset {i // i ≠ p}).map e) = univ :=
-      eq_univ_of_forall fun i ↦ by
-        by_cases hip : i = p
-        · simp [hip]
-        · exact mem_insert_of_mem (mem_map.mpr ⟨⟨i, hip⟩, mem_univ _, rfl⟩)
-    rw [key]
-    simp only [mem_univ, ↓reduceIte, hins]
-    exact h.sum_eq_zero
-  · obtain ⟨j₀, hj₀⟩ : ∃ j₀, j₀ ∉ J := by
-      by_contra! hall
-      exact hJu (eq_univ_of_forall hall)
-    have hj₀' : (j₀ : ι) ∉ insert p (J.map e) := by
-      simp only [mem_insert, mem_map, not_or]
-      exact ⟨j₀.2, fun ⟨j, hj, hjj⟩ ↦ hj₀ (Subtype.ext hjj ▸ hj)⟩
-    rw [key]
-    split_ifs
-    · exact h.subsum_ne_zero (insert_nonempty _ _)
-        fun hu ↦ hj₀' (hu ▸ mem_univ _)
-    · exact h.subsum_ne_zero hJ.map
-        fun hu ↦ hj₀' (mem_insert_of_mem (hu ▸ mem_univ _))
 
 end IsNondegenerateHomogeneousSolution
 
@@ -294,11 +311,8 @@ theorem isNondegenerateHomogeneousSolution_option_iff [Ring R] {α x : Option κ
       have hI' : I = insertNone (eraseNone I) := by
         rw [insertNone_eraseNone, insert_eq_of_mem hnone]
       obtain ⟨j, hj⟩ : ∃ j, j ∉ eraseNone I := by
-        by_contra! hall
-        refine hIu (eq_univ_of_forall fun i ↦ ?_)
-        cases i with
-        | none => exact hnone
-        | some j => exact mem_eraseNone.mp (hall j)
+        obtain ⟨_ | j, hi⟩ := not_forall.mp (hIu ∘ eq_univ_of_forall)
+        exacts [absurd hnone hi, ⟨j, mt mem_eraseNone.mp hi⟩]
       have hcompl := h.subsum_ne_zero (I := (eraseNone I)ᶜ) ⟨j, mem_compl.mpr hj⟩
       have hsplit := sum_add_sum_compl (eraseNone I) fun i ↦ (α ∘ some) i * (x ∘ some) i
       rw [h.sum_eq_one] at hsplit
@@ -315,6 +329,94 @@ theorem isNondegenerateHomogeneousSolution_option_iff [Ring R] {α x : Option κ
         | some j => exact ⟨j, mem_eraseNone.mpr hi⟩
       rw [hI', sum_map]
       simpa using h.subsum_ne_zero hne
+
+section DivisionRing
+
+variable {K : Type*}
+
+omit [Fintype ι] in
+/-- Dividing a minimal vanishing subsum by one of its terms: if `∑_{i ∈ I} cᵢyᵢ = 0` with
+`2 ≤ |I|` and no nonempty proper subsum vanishes, then for `i₁ ∈ I` the ratios `zᵢ = yᵢ / yᵢ₁`
+form a nondegenerate solution of `∑_{i ∈ I \ {i₁}} (-cᵢ / cᵢ₁) zᵢ = 1`. -/
+theorem isNondegenerateSolution_div_of_minimal [Field K] [DecidableEq ι] {c y : ι → K}
+    {I : Finset ι} {i₁ : ι} (hi₁ : i₁ ∈ I) (hI : 2 ≤ #I) (hI0 : ∑ i ∈ I, c i * y i = 0)
+    (hmin : ∀ J ⊂ I, J.Nonempty → ∑ i ∈ J, c i * y i ≠ 0) :
+    IsNondegenerateSolution (fun j : ↥(I.erase i₁) ↦ -c j / c i₁)
+      (fun j : ↥(I.erase i₁) ↦ y j / y i₁) := by
+  have herase : I.erase i₁ ⊂ I := erase_ssubset hi₁
+  have hne : (I.erase i₁).Nonempty := by
+    rw [← card_pos, card_erase_of_mem hi₁]
+    omega
+  have hsplit : ∑ i ∈ I.erase i₁, c i * y i = -(c i₁ * y i₁) := by
+    rw [eq_neg_iff_add_eq_zero, sum_erase_add _ _ hi₁, hI0]
+  have hc₁ : c i₁ * y i₁ ≠ 0 := by
+    rw [← neg_ne_zero, ← hsplit]
+    exact hmin _ herase hne
+  -- Every subsum of the new equation is a subsum of the old one divided by `-cᵢ₁yᵢ₁`.
+  have key (J : Finset ↥(I.erase i₁)) :
+      ∑ j ∈ J, -c j / c i₁ * (y j / y i₁) =
+        -(∑ i ∈ J.map (Function.Embedding.subtype _), c i * y i) / (c i₁ * y i₁) := by
+    rw [sum_map, neg_div, sum_div, ← sum_neg_distrib]
+    refine sum_congr rfl fun j _ ↦ ?_
+    rw [Function.Embedding.subtype_apply, div_mul_div_comm, neg_mul, neg_div]
+  refine isNondegenerateSolution_iff.mpr ⟨?_, fun J hJ ↦ ?_⟩
+  · have huniv : (univ : Finset ↥(I.erase i₁)).map (Function.Embedding.subtype _) = I.erase i₁ :=
+      by ext; simp
+    rw [key, huniv, hsplit, neg_neg, div_self hc₁]
+  · rw [key]
+    refine div_ne_zero (neg_ne_zero.mpr (hmin _ ?_ hJ.map)) hc₁
+    refine LE.le.trans_ssubset (fun i hi ↦ ?_) herase
+    obtain ⟨j, -, rfl⟩ := mem_map.mp hi
+    exact j.property
+
+/-- Merging the terms over `insert i₁ I` of a nondegenerate solution `y` of `∑ αᵢ yᵢ = 1` into
+the term at `i₁`: the unknowns `yᵢ` for `i ∉ I \ {i₁}` form a nondegenerate solution of the
+equation whose coefficient at `i₁` is `αᵢ₁ + ∑_{i ∈ I \ {i₁}} αᵢ yᵢ / yᵢ₁` and whose other
+coefficients are the `αᵢ`. The argument adapts that of
+`TauCeti.IsNondegenerateHomogeneousSolution.merge`. -/
+theorem IsNondegenerateSolution.merge [DivisionSemiring K] [DecidableEq ι] {α y : ι → K}
+    (hy : IsNondegenerateSolution α y) (I : Finset ι) (i₁ : ι) :
+    IsNondegenerateSolution
+      (fun i : {i // i ∉ I.erase i₁} ↦
+        if (i : ι) = i₁ then α i₁ + ∑ j : ↥(I.erase i₁), α j * y j / y i₁ else α i)
+      (fun i ↦ y i) := by
+  have hi₁ : y i₁ ≠ 0 := right_ne_zero_of_mul (hy.ne_zero i₁)
+  let e : {i // i ∉ I.erase i₁} ↪ ι := Function.Embedding.subtype _
+  have hi₁' : i₁ ∉ I.erase i₁ := notMem_erase i₁ I
+  -- A subsum of the merged equation is the corresponding subsum of the original one, together
+  -- with the terms over `I \ {i₁}` exactly when `i₁` is among its indices.
+  have key (J : Finset {i // i ∉ I.erase i₁}) :
+      ∑ i ∈ J, (if (i : ι) = i₁ then α i₁ + ∑ j : ↥(I.erase i₁), α j * y j / y i₁ else α i) *
+          y i =
+        ∑ i ∈ (if ⟨i₁, hi₁'⟩ ∈ J then J.map e ∪ I.erase i₁ else J.map e), α i * y i := by
+    have hdisj : Disjoint (J.map e) (I.erase i₁) := disjoint_left.mpr fun i hi ↦ by
+      obtain ⟨j, -, rfl⟩ := mem_map.mp hi
+      exact j.property
+    have hterm (i : {i // i ∉ I.erase i₁}) :
+        (if (i : ι) = i₁ then α i₁ + ∑ j : ↥(I.erase i₁), α j * y j / y i₁ else α i) * y i =
+          α i * y i + if i = ⟨i₁, hi₁'⟩ then ∑ j ∈ I.erase i₁, α j * y j else 0 := by
+      by_cases hi : i = ⟨i₁, hi₁'⟩
+      · subst hi
+        simp only [↓reduceIte, add_mul, sum_mul, div_mul_cancel₀ _ hi₁]
+        rw [sum_coe_sort (I.erase i₁) fun j ↦ α j * y j]
+      · have hi' : (i : ι) ≠ i₁ := fun h ↦ hi (Subtype.ext h)
+        simp [hi, hi']
+    simp only [hterm, sum_add_distrib, sum_ite_eq']
+    split_ifs <;> simp [sum_union hdisj, sum_map, e]
+  refine isNondegenerateSolution_iff.mpr ⟨?_, fun J hJ ↦ ?_⟩
+  · have huniv : (univ : Finset {i // i ∉ I.erase i₁}).map e ∪ I.erase i₁ = univ := by
+      rw [univ_map_subtype, filter_notMem_eq_sdiff, sdiff_union_of_subset (subset_univ _)]
+    rw [key]
+    simp only [mem_univ, ↓reduceIte, huniv]
+    exact hy.sum_eq_one
+  · rw [key]
+    have hne : (if ⟨i₁, hi₁'⟩ ∈ J then J.map e ∪ I.erase i₁ else J.map e).Nonempty := by
+      split_ifs
+      · exact hJ.map.mono subset_union_left
+      · exact hJ.map
+    exact hy.subsum_ne_zero hne
+
+end DivisionRing
 
 /-- `1/2 + 1/2 = 1` is a nondegenerate solution. -/
 example : IsNondegenerateSolution (R := ℚ) ![1, 1] ![1 / 2, 1 / 2] := by

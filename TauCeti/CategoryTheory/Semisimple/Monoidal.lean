@@ -65,7 +65,8 @@ theorem exists_simple_of_nonzero_to_tensor_left {U X Y : C} {f : U ⟶ X ⊗ Y} 
     refine hf <| (cancel_mono (e.hom ▷ Y ≫ (rightDistributor a Y).hom)).1 ?_
     ext i
     simpa using h i
-  exact ⟨a i, ha i, _, _, hi, biproduct_ι_comp_inv_ne_zero e i⟩
+  exact ⟨a i, ha i, _, biproduct.ι a i ≫ e.inv, hi,
+    fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero _ h)⟩
 
 /-- A nonzero morphism into `X ⊗ Y` gives a nonzero morphism into `X ⊗ W` for some simple
 constituent `W` of `Y`: a summand of a decomposition of `Y` into simple objects. -/
@@ -79,6 +80,7 @@ theorem exists_simple_of_nonzero_to_tensor_right {U X Y : C} {f : U ⟶ X ⊗ Y}
     refine hf <| (cancel_mono (X ◁ e.hom ≫ (leftDistributor X a).hom)).1 ?_
     ext i
     simpa using h i
-  exact ⟨a i, ha i, _, _, hi, biproduct_ι_comp_inv_ne_zero e i⟩
+  exact ⟨a i, ha i, _, biproduct.ι a i ≫ e.inv, hi,
+    fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero _ h)⟩
 
 end TauCeti

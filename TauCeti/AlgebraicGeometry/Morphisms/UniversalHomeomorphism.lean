@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Integral
-public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
+public import TauCeti.AlgebraicGeometry.Morphisms.UniversallyInjective
 
 /-!
 # Universal homeomorphisms of schemes
@@ -55,18 +55,6 @@ theorem UniversallyInjective.of_universally_isHomeomorph
 theorem UniversallyClosed.of_universally_isHomeomorph
     (hf : (topologically @IsHomeomorph).universally f) : UniversallyClosed f :=
   ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ hf⟩
-
-/-- If `f ≫ g` is universally injective and `f` is surjective, then `g` is universally
-injective. -/
-theorem UniversallyInjective.of_comp_surjective {Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
-    [UniversallyInjective (f ≫ g)] [Surjective f] : UniversallyInjective g := by
-  constructor
-  intro X' Y' i₁ i₂ g' H
-  have := UniversallyInjective.universally_injective _ _ _
-    ((IsPullback.of_hasPullback i₁ f).paste_horiz H)
-  have hs : Surjective (pullback.fst i₁ f) :=
-    MorphismProperty.of_isPullback (IsPullback.of_hasPullback i₁ f).flip ‹_›
-  exact Function.Injective.of_comp_right (f := g'.base) (g := (pullback.fst i₁ f).base) this hs.1
 
 end AlgebraicGeometry
 
@@ -117,21 +105,18 @@ instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : UniversallyInjective f :=
 
 /-- An explicit universal-homeomorphism hypothesis implies surjectivity on points. -/
 theorem IsUniversalHomeomorphism.surjective {f : X ⟶ Y}
-    (h : IsUniversalHomeomorphism f) : Surjective f := by
-  let := h
-  infer_instance
+    (h : IsUniversalHomeomorphism f) : Surjective f :=
+  Surjective.of_universally_isHomeomorph h.universally_isHomeomorph
 
 /-- An explicit universal-homeomorphism hypothesis implies universal closedness. -/
 theorem IsUniversalHomeomorphism.universallyClosed {f : X ⟶ Y}
-    (h : IsUniversalHomeomorphism f) : UniversallyClosed f := by
-  let := h
-  infer_instance
+    (h : IsUniversalHomeomorphism f) : UniversallyClosed f :=
+  UniversallyClosed.of_universally_isHomeomorph h.universally_isHomeomorph
 
 /-- An explicit universal-homeomorphism hypothesis implies universal injectivity. -/
 theorem IsUniversalHomeomorphism.universallyInjective {f : X ⟶ Y}
-    (h : IsUniversalHomeomorphism f) : UniversallyInjective f := by
-  let := h
-  infer_instance
+    (h : IsUniversalHomeomorphism f) : UniversallyInjective f :=
+  UniversallyInjective.of_universally_isHomeomorph h.universally_isHomeomorph
 
 /-- The second pullback projection is a universal homeomorphism when the first input map is. -/
 instance (f : X ⟶ S) (g : Y ⟶ S) [IsUniversalHomeomorphism f] :
@@ -151,18 +136,15 @@ theorem isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surj
     (f : X ⟶ Y) :
     IsUniversalHomeomorphism f ↔
       UniversallyClosed f ∧ UniversallyInjective f ∧ Surjective f := by
+  refine ⟨fun _ ↦ ⟨inferInstance, inferInstance, inferInstance⟩, ?_⟩
+  rintro ⟨hclosed, hinj, hsurj⟩
   constructor
-  · intro h
-    let := h
-    exact ⟨inferInstance, inferInstance, inferInstance⟩
-  · rintro ⟨hclosed, hinj, hsurj⟩
-    constructor
-    intro X' Y' i₁ i₂ f' H
-    have : UniversallyClosed f' := MorphismProperty.of_isPullback H.flip hclosed
-    have : UniversallyInjective f' := MorphismProperty.of_isPullback H.flip hinj
-    have : Surjective f' := MorphismProperty.of_isPullback H.flip hsurj
-    exact isHomeomorph_iff_continuous_isClosedMap_bijective.mpr
-      ⟨f'.continuous, f'.isClosedMap, f'.injective, f'.surjective⟩
+  intro X' Y' i₁ i₂ f' H
+  have : UniversallyClosed f' := MorphismProperty.of_isPullback H.flip hclosed
+  have : UniversallyInjective f' := MorphismProperty.of_isPullback H.flip hinj
+  have : Surjective f' := MorphismProperty.of_isPullback H.flip hsurj
+  exact isHomeomorph_iff_continuous_isClosedMap_bijective.mpr
+    ⟨f'.continuous, f'.isClosedMap, f'.injective, f'.surjective⟩
 
 /-- Universal homeomorphisms are integral. -/
 instance (f : X ⟶ Y) [IsUniversalHomeomorphism f] : IsIntegralHom f := by
@@ -178,9 +160,7 @@ theorem isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjecti
     (f : X ⟶ Y) :
     IsUniversalHomeomorphism f ↔
       IsIntegralHom f ∧ UniversallyInjective f ∧ Surjective f := by
-  refine ⟨fun _ ↦ ⟨inferInstance, inferInstance, inferInstance⟩, ?_⟩
-  rintro ⟨hint, hinj, hsurj⟩
-  let := hint
+  refine ⟨fun _ ↦ ⟨inferInstance, inferInstance, inferInstance⟩, fun ⟨_, hinj, hsurj⟩ ↦ ?_⟩
   exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, hinj, hsurj⟩
 
@@ -198,45 +178,24 @@ instance isUniversalHomeomorphism_isZariskiLocalAtTarget :
     @UniversallyClosed.{u} @UniversallyInjective.{u}
   exact MorphismProperty.IsLocalAtTarget.inf (K := Scheme.zariskiPrecoverage) _ _
 
-/-- `Spec.map φ` is a universal homeomorphism iff `φ` is integral, precomposition by `φ` is
-injective on maps from `S` into every field, and `PrimeSpectrum.comap φ.hom` is surjective. -/
+/-- `Spec.map φ` is a universal homeomorphism iff `φ` is integral, any two ring maps from `S`
+into a field that agree on `R` are equal, and `PrimeSpectrum.comap φ.hom` is surjective. -/
 theorem IsUniversalHomeomorphism.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) :
     IsUniversalHomeomorphism (Spec.map φ) ↔
       φ.hom.IsIntegral ∧
-        (∀ (K : Type u) [Field K],
-          Function.Injective (fun g : S ⟶ CommRingCat.of K ↦ φ ≫ g)) ∧
+        (∀ (K : Type u) [Field K], Function.Injective fun g : S →+* K ↦ g.comp φ.hom) ∧
         Function.Surjective (PrimeSpectrum.comap φ.hom) := by
-  have hfield : UniversallyInjective (Spec.map φ) ↔
-      ∀ (K : Type u) [Field K],
-        Function.Injective (fun g : Spec (CommRingCat.of K) ⟶ Spec S ↦ g ≫ Spec.map φ) :=
-    (tfae_universallyInjective (Spec.map φ)).out 1 2
   rw [isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective,
-    IsIntegralHom.SpecMap_iff, hfield]
-  refine and_congr Iff.rfl (and_congr ?_ ?_)
-  · constructor
-    · intro h K _ g₁ g₂ hg
-      apply Spec.map_injective
-      apply h K
-      simpa only [← Spec.map_comp] using congrArg Spec.map hg
-    · intro h K _ g₁ g₂ hg
-      obtain ⟨f₁, rfl⟩ := Spec.map_surjective g₁
-      obtain ⟨f₂, rfl⟩ := Spec.map_surjective g₂
-      apply congrArg Spec.map
-      apply h K
-      exact Spec.map_injective (by simpa only [Spec.map_comp] using hg)
-  · rw [surjective_iff, funext (Spec.map_apply φ)]
-    exact Iff.rfl
+    IsIntegralHom.SpecMap_iff, UniversallyInjective.SpecMap_iff, surjective_iff,
+    funext (Spec.map_apply φ)]
+  exact Iff.rfl
 
 /-- Composites of universal homeomorphisms are universal homeomorphisms. -/
 instance isUniversalHomeomorphism_isStableUnderComposition :
     MorphismProperty.IsStableUnderComposition @IsUniversalHomeomorphism.{u} where
-  comp_mem f g hf hg := by
-    let := hf
-    let := hg
-    apply (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective _).mpr
-    exact ⟨inferInstance,
-      MorphismProperty.comp_mem @UniversallyInjective f g inferInstance inferInstance,
-      inferInstance⟩
+  comp_mem f g _ _ :=
+    (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective _).mpr
+      ⟨inferInstance, MorphismProperty.comp_mem _ f g inferInstance inferInstance, inferInstance⟩
 
 /-- Typeclass inference recognizes composites of universal homeomorphisms. -/
 instance (f : X ⟶ Y) (g : Y ⟶ Z) [IsUniversalHomeomorphism f]

@@ -24,8 +24,9 @@ adjoints, continuous linear maps, and the unitary half-spin action.
 `fockInnerProductCore` takes `J.fockGramForm` directly as its inner product and uses the existence
 of an orthonormal polarization basis (`exists_basis_polar_tmulConj`) only to establish positivity
 and definiteness. `fockInnerProductCore_inner` and `inner_fock` identify it with the wedge-basis
-form of every orthonormal polarization basis, while `inner_fock_eq_zero_of_mem_exteriorPower` and
-`inner_fock_ιMulti` give degree orthogonality and the Gram-determinant formula
+form of every orthonormal polarization basis, while `inner_fock_eq_zero_of_mem_exteriorPower`,
+`inner_fock_ιMulti_ιMulti`, `inner_fock_ι_ι`, and `norm_fock_ιMulti_sq` give degree orthogonality
+and the Gram-determinant formula
 `⟪x₀ ∧ ⋯ ∧ x_{p-1}, y₀ ∧ ⋯ ∧ y_{p-1}⟫_ℂ = det ((innerₗ V).sesqComplexification (xᵢ, yⱼ))`. Install
 the named `fockNormedAddCommGroup` and `fockInnerProductSpace` locally, in that order. No global
 norm or inner product instance on an exterior algebra is introduced.
@@ -51,9 +52,12 @@ either chirality eigenspace.
 * `TauCeti.AlmostComplexStructure.inner_fock_eq_fockGramForm` and
   `TauCeti.AlmostComplexStructure.inner_fock`: `inner ℂ` equals `J.fockGramForm` and the
   wedge-basis form of any orthonormal polarization basis.
-* `TauCeti.AlmostComplexStructure.inner_fock_eq_zero_of_mem_exteriorPower` and
-  `TauCeti.AlmostComplexStructure.inner_fock_ιMulti`: degree orthogonality and the
-  Gram-determinant formula for `inner ℂ`.
+* `TauCeti.AlmostComplexStructure.inner_fock_eq_zero_of_mem_exteriorPower`,
+  `TauCeti.AlmostComplexStructure.inner_fock_ιMulti_ιMulti`,
+  `TauCeti.AlmostComplexStructure.inner_fock_ι_ι`, and
+  `TauCeti.AlmostComplexStructure.norm_fock_ιMulti_sq`: degree orthogonality, the Gram-determinant
+  formula in every degree `p` (and its degree-one specialization), and the squared norm of a
+  decomposable `p`-vector.
 * `TauCeti.AlmostComplexStructure.orthonormal_fock` and
   `TauCeti.AlmostComplexStructure.norm_fock_one`: orthonormality of increasing wedge monomials and
   unit norm of the vacuum.
@@ -97,8 +101,7 @@ theorem fockPolarForm_eq_sesqComplexification_innerₗ (hQ : ∀ v, Q v = -‖v�
     (x y : W) :
     J.fockPolarForm hQJ hQnd x y =
       LinearMap.BilinForm.sesqComplexification (innerₗ V) (x : ℂ ⊗[ℝ] V) (y : ℂ ⊗[ℝ] V) := by
-  refine J.fockPolarForm_eq_sesqComplexification hQJ hQnd ⟨fun u v ↦ real_inner_comm v u⟩
-    (fun v ↦ ?_) x y
+  refine J.fockPolarForm_eq_sesqComplexification hQJ hQnd ⟨isSymm_inner.eq⟩ (fun v ↦ ?_) x y
   rw [hQ, innerₗ_apply_apply, real_inner_self_eq_norm_sq]
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
@@ -114,7 +117,7 @@ def fockInnerProductCore : InnerProductSpace.Core ℂ S where
     obtain ⟨b, hb⟩ := J.exists_basis_polar_tmulConj hQJ hQnd hQ (finrank ℝ V / 2)
       (Nat.two_mul_div_two_of_even J.even_finrank_real).symm
     rw [← J.toLinearMapₛₗ₂_exteriorAlgebra_eq_fockGramForm hQJ hQnd b hb]
-    exact (RCLike.nonneg_iff.mp (toLinearMapₛₗ₂_one_self_nonneg b.ExteriorAlgebra s)).1
+    exact (RCLike.nonneg_iff.mp (toLinearMapₛₗ₂_one_self_nonneg b.ExteriorAlgebra s)).left
   add_left s t u := by simp
   smul_left s t r := by simp
   definite s hs := by
@@ -180,9 +183,11 @@ theorem inner_fock_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q)
   rw [J.inner_fock_eq_fockGramForm hQJ hQnd hQ]
   exact J.fockGramForm_eq_zero_of_mem_exteriorPower hQJ hQnd hpq hs ht
 
-/-- **The Gram-determinant formula for the native Fock inner product** in every degree `p`:
-`⟪x₀ ∧ ⋯ ∧ x_{p-1}, y₀ ∧ ⋯ ∧ y_{p-1}⟫_ℂ = det ((innerₗ V).sesqComplexification (xᵢ, yⱼ))`. -/
-theorem inner_fock_ιMulti {p : ℕ} (x y : Fin p → W) :
+/-- **The Gram-determinant formula for the native Fock metric**: in every degree `p` (including
+degree zero, where the empty determinant is `1`, and degrees above the rank), the native Fock
+inner product of two decomposable wedges in `⋀ W` is the Gram determinant of the sesquilinear
+complexification of the Euclidean inner product restricted to `W`. -/
+theorem inner_fock_ιMulti_ιMulti (p : ℕ) (x y : Fin p → W) :
     letI := J.fockNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockInnerProductSpace hQJ hQnd hQ
     inner ℂ (_root_.ExteriorAlgebra.ιMulti ℂ p x) (_root_.ExteriorAlgebra.ιMulti ℂ p y) =
@@ -195,6 +200,32 @@ theorem inner_fock_ιMulti {p : ℕ} (x y : Fin p → W) :
   congr 1
   ext i j
   exact J.fockPolarForm_eq_sesqComplexification_innerₗ hQJ hQnd hQ (x i) (y j)
+
+/-- In degree one, the native Fock inner product restricts to
+`LinearMap.BilinForm.sesqComplexification (innerₗ V)` on `W`. -/
+@[simp]
+theorem inner_fock_ι_ι (x y : W) :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    inner ℂ (_root_.ExteriorAlgebra.ι ℂ x) (_root_.ExteriorAlgebra.ι ℂ y) =
+      LinearMap.BilinForm.sesqComplexification (innerₗ V) (x : ℂ ⊗[ℝ] V) y := by
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ
+  let := J.fockInnerProductSpace hQJ hQnd hQ
+  rw [J.inner_fock_eq_fockGramForm hQJ hQnd hQ, fockGramForm_ι_ι,
+    J.fockPolarForm_eq_sesqComplexification_innerₗ hQJ hQnd hQ]
+
+/-- The squared norm of a decomposable `p`-vector in the native Fock metric, cast to `ℂ`, is its
+Gram determinant under `LinearMap.BilinForm.sesqComplexification (innerₗ V)`. -/
+theorem norm_fock_ιMulti_sq (p : ℕ) (x : Fin p → W) :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    (‖_root_.ExteriorAlgebra.ιMulti ℂ p x‖ : ℂ) ^ 2 =
+      (Matrix.of fun i j ↦
+        LinearMap.BilinForm.sesqComplexification (innerₗ V) (x i : ℂ ⊗[ℝ] V) (x j)).det := by
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ
+  let := J.fockInnerProductSpace hQJ hQnd hQ
+  exact (inner_self_eq_norm_sq_to_K (𝕜 := ℂ) _).symm.trans
+    (J.inner_fock_ιMulti_ιMulti hQJ hQnd hQ p x x)
 
 /-- Increasing wedge monomials of any orthonormal polarization basis are orthonormal
 in the native Fock metric. -/
@@ -275,7 +306,7 @@ theorem isGeometricClifford_realFockAction :
     (J.realFockAction hQJ hQnd).IsGeometricClifford := by
   let := J.fockNormedAddCommGroup hQJ hQnd hQ
   let := J.fockInnerProductSpace hQJ hQnd hQ
-  exact AlgHom.isGeometricClifford_iff_adjoint.2 ⟨hQ, J.adjoint_realFockAction_ι hQJ hQnd hQ⟩
+  exact AlgHom.isGeometricClifford_iff_adjoint.mpr ⟨hQ, J.adjoint_realFockAction_ι hQJ hQnd hQ⟩
 
 /-- For any nonzero real vector `v ≠ 0` in a Euclidean space `(V, J)` with `Q v = -‖v‖²`, the
 unnormalized native action `spinAction (ι (1 ⊗ v))` is not skew-adjoint in

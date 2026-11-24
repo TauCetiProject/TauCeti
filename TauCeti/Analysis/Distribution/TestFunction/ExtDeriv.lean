@@ -145,7 +145,7 @@ theorem extDerivCLM_postcompCLM_toSpanSingleton_curryLeft [FiniteDimensional ℝ
     eq_zero_of_finrank_lt _ (by simpa using Nat.lt_succ_of_le hk)
   have hcartan := alternatizeUncurryFin_curryLeft_comp_add_curryLeft L y
   rw [hzero, curryLeft_zero, zero_apply, add_zero] at hcartan
-  have hcomp : (curryLeftLI (𝕜 := ℝ) (E := E) (F := F)).toContinuousLinearMap.flip y ∘L L =
+  have hcomp : curryLeftFlipL y ∘L L =
       (fderiv ℝ (g : E → ℝ) x).smulRight (α.curryLeft y) := by
     ext w : 1
     simp [L]
