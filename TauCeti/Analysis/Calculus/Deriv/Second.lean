@@ -41,9 +41,7 @@ Under the change of variables `x = e^y` the operators `x d/dx` and `x² d²/dx²
 coefficients `x` and `x²` degenerate at `0`, into equations with constant coefficients.
 
 If `f′ = f ℓ` near a point `z` and `ℓ` has derivative `ℓ′` at `z`, then `f′` has derivative
-`f(z) (ℓ(z) ^ 2 + ℓ′)` at `z`. The fractional-linear map `w ↦ (k w + l) / (m w + n)` has first
-and second derivatives `(k n - l m) / (m w + n) ^ 2` and `-2 m (k n - l m) / (m w + n) ^ 3`
-where `m w + n ≠ 0`.
+`f(z) (ℓ(z) ^ 2 + ℓ′)` at `z`.
 
 For `p` and `φ` differentiable near `z` and `F` differentiable near `φ z`, the product and chain
 rules give `(p · (F ∘ φ))′ = p′ · (F ∘ φ) + p · (F′ ∘ φ) · φ′` on a neighbourhood of `z`; if also
@@ -68,8 +66,6 @@ complete field they hold in particular when `p`, `φ` are analytic at `z` and `F
   under the change of variables `x = e^y`.
 * `TauCeti.hasDerivAt_deriv_of_eventually_hasDerivAt_mul`: the second derivative of `f` from a
   logarithmic derivative `ℓ` of `f`.
-* `TauCeti.hasDerivAt_mul_add_div_mul_add`, `TauCeti.hasDerivAt_deriv_mul_add_div_mul_add`: the
-  first and second derivatives of the fractional-linear map `w ↦ (k w + l) / (m w + n)`.
 * `TauCeti.deriv_mul_comp_eventuallyEq`, `TauCeti.hasDerivAt_deriv_mul_comp`: the first
   derivative of `p · (F ∘ φ)` near a point and its second derivative at the point, with the
   analytic special cases `AnalyticAt.deriv_mul_comp_eventuallyEq`,
@@ -175,41 +171,6 @@ theorem hasDerivAt_deriv_of_eventually_hasDerivAt_mul {f ℓ : 𝕜 → 𝕜} {�
   ring
 
 end LogDeriv
-
-section Mobius
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {k l m n z : 𝕜}
-
-/-- The derivative of the fractional-linear map `w ↦ (k w + l) / (m w + n)` at a point `z` with
-`m z + n ≠ 0` is `(k n - l m) / (m z + n) ^ 2`. -/
-theorem hasDerivAt_mul_add_div_mul_add (hz : m * z + n ≠ 0) :
-    HasDerivAt (fun w ↦ (k * w + l) / (m * w + n)) ((k * n - l * m) / (m * z + n) ^ 2) z := by
-  refine ((((hasDerivAt_id z).const_mul k).add_const l).div
-    (((hasDerivAt_id z).const_mul m).add_const n) hz).congr_deriv ?_
-  simp only [id]
-  field_simp
-  ring
-
-/-- The derivative of the fractional-linear map `w ↦ (k w + l) / (m w + n)`, as a function, has
-derivative `-2 m (k n - l m) / (m z + n) ^ 3` at a point `z` with `m z + n ≠ 0`. -/
-theorem hasDerivAt_deriv_mul_add_div_mul_add (hz : m * z + n ≠ 0) :
-    HasDerivAt (deriv fun w ↦ (k * w + l) / (m * w + n))
-      (-2 * m * (k * n - l * m) / (m * z + n) ^ 3) z := by
-  -- Near `z` the denominator stays nonzero, so the derivative is `(k n - l m) / (m w + n) ^ 2`.
-  have hopen : IsOpen {w : 𝕜 | m * w + n ≠ 0} :=
-    isOpen_ne_fun (continuous_const.mul continuous_id |>.add continuous_const) continuous_const
-  have hev : (fun w ↦ (k * n - l * m) / (m * w + n) ^ 2) =ᶠ[𝓝 z]
-      deriv fun w ↦ (k * w + l) / (m * w + n) :=
-    Filter.mem_of_superset (hopen.mem_nhds hz) fun w hw ↦
-      (hasDerivAt_mul_add_div_mul_add hw).deriv.symm
-  refine (((hasDerivAt_const z (k * n - l * m)).div
-    ((((hasDerivAt_id z).const_mul m).add_const n).pow 2)
-    (pow_ne_zero 2 hz)).congr_of_eventuallyEq hev.symm).congr_deriv ?_
-  simp only [id, Pi.pow_apply, Nat.cast_ofNat]
-  field_simp
-  ring
-
-end Mobius
 
 section MulComp
 

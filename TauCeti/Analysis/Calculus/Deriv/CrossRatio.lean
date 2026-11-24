@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import TauCeti.Algebra.Field.CrossRatio
 import Mathlib.Analysis.Analytic.Constructions
-import TauCeti.Analysis.Calculus.Deriv.Second
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 
 /-!
 # Derivatives of the cross-ratio in its first point

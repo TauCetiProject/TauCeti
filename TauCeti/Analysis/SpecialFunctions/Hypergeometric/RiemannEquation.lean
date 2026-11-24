@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import TauCeti.Algebra.Field.CrossRatio
 import TauCeti.Analysis.Calculus.Deriv.CrossRatio
 import TauCeti.Analysis.Calculus.Deriv.Second
-import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -35,8 +34,10 @@ The Möbius variable is the cross-ratio `crossRatio z β α γ`.
   identity behind 15.11.7: at each admissible point, the left side of Riemann's equation for `w`
   is an explicit multiple of the left side of the hypergeometric equation for `u` at `ζ`, with
   neither assumed to vanish.
-* `TauCeti.riemannEquation_of_hypergeometricEquation`: DLMF 15.11.7, from a solution of the
-  hypergeometric equation to a solution of Riemann's equation.
+* `TauCeti.analyticOnNhd_and_riemannEquation_of_hypergeometricEquation`: DLMF 15.11.7, from an
+  analytic solution of the hypergeometric equation to an analytic solution of Riemann's equation.
+* `TauCeti.riemannEquation_of_hypergeometricEquation`: DLMF 15.11.7 for `u` differentiable on an
+  open set, with the Möbius variable written out.
 
 ## Implementation notes
 
@@ -152,13 +153,6 @@ theorem riemannEquation_residual_eq_mul_hypergeometricEquation_residual
   have hTa : AnalyticAt ℂ T z := analyticAt_crossRatio_first (sub_ne_zero.mp hzγ)
   -- Expand `w′′` and `w′` by the product and chain rules, and insert the derivatives of `P` and
   -- `T`.
-  have hTd : deriv T z = (β - γ) * (α - γ) / (β - α) * ((z - γ) ^ 2)⁻¹ := by
-    rw [(hasDerivAt_crossRatio_first (sub_ne_zero.mp hzγ)).deriv, div_mul_eq_div_div,
-      div_eq_mul_inv]
-  have hTdd : deriv (deriv T) z = -2 * ((β - γ) * (α - γ) / (β - α)) * ((z - γ) ^ 3)⁻¹ := by
-    rw [(hasDerivAt_deriv_crossRatio_first (sub_ne_zero.mp hzγ)).deriv, div_mul_eq_div_div,
-      div_eq_mul_inv]
-    ring
   set L : ℂ := a₁ * ((z - α)⁻¹ - (z - γ)⁻¹) + b₁ * ((z - β)⁻¹ - (z - γ)⁻¹) with hL
   -- State the derivatives of `P` with the value `P z` kept folded.
   have hPd : deriv P z = P z * L := (hasDerivAt_riemannPrefactor hA hB).deriv
@@ -166,7 +160,9 @@ theorem riemannEquation_residual_eq_mul_hypergeometricEquation_residual
       b₁ * (-((z - β) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹))) :=
     (hasDerivAt_deriv_riemannPrefactor hA hB).deriv
   rw [hw, (hPa.hasDerivAt_deriv_mul_comp hTa hu).deriv,
-    (hPa.deriv_mul_comp_eventuallyEq hTa hu).eq_of_nhds, hPdd, hPd, hTdd, hTd]
+    (hPa.deriv_mul_comp_eventuallyEq hTa hu).eq_of_nhds, hPdd, hPd,
+    (hasDerivAt_deriv_crossRatio_first (sub_ne_zero.mp hzγ)).deriv,
+    (hasDerivAt_crossRatio_first (sub_ne_zero.mp hzγ)).deriv]
   beta_reduce
   -- Riemann's operator at `z` is now the multiplier times the hypergeometric operator at `T z`,
   -- which clearing denominators verifies.
@@ -185,13 +181,48 @@ theorem riemannEquation_residual_eq_mul_hypergeometricEquation_residual
   field_simp
   ring
 
+/-- **DLMF 15.11.7**, analytic form: if `u` is analytic on a set `V` and solves the
+hypergeometric equation (DLMF 15.10.1) with `a = a₁ + b₁ + c₁`, `b = a₁ + b₁ + c₂`,
+`c = 1 + a₁ − a₂` there, then
+`w(z) = ((z − α)/(z − γ))^{a₁} ((z − β)/(z − γ))^{b₁} u(crossRatio z β α γ)` is analytic on, and
+solves Riemann's equation (DLMF 15.11.1) with singular points `α, β, γ` and exponents `{a₁, a₂}`,
+`{b₁, b₂}`, `{c₁, c₂}` under Fuchs's relation (DLMF 15.11.2) on, every set `U` where the two
+quotients lie in the slit plane and the Möbius variable `crossRatio z β α γ` lies in `V`. -/
+theorem analyticOnNhd_and_riemannEquation_of_hypergeometricEquation
+    {α β γ a₁ a₂ b₁ b₂ c₁ c₂ : ℂ} (hαβ : α ≠ β) (hsum : a₁ + a₂ + b₁ + b₂ + c₁ + c₂ = 1)
+    {U V : Set ℂ}
+    (hUs : ∀ z ∈ U, (z - α) / (z - γ) ∈ slitPlane ∧ (z - β) / (z - γ) ∈ slitPlane)
+    (hUV : ∀ z ∈ U, crossRatio z β α γ ∈ V) {u : ℂ → ℂ} (hu : AnalyticOnNhd ℂ u V)
+    (hu' : ∀ ζ ∈ V, ζ * (1 - ζ) * deriv (deriv u) ζ +
+      (1 + a₁ - a₂ - ((a₁ + b₁ + c₁) + (a₁ + b₁ + c₂) + 1) * ζ) * deriv u ζ -
+        (a₁ + b₁ + c₁) * (a₁ + b₁ + c₂) * u ζ = 0) :
+    let w : ℂ → ℂ := fun z => ((z - α) / (z - γ)) ^ a₁ * ((z - β) / (z - γ)) ^ b₁ *
+      u (crossRatio z β α γ)
+    AnalyticOnNhd ℂ w U ∧ ∀ z ∈ U, deriv (deriv w) z +
+      ((1 - a₁ - a₂) / (z - α) + (1 - b₁ - b₂) / (z - β) + (1 - c₁ - c₂) / (z - γ)) * deriv w z +
+        ((α - β) * (α - γ) * a₁ * a₂ / (z - α) + (β - α) * (β - γ) * b₁ * b₂ / (z - β) +
+          (γ - α) * (γ - β) * c₁ * c₂ / (z - γ)) / ((z - α) * (z - β) * (z - γ)) * w z = 0 := by
+  intro w
+  refine ⟨fun z hz => ?_, fun z hz => ?_⟩
+  · have hzγ : z - γ ≠ 0 := (div_ne_zero_iff.mp (slitPlane_ne_zero (hUs z hz).1)).2
+    exact (analyticAt_riemannPrefactor (hUs z hz).1 (hUs z hz).2).mul
+      (AnalyticAt.comp (f := fun x => crossRatio x β α γ) (hu _ (hUV z hz))
+        (analyticAt_crossRatio_first (sub_ne_zero.mp hzγ)))
+  -- The operator identity, with the hypergeometric operator vanishing at the Möbius variable.
+  have h := riemannEquation_residual_eq_mul_hypergeometricEquation_residual hαβ hsum
+    (hUs z hz).1 (hUs z hz).2 (hu _ (hUV z hz))
+  rw [hu' _ (hUV z hz), mul_zero] at h
+  exact h
+
 /-- **DLMF 15.11.7**: if `u` solves the hypergeometric equation (DLMF 15.10.1) with
 `a = a₁ + b₁ + c₁`, `b = a₁ + b₁ + c₂`, `c = 1 + a₁ − a₂` on an open set `V`, then
 `w(z) = ((z − α)/(z − γ))^{a₁} ((z − β)/(z − γ))^{b₁} u((z − α)(β − γ)/((z − γ)(β − α)))` solves
 Riemann's equation (DLMF 15.11.1) with singular points `α, β, γ` and exponents `{a₁, a₂}`,
 `{b₁, b₂}`, `{c₁, c₂}` under Fuchs's relation (DLMF 15.11.2), on every set `U` where the two
 quotients lie in the slit plane and the Möbius variable lies in `V`. The singular points need only
-`α ≠ β`; the slit-plane condition already forces `z ≠ α, β, γ` on `U`. -/
+`α ≠ β`; the slit-plane condition already forces `z ≠ α, β, γ` on `U`. See
+`TauCeti.analyticOnNhd_and_riemannEquation_of_hypergeometricEquation` for the form with `u`
+analytic on an arbitrary `V` and `w` analytic on `U`. -/
 theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ c₁ c₂ : ℂ} (hαβ : α ≠ β)
     (hsum : a₁ + a₂ + b₁ + b₂ + c₁ + c₂ = 1) {U V : Set ℂ} (hV : IsOpen V)
     (hUs : ∀ z ∈ U, (z - α) / (z - γ) ∈ slitPlane ∧ (z - β) / (z - γ) ∈ slitPlane)
@@ -206,23 +237,10 @@ theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ 
       ((1 - a₁ - a₂) / (z - α) + (1 - b₁ - b₂) / (z - β) + (1 - c₁ - c₂) / (z - γ)) * deriv w z +
         ((α - β) * (α - γ) * a₁ * a₂ / (z - α) + (β - α) * (β - γ) * b₁ * b₂ / (z - β) +
           (γ - α) * (γ - β) * c₁ * c₂ / (z - γ)) / ((z - α) * (z - β) * (z - γ)) * w z = 0 := by
-  intro w
-  -- `u` is analytic at the Möbius variable `crossRatio z β α γ` of each `z ∈ U`.
-  have hFa (z : ℂ) (hz : z ∈ U) : AnalyticAt ℂ u (crossRatio z β α γ) := by
-    rw [crossRatio_def]
-    exact hu.analyticAt (hV.mem_nhds (hUV z hz))
-  refine ⟨fun z hz => ?_, fun z hz => ?_⟩
-  · have hzγ : z - γ ≠ 0 := (div_ne_zero_iff.mp (slitPlane_ne_zero (hUs z hz).1)).2
-    have h := (analyticAt_riemannPrefactor (a₁ := a₁) (b₁ := b₁) (hUs z hz).1 (hUs z hz).2).mul
-      (AnalyticAt.comp (f := fun x => crossRatio x β α γ) (hFa z hz)
-        (analyticAt_crossRatio_first (sub_ne_zero.mp hzγ)))
-    simp only [Function.comp_def, crossRatio_def] at h
-    exact h.differentiableAt.differentiableWithinAt
-  -- The operator identity, with the hypergeometric operator vanishing at the Möbius variable.
-  have h := riemannEquation_residual_eq_mul_hypergeometricEquation_residual hαβ hsum
-    (hUs z hz).1 (hUs z hz).2 (hFa z hz)
+  -- Translate the expanded Möbius variable into the cross-ratio, and analyticity back.
+  have h := analyticOnNhd_and_riemannEquation_of_hypergeometricEquation hαβ hsum hUs
+    (fun z hz => crossRatio_def z β α γ ▸ hUV z hz) (hu.analyticOnNhd hV) hu'
   simp only [crossRatio_def] at h
-  rw [hu' _ (hUV z hz), mul_zero] at h
-  exact h
+  exact ⟨h.1.differentiableOn, h.2⟩
 
 end TauCeti

@@ -195,9 +195,8 @@ theorem deriv_deriv_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ}
     (Filter.Eventually.of_forall hp1) ((hasDerivAt_id' t).const_mul c)
   -- The first and second derivatives of `φ`.
   have hφ' : deriv (fun s : ℂ => s ^ 2) = fun s => 2 * s :=
-    funext fun s => (hasDerivAt_pow 2 s).deriv.trans (by ring)
-  have hφ'' : deriv (fun s : ℂ => 2 * s) t = 2 :=
-    ((hasDerivAt_id' t).const_mul 2).deriv.trans (mul_one 2)
+    funext fun s => by simp
+  have hφ'' : deriv (fun s : ℂ => 2 * s) t = 2 := deriv_const_mul_id (x := t) 2
   rw [hW, (hexp.hasDerivAt_deriv_mul_comp hsq hw).deriv, hp''.deriv, hp', hφ', hφ'']
   ring
 
