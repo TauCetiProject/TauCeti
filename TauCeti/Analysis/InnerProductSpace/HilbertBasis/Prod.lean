@@ -51,10 +51,12 @@ protected noncomputable def prodLp (b : HilbertBasis ι 𝕜 E) (c : HilbertBasi
       apply (WithLp.linearEquiv 2 𝕜 (E × F)).injective
       rw [map_zero, WithLp.coe_linearEquiv]
       refine Prod.ext ?_ ?_
-      · exact b.eq_zero_of_forall_inner_eq_zero fun i ↦ by
-          simpa [WithLp.prod_inner_apply] using hx _ (Submodule.subset_span ⟨Sum.inl i, rfl⟩)
-      · exact c.eq_zero_of_forall_inner_eq_zero fun j ↦ by
-          simpa [WithLp.prod_inner_apply] using hx _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩))
+      · exact b.repr.map_eq_zero_iff.1 <| lp.ext <| funext fun i ↦ by
+          simpa [b.repr_apply_apply, WithLp.prod_inner_apply] using
+            hx _ (Submodule.subset_span ⟨Sum.inl i, rfl⟩)
+      · exact c.repr.map_eq_zero_iff.1 <| lp.ext <| funext fun j ↦ by
+          simpa [c.repr_apply_apply, WithLp.prod_inner_apply] using
+            hx _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩))
 
 /-- The left basis vectors of `b.prodLp c` are `(b i, 0)`. -/
 @[simp]

@@ -16,8 +16,7 @@ This file transfers orthogonality to every vector of a subspace from orthogonali
 element of a Hilbert basis of that subspace.  In particular, this lets Hilbert bases of mutually
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
-A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`), and a vector orthogonal
-to every vector of a Hilbert basis is zero (`HilbertBasis.eq_zero_of_forall_inner_eq_zero`).
+A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
 
 It also expands the value of a continuous semilinear map in a Hilbert basis: the series
 `∑ᵢ σ ⟪bᵢ, x⟫ • T bᵢ` converges to `T x` (`HilbertBasis.hasSum_inner_smul_apply`). A continuous
@@ -67,11 +66,6 @@ theorem inner_eq_zero_of_forall_inner_eq_zero {K : Submodule 𝕜 E} (bK : Hilbe
   have h : (innerSL 𝕜 x).comp K.subtypeL = 0 := bK.ext_continuousLinearMap fun i ↦ by
     simpa [innerSL_apply_apply] using hx i
   simpa [innerSL_apply_apply] using DFunLike.congr_fun h ⟨y, hy⟩
-
-/-- A vector orthogonal to every vector of a Hilbert basis is zero. -/
-theorem eq_zero_of_forall_inner_eq_zero (b : HilbertBasis ι 𝕜 E) {x : E}
-    (hx : ∀ i, ⟪b i, x⟫_𝕜 = 0) : x = 0 :=
-  b.repr.map_eq_zero_iff.1 (lp.ext (funext fun i ↦ by simp [b.repr_apply_apply, hx]))
 
 /-- A continuous semilinear map out of `E` sends every vector into a closed submodule that contains
 the images of all vectors of a Hilbert basis of `E`. -/
