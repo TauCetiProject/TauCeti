@@ -246,13 +246,14 @@ private theorem card_mul_two_le_finrank_maxGenEigenspace
   -- symplectic subspace.
   have h2 (μ : s) : 2 ≤ finrank ℝ ((aeval A (X ^ 2 - C (μ : ℝ))).maxGenEigenspace 0) := by
     obtain ⟨x, hx⟩ := (hAs μ μ.property).exists_hasEigenvector
-    exact (isSymplectic_maxGenEigenspace_sq_sub hA μ).two_le_finrank_of_mem
+    exact (isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA μ).two_le_finrank_of_mem
       (Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C (by simpa [sq] using hx.apply_eq_smul))
       hx.2
   have h := card_mul_le_finrank_of_pairwise_apply_eq_zero
-    (fun μ : s ↦ isSymplectic_maxGenEigenspace_sq_sub hA μ)
+    (fun μ : s ↦ isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA μ)
     (fun μ ν hμν _ hv _ hw ↦
-      apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA (Subtype.coe_injective.ne hμν) hv hw) h2
+      apply_eq_zero_of_mem_maxGenEigenspace_aeval_X_sq_sub_C hA (Subtype.coe_injective.ne hμν)
+        hv hw) h2
     fun μ ↦ Module.End.maxGenEigenspace_aeval_zero_le_of_dvd A
       (Finset.dvd_prod_of_mem (fun ν : ℝ ↦ X ^ 2 - C ν) μ.property)
   rwa [Fintype.card_coe] at h
@@ -347,7 +348,7 @@ has distinct eigenvalues `z = a + bi`, `a, b > 0`, `z ∈ t`, each with an eigen
 (recorded as `v ≠ 0` and `w` with `A_P v = a v - b w`, `A_P w = b v + a w`), with
 `2 |s| + 4 |t| = dim V`. Then there are a Darboux basis with `|s| + 2 |t|` planes and a set of
 elliptic planes among the first `|s|` whose Williamson blocks span the same space as `Q`: `|s|`
-elliptic or hyperbolic blocks, one for each `μ`, and `|t|` focus-focus blocks. -/
+elliptic or hyperbolic blocks and `|t|` focus-focus blocks. -/
 theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
     (h : ω.IsNondegenerateQuadraticFamily Q) {P : QuadraticForm ℝ V}
     (hP : P ∈ Submodule.span ℝ (Set.range Q)) {s : Finset ℝ} {t : Finset ℂ}

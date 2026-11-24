@@ -74,9 +74,10 @@ The focus-focus blocks, on which `A_P` has four eigenvalues `±a ± i b`, are no
 
 All declarations are in the namespace `TauCeti.SymplecticForm`.
 
-* `isSymplectic_maxGenEigenspace_sq_sub` and `apply_eq_zero_of_mem_maxGenEigenspace_sq_sub`: for
-  `A ∈ sp(V, ω)`, the vectors killed by a power of `A² - μ` form a symplectic subspace, and these
-  subspaces are pairwise `ω`-orthogonal for distinct `μ`.
+* `isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C` and
+  `apply_eq_zero_of_mem_maxGenEigenspace_aeval_X_sq_sub_C`: for `A ∈ sp(V, ω)`, the vectors killed
+  by a power of `A² - μ` form a symplectic subspace, and these subspaces are pairwise
+  `ω`-orthogonal for distinct `μ`.
 * `exists_isDarbouxBasis_eq_sum_smul_ellipticHyperbolic`: a quadratic form `P` such that `A_P²`
   has `dim V / 2` distinct nonzero real eigenvalues is `∑ₖ cₖ Bₖ` in some Darboux basis.
 * `IsNondegenerateQuadraticFamily.exists_isDarbouxBasis_span_eq_span_ellipticHyperbolic`: a
@@ -104,14 +105,14 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] {ω : SymplecticForm V}
 variable {A : Module.End ℝ V}
 
 /-- For `A ∈ sp(V, ω)`, the vectors killed by a power of `A² - μ` form a symplectic subspace. -/
-theorem isSymplectic_maxGenEigenspace_sq_sub [FiniteDimensional ℝ V]
+theorem isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C [FiniteDimensional ℝ V]
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (μ : ℝ) :
     ω.IsSymplectic ((aeval A (X ^ 2 - C μ)).maxGenEigenspace 0) :=
   ω.isSymplectic_maxGenEigenspace_aeval hA (X_sq_sub_C_comp_neg_X μ)
 
 /-- For `A ∈ sp(V, ω)` and `μ ≠ ν`, `ω` pairs the vectors killed by a power of `A² - μ` trivially
 with those killed by a power of `A² - ν`. -/
-theorem apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
+theorem apply_eq_zero_of_mem_maxGenEigenspace_aeval_X_sq_sub_C
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {μ ν : ℝ} (hμν : μ ≠ ν) {v w : V}
     (hv : v ∈ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0)
     (hw : w ∈ (aeval A (X ^ 2 - C ν)).maxGenEigenspace 0) : ω v w = 0 := by
@@ -127,7 +128,7 @@ private theorem pairwise_apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
     Pairwise fun k l : Fin s.card ↦
       ∀ v ∈ (aeval A (X ^ 2 - C (s.equivFin.symm k : ℝ))).maxGenEigenspace 0,
         ∀ w ∈ (aeval A (X ^ 2 - C (s.equivFin.symm l : ℝ))).maxGenEigenspace 0, ω v w = 0 :=
-  fun _ _ hkl _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA
+  fun _ _ hkl _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_aeval_X_sq_sub_C hA
     (fun h ↦ hkl (s.equivFin.symm.injective (Subtype.ext h))) hv hw
 
 variable [FiniteDimensional ℝ V]
@@ -148,7 +149,7 @@ private theorem finrank_maxGenEigenspace_sq_sub
     simpa [sq] using hx.apply_eq_smul
   choose x hxG hx0 using hx
   have hy (ν : s) : ∃ y ∈ G ν, ω (x ν) y = 1 := by
-    have hL := isSymplectic_maxGenEigenspace_sq_sub hA (ν : ℝ)
+    have hL := isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA (ν : ℝ)
     obtain ⟨y, hy⟩ := (ω.restrict (G ν) hL.nondegenerate_restrict).exists_apply_eq_one
       (x := ⟨x ν, hxG ν⟩) (by simpa using hx0 ν)
     exact ⟨y, y.property, by simpa using hy⟩
@@ -175,7 +176,7 @@ private theorem finrank_maxGenEigenspace_sq_sub
     exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨j, rfl⟩)
   -- `G μ` is a nonzero symplectic subspace of dimension at most two, hence a plane.
   exact le_antisymm ((Submodule.finrank_mono hle).trans ((finrank_range_le_card _).trans
-    (by simp))) ((isSymplectic_maxGenEigenspace_sq_sub hA μ).two_le_finrank_of_mem
+    (by simp))) ((isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA μ).two_le_finrank_of_mem
       (hxG ⟨μ, hμ⟩) (hx0 _))
 
 /-- On the plane of vectors killed by a power of `A² - μ`, the square of `A` is `μ`. -/
@@ -187,7 +188,7 @@ private theorem apply_apply_eq_of_mem_maxGenEigenspace_sq_sub
         A.restrict (End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C μ) 0 ⊤) =
       μ • 1 := by
   set L := (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0
-  have hL := isSymplectic_maxGenEigenspace_sq_sub hA μ
+  have hL := isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA μ
   obtain ⟨κ, hκ⟩ := exists_mul_self_eq_smul_one (ω := ω.restrict L hL.nondegenerate_restrict)
     (finrank_maxGenEigenspace_sq_sub hA hs hAs hμ)
     ⟨_, restrict_mem_skewAdjointLieSubalgebra hA hL.nondegenerate_restrict
@@ -217,7 +218,7 @@ private theorem exists_pair_mem_maxGenEigenspace_sq_sub
         (0 < ν → c ^ 2 = ν ∧ A q = c • q ∧ A p = -c • p) := by
   -- Work on the plane `L` with the restrictions `ω'` of `ω` and `A'` of `A`.
   set L := (aeval A (X ^ 2 - C ν)).maxGenEigenspace 0
-  have hL := isSymplectic_maxGenEigenspace_sq_sub hA ν
+  have hL := isSymplectic_maxGenEigenspace_aeval_X_sq_sub_C hA ν
   set ω' := ω.restrict L hL.nondegenerate_restrict
   set A' := A.restrict
     (End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) (X ^ 2 - C ν) 0 ⊤)

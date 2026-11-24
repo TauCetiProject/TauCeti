@@ -306,10 +306,16 @@ theorem isNondegenerateQuadraticFamily_of_mem_span_of_mul_self_eq_one_of_mul_sel
 open Polynomial
 
 /-- The real polynomial `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)`, whose complex roots are
-`±a ± bi`: the characteristic polynomial of the Hamiltonian endomorphism of `a Q₁ + b Q₂` for the
-focus-focus pair `(Q₁, Q₂)`. -/
+`±a ± bi`. Its generalized kernel at a Hamiltonian endomorphism with eigenvalue `a + bi` carries a
+focus-focus block. -/
 noncomputable def focusFocusPoly (a b : ℝ) : ℝ[X] :=
   (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) * (X ^ 2 + C (2 * a) * X + C (a ^ 2 + b ^ 2))
+
+/-- The defining formula of `focusFocusPoly a b`. -/
+theorem focusFocusPoly_def (a b : ℝ) :
+    focusFocusPoly a b =
+      (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) * (X ^ 2 + C (2 * a) * X + C (a ^ 2 + b ^ 2)) :=
+  (rfl)
 
 /-- The polynomial `focusFocusPoly a b` is even. -/
 theorem focusFocusPoly_comp_neg_X (a b : ℝ) :
@@ -425,9 +431,9 @@ theorem aeval_focusFocusPoly_apply_eq_zero {A : Module.End ℝ V} {a b : ℝ} {v
     module
   rw [focusFocusPoly, mul_comm, map_mul, mul_apply_eq_comp, hq, map_zero]
 
-/-- If `A ∈ sp(V, ω)` has the eigenvalue `a + bi`, `a, b ≠ 0`, with eigenvector `v + iw`, then `v`
-lies in the subspace of vectors killed by a power of `(A² - 2aA + a² + b²)(A² + 2aA + a² + b²)`,
-which has dimension at least four. -/
+/-- If `A ∈ sp(V, ω)` has the eigenvalue `a + bi`, `a, b ≠ 0`, with eigenvector `v + iw`, then the
+vectors killed by a power of `(A² - 2aA + a² + b²)(A² + 2aA + a² + b²)` form a subspace of
+dimension at least four. -/
 theorem four_le_finrank_maxGenEigenspace_aeval_focusFocusPoly {A : Module.End ℝ V}
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
     {v w : V} (hv : v ≠ 0) (hAv : A v = a • v - b • w) (hAw : A w = b • v + a • w) :
@@ -438,8 +444,7 @@ theorem four_le_finrank_maxGenEigenspace_aeval_focusFocusPoly {A : Module.End �
   have hfv := aeval_focusFocusPoly_apply_eq_zero hAv hAw
   have hvG : v ∈ G := (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, by simpa using hfv⟩
   obtain ⟨r, hr⟩ := (ω.restrict G hGs.nondegenerate_restrict).even_finrank
-  have hpos : finrank ℝ G ≠ 0 := fun h0 ↦
-    hv ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hvG))
+  have h2le := hGs.two_le_finrank_of_mem hvG hv
   -- On a plane, `A² = κ` and the polynomial acts as `(κ + a² + b²)² - 4a²κ > 0`.
   have hne2 : finrank ℝ G ≠ 2 := by
     intro h2
