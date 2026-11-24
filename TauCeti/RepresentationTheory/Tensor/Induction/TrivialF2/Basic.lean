@@ -72,9 +72,9 @@ theorem smoothTensorInducedTrivialF2Tprod_eq
 multiply the factors. The factors carry the `ℤ`-module structure of the `DiscreteRep`, which is the
 one the tensor induction is formed with. -/
 private noncomputable def tensorInducedTrivialF2LinearEquiv :=
-  @PiTensorProduct.congr (G ⧸ U) ℤ _ (fun _ ↦ (DiscreteRep.trivialF2 U).V) _
-      (fun _ ↦ (DiscreteRep.trivialF2 U).module) (fun _ ↦ ZMod 2) _
-      (fun _ ↦ AddCommGroup.toIntModule (ZMod 2))
+  @PiTensorProduct.congr (G ⧸ U) ℤ _ ℤ (fun _ ↦ (DiscreteRep.trivialF2 U).V) _
+      (fun _ ↦ (DiscreteRep.trivialF2 U).module) _ (RingHom.id ℤ) (RingHom.id ℤ) _ _
+      (fun _ ↦ ZMod 2) _ (fun _ ↦ AddCommGroup.toIntModule (ZMod 2))
       (fun _ ↦ (trivialF2Equiv U).toIntLinearEquiv
         (modM := (DiscreteRep.trivialF2 U).module)
         (modM₂ := AddCommGroup.toIntModule (ZMod 2))) ≪≫ₗ

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.NegOne.Basic
 public import TauCeti.NumberTheory.LocalField.Different.Eisenstein
-public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
+public import TauCeti.NumberTheory.LocalField.Discriminant.Height
 public import TauCeti.NumberTheory.LocalField.Padic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
@@ -22,7 +22,8 @@ three, so the different exponent is two, as is the discriminant exponent.
 
 This is a wildly ramified extension attaining the lower bound `e ≤ d`. The upper bound
 `d ≤ e - 1 + v_L(e)` is strict here, in contrast to `ℚ₂(√2)`, where it is attained.
-Thus neither endpoint is forced by wild ramification.
+Thus neither endpoint is forced by wild ramification. Accordingly the height `d + 1 - e` of
+`ℚ₂(i)/ℚ₂` is one, below its wild bound `v_L(e) = 2`, and its mean is `1 / 2`.
 
 ## References
 
@@ -176,5 +177,16 @@ theorem differentExponent_lt_ramificationIndex_sub_one_add_natCastValuation :
     rw [natCastValuation_eq_ramificationIndex_mul (K := ℚ_[2]) 2 (by norm_num),
       ramificationIndex_eq_two, Padic.natCastValuation_self, mul_one]
   simp [hv]
+
+/-- The height of `ℚ₂(i)/ℚ₂` is one: `H = c / f + 1 - e = 2 / 1 + 1 - 2`. -/
+@[simp]
+theorem height_eq_one : height ℚ_[2] DyadicSqrtNegOne = 1 := by
+  rw [height_def, discriminantExponent_eq_two, inertiaDegree_eq_one, ramificationIndex_eq_two]
+
+/-- The mean of `ℚ₂(i)/ℚ₂` is one half: `m = H / e = 1 / 2`. -/
+@[simp]
+theorem mean_eq_one_div_two : mean ℚ_[2] DyadicSqrtNegOne = 1 / 2 := by
+  rw [mean_def, height_eq_one, ramificationIndex_eq_two]
+  norm_num
 
 end TauCeti.DyadicSqrtNegOne

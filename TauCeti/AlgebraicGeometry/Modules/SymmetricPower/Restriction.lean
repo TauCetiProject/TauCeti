@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Comparison
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Pullback.Basic
 
 /-!

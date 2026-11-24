@@ -143,7 +143,8 @@ theorem jacobiTheta_one_add_I_mul {y : ℝ} :
       n * (π * I) + m * (2 * π * I) + ((-π * n ^ 2 * y : ℝ) : ℂ) by
         push_cast
         linear_combination (π * I) * hm' + π * n ^ 2 * y * I_sq,
-    Complex.exp_add, Complex.exp_add, Complex.exp_int_mul, exp_pi_mul_I, exp_int_mul_two_pi_mul_I]
+    Complex.exp_add, Complex.exp_add, Complex.exp_intCast_mul, exp_pi_mul_I,
+    exp_int_mul_two_pi_mul_I]
   push_cast
   ring
 

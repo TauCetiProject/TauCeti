@@ -76,7 +76,7 @@ theorem mem_adjoin_of_squareClass_mem_span {ι : Type*} {d : ι → Kˣ} {root :
     intro j hj
     simp only [hS, Finset.coe_image, Set.mem_image, Finset.mem_coe] at hj
     obtain ⟨x, -, rfl⟩ := hj
-    exact x.2
+    exact x.property
   have hclass : squareClass (d i) = squareClass (∏ j ∈ S, d j) := by
     rw [squareClass_prod, hS, Finset.sum_image (fun _ _ _ _ h => Subtype.ext h), ← hc, Finsupp.sum]
     refine Finset.sum_congr rfl fun x hx => ?_

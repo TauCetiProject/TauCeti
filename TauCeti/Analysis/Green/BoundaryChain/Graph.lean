@@ -74,7 +74,7 @@ theorem graphArc_graphPath (d : Coordinate) {g : ℝ → ℝ} {a b c e : ℝ}
   differentiable_graph := hdg
   on_graph t := by simp
   coordinate_mem t := by
-    simpa using (convex_Icc c e).lineMap_mem ha hb t.2
+    simpa using (convex_Icc c e).lineMap_mem ha hb t.property
   differentiable_coordinate := by
     refine ⟨∅, countable_empty, ?_⟩
     intro t ht

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.EulerProduct
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 /-!
 # The product of the local densities over the good primes
@@ -130,7 +131,7 @@ theorem hasProd_inv_half_localDensity_of_card_eq_two_mul_add_one (hA : Aᵀ = A)
   convert TauCeti.hasProd_prod_inv_one_sub_cpow (2 * A.det).natAbs (Finset.range m)
     (fun i => ((2 * (i + 1) : ℕ) : ℂ)) (fun i _ => by simp; norm_cast; omega) using 1 with p
   funext p
-  have : Fact (p : ℕ).Prime := ⟨p.1.prop⟩
+  have : Fact (p : ℕ).Prime := ⟨p.val.prop⟩
   obtain ⟨hp2, hu⟩ := ne_two_and_isUnit_det_map p.prop
   rw [tendsto_nhds_unique (hα p p.prop)
     (tendsto_localDensityCount_div_of_card_eq_two_mul_add_one hp2
@@ -201,7 +202,7 @@ theorem hasProd_inv_half_localDensity_of_card_eq_two_mul_add_two (hA : Aᵀ = A)
     rw [Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast,
       Nat.gcd_eq_right (Int.natCast_dvd.mp hdvd)] at h
     exact p.prop.ne_one h
-  have : Fact (p : ℕ).Prime := ⟨p.1.prop⟩
+  have : Fact (p : ℕ).Prime := ⟨p.val.prop⟩
   obtain ⟨hp2, hu⟩ := ne_two_and_isUnit_det_map p.prop
   rw [tendsto_nhds_unique (hα p p.prop)
     (tendsto_localDensityCount_div_of_card_eq_two_mul_add_two hp2

@@ -66,7 +66,7 @@ private lemma prime_eq_coeff_smul_of_relations (F : modFormCharSpace k χ)
   by_cases hpN : Nat.Coprime p N
   · rw [heckeTNat_def,
       qExpansion_coeff_heckeSlashGamma1ModularFormEnd_diagCosetGamma1_of_mem_modFormCharSpace
-        k hp hpN χ F.2]
+        k hp hpN χ F.property]
     rw [← ZMod.coe_unitOfCoprime p hpN, MulChar.ofUnitHom_coe] at hrec
     linear_combination hrec
   · have hχ : (MulChar.ofUnitHom χ : DirichletCharacter ℂ N) p = 0 :=
@@ -141,7 +141,7 @@ theorem forall_heckeTCompositeGamma0_eq_coeff_smul_iff
       have hT := heckeTNat_eq_smul_of_heckeRingHomCharSpace_heckeTCompositeGamma0_eq_smul
         hp (heig p hp.ne_zero)
       have hrec := (heckeTNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul_ofUnitHom
-        hp F.2 _).mp hT (p ^ (r + 1))
+        hp F.property _).mp hT (p ^ (r + 1))
       have hd : p ∣ p ^ (r + 1) := dvd_pow_self p (by omega)
       rw [ite_eq_left hd, pow_succ, Nat.mul_div_cancel _ hp.pos] at hrec
       simpa only [pow_succ, mul_comm p (p ^ r * p), Nat.add_assoc] using hrec

@@ -165,7 +165,7 @@ theorem colSubgroupMulEquiv_symm_apply (t : YoungTableau μ) (σ : ∀ j, Equiv.
 tableau on it lies in row `0`. -/
 theorem rowIndex_eq_zero_of_colLen_le_one (t : YoungTableau μ) (h : μ.colLen 0 ≤ 1)
     (k : Fin μ.card) : rowIndex t k = 0 := by
-  have hmem : (t.symm k : ℕ × ℕ) ∈ μ := (YoungDiagram.mem_cells _).mp (t.symm k).2
+  have hmem : (t.symm k : ℕ × ℕ) ∈ μ := (YoungDiagram.mem_cells _).mp (t.symm k).property
   have hlt : (t.symm k : ℕ × ℕ).1 < μ.colLen (t.symm k : ℕ × ℕ).2 :=
     YoungDiagram.mem_iff_lt_colLen.mp hmem
   have hle : μ.colLen (t.symm k : ℕ × ℕ).2 ≤ μ.colLen 0 := μ.colLen_anti 0 _ (Nat.zero_le _)
@@ -176,7 +176,7 @@ theorem rowIndex_eq_zero_of_colLen_le_one (t : YoungTableau μ) (h : μ.colLen 0
 tableau on it lies in column `0`. -/
 theorem colIndex_eq_zero_of_rowLen_le_one (t : YoungTableau μ) (h : μ.rowLen 0 ≤ 1)
     (k : Fin μ.card) : colIndex t k = 0 := by
-  have hmem : (t.symm k : ℕ × ℕ) ∈ μ := (YoungDiagram.mem_cells _).mp (t.symm k).2
+  have hmem : (t.symm k : ℕ × ℕ) ∈ μ := (YoungDiagram.mem_cells _).mp (t.symm k).property
   have hlt : (t.symm k : ℕ × ℕ).2 < μ.rowLen (t.symm k : ℕ × ℕ).1 :=
     YoungDiagram.mem_iff_lt_rowLen.mp hmem
   have hle : μ.rowLen (t.symm k : ℕ × ℕ).1 ≤ μ.rowLen 0 := μ.rowLen_anti 0 _ (Nat.zero_le _)

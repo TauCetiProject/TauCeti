@@ -39,6 +39,11 @@ empty diagram has a single enhanced state and sum `1`
 (`TauCeti.OrientedPDCode.enhancedStateSum_empty`). More generally, a diagram without crossings
 and with `c` circles has sum `(q + q⁻¹) ^ c` (`TauCeti.OrientedPDCode.enhancedStateSum_eq_pow`).
 
+Specializing at `q = 1` gives the normalized enhanced-state Euler sum
+`TauCeti.OrientedPDCode.enhancedStateEulerSum`, `E(D) = ∑_s (-1) ^ (|S| + n₋) 2 ^ k(s)`
+(`TauCeti.OrientedPDCode.eval₂_one_enhancedStateSum`), together with its crossing-free values and
+basic diagram symmetries (`reverse`, `rotateCrossing`, `mirror`, `relabel`).
+
 ## Main definitions
 
 * `TauCeti.PDCode.EnhancedState`: a state with a `1`/`X` label on every resolved circle.
@@ -47,6 +52,8 @@ and with `c` circles has sum `(q + q⁻¹) ^ c` (`TauCeti.OrientedPDCode.enhance
 * `TauCeti.OrientedPDCode.stateQuantumShift`: the quantum shift `|S| + n₊ - 2 n₋` of a state.
 * `TauCeti.OrientedPDCode.enhancedQuantumDegree`: the quantum degree of an enhanced state.
 * `TauCeti.OrientedPDCode.enhancedStateSum`: the signed sum of `q ^ j` over all enhanced states.
+* `TauCeti.OrientedPDCode.enhancedStateEulerSum`: the `q = 1` specialization
+  `∑_s (-1) ^ (|S| + n₋) 2 ^ k(s)` of the enhanced state sum.
 
 ## Main results
 
@@ -60,6 +67,17 @@ and with `c` circles has sum `(q + q⁻¹) ^ c` (`TauCeti.OrientedPDCode.enhance
   the enhanced state sum is `(q + q⁻¹)` times the Jones polynomial at `t ^ (1/2) = -q`.
 * `TauCeti.OrientedPDCode.enhancedStateSum_eq_pow`, `TauCeti.OrientedPDCode.enhancedStateSum_empty`:
   the crossing-free diagrams, including the empty one.
+* `TauCeti.OrientedPDCode.eval₂_one_enhancedStateSum`: evaluating `enhancedStateSum` at `q = 1`
+  yields `enhancedStateEulerSum`.
+* `TauCeti.OrientedPDCode.enhancedStateEulerSum_of_zero`,
+  `TauCeti.OrientedPDCode.enhancedStateEulerSum_empty`,
+  `TauCeti.OrientedPDCode.enhancedStateEulerSum_unknot`: crossing-free values of
+  `enhancedStateEulerSum`.
+* `TauCeti.OrientedPDCode.enhancedStateEulerSum_reverse`,
+  `TauCeti.OrientedPDCode.enhancedStateEulerSum_rotateCrossing`,
+  `TauCeti.OrientedPDCode.enhancedStateEulerSum_mirror`,
+  `TauCeti.OrientedPDCode.enhancedStateEulerSum_relabel`: invariance of `enhancedStateEulerSum`
+  under basic diagram symmetries.
 * `TauCeti.enhancedStateSum_rightHandedTrefoilPDCode`: the right-handed trefoil has enhanced state
   sum `q + q³ + q⁵ - q⁹`.
 
@@ -184,6 +202,13 @@ def stateCochainDegree (D : OrientedPDCode n) (s : Fin n → Bool) : ℤ :=
 theorem stateCochainDegree_def (D : OrientedPDCode n) (s : Fin n → Bool) :
     D.stateCochainDegree s = #{i | s i = false} - D.negativeCrossingCount := (rfl)
 
+/-- The cochain-degree sign `(-1) ^ (|s| - n₋)` equals `(-1) ^ (|s| + n₋)`. -/
+theorem coe_negOnePow_stateCochainDegree (D : OrientedPDCode n) (s : Fin n → Bool) :
+    ((D.stateCochainDegree s).negOnePow : ℤ) =
+      (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) := by
+  rw [D.stateCochainDegree_def, Int.negOnePow_sub, ← Int.negOnePow_add, ← Nat.cast_add,
+    Int.coe_negOnePow_natCast]
+
 /-- The quantum shift `|S| + n₊ - 2 n₋` of a state `s` of an oriented code, where `S` is the set
 of crossings at which `s` selects the `B`-smoothing. -/
 def stateQuantumShift (D : OrientedPDCode n) (s : Fin n → Bool) : ℤ :=
@@ -301,6 +326,94 @@ theorem enhancedStateSum_unknot (orientation : Bool) :
     (unknot orientation).enhancedStateSum = T 1 + T (-1) := by
   rw [enhancedStateSum_eq_pow, ← card_crossinglessComponents, crossinglessComponents_unknot]
   simp
+
+/-! ### The normalized enhanced-state Euler sum (`q = 1`) -/
+
+/-- **The normalized enhanced-state Euler sum** `E(D) = ∑_s (-1) ^ (|s| + n₋) 2 ^ k(s)` of an
+oriented PD-code `D`, where `|s| = #{i | s i = false}` counts the `B`-smoothings in `s`, `n₋` is
+`D.negativeCrossingCount`, and `k(s)` is `D.toPDCode.stateLoopCount s`. -/
+noncomputable def enhancedStateEulerSum (D : OrientedPDCode n) : ℤ :=
+  ∑ s : Fin n → Bool,
+    (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) * 2 ^ D.toPDCode.stateLoopCount s
+
+/-- Defining sum of `TauCeti.OrientedPDCode.enhancedStateEulerSum`. -/
+theorem enhancedStateEulerSum_def (D : OrientedPDCode n) :
+    D.enhancedStateEulerSum = ∑ s : Fin n → Bool,
+      (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) *
+        2 ^ D.toPDCode.stateLoopCount s := (rfl)
+
+/-- **Evaluating the enhanced state sum at `q = 1`** yields the normalized enhanced-state Euler
+sum `E(D)`, without any planarity assumption. -/
+@[simp] theorem eval₂_one_enhancedStateSum (D : OrientedPDCode n) :
+    eval₂ (RingHom.id ℤ) 1 D.enhancedStateSum = D.enhancedStateEulerSum := by
+  rw [D.enhancedStateSum_eq_sum, D.enhancedStateEulerSum_def, map_sum]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  rw [Units.smul_def, zsmul_eq_mul, map_mul, map_mul, map_intCast, map_pow, map_add,
+    eval₂_T, eval₂_T, eval₂_T, D.coe_negOnePow_stateCochainDegree s]
+  norm_num
+
+/-- **A crossing-free diagram with `c` circles has `E(D) = 2 ^ c`.** -/
+theorem enhancedStateEulerSum_of_zero (D : OrientedPDCode 0) :
+    D.enhancedStateEulerSum = (2 : ℤ) ^ D.componentCount := by
+  rw [← D.eval₂_one_enhancedStateSum, D.enhancedStateSum_eq_pow, PDCode.componentCount_eq,
+    PDCode.crossingComponentCount_eq_zero, zero_add, map_pow, map_add, eval₂_T, eval₂_T]
+  norm_num
+
+/-- The empty diagram has enhanced-state Euler sum `1`. -/
+@[simp] theorem enhancedStateEulerSum_empty : empty.enhancedStateEulerSum = 1 := by
+  rw [← empty.eval₂_one_enhancedStateSum, enhancedStateSum_empty, map_one]
+
+/-- Either orientation of the crossing-free unknot has enhanced-state Euler sum `2`. -/
+@[simp] theorem enhancedStateEulerSum_unknot (o : Bool) :
+    (unknot o).enhancedStateEulerSum = 2 := by
+  rw [← (unknot o).eval₂_one_enhancedStateSum, enhancedStateSum_unknot, map_add, eval₂_T, eval₂_T]
+  norm_num
+
+/-- Reversing all component orientations preserves `E(D)`. -/
+@[simp] theorem enhancedStateEulerSum_reverse (D : OrientedPDCode n) :
+    D.reverse.enhancedStateEulerSum = D.enhancedStateEulerSum := by
+  simp [enhancedStateEulerSum_def]
+
+/-- Reading a crossing from its next slot preserves `E(D)`. -/
+@[simp] theorem enhancedStateEulerSum_rotateCrossing (D : OrientedPDCode n) (i : Fin n) :
+    (D.rotateCrossing i).enhancedStateEulerSum = D.enhancedStateEulerSum := by
+  simp [enhancedStateEulerSum_def, negativeCrossingCount_def]
+
+/-- Mirroring an oriented PD-code preserves `E(D)`, without any planarity assumption. -/
+@[simp] theorem enhancedStateEulerSum_mirror (D : OrientedPDCode n) :
+    D.mirror.enhancedStateEulerSum = D.enhancedStateEulerSum := by
+  rw [enhancedStateEulerSum_def, enhancedStateEulerSum_def]
+  refine Fintype.sum_bijective (fun s i ↦ !s i)
+    (Function.Involutive.bijective fun s ↦ by funext i; simp) _ _ fun s ↦ ?_
+  have hcard : #{j | (!s j) = false} + #{j | s j = false} = n := by
+    have htrue : #{j | (!s j) = false} = #{j | ¬(s j = false)} := by
+      refine congrArg card (Finset.ext fun j ↦ ?_)
+      simp
+    rw [htrue, add_comm, card_filter_add_card_filter_not, card_univ, Fintype.card_fin]
+  have hn := D.positiveCrossingCount_add_negativeCrossingCount
+  have hsign : (-1 : ℤ) ^ (#{j | s j = false} + D.mirror.negativeCrossingCount) =
+      (-1 : ℤ) ^ (#{j | (!s j) = false} + D.negativeCrossingCount) := by
+    rw [negativeCrossingCount_mirror]
+    exact neg_one_pow_congr (by simp only [Nat.even_iff]; omega)
+  rw [hsign, mirror_toPDCode, D.toPDCode.stateLoopCount_mirror]
+
+/-- Relabelling half-edges and crossings preserves `E(D)`. -/
+@[simp] theorem enhancedStateEulerSum_relabel {m : ℕ} (D : OrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.relabel half cross).enhancedStateEulerSum = D.enhancedStateEulerSum := by
+  rw [enhancedStateEulerSum_def, enhancedStateEulerSum_def,
+    ← (Equiv.arrowCongr cross (Equiv.refl Bool)).sum_comp]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  have hcard : #{j | Equiv.arrowCongr cross (Equiv.refl Bool) s j = false} =
+      #{j | s j = false} :=
+    Finset.card_equiv cross.symm fun j ↦ by simp [Equiv.arrowCongr_apply]
+  have hloop : (D.relabel half cross).toPDCode.stateLoopCount
+      (Equiv.arrowCongr cross (Equiv.refl Bool) s) = D.toPDCode.stateLoopCount s := by
+    rw [relabel_toPDCode, PDCode.stateLoopCount_relabel]
+    congr 1
+    ext j
+    simp [Equiv.arrowCongr_apply]
+  rw [hcard, negativeCrossingCount_relabel, hloop]
 
 end OrientedPDCode
 

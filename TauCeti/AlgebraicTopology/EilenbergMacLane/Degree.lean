@@ -111,13 +111,10 @@ connected, so its homotopy groups at any two points are isomorphic. -/
 theorem of_basepoint (h : IsEilenbergMacLaneSpace G n X x) (x' : X) :
     IsEilenbergMacLaneSpace G n X x' := by
   have := h.pathConnectedSpace
-  refine .mk h.pathConnectedSpace (fun k hk0 hk ↦ ?_) ?_
-  · have : NeZero k := ⟨hk0⟩
-    have := h.subsingleton_homotopyGroup hk
-    obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin k) (x := x) (y := x')
-    exact φ.toEquiv.subsingleton_congr.mp inferInstance
-  · obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin n) (x := x') (y := x)
-    exact h.nonempty_homotopyGroupMulEquiv.map φ.trans
+  refine .mk h.pathConnectedSpace (fun _ _ hk ↦
+    subsingleton_homotopyGroup_of_pathConnectedSpace (h.subsingleton_homotopyGroup hk)) ?_
+  obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv (N := Fin n) (x := x') (y := x)
+  exact h.nonempty_homotopyGroupMulEquiv.map φ.trans
 
 /-- Transporting the target group along an isomorphism preserves the `K(G, n)` property. -/
 theorem of_mulEquiv (h : IsEilenbergMacLaneSpace G n X x) (e : G ≃* H) :

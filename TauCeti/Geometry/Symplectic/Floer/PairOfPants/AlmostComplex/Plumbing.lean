@@ -182,7 +182,7 @@ theorem contMDiffAt_plumbedAlmostComplex {n : ℕ∞} (hq : q ≠ inf)
       (by linarith : (q.endCoord p.2.1).re ≤ p.1 - 2)]
     rfl
   · have h2 : 2 < (q.endCoord w).re := by linarith
-    have hw' := (q.plumbingPreimage L ⟨w, hw.1⟩ hw.2).2
+    have hw' := (q.plumbingPreimage L ⟨w, hw.1⟩ hw.2).property
     rw [coe_plumbingPreimage] at hw'
     -- The inserted piece also moves with the length through the inverse plumbing map.
     have hf := (q.contDiff_inverse_plumbingMap (n := n)).contDiffAt (x := (L, w))

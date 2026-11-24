@@ -107,7 +107,7 @@ theorem forall_even_scalarTrace_mul_eq_zero_iff_forall_scalarTrace_mul_eq_zero (
     (∀ y : even Q, scalarTrace Q ((x : CliffordAlgebra Q) * y) = 0) ↔
       ∀ y : CliffordAlgebra Q, scalarTrace Q ((x : CliffordAlgebra Q) * y) = 0 := by
   simpa [Subtype.forall] using
-    forall_mem_even_scalarTrace_mul_eq_zero_iff_forall_scalarTrace_mul_eq_zero x.2
+    forall_mem_even_scalarTrace_mul_eq_zero_iff_forall_scalarTrace_mul_eq_zero x.property
 
 end CommRing
 

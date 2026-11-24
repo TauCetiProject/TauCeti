@@ -63,7 +63,7 @@ private noncomputable def center (d : RealizationCell K n) : Realization K :=
   d.characteristicMap 0
 
 private theorem support_center (d : RealizationCell K n) :
-    (center d).1.support = d.1.1 := by
+    (center d).val.support = d.val.val := by
   have hzero : (0 : Fin n → ℝ) ∈ d.characteristicMap.source := by
     rw [RealizationCell.characteristicMap_source, mem_ball_zero_iff, norm_zero]
     exact zero_lt_one
@@ -78,7 +78,7 @@ private theorem center_mem_openCell (d : RealizationCell K n) :
   exact support_center d
 
 private theorem center_not_mem_cellFrontier_of_not_subset
-    (c : RealizationCell K (n + 1)) (d : RealizationCell K n) (h : ¬ d.1.1 ⊆ c.1.1) :
+    (c : RealizationCell K (n + 1)) (d : RealizationCell K n) (h : ¬ d.val.val ⊆ c.val.val) :
     letI := realizationCWComplex K
     center d ∉ cellFrontier (n + 1) ((realizationCellEquiv K (n + 1)).symm c) := by
   let := realizationCWComplex K
@@ -90,7 +90,7 @@ private theorem center_not_mem_cellFrontier_of_not_subset
 /-- A cell which is not a codimension-one subface has zero cellular incidence coefficient in the
 boundary of the larger simplicial cell. -/
 theorem cellularIncidence_realization_eq_zero_of_not_subset
-    (c : RealizationCell K (n + 1)) (d : RealizationCell K n) (h : ¬ d.1.1 ⊆ c.1.1) :
+    (c : RealizationCell K (n + 1)) (d : RealizationCell K n) (h : ¬ d.val.val ⊆ c.val.val) :
     letI := realizationCWComplex K
     cellularIncidence (Set.univ : Set (Realization K)) R n
       ((realizationCellEquiv K n).symm d) ((realizationCellEquiv K (n + 1)).symm c) = 0 := by
@@ -149,7 +149,7 @@ theorem cellularDifferential_realization_cellularChainBasis
 positive-dimensional face `d` of a simplicial cell `c`, with one vertex fewer, in the cellular
 boundary of `c` is a unit of the coefficient ring. -/
 theorem isUnit_cellularIncidence_realization_of_subset
-    (c : RealizationCell K (n + 2)) (d : RealizationCell K (n + 1)) (h : d.1.1 ⊆ c.1.1) :
+    (c : RealizationCell K (n + 2)) (d : RealizationCell K (n + 1)) (h : d.val.val ⊆ c.val.val) :
     letI := realizationCWComplex K
     IsUnit (cellularIncidence (Set.univ : Set (Realization K)) R (n + 1)
       ((realizationCellEquiv K (n + 1)).symm d)
@@ -162,7 +162,7 @@ theorem isUnit_cellularIncidence_realization_of_subset
   rw [hx]
   refine Finset.ssubset_iff_subset_ne.2 ⟨h, fun hdc ↦ ?_⟩
   have hcard := congrArg Finset.card hdc
-  rw [d.2, c.2] at hcard
+  rw [d.property, c.property] at hcard
   omega
 
 end TauCeti

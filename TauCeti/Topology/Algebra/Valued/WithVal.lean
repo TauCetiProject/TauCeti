@@ -11,13 +11,20 @@ public import TauCeti.RingTheory.Valuation.RingEquiv
 public import TauCeti.Topology.Algebra.UniformRing
 
 /-!
-# Valuation-preserving isomorphisms extend to the completions
+# Completions of a field at a valuation
 
 Let `σ : K ≃+* K'` be a ring isomorphism carrying a valuation `v` on `K` to a valuation `w`
 on `K'`, in the sense that `w (σ x) = v x`. Then `σ` is uniformly continuous for the uniform
 structures that `v` and `w` define, so it extends to an isomorphism of the completions
 `v.Completion ≃+* w.Completion`. This is how an automorphism of a field fixing a place acts on the
 completion at that place.
+
+The completion `q.Completion` of a field at a valuation `q` carries two descriptions of its
+valuation: the completed valuation `Valued.v` of the `Valued` structure, and Mathlib's valuative
+relation `UniformSpace.Completion.valuativeRel`, induced by the extension of the valuation of
+`WithVal q`. They are the same valuation, so `Valued.v` is compatible with the valuative relation.
+This lets results about fields with a valuative relation, such as nonarchimedean local fields, be
+read through the concrete completed valuation.
 
 The uniform-continuity and completion-transport arguments are extracted and generalized from
 `IsDedekindDomain.HeightOneSpectrum.uniformContinuous_withValCongr` and
@@ -41,6 +48,10 @@ The uniform-continuity and completion-transport arguments are extracted and gene
 * `Valuation.Completion.valued_congr`: it preserves the completed valuations.
 * `Valuation.Completion.congr_refl`, `Valuation.Completion.congr_trans` and
   `Valuation.Completion.congr_symm`: functoriality.
+* `Valuation.Completion.valued_eq_extension`: the completed valuation is the extension
+  `Valuation.extension` of the valuation of `WithVal q`.
+* `Valuation.Completion.compatible_valued`: the completed valuation is compatible with the
+  valuative relation of `q.Completion`.
 -/
 
 public section
@@ -61,9 +72,9 @@ theorem uniformContinuous_congr (σ : K ≃+* K')
     (Valued.hasBasis_nhds_zero _ _)]
   intro γ _
   -- Transport a representative quotient for the target value-group radius back along `σ`.
-  have hγ : (WithVal.valueGroupOrderIso₀ w γ.1) ≠ 0 := by simp
+  have hγ : (WithVal.valueGroupOrderIso₀ w γ.val) ≠ 0 := by simp
   obtain ⟨a, b, ha, hb, hab⟩ :=
-    (WithVal.valueGroupOrderIso₀ w γ.1).zero_or_exists_mk.resolve_left hγ
+    (WithVal.valueGroupOrderIso₀ w γ.val).zero_or_exists_mk.resolve_left hγ
   have hva : v (σ.symm a) ≠ 0 := by simpa [← hσ]
   have hvb : v (σ.symm b) ≠ 0 := by simpa [← hσ]
   let δ : v.ValueGroup₀ := valueGroup.mk (v : K →*₀ Γ₀) (σ.symm a) (σ.symm b) hva hvb
@@ -83,9 +94,7 @@ theorem uniformContinuous_congr (σ : K ≃+* K')
   change (WithVal.valueGroupOrderIso₀ v) ((WithVal.valuation v).restrict x) < _ at hx'
   rw [WithVal.valueGroupOrderIso₀_restrict, Units.val_mk0, OrderMonoidIso.apply_symm_apply,
     Valuation.restrict_lt_iff_lt_embedding] at hx'
-  have haeq : w a = v (σ.symm a) := by rw [← hσ, RingEquiv.apply_symm_apply]
-  have hbeq : w b = v (σ.symm b) := by rw [← hσ, RingEquiv.apply_symm_apply]
-  simpa [δ, WithVal.congr_apply, hσ, haeq, hbeq] using hx'
+  simpa [δ, WithVal.congr_apply, hσ, Valuation.apply_symm_eq_of_apply_eq hσ] using hx'
 
 end WithVal
 
@@ -166,11 +175,39 @@ theorem congr_trans {τ : K' ≃+* K''} (hτ : ∀ y, u (τ y) = w y) :
 /-- The inverse of `Valuation.Completion.congr` is `Valuation.Completion.congr` of the inverse. -/
 @[simp]
 theorem congr_symm :
-    (congr σ hσ).symm = congr σ.symm
-      (fun y ↦ by rw [← hσ, RingEquiv.apply_symm_apply]) := by
+    (congr σ hσ).symm = congr σ.symm (Valuation.apply_symm_eq_of_apply_eq hσ) := by
   refine RingEquiv.toRingHom_injective <| eq_congr_of_continuous _
     (UniformSpace.Completion.continuous_mapRingEquiv_symm _ _ _) fun y ↦ ?_
   rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.symm_apply_eq, congr_coe,
     RingEquiv.apply_symm_apply]
+
+section ValuativeRel
+
+variable {L : Type*} [Field L] (q : Valuation L Γ₀)
+
+/-- **The completed valuation is the extended valuation.** On the completion of a field `L` at a
+valuation `q`, the completed valuation `Valued.v` of the `Valued` structure is the extension
+`Valuation.extension` of the valuation of `WithVal q`, which defines Mathlib's valuative relation
+on `q.Completion`. -/
+theorem valued_eq_extension :
+    (Valued.v : Valuation q.Completion Γ₀) = (WithVal.valuation q).extension := by
+  ext x
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  -- Away from `0` both valuations are locally constant, so they agree at `x` because they agree
+  -- at a nearby element of `L`.
+  obtain ⟨r, hr₁, hr₂⟩ := UniformSpace.Completion.denseRange_coe.mem_nhds <|
+    Filter.inter_mem (Valued.locally_const ((Valuation.ne_zero_iff _).2 hx))
+      ((WithVal.valuation q).extension_locally_const hx)
+  rw [← Set.mem_ofPred_eq.mp hr₁, ← Set.mem_ofPred_eq.mp hr₂, Valuation.extension_apply_coe]
+  exact (Valued.valuedCompletion_apply r).trans
+    ((WithVal.apply_ofVal q r).symm.trans (WithVal.valuation_apply_eq_ofVal q r).symm)
+
+/-- The completed valuation of `q.Completion` is compatible with its valuative relation. -/
+instance compatible_valued : (Valued.v : Valuation q.Completion Γ₀).Compatible := by
+  rw [valued_eq_extension]
+  infer_instance
+
+end ValuativeRel
 
 end Valuation.Completion

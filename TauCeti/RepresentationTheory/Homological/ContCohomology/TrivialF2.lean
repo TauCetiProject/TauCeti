@@ -518,7 +518,7 @@ noncomputable def trivialF2QuotientEquivFixedPoints :
     rw [FixedPoints.mem_addSubgroup]
     intro n
     simp only [Subgroup.smul_def, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]⟩
-  invFun x := (trivialF2Equiv (G ⧸ N)).symm (trivialF2Equiv G x.1)
+  invFun x := (trivialF2Equiv (G ⧸ N)).symm (trivialF2Equiv G x.val)
   left_inv x := by simp
   right_inv x := by ext; simp
   map_add' x y := by

@@ -57,11 +57,11 @@ theorem exists_surjective_localizationAway (f : R →+* S) (hf : f.FiniteType)
         algebraMap S (Localization (M.map f)) (f a) := by
       rw [map_mul, ← hz, IsLocalization.map_mk']
       exact IsLocalization.mk'_spec' (Localization (M.map f)) (f a)
-        ⟨f t, Submonoid.mem_map_of_mem _ t.2⟩
+        ⟨f t, Submonoid.mem_map_of_mem _ t.property⟩
     obtain ⟨d, hd⟩ := (IsLocalization.eq_iff_exists (M.map f) _).mp he
-    obtain ⟨u, hu, hdu⟩ := d.2
+    obtain ⟨u, hu, hdu⟩ := d.property
     rw [← hdu] at hd
-    exact ⟨u * t, M.mul_mem hu t.2, u * a, by simpa [map_mul, mul_assoc] using hd⟩
+    exact ⟨u * t, M.mul_mem hu t.property, u * a, by simpa [map_mul, mul_assoc] using hd⟩
   choose t ht a ha using fun y : s ↦ hgen y
   let r : R := ∏ y : s, t y
   have hr : r ∈ M := M.prod_mem fun y _ ↦ ht y
@@ -94,7 +94,7 @@ theorem exists_mul_ker_eq_zero_of_injective_localization (f : R →+* S) (hker :
     ext x
     apply hg
     have hx := congrArg (fun l : R →+* T ↦ l x) hcomm
-    simpa [mem_ker.mp x.2] using hx
+    simpa [mem_ker.mp x.property] using hx
   obtain ⟨r, hr⟩ := Module.Finite.exists_smul_of_comp_eq_of_isLocalizedModule M
     (Algebra.linearMap R Rm) (ker f).subtype 0 he
   exact ⟨r, fun x hx ↦ by
@@ -111,7 +111,7 @@ theorem exists_injective_localizationAway (f : R →+* S) (hker : (ker f).FG)
   obtain ⟨r, hr⟩ := f.exists_mul_ker_eq_zero_of_injective_localization hker M
     (IsLocalization.map (Localization (M.map f)) f (Submonoid.le_comap_map M))
     (algebraMap S (Localization (M.map f))) (IsLocalization.map_comp _) h
-  refine ⟨r, r.2, (IsLocalization.Away.map_injective_iff (S := Localization.Away (r : R))
+  refine ⟨r, r.property, (IsLocalization.Away.map_injective_iff (S := Localization.Away (r : R))
     (Localization.Away (f r)) f r).mpr fun x hx ↦ ⟨1, ?_⟩⟩
   simpa using hr x hx
 
@@ -180,7 +180,7 @@ private theorem exists_mem_mul_ker_awayMap_eq_zero (f : R →+* S) (M : Submonoi
   obtain ⟨b, hb⟩ := fa.exists_mul_ker_eq_zero_of_injective_localization hker
     (M.map (algebraMap R Ra)) g (algebraMap Sa (Localization (M.map f)))
     (f.map_comp_algebraMap_eq_algebraMap_comp_awayMap M a) hinj
-  obtain ⟨t, ht, hbt⟩ := b.2
+  obtain ⟨t, ht, hbt⟩ := b.property
   exact ⟨t, ht, fun x hx => hbt ▸ hb x hx⟩
 /-- A finitely presented ring map which becomes an isomorphism after localization is already
 an isomorphism on a principal neighbourhood. Neither ring needs to be Noetherian, and the

@@ -99,16 +99,16 @@ private theorem iInf_le_of_mem {E : Finset ι} {j : ι} (hj : j ∈ E) (x : X) :
 private theorem iInf_eq_of_mem {E : Finset ι} {j : ι} {x : X} (hj : j ∈ E)
     (h : ∀ i ∈ E, ρ j x ≤ ρ i x) : ⨅ i : E, ρ i x = ρ j x :=
   have : Nonempty E := ⟨⟨j, hj⟩⟩
-  le_antisymm (iInf_le_of_mem hj x) (le_ciInf fun i ↦ h i i.2)
+  le_antisymm (iInf_le_of_mem hj x) (le_ciInf fun i ↦ h i i.property)
 
 private theorem iSup_compl_eq_of_notMem {E : Finset ι} {k : ι} {x : X} (hk : k ∉ E)
     (h : ∀ i ∉ E, ρ i x ≤ ρ k x) : ⨆ i : {i // i ∉ E}, ρ i x = ρ k x :=
   have : Nonempty {i // i ∉ E} := ⟨⟨k, hk⟩⟩
-  le_antisymm (ciSup_le fun i ↦ h i i.2) (le_iSup_compl hk x)
+  le_antisymm (ciSup_le fun i ↦ h i i.property) (le_iSup_compl hk x)
 
 private theorem iSup_compl_eq_zero {E : Finset ι} {x : X} (h : ∀ i ∉ E, ρ i x = 0) :
     ⨆ i : {i // i ∉ E}, ρ i x = 0 :=
-  le_antisymm (Real.iSup_le (fun i ↦ (h i i.2).le) le_rfl) (iSup_compl_nonneg E x)
+  le_antisymm (Real.iSup_le (fun i ↦ (h i i.property).le) le_rfl) (iSup_compl_nonneg E x)
 
 /-- Where all weights outside a finite set `I` vanish, the supremum over the complement of `E`
 is the supremum over the finite set `I \ E`. -/
@@ -117,10 +117,11 @@ private theorem iSup_compl_eq_iSup_sdiff [DecidableEq ι] {I E : Finset ι} {x :
     ⨆ i : {i // i ∉ E}, ρ i x = ⨆ i : (I \ E : Finset ι), ρ i x := by
   have hnonneg : 0 ≤ ⨆ i : (I \ E : Finset ι), ρ i x := Real.iSup_nonneg fun i ↦ ρ.nonneg i x
   refine le_antisymm (Real.iSup_le (fun i ↦ ?_) hnonneg)
-    (Real.iSup_le (fun i ↦ le_iSup_compl (Finset.mem_sdiff.1 i.2).2 x) (iSup_compl_nonneg E x))
-  by_cases hi : i.1 ∈ I
+    (Real.iSup_le (fun i ↦ le_iSup_compl (Finset.mem_sdiff.1 i.property).2 x)
+        (iSup_compl_nonneg E x))
+  by_cases hi : i.val ∈ I
   · exact le_ciSup (f := fun i : (I \ E : Finset ι) ↦ ρ i x) (finite_range _).bddAbove
-      ⟨i, Finset.mem_sdiff.2 ⟨hi, i.2⟩⟩
+      ⟨i, Finset.mem_sdiff.2 ⟨hi, i.property⟩⟩
   · rw [show ρ i x = 0 from notMem_support.1 fun h ↦ hi (hI h)]
     exact hnonneg
 
@@ -167,7 +168,7 @@ positive, and they strictly exceed every weight outside it. -/
 theorem gap_pos_iff {E : Finset ι} {x : X} :
     0 < ρ.gap E x ↔ E.Nonempty ∧ (∀ i ∈ E, 0 < ρ i x) ∧ ∀ i ∈ E, ∀ j ∉ E, ρ j x < ρ i x := by
   classical
-  refine ⟨fun h ↦ ⟨Finset.nonempty_iff_ne_empty.2 ?_, fun i hi ↦ pos_of_gap_pos h hi,
+  refine ⟨fun h ↦ ⟨Finset.ne_empty_iff_nonempty.1 ?_, fun i hi ↦ pos_of_gap_pos h hi,
     fun i hi j hj ↦ lt_of_gap_pos h hi hj⟩, fun ⟨hne, hpos, hlt⟩ ↦ ?_⟩
   · rintro rfl
     exact h.ne' (gap_empty x)

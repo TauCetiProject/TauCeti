@@ -127,7 +127,7 @@ theorem measurableSet_setOf_bfEquivSetoidOn [Countable V] [∀ n, Countable (L.R
     MeasurableSet {p : modelsOf (V := V) φ × modelsOf (V := V) φ |
       bfEquivSetoidOn V φ α p.1 p.2} :=
   (measurableSet_setOf_bfEquivSetoid hα).preimage
-    (measurable_subtype_coe.prodMap measurable_subtype_coe)
+    (measurable_subtypeVal.prodMap measurable_subtypeVal)
 
 end LevelsOnModels
 
@@ -146,7 +146,7 @@ theorem countable_quotient_comap_bfEquivSetoid_or_hasCantorAntichainOn [Countabl
     ((bfEquivSetoid L V α).comap Subtype.val)
     (fun _ _ h => isoSetoid_le_bfEquivSetoid α h)
     ((measurableSet_setOf_bfEquivSetoid hα).preimage
-      (measurable_subtype_coe.prodMap measurable_subtype_coe))
+      (measurable_subtypeVal.prodMap measurable_subtypeVal))
 
 /-- **One-level dichotomy for Borel sets (perfect-set form).** Below `ω₁`, on a countable carrier
 and in a vocabulary with countably many relation symbols of each arity, any Borel set `K` of
@@ -171,7 +171,7 @@ theorem mk_quotient_comap_bfEquivSetoid_le_aleph0_or_eq_continuum [Countable V]
   have := hK.standardBorel
   exact Setoid.mk_quotient_le_aleph0_or_eq_continuum ((bfEquivSetoid L V α).comap Subtype.val)
     ((measurableSet_setOf_bfEquivSetoid hα).preimage
-      (measurable_subtype_coe.prodMap measurable_subtype_coe))
+      (measurable_subtypeVal.prodMap measurable_subtypeVal))
 
 section LevelDichotomiesOnModels
 

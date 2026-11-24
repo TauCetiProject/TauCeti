@@ -66,9 +66,10 @@ Bochner average and restricts to the largest `G`-invariant open subset of its do
   maps `c (g • ·)`; `OpenPartialHomeomorph.contDiffOn_bochnerChart_comp_symm` is the
   corresponding statement for the Bochner chart, and
   `OpenPartialHomeomorph.contDiffAt_comp_bochnerChart_symm` the one for its inverse.
-* `OpenPartialHomeomorph.smul_mem_restrInvariant_source`,
-  `OpenPartialHomeomorph.map_mem_bochnerChart_target`: the Bochner chart has a `G`-invariant
-  domain and a `ρ`-invariant target.
+* `OpenPartialHomeomorph.map_mem_bochnerChart_target`: the Bochner chart has a `ρ`-invariant
+  target. Its domain is `G`-invariant by
+  `OpenPartialHomeomorph.smul_mem_restrInvariant_source`, from
+  `TauCeti/Topology/OpenPartialHomeomorph/MulAction.lean`.
 * `OpenPartialHomeomorph.bochnerChart_smul`, `OpenPartialHomeomorph.bochnerChart_symm_map`: the
   Bochner chart and its inverse intertwine the action of `G` with `ρ`.
 * `OpenPartialHomeomorph.exists_equivariant_chart`: Bochner linearization. Near a fixed point of
@@ -116,6 +117,7 @@ def bochnerAverage (ρ : ContRepresentation 𝕜 G F) (c : X → F) (y : X) : F 
 
 variable (ρ : ContRepresentation 𝕜 G F) (c : X → F)
 
+/-- Unfolding lemma for `ContRepresentation.bochnerAverage`. -/
 theorem bochnerAverage_def (y : X) :
     bochnerAverage ρ c y = ⅟(Fintype.card G : 𝕜) • ∑ g : G, ρ g⁻¹ (c (g • y)) := by
   rw [bochnerAverage]
@@ -380,6 +382,7 @@ def isotropyRepresentation (hxχ : x ∈ χ.source) (hx : ∀ g : G, g • x = x
           fderiv_comp (χ x) (by rw [hfix]; exact hd g) (hd h), hfix,
           ContinuousLinearMap.mul_def] }
 
+/-- The isotropy representation acts by the derivative of the conjugated map. -/
 @[simp]
 theorem isotropyRepresentation_apply (hxχ : x ∈ χ.source) (hx : ∀ g : G, g • x = x)
     (hd : ∀ g : G, DifferentiableAt 𝕜 (χ ∘ (g • ·) ∘ χ.symm) (χ x)) (g : G) :

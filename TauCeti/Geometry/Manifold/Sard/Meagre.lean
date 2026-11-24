@@ -18,7 +18,9 @@ import TauCeti.Geometry.Manifold.Meagre
 The critical values of a smooth map between finite-dimensional real manifolds without boundary
 form a meagre set, provided the source is Lindelöf. The dimensions need not be equal. More
 locally, it suffices that the map be smooth at the points of a Lindelöf set of critical points.
-Consequently an everywhere rank-deficient real analytic map has meagre image.
+Consequently an everywhere rank-deficient smooth or real analytic map between finite-dimensional
+manifolds without boundary has meagre image (and on an empty source the range is empty without
+requiring finite dimension of the target).
 
 We use the existing Sard--Smale theorem in finite-dimensional coordinate domains. The
 regular-point comparison in arbitrary extended charts identifies the critical points in those
@@ -45,14 +47,17 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
-  {f : M → N} {s : Set M}
+  {f : M → N}
 
-omit [J.Boundaryless] in
+section FiniteDimensionalTarget
+
+variable [FiniteDimensional ℝ E']
+
 /-- The critical points seen by a fixed pair of charts have meagre coordinate image. -/
-private theorem isMeagre_image_extChartAt_inter_charts
+private theorem isMeagre_image_extChartAt_inter_charts {s : Set M}
     (hf : ∀ x ∈ s, ContMDiffAt I J ∞ f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x)
     (x₀ : M) (y₀ : N) :
     IsMeagre ((extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) ''
@@ -75,11 +80,13 @@ private theorem isMeagre_image_extChartAt_inter_charts
   rintro _ ⟨z, hz, rfl⟩
   exact ⟨z, ⟨hz, hcrit z hz⟩, rfl⟩
 
+variable [J.Boundaryless]
+
 /-- **Sard's theorem, in Baire category form.** The image of a Lindelöf set of critical points
 at which a map is smooth is meagre. Both manifolds are finite-dimensional and without boundary;
 their dimensions may differ. Smoothness is required in the ambient manifold at points of `s`,
 not merely within `s`. -/
-theorem isMeagre_image_of_not_isRegularPoint [LindelofSpace s]
+theorem isMeagre_image_of_not_isRegularPoint {s : Set M} [LindelofSpace s]
     (hf : ∀ x ∈ s, ContMDiffAt I J ∞ f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x) :
     IsMeagre (f '' s) :=
   isMeagre_image_of_forall_isMeagre_image_extChartAt (fun x hx ↦ (hf x hx).continuousAt)
@@ -97,13 +104,21 @@ theorem _root_.ContMDiff.isMeagre_image_criticalPoints [LindelofSpace M] {n : �
       (isOpen_setOf_isRegularPoint hf_smooth (by simp)).isClosed_compl.isLindelof
   exact isMeagre_image_of_not_isRegularPoint (fun x _ ↦ hf_smooth.contMDiffAt) (fun _ hx ↦ hx)
 
-/-- An everywhere rank-deficient smooth or real analytic map from a Lindelöf manifold without
-boundary has meagre image. The rank is the dimension of the range of its native manifold
-derivative. For an analytic map, the regularity hypothesis `∞ ≤ ω` is automatic. -/
-theorem _root_.ContMDiff.isMeagre_range_of_finrank_mfderiv_lt [LindelofSpace M] {n : ℕ∞ω}
-    (hf : ContMDiff I J n f) (hn : ∞ ≤ n)
+end FiniteDimensionalTarget
+
+/-- An everywhere rank-deficient smooth or real analytic map between finite-dimensional
+manifolds without boundary with Lindelöf source has meagre image; when `M` is nonempty, `hrank`
+forces `finrank ℝ E'` to be positive and hence `E'` to be finite-dimensional, while for empty `M`
+the range is empty. The rank is the dimension of the range of its native manifold derivative. For
+an analytic map, the regularity hypothesis `∞ ≤ ω` is automatic. -/
+theorem _root_.ContMDiff.isMeagre_range_of_finrank_mfderiv_lt [J.Boundaryless] [LindelofSpace M]
+    {n : ℕ∞ω} (hf : ContMDiff I J n f) (hn : ∞ ≤ n)
     (hrank : ∀ x, finrank ℝ (mfderiv I J f x).range < finrank ℝ E') :
     IsMeagre (range f) := by
+  obtain _ | ⟨⟨x₀⟩⟩ := isEmpty_or_nonempty M
+  · rw [range_eq_empty]
+    exact .empty
+  have : FiniteDimensional ℝ E' := .of_finrank_pos ((Nat.zero_le _).trans_lt (hrank x₀))
   have hcrit (x : M) : ¬ IsRegularPoint I J f x := by
     intro hx
     have h := hrank x
