@@ -6,21 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.QuasiIso
-public import TauCeti.LinearAlgebra.Finsupp.Supported
-public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Relative
+import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Relative
 
 /-!
 # Semi-free models along a filtration, one stage of cells at a time
 
 Let `M` be a differential graded left module over a differential graded algebra `A`, with an
-increasing sequence `F 0 ≤ F 1 ≤ ⋯` of homogeneous `A`-submodules. Suppose that `F 0` is acyclic,
-and that for each `k` a graded set `Q k` of **cells** is given, with elements `c₀ k q ∈ F (k + 1)`
-of degree `-indQ k q` whose differentials lie in `F k`, through which the free module on `Q k`,
-with its coefficient differential alone, is quasi-isomorphic to `F (k + 1)` modulo `F k`. This is
-the situation of the chains on the based path space of a CW complex, filtered by the preimages of
-the skeleta, with one cell for each cell of the complex: the relative chains over the
-`k`-skeleton modulo the `(k - 1)`-skeleton are quasi-isomorphic to a free module over the chains
-on the loop space with one generator per `k`-cell.
+increasing sequence `F 0 ≤ F 1 ≤ ⋯` of homogeneous `A`-submodules. Suppose that every cycle in
+`F 0` is the differential of an element of `F 0`, and that for each `k` a graded set `Q k` of
+**cells** is given, with elements `c₀ k q ∈ F (k + 1)` of degree `-indQ k q` whose differentials
+lie in `F k`, such that, for the free module on `Q k` with its coefficient differential alone,
+every relative cycle of `c₀ k` with target in `F (k + 1)` modulo `F k` is a relative boundary
+there. These elementwise hypotheses do not require the `F k` to be stable under the differential.
+When they are, so that the `F k` are subcomplexes, the hypotheses say that `F 0` is acyclic and
+that `c₀ k` is a quasi-isomorphism onto `F (k + 1)` modulo `F k`. This is the situation of the
+chains on the based path space of a CW complex, filtered by the preimages of the skeleta, with
+one cell for each cell of the complex: the relative chains over the `k`-skeleton modulo the
+`(k - 1)`-skeleton are quasi-isomorphic to a free module over the chains on the loop space with
+one generator per `k`-cell.
 
 Attaching the cells of `Q k` to the model of `F k` along cycles, by the single attachment step
 `TauCeti.RowFiniteTwistingCocycle.exists_attach_of_forall_exists`, and iterating over `k`, builds
@@ -33,14 +36,16 @@ that
 * `g` is a chain map, given on the generators;
 * the row of a cell of stage `k`, its attaching cycle, only involves cells of stages `< k`, so the
   row relation is well-founded and the model is semi-free;
-* for every `k`, the cells of stages `< k`, which span a differential submodule
-  (`TauCeti.rowFiniteTwistedDifferential_mem_supported`), are quasi-isomorphic through `g` to
-  `F k`: relative cycles with target in `F k` are relative boundaries with target in `F k`.
+* for every `k`, on the cells of stages `< k`, which span a differential submodule
+  (`TauCeti.rowFiniteTwistedDifferential_mem_supported`), relative cycles of `g` with target in
+  `F k` are relative boundaries with target in `F k`; when the `F k` are stable under the
+  differential, this says that these cells are quasi-isomorphic through `g` to `F k`.
 
 The cell sets are arbitrary, and no finiteness is assumed: every vector of the model involves
 finitely many cells, so lies in some finite stage. When the filtration is exhaustive, the
-quasi-isomorphisms onto the stages therefore assemble into a quasi-isomorphism onto `M`
-(`TauCeti.exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported`).
+statements for the stages therefore assemble into the same statement with target in `M`
+(`TauCeti.exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported`), which is a
+quasi-isomorphism onto `M` when the `F k` are stable under the differential.
 
 The attaching cycles are not given: they are found, stage by stage, from the representatives
 `c₀ k q`, which are corrected modulo `F k` so that their differentials become images of cycles of
@@ -48,8 +53,8 @@ the previous stage. The finite coefficients of these cycles are the rows of the 
 
 The model is the case of the empty base of the relative construction
 `TauCeti.exists_rowFiniteTwistingCocycle_sum_of_forall_exists` (`RowFinite/Attach/Relative.lean`),
-with the cells `Σ k, Q k` staged by `Sigma.fst`: over an acyclic `F 0`, the module with no
-generators is a base model of `F 0`.
+with the cells `Σ k, Q k` staged by `Sigma.fst`: since every cycle in `F 0` bounds in `F 0`, the
+module with no generators is a base model of `F 0`.
 
 ## Main results
 
@@ -106,10 +111,13 @@ private theorem exists_mapRange_eq_of_equiv {Q Q' : Type uQ} (e : Q' ≃ Q) {c :
 variable [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] {h : IsDGAlgebra 𝒜 d}
 
 /-- **The cell-filtered semi-free model of a filtered differential graded module.** Let `M` be a
-differential graded left module with an increasing sequence of homogeneous submodules `F k`, with
-`F 0` acyclic. For each `k`, let `Q k` be a graded set of cells with representatives `c₀ k q` of
-degree `-indQ k q` in `F (k + 1)`, whose differentials lie in `F k`, through which the free module
-on `Q k`, with its coefficient differential, is quasi-isomorphic to `F (k + 1)` modulo `F k`.
+differential graded left module with an increasing sequence of homogeneous submodules `F k`, such
+that every cycle in `F 0` is the differential of an element of `F 0`. For each `k`, let `Q k` be a
+graded set of cells with representatives `c₀ k q` of degree `-indQ k q` in `F (k + 1)`, whose
+differentials lie in `F k`, such that, for the free module on `Q k` with its coefficient
+differential, every relative cycle of `c₀ k` with target in `F (k + 1)` modulo `F k` is a relative
+boundary there. When the `F k` are stable under `dM`, these hypotheses say that `F 0` is acyclic
+and that `c₀ k` is a quasi-isomorphism onto `F (k + 1)` modulo `F k`.
 
 Then there are a row-finite twisting cocycle `m` on all the cells `Σ k, Q k`, the cell `⟨k, q⟩`
 of index `indQ k q`, and an augmentation `g` to `M` such that:
@@ -118,11 +126,12 @@ of index `indQ k q`, and an augmentation `g` to `M` such that:
 * the row of a cell of stage `k` only involves cells of stages `< k`, so the row relation is
   well-founded: the model is semi-free;
 * for every `k`, the restriction of `g` to the cells of stages `< k` has relative cycles, with
-  target in `F k`, that are relative boundaries with target in `F k`: it is a quasi-isomorphism
-  onto `F k`.
+  target in `F k`, that are relative boundaries with target in `F k`; when the `F k` are stable
+  under `dM`, this says that it is a quasi-isomorphism onto `F k`.
 
-When the filtration is exhaustive, the last property gives a quasi-isomorphism onto `M`
-(`TauCeti.exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported`). -/
+When the filtration is exhaustive, the last property gives the same statement with target in `M`
+(`TauCeti.exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported`), a quasi-isomorphism
+onto `M` when the `F k` are stable under `dM`. -/
 theorem exists_semifreeModel_of_filtration (hM : IsDGLeftModule h ℳ dM) {F : ℕ → Submodule A M}
     (hF : Monotone F) (hFhom : ∀ k, (F k).IsHomogeneous ℳ)
     (hF₀ : ∀ w ∈ F 0, dM w = 0 → ∃ w' ∈ F 0, dM w' = w) {Q : ℕ → Type uQ}
@@ -148,7 +157,7 @@ theorem exists_semifreeModel_of_filtration (hM : IsDGLeftModule h ℳ dM) {F : �
   obtain ⟨m, c, -, hlt, hcdeg, hcF, hcc₀, hc, hstage, -⟩ :=
     exists_rowFiniteTwistingCocycle_sum_of_forall_exists (ind := fun x ↦ indQ x.1 x.2)
       (indP := Empty.elim) hM 0 Sigma.fst hF hFhom (g := Empty.elim) nofun nofun nofun
-      -- The module with no generators is a base model of the acyclic `F 0`.
+      -- The module with no generators is a base model of `F 0`, whose cycles bound in `F 0`.
       (fun u w _ huw hw ↦ by
         have hu : u = 0 := ext fun x ↦ x.elim
         obtain ⟨w', hw', rfl⟩ := hF₀ w hw (by rw [← huw, hu, map_zero])
