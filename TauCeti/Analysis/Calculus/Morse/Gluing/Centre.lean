@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Passage
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.Normed.Lp.ProdLp
+import TauCeti.Topology.MetricSpace.Contracting
 
 /-!
 # Gluing into a disc through the centre of the split hyperbolic box
@@ -156,32 +157,6 @@ private theorem dist_smul_comp_smul_le {ε δ η l : ℝ} {Kg Kk : ℝ≥0} {g :
         exact hg.dist_le_mul _ hy _ hy'
     _ = l * (Kk * (l * Kg)) * dist y y' := by ring
 
-omit [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup Eₛ] [NormedSpace ℝ Eₛ]
-  [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ] in
-/-- **The fixed points of a uniformly contracting family depend continuously on the parameter.**
-If every map `F a`, for `a ∈ S`, maps `s` to itself as a contraction with one constant `K` and
-fixes a point `v a` of `s`, and `a ↦ F a y` is continuous on `S` for every `y ∈ s`, then `v` is
-continuous on `S`: by the a posteriori estimate `ContractingWith.dist_le_of_fixedPoint`,
-`dist (v a) (v a')` is at most `dist (F a (v a')) (F a' (v a')) / (1 - K)`. -/
-private theorem continuousOn_of_forall_contractingWith {α X : Type*} [TopologicalSpace α]
-    [MetricSpace X] {S : Set α} {s : Set X} {F : α → X → X} {v : α → X} {K : ℝ≥0}
-    (hmaps : ∀ a ∈ S, MapsTo (F a) s s)
-    (hF : ∀ a (ha : a ∈ S), ContractingWith K ((hmaps a ha).restrict _ _ _))
-    (hv : ∀ a ∈ S, v a ∈ s ∧ F a (v a) = v a)
-    (hc : ∀ y ∈ s, ContinuousOn (fun a ↦ F a y) S) : ContinuousOn v S := by
-  intro a' ha'
-  have hdist : ∀ a ∈ S, dist (v a) (v a') ≤ dist (F a (v a')) (F a' (v a')) / (1 - K) := by
-    intro a ha
-    have h := (hF a ha).dist_le_of_fixedPoint ⟨v a', (hv a' ha').1⟩
-      (y := ⟨v a, (hv a ha).1⟩) (Subtype.ext (hv a ha).2)
-    rw [(hv a' ha').2, dist_comm, dist_comm (F a _)]
-    simpa only [Subtype.dist_eq, MapsTo.val_restrict_apply] using h
-  have hlim : Tendsto (fun a ↦ dist (F a (v a')) (F a' (v a')) / (1 - K)) (𝓝[S] a') (𝓝 0) := by
-    simpa using ((hc _ (hv a' ha').1 a' ha').tendsto.dist
-      (tendsto_const_nhds (x := F a' (v a')))).div_const (1 - K)
-  exact tendsto_iff_dist_tendsto_zero.2 (squeeze_zero' (.of_forall fun _ ↦ dist_nonneg)
-    (eventually_nhdsWithin_of_forall hdist) hlim)
-
 /-- **The orbits glued at the centre form a continuous family.** Let `y ↦ (g y, y)` be a
 `Kg`-Lipschitz graph in the entrance face `‖x‖ = ε` over the closed ball of radius `δ > 0` of the
 expanding factor, and `x ↦ (x, k x)` a `Kk`-Lipschitz graph through the centre over the closed
@@ -271,13 +246,8 @@ theorem splitQuadraticFlow_snd_eq_iff_smul_comp_smul_eq {k : Eₛ → Eᵤ} (T :
     (splitQuadraticFlow T (WithLp.toLp 2 (x, y))).snd =
         k (splitQuadraticFlow T (WithLp.toLp 2 (x, y))).fst ↔
       Real.exp (-T) • k (Real.exp (-T) • x) = y := by
-  rw [splitQuadraticFlow_apply, WithLp.toLp_fst, WithLp.toLp_snd, WithLp.toLp_fst,
-    WithLp.toLp_snd]
-  constructor
-  · intro h
-    rw [← h, smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
-  · intro h
-    rw [← h, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
+  simp only [splitQuadraticFlow_apply, WithLp.toLp_fst, WithLp.toLp_snd]
+  constructor <;> intro h <;> simp [← h, smul_smul, ← Real.exp_add]
 
 /-- **The glued orbit at a solved rate, in the model.** If `y` solves the gluing equation
 `l • k (l • x) = y` at a rate `l > 0`, with `‖x‖ ≤ ε` and `‖k (l • x)‖ ≤ ε`, then in time `-log l`
@@ -290,14 +260,12 @@ theorem splitQuadraticFlow_eq_and_norm_le_of_smul_comp_smul_eq {k : Eₛ → E�
         WithLp.toLp 2 (l • x, k (l • x)) ∧
       ∀ s ∈ Icc 0 (-Real.log l), ‖(splitQuadraticFlow s (WithLp.toLp 2 (x, y))).fst‖ ≤ ε ∧
         ‖(splitQuadraticFlow s (WithLp.toLp 2 (x, y))).snd‖ ≤ ε := by
-  have hexp : Real.exp (-(-Real.log l)) = l := by rw [neg_neg, Real.exp_log hl]
   have hexpT : Real.exp (-Real.log l) * l = 1 := by
     rw [Real.exp_neg, Real.exp_log hl, inv_mul_cancel₀ hl.ne']
   -- `‖y‖ = l ‖k (l • x)‖`, and `e^s l ≤ 1` for `s ≤ -log l`.
   have hy : ‖y‖ = l * ‖k (l • x)‖ := by rw [← hfix, norm_smul, Real.norm_of_nonneg hl.le]
   refine ⟨?_, fun s hs ↦ ⟨?_, ?_⟩⟩
-  · rw [splitQuadraticFlow_apply, WithLp.toLp_fst, WithLp.toLp_snd, hexp, ← hfix, smul_smul,
-      hexpT, one_smul]
+  · simp [splitQuadraticFlow_apply, Real.exp_log hl, ← hfix, smul_smul, hexpT]
   · rw [norm_fst_splitQuadraticFlow, WithLp.toLp_fst]
     exact (mul_le_of_le_one_left (norm_nonneg _)
       (Real.exp_le_one_iff.2 (by linarith [hs.1]))).trans hx

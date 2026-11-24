@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Passage
 public import Mathlib.Topology.MetricSpace.Contracting
+import TauCeti.Topology.MetricSpace.Contracting
 
 /-!
 # Gluing transverse discs through the split hyperbolic box
@@ -319,21 +320,6 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
 
 /-! ### Families of discs -/
 
-/-- A fixed point `v` of the gluing map `F w = k (r • g (r • w))` in the closed ball of radius `ε`
-is within `dist (F v') v' / (1 - Kk * Kg * r₀ ^ 2)` of every `v'` of that ball, since `F` contracts
-the ball with constant `Kk * Kg * r₀ ^ 2`. -/
-private theorem dist_le_of_isFixedPt_gluing (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
-    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
-    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε)))
-    (hkε : ∀ x ∈ closedBall 0 (r₀ * ε), ‖k x‖ = ε) (hK : Kk * Kg * r₀ ^ 2 < 1) {r : ℝ}
-    (hr : r ∈ Icc 0 r₀) {v v' : Eᵤ} (hv : v ∈ closedBall 0 ε) (hv' : v' ∈ closedBall 0 ε)
-    (hfix : k (r • g (r • v)) = v) :
-    dist v v' ≤ dist (k (r • g (r • v'))) v' / (1 - Kk * Kg * r₀ ^ 2) := by
-  have h := (contractingWith_gluing hg hgε hk hK hr (mapsTo_gluing hgε hkε hr))
-    |>.dist_le_of_fixedPoint ⟨v', hv'⟩ (y := ⟨v, hv⟩) (Subtype.ext hfix)
-  rw [Subtype.dist_eq, Subtype.dist_eq, coe_mul_mul_toNNReal_sq (hr.1.trans hr.2)] at h
-  simpa only [dist_comm, MapsTo.val_restrict_apply] using h
-
 /-- For families of discs `g p` and `k p`, Lipschitz with uniform constants and continuous in the
 parameter `p ∈ S`, the value of the gluing map `w ↦ k p (r • g p (r • w))` at a fixed `v` depends
 continuously on the gluing parameter `r` and on `p` jointly. -/
@@ -404,21 +390,16 @@ theorem exists_continuousOn_and_forall_setOf_mem_splitPassage_source_graph_eq_im
     · exact ⟨0, fun h ↦ absurd h hp⟩
   choose w hw using hex
   refine ⟨fun r p ↦ w p r, ?_, fun p hp ↦ hw p hp⟩
-  -- Joint continuity: the fixed point `w p r` is within a constant times
-  -- `dist (F_{r, p} v') v'` of the fixed point `v'` at `(r', p')`, and `F_{r, p} v' → v'`.
-  rintro ⟨r', p'⟩ ⟨hr', hp'⟩
-  obtain ⟨-, -, hnorm', hfix', -⟩ := hw p' hp'
-  have hv' : ‖w p' r'‖ ≤ ε := (hnorm' r' hr').le
-  have hF := (continuousOn_gluing_family hg hgε hk hgc hkc hv' (r', p') ⟨hr', hp'⟩).tendsto
-  simp only [hfix' r' hr'] at hF
-  have hlim : Tendsto (fun q : ℝ × P ↦ dist (k q.2 (q.1 • g q.2 (q.1 • w p' r'))) (w p' r') /
-      (1 - Kk * Kg * r₀ ^ 2)) (𝓝[Icc 0 r₀ ×ˢ S] (r', p')) (𝓝 0) := by
-    simpa using (tendsto_iff_dist_tendsto_zero.1 hF).div_const (1 - Kk * Kg * r₀ ^ 2)
-  refine tendsto_iff_dist_tendsto_zero.2
-    (squeeze_zero' (Eventually.of_forall fun _ ↦ dist_nonneg) ?_ hlim)
-  filter_upwards [self_mem_nhdsWithin] with q hq
-  obtain ⟨-, -, hnorm, hfix, -⟩ := hw q.2 hq.2
-  exact dist_le_of_isFixedPt_gluing (hg _ hq.2) (hgε _ hq.2) (hk _ hq.2) (hkε _ hq.2) hK hq.1
-    (mem_closedBall_zero_iff.2 (hnorm _ hq.1).le) (mem_closedBall_zero_iff.2 hv') (hfix _ hq.1)
+  -- Joint continuity: the gluing maps contract the closed ball of radius `ε` with one constant
+  -- and depend continuously on `(r, p)`, so their fixed points do too.
+  have hmaps (q : ℝ × P) (hq : q ∈ Icc 0 r₀ ×ˢ S) :=
+    mapsTo_gluing (hgε _ hq.2) (hkε _ hq.2) hq.1
+  exact continuousOn_of_forall_contractingWith (F := fun q v ↦ k q.2 (q.1 • g q.2 (q.1 • v)))
+    hmaps (fun q hq ↦ contractingWith_gluing (hg _ hq.2) (hgε _ hq.2) (hk _ hq.2) hK hq.1
+      (hmaps q hq))
+    (fun q hq ↦ by
+      obtain ⟨-, -, hnorm, hfix, -⟩ := hw q.2 hq.2
+      exact ⟨mem_closedBall_zero_iff.2 (hnorm _ hq.1).le, hfix _ hq.1⟩)
+    fun v hv ↦ continuousOn_gluing_family hg hgε hk hgc hkc (mem_closedBall_zero_iff.1 hv)
 
 end TauCeti
