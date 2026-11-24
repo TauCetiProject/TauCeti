@@ -64,7 +64,7 @@ theorem mem_span_smoothingEquation_iff {p : E × ℂ × ℂ}
     (fun G hG h0 ↦ hG.exists_eventuallyEq_mul_sub_mul
       (exists_toFilterGerm_nhds_eq_iff_analyticAt.1 ⟨s, hS⟩) (eventually_nhdsWithin_iff.1 h0))
     hgG, eventually_nhdsWithin_iff]
-  rfl
+  simp only [Set.mem_ofPred_eq]
 
 /-- **Restriction to `N_s` has kernel `(xy - s(b))`.** At any point `p` of `E × ℂ × ℂ`, the
 holomorphic germs at `p` whose restrictions to `N_s = {xy = S(b)}` have zero germ at `p` form the
@@ -103,8 +103,9 @@ theorem smoothingQuotientEquivRange_mk (p : E × ℂ × ℂ)
     (g : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ)).presheaf.stalk p) :
     smoothingQuotientEquivRange p hS (Ideal.Quotient.mk _ g) =
       (toFilterGerm 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ) p
-        (𝓝[{q | q.2.1 * q.2.2 = S q.1}] p) nhdsWithin_le_nhds).rangeRestrict g :=
-  (rfl)
+        (𝓝[{q | q.2.1 * q.2.2 = S q.1}] p) nhdsWithin_le_nhds).rangeRestrict g := by
+  simp only [smoothingQuotientEquivRange, RingHom.quotientKerEquivRange, RingEquiv.trans_apply,
+    Ideal.quotEquivOfEq_mk, RingHom.quotientKerEquivOfSurjective_apply_mk]
 
 /-- The class of a germ goes to its restriction to `N_s`, as a germ along `N_s`. -/
 theorem coe_smoothingQuotientEquivRange_mk (p : E × ℂ × ℂ)
@@ -113,8 +114,8 @@ theorem coe_smoothingQuotientEquivRange_mk (p : E × ℂ × ℂ)
     (g : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ)).presheaf.stalk p) :
     (smoothingQuotientEquivRange p hS (Ideal.Quotient.mk _ g) : Germ _ ℂ) =
       toFilterGerm 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ) p
-        (𝓝[{q | q.2.1 * q.2.2 = S q.1}] p) nhdsWithin_le_nhds g :=
-  (rfl)
+        (𝓝[{q | q.2.1 * q.2.2 = S q.1}] p) nhdsWithin_le_nhds g := by
+  rw [smoothingQuotientEquivRange_mk, RingHom.coe_rangeRestrict]
 
 /-- The inverse isomorphism sends the restriction of a germ to `N_s` to the class of the germ. -/
 @[simp]
