@@ -9,19 +9,21 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
-import TauCeti.LinearAlgebra.RootSystem.CoweightLattice.Basis
-import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
+public import TauCeti.LinearAlgebra.RootSystem.CoweightLattice.Basis
+import TauCeti.Algebra.Algebra.Pi
+import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
 # The rational coordinate model of a crystallographic root system
 
 For a crystallographic root system `P` over a characteristic-zero ring `R` with base `b`,
 expanding roots in the simple-root basis `b` gives `b.rationalModel` on `b.support → ℚ` paired
-by the dot product, with canonical base `b.rationalModelBase`. Base-changing `b.rationalModel` to
-any characteristic-zero field `S` preserves irreducibility (alongside the general root-system and
-reducedness instances in `TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi`), and over a
-characteristic-zero field `K` itself, `b.equivBaseChangeRationalModel` identifies `P` with the base
-change of `b.rationalModel` to `K`.
+by the dot product, with canonical base `b.rationalModelBase`. When `P` is finite, reduced, and
+irreducible over a characteristic-zero domain `R`, irreducibility transfers to `b.rationalModel`
+and to its base change to any characteristic-zero field `S` (alongside the general root-system and
+reducedness instances in `TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi`). Over any
+characteristic-zero `ℚ`-algebra `K`, `b.equivBaseChangeRationalModel` identifies `P` with the
+base change of `b.rationalModel` to `K`.
 -/
 
 public section
@@ -47,24 +49,6 @@ private lemma corootCoordInt_injective [P.IsRootSystem] :
   simp only [LinearMap.flip_apply, toWeightBasis_apply, root_coroot_eq_pairing,
     ← P.algebraMap_pairingIn ℤ]
   exact congrArg (algebraMap ℤ R) (congrFun hij k)
-
-private lemma rootCoefficients_dot_corootCoordInt (i j : ι) :
-    b.rootCoefficients i ⬝ᵥ (fun k : b.support ↦ P.pairingIn ℤ k j) = P.pairingIn ℤ i j := by
-  apply FaithfulSMul.algebraMap_injective ℤ R
-  rw [P.algebraMap_pairingIn ℤ i j, dotProduct, map_sum]
-  conv_rhs => rw [← root_coroot_eq_pairing, ← b.sum_rootCoefficients_smul_root i, map_sum,
-    LinearMap.sum_apply]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [map_mul, P.algebraMap_pairingIn ℤ, ← root_coroot_eq_pairing, map_zsmul,
-    LinearMap.smul_apply, zsmul_eq_mul, eq_intCast]
-
-private lemma rootCoefficients_reflectionPerm (i j : ι) :
-    b.rootCoefficients (P.reflectionPerm i j) =
-      b.rootCoefficients j - P.pairingIn ℤ j i • b.rootCoefficients i := by
-  rw [b.rootCoefficients_eq_iff]
-  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, sub_smul, Finset.sum_sub_distrib,
-    mul_smul, ← Finset.smul_sum, b.sum_rootCoefficients_smul_root,
-    ← P.reflection_apply_root' ℤ, P.root_reflectionPerm]
 
 private lemma corootCoordInt_reflectionPerm (i j : ι) (k : b.support) :
     P.pairingIn ℤ k (P.reflectionPerm i j) =
@@ -136,6 +120,12 @@ theorem rationalModel_root_support [DecidableEq ι] (i : b.support) :
   ext k
   simp [rationalModel_root_apply, b.rootCoefficients_coe, Pi.single_apply, apply_ite]
 
+private lemma rationalModel_root_eq_pi_basisFun :
+    (fun i : (b.support : Set ι) ↦ b.rationalModel.root i) =
+      Pi.basisFun ℚ (b.support : Set ι) := by
+  classical
+  exact funext fun i ↦ by rw [rationalModel_root_support, Pi.basisFun_apply]
+
 @[simp]
 theorem rationalModel_pairing (i j : ι) :
     b.rationalModel.pairing i j = (P.pairingIn ℤ i j : ℚ) := by
@@ -155,27 +145,23 @@ theorem rationalModel_pairingIn (i j : ι) :
 
 private lemma linearIndependent_rationalModel_coroot :
     LinearIndependent ℚ (fun j : b.support ↦ b.rationalModel.coroot j) := by
-  rw [Fintype.linearIndependent_iff]; intro c hc
-  obtain ⟨d, hd⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors ℤ) c
-  choose a ha using fun j ↦ hd j
-  have ha' (j : b.support) : (a j : ℚ) = ((d : ℤ) : ℚ) * c j := by
-    simpa [Algebra.smul_def] using ha j
-  have hd0 : ((d : ℤ) : ℚ) ≠ 0 := Int.cast_ne_zero.2 (nonZeroDivisors.coe_ne_zero d)
+  let A : Matrix b.support b.support ℤ := Matrix.of fun j k ↦ P.pairingIn ℤ k j
+  have hrow : (fun j : b.support ↦ b.rationalModel.coroot j) = (A.map ((↑) : ℤ → ℚ)).row :=
+    funext fun j ↦ funext fun k ↦ (b.rationalModel_coroot_apply j k).symm
+  rw [hrow, Matrix.linearIndependent_rat_row_iff, Fintype.linearIndependent_iff]
+  intro a ha
   have hN : ∑ j : b.support, a j • P.coroot j = 0 := by
     apply (LinearMap.IsPerfPair.bijective_right P.toLinearMap).injective
     refine b.toWeightBasis.ext fun k ↦ ?_
+    have hk : ∑ j : b.support, a j * P.pairingIn ℤ k j = 0 := by
+      simpa [Matrix.row_apply, A] using congrFun ha k
     simp only [toWeightBasis_apply, map_zero, LinearMap.zero_apply, map_sum, map_zsmul,
       LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.flip_apply, root_coroot_eq_pairing]
-    have hk' : ∑ j : b.support, a j * P.pairingIn ℤ k j = 0 :=
-      Int.cast_injective (α := ℚ) (by
-        simpa [ha', mul_assoc, ← Finset.mul_sum, rationalModel_coroot_apply] using
-          congrArg (((d : ℤ) : ℚ) * ·) (congrFun hc k))
     rw [show ∑ j : b.support, a j • P.pairing k j =
         algebraMap ℤ R (∑ j : b.support, a j * P.pairingIn ℤ k j) by
       rw [map_sum]; exact Finset.sum_congr rfl fun j _ ↦ by
-        rw [map_mul, P.algebraMap_pairingIn ℤ, zsmul_eq_mul, eq_intCast], hk', map_zero]
-  have ha0 := Fintype.linearIndependent_iff.1 (b.linearIndepOn_coroot.restrict_scalars' ℤ) a hN
-  exact fun j ↦ (mul_eq_zero.1 (by rw [← ha' j, ha0 j, Int.cast_zero])).resolve_left hd0
+        rw [map_mul, P.algebraMap_pairingIn ℤ, zsmul_eq_mul, eq_intCast], hk, map_zero]
+  exact Fintype.linearIndependent_iff.1 (b.linearIndepOn_coroot.restrict_scalars' ℤ) a hN
 
 private lemma rationalModel_root_eq_sum_nat (f : ι → ℕ) {i' : ι}
     (hi' : P.root i' = ∑ j ∈ b.support, f j • P.root j) :
@@ -203,12 +189,8 @@ private lemma zsmul_rationalModel_coroot_eq_sum_nat (f : ι → ℕ) {y : N}
 noncomputable def rationalModelBase : b.rationalModel.Base where
   support := b.support
   linearIndepOn_root := by
-    classical
-    have hfun : (fun i : (b.support : Set ι) ↦ b.rationalModel.root i) =
-        fun i : (b.support : Set ι) ↦ Pi.basisFun ℚ b.support i :=
-      funext fun i ↦ by rw [rationalModel_root_support, Pi.basisFun_apply]
-    rw [LinearIndepOn, hfun]
-    exact (Pi.basisFun ℚ b.support).linearIndependent
+    rw [LinearIndepOn, b.rationalModel_root_eq_pi_basisFun]
+    exact (Pi.basisFun ℚ (b.support : Set ι)).linearIndependent
   linearIndepOn_coroot := b.linearIndependent_rationalModel_coroot
   root_mem_or_neg_mem i := by
     classical
@@ -264,10 +246,9 @@ theorem cartanMatrix_rationalModelBase (i j : b.rationalModelBase.support) :
 
 instance isRootSystem_rationalModel : b.rationalModel.IsRootSystem where
   span_root_eq_top := by
-    classical
-    rw [eq_top_iff, ← (Pi.basisFun ℚ b.support).span_eq,
-      show ⇑(Pi.basisFun ℚ b.support) = fun i : b.support ↦ b.rationalModel.root i from
-        funext fun i ↦ by rw [rationalModel_root_support, Pi.basisFun_apply]]
+    have hspan : Submodule.span ℚ (range ⇑(Pi.basisFun ℚ (b.support : Set ι))) = ⊤ :=
+      (Pi.basisFun ℚ (b.support : Set ι)).span_eq
+    rw [eq_top_iff, ← hspan, ← b.rationalModel_root_eq_pi_basisFun]
     exact Submodule.span_mono fun _ ⟨i, hi⟩ ↦ ⟨i, hi⟩
   span_coroot_eq_top := by
     rw [eq_top_iff, ← Submodule.eq_top_of_finrank_eq
@@ -277,20 +258,19 @@ instance isRootSystem_rationalModel : b.rationalModel.IsRootSystem where
 
 instance isReduced_rationalModel [P.IsReduced] : b.rationalModel.IsReduced where
   eq_or_eq_neg i j hdep := by
-    have hR : ¬ LinearIndependent R ![P.root i, P.root j] := fun hli ↦ hdep (by
-      rw [Fintype.linearIndependent_iff]; intro c hc
-      obtain ⟨d, hd⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors ℤ) c
-      choose a ha using fun m ↦ hd m
-      have ha' (m : Fin 2) : (a m : ℚ) = ((d : ℤ) : ℚ) * c m := by
-        simpa [Algebra.smul_def] using ha m
-      have hd0 : ((d : ℤ) : ℚ) ≠ 0 := Int.cast_ne_zero.2 (nonZeroDivisors.coe_ne_zero d)
+    let A : Matrix (Fin 2) b.support ℤ := Matrix.of ![b.rootCoefficients i, b.rootCoefficients j]
+    have hrow : ![b.rationalModel.root i, b.rationalModel.root j] = (A.map ((↑) : ℤ → ℚ)).row := by
+      ext m k
+      fin_cases m <;> rfl
+    have hZ : ¬ LinearIndependent ℤ A.row := by
+      rw [← Matrix.linearIndependent_rat_row_iff, ← hrow]
+      exact hdep
+    have hR : ¬ LinearIndependent R ![P.root i, P.root j] := fun hli ↦ hZ (by
+      rw [Fintype.linearIndependent_iff]; intro a ha
+      have hsum_coord (k : b.support) :
+          a 0 * b.rootCoefficients i k + a 1 * b.rootCoefficients j k = 0 := by
+        simpa [Matrix.row_apply, A, Fin.sum_univ_two] using congrFun ha k
       have hsumR : ∑ m : Fin 2, (a m : R) • ![P.root i, P.root j] m = 0 := by
-        have hsum_coord (k : b.support) :
-            a 0 * b.rootCoefficients i k + a 1 * b.rootCoefficients j k = 0 := by
-          apply Int.cast_injective (α := ℚ); have hk := congrFun hc k
-          simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Pi.add_apply,
-            Pi.smul_apply, smul_eq_mul, Pi.zero_apply, rationalModel_root_apply] at hk
-          push_cast; rw [ha' 0, ha' 1]; linear_combination ((d : ℤ) : ℚ) * hk
         rw [Fin.sum_univ_two]
         simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Int.cast_smul_eq_zsmul,
           ← b.sum_rootCoefficients_smul_root i, ← b.sum_rootCoefficients_smul_root j,
@@ -298,8 +278,8 @@ instance isReduced_rationalModel [P.IsReduced] : b.rationalModel.IsReduced where
         exact Finset.sum_eq_zero fun k _ ↦ by
           rw [smul_smul, smul_smul, ← add_smul, hsum_coord k, zero_smul]
       have ha0 := Fintype.linearIndependent_iff.1 hli (fun m ↦ (a m : R)) hsumR
-      intro m; have ham : a m = 0 := Int.cast_injective (α := R) (by simpa using ha0 m)
-      exact (mul_eq_zero.1 (by rw [← ha' m, ham, Int.cast_zero])).resolve_left hd0)
+      intro m
+      exact Int.cast_injective (α := R) (by simpa using ha0 m))
     rcases IsReduced.eq_or_eq_neg i j hR with h | h
     · exact Or.inl (by rw [P.root.injective h])
     · refine Or.inr ?_
@@ -316,36 +296,61 @@ instance isIrreducible_rationalModel [IsDomain R] [Finite ι] [P.IsReduced] [P.I
 
 end Ring
 
-section BaseChangeField
+section BaseChange
 
 variable {ι R M N : Type*} [CommRing R] [CharZero R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [P.IsCrystallographic] [P.IsRootSystem] (b : P.Base)
-  (S : Type*) [Field S] [CharZero S]
+  (S : Type*) [CommRing S] [IsDomain S] [Algebra ℚ S]
 
-/-- Base-changing `b.rationalModel` to any characteristic-zero field `S` preserves
-irreducibility. -/
-instance isIrreducible_rootPairingBaseChange_rationalModel [IsDomain R] [Finite ι] [P.IsReduced]
-    [P.IsIrreducible] :
-    (rootPairingBaseChange S b.rationalModel b.rationalModel_toLinearMap).IsIrreducible := by
-  let bS := rootPairingBaseChangeBase S b.rationalModel
-    b.rationalModel_toLinearMap b.rationalModelBase
-  let e : bS.support ≃ b.support :=
-    (supportEquivRootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
-      b.rationalModelBase).trans b.supportEquivRationalModelBase
-  exact b.isIrreducible_of_cartanMatrix_equiv bS e fun u v ↦ by simp [bS, e]
+/-- The supports of the base-changed rational model base over `S` and of `b` name the same root
+indices. -/
+noncomputable def supportEquivRootPairingBaseChangeRationalModel :
+    (rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
+      b.rationalModelBase).support ≃ b.support :=
+  (supportEquivRootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
+    b.rationalModelBase).trans b.supportEquivRationalModelBase
 
-end BaseChangeField
+@[simp]
+theorem coe_supportEquivRootPairingBaseChangeRationalModel
+    (i : (rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
+      b.rationalModelBase).support) :
+    (b.supportEquivRootPairingBaseChangeRationalModel S i : ι) = i := by
+  simp [supportEquivRootPairingBaseChangeRationalModel]
 
-section EquivOverField
+/-- Base change of `b.rationalModel` to a `ℚ`-algebra domain of characteristic zero preserves the
+Cartan matrix of `b`. -/
+theorem cartanMatrix_rootPairingBaseChangeRationalModel [CharZero S]
+    (i j : (rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
+      b.rationalModelBase).support) :
+    (rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
+      b.rationalModelBase).cartanMatrix i j =
+      b.cartanMatrix (b.supportEquivRootPairingBaseChangeRationalModel S i)
+        (b.supportEquivRootPairingBaseChangeRationalModel S j) := by
+  simp [supportEquivRootPairingBaseChangeRationalModel]
 
-variable {ι K M N : Type*} [Field K] [CharZero K]
+/-- For a finite reduced irreducible crystallographic root system `P` over a characteristic-zero
+domain `R`, irreducibility transfers to the base change of `b.rationalModel` to any
+characteristic-zero field `S`. -/
+instance isIrreducible_rootPairingBaseChange_rationalModel {S : Type*} [Field S] [CharZero S]
+    [IsDomain R] [Finite ι] [P.IsReduced] [P.IsIrreducible] :
+    (rootPairingBaseChange S b.rationalModel b.rationalModel_toLinearMap).IsIrreducible :=
+  b.isIrreducible_of_cartanMatrix_equiv
+    (rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap b.rationalModelBase)
+    (b.supportEquivRootPairingBaseChangeRationalModel S)
+    (b.cartanMatrix_rootPairingBaseChangeRationalModel S)
+
+end BaseChange
+
+section EquivOverRing
+
+variable {ι K M N : Type*} [CommRing K] [CharZero K] [Algebra ℚ K]
   [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
   {P : RootPairing ι K M N} [P.IsCrystallographic] [P.IsRootSystem] (b : P.Base)
 
-/-- **Comparison with the base-changed rational model.** Over a characteristic-zero field `K`,
-expanding weights in `b.toWeightBasis` identifies `P` with the base change of `b.rationalModel`
-to `K`, with trivial permutation of root indices. -/
+/-- **Comparison with the base-changed rational model.** Over a characteristic-zero `ℚ`-algebra
+`K`, expanding weights in `b.toWeightBasis` identifies `P` with the base change of
+`b.rationalModel` to `K`, with trivial permutation of root indices. -/
 noncomputable def equivBaseChangeRationalModel :
     P.Equiv (rootPairingBaseChange K b.rationalModel b.rationalModel_toLinearMap) where
   weightMap := b.toWeightBasis.equivFun.toLinearMap
@@ -389,6 +394,11 @@ theorem equivBaseChangeRationalModel_weightEquiv :
     b.equivBaseChangeRationalModel.weightEquiv = b.toWeightBasis.equivFun :=
   LinearEquiv.ext fun _ ↦ rfl
 
-end EquivOverField
+@[simp]
+theorem equivBaseChangeRationalModel_coweightEquiv :
+    b.equivBaseChangeRationalModel.coweightEquiv = b.fundamentalCoweightBasis.equivFun.symm :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+end EquivOverRing
 
 end RootPairing.Base

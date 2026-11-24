@@ -227,15 +227,17 @@ theorem _root_.RootPairing.Base.nonempty_support_of_isIrreducible
   rw [not_nonempty_iff] at h
   exact not_subsingleton M b.toWeightBasis.equivFun.subsingleton
 
-/-- Irreducibility transfers across an isomorphism of Cartan matrices of bases, over any
-characteristic-zero field. -/
+/-- For a finite reduced irreducible crystallographic root system `P` over a characteristic-zero
+domain, irreducibility transfers to any crystallographic root system `Q` over a characteristic-zero
+field (possibly on a different root index type `ι'`) along a support equivalence of bases that
+preserves the Cartan matrix. -/
 theorem _root_.RootPairing.Base.isIrreducible_of_cartanMatrix_equiv
     {ι R M N : Type*} [CommRing R] [IsDomain R] [CharZero R]
     [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
     {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
     [P.IsRootSystem] [P.IsIrreducible] (b : P.Base)
-    {S M' N' : Type*} [Field S] [CharZero S] [AddCommGroup M'] [Module S M']
-    [AddCommGroup N'] [Module S N'] {Q : RootPairing ι S M' N'} [Q.IsRootSystem]
+    {ι' S M' N' : Type*} [Field S] [CharZero S] [AddCommGroup M'] [Module S M']
+    [AddCommGroup N'] [Module S N'] {Q : RootPairing ι' S M' N'} [Q.IsRootSystem]
     [Q.IsCrystallographic] (bQ : Q.Base) (e : bQ.support ≃ b.support)
     (hC : ∀ u v, bQ.cartanMatrix u v = b.cartanMatrix (e u) (e v)) : Q.IsIrreducible := by
   have hne' : Nonempty bQ.support := b.nonempty_support_of_isIrreducible.map e.symm

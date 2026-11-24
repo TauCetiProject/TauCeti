@@ -10,32 +10,51 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Orbit
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.CoprimeExponents
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.Coxeter.Element
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
+import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
+import Mathlib.LinearAlgebra.RootSystem.BaseExists
+import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.LinearAlgebra.RootSystem.Basic
+import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
+import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.BaseChange
+import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane
+import TauCeti.LinearAlgebra.RootSystem.Coxeter.FixedPoints
+import TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.BaseChange
 
 /-!
 # The Coxeter number and the exponents of a Weyl group
 
-Let `b` be a base of a finite irreducible reduced crystallographic root system of rank `r`, on a
-finite-dimensional space over an algebraically closed field `K` containing `ℝ`, such as `ℂ`. Let
+Let `b` be a base of a finite irreducible reduced crystallographic root system of rank `r`. Let
 `c` be a Coxeter element, a product of the `r` simple reflections in some order, and let `h` be
-its order, the **Coxeter number**. This file proves:
+its order, the **Coxeter number**.
 
-* the number of roots is `|Φ| = r h`, equivalently `|Φ⁺| = r h / 2`;
-* every exponent `dᵢ - 1`, for the degrees `dᵢ` of a homogeneous basic invariant system, is less
-  than `h`.
+Over an algebraically closed field `K` containing `ℝ` (such as `ℂ`), this file first proves:
 
-With the computation of the eigenvalues of the bipartite Coxeter element at a regular
-eigenvector (`RootPairing.exists_isPrimitiveRoot_charpoly_bipartiteCoxeterElement_eq_prod`), the
-second statement says that its eigenvalues are `ζ ^ eᵢ` for a primitive `h`-th root of unity `ζ`,
-with exponents `1 ≤ eᵢ < h` (the lower bound is
-`RootPairing.two_le_of_injective_aeval_weylGroupRootRep_dual`).
+* `RootPairing.natCard_eq_finrank_mul_orderOf_wordProd`: the number of roots is `|Φ| = r h`,
+  equivalently `|Φ⁺| = r h / 2`;
+* `RootPairing.degree_sub_one_lt_orderOf_wordProd`: every exponent `dᵢ - 1`, for the degrees `dᵢ`
+  of a homogeneous basic invariant system, is less than `h`.
+
+It then extends these results to arbitrary characteristic-zero integral domains `R` and arbitrary
+characteristic-zero fields `K` via base change from the rational model `b.rationalModel` to `ℂ`
+(`TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.BaseChange` and
+`TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.BaseChange`), together with the regular
+eigenvector for `exp (-2πi / h)` from the Coxeter plane construction
+(`TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane`) and cyclotomic descent
+(`TauCeti.RepresentationTheory.SymmetricAlgebra.Weyl.CoprimeExponents` and
+`TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents`):
+
+* Over a characteristic-zero integral domain `R`: `|Φ| = r h` and `2 * |Φ⁺| = r h`.
+* Over a characteristic-zero field `K`: degree bounds `2 ≤ dᵢ ≤ h`, exponent duality
+  `dᵢ - 1 ↦ h - (dᵢ - 1)`, the crystallographic coprime-exponent theorem (including `2` and `h`),
+  and `(P.weylGroupRootRep c).charpoly = ∏ i, (X - C (ζ ^ (dᵢ - 1)))` for any primitive `h`-th
+  root of unity `ζ : K`.
 
 ## The argument
 
-The bipartite Coxeter element `c` has a regular eigenvector for a primitive `h`-th root of unity
-`ζ`, and since its characteristic polynomial is rational, the eigenvalue computation there holds
-with `ζ` replaced by any primitive `h`-th root of unity
+Over `ℂ`, the bipartite Coxeter element `c` has a regular eigenvector for a primitive `h`-th root
+of unity `ζ`, and since its characteristic polynomial is rational, the eigenvalue computation there
+holds with `ζ` replaced by any primitive `h`-th root of unity
 (`RootPairing.charpoly_weylGroupRootRep_of_isRegularWeight_of_isPrimitiveRoot`). Using `ζ` and
 `ζ⁻¹` shows that the exponents `eᵢ` modulo `h` are stable under `e ↦ -e`, with multiplicity.
 None of them is `0` modulo `h`, as `1` is not an eigenvalue of `c`, so they pair off and
@@ -46,25 +65,47 @@ so `2 |Φ⁺| = |Φ| ≤ r h` (`TauCeti.natCard_le_orderOf_wordProd_mul_length`)
 all these inequalities are equalities: `|Φ| = r h` and `eᵢ % h = eᵢ`. Since all Coxeter elements
 are conjugate, the results hold for every Coxeter element.
 
+Over an arbitrary characteristic-zero domain `R` or field `K`, the base-changed rational model
+`rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap` has the same Cartan matrix
+and the same graded invariant-degree multiset as `P`, so `|Φ|`, `orderOf c`, basic invariant
+degrees, and the rational characteristic polynomial descend from `ℂ` to `R` and `K`.
+
 ## Main results
 
-* `RootPairing.natCard_eq_finrank_mul_orderOf_wordProd`: the number of roots is the rank times the
-  order of any Coxeter element.
-* `RootPairing.degree_sub_one_lt_orderOf_wordProd`: every exponent `dᵢ - 1` of a homogeneous basic
-  invariant system is less than the order of any Coxeter element.
+* `RootPairing.natCard_eq_finrank_mul_orderOf_wordProd`: over an algebraically closed field
+  containing `ℝ`, the number of roots is the rank times the order of any Coxeter element.
+* `RootPairing.degree_sub_one_lt_orderOf_wordProd`: over an algebraically closed field containing
+  `ℝ`, every exponent `dᵢ - 1` of a homogeneous basic invariant system is less than `h`.
+* `RootPairing.natCard_eq_card_support_mul_orderOf_wordProd` and
+  `RootPairing.two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd`: over any
+  characteristic-zero integral domain, `|Φ| = b.support.card * h` and `2 |Φ⁺| = b.support.card * h`.
+* `RootPairing.two_le_and_le_orderOf_wordProd_of_bijective_aeval_weylGroupRootRep_dual`: over any
+  characteristic-zero field, `2 ≤ dᵢ ≤ h`.
+* `RootPairing.map_sub_one_eq_map_orderOf_sub_of_bijective_aeval_weylGroupRootRep_dual`: exponent
+  duality `dᵢ - 1 ↦ h - (dᵢ - 1)`.
+* `RootPairing.exists_degree_sub_one_eq_of_coprime_orderOf_wordProd`,
+  `RootPairing.exists_degree_eq_two_of_bijective_aeval_weylGroupRootRep_dual`, and
+  `RootPairing.exists_degree_eq_orderOf_wordProd_of_bijective_aeval_weylGroupRootRep_dual`: the
+  crystallographic coprime-exponent theorem and occurrence of `2` and `h`.
+* `RootPairing.charpoly_weylGroupRootRep_wordProd_eq_prod`: over any characteristic-zero field `K`
+  and any primitive `h`-th root of unity `ζ : K`, `(P.weylGroupRootRep c).charpoly` equals
+  `∏ i, (X - C (ζ ^ (dᵢ - 1)))`.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. V, §6, no. 2.
+* A. J. Coleman, *The Betti numbers of the simple Lie groups*, Canad. J. Math. **10** (1958),
+  349–356.
 * J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Cambridge University Press (1990),
   §§3.18–3.20.
 * T. A. Springer, *Regular elements of finite reflection groups*, Invent. Math. **25** (1974),
   159–198, §4.
+* R. Steinberg, *Finite reflection groups*, Trans. Amer. Math. Soc. **91** (1959), 493–504.
 -/
 
 public section
 
-open Polynomial SymmetricAlgebra TauCeti TauCeti.SymmetricAlgebra
+open Matrix Polynomial SymmetricAlgebra TauCeti TauCeti.SymmetricAlgebra
 
 namespace RootPairing
 
@@ -158,5 +199,316 @@ theorem degree_sub_one_lt_orderOf_wordProd [Finite κ] (b : P.Base) {l : List b.
   obtain ⟨c⟩ := nonempty_coloring_graph_coxeterMatrixOfBase P b
   rw [← P.orderOf_bipartiteCoxeterElement_eq_orderOf_wordProd b c hl hl']
   exact (P.natCard_eq_and_degree_sub_one_lt_orderOf_bipartiteCoxeterElement b c hf hbij).2 k
+
+section CoxeterNumberDomain
+
+private lemma map_supportEquiv_nodup_mem
+    {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic]
+    [P.IsRootSystem] (b : P.Base) (S : Type*) [CommRing S] [IsDomain S] [Algebra ℚ S]
+    {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l) :
+    let e := b.supportEquivRootPairingBaseChangeRationalModel S
+    (l.map e.symm).Nodup ∧ ∀ j, j ∈ l.map e.symm :=
+  ⟨hl.map (b.supportEquivRootPairingBaseChangeRationalModel S).symm.injective,
+    fun j ↦ List.mem_map.2
+      ⟨_, hall _, (b.supportEquivRootPairingBaseChangeRationalModel S).symm_apply_apply j⟩⟩
+
+variable {ι R M N : Type*} [CommRing R] [IsDomain R] [CharZero R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+  [P.IsRootSystem] [P.IsIrreducible]
+
+/-- **Number of roots equals rank times Coxeter number**, over any characteristic-zero integral
+domain. -/
+theorem natCard_eq_card_support_mul_orderOf_wordProd (b : P.Base)
+    {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l) :
+    Nat.card ι = b.support.card * orderOf (wordProd P b l) := by
+  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
+  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
+  let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+    b.rationalModelBase
+  obtain ⟨hlC, hallC⟩ := map_supportEquiv_nodup_mem b ℂ hl hall
+  have hcardC := PC.natCard_eq_finrank_mul_orderOf_wordProd bC hlC hallC
+  rw [Module.finrank_pi, Fintype.card_coe, ← b.orderOf_wordProd_baseChangeRat ℂ l] at hcardC
+  exact hcardC
+
+/-- **Twice the number of positive roots equals rank times Coxeter number**, over any
+characteristic-zero integral domain. -/
+theorem two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd (b : P.Base)
+    {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l) :
+    2 * (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l) := by
+  rw [two_mul_ncard_posRoots P b, P.natCard_eq_card_support_mul_orderOf_wordProd b hl hall]
+
+end CoxeterNumberDomain
+
+section ExponentsAndEigenvalues
+
+variable {ι K M N : Type*} [Field K] [CharZero K]
+  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+  (P : RootPairing ι K M N) [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+  [P.IsRootSystem] [P.IsIrreducible]
+
+private lemma finite_of_bijective_aeval_weylGroupRootRep_dual (b : P.Base) {κ : Type*}
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants}
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) : Finite κ := by
+  have : Nontrivial M := IsIrreducible.nontrivial P
+  have : Module.Finite K M := Module.Finite.of_basis b.toWeightBasis
+  have : Finite P.weylGroup := P.finite_weylGroup_of_base b
+  exact Nat.finite_of_card_ne_zero
+    ((P.natCard_eq_finrank_of_bijective_aeval_weylGroupRootRep_dual hbij).symm ▸
+      Module.finrank_pos.ne')
+
+omit [P.IsIrreducible] in
+private lemma exists_complex_bijective_aeval_degrees_eq (b : P.Base)
+    {κ : Type*} [Fintype κ]
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
+      homogeneousSubmodule K (Module.Dual K M) (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    ∃ (g : Fin (Module.finrank ℂ (b.support → ℂ)) →
+        (rootPairingBaseChange ℂ b.rationalModel
+          b.rationalModel_toLinearMap).weylGroupRootRep.dual.symmetricAlgebraInvariants)
+      (e : Fin (Module.finrank ℂ (b.support → ℂ)) → ℕ),
+      (∀ j, (g j : SymmetricAlgebra ℂ (Module.Dual ℂ (b.support → ℂ))) ∈
+        homogeneousSubmodule ℂ (Module.Dual ℂ (b.support → ℂ)) (e j)) ∧
+      Function.Bijective (MvPolynomial.aeval (R := ℂ) g) ∧
+      Finset.univ.val.map d = Finset.univ.val.map e := by
+  let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
+  let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+    b.rationalModelBase
+  obtain ⟨g, hg_ex, hgbij⟩ := PC.exists_bijective_aeval_weylGroupRootRep_dual_of_base bC
+  refine ⟨g, fun j ↦ (hg_ex j).choose, fun j ↦ (hg_ex j).choose_spec.2, hgbij, ?_⟩
+  exact b.map_univ_eq_of_bijective_aeval_weylGroupRootRep_dual_rootPairingBaseChange_rationalModel
+    ℂ hf hbij (fun j ↦ (hg_ex j).choose_spec.2) hgbij
+
+/-- **Degree bounds for basic invariants of an irreducible crystallographic Weyl group.** Over
+any characteristic-zero field, every basic invariant degree `d i` satisfies
+`2 ≤ d i ≤ orderOf (wordProd P b l)`. -/
+theorem two_le_and_le_orderOf_wordProd_of_bijective_aeval_weylGroupRootRep_dual (b : P.Base)
+    {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l)
+    {κ : Type*}
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
+      homogeneousSubmodule K (Module.Dual K M) (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) (i : κ) :
+    2 ≤ d i ∧ d i ≤ orderOf (wordProd P b l) := by
+  have : Finite κ := P.finite_of_bijective_aeval_weylGroupRootRep_dual b hbij
+  let := Fintype.ofFinite κ
+  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
+  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
+  let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+    b.rationalModelBase
+  obtain ⟨hlC, hallC⟩ := map_supportEquiv_nodup_mem b ℂ hl hall
+  obtain ⟨g, e, hg, hgbij, hmult⟩ := P.exists_complex_bijective_aeval_degrees_eq b hf hbij
+  rcases Multiset.mem_map.1 (hmult ▸ Multiset.mem_map.2 ⟨i, Finset.mem_univ i, rfl⟩)
+    with ⟨j, -, hj⟩
+  have h2 : 2 ≤ e j := PC.two_le_of_injective_aeval_weylGroupRootRep_dual hg hgbij.1 j
+  have hlt := PC.degree_sub_one_lt_orderOf_wordProd bC hlC hallC hg hgbij j
+  rw [← b.orderOf_wordProd_baseChangeRat ℂ l] at hlt
+  omega
+
+/-- **Exponent duality for irreducible crystallographic Weyl groups.** Over any characteristic-zero
+field, the multiset of exponents `d i - 1` is invariant under
+`m ↦ orderOf (wordProd P b l) - m`. -/
+theorem map_sub_one_eq_map_orderOf_sub_of_bijective_aeval_weylGroupRootRep_dual (b : P.Base)
+    {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l)
+    {κ : Type*} [Fintype κ]
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
+      homogeneousSubmodule K (Module.Dual K M) (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    Finset.univ.val.map (fun i ↦ d i - 1) =
+      Finset.univ.val.map (fun i ↦ orderOf (wordProd P b l) - (d i - 1)) := by
+  classical
+  have : Nontrivial M := IsIrreducible.nontrivial P
+  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
+  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  set h : ℕ := orderOf (wordProd P b l)
+  have hh2 : 2 ≤ h := P.two_le_orderOf_wordProd b hl hall
+  have hh_pos : 0 < h := by omega
+  let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
+  let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+    b.rationalModelBase
+  obtain ⟨hlC, hallC⟩ := map_supportEquiv_nodup_mem b ℂ hl hall
+  obtain ⟨g, e, hg, hgbij, hmult⟩ := P.exists_complex_bijective_aeval_degrees_eq b hf hbij
+  have hordC : orderOf (wordProd PC bC (l.map
+      (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm)) = h :=
+    (b.orderOf_wordProd_baseChangeRat ℂ l).symm
+  obtain ⟨v, hv_reg, hv_eig⟩ := PC.exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
+    bC hlC hallC
+  rw [hordC] at hv_eig
+  set ω : ℂ := Complex.exp (2 * Real.pi * Complex.I / h)
+  have hω : IsPrimitiveRoot ω h := Complex.isPrimitiveRoot_exp h hh_pos.ne'
+  have hchar {ξ : ℂ} (hξ : IsPrimitiveRoot ξ h) :=
+    PC.charpoly_weylGroupRootRep_of_isRegularWeight_of_isPrimitiveRoot bC hg hgbij hv_reg hv_eig
+      hω.inv hξ
+  have hprod : (∏ j, (X - C (ω ^ (e j - 1)))) = ∏ j, (X - C (ω⁻¹ ^ (e j - 1))) :=
+    (hchar hω).symm.trans (hchar hω.inv)
+  have he_pos (j) : 2 ≤ e j := PC.two_le_of_injective_aeval_weylGroupRootRep_dual hg hgbij.1 j
+  have he_lt (j) : e j - 1 < h :=
+    hordC ▸ PC.degree_sub_one_lt_orderOf_wordProd bC hlC hallC hg hgbij j
+  have hhe_lt (j) : h - (e j - 1) < h := by have := he_pos j; omega
+  let φ : _ → Fin h := fun j ↦ ⟨e j - 1, he_lt j⟩
+  let ψ : _ → Fin h := fun j ↦ ⟨h - (e j - 1), hhe_lt j⟩
+  have hinv_pow (j) : ω⁻¹ ^ (e j - 1) = ω ^ (h - (e j - 1)) := by
+    rw [inv_pow]
+    exact (eq_inv_of_mul_eq_one_left (by
+      rw [← pow_add, Nat.sub_add_cancel (he_lt j).le, hω.pow_eq_one])).symm
+  have hroots_eq (f' : Fin (Module.finrank ℂ (b.support → ℂ)) → ℂ) :
+      (∏ k, (X - C (f' k))).roots = Finset.univ.val.map f' := by
+    rw [Finset.prod_eq_multiset_prod,
+      show (Finset.univ.val.map fun k ↦ X - C (f' k)) =
+        (Finset.univ.val.map f').map fun z : ℂ ↦ X - C z by rw [Multiset.map_map]; rfl,
+      Polynomial.roots_multiset_prod_X_sub_C]
+  have hroots : Finset.univ.val.map (fun k ↦ ω ^ (φ k : ℕ)) =
+      Finset.univ.val.map (fun k ↦ ω ^ (ψ k : ℕ)) := by
+    have hr := congrArg Polynomial.roots hprod
+    simp_rw [hinv_pow] at hr
+    rw [hroots_eq (fun j ↦ ω ^ (e j - 1)), hroots_eq (fun x ↦ ω ^ (h - (e x - 1)))] at hr
+    exact hr
+  have hinj : Function.Injective (fun a : Fin h ↦ ω ^ (a : ℕ)) :=
+    fun a₁ a₂ ha ↦ Fin.ext (hω.pow_inj a₁.isLt a₂.isLt ha)
+  have hfin : Finset.univ.val.map φ = Finset.univ.val.map ψ :=
+    Multiset.map_injective hinj (by simpa [Multiset.map_map, Function.comp_def] using hroots)
+  have hdualC : Finset.univ.val.map (fun j ↦ e j - 1) =
+      Finset.univ.val.map (fun j ↦ h - (e j - 1)) := by
+    simpa [φ, ψ, Multiset.map_map, Function.comp_def] using congrArg (Multiset.map Fin.val) hfin
+  have h1 := congrArg (Multiset.map (· - 1)) hmult
+  have h2 := congrArg (Multiset.map (fun m ↦ h - (m - 1))) hmult
+  simp only [Multiset.map_map, Function.comp_def] at h1 h2
+  exact h1.trans (hdualC.trans h2.symm)
+
+/-- **Crystallographic coprime-exponent theorem.** Over any characteristic-zero field, every
+`a < orderOf (wordProd P b l)` coprime to `orderOf (wordProd P b l)` occurs as an exponent
+`d i - 1`. -/
+theorem exists_degree_sub_one_eq_of_coprime_orderOf_wordProd (b : P.Base)
+    {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l)
+    {κ : Type*}
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
+      homogeneousSubmodule K (Module.Dual K M) (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f))
+    {a : ℕ} (ha : a < orderOf (wordProd P b l)) (hcop : a.Coprime (orderOf (wordProd P b l))) :
+    ∃ i : κ, d i - 1 = a := by
+  have : Finite κ := P.finite_of_bijective_aeval_weylGroupRootRep_dual b hbij
+  let := Fintype.ofFinite κ
+  have : Nontrivial M := IsIrreducible.nontrivial P
+  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
+  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
+  let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+    b.rationalModelBase
+  obtain ⟨hlC, hallC⟩ := map_supportEquiv_nodup_mem b ℂ hl hall
+  obtain ⟨g, e, hg, hgbij, hmult⟩ := P.exists_complex_bijective_aeval_degrees_eq b hf hbij
+  obtain ⟨v, hv_reg, hv_eig⟩ := PC.exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
+    bC hlC hallC
+  have : Finite P.weylGroup := P.finite_weylGroup_of_base b
+  have hh_pos : 0 < orderOf (wordProd PC bC (l.map
+      (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm)) :=
+    b.orderOf_wordProd_baseChangeRat ℂ l ▸ orderOf_pos (wordProd P b l)
+  have hω_inv : IsPrimitiveRoot (Complex.exp (2 * Real.pi * Complex.I /
+      orderOf (wordProd PC bC (l.map
+        (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm))))⁻¹
+      (orderOf (wordProd PC bC (l.map
+        (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm))) :=
+    (Complex.isPrimitiveRoot_exp _ hh_pos.ne').inv
+  have he_lt (j) : e j - 1 < orderOf (wordProd PC bC (l.map
+      (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm)) :=
+    PC.degree_sub_one_lt_orderOf_wordProd bC hlC hallC hg hgbij j
+  rw [b.orderOf_wordProd_baseChangeRat ℂ l] at ha hcop
+  obtain ⟨j, hj⟩ := PC.exists_degree_sub_one_eq_of_isRegularWeight_of_isPrimitiveRoot bC hg hgbij
+    hv_reg hv_eig hω_inv he_lt ha hcop
+  rcases Multiset.mem_map.1 (hmult.symm ▸ Multiset.mem_map.2 ⟨j, Finset.mem_univ j, rfl⟩)
+    with ⟨i, -, hi⟩
+  exact ⟨i, hi ▸ hj⟩
+
+/-- **Existence of a quadratic basic invariant.** Over any characteristic-zero field, every
+finite homogeneous basic invariant system of an irreducible crystallographic Weyl group contains a
+degree-`2` invariant. -/
+theorem exists_degree_eq_two_of_bijective_aeval_weylGroupRootRep_dual
+    {κ : Type*}
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
+      homogeneousSubmodule K (Module.Dual K M) (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    ∃ i : κ, d i = 2 := by
+  obtain ⟨b⟩ := P.nonempty_base
+  have : Nontrivial M := IsIrreducible.nontrivial P
+  have hl := Finset.nodup_toList (Finset.univ : Finset b.support)
+  have hh2 := P.two_le_orderOf_wordProd b hl (fun j ↦ by simp)
+  obtain ⟨i, hi⟩ := P.exists_degree_sub_one_eq_of_coprime_orderOf_wordProd b hl
+    (fun j ↦ by simp) hf hbij (a := 1) (by omega) (Nat.coprime_one_left _)
+  exact ⟨i, by omega⟩
+
+/-- **The Coxeter number is a basic invariant degree.** Over any characteristic-zero field, some
+`d i` equals `orderOf (wordProd P b l)`; together with
+`two_le_and_le_orderOf_wordProd_of_bijective_aeval_weylGroupRootRep_dual` it is the largest. -/
+theorem exists_degree_eq_orderOf_wordProd_of_bijective_aeval_weylGroupRootRep_dual (b : P.Base)
+    {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l)
+    {κ : Type*}
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
+      homogeneousSubmodule K (Module.Dual K M) (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    ∃ i : κ, d i = orderOf (wordProd P b l) := by
+  have : Nontrivial M := IsIrreducible.nontrivial P
+  have hh2 : 2 ≤ orderOf (wordProd P b l) := P.two_le_orderOf_wordProd b hl hall
+  have hcop : (orderOf (wordProd P b l) - 1).Coprime (orderOf (wordProd P b l)) :=
+    (Nat.coprime_self_sub_left (by omega)).2 (Nat.coprime_one_left _)
+  obtain ⟨i, hi⟩ := P.exists_degree_sub_one_eq_of_coprime_orderOf_wordProd b hl hall hf hbij
+    (a := orderOf (wordProd P b l) - 1) (by omega) hcop
+  exact ⟨i, by omega⟩
+
+/-- **Characteristic polynomial of a Coxeter element from basic invariant degrees.** Over any
+characteristic-zero field `K` and any primitive `h`-th root of unity `ζ : K` where
+`h = orderOf (wordProd P b l)`, the characteristic polynomial of
+`P.weylGroupRootRep (wordProd P b l)` is `∏ i, (X - C (ζ ^ (d i - 1)))`. -/
+theorem charpoly_weylGroupRootRep_wordProd_eq_prod [Module.Finite K M] (b : P.Base)
+    {l : List b.support} (hl : l.Nodup) (hall : ∀ i, i ∈ l)
+    {κ : Type*} [Fintype κ]
+    {f : κ → P.weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ i, (f i : SymmetricAlgebra K (Module.Dual K M)) ∈
+      homogeneousSubmodule K (Module.Dual K M) (d i))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f))
+    {ζ : K} (hζ : IsPrimitiveRoot ζ (orderOf (wordProd P b l))) :
+    (P.weylGroupRootRep (wordProd P b l)).charpoly = ∏ i : κ, (X - C (ζ ^ (d i - 1))) := by
+  classical
+  have : Nontrivial M := IsIrreducible.nontrivial P
+  have : Nonempty b.support := b.nonempty_support_of_isIrreducible
+  have : Nonempty ι := ⟨(Classical.arbitrary b.support : ι)⟩
+  set h : ℕ := orderOf (wordProd P b l)
+  have hh2 : 2 ≤ h := P.two_le_orderOf_wordProd b hl hall
+  have hh_pos : 0 < h := by omega
+  let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
+  let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+    b.rationalModelBase
+  obtain ⟨hlC, hallC⟩ := map_supportEquiv_nodup_mem b ℂ hl hall
+  obtain ⟨g, e, hg, hgbij, hmult⟩ := P.exists_complex_bijective_aeval_degrees_eq b hf hbij
+  have hordC : orderOf (wordProd PC bC (l.map
+      (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm)) = h :=
+    (b.orderOf_wordProd_baseChangeRat ℂ l).symm
+  obtain ⟨v, hv_reg, hv_eig⟩ := PC.exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
+    bC hlC hallC
+  rw [hordC] at hv_eig
+  set ω : ℂ := Complex.exp (2 * Real.pi * Complex.I / h)
+  have hω : IsPrimitiveRoot ω h := Complex.isPrimitiveRoot_exp h hh_pos.ne'
+  have hcharC := PC.charpoly_weylGroupRootRep_of_isRegularWeight_of_isPrimitiveRoot bC hg hgbij
+    hv_reg hv_eig hω.inv hω
+  let p : ℚ[X] := ((l.map (reflMatrix b.cartanMatrix)).prod.map (Int.castRingHom ℚ)).charpoly
+  have hprodC : p.map (algebraMap ℚ ℂ) = ∏ i : κ, (X - C (ω ^ (d i - 1))) := by
+    dsimp only [p]
+    dsimp only [PC, bC] at hcharC
+    rw [b.charpoly_weylGroupRootRep_wordProd_baseChangeRat ℂ l, hcharC,
+      Finset.prod_eq_multiset_prod, Finset.prod_eq_multiset_prod]
+    have hmap := congrArg (Multiset.map (fun m ↦ X - C (ω ^ (m - 1)))) hmult
+    simp only [Multiset.map_map, Function.comp_def] at hmap
+    exact congrArg Multiset.prod hmap.symm
+  dsimp only [p] at hprodC
+  rw [← b.charpoly_weylGroupRootRep_wordProd_eq_map_rat l]
+  exact hω.map_eq_prod_of_map_eq_prod hh_pos hζ hprodC
+
+end ExponentsAndEigenvalues
 
 end RootPairing

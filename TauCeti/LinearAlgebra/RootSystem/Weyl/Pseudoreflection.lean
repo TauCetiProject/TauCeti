@@ -12,7 +12,6 @@ public import TauCeti.RepresentationTheory.Weyl.Reflections
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
-import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
 
 /-!
 # Pseudoreflections and reflecting hyperplanes of the Weyl group: complements
@@ -98,10 +97,20 @@ theorem exists_map_int_eq_charpoly_weylGroupRootRep_of_base [CharZero R] [P.IsRo
   let := Module.Finite.of_basis b.toWeightBasis
   choose c _ _ hc using fun j : b.support ↦ b.exists_root_eq_sum_int (P.weylGroupToPerm w j)
   let A : Matrix b.support b.support ℤ := fun i j ↦ c j i
-  have hA : b.ActsBy w A := Base.actsBy_iff.2 fun j ↦ by
-    rw [P.weylGroup_apply_root, hc j, ← Finset.sum_attach b.support]
+  have hmat : LinearMap.toMatrix b.toWeightBasis b.toWeightBasis (P.weylGroupRootRep w) =
+      A.map (algebraMap ℤ R) := by
+    ext i j
+    have hw : P.weylGroupRootRep w (b.toWeightBasis j) =
+        ∑ k : b.support, (algebraMap ℤ R (A k j)) • b.toWeightBasis k := by
+      rw [weylGroupRootRep_apply, Base.toWeightBasis_apply, P.weylGroup_apply_root, hc j,
+        ← Finset.sum_attach b.support]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      rw [Base.toWeightBasis_apply, eq_intCast, Int.cast_smul_eq_zsmul]
+    rw [LinearMap.toMatrix_apply, ← Basis.equivFun_apply, hw, map_sum, Finset.sum_apply]
+    simp [A, Finsupp.single_apply]
     rfl
-  exact ⟨A.charpoly, by rw [hA.charpoly_weylGroupRootRep, RingHom.ext_int (algebraMap ℤ R)]⟩
+  refine ⟨A.charpoly, ?_⟩
+  rw [← (P.weylGroupRootRep w).charpoly_toMatrix b.toWeightBasis, hmat, Matrix.charpoly_map]
 
 /-- On a root system with a base over a `ℚ`-algebra of characteristic zero, the characteristic
 polynomial of any Weyl-group element on `M` is the scalar extension of a rational polynomial. -/

@@ -169,7 +169,7 @@ component of the symmetric-algebra invariants. -/
 theorem finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_of_equiv
     {R G₁ G₂ V₁ V₂ : Type*} [CommRing R] [Monoid G₁] [Monoid G₂]
     [AddCommMonoid V₁] [Module R V₁] [AddCommMonoid V₂] [Module R V₂]
-    {ρ₁ : Representation R G₁ V₁} {ρ₂ : Representation R G₂ V₂}
+    (ρ₁ : Representation R G₁ V₁) {ρ₂ : Representation R G₂ V₂}
     (eG : G₁ ≃* G₂) (eV : V₁ ≃ₗ[R] V₂)
     (he : ∀ g x, ρ₂ (eG g) (eV x) = eV (ρ₁ g x)) (n : ℕ) :
     Module.finrank R
@@ -186,21 +186,34 @@ theorem finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_of_equiv
     simpa [ρ₂', LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using he g (eV.symm y))⟩
   let φ : SymmetricAlgebra R V₁ ≃ₗ[R] SymmetricAlgebra R V₂ :=
     (SymmetricAlgebra.mapEquiv R eV).toLinearEquiv
+  have hφ_apply (p : SymmetricAlgebra R V₁) : φ p = SymmetricAlgebra.map R eV.toLinearMap p :=
+    SymmetricAlgebra.mapEquiv_apply R eV p
+  have hφ_symm (q : SymmetricAlgebra R V₂) :
+      φ.symm q = SymmetricAlgebra.map R eV.symm.toLinearMap q := by
+    change (SymmetricAlgebra.mapEquiv R eV).symm q = _
+    rw [SymmetricAlgebra.mapEquiv_symm, SymmetricAlgebra.mapEquiv_apply]
+  have hinv_map : (Subalgebra.toSubmodule ρ₁.symmetricAlgebraInvariants).map φ.toLinearMap =
+      Subalgebra.toSubmodule ρ₂.symmetricAlgebraInvariants := by
+    have hsub := map_symmetricAlgebraInvariants_of_leftInverse hf hs eV.apply_symm_apply
+    rw [← hinv_eq, ← hsub]
+    ext q
+    simp only [Submodule.mem_map, Subalgebra.mem_toSubmodule, Subalgebra.mem_map,
+      LinearEquiv.coe_coe, hφ_apply]
+  have hhom_map :
+      (homogeneousSubmodule R V₁ n).map φ.toLinearMap = homogeneousSubmodule R V₂ n := by
+    refine le_antisymm ?_ ?_
+    · rintro _ ⟨p, hp, rfl⟩
+      rw [LinearEquiv.coe_coe, hφ_apply]
+      exact map_mem_homogeneousSubmodule _ hp
+    · intro q hq
+      refine ⟨φ.symm q, ?_, φ.apply_symm_apply q⟩
+      rw [hφ_symm]
+      exact map_mem_homogeneousSubmodule _ hq
   have hmap : (Subalgebra.toSubmodule ρ₁.symmetricAlgebraInvariants ⊓
         homogeneousSubmodule R V₁ n).map φ.toLinearMap =
       Subalgebra.toSubmodule ρ₂.symmetricAlgebraInvariants ⊓
         homogeneousSubmodule R V₂ n := by
-    rw [← hinv_eq]; ext q
-    simp only [Submodule.mem_map, Submodule.mem_inf, Subalgebra.mem_toSubmodule]
-    refine ⟨?_, fun ⟨hq1, hq2⟩ ↦ ⟨φ.symm q, ⟨?_, ?_⟩, φ.apply_symm_apply q⟩⟩
-    · rintro ⟨p, ⟨hp1, hp2⟩, rfl⟩
-      exact ⟨by simpa [φ, SymmetricAlgebra.mapEquiv_apply] using
-          map_mem_symmetricAlgebraInvariants hf hp1,
-        by simpa [φ, SymmetricAlgebra.mapEquiv_apply] using map_mem_homogeneousSubmodule _ hp2⟩
-    · simpa [φ, SymmetricAlgebra.mapEquiv_symm, SymmetricAlgebra.mapEquiv_apply] using
-        map_mem_symmetricAlgebraInvariants hs hq1
-    · simpa [φ, SymmetricAlgebra.mapEquiv_symm, SymmetricAlgebra.mapEquiv_apply] using
-        map_mem_homogeneousSubmodule _ hq2
+    rw [Submodule.map_inf φ.toLinearMap φ.injective, hinv_map, hhom_map]
   exact (φ.submoduleMap _).trans (LinearEquiv.ofEq _ _ hmap) |>.finrank_eq
 
 section LinearInvariants

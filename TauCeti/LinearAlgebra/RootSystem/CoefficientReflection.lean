@@ -229,6 +229,27 @@ theorem eq_highestRoot_of_forall_rootCoefficients_le [Finite ι] [Nonempty ι] {
   rw [← sum_rootCoefficients_eq_height, ← sum_rootCoefficients_eq_height] at hheight
   exact hheight.not_gt (Finset.sum_lt_sum (fun l _ ↦ hle l) ⟨k, Finset.mem_univ k, hk⟩)
 
+/-- The dot product of a root's simple-root coefficient column with the integer pairings of the
+simple roots against a coroot `j` equals the integer pairing `⟨αᵢ, αⱼ^∨⟩`. -/
+theorem rootCoefficients_dot_corootCoordInt [P.IsCrystallographic] (i j : ι) :
+    b.rootCoefficients i ⬝ᵥ (fun k : b.support ↦ P.pairingIn ℤ k j) = P.pairingIn ℤ i j := by
+  apply FaithfulSMul.algebraMap_injective ℤ R
+  rw [P.algebraMap_pairingIn ℤ i j, dotProduct, map_sum]
+  conv_rhs => rw [← root_coroot_eq_pairing, ← b.sum_rootCoefficients_smul_root i, map_sum,
+    LinearMap.sum_apply]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [map_mul, P.algebraMap_pairingIn ℤ, ← root_coroot_eq_pairing, map_zsmul,
+    LinearMap.smul_apply, zsmul_eq_mul, eq_intCast]
+
+/-- The simple-root coefficient column of the reflected root `sᵢ(αⱼ)`. -/
+theorem rootCoefficients_reflectionPerm [P.IsCrystallographic] (i j : ι) :
+    b.rootCoefficients (P.reflectionPerm i j) =
+      b.rootCoefficients j - P.pairingIn ℤ j i • b.rootCoefficients i := by
+  rw [b.rootCoefficients_eq_iff]
+  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, sub_smul, Finset.sum_sub_distrib,
+    mul_smul, ← Finset.smul_sum, b.sum_rootCoefficients_smul_root,
+    ← P.reflection_apply_root' ℤ, P.root_reflectionPerm]
+
 /-! ### Transport of a base -/
 
 section Map

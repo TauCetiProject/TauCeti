@@ -25,7 +25,8 @@ same nonzero eigenvalues with multiplicity.
   `μ`-eigenspaces of `g ∘ₗ f` and `f ∘ₗ g`.
 * `Module.End.finrank_eigenspace_comp_comm`: the two eigenspaces have the same dimension.
 * `LinearMap.apply_apply_add_smul_eq_inv_sq_smul`: a vector `x₁ + μ • x₂` on which two linear
-  maps act dihedrally with parameter `μ + μ⁻¹` is an eigenvector of their composite for `(μ ^ 2)⁻¹`.
+  maps act dihedrally with parameter `μ + μ⁻¹` satisfies the eigenvalue equation
+  `f₁ (f₂ (x₁ + μ • x₂)) = (μ ^ 2)⁻¹ • (x₁ + μ • x₂)` (so it is an eigenvector when nonzero).
 
 ## References
 
@@ -81,23 +82,23 @@ namespace LinearMap
 
 /-- **Dihedral eigenvector identity.** If two linear endomorphisms `f₁, f₂` negate `x₁, x₂`
 respectively and satisfy `f₁ x₂ = x₂ + (μ + μ⁻¹) • x₁` and `f₂ x₁ = x₁ + (μ + μ⁻¹) • x₂` for a
-nonzero scalar `μ`, then `x₁ + μ • x₂` is an eigenvector of `f₁ ∘ₗ f₂` with eigenvalue `(μ ^ 2)⁻¹`.
+nonzero scalar `μ`, then `f₁ (f₂ (x₁ + μ • x₂)) = (μ ^ 2)⁻¹ • (x₁ + μ • x₂)` (so `x₁ + μ • x₂`
+is an eigenvector of `f₁ ∘ₗ f₂` with eigenvalue `(μ ^ 2)⁻¹` whenever it is nonzero).
 -/
 theorem apply_apply_add_smul_eq_inv_sq_smul {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
     (f₁ f₂ : V →ₗ[K] V) {x₁ x₂ : V} {μ : K} (hμ : μ ≠ 0)
     (hf₁₁ : f₁ x₁ = -x₁) (hf₁₂ : f₁ x₂ = x₂ + (μ + μ⁻¹) • x₁)
     (hf₂₂ : f₂ x₂ = -x₂) (hf₂₁ : f₂ x₁ = x₁ + (μ + μ⁻¹) • x₂) :
     f₁ (f₂ (x₁ + μ • x₂)) = (μ ^ 2)⁻¹ • (x₁ + μ • x₂) := by
+  have hc₁ : -1 + μ⁻¹ * (μ + μ⁻¹) = (μ ^ 2)⁻¹ := by field_simp [hμ]; ring
+  have hc₂ : (μ ^ 2)⁻¹ * μ = μ⁻¹ := by field_simp [hμ]
   have h2 : f₂ (x₁ + μ • x₂) = x₁ + μ⁻¹ • x₂ := by
     rw [map_add, map_smul, hf₂₁, hf₂₂, add_smul, smul_neg]
     abel
   calc f₁ (f₂ (x₁ + μ • x₂))
       = -x₁ + μ⁻¹ • (x₂ + (μ + μ⁻¹) • x₁) := by
           rw [h2, map_add, map_smul, hf₁₁, hf₁₂]
-    _ = (μ ^ 2)⁻¹ • (x₁ + μ • x₂) := by
-        rw [smul_add, add_smul, smul_add, smul_smul, smul_smul, inv_mul_cancel₀ hμ, one_smul,
-          ← mul_inv, ← sq, smul_add, smul_smul,
-          show (μ ^ 2)⁻¹ * μ = μ⁻¹ by field_simp [hμ]]
-        abel
+    _ = (-1 + μ⁻¹ * (μ + μ⁻¹)) • x₁ + μ⁻¹ • x₂ := by module
+    _ = (μ ^ 2)⁻¹ • (x₁ + μ • x₂) := by rw [hc₁, ← hc₂]; module
 
 end LinearMap

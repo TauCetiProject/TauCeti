@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
@@ -20,13 +21,15 @@ primitive root without having its cyclotomic conjugates. No simplicity of the ro
 assumed, so repeated exponents are permitted. This is the arithmetic step that turns
 integral characteristic polynomials into constraints on their lists of eigenvalue exponents.
 
-Rationality also makes such a factorization independent of the primitive root: a rational
-polynomial equal to `∏ i, (X - ζ ^ e i)` is equal to `∏ i, (X - ξ ^ e i)` for every primitive
-`h`-th root of unity `ξ` (`IsPrimitiveRoot.map_eq_prod_of_map_eq_prod`). Each coefficient of the
-product is a rational polynomial expression in `ζ`, and agreeing with a rational number at `ζ` it
-does so at every root of the cyclotomic polynomial, the minimal polynomial of `ζ`.
+Rationality also makes such a factorization independent of the primitive root (even in a second
+`ℚ`-algebra domain): a rational polynomial equal to `∏ i, (X - ζ ^ e i)` is equal to
+`∏ i, (X - ξ ^ e i)` for every primitive `h`-th root of unity `ξ`
+(`IsPrimitiveRoot.map_eq_prod_of_map_eq_prod`). Each coefficient of the product is a rational
+polynomial expression in `ζ`, and agreeing with a rational number at `ζ` it does so at every root
+of the cyclotomic polynomial, the minimal polynomial of `ζ`.
 
-The ambient ring can be any domain that is a rational algebra. The proof uses Mathlib's
+The ambient ring can be any domain that is a rational algebra. The proof reuses
+`TauCeti.RingTheory.Polynomial.Cyclotomic.Roots`, which reduces both facts to Mathlib's
 `IsPrimitiveRoot.minpoly_eq_cyclotomic_of_irreducible` and irreducibility of cyclotomic
 polynomials over the rationals.
 
@@ -44,7 +47,8 @@ namespace IsPrimitiveRoot
 
 section Rational
 
-variable {K ι : Type*} [CommRing K] [IsDomain K] [Algebra ℚ K] [Fintype ι]
+variable {K L ι : Type*} [CommRing K] [IsDomain K] [Algebra ℚ K]
+  [CommRing L] [IsDomain L] [Algebra ℚ L] [Fintype ι]
 
 /-- If a rational polynomial factors with roots `ζ ^ e i`, with all `e i < h`, and has a
 primitive `h`-th root, every residue less than `h` and coprime to `h` occurs in `e`.
@@ -55,18 +59,9 @@ theorem exists_eq_of_isRoot_of_map_eq_prod {h : ℕ} {ζ ξ : K}
     (he : ∀ i, e i < h)
     (hprod : p.map (algebraMap ℚ K) = ∏ i, (X - C (ζ ^ e i)))
     {a : ℕ} (ha : a < h) (hcop : a.Coprime h) : ∃ i, e i = a := by
-  classical
   have hh : 0 < h := Nat.zero_lt_of_lt ha
-  have : NeZero (h : ℚ) := ⟨Nat.cast_ne_zero.mpr hh.ne'⟩
-  have hdiv : cyclotomic h ℚ ∣ p := by
-    rw [hξ.minpoly_eq_cyclotomic_of_irreducible (cyclotomic.irreducible_rat hh)]
-    exact minpoly.dvd ℚ ξ (by simpa only [aeval_def, eval₂_eq_eval_map, IsRoot.def] using hp)
-  have hroot : (p.map (algebraMap ℚ K)).IsRoot (ζ ^ a) := by
-    obtain ⟨q, rfl⟩ := hdiv
-    rw [Polynomial.map_mul, map_cyclotomic]
-    have hcy : (cyclotomic h K).IsRoot (ζ ^ a) :=
-      (hζ.pow_of_coprime a hcop).isRoot_cyclotomic hh
-    rw [IsRoot.def, eval_mul, hcy.eq_zero, zero_mul]
+  have hroot : (p.map (algebraMap ℚ K)).IsRoot (ζ ^ a) :=
+    hξ.isRoot_map_of_isRoot_map hh (hζ.pow_of_coprime a hcop) hp
   rw [hprod, IsRoot.def, eval_prod] at hroot
   obtain ⟨i, -, hi⟩ := Finset.prod_eq_zero_iff.mp hroot
   have hi' : ζ ^ a = ζ ^ e i := sub_eq_zero.mp (by simpa using hi)
@@ -74,32 +69,20 @@ theorem exists_eq_of_isRoot_of_map_eq_prod {h : ℕ} {ζ ξ : K}
 
 /-- **A rational factorization into powers of a primitive root does not depend on the root.** If a
 rational polynomial factors as `∏ i, (X - ζ ^ e i)` for a primitive `h`-th root of unity `ζ`, then
-it factors as `∏ i, (X - ξ ^ e i)` for every primitive `h`-th root of unity `ξ`. The exponents are
-unrestricted and may repeat. -/
-theorem map_eq_prod_of_map_eq_prod {h : ℕ} (hh : 0 < h) {ζ ξ : K}
+it factors as `∏ i, (X - ξ ^ e i)` for every primitive `h`-th root of unity `ξ` in any `ℚ`-algebra
+domain. The exponents are unrestricted and may repeat. -/
+theorem map_eq_prod_of_map_eq_prod {h : ℕ} (hh : 0 < h) {ζ : K} {ξ : L}
     (hζ : IsPrimitiveRoot ζ h) (hξ : IsPrimitiveRoot ξ h) {p : ℚ[X]} {e : ι → ℕ}
     (hprod : p.map (algebraMap ℚ K) = ∏ i, (X - C (ζ ^ e i))) :
-    p.map (algebraMap ℚ K) = ∏ i, (X - C (ξ ^ e i)) := by
-  have : NeZero (h : ℚ) := ⟨Nat.cast_ne_zero.mpr hh.ne'⟩
-  -- The same product with the root replaced by a variable, whose coefficients lie in `ℚ[X]`.
-  let F : ℚ[X][X] := ∏ i, (X - C (X ^ e i))
-  have hF (μ : K) : F.map (aeval μ).toRingHom = ∏ i, (X - C (μ ^ e i)) := by
-    simp [F, Polynomial.map_prod]
-  -- Each coefficient of `F`, minus the matching coefficient of `p`, vanishes at `ζ`, so it is
-  -- divisible by the minimal polynomial of `ζ`, the cyclotomic polynomial, which also kills `ξ`.
-  ext j
-  have hj := congr(($hprod).coeff j)
-  rw [← hF ζ, coeff_map, coeff_map] at hj
-  rw [← hF ξ, coeff_map, coeff_map]
-  obtain ⟨q, hq⟩ : cyclotomic h ℚ ∣ F.coeff j - C (p.coeff j) := by
-    rw [hζ.minpoly_eq_cyclotomic_of_irreducible (cyclotomic.irreducible_rat hh)]
-    exact minpoly.dvd ℚ ζ (by simpa [sub_eq_zero] using hj.symm)
-  have hcy : aeval ξ (cyclotomic h ℚ) = 0 := by
-    rw [aeval_def, eval₂_eq_eval_map, map_cyclotomic]
-    exact (hξ.isRoot_cyclotomic hh).eq_zero
-  have hξq := congr(aeval ξ $hq)
-  rw [map_mul, hcy, zero_mul, map_sub, aeval_C, sub_eq_zero] at hξq
-  simpa using hξq.symm
+    p.map (algebraMap ℚ L) = ∏ i, (X - C (ξ ^ e i)) := by
+  let F₁ : (ℚ[X])[X] := p.map Polynomial.C
+  let F₂ : (ℚ[X])[X] := ∏ i, (X - C (X ^ e i))
+  have heqK : F₁.map (aeval ζ).toRingHom = F₂.map (aeval ζ).toRingHom := by
+    rw [AlgHom.toRingHom_eq_coe, Polynomial.map_aeval_map_C]
+    simpa [F₂, Polynomial.map_prod] using hprod
+  have heqL := Polynomial.map_aeval_eq_of_isPrimitiveRoot F₁ F₂ hh hζ hξ heqK
+  rw [AlgHom.toRingHom_eq_coe, Polynomial.map_aeval_map_C] at heqL
+  simpa [F₂, Polynomial.map_prod] using heqL
 
 end Rational
 
