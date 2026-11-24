@@ -80,6 +80,7 @@ theorem dualPairing_apply (a : Codomain σ ⊗[𝓞 K] Module.Dual (𝓞 K) E)
     dualPairing E σ a w = Codomain.equiv σ (TauCeti.Module.Dual.baseChangeEvaluation a w) :=
   (rfl)
 
+@[simp]
 theorem dualPairing_tmul_tmul (c d : Codomain σ) (f : Module.Dual (𝓞 K) E) (x : E) :
     dualPairing E σ (c ⊗ₜ f) (d ⊗ₜ x) =
       Codomain.equiv σ c * (Codomain.equiv σ d * σ (f x)) := by
