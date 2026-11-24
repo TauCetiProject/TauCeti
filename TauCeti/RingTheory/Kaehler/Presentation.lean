@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Presentation.Differentials
-public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.MvPolynomial.Basic
 
 /-!
@@ -22,7 +21,7 @@ characteristic `p` and `t : σ → k`, the differentials of `S = k[Xᵢ] ⧸ (X�
 the `dxᵢ`. For instance, over a field `k` of characteristic `p` such as `𝔽_p(t)`,
 `K = k[y] ⧸ (y ^ p - t)` has `Ω[K⁄k] = K dy`, and `X' = k[τ, y] ⧸ (τ ^ p - t, y ^ p - t)` has
 `Ω[X'⁄k]` free on `dτ, dy`, so the image `dy` of the generator of `Ω[K⁄k]` does not generate
-`Ω[X'⁄k]`.
+`Ω[X'⁄k]`; see `TauCeti.Examples.span_D_ne_top_powSubCQuotient`.
 
 ## Main declarations
 
@@ -31,8 +30,6 @@ the `dxᵢ`. For instance, over a field `k` of characteristic `p` such as `𝔽_
 * `TauCeti.PowSubCQuotient k p t`: the quotient `k[Xᵢ] ⧸ (Xᵢ ^ p - tᵢ)`.
 * `TauCeti.kaehlerDifferentialBasisPowSubC`: the basis `(dxᵢ)` of its differentials in
   characteristic `p`.
-* `TauCeti.span_D_ne_top_powSubCQuotient`: over a domain of characteristic `p ≠ 0`, for
-  `k[τ, y] ⧸ (τ ^ p - t, y ^ p - t)`, the single differential `dy` does not span `Ω`.
 -/
 
 public section
@@ -52,6 +49,9 @@ noncomputable def differentialsBasis
     (h : ∀ r i, algebraMap P.Ring S (pderiv i (P.relation r)) = 0) :
     Module.Basis ι S Ω[S⁄R] :=
   have hrel (r : σ) : P.differentialsRelations.relation r = 0 := by
+    -- Unfold the relation. Its index type `differentialsRelations.G` is `ι` only by definition,
+    -- so `simp [differentialsRelations]` leaves the coordinates over `G`, where
+    -- `Finsupp.mapRange_apply` and `mvPolynomialBasis_repr_apply` do not fire.
     change Finsupp.mapRange (algebraMap P.Ring S) (map_zero _)
       ((mvPolynomialBasis R ι).repr (D _ _ (P.relation r))) = (0 : ι →₀ S)
     ext i
@@ -69,8 +69,19 @@ noncomputable def differentialsBasis
 @[simp]
 theorem differentialsBasis_apply
     (h : ∀ r i, algebraMap P.Ring S (pderiv i (P.relation r)) = 0) (i : ι) :
-    P.differentialsBasis h i = D R S (P.val i) := by
-  exact P.differentialsSolution.π_single i
+    P.differentialsBasis h i = D R S (P.val i) :=
+  -- By definition, `Basis.ofRepr e i = e.symm (Finsupp.single i 1)`, and `e.symm` is the
+  -- presentation map `π`, which sends `Finsupp.single i 1` to `D R S (P.val i)`. The domain of
+  -- `π` is indexed by `differentialsRelations.G`, which is `ι` only by definition, so
+  -- `Basis.coe_ofRepr` and `LinearEquiv.ofBijective_apply` cannot be used with `rw` here.
+  P.differentialsSolution.π_single i
+
+/-- The coordinates of the differential of a generator in `differentialsBasis`. -/
+@[simp]
+theorem differentialsBasis_repr_D
+    (h : ∀ r i, algebraMap P.Ring S (pderiv i (P.relation r)) = 0) (i : ι) :
+    (P.differentialsBasis h).repr (D R S (P.val i)) = Finsupp.single i 1 := by
+  rw [← differentialsBasis_apply P h i, Module.Basis.repr_self]
 
 end Algebra.Presentation
 
@@ -99,42 +110,13 @@ theorem kaehlerDifferentialBasisPowSubC_apply (i : σ) :
       D k (PowSubCQuotient k p t) (Ideal.Quotient.mk _ (X i)) := by
   simp [kaehlerDifferentialBasisPowSubC]
 
+/-- The coordinates of the differential `dxᵢ` in `kaehlerDifferentialBasisPowSubC`. -/
+@[simp]
+theorem kaehlerDifferentialBasisPowSubC_repr_D (i : σ) :
+    (kaehlerDifferentialBasisPowSubC k p t).repr
+        (D k (PowSubCQuotient k p t) (Ideal.Quotient.mk _ (X i))) = Finsupp.single i 1 := by
+  rw [← kaehlerDifferentialBasisPowSubC_apply, Module.Basis.repr_self]
+
 end PowSubC
-
-/-- Over a domain `k`, with `p ≠ 0`, the ring `k[Xᵢ] ⧸ (Xᵢ ^ p - t)` is nontrivial: it maps to
-`k[X] ⧸ (X ^ p - t)` by `Xᵢ ↦ X`. -/
-private theorem nontrivial_powSubCQuotient {k : Type*} [CommRing k] [IsDomain k] {p : ℕ}
-    (hp : p ≠ 0) (σ : Type*) (t : k) : Nontrivial (PowSubCQuotient k p fun _ : σ ↦ t) := by
-  have hdeg : (Polynomial.X ^ p - Polynomial.C t).degree ≠ 0 := by
-    rw [Polynomial.degree_X_pow_sub_C (Nat.pos_of_ne_zero hp)]
-    exact_mod_cast hp
-  have := AdjoinRoot.nontrivial (Polynomial.X ^ p - Polynomial.C t) hdeg
-  let f : MvPolynomial σ k →ₐ[k] AdjoinRoot (Polynomial.X ^ p - Polynomial.C t) :=
-    aeval fun _ ↦ AdjoinRoot.root _
-  refine (Ideal.Quotient.lift _ f.toRingHom ?_).domain_nontrivial
-  intro a ha
-  refine (Ideal.span_le (I := RingHom.ker f.toRingHom)).2 ?_ ha
-  rintro _ ⟨i, rfl⟩
-  have hroot := AdjoinRoot.eval₂_root (Polynomial.X ^ p - Polynomial.C t)
-  simp only [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, Polynomial.eval₂_C] at hroot
-  simpa [f, ← AdjoinRoot.algebraMap_eq] using hroot
-
-/-- **The inseparable base change check.** Over a domain `k` of characteristic `p ≠ 0` and for
-`t : k`, the differentials of `X' = k[τ, y] ⧸ (τ ^ p - t, y ^ p - t)` are free on `dτ, dy`
-(`kaehlerDifferentialBasisPowSubC`), so the single differential `dy`, the image of the generator
-of `Ω[K⁄k]` for `K = k[y] ⧸ (y ^ p - t)`, does not span `Ω[X'⁄k]`. -/
-theorem span_D_ne_top_powSubCQuotient {k : Type*} [CommRing k] [IsDomain k] {p : ℕ} [CharP k p]
-    (hp : p ≠ 0) (t : k) :
-    Submodule.span (PowSubCQuotient k p fun _ : Fin 2 ↦ t)
-        {D k (PowSubCQuotient k p fun _ : Fin 2 ↦ t) (Ideal.Quotient.mk _ (X 1))} ≠ ⊤ := by
-  have := nontrivial_powSubCQuotient hp (Fin 2) t
-  set b := kaehlerDifferentialBasisPowSubC k p fun _ : Fin 2 ↦ t
-  intro htop
-  have hmem : b 0 ∈ Submodule.span (PowSubCQuotient k p fun _ : Fin 2 ↦ t) {b 1} := by
-    rw [kaehlerDifferentialBasisPowSubC_apply k p _ 1]
-    exact htop ▸ Submodule.mem_top
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 hmem
-  have := congr(b.repr $hc 0)
-  simp at this
 
 end TauCeti
