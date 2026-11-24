@@ -96,7 +96,7 @@ theorem mk_const (c : ℝ) : mk (fun _ : X ↦ c) = 0 :=
   mk_eq_zero_iff.2 ⟨|c|, fun _ ↦ le_rfl⟩
 
 /-- On a finite type every function is bounded, so it has zero class. -/
-theorem mk_of_finite [Finite X] (h : X → ℝ) : mk h = 0 := by
+theorem mk_eq_zero_of_finite [Finite X] (h : X → ℝ) : mk h = 0 := by
   obtain ⟨C, hC⟩ := (Set.finite_range fun x ↦ |h x|).bddAbove
   exact mk_eq_zero_iff.2 ⟨C, fun x ↦ hC ⟨x, rfl⟩⟩
 
@@ -105,7 +105,7 @@ instance [Finite X] : Subsingleton (HeightClass X) where
   allEq a b := by
     induction a using Submodule.Quotient.induction_on
     induction b using Submodule.Quotient.induction_on
-    exact (mk_of_finite _).trans (mk_of_finite _).symm
+    exact (mk_eq_zero_of_finite _).trans (mk_eq_zero_of_finite _).symm
 
 /-- **Pullback of height classes** along `f : X → Y`: the linear map `[h] ↦ [h ∘ f]`. It is
 well defined because a bound for `h` on all of `Y` bounds `h ∘ f` on all of `X`. -/

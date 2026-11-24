@@ -45,6 +45,8 @@ theorem of_le_add [Preorder β] [Add β] [AddRightMono β] {h g : α → β} [No
 
 end Northcott
 
+namespace TauCeti
+
 /-- **Functions at bounded distance are Northcott together.** If `|h a - g a| ≤ C` for every
 `a`, then `h` is Northcott exactly when `g` is. -/
 theorem northcott_iff_of_abs_sub_le [AddCommGroup β] [LinearOrder β] [IsOrderedAddMonoid β]
@@ -53,5 +55,7 @@ theorem northcott_iff_of_abs_sub_le [AddCommGroup β] [LinearOrder β] [IsOrdere
     fun _ ↦ Northcott.of_le_add (h := g) C fun a ↦ ?_⟩
   · exact sub_le_iff_le_add'.1 (abs_sub_le_iff.1 (hC a)).1
   · exact sub_le_iff_le_add'.1 (abs_sub_le_iff.1 (hC a)).2
+
+end TauCeti
 
 end
