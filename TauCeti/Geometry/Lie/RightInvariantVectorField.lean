@@ -41,8 +41,8 @@ compare the two fields in the infinitesimal adjoint calculation.
 * `contMDiff_mulRightInvariantVectorField_modelSpace`: jointly `C^m` in the generator and group
   point when multiplication is `C^n` and `m + 1 ≤ n`.
 * `contMDiff_mulRightInvariantVectorField_infty`: a right-invariant field is smooth.
-* `contMDiff_mvfderiv_mulRightInvariantVectorField`: differentiating a smooth scalar function
-  along a right-invariant field gives a smooth function.
+* `contMDiff_mvfderiv_mulRightInvariantVectorField`: differentiating a smooth vector-valued
+  function along a right-invariant field gives a smooth function.
 * `rightInvariantDerivative`: right-invariant differentiation bundled as a smooth scalar function.
 * `GroupLieAlgebra.mfderiv_inv_mulInvariantVectorField`: inversion carries the left-invariant
   field of `v` to minus its right-invariant field, `d(inv)_g (v^L g) = -v^R g⁻¹`.
@@ -257,15 +257,14 @@ theorem contMDiff_mulRightInvariantVectorField_infty
     (I := I) (G := G) (m := ∞) (n := ∞) (by simp)
   exact h.comp (contMDiff_const.prodMk contMDiff_id)
 
-/-- Differentiating a smooth scalar function along a right-invariant vector field gives a smooth
-scalar function. -/
+/-- Differentiating a smooth vector-valued function along a right-invariant vector field gives a
+smooth function. -/
 theorem contMDiff_mvfderiv_mulRightInvariantVectorField
     [ContMDiffMul I ∞ G] (v : GroupLieAlgebra I G)
-    (f : C^∞⟮I, G; 𝕜⟯) :
-    ContMDiff I (modelWithCornersSelf 𝕜 𝕜) ∞
-      (fun g ↦ mvfderiv I f g (mulRightInvariantVectorField v g)) :=
-  (f.contMDiff.contMDiff_mvfderiv_apply (by simp)).comp
-    (contMDiff_mulRightInvariantVectorField_infty v)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : G → F}
+    (hf : ContMDiff I 𝓘(𝕜, F) ∞ f) :
+    ContMDiff I 𝓘(𝕜, F) ∞ (fun g ↦ mvfderiv I f g (mulRightInvariantVectorField v g)) :=
+  (hf.contMDiff_mvfderiv_apply (by simp)).comp (contMDiff_mulRightInvariantVectorField_infty v)
 
 /-- Right-invariant differentiation of a smooth scalar function, bundled as a smooth scalar
 function. -/
@@ -273,7 +272,7 @@ noncomputable def rightInvariantDerivative
     [ContMDiffMul I ∞ G] (v : GroupLieAlgebra I G)
     (f : C^∞⟮I, G; 𝕜⟯) : C^∞⟮I, G; 𝕜⟯ :=
   ⟨fun g => mvfderiv I f g (mulRightInvariantVectorField v g),
-    contMDiff_mvfderiv_mulRightInvariantVectorField v f⟩
+    contMDiff_mvfderiv_mulRightInvariantVectorField v f.contMDiff⟩
 
 /-- Right-invariant differentiation acts pointwise along the corresponding vector field. -/
 @[simp]

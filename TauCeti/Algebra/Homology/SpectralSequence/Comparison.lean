@@ -20,6 +20,9 @@ page, and, by induction, on every object of every page `r' ≥ r`.
 * `CategoryTheory.SpectralSequence.Hom.isIso_hom_f_add_one`: the comparison at one position, from
   the three positions joined by the differentials of the previous page.
 * `CategoryTheory.SpectralSequence.Hom.isIso_hom_f_of_le`: the comparison on later pages.
+* `CategoryTheory.SpectralSequence.Hom.hom_add_one_eq`,
+  `CategoryTheory.SpectralSequence.Hom.hom_eq_of_le`: two morphisms which agree on the `r`th page
+  agree on every later page.
 * `CategoryTheory.SpectralSequence.pageXIsoOfIso`: the pagewise object isomorphism induced by an
   isomorphism of spectral sequences.
 * `CategoryTheory.SpectralSequence.page_d_eq_zero_iff_of_iso`: vanishing of differentials is
@@ -97,6 +100,23 @@ lemma isIso_hom_f_of_le (r : ℤ) (hr : r₀ ≤ r) (h : ∀ pq, IsIso ((f.hom r
   induction r', hrr' using Int.leInduction generalizing pq with
   | base => exact h pq
   | succ r' hrr' ih => exact f.isIso_hom_f_add_one r' (hr.trans hrr') pq fun pq' _ ↦ ih pq'
+
+/-- Two morphisms of spectral sequences which agree on the `r`th page agree on the `(r + 1)`st
+page: each is determined there, through the identifications of the homology of a page with the
+next page, by the map it induces on the homology of the `r`th page. -/
+lemma hom_add_one_eq (g : E ⟶ E') (r : ℤ) (hr : r₀ ≤ r) (h : f.hom r hr = g.hom r hr) :
+    f.hom (r + 1) (hr.trans (Int.le_add_one le_rfl)) =
+      g.hom (r + 1) (hr.trans (Int.le_add_one le_rfl)) := by
+  ext pq : 1
+  rw [← cancel_epi (E.iso r (r + 1) pq).hom, ← f.comm r (r + 1), ← g.comm r (r + 1), h]
+
+/-- Two morphisms of spectral sequences which agree on the `r`th page agree on every page
+`r' ≥ r`. -/
+lemma hom_eq_of_le (g : E ⟶ E') (r : ℤ) (hr : r₀ ≤ r) (h : f.hom r hr = g.hom r hr) (r' : ℤ)
+    (hrr' : r ≤ r') : f.hom r' (hr.trans hrr') = g.hom r' (hr.trans hrr') := by
+  induction r', hrr' using Int.leInduction with
+  | base => exact h
+  | succ r' hrr' ih => exact f.hom_add_one_eq g r' (hr.trans hrr') ih
 
 end Hom
 
