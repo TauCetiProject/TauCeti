@@ -50,6 +50,8 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
 * `Distribution.cutoffTempered_zero`, `Distribution.cutoffTempered_add`,
   `Distribution.cutoffTempered_smul`, `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
 * `Distribution.cutoffTempered_smulLeftCLM`: `φ (g T) = (g φ) T` for a smooth real `g`.
+* `Distribution.cutoffTempered_restrictCLM`: cutting off the restriction of `T` to a smaller open
+  set is cutting off `T` by the cutoff extended by zero.
 * `Distribution.lineDerivOp_cutoffTempered`: the Leibniz rule for `φ T`.
 * `Distribution.smulLeftCLM_cutoffTempered`,
   `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: if `χ = 1` on the support of
@@ -228,6 +230,17 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
     T.cutoffTempered (c • φ) = c • T.cutoffTempered φ := by
   ext ψ
   simp only [smul_apply, cutoffTempered_def, map_smul, smul_eq_mul]
+
+/-- Cutting off the restriction `T|_{Ω'}` to an open set `Ω' ≤ Ω` by a test function `φ` on `Ω'`
+is cutting off `T` by the extension of `φ` by zero. -/
+@[simp]
+theorem cutoffTempered_restrictCLM {Ω' : Opens E} (h : Ω' ≤ Ω) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω', ℂ)) :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).cutoffTempered φ = T.cutoffTempered (monoCLM ℝ φ) := by
+  ext ψ
+  rw [cutoffTempered_def, cutoffTempered_def, complexPairing_restrictCLM]
+  congr 1
+  ext x
+  simp [h]
 
 end Cutoff
 
