@@ -14,12 +14,13 @@ public import Mathlib.Topology.Order.Compact
 A continuous function on a nonempty compact set attains an extremum on the frontier when
 interior local extrema are excluded. On a connected noncompact space, transferring every
 frontier upper bound to the whole compact set also gives a maximum on the frontier, assuming
-continuity there.
+continuity there. A continuous function mapping a nonempty compact set into an open interval
+maps it into a closed subinterval.
 -/
 
 public section
 
-open Topology
+open Set Topology
 
 /-- If every interior point of a compact set is forbidden from being a local maximum, then a
 continuous function on the compact set has a maximum point on the frontier. -/
@@ -64,3 +65,15 @@ theorem IsCompact.exists_mem_frontier_isMaxOn_of_le_frontier {X β : Type*} [Top
     nonempty_frontier_iff.2 ⟨hne, fun h => noncompact_univ X (h ▸ hK)⟩
   obtain ⟨z, hzfr, hzmax⟩ := hfrcompact.exists_isMaxOn hfrne hcont
   exact ⟨z, hzfr, fun y hyK => hbound (fun w hw => hzmax hw) hyK⟩
+
+/-- A function continuous on a nonempty compact set `s` that maps `s` into the open interval
+`Ioo a b` maps it into a closed subinterval `Icc a' b'` with `a < a' ≤ b' < b`: take for `a'` and
+`b'` the minimum and the maximum of the function on `s`. -/
+theorem IsCompact.exists_mapsTo_Icc_of_mapsTo_Ioo {X β : Type*} [TopologicalSpace X]
+    [TopologicalSpace β] [LinearOrder β] [OrderClosedTopology β] {s : Set X} (hs : IsCompact s)
+    (hne : s.Nonempty) {g : X → β} (hg : ContinuousOn g s) {a b : β}
+    (h : MapsTo g s (Ioo a b)) :
+    ∃ a' b', a < a' ∧ a' ≤ b' ∧ b' < b ∧ MapsTo g s (Icc a' b') := by
+  obtain ⟨p, hp, hpmin⟩ := hs.exists_isMinOn hne hg
+  obtain ⟨q, hq, hqmax⟩ := hs.exists_isMaxOn hne hg
+  exact ⟨g p, g q, (h hp).1, hpmin hq, (h hq).2, fun x hx => ⟨hpmin hx, hqmax hx⟩⟩
