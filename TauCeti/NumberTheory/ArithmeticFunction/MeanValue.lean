@@ -20,8 +20,7 @@ import TauCeti.NumberTheory.Mertens
 Let `f` be a real multiplicative function whose prime values lie in `[0, k]`. This file proves
 that the squarefree logarithmic sum `∑_{n ≤ z} μ(n)² f(n) / n` is bounded below by a constant
 multiple of its Euler product `∏_{p ≤ z} (1 + f(p) / p)`, with a constant depending only on `k`,
-uniformly in `f` and in `z ≥ 1`. The upper bound by the same product is elementary; together they
-say that the squarefree sum has the size of its Euler product.
+uniformly in `f` and in `z ≥ 1`.
 
 The proof uses Rankin's trick. Expanding `∏_{p ≤ y} (1 + f(p) / p)` over the subsets of the primes
 up to `y` writes it as the sum of `f(n) / n` over squarefree `n` with prime factors at most `y`.
@@ -33,8 +32,8 @@ The terms with `n > z` are at most `z^{-σ}` times the product with `f(p)` repla
 The form needed for Selberg's sieve with several excluded residue classes compares the sum with
 the reciprocal local densities instead: if `0 ≤ g(p) ≤ d`, then
 `∑_{n ≤ z} μ(n)² g(n) / n ≥ c_d ∏_{d < p ≤ z} (1 - g(p) / p)⁻¹`
-(`TauCeti.exists_pos_mul_prod_one_sub_div_inv_le_sum_moebius_sq_mul_div`). With `g(p) = 2` for
-odd `p` this is the denominator estimate of the twin-prime and Goldbach upper bounds.
+(`TauCeti.exists_pos_mul_prod_one_sub_div_inv_le_sum_moebius_sq_mul_div`). With `g(p) ≤ 2` (the
+local densities of the twin-prime and Goldbach sieves) this is their denominator estimate.
 
 ## Main results
 
@@ -45,6 +44,11 @@ odd `p` this is the denominator estimate of the twin-prime and Goldbach upper bo
   with prime values in `[0, k]` and every `z ≥ 1`.
 * `TauCeti.exists_pos_mul_prod_one_sub_div_inv_le_sum_moebius_sq_mul_div`: the same lower bound
   against `∏_{d < p ≤ z} (1 - g(p) / p)⁻¹` for prime values in `[0, d]`.
+* `TauCeti.sum_primesLE_div_mul_exp_sub_one_le`: the Rankin perturbation
+  `∑_{p ≤ y} (f(p) / p) (p^{1 / log y} - 1)` is at most `k e (1 + (log 4 + 4) / log 2)` when
+  `f(p) ≤ k`.
+* `TauCeti.summable_ite_div_sq_div_one_sub`: the quadratic local corrections
+  `(d / n)² / (1 - (d / n)²)` over `n > d` are summable.
 
 ## References
 
@@ -120,67 +124,10 @@ private theorem sum_powerset_filter_le_sum_moebius_sq_mul_div {f : ArithmeticFun
   exact mem_Ioc.2 ⟨prod_pos fun p hp ↦ (hprime T hTS p hp).pos,
     Nat.le_floor hTz⟩
 
-/-- `1 + a eᵘ ≤ (1 + a) exp (a (eᵘ - 1))` for `a ≥ 0` and `u ≥ 0`. -/
-private theorem one_add_mul_exp_le (a u : ℝ) (ha : 0 ≤ a) (hu : 0 ≤ u) :
-    1 + a * Real.exp u ≤ (1 + a) * Real.exp (a * (Real.exp u - 1)) := by
-  have heu : 1 ≤ Real.exp u := Real.one_le_exp hu
-  have h := Real.add_one_le_exp (a * (Real.exp u - 1))
-  nlinarith [mul_nonneg ha (sub_nonneg.2 heu), mul_nonneg (mul_nonneg ha ha) (sub_nonneg.2 heu)]
-
-/-- `∑_{p ≤ x} 1 / p ≤ (log x + log 4 + 4) / log 2` for `x ≥ 1`, a crude form of Mertens's first
-theorem. -/
-private theorem sum_primesLE_inv_le {x : ℝ} (hx : 1 ≤ x) :
-    ∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹ ≤ (Real.log x + (Real.log 4 + 4)) / Real.log 2 := by
-  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
-  rw [le_div_iff₀ hlog2, sum_mul]
-  refine le_trans (sum_le_sum fun p hp ↦ ?_) (Chebyshev.sum_primesLE_log_div_le hx)
-  have hp := (Nat.mem_primesLE.1 hp).2
-  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.pos
-  rw [inv_mul_eq_div]
-  exact div_le_div_of_nonneg_right
-    (Real.log_le_log two_pos (by exact_mod_cast hp.two_le)) hp0.le
-
-/-- For every `B ≥ 1` the primes in `(z^{1/B}, z]` have bounded reciprocal sum, uniformly in
-`z ≥ 1`. -/
-private theorem exists_sum_sdiff_primesLE_inv_le {B : ℝ} (hB : 1 ≤ B) :
-    ∃ K : ℝ, ∀ z : ℝ, 1 ≤ z →
-      ∑ p ∈ Nat.primesLE ⌊z⌋₊ \ Nat.primesLE ⌊Real.exp (Real.log z / B)⌋₊, (p : ℝ)⁻¹ ≤ K := by
-  obtain ⟨C, hC⟩ := exists_abs_sum_sdiff_primesLE_inv_sub_log_div_le
-  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
-  refine ⟨max (Real.log B + |C| / Real.log 2) ((B * Real.log 2 + (Real.log 4 + 4)) /
-    Real.log 2), fun z hz ↦ ?_⟩
-  set y := Real.exp (Real.log z / B)
-  have hlogz : 0 ≤ Real.log z := Real.log_nonneg hz
-  have hlogy : Real.log y = Real.log z / B := Real.log_exp _
-  rcases le_or_gt 2 y with hy | hy
-  · have hly : Real.log 2 ≤ Real.log y := Real.log_le_log two_pos hy
-    have hyz : y ≤ z := by
-      rw [← Real.exp_log (zero_lt_one.trans_le hz)]
-      exact Real.exp_le_exp.2 (div_le_self hlogz hB)
-    have hratio : Real.log z / Real.log y = B := by
-      have hlz : Real.log z ≠ 0 := fun h ↦ by
-        rw [h, zero_div] at hlogy; linarith
-      rw [hlogy]
-      field_simp
-    refine le_max_of_le_left ?_
-    have h := (abs_le.1 (hC y z hy hyz)).2
-    rw [hratio] at h
-    have hCy : C / Real.log y ≤ |C| / Real.log 2 :=
-      (div_le_div_of_nonneg_right (le_abs_self C) (hlog2.trans_le hly).le).trans
-        (div_le_div_of_nonneg_left (abs_nonneg C) hlog2 hly)
-    linarith
-  · refine le_max_of_le_right ((sum_le_sum_of_subset_of_nonneg sdiff_subset fun _ _ _ ↦
-      by positivity).trans ((sum_primesLE_inv_le hz).trans ?_))
-    have hlz : Real.log z ≤ B * Real.log 2 := by
-      have := Real.log_lt_log (Real.exp_pos _) hy
-      rw [hlogy, div_lt_iff₀ (zero_lt_one.trans_le hB)] at this
-      linarith
-    exact div_le_div_of_nonneg_right (by linarith) hlog2.le
-
 /-- With `σ = 1 / log y` for `y ≥ 2`, the perturbation `∑_{p ≤ y} (f(p) / p) (p^σ - 1)` caused by
 the Rankin weight is at most `k e (1 + (log 4 + 4) / log 2)` when `f(p) ≤ k`, by Mertens's first
 theorem. -/
-private theorem sum_primesLE_div_mul_exp_sub_one_le {f : ArithmeticFunction ℝ} {k : ℝ}
+theorem sum_primesLE_div_mul_exp_sub_one_le {f : ℕ → ℝ} {k : ℝ}
     (hk : 0 ≤ k) (hfk : ∀ p : ℕ, p.Prime → f p ≤ k) {y : ℝ} (hy : 2 ≤ y) :
     ∑ p ∈ Nat.primesLE ⌊y⌋₊, f p / p * (Real.exp ((Real.log y)⁻¹ * Real.log p) - 1) ≤
       k * Real.exp 1 * (1 + (Real.log 4 + 4) / Real.log 2) := by
@@ -246,8 +193,9 @@ private theorem sum_powerset_filter_lt_le_half_mul_prod {f : ArithmeticFunction 
         rw [hσz, Real.exp_sum, ← prod_mul_distrib]
         gcongr with p hp
         · exact fun p hp ↦ by have := ha p hp; positivity
-        · exact one_add_mul_exp_le _ _ (ha p hp) (mul_nonneg (inv_nonneg.2 hlogy.le)
-            (Real.log_nonneg (by exact_mod_cast (Nat.mem_primesLE.1 hp).2.one_le)))
+        · exact one_add_mul_exp_le_one_add_mul_exp_mul_exp_sub_one (ha p hp)
+            (mul_nonneg (inv_nonneg.2 hlogy.le)
+              (Real.log_nonneg (by exact_mod_cast (Nat.mem_primesLE.1 hp).2.one_le)))
     _ ≤ Real.exp (-(M + 1)) * ((∏ p ∈ S, (1 + f p / p)) * Real.exp M) := by
         gcongr
         exact sum_primesLE_div_mul_exp_sub_one_le hk hfk hy
@@ -347,21 +295,9 @@ theorem exists_pos_mul_prod_one_add_div_le_sum_moebius_sq_mul_div (k : ℝ) :
     _ ≤ ∑ n ∈ Ioc 0 ⌊z⌋₊, (μ n : ℝ) ^ 2 * f n / n :=
         half_mul_prod_le_sum_moebius_sq_mul_div hk' hf hf0 hfk' hz
 
-/-- `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`. -/
-private theorem inv_one_sub_le_one_add_mul_exp {x t : ℝ} (hx : 0 ≤ x) (hxt : x ≤ t)
-    (ht : t < 1) : (1 - x)⁻¹ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by
-  have ht2 : 0 < 1 - t ^ 2 := by nlinarith
-  have hx2 : 0 < 1 - x ^ 2 := by nlinarith
-  have hexp := Real.add_one_le_exp (t ^ 2 / (1 - t ^ 2))
-  have hfrac : t ^ 2 / (1 - t ^ 2) + 1 = (1 - t ^ 2)⁻¹ := by field_simp; ring
-  rw [hfrac] at hexp
-  calc (1 - x)⁻¹ = (1 + x) * (1 - x ^ 2)⁻¹ := by field_simp [(by linarith : (1 : ℝ) - x ≠ 0)]; ring
-    _ ≤ (1 + x) * (1 - t ^ 2)⁻¹ := by gcongr
-    _ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by gcongr
-
 /-- The quadratic local corrections `(d / n)² / (1 - (d / n)²)` over `n > d` form a summable
 sequence. -/
-private theorem summable_ite_div_sq_div_one_sub (d : ℝ) :
+theorem summable_ite_div_sq_div_one_sub (d : ℝ) :
     Summable fun n : ℕ ↦ if d < n then (d / n) ^ 2 / (1 - (d / n) ^ 2) else 0 := by
   refine Summable.of_norm_bounded_eventually_nat
     ((Real.summable_nat_pow_inv.2 one_lt_two).mul_left (2 * d ^ 2)) ?_
@@ -408,7 +344,7 @@ private theorem prod_filter_inv_one_sub_div_le {g : ArithmeticFunction ℝ} {d :
           have hp0 : (0 : ℝ) < p := hd.trans_lt hdp
         · exact inv_nonneg.2 (sub_nonneg.2 ((div_le_one hp0).2 ((hgd p (hs p hp)).trans hdp.le)))
         · simp only [φ, hdp, ↓reduceIte]
-          exact inv_one_sub_le_one_add_mul_exp (hx p hp)
+          exact inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq (hx p hp)
             (div_le_div_of_nonneg_right (hgd p (hs p hp)) hp0.le) ((div_lt_one hp0).2 hdp)
     _ = (∏ p ∈ s with d < ((p : ℕ) : ℝ), (1 + g p / p)) *
           Real.exp (∑ p ∈ s with d < ((p : ℕ) : ℝ), φ p) := by
