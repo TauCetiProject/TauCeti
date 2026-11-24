@@ -46,7 +46,7 @@ def fiberInclusion (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet
 theorem fiberInclusion_apply (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet) (f : F) :
     t.fiberInclusion hx f = t.toOpenPartialHomeomorph.symm (x, f) := by
   rw [fiberInclusion, ConcreteCategory.comp_apply, Hom.fiberι_apply]
-  rfl
+  exact congrArg Subtype.val (t.preimageSingletonHomeomorph_symm_apply hx f)
 
 /-- The fibre inclusion of a trivialization lies over the constant map at `x`. -/
 @[reassoc (attr := simp)]
@@ -62,7 +62,16 @@ def preimageIso (t : Bundle.Trivialization F p) {S : Set B} (hS : S ⊆ t.baseSe
     of S ⊗ F ≅ of (p ⁻¹' S) :=
   isoOfHomeo (t.preimageHomeomorph hS).symm
 
+/-- The continuous map underlying `(t.preimageIso hS).hom` is `y ↦ t⁻¹(y.1, y.2)`. This is the
+form `simp` uses: a lemma about `(t.preimageIso hS).hom y` itself is not found by `simp`, because
+the carrier of `of S ⊗ F` is not reducibly `S × F`. -/
 @[simp]
+theorem hom_preimageIso_hom (t : Bundle.Trivialization F p) {S : Set B} (hS : S ⊆ t.baseSet) :
+    (t.preimageIso hS).hom.hom =
+      ⟨fun y ↦ (t.preimageHomeomorph hS).symm (y.1, y.2),
+        (t.preimageHomeomorph hS).symm.continuous⟩ :=
+  (rfl)
+
 theorem preimageIso_hom_apply (t : Bundle.Trivialization F p) {S : Set B} (hS : S ⊆ t.baseSet)
     (y : ↑(of S ⊗ F)) :
     (t.preimageIso hS).hom y = (t.preimageHomeomorph hS).symm (y.1, y.2) := (rfl)
@@ -92,10 +101,6 @@ theorem prodFiberInclusion_comp_preimageIso_hom (t : Bundle.Trivialization F p) 
         ofHom (ContinuousMap.subtypeVal (p ⁻¹' S)) =
       t.fiberInclusion (hS x.property) := by
   ext f
-  -- `simp` leaves `t⁻¹(x, f)` on the right, and on the left the `TopCat.Hom.hom` form of
-  -- `preimageIso` applied to `(x, f)`, which `preimageIso_hom_apply` does not match; the two
-  -- agree by definition.
   simp
-  rfl
 
 end Bundle.Trivialization
