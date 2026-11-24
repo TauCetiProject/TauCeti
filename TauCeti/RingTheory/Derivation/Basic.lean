@@ -245,6 +245,13 @@ theorem conjAlgEquiv_apply (D : Derivation R A A) (e : A ≃ₐ[R] B) (x : B) :
     D.conjAlgEquiv e x = e (D (e.symm x)) :=
   (rfl)
 
+/-- If `D` transported along `e.symm` equals `D'`, then `e` intertwines `D'` with `D`. -/
+theorem algEquiv_apply_of_conjAlgEquiv_symm_eq {D : Derivation R B B} {D' : Derivation R A A}
+    {e : A ≃ₐ[R] B} (h : D.conjAlgEquiv e.symm = D') (x : A) :
+    e (D' x) = D (e x) := by
+  have hx := DFunLike.congr_fun h x
+  rw [← hx, conjAlgEquiv_apply, AlgEquiv.symm_symm, AlgEquiv.apply_symm_apply]
+
 end ConjAlgEquiv
 
 end Derivation

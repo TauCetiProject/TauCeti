@@ -106,15 +106,9 @@ theorem pderiv_totalDeriv (i : ι) (a : α) (I : ι →₀ ℕ) (f : PolynomialJ
       totalDeriv i (pderiv (Sum.inr (a, I)) f) +
         if I i = 0 then 0 else pderiv (Sum.inr (a, I - Finsupp.single i 1)) f := by
   apply (RelJetAlgebra.polyJetEquivRel R ι α).injective
-  have h := RelJetAlgebra.pderiv_totalDeriv
+  simpa [apply_ite] using RelJetAlgebra.pderiv_totalDeriv
     (fun k ↦ MvPolynomial.pderiv (R := R) k) i a I
     (RelJetAlgebra.polyJetEquivRel R ι α f)
-  rcases eq_or_ne (I i) 0 with hI | hI
-  · simpa [hI, RelJetAlgebra.polyJetEquivRel_totalDeriv,
-      RelJetAlgebra.polyJetEquivRel_pderiv_field] using h
-  · have hle : 1 ≤ I i := Nat.one_le_iff_ne_zero.mpr hI
-    simpa [map_add, hI, hle, RelJetAlgebra.polyJetEquivRel_totalDeriv,
-      RelJetAlgebra.polyJetEquivRel_pderiv_field] using h
 
 end CommSemiring
 

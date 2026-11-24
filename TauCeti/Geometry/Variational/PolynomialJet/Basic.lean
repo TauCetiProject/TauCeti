@@ -102,8 +102,7 @@ theorem totalDeriv_X_field_not_mem_stage [Nontrivial R] (i : ι) (a : α) (I : �
 theorem totalDeriv_comm (i j : ι) (p : PolynomialJet R ι α) :
     totalDeriv i (totalDeriv j p) = totalDeriv j (totalDeriv i p) := by
   apply (RelJetAlgebra.polyJetEquivRel R ι α).injective
-  simp only [RelJetAlgebra.polyJetEquivRel_totalDeriv]
-  exact RelJetAlgebra.totalDeriv_comm (MvPolynomial.pderiv_comm i j) _
+  simp [RelJetAlgebra.totalDeriv_comm (MvPolynomial.pderiv_comm i j)]
 
 /-- Commuting total derivatives give the same map from stage `r` to stage `r + 2`. -/
 theorem stageDeriv_comm (i j : ι) (r : ℕ) (p : stage R ι α r) :

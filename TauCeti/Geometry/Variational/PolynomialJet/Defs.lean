@@ -123,6 +123,16 @@ theorem X_base_mem_stage (r : ℕ) (j : ι) :
     (X (Sum.inl j) : PolynomialJet R ι α) ∈ stage R ι α r := by
   exact Algebra.subset_adjoin ⟨Sum.inl j, trivial, rfl⟩
 
+/-- Base-coordinate polynomials lie in every finite stage of `PolynomialJet`. -/
+@[simp]
+theorem rename_inl_mem_stage (r : ℕ) (b : MvPolynomial ι R) :
+    rename Sum.inl b ∈ stage R ι α r := by
+  classical
+  refine supported_mono ?_ (rename Sum.inl b).mem_supported_vars
+  intro v hv
+  rcases Finset.mem_image.mp (vars_rename Sum.inl b hv) with ⟨j, _, rfl⟩
+  trivial
+
 theorem X_field_mem_stage (r : ℕ) (a : α) (I : ι →₀ ℕ) (hI : I.degree ≤ r) :
     (X (Sum.inr (a, I)) : PolynomialJet R ι α) ∈ stage R ι α r := by
   exact Algebra.subset_adjoin ⟨Sum.inr (a, I), hI, rfl⟩

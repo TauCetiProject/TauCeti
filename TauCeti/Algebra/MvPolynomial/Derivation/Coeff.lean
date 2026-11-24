@@ -39,19 +39,30 @@ noncomputable section
 
 variable {R B σ : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
 
+private def coeffTensorEquiv (R B σ : Type*) [CommSemiring R] [CommSemiring B] [Algebra R B] :
+    MvPolynomial σ R ⊗[R] B ≃ₐ[R] MvPolynomial σ B :=
+  (Algebra.TensorProduct.comm R (MvPolynomial σ R) B).trans
+    ((MvPolynomial.algebraTensorAlgEquiv R B).restrictScalars R)
+
+private theorem coeffTensorEquiv_tmul (p : MvPolynomial σ R) (b : B) :
+    coeffTensorEquiv R B σ (p ⊗ₜ[R] b) = b • MvPolynomial.map (algebraMap R B) p := by
+  rw [coeffTensorEquiv, AlgEquiv.trans_apply, Algebra.TensorProduct.comm_tmul,
+    AlgEquiv.coe_restrictScalars, MvPolynomial.algebraTensorAlgEquiv_tmul]
+
 /-- Coefficientwise lift of a base derivation `d : Derivation R B B` to an `R`-derivation of
 `MvPolynomial σ B`, built from `Derivation.baseChange` and `MvPolynomial.algebraTensorAlgEquiv`. -/
 def mapCoeffsMvPolynomial (d : Derivation R B B) :
     Derivation R (MvPolynomial σ B) (MvPolynomial σ B) :=
-  ((d.baseChange (MvPolynomial σ R)).restrictScalars R).conjAlgEquiv
-    ((Algebra.TensorProduct.comm R (MvPolynomial σ R) B).trans
-      ((MvPolynomial.algebraTensorAlgEquiv R B).restrictScalars R))
+  ((d.baseChange (MvPolynomial σ R)).restrictScalars R).conjAlgEquiv (coeffTensorEquiv R B σ)
 
 /-- `d.mapCoeffsMvPolynomial` acts on monomials `monomial m b` by `d` on the coefficient. -/
 @[simp]
 theorem mapCoeffsMvPolynomial_monomial (d : Derivation R B B) (m : σ →₀ ℕ) (b : B) :
     d.mapCoeffsMvPolynomial (monomial m b) = monomial m (d b) := by
-  simp [mapCoeffsMvPolynomial, smul_monomial]
+  have hm (c : B) : coeffTensorEquiv R B σ (monomial m (1 : R) ⊗ₜ[R] c) = monomial m c := by
+    rw [coeffTensorEquiv_tmul, map_monomial, map_one, smul_monomial, smul_eq_mul, mul_one]
+  rw [← hm b, mapCoeffsMvPolynomial, Derivation.conjAlgEquiv_apply, AlgEquiv.symm_apply_apply,
+    Derivation.coe_restrictScalars, Derivation.baseChange_tmul, hm (d b)]
 
 /-- `d.mapCoeffsMvPolynomial` applies `d` to every coefficient of a polynomial. -/
 @[simp]
@@ -72,7 +83,8 @@ theorem mapCoeffsMvPolynomial_C (d : Derivation R B B) (b : B) :
 @[simp]
 theorem mapCoeffsMvPolynomial_X (d : Derivation R B B) (i : σ) :
     d.mapCoeffsMvPolynomial (σ := σ) (X i) = 0 := by
-  simp [mapCoeffsMvPolynomial]
+  have hX : (X i : MvPolynomial σ B) = monomial (Finsupp.single i 1) 1 := rfl
+  rw [hX, mapCoeffsMvPolynomial_monomial, d.map_one_eq_zero, monomial_zero]
 
 end
 

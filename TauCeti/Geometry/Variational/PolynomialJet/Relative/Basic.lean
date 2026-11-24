@@ -120,28 +120,27 @@ theorem totalDeriv_comm {δ : ι → Derivation R B B} {i j : ι}
 open Classical in
 private theorem pderiv_X_add_single (i : ι) (a b : α) (I J : ι →₀ ℕ) :
     MvPolynomial.pderiv (a, I) (X (b, J + Finsupp.single i 1) : RelJetAlgebra B ι α) =
-      if 1 ≤ I i then
-        MvPolynomial.pderiv (a, I - Finsupp.single i 1) (X (b, J) : RelJetAlgebra B ι α)
-      else 0 := by
+      if I i = 0 then 0 else
+        MvPolynomial.pderiv (a, I - Finsupp.single i 1) (X (b, J) : RelJetAlgebra B ι α) := by
   have hshift :
       ((b, J + Finsupp.single i 1) = (a, I)) ↔
-        (1 ≤ I i ∧ (b, J) = (a, I - Finsupp.single i 1)) := by
+        (I i ≠ 0 ∧ (b, J) = (a, I - Finsupp.single i 1)) := by
     simp only [Prod.mk.injEq]
     constructor
     · rintro ⟨rfl, rfl⟩
       exact ⟨by simp, rfl, (add_tsub_cancel_right J (Finsupp.single i 1)).symm⟩
     · rintro ⟨hI, rfl, rfl⟩
-      exact ⟨rfl, tsub_add_cancel_of_le (Finsupp.single_le_iff.mpr hI)⟩
+      exact ⟨rfl, tsub_add_cancel_of_le (Finsupp.single_le_iff.mpr (Nat.one_le_iff_ne_zero.mpr hI))⟩
   simp only [MvPolynomial.pderiv_X, Pi.single_apply]
-  by_cases hI : 1 ≤ I i
+  by_cases hI : I i = 0
   · simp only [hI, ite_true]
+    have hNe : (b, J + Finsupp.single i 1) ≠ (a, I) := fun h ↦ (hshift.mp h).1 hI
+    simp [hNe]
+  · simp only [hI, ite_false]
     by_cases hEq : (b, J + Finsupp.single i 1) = (a, I)
     · simp [hEq, (hshift.mp hEq).2]
     · have hNe' : (b, J) ≠ (a, I - Finsupp.single i 1) := fun h ↦ hEq (hshift.mpr ⟨hI, h⟩)
       simp [hEq, hNe']
-  · simp only [hI, ite_false]
-    have hNe : (b, J + Finsupp.single i 1) ≠ (a, I) := fun h ↦ hI (hshift.mp h).1
-    simp [hNe]
 
 open Classical in
 /-- **Variational commutator identity**: vertical partial differentiation `∂/∂uᵃ_I` and total
@@ -150,9 +149,9 @@ theorem pderiv_totalDeriv (δ : ι → Derivation R B B) (i : ι) (a : α) (I : 
     (p : RelJetAlgebra B ι α) :
     MvPolynomial.pderiv (a, I) (totalDeriv δ i p) =
       totalDeriv δ i (MvPolynomial.pderiv (a, I) p) +
-        if 1 ≤ I i then MvPolynomial.pderiv (a, I - Finsupp.single i 1) p else 0 := by
+        if I i = 0 then 0 else MvPolynomial.pderiv (a, I - Finsupp.single i 1) p := by
   let E : Derivation R (RelJetAlgebra B ι α) (RelJetAlgebra B ι α) :=
-    if 1 ≤ I i then (MvPolynomial.pderiv (a, I - Finsupp.single i 1)).restrictScalars R else 0
+    if I i = 0 then 0 else (MvPolynomial.pderiv (a, I - Finsupp.single i 1)).restrictScalars R
   have hgen (x : RelJetAlgebra B ι α)
       (hx : x ∈ Set.range (C : B → RelJetAlgebra B ι α) ∪ Set.range X) :
       ((MvPolynomial.pderiv (a, I)).restrictScalars R) (totalDeriv δ i x) =
