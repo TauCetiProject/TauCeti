@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Equiv.Opposite
 public import Mathlib.Algebra.Group.Hom.Defs
 public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.Algebra.Opposites
 public import Mathlib.GroupTheory.Perm.Basic
 public import TauCeti.KnotTheory.Foam.ClosedWeb.Basic
+import Mathlib.Tactic.FinCases
 
 /-!
 # Labelled closed webs
@@ -95,17 +97,14 @@ theorem IsLabeling.comp_addHom [Add Λ'] {ℓ : W.Edge → Λ} (h : W.IsLabeling
 
 /-- Orientation reversal keeps the odd end and the cyclic order, hence every labelling. -/
 @[simp] theorem isLabeling_reverse_iff {ℓ : W.Edge → Λ} :
-    W.reverse.IsLabeling ℓ ↔ W.IsLabeling ℓ :=
-  Iff.rfl
+    W.reverse.IsLabeling ℓ ↔ W.IsLabeling ℓ := by
+  simp [isLabeling_def]
 
 /-- Mirror reversal exchanges the two ordered inputs of the vertex rule. -/
 theorem isLabeling_mirror_iff {ℓ : W.Edge → Λ} :
     W.mirror.IsLabeling ℓ ↔
       ∀ v, ℓ (W.ends (v, 2)).1 + ℓ (W.ends (v, 1)).1 = ℓ (W.ends (v, 0)).1 := by
-  rw [isLabeling_def]
-  refine forall_congr' fun v ↦ ?_
-  rw [mirror_ends_apply, mirror_ends_apply, mirror_ends_apply, Equiv.swap_apply_left,
-    Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne (by decide) (by decide)]
+  simp [isLabeling_def, Equiv.swap_apply_def]
 
 /-- Mirror reversal corresponds to passing to the opposite label addition. -/
 @[simp] theorem isLabeling_mirror_op_comp_iff {ℓ : W.Edge → Λ} :
@@ -127,12 +126,8 @@ theorem isLabeling_mirror_iff {ℓ : W.Edge → Λ} :
 /-- Labellings correspond under a web isomorphism. -/
 theorem Iso.isLabeling_comp_edge_iff {V : ClosedWeb.{v}} (f : W.Iso V) {ℓ : V.Edge → Λ} :
     W.IsLabeling (ℓ ∘ f.edge) ↔ V.IsLabeling ℓ := by
-  have key (v : W.Vertex) (i : Fin 3) :
-      ℓ (f.edge (W.ends (v, i)).1) = ℓ (V.ends (f.vertex v, i)).1 := by
-    rw [f.map_ends_apply]
-  simp only [isLabeling_def, Function.comp_apply, key]
-  exact f.vertex.forall_congr_right (q := fun v ↦
-    ℓ (V.ends (v, 1)).1 + ℓ (V.ends (v, 2)).1 = ℓ (V.ends (v, 0)).1)
+  simp only [isLabeling_def]
+  exact f.vertex.forall_congr fun v ↦ by simp only [Function.comp_apply, f.map_ends_apply]
 
 /-- The theta web has a single ordered vertex rule, shared by its merge and its split. -/
 theorem isLabeling_theta_iff (ℓ : Fin 3 → Λ) : theta.IsLabeling ℓ ↔ ℓ 1 + ℓ 2 = ℓ 0 := by
@@ -168,6 +163,12 @@ theorem isLabeling_zero [AddZeroClass Λ] : W.IsLabeling (0 : W.Edge → Λ) :=
   rw [isLabeling_mirror_iff]
   exact forall_congr' fun v ↦ by rw [add_comm]
 
+/-- For commutative label addition, passing to opposite labels preserves labellings. -/
+@[simp] theorem isLabeling_op_comp_iff [AddCommMagma Λ] {ℓ : W.Edge → Λ} :
+    W.IsLabeling (AddOpposite.op ∘ ℓ) ↔ W.IsLabeling ℓ := by
+  simp only [isLabeling_def, Function.comp_apply, ← AddOpposite.op_add, AddOpposite.op_inj,
+    add_comm]
+
 end ClosedWeb
 
 /-- A closed web whose interval edges and vertex-free circles carry labels in `Λ`, satisfying
@@ -183,6 +184,17 @@ structure LabeledClosedWeb (Λ : Type w) [Add Λ] extends ClosedWeb.{u} where
 namespace LabeledClosedWeb
 
 variable [Add Λ] (W : LabeledClosedWeb.{u} Λ)
+
+/-- Labelled webs are equal when their underlying webs are equal and their labels agree. -/
+@[ext] theorem ext {W V : LabeledClosedWeb.{u} Λ} (h : W.toClosedWeb = V.toClosedWeb)
+    (he : HEq W.edgeLabel V.edgeLabel) (hc : HEq W.circleLabel V.circleLabel) : W = V := by
+  cases W
+  cases V
+  dsimp only at h he hc
+  subst h
+  cases he
+  cases hc
+  rfl
 
 /-- Isomorphisms of labelled webs: web isomorphisms preserving every edge and circle label. -/
 structure Iso (V : LabeledClosedWeb.{v} Λ) extends W.toClosedWeb.Iso V.toClosedWeb where
@@ -305,11 +317,12 @@ theorem reverse_edgeLabel (e : W.Edge) : W.reverse.edgeLabel e = W.edgeLabel e :
 theorem reverse_circleLabel (c : W.Circle) : W.reverse.circleLabel c = W.circleLabel c := (rfl)
 
 /-- Orientation reversal of labelled webs is an involution. -/
-@[simp] theorem reverse_reverse : W.reverse.reverse = W := by
-  rcases W with ⟨W, ℓ, c, h⟩
-  dsimp only [reverse]
-  congr 1
-  exact W.reverse_reverse
+@[simp] theorem reverse_reverse : W.reverse.reverse = W :=
+  ext W.toClosedWeb.reverse_reverse .rfl .rfl
+
+/-- Changing labels commutes with orientation reversal. -/
+@[simp] theorem map_reverse [Add Λ'] (f : Λ →ₙ+ Λ') : W.reverse.map f = (W.map f).reverse :=
+  (rfl)
 
 /-- Reverse cyclic orders. The two ordered inputs at each vertex are exchanged, so the labels
 pass to the additive opposite `Λᵃᵒᵖ`. -/
@@ -328,12 +341,32 @@ theorem mirror_circleLabel (c : W.Circle) :
 /-- Orientation reversal and mirror reversal commute. -/
 theorem mirror_reverse : W.reverse.mirror = W.mirror.reverse := (rfl)
 
+/-- Mirror reversal is an involution up to the identification `Λᵃᵒᵖᵃᵒᵖ ≃+ Λ`. -/
+@[simp] theorem mirror_mirror : W.mirror.mirror = W.map (AddEquiv.opOp Λ).toAddHom :=
+  ext W.toClosedWeb.mirror_mirror .rfl .rfl
+
+/-- Changing labels commutes with mirror reversal, along the opposite additive map. -/
+@[simp] theorem map_mirror [Add Λ'] (f : Λ →ₙ+ Λ') :
+    W.mirror.map (AddHom.op f) = (W.map f).mirror := (rfl)
+
 /-- The labelled web of a finite set of vertex-free circles with specified labels. -/
 abbrev circles (C : Type u) [Finite C] (ℓ : C → Λ) : LabeledClosedWeb.{u} Λ where
   toClosedWeb := ClosedWeb.circles C
   edgeLabel := PEmpty.elim
   circleLabel := ℓ
   isLabeling := ClosedWeb.isLabeling_of_isEmpty_vertex _
+
+@[simp] theorem reverse_circles (C : Type u) [Finite C] (ℓ : C → Λ) :
+    (circles C ℓ).reverse = circles C ℓ :=
+  ext (ClosedWeb.reverse_circles C) .rfl .rfl
+
+@[simp] theorem mirror_circles (C : Type u) [Finite C] (ℓ : C → Λ) :
+    (circles C ℓ).mirror = circles C (AddOpposite.op ∘ ℓ) :=
+  ext (ClosedWeb.mirror_circles C) (heq_of_eq (funext fun x ↦ x.elim)) .rfl
+
+@[simp] theorem map_circles [Add Λ'] (C : Type u) [Finite C] (ℓ : C → Λ) (f : Λ →ₙ+ Λ') :
+    (circles C ℓ).map f = circles C (f ∘ ℓ) :=
+  ext rfl (heq_of_eq (funext fun x ↦ x.elim)) .rfl
 
 /-- The empty labelled web. -/
 abbrev empty : LabeledClosedWeb.{u} Λ := circles PEmpty PEmpty.elim
@@ -366,26 +399,17 @@ theorem sum_circleLabel (V : LabeledClosedWeb.{v} Λ) (c : W.Circle ⊕ V.Circle
     (W.sum V).circleLabel c = Sum.elim W.circleLabel V.circleLabel c := (rfl)
 
 @[simp] theorem reverse_sum (V : LabeledClosedWeb.{v} Λ) :
-    (W.sum V).reverse = W.reverse.sum V.reverse := by
-  rcases W with ⟨W, ℓ, c, h⟩
-  rcases V with ⟨V, ℓ', c', h'⟩
-  dsimp only [reverse, sum]
-  congr 1
-  · exact W.reverse_sum V
-  · exact proof_irrel_heq _ _
+    (W.sum V).reverse = W.reverse.sum V.reverse :=
+  ext (W.toClosedWeb.reverse_sum V.toClosedWeb) .rfl .rfl
 
 @[simp] theorem mirror_sum (V : LabeledClosedWeb.{v} Λ) :
-    (W.sum V).mirror = W.mirror.sum V.mirror := by
-  rcases W with ⟨W, ℓ, c, h⟩
-  rcases V with ⟨V, ℓ', c', h'⟩
-  dsimp only [mirror, sum]
-  congr 1
-  · exact W.mirror_sum V
-  · funext e
-    rcases e with e | e <;> rfl
-  · funext c
-    rcases c with c | c <;> rfl
-  · exact proof_irrel_heq _ _
+    (W.sum V).mirror = W.mirror.sum V.mirror :=
+  ext (W.toClosedWeb.mirror_sum V.toClosedWeb) (heq_of_eq (Sum.comp_elim _ _ _))
+    (heq_of_eq (Sum.comp_elim _ _ _))
+
+@[simp] theorem map_sum [Add Λ'] (V : LabeledClosedWeb.{v} Λ) (f : Λ →ₙ+ Λ') :
+    (W.sum V).map f = (W.map f).sum (V.map f) :=
+  ext rfl (heq_of_eq (Sum.comp_elim _ _ _)) (heq_of_eq (Sum.comp_elim _ _ _))
 
 /-- The disjoint-union left unit isomorphism of labelled webs. -/
 def emptySum : (empty.{v}.sum W).Iso W where
@@ -435,6 +459,14 @@ def map [Add Λ'] (f : W.Iso V) (g : Λ →ₙ+ Λ') : (W.map g).Iso (V.map g) w
 @[simp] theorem map_toIso [Add Λ'] (f : W.Iso V) (g : Λ →ₙ+ Λ') : (f.map g).toIso = f.toIso :=
   (rfl)
 
+@[simp] theorem map_refl [Add Λ'] (g : Λ →ₙ+ Λ') : (refl W).map g = refl (W.map g) := (rfl)
+
+@[simp] theorem map_symm [Add Λ'] (f : W.Iso V) (g : Λ →ₙ+ Λ') :
+    f.symm.map g = (f.map g).symm := (rfl)
+
+@[simp] theorem map_trans [Add Λ'] {U : LabeledClosedWeb Λ} (f : W.Iso V) (g : V.Iso U)
+    (h : Λ →ₙ+ Λ') : (f.trans g).map h = (f.map h).trans (g.map h) := (rfl)
+
 /-- Reverse both labelled webs in an isomorphism. -/
 def reverse (f : W.Iso V) : W.reverse.Iso V.reverse where
   toIso := f.toIso.reverse
@@ -472,6 +504,11 @@ abbrev theta (a b : Λ) : LabeledClosedWeb Λ where
   isLabeling := (ClosedWeb.isLabeling_theta_iff _).mpr rfl
 
 theorem theta_edgeLabel (a b : Λ) : (theta a b).edgeLabel = ![a + b, a, b] := (rfl)
+
+@[simp] theorem map_theta [Add Λ'] (a b : Λ) (f : Λ →ₙ+ Λ') :
+    (theta a b).map f = theta (f a) (f b) := by
+  refine ext rfl (heq_of_eq (funext fun i ↦ ?_)) (heq_of_eq (funext fun x ↦ x.elim))
+  fin_cases i <;> simp
 
 end LabeledClosedWeb
 
