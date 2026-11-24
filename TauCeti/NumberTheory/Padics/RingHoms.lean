@@ -497,6 +497,7 @@ theorem index_range_nsmul {n : ℕ} (hn : n ≠ 0) :
     simp [Ideal.mem_span_singleton', nsmul_eq_mul, mul_comm]
   rw [hrange, ← Nat.padicValNat_def, ← valuation_natCast,
     ← natCard_quotient_span (Nat.cast_ne_zero.mpr hn)]
+  -- the ideal quotient `ℤ_[p] ⧸ I` is by definition the additive quotient by `I.toAddSubgroup`
   exact AddSubgroup.index_eq_card _
 
 /-- A unit of `ℤ_[p]` has valuation `0`. -/

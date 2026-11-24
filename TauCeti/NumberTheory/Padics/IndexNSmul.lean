@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.GroupTheory.Index.NSmul
+import TauCeti.GroupTheory.Index.PrimaryComponent
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -50,15 +51,10 @@ variable {G : Type*} [AddCommGroup G] (U : AddSubgroup G) {p : ℕ} [Fact p.Prim
   {n : ℕ}
 
 include e in
-/-- A subgroup isomorphic to `ℤ_p` has no nonzero `n`-torsion for `n ≠ 0`. -/
-private theorem ker_nsmulAddMonoidHom_eq_bot_of_addEquiv_padicInt (hn : n ≠ 0) :
-    (nsmulAddMonoidHom (α := U) n).ker = ⊥ := by
-  rw [AddMonoidHom.ker_eq_bot_iff]
-  intro x y hxy
-  apply e.injective
-  have h := congrArg e hxy
-  simp only [nsmulAddMonoidHom_apply, map_nsmul] at h
-  exact nsmul_right_injective hn h
+/-- Multiplication by `n ≠ 0` is injective on a subgroup isomorphic to `ℤ_p`. -/
+private theorem injective_nsmul_of_addEquiv_padicInt (hn : n ≠ 0) :
+    Function.Injective (fun x : U ↦ n • x) := fun x y h ↦
+  e.injective (nsmul_right_injective hn (by simpa [map_nsmul] using congrArg e h))
 
 variable [U.FiniteIndex]
 
@@ -66,20 +62,11 @@ include e in
 /-- **The `n`-torsion of a group containing `ℤ_p` with finite index is finite** for `n ≠ 0`. -/
 theorem finite_ker_nsmulAddMonoidHom_of_addEquiv_padicInt (hn : n ≠ 0) :
     Finite (nsmulAddMonoidHom (α := G) n).ker := by
-  -- `G[n]` meets `U` trivially, so it embeds in the finite quotient `G ⧸ U`
-  have hker := ker_nsmulAddMonoidHom_eq_bot_of_addEquiv_padicInt U e hn
-  refine Finite.of_injective (fun x ↦ (x : G ⧸ U)) fun x y hxy ↦ ?_
-  rw [QuotientAddGroup.eq] at hxy
-  -- `-x + y` is `n`-torsion in `U`, hence zero
-  have h0 : (⟨-x + y, hxy⟩ : U) ∈ (nsmulAddMonoidHom (α := U) n).ker := by
-    rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, ← Subtype.coe_inj, coe_nsmul, smul_add,
-      smul_neg]
-    have hx := AddMonoidHom.mem_ker.mp x.property
-    have hy := AddMonoidHom.mem_ker.mp y.property
-    rw [nsmulAddMonoidHom_apply] at hx hy
-    simp [hx, hy]
-  rw [hker, mem_bot, ← Subtype.coe_inj] at h0
-  exact Subtype.ext (neg_add_eq_zero.mp h0)
+  -- `G[n]` lies in the `n`-primary component `G[n^∞]`, which is finite
+  have := U.finite_primaryComponent_of_injective (injective_nsmul_of_addEquiv_padicInt U e hn)
+  have hle : (nsmulAddMonoidHom (α := G) n).ker ≤ AddCommGroup.primaryComponent G n :=
+    fun x hx ↦ AddCommGroup.mem_primaryComponent.mpr ⟨1, by simpa using hx⟩
+  exact Finite.of_injective _ (inclusion_injective hle)
 
 include e in
 /-- **The index of `n G` in a group `G` containing `ℤ_p` with finite index**: for `n ≠ 0`,
@@ -93,8 +80,8 @@ theorem index_range_nsmul_of_addEquiv_padicInt (hn : n ≠ 0) :
       Nat.card (nsmulAddMonoidHom (α := G) n).ker * p ^ multiplicity p n := by
   -- `(G : n G) · #U[n] = #G[n] · (U : n U)`, with `#U[n] = 1` and `(U : n U) = (ℤ_p : n ℤ_p)`
   have h := index_range_nsmul_add_card_ker U n
-  rw [ker_nsmulAddMonoidHom_eq_bot_of_addEquiv_padicInt U e hn, card_bot, mul_one,
-    e.index_range_nsmulAddMonoidHom n, PadicInt.index_range_nsmul hn] at h
+  rw [(AddMonoidHom.ker_eq_bot_iff _).mpr (injective_nsmul_of_addEquiv_padicInt U e hn),
+    card_bot, mul_one, e.index_range_nsmulAddMonoidHom n, PadicInt.index_range_nsmul hn] at h
   exact h
 
 include e in
