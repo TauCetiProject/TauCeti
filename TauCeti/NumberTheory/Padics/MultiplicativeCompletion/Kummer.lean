@@ -220,13 +220,11 @@ variable [Fact p.Prime]
 
 variable (p K)
 
-/-- A `p`-adic integer acts on `lim_m H¹(G_K, μ_{p^m})` through its residue modulo `p^m` at
-level `m`. -/
-instance kummerH1LimitSMul : SMul ℤ_[p] (kummerH1Limit p K) where
-  smul a y := ⟨fun m ↦ a.appr m • y.val m, by
-    refine (kummerH1Tower p K).mem_lim.2 fun m ↦ ?_
-    rw [map_nsmul, (kummerH1Tower p K).mem_lim.1 y.property m]
-    exact nsmul_H1_kummerCoeff_eq_of_modEq (a.appr_modEq m.le_succ) _⟩
+/-- **The intrinsic `ℤ_p`-module structure on `lim_m H¹(G_K, μ_{p^m})`**, in which a `p`-adic
+integer acts at level `m` through its residue modulo `p^m` (`TauCeti.kummerH1Limit_smul_apply`);
+this is well defined since `p^m` kills `H¹(G_K, μ_{p^m})`. -/
+instance kummerH1LimitPadicModule : Module ℤ_[p] (kummerH1Limit p K) :=
+  (kummerH1Tower p K).limPadicModule p fun _ ↦ nsmul_H1_kummerCoeff_eq_zero
 
 variable {p K}
 
@@ -236,36 +234,6 @@ the `m`-th coordinate. -/
 theorem kummerH1Limit_smul_apply (a : ℤ_[p]) (y : kummerH1Limit p K) (m : ℕ) :
     (a • y).val m = a.appr m • y.val m :=
   (rfl)
-
-variable (p K)
-
-/-- **The intrinsic `ℤ_p`-module structure on `lim_m H¹(G_K, μ_{p^m})`.** -/
-instance kummerH1LimitPadicModule : Module ℤ_[p] (kummerH1Limit p K) where
-  one_smul y := by
-    ext m
-    simpa using nsmul_H1_kummerCoeff_eq_of_modEq (PadicInt.appr_natCast_modEq 1 m) (y.val m)
-  mul_smul a b y := by
-    ext m
-    simp only [kummerH1Limit_smul_apply]
-    rw [smul_smul]
-    exact nsmul_H1_kummerCoeff_eq_of_modEq (PadicInt.appr_mul_modEq a b m) _
-  smul_zero a := by
-    ext m
-    simp
-  smul_add a y z := by
-    ext m
-    simp only [kummerH1Limit_smul_apply, AddSubgroup.coe_add, Pi.add_apply]
-    exact nsmul_add _ _ _
-  add_smul a b y := by
-    ext m
-    simp only [kummerH1Limit_smul_apply, AddSubgroup.coe_add, Pi.add_apply]
-    rw [← add_nsmul]
-    exact nsmul_H1_kummerCoeff_eq_of_modEq (PadicInt.appr_add_modEq a b m) _
-  zero_smul y := by
-    ext m
-    simpa using nsmul_H1_kummerCoeff_eq_of_modEq (PadicInt.appr_natCast_modEq 0 m) (y.val m)
-
-variable {p K}
 
 /-- **The limit Kummer map is `ℤ_p`-linear.** -/
 theorem padicKummerMap_smul (hp : IsUnit (p : K)) (a : ℤ_[p])

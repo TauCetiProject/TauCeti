@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
 public import TauCeti.Algebra.Category.ModuleCat.Tower.MittagLeffler
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Padic
+public import Mathlib.NumberTheory.Padics.RingHoms
+public import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Towers of abelian groups
@@ -37,6 +39,8 @@ multiplication by `p` has `lim = 0` and `lim¹ ≃ ℤ_[p] ⧸ ℤ`, so it is no
   `Tower.shift`, its limit `Tower.lim` and its first derived limit `Tower.limOne`.
 * `TauCeti.CompactCoefficients.Tower.limLift`: the homomorphism into `lim A` induced by a family
   of homomorphisms compatible with the transitions.
+* `TauCeti.CompactCoefficients.Tower.limPadicModule`: the `ℤ_[p]`-module structure on `lim A` when
+  `pⁿ` kills `Aₙ` for every `n`.
 * `TauCeti.CompactCoefficients.Tower.toModuleFunctor`: the tower as a tower of `ℤ`-modules.
 * `TauCeti.CompactCoefficients.Tower.limComparison`,
   `TauCeti.CompactCoefficients.Tower.limOneComparison`: the identifications of `lim` and `lim¹`
@@ -259,6 +263,46 @@ theorem subsingleton_limOne_of_surjective (h : ∀ n, Function.Surjective (A.map
       A.transition_toModuleFunctor_surjective_iff.2 (h n)
 
 end Basic
+
+section PadicModule
+
+variable (A : Tower.{u}) (p : ℕ) [Fact p.Prime]
+
+/-- **The `ℤ_[p]`-module structure on `lim A`** of a tower in which `pⁿ` kills `Aₙ` for every `n`:
+a `p`-adic integer acts on the `n`-th coordinate through its residue modulo `pⁿ`
+(`coe_limPadicModule_smul_apply`). It is not an instance because it depends on the torsion
+hypothesis. -/
+abbrev limPadicModule (hA : ∀ n (x : A.obj n), p ^ n • x = 0) : Module ℤ_[p] A.lim :=
+  letI : SMul ℤ_[p] A.lim := ⟨fun a y ↦ ⟨fun n ↦ a.appr n • (y : ∀ n, A.obj n) n,
+    A.mem_lim.2 fun n ↦ by
+      rw [map_nsmul, A.mem_lim.1 y.property n]
+      exact nsmul_eq_nsmul_of_modEq (a.appr_modEq n.le_succ) (hA n _)⟩⟩
+  -- each axiom holds coordinatewise because `pⁿ` kills `Aₙ` and `appr` respects `+`, `*`, `0`
+  -- and `1` modulo `pⁿ`
+  { one_smul y := A.lim_ext fun n ↦ by
+      change (1 : ℤ_[p]).appr n • _ = _
+      simpa using nsmul_eq_nsmul_of_modEq (PadicInt.appr_natCast_modEq 1 n) (hA n _)
+    mul_smul a b y := A.lim_ext fun n ↦ by
+      change (a * b).appr n • _ = a.appr n • b.appr n • _
+      rw [smul_smul]
+      exact nsmul_eq_nsmul_of_modEq (PadicInt.appr_mul_modEq a b n) (hA n _)
+    smul_zero a := A.lim_ext fun n ↦ nsmul_zero _
+    smul_add a y z := A.lim_ext fun n ↦ nsmul_add _ _ _
+    add_smul a b y := A.lim_ext fun n ↦ (nsmul_eq_nsmul_of_modEq
+      (PadicInt.appr_add_modEq a b n) (hA n _)).trans (add_nsmul _ _ _)
+    zero_smul y := A.lim_ext fun n ↦ by
+      change (0 : ℤ_[p]).appr n • _ = _
+      simpa using nsmul_eq_nsmul_of_modEq (PadicInt.appr_natCast_modEq 0 n) (hA n _) }
+
+/-- Under `limPadicModule`, a `p`-adic integer acts on the `n`-th coordinate of `lim A` by its
+residue modulo `pⁿ`. -/
+theorem coe_limPadicModule_smul_apply (hA : ∀ n (x : A.obj n), p ^ n • x = 0) (a : ℤ_[p])
+    (y : A.lim) (n : ℕ) :
+    letI := A.limPadicModule p hA
+    ((a • y : A.lim) : ∀ n, A.obj n) n = a.appr n • (y : ∀ n, A.obj n) n :=
+  (rfl)
+
+end PadicModule
 
 section MittagLeffler
 
