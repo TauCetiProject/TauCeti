@@ -179,8 +179,9 @@ theorem single_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
 /-- A scalar monomial times a vector-valued monomial is a vector-valued monomial. -/
 theorem single_smul_single [Semiring R] [AddCommMonoid V] [Module R V] (g a : Γ) (r : R)
     (v : V) : single g r • of R (single a v) = of R (single (g + a) (r • v)) := by
-  rw [← one_smul R v, ← single_smul_single_zero, smul_smul, single_mul_single, mul_one, one_smul,
-    single_smul_single_zero]
+  have hv : of R (single a v) = single a (1 : R) • of R (single 0 v) := by simp
+  rw [hv, smul_smul]
+  simp
 
 end HahnModule
 

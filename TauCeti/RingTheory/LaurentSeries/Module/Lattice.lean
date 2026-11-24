@@ -54,15 +54,16 @@ open HahnSeries in
 @[simp]
 theorem coeff_powerSeries_smul_single_add (p : R⟦X⟧) (a : ℤ) (v : V) (k : ℕ) :
     ((of R).symm (p • of R (single a v))).coeff (a + k) = PowerSeries.coeff k p • v := by
-  rw [powerSeries_smul, ← one_smul R v, ← single_smul_single_zero, smul_smul, one_smul,
-    coeff_smul_single_zero, add_comm, coeff_mul_single_add, mul_one, ofPowerSeries_apply_coeff]
+  have hv : of R (single a v) = single a (1 : R) • of R (single 0 v) := by simp
+  rw [powerSeries_smul, hv, smul_smul]
+  simp [add_comm a, coeff_mul_single_add]
 
 open HahnSeries in
 /-- Multiplying by `X ^ k` shifts a monomial `X ^ a v` to `X ^ (a + k) v`. -/
 @[simp]
 theorem X_pow_smul_single (k : ℕ) (a : ℤ) (v : V) :
     (PowerSeries.X ^ k : R⟦X⟧) • of R (single a v) = of R (single (a + k) v) := by
-  rw [powerSeries_smul, ofPowerSeries_X_pow, single_smul_single, one_smul, add_comm]
+  simp [powerSeries_smul, single_smul_single, add_comm a]
 
 end HahnModule
 

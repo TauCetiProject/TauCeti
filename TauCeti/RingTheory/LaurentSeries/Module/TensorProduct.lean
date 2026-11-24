@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.RingTheory.HahnSeries.TensorProduct
 public import TauCeti.RingTheory.LaurentSeries.Module.Lattice
 public import TauCeti.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.HahnSeries.PowerSeries
 
 /-!
 # Power-series lattices and finite jets as scalar extensions
@@ -95,9 +96,7 @@ private theorem powerSeriesTensorToHahnModule_eq (z : R⟦X⟧ ⊗[R] V) :
         ((HahnSeries.ofPowerSeriesAlg ℤ R (A := R)).toLinearMap.rTensor V z) := by
   induction z using TensorProduct.inductionOn with
   | tmul p v =>
-    -- `ofPowerSeriesAlg` is `ofPowerSeries` bundled as an algebra map.
-    have h : HahnSeries.ofPowerSeriesAlg ℤ R (A := R) p = ofPowerSeries ℤ R p := rfl
-    simp [powerSeriesTensorToHahnModule_tmul, powerSeries_smul, h]
+    simp [powerSeriesTensorToHahnModule_tmul, powerSeries_smul]
   | add z w hz hw => simp [hz, hw]
 
 private theorem powerSeriesTensorToHahnModule_injective [Module.Free R V] :
