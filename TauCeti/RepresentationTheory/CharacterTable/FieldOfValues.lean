@@ -97,28 +97,28 @@ noncomputable def characterField (X : FDRep k G) (F : Type w) [Field F] [Algebra
   Representation.characterField X.ρ F
 
 /-- The character field of `X` is that of its underlying representation. -/
-theorem characterField_eq (X : FDRep k G) (F : Type w) [Field F] [Algebra F k] :
-    X.characterField F = Representation.characterField X.ρ F :=
+theorem characterField_ρ (X : FDRep k G) (F : Type w) [Field F] [Algebra F k] :
+    Representation.characterField X.ρ F = X.characterField F :=
   (rfl)
 
 /-- The character field is the intermediate field adjoined by the range of the character. -/
 theorem characterField_def (X : FDRep k G) (F : Type w) [Field F] [Algebra F k] :
     X.characterField F = IntermediateField.adjoin F (Set.range X.character) := by
-  simpa only [← characterField_eq, funext (character_ρ X)] using
+  simpa only [characterField_ρ, funext (character_ρ X)] using
     Representation.characterField_def X.ρ F
 
 /-- Every character value belongs to the character field. -/
 @[simp]
 theorem character_mem_characterField (X : FDRep k G) (F : Type w) [Field F] [Algebra F k]
     (g : G) : X.character g ∈ X.characterField F := by
-  simpa only [← characterField_eq, character_ρ] using
+  simpa only [characterField_ρ, character_ρ] using
     Representation.character_mem_characterField X.ρ F g
 
 /-- The character field is the smallest intermediate field containing all character values. -/
 @[simp]
 theorem characterField_le_iff (X : FDRep k G) (F : Type w) [Field F] [Algebra F k]
     (L : IntermediateField F k) : X.characterField F ≤ L ↔ ∀ g, X.character g ∈ L := by
-  simpa only [← characterField_eq, character_ρ] using Representation.characterField_le_iff X.ρ F L
+  simpa only [characterField_ρ, character_ρ] using Representation.characterField_le_iff X.ρ F L
 
 /-- Isomorphic representations have the same field of character values. -/
 theorem characterField_eq_of_iso (X Y : FDRep k G) (e : X ≅ Y) (F : Type w) [Field F]
