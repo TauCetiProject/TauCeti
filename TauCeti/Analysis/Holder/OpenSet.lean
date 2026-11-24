@@ -589,6 +589,14 @@ theorem iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) 
     _root_.iteratedFDeriv ℝ i f.extend x = f.iteratedFDeriv i x :=
   f.iteratedFDeriv_eq f.extend_apply i x
 
+/-- Elements of `C^{k,α}(Ω)` and `C^{k,β}(Ω)` that agree pointwise have the same derivative
+fields: both are the iterated derivatives of any common representative on the whole space. -/
+theorem iteratedFDeriv_eq_of_coe_eq {β : ℝ≥0} {f : CkHolderSpaceOn k α Ω F}
+    {g : CkHolderSpaceOn k β Ω F} (h : ∀ x, f x = g x) (i : Fin (k + 1)) :
+    f.iteratedFDeriv i = g.iteratedFDeriv i := by
+  ext1 x
+  rw [← g.iteratedFDeriv_extend, f.iteratedFDeriv_eq fun y ↦ by rw [g.extend_apply, h]]
+
 /-- The `k`-th iterated derivative of the extension by zero is `α`-Hölder on `Ω`, with constant the
 Hölder seminorm of the derivative field of order `k`. -/
 theorem holderOnWith_iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) :
