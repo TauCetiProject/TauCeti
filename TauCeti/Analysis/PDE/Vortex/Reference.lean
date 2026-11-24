@@ -306,8 +306,8 @@ natural order `k`. -/
 theorem memSobolev_smulLeftCLM_referenceSection (hp : 1 < p) (hp_top : p ≠ ⊤)
     (f : ContDiffBump (0 : ℝ)) (m : ℕ) {k : ℕ} {u : 𝓢'(ℂ, F)} (hu : MemSobolev k p u) :
     MemSobolev k p (smulLeftCLM F (referenceSection f m) u) :=
-  hu.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top (hasTemperateGrowth_referenceSection f m)
-    fun n _ ↦ exists_norm_iteratedFDeriv_referenceSection_le f m n
+  hu.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top fun n _ ↦
+    exists_norm_iteratedFDeriv_referenceSection_le f m n
 
 /-- **Multiplication by a coefficient `z ↦ a_m(z) v` of the reference connection preserves
 `H^{k,p}`**, for `1 < p < ∞` and every natural order `k`. -/
@@ -315,7 +315,6 @@ theorem memSobolev_smulLeftCLM_referenceConnection_apply (hp : 1 < p) (hp_top : 
     (f : ContDiffBump (0 : ℝ)) (m : ℕ) (v : ℂ) {k : ℕ} {u : 𝓢'(ℂ, F)} (hu : MemSobolev k p u) :
     MemSobolev k p (smulLeftCLM F (fun z ↦ referenceConnection f m z v) u) :=
   hu.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
-    (hasTemperateGrowth_referenceConnection_apply f m v)
     fun n _ ↦ exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n v
 
 end Sobolev

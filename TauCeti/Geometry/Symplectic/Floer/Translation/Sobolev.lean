@@ -17,8 +17,8 @@ Let `u` be a Floer trajectory of `K = H_t dt` in a symplectic vector space, betw
 one-periodic orbits, for almost complex structures `J_t` compatible along `u` and along the orbits.
 Its data do not depend on `s`, so its translates `u(· + c, ·)` are Floer trajectories as well, and
 the infinitesimal translation `∂s u` solves the linearized equation `D_u (∂s u) = 0`
-(`TauCeti.SymplecticForm.floerLinearization_fderiv_apply_eq_zero`). This file shows that `∂s u`
-is an element of the kernel of the Sobolev realization
+(`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineReal_eq_zero`). This file shows
+that `∂s u` is an element of the kernel of the Sobolev realization
 `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator`) as soon
 as it is square integrable on the cylinder, as it is for a trajectory of finite energy
 (`TauCeti.SymplecticForm.exists_mem_ker_floerSobolevOperator_valueL_eq`). Since `D_u` satisfies the
@@ -65,9 +65,9 @@ private theorem floerJetCoeff_jet_fderiv_eq_zero (ω : SymplecticForm V) {H : �
     ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
       (fun w ↦ H w.2) u z (jet (fun z ↦ fderiv ℝ u z (1, 0)) z) = 0 := by
   have hslice : ContDiff ℝ 2 fun y : V ↦ (z.2, y) := contDiff_const.prodMk contDiff_id
-  rw [floerJetCoeff_jet]
-  refine floerLinearization_fderiv_apply_eq_zero (v := ((1 : ℝ), (0 : ℝ)))
-    (.of_forall fun c ↦ by simp) (.of_forall fun _ ↦ rfl) (.of_forall fun c ↦ by simp)
+  rw [floerJetCoeff_jet, ← stdComplexLineReal_eq]
+  exact floerLinearization_fderiv_stdComplexLineReal_eq_zero
+    (J := fun t y ↦ (J t y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0) (Kt := H)
     ((hJ.comp (hslice.of_le (by norm_num))).differentiable one_ne_zero _) contDiffAt_const
     (hH.comp hslice).contDiffAt (hu.contDiffAt.of_le (by norm_num)) (.of_forall hF)
 

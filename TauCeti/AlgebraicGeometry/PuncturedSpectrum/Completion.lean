@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
-public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.RingTheory.AdicCompletion.LocalRing
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
+public import TauCeti.CategoryTheory.Comma.Over.Pullback
 public import TauCeti.RingTheory.LocalRing.Quotient
 import Mathlib.AlgebraicGeometry.Morphisms.FlatDescent
 import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
@@ -17,8 +17,6 @@ import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.AlgebraicGeometry.Scheme.SectionsBaseChange
-import TauCeti.CategoryTheory.Comma.Over
-import TauCeti.CategoryTheory.Comma.Over.Pullback
 import TauCeti.RingTheory.FormalGlueing.Reconstruction
 
 /-!
@@ -88,74 +86,14 @@ variable {A A' : Type u} [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing
 /-- Restriction of schemes over `Spec A` to the punctured spectrum commutes with pullback along
 `Spec A' ⟶ Spec A` whenever the closed point is the only point of `Spec A'` over the closed point
 of `Spec A`. -/
-def overRestrictPuncturedCompPullbackIso
+abbrev overRestrictPuncturedCompPullbackIso
     (h : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A') :
     Over.pullback (puncturedSpectrum A).ι ⋙
         Over.pullback ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
           (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge) ≅
       Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap A A'))) ⋙
         Over.pullback (puncturedSpectrum A').ι :=
-  Over.pullbackCompIsoOfEq (Scheme.Hom.resLE_comp_ι _ (preimage_puncturedSpectrum h).ge)
-
-/-- First-projection compatibility for the forward direction of
-`overRestrictPuncturedCompPullbackIso`. -/
-@[reassoc (attr := simp)]
-theorem overRestrictPuncturedCompPullbackIso_hom_app_left_fst_fst
-    (h : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A')
-    (Y : Over (Spec (.of A))) :
-    ((overRestrictPuncturedCompPullbackIso h).hom.app Y).left ≫
-        pullback.fst (pullback.snd Y.hom (Spec.map (CommRingCat.ofHom (algebraMap A A'))))
-          (puncturedSpectrum A').ι ≫
-        pullback.fst Y.hom (Spec.map (CommRingCat.ofHom (algebraMap A A'))) =
-      pullback.fst (pullback.snd Y.hom (puncturedSpectrum A).ι)
-          ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
-            (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge) ≫
-        pullback.fst Y.hom (puncturedSpectrum A).ι :=
-  Over.pullbackCompIsoOfEq_hom_app_left_fst_fst _ Y
-
-/-- Second-projection compatibility for the forward direction of
-`overRestrictPuncturedCompPullbackIso`. -/
-@[reassoc (attr := simp)]
-theorem overRestrictPuncturedCompPullbackIso_hom_app_left_snd
-    (h : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A')
-    (Y : Over (Spec (.of A))) :
-    ((overRestrictPuncturedCompPullbackIso h).hom.app Y).left ≫
-        pullback.snd (pullback.snd Y.hom (Spec.map (CommRingCat.ofHom (algebraMap A A'))))
-          (puncturedSpectrum A').ι =
-      pullback.snd (pullback.snd Y.hom (puncturedSpectrum A).ι)
-        ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
-          (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge) :=
-  Over.pullbackCompIsoOfEq_hom_app_left_snd _ Y
-
-/-- First-projection compatibility for the inverse direction of
-`overRestrictPuncturedCompPullbackIso`. -/
-@[reassoc (attr := simp)]
-theorem overRestrictPuncturedCompPullbackIso_inv_app_left_fst_fst
-    (h : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A')
-    (Y : Over (Spec (.of A))) :
-    ((overRestrictPuncturedCompPullbackIso h).inv.app Y).left ≫
-        pullback.fst (pullback.snd Y.hom (puncturedSpectrum A).ι)
-          ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
-            (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge) ≫
-        pullback.fst Y.hom (puncturedSpectrum A).ι =
-      pullback.fst (pullback.snd Y.hom (Spec.map (CommRingCat.ofHom (algebraMap A A'))))
-          (puncturedSpectrum A').ι ≫
-        pullback.fst Y.hom (Spec.map (CommRingCat.ofHom (algebraMap A A'))) :=
-  Over.pullbackCompIsoOfEq_inv_app_left_fst_fst _ Y
-
-/-- Second-projection compatibility for the inverse direction of
-`overRestrictPuncturedCompPullbackIso`. -/
-@[reassoc (attr := simp)]
-theorem overRestrictPuncturedCompPullbackIso_inv_app_left_snd
-    (h : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A')
-    (Y : Over (Spec (.of A))) :
-    ((overRestrictPuncturedCompPullbackIso h).inv.app Y).left ≫
-        pullback.snd (pullback.snd Y.hom (puncturedSpectrum A).ι)
-          ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
-            (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge) =
-      pullback.snd (pullback.snd Y.hom (Spec.map (CommRingCat.ofHom (algebraMap A A'))))
-        (puncturedSpectrum A').ι :=
-  Over.pullbackCompIsoOfEq_inv_app_left_snd _ Y
+  Over.pullbackPullbackIsoOfComm (Scheme.Hom.resLE_comp_ι _ (preimage_puncturedSpectrum h).ge)
 
 end PullbackIso
 
@@ -434,7 +372,7 @@ private theorem overPullback_map_homMk_lift_eq
       have hR_step : ((overRestrictPuncturedCompPullbackIso hrad).inv.app Y).left ≫
           pullback.fst (pullback.snd q U.ι) r ≫ pullback.fst q U.ι =
           pullback.fst (pullback.snd q f) U'.ι ≫ pullback.fst q f :=
-        overRestrictPuncturedCompPullbackIso_inv_app_left_fst_fst hrad Y
+        Over.pullbackPullbackIsoOfComm_inv_app_left_fst _ Y
       have hR : (e'.inv ≫ (Over.pullback U'.ι).map eY'.inv ≫
           (overRestrictPuncturedCompPullbackIso hrad).inv.app Y).left ≫
           pullback.fst (pullback.snd q U.ι) r ≫ pullback.fst q U.ι =

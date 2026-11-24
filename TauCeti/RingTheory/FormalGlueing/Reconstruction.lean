@@ -178,7 +178,10 @@ theorem exists_submodule_isBaseChange_of_formalGlueing {G : Finset R}
   let E : Submodule R N := LinearMap.range sndK
   let e : K ≃ₗ[R] E := LinearEquiv.ofInjective sndK hsnd_inj
   let ψ : E →ₗ[R] M := fstK ∘ₗ e.symm.toLinearMap
-  refine ⟨E, ψ, hsnd_bc.subtype_range, ?_, ?_, fun r hr ↦ ?_⟩
+  refine ⟨E, ψ,
+    (by ext x; exact congrArg Subtype.val (e.apply_symm_apply x) :
+      sndK ∘ₗ e.symm.toLinearMap = E.subtype) ▸ hsnd_bc.comp_equiv e.symm sndK,
+    ?_, ?_, fun r hr ↦ ?_⟩
   · ext x
     have hx : (e (e.symm x) : N) = (x : N) := congrArg Subtype.val (e.apply_symm_apply x)
     exact (LinearMap.apply_fst_ker_coprod_eq f g (e.symm x)).trans (congrArg g hx)
