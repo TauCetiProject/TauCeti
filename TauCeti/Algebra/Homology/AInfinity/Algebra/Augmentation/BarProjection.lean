@@ -119,17 +119,12 @@ theorem comp_taylor (ε : 𝒜.Augmentation) :
           (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A)
           (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A) ∘ₗ
         ReducedTensorWords.deconcatenation R A := by
-  refine ReducedTensorWords.linearMap_ext R A fun n x ↦ ?_
-  simp only [LinearMap.comp_apply]
-  by_cases hn : n.val = 2
-  · obtain ⟨k, hk⟩ := n
-    simp only at hn
-    subst k
-    rw [ReducedTensorWords.of_two_tprod R A x]
-    exact ε.comp_taylor_two (x 0) (x 1)
-  · rw [𝒜.taylor_of_tprod, ε.map_m_of_ne_two n.val n.property hn]
-    exact (ReducedTensorWords.eq_zero_of_factor_letter_pair R A (LinearMap.mul' R R)
-      ε.toLinearMap ε.toLinearMap rfl n hn x).symm
+  refine ReducedTensorWords.linearMap_ext_two_ne_two R A
+    (fun a b ↦ by simpa only [LinearMap.comp_apply] using ε.comp_taylor_two a b)
+    (fun n hn x ↦ ?_)
+  simp only [LinearMap.comp_apply, 𝒜.taylor_of_tprod, ε.map_m_of_ne_two n.val n.property hn]
+  exact (ReducedTensorWords.eq_zero_of_factor_letter_pair R A (LinearMap.mul' R R)
+    ε.toLinearMap ε.toLinearMap rfl n hn x).symm
 
 /-- The scalar projection `Tᶜ(sA) ⟶ R` extracting the augmentation of the single-letter
 component. -/
@@ -287,12 +282,7 @@ private theorem isGradedCoderivationAlong_unitTerms (ε : 𝒜.Augmentation) :
     ε.deconcatenation_comp_rightUnitTerm, TensorProduct.map_add_left,
     TensorProduct.map_smul_left, TensorProduct.map_add_right, TensorProduct.map_smul_right,
     LinearMap.add_comp, LinearMap.smul_comp, ε.map_leftUnitTerm_comp_deconcatenation]
-  set C := TensorProduct.map ε.rightUnitTerm
-    (ReducedTensorWords.map (R := R) ε.reducedPart) ∘ₗ
-      ReducedTensorWords.deconcatenation R A
-  rw [add_assoc, ← add_assoc ((-1 : R) • C)]
-  have hzero : (-1 : R) • C + C = 0 := by module
-  rw [hzero, zero_add]
+  module
 
 /-- Decomposing `𝒜.m 2 ![𝒜.grading.koszulTwist 1 a, b]` into the reduced binary operation plus
 scalar-multiple-of-unit corrections. -/
@@ -456,15 +446,14 @@ private theorem map_reducedPart_comp_barDifferential_aux (ε : 𝒜.Augmentation
     (ε.reducedAlgebra.isGradedCoderivation_barDifferential.comp_isCoalgHom hπ_coalg hπ_hom).add
       ε.isGradedCoderivationAlong_unitTerms
   refine hLHS.eq_of_letter_comp_eq hRHS
-    (ε.letter_comp_barDifferential_eq_of_taylor (ReducedTensorWords.linearMap_ext R A fun n x ↦ ?_))
-  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply]
-  by_cases hn2 : n.val = 2
-  · obtain ⟨k, hk⟩ := n
-    simp only at hn2
-    subst k
-    rw [ReducedTensorWords.of_two_tprod R A x]
-    exact ε.taylor_map_reducedPart_two (x 0) (x 1)
-  · exact ε.taylor_map_reducedPart_of_ne_two n hn2 x
+    (ε.letter_comp_barDifferential_eq_of_taylor
+      (ReducedTensorWords.linearMap_ext_two_ne_two R A
+        (fun a b ↦ by
+          simpa only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply] using
+            ε.taylor_map_reducedPart_two a b)
+        (fun n hn x ↦ by
+          simpa only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply] using
+            ε.taylor_map_reducedPart_of_ne_two n hn x)))
 
 /-- The letterwise reduced-part projection `π = map reducedPart` intertwines the bar differential
 of `𝒜` with that of the reduced algebra `ε.reducedAlgebra`, up to the left and right
