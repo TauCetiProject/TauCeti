@@ -202,10 +202,8 @@ theorem monoidalClosed_uncurry {M X N : HopfModuleCat k H} (φ : X ⟶ (ihom hS 
     letI := monoidalClosed hS
     MonoidalClosed.uncurry φ = (tensorHomEquiv hS M X N).symm φ := by
   let := monoidalClosed hS
-  refine (MonoidalClosed.homEquiv_symm_apply_eq φ).symm.trans ?_
-  change ((ihomAdjunction hS M).homEquiv X N).symm φ = _
-  rw [ihomAdjunction_homEquiv]
-  rfl
+  exact (MonoidalClosed.homEquiv_symm_apply_eq φ).symm.trans
+    (DFunLike.congr_fun (congrArg Equiv.symm (ihomAdjunction_homEquiv M X N)) φ)
 
 /-- Precomposition of internal Homs in `monoidalClosed` is `linHomPrecomp`. -/
 @[simp]
@@ -224,7 +222,6 @@ theorem monoidalClosed_pre_app_hom {M M' : HopfModuleCat k H} (f : M' ⟶ M)
       (monoidalClosed_uncurry (X := (ihom hS M).obj N) _).trans <| tensor_ext fun m g =>
         (tensorHomEquiv_symm_apply_hom_tmul _ m g).trans <|
           (linHomEquiv_linHomPrecomp_apply f.hom g m).trans (hev m g).symm
-  rw [this]
-  rfl
+  exact (congrArg ModuleCat.Hom.hom this).trans (ModuleCat.hom_ofHom _)
 
 end TauCeti.HopfModuleCat
