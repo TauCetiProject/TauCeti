@@ -42,14 +42,20 @@ private theorem parameter_le_comap_genericLocalRing :
     Ideal.span {π} ≤ (maximalIdeal (genericLocalRing π)).comap
       (IsScalarTower.toAlgHom O A (genericLocalRing π)) := by
   rw [Ideal.span_singleton_le_iff_mem, Ideal.mem_comap]
-  exact (IsLocalization.AtPrime.to_map_mem_maximal_iff (genericLocalRing π) (Ideal.span {π}) π).mpr
-    (Ideal.subset_span rfl)
+  exact (IsLocalization.AtPrime.to_map_mem_maximal_iff
+    (genericLocalRing π) (Ideal.span {π}) π).mpr (Ideal.subset_span rfl)
 
 /-- The canonical map from the weak completion of an affine lift to the ring of integers
 of the completed generic field. -/
 noncomputable def weakCompletionToGenericIntegers : W →ₐ[O] C :=
   (_root_.AdicCompletion.mapₐ (IsScalarTower.toAlgHom O A (genericLocalRing π))
     (parameter_le_comap_genericLocalRing ϖ)).comp (Dagger.weakCompletion ϖ A).val
+
+private theorem weakCompletionToGenericIntegers_comp_parameter (φ : W →+* W) :
+    ((weakCompletionToGenericIntegers ϖ).toRingHom.comp
+      (φ.comp (Dagger.weakCompletion.of ϖ A).toRingHom)) π =
+        weakCompletionToGenericIntegers ϖ (φ (algebraMap O W ϖ)) := by
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes]
 
 /-- The canonical weak-completion map agrees with the structural map on the affine algebra. -/
 @[simp]
@@ -101,7 +107,8 @@ theorem weakCompletionToGenericIntegers_mem_maximalIdeal_iff (z : W) :
 
 /-- A weak-completion Frobenius lift contracts the generic maximal ideal to the affine
 special fibre, without requiring preservation of the affine algebra. -/
-theorem weakCompletionFrobenius_comap_maximalIdeal (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+theorem comap_maximalIdeal_weakCompletionToGenericIntegers_comp_eq_span
+    (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
     (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
       Dagger.weakCompletion.eval ϖ 1 z ^ q) :
     (maximalIdeal C).comap ((weakCompletionToGenericIntegers ϖ).toRingHom.comp
@@ -150,7 +157,7 @@ theorem completedGenericIntegersLift_weakCompletion (φ : W →+* W)
   have hbase : F (weakCompletionToGenericIntegers ϖ (Dagger.weakCompletion.of ϖ A a)) =
       weakCompletionToGenericIntegers ϖ (φ (Dagger.weakCompletion.of ϖ A a)) := by
     rw [weakCompletionToGenericIntegers_of, completedGenericIntegersLift_algebraMap]
-    rfl
+    simp only [f, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
   simpa only [map_sub, hbase, sub_sub_sub_cancel_right,
     IsScalarTower.algebraMap_apply O A C] using h
 
@@ -161,7 +168,7 @@ noncomputable def completedGenericIntegersFrobenius (φ : W →+* W) (q : ℕ) (
       Dagger.weakCompletion.eval ϖ 1 z ^ q) : C →+* C :=
   completedGenericIntegersLift π ((weakCompletionToGenericIntegers ϖ).toRingHom.comp
     (φ.comp (Dagger.weakCompletion.of ϖ A).toRingHom))
-    (weakCompletionFrobenius_comap_maximalIdeal ϖ φ q hq hφ)
+    (comap_maximalIdeal_weakCompletionToGenericIntegers_comp_eq_span ϖ φ q hq hφ)
 
 /-- The weak-completion Frobenius extension is a local homomorphism. -/
 instance completedGenericIntegersFrobenius_isLocalHom (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
@@ -192,8 +199,8 @@ theorem completedGenericIntegersFrobenius_algebraMap (φ : W →+* W) (q : ℕ) 
       Dagger.weakCompletion.eval ϖ 1 z ^ q) (a : A) :
     completedGenericIntegersFrobenius ϖ φ q hq hφ (algebraMap A C a) =
       weakCompletionToGenericIntegers ϖ (φ (Dagger.weakCompletion.of ϖ A a)) := by
-  rw [completedGenericIntegersFrobenius, completedGenericIntegersLift_algebraMap]
-  rfl
+  simp only [completedGenericIntegersFrobenius, completedGenericIntegersLift_algebraMap,
+    RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
 
 /-- The generic integral Frobenius acts as the q-th power on the residue function field. -/
 theorem completedGenericIntegersFrobenius_residue (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
@@ -236,9 +243,8 @@ noncomputable def completedGenericFieldFrobenius (φ : W →+* W) (q : ℕ) (hq 
     completedGenericField π hπ →+* completedGenericField π hπ :=
   completedGenericFieldLift π ((weakCompletionToGenericIntegers ϖ).toRingHom.comp
     (φ.comp (Dagger.weakCompletion.of ϖ A).toRingHom))
-    (weakCompletionFrobenius_comap_maximalIdeal ϖ φ q hq hφ) hπ
-    (by simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      AlgHom.commutes] using hzero)
+    (comap_maximalIdeal_weakCompletionToGenericIntegers_comp_eq_span ϖ φ q hq hφ) hπ
+    (by simpa only [weakCompletionToGenericIntegers_comp_parameter] using hzero)
 
 /-- The generic-field Frobenius restricts to the integral Frobenius on the valuation ring. -/
 @[simp]
@@ -252,8 +258,23 @@ theorem completedGenericFieldFrobenius_algebraMap (φ : W →+* W) (q : ℕ) (hq
       (algebraMap C (completedGenericField π hπ) x) =
         algebraMap C (completedGenericField π hπ)
           (completedGenericIntegersFrobenius ϖ φ q hq hφ x) := by
-  rw [completedGenericFieldFrobenius, completedGenericFieldLift_algebraMap]
-  rfl
+  simp only [completedGenericFieldFrobenius, completedGenericFieldLift_algebraMap,
+    completedGenericIntegersFrobenius]
+
+/-- On the affine algebra the generic-field Frobenius is computed through the weak lift. -/
+@[simp]
+theorem completedGenericFieldFrobenius_algebraMap_affine (φ : W →+* W) (q : ℕ) (hq : q ≠ 0)
+    (hφ : ∀ z : W, Dagger.weakCompletion.eval ϖ 1 (φ z) =
+      Dagger.weakCompletion.eval ϖ 1 z ^ q)
+    (hπ : π ∈ nonZeroDivisors A)
+    (hzero : weakCompletionToGenericIntegers ϖ
+      (φ (algebraMap O W ϖ)) ≠ 0) (a : A) :
+    completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero
+      (algebraMap A (completedGenericField π hπ) a) =
+        algebraMap C (completedGenericField π hπ)
+          (weakCompletionToGenericIntegers ϖ (φ (Dagger.weakCompletion.of ϖ A a))) := by
+  simp only [completedGenericFieldFrobenius, completedGenericFieldLift_algebraMap_affine,
+    RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
 
 /-- If the Frobenius image of the parameter is a uniformizer of the generic integers, the
 field extension preserves the normalized generic-field valuation. -/
@@ -268,10 +289,8 @@ theorem completedGenericFieldFrobenius_valuation (φ : W →+* W) (q : ℕ) (hq 
     (x : completedGenericField π hπ) :
     Valued.v (completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero x) = Valued.v x :=
   completedGenericFieldLift_valuation π _ _ hπ
-    (by simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      AlgHom.commutes] using hzero)
-    (by simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      AlgHom.commutes] using hassoc) x
+    (by simpa only [weakCompletionToGenericIntegers_comp_parameter] using hzero)
+    (by simpa only [weakCompletionToGenericIntegers_comp_parameter] using hassoc) x
 
 variable (φ : Dagger.weakCompletion ϖ A →+* Dagger.weakCompletion ϖ A) (q : ℕ) (hq : q ≠ 0)
   (hφ : ∀ z : Dagger.weakCompletion ϖ A, Dagger.weakCompletion.eval ϖ 1 (φ z) =
@@ -321,16 +340,17 @@ theorem completedGenericFieldFrobenius_continuous
     completedGenericFieldFrobenius_valuation ϖ φ q hq hφ hπ hzero hassoc x
   rwa [((Valued.v : Valuation E ℤᵐ⁰).restrict_inj).mpr hv]
 
-/-- A valuation-preserving field endomorphism extending the weak-completion Frobenius
-is the generic Frobenius. -/
-theorem completedGenericFieldFrobenius_unique (g : E →+* E) (hg : ∀ x, Valued.v (g x) = Valued.v x)
-    (hweak : ∀ z : W, g (algebraMap C E (weakCompletionToGenericIntegers ϖ z)) =
-      algebraMap C E (weakCompletionToGenericIntegers ϖ (φ z))) :
+/-- A valuation-preserving field endomorphism agreeing with the weak-completion Frobenius
+on the affine algebra is the generic Frobenius. -/
+theorem completedGenericFieldFrobenius_unique (g : E →+* E)
+    (hg : ∀ x, Valued.v (g x) = Valued.v x)
+    (haffine : ∀ a : A, g (algebraMap A E a) =
+      algebraMap C E
+        (weakCompletionToGenericIntegers ϖ (φ (Dagger.weakCompletion.of ϖ A a)))) :
     g = completedGenericFieldFrobenius ϖ φ q hq hφ hπ hzero := by
   unfold completedGenericFieldFrobenius
   apply completedGenericFieldLift_unique _ _ _ _ _ g hg
   intro a
-  rw [IsScalarTower.algebraMap_apply A C E, ← weakCompletionToGenericIntegers_of]
-  exact hweak (Dagger.weakCompletion.of ϖ A a)
+  simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using haffine a
 
 end TauCeti.AdicCompletion
