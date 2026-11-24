@@ -359,6 +359,29 @@ private theorem exists_localization_apply (i : ι) (j : Fin (Module.finrank ℝ 
     rw [localization_apply, Distribution.cutoffTempered_def, Distribution.complexPairing_apply,
       Bundle.Trivialization.chartComponent_apply, Bundle.Trivialization.chartComponent_apply]⟩
 
+/-- **Being a tuple of localizations is a closed condition.** Let `v x` be a tuple of tempered
+distributions depending on a parameter `x` in a topological space, such that each value
+`v x k ψ` on a Schwartz function depends continuously on `x`. Then the parameters for which
+`v x` is reproduced by localizing its reconstruction, that is, for which `v x` is the tuple of
+localizations of a functional on bundle tests
+(`TauCeti.SquareChartPartition.mem_sobolevSpace_iff_exists_localization`), form a closed set: a
+value of the localization of a reconstruction only involves finitely many values of the `v x l`. -/
+theorem isClosed_setOf_forall_localization_reconstruction_eq {X : Type*} [TopologicalSpace X]
+    (v : X → ι × Fin (Module.finrank ℝ F) → 𝓢'(E, ℂ))
+    (hv : ∀ k (ψ : 𝓢(E, ℂ)), Continuous fun x ↦ v x k ψ) :
+    IsClosed {x | ∀ k, A.localization k.1 k.2 (A.reconstruction (v x)) = v x k} := by
+  have h : {x | ∀ k, A.localization k.1 k.2 (A.reconstruction (v x)) = v x k} =
+      ⋂ k, ⋂ ψ : 𝓢(E, ℂ), {x | A.localization k.1 k.2 (A.reconstruction (v x)) ψ = v x k ψ} := by
+    ext x
+    simp only [mem_iInter, Set.mem_ofPred_eq]
+    exact forall_congr' fun k ↦ ⟨fun h ψ ↦ by rw [h], fun h ↦ ContinuousLinearMap.ext h⟩
+  rw [h]
+  refine isClosed_iInter fun k ↦ isClosed_iInter fun ψ ↦ isClosed_eq ?_ (hv k ψ)
+  obtain ⟨g, g', hg⟩ := A.exists_localization_apply k.1 k.2 ψ
+  simp only [hg, reconstruction_apply]
+  refine ((continuous_ofReal.comp ?_).add (continuous_const.mul (continuous_ofReal.comp ?_))) <;>
+    exact continuous_finsetSum _ fun l _ ↦ continuous_re.comp (hv l _)
+
 /-! ### Sobolev regularity and the Sobolev spaces -/
 
 section Sobolev
@@ -468,25 +491,12 @@ theorem mem_sobolevSpace_iff_exists_localization
 /-- The `H^s` spaces of `A` are closed in the Hilbert sum `⨁ᵢⱼ H^s(E, ℂ)`. -/
 theorem isClosed_sobolevSpace :
     IsClosed
-      (A.sobolevSpace s : Set (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ))) := by
-  have hcont (k : ι × Fin (Module.finrank ℝ F)) (ψ : 𝓢(E, ℂ)) :
-      Continuous fun u : PiLp 2 (fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) ↦
-        (u k).toDistr ψ :=
+      (A.sobolevSpace s : Set (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ))) :=
+  A.isClosed_setOf_forall_localization_reconstruction_eq
+    (fun (u : PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) l ↦ (u l).toDistr)
+    fun k ψ ↦
     (ContinuousEvalConst.continuous_eval_const ψ).comp
       (BesselPotentialSpace.continuous_toDistr.comp (PiLp.continuous_apply 2 _ k))
-  have h : (A.sobolevSpace s : Set (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ))) =
-      ⋂ k, ⋂ ψ : 𝓢(E, ℂ),
-      {u | A.localization k.1 k.2 (A.reconstruction fun l ↦ (u l).toDistr) ψ =
-        (u k).toDistr ψ} := by
-    ext u
-    simp only [SetLike.mem_coe, mem_sobolevSpace, mem_iInter, Set.mem_ofPred_eq]
-    exact forall_congr' fun k ↦ ⟨fun h ψ ↦ by rw [h], fun h ↦ ContinuousLinearMap.ext h⟩
-  rw [h]
-  refine isClosed_iInter fun k ↦ isClosed_iInter fun ψ ↦ isClosed_eq ?_ (hcont k ψ)
-  obtain ⟨g, g', hg⟩ := A.exists_localization_apply k.1 k.2 ψ
-  simp only [hg, reconstruction_apply]
-  refine ((continuous_ofReal.comp ?_).add (continuous_const.mul (continuous_ofReal.comp ?_))) <;>
-    exact continuous_finsetSum _ fun l _ ↦ continuous_re.comp (hcont l _)
 
 instance : CompleteSpace (A.sobolevSpace s) :=
   (A.isClosed_sobolevSpace s).completeSpace_coe
