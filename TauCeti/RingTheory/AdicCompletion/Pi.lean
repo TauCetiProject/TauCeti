@@ -145,16 +145,10 @@ ring, a sequence of coordinate families whose consecutive terms are congruent mo
 limit, congruent to the `m`-th term modulo `I ^ m`. -/
 theorem exists_forall_sub_mem_pow [IsPrecomplete I R] (x : ℕ → ι → R)
     (hx : ∀ m i, x (m + 1) i - x m i ∈ I ^ m) : ∃ L : ι → R, ∀ m i, L i - x m i ∈ I ^ m := by
-  have hcauchy {m m' : ℕ} (hm : m ≤ m') (i : ι) : x m' i - x m i ∈ I ^ m := by
-    induction m', hm using Nat.le_induction with
-    | base => simp
-    | succ m' hm ih =>
-      rw [← sub_add_sub_cancel]
-      exact Ideal.add_mem _ (Ideal.pow_le_pow_right hm (hx m' i)) ih
   choose L hL using fun i ↦ IsPrecomplete.prec (I := I) inferInstance
-    (f := (x · i)) fun hm ↦ by
+    ((isAdicCauchy_iff I R (x · i)).2 fun n ↦ by
       rw [Ideal.smodEq_smul_top_iff_sub_mem, ← neg_sub]
-      exact neg_mem (hcauchy hm i)
+      exact neg_mem (hx n i))
   refine ⟨L, fun m i ↦ ?_⟩
   rw [← neg_sub, neg_mem_iff, ← Ideal.smodEq_smul_top_iff_sub_mem]
   exact hL i m
