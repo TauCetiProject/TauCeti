@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Normed.Operator.Completeness
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Bounded composition in the strong operator topology
@@ -177,9 +178,16 @@ theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] 
   simp only [Set.mem_image, Set.mem_preimage]
   constructor
   · rintro ⟨f, hf, rfl⟩
-    exact ⟨f, hf, rfl⟩
+    -- `toPointwiseConvergenceCLM_apply` exposes the same underlying map across distinct `FunLike`
+    -- instances on `E →SL[σ] F` and `E →SLₚₜ[σ] F`, whose coercions agree definitionally.
+    exact ⟨f, hf, by rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply]; rfl⟩
   · rintro ⟨f, hf, hT⟩
-    exact ⟨f, hf, DFunLike.coe_injective hT⟩
+    obtain ⟨g, rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective T
+    refine ⟨f, hf, congrArg (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F)
+      (ContinuousLinearMap.ext fun x ↦ ?_)⟩
+    have hx := congrFun hT x
+    rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply] at hx
+    exact hx
 
 end ClosedBall
 

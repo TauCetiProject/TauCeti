@@ -161,9 +161,8 @@ theorem toStarSubalgebra_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fint
 matrix entries lie in `M`. -/
 theorem mem_piLpMatrix_iff {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι] [DecidableEq ι]
     {T : PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H)} :
-    T ∈ M.piLpMatrix ι ↔ ∀ i j, T.piLpEntry i j ∈ M := by
-  rw [← SetLike.mem_coe, ← mem_carrier, toStarSubalgebra_piLpMatrix, StarSubalgebra.mem_piLpMatrix]
-  simp only [mem_carrier, SetLike.mem_coe]
+    T ∈ M.piLpMatrix ι ↔ ∀ i j, T.piLpEntry i j ∈ M :=
+  Iff.rfl
 
 /-- The underlying set of `M.piLpMatrix ι` consists of all operators whose matrix entries lie in
 `M`. -/
@@ -179,15 +178,19 @@ the element belongs to `M`. -/
 theorem singleEntryCLM_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
     [DecidableEq ι] {i j : ι} {s : H →L[ℂ] H} :
     PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι ↔ s ∈ M := by
-  rw [← SetLike.mem_coe, ← mem_carrier, toStarSubalgebra_piLpMatrix,
-    StarSubalgebra.singleEntryCLM_mem_piLpMatrix, mem_carrier, SetLike.mem_coe]
+  refine mem_piLpMatrix_iff.trans ⟨fun h => by simpa using h i j, fun hs k l => ?_⟩
+  rw [ContinuousLinearMap.piLpEntry_singleEntryCLM]
+  split_ifs
+  exacts [hs, zero_mem M]
 
 /-- Diagonal amplification maps `M` into `M.piLpMatrix ι`. -/
 theorem diagStarAlgHom_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
     [DecidableEq ι] {s : H →L[ℂ] H} (hs : s ∈ M) :
-    PiLp.diagStarAlgHom ℂ H ι s ∈ M.piLpMatrix ι := by
-  rw [← SetLike.mem_coe, ← mem_carrier, toStarSubalgebra_piLpMatrix]
-  exact M.toStarSubalgebra.diagStarAlgHom_mem_piLpMatrix (mem_carrier.mpr (SetLike.mem_coe.mpr hs))
+    PiLp.diagStarAlgHom ℂ H ι s ∈ M.piLpMatrix ι :=
+  mem_piLpMatrix_iff.2 fun i j => by
+    rw [ContinuousLinearMap.piLpEntry_diagStarAlgHom]
+    split_ifs
+    exacts [hs, zero_mem M]
 
 /-- The commutant of the matrix von Neumann algebra `M.piLpMatrix ι` consists of block-diagonal
 operators with constant diagonal entry in `M.commutant`. -/
