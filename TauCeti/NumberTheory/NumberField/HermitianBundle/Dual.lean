@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.BaseChange
+public import TauCeti.LinearAlgebra.Dual.BaseChange
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
 
-import Mathlib.LinearAlgebra.Contraction
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -21,7 +20,7 @@ fibre of `E^∨` at `σ`.
 For a finitely generated projective `𝓞 K`-module `E`, the complex fibre
 `Codomain σ ⊗[𝓞 K] E^∨` of the dual is identified with the complex dual of the fibre
 `Codomain σ ⊗[𝓞 K] E` by `c ⊗ f ↦ (d ⊗ x ↦ c d σ(f x))`
-(`TauCeti.HermitianMetric.bijective_dualPairing`). The form `h_σ` is nondegenerate on the
+(`TauCeti.Module.Dual.baseChangeEvaluationEquiv`). The form `h_σ` is nondegenerate on the
 finite-dimensional fibre, so every complex linear functional `φ` on the fibre is `h_σ(u_φ, ·)` for
 a unique vector `u_φ` (the Riesz vector, `TauCeti.HermitianMetric.dualVector`). The dual form is
 `h^∨_σ(a, b) = h_σ(u_b, u_a)`, so that the Riesz correspondence is antiunitary. Complex
@@ -31,9 +30,9 @@ metric.
 
 ## Main definitions
 
-* `TauCeti.HermitianMetric.dualPairing σ`: the complex linear map from the fibre of `E^∨` at `σ`
-  to the complex dual of the fibre of `E` at `σ`; it is bijective for finitely generated
-  projective `E`.
+* `TauCeti.HermitianMetric.dualPairing σ`: the scalar-extended evaluation
+  `TauCeti.Module.Dual.baseChangeEvaluation`, viewed as a complex linear map from the fibre of
+  `E^∨` at `σ` to the complex dual of the fibre of `E` at `σ`.
 * `TauCeti.HermitianMetric.dualVector`: the Riesz vector `u_a` of an element `a` of the fibre of
   `E^∨`, characterized by `h_σ(u_a, w) = a(w)` (`TauCeti.HermitianMetric.form_dualVector`).
 * `TauCeti.HermitianMetric.dual`: the dual hermitian metric on `Module.Dual (𝓞 K) E`.
@@ -72,60 +71,27 @@ variable {K : Type*} [Field K] {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] 
 /-! ### The fibre of the dual module -/
 
 variable (E) in
-/-- The complex linear map from the complex fibre `Codomain σ ⊗[𝓞 K] E^∨` of the dual module to
-the complex dual of the fibre `Codomain σ ⊗[𝓞 K] E`, `c ⊗ f ↦ (d ⊗ x ↦ c d σ(f x))`
-(`TauCeti.HermitianMetric.dualPairing_tmul_tmul`). It is bijective for finitely generated
-projective `E` (`TauCeti.HermitianMetric.bijective_dualPairing`). -/
+/-- The scalar-extended evaluation `TauCeti.Module.Dual.baseChangeEvaluation` from the complex
+fibre `Codomain σ ⊗[𝓞 K] E^∨` of the dual module to the complex dual of the fibre
+`Codomain σ ⊗[𝓞 K] E`, viewed as a complex linear map: `c ⊗ f ↦ (d ⊗ x ↦ c d σ(f x))`
+(`TauCeti.HermitianMetric.dualPairing_tmul_tmul`). For finitely generated projective `E` it is
+the equivalence `TauCeti.Module.Dual.baseChangeEvaluationEquiv`. -/
 def dualPairing :
     Codomain σ ⊗[𝓞 K] Module.Dual (𝓞 K) E →ₗ[ℂ] Module.Dual ℂ (Codomain σ ⊗[𝓞 K] E) :=
-  ((Module.Dual.baseChange (Codomain σ)).liftBaseChange (Codomain σ)).restrictScalars ℂ
+  (TauCeti.Module.Dual.baseChangeEvaluation (R := 𝓞 K) (M := E)
+    (A := Codomain σ)).restrictScalars ℂ
 
-theorem dualPairing_def :
-    dualPairing E σ =
-      ((Module.Dual.baseChange (Codomain σ)).liftBaseChange (Codomain σ)).restrictScalars ℂ :=
+theorem dualPairing_apply (a : Codomain σ ⊗[𝓞 K] Module.Dual (𝓞 K) E)
+    (w : Codomain σ ⊗[𝓞 K] E) :
+    dualPairing E σ a w = TauCeti.Module.Dual.baseChangeEvaluation a w :=
   (rfl)
 
 theorem dualPairing_tmul_tmul (c d : Codomain σ) (f : Module.Dual (𝓞 K) E) (x : E) :
     dualPairing E σ (c ⊗ₜ f) (d ⊗ₜ x) =
       Codomain.equiv σ c * (Codomain.equiv σ d * σ (f x)) := by
-  change c * (algebraMap (𝓞 K) (Codomain σ) (f x) * d) = _
-  rw [Codomain.equiv_apply, Codomain.equiv_apply, mul_comm (algebraMap _ _ _)]
-  rfl
-
-/-- For finitely generated projective `E`, taking duals commutes with the scalar extension to
-the complex fibre: `dualPairing E σ` is bijective. It agrees with the composite of Mathlib's
-`dualTensorHomEquiv` and `LinearMap.liftBaseChangeEquiv`. -/
-theorem bijective_dualPairing [Module.Finite (𝓞 K) E] [Module.Projective (𝓞 K) E] :
-    Function.Bijective (dualPairing E σ) := by
-  let e := ((TensorProduct.comm (𝓞 K) (Codomain σ) (Module.Dual (𝓞 K) E)).trans
-    (dualTensorHomEquiv (𝓞 K) E (Codomain σ))).trans
-    ((LinearMap.liftBaseChangeEquiv (Codomain σ)).restrictScalars (𝓞 K))
-  have he : ∀ u, ((e u : Codomain σ ⊗[𝓞 K] E →ₗ[Codomain σ] Codomain σ) : _ → _) =
-      dualPairing E σ u := by
-    intro u
-    induction u using TensorProduct.inductionOn with
-    | add a b ha hb => ext v; simp only [map_add, LinearMap.add_apply]; rw [← ha, ← hb]; rfl
-    | tmul c f =>
-      funext v
-      induction v using TensorProduct.inductionOn with
-      | add a b ha hb => simp only [map_add] at *; rw [ha, hb]; rfl
-      | tmul d x =>
-        rw [dualPairing_tmul_tmul]
-        simp only [e, LinearEquiv.trans_apply, TensorProduct.comm_tmul,
-          LinearEquiv.restrictScalars_apply]
-        rw [LinearMap.liftBaseChange_tmul, dualTensorHomEquiv_tmul, smul_eq_mul,
-          Algebra.smul_def]
-        rw [Codomain.equiv_apply, Codomain.equiv_apply]
-        exact (by intros; ring : ∀ a b d : ℂ, d * (a * b) = b * (d * a)) _ _ _
-  refine ⟨fun u u' huu' ↦ e.injective (LinearMap.ext fun v ↦ ?_), fun g ↦ ?_⟩
-  · exact (congrFun (he u) v).trans
-      ((congrArg (· v) huu').trans (congrFun (he u') v).symm)
-  · let g' : Codomain σ ⊗[𝓞 K] E →ₗ[Codomain σ] Codomain σ :=
-      { toFun := g
-        map_add' := g.map_add
-        map_smul' := fun c v ↦ g.map_smul (c : ℂ) v }
-    obtain ⟨u, hu⟩ := e.surjective g'
-    exact ⟨u, LinearMap.ext fun v ↦ (congrFun (he u) v).symm.trans (by rw [hu]; rfl)⟩
+  rw [dualPairing_apply, TauCeti.Module.Dual.baseChangeEvaluation_tmul,
+    ← Codomain.equiv_algebraMap_ringOfIntegers, ← map_mul, ← map_mul, ← mul_assoc]
+  exact (Codomain.equiv_apply σ _).symm
 
 /-- Pairing the element `1 ⊗ eval x` of the fibre of the double dual with an element `b` of the
 fibre of the dual is pairing `b` with `1 ⊗ x`. -/
@@ -247,9 +213,14 @@ theorem form_dualVector (a : Codomain σ ⊗[𝓞 K] Module.Dual (𝓞 K) E)
   congrArg (· w) ((h.dualVector_eq_iff σ).1 rfl)
 
 theorem dualVector_injective [Module.Projective (𝓞 K) E] :
-    Function.Injective (h.dualVector σ) :=
-  (LinearEquiv.ofBijective (h.form σ) (h.bijective_form σ)).symm.injective.comp
-    (bijective_dualPairing σ).1
+    Function.Injective (h.dualVector σ) := by
+  refine (LinearEquiv.ofBijective (h.form σ) (h.bijective_form σ)).symm.injective.comp
+    fun a b hab ↦ (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := 𝓞 K) (M := E)
+      (A := Codomain σ)).injective (LinearMap.ext fun w ↦ ?_)
+  have hw := congrArg (· w) hab
+  simp only [dualPairing_apply] at hw
+  simp only [TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply]
+  exact hw
 
 /-- Conjugation of fibres carries the Riesz vector of `1 ⊗ f` at `σ` to the Riesz vector of
 `1 ⊗ f` at the conjugate embedding. -/
@@ -292,16 +263,19 @@ theorem dual_form_apply (a b : Codomain σ ⊗[𝓞 K] Module.Dual (𝓞 K) E) :
 functional `h_σ(u, ·)` is `u`. -/
 theorem dualVector_symm_form (u : Codomain σ ⊗[𝓞 K] E) :
     h.dualVector σ
-      ((LinearEquiv.ofBijective _ (bijective_dualPairing (E := E) σ)).symm (h.form σ u)) = u := by
+      ((TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := 𝓞 K) (M := E)
+        (A := Codomain σ)).symm (h.form σ u)) = u := by
   rw [dualVector_eq_iff]
-  exact ((LinearEquiv.ofBijective _ (bijective_dualPairing (E := E) σ)).apply_symm_apply _).symm
+  refine LinearMap.ext fun w ↦ ?_
+  rw [dualPairing_apply, ← TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply]
+  exact (LinearMap.congr_fun (LinearEquiv.apply_symm_apply _ _) w).symm
 
 /-- The Riesz vector, for the dual metric, of `1 ⊗ eval x` is the element of the fibre of `E^∨`
 corresponding to the functional `h_σ(1 ⊗ x, ·)`. -/
 theorem dualVector_dual_one_tmul_eval (x : E) :
     h.dual.dualVector σ (1 ⊗ₜ Module.Dual.eval (𝓞 K) E x) =
-      (LinearEquiv.ofBijective _ (bijective_dualPairing (E := E) σ)).symm
-        (h.form σ (1 ⊗ₜ x)) := by
+      (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := 𝓞 K) (M := E)
+        (A := Codomain σ)).symm (h.form σ (1 ⊗ₜ x)) := by
   have ha := h.dualVector_symm_form σ (1 ⊗ₜ x)
   rw [dualVector_eq_iff]
   ext b
