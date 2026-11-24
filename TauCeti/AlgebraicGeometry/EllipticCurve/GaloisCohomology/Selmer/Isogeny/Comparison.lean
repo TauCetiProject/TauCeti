@@ -123,7 +123,7 @@ private theorem localPairing_dualKerRes_eq_zero (v : HeightOneSpectrum (𝓞 K))
     {d : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
     (hd : d ∈ φ.dual.selmerGroup τ) :
     localPairing φ v a (φ.dualKerRes (L := v.adicCompletion K) (τ (.inl v)) d) = 0 := by
-  rw [← selmerStructure_selmerGroup] at hd
+  rw [selmerGroup_def] at hd
   have hd' := (φ.dual.selmerStructure τ).localization_mem ⟨d, hd⟩ (.inl v)
   simp only [selmerStructure_localization, selmerStructure_localCondition,
     AddMonoidHom.mem_ker] at hd'
@@ -142,7 +142,7 @@ private theorem sum_localPairing_eq_zero (S : Finset (HeightOneSpectrum (𝓞 K)
     ∑ v : S, localPairing φ v (φ.kerRes (L := (v : HeightOneSpectrum (𝓞 K)).adicCompletion K)
       (τ (.inl v)) c) (φ.dualKerRes (L := (v : HeightOneSpectrum (𝓞 K)).adicCompletion K)
         (τ (.inl v)) d) = 0 := by
-  rw [← selmerStructure_selmerGroup] at hd
+  rw [selmerGroup_def] at hd
   have hc' (i : GlobalNumberFields.Place K)
       (hi : i ∉ Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K)))) :=
     ((φ.selmerStructure τ).mem_selmerGroup_relaxedAt_iff _).mp hc i hi
@@ -239,7 +239,7 @@ private theorem natCard_sup :
     ← AddSubgroup.inf_relIndex_right (φ.selmerGroup τ)]
   congr 2
   ext c
-  rw [← selmerStructure_selmerGroup, AddSubgroup.mem_inf, AddSubgroup.mem_inf]
+  rw [selmerGroup_def, AddSubgroup.mem_inf, AddSubgroup.mem_inf]
   refine and_congr_left fun hc ↦ ?_
   rw [SelmerStructure.mem_selmerGroup_relaxedAt_iff] at hc
   simp only [AddSubgroup.mem_comap, localConditions, AddSubgroup.mem_pi, Set.mem_univ,
@@ -261,7 +261,7 @@ private theorem natCard_map_locDualRes :
     ← AddSubgroup.inf_relIndex_right ((φ.dual.selmerStructure τ).strictAt _).selmerGroup]
   congr 1
   ext d
-  rw [← selmerStructure_selmerGroup, AddSubgroup.mem_inf, AddSubgroup.mem_inf,
+  rw [selmerGroup_def, AddSubgroup.mem_inf, AddSubgroup.mem_inf,
     SelmerStructure.mem_selmerGroup_strictAt_iff, AddMonoidHom.mem_ker]
   have key : locDualRes φ τ S d = 0 ↔ ∀ i ∈ Sum.inl '' (S : Set (HeightOneSpectrum (𝓞 K))),
       (φ.dual.selmerStructure τ).localization i d = 0 := by

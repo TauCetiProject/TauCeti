@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.CategoryTheory.ObjectProperty
+import TauCeti.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Connected
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth

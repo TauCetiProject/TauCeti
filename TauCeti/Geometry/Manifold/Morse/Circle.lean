@@ -42,8 +42,8 @@ second derivative `-4 δ cos (2 (y - r))`. So the critical points are the angles
   `r + j π` and minimum `r + π / 2 + j π`, `j ∈ ℤ`, is one of them.
 * `TauCeti.circleCosTwoMax_add_coe`, `TauCeti.circleCosTwoMin_add_coe`,
   `TauCeti.circleCosTwoMax_sub_coe`: rotating the function moves the labelled points with it.
-* `TauCeti.circleCosTwoMax_add_pi`, `TauCeti.circleCosTwoMin_add_pi`: rotating the function by `π`
-  exchanges the labels.
+* `TauCeti.circleCosTwo_add_pi`: rotating the function by `π` does not change it;
+  `TauCeti.circleCosTwoMax_add_pi`, `TauCeti.circleCosTwoMin_add_pi`: it exchanges the labels.
 * `TauCeti.circleCosTwoMaxCrit`, `TauCeti.circleCosTwoMinCrit`: the same points as elements of
   the set of critical points, the basis elements of the Morse complex;
   `TauCeti.circleCosTwoMaxCrit_ne_circleCosTwoMinCrit`: a maximum is never a minimum among them.
@@ -203,6 +203,13 @@ theorem exists_circleCosTwoMin_eq (r : ℝ) (m : ℤ) :
     ∃ j : Fin 2, circleCosTwoMin r j = ((r + π / 2 + m * π : ℝ) : AddCircle (2 * π)) := by
   obtain ⟨j, hj⟩ := exists_circleCosTwoMax_eq (r + π / 2) m
   exact ⟨j, by rw [circleCosTwoMin_def, ← hj, circleCosTwoMax_def]⟩
+
+/-- Rotating the function by `π` does not change it, since `cos` has period `2 π`. -/
+theorem circleCosTwo_add_pi (δ r : ℝ) : circleCosTwo δ (r + π) = circleCosTwo δ r := by
+  funext θ
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  rw [circleCosTwo_coe, circleCosTwo_coe,
+    show 2 * (t - (r + π)) = 2 * (t - r) - 2 * π by ring, Real.cos_sub_two_pi]
 
 /-- Rotating the function by `c` moves its maxima by `c`, keeping their labels. -/
 theorem circleCosTwoMax_add_coe (r c : ℝ) (j : Fin 2) :

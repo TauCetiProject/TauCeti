@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Peetre's inequality for the Japanese bracket
@@ -78,6 +79,10 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `s ≤ N`.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_rpow`: the bracket is at most the
   inhomogeneous norm, `⟨x⟩ ^ r ≤ (1 + ‖x‖) ^ r` for `r ≥ 0`.
+* `TauCeti.one_add_norm_rpow_le_max_mul_one_add_norm_sq_rpow`,
+  `TauCeti.min_mul_one_add_norm_sq_rpow_le_one_add_norm_rpow`: for every real `s` the
+  inhomogeneous weight and the bracket are comparable with the sharp constants,
+  `min 1 (2 ^ (s / 2)) ⟨x⟩ ^ s ≤ (1 + ‖x‖) ^ s ≤ max 1 (2 ^ (s / 2)) ⟨x⟩ ^ s`.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
   `⟨x⟩ ^ N ≤ 2 ^ N (1 + ‖x‖ ^ N)` of a natural power of the bracket with a power of the norm.
 * `TauCeti.one_add_norm_sq_rpow_le_max_mul_rpow`: where `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` with
@@ -368,6 +373,43 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_rpow (x : E) {r : ℝ} (hr : 0 ≤ 
     _ = (1 + ‖x‖) ^ r := by
         rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity)]
         ring_nf
+
+/-- The square of the inhomogeneous weight is at most twice the squared bracket,
+`(1 + ‖x‖) ^ 2 ≤ 2 (1 + ‖x‖ ^ 2)`, and its real powers are powers of the square. -/
+private theorem one_add_norm_rpow_eq_and_bounds (x : E) (s : ℝ) :
+    (1 + ‖x‖) ^ s = ((1 + ‖x‖) ^ 2) ^ (s / 2) ∧ (1 + ‖x‖) ^ 2 ≤ 2 * (1 + ‖x‖ ^ 2) := by
+  refine ⟨?_, by nlinarith [sq_nonneg (‖x‖ - 1)]⟩
+  rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity)]
+  congr 1
+  push_cast
+  ring
+
+/-- **The inhomogeneous weight is at most a multiple of the Japanese bracket.** For every real
+`s`, `(1 + ‖x‖) ^ s ≤ max 1 (2 ^ (s / 2)) (1 + ‖x‖ ^ 2) ^ (s / 2)`, that is
+`(1 + ‖x‖) ^ (2 s) ≤ max 1 (2 ^ s) (1 + ‖x‖ ^ 2) ^ s` after replacing `s` by `2 s`. Equality
+holds at `‖x‖ = 1` for `s ≥ 0` and at `x = 0` for `s ≤ 0`, so the constant is sharp. -/
+theorem one_add_norm_rpow_le_max_mul_one_add_norm_sq_rpow (x : E) (s : ℝ) :
+    (1 + ‖x‖) ^ s ≤ max 1 (2 ^ (s / 2)) * (1 + ‖x‖ ^ 2) ^ (s / 2) := by
+  rw [(one_add_norm_rpow_eq_and_bounds x s).1,
+    show (1 + ‖x‖) ^ 2 = 1 + ‖x‖ ^ 2 + 2 * ‖x‖ by ring]
+  exact Real.add_rpow_le_max_two_rpow_mul (s / 2) (by positivity)
+    (by nlinarith [sq_nonneg (‖x‖ - 1)])
+
+/-- **The inhomogeneous weight is at least a multiple of the Japanese bracket.** For every real
+`s`, `min 1 (2 ^ (s / 2)) (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ s`. Equality holds at `x = 0` for
+`s ≥ 0` and at `‖x‖ = 1` for `s ≤ 0`, so the constant is sharp. -/
+theorem min_mul_one_add_norm_sq_rpow_le_one_add_norm_rpow (x : E) (s : ℝ) :
+    min 1 (2 ^ (s / 2)) * (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ s := by
+  rcases le_total 0 s with hs | hs
+  · exact (mul_le_of_le_one_left (by positivity) (min_le_left _ _)).trans
+      (one_add_norm_sq_rpow_le_one_add_norm_rpow x hs)
+  obtain ⟨hsq, hhi⟩ := one_add_norm_rpow_eq_and_bounds x s
+  rw [hsq]
+  calc min 1 (2 ^ (s / 2)) * (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ 2 ^ (s / 2) * (1 + ‖x‖ ^ 2) ^ (s / 2) := by
+        gcongr
+        exact min_le_right _ _
+    _ = (2 * (1 + ‖x‖ ^ 2)) ^ (s / 2) := (Real.mul_rpow (by norm_num) (by positivity)).symm
+    _ ≤ ((1 + ‖x‖) ^ 2) ^ (s / 2) := Real.rpow_le_rpow_of_nonpos (by positivity) hhi (by linarith)
 
 /-- The powers of the Japanese bracket multiply: `⟨x⟩ ^ (s + t) = ⟨x⟩ ^ s ⟨x⟩ ^ t`. -/
 theorem one_add_norm_sq_rpow_add (x : E) (s t : ℝ) :

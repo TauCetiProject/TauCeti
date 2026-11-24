@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.MeasureTheory.Function.DecreasingRearrangement
@@ -63,7 +64,8 @@ everywhere measurable and the layers `b ↦ (F b)ₖ` are almost everywhere stro
   `MeasureTheory.Lp.eLpNorm_dyadicLayer_le`: size and support of a layer.
 * `MeasureTheory.Lp.tendsto_sum_range_dyadicLayer`: the layers sum to the function, with partial
   sums of norm at most its norm (`MeasureTheory.Lp.norm_sum_range_dyadicLayer_le`).
-* `MeasureTheory.AEStronglyMeasurable.dyadicLayer`: measurability of the layers of a family.
+* `MeasureTheory.AEStronglyMeasurable.dyadicLayer`, `MeasureTheory.Integrable.dyadicLayer`:
+  measurability and integrability of the layers of a family.
 
 ## References
 
@@ -253,6 +255,14 @@ theorem enorm_dyadicLayer_le_enorm (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
   filter_upwards [norm_dyadicLayer_le_min hp0 k g] with x hx
   exact eNorm_le_iff_norm_le.2 (hx.trans (min_le_left _ _))
 
+/-- The `k`-th dyadic layers of an integrable family `F : β → Lᵖ` form an integrable family. -/
+theorem _root_.MeasureTheory.Integrable.dyadicLayer [Fact (1 ≤ p)] {β : Type*}
+    [MeasurableSpace β] {ν : Measure β} {F : β → Lp E p μ} (hF : Integrable F ν) (k : ℤ) :
+    Integrable (fun b ↦ dyadicLayer k (F b)) ν :=
+  hF.norm.mono' (hF.aestronglyMeasurable.dyadicLayer k) (ae_of_all _ fun b ↦
+    Lp.norm_le_norm_of_ae_le ((enorm_dyadicLayer_le_enorm
+      (zero_lt_one.trans_le Fact.out).ne' k (F b)).mono fun _ hx ↦ eNorm_le_iff_norm_le.1 hx))
+
 /-- The `k`-th dyadic layer of `g` vanishes where `‖g‖ₑ ≤ f*(2ᵏ⁺¹)`. -/
 theorem dyadicLayer_eq_zero_of_enorm_le (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
     ∀ᵐ x ∂μ, ‖g x‖ₑ ≤ μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1)) →
@@ -347,16 +357,16 @@ private theorem tendsto_radialRetraction_sub_radialRetraction (v : E) {hi : ℕ 
     rw [min_eq_right hle, toReal_eNorm] at h
     exact h
   have hupper : Tendsto (fun N ↦ TauCeti.radialRetraction (hi N).toNNReal v) atTop (𝓝 v) := by
-    have h := hmin.radialRetraction (Eventually.of_forall fun _ ↦ ENNReal.toReal_nonneg)
+    have h := hmin.radialRetraction (.inr (norm_nonneg v))
       (tendsto_const_nhds (x := v))
     rw [TauCeti.radialRetraction_of_norm_le le_rfl] at h
     refine h.congr fun N ↦ ?_
     rw [ENNReal.toReal_min (hfin N) eNorm_ne_top, toReal_eNorm, TauCeti.radialRetraction_min_norm,
       ENNReal.coe_toNNReal_eq_toReal]
   have hlower : Tendsto (fun N ↦ TauCeti.radialRetraction (lo N) v) atTop (𝓝 0) := by
-    have h := hlo.radialRetraction (Eventually.of_forall fun N ↦ NNReal.coe_nonneg _)
+    have h := hlo.radialRetraction (.inr le_rfl)
       (tendsto_const_nhds (x := v))
-    simpa [TauCeti.radialRetraction_def] using h
+    simpa using h
   simpa using hupper.sub hlower
 
 /-- **The dyadic layers of an `Lᵖ` function sum to it**, `1 ≤ p < ∞`. -/

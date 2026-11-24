@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Multiplication operators in seminormed algebras
@@ -16,7 +17,8 @@ and evaluates their powers. These identities connect the bounded-operator API wi
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
 It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
 seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
-faithful (`RegularNormedAlgebra.faithfulSMul`).
+faithful (`RegularNormedAlgebra.faithfulSMul`). On the field itself, `c • mul 𝕜 𝕜` is invertible
+exactly when `c ≠ 0` (`ContinuousLinearMap.isInvertible_smul_mul_iff`).
 For unital algebras we also specialize bounded two-sided multiplication `mulLeftRight` when one
 factor is `1`, bundle the left regular representation as a unital algebra homomorphism, and give its
 inverse norm bound without assuming that the identity has norm one.
@@ -63,8 +65,7 @@ theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
 bounded endomorphism ring are subsingletons. -/
 instance _root_.RegularNormedAlgebra.of_subsingleton [Subsingleton R] :
     RegularNormedAlgebra 𝕜 R where
-  isometry_mul' := AddMonoidHomClass.isometry_of_norm _ fun x ↦ by
-    simp [Subsingleton.elim x 0, Subsingleton.elim (mul 𝕜 R 0) 0]
+  isometry_mul' := isometry_subsingleton
 
 end NonUnital
 
@@ -87,11 +88,6 @@ gives the flipped (right-multiplication) operator `(mul 𝕜 R).flip`. -/
 @[simp]
 theorem mulLeftRight_one : mulLeftRight 𝕜 R (1 : R) = (mul 𝕜 R).flip := by
   ext y x
-  simp
-
-/-- Specializing the left factor of `mulLeftRight 𝕜 R` to `1` gives bounded right multiplication
-by `y`. -/
-theorem mulLeftRight_one_left (y : R) : mulLeftRight 𝕜 R 1 y = (mul 𝕜 R).flip y := by
   simp
 
 /-- Specializing the right factor of `mulLeftRight 𝕜 R` to `1` gives bounded left multiplication
@@ -153,6 +149,14 @@ theorem norm_scalarSMulL_apply [NontrivialTopology E] (T : 𝕜 →L[𝕜] 𝕜)
   simp
 
 end ScalarSMul
+
+/-- On the field itself, the bilinear map `(v, w) ↦ c v w`, viewed as a map into the dual, is
+invertible exactly when `c ≠ 0`. -/
+@[simp]
+theorem isInvertible_smul_mul_iff {c : 𝕜} : (c • mul 𝕜 𝕜).IsInvertible ↔ c ≠ 0 := by
+  refine ⟨fun h hc ↦ ?_, fun hc ↦ .of_inverse (g := c⁻¹ • apply 𝕜 𝕜 (1 : 𝕜)) ?_ ?_⟩
+  · exact one_ne_zero (h.injective (a₁ := 1) (a₂ := 0) (by simp [hc]))
+  all_goals ext; simp [hc]
 
 end ContinuousLinearMap
 

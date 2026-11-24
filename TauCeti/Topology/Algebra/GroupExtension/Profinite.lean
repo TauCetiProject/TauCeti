@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Separation.Connected
 public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
+public import TauCeti.Topology.Algebra.Group.Compact
 public import TauCeti.Topology.Algebra.Group.Profinite.Section
 public import TauCeti.Topology.Algebra.GroupExtension.FactorSet
 
@@ -15,9 +16,10 @@ public import TauCeti.Topology.Algebra.GroupExtension.FactorSet
 # Profinite extensions by a compact kernel are twisted products
 
 A group extension `1 → M → E → G → 1` is an extension *of topological groups* when its inclusion
-and its projection are continuous. This file proves that, when `E` is profinite and the kernel `M`
-is compact — in the application of the extension dictionary, finite and discrete — such an
-extension is the twisted product of `G` by `M` built from a continuous factor set:
+and its projection are continuous. This file proves that, when `E` is profinite, the kernel `M` is
+compact and abelian — in the application of the extension dictionary, finite and discrete — the
+base `G` is Hausdorff and the extension induces the given action of `G` on `M`, such an extension
+is the twisted product of `G` by `M` built from a continuous factor set:
 
 * the projection has a continuous normalized set-theoretic section
   (`TauCeti.GroupExtension.exists_continuous_section`);
@@ -82,8 +84,11 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
 * `TauCeti.GroupExtension.continuous_factorSet`: the factor set of a continuous normalized section
   is continuous whenever the inclusion of the kernel is an embedding, as a compact kernel of a
   Hausdorff extension is.
-* `TauCeti.GroupExtension.exists_continuous_factorSet`: **a profinite extension with compact kernel
-  is the twisted product of a continuous factor set.**
+* `TauCeti.GroupExtension.exists_continuous_factorSet`: **a profinite extension with compact
+  abelian kernel, continuous projection onto a Hausdorff base and inducing the given action is the
+  twisted product of a continuous factor set.** Of the total group only the multiplication has to
+  be continuous: a compact `T₁` group with continuous multiplication is a topological group
+  (`IsTopologicalGroup.of_compactSpace`).
 
 ## References
 
@@ -168,14 +173,18 @@ end ClosedKernel
 
 section Profinite
 
-variable [IsTopologicalGroup E] [CompactSpace E] [TotallyDisconnectedSpace E]
+variable [ContinuousMul E] [CompactSpace E] [TotallyDisconnectedSpace E]
   [Group M] {S : GroupExtension M E G}
 
 /-- **The projection of a profinite extension to a Hausdorff group has a continuous normalized
-section.** The hypotheses are a profinite total group `E`, a Hausdorff base `G` and a continuous
-projection `S.rightHom`; no topology on the kernel `M` and no continuity of `S.inl` is needed. -/
+section.** The hypotheses are a compact, totally disconnected total group `E` with continuous
+multiplication, a Hausdorff base `G` and a continuous projection `S.rightHom`; no topology on the
+kernel `M` and no continuity of `S.inl` is needed. Inversion on `E` is then continuous by
+`IsTopologicalGroup.of_compactSpace`, a totally disconnected space being `T₁`, so `E` is a
+profinite group. -/
 theorem exists_continuous_section [T2Space G] (hrh : Continuous S.rightHom) :
     ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
+  have := IsTopologicalGroup.of_compactSpace E
   obtain ⟨s, hs, hsec, h1⟩ :=
     S.rightHom.exists_continuous_section_of_surjective hrh S.rightHom_surjective
   exact ⟨⟨s, hsec⟩, hs, h1⟩
@@ -196,7 +205,7 @@ the extension Hausdorff: a continuous inclusion is then a closed embedding by
 continuous. -/
 theorem continuous_factorSet [ContinuousMul E] [ContinuousInv E] [ContinuousMul G]
     (hinl : Topology.IsEmbedding ⇑S.inl)
-    {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
+    {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : S.InducesAction) :
     Continuous ⇑(factorSet σ hσ hact) := by
   refine hinl.continuous_iff.2 ?_
   have hfs : ⇑S.inl ∘ ⇑(factorSet σ hσ hact)
@@ -211,7 +220,7 @@ section is. Only the multiplication of `E` has to be continuous: the map is a pr
 continuous maps, so nothing is asked of inversion. -/
 theorem continuous_factorSetToGroupExtensionEquiv [ContinuousMul E] (hinl : Continuous S.inl)
     {σ : S.Section}
-    (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
+    (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : S.InducesAction) :
     Continuous ⇑(factorSetToGroupExtensionEquiv σ hσ hact) := by
   have he : ⇑(factorSetToGroupExtensionEquiv σ hσ hact)
       = fun x : (factorSet σ hσ hact).Extension => S.inl x.left * σ x.right :=
@@ -228,7 +237,7 @@ image under the embedding `inl` is. Together with
 homeomorphism with no compactness assumption. -/
 theorem continuous_factorSetToGroupExtensionEquiv_symm [ContinuousMul E] [ContinuousInv E]
     (hinl : Topology.IsEmbedding ⇑S.inl) (hrh : Continuous S.rightHom) {σ : S.Section}
-    (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
+    (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : S.InducesAction) :
     Continuous ⇑(factorSetToGroupExtensionEquiv σ hσ hact).symm := by
   have hright : ∀ y : E, ((factorSetToGroupExtensionEquiv σ hσ hact).symm y).right =
       S.rightHom y := fun y => by
@@ -268,7 +277,7 @@ map itself, only the multiplication of `E` is asked to be continuous. -/
 noncomputable def factorSetContinuousMulEquiv [ContinuousMul E] [T2Space E] [CompactSpace M]
     [CompactSpace G] (hinl : Continuous S.inl)
     {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
-    (hact : InducesAction S) : (factorSet σ hσ hact).Extension ≃ₜ* E :=
+    (hact : S.InducesAction) : (factorSet σ hσ hact).Extension ≃ₜ* E :=
   continuousMulEquivOfEquiv (factorSetToGroupExtensionEquiv σ hσ hact)
     (continuous_factorSetToGroupExtensionEquiv hinl hσc hσ hact)
 
@@ -276,20 +285,33 @@ noncomputable def factorSetContinuousMulEquiv [ContinuousMul E] [T2Space E] [Com
 theorem factorSetContinuousMulEquiv_apply [ContinuousMul E] [T2Space E] [CompactSpace M]
     [CompactSpace G] (hinl : Continuous S.inl)
     {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
-    (hact : InducesAction S) (x : (factorSet σ hσ hact).Extension) :
+    (hact : S.InducesAction) (x : (factorSet σ hσ hact).Extension) :
     factorSetContinuousMulEquiv hinl hσc hσ hact x = S.inl x.left * σ x.right :=
   factorSetToGroupExtensionEquiv_apply σ hσ hact x
 
-/-- **A profinite extension with compact kernel is the twisted product of a continuous factor
-set**, by an equivalence of extensions that is continuous, hence a homeomorphism through
-`TauCeti.GroupExtension.continuousMulEquivOfEquiv`. This is the direction of the extension
-dictionary that reads a cocycle off an extension;
-`TauCeti.GroupExtension.factorSet_canonicalSection` is the other one. -/
-theorem exists_continuous_factorSet [IsTopologicalGroup E] [CompactSpace E]
-    [TotallyDisconnectedSpace E] [CompactSpace M] [T2Space G]
-    [ContinuousMul G] (hinl : Continuous S.inl)
-    (hrh : Continuous S.rightHom) (hact : InducesAction S) :
+/-- **A profinite extension with compact abelian kernel is the twisted product of a continuous
+factor set.** Let the total group `E` be compact and totally disconnected with continuous
+multiplication, the kernel `M` compact and abelian with continuous inclusion, and the projection
+continuous onto the Hausdorff base `G`, and let `S` induce the ambient action of `G` on `M`. Then
+`S` is the twisted product of a continuous factor set, by an equivalence of extensions that is
+continuous, hence a homeomorphism through `TauCeti.GroupExtension.continuousMulEquivOfEquiv`. This
+is the direction of the extension dictionary that reads a cocycle off an extension;
+`TauCeti.GroupExtension.factorSet_canonicalSection` is the other one. Neither the inversion of `E`
+nor the multiplication of `G` is assumed continuous: inversion is continuous on the compact `T₁`
+group `E` by `IsTopologicalGroup.of_compactSpace`, and `G`, the Hausdorff image of the compact
+group `E`, is identified with a quotient group of `E` by
+`ContinuousMonoidHom.quotientKerEquivOfSurjective`. -/
+theorem exists_continuous_factorSet [ContinuousMul E] [CompactSpace E]
+    [TotallyDisconnectedSpace E] [CompactSpace M] [T2Space G] (hinl : Continuous S.inl)
+    (hrh : Continuous S.rightHom) (hact : S.InducesAction) :
     ∃ α : FactorSet G M, Continuous ⇑α ∧ ∃ e : α.groupExtension.Equiv S, Continuous ⇑e := by
+  have := IsTopologicalGroup.of_compactSpace E
+  have : ContinuousMul G := by
+    let e := (ContinuousMonoidHom.mk S.rightHom hrh).quotientKerEquivOfSurjective
+      S.rightHom_surjective
+    have he : Topology.IsInducing ⇑e.symm :=
+      Homeomorph.coe_ofClass e.symm ▸ (Homeomorph.ofClass e.symm).isInducing
+    exact he.continuousMul e.symm
   obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
   exact ⟨factorSet σ hσ hact,
     continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσc hσ hact,
@@ -386,7 +408,7 @@ abbrev ofFactorSet : ProfiniteGroupExtension G M where
   continuous_rightHom := by
     rw [FactorSet.groupExtension_rightHom]
     exact FactorSet.continuous_rightHom α
-  inducesAction := GroupExtension.inducesAction_groupExtension α
+  inducesAction := α.inducesAction_groupExtension
 
 @[simp]
 theorem ofFactorSet_toGroupExtension : (ofFactorSet α hα).toGroupExtension = α.groupExtension :=
