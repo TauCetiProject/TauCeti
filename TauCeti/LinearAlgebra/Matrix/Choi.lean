@@ -135,7 +135,7 @@ theorem choiMatrix_injective {m n R : Type*} [Finite n] [DecidableEq n] [Semirin
 /-- Two linear maps with finite input index type have equal Choi matrices exactly when
 the maps are equal. -/
 @[simp]
-theorem choiMatrix_eq_iff {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R]
+theorem choiMatrix_inj {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R]
     {Φ Ψ : Matrix n n R →ₗ[R] Matrix m m R} :
     choiMatrix Φ = choiMatrix Ψ ↔ Φ = Ψ :=
   choiMatrix_injective.eq_iff

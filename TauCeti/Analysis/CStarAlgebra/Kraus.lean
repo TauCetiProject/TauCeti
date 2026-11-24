@@ -143,7 +143,7 @@ theorem krausMapLinearMap_apply (V : ι → Matrix n m ℂ) (X : Matrix n n ℂ)
 
 /-- The Choi matrix of a Kraus map is the sum of outer products of its vectorized adjoints
 with their entrywise conjugates. -/
-theorem choiMatrix_krausMap [DecidableEq n] (V : ι → Matrix n m ℂ) :
+theorem choiMatrix_krausMapLinearMap [DecidableEq n] (V : ι → Matrix n m ℂ) :
     TauCeti.choiMatrix (krausMapLinearMap V) =
       ∑ i, Matrix.vecMulVec (V i)ᴴ.vec (star (V i)ᴴ.vec) := by
   have h : (⇑(krausMapLinearMap V)) = ∑ i, fun X : Matrix n n ℂ => (V i)ᴴ * X * V i := by
