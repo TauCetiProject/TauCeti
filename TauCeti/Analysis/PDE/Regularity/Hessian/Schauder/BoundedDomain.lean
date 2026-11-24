@@ -8,9 +8,12 @@ module
 public import TauCeti.Analysis.Holder.C2HolderBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
+public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.LowerOrder
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Holder.BoundaryInterpolation
+import TauCeti.Analysis.Holder.LipschitzDomain
 import TauCeti.Analysis.InnerProductSpace.GraphPatch
+import TauCeti.Analysis.Sobolev.LipschitzDomain.GraphPatch
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -51,6 +54,12 @@ if only `|u| ≤ N` on `closure Ω`, then
 This is Gilbarg–Trudinger's global estimate, Theorem 6.6, for zero boundary values and without
 lower-order terms.
 
+The first estimate holds for the general operator `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + b · ∇u + c u` too, with a
+drift `b` and a potential `c` that are `α`-Hölder and bounded on `Ω`, the constant now depending
+also on their bounds (in the `TauCeti.PDE` namespace,
+`exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul`).
+No sign condition on `c` is needed. The norms of `Du` and `D²u` are still on the right there.
+
 ## The argument
 
 * **Boundary patches.** At a frontier point `x`, the estimate near a curved boundary
@@ -74,6 +83,13 @@ lower-order terms.
   `D²u` on `closure Ω` (`nnHolderNorm`), finite by hypothesis. The first estimate with `N₁` in
   place of `N` gives `H ≤ C₁ (K + N₁)`, and for `ε` so small that `C₁ C₂ ε^α ≤ 1 / 2` the
   multiple of `H` on the right is absorbed into the left side.
+* **Lower-order terms.** A domain with a graph patch at every frontier point is a Lipschitz domain
+  (`TauCeti.isLipschitzDomain_of_forall_ball_inter_eq`), so on the bounded domain `Ω` the bounds
+  `N` on `u`, `Du` and `D²u` make `u` and `Du` `α`-Hölder with constant a multiple of `N`
+  (`Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le`). The Hölder constant of
+  `b · ∇u + c u` on `Ω` is then a multiple of `N`
+  (`TauCeti.PDE.holderOnWith_fderiv_apply_add_mul`), and the estimate for the principal part
+  applies to `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = L u - b · ∇u - c u`.
 
 ## Main declarations
 
@@ -82,6 +98,8 @@ lower-order terms.
   `D²u` on the right.
 * `exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_fderiv_fderiv`:
   the same estimate in terms of `[L u]_α` and `sup |u|` alone, with bounds on `‖Du‖` and `‖D²u‖`.
+* `exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul`,
+  in the `TauCeti.PDE` namespace: the first estimate with lower-order terms.
 
 ## References
 
@@ -516,5 +534,85 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_f
   rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_add]
   have hCA : 0 ≤ C₂ * A := by positivity
   exact hHA.trans ((mul_le_mul_of_nonneg_right (by linarith) (by positivity)).trans hC)
+
+/-! ### Lower-order terms -/
+
+/-- **The global Schauder estimate with lower-order terms on a bounded domain with `C^{2,α}`
+boundary.** Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary
+(`Set.HasC2HolderBoundary`), as in
+`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`. Let
+`0 < λ`, `Λ`, `L`, `M` and `B` be given. Then there is a constant `C` with the following property.
+Let `a` have ellipticity bounds `λ, Λ` at every point of `closure Ω`, and entries `α`-Hölder with
+constant `L` and bounded by `M` on `closure Ω`; let the drift `b` and the potential `c` be
+`α`-Hölder with constant `B` and bounded by `B` on `Ω`. Put
+`L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu + b · ∇u + c u`. Let `u` be `C²` on an open set containing `closure Ω`,
+vanishing on the frontier of `Ω`, with `|u|`, `‖Du‖` and `‖D²u‖` bounded by `N` on `closure Ω` and
+with `D²u` `α`-Hölder there (with any constant). If `L u` is `α`-Hölder on `Ω` with constant `K`,
+then `D²u` is `α`-Hölder on `closure Ω` with constant `C (K + N)`.
+
+The constant depends only on `Ω`, `α`, `λ`, `Λ`, `L`, `M` and `B`: not on the coefficients beyond
+these bounds, nor on `u`. No sign condition on `c` is needed. This is Gilbarg–Trudinger,
+Theorem 6.6, for zero boundary values, with the norms of `Du` and `D²u` on the right. -/
+theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : Bornology.IsBounded Ω)
+    (hbdry : Ω.HasC2HolderBoundary α) {lam : ℝ} (Lam : ℝ) (L M B : ℝ≥0) (hlam : 0 < lam) :
+    ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c : E → ℝ},
+      (∀ z ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) →
+      (∀ z ∈ closure Ω, ∀ ξ : E, (a z).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
+      (∀ i j, HolderOnWith L α (fun z => a z i j) (closure Ω)) →
+      (∀ z ∈ closure Ω, ∀ i j, |a z i j| ≤ M) →
+      HolderOnWith B α b Ω → (∀ z ∈ Ω, ‖b z‖ ≤ B) →
+      HolderOnWith B α c Ω → (∀ z ∈ Ω, |c z| ≤ B) →
+      ∀ {U : Set E} {u : E → ℝ} {N K V : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
+        ContDiffOn ℝ 2 u U → (∀ z ∈ frontier Ω, u z = 0) →
+        (∀ z ∈ closure Ω, |u z| ≤ N) → (∀ z ∈ closure Ω, ‖fderiv ℝ u z‖ ≤ N) →
+        (∀ z ∈ closure Ω, ‖iteratedFDeriv ℝ 2 u z‖ ≤ N) →
+        HolderOnWith V α (iteratedFDeriv ℝ 2 u) (closure Ω) →
+        HolderOnWith K α (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ u z (b z) +
+            c z * u z) Ω →
+        HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closure Ω) := by
+  obtain ⟨C₀, hC₀⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
+    hα hα1 hΩ hbdry Lam L M hlam
+  -- `Ω` is a bounded Lipschitz domain, so bounds on a function and its derivative make it
+  -- `α`-Hölder on `Ω`.
+  have hLip : Ω.IsLipschitzDomain (EuclideanSpace ℝ (Fin n)) :=
+    TauCeti.isLipschitzDomain_of_forall_ball_inter_eq finrank_euclideanSpace_fin fun x hx => by
+      obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG, -, -, hr, hΩx⟩ :=
+        Set.hasC2HolderBoundary_iff.1 hbdry x hx
+      refine ⟨ν, γ, G, r, norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero),
+        lipschitzWith_of_nnNorm_fderiv_le (hγ.differentiable (by norm_num)) fun z => ?_,
+        hγν, hr, by rw [inter_comm, hΩx, inter_comm]⟩
+      rw [← NNReal.coe_le_coe, coe_nnNorm]
+      exact hG z
+  obtain ⟨C₁, hC₁⟩ := hLip.exists_holderOnWith_of_norm_fderiv_le hΩ hα1.le
+  set P : ℝ≥0 := 2 * B + 4 * B * C₁
+  refine ⟨C₀ * (1 + P), fun {a b c} hEll hEll' hL hM hHb hb hHc hc {U u N K V} hU hΩU hu hu0
+    hN0 hN1 hN2 hV hK => ?_⟩
+  have hΩcl : Ω ⊆ closure Ω := subset_closure
+  have hcd : ∀ z ∈ Ω, ContDiffAt ℝ 2 u z := fun z hz => hu.contDiffAt (hU.mem_nhds (hΩU (hΩcl hz)))
+  -- `u` and `Du` are `α`-Hölder on `Ω` with constant `2 C₁ N`.
+  have hHu : HolderOnWith (C₁ * (N + N)) α u Ω :=
+    hC₁ (fun z hz => (hcd z hz).differentiableAt (by norm_num))
+      (fun z hz => by rw [Real.norm_eq_abs]; exact hN0 z (hΩcl hz)) fun z hz => hN1 z (hΩcl hz)
+  have hHDu : HolderOnWith (C₁ * (N + N)) α (fderiv ℝ u) Ω := by
+    refine hC₁ (fun z hz => ((hcd z hz).fderiv_right (m := 1) (by norm_num)).differentiableAt
+      (by norm_num)) (fun z hz => hN1 z (hΩcl hz)) fun z hz => ?_
+    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+    exact hN2 z (hΩcl hz)
+  -- The principal part `L u - (b · ∇u + c u)` is `α`-Hölder on `Ω` with constant `K + N P`.
+  have hlow := holderOnWith_fderiv_apply_add_mul hHu hHDu (fun z hz => hN0 z (hΩcl hz))
+    (fun z hz => hN1 z (hΩcl hz)) hHb hb hHc hc
+  have hprin : HolderOnWith (K + N * P) α (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω := by
+    have h := hK.sub hlow
+    simp only [Pi.sub_def, add_sub_add_right_eq_sub, add_sub_cancel_right] at h
+    exact h.mono_const (le_of_eq (by ring))
+  refine (hC₀ hEll hEll' hL hM hU hΩU hu hu0 hN0 hN1 hN2 hV hprin).mono_const ?_
+  calc C₀ * (K + N * P + N) ≤ C₀ * ((1 + P) * (K + N)) := by
+        gcongr
+        calc K + N * P + N ≤ K + N * P + N + K * P := le_self_add
+          _ = (1 + P) * (K + N) := by ring
+    _ = C₀ * (1 + P) * (K + N) := by ring
 
 end TauCeti.PDE
