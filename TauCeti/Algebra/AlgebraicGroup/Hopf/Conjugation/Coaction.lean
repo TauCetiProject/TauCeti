@@ -44,6 +44,8 @@ of the quotient map `χ_G : G → G // G` on points.
 * `TauCeti.HopfAlgebra.mem_conjugationInvariants_iff_forall_conj`: a function is invariant
   exactly when it is constant on conjugacy classes of points with values in every commutative
   algebra.
+* `TauCeti.HopfAlgebra.conjugationInvariants_eq_top`: for a commutative group, every function is
+  invariant.
 
 ## References
 
@@ -288,6 +290,14 @@ theorem mem_conjugationInvariants_iff_conjugationAlgHom {f : H} :
       (productMap_comp_conjugationAlgHom (R := R) (H := H) g x) f
     rw [AlgHom.comp_apply, h] at hc
     simpa using hc.symm
+
+/-- **A commutative affine group acts trivially on itself by conjugation**: when `H` is
+cocommutative, every function is conjugation invariant, so the conjugation quotient `G // G` is
+`G` itself. -/
+theorem conjugationInvariants_eq_top [Coalgebra.IsCocomm R H] :
+    conjugationInvariants R H = ⊤ :=
+  eq_top_iff.2 fun _ _ ↦ mem_conjugationInvariants_iff_forall_conj.2 fun _ _ _ g x ↦ by
+    rw [mul_comm g x, mul_inv_cancel_right]
 
 end HopfAlgebra
 
