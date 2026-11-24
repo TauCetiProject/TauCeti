@@ -68,7 +68,8 @@ of its summands `DirectSum.summand R M i`, the ranges of the inclusions `DirectS
 has `i`-th component `DirectSum.of M i (x i)` (`DirectSum.coe_decompose_summand`).
 
 Over any semiring, the spans of the basis vectors in the fibers of a map on the index set of a basis
-form an internal direct sum (`Module.Basis.isInternal_span_image_fiber`).
+form an internal direct sum (`Module.Basis.isInternal_span_image_fiber`), and the basis vectors in
+one fiber form a basis of their span (`Module.Basis.spanImageFiber`).
 -/
 
 public section
@@ -675,6 +676,20 @@ theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R
   · rw [← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
     exact ⟨DirectSum.of (fun c => A c) (w i) ⟨b i, Submodule.subset_span ⟨i, rfl, rfl⟩⟩, by simp⟩
+
+/-- The basis vectors of `b` in the fiber of `w : ι → κ` over `c`, as a basis of their span. -/
+noncomputable def Module.Basis.spanImageFiber {R ι κ M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (b : Module.Basis ι R M) (w : ι → κ) (c : κ) :
+    Module.Basis {i // w i = c} R (Submodule.span R (b '' {i | w i = c})) :=
+  (Module.Basis.span (b.linearIndependent.comp _ Subtype.val_injective)).map
+    (LinearEquiv.ofEq _ _ (by rw [Set.range_comp, Subtype.range_coe_subtype]))
+
+/-- The vectors of `Module.Basis.spanImageFiber` are the basis vectors of `b`. -/
+@[simp]
+theorem Module.Basis.spanImageFiber_apply {R ι κ M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (b : Module.Basis ι R M) (w : ι → κ) (c : κ) (i : {i // w i = c}) :
+    (b.spanImageFiber w c i : M) = b i := by
+  simp [Module.Basis.spanImageFiber, Module.Basis.span_apply]
 
 /-- If a supremum-independent family of submodules `A` over a ring has supremum `S`, then its
 traces `(A i).comap S.subtype` on `S` form an internal direct sum of `S` (the ring hypothesis is
