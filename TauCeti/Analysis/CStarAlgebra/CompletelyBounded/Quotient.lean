@@ -24,8 +24,8 @@ norm (`NonUnitalStarAlgHom.exists_apply_eq_norm_eq`).
 ## Main declarations
 
 * `LinearMap.IsCompleteQuotient`: complete quotient maps.
-* `LinearMap.IsCompleteQuotient.of_norm_map_le_of_exists_map_eq`: a complete contraction whose
-  amplifications lift the open unit ball is a complete quotient map.
+* `LinearMap.IsCompleteQuotient.of_isCompleteContraction_of_exists_map_eq`: a complete
+  contraction whose amplifications lift the open unit ball is a complete quotient map.
 * `LinearMap.IsCompleteQuotient.comp`, `LinearMap.isCompleteQuotient_id`: composition and the
   identity.
 * `LinearMap.IsCompleteQuotient.isCompleteContraction`: a complete quotient map is a complete
@@ -62,7 +62,7 @@ theorem isCompleteQuotient_def {φ : A →ₗ[ℂ] B} :
 
 /-- A complete contraction whose amplifications at the levels `Fin n` lift the open unit ball is a
 complete quotient map. -/
-theorem IsCompleteQuotient.of_norm_map_le_of_exists_map_eq {φ : A →ₗ[ℂ] B}
+theorem IsCompleteQuotient.of_isCompleteContraction_of_exists_map_eq {φ : A →ₗ[ℂ] B}
     (hle : IsCompleteContraction φ)
     (hlift : ∀ (n : ℕ) (y : CStarMatrix (Fin n) (Fin n) B), ‖y‖ < 1 →
       ∃ x : CStarMatrix (Fin n) (Fin n) A, ‖x‖ < 1 ∧ x.map φ = y) :
@@ -103,6 +103,7 @@ theorem IsCompleteQuotient.isCompleteContraction {φ : A →ₗ[ℂ] B} (h : IsC
     key] at hmem
 
 /-- A complete quotient map is completely bounded. -/
+@[grind →]
 theorem IsCompleteQuotient.isCompletelyBounded {φ : A →ₗ[ℂ] B} (h : IsCompleteQuotient φ) :
     IsCompletelyBounded φ :=
   (isCompleteContraction_iff.1 h.isCompleteContraction).1
@@ -145,7 +146,7 @@ theorem isCompleteQuotient (π : F) (hπ : Function.Surjective π) :
     (π : A →ₗ[ℂ] B).IsCompleteQuotient := by
   have hπₙ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A) :
       CStarMatrix.mapₙₐ (ofClass π) x = x.map (π : A →ₗ[ℂ] B) := by simp
-  refine .of_norm_map_le_of_exists_map_eq (isCompleteContraction π) fun n y hy ↦ ?_
+  refine .of_isCompleteContraction_of_exists_map_eq (isCompleteContraction π) fun n y hy ↦ ?_
   have hrange : y ∈ Set.range (CStarMatrix.mapₙₐ (n := Fin n) (ofClass π)) :=
     ⟨CStarMatrix.ofMatrix fun i j ↦ (hπ (y i j)).choose, by
       ext i j
