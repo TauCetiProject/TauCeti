@@ -5,10 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
+public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
+
+import TauCeti.Algebra.Lie.SkewAdjoint
+import TauCeti.Geometry.Symplectic.Invariants
 
 /-!
 # Linear symplectic reduction
@@ -29,7 +35,18 @@ The construction is functorial: a linear symplectomorphism carrying `U` onto `U'
 symplectomorphism of reduced spaces, compatibly with identities and composition
 (`TauCeti.SymplecticForm.reducedSpaceCongr`). Hence a group acting by linear symplectomorphisms
 preserving `U` acts by symplectomorphisms on the reduced space
-(`TauCeti.SymplecticForm.reducedSpaceRepresentation`).
+(`TauCeti.SymplecticForm.reducedSpaceRepresentation`). Infinitesimally, endomorphisms that are
+skew-adjoint for `ω` and preserve `U` descend to skew-adjoint endomorphisms `[u] ↦ [A u]` of the
+reduced space (`TauCeti.SymplecticForm.reducedSpaceSkewAdjoint`).
+
+For a semisimple representation preserving `ω` and `U`, the quotient map `U → U_red` has an
+equivariant linear right inverse (`TauCeti.SymplecticForm.exists_equivariant_lift_reducedSpace`):
+an equivariant projection onto the radical `U ∩ U^ω` splits it off. Even without
+semisimplicity, a representation acting on `U_red` by `[u] ↦ [g u]` preserves the reduced form
+(`TauCeti.SymplecticForm.isInvariantForm_reduction`). Any lift `s` of the reduced space of `U^ω`
+embeds it into `V` beside `U`
+(`TauCeti.SymplecticForm.injective_coprod_subtype_comp`), with coisotropic sum
+`U + s(U^ω ⧸ (U ∩ U^ω))` (`TauCeti.SymplecticForm.isCoisotropic_sup_range_subtype_comp`).
 
 Reduction also acts on subspaces: the image of `L ∩ U` in the reduced space is isotropic when `L`
 is, and for coisotropic `U` it is Lagrangian when `L` is
@@ -53,6 +70,9 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
   linear symplectomorphism.
 * `TauCeti.SymplecticForm.reducedSpaceRepresentation`: the induced symplectic representation of a
   group on a reduced space.
+* `TauCeti.SymplecticForm.reducedSpaceSkewAdjoint`: the induced linear map into the skew-adjoint
+  endomorphisms of a reduced space, from a linear family of skew-adjoint endomorphisms preserving
+  `U`.
 
 ## Main results
 
@@ -68,6 +88,18 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
 * `TauCeti.SymplecticForm.subsingleton_reducedSpace_iff`,
   `TauCeti.SymplecticForm.isSymplectomorphism_quotEquivOfEqBot`: the reduced space is trivial
   exactly for isotropic `U`, and is `U` itself with the restricted form for symplectic `U`.
+* `TauCeti.SymplecticForm.forall_polar_comp_eq_zero_iff`,
+  `TauCeti.SymplecticForm.reducedQuadraticForm_comp_reducedSpaceCongr`: a quadratic form `Q`
+  descends to a reduced space exactly when its pullback `Q ∘ e` does, and the induced map of
+  reduced spaces intertwines the two induced quadratic forms.
+* `TauCeti.SymplecticForm.exists_equivariant_lift_reducedSpace`: an equivariant lift of the
+  reduced space for a semisimple representation.
+* `TauCeti.SymplecticForm.isInvariantForm_reduction`: an action induced on the reduced space
+  preserves the reduced form.
+* `TauCeti.SymplecticForm.injective_coprod_subtype_comp`,
+  `TauCeti.SymplecticForm.isCoisotropic_sup_range_subtype_comp`: for a lift `s` of the reduced
+  space of `U^ω`, `(w, v) ↦ ι w + s v` is injective for injective `ι` with image in `U`, and
+  `U + s(U^ω ⧸ (U ∩ U^ω))` is coisotropic.
 * `TauCeti.SymplecticForm.IsIsotropic.reduction_map`,
   `TauCeti.SymplecticForm.IsLagrangian.reduction_map`: reduction of isotropic and Lagrangian
   subspaces.
@@ -251,6 +283,16 @@ theorem reducedQuadraticForm_mk (Q : QuadraticForm ℝ V)
     ω.reducedQuadraticForm U Q hQ (Submodule.Quotient.mk u) = Q u :=
   QuadraticMap.lift_mk _ u
 
+/-- The induced quadratic form on the reduced space only depends on the values of `Q` on `U`. -/
+theorem reducedQuadraticForm_congr {Q Q' : QuadraticForm ℝ V}
+    (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0)
+    (hQ' : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q' w u = 0)
+    (h : ∀ u ∈ U, Q u = Q' u) :
+    ω.reducedQuadraticForm U Q hQ = ω.reducedQuadraticForm U Q' hQ' := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H u => simpa using h u u.property
+
 end QuadraticForm
 
 section Finrank
@@ -341,6 +383,44 @@ theorem isSymplectomorphism_reducedSpaceCongr (e : V ≃ₗ[ℝ] V')
   induction y using Submodule.Quotient.induction_on with
   | H v => simpa using he.apply u v
 
+/-- The descent condition of `TauCeti.SymplecticForm.reducedQuadraticForm` transfers along a linear
+symplectomorphism `e` carrying `U` onto `U'`: the pullback `Q ∘ e` vanishes on `(U ∩ U^ω) × U`
+exactly when `Q` vanishes on `(U' ∩ U'^ω') × U'`, since `e` carries `U ∩ U^ω` onto `U' ∩ U'^ω'`. -/
+theorem forall_polar_comp_eq_zero_iff (e : V ≃ₗ[ℝ] V') (he : IsSymplectomorphism ω ω' e)
+    {U : Submodule ℝ V} {U' : Submodule ℝ V'} (hU : U.map (e : V →ₗ[ℝ] V') = U')
+    (Q : QuadraticForm ℝ V') :
+    (∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar (Q.comp (e : V →ₗ[ℝ] V')) w u = 0) ↔
+      ∀ w ∈ U' ⊓ ω'.orthogonal U', ∀ u ∈ U', QuadraticMap.polar Q w u = 0 := by
+  subst hU
+  have hmem (v : V) : e v ∈ U.map (e : V →ₗ[ℝ] V') ↔ v ∈ U := by simp
+  have horth (v : V) : e v ∈ ω'.orthogonal (U.map (e : V →ₗ[ℝ] V')) ↔ v ∈ ω.orthogonal U := by
+    rw [← he.map_orthogonal, Submodule.mem_map_equiv]
+    simp
+  constructor
+  · intro h w' hw' u' hu'
+    obtain ⟨w, rfl⟩ := e.surjective w'
+    obtain ⟨u, rfl⟩ := e.surjective u'
+    rw [Submodule.mem_inf, hmem, horth] at hw'
+    simpa [QuadraticMap.polar, map_add] using h w hw' u ((hmem u).1 hu')
+  · intro h w hw u hu
+    simpa [QuadraticMap.polar, map_add] using
+      h _ (Submodule.mem_inf.2 ⟨(hmem w).2 hw.1, (horth w).2 hw.2⟩) _ ((hmem u).2 hu)
+
+/-- The map of reduced spaces induced by a linear symplectomorphism `e` carries the quadratic form
+induced by `Q` back to the quadratic form induced by its pullback `Q ∘ e`. -/
+theorem reducedQuadraticForm_comp_reducedSpaceCongr (e : V ≃ₗ[ℝ] V')
+    (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
+    (hU : U.map (e : V →ₗ[ℝ] V') = U') (Q : QuadraticForm ℝ V')
+    (hQ : ∀ w ∈ U' ⊓ ω'.orthogonal U', ∀ u ∈ U', QuadraticMap.polar Q w u = 0)
+    (hQe : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U,
+      QuadraticMap.polar (Q.comp (e : V →ₗ[ℝ] V')) w u = 0) :
+    (ω'.reducedQuadraticForm U' Q hQ).comp
+        (reducedSpaceCongr ω ω' e he hU : ω.ReducedSpace U →ₗ[ℝ] ω'.ReducedSpace U') =
+      ω.reducedQuadraticForm U (Q.comp (e : V →ₗ[ℝ] V')) hQe := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H u => simp
+
 /-- The identity induces the identity of reduced spaces. -/
 @[simp]
 theorem reducedSpaceCongr_refl {U : Submodule ℝ V}
@@ -415,7 +495,140 @@ theorem isSymplectomorphism_reducedSpaceRepresentation {G : Type*} [Group G]
       (ω.reducedSpaceRepresentation ρ hρ U hU g) :=
   isSymplectomorphism_reducedSpaceCongr _ (hρ g) _
 
+/-- **An equivariant lift of the reduced space.** For a semisimple representation `πT` preserving
+`ω` and a subspace `U` it preserves, the reduced space `U ⧸ (U ∩ U^ω)` has a linear lift to `U`
+intertwining a representation `πV` induced on the reduced space with the action on `U`. It is
+`u ↦ u - P u` for an equivariant projection `P` onto the radical `U ∩ U^ω`. -/
+theorem exists_equivariant_lift_reducedSpace {K : Type*} [Group K] {πT : Representation ℝ K V}
+    [πT.IsSemisimpleRepresentation] (hπT : ∀ k u v, ω (πT k u) (πT k v) = ω u v)
+    {U : Submodule ℝ V} (hU : ∀ k, ∀ u ∈ U, πT k u ∈ U)
+    {πV : Representation ℝ K (ω.ReducedSpace U)}
+    (hπV : ∀ k (u u' : U), (u' : V) = πT k u →
+      πV k (Submodule.Quotient.mk u) = Submodule.Quotient.mk u') :
+    ∃ s : ω.ReducedSpace U →ₗ[ℝ] U, (∀ v, Submodule.Quotient.mk (s v) = v) ∧
+      ∀ k v, (s (πV k v) : V) = πT k (s v) := by
+  let SU : Subrepresentation πT := ⟨U, fun k _ hu ↦ hU k _ hu⟩
+  have : SU.toRepresentation.IsSemisimpleRepresentation :=
+    SU.subtype.isSemisimpleRepresentation_of_injective SU.subtype_injective
+  -- The radical `U ∩ U^ω` is a subrepresentation, with an equivariant projection `P`.
+  let N : Subrepresentation SU.toRepresentation :=
+    ⟨LinearMap.ker (ω.toBilinForm.restrict U), fun k u hu ↦ by
+      rw [mem_ker_restrict_iff] at hu ⊢
+      exact apply_mem_orthogonal hπT hU k hu⟩
+  obtain ⟨P, hP, hPπ⟩ := Subrepresentation.exists_equivariant_projection N
+  refine ⟨N.toSubmodule.liftQ (LinearMap.id - N.toSubmodule.subtype ∘ₗ P) fun u hu ↦ ?_,
+    fun v ↦ ?_, fun k v ↦ ?_⟩
+  · simp [hP ⟨u, hu⟩]
+  · induction v using Submodule.Quotient.induction_on with
+    | H u =>
+      rw [Submodule.liftQ_apply, Submodule.Quotient.eq]
+      simp
+  · induction v using Submodule.Quotient.induction_on with
+    | H u =>
+      rw [hπV k u ⟨πT k u, hU k u u.property⟩ rfl, Submodule.liftQ_apply, Submodule.liftQ_apply]
+      have h := congrArg Subtype.val (hPπ k u)
+      simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
+        Submodule.subtype_apply, Submodule.coe_sub, map_sub] at h ⊢
+      exact congrArg (fun t ↦ πT k u - t) h
+
+/-- **An induced action preserves the reduced form.** If `πT` preserves `ω` and `U`, a
+representation `πV` on the reduced space `U ⧸ (U ∩ U^ω)` acting by `[u] ↦ [πT k u]` preserves the
+reduced form. -/
+theorem isInvariantForm_reduction {K : Type*} [Group K] {πT : Representation ℝ K V}
+    (hπT : ∀ k u v, ω (πT k u) (πT k v) = ω u v) {U : Submodule ℝ V}
+    (hU : ∀ k, ∀ u ∈ U, πT k u ∈ U) {πV : Representation ℝ K (ω.ReducedSpace U)}
+    (hπV : ∀ k (u u' : U), (u' : V) = πT k u →
+      πV k (Submodule.Quotient.mk u) = Submodule.Quotient.mk u') :
+    Representation.IsInvariantForm πV (ω.reduction U).toBilinForm := by
+  refine Representation.isInvariantForm_iff.2 fun k v v' ↦ ?_
+  induction v using Submodule.Quotient.induction_on with | H u => ?_
+  induction v' using Submodule.Quotient.induction_on with | H u' => ?_
+  have h := hπV k u ⟨_, hU k u u.property⟩ rfl
+  have h' := hπV k u' ⟨_, hU k u' u'.property⟩ rfl
+  simpa [h, h'] using hπT k u u'
+
 end Functoriality
+
+section SkewAdjoint
+
+variable (ω : SymplecticForm V) {L : Type*} [AddCommGroup L] [Module ℝ L]
+
+/-- A skew-adjoint endomorphism `A` of `(V, ω)` preserving `U` preserves `U ∩ U^ω`, the kernel of
+the restriction of `ω` to `U`: for `u ∈ U^ω` and `y ∈ U`, `ω(y, A u) = -ω(A y, u) = 0`. -/
+private theorem ker_restrict_le_comap_restrict (A : skewAdjointLieSubalgebra ω.toBilinForm)
+    {U : Submodule ℝ V} (hU : ∀ u ∈ U, (A : Module.End ℝ V) u ∈ U) :
+    LinearMap.ker (ω.toBilinForm.restrict U) ≤
+      (LinearMap.ker (ω.toBilinForm.restrict U)).comap ((A : Module.End ℝ V).restrict hU) := by
+  intro u hu
+  rw [Submodule.mem_comap, mem_ker_restrict_iff, LinearMap.coe_restrict_apply, mem_orthogonal_iff]
+  rw [mem_ker_restrict_iff, mem_orthogonal_iff] at hu
+  intro y hy
+  have h := skewAdjointLieSubalgebra.apply_left A y u
+  rw [show ω.toBilinForm ((A : Module.End ℝ V) y) u = 0 from hu _ (hU y hy)] at h
+  exact neg_eq_zero.1 h.symm
+
+/-- The endomorphism `[u] ↦ [A u]` of the reduced space induced by a skew-adjoint endomorphism `A`
+of `(V, ω)` preserving `U`. -/
+private noncomputable def reducedSpaceEnd (A : skewAdjointLieSubalgebra ω.toBilinForm)
+    (U : Submodule ℝ V) (hU : ∀ u ∈ U, (A : Module.End ℝ V) u ∈ U) :
+    Module.End ℝ (ω.ReducedSpace U) :=
+  Submodule.mapQ _ _ ((A : Module.End ℝ V).restrict hU) (ker_restrict_le_comap_restrict ω A hU)
+
+private theorem reducedSpaceEnd_mk (A : skewAdjointLieSubalgebra ω.toBilinForm)
+    (U : Submodule ℝ V) (hU : ∀ u ∈ U, (A : Module.End ℝ V) u ∈ U) (u : U) :
+    reducedSpaceEnd ω A U hU (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk ⟨(A : Module.End ℝ V) u, hU u u.property⟩ :=
+  (rfl)
+
+/-- The induced endomorphism of the reduced space is skew-adjoint for the reduced form. -/
+private theorem reducedSpaceEnd_mem (A : skewAdjointLieSubalgebra ω.toBilinForm)
+    (U : Submodule ℝ V) (hU : ∀ u ∈ U, (A : Module.End ℝ V) u ∈ U) :
+    reducedSpaceEnd ω A U hU ∈ skewAdjointLieSubalgebra (ω.reduction U).toBilinForm := by
+  refine (LinearMap.mem_skewAdjointSubmodule _).2 fun x y ↦ ?_
+  induction x using Submodule.Quotient.induction_on with
+  | H u =>
+  induction y using Submodule.Quotient.induction_on with
+  | H v =>
+    rw [Pi.neg_apply, map_neg, reducedSpaceEnd_mk, reducedSpaceEnd_mk]
+    exact skewAdjointLieSubalgebra.apply_left A u v
+
+/-- **Skew-adjoint endomorphisms descend to the reduced space.** A linear family
+`ρ : L → sp(V, ω)` of skew-adjoint endomorphisms which all preserve `U` induces the linear family
+`ξ ↦ ([u] ↦ [ρ ξ u])` of skew-adjoint endomorphisms of the reduced space `U ⧸ (U ∩ U^ω)` for the
+reduced form. It is the infinitesimal counterpart of
+`TauCeti.SymplecticForm.reducedSpaceRepresentation`. -/
+noncomputable def reducedSpaceSkewAdjoint (ρ : L →ₗ[ℝ] skewAdjointLieSubalgebra ω.toBilinForm)
+    (U : Submodule ℝ V) (hU : ∀ ξ, ∀ u ∈ U, (ρ ξ : Module.End ℝ V) u ∈ U) :
+    L →ₗ[ℝ] skewAdjointLieSubalgebra (ω.reduction U).toBilinForm where
+  toFun ξ := ⟨reducedSpaceEnd ω (ρ ξ) U (hU ξ), reducedSpaceEnd_mem ω (ρ ξ) U (hU ξ)⟩
+  map_add' ξ η := by
+    refine Subtype.ext (LinearMap.ext fun x ↦ ?_)
+    induction x using Submodule.Quotient.induction_on with
+    | H u =>
+      simp only [AddMemClass.coe_add, LinearMap.add_apply, reducedSpaceEnd_mk,
+        ← Submodule.Quotient.mk_add]
+      congr 1
+      exact Subtype.ext (by simp)
+  map_smul' c ξ := by
+    refine Subtype.ext (LinearMap.ext fun x ↦ ?_)
+    induction x using Submodule.Quotient.induction_on with
+    | H u =>
+      simp only [SetLike.val_smul, LinearMap.smul_apply, reducedSpaceEnd_mk, RingHom.id_apply,
+        ← Submodule.Quotient.mk_smul]
+      congr 1
+      exact Subtype.ext (by simp)
+
+/-- The induced endomorphism of the reduced space is `[u] ↦ [ρ ξ u]`. -/
+@[simp]
+theorem reducedSpaceSkewAdjoint_mk (ρ : L →ₗ[ℝ] skewAdjointLieSubalgebra ω.toBilinForm)
+    (U : Submodule ℝ V) (hU : ∀ ξ, ∀ u ∈ U, (ρ ξ : Module.End ℝ V) u ∈ U) (ξ : L) (u : U) :
+    (ω.reducedSpaceSkewAdjoint ρ U hU ξ : Module.End ℝ (ω.ReducedSpace U))
+        (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk ⟨(ρ ξ : Module.End ℝ V) u, hU ξ u u.property⟩ :=
+  (rfl)
+
+end SkewAdjoint
+
 
 section Subspaces
 
@@ -456,6 +669,41 @@ theorem IsLagrangian.reduction_map [FiniteDimensional ℝ V] (hL : ω.IsLagrangi
   refine ⟨⟨l, hlU⟩, hl, ReducedSpace.mk_eq_mk_iff.2 ?_⟩
   have : l - (u : V) = -c := by rw [← hlc]; abel
   exact this ▸ (ω.orthogonal U).neg_mem hc
+
+/-- For an injective `ι : V' → V` with image in `U` and a lift `s` of the reduced space
+`V_U = U^ω ⧸ (U ∩ U^ω)` to `U^ω`, the map `V' × V_U → V`, `(w, v) ↦ ι w + s v` is injective: if
+`ι w + s v = 0`, then `s v` lies in `U^ω ∩ U`, so `v = 0`, and then `w = 0`. -/
+theorem injective_coprod_subtype_comp [FiniteDimensional ℝ V] {ι : V' →ₗ[ℝ] V}
+    (hι : Function.Injective ι) (hιU : LinearMap.range ι ≤ U)
+    {s : ω.ReducedSpace (ω.orthogonal U) →ₗ[ℝ] ω.orthogonal U}
+    (hs : ∀ v, Submodule.Quotient.mk (s v) = v) :
+    Function.Injective (ι.coprod ((ω.orthogonal U).subtype ∘ₗ s)) := by
+  rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+  rintro ⟨w, v⟩ h
+  simp only [LinearMap.mem_ker, LinearMap.coprod_apply, LinearMap.comp_apply,
+    Submodule.subtype_apply] at h
+  obtain rfl : v = 0 := by
+    rw [← hs v, ReducedSpace.mk_eq_zero_iff, ω.orthogonal_orthogonal,
+      eq_neg_of_add_eq_zero_right h, neg_mem_iff]
+    exact hιU ⟨w, rfl⟩
+  rw [map_zero, Submodule.coe_zero, add_zero] at h
+  exact Prod.ext (hι (h.trans (map_zero ι).symm)) rfl
+
+/-- For a lift `s` of the reduced space `U^ω ⧸ (U ∩ U^ω)` to `U^ω`, the sum of `U` and the image of
+`s` is coisotropic: a vector `ω`-orthogonal to it lies in `U^ω` with zero class in the reduced
+space, so in `(U^ω)^ω = U`. -/
+theorem isCoisotropic_sup_range_subtype_comp [FiniteDimensional ℝ V]
+    {s : ω.ReducedSpace (ω.orthogonal U) →ₗ[ℝ] ω.orthogonal U}
+    (hs : ∀ v, Submodule.Quotient.mk (s v) = v) :
+    ω.IsCoisotropic (U ⊔ LinearMap.range ((ω.orthogonal U).subtype ∘ₗ s)) := by
+  refine isCoisotropic_iff.2 fun y hy ↦ Submodule.mem_sup_left ?_
+  have hyU : y ∈ ω.orthogonal U := ω.orthogonal_le le_sup_left hy
+  have h0 : (Submodule.Quotient.mk ⟨y, hyU⟩ : ω.ReducedSpace (ω.orthogonal U)) = 0 :=
+    (ω.reduction (ω.orthogonal U)).separatingLeft _ fun v ↦ by
+      rw [← hs v]
+      exact (reduction_mk ω _ _ _).trans
+        (ω.isRefl.eq_zero (hy _ (Submodule.mem_sup_right ⟨v, rfl⟩)))
+  rwa [ReducedSpace.mk_eq_zero_iff, ω.orthogonal_orthogonal] at h0
 
 end Subspaces
 

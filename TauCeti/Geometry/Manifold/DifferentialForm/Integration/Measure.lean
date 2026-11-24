@@ -31,10 +31,11 @@ transition map, so its absolute value transforms exactly as Lebesgue measure doe
 measures agree on chart overlaps and, on a Lindelöf manifold, glue to a unique measure on the
 Borel `σ`-algebra. No orientation is used, the form may vanish, and manifolds with boundary or
 corners are allowed. The same computation shows that a differentiable homeomorphism `Φ : M → N`
-carries `|Φ^* ψ|` to `|ψ|` (`Homeomorph.measurePreserving_measure_mpullback`); in particular a
-diffeomorphism preserving `ψ` preserves `|ψ|`. More generally, a differentiable measurable
-embedding `f : M → N`, such as the inclusion of an open subset, carries `|f^* ψ|` to the
-restriction of `|ψ|` to its range (`MeasurableEmbedding.map_measure_mpullback`).
+carries `|Φ^* ψ|` to `|ψ|` (`Homeomorph.measurePreserving_measure_mpullback`), also when `M` and `N`
+are modelled on different spaces of the same dimension; in particular a diffeomorphism preserving
+`ψ` preserves `|ψ|`. More generally, a differentiable measurable embedding `f : M → N`, such as the
+inclusion of an open subset, carries `|f^* ψ|` to the restriction of `|ψ|` to its range
+(`MeasurableEmbedding.map_measure_mpullback`).
 
 For a continuous form the measure is locally finite, and if moreover the form vanishes nowhere,
 every nonempty open set has positive measure. Applied to the symplectic volume form `ωⁿ / n!`,
@@ -375,8 +376,9 @@ namespace MeasurableEmbedding
 
 open TauCeti
 
-variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N]
-  [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [hk' : Fact (finrank ℝ E' = k)] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
   [LindelofSpace M] [LindelofSpace N] {f : M → N}
 
 /-- The chart-local case of `MeasurableEmbedding.map_measure_mpullback`: on a measurable set `A`
@@ -387,16 +389,25 @@ private theorem measure_mpullback_apply_of_subset (hf : MeasurableEmbedding f)
     (hA : MeasurableSet A)
     (hAsub : A ⊆ (extChartAt I x).source ∩ f ⁻¹' (extChartAt J (f x)).source) :
     (mpullback I J f ψ).measure A = ψ.measure (f '' A) := by
+  -- Compare the model spaces through the linear equivalence carrying the basis normalizing the
+  -- coordinate measure of `E` to that of `E'`.
+  set b := finBasisOfFinrankEq ℝ E hk.out
+  set b' := finBasisOfFinrankEq ℝ E' hk'.out
+  set C : E ≃L[ℝ] E' := (b.equiv b' (Equiv.refl _)).toContinuousLinearEquiv
+  have hb : b.map C.toLinearEquiv = b' := by
+    simp [C, Basis.map_equiv]
+  have hμ : b.addHaar.map C = b'.addHaar := by
+    simpa [C] using (b.measurePreserving_equiv b' (Equiv.refl _)).map_eq
   rw [RoughForm.measure_apply_of_subset _ hA (hAsub.trans inter_subset_left),
     ψ.measure_apply_of_subset (hf.measurableSet_image.2 hA)
       (image_subset_iff.2 (hAsub.trans inter_subset_right)),
-    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ (ContinuousLinearEquiv.refl ℝ E)
+    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ C
       hf.injective.injOn (fun x _ ↦ hfd x) hA.isChartMeasurable hAsub,
-    map_basis_refl, map_measure_refl]
+    hb, hμ]
 
 /-- **Change of variables for the measure of a top form along an embedding.** A differentiable
-measurable embedding `f : M → N` between manifolds modelled on the same space, such as the
-inclusion of an open subset, carries the measure of the pulled-back form `f^* ψ` to the
+measurable embedding `f : M → N` between manifolds modelled on spaces of the same dimension, such
+as the inclusion of an open subset, carries the measure of the pulled-back form `f^* ψ` to the
 restriction of the measure of `ψ` to the range of `f`. No orientation is involved. -/
 theorem map_measure_mpullback (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
     (ψ : RoughForm J N ℝ k) :
@@ -434,8 +445,9 @@ theorem map_measure_mpullback (hf : MeasurableEmbedding f) (hfd : MDifferentiabl
     ((hf.measurable hs).inter (hV z).measurableSet) inter_subset_right
 
 /-- **The measure of a top form pulled back along an embedding.** For a differentiable measurable
-embedding `f : M → N` between manifolds modelled on the same space, the measure of `f^* ψ` is the
-pullback along `f` of the measure of `ψ`: it gives a set `s` the measure of `f '' s`. -/
+embedding `f : M → N` between manifolds modelled on spaces of the same dimension, the measure of
+`f^* ψ` is the pullback along `f` of the measure of `ψ`: it gives a set `s` the measure of
+`f '' s`. -/
 theorem measure_mpullback (hf : MeasurableEmbedding f) (hfd : MDifferentiable I J f)
     (ψ : RoughForm J N ℝ k) : (mpullback I J f ψ).measure = ψ.measure.comap f := by
   rw [← hf.comap_map (mpullback I J f ψ).measure, hf.map_measure_mpullback hfd, hf.comap_restrict,
@@ -449,14 +461,15 @@ namespace Homeomorph
 
 open TauCeti
 
-variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N]
-  [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [hk' : Fact (finrank ℝ E' = k)] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] [MeasurableSpace N] [BorelSpace N]
   [LindelofSpace M] [LindelofSpace N]
 
 /-- **Change of variables for the measure of a top form.** A differentiable homeomorphism
-`Φ : M → N` between manifolds modelled on the same space carries the measure of the pulled-back
-form `Φ^* ψ` to the measure of `ψ`. In particular a diffeomorphism preserving a top form preserves
-its measure. No orientation is involved. -/
+`Φ : M → N` between manifolds modelled on spaces of the same dimension carries the measure of the
+pulled-back form `Φ^* ψ` to the measure of `ψ`. In particular a diffeomorphism preserving a top
+form preserves its measure. No orientation is involved. -/
 theorem measurePreserving_measure_mpullback (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ)
     (ψ : RoughForm J N ℝ k) :
     MeasurePreserving Φ (mpullback I J Φ ψ).measure ψ.measure :=

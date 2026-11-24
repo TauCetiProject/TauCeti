@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Decomposition
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Centralizer
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Kernel
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Quotient
 
 /-!
 # Torus centralizer and normalizer in the extended elementary Chevalley group

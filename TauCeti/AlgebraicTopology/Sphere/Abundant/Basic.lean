@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
 public import TauCeti.Topology.MappingSpace.Evaluation
+public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import TauCeti.Topology.Sphere.Suspension
+public import Mathlib.Topology.Homotopy.HomotopyGroup
 
 /-!
 # Manifolds abundant with two-spheres
@@ -41,12 +43,15 @@ does not lie in the image of `c_* : Hₙ(Q, Q ∖ {b}) → Hₙ(E, E ∖ F)`.
 The definition only uses the space `Q`, a point `b` and the dimension `n`; it is meant for closed
 connected oriented `n`-manifolds, where it is the source's definition. Coefficients are the
 integers, written `ULift ℤ` as for the integral fundamental classes of
-`TauCeti.HomologicalOrientation`.
+`TauCeti.HomologicalOrientation`. Witnesses are built as cross products of integral classes, with
+coefficients `ℤ ⊗ ℤ` identified with `ℤ` (`ModuleCat.uliftTensorSelfIso`), from classes of the
+double loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedMap`).
 
 ## Main definitions
 
 * `TauCeti.IsAbundantWithTwoSpheres Q n b`: `Q` is abundant with 2-spheres at `b`, in
   dimension `n`, characterized by `TauCeti.isAbundantWithTwoSpheres_iff`.
+* `TauCeti.doubleLoopSpaceHomologyIsoBasedMap`: `Hₘ(Ω²Q; ℤ) ≅ Hₘ(Map_*(S², Q); ℤ)`.
 
 ## Main results
 
@@ -54,6 +59,9 @@ integers, written `ULift ℤ` as for the integral fundamental classes of
   fundamental class witnesses abundance.
 * `TauCeti.isAbundantWithTwoSpheres_of_eq`: so does a class of degree `n` living over the
   fundamental class whose localization is not that of a constant sphere class.
+* `TauCeti.isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub`: this holds for a class `α`
+  of degree `n` when both `α` and `α - ρ_* α` live over the fundamental class, where `ρ` is the
+  self-map `f ↦ const (f(north))` of `Map(S², Q)`.
 * `TauCeti.fiberLocalization_mem_range_localHomologyMap_const'_iff`: the localization of a class
   `α` of `Map(B, X)` is that of a class of constant maps exactly when `α - ρ_* α` does not live over
   the fundamental class, where `ρ` sends a map to the constant map at its value at the base point.
@@ -71,6 +79,7 @@ public section
 noncomputable section
 
 open CategoryTheory
+open scoped Topology Topology.Homotopy
 
 namespace TauCeti
 
@@ -188,6 +197,37 @@ theorem isAbundantWithTwoSpheres_of_eq {n : ℕ} {b : Q}
           n).hom α) :
     IsAbundantWithTwoSpheres Q n b :=
   ⟨n, α, hα, Or.inr ⟨rfl, fun ⟨β, hβ⟩ ↦ hc β hβ⟩⟩
+
+/-- **Abundance from a class in the dimension not fixed by the constant spheres.** Let `ρ` be the
+self-map `f ↦ const (f(north))` of `Map(S², Q)`. If a class `α ∈ Hₙ(Map(S², Q); ℤ)` lives over the
+fundamental class at `b`, and so does `α - ρ_* α`, then `Q` is abundant with 2-spheres at `b` in
+dimension `n`, by `TauCeti.fiberLocalization_mem_range_localHomologyMap_const'_iff`. -/
+theorem isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub {n : ℕ} {b : Q}
+    {α : ((TopCat.toSSet.obj (TopCat.of C(Sphere2, Q))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) n : ModuleCat.{0} ℤ)}
+    (hα : LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (mappingSpaceEval Sphere2.north) b α)
+    (hρα : LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (mappingSpaceEval Sphere2.north) b (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+        (ContinuousMap.const'.comp (mappingSpaceEval (X := Q) Sphere2.north))))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom α)) :
+    IsAbundantWithTwoSpheres Q n b :=
+  ⟨n, α, hα, Or.inr ⟨rfl, fun h ↦
+    (fiberLocalization_mem_range_localHomologyMap_const'_iff _ _ _ α).1 h hρα⟩⟩
+
+/-- The integral homology of the double loop space `Ω²Q` at `x` is that of the based mapping space
+`Map_*(S², Q)` of maps sending the north pole to `x`, with the coefficients `ULift ℤ` of
+`TauCeti.IsAbundantWithTwoSpheres`, through the homeomorphism of `Map_*(S², Q)` with the iterated
+loop space (`BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace`). -/
+def doubleLoopSpaceHomologyIsoBasedMap (x : Q) (m : ℕ) :
+    ((singularChains ℤ).obj (TopCat.of (Ω (Ω Q x) (Path.refl x)))).homology m ≅
+      (TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 Q Sphere2.north x))).homology
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) m :=
+  (uliftIntHomologyIso _ m).symm ≪≫
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).mapIso (TopCat.isoOfHomeo
+        (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩
+          Sphere2.north).symm)
 
 /-- **Abundance is invariant under homeomorphisms.** If `Q` is abundant with 2-spheres at `b` in
 dimension `n`, and `e : Q ≃ₜ Q'`, then `Q'` is abundant with 2-spheres at `e b` in dimension `n`:
