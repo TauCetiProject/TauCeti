@@ -51,7 +51,8 @@ stated for spaces in the lowest universe, so `A` is a type in `Type`.
 ## Main results
 
 * `TauCeti.EilenbergMacLane.subsingleton_homotopyGroup_presentation`: the presentation complex is
-  `(n + 1)`-connected.
+  `(n + 1)`-connected, in particular path connected
+  (`TauCeti.EilenbergMacLane.pathConnectedSpace_presentation`).
 * `TauCeti.EilenbergMacLane.ker_singularHomologyMap_presentation`: attaching the relation cells
   kills exactly the kernel of `ψ` in `Hₙ₊₂`.
 * `TauCeti.EilenbergMacLane.nonempty_homotopyGroup_presentation_mulEquiv`: for surjective `ψ`, the
@@ -144,6 +145,11 @@ theorem subsingleton_homotopyGroup_presentation (k : ℕ) (hk : k < n + 2) :
   (bijective_homotopyGroupMap_cellAttachmentIncl (N := Fin k) (relationAttach A n ψ)
     (by simpa using hk) (sphereWedgeBase A (n + 2))).2.subsingleton
 
+/-- The presentation complex is path connected, since its `π₀` is trivial. -/
+instance pathConnectedSpace_presentation : PathConnectedSpace (presentation A n ψ) :=
+  (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (presentationBase A n ψ)).2
+    (subsingleton_homotopyGroup_presentation A n ψ 0 (by omega))
+
 /-- **Attaching the relation cells kills exactly the kernel of `ψ` in `Hₙ₊₂`.** The kernel of the
 map `Hₙ₊₂(W; ℤ) → Hₙ₊₂(Y; ℤ)` induced by the inclusion of the wedge into the presentation complex
 is the kernel of `ψ`. -/
@@ -156,31 +162,17 @@ theorem ker_singularHomologyMap_presentation :
   rw [ker_singularHomologyMap_cellAttachmentIncl]
   refine le_antisymm (Submodule.span_le.2 ?_) fun h hh ↦ ?_
   · rintro _ ⟨r, rfl⟩
-    exact r.property
+    exact LinearMap.mem_ker.2 r.property
   -- Every class of `Hₙ₊₂(W)` is the Hurewicz class of a generalized loop, so up to sign the class
   -- of its attaching sphere, which lies in the kernel of `ψ` with the class.
-  obtain ⟨ε, hε⟩ :=
-    exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n + 1)
   obtain ⟨a, rfl⟩ :=
     (HomotopyGroup.hurewiczAddEquiv hW).surjective h
   induction a using Additive.rec with | ofMul a => ?_
   induction a using Quotient.inductionOn with | h p => ?_
-  have hp : (H (n + 2)).map (GenLoop.diskBoundaryMap p) (sphereClass n) =
-      (ε : ℤ) • HomotopyGroup.hurewiczAddEquiv hW (Additive.ofMul ⟦p⟧) := by
-    rw [HomotopyGroup.hurewiczAddEquiv_apply, HomotopyGroup.hurewiczHom_apply]
-    -- `Additive.ofMul ⟦p⟧` is presented through `Quotient` rather than `HomotopyGroup`, so the
-    -- generated motive of `rw` is ill-typed and `erw` is needed.
-    erw [toMul_ofMul, HomotopyGroup.hurewicz_mk]
-    exact hε (sphereWedge A (n + 2)) _ p
-  have hr : ψ ((H (n + 2)).map (GenLoop.diskBoundaryMap p) (sphereClass n)) = 0 := by
-    rw [hp, map_zsmul, LinearMap.mem_ker.1 hh, smul_zero]
-  have hmem := (Submodule.span ℤ (Set.range fun r : Relation A n ψ ↦
-    (H (n + 2)).map (relationAttach A n ψ r) (sphereClass n))).toAddSubgroup.zsmul_mem
-    (Submodule.subset_span ⟨⟨GenLoop.diskBoundaryMap p, hr⟩, rfl⟩) ((ε⁻¹ : ℤˣ) : ℤ)
-  dsimp only [relationAttach] at hmem
-  rw [hp] at hmem
-  simpa only [smul_smul, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul,
-    Submodule.mem_toAddSubgroup] using hmem
+  rw [HomotopyGroup.hurewiczAddEquiv_ofMul_mk] at hh ⊢
+  have hr := (GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff p (LinearMap.ker ψ)).2 hh
+  exact (GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff p _).1
+    (Submodule.subset_span ⟨⟨GenLoop.diskBoundaryMap p, LinearMap.mem_ker.1 hr⟩, rfl⟩)
 
 /-- **The presentation complex has `πₙ₊₂ ≅ A`.** For a surjection `ψ : Hₙ₊₂(W; ℤ) → A`, the
 `(n + 2)`-nd homotopy group of the presentation complex is isomorphic to `A`. -/
@@ -206,9 +198,6 @@ theorem isEilenbergMacLaneSpace_killHomotopyGroups_presentation (hψ : Function.
       (killHomotopyGroups (n + 3) (presentation A n ψ) (presentationBase A n ψ))
       (killHomotopyGroupsIncl (n + 3) (presentation A n ψ) (presentationBase A n ψ)
         (presentationBase A n ψ)) := by
-  have : PathConnectedSpace (presentation A n ψ) :=
-    (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (presentationBase A n ψ)).2
-      (subsingleton_homotopyGroup_presentation A n ψ 0 (by omega))
   obtain ⟨e⟩ := nonempty_homotopyGroup_presentation_mulEquiv A n ψ hψ
   exact (isEilenbergMacLaneSpace_killHomotopyGroups (n + 2) (presentation A n ψ)
     (presentationBase A n ψ) fun k _ hk ↦
