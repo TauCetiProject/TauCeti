@@ -38,7 +38,7 @@ Together with the trace `T` and the quadratic **spur** `S`, the sum of the princ
 
 `spur A = a 0 * a 1 + a 1 * a 2 + a 2 * a 0 - N (x 0) - N (x 1) - N (x 2)`,
 
-the determinant is the constant term of the **generic minimal polynomial**
+the determinant is, up to sign, the constant term of the **generic minimal polynomial**
 `t³ - T(A) t² + S(A) t - det A`, and every element satisfies the **cubic equation**
 
 `A ∘ (A ∘ A) = T(A) • (A ∘ A) - S(A) • A + det A • 1`

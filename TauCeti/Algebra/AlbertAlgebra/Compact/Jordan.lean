@@ -31,15 +31,18 @@ computation of the identity itself is needed. The instance is
 
 * the **cubic equation** `A³ = T(A) A² - S(A) A + det A · 1`
   (`TauCeti.CompactAlbertAlgebra.mul_mul_self`), with `T` the trace, `S` the spur and `A³ = A ∘ A²`;
-* its polarization, the **linearized cubic equation**
-  (`TauCeti.CompactAlbertAlgebra.mul_mul_self_add_two_smul_mul_mul`), which writes the
-  multiplication operator `L_{A²}` as a polynomial in `L_A` plus an operator with values in the
-  span of `1`, `A` and `A²`;
 * the **associativity of the trace form**, `T((A ∘ B) ∘ C) = T(A ∘ (B ∘ C))`
-  (`TauCeti.CompactAlbertAlgebra.trace_mul_assoc`).
+  (`TauCeti.CompactAlbertAlgebra.trace_mul_assoc`);
+* the **gradient of the determinant**: its derivative at `A` in the direction `B` is
+  `T(A^# ∘ B)`, where `A^# = A² - T(A) A + S(A) 1` is the adjoint of `A`
+  (`TauCeti.CompactAlbertAlgebra.det_add_sub_det_sub`).
 
-The commutator `⁅L_A, L_{A²}⁆` therefore takes values in the span of `1`, `A` and `A²`, and its
-three coefficients vanish by the cubic equation and the associativity of the trace form.
+The cubic equation holds for every element, so it can be polarized, and the gradient of the
+determinant identifies the coefficient of `1`; this gives the **linearized cubic equation**
+(`TauCeti.CompactAlbertAlgebra.mul_mul_self_add_two_smul_mul_mul`). Solving it for `B ∘ A²` writes
+the multiplication operator `L_{A²}` as a polynomial in `L_A` plus an operator with values in the
+span of `1`, `A` and `A²`. The commutator `⁅L_A, L_{A²}⁆` therefore takes values in that span, and
+its three coefficients vanish by the cubic equation and the associativity of the trace form.
 
 ## Main results
 
