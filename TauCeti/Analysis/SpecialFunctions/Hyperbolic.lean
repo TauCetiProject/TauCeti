@@ -66,6 +66,12 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
   `z` and `w`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
+* `Real.cosh_eq_one_add_two_mul_sinh_half_sq` — `cosh x = 1 + 2 * sinh (x / 2) ^ 2`, the
+  half-argument formula that turns `cosh` into a square under the substitution
+  `s = 2 sinh (x / 2)`.
+* `Real.one_add_sq_div_two_le_cosh` — `1 + x ^ 2 / 2 ≤ cosh x`, the lower companion of
+  Mathlib's `Real.cosh_le_exp_half_sq`, which bounds Laplace-type integrals of `exp (-c cosh x)`
+  by Gaussian ones.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
   distribution on `[0, 1]`, which is what makes the volume of a simplex cut from a cube
@@ -281,6 +287,24 @@ theorem four_mul_sinh_half_sq (r : ℝ) :
     4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2 := by
   rw [sinh_eq]
   ring
+
+/-- The half-argument formula `cosh x = 1 + 2 * sinh (x / 2) ^ 2`. -/
+theorem cosh_eq_one_add_two_mul_sinh_half_sq (x : ℝ) : cosh x = 1 + 2 * sinh (x / 2) ^ 2 := by
+  have h := cosh_two_mul (x / 2)
+  rw [show 2 * (x / 2) = x by ring, cosh_sq] at h
+  linarith
+
+/-- `1 + x ^ 2 / 2 ≤ cosh x`: the first two terms of the power series of `Real.cosh` bound it
+from below. -/
+theorem one_add_sq_div_two_le_cosh (x : ℝ) : 1 + x ^ 2 / 2 ≤ cosh x := by
+  -- `cosh x = 1 + 2 sinh (x / 2) ^ 2` and `|x / 2| ≤ |sinh (x / 2)|`
+  have h : |x / 2| ≤ |sinh (x / 2)| := by
+    rw [abs_sinh]
+    exact self_le_sinh_iff.mpr (abs_nonneg _)
+  have hsq := pow_le_pow_left₀ (abs_nonneg _) h 2
+  rw [sq_abs, sq_abs] at hsq
+  rw [cosh_eq_one_add_two_mul_sinh_half_sq]
+  nlinarith
 
 /-- `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of `Real.cosh_le_exp_half_sq`.
 The constant `6` is sharp: the cubic terms of the two power series agree. -/
