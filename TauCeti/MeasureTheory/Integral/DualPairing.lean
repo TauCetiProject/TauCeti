@@ -22,6 +22,7 @@ everywhere. This file bounds the integral of the pairing `x ↦ τ x (f x)` of `
 * `TauCeti.enorm_integral_apply_le_lintegral_enorm`: `‖∫ τ x (f x) dμ‖ₑ ≤ ∫⁻ ‖f x‖ₑ dμ`;
 * `TauCeti.lintegral_enorm_le_measure`: a field of norm at most one supported in a measurable set
   `U` has `∫⁻ ‖f x‖ₑ dμ ≤ μ U`;
+* `TauCeti.enorm_integral_apply_le_measure`: for such a field, `‖∫ τ x (f x) dμ‖ₑ ≤ μ U`;
 * `TauCeti.abs_integral_apply_le_mul_measureReal`: a field bounded by `c` and supported in a set
   `K` of finite measure has `|∫ τ x (f x) dμ| ≤ c μ(K)`;
 * `CompactlySupportedContinuousMap.integrable_dual_apply`: for a compactly supported continuous
@@ -59,6 +60,14 @@ theorem lintegral_enorm_le_measure (μ : Measure X) {f : X → F} {U : Set X}
   · rw [indicator_of_mem hx, Pi.one_apply, ← ofReal_norm]
     exact ENNReal.ofReal_le_one.2 (hf x)
   · simp [Function.notMem_support.1 fun h => hx (hfU h)]
+
+/-- The pairing of a field of norm at most one supported in a measurable set `U` with a density of
+dual norm at most one is at most `μ U`. -/
+theorem enorm_integral_apply_le_measure [NormedSpace ℝ F] {μ : Measure X}
+    {τ : X → StrongDual ℝ F} (hτ : ∀ᵐ x ∂μ, ‖τ x‖ ≤ 1) {f : X → F} {U : Set X}
+    (hU : MeasurableSet U) (hfU : Function.support f ⊆ U) (hf : ∀ x, ‖f x‖ ≤ 1) :
+    ‖∫ x, τ x (f x) ∂μ‖ₑ ≤ μ U :=
+  (enorm_integral_apply_le_lintegral_enorm hτ f).trans (lintegral_enorm_le_measure μ hU hfU hf)
 
 /-- The pairing of a field bounded by `c` and supported in a measurable set `K` of finite measure
 with a density of dual norm at most one is at most `c μ(K)`. -/

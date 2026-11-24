@@ -95,16 +95,15 @@ variable [MeasurableSpace E] [BorelSpace E]
 
 /-- **The converse of the Riesz representation theorem for vector fields.** A representation of `L`
 against a measure finite on compact sets, with a density of dual norm at most one, bounds `L` on
-the fields of norm at most one supported in each compact set, by the measure of that set. -/
+the fields of norm at most one supported in each compact set. -/
 theorem exists_le_of_apply_eq_integral {μ : Measure Ω} [IsFiniteMeasureOnCompacts μ]
     {τ : Ω → StrongDual ℝ F} (hτ : ∀ᵐ x ∂μ, ‖τ x‖ ≤ 1)
     (h : ∀ f : C_c(Ω, F), L f = ∫ x, τ x (f x) ∂μ) (K : Set Ω) (hK : IsCompact K) :
     ∃ C : ℝ, ∀ f : C_c(Ω, F), tsupport f ⊆ K → (∀ x, ‖f x‖ ≤ 1) → L f ≤ C := by
-  refine ⟨(μ K).toReal, fun f hfK hf => ?_⟩
-  have h' := (enorm_integral_apply_le_lintegral_enorm hτ f).trans
-    (lintegral_enorm_le_measure μ hK.measurableSet ((subset_tsupport f).trans hfK) hf)
-  rw [← h f, Real.eNorm_eq_ofReal_abs] at h'
-  exact (le_abs_self _).trans ((ENNReal.ofReal_le_iff_le_toReal hK.measure_lt_top.ne).1 h')
+  refine ⟨μ.real K, fun f hfK hf => ?_⟩
+  rw [h f, ← one_mul (μ.real K)]
+  exact (le_abs_self _).trans (abs_integral_apply_le_mul_measureReal hτ hK.measurableSet
+    hK.measure_lt_top.ne ((subset_tsupport f).trans hfK) hf)
 
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
@@ -278,11 +277,9 @@ private lemma massMeasure_testCLM_eq_iSup {U : Set Ω} (hU : IsOpen U) :
     refine max_le (hle _ hφU' hφ') (hle _ ?_ fun x => by simpa using hφ' x)
     rwa [CompactlySupportedContinuousMap.coe_neg, tsupport_neg]
   · rw [apply_eq_integral_testCLM hL f]
-    refine (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans ?_
-    rw [← Real.eNorm_eq_ofReal_abs]
-    exact (enorm_integral_apply_le_lintegral_enorm
-      ((ae_norm_polarDensity_eq_one hT).mono fun _ hx => hx.le) f).trans
-      (lintegral_enorm_le_measure _ hU.measurableSet ((subset_tsupport f).trans hfU) hf)
+    exact (Real.ofReal_le_eNorm _).trans (enorm_integral_apply_le_measure
+      ((ae_norm_polarDensity_eq_one hT).mono fun _ hx => hx.le) hU.measurableSet
+      ((subset_tsupport f).trans hfU) hf)
 
 /-- **The Riesz representation theorem for vector fields.** A linear functional `L` on the
 compactly supported continuous fields `C_c(Ω, F)` that is bounded above on the fields of norm at
