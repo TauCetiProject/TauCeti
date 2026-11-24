@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Sites.AffineEtale
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.Basic
+public import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.Sheaf
 
 /-!
 # The affine Nisnevich site and Nisnevich sheafification
@@ -38,13 +39,13 @@ values in any concrete category such as `Type u`, `AddCommGrpCat.{u}` or `Module
 * `AlgebraicGeometry.Scheme.isGrothendieckAbelian_sheaf_smallNisnevichTopology`: sheaves on the
   small Nisnevich site with values in a Grothendieck abelian category, in which presheaves on the
   affine Nisnevich site can be sheafified, form a Grothendieck abelian category, by
-  `CategoryTheory.Sheaf.isGrothendieckAbelian_of_essentiallySmall_of_hasSheafify`, the same
-  statement for any essentially small site.
+  `CategoryTheory.Sheaf.isGrothendieckAbelian_of_essentiallySmall_of_hasSheafify`
+  (`TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.Sheaf`).
 -/
 
 public noncomputable section
 
-universe u u' v' u₂
+universe u u' v'
 
 open CategoryTheory Limits MorphismProperty TauCeti.AlgebraicGeometry.Scheme
 
@@ -192,21 +193,6 @@ end
 section
 
 variable {A : Type u'} [Category.{v'} A] [Abelian A] [IsGrothendieckAbelian.{u} A]
-
-/-- Sheaves on an essentially small site with values in a Grothendieck abelian category form a
-Grothendieck abelian category, provided presheaves on the site can be sheafified: sheafification
-transports to the small model of the site, where `Sheaf.isGrothendieckAbelian_of_essentiallySmall`
-applies. -/
-theorem _root_.CategoryTheory.Sheaf.isGrothendieckAbelian_of_essentiallySmall_of_hasSheafify
-    {C : Type u₂} [Category.{u} C] [EssentiallySmall.{u} C] (J : GrothendieckTopology C)
-    (A : Type u') [Category.{v'} A] [Abelian A] [IsGrothendieckAbelian.{u} A] [HasSheafify J A] :
-    IsGrothendieckAbelian.{u} (Sheaf J A) :=
-  have : HasSheafify ((equivSmallModel C).inverse.inducedTopology J) A :=
-    have : (equivSmallModel C).symm.inverse.IsDenseSubsite J
-        ((equivSmallModel C).inverse.inducedTopology J) :=
-      inferInstanceAs ((equivSmallModel C).functor.IsDenseSubsite _ _)
-    (equivSmallModel C).symm.hasSheafify _ J A
-  Sheaf.isGrothendieckAbelian_of_essentiallySmall _ _
 
 instance AffineEtale.isGrothendieckAbelian_sheaf_nisnevichTopology
     [HasSheafify (AffineEtale.nisnevichTopology S) A] :
