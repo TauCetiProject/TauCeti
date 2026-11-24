@@ -26,8 +26,8 @@ For a Hermitian matrix, each ordered eigenvalue is bounded in absolute value by 
 norm, and the `2 * k`-th power of the operator norm is bounded by the real trace of the
 `2 * k`-th matrix power, provided the matrix is nonempty when `k = 0`. This is the trace bound
 behind moment estimates for the operator norm of random matrices. For a positive-semidefinite
-matrix on a nonempty carrier, every power of the operator norm, that is of the largest
-eigenvalue, is bounded by the real trace of the same matrix power.
+matrix, every power of the operator norm, that is of the largest eigenvalue, is bounded by the
+real trace of the same matrix power, again provided the matrix is nonempty for the zeroth power.
 
 All matrix norms here use `Matrix.Norms.L2Operator`, hence agree with the norms of the
 native maps on `EuclideanSpace`. The proof uses Mathlib's
@@ -77,10 +77,15 @@ theorem PosSemidef.l2_opNorm_eq_eigenvalues₀_zero [Nonempty n] {B : Matrix n n
       norm_le_pi_norm hB.isHermitian.eigenvalues (e ⟨0, Fintype.card_pos⟩)
 
 /-- Every power of the Euclidean operator norm of a positive-semidefinite matrix, that is of its
-largest eigenvalue, is at most the real trace of the same power of the matrix. The carrier is
-nonempty: for the empty matrix and `k = 0` the left side is `1` and the trace is `0`. -/
-theorem PosSemidef.l2_opNorm_pow_le_re_trace_pow [Nonempty n] {B : Matrix n n 𝕜}
-    (hB : B.PosSemidef) (k : ℕ) : ‖B‖ ^ k ≤ RCLike.re (B ^ k).trace := by
+largest eigenvalue, is at most the real trace of the same power of the matrix. The carrier must be
+nonempty when `k = 0`: for the empty matrix and `k = 0` the left side is `1` and the trace is `0`.
+-/
+theorem PosSemidef.l2_opNorm_pow_le_re_trace_pow {B : Matrix n n 𝕜}
+    (hB : B.PosSemidef) (k : ℕ) (hn : k = 0 → Nonempty n) :
+    ‖B‖ ^ k ≤ RCLike.re (B ^ k).trace := by
+  rcases isEmpty_or_nonempty n with hne | hne
+  · have hk : k ≠ 0 := fun hk ↦ (hn hk).elim isEmptyElim
+    simp [Subsingleton.elim B 0, zero_pow hk]
   obtain ⟨j, hj⟩ := Pi.exists_norm_apply_eq_norm hB.isHermitian.eigenvalues
   rw [hB.isHermitian.l2_opNorm_eq_norm_eigenvalues, ← hj,
     Real.norm_of_nonneg (hB.eigenvalues_nonneg j), hB.isHermitian.trace_pow_eq_sum_eigenvalues_pow,

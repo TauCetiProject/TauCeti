@@ -174,22 +174,25 @@ theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le
     hA hi ht htr hB hk hb
 
 /-- **Trace method for positive-semidefinite random matrices.** Let the matrices be eventually
-almost surely positive semidefinite on nonempty carriers, with eventually integrable real traces
+almost surely positive semidefinite, with eventually integrable real traces
 of their `k n`-th powers, where the orders `k n` have any parity and grow faster than `log n`. If
 for every `r > s ≥ 0` there are constants `C` and `a` with `E tr (A n ^ k n) ≤ C n ^ a r ^ k n`
 for all large `n`, then almost surely the norms, that is the largest eigenvalues
 (`Matrix.PosSemidef.l2_opNorm_eq_eigenvalues₀_zero`), are eventually below every `r > s`. -/
-theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_le [∀ n, Nonempty (m n)]
+theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_le
     (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).PosSemidef)
     (hk : Tendsto (fun n ↦ (k n : ℝ) / Real.log n) atTop atTop)
     (hint : ∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re (A n ω ^ k n).trace) P) {s : ℝ}
     (hs : 0 ≤ s) (hmom : ∀ r > s, ∃ C : ℝ, ∃ a : ℕ, ∀ᶠ n : ℕ in atTop,
       ∫ ω, RCLike.re (A n ω ^ k n).trace ∂P ≤ C * n ^ a * r ^ k n) :
-    ∀ᵐ ω ∂P, ∀ r > s, ∀ᶠ n in atTop, ‖A n ω‖ < r :=
-  ae_forall_eventually_lt_of_integral_le_mul_pow hs
-    (hA.mono fun n hn ↦ hn.mono fun ω hω ↦ by
+    ∀ᵐ ω ∂P, ∀ r > s, ∀ᶠ n in atTop, ‖A n ω‖ < r := by
+  -- Orders growing faster than `log n` are eventually nonzero.
+  have hk₀ : ∀ᶠ n in atTop, k n ≠ 0 :=
+    (hk.eventually_gt_atTop 0).mono fun n hn hkn ↦ by simp [hkn] at hn
+  exact ae_forall_eventually_lt_of_integral_le_mul_pow hs
+    ((hA.and hk₀).mono fun n hn ↦ hn.1.mono fun ω hω ↦ by
       rw [abs_norm]
-      exact hω.l2_opNorm_pow_le_re_trace_pow (k n))
+      exact hω.l2_opNorm_pow_le_re_trace_pow (k n) fun h ↦ absurd h hn.2)
     hint hk hmom
 
 end TauCeti.Probability
