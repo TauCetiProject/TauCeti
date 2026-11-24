@@ -68,20 +68,17 @@ noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDerivation I 
   finiteDimensional_leftInvariantDerivation
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
 
-/-- **The exponential of a connected commutative Lie group is a covering map.** It is the quotient
-map of the Lie algebra by the discrete kernel of the exponential, followed by the identification
-`TauCeti.lieExpQuotientKerContinuousAddEquiv` of the quotient with the group. -/
+/-- **The exponential of a connected commutative Lie group is a covering map.** It is an open
+continuous surjective homomorphism, hence a quotient map, and its kernel is discrete. -/
 theorem isCoveringMap_lieExp [PreconnectedSpace G] : IsCoveringMap (lieExp (I := I) (G := G)) := by
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have hq := (AddSubgroup.isAddQuotientCoveringMap_of_comm
-    (lieExpAddMonoidHom (I := I) (G := G)).ker
-    (SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance)).isCoveringMap
-  let t : Additive G ≃ₜ G := ⟨Additive.toMul, continuous_toMul, continuous_ofMul⟩
-  convert (hq.homeomorph_comp
-    (lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).toHomeomorph).homeomorph_comp t
-    using 1
-  ext X
-  exact congrArg Additive.toMul (lieExpQuotientKerContinuousAddEquiv_apply X).symm
+  have h := ((isOpenMap_lieExpAddMonoidHom (I := I) (G := G)).isQuotientMap
+    (continuous_lieExpAddMonoidHom (I := I) (G := G))
+    lieExpAddMonoidHom_surjective_of_preconnectedSpace
+    ).isAddQuotientCoveringMap_of_isDiscrete_ker_addMonoidHom
+    (SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance) |>.isCoveringMap
+  rw [coe_lieExpAddMonoidHom] at h
+  exact h
 
 variable [SimplyConnectedSpace G]
 
