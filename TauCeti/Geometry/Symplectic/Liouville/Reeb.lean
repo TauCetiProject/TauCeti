@@ -132,12 +132,12 @@ private theorem injective_mfderiv_flowOf_comp (h : IsLiouvilleCompletion ω α W
     (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (t : ℝ) (s : S) :
     Function.Injective (mfderiv J I (flowOf Z t ∘ ι) s) := by
-  set ψ := globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top
-    (h.contMDiff_of_interior_eq hZ) t
-  rw [h.flowOf_eq_globalFlowDiffeomorph hZ t, mfderiv_comp s
-    ((ψ.contMDiff (ι s)).mdifferentiableAt (by simp)) ((hι s).mdifferentiableAt (by simp)),
-    ContinuousLinearMap.coe_comp]
-  exact (ψ.isInvertible_mfderiv (by simp)).injective.comp (hιs s)
+  have hψ : MDifferentiableAt I I (flowOf Z t) (ι s) := by
+    rw [h.flowOf_eq_globalFlowDiffeomorph hZ t]
+    exact (Diffeomorph.contMDiff _ _).mdifferentiableAt (by simp)
+  rw [mfderiv_comp s hψ ((hι s).mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
+  exact (injective_mfderiv_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
+    (h.isCompleteVectorField hZ) t (ι s)).comp (hιs s)
 
 omit [IsManifold J (⊤ : ℕ∞) S] in
 /-- **The flow-out of the boundary is a level of the radial coordinate, infinitesimally.** Let

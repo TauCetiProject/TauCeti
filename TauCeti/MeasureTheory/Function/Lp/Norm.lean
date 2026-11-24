@@ -22,6 +22,7 @@ import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.MeasureTheory.Measure.Restrict
 
@@ -47,6 +48,8 @@ bounds.
   power of the pointwise norm of an `Lᵖ` function is the `p`-th power of its `Lᵖ` norm.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.eNorm_rpow_eq_lintegral` and `MeasureTheory.Lp.eNorm_rpow_two_eq_lintegral`:
+  the same identities for the extended norm and the lower integral of an `Lᵖ` function.
 * `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂` for
   `L²` functions.
 * `MeasureTheory.Lp.integrable_norm_sq_sub` and
@@ -374,6 +377,22 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- For `0 < p < ∞`, the `p`-th power of the extended norm of an `Lᵖ` function is the lower
+integral of the `p`-th power of its pointwise extended norm. -/
+theorem Lp.eNorm_rpow_eq_lintegral {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (f : Lp F p m) :
+    ‖f‖ₑ ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
+  rw [Lp.eNorm_def, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp (Lp.aestronglyMeasurable f)]
+
+/-- The squared extended norm of an `L²` function is the lower integral of its squared pointwise
+extended norm. -/
+theorem Lp.eNorm_rpow_two_eq_lintegral {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] (f : Lp F 2 m) :
+    ‖f‖ₑ ^ (2 : ℝ) = ∫⁻ x, ‖f x‖ₑ ^ (2 : ℝ) ∂m := by
+  simpa only [ENNReal.toReal_ofNat] using
+    Lp.eNorm_rpow_eq_lintegral two_ne_zero ENNReal.ofNat_ne_top f
 
 /-- **Cauchy–Schwarz for `L²` functions.** For `f, g ∈ L²`, possibly with different codomains,
 `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂`. -/
