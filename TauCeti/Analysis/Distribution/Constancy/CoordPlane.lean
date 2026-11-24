@@ -15,7 +15,6 @@ import TauCeti.Analysis.Distribution.Mass.Support
 import TauCeti.Analysis.Distribution.Pushforward
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.TopDegree
-import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
 /-!
 # The constancy theorem for normal currents in a coordinate plane
@@ -44,12 +43,12 @@ The proof has two steps.
   does not change when its test forms are pulled back by the projection killing `e_m`
   (`Distribution.HasLocallyFiniteMass.map_postcompCLM_compContinuousLinearMapCLM_id_sub_smulRight`).
   Once all normal coordinates are killed, a `(k + 1)`-form is its coefficient times the coordinate
-  form `dx^I`, and a current of locally finite mass only sees the values of a test form on its
-  support (`Distribution.HasLocallyFiniteMass.map_eq_map_of_eqOn_dsupport`).
+  form `dx^I` (`TauCeti.coordForm`), and a current of locally finite mass only sees the values of
+  a test form on its support (`Distribution.HasLocallyFiniteMass.map_eq_map_of_eqOn_dsupport`).
 * **Constancy.** The scalar distribution `g ↦ T (g dx^I)` is supported in the plane, so it can be
-  pushed forward to the plane along the affine projection onto the coordinates indexed by `I`
-  (`Distribution.pushforward`). For a direction `y` of the plane, Cartan's formula
-  `∂_y g dx^I = d (g ι_y dx^I) + ι_y d (g dx^I)`
+  pushed forward to the plane along the affine projection `TauCeti.planeProj I x` onto the
+  coordinates indexed by `I` (`Distribution.pushforward`). For a direction `y` of the plane,
+  Cartan's formula `∂_y g dx^I = d (g ι_y dx^I) + ι_y d (g dx^I)`
   (`TestFunction.extDerivCLM_postcompCLM_toSpanSingleton_curryLeft_add`), the boundary condition
   and tangency show that the pushforward has vanishing derivatives. On the connected part of the
   plane in `U` it is therefore integration against a constant `c`
@@ -169,38 +168,6 @@ end CoordPlaneCurrent
 
 section Tangency
 
-/-- The coordinate projection `v ↦ (v (I j))ⱼ`, a left inverse of the linear part of
-`TauCeti.coordPlaneMap I x`. -/
-private noncomputable def coordProj (I : Fin k ↪ Fin n) :
-    EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
-  (EuclideanSpace.equiv (Fin k) ℝ).symm.toContinuousLinearMap ∘L
-    ContinuousLinearMap.pi fun j ↦ EuclideanSpace.proj (I j)
-
-private theorem coordProj_apply (I : Fin k ↪ Fin n) (v : EuclideanSpace ℝ (Fin n)) (j : Fin k) :
-    coordProj I v j = v (I j) := by
-  simp [coordProj]
-
-private theorem coordProj_contLinear_coordPlaneMap (I : Fin k ↪ Fin n)
-    (x : EuclideanSpace ℝ (Fin n)) (s : EuclideanSpace ℝ (Fin k)) :
-    coordProj I ((coordPlaneMap I x).contLinear s) = s := by
-  ext j
-  simp [coordProj_apply, contLinear_coordPlaneMap, I.injective.extend_apply]
-
-/-- The coordinate `k`-form `dx^I`: the determinant of the coordinates indexed by `I`. -/
-private noncomputable def coordForm (I : Fin k ↪ Fin n) :
-    EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ :=
-  (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.continuousDet.compContinuousLinearMap (coordProj I)
-
-private theorem coordForm_apply_single (I : Fin k ↪ Fin n) :
-    coordForm I (fun j ↦ EuclideanSpace.single (I j) 1) = 1 := by
-  have h : (coordProj I ∘ fun j ↦ EuclideanSpace.single (I j) (1 : ℝ)) =
-      (EuclideanSpace.basisFun (Fin k) ℝ).toBasis := by
-    funext j
-    ext i
-    simp [coordProj_apply, I.injective.eq_iff, eq_comm]
-  rw [coordForm, ContinuousAlternatingMap.compContinuousLinearMap_apply, h,
-    Module.Basis.continuousDet_apply, Module.Basis.det_self]
-
 /-- The linear map zeroing the coordinates indexed by `S`. -/
 private noncomputable def zeroCoords (S : Finset (Fin n)) :
     EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) :=
@@ -239,19 +206,8 @@ private theorem compContinuousLinearMap_zeroCoords (I : Fin k ↪ Fin n)
     (α : EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) :
     α.compContinuousLinearMap (zeroCoords (Finset.univ.filter (· ∉ range I))) =
       α (fun j ↦ EuclideanSpace.single (I j) 1) • coordForm I := by
-  rw [← contLinear_coordPlaneMap_comp_coordProj I 0]
-  ext v
-  set b := (EuclideanSpace.basisFun (Fin k) ℝ).toBasis
-  have h := (α.compContinuousLinearMap (coordPlaneMap I 0).contLinear).apply_eq_det_mul b
-    (coordProj I ∘ v)
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply] at h
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, ContinuousLinearMap.coe_comp,
-    ContinuousAlternatingMap.smul_apply, coordForm, smul_eq_mul]
-  have hb : (coordPlaneMap I 0).contLinear ∘ b = fun j ↦ EuclideanSpace.single (I j) 1 := by
-    funext j
-    simp only [Function.comp_apply, b, OrthonormalBasis.coe_toBasis,
-      EuclideanSpace.basisFun_apply, contLinear_coordPlaneMap_single]
-  rw [Function.comp_assoc, h, hb, mul_comm, Module.Basis.continuousDet_apply]
+  rw [← contLinear_coordPlaneMap_comp_coordProj I 0,
+    compContinuousLinearMap_contLinear_coordPlaneMap_comp_coordProj]
 
 variable {I : Fin (k + 1) ↪ Fin n} {x : EuclideanSpace ℝ (Fin n)}
   {U : Opens (EuclideanSpace ℝ (Fin n))}
@@ -340,15 +296,6 @@ variable {I : Fin (k + 1) ↪ Fin n} {x : EuclideanSpace ℝ (Fin n)}
   {U : Opens (EuclideanSpace ℝ (Fin n))}
   {T : 𝓓(U, EuclideanSpace ℝ (Fin n) [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ}
 
-/-- The directions of a coordinate plane lie in the span of `e_{I 0}, …, e_{I (k-1)}`. -/
-private theorem contLinear_coordPlaneMap_mem_span {k : ℕ} (I : Fin k ↪ Fin n)
-    (x : EuclideanSpace ℝ (Fin n)) (v : EuclideanSpace ℝ (Fin k)) :
-    (coordPlaneMap I x).contLinear v ∈
-      Submodule.span ℝ (range fun j ↦ EuclideanSpace.single (I j) (1 : ℝ)) := by
-  refine (Submodule.mem_span_range_iff_exists_fun ℝ).2 ⟨fun j ↦ v j, ?_⟩
-  conv_rhs => rw [← (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.sum_repr v]
-  simp [map_sum, map_smul, contLinear_coordPlaneMap_single]
-
 /-- If `∂T = 0`, the coefficient distribution `g ↦ T (g dx^I)` of a current `T` of locally finite
 mass supported in the coordinate plane has vanishing derivatives along the plane. -/
 private theorem map_postcompCLM_coordForm_lineDerivOp_eq_zero (hT : HasLocallyFiniteMass T)
@@ -371,28 +318,6 @@ private theorem map_postcompCLM_coordForm_lineDerivOp_eq_zero (hT : HasLocallyFi
   exact .inr (contLinear_coordPlaneMap_mem_span I x v)
 
 /-! ### The coefficient distribution and its pushforward to the plane -/
-
-/-- The affine projection `y ↦ (y - x)_I` onto the coordinates of the plane, a left inverse of
-`TauCeti.coordPlaneMap I x`. -/
-private noncomputable def planeProj {k : ℕ} (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
-    (y : EuclideanSpace ℝ (Fin n)) : EuclideanSpace ℝ (Fin k) :=
-  coordProj I (y - x)
-
-private theorem hasFDerivAt_planeProj {k : ℕ} (I : Fin k ↪ Fin n) (x y : EuclideanSpace ℝ (Fin n)) :
-    HasFDerivAt (planeProj I x) (coordProj I) y := by
-  have h := (coordProj I).hasFDerivAt.comp y ((hasFDerivAt_id y).sub_const x)
-  rwa [ContinuousLinearMap.comp_id] at h
-
-private theorem contDiff_planeProj {k : ℕ} (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n)) :
-    ContDiff ℝ (⊤ : ℕ∞) (planeProj I x) :=
-  (coordProj I).contDiff.comp (contDiff_id.sub contDiff_const)
-
-@[simp]
-private theorem planeProj_coordPlaneMap {k : ℕ} (I : Fin k ↪ Fin n)
-    (x : EuclideanSpace ℝ (Fin n)) (s : EuclideanSpace ℝ (Fin k)) :
-    planeProj I x (coordPlaneMap I x s) = s := by
-  ext j
-  simp [planeProj, coordPlaneMap_apply, coordProj_apply, I.injective.extend_apply]
 
 /-- The part of the coordinate plane in `U`, in the coordinates of the plane. -/
 private noncomputable def planeOpens {k : ℕ} (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
@@ -459,7 +384,7 @@ private theorem exists_eventuallyEq_comp_planeProj
       isClosed_dsupport
   obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hK
     (inter_subset_left.trans inter_subset_left)
-  exact ⟨cutoffCompCLM χ _ (contDiff_planeProj I x).contDiffOn φ,
+  exact ⟨cutoffCompCLM χ _ (planeProj I x).contDiff.contDiffOn φ,
     fun y hy ↦ cutoffCompCLM_eventuallyEq hχ hy.1 hy⟩
 
 /-- If `∂T = 0`, the pushforward of the coefficient distribution of `T` to the plane has vanishing
@@ -468,7 +393,7 @@ private theorem lineDerivOp_pushforward_coeffDistribution_eq_zero (hT : HasLocal
     (hTI : (U : Set (EuclideanSpace ℝ (Fin n))) ∩ dsupport T ⊆ range (coordPlaneMap I x))
     (hb : T ∘L extDerivCLM = 0) (v : EuclideanSpace ℝ (Fin (k + 1))) :
     ∂_{v} (pushforward (coeffDistribution T I) (planeProj I x)
-      (contDiff_planeProj I x).contDiffOn (isProperOnSupport_coeffDistribution hTI)) = 0 := by
+      (planeProj I x).contDiff.contDiffOn (isProperOnSupport_coeffDistribution hTI)) = 0 := by
   ext φ
   obtain ⟨g, hg⟩ := exists_eventuallyEq_comp_planeProj hTI φ
   -- The derivative of `g` along the plane agrees with `∂_v φ ∘ q` near the support of `T`.
@@ -479,7 +404,8 @@ private theorem lineDerivOp_pushforward_coeffDistribution_eq_zero (hT : HasLocal
       with z hz
     have hφq : HasFDerivAt (fun z ↦ φ (planeProj I x z))
         (fderiv ℝ φ (planeProj I x z) ∘L coordProj I) z :=
-      (φ.contDiff.differentiable (by simp) _).hasFDerivAt.comp z (hasFDerivAt_planeProj I x z)
+      (φ.contDiff.differentiable (by simp) _).hasFDerivAt.comp z
+        (contLinear_planeProj I x ▸ (planeProj I x).hasFDerivAt)
     rw [lineDerivOp_apply, hz.lineDeriv_eq, (hφq.hasLineDerivAt _).lineDeriv,
       lineDerivOp_apply_eq_fderiv, ContinuousLinearMap.comp_apply,
       coordProj_contLinear_coordPlaneMap]
@@ -492,7 +418,7 @@ the constant `c`, then `T = c • [[x; I]]`. -/
 private theorem eq_smul_coordPlaneCurrent_of_pushforward_eq (hT : HasLocallyFiniteMass T)
     (hdT : HasLocallyFiniteMass (T ∘L extDerivCLM))
     (hTI : (U : Set (EuclideanSpace ℝ (Fin n))) ∩ dsupport T ⊆ range (coordPlaneMap I x)) {c : ℝ}
-    (hc : pushforward (coeffDistribution T I) (planeProj I x) (contDiff_planeProj I x).contDiffOn
+    (hc : pushforward (coeffDistribution T I) (planeProj I x) (planeProj I x).contDiff.contDiffOn
       (isProperOnSupport_coeffDistribution hTI) = ofFun (planeOpens I x U) (fun _ ↦ c) volume ⊤) :
     T = c • coordPlaneCurrent I x U := by
   ext ω
@@ -523,7 +449,7 @@ private theorem eq_smul_coordPlaneCurrent_of_pushforward_eq (hT : HasLocallyFini
       obtain ⟨s, rfl⟩ := hTI hy
       simp [coordForm_apply_single, (hg _ hy).eq_of_nhds, hφ]
   rw [hgT, ← coeffDistribution_apply, ← pushforward_apply_of_eventuallyEq
-      (hΦ := (contDiff_planeProj I x).contDiffOn) (hT := isProperOnSupport_coeffDistribution hTI) φ
+      (hΦ := (planeProj I x).contDiff.contDiffOn) (hT := isProperOnSupport_coeffDistribution hTI) φ
       fun y hy ↦ hg y ⟨hy.1, dsupport_coeffDistribution_subset hy.2⟩, hc,
     ofFun_apply (locallyIntegrableOn_const c), smul_apply, coordPlaneCurrent_apply]
   simp only [hφ, smul_eq_mul, mul_comm _ c, integral_const_mul]
@@ -545,7 +471,7 @@ theorem existsUnique_eq_smul_coordPlaneCurrent_of_comp_extDerivCLM_eq_zero
   -- The pushforward of the coefficient distribution has vanishing derivatives on the connected
   -- part of the plane in `U`, so it is integration against a constant `c`.
   obtain ⟨c, hc, -⟩ := Distribution.existsUnique_eq_ofFun_const_of_forall_lineDerivOp_eq_zero
-    (pushforward (coeffDistribution T I) (planeProj I x) (contDiff_planeProj I x).contDiffOn
+    (pushforward (coeffDistribution T I) (planeProj I x) (planeProj I x).contDiff.contDiffOn
       (isProperOnSupport_coeffDistribution hTI))
     volume hU (lineDerivOp_pushforward_coeffDistribution_eq_zero hT hTI hb)
   have hTc := eq_smul_coordPlaneCurrent_of_pushforward_eq hT hdT hTI hc
