@@ -237,13 +237,9 @@ theorem flowOf_hamiltonianVectorField_comp_eq [FiniteDimensional ℝ E] [T2Space
     intro s
     have hπγ : π (γ s) = π x := h.apply_maximalIntegralCurve_hamiltonianVectorField_comp hg
       (hc.mem_maximalIntegralCurveInterval x s)
-    have hd : mvfderiv J g (π (γ s)) = mvfderiv J g' (π (γ s)) := by rw [hπγ]; exact hgg'
-    have hX : σ.hamiltonianVectorField (g ∘ π) (γ s) =
-        σ.hamiltonianVectorField (g' ∘ π) (γ s) := by
-      rw [hamiltonianVectorField_def, hamiltonianVectorField_def,
-        mvfderiv_comp (γ s) ((hg _).mdifferentiableAt (by simp)) (h.mdifferentiableAt _),
-        mvfderiv_comp (γ s) ((hg' _).mdifferentiableAt (by simp)) (h.mdifferentiableAt _), hd]
-    rw [← hX]
+    rw [← hamiltonianVectorField_comp_eq_of_mvfderiv_eq (h.mdifferentiableAt _)
+      ((hg _).mdifferentiableAt (by simp)) ((hg' _).mdifferentiableAt (by simp))
+      (by rw [hπγ]; exact hgg')]
     exact hγ s
   have h0 : γ 0 = x := maximalIntegralCurve_zero
   have h1 := hγ'.maximalIntegralCurve_eq (h.contMDiff_hamiltonianVectorField_comp hg') t

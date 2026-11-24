@@ -11,6 +11,7 @@ import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
 import TauCeti.MeasureTheory.Function.Lp.Star
 
 /-!
@@ -264,6 +265,15 @@ private theorem enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two (j : ℤ) :
   congr 1
   ring
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The constant `2^{-j} (2i)⁻¹` of the decomposition of `D⁻¹ sin(τD)`, counted twice, lowers the
+exponent of a power of `2^j` by `1`. -/
+private theorem enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two_mul_ofReal_rpow (j : ℤ) (a : ℝ) :
+    ‖(((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹ : ℂ)‖ₑ * 2 * ENNReal.ofReal (((2 : ℝ) ^ j) ^ a) =
+      ENNReal.ofReal (((2 : ℝ) ^ j) ^ (a - 1)) := by
+  rw [enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two, ← ENNReal.ofReal_mul (by positivity),
+    Real.rpow_sub_one (zpow_pos two_pos j).ne', div_eq_inv_mul]
+
 /-! ### Measurability and reflection of time -/
 
 /-- Joint measurability of the pairings `(t, s) ↦ ‖⟪W₊(τ(t, s)) T Y(s), G(t)⟫‖`. -/
@@ -456,7 +466,6 @@ private theorem exists_enorm_integral_halfWavePropagator_neg_le_of_two_lt {p q r
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
       ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
-        Integrable (fun s ↦ halfWavePropagator ℂ (-s) (Lp.fourierMultiplierCLM ℂ m (F s))) →
         ‖∫ s, halfWavePropagator ℂ (-s) (Lp.fourierMultiplierCLM ℂ m (F s))‖ₑ ≤
           C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal)) *
@@ -466,7 +475,7 @@ private theorem exists_enorm_integral_halfWavePropagator_neg_le_of_two_lt {p q r
     obtain rfl : p = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ⊤ p).1 rfl
     obtain ⟨C, hC⟩ :=
       φ.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_eLpNorm_one (r' := r') hr
-    exact ⟨C, fun j m hm F hF _ ↦ by simpa using hC j m hm F hF⟩
+    exact ⟨C, fun j m hm F hF ↦ by simpa using hC j m hm F hF⟩
   -- For `q < ∞` pass to the real exponents `q.toNNReal` and `p.toNNReal`.
   obtain ⟨hq2, hqr⟩ := waveAdmissible_toNNReal hq hqtop hqr
   have hptop : p ≠ ⊤ :=
@@ -475,8 +484,8 @@ private theorem exists_enorm_integral_halfWavePropagator_neg_le_of_two_lt {p q r
     (ENNReal.HolderConjugate.toNNReal (p := q) (q := p) (one_lt_two.trans hq2)).symm
   obtain ⟨C, hC⟩ :=
     φ.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le (r' := r') hq2 hpq hqr
-  refine ⟨C, fun j m hm F hF hWF ↦ ?_⟩
-  have h := hC j m hm F hF hWF
+  refine ⟨C, fun j m hm F hF ↦ ?_⟩
+  have h := hC j m hm F hF
   rw [ENNReal.coe_toNNReal hptop, ENNReal.coe_toNNReal_eq_toReal, ← ENNReal.toReal_inv] at h
   exact h
 
@@ -514,16 +523,15 @@ private theorem exists_enorm_integral_adjoint_halfWavePropagator_comp_le (hq : 2
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
       ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
-        Integrable (fun s ↦ ((halfWavePropagator ℂ s ∘L Lp.fourierMultiplierCLM ℂ m)†) (F s)) →
         ‖∫ s, ((halfWavePropagator ℂ s ∘L Lp.fourierMultiplierCLM ℂ m)†) (F s)‖ₑ ≤
           C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal)) *
             eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume := by
   obtain ⟨C, hC⟩ :=
     φ.exists_enorm_integral_halfWavePropagator_neg_le_of_two_lt (p := p) (r' := r') hq hr hqr
-  refine ⟨C, fun j m hm F hF hUF ↦ ?_⟩
-  simp only [φ.adjoint_halfWavePropagator_comp_apply hm] at hUF ⊢
-  exact hC j m hm F hF hUF
+  refine ⟨C, fun j m hm F hF ↦ ?_⟩
+  simp only [φ.adjoint_halfWavePropagator_comp_apply hm]
+  exact hC j m hm F hF
 
 /-- **The Christ–Kiselev step for two admissible pairs.** If operators `U(t)` on `L²(E)` satisfy
 the dual estimates along `(q₁, r₁)` and `(q, r)`, `2 < q, q₁`, with the constants `C₁ 2^{jγ₁}`
@@ -585,8 +593,8 @@ private theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_s
   refine ⟨((1 - (2 : ℝ≥0∞) ^ (-(p₁⁻¹ + p⁻¹ - 1).toReal))⁻¹).toNNReal * C₁ * C,
     fun j m hm F G hF hG hWF hWG ↦ ?_⟩
   simp_rw [φ.inner_halfWavePropagator_sub_eq_inner_adjoint hm]
-  refine enorm_integral_setIntegral_Iio_inner_adjoint_le_of_two_lt hq hq₁ (hC₁ j m hm) (hC j m hm)
-    hF hG ?_ ?_
+  refine enorm_integral_setIntegral_Iio_inner_adjoint_le_of_two_lt hq hq₁
+    (fun F hF _ ↦ hC₁ j m hm F hF) (fun G hG _ ↦ hC j m hm G hG) hF hG ?_ ?_
   all_goals simpa only [φ.adjoint_halfWavePropagator_comp_apply hm]
 
 /-- The retarded estimate of
@@ -632,8 +640,8 @@ private theorem exists_enorm_integral_setIntegral_Iio_inner_halfWavePropagator_n
   simp_rw [hpair]
   refine enorm_integral_setIntegral_Iio_inner_adjoint_le_of_two_lt
     (U := fun t ↦ halfWavePropagator ℂ (-t) ∘L Lp.fourierMultiplierCLM ℂ m) hq hq₁
-    (fun F hF hUF ↦ enorm_integral_adjoint_neg_le (hC₁ j m hm) hF hUF)
-    (fun G hG hUG ↦ enorm_integral_adjoint_neg_le (hC j m hm) hG hUG) hF hG ?_ ?_
+    (fun F hF hUF ↦ enorm_integral_adjoint_neg_le (fun F hF _ ↦ hC₁ j m hm F hF) hF hUF)
+    (fun G hG hUG ↦ enorm_integral_adjoint_neg_le (fun G hG _ ↦ hC j m hm G hG) hG hUG) hF hG ?_ ?_
   all_goals simpa only [hadj]
 
 /-- The retarded estimate for the frequency-localized wave Duhamel operator with two
@@ -696,11 +704,10 @@ private theorem exists_enorm_integral_inner_setIntegral_Iio_waveSinPropagator_su
         gcongr ?_ * (_ * _ * ?_ * _)
         · exact le_mul_of_one_le_right' one_le_two
         · exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invCutoff j hF.aestronglyMeasurable
-            (ENNReal.HolderConjugate.pos p₁ q₁) (ENNReal.HolderConjugate.one_le r₁' r₁)
+            (ENNReal.HolderConjugate.one_le r₁' r₁)
     _ = _ := by
-        rw [enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two, ENNReal.coe_mul, ENNReal.coe_add, hK,
-          Real.rpow_sub_one (zpow_pos two_pos j).ne', div_eq_inv_mul,
-          ENNReal.ofReal_mul (by positivity)]
+        rw [← enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two_mul_ofReal_rpow j γ, ENNReal.coe_mul,
+          ENNReal.coe_add, hK]
         ring
 
 end TwoPairs
@@ -744,8 +751,8 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le (hq : 2 < q
     (r' := (1 - r⁻¹)⁻¹) hq hpq hqr
   have := hpq.symm.coe_ennreal
   exact ⟨C, fun j m hm f ↦ (continuous_phasePropagator_apply _ _).aestronglyMeasurable
-    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := p)
-      (r' := (1 - r⁻¹)⁻¹) ENNReal.coe_ne_top hr2 fun G hG _ ↦
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (p' := p)
+      (q' := (1 - r⁻¹)⁻¹) fun G hG _ ↦
         hC j m hm f G hG.aestronglyMeasurable
           (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable
             ((Lp.fourierMultiplierCLM ℂ m).integrable_comp hG))⟩
@@ -829,7 +836,6 @@ theorem exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le (hq : 2 < q)
     simpa only [Lp.eNorm_def] using φ.eLpNorm_dyadicMultiplier_le φ.invCutoff j g one_le_two
   have hK : (K.toNNReal : ℝ≥0∞) = K := ENNReal.coe_toNNReal
     (φ.memLp_fourierInv_dyadicDilate φ.invCutoff 0 1).eLpNorm_ne_top
-  have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
   calc _ ≤ ‖c‖ₑ * ENNReal.LpAddConst r * 2 * eLpNorm (fun t ↦ eLpNorm (u t) r volume) q volume :=
         eLpNorm_eLpNorm_le_mul_two_mul (continuous_waveSinPropagator_apply _).aestronglyMeasurable
           hu.aestronglyMeasurable (by exact_mod_cast (one_le_two.trans hq.le)) hpt
@@ -839,9 +845,8 @@ theorem exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le (hq : 2 < q)
         gcongr
         exact (hC j m hm _).trans (by gcongr)
     _ = _ := by
-        rw [enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two, ENNReal.coe_mul, ENNReal.coe_mul, hK,
-          ENNReal.coe_toNNReal (ENNReal.LpAddConst_lt_top r).ne, Real.rpow_sub_one h2j.ne',
-          div_eq_inv_mul, ENNReal.ofReal_mul (by positivity)]
+        rw [← enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two_mul_ofReal_rpow j γ, ENNReal.coe_mul,
+          ENNReal.coe_mul, hK, ENNReal.coe_toNNReal (ENNReal.LpAddConst_lt_top r).ne]
         ring
 
 /-- **The bilinear Strichartz estimate for the frequency-localized wave Duhamel operator.** Let
@@ -875,33 +880,39 @@ theorem exists_lintegral_lintegral_enorm_inner_waveSinPropagator_sub_littlewoodP
     φ.exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_littlewoodPaley_le (r' := r')
       hq hpq hqr
   set K := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invCutoff 0)) 1 volume
-  refine ⟨C * K.toNNReal, fun j m hm F G hF hG ↦ ?_⟩
+  set KP := eLpNorm (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))) 1 volume
+  refine ⟨C * KP.toNNReal * K.toNNReal, fun j m hm F G hF hG ↦ ?_⟩
   set γ := (Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹
   set c : ℂ := ((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹
-  set Y := fun s ↦ φ.dyadicMultiplier ℂ φ.invCutoff j (F s)
-  have hY : AEStronglyMeasurable Y :=
+  have hMF : AEStronglyMeasurable fun s ↦ φ.dyadicMultiplier ℂ φ.invCutoff j (F s) :=
     (φ.dyadicMultiplier ℂ φ.invCutoff j).continuous.comp_aestronglyMeasurable hF
-  -- `D⁻¹ sin(τD) Pⱼ Pⱼ = c (W₊(τ) - W₊(-τ)) Pⱼ Pⱼ Mⱼ`, and the half-wave estimate applies to
-  -- both halves.
+  set Y := fun s ↦ Lp.fourierMultiplierCLM ℂ m (φ.dyadicMultiplier ℂ φ.invCutoff j (F s))
+  have hY : AEStronglyMeasurable Y :=
+    (Lp.fourierMultiplierCLM ℂ m).continuous.comp_aestronglyMeasurable hMF
+  -- `D⁻¹ sin(τD) Pⱼ Pⱼ = c (W₊(τ) - W₊(-τ)) Pⱼ Pⱼ Mⱼ`, and the single-block half-wave estimate
+  -- applies to both halves, with `Pⱼ Mⱼ F` as forcing.
   have hsplit := lintegral_lintegral_enorm_inner_smul_halfWavePropagator_sub_le
-    (Lp.fourierMultiplierCLM ℂ m ∘L Lp.fourierMultiplierCLM ℂ m) c
-    (fun F G hF hG ↦ hC j m hm F G hF hG) hY hG
-  simp only [ContinuousLinearMap.comp_apply] at hsplit
+    (Lp.fourierMultiplierCLM ℂ m) c (fun F G hF hG ↦ hC j m hm F G hF hG) hY hG
   simp_rw [φ.waveSinPropagator_littlewoodPaley_littlewoodPaley_eq hm]
-  -- `Mⱼ` costs a constant factor in the mixed norm.
-  have hYF := φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invCutoff j hF (p := p) (r := r')
-    (by exact_mod_cast hpq.pos) (ENNReal.HolderConjugate.one_le r' r)
+  -- `Pⱼ` and `Mⱼ` cost constant factors in the mixed norm.
+  have hr : 1 ≤ r' := ENNReal.HolderConjugate.one_le r' r
+  have hYF : eLpNorm (fun s ↦ eLpNorm (Y s) r' volume) p volume ≤
+      KP * (K * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume) :=
+    (eLpNorm_eLpNorm_apply_le (Lp.fourierMultiplierCLM ℂ m).continuous
+      (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le hm f hr) hMF).trans
+      (by gcongr; exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invCutoff j hF hr)
   have hK : (K.toNNReal : ℝ≥0∞) = K := ENNReal.coe_toNNReal
     (φ.memLp_fourierInv_dyadicDilate φ.invCutoff 0 1).eLpNorm_ne_top
-  have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
+  have hKP : (KP.toNNReal : ℝ≥0∞) = KP :=
+    ENNReal.coe_toNNReal (φ.memLp_fourierInv_littlewoodPaley 0 1).eLpNorm_ne_top
   calc _ ≤ _ := hsplit
     _ ≤ ‖c‖ₑ * 2 * (C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ (2 * γ)) *
-          (K * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume) *
+          (KP * (K * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume)) *
           eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume) := by
         gcongr
     _ = _ := by
-        rw [enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two, ENNReal.coe_mul, hK,
-          Real.rpow_sub_one h2j.ne', div_eq_inv_mul, ENNReal.ofReal_mul (by positivity)]
+        rw [← enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two_mul_ofReal_rpow j (2 * γ),
+          ENNReal.coe_mul, ENNReal.coe_mul, hKP, hK]
         ring
 
 end Admissible
@@ -957,7 +968,7 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
     ((Lp.fourierMultiplierCLM ℂ m).integrable_comp hF)
   exact (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
     hPPF.aestronglyMeasurable).eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
-    (q' := (1 - q⁻¹)⁻¹) (r' := (1 - r⁻¹)⁻¹) hq_top hr2 fun G hG _ ↦ hC j m hm F G hF hG
+    (p' := (1 - q⁻¹)⁻¹) (q' := (1 - r⁻¹)⁻¹) fun G hG _ ↦ hC j m hm F G hF hG
 
 end ContDiffBump
 

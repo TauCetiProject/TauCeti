@@ -27,6 +27,8 @@ one equivalence preserves the trace.
   trace.
 * `Matrix.trace_mul_transpose_self_pos`: `0 < (A * Aᵀ).trace` for any nonzero matrix `A` over a
   linearly strict ordered ring.
+* `Matrix.trace_list_prod_map_mapMatrix`: mapping a list of square matrices along a ring
+  homomorphism commutes with taking the trace of its product.
 -/
 
 public section
@@ -67,5 +69,12 @@ theorem trace_mul_transpose_self_pos {R : Type*} [Ring R] [LinearOrder R] [IsStr
   exact Finset.sum_pos' (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _)
     ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ mul_self_nonneg _)
       ⟨j, Finset.mem_univ _, mul_self_pos.mpr hij⟩⟩
+
+/-- Mapping a list of square matrices along a ring homomorphism commutes with taking the trace of
+its product. -/
+theorem trace_list_prod_map_mapMatrix {R S : Type*} [DecidableEq n] [Semiring R] [Semiring S]
+    (f : R →+* S) (l : List (Matrix n n R)) :
+    trace (l.map f.mapMatrix).prod = f (trace l.prod) := by
+  rw [← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace]
 
 end Matrix

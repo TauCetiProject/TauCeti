@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Reductive
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 public import TauCeti.Algebra.Lie.SpecialLinear.Cartan
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.SpecialLinear.Killing
 
 /-!
 # Classical examples of Cartan and reductive Cartan involutions

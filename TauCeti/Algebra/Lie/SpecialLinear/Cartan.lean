@@ -6,20 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Classical
-public import Mathlib.Algebra.Lie.TraceForm
+public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
-import Mathlib.Algebra.Lie.Killing
-import TauCeti.Algebra.Lie.Equiv
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
-import TauCeti.Algebra.Lie.GeneralLinear.Killing
+import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
+import TauCeti.Algebra.Lie.SpecialLinear.Killing
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Negative transpose and the Killing form on `sl n R`
 
 Restricting `TauCeti.negTransposeLieEquiv` to `LieAlgebra.SpecialLinear.sl n R` yields `X ↦ -Xᵀ`
-(`LieAlgebra.SpecialLinear.cartanInvolution`). Over a principal ideal domain `R`,
-`κ(X, Y) = 2 n trace (X * Y)` (`LieAlgebra.SpecialLinear.killingForm_apply`), so
+(`LieAlgebra.SpecialLinear.cartanInvolution`). Using `LieAlgebra.SpecialLinear.killingForm_apply`
+(`κ(X, Y) = 2 n trace (X * Y)` over a principal ideal domain `R`), we obtain
 `κ(X, θ Y) = -(2 n trace (X * Yᵀ))` (`LieAlgebra.SpecialLinear.killingForm_cartanInvolution_apply`)
 and `κ(X, θ X) < 0` for nonzero `X` over an ordered principal ideal domain
 (`LieAlgebra.SpecialLinear.killingForm_cartanInvolution_self_neg`).
@@ -48,10 +46,9 @@ variable (n R)
 def cartanInvolution : sl n R ≃ₗ⁅R⁆ sl n R :=
   (TauCeti.negTransposeLieEquiv n R).ofSubalgebras (sl n R) (sl n R) (by
     ext X
-    refine ⟨?_, fun hX ↦ ⟨-Xᵀ, ?_, by simp⟩⟩
+    refine ⟨?_, fun hX ↦ ⟨-Xᵀ, neg_transpose_mem_sl hX, by simp⟩⟩
     · rintro ⟨Y, hY, rfl⟩
-      simp [mem_sl_iff.mp hY]
-    · simp [mem_sl_iff.mp hX])
+      simpa using neg_transpose_mem_sl hY)
 
 variable {n R}
 
@@ -90,21 +87,6 @@ section PID
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {R : Type*} [CommRing R] [IsDomain R]
   [IsPrincipalIdealRing R]
-
-/-- **The Killing form of `sl n R`**: `κ(X, Y) = 2 n trace (X * Y)` over any principal ideal
-domain. -/
-theorem killingForm_apply (X Y : sl n R) :
-    killingForm R (sl n R) X Y =
-      2 * Fintype.card n * ((X : Matrix n n R) * Y).trace := by
-  let e := LieEquiv.ofSubalgebraEqIdeal (sl n R) (TauCeti.slIdeal R n)
-    (TauCeti.slIdeal_toLieSubalgebra_eq_sl (R := R) (n := n))
-  have h2 : killingForm R (TauCeti.slIdeal R n) (e X) (e Y) = killingForm R (Matrix n n R) X Y := by
-    simpa [e] using (congrArg (fun B ↦ B (e X) (e Y))
-      (LieIdeal.killingForm_eq (R := R) (L := Matrix n n R) (I := TauCeti.slIdeal R n))).trans
-      (LinearMap.domRestrict₁₂_apply (killingForm R (Matrix n n R)) _ _ (e X) (e Y))
-  rw [← killingForm_of_equiv_apply e X Y, h2, Matrix.killingForm_apply,
-    mem_sl_iff.mp X.property, mem_sl_iff.mp Y.property]
-  ring
 
 /-- The Killing form of `sl n R` twisted by `θ Y = -Yᵀ`:
 `κ(X, θ Y) = -(2 n trace (X * Yᵀ))`. -/
