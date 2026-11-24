@@ -55,7 +55,7 @@ least `1 / 2`.
   `TauCeti.GromovWassersteinPresentation.gromovWassersteinEDist_finiteUniform_right`: the
   presentation `finiteUniform n ω` is weakly isomorphic to the uniform law on `Fin n` with kernel
   `ω`, and has the same Gromov–Wasserstein distances.
-* `TauCeti.GromovWassersteinPresentation.exists_finiteUniform_edist_lt`: every presentation is
+* `TauCeti.GromovWassersteinPresentation.exists_edist_finiteUniform_lt`: every presentation is
   within any positive distance of a finite uniform kernel with values in a given dense set.
 * `TauCeti.GromovWassersteinSpace.dense_finiteUniform`: the classes of these kernels are dense in
   the Gromov–Wasserstein space.
@@ -163,7 +163,7 @@ end FiniteUniform
 and 38). For a finite exponent `1 ≤ p < ∞`, every finite-`p` presentation is within any positive
 Gromov–Wasserstein distance of a finite uniform kernel whose values lie in a prescribed dense
 subset `D` of the target. The target need not be separable or complete. -/
-theorem exists_finiteUniform_edist_lt [Fact (1 ≤ p)] (hp : p ≠ ∞) {D : Set Z} (hD : Dense D)
+theorem exists_edist_finiteUniform_lt [Fact (1 ≤ p)] (hp : p ≠ ∞) {D : Set Z} (hD : Dense D)
     (K : GromovWassersteinPresentation.{u} p Z) {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ (n : ℕ) (_ : NeZero n) (ω : Fin n × Fin n → Z), (∀ ij, ω ij ∈ D) ∧
       edist K (finiteUniform n ω) < ε := by
@@ -182,7 +182,7 @@ theorem separableSpace [Fact (1 ≤ p)] [SeparableSpace Z] (hp : p ≠ ∞) :
   refine ⟨⟨range fun x : Σ n : ℕ, Fin (n + 1) × Fin (n + 1) → D ↦
     finiteUniform (n := x.1 + 1) fun ij ↦ (x.2 ij : Z), countable_range _, ?_⟩⟩
   refine EMetric.dense_iff.2 fun K ε hε ↦ ?_
-  obtain ⟨n, hn, ω, hωD, hlt⟩ := exists_finiteUniform_edist_lt hp hD K hε
+  obtain ⟨n, hn, ω, hωD, hlt⟩ := exists_edist_finiteUniform_lt hp hD K hε
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.out
   exact ⟨_, by rw [Metric.mem_eball, edist_comm]; exact hlt,
     ⟨⟨m, fun ij ↦ ⟨ω ij, hωD ij⟩⟩, by simp⟩⟩
@@ -209,7 +209,7 @@ theorem dense_finiteUniform (hp : p ≠ ∞) {D : Set Z} (hD : Dense D) :
   refine EMetric.dense_iff.2 fun x ε hε ↦ ?_
   obtain ⟨K, rfl⟩ := mk_surjective x
   obtain ⟨n, hn, ω, hωD, hlt⟩ :=
-    GromovWassersteinPresentation.exists_finiteUniform_edist_lt hp hD K hε
+    GromovWassersteinPresentation.exists_edist_finiteUniform_lt hp hD K hε
   refine ⟨_, ?_, n, hn, ω, hωD, rfl⟩
   rw [Metric.mem_eball, edist_comm]
   exact (isometry_mk.edist_eq K _).trans_lt hlt

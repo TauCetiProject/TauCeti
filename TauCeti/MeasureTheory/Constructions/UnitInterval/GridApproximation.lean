@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Constructions.UnitInterval
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import Mathlib.Topology.ContinuousMap.Bounded.Normed
-import TauCeti.Topology.MetricSpace.Isometry.Basic
+import TauCeti.Topology.MetricSpace.HausdorffDistance
 import TauCeti.Topology.MetricSpace.Kuratowski
 
 /-!

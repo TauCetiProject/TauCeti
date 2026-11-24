@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.Isometry
-import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
-# Splitting tuples of coordinates is an isometry, and nearby points of an isometric image
+# Splitting tuples of coordinates is an isometry
 
 For a pseudo-emetric space `α`, the identification `Fin.initLastIsometry α n` of
 `Fin (n + 1) → α` with `(Fin n → α) × α`, sending `x` to `(Fin.init x, x (Fin.last n))`, is an
@@ -24,10 +23,6 @@ splits off the interval coordinate.
 The same holds for Mathlib's splitting `(Fin.appendIsometryOfEq h).symm` of `Fin n → α` into
 `(Fin m → α) × (Fin l → α)` when `m + l = n`, which splits the coordinates of a product cell.
 
-For an isometry `ι : Z → E` and a dense set `D ⊆ Z`, every point `y : E` has a point `z ∈ D`
-whose distance to each `s : Z` is at most `2 * dist (ι s) y` plus any prescribed positive slack.
-This brings an approximation made in the ambient space `E` back to `D`.
-
 ## Main declarations
 
 * `Fin.initLastIsometry`: the isometry `(Fin (n + 1) → α) ≃ᵢ (Fin n → α) × α`.
@@ -39,8 +34,6 @@ This brings an approximation made in the ambient space `E` back to `D`.
   into `(Fin m → α) × (Fin l → α)`, with the membership forms
   `Fin.mem_ball_iff_appendIsometryOfEq_symm`, `Fin.mem_closedBall_iff_appendIsometryOfEq_symm` and
   `Fin.mem_sphere_iff_appendIsometryOfEq_symm`.
-* `Isometry.exists_mem_dist_le_two_mul_dist_add`: for every `y : E` and `r > 0`, a point `z ∈ D`
-  with `dist s z ≤ 2 * dist (ι s) y + r` for every `s : Z`.
 -/
 
 public section
@@ -180,25 +173,3 @@ theorem mem_sphere_iff_appendIsometryOfEq_symm {x : Fin n → α} :
 end PseudoMetricSpace
 
 end Fin
-
-namespace Isometry
-
-/-- For an isometry `ι : Z → E` of a nonempty space, a dense set `D ⊆ Z`, every `y : E` and every
-`r > 0`, there is `z ∈ D` with `dist s z ≤ 2 * dist (ι s) y + r` for every `s : Z`. -/
-theorem exists_mem_dist_le_two_mul_dist_add {Z E : Type*} [PseudoMetricSpace Z]
-    [PseudoMetricSpace E] [Nonempty Z] {ι : Z → E} (hι : Isometry ι) {D : Set Z} (hD : Dense D)
-    (y : E) {r : ℝ} (hr : 0 < r) :
-    ∃ z ∈ D, ∀ s, dist s z ≤ 2 * dist (ι s) y + r := by
-  obtain ⟨_, ⟨s₀, rfl⟩, hs₀⟩ := (infDist_lt_iff (range_nonempty ι)).1
-    (lt_add_of_pos_right (infDist y (range ι)) (half_pos hr))
-  obtain ⟨z, hzD, hz⟩ := hD.exists_dist_lt s₀ (half_pos hr)
-  refine ⟨z, hzD, fun s ↦ ?_⟩
-  have h₁ := dist_triangle s s₀ z
-  have h₂ := hι.dist_eq s s₀
-  have h₃ := dist_triangle (ι s) y (ι s₀)
-  have h₄ : infDist y (range ι) ≤ dist (ι s) y := by
-    rw [dist_comm]
-    exact infDist_le_dist_of_mem (mem_range_self s)
-  linarith
-
-end Isometry
