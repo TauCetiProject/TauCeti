@@ -8,7 +8,7 @@ module
 public import TauCeti.Dynamics.Billiard.NextCollision
 public import Mathlib.Topology.Instances.AddCircle.Defs
 import TauCeti.Algebra.Order.ToIntervalMod
-import TauCeti.Topology.Instances.AddCircle.Lift
+import TauCeti.Topology.Instances.AddCircle.Coe
 
 /-!
 # Time reversal and the inverse of the billiard map

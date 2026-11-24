@@ -9,6 +9,7 @@ public import TauCeti.Dynamics.Billiard.Smooth
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Topology.Constructions.SumProd
+import TauCeti.Topology.Instances.AddCircle.Coe
 import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
