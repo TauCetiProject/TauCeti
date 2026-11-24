@@ -39,7 +39,9 @@ height `1`, and the quotient `ℂ_p ⧸ ℚ_p` one of dimension `1` and height `
 * `TauCeti.IsAlmostCRep.of_almostIso`: a Banach representation almost isomorphic to an almost
   `ℂ_p`-representation is one.
 * `TauCeti.isAlmostCRep_of_finiteDimensional`: finite-dimensional Banach representations are
-  almost `ℂ_p`-representations, with a presentation of dimension `0` and height their dimension.
+  almost `ℂ_p`-representations.
+* `TauCeti.exists_almostIso_padicComplexPow_zero_height_eq`: a finite-dimensional Banach
+  representation `W` has a presentation of dimension `0` and height `dim W`.
 * `TauCeti.exists_almostIso_padicComplexPow_one_height_eq_neg_one`: `ℂ_p ⧸ ℚ_p` has a
   presentation of dimension `1` and height `-1`.
 

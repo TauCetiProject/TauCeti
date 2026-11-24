@@ -440,10 +440,12 @@ theorem height_trans (e : AlmostIso X Y) (f : AlmostIso Y Z) :
   rw [height_symm] at hf
   rw [height_def (e.refineRight (e.right ⊔ f.left) hD le_sup_left), refineRight_left,
     refineRight_right] at he
-  rw [height_def (f.symm.refineRight (e.right ⊔ f.left) hD h'), refineRight_right] at hf
-  -- `e.trans f` divides out of `Z` what the refinement of `f.symm` divides out.
-  rw [height_def, trans_left, show (e.trans f).right = (f.symm.refineRight _ hD h').left from rfl]
-  linarith
+  rw [height_def (f.symm.refineRight (e.right ⊔ f.left) hD h'), refineRight_left,
+    refineRight_right] at hf
+  rw [height_def, trans_left, trans_right]
+  -- `hf` quotients by `f.symm.right` where `trans_right` has `f.left`. The two agree by
+  -- `symm_right`, which `rw` cannot apply under the dependent `mkQ`, so `ring1!` matches them.
+  linear_combination (norm := ring1!) he - hf
 
 /-- **Being almost isomorphic is an equivalence relation.** -/
 theorem equivalence :
