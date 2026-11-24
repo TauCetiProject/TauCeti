@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
+public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Automorphism
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 import TauCeti.LinearAlgebra.RootSystem.Weyl.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
@@ -14,22 +15,24 @@ import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
 /-!
 # The Weyl group of type `E₈` has order `696729600`
 
-Every finite reduced crystallographic root system over `ℚ` with a base of Cartan type `E₈` has a
-Weyl group of order `696729600 = 2¹⁴ · 3⁵ · 5² · 7`, and, the `E₈` diagram having no nontrivial
-symmetry, so has its full automorphism group.
+Every finite reduced crystallographic root system over a characteristic-zero domain, such as `ℚ`,
+with a base of Cartan type `E₈` has a Weyl group of order `696729600 = 2¹⁴ · 3⁵ · 5² · 7`, and, the
+`E₈` diagram having no nontrivial symmetry, so has its full automorphism group.
 
 The order is known on the pinned integral root datum of type `E₈`
 (`TauCeti.DynkinType.card_weylGroup_e8SimplyConnectedRootDatum`). The Weyl group is unchanged by
-the entrywise base change of that datum to `ℚ` (`TauCeti.weylGroupBaseChangeEquiv`), which is the
-pinned rational model `TauCeti.DynkinType.rationalRootSystem` of type `E₈`, and it is an invariant
-of the Cartan type (`TauCeti.nonempty_weylGroup_mulEquiv_of_hasCartanType`), so the order passes
-from the model to every rational root system of type `E₈`. These are the Weyl factors of the
-`E₈` components of even unimodular lattices, such as `E₈ ⊕ E₈`.
+the entrywise base change of that datum to any such domain `R`
+(`TauCeti.weylGroupBaseChangeEquiv`), the base change is again a root system of type `E₈` because
+the `E₈` roots already span integrally and base change keeps every Cartan integer, and the Weyl
+group is an invariant of the Cartan type (`TauCeti.nonempty_weylGroup_mulEquiv_of_hasCartanType`),
+so the order passes from that model to every root system of type `E₈` over `R`. These are the Weyl
+factors of the `E₈` components of even unimodular lattices, such as `E₈ ⊕ E₈`.
 
 ## Main results
 
 * `RootPairing.card_weylGroup_of_hasCartanType_E8`: **every finite reduced crystallographic root
-  system over `ℚ` with a base of Cartan type `E₈` has Weyl group of order `696729600`.**
+  system over a characteristic-zero domain with a base of Cartan type `E₈` has Weyl group of order
+  `696729600`.**
 * `RootPairing.card_aut_of_hasCartanType_E8`: so does its automorphism group.
 
 ## References
@@ -43,15 +46,30 @@ public section
 
 namespace TauCeti.DynkinType
 
-/-- The Weyl group of the pinned rational root system of type `E₈` has order `696729600`: it is
-the Weyl group of the pinned integral datum, read after base change to `ℚ`. -/
-private theorem card_weylGroup_rationalRootSystem_E8 :
-    Nat.card (E8.rationalRootSystem valid_E8).weylGroup = 696729600 := by
-  rw [rationalRootSystem_def, ← Nat.card_congr (weylGroupBaseChangeEquiv ℚ _ _).toEquiv,
-    simplyConnectedRootDatum_E8]
-  -- The goal indexes the roots by `Fin E8.numRoots`, which reduces to the `Fin 240` of the
-  -- integral `E₈` datum, so `exact` rather than a further rewrite closes it.
-  exact card_weylGroup_e8SimplyConnectedRootDatum
+variable (R : Type*) [CommRing R] [IsDomain R] [CharZero R]
+
+/-- The pinned integral root datum of type `E₈`, read entrywise in `Fin 8 → R`. -/
+local notation "Q" =>
+  rootPairingBaseChange R e8SimplyConnectedRootDatum e8SimplyConnectedRootDatum_toLinearMap_apply
+
+-- The roots and coroots of the pinned `E₈` datum already span over `ℤ`, because the `E₈` Cartan
+-- matrix is unimodular, so they span after any base change.
+private instance : (Q).IsRootSystem where
+  span_root_eq_top :=
+    span_range_root_rootPairingBaseChange_eq_top R _ _ span_root_e8SimplyConnectedRootDatum_eq_top
+  span_coroot_eq_top := span_range_coroot_rootPairingBaseChange_eq_top R _ _
+    corootSpan_e8SimplyConnectedRootDatum_eq_top
+
+private instance : (Q).IsReduced := isReduced_rootPairingBaseChange R _ _
+
+/-- The base change of the pinned `E₈` base still has Cartan type `E₈`: base change leaves the
+support of the base and every Cartan integer alone. -/
+private theorem hasCartanType_baseChange_e8 :
+    HasCartanType Q (rootPairingBaseChangeBase R _ _ e8SimplyConnectedBase) .E8 := by
+  obtain ⟨e, he⟩ := (hasCartanType_iff _ _).1 hasCartanType_e8SimplyConnectedRootDatum
+  refine (hasCartanType_iff _ _).2 ⟨(supportEquivRootPairingBaseChangeBase R _ _ _).trans e,
+    fun i j ↦ ?_⟩
+  exact (cartanMatrix_rootPairingBaseChangeBase R _ _ _ i j).trans (he _ _)
 
 end TauCeti.DynkinType
 
@@ -59,18 +77,20 @@ namespace RootPairing
 
 open TauCeti TauCeti.DynkinType
 
-variable {ι M N : Type*} [AddCommGroup M] [Module ℚ M] [AddCommGroup N] [Module ℚ N]
-  {P : RootPairing ι ℚ M N} [Finite ι] [P.IsRootSystem] [P.IsCrystallographic] [P.IsReduced]
+variable {ι R M N : Type*} [CommRing R] [IsDomain R] [CharZero R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} [Finite ι] [P.IsRootSystem] [P.IsCrystallographic] [P.IsReduced]
   {b : P.Base}
 
 /-- **The Weyl group of type `E₈` has order `696729600 = 2¹⁴ · 3⁵ · 5² · 7`**: every finite
-reduced crystallographic root system over `ℚ` with a base of Cartan type `E₈` has Weyl group of
-this order. -/
+reduced crystallographic root system over a characteristic-zero domain, for instance `ℚ`, with a
+base of Cartan type `E₈` has Weyl group of this order. -/
 theorem card_weylGroup_of_hasCartanType_E8 (h : HasCartanType P b .E8) :
     Nat.card P.weylGroup = 696729600 := by
-  obtain ⟨e⟩ := nonempty_weylGroup_mulEquiv_of_hasCartanType b (E8.rationalBase valid_E8) .E8 h
-    (E8.hasCartanType_rationalRootSystem valid_E8)
-  rw [Nat.card_congr e.toEquiv, card_weylGroup_rationalRootSystem_E8]
+  obtain ⟨e⟩ := nonempty_weylGroup_mulEquiv_of_hasCartanType b _ .E8 h
+    (hasCartanType_baseChange_e8 R)
+  rw [Nat.card_congr e.toEquiv, ← Nat.card_congr (weylGroupBaseChangeEquiv R _ _).toEquiv,
+    card_weylGroup_e8SimplyConnectedRootDatum]
 
 /-- **The automorphism group of a root system of type `E₈` has order `696729600`**: it is the
 Weyl group, the `E₈` diagram having no nontrivial symmetry. -/
