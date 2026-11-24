@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.LinearAlgebra.TensorProduct.Homology
 
+import TauCeti.Algebra.Module.FinitePresentation
 import TauCeti.RingTheory.Flat.Extensions
 import TauCeti.RingTheory.Flat.Reduced.Basic
 import TauCeti.RingTheory.Spectrum.Prime.Semicontinuity
@@ -22,8 +23,9 @@ and `M₃` finite projective. Suppose that the dimension of the fibre homology
 `p ↦ dim H(κ(p) ⊗ M₁ → κ(p) ⊗ M₂ → κ(p) ⊗ M₃)`
 
 is a locally constant function on `Spec R`. Then the homology `H = H(M₁ → M₂ → M₃)` is flat
-(`LinearMap.flat_homology_of_isLocallyConstant_finrank_fiber_homology`), and projective when `M₁`
-is finite and `M₂` finitely presented
+(`LinearMap.flat_homology_of_isLocallyConstant_finrank_fiber_homology`) and finite
+(`LinearMap.finite_homology_of_isLocallyConstant_finrank_fiber_homology`), and projective when
+`M₁` is finite and `M₂` finitely presented
 (`LinearMap.projective_homology_of_isLocallyConstant_finrank_fiber_homology`). Its formation
 commutes with every base change: for every `R`-algebra `S` the base change map
 `S ⊗[R] H → H(S ⊗[R] M₁ → S ⊗[R] M₂ → S ⊗[R] M₃)` is bijective
@@ -39,7 +41,8 @@ homology at `M₁` also commutes with every base change.
 When a bounded complex of finite projective modules computes the cohomology of a proper flat family
 over `Spec R` and of all its base changes, this is Grauert's theorem: if `R` is reduced and the
 dimension of `Hⁱ` on the fibres is locally constant, then the `i`th higher direct image is locally
-free and commutes with base change, and so does the `(i - 1)`st.
+free and commutes with base change, and the `(i - 1)`st higher direct image also commutes with
+base change.
 
 The proof: at each prime the fibre homology dimension plus `dim κ(p) ⊗ M₃` is the sum of the fibre
 dimensions of the two cokernels `M₂ ⧸ range f` and `M₃ ⧸ range g`
@@ -110,10 +113,7 @@ private theorem projective_quotient_range (hfg : g ∘ₗ f = 0)
         (range (f.baseChange p.asIdeal.ResidueField)).mkQ)) :
     Module.Projective R (M₃ ⧸ range g) := by
   have := Module.finitePresentation_of_projective R M₃
-  have : Module.FinitePresentation R (M₃ ⧸ range g) :=
-    Module.finitePresentation_of_surjective _ (range g).mkQ_surjective (by
-      rw [Submodule.ker_mkQ]
-      exact Module.Finite.iff_fg.1 inferInstance)
+  have := Module.FinitePresentation.quotient (Submodule.fg_range g)
   exact projective_of_isLocallyConstant_finrank_fiber _
     (isLocallyConstant_finrank_fiber_quotient_range hfg h).2
 
@@ -145,6 +145,17 @@ theorem flat_homology_of_isLocallyConstant_finrank_fiber_homology (hfg : g ∘�
   have := (projective_range hfg h).1
   flat_homology hfg
 
+/-- **Grauert's theorem: homology is finite.** Over a reduced ring, for a complex
+`M₁ → M₂ → M₃` with `M₂` finite and `M₃` finite projective whose fibre homology has locally
+constant dimension, the homology at `M₂` is a finite module. -/
+theorem finite_homology_of_isLocallyConstant_finrank_fiber_homology (hfg : g ∘ₗ f = 0)
+    (h : IsLocallyConstant fun p : PrimeSpectrum R ↦ finrank p.asIdeal.ResidueField
+      ((ker (g.baseChange p.asIdeal.ResidueField)).map
+        (range (f.baseChange p.asIdeal.ResidueField)).mkQ)) :
+    Module.Finite R ((ker g).map (range f).mkQ) :=
+  have := (projective_range hfg h).2
+  finite_homology hfg
+
 /-- **Grauert's theorem: homology commutes with base change.** Over a reduced ring, for a complex
 `M₁ → M₂ → M₃` with `M₂` finite and `M₃` finite projective whose fibre homology has locally
 constant dimension, the base change map
@@ -171,15 +182,17 @@ theorem rankAtStalk_homology_eq_finrank_fiber_homology (hfg : g ∘ₗ f = 0)
       ((ker (g.baseChange p.asIdeal.ResidueField)).map
         (range (f.baseChange p.asIdeal.ResidueField)).mkQ) := by
   have := flat_homology_of_isLocallyConstant_finrank_fiber_homology hfg h
-  have := (projective_range hfg h).2
-  have := finite_homology hfg
+  have := finite_homology_of_isLocallyConstant_finrank_fiber_homology hfg h
   rw [rankAtStalk_eq]
   exact (LinearEquiv.ofBijective _
     (homologyBaseChange_bijective_of_isLocallyConstant_finrank_fiber_homology _ hfg h)).finrank_eq
 
+omit [Module.Finite R M₂] in
 /-- **Grauert's theorem: homology is projective.** Over a reduced ring, for a complex
 `M₁ → M₂ → M₃` with `M₁` finite, `M₂` finitely presented and `M₃` finite projective whose fibre
-homology has locally constant dimension, the homology at `M₂` is a finite projective module. -/
+homology has locally constant dimension, the homology at `M₂` is projective. It is also finite, by
+`LinearMap.finite_homology_of_isLocallyConstant_finrank_fiber_homology`, so it is a finite
+projective module. -/
 theorem projective_homology_of_isLocallyConstant_finrank_fiber_homology [Module.Finite R M₁]
     [Module.FinitePresentation R M₂] (hfg : g ∘ₗ f = 0)
     (h : IsLocallyConstant fun p : PrimeSpectrum R ↦ finrank p.asIdeal.ResidueField
@@ -188,10 +201,7 @@ theorem projective_homology_of_isLocallyConstant_finrank_fiber_homology [Module.
     Module.Projective R ((ker g).map (range f).mkQ) := by
   have := flat_homology_of_isLocallyConstant_finrank_fiber_homology hfg h
   have := (projective_range hfg h).1
-  have : Module.FinitePresentation R (M₂ ⧸ range f) :=
-    Module.finitePresentation_of_surjective _ (range f).mkQ_surjective (by
-      rw [Submodule.ker_mkQ]
-      exact Module.Finite.iff_fg.1 inferInstance)
+  have := Module.FinitePresentation.quotient (Submodule.fg_range f)
   have := finitePresentation_homology hfg
   exact Module.Flat.projective_of_finitePresentation
 

@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
-# Lower semicontinuity of suprema over neighbourhoods
+# Semicontinuity of suprema, series, and locally constant sums
 
 A function of the form `x ↦ ⨆ s ∈ 𝓝 x, G s`, for an arbitrary `G : Set X → β` with values in a
 complete linear order, is lower semicontinuous (`TauCeti.lowerSemicontinuous_iSup_nhds`): a strict

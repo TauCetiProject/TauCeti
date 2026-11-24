@@ -153,8 +153,8 @@ theorem homologyBaseChange_surjective [Module.Flat R (M₃ ⧸ range g)] (hfg : 
       (ker ψ).baseChange S := by
     rw [← ker_baseChange_of_flat_quotient_range, mem_ker]
     simpa using LinearMap.congr_fun (liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm S hfg) z
-      |>.trans hz
-  rw [Submodule.ker_liftQ] at hw
+      |>.trans (mem_ker.1 hz)
+  rw [Submodule.ker_liftQ, Submodule.baseChange, mem_range] at hw
   obtain ⟨t, ht⟩ := hw
   refine ⟨t, Subtype.ext ?_⟩
   have := LinearMap.congr_fun (subtype_comp_homologyBaseChange S f g) t
