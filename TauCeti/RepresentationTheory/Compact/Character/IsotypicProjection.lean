@@ -61,11 +61,12 @@ the only datum visible in the answer: the range is Mathlib's sum of the simple `
 The carrier of `sigma` is only asked to be a finite-dimensional normed space; no inner product on
 it is required, since everything visible in the statements reads `sigma` through its dimension, its
 character and its isomorphism type. The same holds for `rho`: the operator and every result about
-it -- the identity on a matching block, the vanishing on a non-matching one, the range
-identification, the fixed-point characterization and idempotence -- need only a finite-dimensional
-normed carrier, with no inner product and no unitarity of `rho`; all but the vanishing on a
-non-matching block assume `[IsAlgClosed k]`. Complete reducibility of `rho`, which the range
-identification uses, comes from continuity alone, not from a unitary structure.
+it -- the identity on a matching block and on the matching isotypic component, the vanishing on a
+non-matching block and on a non-matching isotypic component, the range identification and range
+membership, the fixed-point characterization and idempotence -- need only a finite-dimensional
+normed carrier, with no inner product and no unitarity of `rho`. Of these, all but the two vanishing
+results assume `[IsAlgClosed k]`. Complete reducibility of `rho`, which the range identification
+uses, comes from continuity alone, not from a unitary structure.
 
 ## References
 
