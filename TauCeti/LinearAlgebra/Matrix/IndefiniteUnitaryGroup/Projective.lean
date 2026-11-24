@@ -36,6 +36,8 @@ representation through which neat subgroups of `PU(1, n)` are defined, by the ei
 
 ## Main results
 
+* `TauCeti.Matrix.indefiniteUnitaryGroup.ker_innerAut_comp_subtype`: the kernel of conjugation
+  restricted to `U(p, q)` is the centre of `U(p, q)`.
 * `TauCeti.Matrix.ProjectiveIndefiniteUnitaryGroup.innerAut_injective`: the conjugation
   representation of `PU(p, q)` is faithful.
 
@@ -68,6 +70,14 @@ abbrev ProjectiveIndefiniteUnitaryGroup :=
 
 variable {p q} {K : Type*} [Field K] [StarRing K] [CharZero K]
 
+/-- Over a field of characteristic zero, the kernel of conjugation `X ↦ g X g⁻¹` restricted to
+`U(p, q)` is the centre of `U(p, q)`. -/
+theorem indefiniteUnitaryGroup.ker_innerAut_comp_subtype :
+    (GeneralLinearGroup.innerAut.comp (indefiniteUnitaryGroup p q K).subtype).ker =
+      Subgroup.center (indefiniteUnitaryGroup p q K) := by
+  rw [← MonoidHom.comap_ker, GeneralLinearGroup.ker_innerAut,
+    indefiniteUnitaryGroup.center_eq_comap_center]
+
 namespace ProjectiveIndefiniteUnitaryGroup
 
 /-- The **conjugation representation** `Ad` of `PU(p, q)` on the matrix algebra: the class of
@@ -78,8 +88,7 @@ noncomputable def innerAut :
     ProjectiveIndefiniteUnitaryGroup p q K →*
       (Matrix (p ⊕ q) (p ⊕ q) K ≃ₐ[K] Matrix (p ⊕ q) (p ⊕ q) K) :=
   QuotientGroup.lift _ (GeneralLinearGroup.innerAut.comp (indefiniteUnitaryGroup p q K).subtype)
-    (by rw [← MonoidHom.comap_ker, GeneralLinearGroup.ker_innerAut,
-      indefiniteUnitaryGroup.center_eq_comap_center])
+    indefiniteUnitaryGroup.ker_innerAut_comp_subtype.ge
 
 /-- The conjugation representation of `PU(p, q)` on the class of `g ∈ U(p, q)` is conjugation by
 `g`. -/
@@ -87,15 +96,14 @@ noncomputable def innerAut :
 theorem innerAut_mk (g : indefiniteUnitaryGroup p q K) :
     innerAut (g : ProjectiveIndefiniteUnitaryGroup p q K) =
       GeneralLinearGroup.innerAut (g : GL (p ⊕ q) K) := by
-  rw [innerAut, QuotientGroup.lift_mk, MonoidHom.comp_apply, Subgroup.coe_subtype]
+  rfl
 
 /-- **The conjugation representation of `PU(p, q)` is faithful**: an element of `U(p, q)` acting
 trivially by conjugation on the matrix algebra is central in the general linear group, hence
 central in `U(p, q)`, hence trivial in `PU(p, q)`. -/
 theorem innerAut_injective : Function.Injective (innerAut (p := p) (q := q) (K := K)) :=
-  (QuotientGroup.injective_lift_iff _ _ _).2 <| by
-    rw [← MonoidHom.comap_ker, GeneralLinearGroup.ker_innerAut,
-      indefiniteUnitaryGroup.center_eq_comap_center]
+  (QuotientGroup.injective_lift_iff _ _ _).2
+    indefiniteUnitaryGroup.ker_innerAut_comp_subtype.symm
 
 end ProjectiveIndefiniteUnitaryGroup
 
