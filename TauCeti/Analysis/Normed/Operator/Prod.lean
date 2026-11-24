@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
-# Operator norm of maps out of a product
+# Operator norms of maps into and out of a product
 
 The continuous linear map `(x, y) ↦ f x + g y` out of a product (`ContinuousLinearMap.coprod`) has
 operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le`). This bounds solution
@@ -19,7 +19,13 @@ is determined by its values on the coordinate vectors
 `‖f (1, 0)‖ + ‖f (0, 1)‖`
 (`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`). The map
 `(x, y) ↦ (x, c • y)` on a product with `‖c‖ ≤ 1` is a contraction
-(`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`).
+(`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`). For an
+endomorphism `L` of `E × F`, each component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`
+(`ContinuousLinearMap.norm_apply_fst_sub_fst_le`, `ContinuousLinearMap.norm_apply_snd_sub_snd_le`),
+so `L` moves each coordinate of `v` little when it is close to the identity.
+
+The map `x ↦ (x, f x)` into a product, the derivative of a graph map, has operator norm at most
+`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`).
 -/
 
 public section
@@ -54,6 +60,12 @@ theorem opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one (f : 𝕜 × 𝕜 
   · exact mul_le_mul_of_nonneg_left (_root_.norm_fst_le (a, b)) (norm_nonneg _)
   · exact mul_le_mul_of_nonneg_left (_root_.norm_snd_le (a, b)) (norm_nonneg _)
 
+/-- The operator norm of `x ↦ (x, f x)` is at most `max 1 ‖f‖`. -/
+theorem opNorm_id_prod_le (f : E →L[𝕜] F) :
+    ‖(ContinuousLinearMap.id 𝕜 E).prod f‖ ≤ max 1 ‖f‖ := by
+  rw [opNorm_prod, Prod.norm_def]
+  exact max_le_max norm_id_le le_rfl
+
 /-- The map `(x, y) ↦ (x, c • y)` on a product has operator norm at most `1` when `‖c‖ ≤ 1`. -/
 theorem norm_inl_comp_fst_add_smul_inr_comp_snd_le {c : 𝕜} (hc : ‖c‖ ≤ 1) :
     ‖(inl 𝕜 E F).comp (fst 𝕜 E F) + c • (inr 𝕜 E F).comp (snd 𝕜 E F)‖ ≤ 1 := by
@@ -64,6 +76,16 @@ theorem norm_inl_comp_fst_add_smul_inr_comp_snd_le {c : 𝕜} (hc : ‖c‖ ≤ 
   refine max_le (norm_fst_le _ _ _) ?_
   rw [norm_smul]
   exact (mul_le_of_le_one_left (norm_nonneg _) hc).trans (norm_snd_le _ _ _)
+
+/-- The first component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`. -/
+theorem norm_apply_fst_sub_fst_le (L : E × F →L[𝕜] E × F) (v : E × F) :
+    ‖(L v).1 - v.1‖ ≤ ‖L - 1‖ * ‖v‖ :=
+  (_root_.norm_fst_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
+
+/-- The second component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`. -/
+theorem norm_apply_snd_sub_snd_le (L : E × F →L[𝕜] E × F) (v : E × F) :
+    ‖(L v).2 - v.2‖ ≤ ‖L - 1‖ * ‖v‖ :=
+  (_root_.norm_snd_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
 
 end ContinuousLinearMap
 

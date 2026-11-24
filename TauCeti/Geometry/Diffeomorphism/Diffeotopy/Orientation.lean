@@ -46,16 +46,12 @@ theorem isOrientationPreservingAt_timeSlice (Φ : Diffeotopy I n M) (hn : 1 ≤ 
   let : IsManifold I 1 M := .of_le hn
   have hs (s : unitInterval) : (fun y => Φ (s, y)) = Φ.timeSlice s :=
     funext fun y => (Φ.timeSlice_apply s y).symm
-  have h := Manifold.Orientation.isOrientationPreservingAt_family_iff o o
-    (Φ.contMDiff.of_le hn) x
+  rw [← hs t]
+  exact Manifold.Orientation.isOrientationPreservingAt_of_family_eq_id o (Φ.contMDiff.of_le hn) x
     (fun s => by
       rw [hs s]
-      exact (Φ.timeSlice s).isInvertible_mfderiv (ne_of_gt (lt_of_lt_of_le (by simp) hn))) t 0
-  rw [hs t] at h
-  apply h.mpr
-  have hzero : (fun y => Φ (0, y)) = id := funext Φ.apply_zero
-  rw [hzero]
-  exact Manifold.Orientation.isOrientationPreservingAt_id o x
+      exact (Φ.timeSlice s).isInvertible_mfderiv (ne_of_gt (lt_of_lt_of_le (by simp) hn)))
+    (funext Φ.apply_zero) t
 
 /-- The final diffeomorphism of a positive-order diffeotopy preserves every ambient
 orientation. -/

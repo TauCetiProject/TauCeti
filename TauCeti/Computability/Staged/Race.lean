@@ -47,6 +47,17 @@ theorem race_succ (l : ℕ → Option α) (r : ℕ → Option β) (s : ℕ) :
     race l r (s + 1) =
       (race l r s <|> ((l (s + 1)).map Sum.inl <|> (r (s + 1)).map Sum.inr)) := (rfl)
 
+/-- The race depends only on the observations up to and including its current stage. -/
+theorem race_congr {l' : ℕ → Option α} {r' : ℕ → Option β}
+    (hl : ∀ t ≤ s, l t = l' t) (hr : ∀ t ≤ s, r t = r' t) :
+    race l r s = race l' r' s := by
+  induction s with
+  | zero => simp only [race_zero, hl 0 le_rfl, hr 0 le_rfl]
+  | succ s ih =>
+    have heq := ih (fun t ht => hl t (ht.trans s.le_succ))
+      (fun t ht => hr t (ht.trans s.le_succ))
+    simp only [race_succ, heq, hl (s + 1) le_rfl, hr (s + 1) le_rfl]
+
 /-- The race has no winner exactly when neither stream has succeeded at any inspected stage. -/
 @[simp]
 theorem race_eq_none_iff :

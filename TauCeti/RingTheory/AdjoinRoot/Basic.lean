@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 
 import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
 # Complements on `AdjoinRoot`
@@ -41,6 +42,8 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
 * `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
   of `a`, over any commutative ring. Mathlib states this only over a field.
 * `AdjoinRoot.isUnit_root_X_pow_sub_C`: that root is a unit when `a` is a unit and `n ≠ 0`.
+* `AdjoinRoot.isUnit_mk_iff_isCoprime`: the class of `g` is a unit of `AdjoinRoot f` exactly when
+  `f` and `g` are coprime.
 * `AdjoinRoot.mk_modByMonic`: for any relator, a polynomial and its remainder have the same
   class.
 * `AdjoinRoot.exists_degree_lt_mk_eq`, `AdjoinRoot.mk_eq_mk_iff_of_degree_lt`: for a monic
@@ -191,6 +194,13 @@ protected theorem root_X_pow_sub_C_pow (n : ℕ) (a : R) : root (X ^ n - C a) ^ 
 theorem isUnit_root_X_pow_sub_C {n : ℕ} {a : R} (ha : IsUnit a) (hn : n ≠ 0) :
     IsUnit (root (X ^ n - C a)) :=
   (isUnit_pow_iff hn).mp (by rw [AdjoinRoot.root_X_pow_sub_C_pow]; exact ha.map _)
+
+/-- **The units of `AdjoinRoot f`.** The class of `g` is a unit of `AdjoinRoot f` exactly when
+`f` and `g` are coprime, that is, when `g` is invertible modulo `f`. -/
+@[simp]
+theorem isUnit_mk_iff_isCoprime {f g : R[X]} : IsUnit (mk f g) ↔ IsCoprime f g :=
+  -- `mk f` is by definition the quotient map `R[X] →+* R[X] ⧸ span {f}`, as in `mk_surjective`.
+  Ideal.Quotient.isUnit_mk_iff.trans <| (Ideal.sup_eq_top_iff_isCoprime g f).trans isCoprime_comm
 
 /-- For any relator `g`, the remainder `p %ₘ g` has the same class as `p` in
 `AdjoinRoot g`. -/

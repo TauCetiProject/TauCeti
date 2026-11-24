@@ -163,6 +163,15 @@ theorem _root_.TauCeti.DoubleCategoryStruct.Cell.eq_cast_iff_heq
   subst hp hq hl hr
   exact heq_iff_eq.symm
 
+/-- Move a boundary transport across an equality using its inverse, without introducing
+heterogeneous equality in the statement. -/
+theorem _root_.TauCeti.DoubleCategoryStruct.Cell.cast_eq_iff
+    (hp : p = p') (hq : q = q') (hl : l = l') (hr : r = r')
+    (α : D.Cell p q l r) (β : D.Cell p' q' l' r') :
+    α.cast hp hq hl hr = β ↔ α = β.cast hp.symm hq.symm hl.symm hr.symm := by
+  subst hp hq hl hr
+  rfl
+
 /-- Transport of cells along equalities of boundaries is injective. -/
 @[simp]
 theorem Cell.cast_inj (hp : p = p') (hq : q = q') (hl : l = l') (hr : r = r')

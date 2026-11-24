@@ -13,8 +13,9 @@ import TauCeti.Topology.MetricSpace.Holder
 /-!
 # Smooth approximation with uniform Hölder bounds and controlled support
 
-Normalized bump convolutions approximate a bounded Hölder source uniformly, preserve its
-supremum and Hölder constant, and enlarge a fixed support disc by at most one unit. These
+Normalized bump convolutions on a finite-dimensional space approximate a bounded Hölder source
+uniformly, preserve its supremum and Hölder constant, and enlarge a fixed support ball by at most
+one unit (`TauCeti.exists_contDiff_support_subset_holderWith_tendstoUniformly`). These
 approximations let uniform smooth-data potential estimates pass to Hölder data.
 
 The approximation also holds in the Hölder seminorm when the Hölder bound is only used below the
@@ -81,25 +82,28 @@ theorem _root_.ContDiffBump.holderWith_sub_normed_convolution (hf : Continuous f
 
 end LocalHolder
 
-/-- Smooth approximation of a bounded Hölder source, with its Hölder constant and supremum
-unchanged and its support contained in one fixed larger disc. -/
+/-- Smooth approximation of a bounded Hölder source on a finite-dimensional space, with its Hölder
+constant and supremum unchanged and its support contained in one fixed larger ball. -/
 theorem exists_contDiff_support_subset_holderWith_tendstoUniformly
-    {f : ℂ → F} {H α M : ℝ≥0} (hα : 0 < α) (hf : HolderWith H α f)
-    (hM : ∀ x, ‖f x‖ ≤ M) {c : ℂ} {r : ℝ}
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    {f : G → F} {H α M : ℝ≥0} (hα : 0 < α) (hf : HolderWith H α f)
+    (hM : ∀ x, ‖f x‖ ≤ M) {c : G} {r : ℝ}
     (hs : Function.support f ⊆ closedBall c r) :
-    ∃ g : ℕ → ℂ → F,
+    ∃ g : ℕ → G → F,
       (∀ n, ContDiff ℝ ∞ (g n)) ∧
       (∀ n, Function.support (g n) ⊆ closedBall c (r + 1)) ∧
       (∀ n, HolderWith H α (g n)) ∧ (∀ n x, ‖g n x‖ ≤ M) ∧
       TendstoUniformly g f atTop := by
-  let ρ (n : ℕ) : ContDiffBump (0 : ℂ) := ContDiffBump.shrinking zero_lt_one n
-  let g (n : ℕ) := (ρ n).normed volume ⋆ f
+  borelize G
+  let μ : Measure G := Measure.addHaar
+  let ρ (n : ℕ) : ContDiffBump (0 : G) := ContDiffBump.shrinking zero_lt_one n
+  let g (n : ℕ) := (ρ n).normed μ ⋆[lsmul ℝ ℝ, μ] f
   have hfc := hf.continuous hα
   have hgc (n : ℕ) : ContDiff ℝ ∞ (g n) :=
     (ρ n).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
       (ρ n).contDiff_normed hfc.locallyIntegrable
-  have hInt (n : ℕ) : ∫ z, ‖(ρ n).normed volume z‖ = 1 := by
-    have heq : (fun z ↦ ‖(ρ n).normed volume z‖) = (ρ n).normed volume := by
+  have hInt (n : ℕ) : ∫ z, ‖(ρ n).normed μ z‖ ∂μ = 1 := by
+    have heq : (fun z ↦ ‖(ρ n).normed μ z‖) = (ρ n).normed μ := by
       funext z
       exact Real.norm_of_nonneg ((ρ n).nonneg_normed z)
     rw [heq]
@@ -107,11 +111,9 @@ theorem exists_contDiff_support_subset_holderWith_tendstoUniformly
   refine ⟨g, hgc, fun n ↦ ?_, fun n ↦ ?_, fun n x ↦ ?_, ?_⟩
   · have hfs : tsupport f ⊆ closedBall c r :=
       closure_minimal hs isClosed_closedBall
-    have hρ : (ρ n).rOut ≤ 1 := by
-      rw [ContDiffBump.rOut_shrinking]
-      exact div_le_self zero_le_one (le_add_of_nonneg_left (Nat.cast_nonneg n))
+    have hρ : (ρ n).rOut ≤ 1 := ContDiffBump.rOut_shrinking_le zero_lt_one n
     intro x hx
-    have hx' := (ρ n).tsupport_normed_convolution_subset (μ := volume)
+    have hx' := (ρ n).tsupport_normed_convolution_subset (μ := μ)
       (subset_tsupport _ hx)
     rcases hx' with ⟨a, ha, b, hb, rfl⟩
     rw [mem_closedBall] at ha ⊢
@@ -120,8 +122,8 @@ theorem exists_contDiff_support_subset_holderWith_tendstoUniformly
       _ ≤ dist a 0 + dist b c := dist_add_add_le _ _ _ _
       _ ≤ 1 + r := add_le_add (ha.trans hρ) (mem_closedBall.mp (hfs hb))
       _ = r + 1 := add_comm _ _
-  · have h := holderWith_integral_kernel_smul_sub (μ := volume) (ρ n).integrable_normed hα hf
-    have heq : g n = fun w ↦ ∫ z, (ρ n).normed volume z • f (w - z) := by
+  · have h := holderWith_integral_kernel_smul_sub (μ := μ) (ρ n).integrable_normed hα hf
+    have heq : g n = fun w ↦ ∫ z, (ρ n).normed μ z • f (w - z) ∂μ := by
       funext w
       dsimp only [g]
       rw [convolution_def]

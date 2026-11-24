@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
@@ -429,7 +430,7 @@ theorem exists_eLpNorm_fourierInv_apply_le_of_norm_iteratedFDeriv_le {G H : Type
   -- The scalar coefficients `mₖ = cₖ ∘ b` satisfy Mihlin's condition with constant `‖cₖ‖ A`.
   set m : Fin (finrank ℂ (G →L[ℂ] H)) → V → ℂ := fun k ξ ↦ c k (b ξ)
   have hm (k) : (m k).HasTemperateGrowth :=
-    ((c k).restrictScalars ℝ).hasTemperateGrowth.comp hb
+    hb.continuousLinearMap_comp (c k)
   have hmA (k) : ∀ j ≤ N, ∀ ξ ≠ 0,
       ‖iteratedFDeriv ℝ j (m k) ξ‖ ≤ ((‖c k‖₊ * A : ℝ≥0) : ℝ) / ‖ξ‖ ^ j := by
     intro j hj ξ hξ

@@ -89,13 +89,13 @@ theorem mem_opposite_piece_iff (G : InternalGrading R M ℤ) (p : ℤ) (x : Mᵐ
 
 /-- Passage to the multiplicative opposite is homogeneous of degree zero. -/
 theorem isHomogeneous_op (G : InternalGrading R M ℤ) :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       (opLinearEquiv R).toLinearMap G.piece G.opposite.piece 0 :=
   G.isHomogeneous_map (opLinearEquiv R)
 
 /-- Returning from the multiplicative opposite is homogeneous of degree zero. -/
 theorem isHomogeneous_unop (G : InternalGrading R M ℤ) :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       (opLinearEquiv R).symm.toLinearMap G.opposite.piece G.piece 0 :=
   G.isHomogeneous_map_symm (opLinearEquiv R)
 

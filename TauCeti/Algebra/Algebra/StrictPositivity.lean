@@ -11,12 +11,15 @@ public import Mathlib.Algebra.Algebra.StrictPositivity
 # Strict positivity of `a a⋆` and `a⋆ a` for a unit `a`
 
 In a star-ordered ring, the products `a a⋆` and `a⋆ a` of a unit `a` with its adjoint are
-nonnegative and invertible, hence strictly positive.
+nonnegative and invertible, hence strictly positive. In particular the square of an invertible
+self-adjoint element is strictly positive.
 
 ## Main results
 
 * `Units.isStrictlyPositive_mul_star`: `a a⋆` is strictly positive.
 * `Units.isStrictlyPositive_star_mul`: `a⋆ a` is strictly positive.
+* `IsSelfAdjoint.isStrictlyPositive_mul_self`: `a a` is strictly positive for an invertible
+  self-adjoint `a`.
 -/
 
 public section
@@ -36,3 +39,8 @@ theorem isStrictlyPositive_star_mul : IsStrictlyPositive (star (a : A) * a) :=
   (a.isUnit.star.mul a.isUnit).isStrictlyPositive (star_mul_self_nonneg _)
 
 end Units
+
+/-- The square of an invertible self-adjoint element is strictly positive. -/
+theorem IsSelfAdjoint.isStrictlyPositive_mul_self {a : A} (ha : IsSelfAdjoint a) (hu : IsUnit a) :
+    IsStrictlyPositive (a * a) :=
+  (hu.mul hu).isStrictlyPositive ha.mul_self_nonneg

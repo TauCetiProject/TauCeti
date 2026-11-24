@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Coadjoint.LieGroup
+public import TauCeti.Geometry.Lie.Subgroup.BalancedProduct
+public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 
 /-!
-# The shifting identity for the form on `G × μ⁻¹(c)`
+# The shifting identity on `G × μ⁻¹(c)` and on `G ×_{G_c} μ⁻¹(c)`
 
 Let a Lie group `G` act smoothly by symplectomorphisms on `(M, σ)`, with coadjoint-equivariant
 moment map `μ : M → 𝔤*`, and fix `c ∈ 𝔤*`. In orbit reduction one compares the level
@@ -35,13 +36,6 @@ nondegeneracy of `σ`. Instead of equivariance of `μ` it only assumes that the 
 vanishes on the image of `i`, which holds for a coadjoint-equivariant moment map
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`).
 
-The quotient `Y_O = G ×_{G_c} Z` of `G × Z` by `h · (g, z) = (g h⁻¹, h • z)` maps to the reduced
-space `Q = Z / G_c` by `q_Y [g, z] = [z]`, to `M` by `i_Y [g, z] = g • z` and to `O` by
-`pr_Y [g, z] = [g]`. Since the reduced form satisfies `π^* ω_red = i^* σ`, pulling the identity
-`q_Y^* ω_red = i_Y^* σ - pr_Y^* ω_KKS` back along the quotient map `G × Z → Y_O` gives exactly
-the shifting identity above, so the identity on `Y_O` is equivalent to it whenever pullback along
-that quotient map is injective, as for a surjective submersion.
-
 The computation is pointwise. A tangent vector of `G × Z` at `(g, z)` is a pair of the left
 translate of some `ξ ∈ 𝔤` and a tangent vector `v` of `Z`, and the action map sends it to
 `d(g •)(ξ_M + v)`, where `v` is read in `T_z M`
@@ -52,6 +46,21 @@ translate of some `ξ ∈ 𝔤` and a tangent vector `v` of `Z`, and the action 
 The moment map identity `σ(ξ_M, w) = ⟨dμ(w), ξ⟩` kills the two cross terms when `v` and `w` are
 tangent to the level, and infinitesimal equivariance gives `σ(ξ_M, η_M) = μ(z) ⁅ξ, η⁆ = c ⁅ξ, η⁆`
 (`TauCeti.SmoothTwoForm.IsMomentMap.eval₂_mfderiv_smul_add_fundamentalVectorField`).
+
+The quotient `Y_O = G ×_{G_c} Z` of `G × Z` by `h · (g, z) = (g h⁻¹, h • z)` maps to the reduced
+space `Q = Z / G_c` by `q_Y [g, z] = [z]`, to `M` by `i_Y [g, z] = g • z` and to `O` by
+`pr_Y [g, z] = [g]`. When `G_c` acts freely and properly on `Z`, the balanced product `Y_O` and the
+quotient `Q` are smooth manifolds (`TauCeti.BalancedProduct.rightTranslationChartedSpace` and
+`ProperSMul.orbitRelQuotientChartedSpace`), and for the reduced form, characterized by
+`π^* ω_red = i^* σ`, the shifting identity descends to
+
+`q_Y^* ω_red = i_Y^* σ - pr_Y^* ω_KKS`
+
+on `Y_O` (`TauCeti.SmoothTwoForm.IsMomentMap.mpullback_orbitProj_eq_sub_coadjointOrbitForm`).
+Indeed, pulled back along the quotient map `G × Z → Y_O`, both sides become the two sides of the
+shifting identity on `G × Z`, with `ω_KKS` pulled back to `σ_c` along `G → G ⧸ G_c`
+(`Module.Dual.mpullback_quotientMk_coadjointOrbitForm`), and pullback along this surjective
+submersion is injective.
 
 ## Main results
 
@@ -65,6 +74,9 @@ All results are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 * `mpullback_smul_prodMk_prod_neg_leftInvariantKirillovForm`: equivalently, the map
   `(g, z) ↦ (g • i z, g)` pulls `pr_M^* σ - pr_G^* σ_c` on `M × G` back to `pr_Z^* (i^* σ)`, the
   form of the shifting construction on `M × O⁻` read on `G × Z`.
+* `mpullback_orbitProj_eq_sub_coadjointOrbitForm`: the shifting identity
+  `q_Y^* ω_red = i_Y^* σ - pr_Y^* ω_KKS` on `Y_O = G ×_{G_c} Z`, for any two-form `ω_red` on
+  `Z / G_c` with `π^* ω_red = i^* σ`.
 
 ## References
 
@@ -207,6 +219,107 @@ theorem mpullback_smul_prodMk_prod_neg_leftInvariantKirillovForm
     SmoothForm.mpullback_mpullback _ _ _ _ _
   rw [prod_def, map_add, map_neg, map_neg, hM, hK,
     h.mpullback_smul_eq_prod_leftInvariantKirillovForm hG hi hic hc, prod_def, add_neg_cancel_comm]
+
+/-! ### The shifting identity on `G ×_{G_c} Z` -/
+
+section BalancedProduct
+
+open BalancedProduct
+
+attribute [local instance] Lie.isClosed_stabilizer_coadjointRepresentation
+
+variable [I.Boundaryless] [FiniteDimensional ℝ EZ] [IZ.Boundaryless] [T2Space Z]
+  {c : Module.Dual ℝ (GroupLieAlgebra I G)}
+  [MulAction ((Lie.coadjointRepresentation ℝ I G).stabilizer c) Z]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [ChartedSpace F ((Lie.coadjointRepresentation ℝ I G).stabilizer c)]
+  [LieGroup 𝓘(ℝ, F) ∞ ((Lie.coadjointRepresentation ℝ I G).stabilizer c)]
+  [ContMDiffSMul 𝓘(ℝ, F) I ∞ ((Lie.coadjointRepresentation ℝ I G).stabilizer c) G]
+  [ContMDiffSMul 𝓘(ℝ, F) IZ ∞ ((Lie.coadjointRepresentation ℝ I G).stabilizer c) Z]
+  [ProperSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) Z]
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) Z]
+
+/-- **The shifting identity on `Y_O = G ×_{G_c} Z`.** Let `G` act by symplectomorphisms of
+`(M, σ)` with moment map `μ`, let the coadjoint stabilizer `G_c` act freely and properly on a
+manifold `Z`, and let `ι : Z → M` be a smooth `G_c`-equivariant map into the level `μ⁻¹(c)`, on
+whose image the moment cocycle vanishes, such as the inclusion of a regular level. If a two-form
+`η` on the quotient `Q = Z ⧸ G_c` satisfies `π^* η = ι^* σ`, as the reduced form does, then on the
+balanced product `Y_O`
+
+`q_Y^* η = i_Y^* σ - pr_Y^* ω_KKS`,
+
+where `q_Y [g, z] = [z]` maps to `Q`, `i_Y [g, z] = g • ι z` maps to `M`, and
+`pr_Y [g, z] = g G_c` maps to the coadjoint orbit `G ⧸ G_c` with its Kirillov–Kostant–Souriau form
+`ω_KKS`. -/
+theorem mpullback_orbitProj_eq_sub_coadjointOrbitForm
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ)
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
+    {ι : Z →ₑ[((↑) : (Lie.coadjointRepresentation ℝ I G).stabilizer c → G)] M}
+    (hι : ContMDiff IZ I' ∞ ι) (hιc : ∀ z, μ (ι z) = c)
+    (hc : ∀ z, σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ (ι z) = 0) :
+    letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F)
+      ((Lie.coadjointRepresentation ℝ I G).stabilizer c) IZ Z
+    letI := rightTranslationChartedSpace
+      ((Lie.coadjointRepresentation ℝ I G).stabilizer c) Z I IZ F
+    haveI := isManifold_rightTranslation (K := (Lie.coadjointRepresentation ℝ I G).stabilizer c)
+      (Z := Z) (I := I) (IZ := IZ) (F := F)
+    ∀ η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F EZ)
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c) Z),
+      SmoothForm.mpullback _ ProperSMul.isSubmersion_quotientMk.contMDiff η =
+          SmoothForm.mpullback ι hι σ →
+        SmoothForm.mpullback orbitProj contMDiff_orbitProj_rightTranslation η =
+          SmoothForm.mpullback (liftRightTranslation ι)
+              (contMDiff_liftRightTranslation (I := I) (F := F) hι) σ -
+            SmoothForm.mpullback (proj Z Subgroup.RightTranslation.quotientMk_smul)
+              (contMDiff_proj_rightTranslation
+                (K := (Lie.coadjointRepresentation ℝ I G).stabilizer c) (I := I) (IZ := IZ)
+                (F := F)) c.coadjointOrbitForm := by
+  intro η hη
+  let _ := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F)
+    ((Lie.coadjointRepresentation ℝ I G).stabilizer c) IZ Z
+  let _ := rightTranslationChartedSpace ((Lie.coadjointRepresentation ℝ I G).stabilizer c) Z I IZ F
+  have := isManifold_rightTranslation (K := (Lie.coadjointRepresentation ℝ I G).stabilizer c)
+    (Z := Z) (I := I) (IZ := IZ) (F := F)
+  have hP := isSubmersion_quotientMk_rightTranslation
+    (K := (Lie.coadjointRepresentation ℝ I G).stabilizer c) (Z := Z) (I := I) (IZ := IZ) (F := F)
+  -- The projection `P : G_c.RightTranslation × Z → Y_O` is a surjective submersion, so it suffices
+  -- to compare pullbacks along `P`. Composed with `P`, each of `q_Y`, `i_Y` and `pr_Y` factors
+  -- through the identification `e` of `G_c.RightTranslation × Z` with `G × Z`.
+  refine SmoothForm.mpullback_injective_of_surjective hP.contMDiff Quotient.mk_surjective
+    (hP.surjective_mfderiv (by simp)) ?_
+  have he : ContMDiff (I.prod IZ) (I.prod IZ) ∞
+      (Prod.map ((Lie.coadjointRepresentation ℝ I G).stabilizer c).toRightTranslation.symm
+        (id : Z → Z)) :=
+    (Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞).prodMap contMDiff_id
+  have hq := SmoothForm.mpullback_mpullback_of_comp_eq hP.contMDiff
+    (contMDiff_orbitProj_rightTranslation (I := I) (IZ := IZ) (F := F)) he
+    (ProperSMul.isSubmersion_quotientMk.contMDiff.comp contMDiff_snd)
+    (funext fun x ↦ orbitProj_mk x.1 x.2) η
+  have hi := SmoothForm.mpullback_mpullback_of_comp_eq (g' := fun p : G × Z ↦ p.1 • ι p.2)
+    hP.contMDiff (contMDiff_liftRightTranslation (I := I) (F := F) hι) he
+    (contMDiff_fst.smul (hι.comp contMDiff_snd)) (funext fun x ↦ by
+      rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, liftRightTranslation_mk]
+      rfl) σ
+  have hpr := SmoothForm.mpullback_mpullback_of_comp_eq hP.contMDiff
+    (contMDiff_proj_rightTranslation (K := (Lie.coadjointRepresentation ℝ I G).stabilizer c)
+      (I := I) (IZ := IZ) (F := F)) he
+    (c.isSubmersion_quotientMk_stabilizer_coadjointRepresentation.contMDiff.comp
+      (contMDiff_fst (J := IZ) (N := Z)))
+    (funext fun x ↦ by
+      rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, proj_mk,
+        Subgroup.RightTranslation.quotientMk_toRightTranslation]
+      rfl) c.coadjointOrbitForm
+  rw [map_sub, hq, hi, hpr, ← map_sub,
+    ← SmoothForm.mpullback_mpullback _ _ (contMDiff_snd (I := I) (J := IZ))
+      ProperSMul.isSubmersion_quotientMk.contMDiff,
+    ← SmoothForm.mpullback_mpullback _ _ (contMDiff_fst (I := I) (J := IZ))
+      c.isSubmersion_quotientMk_stabilizer_coadjointRepresentation.contMDiff,
+    hη, Module.Dual.mpullback_quotientMk_coadjointOrbitForm,
+    h.mpullback_smul_eq_prod_leftInvariantKirillovForm hG hι hιc hc, SmoothTwoForm.prod_def,
+    add_sub_cancel_left]
+
+end BalancedProduct
 
 end IsMomentMap
 

@@ -17,12 +17,14 @@ A nonnegative finite sequence in which every term is at most half of the previou
 most twice its first term. In Roth's lemma this bounds the sum of the weights `rᵢ` by `2 r₀`.
 
 The partial products of a sequence of terms at least `1`, and the partial sums of a nonnegative
-sequence, are monotone.
+sequence, are monotone, so each partial product through an entry is at most the full product.
 
 A nonnegative monotone sequence of length `D * k` bounds the `D`-th power of the product of `k`
 of its terms, the `j`-th of which is taken no later than position `D * j`. This converts bounds
 for vectors selected from an ordered family, such as a family of successive minima, into a bound
-by the product of the whole family.
+by the product of the whole family. In the same way, a monotone sequence of terms at least `1`
+bounds the `(n - i)`-th power of its `i`-th term, the length of the tail it starts, by the product
+of the whole sequence.
 
 ## Main results
 
@@ -30,8 +32,13 @@ by the product of the whole family.
   `∑ᵢ rᵢ ≤ 2 r₀`.
 * `Fin.monotone_partialProd`, `Fin.monotone_partialSum`: the partial products of entries at least
   `1` (the partial sums of nonnegative entries) are monotone.
+* `Fin.partialProd_castSucc_mul_le`, `Fin.partialSum_castSucc_add_le`: for entries at least `1`
+  (nonnegative entries), the partial product (sum) through the `i`-th entry is at most the full
+  product (sum).
 * `Fin.prod_pow_le_prod_of_monotone`: if `c` is nonnegative and monotone on `Fin (D * k)` and
   `s j ≤ D * j`, then `(∏ⱼ c (s j)) ^ D ≤ ∏ᵢ cᵢ`.
+* `Fin.pow_sub_le_prod_of_monotone`: if `c : Fin n → R` is monotone with `1 ≤ cⱼ`, then
+  `cᵢ ^ (n - i) ≤ ∏ⱼ cⱼ`.
 -/
 
 public section
@@ -88,5 +95,30 @@ theorem monotone_partialProd {M : Type*} [Monoid M] [Preorder M] [MulLeftMono M]
   monotone_iff_le_succ.2 fun i ↦ by
     rw [partialProd_succ]
     exact le_mul_of_one_le_right' (hf i)
+
+/-- For entries at least `1`, the partial product through the `i`-th entry is at most the full
+product. -/
+@[to_additive /-- For nonnegative entries, the partial sum through the `i`-th entry is at most the
+full sum. -/]
+theorem partialProd_castSucc_mul_le {M : Type*} [Monoid M] [Preorder M] [MulLeftMono M] {n : ℕ}
+    {f : Fin n → M} (hf : ∀ i, 1 ≤ f i) (i : Fin n) :
+    partialProd f i.castSucc * f i ≤ partialProd f (last n) := by
+  rw [← partialProd_succ]
+  exact monotone_partialProd hf (le_last _)
+
+/-- In a monotone sequence `c : Fin n → R` of terms at least `1`, the `i`-th term raised to the
+power `n - i` is at most the product of the whole sequence: the `n - i` terms from position `i`
+on are at least `c i`, and the others are at least `1`. Both hypotheses are needed: `(1 / 2, 2)`
+has last term `2` above its product `1`, and `(4, 1)` has `4 ^ 2` above its product `4`. -/
+theorem pow_sub_le_prod_of_monotone {R : Type*} [CommMonoidWithZero R] [Preorder R]
+    [ZeroLEOneClass R] [PosMulMono R] {n : ℕ} {c : Fin n → R} (hc1 : ∀ i, 1 ≤ c i)
+    (hc : Monotone c) (i : Fin n) : c i ^ (n - i) ≤ ∏ j, c j := by
+  have hc0 (j : Fin n) : 0 ≤ c j := zero_le_one.trans (hc1 j)
+  calc c i ^ (n - i) = ∏ _j ∈ Finset.Ici i, c i := by rw [Finset.prod_const, card_Ici]
+    _ ≤ ∏ j ∈ Finset.Ici i, c j :=
+        Finset.prod_le_prod₀ (fun _ _ ↦ hc0 i) fun _ hj ↦ hc (Finset.mem_Ici.1 hj)
+    _ ≤ ∏ j, c j :=
+        Finset.prod_le_prod_of_subset_of_one_le₀ (Finset.subset_univ _) (fun j _ ↦ hc0 j)
+          fun j _ _ ↦ hc1 j
 
 end Fin

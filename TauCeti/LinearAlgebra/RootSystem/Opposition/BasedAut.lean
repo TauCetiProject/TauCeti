@@ -63,6 +63,7 @@ criterion that every finite-dimensional module of a semisimple Lie algebra is se
   `RootPairing.oppositionAut_eq_one_iff_forall_longestElement_smul_eq_neg` and
   `RootPairing.oppositionAut_eq_one_iff_forall_opposition_eq`: `δ = 1` exactly when `w₀ = -1`,
   and, for a root system, exactly when the opposition involution fixes every simple root.
+* `RootPairing.neg_mem_weylGroup_iff`: `-1` lies in the Weyl group exactly when it is `w₀`.
 
 ## References
 
@@ -255,6 +256,12 @@ theorem oppositionAut_map_eq_mul_mul_inv (g : P.Aut) :
 theorem oppositionAut_eq_one_iff :
     oppositionAut P b = 1 ↔ (longestElement P b : P.Aut) = Equiv.neg P := by
   rw [oppositionAut_def, mul_eq_one_iff_inv_eq, Equiv.neg_inv, eq_comm]
+
+/-- **`-1` lies in the Weyl group exactly when it is the longest element.** -/
+theorem neg_mem_weylGroup_iff :
+    Equiv.neg P ∈ P.weylGroup ↔ (longestElement P b : P.Aut) = Equiv.neg P := by
+  rw [← oppositionAut_eq_one_iff, eq_comm,
+    eq_oppositionAut_iff_neg_mul_mem_weylGroup P b (one_mem _), mul_one]
 
 /-- **The opposition automorphism is trivial exactly when `w₀` acts on weights by `-1`.** -/
 theorem oppositionAut_eq_one_iff_forall_longestElement_smul_eq_neg :

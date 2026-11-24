@@ -16,8 +16,10 @@ public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+import TauCeti.LinearAlgebra.Dual.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+import Mathlib.Topology.DiscreteSubset
 
 /-!
 # Integral lattices in a real vector space
@@ -70,6 +72,8 @@ forcing the integral and real ranks to agree.
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
 * `TauCeti.Toric.IsIntegralLattice.isClosed_range_smul`: in a normed space every rescaling
   `p i(N)` of the image of an integral lattice is closed.
+* `TauCeti.Toric.IsIntegralLattice.isDiscrete_range_smul`: every rescaling `p i(N)` of the image of
+  an integral lattice is discrete.
 * `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
   finite-dimensional space is an integral lattice for its inclusion.
 * `TauCeti.Toric.isIntegralLattice_castAddHom`, `TauCeti.Toric.isIntegralLattice_intCast`: the
@@ -269,6 +273,16 @@ theorem IsIntegralLattice.realCharacter_apply (h : IsIntegralLattice i)
   simpa [IsIntegralLattice.realCharacter] using
     h.isBaseChange.toDual_comp_apply m.toIntLinearMap n
 
+/-- For prescribed characters, contraction adds a transverse lattice line to their
+common real kernel. No independence or codimension assumption is needed. -/
+theorem IsIntegralLattice.ker_realCharacter_apply_smul_sub_apply_smul (h : IsIntegralLattice i)
+    (f g : N →+ ℤ) (v : N)
+    (hv : i v ∉ (h.realCharacter f).ker ⊓ (h.realCharacter g).ker) :
+    (h.realCharacter (f v • g - g v • f)).ker =
+      (h.realCharacter f).ker ⊓ (h.realCharacter g).ker ⊔ ℝ ∙ i v := by
+  simpa only [map_sub, map_zsmul, h.realCharacter_apply, ← Int.cast_smul_eq_zsmul ℝ] using
+    LinearMap.ker_apply_smul_sub_apply_smul (h.realCharacter f) (h.realCharacter g) hv
+
 /-- A real-linear functional agreeing with an integral character on lattice points is *the* real
 extension of that character. -/
 theorem IsIntegralLattice.eq_realCharacter (h : IsIntegralLattice i) {m : N →+ ℤ}
@@ -424,6 +438,20 @@ theorem IsIntegralLattice.isClosed_range_smul (hi : IsIntegralLattice i) (p : �
   rw [hrange]
   exact (Homeomorph.smulOfNeZero p hp).isClosedMap _ h
 
+/-- For an integral lattice `i`, the rescaled lattice `p i(N)` is discrete in `V`: it is the image
+of the discrete lattice `i(N)` under a homeomorphism for `p ≠ 0`, and zero for `p = 0`. -/
+theorem IsIntegralLattice.isDiscrete_range_smul (hi : IsIntegralLattice i) (p : ℝ) :
+    IsDiscrete ((p • i).range : Set V) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · exact Set.Subsingleton.isDiscrete (by simp)
+  have := hi.discreteTopology
+  have hrange : ((p • i).range : Set V) =
+      Homeomorph.smulOfNeZero p hp '' (LinearMap.range i.toIntLinearMap) := by
+    ext v
+    simp [eq_comm]
+  rw [hrange]
+  exact (isDiscrete_iff_discreteTopology.2 ‹_›).image (Homeomorph.smulOfNeZero p hp).isInducing
+
 /-- Conversely, a full `ℤ`-lattice in Mathlib's sense, in a finite-dimensional normed real vector
 space, is an integral lattice for its inclusion: the space is the real scalar extension of the
 lattice. -/
@@ -491,6 +519,43 @@ theorem dualBasis_apply_apply [DecidableEq κ] (b : Basis κ ℤ N) (j k : κ) :
     h.dualBasis b j (i (b k)) = if k = j then 1 else 0 := by
   rw [← h.dualBasis_repr, Basis.repr_self, Finsupp.single_apply]
   exact if_congr eq_comm rfl rfl
+
+/-- A functional on `V` is determined by its values on an integral basis `b`: it is the
+combination of the dual basis of `b` with these values as coefficients. -/
+@[simp]
+theorem sum_apply_mul_dualBasis_apply [Fintype κ] (b : Basis κ ℤ N) (x : StrongDual ℝ V) (z : V) :
+    ∑ j, x (i (b j)) * h.dualBasis b j z = x z := by
+  conv_rhs => rw [← (h.dualBasis b).sum_repr x]
+  simp [dualBasis_repr]
+
+/-- A vector of `V` is the combination of the lattice vectors `i (b j)` with its values on the
+dual basis of `b` as coefficients. -/
+@[simp]
+theorem sum_dualBasis_apply_smul [Fintype κ] (b : Basis κ ℤ N) (z : V) :
+    ∑ j, h.dualBasis b j z • i (b j) = z := by
+  have := h.finiteDimensional
+  classical
+  conv_rhs => rw [← (h.isBaseChange.basis b).sum_repr z]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp [dualBasis, IsBaseChange.basis_apply]
+
+/-- A vector of `V` vanishing on every vector of the dual basis of `b` but one, `l₀`, is its
+value there times the matching lattice vector `i (b l₀)`. -/
+theorem eq_smul_of_dualBasis_apply_eq_zero {b : Basis κ ℤ N} {z : V} {l₀ : κ}
+    (hz : ∀ l, l ≠ l₀ → h.dualBasis b l z = 0) : z = h.dualBasis b l₀ z • i (b l₀) := by
+  have := Fintype.ofFinite κ
+  conv_lhs => rw [← h.sum_dualBasis_apply_smul b z]
+  exact Finset.sum_eq_single l₀ (fun l _ hl ↦ by rw [hz l hl, zero_smul]) (by simp)
+
+/-- A nonzero vector of `V` that is nonnegative on the dual basis of `b` is positive on one of its
+vectors. -/
+theorem exists_dualBasis_apply_pos {b : Basis κ ℤ N} {z : V} (hz : z ≠ 0)
+    (ht : ∀ m, 0 ≤ h.dualBasis b m z) : ∃ m, 0 < h.dualBasis b m z := by
+  have := Fintype.ofFinite κ
+  by_contra! hneg
+  refine hz ?_
+  rw [← h.sum_dualBasis_apply_smul b z]
+  exact Finset.sum_eq_zero fun k _ ↦ by rw [le_antisymm (hneg k) (ht k), zero_smul]
 
 /-- **The `ℤ`-span of the dual basis is the weight lattice**: a functional lies in it exactly when
 it takes integer values on the lattice. In particular this span does not depend on `b`. -/
