@@ -30,6 +30,11 @@ of subspaces of a topological vector bundle, with the subspace topology, is
 `TauCeti.IsSubbundleFrameOn.trivialization`. Mathlib's `Bundle.Trivialization.localFrame`
 gives the converse direction for trivializations of the bundle's own atlas.
 
+The same operator detects local frames: `C^n` sections whose values at a point `x` form a basis of
+the fibre are, read in the trivialization at `x`, an operator family equal to the identity at `x`.
+It stays invertible near `x`, where the sections therefore still form a basis, so they are a `C^n`
+local frame on a neighbourhood of `x`.
+
 For a bundle of rank one a single section that vanishes nowhere on `U` is a local frame on `U`.
 Hence a line bundle admits a compatible trivialization over `U` exactly when it has a `C^n`
 section without zeros on `U`; with `U = univ`, it is trivial exactly when it has a nowhere-zero
@@ -46,6 +51,8 @@ holomorphic section.
 ## Main results
 
 * `IsLocalFrameOn.contMDiffOn_coeff`: a Cᵐ section has Cᵐ coefficients in a Cⁿ frame, for m ≤ n.
+* `IsLocalFrameOn.exists_of_linearIndependent`: Cⁿ sections whose values at a point form a basis
+  of the fibre form a Cⁿ local frame on a neighbourhood of that point.
 * `IsLocalFrameOn.continuousOn_coeff_totalSpace`: the coefficients of a vector in a frame depend
   continuously on the vector, as a point of the total space.
 * `IsLocalFrameOn.coeff_sum_smul`: the coefficients of a combination of frame vectors are its
@@ -193,14 +200,14 @@ private theorem coords_eq_inverse (hx : x ∈ U) (hx' : x ∈ e'.baseSet) (v : V
     ContinuousLinearMap.inverse_equiv]
   simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
 
-omit [e'.IsLinear 𝕜] in
-include hs in
-private theorem continuousOn_frameOperator :
+omit [e'.IsLinear 𝕜] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] in
+private theorem continuousOn_frameOperator
+    (hs : ∀ i, ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (s i x)) U) :
     ContinuousOn (frameOperator s b e') (U ∩ e'.baseSet) := by
   refine continuousOn_finsetSum _ fun i _ ↦ ?_
   refine (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 F F _).continuous.comp_continuousOn ?_
   exact continuous_snd.comp_continuousOn (e'.continuousOn.comp
-    ((hs.contMDiffOn i).continuousOn.mono inter_subset_left) fun y hy ↦ e'.mem_source.2 hy.2)
+    ((hs i).continuousOn.mono inter_subset_left) fun y hy ↦ e'.mem_source.2 hy.2)
 
 include hs in
 private theorem continuousAt_inverse_frameOperator (hU : IsOpen U) (hx : x ∈ U)
@@ -209,7 +216,7 @@ private theorem continuousAt_inverse_frameOperator (hU : IsOpen U) (hx : x ∈ U
   have : FiniteDimensional 𝕜 F := .of_basis b
   have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   exact ((isInvertible_frameOperator b e' hs hx hx').contDiffAt_map_inverse
-    (n := 0)).continuousAt.comp ((continuousOn_frameOperator b e' hs).continuousAt
+    (n := 0)).continuousAt.comp ((continuousOn_frameOperator b e' hs.contMDiffOn).continuousAt
     ((hU.inter e'.open_baseSet).mem_nhds ⟨hx, hx'⟩))
 
 end Operator
@@ -241,7 +248,7 @@ private theorem continuousAt_vec {q : B × F} (hq : q.1 ∈ U) :
   rw [FiberBundle.continuousAt_totalSpace]
   set e' := trivializationAt F V q.1
   have hq' : q.1 ∈ e'.baseSet := FiberBundle.mem_baseSet_trivializationAt' q.1
-  refine ⟨continuousAt_fst, ((((continuousOn_frameOperator b e' hs).continuousAt
+  refine ⟨continuousAt_fst, ((((continuousOn_frameOperator b e' hs.contMDiffOn).continuousAt
     ((hU.inter e'.open_baseSet).mem_nhds ⟨hq, hq'⟩)).comp continuousAt_fst).clm_apply
       continuousAt_snd).congr ?_⟩
   filter_upwards [continuousAt_fst.preimage_mem_nhds
@@ -353,6 +360,56 @@ theorem trivialization_mem_maximalAtlas [ContMDiffVectorBundle n F V IB] :
   exact (hinv.contMDiffAt.comp_contMDiffWithinAt x (hframe x hx)).congr hsymm (hsymm x hx)
 
 end Trivialization
+
+/-! ### Frames near a point -/
+
+/-- **Sections forming a basis at a point form a local frame near it.** Let `s` be a family of
+sections of a vector bundle with finite-dimensional model fibre, `C^n` on an open set `U`. If
+the values `s i x` form a basis of the fibre at a point `x ∈ U`, then `s` is a `C^n` local frame
+on an open neighbourhood of `x` contained in `U`. -/
+theorem exists_of_linearIndependent [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F] (hU : IsOpen U)
+    (hs : ∀ i, ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (s i x)) U)
+    {x : B} (hx : x ∈ U) (hli : LinearIndependent 𝕜 (s · x))
+    (hsp : ⊤ ≤ Submodule.span 𝕜 (range (s · x))) :
+    ∃ U' ⊆ U, IsOpen U' ∧ x ∈ U' ∧ IsLocalFrameOn IB F n s U' := by
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
+  set e := trivializationAt F V x
+  have hxe : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  have : Finite ι := (hli.map' (e.linearEquivAt 𝕜 x hxe).toLinearMap
+    (e.linearEquivAt 𝕜 x hxe).ker).finite
+  let := Fintype.ofFinite ι
+  -- The basis of `F` formed by the values of the sections at `x`, read in `e`.
+  let b : Basis ι 𝕜 F := (Basis.mk hli hsp).map (e.linearEquivAt 𝕜 x hxe)
+  have hb {y : B} (hy : y ∈ e.baseSet) (i : ι) :
+      frameOperator s b e y (b i) = (e ⟨y, s i y⟩).2 := by
+    classical
+    rw [frameOperator_apply b e hy]
+    simp [Finsupp.single_apply]
+  -- Read in `e`, the sections at `x` are the basis `b` itself, so the frame operator is the
+  -- identity at `x`; it stays invertible near `x`, where the sections therefore form a basis.
+  have hbx : frameOperator s b e x = ContinuousLinearMap.id 𝕜 F := by
+    refine ContinuousLinearMap.coe_injective (b.ext fun i ↦ ?_)
+    rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, hb hxe]
+    simp [b, Trivialization.linearEquivAt_apply]
+  refine ⟨U ∩ e.baseSet ∩ frameOperator s b e ⁻¹' range ((↑) : (F ≃L[𝕜] F) → F →L[𝕜] F),
+    fun y hy ↦ hy.1.1, (continuousOn_frameOperator b e hs).isOpen_inter_preimage
+      (hU.inter e.open_baseSet) ContinuousLinearEquiv.isOpen,
+    ⟨⟨hx, hxe⟩, ContinuousLinearEquiv.refl 𝕜 F, hbx.symm⟩, ?_⟩
+  have hbasis {y : B} (hy : y ∈ U ∩ e.baseSet ∩
+      frameOperator s b e ⁻¹' range ((↑) : (F ≃L[𝕜] F) → F →L[𝕜] F)) :
+      ∃ c : Basis ι 𝕜 (V y), ⇑c = (s · y) := by
+    obtain ⟨⟨-, hye⟩, φ, hφ⟩ := hy
+    refine ⟨b.map (φ.toLinearEquiv.trans (e.linearEquivAt 𝕜 y hye).symm), funext fun i ↦ ?_⟩
+    have hφi : φ (b i) = (e ⟨y, s i y⟩).2 := by
+      rw [← hb hye, ← hφ, ContinuousLinearEquiv.coe_coe]
+    simp only [Basis.map_apply, LinearEquiv.trans_apply,
+      ContinuousLinearEquiv.coe_toLinearEquiv, hφi, Trivialization.linearEquivAt_symm_apply,
+      e.symm_apply_apply_mk hye]
+  refine ⟨fun hy ↦ ?_, fun hy ↦ ?_, fun i ↦ (hs i).mono fun y hy ↦ hy.1.1⟩
+  · obtain ⟨c, hc⟩ := hbasis hy
+    exact hc ▸ c.linearIndependent
+  · obtain ⟨c, hc⟩ := hbasis hy
+    exact hc ▸ c.span_eq.ge
 
 /-- The coefficients of a `C^m` section in a `C^n` local frame on an open set are `C^m`,
 provided `m ≤ n`. -/

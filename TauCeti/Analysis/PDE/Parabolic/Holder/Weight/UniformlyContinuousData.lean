@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.UniformlyContinuousData
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight.Solvability
 
 /-!
-# The weighted Cauchy problem with uniformly continuous initial data
+# Weighted Cauchy and terminal-value problems with uniformly continuous data
 
 On `ℝⁿ = EuclideanSpace ℝ ι` and a time slab `ℝⁿ × [0, T]`, let
 
@@ -60,6 +60,21 @@ and `TauCeti.ParabolicC2HolderSpace.abs_euclideanCauchySolutionBUC_apply_le` wit
 gives the maximum principle `|u(x, t)| ≤ w(x) exp (γ t) (M + t K)` when `c_w ≤ γ`, `0 ≤ γ`,
 `|f| ≤ K` and `|g| ≤ M`.
 
+The terminal-value problem `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = w f`, `u(·, T) = w g` with `g` bounded
+and uniformly continuous is treated in the same way. The weight does not depend on time, so the
+backward operator conjugates with the same coefficients `b_w`, `c_w`
+(`TauCeti.ParabolicC2HolderSpace.exp_mul_euclideanBackwardParabolicOperatorL_eq`), and
+`u = w V` with `V = euclideanTerminalSolutionBUC … a b_w c_w … (f, g)`, the time reversal of the
+Cauchy solution operator, is the weighted terminal solution. It agrees with the classical weighted
+terminal solutions, is the only continuous linear map that does, is within
+`w(x) exp (‖c_w‖ T) (1 + T) δ` of the classical weighted solution whose `C_b^{2,α}` terminal datum
+is uniformly within `δ` of `g`, solves the equation pointwise when `g ∈ C_b^{2,α}`, and satisfies
+the same uniform bound. As for the Cauchy problem, the statements about `u / w = V` alone are the
+unweighted ones for `euclideanTerminalSolutionBUC` with `c := c_w`: the terminal values
+`u(x, T) = w(x) g(x)`, the uniform attainment `u(·, t) / w → g` as `t → T⁻`
+(`TauCeti.ParabolicC2HolderSpace.tendstoUniformly_euclideanTerminalSolutionBUC`), and the maximum
+principle (`TauCeti.ParabolicC2HolderSpace.abs_euclideanTerminalSolutionBUC_apply_le`).
+
 On the line, the weight `1 + exp x` qualifies:
 `TauCeti.contDiff_log_one_add_exp_and_exists_fderiv_eq` supplies the derivatives `dℓ`, `d2ℓ` of
 `ℓ = log (1 + exp x)`, and with them the statements above cover data growing like `exp x` as
@@ -77,6 +92,12 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
 * `derivWithin_sub_eq_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the solution satisfies
   `P u = w f` pointwise for initial data in `C_b^{2,α}`.
 * `exists_norm_euclideanCauchySolutionBUC_weightedCoeff_le`: the uniform bound.
+* `exp_mul_euclideanTerminalSolutionBUC_weightedCoeff_eq`,
+  `eq_euclideanTerminalSolutionBUC_weightedCoeff`,
+  `abs_sub_le_exp_mul_of_eq_exp_mul_euclideanTerminalSolutionBUC`,
+  `derivWithin_add_eq_exp_mul_of_eq_exp_mul_euclideanTerminalSolutionBUC` and
+  `exists_norm_euclideanTerminalSolutionBUC_weightedCoeff_le`: the same for the terminal-value
+  problem.
 
 ## References
 
@@ -240,6 +261,143 @@ theorem derivWithin_sub_eq_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC (h�
   exact ((eq_euclideanInitialDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ hd2ℓ _ hu' f
     g').1 rfl).1 x t
 
+/-! ### The weighted terminal-value problem -/
+
+/-- **Agreement with the classical weighted terminal solution.** Let `w = exp ℓ` be a spatial
+weight as in `eq_euclideanInitialDataCLE_symm_iff_exp_mul`, let `u = w v` with
+`v ∈ C_b^{2+α,1+α/2}` be a classical solution of `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = w f`,
+`u(·, T) = w g` with `f ∈ C_b^{α,α/2}` and `g ∈ C_b^{2,α}`, and let `g'` be `g` regarded as a
+bounded uniformly continuous function. Then `u` is `w` times the solution with data `(f, g')` of
+the conjugated terminal-value problem for bounded uniformly continuous terminal data. -/
+theorem exp_mul_euclideanTerminalSolutionBUC_weightedCoeff_eq (hℓ : ContDiff ℝ 2 ℓ)
+    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = d2ℓ i j x)
+    (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) * v (slabMk y s))
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ)
+    (g' : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ)
+    (hg' : ∀ x, (g' : EuclideanSpace ℝ ι →ᵇ ℝ) x = g x)
+    (hP : ∀ (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T), derivWithin (u x) (Icc 0 T) t +
+      (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+        ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
+        c (slabMk x t) * u x t) = exp (ℓ x) * f (slabMk x t))
+    (hfin : ∀ x, u x T = exp (ℓ x) * g x) (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T) :
+    exp (ℓ x) * euclideanTerminalSolutionBUC hα₀ hα₁ hT a
+      (euclideanWeightedFirstOrderCoeff a b dℓ) (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ)
+      ha (f, g') (slabMk x t) = u x t := by
+  have hv := (eq_euclideanTerminalDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ hd2ℓ v hu f
+    g).2 ⟨hP, hfin⟩
+  rw [euclideanTerminalSolutionBUC_apply_of_ckHolderSpace hα₀ hα₁ hT ha f g' g hg', ← hv,
+    valueL_apply, hu]
+
+/-- **Uniqueness of the weighted terminal solution operator.** Let `w = exp ℓ` be a spatial weight
+as in `eq_euclideanInitialDataCLE_symm_iff_exp_mul`. A continuous linear map `L` from
+`C_b^{α,α/2} × BUC` to the bounded continuous functions on the slab that recovers `v` from the
+data `(f, g)` of every classical solution `u = w v` of `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = w f`,
+`u(·, T) = w g`, with `v ∈ C_b^{2+α,1+α/2}` and `g ∈ C_b^{2,α}`, is the solution operator of the
+conjugated terminal-value problem for bounded uniformly continuous terminal data. -/
+theorem eq_euclideanTerminalSolutionBUC_weightedCoeff (hℓ : ContDiff ℝ 2 ℓ)
+    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = d2ℓ i j x)
+    (L : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ →L[ℝ]
+        (slab (E := EuclideanSpace ℝ ι) 0 T →ᵇ ℝ))
+    (hL : ∀ (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+      (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ)
+      (g' : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ)
+      (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) (u : EuclideanSpace ℝ ι → ℝ → ℝ),
+      (∀ x, (g' : EuclideanSpace ℝ ι →ᵇ ℝ) x = g x) →
+      (∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) * v (slabMk y s)) →
+      (∀ (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T), derivWithin (u x) (Icc 0 T) t +
+        (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
+            (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+          ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
+          c (slabMk x t) * u x t) = exp (ℓ x) * f (slabMk x t)) →
+      (∀ x, u x T = exp (ℓ x) * g x) → L (f, g') = valueL v) :
+    L = euclideanTerminalSolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+      (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha := by
+  refine eq_euclideanTerminalSolutionBUC hα₀ hα₁ hT ha L fun f g' v hPv hg' ↦ ?_
+  -- A classical solution of the conjugated problem, extended in time and multiplied by the
+  -- weight, is a classical solution of the weighted problem whose terminal datum is its trace.
+  set g := v.spatialTrace ⟨T, right_mem_Icc.2 hT.le⟩
+  have hv : v = (euclideanTerminalDataCLE hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+      (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha).symm (f, g) := by
+    rw [ContinuousLinearEquiv.eq_symm_apply, euclideanTerminalDataCLE_apply, hPv]
+  have hu (y : EuclideanSpace ℝ ι) (s : Icc (0 : ℝ) T) :
+      exp (ℓ y) * timeExtension hT.le v y s = exp (ℓ y) * v (slabMk y s) := by
+    rw [timeExtension_of_mem]
+  obtain ⟨hP, hfin⟩ := (eq_euclideanTerminalDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ
+    hd2ℓ v (u := fun y s ↦ exp (ℓ y) * timeExtension hT.le v y s) hu f g).1 hv
+  exact hL f g g' v _ (fun x ↦ by rw [hg', spatialTrace_apply]) hu hP hfin
+
+/-- **Comparison with classical weighted terminal solutions.** Let `w = exp ℓ` be a spatial weight
+as in `eq_euclideanInitialDataCLE_symm_iff_exp_mul`, let `f ∈ C_b^{α,α/2}` and let `g` be bounded
+and uniformly continuous. Let `u = exp ℓ * V`, where `V` is the extended solution of the
+conjugated terminal-value problem `P_back,w V = f`, `V(·, T) = g`. Let `u' = exp ℓ * v` with
+`v ∈ C_b^{2+α,1+α/2}` be a classical solution of `∂ₜu' + aⁱʲ ∂ᵢ∂ⱼu' + bⁱ ∂ᵢu' + c u' = exp ℓ * f`,
+`u'(·, T) = exp ℓ * g'`, where `g' ∈ C_b^{2,α}` satisfies `|g - g'| ≤ δ`. Then
+`|u(x, t) - u'(x, t)| ≤ exp (ℓ x) exp (‖c_w‖ T) (1 + T) δ`. -/
+theorem abs_sub_le_exp_mul_of_eq_exp_mul_euclideanTerminalSolutionBUC (hℓ : ContDiff ℝ 2 ℓ)
+    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = d2ℓ i j x)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
+      euclideanTerminalSolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s))
+    (g' : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) {δ : ℝ}
+    (hg' : ∀ x, |(g : EuclideanSpace ℝ ι →ᵇ ℝ) x - g' x| ≤ δ)
+    (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {u' : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu' : ∀ y (s : Icc (0 : ℝ) T), u' y s = exp (ℓ y) * v (slabMk y s))
+    (hP : ∀ (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T), derivWithin (u' x) (Icc 0 T) t +
+      (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u' y t) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+        ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u' y t) x (EuclideanSpace.single i 1) +
+        c (slabMk x t) * u' x t) = exp (ℓ x) * f (slabMk x t))
+    (hfin : ∀ x, u' x T = exp (ℓ x) * g' x) (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T) :
+    |u x t - u' x t| ≤ exp (ℓ x) *
+      (Real.exp (‖euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ‖ * T) * (1 + T) * δ) := by
+  -- The classical solution `u'` is `exp ℓ` times the classical solution of the conjugated problem.
+  have hv := (eq_euclideanTerminalDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ hd2ℓ v hu' f
+    g').2 ⟨hP, hfin⟩
+  rw [hu x t, hu' x t, ← mul_sub, abs_mul, abs_of_pos (exp_pos _), hv]
+  exact mul_le_mul_of_nonneg_left
+    (abs_euclideanTerminalSolutionBUC_apply_sub_le hα₀ hα₁ hT ha f g g' hg' _) (exp_pos _).le
+
+/-- **The weighted terminal solution solves the equation.** If the terminal datum `g` of
+`abs_sub_le_exp_mul_of_eq_exp_mul_euclideanTerminalSolutionBUC` is a bounded `C^{2,α}` function
+`g'`, then `u = exp ℓ * V` satisfies `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = exp ℓ * f` pointwise on the
+slab, with the derivatives of `u` taken by `derivWithin` and `fderiv`. -/
+theorem derivWithin_add_eq_exp_mul_of_eq_exp_mul_euclideanTerminalSolutionBUC
+    (hℓ : ContDiff ℝ 2 ℓ) (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = d2ℓ i j x)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
+      euclideanTerminalSolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s))
+    (g' : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ)
+    (hg' : ∀ x, (g : EuclideanSpace ℝ ι →ᵇ ℝ) x = g' x)
+    (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T) :
+    derivWithin (u x) (Icc 0 T) t +
+      (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+        ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
+        c (slabMk x t) * u x t) = exp (ℓ x) * f (slabMk x t) := by
+  have hu' (y : EuclideanSpace ℝ ι) (s : Icc (0 : ℝ) T) : u y s = exp (ℓ y) *
+      (euclideanTerminalDataCLE hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha).symm (f, g') (slabMk y s) := by
+    rw [hu, euclideanTerminalSolutionBUC_apply_of_ckHolderSpace hα₀ hα₁ hT ha f g g' hg',
+      valueL_apply]
+  exact ((eq_euclideanTerminalDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ hd2ℓ _ hu' f
+    g').1 rfl).1 x t
+
 end Solution
 
 /-! ### The uniform bound -/
@@ -277,6 +435,34 @@ theorem exists_norm_euclideanCauchySolutionBUC_weightedCoeff_le (hα₀ : 0 < α
   have hc := norm_euclideanWeightedZerothOrderCoeff_le_of_le hak hbk hck hdℓ hd2ℓ
   have hTT₀' : (T : ℝ) ≤ T₀ := hTT₀
   refine (norm_euclideanCauchySolutionBUC_le hα₀ hα₁ hT ha).trans ?_
+  gcongr
+
+/-- **The uniform bound for the weighted terminal-value problem.** Under the bounds of
+`exists_norm_euclideanCauchySolutionBUC_weightedCoeff_le`, the solution operators of the
+conjugated terminal-value problems for bounded uniformly continuous terminal data on
+`ℝⁿ × [0, T]`, `T ≤ T₀`, are bounded uniformly: `sup |u / w| ≤ C max (‖f‖_{α,par}) (sup |g|)` for
+`u = w V` with `V = euclideanTerminalSolutionBUC … (f, g)`. -/
+theorem exists_norm_euclideanTerminalSolutionBUC_weightedCoeff_le (hα₀ : 0 < α) (hα₁ : α < 1)
+    (K L T₀ : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
+      ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (dℓ : ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ)
+        (d2ℓ : ι → ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ)
+        (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
+        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
+        (∀ i, ‖dℓ i‖ ≤ L) → (∀ i j, ‖d2ℓ i j‖ ≤ L) →
+        ‖euclideanTerminalSolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+          (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha‖ ≤ C := by
+  set K' : ℝ := K + Fintype.card ι * (Fintype.card ι * (K * (L + L * L))) +
+    Fintype.card ι * (K * L)
+  refine ⟨exp (K' * T₀) * (1 + T₀), by positivity,
+    fun T hT hTT₀ a b c dℓ d2ℓ ha hak hbk hck hdℓ hd2ℓ ↦ ?_⟩
+  have hc := norm_euclideanWeightedZerothOrderCoeff_le_of_le hak hbk hck hdℓ hd2ℓ
+  have hTT₀' : (T : ℝ) ≤ T₀ := hTT₀
+  refine (norm_euclideanTerminalSolutionBUC_le hα₀ hα₁ hT ha).trans ?_
   gcongr
 
 end Bound

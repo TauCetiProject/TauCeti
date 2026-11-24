@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 public import TauCeti.Analysis.Calculus.GaussianDecay
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.Bounds
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Scale-invariant bounds on the space-time derivatives of the heat kernel
@@ -53,6 +54,7 @@ the constant function `1`.
 * `TauCeti.integrable_norm_iteratedFDeriv_heatKernel_mul_rpow`: integrability of the weighted
   derivatives.
 * `TauCeti.integrable_norm_rpow_mul_heatKernel`: integrability of the weight `‖x‖^α K_t(x)`.
+* `TauCeti.integrable_heatKernel_smul_apply`: integrability of `K_t(y) L y` for linear `L`.
 * `TauCeti.heatKernelMoment`: the absolute moment `∫ ‖y‖^α K_1(y) dy`.
 * `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: the weighted `L¹` bound.
 * `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_le`: the `L¹` bound.
@@ -60,6 +62,7 @@ the constant function `1`.
   `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_sub_mul_rpow_le`: the weighted bounds
   on time differences.
 * `TauCeti.integral_iteratedFDeriv_heatKernel_eq_zero`: the derivatives have integral zero.
+* `TauCeti.integral_heatKernel_smul_apply_eq_zero`: the first moment `∫ K_t(y) L y dy` vanishes.
 
 ## References
 
@@ -388,6 +391,15 @@ theorem integrable_norm_rpow_mul_heatKernel {t : ℝ} (ht : 0 < t) {α : ℝ} (h
   dsimp only
   rw [norm_iteratedFDeriv_zero, norm_of_nonneg (heatKernel_pos ht x).le, mul_comm]
 
+/-- For `t > 0`, a continuous linear map is integrable against `K_t`. -/
+theorem integrable_heatKernel_smul_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {t : ℝ} (ht : 0 < t) (L : E →L[ℝ] F) : Integrable fun y : E ↦ heatKernel t y • L y := by
+  refine ((integrable_norm_rpow_mul_heatKernel (E := E) ht zero_le_one).const_mul
+    ‖L‖).mono' ((contDiff_heatKernel (k := 0) t).continuous.smul L.continuous).aestronglyMeasurable
+    (ae_of_all _ fun y ↦ ?_)
+  rw [norm_smul, norm_of_nonneg (heatKernel_pos ht y).le, rpow_one, mul_comm, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (L.le_opNorm y) (heatKernel_pos ht y).le
+
 variable (E) in
 /-- The **absolute moment** `M_α = ∫ ‖y‖^α K_1(y) dy` of order `α` of the heat kernel at time one.
 It is the constant in the Hölder estimates of heat potentials. -/
@@ -469,5 +481,11 @@ theorem integral_iteratedFDeriv_heatKernel_eq_zero {t : ℝ} (ht : 0 < t) {m : �
       (ContinuousMultilinearMap.apply ℝ _ ℝ v).integrable_comp (hint (k + 1)))
     (by simpa using (ContinuousMultilinearMap.apply ℝ _ ℝ (Fin.tail v)).integrable_comp (hint k))
     (fun x _ => differentiableAt_const _) (fun x _ => hh x)
+
+/-- **The first moment of the heat kernel vanishes.** For every time `t` and every continuous
+linear map `L`, `∫ K_t(y) L y dy = 0`, since `K_t` is even. -/
+theorem integral_heatKernel_smul_apply_eq_zero {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (t : ℝ) (L : E →L[ℝ] F) : ∫ y, heatKernel t y • L y = 0 :=
+  integral_eq_zero_of_odd (Filter.Eventually.of_forall fun y ↦ by simp [heatKernel_neg])
 
 end TauCeti

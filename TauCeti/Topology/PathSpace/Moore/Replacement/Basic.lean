@@ -297,6 +297,15 @@ theorem ext {x y : Fiber p b} (h : x.val = y.val) : x = y :=
 theorem continuous_val : Continuous (val : Fiber p b → MooreReplacement p) :=
   continuous_subtypeVal
 
+variable (p b) in
+/-- The projection of the Moore fibre to `E`, `(e, γ) ↦ e`. -/
+def proj : C(Fiber p b, E) :=
+  ⟨fun x ↦ x.val.point, continuous_point.comp continuous_val⟩
+
+@[simp]
+theorem proj_apply (x : Fiber p b) : proj p b x = x.val.point :=
+  (rfl)
+
 /-- The point `(e, γ)` of the fibre, for a pair whose path ends at `b`. -/
 def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
   ⟨x, h⟩
@@ -304,6 +313,12 @@ def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
 @[simp]
 theorem val_mk' (x : MooreReplacement p) (h : x.path.target = b) : (mk' x h).val = x :=
   (rfl)
+
+/-- A family of points of the fibre is continuous when the family of underlying pairs is. -/
+@[fun_prop]
+theorem continuous_mk' {Y : Type*} [TopologicalSpace Y] {f : Y → MooreReplacement p}
+    (hf : Continuous f) (h : ∀ y, (f y).path.target = b) : Continuous fun y ↦ mk' (f y) (h y) :=
+  hf.subtype_mk _
 
 /-- The fibre `F'` is the fibre of the endpoint map `p'` over `b`: a point of `F'` is sent to its
 underlying pair. -/

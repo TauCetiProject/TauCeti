@@ -11,7 +11,7 @@ public import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
 import Mathlib.Analysis.MeanInequalitiesPow
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.Normed.Lp.WeightedSum
-import TauCeti.Analysis.PSeries
+import TauCeti.Analysis.PSeries.Shifted
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!

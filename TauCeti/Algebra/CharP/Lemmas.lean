@@ -13,13 +13,12 @@ import Mathlib.Data.Nat.Choose.Dvd
 # Natural casts and `p`-power maps in exponential characteristic `p`
 
 In an additive monoid with one of exponential characteristic `p`, the natural-number cast of
-`p ^ n` vanishes whenever `1 < p ^ n`. If an integer is not divisible by `p`, then `1 < p`. In an
-additive monoid with one in which `1 ≠ 0` some prime, `2` or `3`, has a nonzero cast; this is how
-one picks a prime `ℓ` different from the characteristic of a field. In a nontrivial ring only the
-characteristic can vanish among the primes, so there are arbitrarily large primes with nonzero
-cast. Without zero divisors, `4` is nonzero whenever `2` is. A natural number prime to the
-characteristic of a nontrivial ring is nonzero. In characteristic a prime `p`, the binomial
-coefficient `(p - 1).choose k` is `(-1) ^ k` for `k ≤ p - 1`. In characteristic `p`, the
+`p ^ n` vanishes whenever `1 < p ^ n`, and `1 < p` as soon as `p ≠ 1`. In an additive monoid with
+one in which `1 ≠ 0` some prime, `2` or `3`, has a nonzero cast; this is how one picks a prime `ℓ`
+different from the characteristic of a field. In a nontrivial ring only the characteristic can
+vanish among the primes, so there are arbitrarily large primes with nonzero cast. A natural number
+prime to the characteristic of a nontrivial ring is nonzero. In characteristic a prime `p`, the
+binomial coefficient `(p - 1).choose k` is `(-1) ^ k` for `k ≤ p - 1`. In characteristic `p`, the
 natural-number representative of the inverse of `m` modulo `p` inverts the cast of `m` when `m` is
 prime to `p`.
 
@@ -30,14 +29,12 @@ law.
 
 ## Main results
 
-* `TauCeti.one_lt_expChar_of_not_dvd`: nondivisibility by the exponential characteristic
-  forces it to exceed one.
+* `TauCeti.one_lt_expChar_of_ne_one`: an exponential characteristic other than one exceeds one.
 * `TauCeti.natCast_pow_expChar_eq_zero`: the natural-number cast of `p ^ n` vanishes when
   `1 < p ^ n`.
 * `TauCeti.exists_prime_natCast_ne_zero`: if `1 ≠ 0`, some prime has nonzero cast.
 * `TauCeti.exists_prime_lt_natCast_ne_zero`: in a nontrivial ring, arbitrarily large primes have
   nonzero cast.
-* `TauCeti.four_ne_zero_of_two_ne_zero`: without zero divisors, `2 ≠ 0` implies `4 ≠ 0`.
 * `TauCeti.ne_zero_of_coprime_ringChar`: a natural number prime to the characteristic of a
   nontrivial ring is nonzero.
 * `TauCeti.natCast_choose_sub_one_eq_neg_one_pow`: `(p - 1).choose k = (-1) ^ k` in
@@ -51,12 +48,10 @@ public section
 
 namespace TauCeti
 
-/-- An exponential characteristic that does not divide an integer is greater than one. -/
-theorem one_lt_expChar_of_not_dvd (R : Type*) [AddMonoidWithOne R] {p : ℕ} [ExpChar R p]
-    {n : ℤ} (h : ¬(p : ℤ) ∣ n) : 1 < p := by
-  rcases expChar_is_prime_or_one R p with hp | rfl
-  · exact hp.one_lt
-  · exact (h (one_dvd _)).elim
+/-- An exponential characteristic other than one is greater than one, since it is then prime. -/
+theorem one_lt_expChar_of_ne_one (R : Type*) [AddMonoidWithOne R] {p : ℕ} [ExpChar R p]
+    (hp : p ≠ 1) : 1 < p :=
+  ((expChar_is_prime_or_one R p).resolve_right hp).one_lt
 
 /-- In an additive monoid with one of exponential characteristic `p`, the natural-number cast
 of `p ^ n` vanishes whenever `1 < p ^ n`. -/
@@ -91,12 +86,6 @@ theorem exists_prime_lt_natCast_ne_zero (R : Type*) [NonAssocSemiring R] [Nontri
   rcases hℓ.eq_one_or_self_of_dvd _ ((ringChar.spec R ℓ).mp h) with h1 | h1
   · exact CharP.ringChar_ne_one h1
   · omega
-
-/-- In a semiring without zero divisors, such as a field, `4 = 2 * 2` is nonzero when `2` is. -/
-theorem four_ne_zero_of_two_ne_zero {R : Type*} [NonAssocSemiring R] [NoZeroDivisors R]
-    (h2 : (2 : R) ≠ 0) : (4 : R) ≠ 0 := by
-  rw [← two_add_two_eq_four, ← two_mul]
-  exact mul_ne_zero h2 h2
 
 /-- In characteristic a prime `p`, the binomial coefficient `(p - 1).choose k` is `(-1) ^ k` for
 every `k ≤ p - 1`: consecutive coefficients add up to `p.choose (k + 1)`, which vanishes. -/
