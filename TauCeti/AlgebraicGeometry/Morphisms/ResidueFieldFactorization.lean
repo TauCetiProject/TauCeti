@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.AlgebraicGeometry.ResidueField
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.Scheme.LocalSpectrum
 
 /-!
 # Morphisms from reduced schemes onto a point factor through its residue field
@@ -111,15 +113,6 @@ noncomputable def toSpecResidueField [IsReduced Y] (hf : ∀ y, f y = x) :
     Y ⟶ Spec (X.residueField x) :=
   Y.toSpecΓ ≫ Spec.map (residueFieldToΓ f hf)
 
-/-- If `f` maps all of `Y` into an affine open `U`, then `f` is recovered from its ring map
-`Γ(X, U) ⟶ Γ(Y, ⊤)` via `Y ⟶ Spec Γ(Y, ⊤) ⟶ Spec Γ(X, U) ≅ U ⟶ X`. -/
-private lemma toSpecΓ_SpecMap_appLE_fromSpec {U : X.Opens} (hU : IsAffineOpen U)
-    (e : ⊤ ≤ f ⁻¹ᵁ U) : Y.toSpecΓ ≫ Spec.map (f.appLE U ⊤ e) ≫ hU.fromSpec = f := by
-  -- Precompose with `⊤ ≅ Y`, where `toSpecΓ` becomes `Scheme.Opens.toSpecΓ` of the open `⊤`;
-  -- then `toSpecΓ ≫ Spec.map (appLE)` is `resLE ≫ toSpecΓ` and `toSpecΓ ≫ fromSpec` is `ι`.
-  rw [← cancel_epi Y.topIso.hom, Scheme.topIso_hom, ← Category.assoc, ← Scheme.Opens.toSpecΓ_top,
-    Scheme.Opens.toSpecΓ_SpecMap_appLE_assoc, IsAffineOpen.toSpecΓ_fromSpec, resLE_comp_ι]
-
 /-- A morphism from a reduced scheme all of whose points map to `x` factors through
 `Spec κ(x) ⟶ X`. -/
 @[reassoc (attr := simp), stacks 0H1M]
@@ -147,53 +140,6 @@ theorem exists_comp_fromSpecResidueField_eq_iff [IsReduced Y] :
   refine ⟨?_, fun hf ↦ ⟨_, toSpecResidueField_fromSpecResidueField f hf⟩⟩
   rintro ⟨g, rfl⟩ y
   rw [Scheme.Hom.comp_apply, Scheme.fromSpecResidueField_apply]
-
-/-- The pullback of a section `s` along `Spec 𝒪_{Y,y} ⟶ Y ⟶ X` is the image of the germ at `y`
-of the pullback of `s` under `Γ(Spec 𝒪_{Y,y}, ⊤) ≅ 𝒪_{Y,y}`. -/
-private lemma comp_appLE_fromSpecStalk {y : Y} {U : X.Opens} (hy : y ∈ f ⁻¹ᵁ U)
-    (e : ⊤ ≤ (Y.fromSpecStalk y ≫ f) ⁻¹ᵁ U) :
-    (Y.fromSpecStalk y ≫ f).appLE U ⊤ e =
-      f.app U ≫ Y.presheaf.germ (f ⁻¹ᵁ U) y hy ≫ (Scheme.ΓSpecIso _).inv := by
-  rw [comp_appLE]
-  simp only [Hom.appLE, fromSpecStalk_app hy, Category.assoc, ← Functor.map_comp]
-  -- The two restrictions compose to an endomorphism of an open of `Spec 𝒪_{Y,y}`; as the opens
-  -- form a poset, it is the identity.
-  rw [Subsingleton.elim (_ ≫ _) (𝟙 _), CategoryTheory.Functor.map_id, Category.comp_id]
-
-/-- If `f` maps every generization of `y` to `f y`, then for a section `s` near `f y` whose basic
-open misses `f y`, the germ at `y` of the pullback of `s` is nilpotent. -/
-theorem isNilpotent_germ_app {y : Y} (hgen : ∀ y', y' ⤳ y → f y' = f y) {U : X.Opens}
-    (hy : y ∈ f ⁻¹ᵁ U) {s : Γ(X, U)} (hs : f y ∉ X.basicOpen s) :
-    IsNilpotent (Y.presheaf.germ (f ⁻¹ᵁ U) y hy (f.app U s)) := by
-  -- The composite `Spec 𝒪_{Y,y} ⟶ Y ⟶ X` maps every point to `f y`.
-  have hg (z : Spec (Y.presheaf.stalk y)) : (Y.fromSpecStalk y ≫ f) z = f y := by
-    rw [Scheme.Hom.comp_apply]
-    refine hgen _ ?_
-    have := Set.mem_range_self (f := Y.fromSpecStalk y) z
-    rwa [range_fromSpecStalk] at this
-  have h0 := basicOpen_appLE_eq_bot _ hg (top_le_preimage _ hg (f.mem_preimage.mp hy)) hs
-  rw [comp_appLE_fromSpecStalk f hy, CommRingCat.comp_apply, CommRingCat.comp_apply,
-    basicOpen_eq_of_affine] at h0
-  exact (PrimeSpectrum.basicOpen_eq_bot_iff _).mp h0
-
-/-- If the germ at `y` of a section `t` is nilpotent, then `t` vanishes on a neighbourhood of `y`,
-so `y` is not in the closure of the basic open of `t`. -/
-private lemma notMem_closure_basicOpen_of_isNilpotent_germ {W : Y.Opens} {y : Y} (hy : y ∈ W)
-    {t : Γ(Y, W)} (h : IsNilpotent (Y.presheaf.germ W y hy t)) :
-    y ∉ closure (Y.basicOpen t : Set Y) := by
-  obtain ⟨n, hn⟩ := h
-  -- Some power `t ^ (n + 1)` restricts to zero on an open neighbourhood `V ⊆ W` of `y`.
-  obtain ⟨V, hyV, iVW, _, hV⟩ := Y.presheaf.germ_eq y hy hy (t ^ (n + 1)) 0
-    (by rw [map_pow, pow_succ, hn, zero_mul, map_zero])
-  rw [mem_closure_iff]
-  push Not
-  -- On `V`, the basic open of `t` agrees with that of the zero section, which is empty.
-  refine ⟨V, V.isOpen, hyV, Set.eq_empty_iff_forall_notMem.mpr fun z ⟨hzV, hz⟩ ↦ ?_⟩
-  have : z ∈ Y.basicOpen (Y.presheaf.map iVW.op (t ^ (n + 1))) := by
-    rw [Scheme.basicOpen_res, Scheme.basicOpen_pow _ _ n.succ_pos]
-    exact ⟨hzV, hz⟩
-  rw [hV, map_zero, Scheme.basicOpen_zero] at this
-  exact this
 
 /-- Let `E` be a set of points of a locally Noetherian scheme `X` with no nontrivial
 specializations between them. If a morphism maps every point into `E`, the preimage of each point

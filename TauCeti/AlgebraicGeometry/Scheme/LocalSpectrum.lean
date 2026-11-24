@@ -19,11 +19,17 @@ and pointwise ramification conditions.
 
 The local-ring comparison uses Mathlib's
 `isIso_specMap_stalkMap_localization` on an affine neighbourhood.
+
+Pulling sections back along `Spec 𝒪_{Y,y} ⟶ Y` takes germs at `y`
+(`Scheme.Hom.fromSpecStalk_comp_appLE`). Hence if a morphism `f` is constant on the generizations
+of `y`, the germ at `y` of the pullback of a section vanishing at `f y` is nilpotent
+(`Scheme.Hom.isNilpotent_germ_app`), and a section with nilpotent germ at `y` vanishes on a
+neighbourhood of `y` (`Scheme.notMem_closure_basicOpen_of_isNilpotent_germ`).
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory TopologicalSpace
 
 universe u
 
@@ -68,5 +74,64 @@ theorem height_eq_ringKrullDim_fromSpecStalk (X : Scheme.{u}) (x : X)
   rw [idealHeight_eq_coheight, ← ringKrullDim_stalk_eq_coheight]
   exact (ringKrullDim_eq_of_ringEquiv
     (asIso ((X.fromSpecStalk x).stalkMap q)).commRingCatIsoToRingEquiv).symm
+
+/-- If the germ at `y` of a section `t` is nilpotent, then `t` vanishes on a neighbourhood of `y`,
+so `y` is not in the closure of the basic open of `t`. -/
+theorem notMem_closure_basicOpen_of_isNilpotent_germ {Y : Scheme.{u}} {W : Y.Opens} {y : Y}
+    (hy : y ∈ W) {t : Γ(Y, W)} (h : IsNilpotent (Y.presheaf.germ W y hy t)) :
+    y ∉ closure (Y.basicOpen t : Set Y) := by
+  obtain ⟨n, hn⟩ := h
+  -- Some power `t ^ (n + 1)` restricts to zero on an open neighbourhood `V ⊆ W` of `y`.
+  obtain ⟨V, hyV, iVW, _, hV⟩ := Y.presheaf.germ_eq y hy hy (t ^ (n + 1)) 0
+    (by rw [map_pow, pow_succ, hn, zero_mul, map_zero])
+  rw [mem_closure_iff]
+  push Not
+  -- On `V`, the basic open of `t` agrees with that of the zero section, which is empty.
+  refine ⟨V, V.isOpen, hyV, Set.eq_empty_iff_forall_notMem.mpr fun z ⟨hzV, hz⟩ ↦ ?_⟩
+  have : z ∈ Y.basicOpen (Y.presheaf.map iVW.op (t ^ (n + 1))) := by
+    rw [Scheme.basicOpen_res, Scheme.basicOpen_pow _ _ n.succ_pos]
+    exact ⟨hzV, hz⟩
+  rw [hV, map_zero, Scheme.basicOpen_zero] at this
+  exact this
+
+namespace Hom
+
+variable {X Y : Scheme.{u}} (f : Y ⟶ X)
+
+/-- The pullback of a section `s` along `Spec 𝒪_{Y,y} ⟶ Y ⟶ X` is the image of the germ at `y`
+of the pullback of `s` under `Γ(Spec 𝒪_{Y,y}, ⊤) ≅ 𝒪_{Y,y}`. -/
+theorem fromSpecStalk_comp_appLE {y : Y} {U : X.Opens} (hy : y ∈ f ⁻¹ᵁ U)
+    (e : ⊤ ≤ (Y.fromSpecStalk y ≫ f) ⁻¹ᵁ U) :
+    (Y.fromSpecStalk y ≫ f).appLE U ⊤ e =
+      f.app U ≫ Y.presheaf.germ (f ⁻¹ᵁ U) y hy ≫ (Scheme.ΓSpecIso _).inv := by
+  rw [comp_appLE]
+  simp only [Hom.appLE, fromSpecStalk_app hy, Category.assoc, ← Functor.map_comp]
+  -- The two restrictions compose to an endomorphism of an open of `Spec 𝒪_{Y,y}`; as the opens
+  -- form a poset, it is the identity.
+  rw [Subsingleton.elim (_ ≫ _) (𝟙 _), CategoryTheory.Functor.map_id, Category.comp_id]
+
+/-- If `f` maps every generization of `y` to `f y`, then for a section `s` near `f y` whose basic
+open misses `f y`, the germ at `y` of the pullback of `s` is nilpotent. -/
+theorem isNilpotent_germ_app {y : Y} (hgen : ∀ y', y' ⤳ y → f y' = f y) {U : X.Opens}
+    (hy : y ∈ f ⁻¹ᵁ U) {s : Γ(X, U)} (hs : f y ∉ X.basicOpen s) :
+    IsNilpotent (Y.presheaf.germ (f ⁻¹ᵁ U) y hy (f.app U s)) := by
+  -- The composite `Spec 𝒪_{Y,y} ⟶ Y ⟶ X` maps every point to `f y`.
+  have hg (z : Spec (Y.presheaf.stalk y)) : (Y.fromSpecStalk y ≫ f) z = f y := by
+    rw [Scheme.Hom.comp_apply]
+    refine hgen _ ?_
+    have := Set.mem_range_self (f := Y.fromSpecStalk y) z
+    rwa [range_fromSpecStalk] at this
+  have e : ⊤ ≤ (Y.fromSpecStalk y ≫ f) ⁻¹ᵁ U := fun z _ ↦
+    (Y.fromSpecStalk y ≫ f).mem_preimage.mpr (hg z ▸ f.mem_preimage.mp hy)
+  -- Hence the pullback of `s` to `Spec 𝒪_{Y,y}` has empty basic open.
+  have h0 : (Spec (Y.presheaf.stalk y)).basicOpen ((Y.fromSpecStalk y ≫ f).appLE U ⊤ e s) = ⊥ := by
+    rw [Scheme.basicOpen_appLE, eq_bot_iff]
+    rintro z ⟨-, hz⟩
+    exact hs (hg z ▸ hz)
+  rw [fromSpecStalk_comp_appLE f hy, CommRingCat.comp_apply, CommRingCat.comp_apply,
+    basicOpen_eq_of_affine] at h0
+  exact (PrimeSpectrum.basicOpen_eq_bot_iff _).mp h0
+
+end Hom
 
 end AlgebraicGeometry.Scheme

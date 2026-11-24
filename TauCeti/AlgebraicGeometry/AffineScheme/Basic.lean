@@ -59,6 +59,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.IsAffineOpen.exists_SpecMap_comp_fromSpec_eq`: a morphism `Spec R ⟶ X` with
   image in an affine open `U` is the spectrum of a ring map `Γ(X, U) ⟶ R` followed by
   `Spec Γ(X, U) ⟶ X`.
+* `AlgebraicGeometry.Scheme.Hom.toSpecΓ_SpecMap_appLE_fromSpec`: a morphism `f : Y ⟶ X` with image
+  in an affine open `U` is `Y ⟶ Spec Γ(Y, ⊤) ⟶ Spec Γ(X, U) ⟶ X`, the middle map being induced by
+  `f`.
 * `AlgebraicGeometry.Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE`: on an open `U` of `X`, the
   morphism `U ⟶ Spec Γ(X, U)` induces restriction of functions on the sections over opens of `U`.
 * `AlgebraicGeometry.Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE`: the map `Γ(B, V) ⟶ Γ(U, T)`
@@ -220,6 +223,17 @@ theorem IsAffineOpen.exists_SpecMap_comp_fromSpec_eq {X : Scheme.{u}} {R : CommR
   rw [Spec.map_comp_assoc, IsAffineOpen.SpecMap_appLE_fromSpec f hU (isAffineOpen_top _) hle,
     IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp_assoc, Iso.inv_hom_id,
     Spec.map_id, Category.id_comp]
+
+/-- If `f : Y ⟶ X` maps all of `Y` into an affine open `U`, then `f` is recovered from its ring
+map `Γ(X, U) ⟶ Γ(Y, ⊤)` via `Y ⟶ Spec Γ(Y, ⊤) ⟶ Spec Γ(X, U) ≅ U ⟶ X`. -/
+theorem Scheme.Hom.toSpecΓ_SpecMap_appLE_fromSpec {X Y : Scheme.{u}} (f : Y ⟶ X) {U : X.Opens}
+    (hU : IsAffineOpen U) (e : ⊤ ≤ f ⁻¹ᵁ U) :
+    Y.toSpecΓ ≫ Spec.map (f.appLE U ⊤ e) ≫ hU.fromSpec = f := by
+  -- Precompose with `⊤ ≅ Y`, where `toSpecΓ` becomes `Scheme.Opens.toSpecΓ` of the open `⊤`;
+  -- then `toSpecΓ ≫ Spec.map (appLE)` is `resLE ≫ toSpecΓ` and `toSpecΓ ≫ fromSpec` is `ι`.
+  rw [← cancel_epi Y.topIso.hom, Scheme.topIso_hom, ← Category.assoc, ← Scheme.Opens.toSpecΓ_top,
+    Scheme.Opens.toSpecΓ_SpecMap_appLE_assoc, IsAffineOpen.toSpecΓ_fromSpec,
+    Scheme.Hom.resLE_comp_ι]
 
 /-- For an open `U` of `X`, the map `Γ(X, U) ≅ Γ(Spec Γ(X, U), ⊤) ⟶ Γ(U, T)` induced on the
 sections over an open `T` of `U` by the canonical morphism `U ⟶ Spec Γ(X, U)` is restriction of
