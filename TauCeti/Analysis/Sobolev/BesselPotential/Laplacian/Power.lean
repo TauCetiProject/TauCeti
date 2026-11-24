@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolv
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Real powers of the shifted Laplacian on the `L²` Bessel-potential scale

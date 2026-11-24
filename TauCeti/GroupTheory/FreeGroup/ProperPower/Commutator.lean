@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Commuting
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 import TauCeti.GroupTheory.FreeGroup.Abelianization
 import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 
@@ -48,7 +48,7 @@ public section
 
 open scoped commutatorElement
 
-open Group Subgroup TauCeti
+open Subgroup TauCeti
 
 namespace IsFreeGroup
 
