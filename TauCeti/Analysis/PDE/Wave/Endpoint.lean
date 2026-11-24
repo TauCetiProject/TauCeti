@@ -228,6 +228,20 @@ private theorem toReal_inv_eq_of_endpoint {n : ℝ} (hn : 1 < n)
   field_simp
   linarith
 
+/-- At the endpoint `1 + (n - 1) / r = (n - 1) / 2`, the Hölder conjugate `r'` of `r` satisfies
+`1 / r' = ((n - 1) / 2 + 1) / (2 ((n - 1) / 2))`, the exponent of the abstract endpoint theorem
+with `σ = (n - 1) / 2`. -/
+private theorem toReal_inv_holderConjugate_eq_of_endpoint {n : ℝ}
+    (hr : 1 + (n - 1) * (r⁻¹).toReal = (n - 1) / 2) :
+    r'.toReal⁻¹ = ((n - 1) / 2 + 1) / (2 * ((n - 1) / 2)) := by
+  have hn : n - 1 ≠ 0 := fun h ↦ by rw [h] at hr; norm_num at hr
+  have h := congrArg ENNReal.toReal (ENNReal.HolderConjugate.inv_add_inv_eq_one r' r)
+  rw [ENNReal.toReal_add (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r' r))
+    (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r r')), ENNReal.toReal_one] at h
+  rw [← ENNReal.toReal_inv, show r'⁻¹.toReal = 1 - (r⁻¹).toReal by linarith]
+  field_simp
+  linear_combination -2 * hr
+
 /-- The endpoint exponent `r = 2 (n - 1) / (n - 3)` of the wave equation in dimension `n > 3`,
 given by `1 + (n - 1) / r = (n - 1) / 2`, satisfies `2 ≤ r < ∞`. -/
 theorem two_le_and_ne_top_of_waveEndpoint {n : ℝ} (hn : 3 < n)
@@ -260,23 +274,16 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
   have hxp : 0 ≤ 2⁻¹ + (2 * (n - 1))⁻¹ := by positivity
   have hbinv : ((ENNReal.ofReal (2⁻¹ + (2 * (n - 1))⁻¹))⁻¹).toReal⁻¹ = 2⁻¹ + (2 * (n - 1))⁻¹ := by
     rw [ENNReal.toReal_inv, inv_inv, ENNReal.toReal_ofReal hxp]
-  have hr'inv : r'.toReal⁻¹ = ((n - 1) / 2 + 1) / (2 * ((n - 1) / 2)) := by
-    have h := congrArg ENNReal.toReal (ENNReal.HolderConjugate.inv_add_inv_eq_one r' r)
-    rw [ENNReal.toReal_add (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r' r))
-      (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r r')), ENNReal.toReal_one,
-      toReal_inv_eq_of_endpoint (by linarith) hr] at h
-    rw [← ENNReal.toReal_inv, show r'⁻¹.toReal = 2⁻¹ + (n - 1)⁻¹ by linarith]
-    field_simp
   obtain ⟨A, hA⟩ :=
     exists_eLpNorm_halfWavePropagator_mul_comp_apply_adjoint_le_top hψ hψc hψ0 (by omega)
   obtain ⟨K, hK⟩ :=
     exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le_four hψ hψc hψ0 (by omega)
   obtain ⟨B, hB⟩ := hψ.continuous.bounded_above_of_compact_support hψc
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
   obtain ⟨C, hC⟩ := exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds
     (𝕜 := ℂ) (H := Lp ℂ 2 (volume : Measure E)) (E := ℂ) (μ := (volume : Measure E))
     (σ := (n - 1) / 2) (b := (ENNReal.ofReal (2⁻¹ + (2 * (n - 1))⁻¹))⁻¹) (r' := r')
-    (by linarith) (by rw [hbinv]; ring) hr'inv A B.toNNReal K
+    (by linarith) (by rw [hbinv]; ring)
+    (toReal_inv_holderConjugate_eq_of_endpoint hr) A B.toNNReal K
   refine ⟨NNReal.sqrt C, fun j m hm F hF ↦ ?_⟩
   have hV (t : ℝ) (g : Lp ℂ 2 (volume : Measure E)) :
       ((halfWavePropagator ℂ (((2 : ℝ) ^ j) ^ ((n + 1) / (n - 1)) * t) ∘L
@@ -288,7 +295,8 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
     (fun t ↦ by
       rw [← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal
-        (norm_halfWavePropagator_comp_fourierMultiplierCLM_le hB0 (hm.mono fun ξ h ↦ h ▸ hB _) _))
+        (norm_halfWavePropagator_comp_fourierMultiplierCLM_le (B := B)
+          (hm.mono fun ξ h ↦ h ▸ hB _) _))
     (hA j m hm)
     (fun G hG hVG ↦ by
       simp_rw [hV] at hVG ⊢

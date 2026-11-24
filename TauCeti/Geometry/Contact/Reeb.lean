@@ -46,6 +46,8 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 ## Main declarations
 
 * `TauCeti.SmoothForm.reebVectorField`: the Reeb vector field of a one-form.
+* `TauCeti.SmoothForm.reebVectorField_congr`: the Reeb vector at a point only depends on the values
+  of the form and of its exterior derivative there.
 * `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField`,
   `TauCeti.SmoothForm.IsContactForm.mextDeriv_reebVectorField_left`: the Reeb equations, with
   pointwise versions `TauCeti.SmoothForm.apply_reebVectorField_of_isContactFormAt` and
@@ -96,6 +98,20 @@ vector field of `α`. -/
 theorem characteristicVectorField_mextDerivₗ (α : SmoothForm I M ℝ 1) :
     α.characteristicVectorField (mextDerivₗ I 1 α) = α.reebVectorField :=
   (rfl)
+
+/-- The Reeb vector of a one-form at a point only depends on the values at that point of the form
+and of its exterior derivative. -/
+theorem reebVectorField_congr {α β : SmoothForm I M ℝ 1} {x : M} (h : α.val x = β.val x)
+    (hd : mextDeriv α.val x = mextDeriv β.val x) :
+    α.reebVectorField x = β.reebVectorField x := by
+  rw [reebVectorField, reebVectorField, characteristicVectorField_def,
+    characteristicVectorField_def]
+  congr 1
+  · ext v
+    rw [degreeOneEquiv_coe_apply, degreeOneEquiv_coe_apply, h]
+  · ext v w
+    rw [bilinFormAt_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
+      SmoothBundleForm.eval₂_apply, mextDerivₗ_apply, mextDerivₗ_apply, hd]
 
 variable [FiniteDimensional ℝ E] {α : SmoothForm I M ℝ 1}
 

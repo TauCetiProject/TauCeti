@@ -87,8 +87,9 @@ noncomputable def resolutionModuleProj :
       ModuleCat.ofHom (ContinuousMap.evalCLM R (1 : G)).toLinearMap :=
   CochainComplex.toSingle₀Equiv_symm_apply_f_zero _
 
-/-- The projection vanishes in every positive degree. -/
-@[simp] theorem resolutionModuleProj_f_succ (n : ℕ) :
+/-- The projection vanishes in every positive degree. Not `@[simp]`: the general
+`HomologicalComplex.Hom.to_single_f_eq_zero` proves it. -/
+theorem resolutionModuleProj_f_succ (n : ℕ) :
     (resolutionModuleProj X).f (n + 1) = 0 :=
   CochainComplex.toSingle₀Equiv_symm_apply_f_succ _ n
 

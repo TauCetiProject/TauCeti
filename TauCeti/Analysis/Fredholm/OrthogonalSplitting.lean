@@ -81,6 +81,10 @@ complements of the kernel, which move continuously with the solution about which
 * `ContinuousLinearMap.IsFredholm.exists_contDiffOn_orthogonal_ker_projection` and
   `ContinuousLinearMap.IsFredholm.exists_contDiffOn_orthogonal_rightInverse`: the same for a
   real `C^n` family, with `C^n` projections and right inverses.
+* `ContinuousLinearMap.IsFredholm.contDiffAt_orthogonalKerProjection` and
+  `ContinuousLinearMap.IsFredholm.contDiffAt_orthogonalRightInverse`: over `ℝ`, the orthogonal
+  kernel projection and right inverse are `C^n` functions of the operator at every Fredholm
+  operator that is onto.
 
 ## References
 
@@ -582,6 +586,41 @@ theorem IsFredholm.exists_contDiffOn_orthogonal_rightInverse (ι : E →L[ℝ] H
     orthogonal_rightInverse_of_projection hι hπker hW⟩
   have hR' : ContDiffOn ℝ n R (U₁ ∩ (U₂ ∩ W)) := hR.mono fun x hx ↦ hx.2.1
   exact hR'.sub ((hπ.mono inter_subset_left).clm_comp hR')
+
+omit [NormedAddCommGroup X] [NormedSpace ℝ X] in
+/-- Near a real Fredholm operator `T₀` that is onto, the orthogonal kernel projections and right
+inverses are `C^n` functions of the operator. -/
+private theorem IsFredholm.exists_contDiffOn_orthogonalKerProjection {ι : E →L[ℝ] H}
+    (hι : Injective ι) {T₀ : E →L[ℝ] F} (hT₀ : IsFredholm T₀) (hsurj : Surjective T₀) :
+    ∃ U : Set (E →L[ℝ] F), IsOpen U ∧ T₀ ∈ U ∧ ContDiffOn ℝ n (orthogonalKerProjection ι) U ∧
+      ContDiffOn ℝ n (orthogonalRightInverse ι) U := by
+  obtain ⟨U, -, hU, hT₀U, π, Q, hπ, hQ, h⟩ := hT₀.exists_contDiffOn_orthogonal_rightInverse
+    (T := id) ι hι hsurj contDiffOn_id isOpen_univ (mem_univ T₀)
+  have hspec (T : E →L[ℝ] F) (hT : T ∈ U) :
+      IsOrthogonalKerProjection ι T (π T) ∧ IsOrthogonalRightInverse ι T (Q T) := by
+    obtain ⟨-, hmem, -, horth, hQT, hQorth, -⟩ := h T hT
+    exact ⟨⟨hmem, horth⟩, ⟨hQT, hQorth⟩⟩
+  exact ⟨U, hU, hT₀U,
+    hπ.congr fun T hT ↦ ((hspec T hT).1.eq_orthogonalKerProjection hι).symm,
+    hQ.congr fun T hT ↦ ((hspec T hT).2.eq_orthogonalRightInverse hι).symm⟩
+
+omit [NormedAddCommGroup X] [NormedSpace ℝ X] in
+/-- **The orthogonal kernel projection is a `C^n` function of the operator** near a real Fredholm
+operator `T` that is onto: `ContinuousLinearMap.orthogonalKerProjection ι` is `C^n` at `T`. -/
+theorem IsFredholm.contDiffAt_orthogonalKerProjection {ι : E →L[ℝ] H} (hι : Injective ι)
+    {T : E →L[ℝ] F} (hT : IsFredholm T) (hsurj : Surjective T) :
+    ContDiffAt ℝ n (orthogonalKerProjection ι) T := by
+  obtain ⟨U, hU, hTU, h, -⟩ := hT.exists_contDiffOn_orthogonalKerProjection (n := n) hι hsurj
+  exact h.contDiffAt (hU.mem_nhds hTU)
+
+omit [NormedAddCommGroup X] [NormedSpace ℝ X] in
+/-- **The orthogonal right inverse is a `C^n` function of the operator** near a real Fredholm
+operator `T` that is onto: `ContinuousLinearMap.orthogonalRightInverse ι` is `C^n` at `T`. -/
+theorem IsFredholm.contDiffAt_orthogonalRightInverse {ι : E →L[ℝ] H} (hι : Injective ι)
+    {T : E →L[ℝ] F} (hT : IsFredholm T) (hsurj : Surjective T) :
+    ContDiffAt ℝ n (orthogonalRightInverse ι) T := by
+  obtain ⟨U, hU, hTU, -, h⟩ := hT.exists_contDiffOn_orthogonalKerProjection (n := n) hι hsurj
+  exact h.contDiffAt (hU.mem_nhds hTU)
 
 end RealFamily
 
