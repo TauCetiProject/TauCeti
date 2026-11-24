@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 import TauCeti.LinearAlgebra.Eigenspace.Involution
@@ -874,11 +874,7 @@ theorem wedge_self_apply (hk : Even k) (α : RoughForm I M ℝ k) (x : M)
       (alternatingFormInner (TangentSpace I x) k (selfDualPart o α x) (selfDualPart o α x) -
         alternatingFormInner (TangentSpace I x) k (antiSelfDualPart o α x)
           (antiSelfDualPart o α x)) * riemannianVolumeForm o x v := by
-  -- Write the second factor as `⋆(⋆α)`, so that `α ∧ ⋆(⋆α) = ⟨α, ⋆α⟩ vol`.
-  have hw : α.wedge α x v = (α x).wedge (hodgeStar o rfl (hodgeStar o rfl α) x) v := by
-    rw [hodgeStar_hodgeStar_of_even o hk, wedge_def, wedgeWith_apply',
-      ContinuousAlternatingMap.wedge_def]
-  rw [hw, wedge_hodgeStar_apply, finCongr_refl, Equiv.coe_refl, Function.comp_id]
+  rw [wedge_self_apply_eq_alternatingFormInner_hodgeStar o hk]
   congr 1
   -- Then `⟨α⁺ + α⁻, α⁺ - α⁻⟩ = |α⁺|² - |α⁻|²` by orthogonality.
   have h := alternatingFormInner_selfDualPart_antiSelfDualPart o hk α α x
@@ -1375,8 +1371,7 @@ theorem integralTopForm_inner_selfDualPart_eq_zero (hk : Even k) {β : SmoothFor
       (coe_mem_selfDualForms_iff.2 hγ'), hd, cast_apply, coe_wedge]
     simp only [Function.comp_def, Fin.cast_eq_self]
   rw [h, ← coe_wedge]
-  exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
-    (wedge_mem_exactCompactlySupportedForms_of_left_mem hβ hγ)
+  exact integralTopForm_wedge_eq_zero_of_mem_exactForms o hβ hγ
 
 /-- **The anti-self-dual part of an exact form is orthogonal to the closed anti-self-dual forms**:
 on an oriented boundaryless Riemannian manifold of dimension `k + k` with `k` even, for an exact
@@ -1400,8 +1395,7 @@ theorem integralTopForm_inner_antiSelfDualPart_eq_zero (hk : Even k) {β : Smoot
         (coe_mem_antiSelfDualForms_iff.2 hγ'), hd, cast_apply, coe_wedge]
     simp only [Function.comp_def, Fin.cast_eq_self]
   rw [h, ← coe_wedge]
-  exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
-    (wedge_mem_exactCompactlySupportedForms_of_left_mem hβ (neg_mem hγ))
+  exact integralTopForm_wedge_eq_zero_of_mem_exactForms o hβ (neg_mem hγ)
 
 /-- **Pairings with a closed self-dual form are cohomological**: on an oriented boundaryless
 Riemannian manifold of dimension `k + k`, for a closed `k`-form `φ` and a compactly supported

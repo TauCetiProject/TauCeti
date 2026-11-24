@@ -254,21 +254,21 @@ theorem tendsto_cdf_renewalExcess
     hindep hid hzero hmean ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
 
 /-- **Limiting distribution of the excess life.** For i.i.d. nonnegative increments whose
-common law is nonlattice, the real-valued excess life `(renewalExcess T t · : ℝ)` converges in
-distribution as `t → ∞` in `ℝ≥0` to any random variable `Z` with law
-`(P.map (T 0)).equilibriumExcessLaw`. The existence of `Z` forces the extended mean to be
-finite, since the equilibrium law is otherwise not a probability measure. Precomposing via
-`MeasureTheory.TendstoInDistribution.comp_tendsto` yields convergence along any family or
-sequence of observation times tending to `atTop`. -/
+common law is nonlattice, the real-valued excess life `(renewalExcess T (t i) · : ℝ)`
+converges in distribution, along any filter of observation times `t i` tending to infinity in
+`ℝ≥0`, to any random variable `Z` with law `(P.map (T 0)).equilibriumExcessLaw`. Both processes
+may live on arbitrary probability spaces. The existence of `Z` forces the extended mean to be
+finite, since the equilibrium law is otherwise not a probability measure. -/
 theorem tendstoInDistribution_renewalExcess
     [IsProbabilityMeasure P]
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hNL : ¬ (P.map (T 0)).IsLattice)
     {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'} [IsProbabilityMeasure Q]
-    {Z : Ω' → ℝ} (hZ : HasLaw Z (P.map (T 0)).equilibriumExcessLaw Q) :
-    TendstoInDistribution (fun (t : ℝ≥0) ω ↦ (renewalExcess T t ω : ℝ)) atTop
+    {Z : Ω' → ℝ} (hZ : HasLaw Z (P.map (T 0)).equilibriumExcessLaw Q)
+    {ι : Type*} {l : Filter ι} {t : ι → ℝ≥0} (ht : Tendsto t l atTop) :
+    TendstoInDistribution (fun i ω ↦ (renewalExcess T (t i) ω : ℝ)) l
       Z (fun _ ↦ P) Q :=
   tendstoInDistribution_renewalExcess_of_tendsto_measureReal_Ioc
-    hindep hid ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) hZ tendsto_id
+    hindep hid ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) hZ ht
 
 end TauCeti.Probability

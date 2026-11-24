@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Core.Trivial
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Topology.Covering.AssociatedBundle
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Basic
 
 /-!
 # Smooth and holomorphic bundles associated with representations of a deck group
@@ -22,7 +23,14 @@ and every regularity they are `C^n`: the associated bundle is a `C^n` vector bun
 charted space `X` (`IsQuotientCoveringMap.isContMDiff_associatedCore`), including analytic
 regularity. Over a complex manifold, modelled on `𝓘(ℂ, EB)` with `n = ∞`, it is a holomorphic
 vector bundle, and for a character `χ : G →* ℂˣ` the core `IsQuotientCoveringMap.characterCore χ`
-is a holomorphic line bundle.
+is a holomorphic line bundle. Likewise, the point-indexed finite-rank core
+`IsQuotientCoveringMap.associatedFiniteRankCore ρ` and its character specialization
+`IsQuotientCoveringMap.characterFiniteRankCore χ` have locally constant transitions and hence are
+`C^n` (`isContMDiff_associatedFiniteRankCore`, `isContMDiff_characterFiniteRankCore`); for a
+character `χ`, `characterFiniteRankCoreDiffeomorph` identifies the total space of
+`characterFiniteRankCore χ` with that of `characterCore χ` via a `C^n` diffeomorphism over `X`,
+yielding the equivalence of nowhere-vanishing `C^n` sections
+(`exists_section_ne_zero_characterFiniteRankCore_iff`).
 
 When `p` is moreover a `C^n` local diffeomorphism, as the orbit projection of a free properly
 discontinuous action by `C^n` maps is (`TauCeti.isLocalDiffeomorph_quotientMk`), the regularity
@@ -55,7 +63,13 @@ holomorphically trivial exactly when `χ = 1`
 
 ## Main results
 
-* `IsQuotientCoveringMap.isContMDiff_associatedCore`: the associated bundle is `C^n`.
+* `IsQuotientCoveringMap.isContMDiff_associatedCore`,
+  `IsQuotientCoveringMap.isContMDiff_associatedFiniteRankCore`: the associated bundle (and its
+  point-indexed finite-rank core) is `C^n`.
+* `IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`,
+  `IsQuotientCoveringMap.exists_section_ne_zero_characterFiniteRankCore_iff`: total-space `C^n`
+  diffeomorphism and nowhere-vanishing section equivalence between `characterFiniteRankCore χ` and
+  `characterCore χ`.
 * `IsQuotientCoveringMap.contMDiffAt_section_associatedCore_iff`,
   `IsQuotientCoveringMap.contMDiff_section_associatedCore_iff`: a section is `C^m` at `p y`, or
   globally, exactly when the corresponding equivariant function is `C^m` at `y`, or globally.
@@ -112,6 +126,92 @@ instance isContMDiff_characterCore (χ : G →* 𝕜ˣ) :
     (hp.characterCore χ).IsContMDiff IB n := by
   rw [characterCore_def]
   infer_instance
+
+/-- The point-indexed finite-rank core associated with a representation of the deck group has
+locally constant transitions, so it is a `C^n` vector bundle for every model of the base and every
+regularity. -/
+instance isContMDiff_associatedFiniteRankCore {r : ℕ}
+    (ρ : G →* ((Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜))ˣ) :
+    (hp.associatedFiniteRankCore ρ).core.IsContMDiff IB n where
+  contMDiffOn_coordChange _ _ _ hx :=
+    (contMDiffAt_const.congr_of_eventuallyEq
+      (hp.eventually_associatedFiniteRankCore_coordChange_eq ρ hx)).contMDiffWithinAt
+
+/-- The point-indexed finite-rank core of a character is `C^n` for every model and regularity. -/
+instance isContMDiff_characterFiniteRankCore (χ : G →* 𝕜ˣ) :
+    (hp.characterFiniteRankCore χ).core.IsContMDiff IB n := by
+  rw [characterFiniteRankCore_def]
+  infer_instance
+
+section FiniteRankComparison
+
+variable (IB n)
+
+/-- Total-space `C^n` diffeomorphism identifying `(hp.characterFiniteRankCore χ).core.TotalSpace`
+with `(hp.characterCore χ).TotalSpace` over `X`. -/
+noncomputable def characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
+    (hp.characterFiniteRankCore χ).core.TotalSpace ≃ₘ^n⟮IB.prod
+      𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜), IB.prod 𝓘(𝕜)⟯
+      (hp.characterCore χ).TotalSpace where
+  toEquiv := (hp.characterFiniteRankCoreHomeomorph χ).toEquiv
+  contMDiff_toFun :=
+    (hp.characterFiniteRankCore χ).contMDiff_of_localTriv_snd
+      (hp.characterFiniteRankCoreHomeomorph χ)
+      (fun p₀ ↦ by simp [characterFiniteRankCoreHomeomorph_apply])
+      (ContinuousLinearMap.proj (⟨0, by simp⟩ : Fin (hp.characterFiniteRankCore χ).rank))
+      fun b p₀ ↦ by
+        rw [← (hp.characterFiniteRankCore χ).trivializationAt_core,
+          characterFiniteRankCoreHomeomorph_apply]
+        exact hp.trivializationAt_characterCore_snd χ b p₀
+  contMDiff_invFun :=
+    (hp.characterFiniteRankCore χ).contMDiff_of_trivializationAt_snd
+      (hp.characterFiniteRankCoreHomeomorph χ).symm
+      (fun q ↦ by simp [characterFiniteRankCoreHomeomorph_symm_apply])
+      (ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id 𝕜 𝕜) fun b q ↦ by
+        ext k
+        rw [← (hp.characterFiniteRankCore χ).trivializationAt_core,
+          characterFiniteRankCoreHomeomorph_symm_apply]
+        exact hp.trivializationAt_characterFiniteRankCore_snd χ b q k
+
+@[simp] theorem characterFiniteRankCoreDiffeomorph_apply (χ : G →* 𝕜ˣ)
+    (p₀ : (hp.characterFiniteRankCore χ).core.TotalSpace) :
+    hp.characterFiniteRankCoreDiffeomorph IB n χ p₀ =
+      ⟨p₀.proj, (p₀.snd : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) ⟨0, by simp⟩⟩ :=
+  hp.characterFiniteRankCoreHomeomorph_apply χ p₀
+
+@[simp] theorem characterFiniteRankCoreDiffeomorph_symm_apply (χ : G →* 𝕜ˣ)
+    (q : (hp.characterCore χ).TotalSpace) :
+    (hp.characterFiniteRankCoreDiffeomorph IB n χ).symm q =
+      ⟨q.proj, (fun _ ↦ (q.snd : 𝕜) : Fin (hp.characterFiniteRankCore χ).rank → 𝕜)⟩ :=
+  hp.characterFiniteRankCoreHomeomorph_symm_apply χ q
+
+/-- `hp.characterFiniteRankCore χ` admits a nowhere-vanishing `C^n` section if and only if
+`hp.characterCore χ` does. -/
+theorem exists_section_ne_zero_characterFiniteRankCore_iff (χ : G →* 𝕜ˣ) :
+    (∃ σ : ∀ x, (hp.characterFiniteRankCore χ).core.Fiber x,
+      ContMDiff IB (IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜)) n
+        (fun x ↦ TotalSpace.mk' (Fin (hp.characterFiniteRankCore χ).rank → 𝕜) x (σ x)) ∧
+      ∀ x, σ x ≠ 0) ↔
+    ∃ τ : ∀ x, (hp.characterCore χ).Fiber x,
+      ContMDiff IB (IB.prod 𝓘(𝕜)) n (fun x ↦ TotalSpace.mk' 𝕜 x (τ x)) ∧
+      ∀ x, τ x ≠ 0 := by
+  let k₀ : Fin (hp.characterFiniteRankCore χ).rank := ⟨0, by simp⟩
+  constructor
+  · rintro ⟨σ, hσ, hσ₀⟩
+    refine ⟨fun x ↦ (σ x : Fin (hp.characterFiniteRankCore χ).rank → 𝕜) k₀,
+      ((hp.characterFiniteRankCoreDiffeomorph IB n χ).contMDiff.comp hσ).congr fun x ↦
+        (hp.characterFiniteRankCoreDiffeomorph_apply IB n χ ⟨x, σ x⟩).symm,
+      fun x h0 ↦ hσ₀ x ?_⟩
+    exact funext fun k ↦ by
+      obtain rfl : k = k₀ := Fin.ext (Nat.lt_one_iff.mp k.isLt)
+      exact h0
+  · rintro ⟨τ, hτ, hτ₀⟩
+    exact ⟨fun x _ ↦ (τ x : 𝕜),
+      ((hp.characterFiniteRankCoreDiffeomorph IB n χ).symm.contMDiff.comp hτ).congr fun x ↦
+        (hp.characterFiniteRankCoreDiffeomorph_symm_apply IB n χ ⟨x, τ x⟩).symm,
+      fun x h0 ↦ hτ₀ x (congrFun h0 k₀)⟩
+
+end FiniteRankComparison
 
 /-- A section whose equivariant function upstairs is constant is `C^m`, for every model of the
 base and every regularity `m`, without any regularity hypothesis on `p`. -/

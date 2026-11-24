@@ -9,6 +9,7 @@ public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 import Mathlib.Topology.LocalAtTarget
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # Proper maps and covering maps
@@ -17,8 +18,9 @@ A covering map is proper exactly when its fibres are finite
 (`IsCoveringMap.isProperMap_iff_finite_fiber`): over an evenly covered open set `U` the map is
 the projection `U × F → U` with `F` the discrete fibre, which is closed when `F` is finite, and
 being a closed map is local on the target. Thus the preimage of a compact set under a
-finite-sheeted cover is compact; this is what makes a finite cover of a punctured compact surface
-compact away from small neighbourhoods of the punctures.
+finite-sheeted cover is compact; in particular, a finite-sheeted covering space of a compact space
+is compact (`IsCoveringMap.compactSpace`). This is also what makes a finite cover of a punctured
+compact surface compact away from small neighbourhoods of the punctures.
 
 Conversely, a local homeomorphism is a covering map over the part of the base where it is proper.
 
@@ -39,6 +41,7 @@ is proper, hence a covering.
 
 * `IsCoveringMap.isProperMap`, `IsCoveringMap.isProperMap_iff_finite_fiber`: a covering map is
   proper exactly when its fibres are finite.
+* `IsCoveringMap.compactSpace`: a covering space with finite fibres over a compact base is compact.
 * `IsLocalHomeomorph.isCoveringMap_of_isProperMap`: a proper local homeomorphism with Hausdorff
   domain is a covering map.
 * `IsCoveringMapOn.of_isLocalHomeomorph_of_isCompact_preimage`: a local homeomorphism is a
@@ -79,6 +82,11 @@ theorem IsCoveringMap.isProperMap_iff_finite_fiber (hf : IsCoveringMap f) :
     IsProperMap f ↔ ∀ x, Finite (f ⁻¹' {x}) :=
   ⟨fun h x ↦ ((h.isCompact_preimage isCompact_singleton).finite
     ⟨(hf x).discreteTopology_fiber⟩).to_subtype, hf.isProperMap⟩
+
+/-- A covering space with finite fibres over a compact base is compact. -/
+theorem IsCoveringMap.compactSpace [CompactSpace X] (hf : IsCoveringMap f)
+    (hfin : ∀ x, Finite (f ⁻¹' {x})) : CompactSpace E :=
+  (hf.isProperMap hfin).compactSpace
 
 /-- A proper local homeomorphism with Hausdorff domain is a covering map. -/
 theorem IsLocalHomeomorph.isCoveringMap_of_isProperMap [T2Space E]

@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.LocallyConvex.HahnBanach
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Smoothness of the complemented-kernel implicit function theorem
@@ -65,6 +67,12 @@ and `h` is as smooth as `f` and `g`.
 * `ContinuousLinearMap.implicitCoordEquiv`: the derivative `x ↦ (f' x, P x)` of the coordinate
   map, as a continuous linear equivalence; its inverse is the inclusion on `{0} × ker f'`
   (`ContinuousLinearMap.implicitCoordEquiv_symm_apply_zero_mk`).
+* `ContinuousLinearMap.linearCoord`: for a surjective linear map `A` between finite-dimensional
+  real spaces, the coordinates `x ↦ (A x, P x)` with `P` a projection onto `ker A`
+  (`ContinuousLinearMap.linearCoord_apply_fst`, `ContinuousLinearMap.linearCoord_coe`),
+  and the linear section `ContinuousLinearMap.linearSection` of `A`, `y ↦ L⁻¹ (y, 0)`
+  (`ContinuousLinearMap.apply_linearSection`, `ContinuousLinearMap.linearCoord_linearSection`).
+  Every `x` is `s (A x) + P x` (`ContinuousLinearMap.linearSection_add_linearCoord_snd`).
 * `HasStrictFDerivAt.implicitCoordSource`: an open neighbourhood of the base point on which the
   derivative of the coordinate map stays invertible.
 * `HasStrictFDerivAt.implicitToOpenPartialHomeomorphOfComplemented_congr` and
@@ -80,6 +88,10 @@ and `h` is as smooth as `f` and `g`.
 * `ContDiffAt.exists_eventuallyEq_comp_of_ker_fderiv_le`: near such a point, a `C^n` function
   whose derivative vanishes on the kernel of the derivative of `f` is `h ∘ f` for a function `h`
   which is `C^n` at `f a`.
+* `ContDiffOn.exists_openPartialHomeomorph_eqOn_fderiv_comp`: the local normal form of a
+  submersion. Near such a point a `C^n` map is its derivative composed with a `C^n` diffeomorphism
+  `Θ x = L⁻¹ (f x, P (x - a))`, where `L = ContinuousLinearMap.implicitCoordEquiv`, so in suitable
+  source coordinates a submersion is a surjective linear map.
 -/
 
 public section
@@ -220,6 +232,79 @@ theorem exists_continuousLinearEquiv_symm_eq {G : Type*} [NormedAddCommGroup G]
       Prod.fst_swap, Prod.snd_swap]
   exact ⟨A, fun x ↦ by rw [hA_symm, implicitCoordEquiv_apply],
     fun x ↦ by rw [hA_symm, implicitCoordEquiv_apply]⟩
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+/-! ### Linear coordinates adapted to a surjective linear map -/
+
+section LinearCoord
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  (A : E →L[ℝ] E') (hA : Function.Surjective A)
+
+/-- The linear equivalence `L : E ≃ E' × ker A` whose first component is `A`, that is,
+`L x = (A x, P x)` for a projection `P` onto `ker A`. -/
+noncomputable def linearCoord : E ≃L[ℝ] E' × (A : E →ₗ[ℝ] E').ker :=
+  A.implicitCoordEquiv (LinearMap.range_eq_top.2 hA) (.of_finiteDimensional _)
+
+/-- The first component of `linearCoord` is `A`. -/
+@[simp]
+theorem linearCoord_apply_fst (x : E) : (A.linearCoord hA x).1 = A x := by
+  simp [linearCoord]
+
+/-- The linear section `y ↦ L⁻¹ (y, 0)` of `A`, where `L = linearCoord`. -/
+noncomputable def linearSection : E' →L[ℝ] E :=
+  ((A.linearCoord hA).symm : E' × (A : E →ₗ[ℝ] E').ker →L[ℝ] E).comp
+    (ContinuousLinearMap.inl ℝ E' (A : E →ₗ[ℝ] E').ker)
+
+/-- `linearSection` is `y ↦ L⁻¹ (y, 0)`, where `L = linearCoord`. -/
+theorem linearSection_apply (y : E') :
+    A.linearSection hA y = (A.linearCoord hA).symm (y, 0) := by
+  simp [linearSection]
+
+/-- The inverse of `linearCoord` sends `(y, k)` to `s y + k`, where `s = linearSection`. -/
+@[simp]
+theorem linearCoord_symm_apply (y : E') (k : (A : E →ₗ[ℝ] E').ker) :
+    (A.linearCoord hA).symm (y, k) = A.linearSection hA y + k := by
+  have h : ((y, k) : E' × (A : E →ₗ[ℝ] E').ker) = (y, 0) + (0, k) := by simp
+  rw [h, map_add, linearSection_apply, linearCoord, A.implicitCoordEquiv_symm_apply_zero_mk]
+
+/-- In the coordinates `linearCoord`, an element `k` of `ker A` is `(0, k)`: the second component
+of `linearCoord` is a projection onto `ker A`. -/
+@[simp]
+theorem linearCoord_coe (k : (A : E →ₗ[ℝ] E').ker) : A.linearCoord hA k = (0, k) := by
+  have h := A.linearCoord_symm_apply hA 0 k
+  rw [map_zero, zero_add, ContinuousLinearEquiv.symm_apply_eq] at h
+  exact h.symm
+
+/-- In the coordinates `linearCoord`, `linearSection y` is `(y, 0)`. -/
+@[simp]
+theorem linearCoord_linearSection (y : E') :
+    A.linearCoord hA (A.linearSection hA y) = (y, 0) := by
+  rw [linearSection_apply, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- `linearSection` is a pointwise right inverse of `A`. -/
+@[simp]
+theorem apply_linearSection (y : E') : A (A.linearSection hA y) = y := by
+  rw [← A.linearCoord_apply_fst hA, linearCoord_linearSection]
+
+/-- `linearSection` is a right inverse of `A`. -/
+@[simp]
+theorem comp_linearSection : A.comp (A.linearSection hA) = ContinuousLinearMap.id ℝ E' := by
+  ext y
+  exact A.apply_linearSection hA y
+
+/-- Every `x` decomposes as `s (A x) + P x`, where `s = linearSection` and `P x ∈ ker A` is the
+second component of `linearCoord`. -/
+theorem linearSection_add_linearCoord_snd (x : E) :
+    A.linearSection hA (A x) + ((A.linearCoord hA x).2 : E) = x := by
+  rw [← linearCoord_symm_apply, ← A.linearCoord_apply_fst hA x]
+  exact (A.linearCoord hA).symm_apply_apply x
+
+end LinearCoord
 
 end ContinuousLinearMap
 
@@ -584,5 +669,55 @@ theorem exists_eventuallyEq_comp_of_ker_fderiv_le (hf : ContDiffAt 𝕜 n f a)
       _ = g (Φ.symm (f x, 0)) := hslice _ hxb.1 _ hxb.2
 
 end ContDiffAt
+
+namespace ContDiffOn
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {n : ℕ∞ω} {f : E → F} {s : Set E} {a : E}
+
+/-- **Local normal form of a submersion.** A map `f` that is `C^n`, `1 ≤ n`, on an open set `s` and
+whose derivative at `a ∈ s` is surjective with complemented kernel agrees, on a neighbourhood of
+`a` contained in `s`, with its derivative at `a` composed with a `C^n` diffeomorphism `Θ` onto an
+open set, whose inverse is `C^n` as well. -/
+theorem exists_openPartialHomeomorph_eqOn_fderiv_comp (hf : ContDiffOn 𝕜 n f s)
+    (hs : IsOpen s) (ha : a ∈ s) (hn : 1 ≤ n) (hsurj : (fderiv 𝕜 f a).range = ⊤)
+    (hker : (fderiv 𝕜 f a).ker.ClosedComplemented) :
+    ∃ Θ : OpenPartialHomeomorph E E, a ∈ Θ.source ∧ Θ.source ⊆ s ∧
+      ContDiffOn 𝕜 n Θ Θ.source ∧ ContDiffOn 𝕜 n Θ.symm Θ.target ∧
+      EqOn f (fderiv 𝕜 f a ∘ Θ) Θ.source := by
+  have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
+  set f' := fderiv 𝕜 f a
+  set L := f'.implicitCoordEquiv hsurj hker
+  -- The second coordinate of `L` is a projection onto the kernel of `f'`.
+  set g : E → E := fun x ↦ L.symm (f x, (L (x - a)).2)
+  have hg : ContDiffOn 𝕜 n g s := by
+    have hL : ContDiff 𝕜 n fun x ↦ (L (x - a)).2 := by fun_prop
+    exact L.symm.contDiff.comp_contDiffOn (hf.prodMk hL.contDiffOn)
+  have hfa : HasFDerivAt f f' a :=
+    ((hf.differentiableOn hn0).differentiableAt (hs.mem_nhds ha)).hasFDerivAt
+  have hga : HasFDerivAt g (ContinuousLinearMap.id 𝕜 E) a := by
+    have hsnd : HasFDerivAt (fun x ↦ (L (x - a)).2)
+        ((ContinuousLinearMap.snd 𝕜 F f'.ker).comp (L : E →L[𝕜] F × f'.ker)) a :=
+      ((ContinuousLinearMap.snd 𝕜 F f'.ker).comp (L : E →L[𝕜] F × f'.ker)).hasFDerivAt.comp a
+        ((hasFDerivAt_id a).sub_const a) |>.congr_fderiv (by ext; simp)
+    refine ((L.symm : F × f'.ker →L[𝕜] E).hasFDerivAt.comp a (hfa.prodMk hsnd)).congr_fderiv ?_
+    ext v
+    simp only [ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply,
+      ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_id',
+      id_eq]
+    rw [ContinuousLinearEquiv.symm_apply_eq, Prod.ext_iff]
+    simp [L, f']
+  obtain ⟨Θ, hΘ, haΘ, hΘs, hΘ'⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph hg hs ha hn
+    (e := ContinuousLinearEquiv.refl 𝕜 E) (by simpa using hga.fderiv.symm)
+  refine ⟨Θ, haΘ, hΘs, hΘ ▸ hg.mono hΘs, hΘ', fun x _ ↦ ?_⟩
+  simp only [Function.comp_apply, hΘ, g]
+  -- `f' v` is the first coordinate of `L v`.
+  have h := f'.implicitCoordEquiv_apply hsurj hker (L.symm (f x, (L (x - a)).2))
+  rw [ContinuousLinearEquiv.apply_symm_apply] at h
+  exact congrArg Prod.fst h
+
+end ContDiffOn
 
 end

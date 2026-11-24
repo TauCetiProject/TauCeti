@@ -171,6 +171,14 @@ private theorem quarticWellSum_eq :
     (quarticWellSum : (ι → ℝ) → ℝ) = fun z ↦ ∑ i, intervalBasePotential 1 (z i) :=
   funext quarticWellSum_def
 
+/-- The Euclidean quartic is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_quarticWellSum : Continuous (quarticWellSum : (ι → ℝ) → ℝ) := by
+  have h : Continuous (intervalBasePotential 1) :=
+    (contDiff_intervalBasePotential (n := 0) 1).continuous
+  rw [quarticWellSum_eq]
+  fun_prop
+
 /-- The partial derivatives of the Euclidean quartic are those of its summands, so its gradient
 for the Euclidean inner product is `(yᵢ (yᵢ² - 1))ᵢ`, and `TauCeti.quarticWellSumFlow` integrates
 its negative. -/

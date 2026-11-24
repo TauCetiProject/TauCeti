@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Disk
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CoherentHomotopy
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Deformation
 
 /-!
 # Deforming singular cubes into a subspace
@@ -341,27 +342,15 @@ every singular cube `c`, with time as the first coordinate, starting at `c`, and
 with values in `A` when the dimension of `c` is less than `n`. The homotopies are compatible with
 faces and degeneracies, and fix the cubes that already have values in `A`. For `n = ⊤` every cube
 deforms into `A`. -/
-structure SubspaceCubeDeformation where
-  /-- The homotopy deforming the singular cube `c`. -/
-  homotopy {m : ℕ} (c : SingularCube X m) : C(I × (Fin m → I), X)
-  /-- The homotopy of `c` starts at `c`. -/
-  homotopy_zero {m : ℕ} (c : SingularCube X m) (y : Fin m → I) : homotopy c (0, y) = c y
+structure SubspaceCubeDeformation extends CubeDeformation X where
   /-- The homotopy of a cube of dimension less than `n` ends at a cube with values in `A`. -/
   homotopy_one_mem {m : ℕ} (hm : (m : ℕ∞) < n) (c : SingularCube X m) (y : Fin m → I) :
     homotopy c (1, y) ∈ A
-  /-- The homotopy of a face of `c` is the restriction of the homotopy of `c` to that face. -/
-  homotopy_insertNth {m : ℕ} (c : SingularCube X (m + 1)) (i : Fin (m + 1)) {t : I}
-    (ht : t = 0 ∨ t = 1) (s : I) (z : Fin m → I) :
-    homotopy c (s, i.insertNth t z) = homotopy (SingularCube.face i t c) (s, z)
-  /-- If `c` does not depend on a coordinate, then neither does its homotopy at any time. -/
-  isDegenerateAt_curry {m : ℕ} {c : SingularCube X m} {i : Fin m} (hc : c.IsDegenerateAt i)
-    (s : I) : SingularCube.IsDegenerateAt ((homotopy c).curry s) i
   /-- The homotopy of a cube with values in `A` is constant. -/
   homotopy_of_range_subset {m : ℕ} {c : SingularCube X m} (hc : range c ⊆ A) (s : I)
     (y : Fin m → I) : homotopy c (s, y) = c y
 
-attribute [simp] SubspaceCubeDeformation.homotopy_zero SubspaceCubeDeformation.homotopy_insertNth
-  SubspaceCubeDeformation.homotopy_of_range_subset
+attribute [simp] SubspaceCubeDeformation.homotopy_of_range_subset
 
 /-- **Below dimension `n`, the singular cubes deform into a compressible subspace.** If every
 singular cube of `X` of dimension less than `n` with boundary in `A` is homotopic, relative to the

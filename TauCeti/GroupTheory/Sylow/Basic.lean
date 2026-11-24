@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Sylow
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Sylow subgroups and conjugacy of prime-power order elements
@@ -17,7 +18,8 @@ order `120` is divisible by `5` but not by `25`, and to their subgroups.
 The file also records that `p` times the number of Sylow `p`-subgroups divides the order of the
 group whenever `p` does. When `p ^ 2` does not divide the order, any two elements of order `p`
 generate conjugate subgroups. More generally, every element of prime-power order is conjugate
-to an element of any chosen Sylow subgroup for that prime.
+to an element of any chosen Sylow subgroup for that prime. For `p = 2`: when `4` does not
+divide the order, all elements of order `2` are conjugate and so form a single conjugacy class.
 
 ## Main results
 
@@ -30,6 +32,10 @@ to an element of any chosen Sylow subgroup for that prime.
 * `TauCeti.exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd`: if `p ^ 2` does not divide the order of
   the group, some conjugate of an element of order `p` is a power of any other element of
   order `p`.
+* `TauCeti.isConj_of_orderOf_eq_two_of_not_four_dvd`: if `4` does not divide the order of the
+  group, any two elements of order `2` are conjugate.
+* `TauCeti.carrier_mk_eq_setOf_orderOf_eq_two`: if `4` does not divide the order of the group,
+  the elements of order `2` form a single conjugacy class.
 * `TauCeti.subsingleton_sylow_of_forall_dvd_natCard_modEq_one`: the Sylow `p`-subgroup is unique
   when no divisor of the group order other than `1` is congruent to `1` modulo `p`.
 -/
@@ -104,6 +110,25 @@ theorem exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (hsq : ¬ p ^ 2 ∣ Nat.car
   have hmem : (x : G) ∈ (Pg : Subgroup G) := x.property
   simp only [Pg, Sylow.coe_ofCard] at hmem
   exact ⟨y, hy ▸ hmem⟩
+
+/-- If `4` does not divide the order of a group, any two elements of order `2` are conjugate. For
+a finite group this applies exactly when the order is odd or twice an odd number. -/
+theorem isConj_of_orderOf_eq_two_of_not_four_dvd (h4 : ¬ 4 ∣ Nat.card G) {g h : G}
+    (hg : orderOf g = 2) (hh : orderOf h = 2) : IsConj g h := by
+  obtain ⟨y, hy⟩ := exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (p := 2) (by norm_num [h4]) hg hh
+  rcases (Subgroup.mem_zpowers_iff_of_orderOf_eq_two hg).mp hy with h1 | hgy
+  · simp_all
+  · exact (isConj_iff.mpr ⟨y, hgy⟩).symm
+
+/-- If `4` does not divide the order of a group, the elements of order `2` form a single conjugacy
+class, the class of any one of them. -/
+theorem carrier_mk_eq_setOf_orderOf_eq_two (h4 : ¬ 4 ∣ Nat.card G) {g : G} (hg : orderOf g = 2) :
+    (ConjClasses.mk g).carrier = {x : G | orderOf x = 2} := by
+  ext x
+  rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mk_eq_mk_iff_isConj, Set.mem_ofPred_eq]
+  refine ⟨fun hx => ?_, fun hx => isConj_of_orderOf_eq_two_of_not_four_dvd h4 hx hg⟩
+  obtain ⟨y, rfl⟩ := isConj_iff.mp hx.symm
+  rw [← MulAut.conj_apply, MulEquiv.orderOf_eq, hg]
 
 /-- A group has a unique Sylow `p`-subgroup when `1` is the only divisor of its order congruent
 to `1` modulo `p`. The hypothesis forces the group to be finite, since every number divides

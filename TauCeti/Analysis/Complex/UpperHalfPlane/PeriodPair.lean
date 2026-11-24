@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Map
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Weierstrass.Zeta
 public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Algebra.Field.Basic
@@ -237,35 +237,6 @@ theorem latticeQuotientEquivZPowers_symm_ofMul (z : ℍ) {q : ℂˣ}
     (latticeQuotientEquivZPowers z hq).symm
         (.ofMul ↑(Units.mk0 (cexp (2 * π * Complex.I * x)) (Complex.exp_ne_zero _))) = x := by
   rw [AddEquiv.symm_apply_eq, latticeQuotientEquivZPowers_mk]
-
-/-- A division point `(b₀ z + b₁) / N` lies in the lattice `ℤ z + ℤ` only if `b ≡ 0 mod N`. -/
-lemma intCast_comp_eq_zero_of_div_mem_lattice_periodPair {N : ℕ} [NeZero N] {b : Fin 2 → ℤ}
-    {z : ℍ} (h : ((b 0 : ℂ) * z + b 1) / N ∈ z.periodPair.lattice) :
-    ((↑) : ℤ → ZMod N) ∘ b = 0 := by
-  have hN : (N : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr (NeZero.ne N)
-  have h' : (((b 0 / (N : ℤ) : ℚ) : ℂ) * z.periodPair.ω₁ +
-      ((b 1 / (N : ℤ) : ℚ) : ℂ) * z.periodPair.ω₂) ∈ z.periodPair.lattice := by
-    convert h using 1
-    push_cast
-    simp only [periodPair_ω₁, periodPair_ω₂]
-    ring
-  obtain ⟨h0, h1⟩ := mul_ω₁_add_mul_ω₂_mem_lattice.mp h'
-  rw [Rat.den_div_intCast_eq_one_iff _ _ hN] at h0 h1
-  ext i
-  fin_cases i <;> simpa [ZMod.intCast_zmod_eq_zero_iff_dvd]
-
-/-- A division point `(b₀ z + b₁) / N` lies in the lattice `ℤ z + ℤ` if `b ≡ 0 mod N`. -/
-lemma div_mem_lattice_periodPair_of_intCast_comp_eq_zero {N : ℕ} {b : Fin 2 → ℤ} (z : ℍ)
-    (h : ((↑) : ℤ → ZMod N) ∘ b = 0) : ((b 0 : ℂ) * z + b 1) / N ∈ z.periodPair.lattice := by
-  obtain ⟨k₀, hk₀⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp (congrFun h 0)
-  obtain ⟨k₁, hk₁⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp (congrFun h 1)
-  rcases eq_or_ne (N : ℂ) 0 with hN | hN
-  · rw [hN, div_zero]
-    exact zero_mem _
-  convert intCast_mul_add_intCast_mem_lattice_periodPair z k₀ k₁ using 1
-  rw [hk₀, hk₁, div_eq_iff hN]
-  push_cast
-  ring
 
 /-- The integer pairs parametrize the lattice of `z.periodPair` by `y ↦ y₀ z + y₁`. -/
 private def latticeEquiv (z : ℍ) : (Fin 2 → ℤ) ≃ z.periodPair.lattice :=
@@ -1054,8 +1025,9 @@ theorem exists_smul_eq_and_denom_eq_of_lattice_periodPair_eq {z z' : ℍ} {c : �
       rw [← key]
       exact mul_pos z.im_pos (Complex.normSq_pos.mpr hc₀)
     exact_mod_cast pos_of_mul_pos_left this z'.im_pos.le
-  let γ : SL(2, ℤ) := ⟨!![a, b; c', d], by
-    rw [Matrix.det_fin_two_of]; exact Int.eq_one_of_mul_eq_one_right hpos.le hdet⟩
+  -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
+  let γ : SL(2, ℤ) := .mk !![a, b; c', d] (by
+    rw [Matrix.det_fin_two_of]; exact Int.eq_one_of_mul_eq_one_right hpos.le hdet)
   have hden : denom γ z' = c := by
     rw [ModularGroup.denom_apply]
     simpa [γ] using hcd

@@ -195,6 +195,13 @@ instance memTrivializationAtlas_complexification : MemTrivializationAtlas e.comp
 
 @[simp] theorem baseSet_complexification : e.complexification.baseSet = e.baseSet := (rfl)
 
+/-- Complexifying a family of atlas frames preserves all prescribed frame domains. -/
+theorem subset_baseSet_complexification {ι : Type*}
+    (frames : ι → Trivialization F (π F E)) [∀ i, MemTrivializationAtlas (frames i)]
+    {U : ι → Set B} (hU : ∀ i, U i ⊆ (frames i).baseSet) :
+    ∀ i, U i ⊆ (frames i).complexification.baseSet := by
+  simpa only [baseSet_complexification] using hU
+
 theorem complexification_apply (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     e.complexification p = (p.proj, ⟨e.linearMapAt ℝ p.proj (realPart (E p.proj) p.snd),
       e.linearMapAt ℝ p.proj (imaginaryPart (E p.proj) p.snd)⟩) := (rfl)
@@ -206,6 +213,16 @@ theorem complexification_apply (p : TotalSpace (Complexification F) fun x ↦ �
 @[simp] theorem complexification_apply_im
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     (e.complexification p).2.im = e.linearMapAt ℝ p.proj (imaginaryPart (E p.proj) p.snd) := (rfl)
+
+open scoped TauCeti.Complexification in
+/-- The complexification of a real fibre frame is the scalar extension of that frame,
+followed by the canonical tensor-to-model equivalence. -/
+theorem continuousLinearEquivAt_complexification {x : B} (hx : x ∈ e.baseSet) :
+    e.complexification.continuousLinearEquivAt ℂ x (by simpa using hx) =
+      (e.continuousLinearEquivAt ℝ x hx).baseChangeComplex.trans
+        (tensorContinuousLinearEquivComplexification F) := by
+  ext u <;> simp [Trivialization.continuousLinearEquivAt_apply,
+    Trivialization.complexification_apply, e.coe_linearMapAt_of_mem hx]
 
 theorem complexification_symm_apply {b : B} (hb : b ∈ e.baseSet) (z : Complexification F) :
     e.complexification.symm b z = 1 ⊗ₜ[ℝ] e.symm b z.re + Complex.I ⊗ₜ[ℝ] e.symm b z.im :=

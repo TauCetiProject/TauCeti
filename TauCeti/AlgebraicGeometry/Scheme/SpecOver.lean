@@ -7,8 +7,14 @@ module
 
 public import Mathlib.AlgebraicGeometry.Group.Affine
 
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+
 /-!
-# Morphisms of affine schemes over an affine base
+# Schemes and morphisms over an affine base
+
+For a scheme with an explicit structure morphism `π : X ⟶ Spec R`, sections over each open
+carry an `R`-algebra structure, and restriction maps are algebra homomorphisms. These algebra
+structures are supplied explicitly and can be installed locally, without a global instance.
 
 For commutative `R`-algebras `A` and `B`, the scheme `Spec B` is a scheme over `Spec R` through
 Mathlib's `AlgebraicGeometry.specOverSpec`. This file identifies the morphisms
@@ -31,6 +37,16 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
 
 ## Main declarations
 
+* `AlgebraicGeometry.Scheme.Hom.sectionsAlgebra`: the algebra of sections over an arbitrary
+  open induced by an explicit morphism to `Spec R`.
+* `AlgebraicGeometry.Scheme.Hom.algebraMap_sections`: the ring map underlying that algebra.
+* `AlgebraicGeometry.Scheme.Hom.fromSpec_toSpec`: an affine open chart respects its induced
+  algebra structure over `R`.
+* `AlgebraicGeometry.Scheme.Hom.resₐ`: restriction of sections as an algebra homomorphism.
+* `AlgebraicGeometry.Scheme.Hom.resₐ_toRingHom`: the underlying restriction ring homomorphism.
+* `AlgebraicGeometry.Scheme.Hom.commSq_specMap_algebraMap_self`: a morphism over `Spec R` forms a
+  commutative square with the structure morphisms and
+  `Spec.map (CommRingCat.ofHom (algebraMap R R))`.
 * `TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom`: morphisms `Spec B ⟶ Spec A` over `Spec R`
   are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 * `TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset`: a morphism over
@@ -51,6 +67,50 @@ open _root_.AlgebraicGeometry CategoryTheory Opposite
 
 universe u
 
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {R : Type u} [CommRing R] {X : Scheme.{u}} (π : X ⟶ Spec (.of R))
+
+/-- The sections over an open `U` form an `R`-algebra through the structure morphism `π`.
+Install this structure locally when using the associated restriction algebra homomorphisms. -/
+@[instance_reducible]
+noncomputable def sectionsAlgebra (U : X.Opens) : Algebra R Γ(X, U) :=
+  ((Scheme.ΓSpecIso (.of R)).inv ≫ π.appLE ⊤ U fun _ _ ↦ trivial).hom.toAlgebra
+
+/-- The algebra map on sections is the pullback from the global sections of `Spec R`. -/
+theorem algebraMap_sections (U : X.Opens) :
+    @algebraMap R Γ(X, U) _ _ (sectionsAlgebra π U) =
+      ((Scheme.ΓSpecIso (.of R)).inv ≫ π.appLE ⊤ U fun _ _ ↦ trivial).hom := by
+  rfl
+
+/-- The inclusion `Spec Γ(X, U) ⟶ X` of an affine open respects its induced `R`-algebra. -/
+theorem fromSpec_toSpec {U : X.Opens} (hU : IsAffineOpen U) :
+    hU.fromSpec ≫ π =
+      Spec.map (CommRingCat.ofHom (@algebraMap R Γ(X, U) _ _ (sectionsAlgebra π U))) := by
+  rw [IsAffineOpen.fromSpec_comp_eq_SpecMap, algebraMap_sections, CommRingCat.ofHom_hom]
+
+/-- Restriction of sections as a map of the `R`-algebras induced by `π`. -/
+noncomputable def resₐ {U V : X.Opens} (h : V ≤ U) :
+    letI := sectionsAlgebra π U
+    letI := sectionsAlgebra π V
+    Γ(X, U) →ₐ[R] Γ(X, V) := by
+  letI := sectionsAlgebra π U
+  letI := sectionsAlgebra π V
+  exact {
+    toRingHom := (X.presheaf.map (homOfLE h).op).hom
+    commutes' := fun r ↦ by
+      exact congr(($(π.appLE_map (U := ⊤) (fun _ _ ↦ trivial) (homOfLE h).op)).hom
+        ((Scheme.ΓSpecIso (.of R)).inv.hom r)) }
+
+/-- The ring homomorphism underlying algebraic restriction is presheaf restriction. -/
+theorem resₐ_toRingHom {U V : X.Opens} (h : V ≤ U) :
+    letI := sectionsAlgebra π U
+    letI := sectionsAlgebra π V
+    (π.resₐ h).toRingHom = (X.presheaf.map (homOfLE h).op).hom := by
+  rfl
+
+end AlgebraicGeometry.Scheme.Hom
+
 namespace AlgebraicGeometry.Spec
 
 /-- The scheme morphism underlying `Spec.homEquivAlgHom.symm φ` is `Spec.map φ`. -/
@@ -62,6 +122,20 @@ theorem homEquivAlgHom_symm_apply_val {R A B : Type u}
   (rfl)
 
 end AlgebraicGeometry.Spec
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- A morphism `f : X ⟶ Y` over `Spec R` forms a commutative square with the structure morphisms
+and `Spec.map (CommRingCat.ofHom (algebraMap R R))`. -/
+theorem commSq_specMap_algebraMap_self {X Y : Scheme.{u}} (f : X ⟶ Y) (R : Type u) [CommRing R]
+    [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))] [hf : f.IsOver (Spec (.of R))] :
+    CommSq f (X ↘ Spec (.of R)) (Y ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R R))) := by
+  refine ⟨?_⟩
+  rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id, Category.comp_id]
+  exact hf.comp_over
+
+end AlgebraicGeometry.Scheme.Hom
 
 namespace TauCeti.AlgebraicGeometry
 

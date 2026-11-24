@@ -13,8 +13,9 @@ public import TauCeti.LinearAlgebra.Dual.Lemmas
 
 The reflecting hyperplanes are the distinct fixed spaces of pseudoreflections, not a list
 indexed by pseudoreflections: several complex pseudoreflections can fix the same hyperplane.
-Each hyperplane admits a nonzero defining linear form. An element fixing a reflecting
-hyperplane pointwise either acts trivially or has precisely that fixed space. For a faithful
+The group permutes the hyperplanes, and each of them admits a nonzero defining linear form. An
+element fixing a reflecting hyperplane pointwise either acts trivially or has precisely that
+fixed space. For a faithful
 representation, its pointwise stabilizer therefore consists of the identity and the
 pseudoreflections with that fixed space.
 
@@ -50,6 +51,14 @@ theorem fixedSubmodule_mem_reflectingHyperplanes {g : G}
     (hg : Module.finrank K (V ⧸ (ρ g).fixedSubmodule) = 1) :
     (ρ g).fixedSubmodule ∈ ρ.reflectingHyperplanes :=
   ρ.mem_reflectingHyperplanes.2 ⟨g, hg, rfl⟩
+
+/-- The group permutes its reflecting hyperplanes: `ρ g` carries the fixed hyperplane of a
+pseudoreflection `k` onto that of `g * k * g⁻¹`. -/
+theorem map_mem_reflectingHyperplanes {H : Submodule K V} (hH : H ∈ ρ.reflectingHyperplanes)
+    (g : G) : H.map (ρ g) ∈ ρ.reflectingHyperplanes := by
+  obtain ⟨k, hk, rfl⟩ := ρ.mem_reflectingHyperplanes.1 hH
+  exact ρ.mem_reflectingHyperplanes.2 ⟨g * k * g⁻¹,
+    (ρ.finrank_quotient_fixedSubmodule_conj g k).trans hk, (ρ.map_fixedSubmodule_conj g k).symm⟩
 
 /-- A reflecting hyperplane has codimension one. -/
 theorem finrank_quotient_of_mem_reflectingHyperplanes {H : Submodule K V}

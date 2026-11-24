@@ -7,7 +7,9 @@ module
 
 public import Mathlib.FieldTheory.LinearDisjoint
 import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.RingTheory.Localization.Defs
 import TauCeti.RingTheory.Localization.FractionRing
+import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
 # The fraction field of a tensor product of fields
@@ -546,11 +548,9 @@ private theorem algebraMap_baseTensorAlgebra_eq :
 
 /-- `F ⊗[k] K` is the localization of `A ⊗[k] K` at the image of `nonZeroDivisors A`. -/
 private theorem isLocalization_baseTensorAlgebra [IsFractionRing A F] :
-    IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[k] K) (nonZeroDivisors A)) (F ⊗[k] K) := by
-  have : IsScalarTower A (A ⊗[k] K) (F ⊗[k] K) := .of_algebraMap_eq fun a ↦ by
-    simp [algebraMap_baseTensorAlgebra_eq]
-  exact _root_.IsLocalization.tensorProduct_tensorProduct k K (nonZeroDivisors A) F
-    (by ext; simp [algebraMap_baseTensorAlgebra_eq])
+    IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[k] K) (nonZeroDivisors A)) (F ⊗[k] K) :=
+  IsLocalization.tensorProduct_tensorProduct_of_algebraMap_eq k K (nonZeroDivisors A) F
+    algebraMap_baseTensorAlgebra_eq
 
 variable {Q : Type*} [CommRing Q] [Algebra (A ⊗[k] K) Q] [Algebra (F ⊗[k] K) Q]
 
