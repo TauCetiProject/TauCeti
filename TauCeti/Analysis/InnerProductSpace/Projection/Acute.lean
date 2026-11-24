@@ -144,8 +144,8 @@ theorem IsAcute.nonempty_linearIsometryEquiv (h : U.IsAcute V) : Nonempty (U ≃
     exact (mem_bot 𝕜).2 (Subtype.ext (disjoint_def.1 hVU _ v.property hvU))
   have hsurj : Function.Surjective T.polarFactor :=
     LinearMap.range_eq_top.1 (by rw [range_polarFactor, hdense])
-  exact ⟨LinearIsometryEquiv.ofSurjective
-    ⟨T.polarFactor.toLinearMap, T.norm_polarFactor_apply_of_injective hinj⟩ hsurj⟩
+  exact ⟨LinearIsometryEquiv.ofSurjective (T.polarIsometry hinj)
+    (by rwa [coe_polarIsometry])⟩
 
 end Submodule
 

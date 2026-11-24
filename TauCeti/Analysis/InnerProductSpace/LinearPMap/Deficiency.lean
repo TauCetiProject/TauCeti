@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.PairShift
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SymmetricSpectrum
+public import TauCeti.Analysis.InnerProductSpace.Projection.DualNorm
 public import TauCeti.Analysis.InnerProductSpace.Projection.Acute
 
 /-!
@@ -93,10 +94,6 @@ theorem mem_deficiencySubspace_iff {y : E} :
   simp only [deficiencySubspace, Submodule.mem_orthogonal', LinearMap.mem_range,
     forall_exists_index, forall_apply_eq_imp_iff, smulSub_apply]
 
-/-- The deficiency subspace is closed. -/
-theorem isClosed_deficiencySubspace : _root_.IsClosed (S.deficiencySubspace z : Set E) :=
-  Submodule.isClosed_orthogonal _
-
 instance [CompleteSpace E] : CompleteSpace (S.deficiencySubspace z) :=
   inferInstanceAs (CompleteSpace (LinearMap.range (S.smulSub (starRingEnd 𝕜 z)))ᗮ)
 
@@ -166,24 +163,13 @@ theorem IsFormalAdjoint.abs_im_mul_directedProjectionGap_deficiencySubspace_le [
   · simp [hz]
   have hz' : 0 < |im z| := abs_pos.2 hz
   rw [← le_div_iff₀' hz', Submodule.directedProjectionGap_le_iff _ _ (by positivity)]
-  intro u hu
-  -- `p = P_{N_z(S)ᗮ} u` lies in the closure of the range of `conj z - S`, and `‖p‖² = ⟪u, p⟫`.
-  set p := (S.deficiencySubspace z)ᗮ.starProjection u
-  have hp : p ∈ (LinearMap.range (S.smulSub (starRingEnd 𝕜 z))).topologicalClosure := by
-    rw [← Submodule.orthogonal_orthogonal_eq_closure]
-    exact Submodule.starProjection_apply_mem _ u
-  have hpp : ‖p‖ ^ 2 = re ⟪u, p⟫_𝕜 := by
-    rw [← inner_self_eq_norm_sq (𝕜 := 𝕜), Submodule.inner_starProjection_left_eq_right,
-      Submodule.starProjection_eq_self_iff.2 (Submodule.starProjection_apply_mem _ u)]
-  have h := hS.abs_im_mul_norm_inner_le hu hp
-  have hre : re ⟪u, p⟫_𝕜 ≤ ‖⟪u, p⟫_𝕜‖ := re_le_norm _
-  rw [div_mul_eq_mul_div, le_div_iff₀ hz']
-  -- From `|im z| ‖p‖² ≤ ‖w - z‖ ‖u‖ ‖p‖`, cancel one factor `‖p‖`.
-  rcases (norm_nonneg p).eq_or_lt with hp0 | hp0
-  · rw [← hp0, zero_mul]
-    positivity
-  refine le_of_mul_le_mul_right ?_ hp0
-  nlinarith [norm_nonneg u, norm_nonneg (w - z)]
+  refine fun u hu ↦ (Submodule.norm_starProjection_le_iff_forall_norm_inner_le _ u
+    (by positivity)).2 fun v hv ↦ ?_
+  -- `N_z(S)ᗮ` is the closure of the range of `conj z - S`.
+  rw [deficiencySubspace, Submodule.orthogonal_orthogonal_eq_closure] at hv
+  have h := hS.abs_im_mul_norm_inner_le hu hv
+  rw [norm_inner_symm, div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀' hz']
+  linarith
 
 /-- For symmetric `S` on a Hilbert space and `‖w - z‖ < |im z|`, no nonzero vector of `N_w(S)`
 is orthogonal to `N_z(S)`. -/
@@ -260,27 +246,17 @@ vanish, for any `z` in the open upper half-plane and `w` in the open lower half-
 theorem IsFormalAdjoint.isSelfAdjoint_iff_deficiencySubspace_eq_bot (hS : S.IsFormalAdjoint S)
     (hcl : S.IsClosed) (hz : 0 < z.im) (hw : w.im < 0) :
     IsSelfAdjoint S ↔ S.deficiencySubspace z = ⊥ ∧ S.deficiencySubspace w = ⊥ := by
-  -- Vanishing of a deficiency subspace transfers across a half-plane.
-  have htrans {a b : ℂ} (e : S.deficiencySubspace a ≃ₗᵢ[ℂ] S.deficiencySubspace b)
-      (hb : S.deficiencySubspace b = ⊥) : S.deficiencySubspace a = ⊥ := by
-    rw [← Submodule.subsingleton_iff_eq_bot] at hb ⊢
-    exact e.toEquiv.subsingleton
   refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hz₀, hw₀⟩ ↦ ?_⟩
   · exact (hS.deficiencySubspace_eq_bot_iff_surjective hcl hz.ne').2
       (h.smul_sub_surjective (by simpa using hz.ne'))
   · exact (hS.deficiencySubspace_eq_bot_iff_surjective hcl hw.ne).2
       (h.smul_sub_surjective (by simpa using hw.ne))
-  obtain ⟨ePlus⟩ := hS.nonempty_linearIsometryEquiv_deficiencySubspace_of_im_pos
-    (z := I) (w := z) (by simp) hz
-  obtain ⟨eMinus⟩ := hS.nonempty_linearIsometryEquiv_deficiencySubspace_of_im_neg
-    (z := -I) (w := w) (by simp) hw
-  have hplus := (hS.deficiencySubspace_eq_bot_iff_surjective hcl (by simp)).1 (htrans ePlus hz₀)
-  have hminus := (hS.deficiencySubspace_eq_bot_iff_surjective hcl (by simp)).1 (htrans eMinus hw₀)
-  refine isSelfAdjoint_of_surjective_addSub S hS (fun φ ↦ ?_) (fun φ ↦ ?_)
-  · obtain ⟨ψ, hψ⟩ := hplus (-φ)
-    exact ⟨ψ, by simpa [neg_sub', sub_neg_eq_add, add_comm] using congrArg Neg.neg hψ⟩
-  · obtain ⟨ψ, hψ⟩ := hminus (-φ)
-    exact ⟨ψ, by simpa [neg_sub', sub_neg_eq_add, add_comm] using congrArg Neg.neg hψ⟩
+  -- `conj w` and `conj z` are resolvent points in the upper and lower half-planes.
+  refine hS.isSelfAdjoint_of_mem_resolventSet (z := starRingEnd ℂ w) (w := starRingEnd ℂ z)
+    (by simpa using hw) (hcl.mem_resolventSet_iff_bijective.2 ⟨hS.smul_sub_injective
+      (by simpa using hw.ne), (hS.deficiencySubspace_eq_bot_iff_surjective hcl hw.ne).1 hw₀⟩)
+    (by simpa using hz) (hcl.mem_resolventSet_iff_bijective.2 ⟨hS.smul_sub_injective
+      (by simpa using hz.ne'), (hS.deficiencySubspace_eq_bot_iff_surjective hcl hz.ne').1 hz₀⟩)
 
 end Complex
 
