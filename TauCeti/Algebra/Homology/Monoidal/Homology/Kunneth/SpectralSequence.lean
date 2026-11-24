@@ -56,6 +56,16 @@ Pages are numbered as in `HomologicalComplex₂.columnFiltrationSpectralSequence
   `HomologicalComplex.kunnethTorSumComplexHomologyIso_hom_naturality`). They are used to describe
   the morphisms of Künneth spectral sequences in
   `TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Naturality`.
+* **Naturality in the second variable.** Morphisms `φ j` of the projective resolutions
+  `ChainComplex.cartanEilenbergResolution.homologyResolution L j` of `Hⱼ(L)` induce morphisms of
+  complexes `HomologicalComplex.kunnethTorComplexMapRight` and
+  `HomologicalComplex.kunnethTorSumComplexMapRight`, through which the identifications above are
+  natural (`HomologicalComplex.kunnethColumnHomologyKunneth_naturality_right`,
+  `HomologicalComplex.tensorObjIsoKunnethTorSumComplexX_hom_naturality_right`). When each `φ j`
+  lies over a map `Hⱼ(L) ⟶ Hⱼ(L')`, the identification with `Tor` turns them into the maps induced
+  on `Tor` in the second variable
+  (`HomologicalComplex.kunnethTorSumComplexHomologyIso_hom_naturality_right`), as computed by
+  `ProjectiveResolution.isoLeftDerivedObj_inv_naturality`.
 
 ## References
 
@@ -625,5 +635,183 @@ lemma kunnethTorSumComplexHomologyIso_hom_naturality
     kunnethTorComplexHomologyIso_hom_naturality_assoc, GradedObject.ι_mapBifunctorMapMap]
   simp only [Pi.id_apply]
   rw [CategoryTheory.Functor.map_id, Category.id_comp]
+
+end HomologicalComplex
+
+/-! ### Naturality in the second variable -/
+
+namespace HomologicalComplex
+
+attribute [local instance] Abelian.hasFiniteBiproducts
+
+variable {R : Type u} [CommRing R] (K : ChainComplex (ModuleCat.{u} R) ℕ)
+  {L L' L'' : ChainComplex (ModuleCat.{u} R) ℕ}
+
+/-- Naturality of `kunnethColumnHomologyKunneth` in the second variable, with respect to a
+morphism `ψ : Q.X p ⟶ Q'.X p` of the rows `p` of the Cartan–Eilenberg resolutions of `L` and
+`L'`. -/
+@[reassoc]
+lemma kunnethColumnHomologyKunneth_naturality_right (p k : ℕ)
+    (ψ : (cartanEilenbergResolution L).X p ⟶ (cartanEilenbergResolution L').X p) :
+    GradedObject.Monoidal.whiskerLeft (fun i ↦ K.homology i) (fun j ↦ homologyMap ψ j) k ≫
+        kunnethColumnHomologyKunneth K L' p k =
+      kunnethColumnHomologyKunneth K L p k ≫ homologyMap (K ◁ ψ) k := by
+  have h := homologyKunneth_naturality (𝟙 K) ψ k
+  have e₁ : (fun i ↦ homologyMap (𝟙 K) i) = 𝟙 (fun i ↦ K.homology i) :=
+    funext fun i ↦ homologyMap_id _ i
+  -- `HomologicalComplex.tensorHom` is the tensor product of morphisms of the monoidal structure
+  -- on complexes by definition
+  have e₂ : HomologicalComplex.tensorHom (𝟙 K) ψ = K ◁ ψ := by
+    exact MonoidalCategory.id_tensorHom K ψ
+  rw [e₁, e₂] at h
+  rw [kunnethColumnHomologyKunneth_eq, kunnethColumnHomologyKunneth_eq]
+  -- the columns of the Künneth bicomplexes are `K ⊗ Q.X p` by definition
+  exact h
+
+/-- The morphism of complexes `kunnethTorComplex K L i j ⟶ kunnethTorComplex K L' i j` induced by
+a morphism `φ` of the complexes of the projective resolutions `homologyResolution L j` and
+`homologyResolution L' j`: `Hᵢ(K) ⊗ φ`. -/
+def kunnethTorComplexMapRight (i : ℕ) {j : ℕ}
+    (φ : (homologyResolution L j).complex ⟶ (homologyResolution L' j).complex) :
+    kunnethTorComplex K L i j ⟶ kunnethTorComplex K L' i j :=
+  (((tensoringLeft _).obj (K.homology i)).mapHomologicalComplex _).map φ
+
+/-- The identity of the resolution induces the identity of `kunnethTorComplex K L i j`. -/
+@[simp]
+lemma kunnethTorComplexMapRight_id (i j : ℕ) :
+    kunnethTorComplexMapRight K i (𝟙 (homologyResolution L j).complex) = 𝟙 _ :=
+  CategoryTheory.Functor.map_id _ _
+
+/-- `HomologicalComplex.kunnethTorComplexMapRight` is compatible with composition. -/
+@[simp]
+lemma kunnethTorComplexMapRight_comp (i : ℕ) {j : ℕ}
+    (φ : (homologyResolution L j).complex ⟶ (homologyResolution L' j).complex)
+    (φ' : (homologyResolution L' j).complex ⟶ (homologyResolution L'' j).complex) :
+    kunnethTorComplexMapRight K i (φ ≫ φ') =
+      kunnethTorComplexMapRight K i φ ≫ kunnethTorComplexMapRight K i φ' :=
+  CategoryTheory.Functor.map_comp _ _ _
+
+/-- In degree `p`, the morphism `HomologicalComplex.kunnethTorComplexMapRight K i φ` is
+`Hᵢ(K) ◁ φ.f p`. -/
+@[reassoc]
+lemma kunnethTorComplexXIso_inv_kunnethTorComplexMapRight_f (i : ℕ) {j : ℕ}
+    (φ : (homologyResolution L j).complex ⟶ (homologyResolution L' j).complex) (p : ℕ) :
+    (kunnethTorComplexXIso K L i j p).inv ≫ (kunnethTorComplexMapRight K i φ).f p =
+      K.homology i ◁ φ.f p ≫ (kunnethTorComplexXIso K L' i j p).inv := by
+  -- both identifications are identities, and the component of `kunnethTorComplexMapRight K i φ`
+  -- in degree `p` is `Hᵢ(K) ◁ φ.f p` by definition
+  exact (Category.id_comp _).trans (Category.comp_id _).symm
+
+/-- The identifications `HomologicalComplex.kunnethTorComplexHomologyIso` with `Tor` are natural in
+the second variable: if `φ` lies over `v : Hⱼ(L) ⟶ Hⱼ(L')`, the map induced on homology by
+`HomologicalComplex.kunnethTorComplexMapRight K i φ` is the map `Torₚ(Hᵢ(K), v)`. -/
+@[reassoc]
+lemma kunnethTorComplexHomologyIso_hom_naturality_right (i : ℕ) {j : ℕ}
+    (φ : (homologyResolution L j).complex ⟶ (homologyResolution L' j).complex)
+    (v : L.homology j ⟶ L'.homology j)
+    (hφ : φ.f 0 ≫ (homologyResolution L' j).π.f 0 = (homologyResolution L j).π.f 0 ≫ v)
+    (p : ℕ) :
+    homologyMap (kunnethTorComplexMapRight K i φ) p ≫
+        (kunnethTorComplexHomologyIso K L' i j p).hom =
+      (kunnethTorComplexHomologyIso K L i j p).hom ≫
+        ((Tor (ModuleCat.{u} R) p).obj (K.homology i)).map v := by
+  rw [kunnethTorComplexHomologyIso_hom, kunnethTorComplexHomologyIso_hom,
+    kunnethTorComplexMapRight]
+  -- `(Tor _ p).obj A` is `Lₚ(A ⊗ -)` and `homologyMap` is the action of the homology functor on
+  -- morphisms, both by definition
+  exact (ProjectiveResolution.isoLeftDerivedObj_inv_naturality v _ _ φ hφ _ p).symm
+
+/-- The morphism of complexes `kunnethTorSumComplex K L q ⟶ kunnethTorSumComplex K L' q` induced by
+a family `φ` of morphisms of the complexes of the projective resolutions `homologyResolution L j`
+and `homologyResolution L' j`: the direct sum of the morphisms
+`HomologicalComplex.kunnethTorComplexMapRight K i (φ j)`. -/
+def kunnethTorSumComplexMapRight
+    (φ : ∀ j, (homologyResolution L j).complex ⟶ (homologyResolution L' j).complex) (q : ℕ) :
+    kunnethTorSumComplex K L q ⟶ kunnethTorSumComplex K L' q :=
+  biproduct.map fun x ↦ kunnethTorComplexMapRight K x.val.1 (φ x.val.2)
+
+/-- On the summand `kunnethTorComplex K L i j`, the morphism
+`HomologicalComplex.kunnethTorSumComplexMapRight K φ q` is
+`HomologicalComplex.kunnethTorComplexMapRight K i (φ j)`. -/
+@[reassoc (attr := simp)]
+lemma ι_kunnethTorSumComplexMapRight
+    (φ : ∀ j, (homologyResolution L j).complex ⟶ (homologyResolution L' j).complex) (q : ℕ)
+    (x : Finset.antidiagonal q) :
+    biproduct.ι (fun x : Finset.antidiagonal q ↦ kunnethTorComplex K L x.val.1 x.val.2) x ≫
+        kunnethTorSumComplexMapRight K φ q =
+      kunnethTorComplexMapRight K x.val.1 (φ x.val.2) ≫
+        biproduct.ι (fun x : Finset.antidiagonal q ↦ kunnethTorComplex K L' x.val.1 x.val.2) x := by
+  rw [kunnethTorSumComplexMapRight, biproduct.ι_map]
+
+/-- The identities of the resolutions induce the identity of `kunnethTorSumComplex K L q`. -/
+@[simp]
+lemma kunnethTorSumComplexMapRight_id (q : ℕ) :
+    kunnethTorSumComplexMapRight K (L := L) (fun j ↦ 𝟙 _) q = 𝟙 _ :=
+  biproduct.hom_ext' _ _ fun x ↦ by
+    rw [ι_kunnethTorSumComplexMapRight, kunnethTorComplexMapRight_id, Category.id_comp,
+      Category.comp_id]
+
+/-- `HomologicalComplex.kunnethTorSumComplexMapRight` is compatible with composition. -/
+@[simp]
+lemma kunnethTorSumComplexMapRight_comp
+    (φ : ∀ j, (homologyResolution L j).complex ⟶ (homologyResolution L' j).complex)
+    (φ' : ∀ j, (homologyResolution L' j).complex ⟶ (homologyResolution L'' j).complex)
+    (q : ℕ) :
+    kunnethTorSumComplexMapRight K (fun j ↦ φ j ≫ φ' j) q =
+      kunnethTorSumComplexMapRight K φ q ≫ kunnethTorSumComplexMapRight K φ' q :=
+  biproduct.hom_ext' _ _ fun x ↦ by
+    rw [ι_kunnethTorSumComplexMapRight, ι_kunnethTorSumComplexMapRight_assoc,
+      kunnethTorComplexMapRight_comp, Category.assoc, ι_kunnethTorSumComplexMapRight]
+
+/-- The identifications `HomologicalComplex.tensorObjIsoKunnethTorSumComplexX` are natural in the
+second variable: for a family `φ` of morphisms of the resolutions whose components in degree `p`
+are the maps `v j : Hⱼ(Q.X p) ⟶ Hⱼ(Q'.X p)`. -/
+@[reassoc]
+lemma tensorObjIsoKunnethTorSumComplexX_hom_naturality_right
+    (φ : ∀ j, (homologyResolution L j).complex ⟶ (homologyResolution L' j).complex) (q p : ℕ)
+    (v : (fun j ↦ ((cartanEilenbergResolution L).X p).homology j) ⟶
+      (fun j ↦ ((cartanEilenbergResolution L').X p).homology j))
+    (hv : ∀ j, (φ j).f p = v j) :
+    GradedObject.Monoidal.whiskerLeft (fun i ↦ K.homology i) v q ≫
+      (tensorObjIsoKunnethTorSumComplexX K L' q p).hom =
+    (tensorObjIsoKunnethTorSumComplexX K L q p).hom ≫
+      (kunnethTorSumComplexMapRight K φ q).f p := by
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun i j h ↦ ?_
+  simp only [GradedObject.Monoidal.ι_tensorHom_assoc,
+    ιTensorObj_tensorObjIsoKunnethTorSumComplexX_hom_assoc,
+    ιTensorObj_tensorObjIsoKunnethTorSumComplexX_hom, ← comp_f, ι_kunnethTorSumComplexMapRight]
+  rw [comp_f, kunnethTorComplexXIso_inv_kunnethTorComplexMapRight_f_assoc, hv]
+  -- the identity of the graded object `i ↦ Hᵢ(K)` is the identity of `Hᵢ(K)` in degree `i` by
+  -- definition
+  exact congrArg (· ≫ _) (MonoidalCategory.id_tensorHom _ _)
+
+/-- The identifications `HomologicalComplex.kunnethTorSumComplexHomologyIso` with
+`⨁_{i + j = q} Torₚ(Hᵢ(K), Hⱼ(L))` are natural in the second variable: if each `φ j` lies over
+`v j : Hⱼ(L) ⟶ Hⱼ(L')`, the map induced on homology by
+`HomologicalComplex.kunnethTorSumComplexMapRight K φ q` is induced by the maps
+`Torₚ(Hᵢ(K), v j)`. -/
+@[reassoc]
+lemma kunnethTorSumComplexHomologyIso_hom_naturality_right
+    (φ : ∀ j, (homologyResolution L j).complex ⟶ (homologyResolution L' j).complex)
+    (v : (fun j ↦ L.homology j) ⟶ (fun j ↦ L'.homology j))
+    (hφ : ∀ j, (φ j).f 0 ≫ (homologyResolution L' j).π.f 0 =
+      (homologyResolution L j).π.f 0 ≫ v j) (q p : ℕ) :
+    homologyMap (kunnethTorSumComplexMapRight K φ q) p ≫
+        (kunnethTorSumComplexHomologyIso K L' q p).hom =
+      (kunnethTorSumComplexHomologyIso K L q p).hom ≫
+        GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) p) (fun x ↦ x.1 + x.2)
+          (𝟙 fun i ↦ K.homology i) v q := by
+  rw [← cancel_epi ((HomologicalComplex.homologyFunctor _ _ p).mapBiproduct
+    (fun x : Finset.antidiagonal q ↦ kunnethTorComplex K L x.val.1 x.val.2)).inv]
+  refine biproduct.hom_ext' _ _ fun ⟨⟨i, j⟩, h⟩ ↦ ?_
+  have h' : i + j = q := Finset.mem_antidiagonal.1 h
+  simp only [Functor.mapBiproduct_inv, biproduct.ι_desc_assoc, homologyFunctor_map]
+  rw [← homologyMap_comp_assoc, ι_kunnethTorSumComplexMapRight, homologyMap_comp_assoc,
+    homologyMap_ι_kunnethTorSumComplexHomologyIso_hom (h := h'),
+    homologyMap_ι_kunnethTorSumComplexHomologyIso_hom_assoc (h := h'),
+    kunnethTorComplexHomologyIso_hom_naturality_right_assoc K i (φ j) (v j) (hφ j),
+    GradedObject.ι_mapBifunctorMapMap]
+  simp only [Pi.id_apply]
+  rw [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
 
 end HomologicalComplex
