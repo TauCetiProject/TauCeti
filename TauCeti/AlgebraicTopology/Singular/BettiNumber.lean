@@ -64,6 +64,8 @@ natural number coefficients.
   coefficients in `ULift k`.
 * `ContinuousMap.HomotopyEquiv.bettiNumber_eq`: Betti numbers are homotopy invariant.
 * `TauCeti.bettiNumber_zero`: the zeroth Betti number is the number of path components.
+* `TauCeti.rank_singularHomology_zero`: the cardinal rank of the zeroth homology is the cardinal
+  number of path components, which stays meaningful when there are infinitely many.
 * `TauCeti.bettiNumber_eq_zero_of_contractibleSpace`: the positive-degree Betti numbers of a
   contractible space vanish.
 * `TauCeti.bettiNumber_of_contractibleSpace`: the Betti numbers of a contractible space are
@@ -117,16 +119,22 @@ theorem bettiNumber_def (j : ℕ) :
         (TopCat.of X)) :=
   (rfl)
 
+/-- **The zeroth homology has rank the number of path components.** Over a ring with the strong
+rank condition, `H₀(X; k)` is free on the path components of `X`, so its rank is their cardinal
+number, also when there are infinitely many. -/
+theorem rank_singularHomology_zero [StrongRankCondition k] :
+    Module.rank k (((singularHomologyFunctor (ModuleCat.{u} k) 0).obj (ModuleCat.of k k)).obj
+      (TopCat.of X)) = Cardinal.mk (ZerothHomotopy X) := by
+  rw [((TopCat.singularHomology₀Iso (TopCat.of X) (ModuleCat.of k k)).toLinearEquiv ≪≫ₗ
+    ModuleCat.coprodLinearEquivFinsupp (ModuleCat.of k k) (ZerothHomotopy X)).rank_eq,
+    rank_finsupp_self']
+
 /-- **The zeroth Betti number counts path components.** Over a ring with the strong rank
 condition, such as a division ring or a nontrivial commutative ring, `b₀(X)` is the number of path
 components of `X`, or `0` when there are infinitely many. -/
 theorem bettiNumber_zero [StrongRankCondition k] :
     bettiNumber k X 0 = Nat.card (ZerothHomotopy X) := by
-  classical
-  let e := (TopCat.singularHomology₀Iso (TopCat.of X) (ModuleCat.of k k) ≪≫
-    ModuleCat.coprodIsoDirectSum _).toLinearEquiv
-  rw [bettiNumber_def, e.finrank_eq, ← (finsuppLEquivDirectSum k k _).finrank_eq]
-  exact finrank_eq_nat_card_basis Finsupp.basisSingleOne
+  rw [bettiNumber_def, finrank, rank_singularHomology_zero, Nat.card]
 
 variable {X} in
 /-- **The positive-degree Betti numbers of a contractible space vanish.** -/
