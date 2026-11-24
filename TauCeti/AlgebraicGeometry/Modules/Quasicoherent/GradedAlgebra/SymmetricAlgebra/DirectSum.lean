@@ -257,6 +257,9 @@ theorem symmetricAlgebraι_def (F : QuasicoherentSheaf X) :
       eqToHom (degree_obj_obj _ 1) ≫ ιTotal _ 1 := by
   rw [symmetricAlgebraι, gradedSymmetricAlgebraXOneIso_inv,
     gradedSymmetricAlgebraDegreeOneIso_inv_app_hom]
+  -- As in `one_liftTotal`, the transports are composed partly in `SheafOfModules X.ringCatSheaf`
+  -- and partly in `X.Modules`, whose category instances agree only up to unfolding, so they are
+  -- merged with `erw`.
   erw [Category.assoc, Category.assoc,
     eqToHom_trans_assoc (degree_obj_gradedSymmetricAlgebra_obj F 1).symm (degree_obj_obj _ 1)]
 

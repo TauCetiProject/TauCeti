@@ -78,18 +78,34 @@ def projectiveBundle : Scheme.{u} :=
 
 namespace projectiveBundle
 
-/-- The structure morphism `π : P(E) ⟶ S` of the projective bundle. -/
+/-- The structure morphism `π : P(E) ⟶ S` of the projective bundle. It is exposed because the
+statements about `universalQuotient` below are typed through `relativeProjToBase`; use
+`projection_def` to rewrite it. -/
 @[expose]
 def projection : projectiveBundle S E ⟶ S :=
   ((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.relativeProjToBase
 
+/-- The structure morphism of `P(E)` is the structure morphism of the relative `Proj` of `Sym E`. -/
+theorem projection_def :
+    projection S E = ((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.relativeProjToBase :=
+  (rfl)
+
 /-- The **twisting sheaf** `𝒪(m)` of the projective bundle `P(E)`, for `m ∈ ℤ`. It is invertible
-because `Sym E` is generated in degree one. -/
+because `Sym E` is generated in degree one. It is exposed because the statements about
+`universalQuotient` below are typed through `relativeProjTwistingSheaf`; use `twistingSheaf_obj` to
+rewrite it. -/
 @[expose]
 def twistingSheaf (m : ℤ) : InvertibleSheaf (projectiveBundle S E) :=
   ⟨((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.relativeProjTwistingSheaf m,
     ((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.isInvertible_relativeProjTwistingSheaf
       (isGeneratedInDegreeOne_gradedSymmetricAlgebra _) m⟩
+
+/-- The underlying module of the twisting sheaf `𝒪(m)` of `P(E)` is the twisting sheaf of the
+relative `Proj` of `Sym E`. -/
+theorem twistingSheaf_obj (m : ℤ) :
+    (twistingSheaf S E m).obj =
+      ((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.relativeProjTwistingSheaf m :=
+  (rfl)
 
 /-- The **tautological quotient** `π^* E ⟶ 𝒪(1)` of the projective bundle: the morphism adjoint to
 the map `E ≅ Sym¹ E ⟶ π_* 𝒪(1)` that sends a section `e` of `E` over an affine open `U` to the
