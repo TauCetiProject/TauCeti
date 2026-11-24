@@ -39,8 +39,8 @@ says that the classes of the elements `ζ_λ`, for `λ` a partition of `n`, span
 `Hₙ` agree as soon as they agree on every `ζ_λ`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.trace_eq_of_cycleBlock_values`). This is the spanning half of
 the theorem that these classes form a basis of the cocenter; their linear independence, over an
-infinite integral domain and for parameters at which the `Q`-integers `[d]_Q`, `d ≤ n`, are nonzero
-and `Q ≠ 1`, is proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basis`.
+infinite integral domain and for parameters at which the `Q`-integers `[d]_Q`, `d ≤ n`, are
+nonzero, is proved in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basis`.
 
 A linear functional `τ` on the infinite type-A Hecke algebra is *block multiplicative* when
 `τ (x * shift a y) = τ x * τ y` for every `x` in the stage of the first `a` strands and every

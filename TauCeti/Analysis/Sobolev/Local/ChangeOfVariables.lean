@@ -184,13 +184,19 @@ theorem MemWkpLoc.comp_conj {u : ℂ → F} (hu : MemWkpLoc p V k u)
     (hmaps : MapsTo (conj ·) U V) : MemWkpLoc p U k (fun z => u (conj z)) := by
   simpa using hu.comp_continuousLinearEquiv_add Complex.conjCLE 0 (by simpa using hmaps)
 
+/-- The reflection `z ↦ -conj z` across the imaginary axis preserves every local Sobolev class on
+sets it maps into one another. -/
+theorem MemWkpLoc.comp_neg_conj {u : ℂ → F} (hu : MemWkpLoc p V k u)
+    (hmaps : MapsTo (fun z => -conj z) U V) : MemWkpLoc p U k (fun z => u (-conj z)) := by
+  simpa using hu.comp_continuousLinearEquiv_add (Complex.conjCLE.trans
+    (ContinuousLinearEquiv.neg ℝ)) 0 (by simpa using hmaps)
+
 /-- The reflection `z ↦ -conj z` across the imaginary axis preserves the real axis and the upper
 half-plane, hence the half-disc classes on the unit half-disc, at every order. -/
 theorem MemWkpLoc.halfDisc_comp_neg_conj {u : ℂ → F}
     (hu : MemWkpLoc p (Metric.ball 0 1 ∩ {z | 0 ≤ z.im}) k u) :
-    MemWkpLoc p (Metric.ball 0 1 ∩ {z | 0 ≤ z.im}) k (fun z => u (-conj z)) := by
-  simpa using hu.comp_continuousLinearEquiv_add (Complex.conjCLE.trans
-    (ContinuousLinearEquiv.neg ℝ)) 0 (fun z hz => by simpa using hz)
+    MemWkpLoc p (Metric.ball 0 1 ∩ {z | 0 ≤ z.im}) k (fun z => u (-conj z)) :=
+  hu.comp_neg_conj fun z hz => by simpa using hz
 
 end Planar
 

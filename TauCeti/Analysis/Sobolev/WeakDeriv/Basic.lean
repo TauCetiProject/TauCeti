@@ -220,6 +220,8 @@ weaken them for no gain.
   finite-dimensional `E` with its Borel σ-algebra, uniqueness almost everywhere on `Ω`.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`: under the same assumptions, a weak line
   derivative vanishes almost everywhere on an open set where the function does.
+* `TauCeti.HasWeakFDerivOn.ae_apply_eq_zero_of_notMem_tsupport`: in particular, a weak
+  derivative vanishes almost everywhere on `Ω` off the support of the function.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: for an
   additive Haar measure on a finite-dimensional `E` with its Borel σ-algebra, where the classical
   derivative exists and is locally integrable on `Ω`, the weak one agrees with it almost
@@ -1047,6 +1049,13 @@ theorem HasWeakLineDerivOn.ae_eq_zero_of_isOpen {u' : E → F}
     (((h.mono inf_le_left).congr_ae huW).ae_eq hasWeakLineDerivOn_zero)
   filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet, ae_restrict_of_ae hW]
     with x hxΩ hx hxt using hx ⟨hxΩ, hxt⟩
+
+/-- **A weak derivative vanishes off the support.** If `Du` is a weak derivative of `u` on `Ω`,
+then for every direction `c`, `Du x c = 0` for almost every `x ∈ Ω` outside the support of `u`. -/
+theorem HasWeakFDerivOn.ae_apply_eq_zero_of_notMem_tsupport {Du : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω u Du) (c : E) : ∀ᵐ x ∂μ.restrict Ω, x ∉ tsupport u → Du x c = 0 :=
+  (h.hasWeakLineDerivOn c).ae_eq_zero_of_isOpen (isClosed_tsupport u).isOpen_compl
+    (.of_forall fun _ hx => image_eq_zero_of_notMem_tsupport hx)
 
 /-- **A weak Fréchet derivative is unique almost everywhere.** Two weak derivatives of `u` on `Ω`
 agree almost everywhere on `Ω`.
