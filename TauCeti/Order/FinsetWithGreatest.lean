@@ -134,11 +134,12 @@ noncomputable instance : LocallyFiniteOrderBot (FinsetWithGreatest α) := by
   classical
   exact inferInstanceAs (LocallyFiniteOrderBot {s : Finset α // ∃ a, IsGreatest (s : Set α) a})
 
-/-- Two finite sets with greatest elements both lie in the union with an upper bound of their
-greatest elements adjoined, whose greatest element is that upper bound. -/
+/-- If `α` is directed, so is `FinsetWithGreatest α`. -/
 instance [IsDirected α (· ≤ ·)] : IsDirected (FinsetWithGreatest α) (· ≤ ·) where
   directed s t := by
     classical
+    -- Adjoin an upper bound `c` of the two greatest elements to the union; `c` is its greatest
+    -- element.
     obtain ⟨c, hsc, htc⟩ := directed_of (· ≤ ·) s.greatest t.greatest
     refine ⟨mk (insert c (s.toFinset ∪ t.toFinset)) ⟨c, by simp, ?_⟩, ?_, ?_⟩
     · intro b hb

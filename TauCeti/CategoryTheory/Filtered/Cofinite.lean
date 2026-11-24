@@ -63,9 +63,7 @@ theorem greatestFunctor_obj (s : FinsetWithGreatest α) :
 
 /-- For directed `α`, the greatest-element functor is final, since its range is cofinal. -/
 instance final_greatestFunctor [IsDirected α (· ≤ ·)] : (greatestFunctor α).Final :=
-  Functor.final_of_exists_of_isFiltered _
-    (fun a ↦ ⟨singleton a, ⟨homOfLE (le_greatest_singleton a)⟩⟩)
-    (fun {_ s} _ _ ↦ ⟨s, 𝟙 s, Subsingleton.elim _ _⟩)
+  greatest_mono.final_functor_iff.2 fun a ↦ ⟨singleton a, le_greatest_singleton a⟩
 
 end TauCeti.FinsetWithGreatest
 
