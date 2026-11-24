@@ -66,7 +66,7 @@ So the defect is strictly differentiable
 at `(x, 0)` with derivative `(v, φ) ↦ d₀* v + d₀* d₀ φ`, and `(y, f) ↦ (y, d₀* (e^{if} y - x))` has
 an invertible strict derivative there. The inverse function theorem gives a branch of zeros
 `y ↦ (y, f(y))` with `f(x) = 0`, and `g y = exp (i f(y))`. The defect is moreover a smooth function
-of `(y, f)`: it is built from bounded linear maps, the product of `H^(k-1)(ℂ)` and the smooth map
+of `(y, f)`: it is built from bounded linear maps, the product of `H^k(ℂ)` and the smooth map
 `f ↦ exp (i f) - 1` of the gauge group (`TauCeti.Vortex.contDiff_subOne_expGauge`). So the local
 inverse, and with it the branch `y ↦ f(y)`, is smooth on an open set
 (`HasStrictFDerivAt.contDiffOn_toOpenPartialHomeomorph_symm`).
@@ -93,6 +93,8 @@ and all terms are continuous, so the Coulomb condition holds at every point.
   Chapter III.
 * C. H. Taubes, *Gr ⇒ SW: From pseudo-holomorphic curves to Seiberg–Witten solutions*,
   J. Differential Geom. 51 (1999), 203–334.
+* S. K. Donaldson and P. B. Kronheimer, *The Geometry of Four-Manifolds*, Oxford University Press,
+  1990, Section 4.2.
 -/
 
 public section
@@ -201,6 +203,32 @@ private theorem cosSubOne_zero :
     cosSubOne (0 : realSubmodule ℂ (natCast_add_two_add_one_nonneg j)) = 0 := by
   simp [cosSubOne, expIRemainder_zero]
 
+/-- `exp (i F) - 1 - i F` as the difference of `F ↦ exp (i F) - 1` and the bounded map
+`F ↦ i F`. -/
+private theorem expIRemainder_eq :
+    (expIRemainder : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
+      fun F ↦ subOne (expGauge (one_lt_natCast_add_two_add_one j) F) -
+        (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL) F := by
+  funext F
+  rw [expIRemainder, smul_apply, Submodule.subtypeL_apply]
+
+/-- `sin F - F` as a bounded real-linear map applied to `exp (i F) - 1 - i F`. -/
+private theorem sinSubSelf_eq_comp :
+    (sinSubSelf : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
+      ((realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).comp
+        ((-Complex.I : ℂ) • ContinuousLinearMap.id ℝ H^{((j + 2 : ℕ) : ℝ) + 1}(ℂ))) ∘
+          expIRemainder := by
+  funext F
+  rw [Function.comp_apply, ContinuousLinearMap.comp_apply, smul_apply,
+    ContinuousLinearMap.id_apply, sinSubSelf]
+
+/-- `cos F - 1` as the real part of `exp (i F) - 1 - i F`. -/
+private theorem cosSubOne_eq_comp :
+    (cosSubOne : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
+      realPartCLM ℂ (natCast_add_two_add_one_nonneg j) ∘ expIRemainder := by
+  funext F
+  rw [Function.comp_apply, cosSubOne]
+
 /-- The `L²` function of `exp (i F) - 1 - i F` is `exp (i f) - 1 - i f`. -/
 private theorem coeFn_inclusionLp_expIRemainder
     (F : realSubmodule ℂ (natCast_add_two_add_one_nonneg j)) :
@@ -252,12 +280,8 @@ private theorem hasStrictFDerivAt_expIRemainder_zero :
     hasFDerivAt_subOne_expGauge_zero (by simp)
   have hL := (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL
     ).hasStrictFDerivAt (x := 0)
-  have hfun : (expIRemainder : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
-      fun F ↦ subOne (expGauge hs F) -
-        (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL) F := by
-    funext F
-    rw [expIRemainder, smul_apply, Submodule.subtypeL_apply]
-  rw [hfun, ← sub_self (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL)]
+  rw [expIRemainder_eq,
+    ← sub_self (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL)]
   exact h.sub hL
 
 /-- **`sin f - f` vanishes to second order at `0`**: its strict derivative at `0` is `0`. -/
@@ -268,15 +292,8 @@ private theorem hasStrictFDerivAt_sinSubSelf_zero :
   have hS := ((realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).comp
     ((-Complex.I : ℂ) • ContinuousLinearMap.id ℝ H^{((j + 2 : ℕ) : ℝ) + 1}(ℂ))
     ).hasStrictFDerivAt.comp 0 hasStrictFDerivAt_expIRemainder_zero
-  have hfun : (sinSubSelf : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
-      ((realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).comp
-        ((-Complex.I : ℂ) • ContinuousLinearMap.id ℝ H^{((j + 2 : ℕ) : ℝ) + 1}(ℂ))) ∘
-          expIRemainder := by
-    funext F
-    rw [Function.comp_apply, ContinuousLinearMap.comp_apply, smul_apply,
-      ContinuousLinearMap.id_apply, sinSubSelf]
   rw [ContinuousLinearMap.comp_zero] at hS
-  rw [hfun]
+  rw [sinSubSelf_eq_comp]
   exact hS
 
 /-- **`cos f - 1` vanishes to second order at `0`**: its strict derivative at `0` is `0`. -/
@@ -286,12 +303,8 @@ private theorem hasStrictFDerivAt_cosSubOne_zero :
         realSubmodule ℂ (natCast_add_two_add_one_nonneg j)) 0 := by
   have hC := (realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).hasStrictFDerivAt.comp 0
     hasStrictFDerivAt_expIRemainder_zero
-  have hfun : (cosSubOne : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) =
-      realPartCLM ℂ (natCast_add_two_add_one_nonneg j) ∘ expIRemainder := by
-    funext F
-    rw [Function.comp_apply, cosSubOne]
   rw [ContinuousLinearMap.comp_zero] at hC
-  rw [hfun]
+  rw [cosSubOne_eq_comp]
   exact hC
 
 variable (j) in
@@ -413,6 +426,16 @@ private theorem coulombMap_self (x : SobolevFieldSpace f m ((j + 2 : ℕ) : ℝ)
     coulombMap x (x.realSubRef _, 0) = 0 := by
   simp [coulombMap, coulombNonlinear_self]
 
+/-- `coulombMap x` as a function of `p = (u, F)`, with `d₀*` at `x` as a real-linear map. -/
+private theorem coulombMap_eq (x : SobolevFieldSpace f m ((j + 2 : ℕ) : ℝ)) :
+    coulombMap x = fun p ↦ realPartCLM ℂ _
+      ((sobolevGaugeAdjoint f m (by omega : 1 ≤ j + 1) (coordW j (x.realSubRef _))).restrictScalars
+          ℝ (coordW j p.1 - coordW j (x.realSubRef _)) +
+        inclusion (lt_add_one ((j + 1 : ℕ) : ℝ)).le (coulombNonlinear x p)) +
+      coulombPhaseDeriv x p.2 := by
+  ext1 p
+  simp only [coulombMap, ContinuousLinearMap.coe_restrictScalars']
+
 /-- The derivative of the Coulomb map at `(x, 0)` in the field coordinates: `d₀*` at `x`. -/
 private def coulombFieldDeriv (x : SobolevFieldSpace f m ((j + 2 : ℕ) : ℝ)) :
     (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))) →L[ℝ]
@@ -448,6 +471,21 @@ private theorem hasStrictFDerivAt_fieldMul_add_mulR (x : SobolevFieldSpace f m (
   rw [ContinuousLinearMap.comp_zero] at h₁
   simpa using ((fieldMulOrderPreservingCLM f m (by omega : 1 ≤ j + 1) (coordW j (x.realSubRef _))
     a).restrictScalars ℝ).hasStrictFDerivAt.comp _ (h₁.add h₂)
+
+/-- A product `x_a (y_b S)` with a smooth term `S` is smooth. -/
+private theorem contDiff_fieldMul_add_mulR (x : SobolevFieldSpace f m ((j + 2 : ℕ) : ℝ))
+    (a b : Fin 4)
+    {S : (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))) ×
+      realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → H^{((j + 1 : ℕ) : ℝ) + 1}(ℂ)}
+    (hS : ContDiff ℝ ∞ S) :
+    ContDiff ℝ ∞ fun p ↦ fieldMulOrderPreservingCLM f m (by omega : 1 ≤ j + 1)
+      (coordW j (x.realSubRef _)) a (fieldMulOrderPreservingCLM f m (by omega : 1 ≤ j + 1) 0 b
+        (S p) + mulR j (coordW j p.1 b) (S p)) :=
+  ((fieldMulOrderPreservingCLM f m (by omega : 1 ≤ j + 1) (coordW j (x.realSubRef _))
+    a).restrictScalars ℝ).contDiff.comp
+      ((((fieldMulOrderPreservingCLM f m (by omega : 1 ≤ j + 1) 0 b).restrictScalars
+        ℝ).contDiff.comp hS).add (((mulR j).contDiff.comp ((contDiff_apply ℝ _ b).comp
+          ((coordW j).contDiff.comp contDiff_fst))).clm_apply hS))
 
 /-- The nonlinear part of the Coulomb map vanishes to second order at `(x, 0)`. -/
 private theorem hasStrictFDerivAt_coulombNonlinear (x : SobolevFieldSpace f m ((j + 2 : ℕ) : ℝ)) :
@@ -522,13 +560,7 @@ private theorem hasStrictFDerivAt_coulombMap (x : SobolevFieldSpace f m ((j + 2 
   have hT := ((coulombPhaseDeriv x : P →L[ℝ]
     realSubmodule ℂ (Nat.cast_nonneg (j + 1) : (0 : ℝ) ≤ ((j + 1 : ℕ) : ℝ))).comp
       (ContinuousLinearMap.snd ℝ V P)).hasStrictFDerivAt (x := p₀)
-  -- The definition of `coulombMap x`, with the abbreviations of this proof.
-  have hfun : coulombMap x = fun p : V × P ↦ realPartCLM ℂ _ (D (coordW j p.1 - ξ) +
-      inclusion (lt_add_one ((j + 1 : ℕ) : ℝ)).le (coulombNonlinear x p)) +
-        coulombPhaseDeriv x p.2 := by
-    ext1 p
-    simp only [coulombMap, D, ξ, ContinuousLinearMap.coe_restrictScalars']
-  rw [hfun]
+  rw [coulombMap_eq]
   refine (hR.add hT).congr_fderiv (ContinuousLinearMap.ext fun p ↦ ?_)
   simp [coulombFieldDeriv, D, ξ]
 
@@ -537,23 +569,23 @@ private theorem hasStrictFDerivAt_coulombMap (x : SobolevFieldSpace f m ((j + 2 
 /-- The remainder `exp (i F) - 1 - i F` is a smooth function of the real phase `F`. -/
 private theorem contDiff_expIRemainder :
     ContDiff ℝ ∞ (expIRemainder : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) := by
-  have hs := one_lt_natCast_add_two_add_one j
-  convert (contDiff_subOne_expGauge (hs := hs)).sub
-    (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL).contDiff using 1
-  funext F
-  rw [expIRemainder, smul_apply, Submodule.subtypeL_apply]
+  rw [expIRemainder_eq]
+  exact (contDiff_subOne_expGauge (hs := one_lt_natCast_add_two_add_one j)).sub
+    (Complex.I • (realSubmodule ℂ (natCast_add_two_add_one_nonneg j)).subtypeL).contDiff
 
 /-- `sin f - f` is a smooth function of the real phase. -/
 private theorem contDiff_sinSubSelf :
-    ContDiff ℝ ∞ (sinSubSelf : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) :=
-  ((realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).comp
+    ContDiff ℝ ∞ (sinSubSelf : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) := by
+  rw [sinSubSelf_eq_comp]
+  exact ((realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).comp
     ((-Complex.I : ℂ) • ContinuousLinearMap.id ℝ H^{((j + 2 : ℕ) : ℝ) + 1}(ℂ))).contDiff.comp
       contDiff_expIRemainder
 
 /-- `cos f - 1` is a smooth function of the real phase. -/
 private theorem contDiff_cosSubOne :
-    ContDiff ℝ ∞ (cosSubOne : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) :=
-  (realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).contDiff.comp contDiff_expIRemainder
+    ContDiff ℝ ∞ (cosSubOne : realSubmodule ℂ (natCast_add_two_add_one_nonneg j) → _) := by
+  rw [cosSubOne_eq_comp]
+  exact (realPartCLM ℂ (natCast_add_two_add_one_nonneg j)).contDiff.comp contDiff_expIRemainder
 
 /-- **The nonlinear part of the Coulomb map is smooth**: it is built from bounded linear maps, the
 bilinear product of `H^(j+2)(ℂ)` and the smooth remainders `sin F - F` and `cos F - 1`. -/
@@ -562,9 +594,6 @@ private theorem contDiff_coulombNonlinear (x : SobolevFieldSpace f m ((j + 2 : �
   set V := Fin 4 → realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))
   set P := realSubmodule ℂ (natCast_add_two_add_one_nonneg j)
   set ξ := coordW j (x.realSubRef _)
-  have hu (b : Fin 4) : ContDiff ℝ ∞ fun p : V × P ↦ coordW j p.1 b :=
-    (((ContinuousLinearMap.proj b).comp (coordW j)).comp
-      (ContinuousLinearMap.fst ℝ V P)).contDiff
   have hS : ContDiff ℝ ∞ fun p : V × P ↦ phaseW j (sinSubSelf p.2) :=
     (phaseW j).contDiff.comp (contDiff_sinSubSelf.comp contDiff_snd)
   have hC : ContDiff ℝ ∞ fun p : V × P ↦ phaseW j (cosSubOne p.2) :=
@@ -572,29 +601,17 @@ private theorem contDiff_coulombNonlinear (x : SobolevFieldSpace f m ((j + 2 : �
   have hd : ContDiff ℝ ∞ fun p : V × P ↦ sectionPairing (f := f) (m := m) ξ (coordW j p.1 - ξ) :=
     (sectionPairing (f := f) (m := m) ξ).contDiff.comp
       (((coordW j).contDiff.comp contDiff_fst).sub contDiff_const)
-  -- A product `x_a (y_b S)` of a smooth term `S`.
-  have hY (a b : Fin 4) {S : V × P → H^{((j + 1 : ℕ) : ℝ) + 1}(ℂ)} (hS : ContDiff ℝ ∞ S) :
-      ContDiff ℝ ∞ fun p ↦ fieldMulOrderPreservingCLM f m (by omega : 1 ≤ j + 1) ξ a
-        (fieldMulOrderPreservingCLM f m (by omega : 1 ≤ j + 1) 0 b (S p) +
-          mulR j (coordW j p.1 b) (S p)) :=
-    ((fieldMulOrderPreservingCLM f m (by omega : 1 ≤ j + 1) ξ a).restrictScalars ℝ).contDiff.comp
-      ((((fieldMulOrderPreservingCLM f m (by omega : 1 ≤ j + 1) 0 b).restrictScalars
-        ℝ).contDiff.comp hS).add (((mulR j).contDiff.comp (hu b)).clm_apply hS))
   rw [show coulombNonlinear x = fun p ↦ _ from funext fun p ↦ coulombNonlinear_eq x p.1 p.2]
   exact (((((((mulR j).contDiff.comp ((phaseW j).contDiff.comp contDiff_snd)).clm_apply hd).add
-    (hY 2 2 hS)).add (hY 3 3 hS)).add (hY 2 3 hC)).sub (hY 3 2 hC))
+    (contDiff_fieldMul_add_mulR x 2 2 hS)).add (contDiff_fieldMul_add_mulR x 3 3 hS)).add
+      (contDiff_fieldMul_add_mulR x 2 3 hC)).sub (contDiff_fieldMul_add_mulR x 3 2 hC))
 
 /-- **The Coulomb map is smooth** in the real coordinates of the field and the phase. -/
 private theorem contDiff_coulombMap (x : SobolevFieldSpace f m ((j + 2 : ℕ) : ℝ)) :
     ContDiff ℝ ∞ (coulombMap x) := by
   set ξ := coordW j (x.realSubRef _)
   set D := (sobolevGaugeAdjoint f m (by omega : 1 ≤ j + 1) ξ).restrictScalars ℝ
-  have hfun : coulombMap x = fun p ↦ realPartCLM ℂ _ (D (coordW j p.1 - ξ) +
-      inclusion (lt_add_one ((j + 1 : ℕ) : ℝ)).le (coulombNonlinear x p)) +
-        coulombPhaseDeriv x p.2 := by
-    ext1 p
-    simp only [coulombMap, D, ξ, ContinuousLinearMap.coe_restrictScalars']
-  rw [hfun]
+  rw [coulombMap_eq]
   exact ((realPartCLM ℂ _).contDiff.comp ((D.contDiff.comp
     (((coordW j).contDiff.comp contDiff_fst).sub contDiff_const)).add
       (((inclusion (lt_add_one ((j + 1 : ℕ) : ℝ)).le).restrictScalars ℝ).contDiff.comp
@@ -955,14 +972,13 @@ theorem exists_isOpen_contDiffOn_forall_realSubRef_smul_eq (hk : 3 ≤ k)
   set R : (Fin 4 → H^{(k : ℝ)}(ℂ)) →L[ℝ]
       Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k) :=
     ContinuousLinearMap.pi fun i ↦ (realPartCLM ℂ _).comp (ContinuousLinearMap.proj i)
-  set ι : (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)) →L[ℝ]
-      Fin 4 → H^{(k : ℝ)}(ℂ) :=
-    ContinuousLinearMap.pi fun i ↦ (realSubmodule ℂ _).subtypeL.comp (ContinuousLinearMap.proj i)
+  set ι := coordInclusion (Nat.cast_nonneg k : (0 : ℝ) ≤ k) with hιdef
   have hπ (g : SobolevTopologicalGaugeGroup hs) (y : SobolevFieldSpace f m k) :
       R (smulCoord f m (reSubOne g) (imPart g) (ι (y.realSubRef (Nat.cast_nonneg k)))) =
         (g • y).realSubRef (Nat.cast_nonneg k) := by
-    have hι : ι (y.realSubRef (Nat.cast_nonneg k)) = subRef y :=
-      funext fun i ↦ coe_realSubRef _ y i
+    have hι : ι (y.realSubRef (Nat.cast_nonneg k)) = subRef y := by
+      rw [hιdef, coordInclusion_apply]
+      exact funext fun i ↦ coe_realSubRef _ y i
     funext i
     rw [hι, ← subRef_smul, ← funext (coe_realSubRef (Nat.cast_nonneg k) (g • y))]
     simp only [R, ContinuousLinearMap.pi_apply, ContinuousLinearMap.coe_comp,
