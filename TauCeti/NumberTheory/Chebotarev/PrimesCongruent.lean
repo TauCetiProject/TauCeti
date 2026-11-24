@@ -96,9 +96,7 @@ theorem frobeniusPrimeSet_galEquivZMod_symm_eq_setOf_natCast_absNorm_eq (hn : n 
     have hcop := (ZMod.isUnit_iff_coprime (Ideal.absNorm 𝔭.asIdeal) n).mp
       (ha.symm ▸ a.isUnit)
     have hdvd := (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mp hm
-    have hp := Rat.HeightOneSpectrum.prime_natGenerator 𝔭
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hcop hdvd
-    exact (hp.coprime_iff_not_dvd.mp hcop) hdvd
+    exact ((Rat.HeightOneSpectrum.prime_absNorm_asIdeal 𝔭).coprime_iff_not_dvd.mp hcop) hdvd
   · rw [mem_frobeniusPrimeSet_galEquivZMod_symm_iff F n hm, Set.mem_ofPred_eq]
 
 /-- At every nonzero level, the cyclotomic Frobenius fibre differs from its arithmetic
