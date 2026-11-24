@@ -124,35 +124,6 @@ end CommRing
 
 variable {k : Type u} {V : Type w} [Field k] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
 
-/-- The trace of an endomorphism of finite order is an algebraic integer once its characteristic
-polynomial splits: the trace is then the sum of the roots, and each of those is an `n`-th root of
-unity. This is the splitting case of `Module.End.isIntegral_trace_of_pow_eq_one`, which subsumes
-it, so it stays private. -/
-private theorem isIntegral_trace_of_pow_eq_one_of_splits {f : End k V} {n : ℕ} (hn : n ≠ 0)
-    (hf : f ^ n = 1) (hsplits : f.charpoly.Splits) : IsIntegral ℤ (LinearMap.trace k V f) := by
-  rw [Module.End.trace_eq_sum_roots_charpoly_of_splits hsplits]
-  refine IsIntegral.multiset_sum fun μ hμ => IsIntegral.of_pow (Nat.pos_of_ne_zero hn) ?_
-  rw [pow_eq_one_of_isRoot_charpoly hf (isRoot_of_mem_roots hμ)]
-  exact isIntegral_one
-
-omit [FiniteDimensional k V] in
-/-- **The trace of an endomorphism of finite order is an algebraic integer**, over an arbitrary
-field. For finite-dimensional `V`, the trace is a sum of eigenvalues over an algebraic closure of
-`k`, each of them a root of unity. If `V` is not finite-dimensional, `LinearMap.trace` is `0` by
-convention, so the statement holds trivially. -/
-theorem isIntegral_trace_of_pow_eq_one {f : End k V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
-    IsIntegral ℤ (LinearMap.trace k V f) := by
-  by_cases hfin : Module.Finite k V
-  swap
-  · rw [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin, LinearMap.zero_apply]
-    exact isIntegral_zero
-  have hbase : f.baseChange (AlgebraicClosure k) ^ n = 1 := by
-    rw [← LinearMap.baseChange_pow, hf, LinearMap.baseChange_one]
-  have hint := isIntegral_trace_of_pow_eq_one_of_splits (k := AlgebraicClosure k) hn hbase
-    (IsAlgClosed.splits _)
-  rw [LinearMap.trace_baseChange] at hint
-  exact hint.tower_bot (algebraMap k (AlgebraicClosure k)).injective
-
 omit [FiniteDimensional k V] in
 /-- **An endomorphism with two equal distinct powers has integral trace**: if `f ^ a = f ^ b` with
 `a ≠ b`, then the trace of `f` is integral over every ring `R` below `k`. If `V` is not
@@ -173,6 +144,14 @@ theorem isIntegral_trace_of_pow_eq_pow {R : Type*} [CommRing R] [Algebra R k] {f
     simp [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, ← map_pow, h]
   rw [LinearMap.trace_eq_matrix_trace k bs]
   exact Matrix.isIntegral_trace hM
+
+omit [FiniteDimensional k V] in
+/-- **The trace of an endomorphism of finite order is an algebraic integer**, over an arbitrary
+field: `f ^ n = f ^ 0` with `n ≠ 0`, so this is a case of
+`Module.End.isIntegral_trace_of_pow_eq_pow`. -/
+theorem isIntegral_trace_of_pow_eq_one {f : End k V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
+    IsIntegral ℤ (LinearMap.trace k V f) :=
+  isIntegral_trace_of_pow_eq_pow hn (by rwa [pow_zero])
 
 omit [FiniteDimensional k V] in
 /-- An endomorphism `f` with `f ^ n = 1` for some `n` invertible in `k` is semisimple, because it

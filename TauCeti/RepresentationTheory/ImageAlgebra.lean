@@ -27,7 +27,7 @@ an isomorphism. Consequently `B(ρ)` is central simple over `k(ρ)` of dimension
 `n = dim_K V`, and it has a Schur index `s(ρ)` dividing `n` and a Brauer class `β(ρ)`, with
 `s(ρ) = 1` exactly when `β(ρ) = 1`, and both equal to one when `k(ρ)` is finite.
 
-The descent is `Module.End.baseChangeSubalgebraAlgEquiv` from
+The descent is `Subalgebra.baseChangeAlgEquiv` from
 `TauCeti/LinearAlgebra/Trace/Descent.lean`: a subalgebra of `End_K(V)` over a subfield `F ⊆ K`
 that spans `End_K(V)` and has all its traces in `F` is an `F`-form of `End_K(V)`. The image algebra
 qualifies because its traces are `k(ρ)`-linear combinations of character values.
@@ -51,7 +51,6 @@ universe, as `TauCeti.BrauerGroup.mk_eq_one_iff_isSplittingField` does.
 * `Representation.schurIndex_dvd_finrank`: `s(ρ) ∣ n`.
 * `Representation.brauerClass_eq_one_iff_schurIndex_eq_one`: `β(ρ) = 1 ↔ s(ρ) = 1`.
 * `Representation.brauerClass_eq_one_of_finite`: `β(ρ) = 1` when `k(ρ)` is finite.
-* `Representation.finite_characterField`: finite image over a finite field gives a finite `k(ρ)`.
 
 Over an algebraically closed `K` an irreducible representation satisfies the spanning hypothesis
 (`Representation.span_range_eq_top_of_isIrreducible`), and so does every one-dimensional
@@ -74,7 +73,6 @@ open scoped TensorProduct
 
 namespace Representation
 
-open Module.End
 
 section Definitions
 
@@ -129,20 +127,6 @@ theorem span_imageAlgebra_eq_top (hρ : Submodule.span K (Set.range ρ) = ⊤) :
     Submodule.span K (ρ.imageAlgebra k : Set (Module.End K V)) = ⊤ :=
   eq_top_mono (Submodule.span_mono (Set.range_subset_iff.mpr (ρ.apply_mem_imageAlgebra k))) hρ
 
-/-- **A representation with finite image over a finite field has a finite character field.** -/
-theorem finite_characterField [Finite k] (h : (Set.range ρ).Finite) :
-    Finite (ρ.characterField k) := by
-  have hfin : (Set.range ρ.character).Finite := by
-    have : Set.range ρ.character = LinearMap.trace K V '' Set.range ρ := by
-      ext; simp [character]
-    exact this ▸ h.image _
-  have : Finite (Set.range ρ.character) := hfin.to_subtype
-  have : FiniteDimensional k (ρ.characterField k) := by
-    rw [characterField_def]
-    exact IntermediateField.finiteDimensional_adjoin fun _ ⟨g, hg⟩ =>
-      hg ▸ ρ.isIntegral_character_of_finite_range h g
-  exact Module.finite_of_finite k
-
 end Definitions
 
 section CentralSimple
@@ -155,38 +139,38 @@ variable {k K G V : Type*} [Field k] [Field K] [Algebra k K] [Monoid G]
 multiplication `K ⊗_{k(ρ)} B(ρ) → End_K(V)` is an isomorphism. -/
 noncomputable def imageAlgebraBaseChangeAlgEquiv :
     K ⊗[ρ.characterField k] ρ.imageAlgebra k ≃ₐ[K] Module.End K V :=
-  baseChangeSubalgebraAlgEquiv _ (span_imageAlgebra_eq_top hρ)
+  (ρ.imageAlgebra k).baseChangeAlgEquiv (span_imageAlgebra_eq_top hρ)
     fun _ hx => ρ.trace_mem_characterField k hx
 
 @[simp]
 theorem imageAlgebraBaseChangeAlgEquiv_tmul (a : K) (x : ρ.imageAlgebra k) :
     imageAlgebraBaseChangeAlgEquiv hρ (a ⊗ₜ x) = a • (x : Module.End K V) :=
-  baseChangeSubalgebraAlgEquiv_tmul _ _ _ a x
+  Subalgebra.baseChangeAlgEquiv_tmul _ _ _ a x
 
 include hρ in
 /-- The image algebra is finite-dimensional over the character field. -/
 theorem finiteDimensional_imageAlgebra :
     FiniteDimensional (ρ.characterField k) (ρ.imageAlgebra k) :=
-  finiteDimensional_subalgebra_of_trace_mem _ (span_imageAlgebra_eq_top hρ)
+  (ρ.imageAlgebra k).finiteDimensional_of_trace_mem (span_imageAlgebra_eq_top hρ)
     fun _ hx => ρ.trace_mem_characterField k hx
 
 include hρ in
 /-- **The image algebra has dimension `n²`** over the character field, `n = dim_K V`. -/
 theorem finrank_imageAlgebra :
     finrank (ρ.characterField k) (ρ.imageAlgebra k) = finrank K V ^ 2 :=
-  finrank_subalgebra_of_trace_mem _ (span_imageAlgebra_eq_top hρ)
+  (ρ.imageAlgebra k).finrank_of_trace_mem (span_imageAlgebra_eq_top hρ)
     fun _ hx => ρ.trace_mem_characterField k hx
 
 include hρ in
 /-- The image algebra is central over the character field. -/
 theorem isCentral_imageAlgebra : Algebra.IsCentral (ρ.characterField k) (ρ.imageAlgebra k) :=
-  isCentral_subalgebra_of_trace_mem _ (span_imageAlgebra_eq_top hρ)
+  (ρ.imageAlgebra k).isCentral_of_trace_mem (span_imageAlgebra_eq_top hρ)
     fun _ hx => ρ.trace_mem_characterField k hx
 
 include hρ in
 /-- The image algebra of a representation on a nonzero space is a simple ring. -/
 theorem isSimpleRing_imageAlgebra [Nontrivial V] : IsSimpleRing (ρ.imageAlgebra k) :=
-  isSimpleRing_subalgebra_of_trace_mem _ (span_imageAlgebra_eq_top hρ)
+  (ρ.imageAlgebra k).isSimpleRing_of_trace_mem (span_imageAlgebra_eq_top hρ)
     fun _ hx => ρ.trace_mem_characterField k hx
 
 include hρ in
@@ -306,7 +290,7 @@ example {k K V G : Type} [Field k] [Finite k] [Field K] [Algebra k K]
     [Monoid G] [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Nontrivial V]
     (ρ : Representation K G V) [Fact (Submodule.span K (Set.range ρ) = ⊤)]
     (h : (Set.range ρ).Finite) : ρ.brauerClass k = 1 :=
-  have := finite_characterField (k := k) h
+  have := finite_characterField k h
   ρ.brauerClass_eq_one_of_finite k
 
 end Examples

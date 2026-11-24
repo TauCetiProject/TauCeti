@@ -68,6 +68,20 @@ theorem characterField_eq_of_equiv {W : Type*} [AddCommGroup W] [Module k W]
     [Algebra F k] : ρ.characterField F = σ.characterField F := by
   rw [characterField_def, characterField_def, char_iso φ]
 
+/-- **A representation with finite image over a finite field has a finite character field.** -/
+theorem finite_characterField {ρ : Representation k G V} (F : Type w) [Field F] [Finite F]
+    [Algebra F k] (h : (Set.range ρ).Finite) : Finite (ρ.characterField F) := by
+  have hfin : (Set.range ρ.character).Finite := by
+    have : Set.range ρ.character = LinearMap.trace k V '' Set.range ρ := by
+      ext; simp [character]
+    exact this ▸ h.image _
+  have : Finite (Set.range ρ.character) := hfin.to_subtype
+  have : FiniteDimensional F (ρ.characterField F) := by
+    rw [characterField_def]
+    exact IntermediateField.finiteDimensional_adjoin fun _ ⟨g, hg⟩ =>
+      hg ▸ ρ.isIntegral_character_of_finite_range h g
+  exact Module.finite_of_finite F
+
 end Representation
 
 namespace FDRep
@@ -89,20 +103,22 @@ theorem characterField_eq (X : FDRep k G) (F : Type w) [Field F] [Algebra F k] :
 
 /-- The character field is the intermediate field adjoined by the range of the character. -/
 theorem characterField_def (X : FDRep k G) (F : Type w) [Field F] [Algebra F k] :
-    X.characterField F = IntermediateField.adjoin F (Set.range X.character) :=
-  Representation.characterField_def X.ρ F
+    X.characterField F = IntermediateField.adjoin F (Set.range X.character) := by
+  simpa only [← characterField_eq, funext (character_ρ X)] using
+    Representation.characterField_def X.ρ F
 
 /-- Every character value belongs to the character field. -/
 @[simp]
 theorem character_mem_characterField (X : FDRep k G) (F : Type w) [Field F] [Algebra F k]
-    (g : G) : X.character g ∈ X.characterField F :=
-  Representation.character_mem_characterField X.ρ F g
+    (g : G) : X.character g ∈ X.characterField F := by
+  simpa only [← characterField_eq, character_ρ] using
+    Representation.character_mem_characterField X.ρ F g
 
 /-- The character field is the smallest intermediate field containing all character values. -/
 @[simp]
 theorem characterField_le_iff (X : FDRep k G) (F : Type w) [Field F] [Algebra F k]
-    (L : IntermediateField F k) : X.characterField F ≤ L ↔ ∀ g, X.character g ∈ L :=
-  Representation.characterField_le_iff X.ρ F L
+    (L : IntermediateField F k) : X.characterField F ≤ L ↔ ∀ g, X.character g ∈ L := by
+  simpa only [← characterField_eq, character_ρ] using Representation.characterField_le_iff X.ρ F L
 
 /-- Isomorphic representations have the same field of character values. -/
 theorem characterField_eq_of_iso (X Y : FDRep k G) (e : X ≅ Y) (F : Type w) [Field F]
