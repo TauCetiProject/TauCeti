@@ -205,6 +205,17 @@ instance : LinearMapClass (RestrictedLieHom R L L' p) R L L' where
 theorem coe_toLieHom (f : RestrictedLieHom R L L' p) : ⇑f.toLieHom = f :=
   (rfl)
 
+/-- The underlying function of a restricted morphism built from a Lie algebra morphism. -/
+@[simp]
+theorem coe_mk (f : L →ₗ⁅R⁆ L') (h) : ⇑(⟨f, h⟩ : RestrictedLieHom R L L' p) = f :=
+  (rfl)
+
+/-- Rebuilding a restricted morphism from its underlying Lie algebra morphism gives it back. -/
+@[simp]
+theorem mk_coe (f : RestrictedLieHom R L L' p) (h) :
+    (⟨f.toLieHom, h⟩ : RestrictedLieHom R L L' p) = f :=
+  (rfl)
+
 /-- A restricted morphism preserves brackets. -/
 @[simp]
 theorem map_lie (f : RestrictedLieHom R L L' p) (x y : L) : f ⁅x, y⁆ = ⁅f x, f y⁆ :=
