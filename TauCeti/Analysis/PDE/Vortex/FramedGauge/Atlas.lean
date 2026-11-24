@@ -44,7 +44,8 @@ gauge-fixed deformation operator at a vortex.
 **The divisor.** The zero divisor is gauge invariant, so it descends to the vortex moduli space
 (`TauCeti.Vortex.SobolevFieldSpace.vortexModuliDivisor`). It is a bijection onto `Sym ℂ m`
 (`TauCeti.Vortex.SobolevFieldSpace.vortexModuliDivisor_bijective`), by Taubes's existence and
-uniqueness theorems. It is continuous
+uniqueness theorems, and so an equivalence
+(`TauCeti.Vortex.SobolevFieldSpace.vortexModuliEquiv`). It is continuous
 (`TauCeti.Vortex.SobolevFieldSpace.continuous_vortexModuliDivisor`): convergence in `A_m^k`
 implies uniform convergence of the fields, along which the zero divisor is continuous by Hurwitz's
 theorem (`TauCeti.Vortex.SobolevFieldSpace.tendsto_of_tendsto`), and the quotient map onto the
@@ -63,6 +64,8 @@ continuous, is not treated here.
   charted space modelled on `ℝ^(2m)`.
 * `TauCeti.Vortex.SobolevFieldSpace.vortexModuliDivisor`: the zero divisor of a vortex orbit, a
   continuous bijection onto `Sym ℂ m`.
+* `TauCeti.Vortex.SobolevFieldSpace.vortexModuliEquiv`: the zero divisor as an equivalence
+  between the vortex moduli space and `Sym ℂ m`.
 
 ## References
 
@@ -186,6 +189,18 @@ theorem vortexModuliDivisor_bijective (hk : 3 < k) :
     have hx := (mem_sobolevVortices.1 x.property).2
     let y : SobolevFieldSpace f m k := ⟨_, x.val.property, hxc.continuous⟩
     exact ⟨⟨Quotient.mk _ y, mk_mem_vortexModuli hx⟩, (vortexModuliDivisor_mk hk hx).trans hxD⟩
+
+/-- **The vortex moduli space is `Sym ℂ m`** (Taubes). For `k ≥ 4`, the zero divisor as an
+equivalence between the vortex moduli space in `A_m^k / G_(k+1)` and the effective divisors of
+degree `m` (`vortexModuliDivisor_bijective`). -/
+def vortexModuliEquiv (hk : 3 < k) : vortexModuli f m hs ≃ Sym ℂ m :=
+  Equiv.ofBijective (vortexModuliDivisor hk) (vortexModuliDivisor_bijective hk)
+
+/-- The equivalence sends a vortex orbit to its divisor. -/
+@[simp]
+theorem vortexModuliEquiv_apply (hk : 3 < k) (q : vortexModuli f m hs) :
+    vortexModuliEquiv hk q = vortexModuliDivisor hk q :=
+  (rfl)
 
 /-- **The divisor of a vortex orbit depends continuously on the orbit.** For `k ≥ 4`, the zero
 divisor is continuous on the vortex moduli space in `A_m^k / G_(k+1)`, with the topology of
