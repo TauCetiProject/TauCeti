@@ -122,38 +122,6 @@ theorem mem_fixedField_zpowers_iff (σ : M ≃ₐ[K] M) (x : M) :
   rw [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
   exact (MulAction.mem_fixedBy_zpowers_iff_mem_fixedBy (g := σ) (a := x))
 
-/-- By Artin's theorem, `M` has degree `orderOf σ` over the field fixed by an automorphism `σ` of
-finite order. -/
-theorem finrank_fixedField_zpowers_eq_orderOf (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)] :
-    Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ := by
-  have := Fintype.ofFinite (Subgroup.zpowers σ)
-  rw [← Nat.card_zpowers, Nat.card_eq_fintype_card]
-  exact FixedPoints.finrank_eq_card (Subgroup.zpowers σ) M
-
-/-- Over the field fixed by a nontrivial automorphism `σ` of finite order, `M` has degree
-`orderOf σ > 1`. -/
-theorem one_lt_finrank_fixedField_zpowers {σ : M ≃ₐ[K] M} (hσ : IsOfFinOrder σ) (h1 : σ ≠ 1) :
-    1 < Module.finrank (fixedField (Subgroup.zpowers σ)) M := by
-  have : Finite (Subgroup.zpowers σ) := finite_zpowers.2 hσ
-  have hne : orderOf σ ≠ 1 := mt orderOf_eq_one_iff.1 h1
-  have := hσ.orderOf_pos
-  rw [finrank_fixedField_zpowers_eq_orderOf]
-  omega
-
-/-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
-`σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
-theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :
-    Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
-  by_cases hfin : Finite (Subgroup.zpowers σ)
-  · rw [← finrank_fixedField_zpowers_eq_orderOf σ, Module.finrank_mul_finrank]
-  · have hσ : orderOf σ = 0 := by
-      rw [orderOf_eq_zero_iff, ← finite_zpowers]
-      exact hfin
-    rw [hσ, mul_zero]
-    by_contra hne
-    have : FiniteDimensional K M := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero (Ne.symm hne))
-    exact hfin inferInstance
-
 /-- The Galois connection between fixing subgroups and fixed intermediate fields. -/
 theorem fixingSubgroup_fixedField_gc :
     GaloisConnection
@@ -540,6 +508,27 @@ end Subgroup
 namespace IntermediateField
 
 variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+/-- By Artin's theorem, `M` has degree `orderOf σ` over the field fixed by an automorphism `σ`.
+When `σ` has infinite order both sides are `0`. -/
+theorem finrank_fixedField_zpowers_eq_orderOf (σ : M ≃ₐ[K] M) :
+    Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ :=
+  (Subgroup.finrank_fixedField_eq_card _).trans (Nat.card_zpowers σ)
+
+/-- Over the field fixed by a nontrivial automorphism `σ` of finite order, `M` has degree
+`orderOf σ > 1`. -/
+theorem one_lt_finrank_fixedField_zpowers {σ : M ≃ₐ[K] M} (hσ : IsOfFinOrder σ) (h1 : σ ≠ 1) :
+    1 < Module.finrank (fixedField (Subgroup.zpowers σ)) M := by
+  have hne : orderOf σ ≠ 1 := mt orderOf_eq_one_iff.1 h1
+  have := hσ.orderOf_pos
+  rw [finrank_fixedField_zpowers_eq_orderOf]
+  omega
+
+/-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
+`σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
+theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :
+    Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
+  rw [← finrank_fixedField_zpowers_eq_orderOf σ, Module.finrank_mul_finrank]
 
 /-- Translating a point along an action of `M ≃ₐ[K] M` maps the fixed field of its stabilizer by
 the translating automorphism. -/

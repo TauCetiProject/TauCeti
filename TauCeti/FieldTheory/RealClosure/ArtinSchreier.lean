@@ -229,7 +229,6 @@ theorem isRealClosed_of_isAlgClosed_of_one_lt_finrank (h : 1 < finrank F C) : Is
 /-- A nontrivial automorphism of finite order of an algebraically closed field has order two. -/
 theorem orderOf_eq_two_of_isOfFinOrder {k : Type*} [Field k] [Algebra k C] {σ : C ≃ₐ[k] C}
     (hσ : IsOfFinOrder σ) (h1 : σ ≠ 1) : orderOf σ = 2 := by
-  have : Finite (Subgroup.zpowers σ) := finite_zpowers.2 hσ
   rw [← finrank_fixedField_zpowers_eq_orderOf]
   exact finrank_eq_two_of_isAlgClosed_of_one_lt_finrank (one_lt_finrank_fixedField_zpowers hσ h1)
 
