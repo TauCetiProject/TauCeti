@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Sheaves.Stalks
+import TauCeti.Topology.Sheaves.Stalks
 public import TauCeti.Topology.Sheaves.SupportedCohomology
+import Mathlib.Algebra.Category.Grp.Zero
 import Mathlib.Topology.Sheaves.LocallySurjective
 import TauCeti.CategoryTheory.Sites.EpiMono
 
@@ -131,14 +132,14 @@ restriction maps of `F`. -/
 def supportedSectionsPresheaf : TopCat.Presheaf AddCommGrpCat.{u} X where
   obj W := AddCommGrpCat.of (F.supportedSections S W.unop)
   map f := AddCommGrpCat.ofHom <| AddMonoidHom.mk'
-    (fun s ↦ ⟨F.obj.map f s, F.map_mem_supportedSections_of_le (leOfHom f.unop) s.2⟩)
+    (fun s ↦ ⟨F.obj.map f s, F.map_mem_supportedSections_of_le (leOfHom f.unop) s.property⟩)
     fun s t ↦ Subtype.ext (map_add _ _ _)
   map_id W := by
     ext s
-    exact congr($(F.obj.map_id W) s.1)
+    exact congr($(F.obj.map_id W) s.val)
   map_comp f g := by
     ext s
-    exact congr($(F.obj.map_comp f g) s.1)
+    exact congr($(F.obj.map_comp f g) s.val)
 
 @[simp]
 lemma supportedSectionsPresheaf_obj (W : (Opens X)ᵒᵖ) :
@@ -157,7 +158,7 @@ supported sections is supported, since its restriction to the complement of `S` 
 locally. -/
 theorem isSheaf_supportedSectionsPresheaf : (F.supportedSectionsPresheaf S).IsSheaf := by
   refine (TopCat.Presheaf.isSheaf_iff_isSheafUniqueGluing _).2 fun ι U sf hsf ↦ ?_
-  obtain ⟨s, hs, hs'⟩ := TopCat.Sheaf.existsUnique_gluing F U (fun i ↦ (sf i).1)
+  obtain ⟨s, hs, hs'⟩ := TopCat.Sheaf.existsUnique_gluing F U (fun i ↦ (sf i).val)
     fun i j ↦ congr_arg (Subtype.val : F.supportedSections S _ → F.obj.obj _) (hsf i j)
   -- the restriction of `s` to `(⋃ U i) ∖ S` vanishes on each `U i ∖ S`
   have hmem : s ∈ F.supportedSections S (iSup U) := by
@@ -168,10 +169,10 @@ theorem isSheaf_supportedSectionsPresheaf : (F.supportedSectionsPresheaf S).IsSh
     · obtain ⟨i, hi⟩ := Opens.mem_iSup.1 hx.1
       exact ⟨i, hi, hx.2⟩
     · have h := congr(F.obj.map (S.complInclusion (U i)).op $(hs i))
-      rw [(F.mem_supportedSections_iff).1 (sf i).2] at h
+      rw [(F.mem_supportedSections_iff).1 (sf i).property] at h
       simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, Opens.leSupr] using h
   refine ⟨⟨s, hmem⟩, fun i ↦ Subtype.ext (hs i), fun t ht ↦ Subtype.ext ?_⟩
-  exact hs' t.1 fun i ↦ congr_arg (Subtype.val : F.supportedSections S _ → F.obj.obj _) (ht i)
+  exact hs' t.val fun i ↦ congr_arg (Subtype.val : F.supportedSections S _ → F.obj.obj _) (ht i)
 
 /-- The sheaf `Γ_S(F)` of sections of `F` supported in the closed subset `S`. -/
 @[expose]
@@ -238,7 +239,7 @@ instance isFlasque_supportedSectionsSheaf [TopCat.Presheaf.IsFlasque F.obj] :
     -- glue `s` with zero on `V ∖ S`, then extend from `U ∪ (V ∖ S)` to `V` using flasqueness
     obtain ⟨t₀, ⟨ht₀, ht₀s⟩, -⟩ := F.existsUnique_mem_supportedSections_map_eq
       (le_sup_left : U.unop ≤ U.unop ⊔ V.unop ⊓ S.compl)
-      (sup_le le_sup_left (inf_le_right.trans le_sup_right)) s.2
+      (sup_le le_sup_left (inf_le_right.trans le_sup_right)) s.property
     have hW : U.unop ⊔ V.unop ⊓ S.compl ≤ V.unop := sup_le hUV inf_le_left
     obtain ⟨t, ht⟩ := (AddCommGrpCat.epi_iff_surjective _).1
       (TopCat.Presheaf.IsFlasque.epi (F := F.obj) (homOfLE hW).op) t₀
@@ -425,7 +426,7 @@ theorem exact_map_supportedSectionsFunctor (hT : T.Exact) [Mono T.f] :
     simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
       ConcreteCategory.comp_apply] at hk
     rw [map_zero, NatTrans.naturality_apply, hk]
-    exact (mem_supportedSections_iff _).1 (φ.hom.app W s).2
+    exact (mem_supportedSections_iff _).1 (φ.hom.app W s).property
   · rw [← cancel_mono (T.X₂.supportedSectionsι S)]
     simp
   · rw [← cancel_mono (T.X₁.supportedSectionsι S), ← cancel_mono T.f]
@@ -781,7 +782,7 @@ def supportedHEdgeEquiv (h : ∀ q < n, IsZero (F.supportedHSheaf S q)) (hZS : Z
       obtain ⟨x, rfl⟩ := (F.exact_supportedHMap_supportedHRestrict hZS W n y).1 <|
         (F.supportedHSectionsEquiv S h _).injective <| by
           rw [supportedHSectionsEquiv_supportedHRestrict, hy, map_zero]
-          exact (mem_supportedSections_iff _).1 s.2
+          exact (mem_supportedSections_iff _).1 s.property
       exact ⟨x, Subtype.ext hy⟩⟩
 
 /-- The degenerate edge comparison enlarges the support from `Z` to `S` and then applies the
@@ -822,12 +823,12 @@ private lemma bijective_supportedSectionsFunctor_map_supportedSectionsι (hZS : 
     exact injective_app_of_mono ((supportedSectionsFunctor Z).map (F.supportedSectionsι S)) _
   -- the section `t` supported in `Z` is supported in `S`
   obtain ⟨y, rfl⟩ := (F.supportedHZeroEquiv Z W).surjective t
-  have hS := (F.supportedHZeroEquiv S W (F.supportedHMap hZS W 0 y)).2
+  have hS := (F.supportedHZeroEquiv S W (F.supportedHMap hZS W 0 y)).property
   rw [coe_supportedHZeroEquiv_supportedHMap] at hS
   refine ⟨⟨⟨_, hS⟩, (mem_supportedSections_iff _).2 (Subtype.ext ?_)⟩, Subtype.ext
     ((coe_supportedSectionsFunctor_map_hom_app_apply Z _ (op W) _).trans
       (supportedSectionsι_hom_app_apply F S (op W) _))⟩
-  exact (mem_supportedSections_iff _).1 (F.supportedHZeroEquiv Z W y).2
+  exact (mem_supportedSections_iff _).1 (F.supportedHZeroEquiv Z W y).property
 
 /-- For closed `Z ≤ S`, the inclusion `Γ_S(F) ⟶ F` induces bijections
 `H_Z⁰(W, Γ_S(F)) ⟶ H_Z⁰(W, F)`. -/

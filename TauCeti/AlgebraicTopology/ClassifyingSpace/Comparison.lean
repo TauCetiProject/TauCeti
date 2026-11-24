@@ -39,7 +39,7 @@ and which induces `φ⁻¹` directly
 
 Applied to Milnor's classifying space `TauCeti.classifyingSpace G`, which is a Hausdorff CW complex
 and a `K(G, 1)` (so its base point has the homotopy extension property by
-`TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex_univ`), this compares the two models
+`TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex`), this compares the two models
 of the classifying space of a group: for every isomorphism `e : PresentedGroup R ≃* G`,
 `TauCeti.cellularHomotopyEquivClassifyingSpace R e` is a *pointed* homotopy equivalence from the
 cellular to the simplicial model, whose forward and inverse maps both preserve base points, whose
@@ -226,7 +226,7 @@ theorem exists_basedInverse_cellularClassifyingSpaceHomotopyEquiv
   set e := cellularClassifyingSpaceHomotopyEquiv R hY φ
   have hbase : HasHomotopyExtensionProperty
       ({cellularClassifyingSpaceBasepoint R} : Set (cellularClassifyingSpace R)) :=
-    hasHomotopyExtensionProperty_singleton_of_cwComplex_univ _
+    hasHomotopyExtensionProperty_singleton_of_cwComplex _
   obtain ⟨g, hg, hgf, hfg⟩ := hbase.exists_basedInverse_homotopicRel hy e
     (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hY φ)
   refine ⟨g, hg, hgf, hfg, MonoidHom.ext fun a ↦ ?_⟩
@@ -271,7 +271,7 @@ private theorem exists_basedInverse_comparison :
   exists_basedInverse_cellularClassifyingSpaceHomotopyEquiv R
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical
     (comparisonMulEquiv R e)
-    (hasHomotopyExtensionProperty_singleton_of_cwComplex_univ (classifyingSpaceBasepoint G))
+    (hasHomotopyExtensionProperty_singleton_of_cwComplex (classifyingSpaceBasepoint G))
 
 /-- **The cellular and the simplicial classifying spaces agree.** For a presentation
 `e : PresentedGroup R ≃* G` of `G`, this is a pointed homotopy equivalence from the cellular

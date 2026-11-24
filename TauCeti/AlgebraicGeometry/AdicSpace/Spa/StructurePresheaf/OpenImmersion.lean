@@ -214,7 +214,7 @@ private noncomputable def toLocCone :
           presentationLimitMap (P := P)
             (spaComapLoc_functor_obj_mono P Aplus hP T s S hden (leOfHom g.hom.unop)) ≫
           (presentationLimitLocImageIso P Aplus T s S hden hAplus hP hT
-            ((rationalOpensFunctor _).obj g.right.unop) g.right.unop.2).hom ≫
+            ((rationalOpensFunctor _).obj g.right.unop) g.right.unop.property).hom ≫
           eqToHom (presentationLimitPresheaf_obj (completionLocalization P T s S hden)
             (completedPlusSubring P Aplus T s S hden)
             (op ((rationalOpensFunctor _).obj g.right.unop))).symm
@@ -228,7 +228,8 @@ private noncomputable def toLocCone :
             eqToHom_refl]
           rw [← reassoc_of% presentationLimitMap_comp_presentationLimitLocImageIso_hom P Aplus T s S
             hden hAplus hP hT ((rationalOpensFunctor _).obj g₁.right.unop)
-            ((rationalOpensFunctor _).obj g₂.right.unop) g₁.right.unop.2 g₂.right.unop.2 hφ,
+            ((rationalOpensFunctor _).obj g₂.right.unop) g₁.right.unop.property
+                g₂.right.unop.property hφ,
             reassoc_of% presentationLimitMap_comp] } }
 
 /-- **The cone over the rational opens of `j(W)` with vertex `𝒪_U(W)`**: its leg at a rational
@@ -256,7 +257,7 @@ private noncomputable def ofLocCone :
             ((locOpensComap_mono P Aplus T s S hden (leOfHom g.hom.unop)).trans
               (locOpensComap_spaComapLoc_functor_obj P Aplus hP T s S hden W).le) ≫
           (presentationLimitLocIso P Aplus T s S hden hAplus hT
-            ((rationalOpensFunctor Aplus).obj g.right.unop) g.right.unop.2
+            ((rationalOpensFunctor Aplus).obj g.right.unop) g.right.unop.property
             ((leOfHom g.hom.unop).trans
               (spaComapLoc_functor_obj_le_spaBasicOpen P Aplus hP T s S hden W))).inv ≫
           eqToHom (presentationLimitPresheaf_obj P Aplus
@@ -270,18 +271,18 @@ private noncomputable def ofLocCone :
           -- the inverse identifications commute with restriction
           have key :
               (presentationLimitLocIso P Aplus T s S hden hAplus hT
-                ((rationalOpensFunctor Aplus).obj g₁.right.unop) g₁.right.unop.2 h₁).inv ≫
+                ((rationalOpensFunctor Aplus).obj g₁.right.unop) g₁.right.unop.property h₁).inv ≫
                 presentationLimitMap (P := P) hφ =
               presentationLimitMap (P := completionLocalization P T s S hden)
                 (locOpensComap_mono P Aplus T s S hden hφ) ≫
               (presentationLimitLocIso P Aplus T s S hden hAplus hT
-                ((rationalOpensFunctor Aplus).obj g₂.right.unop) g₂.right.unop.2
+                ((rationalOpensFunctor Aplus).obj g₂.right.unop) g₂.right.unop.property
                 (hφ.trans h₁)).inv := by
             rw [Iso.inv_comp_eq, ← Category.assoc,
               ← presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s S hden hAplus hT
                 (V := (rationalOpensFunctor Aplus).obj g₁.right.unop)
                 (V' := (rationalOpensFunctor Aplus).obj g₂.right.unop)
-                g₁.right.unop.2 g₂.right.unop.2 h₁ hφ,
+                g₁.right.unop.property g₂.right.unop.property h₁ hφ,
               Category.assoc, Iso.hom_inv_id, Category.comp_id]
           simp only [Functor.const_obj_obj, Functor.const_obj_map, Functor.comp_map,
             StructuredArrow.proj_map, Functor.comp_obj, StructuredArrow.proj_obj,
@@ -302,7 +303,7 @@ private theorem toLocCone_π_app :
           presentationLimitMap (P := P)
             (spaComapLoc_functor_obj_mono P Aplus hP T s S hden (leOfHom g.hom.unop)) ≫
           (presentationLimitLocImageIso P Aplus T s S hden hAplus hP hT
-            ((rationalOpensFunctor _).obj g.right.unop) g.right.unop.2).hom ≫
+            ((rationalOpensFunctor _).obj g.right.unop) g.right.unop.property).hom ≫
           eqToHom (presentationLimitPresheaf_obj (completionLocalization P T s S hden)
             (completedPlusSubring P Aplus T s S hden)
             (op ((rationalOpensFunctor _).obj g.right.unop))).symm :=
@@ -323,7 +324,7 @@ private theorem ofLocCone_π_app :
             ((locOpensComap_mono P Aplus T s S hden (leOfHom g.hom.unop)).trans
               (locOpensComap_spaComapLoc_functor_obj P Aplus hP T s S hden W).le) ≫
           (presentationLimitLocIso P Aplus T s S hden hAplus hT
-            ((rationalOpensFunctor Aplus).obj g.right.unop) g.right.unop.2
+            ((rationalOpensFunctor Aplus).obj g.right.unop) g.right.unop.property
             ((leOfHom g.hom.unop).trans
               (spaComapLoc_functor_obj_le_spaBasicOpen P Aplus hP T s S hden W))).inv ≫
           eqToHom (presentationLimitPresheaf_obj P Aplus
@@ -447,7 +448,7 @@ private theorem toLoc_comp_ofLoc :
   refine (presentationLimitPresheafIsPointwiseRightKanExtension (op _)).hom_ext fun g ↦ ?_
   -- the leg of the Kan-extension cone at `g` is restriction to the rational open `V = R(g)`
   have hV : (rationalOpensFunctor Aplus).obj g.right.unop ∈ spaRationalOpens Aplus :=
-    g.right.unop.2
+    g.right.unop.property
   have hVW : (rationalOpensFunctor Aplus).obj g.right.unop ≤
       (isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden).functor.obj W :=
     leOfHom g.hom.unop
@@ -483,7 +484,7 @@ private theorem ofLoc_comp_toLoc :
   -- the leg of the Kan-extension cone at `g` is restriction to the rational open `W' = R(g)`
   have hW' : (rationalOpensFunctor _).obj g.right.unop ∈
       spaRationalOpens (completedPlusSubring P Aplus T s S hden) :=
-    g.right.unop.2
+    g.right.unop.property
   have h : (rationalOpensFunctor _).obj g.right.unop ≤ W := leOfHom g.hom.unop
   rw [presentationLimitPresheaf_coneAt_π_app, presentationLimitPresheaf_map]
   simp only [Category.assoc, Category.id_comp]
@@ -516,7 +517,7 @@ private theorem map_comp_toLoc :
   refine (presentationLimitPresheafIsPointwiseRightKanExtension (op Y.unop)).hom_ext fun g ↦ ?_
   have hW' : (rationalOpensFunctor _).obj g.right.unop ∈
       spaRationalOpens (completedPlusSubring P Aplus T s S hden) :=
-    g.right.unop.2
+    g.right.unop.property
   have h₂ : (rationalOpensFunctor _).obj g.right.unop ≤ Y.unop := leOfHom g.hom.unop
   -- the leg of the Kan-extension cone at `g` is restriction to the rational open `W' = R(g)`;
   -- on the right, the two restrictions compose to the restriction from `X` to `W'`

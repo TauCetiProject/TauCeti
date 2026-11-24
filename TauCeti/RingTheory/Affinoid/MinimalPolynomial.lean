@@ -50,6 +50,8 @@ are retained throughout.
   value of a monic polynomial generating the annihilator of `f`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_minpoly_coeff_rpow`: `|f|sup` is the spectral
   value of the minimal polynomial of `f` over an integrally closed domain.
+* `TauCeti.IsAffinoidAlgebra.supSeminorm_smul_of_isTorsionFree`: scaling `f` by an element `a` of
+  `A` whose multiplication scales `|·|sup` on `A` multiplies `|f|sup` by `|a|sup`.
 
 ## References
 
@@ -195,7 +197,7 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
         exact (hy i).trans (pow_le_pow_left₀ (pointNorm_nonneg f)
           (hB.pointNorm_le_supSeminorm y f) _)
     exact (Real.rpow_one_div_natCast_sub_le_iff (supSeminorm_nonneg _) (supSeminorm_nonneg f)
-      i.2).mpr hle
+      i.isLt).mpr hle
 
 /-- **The supremum seminorm is the spectral value of the minimal polynomial.** Let `B` be an
 affinoid algebra which is integral and torsion-free over an integrally closed domain `A`. For
@@ -209,5 +211,43 @@ theorem supSeminorm_eq_iSup_minpoly_coeff_rpow (hB : IsAffinoidAlgebra K B) [IsD
   have hf := Algebra.IsIntegral.isIntegral (R := A) f
   hB.supSeminorm_eq_iSup_coeff_rpow_of_dvd (minpoly.monic hf) (minpoly.aeval A f)
     fun _ ↦ TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree hf
+
+/-- **Multiplicativity of the supremum seminorm under torsion-free integral scalar
+multiplication.** Let `B` be an affinoid algebra which is integral and torsion-free
+over an integrally closed domain `A`. If right multiplication by `a : A` scales the supremum
+seminorm on `A` (for instance when `A` is a Tate algebra), then
+`|a • f|sup = |a|sup * |f|sup` for every `f : B`. -/
+theorem supSeminorm_smul_of_isTorsionFree (hB : IsAffinoidAlgebra K B) [IsDomain A]
+    [IsIntegrallyClosed A] [Module.IsTorsionFree A B] [Algebra.IsIntegral A B]
+    {a : A} (ha : ∀ x : A, supSeminorm K (x * a) = supSeminorm K x * supSeminorm K a)
+    (f : B) :
+    supSeminorm K (a • f) = supSeminorm K a * supSeminorm K f := by
+  rcases eq_or_ne a 0 with rfl | ha0
+  · simp
+  have hf : IsIntegral A f := Algebra.IsIntegral.isIntegral (R := A) f
+  have hpow (x : A) (n : ℕ) :
+      supSeminorm K (x * a ^ n) = supSeminorm K x * supSeminorm K a ^ n := by
+    induction n with
+    | zero => simp
+    | succ n ih => rw [pow_succ, ← mul_assoc, ha, ih, mul_assoc, pow_succ]
+  set p := minpoly A f
+  have hterm (i : Fin p.natDegree) :
+      supSeminorm K ((p.scaleRoots a).coeff i) ^ (1 / (p.natDegree - i : ℝ)) =
+        supSeminorm K a * supSeminorm K (p.coeff i) ^ (1 / (p.natDegree - i : ℝ)) := by
+    have hpos : (0 : ℝ) < (p.natDegree : ℝ) - i := sub_pos.mpr (Nat.cast_lt.mpr i.isLt)
+    rw [coeff_scaleRoots, hpow, Real.mul_rpow (supSeminorm_nonneg _)
+      (pow_nonneg (supSeminorm_nonneg _) _), ← Real.rpow_natCast (supSeminorm K a),
+      ← Real.rpow_mul (supSeminorm_nonneg _), Nat.cast_sub i.isLt.le,
+      mul_one_div_cancel hpos.ne', Real.rpow_one, mul_comm]
+  trans (⨆ i : Fin p.natDegree,
+    supSeminorm K ((p.scaleRoots a).coeff i) ^ (1 / (p.natDegree - i : ℝ)))
+  · rw [hB.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := A) (a • f),
+      TauCeti.minpoly.isIntegrallyClosed_smul_of_isTorsionFree ha0 hf]
+    exact congrArg
+      (fun n ↦ ⨆ i : Fin n, supSeminorm K ((p.scaleRoots a).coeff i) ^ (1 / (n - i : ℝ)))
+      (natDegree_scaleRoots p a)
+  · rw [hB.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := A) f,
+      Real.mul_iSup_of_nonneg (supSeminorm_nonneg a)]
+    exact congrArg iSup (funext hterm)
 
 end TauCeti.IsAffinoidAlgebra

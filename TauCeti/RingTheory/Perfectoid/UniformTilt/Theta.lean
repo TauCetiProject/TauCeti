@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Perfectoid.FontaineTheta
 public import TauCeti.RingTheory.Huber.Pair.Complete
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Plus
 import TauCeti.RingTheory.Ideal.Quotient.Frobenius
-import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 
 /-!
 # Fontaine's map for the tilt of a complete uniform Tate ring
@@ -97,7 +97,7 @@ theorem plusEquivPreTilt_symm_apply [IsAdicComplete (Ideal.span {(p : Bplus)}) B
 @[simp]
 theorem coeff_plusEquivPreTilt (x : plusSubring p h) (n : ℕ) :
     PreTilt.coeff n (plusEquivPreTilt p h x) =
-      Ideal.Quotient.mk _ ⟨coeff p B n x, mem_plusSubring_iff.mp x.2 n⟩ := by
+      Ideal.Quotient.mk _ ⟨coeff p B n x, mem_plusSubring_iff.mp x.property n⟩ := by
   have := h.isAdicComplete_span_natCast p hpn.out
   rw [PreTilt.coeff_def, plusEquivPreTilt_apply, coeff_plusEquiv]
 

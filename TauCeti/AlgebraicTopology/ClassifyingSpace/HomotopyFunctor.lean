@@ -65,8 +65,9 @@ classifying space (`TauCeti.fundamentalGroupFunctor_map_bijective_classifyingSpa
 Every object of `isWellPointedAsphericalCWType` lies in `classifyingSpaceHomotopyFunctor.essImage`
 (`TauCeti.isWellPointedAsphericalCWType_le_essImage`). This inclusion is proper in general: for an
 uncountable index set `I`, the cube `[0, 1]^I` based at `0` is pointed-contractible (hence
-isomorphic to `classifyingSpace Unit` in `PointedHomotopyCat`), yet `{0}` is not a `G_δ` set and
-therefore does not satisfy the homotopy extension property.
+isomorphic to `classifyingSpace Unit` in `PointedHomotopyCat`), yet `{0}` is closed without being a
+`G_δ` set and therefore does not satisfy the homotopy extension property by Strøm's theorem on
+closed cofibrations (Strøm, 1966).
 
 ## Main definitions
 
@@ -115,6 +116,7 @@ therefore does not satisfy the homotopy extension property.
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Chapter 0 (Proposition 0.19),
   Section 1.B, Theorem 1B.8 and Proposition 1B.9.
 * J. Milnor, *Construction of universal bundles, II*, Ann. of Math. 63 (1956), 430--436.
+* A. Strøm, *Note on cofibrations*, Math. Scand. 19 (1966), 11--14.
 -/
 
 public section
@@ -434,7 +436,7 @@ theorem fundamentalGroupFunctor_map_bijective_classifyingSpace
       (X := classifyingSpaceHomotopyFunctor.obj G) (Y := Y)) :=
   fundamentalGroupFunctor_map_bijective_of_isAspherical
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical
-    (hasHomotopyExtensionProperty_singleton_of_cwComplex_univ (classifyingSpaceBasepoint G)) hY
+    (hasHomotopyExtensionProperty_singleton_of_cwComplex (classifyingSpaceBasepoint G)) hY
 
 /-- **Every pointed map between Milnor classifying spaces is pointed homotopic to the strict map
 induced by its homomorphism on `π₁`.** For `φ : G →* H`, any continuous map
@@ -659,7 +661,7 @@ def pointedIsoClassifyingSpace {X : PointedHomotopyCat.{u}} {G : GrpCat.{u}}
     X ≅ classifyingSpaceHomotopyFunctor.obj G :=
   pointedIsoOfIsAspherical hX
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hx
-    (hasHomotopyExtensionProperty_singleton_of_cwComplex_univ (classifyingSpaceBasepoint G))
+    (hasHomotopyExtensionProperty_singleton_of_cwComplex (classifyingSpaceBasepoint G))
     (eX ≪≫ (classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.app G).symm)
 
 @[simp]
@@ -699,7 +701,7 @@ theorem eq_pointedIsoClassifyingSpace_hom {X : PointedHomotopyCat.{u}} {G : GrpC
     f = (pointedIsoClassifyingSpace hX hx eX).hom :=
   eq_pointedIsoOfIsAspherical_hom (Y := classifyingSpaceHomotopyFunctor.obj G) hX
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hx
-    (hasHomotopyExtensionProperty_singleton_of_cwComplex_univ (classifyingSpaceBasepoint G)) _
+    (hasHomotopyExtensionProperty_singleton_of_cwComplex (classifyingSpaceBasepoint G)) _
     (by
       apply (cancel_mono
         (classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app G)).1
@@ -731,14 +733,14 @@ theorem isWellPointedAsphericalCWType_of_cwComplex {X : PointedHomotopyCat.{u}}
     [T2Space X.as.carrier] [Topology.CWComplex (Set.univ : Set X.as.carrier)]
     (hX : IsAspherical X.as.carrier X.as.basepoint) :
     isWellPointedAsphericalCWType X :=
-  ⟨inferInstance, hX, hasHomotopyExtensionProperty_singleton_of_cwComplex_univ X.as.basepoint⟩
+  ⟨inferInstance, hX, hasHomotopyExtensionProperty_singleton_of_cwComplex X.as.basepoint⟩
 
 /-- Milnor's classifying space `classifyingSpaceHomotopyFunctor.obj G` belongs to
 `isWellPointedAsphericalCWType`. -/
 theorem isWellPointedAsphericalCWType_classifyingSpace (G : GrpCat.{u}) :
     isWellPointedAsphericalCWType (classifyingSpaceHomotopyFunctor.obj G) :=
   ⟨inferInstance, (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical,
-    hasHomotopyExtensionProperty_singleton_of_cwComplex_univ (classifyingSpaceBasepoint G)⟩
+    hasHomotopyExtensionProperty_singleton_of_cwComplex (classifyingSpaceBasepoint G)⟩
 
 /-- Every cellular classifying space belongs to `isWellPointedAsphericalCWType`. -/
 theorem isWellPointedAsphericalCWType_cellularClassifyingSpace {S : Type u}
@@ -747,7 +749,7 @@ theorem isWellPointedAsphericalCWType_cellularClassifyingSpace {S : Type u}
       (PointedHomotopyCat.quotient.obj (cellularClassifyingSpaceBased R)) :=
   ⟨inferInstanceAs (CWType (cellularClassifyingSpace R)),
     (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace R).isAspherical,
-    hasHomotopyExtensionProperty_singleton_of_cwComplex_univ
+    hasHomotopyExtensionProperty_singleton_of_cwComplex
       (cellularClassifyingSpaceBasepoint R)⟩
 
 /-- Every well-pointed aspherical space of CW type lies in the essential image of
@@ -755,7 +757,8 @@ theorem isWellPointedAsphericalCWType_cellularClassifyingSpace {S : Type u}
 
 This inclusion is proper in general: for an uncountable index set `I`, `[0, 1]^I` based at `0` is
 pointed-contractible (hence isomorphic to `classifyingSpace Unit` in `PointedHomotopyCat`), while
-`{0}` is not a `G_δ` set and therefore lacks the homotopy extension property. -/
+`{0}` is closed without being a `G_δ` set and therefore lacks the homotopy extension property by
+Strøm's theorem on closed cofibrations (Strøm, *Note on cofibrations*, 1966). -/
 theorem isWellPointedAsphericalCWType_le_essImage :
     isWellPointedAsphericalCWType.{u} ≤ classifyingSpaceHomotopyFunctor.{u}.essImage := by
   intro X hX

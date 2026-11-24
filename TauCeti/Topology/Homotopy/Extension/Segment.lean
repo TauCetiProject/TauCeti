@@ -47,8 +47,6 @@ The proof produces NDR data through `TauCeti.NDRPair.ofHomotopyRel`.
 
 * `OpenPartialHomeomorph.hasHomotopyExtensionProperty_symm_image_segment`: the image of a segment
   in the target of `e` has the homotopy extension property.
-* `OpenPartialHomeomorph.hasHomotopyExtensionProperty_singleton`: every point in the source of `e`
-  has the homotopy extension property (degenerate case `x = y`).
 
 ## References
 
@@ -77,7 +75,7 @@ private theorem continuous_segmentProj (ℓ : StrongDual ℝ E) (x y : E) :
 private theorem segmentProj_mem (ℓ : StrongDual ℝ E) (x y z : E) :
     segmentProj ℓ x y z ∈ segment ℝ x y := by
   rw [segment_eq_image']
-  exact mem_image_of_mem _ (projIcc (0 : ℝ) 1 zero_le_one (ℓ (z - x))).2
+  exact mem_image_of_mem _ (projIcc (0 : ℝ) 1 zero_le_one (ℓ (z - x))).property
 
 private theorem segmentProj_eq_self (ℓ : StrongDual ℝ E) {x y z : E}
     (hℓ : y - x ≠ 0 → ℓ (y - x) = 1) (hz : z ∈ segment ℝ x y) : segmentProj ℓ x y z = z := by
@@ -90,7 +88,7 @@ private theorem segmentProj_eq_self (ℓ : StrongDual ℝ E) {x y z : E}
 /-- Every point is within `‖z - p z‖ + ‖y - x‖` of `x`, where `p` is the projection. -/
 private theorem norm_sub_le_segmentProj (ℓ : StrongDual ℝ E) (x y z : E) :
     ‖z - x‖ ≤ ‖z - segmentProj ℓ x y z‖ + ‖y - x‖ := by
-  have hθ := (projIcc (0 : ℝ) 1 zero_le_one (ℓ (z - x))).2
+  have hθ := (projIcc (0 : ℝ) 1 zero_le_one (ℓ (z - x))).property
   have h : ‖segmentProj ℓ x y z - x‖ ≤ ‖y - x‖ := by
     rw [segmentProj, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hθ.1]
     exact mul_le_of_le_one_left (norm_nonneg _) hθ.2
@@ -132,11 +130,11 @@ private theorem exists_homotopyRel_segment (hℓ : y - x ≠ 0 → ℓ (y - x) =
   have hline {z : E} (hz : z ∈ thickening δ (segment ℝ x y)) (t : I) :
       z + (t : ℝ) • (p z - z) ∈ thickening δ (segment ℝ x y) :=
     ((convex_segment x y).thickening δ).add_smul_sub_mem hz
-      (self_subset_thickening hδ _ (segmentProj_mem ℓ x y z)) ⟨t.2.1, t.2.2⟩
+      (self_subset_thickening hδ _ (segmentProj_mem ℓ x y z)) ⟨t.property.1, t.property.2⟩
   have hcontU : Continuous fun z : U => e z :=
-    e.continuousOn.comp_continuous continuous_subtype_val fun z => z.2.1
+    e.continuousOn.comp_continuous continuous_subtypeVal fun z => z.property.1
   have hlineU (q : I × U) : e.symm (e q.2 + (q.1 : ℝ) • (p (e q.2) - e q.2)) ∈ U := by
-    have hT := hline q.2.2.2 q.1
+    have hT := hline q.2.property.2 q.1
     exact ⟨e.map_target (hδt hT), by rw [mem_preimage, e.right_inv (hδt hT)]; exact hT⟩
   let r : C(U, e.symm '' segment ℝ x y) :=
     ⟨fun z => ⟨e.symm (p (e z)), mem_image_of_mem _ (segmentProj_mem ℓ x y _)⟩,
@@ -144,13 +142,13 @@ private theorem exists_homotopyRel_segment (hℓ : y - x ≠ 0 → ℓ (y - x) =
         fun z => h (segmentProj_mem ℓ x y _)).subtype_mk _⟩
   refine ⟨r, ⟨{ toFun := fun q => ⟨e.symm (e q.2 + (q.1 : ℝ) • (p (e q.2) - e q.2)), hlineU q⟩
                 continuous_toFun := ?_
-                map_zero_left := fun z => Subtype.ext <| by simp [e.left_inv z.2.1]
+                map_zero_left := fun z => Subtype.ext <| by simp [e.left_inv z.property.1]
                 map_one_left := fun z => Subtype.ext <| by simp [r]
                 prop' := fun t z hz => Subtype.ext <| ?_ }⟩⟩
   · exact (e.continuousOn_symm.comp_continuous ((hcontU.comp continuous_snd).add
-      ((continuous_subtype_val.comp continuous_fst).smul
+      ((continuous_subtypeVal.comp continuous_fst).smul
         ((hp.comp (hcontU.comp continuous_snd)).sub (hcontU.comp continuous_snd))))
-      fun q => hδt (hline q.2.2.2 q.1)).subtype_mk _
+      fun q => hδt (hline q.2.property.2 q.1)).subtype_mk _
   · obtain ⟨w, hw, hwz⟩ := hz
     have hez : e z = w := by rw [← hwz, e.right_inv (h hw)]
     have hpw : p w = w := segmentProj_eq_self ℓ hℓ hw
@@ -224,15 +222,5 @@ theorem hasHomotopyExtensionProperty_symm_image_segment [T2Space X] [ProperSpace
   obtain ⟨r, ⟨D⟩⟩ := e.exists_homotopyRel_segment hℓ hδ h hδt
   obtain ⟨f, hf, hfU⟩ := e.exists_control_segment hℓ hδ h hδt
   exact (NDRPair.ofHomotopyRel _ D f hf hfU).hasHomotopyExtensionProperty
-
-/-- **A point in the source of an open partial homeomorphism has the homotopy extension property.**
-Special case of `OpenPartialHomeomorph.hasHomotopyExtensionProperty_symm_image_segment` for the
-degenerate segment `[e x, e x] = {e x}`. -/
-theorem hasHomotopyExtensionProperty_singleton [T2Space X] [ProperSpace E]
-    {x : X} (hx : x ∈ e.source) :
-    HasHomotopyExtensionProperty ({x} : Set X) := by
-  have h := e.hasHomotopyExtensionProperty_symm_image_segment (x := e x) (y := e x)
-    (by simp [e.map_source hx])
-  simpa [segment_same, e.left_inv hx] using h
 
 end OpenPartialHomeomorph

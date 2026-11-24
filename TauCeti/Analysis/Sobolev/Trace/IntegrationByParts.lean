@@ -266,8 +266,10 @@ private theorem setIntegral_extendByZeroₗᵢ_eq {p : ENNReal} [Fact (1 ≤ p)]
   have htop := (⊤ : Opens (WithLp 2 (ℝ × E))).isOpen.measurableSet
   have hsub : (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) ⊆
       ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) := subset_univ _
-  have hval := (ae_restrict_iff' htop).1 (coeFn_extendByZeroLpₗᵢ ℝ hH hsub (W1p.value u))
-  have hgrad := (ae_restrict_iff' htop).1 (coeFn_extendByZeroLpₗᵢ ℝ hH hsub (W1p.gradient u))
+  have hval := (ae_restrict_iff' htop).1
+    (coeFn_extendByZeroLpₗᵢ ℝ hH.nullMeasurableSet hsub (W1p.value u))
+  have hgrad := (ae_restrict_iff' htop).1
+    (coeFn_extendByZeroLpₗᵢ ℝ hH.nullMeasurableSet hsub (W1p.gradient u))
   rw [← integral_indicator hH, setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦
       (hx (by simp)).elim]
   apply integral_congr_ae

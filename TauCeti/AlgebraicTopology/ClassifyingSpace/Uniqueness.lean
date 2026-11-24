@@ -29,7 +29,7 @@ with the identifications of both fundamental groups with `G`
 (`TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`).
 
 When the base point `x` of `X` has the homotopy extension property (for instance any point of a
-Hausdorff CW complex, by `TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex_univ`), the
+Hausdorff CW complex, by `TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex`), the
 comparison map from a cellular classifying space `cellularClassifyingSpace R` to `X` upgrades to a
 *pointed* homotopy equivalence relative to the base points
 (`TauCeti.exists_basedInverse_cellularClassifyingSpaceHomotopyEquiv`). Transporting the universal
@@ -243,7 +243,7 @@ theorem exists_mapOfEq_classifyingSpace {G : Type u} [Group G] {Y : Type u} [Top
     ∃ (f : C(classifyingSpace G, Y)) (hf : f (classifyingSpaceBasepoint G) = y),
       FundamentalGroup.mapOfEq f hf = φ :=
   (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical.exists_mapOfEq
-    (hasHomotopyExtensionProperty_singleton_of_cwComplex_univ _) hY φ
+    (hasHomotopyExtensionProperty_singleton_of_cwComplex _) hY φ
 
 /-- **Pointed maps out of Milnor's classifying space are determined up to pointed homotopy by
 their effect on `π₁`.** If `π_{n+2}(Y, z)` vanishes at every `z : Y`, two maps from
@@ -256,7 +256,7 @@ theorem homotopicRel_of_mapOfEq_eq_classifyingSpace {G : Type u} [Group G] {Y : 
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {classifyingSpaceBasepoint G} :=
   (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical.homotopicRel_of_mapOfEq_eq
-    (hasHomotopyExtensionProperty_singleton_of_cwComplex_univ _) hY hf hg hfg
+    (hasHomotopyExtensionProperty_singleton_of_cwComplex _) hY hf hg hfg
 
 /-- **Pointed forward uniqueness of aspherical spaces of CW type** (one-sided well-pointedness).
 When `{x}` has the homotopy extension property in `X`, any isomorphism `φ : π₁(X, x) ≃* π₁(Y, y)`
@@ -312,7 +312,7 @@ theorem IsAspherical.exists_homotopyEquiv_homotopicRel {X Y : Type u}
 
 /-- **Pointed uniqueness of aspherical Hausdorff CW complexes.** Every point of a Hausdorff CW
 complex has the homotopy extension property
-(`TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex_univ`), so any isomorphism
+(`TauCeti.hasHomotopyExtensionProperty_singleton_of_cwComplex`), so any isomorphism
 `φ : π₁(X, x) ≃* π₁(Y, y)` between aspherical Hausdorff CW complexes at arbitrary base points `x`
 and `y` is realized by a pointed homotopy equivalence relative to `{x}` and `{y}`. -/
 theorem IsAspherical.exists_homotopyEquiv_of_cwComplex {X Y : Type u}
@@ -326,8 +326,8 @@ theorem IsAspherical.exists_homotopyEquiv_of_cwComplex {X Y : Type u}
       (e.invFun.comp e.toFun).HomotopicRel (ContinuousMap.id X) {x} ∧
       (e.toFun.comp e.invFun).HomotopicRel (ContinuousMap.id Y) {y} :=
   hX.exists_homotopyEquiv_homotopicRel hY
-    (hasHomotopyExtensionProperty_singleton_of_cwComplex_univ x)
-    (hasHomotopyExtensionProperty_singleton_of_cwComplex_univ y) φ
+    (hasHomotopyExtensionProperty_singleton_of_cwComplex x)
+    (hasHomotopyExtensionProperty_singleton_of_cwComplex y) φ
 
 /-- **Every well-pointed aspherical space of CW type is pointed homotopy equivalent to Milnor's
 classifying space**, compatibly with a prescribed identification `eX : π₁(X, x) ≃* G`, with both
@@ -348,7 +348,7 @@ theorem IsAspherical.exists_homotopyEquiv_classifyingSpace_homotopicRel {G : Typ
   let φ := eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm
   obtain ⟨e, he, he', hφ, hφ', hleft, hright⟩ := hX.exists_homotopyEquiv_homotopicRel
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical hx
-    (hasHomotopyExtensionProperty_singleton_of_cwComplex_univ (classifyingSpaceBasepoint G)) φ
+    (hasHomotopyExtensionProperty_singleton_of_cwComplex (classifyingSpaceBasepoint G)) φ
   refine ⟨e, he, he', fun a ↦ ?_, fun a ↦ ?_, hleft, hright⟩
   · rw [DFunLike.congr_fun hφ a]
     simp [φ]

@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.Algebra.Star.Projection.Family
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
+public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
@@ -58,12 +59,15 @@ hypothesis in the intended applications.
 
 * `TauCeti.smulTopMap S e f`: the restriction of an `R`-linear map `f : M →ₗ[R] N` to
   `e • M →ₗ[S] e • N`.
+* `IsIdempotentElem.smulTopSubmoduleEquiv`: for an idempotent `e` of a ring `A`, the
+  corner of an `A`-submodule containing `eM` is `eM`.
 
 ## Main results
 
 * `IsIdempotentElem.mem_smul_top_iff_smul_eq_self`: for an idempotent `e`, membership in
   `e • M` is the fixed-point condition `e • x = x`. The scalar `e` needs only a distributive
   monoid action on `M`.
+* `Module.End.smul_top_eq_range`: for an endomorphism `f`, the piece `f • M` is `range f`.
 * `TauCeti.isInternal_smul_top`: **the decomposition** `M = ⨁ᵢ eᵢ M`, with the component of `x` at
   `i` being `eᵢ • x` (`TauCeti.coe_ofBijective_coeLinearMap_symm_apply_smul_top`).
 * `TauCeti.smul_coeLinearMap_smul_top`: multiplying by `eᵢ` reads off the `i`-th component of a
@@ -74,6 +78,12 @@ hypothesis in the intended applications.
   module over the corner ring `eAe` (`IsIdempotentElem.Corner`), which acts by restricting the
   action of `A`, as recorded by `IsIdempotentElem.Corner.coe_smul`. This is the module structure the
   corner functor `M ↦ eM` of Morita theory is built on.
+* `TauCeti.isIdempotentElem_of_smul_eq_self`: an element `e ∈ A` that fixes `S` pointwise and
+  annihilates the kernel of `Algebra.lsmul` is automatically idempotent.
+* `TauCeti.IsIndecomposableModule.existsUnique_forall_smul_eq_self`: a central idempotent acts on
+  a module by an idempotent endomorphism, which is `0` or `1` on an indecomposable module, so an
+  indecomposable module is fixed by exactly one term of a complete orthogonal family of central
+  idempotents and killed by the others.
 
 ## References
 
@@ -106,6 +116,20 @@ theorem smul_eq_self_of_mem_smul_top {e : R} (he : IsIdempotentElem e) {x : M}
   he.mem_smul_top_iff_smul_eq_self.1 hx
 
 end IsIdempotentElem
+
+namespace Module.End
+
+variable {S M : Type*} [CommSemiring S] [AddCommMonoid M] [Module S M]
+
+/-- **An endomorphism acting on `⊤` gives its range**: the piece `f • M` cut out by an
+endomorphism `f : Module.End S M`, acting through Mathlib's pointwise action, is `range f`. -/
+theorem smul_top_eq_range (f : Module.End S M) :
+    f • (⊤ : Submodule S M) = LinearMap.range f := by
+  rw [Submodule.pointwise_smul_def, Submodule.map_top]
+  exact congrArg LinearMap.range <| LinearMap.ext fun x ↦ by
+    rw [DistribSMul.toLinearMap_apply, Module.End.smul_def]
+
+end Module.End
 
 namespace TauCeti
 
@@ -215,9 +239,9 @@ theorem smul_coeLinearMap_smul_top (he : OrthogonalIdempotents e)
   | of i x =>
     rcases eq_or_ne j i with rfl | hji
     · rw [DirectSum.coeLinearMap_of, DirectSum.of_eq_same,
-        (he.idem j).smul_eq_self_of_mem_smul_top x.2]
+        (he.idem j).smul_eq_self_of_mem_smul_top x.property]
     · rw [DirectSum.coeLinearMap_of, DirectSum.of_eq_of_ne _ _ _ hji,
-        smul_eq_zero_of_ne_of_mem_smul_top he hji x.2, ZeroMemClass.coe_zero]
+        smul_eq_zero_of_ne_of_mem_smul_top he hji x.property, ZeroMemClass.coe_zero]
   | add z w hz hw =>
     rw [map_add, smul_add, hz, hw, DFinsupp.add_apply, Submodule.coe_add]
 
@@ -313,6 +337,54 @@ theorem projectionFamilyOverlap_injective (hPsum : ∑ i, P i = 1)
 
 end ProjectionFamily
 
+/-! ### Idempotence from an algebra action -/
+
+/-- An element `e ∈ A` that fixes `S` pointwise and kills the kernel of `lsmul` is automatically
+idempotent: `e` and `1` have the same image in `End_k S`, so `e * e = e * 1 = e`. -/
+theorem isIdempotentElem_of_smul_eq_self {k A S : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+    [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S] {e : A}
+    (heS : ∀ s : S, e • s = s)
+    (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b) :
+    IsIdempotentElem e := by
+  have he1 : Algebra.lsmul k k S e = Algebra.lsmul k k S (1 : A) := by
+    ext s
+    simp [heS s]
+  simpa only [IsIdempotentElem, mul_one] using hker e 1 he1
+
+section Indecomposable
+
+variable {A : Type*} [Ring A] {M : Type*} [AddCommGroup M] [Module A M]
+
+/-- **An indecomposable module lies over exactly one central idempotent of a decomposition.**
+Each central idempotent `e i` acts on `M` by an idempotent module endomorphism, which is `0` or
+`1` because `M` is indecomposable. Not all of them act by `0`, because they sum to `1` and `M` is
+nonzero, and two of them cannot act by `1`, because their product is `0` (P. Webb, *A Course in
+Finite Group Representation Theory*, Corollary 12.1.3). -/
+theorem IsIndecomposableModule.existsUnique_forall_smul_eq_self (hM : IsIndecomposableModule A M)
+    {ι : Type*} [Fintype ι] {e : ι → A} (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, e i ∈ Set.center A) :
+    ∃! i, ∀ m : M, e i • m = m := by
+  have : Nontrivial M := hM.nontrivial
+  obtain ⟨φ, hφe⟩ : ∃ φ : ι → Module.End A M, ∀ i m, φ i m = e i • m :=
+    ⟨fun i ↦ .smulLeft (e i) (hc i), fun i m ↦ Module.End.smulLeft_apply ..⟩
+  have hφ (i : ι) : φ i = 0 ∨ φ i = 1 := hM.eq_zero_or_eq_one_of_isIdempotentElem <|
+    LinearMap.ext fun m ↦ by rw [mul_apply_eq_comp, hφe, hφe, smul_smul, (he.idem i).eq]
+  have hφ₁ (i : ι) : φ i = 1 ↔ ∀ m : M, e i • m = m := by
+    simp only [LinearMap.ext_iff, hφe, one_apply_eq_self]
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  have hex : ∃ i, φ i = 1 := by
+    by_contra! h
+    refine hm ?_
+    calc m = (∑ i, e i) • m := by rw [he.complete, one_smul]
+      _ = ∑ i, φ i m := by simp only [Finset.sum_smul, hφe]
+      _ = 0 := Finset.sum_eq_zero fun i _ ↦ by rw [(hφ i).resolve_right (h i), LinearMap.zero_apply]
+  obtain ⟨i, hi⟩ := hex
+  refine ⟨i, (hφ₁ i).mp hi, fun j hj ↦ by_contra fun hji ↦ hm ?_⟩
+  calc m = e j • e i • m := by rw [(hφ₁ i).mp hi, hj]
+    _ = 0 := by rw [smul_smul, he.ortho hji, zero_smul]
+
+end Indecomposable
+
 end TauCeti
 
 /-! ### The pieces as modules over the corner ring -/
@@ -324,21 +396,21 @@ variable {S M A : Type*} [Semiring S] [Semiring A] [AddCommMonoid M] [Module S M
 
 /-- The corner ring `eAe` acts on the piece `e • M` by restricting the action of `A`. -/
 instance instSMulCornerSmulTop : SMul he.Corner ↥(e • (⊤ : Submodule S M)) where
-  smul b x := ⟨b.1 • x.1, TauCeti.smul_mem_smul_top_of_mul_eq_self (he.mul_corner_val b) _⟩
+  smul b x := ⟨b.val • x.val, TauCeti.smul_mem_smul_top_of_mul_eq_self (he.mul_corner_val b) _⟩
 
 @[simp]
 theorem Corner.coe_smul (b : he.Corner) (x : ↥(e • (⊤ : Submodule S M))) :
-    ((b • x : ↥(e • (⊤ : Submodule S M))) : M) = b.1 • (x : M) := (rfl)
+    ((b • x : ↥(e • (⊤ : Submodule S M))) : M) = b.val • (x : M) := (rfl)
 
 /-- **The piece `e • M` of an `A`-module is a module over the corner ring `eAe`.** Its unit `e`
 acts trivially because `e` fixes `e • M` pointwise. -/
 instance instModuleCornerSmulTop : Module he.Corner ↥(e • (⊤ : Submodule S M)) where
-  one_smul x := Subtype.ext (he.smul_eq_self_of_mem_smul_top x.2)
-  mul_smul b c x := Subtype.ext (mul_smul b.1 c.1 x.1)
-  smul_zero b := Subtype.ext (smul_zero b.1)
-  smul_add b x y := Subtype.ext (smul_add b.1 x.1 y.1)
-  add_smul b c x := Subtype.ext (add_smul b.1 c.1 x.1)
-  zero_smul x := Subtype.ext (zero_smul A x.1)
+  one_smul x := Subtype.ext (he.smul_eq_self_of_mem_smul_top x.property)
+  mul_smul b c x := Subtype.ext (mul_smul b.val c.val x.val)
+  smul_zero b := Subtype.ext (smul_zero b.val)
+  smul_add b x y := Subtype.ext (smul_add b.val x.val y.val)
+  add_smul b c x := Subtype.ext (add_smul b.val c.val x.val)
+  zero_smul x := Subtype.ext (zero_smul A x.val)
 
 /-- On the piece `e • M`, the scalar `r • e` of the corner ring acts as `r` does on `M`. -/
 theorem coe_algebraMap_corner_smul {R : Type*} [CommSemiring R] [Algebra R A] (r : R)
@@ -346,6 +418,37 @@ theorem coe_algebraMap_corner_smul {R : Type*} [CommSemiring R] [Algebra R A] (r
     ((algebraMap R he.Corner r • x : ↥(e • (⊤ : Submodule S M))) : M) =
       algebraMap R A r • (x : M) := by
   rw [Corner.coe_smul, Corner.val_algebraMap, Algebra.smul_def, mul_smul,
-    he.smul_eq_self_of_mem_smul_top x.2]
+    he.smul_eq_self_of_mem_smul_top x.property]
+
+section Submodule
+
+variable {A M : Type*} [Ring A] [AddCommGroup M] [Module A M] {e : A} (he : IsIdempotentElem e)
+
+/-- **The corner of a submodule containing `eM` is `eM`.** If an `A`-submodule `X` of `M`
+contains every `e • m`, then the corner `eX` is identified with `eM` by the inclusion `X ⊆ M`. -/
+def smulTopSubmoduleEquiv (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X) :
+    ↥(e • (⊤ : Submodule ℤ X)) ≃ₗ[he.Corner] ↥(e • (⊤ : Submodule ℤ M)) where
+  toFun y := ⟨y.val.val, he.mem_smul_top_iff_smul_eq_self.2
+    (congrArg Subtype.val (he.smul_eq_self_of_mem_smul_top y.property))⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun z := ⟨⟨z.val, he.smul_eq_self_of_mem_smul_top z.property ▸ hX z.val⟩,
+    he.mem_smul_top_iff_smul_eq_self.2 (Subtype.ext (he.smul_eq_self_of_mem_smul_top z.property))⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coe_smulTopSubmoduleEquiv_apply (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X)
+    (y : ↥(e • (⊤ : Submodule ℤ X))) :
+    (he.smulTopSubmoduleEquiv X hX y : M) = y.val.val :=
+  (rfl)
+
+@[simp]
+theorem coe_coe_smulTopSubmoduleEquiv_symm_apply (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X)
+    (z : ↥(e • (⊤ : Submodule ℤ M))) :
+    (((he.smulTopSubmoduleEquiv X hX).symm z : X) : M) = z.val :=
+  (rfl)
+
+end Submodule
 
 end IsIdempotentElem
