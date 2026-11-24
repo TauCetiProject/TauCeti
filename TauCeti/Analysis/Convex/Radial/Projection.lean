@@ -177,20 +177,6 @@ theorem continuousOn_frontierRadialProjection (hK : Convex ℝ K) (hp : K ∈ �
 
 /-! ### Lipschitz bounds away from the centre -/
 
-/-- If `K ⊆ closedBall p R`, the inverse of the gauge of `K` centred at an interior point `p` is
-at most `R / r` at distance at least `r > 0` from `p`. -/
-private theorem inv_gauge_sub_le {y : E} (hp : K ∈ 𝓝 p) (hR : K ⊆ closedBall p R) (hr : 0 < r)
-    (hy : r ≤ ‖y - p‖) : (gauge ((p + ·) ⁻¹' K) (y - p))⁻¹ ≤ R / r := by
-  have hpos := gauge_sub_pos hp (isBounded_closedBall.subset hR)
-    (sub_ne_zero.1 (norm_pos_iff.1 (hr.trans_le hy)))
-  rw [inv_eq_one_div, div_le_div_iff₀ hpos hr, one_mul]
-  calc r ≤ ‖y - p‖ := hy
-    _ = ‖frontierRadialProjection K p y - p‖ * gauge ((p + ·) ⁻¹' K) (y - p) := by
-        rw [frontierRadialProjection_sub, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hpos.le)]
-        field_simp
-    _ ≤ R * gauge ((p + ·) ⁻¹' K) (y - p) := by
-        gcongr; exact norm_frontierRadialProjection_sub_le hp hR y
-
 /-- **The Lipschitz bound of the radial projection.** If `ball p ρ ⊆ K ⊆ closedBall p R` for a
 convex `K` and `ρ > 0`, the radial projection of `K` from `p` is
 `R / r * (1 + R / ρ)`-Lipschitz outside `ball p r`, for every `r > 0`. -/
@@ -205,11 +191,11 @@ theorem lipschitzOnWith_frontierRadialProjection (hK : Convex ℝ K) (hρ : 0 < 
   -- Points outside `ball p r` are at distance at least `r` from `p`.
   have hfar : ∀ y ∈ (ball p r)ᶜ, r ≤ ‖y - p‖ := fun y hy ↦ by
     simpa [dist_eq_norm] using hy
-  refine LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
-  have hgx : 0 < g (x - p) :=
-    gauge_sub_pos hp hb (sub_ne_zero.1 (norm_pos_iff.1 (hr.trans_le (hfar x hx))))
-  have hgy : 0 < g (y - p) :=
+  have hgpos : ∀ y ∈ (ball p r)ᶜ, 0 < g (y - p) := fun y hy ↦
     gauge_sub_pos hp hb (sub_ne_zero.1 (norm_pos_iff.1 (hr.trans_le (hfar y hy))))
+  refine LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
+  have hgx := hgpos x hx
+  have hgy := hgpos y hy
   set a := (g (x - p))⁻¹
   set b := (g (y - p))⁻¹
   have ha : 0 ≤ a := inv_nonneg.2 hgx.le
@@ -224,11 +210,9 @@ theorem lipschitzOnWith_frontierRadialProjection (hK : Convex ℝ K) (hρ : 0 < 
     abel
   rw [dist_eq_norm, hsplit, Real.coe_toNNReal _ (by positivity), dist_eq_norm]
   have hdiff : |g (y - p) - g (x - p)| ≤ ‖x - y‖ / ρ := by
-    have h := ((hK.lipschitzWith_gauge_preimage_add (r := ρ.toNNReal) (Real.toNNReal_pos.2 hρ)
-      (by rwa [Real.coe_toNNReal _ hρ.le])).dist_le_mul (y - p) (x - p))
-    rw [Real.dist_eq, dist_eq_norm, sub_sub_sub_cancel_right, NNReal.coe_inv,
-      Real.coe_toNNReal _ hρ.le, ← norm_neg, neg_sub] at h
-    rwa [div_eq_inv_mul]
+    simpa [Real.dist_eq, dist_eq_norm, div_eq_inv_mul, norm_sub_rev x y, hρ.le] using
+      (hK.lipschitzWith_gauge_preimage_add (Real.toNNReal_pos.2 hρ)
+        (by simpa [hρ.le] using hball)).dist_le_mul (y - p) (x - p)
   calc ‖a • (x - y) + (a * (g (y - p) - g (x - p))) • (b • (y - p))‖
       ≤ a * ‖x - y‖ + a * |g (y - p) - g (x - p)| * R := by
         refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
@@ -241,7 +225,13 @@ theorem lipschitzOnWith_frontierRadialProjection (hK : Convex ℝ K) (hρ : 0 < 
     _ = a * (1 + R / ρ) * ‖x - y‖ := by ring
     _ ≤ R / r * (1 + R / ρ) * ‖x - y‖ := by
         gcongr
-        exact inv_gauge_sub_le hp hR hr (hfar x hx)
+        -- `a = (g (x - p))⁻¹ ≤ R / ‖x - p‖ ≤ R / r`, where `R > 0` as `ψ x ≠ p`.
+        have hRpos : 0 < R := (norm_frontierRadialProjection_sub_le hp hR x).trans_lt' <| by
+          rw [frontierRadialProjection_sub, norm_smul]
+          exact mul_pos (norm_pos_iff.2 (inv_ne_zero hgx.ne')) (hr.trans_le (hfar x hx))
+        rw [inv_le_comm₀ hgx (by positivity), inv_div]
+        exact (div_le_div_of_nonneg_right (hfar x hx) hR0).trans
+          (le_gauge_preimage_add_of_subset_closedBall hp hR)
 
 /-- **The local Lipschitz bound of the radial projection.** If `ball p ρ ⊆ K ⊆ closedBall p R` for
 a convex `K` and `ρ > 0`, then near every `x ≠ p`, on `ball x (‖x - p‖ / 2)`, the radial projection

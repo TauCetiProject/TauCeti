@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Gauge
 public import Mathlib.Topology.Homotopy.Basic
+public import TauCeti.Analysis.Convex.Gauge.Translate
 
 /-!
 # Pushing a convex body onto its frontier away from an interior point
@@ -50,18 +50,14 @@ theorem exists_homotopyRel_frontier (hs : Convex ℝ s) (hsc : IsClosed s)
   -- `y ∈ frontier s ↔ gauge K (y - p) = 1`.
   set K : Set E := (p + ·) ⁻¹' s
   have hK : Convex ℝ K := hs.translate_preimage_right p
-  have hK₀ : K ∈ 𝓝 (0 : E) := (continuous_const_add p).continuousAt.preimage_mem_nhds
-    (by simpa using mem_interior_iff_mem_nhds.1 hp)
-  have hKb : Bornology.IsVonNBounded ℝ K := by
-    simpa [← image_vadd, image_add_left] using hsb.vadd (-p)
+  have hK₀ : K ∈ 𝓝 (0 : E) := TauCeti.preimage_add_mem_nhds_zero (mem_interior_iff_mem_nhds.1 hp)
+  have hKb : Bornology.IsVonNBounded ℝ K := hsb.preimage_add p
   have hmem (y : E) : y ∈ s ↔ gauge K (y - p) ≤ 1 := by
     rw [gauge_le_one_iff_mem_closure hK hK₀, (hsc.preimage (continuous_const_add p)).closure_eq]
     simp
-  have hfr (y : E) : y ∈ frontier s ↔ gauge K (y - p) = 1 := by
-    have hKfr : frontier K = (p + ·) ⁻¹' frontier s :=
-      ((Homeomorph.addLeft p).preimage_frontier s).symm
-    rw [gauge_eq_one_iff_mem_frontier hK hK₀, hKfr]
-    simp
+  have hfr (y : E) : y ∈ frontier s ↔ gauge K (y - p) = 1 :=
+    (TauCeti.gauge_preimage_add_sub_eq_one_iff_mem_frontier hs
+      (mem_interior_iff_mem_nhds.1 hp)).symm
   -- Points outside `U` have a large gauge, since `K` is bounded.
   obtain ⟨c₀, hc₀, hc₀U⟩ : ∃ c₀ > 0, gauge K ⁻¹' ball 0 c₀ ⊆ (p + ·) ⁻¹' U :=
     (nhds_basis_ball.comap (gauge K)).mem_iff.1 <| by
