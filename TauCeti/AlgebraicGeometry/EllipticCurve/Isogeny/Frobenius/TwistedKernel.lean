@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Frobenius.TwistedKernel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Trace
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Pencil
 import TauCeti.Algebra.CharP.Lemmas
 
 /-!
