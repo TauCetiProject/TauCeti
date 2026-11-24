@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.DiscreteValuationStalk
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.Smooth.Regular
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 import TauCeti.RingTheory.RegularLocalRing.Smooth
 import TauCeti.RingTheory.Smooth.Field
 

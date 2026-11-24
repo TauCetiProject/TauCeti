@@ -76,6 +76,8 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.mem_invariants_comp_subtype_iff`,
   `Representation.antitone_invariants_comp_subtype`, `Representation.map_invariants_comp_subtype`:
   invariants of subgroups, their monotonicity, and their transport under conjugation.
+* `Representation.le_stabilizer_ofMulAction`
+* `Representation.le_stabilizer_dual`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
   `Representation.range_orbitMap`, `Representation.finsum_mem_range_eq_finsum_orbitMap` and
   `Representation.natCard_range_eq_index_stabilizer`: the orbit is in bijection with the cosets of
@@ -205,6 +207,19 @@ theorem stabilizer_pi_ofMulAction_quotient_basepoint [Nontrivial A] {ι : Type*}
   simp only [stabilizer_pi, stabilizer_ofMulAction_single _ one_ne_zero,
     MulAction.stabilizer_quotient]
 
+/-- A subgroup fixing every point of `X` fixes every vector of the permutation representation on
+`A[X]`. -/
+theorem le_stabilizer_ofMulAction {U : Subgroup G}
+    (h : ∀ x : X, U ≤ MulAction.stabilizer G x) (v : MonoidAlgebra A X) :
+    U ≤ (ofMulAction A G X).stabilizer v := by
+  intro g hg
+  induction v using MonoidAlgebra.induction_linear with
+  | zero => exact mem_stabilizer.2 (map_zero _)
+  | add f₁ f₂ h₁ h₂ =>
+    exact mem_stabilizer.2 (by rw [map_add, mem_stabilizer.1 h₁, mem_stabilizer.1 h₂])
+  | single x r =>
+    exact mem_stabilizer.2 (by rw [ofMulAction_single, MulAction.mem_stabilizer_iff.1 (h x hg)])
+
 end MulAction
 
 /-- **Every nonzero vector in the left regular representation has finite stabilizer.** -/
@@ -235,6 +250,20 @@ theorem le_stabilizer_of_isTrivial_comp_subtype (ρ : Representation A G V) (H :
   (ρ.isTrivial_comp_subtype_iff H).mp ‹_› v
 
 end Semiring
+
+section CommSemiring
+
+variable {A G V : Type*} [CommSemiring A] [Group G] [AddCommMonoid V] [Module A V]
+  {ρ : Representation A G V}
+
+/-- A subgroup fixing every vector fixes every linear form in the dual representation. -/
+theorem le_stabilizer_dual {U : Subgroup G} (h : ∀ v, U ≤ ρ.stabilizer v)
+    (f : Module.Dual A V) : U ≤ ρ.dual.stabilizer f := fun g hg ↦
+  mem_stabilizer.2 <| LinearMap.ext fun v ↦ by
+    simp only [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
+      mem_stabilizer.1 (h v (inv_mem hg))]
+
+end CommSemiring
 
 section CommRing
 

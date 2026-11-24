@@ -60,6 +60,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 ## Main declarations
 
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
+* `SchwartzMap.fourier_fourierMultiplierCLM_apply`: on the Fourier side a Fourier multiplier is
+  multiplication by its symbol.
 * `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 * `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM`: the Bessel
   multipliers of orders `t` and `t'` compose to the one of order `t + t'`.
@@ -199,6 +201,16 @@ theorem fourier_smulLeftCLM_fourierInv_eq {g : E → ℂ} (hg : g.HasTemperateGr
   simp [fourier_coe]
 
 variable [CompleteSpace F]
+
+omit [CompleteSpace F] in
+/-- On the Fourier side, the Fourier multiplier with a symbol `g` of temperate growth is
+multiplication by `g`: `𝓕 (𝓕⁻ (g • 𝓕 f)) ξ = g ξ • 𝓕 f ξ`. -/
+@[simp]
+theorem fourier_fourierMultiplierCLM_apply {g : E → ℂ} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F))
+    (ξ : E) : 𝓕 (fourierMultiplierCLM F g f) ξ = g ξ • 𝓕 f ξ := by
+  by_cases hF : CompleteSpace F
+  · rw [fourierMultiplierCLM_apply, fourier_fourierInv_eq, smulLeftCLM_apply_apply hg]
+  · simp [fourier_eq_zero_of_not_completeSpace hF]
 
 omit [CompleteSpace F] in
 /-- Fourier multipliers commute with the Laplacian. Without completeness of the target or temperate

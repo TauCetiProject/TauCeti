@@ -8,13 +8,14 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Probability.Distributions.Cauchy
-public import TauCeti.Analysis.Complex.Pick.Herglotz
+public import TauCeti.Analysis.Complex.Pick.Herglotz.Basic
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 import TauCeti.Analysis.PDE.GreenFunction.HalfPlane
 import TauCeti.Basic.Complex.OfRealSub
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Poisson and Schwarz integrals on the upper half-plane
@@ -50,6 +51,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
 * `TauCeti.upperHalfPlanePoissonMeasure`, `TauCeti.IsPoissonFinite`: the Poisson measure
   `dx / (1 + x ^ 2)`, which is `π` times the standard Cauchy distribution, and Poisson-finite
   measures.
+* `TauCeti.integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul`: `h` is integrable for the
+  Poisson measure exactly when `h(x) / (1 + x ^ 2)` is Lebesgue integrable.
 * `TauCeti.upperHalfPlanePoissonIntegral`, `TauCeti.upperHalfPlaneSchwarzIntegral`: the Poisson and
   Schwarz integrals of a measure on `ℝ`, which vanish off the real axis for a measure that is not
   Poisson-finite (`TauCeti.upperHalfPlanePoissonIntegral_of_not_isPoissonFinite`,
@@ -76,11 +79,11 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Complex InnerProductSpace MeasureTheory Metric Set Filter
 
 open scoped Real Topology ENNReal ComplexConjugate
+
+namespace TauCeti
 
 /-! ### The Poisson kernel -/
 
@@ -227,6 +230,24 @@ instance instIsFiniteMeasureUpperHalfPlanePoissonMeasure :
     IsFiniteMeasure upperHalfPlanePoissonMeasure :=
   ⟨by simp [upperHalfPlanePoissonMeasure_univ]⟩
 
+/-- A function is integrable for the Poisson measure `dx / (1 + x ^ 2)` exactly when
+`h(x) / (1 + x ^ 2)` is Lebesgue integrable. -/
+theorem integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {h : ℝ → E} :
+    Integrable h upperHalfPlanePoissonMeasure ↔ Integrable (fun x ↦ (1 + x ^ 2)⁻¹ • h x) := by
+  rw [upperHalfPlanePoissonMeasure_eq_withDensity,
+    TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff (by fun_prop)
+      (.of_forall fun _ ↦ by positivity)]
+
+/-- A function integrable for the Poisson measure is Lebesgue a.e. strongly measurable, since the
+Poisson measure has an everywhere positive density. -/
+theorem aestronglyMeasurable_of_integrable_upperHalfPlanePoissonMeasure {E : Type*}
+    [NormedAddCommGroup E] {h : ℝ → E} (hh : Integrable h upperHalfPlanePoissonMeasure) :
+    AEStronglyMeasurable h :=
+  hh.aestronglyMeasurable.mono_ac (upperHalfPlanePoissonMeasure_eq_withDensity ▸
+    withDensity_absolutelyContinuous' (by fun_prop)
+      (.of_forall fun _ ↦ (ENNReal.ofReal_pos.2 (by positivity)).ne'))
+
 /-- A measure `ν` on `ℝ` is **Poisson-finite** when `∫ dν / (1 + x ^ 2) < ∞`, that is when
 `x ↦ 1 / (1 + x ^ 2)` is `ν`-integrable. -/
 def IsPoissonFinite (ν : Measure ℝ) : Prop :=
@@ -251,9 +272,7 @@ theorem isPoissonFinite_volume : IsPoissonFinite volume :=
 /-- Every finite measure is Poisson-finite. -/
 theorem isPoissonFinite_of_isFiniteMeasure (ν : Measure ℝ) [IsFiniteMeasure ν] :
     IsPoissonFinite ν :=
-  (isPoissonFinite_iff _).2 <| .of_bound (by fun_prop) 1 <| .of_forall fun x ↦ by
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact inv_le_one_of_one_le₀ (by nlinarith [sq_nonneg x])
+  (isPoissonFinite_iff_lintegral_lt_top ν).2 (lintegral_inv_one_add_sq_lt_top ν)
 
 /-- Reflecting the pole in the real axis changes the sign of the Poisson kernel. -/
 @[simp]
@@ -407,9 +426,8 @@ theorem upperHalfPlaneSchwarzIntegral_def (ν : Measure ℝ) (z : ℂ) :
 value `0`, since the subtracted resolvent kernel is not integrable there. -/
 theorem upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite {ν : Measure ℝ}
     (hν : ¬IsPoissonFinite ν) {z : ℂ} (hz : z.im ≠ 0) : upperHalfPlaneSchwarzIntegral ν z = 0 := by
-  rw [upperHalfPlaneSchwarzIntegral_def, integral_undef fun h ↦ hν
-    ((isPoissonFinite_iff_lintegral_lt_top ν).2
-      ((integrable_subtractedResolventKernel_iff hz).1 h)), mul_zero]
+  rw [upperHalfPlaneSchwarzIntegral_def, integral_subtractedResolventKernel_eq_zero
+    (mt (isPoissonFinite_iff_lintegral_lt_top ν).2 hν) hz, mul_zero]
 
 /-- At `z = i` the Schwarz integral is real: `S[ν](i) = (1 / π) ∫ dν / (1 + x ^ 2)`. -/
 @[simp]
