@@ -38,7 +38,10 @@ energy identity
 absorbed by the potentials; the exterior bound
 (`exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`) is the Gårding inequality
 `exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le` for variations vanishing
-on its disc.
+on its disc. More precisely, `‖L_x y‖₂² ≥ a ‖y‖₂²` for every variation supported where the
+coefficient `vortexMass x = min (P, (12 P - 1) / 8) - |∇₁ α|` is at least `a`
+(`mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedOperator`), which gives exterior bounds with
+an explicit radius whenever that coefficient is controlled.
 Together, the exterior bounds for `L_x` and `L_x*` are the estimates at infinity behind the
 Fredholm property of `L_x` at a vortex.
 
@@ -253,6 +256,32 @@ theorem integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero
   · simp [gaugeFixedPotential_def, hz]
   · exact gaugeFixedPotential_eq_of_equation_eq_zero (hx.differentiable one_ne_zero z)
       (hsol z hz) (y z)
+
+/-- The gauge-fixed operator has squared `L²` lower bound `a` on any compactly supported `C²`
+variation supported where the vortex equation holds and the coefficient `vortexMass x` is at least
+`a`: there the potential of the Weitzenböck formula `integral_norm_sq_gaugeFixedOperator` is at
+least `a |y|²`, and the gradient term is nonnegative. This is a support-local estimate; the
+exterior estimates follow by taking `y` supported where `vortexMass x > a`. -/
+theorem mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedOperator
+    (hx : ContDiff ℝ 1 x) (hy : ContDiff ℝ 2 y) (hc : HasCompactSupport y)
+    (hsol : ∀ z, y z ≠ 0 → equation x z = 0) {a : ℝ}
+    (ha : ∀ z, y z ≠ 0 → a ≤ vortexMass x z) :
+    a * (∫ z, ‖y z‖ ^ 2 ∂μ) ≤ ∫ z, ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ := by
+  have hn : Integrable (fun z ↦ a * ‖y z‖ ^ 2) μ :=
+    ((hy.continuous.norm.pow 2).const_mul a).integrable_of_hasCompactSupport
+      (hc.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)).mul_left
+  have hpt (z : ℂ) : a * ‖y z‖ ^ 2 ≤ gaugeFixedPotential x z (y z) := by
+    by_cases hz : y z = 0
+    · simp [gaugeFixedPotential_def, hz]
+    · exact (mul_le_mul_of_nonneg_right (ha z hz) (sq_nonneg _)).trans
+        (vortexMass_mul_norm_sq_le_gaugeFixedPotential (hx.differentiable one_ne_zero z)
+          (hsol z hz) (y z))
+  have hlow := integral_mono hn (integrable_gaugeFixedPotential hx hy.continuous hc) hpt
+  rw [integral_const_mul] at hlow
+  have hG : 0 ≤ ∫ z, gaugeFixedGradientDensity x y z ∂μ :=
+    integral_nonneg (gaugeFixedGradientDensity_nonneg x y)
+  rw [integral_norm_sq_gaugeFixedOperator hx hy hc]
+  linarith
 
 /-- **Exterior coercivity of the gauge-fixed vortex operator.** For an actual vortex with
 `|α| → 1` and `∇₁ α → 0` at infinity, and `0 < c < 1/2`, there is a radius `R > 0`, depending

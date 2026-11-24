@@ -46,11 +46,16 @@ collects the terms carrying `db`, which live on the disc of radius `2 R`. Since 
 Fatou's lemma (`TauCeti.lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le`) lets
 `ε → 0`.
 
-The constant `K` depends only on `c` and on the radius of the exterior estimate of the vortex.
-Nothing here is uniform over the noncompact moduli space of vortices.
+The constant `K` depends only on `c`, the exterior mass `c₁` and the radius `R` of the exterior
+estimate, not otherwise on the field
+(`TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel`). So the decay is
+uniform over every family of vortices sharing an exterior estimate, but not over the noncompact
+moduli space of vortices.
 
 ## Main results
 
+* `TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel`: the weighted
+  bound on the kernel, with a constant depending only on the rate and the exterior estimate.
 * `TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel`: the weighted bound on
   the kernel.
 * `TauCeti.Vortex.memLp_exp_mul_smul_of_mem_gaugeFixedKernel`: kernel elements decay
@@ -241,42 +246,50 @@ private theorem lintegral_ofReal_sq_mul_norm_sq_le (hx : Continuous x) {c₁ R d
 
 /-! ### Exponential decay of the kernel -/
 
-/-- **Exponential decay of the vortex kernel, quantitatively.** Let `x` be a `C¹` plane vortex
-with `|α| → 1` and `∇₁ α → 0` at infinity, let `ρ(z) = √(1 + |z|²)` and `c < 1 / 2`. There is `K`
-such that every `C²` square-integrable solution `y` of `L_x y = 0` satisfies
+/-- **Exponential decay of the vortex kernel, from an exterior estimate.** Let `R` be a radius,
+`0 < c₁` and `c < c₁`, and let `ρ(z) = √(1 + |z|²)`. There is `K`, depending only on `c`, `c₁`
+and `R`, with the following property. Let `x` be a continuous field for which `L_x` satisfies the
+exterior estimate `c₁² ∫ |u|² ≤ ∫ |L_x u|²` on compactly supported `C²` variations vanishing on the
+closed disc of radius `R`. Then every `C²` square-integrable solution `y` of `L_x y = 0` satisfies
 
-`‖exp(c ρ) y‖₂ ≤ K ‖y‖₂`. -/
-theorem exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel (hx : ContDiff ℝ 1 x)
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
-    {c : ℝ} (hc : c < 1 / 2) :
-    ∃ K : ℝ≥0, ∀ y ∈ gaugeFixedKernel x,
-      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 ≤ K * eLpNorm y 2 := by
-  -- Work with the rate `d = max c 0` and an exterior mass `c₁` strictly between `d` and `1 / 2`.
+`‖exp(c ρ) y‖₂ ≤ K ‖y‖₂`.
+
+Since `K` does not depend on `x`, the estimate is uniform over every family of fields sharing an
+exterior estimate; for instance over the plane vortices of degree `m` whose zeros lie in a fixed
+disc (`exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le`). -/
+theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel {c c₁ R : ℝ}
+    (hc : c < c₁) (hc₁ : 0 < c₁) :
+    ∃ K : ℝ≥0, ∀ x : ℂ → EuclideanSpace ℝ (Fin 4), Continuous x →
+      (∀ u : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 u → HasCompactSupport u →
+        (∀ z, ‖z‖ ≤ R → u z = 0) →
+        c₁ ^ 2 * (∫ z, ‖u z‖ ^ 2) ≤ ∫ z, ‖gaugeFixedOperator x u z‖ ^ 2) →
+      ∀ y ∈ gaugeFixedKernel x,
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 ≤ K * eLpNorm y 2 := by
+  -- Work with the rate `d = max c 0`, which is still below the exterior mass `c₁`.
   set d := max c 0
   have hd0 : 0 ≤ d := le_max_right _ _
-  have hd2 : d < 1 / 2 := max_lt hc (by norm_num)
-  obtain ⟨R, hR0, hR⟩ := exists_exterior_integral_norm_sq_gaugeFixedOperator_ge (μ := volume)
-    hx hsol hlim hcov (c := (d + 1 / 2) / 2) (by linarith) (by linarith)
-  -- `b` is one on the disc of radius `R` and vanishes beyond `2 R`; the cutoff is `1 - b`.
+  have hdc₁ : d < c₁ := max_lt hc hc₁
+  -- The exterior estimate also holds outside every disc of radius `R' ≥ R`; take `R' > 0`.
+  obtain ⟨R', hR'0, hRR'⟩ : ∃ R', 0 < R' ∧ R ≤ R' :=
+    ⟨max R 1, lt_max_of_lt_right one_pos, le_max_left R 1⟩
+  -- `b` is one on the disc of radius `R'` and vanishes beyond `2 R'`; the cutoff is `1 - b`.
   obtain ⟨A, hA, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
-  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb, hb'c, hb'0⟩ := hcut 0 R hR0
+  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb, hb'c, hb'0⟩ := hcut 0 R' hR'0
   set W : ℂ → ℝ := fun z ↦ Real.exp (d * √(1 + ‖z‖ ^ 2))
-  set E := Real.exp (d * √(1 + (2 * R) ^ 2))
-  set K := 2 * ((2 * d * (A * R⁻¹) + (A * R⁻¹) ^ 2) * E ^ 2 / (((d + 1 / 2) / 2) ^ 2 - d ^ 2)) +
-    2 * E ^ 2
+  set E := Real.exp (d * √(1 + (2 * R') ^ 2))
+  set K := 2 * ((2 * d * (A * R'⁻¹) + (A * R'⁻¹) ^ 2) * E ^ 2 / (c₁ ^ 2 - d ^ 2)) + 2 * E ^ 2
   have hK : 0 ≤ K := by
-    have : 0 < ((d + 1 / 2) / 2) ^ 2 - d ^ 2 := by nlinarith
+    have : 0 < c₁ ^ 2 - d ^ 2 := by nlinarith
     positivity
-  refine ⟨NNReal.mk √K (Real.sqrt_nonneg K), fun y hyK ↦ ?_⟩
+  refine ⟨NNReal.mk √K (Real.sqrt_nonneg K), fun x hx hR y hyK ↦ ?_⟩
   obtain ⟨hy, hy₂, -⟩ := mem_gaugeFixedKernel.1 hyK
   -- The estimate for the bounded weights `V_n = W / (1 + W / (n + 1))`, and Fatou's lemma.
   have hVn (n : ℕ) : ∫⁻ z, ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 *
       ‖y z‖ ^ 2) ≤ ENNReal.ofReal (K * ∫ z, ‖y z‖ ^ 2) := by
     have hε : 0 < 1 / ((n : ℝ) + 1) := by positivity
     have hV0 := exp_div_one_add_mul_exp_nonneg (E := ℂ) (b := 1) d hε.le
-    refine lintegral_ofReal_sq_mul_norm_sq_le hx.continuous hR hd0 (by linarith)
+    refine lintegral_ofReal_sq_mul_norm_sq_le hx
+      (fun u hu huc hu0 ↦ hR u hu huc fun z hz ↦ hu0 z (hz.trans hRR')) hd0 hdc₁
       (Real.exp_pos _).le (hb 2) hb01 (fun z hz ↦ hb1 z (by simpa using hz))
       (fun z hz ↦ hb0 z (by simpa using hz)) hbd hbb hb'c
       (fun z hz ↦ hb'0 z (by simpa using hz))
@@ -300,6 +313,28 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel (hx : ContDiff �
         (mul_le_mul_of_nonneg_right (le_max_left c 0) (Real.sqrt_nonneg _))) 2)
       (sq_nonneg _))).trans hWy)).trans_eq ?_
   rw [ENNReal.ofReal_eq_coe_nnreal (Real.sqrt_nonneg K)]
+
+/-- **Exponential decay of the vortex kernel, quantitatively.** Let `x` be a `C¹` plane vortex
+with `|α| → 1` and `∇₁ α → 0` at infinity, let `ρ(z) = √(1 + |z|²)` and `c < 1 / 2`. There is `K`
+such that every `C²` square-integrable solution `y` of `L_x y = 0` satisfies
+
+`‖exp(c ρ) y‖₂ ≤ K ‖y‖₂`. -/
+theorem exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel (hx : ContDiff ℝ 1 x)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
+    {c : ℝ} (hc : c < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ y ∈ gaugeFixedKernel x,
+      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) 2 ≤ K * eLpNorm y 2 := by
+  -- An exterior mass `c₁` strictly between `max c 0` and `1 / 2`.
+  have hd2 : max c 0 < 1 / 2 := max_lt hc (by norm_num)
+  obtain ⟨R, -, hR⟩ := exists_exterior_integral_norm_sq_gaugeFixedOperator_ge (μ := volume)
+    hx hsol hlim hcov (c := (max c 0 + 1 / 2) / 2)
+    (by linarith [le_max_right c 0]) (by linarith)
+  obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel
+    (c := c) (c₁ := (max c 0 + 1 / 2) / 2) (by linarith [le_max_left c 0])
+    (by linarith [le_max_right c 0]) (R := R)
+  exact ⟨K, hK x hx.continuous hR⟩
 
 /-- **Kernel elements of the vortex operator decay exponentially.** Let `x` be a `C¹` plane vortex
 with `|α| → 1` and `∇₁ α → 0` at infinity, let `ρ(z) = √(1 + |z|²)` and `c < 1 / 2`. Every `C²`
