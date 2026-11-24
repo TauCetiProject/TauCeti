@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.RCLike.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The principal square root and the slit plane
@@ -15,8 +16,17 @@ import TauCeti.Analysis.Complex.SlitPlane
 The principal square root has nonnegative real part, and its real part is strictly positive
 exactly on the slit plane; consequently squaring carries the open right half-plane bijectively
 onto `Complex.slitPlane` (`TauCeti.bijOn_sq_setOf_re_pos_slitPlane`). These facts control the
-branches in algebraic transformations involving sums of principal roots. The file also records
-the values `√i = e^{π i / 4}` and `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane.
+branches in algebraic transformations involving sums of principal roots. The file also records the
+values `√i = e^{π i / 4}` and `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the
+splitting `√(r z) = √r √z` for real `r ≥ 0` and the identification of the real square root of
+`x ≥ 0` with the complex half-power `x ^ (1 / 2)`, records that the real square root of a
+nonnegative real, cast to `ℂ`, squares back to it, and packages the principal square root of a
+nonzero complex number as a unit, `Complex.sqrtUnit`.
+
+The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
+real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
+(`Complex.inv_ofReal_sqrt_mul_self`). Together with `1 + i ≠ 0` (`Complex.one_add_I_ne_zero`),
+these at `x = 2` are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`.
 -/
 
 public section
@@ -24,6 +34,12 @@ public section
 open scoped Real
 
 namespace Complex
+
+/-- The real square root of a nonnegative real, cast to `ℂ`, squares back to it:
+`(√x : ℂ) * √x = x`. -/
+@[simp]
+theorem mul_self_ofReal_sqrt {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) * √x = x := by
+  exact_mod_cast Real.mul_self_sqrt hx
 
 /-- The square of the principal square root is the original complex number. -/
 @[simp]
@@ -35,6 +51,15 @@ theorem sq_sqrt (z : ℂ) : sqrt z ^ 2 = z :=
 theorem sqrt_eq_zero_iff {z : ℂ} : sqrt z = 0 ↔ z = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ sqrt_zero⟩
   rw [← sq_sqrt z, h, zero_pow two_ne_zero]
+
+/-- The real square root of a nonnegative real number is its principal complex half-power. -/
+theorem ofReal_sqrt_eq_cpow {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) = (x : ℂ) ^ (1 / 2 : ℂ) := by
+  rw [Real.sqrt_eq_rpow, ofReal_cpow hx]
+  norm_num
+
+/-- The principal square root splits across a nonnegative real factor: `√(r z) = √r √z`. -/
+theorem sqrt_ofReal_mul {r : ℝ} (hr : 0 ≤ r) (z : ℂ) : sqrt (r * z) = sqrt r * sqrt z :=
+  TauCeti.ofReal_mul_cpow hr z 2⁻¹
 
 /-- The principal square root of `i` is `e^{π i / 4}`. -/
 theorem sqrt_I_eq_exp : sqrt I = exp (π * I / 4) := by
@@ -80,6 +105,10 @@ theorem sqrt_re_pos_iff (z : ℂ) : 0 < (sqrt z).re ↔ z ∈ slitPlane := by
     have hlt := lt_of_le_of_ne h hz
     linarith
 
+/-- The principal half-power `z ^ (1 / 2)` has positive real part exactly on the slit plane. -/
+theorem cpow_one_half_re_pos_iff (z : ℂ) : 0 < (z ^ (1 / 2 : ℂ)).re ↔ z ∈ slitPlane := by
+  simpa only [sqrt, one_div] using sqrt_re_pos_iff z
+
 /-- A sum of principal square roots has positive real part exactly when at least one
 input lies in the slit plane. -/
 @[simp]
@@ -94,6 +123,37 @@ theorem sqrt_add_sqrt_re_pos_iff (x y : ℂ) :
     linarith
   · rintro (h | h) <;> linarith
 
+/-- The principal square root of a nonzero complex number, as a unit. -/
+noncomputable def sqrtUnit {z : ℂ} (hz : z ≠ 0) : ℂˣ :=
+  Units.mk0 (sqrt z) (sqrt_eq_zero_iff.not.2 hz)
+
+/-- The value of `Complex.sqrtUnit` is the principal square root. -/
+@[simp]
+theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
+  Units.val_mk0 _
+
+/-- The unit principal square root of `z` squares to `z`. -/
+theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
+  rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
+
+/-- The real square root of a positive real, cast to `ℂ`, is nonzero. -/
+theorem ofReal_sqrt_ne_zero {x : ℝ} (hx : 0 < x) : (√x : ℂ) ≠ 0 := by
+  exact_mod_cast (Real.sqrt_pos.mpr hx).ne'
+
+/-- The real square root of a nonnegative real, cast to `ℂ`, squares back to it:
+`(√x : ℂ) ^ 2 = x`. -/
+theorem sq_ofReal_sqrt {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) ^ 2 = x := by
+  exact_mod_cast Real.sq_sqrt hx
+
+/-- The inverse of the real square root of a nonnegative real `x`, cast to `ℂ`, times itself is
+`x⁻¹`. -/
+theorem inv_ofReal_sqrt_mul_self {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ)⁻¹ * (√x : ℂ)⁻¹ = (x : ℂ)⁻¹ := by
+  rw [← mul_inv, mul_self_ofReal_sqrt hx]
+
+/-- The complex number `1 + i` is nonzero. -/
+theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by
+  simpa using congrArg re h
+
 end Complex
 
 namespace TauCeti
@@ -101,19 +161,11 @@ namespace TauCeti
 /-- Squaring maps the open right half-plane `{w | 0 < w.re}` bijectively onto
 `Complex.slitPlane`. -/
 theorem bijOn_sq_setOf_re_pos_slitPlane :
-    Set.BijOn (· ^ 2 : ℂ → ℂ) {w : ℂ | 0 < w.re} Complex.slitPlane := by
-  refine Set.InvOn.bijOn ⟨fun w hw => ?_, fun z _ => Complex.sq_sqrt z⟩
-    (fun w hw => by rw [sq]; exact mul_mem_slitPlane_of_re_pos hw hw)
+    Set.BijOn (· ^ 2 : ℂ → ℂ) {w : ℂ | 0 < w.re} Complex.slitPlane :=
+  Set.InvOn.bijOn
+    ⟨fun _ hw => by simpa only [Complex.sqrt] using Complex.sq_cpow_two_inv hw,
+      fun z _ => Complex.sq_sqrt z⟩
+    (fun _ hw => by rw [sq]; exact mul_mem_slitPlane_of_re_pos hw hw)
     (fun z hz => (Complex.sqrt_re_pos_iff z).mpr hz)
-  have hw2 : w ^ 2 ∈ Complex.slitPlane := by rw [sq]; exact mul_mem_slitPlane_of_re_pos hw hw
-  have hsq : Complex.sqrt (w ^ 2) ^ 2 = w ^ 2 := Complex.sq_sqrt (w ^ 2)
-  have hmul : (Complex.sqrt (w ^ 2) - w) * (Complex.sqrt (w ^ 2) + w) = 0 := by
-    linear_combination hsq
-  have hsum : Complex.sqrt (w ^ 2) + w ≠ 0 := by
-    intro h0
-    have hre := congrArg Complex.re h0
-    simp only [Complex.add_re, Complex.zero_re] at hre
-    linarith [(Complex.sqrt_re_pos_iff (w ^ 2)).mpr hw2, hw.out]
-  exact sub_eq_zero.mp ((mul_eq_zero.mp hmul).resolve_right hsum)
 
 end TauCeti

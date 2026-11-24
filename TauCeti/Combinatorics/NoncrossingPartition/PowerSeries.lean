@@ -59,10 +59,10 @@ size. If `m ∉ t`, the part through `m` is empty and contributes `f(0)`; in par
 partition of `t = ∅` has weight `f(0)` rather than `1`. -/
 private noncomputable def firstPartSum (C f : R⟦X⟧) (m : α) (t : Finset α) : R :=
   ∑ P : NoncrossingPartition t,
-    coeff #(P.1.part m) f * ∏ B ∈ P.1.parts with m ∉ B, coeff #B C
+    coeff #(P.val.part m) f * ∏ B ∈ P.val.parts with m ∉ B, coeff #B C
 
 /-- The only noncrossing partition of the empty set has no parts. -/
-private theorem parts_eq_empty (P : NoncrossingPartition (∅ : Finset α)) : P.1.parts = ∅ :=
+private theorem parts_eq_empty (P : NoncrossingPartition (∅ : Finset α)) : P.val.parts = ∅ :=
   Finpartition.parts_eq_empty_iff.2 rfl
 
 /-- Assume that the total weight of the noncrossing partitions of every set of fewer than `n`
@@ -72,7 +72,7 @@ whose least position is `m` if `t` is nonempty, the total weight with the first 
 `firstPartSum` gives the empty partition the weight `f(0)`. -/
 private theorem firstPartSum_eq_coeff_subst {C M : R⟦X⟧} {n : ℕ}
     (hZ : ∀ u : Finset α, #u < n →
-      ∑ P : NoncrossingPartition u, ∏ B ∈ P.1.parts, coeff #B C = coeff #u M)
+      ∑ P : NoncrossingPartition u, ∏ B ∈ P.val.parts, coeff #B C = coeff #u M)
     (t : Finset α) (m : α) (hm : ∀ y ∈ t, m ≤ y) (hmt : t.Nonempty → m ∈ t) (ht : #t ≤ n)
     (f : R⟦X⟧) : firstPartSum C f m t = coeff #t (f.subst (X * M)) := by
   induction hk : #t using Nat.strong_induction_on generalizing t f with
@@ -84,7 +84,7 @@ private theorem firstPartSum_eq_coeff_subst {C M : R⟦X⟧} {n : ℕ}
       exact constantCoeff_subst_of_constantCoeff_zero (S := R) (by simp [← constantCoeff_eq]) f
     rw [← hk, card_empty, h0, firstPartSum, Fintype.sum_unique,
       parts_eq_empty, filter_empty, prod_empty, mul_one,
-      (default : NoncrossingPartition _).1.part_eq_empty.2 (notMem_empty m), card_empty]
+      (default : NoncrossingPartition _).val.part_eq_empty.2 (notMem_empty m), card_empty]
   have hmin : t.min' hne = m := le_antisymm (min'_le t m (hmt hne)) (le_min' t hne m hm)
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (hk ▸ hne.card_pos.ne')
   -- The positions before `x ∈ t`, or after it, are fewer than those of `t`.
@@ -101,8 +101,8 @@ private theorem firstPartSum_eq_coeff_subst {C M : R⟦X⟧} {n : ℕ}
   refine sum_congr rfl fun x hx => ?_
   -- The weight of the part of `m` extended by `x` is the shifted coefficient of `f`.
   have hshift (L : NoncrossingPartition {y ∈ t | y < x}) :
-      coeff #(insert x (L.1.part m)) f = coeff #(L.1.part m) (mk fun p => coeff (p + 1) f) := by
-    rw [card_insert_of_notMem fun h => lt_irrefl x (mem_filter.1 (L.1.part_subset m h)).2,
+      coeff #(insert x (L.val.part m)) f = coeff #(L.val.part m) (mk fun p => coeff (p + 1) f) := by
+    rw [card_insert_of_notMem fun h => lt_irrefl x (mem_filter.1 (L.val.part_subset m h)).2,
       coeff_mk]
   simp_rw [hmin, hshift]
   have hlt' := hlt (p := (· < x)) hx (lt_irrefl x)
@@ -119,7 +119,7 @@ of positions in a linear order, the sum over the noncrossing partitions `π` of 
 `|s|`. -/
 theorem sum_prod_coeff_eq_coeff_of_subst_eq {C M : R⟦X⟧} (hC : constantCoeff C = 1)
     (hM : C.subst (X * M) = M) (s : Finset α) :
-    ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, coeff #B C = coeff #s M := by
+    ∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts, coeff #B C = coeff #s M := by
   induction hn : #s using Nat.strong_induction_on generalizing s with
   | _ n ih =>
   obtain rfl | hs := s.eq_empty_or_nonempty
@@ -133,7 +133,7 @@ theorem sum_prod_coeff_eq_coeff_of_subst_eq {C M : R⟦X⟧} (hC : constantCoeff
   rw [hM, hn] at h
   rw [← h, firstPartSum]
   exact sum_congr rfl fun π _ =>
-    π.1.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) fun B => coeff #B C
+    π.val.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) fun B => coeff #B C
 
 /-- *The moment–cumulant functional equation, from the coefficients.* Let `C` be a formal power
 series with constant coefficient `1`, and let `M` be a formal power series whose coefficient at
@@ -142,7 +142,8 @@ series with constant coefficient `1`, and let `M` be a formal power series whose
 `M(z) = C(z M(z))`. This is the converse of `sum_prod_coeff_eq_coeff_of_subst_eq`. -/
 theorem subst_eq_of_forall_sum_prod_coeff_eq [Infinite α] {C M : R⟦X⟧}
     (hC : constantCoeff C = 1)
-    (hM : ∀ s : Finset α, ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, coeff #B C = coeff #s M) :
+    (hM : ∀ s : Finset α, ∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts,
+        coeff #B C = coeff #s M) :
     C.subst (X * M) = M := by
   ext n
   obtain ⟨s, rfl⟩ := Infinite.exists_subset_card_eq α n
@@ -156,6 +157,6 @@ theorem subst_eq_of_forall_sum_prod_coeff_eq [Infinite α] {C M : R⟦X⟧}
     (s.min' hs) (fun y hy => s.min'_le y hy) (fun _ => s.min'_mem hs) le_rfl C
   rw [← h, ← hM, firstPartSum]
   exact sum_congr rfl fun π _ =>
-    (π.1.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) fun B => coeff #B C).symm
+    (π.val.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) fun B => coeff #B C).symm
 
 end TauCeti.NoncrossingPartition

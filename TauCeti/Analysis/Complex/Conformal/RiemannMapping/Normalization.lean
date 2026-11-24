@@ -9,10 +9,9 @@ public import TauCeti.Analysis.Complex.Conformal.Koebe
 public import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Uniqueness
 public import Mathlib.Analysis.Complex.Order
 import Mathlib.Analysis.Complex.Isometry
-import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Normed.Module.Connected
-import TauCeti.Analysis.Complex.Conformal.Biholomorph
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
+import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Equivalence
 import TauCeti.Data.Set.Function
 
 /-!
@@ -211,23 +210,6 @@ theorem IsNormalizedRiemannMapOn.eqOn (hg : IsNormalizedRiemannMapOn g Ω z₀)
   intro z hz
   have hz' := hu hz
   simpa only [hu1, one_mul] using hz'
-
-/-- A holomorphic bijection of an open plane set onto the open unit disc forces the source to be
-simply connected and proper: the homeomorphism onto the contractible disc gives simple connectivity,
-and Liouville's theorem rules out `Ω = univ`. -/
-private theorem isSimplyConnected_and_ne_univ_of_bijOn_ball (hΩo : IsOpen Ω)
-    (hfd : DifferentiableOn ℂ f Ω) (hfbij : BijOn f Ω (ball (0 : ℂ) 1)) :
-    IsSimplyConnected Ω ∧ Ω ≠ univ := by
-  have : ContractibleSpace (ball (0 : ℂ) 1) := contractibleSpace_ball one_pos
-  have hsc : IsSimplyConnected Ω :=
-    (hfd.toHomeomorphOfBijOn hΩo hfbij).toHomotopyEquiv.simplyConnectedSpace
-  refine ⟨hsc, ?_⟩
-  rintro rfl
-  have hent : Differentiable ℂ f := differentiableOn_univ.mp hfd
-  have hbdd : Bornology.IsBounded (range f) :=
-    isBounded_ball.subset (by rw [← image_univ]; exact hfbij.mapsTo.image_subset)
-  obtain ⟨c, hc⟩ := hent.exists_const_forall_eq_of_bounded hbdd
-  exact zero_ne_one (hfbij.injOn (mem_univ 0) (mem_univ 1) ((hc 0).trans (hc 1).symm))
 
 namespace IsNormalizedRiemannMapOn
 

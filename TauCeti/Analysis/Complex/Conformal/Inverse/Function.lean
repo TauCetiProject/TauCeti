@@ -26,6 +26,8 @@ functions that are injective on an open set and for holomorphic open partial hom
   segment through the image of `z₀`.
 * `TauCeti.OpenPartialHomeomorph.differentiableOn_symm` — the inverse of a holomorphic open partial
   homeomorphism is holomorphic on its target.
+* `OpenPartialHomeomorph.hasDerivAt_symm_of_differentiableOn` — its derivative at `w` is
+  `(deriv e (e.symm w))⁻¹`.
 
 ## References
 
@@ -79,6 +81,16 @@ theorem OpenPartialHomeomorph.differentiableOn_symm {e : OpenPartialHomeomorph �
         (e.injOn.leftInvOn_invFunOn (e.map_target hz)).symm
       _ = Function.invFunOn e e.source z :=
         congrArg (Function.invFunOn e e.source) (e.right_inv hz)
+
+/-- **The derivative of the inverse of a holomorphic open partial homeomorphism.** At a point `w`
+of the target, `e.symm` has derivative `(deriv e (e.symm w))⁻¹`; the derivative of `e` does not
+vanish since `e` is injective on its open source. -/
+theorem _root_.OpenPartialHomeomorph.hasDerivAt_symm_of_differentiableOn
+    (e : OpenPartialHomeomorph ℂ ℂ) (he : DifferentiableOn ℂ e e.source) {w : ℂ}
+    (hw : w ∈ e.target) :
+    HasDerivAt e.symm (deriv e (e.symm w))⁻¹ w :=
+  e.hasDerivAt_symm hw (deriv_ne_zero_of_injOn he e.open_source e.injOn (e.map_target hw))
+    (he.differentiableAt (e.open_source.mem_nhds (e.map_target hw))).hasDerivAt
 
 /-- **The derivative of the holomorphic inverse.** At `f z₀`, the inverse `Function.invFunOn f U`
 of a holomorphic injection `f` of the open set `U` has derivative `(deriv f z₀)⁻¹`, by

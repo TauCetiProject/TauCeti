@@ -318,12 +318,12 @@ integer exponent gives both the modulus exponent and its parity.  At a complex p
 frequency `a - b`. -/
 def toContinuous : AlgebraicInfinityType K →+ ContinuousInfinityType K where
   toFun n :=
-    { realExponent := fun w ↦ n w.1.embedding
-      realParity := fun w ↦ n w.1.embedding
+    { realExponent := fun w ↦ n w.val.embedding
+      realParity := fun w ↦ n w.val.embedding
       complexExponent := fun w ↦
-        n w.1.embedding + n (ComplexEmbedding.conjugate w.1.embedding)
+        n w.val.embedding + n (ComplexEmbedding.conjugate w.val.embedding)
       complexAngularFrequency := fun w ↦
-        n w.1.embedding - n (ComplexEmbedding.conjugate w.1.embedding) }
+        n w.val.embedding - n (ComplexEmbedding.conjugate w.val.embedding) }
   map_zero' := by ext <;> simp
   map_add' _ _ := by ext <;> simp <;> ring
 
@@ -332,14 +332,14 @@ embedding. -/
 @[simp]
 theorem toContinuous_realExponent (n : AlgebraicInfinityType K)
     (w : {w : InfinitePlace K // w.IsReal}) :
-    (toContinuous n).realExponent w = n w.1.embedding :=
+    (toContinuous n).realExponent w = n w.val.embedding :=
   (rfl)
 
 /-- The real parity of an algebraic infinity type is its embedding exponent modulo two. -/
 @[simp]
 theorem toContinuous_realParity (n : AlgebraicInfinityType K)
     (w : {w : InfinitePlace K // w.IsReal}) :
-    (toContinuous n).realParity w = n w.1.embedding :=
+    (toContinuous n).realParity w = n w.val.embedding :=
   (rfl)
 
 /-- The complex modulus exponent of an algebraic infinity type is the sum of its two conjugate
@@ -348,7 +348,7 @@ embedding exponents. -/
 theorem toContinuous_complexExponent (n : AlgebraicInfinityType K)
     (w : {w : InfinitePlace K // w.IsComplex}) :
     (toContinuous n).complexExponent w =
-      n w.1.embedding + n (ComplexEmbedding.conjugate w.1.embedding) :=
+      n w.val.embedding + n (ComplexEmbedding.conjugate w.val.embedding) :=
   (rfl)
 
 /-- The complex angular frequency of an algebraic infinity type is the difference of its two
@@ -357,7 +357,7 @@ conjugate embedding exponents. -/
 theorem toContinuous_complexAngularFrequency (n : AlgebraicInfinityType K)
     (w : {w : InfinitePlace K // w.IsComplex}) :
     (toContinuous n).complexAngularFrequency w =
-      n w.1.embedding - n (ComplexEmbedding.conjugate w.1.embedding) :=
+      n w.val.embedding - n (ComplexEmbedding.conjugate w.val.embedding) :=
   (rfl)
 
 /-- Algebraic infinity types are determined by their associated continuous infinity types. -/

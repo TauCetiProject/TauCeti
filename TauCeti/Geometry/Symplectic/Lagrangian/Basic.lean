@@ -51,6 +51,8 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
   `isSymplectic_iff_isCompl` identifies this with the splitting `V = L ⊕ L^ω`.
 * `TauCeti.SymplecticForm.Tames.isSymplectic_of_mem_invtSubmodule`: a subspace invariant under
   an almost complex structure tamed by `ω` is symplectic.
+* `TauCeti.SymplecticForm.iSupIndep_of_pairwise_apply_eq_zero`: pairwise `ω`-orthogonal
+  symplectic subspaces are independent.
 * `TauCeti.SymplecticForm.finrank_add_finrank_orthogonal`: `dim L + dim L^ω = dim V`.
 * `TauCeti.SymplecticForm.ker_eq_comap_orthogonal_range`: the kernel of the form `B` pulled back
   along a linear map `ι` is the preimage of the symplectic orthogonal of the image of `ι`, and
@@ -274,6 +276,15 @@ lemma Tames.isSymplectic_of_mem_invtSubmodule {J : AlmostComplexStructure V} (hJ
 lemma IsIsotropic.eq_bot_of_isSymplectic (h : ω.IsIsotropic L) (hs : ω.IsSymplectic L) : L = ⊥ :=
   disjoint_self.1 (hs.mono_right h)
 
+/-- **Pairwise orthogonal symplectic subspaces are independent.** If the symplectic subspaces
+`G j` are pairwise `ω`-orthogonal, each meets the sum of the others only in zero. -/
+theorem iSupIndep_of_pairwise_apply_eq_zero {ι : Type*} {G : ι → Submodule ℝ V}
+    (hG : ∀ j, ω.IsSymplectic (G j))
+    (horth : Pairwise fun j k ↦ ∀ v ∈ G j, ∀ w ∈ G k, ω v w = 0) : iSupIndep G := fun j ↦
+  -- The sum of the other subspaces is `ω`-orthogonal to the symplectic subspace `G j`.
+  (isSymplectic_iff_disjoint.1 (hG j)).mono_right <| iSup₂_le fun _ hk w hw ↦
+    mem_orthogonal_iff.2 fun y hy ↦ horth (Ne.symm hk) y hy w hw
+
 /-- A graph is Lagrangian exactly when its defining map is symmetric for a pairing whose
 associated product symplectic form is specified by the hypothesis. -/
 theorem isLagrangian_graph_iff_of_pairing
@@ -394,6 +405,7 @@ theorem finrank_ker_add_finrank_of_isCoisotropic {W : Type*} [AddCommGroup W] [M
     ← LinearMap.finrank_range_of_inj hι, add_comm]
   exact ω.finrank_add_finrank_orthogonal _
 
+omit [FiniteDimensional ℝ V] in
 /-- A coisotropic subspace has at least half the dimension of the ambient space. -/
 lemma IsCoisotropic.finrank_le_two_mul_finrank (h : ω.IsCoisotropic L) :
     finrank ℝ V ≤ 2 * finrank ℝ L :=

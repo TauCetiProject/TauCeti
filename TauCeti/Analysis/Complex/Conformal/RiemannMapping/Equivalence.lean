@@ -40,6 +40,9 @@ other. This file proves those two statements, and the sharpness of the propernes
   such set. This is why `Ω ≠ Set.univ` cannot be dropped from the *biholomorphic* equivalence
   statements above. Homogeneity needs no properness hypothesis either: `Ω = Set.univ` is
   homogeneous too, because the translations already act transitively on `ℂ`.
+* `TauCeti.isSimplyConnected_and_ne_univ_of_bijOn_ball` — the converse domain characterization: an
+  open subset of `ℂ` mapped holomorphically and bijectively onto the open unit disc is simply
+  connected and proper.
 
 ## Proof outline
 
@@ -257,5 +260,19 @@ theorem not_bijOn_univ_of_isSimplyConnected {f : ℂ → ℂ} (hf : Differentiab
     (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩ : Ω ≠ univ) :
     ¬ BijOn f univ Ω := fun hbij =>
   not_injOn_univ_of_isSimplyConnected hf hΩo hΩc hΩ hbij.mapsTo hbij.injOn
+
+/-- **Converse domain characterization for disc biholomorphisms.** An open subset of `ℂ` mapped
+holomorphically and bijectively onto the open unit disc is simply connected and proper: the
+homeomorphism onto the contractible disc supplies simple connectivity, and
+`TauCeti.not_bijOn_univ_of_isSimplyConnected` rules out `Ω = Set.univ`. -/
+theorem isSimplyConnected_and_ne_univ_of_bijOn_ball {f : ℂ → ℂ} (hΩo : IsOpen Ω)
+    (hfd : DifferentiableOn ℂ f Ω) (hfbij : BijOn f Ω (ball (0 : ℂ) 1)) :
+    IsSimplyConnected Ω ∧ Ω ≠ univ := by
+  have : ContractibleSpace (ball (0 : ℂ) 1) := contractibleSpace_ball one_pos
+  refine ⟨(hfd.toHomeomorphOfBijOn hΩo hfbij).toHomotopyEquiv.simplyConnectedSpace, ?_⟩
+  rintro rfl
+  exact not_bijOn_univ_of_isSimplyConnected (differentiableOn_univ.mp hfd) isOpen_ball
+    (inferInstance : SimplyConnectedSpace (ball (0 : ℂ) 1))
+    (ne_of_apply_ne ((1 : ℂ) ∈ ·) (by simp)) hfbij
 
 end TauCeti

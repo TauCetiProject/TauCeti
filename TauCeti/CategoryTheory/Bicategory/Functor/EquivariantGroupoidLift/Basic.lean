@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import TauCeti.CategoryTheory.Bicategory.Strict.Pseudofunctor
 
 /-!
 # Equivariant groupoid lifts of categorical group actions
@@ -99,9 +100,7 @@ namespace TauCeti
 
 open CategoryTheory Bicategory CategoryTheory.Prod
 
-variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
-
-variable (Γ) in
+variable (Γ : Type u₁) [Category.{v₁} Γ] {H : Type u₂} [Monoid H] in
 /-- A coherent equivariant lift along `Γ` of a family `actions` of categorical actions of `H`.
 It consists of a pseudofunctor `joint : LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ Cat` and, for each
 `p : Γ`, a strong transformation from the restriction of `joint` to `{p} × SingleObj H` to the
@@ -119,7 +118,10 @@ structure EquivariantGroupoidLift (actions : Γ → LocallyDiscrete (SingleObj H
 
 namespace EquivariantGroupoidLift
 
-variable {actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
+section Transport
+
+variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
+  {actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
   (L : EquivariantGroupoidLift Γ actions)
 
 /-- The prescribed fiber category at `p`, the value of `actions p` at the unique object. -/
@@ -516,6 +518,13 @@ lemma jointActComp_inv_app (p : Γ) (a b ab : SingleObj.star H ⟶ SingleObj.sta
         (by simp [← Quiver.Hom.comp_toLoc, hab])).inv.toNatTrans.app Y := by
   rfl
 
+end Transport
+
+section PrescribedAction
+
+variable {Γ : Type u₁} {H : Type u₂} [Monoid H]
+  {actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
+
 /-- The composition comparison `T_ab ≅ T_a ⋙ T_b` of the prescribed action at `p`, for
 `a ≫ b = ab` in `SingleObj H`. -/
 noncomputable def actComp (actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}) (p : Γ)
@@ -524,7 +533,6 @@ noncomputable def actComp (actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ
   Cat.Hom.toNatIso ((actions p).mapComp' a.toLoc b.toLoc ab.toLoc
     (by rw [← Quiver.Hom.comp_toLoc, hab]))
 
-omit [Category.{v₁, u₁} Γ] in
 lemma actComp_hom_app (p : Γ) (a b ab : SingleObj.star H ⟶ SingleObj.star H)
     (hab : a ≫ b = ab) (X : fiber actions p) :
     (actComp actions p a b ab hab).hom.app X =
@@ -532,7 +540,6 @@ lemma actComp_hom_app (p : Γ) (a b ab : SingleObj.star H ⟶ SingleObj.star H)
         (by rw [← Quiver.Hom.comp_toLoc, hab])).hom.toNatTrans.app X := by
   rfl
 
-omit [Category.{v₁, u₁} Γ] in
 lemma actComp_inv_app (p : Γ) (a b ab : SingleObj.star H ⟶ SingleObj.star H)
     (hab : a ≫ b = ab) (X : fiber actions p) :
     (actComp actions p a b ab hab).inv.app X =
@@ -540,7 +547,6 @@ lemma actComp_inv_app (p : Γ) (a b ab : SingleObj.star H ⟶ SingleObj.star H)
         (by rw [← Quiver.Hom.comp_toLoc, hab])).inv.toNatTrans.app X := by
   rfl
 
-omit [Category.{v₁, u₁} Γ] in
 /-- At the composite `f ≫ g` itself, the composition comparison `actComp` of the action is the
 composition comparison `mapComp` of the pseudofunctor `actions p`. -/
 lemma actComp_hom_app_eq_mapComp (p : Γ)
@@ -556,19 +562,16 @@ noncomputable def actId (actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ C
     act actions p (𝟙 (SingleObj.star H)) ≅ 𝟭 (fiber actions p) :=
   Cat.Hom.toNatIso ((actions p).mapId' (𝟙 (SingleObj.star H)).toLoc)
 
-omit [Category.{v₁, u₁} Γ] in
 lemma actId_hom_app (p : Γ) (X : fiber actions p) :
     (actId actions p).hom.app X =
       ((actions p).mapId' (𝟙 (SingleObj.star H)).toLoc).hom.toNatTrans.app X := by
   rfl
 
-omit [Category.{v₁, u₁} Γ] in
 lemma actId_inv_app (p : Γ) (X : fiber actions p) :
     (actId actions p).inv.app X =
       ((actions p).mapId' (𝟙 (SingleObj.star H)).toLoc).inv.toNatTrans.app X := by
   rfl
 
-omit [Category.{v₁, u₁} Γ] in
 /-- Associativity of the composition comparisons of the prescribed action at `p`. -/
 @[reassoc]
 lemma actComp_associativity (p : Γ) (a b c ab bc abc : SingleObj.star H ⟶ SingleObj.star H)
@@ -583,7 +586,6 @@ lemma actComp_associativity (p : Γ) (a b c ab bc abc : SingleObj.star H ⟶ Sin
     (by rw [← Quiver.Hom.comp_toLoc, hbc]) (by rw [← Quiver.Hom.comp_toLoc, habc]) X
   simpa [actComp_hom_app] using this
 
-omit [Category.{v₁, u₁} Γ] in
 /-- Left unitality of the composition comparisons of the prescribed action at `p`. -/
 @[reassoc]
 lemma actComp_left_unitality (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
@@ -593,7 +595,6 @@ lemma actComp_left_unitality (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H
   simp [actComp_hom_app, actId_hom_app, Pseudofunctor.mapComp'_id_comp_hom_app,
     Pseudofunctor.mapId'_eq_mapId, act, ← Functor.map_comp]
 
-omit [Category.{v₁, u₁} Γ] in
 /-- Right unitality of the composition comparisons of the prescribed action at `p`. -/
 @[reassoc]
 lemma actComp_right_unitality (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star H)
@@ -602,6 +603,14 @@ lemma actComp_right_unitality (p : Γ) (a : SingleObj.star H ⟶ SingleObj.star 
         (actId actions p).hom.app ((act actions p a).obj X) = 𝟙 _ := by
   simp [actComp_hom_app, actId_hom_app, Pseudofunctor.mapComp'_comp_id_hom_app,
     Pseudofunctor.mapId'_eq_mapId, act]
+
+end PrescribedAction
+
+section Coherence
+
+variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
+  {actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
+  (L : EquivariantGroupoidLift Γ actions)
 
 /-- Compatibility of the commuting isomorphisms of the joint functors with the composition
 comparisons along `Γ`. -/
@@ -614,26 +623,22 @@ lemma jointActCommIso_comp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
           (L.jointAct r a).map ((L.jointMapComp g h gh hgh).inv.app Y) =
       (L.jointMapComp g h gh hgh).inv.app ((L.jointAct p a).obj Y) ≫
         (L.jointActCommIso gh a).hom.app Y := by
-  rw [← cancel_mono ((L.jointAct r a).map ((L.jointMapComp g h gh hgh).hom.app Y))]
-  simp only [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id_app]
-  simp only [jointActCommIso_hom_app, jointMapComp_inv_app, jointMapComp_hom_app,
-    Functor.map_comp, Category.assoc, jointMap, jointAct]
-  rw [← L.joint.mapComp'_inv_whiskerRight_mapComp'₀₂₃_inv_app_assoc
-    (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc
-    (g ×ₘ a).toLoc (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc (gh ×ₘ a).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc]) (by simp [← Quiver.Hom.comp_toLoc, hgh])
-    (by simp [← Quiver.Hom.comp_toLoc, ← hgh]),
-    ← L.joint.mapComp'₀₁₃_hom_comp_whiskerLeft_mapComp'_hom_app
-    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 r ×ₘ a).toLoc
-    (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ a).toLoc (gh ×ₘ a).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc, hgh]) (by simp [← Quiver.Hom.comp_toLoc])
-    (by simp [← Quiver.Hom.comp_toLoc, ← hgh]),
-    L.joint.mapComp'₀₂₃_inv_comp_mapComp'₀₁₃_hom_app_assoc
-    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ a).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc
-    (g ×ₘ a).toLoc (h ×ₘ a).toLoc (gh ×ₘ a).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc]) (by simp [← Quiver.Hom.comp_toLoc])
-    (by simp [← Quiver.Hom.comp_toLoc, ← hgh])]
-  simp
+  have := L.joint.isoMapOfCommSq_hom_whiskerRight_mapComp'_app
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ a) (g ×ₘ 𝟙 (SingleObj.star H)) (g ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 q ×ₘ a)).toLoc
+      (⟨by simp⟩ : CommSq (𝟙 q ×ₘ a) (h ×ₘ 𝟙 (SingleObj.star H)) (h ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 r ×ₘ a)).toLoc
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ a) (gh ×ₘ 𝟙 (SingleObj.star H)) (gh ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 r ×ₘ a)).toLoc
+      (by simp [← Quiver.Hom.comp_toLoc, hgh]) (by simp [← Quiver.Hom.comp_toLoc, hgh]) Y
+  rw [← cancel_mono ((L.jointAct r a).map ((L.jointMapComp g h gh hgh).hom.app Y)),
+    ← cancel_epi ((L.jointMapComp g h gh hgh).hom.app ((L.jointAct p a).obj Y))]
+  simp only [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id_app, Iso.hom_inv_id_app_assoc]
+  -- `erw` is needed to see the identity as the image of an identity under `jointAct r a`: the
+  -- object `(jointMap g ⋙ jointMap h).obj Y` only unfolds definitionally.
+  erw [(L.jointAct r a).map_id, Category.comp_id]
+  simp only [jointActCommIso, jointMapComp_hom_app, jointMap, jointAct]
+  exact this.symm
 
 /-- Compatibility of the commuting isomorphisms of the joint functors with the composition
 comparisons along `H`. -/
@@ -645,25 +650,16 @@ lemma jointActCommIso_actComp {p q : Γ} (g : p ⟶ q)
           (L.jointAct q b).map ((L.jointActCommIso g a).hom.app Y) =
       (L.jointActCommIso g ab).hom.app Y ≫
         (L.jointActComp q a b ab hab).hom.app ((L.jointMap g).obj Y) := by
-  simp only [jointActCommIso_hom_app, jointActComp_hom_app, Functor.map_comp, Category.assoc,
-    jointMap, jointAct]
-  rw [L.joint.mapComp'₀₁₃_hom_comp_whiskerLeft_mapComp'_hom_app
-    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ a).toLoc (𝟙 q ×ₘ b).toLoc
-    (g ×ₘ a).toLoc (𝟙 q ×ₘ ab).toLoc (g ×ₘ ab).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc]) (by simp [← Quiver.Hom.comp_toLoc, hab])
-    (by simp [← Quiver.Hom.comp_toLoc]),
-    ← L.joint.mapComp'₀₂₃_inv_comp_mapComp'₀₁₃_hom_app_assoc
-    (𝟙 p ×ₘ a).toLoc (𝟙 p ×ₘ b).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc
-    (𝟙 p ×ₘ ab).toLoc (g ×ₘ b).toLoc (g ×ₘ ab).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc, hab]) (by simp [← Quiver.Hom.comp_toLoc])
-    (by simp [← Quiver.Hom.comp_toLoc]),
-    L.joint.mapComp'₀₁₃_hom_comp_whiskerLeft_mapComp'_hom_app_assoc
-    (𝟙 p ×ₘ a).toLoc (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 q ×ₘ b).toLoc
-    (g ×ₘ a).toLoc (g ×ₘ b).toLoc (g ×ₘ ab).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc]) (by simp [← Quiver.Hom.comp_toLoc])
-    (by simp [← Quiver.Hom.comp_toLoc, ← hab])]
-  rw [← Functor.map_comp_assoc]
-  simp
+  have := L.joint.isoMapOfCommSq_hom_whiskerLeft_mapComp'_app
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ a) (g ×ₘ 𝟙 (SingleObj.star H)) (g ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 q ×ₘ a)).toLoc
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ b) (g ×ₘ 𝟙 (SingleObj.star H)) (g ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 q ×ₘ b)).toLoc
+      (⟨by simp⟩ : CommSq (𝟙 p ×ₘ ab) (g ×ₘ 𝟙 (SingleObj.star H)) (g ×ₘ 𝟙 (SingleObj.star H))
+        (𝟙 q ×ₘ ab)).toLoc
+      (by simp [← Quiver.Hom.comp_toLoc, hab]) (by simp [← Quiver.Hom.comp_toLoc, hab]) Y
+  simp only [jointActCommIso, jointActComp_hom_app]
+  exact this.symm
 
 /-- Mixed unit coherence of the joint functors: the commuting isomorphism of `F (𝟙 p, 1)` with
 `F (𝟙 p, a)` is induced by the unit comparison `F (𝟙 p, 1) ≅ 𝟭`. -/
@@ -1027,6 +1023,8 @@ lemma endAction_mapComp_inv_toNatTrans_app (p : Γ)
     ((L.endAction p).mapComp g h).inv.toNatTrans.app X =
       (L.transportComp g.as.asHom h.as.asHom (g.as ≫ h.as).asHom rfl).hom.app X :=
   Category.comp_id _
+
+end Coherence
 
 end EquivariantGroupoidLift
 

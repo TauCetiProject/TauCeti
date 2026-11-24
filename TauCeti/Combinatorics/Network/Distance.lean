@@ -54,18 +54,18 @@ variable {V : Type u} {Q : V → V → Type v} {K : Type w} [Zero K] [LT K]
 `s` to `t` that traverses only arrows of positive capacity, or `⊤` if `t` is not positively
 reachable from `s`. For residual capacities it is the length of a shortest augmenting walk. -/
 noncomputable def positiveEDist (c : Assignment Q K) (s t : V) : ℕ∞ :=
-  ⨅ p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2}, (p.1.length : ℕ∞)
+  ⨅ p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2}, (p.val.length : ℕ∞)
 
 variable {c : Assignment Q K} {s t x : V}
 
 theorem positiveEDist_def :
     positiveEDist c s t =
-      ⨅ p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2}, (p.1.length : ℕ∞) := by
+      ⨅ p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2}, (p.val.length : ℕ∞) := by
   rw [positiveEDist]
 
 theorem positiveEDist_le_length (p : ArrowWalk Q s t) (hp : ∀ a ∈ p.arrows, 0 < c a.2.2) :
     positiveEDist c s t ≤ p.length :=
-  iInf_le (fun p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2} ↦ (p.1.length : ℕ∞))
+  iInf_le (fun p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2} ↦ (p.val.length : ℕ∞))
     ⟨p, hp⟩
 
 @[simp]
@@ -74,7 +74,7 @@ theorem positiveEDist_self (c : Assignment Q K) (s : V) : positiveEDist c s s = 
 
 theorem positiveEDist_ne_top_iff : positiveEDist c s t ≠ ⊤ ↔ PositiveReachable c s t := by
   rw [positiveEDist, ENat.iInf_natCast_ne_top, positiveReachable_def]
-  exact ⟨fun ⟨p⟩ ↦ ⟨p.1, p.2⟩, fun ⟨p, hp⟩ ↦ ⟨⟨p, hp⟩⟩⟩
+  exact ⟨fun ⟨p⟩ ↦ ⟨p.val, p.property⟩, fun ⟨p, hp⟩ ↦ ⟨⟨p, hp⟩⟩⟩
 
 theorem positiveEDist_eq_top_iff : positiveEDist c s t = ⊤ ↔ ¬PositiveReachable c s t :=
   positiveEDist_ne_top_iff.not_right
@@ -88,8 +88,8 @@ theorem PositiveReachable.exists_length_eq_positiveEDist (h : PositiveReachable 
   have : Nonempty {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2} := ⟨⟨p, hp⟩⟩
   obtain ⟨p, hp⟩ :=
     ENat.exists_eq_iInf fun p : {p : ArrowWalk Q s t // ∀ a ∈ p.arrows, 0 < c a.2.2} ↦
-      (p.1.length : ℕ∞)
-  exact ⟨p.1, p.2, hp⟩
+      (p.val.length : ℕ∞)
+  exact ⟨p.val, p.property, hp⟩
 
 @[simp]
 theorem positiveEDist_eq_zero_iff : positiveEDist c s t = 0 ↔ s = t := by
@@ -116,7 +116,7 @@ theorem le_positiveEDist {φ : V → ℕ∞} (hs : φ s = 0)
     (h : ∀ ⦃u v : V⦄ (e : Q u v), 0 < c e → φ v ≤ φ u + 1) (t : V) :
     φ t ≤ positiveEDist c s t := by
   suffices ∀ p : ArrowWalk Q s t, (∀ a ∈ p.arrows, 0 < c a.2.2) → φ t ≤ p.length from
-    le_iInf fun p ↦ this p.1 p.2
+    le_iInf fun p ↦ this p.val p.property
   intro p hp
   induction p with
   | nil => simp [hs]

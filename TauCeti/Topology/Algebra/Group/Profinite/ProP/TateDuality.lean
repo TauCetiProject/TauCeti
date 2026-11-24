@@ -135,12 +135,12 @@ theorem IsProP.dualityMap0_injective : Function.Injective (dualityMap0 G M N) :=
       N hN hcoind) ?_
     (hG.dualityMap0_surjective_dualityMap1_injective N hN hH2 h (DiscreteCoind.traceKer G V M)
       (fun f ↦
-        ⟨k, Subtype.ext (by simpa using DiscreteCoind.nsmul_eq_zero hk f.1)⟩)
+        ⟨k, Subtype.ext (by simpa using DiscreteCoind.nsmul_eq_zero hk f.val)⟩)
       fun f ↦ Subtype.ext (by simpa using hcoind f)).2
   refine AddMonoidHom.ext fun f ↦ Subtype.ext ?_
   rw [coe_explicitCoeff0, AddMonoidHom.zero_apply, DiscreteShortExact.projDistribMulActionHom_apply,
     DiscreteCoind.traceShortExact_proj]
-  exact htr f f.2
+  exact htr f f.property
 
 end SurjectiveInjective
 

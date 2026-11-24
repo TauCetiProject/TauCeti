@@ -141,7 +141,7 @@ theorem _root_.Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S (g : PSL(
   rw [mul_assoc, ← sq, coe_S_sq, mul_one]
 
 /-- Popa and Zagier's `T′ = (1 0; 1 1)`, the lower-triangular counterpart of `T`. -/
-def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
+def tPrime : SL(2, ℤ) := .mk !![1, 0; 1, 1] (by decide +kernel)
 
 /-- The matrix of `T′`. -/
 @[simp]

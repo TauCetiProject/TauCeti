@@ -69,7 +69,7 @@ theorem isOpenMap_frobenius (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRing R 
       smul_add a y z := Subtype.ext (by rw [hsmul, AddSubgroup.coe_add, AddSubgroup.coe_add,
         hsmul, hsmul, mul_add]) }
   have : ContinuousConstSMul R N :=
-    ⟨fun a ↦ (continuous_const.mul continuous_subtype_val).subtype_mk _⟩
+    ⟨fun a ↦ (continuous_const.mul continuous_subtypeVal).subtype_mk _⟩
   have : (uniformity R).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   have : BaireSpace N := hN.baireSpace
   -- Frobenius as an `R`-equivariant additive map `R → N`
@@ -87,23 +87,20 @@ theorem isOpenMap_frobenius (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRing R 
   have hφ : ⇑(frobenius R p) = Subtype.val ∘ ⇑f :=
     funext fun x ↦ by rw [Function.comp_apply, hfx, frobenius_def]
   rw [hφ]
-  exact hN.isOpenMap_subtype_val.comp hf
+  exact hN.isOpenMap_subtypeVal.comp hf
 
 /-- **A perfect complete Hausdorff Tate ring of characteristic `p` is uniform** (Scholze, *Étale
 cohomology of diamonds*, proof of Proposition 3.5): its power-bounded subring `R°` is bounded. -/
 theorem IsUniform.of_perfectRing (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRing R p] :
     IsUniform R := by
-  obtain ⟨ϖ₀, hϖ₀⟩ := IsTateRing.exists_isPseudoUniformizer (A := R)
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := R)
   set R₀ := P.ringOfDefinition
   have hR₀ : (R₀ : Set R) ∈ 𝓝 0 := P.isOpen_ringOfDefinition.mem_nhds R₀.zero_mem
   have hb : IsBounded (R₀ : Set R) := P.isBounded_ringOfDefinition
   -- a pseudouniformiser `ϖ` lying in `R₀`
-  obtain ⟨N, hN⟩ := eventually_atTop.mp (hϖ₀.isTopologicallyNilpotent.eventually_mem hR₀)
-  set ϖ := ϖ₀ ^ (N + 1)
-  have hϖR₀ : ϖ ∈ R₀ := hN _ N.le_succ
-  have hϖ : IsTopologicallyNilpotent ϖ := hϖ₀.isTopologicallyNilpotent.pow N.succ_ne_zero
-  have hϖu : IsUnit ϖ := hϖ₀.isUnit.pow _
+  obtain ⟨⟨ϖ, hϖR₀⟩, hϖ₀⟩ := P.exists_isPseudoUniformizer
+  have hϖ : IsTopologicallyNilpotent ϖ := hϖ₀.isTopologicallyNilpotent
+  have hϖu : IsUnit ϖ := hϖ₀.isUnit
   -- openness of Frobenius: `ϖ ^ c R₀` consists of `p`-th powers of elements of `R₀`
   have hφ := (isOpenMap_frobenius (R := R) p).image_mem_nhds hR₀
   rw [map_zero] at hφ
@@ -126,7 +123,7 @@ theorem IsUniform.of_perfectRing (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRi
       refine fun x hx ↦ hroot x (ih (x ^ p) ?_)
       rwa [← pow_mul, ← pow_succ']
   -- hence `R° ⊆ ϖ ^ (-(c + 1)) R₀`
-  refine isUniform_iff.mpr (((isBounded_singleton (hϖu.unit⁻¹ ^ (c + 1) : Rˣ).1).mul hb).subset
+  refine isUniform_iff.mpr (((isBounded_singleton (hϖu.unit⁻¹ ^ (c + 1) : Rˣ).val).mul hb).subset
     fun x hx ↦ ?_)
   obtain ⟨k, hk⟩ := (isPowerBounded_iff.mp hx).exists_pow_mul_subset hϖ hR₀
   have hlt : k ≤ p ^ k := (Nat.lt_pow_self (Fact.out : p.Prime).one_lt).le
