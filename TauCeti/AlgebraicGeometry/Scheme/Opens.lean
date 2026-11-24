@@ -20,6 +20,9 @@ This file records general-purpose facts about open subsets of schemes.
   subset of any nonempty scheme.
 * `AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom` identifies restriction of
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
+* `AlgebraicGeometry.Scheme.Hom.disjoint_preimage` and
+  `AlgebraicGeometry.Scheme.Hom.pairwise_disjoint_preimage`: inverse images of (pairwise) disjoint
+  opens are (pairwise) disjoint.
 * `AlgebraicGeometry.Scheme.Hom.preimage_finset_inf` and
   `AlgebraicGeometry.Scheme.Hom.preimage_finite_product`: inverse images commute with finite
   intersections, written as `Finset.inf` or as finite products of opens.
@@ -101,6 +104,18 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_sup_eq_top {Y : Scheme.{u}}
     (f : X ⟶ Y) {U V : Y.Opens} (hUV : U ⊔ V = ⊤) :
     f ⁻¹ᵁ U ⊔ f ⁻¹ᵁ V = ⊤ := by
   rw [← f.preimage_sup, hUV, f.preimage_top]
+
+/-- Preimages of disjoint opens are disjoint. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.disjoint_preimage {Y : Scheme.{u}} (f : X ⟶ Y)
+    {U V : Y.Opens} (hUV : Disjoint U V) : Disjoint (f ⁻¹ᵁ U) (f ⁻¹ᵁ V) := by
+  rw [disjoint_iff, ← f.preimage_inf, disjoint_iff.mp hUV, f.preimage_bot]
+
+open scoped Function in
+/-- Preimages of pairwise disjoint opens are pairwise disjoint. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pairwise_disjoint_preimage {Y : Scheme.{u}}
+    (f : X ⟶ Y) {ι : Type*} {U : ι → Y.Opens} (hU : Pairwise (Disjoint on U)) :
+    Pairwise (Disjoint on fun i ↦ f ⁻¹ᵁ U i) :=
+  fun _ _ hij ↦ f.disjoint_preimage (hU hij)
 
 /-- Taking inverse images under a morphism of schemes commutes with finite intersections. -/
 @[simp]

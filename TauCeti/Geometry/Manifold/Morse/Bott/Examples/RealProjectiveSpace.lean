@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.Map
 public import TauCeti.Topology.Order.Sublevel
-import Mathlib.Analysis.Convex.Contractible
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.Morse.Bott.Projectivization
 import TauCeti.LinearAlgebra.ExtendByZero
 
@@ -134,10 +134,6 @@ theorem contMDiff_projectiveHyperplaneMomentFunction {r : ℕ∞ω} :
     ContMDiff 𝓘(ℝ, Fin N → ℝ) 𝓘(ℝ) r (projectiveHyperplaneMomentFunction N) :=
   contMDiff_projectiveMomentFunction _
 
-/-- A nonzero vector has a nonzero sum of squares. -/
-private theorem sum_sq_ne_zero {v : Fin (N + 1) → ℝ} (hv : v ≠ 0) : ∑ i, v i ^ 2 ≠ 0 :=
-  fun h ↦ hv <| funext fun i ↦ (Finset.sum_sq_eq_zero_iff _ _).1 h i (Finset.mem_univ i)
-
 /-- The moment function in homogeneous coordinates: `f [v] = 1 - v_N² / ∑ᵢ vᵢ²`. -/
 @[simp]
 theorem projectiveHyperplaneMomentFunction_mk (v : Fin (N + 1) → ℝ) (hv : v ≠ 0) :
@@ -148,14 +144,13 @@ theorem projectiveHyperplaneMomentFunction_mk (v : Fin (N + 1) → ℝ) (hv : v 
     simp [Fin.sum_univ_castSucc, Fin.castSucc_ne_last]
   rw [projectiveHyperplaneMomentFunction, projectiveMomentFunction_mk]
   simp only [Real.norm_eq_abs, sq_abs, hsum]
-  rw [sub_div, div_self (sum_sq_ne_zero hv)]
+  rw [sub_div, div_self (by simpa using (sum_norm_sq_pos hv).ne')]
 
 /-- The moment function is at most `1`, its value on the critical hyperplane. -/
 theorem projectiveHyperplaneMomentFunction_le_one (x : ℙ ℝ (Fin (N + 1) → ℝ)) :
     projectiveHyperplaneMomentFunction N x ≤ 1 := by
-  induction x using Projectivization.ind with | h v hv =>
-  rw [projectiveHyperplaneMomentFunction_mk, sub_le_self_iff]
-  exact div_nonneg (sq_nonneg _) (Finset.sum_nonneg fun i _ ↦ sq_nonneg (v i))
+  rw [projectiveHyperplaneMomentFunction_def]
+  exact projectiveMomentFunction_le (fun i ↦ by split_ifs <;> norm_num) x
 
 /-- The level set `f⁻¹(1)` is the hyperplane `{v_N = 0}`, the complement of the affine open where
 the last homogeneous coordinate is nonzero. -/
@@ -163,7 +158,8 @@ theorem projectiveHyperplaneMomentFunction_eq_one_iff {x : ℙ ℝ (Fin (N + 1) 
     projectiveHyperplaneMomentFunction N x = 1 ↔ x ∉ affineOpen (Fin.last N) := by
   induction x using Projectivization.ind with | h v hv =>
   rw [projectiveHyperplaneMomentFunction_mk, mk_mem_affineOpen_iff, not_not, sub_eq_self,
-    div_eq_zero_iff, or_iff_left (sum_sq_ne_zero hv), pow_eq_zero_iff two_ne_zero]
+    div_eq_zero_iff, or_iff_left (by simpa using (sum_norm_sq_pos hv).ne'),
+    pow_eq_zero_iff two_ne_zero]
 
 /-- In the affine chart where the last homogeneous coordinate is `1`, the moment function is
 `z ↦ ‖z‖₂² / (1 + ‖z‖₂²)`. -/
@@ -414,54 +410,24 @@ end Components
 coordinate is nonzero. -/
 theorem sublevel_projectiveHyperplaneMomentFunction_subset_affineOpen {c : ℝ} (hc : c < 1) :
     {x | projectiveHyperplaneMomentFunction N x ≤ c} ⊆ affineOpen (Fin.last N) := fun x hx ↦ by
+  rw [mem_ofPred_eq, projectiveHyperplaneMomentFunction_def] at hx
   by_contra h
-  exact (projectiveHyperplaneMomentFunction_eq_one_iff.2 h ▸ hx : (1 : ℝ) ≤ c).not_gt hc
+  exact (lt_projectiveMomentFunction_of_notMem_affineOpen (fun i hi ↦ by simpa [hi] using hc) h
+    |>.trans_le hx).false
 
 /-- **The sublevels below the critical hyperplane are contractible.** For `0 ≤ c < 1`, the
 sublevel `{f ≤ c}` is contractible. -/
 theorem contractibleSpace_sublevel_projectiveHyperplaneMomentFunction {c : ℝ} (hc₀ : 0 ≤ c)
     (hc₁ : c < 1) : ContractibleSpace {x | projectiveHyperplaneMomentFunction N x ≤ c} := by
-  set X := {x | projectiveHyperplaneMomentFunction N x ≤ c}
-  set Z : Set (Fin N → ℝ) := {z | (∑ j, z j ^ 2) / (1 + ∑ j, z j ^ 2) ≤ c} with hZdef
-  have hZ : affineChart (Fin.last N) '' (X ∩ affineOpen (Fin.last N)) = Z := by
-    rw [inter_comm, ← affineChart_source, PartialEquiv.image_source_inter_eq', affineChart_target,
-      univ_inter]
-    ext z
-    simp only [X, Z, mem_preimage, mem_ofPred_eq,
-      projectiveHyperplaneMomentFunction_affineChart_symm]
-  -- The function `s ↦ s / (1 + s)` is monotone on `s ≥ 0`, and scaling `z` by `b ∈ [0, 1]`
-  -- scales `‖z‖₂²` by `b² ≤ 1`.
-  have hstar : StarConvex ℝ 0 Z := by
-    intro y hy a b _ hb hab
-    have hs : 0 ≤ ∑ j, y j ^ 2 := Finset.sum_nonneg fun j _ ↦ sq_nonneg (y j)
-    have hscale : ∑ j, (a • (0 : Fin N → ℝ) + b • y) j ^ 2 = b ^ 2 * ∑ j, y j ^ 2 := by
-      simp only [smul_zero, zero_add, Pi.smul_apply, smul_eq_mul, mul_pow, Finset.mul_sum]
-    have hb1 : b ^ 2 ≤ 1 := pow_le_one₀ hb (hab ▸ le_add_of_nonneg_left ‹0 ≤ a›)
-    rw [hZdef, mem_ofPred_eq] at hy ⊢
-    refine le_trans ?_ hy
-    rw [hscale, div_le_div_iff₀ (by positivity) (by positivity)]
-    nlinarith [mul_nonneg (sq_nonneg b) hs, mul_nonneg (sub_nonneg.2 hb1) hs]
-  have hne : Z.Nonempty := ⟨0, by simpa [Z] using hc₀⟩
-  have := hstar.contractibleSpace hne
-  have hX : X = X ∩ affineOpen (Fin.last N) :=
-    (inter_eq_left.2 (sublevel_projectiveHyperplaneMomentFunction_subset_affineOpen hc₁)).symm
-  exact ((Homeomorph.setCongr hX).trans (interAffineOpenHomeomorph hZ)).contractibleSpace
+  rw [projectiveHyperplaneMomentFunction_def]
+  exact contractibleSpace_sublevel_projectiveMomentFunction (k := Fin.last N) (by simpa using hc₀)
+    fun i hi ↦ by simpa [hi] using hc₁
 
 /-! ### The relative homology of a band crossing the top level -/
 
 section Homology
 
 variable {A : Type*} [Category A] [HasCoproducts.{0} A] [Abelian A] (R : A) {c d : ℝ}
-
-/-- The homeomorphism from `ℝℙᴺ` to its whole sublevel `{f ≤ d}`, for `1 ≤ d`. -/
-private def homeomorphTopSublevel (hd : 1 ≤ d) :
-    ℙ ℝ (Fin (N + 1) → ℝ) ≃ₜ {x | projectiveHyperplaneMomentFunction N x ≤ d} where
-  toFun x := ⟨x, (projectiveHyperplaneMomentFunction_le_one x).trans hd⟩
-  invFun := Subtype.val
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := by fun_prop
-  continuous_invFun := continuous_subtypeVal
 
 /-- **A band crossing the top level in positive degrees.** For `0 ≤ c < 1 ≤ d`, the lower sublevel
 `{f ≤ c}` is contractible, so in every positive degree the relative homology of the band
@@ -477,11 +443,9 @@ def singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction (hc₀ : 0
       (sublevelPair (projectiveHyperplaneMomentFunction N) (hc₁.le.trans hd)).snd :=
     contractibleSpace_sublevel_projectiveHyperplaneMomentFunction hc₀ hc₁
   ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).mapIso
-      (TopCat.isoOfHomeo (homeomorphTopSublevel hd)) ≪≫
-    -- The source of `singularHomologyπ` is the homology of the singular simplicial set of
-    -- `{f ≤ d}`, which agrees with the target of the first factor only up to unfolding
-    -- `singularHomologyFunctor` and `TopPair.toSSetPair`; so the morphism is left implicit.
-    @asIso _ _ _ _ _ (TopPair.isIso_singularHomologyπ_of_contractibleSpace _ R k)
+      (TopCat.isoOfHomeo (sublevelHomeomorphUniv fun x ↦
+        (projectiveHyperplaneMomentFunction_le_one x).trans hd).symm) ≪≫
+    (sublevelPair _ _).singularHomologyIsoOfContractibleSpace R k
 
 /-- The forward map of `singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction` is
 induced by the inclusion `ℝℙᴺ → {f ≤ d}`, followed by the quotient map to relative homology. -/
@@ -494,10 +458,14 @@ theorem singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction_hom (h
             by fun_prop⟩) ≫
         (sublevelPair (projectiveHyperplaneMomentFunction N) (hc₁.le.trans hd)).singularHomologyπ
           R (k + 1) := by
-  dsimp only [singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction, Iso.trans_hom,
-    Functor.mapIso_hom, asIso_hom, TopCat.isoOfHomeo_hom]
-  -- `homeomorphTopSublevel hd` is defined with the inclusion `x ↦ ⟨x, _⟩` as its forward map.
-  rfl
+  -- Instance search does not see through the subspace of `sublevelPair`, so the contractibility
+  -- of `{f ≤ c}` is supplied explicitly.
+  rw [singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction, Iso.trans_hom,
+    Functor.mapIso_hom, @TopPair.singularHomologyIsoOfContractibleSpace_hom _ _ _ _ _ R
+      (contractibleSpace_sublevel_projectiveHyperplaneMomentFunction hc₀ hc₁) k]
+  congr 2
+  ext x
+  exact sublevelHomeomorphUniv_symm_apply _ x
 
 /-- **A band in degree zero.** For `0 ≤ c ≤ d`, the zeroth relative homology of the band
 `({f ≤ d}, {f ≤ c})` vanishes, since `{f ≤ d}` is path-connected (contractible for `d < 1`, and
@@ -510,8 +478,9 @@ theorem isZero_singularHomology_zero_sublevelPair_projectiveHyperplaneMomentFunc
     · have := contractibleSpace_sublevel_projectiveHyperplaneMomentFunction (N := N)
         (hc₀.trans hcd) hd
       exact inferInstanceAs (PathConnectedSpace {x | projectiveHyperplaneMomentFunction N x ≤ d})
-    · exact (homeomorphTopSublevel hd).surjective.pathConnectedSpace
-        (homeomorphTopSublevel hd).continuous
+    · have hle x := (projectiveHyperplaneMomentFunction_le_one (N := N) x).trans hd
+      exact (sublevelHomeomorphUniv hle).symm.surjective.pathConnectedSpace
+        (sublevelHomeomorphUniv hle).symm.continuous
   have : Nonempty (sublevelPair (projectiveHyperplaneMomentFunction N) hcd).snd :=
     ⟨⟨mk ℝ (Pi.single (Fin.last N) 1) (by simp), by
       rw [mem_ofPred_eq, projectiveHyperplaneMomentFunction_def,
