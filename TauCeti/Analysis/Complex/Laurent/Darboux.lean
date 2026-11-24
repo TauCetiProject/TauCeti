@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.Analysis.Complex.Laurent.Basic
-import TauCeti.Analysis.Complex.Laurent.Expansion
+import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Fourier.RiemannLebesgue
 
 /-!
@@ -20,11 +20,13 @@ punctured disc, whose coefficients `g_n` are known: if the difference `f - g` ex
 continuously to the closed punctured disc `0 < |z - c| ≤ r`, then `f_n = g_n + o(r^{-n})` as
 `n → ±∞` (DLMF 2.10.29). Typically `g` collects the singular parts of `f` on the circle
 `|z - c| = r`, and the theorem says that they alone determine the coefficients of `f` up to an
-error of smaller exponential order.
+error that is `o(r^{-n})`.
 
 The proof moves the integration circle out to the boundary circle `|z - c| = r`, which
 `TauCeti.circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable` allows because the
-continuous extension of `f - g` is continuous up to that circle. On a circle of radius `R ≠ 0`,
+continuous extension of `f - g` is continuous up to that circle. More generally, the coefficients
+extracted on the inner circle of a closed annulus `ρ ≤ |z - c| ≤ r`, of any function continuous on
+the annulus and holomorphic inside it, are `o(r^{-n})`. On a circle of radius `R ≠ 0`,
 `R ^ n` times the `n`-th Laurent coefficient of any function is the `n`-th Fourier coefficient of
 `θ ↦ f(c + R e^{iθ})` on `[0, 2π]`, and these tend to `0` by the Riemann--Lebesgue lemma.
 
@@ -35,7 +37,12 @@ continuous extension of `f - g` is continuous up to that circle. On a circle of 
   on `[0, 2π]`.
 * `TauCeti.tendsto_zpow_smul_circleLaurentCoeff`: `R ^ n • circleLaurentCoeff f c R n → 0` as
   `n → ±∞`, for every function `f` and radius `R`.
+* `TauCeti.tendsto_zpow_smul_circleLaurentCoeff_of_differentiable_on_annulus_off_countable`:
+  `r ^ n • circleLaurentCoeff f c ρ n → 0` as `n → ±∞` for `f` continuous on the closed annulus
+  `ρ ≤ |z - c| ≤ r` and holomorphic off a countable set inside it.
 * `TauCeti.tendsto_zpow_smul_circleLaurentCoeff_sub`: Darboux's comparison theorem (DLMF 2.10.29).
+
+The roadmap checks for these results are in `TauCeti.Analysis.Complex.Laurent.Examples.Darboux`.
 
 ## References
 
@@ -60,21 +67,22 @@ theorem zpow_smul_circleLaurentCoeff_eq_fourierCoeffOn (f : ℂ → E) (c : ℂ)
     (n : ℤ) :
     R ^ n • circleLaurentCoeff f c R n =
       fourierCoeffOn Real.two_pi_pos (fun θ ↦ f (circleMap c R θ)) n := by
-  rw [circleLaurentCoeff_def, fourierCoeffOn_eq_integral, circleIntegral, ← Complex.coe_smul,
-    ← Complex.coe_smul, smul_smul, ← intervalIntegral.integral_smul,
-    ← intervalIntegral.integral_smul]
-  refine intervalIntegral.integral_congr fun θ _ ↦ ?_
-  have he : cexp (θ * I) ≠ 0 := exp_ne_zero _
+  -- On the circle, `(z - c) ^ (-n)` is `R ^ (-n)` times the Fourier character of degree `-n`.
+  have hpt (θ : ℝ) : circleMap 0 R θ ^ (-n) =
+      ((R ^ (-n) : ℝ) : ℂ) * fourier (-n) (θ : AddCircle (2 * π - 0)) := by
+    rw [circleMap_zero_zpow, circleMap_zero, fourier_coe_apply]
+    push_cast [sub_zero]
+    congr 2
+    field_simp
   have hRc : (R : ℂ) ≠ 0 := ofReal_ne_zero.2 hR
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
-  simp only [deriv_circleMap, circleMap_sub_center, circleMap_zero, fourier_coe_apply, smul_smul]
-  have hθ : (2 * π * I * ((-n : ℤ) : ℂ) * θ / ((2 * π - 0 : ℝ) : ℂ)) = -(n * (θ * I)) := by
-    push_cast [sub_zero]
-    field_simp
+  rw [circleLaurentCoeff_def, circleIntegral_sub_zpow_sub_one_smul f c hR (-n),
+    fourierCoeffOn_eq_integral]
+  simp_rw [hpt, mul_smul, intervalIntegral.integral_smul, smul_smul, ← Complex.coe_smul, smul_smul]
+  -- What remains is the scalar identity `R ^ n (2πi)⁻¹ i R ^ (-n) = (2π)⁻¹`.
   congr 1
-  rw [zpow_sub_one₀ (mul_ne_zero hRc he), mul_zpow, zpow_neg, zpow_neg, ← exp_intCast_mul, hθ,
-    exp_neg]
   push_cast [sub_zero]
+  rw [zpow_neg]
   field_simp
 
 /-- **Riemann--Lebesgue for Laurent coefficients**: on any circle of radius `R`, the Laurent
@@ -83,9 +91,21 @@ coefficients of any function satisfy `R ^ n • circleLaurentCoeff f c R n → 0
 theorem tendsto_zpow_smul_circleLaurentCoeff (f : ℂ → E) (c : ℂ) (R : ℝ) :
     Tendsto (fun n : ℤ ↦ R ^ n • circleLaurentCoeff f c R n) cofinite (𝓝 0) := by
   rcases eq_or_ne R 0 with (rfl | hR)
-  · simp [circleLaurentCoeff_def, circleIntegral.integral_radius_zero]
+  · simp
   simp_rw [zpow_smul_circleLaurentCoeff_eq_fourierCoeffOn f c hR]
   exact tendsto_fourierCoeffOn_cofinite _ _
+
+/-- **Riemann--Lebesgue on an annulus**: let `f` be continuous on the closed annulus
+`ρ ≤ |z - c| ≤ r` (`0 < ρ`) and complex differentiable off a countable set in its interior. Then
+the Laurent coefficients extracted on the inner circle satisfy `f_n = o(r ^ (-n))` as `n → ±∞`. -/
+theorem tendsto_zpow_smul_circleLaurentCoeff_of_differentiable_on_annulus_off_countable
+    {f : ℂ → E} {c : ℂ} {ρ r : ℝ} (hρ : 0 < ρ) (hρr : ρ ≤ r) {s : Set ℂ} (hs : s.Countable)
+    (hc : ContinuousOn f (closedBall c r \ ball c ρ))
+    (hd : ∀ z ∈ (ball c r \ closedBall c ρ) \ s, DifferentiableAt ℂ f z) :
+    Tendsto (fun n : ℤ ↦ r ^ n • circleLaurentCoeff f c ρ n) cofinite (𝓝 0) :=
+  -- Move the integration circle out to radius `r`, where Riemann--Lebesgue applies.
+  (tendsto_zpow_smul_circleLaurentCoeff f c r).congr fun n ↦ by
+    rw [circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable hρ hρr hs hc hd]
 
 /-- **Darboux's method** (DLMF 2.10.29). Let `f` and `g` be holomorphic on the punctured disc
 `0 < |z - c| < r`, and let `f - g` agree there with a function `h` continuous on the closed
@@ -97,58 +117,22 @@ theorem tendsto_zpow_smul_circleLaurentCoeff_sub {f g h : ℂ → E} {c : ℂ} {
     (hfgh : EqOn (f - g) h (ball c r \ {c})) :
     Tendsto (fun n : ℤ ↦ r ^ n • (circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n))
       cofinite (𝓝 0) := by
-  have hsph : sphere c ρ ⊆ ball c r \ {c} := fun z hz ↦
-    ⟨mem_ball.2 ((mem_sphere.1 hz).trans_lt hρr), ne_of_mem_sphere hz hρ.ne'⟩
+  have hsph : sphere c ρ ⊆ ball c r \ {c} :=
+    subset_sdiff_singleton (sphere_subset_ball hρr) fun hc ↦ ne_of_mem_sphere hc hρ.ne' rfl
   have hann : closedBall c r \ ball c ρ ⊆ closedBall c r \ {c} :=
     sdiff_subset_sdiff_right (singleton_subset_iff.2 (mem_ball_self hρ))
   have hopen : IsOpen (ball c r \ {c}) := isOpen_ball.sdiff isClosed_singleton
-  -- Replace `f_n - g_n` by the coefficient of `h` on the circle of radius `ρ`, then move that
-  -- circle out to radius `r`, where Riemann--Lebesgue applies.
-  refine (tendsto_zpow_smul_circleLaurentCoeff h c r).congr fun n ↦ ?_
-  rw [← circleLaurentCoeff_sub ((hf.continuousOn.mono hsph).circleIntegrable hρ.le)
-      ((hg.continuousOn.mono hsph).circleIntegrable hρ.le),
-    circleLaurentCoeff_congr (f := fun z ↦ f z - g z) (g := h) hρ.le (fun z hz ↦ hfgh (hsph hz)),
-    circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable hρ hρr.le countable_empty
-      (hh.mono hann)]
-  intro z hz
-  have hz' : z ∈ ball c r \ {c} :=
-    ⟨hz.1.1, fun hzc ↦ hz.1.2 (hzc ▸ mem_closedBall_self hρ.le)⟩
-  exact ((hf.sub hg).differentiableAt (hopen.mem_nhds hz')).congr_of_eventuallyEq
-    (eventuallyEq_of_mem (hopen.mem_nhds hz') hfgh).symm
-
-/-! ### Examples -/
-
-/-- On every circle `|z| = ρ` with `0 < ρ < 1`, the Laurent coefficients of `1 / (1 - z)` are `1`
-in every nonnegative degree and `0` in every negative degree. -/
-example {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) (n : ℤ) :
-    circleLaurentCoeff (fun z ↦ (1 - z)⁻¹) 0 ρ n = if 0 ≤ n then 1 else 0 := by
-  simpa using circleLaurentCoeff_inv_sub_of_lt_norm (a := 1) (c := 0) hρ (by simpa using hρ1) n
-
-/-- Darboux's method with `f(z) = 1 / (1 - z) + 1 / (2 - z)`, `g(z) = 1 / (1 - z)` and `r = 1`:
-`f - g = 1 / (2 - z)` is continuous on `|z| ≤ 1`, and `f_n - g_n = 2 ^ (-n - 1)` for `n ≥ 0` and
-`0` for `n < 0`, which is `o(1)` as `n → ±∞`. -/
-example {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) :
-    (∀ n : ℤ, circleLaurentCoeff (fun z ↦ (1 - z)⁻¹ + (2 - z)⁻¹) 0 ρ n -
-        circleLaurentCoeff (fun z ↦ (1 - z)⁻¹) 0 ρ n = if 0 ≤ n then 2 ^ (-n - 1) else 0) ∧
-      Tendsto (fun n : ℤ ↦ (1 : ℝ) ^ n • (circleLaurentCoeff (fun z ↦ (1 - z)⁻¹ + (2 - z)⁻¹) 0 ρ n -
-        circleLaurentCoeff (fun z ↦ (1 - z)⁻¹) 0 ρ n)) cofinite (𝓝 0) := by
-  have hball : ∀ a : ℂ, 1 ≤ ‖a‖ → ∀ z ∈ ball (0 : ℂ) 1 \ {0}, a - z ≠ 0 := fun a ha z hz h ↦ by
-    rw [← sub_eq_zero.1 h, Set.mem_sdiff, mem_ball_zero_iff] at hz
-    exact (ha.trans_lt hz.1).false
-  have hdiff : ∀ a : ℂ, 1 ≤ ‖a‖ → DifferentiableOn ℂ (fun z : ℂ ↦ (a - z)⁻¹) (ball 0 1 \ {0}) :=
-    fun a ha ↦ ((differentiableOn_const a).sub differentiableOn_id).inv (hball a ha)
-  refine ⟨fun n ↦ ?_, tendsto_zpow_smul_circleLaurentCoeff_sub (h := fun z ↦ (2 - z)⁻¹) hρ hρ1
-    ((hdiff 1 (by simp)).add (hdiff 2 (by simp))) (hdiff 1 (by simp)) ?_ fun z _ ↦ ?_⟩
-  · have hsph : ∀ a : ℂ, 1 ≤ ‖a‖ → CircleIntegrable (fun z : ℂ ↦ (a - z)⁻¹) 0 ρ := fun a ha ↦
-      ((hdiff a ha).continuousOn.mono fun z hz ↦
-        ⟨mem_ball_zero_iff.2 ((mem_sphere_zero_iff_norm.1 hz).trans_lt hρ1),
-          ne_of_mem_sphere hz hρ.ne'⟩).circleIntegrable hρ.le
-    rw [circleLaurentCoeff_add (hsph 1 (by simp)) (hsph 2 (by simp)), add_sub_cancel_left,
-      circleLaurentCoeff_inv_sub_of_lt_norm hρ (by simpa using hρ1.trans one_lt_two), sub_zero]
-  · refine (continuousOn_const.sub continuousOn_id).inv₀ fun z hz h ↦ ?_
-    simp only [Pi.sub_apply, id_eq, sub_eq_zero] at h
-    subst h
-    norm_num at hz
-  · simp
+  -- `h` satisfies the annulus hypotheses, and `f_n - g_n` is the coefficient of `h` on the circle
+  -- of radius `ρ`.
+  refine (tendsto_zpow_smul_circleLaurentCoeff_of_differentiable_on_annulus_off_countable hρ hρr.le
+    countable_empty (hh.mono hann) fun z hz ↦ ?_).congr fun n ↦ ?_
+  · have hz' : z ∈ ball c r \ {c} :=
+      ⟨hz.1.1, fun hzc ↦ hz.1.2 (hzc ▸ mem_closedBall_self hρ.le)⟩
+    exact ((hf.sub hg).differentiableAt (hopen.mem_nhds hz')).congr_of_eventuallyEq
+      (eventuallyEq_of_mem (hopen.mem_nhds hz') hfgh).symm
+  · rw [← circleLaurentCoeff_sub ((hf.continuousOn.mono hsph).circleIntegrable hρ.le)
+        ((hg.continuousOn.mono hsph).circleIntegrable hρ.le),
+      circleLaurentCoeff_congr (f := fun z ↦ f z - g z) (g := h) hρ.le
+        (fun z hz ↦ hfgh (hsph hz))]
 
 end TauCeti

@@ -64,15 +64,14 @@ theorem tendsto_fourierCoeff_cofinite {T : ℝ} [hT : Fact (0 < T)] (f : AddCirc
   refine h.congr fun n ↦ ?_
   rw [fourierCoeff_eq_intervalIntegral f n 0, zero_add, intervalIntegral.integral_of_le hT.out.le,
     ← integral_indicator measurableSet_Ioc]
+  rw [indicator_smul]
   congr 1
   refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  simp only [indicator_apply]
-  split_ifs
-  · rw [Circle.smul_def, Real.fourierChar_apply, fourier_coe_apply]
-    congr 2
-    push_cast
-    field_simp
-  · simp
+  dsimp only
+  rw [Circle.smul_def, Real.fourierChar_apply, fourier_coe_apply]
+  congr 2
+  push_cast
+  field_simp
 
 /-- **Riemann--Lebesgue for Fourier coefficients on an interval**: the Fourier coefficients
 `fourierCoeffOn hab f n` of any function `f` on `[a, b]` tend to `0` as `n → ±∞`. -/

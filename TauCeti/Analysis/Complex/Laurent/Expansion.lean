@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Laurent.Series
+import Mathlib.Analysis.Normed.Algebra.Spectrum
 import TauCeti.Topology.MetricSpace.EBall
 
 /-!
@@ -224,40 +225,6 @@ theorem circleLaurentCoeff_eq_of_hasSum_sphere {f : ℂ → E} {a : ℤ → E} {
     · rw [ite_eq_right (Ne.symm hkn), ite_eq_right hkn]
   exact hsum_coeff.unique hsingle
 
-/-- The Laurent coefficients of the simple pole `z ↦ (a - z)⁻¹` on a circle about `c` that does
-not reach `a` are those of its geometric expansion `∑_{n ≥ 0} (z - c) ^ n / (a - c) ^ (n + 1)`. -/
-theorem circleLaurentCoeff_inv_sub_of_lt_norm {a c : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρa : ρ < ‖a - c‖)
-    (n : ℤ) :
-    circleLaurentCoeff (fun z => (a - z)⁻¹) c ρ n = if 0 ≤ n then (a - c) ^ (-n - 1) else 0 := by
-  have hd : a - c ≠ 0 := norm_pos_iff.1 (hρ.trans hρa)
-  set b : ℤ → ℂ := fun k => if 0 ≤ k then (a - c) ^ (-k - 1) else 0 with hb
-  have hb_nat (k : ℕ) : b k = (a - c)⁻¹ * ((a - c) ^ k)⁻¹ := by
-    simp only [hb, Int.natCast_nonneg, ite_true, zpow_sub_one₀ hd, zpow_neg, zpow_natCast,
-      mul_comm]
-  have hb_neg (k : ℕ) : b (-(k + 1)) = 0 := by
-    simp only [hb, ite_eq_right_iff]
-    omega
-  refine circleLaurentCoeff_eq_of_hasSum_sphere (a := b) hρ (fun z hz => ?_) ?_ n
-  · have hzc : ‖z - c‖ = ρ := mem_sphere_iff_norm.1 hz
-    have hw : ‖(z - c) / (a - c)‖ < 1 := by
-      rwa [norm_div, div_lt_one (hρ.trans hρa), hzc]
-    have hsum := (hasSum_geometric_of_norm_lt_one hw).mul_left (a - c)⁻¹
-    rw [one_sub_div hd, sub_sub_sub_cancel_right, inv_div, ← div_eq_inv_mul,
-      div_div_cancel_left₀ hd] at hsum
-    have h := HasSum.of_nat_of_neg_add_one (f := fun k : ℤ => (z - c) ^ k • b k)
-      (hsum.congr_fun fun k => ?_) (hasSum_zero.congr_fun fun k => ?_)
-    · rwa [add_zero] at h
-    · simp only [zpow_natCast, hb_nat, smul_eq_mul, div_pow]
-      ring
-    · rw [hb_neg, smul_zero]
-  · refine Summable.of_nat_of_neg_add_one ?_ (summable_zero.congr fun k => by
-      rw [hb_neg, norm_zero, zero_mul])
-    have hr : ρ / ‖a - c‖ < 1 := (div_lt_one (hρ.trans hρa)).2 hρa
-    refine ((summable_geometric_of_lt_one (by positivity) hr).mul_left ‖a - c‖⁻¹).congr
-      fun k => ?_
-    simp only [hb_nat, norm_mul, norm_inv, norm_pow, zpow_natCast, div_pow]
-    ring
-
 namespace HasLaurentSeriesOnAnnulus
 
 /-- **Cauchy-Laurent coefficient formula.** For any convergent Laurent series on
@@ -280,6 +247,32 @@ theorem coeff_unique {f : ℂ → E} {a b : ℤ → E} {c : ℂ} {r : ℝ} {R : 
   exact (ha.circleLaurentCoeff_eq hrρ hρR n).symm.trans (hb.circleLaurentCoeff_eq hrρ hρR n)
 
 end HasLaurentSeriesOnAnnulus
+
+/-- The Laurent coefficients of the simple pole `z ↦ (a - z)⁻¹` on a circle about `c` that does
+not reach `a` are those of its geometric expansion `∑_{n ≥ 0} (z - c) ^ n / (a - c) ^ (n + 1)`. -/
+theorem circleLaurentCoeff_inv_sub_of_lt_norm {a c : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρa : ρ < ‖a - c‖)
+    (n : ℤ) :
+    circleLaurentCoeff (fun z => (a - z)⁻¹) c ρ n = if 0 ≤ n then (a - c) ^ (-n - 1) else 0 := by
+  have hd : a - c ≠ 0 := norm_pos_iff.1 (hρ.trans hρa)
+  -- `(a - z)⁻¹ = (a - c)⁻¹ (1 - (z - c) (a - c)⁻¹)⁻¹` is a geometric series in `z - c`.
+  have hp := (((hasFPowerSeriesOnBall_inverse_one_sub_smul ℂ (a - c)⁻¹).comp_sub c).const_smul
+    (c := (a - c)⁻¹)).hasLaurentSeriesOnAnnulus
+  rw [zero_add, eNorm_inv hd, inv_inv] at hp
+  have hfun : EqOn ((a - c)⁻¹ • fun z => Ring.inverse (1 - (z - c) • (a - c)⁻¹))
+      (fun z => (a - z)⁻¹) (eball c ‖a - c‖ₑ \ closedBall c 0) := fun z _ ↦ by
+    simp only [Pi.smul_apply, smul_eq_mul]
+    rw [Ring.inverse_eq_inv', ← mul_inv]
+    congr 1
+    field_simp
+    ring
+  have hρa' : ENNReal.ofReal ρ < ‖a - c‖ₑ := by
+    rwa [← ofReal_norm, ENNReal.ofReal_lt_ofReal_iff (norm_pos_iff.2 hd)]
+  rw [(hp.congr hfun).circleLaurentCoeff_eq hρ hρa' n]
+  split_ifs with hn
+  · lift n to ℕ using hn
+    change (a - c)⁻¹ • ContinuousMultilinearMap.mkPiRing ℂ (Fin n) ((a - c)⁻¹ ^ n) 1 = _
+    simp [ContinuousMultilinearMap.mkPiRing_apply, zpow_sub_one₀ hd, mul_comm]
+  · rfl
 
 /-- **Pointwise Laurent expansion on a closed annulus.** If `f` is continuous on the closed annulus
 `Metric.closedBall c R \ Metric.ball c r` (`0 < r`) and complex-differentiable outside a countable
