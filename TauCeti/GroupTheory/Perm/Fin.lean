@@ -30,9 +30,8 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   are stated on natural numbers, ready for `omega`.
 * `List.formPerm_finRange`, `Fin.formPerm_sort_univ`: the cycle through the points of `Fin n` in
   increasing order is the rotation `finRotate n`, that is `i ↦ i + 1` modulo `n`.
-* `Fin.cycleRange_mul_swap`, `Fin.prod_finRange_swap_eq_cycleRange`,
-  `Fin.prod_finRange_swap_castSucc_succ`: products of consecutive adjacent transpositions
-  `Equiv.swap i.castSucc i.succ` equal `Fin.cycleRange` and `finRotate`.
+* `Fin.cycleRange_mul_swap`, `Fin.prod_finRange_swap_eq_cycleRange`: products of consecutive
+  adjacent transpositions `Equiv.swap i.castSucc i.succ` equal `Fin.cycleRange`.
 * `Fin.swap_apply_lt_swap_apply`: an adjacent transposition `(a a+1)` of `Fin n` keeps every
   strict pair in order except `a < a + 1` itself.
 * `Fin.cons_comp_perm`: prepending a fixed first entry commutes with permuting the other entries,
@@ -133,14 +132,6 @@ theorem prod_finRange_swap_eq_cycleRange {N : ℕ} (k : ℕ) (hk : k < N) :
       ih (by omega)
     rw [hpre]
     simp only [Fin.val_last, cycleRange_mul_swap hk]
-
-/-- The product of all `m` adjacent transpositions `(i, i + 1)` on `Fin (m + 1)` is the cyclic
-rotation `finRotate (m + 1)`. -/
-theorem prod_finRange_swap_castSucc_succ (m : ℕ) :
-    ((List.finRange m).map fun i : Fin m => Equiv.swap i.castSucc i.succ).prod =
-      finRotate (m + 1) := by
-  rw [← cycleRange_last m]
-  exact prod_finRange_swap_eq_cycleRange m (Nat.lt_succ_self m)
 
 /-- An adjacent transposition `(a b)`, with `b = a + 1`, preserves the strict order of every pair
 of elements of `Fin n` other than the pair `a < b` itself. -/

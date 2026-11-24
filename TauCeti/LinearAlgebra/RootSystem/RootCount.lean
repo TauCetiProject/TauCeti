@@ -56,29 +56,13 @@ private lemma image_comp_symm_range_rootCoefficients {b : P.Base} {t : DynkinTyp
     Set.range (fun x : ι ↦ b.rootCoefficients x ∘ e.symm) =
       Set.range (t.simpleRootCoefficients ht) := by
   classical
-  have hrange : Set.range (fun x : ι ↦ b.rootCoefficients x ∘ e.symm) =
-      (fun c : b.support → ℤ ↦ c ∘ e.symm) '' Set.range b.rootCoefficients :=
-    Set.range_comp (fun c : b.support → ℤ ↦ c ∘ e.symm) b.rootCoefficients
-  rw [hrange, ← b.iUnion_orbit_single_eq_range_rootCoefficients,
-    ← t.iUnion_orbit_single_eq_range_simpleRootCoefficients ht]
-  ext d
-  simp only [mem_image, mem_iUnion]
-  constructor
-  · rintro ⟨c, ⟨k, hk⟩, rfl⟩
-    refine ⟨e k, ?_⟩
-    have horb := Matrix.comp_equiv_mem_orbit b.cartanMatrix b.cartanMatrix_apply_same
-      t.cartanMatrix_apply_same e.symm
-      (fun i j ↦ by simp [he (e.symm i) (e.symm j)]) hk
-    have hs : (Pi.single k 1 : b.support → ℤ) ∘ e.symm = Pi.single (e k) 1 := by
-      rw [Pi.single_comp_equiv, Equiv.symm_symm]
-    rwa [hs] at horb
-  · rintro ⟨i, hi⟩
-    refine ⟨d ∘ e, ⟨e.symm i, ?_⟩, by ext j; simp⟩
-    have horb := Matrix.comp_equiv_mem_orbit t.cartanMatrix t.cartanMatrix_apply_same
-      b.cartanMatrix_apply_same e he hi
-    have hs : (Pi.single i 1 : Fin t.rank → ℤ) ∘ e = Pi.single (e.symm i) 1 :=
-      Pi.single_comp_equiv e i 1
-    rwa [hs] at horb
+  have hr : Set.range b.rootCoefficients =
+      Set.range (fun k ↦ t.simpleRootCoefficients ht k ∘ e) :=
+    b.iUnion_orbit_single_eq_range_rootCoefficients.symm.trans
+      (t.iUnion_orbit_single_eq_range_simpleRootCoefficients_comp ht e he)
+  have him := congrArg ((fun c : b.support → ℤ ↦ c ∘ e.symm) '' ·) hr
+  rw [← Set.range_comp, ← Set.range_comp] at him
+  simpa [Function.comp_def, Function.comp_assoc] using him
 
 /-- **A finite reduced crystallographic root pairing carrying a base of valid Cartan type `t` has
 root index type equivalent to `Fin t.numRoots`.** No spanning assumption on the roots is

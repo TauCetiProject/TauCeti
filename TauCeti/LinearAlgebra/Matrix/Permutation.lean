@@ -110,9 +110,11 @@ theorem prod_finRange_succ_adjSwap {m : ℕ} {R : Type*} [Semiring R]
     (hS : ∀ i : Fin m, S i.castSucc = permMatrixHom (Equiv.swap i.castSucc i.succ)) :
     ((List.finRange (m + 1)).map S).prod =
       permMatrixHom (finRotate (m + 1)) * S (Fin.last m) := by
+  have hcyc : ((List.finRange m).map fun i : Fin m =>
+      Equiv.swap i.castSucc i.succ).prod = finRotate (m + 1) :=
+    (Fin.prod_finRange_swap_eq_cycleRange m (Nat.lt_succ_self m)).trans (Fin.cycleRange_last m)
   rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
-    List.map_singleton, List.prod_singleton, ← Fin.prod_finRange_swap_castSucc_succ m,
-    map_list_prod, List.map_map]
+    List.map_singleton, List.prod_singleton, ← hcyc, map_list_prod, List.map_map]
   congr 1
   exact congrArg List.prod (List.map_congr_left fun i _ => hS i)
 

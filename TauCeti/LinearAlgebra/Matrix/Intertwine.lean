@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import Mathlib.LinearAlgebra.Matrix.Nondegenerate
+import Mathlib.LinearAlgebra.Matrix.Adjugate
 
 /-!
 # Intertwining matrices and multiplicative order
@@ -15,7 +15,8 @@ import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 A rectangular matrix `V` intertwining two square matrices (`A * V = V * B`) intertwines every
 natural power of them (`Matrix.pow_mul_eq_mul_pow`). Over an integral domain, intertwining
 `A * P = P * B` by a square matrix `P` of nonzero determinant preserves multiplicative order
-(`Matrix.orderOf_eq_of_mul_eq_mul`), because left multiplication by `P` and by `Pᵀ` is left-regular.
+(`Matrix.orderOf_eq_of_mul_eq_mul`), because `P` is regular
+(`Matrix.isRegular_of_isLeftRegular_det`).
 
 ## Main results
 
@@ -44,16 +45,12 @@ has nonzero determinant over an integral domain and `A * P = P * B`, then
 theorem orderOf_eq_of_mul_eq_mul {n R : Type*} [Fintype n] [DecidableEq n]
     [CommRing R] [IsDomain R] {A B P : Matrix n n R} (hP : P.det ≠ 0) (h : A * P = P * B) :
     orderOf A = orderOf B := by
-  have hP' : IsLeftRegular P :=
-    Matrix.isLeftRegular_iff_mulVec_injective.mpr (Matrix.mulVec_injective_of_det_ne_zero hP)
-  have hPT' : IsLeftRegular Pᵀ :=
-    Matrix.isLeftRegular_iff_mulVec_injective.mpr
-      (Matrix.mulVec_injective_of_det_ne_zero (by rwa [Matrix.det_transpose]))
+  have hreg : IsRegular P :=
+    Matrix.isRegular_of_isLeftRegular_det (isRegular_iff_ne_zero.mpr hP).left
   refine orderOf_eq_orderOf_iff.mpr fun m ↦ ?_
   have hm := pow_mul_eq_mul_pow h m
-  refine ⟨fun hA ↦ hP' ?_, fun hB ↦ Matrix.transpose_injective <| hPT' ?_⟩
+  refine ⟨fun hA ↦ hreg.left ?_, fun hB ↦ hreg.right ?_⟩
   · dsimp only; rw [← hm, hA, Matrix.one_mul, Matrix.mul_one]
-  · dsimp only
-    rw [← Matrix.transpose_mul, hm, hB, Matrix.mul_one, Matrix.transpose_one, Matrix.mul_one]
+  · dsimp only; rw [hm, hB, Matrix.mul_one, Matrix.one_mul]
 
 end Matrix
