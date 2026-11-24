@@ -233,24 +233,26 @@ theorem HasWeakFDerivOn.exists_contDiff_tendsto_eLpNorm (hu : HasWeakFDerivOn μ
   exact ⟨un, hcd, hbound, hu_conv, hDu_conv⟩
 
 /-- **Local smooth approximation in `W^{1,p}` and uniformly on `closure U` for continuous `u`.**
--/
+For `u` continuous on `V` and `Du` locally `Lᵖ` on `V`, the mollifications converge uniformly to
+`u` on `closure U`, to `u` in `L^q(U)`, and their derivatives converge to `Du` in `Lᵖ(U)` for all
+finite exponents `1 ≤ q, p < ∞`. -/
 theorem HasWeakFDerivOn.exists_contDiff_tendstoUniformlyOn (hu : HasWeakFDerivOn μ Ω u Du)
     {U V : Opens E} (huc : ContinuousOn u V) (hUc : IsCompact (closure (U : Set E)))
-    (hUV : closure (U : Set E) ⊆ V) (hVΩ : V ≤ Ω) {p : ℝ≥0∞} (hp1 : 1 ≤ p)
-    (hp : p ≠ (∞ : ℝ≥0∞)) (hDup : MemLpLoc p V Du μ) :
+    (hUV : closure (U : Set E) ⊆ V) (hVΩ : V ≤ Ω) {q p : ℝ≥0∞} (hq1 : 1 ≤ q)
+    (hq : q ≠ (∞ : ℝ≥0∞)) (hp1 : 1 ≤ p) (hp : p ≠ (∞ : ℝ≥0∞)) (hDup : MemLpLoc p V Du μ) :
     ∃ un : ℕ → E → F, (∀ n, ContDiff ℝ ∞ (un n)) ∧
       TendstoUniformlyOn un u atTop (closure (U : Set E)) ∧
       (∀ n, eLpNorm (fderiv ℝ (un n)) p (μ.restrict U) ≤ eLpNorm Du p (μ.restrict V)) ∧
-      Tendsto (fun n => eLpNorm (un n - u) p (μ.restrict U)) atTop (𝓝 0) ∧
+      Tendsto (fun n => eLpNorm (un n - u) q (μ.restrict U)) atTop (𝓝 0) ∧
       Tendsto (fun n => eLpNorm (fderiv ℝ (un n) - Du) p (μ.restrict U)) atTop (𝓝 0) := by
   have huW (W : Opens E) (hWc : IsCompact (closure (W : Set E)))
-      (hWV : closure (W : Set E) ⊆ V) : MemLp u p (μ.restrict W) := by
+      (hWV : closure (W : Set E) ⊆ V) : MemLp u q (μ.restrict W) := by
     have : IsFiniteMeasure (μ.restrict (W : Set E)) :=
       isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne
     exact ((huc.mono hWV).memLp_top_restrict_of_subset_isCompact hWc
       W.isOpen.measurableSet subset_closure).mono_exponent le_top
   obtain ⟨un, hcd, hbound, hunif, hu_conv, hDu_conv⟩ :=
-    exists_interior_mollification hu hUc hUV hVΩ hp1 hp huW hp1 hp hDup
+    exists_interior_mollification hu hUc hUV hVΩ hq1 hq huW hp1 hp hDup
   exact ⟨un, hcd, hunif huc, hbound, hu_conv, hDu_conv⟩
 
 end TauCeti
