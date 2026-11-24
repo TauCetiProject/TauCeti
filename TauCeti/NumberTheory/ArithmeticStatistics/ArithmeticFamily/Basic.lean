@@ -68,6 +68,34 @@ theorem tendsto_heightLE_atTop : Filter.Tendsto F.heightLE Filter.atTop Filter.a
   Filter.tendsto_atTop_finset_of_monotone F.heightLE_mono fun i ↦
     ⟨F.height i, (mem_heightLE F).mpr le_rfl⟩
 
+/-- The finite carrier at a strict real cutoff. -/
+noncomputable def heightLT (X : ℝ) : Finset ι := by
+  classical
+  exact (F.heightLE X).filter (F.height · < X)
+
+/-- Membership in the strict carrier is exactly the strict height inequality. -/
+@[simp, grind =]
+theorem mem_heightLT {i : ι} {X : ℝ} : i ∈ F.heightLT X ↔ F.height i < X := by
+  simp only [heightLT, Finset.mem_filter, mem_heightLE, and_iff_right_iff_imp]
+  exact le_of_lt
+
+/-- The strict carrier represents the strict height sublevel set. -/
+@[simp]
+theorem coe_heightLT (X : ℝ) : (F.heightLT X : Set ι) = {i | F.height i < X} := by
+  ext
+  simp
+
+/-- Enlarging the cutoff enlarges the strict carrier. -/
+theorem heightLT_mono : Monotone F.heightLT := fun _ _ h _ hi ↦
+  (mem_heightLT F).mpr (((mem_heightLT F).mp hi).trans_le h)
+
+/-- The strict carrier is nonempty at every large enough cutoff. -/
+theorem eventually_heightLT_nonempty [Nonempty ι] :
+    ∀ᶠ X in Filter.atTop, (F.heightLT X).Nonempty := by
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  filter_upwards [Filter.eventually_gt_atTop (F.height i)] with X hX
+  exact ⟨i, (mem_heightLT F).mpr hX⟩
+
 /-- Sum a weight over the inclusive height sublevel. -/
 noncomputable def weightedCount {M : Type*} [AddCommMonoid M] (w : ι → M) (X : ℝ) : M :=
   ∑ i ∈ F.heightLE X, w i
@@ -105,6 +133,11 @@ theorem countLT_eq_ncard (S : Set ι) (X : ℝ) :
   ext
   simp only [Finset.mem_coe, Finset.mem_filter, mem_heightLE, Set.mem_ofPred_eq]
   grind
+
+/-- The strict carrier has the strict count of the whole family as its cardinality. -/
+theorem card_heightLT (X : ℝ) : (F.heightLT X).card = F.countLT Set.univ X := by
+  rw [countLT_eq_ncard, ← Set.ncard_coe_finset, coe_heightLT]
+  simp
 
 /-- The empty subfamily has inclusive count zero. -/
 @[simp]
@@ -271,6 +304,12 @@ theorem heightLE_rescale (c : ℝ) (hc : 0 < c) (X : ℝ) :
     (F.rescale c hc).heightLE X = F.heightLE (X / c) := by
   ext
   simp [← le_div_iff₀' hc]
+
+/-- Rescaling the height divides the strict cutoff by the same constant. -/
+theorem heightLT_rescale (c : ℝ) (hc : 0 < c) (X : ℝ) :
+    (F.rescale c hc).heightLT X = F.heightLT (X / c) := by
+  ext
+  simp [← lt_div_iff₀' hc]
 
 /-- The count for a rescaled height is the original count at the divided cutoff. -/
 theorem count_rescale (c : ℝ) (hc : 0 < c) (S : Set ι) (X : ℝ) :
