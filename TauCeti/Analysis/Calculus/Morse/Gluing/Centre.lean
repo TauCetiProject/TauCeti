@@ -60,6 +60,8 @@ one-dimensional moduli space at a configuration breaking at a critical point.
   equation form a continuous family in the rate.
 * `TauCeti.splitQuadraticFlow_snd_eq_iff_smul_comp_smul_eq`: meeting the graph through the centre
   at time `T` is the gluing equation at the rate `e^{-T}`.
+* `TauCeti.splitQuadraticFlow_eq_and_norm_le_of_smul_comp_smul_eq`: a solution of the gluing
+  equation at the rate `l` flows in the box, in time `-log l`, to the graph through the centre.
 
 ## References
 
@@ -120,6 +122,11 @@ theorem exists_lipschitzOnWith_graph_of_hasStrictFDerivAt [CompleteSpace G]
     filter_upwards [hleft, hat (closedBall_mem_nhds 0 hη)] with z hz hzη
     exact ⟨hzη, by simp only [k, ha_def] at hz ⊢; rw [hz]⟩
 
+/-- A linear function of the rate tends to `0` as the rate tends to `0` from above. -/
+private theorem tendsto_mul_const_nhdsGT_zero (c : ℝ) :
+    Tendsto (fun l : ℝ ↦ l * c) (𝓝[>] 0) (𝓝 0) :=
+  ((continuous_id.mul continuous_const).tendsto' 0 0 (zero_mul c)).mono_left nhdsWithin_le_nhds
+
 omit [NormedSpace ℝ Eᵤ] in
 /-- Along the entrance graph `y ↦ (g y, y)` in the face `‖x‖ = ε`, scaled by a rate `l` with
 `l ε ≤ η`, the contracting component stays over the ball of radius `η` on which the graph `k`
@@ -172,14 +179,13 @@ theorem eventually_exists_continuousOn_smul_comp_smul_eq_iff [CompleteSpace Eᵤ
         ‖k (l • g (v l))‖ ≤ Kk * (l * ε) ∧ ∀ y ∈ closedBall 0 δ, l • k (l • g y) = y ↔ y = v l := by
   have hε : 0 ≤ ε := hgε 0 (mem_closedBall_self hδ.le) ▸ norm_nonneg _
   -- The rates `l₀` for which every `l ∈ [0, l₀]` gives a contraction with one constant.
-  have hlin (c : ℝ) : Tendsto (fun l₀ : ℝ ↦ l₀ * c) (𝓝[>] 0) (𝓝 0) := by
-    have hc : Continuous fun l₀ : ℝ ↦ l₀ * c := by fun_prop
-    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-  have hquad : Tendsto (fun l₀ : ℝ ↦ l₀ * (Kk * (l₀ * Kg))) (𝓝[>] 0) (𝓝 0) := by
-    have hc : Continuous fun l₀ : ℝ ↦ l₀ * ((Kk : ℝ) * (l₀ * Kg)) := by fun_prop
-    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-  filter_upwards [self_mem_nhdsWithin, (hlin 1).eventually (gt_mem_nhds one_pos),
-    (hlin ε).eventually (gt_mem_nhds hη), (hlin (Kk * ε)).eventually (gt_mem_nhds hδ),
+  have hquad : Tendsto (fun l₀ : ℝ ↦ l₀ * (Kk * (l₀ * Kg))) (𝓝[>] 0) (𝓝 0) :=
+    ((by fun_prop : Continuous fun l₀ : ℝ ↦ l₀ * ((Kk : ℝ) * (l₀ * Kg))).tendsto' 0 0
+      (by simp)).mono_left nhdsWithin_le_nhds
+  filter_upwards [self_mem_nhdsWithin,
+    (tendsto_mul_const_nhdsGT_zero 1).eventually (gt_mem_nhds one_pos),
+    (tendsto_mul_const_nhdsGT_zero ε).eventually (gt_mem_nhds hη),
+    (tendsto_mul_const_nhdsGT_zero (Kk * ε)).eventually (gt_mem_nhds hδ),
     hquad.eventually (gt_mem_nhds one_pos)] with l₀ hl₀ h₀ h₁ h₂ h₃
   rw [mem_Ioi] at hl₀
   rw [mul_one] at h₀
@@ -206,9 +212,8 @@ theorem eventually_exists_continuousOn_smul_comp_smul_eq_iff [CompleteSpace Eᵤ
     rw [Subtype.dist_eq, Subtype.dist_eq, MapsTo.val_restrict_apply, MapsTo.val_restrict_apply,
       hK]
     refine (dist_smul_comp_smul_le hη hg hgε hk hk₀ hl.1 (hlε hl) y.property y'.property).trans ?_
-    exact mul_le_mul_of_nonneg_right (mul_le_mul hl.2 (mul_le_mul_of_nonneg_left
-      (mul_le_mul_of_nonneg_right hl.2 Kg.coe_nonneg) Kk.coe_nonneg)
-      (mul_nonneg Kk.coe_nonneg (mul_nonneg hl.1 Kg.coe_nonneg)) hl₀.le) dist_nonneg
+    obtain ⟨hl0, hll₀⟩ := hl
+    gcongr
   -- Its fixed point `v l`.
   have hfix (l : ℝ) : ∃ y : Eᵤ, l ∈ Icc 0 l₀ → y ∈ closedBall 0 δ ∧ l • k (l • g y) = y := by
     by_cases hl : l ∈ Icc 0 l₀
@@ -267,6 +272,45 @@ theorem splitQuadraticFlow_snd_eq_iff_smul_comp_smul_eq {k : Eₛ → Eᵤ} (T :
   · intro h
     rw [← h, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
 
+/-- **The glued orbit at a solved rate, in the model.** If `y` solves the gluing equation
+`l • k (l • x) = y` at a rate `l > 0`, with `‖x‖ ≤ ε` and `‖k (l • x)‖ ≤ ε`, then in time `-log l`
+the orbit through `(x, y)` reaches the point `(l • x, k (l • x))` of the graph of `k`, and it stays
+in the box `‖x‖ ≤ ε, ‖y‖ ≤ ε` meanwhile. -/
+theorem splitQuadraticFlow_eq_and_norm_le_of_smul_comp_smul_eq {k : Eₛ → Eᵤ} {ε l : ℝ}
+    (hl : 0 < l) {x : Eₛ} {y : Eᵤ} (hx : ‖x‖ ≤ ε) (hfix : l • k (l • x) = y)
+    (hk : ‖k (l • x)‖ ≤ ε) :
+    splitQuadraticFlow (-Real.log l) (WithLp.toLp 2 (x, y)) =
+        WithLp.toLp 2 (l • x, k (l • x)) ∧
+      ∀ s ∈ Icc 0 (-Real.log l), ‖(splitQuadraticFlow s (WithLp.toLp 2 (x, y))).fst‖ ≤ ε ∧
+        ‖(splitQuadraticFlow s (WithLp.toLp 2 (x, y))).snd‖ ≤ ε := by
+  have hexp : Real.exp (-(-Real.log l)) = l := by rw [neg_neg, Real.exp_log hl]
+  have hexpT : Real.exp (-Real.log l) * l = 1 := by
+    rw [Real.exp_neg, Real.exp_log hl, inv_mul_cancel₀ hl.ne']
+  -- `‖y‖ = l ‖k (l • x)‖`, and `e^s l ≤ 1` for `s ≤ -log l`.
+  have hy : ‖y‖ = l * ‖k (l • x)‖ := by rw [← hfix, norm_smul, Real.norm_of_nonneg hl.le]
+  refine ⟨?_, fun s hs ↦ ⟨?_, ?_⟩⟩
+  · rw [splitQuadraticFlow_apply, WithLp.toLp_fst, WithLp.toLp_snd, hexp, ← hfix, smul_smul,
+      hexpT, one_smul]
+  · rw [norm_fst_splitQuadraticFlow, WithLp.toLp_fst]
+    exact (mul_le_of_le_one_left (norm_nonneg _)
+      (Real.exp_le_one_iff.2 (by linarith [hs.1]))).trans hx
+  · rw [norm_snd_splitQuadraticFlow, WithLp.toLp_snd, hy]
+    calc Real.exp s * (l * ‖k (l • x)‖) ≤ Real.exp (-Real.log l) * (l * ‖k (l • x)‖) := by
+          gcongr; exact hs.2
+      _ = ‖k (l • x)‖ := by rw [← mul_assoc, hexpT, one_mul]
+      _ ≤ ε := hk
+
+omit [NormedSpace ℝ Eₛ] [NormedSpace ℝ Eᵤ] in
+/-- A neighbourhood of the centre of the split model contains the points whose two components
+are both smaller than some `r > 0`. -/
+theorem exists_pos_forall_toLp_mem_of_mem_nhds {W : Set (WithLp 2 (Eₛ × Eᵤ))} (hW : W ∈ 𝓝 0) :
+    ∃ r > 0, ∀ (x : Eₛ) (y : Eᵤ), ‖x‖ < r → ‖y‖ < r → WithLp.toLp 2 (x, y) ∈ W := by
+  obtain ⟨r, hr, hrW⟩ := Metric.mem_nhds_iff.1 ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).tendsto 0
+    (by simpa using hW))
+  refine ⟨r, hr, fun x y hx hy ↦ hrW ?_⟩
+  rw [← ball_prod_same]
+  exact mk_mem_prod (mem_ball_zero_iff.2 hx) (mem_ball_zero_iff.2 hy)
+
 /-- **Gluing at the centre of the split hyperbolic box.** Let `y ↦ (g y, y)` be a `Kg`-Lipschitz
 graph in the entrance face `‖x‖ = ε` over the closed ball of radius `δ > 0` of the expanding
 factor, and `x ↦ (x, k x)` a `Kk`-Lipschitz graph through the centre over the closed ball of
@@ -287,17 +331,10 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
         k (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst := by
   have hε : 0 ≤ ε := hgε 0 (mem_closedBall_self hδ.le) ▸ norm_nonneg _
   -- `W` contains the points whose two components are smaller than some `r`.
-  obtain ⟨r, hr, hrW⟩ := Metric.mem_nhds_iff.1 ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).tendsto 0
-    (by simpa using hW))
-  have hW' (x : Eₛ) (y : Eᵤ) (hx : ‖x‖ < r) (hy : ‖y‖ < r) : WithLp.toLp 2 (x, y) ∈ W :=
-    hrW (by
-      rw [← ball_prod_same]
-      exact mk_mem_prod (mem_ball_zero_iff.2 hx) (mem_ball_zero_iff.2 hy))
+  obtain ⟨r, hr, hW'⟩ := exists_pos_forall_toLp_mem_of_mem_nhds hW
   -- A bound `l₀` on the rates for which the gluing equation has its solutions `v l`, and for
   -- which the glued points lie in `W`.
-  have hlin (C : ℝ) : Tendsto (fun l₀ : ℝ ↦ l₀ * C) (𝓝[>] 0) (𝓝 0) := by
-    have hc : Continuous fun l₀ : ℝ ↦ l₀ * C := by fun_prop
-    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  have hlin := tendsto_mul_const_nhdsGT_zero
   obtain ⟨l₀, ⟨v, -, -, hv⟩, hl₀, hl₀₁, hl₀r, hl₀k, hl₀Kk⟩ :=
     ((eventually_exists_continuousOn_smul_comp_smul_eq_iff hδ hη hg hgε hk hk₀).and
       (Filter.Eventually.and self_mem_nhdsWithin (((hlin 1).eventually (gt_mem_nhds one_pos)).and
@@ -307,29 +344,17 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
   filter_upwards [Real.tendsto_exp_neg_atTop_nhds_zero.eventually (ge_mem_nhds hl₀)] with T hTl₀
   set l := Real.exp (-T) with hldef
   have hl : l ∈ Icc 0 l₀ := ⟨(Real.exp_pos _).le, hTl₀⟩
-  have hexp : Real.exp T * l = 1 := by rw [hldef, ← Real.exp_add, add_neg_cancel, Real.exp_zero]
+  have hlT : -Real.log l = T := by rw [hldef, Real.log_exp, neg_neg]
   -- The orbit through `(g y, y)` meets the graph of `k` at time `T` for the solution `y = v l` of
-  -- the gluing equation at the rate `l = e^{-T}`.
+  -- the gluing equation at the rate `l = e^{-T}`, staying in the box.
   obtain ⟨hy, hgη, hkg, hiff⟩ := hv l hl
   set y := v l
-  have hyF : l • k (l • g y) = y := (hiff y hy).2 rfl
-  have hky : Real.exp T • y = k (l • g y) := by
-    calc Real.exp T • y = Real.exp T • (l • k (l • g y)) := by rw [hyF]
-      _ = k (l • g y) := by rw [smul_smul, hexp, one_smul]
-  -- At time `T` the orbit is at `(e^{-T} g y, k (e^{-T} g y))`.
-  have hT' : splitQuadraticFlow T (WithLp.toLp 2 (g y, y)) =
-      WithLp.toLp 2 (l • g y, k (l • g y)) := by
-    rw [splitQuadraticFlow_apply, WithLp.toLp_fst, WithLp.toLp_snd, hky]
-  have hny : Real.exp T * ‖y‖ ≤ Kk * (l * ε) := by
-    rw [← Real.norm_of_nonneg (Real.exp_pos T).le, ← norm_smul, hky]
-    exact hkg
-  refine ⟨y, hy, fun s hs ↦ ⟨?_, ?_⟩, ?_, ?_, ?_⟩
-  · rw [norm_fst_splitQuadraticFlow, WithLp.toLp_fst, hgε y hy]
-    exact mul_le_of_le_one_left hε (Real.exp_le_one_iff.2 (by linarith [hs.1]))
-  · rw [norm_snd_splitQuadraticFlow, WithLp.toLp_snd]
-    calc Real.exp s * ‖y‖ ≤ Real.exp T * ‖y‖ := by gcongr; exact hs.2
-      _ ≤ Kk * (l * ε) := hny
-      _ ≤ ε := by nlinarith [mul_nonneg (Kk.coe_nonneg) hε, hl.1, hl.2, Kk.coe_nonneg]
+  have hkε : ‖k (l • g y)‖ ≤ ε :=
+    hkg.trans (by nlinarith [mul_nonneg (Kk.coe_nonneg) hε, hl.1, hl.2, Kk.coe_nonneg])
+  obtain ⟨hT', hbox⟩ := splitQuadraticFlow_eq_and_norm_le_of_smul_comp_smul_eq (Real.exp_pos _)
+    (hgε y hy).le ((hiff y hy).2 rfl) hkε
+  rw [hlT] at hT' hbox
+  refine ⟨y, hy, hbox, ?_, ?_, ?_⟩
   · rw [hT']
     refine hW' _ _ ?_ ?_
     · rw [norm_smul, Real.norm_of_nonneg hl.1, hgε y hy]

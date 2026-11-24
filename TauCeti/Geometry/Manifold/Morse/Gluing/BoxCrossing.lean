@@ -57,32 +57,27 @@ namespace IsAdaptedPseudoGradient
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
   {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
-/-- An orbit through the entrance face of a Morse box off the stable plane does not meet the
-entrance face again before it leaves the box. -/
-private theorem flow_ne_of_mem_splitPassage_source (hX : IsAdaptedPseudoGradient f X)
+/-- An orbit through the entrance face of a Morse box that stays in the box up to time `t > 0`
+does not meet the entrance face again at time `t`. -/
+private theorem flow_ne_of_forall_norm_le (hX : IsAdaptedPseudoGradient f X)
     (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
-    {ε : ℝ} (hε : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
+    {ε : ℝ} (hε₀ : 0 < ε) (hε : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
     {z z' : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
-    (hz : z ∈ (splitPassage ε).source) (hz' : ‖z'.fst‖ = ε) (hz's : ‖z'.snd‖ ≤ ε) {t : ℝ}
-    (ht₀ : 0 < t) (htT : t ≤ splitExitTime ε z) :
+    (hz : ‖z.fst‖ = ε) (hz' : ‖z'.fst‖ = ε) (hz's : ‖z'.snd‖ ≤ ε) {t : ℝ} (ht₀ : 0 < t)
+    (hbox : ∀ s ∈ uIcc 0 t,
+      ‖(splitQuadraticFlow s z).fst‖ ≤ ε ∧ ‖(splitQuadraticFlow s z).snd‖ ≤ ε) :
     hX.flow t (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) ≠
       φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z')) := by
   intro h
-  have hbox : ∀ s ∈ uIcc 0 t,
-      ‖(splitQuadraticFlow s z).fst‖ ≤ ε ∧ ‖(splitQuadraticFlow s z).snd‖ ≤ ε := fun s hs ↦ by
-    rw [uIcc_of_le ht₀.le] at hs
-    exact (norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_source hz).2
-      ⟨hs.1, hs.2.trans htT⟩
   rw [hX.flow_toChart_symm_splitCoord_symm φ hφ hε hbox] at h
   obtain ⟨h₁, h₂⟩ := hbox t (right_mem_uIcc)
   have hzz := φ.injOn_toChart_symm_coord_symm_splitCoord_symm
     (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε h₁ h₂)
     (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε hz'.le hz's) h
   have hnorm := congrArg (fun w ↦ ‖w.fst‖) hzz
-  simp only [norm_fst_splitQuadraticFlow, (mem_splitPassage_source.1 hz).1, hz'] at hnorm
-  have hε0 := pos_of_mem_splitPassage_source hz
+  simp only [norm_fst_splitQuadraticFlow, hz, hz'] at hnorm
   have : Real.exp (-t) < 1 := Real.exp_lt_one_iff.2 (by linarith)
   nlinarith
 
@@ -106,26 +101,16 @@ private theorem flow_ne_of_norm_fst_eq (hX : IsAdaptedPseudoGradient f X)
   set Ψ := fun w ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm w))
   by_cases hz0 : z.snd = 0
   · -- On the stable plane the model orbit stays in the box, closer to the centre.
-    intro h
-    have hbox : ∀ s ∈ uIcc 0 t,
-        ‖(splitQuadraticFlow s z).fst‖ ≤ ε ∧ ‖(splitQuadraticFlow s z).snd‖ ≤ ε := fun s hs ↦ by
-      rw [uIcc_of_le ht₀.le] at hs
-      rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow, hz, hz0, norm_zero,
-        mul_zero]
-      exact ⟨mul_le_of_le_one_left hε₀.le (Real.exp_le_one_iff.2 (by linarith [hs.1])),
-        hε₀.le⟩
-    rw [hX.flow_toChart_symm_splitCoord_symm φ hφ hε hbox] at h
-    obtain ⟨h₁, h₂⟩ := hbox t right_mem_uIcc
-    have hzz := φ.injOn_toChart_symm_coord_symm_splitCoord_symm
-      (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε h₁ h₂)
-      (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε hz'.le hz's) h
-    have hnorm := congrArg (fun w ↦ ‖w.fst‖) hzz
-    simp only [norm_fst_splitQuadraticFlow, hz, hz'] at hnorm
-    have : Real.exp (-t) < 1 := Real.exp_lt_one_iff.2 (by linarith)
-    nlinarith
+    refine flow_ne_of_forall_norm_le hX φ hφ hε₀ hε hz hz' hz's ht₀ fun s hs ↦ ?_
+    rw [uIcc_of_le ht₀.le] at hs
+    rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow, hz, hz0, norm_zero, mul_zero]
+    exact ⟨mul_le_of_le_one_left hε₀.le (Real.exp_le_one_iff.2 (by linarith [hs.1])), hε₀.le⟩
   have hzsrc : z ∈ (splitPassage ε).source := mem_splitPassage_source.2 ⟨hz, hz0, hzs⟩
   rcases le_or_gt t (splitExitTime ε z) with htT | htT
-  · exact flow_ne_of_mem_splitPassage_source hX φ hφ hε hzsrc hz' hz's ht₀ htT
+  · refine flow_ne_of_forall_norm_le hX φ hφ hε₀ hε hz hz' hz's ht₀ fun s hs ↦ ?_
+    rw [uIcc_of_le ht₀.le] at hs
+    exact (norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_source hzsrc).2
+      ⟨hs.1, hs.2.trans htT⟩
   · -- After its exit time the orbit is below `f x`, while `f` exceeds `f x` at `z'`.
     intro h
     have hmem' : φ.coord.symm (φ.splitCoord.symm (splitPassage ε z)) ∈ φ.toChart.target :=
