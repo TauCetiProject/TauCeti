@@ -167,8 +167,8 @@ theorem isLocalDiffeomorphAt_liftRightTranslation_one [CompleteSpace EM] (hι : 
   have h₆ : finrank ℝ (TangentSpace IZ z₀) = finrank ℝ EZ := rfl
   omega
 
-/-- **The slice theorem along the orbit of the identity coset.** If the differential of
-`(h, z) ↦ h • ι z` at `(1, z)` is onto and `dim G + dim Z = dim M + dim K`, then
+/-- **The descended action map is a local diffeomorphism along the orbit of `[1, z]`.** If the
+differential of `(h, z) ↦ h • ι z` at `(1, z)` is onto and `dim G + dim Z = dim M + dim K`, then
 `[g, z] ↦ g • ι z` is a local diffeomorphism at `[g, z]` for every `g ∈ G`. -/
 theorem isLocalDiffeomorphAt_liftRightTranslation_of_surjective_one (hι : ContMDiff IZ IM ∞ ι)
     {z : Z} (hsurj : Surjective (mfderiv (I.prod IZ) IM (fun p : G × Z ↦ p.1 • ι p.2) (1, z)))
