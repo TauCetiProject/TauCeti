@@ -60,40 +60,33 @@ private theorem norm_toHolderSpaceL (f : CkHolderSpaceOn 0 α Ω F) :
     toBoundedContinuousFunction_iteratedFDerivHolder]
   rfl
 
-open scoped Classical in
-/-- The extension by zero of a function on `Ω`. -/
-private def extendHolder (f : HolderSpace α Ω F) (x : E) : F :=
-  if h : x ∈ Ω then f ⟨x, h⟩ else 0
-
-omit [NormedSpace ℝ E] in
-private theorem extendHolder_coe (f : HolderSpace α Ω F) (x : Ω) : extendHolder f x = f x := by
-  simp [extendHolder]
-
 private theorem surjective_toHolderSpaceL :
     Function.Surjective (toHolderSpaceL (α := α) (Ω := Ω) (F := F)) := by
   intro f
-  have hcont : ContinuousOn (extendHolder f) Ω := by
+  have hcont : ContinuousOn (Function.extend Subtype.val (f : Ω → F) 0) Ω := by
     rw [continuousOn_iff_continuous_domRestrict]
     convert f.toBoundedContinuousFunction.continuous using 1
     funext x
     rw [HolderSpace.coe_toBoundedContinuousFunction]
-    exact extendHolder_coe f x
-  have hbdd : ∀ i ≤ 0, ∃ C, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i (extendHolder f) x‖ ≤ C := by
+    exact Subtype.val_injective.extend_apply (f : Ω → F) 0 x
+  have hbdd : ∀ i ≤ 0, ∃ C, ∀ x : Ω,
+      ‖_root_.iteratedFDeriv ℝ i (Function.extend Subtype.val (f : Ω → F) 0) x‖ ≤ C := by
     intro i hi
     obtain rfl := Nat.le_zero.1 hi
     exact ⟨‖f‖, fun x ↦ by
-      rw [_root_.norm_iteratedFDeriv_zero, extendHolder_coe]
+      rw [_root_.norm_iteratedFDeriv_zero, Subtype.val_injective.extend_apply]
       exact f.norm_apply_le x⟩
-  have hholder : MemHolder α fun x : Ω ↦ _root_.iteratedFDeriv ℝ 0 (extendHolder f) x := by
+  have hholder : MemHolder α fun x : Ω ↦
+      _root_.iteratedFDeriv ℝ 0 (Function.extend Subtype.val (f : Ω → F) 0) x := by
     obtain ⟨C, hC⟩ := f.memHolder
     simp only [HolderSpace.coe_toBoundedContinuousFunction] at hC
     refine ⟨C, fun x y ↦ ?_⟩
     simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply, LinearIsometryEquiv.edist_map,
-      extendHolder_coe]
+      Subtype.val_injective.extend_apply]
     exact hC x y
-  exact ⟨ofContDiffOn (k := 0) (extendHolder f) (by exact_mod_cast contDiffOn_zero.2 hcont) hbdd
-    hholder, HolderSpace.ext fun x ↦ by
-      rw [toHolderSpaceL_apply, ofContDiffOn_apply, extendHolder_coe]⟩
+  exact ⟨ofContDiffOn (k := 0) (Function.extend Subtype.val (f : Ω → F) 0)
+    (by exact_mod_cast contDiffOn_zero.2 hcont) hbdd hholder, HolderSpace.ext fun x ↦ by
+      rw [toHolderSpaceL_apply, ofContDiffOn_apply, Subtype.val_injective.extend_apply]⟩
 
 /-- The identification of `C^{0,α}(Ω, F)` with the bounded `α`-Hölder functions on `Ω`: an element
 is sent to its values. It preserves the norm. -/
