@@ -32,7 +32,8 @@ sequences.
 ## Main results
 
 * `TauCeti.supportDim_prefixQuotient_nil`, `TauCeti.supportDim_prefixQuotient_cons`: the support
-  dimension of the prefix quotient by `[]` and by `r :: ts`.
+  dimension of the prefix quotient by `[]` and by `r :: ts`;
+  `TauCeti.supportDim_prefixQuotient_take_succ_cons` is the form used along prefixes of `r :: rs`.
 * `TauCeti.isSecant_cons_iff`, `TauCeti.isSecant_append_iff`: secancy of a concatenation
   `rs ++ qs` is secancy of `rs` for `M` together with secancy of `qs` for `M ⧸ (rs) M`.
 * `TauCeti.isSecant_iff_of_support_eq`: secancy for a finite module depends only on its support.
@@ -44,7 +45,7 @@ sequences.
   are secant.
 * `TauCeti.isSecant_append_pow_cons_iff`: replacing an entry by a positive power of itself does
   not affect secancy.
-* `TauCeti.IsSecant.append_mul`: if `r₁, …, rₛ` is secant and `i ≤ j ≤ s`, then
+* `TauCeti.IsSecant.append_mul`: if `r₁, …, rₙ` is secant and `i ≤ j ≤ n`, then
   `r₁, …, rᵢ₋₁, rᵢ rⱼ` is secant.
 * `RingTheory.Sequence.IsRegular.isSecant`: a regular sequence is secant.
 * `TauCeti.exists_isSecant_singleton`: a finite module over a Noetherian local ring whose support
@@ -86,6 +87,13 @@ theorem supportDim_prefixQuotient_cons (r : R) (ts : List R) :
       supportDim R (prefixQuotient (QuotSMulTop r M) ts) :=
   supportDim_eq_of_equiv (Submodule.quotOfListConsSMulTopEquivQuotSMulTopInner M r ts)
 
+/-- The prefix quotient of `M` by the first `i + 1` entries of `r :: rs` has the support dimension
+of the prefix quotient of `M ⧸ r M` by the first `i` entries of `rs`. -/
+theorem supportDim_prefixQuotient_take_succ_cons (r : R) (rs : List R) (i : ℕ) :
+    supportDim R (prefixQuotient M ((r :: rs).take (i + 1))) =
+      supportDim R (prefixQuotient (QuotSMulTop r M) (rs.take i)) := by
+  rw [List.take_succ_cons, supportDim_prefixQuotient_cons]
+
 end SupportDim
 
 section Secant
@@ -121,26 +129,10 @@ support of `M`, and `rs` is secant for `M ⧸ r M`. -/
 theorem isSecant_cons_iff (r : R) (rs : List R) :
     IsSecant M (r :: rs) ↔ r ∈ maximalIdeal R ∧
       supportDim R (QuotSMulTop r M) < supportDim R M ∧ IsSecant (QuotSMulTop r M) rs := by
-  constructor
-  · rintro ⟨hmem, hlt⟩
-    refine ⟨hmem r List.mem_cons_self, ?_, fun s hs ↦ hmem s (List.mem_cons_of_mem r hs),
-      fun i hi ↦ ?_⟩
-    · have := hlt 0 (by simp)
-      rwa [List.take_succ_cons, List.take_zero, List.take_zero, supportDim_prefixQuotient_cons,
-        supportDim_prefixQuotient_nil, supportDim_prefixQuotient_nil] at this
-    · have := hlt (i + 1) (by simpa using hi)
-      rwa [List.take_succ_cons, List.take_succ_cons, supportDim_prefixQuotient_cons,
-        supportDim_prefixQuotient_cons] at this
-  · rintro ⟨hr, hlt, hmem, hrs⟩
-    refine ⟨List.forall_mem_cons.2 ⟨hr, hmem⟩, fun i hi ↦ ?_⟩
-    cases i with
-    | zero =>
-      rwa [List.take_succ_cons, List.take_zero, List.take_zero, supportDim_prefixQuotient_cons,
-        supportDim_prefixQuotient_nil, supportDim_prefixQuotient_nil]
-    | succ i =>
-      rw [List.take_succ_cons, List.take_succ_cons, supportDim_prefixQuotient_cons,
-        supportDim_prefixQuotient_cons]
-      exact hrs i (by simpa using hi)
+  rw [isSecant_iff, isSecant_iff, List.forall_mem_cons, List.length_cons]
+  simp only [Nat.forall_lt_succ_left', supportDim_prefixQuotient_take_succ_cons]
+  rw [List.take_zero, List.take_zero, supportDim_prefixQuotient_nil, supportDim_prefixQuotient_nil]
+  tauto
 
 /-- A one-element list `[r]` is secant for `M` if and only if `r ∈ 𝔪` lowers the dimension of the
 support of `M`. -/
@@ -230,9 +222,7 @@ theorem isSecant_iff_supportDim_add_length_eq [Nontrivial M] (rs : List R) :
       le_antisymm
         ((add_le_add_left (supportDim_le_supportDim_quotient_add_length rs hrs) 1).trans hdim.le)
         (supportDim_le_supportDim_quotSMulTop_succ hr)
-    obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
-    refine (isSecant_cons_iff r rs).2
-      ⟨hr, hk ▸ ENat.WithBot.lt_natCast_of_add_one_eq (heq.trans hk), ih ⟨hrs, ?_⟩⟩
+    refine (isSecant_cons_iff r rs).2 ⟨hr, lt_supportDim_of_add_one_eq heq, ih ⟨hrs, ?_⟩⟩
     rwa [← heq, ENat.WithBot.add_one_cancel] at hdim
 
 /-- A secant list for a nonzero finite module has length at most the dimension of its support. -/
@@ -258,7 +248,7 @@ theorem IsSecant.sublist {rs qs : List R} (h : IsSecant M rs) (hs : qs.Sublist r
   obtain ⟨ts, hts⟩ := hs.exists_perm_append
   exact ((isSecant_append_iff qs ts).1 (h.perm hts)).1
 
-/-- **The truncated-product property.** If `r₁, …, rₛ` is secant and `i ≤ j ≤ s`, then
+/-- **The truncated-product property.** If `r₁, …, rₙ` is secant and `i ≤ j ≤ n`, then
 `r₁, …, rᵢ₋₁, rᵢ rⱼ` is secant. Here `rs = (r₁, …, rᵢ₋₁)`, `r = rᵢ` and `s = rⱼ`. -/
 theorem IsSecant.append_mul {rs qs : List R} {r s : R} (h : IsSecant M (rs ++ r :: qs))
     (hs : s ∈ r :: qs) : IsSecant M (rs ++ [r * s]) := by
@@ -295,9 +285,7 @@ theorem exists_isSecant_singleton (h : 0 < supportDim R M) : ∃ x : R, IsSecant
     (fun p hp _ _ ↦ hp.1.1) bot_ne_top bot_ne_top).1 hm
   have hdrop := supportDim_quotSMulTop_succ_eq_of_notMem_minimalPrimes_of_mem_maximalIdeal
     (M := M) (fun p hp hxp ↦ hxS (Set.mem_biUnion hp hxp)) hx
-  obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
-  exact ⟨x, (isSecant_singleton_iff x).2
-    ⟨hx, hk ▸ ENat.WithBot.lt_natCast_of_add_one_eq (hdrop.trans hk)⟩⟩
+  exact ⟨x, (isSecant_singleton_iff x).2 ⟨hx, lt_supportDim_of_add_one_eq hdrop⟩⟩
 
 /-- **Existence of secant parameter lists.** A nonzero finite module over a Noetherian local ring
 has a secant list whose terminal quotient has zero-dimensional support. -/

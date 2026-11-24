@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Data.ENat.Monoid
+import TauCeti.RingTheory.KrullDimension.Module
 import TauCeti.RingTheory.KrullDimension.Secant
 import Mathlib.Algebra.Module.Torsion.Free
 import Mathlib.RingTheory.DiscreteValuationRing.TFAE
@@ -27,10 +27,7 @@ example : IsSecant ℚ⟦X⟧ [(X : ℚ⟦X⟧)] := by
     simp [mem_maximalIdeal, mem_nonunits_iff, PowerSeries.isUnit_iff_constantCoeff]
   have hdrop := supportDim_quotSMulTop_succ_eq_supportDim
     (IsSMulRegular.of_ne_zero (M := ℚ⟦X⟧) X_ne_zero) hX
-  rw [supportDim_self_eq_ringKrullDim, IsDiscreteValuationRing.ringKrullDim_eq_one] at hdrop
-  rw [isSecant_singleton_iff, supportDim_self_eq_ringKrullDim,
-    IsDiscreteValuationRing.ringKrullDim_eq_one]
-  exact ⟨hX, ENat.WithBot.lt_natCast_of_add_one_eq (k := 1) hdrop⟩
+  exact (isSecant_singleton_iff _).2 ⟨hX, lt_supportDim_of_add_one_eq hdrop⟩
 
 /-- `[X²]` is secant for `ℚ⟦X⟧` as well. -/
 example (h : IsSecant ℚ⟦X⟧ [(X : ℚ⟦X⟧)]) : IsSecant ℚ⟦X⟧ [(X : ℚ⟦X⟧) ^ 2] :=

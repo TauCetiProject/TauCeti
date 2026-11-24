@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.KrullDimension.Module
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
 import Mathlib.RingTheory.KrullDimension.Field
+import TauCeti.Data.ENat.Monoid
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.Localization.Annihilator
@@ -33,6 +34,8 @@ embedded primes.
   support dimension of a module.
 * `Module.exists_supportDim_eq_natCast`: a nonzero module over a ring of finite Krull dimension,
   such as a Noetherian local ring, has support of finite dimension.
+* `Module.lt_supportDim_of_add_one_eq`: for such a module, `d + 1 = dim Supp M` forces
+  `d < dim Supp M`.
 * `Module.supportDim_localizedModule_nonpos_iff`: `M_p` has zero-dimensional support exactly when
   `p` is a minimal prime of the support of `M`.
 -/
@@ -101,6 +104,14 @@ theorem exists_supportDim_eq_natCast [FiniteRingKrullDim R] [Nontrivial M] :
     exact (hd ▸ (supportDim_le_ringKrullDim R M).trans_lt ringKrullDim_lt_top).ne rfl
   obtain ⟨k, rfl⟩ := ENat.ne_top_iff_exists.1 hd_top
   exact ⟨k, hd.symm⟩
+
+/-- For a nonzero module over a ring of finite Krull dimension, a drop of exactly one in the
+dimension of the support is a strict drop: `d + 1 = dim Supp M` implies `d < dim Supp M`. -/
+theorem lt_supportDim_of_add_one_eq [FiniteRingKrullDim R] [Nontrivial M] {d : WithBot ℕ∞}
+    (h : d + 1 = supportDim R M) : d < supportDim R M := by
+  obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
+  rw [hk] at h ⊢
+  exact ENat.WithBot.lt_natCast_of_add_one_eq h
 
 /-- Let `M` be a finite module over a Noetherian ring and `p` a prime containing the annihilator
 of `M`. The support of `M_p` has dimension zero exactly when `p` is a minimal prime of the support
