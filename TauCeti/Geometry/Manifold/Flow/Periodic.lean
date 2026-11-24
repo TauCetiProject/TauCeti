@@ -101,10 +101,10 @@ rotates the orbit at that end.
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
   of the return map is defined for all time.
-* `TauCeti.mfderiv_timeDependentFlowOf_add_period_apply`: the derivative of the flow over one
-  more period factors through the derivative of the return map, wherever both are defined. At a
-  fixed point of the return map in its domain, a vector fixed by the derivative of the return map
-  therefore spreads to a periodic solution of the linearized flow
+* `TauCeti.mfderiv_timeDependentFlowOf_add_period_apply`: for a jointly `C¹` periodic field, the
+  derivative of the flow over one more period factors through the derivative of the return map,
+  wherever both are defined. At a fixed point of the return map in its domain, a vector fixed by
+  the derivative of the return map therefore spreads to a periodic solution of the linearized flow
   (`TauCeti.mfderiv_timeDependentFlowOf_add_period_apply_of_eq`).
 * `TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt`,
   `TauCeti.IsNondegenerateFixedPt.eventually_forall_mem_periodicSolutions_eq`: periodic solutions
@@ -465,9 +465,9 @@ theorem mfderiv_timeDependentFlowOf_add_period_apply (hT : Periodic X T)
   -- whereas rewriting with `comp_apply` fails on the mismatched codomain.
   rfl
 
-/-- **Periodic solutions of the linearized flow.** If `X` is `T`-periodic, `x` is a fixed point of
-the return map `φ_{s, s + T}` in its domain, and `v` is fixed by its derivative, then
-`t ↦ dφ_{s, t} v` along the periodic orbit of `x` is `T`-periodic. -/
+/-- **Periodic solutions of the linearized flow.** If `X` is jointly `C¹` and `T`-periodic, `x` is
+a fixed point of the return map `φ_{s, s + T}` in its domain, and `v` is fixed by its derivative,
+then `t ↦ dφ_{s, t} v` along the periodic orbit of `x` is `T`-periodic. -/
 theorem mfderiv_timeDependentFlowOf_add_period_apply_of_eq (hT : Periodic X T)
     (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
     (hfix : IsFixedPt (timeDependentFlowOf X s (s + T)) x) {v : TangentSpace I x}

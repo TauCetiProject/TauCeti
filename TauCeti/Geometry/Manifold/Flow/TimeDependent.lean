@@ -1408,8 +1408,9 @@ theorem eventually_curveVelocity_timeDependentFlowOf_eq {α : Type*} [Topologica
     ((isOpen_timeDependentFlowDomain hX).mem_nhds h)] with r hr
   exact curveVelocity_timeDependentFlowOf hX hr
 
-/-- The transverse velocity of the trajectories through a curve of initial points is the
-derivative of the flow applied to the velocity of the curve. -/
+/-- The transverse velocity of the trajectories through a curve `c` of initial points is the
+derivative of the flow applied to the velocity of the curve, at a parameter `q` where `c` is
+differentiable and the flow from `(s, c q)` is defined at time `t`. -/
 theorem curveVelocity_timeDependentFlowOf_comp {c : ℝ → M} {q : ℝ}
     (hc : MDifferentiableAt 𝓘(ℝ, ℝ) I c q) (h : ((s, t), c q) ∈ timeDependentFlowDomain X) :
     curveVelocity I (fun a ↦ timeDependentFlowOf X s t (c a)) q =
