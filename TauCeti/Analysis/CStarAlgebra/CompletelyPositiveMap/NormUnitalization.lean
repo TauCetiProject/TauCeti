@@ -26,7 +26,7 @@ this, because compressing creates the cross term `Qφ(a)(1 - Q)·(1 - Q)φ(b)Q`.
 ## Main declarations
 
 * `CompletelyPositiveMap.norm_mul_map_sq_le`, `CompletelyPositiveMap.norm_map_mul_sq_le`:
-  `‖Pφ(b)‖² ≤ ‖b‖²‖Pφ(1)P‖` and `‖φ(b)P‖² ≤ ‖b‖²‖Pφ(1)P‖` for self-adjoint `P`.
+  `‖Tφ(b)‖² ≤ ‖b‖²‖Tφ(1)T⋆‖` and `‖φ(b)T‖² ≤ ‖b‖²‖T⋆φ(1)T‖` for every `T`.
 * `CompletelyPositiveMap.norm_compress_map_mul_sub_le`,
   `CompletelyPositiveMap.norm_roundProjection_compress_map_mul_sub_le`: the defect estimate for
   `QφQ`.
@@ -45,34 +45,35 @@ variable {n : Type*} [Fintype n]
   {φ : A →CP CStarMatrix n n ℂ} (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖)
 include hφ
 
-/-- **Cutting a completely positive contraction by a self-adjoint `P`.** For a completely
-positive contraction `φ : A → M_k` on a unital C⋆-algebra and a self-adjoint `P ∈ M_k`,
-`‖Pφ(b)‖² ≤ ‖b‖²‖Pφ(1)P‖`, from `φ(b)φ(b)⋆ ≤ φ(bb⋆) ≤ ‖b‖²φ(1)`. -/
-theorem norm_mul_map_sq_le {P : CStarMatrix n n ℂ} (hP : IsSelfAdjoint P) (b : A) :
-    ‖P * φ b‖ ^ 2 ≤ ‖b‖ ^ 2 * ‖P * φ 1 * P‖ := by
+/-- **Cutting a completely positive contraction.** For a completely positive contraction
+`φ : A → M_k` on a unital C⋆-algebra and any `T ∈ M_k`, `‖Tφ(b)‖² ≤ ‖b‖²‖Tφ(1)T⋆‖`, from
+`φ(b)φ(b)⋆ ≤ φ(bb⋆) ≤ ‖b‖²φ(1)`. -/
+theorem norm_mul_map_sq_le (T : CStarMatrix n n ℂ) (b : A) :
+    ‖T * φ b‖ ^ 2 ≤ ‖b‖ ^ 2 * ‖T * φ 1 * star T‖ := by
   have hks : φ b * star (φ b) ≤ φ (b * star b) := by
     simpa [φ.map_star] using star_map_mul_map_le_of_norm_map_le hφ (star b)
   have hb : φ (b * star b) ≤ ((‖b‖ ^ 2 : ℝ) : ℂ) • φ 1 := by
     have h := OrderHomClass.mono φ (CStarAlgebra.mul_star_le_algebraMap_norm_sq b)
     rwa [Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul, map_smul] at h
-  have hle : P * (φ b * star (φ b)) * P ≤ ((‖b‖ ^ 2 : ℝ) : ℂ) • (P * φ 1 * P) := by
+  have hle : T * (φ b * star (φ b)) * star T ≤ ((‖b‖ ^ 2 : ℝ) : ℂ) • (T * φ 1 * star T) := by
     rw [← smul_mul_assoc, ← mul_smul_comm]
-    exact hP.conjugate_le_conjugate (hks.trans hb)
-  have h0 : 0 ≤ P * (φ b * star (φ b)) * P := hP.conjugate_nonneg (mul_star_self_nonneg _)
-  calc ‖P * φ b‖ ^ 2 = ‖P * (φ b * star (φ b)) * P‖ := by
-        rw [sq, ← CStarRing.norm_self_mul_star, star_mul, hP.star_eq, mul_assoc, mul_assoc,
-          mul_assoc]
-    _ ≤ ‖((‖b‖ ^ 2 : ℝ) : ℂ) • (P * φ 1 * P)‖ := CStarAlgebra.norm_le_norm_of_le_of_nonneg hle h0
-    _ = ‖b‖ ^ 2 * ‖P * φ 1 * P‖ := by
+    exact star_right_conjugate_le_conjugate (hks.trans hb) T
+  have h0 : 0 ≤ T * (φ b * star (φ b)) * star T :=
+    star_right_conjugate_nonneg (mul_star_self_nonneg _) T
+  calc ‖T * φ b‖ ^ 2 = ‖T * (φ b * star (φ b)) * star T‖ := by
+        rw [sq, ← CStarRing.norm_self_mul_star, star_mul, mul_assoc, mul_assoc, mul_assoc]
+    _ ≤ ‖((‖b‖ ^ 2 : ℝ) : ℂ) • (T * φ 1 * star T)‖ :=
+        CStarAlgebra.norm_le_norm_of_le_of_nonneg hle h0
+    _ = ‖b‖ ^ 2 * ‖T * φ 1 * star T‖ := by
         rw [norm_smul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
 
 /-- The mirror of `CompletelyPositiveMap.norm_mul_map_sq_le`: for a completely positive
-contraction `φ : A → M_k` on a unital C⋆-algebra and a self-adjoint `P ∈ M_k`,
-`‖φ(b)P‖² ≤ ‖b‖²‖Pφ(1)P‖`. -/
-theorem norm_map_mul_sq_le {P : CStarMatrix n n ℂ} (hP : IsSelfAdjoint P) (b : A) :
-    ‖φ b * P‖ ^ 2 ≤ ‖b‖ ^ 2 * ‖P * φ 1 * P‖ := by
-  have h := norm_mul_map_sq_le hφ hP (star b)
-  rwa [φ.map_star, ← norm_star, star_mul, star_star, hP.star_eq, norm_star] at h
+contraction `φ : A → M_k` on a unital C⋆-algebra and any `T ∈ M_k`,
+`‖φ(b)T‖² ≤ ‖b‖²‖T⋆φ(1)T‖`. -/
+theorem norm_map_mul_sq_le (T : CStarMatrix n n ℂ) (b : A) :
+    ‖φ b * T‖ ^ 2 ≤ ‖b‖ ^ 2 * ‖star T * φ 1 * T‖ := by
+  have h := norm_mul_map_sq_le hφ (star T) (star b)
+  rwa [φ.map_star, ← norm_star, star_mul, star_star, star_star, norm_star] at h
 
 /-- **Compressing a completely positive contraction by a projection.** Let `φ : A → M_k` be a
 completely positive contraction on a unital C⋆-algebra and `Q` a projection with
@@ -88,8 +89,11 @@ theorem norm_compress_map_mul_sub_le [DecidableEq n] {Q : CStarMatrix n n ℂ}
   have hP : IsSelfAdjoint (1 - Q) := hQ.one_sub.isSelfAdjoint
   have hQn : ‖Q‖ ≤ 1 := hQ.norm_le
   have hε0 : 0 ≤ ε := (norm_nonneg _).trans hε
-  have hb := (norm_mul_map_sq_le hφ hP b).trans (mul_le_mul_of_nonneg_left hε (by positivity))
-  have ha := (norm_map_mul_sq_le hφ hP a).trans (mul_le_mul_of_nonneg_left hε (by positivity))
+  have hb := norm_mul_map_sq_le hφ (1 - Q) b
+  have ha := norm_map_mul_sq_le hφ (1 - Q) a
+  rw [hP.star_eq] at hb ha
+  replace hb := hb.trans (mul_le_mul_of_nonneg_left hε (by positivity))
+  replace ha := ha.trans (mul_le_mul_of_nonneg_left hε (by positivity))
   have hab : ‖φ a * (1 - Q)‖ * ‖(1 - Q) * φ b‖ ≤ ε * ‖a‖ * ‖b‖ := by
     rw [← pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero]
     calc (‖φ a * (1 - Q)‖ * ‖(1 - Q) * φ b‖) ^ 2 =
