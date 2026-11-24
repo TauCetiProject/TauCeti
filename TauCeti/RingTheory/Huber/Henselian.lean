@@ -28,7 +28,6 @@ the topologically nilpotent elements of `B` in its Jacobson radical.
 
 ## Main results
 
-* `TauCeti.Huber.PairOfDefinition.mem_radical_idealOfDefinition_iff`: `√J = A₀ ∩ A°°`.
 * `TauCeti.Huber.PairOfDefinition.henselianRing`: a ring of definition of a complete Hausdorff
   Huber ring is henselian along every ideal of topologically nilpotent elements.
 * `TauCeti.Huber.henselianRing_of_isOpen_subring`: the same for open subrings of `A°`.
@@ -46,21 +45,6 @@ public section
 open Polynomial
 
 namespace TauCeti.Huber
-
-section Radical
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A]
-
-/-- The radical of the ideal of definition consists of exactly those elements of the ring of
-definition that are topologically nilpotent in `A`: `√J = A₀ ∩ A°°`. -/
-theorem PairOfDefinition.mem_radical_idealOfDefinition_iff (P : PairOfDefinition A)
-    {a : P.ringOfDefinition} :
-    a ∈ P.idealOfDefinition.radical ↔ IsTopologicallyNilpotent (a : A) := by
-  rw [← P.isAdic_idealOfDefinition.isTopologicallyNilpotent_iff_mem_radical]
-  exact ⟨fun h ↦ h.map (φ := P.ringOfDefinition.subtype) continuous_subtypeVal,
-    fun h ↦ isTopologicallyNilpotent_mk a.property h⟩
-
-end Radical
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
   [IsTopologicalRing A] [IsHuberRing A] [CompleteSpace A] [T0Space A]
