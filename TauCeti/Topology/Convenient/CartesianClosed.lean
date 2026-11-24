@@ -382,60 +382,6 @@ section Closed
 
 variable [∀ i, LocallyCompactSpace (G i)] [∀ i j, IsGeneratedBy G (G i × G j)]
 
-section LocallyCompact
-
-variable (Y Z : GeneratedByTopCat.{v} G)
-
-/-- When all test spaces `G i` are locally compact, their pairwise products are `G`-generated, and
-`Z` is locally compact, the product comparison in `TopCat` is an isomorphism. -/
-instance instIsIsoProdComparisonToTopCatOfLocallyCompactRight [LocallyCompactSpace Z] :
-    IsIso (CartesianMonoidalCategory.prodComparison toTopCat Y Z) := by
-  have := IsGeneratedBy.prod_of_locallyCompactSpace_right (G := G) Y Z; infer_instance
-
-/-- When all test spaces `G i` are locally compact, their pairwise products are `G`-generated, and
-`Y` is locally compact, the product comparison in `TopCat` is an isomorphism. -/
-instance instIsIsoProdComparisonToTopCatOfLocallyCompactLeft [LocallyCompactSpace Y] :
-    IsIso (CartesianMonoidalCategory.prodComparison toTopCat Y Z) := by
-  have := IsGeneratedBy.prod_of_locallyCompactSpace_left (G := G) Y Z; infer_instance
-
-/-- When all test spaces `G i` are locally compact, their pairwise products are `G`-generated, and
-`Z` is locally compact, the convenient product `Y ⊗ Z` is homeomorphic to the ordinary product
-`Y × Z` via `WithGeneratedByTopology.equiv`. -/
-@[expose]
-def tensorHomeomorphProdOfLocallyCompactRight [LocallyCompactSpace Z] : ↑(Y ⊗ Z) ≃ₜ Y × Z :=
-  have := IsGeneratedBy.prod_of_locallyCompactSpace_right (G := G) Y Z
-  tensorHomeomorphProd Y Z
-
-@[simp]
-theorem coe_tensorHomeomorphProdOfLocallyCompactRight [LocallyCompactSpace Z] :
-    ⇑(tensorHomeomorphProdOfLocallyCompactRight Y Z) =
-      WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) := rfl
-
-@[simp]
-theorem coe_tensorHomeomorphProdOfLocallyCompactRight_symm [LocallyCompactSpace Z] :
-    ⇑(tensorHomeomorphProdOfLocallyCompactRight Y Z).symm =
-      (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z)).symm := rfl
-
-/-- When all test spaces `G i` are locally compact, their pairwise products are `G`-generated, and
-`Y` is locally compact, the convenient product `Y ⊗ Z` is homeomorphic to the ordinary product
-`Y × Z` via `WithGeneratedByTopology.equiv`. -/
-@[expose]
-def tensorHomeomorphProdOfLocallyCompactLeft [LocallyCompactSpace Y] : ↑(Y ⊗ Z) ≃ₜ Y × Z :=
-  have := IsGeneratedBy.prod_of_locallyCompactSpace_left (G := G) Y Z
-  tensorHomeomorphProd Y Z
-
-@[simp]
-theorem coe_tensorHomeomorphProdOfLocallyCompactLeft [LocallyCompactSpace Y] :
-    ⇑(tensorHomeomorphProdOfLocallyCompactLeft Y Z) =
-      WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) := rfl
-
-@[simp]
-theorem coe_tensorHomeomorphProdOfLocallyCompactLeft_symm [LocallyCompactSpace Y] :
-    ⇑(tensorHomeomorphProdOfLocallyCompactLeft Y Z).symm =
-      (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z)).symm := rfl
-
-end LocallyCompact
-
 /-- The internal hom functor on `GeneratedByTopCat G`, sending `Z` to the `G`-generated refinement
 of `ContinuousMapGeneratedBy G Y Z`. -/
 @[expose, simps! obj]

@@ -27,8 +27,6 @@ object universe `w`.
 * `CompactlyGenerated.prodComparison_compactlyGeneratedToTop`,
   `CompactlyGenerated.isIso_prodComparison_compactlyGeneratedToTop_iff`,
   `CompactlyGenerated.tensorHomeomorphProd`,
-  `CompactlyGenerated.tensorHomeomorphProdOfLocallyCompactRight`,
-  `CompactlyGenerated.tensorHomeomorphProdOfLocallyCompactLeft`,
   `CompactlyGenerated.toCompactlyGeneratedProdRightIso`,
   `CompactlyGenerated.toCompactlyGeneratedProdLeftIso`: the product comparison in `TopCat` is the
   coreflection counit on `X × Y`, so `X ⊗ Y ≃ₜ X × Y` whenever `X × Y` is `u`-compactly generated
@@ -243,50 +241,6 @@ theorem tensorHomeomorphProd_apply [UCompactlyGeneratedSpace.{u} (X × Y)] (p : 
 theorem tensorHomeomorphProd_symm_apply [UCompactlyGeneratedSpace.{u} (X × Y)] (p : X × Y) :
     (tensorHomeomorphProd X Y).symm p = p := rfl
 
-/-- When `Y` is locally compact, the product comparison in `TopCat` is an isomorphism, without
-requiring separation or `u`-smallness on `Y`. -/
-instance instIsIsoProdComparisonCompactlyGeneratedToTopOfLocallyCompactRight
-    [LocallyCompactSpace Y] :
-    IsIso (CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y) := by
-  have := TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right.{u} X Y; infer_instance
-
-/-- When `X` is locally compact, the product comparison in `TopCat` is an isomorphism, without
-requiring separation or `u`-smallness on `X`. -/
-instance instIsIsoProdComparisonCompactlyGeneratedToTopOfLocallyCompactLeft
-    [LocallyCompactSpace X] :
-    IsIso (CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y) := by
-  have := TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left.{u} X Y; infer_instance
-
-/-- When `Y` is locally compact, the convenient product `X ⊗ Y` is homeomorphic to the ordinary
-product `X × Y` by the identity on points, without separation or `u`-smallness hypotheses. -/
-@[expose]
-def tensorHomeomorphProdOfLocallyCompactRight [LocallyCompactSpace Y] : ↑(X ⊗ Y) ≃ₜ X × Y :=
-  have := TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right.{u} X Y
-  tensorHomeomorphProd X Y
-
-@[simp]
-theorem tensorHomeomorphProdOfLocallyCompactRight_apply [LocallyCompactSpace Y]
-    (p : ↑(X ⊗ Y)) : tensorHomeomorphProdOfLocallyCompactRight X Y p = p := rfl
-
-@[simp]
-theorem tensorHomeomorphProdOfLocallyCompactRight_symm_apply [LocallyCompactSpace Y]
-    (p : X × Y) : (tensorHomeomorphProdOfLocallyCompactRight X Y).symm p = p := rfl
-
-/-- When `X` is locally compact, the convenient product `X ⊗ Y` is homeomorphic to the ordinary
-product `X × Y` by the identity on points, without separation or `u`-smallness hypotheses. -/
-@[expose]
-def tensorHomeomorphProdOfLocallyCompactLeft [LocallyCompactSpace X] : ↑(X ⊗ Y) ≃ₜ X × Y :=
-  have := TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left.{u} X Y
-  tensorHomeomorphProd X Y
-
-@[simp]
-theorem tensorHomeomorphProdOfLocallyCompactLeft_apply [LocallyCompactSpace X]
-    (p : ↑(X ⊗ Y)) : tensorHomeomorphProdOfLocallyCompactLeft X Y p = p := rfl
-
-@[simp]
-theorem tensorHomeomorphProdOfLocallyCompactLeft_symm_apply [LocallyCompactSpace X]
-    (p : X × Y) : (tensorHomeomorphProdOfLocallyCompactLeft X Y).symm p = p := rfl
-
 end ProdComparison
 
 /-- Isomorphism `k(X × L) ≅ kX ⊗ of L` in `CompactlyGenerated.{u, w}` for any `X : TopCat.{w}` and
@@ -297,7 +251,7 @@ def toCompactlyGeneratedProdRightIso (X : TopCat.{w}) (L : Type w)
     TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of (X × L)) ≅
       TopCat.toCompactlyGenerated.{u, w}.obj X ⊗ (of L : CompactlyGenerated.{u, w}) :=
   isoOfHomeo <| (TopCat.toCompactlyGeneratedProdRightHomeomorph.{u} X L).trans
-    (tensorHomeomorphProdOfLocallyCompactRight (TopCat.toCompactlyGenerated.{u, w}.obj X)
+    (tensorHomeomorphProd (TopCat.toCompactlyGenerated.{u, w}.obj X)
       (of.{u, w} L)).symm
 
 @[simp]
@@ -319,7 +273,7 @@ def toCompactlyGeneratedProdLeftIso (L : Type w) (X : TopCat.{w})
     TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of (L × X)) ≅
       (of L : CompactlyGenerated.{u, w}) ⊗ TopCat.toCompactlyGenerated.{u, w}.obj X :=
   isoOfHomeo <| (TopCat.toCompactlyGeneratedProdLeftHomeomorph.{u} L X).trans
-    (tensorHomeomorphProdOfLocallyCompactLeft (of.{u, w} L)
+    (tensorHomeomorphProd (of.{u, w} L)
       (TopCat.toCompactlyGenerated.{u, w}.obj X)).symm
 
 @[simp]
@@ -596,10 +550,10 @@ theorem curry_comp_ihomIsoToCompactlyGeneratedMappingSpace
     MonoidalClosed.curry f ≫ (ihomIsoToCompactlyGeneratedMappingSpace Y).hom.app Z =
       adj.{u, w}.homEquiv X (TopCat.of C(Y, Z))
         (TopCat.curryEquiv Y.toTop X.toTop Z.toTop
-          ((TopCat.isoOfHomeo (tensorHomeomorphProdOfLocallyCompactLeft Y X)).inv ≫ f.hom)) := by
+          ((TopCat.isoOfHomeo (tensorHomeomorphProd Y X)).inv ≫ f.hom)) := by
   refine ConcreteCategory.hom_ext _ _ fun x ↦ DFunLike.ext _ _ fun y ↦ ?_
   let g : X.toTop ⟶ TopCat.of C(Y, Z) := TopCat.curryEquiv Y.toTop X.toTop Z.toTop
-    ((TopCat.isoOfHomeo (tensorHomeomorphProdOfLocallyCompactLeft Y X)).inv ≫ f.hom)
+    ((TopCat.isoOfHomeo (tensorHomeomorphProd Y X)).inv ≫ f.hom)
   calc
     ((MonoidalClosed.curry f ≫ (ihomIsoToCompactlyGeneratedMappingSpace Y).hom.app Z) x) y
       = ((ihomIsoToCompactlyGeneratedMappingSpace Y).hom.app Z (MonoidalClosed.curry f x)) y := by
@@ -702,8 +656,6 @@ theorem unitIsoSelf_inv_apply (Z : CompactlyGenerated.{u, w}) (z : Z) (p : PUnit
 @[expose]
 def uliftBoolEval (Z : CompactlyGenerated.{u, w}) :
     (of.{u, w} (ULift.{w} Bool)) ⊗ (Z ⊗ Z) ⟶ Z :=
-  haveI : UCompactlyGeneratedSpace.{u} (ULift.{w} Bool × ↑(Z ⊗ Z)) :=
-    TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left.{u} (ULift.{w} Bool) ↑(Z ⊗ Z)
   let condHom : of.{u, w} (ULift.{w} Bool × ↑(Z ⊗ Z)) ⟶ Z :=
     InducedCategory.homMk <| TopCat.ofHom
       ⟨fun q : ULift.{w} Bool × ↑(Z ⊗ Z) ↦
@@ -713,8 +665,7 @@ def uliftBoolEval (Z : CompactlyGenerated.{u, w}) :
           rintro ⟨_ | _⟩
           · exact (CartesianMonoidalCategory.fst Z Z).hom.hom.continuous
           · exact (CartesianMonoidalCategory.snd Z Z).hom.hom.continuous⟩
-  (isoOfHomeo (tensorHomeomorphProdOfLocallyCompactLeft
-    (of.{u, w} (ULift.{w} Bool)) (Z ⊗ Z))).hom ≫ condHom
+  (isoOfHomeo (tensorHomeomorphProd (of.{u, w} (ULift.{w} Bool)) (Z ⊗ Z))).hom ≫ condHom
 
 @[simp]
 theorem uliftBoolEval_apply_false (Z : CompactlyGenerated.{u, w}) (p : ↑(Z ⊗ Z)) :
@@ -765,7 +716,7 @@ def ihomULiftBoolHomeomorph (L : Type w) [TopologicalSpace L] [LocallyCompactSpa
     [Small.{u} L] :
     ↑((ihom (of.{u, w} (ULift.{w} Bool))).obj (of.{u, w} L)) ≃ₜ L × L :=
   (homeoOfIso (ihomULiftBoolIso (of.{u, w} L))).trans
-    (tensorHomeomorphProdOfLocallyCompactRight (of.{u, w} L) (of.{u, w} L))
+    (tensorHomeomorphProd (of.{u, w} L) (of.{u, w} L))
 
 @[simp]
 theorem ihomULiftBoolHomeomorph_apply (L : Type w) [TopologicalSpace L] [LocallyCompactSpace L]

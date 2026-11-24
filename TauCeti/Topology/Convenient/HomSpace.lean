@@ -58,39 +58,23 @@ namespace Topology.IsGeneratedBy
 variable {ι : Type t} {G : ι → Type u} [∀ i, TopologicalSpace (G i)]
   {Y : Type v} [TopologicalSpace Y] {Z : Type v'} [TopologicalSpace Z]
 
-/-- If a generator `G i` is locally compact and `G j × G i` is `G`-generated for every `j`, then
-the product of any `G`-generated space with `G i` on the right is `G`-generated. -/
-theorem prod_index (Y : Type v) [TopologicalSpace Y] [IsGeneratedBy G Y] (i : ι)
-    [LocallyCompactSpace (G i)] [∀ j, IsGeneratedBy G (G j × G i)] :
-    IsGeneratedBy G (Y × G i) :=
-  prod_right
-
-/-- If a generator `G i` is locally compact and `G j × G i` is `G`-generated for every `j`, then
-the product of `G i` on the left with any `G`-generated space is `G`-generated. -/
-theorem index_prod (i : ι) (Z : Type v') [TopologicalSpace Z] [IsGeneratedBy G Z]
-    [LocallyCompactSpace (G i)] [∀ j, IsGeneratedBy G (G j × G i)] :
-    IsGeneratedBy G (G i × Z) :=
-  have : IsGeneratedBy G (Z × G i) := prod_index Z i
-  (Homeomorph.prodComm Z (G i)).isQuotientMap.isGeneratedBy
-
 section LocallyCompactGenerators
 
 variable [∀ i, LocallyCompactSpace (G i)] [∀ i j, IsGeneratedBy G (G i × G j)]
-  (Y : Type v) (Z : Type v') [TopologicalSpace Y] [TopologicalSpace Z]
   [IsGeneratedBy G Y] [IsGeneratedBy G Z]
 
 /-- Assuming all generators `G i` are locally compact with `G`-generated pairwise products
 `G i × G j`, if `Y` and `Z` are `G`-generated and `Z` is locally compact, then the ordinary product
 `Y × Z` is `G`-generated. -/
-theorem prod_of_locallyCompactSpace_right [LocallyCompactSpace Z] : IsGeneratedBy G (Y × Z) :=
-  haveI := fun i ↦ index_prod (G := G) i Z
+instance prod_of_locallyCompactSpace_right [LocallyCompactSpace Z] : IsGeneratedBy G (Y × Z) :=
+  haveI := fun i ↦ (prod_left : IsGeneratedBy G (G i × Z))
   prod_right
 
 /-- Assuming all generators `G i` are locally compact with `G`-generated pairwise products
 `G i × G j`, if `Y` and `Z` are `G`-generated and `Y` is locally compact, then the ordinary product
 `Y × Z` is `G`-generated. -/
-theorem prod_of_locallyCompactSpace_left [LocallyCompactSpace Y] : IsGeneratedBy G (Y × Z) :=
-  haveI := fun i ↦ index_prod (G := G) i Y
+instance prod_of_locallyCompactSpace_left [LocallyCompactSpace Y] : IsGeneratedBy G (Y × Z) :=
+  haveI := fun i ↦ (prod_left : IsGeneratedBy G (G i × Y))
   prod_left
 
 end LocallyCompactGenerators

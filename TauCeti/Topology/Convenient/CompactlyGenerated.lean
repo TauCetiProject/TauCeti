@@ -152,24 +152,22 @@ instance (priority := 100) instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceO
   rw [← Subtype.preimage_coe_inter_self]
   exact hclosed.preimage continuous_subtypeVal
 
-variable (X : Type v) (Y : Type w) [TopologicalSpace X] [TopologicalSpace Y]
+variable {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
   [UCompactlyGeneratedSpace.{u} X] [UCompactlyGeneratedSpace.{u} Y]
 
 /-- If `X` and `Y` are `u`-compactly generated and `Y` is locally compact, then the ordinary
 product `X × Y` is `u`-compactly generated (specializing
 `Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right`, Whitehead 1948). -/
-theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right [LocallyCompactSpace Y] :
+instance uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right [LocallyCompactSpace Y] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=
-  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
-    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right X Y)
+  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1 inferInstance
 
 /-- If `X` and `Y` are `u`-compactly generated and `X` is locally compact, then the ordinary
 product `X × Y` is `u`-compactly generated (specializing
 `Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left`, Whitehead 1948). -/
-theorem uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left [LocallyCompactSpace X] :
+instance uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left [LocallyCompactSpace X] :
     UCompactlyGeneratedSpace.{u} (X × Y) :=
-  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1
-    (Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left X Y)
+  (Topology.isGeneratedBy_compHaus_iff (X × Y)).1 inferInstance
 
 end TauCeti
 
@@ -177,11 +175,11 @@ namespace UCompactlyGeneratedSpace
 
 instance instProdUnitIntervalRight (X : Type v) [TopologicalSpace X]
     [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (X × unitInterval) :=
-  TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right.{u} X unitInterval
+  inferInstance
 
 instance instProdUnitIntervalLeft (X : Type v) [TopologicalSpace X]
     [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (unitInterval × X) :=
-  TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left.{u} unitInterval X
+  inferInstance
 
 end UCompactlyGeneratedSpace
 
