@@ -56,6 +56,8 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
 
 ## Main results
 
+* `ClosedSubgroup.isCompact_image_coe_matrix`: a closed subgroup of `U(n)` is compact as a set of
+  matrices.
 * `ClosedSubgroup.mem_matrixLieAlgebra_of_tendsto`: the limit criterion, a limit `X` of matrices
   `Xₖ` with `exp (tₖ • Xₖ) ∈ G` for positive scales `tₖ → 0` lies in the Lie algebra.
 * `ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra`: the Lie algebra consists of
@@ -92,6 +94,11 @@ where the topology of the operator norm is selected instead. -/
 private theorem isCompact_coe (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
     IsCompact (G : Set (Matrix.unitaryGroup n 𝕜)) :=
   G.isClosed'.isCompact
+
+/-- A closed subgroup of `U(n)` is compact as a set of matrices. -/
+theorem isCompact_image_coe_matrix (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
+    IsCompact (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) :=
+  (isCompact_coe G).image continuous_subtypeVal
 
 section Transport
 

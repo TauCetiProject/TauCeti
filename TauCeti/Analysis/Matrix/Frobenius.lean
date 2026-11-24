@@ -38,6 +38,7 @@ and the inner product together.
 * `Matrix.frobenius_norm_sq_eq_sum_normSq` — the squared complex Frobenius norm is the sum of
   the squared norms of the entries.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
+* `Matrix.frobenius_norm_sq_of_mem_unitaryGroup` — a unitary matrix has squared norm `card ι`.
 * `Matrix.abs_apply_le_sqrt_trace_mul_transpose` — each entry of a real matrix is bounded in
   absolute value by the square root of the trace of its Gram matrix `L * Lᵀ`.
 -/
@@ -151,6 +152,15 @@ theorem frobenius_norm_sq_conj_unitary {ι : Type*} [Fintype ι] [DecidableEq ι
     simp only [conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc,
       ← Matrix.mul_assoc U Uᴴ, hright, one_mul]
   rw [hmul, trace_mul_cycle, hright, one_mul]
+
+/-- A unitary matrix has squared Frobenius norm `card ι`. -/
+theorem frobenius_norm_sq_of_mem_unitaryGroup {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (U : Matrix ι ι 𝕜) (hU : U ∈ Matrix.unitaryGroup ι 𝕜) :
+    ‖U‖ ^ 2 = Fintype.card ι := by
+  have h := inner_self_eq_norm_sq_to_K (𝕜 := 𝕜) U
+  rw [frobenius_inner_eq_trace_conjTranspose_mul, ← star_eq_conjTranspose,
+    mem_unitaryGroup_iff'.mp hU, trace_one] at h
+  exact_mod_cast h.symm
 
 open scoped Matrix.Norms.Frobenius in
 /-- Each entry of a real matrix is bounded in absolute value by the square root of the trace of

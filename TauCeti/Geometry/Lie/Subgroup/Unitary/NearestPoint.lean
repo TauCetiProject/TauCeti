@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.TangentSpace
-import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 import TauCeti.Geometry.Lie.Subgroup.Embedded
+import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 import TauCeti.Geometry.Manifold.TubularNeighborhood.NearestPoint
 import TauCeti.Topology.Algebra.Star.Unitary
 
@@ -20,11 +20,12 @@ import TauCeti.Topology.Algebra.Star.Unitary
 Let `G` be a closed subgroup of `U(n) = Matrix.unitaryGroup n 𝕜` (over `ℝ` or `ℂ`), viewed as a
 compact subset of the real inner product space of `n × n` matrices with the Frobenius inner
 product. This file constructs the nearest-point retraction `π_G` onto `G`
-(`ClosedSubgroup.nearestPoint`): a chosen point of `G` nearest to a matrix `M`. By the
+(`ClosedSubgroup.matrixNearestPoint`): a chosen point of `G` nearest to a matrix `M`. By the
 closed-subgroup theorem `G` is a compact embedded submanifold of the matrices, so the tubular
 neighbourhood theorem `TauCeti.exists_isOpenEmbedding_normalTube` and the smoothness of the
 nearest-point map `TauCeti.exists_contMDiffOn_nearestPoint_retraction` apply. They give `ε > 0`
-such that on the neighbourhood `𝒰 = {M : dist(M, G) < ε}` (`ClosedSubgroup.exists_pos_nearestPoint`)
+such that on the neighbourhood `𝒰 = {M : dist(M, G) < ε}`
+(`ClosedSubgroup.exists_pos_contDiffOn_matrixNearestPoint`)
 
 * the nearest point of `G` to `M` is unique,
 * `π_G` is smooth, and
@@ -66,35 +67,36 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
 
 open scoped Matrix.Norms.Frobenius
 
-/-- A closed subgroup of `U(n)` is compact as a set of matrices. -/
-theorem isCompact_image_coe :
-    IsCompact (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) :=
-  G.isClosed'.isCompact.image continuous_subtypeVal
+/-- Some point of the compact set `G` is nearest to `M`. -/
+private theorem exists_isMinOn_dist (M : Matrix n n 𝕜) :
+    ∃ A ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G,
+      IsMinOn (dist M) (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) A :=
+  G.isCompact_image_coe_matrix.exists_isMinOn ⟨1, 1, G.one_mem, rfl⟩
+    (continuous_const.dist continuous_id (f := fun _ ↦ M)).continuousOn
 
 /-- The **nearest-point retraction** `π_G` onto a closed subgroup `G` of `U(n)`: a chosen point of
 `G` nearest to `M` for the Frobenius distance. On a neighbourhood of `G` this nearest point is
-unique and depends smoothly on `M` (`ClosedSubgroup.exists_pos_nearestPoint`). -/
-def nearestPoint (M : Matrix n n 𝕜) : Matrix n n 𝕜 :=
-  (G.isCompact_image_coe.exists_isMinOn ⟨1, 1, G.one_mem, rfl⟩
-    (continuous_const.dist continuous_id (f := fun _ ↦ M)).continuousOn).choose
+unique and depends smoothly on `M` (`ClosedSubgroup.exists_pos_contDiffOn_matrixNearestPoint`). -/
+def matrixNearestPoint (M : Matrix n n 𝕜) : Matrix n n 𝕜 :=
+  (G.exists_isMinOn_dist M).choose
 
 /-- `π_G M` lies in `G`. -/
-theorem nearestPoint_mem (M : Matrix n n 𝕜) :
-    G.nearestPoint M ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G :=
-  (G.isCompact_image_coe.exists_isMinOn ⟨1, 1, G.one_mem, rfl⟩
-    (continuous_const.dist continuous_id (f := fun _ ↦ M)).continuousOn).choose_spec.1
+theorem matrixNearestPoint_mem (M : Matrix n n 𝕜) :
+    G.matrixNearestPoint M ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G :=
+  (G.exists_isMinOn_dist M).choose_spec.1
 
 /-- `π_G M` is a point of `G` nearest to `M`. -/
-theorem isMinOn_nearestPoint (M : Matrix n n 𝕜) :
-    IsMinOn (dist M) (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) (G.nearestPoint M) :=
-  (G.isCompact_image_coe.exists_isMinOn ⟨1, 1, G.one_mem, rfl⟩
-    (continuous_const.dist continuous_id (f := fun _ ↦ M)).continuousOn).choose_spec.2
+theorem isMinOn_matrixNearestPoint (M : Matrix n n 𝕜) :
+    IsMinOn (dist M) (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)
+      (G.matrixNearestPoint M) :=
+  (G.exists_isMinOn_dist M).choose_spec.2
 
 /-- `π_G` is the identity on `G`. -/
-theorem nearestPoint_coe {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G) :
-    G.nearestPoint g = g := by
-  have h : dist (g : Matrix n n 𝕜) (G.nearestPoint g) ≤ dist (g : Matrix n n 𝕜) g :=
-    G.isMinOn_nearestPoint g ⟨g, hg, rfl⟩
+@[simp]
+theorem matrixNearestPoint_coe {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G) :
+    G.matrixNearestPoint g = g := by
+  have h : dist (g : Matrix n n 𝕜) (G.matrixNearestPoint g) ≤ dist (g : Matrix n n 𝕜) g :=
+    G.isMinOn_matrixNearestPoint g ⟨g, hg, rfl⟩
   rw [dist_self] at h
   exact (dist_le_zero.mp h).symm
 
@@ -154,22 +156,14 @@ private theorem contMDiff_coeUnits :
       G.toUnits).toSubmodule) 𝓘(ℝ, Matrix n n 𝕜) ∞ G.coeUnits :=
   (Units.contMDiff_val (𝕜 := ℝ)).comp G.chartData.contMDiff_subtypeVal
 
-/-- `Units.val` is the chart of the units, so its differential is invertible. -/
-private theorem injective_mfderiv_val (u : (Matrix n n 𝕜)ˣ) :
-    Injective (mfderiv 𝓘(ℝ, Matrix n n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) Units.val u) := by
-  obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt (I := 𝓘(ℝ, Matrix n n 𝕜))
-    (mem_extChartAt_source (I := 𝓘(ℝ, Matrix n n 𝕜)) u)
-  have : (extChartAt 𝓘(ℝ, Matrix n n 𝕜) u : (Matrix n n 𝕜)ˣ → Matrix n n 𝕜) = Units.val := rfl
-  rw [← this, ← hL]
-  exact L.injective
-
 private theorem injective_mfderiv_coeUnits (k : G.toUnits) :
     Injective (mfderiv 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
       G.toUnits).toSubmodule) 𝓘(ℝ, Matrix n n 𝕜) G.coeUnits k) := by
   have hcomp : G.coeUnits = Units.val ∘ fun x : G.toUnits ↦ (x : (Matrix n n 𝕜)ˣ) := rfl
   rw [hcomp, mfderiv_comp k ((Units.contMDiff_val (𝕜 := ℝ) (n := ∞)).mdifferentiableAt (by simp))
     (G.chartData.contMDiff_subtypeVal.mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
-  exact (injective_mfderiv_val _).comp (G.chartData.injective_mfderiv_subtypeVal k)
+  obtain ⟨L, hL⟩ := Units.isInvertible_mfderiv_val (𝕜 := ℝ) (k : (Matrix n n 𝕜)ˣ)
+  exact hL ▸ L.injective.comp (G.chartData.injective_mfderiv_subtypeVal k)
 
 /-- A vector orthogonal to the tangent space `g 𝔤` of `G` is normal to the inclusion of `G` at
 `g`: the differential of the inclusion takes values in the tangent cone of `G`, which is `g 𝔤`. -/
@@ -197,17 +191,19 @@ private theorem mem_normalSubspace_of_mem_orthogonal (g : G) {v : Matrix n n �
   exact TauCeti.mem_normalSubspace_iff.mpr fun u ↦
     Submodule.inner_left_of_mem_orthogonal (htan u) hv
 
-/-- **The nearest-point retraction from the tubular neighbourhood theorem**, in terms of the
-closed-subgroup charts on `G`. -/
-private theorem exists_pos_nearestPoint_aux :
-    ∃ ε > 0, ContDiffOn ℝ ∞ G.nearestPoint
+/-- **The nearest-point retraction onto `G`.** There is `ε > 0` such that, on the neighbourhood
+`𝒰 = {M : dist(M, G) < ε}` of `G`, the retraction `π_G` is smooth, `π_G M` is the unique point of
+`G` nearest to `M`, and `π_G (g + v) = g` for every `g ∈ G` and every `v` orthogonal to the tangent
+space `g 𝔤` of `G` at `g` with `‖v‖ < ε`. -/
+theorem exists_pos_contDiffOn_matrixNearestPoint :
+    ∃ ε > 0, ContDiffOn ℝ ∞ G.matrixNearestPoint
         (thickening ε (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)) ∧
       (∀ M ∈ thickening ε (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G),
         ∀ A ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G,
           IsMinOn (dist M) (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) A →
-            A = G.nearestPoint M) ∧
+            A = G.matrixNearestPoint M) ∧
       ∀ g : G, ∀ v ∈ (G.matrixTangentSpace g)ᗮ, ‖v‖ < ε →
-        G.nearestPoint ((g : Matrix n n 𝕜) + v) = g := by
+        G.matrixNearestPoint ((g : Matrix n n 𝕜) + v) = g := by
   have : IsManifold 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
       G.toUnits).toSubmodule) (∞ + 1) G.toUnits := IsManifold.of_le (n := ∞) (by simp)
   have hf := G.contMDiff_coeUnits
@@ -222,9 +218,9 @@ private theorem exists_pos_nearestPoint_aux :
       IsMinOn (dist M) (range G.coeUnits) A → A = G.coeUnits (r M) := by
     rintro M hM _ ⟨z, rfl⟩ hA
     rw [huniq M (thickening_mono hδε _ hM) z fun w _ ↦ hA ⟨w, rfl⟩]
-  have hπ : ∀ M ∈ thickening δ (range G.coeUnits), G.nearestPoint M = G.coeUnits (r M) :=
-    fun M hM ↦ hr' M hM _ (G.range_coeUnits ▸ G.nearestPoint_mem M)
-      (G.range_coeUnits ▸ G.isMinOn_nearestPoint M)
+  have hπ : ∀ M ∈ thickening δ (range G.coeUnits), G.matrixNearestPoint M = G.coeUnits (r M) :=
+    fun M hM ↦ hr' M hM _ (G.range_coeUnits ▸ G.matrixNearestPoint_mem M)
+      (G.range_coeUnits ▸ G.isMinOn_matrixNearestPoint M)
   refine ⟨δ, hδ, ?_, fun M hM A hA hAmin ↦ (hr' M hM A hA hAmin).trans (hπ M hM).symm, ?_⟩
   · have h := hf.comp_contMDiffOn hr
     rw [contMDiffOn_iff_contDiffOn] at h
@@ -243,29 +239,6 @@ private theorem exists_pos_nearestPoint_aux :
 
 end Manifold
 
-/-- **The nearest-point retraction onto `G`.** There is `ε > 0` such that, on the neighbourhood
-`𝒰 = {M : dist(M, G) < ε}` of `G`, the retraction `π_G` is smooth, `π_G M` is the unique point of
-`G` nearest to `M`, and `π_G (g + v) = g` for every `g ∈ G` and every `v` orthogonal to the tangent
-space `g 𝔤` of `G` at `g` with `‖v‖ < ε`. -/
-theorem exists_pos_nearestPoint :
-    ∃ ε > 0, ContDiffOn ℝ ∞ G.nearestPoint
-        (thickening ε (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)) ∧
-      (∀ M ∈ thickening ε (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G),
-        ∀ A ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G,
-          IsMinOn (dist M) (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) A →
-            A = G.nearestPoint M) ∧
-      ∀ g : G, ∀ v ∈ (G.matrixTangentSpace g)ᗮ, ‖v‖ < ε →
-        G.nearestPoint ((g : Matrix n n 𝕜) + v) = g :=
-  G.exists_pos_nearestPoint_aux
-
-/-- A unitary matrix has squared Frobenius norm `card n`. -/
-private theorem norm_sq_coe_unitary (u : Matrix.unitaryGroup n 𝕜) :
-    ‖(u : Matrix n n 𝕜)‖ ^ 2 = Fintype.card n := by
-  have h := inner_self_eq_norm_sq_to_K (𝕜 := 𝕜) (u : Matrix n n 𝕜)
-  rw [Matrix.frobenius_inner_eq_trace_conjTranspose_mul, ← Matrix.star_eq_conjTranspose,
-    Matrix.UnitaryGroup.star_mul_self, Matrix.trace_one] at h
-  exact_mod_cast h.symm
-
 /-- **`0` lies outside `𝒰` for a nontrivial `G`.** Every point of `G` has Frobenius norm
 `√(card n)`, so every point of `G` is a nearest point to `0`. If nearest points are unique on the
 `ε`-neighbourhood of `G` and `G` has a point other than `1`, then `0` is not in that
@@ -274,7 +247,7 @@ theorem zero_notMem_thickening {ε : ℝ}
     (huniq : ∀ M ∈ thickening ε (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G),
       ∀ A ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G,
         IsMinOn (dist M) (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) A →
-          A = G.nearestPoint M)
+          A = G.matrixNearestPoint M)
     {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G) (hg1 : g ≠ 1) :
     (0 : Matrix n n 𝕜) ∉ thickening ε (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) := by
   intro h0
@@ -285,7 +258,8 @@ theorem zero_notMem_thickening {ε : ℝ}
     rintro _ ⟨w, -, rfl⟩
     simp only [mem_ofPred_eq, dist_zero_left]
     exact ((sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
-      ((norm_sq_coe_unitary u).trans (norm_sq_coe_unitary w).symm)).le
+      ((Matrix.frobenius_norm_sq_of_mem_unitaryGroup _ u.property).trans
+        (Matrix.frobenius_norm_sq_of_mem_unitaryGroup _ w.property).symm)).le
   have h1 := huniq 0 h0 _ ⟨1, G.one_mem, rfl⟩ (hmin 1)
   have hg' := huniq 0 h0 _ ⟨g, hg, rfl⟩ (hmin g)
   exact hg1 (Subtype.ext (hg'.trans h1.symm))
