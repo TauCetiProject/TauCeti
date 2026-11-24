@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
@@ -13,6 +12,7 @@ public import Mathlib.RingTheory.Polynomial.GaussLemma
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Multiplicity
+public import TauCeti.Algebra.Polynomial.Lifts
 public import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
@@ -41,9 +41,6 @@ polynomials `X + t` and `X + t + t²` have equal resultant valuations against ev
 
 ## Main results
 
-* `Polynomial.Monic.exists_monic_map_sub_mem_map_C`: a monic polynomial over `O` is congruent,
-  modulo an ideal `I`, to the image of a monic polynomial of the same degree over any ring
-  mapping onto `O / I`.
 * `Polynomial.Monic.addVal_resultant_of_dvd_sub`: if `R` is monic, `ψ ≡ R + πⁿ (mod π²ⁿ)` and
   `n ≥ 1`, then `v Res(R, ψ) = n · deg R`.
 * `Polynomial.Monic.eventually_addVal_resultant_pow_mul`: for `P = Rᵉ S` with `Res(S, R) ≠ 0`,
@@ -64,43 +61,12 @@ open IsDiscreteValuationRing UniqueFactorizationMonoid
 
 namespace Polynomial
 
-section Lifts
-
-variable {D O : Type*} [Semiring D] [CommRing O]
-
-/-- **Monic lifts modulo an ideal.** Let `φ : D →+* O` be surjective modulo an ideal `I`. Every
-monic polynomial over `O` is congruent modulo `I` to the image of a monic polynomial over `D` of
-the same degree. -/
-theorem Monic.exists_monic_map_sub_mem_map_C {T : O[X]} (hT : T.Monic) (φ : D →+* O)
-    {I : Ideal O} (hφ : ∀ o : O, ∃ d : D, o - φ d ∈ I) :
-    ∃ ψ : D[X], ψ.Monic ∧ ψ.natDegree = T.natDegree ∧ ψ.map φ - T ∈ I.map C := by
-  rcases eq_or_ne I ⊤ with rfl | hI
-  · -- the congruence is empty, and `X ^ deg T` works unless `D`, hence `O`, is zero
-    rw [Ideal.map_top]
-    cases subsingleton_or_nontrivial D with
-    | inl _ =>
-      have : Subsingleton O := φ.codomain_trivial
-      exact ⟨1, monic_one, by simp [natDegree_of_subsingleton], Submodule.mem_top⟩
-    | inr _ => exact ⟨X ^ T.natDegree, monic_X_pow _, natDegree_X_pow _, Submodule.mem_top⟩
-  have : Nontrivial (O ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
-  have hsurj : Function.Surjective ((Ideal.Quotient.mk I).comp φ) := by
-    intro x
-    obtain ⟨o, rfl⟩ := Ideal.Quotient.mk_surjective x
-    obtain ⟨d, hd⟩ := hφ o
-    exact ⟨d, (Ideal.Quotient.eq.mpr hd).symm⟩
-  obtain ⟨ψ, hψ, hdeg, hmonic⟩ := lifts_and_natDegree_eq_and_monic
-    ((mem_lifts _).mpr (map_surjective _ hsurj (T.map (Ideal.Quotient.mk I)))) (hT.map _)
-  refine ⟨ψ, hmonic, hdeg.trans (hT.natDegree_map _), ?_⟩
-  rw [← Ideal.mk_ker (I := I), ← ker_mapRingHom, RingHom.mem_ker, map_sub, coe_mapRingHom,
-    map_map, hψ, sub_self]
-
-end Lifts
-
-/-- A polynomial `ψ ≡ R + a (mod a²)` has the form `ψ = a g + R` with `g ≡ 1 (mod a)`. -/
+/-- A polynomial `ψ ≡ R + aⁿ (mod a²ⁿ)` has the form `ψ = aⁿ g + R` with `g ≡ 1 (mod aⁿ)`. -/
 private theorem exists_eq_C_mul_add_of_dvd_sub {O : Type*} [CommRing O] {R ψ : O[X]} {a : O}
-    (hcong : C (a ^ 2) ∣ ψ - (R + C a)) : ∃ h : O[X], ψ = C a * (1 + C a * h) + R := by
+    {n : ℕ} (hcong : C (a ^ (2 * n)) ∣ ψ - (R + C (a ^ n))) :
+    ∃ h : O[X], ψ = C (a ^ n) * (1 + C (a ^ n) * h) + R := by
   obtain ⟨h, hh⟩ := hcong
-  have hC : C (a ^ 2) = C a * C a := by rw [sq, C_mul]
+  have hC : C (a ^ (2 * n)) = C (a ^ n) * C (a ^ n) := by rw [mul_comm 2 n, pow_mul, sq, C_mul]
   exact ⟨h, by linear_combination hh + h * hC⟩
 
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
@@ -111,7 +77,6 @@ with `n ≥ 1`. Then `Res(R, ψ)` is `π ^ (n · deg R)` times a unit, so its va
 theorem Monic.addVal_resultant_of_dvd_sub {R ψ : O[X]} (hR : R.Monic) {π : O}
     (hπ : Irreducible π) {n : ℕ} (hn : n ≠ 0) (hcong : C (π ^ (2 * n)) ∣ ψ - (R + C (π ^ n))) :
     addVal O (R.resultant ψ) = (n * R.natDegree : ℕ) := by
-  rw [mul_comm 2 n, pow_mul] at hcong
   obtain ⟨h, hψ⟩ := exists_eq_C_mul_add_of_dvd_sub hcong
   set g := 1 + C (π ^ n) * h
   -- compute with the degree bound `k` for `ψ`, which is also valid for `R`
@@ -156,17 +121,13 @@ theorem Monic.eventually_addVal_resultant_pow_mul {R S : O[X]} (hR : R.Monic) {�
   have hn0 : n ≠ 0 := by omega
   -- `Res(S, ψ)` is congruent to `Res(S, R)` modulo `πⁿ`
   have hSψ : addVal O (S.resultant ψ) = c := by
-    rw [mul_comm 2 n, pow_mul] at hcong
     obtain ⟨h, hψ'⟩ := exists_eq_C_mul_add_of_dvd_sub hcong
     have hmk : ψ.map (Ideal.Quotient.mk (Ideal.span {π ^ n})) =
         R.map (Ideal.Quotient.mk (Ideal.span {π ^ n})) := by
-      rw [hψ', Polynomial.map_add, Polynomial.map_mul, map_C,
-        Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self _), C_0, zero_mul,
-        zero_add]
-    have hdvd : π ^ n ∣ S.resultant ψ - S.resultant R := by
-      rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq, ← resultant_map_map,
-        ← resultant_map_map, hψ, hmk]
-    obtain ⟨t, ht⟩ := hdvd
+      simp [hψ', -map_pow]
+    have hmem : S.resultant ψ - S.resultant R ∈ Ideal.span {π ^ n} := by
+      simpa only [hψ] using resultant_sub_mem_of_map_eq (f := S) rfl hmk S.natDegree ψ.natDegree
+    obtain ⟨t, ht⟩ := Ideal.mem_span_singleton.mp hmem
     rw [show S.resultant ψ = S.resultant R + π ^ n * t by rw [← ht]; ring,
       AddValuation.map_add_eq_of_lt_left, hc]
     rw [hc, addVal_mul, hπ.addVal_pow]
@@ -207,24 +168,10 @@ with `Res(S, R) ≠ 0`. -/
 private theorem exists_eq_pow_multiplicity_mul {R P : O[X]} (hR : R.Monic) (hRp : Prime R)
     (hP : P.Monic) : ∃ S : O[X], P = R ^ multiplicity R P * S ∧ S.resultant R ≠ 0 := by
   obtain ⟨S, hS⟩ := pow_multiplicity_dvd R P
-  refine ⟨S, hS, ?_⟩
-  have hndvd : ¬R ∣ S := by
-    rintro ⟨T, rfl⟩
-    exact (FiniteMultiplicity.of_prime_left hRp hP.ne_zero).not_pow_dvd_of_multiplicity_lt
-      (lt_add_one _) ⟨T, hS.trans (by ring)⟩
-  have hS : S.Monic := (hR.pow _).of_mul_monic_left (hS ▸ hP)
-  -- over the fraction field `R` stays irreducible, hence coprime to `S`
-  let K := FractionRing O
-  have hinj := IsFractionRing.injective O K
-  have hirr : Irreducible (R.map (algebraMap O K)) :=
-    (hR.irreducible_iff_irreducible_map_fraction_map (K := K)).mp hRp.irreducible
-  have hcop : IsCoprime (S.map (algebraMap O K)) (R.map (algebraMap O K)) :=
-    (hirr.coprime_iff_not_dvd.mpr fun h ↦
-      hndvd ((Monic.dvd_iff_fraction_map_dvd_fraction_map (K := K) hS hR).mp h)).symm
-  intro h0
-  apply resultant_ne_zero _ _ hcop
-  rw [resultant_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _)
-    (natDegree_map_eq_of_injective hinj _), h0, map_zero]
+  refine ⟨S, hS, hR.resultant_ne_zero_of_not_dvd hRp.irreducible ?_⟩
+  rintro ⟨T, rfl⟩
+  exact (FiniteMultiplicity.of_prime_left hRp hP.ne_zero).not_pow_dvd_of_multiplicity_lt
+    (lt_add_one _) ⟨T, hS.trans (by ring)⟩
 
 /-- Under the hypotheses of `Polynomial.Monic.eq_of_forall_addVal_resultant_eq`, every monic prime
 factor occurs in `P` and `Q` with the same multiplicity: it is the slope in `n` of the valuations
@@ -260,8 +207,8 @@ private theorem emultiplicity_eq_of_forall_addVal_resultant_eq {P Q R : O[X]} (h
   have h1 := key N le_rfl
   have h2 := key (N + 1) (Nat.le_succ N)
   have hmul : R.natDegree * multiplicity R P = R.natDegree * multiplicity R Q := by
-    ring_nf at h1 h2
-    omega
+    zify at h1 h2 ⊢
+    linear_combination h2 - h1
   rw [(FiniteMultiplicity.of_prime_left hRp hP.ne_zero).emultiplicity_eq_multiplicity,
     (FiniteMultiplicity.of_prime_left hRp hQ.ne_zero).emultiplicity_eq_multiplicity,
     Nat.eq_of_mul_eq_mul_left hd hmul]
