@@ -787,7 +787,7 @@ theorem dual_tensor_eq_hom (A D : FiniteRankBundleCore 𝕜 B) :
 coordinate equivalence on every fibre. -/
 noncomputable def dualTensorIsoHom (A D : FiniteRankBundleCore 𝕜 B) :
     A.dual ⊗ D ≅ hom A D :=
-  constIso (fun _ ↦ rfl) (ContinuousLinearEquiv.refl 𝕜 (Fin (A.rank * D.rank) → 𝕜))
+  constIso (fun _ ↦ subset_rfl) (ContinuousLinearEquiv.refl 𝕜 (Fin (A.rank * D.rank) → 𝕜))
     fun i j x _ _ ↦ by
       -- Unfold the unexposed `MonoidalCategoryStruct.tensorObj` projection inside `A.dual ⊗ D`.
       change (ContinuousLinearMap.id 𝕜 _).comp
@@ -822,7 +822,7 @@ theorem dualTensorIsoHom_naturality (f : A' ⟶ A) (g : D ⟶ D') :
 right Kronecker unitor `kroneckerRid`. -/
 noncomputable def homUnitIsoDual (A : FiniteRankBundleCore 𝕜 B) :
     hom A (𝟙_ (FiniteRankBundleCore 𝕜 B)) ≅ A.dual :=
-  constIso (fun _ ↦ Set.inter_univ _) (kroneckerRid 𝕜 A.rank) fun i j x _ _ ↦ by
+  constIso (fun _ ↦ (Set.inter_univ _).le) (kroneckerRid 𝕜 A.rank) fun i j x _ _ ↦ by
     -- Unfold the unexposed `MonoidalCategoryStruct.tensorUnit` projection inside `𝟙_ _`.
     change (kroneckerRid 𝕜 A.rank).toContinuousLinearMap.comp
         ((A.core.coordChange j i x).homCoordConj (ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜))) =

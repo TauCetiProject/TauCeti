@@ -202,7 +202,8 @@ theorem covariance_compoundPoissonMeasure (L M : E →L[ℝ] ℝ)
   have hMcp : MemLp M 2 (compoundPoissonMeasure r μ) := by
     exact memLp_continuousLinearMap_compoundPoissonMeasure (by simp) M hM r
   rw [compoundPoissonMeasure_def] at hLcp hMcp ⊢
-  rw [covariance_bind Measurable.of_discrete (.of_forall fun n ↦ inferInstance) hLcp hMcp]
+  rw [covariance_bind Measurable.of_discrete.aemeasurable (.of_forall fun n ↦ inferInstance)
+    hLcp hMcp]
   simp_rw [μ.covariance_convolutionPower L M hL hM,
     μ.integral_continuousLinearMap_convolutionPower L (hL.integrable one_le_two),
     μ.integral_continuousLinearMap_convolutionPower M (hM.integrable one_le_two)]

@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
-public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 public import TauCeti.LinearAlgebra.Unimodular
 import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
