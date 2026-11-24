@@ -101,6 +101,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
 * `Representation.exists_invariant_preimage_of_surjective_of_projective`: a surjective
   equivariant additive map, possibly between representations over different coefficient rings,
   lifts invariant vectors when its target is projective over the target group algebra.
+* `Representation.IntertwiningMap.invariantsMap`: an intertwining map induces a linear map on
+  invariants, injective when the intertwining map is.
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
   invariants, and `Representation.Equiv.apply_mem_invariants_iff`: an equivalence detects
   invariance of a vector.
@@ -109,6 +111,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   `S`-invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
+* `Representation.invariants_comp_comp_subtype`: the invariants of `ρ.comp φ` under a subgroup
+  `U` are the invariants of `ρ` under its image `φ(U)`.
 * `Representation.map_subtype_invariants_subrepresentation`: the invariants of the restriction to
   a `G`-stable submodule `W` are `ρ.invariants ⊓ W`.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
@@ -244,6 +248,16 @@ theorem invariants_comp_of_surjective {k G H V : Type*} [CommRing k] [Group G] [
   ext v
   simp only [mem_invariants, MonoidHom.comp_apply]
   exact ⟨fun h g ↦ by obtain ⟨g, rfl⟩ := hf g; exact h g, fun h g ↦ h (f g)⟩
+
+/-- **Invariants under a subgroup after restriction along a homomorphism**: a vector is fixed by
+`φ u` for every `u ∈ U` exactly when it is fixed by the image subgroup `φ(U)`. -/
+theorem invariants_comp_comp_subtype {k G H V : Type*} [CommRing k] [Group G] [Group H]
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) (φ : H →* G) (U : Subgroup H) :
+    invariants ((ρ.comp φ).comp U.subtype) = invariants (ρ.comp (U.map φ).subtype) := by
+  have h : (ρ.comp φ).comp U.subtype = (ρ.comp (U.map φ).subtype).comp (φ.subgroupMap U) := by
+    ext u : 1
+    simp
+  rw [h, invariants_comp_of_surjective _ _ (φ.subgroupMap_surjective U)]
 
 /-- **Invariance may be tested on a generating set**: if `s` generates `G`, a vector is invariant
 exactly when every element of `s` fixes it. -/
@@ -382,6 +396,28 @@ theorem exists_invariant_preimage_of_surjective_of_projective
 end ChangeRings
 
 end Representation
+
+namespace Representation.IntertwiningMap
+
+variable {k G V W : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+  [AddCommGroup W] [Module k W] {ρ : Representation k G V} {σ : Representation k G W}
+
+/-- **An intertwining map preserves invariants.** The linear map `V^G → W^G` induced by an
+intertwining map `V → W`. -/
+noncomputable def invariantsMap (f : ρ.IntertwiningMap σ) : ρ.invariants →ₗ[k] σ.invariants :=
+  f.toLinearMap.restrict fun v hv g ↦ by simpa [f.isIntertwining] using congrArg f (hv g)
+
+@[simp]
+theorem coe_invariantsMap_apply (f : ρ.IntertwiningMap σ) (x : ρ.invariants) :
+    (f.invariantsMap x : W) = f (x : V) :=
+  (rfl)
+
+/-- The map induced on invariants by an injective intertwining map is injective. -/
+theorem invariantsMap_injective (f : ρ.IntertwiningMap σ) (hf : Function.Injective f) :
+    Function.Injective f.invariantsMap :=
+  fun _ _ h ↦ Subtype.ext (hf (by simpa using congrArg Subtype.val h))
+
+end Representation.IntertwiningMap
 
 namespace Representation.Equiv
 

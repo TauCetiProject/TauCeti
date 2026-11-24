@@ -50,6 +50,7 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.mem_invariants_comp_subtype_iff`
 * `Representation.invariants_prod`, `Representation.invariants_directSum`: invariants of direct
   sums.
+* `Representation.prod_comp`, `Representation.directSum_comp`: restricting a direct sum.
 * `Representation.stabilizer_ofMulAction_single`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
   `Representation.range_orbitMap`
@@ -154,6 +155,18 @@ theorem invariants_directSum {ι : Type*} [Fintype ι] {V : ι → Type*} [∀ i
     true_implies, LinearEquiv.coe_coe, DirectSum.linearEquivFunOnFintype_apply, DirectSum.ext_iff,
     DirectSum.lmap_apply]
   exact forall_comm
+
+/-- Restricting a direct sum along a homomorphism gives the direct sum of the restrictions. -/
+theorem prod_comp {H : Type*} [Group H] (ρ : Representation A G V) (σ : Representation A G W)
+    (f : H →* G) : (ρ.prod σ).comp f = Representation.prod (ρ.comp f) (σ.comp f) :=
+  MonoidHom.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
+
+/-- Restricting a direct sum of a family along a homomorphism gives the direct sum of the
+restrictions. -/
+theorem directSum_comp {H ι : Type*} [Group H] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
+    [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i)) (f : H →* G) :
+    (directSum ρ).comp f = directSum fun i ↦ (ρ i).comp f :=
+  MonoidHom.ext fun _ ↦ by simp
 
 end CommRing
 

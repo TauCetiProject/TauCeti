@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.RepresentationTheory.Smooth.Basic
 import TauCeti.RepresentationTheory.Invariants
@@ -27,14 +26,19 @@ meant for locally profinite groups: a group with no compact open subgroup impose
 
 ## Main results
 
-* `Representation.IsAdmissible.of_hasBasis`: over a noetherian ring, it suffices to check finite
-  generation of `V^U` for the members `U` of a basis of neighbourhoods of `1` made of subgroups,
-  since `V^U` is a submodule of `V^{U'}` for `U' ≤ U`.
+* `Representation.IsAdmissible.of_forall_le`: it suffices to check that `V^U` is noetherian for
+  the members `U` of a family of subgroups refining every compact open subgroup, since `V^U` is a
+  submodule of `V^{U'}` for `U' ≤ U`.
+* `Representation.IsAdmissible.of_hasBasis`, `Representation.isAdmissible_iff_of_hasBasis`: over a
+  noetherian ring, it suffices to check finite generation of `V^U` for the members `U` of a basis
+  of neighbourhoods of `1` made of subgroups.
 * `Representation.IsAdmissible.prod`, `Representation.IsAdmissible.directSum`: a direct sum of
   finitely many admissible representations is admissible.
 * `Representation.IsAdmissible.comp`: the restriction of an admissible representation along a
   continuous open homomorphism, in particular to an open subgroup
   (`Representation.IsAdmissible.comp_openSubgroup`), is admissible.
+* `Representation.IsAdmissible.of_injective_of_isNoetherian`: a representation with an injective
+  intertwining map to a smooth one whose compact open invariants are noetherian is admissible.
 * `Representation.IsAdmissible.of_injective`: over a noetherian ring, a representation with an
   injective intertwining map to an admissible one is admissible; in particular so is every
   subrepresentation of an admissible representation
@@ -76,33 +80,64 @@ theorem isAdmissible_iff :
       Module.Finite A (invariants (ρ.comp (U : Subgroup G).subtype)) :=
   ⟨fun h ↦ ⟨h.toIsSmooth, h.finite_invariants⟩, fun ⟨_, h₂⟩ ↦ ⟨h₂⟩⟩
 
+/-- **Admissibility on a refining family.** A smooth representation is admissible as soon as
+`V^U` is noetherian for every member `U` of a family of subgroups refining every compact open
+subgroup. -/
+theorem IsAdmissible.of_forall_le [IsSmooth ρ] {ι : Type*} {p : ι → Prop} {U : ι → Subgroup G}
+    (hU : ∀ K : OpenSubgroup G, IsCompact (K : Set G) → ∃ i, p i ∧ U i ≤ (K : Subgroup G))
+    (hfin : ∀ i, p i → IsNoetherian A (invariants (ρ.comp (U i).subtype))) :
+    IsAdmissible ρ := by
+  refine ⟨fun K hK ↦ ?_⟩
+  obtain ⟨i, hi, hle⟩ := hU K hK
+  have := hfin i hi
+  -- A vector fixed by `K` is fixed by its subgroup `U i`.
+  have hinv : invariants (ρ.comp (K : Subgroup G).subtype) ≤ invariants (ρ.comp (U i).subtype) :=
+    fun v hv ↦ mem_invariants_comp_subtype_iff.2 (hle.trans (mem_invariants_comp_subtype_iff.1 hv))
+  exact Module.Finite.of_injective (Submodule.inclusion hinv) (Submodule.inclusion_injective _)
+
 /-- **Admissibility on a basis.** Over a noetherian ring, a smooth representation is admissible as
 soon as `V^U` is finitely generated for every member `U` of a basis of neighbourhoods of `1`
 made of subgroups. -/
 theorem IsAdmissible.of_hasBasis [IsNoetherianRing A] [IsSmooth ρ] {ι : Type*} {p : ι → Prop}
     {U : ι → Subgroup G} (hU : (nhds (1 : G)).HasBasis p fun i ↦ (U i : Set G))
     (hfin : ∀ i, p i → Module.Finite A (invariants (ρ.comp (U i).subtype))) :
+    IsAdmissible ρ :=
+  of_forall_le (fun K _ ↦ (hU.mem_iff.1 K.mem_nhds_one).imp fun _ ⟨hi, hsub⟩ ↦
+    ⟨hi, SetLike.coe_subset_coe.1 hsub⟩) fun i hi ↦ by
+      have := hfin i hi
+      infer_instance
+
+/-- Over a noetherian ring, a smooth representation is admissible exactly when `V^U` is finitely
+generated for every member `U` of a basis of neighbourhoods of `1` made of compact open
+subgroups. -/
+theorem isAdmissible_iff_of_hasBasis [IsNoetherianRing A] [IsSmooth ρ] {ι : Type*}
+    {p : ι → Prop} {U : ι → OpenSubgroup G} (hU : (nhds (1 : G)).HasBasis p fun i ↦ (U i : Set G))
+    (hUc : ∀ i, p i → IsCompact (U i : Set G)) :
+    IsAdmissible ρ ↔
+      ∀ i, p i → Module.Finite A (invariants (ρ.comp (U i : Subgroup G).subtype)) :=
+  ⟨fun h i hi ↦ h.finite_invariants (U i) (hUc i hi),
+    IsAdmissible.of_hasBasis (U := fun i ↦ (U i : Subgroup G)) hU⟩
+
+/-- Admissibility passes back along an injective intertwining map to a smooth representation
+whose invariants under compact open subgroups are noetherian. -/
+theorem IsAdmissible.of_injective_of_isNoetherian [IsSmooth σ] (f : ρ.IntertwiningMap σ)
+    (hf : Function.Injective f)
+    (hσ : ∀ U : OpenSubgroup G, IsCompact (U : Set G) →
+      IsNoetherian A (invariants (σ.comp (U : Subgroup G).subtype))) :
     IsAdmissible ρ := by
-  refine ⟨fun U' _ ↦ ?_⟩
-  obtain ⟨i, hi, hsub⟩ := hU.mem_iff.1 (U'.mem_nhds_one)
-  have := hfin i hi
-  have hle : invariants (ρ.comp (U' : Subgroup G).subtype) ≤ invariants (ρ.comp (U i).subtype) :=
-    invariants_le_invariants_comp (ρ.comp (U' : Subgroup G).subtype)
-      (Subgroup.inclusion (SetLike.coe_subset_coe.1 hsub))
-  exact Module.Finite.of_injective (Submodule.inclusion hle) (Submodule.inclusion_injective _)
+  have : IsSmooth ρ := IsSmooth.of_injective f hf
+  refine ⟨fun U hU ↦ ?_⟩
+  have := hσ U hU
+  exact Module.Finite.of_injective _
+    ((f.res (U : Subgroup G).subtype).invariantsMap_injective (by rwa [IntertwiningMap.coe_res]))
 
 /-- Admissibility passes back along an injective intertwining map over a noetherian ring; in
 particular a subrepresentation of an admissible representation is admissible. -/
 theorem IsAdmissible.of_injective [IsNoetherianRing A] [IsAdmissible σ] (f : ρ.IntertwiningMap σ)
-    (hf : Function.Injective f) : IsAdmissible ρ := by
-  have : IsSmooth ρ := IsSmooth.of_injective f hf
-  refine ⟨fun U hU ↦ ?_⟩
-  have := IsAdmissible.finite_invariants (ρ := σ) U hU
-  -- `f` maps `U`-invariant vectors to `U`-invariant vectors, since it intertwines `ρ` and `σ`.
-  let g := f.toLinearMap.restrict (p := invariants (ρ.comp (U : Subgroup G).subtype))
-    (q := invariants (σ.comp (U : Subgroup G).subtype)) fun v hv u ↦ by
-      simpa [f.isIntertwining] using congrArg f (hv u)
-  exact Module.Finite.of_injective g fun v w hvw ↦ Subtype.ext (hf (congrArg Subtype.val hvw))
+    (hf : Function.Injective f) : IsAdmissible ρ :=
+  of_injective_of_isNoetherian f hf fun U hU ↦ by
+    have := IsAdmissible.finite_invariants (ρ := σ) U hU
+    infer_instance
 
 /-- A subrepresentation of an admissible representation over a noetherian ring is admissible. -/
 instance IsAdmissible.subrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
@@ -114,8 +149,9 @@ instance IsAdmissible.subrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
 submodule is admissible. -/
 instance IsAdmissible.instSubrepresentation [IsNoetherianRing A] [IsAdmissible ρ]
     (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
-    IsAdmissible (ρ.subrepresentation W le_comap) :=
-  IsAdmissible.subrepresentation (ρ := ρ) ⟨W, fun g _ hv ↦ le_comap g hv⟩
+    IsAdmissible (ρ.subrepresentation W le_comap) := by
+  rw [subrepresentation_eq_toRepresentation]
+  exact IsAdmissible.subrepresentation _
 
 /-- An admissible representation transfers admissibility along an equivalence. -/
 private theorem IsAdmissible.of_equiv [IsAdmissible ρ] (e : Equiv ρ σ) : IsAdmissible σ := by
@@ -142,13 +178,8 @@ theorem IsAdmissible.comp [IsAdmissible ρ] {H : Type*} [Group H] [TopologicalSp
     rw [Subgroup.coe_map]
     exact hU.image hφ
   have := IsAdmissible.finite_invariants (ρ := ρ) U' hU'
-  -- Restricting `ρ.comp φ` to `U` is restricting `ρ` to `U' = φ(U)` after `φ : U → φ(U)`.
-  have hcomp : (ρ.comp φ).comp (U : Subgroup H).subtype =
-      (ρ.comp (U' : Subgroup G).subtype).comp (φ.subgroupMap (U : Subgroup H)) := by
-    ext u : 1
-    simp [U']
-  rw [hcomp, invariants_comp_of_surjective _ _ (φ.subgroupMap_surjective _)]
-  infer_instance
+  rw [invariants_comp_comp_subtype]
+  exact this
 
 /-- The restriction of an admissible representation to an open subgroup is admissible. -/
 instance IsAdmissible.comp_openSubgroup [IsAdmissible ρ] (H : OpenSubgroup G) :
@@ -160,15 +191,11 @@ sum are the product of the invariants. -/
 instance IsAdmissible.prod [IsAdmissible ρ] [IsAdmissible σ] :
     IsAdmissible (ρ.prod σ) := by
   refine ⟨fun U hU ↦ ?_⟩
-  have := IsAdmissible.finite_invariants (ρ := ρ) U hU
-  have := IsAdmissible.finite_invariants (ρ := σ) U hU
-  -- Restricting `ρ.prod σ` to `U` is, by definition, the product of the restrictions.
-  have h : invariants ((ρ.prod σ).comp (U : Subgroup G).subtype) =
-      (invariants (ρ.comp (U : Subgroup G).subtype)).prod
-        (invariants (σ.comp (U : Subgroup G).subtype)) :=
-    invariants_prod (ρ.comp (U : Subgroup G).subtype) (σ.comp (U : Subgroup G).subtype)
-  rw [Module.Finite.iff_fg, h]
-  exact (Module.Finite.iff_fg.1 ‹_›).prod (Module.Finite.iff_fg.1 ‹_›)
+  have h₁ := IsAdmissible.finite_invariants (ρ := ρ) U hU
+  have h₂ := IsAdmissible.finite_invariants (ρ := σ) U hU
+  rw [Module.Finite.iff_fg] at h₁ h₂ ⊢
+  rw [prod_comp, invariants_prod]
+  exact h₁.prod h₂
 
 /-- The direct sum of a finite family of admissible representations is admissible: its
 invariants correspond to the product of the invariants. -/
@@ -179,12 +206,8 @@ instance IsAdmissible.directSum {ι : Type*} [Finite ι] {V : ι → Type*}
   have := Fintype.ofFinite ι
   refine ⟨fun U hU ↦ ?_⟩
   have := fun i ↦ IsAdmissible.finite_invariants (ρ := ρ i) U hU
-  have h : invariants ((Representation.directSum ρ).comp (U : Subgroup G).subtype) =
-      (Submodule.pi Set.univ fun i ↦ invariants ((ρ i).comp (U : Subgroup G).subtype)).comap
-        (DirectSum.linearEquivFunOnFintype A ι V).toLinearMap :=
-    -- Restricting `directSum ρ` to `U` is, by definition, the direct sum of the restrictions.
-    invariants_directSum fun i ↦ (ρ i).comp (U : Subgroup G).subtype
-  rw [Module.Finite.iff_fg, h, Submodule.comap_equiv_eq_map_symm]
+  rw [Module.Finite.iff_fg, directSum_comp, invariants_directSum,
+    Submodule.comap_equiv_eq_map_symm]
   exact (Submodule.fg_pi fun i ↦ Module.Finite.iff_fg.1 (this i)).map _
 
 /-- A representation on a module with at most one vector, such as the zero representation, is
