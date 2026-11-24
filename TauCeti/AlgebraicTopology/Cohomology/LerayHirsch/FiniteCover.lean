@@ -32,7 +32,7 @@ trivializations of `p`, by induction over the cover from the trivial case.
   restriction of `p` with the projection `S × F ⟶ S`, and
   `TopCat.lerayHirsch_fst_bijective_of_fiberwise_basis` applies when the classes restrict to a
   basis of the cohomology of every fibre, read through the fibre inclusions `f ↦ t⁻¹(x, f)`
-  (`TopCat.trivializationFiberInclusion`).
+  (`Bundle.Trivialization.fiberInclusion`).
 
 ## Main results
 
@@ -133,15 +133,15 @@ theorem lerayHirschRestrict_bijective_of_trivialization (t : Bundle.Trivializati
       (𝟙_ (ModuleCat.{w} k))).obj F))
     (hc : ∀ x (hx : x ∈ S), ∀ d ≤ n,
       LinearIndependent k (fun i ↦ TopCat.singularCohomologyMap
-        (trivializationFiberInclusion t (hS hx)) d (e d i)) ∧
+        (t.fiberInclusion (hS hx)) d (e d i)) ∧
       ⊤ ≤ Submodule.span k (Set.range fun i ↦
-        TopCat.singularCohomologyMap (trivializationFiberInclusion t (hS hx)) d (e d i))) :
+        TopCat.singularCohomologyMap (t.fiberInclusion (hS hx)) d (e d i))) :
     Function.Bijective (lerayHirschRestrict p e S n) := by
-  refine (lerayHirsch_bijective_iff_of_isIso (trivializationPreimageIso t hS).hom (𝟙 _)
-    (by rw [trivializationPreimageIso_hom_comp, Category.comp_id]) (fun _ _ _ ↦ rfl)).1
+  refine (lerayHirsch_bijective_iff_of_isIso (t.preimageIso hS).hom (𝟙 _)
+    (by rw [t.preimageIso_hom_comp, Category.comp_id]) (fun _ _ _ ↦ rfl)).1
     (lerayHirsch_fst_bijective_of_fiberwise_basis (of S) n _ hF fun x d hd ↦ ?_)
   simp only [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp,
-    prodFiberInclusion_comp_trivializationPreimageIso_hom]
+    t.prodFiberInclusion_comp_preimageIso_hom]
   exact hc x x.property d hd
 
 /-- **The Leray–Hirsch theorem over a base with a finite trivializing cover.** Let `p : E ⟶ B` have
@@ -158,9 +158,9 @@ theorem lerayHirsch_bijective_of_trivializations {κ : Type*} (s : Finset κ)
       (𝟙_ (ModuleCat.{w} k))).obj F))
     (hc : ∀ i ∈ s, ∀ x (hx : x ∈ (t i).baseSet), ∀ d ≤ n,
       LinearIndependent k (fun i' ↦ TopCat.singularCohomologyMap
-        (trivializationFiberInclusion (t i) hx) d (e d i')) ∧
+        ((t i).fiberInclusion hx) d (e d i')) ∧
       ⊤ ≤ Submodule.span k (Set.range fun i' ↦
-        TopCat.singularCohomologyMap (trivializationFiberInclusion (t i) hx) d (e d i'))) :
+        TopCat.singularCohomologyMap ((t i).fiberInclusion hx) d (e d i'))) :
     ∀ m ≤ n, Function.Bijective (lerayHirsch p m e) :=
   lerayHirsch_bijective_of_finite_cover p e (fun i ↦ (t i).baseSet) n s
     (fun i _ ↦ (t i).open_baseSet) hcover fun i hi _ _ hS m hm ↦
