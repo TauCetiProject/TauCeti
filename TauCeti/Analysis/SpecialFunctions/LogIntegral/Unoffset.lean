@@ -26,7 +26,11 @@ which equals the exponential integral `Ei (log x)` for `x > 0`, `x ≠ 1` (at `x
 ## Main declarations
 
 * `TauCeti.Real.unoffsetLogIntegralSeries`: the entire series
-  `∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)`.
+  `∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)`, with partial sums
+  `TauCeti.Real.unoffsetLogIntegralSeriesPartial`, strict monotonicity
+  (`TauCeti.Real.strictMono_unoffsetLogIntegralSeries`), and two-sided truncation bounds
+  (`TauCeti.Real.unoffsetLogIntegralSeriesPartial_le_unoffsetLogIntegralSeries`,
+  `TauCeti.Real.unoffsetLogIntegralSeries_le_partial_add`).
 * `TauCeti.Real.unoffsetLogIntegral`: the unoffset logarithmic integral `li`.
 * `TauCeti.Real.hasDerivAt_unoffsetLogIntegral`: `li' x = (log x)⁻¹` for `x > 0`, `x ≠ 1`.
 * `TauCeti.Real.tendsto_unoffsetLogIntegral_nhdsGT_zero`: `li x → 0` as `x → 0⁺`.
@@ -74,6 +78,90 @@ theorem hasDerivAt_unoffsetLogIntegralSeries (y : ℝ) :
 /-- `TauCeti.Real.unoffsetLogIntegralSeries` is continuous on `ℝ`. -/
 theorem continuous_unoffsetLogIntegralSeries : Continuous unoffsetLogIntegralSeries :=
   continuous_iff_continuousAt.mpr fun y ↦ (hasDerivAt_unoffsetLogIntegralSeries y).continuousAt
+
+/-- Partial sum `∑ n < N, y ^ (n + 1) / ((n + 1) * (n + 1)!)` of
+`TauCeti.Real.unoffsetLogIntegralSeries`. -/
+noncomputable def unoffsetLogIntegralSeriesPartial (N : ℕ) (y : ℝ) : ℝ :=
+  ∑ n ∈ Finset.range N, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))
+
+/-- Defining equation of `TauCeti.Real.unoffsetLogIntegralSeriesPartial`. -/
+theorem unoffsetLogIntegralSeriesPartial_def (N : ℕ) (y : ℝ) :
+    unoffsetLogIntegralSeriesPartial N y =
+      ∑ n ∈ Finset.range N, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := (rfl)
+
+/-- `TauCeti.Real.unoffsetLogIntegralSeries` is strictly increasing on `ℝ`. -/
+theorem strictMono_unoffsetLogIntegralSeries : StrictMono unoffsetLogIntegralSeries := by
+  refine strictMono_of_deriv_pos fun y ↦ ?_
+  rw [(hasDerivAt_unoffsetLogIntegralSeries y).deriv]
+  rcases lt_trichotomy y 0 with hy | rfl | hy
+  · rw [Function.update_of_ne hy.ne]
+    exact div_pos_of_neg_of_neg (sub_neg.mpr (Real.exp_lt_one_iff.mpr hy)) hy
+  · simp
+  · rw [Function.update_of_ne hy.ne']
+    exact div_pos (sub_pos.mpr (Real.one_lt_exp_iff.mpr hy)) hy
+
+/-- For `y ≥ 0`, every partial sum `TauCeti.Real.unoffsetLogIntegralSeriesPartial N y` is a lower
+bound for `TauCeti.Real.unoffsetLogIntegralSeries y`. -/
+theorem unoffsetLogIntegralSeriesPartial_le_unoffsetLogIntegralSeries
+    (N : ℕ) {y : ℝ} (hy : 0 ≤ y) :
+    unoffsetLogIntegralSeriesPartial N y ≤ unoffsetLogIntegralSeries y := by
+  rw [unoffsetLogIntegralSeriesPartial_def, unoffsetLogIntegralSeries_def,
+    ← (Real.summable_pow_div_mul_factorial y).sum_add_tsum_nat_add N]
+  refine le_add_of_nonneg_right (tsum_nonneg fun m ↦ ?_)
+  positivity
+
+private theorem unoffsetLogIntegralSeries_term_add_le (N m : ℕ) {y : ℝ} (hy0 : 0 ≤ y) :
+    y ^ (m + N + 1) / (((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ)) ≤
+      (y ^ (N + 1) / (((N : ℝ) + 1) * ((N + 1)! : ℝ))) * (y / ((N : ℝ) + 2)) ^ m := by
+  have hfac : ((N + 1)! : ℝ) * ((N : ℝ) + 2) ^ m ≤ ((m + N + 1)! : ℝ) := by
+    have h := Nat.factorial_mul_pow_le_factorial (m := N + 1) (n := m)
+    rw [show N + 1 + m = m + N + 1 by omega] at h
+    exact_mod_cast h
+  have hmul : (((N : ℝ) + 1) * ((N + 1)! : ℝ)) * ((N : ℝ) + 2) ^ m ≤
+      ((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ) := by
+    calc (((N : ℝ) + 1) * ((N + 1)! : ℝ)) * ((N : ℝ) + 2) ^ m
+        = ((N : ℝ) + 1) * (((N + 1)! : ℝ) * ((N : ℝ) + 2) ^ m) := by ring
+      _ ≤ ((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ) :=
+          mul_le_mul (by linarith) hfac (by positivity) (by positivity)
+  have hpow : y ^ (m + N + 1) = y ^ (N + 1) * y ^ m := by
+    rw [← pow_add]; congr 1; omega
+  calc y ^ (m + N + 1) / (((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ))
+      = (y ^ (N + 1) * y ^ m) / (((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ)) := by rw [hpow]
+    _ ≤ (y ^ (N + 1) * y ^ m) / ((((N : ℝ) + 1) * ((N + 1)! : ℝ)) * ((N : ℝ) + 2) ^ m) :=
+        div_le_div_of_nonneg_left (by positivity) (by positivity) hmul
+    _ = (y ^ (N + 1) / (((N : ℝ) + 1) * ((N + 1)! : ℝ))) * (y / ((N : ℝ) + 2)) ^ m := by
+        simp only [div_pow, div_mul_div_comm]
+
+/-- Geometric-tail upper bound for `TauCeti.Real.unoffsetLogIntegralSeries y` from its `N`-term
+partial sum when `0 ≤ y < N + 2`. -/
+theorem unoffsetLogIntegralSeries_le_partial_add (N : ℕ) {y : ℝ} (hy0 : 0 ≤ y)
+    (hyN : y < (N : ℝ) + 2) :
+    unoffsetLogIntegralSeries y ≤ unoffsetLogIntegralSeriesPartial N y +
+      (y ^ (N + 1) / (((N : ℝ) + 1) * ((N + 1)! : ℝ))) *
+        (((N : ℝ) + 2) / ((N : ℝ) + 2 - y)) := by
+  -- Step 1: Split off the first `N` terms.
+  rw [unoffsetLogIntegralSeries_def, unoffsetLogIntegralSeriesPartial_def,
+    ← (Real.summable_pow_div_mul_factorial y).sum_add_tsum_nat_add N]
+  gcongr
+  simp only [Nat.cast_add]
+  -- Step 2: Compare the tail termwise against a geometric series of ratio `y / (N + 2)`.
+  set r : ℝ := y / ((N : ℝ) + 2)
+  have hN2 : (0 : ℝ) < (N : ℝ) + 2 := by positivity
+  have hr0 : 0 ≤ r := div_nonneg hy0 hN2.le
+  have hr1 : r < 1 := (div_lt_one hN2).mpr hyN
+  have hgeom : Summable fun m : ℕ ↦
+      (y ^ (N + 1) / (((N : ℝ) + 1) * ((N + 1)! : ℝ))) * r ^ m :=
+    (summable_geometric_of_lt_one hr0 hr1).mul_left _
+  have htsum_tail : Summable fun m : ℕ ↦
+      y ^ (m + N + 1) / (((m + N : ℝ) + 1) * ((m + N + 1)! : ℝ)) := by
+    simpa only [Nat.cast_add] using
+      (summable_nat_add_iff N).mpr (Real.summable_pow_div_mul_factorial y)
+  refine (htsum_tail.tsum_le_tsum
+    (fun m ↦ unoffsetLogIntegralSeries_term_add_le N m hy0) hgeom).trans_eq ?_
+  rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
+  have hsub : (1 : ℝ) - r = ((N : ℝ) + 2 - y) / ((N : ℝ) + 2) := by
+    simp only [r]; field_simp [hN2.ne']
+  rw [hsub, inv_div]
 
 /-- The **unoffset logarithmic integral**
 `li x = γ + log |log x| + ∑' n, (log x) ^ (n + 1) / ((n + 1) * (n + 1)!)`.

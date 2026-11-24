@@ -121,18 +121,10 @@ theorem hasDerivAt_div_log_rpow (k : ℝ) {t : ℝ} (ht : 1 < t) :
     HasDerivAt.rpow_const (Real.hasDerivAt_log ht₀) (Or.inl hlog.ne')
   have hd := (hasDerivAt_id t).div hp (Real.rpow_pos_of_pos hlog k).ne'
   refine hd.congr_deriv ?_
-  have hk : Real.log t ^ k = Real.log t ^ (k - 1) * Real.log t := by
-    calc Real.log t ^ k = Real.log t ^ ((k - 1) + 1) := by ring_nf
-      _ = Real.log t ^ (k - 1) * Real.log t ^ (1 : ℝ) := Real.rpow_add hlog (k - 1) 1
-      _ = Real.log t ^ (k - 1) * Real.log t := by rw [Real.rpow_one]
-  have hk1 : Real.log t ^ (k + 1) = Real.log t ^ (k - 1) * Real.log t * Real.log t := by
-    calc Real.log t ^ (k + 1) = Real.log t ^ k * Real.log t ^ (1 : ℝ) := Real.rpow_add hlog k 1
-      _ = Real.log t ^ k * Real.log t := by rw [Real.rpow_one]
-      _ = Real.log t ^ (k - 1) * Real.log t * Real.log t := by rw [hk]
-  have h1 : Real.log t ^ (k - 1) ≠ 0 := (Real.rpow_pos_of_pos hlog (k - 1)).ne'
-  rw [hk, hk1]
+  have hk0 : Real.log t ^ k ≠ 0 := (Real.rpow_pos_of_pos hlog k).ne'
+  rw [Real.rpow_sub_one hlog.ne' k, Real.rpow_add_one hlog.ne' k]
   simp only [id_eq]
-  field_simp [ht₀, hlog.ne', h1]
+  field_simp [ht₀, hlog.ne', hk0]
 
 end TauCeti.Real
 

@@ -40,6 +40,8 @@ This file records integrability and interval-integral identities for `(e^u - 1) 
   `∫ t in a..b, (1 - e^{-t}) / t = log b - log a - ∫ t in a..b, e^{-t} / t`.
 * `Real.integral_exp_div_eq_log_sub_add`: for `a, b > 0`,
   `∫ u in a..b, e^u / u = log b - log a + ∫ u in a..b, (e^u - 1) / u`.
+* `Real.integral_neg_exp_div`: reflection identity
+  `∫ u in (-b)..(-a), e^u / u = -∫ t in a..b, e^{-t} / t`.
 * `Real.summable_pow_div_mul_factorial`, `Real.tsum_pow_div_factorial_succ_eq`,
   `Real.hasDerivAt_tsum_pow_div_mul_factorial`, `Real.integral_exp_sub_one_div_eq_tsum`,
   `Real.integral_one_sub_exp_neg_div_eq`: power series for `(e^u - 1) / u`, its termwise
@@ -254,6 +256,16 @@ theorem integral_exp_div_eq_log_sub_add {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
       ring
   rw [hcongr, intervalIntegral.integral_add hint1 hint2, integral_inv_of_pos ha hb,
     log_div hb.ne' ha.ne']
+
+/-- Reflection identity for `exp u / u`:
+`∫ u in (-b)..(-a), exp u / u = -∫ t in a..b, exp (-t) / t`. -/
+theorem integral_neg_exp_div (a b : ℝ) :
+    ∫ u in (-b)..(-a), exp u / u = -∫ t in a..b, exp (-t) / t := by
+  have hcomp := (intervalIntegral.integral_comp_neg
+    (f := fun u : ℝ ↦ exp u / u) (a := a) (b := b)).symm
+  have hneg : (fun t : ℝ ↦ exp (-t) / (-t)) = fun t : ℝ ↦ -(exp (-t) / t) := by
+    ext t; ring
+  rw [hcomp, hneg, intervalIntegral.integral_neg]
 
 /-- The series `∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)` is summable for every real `y`. -/
 theorem summable_pow_div_mul_factorial (y : ℝ) :

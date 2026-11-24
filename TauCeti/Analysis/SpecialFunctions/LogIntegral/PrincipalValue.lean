@@ -63,12 +63,7 @@ theorem integral_Iic_exp_div {y : ℝ} (hy : y < 0) :
   have heq_Ioi : (∫ u in Iic y, Real.exp u / u) = -∫ t in Ioi z, Real.exp (-t) / t := by
     refine tendsto_nhds_unique htend_lhs (htend_rhs.congr' ?_)
     filter_upwards with a
-    have hcomp := intervalIntegral.integral_comp_neg (f := fun u : ℝ ↦ Real.exp u / u) (a := z)
-      (b := -a)
-    have hneg : (fun t : ℝ ↦ Real.exp (-t) / (-t)) = fun t : ℝ ↦ -(Real.exp (-t) / t) := by
-      ext t; ring
-    rw [hneg, intervalIntegral.integral_neg, neg_neg] at hcomp
-    simpa [z] using hcomp
+    simpa [z] using (Real.integral_neg_exp_div z (-a)).symm
   -- Step 2: Combine `γ`, `∫ 1..z, (1 - e^{-t}) / t`, and `∫ 0..z, (1 - e^{-t}) / t`.
   have hsub_Ioi : ∫ t in (1 : ℝ)..z, Real.exp (-t) / t =
       (∫ t in Ioi (1 : ℝ), Real.exp (-t) / t) - ∫ t in Ioi z, Real.exp (-t) / t :=
@@ -126,11 +121,8 @@ theorem tendsto_principalValue_exp_div {y : ℝ} (hy : 0 < y) :
   filter_upwards [Ioo_mem_nhdsGT (lt_min zero_lt_one hy)] with ε hε
   have hε0 : 0 < ε := hε.1
   have hinv_pos : 0 < ε⁻¹ := inv_pos.mpr hε0
-  have hcomp := intervalIntegral.integral_comp_neg (f := fun u : ℝ ↦ Real.exp u / u)
-    (a := ε) (b := ε⁻¹)
-  have hneg : (fun t : ℝ ↦ Real.exp (-t) / (-t)) = fun t : ℝ ↦ -(Real.exp (-t) / t) := by
-    ext t; ring
-  rw [hneg, show -ε⁻¹ = -1 / ε by ring, intervalIntegral.integral_neg] at hcomp
+  have hcomp : ∫ u in (-1 / ε)..(-ε), Real.exp u / u = -∫ t in ε..ε⁻¹, Real.exp (-t) / t := by
+    simpa only [show (-1 / ε : ℝ) = -ε⁻¹ by ring] using Real.integral_neg_exp_div ε ε⁻¹
   have hleft_split : ∫ t in ε..ε⁻¹, Real.exp (-t) / t =
       (∫ t in ε..1, Real.exp (-t) / t) + ∫ t in (1 : ℝ)..ε⁻¹, Real.exp (-t) / t :=
     (intervalIntegral.integral_add_adjacent_intervals
@@ -182,70 +174,71 @@ theorem tendsto_inv_log_sub_inv_sub_one_nhdsNE_one :
   rw [Real.exp_log ht0]
   field_simp [hlog_ne, htsub]
 
+private theorem continuousOn_update_two {f : ℝ → ℝ} {s : Set ℝ} {x₀ x₁ v₀ v₁ : ℝ}
+    (hne : x₀ ≠ x₁) (hf : ContinuousOn f (s \ {x₀, x₁}))
+    (h₀ : x₀ ∈ s → Tendsto f (𝓝[s \ {x₀}] x₀) (𝓝 v₀))
+    (h₁ : x₁ ∈ s → Tendsto f (𝓝[s \ {x₁}] x₁) (𝓝 v₁)) :
+    ContinuousOn (Function.update (Function.update f x₀ v₀) x₁ v₁) s := by
+  rw [continuousOn_update_iff, continuousOn_update_iff]
+  refine ⟨⟨?_, fun hx₀ ↦ ?_⟩, fun hx₁ ↦ ?_⟩
+  · simpa only [sdiff_sdiff, union_singleton, pair_comm] using hf
+  · exact (h₀ hx₀.1).mono_left (nhdsWithin_mono _ fun _ hz ↦ ⟨hz.1.1, hz.2⟩)
+  · refine (h₁ hx₁).congr' ?_
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_ne_nhds hne.symm)]
+      with u hu
+    exact (Function.update_of_ne hu v₀ f).symm
+
 /-- Continuous extension of `(log t)⁻¹ - (t - 1)⁻¹` on `[0, ∞)` with value `1` at `0`
 and `1 / 2` at `1`. -/
+private noncomputable def invLogSubInvSubOneExt : ℝ → ℝ :=
+  Function.update (Function.update (fun t : ℝ ↦ (Real.log t)⁻¹ - (t - 1)⁻¹) 0 1) 1 (1 / 2)
+
 private theorem continuousOn_inv_log_sub_inv_sub_one_ext :
-    ContinuousOn
-      (fun t : ℝ ↦ if t = 0 then 1 else if t = 1 then (1 / 2 : ℝ) else (Real.log t)⁻¹ - (t - 1)⁻¹)
-      (Ici 0) := by
-  intro t ht
-  rcases eq_or_ne t 0 with rfl | ht0
-  · rw [← continuousWithinAt_sdiff_self, ContinuousWithinAt]
-    simp only [↓reduceIte]
-    have hsub : Tendsto (fun u : ℝ ↦ (Real.log u)⁻¹ - (u - 1)⁻¹) (𝓝[Ici 0 \ {0}] 0) (𝓝 1) :=
-      tendsto_inv_log_sub_inv_sub_one_nhdsGT_zero.mono_left
-        (nhdsWithin_mono _ fun u hu ↦ lt_of_le_of_ne hu.1 (Ne.symm hu.2))
-    refine hsub.congr' ?_
-    filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
-      (eventually_lt_nhds zero_lt_one)] with u hu hu1
-    have hu0 : u ≠ 0 := hu.2
-    simp [hu0, hu1.ne]
-  · have htpos : 0 < t := lt_of_le_of_ne ht ht0.symm
-    rcases eq_or_ne t 1 with rfl | ht1
-    · rw [← continuousWithinAt_sdiff_self, ContinuousWithinAt]
-      simp only [one_ne_zero, ↓reduceIte]
-      have hsub : Tendsto (fun u : ℝ ↦ (Real.log u)⁻¹ - (u - 1)⁻¹) (𝓝[Ici 0 \ {1}] 1)
-          (𝓝 (1 / 2 : ℝ)) :=
-        tendsto_inv_log_sub_inv_sub_one_nhdsNE_one.mono_left
-          (nhdsWithin_mono _ fun _ hu ↦ hu.2)
-      refine hsub.congr' ?_
-      filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
-        (eventually_ne_nhds one_ne_zero)] with u hu1 hu0
-      have hu1' : u ≠ 1 := hu1.2
-      simp [hu0, hu1']
-    · have hlog : Real.log t ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one htpos ht1
-      have hsub : t - 1 ≠ 0 := sub_ne_zero.mpr ht1
-      have hcont : ContinuousAt (fun u : ℝ ↦ (Real.log u)⁻¹ - (u - 1)⁻¹) t := by
-        fun_prop (disch := first | exact ht0 | exact hlog | exact hsub)
-      refine (hcont.congr ?_).continuousWithinAt
-      filter_upwards [eventually_ne_nhds ht0, eventually_ne_nhds ht1] with u hu0 hu1
-      simp [hu0, hu1]
+    ContinuousOn invLogSubInvSubOneExt (Ici 0) := by
+  refine continuousOn_update_two zero_ne_one (fun t ht ↦ ?_) (fun _ ↦ ?_) (fun _ ↦ ?_)
+  · have ht0 : t ≠ 0 := fun h ↦ ht.2 (by simp [h])
+    have ht1 : t ≠ 1 := fun h ↦ ht.2 (by simp [h])
+    have htpos : 0 < t := lt_of_le_of_ne ht.1 ht0.symm
+    have hlog : Real.log t ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one htpos ht1
+    have hsub : t - 1 ≠ 0 := sub_ne_zero.mpr ht1
+    exact (by fun_prop (disch := first | exact ht0 | exact hlog | exact hsub) :
+      ContinuousAt (fun u : ℝ ↦ (Real.log u)⁻¹ - (u - 1)⁻¹) t).continuousWithinAt
+  · exact tendsto_inv_log_sub_inv_sub_one_nhdsGT_zero.mono_left
+      (nhdsWithin_mono _ fun u hu ↦ lt_of_le_of_ne hu.1 (Ne.symm hu.2))
+  · exact tendsto_inv_log_sub_inv_sub_one_nhdsNE_one.mono_left
+      (nhdsWithin_mono _ fun _ hu ↦ hu.2)
 
 /-- The integrand `(log t)⁻¹ - (t - 1)⁻¹` is interval integrable on `[0, x]` for every `x ≥ 0`. -/
 theorem intervalIntegrable_inv_log_sub_inv_sub_one {x : ℝ} (hx : 0 ≤ x) :
     IntervalIntegrable (fun t : ℝ ↦ (Real.log t)⁻¹ - (t - 1)⁻¹) volume 0 x := by
-  let g (t : ℝ) : ℝ :=
-    if t = 0 then 1 else if t = 1 then (1 / 2 : ℝ) else (Real.log t)⁻¹ - (t - 1)⁻¹
-  have hg : IntervalIntegrable g volume 0 x :=
+  have hg : IntervalIntegrable invLogSubInvSubOneExt volume 0 x :=
     (continuousOn_inv_log_sub_inv_sub_one_ext.mono Icc_subset_Ici_self).intervalIntegrable_of_Icc hx
   refine hg.congr_ae ?_
   have hne0 : ∀ᵐ t : ℝ ∂volume, t ≠ 0 := ae_iff.mpr (by simp)
   have hne1 : ∀ᵐ t : ℝ ∂volume, t ≠ 1 := ae_iff.mpr (by simp)
   filter_upwards [ae_restrict_of_ae (hne0.and hne1)] with t ⟨ht0, ht1⟩
-  simp [g, ht0, ht1]
+  simp [invLogSubInvSubOneExt, ht0, ht1]
+
+private theorem integral_invLogSubInvSubOneExt (a b : ℝ) :
+    ∫ t in a..b, invLogSubInvSubOneExt t =
+      ∫ t in a..b, ((Real.log t)⁻¹ - (t - 1)⁻¹) := by
+  refine intervalIntegral.integral_congr_ae ?_
+  filter_upwards [(ae_iff.mpr (by simp : volume {t : ℝ | ¬t ≠ 0} = 0)).and
+    (ae_iff.mpr (by simp : volume {t : ℝ | ¬t ≠ 1} = 0))] with t ⟨ht0, ht1⟩ _
+  simp [invLogSubInvSubOneExt, ht0, ht1]
 
 /-- For `x > 1`, `li x = log (x - 1) + ∫ t in 0..x, ((log t)⁻¹ - (t - 1)⁻¹)`. -/
 private theorem unoffsetLogIntegral_eq_log_sub_one_add_integral_of_one_lt {x : ℝ} (hx : 1 < x) :
     unoffsetLogIntegral x =
       Real.log (x - 1) + ∫ t in (0 : ℝ)..x, ((Real.log t)⁻¹ - (t - 1)⁻¹) := by
-  let g (t : ℝ) : ℝ :=
-    if t = 0 then 1 else if t = 1 then (1 / 2 : ℝ) else (Real.log t)⁻¹ - (t - 1)⁻¹
-  -- Step 1: Continuity of the filled-in integrand `g` passes the symmetric limit to `∫ 0..x, g`.
+  -- Step 1: Continuity of the filled-in integrand passes the symmetric limit to
+  -- `∫ 0..x, invLogSubInvSubOneExt`.
   have hmid := TauCeti.intervalIntegral.tendsto_principalValue_of_continuousOn (μ := volume)
     zero_lt_one hx (continuousOn_inv_log_sub_inv_sub_one_ext.mono Icc_subset_Ici_self)
   -- Step 2: Subtract `∫ (t - 1)⁻¹` from the principal value on `(0, 1 - ε)` and `(1 + ε, x)`.
-  have hrhs : Tendsto (fun ε : ℝ ↦ (∫ t in (0 : ℝ)..(1 - ε), g t) +
-      ∫ t in (1 + ε)..x, g t) (𝓝[>] 0) (𝓝 (unoffsetLogIntegral x - Real.log (x - 1))) := by
+  have hrhs : Tendsto (fun ε : ℝ ↦ (∫ t in (0 : ℝ)..(1 - ε), invLogSubInvSubOneExt t) +
+      ∫ t in (1 + ε)..x, invLogSubInvSubOneExt t) (𝓝[>] 0)
+      (𝓝 (unoffsetLogIntegral x - Real.log (x - 1))) := by
     refine ((tendsto_principalValue_inv_log hx).sub
       (tendsto_const_nhds (x := Real.log (x - 1)))).congr' ?_
     filter_upwards [Ioo_mem_nhdsGT (lt_min zero_lt_one (sub_pos.mpr hx))] with ε hε
@@ -260,32 +253,18 @@ private theorem unoffsetLogIntegral_eq_log_sub_one_add_integral_of_one_lt {x : �
     have hsub2_val : ∫ t in (1 + ε)..x, (t - 1)⁻¹ = Real.log (x - 1) - Real.log ε := by
       rw [Real.integral_sub_inv hnot2, show (1 + ε - 1 : ℝ) = ε by ring,
         Real.log_div (sub_pos.mpr hx).ne' hε.1.ne']
-    have hcongr1 : ∫ t in (0 : ℝ)..(1 - ε), g t =
-        ∫ t in (0 : ℝ)..(1 - ε), ((Real.log t)⁻¹ - (t - 1)⁻¹) := by
-      refine intervalIntegral.integral_congr_ae ?_
-      filter_upwards [ae_iff.mpr (by simp : volume {t : ℝ | ¬t ≠ 0} = 0)] with t ht0 ht_mem
-      rw [uIoc_of_le (by linarith : (0 : ℝ) ≤ 1 - ε)] at ht_mem
-      simp [g, ht0, (by linarith [ht_mem.2, hε.1] : t ≠ 1)]
-    have hcongr2 : ∫ t in (1 + ε)..x, g t =
-        ∫ t in (1 + ε)..x, ((Real.log t)⁻¹ - (t - 1)⁻¹) := by
-      refine intervalIntegral.integral_congr fun t ht_mem ↦ ?_
-      rw [uIcc_of_le hεx.le] at ht_mem
-      simp [g, (by linarith [ht_mem.1, hε.1] : t ≠ 0), (by linarith [ht_mem.1, hε.1] : t ≠ 1)]
     have hlog1 := Real.intervalIntegrable_inv_log_of_Ico (sub_nonneg.mpr hε1.le)
       (by linarith [hε.1])
     have hlog2 : IntervalIntegrable (fun t : ℝ ↦ (Real.log t)⁻¹) volume (1 + ε) x := by
       simpa only [pow_one] using intervalIntegrable_inv_log_pow 1 (by linarith [hε.1]) hx
-    rw [hcongr1, hcongr2,
+    rw [integral_invLogSubInvSubOneExt, integral_invLogSubInvSubOneExt,
       intervalIntegral.integral_sub hlog1 (intervalIntegrable_sub_inv_iff.mpr (Or.inr hnot1)),
       intervalIntegral.integral_sub hlog2 (intervalIntegrable_sub_inv_iff.mpr (Or.inr hnot2)),
       hsub1_val, hsub2_val]; ring
-  -- Step 3: Equate the two limits and identify `g` with `(log t)⁻¹ - (t - 1)⁻¹` a.e.
+  -- Step 3: Equate the two limits and identify `invLogSubInvSubOneExt` with `(log t)⁻¹ - (t - 1)⁻¹`
+  -- a.e.
   have heq_g := tendsto_nhds_unique hmid hrhs
-  have heq_main : ∫ t in (0 : ℝ)..x, g t = ∫ t in (0 : ℝ)..x, ((Real.log t)⁻¹ - (t - 1)⁻¹) := by
-    refine intervalIntegral.integral_congr_ae ?_
-    filter_upwards [(ae_iff.mpr (by simp : volume {t : ℝ | ¬t ≠ 0} = 0)).and
-      (ae_iff.mpr (by simp : volume {t : ℝ | ¬t ≠ 1} = 0))] with t ⟨ht0, ht1⟩ _
-    simp [g, ht0, ht1]
+  have heq_main := integral_invLogSubInvSubOneExt 0 x
   linarith
 
 /-- **Absolutely convergent integral for `li x`** (`0 < x`, `x ≠ 1`):
@@ -352,43 +331,25 @@ theorem tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsLT_one :
   simpa using h1.add h2
 
 /-- Continuous extension of `(log (1 + u))⁻¹ + (log (1 - u))⁻¹` on `[0, 1]`. -/
+private noncomputable def invLogOneAddAddInvLogOneSubExt : ℝ → ℝ :=
+  Function.update (Function.update (fun u : ℝ ↦ (Real.log (1 + u))⁻¹ + (Real.log (1 - u))⁻¹) 0 1)
+    1 (Real.log 2)⁻¹
+
 private theorem continuousOn_inv_log_one_add_add_inv_log_one_sub_ext :
-    ContinuousOn (fun u : ℝ ↦ if u = 0 then 1 else if u = 1 then (Real.log 2)⁻¹ else
-      (Real.log (1 + u))⁻¹ + (Real.log (1 - u))⁻¹) (Icc 0 1) := by
-  intro u hu
-  rcases eq_or_ne u 0 with rfl | hu0
-  · rw [← continuousWithinAt_sdiff_self, ContinuousWithinAt]
-    simp only [↓reduceIte]
-    have hsub_set : Icc (0 : ℝ) 1 \ {0} ⊆ Ioi 0 :=
-      fun v hv ↦ lt_of_le_of_ne hv.1.1 (Ne.symm hv.2)
-    have hsub := tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsGT_zero.mono_left
-      (nhdsWithin_mono _ hsub_set)
-    refine hsub.congr' ?_
-    filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
-      (eventually_lt_nhds zero_lt_one)] with v hv hv1
-    have hv0 : v ≠ 0 := hv.2
-    simp [hv0, hv1.ne]
-  · rcases eq_or_ne u 1 with rfl | hu1
-    · rw [← continuousWithinAt_sdiff_self, ContinuousWithinAt]
-      simp only [one_ne_zero, ↓reduceIte]
-      have hsub_set : Icc (0 : ℝ) 1 \ {1} ⊆ Iio 1 :=
-        fun v hv ↦ lt_of_le_of_ne hv.1.2 hv.2
-      have hsub := tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsLT_one.mono_left
-        (nhdsWithin_mono _ hsub_set)
-      refine hsub.congr' ?_
-      filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
-        (eventually_ne_nhds one_ne_zero)] with v hv1 hv0
-      have hv1' : v ≠ 1 := hv1.2
-      simp [hv0, hv1']
-    · have hu_pos : 0 < u := lt_of_le_of_ne hu.1 hu0.symm
-      have hu_lt : u < 1 := lt_of_le_of_ne hu.2 hu1
-      have h1p : Real.log (1 + u) ≠ 0 := (Real.log_pos (by linarith)).ne'
-      have h1m : Real.log (1 - u) ≠ 0 := (Real.log_neg (by linarith) (by linarith)).ne
-      have hc : ContinuousAt (fun v : ℝ ↦ (Real.log (1 + v))⁻¹ + (Real.log (1 - v))⁻¹) u := by
-        fun_prop (disch := first | linarith | exact h1p | exact h1m)
-      refine (hc.congr ?_).continuousWithinAt
-      filter_upwards [eventually_ne_nhds hu0, eventually_ne_nhds hu1] with v hv0 hv1
-      simp [hv0, hv1]
+    ContinuousOn invLogOneAddAddInvLogOneSubExt (Icc 0 1) := by
+  refine continuousOn_update_two zero_ne_one (fun u hu ↦ ?_) (fun _ ↦ ?_) (fun _ ↦ ?_)
+  · have hu0 : u ≠ 0 := fun h ↦ hu.2 (by simp [h])
+    have hu1 : u ≠ 1 := fun h ↦ hu.2 (by simp [h])
+    have hu_pos : 0 < u := lt_of_le_of_ne hu.1.1 hu0.symm
+    have hu_lt : u < 1 := lt_of_le_of_ne hu.1.2 hu1
+    have h1p : Real.log (1 + u) ≠ 0 := (Real.log_pos (by linarith)).ne'
+    have h1m : Real.log (1 - u) ≠ 0 := (Real.log_neg (by linarith) (by linarith)).ne
+    exact (by fun_prop (disch := first | linarith | exact h1p | exact h1m) :
+      ContinuousAt (fun v : ℝ ↦ (Real.log (1 + v))⁻¹ + (Real.log (1 - v))⁻¹) u).continuousWithinAt
+  · exact tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsGT_zero.mono_left
+      (nhdsWithin_mono _ fun v hv ↦ lt_of_le_of_ne hv.1.1 (Ne.symm hv.2))
+  · exact tendsto_inv_log_one_add_add_inv_log_one_sub_nhdsLT_one.mono_left
+      (nhdsWithin_mono _ fun v hv ↦ lt_of_le_of_ne hv.1.2 hv.2)
 
 /-- `(log (1 + u))⁻¹ + (log (1 - u))⁻¹` is interval integrable on `[0, 1]`. -/
 theorem intervalIntegrable_inv_log_one_add_add_inv_log_one_sub :
@@ -398,7 +359,7 @@ theorem intervalIntegrable_inv_log_one_add_add_inv_log_one_sub :
   have hne0 : ∀ᵐ u : ℝ ∂volume, u ≠ 0 := ae_iff.mpr (by simp)
   have hne1 : ∀ᵐ u : ℝ ∂volume, u ≠ 1 := ae_iff.mpr (by simp)
   filter_upwards [ae_restrict_of_ae (hne0.and hne1)] with u ⟨hu0, hu1⟩
-  simp [hu0, hu1]
+  simp [invLogOneAddAddInvLogOneSubExt, hu0, hu1]
 
 /-- Uniform bound on `(0, 1 / 2]` for the symmetric integrand:
 `|(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3`. -/
@@ -453,7 +414,7 @@ theorem unoffsetLogIntegral_two_eq_integral :
       (𝓝[>] 0) (𝓝 (∫ u in (0 : ℝ)..1, ((Real.log (1 + u))⁻¹ + (Real.log (1 - u))⁻¹))) :=
     TauCeti.intervalIntegral.tendsto_integral_left_nhdsGT zero_lt_one
       continuousOn_inv_log_one_add_add_inv_log_one_sub_ext
-      (by filter_upwards [hne1] with u hu1 hu; simp [hu.1.ne', hu1])
+      (by filter_upwards [hne1] with u hu1 hu; simp [invLogOneAddAddInvLogOneSubExt, hu.1.ne', hu1])
   -- Step 2: Fold the principal value at `x = 2` via `t = 1 - u` and `t = 1 + u`.
   have heq_pv : Tendsto
       (fun ε : ℝ ↦ ∫ u in ε..1, ((Real.log (1 + u))⁻¹ + (Real.log (1 - u))⁻¹))

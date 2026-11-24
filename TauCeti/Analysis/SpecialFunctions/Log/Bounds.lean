@@ -45,9 +45,10 @@ in explicit prime-counting estimates.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
 * `Real.sub_sq_div_two_le_log_one_add`: `u - u ^ 2 / 2 ≤ log (1 + u)` for `0 ≤ u`.
-* `Real.artanhPartial`, `Real.two_mul_artanhPartial_le_log`,
-  `Real.log_le_two_mul_artanhPartial_add`, `Real.neg_two_mul_artanhPartial_add_le_log`,
-  `Real.log_le_neg_two_mul_artanhPartial`: two-sided rational enclosures for `Real.log` via
+* `TauCeti.Real.artanhPartial`, `TauCeti.Real.two_mul_artanhPartial_le_log`,
+  `TauCeti.Real.log_le_two_mul_artanhPartial_add`,
+  `TauCeti.Real.neg_two_mul_artanhPartial_add_le_log`,
+  `TauCeti.Real.log_le_neg_two_mul_artanhPartial`: two-sided rational enclosures for `Real.log` via
   `artanh` partial sums.
 -/
 
@@ -163,12 +164,16 @@ theorem sub_sq_div_two_le_log_one_add {u : ℝ} (hu : 0 ≤ u) :
     zero_div, sub_self, sub_nonneg] at hψ0
   exact hψ0
 
+end Real
+
+namespace TauCeti.Real
+
 /-- Partial sum `∑ i < n, x ^ (2 * i + 1) / (2 * i + 1)` of `artanh x`, used in rational
 enclosures of `Real.log` via `log a = 2 * artanh ((a - 1) / (a + 1))`. -/
 noncomputable def artanhPartial (n : ℕ) (x : ℝ) : ℝ :=
   ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1)
 
-/-- Defining equation of `Real.artanhPartial`. -/
+/-- Defining equation of `TauCeti.Real.artanhPartial`. -/
 theorem artanhPartial_def (n : ℕ) (x : ℝ) :
     artanhPartial n x = ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1) :=
   (rfl)
@@ -183,19 +188,19 @@ private theorem artanh_arg_spec {a : ℝ} (ha : 1 ≤ a) :
 
 /-- Lower rational enclosure `2 * artanhPartial n ((a - 1) / (a + 1)) ≤ log a` for `1 ≤ a`. -/
 theorem two_mul_artanhPartial_le_log {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
-    2 * artanhPartial n ((a - 1) / (a + 1)) ≤ log a := by
+    2 * artanhPartial n ((a - 1) / (a + 1)) ≤ Real.log a := by
   obtain ⟨hx0, hx1, hdiv⟩ := artanh_arg_spec ha
-  have hle := sum_range_le_log_div hx0 hx1 n
+  have hle := Real.sum_range_le_log_div hx0 hx1 n
   rw [hdiv] at hle
   rw [artanhPartial_def]
   linarith
 
 /-- Upper rational enclosure of `log a` for `1 ≤ a` via `artanhPartial` and a geometric tail. -/
 theorem log_le_two_mul_artanhPartial_add {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
-    log a ≤ 2 * (artanhPartial n ((a - 1) / (a + 1)) +
+    Real.log a ≤ 2 * (artanhPartial n ((a - 1) / (a + 1)) +
       ((a - 1) / (a + 1)) ^ (2 * n + 1) / (1 - ((a - 1) / (a + 1)) ^ 2)) := by
   obtain ⟨hx0, hx1, hdiv⟩ := artanh_arg_spec ha
-  have hle := log_div_le_sum_range_add hx0 hx1 n
+  have hle := Real.log_div_le_sum_range_add hx0 hx1 n
   rw [hdiv] at hle
   rw [artanhPartial_def]
   linarith
@@ -204,23 +209,23 @@ theorem log_le_two_mul_artanhPartial_add {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
 tail. -/
 theorem neg_two_mul_artanhPartial_add_le_log {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
     -2 * (artanhPartial n ((1 - a) / (1 + a)) +
-      ((1 - a) / (1 + a)) ^ (2 * n + 1) / (1 - ((1 - a) / (1 + a)) ^ 2)) ≤ log a := by
+      ((1 - a) / (1 + a)) ^ (2 * n + 1) / (1 - ((1 - a) / (1 + a)) ^ 2)) ≤ Real.log a := by
   have hinv : 1 ≤ a⁻¹ := one_le_inv₀ ha0 |>.mpr ha1
   have harg : (a⁻¹ - 1) / (a⁻¹ + 1) = (1 - a) / (1 + a) := by
     field_simp [ha0.ne']
   have hle := log_le_two_mul_artanhPartial_add hinv n
-  rw [log_inv, harg] at hle
+  rw [Real.log_inv, harg] at hle
   linarith
 
 /-- Upper rational enclosure `log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a))` for `0 < a ≤ 1`.
 -/
 theorem log_le_neg_two_mul_artanhPartial {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
-    log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a)) := by
+    Real.log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a)) := by
   have hinv : 1 ≤ a⁻¹ := one_le_inv₀ ha0 |>.mpr ha1
   have harg : (a⁻¹ - 1) / (a⁻¹ + 1) = (1 - a) / (1 + a) := by
     field_simp [ha0.ne']
   have hle := two_mul_artanhPartial_le_log hinv n
-  rw [log_inv, harg] at hle
+  rw [Real.log_inv, harg] at hle
   linarith
 
-end Real
+end TauCeti.Real
