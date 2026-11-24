@@ -23,11 +23,17 @@ product with the factor `f k` replaced by `δ (f k)`. The rule covers both a der
 commutative ring and the inner derivation `⁅a, -⁆` of an associative ring, which is how the
 commutator with a Lie generator acts on a word in a universal enveloping algebra.
 
+A ring homomorphism sending each scalar `c i • 1` to `d i • 1` carries the ordered product
+`(M₀ - c₀ • 1) ⋯ (M_{m-1} - c_{m-1} • 1)` to the ordered product of the images, as for a change
+of coefficients of matrices.
+
 ## Main results
 
 * `List.prod_append_sub_algebraMap_cons`:
   `(l₁ ++ (a - algebraMap R A c) :: l₂).prod = (l₁ ++ a :: l₂).prod - c • (l₁ ++ l₂).prod`.
 * `TauCeti.map_prod_ofFn_of_leibniz`: the Leibniz rule for an ordered product of `n` factors.
+* `TauCeti.map_list_prod_ofFn_sub_smul_one`: a ring homomorphism sending each `c i • 1` to
+  `d i • 1` maps `∏ (M i - c i • 1)` to `∏ (φ (M i) - d i • 1)`, in order.
 -/
 
 public section
@@ -68,5 +74,14 @@ theorem map_prod_ofFn_of_leibniz (δ : A → A) (hδ : ∀ a b, δ (a * b) = δ 
       congr 3
       funext i
       simp only [Function.update_apply, Fin.succ_inj]
+
+/-- A ring homomorphism `φ` sending each `c i • 1` to `d i • 1` sends the ordered product
+`(M₀ - c₀ • 1) * ⋯ * (M_{m-1} - c_{m-1} • 1)` to
+`(φ M₀ - d₀ • 1) * ⋯ * (φ M_{m-1} - d_{m-1} • 1)`. -/
+theorem map_list_prod_ofFn_sub_smul_one {R S B C Φ : Type*} [Ring R] [Ring S] [SMul B R]
+    [SMul C S] [FunLike Φ R S] [RingHomClass Φ R S] (φ : Φ) {m : ℕ} (M : Fin m → R)
+    {c : Fin m → B} {d : Fin m → C} (hφ : ∀ i, φ (c i • 1) = d i • 1) :
+    φ (List.ofFn fun i ↦ M i - c i • 1).prod = (List.ofFn fun i ↦ φ (M i) - d i • 1).prod := by
+  simp only [map_list_prod, List.map_ofFn, Function.comp_def, map_sub, hφ]
 
 end TauCeti
