@@ -27,7 +27,8 @@ condition holds because the conjugate of `τ|K` is the restriction of the conjug
 * `TauCeti.HermitianMetric.baseChangeFiberEquiv`: the fibre identification above.
 * `TauCeti.HermitianMetric.baseChange`: the base-changed metric `(h_{τ|K})_τ` on
   `𝓞 L ⊗_{𝓞 K} E`.
-* `TauCeti.HermitianMetric.IsometryEquiv.baseChange`: base change is functorial on isometries.
+* `TauCeti.HermitianMetric.IsometryEquiv.baseChange`: base change is functorial on isometries,
+  compatibly with `refl`, `symm` and `trans`.
 * `TauCeti.HermitianMetric.isometryEquivBaseChangeSelf`: base change along the identity of `K` is
   isometric to the original metric, through `𝓞 K ⊗_{𝓞 K} E ≅ E`.
 * `TauCeti.HermitianMetric.isometryEquivBaseChangeBaseChange`: base change along `K → L → M` is
@@ -190,7 +191,7 @@ theorem isometryEquivBaseChangeSelf_apply (x : 𝓞 K ⊗[𝓞 K] E) :
 
 section Functoriality
 
-variable {F : Type*} [AddCommGroup F] [Module (𝓞 K) F]
+variable {F G : Type*} [AddCommGroup F] [Module (𝓞 K) F] [AddCommGroup G] [Module (𝓞 K) G]
 
 /-- The fibre identifications are natural in the module: base change of a linear map
 `f : E → F` along `K → L` corresponds to the complexification of `f` at `τ|K`. -/
@@ -206,7 +207,7 @@ theorem baseChangeFiberEquiv_one_tmul_baseChange (f : E →ₗ[𝓞 K] F) (τ : 
 
 namespace IsometryEquiv
 
-variable {h} {h' : HermitianMetric K F}
+variable {h} {h' : HermitianMetric K F} {h'' : HermitianMetric K G}
 
 /-- Base change is functorial on isometries: an isometry `e` from `h` to `h'` gives an isometry
 between their base changes along `K → L`, through `𝓞 L ⊗_{𝓞 K} E ≅ 𝓞 L ⊗_{𝓞 K} F`. -/
@@ -223,6 +224,31 @@ def baseChange (e : IsometryEquiv h h') :
 theorem baseChange_tmul (e : IsometryEquiv h h') (a : 𝓞 L) (x : E) :
     e.baseChange (L := L) (a ⊗ₜ x) = a ⊗ₜ e x :=
   LinearEquiv.baseChange_tmul _ _ _ _ a x
+
+@[simp]
+theorem baseChange_refl : (refl h).baseChange (L := L) = refl h.baseChange := by
+  ext z
+  induction z using TensorProduct.inductionOn with
+  | add z₁ z₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
+  | tmul a x => rw [baseChange_tmul, refl_apply, refl_apply]
+
+@[simp]
+theorem baseChange_trans (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') :
+    (e.trans e').baseChange (L := L) = e.baseChange.trans e'.baseChange := by
+  ext z
+  induction z using TensorProduct.inductionOn with
+  | add z₁ z₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
+  | tmul a x => rw [baseChange_tmul, trans_apply, trans_apply, baseChange_tmul, baseChange_tmul]
+
+@[simp]
+theorem baseChange_symm (e : IsometryEquiv h h') :
+    e.symm.baseChange (L := L) = e.baseChange.symm := by
+  ext z
+  refine EquivLike.injective (e.baseChange (L := L)) ?_
+  rw [apply_symm_apply]
+  induction z using TensorProduct.inductionOn with
+  | add z₁ z₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
+  | tmul a x => rw [baseChange_tmul, baseChange_tmul, apply_symm_apply]
 
 end IsometryEquiv
 
