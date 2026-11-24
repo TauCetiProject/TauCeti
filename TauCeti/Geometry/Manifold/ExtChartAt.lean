@@ -86,6 +86,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   is continuous on its domain, for extended charts over any models.
 * `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
   chart target is locally compact.
+* `CompleteSpace.of_locallyCompact_manifold`: a nonempty locally compact manifold is modelled on a
+  complete space.
 * `TauCeti.exists_countable_chartExhaustion`: a sigma-compact manifold with locally compact model
   is covered by the sources of countably many charts, whose targets have compact exhaustions.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
@@ -634,6 +636,15 @@ instance locallyCompactSpace_extChartAt_target [LocallyCompactSpace E] (x : M) :
   rw [extChartAt_target]
   exact ((chartAt H x).open_target.preimage I.continuous_symm).isLocallyClosed.inter
     I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
+
+/-- **The model space of a locally compact manifold is complete.** By Riesz's theorem a nonempty
+locally compact manifold over a complete field is modelled on a finite-dimensional space
+(`FiniteDimensional.of_locallyCompact_manifold`), which is complete. -/
+theorem _root_.CompleteSpace.of_locallyCompact_manifold [CompleteSpace 𝕜] (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] (I : ModelWithCorners 𝕜 E H) [Nonempty M]
+    [LocallyCompactSpace M] : CompleteSpace E :=
+  have := FiniteDimensional.of_locallyCompact_manifold M I
+  FiniteDimensional.completeSpace 𝕜 E
 
 /-- On a sigma-compact manifold with locally compact model, select a countable set of chart
 centres whose chart sources cover the manifold, together with compact exhaustions of their chart

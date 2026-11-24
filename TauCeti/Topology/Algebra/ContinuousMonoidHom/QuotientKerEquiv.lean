@@ -37,6 +37,13 @@ target. So the quotient of its source by its kernel is compact when the target i
   `AddMonoidHom.compactSpace_quotient_ker_of_isOpenMap`: the quotient by the kernel of a continuous
   open homomorphism is compact when the target is.
 
+## Main statements
+
+* `TauCeti.QuotientGroup.continuous_rangeKerLift` and
+  `TauCeti.QuotientAddGroup.continuous_rangeKerLift`: the kernel lift `G ⧸ f.ker →* f.range` of a
+  continuous homomorphism is continuous, for the quotient topology on the source and the subspace
+  topology on the range.
+
 ## References
 
 * N. Bourbaki, *General Topology*, Chapters 1–4, Springer (1989), Chapter III (Topological
@@ -133,3 +140,18 @@ theorem compactSpace_quotient_ker_of_isOpenMap [SeparatelyContinuousMul K] [Comp
     |>.compactSpace
 
 end MonoidHom
+
+namespace TauCeti.QuotientGroup
+
+variable {G H : Type*} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
+
+/-- The kernel lift `G ⧸ f.ker →* f.range` of a continuous homomorphism `f` is continuous, for the
+quotient topology on the source and the subspace topology on the range. -/
+@[to_additive TauCeti.QuotientAddGroup.continuous_rangeKerLift
+  /-- The kernel lift `G ⧸ f.ker →+ f.range` of a continuous additive homomorphism `f` is
+  continuous, for the quotient topology on the source and the subspace topology on the range. -/]
+theorem continuous_rangeKerLift {f : G →* H} (hf : Continuous f) :
+    Continuous (QuotientGroup.rangeKerLift f) :=
+  (QuotientGroup.isQuotientMap_mk f.ker).continuous_iff.2 (hf.subtype_mk _)
+
+end TauCeti.QuotientGroup

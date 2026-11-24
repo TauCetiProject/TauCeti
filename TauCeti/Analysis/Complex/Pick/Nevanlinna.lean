@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.Pick.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
+import TauCeti.Basic.Complex.OfRealSub
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
 /-!
 # Boundary Cayley coordinates and Nevanlinna measure transport
@@ -41,6 +44,10 @@ Nevanlinna kernel `(1 + x * z) / (x - z)`.
 * `TauCeti.nevanlinnaKernel_ofReal`: the kernel is real at a real parameter.
 * `TauCeti.exists_isFiniteMeasure_eq_nevanlinnaKernel_add`: the Nevanlinna representation of a
   Pick function by a nonnegative linear coefficient and a finite real-line measure.
+* `MeasureTheory.Measure.integral_nevanlinnaKernel_eq_add_mul_resolventTransform` and
+  `MeasureTheory.Measure.ext_of_integral_nevanlinnaKernel`: off the real axis the Nevanlinna
+  integral of a finite measure is `ρ(ℝ) z + (1 + z ^ 2) m_ρ(z)` for its resolvent transform
+  `m_ρ`, so a finite measure is determined by its Nevanlinna integral on the upper half-plane.
 
 ## References
 
@@ -422,6 +429,65 @@ theorem exists_isFiniteMeasure_eq_nevanlinnaKernel_add {F : ℂ → ℂ}
   refine ⟨mu.cayleyPushforward, mu.real {1}, inferInstance, measureReal_nonneg, fun z hz ↦ ?_⟩
   rw [hrep z hz, I_mul_herglotzTransform_cayley_eq mu hz]
 
+/-- Off the real axis, the Nevanlinna integral of a finite measure `ρ` is
+`ρ(ℝ) z + (1 + z ^ 2) m_ρ(z)`, where `m_ρ` is the resolvent transform. -/
+theorem _root_.MeasureTheory.Measure.integral_nevanlinnaKernel_eq_add_mul_resolventTransform
+    (rho : Measure ℝ) [IsFiniteMeasure rho] {z : ℂ} (hz : z.im ≠ 0) :
+    ∫ t, nevanlinnaKernel z t ∂rho =
+      rho.real Set.univ * z + (1 + z ^ 2) * resolventTransform rho z := by
+  have hk : ∀ t : ℝ, nevanlinnaKernel z t = z + (1 + z ^ 2) * resolvent z t := fun t ↦ by
+    rw [nevanlinnaKernel_eq_add_div (ofReal_sub_ne_zero_of_im_ne_zero hz t), resolvent,
+      Ring.inverse_eq_inv', div_eq_mul_inv]
+    simp
+  simp_rw [hk]
+  rw [integral_add (integrable_const _)
+      ((integrable_resolvent_of_im_ne_zero hz).const_mul _), integral_const, integral_const_mul,
+    resolventTransform_apply, real_smul]
+
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti Filter Topology
+
+/-- **A finite measure is determined by its Nevanlinna integral.** Two finite measures on `ℝ`
+whose Nevanlinna kernels have the same integral at every point of the upper half-plane are equal. -/
+theorem ext_of_integral_nevanlinnaKernel {rho rho' : Measure ℝ} [IsFiniteMeasure rho]
+    [IsFiniteMeasure rho']
+    (h : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      ∫ t, nevanlinnaKernel z t ∂rho = ∫ t, nevanlinnaKernel z t ∂rho') :
+    rho = rho' := by
+  have hrep (z : ℂ) (hz : 0 < z.im) := by
+    have := h z hz
+    rwa [rho.integral_nevanlinnaKernel_eq_add_mul_resolventTransform hz.ne',
+      rho'.integral_nevanlinnaKernel_eq_add_mul_resolventTransform hz.ne'] at this
+  have hmass : rho.real Set.univ = rho'.real Set.univ := by
+    simpa using congrArg im (hrep I (by simp))
+  have hne {z : ℂ} (hz : 0 < z.im) (hzI : z ≠ I) :
+      resolventTransform rho z = resolventTransform rho' z := by
+    have h1 : 1 + z ^ 2 ≠ 0 := by
+      have : 1 + z ^ 2 = (z - I) * (z + I) := by linear_combination I_sq
+      rw [this]
+      refine mul_ne_zero (sub_ne_zero.2 hzI) fun h0 ↦ ?_
+      have := congrArg im h0
+      simp at this
+      linarith
+    have := hrep z hz
+    rw [hmass, _root_.add_right_inj] at this
+    exact mul_left_cancel₀ h1 this
+  refine ext_of_resolventTransform fun z hz ↦ ?_
+  rcases eq_or_ne z I with rfl | hzI
+  · -- At `i`, the transforms agree on a punctured neighbourhood, so by continuity also at `i`.
+    have hcont (μ : Measure ℝ) [IsFiniteMeasure μ] :
+        Tendsto (resolventTransform μ) (𝓝[≠] I) (𝓝 (resolventTransform μ I)) :=
+      (continuousAt_resolventTransform_of_im_ne_zero (by simp)).tendsto.mono_left
+        nhdsWithin_le_nhds
+    refine tendsto_nhds_unique (hcont rho) ((hcont rho').congr' ?_)
+    filter_upwards [nhdsWithin_le_nhds (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds hz),
+      self_mem_nhdsWithin] with w hw hwI
+    exact (hne hw hwI).symm
+  · exact hne hz hzI
+
+end MeasureTheory.Measure
 
 end
