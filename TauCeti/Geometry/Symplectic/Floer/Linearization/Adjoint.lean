@@ -228,14 +228,6 @@ theorem floerLinearizationAdjoint_eq_neg (hη : DifferentiableAt ℝ η z)
   simp only [add_apply, comp_apply, compL_apply, flip_apply, comp_sub]
   abel
 
-/-- The derivative of the vector field `ω♭⁻¹ ∘ η` is `ω♭⁻¹` of the derivative of the covector
-field `η`. -/
-theorem fderiv_flatEquiv_symm_apply (ω : SymplecticForm V) (η : ℝ × ℝ → V →L[ℝ] ℝ)
-    (z v : ℝ × ℝ) :
-    fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z v = ω.flatEquiv.symm (fderiv ℝ η z v) := by
-  rw [← Function.comp_def ω.flatEquiv.symm η, ContinuousLinearEquiv.comp_fderiv]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-
 /-- **The formal adjoint through `ω`.** Write a covector field as `η = ω♭ ∘ ζ`, where
 `ω♭ v = ω(v, ·)`. At a point where `J(z, u z)` preserves `ω`, the formal adjoint is `-ω♭` of
 

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Topology.Algebra.Module.BilinearForm
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
@@ -135,6 +136,14 @@ theorem norm_flatEquiv_symm_apply_sq_le (ω : SymplecticForm V) (φ : V →L[ℝ
     ‖ω.flatEquiv.symm φ‖ ^ 2 ≤ ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖ ^ 2 * ‖φ‖ ^ 2 := by
   rw [← mul_pow]
   exact pow_le_pow_left₀ (norm_nonneg _) ((ω.flatEquiv.symm : _ →L[ℝ] V).le_opNorm φ) 2
+
+/-- The derivative of the vector field `ω♭⁻¹ ∘ η` is `ω♭⁻¹` of the derivative of the covector
+field `η`. -/
+theorem fderiv_flatEquiv_symm_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (ω : SymplecticForm V) (η : E → V →L[ℝ] ℝ) (z v : E) :
+    fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z v = ω.flatEquiv.symm (fderiv ℝ η z v) := by
+  rw [← Function.comp_def ω.flatEquiv.symm η, ContinuousLinearEquiv.comp_fderiv]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
 
 omit [FiniteDimensional ℝ V] in
 /-- Two endomorphisms that pair in the same way under `ω` are equal. -/
