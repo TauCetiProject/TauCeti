@@ -638,7 +638,7 @@ theorem NatTrans.isIso_app_right_of_exactPairing (τ : F ⟶ G) [τ.IsMonoidal]
 
 /-- Every monoidal natural transformation between strong monoidal functors out of a right rigid
 monoidal category is an isomorphism. -/
-theorem NatTrans.isIso_of_rightRigid [RightRigidCategory C] (τ : F ⟶ G) [τ.IsMonoidal] :
+instance NatTrans.isIso_of_rightRigid [RightRigidCategory C] (τ : F ⟶ G) [τ.IsMonoidal] :
     IsIso τ := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro X
@@ -646,7 +646,7 @@ theorem NatTrans.isIso_of_rightRigid [RightRigidCategory C] (τ : F ⟶ G) [τ.I
 
 /-- Every monoidal natural transformation between strong monoidal functors out of a left rigid
 monoidal category is an isomorphism. -/
-theorem NatTrans.isIso_of_leftRigid [LeftRigidCategory C] (τ : F ⟶ G) [τ.IsMonoidal] :
+instance NatTrans.isIso_of_leftRigid [LeftRigidCategory C] (τ : F ⟶ G) [τ.IsMonoidal] :
     IsIso τ := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro X

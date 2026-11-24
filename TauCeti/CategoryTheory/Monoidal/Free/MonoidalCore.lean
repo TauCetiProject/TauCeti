@@ -145,7 +145,7 @@ structure Presentation where
 
 /-- The free monoidal category on a presentation `P`, formed by wrapping `P.Obj` as objects and
 quotienting formal morphisms `Hom P.unitObj P.tensorObj P.Gen` by `HomEquiv P.Rel`. -/
-structure Free (P : Presentation.{u, v}) where
+@[ext] structure Free (P : Presentation.{u, v}) where
   /-- The underlying syntactic object. -/
   as : P.Obj
 
@@ -387,6 +387,39 @@ structure Lawful (E : MonoidalEval unitObj tensorObj D) : Prop where
   triangle (X Y : Obj) :
     E.αHom X unitObj Y ≫ E.whiskerLeft X (E.lHom Y) = E.whiskerRight (E.ρHom X) Y
 
+private theorem heq_eq_eqToHom_comp {A B A' B' : D} {f : A ⟶ B} {g : A' ⟶ B'}
+    (hA : A = A') (hB : B = B') (h : HEq f g) :
+    f = eqToHom hA ≫ g ≫ eqToHom hB.symm := by
+  subst hA hB; simp [eq_of_heq h]
+
+private theorem associator_hom_congr [MonoidalCategory D] {A B C A' B' C' : D}
+    (hA : A = A') (hB : B = B') (hC : C = C') :
+    (α_ A B C).hom = eqToHom (by rw [hA, hB, hC]) ≫ (α_ A' B' C').hom ≫
+      eqToHom (by rw [hA, hB, hC]) := by
+  subst hA hB hC; simp
+
+private theorem tensorHom_left_congr [MonoidalCategory D] {A B A' B' C D' : D}
+    (hA : A = A') (hB : B' = B) (f : A' ⟶ B') (g : C ⟶ D') :
+    (eqToHom hA ≫ f ≫ eqToHom hB) ⊗ₘ g =
+      eqToHom (by rw [hA]) ≫ (f ⊗ₘ g) ≫ eqToHom (by rw [hB]) := by
+  subst hA hB; simp
+
+private theorem tensorHom_right_congr [MonoidalCategory D] {A B C C' D' D'' : D}
+    (hC : C = C') (hD : D' = D'') (f : A ⟶ B) (g : C' ⟶ D') :
+    f ⊗ₘ (eqToHom hC ≫ g ≫ eqToHom hD) =
+      eqToHom (by rw [hC]) ≫ (f ⊗ₘ g) ≫ eqToHom (by rw [hD]) := by
+  subst hC hD; simp
+
+private theorem whiskerLeft_congr [MonoidalCategory D] {A A' B C : D}
+    (hA : A = A') (f : B ⟶ C) :
+    A ◁ f = eqToHom (by rw [hA]) ≫ (A' ◁ f) ≫ eqToHom (by rw [hA]) := by
+  subst hA; simp
+
+private theorem whiskerRight_congr [MonoidalCategory D] {A B C C' : D}
+    (f : A ⟶ B) (hC : C = C') :
+    f ▷ C = eqToHom (by rw [hC]) ≫ (f ▷ C') ≫ eqToHom (by rw [hC]) := by
+  subst hC; simp
+
 /-- When `E.obj` sends `unitObj` to `𝟙_ D` and `tensorObj` to `⊗` in a monoidal category `D`,
 and its operations agree heterogeneously with the monoidal structure of `D`, `E` is lawful. -/
 theorem Lawful.ofMonoidal [MonoidalCategory D] (E : MonoidalEval unitObj tensorObj D)
@@ -403,92 +436,69 @@ theorem Lawful.ofMonoidal [MonoidalCategory D] (E : MonoidalEval unitObj tensorO
     (htens : ∀ {W X Y Z} (f : E.obj W ⟶ E.obj Y) (g : E.obj X ⟶ E.obj Z),
       HEq (E.tensorHom f g) (f ⊗ₘ g)) :
     E.Lawful := by
-  have heq_eq {A B A' B' : D} {f : A ⟶ B} {g : A' ⟶ B'} (hA : A = A') (hB : B = B')
-      (h : HEq f g) : f = eqToHom hA ≫ g ≫ eqToHom hB.symm := by
-    subst hA hB; simp [eq_of_heq h]
+  -- Express each operation of `E` as its counterpart in `D` conjugated by `eqToHom` coercions
+  -- along `hunit` and `htensor`, then close each monoidal axiom by normalizing nested coercions.
   have eα_hom (X Y Z) : E.αHom X Y Z =
       eqToHom (by rw [htensor, htensor]) ≫ (α_ (E.obj X) (E.obj Y) (E.obj Z)).hom ≫
         eqToHom (by rw [htensor, htensor]) :=
-    heq_eq (by rw [htensor, htensor]) (by rw [htensor, htensor]) (hα_hom X Y Z)
+    heq_eq_eqToHom_comp (by rw [htensor, htensor]) (by rw [htensor, htensor]) (hα_hom X Y Z)
   have eα_inv (X Y Z) : E.αInv X Y Z =
       eqToHom (by rw [htensor, htensor]) ≫ (α_ (E.obj X) (E.obj Y) (E.obj Z)).inv ≫
         eqToHom (by rw [htensor, htensor]) :=
-    heq_eq (by rw [htensor, htensor]) (by rw [htensor, htensor]) (hα_inv X Y Z)
+    heq_eq_eqToHom_comp (by rw [htensor, htensor]) (by rw [htensor, htensor]) (hα_inv X Y Z)
   have el_hom (X) : E.lHom X =
       eqToHom (by rw [htensor, hunit]) ≫ (λ_ (E.obj X)).hom := by
-    simpa using heq_eq (by rw [htensor, hunit]) rfl (hl_hom X)
+    simpa using heq_eq_eqToHom_comp (by rw [htensor, hunit]) rfl (hl_hom X)
   have el_inv (X) : E.lInv X =
       (λ_ (E.obj X)).inv ≫ eqToHom (by rw [htensor, hunit]) := by
-    simpa using heq_eq rfl (by rw [htensor, hunit]) (hl_inv X)
+    simpa using heq_eq_eqToHom_comp rfl (by rw [htensor, hunit]) (hl_inv X)
   have eρ_hom (X) : E.ρHom X =
       eqToHom (by rw [htensor, hunit]) ≫ (ρ_ (E.obj X)).hom := by
-    simpa using heq_eq (by rw [htensor, hunit]) rfl (hρ_hom X)
+    simpa using heq_eq_eqToHom_comp (by rw [htensor, hunit]) rfl (hρ_hom X)
   have eρ_inv (X) : E.ρInv X =
       (ρ_ (E.obj X)).inv ≫ eqToHom (by rw [htensor, hunit]) := by
-    simpa using heq_eq rfl (by rw [htensor, hunit]) (hρ_inv X)
+    simpa using heq_eq_eqToHom_comp rfl (by rw [htensor, hunit]) (hρ_inv X)
   have ewL (X) {Y₁ Y₂} (f : E.obj Y₁ ⟶ E.obj Y₂) :
       E.whiskerLeft X f = eqToHom (htensor X Y₁) ≫ (E.obj X ◁ f) ≫ eqToHom (htensor X Y₂).symm :=
-    heq_eq (htensor X Y₁) (htensor X Y₂) (hwL X f)
+    heq_eq_eqToHom_comp (htensor X Y₁) (htensor X Y₂) (hwL X f)
   have ewR {X₁ X₂} (f : E.obj X₁ ⟶ E.obj X₂) (Y) :
       E.whiskerRight f Y = eqToHom (htensor X₁ Y) ≫ (f ▷ E.obj Y) ≫ eqToHom (htensor X₂ Y).symm :=
-    heq_eq (htensor X₁ Y) (htensor X₂ Y) (hwR f Y)
+    heq_eq_eqToHom_comp (htensor X₁ Y) (htensor X₂ Y) (hwR f Y)
   have etens {W X Y Z} (f : E.obj W ⟶ E.obj Y) (g : E.obj X ⟶ E.obj Z) :
       E.tensorHom f g = eqToHom (htensor W X) ≫ (f ⊗ₘ g) ≫ eqToHom (htensor Y Z).symm :=
-    heq_eq (htensor W X) (htensor Y Z) (htens f g)
-  have hα_congr {A B C A' B' C' : D} (hA : A = A') (hB : B = B') (hC : C = C') :
-      (α_ A B C).hom = eqToHom (by rw [hA, hB, hC]) ≫ (α_ A' B' C').hom ≫
-        eqToHom (by rw [hA, hB, hC]) := by
-    subst hA hB hC; simp
-  have htensor_l {A B A' B' C D' : D} (hA : A = A') (hB : B' = B)
-      (f : A' ⟶ B') (g : C ⟶ D') :
-      (eqToHom hA ≫ f ≫ eqToHom hB) ⊗ₘ g =
-        eqToHom (by rw [hA]) ≫ (f ⊗ₘ g) ≫ eqToHom (by rw [hB]) := by
-    subst hA hB; simp
-  have htensor_r {A B C C' D' D'' : D} (hC : C = C') (hD : D' = D'')
-      (f : A ⟶ B) (g : C' ⟶ D') :
-      f ⊗ₘ (eqToHom hC ≫ g ≫ eqToHom hD) =
-        eqToHom (by rw [hC]) ≫ (f ⊗ₘ g) ≫ eqToHom (by rw [hD]) := by
-    subst hC hD; simp
-  have hwL_congr {A A' B C : D} (hA : A = A') (f : B ⟶ C) :
-      A ◁ f = eqToHom (by rw [hA]) ≫ (A' ◁ f) ≫ eqToHom (by rw [hA]) := by
-    subst hA; simp
-  have hwR_congr {A B C C' : D} (f : A ⟶ B) (hC : C = C') :
-      f ▷ C = eqToHom (by rw [hC]) ≫ (f ▷ C') ≫ eqToHom (by rw [hC]) := by
-    subst hC; simp
+    heq_eq_eqToHom_comp (htensor W X) (htensor Y Z) (htens f g)
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · intro X₁ Y₁ X₂ Y₂ f g
-    simp [etens, ewR, ewL, MonoidalCategory.tensorHom_def]
+  · intro X₁ Y₁ X₂ Y₂ f g; simp [etens, ewR, ewL, MonoidalCategory.tensorHom_def]
   · intro X Y; simp [etens]
-  · intro X₁ Y₁ Z₁ X₂ Y₂ Z₂ f₁ f₂ g₁ g₂
-    simp [etens]
+  · intro X₁ Y₁ Z₁ X₂ Y₂ Z₂ f₁ f₂ g₁ g₂; simp [etens]
   · intro X Y; simp [ewL]
   · intro X Y; simp [ewR]
   · intro X Y Z; simp [eα_hom, eα_inv]
   · intro X Y Z; simp [eα_hom, eα_inv]
   · intro X₁ X₂ X₃ Y₁ Y₂ Y₃ f₁ f₂ f₃
     simp only [etens, eα_hom, Category.assoc]
-    rw [htensor_l, htensor_r]
+    rw [tensorHom_left_congr, tensorHom_right_congr]
     simp
   · intro X; simp [eρ_hom, eρ_inv]
   · intro X; simp [eρ_hom, eρ_inv]
   · intro X Y f
     simp only [ewR, eρ_hom, Category.assoc]
-    rw [hwR_congr f hunit]
+    rw [whiskerRight_congr f hunit]
     simp
   · intro X; simp [el_hom, el_inv]
   · intro X; simp [el_hom, el_inv]
   · intro X Y f
     simp only [ewL, el_hom, Category.assoc]
-    rw [hwL_congr hunit f]
+    rw [whiskerLeft_congr hunit f]
     simp
   · intro W X Y Z
     simp only [ewR, ewL, eα_hom, Category.assoc]
-    rw [hα_congr rfl (htensor X Y) rfl, hα_congr (htensor W X) rfl rfl,
-      hα_congr rfl rfl (htensor Y Z)]
+    rw [associator_hom_congr rfl (htensor X Y) rfl, associator_hom_congr (htensor W X) rfl rfl,
+      associator_hom_congr rfl rfl (htensor Y Z)]
     simp
   · intro X Y
     simp only [ewR, ewL, eα_hom, el_hom, eρ_hom, Category.assoc]
-    rw [hα_congr rfl hunit rfl]
+    rw [associator_hom_congr rfl hunit rfl]
     simp
 
 end MonoidalEval

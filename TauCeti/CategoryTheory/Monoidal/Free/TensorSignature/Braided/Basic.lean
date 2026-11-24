@@ -306,21 +306,6 @@ tensorator and unit comparison. -/
       | .hexagon_forward => BraidedCategory.hexagon_forward _ _ _
       | .hexagon_reverse => BraidedCategory.hexagon_reverse _ _ _)
 
-/-- The interpretation of morphisms of the free braided monoidal category on `S`, given the images
-`fo` of the generating objects and `fc` of the coupons. This is the action of `FreeBraided.lift` on
-morphisms; use the `lift_map_*` lemmas to compute it. -/
-def liftMap {X Y : S.FreeBraided} (f : X ⟶ Y) : projectObj fo X.as ⟶ projectObj fo Y.as :=
-  (lift fo fc).map f
-
-/-- `liftMap` sends identities to identities. -/
-theorem liftMap_id (X : S.FreeBraided) : liftMap fo fc (𝟙 X) = 𝟙 _ :=
-  (lift fo fc).map_id X
-
-/-- `liftMap` preserves categorical composition. -/
-theorem liftMap_comp {X Y Z : S.FreeBraided} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    liftMap fo fc (f ≫ g) = liftMap fo fc f ≫ liftMap fo fc g :=
-  (lift fo fc).map_comp f g
-
 /-- On objects, `lift fo fc` interprets the underlying tensor word via `projectObj fo`. -/
 theorem lift_obj (X : S.FreeBraided) : (lift fo fc).obj X = projectObj fo X.as := (rfl)
 

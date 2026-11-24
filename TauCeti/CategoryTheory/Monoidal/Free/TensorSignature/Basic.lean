@@ -223,19 +223,6 @@ unit comparison. -/
       (fun {_ _ _ _} _ _ ↦ HEq.rfl))
     (fun | .coupon g => fc g) (fun h ↦ False.elim h)
 
-/-- The interpretation of morphisms of the free monoidal category on `S`, given the images `fo`
-of the generating objects and `fc` of the coupons. This is the action of `FreeMonoidal.lift` on
-morphisms; use the `lift_map_*` lemmas to compute it. -/
-def liftMap {X Y : S.FreeMonoidal} (f : X ⟶ Y) : projectObj fo X.as ⟶ projectObj fo Y.as :=
-  (lift fo fc).map f
-
-theorem liftMap_id (X : S.FreeMonoidal) : liftMap fo fc (𝟙 X) = 𝟙 _ :=
-  (lift fo fc).map_id X
-
-theorem liftMap_comp {X Y Z : S.FreeMonoidal} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    liftMap fo fc (f ≫ g) = liftMap fo fc f ≫ liftMap fo fc g :=
-  (lift fo fc).map_comp f g
-
 @[simp]
 theorem lift_obj_of (a : S.Obj) : (lift fo fc).obj (of a) = fo a := rfl
 
@@ -427,19 +414,21 @@ of the free monoidal category, induced by isomorphisms `e` at the generating obj
 with the tensorators and unit comparisons of the two functors. -/
 def wordIso : ∀ X : FreeMonoidalCategory S.Obj, F.obj ⟨X⟩ ≅ G.obj ⟨X⟩
   | .of a => e a
-  | .unit => Functor.Monoidal.unitIso F G
-  | .tensor X Y => Functor.Monoidal.tensorIso F G (wordIso X) (wordIso Y)
+  | .unit => Functor.Monoidal.isoAppUnit F G
+  | .tensor X Y => Functor.Monoidal.isoAppTensor F G (wordIso X) (wordIso Y)
 
 @[simp]
 theorem wordIso_of (a : S.Obj) : wordIso F G e (of a).as = e a := by rfl
 
 @[simp]
-theorem wordIso_tensorUnit_hom : (wordIso F G e (𝟙_ S.FreeMonoidal).as).hom = η F ≫ ε G := by rfl
+theorem wordIso_tensorUnit_hom : (wordIso F G e (𝟙_ S.FreeMonoidal).as).hom = η F ≫ ε G :=
+  Functor.Monoidal.isoAppUnit_hom F G
 
 @[simp]
 theorem wordIso_tensor_hom (X Y : S.FreeMonoidal) :
     (wordIso F G e (X ⊗ Y).as).hom =
-      δ F X Y ≫ ((wordIso F G e X.as).hom ⊗ₘ (wordIso F G e Y.as).hom) ≫ μ G X Y := by rfl
+      δ F X Y ≫ ((wordIso F G e X.as).hom ⊗ₘ (wordIso F G e Y.as).hom) ≫ μ G X Y :=
+  Functor.Monoidal.isoAppTensor_hom F G _ _
 
 variable {F G e}
 

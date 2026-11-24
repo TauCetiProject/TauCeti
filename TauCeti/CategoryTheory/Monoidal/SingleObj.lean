@@ -53,19 +53,13 @@ scoped instance monoidalCategory : MonoidalCategory (SingleObj M) where
   associator _ _ _ := Iso.refl _
   leftUnitor _ := Iso.refl _
   rightUnitor _ := Iso.refl _
-  tensorHom_def f g := by
-    change ((f : M) * (g : M)) = (g : M) * (f : M)
-    exact mul_comm _ _
-  id_tensorHom_id _ _ := by
-    change (1 : M) * 1 = 1
-    exact one_mul 1
-  tensorHom_comp_tensorHom f₁ f₂ g₁ g₂ := by
-    change ((g₁ : M) * (g₂ : M)) * ((f₁ : M) * (f₂ : M)) =
-      ((g₁ : M) * (f₁ : M)) * ((g₂ : M) * (f₂ : M))
+  tensorHom_def _ _ := mul_comm _ _
+  id_tensorHom_id _ _ := one_mul (1 : M)
+  tensorHom_comp_tensorHom _ _ _ _ := by
+    simp only [comp_as_mul]
     exact mul_mul_mul_comm _ _ _ _
-  associator_naturality f₁ f₂ f₃ := by
+  associator_naturality _ _ _ := by
     simp only [Iso.refl_hom, Category.comp_id, Category.id_comp]
-    change ((f₁ : M) * (f₂ : M)) * (f₃ : M) = (f₁ : M) * ((f₂ : M) * (f₃ : M))
     exact mul_assoc _ _ _
   leftUnitor_naturality _ := by
     simp only [Iso.refl_hom, Category.comp_id, Category.id_comp]

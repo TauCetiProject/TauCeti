@@ -199,34 +199,37 @@ variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
 
 /-- The canonical isomorphism `F.obj (𝟙_ C) ≅ G.obj (𝟙_ C)` between the images of the tensor unit
 under two strong monoidal functors. -/
-@[expose] def unitIso (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] : F.obj (𝟙_ C) ≅ G.obj (𝟙_ C) :=
+def isoAppUnit (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] : F.obj (𝟙_ C) ≅ G.obj (𝟙_ C) :=
   (εIso F).symm ≪≫ εIso G
 
 @[simp]
-theorem unitIso_hom (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] :
-    (unitIso F G).hom = η F ≫ ε G := rfl
+theorem isoAppUnit_hom (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] :
+    (isoAppUnit F G).hom = η F ≫ ε G := by
+  simp [isoAppUnit]
 
 @[simp]
-theorem unitIso_inv (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] :
-    (unitIso F G).inv = η G ≫ ε F := rfl
+theorem isoAppUnit_inv (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] :
+    (isoAppUnit F G).inv = η G ≫ ε F := by
+  simp [isoAppUnit]
 
 /-- The canonical isomorphism `F.obj (X ⊗ Y) ≅ G.obj (X ⊗ Y)` induced by isomorphisms
 `F.obj X ≅ G.obj X` and `F.obj Y ≅ G.obj Y`. -/
-@[expose] def tensorIso (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
+def isoAppTensor (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
     (iX : F.obj X ≅ G.obj X) (iY : F.obj Y ≅ G.obj Y) :
     F.obj (X ⊗ Y) ≅ G.obj (X ⊗ Y) :=
   (μIso F X Y).symm ≪≫ (iX ⊗ᵢ iY) ≪≫ μIso G X Y
 
 @[simp]
-theorem tensorIso_hom (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
+theorem isoAppTensor_hom (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
     (iX : F.obj X ≅ G.obj X) (iY : F.obj Y ≅ G.obj Y) :
-    (tensorIso F G iX iY).hom = δ F X Y ≫ (iX.hom ⊗ₘ iY.hom) ≫ μ G X Y := rfl
+    (isoAppTensor F G iX iY).hom = δ F X Y ≫ (iX.hom ⊗ₘ iY.hom) ≫ μ G X Y := by
+  simp [isoAppTensor]
 
 @[simp]
-theorem tensorIso_inv (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
+theorem isoAppTensor_inv (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
     (iX : F.obj X ≅ G.obj X) (iY : F.obj Y ≅ G.obj Y) :
-    (tensorIso F G iX iY).inv = δ G X Y ≫ (iX.inv ⊗ₘ iY.inv) ≫ μ F X Y := by
-  simp [tensorIso]
+    (isoAppTensor F G iX iY).inv = δ G X Y ≫ (iX.inv ⊗ₘ iY.inv) ≫ μ F X Y := by
+  simp [isoAppTensor]
 
 section StructuralNaturality
 
