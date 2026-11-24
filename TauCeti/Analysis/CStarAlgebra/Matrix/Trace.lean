@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
-public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import TauCeti.Analysis.Matrix.Frobenius
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
@@ -33,8 +32,6 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
   `tr_k(xy) = tr_k(yx)` and monotonicity for the C⋆-order.
 * `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, of norm
   at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`.
-* `CStarMatrix.normalizedTraceState`: `tr_k` in the weak-* dual, a state for `k ≠ 0`
-  (`CStarMatrix.normalizedTraceState_mem_stateSpace`).
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
 * `CStarMatrix.normalizedTwoNorm_eq_inv_sqrt_mul_frobenius_norm`: `‖x‖₂ = k^{-1/2}‖x‖_F`.
 * `CStarMatrix.normalizedTwoNormAddGroupNorm`: `‖·‖₂` as an additive group norm; its complex
@@ -420,24 +417,6 @@ theorem norm_normalizedTraceMap [Nonempty n] :
   classical
   refine le_antisymm (norm_normalizedTraceMap_le n) ?_
   simpa [CStarRing.norm_one] using (normalizedTraceMap n).toContinuousLinearMap.le_opNorm 1
-
-variable (n) in
-/-- The normalized trace as a functional in the weak-* dual. It is a state for a nonempty index
-type, by `CStarMatrix.normalizedTraceState_mem_stateSpace`. -/
-def normalizedTraceState : WeakDual ℂ (CStarMatrix n n ℂ) :=
-  StrongDual.toWeakDual (normalizedTraceMap n).toContinuousLinearMap
-
-/-- `normalizedTraceState n` evaluates to the normalized trace. -/
-@[simp]
-theorem normalizedTraceState_apply (x : CStarMatrix n n ℂ) :
-    normalizedTraceState n x = normalizedTrace x :=
-  (rfl)
-
-variable (n) in
-/-- The normalized trace is a state for a nonempty index type. -/
-theorem normalizedTraceState_mem_stateSpace [Nonempty n] :
-    normalizedTraceState n ∈ TauCeti.stateSpace (CStarMatrix n n ℂ) :=
-  (normalizedTraceMap n).toWeakDual_mem_stateSpace_iff.2 (norm_normalizedTraceMap n)
 
 /-- Left multiplication by an isometry `u⋆u = 1` preserves the normalized 2-norm. -/
 theorem normalizedTwoNorm_mul_left_of_star_mul_self [DecidableEq n] {u : CStarMatrix n n ℂ}

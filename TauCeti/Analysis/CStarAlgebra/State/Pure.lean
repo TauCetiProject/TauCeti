@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import TauCeti.Analysis.CStarAlgebra.State.Space
-import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
@@ -26,11 +25,7 @@ point of the state space.
 
 ## Main results
 
-* `PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero`: a positive linear functional
-  vanishing at `b⋆ b` kills `a b`.
-* `PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero`: a positive linear functional
-  vanishing at `b b⋆` kills `b a`.
-* `TauCeti.eq_of_mem_stateSpace_of_apply_one_sub_eq_zero`: a state vanishing at `1 - p` is `ω`.
+* `TauCeti.eq_of_mem_stateSpace_of_map_one_sub_eq_zero`: a state vanishing at `1 - p` is `ω`.
 * `TauCeti.mem_extremePoints_stateSpace_of_mul_mul_eq_smul`: `ω` is an extreme point of the state
   space.
 
@@ -45,30 +40,6 @@ public section
 open WeakDual
 open scoped ComplexOrder
 
-namespace PositiveLinearMap
-
-variable {A F : Type*} [NonUnitalRing A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
-  [Module ℂ A] [SelfAdjointDecompose A] [StarModule ℂ A] [IsScalarTower ℂ A A]
-  [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
-
-/-- A positive linear functional that vanishes at `b⋆ b` kills every product `a * b`, by the
-Cauchy–Schwarz inequality. -/
-theorem map_mul_eq_zero_of_map_star_mul_eq_zero (f : F) {b : A} (hb : f (star b * b) = 0)
-    (a : A) : f (a * b) = 0 := by
-  have h := norm_map_star_mul_le f (star a) b
-  simp only [star_star, hb, norm_zero, Real.sqrt_zero, mul_zero, norm_le_zero_iff] at h
-  exact h
-
-/-- A positive linear functional that vanishes at `b b⋆` kills every product `b * a`, by the
-Cauchy–Schwarz inequality. -/
-theorem map_mul_eq_zero_of_map_mul_star_eq_zero (f : F) {b : A} (hb : f (b * star b) = 0)
-    (a : A) : f (b * a) = 0 := by
-  have h := norm_map_mul_star_le f b (star a)
-  simp only [star_star, hb, norm_zero, Real.sqrt_zero, zero_mul, norm_le_zero_iff] at h
-  exact h
-
-end PositiveLinearMap
-
 namespace TauCeti
 
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {ω φ : WeakDual ℂ A}
@@ -76,7 +47,7 @@ variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {ω �
 
 /-- **A state supported on a minimal projection is determined.** Let `p` be a projection with
 `p a p = ω(a) p` for every `a`. A state `φ` with `φ(1 - p) = 0` is `ω`. -/
-theorem eq_of_mem_stateSpace_of_apply_one_sub_eq_zero (hp : IsStarProjection p)
+theorem eq_of_mem_stateSpace_of_map_one_sub_eq_zero (hp : IsStarProjection p)
     (hpap : ∀ a, p * a * p = ω a • p) (hφ : φ ∈ stateSpace A) (hφp : φ (1 - p) = 0) : φ = ω := by
   have hq := hp.one_sub
   have hφ1 : φ p = 1 := by
@@ -118,7 +89,7 @@ theorem mem_extremePoints_stateSpace_of_mul_mul_eq_smul (hω : ω ∈ stateSpace
     (mul_nonneg (Complex.zero_le_real.2 ht.le) hψq)).1 hsum
   have hφ0 := (mul_eq_zero.1 h₁).resolve_left (Complex.ofReal_ne_zero.2 hs.ne')
   have hψ0 := (mul_eq_zero.1 h₂).resolve_left (Complex.ofReal_ne_zero.2 ht.ne')
-  exact ⟨eq_of_mem_stateSpace_of_apply_one_sub_eq_zero hp hpap hφ hφ0,
-    eq_of_mem_stateSpace_of_apply_one_sub_eq_zero hp hpap hψ hψ0⟩
+  exact ⟨eq_of_mem_stateSpace_of_map_one_sub_eq_zero hp hpap hφ hφ0,
+    eq_of_mem_stateSpace_of_map_one_sub_eq_zero hp hpap hψ hψ0⟩
 
 end TauCeti

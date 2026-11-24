@@ -19,7 +19,8 @@ For a vector `ξ : n → ℂ`, the vector functional `a ↦ ⟪ξ, a ξ⟫ = sta
 C⋆-algebra `CStarMatrix n n ℂ` is a state when `ξ` is a unit vector. It is pure: the rank-one
 projection `ξ ξ⋆ = TauCeti.rankOneHermitianProjector ξ` compresses every matrix `a` to
 `⟪ξ, a ξ⟫ ξ ξ⋆`, so `TauCeti.mem_extremePoints_stateSpace_of_mul_mul_eq_smul` applies. The
-normalized trace is the average of the vector states of the standard basis vectors.
+normalized trace, a state of `M_n` for `n` nonempty, is the average of the vector states of the
+standard basis vectors.
 
 ## Main declarations
 
@@ -28,6 +29,8 @@ normalized trace is the average of the vector states of the standard basis vecto
   `ξ ξ⋆` compresses `a` to `⟪ξ, a ξ⟫ ξ ξ⋆`.
 * `CStarMatrix.vectorFunctional_mem_stateSpace`: the vector functional of a unit vector is a state.
 * `CStarMatrix.vectorFunctional_mem_extremePoints_stateSpace`: it is a pure state.
+* `CStarMatrix.normalizedTraceState`: the normalized trace in the weak-* dual, a state for `n`
+  nonempty (`CStarMatrix.normalizedTraceState_mem_stateSpace`).
 * `CStarMatrix.normalizedTraceState_eq_sum_smul_vectorFunctional`: the normalized trace is the
   average of the vector states of the standard basis vectors.
 -/
@@ -90,6 +93,24 @@ theorem vectorFunctional_mem_extremePoints_stateSpace {ξ : n → ℂ} (hξ : st
     ((isStarProjection_rankOneHermitianProjector ξ).map ofMatrixStarAlgEquiv)
     (ofMatrix_rankOneHermitianProjector_mul_mul hξ) ?_
   simp [← ofMatrix_eq_ofMatrixStarAlgEquiv, rankOneHermitianProjector_def, hξ, vecMulVec_mulVec]
+
+variable (n) in
+/-- The normalized trace as a functional in the weak-* dual. It is a state for a nonempty index
+type, by `CStarMatrix.normalizedTraceState_mem_stateSpace`. -/
+def normalizedTraceState : WeakDual ℂ (CStarMatrix n n ℂ) :=
+  StrongDual.toWeakDual (normalizedTraceMap n).toContinuousLinearMap
+
+/-- `normalizedTraceState n` evaluates to the normalized trace. -/
+@[simp]
+theorem normalizedTraceState_apply (x : CStarMatrix n n ℂ) :
+    normalizedTraceState n x = normalizedTrace x :=
+  normalizedTraceMap_apply x
+
+variable (n) in
+/-- The normalized trace is a state for a nonempty index type. -/
+theorem normalizedTraceState_mem_stateSpace [Nonempty n] :
+    normalizedTraceState n ∈ stateSpace (CStarMatrix n n ℂ) :=
+  (normalizedTraceMap n).toWeakDual_mem_stateSpace_iff.2 (norm_normalizedTraceMap n)
 
 /-- The normalized trace of `M_n` is the average of the vector states of the standard basis
 vectors. -/
