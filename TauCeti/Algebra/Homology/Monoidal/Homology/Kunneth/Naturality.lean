@@ -18,9 +18,11 @@ the spectral sequences of the column filtrations
 bicomplexes `HomologicalComplex.kunnethBicomplexMapLeft f L`, `f ▷ Q.X p` on column `p` for the
 Cartan–Eilenberg resolution `Q` of `L`.
 
-The Künneth bicomplex is built from the Cartan–Eilenberg resolution of the second variable, so
-naturality in the second variable needs a comparison of Cartan–Eilenberg resolutions and is not
-treated here.
+The Künneth bicomplex is built from the Cartan–Eilenberg resolution of the second variable, so a
+chain map `g : L₁ ⟶ L₂` induces a morphism of Künneth spectral sequences
+(`HomologicalComplex.kunnethSpectralSequenceMapRight`) through a lift of `g` to the
+Cartan–Eilenberg resolutions (`ChainComplex.cartanEilenbergResolutionMap`). That lift depends on
+choices, so no functoriality is stated for it.
 
 ## Main definitions and results
 
@@ -58,5 +60,19 @@ lemma kunnethSpectralSequenceMapLeft_comp :
     kunnethSpectralSequenceMapLeft (f ≫ f') L =
       kunnethSpectralSequenceMapLeft f L ≫ kunnethSpectralSequenceMapLeft f' L := by
   simp [kunnethSpectralSequenceMapLeft]
+
+section Right
+
+variable (K) {L₁ L₂ : ChainComplex (ModuleCat.{u} R) ℕ} (g : L₁ ⟶ L₂)
+
+/-- **A morphism of Künneth spectral sequences in the second variable**: the morphism of the
+spectral sequences of the column filtrations induced by
+`HomologicalComplex.kunnethBicomplexMapRight K g`, over a chain map `g : L₁ ⟶ L₂`. It depends on
+the choice of the lift of `g` to the Cartan–Eilenberg resolutions. -/
+abbrev kunnethSpectralSequenceMapRight :
+    kunnethSpectralSequence K L₁ ⟶ kunnethSpectralSequence K L₂ :=
+  HomologicalComplex₂.columnFiltrationSpectralSequenceMap (kunnethBicomplexMapRight K g)
+
+end Right
 
 end HomologicalComplex
