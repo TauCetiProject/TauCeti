@@ -172,8 +172,9 @@ theorem tendsto_ofReal_pi_mul_mul_upperHalfPlanePoissonIntegral_mul_I {ν : Meas
   simp [f, max_eq_left hy.le]
 
 /-- On the imaginary axis, `P[ν](iy) / y → 0` as `y → ∞`. This is the linear-coefficient limit
-`TauCeti.tendsto_im_div_of_eq_subtractedResolventKernel_add` for the Herglotz function whose
-imaginary part is `P[ν]`. -/
+`TauCeti.tendsto_im_div_of_eq_subtractedResolventKernel_add` for the Herglotz function
+`z ↦ ∫ t, subtractedResolventKernel z t ∂ν`, whose imaginary part is `π P[ν]`
+(`TauCeti.im_integral_subtractedResolventKernel`), divided by `π`. -/
 theorem tendsto_upperHalfPlanePoissonIntegral_mul_I_div (ν : Measure ℝ) :
     Tendsto (fun y : ℝ ↦ upperHalfPlanePoissonIntegral ν (y * I) / y) atTop (𝓝 0) := by
   have h := (tendsto_im_div_of_eq_subtractedResolventKernel_add (a := 0) (b := 0) (nu := ν)

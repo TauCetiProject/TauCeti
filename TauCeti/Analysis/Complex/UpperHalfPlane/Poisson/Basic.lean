@@ -325,6 +325,7 @@ theorem upperHalfPlanePoissonIntegral_nonneg (ν : Measure ℝ) {z : ℂ} (hz : 
   integral_nonneg (upperHalfPlanePoissonKernel_nonneg hz)
 
 /-- The Poisson integral is linear in the measure: `P[c • ν] = c P[ν]`. -/
+@[simp]
 theorem upperHalfPlanePoissonIntegral_smul_measure (ν : Measure ℝ) (c : ℝ≥0∞) (z : ℂ) :
     upperHalfPlanePoissonIntegral (c • ν) z = c.toReal * upperHalfPlanePoissonIntegral ν z := by
   rw [upperHalfPlanePoissonIntegral_def, integral_smul_measure, smul_eq_mul,
