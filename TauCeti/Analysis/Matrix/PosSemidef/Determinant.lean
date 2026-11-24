@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.Positive
 
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.LinearAlgebra.Matrix.Vec
 
 /-!
@@ -256,12 +257,6 @@ theorem PosDef.card_mul_re_det_mul_det_rpow_eq_re_trace_mul_iff {A B : Matrix n 
   · simp [hc, hAinv, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hSu,
       Matrix.nonsing_inv_mul _ hSu]
 
-/-- If `n * x ^ (1 / n) ≤ t` for a nonnegative real `x` and `n ≠ 0`, then `x ≤ (t / n) ^ n`. -/
-private theorem le_div_pow_of_mul_rpow_inv_le {x t : ℝ} {k : ℕ} (hk : k ≠ 0) (hx : 0 ≤ x)
-    (h : k * x ^ (k : ℝ)⁻¹ ≤ t) : x ≤ (t / k) ^ k := by
-  rw [← Real.rpow_inv_natCast_pow hx hk]
-  exact pow_le_pow_left₀ (Real.rpow_nonneg hx _) ((le_div_iff₀' (by positivity)).2 h) _
-
 /-- **The determinant–trace inequality in power form.** The determinant of a real
 positive-semidefinite `n × n` matrix is at most the `n`-th power of the mean of its eigenvalues,
 `det A ≤ (tr A / n) ^ n`. For `n = 0` both sides are `1`. -/
@@ -269,7 +264,7 @@ theorem PosSemidef.det_le_trace_div_card_pow {A : Matrix n n ℝ} (hA : A.PosSem
     A.det ≤ (A.trace / Fintype.card n) ^ Fintype.card n := by
   rcases isEmpty_or_nonempty n with hn | hn
   · simp
-  exact le_div_pow_of_mul_rpow_inv_le Fintype.card_ne_zero hA.det_nonneg
+  exact Real.le_div_pow_of_mul_rpow_inv_le Fintype.card_ne_zero hA.det_nonneg
     (by simpa only [RCLike.re_to_real] using hA.card_mul_re_det_rpow_le_re_trace)
 
 /-- **The mixed determinant–trace inequality in power form.** For real positive-semidefinite
@@ -279,7 +274,7 @@ theorem PosSemidef.det_mul_det_le_trace_mul_div_card_pow {A B : Matrix n n ℝ}
     A.det * B.det ≤ ((A * B).trace / Fintype.card n) ^ Fintype.card n := by
   rcases isEmpty_or_nonempty n with hn | hn
   · simp
-  exact le_div_pow_of_mul_rpow_inv_le Fintype.card_ne_zero
+  exact Real.le_div_pow_of_mul_rpow_inv_le Fintype.card_ne_zero
     (mul_nonneg hA.det_nonneg hB.det_nonneg)
     (by simpa only [RCLike.re_to_real] using hA.card_mul_re_det_mul_det_rpow_le_re_trace_mul hB)
 
