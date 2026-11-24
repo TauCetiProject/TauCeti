@@ -46,7 +46,8 @@ values on compactly supported functions, and hence by its chart compressions.
 ## Main results
 
 * `TauCeti.IsProperlySupported P`: the operator `P` is properly supported. The identity, sums,
-  scalar multiples and products with smooth functions on either side are properly supported.
+  scalar multiples, products with smooth functions on either side and local operators
+  (`TauCeti.IsProperlySupported.of_local`) are properly supported.
 * `TauCeti.classicalPseudodifferentialOperators m`: the properly supported operators all of whose
   chart compressions are quantizations of classical symbols of order `m`, a complex submodule of
   the operators on `C^∞(M, ℂ)`.
@@ -165,29 +166,21 @@ theorem IsProperlySupported.comp_mulLeft (hP : IsProperlySupported P)
     exact tsupport_mul_subset_right.trans hf
   · simp [hy]
 
+/-- A **local** operator, one such that `P f` vanishes at every point near which `f` vanishes, is
+properly supported, with `K' = K`. -/
+theorem IsProperlySupported.of_local
+    (hP : ∀ f x, (∀ᶠ y in 𝓝 x, f y = 0) → P f x = 0) : IsProperlySupported P := by
+  refine fun K hK ↦ ⟨K, hK, fun f hf ↦ ?_,
+    fun f hf x hx ↦ hP f x (hf.filter_mono (nhds_le_nhdsSet hx))⟩
+  refine (closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport f)).trans hf
+  by_contra h
+  exact hx (hP f x (notMem_tsupport_iff_eventuallyEq.1 h))
+
 end ProperSupport
 
 variable [T2Space M]
 
 /-! ### Classical pseudodifferential operators -/
-
-/-- The quantization of a sum of classical symbols is the sum of their quantizations. -/
-private theorem quantizeSchwartzValue_toSymbol_add {m : ℝ} (a b : ClassicalSymbol n ℂ ℂ m)
-    (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue (a + b).toSymbol.coefficient u x =
-      quantizeSchwartzValue a.toSymbol.coefficient u x +
-        quantizeSchwartzValue b.toSymbol.coefficient u x := by
-  rw [ClassicalSymbol.toSymbol_add, Symbol.coefficient_add,
-    Symbol.quantizeSchwartzValue_coefficient_add]
-
-/-- The quantization of a scalar multiple of a classical symbol is the scalar multiple of its
-quantization. -/
-private theorem quantizeSchwartzValue_toSymbol_smul {m : ℝ} (c : ℂ)
-    (a : ClassicalSymbol n ℂ ℂ m) (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue (c • a).toSymbol.coefficient u x =
-      c * quantizeSchwartzValue a.toSymbol.coefficient u x := by
-  rw [ClassicalSymbol.toSymbol_smul, Symbol.coefficient_smul, quantizeSchwartzValue_smul_left,
-    smul_eq_mul]
 
 /-- The **classical pseudodifferential operators of order `m`** on a manifold `M` modelled on
 `ℝⁿ`: the complex-linear operators `P` on the complex-valued smooth functions on `M` such that
@@ -214,13 +207,13 @@ def classicalPseudodifferentialOperators (m : ℝ) :
     let ⟨a, ha⟩ := hP.2 e he φ ψ
     let ⟨b, hb⟩ := hQ.2 e he φ ψ
     ⟨a + b, fun u x ↦ by
-      rw [quantizeSchwartzValue_toSymbol_add, ha, hb, map_add, LinearMap.add_apply,
-        ContMDiffMap.coe_add, Pi.add_apply]⟩⟩
+      rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add, ha, hb, map_add,
+        LinearMap.add_apply, ContMDiffMap.coe_add, Pi.add_apply]⟩⟩
   smul_mem' c P hP := ⟨hP.1.smul c, fun e he φ ψ ↦
     let ⟨a, ha⟩ := hP.2 e he φ ψ
     ⟨c • a, fun u x ↦ by
-      rw [quantizeSchwartzValue_toSymbol_smul, ha, map_smul, LinearMap.smul_apply,
-        ContMDiffMap.complex_smul_apply]⟩⟩
+      rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha, map_smul, LinearMap.smul_apply,
+        ContMDiffMap.complex_smul_apply, smul_eq_mul]⟩⟩
 
 theorem mem_classicalPseudodifferentialOperators_iff {m : ℝ}
     {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
@@ -305,7 +298,8 @@ theorem mulLeft_comp_mem_classicalPseudodifferentialOperators {m : ℝ}
   obtain ⟨a₁, ha₁⟩ := hP.2 e he (chartPartCutoff he g Complex.reCLM φ) ψ
   obtain ⟨a₂, ha₂⟩ := hP.2 e he (chartPartCutoff he g Complex.imCLM φ) ψ
   refine ⟨a₁ + Complex.I • a₂, fun u x ↦ ?_⟩
-  rw [quantizeSchwartzValue_toSymbol_add, quantizeSchwartzValue_toSymbol_smul, ha₁, ha₂]
+  rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add,
+    ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha₁, ha₂, smul_eq_mul]
   simp only [OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
     LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply, Complex.real_smul]
   linear_combination
@@ -342,7 +336,8 @@ theorem comp_mulLeft_mem_classicalPseudodifferentialOperators {m : ℝ}
         OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he _ _ hy, Complex.real_smul]
       linear_combination -f (e y) * h
     · simp [OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he _ _ hy]
-  rw [quantizeSchwartzValue_toSymbol_add, quantizeSchwartzValue_toSymbol_smul, ha₁, ha₂]
+  rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add,
+    ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha₁, ha₂, smul_eq_mul]
   simp only [OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
     LinearMap.mulLeft_apply, key, map_add, map_smul, ContMDiffMap.coe_add, Pi.add_apply,
     ContMDiffMap.complex_smul_apply, smul_add, Complex.real_smul]
@@ -375,7 +370,7 @@ theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m) :
     ContMDiffMap.complexifyLinearMap D ∈
       classicalPseudodifferentialOperators (n := n) (M := M) m := by
-  -- Like `D`, its complexification is local, so it is properly supported with `K' = K`.
+  -- Like `D`, its complexification is local, so it is properly supported.
   have hloc (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M)
       (hf : ∀ᶠ y in 𝓝 x, f y = 0) : ContMDiffMap.complexifyLinearMap D f x = 0 := by
     have hD₀ (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hg : ∀ᶠ y in 𝓝 x, g y = 0) :
@@ -384,11 +379,8 @@ theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
     simp [ContMDiffMap.complex_smul_apply, ContMDiffMap.ofReal_apply,
       hD₀ (ContMDiffMap.re f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.re_apply, hy]),
       hD₀ (ContMDiffMap.im f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.im_apply, hy])]
-  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨fun K hK ↦ ⟨K, hK, fun f hf ↦ ?_,
-    fun f hf x hx ↦ hloc f x (hf.filter_mono (nhds_le_nhdsSet hx))⟩, fun e he φ ψ ↦ ?_⟩
-  · refine (closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport f)).trans hf
-    by_contra h
-    exact hx (hloc f x (notMem_tsupport_iff_eventuallyEq.1 h))
+  refine mem_classicalPseudodifferentialOperators_iff.2
+    ⟨IsProperlySupported.of_local hloc, fun e he φ ψ ↦ ?_⟩
   refine ⟨ClassicalSymbol.ofDifferentialOperator ℂ
     (e.chartCompressionDifferentialOperators he φ ψ m ⟨D, hD⟩), fun u x ↦ ?_⟩
   rw [ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_chartCompression]
