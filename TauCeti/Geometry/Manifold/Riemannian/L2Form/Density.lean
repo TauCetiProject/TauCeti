@@ -49,10 +49,9 @@ theorem contMDiffSectionEquiv_toContMDiffSection_mem_compactlySupported_iff
     WithFiberMetric.contMDiffSectionEquiv (formMetric I M k) α.toContMDiffSection ∈
       ContMDiffSection.compactlySupported I (E [⋀^Fin k]→L[ℝ] ℝ) ∞
         (WithFiberMetric (formMetric I M k)) ↔ α ∈ compactlySupportedForms I M k := by
-  rw [ContMDiffSection.mem_compactlySupported, WithFiberMetric.tsupport_contMDiffSectionEquiv,
-    ContMDiffSection.tsupport_def, mem_compactlySupportedForms]
-  simp only [SmoothForm.toContMDiffSection_apply]
-  rfl
+  simp only [ContMDiffSection.mem_compactlySupported, ContMDiffSection.tsupport_def,
+    WithFiberMetric.contMDiffSectionEquiv_apply, SmoothForm.toContMDiffSection_apply,
+    SmoothForm.closure_setOf_toWithFiberMetric_ne_zero, mem_compactlySupportedForms]
 
 namespace compactlySupportedForms
 

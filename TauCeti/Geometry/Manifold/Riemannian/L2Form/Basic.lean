@@ -77,6 +77,16 @@ private theorem continuous_toWithFiberMetric (α : SmoothForm I M ℝ k) :
   (WithFiberMetric.continuous_totalSpaceMk_toWithFiberMetric_iff _).2
     α.isSmoothForm.contMDiff.continuous
 
+/-- A smooth form, read in the fibres carrying the Gram metric, has the closed support of the
+form. -/
+theorem SmoothForm.closure_setOf_toWithFiberMetric_ne_zero (α : SmoothForm I M ℝ k) :
+    closure {x | WithFiberMetric.toWithFiberMetric (formMetric I M k) x (α.val x) ≠ 0} =
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α.val := by
+  simp only [EmbeddingLike.map_ne_zero_iff]
+  -- The fibre of the bundle of forms at `x` is `E [⋀^Fin k]→L[ℝ] ℝ` with its own zero, so the
+  -- nonzero locus is the support of `α` by definition.
+  rfl
+
 section L2
 
 variable [MeasurableSpace M] [BorelSpace M] [SecondCountableTopology M]
@@ -103,8 +113,7 @@ def toContinuousSection : compactlySupportedForms I M k →ₗ[ℝ]
     contMDiff_zero_iff.2 (continuous_toWithFiberMetric α.val)⟩, by
       rw [ContMDiffSection.mem_compactlySupported, ContMDiffSection.tsupport_def]
       convert (mem_compactlySupportedForms I).1 α.property using 1
-      simp only [WithFiberMetric.toWithFiberMetric_apply]
-      rfl⟩
+      exact SmoothForm.closure_setOf_toWithFiberMetric_ne_zero α.val⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
 
