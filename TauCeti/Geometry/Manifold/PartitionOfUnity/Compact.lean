@@ -103,7 +103,12 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩
 
-private theorem contMDiff_toPartitionOfUnity {ι E H M : Type*}
+namespace BumpCovering
+
+/-- If all functions in a `BumpCovering` are `C^n`, then each function in the associated
+partition of unity is `C^n`. This generalizes `BumpCovering.contMDiff_toPartitionOfUnity` from `∞`
+to an arbitrary regularity order `n : ℕ∞ω`. -/
+theorem contMDiff_toPartitionOfUnity_of_contMDiff {ι E H M : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω} {K : Set M}
     (b : BumpCovering ι M K) (hb : ∀ i, CMDiff n (b i)) (i : ι) :
@@ -115,6 +120,8 @@ private theorem contMDiff_toPartitionOfUnity {ι E H M : Type*}
   refine (hb i).mul <|
     (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hb j)) ?_
   simpa only [mulSupport_one_sub] using b.locallyFinite
+
+end BumpCovering
 
 private theorem exists_finset_contMDiff_sum_eq_one_of_partition {ι E H M : Type*} [Finite ι]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -203,6 +210,6 @@ theorem IsCompact.exists_finset_contMDiff_sum_eq_one
     have hfi : tsupport (f i) ⊆ W (f.c i) := hf i
     simpa only [W, dite_eq_left (f.c_mem' i), j₀] using (hP_tsupp i).trans hfi
   exact exists_finset_contMDiff_sum_eq_one_of_partition b.toPartitionOfUnity
-    (contMDiff_toPartitionOfUnity b fun i ↦ (f i).contMDiff_of_isManifold)
+    (b.contMDiff_toPartitionOfUnity_of_contMDiff fun i ↦ (f i).contMDiff_of_isManifold)
     (fun i ↦ (f i).hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) (hP_tsupp i))
     j₀ hP_sub
