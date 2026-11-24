@@ -118,7 +118,7 @@ theorem tensorInducedChangeTransversalLinearEquiv_trans (v : U.LeftTransversal) 
 preserves and detects the total degree of the tensor power. -/
 theorem tensorInducedChangeTransversalLinearEquiv_mem_totalDegreePiece_iff [Fintype (G ⧸ U)]
     {A : Type*} [AddCommMonoid A] {ℳ : A → Submodule R M}
-    (hρ : ∀ u, TauCeti.LinearMap.IsHomogeneous (ρ u) ℳ ℳ 0) (n : A) (z : ⨂[R] _ : G ⧸ U, M) :
+    (hρ : ∀ u, LinearMap.IsHomogeneous (ρ u) ℳ ℳ 0) (n : A) (z : ⨂[R] _ : G ⧸ U, M) :
     tensorInducedChangeTransversalLinearEquiv U s t ρ z ∈
         TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n ↔
       z ∈ TauCeti.PiTensorProduct.totalDegreePiece (G ⧸ U) (fun _ ↦ ℳ) n := by

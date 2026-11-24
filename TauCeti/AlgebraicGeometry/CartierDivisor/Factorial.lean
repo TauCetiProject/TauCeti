@@ -10,12 +10,14 @@ public import TauCeti.AlgebraicGeometry.CartierDivisor.IdealSheaf
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Factorial
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Inverse
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effectivity
+public import TauCeti.AlgebraicGeometry.LineBundle.Affine.Picard
+public import TauCeti.AlgebraicGeometry.StructureSheaf.Stalk
 
 /-!
 # Divisors on normal and locally factorial schemes
 
-On a locally Noetherian normal integral scheme, algebraic Hartogs' principle
-(`exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme`) implies that
+Algebraic Hartogs' principle, through
+`SchemeWeilDivisor.rationalUnitClass_eq_of_forall_orderAt_eq`, implies that
 `CartierDivisor X →+ SchemeWeilDivisor X` is injective (`CartierDivisor.toWeilDivisorHom_injective`)
 on any Noetherian normal integral scheme.
 
@@ -26,11 +28,13 @@ divisor `Finsupp.single η 1`, giving canonical equivalences
 `CartierDivisor.weilClassGroupAddEquivLineBundleClass : Cl(X) ≃+ Additive (LineBundleClass X)`
 via `CartierDivisor.weilToLineBundleClassHom` in arbitrary dimension. Open-immersion Picard
 excision built on this equivalence is in `TauCeti.AlgebraicGeometry.CartierDivisor.Excision`.
+Since the Picard group of a unique factorization domain is trivial, so is the divisor class group
+of its spectrum (`SchemeWeilDivisor.subsingleton_classGroup_of_uniqueFactorizationMonoid`).
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Chapter II, Proposition 6.3A, Proposition 6.11, and
-  Corollary 6.16.
+* R. Hartshorne, *Algebraic Geometry*, Chapter II, Proposition 6.2, Proposition 6.3A,
+  Proposition 6.11, and Corollary 6.16.
 * [The Stacks Project, Tag 0BE9](https://stacks.math.columbia.edu/tag/0BE9).
 -/
 
@@ -43,29 +47,6 @@ namespace TauCeti.AlgebraicGeometry.Scheme
 universe u
 
 noncomputable section
-
-section Normal
-
-variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X] [IsNormalScheme X]
-
-/-- On a locally Noetherian normal integral scheme, two nonzero rational functions with the same
-orders at all codimension-one points of a nonempty open `U` represent the same Cartier divisor
-section over `U`. -/
-theorem rationalUnitClass_eq_of_forall_orderAt_eq_of_isNormalScheme {U : X.Opens} [Nonempty U]
-    {g h : Additive X.functionFieldˣ}
-    (hord : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
-      SchemeWeilDivisor.orderAt y g = SchemeWeilDivisor.orderAt y h) :
-    rationalUnitClass X U g = rationalUnitClass X U h := by
-  have hzero : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
-      X.ord ((Additive.toMul (g - h) : X.functionFieldˣ) : X.functionField) y = 0 := fun y hy ↦ by
-    rw [← SchemeWeilDivisor.orderAt_apply y (g - h), map_sub, hord y hy, sub_self]
-  obtain ⟨u, hu⟩ := exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isNormalScheme hzero
-  have hunit : Units.map (X.germToFunctionField U).hom u = Additive.toMul (g - h) := Units.ext hu
-  have hcl := rationalUnitClass_germToFunctionField_eq_zero X U u
-  rw [hunit, ofMul_toMul, map_sub] at hcl
-  exact sub_eq_zero.mp hcl
-
-end Normal
 
 namespace CartierDivisor
 
@@ -94,8 +75,15 @@ theorem toWeilDivisorHom_injective : Function.Injective (toWeilDivisorHom (X := 
     rw [map_zero, ← orderAt_eq_of_restrict_eq_rationalUnitClass D y (U x) hy g hDg,
       ← coeff_toWeilDivisor, hD0, WeilDivisor.coeff_zero]
   have hres : D |_ U x = 0 := by
-    rw [hDg, rationalUnitClass_eq_of_forall_orderAt_eq_of_isNormalScheme hord, map_zero]
+    rw [hDg, SchemeWeilDivisor.rationalUnitClass_eq_of_forall_orderAt_eq (fun _ _ ↦ inferInstance)
+      hord, map_zero]
   simpa only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_zero] using hres
+
+/-- On a Noetherian normal integral scheme, a Cartier divisor with zero Weil divisor is zero.
+Hartshorne, *Algebraic Geometry*, Remark II.6.11.2. -/
+@[simp]
+theorem toWeilDivisor_eq_zero_iff {D : CartierDivisor X} : D.toWeilDivisor = 0 ↔ D = 0 := by
+  rw [← toWeilDivisorHom_apply, map_eq_zero_iff _ toWeilDivisorHom_injective]
 
 /-- On a Noetherian normal integral scheme, a Cartier divisor is principal if and only if its
 associated Weil divisor is principal. -/
@@ -552,6 +540,21 @@ theorem equivCartierDivisor_eq_equivCartierDivisorOfUniqueFactorizationMonoid
 end SchemeWeilDivisor
 
 end LocallyFactorial
+
+section UniqueFactorizationDomain
+
+variable {R : CommRingCat.{u}} [IsDomain R] [IsNoetherianRing R] [UniqueFactorizationMonoid R]
+
+/-- **The divisor class group of a unique factorization domain is trivial.** On the spectrum of a
+Noetherian unique factorization domain `R`, `Cl(Spec R) ≃ Pic(Spec R) ≃ Pic R` is trivial, as the
+Picard group of a unique factorization domain is. Hartshorne, Proposition II.6.2. -/
+instance SchemeWeilDivisor.subsingleton_classGroup_of_uniqueFactorizationMonoid :
+    Subsingleton (WeilDivisor.OrderSystem.ofScheme (Spec R)).ClassGroup :=
+  have : Subsingleton (LineBundleClass (Spec R)) := LineBundleClass.subsingleton_spec (R := R)
+  (SchemeWeilDivisor.classGroupAddEquivLineBundleClassOfUniqueFactorizationMonoid
+    (Spec R)).toEquiv.subsingleton
+
+end UniqueFactorizationDomain
 
 end
 

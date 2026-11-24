@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
 public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Naturality
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.CategoryTheory.ObjectProperty.ColimitsOfShape
 
@@ -23,7 +24,8 @@ This file proves the row `q = 0`, where the coefficients `H₀(F; R) = R` are co
 The projection `p` maps the preimages `p⁻¹(Xᵏ)` of the skeleta of `B` to the skeleta themselves, so
 it induces a morphism from the Serre spectral sequence of `p` to that of the identity of `B`, the
 spectral sequence of the skeletal filtration of `B`
-(`TauCeti.TopCat.serreSpectralSequenceProj`).
+(`TauCeti.TopCat.serreSpectralSequenceProj`, the morphism
+`TauCeti.TopCat.serreSpectralSequenceMapOver` of `p` as a map over `B`).
 
 * On the row `q = 0` of the first page this morphism is the map
   `H_k(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹)) ⟶ H_k(Xᵏ, Xᵏ⁻¹)`. Cell by cell it is the map `H₀(F) ⟶ H₀(pt)` of the
@@ -86,10 +88,10 @@ variable (C : Set B) {D : Set B} [RelCWComplex C D]
 
 /-- **The projection of the Serre spectral sequence onto the base.** The morphism from the Serre
 spectral sequence of `p` over a relative CW complex `C` to that of the identity of `B`, the
-spectral sequence of the skeletal filtration of `C`, induced by `p`. -/
+spectral sequence of the skeletal filtration of `C`, induced by `p`: the morphism
+`TauCeti.TopCat.serreSpectralSequenceMapOver` of the map `p` over `B` into the identity of `B`. -/
 def serreSpectralSequenceProj : serreSpectralSequence C p R ⟶ serreSpectralSequence C (𝟙 B) R :=
-  filteredSpaceSpectralSequenceMap (ModuleCat.of R R) (monotone_preimageSkeleton p)
-    (monotone_preimageSkeleton (𝟙 B)) p (mapsTo_preimageSkeleton (C := C) p fun _ ↦ rfl)
+  serreSpectralSequenceMapOver C R (Category.comp_id p)
 
 /-- The projection of the Serre spectral sequence onto the base is the morphism of spectral
 sequences of filtered spaces induced by `p`. -/

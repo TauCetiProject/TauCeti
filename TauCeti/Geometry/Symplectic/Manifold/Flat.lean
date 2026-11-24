@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.BilinearForm
 

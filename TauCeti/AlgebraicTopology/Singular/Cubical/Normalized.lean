@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Chains
+import Mathlib.Topology.CompactOpen
 
 /-!
 # Normalized cubical chains
@@ -34,6 +35,8 @@ inverse.
 * `TauCeti.NormalizedCubicalChain.cast R h`: reindexing along an equality of dimensions.
 * `TauCeti.NormalizedCubicalChain.desc g hg`: the linear map determined by its values on cubes,
   vanishing on the degenerate ones.
+* `TauCeti.NormalizedCubicalChain.zeroEquiv X R`: the normalized `0`-chains are the formal
+  combinations of points.
 
 ## Main results
 
@@ -42,6 +45,8 @@ inverse.
 * `TauCeti.CubicalChain.boundary_mem_degenerate`: the boundary of a degenerate chain is degenerate.
 * `TauCeti.CubicalChain.degenerate_zero`: there are no degenerate `0`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on normalized chains.
+* `TauCeti.NormalizedCubicalChain.boundary_ofCube_comp_squareSwap`: transposing a square negates
+  its boundary.
 * `TauCeti.NormalizedCubicalChain.map_boundary` and
   `TauCeti.NormalizedCubicalChain.map_boundary_apply`: the boundary is natural.
 * `TauCeti.NormalizedCubicalChain.map_injective`: injective continuous maps induce injective
@@ -175,10 +180,10 @@ variable (R : Type*) [Ring R]
 /-- The boundary of a degenerate cube is a degenerate chain: the two terms of the degenerate
 coordinate cancel, and every other face is degenerate. -/
 theorem boundary_single_mem_degenerate {n : ℕ} {c : SingularCube X (n + 1)}
-    (hc : IsDegenerate c) : boundary X R n (single c 1) ∈ degenerate X R n := by
+    (hc : IsDegenerate c) : boundary X R R n (single c 1) ∈ degenerate X R n := by
   obtain ⟨i, hi⟩ := isDegenerate_iff.1 hc
   rw [boundary_single]
-  refine Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _ ?_
+  refine Submodule.sum_mem _ fun j _ ↦ Submodule.smul_of_tower_mem _ _ ?_
   by_cases hij : i = j
   · subst hij
     rw [face_eq_of_isDegenerateAt hi 0 1, sub_self]
@@ -188,7 +193,7 @@ theorem boundary_single_mem_degenerate {n : ℕ} {c : SingularCube X (n + 1)}
 
 /-- The degenerate chains form a subcomplex. -/
 theorem boundary_mem_degenerate {n : ℕ} {f : CubicalChain X R (n + 1)}
-    (hf : f ∈ degenerate X R (n + 1)) : boundary X R n f ∈ degenerate X R n := by
+    (hf : f ∈ degenerate X R (n + 1)) : boundary X R R n f ∈ degenerate X R n := by
   induction hf using Submodule.span_induction with
   | mem f hf =>
     obtain ⟨c, hc, rfl⟩ := hf
@@ -198,7 +203,7 @@ theorem boundary_mem_degenerate {n : ℕ} {f : CubicalChain X R (n + 1)}
   | smul a f _ hf => rw [map_smul]; exact Submodule.smul_mem _ a hf
 
 private theorem degenerate_le_comap_boundary (n : ℕ) :
-    degenerate X R (n + 1) ≤ (degenerate X R n).comap (boundary X R n) :=
+    degenerate X R (n + 1) ≤ (degenerate X R n).comap (boundary X R R n) :=
   fun _ hf ↦ boundary_mem_degenerate R hf
 
 end Ring
@@ -282,14 +287,33 @@ theorem desc_ofCube {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ} (g : Sin
   simp [desc, ofCube_def]
 
 variable (X) in
+/-- **The normalized `0`-chains are the formal combinations of points**: no `0`-cube is
+degenerate, and a `0`-cube is the constant cube at its value. -/
+def zeroEquiv : NormalizedCubicalChain X R 0 ≃ₗ[R] (X →₀ R) :=
+  Submodule.quotEquivOfEqBot _ (CubicalChain.degenerate_zero (X := X) (R := R)) ≪≫ₗ
+    Finsupp.domLCongr (Homeomorph.continuousMapOfUnique (X := Fin 0 → I) (Y := X)).symm.toEquiv
+
+/-- The class of the `0`-cube at a point is the indicator of that point. -/
+@[simp]
+theorem zeroEquiv_ofCube_point (x : X) :
+    zeroEquiv X R (ofCube X R (SingularCube.point x)) = Finsupp.single x 1 := by
+  simp [zeroEquiv, ofCube_def]
+
+/-- The indicator of a point is the class of the `0`-cube at that point. -/
+@[simp]
+theorem zeroEquiv_symm_single (x : X) (r : R) :
+    (zeroEquiv X R).symm (Finsupp.single x r) = r • ofCube X R (SingularCube.point x) := by
+  rw [LinearEquiv.symm_apply_eq, map_smul, zeroEquiv_ofCube_point, Finsupp.smul_single_one]
+
+variable (X) in
 /-- The boundary of normalized cubical chains, induced by the boundary of the unnormalized ones. -/
 def boundary (n : ℕ) : NormalizedCubicalChain X R (n + 1) →ₗ[R] NormalizedCubicalChain X R n :=
-  Submodule.mapQ _ _ (CubicalChain.boundary X R n) (degenerate_le_comap_boundary R n)
+  Submodule.mapQ _ _ (CubicalChain.boundary X R R n) (degenerate_le_comap_boundary R n)
 
 @[simp]
 theorem boundary_mk {n : ℕ} (f : CubicalChain X R (n + 1)) :
     boundary X R n (Submodule.Quotient.mk f) =
-      Submodule.Quotient.mk (CubicalChain.boundary X R n f) :=
+      Submodule.Quotient.mk (CubicalChain.boundary X R R n f) :=
   Submodule.mapQ_apply _ _ _ f
 
 /-- The boundary of a boundary vanishes. -/
@@ -305,6 +329,12 @@ theorem boundary_ofCube {n : ℕ} (c : SingularCube X (n + 1)) :
         (ofCube X R (SingularCube.face i 0 c) - ofCube X R (SingularCube.face i 1 c)) := by
   rw [ofCube_def, boundary_mk, CubicalChain.boundary_single_one, CubicalChain.boundaryCube_def]
   simp only [ofCube_def, ← Submodule.mkQ_apply, map_sum, map_smul, map_sub]
+
+/-- The boundary of a transposed square is minus the boundary of the square. -/
+theorem boundary_ofCube_comp_squareSwap (c : SingularCube X 2) :
+    boundary X R 1 (ofCube X R (c.comp SingularCube.squareSwap)) =
+      -boundary X R 1 (ofCube X R c) := by
+  simp [Fin.sum_univ_two]
 
 /-- Normalized cubical chains pushed forward along a continuous map. -/
 def map (f : C(X, Y)) (n : ℕ) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain Y R n :=

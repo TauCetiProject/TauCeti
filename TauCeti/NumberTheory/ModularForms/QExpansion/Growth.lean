@@ -74,7 +74,7 @@ theorem meromorphicAt_cuspFunction_of_isBigO_exp (hh : 0 < h)
       hτ
   have han : AnalyticAt ℂ (cuspFunction h fun τ ↦ 𝕢 h τ ^ n * f τ) 0 :=
     analyticAt_cuspFunction_zero_of_eventually_mdifferentiableAt hh
-      (periodic_qParam_pow_mul hper n) hhol' hbdd
+      (periodic_qParam_pow_mul_comp_ofComplex hper n) hhol' hbdd
   have heq : cuspFunction h f =ᶠ[𝓝[≠] 0]
       fun q ↦ (q ^ n)⁻¹ * cuspFunction h (fun τ ↦ 𝕢 h τ ^ n * f τ) q := by
     filter_upwards [cuspFunction_qParam_pow_mul_eventuallyEq hh n f, self_mem_nhdsWithin]
@@ -96,7 +96,7 @@ theorem exists_isBigO_exp_of_meromorphicAt_cuspFunction (hh : 0 < h)
   have hbdd : IsBoundedAtImInfty fun τ ↦ 𝕢 h τ ^ n * f τ := by
     refine ((han.continuousAt.tendsto.comp (qParam_tendsto_atImInfty hh)).isBigO_one ℝ).congr_left
       fun τ ↦ ?_
-    exact eq_cuspFunction τ hh.ne' (periodic_qParam_pow_mul hper n)
+    exact eq_cuspFunction τ hh.ne' (periodic_qParam_pow_mul_comp_ofComplex hper n)
   refine ⟨2 * Real.pi * n / h, ?_⟩
   have hbound := (isBoundedAtImInfty_qParam_zpow_mul_iff h n).1 (by simpa only [zpow_natCast])
   refine hbound.congr_right fun τ ↦ ?_

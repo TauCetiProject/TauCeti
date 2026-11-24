@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.Oscillation
+import TauCeti.Algebra.Order.Ring.MaxOneMul
 import TauCeti.Analysis.PDE.Ellipticity.Extension
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -19,10 +20,11 @@ Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ` with
 `0 < λ ≤ Λ`, let `F ∈ L^q(Ω; ℝⁿ)` with `q > 2` and `q > n`, and let `u ∈ H¹(Ω)` be a weak
 subsolution of
 
-`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ` in `Ω` near a point `x₀`,
 
-meaning `a(u, v) ≤ -∫_Ω ⟪F, ∇v⟫` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≤ 0` on `∂Ω` in the
-sense that `u⁺ ∈ H¹₀(Ω)`. Nothing is assumed about the regularity of `∂Ω`. This file proves
+meaning `a(u, v) ≤ -∫_Ω ⟪F, ∇v⟫` for every nonnegative `v ∈ H¹₀(Ω)` vanishing off a ball about
+`x₀`, with `u ≤ 0` on `∂Ω` in the sense that `u⁺ ∈ H¹₀(Ω)`. Nothing is assumed about the
+regularity of `∂Ω`, nor about the equation away from `x₀`. This file proves
 De Giorgi's estimate at boundary points with this divergence datum: if the complement of `Ω` fills
 a fixed proportion `θ > 0` of `B(x₀, R)`, then
 
@@ -56,9 +58,9 @@ The datum is therefore split off on the ball first.
   `-∂ᵢ(a'ⁱʲ ∂ⱼH) ≤ 0` on `D`: by `TauCeti.PDE.energyFormH1_posPart_left_nonpos_of_forall_pos` it
   suffices to test `ū - w - K₀` against the truncations `m = min(H, ε v)`, `v ≥ 0` in `H¹₀(D)`.
   Such an `m` lies in `H¹₀(D)` below `ε v`, and its zero extension to `Ω` lies in `H¹₀(Ω)` below
-  `u⁺` (`TauCeti.W1p.mem_w1p0Submodule_of_nonneg_of_le`), so the weak formulations of `u` on `Ω`
-  and of `w` on `D` may both be tested against it. Their data terms are the same integral
-  `∫_{Ω ∩ D} ⟪F, ∇m⟫` and cancel.
+  `u⁺` (`TauCeti.W1p.mem_w1p0Submodule_of_nonneg_of_le`) and vanishes off `D`, so the weak
+  formulations of `u` near `x₀` and of `w` on `D` may both be tested against it. Their data terms
+  are the same integral `∫_{Ω ∩ D} ⟪F, ∇m⟫` and cancel.
 * **Reduction.** De Giorgi's interior reduction of the supremum
   (`TauCeti.PDE.exists_ae_value_le_sub_mul_sub`) applies to `H` on `D` at the level `0`, which `H`
   does not exceed on the proportion `θ` of `B(x₀, R)` outside `Ω`. Then `u ≤ H + 2 K₀`.
@@ -185,7 +187,7 @@ variable [DecidableEq ι]
 
 omit [DecidableEq ι] in
 /-- A function `0 ≤ m ≤ u⁺` in `H¹₀(D)`, extended by zero to `Ω`, is a nonnegative element of
-`H¹₀(Ω)` when `u⁺ ∈ H¹₀(Ω)`. -/
+`H¹₀(Ω)` vanishing off `D` when `u⁺ ∈ H¹₀(Ω)`. -/
 private theorem mem_w1p0Submodule_restrictL_extendByZeroL_of_le
     {D : Opens (EuclideanSpace ℝ ι)} {u : W1p mu Omega 2}
     (hb : W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2) (m : W1p0 mu D 2)
@@ -196,7 +198,10 @@ private theorem mem_w1p0Submodule_restrictL_extendByZeroL_of_le
     (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.restrictL (le_top : Omega ≤ ⊤)
       (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x) ∧
     W1p.restrictL (le_top : Omega ≤ ⊤) (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2) ∈
-      w1p0Submodule mu Omega 2 := by
+      w1p0Submodule mu Omega 2 ∧
+    ∀ᵐ x ∂mu.restrict Omega, x ∉ (D : Set (EuclideanSpace ℝ ι)) →
+      W1p.value (W1p.restrictL (le_top : Omega ≤ ⊤)
+        (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x = 0 := by
   have hval := W1p0.value_restrictL_extendByZeroL_ae (V := Omega) le_top le_top m
   have hnn : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.restrictL (le_top : Omega ≤ ⊤)
       (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x := by
@@ -206,7 +211,10 @@ private theorem mem_w1p0Submodule_restrictL_extendByZeroL_of_le
     · rw [indicator_of_mem hxD]
       exact h2 hxD
     · rw [indicator_of_notMem hxD]
-  refine ⟨hnn, W1p.mem_w1p0Submodule_of_nonneg_of_le (by norm_num) hb hnn ?_⟩
+  refine ⟨hnn, W1p.mem_w1p0Submodule_of_nonneg_of_le (by norm_num) hb hnn ?_, ?_⟩
+  swap
+  · filter_upwards [hval] with x h1 hxD
+    rw [h1, indicator_of_notMem hxD]
   filter_upwards [hval, ae_restrict_of_ae hmu, Lp.coeFn_posPart (W1p.value u),
     self_mem_ae_restrict Omega.isOpen.measurableSet] with x h1 h2 h3 hxO
   rw [h1, W1p.value_posPart, h3]
@@ -216,10 +224,11 @@ private theorem mem_w1p0Submodule_restrictL_extendByZeroL_of_le
   · rw [indicator_of_notMem hxD]
     exact le_max_right _ _
 
-/-- The energy step of the splitting: test the weak formulation of `u` on `Ω` against the zero
-extension of a truncation `m ∈ H¹₀(D)`, and that of `w` on `D` against `m`. If the energy of
-`ū` against `m` on `D` is that of `u` against the extension on `Ω`, then the energy of
-`ū - w - K` against `m` is nonpositive: the two data terms cancel. -/
+/-- The energy step of the splitting: test the weak formulation of `u` on `Ω`, required only for
+test functions vanishing off `D`, against the zero extension of a truncation `m ∈ H¹₀(D)`, and
+that of `w` on `D` against `m`. If the energy of `ū` against `m` on `D` is that of `u` against
+the extension on `Ω`, then the energy of `ū - w - K` against `m` is nonpositive: the two data
+terms cancel. -/
 private theorem energyFormH1_sub_add_const_nonpos_of_eq
     {D : Opens (EuclideanSpace ℝ ι)} [IsFiniteMeasure (mu.restrict (D : Set (EuclideanSpace ℝ ι)))]
     {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
@@ -228,6 +237,8 @@ private theorem energyFormH1_sub_add_const_nonpos_of_eq
     {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+      (∀ᵐ x ∂mu.restrict Omega,
+        x ∉ (D : Set (EuclideanSpace ℝ ι)) → W1p.value (v : W1p mu Omega 2) x = 0) →
         energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
           -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu)
     {w : W1p0 mu D 2}
@@ -240,13 +251,16 @@ private theorem energyFormH1_sub_add_const_nonpos_of_eq
     (hmΩnn : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.restrictL (le_top : Omega ≤ ⊤)
       (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x)
     (hmΩ : W1p.restrictL (le_top : Omega ≤ ⊤) (W1p0.extendByZeroL (le_top : D ≤ ⊤) m :
-      W1p mu ⊤ 2) ∈ w1p0Submodule mu Omega 2) :
+      W1p mu ⊤ 2) ∈ w1p0Submodule mu Omega 2)
+    (hmΩD : ∀ᵐ x ∂mu.restrict Omega, x ∉ (D : Set (EuclideanSpace ℝ ι)) →
+      W1p.value (W1p.restrictL (le_top : Omega ≤ ⊤)
+        (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x = 0) :
     energyFormH1 a' 0 0 (ub - ((w : W1p mu D 2) + W1p.const K)) (m : W1p mu D 2) ≤ 0 := by
   have hu' : energyFormH1 a 0 0 u (W1p.restrictL (le_top : Omega ≤ ⊤)
       (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) ≤
       -∫ x in Omega, ⟪F x, W1p.gradient (W1p.restrictL (le_top : Omega ≤ ⊤)
         (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x⟫ ∂mu :=
-    hu ⟨_, hmΩ⟩ hmΩnn
+    hu ⟨_, hmΩ⟩ hmΩnn hmΩD
   have hF : ∫ x in Omega, ⟪F x, W1p.gradient (W1p.restrictL (le_top : Omega ≤ ⊤)
       (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x⟫ ∂mu =
       ∫ x in D, ⟪(Omega : Set (EuclideanSpace ℝ ι)).indicator F x,
@@ -261,7 +275,8 @@ private theorem energyFormH1_sub_add_const_nonpos_of_eq
   linarith [hw m]
 
 /-- **Splitting off the divergence datum on a ball keeps a subsolution.** Let `u ∈ H¹(Ω)` be a
-weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ` with `u⁺ ∈ H¹₀(Ω)`, and let `ū` be the zero extension of
+weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ` near `D`, tested against the nonnegative
+`v ∈ H¹₀(Ω)` vanishing off `D`, with `u⁺ ∈ H¹₀(Ω)`, and let `ū` be the zero extension of
 `u⁺` to an open set `D` of finite measure. Let `a'` be uniformly elliptic on `D` and agree with
 `a` on `Ω`, and let `w ∈ H¹₀(D)` solve `-∂ᵢ(a'ⁱʲ ∂ⱼw) = ∂ᵢ(1_Ω F)ⁱ` on `D` with `w ≥ -K`. Then
 `(ū - w - K)⁺` is a weak subsolution of `-∂ᵢ(a'ⁱʲ ∂ⱼ·) ≤ 0` on `D`. -/
@@ -275,6 +290,8 @@ private theorem energyFormH1_posPart_restrictL_extendByZeroL_sub_nonpos
     (hb : W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2)
     (hu : ∀ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+      (∀ᵐ x ∂mu.restrict Omega,
+        x ∉ (D : Set (EuclideanSpace ℝ ι)) → W1p.value (v : W1p mu Omega 2) x = 0) →
         energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
           -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu)
     {w : W1p0 mu D 2}
@@ -314,7 +331,7 @@ private theorem energyFormH1_posPart_restrictL_extendByZeroL_sub_nonpos
         rw [h1, h2, Pi.smul_apply, smul_eq_mul]
         exact min_le_right _ _)
   -- It lies below `u⁺` on `Ω`, so its zero extension to `Ω` lies in `H¹₀(Ω)`.
-  obtain ⟨hmΩnn, hmΩ⟩ := mem_w1p0Submodule_restrictL_extendByZeroL_of_le hb ⟨m, hmD⟩
+  obtain ⟨hmΩnn, hmΩ, hmΩD⟩ := mem_w1p0Submodule_restrictL_extendByZeroL_of_le hb ⟨m, hmD⟩
     ((ae_restrict_iff' hD).1 hm0)
     (by
       filter_upwards [(ae_restrict_iff' hD).1 hmval, hUval, (ae_restrict_iff' hD).1 hwK]
@@ -331,14 +348,15 @@ private theorem energyFormH1_posPart_restrictL_extendByZeroL_sub_nonpos
     rw [h2, indicator_of_mem hxO, max_eq_right hu0]
     linarith
   exact energyFormH1_sub_add_const_nonpos_of_eq h' ha' hu hw ub K ⟨m, hmD⟩ (hE ⟨m, hmD⟩ hgrad)
-    hmΩnn hmΩ
+    hmΩnn hmΩ hmΩD
 
 /-- **Splitting off the divergence datum at a boundary point.** For `q > 2`, `q > n` there is
 `K > 0`, depending only on `q`, the dimension and `mu`, such that the following holds. Let `u`
-be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ` on `Ω` with `u⁺ ∈ H¹₀(Ω)`, and let
-`D = B(x₀, 2R)`. Then there are a coefficient field `a'` on `D`, uniformly elliptic with the
-constants of `a`, and `U ∈ H¹(D)` with `U⁺` a weak subsolution of `-∂ᵢ(a'ⁱʲ ∂ⱼ·) ≤ 0` on `D`,
-such that `U ≤ 1_Ω u⁺ ≤ U + K R^(1 - n/q) ‖F‖_{L^q(Ω ∩ D)} / λ` on `D`. -/
+be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ` in `Ω ∩ D`, `D = B(x₀, 2R)`, tested against the
+nonnegative `v ∈ H¹₀(Ω)` vanishing off `D`, with `u⁺ ∈ H¹₀(Ω)`. Then there are a coefficient
+field `a'` on `D`, uniformly elliptic with the constants of `a`, and `U ∈ H¹(D)` with `U⁺` a weak
+subsolution of `-∂ᵢ(a'ⁱʲ ∂ⱼ·) ≤ 0` on `D`, such that
+`U ≤ 1_Ω u⁺ ≤ U + K R^(1 - n/q) ‖F‖_{L^q(Ω ∩ D)} / λ` on `D`. -/
 private theorem exists_posPart_subsolution_ball_divergence [Nonempty ι] {q : ℝ≥0}
     (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) :
     ∃ K : ℝ, 0 < K ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
@@ -350,6 +368,7 @@ private theorem exists_posPart_subsolution_ball_divergence [Nonempty ι] {q : �
       (hb : W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2) →
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        (∀ᵐ x ∂mu.restrict Omega, x ∉ ball x₀ (2 * R) → W1p.value (v : W1p mu Omega 2) x = 0) →
           energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
             -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
       0 < R →
@@ -419,11 +438,11 @@ private theorem exists_posPart_subsolution_ball_divergence [Nonempty ι] {q : �
 are `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the dimension and the normalization of the
 additive Haar measure `mu`, and `K > 0`, depending only on `q`, the dimension and `mu`, such that
 the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`,
-and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ`, that is
-`a(u, v) ≤ -∫_Ω ⟪F, ∇v⟫` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≤ 0` on `∂Ω` in the sense
-that `u⁺ ∈ H¹₀(Ω)`, and `F ∈ L^q(Ω ∩ B(x₀, 2R); ℝⁿ)`. If `u ≤ M` almost everywhere on
-`Ω ∩ B(x₀, 2R)` and the complement of `Ω` fills the proportion `θ` of `B(x₀, R)`, then almost
-everywhere on `Ω ∩ B(x₀, R/2)`
+and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ` in `Ω ∩ B(x₀, 2R)`, that is
+`a(u, v) ≤ -∫_Ω ⟪F, ∇v⟫` for every nonnegative `v ∈ H¹₀(Ω)` vanishing off `B(x₀, 2R)`, with
+`u ≤ 0` on `∂Ω` in the sense that `u⁺ ∈ H¹₀(Ω)`, and `F ∈ L^q(Ω ∩ B(x₀, 2R); ℝⁿ)`. If `u ≤ M`
+almost everywhere on `Ω ∩ B(x₀, 2R)` and the complement of `Ω` fills the proportion `θ` of
+`B(x₀, R)`, then almost everywhere on `Ω ∩ B(x₀, R/2)`
 
 `u ≤ (1 - δ) M + K R^(1 - n/q) ‖F‖_{L^q(Ω ∩ B(x₀, 2R))} / λ`.
 
@@ -440,6 +459,7 @@ theorem exists_ae_value_le_mul_add_of_mul_measureReal_le_measureReal_ball_diff_d
       W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2 →
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        (∀ᵐ x ∂mu.restrict Omega, x ∉ ball x₀ (2 * R) → W1p.value (v : W1p mu Omega 2) x = 0) →
           energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
             -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
       0 < R →
@@ -550,7 +570,8 @@ private theorem div_pow_div_two_rpow_le {R γ τ : ℝ} (hR : 0 < R) (hγ : 0 < 
 `τ ∈ (0, 1)` and `C > 0`, depending only on `λ`, `Λ`, `θ`, `q`, the dimension and the
 normalization of `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic
 on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ`
-with `u⁺ ∈ H¹₀(Ω)` and `F ∈ L^q(Ω ∩ B(x₀, R); ℝⁿ)`. If `u ≤ M` almost everywhere on
+in `Ω ∩ B(x₀, R)`, tested against the nonnegative `v ∈ H¹₀(Ω)` vanishing off `B(x₀, R)`, with
+`u⁺ ∈ H¹₀(Ω)` and `F ∈ L^q(Ω ∩ B(x₀, R); ℝⁿ)`. If `u ≤ M` almost everywhere on
 `Ω ∩ B(x₀, R)`, `M ≥ 0`, and the complement of `Ω` fills the proportion `θ` of every ball
 `B(x₀, r)`, `0 < r ≤ R`, then for every `j`, almost everywhere on `Ω ∩ B(x₀, R / 4ʲ)`,
 
@@ -567,6 +588,7 @@ theorem exists_ae_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_di
       W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2 →
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        (∀ᵐ x ∂mu.restrict Omega, x ∉ ball x₀ R → W1p.value (v : W1p mu Omega 2) x = 0) →
           energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
             -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
       0 < R → 0 ≤ M →
@@ -612,8 +634,10 @@ theorem exists_ae_value_le_pow_mul_add_of_mul_measureReal_le_measureReal_ball_di
       inter_subset_inter_right _ (ball_subset_ball hrR)
     rw [h2r] at ih
     rw [hr2]
-    refine (hred h ha (hF.mono_measure (Measure.restrict_mono hsub le_rfl)) hb hu hr ih
-      (hext r hr (by linarith))).mono fun x hx => hx.trans ?_
+    refine (hred h ha (hF.mono_measure (Measure.restrict_mono hsub le_rfl)) hb
+      (fun v hv hvS => hu v hv (by
+        filter_upwards [hvS] with x hx hxR using hx fun hx2 => hxR (ball_subset_ball hrR hx2)))
+      hr ih (hext r hr (by linarith))).mono fun x hx => hx.trans ?_
     -- The datum term on `B(x₀, 2r)` is at most `τʲ` times the one on `B(x₀, R)`.
     have hrγ := div_pow_div_two_rpow_le (τ := τ) hR hγ (le_max_right _ _) j
     rw [← hr_def] at hrγ
@@ -643,7 +667,8 @@ private theorem inv_rpow_pow_le_rpow_mul_div_rpow {α ρ R : ℝ} (hα : 0 ≤ �
 dimension, fix a proportion `θ > 0` and an exponent `q > 2` with `q > n`. There are `α > 0` and
 `C > 0`, depending only on `λ`, `Λ`, `θ`, `q`, the dimension and the normalization of `mu`, such
 that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants
-`λ, Λ`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ` with `u⁺ ∈ H¹₀(Ω)` and
+`λ, Λ`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ ∂ᵢFⁱ` in `Ω ∩ B(x₀, R)`,
+tested against the nonnegative `v ∈ H¹₀(Ω)` vanishing off `B(x₀, R)`, with `u⁺ ∈ H¹₀(Ω)` and
 `F ∈ L^q(Ω ∩ B(x₀, R); ℝⁿ)`. If `u ≤ M` almost everywhere on `Ω ∩ B(x₀, R)`, `M ≥ 0`, and the
 complement of `Ω` fills the proportion `θ` of every ball `B(x₀, r)`, `0 < r ≤ R`, then for
 `0 < ρ ≤ R`, almost everywhere on `Ω ∩ B(x₀, ρ)`,
@@ -661,6 +686,7 @@ theorem exists_ae_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureReal_ba
       W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2 →
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        (∀ᵐ x ∂mu.restrict Omega, x ∉ ball x₀ R → W1p.value (v : W1p mu Omega 2) x = 0) →
           energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
             -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
       0 < R → 0 ≤ M →
@@ -695,8 +721,7 @@ theorem exists_ae_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureReal_ba
   have hA : 0 ≤ A := by positivity
   have hτj : τ ^ j ≤ 4 ^ α * (ρ / R) ^ α :=
     hτα ▸ inv_rpow_pow_le_rpow_mul_div_rpow hα.le hρ hR hj2
-  have hMA : M + c * A ≤ max 1 c * (M + A) := by
-    nlinarith [le_max_left 1 c, le_max_right 1 c]
+  have hMA : M + c * A ≤ max 1 c * (M + A) := add_mul_le_max_one_mul_add hM hA
   calc _ = τ ^ j * (M + c * A) := by simp only [A]; ring
     _ ≤ (4 ^ α * (ρ / R) ^ α) * (max 1 c * (M + A)) :=
         mul_le_mul hτj hMA (by positivity) (by positivity)
@@ -706,10 +731,11 @@ theorem exists_ae_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureReal_ba
 `n ≥ 1` be the dimension, fix a proportion `θ > 0` and an exponent `q > 2` with `q > n`. There
 are `α > 0` and `C > 0`, depending only on `λ`, `Λ`, `θ`, `q`, the dimension and the normalization
 of `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with
-constants `λ, Λ`, and let `u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` with
-`F ∈ L^q(Ω ∩ B(x₀, R); ℝⁿ)`. If `|u| ≤ M` almost everywhere on `Ω ∩ B(x₀, R)` and the complement
-of `Ω` fills the proportion `θ` of every ball `B(x₀, r)`, `0 < r ≤ R`, then for `0 < ρ ≤ R`,
-almost everywhere on `Ω ∩ B(x₀, ρ)`,
+constants `λ, Λ`, and let `u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` in
+`Ω ∩ B(x₀, R)`, that is `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)` vanishing off `B(x₀, R)`,
+with `F ∈ L^q(Ω ∩ B(x₀, R); ℝⁿ)`. If `|u| ≤ M` almost everywhere on `Ω ∩ B(x₀, R)` and the
+complement of `Ω` fills the proportion `θ` of every ball `B(x₀, r)`, `0 < r ≤ R`, then for
+`0 < ρ ≤ R`, almost everywhere on `Ω ∩ B(x₀, ρ)`,
 
 `|u| ≤ C (ρ / R)^α (M + R^(1 - n/q) ‖F‖_{L^q(Ω ∩ B(x₀, R))} / λ)`. -/
 theorem
@@ -723,8 +749,10 @@ theorem
       AEStronglyMeasurable a (mu.restrict Omega) →
       MemLp F q (mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ R)) →
       u ∈ w1p0Submodule mu Omega 2 →
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
-        -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, x ∉ ball x₀ R → W1p.value (v : W1p mu Omega 2) x = 0) →
+          energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+            -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) →
       0 < R →
       (∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball x₀ R),
         |W1p.value u x| ≤ M) →
@@ -755,13 +783,13 @@ theorem
     ae_restrict_of_ae_restrict_of_subset inter_subset_left (W1p.value_neg_ae u)
   -- Both `u` and `-u` are subsolutions vanishing on the boundary, with data `F` and `-F`.
   have hpos := hdecay h ha hF (W1p.posPart_mem_w1p0Submodule (by norm_num) hu0)
-    (fun v _ => (hu v).le) hR hM (by filter_upwards [hle] with x hx using (abs_le.1 hx).2)
+    (fun v _ hvR => (hu v hvR).le) hR hM (by filter_upwards [hle] with x hx using (abs_le.1 hx).2)
     hext hρ hρR
   have hneg' := hdecay (F := -F) (u := -u) h ha hF.neg
     (W1p.posPart_mem_w1p0Submodule (by norm_num)
       ((w1p0Submodule mu Omega 2).toSubmodule.neg_mem hu0))
-    (fun v _ => by
-      rw [energyFormH1_neg_left, hu v]
+    (fun v _ hvR => by
+      rw [energyFormH1_neg_left, hu v hvR]
       simp only [Pi.neg_apply, inner_neg_left, integral_neg, neg_neg, le_refl])
     hR hM (by
       filter_upwards [hle, hneg] with x hx hx'

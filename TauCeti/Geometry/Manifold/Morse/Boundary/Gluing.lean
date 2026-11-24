@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Compactification
-public import TauCeti.Geometry.Manifold.Morse.Gluing.Broken
+public import TauCeti.Geometry.Manifold.Morse.Gluing.Transverse
 
 /-!
 # Broken index-two trajectories are limits of unbroken ones
