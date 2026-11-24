@@ -68,8 +68,8 @@ the law under `τ ↦ τ + 1` follows in the same way from the action of `T` on 
 
 * F. Calegari, V. Dimitrov and Y. Tang, *The unbounded denominators conjecture*,
   J. Amer. Math. Soc. 38 (2025), (1.0.2) and §1.1.3.
-* T. M. Apostol, *Modular Functions and Dirichlet Series in Number Theory*, 2nd ed., §2.3 and
-  §4.9 (the eta function).
+* T. M. Apostol, *Modular Functions and Dirichlet Series in Number Theory*, 2nd ed., Chapter 3,
+  Theorems 3.1 and 3.4 (the eta function).
 * H. Weber, *Lehrbuch der Algebra*, Band III, and D. A. Cox, *Primes of the Form x² + ny²*, §12
   (Weber's functions, with `λ = 𝔣₂⁸/𝔣⁸` and `1 - λ = 𝔣₁⁸/𝔣⁸`).
 -/
