@@ -294,9 +294,7 @@ theorem contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le {k : ℕ
     simp only [iteratedFDeriv_fun_zero, Pi.zero_apply, norm_zero]
     positivity⟩
   have hneg {g : ℂ → ℝ} (hg : P g) : P fun z ↦ -g z :=
-    ⟨hg.1.neg, fun n hn z ↦ by
-      rw [← Pi.neg_def, iteratedFDeriv_neg_apply, norm_neg]
-      exact hg.2 n hn z⟩
+    ⟨hg.1.neg, fun n hn z ↦ (norm_iteratedFDeriv_fun_neg g n z).trans_le (hg.2 n hn z)⟩
   have hw (a : Fin 4) : P fun z ↦ (x z - vacuumField z) a := by
     have hxa : ContDiff ℝ ∞ fun z ↦ x z a := contDiff_euclidean.1 hx a
     have he : (fun z ↦ (x z - vacuumField z) a) = (fun z ↦ x z a) - fun _ ↦ vacuumField 0 a :=
@@ -350,16 +348,17 @@ private theorem mem_sobolevFields_natCast_add_one_of_mem_sobolevFields {k : ℕ}
     y ∈ sobolevFields (k + 1) := by
   -- A single bound for the derivatives of the four coordinates through order `k`.
   choose M hM using fun i ↦ exists_forall_norm_iteratedFDeriv_le_of_forall_exists (hbound i)
+  obtain ⟨N, hN⟩ := Finite.exists_le M
+  have hN₀ : 0 ≤ N := (norm_nonneg _).trans ((hM 0 0 (Nat.zero_le k) 0).trans (hN 0))
   have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx
-    (B := ∑ a, |M a|) fun i n hn z ↦ (hM i n hn z).trans ((le_abs_self _).trans
-      (Finset.single_le_sum (f := fun a ↦ |M a|) (fun a _ ↦ abs_nonneg _) (Finset.mem_univ i)))
+    (B := N) fun i n hn z ↦ (hM i n hn z).trans (hN i)
   have hzo : (fun z ↦ (A (x z - vacuumField z)).toEuclideanLin (y z)) ∈ sobolevFields k := by
     simp_rw [toEuclideanLin_apply_eq_toLp]
     refine mulVec_mem_sobolevFields_natCast k (A := fun i j z ↦ A (x z - vacuumField z) i j)
       (fun i j ↦ ?_) (fun i j ↦ ?_) hy <;>
     · obtain ⟨a, b, hab⟩ := hA i j
       simp only [hab]
-      first | exact (hZ a b).1 | exact ⟨_, by positivity, (hZ a b).2⟩
+      first | exact (hZ a b).1 | exact ⟨_, add_nonneg hN₀ (norm_nonneg _), (hZ a b).2⟩
   exact mem_sobolevFields_add_one_of_zerothOrder_mem hT hK hreg hB hzo
     (memLp_of_mem_sobolevFields hy) hf hweak
 

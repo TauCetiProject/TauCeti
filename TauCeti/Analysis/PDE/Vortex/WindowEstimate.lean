@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.EllipticEstimate
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 
@@ -98,6 +99,16 @@ private theorem norm_inclusion_le_and_ae_eq {r s : ℝ} (h : r ≤ s) (hr : 0 �
       (norm_inclusion_apply_le h _).trans (norm_le_pi_norm u a),
     fun a ↦ by rw [inclusionLp_inclusion]; exact hu a⟩
 
+/-- Coordinates in `H^s(ℂ)` serve, through the inclusion, at an equal order `r = s`, with the same
+norm. This moves coordinates between the orders `((n + 1 : ℕ) : ℝ)` and `(n : ℝ) + 1`. -/
+private theorem norm_inclusion_eq_and_ae_eq {r s : ℝ} (h : r = s) (hr : 0 ≤ r)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {u : Fin 4 → H^{s}(ℂ)}
+    (hu : ∀ a, ⇑(inclusionLp (hr.trans h.le) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) :
+    ‖fun a ↦ inclusion h.le (u a)‖ = ‖u‖ ∧
+      ∀ a, ⇑(inclusionLp hr (inclusion h.le (u a))) =ᵐ[volume] fun z ↦ (y z a : ℂ) := by
+  subst h
+  exact ⟨by simp only [inclusion_self], fun a ↦ by simpa only [inclusion_self] using hu a⟩
+
 /-- **The coordinates of `f + A y`.** For orders `j ≤ k` there is a constant `C` with the
 following property. If `A` is a matrix of smooth coefficients with derivatives bounded by `B`
 through order `j`, `u` are coordinates of `y` in `H^j(ℂ)` and `v` coordinates of `f` in `H^k(ℂ)`,
@@ -140,7 +151,8 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_add_mulVec {j k : ℕ} (h
           gcongr with b
           · exact (norm_inclusion_apply_le hjk' _).trans (norm_le_pi_norm v a)
           · exact (hwn a b).trans (by gcongr; exact norm_le_pi_norm u b)
-      _ = ‖v‖ + 4 * C * B * ‖u‖ := by simp; ring
+      _ = ‖v‖ + 4 * C * B * ‖u‖ := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]; ring
 
 /-- Subtracting an entry of the zeroth-order matrix of `L_x - L₀` from a smooth coefficient with
 derivatives bounded by `B` gives a smooth coefficient with derivatives bounded by
@@ -267,20 +279,14 @@ private theorem exists_norm_le_of_vacuum
     refine ⟨K₀ * (1 + C * |B| * Kj), by positivity, fun A hA hAb y f v hy hv hweak u hu ↦ ?_⟩
     have hB : 0 ≤ B := (norm_nonneg _).trans (hAb 0 0 0 (Nat.zero_le k) 0)
     have hjs : (j : ℝ) ≤ ((j + 1 : ℕ) : ℝ) := by exact_mod_cast j.le_succ
-    have hs₁ : (j : ℝ) + 1 ≤ ((j + 1 : ℕ) : ℝ) := by push_cast; rfl
-    have hs₂ : ((j + 1 : ℕ) : ℝ) ≤ (j : ℝ) + 1 := by push_cast; rfl
     -- The coordinates of `y` in `H^j`, and in `H^(j+1)` indexed by `(j : ℝ) + 1`.
     obtain ⟨-, hujy⟩ := norm_inclusion_le_and_ae_eq hjs (Nat.cast_nonneg j) hu
-    obtain ⟨-, hu'y⟩ := norm_inclusion_le_and_ae_eq hs₁ (by positivity) hu
-    have hu' : ‖u‖ ≤ ‖fun a ↦ inclusion hs₁ (u a)‖ := by
-      have h := (norm_inclusion_le_and_ae_eq hs₂ (Nat.cast_nonneg (j + 1)) hu'y).1
-      simpa only [inclusion_inclusion, inclusion_self] using h
+    obtain ⟨hu', hu'y⟩ := norm_inclusion_eq_and_ae_eq (Nat.cast_succ j).symm (by positivity) hu
     have hujb := hKjb A hA hAb y f v hy hv hweak _ hujy
     obtain ⟨W, hW, hWn⟩ := hCb A hA B (fun a b n hn ↦ hAb a b n (hn.trans (by omega))) y f _ v
       hujy hv
-    calc ‖u‖ ≤ ‖fun a ↦ inclusion hs₁ (u a)‖ := hu'
-      _ ≤ K₀ * (‖W‖ + (eLpNorm y 2 volume).toReal) :=
-          hK₀b y _ (fun a ↦ inclusion hs₁ (u a)) W hu'y hW hweak
+    calc ‖u‖ = ‖fun a ↦ inclusion (Nat.cast_succ j).symm.le (u a)‖ := hu'.symm
+      _ ≤ K₀ * (‖W‖ + (eLpNorm y 2 volume).toReal) := hK₀b y _ _ W hu'y hW hweak
       _ ≤ K₀ * (‖v‖ + C * B * (Kj * (‖v‖ + (eLpNorm y 2 volume).toReal)) +
             (eLpNorm y 2 volume).toReal) := by gcongr; exact hWn.trans (by gcongr)
       _ = K₀ * (1 + C * |B| * Kj) * (‖v‖ + (eLpNorm y 2 volume).toReal) := by
@@ -322,12 +328,8 @@ private theorem exists_norm_le_mul_add_of_vacuum
   refine ⟨K, hK, fun A hA hAb y f u v hu hv hweak ↦ ?_⟩
   have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
     ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
-  have hs : ((k + 1 : ℕ) : ℝ) ≤ (k : ℝ) + 1 := by push_cast; rfl
-  have hs' : (k : ℝ) + 1 ≤ ((k + 1 : ℕ) : ℝ) := by push_cast; rfl
-  obtain ⟨-, hu'⟩ := norm_inclusion_le_and_ae_eq hs (Nat.cast_nonneg (k + 1)) hu
-  have hn := (norm_inclusion_le_and_ae_eq hs' (by positivity) hu').1
-  simp only [inclusion_inclusion, inclusion_self] at hn
-  exact hn.trans (hKb A hA hAb y f v hy hv hweak _ hu')
+  obtain ⟨hn, hu'⟩ := norm_inclusion_eq_and_ae_eq (Nat.cast_succ k) (Nat.cast_nonneg (k + 1)) hu
+  exact hn.symm.trans_le (hKb A hA hAb y f v hy hv hweak _ hu')
 
 end Bootstrap
 
@@ -462,11 +464,8 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_ad
 private theorem exists_forall_norm_iteratedFDeriv_expWeightCoeff_le (c : ℝ) (k : ℕ) :
     ∃ M ≥ 0, ∀ i j, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (expWeightCoeff c i j) z‖ ≤ M := by
   choose M hM hMb using fun i j ↦ exists_norm_iteratedFDeriv_expWeightCoeff_le c i j k
-  refine ⟨∑ i, ∑ j, M i j, Finset.sum_nonneg fun i _ ↦ Finset.sum_nonneg fun j _ ↦ hM i j,
-    fun i j n hn z ↦ (hMb i j n hn z).trans ?_⟩
-  exact (Finset.single_le_sum (f := fun j ↦ M i j) (fun j _ ↦ hM i j) (Finset.mem_univ j)).trans
-    (Finset.single_le_sum (f := fun i ↦ ∑ j, M i j)
-      (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ hM i j) (Finset.mem_univ i))
+  obtain ⟨N, hN⟩ := Finite.exists_le fun p : Fin 4 × Fin 4 ↦ M p.1 p.2
+  exact ⟨N, (hM 0 0).trans (hN (0, 0)), fun i j n hn z ↦ (hMb i j n hn z).trans (hN (i, j))⟩
 
 /-- **The weighted Sobolev estimate for the right inverse, uniformly over a window of
 divisors.** For every degree `m`, radius `r`, bound `B`, rate `|c| < 1/2` and order `k` there is a
@@ -567,7 +566,7 @@ theorem exists_forall_norm_exp_mul_smul_adjoint_apply_le_mul_norm_of_forall_mem_
     exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add k (max B M)
   have hAb (i j : Fin 4) (n : ℕ) (hn : n ≤ k) (z : ℂ) :
       ‖iteratedFDeriv ℝ n (fun z ↦ -expWeightCoeff c j i z) z‖ ≤ max B M := by
-    rw [← Pi.neg_def, iteratedFDeriv_neg_apply, norm_neg]
+    rw [norm_iteratedFDeriv_fun_neg]
     exact (hM j i n hn z).trans (le_max_right _ _)
   exact ⟨K₁ * (1 + 4 * K₀), by positivity,
     fun x D hx hsol hframe hD hDr hxb Q hweak horth g hg v hv ↦
