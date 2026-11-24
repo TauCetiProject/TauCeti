@@ -161,7 +161,7 @@ theorem isClosedEmbedding_ι_of_isColimit {J : Type w} [Preorder J] [IsDirectedO
     {F : J ⥤ TopCat.{u}}
     (hF : ∀ ⦃i j : J⦄ (hij : i ≤ j), IsClosedEmbedding (F.map (homOfLE hij)))
     {c : Cocone F} (hc : IsColimit c) (i : J) : IsClosedEmbedding (c.ι.app i) := by
-  have hinj := injective_ι_of_isColimit (fun _ _ hij ↦ (hF hij).injective) hc
+  have hinj := injective_ι_of_isColimit (fun _ _ f ↦ (hF (leOfHom f)).injective) hc
   refine .of_continuous_injective_isClosedMap (c.ι.app i).hom.continuous (hinj i) fun Z hZ ↦ ?_
   rw [TopCat.isClosed_iff_of_isColimit _ hc]
   intro k

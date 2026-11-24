@@ -206,7 +206,9 @@ noncomputable def relabel (hf : ⋃ I : Finset A', 𝒜.footprint (I.map f) = un
       (Homeomorph.piCongrLeft (Y := fun α : ↥(J.map f \ I.map f) ↦ E α) σ).symm), hxe,
       fun y hy ↦ ?_⟩
     -- Both sides are `s_(f α)(y)` for `α ∈ J \ I`, since `σ α` is `f α` by definition.
-    exact funext fun α ↦ congrFun (he y hy) (σ α)
+    refine funext fun α ↦ ?_
+    rw [kuranishiSdiff_apply, relabelKuranishi_apply]
+    exact (congrFun (he y hy) (σ α)).trans (kuranishiSdiff_apply _ _ _ _ _)
   exists_footprintMap_eq y := by
     obtain ⟨I, hI⟩ := mem_iUnion.1 (hf.ge (mem_univ y))
     obtain ⟨x, hx, hxy⟩ := 𝒜.mem_footprint.1 hI
@@ -253,7 +255,7 @@ theorem footprintMap_relabel {I J : Finset A'} (h : I ⊆ J)
 theorem footprint_relabel (I : Finset A') :
     (𝒜.relabel f hf).footprint I = 𝒜.footprint (I.map f) := by
   ext y
-  simp only [mem_footprint]
+  simp only [Core.mem_footprint]
   -- The footprint maps `ψ_∅I` and `ψ_∅(f I)` agree on the equal zero sets `Z_∅I = Z_∅(f I)`.
   constructor
   · rintro ⟨x, hx, rfl⟩

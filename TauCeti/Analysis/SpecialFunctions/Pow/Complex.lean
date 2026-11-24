@@ -87,6 +87,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
   `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
   including at `w = 0`, and the sign dichotomy `(-w) ^ (1/2) = ±(I * w ^ (1/2))`.
@@ -577,6 +578,12 @@ theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : 
 end TauCeti
 
 namespace Complex
+
+/-- An exponential based at a principal logarithm splits into a principal power and the
+exponential of the remaining summand. -/
+theorem exp_log_add_mul {z : ℂ} (hz : z ≠ 0) (w e : ℂ) :
+    exp ((log z + w) * e) = z ^ e * exp (w * e) := by
+  rw [add_mul, exp_add, cpow_def_of_ne_zero hz]
 
 /-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
 theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by

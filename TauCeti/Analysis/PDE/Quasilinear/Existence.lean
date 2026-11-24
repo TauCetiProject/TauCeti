@@ -227,6 +227,25 @@ theorem eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
   (existsUnique_frozen hA hAm hAc hΩ g ℓ hv).unique ⟨hug, hu⟩
     (frozenSolution_spec hA hAm hAc hΩ g ℓ hv)
 
+/-- The frozen solution is homogeneous in the data: scaling the boundary values `g` and the
+forcing `ℓ` by `θ` scales the solution of `-div (A(x, v) ∇u) = ℓ`, `u - g ∈ H¹₀(Ω)`, by `θ`. -/
+theorem smul_frozenSolution
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
+    (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
+    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
+    (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2)) (θ : ℝ)
+    {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
+    θ • frozenSolution A g ℓ v = frozenSolution A (θ • g) (θ • ℓ) v := by
+  have hspec := frozenSolution_spec hA hAm hAc hΩ g ℓ hv
+  refine eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq hA hAm hAc hΩ hv
+    ?_ fun φ => ?_
+  · have h := Submodule.smul_mem _ θ ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hspec.1)
+    rwa [smul_sub, ClosedSubmodule.mem_toSubmodule_iff] at h
+  · rw [smul_apply, smul_eq_mul, ← hspec.2 φ]
+    exact energyFormH1_smul_left _ 0 0 θ _ _
+
 /-- The energy form of a frozen coefficient has norm at most `Λ` as a bilinear form on `H¹(Ω)`. -/
 private theorem norm_energyFormH1L_comp_le
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))

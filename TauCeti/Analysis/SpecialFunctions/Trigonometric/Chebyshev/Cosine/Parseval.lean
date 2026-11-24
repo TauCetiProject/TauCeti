@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Parseval
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Cosine.HilbertBasis
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Parseval
 
@@ -81,7 +80,7 @@ theorem tsum_norm_sq_integral_normalizedChebyshevCosine_mul
     (f : Lp 𝕜 2 chebyshevAngleMeasure) :
     ∑' n : ℕ, ‖∫ θ : ℝ, (algebraMap ℝ 𝕜) (normalizedChebyshevCosine n θ) * f θ
         ∂chebyshevAngleMeasure‖ ^ 2 = ‖f‖ ^ 2 := by
-  have h := (chebyshevCosineHilbertBasis 𝕜).tsum_norm_sq_inner f
+  have h := (chebyshevCosineHilbertBasis 𝕜).tsum_norm_inner_sq f
   simp_rw [← (chebyshevCosineHilbertBasis 𝕜).repr_apply_apply,
     chebyshevCosineHilbertBasis_repr_apply] at h
   exact h
@@ -92,7 +91,7 @@ theorem tsum_norm_sq_intervalIntegral_normalizedChebyshevCosine_mul
     (f : Lp 𝕜 2 chebyshevAngleMeasure) :
     ∑' n : ℕ, ‖∫ θ in (0)..Real.pi, (algebraMap ℝ 𝕜) (normalizedChebyshevCosine n θ) * f θ‖ ^ 2 =
       ‖f‖ ^ 2 := by
-  have h := (chebyshevCosineHilbertBasis 𝕜).tsum_norm_sq_inner f
+  have h := (chebyshevCosineHilbertBasis 𝕜).tsum_norm_inner_sq f
   simp_rw [← (chebyshevCosineHilbertBasis 𝕜).repr_apply_apply,
     chebyshevCosineHilbertBasis_repr_apply_interval] at h
   exact h
@@ -138,7 +137,7 @@ theorem summable_norm_sq_integral_normalizedChebyshevCosine_mul
     Summable fun n : ℕ =>
       ‖∫ θ : ℝ, (algebraMap ℝ 𝕜) (normalizedChebyshevCosine n θ) * f θ
         ∂chebyshevAngleMeasure‖ ^ 2 := by
-  have h := (chebyshevCosineHilbertBasis 𝕜).summable_norm_sq_inner f
+  have h := (chebyshevCosineHilbertBasis 𝕜).summable_norm_inner_sq f
   simp_rw [← (chebyshevCosineHilbertBasis 𝕜).repr_apply_apply,
     chebyshevCosineHilbertBasis_repr_apply] at h
   exact h
@@ -149,7 +148,7 @@ theorem summable_norm_sq_intervalIntegral_normalizedChebyshevCosine_mul
     (f : Lp 𝕜 2 chebyshevAngleMeasure) :
     Summable fun n : ℕ =>
       ‖∫ θ in (0)..Real.pi, (algebraMap ℝ 𝕜) (normalizedChebyshevCosine n θ) * f θ‖ ^ 2 := by
-  have h := (chebyshevCosineHilbertBasis 𝕜).summable_norm_sq_inner f
+  have h := (chebyshevCosineHilbertBasis 𝕜).summable_norm_inner_sq f
   simp_rw [← (chebyshevCosineHilbertBasis 𝕜).repr_apply_apply,
     chebyshevCosineHilbertBasis_repr_apply_interval] at h
   exact h

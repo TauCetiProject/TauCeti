@@ -79,6 +79,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   of `M` by it.
 * `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
   over `A`.
+* `TauCeti.natCard_eq_pow_of_length_eq` and `TauCeti.natCard_eq_pow_length_toNat`: a module of
+  finite length `ℓ` over a local ring whose residue field has `q` elements has `q ^ ℓ` elements.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
 * `Ideal.length_quotient_eq_one`: `length (A ⧸ 𝔪) = 1` for a maximal (left) ideal `𝔪` of a ring
@@ -92,7 +94,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `Ideal.length_localizedModule_quotient_eq_one`: for a prime `𝔭`, the localization of `A ⧸ 𝔭`
   at `𝔭` has length one over `A_𝔭`, being its residue field.
 * `TauCeti.isFiniteLength_quotient_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` has finite length for every `n`
-  over a noetherian local ring.
+  over a noetherian local ring, so it is an Artinian ring
+  (`TauCeti.isArtinianRing_quotient_maximalIdeal_pow`).
 * `Submodule.eq_of_le_of_length_eq`: a submodule contained in another of the same finite length
   is equal to it.
 * `LinearMap.length_eq_of_bijective`: a bijective semilinear map along a surjective ring
@@ -389,6 +392,52 @@ theorem length_residueField_eq_one : Module.length A (ResidueField A) = 1 := by
     (S := ResidueField A) residue_surjective]
   exact instIsSimpleModule _
 
+variable {M : Type*} [AddCommGroup M] [Module A M]
+
+/-- Over a local ring, a covering `N ⋖ P` of submodules multiplies the cardinality by that of the
+residue field: `P ⧸ N` is a simple module, hence isomorphic to the residue field. This follows the
+proof of Mathlib's `CovBy.length_restrictScalars` (`Mathlib/RingTheory/LocalRing/Length.lean`). -/
+theorem _root_.CovBy.natCard_eq_mul_natCard_residueField {N P : Submodule A M} (h : N ⋖ P) :
+    Nat.card P = Nat.card N * Nat.card (ResidueField A) := by
+  let f : N →ₗ[A] P := Submodule.inclusion h.le
+  have key : IsSimpleModule A (P ⧸ LinearMap.range f) := by
+    rwa [Submodule.range_inclusion, ← covBy_iff_quot_is_simple h.le]
+  obtain ⟨m, hm, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp key
+  rw [eq_maximalIdeal hm] at e
+  rw [Submodule.card_eq_card_quotient_mul_card (LinearMap.range f),
+    ← Nat.card_congr (LinearEquiv.ofInjective f (Submodule.inclusion_injective h.le)).toEquiv,
+    Nat.card_congr e.toEquiv]
+  -- The residue field is by definition the quotient by the maximal ideal.
+  rfl
+
+/-- **The cardinality of a module of finite length over a local ring.** If `M` has length `n`
+over a local ring `A`, then `M` has `q ^ n` elements, where `q` is the cardinality of the residue
+field of `A`. The proof adapts the composition-series induction of Mathlib's
+`IsLocalRing.length_restrictScalars`. -/
+theorem natCard_eq_pow_of_length_eq {n : ℕ} (h : Module.length A M = n) :
+    Nat.card M = Nat.card (ResidueField A) ^ n := by
+  obtain ⟨s, hs_bot, hs_top⟩ := isFiniteLength_iff_exists_compositionSeries.mp
+    (Module.length_ne_top_iff.mp (h ▸ ENat.natCast_ne_top n))
+  have hlen : s.length = n := by
+    exact_mod_cast (Module.length_compositionSeries s hs_bot hs_top).trans h
+  suffices ∀ k, Nat.card (s k) = Nat.card (ResidueField A) ^ (k : ℕ) by
+    rw [← hlen, ← Fin.val_last s.length, ← this, ← RelSeries.last, hs_top]
+    exact Nat.card_congr (LinearEquiv.ofTop ⊤ rfl).toEquiv.symm
+  intro k
+  induction k using Fin.induction with
+  | zero => rw [← RelSeries.head, hs_bot]; simp
+  | succ i hi =>
+    rw [Fin.val_succ, pow_succ, ← Fin.val_castSucc, ← hi]
+    exact (s.step i).natCard_eq_mul_natCard_residueField
+
+/-- A finite module over a local ring `A` has `q ^ ℓ` elements, where `q` is the cardinality of the
+residue field and `ℓ` the (finite) length of the module. -/
+theorem natCard_eq_pow_length_toNat [Finite M] :
+    Nat.card M = Nat.card (ResidueField A) ^ (Module.length A M).toNat := by
+  have : IsArtinian A M := isArtinian_of_finite
+  have : IsNoetherian A M := isNoetherian_of_finite A M
+  exact natCard_eq_pow_of_length_eq (ENat.natCast_toNat Module.length_ne_top).symm
+
 end LocalRing
 
 end TauCeti
@@ -460,6 +509,14 @@ theorem _root_.TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n : ℕ) :
   · exact isFiniteLength_quotient_of_isMaximal_radical _ <| by
       rw [radical_pow _ hn, (maximalIdeal.isMaximal A).isPrime.radical]
       infer_instance
+
+/-- The quotient of a noetherian local ring by a power of its maximal ideal is an Artinian ring,
+being of finite length over the ring. -/
+instance _root_.TauCeti.isArtinianRing_quotient_maximalIdeal_pow (n : ℕ) :
+    IsArtinianRing (A ⧸ maximalIdeal A ^ n) :=
+  isArtinian_of_tower A
+    (isFiniteLength_iff_isNoetherian_isArtinian.mp
+      (TauCeti.isFiniteLength_quotient_maximalIdeal_pow n)).2
 
 end NoetherianLocalRing
 

@@ -137,14 +137,15 @@ theorem interiorAngle_triangle_two : triangle.interiorAngle 2 = 0 :=
 
 /-! ### The vertex transformations -/
 
+-- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
 /-- The element `z ↦ (z - 1/2) / (z + 1/2)` of `SL(2, ℝ)`, whose geodesic line is the unit
 semicircle. -/
 private def unitCircleMatrix : SL(2, ℝ) :=
-  ⟨!![1, -1 / 2; 1, 1 / 2], by norm_num [Matrix.det_fin_two]⟩
+  .mk !![1, -1 / 2; 1, 1 / 2] (by norm_num [Matrix.det_fin_two])
 
 private theorem coe_unitCircleMatrix :
-    (unitCircleMatrix : Matrix (Fin 2) (Fin 2) ℝ) = !![1, -1 / 2; 1, 1 / 2] :=
-  (rfl)
+    (unitCircleMatrix : Matrix (Fin 2) (Fin 2) ℝ) = !![1, -1 / 2; 1, 1 / 2] := by
+  rw [unitCircleMatrix, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- Conjugating `unitCircleMatrix` by `J` and dividing by it gives `-S`. -/
 private theorem conjJ_unitCircleMatrix_mul_inv :

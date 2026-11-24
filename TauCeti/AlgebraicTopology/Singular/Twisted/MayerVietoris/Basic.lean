@@ -223,14 +223,6 @@ private lemma homologyMap_fromBiprod_comp_ι (n : ℕ) :
 
 variable {U V} (hU : IsOpen U) (hV : IsOpen V) (hUV : U ∪ V = Set.univ)
 
-include hU hV hUV in
-private lemma quasiIso_smallTwistedChainComplexι_bool :
-    QuasiIso (smallTwistedChainComplexι L (Bool.rec U V)) :=
-  quasiIso_smallTwistedChainComplexι L _ (fun b ↦ by cases b <;> assumption) <|
-    Set.eq_univ_of_forall fun x ↦ by
-      rcases (hUV ▸ Set.mem_univ x : x ∈ U ∪ V) with h | h
-      exacts [Set.mem_iUnion.2 ⟨false, h⟩, Set.mem_iUnion.2 ⟨true, h⟩]
-
 /-- The homology of the chains subordinate to the cover `U, V` is that of `X`. -/
 private def homologyIsoUnion (n : ℕ) :
     (smallTwistedChainComplex L (Bool.rec U V)).homology n ≅ L.twistedHomology n :=
