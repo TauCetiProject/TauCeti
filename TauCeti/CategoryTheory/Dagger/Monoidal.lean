@@ -281,7 +281,8 @@ variable (D : Type u₂) [Category.{v₂} D] [MonoidalCategory D] [DaggerCategor
 
 /-- A dagger tensor functor between dagger monoidal categories: a dagger-preserving lax monoidal
 functor whose unit and tensor comparison morphisms are unitary, hence strong monoidal. -/
-structure DaggerTensorFunctor extends LaxMonoidalFunctor C D where
+structure DaggerTensorFunctor [DaggerMonoidalCategory C] [DaggerMonoidalCategory D] extends
+    LaxMonoidalFunctor C D where
   preservesDagger : toFunctor.PreservesDagger := by infer_instance
   isUnitaryMonoidal : toFunctor.IsUnitaryMonoidal := by infer_instance
 
@@ -289,7 +290,7 @@ namespace DaggerTensorFunctor
 
 attribute [instance] preservesDagger isUnitaryMonoidal
 
-variable {C D}
+variable {C D} [DaggerMonoidalCategory C] [DaggerMonoidalCategory D]
 
 /-- Bundle a dagger-preserving functor with a unitary lax monoidal structure as a dagger tensor
 functor. -/
@@ -351,8 +352,6 @@ lemma forget_map {F G : DaggerTensorFunctor C D} (α : F ⟶ G) : forget.map α 
 faithful. -/
 def fullyFaithfulForget : (forget (C := C) (D := D)).FullyFaithful :=
   fullyFaithfulInducedFunctor _
-
-variable [DaggerMonoidalCategory D]
 
 /-- The category of dagger tensor functors is a dagger category under pointwise daggers. -/
 instance : DaggerCategory (DaggerTensorFunctor C D) where
