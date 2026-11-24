@@ -169,6 +169,7 @@ theorem coordinateHopfAlgebraIsoSpecialOrthogonal_def (hi : i * i = -1) :
 
 /-- The isomorphism of coordinate Hopf algebras is induced by conjugation by the inverse of the
 congruence matrix on the coordinates of `GL_l`. -/
+@[reassoc (attr := simp)]
 theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom (hi : i * i = -1) :
     coordinateMap R l ≫ (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).hom =
       (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹).hom ≫
@@ -179,6 +180,7 @@ theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom (hi : i
 
 /-- The inverse isomorphism of coordinate Hopf algebras is induced by conjugation by the congruence
 matrix on the coordinates of `GL_l`. -/
+@[reassoc (attr := simp)]
 theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_inv (hi : i * i = -1) :
     SpecialOrthogonal.coordinateMap R l ≫ (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv =
       (GeneralLinear.conjCoordinateIso (congrUnit l hi)).hom ≫ coordinateMap R l := by
