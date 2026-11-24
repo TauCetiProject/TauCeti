@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coset.Enumeration
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Mathieu.Eleven
+import TauCeti.Algebra.Group.Subgroup.Finite
 
 /-!
 # Recognition and simplicity of the presented group of `M₁₁`
@@ -272,20 +273,16 @@ namespace TauCeti.Sporadic.M11
 
 /-- The transcribed presentation of `M₁₁` is isomorphic to the canonical permutation model,
 via the homomorphism sending its generators to `presentationImage`. -/
-noncomputable def presentationEquiv : SporadicName.M11.Group ≃* Sporadic.M11 := by
-  let f := (MulEquiv.subgroupCongr range_presentationHom).toMonoidHom.comp
-    presentationHom.rangeRestrict
-  have hf : Function.Surjective f :=
-    (MulEquiv.subgroupCongr range_presentationHom).surjective.comp
-      presentationHom.rangeRestrict_surjective
-  exact MulEquiv.ofBijective f (hf.bijective_of_nat_card_le
-    (by simpa only [card_M11] using SporadicName.natCard_group_M11_le))
+noncomputable def presentationEquiv : SporadicName.M11.Group ≃* Sporadic.M11 :=
+  presentationHom.mulEquivOfRangeEq range_presentationHom
+    (by simpa only [card_M11] using SporadicName.natCard_group_M11_le)
 
 /-- The underlying permutation of the recognition equivalence is the canonical presentation
 homomorphism. -/
 @[simp]
 theorem coe_presentationEquiv (g : SporadicName.M11.Group) :
-    (presentationEquiv g : Equiv.Perm (Fin 11)) = presentationHom g := (rfl)
+    (presentationEquiv g : Equiv.Perm (Fin 11)) = presentationHom g :=
+  presentationHom.coe_mulEquivOfRangeEq_apply _ _ g
 
 end TauCeti.Sporadic.M11
 

@@ -142,9 +142,10 @@ private theorem contMDiffAt_cappedExchangePerturbation_apply (hH : ∀ q, Period
 
 variable [IsManifold I ⊤ M] {ω : SmoothTwoForm I M} [FiniteDimensional ℝ E]
 
-/-- The curvature of the capped datum along a map continuous on `S` is integrable. It is
-continuous on `S`, and its integral is finite by the uniform curvature bound. -/
-private theorem IsNondegenerate.integrable_hamiltonianCurvature_cappedExchangePerturbation
+/-- **The curvature of the input-exchange family capped at `0` is integrable.** For bounded
+period-one `C¹` Hamiltonians, `L > 4` and `0 ≤ c ≤ 1`, the curvature of the member `c` of the
+family along a map continuous on `S` is integrable over the plane. -/
+theorem IsNondegenerate.integrable_hamiltonianCurvature_cappedExchangePerturbation
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {B : Puncture → ℝ}
     (hB : ∀ q t x, |H q t x| ≤ B q) (hL : 4 < L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {u : ℝ × ℝ → M}
@@ -216,7 +217,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_cappedExchangePertur
   have hK (w : ThricePuncturedSphere) (x : M) :
       ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
         (fun p : ℂ × M ↦ cappedExchangePerturbation H L 0 p.1 p.2) ((w : ℂ), x) := by
-    exact (contMDiffAt_cappedExchangePerturbation hH hHs hL 0 w.2.2 x).comp
+    exact (contMDiffAt_cappedExchangePerturbation hH hHs hL 0 w.property.2 x).comp
       (f := fun p : ℂ × M ↦ ((0 : ℝ), p)) _ (contMDiffAt_const.prodMk contMDiffAt_id)
   -- The Hamiltonian terms of the loops along the three ends converge.
   have hloop (q : Puncture) (hq : q ≠ zero) {xq : ℝ → M}

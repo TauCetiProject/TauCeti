@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.Exponent
+import TauCeti.Analysis.MeanInequalities
 
 /-!
 # Lowering the integrability exponent of Sobolev functions
@@ -34,11 +35,16 @@ is unchanged up to almost everywhere equality.
   the highest weak derivative are their `Lᵖ` copies.
 * `TauCeti.Wkp.value_ofExponentLEL_ae`, `TauCeti.Wkp.iteratedGradient_ofExponentLEL_ae`: the value
   and the highest weak derivative are unchanged.
-* `TauCeti.Wkp.lowerOrder_ofExponentLEL`, `TauCeti.Wkp.restrictL_ofExponentLEL`: compatibility with
-  the lower-order projection and with restriction.
+* `TauCeti.Wkp.lowerOrder_ofExponentLEL`, `TauCeti.Wkp.toOrderL_ofExponentLEL`,
+  `TauCeti.Wkp.restrictL_ofExponentLEL`: compatibility with lower-order and order-truncation
+  projections and with restriction.
 * `TauCeti.Wkp.ofExponentLEL_injective`: the inclusion is injective.
 * `TauCeti.Wkp.opNorm_ofExponentLEL_le`, `TauCeti.Wkp.norm_ofExponentLEL_apply_le`: the bound
   `μ(Ω) ^ (1/p - 1/q)` on the operator norm.
+* `TauCeti.Wkp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow`: the norms are logarithmically
+  convex in `1 / p`, `‖u‖_{W^{k,q}} ≤ ‖u‖_{W^{k,p}} ^ (1 - θ) ‖u‖_{W^{k,r}} ^ θ` for
+  `1 / q = (1 - θ) / p + θ / r`. This is what passes compactness into `W^{k,p}` to compactness into
+  `W^{k,q}` for an operator that is bounded into `W^{k,r}`.
 
 ## References
 
@@ -73,16 +79,16 @@ private def ofExponentLEAux (hpq : p ≤ q) : (k : ℕ) → (u : Wkp mu Omega q 
         (W1p.coeFn_gradient_ofExponentLE hpq u).eventuallyEq⟩
   | k + 1, u =>
       let v := ofExponentLEAux hpq k (lowerOrder (k + 1) u)
-      ⟨mk k v.1 (Lp.ofExponentLEL ℝ _ hpq (iteratedGradient (k + 1) u))
-          (((hasWeakFDerivOn_iteratedGradient k u).congr_ae v.2.2.symm).congr_ae_deriv
+      ⟨mk k v.val (Lp.ofExponentLEL ℝ _ hpq (iteratedGradient (k + 1) u))
+          (((hasWeakFDerivOn_iteratedGradient k u).congr_ae v.property.2.symm).congr_ae_deriv
             (by rw [Lp.coeFn_ofExponentLEL])),
-        by rw [value_mk, value_succ (k + 1) u]; exact v.2.1,
+        by rw [value_mk, value_succ (k + 1) u]; exact v.property.1,
         by rw [iteratedGradient_mk, Lp.coeFn_ofExponentLEL]⟩
 
 /-- The underlying function of `TauCeti.Wkp.ofExponentLEL`. -/
 private def ofExponentLEFun (hpq : p ≤ q) : (k : ℕ) → Wkp mu Omega q k → Wkp mu Omega p k
   | 0, u => Lp.ofExponentLEL ℝ ℝ hpq u
-  | k + 1, u => (ofExponentLEAux hpq k u).1
+  | k + 1, u => (ofExponentLEAux hpq k u).val
 
 private theorem value_ofExponentLEFun_ae (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q k) :
     ⇑(value k (ofExponentLEFun hpq k u)) =ᵐ[mu.restrict Omega] value k u := by
@@ -90,7 +96,7 @@ private theorem value_ofExponentLEFun_ae (hpq : p ≤ q) (k : ℕ) (u : Wkp mu O
   | zero =>
       simp only [value_zero]
       exact Filter.EventuallyEq.of_eq (Lp.coeFn_ofExponentLEL hpq u)
-  | succ k => exact (ofExponentLEAux hpq k u).2.1
+  | succ k => exact (ofExponentLEAux hpq k u).property.1
 
 private theorem value_ofExponentLEFun (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q k) :
     value k (ofExponentLEFun hpq k u) = Lp.ofExponentLEL ℝ ℝ hpq (value k u) :=
@@ -106,7 +112,7 @@ private theorem iteratedGradient_ofExponentLEFun (hpq : p ≤ q) (k : ℕ)
     (u : Wkp mu Omega q (k + 1)) :
     iteratedGradient k (ofExponentLEFun hpq (k + 1) u) =
       Lp.ofExponentLEL ℝ _ hpq (iteratedGradient k u) :=
-  Lp.ext (by rw [Lp.coeFn_ofExponentLEL]; exact (ofExponentLEAux hpq k u).2.2)
+  Lp.ext (by rw [Lp.coeFn_ofExponentLEL]; exact (ofExponentLEAux hpq k u).property.2)
 
 private theorem continuous_ofExponentLEFun (hpq : p ≤ q) :
     ∀ k : ℕ, Continuous (ofExponentLEFun (mu := mu) (Omega := Omega) hpq k)
@@ -151,7 +157,7 @@ theorem iteratedGradient_ofExponentLEL (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Ome
 theorem iteratedGradient_ofExponentLEL_ae (hpq : p ≤ q) (k : ℕ) (u : Wkp mu Omega q (k + 1)) :
     ⇑(iteratedGradient k (ofExponentLEL hpq (k + 1) u)) =ᵐ[mu.restrict Omega]
       iteratedGradient k u :=
-  (ofExponentLEAux hpq k u).2.2
+  (ofExponentLEAux hpq k u).property.2
 
 /-- Lowering the exponent commutes with forgetting the highest derivative.
 Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
@@ -207,6 +213,39 @@ theorem norm_ofExponentLEL_apply_le (hpq : p ≤ q) : ∀ (k : ℕ) (u : Wkp mu 
       exact add_le_add (pow_le_pow_left₀ (norm_nonneg _) hlow 2)
         (pow_le_pow_left₀ (norm_nonneg _) hgrad 2)
 
+/-- **Logarithmic convexity of the `W^{k,p}` norms.** If `p, q ≤ r` and
+`1 / q = (1 - θ) / p + θ / r` with `0 ≤ θ ≤ 1`, then the `W^{k,q}` norm of `u ∈ W^{k,r}(Ω)` is at
+most its `W^{k,p}` norm to the power `1 - θ` times its `W^{k,r}` norm to the power `θ`. The
+constant is one at every order, because each order adjoins one more `Lᵖ` component by a
+Euclidean product norm. -/
+theorem norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow (hpr : p ≤ r) (hqr : q ≤ r) {θ : ℝ}
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * r⁻¹) :
+    ∀ (k : ℕ) (u : Wkp mu Omega r k),
+      ‖ofExponentLEL hqr k u‖ ≤ ‖ofExponentLEL hpr k u‖ ^ (1 - θ) * ‖u‖ ^ θ
+  | 0, u => by
+      rw [ofExponentLEL_zero, ofExponentLEL_zero]
+      exact Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq u
+  | 1, u => by
+      rw [ofExponentLEL_one, ofExponentLEL_one]
+      exact W1p.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq u
+  | k + 2, u => by
+      have hlow := norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq (k + 1)
+        (lowerOrder (k + 1) u)
+      have hgrad := Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow (𝕜 := ℝ) hpr hqr hθ hq
+        (iteratedGradient (k + 1) u)
+      refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
+      -- Square both sides: each squared norm is that of the lower-order part plus that of the
+      -- highest weak derivative.
+      rw [mul_pow, Real.rpow_pow_comm (norm_nonneg _), Real.rpow_pow_comm (norm_nonneg _),
+        norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k,
+        norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k,
+        norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u,
+        lowerOrder_ofExponentLEL, lowerOrder_ofExponentLEL, iteratedGradient_ofExponentLEL,
+        iteratedGradient_ofExponentLEL]
+      exact Real.sq_add_sq_le_rpow_mul_rpow hθ (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+        (norm_nonneg _) (norm_nonneg _) (norm_nonneg _) hlow hgrad
+
 /-- The operator norm of `W^{k,q}(Ω) → W^{k,p}(Ω)` is at most `μ(Ω) ^ (1/p - 1/q)`. -/
 theorem opNorm_ofExponentLEL_le (hpq : p ≤ q) (k : ℕ) :
     ‖ofExponentLEL (mu := mu) (Omega := Omega) hpq k‖ ≤
@@ -236,6 +275,34 @@ theorem restrictL_ofExponentLEL [IsFiniteMeasure (mu.restrict (U : Set E))] (hU 
     (value_restrictL_ae hU k _).symm)
   exact ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
     (value_ofExponentLEL_ae hpq k u).symm
+
+/-- On a finite-measure domain, order truncation commutes with lowering the integrability
+exponent. -/
+theorem toOrderL_ofExponentLEL (hpq : p ≤ q) {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega q k) :
+    toOrderL h (ofExponentLEL hpq k u) = ofExponentLEL hpq j (toOrderL h u) := by
+  apply ext j
+  rw [value_toOrderL, value_ofExponentLEL, value_ofExponentLEL, value_toOrderL]
+
+/-- Exponent lowering and order truncation commute as continuous linear maps. -/
+theorem ofExponentLEL_comp_toOrderL (hpq : p ≤ q) {j k : ℕ} (h : j ≤ k) :
+    (ofExponentLEL (mu := mu) (Omega := Omega) hpq j).comp (toOrderL h) =
+      (toOrderL h).comp (ofExponentLEL hpq k) :=
+  ContinuousLinearMap.ext fun u => (toOrderL_ofExponentLEL hpq h u).symm
+
+/-- Lowering the exponent maps each intermediate weak derivative to its `Lᵖ` copy. -/
+theorem iteratedGradient_toOrderL_ofExponentLEL (hpq : p ≤ q) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega q k) :
+    iteratedGradient j (toOrderL h (ofExponentLEL hpq k u)) =
+      Lp.ofExponentLEL ℝ _ hpq (iteratedGradient j (toOrderL h u)) := by
+  rw [toOrderL_ofExponentLEL, iteratedGradient_ofExponentLEL]
+
+/-- Lowering the exponent leaves each intermediate weak derivative unchanged almost everywhere. -/
+theorem iteratedGradient_toOrderL_ofExponentLEL_ae (hpq : p ≤ q) {j k : ℕ} (h : j + 1 ≤ k)
+    (u : Wkp mu Omega q k) :
+    ⇑(iteratedGradient j (toOrderL h (ofExponentLEL hpq k u))) =ᵐ[mu.restrict Omega]
+      iteratedGradient j (toOrderL h u) := by
+  rw [toOrderL_ofExponentLEL]
+  exact iteratedGradient_ofExponentLEL_ae hpq j (toOrderL h u)
 
 end Wkp
 

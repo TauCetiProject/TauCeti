@@ -7,18 +7,19 @@ module
 
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Analysis.Convex.Combination
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
+public import Mathlib.CategoryTheory.Limits.Preserves.Filtered
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
 import Mathlib.Algebra.Category.ModuleCat.Free
+import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 import Mathlib.Algebra.Category.ModuleCat.Projective
-import Mathlib.RepresentationTheory.Maschke
-import Mathlib.RingTheory.SimpleModule.InjectiveProjective
+import Mathlib.CategoryTheory.Filtered.Final
 import Mathlib.RepresentationTheory.Rep.Iso
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.Finsupp
 import TauCeti.RepresentationTheory.Intertwining
-import TauCeti.RepresentationTheory.OfModule
-import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
 # Invariants of group representations
@@ -58,10 +59,19 @@ the common case where nontriviality follows from the dimension being other than 
 Taking invariants under a normal subgroup `S`, Mathlib's `Rep.quotientToInvariantsFunctor`, is an
 additive functor from representations of `G` to representations of `G ⧸ S`.
 
-When `G` is finite and `#G` is invertible in a field `k`, Maschke's theorem makes every
-representation projective over `k[G]`, so the surjectivity result above makes taking invariants
-exact. In particular the dimension of the invariants is additive in short exact sequences of
-finite-dimensional representations.
+When `G` is finite and `#G` is invertible in the commutative ring `k`, an invariant vector lifts
+along any surjection: average an arbitrary preimage. Taking invariants is then an exact functor
+`Rep k G ⥤ ModuleCat k`. It preserves finite limits as a right adjoint, and epimorphisms,
+homology and finite colimits by averaging; in particular it preserves short exact sequences and
+quasi-isomorphisms of complexes of representations. Invertibility of `#G` is also necessary:
+invariants preserve epimorphisms exactly when `#G` is a unit, as the augmentation `k[G] ⟶ k`
+shows, since an invariant of `k[G]` has constant coefficients. Over `ZMod 2` and a group of order
+two, the augmentation is onto while its restriction to invariants is zero. Without any
+hypothesis on `#G`, invariants of a finitely generated group, in particular of a finite group,
+commute with filtered colimits: invariance is tested on a finite generating set, and finitely
+many equations `g • v = v` that hold in a filtered colimit already hold at a common stage. In
+particular the dimension of the invariants is additive in short exact sequences of
+finite-dimensional representations over a field in which `#G` is invertible.
 
 A functor `F : ModuleCat A ⥤ ModuleCat B` carries a representation `σ` of `G` by `A`-linear maps
 on `M` to the representation `g ↦ F(σ g)` on `F(M)`, the representation-level form of Mathlib's
@@ -108,6 +118,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
 * `Rep.invariantsFunctor_map_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
 * `Rep.ρ_apply_of_mem_ker`: a vector killed by `ρ(g) - 1` is fixed by `g`.
+* `Rep.applyAsHom_trivial_sub_id_apply`, `Rep.norm_trivial_hom_apply`: for the trivial
+  representation, `ρ(g) - 𝟙` vanishes and the norm is multiplication by the group order.
 * `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
   vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
@@ -123,13 +135,20 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   turn a nonzero invariant vector of an irreducible representation into triviality and into
   dimension one.
 * `Rep.quotientToInvariantsFunctor` is additive.
-* `TauCeti.Rep.shortExact_map_invariantsFunctor`: under Maschke's hypothesis, taking invariants
-  preserves short exact sequences.
+* `Rep.invariantsFunctor_map_hom_apply_coe`: the image of an invariant under
+  `(invariantsFunctor k G).map f` is its image under `f`.
+* `Rep.invariantsFunctor_map_surjective`: when `#G` is invertible in `k`, taking invariants
+  preserves surjective morphisms of representations; hence instances saying that it preserves
+  epimorphisms, homology and finite colimits.
+* `Rep.preservesEpimorphisms_invariantsFunctor_iff`: for a finite group, taking invariants
+  preserves epimorphisms if and only if `#G` is a unit in `k`.
+* An instance saying that invariants of a finitely generated group, in particular of a finite
+  group, preserve filtered colimits.
 * `CategoryTheory.Functor.mapRepresentation`: the representation `g ↦ F(σ g)` on `F(M)`.
 * `CategoryTheory.Functor.invariants_mapRepresentation` and
   `CategoryTheory.Functor.map_ofHom_subtype_invariants_injective`: when `#G` is invertible, an
   additive functor identifies `F(M^G)` with the invariants of `F(M)`.
-* `TauCeti.FDRep.finrank_invariants_add_of_shortExact`: under Maschke's hypothesis, the dimension
+* `TauCeti.FDRep.finrank_invariants_add_of_shortExact`: when `#G` is invertible, the dimension
   of the invariants is additive in short exact sequences of finite-dimensional representations.
 -/
 public section
@@ -260,7 +279,7 @@ theorem map_subtype_invariants_subrepresentation :
   ext v
   refine ⟨?_, fun hv ↦ ⟨⟨v, hv.2⟩, (ρ.mem_invariants_subrepresentation hW).2 hv.1, rfl⟩⟩
   rintro ⟨x, hx, rfl⟩
-  exact ⟨(ρ.mem_invariants_subrepresentation hW).1 hx, x.2⟩
+  exact ⟨(ρ.mem_invariants_subrepresentation hW).1 hx, x.property⟩
 
 end Subrepresentation
 
@@ -287,24 +306,21 @@ private theorem norm_leftRegular_single_coeff_one {x : MonoidAlgebra k G}
     simpa using h.symm
   simp [norm, hcoeff]
 
-/-- The norm maps onto the invariants of a direct sum of left regular representations. -/
+/-- The norm maps onto the invariants of a free representation, a direct sum of left regular
+representations. -/
 private theorem range_norm_free_eq_invariants (ι : Type*) :
-    LinearMap.range (ofModule' (k := k) (G := G) (ι →₀ MonoidAlgebra k G)).norm =
-      (ofModule' (k := k) (G := G) (ι →₀ MonoidAlgebra k G)).invariants := by
+    LinearMap.range (free k G ι).norm = (free k G ι).invariants := by
   apply le_antisymm
   · rintro _ ⟨x, rfl⟩
     exact fun g => self_norm_apply _ g x
   · rintro x hx
     have hxi (i : ι) : x i ∈ (leftRegular k G).invariants := fun g => by
-      have h := DFunLike.congr_fun (hx g) i
-      rwa [TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply, smul_eq_mul,
-        ← asAlgebraHom_ofMulAction_smul_eq_mul, asAlgebraHom_single_one] at h
+      simpa only [finsupp_apply_apply] using DFunLike.congr_fun (hx g) i
     refine ⟨Finsupp.mapRange (fun a => MonoidAlgebra.single 1 (a.coeff 1)) (by simp) x, ?_⟩
     ext i : 1
     rw [← norm_leftRegular_single_coeff_one (hxi i)]
-    simp only [norm, LinearMap.sum_apply, Finsupp.finsetSum_apply,
-      TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply, Finsupp.mapRange_apply,
-      smul_eq_mul, ← asAlgebraHom_ofMulAction_smul_eq_mul, asAlgebraHom_single_one]
+    simp only [norm, LinearMap.sum_apply, Finsupp.finsetSum_apply, finsupp_apply_apply,
+      Finsupp.mapRange_apply]
 
 /-- **The norm maps onto the invariants of a projective representation.** Let `G` be finite over
 an arbitrary commutative ring `k`. If the `k[G]`-module underlying `ρ` is projective, then every
@@ -320,37 +336,14 @@ theorem range_norm_eq_invariants_of_projective (ρ : Representation k G V)
   · rintro _ ⟨x, rfl⟩
     exact fun g => self_norm_apply _ g x
   · rintro x hx
-    obtain ⟨s, hs⟩ := Module.projective_def.mp ‹Module.Projective k[G] ρ.asModule›
-    let τ := ofModule' (k := k) (G := G) (ρ.asModule →₀ MonoidAlgebra k G)
-    let E : τ.asModule ≃ₗ[k[G]] (ρ.asModule →₀ MonoidAlgebra k G) :=
-      TauCeti.Representation.ofModule'AsModuleEquiv _
-    let F : IntertwiningMap τ ρ := (IntertwiningMap.equivLinearMapAsModule τ ρ).symm
-      (Finsupp.linearCombination k[G] id ∘ₗ E.toLinearMap)
-    let S : IntertwiningMap ρ τ :=
-      (IntertwiningMap.equivLinearMapAsModule ρ τ).symm (E.symm.toLinearMap ∘ₗ s)
-    have hSx : S x ∈ τ.invariants := fun g => by
-      rw [← IntertwiningMap.isIntertwining ρ τ S g x, hx g]
-    obtain ⟨y, hy⟩ : S x ∈ LinearMap.range τ.norm := by
+    obtain ⟨F, S, hFS⟩ := exists_retract_free_of_projective ρ
+    have hSx : S x ∈ (free k G V).invariants := fun g => by
+      rw [← IntertwiningMap.isIntertwining ρ _ S g x, hx g]
+    obtain ⟨y, hy⟩ : S x ∈ LinearMap.range (free k G V).norm := by
       rw [range_norm_free_eq_invariants]
       exact hSx
-    -- `comp_norm` is stated along a group isomorphism (so that the two carriers may live in
-    -- different universes); here it is used along the identity of `G`.
-    have hF : τ.IsIntertwiningMap (ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
-        F.toLinearMap := ⟨IntertwiningMap.isIntertwining τ ρ F⟩
-    have hN : F (τ.norm y) = ρ.norm (F y) := LinearMap.congr_fun hF.comp_norm y
-    have hF_apply (z : ρ.asModule →₀ MonoidAlgebra k G) :
-        F z = ρ.asModuleEquiv
-          (Finsupp.linearCombination k[G] id (E (τ.asModuleEquiv.symm z))) := by
-      simp only [F, IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearMap.comp_apply,
-        LinearEquiv.coe_coe]
-    have hS_apply (z : V) :
-        S z = τ.asModuleEquiv (E.symm (s (ρ.asModuleEquiv.symm z))) := by
-      simp only [S, IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearMap.comp_apply,
-        LinearEquiv.coe_coe]
-    -- `S` is a section of `F`, because `s` is a section of `Finsupp.linearCombination`.
-    have hFS : F (S x) = x := by
-      simpa only [hF_apply, hS_apply, LinearEquiv.symm_apply_apply, E.apply_symm_apply,
-        LinearEquiv.apply_symm_apply] using congrArg ρ.asModuleEquiv (hs (ρ.asModuleEquiv.symm x))
+    have hN : F ((free k G V).norm y) = ρ.norm (F y) := by
+      simp only [norm, LinearMap.sum_apply, map_sum, IntertwiningMap.isIntertwining]
     exact ⟨F y, by rw [← hN, hy, hFS]⟩
 
 end Finite
@@ -378,7 +371,7 @@ theorem exists_invariant_preimage_of_surjective_of_projective
   let _ := Fintype.ofFinite G
   have hy : (y : X) ∈ LinearMap.range σ.norm := by
     rw [range_norm_eq_invariants_of_projective]
-    exact y.2
+    exact y.property
   obtain ⟨z, hz⟩ := hy
   obtain ⟨x, rfl⟩ := hf z
   refine ⟨⟨ρ.norm x, fun g => self_norm_apply ρ g x⟩, ?_⟩
@@ -483,8 +476,22 @@ open scoped MonoidAlgebra
 /-- A vector in the kernel of `ρ(g) - 1` is fixed by `g`. -/
 @[simp]
 theorem ρ_apply_of_mem_ker {k G : Type*} [Semiring k] [CommMonoid G] (A : Rep k G) (g : G)
-    (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) : A.ρ g x.1 = x.1 := by
-  simpa [sub_hom, sub_eq_zero] using x.2
+    (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) : A.ρ g x.val = x.val := by
+  simpa [sub_hom, sub_eq_zero] using x.property
+
+/-- For the trivial representation, `ρ(g) - 𝟙` vanishes. -/
+@[simp]
+theorem applyAsHom_trivial_sub_id_apply {k G : Type*} [Semiring k] [CommMonoid G] (g : G)
+    (M : Type*) [AddCommGroup M] [Module k M] (x : M) :
+    (applyAsHom (Rep.trivial k G M) g - 𝟙 (Rep.trivial k G M)).hom x = 0 := by
+  simp [Rep.applyAsHom, sub_hom]
+
+/-- For the trivial representation, the norm is multiplication by the group order. -/
+@[simp]
+theorem norm_trivial_hom_apply (k : Type*) {G : Type*} [Semiring k] [Group G] [Fintype G]
+    {M : Type*} [AddCommGroup M] [Module k M] (x : M) :
+    (Rep.trivial k G M).norm.asHom.hom x = (Nat.card G : k) • x :=
+  (Rep.norm_apply _).trans (Representation.norm_trivial_apply k G x)
 
 variable {k G : Type*} [CommRing k] [Group G]
 
@@ -508,7 +515,7 @@ noncomputable def trivialHomEquivInvariants (A : Rep k G) :
     (Rep.trivial k G k ⟶ A) ≃ₗ[k] A.ρ.invariants where
   toFun f := ⟨f.hom 1, fun g ↦ by simpa using (hom_comm_apply f g 1).symm⟩
   invFun x := ConcreteCategory.ofHom
-    ⟨LinearMap.toSpanSingleton k A x, fun g ↦ LinearMap.ext fun r ↦ by simp [x.2 g]⟩
+    ⟨LinearMap.toSpanSingleton k A x, fun g ↦ LinearMap.ext fun r ↦ by simp [x.property g]⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv f := hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext_ring <| one_smul k _
@@ -613,32 +620,143 @@ instance : (Rep.quotientToInvariantsFunctor k S).Additive where
 
 end TauCeti
 
-namespace TauCeti
+namespace Rep
 
 open CategoryTheory CategoryTheory.Limits
-open scoped MonoidAlgebra
 
 universe u v w
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [NeZero (Nat.card G : k)]
+/-- The underlying vector of the image of an invariant under `(invariantsFunctor k G).map f` is
+its image under `f`. -/
+theorem invariantsFunctor_map_hom_apply_coe {k : Type u} {G : Type v} [CommRing k] [Group G]
+    {A B : Rep.{w} k G} (f : A ⟶ B) (x : A.ρ.invariants) :
+    (((invariantsFunctor k G).map f).hom x : B.ρ.invariants).val = f.hom x :=
+  rfl
 
-/-- Under Maschke's hypothesis, taking invariants preserves short exact sequences of
-representations. -/
-theorem Rep.shortExact_map_invariantsFunctor {S : ShortComplex (Rep.{w} k G)} (hS : S.ShortExact) :
-    (S.map (Rep.invariantsFunctor k G)).ShortExact := by
-  -- A nonzero cardinality in `k` forces `G` to be finite (`Maschke` needs `Finite G`).
-  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
-  have : (Rep.invariantsFunctor k G).PreservesEpimorphisms := ⟨fun {X Y} f hf ↦ by
-      have : Module.Projective k[G] Y.ρ.asModule :=
-        Module.projective_of_isSemisimpleRing k[G] Y.ρ.asModule
-      exact (ModuleCat.epi_iff_surjective _).2
-        (Rep.invariantsFunctor_map_surjective_of_projective f
-          ((Rep.epi_iff_surjective f).1 hf))⟩
-  have : (Rep.invariantsFunctor k G).PreservesHomology :=
-    Functor.preservesHomology_of_preservesEpis_and_kernels _
-  have : Mono S.f := hS.mono_f
-  have : Epi S.g := hS.epi_g
-  exact hS.map _
+section Invertible
+
+variable {k : Type u} {G : Type v} [CommRing k] [Group G] [Fintype G]
+  [Invertible (Fintype.card G : k)]
+
+/-- **Invariants preserve surjections when the group order is invertible.** If `#G` is invertible
+in `k` and `f : A ⟶ B` is surjective, every invariant `y` of `B` lifts to an invariant of `A`: the
+average of any preimage of `y`. No projectivity of `B` over `k[G]` is needed, in contrast with
+`Rep.invariantsFunctor_map_surjective_of_projective`. -/
+theorem invariantsFunctor_map_surjective {A B : Rep.{w} k G} (f : A ⟶ B)
+    (hf : Function.Surjective f.hom) :
+    Function.Surjective ((invariantsFunctor k G).map f).hom := by
+  rintro ⟨y, hy⟩
+  obtain ⟨x, rfl⟩ := hf y
+  refine ⟨⟨A.ρ.averageMap x, A.ρ.averageMap_invariant x⟩, Subtype.ext ?_⟩
+  rw [invariantsFunctor_map_hom_apply_coe]
+  exact (Representation.IntertwiningMap.map_averageMap f.hom x).trans (B.ρ.averageMap_id _ hy)
+
+/-- When `#G` is invertible in `k`, taking invariants preserves epimorphisms. -/
+instance : (invariantsFunctor.{w} k G).PreservesEpimorphisms where
+  preserves f hf := (ModuleCat.epi_iff_surjective _).2 <|
+    invariantsFunctor_map_surjective f ((epi_iff_surjective f).1 hf)
+
+/-- When `#G` is invertible in `k`, taking invariants is an exact functor: it preserves kernels
+as a right adjoint, and epimorphisms by averaging. -/
+instance : (invariantsFunctor.{w} k G).PreservesHomology :=
+  Functor.preservesHomology_of_preservesEpis_and_kernels _
+
+/-- When `#G` is invertible in `k`, taking invariants preserves finite colimits. -/
+instance : PreservesFiniteColimits (invariantsFunctor.{w} k G) :=
+  (invariantsFunctor k G).preservesFiniteColimits_of_preservesHomology
+
+end Invertible
+
+/-- **Invariants are exact exactly when the group order is a unit.** For a finite group `G`,
+taking invariants preserves epimorphisms of `k`-linear representations if and only if `#G` is a
+unit of `k`. For the converse, apply it to the augmentation `k[G] ⟶ k`: an invariant of `k[G]`
+has constant coefficients, so the augmentation sends it into the ideal generated by `#G`. Over
+`ZMod 2` with `G` of order two, the surjection `k[G] ⟶ k` thus maps the invariants to zero. -/
+theorem preservesEpimorphisms_invariantsFunctor_iff {k : Type u} {G : Type v} [CommRing k]
+    [Group G] [Finite G] :
+    (invariantsFunctor.{max u v} k G).PreservesEpimorphisms ↔ IsUnit (Nat.card G : k) := by
+  have : Fintype G := Fintype.ofFinite G
+  refine ⟨fun _ ↦ ?_, fun h ↦ ?_⟩
+  · -- The augmentation `ε : k[G] ⟶ k`, `[g] ↦ 1`, is surjective. Its target is `k` lifted to the
+    -- universe of `k[G]`.
+    let ε : leftRegular k G ⟶ trivial k G (ULift.{v} k) :=
+      leftRegularHom (trivial k G (ULift.{v} k)) ⟨1⟩
+    have : Epi ε := (epi_iff_surjective ε).2 fun r ↦ ⟨.single 1 r.down, by ext; simp [ε]⟩
+    obtain ⟨⟨x, hx⟩, hx1⟩ := (ModuleCat.epi_iff_surjective _).1
+      ((invariantsFunctor k G).map_epi ε) ⟨⟨1⟩, fun _ ↦ rfl⟩
+    have hconst (g : G) : x.coeff g = x.coeff 1 := by
+      simpa [Representation.coeff_ofMulAction] using (congrArg (·.coeff g) (hx g)).symm
+    have hsum : (ε.hom x).down = ∑ g : G, x.coeff g := by
+      simp [ε, leftRegularHom, Finsupp.sum_fintype, ← Finset.sum_smul]
+    have h1 : (ε.hom x).down = 1 :=
+      congrArg ULift.down
+        ((invariantsFunctor_map_hom_apply_coe ε ⟨x, hx⟩).symm.trans (congrArg Subtype.val hx1))
+    simp only [hsum, hconst, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+      ← Nat.card_eq_fintype_card] at h1
+    exact IsUnit.of_mul_eq_one _ h1
+  · have : Invertible (Fintype.card G : k) := (Nat.card_eq_fintype_card (α := G) ▸ h).invertible
+    infer_instance
+
+section Filtered
+
+variable {k : Type u} {G : Type v} [CommRing k] [Group G] [IsMulFG G]
+
+open Types.FilteredColimit in
+/-- **Invariants of a finitely generated group commute with filtered colimits.** An invariant of
+the colimit comes from a vector at some stage. It is invariant as soon as it is fixed by a finite
+generating set `s`; each of the finitely many equations `g • v = v` for `g ∈ s` holds at a later
+stage, hence all of them at a common later stage. In particular this applies to finite groups, and
+no invertibility of `#G` is needed. -/
+instance : PreservesFilteredColimits (invariantsFunctor.{u} k G) where
+  preserves_filtered_colimits J _ _ := ⟨fun {D} ↦ ⟨fun {c} hc ↦ by
+    obtain ⟨s, hs⟩ := Group.exists_of_isMulFG G
+    classical
+    -- Filtered colimits of representations are computed on underlying sets, where they are
+    -- described elementwise.
+    let hT := isColimitOfPreserves (forget₂ (Rep.{u} k G) (ModuleCat.{u} k) ⋙
+      forget (ModuleCat.{u} k)) hc
+    refine ⟨isColimitOfReflects (forget (ModuleCat.{u} k)) (isColimitOf _ _ ?_ ?_)⟩
+    · rintro ⟨x, hx⟩
+      obtain ⟨i, v, hv⟩ := Types.jointly_surjective_of_isColimit hT x
+      -- The underlying function of a morphism of representations, after `forget₂` and `forget`,
+      -- is its `hom` by definition.
+      replace hv : (c.ι.app i).hom v = x := hv
+      -- For each generator `g` the vectors `g • v` and `v` have the same image `x`, so they agree
+      -- at a later stage, recorded as an object of the filtered category `Under i`.
+      have hg (g : s) : ∃ X : Under i,
+          (D.map X.hom).hom ((D.obj i).ρ g v) = (D.map X.hom).hom v := by
+        have h : (c.ι.app i).hom ((D.obj i).ρ g v) = (c.ι.app i).hom v := by
+          rw [hom_comm_apply, hv]
+          exact hx g
+        obtain ⟨j, f, hf⟩ := (isColimit_eq_iff' hT _ _).1 h
+        exact ⟨Under.mk f, hf⟩
+      choose X hX using hg
+      obtain ⟨S, hS⟩ := IsFiltered.sup_objs_exists (Finset.univ.image X)
+      refine ⟨S.right, ⟨(D.map S.hom).hom v,
+        (Representation.mem_invariants_iff_of_closure_eq_top _ hs _).2 fun g hg ↦ ?_⟩, ?_⟩
+      · obtain ⟨m⟩ := hS (Finset.mem_image_of_mem X (Finset.mem_univ ⟨g, hg⟩))
+        rw [← Under.w m, Functor.map_comp]
+        simp only [hom_comp, Representation.IntertwiningMap.comp_apply, ← hom_comm_apply, hX]
+      · -- The image of `D.map S.hom v` in the colimit is that of `v`, by naturality of `c`.
+        refine Subtype.ext (hv.symm.trans ?_)
+        rw [← c.w S.hom, hom_comp, Representation.IntertwiningMap.comp_apply]
+        simp only [Functor.mapCocone_ι_app, TypeCat.ofHom_apply]
+        rw [invariantsFunctor_map_hom_apply_coe]
+    · intro i j xi xj h
+      obtain ⟨l, f, g, hfg⟩ := (isColimit_eq_iff _ hT).1 (congrArg Subtype.val h)
+      exact ⟨l, f, g, Subtype.ext hfg⟩⟩⟩
+
+end Filtered
+
+end Rep
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits
+
+universe u v
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [NeZero (Nat.card G : k)]
 
 /-- Invariant dimension is additive on short exact sequences of finite-dimensional
 representations when the group order is invertible in the coefficient field. -/
@@ -647,8 +765,13 @@ theorem FDRep.finrank_invariants_add_of_shortExact {S : ShortComplex (FDRep k G)
     Module.finrank k (Representation.invariants S.X₂.ρ) =
       Module.finrank k (Representation.invariants S.X₁.ρ) +
         Module.finrank k (Representation.invariants S.X₃.ρ) := by
-  have hInv := Rep.shortExact_map_invariantsFunctor
-    (hS.map_of_exact (forget₂ (FDRep k G) (Rep k G)))
+  -- A nonzero cardinality in `k` forces `G` to be finite, with invertible order.
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
+  have : Fintype G := Fintype.ofFinite G
+  have : Invertible (Fintype.card G : k) :=
+    invertibleOfNonzero (Nat.card_eq_fintype_card (α := G) ▸ NeZero.ne (Nat.card G : k))
+  have hInv := (hS.map_of_exact (forget₂ (FDRep k G) (Rep k G))).map_of_exact
+    (Rep.invariantsFunctor k G)
   -- `Rep.invariantsFunctor` sends `forget₂ V` to the invariant subspace of `V.ρ`
   -- (`Rep.invariantsFunctor_obj_carrier`, `FDRep.forget₂_ρ`).
   have hfinrank (V : FDRep k G) :
@@ -712,7 +835,7 @@ theorem map_ofHom_subtype_invariants_injective :
     ModuleCat.ofHom (σ.averageMap.codRestrict σ.invariants σ.averageMap_invariant)
   have h : ModuleCat.ofHom σ.invariants.subtype ≫ π = 𝟙 _ := by
     ext m
-    exact σ.averageMap_id m m.2
+    exact σ.averageMap_id m m.property
   refine Function.LeftInverse.injective (g := (F.map π).hom) fun y ↦ ?_
   rw [← ModuleCat.comp_apply, ← F.map_comp, h, F.map_id, ModuleCat.id_apply]
 
@@ -760,7 +883,7 @@ theorem invariants_mapRepresentation :
   · rintro _ ⟨y, rfl⟩ g
     have h : ι ≫ ModuleCat.ofHom (σ g) = ι := by
       ext m
-      exact m.2 g
+      exact m.property g
     rw [mapRepresentation_apply, ← ModuleCat.comp_apply, ← F.map_comp, h]
 
 end CategoryTheory.Functor

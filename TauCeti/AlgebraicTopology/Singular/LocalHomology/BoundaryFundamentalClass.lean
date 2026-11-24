@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.Triple
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.AlgebraicTopology.Singular.Excision
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
@@ -17,8 +18,8 @@ import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 
 Let `X` be a compact Hausdorff space and `ι : M → X` an open embedding of an oriented
 `(n + 1)`-manifold `M`, whose complement `∂X = X ∖ ι(M)` is the image of a collared map, as for a
-compact topological manifold with boundary. The connecting morphism of the pair `(X, ∂X)` sends the
-relative fundamental class `[X, ∂X] ∈ Hₙ₊₁(X, ∂X; ℤ)`
+compact topological manifold with boundary or with corners. The connecting morphism of the pair
+`(X, ∂X)` sends the relative fundamental class `[X, ∂X] ∈ Hₙ₊₁(X, ∂X; ℤ)`
 (`TauCeti.HomologicalOrientation.fundamentalClassRel`) to a fundamental class of `∂X`: its image in
 the local homology `Hₙ(∂X, ∂X ∖ {z}; ℤ)` generates that group at every point `z` of `∂X`
 (`TauCeti.HomologicalOrientation.isFundamentalClass_singularHomologyδ_fundamentalClassRel`). No
@@ -28,6 +29,18 @@ comparison, `TopPair.exists_boundary_eq_of_singularHomologyδ_eq` therefore give
 cubical fundamental chain of `X` relative to `∂X` whose boundary is any prescribed normalized
 cubical cycle of `∂X` representing `∂[X, ∂X]`, and such a cycle is a fundamental cycle of `∂X`;
 this is the homological input of fundamental chains of manifolds with corners.
+
+The argument uses neither the orientation nor the integral coefficients, only that the class
+generates the local homology at the interior points. With coefficients in any module `R` over a
+ring `Λ`, a class of `Hₙ₊₁(X, ∂X; R)` whose local images at the points of `ι(M)` generate is sent
+to a fundamental class of `∂X` with coefficients in `R`
+(`TauCeti.isFundamentalClass_singularHomologyδ_of_forall_span_eq_top`). With coefficients in a
+Dedekind-finite ring whose only unit is `1`, such as `ZMod 2`, this applies to the fundamental class
+relative to the boundary of an unoriented `X`
+(`TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`);
+when `∂X` is moreover a compact manifold, its image is the unique fundamental class of `∂X`
+(`TauCeti.IsFundamentalClass.eq_of_subsingleton_units`). This is the homological input of the
+fundamental chains of manifolds with corners over `ℤ/2` of Barraud and Cornea.
 
 ## Proof
 
@@ -49,10 +62,14 @@ onto an open subset of `X`:
 
 The collar is an open embedding, so by excision it induces isomorphisms on local homology, and the
 two isomorphisms above transport to the triple in `X`. The composite of these isomorphisms carries
-the local orientation at `p` to the image of `∂[X, ∂X]` at `z`, which is therefore a generator.
+the local class of `[X, ∂X]` at `p`, a generator, to the image of `∂[X, ∂X]` at `z`, which is
+therefore a generator.
 
 ## Main results
 
+* `TauCeti.isFundamentalClass_singularHomologyδ_of_forall_span_eq_top`: the connecting morphism
+  `Hₙ₊₁(X, ∂X; R) ⟶ Hₙ(∂X; R)` carries a class generating the local homology at every interior
+  point to a fundamental class of `∂X`.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_singularHomologyδ_fundamentalClassRel`: the
   connecting morphism `Hₙ₊₁(X, ∂X; ℤ) ⟶ Hₙ(∂X; ℤ)` carries the relative fundamental class to a
   fundamental class of `∂X`.
@@ -62,8 +79,9 @@ the local orientation at `p` to the image of `∂[X, ∂X]` at `z`, which is the
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 3.3: fundamental
   classes of compact manifolds with boundary and Lefschetz duality.
 * J.-F. Barraud, O. Cornea, *Lagrangian intersections and the Serre spectral sequence*, Annals of
-  Mathematics 166 (2007), Appendix A, where fundamental chains relative to the boundary, with
-  boundary the fundamental cycle of the boundary, form the representing chain systems.
+  Mathematics 166 (2007), Lemma 2.2 and Appendix A, where fundamental chains relative to the
+  boundary, with boundary the fundamental cycle of the boundary, form the representing chain
+  systems.
 -/
 
 public section
@@ -93,7 +111,7 @@ private def segment : Set (B × Ico (0 : ℝ) 1) := {q | q.1 = b ∧ (q.2 : ℝ)
 
 private lemma isClosed_segment [T1Space B] : IsClosed (segment b) :=
   (isClosed_singleton.preimage continuous_fst).inter
-    (isClosed_le (continuous_subtype_val.comp continuous_snd) continuous_const)
+    (isClosed_le (continuous_subtypeVal.comp continuous_snd) continuous_const)
 
 private lemma isCompact_segment : IsCompact (segment b) := by
   have hI : IsCompact {t : Ico (0 : ℝ) 1 | (t : ℝ) ≤ 1 / 2} := by
@@ -102,13 +120,13 @@ private lemma isCompact_segment : IsCompact (segment b) := by
     ext t
     refine ⟨?_, fun ht ↦ ⟨⟨t, ht.1, by linarith [ht.2]⟩, ht.2, rfl⟩⟩
     rintro ⟨t, ht, rfl⟩
-    exact ⟨t.2.1, ht⟩
+    exact ⟨t.property.1, ht⟩
   exact isCompact_singleton.prod hI
 
 /-- Pushing the depth coordinate up to at least `3τ / 4` at time `τ`. -/
 private def pushUp (τ : unitInterval) (q : B × Ico (0 : ℝ) 1) : B × Ico (0 : ℝ) 1 :=
-  (q.1, ⟨max q.2 (τ * (3 / 4)), le_max_of_le_left q.2.2.1,
-    max_lt q.2.2.2 (by nlinarith [τ.2.1, τ.2.2])⟩)
+  (q.1, ⟨max q.2 (τ * (3 / 4)), le_max_of_le_left q.2.property.1,
+    max_lt q.2.property.2 (by nlinarith [τ.property.1, τ.property.2])⟩)
 
 private lemma continuous_pushUp : Continuous fun x : unitInterval × (B × Ico (0 : ℝ) 1) ↦
     pushUp x.1 x.2 := by
@@ -116,7 +134,7 @@ private lemma continuous_pushUp : Continuous fun x : unitInterval × (B × Ico (
 
 omit [TopologicalSpace B] in
 private lemma pushUp_zero (q : B × Ico (0 : ℝ) 1) : pushUp 0 q = q :=
-  Prod.ext rfl (Subtype.ext (by simp [pushUp, q.2.2.1]))
+  Prod.ext rfl (Subtype.ext (by simp [pushUp, q.2.property.1]))
 
 omit [TopologicalSpace B] in
 private lemma pushUp_one_notMem (q : B × Ico (0 : ℝ) 1) : pushUp 1 q ∉ segment b := fun h ↦ by
@@ -201,16 +219,16 @@ private lemma isIso_singularHomologyMap_lowerPairMap [T1Space B] (k : ℕ) :
   · rintro (x : lower B) ⟨(y : ((segment b)ᶜ : Set (B × Ico (0 : ℝ) 1))), hy⟩
     rw [lowerPairMap_fst] at hy
     have hyx : (y : B × Ico (0 : ℝ) 1) = x := congrArg Subtype.val hy
-    exact ⟨⟨x, x.2, hyx ▸ y.2⟩, rfl⟩
+    exact ⟨⟨x, x.property, hyx ▸ y.property⟩, rfl⟩
   · rintro (_ | _)
-    · exact (isClosed_segment b).isOpen_compl.preimage continuous_subtype_val
-    · exact (isOpen_lt (continuous_subtype_val.comp continuous_snd) continuous_const).preimage
-        continuous_subtype_val
+    · exact (isClosed_segment b).isOpen_compl.preimage continuous_subtypeVal
+    · exact (isOpen_lt (continuous_subtypeVal.comp continuous_snd) continuous_const).preimage
+        continuous_subtypeVal
   · refine eq_univ_of_forall fun (w : ({(b, half)}ᶜ : Set (B × Ico (0 : ℝ) 1))) ↦
       mem_iUnion.2 ?_
     by_cases hw : ((w : B × Ico (0 : ℝ) 1).2 : ℝ) < 1 / 2
     · exact ⟨true, hw⟩
-    · refine ⟨false, fun hs ↦ w.2 (Prod.ext hs.1 (Subtype.ext ?_))⟩
+    · refine ⟨false, fun hs ↦ w.property (Prod.ext hs.1 (Subtype.ext ?_))⟩
       exact le_antisymm hs.2 (not_lt.1 hw)
   · rintro (_ | _)
     · exact Or.inl fun (w : ({(b, half)}ᶜ : Set (B × Ico (0 : ℝ) 1))) hw ↦ ⟨⟨w, hw⟩, rfl⟩
@@ -229,16 +247,16 @@ private def toLower : TopPair.ofSubset ({b}ᶜ : Set (TopCat.of B)) ⟶ lowerPai
   TopPair.ofHom
     (TopCat.ofHom ⟨fun m ↦ ⟨(m, bottom), bottom_lt_half⟩,
       (continuous_id.prodMk continuous_const).subtype_mk _⟩)
-    (TopCat.ofHom ⟨fun m ↦ ⟨(m.1, bottom), bottom_lt_half, fun h ↦ m.2 h.1⟩,
-      (continuous_subtype_val.prodMk continuous_const).subtype_mk _⟩) rfl
+    (TopCat.ofHom ⟨fun m ↦ ⟨(m.val, bottom), bottom_lt_half, fun h ↦ m.property h.1⟩,
+      (continuous_subtypeVal.prodMk continuous_const).subtype_mk _⟩) rfl
 
 /-- The projection `(m, t) ↦ m` of `lowerPair b` onto `(B, B ∖ {b})`. -/
 private def fromLower : lowerPair b ⟶ TopPair.ofSubset ({b}ᶜ : Set (TopCat.of B)) :=
   TopPair.ofHom
     (TopCat.ofHom ⟨fun q : lower B ↦ (q : B × Ico (0 : ℝ) 1).1, by fun_prop⟩)
     (TopCat.ofHom ⟨fun q : ↥(lower B ∩ (segment b)ᶜ) ↦
-      ⟨(q : B × Ico (0 : ℝ) 1).1, fun h ↦ q.2.2 ⟨h, q.2.1.le⟩⟩,
-      (continuous_fst.comp continuous_subtype_val).subtype_mk _⟩) rfl
+      ⟨(q : B × Ico (0 : ℝ) 1).1, fun h ↦ q.property.2 ⟨h, q.property.1.le⟩⟩,
+      (continuous_fst.comp continuous_subtypeVal).subtype_mk _⟩) rfl
 
 private lemma toLower_comp_fromLower : toLower b ≫ fromLower b = 𝟙 _ :=
   TopPair.hom_ext_of_fst _ rfl
@@ -247,17 +265,18 @@ variable (B) in
 /-- Contracting the depth coordinate of `B × [0, 1 / 2)` to `0`. -/
 private def lowerContraction : C(lower B, lower B) :=
   ⟨fun q ↦ ⟨((q : B × Ico (0 : ℝ) 1).1, bottom), bottom_lt_half⟩,
-    ((continuous_fst.comp continuous_subtype_val).prodMk continuous_const).subtype_mk _⟩
+    ((continuous_fst.comp continuous_subtypeVal).prodMk continuous_const).subtype_mk _⟩
 
 variable (B) in
 /-- Scaling the depth coordinate deforms `lowerContraction B` into the identity of `lower B`. -/
 private def lowerHomotopy :
     (lowerContraction B).Homotopy (ContinuousMap.id (lower B)) where
   toFun x := ⟨((x.2 : B × Ico (0 : ℝ) 1).1, ⟨x.1 * ((x.2 : B × Ico (0 : ℝ) 1).2 : ℝ),
-      mul_nonneg x.1.2.1 (x.2 : B × Ico (0 : ℝ) 1).2.2.1,
-      (mul_le_of_le_one_left (x.2 : B × Ico (0 : ℝ) 1).2.2.1 x.1.2.2).trans_lt
-        (x.2 : B × Ico (0 : ℝ) 1).2.2.2⟩),
-    (mul_le_of_le_one_left (x.2 : B × Ico (0 : ℝ) 1).2.2.1 x.1.2.2).trans_lt x.2.2⟩
+      mul_nonneg x.1.property.1 (x.2 : B × Ico (0 : ℝ) 1).2.property.1,
+      (mul_le_of_le_one_left (x.2 : B × Ico (0 : ℝ) 1).2.property.1 x.1.property.2).trans_lt
+        (x.2 : B × Ico (0 : ℝ) 1).2.property.2⟩),
+    (mul_le_of_le_one_left (x.2 : B × Ico (0 : ℝ) 1).2.property.1 x.1.property.2).trans_lt
+        x.2.property⟩
   continuous_toFun := by fun_prop
   map_zero_left q := by
     refine Subtype.ext (Prod.ext rfl (Subtype.ext ?_))
@@ -273,7 +292,7 @@ private lemma fromLower_comp_toLower :
         -- first coordinate is that of `q`.
         fun q (hq : (q : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ) ↦
           show ((lowerContraction B q : lower B) : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ
-            from ⟨(lowerContraction B q).2, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :=
+            from ⟨(lowerContraction B q).property, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :=
   TopPair.hom_ext_of_fst _ (by rw [TopPair.ofInclusionMap_fst]; rfl)
 
 /-- `(B, B ∖ {b}) ⟶ lowerPair b` induces isomorphisms on relative homology: the projection is a
@@ -286,7 +305,7 @@ private lemma isIso_singularHomologyMap_toLower (k : ℕ) :
   exact TopPair.ofInclusionHomotopy (hst := inter_subset_left) (hst' := inter_subset_left)
     -- As in `fromLower_comp_toLower`, the ascription unfolds the point to its underlying pair.
     (lowerHomotopy B) fun τ q (hq : (q : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ) ↦
-      (⟨(lowerHomotopy B (τ, q)).2, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :
+      (⟨(lowerHomotopy B (τ, q)).property, fun h ↦ hq.2 ⟨h.1, hq.1.le⟩⟩ :
         ((lowerHomotopy B (τ, q) : lower B) : B × Ico (0 : ℝ) 1) ∈ lower B ∩ (segment b)ᶜ)
 
 /-- The inclusion `m ↦ (m, 0)` of `(B, B ∖ {b})` into the inner pair of the model triple. -/
@@ -342,7 +361,7 @@ include hc in
 omit [T2Space X] in
 private lemma notMem_image_segment {w : D} (hw : w ≠ z) : (w : X) ∉ c '' segment z := by
   rintro ⟨q, hq, hqw⟩
-  have h0 := (apply_mem_iff hc q).1 (hqw ▸ w.2)
+  have h0 := (apply_mem_iff hc q).1 (hqw ▸ w.property)
   refine hw (Subtype.ext ?_)
   rw [← hqw, ← hc.apply_zero z, ← hq.1, ← h0]
 
@@ -368,26 +387,26 @@ private abbrev spaceTriple : TopTriple.{w} :=
 private def collarTripleMap : triple z ⟶ spaceTriple (c := c) z :=
   ⟨ComposableArrows.homMk₂
     (TopCat.ofHom ⟨fun q : ↥(segment z)ᶜ ↦ ⟨c q, fun h ↦
-      q.2 (hc.isOpenEmbedding.injective.mem_set_image.1 h)⟩, by
+      q.property (hc.isOpenEmbedding.injective.mem_set_image.1 h)⟩, by
         have := hc.isOpenEmbedding.continuous; fun_prop⟩)
     (TopCat.ofHom ⟨fun q : ↥({(z, half)}ᶜ : Set (D × Ico (0 : ℝ) 1)) ↦ ⟨c q, fun h ↦
-      q.2 (hc.isOpenEmbedding.injective h)⟩, by
+      q.property (hc.isOpenEmbedding.injective h)⟩, by
         have := hc.isOpenEmbedding.continuous; fun_prop⟩)
     (TopCat.ofHom ⟨c, hc.isOpenEmbedding.continuous⟩) rfl rfl⟩
 
 /-- The triple `(X, D, D ∖ {z})`. -/
 private abbrev boundaryTriple : TopTriple.{w} :=
-  TopTriple.of (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
+  TopTriple.of (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ :
       TopCat.of ↥({z}ᶜ : Set D) ⟶ TopCat.of D)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ : TopCat.of D ⟶ TopCat.of X)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ : TopCat.of D ⟶ TopCat.of X)
     IsEmbedding.subtypeVal IsEmbedding.subtypeVal
 
 /-- The identity of `X` as a map of triples `(X, D, D ∖ {z}) ⟶ (X, X ∖ {p}, X ∖ σ)`. -/
 private def boundaryTripleMap : boundaryTriple z ⟶ spaceTriple (c := c) z :=
   ⟨ComposableArrows.homMk₂
-    (TopCat.ofHom ⟨fun w : ↥({z}ᶜ : Set D) ↦ ⟨(w : D), notMem_image_segment hc z w.2⟩, by
+    (TopCat.ofHom ⟨fun w : ↥({z}ᶜ : Set D) ↦ ⟨(w : D), notMem_image_segment hc z w.property⟩, by
       fun_prop⟩)
-    (TopCat.ofHom ⟨fun w : D ↦ ⟨w, fun h ↦ apply_half_notMem hc z (h ▸ w.2)⟩, by fun_prop⟩)
+    (TopCat.ofHom ⟨fun w : D ↦ ⟨w, fun h ↦ apply_half_notMem hc z (h ▸ w.property)⟩, by fun_prop⟩)
     (𝟙 _) rfl rfl⟩
 
 /-- The inclusion `m ↦ (m, 0)` of the model, as a map out of the inner pair of
@@ -485,6 +504,64 @@ end Collar
 
 end CollarModel
 
+/-! ### The boundary of a relative class with generating interior local classes -/
+
+section Coefficients
+
+variable {X M : Type w} {N : Type*} [TopologicalSpace X] [TopologicalSpace N] [T2Space X]
+  {ι : M → X} {f : N → X} {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ) {n : ℕ}
+  (hιf : range ι = (range f)ᶜ) (hf : IsCollared f)
+
+include hιf hf in
+/-- **The boundary of a relative class generating at every interior point is a fundamental class
+of the boundary.** Let `X` be a Hausdorff space and `∂X = X ∖ ι(M)` the collared image of
+`f : N → X`, and let `R` be a module over a ring `Λ`. If the image of `γ ∈ Hₙ₊₁(X, ∂X; R)` in the
+local homology `Hₙ₊₁(X, X ∖ {p}; R)` generates that `Λ`-module at every point `p` of `ι(M)`, then
+the connecting morphism `Hₙ₊₁(X, ∂X; R) ⟶ Hₙ(∂X; R)` sends `γ` to a fundamental class of `∂X`.
+
+No manifold structure is used, on `M` or on `∂X`: the collar identifies the local homology of
+`∂X` at `z` with that of `X` at an interior point one dimension up. For integral coefficients this
+gives `TauCeti.HomologicalOrientation.isFundamentalClass_singularHomologyδ_fundamentalClassRel`.
+With coefficients in a Dedekind-finite ring whose only unit is `1`, such as `ZMod 2`, it applies to
+the fundamental class relative to the boundary of
+`TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`, with no orientation. -/
+theorem isFundamentalClass_singularHomologyδ_of_forall_span_eq_top
+    {γ : (localHomology R (range ι) (n + 1) : ModuleCat.{w} Λ)}
+    (hγ : ∀ p (hp : p ∈ range ι),
+      Submodule.span Λ {localHomologyRestriction R (singleton_subset_iff.2 hp) (n + 1) γ} = ⊤) :
+    IsFundamentalClass (M := ↥((range ι)ᶜ : Set X)) (n := n)
+      ((TopPair.ofSubset (X := TopCat.of X) (range ι)ᶜ).singularHomologyδ R (n + 1) n rfl γ) := by
+  refine (isFundamentalClass_iff _).2 fun z ↦ ?_
+  -- A collar of the inclusion of the boundary `∂X = f(N)`.
+  have hD : range f = (range ι)ᶜ := by rw [hιf, compl_compl]
+  obtain ⟨c, hc⟩ := isCollared_iff.1
+    (hD ▸ hf.subtypeVal_range : IsCollared (Subtype.val : ↥((range ι)ᶜ : Set X) → X))
+  -- The interior point `p = c (z, 1 / 2)` of the collar.
+  have hp : c (z, CollarModel.half) ∈ range ι := by
+    simpa using CollarModel.apply_half_notMem hc z
+  have houter : TopPair.singularHomologyMap
+      (TopTriple.outerPair.map (CollarModel.boundaryTripleMap hc z)) R (n + 1) =
+      localHomologyRestriction R (singleton_subset_iff.2 hp) (n + 1) := by
+    rw [localHomologyRestriction_def]
+    exact congrArg (TopPair.singularHomologyMap · _ _)
+      (TopPair.hom_ext_of_fst _ (TopPair.ofSubsetMap_fst _ _).symm)
+  have key := (TopTriple.singularHomologyδ_eq_comp_singularHomologyπ
+    (CollarModel.boundaryTriple z) R (n + 1) n).symm.trans
+      (CollarModel.singularHomologyδ_boundaryTriple R hc z n)
+  rw [houter] at key
+  -- So the image of `∂γ` at `z` is the image of the local class of `γ` at `p` under
+  -- `localHomologyIso`. The final step is up to definitional unfolding: the inner pair of
+  -- `boundaryTriple z` is `TopPair.ofSubset ({z}ᶜ : Set ∂X)`, so its homology is the local homology
+  -- of `∂X` at `z` (see `boundaryTripleInnerMap`), and the outer pair of `spaceTriple z` is
+  -- `TopPair.ofSubset {p}ᶜ`, whose homology is the abbreviation `localHomology` at `p`.
+  exact (congrArg (fun v ↦ Submodule.span Λ {v} = ⊤)
+    ((singularHomologyToLocalHomology_eq_singularHomologyπ _ z _).trans
+      (congrArg (fun φ ↦ φ.hom γ) key))).mpr
+    ((ModuleCat.span_singleton_apply_eq_top_iff (CollarModel.localHomologyIso R hc z n).hom).2
+      (hγ _ hp))
+
+end Coefficients
+
 /-! ### The boundary of the relative fundamental class -/
 
 namespace HomologicalOrientation
@@ -504,44 +581,10 @@ of `∂X`: its image in the local homology `Hₙ(∂X, ∂X ∖ {z}; ℤ)` gener
 theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel :
     IsFundamentalClass (M := ↥((range ι)ᶜ : Set X)) (n := n)
       ((TopPair.ofSubset (X := TopCat.of X) (range ι)ᶜ).singularHomologyδ
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + 1) n rfl (o.fundamentalClassRel hn hι hιf hf)) := by
-  refine (isFundamentalClass_iff_forall_isLocalOrientation _).2 fun z ↦ ?_
-  -- A collar of the inclusion of the boundary `∂X = f(N)`.
-  have hD : range f = (range ι)ᶜ := by rw [hιf, compl_compl]
-  obtain ⟨c, hc⟩ := isCollared_iff.1
-    (hD ▸ hf.subtypeVal_range : IsCollared (Subtype.val : ↥((range ι)ᶜ : Set X) → X))
-  set γ := o.fundamentalClassRel hn hι hιf hf
-  -- The relative fundamental class restricts to a local orientation at every interior point.
-  have hloc (y : X) (hy : y ∈ range ι) : IsLocalOrientation y (n + 1)
-      (localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hy)
-        (n + 1) γ) := by
-    obtain ⟨x, rfl⟩ := hy
-    rw [o.localHomologyRestriction_fundamentalClassRel hn hι hιf hf x]
-    exact (o x).2.map (localHomologyIsoOfIsOpenEmbedding _ hι x (n + 1))
-  -- The interior point `p = c (z, 1 / 2)` of the collar.
-  have hp : c (z, CollarModel.half) ∈ range ι := by
-    simpa using CollarModel.apply_half_notMem hc z
-  have houter : TopPair.singularHomologyMap
-      (TopTriple.outerPair.map (CollarModel.boundaryTripleMap hc z))
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + 1) =
-      localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hp)
-        (n + 1) := by
-    rw [localHomologyRestriction_def]
-    exact congrArg (TopPair.singularHomologyMap · _ _)
-      (TopPair.hom_ext_of_fst _ (TopPair.ofSubsetMap_fst _ _).symm)
-  have key := (TopTriple.singularHomologyδ_eq_comp_singularHomologyπ
-    (CollarModel.boundaryTriple z) (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + 1) n).symm.trans
-      (CollarModel.singularHomologyδ_boundaryTriple (ModuleCat.of ℤ (ULift.{0} ℤ)) hc z n)
-  rw [houter] at key
-  -- So the image of `∂[X, ∂X]` at `z` is the image of the local orientation at `p` under
-  -- `localHomologyIso`. The final step is up to definitional unfolding: the inner pair of
-  -- `boundaryTriple z` is `TopPair.ofSubset ({z}ᶜ : Set ∂X)`, so its homology is the local homology
-  -- of `∂X` at `z` (see `boundaryTripleInnerMap`), and the outer pair of `spaceTriple z` is
-  -- `TopPair.ofSubset {p}ᶜ`, whose homology is the abbreviation `localHomology` at `p`.
-  convert (hloc _ hp).map (x := c (z, CollarModel.half)) (y := z) (d := n + 1) (d' := n)
-    (CollarModel.localHomologyIso (ModuleCat.of ℤ (ULift.{0} ℤ)) hc z n) using 1
-  exact (singularHomologyToLocalHomology_eq_singularHomologyπ _ z _).trans
-    (congrArg (fun φ ↦ φ.hom γ) key)
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + 1) n rfl (o.fundamentalClassRel hn hι hιf hf)) :=
+  isFundamentalClass_singularHomologyδ_of_forall_span_eq_top _ hιf hf fun _ hp ↦
+    (isLocalOrientation_iff_span_eq_top _ _ _).1
+      (o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel hn hι hιf hf hp)
 
 end HomologicalOrientation
 

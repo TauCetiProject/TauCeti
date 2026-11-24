@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMinima
-import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Dual.AbsoluteValue
 import TauCeti.NumberTheory.Height.FundamentalInequality
 
 /-!
@@ -50,6 +50,8 @@ bound. The uniformity in `c` is what lets exponent families that move with `Q` b
 ## Main results
 
 * `TauCeti.NumberField.le_prod_successiveMinimum_approx`: the lower bound on `∏ l, μ l ^ d`.
+* `TauCeti.NumberField.exists_pos_mul_rpow_le_successiveMinimum_pow`: when every minimum but the
+  last is at most `1`, the lower bound holds for the `d`-th power of the last one alone.
 * `TauCeti.NumberField.prod_successiveMinimum_approx_le`: the upper bound on `∏ l, μ l ^ d`.
 * `TauCeti.NumberField.exists_pos_forall_rpow_le_successiveMinimum`: every minimum is at least
   `Q ^ (-B)` for `Q ≥ Q₀`, uniformly in the exponents of absolute weight at most `A`.
@@ -80,8 +82,8 @@ at `S₀`, the product of the `[K : ℚ]`-th powers of the successive minima ove
 where `N = [K : ℚ] · card ι` and `c_K = integralBasisHouse K`. -/
 theorem le_prod_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
     (2 : ℝ) ^ (finrank ℚ K * Fintype.card ι) /
         (((finrank ℚ K * Fintype.card ι).factorial : ℝ) *
@@ -124,6 +126,35 @@ theorem le_prod_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
         ring
     _ ≤ P := (div_le_iff₀ (mul_pos hconst hQw)).2 hA
 
+/-- **The last minimum of a domain controls its weight.** For forms independent at the infinite
+places and at `S₀` there is `A > 0` such that for all exponents `c` and levels `0 < Q`, if every
+successive minimum over `K` of `approxDomain S₀ L c Q` but the last is at most `1`, then the
+`[K : ℚ]`-th power of the last is at least `A · Q ^ (-approxWeight S₀ c)`. -/
+theorem exists_pos_mul_rpow_le_successiveMinimum_pow {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (hι : 0 < Fintype.card ι) :
+    ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q →
+      (∀ l < Fintype.card ι - 1,
+        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1) →
+      A * Q ^ (-approxWeight S₀ c) ≤
+        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+          (Fintype.card ι - 1) ^ finrank ℚ K := by
+  classical
+  have := approxConst_pos hLinf hLfin
+  have := zero_lt_one.trans_le (one_le_integralBasisHouse (K := K))
+  refine ⟨_, by positivity, fun c Q hQ h₁ ↦
+    (le_prod_successiveMinimum_approx hLinf hLfin c hQ).trans ?_⟩
+  -- Split off the last factor; the others are at most `1`.
+  let l₀ : Fin (Fintype.card ι) := ⟨Fintype.card ι - 1, by omega⟩
+  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ l₀)]
+  refine mul_le_of_le_one_right (pow_nonneg (Submodule.successiveMinimum_nonneg _ _ _) _)
+    (Finset.prod_le_one₀ (fun _ _ ↦ pow_nonneg (Submodule.successiveMinimum_nonneg _ _ _) _)
+      fun l hl ↦ pow_le_one₀ (Submodule.successiveMinimum_nonneg _ _ _) (h₁ l ?_))
+  have hl' : l ≠ l₀ := Finset.ne_of_mem_erase hl
+  have : (l : ℕ) ≠ Fintype.card ι - 1 := fun h ↦ hl' (Fin.ext h)
+  omega
+
 /-- **The successive minima of an approximation domain, upper bound** (Bombieri–Gubler, Theorem
 C.2.11 with Corollary 7.5.8): for `0 < Q` and linearly independent forms at the infinite places and
 at `S₀`, the product of the `[K : ℚ]`-th powers of the successive minima over `K` of
@@ -132,8 +163,8 @@ at `S₀`, the product of the `[K : ℚ]`-th powers of the successive minima ove
 `N = [K : ℚ] · card ι`. -/
 theorem prod_successiveMinimum_approx_le {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
     ∏ l : Fin (Fintype.card ι),
         (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ^ finrank ℚ K ≤
@@ -186,14 +217,14 @@ infinite places are at most `t` times the bounds of the domain has
 coordinate of the point cannot be small at every place. -/
 private theorem one_le_mul_rpow_approxAbsWeight_mul_pow {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) (D : AbsoluteValue K ℝ → ℝ)
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (D : AbsoluteValue K ℝ → ℝ)
     (hD : ∀ v : AbsoluteValue K ℝ, LinearIndependent K (L v) → ∀ (x : ι → K) (j : ι) (M : ℝ),
       (∀ i, v (L v i x) ≤ M) → v (x j) ≤ D v * M)
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q t : ℝ} (hQ : 1 ≤ Q) (ht : 0 ≤ t)
     {x : ι → K} (hxΛ : x ∈ approxModule S₀ L c Q) (hx : x ≠ 0)
-    (hxB : ∀ (w : InfinitePlace K) (i : ι), w (L w.1 i x) ≤ t * Q ^ c w.1 i) :
-    1 ≤ ((∏ v : InfinitePlace K, D v.1 ^ v.mult) * ∏ v ∈ S₀, D v.1) *
+    (hxB : ∀ (w : InfinitePlace K) (i : ι), w (L w.val i x) ≤ t * Q ^ c w.val i) :
+    1 ≤ ((∏ v : InfinitePlace K, D v.val ^ v.mult) * ∏ v ∈ S₀, D v.val) *
       Q ^ approxAbsWeight S₀ c * t ^ finrank ℚ K := by
   have hQ0 : 0 < Q := zero_lt_one.trans_le hQ
   -- `P v` bounds `Q ^ c v i` for every `i`, and the `P v` multiply to `Q ^ approxAbsWeight S₀ c`.
@@ -203,17 +234,18 @@ private theorem one_le_mul_rpow_approxAbsWeight_mul_pow {S₀ : Finset (FinitePl
     exact Real.rpow_le_rpow_of_exponent_le hQ ((le_abs_self _).trans
       (Finset.single_le_sum (f := fun i ↦ |c v i|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ i)))
   have hweight : Q ^ approxAbsWeight S₀ c =
-      (∏ v : InfinitePlace K, P v.1 ^ v.mult) * ∏ v ∈ S₀, P v.1 := by
+      (∏ v : InfinitePlace K, P v.val ^ v.mult) * ∏ v ∈ S₀, P v.val := by
     rw [approxAbsWeight_eq_approxWeight_abs, rpow_approxWeight S₀ _ hQ0]
   obtain ⟨j, hj⟩ := Function.ne_iff.1 hx
   rw [mem_approxModule, abs_of_pos hQ0] at hxΛ
-  have hinf (v : InfinitePlace K) : v (x j) ≤ D v.1 * (t * P v.1) :=
-    hD v.1 (hLInf v) x j _ fun i ↦ (hxB v i).trans (by gcongr; exact hP _ i)
-  have hfin (v : FinitePlace K) (hv : v ∈ S₀) : v (x j) ≤ D v.1 * P v.1 :=
-    hD v.1 (hLFin v hv) x j _ fun i ↦ (hxΛ.1 v hv i).trans (hP _ i)
+  have hinf (v : InfinitePlace K) : v (x j) ≤ D v.val * (t * P v.val) :=
+    hD v.val (hLInf v) x j _ fun i ↦ (hxB v i).trans (by gcongr; exact hP _ i)
+  have hfin (v : FinitePlace K) (hv : v ∈ S₀) : v (x j) ≤ D v.val * P v.val :=
+    hD v.val (hLFin v hv) x j _ fun i ↦ (hxΛ.1 v hv i).trans (hP _ i)
   calc 1 ≤ (∏ v : InfinitePlace K, v (x j) ^ v.mult) * ∏ v ∈ S₀, v (x j) :=
         NumberField.one_le_prod_apply_of_forall_le_one S₀ hj fun v hv ↦ hxΛ.2 v hv j
-    _ ≤ (∏ v : InfinitePlace K, (D v.1 * (t * P v.1)) ^ v.mult) * ∏ v ∈ S₀, D v.1 * P v.1 := by
+    _ ≤ (∏ v : InfinitePlace K, (D v.val * (t * P v.val)) ^ v.mult) * ∏ v ∈ S₀, D v.val * P v.val
+        := by
         refine mul_le_mul (Finset.prod_le_prod₀ (fun v _ ↦ by positivity)
           fun v _ ↦ pow_le_pow_left₀ (apply_nonneg _ _) (hinf v) _)
           (Finset.prod_le_prod₀ (fun v _ ↦ apply_nonneg _ _) hfin)
@@ -231,39 +263,31 @@ places are at most `t` times the bounds of the domain has `C * Q ^ (-approxAbsWe
 -/
 private theorem exists_pos_forall_mul_rpow_le_pow {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) :
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) :
     ∃ C : ℝ, 0 < C ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q t : ℝ}, 1 ≤ Q → 0 < t →
       ∀ x ∈ approxModule S₀ L c Q, x ≠ 0 →
-        (∀ (w : InfinitePlace K) (i : ι), w (L w.1 i x) ≤ t * Q ^ c w.1 i) →
+        (∀ (w : InfinitePlace K) (i : ι), w (L w.val i x) ≤ t * Q ^ c w.val i) →
         C * Q ^ (-approxAbsWeight S₀ c) ≤ t ^ finrank ℚ K := by
   classical
-  -- At each place with independent forms, every coordinate is a combination of the forms.
-  have hcomb (v : AbsoluteValue K ℝ) : ∃ a : ι → ι → K,
-      LinearIndependent K (L v) → ∀ (x : ι → K) j, x j = ∑ i, a j i * L v i x := by
+  -- At each place with independent forms, a coordinate is at most `D v` times a common bound on
+  -- the values of the forms.
+  have hcoord (v : AbsoluteValue K ℝ) : ∃ D : ℝ, 0 < D ∧ (LinearIndependent K (L v) →
+      ∀ (x : ι → K) (j : ι) (M : ℝ), (∀ i, v (L v i x) ≤ M) → v (x j) ≤ D * M) := by
     by_cases hv : LinearIndependent K (L v)
-    · obtain ⟨a, ha⟩ := hv.exists_sum_smul_eq_proj
-      exact ⟨a, fun _ x j ↦ by simpa using (LinearMap.congr_fun (ha j) x).symm⟩
-    · exact ⟨0, fun h ↦ (hv h).elim⟩
-  choose a ha using hcomb
-  set D : AbsoluteValue K ℝ → ℝ := fun v ↦ 1 + ∑ j, ∑ i, v (a v j i)
-  -- A coordinate is at most `D v` times a common bound on the values of the forms.
-  have hD (v : AbsoluteValue K ℝ) (hv : LinearIndependent K (L v)) (x : ι → K) (j : ι)
-      (M : ℝ) (hM : ∀ i, v (L v i x) ≤ M) : v (x j) ≤ D v * M := by
-    calc v (x j) ≤ ∑ i, v (a v j i) * v (L v i x) := by
-          rw [ha v hv x j]
-          exact (AbsoluteValue.sum_le _ _ _).trans_eq (by simp only [map_mul])
-      _ ≤ (∑ i, v (a v j i)) * M := by
-          rw [Finset.sum_mul]
-          gcongr with i
-          exact hM i
-      _ ≤ D v * M := by
-          refine mul_le_mul_of_nonneg_right ?_ ((apply_nonneg v _).trans (hM j))
-          exact (Finset.single_le_sum (f := fun j ↦ ∑ i, v (a v j i))
-            (fun _ _ ↦ by positivity) (Finset.mem_univ j)).trans (le_add_of_nonneg_left zero_le_one)
-  set C' : ℝ := (∏ v : InfinitePlace K, D v.1 ^ v.mult) * ∏ v ∈ S₀, D v.1
-  refine ⟨C'⁻¹, by positivity, fun c Q t hQ ht x hxΛ hx hxB ↦ ?_⟩
-  rw [Real.rpow_neg (zero_le_one.trans hQ), ← mul_inv, inv_le_iff_one_le_mul₀' (by positivity)]
+    · obtain ⟨D, hD0, hD⟩ := hv.exists_forall_abv_apply_le_mul v
+      refine ⟨1 + D, by positivity, fun _ x j M hM ↦ (hD x M hM j).trans ?_⟩
+      have hM0 : 0 ≤ M := (apply_nonneg v _).trans (hM j)
+      gcongr
+      exact le_add_of_nonneg_left zero_le_one
+    · exact ⟨1, one_pos, fun h ↦ (hv h).elim⟩
+  choose D hD0 hD using hcoord
+  set C' : ℝ := (∏ v : InfinitePlace K, D v.val ^ v.mult) * ∏ v ∈ S₀, D v.val
+  have hC' : 0 < C' :=
+    mul_pos (Finset.prod_pos fun v _ ↦ pow_pos (hD0 _) _) (Finset.prod_pos fun v _ ↦ hD0 _)
+  refine ⟨C'⁻¹, inv_pos.2 hC', fun c Q t hQ ht x hxΛ hx hxB ↦ ?_⟩
+  rw [Real.rpow_neg (zero_le_one.trans hQ), ← mul_inv,
+    inv_le_iff_one_le_mul₀' (mul_pos hC' (Real.rpow_pos_of_pos (zero_lt_one.trans_le hQ) _))]
   exact one_le_mul_rpow_approxAbsWeight_mul_pow hLInf hLFin D hD c hQ ht.le hxΛ hx hxB
 
 open scoped Classical Pointwise in
@@ -272,8 +296,8 @@ is positive, and its dilate of the body contains the mixed embedding of a nonzer
 module. -/
 private theorem exists_ne_zero_mem_smul_approxBody {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
     0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ∧
       ∃ x ∈ approxModule S₀ L c Q, x ≠ 0 ∧ (fun j ↦ mixedEmbedding K (x j)) ∈
@@ -296,8 +320,8 @@ private theorem exists_ne_zero_mem_smul_approxBody {S₀ : Finset (FinitePlace K
 `C * Q ^ (-approxAbsWeight S₀ c)`, with `C > 0` independent of `c` and of `Q ≥ 1`. -/
 private theorem exists_pos_forall_mul_rpow_le_successiveMinimum_pow
     {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) :
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) :
     ∃ C : ℝ, 0 < C ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 1 ≤ Q →
       ∀ {l : ℕ}, l < Fintype.card ι → C * Q ^ (-approxAbsWeight S₀ c) ≤
         (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ^ finrank ℚ K := by
@@ -313,8 +337,8 @@ upper bound on the product of all the minima, with every other minimum replaced 
 bound. -/
 private theorem exists_pos_forall_successiveMinimum_pow_le_mul_rpow
     {S₀ : Finset (FinitePlace K)} {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) :
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) :
     ∃ C : ℝ, 0 < C ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 1 ≤ Q →
       ∀ {l : ℕ}, l < Fintype.card ι →
         (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ^ finrank ℚ K ≤
@@ -336,7 +360,7 @@ private theorem exists_pos_forall_successiveMinimum_pow_le_mul_rpow
     (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k ^ finrank ℚ K
   have hf (k : Fin n) : C₁ * y⁻¹ ≤ f k := by
     rw [← Real.rpow_neg hQ0.le]
-    exact h₁ c hQ k.2
+    exact h₁ c hQ k.isLt
   -- Minkowski's upper bound on the product, with `Q ^ (-weight) ≤ Q ^ approxAbsWeight`.
   have hprod : ∏ k, f k ≤ C₂ * y := by
     refine (prod_successiveMinimum_approx_le hLInf hLFin c hQ0).trans ?_
@@ -372,8 +396,8 @@ least `Q ^ (-B)`, where `B = #ι · (A + 1) / [K : ℚ]`. The level `Q₀` depen
 -/
 theorem exists_pos_forall_rpow_le_successiveMinimum {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) (A : ℝ) :
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (A : ℝ) :
     ∃ Q₀ : ℝ, 0 < Q₀ ∧ ∀ c : AbsoluteValue K ℝ → ι → ℝ, approxAbsWeight S₀ c ≤ A →
       ∀ {Q : ℝ}, Q₀ ≤ Q → ∀ {l : ℕ}, l < Fintype.card ι →
         Q ^ (-((Fintype.card ι : ℝ) * (A + 1) / finrank ℚ K)) ≤
@@ -407,8 +431,8 @@ and every `l < #ι`, the `l`-th successive minimum over `K` of `approxDomain S�
 on `c`. -/
 theorem exists_pos_forall_rpow_le_successiveMinimum_le {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.1)) (A : ℝ) :
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (A : ℝ) :
     ∃ Q₀ : ℝ, 0 < Q₀ ∧ ∀ c : AbsoluteValue K ℝ → ι → ℝ, approxAbsWeight S₀ c ≤ A →
       ∀ {Q : ℝ}, Q₀ ≤ Q → ∀ {l : ℕ}, l < Fintype.card ι →
         Q ^ (-((Fintype.card ι : ℝ) * (A + 1) / finrank ℚ K)) ≤

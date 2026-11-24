@@ -82,6 +82,9 @@ the labelled presentation is Delzant exactly when `(u, c)` is Delzant and every 
 * `TauCeti.Toric.IsDelzant.extremePoints_nonempty`: a Delzant polytope has a vertex.
 * `TauCeti.Toric.mem_extremePoints_facetPolyhedron_iff_span_eq_top`: in finite dimension, the
   vertices are the points of the polyhedron at which the active normals span `V`.
+* `TauCeti.Toric.injOn_activeSet_extremePoints_facetPolyhedron`,
+  `TauCeti.Toric.finite_extremePoints_facetPolyhedron`: a vertex is determined by its active
+  constraints, so a facet polyhedron has finitely many vertices.
 * `TauCeti.Toric.exists_mem_extremePoints_activeSet_subset`: the constraints active at a point of
   a compact facet polyhedron are active at some vertex.
 * `TauCeti.Toric.isSmoothVertex_iff_linearIndepOn`: a smooth vertex is a point whose active
@@ -89,6 +92,8 @@ the labelled presentation is Delzant exactly when `(u, c)` is Delzant and every 
 * `TauCeti.Toric.IsSmoothVertex.ncard_activeSet`: exactly `rank N` facets meet at a smooth vertex.
 * `TauCeti.Toric.isSmoothVertex_iff_span_eq_top`: a smooth vertex is a point whose active normals
   generate the lattice and number at most `rank N`.
+* `TauCeti.Toric.isSmoothVertex_of_forall_apply_eq`: when the normals form a lattice basis, a
+  point at which every constraint is active is a smooth vertex.
 * `TauCeti.Toric.IsDelzant.isPrimitive`: the facet normals of a Delzant polytope are primitive.
 * `TauCeti.Toric.IsDelzant.facetPairing_ne_zero`: for an injective lattice map, the facet
   pairings of a Delzant polytope are nonzero.
@@ -189,6 +194,16 @@ theorem isSmoothVertex_def {x : StrongDual ℝ V} :
       ∃ b : Module.Basis (activeSet (facetPairing i u) c x) ℤ N, ∀ j, b j = u j :=
   Iff.rfl
 
+/-- The basis of the lattice `N` formed by the normals of the facets active at a smooth vertex. -/
+def IsSmoothVertex.basis {x : StrongDual ℝ V} (hx : IsSmoothVertex i u c x) :
+    Module.Basis (activeSet (facetPairing i u) c x) ℤ N :=
+  Classical.choose (isSmoothVertex_def.1 hx)
+
+@[simp]
+theorem IsSmoothVertex.basis_apply {x : StrongDual ℝ V} (hx : IsSmoothVertex i u c x)
+    (j : activeSet (facetPairing i u) c x) : hx.basis j = u j :=
+  Classical.choose_spec (isSmoothVertex_def.1 hx) j
+
 /-- A point is a smooth vertex exactly when the active normals are linearly independent and
 generate the lattice. -/
 theorem isSmoothVertex_iff_linearIndepOn {x : StrongDual ℝ V} :
@@ -222,6 +237,19 @@ theorem mem_extremePoints_facetPolyhedron_iff [Finite ι] {x : StrongDual ℝ V}
       ∀ w : StrongDual ℝ V, (∀ j ∈ activeSet (facetPairing i u) c x, w (i (u j)) = 0) → w = 0 := by
   unfold facetPolyhedron
   exact mem_extremePoints_polyhedron_iff
+
+/-- **A vertex of a facet polyhedron is determined by its facets.** Two vertices at which the
+same constraints are active are equal. -/
+theorem injOn_activeSet_extremePoints_facetPolyhedron [Finite ι] :
+    InjOn (activeSet (facetPairing i u) c) ((facetPolyhedron i u c).extremePoints ℝ) := by
+  unfold facetPolyhedron
+  exact injOn_activeSet_extremePoints_polyhedron
+
+/-- A facet polyhedron with finitely many facets has finitely many vertices. -/
+theorem finite_extremePoints_facetPolyhedron [Finite ι] :
+    ((facetPolyhedron i u c).extremePoints ℝ).Finite := by
+  unfold facetPolyhedron
+  exact finite_extremePoints_polyhedron
 
 /-- **Vertices of a facet polyhedron, by spanning.** In finite dimension, a point `x` of the
 polyhedron is a vertex exactly when the normals active at `x` span `V`. -/
@@ -271,6 +299,13 @@ theorem isSmoothVertex_iff_span_eq_top [Finite ι] {x : StrongDual ℝ V} :
   refine linearIndependent_of_top_le_span_of_card_le_finrank ?_ ?_
   · rw [← Set.image_eq_range, hspan]
   · rwa [Fintype.card_eq_nat_card, Nat.card_coe_set_eq]
+
+/-- A point at which every constraint is active is a smooth vertex when the normals form a basis
+of the lattice. This is the apex of the moment cone of the local model of a symplectic toric
+manifold at a fixed point. -/
+theorem isSmoothVertex_of_forall_apply_eq (b : Module.Basis ι ℤ N) (hb : ∀ j, b j = u j)
+    {x : StrongDual ℝ V} (hx : ∀ j, x (i (u j)) = c j) : IsSmoothVertex i u c x :=
+  ⟨b.reindex (Equiv.subtypeUnivEquiv fun j ↦ mem_activeSet.2 (hx j)).symm, fun j ↦ by simp [hb]⟩
 
 /-- A bounded facet polyhedron is compact. -/
 theorem isCompact_facetPolyhedron_of_isBounded [FiniteDimensional ℝ V]
@@ -329,6 +364,15 @@ theorem exists_mem_extremePoints_mem_activeSet (j : ι) :
     ∃ x ∈ (facetPolyhedron i u c).extremePoints ℝ, j ∈ activeSet (facetPairing i u) c x := by
   obtain ⟨x, hx, hxj⟩ := hΔ.irredundant j
   exact Toric.exists_mem_extremePoints_mem_activeSet hΔ.isCompact hx (hxj ▸ mem_singleton j)
+
+/-- The facets through a point of a Delzant polytope pass through a smooth vertex. In particular
+the active normals at every point are part of a lattice basis. -/
+theorem exists_isSmoothVertex_activeSet_subset {x : StrongDual ℝ V}
+    (hx : x ∈ facetPolyhedron i u c) :
+    ∃ v, IsSmoothVertex i u c v ∧
+      activeSet (facetPairing i u) c x ⊆ activeSet (facetPairing i u) c v := by
+  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset hΔ.isCompact hx
+  exact ⟨v, hΔ.isSmoothVertex v hv, hsub⟩
 
 /-- The facet normals of a Delzant polytope are primitive lattice vectors. -/
 theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
@@ -484,9 +528,9 @@ theorem isSmoothVertex_nsmul_iff (hm : ∀ j, m j ≠ 0) {y : StrongDual ℝ V} 
     -- A member of a lattice basis is primitive, so it is not a proper multiple.
     have h1 (j : ι) (hj : j ∈ activeSet (facetPairing i u) c y) : m j = 1 :=
       (b.isPrimitive ⟨j, hj⟩).eq_one_of_eq_nsmul (hb ⟨j, hj⟩)
-    exact ⟨h1, b, fun j ↦ by rw [hb, h1 j j.2, one_smul]⟩
+    exact ⟨h1, b, fun j ↦ by rw [hb, h1 j j.property, one_smul]⟩
   · rintro ⟨h1, b, hb⟩
-    exact ⟨b, fun j ↦ by rw [hb, h1 j j.2, one_smul]⟩
+    exact ⟨b, fun j ↦ by rw [hb, h1 j j.property, one_smul]⟩
 
 /-- **Labelled Delzant presentations.** The labelled presentation with normals `m j • u j` and
 support constants `m j * c j` is Delzant exactly when every label is one and `(u, c)` is Delzant:

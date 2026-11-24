@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Sites.Big.Module
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.RingTheory.Flat.EffectiveDescent

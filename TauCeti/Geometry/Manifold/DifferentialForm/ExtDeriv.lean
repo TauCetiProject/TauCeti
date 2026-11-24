@@ -161,6 +161,12 @@ theorem mextDeriv_def (φ : RoughForm I M F k) (x : M) :
     mextDeriv φ x = extDerivWithin (E := E) (φ.inChartAt x) (range I) (extChartAt I x x) := by
   rw [← mextDerivWithin_univ, mextDerivWithin_def, preimage_univ, univ_inter]
 
+/-- For a boundaryless model, the exterior derivative of a rough form at `x` is the flat exterior
+derivative of its coordinate expression in the chart at `x`. -/
+theorem mextDeriv_eq_extDeriv_inChartAt [I.Boundaryless] (φ : RoughForm I M F k) (x : M) :
+    mextDeriv φ x = extDeriv (E := E) (φ.inChartAt x) (extChartAt I x x) := by
+  rw [mextDeriv_def, I.range_eq_univ, extDerivWithin_univ]
+
 /-! ### Locality -/
 
 /-- The exterior derivative within a set does not change when the set is modified away from a
@@ -396,6 +402,14 @@ theorem mextDeriv_ofFunction_apply (f : M → F) (x : M) (v : TangentSpace I x) 
     mextDeriv (RoughForm.ofFunction I f) x ![v] = mfderiv I 𝓘(ℝ, F) f x v := by
   rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     mvfderiv_apply_eq_mfderiv_apply, Matrix.cons_val_zero]
+
+/-- The differential `dt` of the coordinate of `ℝ` sends a tangent vector to itself. -/
+theorem mextDeriv_ofFunction_id_apply (z : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) z) :
+    mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) z v = v 0 := by
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_eq_fderiv, fderiv_id]
+  -- Tangent vectors of `ℝ` are real numbers, on which the identity of `ℝ` acts.
+  rfl
 
 /-- **The chain rule for the exterior derivative of a `0`-form.** If `f` is differentiable at `x`
 and `g` has derivative `g'` at `f x`, then `d (g ∘ f) = g' • df` at `x`. -/

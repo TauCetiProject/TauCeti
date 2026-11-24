@@ -285,7 +285,7 @@ theorem isCancellationScheme_iff {S : EqIneqSystem X A}
     S.IsCancellationScheme T ↔ IsPartitionTable S.toWords T ∧
       ∀ (o : Occurrence S.toWords) (k : Fin S.ineqs.length),
         S.toWords[o.1][o.2].1 = Sum.inl (Sum.inr k) → T o ≠ [] :=
-  ⟨fun h => ⟨h.1, h.2⟩, fun h => ⟨h.1, h.2⟩⟩
+  ⟨fun h => ⟨h.isPartitionTable, h.ne_nil⟩, fun h => ⟨h.1, h.2⟩⟩
 
 /-- The generalised equation `Ω_T` of a table of the words of a system. -/
 noncomputable abbrev genEq (S : EqIneqSystem X A)

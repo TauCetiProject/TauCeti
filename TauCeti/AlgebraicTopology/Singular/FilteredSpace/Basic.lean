@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
-public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
-public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
 public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
-public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.ChainFunctor
 public import TauCeti.AlgebraicTopology.Singular.Triple
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
+import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 
 /-!
 # The spectral sequence of a filtered space
@@ -20,11 +18,22 @@ import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 Let `X : ℤ → Set Y` be an increasing family of subsets of a topological space `Y`, for instance
 the preimages of the skeleta of a CW complex under a map to it. The singular chains of the `X q`
 form an increasing filtration of the singular chains of `Y`
-(`TauCeti.singularChainFiltration`), and this file studies the spectral sequence of that filtered
+(`TauCeti.chainFiltration`), and this file studies the spectral sequence of that filtered
 complex (`TauCeti.filteredSpaceSpectralSequence`). It is the spectral sequence of a filtered
 complex from `TauCeti.Algebra.Homology.SpectralSequence.Filtered`, which uses cochain complexes
 indexed by `ℤ`, so singular chains in degree `n` are placed in degree `-n` along
 `ComplexShape.embeddingDownNat`.
+
+The filtration itself (`TauCeti.chainFiltration`), the identification of its stages with the
+chains of the `X q` (`TauCeti.chainFiltrationIso`), its extreme stages, its graded pieces, its
+first page and the abutment (`TauCeti.chainFiltrationAbutmentIso`) are built in
+`TauCeti.AlgebraicTopology.Singular.FilteredSpace.ChainFunctor` for any functor `F` from spaces to
+chain complexes sending subspace inclusions to monomorphisms, so that they apply to singular and
+to cubical chains alike. So is the morphism of filtrations induced by a natural transformation
+`F ⟶ G` together with a map of filtered spaces (`TauCeti.chainFiltrationMap`), which is a
+quasi-isomorphism on every stage when the natural transformation is a quasi-isomorphism on every
+space (`TauCeti.quasiIso_chainFiltrationMap_app`). This file is the instance for simplicial
+singular chains.
 
 * **Graded pieces.** The quotient `F_b / F_a` of two stages of the filtration is the relative
   singular chain complex of the pair `(X b, X a)` (`TauCeti.singularChainFiltrationCokernelIso`),
@@ -39,11 +48,21 @@ indexed by `ℤ`, so singular chains in degree `n` are placed in degree `-n` alo
   graded pieces `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q`, whose connecting map is the
   first differential (`CochainComplex.spectralSequence_first_page_d_eq`), is isomorphic to the
   relative singular chain sequence of the triple.
-* **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.filteredSpaceAbutmentIso`).
+* **Convergence.** The abutment in degree `-n` is `Hₙ(Y)` (`TauCeti.chainFiltrationAbutmentIso`),
+  and the `q`th piece of its filtration is the image of `Hₙ(X q) ⟶ Hₙ(Y)`
+  (`TauCeti.range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom`).
+  When `X (q + 1) = Y`, the projection of `Hₙ(Y)` onto the limit object `E∞` at `q`
+  (`TauCeti.toFilteredSpaceTopColumnEInfty`) vanishes exactly on the image of `Hₙ(X q)`
+  (`TauCeti.toFilteredSpaceTopColumnEInfty_eq_zero_iff`).
   When `X a = ∅` and `X b = Y`, the filtration is finite and the spectral sequence converges
-  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). Filtrations that
-  absorb every compact subset without reaching `Y`, such as the skeletal filtration over an
-  infinite-dimensional CW complex, are treated in
+  strongly (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`). If moreover for
+  every position whose total degree differs by one from that of `(p, q)`, that position or
+  `(p, q)` carries the zero object on the first page, the object at `(p, q)` survives to the
+  graded homology
+  (`TauCeti.nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero`), by
+  `CategoryTheory.SpectralSequence.nonempty_page_X_iso_page_two_X_of_isZero_or_isZero`.
+  Filtrations that absorb every compact subset without reaching `Y`, such as the skeletal
+  filtration over an infinite-dimensional CW complex, are treated in
   `TauCeti.AlgebraicTopology.Singular.FilteredSpace.Exhaustive`; the vanishing of the graded
   pieces `Hₙ(X b, X a)` they need there is transported to the quotients `F_b / F_a` by
   `TauCeti.isZero_homology_cokernel_singularChainFiltration`.
@@ -53,7 +72,12 @@ indexed by `ℤ`, so singular chains in degree `n` are placed in degree `-n` alo
   `Hₙ(X (q + 1), X q) ⟶ Hₙ(X' (q + 1), X' q)` induced by `g`
   (`TauCeti.filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality`), so if these maps are
   isomorphisms, the morphism of spectral sequences is an isomorphism on every page
-  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_hom_f`).
+  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_hom_f`). On the abutment, the underlying
+  morphism of spectral objects is the map `Hₙ(g)` in singular homology
+  (`TauCeti.chainFiltrationAbutmentIso_hom_naturality`). For finite filtrations this gives the
+  comparison theorem: if `g` induces isomorphisms on the relative homology of the pairs
+  `(X (q + 1), X q) ⟶ (X' (q + 1), X' q)`, it induces isomorphisms in singular homology
+  (`TauCeti.isIso_singularHomologyFunctor_map_of_isIso_singularHomologyMap`).
 * **Naturality in the coefficients.** A morphism `φ : R ⟶ R'` of coefficient objects induces a
   morphism of filtered complexes and hence of spectral sequences
   (`TauCeti.filteredSpaceSpectralSequenceCoefficientMap`), functorial in `φ`. On the first page it
@@ -74,8 +98,9 @@ a fibration by the preimages of the skeleta of the base gives the Serre spectral
 ## References
 
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
-  Section 2.2, the spectral sequence of a filtered complex, and Chapter 5, its application to the
-  filtration of a total space by the preimages of the skeleta of the base.
+  Section 2.2, the spectral sequence of a filtered complex, Chapter 3, the comparison of spectral
+  sequences, and Chapter 5, its application to the filtration of a total space by the preimages of
+  the skeleta of the base.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   425–505.
 -/
@@ -84,163 +109,72 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits HomologicalComplex
+open CategoryTheory Limits HomologicalComplex AlgebraicTopology
 
 universe w v u
 
 namespace TauCeti
 
-variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-  {Y : TopCat.{w}}
+variable {A : Type u} [Category.{v} A] [Abelian A] {Y : TopCat.{w}}
 
-variable (X : ℤ → Set Y)
+variable [HasCoproducts.{w} A] (R : A) {X : ℤ → Set Y}
 
-/-- The inclusion of the singular chains of `X q` into those of `Y`, with both chain complexes
-reindexed as cochain complexes in nonpositive degrees along `n ↦ -n`. -/
-def singularChainFiltrationι (q : ℤ) :
-    ((TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd).chainComplex R).extend
-        ComplexShape.embeddingDownNat ⟶
-      ((TopCat.toSSet.obj Y).chainComplex R).extend ComplexShape.embeddingDownNat :=
-  extendMap (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) R) _
-
-/-- The inclusion of the singular chains of `X q` into those of `Y` is induced by the inclusion
-of the subspace `X q`. -/
-lemma singularChainFiltrationι_def (q : ℤ) :
-    singularChainFiltrationι R X q =
-      extendMap (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) R)
-        ComplexShape.embeddingDownNat := by
-  rw [singularChainFiltrationι]
-
-/-- The singular chains of `X q` form a subcomplex of those of `Y`, also after reindexing. -/
-instance (q : ℤ) : Mono (singularChainFiltrationι R X q) := by
-  have : Mono (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) R) :=
-    ((TopPair.ofSubset (X q)).shortExact_singularChainComplexShortComplex R).mono_f
-  rw [singularChainFiltrationι_def]
-  exact HomologicalComplex.mono_extendMap _ _
-
-/-- The filtration of the singular chains of `Y` by the singular chains of the subsets `X q`,
-with the chain complexes reindexed as cochain complexes in nonpositive degrees along `n ↦ -n`. -/
-def singularChainFiltration (q : ℤ) :
-    Subobject (((TopCat.toSSet.obj Y).chainComplex R).extend ComplexShape.embeddingDownNat) :=
-  Subobject.mk (singularChainFiltrationι R X q)
-
-/-- The `q`-th stage of the filtration is the reindexed singular chain complex of `X q`. -/
-def singularChainFiltrationIso (q : ℤ) :
-    (singularChainFiltration R X q : CochainComplex A ℤ) ≅
-      ((TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd).chainComplex R).extend
-        ComplexShape.embeddingDownNat :=
-  Subobject.underlyingIso (singularChainFiltrationι R X q)
-
-/-- The identification of the `q`-th stage of the filtration with the singular chains of `X q`
-is compatible with the inclusions into the singular chains of `Y`. -/
-@[reassoc (attr := simp)]
-lemma singularChainFiltrationIso_hom_comp_singularChainFiltrationι (q : ℤ) :
-    (singularChainFiltrationIso R X q).hom ≫ singularChainFiltrationι R X q =
-      (singularChainFiltration R X q).arrow :=
-  Subobject.underlyingIso_hom_comp_eq_mk _
-
-variable {X}
-
-/-- For `X a ⊆ X b`, the inclusion of the singular chains of `X a` into those of `Y` factors
-through the inclusion of the pair `(X b, X a)`. -/
-@[simp, reassoc]
-lemma extendMap_comp_singularChainFiltrationι {a b : ℤ} (hab : X a ⊆ X b) :
-    extendMap (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofInclusion hab).map) R)
-        ComplexShape.embeddingDownNat ≫ singularChainFiltrationι R X b =
-      singularChainFiltrationι R X a := by
-  -- The ambient space of the pair `(X b, X a)` is the subspace `X b` of `Y` only up to
-  -- definitional unfolding, so the composites are formed with `exact` rather than `rw`.
-  exact (extendMap_comp _ _ _).symm.trans <| congrArg (extendMap · _) <|
-    (Functor.map_comp _ _ _).symm.trans <| congrArg _ (Functor.map_comp _ _ _).symm
-
-/-- The filtration of singular chains is monotone in the subsets. -/
-lemma singularChainFiltration_mono {a b : ℤ} (hab : X a ⊆ X b) :
-    singularChainFiltration R X a ≤ singularChainFiltration R X b :=
-  Subobject.mk_le_mk_of_comm _ (extendMap_comp_singularChainFiltrationι R hab)
-
-/-- Under the identifications of the stages of the filtration with singular chain complexes, the
-inclusion `F_a ⟶ F_b` is induced by the inclusion `X a ⊆ X b`. -/
-@[reassoc]
-lemma ofLE_comp_singularChainFiltrationIso_hom {a b : ℤ} (hab : X a ⊆ X b) :
-    Subobject.ofLE _ _ (singularChainFiltration_mono R hab) ≫
-        (singularChainFiltrationIso R X b).hom =
-      (singularChainFiltrationIso R X a).hom ≫
-        extendMap (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofInclusion hab).map) R)
-          ComplexShape.embeddingDownNat :=
-  (Iso.eq_comp_inv _).1 <| (Subobject.ofLE_mk_le_mk_of_comm
-    (f₁ := singularChainFiltrationι R X a) (f₂ := singularChainFiltrationι R X b) _
-    (extendMap_comp_singularChainFiltrationι R hab)).trans (Category.assoc _ _ _).symm
-
-/-- An increasing family of subsets gives an increasing filtration of singular chains. -/
-lemma monotone_singularChainFiltration (hX : Monotone X) :
-    Monotone (singularChainFiltration R X) :=
-  fun _ _ h ↦ singularChainFiltration_mono R (hX h)
-
-/-- The stage of the filtration at an empty subset is zero. -/
+/-- The stage of the filtration of singular chains at an empty subset is zero. -/
 @[simp]
 lemma singularChainFiltration_eq_bot {a : ℤ} (ha : X a = ∅) :
-    singularChainFiltration R X a = ⊥ := by
-  have : IsEmpty (TopPair.ofSubset (X a)).snd := by
-    rw [ha]
-    exact Set.isEmpty_coe_sort.2 rfl
-  have hz : IsZero (((TopCat.toSSet.obj (TopPair.ofSubset (X a)).snd).chainComplex R).extend
-      ComplexShape.embeddingDownNat) :=
-    (ComplexShape.embeddingDownNat.extendFunctor A).map_isZero
-      (SSet.isZero_chainComplex (X := (TopPair.toSSetPair.obj (TopPair.ofSubset (X a))).left) R)
-  exact Subobject.mk_eq_bot_iff_zero.2 (hz.eq_of_src _ _)
+    chainFiltration ((singularChainComplexFunctor A).obj R) X a = ⊥ :=
+  chainFiltration_eq_bot _ (fun Z _ ↦
+    -- An empty space has no singular simplices.
+    have : (TopCat.toSSet.obj Z).HasDimensionLT 0 :=
+      (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
+        isEmptyElim (TopCat.toSSetObj₀Equiv σ)
+    SSet.isZero_chainComplex _ R) ha
 
-/-- The stage of the filtration at the whole space is everything. -/
-@[simp]
-lemma singularChainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) :
-    singularChainFiltration R X b = ⊤ := by
-  have := TopPair.isIso_ofSubset_map_of_eq_univ hb
-  have : IsIso (singularChainFiltrationι R X b) := by
-    rw [singularChainFiltrationι]
-    exact Functor.map_isIso (ComplexShape.embeddingDownNat.extendFunctor A) _
-  exact Subobject.mk_eq_top_of_isIso _
+/-- The reindexed quotient map onto the cokernel of the map of singular chains of a pair, followed
+by the identification of that cokernel with relative singular chains, is the reindexed quotient
+map onto relative singular chains. -/
+private lemma extendMap_π_comp_cokernelSingularChainComplexIso_hom (P : TopPair.{w}) :
+    extendMap (cokernel.π (((singularChainComplexFunctor A).obj R).map P.map))
+        ComplexShape.embeddingDownNat ≫
+      (ComplexShape.embeddingDownNat.extendFunctor A).map
+        (P.cokernelSingularChainComplexIso R).hom =
+    extendMap (P.singularChainComplexπ R) ComplexShape.embeddingDownNat :=
+  (extendMap_comp _ _ _).symm.trans
+    (congrArg (extendMap · _) (TopPair.π_cokernelSingularChainComplexIso_hom P R))
 
 /-- The quotient `F_b / F_a` of two stages of the filtration of the singular chains of `Y` by
 the singular chains of the `X q` is the relative singular chain complex of the pair `(X b, X a)`,
 reindexed along `n ↦ -n`. The isomorphism is induced by the quotient map from the singular chains
 of `X b` (`TauCeti.π_singularChainFiltrationCokernelIso_hom`). -/
 def singularChainFiltrationCokernelIso {a b : ℤ} (hab : X a ⊆ X b) :
-    cokernel (Subobject.ofLE _ _ (singularChainFiltration_mono R hab)) ≅
+    cokernel (Subobject.ofLE _ _
+        (chainFiltration_mono ((singularChainComplexFunctor A).obj R) hab)) ≅
       ((TopPair.ofInclusion hab).singularChainComplex R).extend ComplexShape.embeddingDownNat :=
-  have hS := ((TopPair.ofInclusion hab).shortExact_singularChainComplexShortComplex R).extend
-    ComplexShape.embeddingDownNat
-  cokernel.mapIso _
-      (extendMap (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofInclusion hab).map) R)
-        ComplexShape.embeddingDownNat)
-      (singularChainFiltrationIso R X a) (singularChainFiltrationIso R X b)
-      (ofLE_comp_singularChainFiltrationIso_hom R hab) ≪≫
-    (colimit.isColimit _).coconePointUniqueUpToIso hS.gIsCokernel
+  chainFiltrationCokernelIso _ hab ≪≫
+    (ComplexShape.embeddingDownNat.extendFunctor A).mapIso
+      ((TopPair.ofInclusion hab).cokernelSingularChainComplexIso R)
 
 /-- The identification of `F_b / F_a` with relative singular chains is induced by the quotient
 map from the singular chains of `X b` to those of the pair `(X b, X a)`. -/
 @[reassoc (attr := simp)]
 lemma π_singularChainFiltrationCokernelIso_hom {a b : ℤ} (hab : X a ⊆ X b) :
     cokernel.π _ ≫ (singularChainFiltrationCokernelIso R hab).hom =
-      (singularChainFiltrationIso R X b).hom ≫
+      (chainFiltrationIso ((singularChainComplexFunctor A).obj R) X b).hom ≫
         extendMap ((TopPair.ofInclusion hab).singularChainComplexπ R)
-          ComplexShape.embeddingDownNat := by
-  -- The first factor is `cokernel.map`, which is `cokernel.desc` of the composite with the
-  -- quotient map, and the second sends that quotient map to the cokernel cofork's map.
-  refine (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
-    congrArg (_ ≫ ·) (IsColimit.comp_coconePointUniqueUpToIso_hom _ _ WalkingParallelPair.one)
+          ComplexShape.embeddingDownNat :=
+  (π_chainFiltrationCokernelIso_hom_assoc _ hab _).trans <| (Category.assoc _ _ _).trans <|
+    congrArg (_ ≫ ·) (extendMap_π_comp_cokernelSingularChainComplexIso_hom R _)
 
 /-- The quotient `F_b / F_a` of two stages of the filtration of singular chains has vanishing
 cohomology in degree `m` when the relative singular homology `Hₙ(X b, X a)` vanishes for
 `m = -n`. In positive degrees `m` there is nothing to check. -/
 lemma isZero_homology_cokernel_singularChainFiltration {a b : ℤ} (hab : X a ⊆ X b) (m : ℤ)
     (h : ∀ n : ℕ, m = -n → IsZero ((TopPair.ofInclusion hab).singularHomology R n)) :
-    IsZero ((cokernel (Subobject.ofLE _ _ (singularChainFiltration_mono R hab))).homology m) := by
-  refine IsZero.of_iso ?_
-    ((homologyFunctor A _ m).mapIso (singularChainFiltrationCokernelIso R hab))
-  by_cases hm : ∃ n : ℕ, ComplexShape.embeddingDownNat.f n = m
-  · obtain ⟨n, hn⟩ := hm
-    exact (h n hn.symm).of_iso (extendHomologyIso _ _ hn)
-  · push Not at hm
-    exact (extend_exactAt _ _ m hm).isZero_homology
+    IsZero ((cokernel (Subobject.ofLE _ _
+      (chainFiltration_mono ((singularChainComplexFunctor A).obj R) hab))).homology m) :=
+  isZero_homology_cokernel_chainFiltration _ hab m fun n hn ↦
+    (h n hn).of_iso ((homologyFunctor A _ n).mapIso
+      ((TopPair.ofInclusion hab).cokernelSingularChainComplexIso R))
 
 variable (hX : Monotone X)
 
@@ -248,30 +182,35 @@ variable (hX : Monotone X)
 transition map of the functor `CochainComplex.filtrationFunctor` of the filtration, is the
 reindexed relative singular chain complex of the corresponding pair. -/
 private def cokernelFiltrationFunctorMapIso {a b : ℤ} (f : (a : EInt) ⟶ b) :
-    cokernel ((CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX)).map f) ≅
+    cokernel ((CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX)).map f) ≅
       ((TopPair.ofInclusion (hX (WithBotTop.coe_le_coe.mp (leOfHom f)))).singularChainComplex
         R).extend ComplexShape.embeddingDownNat :=
-  cokernel.mapIso _ _
-      (CochainComplex.filtrationFunctorObjIso _ _ a ≪≫
-        Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ a))
-      (CochainComplex.filtrationFunctorObjIso _ _ b ≪≫
-        Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ b))
-      (by simp only [Iso.trans_hom, Subobject.isoOfEq_hom, Subobject.ofLE_comp_ofLE,
-        reassoc_of% CochainComplex.filtrationFunctor_map_comp_objIso_hom, Category.assoc]) ≪≫
-    singularChainFiltrationCokernelIso R _
+  chainFiltrationCokernelFiltrationFunctorMapIso _ hX f ≪≫
+    (ComplexShape.embeddingDownNat.extendFunctor A).mapIso
+      ((TopPair.ofInclusion _).cokernelSingularChainComplexIso R)
 
 @[reassoc]
 private lemma π_cokernelFiltrationFunctorMapIso_hom {a b : ℤ} (f : (a : EInt) ⟶ b) :
     cokernel.π _ ≫ (cokernelFiltrationFunctorMapIso R hX f).hom =
       (CochainComplex.filtrationFunctorObjIso _ _ b).hom ≫
         Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
-          (singularChainFiltrationIso R X b).hom ≫
+          (chainFiltrationIso ((singularChainComplexFunctor A).obj R) X b).hom ≫
             extendMap ((TopPair.ofInclusion
               (hX (WithBotTop.coe_le_coe.mp (leOfHom f)))).singularChainComplexπ R)
               ComplexShape.embeddingDownNat :=
-  (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
-    (Category.assoc _ _ _).trans <|
-      congrArg (_ ≫ _ ≫ ·) (π_singularChainFiltrationCokernelIso_hom R _)
+  (π_chainFiltrationCokernelFiltrationFunctorMapIso_hom_assoc _ hX f _).trans <|
+    congrArg (_ ≫ _ ≫ ·) <| (Category.assoc _ _ _).trans <|
+      congrArg (_ ≫ ·) (extendMap_π_comp_cokernelSingularChainComplexIso_hom R _)
+
+/-- **The spectral object of a filtered space.** For an increasing family `X : ℤ → Set Y` of
+subsets of a space `Y`, this is the spectral object of the filtration of the singular chains of
+`Y` by the singular chains of the `X q`. Its spectral sequence is
+`TauCeti.filteredSpaceSpectralSequence`. -/
+abbrev filteredSpaceSpectralObject :=
+  CochainComplex.spectralObject
+    (CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX))
 
 /-- **The spectral sequence of a filtered space.** For an increasing family `X : ℤ → Set Y` of
 subsets of a space `Y`, this is the spectral sequence of the filtration of the singular chains of
@@ -279,7 +218,8 @@ subsets of a space `Y`, this is the spectral sequence of the filtration of the s
 `CochainComplex.spectralSequence`: singular chains in degree `n` sit in degree `-n`. -/
 abbrev filteredSpaceSpectralSequence :=
   CochainComplex.spectralSequence
-    (CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX))
+    (CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX))
 
 /-- **The first page of the spectral sequence of a filtered space.** The object at `(p, q)` on the
 first page (numbered `2`, as in `CochainComplex.spectralSequence`) is the relative singular
@@ -293,15 +233,31 @@ def filteredSpaceSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) (a b : ℤ) (ha
     (homologyFunctor A _ _).mapIso (cokernelFiltrationFunctorMapIso R hX _) ≪≫
     extendHomologyIso _ ComplexShape.embeddingDownNat hn.symm
 
+/-- The identification of the first page with relative singular homology is the identification
+`TauCeti.chainFiltrationSpectralSequenceFirstPageXIso` of the first page with the homology of the
+cokernel of the map of singular chains of the pair, followed by the identification of that
+cokernel with the relative singular chain complex. -/
+lemma filteredSpaceSpectralSequenceFirstPageXIso_hom (pq : ℤ × ℤ) (a b : ℤ) (ha : a = pq.2)
+    (hb : b = pq.2 + 1) (m : ℤ) (hm : m = pq.1 + pq.2) (n : ℕ) (hn : m = -n) :
+    (filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m hm n hn).hom =
+      (chainFiltrationSpectralSequenceFirstPageXIso _ hX pq a b ha hb m hm n hn).hom ≫
+        homologyMap ((TopPair.ofInclusion (hX (by lia : a ≤ b))).cokernelSingularChainComplexIso
+          R).hom n := by
+  rw [chainFiltrationSpectralSequenceFirstPageXIso_eq]
+  simp only [filteredSpaceSpectralSequenceFirstPageXIso, cokernelFiltrationFunctorMapIso,
+    Iso.trans_hom, Category.assoc]
+  -- The identifications are composites of isomorphisms whose types mention the pair
+  -- `(X b, X a)` through `hX`, so they are composed with terms rather than `rw`.
+  exact congrArg (_ ≫ ·) <|
+    ((congrArg (· ≫ _) ((homologyFunctor A _ m).map_comp _ _)).trans
+      (Category.assoc _ _ _)).trans <|
+      congrArg (_ ≫ ·) (extendHomologyIso_hom_naturality _ _ _)
+
 /-- The first page of the spectral sequence of a filtered space vanishes in positive total
 degree `p + q`, since singular chains are concentrated in nonpositive cohomological degrees. -/
 lemma isZero_filteredSpaceSpectralSequence_page_two_X (pq : ℤ × ℤ) (h : 0 < pq.1 + pq.2) :
     IsZero (((filteredSpaceSpectralSequence R hX).page 2).X pq) :=
-  IsZero.of_iso ((extend_exactAt _ ComplexShape.embeddingDownNat _ fun n hn ↦ by
-      have : -(n : ℤ) = pq.1 + pq.2 := hn
-      lia).isZero_homology)
-    (CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq pq.2 (pq.2 + 1) rfl rfl _ rfl ≪≫
-      (homologyFunctor A _ _).mapIso (cokernelFiltrationFunctorMapIso R hX _))
+  isZero_chainFiltrationSpectralSequence_page_two_X _ hX pq h
 
 /-- A morphism between spectral sequences of filtered spaces is an isomorphism on every object of
 every page `r ≥ 2` as soon as it is one on the first page in nonpositive total degree, since the
@@ -319,28 +275,82 @@ private lemma isIso_hom_f_of_isIso_page_two {R' : A} {Y' : TopCat.{w}} {X' : ℤ
   obtain ⟨n, hn⟩ := Int.exists_eq_neg_ofNat hle
   exact h pq n hn
 
-/-- **The abutment of the spectral sequence of a filtered space** in degree `-n` is the singular
-homology `Hₙ(Y)`. -/
-def filteredSpaceAbutmentIso (n : ℕ) :
-    (CochainComplex.spectralObject
-        (CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX))).abutment
-        (-n) ≅
-      ((AlgebraicTopology.singularHomologyFunctor A n).obj R).obj Y :=
-  CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
-    extendHomologyIso _ ComplexShape.embeddingDownNat rfl
-
 /-- **Strong convergence of the spectral sequence of a finite filtration of a space.** If
 `X a = ∅` and `X b` is all of `Y`, then on every page `r ≥ 2` with `q - r + 2 ≤ a` and
 `b ≤ q + r - 1`, the object at `(p, q)` is the graded piece `F_{q+1} H / F_q H` of the filtration of
-the abutment in degree `p + q`, which is `H_{-(p+q)}(Y)` by `TauCeti.filteredSpaceAbutmentIso`. -/
+the abutment in degree `p + q`, which is `H_{-(p+q)}(Y)` by `TauCeti.chainFiltrationAbutmentIso`. -/
 def filteredSpaceSpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (ha : X a = ∅)
     (hb : X b = Set.univ) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 - r + 2 ≤ a)
     (hrb : b ≤ pq.2 + r - 1) :
     ((filteredSpaceSpectralSequence R hX).page r).X pq ≅
-      cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        (monotone_singularChainFiltration R hX))).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
+      cokernel ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite _ _
-    (singularChainFiltration_eq_bot R ha) (singularChainFiltration_eq_top R hb) r hr pq hra hrb
+    (singularChainFiltration_eq_bot R ha) (chainFiltration_eq_top _ hb) r hr pq hra hrb
+
+/-- **The graded homology of a degenerate finite filtration of a space.** Let `X a = ∅` and
+`X b = Y`. If for every position `pq'` of the first page whose total degree differs by one from
+that of `pq` the object at `pq` or the object at `pq'` is zero, the graded piece
+`F_{q+1} H / F_q H` of the filtration of the abutment in degree `p + q`, which is `H_{-(p+q)}(Y)` by
+`TauCeti.chainFiltrationAbutmentIso`, is isomorphic to the object at `(p, q)` on the first page. -/
+lemma nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero {a b : ℤ}
+    (ha : X a = ∅) (hb : X b = Set.univ) {pq : ℤ × ℤ}
+    (h : ∀ pq' : ℤ × ℤ, pq.1 + pq.2 + 1 = pq'.1 + pq'.2 ∨ pq'.1 + pq'.2 + 1 = pq.1 + pq.2 →
+      IsZero (((filteredSpaceSpectralSequence R hX).page 2).X pq) ∨
+        IsZero (((filteredSpaceSpectralSequence R hX).page 2).X pq')) :
+    Nonempty (cokernel ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap pq.2
+      (pq.1 + pq.2)) ≅ ((filteredSpaceSpectralSequence R hX).page 2).X pq) := by
+  -- On a late enough page the object at `pq` is the graded piece, and it is the first-page object.
+  set r := max 2 (max (pq.2 - a + 2) (b - pq.2 + 1))
+  have hr : 2 ≤ r := le_max_left _ _
+  obtain ⟨e⟩ :=
+    (filteredSpaceSpectralSequence R hX).nonempty_page_X_iso_page_two_X_of_isZero_or_isZero h r hr
+  exact ⟨(filteredSpaceSpectralSequencePageXIsoGradedOfFinite R hX ha hb r hr pq (by lia)
+    (by lia)).symm ≪≫ e⟩
+
+section ImageFiltration
+
+variable {k : Type w} [Ring k]
+
+/-- **The filtration of the abutment of a filtered space is the image filtration.** Under the
+identification `TauCeti.chainFiltrationAbutmentIso` of the abutment in degree `-n` with `Hₙ(Y; M)`,
+the `q`th piece of its filtration is the image of the map `Hₙ(X q; M) ⟶ Hₙ(Y; M)` induced by the
+inclusion of `X q`. This is the singular case of
+`TauCeti.range_abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom`. -/
+theorem range_filteredSpaceAbutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom
+    (M : ModuleCat.{w} k) (hX : Monotone X) (q : ℤ) (n : ℕ) :
+    LinearMap.range ((filteredSpaceSpectralObject M hX).abutmentFiltrationι q (-n) ≫
+        (chainFiltrationAbutmentIso ((singularChainComplexFunctor _).obj M) hX n).hom).hom =
+      LinearMap.range
+        (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M n).hom :=
+  -- `SSet.homologyMap` is by definition the map in homology of the singular chains.
+  range_abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom _ hX q n
+
+end ImageFiltration
+
+/-- **The projection onto the top column of the spectral sequence of a filtered space.** If
+`X (q + 1)` is all of `Y`, then `Hₙ(Y)` is the piece `F_{q+1}` of the filtration of the abutment
+in degree `-n`, and this is its projection onto the graded piece `F_{q+1} / F_q`, the limit object
+`E∞` at `q` in degree `-n`. It is the singular case of `TauCeti.chainFiltrationToTopColumnEInfty`,
+which has the lemmas characterizing it. -/
+abbrev toFilteredSpaceTopColumnEInfty {q : ℤ} (hq : X (q + 1) = Set.univ) (n : ℕ) :
+    (TopCat.toSSet.obj Y).homology R n ⟶ (filteredSpaceSpectralObject R hX).EInfty q (-n) :=
+  chainFiltrationToTopColumnEInfty ((singularChainComplexFunctor A).obj R) hX hq n
+
+-- The source of the projection is stated as singular homology, which instance search does not
+-- unfold to the homology of the singular chains, so the instance for any chain functor is restated.
+instance {q : ℤ} (hq : X (q + 1) = Set.univ) (n : ℕ) :
+    Epi (toFilteredSpaceTopColumnEInfty R hX hq n) :=
+  inferInstanceAs (Epi (chainFiltrationToTopColumnEInfty _ hX hq n))
+
+/-- The projection onto the top column vanishes on a class `α ∈ Hₙ(Y; M)` exactly when `α` comes
+from the homology of `X q`. -/
+theorem toFilteredSpaceTopColumnEInfty_eq_zero_iff {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+    (hX : Monotone X) {q : ℤ} (hq : X (q + 1) = Set.univ) {n : ℕ}
+    (α : ((TopCat.toSSet.obj Y).homology M n : ModuleCat.{w} k)) :
+    (toFilteredSpaceTopColumnEInfty M hX hq n).hom α = 0 ↔
+      α ∈ LinearMap.range
+        (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M n).hom :=
+  chainFiltrationToTopColumnEInfty_eq_zero_iff ((singularChainComplexFunctor _).obj M) hX hq α
 
 section FirstDifferential
 
@@ -352,13 +362,14 @@ private abbrev filtrationTriple : TopTriple.{w} :=
 
 /-- The transition map `F_a ⟶ F_b` of the functor of the filtration of singular chains. -/
 private abbrev fMap {a b : ℤ} (h : (a : EInt) ≤ b) :=
-  (CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX)).map (homOfLE h)
+  (CochainComplex.filtrationFunctor _
+    (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX)).map (homOfLE h)
 
-/-- The sequence `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q` of graded pieces: the last row of
-`kernelCokernelCompSequence.snakeInput` for the transition maps `F_{q-1} ⟶ F_q ⟶ F_{q+1}`. -/
+/-- The sequence `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q` of graded pieces: the sequence
+`TauCeti.cokernelCompSequence` of the transition maps `F_{q-1} ⟶ F_q ⟶ F_{q+1}`. -/
 private abbrev gradedShortComplex : ShortComplex (CochainComplex A ℤ) :=
-  (kernelCokernelCompSequence.snakeInput (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q))
-    (fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt)))).L₃
+  cokernelCompSequence (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q))
+    (fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt)))
 
 /-- The reindexed relative singular chain sequence of the triple `(X (q + 1), X q, X (q - 1))`,
 written with the pairs of the filtration. -/
@@ -414,7 +425,7 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
     cokernelFiltrationFunctorMapIso R hX _).hom
   τ₃ := (cokernelFiltrationFunctorMapIso R hX _).hom
   comm₁₂ := by
-    unfold gradedShortComplex kernelCokernelCompSequence.snakeInput
+    unfold gradedShortComplex
     refine (cancel_epi (cokernel.π _)).1 ?_
     simp only [homOfLE_leOfHom, TopTriple.innerPair_obj_ofInclusions,
       TopTriple.totalPair_obj_ofInclusions, π_cokernelFiltrationFunctorMapIso_hom_assoc,
@@ -423,18 +434,20 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
       π_cokernelFiltrationFunctorMapIso_hom,
       reassoc_of% CochainComplex.filtrationFunctor_map_comp_objIso_hom,
       Subobject.ofLE_comp_ofLE_assoc, Iso.cancel_iso_hom_left]
-    rw [← Subobject.ofLE_comp_ofLE_assoc _ (singularChainFiltration R X q) _
+    rw [← Subobject.ofLE_comp_ofLE_assoc _
+      (chainFiltration ((singularChainComplexFunctor A).obj R) X q) _
       (CochainComplex.filtrationEInt_coe _ q).le
-      (singularChainFiltration_mono R (hX (by lia : q ≤ q + 1)))]
+      (chainFiltration_mono ((singularChainComplexFunctor A).obj R) (hX (by lia : q ≤ q + 1)))]
     -- The identification of `F_{q+1}` with the chains of `X (q + 1)` lands in the chains of the
     -- subspace `X (q + 1)` of `Y`, which are those of the ambient space of the pair
     -- `(X (q + 1), X (q - 1))` only up to unfolding `MorphismProperty.Arrow.mk`; `erw` matches
     -- the composite up to that unfolding.
-    erw [ofLE_comp_singularChainFiltrationIso_hom_assoc R (hX (by lia : q ≤ q + 1))]
+    erw [ofLE_comp_chainFiltrationIso_hom_assoc ((singularChainComplexFunctor A).obj R)
+      (hX (by lia : q ≤ q + 1))]
     exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
       (congrArg (_ ≫ ·) (extendMap_π_comp_innerToTotal R hX q)).trans (Category.assoc _ _ _).symm)
   comm₂₃ := by
-    unfold gradedShortComplex kernelCokernelCompSequence.snakeInput
+    unfold gradedShortComplex
     refine (cancel_epi (cokernel.π _)).1 ?_
     simp only [homOfLE_leOfHom, homOfLE_comp, Iso.trans_hom,
       TopTriple.totalPair_obj_ofInclusions, TopTriple.outerPair_obj_ofInclusions, Category.assoc,
@@ -449,7 +462,7 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
 singular chains. -/
 private lemma δ_comp_extendHomologyIso_hom (n : ℕ) (m₀ m₁ : ℤ) (h₀ : m₀ = -(n + 1 : ℕ))
     (h₁ : m₁ = -n) (h : (ComplexShape.up ℤ).Rel m₀ m₁) :
-    (kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ m₀ m₁ h ≫
+    (cokernelCompSequence_shortExact _ _).δ m₀ m₁ h ≫
         HomologicalComplex.homologyMap (gradedShortComplexHom R hX q).τ₁ m₁ ≫
           (extendHomologyIso _ ComplexShape.embeddingDownNat h₁.symm).hom =
       HomologicalComplex.homologyMap (gradedShortComplexHom R hX q).τ₃ m₀ ≫
@@ -483,7 +496,14 @@ theorem filteredSpaceSpectralSequence_first_page_d_eq (p : ℤ) (n : ℕ)
       (cokernelFiltrationFunctorMapIso R hX _) ≪≫ extendHomologyIso _ _ _)).2
     ((δ_comp_extendHomologyIso_hom R hX q n _ _ hn (by lia) rfl).trans
       (Category.assoc _ _ _).symm)]
-  exact (Category.assoc _ _ _).trans (Category.assoc _ _ _)
+  -- The remaining chain only reassociates the composite. It closes by `exact` because
+  -- `((homologyFunctor A _ (p + q)).mapIso (cokernelFiltrationFunctorMapIso R hX _)).hom` is
+  -- definitionally `homologyMap (gradedShortComplexHom R hX q).τ₃ (p + q)`, and the inverse of the
+  -- `Iso.trans` above agrees with the composite of inverses only up to unfolding.
+  refine (Category.assoc _ _ _).trans ?_
+  refine (Category.assoc _ _ _).trans ?_
+  refine (Category.assoc _ _ _).trans ?_
+  exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (Category.assoc _ _ _)))
 
 end FirstDifferential
 
@@ -491,76 +511,6 @@ section Naturality
 
 variable {Y' Y'' : TopCat.{w}} {X' : ℤ → Set Y'} (hX' : Monotone X') {X'' : ℤ → Set Y''}
   (hX'' : Monotone X'') (g : Y ⟶ Y') (hg : ∀ q, Set.MapsTo g (X q) (X' q))
-
-/-- A map carrying `X q` into `X' q` carries the singular chains of `X q` into those of `X' q`. -/
-@[reassoc]
-private lemma singularChainFiltrationι_naturality (q : ℤ) :
-    extendMap (SSet.chainComplexMap
-        (TopCat.toSSet.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg q)))) R)
-        ComplexShape.embeddingDownNat ≫ singularChainFiltrationι R X' q =
-      singularChainFiltrationι R X q ≫
-        extendMap (SSet.chainComplexMap (TopCat.toSSet.map g) R) ComplexShape.embeddingDownNat := by
-  -- The map of pairs `(Y, X q) ⟶ (Y', X' q)` induced by `g` commutes with the inclusions; push
-  -- this square through the singular chain functors.
-  have h := congrArg (fun φ ↦ extendMap (SSet.chainComplexMap (TopCat.toSSet.map φ) R)
-    ComplexShape.embeddingDownNat) (TopPair.Hom.w (TopPair.ofSubsetMap g (hg q)))
-  simp only [Functor.map_comp, extendMap_comp] at h
-  rw [TopPair.ofSubsetMap_fst] at h
-  rw [singularChainFiltrationι_def, singularChainFiltrationι_def]
-  exact h
-
-include hg in
-private lemma factors_singularChainFiltration (q : ℤ) :
-    (singularChainFiltration R X' q).Factors ((singularChainFiltration R X q).arrow ≫
-      extendMap (SSet.chainComplexMap (TopCat.toSSet.map g) R) ComplexShape.embeddingDownNat) :=
-  (Subobject.mk_factors_iff _ _).2 ⟨(singularChainFiltrationIso R X q).hom ≫ extendMap
-      (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg q)))) R)
-        ComplexShape.embeddingDownNat,
-    (Category.assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) (singularChainFiltrationι_naturality R g hg q)).trans
-        (singularChainFiltrationIso_hom_comp_singularChainFiltrationι_assoc R X q _)⟩
-
-include g hg in
-/-- **The morphism of filtered complexes induced by a map of filtered spaces.** A continuous map
-`g : Y ⟶ Y'` carrying each `X q` into `X' q` induces, on singular chains, a morphism from the
-filtration of the singular chains of `Y` by those of the `X q` to the filtration of the singular
-chains of `Y'` by those of the `X' q`. -/
-def filteredSpaceFiltrationMap :
-    CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX) ⟶
-      CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX') :=
-  CochainComplex.filtrationFunctorMap _ _ _ (factors_singularChainFiltration R g hg)
-
-/-- The components of `TauCeti.filteredSpaceFiltrationMap` are the restrictions of the chain map
-induced by `g`. -/
-@[reassoc (attr := simp)]
-lemma filteredSpaceFiltrationMap_app_comp (a : EInt) :
-    (filteredSpaceFiltrationMap R hX hX' g hg).app a ≫
-        CochainComplex.filtrationFunctorArrow _ (monotone_singularChainFiltration R hX') a =
-      CochainComplex.filtrationFunctorArrow _ (monotone_singularChainFiltration R hX) a ≫
-        extendMap (SSet.chainComplexMap (TopCat.toSSet.map g) R) ComplexShape.embeddingDownNat :=
-  (CochainComplex.filtrationFunctorMap_app_comp _ _ a).trans (Category.assoc _ _ _).symm
-
-/-- The identity of a filtered space induces the identity of its filtered singular chains. -/
-@[simp]
-lemma filteredSpaceFiltrationMap_id (h : ∀ q, Set.MapsTo (𝟙 Y : Y ⟶ Y) (X q) (X q)) :
-    filteredSpaceFiltrationMap R hX hX (𝟙 Y) h = 𝟙 _ := by
-  rw [filteredSpaceFiltrationMap,
-    CochainComplex.filtrationFunctorMap_congr (f' := 𝟙 _) (by simp),
-    CochainComplex.filtrationFunctorMap_id]
-
-/-- A composite of maps of filtered spaces induces the composite of the morphisms of filtered
-singular chains. -/
-@[reassoc]
-lemma filteredSpaceFiltrationMap_comp (g' : Y' ⟶ Y'') (hg' : ∀ q, Set.MapsTo g' (X' q) (X'' q))
-    (hgg' : ∀ q, Set.MapsTo (g ≫ g') (X q) (X'' q)) :
-    filteredSpaceFiltrationMap R hX hX'' (g ≫ g') hgg' =
-      filteredSpaceFiltrationMap R hX hX' g hg ≫ filteredSpaceFiltrationMap R hX' hX'' g' hg' := by
-  rw [filteredSpaceFiltrationMap, filteredSpaceFiltrationMap, filteredSpaceFiltrationMap,
-    CochainComplex.filtrationFunctorMap_congr
-      (f' := extendMap (SSet.chainComplexMap (TopCat.toSSet.map g) R) _ ≫
-        extendMap (SSet.chainComplexMap (TopCat.toSSet.map g') R) _) (by simp),
-    CochainComplex.filtrationFunctorMap_comp _ _ (factors_singularChainFiltration R g hg)
-      (factors_singularChainFiltration R g' hg')]
 
 include g hg in
 /-- **The morphism of spectral sequences induced by a map of filtered spaces.** A continuous map
@@ -571,15 +521,16 @@ it is the map induced by `g` on the relative singular homology of the steps
 def filteredSpaceSpectralSequenceMap :
     filteredSpaceSpectralSequence R hX ⟶ filteredSpaceSpectralSequence R hX' :=
   Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
-    (CochainComplex.spectralObjectMap (filteredSpaceFiltrationMap R hX hX' g hg))
+    (CochainComplex.spectralObjectMap (chainFiltrationMap (𝟙 _) hX hX' g hg))
 
 include g hg in
 /-- `TauCeti.filteredSpaceSpectralSequenceMap` is the morphism of spectral sequences of the
-morphism of spectral objects of `TauCeti.filteredSpaceFiltrationMap`. -/
+morphism of spectral objects of `TauCeti.chainFiltrationMap` for the identity of singular
+chains. -/
 lemma filteredSpaceSpectralSequenceMap_def :
     filteredSpaceSpectralSequenceMap R hX hX' g hg =
       Abelian.SpectralObject.spectralSequenceMap Abelian.SpectralObject.coreE₂Cohomological
-        (CochainComplex.spectralObjectMap (filteredSpaceFiltrationMap R hX hX' g hg)) :=
+        (CochainComplex.spectralObjectMap (chainFiltrationMap (𝟙 _) hX hX' g hg)) :=
   (rfl)
 
 /-- The identity of a filtered space induces the identity of its spectral sequence. -/
@@ -587,7 +538,7 @@ lemma filteredSpaceSpectralSequenceMap_def :
 lemma filteredSpaceSpectralSequenceMap_id
     (h : ∀ q, Set.MapsTo (𝟙 Y : Y ⟶ Y) (X q) (X q)) :
     filteredSpaceSpectralSequenceMap R hX hX (𝟙 Y) h = 𝟙 _ := by
-  rw [filteredSpaceSpectralSequenceMap_def, filteredSpaceFiltrationMap_id,
+  rw [filteredSpaceSpectralSequenceMap_def, chainFiltrationMap_id,
     CochainComplex.spectralObjectMap_id, Abelian.SpectralObject.spectralSequenceMap_id]
 
 /-- A composite of maps of filtered spaces induces the composite of the morphisms of spectral
@@ -598,9 +549,14 @@ lemma filteredSpaceSpectralSequenceMap_comp (g' : Y' ⟶ Y'')
     filteredSpaceSpectralSequenceMap R hX hX'' (g ≫ g') hgg' =
       filteredSpaceSpectralSequenceMap R hX hX' g hg ≫
         filteredSpaceSpectralSequenceMap R hX' hX'' g' hg' := by
+  -- `TauCeti.chainFiltrationMap_comp` also composes the natural transformations, here two
+  -- identities of singular chains.
+  have h := chainFiltrationMap_comp (𝟙 ((singularChainComplexFunctor A).obj R)) hX hX' hX'' g hg
+    (𝟙 _) g' hg' hgg'
+  rw [Category.comp_id] at h
   rw [filteredSpaceSpectralSequenceMap_def, filteredSpaceSpectralSequenceMap_def,
-    filteredSpaceSpectralSequenceMap_def, filteredSpaceFiltrationMap_comp R hX hX' hX'' g hg g' hg',
-    CochainComplex.spectralObjectMap_comp, Abelian.SpectralObject.spectralSequenceMap_comp]
+    filteredSpaceSpectralSequenceMap_def, h, CochainComplex.spectralObjectMap_comp,
+    Abelian.SpectralObject.spectralSequenceMap_comp]
 
 include g hg in
 /-- The map of pairs `(X b, X a) ⟶ (X' b, X' a)` induced by a map `g` carrying each `X q` into
@@ -615,7 +571,7 @@ def filteredSpaceStepMap {a b : ℤ} (hab : a ≤ b) :
 @[simp]
 lemma filteredSpaceStepMap_fst_apply {a b : ℤ} (hab : a ≤ b)
     (x : (TopPair.ofInclusion (hX hab)).fst) :
-    (TopPair.Hom.fst (filteredSpaceStepMap hX hX' g hg hab) x).1 = g x.1 :=
+    (TopPair.Hom.fst (filteredSpaceStepMap hX hX' g hg hab) x).val = g x.val :=
   congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)
 
 /-- The subspace component of the map of pairs `(X b, X a) ⟶ (X' b, X' a)` induced by `g` sends
@@ -623,7 +579,7 @@ lemma filteredSpaceStepMap_fst_apply {a b : ℤ} (hab : a ≤ b)
 @[simp]
 lemma filteredSpaceStepMap_snd_apply {a b : ℤ} (hab : a ≤ b)
     (x : (TopPair.ofInclusion (hX hab)).snd) :
-    (TopPair.Hom.snd (filteredSpaceStepMap hX hX' g hg hab) x).1 = g x.1 :=
+    (TopPair.Hom.snd (filteredSpaceStepMap hX hX' g hg hab) x).val = g x.val :=
   TopPair.ofInclusionMap_snd_apply _ _ x
 
 /-- The identity of a filtered space induces the identity of each pair `(X b, X a)`. -/
@@ -658,28 +614,36 @@ private lemma fst_filteredSpaceStepMap {a b : ℤ} (hab : a ≤ b) :
 /-- On the stage `F_b`, identified with the singular chains of `X b`, the morphism of filtrations
 induced by `g` is the chain map induced by the restriction of `g`. -/
 @[reassoc]
-private lemma filteredSpaceFiltrationMap_app_comp_singularChainFiltrationIso_hom (b : ℤ) :
-    (filteredSpaceFiltrationMap R hX hX' g hg).app b ≫
-        (CochainComplex.filtrationFunctorObjIso _ (monotone_singularChainFiltration R hX') b).hom ≫
+private lemma chainFiltrationMap_app_comp_singularChainFiltrationIso_hom (b : ℤ) :
+    (chainFiltrationMap (𝟙 _) hX hX' g hg).app b ≫
+        (CochainComplex.filtrationFunctorObjIso _
+            (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX') b).hom ≫
           Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
-            (singularChainFiltrationIso R X' b).hom =
-      (CochainComplex.filtrationFunctorObjIso _ (monotone_singularChainFiltration R hX) b).hom ≫
+            (chainFiltrationIso ((singularChainComplexFunctor A).obj R) X' b).hom =
+      (CochainComplex.filtrationFunctorObjIso _
+          (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX) b).hom ≫
         Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
-          (singularChainFiltrationIso R X b).hom ≫ extendMap (SSet.chainComplexMap
-            (TopCat.toSSet.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg b)))) R)
-            ComplexShape.embeddingDownNat := by
-  refine (cancel_mono (singularChainFiltrationι R X' b)).1 ?_
-  simp only [Category.assoc, singularChainFiltrationIso_hom_comp_singularChainFiltrationι,
-    singularChainFiltrationι_naturality,
-    singularChainFiltrationIso_hom_comp_singularChainFiltrationι_assoc,
-    Subobject.ofLE_arrow, Subobject.ofLE_arrow_assoc]
-  exact (filteredSpaceFiltrationMap_app_comp R hX hX' g hg (b : EInt)).trans (Category.assoc _ _ _)
+          (chainFiltrationIso ((singularChainComplexFunctor A).obj R) X b).hom ≫
+            extendMap (((singularChainComplexFunctor A).obj R).map
+              (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg b)))) ComplexShape.embeddingDownNat := by
+  -- These identifications of the stages are `CochainComplex.filtrationFunctorObjIsoOfEqMk`, so this
+  -- is the generic statement for the identity of singular chains.
+  have e {Z : TopCat.{w}} {Xz : ℤ → Set Z} (hXz : Monotone Xz) :
+      (CochainComplex.filtrationFunctorObjIso _
+          (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hXz) b).hom ≫
+        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
+          (chainFiltrationIso ((singularChainComplexFunctor A).obj R) Xz b).hom =
+        (CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (chainFiltrationι _ Xz)
+          (chainFiltration_def _ Xz) b).hom :=
+    (cancel_mono (chainFiltrationι _ Xz b)).1 (by simp)
+  simpa only [reassoc_of% (e hX), e hX', NatTrans.id_app, Category.comp_id] using
+    chainFiltrationMap_app_comp_filtrationFunctorObjIsoOfEqMk_hom (𝟙 _) hX hX' g hg b
 
 /-- On the graded pieces `F_b / F_a`, identified with relative singular chains, the morphism of
 filtrations induced by `g` is the chain map induced by `g` on the pairs `(X b, X a)`. -/
 private lemma cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom {a b : ℤ}
     (f : (a : EInt) ⟶ b) :
-    cokernel.map _ _ _ _ ((filteredSpaceFiltrationMap R hX hX' g hg).naturality f) ≫
+    cokernel.map _ _ _ _ ((chainFiltrationMap (𝟙 _) hX hX' g hg).naturality f).symm ≫
         (cokernelFiltrationFunctorMapIso R hX' f).hom =
       (cokernelFiltrationFunctorMapIso R hX f).hom ≫
         extendMap (TopPair.singularChainComplexMap
@@ -694,15 +658,14 @@ private lemma cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom {a b : ℤ}
         ComplexShape.embeddingDownNat ≫
       extendMap (TopPair.singularChainComplexMap (filteredSpaceStepMap hX hX' g hg hab) R)
         ComplexShape.embeddingDownNat =
-      extendMap (SSet.chainComplexMap
-          (TopCat.toSSet.map (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg b)))) R)
-        ComplexShape.embeddingDownNat ≫
+      extendMap (((singularChainComplexFunctor A).obj R).map
+          (TopPair.Hom.snd (TopPair.ofSubsetMap g (hg b)))) ComplexShape.embeddingDownNat ≫
       extendMap ((TopPair.ofInclusion (hX' hab)).singularChainComplexπ R)
         ComplexShape.embeddingDownNat := by
     rw [← extendMap_comp, ← TopPair.singularChainComplexπ_pair_naturality,
       fst_filteredSpaceStepMap]
     exact extendMap_comp _ _ _
-  refine (filteredSpaceFiltrationMap_app_comp_singularChainFiltrationIso_hom_assoc R hX hX' g hg b
+  refine (chainFiltrationMap_app_comp_singularChainFiltrationIso_hom_assoc R hX hX' g hg b
     _).trans ?_
   rw [← h]
   exact congrArg (_ ≫ ·) <| congrArg (_ ≫ ·) (Category.assoc _ _ _).symm
@@ -752,6 +715,49 @@ theorem isIso_filteredSpaceSpectralSequenceMap_hom_f
   rw [e]
   infer_instance
 
+/-- Outside `[a, b)`, the relative singular homology `Hₙ(X (q + 1), X q)` of a filtration with
+`X a = ∅` and `X b = Y` vanishes: both subspaces are empty, or both are everything. -/
+private lemma isZero_singularHomology_ofInclusion_of_notMem_Ico {a b q : ℤ} (ha : X a = ∅)
+    (hb : X b = Set.univ) (hq : q ∉ Set.Ico a b) (n : ℕ) :
+    IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl : q ≤ q + 1))).singularHomology R n) :=
+  TopPair.isZero_singularHomology_of_surjective_map _ R (fun y ↦ by
+    rcases not_and_or.1 hq with hq | hq
+    · exact absurd (hX (by lia : q + 1 ≤ a) y.property) (by simp [ha])
+    · exact ⟨⟨y.val, hX (not_lt.1 hq) (hb ▸ Set.mem_univ y.val)⟩, rfl⟩) n
+
+/-- **The comparison theorem for maps of finite filtrations of spaces.** Let `g : Y ⟶ Y'` carry
+each `X q` into `X' q`, for finite filtrations: `X a` and `X' a` are empty, and `X b` and `X' b`
+are everything. If for every `a ≤ q < b` the map of pairs `(X (q + 1), X q) ⟶ (X' (q + 1), X' q)`
+induced by `g` gives isomorphisms in relative singular homology, then `g` induces isomorphisms
+`Hₙ(Y) ⟶ Hₙ(Y')` in singular homology. -/
+theorem isIso_singularHomologyFunctor_map_of_isIso_singularHomologyMap {a b : ℤ} (ha : X a = ∅)
+    (ha' : X' a = ∅) (hb : X b = Set.univ) (hb' : X' b = Set.univ)
+    (h : ∀ q, a ≤ q → q < b → ∀ n : ℕ, IsIso (TopPair.singularHomologyMap
+      (filteredSpaceStepMap hX hX' g hg (Int.le_add_one le_rfl : q ≤ q + 1)) R n))
+    (n : ℕ) : IsIso (((AlgebraicTopology.singularHomologyFunctor A n).obj R).map g) := by
+  -- The morphism of spectral sequences is an isomorphism from the first page on: outside the
+  -- bands `a ≤ q < b` both relative homologies vanish.
+  have hpage := isIso_filteredSpaceSpectralSequenceMap_hom_f R hX hX' g hg (fun q m ↦ by
+    by_cases hq : q ∈ Set.Ico a b
+    · exact h q hq.1 hq.2 m
+    · exact (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX ha hb hq m).isIso
+        (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX' ha' hb' hq m) _) 2 le_rfl
+  -- Both filtrations are finite, so it is an isomorphism on the abutments.
+  have habut :=
+    CochainComplex.isIso_spectralObjectMap_hom_app_abutment_of_isIso_spectralSequence_page _ _ _ _
+      (chainFiltrationMap (𝟙 _) hX hX' g hg) (singularChainFiltration_eq_bot R ha)
+      (singularChainFiltration_eq_bot R ha') (chainFiltration_eq_top _ hb)
+      (chainFiltration_eq_top _ hb') 2 le_rfl hpage (-n)
+  have e := chainFiltrationAbutmentIso_hom_naturality (𝟙 ((singularChainComplexFunctor A).obj R))
+    hX hX' g hg n
+  rw [NatTrans.id_app, Category.comp_id, ← Iso.inv_comp_eq] at e
+  rw [singularHomologyFunctor_obj_map]
+  -- `SSet.homologyMap` is by definition the map in homology of the singular chains.
+  change IsIso (HomologicalComplex.homologyMap
+    (((singularChainComplexFunctor A).obj R).map g) n)
+  rw [← e]
+  infer_instance
+
 end Naturality
 
 section CoefficientNaturality
@@ -762,59 +768,53 @@ variable {R} {R' R'' : A} (φ : R ⟶ R') (ψ : R' ⟶ R'')
 in `R` into those with coefficients in `R'`, compatibly with the inclusions into the chains of
 `Y`. -/
 @[reassoc]
-private lemma singularChainFiltrationι_coefficient_naturality (q : ℤ) :
-    extendMap (((SSet.chainComplexFunctor A).map φ).app
-        (TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd)) ComplexShape.embeddingDownNat ≫
-        singularChainFiltrationι R' X q =
-      singularChainFiltrationι R X q ≫
-        extendMap (((SSet.chainComplexFunctor A).map φ).app (TopCat.toSSet.obj Y))
+private lemma chainFiltrationι_coefficient_naturality (q : ℤ) :
+    extendMap (((singularChainComplexFunctor A).map φ).app (TopPair.ofSubset (X q)).snd)
+        ComplexShape.embeddingDownNat ≫
+        chainFiltrationι ((singularChainComplexFunctor A).obj R') X q =
+      chainFiltrationι ((singularChainComplexFunctor A).obj R) X q ≫
+        extendMap (((singularChainComplexFunctor A).map φ).app Y)
           ComplexShape.embeddingDownNat := by
-  rw [singularChainFiltrationι_def, singularChainFiltrationι_def]
+  rw [chainFiltrationι_def, chainFiltrationι_def]
   -- The ambient space of `TopPair.ofSubset (X q)` is `Y` only up to unfolding, so the composites
-  -- are formed with `exact` rather than `rw`, as in `extendMap_comp_singularChainFiltrationι`.
+  -- are formed with `exact` rather than `rw`, as in `extendMap_comp_chainFiltrationι`.
   exact (extendMap_comp _ _ _).symm.trans <|
     (congrArg (extendMap · ComplexShape.embeddingDownNat)
-      (((SSet.chainComplexFunctor A).map φ).naturality
-        (TopCat.toSSet.map (TopPair.ofSubset (X q)).map)).symm).trans (extendMap_comp _ _ _)
-
-private lemma factors_singularChainFiltration_coefficient (q : ℤ) :
-    (singularChainFiltration R' X q).Factors ((singularChainFiltration R X q).arrow ≫
-      extendMap (((SSet.chainComplexFunctor A).map φ).app (TopCat.toSSet.obj Y))
-        ComplexShape.embeddingDownNat) :=
-  (Subobject.mk_factors_iff _ _).2 ⟨(singularChainFiltrationIso R X q).hom ≫
-      extendMap (((SSet.chainComplexFunctor A).map φ).app
-        (TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd)) ComplexShape.embeddingDownNat,
-    (Category.assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) (singularChainFiltrationι_coefficient_naturality φ q)).trans
-        (singularChainFiltrationIso_hom_comp_singularChainFiltrationι_assoc R X q _)⟩
+      (((singularChainComplexFunctor A).map φ).naturality
+        (TopPair.ofSubset (X q)).map).symm).trans (extendMap_comp _ _ _)
 
 /-- **The morphism of filtered complexes induced by a morphism of coefficients.** A morphism
 `φ : R ⟶ R'` in the coefficient category induces, on the singular chains of `Y`, a morphism from
 the filtration by the singular chains of the `X q` with coefficients in `R` to the same filtration
-with coefficients in `R'`. -/
+with coefficients in `R'`. It is `TauCeti.chainFiltrationMap` for the natural transformation of
+singular chain functors induced by `φ` and the identity of `Y`. -/
 def filteredSpaceCoefficientFiltrationMap :
-    CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX) ⟶
-      CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R' hX) :=
-  CochainComplex.filtrationFunctorMap _ _ _ (factors_singularChainFiltration_coefficient φ)
+    CochainComplex.filtrationFunctor _
+        (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX) ⟶
+      CochainComplex.filtrationFunctor _
+        (monotone_chainFiltration ((singularChainComplexFunctor A).obj R') hX) :=
+  chainFiltrationMap ((singularChainComplexFunctor A).map φ) hX hX (𝟙 Y) fun q ↦ by
+    simpa using Set.mapsTo_id (X q)
 
 /-- The components of `TauCeti.filteredSpaceCoefficientFiltrationMap` are the restrictions of the
 chain map induced by the morphism of coefficients. -/
 @[reassoc (attr := simp)]
 lemma filteredSpaceCoefficientFiltrationMap_app_comp (a : EInt) :
     (filteredSpaceCoefficientFiltrationMap hX φ).app a ≫
-        CochainComplex.filtrationFunctorArrow _ (monotone_singularChainFiltration R' hX) a =
-      CochainComplex.filtrationFunctorArrow _ (monotone_singularChainFiltration R hX) a ≫
-        extendMap (((SSet.chainComplexFunctor A).map φ).app (TopCat.toSSet.obj Y))
-          ComplexShape.embeddingDownNat :=
-  (CochainComplex.filtrationFunctorMap_app_comp _ _ a).trans (Category.assoc _ _ _).symm
+        CochainComplex.filtrationFunctorArrow _
+          (monotone_chainFiltration ((singularChainComplexFunctor A).obj R') hX) a =
+      CochainComplex.filtrationFunctorArrow _
+          (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX) a ≫
+        extendMap (((singularChainComplexFunctor A).map φ).app Y)
+          ComplexShape.embeddingDownNat := by
+  rw [filteredSpaceCoefficientFiltrationMap, chainFiltrationMap_app_comp,
+    CategoryTheory.Functor.map_id, Category.id_comp]
 
 /-- The identity of the coefficients induces the identity of the filtered singular chains. -/
 @[simp]
 lemma filteredSpaceCoefficientFiltrationMap_id :
     filteredSpaceCoefficientFiltrationMap hX (𝟙 R) = 𝟙 _ := by
-  rw [filteredSpaceCoefficientFiltrationMap,
-    CochainComplex.filtrationFunctorMap_congr (f' := 𝟙 _) (by simp),
-    CochainComplex.filtrationFunctorMap_id]
+  rw [filteredSpaceCoefficientFiltrationMap, CategoryTheory.Functor.map_id, chainFiltrationMap_id]
 
 /-- A composite of morphisms of coefficients induces the composite of the morphisms of filtered
 singular chains. -/
@@ -822,14 +822,12 @@ singular chains. -/
 lemma filteredSpaceCoefficientFiltrationMap_comp :
     filteredSpaceCoefficientFiltrationMap hX (φ ≫ ψ) =
       filteredSpaceCoefficientFiltrationMap hX φ ≫ filteredSpaceCoefficientFiltrationMap hX ψ := by
-  rw [filteredSpaceCoefficientFiltrationMap, filteredSpaceCoefficientFiltrationMap,
-    filteredSpaceCoefficientFiltrationMap,
-    CochainComplex.filtrationFunctorMap_congr
-      (f' := extendMap (((SSet.chainComplexFunctor A).map φ).app (TopCat.toSSet.obj Y)) _ ≫
-        extendMap (((SSet.chainComplexFunctor A).map ψ).app (TopCat.toSSet.obj Y)) _)
-      (by simp),
-    CochainComplex.filtrationFunctorMap_comp _ _ (factors_singularChainFiltration_coefficient φ)
-      (factors_singularChainFiltration_coefficient ψ)]
+  ext a : 2
+  rw [← cancel_mono (CochainComplex.filtrationFunctorArrow _
+    (monotone_chainFiltration ((singularChainComplexFunctor A).obj R'') hX) a)]
+  simp only [NatTrans.comp_app, Category.assoc, filteredSpaceCoefficientFiltrationMap_app_comp,
+    filteredSpaceCoefficientFiltrationMap_app_comp_assoc, ← extendMap_comp,
+    CategoryTheory.Functor.map_comp]
 
 /-- **The morphism of spectral sequences induced by a morphism of coefficients.** A morphism
 `φ : R ⟶ R'` induces a morphism from the spectral sequence of the filtration of `Y` by the `X q`
@@ -871,21 +869,22 @@ lemma filteredSpaceSpectralSequenceCoefficientMap_comp :
 /-- On the stage `F_b`, identified with the singular chains of `X b`, the morphism of filtrations
 induced by `φ` is the chain map induced by `φ` on the singular chains of `X b`. -/
 @[reassoc]
-private lemma filteredSpaceCoefficientFiltrationMap_app_comp_singularChainFiltrationIso_hom
+private lemma filteredSpaceCoefficientFiltrationMap_app_comp_chainFiltrationIso_hom
     (b : ℤ) :
     (filteredSpaceCoefficientFiltrationMap hX φ).app b ≫
-        (CochainComplex.filtrationFunctorObjIso _ (monotone_singularChainFiltration R' hX) b).hom ≫
+        (CochainComplex.filtrationFunctorObjIso _
+            (monotone_chainFiltration ((singularChainComplexFunctor A).obj R') hX) b).hom ≫
           Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
-            (singularChainFiltrationIso R' X b).hom =
-      (CochainComplex.filtrationFunctorObjIso _ (monotone_singularChainFiltration R hX) b).hom ≫
+            (chainFiltrationIso ((singularChainComplexFunctor A).obj R') X b).hom =
+      (CochainComplex.filtrationFunctorObjIso _
+          (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX) b).hom ≫
         Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
-          (singularChainFiltrationIso R X b).hom ≫
-            extendMap (((SSet.chainComplexFunctor A).map φ).app
-              (TopCat.toSSet.obj (TopPair.ofSubset (X b)).snd)) ComplexShape.embeddingDownNat := by
-  refine (cancel_mono (singularChainFiltrationι R' X b)).1 ?_
-  simp only [Category.assoc, singularChainFiltrationIso_hom_comp_singularChainFiltrationι,
-    singularChainFiltrationι_coefficient_naturality,
-    singularChainFiltrationIso_hom_comp_singularChainFiltrationι_assoc,
+          (chainFiltrationIso ((singularChainComplexFunctor A).obj R) X b).hom ≫
+            extendMap (((singularChainComplexFunctor A).map φ).app (TopPair.ofSubset (X b)).snd)
+              ComplexShape.embeddingDownNat := by
+  refine (cancel_mono (chainFiltrationι ((singularChainComplexFunctor A).obj R') X b)).1 ?_
+  simp only [Category.assoc, chainFiltrationIso_hom_comp_chainFiltrationι,
+    chainFiltrationι_coefficient_naturality, chainFiltrationIso_hom_comp_chainFiltrationι_assoc,
     Subobject.ofLE_arrow, Subobject.ofLE_arrow_assoc]
   exact (filteredSpaceCoefficientFiltrationMap_app_comp hX φ (b : EInt)).trans
     (Category.assoc _ _ _)
@@ -895,7 +894,7 @@ filtrations induced by `φ` is the chain map induced by `φ` on the relative sin
 pair `(X b, X a)`. -/
 private lemma cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom_coefficient {a b : ℤ}
     (f : (a : EInt) ⟶ b) :
-    cokernel.map _ _ _ _ ((filteredSpaceCoefficientFiltrationMap hX φ).naturality f) ≫
+    cokernel.map _ _ _ _ ((filteredSpaceCoefficientFiltrationMap hX φ).naturality f).symm ≫
         (cokernelFiltrationFunctorMapIso R' hX f).hom =
       (cokernelFiltrationFunctorMapIso R hX f).hom ≫
         extendMap (((SSetPair.chainComplexFunctor A).map φ).app (TopPair.toSSetPair.obj
@@ -910,16 +909,16 @@ private lemma cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom_coefficient {
         ComplexShape.embeddingDownNat ≫
       extendMap (((SSetPair.chainComplexFunctor A).map φ).app
         (TopPair.toSSetPair.obj (TopPair.ofInclusion (hX hab)))) ComplexShape.embeddingDownNat =
-      extendMap (((SSet.chainComplexFunctor A).map φ).app
-          (TopCat.toSSet.obj (TopPair.ofSubset (X b)).snd)) ComplexShape.embeddingDownNat ≫
+      extendMap (((singularChainComplexFunctor A).map φ).app (TopPair.ofSubset (X b)).snd)
+          ComplexShape.embeddingDownNat ≫
       extendMap ((TopPair.ofInclusion (hX hab)).singularChainComplexπ R')
         ComplexShape.embeddingDownNat := by
     exact (extendMap_comp _ _ _).symm.trans <|
       (congrArg (extendMap · ComplexShape.embeddingDownNat) (congrArg (fun η ↦ η.app
         (TopPair.toSSetPair.obj (TopPair.ofInclusion (hX hab))))
           ((SSetPair.chainComplexFunctorπ A).naturality φ)).symm).trans (extendMap_comp _ _ _)
-  refine (filteredSpaceCoefficientFiltrationMap_app_comp_singularChainFiltrationIso_hom_assoc hX φ
-    b _).trans ?_
+  refine (filteredSpaceCoefficientFiltrationMap_app_comp_chainFiltrationIso_hom_assoc hX φ b
+    _).trans ?_
   rw [← h]
   exact congrArg (_ ≫ ·) <| congrArg (_ ≫ ·) (Category.assoc _ _ _).symm
 
@@ -978,16 +977,17 @@ variable {Y' : TopCat.{w}} {X' : ℤ → Set Y'} (hX' : Monotone X') (g : Y ⟶ 
 /-- The morphisms of filtered singular chains induced by a map of filtered spaces and by a
 morphism of coefficients commute. -/
 @[reassoc]
-lemma filteredSpaceFiltrationMap_comp_filteredSpaceCoefficientFiltrationMap :
-    filteredSpaceFiltrationMap R hX hX' g hg ≫ filteredSpaceCoefficientFiltrationMap hX' φ =
-      filteredSpaceCoefficientFiltrationMap hX φ ≫ filteredSpaceFiltrationMap R' hX hX' g hg := by
+lemma chainFiltrationMap_comp_filteredSpaceCoefficientFiltrationMap :
+    chainFiltrationMap (𝟙 _) hX hX' g hg ≫ filteredSpaceCoefficientFiltrationMap hX' φ =
+      filteredSpaceCoefficientFiltrationMap hX φ ≫ chainFiltrationMap (𝟙 _) hX hX' g hg := by
   ext a : 2
-  rw [← cancel_mono
-    (CochainComplex.filtrationFunctorArrow _ (monotone_singularChainFiltration R' hX') a)]
+  rw [← cancel_mono (CochainComplex.filtrationFunctorArrow _
+    (monotone_chainFiltration ((singularChainComplexFunctor A).obj R') hX') a)]
   simp only [NatTrans.comp_app, Category.assoc, filteredSpaceCoefficientFiltrationMap_app_comp,
-    filteredSpaceFiltrationMap_app_comp, filteredSpaceFiltrationMap_app_comp_assoc,
-    filteredSpaceCoefficientFiltrationMap_app_comp_assoc, ← extendMap_comp]
-  rw [((SSet.chainComplexFunctor A).map φ).naturality]
+    chainFiltrationMap_app_comp, chainFiltrationMap_app_comp_assoc,
+    filteredSpaceCoefficientFiltrationMap_app_comp_assoc, ← extendMap_comp, NatTrans.id_app,
+    Category.comp_id]
+  rw [((singularChainComplexFunctor A).map φ).naturality]
 
 /-- **The spectral sequence of a filtered space is a bifunctor**: the morphisms of spectral
 sequences induced by a map of filtered spaces and by a morphism of coefficients commute. -/
@@ -1003,7 +1003,7 @@ lemma filteredSpaceSpectralSequenceMap_comp_filteredSpaceSpectralSequenceCoeffic
     ← Abelian.SpectralObject.spectralSequenceMap_comp,
     ← Abelian.SpectralObject.spectralSequenceMap_comp, ← CochainComplex.spectralObjectMap_comp,
     ← CochainComplex.spectralObjectMap_comp,
-    filteredSpaceFiltrationMap_comp_filteredSpaceCoefficientFiltrationMap]
+    chainFiltrationMap_comp_filteredSpaceCoefficientFiltrationMap]
 
 end Bifunctoriality
 
