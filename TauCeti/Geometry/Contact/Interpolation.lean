@@ -95,19 +95,6 @@ private theorem contMDiff_contactFlat_add_smul_sub (α₀ α₁ : SmoothForm I M
 
 /-! ### The interpolation is contact near the set of agreement -/
 
-/-- **Interpolations of forms agreeing to first order at a contact point are contact there.** If
-`α₀` is contact at `x`, `α₁ x = α₀ x`, and `dα₁ x` agrees with `dα₀ x` on the hyperplane
-`ker α₀ x`, then every form `α₀ + s (α₁ - α₀)` is contact at `x`. -/
-theorem isContactFormAt_add_smul_sub {x : M} (hc : IsContactFormAt α₀.val x)
-    (hval : α₁.val x = α₀.val x)
-    (hd : ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
-      mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) (s : ℝ) :
-    IsContactFormAt (α₀ + s • (α₁ - α₀)).val x := by
-  refine (isContactFormAt_congr ?_ fun v hv w hw ↦ ?_).2 hc
-  · simp [hval]
-  · rw [← mextDerivₗ_apply I 1 (α₀ + s • (α₁ - α₀)), map_add, map_smul, map_sub]
-    simp [hd v hv w hw]
-
 /-- **Interpolations of forms agreeing along a coisotropic subspace are contact.** Let `α₀` be
 contact at `x` and `α₁ x = α₀ x`, and let `W ⊆ ker α₀ x` be a subspace containing every vector of
 `ker α₀ x` that is `dα₀ x`-orthogonal to `W`. If `dα₁ x (w, v) = dα₀ x (w, v)` for `w ∈ W` and
@@ -141,6 +128,17 @@ theorem isContactFormAt_add_smul_sub_of_mextDeriv_eq_on {x : M} (hc : IsContactF
   have hvW : v ∈ W := hW v hv fun w hw ↦ by
     rw [← hdW w hw v hv, hswap, hvw w (hker.2 (hWk w hw)), neg_zero]
   exact hc.nondegenerate v hv fun w hw ↦ by rw [← hdW v hvW w hw, hvw w (hker.2 hw)]
+
+/-- **Interpolations of forms agreeing to first order at a contact point are contact there.** If
+`α₀` is contact at `x`, `α₁ x = α₀ x`, and `dα₁ x` agrees with `dα₀ x` on the hyperplane
+`ker α₀ x`, then every form `α₀ + s (α₁ - α₀)` is contact at `x`. -/
+theorem isContactFormAt_add_smul_sub {x : M} (hc : IsContactFormAt α₀.val x)
+    (hval : α₁.val x = α₀.val x)
+    (hd : ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
+      mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w]) (s : ℝ) :
+    IsContactFormAt (α₀ + s • (α₁ - α₀)).val x :=
+  isContactFormAt_add_smul_sub_of_mextDeriv_eq_on (W := RoughForm.ker α₀.val x) hc hval
+    (fun _ h ↦ h) (fun _ hv _ ↦ hv) hd s
 
 variable [FiniteDimensional ℝ E]
 

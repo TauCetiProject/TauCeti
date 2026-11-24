@@ -116,32 +116,39 @@ private theorem firstOrder_linear (L : (E × (E →L[ℝ] ℝ)) × ℝ →L[ℝ]
   · rw [hw, ContinuousAlternatingMap.vecCons_add, ha, (hver _ _).1, zero_add]
   · rw [hw, hadd, hb, (hver _ _).2, zero_add]
 
+variable (I) in
+/-- The point `(0_q, 0)` of the one-jet space `J¹Λ = T^* Λ × ℝ` over `q`. -/
+private abbrev jetZero (q : Λ) : CotangentBundle I Λ × ℝ :=
+  (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
+
+/-- The first-order conditions on `Ψ : J¹Λ → M` at `(0_q, 0)` relative to `ι : Λ → M` and a
+one-form `α` on `M`: the differential of `Ψ` sends `((u, 0), 0)` to `dι u`, and `Ψ^* α`
+evaluates a tangent vector `w` to `w₂`, with `dα(dι u, dΨ w) = w₁₂ u`. -/
+private def IsJetFirstOrder (ι : Λ → M) (α : SmoothForm J M ℝ 1)
+    (Ψ : CotangentBundle I Λ × ℝ → M) (q : Λ) : Prop :=
+  (∀ u : TangentSpace I q, mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
+      ((u, (0 : E →L[ℝ] ℝ)), (0 : ℝ)) = mfderiv I J ι q u) ∧
+    ∀ w : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) (jetZero I q),
+      α.val (ι q) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q) w] = w.2 ∧
+      ∀ u : TangentSpace I q, mextDeriv α.val (ι q) ![mfderiv I J ι q u,
+        mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q) w] = w.1.2 u
+
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [J.Boundaryless] [T2Space M]
   [SecondCountableTopology M] in
 /-- If the differential of `Ψ : J¹Λ → M` at `(0_q, 0)` sends `((u, 0), 0)` to `dι u` and
-`((0, p), c)` to a vector `v` with `α(v) = c` and `dα(dι ·, v) = p`, then `Ψ^* α` evaluates a
-tangent vector `w` at `(0_q, 0)` to `w₂`, and `dα(dι u, dΨ w) = w₁₂ u`. -/
-private theorem firstOrder_of_mfderiv {ι : Λ → M}
+`((0, p), c)` to a vector `v` with `α(v) = c` and `dα(dι ·, v) = p`, then `Ψ` satisfies the
+first-order conditions at `q`. -/
+private theorem isJetFirstOrder_of_mfderiv {ι : Λ → M}
     (hι : IsLegendrianImmersion I α.kerDistribution ι) {Ψ : CotangentBundle I Λ × ℝ → M} {q : Λ}
     (hhor : ∀ u : TangentSpace I q, mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
-        ((u, (0 : E →L[ℝ] ℝ)), (0 : ℝ)) = mfderiv I J ι q u)
+        (jetZero I q) ((u, (0 : E →L[ℝ] ℝ)), (0 : ℝ)) = mfderiv I J ι q u)
     (hver : ∀ (p : TangentSpace I q →L[ℝ] ℝ) (c : ℝ),
-        α.val (ι q) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-          (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
+        α.val (ι q) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
           (((0 : E), (p : E →L[ℝ] ℝ)), c)] = c ∧
         ∀ u, mextDeriv α.val (ι q) ![mfderiv I J ι q u,
-          mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-            (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
-            (((0 : E), (p : E →L[ℝ] ℝ)), c)] = p u)
-    (w : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ))) :
-    α.val (ι q) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) w] = w.2 ∧
-      ∀ u : TangentSpace I q, mextDeriv α.val (ι q) ![mfderiv I J ι q u,
-        mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-          (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) w] =
-        w.1.2 u := by
+          mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
+            (((0 : E), (p : E →L[ℝ] ℝ)), c)] = p u) :
+    IsJetFirstOrder ι α Ψ q := by
   have hαι (u : TangentSpace I q) : α.val (ι q) ![mfderiv I J ι q u] = 0 :=
     SmoothForm.mem_kerDistribution.1
       (isHorizontalMap_iff_range_mfderiv_le.1 hι.isHorizontalMap q ⟨u, rfl⟩)
@@ -152,11 +159,12 @@ private theorem firstOrder_of_mfderiv {ι : Λ → M}
       (SmoothForm.mpullback_mextDerivₗ_eq_zero_of_isHorizontalMap hι.isImmersion.contMDiff
         hι.isHorizontalMap)
     simp only [SmoothForm.coe_mpullback, TauCeti.mpullback_apply_pair, mextDerivₗ_apply] at h0
-    exact h0.trans rfl
+    rw [h0]
+    simp
   -- All tangent spaces involved are model spaces, where the computation is linear algebra.
-  exact firstOrder_linear (E := E) (F := F) (mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-    (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)) (mfderiv I J ι q)
-    (α.val (ι q)) (mextDeriv α.val (ι q)) hhor hαι hdι hver w
+  exact ⟨hhor, firstOrder_linear (E := E) (F := F)
+    (mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)) (mfderiv I J ι q)
+    (α.val (ι q)) (mextDeriv α.val (ι q)) hhor hαι hdι hver⟩
 
 /-! ### Velocities along the zero section of `J¹Λ` -/
 
@@ -172,15 +180,19 @@ private theorem hasMFDerivAt_jetLine (q : Λ) (p : TangentSpace I q →L[ℝ] �
     rw [CotangentBundle.trivializationAt_mk_snd]
     ext v
     simp [Manifold.symmL_trivializationAt_self]
+    -- The two sides differ only in reading `v` in `E` or in `TangentSpace I q`, which unfolds to
+    -- `E`.
     rfl
   have h1 := TotalSpace.hasMFDerivAt_smul_curve (IB := I)
     (⟨q, p⟩ : CotangentBundle I Λ) (hasDerivAt_id (0 : ℝ))
   simp only [hcoord] at h1
   have h2 : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (fun t : ℝ ↦ t * c) 0 ((1 : ℝ →L[ℝ] ℝ).smulRight c) := by
     refine ((hasDerivAt_id (0 : ℝ)).mul_const c).hasFDerivAt.hasMFDerivAt.congr_mfderiv ?_
+    -- `smulRight 1 x` sends `1` to `1 • x` by the definition of `ContinuousLinearMap.smulRight`.
     ext
     exact congrArg (fun x : ℝ ↦ (1 : ℝ) • x) (one_mul c)
   refine (h1.prodMk h2).congr_mfderiv ?_
+  -- Likewise, both sides evaluate at `1` to `((0, 1 • p), 1 • c)`.
   ext
   · exact Prod.ext rfl (congrArg (fun x : E →L[ℝ] ℝ ↦ (1 : ℝ) • x) (one_smul ℝ (p : E →L[ℝ] ℝ)))
   · rfl
@@ -260,12 +272,10 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ F] [J.Bou
 /-- If `Ψ : J¹Λ → M` restricts to `ι` along the zero section, its differential at `(0_q, 0)`
 sends `((u, 0), 0)` to `dι u`. -/
 private theorem mfderiv_jetZeroSection_eq {ι : Λ → M} {Ψ : CotangentBundle I Λ × ℝ → M}
-    (hval : ∀ q, Ψ (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) = ι q)
-    {q : Λ} (hΨ : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0))
+    (hval : ∀ q, Ψ (jetZero I q) = ι q) {q : Λ}
+    (hΨ : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q))
     (u : TangentSpace I q) :
-    mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
+    mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
       ((u, (0 : E →L[ℝ] ℝ)), (0 : ℝ)) = mfderiv I J ι q u := by
   have hz := hasMFDerivAt_jetZeroSection (I := I) q
   have e := mfderiv_comp_apply (x := q) (hg := hΨ) (hf := hz.mdifferentiableAt) (v := u)
@@ -295,29 +305,17 @@ private theorem apply_normalRepresentative {ι : SmoothEmbedding I J ∞ Λ M}
 
 /-- **First-order identification of a Legendrian neighbourhood.** For a Legendrian embedding
 `ι : Λ → M` there is a partial diffeomorphism `Ψ` from `J¹Λ` to `M`, defined near the zero
-section, with `Ψ(0_q, 0) = ι q`, whose differential at `(0_q, 0)` sends `((u, 0), 0)` to `dι u`,
-such that `Ψ^* α` evaluates a tangent vector `w` at `(0_q, 0)` to `w₂` and
-`dα(dι u, dΨ w) = w₁₂ u`. It is the normal exponential for an auxiliary metric, read through the
-identification of the normal bundle with `T^* Λ × ℝ` by `[v] ↦ (dα(dι ·, v), α(v))`. -/
+section, with `Ψ(0_q, 0) = ι q`, which satisfies the first-order conditions at every `q`: its
+differential at `(0_q, 0)` sends `((u, 0), 0)` to `dι u`, `Ψ^* α` evaluates a tangent vector `w` at
+`(0_q, 0)` to `w₂`, and `dα(dι u, dΨ w) = w₁₂ u`. It is the normal exponential for an auxiliary
+metric, read through the identification of the normal bundle with `T^* Λ × ℝ` by
+`[v] ↦ (dα(dι ·, v), α(v))`. -/
 private theorem exists_partialDiffeomorph_jet [Nonempty Λ] (ι : SmoothEmbedding I J ∞ Λ M)
     (hι : IsLegendrianImmersion I α.kerDistribution ι) :
     ∃ Ψ : PartialDiffeomorph ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J
         (CotangentBundle I Λ × ℝ) M ∞,
-      (∀ q, (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ)) ∈
-        Ψ.source) ∧
-      (∀ q, Ψ (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) = ι q) ∧
-      (∀ q (u : TangentSpace I q),
-        mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-          (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
-          ((u, (0 : E →L[ℝ] ℝ)), (0 : ℝ)) = mfderiv I J ι q u) ∧
-      ∀ q (w : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ))),
-        α.val (ι q) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-          (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) w] = w.2 ∧
-        ∀ u : TangentSpace I q, mextDeriv α.val (ι q) ![mfderiv I J ι q u,
-          mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-            (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) w] =
-          w.1.2 u := by
+      (∀ q, jetZero I q ∈ Ψ.source) ∧ (∀ q, Ψ (jetZero I q) = ι q) ∧
+        ∀ q, IsJetFirstOrder ι α Ψ q := by
   have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   have hm : (∞ : ℕ∞ω) + 1 ≤ ∞ := by norm_cast
   have : LocallyCompactSpace G := J.locallyCompactSpace
@@ -362,41 +360,14 @@ private theorem exists_partialDiffeomorph_jet [Nonempty Λ] (ι : SmoothEmbeddin
       (Ψ.mdifferentiableAt hn (hsrc q)) (hΦ ▸ Φ.mdifferentiableAt hn (hΦ0 q)) (by
         funext t
         simp only [hΨfun, Function.comp_apply, hD,
-          normalBundleDiffeomorphOfIsLegendrianImmersion_symm_apply, hv, ← map_smul]
-        rfl)
+          normalBundleDiffeomorphOfIsLegendrianImmersion_symm_apply, hv, ← map_smul, Prod.smul_mk,
+          smul_eq_mul])
     rw [key, hv]
     exact apply_normalRepresentative hι hn p c
   have hhor (q : Λ) := mfderiv_jetZeroSection_eq hval (Ψ.mdifferentiableAt hn (hsrc q))
-  exact ⟨Ψ, hsrc, hval, hhor, fun q ↦ firstOrder_of_mfderiv hι (hhor q) (hver q)⟩
+  exact ⟨Ψ, hsrc, hval, fun q ↦ isJetFirstOrder_of_mfderiv hι (hhor q) (hver q)⟩
 
 /-! ### Contactness of the interpolation along the zero section -/
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ F] [J.Boundaryless]
-  [T2Space M] [SecondCountableTopology M] in
-/-- On an open set `W` of `J¹Λ` on which `Ψ` is differentiable, `(Ψ|_W)^* α` evaluates a tangent
-vector `v` at `y` to `α(dΨ v)`, and its exterior derivative evaluates `(v, w)` to
-`dα(dΨ v, dΨ w)`. -/
-private theorem mpullback_comp_subtypeVal_apply
-    {W : TopologicalSpace.Opens (CotangentBundle I Λ × ℝ)} {Ψ : CotangentBundle I Λ × ℝ → M}
-    (hΨW : ContMDiff ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J ∞ (Ψ ∘ (Subtype.val : W → _)))
-    {y : W} (hy : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ y)
-    (v w : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) y) :
-    (SmoothForm.mpullback _ hΨW α).val y ![v] =
-        α.val (Ψ y) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ y v] ∧
-      mextDeriv (SmoothForm.mpullback _ hΨW α).val y ![v, w] = mextDeriv α.val (Ψ y)
-        ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ y v,
-          mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ y w] := by
-  have hd (v : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) y) :
-      mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J (Ψ ∘ (Subtype.val : W → _)) y v =
-        mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ y v := by
-    rw [mfderiv_comp_apply (x := y) hy (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero),
-      Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
-      Manifold.tangentSpaceOpenEquiv_apply]
-  refine ⟨?_, ?_⟩
-  · rw [SmoothForm.mpullback_apply_one, hd]
-    rfl
-  · rw [SmoothForm.mextDeriv_mpullback_apply_two, hd, hd]
-    rfl
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] in
 /-- On an open set `W` of `J¹Λ`, the form `dz - λ` evaluates a tangent vector at `(0_q, 0)` to its
@@ -421,27 +392,15 @@ private theorem contactization_subtypeVal_zeroSection
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ F] [J.Boundaryless]
   [T2Space M] [SecondCountableTopology M] in
-/-- At a point `(0_q, 0)` of an open set `W` of `J¹Λ`, let `Ψ` satisfy the conclusions of the
-first-order identification. Then `(Ψ|_W)^* α` and `(dz - λ)|_W` agree at `(0_q, 0)`, and every
+/-- At a point `(0_q, 0)` of an open set `W` of `J¹Λ`, let `Ψ` satisfy the first-order conditions
+at `q`. Then `(Ψ|_W)^* α` and `(dz - λ)|_W` agree at `(0_q, 0)`, and every
 interpolation between them is contact there: the tangent space of the zero section is a
 coisotropic subspace of `ker (dz - λ)` along which the two exterior derivatives agree. -/
 private theorem isContactFormAt_jet {ι : Λ → M} {Ψ : CotangentBundle I Λ × ℝ → M} {q : Λ}
-    (hval : Ψ (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) = ι q)
-    (hhor : ∀ u : TangentSpace I q, mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
-        ((u, (0 : E →L[ℝ] ℝ)), (0 : ℝ)) = mfderiv I J ι q u)
-    (hfo : ∀ w : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ)),
-        α.val (ι q) ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-          (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) w] = w.2 ∧
-        ∀ u : TangentSpace I q, mextDeriv α.val (ι q) ![mfderiv I J ι q u,
-          mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-            (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) w] = w.1.2 u)
+    (hval : Ψ (jetZero I q) = ι q) (hfo : IsJetFirstOrder ι α Ψ q)
     {W : TopologicalSpace.Opens (CotangentBundle I Λ × ℝ)}
     (hΨW : ContMDiff ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J ∞ (Ψ ∘ (Subtype.val : W → _)))
-    (hq : (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ)) ∈ W)
-    (hΨ : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-      (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)) :
+    (hq : jetZero I q ∈ W) :
     let α₀ := SmoothForm.mpullback (Subtype.val : W → _) contMDiff_subtypeVal
       (CotangentBundle.liouvilleForm I Λ).contactization
     (SmoothForm.mpullback _ hΨW α).val ⟨_, hq⟩ = α₀.val ⟨_, hq⟩ ∧ ∀ u ∈ Icc (0 : ℝ) 1,
@@ -451,10 +410,8 @@ private theorem isContactFormAt_jet {ι : Λ → M} {Ψ : CotangentBundle I Λ �
   have hvalW : (SmoothForm.mpullback _ hΨW α).val ⟨_, hq⟩ = α₀.val ⟨_, hq⟩ := by
     refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [show v = ![v 0] from funext fun i ↦ by fin_cases i; rfl,
-      (mpullback_comp_subtypeVal_apply hΨW hΨ (v 0) (v 0)).1, h₀]
-    dsimp only
-    rw [hval]
-    exact (hfo (v 0)).1
+      SmoothForm.mpullback_comp_subtypeVal_apply, h₀, ← (hfo.2 (v 0)).1, ← hval]
+    exact congrArg (α.val _) (funext fun i ↦ by fin_cases i; simp)
   -- The tangent space `{((u, 0), 0)}` of the zero section is the kernel of `w ↦ (w₁₂, w₂)`.
   set L : (E × (E →L[ℝ] ℝ)) × ℝ →ₗ[ℝ] (E →L[ℝ] ℝ) × ℝ :=
     ((LinearMap.snd ℝ E (E →L[ℝ] ℝ)).comp (LinearMap.fst ℝ (E × (E →L[ℝ] ℝ)) ℝ)).prod
@@ -475,22 +432,20 @@ private theorem isContactFormAt_jet {ι : Λ → M} {Ψ : CotangentBundle I Λ �
   · -- On pairs with a vector tangent to the zero section, both derivatives are `w₁₂ u`.
     obtain ⟨⟨u', p⟩, c⟩ := w
     obtain ⟨rfl, rfl⟩ := (hmemL _).1 hw
-    have hmid : mextDeriv α.val (Ψ (zeroSection (E →L[ℝ] ℝ)
-        (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0))
-        ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-            (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0)
+    have hmid : mextDeriv α.val (Ψ (jetZero I q))
+        ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
             ((u', (0 : E →L[ℝ] ℝ)), (0 : ℝ)),
-          mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-            (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) v] =
+          mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q) v] =
         v.1.2 u' - (0 : E →L[ℝ] ℝ) v.1.1 := by
       rw [hval]
       refine (congrArg (fun a ↦ mextDeriv α.val (ι q)
-        ![a, mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ
-          (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) v])
-        (hhor u')).trans (((hfo v).2 u').trans ?_)
-      simp
-    exact (mpullback_comp_subtypeVal_apply hΨW hΨ ((u', 0), 0) v).2.trans
+        ![a, mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q) v])
+        (hfo.1 u')).trans (((hfo.2 v).2 u').trans ?_)
+      rw [zero_apply, sub_zero]
+    rw [SmoothForm.mextDeriv_mpullback_comp_subtypeVal_apply]
+    refine (congrArg (mextDeriv α.val _) (funext fun i ↦ ?_)).trans
       (hmid.trans (hd₀ ((u', 0), 0) v).symm)
+    fin_cases i <;> simp
 
 /-! ### The strict Moser correction -/
 
@@ -502,26 +457,18 @@ section, and `dz` vanishes on it and equals `dz - λ` along the zero section. -/
 private theorem exists_partialDiffeomorph_opens_zeroSection [T2Space Λ] [SigmaCompactSpace Λ]
     (W : TopologicalSpace.Opens (CotangentBundle I Λ × ℝ))
     {α₁ : SmoothForm ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) W ℝ 1}
-    (hval : ∀ y ∈ Subtype.val ⁻¹' range fun q ↦
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ)),
+    (hvc : ∀ y ∈ Subtype.val ⁻¹' range (jetZero I),
       α₁.val y = (SmoothForm.mpullback (Subtype.val : W → _) contMDiff_subtypeVal
-        (CotangentBundle.liouvilleForm I Λ).contactization).val y)
-    (hc : ∀ y ∈ Subtype.val ⁻¹' range fun q ↦
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ)),
+        (CotangentBundle.liouvilleForm I Λ).contactization).val y ∧
       ∀ u ∈ Icc (0 : ℝ) 1, IsContactFormAt ((SmoothForm.mpullback (Subtype.val : W → _)
         contMDiff_subtypeVal (CotangentBundle.liouvilleForm I Λ).contactization) +
         u • (α₁ - SmoothForm.mpullback (Subtype.val : W → _) contMDiff_subtypeVal
           (CotangentBundle.liouvilleForm I Λ).contactization)).val y) :
     ∃ φ : PartialDiffeomorph ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
         ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) W W ∞,
-      Subtype.val ⁻¹' (range fun q ↦
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ))) ⊆
-          φ.source ∧
-      Subtype.val ⁻¹' (range fun q ↦
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ))) ⊆
-          φ.target ∧
-      (∀ y ∈ Subtype.val ⁻¹' range fun q ↦
-        (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, (0 : ℝ)), φ y = y) ∧
+      Subtype.val ⁻¹' range (jetZero I) ⊆ φ.source ∧
+      Subtype.val ⁻¹' range (jetZero I) ⊆ φ.target ∧
+      (∀ y ∈ Subtype.val ⁻¹' range (jetZero I), φ y = y) ∧
       ∀ y ∈ φ.source, TauCeti.mpullback _ _ φ α₁.val y =
         (SmoothForm.mpullback (Subtype.val : W → _) contMDiff_subtypeVal
           (CotangentBundle.liouvilleForm I Λ).contactization).val y := by
@@ -554,10 +501,12 @@ private theorem exists_partialDiffeomorph_opens_zeroSection [T2Space Λ] [SigmaC
     refine (SmoothForm.mpullback_apply_one _ _ SmoothForm.realLineCoordForm
       (y : CotangentBundle I Λ × ℝ) v).trans ?_
     rw [SmoothForm.realLineCoordForm_apply, Matrix.cons_val_zero, mfderiv_snd]
+    -- `ContinuousLinearMap.snd` is `Prod.snd` once `TangentSpace` unfolds to the model product.
     rfl
   refine
     SmoothForm.exists_partialDiffeomorph_mpullback_eq_of_isContactFormAt_of_apply_mfderiv_eq_zero
-    (β := β) hc hval (hσ.restrictPreimage W) (fun s ↦ ?_) (hσind.restrictPreimage W) hσWclosed
+    (β := β) (fun y hy ↦ (hvc y hy).2) (fun y hy ↦ (hvc y hy).1) (hσ.restrictPreimage W)
+    (fun s ↦ ?_) (hσind.restrictPreimage W) hσWclosed
     (by rw [Module.finrank_prod (R := ℝ) (M := E × (E →L[ℝ] ℝ)) (M' := ℝ), Module.finrank_self])
     ?_ (fun s w ↦ ?_) ?_
   · rw [Manifold.injective_mfderiv_restrictPreimage_iff hσ.continuous W, (hdσ s).mfderiv]
@@ -565,6 +514,8 @@ private theorem exists_partialDiffeomorph_opens_zeroSection [T2Space Λ] [SigmaC
   · rintro ⟨x, hx⟩ ⟨q, rfl⟩
     exact ⟨⟨zeroSection _ _ q, hx⟩, rfl⟩
   · rw [hβ', Manifold.mfderiv_restrictPreimage_apply hσ.continuous W, (hdσ s).mfderiv]
+    -- The second component of `(id.prod 0) w` is `0` by the definition of
+    -- `ContinuousLinearMap.prod`; the tangent spaces are model spaces.
     rfl
   · rintro ⟨x, hx⟩ ⟨q, rfl⟩
     refine ContinuousAlternatingMap.ext fun v ↦ ?_
@@ -640,8 +591,7 @@ theorem exists_partialDiffeomorph_mpullback_eq_contactization [Nonempty Λ]
       (∀ q, φ (zeroSection (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q, 0) = ι q) ∧
       ∀ x ∈ φ.source, TauCeti.mpullback _ J φ α.val x =
         (CotangentBundle.liouvilleForm I Λ).contactization.val x := by
-  obtain ⟨Ψ, hsrc, hval, hhor, hfo⟩ := exists_partialDiffeomorph_jet ι hι
-  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+  obtain ⟨Ψ, hsrc, hval, hfo⟩ := exists_partialDiffeomorph_jet ι hι
   -- `Λ` is embedded in `M`, so it is a Hausdorff σ-compact manifold.
   have : T2Space Λ := ι.isEmbedding.t2Space
   have : SecondCountableTopology Λ := ι.isEmbedding.isInducing.secondCountableTopology
@@ -652,17 +602,9 @@ theorem exists_partialDiffeomorph_mpullback_eq_contactization [Nonempty Λ]
         TopologicalSpace.Opens (CotangentBundle I Λ × ℝ)) → _)) :=
     Ψ.contMDiffOn_toFun.comp_contMDiff contMDiff_subtypeVal fun y ↦ y.property
   -- Along the zero section, `(Ψ|_W)^* α` agrees with `dz - λ` and the interpolation is contact.
-  obtain ⟨φ, hφs, hφt, hφfix, hφ⟩ := exists_partialDiffeomorph_opens_zeroSection _
-    (fun y hy ↦ by
-      obtain ⟨x, hx⟩ := y
-      obtain ⟨q, rfl⟩ := hy
-      exact (isContactFormAt_jet (hval q) (hhor q) (hfo q) hΨW hx
-        (Ψ.mdifferentiableAt hn (hsrc q))).1)
-    (fun y hy ↦ by
-      obtain ⟨x, hx⟩ := y
-      obtain ⟨q, rfl⟩ := hy
-      exact (isContactFormAt_jet (hval q) (hhor q) (hfo q) hΨW hx
-        (Ψ.mdifferentiableAt hn (hsrc q))).2)
+  obtain ⟨φ, hφs, hφt, hφfix, hφ⟩ := exists_partialDiffeomorph_opens_zeroSection _ <| by
+    rintro ⟨x, hx⟩ ⟨q, rfl⟩
+    exact isContactFormAt_jet (hval q) (hfo q) hΨW hx
   obtain ⟨F, hFs, hFΨ, hF⟩ := exists_partialDiffeomorph_trans_opens Ψ hΨW
     (range_subset_iff.2 hsrc) φ hφs hφt hφfix hφ
   exact ⟨F, fun q ↦ hFs ⟨q, rfl⟩, fun q ↦ (hFΨ _ ⟨q, rfl⟩).trans (hval q), hF⟩

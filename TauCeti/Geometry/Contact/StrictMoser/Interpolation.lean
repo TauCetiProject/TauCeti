@@ -74,8 +74,6 @@ contact there, the hypersurface `T^* Λ × {0}` and the one-form `β = dz` satis
   (in `TauCeti.SmoothForm`): strict relative Moser stability for a segment of forms
   which are contact along `K`, when `K` lies in a closed hypersurface tangent to `ker α₀` along
   `K`.
-* `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_of_apply_eq_of_apply_mfderiv_eq_zero`:
-  the same for forms whose exterior derivatives agree only on `ker α₀` along `K`.
 
 ## References
 
@@ -419,37 +417,5 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_isContactFormAt_of_apply_mfder
   rw [ContinuousLinearMap.coe_coe] at hw
   rw [hw] at h0
   exact (hs.2 t ht).ne' h0
-
-/-- **Strict relative Moser stability for contact forms agreeing on the contact hyperplanes along
-a tangent slice.** Let `α₀` be a contact form at the points of a set `K`, and let `α₁` agree with
-`α₀` at the points of `K`, with `dα₁` agreeing with `dα₀` only on the hyperplanes `ker α₀` there.
-Let `K` lie in a closed embedded hypersurface `ι : S → M` of a boundaryless σ-compact manifold `M`
-which is tangent to the hyperplanes `ker α₀` along `K` in the following sense: some one-form `β`
-vanishes on the tangent images of `ι` and agrees with `α₀` at the points of `K`. Then there is a
-smooth partial diffeomorphism `φ` of `M`, whose source and target are open neighbourhoods of `K`,
-which fixes every point of `K` and pulls `α₁` back to `α₀` exactly on its source. Neither `K` nor
-`M` need be compact.
-
-Unlike `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_of_apply_eq`, the exterior
-derivatives need only agree on `ker α₀`, as in the relative Gray theorem
-`TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq`, so the interpolations
-need not share the Reeb vector of `α₀` along `K`. The one-form `β` keeps their Reeb vectors
-transverse to the hypersurface: at the points of `K`, `β(R_(α_t)) = α_t(R_(α_t)) = 1`. For
-instance, along the zero section of the one-jet bundle `T^* L × ℝ` with its contact form `dz - λ`,
-the slice `z = 0` and `β = dz` satisfy these hypotheses. -/
-theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq_of_apply_mfderiv_eq_zero
-    [SigmaCompactSpace M] {β : SmoothForm I M ℝ 1} {K : Set M}
-    (hc : ∀ x ∈ K, IsContactFormAt α₀.val x) (hval : ∀ x ∈ K, α₁.val x = α₀.val x)
-    (hd : ∀ x ∈ K, ∀ v ∈ RoughForm.ker α₀.val x, ∀ w ∈ RoughForm.ker α₀.val x,
-      mextDeriv α₁.val x ![v, w] = mextDeriv α₀.val x ![v, w])
-    (hι : ContMDiff J I ∞ ι) (himm : ∀ s, Function.Injective (mfderiv J I ι s))
-    (hind : Topology.IsInducing ι) (hclosed : _root_.IsClosed (range ι))
-    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hKι : K ⊆ range ι)
-    (hβι : ∀ s w, β.val (ι s) ![mfderiv J I ι s w] = 0) (hβK : ∀ x ∈ K, β.val x = α₀.val x) :
-    ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
-      ∀ x ∈ φ.source, TauCeti.mpullback I I φ α₁.val x = α₀.val x :=
-  exists_partialDiffeomorph_mpullback_eq_of_isContactFormAt_of_apply_mfderiv_eq_zero
-    (fun x hx u _ ↦ isContactFormAt_add_smul_sub (hc x hx) (hval x hx) (hd x hx) u) hval hι himm
-    hind hclosed hdim hKι hβι hβK
 
 end TauCeti.SmoothForm

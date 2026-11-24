@@ -86,8 +86,8 @@ theorem contactization_liouvilleForm_apply_zeroSection (q : M) (s : ℝ)
         (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) q, s) ![w] = w.2 := by
   rw [SmoothForm.contactization_apply, liouvilleForm_apply, Manifold.tangentSpaceProdEquiv_apply]
   -- The Liouville form at the zero covector is the zero covector applied to `dπ w.1`.
-  rw [NormedSpace.fromTangentSpace_apply]
-  exact sub_zero w.2
+  simp only [NormedSpace.fromTangentSpace_apply, zeroSection_snd, zero_apply,
+    sub_zero]
 
 /-- **The exterior derivative of the one-jet form.** At a point `p` of `J¹M = T*M × ℝ`, read in the
 preferred chart at `p` itself, the exterior derivative of `dz - λ` is the canonical symplectic
