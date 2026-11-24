@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Invariants
 public import TauCeti.Geometry.Symplectic.Lagrangian.CoisotropicModel
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 
 /-!

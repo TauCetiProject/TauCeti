@@ -343,6 +343,32 @@ theorem resEquiv_symm (φ : G₁ ≃* G₂) :
     (resEquiv k φ).symm = resEquiv k φ.symm :=
   Equiv.ext (resEquiv_symm_apply φ)
 
+/-- Restricting along the identity monoid isomorphism is the identity equivalence on simple
+isomorphism classes. -/
+@[simp]
+theorem resEquiv_refl :
+    resEquiv k (MulEquiv.refl G₁) = Equiv.refl (SimpleFDRepClasses k G₁) := by
+  ext c
+  induction c using ind with
+  | h X hX =>
+    rw [resEquiv_mk, Equiv.refl_apply, mk_eq_mk_iff]
+    exact ⟨eqToIso (by
+      rw [show (MulEquiv.refl G₁ : G₁ →* G₁) = MonoidHom.id G₁ from rfl, MonoidHom.actionRes_id]
+      rfl)⟩
+
+/-- Restricting along a composite monoid isomorphism is contravariant in the equivalence. -/
+@[simp]
+theorem resEquiv_trans {G₃ : Type*} [Monoid G₃] (φ : G₁ ≃* G₂) (ψ : G₂ ≃* G₃) :
+    resEquiv k (φ.trans ψ) = (resEquiv k ψ).trans (resEquiv k φ) := by
+  ext c
+  induction c using ind with
+  | h X hX =>
+    rw [resEquiv_mk, Equiv.trans_apply, resEquiv_mk, resEquiv_mk, mk_eq_mk_iff]
+    exact ⟨eqToIso (by
+      rw [show ((φ.trans ψ : G₁ ≃* G₃) : G₁ →* G₃) = (ψ : G₂ →* G₃).comp (φ : G₁ →* G₂) from rfl,
+        MonoidHom.actionRes_comp]
+      rfl)⟩
+
 end SimpleFDRepClasses
 
 end ResEquiv
@@ -482,7 +508,7 @@ class. -/
 theorem resEquiv_trivial (φ : G₁ ≃* G₂) :
     resEquiv k φ (trivial k G₂) = trivial k G₁ := by
   rw [← mk_tensorUnit, ← mk_tensorUnit, resEquiv_mk, mk_eq_mk_iff]
-  exact ⟨LinearEquiv.toFDRepIso (LinearEquiv.refl k _) fun _ _ ↦ rfl⟩
+  exact ⟨FDRep.resTensorUnitIso (φ : G₁ →* G₂)⟩
 
 /-- Restricting along a monoid isomorphism preserves `SimpleFDRepClasses.finrankHom`. -/
 @[simp]

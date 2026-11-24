@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced

@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 public import TauCeti.Topology.Algebra.UnitaryGroup
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import TauCeti.Analysis.Matrix.Exponential.Block

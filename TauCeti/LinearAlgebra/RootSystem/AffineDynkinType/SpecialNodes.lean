@@ -203,12 +203,14 @@ theorem exists_graph_iso_apply_eq_affineNode {t : AffineDynkinType} (ht : t.Vali
       · exact ⟨SimpleGraph.Iso.refl, Fin.ext (h0.trans (Fin.val_zero _).symm)⟩
       · refine ⟨dReverse ht, Fin.ext ?_⟩
         rw [coe_dReverse, Fin.val_zero]; dsimp [dRevVal]; split_ifs <;> omega
-      · refine ⟨dSwapLeft ht, ?_⟩
-        rw [show i = ⟨n - 1, by rw [nodes_D]; omega⟩ from Fin.ext hn1]
+      · have hi_eq : i = ⟨n - 1, by rw [nodes_D]; omega⟩ := Fin.ext hn1
+        refine ⟨dSwapLeft ht, ?_⟩
+        rw [hi_eq]
         exact Equiv.swap_apply_right _ _
-      · refine ⟨(dReverse ht).trans (dSwapLeft ht), ?_⟩
-        rw [RelIso.trans_apply, show dReverse ht i = ⟨n - 1, by rw [nodes_D]; omega⟩ from
-          Fin.ext (by rw [coe_dReverse]; dsimp [dRevVal]; split_ifs <;> omega)]
+      · have hrev_eq : dReverse ht i = ⟨n - 1, by rw [nodes_D]; omega⟩ :=
+          Fin.ext (by rw [coe_dReverse]; dsimp [dRevVal]; split_ifs <;> omega)
+        refine ⟨(dReverse ht).trans (dSwapLeft ht), ?_⟩
+        rw [RelIso.trans_apply, hrev_eq]
         exact Equiv.swap_apply_right _ _
   | E6 =>
       rw [marks_E6] at hi; rw [affineNode_E6]

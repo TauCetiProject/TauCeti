@@ -58,15 +58,15 @@ as kernel: over a field an alternating form is `B₀ - B₀.flip` for some form 
 invariant symmetric and the invariant alternating forms together, as natural numbers, even in
 characteristic two, where the two kinds of form overlap: this is
 `Representation.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible`
-in `TauCeti/RepresentationTheory/InvariantForm.lean`.  Characteristic two matters only for
+in `TauCeti/RepresentationTheory/InvariantForm/Basic.lean`.  Characteristic two matters only for
 `TauCeti.Representation.frobeniusSchurIndicator_eq_neg_one_iff`, which assumes `2 ≠ 0`: when `2 = 0`
 we have `-1 = 1`, and the trivial one-dimensional representation has indicator `1 = -1` but no
 nonzero alternating form.
 
 Three ingredients come from earlier modules and are only applied here.  The invariant forms
 themselves and the symmetric and the alternating ones among them are in
-`TauCeti/RepresentationTheory/InvariantForm.lean`; the dictionary turning a functional on either
-square into a form is `TauCeti.BilinForm.ofSymmetricSquareDual` and
+`TauCeti/RepresentationTheory/InvariantForm/Basic.lean`; the dictionary turning a functional on
+either square into a form is `TauCeti.BilinForm.ofSymmetricSquareDual` and
 `TauCeti.BilinForm.ofExteriorSquareDual`, in `TauCeti/LinearAlgebra/BilinearForm/Squares.lean`; and
 the fact that the dictionary carries the invariant functionals onto the invariant forms, with the
 two counts that follow and the count `Representation.finrank_invariantForms` of all invariant forms

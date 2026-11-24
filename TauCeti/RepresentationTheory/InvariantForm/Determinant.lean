@@ -8,7 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.RepresentationTheory.Dual
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.FDRep.Rigid
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 
 /-!
 # Determinant alternating forms and self-duality in rank two

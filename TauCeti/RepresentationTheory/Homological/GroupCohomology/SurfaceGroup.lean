@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.SurfaceGroup.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Finrank
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.PresentedGroup
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.RepresentationTheory.Dual
 

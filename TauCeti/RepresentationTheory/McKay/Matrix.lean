@@ -11,6 +11,7 @@ public import TauCeti.CategoryTheory.Action.EssentiallySmall
 public import TauCeti.CategoryTheory.Semisimple.GrothendieckRing
 public import TauCeti.RepresentationTheory.CharacterTable.Multiplicity
 public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.FDRep.Rigid
 public import TauCeti.RepresentationTheory.Maschke
 public import TauCeti.RepresentationTheory.Tensor.Power
 import Mathlib.GroupTheory.Perm.Cycle.Type
@@ -24,41 +25,42 @@ import TauCeti.RepresentationTheory.Irreducible
 /-!
 # The McKay matrix and tensor-power multiplicities
 
-For an object `V` of `FDRep k G`, the **McKay matrix** `TauCeti.mckayMatrix V` is the matrix indexed
-by `TauCeti.SimpleFDRepClasses k G` whose `(c₁, c₂)` entry is `dim_k Hom_G(X, V ⊗ Y)` for
-representatives `c₁ = [X]` and `c₂ = [Y]`; under split semisimplicity (for instance over an
-algebraically closed field in which `|G|` is invertible), this is the multiplicity of `c₁` in
-`V ⊗ Y`. This file establishes its loop-freeness on faithful two-dimensional representations of
-determinant `1` over an algebraically closed field of characteristic zero, its duality
-`(mckayMatrix V)ᵀ = mckayMatrix (ᘁV)` and symmetry under self-duality, its comparison with
-`TauCeti.fusionMatrix` and with left multiplication on `TauCeti.SplitK0 (FDRep k G)`, the
-dimension null-vector equation `M δ = (dim V) δ`, the identification
-`mckayMatrix (V.tensorPower n) = mckayMatrix V ^ n` with its entry formulas, and reachability to
-the trivial class for faithful complex representations.
+For an object `V` of `FDRep k G`, the **McKay matrix** `FDRep.mckayMatrix V` (`V.mckayMatrix`) is
+the matrix indexed by `TauCeti.SimpleFDRepClasses k G` whose `(c₁, c₂)` entry is
+`dim_k Hom_G(X, V ⊗ Y)` for representatives `c₁ = [X]` and `c₂ = [Y]`; under split semisimplicity
+(for instance over an algebraically closed field in which `|G|` is invertible), this is the
+multiplicity of `c₁` in `V ⊗ Y`. This file establishes its loop-freeness on faithful
+two-dimensional representations of determinant `1` over an algebraically closed field of
+characteristic zero, its duality `(V.mckayMatrix)ᵀ = (ᘁV).mckayMatrix` and symmetry under
+self-duality, its comparison with `TauCeti.fusionMatrix` and with left multiplication on
+`TauCeti.SplitK0 (FDRep k G)`, the column-sum identity and dimension null-vector equation
+`M δ = (dim V) δ` (for finite groups over an algebraically closed field in which the group order
+`|G|` is invertible), the identification `(V.tensorPower n).mckayMatrix = V.mckayMatrix ^ n` with
+its entry formulas, and reachability to the trivial class for faithful complex representations.
 
 ## Main definitions and results
 
-* `TauCeti.mckayMatrix`: the matrix `(c₁, c₂) ↦ dim_k Hom_G(X, V ⊗ Y)` on `SimpleFDRepClasses k G`,
-  with `TauCeti.mckayMatrix_apply_trivial`, `TauCeti.mckayMatrix_zero`,
-  `TauCeti.mckayMatrix_biprod`, `TauCeti.mckayMatrix_tensorUnit`, `TauCeti.mckayMatrix_tensor`, and
-  `TauCeti.mckayMatrix_res_apply`.
+* `FDRep.mckayMatrix`: the matrix `(c₁, c₂) ↦ dim_k Hom_G(X, V ⊗ Y)` on `SimpleFDRepClasses k G`,
+  with `FDRep.mckayMatrix_apply_trivial`, `FDRep.mckayMatrix_zero`, `FDRep.mckayMatrix_biprod`,
+  `FDRep.mckayMatrix_tensorUnit`, `FDRep.mckayMatrix_tensor`, and `FDRep.mckayMatrix_res_apply`.
 * `FDRep.finrank_hom_tensor_self_eq_zero_of_central`, `FDRep.finrank_hom_tensor_self_eq_zero`, and
-  `TauCeti.mckayMatrix_apply_self_eq_zero`: loop-freeness for faithful two-dimensional
+  `FDRep.mckayMatrix_apply_self_eq_zero`: loop-freeness for faithful two-dimensional
   representations of determinant `1`.
-* `TauCeti.mckayMatrix_transpose`, `TauCeti.isSymm_mckayMatrix_of_equiv_dual`, and
-  `TauCeti.isSymm_mckayMatrix_of_finrank_eq_two`: transpose via `ᘁV` and symmetry.
-* `TauCeti.reindex_mckayMatrix_eq_transpose_fusionMatrix`: reindexing `mckayMatrix V` along
+* `FDRep.mckayMatrix_transpose`, `FDRep.isSymm_mckayMatrix_of_equiv_dual`, and
+  `FDRep.isSymm_mckayMatrix_of_finrank_eq_two`: transpose via `ᘁV` and symmetry.
+* `FDRep.reindex_mckayMatrix_eq_transpose_fusionMatrix`: reindexing `V.mckayMatrix` along
   `SimpleFDRepClasses.equivSimpleClasses` recovers `(fusionMatrix k (SimpleClasses.classOf V))ᵀ`
   for simple `V`.
-* `TauCeti.reindex_mckayMatrix_eq_leftMulMatrix`: reindexing the integer-cast `mckayMatrix V` along
+* `FDRep.reindex_mckayMatrix_eq_leftMulMatrix`: reindexing the integer-cast `V.mckayMatrix` along
   `SimpleFDRepClasses.equivSimpleClasses` recovers `Algebra.leftMulMatrix` by `SplitK0.of V` in
   `SplitK0.simpleBasis (FDRep k G)` for any `V`.
-* `TauCeti.sum_mckayMatrix_mul_finrank_left` and `TauCeti.sum_mckayMatrix_mul_finrank`:
-  column-sum identity and null-vector equation `M δ = (dim V) δ`.
-* `TauCeti.mckayMatrix_tensorPower`, `TauCeti.mckayMatrix_pow_apply`, and
-  `TauCeti.mckayMatrix_pow_apply_trivial`: under split semisimplicity, powers of `mckayMatrix V`
+* `FDRep.sum_mckayMatrix_mul_finrank_left` and `FDRep.sum_mckayMatrix_mul_finrank`:
+  column-sum identity and null-vector equation `M δ = (dim V) δ` for finite groups over an
+  algebraically closed field in which the group order `|G|` is invertible.
+* `FDRep.mckayMatrix_tensorPower`, `FDRep.mckayMatrix_pow_apply`, and
+  `FDRep.mckayMatrix_pow_apply_trivial`: under split semisimplicity, powers of `V.mckayMatrix`
   compute tensor-power multiplicities.
-* `TauCeti.reflTransGen_mckayMatrix_trivial`: reachability to the trivial class for faithful
+* `FDRep.reflTransGen_mckayMatrix_trivial`: reachability to the trivial class for faithful
   complex representations.
 
 ## References
@@ -108,7 +110,10 @@ theorem finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : FDRep k 
     simpa only [LinearMap.comp_apply, hμ x, map_smul] using
       (LinearMap.congr_fun (FDRep.hom_hom_hom_comm f g₀) x).symm
   have htens : (V ⊗ X : FDRep k G).ρ g₀ = μ • (V.ρ g₀).rTensor X := by
-    rw [FDRep.tensor_ρ, show X.ρ g₀ = μ • LinearMap.id from LinearMap.ext hμ]
+    have hX_map : X.ρ g₀ = μ • LinearMap.id := by
+      ext y
+      simp [hμ y]
+    rw [FDRep.tensor_ρ, hX_map]
     exact TensorProduct.ext' fun v y ↦ by simp [TensorProduct.tmul_smul]
   rw [htens, LinearMap.smul_apply] at heq
   have hz : (V.ρ g₀).rTensor X z = z := smul_right_injective _ hμ0 heq
@@ -125,6 +130,55 @@ theorem finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : FDRep k 
       rw [LinearMap.rTensor_comp, LinearMap.comp_apply]
     _ = 0 := by rw [hz0, map_zero]
 
+private theorem det_eq_det_mul_det_of_equiv_prod
+    {W₀ W₁ W₂ : Type*} [AddCommGroup W₀] [Module k W₀]
+    [AddCommGroup W₁] [Module k W₁] [FiniteDimensional k W₁]
+    [AddCommGroup W₂] [Module k W₂] [FiniteDimensional k W₂]
+    {ρ : _root_.Representation k G W₀} {ρ₁ : _root_.Representation k G W₁}
+    {ρ₂ : _root_.Representation k G W₂} (e : ρ.Equiv (ρ₁.prod ρ₂)) (g : G) :
+    LinearMap.det (ρ g) = LinearMap.det (ρ₁ g) * LinearMap.det (ρ₂ g) := by
+  have hconj :
+      (e.toLinearEquiv : W₀ →ₗ[k] W₁ × W₂) ∘ₗ ρ g ∘ₗ
+          (e.toLinearEquiv.symm : W₁ × W₂ →ₗ[k] W₀) =
+        LinearMap.prodMap (ρ₁ g) (ρ₂ g) := by
+    refine LinearMap.ext fun x ↦ ?_
+    have h := LinearMap.congr_fun (e.isIntertwining' g) (e.toLinearEquiv.symm x)
+    change e.toLinearEquiv ((ρ g) (e.toLinearEquiv.symm x)) = _
+    change e.toLinearEquiv ((ρ g) (e.toLinearEquiv.symm x)) =
+      ((ρ₁.prod ρ₂) g) (e.toLinearEquiv (e.toLinearEquiv.symm x)) at h
+    rw [h, LinearEquiv.apply_symm_apply]
+    rfl
+  rw [← LinearMap.det_conj (ρ g) e.toLinearEquiv, hconj, LinearMap.det_prodMap]
+
+private theorem not_hasEigenvalue_one_of_equiv_prod_finrank_eq_one
+    {W₀ W₁ W₂ : Type*} [AddCommGroup W₀] [Module k W₀]
+    [AddCommGroup W₁] [Module k W₁] [AddCommGroup W₂] [Module k W₂]
+    {ρ : _root_.Representation k G W₀} {ρ₁ : _root_.Representation k G W₁}
+    {ρ₂ : _root_.Representation k G W₂} (e : ρ.Equiv (ρ₁.prod ρ₂))
+    (hW₁ : Module.finrank k W₁ = 1) (hW₂ : Module.finrank k W₂ = 1)
+    {g : G} (hc₁ : LinearMap.det (ρ₁ g) ≠ 1) (hc₂ : LinearMap.det (ρ₂ g) ≠ 1) :
+    ¬ Module.End.HasEigenvalue (ρ g) 1 := by
+  have : FiniteDimensional k W₁ := Module.finite_of_finrank_pos (by omega)
+  have : FiniteDimensional k W₂ := Module.finite_of_finrank_pos (by omega)
+  intro hev
+  obtain ⟨v, hv, hv0⟩ := hev.exists_hasEigenvector
+  have hv_fix : ρ g v = v := by simpa using Module.End.mem_eigenspace_iff.mp hv
+  have hpair : (LinearMap.det (ρ₁ g) • (e v).1, LinearMap.det (ρ₂ g) • (e v).2) = e v := by
+    calc
+      (LinearMap.det (ρ₁ g) • (e v).1, LinearMap.det (ρ₂ g) • (e v).2)
+        = (ρ₁ g (e v).1, ρ₂ g (e v).2) :=
+            Prod.ext (LinearMap.apply_eq_det_smul_of_finrank_eq_one hW₁ _ _).symm
+              (LinearMap.apply_eq_det_smul_of_finrank_eq_one hW₂ _ _).symm
+      _ = e (ρ g v) := by simpa using (LinearMap.congr_fun (e.isIntertwining' g) v).symm
+      _ = e v := by rw [hv_fix]
+  have h1 : (e v).1 = 0 := by
+    by_contra hnz
+    exact hc₁ (smul_left_injective k hnz (by simpa using congrArg Prod.fst hpair))
+  have h2 : (e v).2 = 0 := by
+    by_contra hnz
+    exact hc₂ (smul_left_injective k hnz (by simpa using congrArg Prod.snd hpair))
+  exact hv0 (e.injective ((Prod.ext h1 h2).trans (map_zero e).symm))
+
 /-- A reducible faithful semisimple two-dimensional representation of determinant `1` has a
 central group element without eigenvalue `1`. -/
 private theorem exists_central_no_eigenvalue_one_of_not_isIrreducible [Nontrivial G]
@@ -138,51 +192,35 @@ private theorem exists_central_no_eigenvalue_one_of_not_isIrreducible [Nontrivia
   obtain ⟨W, W', hWW', hW1, hW'1⟩ :=
     _root_.Representation.exists_isCompl_finrank_eq_one_of_not_isIrreducible hdim hρ
   let e := _root_.Subrepresentation.equivProdOfIsCompl hWW'
-  choose c₁ hc₁ using fun g : G ↦
-    (LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hW1 (W.toRepresentation g)).exists
-  choose c₂ hc₂ using fun g : G ↦
-    (LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hW'1 (W'.toRepresentation g)).exists
-  let eL : W₀ ≃ₗ[k] W.toSubmodule × W'.toSubmodule := e.toLinearEquiv
-  have he_apply (g : G) (v : W₀) : eL (ρ g v) = (c₁ g • (eL v).1, c₂ g • (eL v).2) := by
-    have h := LinearMap.congr_fun (e.isIntertwining' g) v
-    exact Prod.ext (by simpa [eL, hc₁ g] using congrArg Prod.fst h)
-      (by simpa [eL, hc₂ g] using congrArg Prod.snd h)
-  -- Read `det (ρ g) = 1` across `W₀ ≃ W × W'` to get `c₁ g * c₂ g = 1`, and deduce `G` is abelian
-  -- since `ρ` embeds `G` into diagonal matrices.
-  have hconj (g : G) :
-      (eL : W₀ →ₗ[k] W.toSubmodule × W'.toSubmodule) ∘ₗ ρ g ∘ₗ
-          (eL.symm : W.toSubmodule × W'.toSubmodule →ₗ[k] W₀) =
-        LinearMap.prodMap (c₁ g • LinearMap.id) (c₂ g • LinearMap.id) :=
-    LinearMap.ext fun p ↦ Prod.ext (by simp [he_apply]) (by simp [he_apply])
   have : FiniteDimensional k W.toSubmodule := Module.finite_of_finrank_pos (by omega)
   have : FiniteDimensional k W'.toSubmodule := Module.finite_of_finrank_pos (by omega)
-  have hdet_prod (g : G) : c₁ g * c₂ g = 1 := by
-    have hd : LinearMap.det ((eL : W₀ →ₗ[k] W.toSubmodule × W'.toSubmodule) ∘ₗ ρ g ∘ₗ
-        (eL.symm : W.toSubmodule × W'.toSubmodule →ₗ[k] W₀)) = 1 := by
-      rw [LinearMap.det_conj, hdet g]
-    simpa [hconj g, LinearMap.det_prodMap, hW1, hW'1] using hd
+  have he_apply (g : G) (v : W₀) :
+      e (ρ g v) =
+        (LinearMap.det (W.toRepresentation g) • (e v).1,
+          LinearMap.det (W'.toRepresentation g) • (e v).2) := by
+    have h := LinearMap.congr_fun (e.isIntertwining' g) v
+    exact Prod.ext
+      (by simpa [LinearMap.apply_eq_det_smul_of_finrank_eq_one hW1] using congrArg Prod.fst h)
+      (by simpa [LinearMap.apply_eq_det_smul_of_finrank_eq_one hW'1] using congrArg Prod.snd h)
+  have hdet_prod (g : G) :
+      LinearMap.det (W.toRepresentation g) * LinearMap.det (W'.toRepresentation g) = 1 :=
+    (det_eq_det_mul_det_of_equiv_prod e g).symm.trans (hdet g)
   have hcomm (g h : G) : g * h = h * g :=
-    hfaithful <| LinearMap.ext fun v ↦ eL.injective <| by
+    hfaithful <| LinearMap.ext fun v ↦ e.injective <| by
       simp [map_mul, mul_apply_eq_comp, he_apply, smul_smul, mul_comm]
-  -- Any `g₀ ≠ 1` is central with diagonal eigenvalues `c₁ g₀, c₂ g₀ ≠ 1`.
+  -- Any `g₀ ≠ 1` is central with diagonal eigenvalues `det (W g₀), det (W' g₀) ≠ 1`.
   obtain ⟨g₀, hg₀⟩ := exists_ne (1 : G)
-  have hne_one : ¬ (c₁ g₀ = 1 ∧ c₂ g₀ = 1) := fun ⟨h1, h2⟩ ↦
+  have hne_one :
+      ¬ (LinearMap.det (W.toRepresentation g₀) = 1 ∧
+          LinearMap.det (W'.toRepresentation g₀) = 1) := fun ⟨h1, h2⟩ ↦
     hg₀ <| hfaithful <| by
-      rw [map_one]; exact LinearMap.ext fun v ↦ eL.injective (by simp [he_apply, h1, h2])
-  have hc₁_ne : c₁ g₀ ≠ 1 := fun h1 ↦ hne_one ⟨h1, by simpa [h1] using hdet_prod g₀⟩
-  have hc₂_ne : c₂ g₀ ≠ 1 := fun h2 ↦ hne_one ⟨by simpa [h2] using hdet_prod g₀, h2⟩
-  refine ⟨g₀, fun h ↦ hcomm g₀ h, fun hev ↦ ?_⟩
-  obtain ⟨v, hv, hv0⟩ := hev.exists_hasEigenvector
-  have hv_fix : ρ g₀ v = v := by simpa using Module.End.mem_eigenspace_iff.mp hv
-  have hpair := congrArg eL hv_fix
-  rw [he_apply] at hpair
-  have h1 : (eL v).1 = 0 := by
-    by_contra hnz
-    exact hc₁_ne (smul_left_injective k hnz (by simpa using congrArg Prod.fst hpair))
-  have h2 : (eL v).2 = 0 := by
-    by_contra hnz
-    exact hc₂_ne (smul_left_injective k hnz (by simpa using congrArg Prod.snd hpair))
-  exact hv0 (eL.injective (by ext <;> simp [h1, h2]))
+      rw [map_one]; exact LinearMap.ext fun v ↦ e.injective (by simp [he_apply, h1, h2])
+  have hc₁_ne : LinearMap.det (W.toRepresentation g₀) ≠ 1 := fun h1 ↦
+    hne_one ⟨h1, by simpa [h1] using hdet_prod g₀⟩
+  have hc₂_ne : LinearMap.det (W'.toRepresentation g₀) ≠ 1 := fun h2 ↦
+    hne_one ⟨by simpa [h2] using hdet_prod g₀, h2⟩
+  exact ⟨g₀, hcomm g₀,
+    not_hasEigenvalue_one_of_equiv_prod_finrank_eq_one e hW1 hW'1 hc₁_ne hc₂_ne⟩
 
 /-- **Loop-freeness of the McKay graph.** For a nontrivial finite group `G` and a faithful
 two-dimensional representation `V : FDRep k G` of determinant `1` over an algebraically closed
@@ -219,11 +257,9 @@ theorem finrank_hom_tensor_self_eq_zero [IsAlgClosed k] [CharZero k] [Finite G] 
 
 end LoopFree
 
-end FDRep
-
-namespace TauCeti
-
 section McKayMatrix
+
+open TauCeti
 
 variable {k : Type u} {G : Type v} [Field k]
 
@@ -275,13 +311,8 @@ theorem mckayMatrix_res_apply {k : Type u} {G₁ : Type v} {G₂ : Type w} [Fiel
       mckayMatrix V c₁ c₂ := by
   induction c₂ using SimpleFDRepClasses.ind with
   | h Y hY =>
-    rw [SimpleFDRepClasses.resEquiv_mk, mckayMatrix_apply_mk, mckayMatrix_apply_mk]
-    have hiso :
-        (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj V ⊗
-            (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj Y ≅
-          (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj (V ⊗ Y) :=
-      LinearEquiv.toFDRepIso (LinearEquiv.refl k _) fun _ _ ↦ rfl
-    rw [(SimpleFDRepClasses.resEquiv k φ c₁).finrankHom_congr hiso,
+    rw [SimpleFDRepClasses.resEquiv_mk, mckayMatrix_apply_mk, mckayMatrix_apply_mk,
+      (SimpleFDRepClasses.resEquiv k φ c₁).finrankHom_congr (FDRep.resTensorIso (φ : G₁ →* G₂) V Y),
       SimpleFDRepClasses.finrankHom_resEquiv]
 
 open scoped ZeroObject in
@@ -325,7 +356,7 @@ theorem mckayMatrix_tensorUnit [IsAlgClosed k] [Monoid G] [DecidableEq (SimpleFD
 McKay matrix of the categorical left dual `ᘁV`. -/
 @[simp]
 theorem mckayMatrix_transpose [Group G] [Invertible (Nat.card G : k)] (V : FDRep k G) :
-    (mckayMatrix V).transpose = mckayMatrix (ᘁV) := by
+    (mckayMatrix V).transpose = mckayMatrix (ᘁV : FDRep k G) := by
   ext c₁ c₂
   induction c₁ using SimpleFDRepClasses.ind with | h X hX =>
   induction c₂ using SimpleFDRepClasses.ind with | h Y hY =>
@@ -396,7 +427,8 @@ section Semisimple
 
 variable [IsAlgClosed k] [Group G] [Invertible (Nat.card G : k)]
 
-/-- Column sum of `mckayMatrix V` against the irreducible dimensions:
+/-- For a finite group `G` over an algebraically closed field `k` in which the group order `|G|`
+is invertible, the column sum of `mckayMatrix V` against the irreducible dimensions is
 `∑ c₁, mckayMatrix V c₁ c₂ * c₁.finrank = dim V * c₂.finrank`. -/
 theorem sum_mckayMatrix_mul_finrank_left [Fintype (SimpleFDRepClasses k G)] (V : FDRep k G)
     (c₂ : SimpleFDRepClasses k G) :
@@ -405,17 +437,20 @@ theorem sum_mckayMatrix_mul_finrank_left [Fintype (SimpleFDRepClasses k G)] (V :
   induction c₂ using SimpleFDRepClasses.ind with
   | h Y hY =>
     simp_rw [mckayMatrix_apply_mk, SimpleFDRepClasses.finrank_mk]
-    rw [← finrank_eq_sum_finrankHom_mul_finrank (V ⊗ Y), FDRep.finrank_tensor]
+    rw [← FDRep.finrank_eq_sum_finrankHom_mul_finrank (V ⊗ Y), FDRep.finrank_tensor]
 
-/-- **Null-vector equation `M δ = (dim V) δ`** for every finite-dimensional representation `V`. -/
+/-- **Null-vector equation `M δ = (dim V) δ`.** For a finite group `G` over an algebraically closed
+field `k` in which the group order `|G|` is invertible, every `V : FDRep k G` satisfies
+`∑ c₂, mckayMatrix V c₁ c₂ * c₂.finrank = dim V * c₁.finrank`. -/
 theorem sum_mckayMatrix_mul_finrank [Fintype (SimpleFDRepClasses k G)] (V : FDRep k G)
     (c₁ : SimpleFDRepClasses k G) :
     ∑ c₂ : SimpleFDRepClasses k G, mckayMatrix V c₁ c₂ * c₂.finrank =
       Module.finrank k V * c₁.finrank := by
-  have hentry (c₂ : SimpleFDRepClasses k G) : mckayMatrix V c₁ c₂ = mckayMatrix (ᘁV) c₂ c₁ := by
+  have hentry (c₂ : SimpleFDRepClasses k G) :
+      mckayMatrix V c₁ c₂ = mckayMatrix (ᘁV : FDRep k G) c₂ c₁ := by
     rw [← mckayMatrix_transpose, Matrix.transpose_apply]
   simp_rw [hentry]
-  rw [sum_mckayMatrix_mul_finrank_left (ᘁV) c₁, FDRep.finrank_leftDual]
+  rw [sum_mckayMatrix_mul_finrank_left (ᘁV : FDRep k G) c₁, FDRep.finrank_leftDual]
 
 /-- **Multiplicativity on tensor products for the McKay matrix.** -/
 @[simp]
@@ -493,4 +528,4 @@ theorem reflTransGen_mckayMatrix_trivial {G : Type u} [Group G] [Finite G] (V : 
 
 end McKayMatrix
 
-end TauCeti
+end FDRep

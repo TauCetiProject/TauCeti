@@ -38,7 +38,7 @@ the flip that the trichotomy counts *are* the invariant symmetric and the invari
 forms, and each of the three cases can be stated without mentioning the tensor square.
 
 Two facts about an irreducible representation supply the rest, and both are consumed from
-`TauCeti/RepresentationTheory/InvariantForm.lean`: a nonzero invariant form on an irreducible
+`TauCeti/RepresentationTheory/InvariantForm/Basic.lean`: a nonzero invariant form on an irreducible
 representation is automatically nondegenerate
 (`TauCeti.Representation.IsInvariantForm.nondegenerate`), which is why the statements below ask for
 nondegeneracy rather than for nonvanishing; and over an algebraically closed field it carries a

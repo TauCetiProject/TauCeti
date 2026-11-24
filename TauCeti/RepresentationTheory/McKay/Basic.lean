@@ -23,7 +23,7 @@ Following Steinberg (1985), `TauCeti.exists_isMcKayLabelling` proves this direct
 classification of the finite subgroups of `SL₂(ℂ)` by combining symmetry, loop-freeness, the
 dimension null vector, and reachability to the trivial class from
 `TauCeti.RepresentationTheory.McKay.Matrix` with matrix affine-diagram recognition
-(`TauCeti.exists_affineDynkinType_of_symm_loopFree_nullVector`).
+(`TauCeti.exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul`).
 
 ## Main definitions and results
 
@@ -105,18 +105,18 @@ theorem apply_mk_of_trivial (h : IsMcKayLabelling V t e) (X : FDRep ℂ G) [Simp
     (htriv : ∀ g : G, X.ρ g = 1) : e (SimpleFDRepClasses.mk X) = t.affineNode :=
   h.2.2 X htriv
 
-/-- Under a McKay labelling, `(mckayMatrix V c₁ c₂ : ℤ) = 2 δ_{e c₁, e c₂} - C_{e c₁, e c₂}`. -/
+/-- Under a McKay labelling, `(V.mckayMatrix c₁ c₂ : ℤ) = 2 δ_{e c₁, e c₂} - C_{e c₁, e c₂}`. -/
 theorem mckayMatrix_apply (h : IsMcKayLabelling V t e) (c₁ c₂ : SimpleFDRepClasses ℂ G) :
-    (mckayMatrix V c₁ c₂ : ℤ) =
+    (V.mckayMatrix c₁ c₂ : ℤ) =
       2 * (if e c₁ = e c₂ then 1 else 0) - t.cartanMatrix (e c₁) (e c₂) := by
   induction c₁ using SimpleFDRepClasses.ind with | h X hX =>
   induction c₂ using SimpleFDRepClasses.ind with | h Y hY =>
-    rw [mckayMatrix_mk_mk]; exact h.1 X Y
+    rw [FDRep.mckayMatrix_mk_mk]; exact h.1 X Y
 
 /-- Under a McKay labelling, reindexing the integer-cast McKay matrix along `e` gives
 `2 • 1 - t.cartanMatrix`. -/
 theorem reindex_mckayMatrix (h : IsMcKayLabelling V t e) :
-    Matrix.reindex e e ((mckayMatrix V).map (Nat.cast : ℕ → ℤ)) = 2 • 1 - t.cartanMatrix := by
+    Matrix.reindex e e (V.mckayMatrix.map (Nat.cast : ℕ → ℤ)) = 2 • 1 - t.cartanMatrix := by
   ext i j
   simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.map_apply,
     h.mckayMatrix_apply, Equiv.apply_symm_apply, Matrix.sub_apply, Matrix.smul_apply,
@@ -161,19 +161,19 @@ theorem eq_of_valid {t₁ t₂ : AffineDynkinType} {e₁ : SimpleFDRepClasses �
 end IsMcKayLabelling
 
 /-- `TauCeti.IsMcKayLabelling V t e` is equivalent to the three isomorphism-class identities on
-`mckayMatrix V`, `SimpleFDRepClasses.finrank`, and `SimpleFDRepClasses.trivial ℂ G`. -/
+`V.mckayMatrix`, `SimpleFDRepClasses.finrank`, and `SimpleFDRepClasses.trivial ℂ G`. -/
 theorem isMcKayLabelling_iff_mckayMatrix {G : Type u} [Group G] (V : FDRep ℂ G)
     (t : AffineDynkinType) (e : SimpleFDRepClasses ℂ G ≃ Fin t.nodes) :
     IsMcKayLabelling V t e ↔
       (∀ c₁ c₂ : SimpleFDRepClasses ℂ G,
-          (mckayMatrix V c₁ c₂ : ℤ) =
+          (V.mckayMatrix c₁ c₂ : ℤ) =
             2 * (if e c₁ = e c₂ then 1 else 0) - t.cartanMatrix (e c₁) (e c₂)) ∧
         (∀ c : SimpleFDRepClasses ℂ G, (c.finrank : ℤ) = t.marks (e c)) ∧
         e (SimpleFDRepClasses.trivial ℂ G) = t.affineNode := by
   refine ⟨fun h ↦ ⟨h.mckayMatrix_apply, h.finrank_eq_marks, h.apply_trivial⟩, ?_⟩
   rintro ⟨hM, hδ, hAff⟩
   refine ⟨fun X Y _ _ ↦ ?_, fun X _ ↦ ?_, fun X _ htriv ↦ ?_⟩
-  · simpa [mckayMatrix_mk_mk] using hM (SimpleFDRepClasses.mk X) (SimpleFDRepClasses.mk Y)
+  · simpa [FDRep.mckayMatrix_mk_mk] using hM (SimpleFDRepClasses.mk X) (SimpleFDRepClasses.mk Y)
   · simpa [SimpleFDRepClasses.finrank_mk] using hδ (SimpleFDRepClasses.mk X)
   · rwa [(SimpleFDRepClasses.mk_eq_trivial_iff X).mpr htriv]
 
@@ -181,7 +181,7 @@ theorem isMcKayLabelling_iff_mckayMatrix {G : Type u} [Group G] (V : FDRep ℂ G
 theorem IsMcKayLabelling.of_iso {G : Type u} [Group G] {V₁ V₂ : FDRep ℂ G} (iso : V₁ ≅ V₂)
     {t : AffineDynkinType} {e : SimpleFDRepClasses ℂ G ≃ Fin t.nodes}
     (h : IsMcKayLabelling V₁ t e) : IsMcKayLabelling V₂ t e := by
-  rw [isMcKayLabelling_iff_mckayMatrix, ← mckayMatrix_congr iso]
+  rw [isMcKayLabelling_iff_mckayMatrix, ← FDRep.mckayMatrix_congr iso]
   exact (isMcKayLabelling_iff_mckayMatrix V₁ t e).mp h
 
 /-- Isomorphic complex representations admit the same McKay labellings. -/
@@ -202,7 +202,7 @@ theorem isMcKayLabelling_res_iff {G₁ : Type u} {G₂ : Type v} [Group G₁] [G
   refine ⟨fun ⟨hM, hδ, hAff⟩ ↦ ⟨fun c₁ c₂ ↦ ?_, fun c ↦ ?_, ?_⟩,
       fun ⟨hM, hδ, hAff⟩ ↦ ⟨fun c₁ c₂ ↦ ?_, fun c ↦ ?_, ?_⟩⟩
   · have h := hM (SimpleFDRepClasses.resEquiv ℂ φ c₁) (SimpleFDRepClasses.resEquiv ℂ φ c₂)
-    rwa [mckayMatrix_res_apply, Equiv.trans_apply, Equiv.trans_apply,
+    rwa [FDRep.mckayMatrix_res_apply, Equiv.trans_apply, Equiv.trans_apply,
       Equiv.symm_apply_apply, Equiv.symm_apply_apply] at h
   · have h := hδ (SimpleFDRepClasses.resEquiv ℂ φ c)
     rwa [SimpleFDRepClasses.finrank_resEquiv, Equiv.trans_apply, Equiv.symm_apply_apply] at h
@@ -211,7 +211,7 @@ theorem isMcKayLabelling_res_iff {G₁ : Type u} {G₂ : Type v} [Group G₁] [G
     exact hAff
   · obtain ⟨c₁', rfl⟩ := (SimpleFDRepClasses.resEquiv ℂ φ).surjective c₁
     obtain ⟨c₂', rfl⟩ := (SimpleFDRepClasses.resEquiv ℂ φ).surjective c₂
-    rw [mckayMatrix_res_apply, Equiv.trans_apply, Equiv.trans_apply,
+    rw [FDRep.mckayMatrix_res_apply, Equiv.trans_apply, Equiv.trans_apply,
       Equiv.symm_apply_apply, Equiv.symm_apply_apply]
     exact hM c₁' c₂'
   · obtain ⟨c', rfl⟩ := (SimpleFDRepClasses.resEquiv ℂ φ).surjective c
@@ -255,12 +255,12 @@ theorem exists_isMcKayLabelling {G : Type u} [Group G] [Finite G] [Nontrivial G]
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   let _ := Fintype.ofFinite (SimpleFDRepClasses ℂ G)
   obtain ⟨t, e, ht, hLab⟩ :=
-    exists_affineDynkinType_of_symm_loopFree_nullVector (mckayMatrix V)
-      (isSymm_mckayMatrix_of_finrank_eq_two hdim hdet)
-      (mckayMatrix_apply_self_eq_zero hdim hfaithful hdet)
-      (SimpleFDRepClasses.trivial ℂ G) (reflTransGen_mckayMatrix_trivial V hfaithful)
+    exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul V.mckayMatrix
+      (FDRep.isSymm_mckayMatrix_of_finrank_eq_two hdim hdet)
+      (FDRep.mckayMatrix_apply_self_eq_zero hdim hfaithful hdet)
+      (SimpleFDRepClasses.trivial ℂ G) (FDRep.reflTransGen_mckayMatrix_trivial V hfaithful)
       SimpleFDRepClasses.finrank SimpleFDRepClasses.finrank_pos SimpleFDRepClasses.finrank_trivial
-      fun c ↦ by simpa [hdim] using sum_mckayMatrix_mul_finrank V c
+      fun c ↦ by simpa [hdim] using FDRep.sum_mckayMatrix_mul_finrank V c
   exact ⟨t, e, ht, (isMcKayLabelling_iff_mckayMatrix V t e).mpr hLab⟩
 
 end TauCeti

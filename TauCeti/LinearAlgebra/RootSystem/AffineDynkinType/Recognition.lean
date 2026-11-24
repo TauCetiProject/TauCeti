@@ -35,7 +35,7 @@ recognised by the simple-graph statement. Allowing non-negative integer off-diag
 `Ã₁` back on equal footing: any symmetric, loop-free, connected matrix `M : Matrix ι ι ℕ` carrying
 a positive vector `δ` with `δ i₀ = 1` and `M *ᵥ δ = 2 • δ` is isomorphic to `2I - t.cartanMatrix`
 for a valid `t : AffineDynkinType`, with `δ` matching `t.marks` and `i₀` carried to `t.affineNode`
-(`TauCeti.exists_affineDynkinType_of_symm_loopFree_nullVector`).
+(`TauCeti.exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul`).
 
 ## Main results
 
@@ -45,8 +45,8 @@ for a valid `t : AffineDynkinType`, with `δ` matching `t.marks` and `i₀` carr
   semidefinite form, where the weight is replaced by the condition that `2I - A` is positive
   semidefinite and singular
   (`SimpleGraph.Preconnected.exists_sum_eq_two_mul_iff_posSemidef_and_det_eq_zero`).
-* `TauCeti.exists_affineDynkinType_of_symm_loopFree_nullVector`: **matrix recognition** including
-  `Ã₁`, with marks and affine-node normalization.
+* `TauCeti.exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul`: **matrix recognition**
+  including `Ã₁`, with marks and affine-node normalization.
 
 ## References
 
@@ -234,7 +234,7 @@ private theorem exists_affineDynkinType_of_le_one
 matrix `M : Matrix ι ι ℕ` admitting a positive vector `δ` with `δ i₀ = 1` and `M *ᵥ δ = 2 • δ` is
 isomorphic to `2I - t.cartanMatrix` for a valid `t : AffineDynkinType`, with `δ` matching `t.marks`
 and `i₀` mapped to `t.affineNode`. -/
-theorem exists_affineDynkinType_of_symm_loopFree_nullVector
+theorem exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul
     (M : Matrix ι ι ℕ) (hSymm : M.IsSymm) (hLoop : ∀ i, M i i = 0)
     (i₀ : ι) (hConn : ∀ i, Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < M x y) i i₀)
     (δ : ι → ℕ) (hδ_pos : ∀ i, 0 < δ i) (hδ_one : δ i₀ = 1)
@@ -247,10 +247,9 @@ theorem exists_affineDynkinType_of_symm_loopFree_nullVector
         e i₀ = t.affineNode := by
   classical
   let r : ι → ι → Prop := fun x y ↦ x ≠ y ∧ 0 < M x y
-  have hsymm_rtg {x y : ι} (h : Relation.ReflTransGen r x y) : Relation.ReflTransGen r y x := by
-    induction h with
-    | refl => exact .refl
-    | tail _ hstep ih => exact ih.head ⟨hstep.1.symm, hSymm.apply _ _ ▸ hstep.2⟩
+  have hsymm_rtg {x y : ι} (h : Relation.ReflTransGen r x y) : Relation.ReflTransGen r y x :=
+    Relation.ReflTransGen.mono (fun _ _ hxy ↦ ⟨hxy.1.symm, hSymm.apply _ _ ▸ hxy.2⟩) y x
+      (Relation.reflTransGen_swap.mpr h)
   have hReach (x y : ι) : Relation.ReflTransGen r x y := (hConn x).trans (hsymm_rtg (hConn y))
   if hMult : ∃ a b : ι, 2 ≤ M a b then
     obtain ⟨a, b, hab2⟩ := hMult

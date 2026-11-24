@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import TauCeti.RepresentationTheory.Continuous.Basic
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Analysis.Normed.Operator.Completeness

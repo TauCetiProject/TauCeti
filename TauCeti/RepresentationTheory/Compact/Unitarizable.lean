@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 public import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap

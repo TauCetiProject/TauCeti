@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.RepresentationTheory.BaseChange
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 
 /-!
 # Base change of an invariant bilinear form

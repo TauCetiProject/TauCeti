@@ -72,7 +72,7 @@ non-isomorphic.
 * `Representation.intrinsicMultiplicity_leftRegular`: `Zᵢ` occurs in the left regular
   representation with multiplicity its degree.
 * `TauCeti.SimpleFDRepClasses.finrankHom_equivFinCardConjClasses_symm` and
-  `TauCeti.finrank_eq_sum_finrankHom_mul_finrank`: compatibility with
+  `FDRep.finrank_eq_sum_finrankHom_mul_finrank`: compatibility with
   `SimpleFDRepClasses.finrankHom` and the dimension decomposition into simple classes.
 
 ## References
@@ -318,7 +318,7 @@ theorem _root_.TauCeti.SimpleFDRepClasses.finrankHom_equivFinCardConjClasses_sym
 
 /-- **Dimension decomposition into simple classes.** Every `W : FDRep k G` has dimension
 `∑ c, c.finrankHom W * c.finrank`. -/
-theorem _root_.TauCeti.finrank_eq_sum_finrankHom_mul_finrank
+theorem _root_.FDRep.finrank_eq_sum_finrankHom_mul_finrank
     [Fintype (SimpleFDRepClasses k G)] (W : FDRep k G) :
     finrank k W = ∑ c : SimpleFDRepClasses k G, c.finrankHom W * c.finrank := by
   rw [finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree W.ρ]

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.BilinearForm.Basic
 public import TauCeti.RepresentationTheory.Continuous.Square.Basic
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 
 /-!
 # Invariant tensors and invariant bilinear forms
