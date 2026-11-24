@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Local
+public import TauCeti.Analysis.Holder.Distribution
 public import TauCeti.Analysis.Pseudodifferential.BesovSpace
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.EllipticRegularity
 
@@ -33,7 +34,17 @@ Conversely, for all `1 ≤ p, q ≤ ∞`, properly supported operators of order 
 For `p = q = ∞` these are the local mapping and regularity theorems on the Hölder–Zygmund scale
 `𝒞^s = B^s_{∞,∞}`, which at positive non-integer orders `k + α` is the scale of the Hölder spaces
 `C^{k,α}` (`TauCeti.BesovSpace.ckHolderSpaceEquiv`): an elliptic operator of order `m` gains back
-`m` orders of Hölder–Zygmund regularity, as in the Schauder estimates.
+`m` orders of Hölder–Zygmund regularity, as in the Schauder estimates. In Hölder form, for
+`0 < α < 1` and natural numbers `k`, `l` with `k + m = l`,
+
+`Op(a) T ∈ C^{k,α}` near `x` ⟹ `T ∈ C^{l,α}` near `x`
+
+(`Distribution.IsLocallyCkHolderAt.of_quantizeDistribution`), which is the local Schauder theorem
+for properly supported elliptic operators of integer order acting on distributions, through the
+local identification `Distribution.isLocallyMemBesovAt_iff_isLocallyCkHolderAt`. Conversely,
+`Op(a)` maps `C^{l,α}` locally to `C^{k,α}`: if `T` is `C^{l,α}` near every point of the closed
+`R`-neighbourhood of a neighbourhood of `x`, then `Op(a) T` is `C^{k,α}` near `x`
+(`Distribution.isLocallyCkHolderAt_quantizeDistribution`).
 
 ## The argument
 
@@ -57,7 +68,7 @@ public section
 noncomputable section
 
 open Set TopologicalSpace TemperedDistribution
-open scoped ContDiff Distributions ENNReal SchwartzMap Topology
+open scoped ContDiff Distributions ENNReal NNReal SchwartzMap Topology
 
 namespace Distribution
 
@@ -106,6 +117,44 @@ theorem IsLocallyMemBesovAt.of_quantizeDistribution (ha : a.HasNearDiagonalKerne
     (hcT ▸ hUs ψ hψU)
   exact isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2 ⟨φ₀, hφ₀x, hφ₀T ▸ hreg⟩
 
+/-- **Local Schauder regularity of properly supported operators.** Let `Op(a)` have order `m` and
+kernel supported within distance `R` of the diagonal, let `a` have a formal left parametrix `b`,
+`1 ∼ ∑ₖ sharpTerm b a k`, and let `0 < α < 1` and `k + m = l` for natural numbers `k` and `l`. If
+`Op(a) T` is a `C^{k,α}` function near `x` for a distribution `T`, then `T` is a `C^{l,α}` function
+near `x`. -/
+theorem IsLocallyCkHolderAt.of_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
+    {b : Symbol n ℂ ℂ (-m)}
+    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
+      (inclusion (by simp) (const (.id ℂ ℂ))) (b.sharpTerm a))
+    {k l : ℕ} {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) (hkl : (k : ℝ) + m = l)
+    {x : CoordinateSpace n} (h : (quantizeDistribution ha T).IsLocallyCkHolderAt k α x) :
+    T.IsLocallyCkHolderAt l α x := by
+  have hreg := (h.isLocallyMemBesovAt default).of_quantizeDistribution ha hab ENNReal.one_lt_top
+  rw [add_right_comm, hkl] at hreg
+  exact hreg.isLocallyCkHolderAt hα0 hα1
+
+/-- **Properly supported operators map `C^{l,α}` locally to `C^{k,α}`.** Let `Op(a)` have order
+`m` and kernel supported within distance `R` of the diagonal, and let `0 < α < 1` and `k + m = l`
+for natural numbers `k` and `l`. If `T` is a `C^{l,α}` function near every point of the closed
+`R`-neighbourhood of a neighbourhood `V` of `x`, then `Op(a) T` is a `C^{k,α}` function near
+`x`. -/
+theorem isLocallyCkHolderAt_quantizeDistribution (ha : a.HasNearDiagonalKernel R) {k l : ℕ}
+    {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) (hkl : (k : ℝ) + m = l) {x : CoordinateSpace n}
+    {V : Set (CoordinateSpace n)} (hV : V ∈ 𝓝 x)
+    (h : ∀ y ∈ Metric.cthickening R V, T.IsLocallyCkHolderAt l α y) :
+    (quantizeDistribution ha T).IsLocallyCkHolderAt k α x := by
+  -- A cutoff `ψ` equal to one near `x` and supported in `V` has `ψ Op(a) T ∈ 𝒞^{k+α}`.
+  obtain ⟨ψ, hψ1, hψV⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤) (Ω := ⊤)
+    isCompact_singleton isOpen_interior
+    (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 hV)) (by simp)
+  rw [nhdsSet_singleton] at hψ1
+  refine IsLocallyMemBesovAt.isLocallyCkHolderAt (φ := default) hα0 hα1
+    (isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2
+      ⟨ψ, hψ1, memBesov_cutoffTempered_quantizeDistribution ha fun y hy ↦ ?_⟩)
+  rw [add_right_comm, hkl]
+  exact (h y (Metric.cthickening_subset_of_subset R (hψV.trans interior_subset) hy)
+    ).isLocallyMemBesovAt default
+
 end Distribution
 
 namespace TauCeti
@@ -132,5 +181,30 @@ theorem ClassicalSymbol.IsElliptic.isLocallyMemBesovAt_of_quantizeDistribution
     T.IsLocallyMemBesovAt φ (s + m) p q x :=
   let ⟨_, hab⟩ := hell.exists_isAsymptoticSum_sharpTerm_left
   h.of_quantizeDistribution ha hab hp
+
+variable {k l : ℕ} {α : ℝ≥0}
+
+/-- **Local Schauder regularity for symbols elliptic above a radius.** If `a` is elliptic above
+some radius, `Op(a)` has kernel supported within distance `R` of the diagonal, `0 < α < 1` and
+`k + m = l` for natural numbers `k` and `l`, then `Op(a) T ∈ C^{k,α}` near `x` implies
+`T ∈ C^{l,α}` near `x`. -/
+theorem Symbol.IsEllipticAbove.isLocallyCkHolderAt_of_quantizeDistribution
+    {a : Symbol n ℂ ℂ m} {R' : ℝ} (hell : a.IsEllipticAbove R') (ha : a.HasNearDiagonalKernel R)
+    (hα0 : 0 < α) (hα1 : α < 1) (hkl : (k : ℝ) + m = l)
+    (h : (quantizeDistribution ha T).IsLocallyCkHolderAt k α x) : T.IsLocallyCkHolderAt l α x :=
+  let ⟨_, hab, _⟩ := hell.exists_isAsymptoticSum_sharpTerm
+  h.of_quantizeDistribution ha hab hα0 hα1 hkl
+
+/-- **Local Schauder regularity for elliptic classical symbols.** If the classical symbol `a` is
+elliptic, `Op(a)` has kernel supported within distance `R` of the diagonal, `0 < α < 1` and
+`k + m = l` for natural numbers `k` and `l`, then `Op(a) T ∈ C^{k,α}` near `x` implies
+`T ∈ C^{l,α}` near `x`. -/
+theorem ClassicalSymbol.IsElliptic.isLocallyCkHolderAt_of_quantizeDistribution
+    {a : ClassicalSymbol n ℂ ℂ m} (hell : a.IsElliptic) (ha : a.toSymbol.HasNearDiagonalKernel R)
+    (hα0 : 0 < α) (hα1 : α < 1) (hkl : (k : ℝ) + m = l)
+    (h : (Symbol.quantizeDistribution ha T).IsLocallyCkHolderAt k α x) :
+    T.IsLocallyCkHolderAt l α x :=
+  let ⟨_, hab⟩ := hell.exists_isAsymptoticSum_sharpTerm_left
+  h.of_quantizeDistribution ha hab hα0 hα1 hkl
 
 end TauCeti

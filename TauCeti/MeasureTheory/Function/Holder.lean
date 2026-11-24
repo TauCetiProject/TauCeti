@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import TauCeti.MeasureTheory.Function.Lp.One
 import Mathlib.Analysis.InnerProductSpace.Continuous
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Hölder estimates for pointwise pairings
@@ -37,8 +38,13 @@ integration-by-parts arguments:
   continuous on `K` is integrable.
 * `ContinuousLinearMap.norm_lpPairing_apply_apply_le`: Hölder's inequality
   `‖B.lpPairing μ p q g f‖ ≤ ‖B‖ * ‖g‖ * ‖f‖` for the integral pairing of a bilinear map `B`.
+* `ContinuousLinearMap.norm_lpPairing_le`: the Hölder pairing induced by a continuous bilinear map
+  `B` has norm at most `‖B‖`.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
+* `TauCeti.eNorm_integral_smul_sub_integral_smul_le`: against an integrable weight, the integrals
+  of two products `a • b` and `f • g` of `L^∞` functions differ by at most
+  `‖b‖_∞ ∫ |ψ| ‖a - f‖ + ‖f‖_∞ ∫ |ψ| ‖b - g‖`.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
 * `MeasureTheory.MemLp.toLp_smul_toLp`: the product of the classes of `f` and `g` is the class of
@@ -184,6 +190,11 @@ theorem norm_lpPairing_apply_apply_le (B : E →L[𝕜] F →L[𝕜] G) (g : Lp 
   rw [h]
   exact (L1.norm_integral_le _).trans (B.norm_holder_apply_apply_le _ _)
 
+/-- **Hölder's inequality for the pairing** `∫ B (f x) (g x) dx` of `Lᵖ` and `L^q`: the Hölder
+pairing induced by a continuous bilinear map `B` has norm at most `‖B‖`. -/
+theorem norm_lpPairing_le (B : E →L[𝕜] F →L[𝕜] G) : ‖B.lpPairing μ p q‖ ≤ ‖B‖ :=
+  opNorm_le_bound₂ _ (norm_nonneg B) B.norm_lpPairing_apply_apply_le
+
 end ContinuousLinearMap
 
 namespace MeasureTheory.Lp
@@ -245,5 +256,40 @@ theorem enorm_integral_smul_le {α 𝕜 F : Type*} [MeasurableSpace α]
       simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (· • ·) 1
         continuous_smul.comp_aestronglyMeasurable₂
         (.of_forall fun _ => by simpa using eNorm_smul_le) zero_lt_one
+
+/-- Against an integrable weight `ψ`, the products `a • b` and `f • g` of bounded functions differ
+by at most `‖b‖_∞ ∫ |ψ| ‖a - f‖ + ‖f‖_∞ ∫ |ψ| ‖b - g‖`, from
+`a • b - f • g = (a - f) • b + f • (b - g)`. -/
+theorem eNorm_integral_smul_sub_integral_smul_le {α 𝕜 F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedRing 𝕜] [NormedAddCommGroup F] [Module 𝕜 F] [IsBoundedSMul 𝕜 F]
+    [NormedSpace ℝ F] {ψ : α → 𝕜} (hψ : Integrable ψ μ) (a f : Lp 𝕜 ∞ μ) (b g : Lp F ∞ μ) :
+    ‖(∫ x, ψ x • (a • b : Lp F ∞ μ) x ∂μ) - ∫ x, ψ x • (f • g : Lp F ∞ μ) x ∂μ‖ₑ ≤
+      ‖b‖ₑ * (∫⁻ x, ‖ψ x‖ₑ * ‖a x - f x‖ₑ ∂μ) + ‖f‖ₑ * ∫⁻ x, ‖ψ x‖ₑ * ‖b x - g x‖ₑ ∂μ := by
+  have hint : ∀ u : Lp F ∞ μ, Integrable (fun x ↦ ψ x • u x) μ :=
+    fun u ↦ hψ.smul_of_top_left (Lp.memLp u)
+  have hm : AEMeasurable (fun x ↦ ‖ψ x‖ₑ * ‖a x - f x‖ₑ) μ :=
+    hψ.aestronglyMeasurable.eNorm.mul
+      ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _)).eNorm
+  rw [← integral_sub (hint _) (hint _), ← lintegral_const_mul' _ _ eNorm_ne_top,
+    ← lintegral_const_mul' _ _ eNorm_ne_top, ← lintegral_add_left' (hm.const_mul _)]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_ae ?_)
+  filter_upwards [Lp.coeFn_lpSMul (r := ∞) a b, Lp.coeFn_lpSMul (r := ∞) f g,
+    Lp.ae_norm_le_norm_top b, Lp.ae_norm_le_norm_top f] with x hab hfg hb hf
+  rw [← smul_sub, hab, hfg, Pi.smul_apply', Pi.smul_apply']
+  have hsplit : a x • b x - f x • g x = (a x - f x) • b x + f x • (b x - g x) := by
+    rw [sub_smul, smul_sub]
+    abel
+  have hb' : ‖b x‖ₑ ≤ ‖b‖ₑ := eNorm_le_iff_norm_le.2 hb
+  have hf' : ‖f x‖ₑ ≤ ‖f‖ₑ := eNorm_le_iff_norm_le.2 hf
+  calc ‖ψ x • (a x • b x - f x • g x)‖ₑ
+      ≤ ‖ψ x‖ₑ * (‖a x - f x‖ₑ * ‖b‖ₑ + ‖f‖ₑ * ‖b x - g x‖ₑ) := by
+        refine eNorm_smul_le.trans ?_
+        rw [hsplit]
+        gcongr
+        refine (eNorm_add_le _ _).trans ?_
+        gcongr
+        · exact eNorm_smul_le.trans (by gcongr)
+        · exact eNorm_smul_le.trans (by gcongr)
+    _ = ‖b‖ₑ * (‖ψ x‖ₑ * ‖a x - f x‖ₑ) + ‖f‖ₑ * (‖ψ x‖ₑ * ‖b x - g x‖ₑ) := by ring
 
 end TauCeti
