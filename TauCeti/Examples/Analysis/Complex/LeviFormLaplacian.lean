@@ -11,9 +11,9 @@ public import TauCeti.Analysis.Complex.QuadraticLeviForm
 /-!
 # Examples: the complex Laplacian of the standard metric
 
-The Hermitian form of `i∂∂baru` is `2 L_u`, and the complex Laplacian of the standard metric `ω` on
+The Hermitian form of `i∂∂bar u` is `2 L_u`, and the complex Laplacian of the standard metric `ω` on
 `ℂⁿ` is the sum `Δ_ω u = ∑ⱼ λⱼ[2 L_u]` of its relative eigenvalues. For `|z|²` the Levi form is the
-inner product, so `λ[i∂∂bar|z|²] = 2e` and `Δ_ω |z|² = 2n`. For `x₁² = (Re z₁)²` the complex
+inner product, so `λ[i∂∂bar |z|²] = 2e` and `Δ_ω |z|² = 2n`. For `x₁² = (Re z₁)²` the complex
 Laplacian is `1`, half the Euclidean Laplacian `2`. The pluriharmonic `Re z₁²` has vanishing Levi
 form, so `i∂∂bar (Re z₁²) = 0`.
 -/
@@ -25,7 +25,7 @@ open Complex Module TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDimensional ℂ E]
   {n : ℕ}
 
--- `λ[i∂∂bar|z|²] = 2e`.
+-- `λ[i∂∂bar |z|²] = 2e`.
 example (hn : finrank ℂ E = n) (x : E)
     (h : ((2 : ℂ) • leviForm (fun z : E ↦ ‖z‖ ^ 2) x).IsSymm) :
     h.relEigenvalues hn = fun _ ↦ 2 := by

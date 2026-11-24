@@ -16,13 +16,12 @@ public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues
 On a finite-dimensional complex inner product space `E`, view `E` as a real inner product space
 with `⟪v, w⟫_ℝ = Re ⟪v, w⟫_ℂ`. A complex orthonormal basis `b` gives the real orthonormal basis
 `(b j, I • b j)` (`OrthonormalBasis.complexToReal`). Evaluating the Laplacian `Δ f` in this basis
-and the diagonal of the Levi form through `TauCeti.leviForm_apply_self` gives, for `f` of class
-`C²` at `x`,
+and the real part of the diagonal of the Levi form through `TauCeti.re_leviForm_apply` gives
 `∑ⱼ Re (leviForm f x (b j) (b j)) = Δ f x / 4`
-(`TauCeti.sum_re_leviForm_apply_self`). In the normalization `H_{i∂∂barf} = 2 L_f` of the
+(`TauCeti.sum_re_leviForm_apply_self`). In the normalization `H_{i∂∂bar f} = 2 L_f` of the
 ComplexHessianEquations roadmap, the relative eigenvalues of `2 L_f(x)` with respect to the inner
 product therefore sum to `Δ f x / 2` (`TauCeti.sum_relEigenvalues_two_smul_leviForm`): the complex
-Laplacian `Δ_ω f = ∑ⱼ λⱼ[i∂∂barf]` of the standard metric is half the Euclidean Laplacian.
+Laplacian `Δ_ω f = ∑ⱼ λⱼ[i∂∂bar f]` of the standard metric is half the Euclidean Laplacian.
 
 The real inner product structure `InnerProductSpace.complexToReal` is enabled locally.
 
@@ -109,29 +108,29 @@ namespace TauCeti
 
 variable [FiniteDimensional ℂ E] {f : E → ℝ} {x : E}
 
-/-- **The trace of the Levi form is a quarter of the Laplacian.** For `f` of class `C²` at `x` and
+/-- **The trace of the Levi form is a quarter of the Laplacian.** For any real function `f` and
 any complex orthonormal basis `b`, `∑ⱼ Re (leviForm f x (b j) (b j)) = Δ f x / 4`, where `Δ` is
-the Laplacian for the real inner product `Re ⟪·, ·⟫`. -/
-theorem sum_re_leviForm_apply_self (b : OrthonormalBasis ι ℂ E) (hf : ContDiffAt ℝ 2 f x) :
+the Laplacian for the real inner product `Re ⟪·, ·⟫`. No differentiability is needed: both sides
+are read off the same second derivative. -/
+theorem sum_re_leviForm_apply_self (b : OrthonormalBasis ι ℂ E) :
     ∑ j, (leviForm f x (b j) (b j)).re = Δ f x / 4 := by
   rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f b.complexToReal]
   dsimp only
   rw [Fintype.sum_sum_type, ← Finset.sum_add_distrib, Finset.sum_div]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [leviForm_apply_self hf, ofReal_re, hessianQuadraticForm_apply, hessianQuadraticForm_apply,
-    iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
+  rw [re_leviForm_apply, iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
   simp
 
 /-- **The complex Laplacian of the standard metric.** The relative eigenvalues of `2 L_f(x)`, the
-Hermitian form of `i∂∂barf` at `x`, with respect to the inner product sum to `Δ f x / 2`, half the
+Hermitian form of `i∂∂bar f` at `x`, with respect to the inner product sum to `Δ f x / 2`, half the
 Laplacian for the real inner product `Re ⟪·, ·⟫`. -/
 theorem sum_relEigenvalues_two_smul_leviForm {n : ℕ} (hn : finrank ℂ E = n)
-    (hf : ContDiffAt ℝ 2 f x) (h : ((2 : ℂ) • leviForm f x).IsSymm) :
+    (h : ((2 : ℂ) • leviForm f x).IsSymm) :
     ∑ i, h.relEigenvalues hn i = Δ f x / 2 := by
   rw [h.sum_relEigenvalues_eq_sum_re_apply hn (stdOrthonormalBasis ℂ E)]
   simp only [LinearMap.smul_apply, smul_eq_mul, RCLike.re_to_complex, mul_re, re_ofNat,
     im_ofNat, zero_mul, sub_zero]
-  rw [← Finset.mul_sum, sum_re_leviForm_apply_self _ hf]
+  rw [← Finset.mul_sum, sum_re_leviForm_apply_self]
   ring
 
 end TauCeti
