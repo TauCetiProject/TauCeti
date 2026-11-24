@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.StarProjection
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
+import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
 # Pure states supported on a minimal projection
@@ -25,7 +26,9 @@ point of the state space.
 
 ## Main results
 
-* `TauCeti.eq_of_apply_one_sub_eq_zero`: a state vanishing at `1 - p` is `ω`.
+* `TauCeti.apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero`: a state vanishing at a projection
+  `q` kills `a q` and `q a`.
+* `TauCeti.eq_of_mem_stateSpace_of_apply_one_sub_eq_zero`: a state vanishing at `1 - p` is `ω`.
 * `TauCeti.mem_extremePoints_stateSpace_of_mul_mul_eq_smul`: `ω` is an extreme point of the state
   space.
 
@@ -47,8 +50,8 @@ variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {ω �
 
 /-- A state that vanishes at a self-adjoint idempotent `q` kills every product `a * q` and
 `q * a`. -/
-private theorem apply_mul_eq_zero_of_apply_eq_zero (hφ : φ ∈ stateSpace A) {q : A}
-    (hq : IsStarProjection q) (hφq : φ q = 0) (a : A) : φ (a * q) = 0 ∧ φ (q * a) = 0 := by
+theorem apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero (hφ : φ ∈ stateSpace A)
+    {q : A} (hq : IsStarProjection q) (hφq : φ q = 0) (a : A) : φ (a * q) = 0 ∧ φ (q * a) = 0 := by
   obtain ⟨f, -, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
   have hfq : f q = 0 := hφq
   have h₁ := PositiveLinearMap.norm_map_mul_star_le f a q
@@ -61,16 +64,16 @@ private theorem apply_mul_eq_zero_of_apply_eq_zero (hφ : φ ∈ stateSpace A) {
 
 /-- **A state supported on a minimal projection is determined.** Let `p` be a projection with
 `p a p = ω(a) p` for every `a`. A state `φ` with `φ(1 - p) = 0` is `ω`. -/
-theorem eq_of_apply_one_sub_eq_zero (hp : IsStarProjection p) (hpap : ∀ a, p * a * p = ω a • p)
-    (hφ : φ ∈ stateSpace A) (hφp : φ (1 - p) = 0) : φ = ω := by
+theorem eq_of_mem_stateSpace_of_apply_one_sub_eq_zero (hp : IsStarProjection p)
+    (hpap : ∀ a, p * a * p = ω a • p) (hφ : φ ∈ stateSpace A) (hφp : φ (1 - p) = 0) : φ = ω := by
   have hq := hp.one_sub
   have hφ1 : φ p = 1 := by
     rw [map_sub, map_one_of_mem_stateSpace hφ, sub_eq_zero] at hφp
     exact hφp.symm
   refine DFunLike.ext _ _ fun a ↦ ?_
   have ha : a * p = p * a * p + (1 - p) * (a * p) := by noncomm_ring
-  have h₁ := (apply_mul_eq_zero_of_apply_eq_zero hφ hq hφp a).1
-  have h₂ := (apply_mul_eq_zero_of_apply_eq_zero hφ hq hφp (a * p)).2
+  have h₁ := (apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero hφ hq hφp a).1
+  have h₂ := (apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero hφ hq hφp (a * p)).2
   calc φ a = φ (a * p) + φ (a * (1 - p)) := by rw [← map_add, ← mul_add, add_sub_cancel, mul_one]
     _ = ω a := by rw [h₁, add_zero, ha, map_add, h₂, add_zero, hpap, map_smul, hφ1, smul_eq_mul,
       mul_one]
@@ -86,21 +89,13 @@ theorem mem_extremePoints_stateSpace_of_mul_mul_eq_smul (hω : ω ∈ stateSpace
   have hφq := map_nonneg_of_mem_stateSpace hφ hq.nonneg
   have hψq := map_nonneg_of_mem_stateSpace hψ hq.nonneg
   have hsum : (s : ℂ) * φ (1 - p) + (t : ℂ) * ψ (1 - p) = 0 := by
-    rw [← hωq, ← h]
-    rfl
-  -- Both values are nonnegative reals, and their positive combination vanishes.
-  rw [Complex.nonneg_iff] at hφq hψq
-  have hre := congrArg Complex.re hsum
-  simp only [Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
-    sub_zero, Complex.zero_re] at hre
-  have hs0 : s * (φ (1 - p)).re = 0 := by
-    linarith [mul_nonneg hs.le hφq.1, mul_nonneg ht.le hψq.1]
-  have ht0 : t * (ψ (1 - p)).re = 0 := by
-    linarith [mul_nonneg hs.le hφq.1, mul_nonneg ht.le hψq.1]
-  have hφ0 : φ (1 - p) = 0 :=
-    Complex.ext (by simpa using (mul_eq_zero.1 hs0).resolve_left hs.ne') (by simpa using hφq.2.symm)
-  have hψ0 : ψ (1 - p) = 0 :=
-    Complex.ext (by simpa using (mul_eq_zero.1 ht0).resolve_left ht.ne') (by simpa using hψq.2.symm)
-  exact ⟨eq_of_apply_one_sub_eq_zero hp hpap hφ hφ0, eq_of_apply_one_sub_eq_zero hp hpap hψ hψ0⟩
+    rw [← hωq, ← h, add_apply, smul_apply, smul_apply, Complex.real_smul, Complex.real_smul]
+  -- Both terms are nonnegative, and their sum vanishes.
+  obtain ⟨h₁, h₂⟩ := (add_eq_zero_iff_of_nonneg (mul_nonneg (Complex.zero_le_real.2 hs.le) hφq)
+    (mul_nonneg (Complex.zero_le_real.2 ht.le) hψq)).1 hsum
+  have hφ0 := (mul_eq_zero.1 h₁).resolve_left (Complex.ofReal_ne_zero.2 hs.ne')
+  have hψ0 := (mul_eq_zero.1 h₂).resolve_left (Complex.ofReal_ne_zero.2 ht.ne')
+  exact ⟨eq_of_mem_stateSpace_of_apply_one_sub_eq_zero hp hpap hφ hφ0,
+    eq_of_mem_stateSpace_of_apply_one_sub_eq_zero hp hpap hψ hψ0⟩
 
 end TauCeti

@@ -41,6 +41,7 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instFiniteDimensionalComplex`: `CStarMatrix m m ℂ` is finite-dimensional.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`,
   `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
@@ -167,6 +168,12 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring
     [DistribMulAction R A] [SMulCommClass R A A] :
     SMulCommClass R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => (mul_smul M r N).symm⟩
+
+/-- The complex matrix algebra `CStarMatrix m m ℂ` over a finite index type is
+finite-dimensional, as for `Matrix`. -/
+instance instFiniteDimensionalComplex {m : Type*} [Finite m] :
+    FiniteDimensional ℂ (CStarMatrix m m ℂ) :=
+  inferInstanceAs (FiniteDimensional ℂ (Matrix m m ℂ))
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
 @[simp]
