@@ -90,6 +90,7 @@ theorem mem_ideal_iff {I : Ideal A} {x : 𝕎 A} : x ∈ ideal p I ↔ ∀ n, x.
 
 /-- The kernel of the map of Witt vectors induced by a ring homomorphism `f` is the Witt ideal of
 the kernel of `f`. -/
+@[simp]
 theorem ker_map (f : A →+* B) : RingHom.ker (map (p := p) f) = ideal p (RingHom.ker f) := by
   ext x
   simp only [RingHom.mem_ker, WittVector.ext_iff, map_coeff, zero_coeff, mem_ideal_iff]
@@ -289,6 +290,7 @@ def ideal (n : ℕ) (I : Ideal A) : Ideal (TruncatedWittVector p n A) :=
 variable {p}
 
 /-- A truncated Witt vector lies in `W_n(I)` exactly when all of its coordinates lie in `I`. -/
+@[simp]
 theorem mem_ideal_iff {n : ℕ} {I : Ideal A} {x : TruncatedWittVector p n A} :
     x ∈ ideal p n I ↔ ∀ i, x.coeff i ∈ I := by
   simp only [ideal, RingHom.mem_ker, TruncatedWittVector.ext_iff, map_coeff, coeff_zero,
@@ -296,6 +298,7 @@ theorem mem_ideal_iff {n : ℕ} {I : Ideal A} {x : TruncatedWittVector p n A} :
 
 /-- The kernel of the map of truncated Witt vectors induced by `f` is the truncated Witt ideal of
 the kernel of `f`. -/
+@[simp]
 theorem ker_map (n : ℕ) (f : A →+* B) :
     RingHom.ker (map (p := p) n f) = ideal p n (RingHom.ker f) := by
   ext x
