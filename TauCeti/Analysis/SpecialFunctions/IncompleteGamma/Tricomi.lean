@@ -215,8 +215,11 @@ theorem differentiable_tricomiIncompleteGamma_left (z : ℂ) :
 is the second form of 8.7.1; the integral 8.2.7 follows from it by termwise integration. -/
 
 /-- **Kummer representation** of Tricomi's function (DLMF 8.5.2):
-`γ*(a, z) = 𝐌(a, a + 1, −z)` for all `a` and `z`. This is Kummer's transformation
-`regularizedHGFun_singleton_eq_exp_mul` at the parameters `(1, a + 1)`. -/
+`γ*(a, z) = 𝐌(a, a + 1, −z)` for all `a` and `z`. The other form of 8.5.2,
+`γ*(a, z) = e^{−z} 𝐌(1, a + 1, z)`, is `tricomiIncompleteGamma_def`.
+
+Adapted from `tricomiIncompleteGamma_regularized_pair` of the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/IncompleteGamma/SpecialValues.lean`. -/
 theorem tricomiIncompleteGamma_eq_regularizedHGFun (a z : ℂ) :
     tricomiIncompleteGamma a z = regularizedHGFun {a} {a + 1} (-z) := by
   rw [regularizedHGFun_singleton_eq_exp_mul, add_sub_cancel_left, neg_neg,
