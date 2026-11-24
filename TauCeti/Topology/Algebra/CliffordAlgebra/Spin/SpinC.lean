@@ -99,6 +99,13 @@ theorem continuous_ofCircle : Continuous (ofCircle Q hQ) := by
         (continuous_const.prodMk continuous_id)
   exact h.congr fun z ↦ (ofCircle_apply Q hQ z).symm
 
+/-- Multiplication by the central circle is continuous. -/
+@[fun_prop]
+theorem continuous_mulCircle [ContinuousMul (spinCGroup Q hQ)] : Continuous (mulCircle Q hQ) := by
+  have h : Continuous fun g : spinCGroup Q hQ × Circle ↦ g.1 * ofCircle Q hQ g.2 :=
+    continuous_fst.mul ((continuous_ofCircle Q hQ).comp continuous_snd)
+  exact h.congr fun g ↦ (mulCircle_apply Q hQ g.1 g.2).symm
+
 /-- Charge conjugation `[s, z] ↦ [s, z⁻¹]` is continuous for the quotient topology. -/
 @[fun_prop]
 theorem continuous_chargeConj : Continuous (chargeConj Q hQ) := by

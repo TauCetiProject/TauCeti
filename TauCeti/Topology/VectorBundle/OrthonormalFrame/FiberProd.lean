@@ -107,14 +107,7 @@ noncomputable def Equiv.fiberProd {s t : OrthonormalFrameLift F E n G ρ} (φ : 
   continuous_invFun :=
     (φ.continuous_invFun.comp FiberProd.continuous_totalSpaceMk_fst).totalSpaceMk_fiberProdMk
       (hψc'.comp FiberProd.continuous_totalSpaceMk_snd)
-  map_smul x z g := by
-    obtain ⟨g, h⟩ := g
-    revert z
-    change ∀ z : FiberProd s.P Q x,
-      FiberProd.mk (φ.toEquiv x (op (g, h) • z).fst) (ψ x (op (g, h) • z).snd) =
-        op (g, h) • FiberProd.mk (φ.toEquiv x z.fst) (ψ x z.snd)
-    intro z
-    simp [φ.map_smul, hψ]
+  map_smul x z g := congrArg₂ FiberProd.mk (φ.map_smul x z.fst g.1) (hψ x z.snd g.2)
   toFrame_map x z := φ.toFrame_map x z.fst
 
 @[simp]

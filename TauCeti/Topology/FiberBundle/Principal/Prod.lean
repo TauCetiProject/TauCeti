@@ -102,6 +102,7 @@ theorem ext {z w : FiberProd P Q b} (h₁ : z.fst = w.fst) (h₂ : z.snd = w.snd
 
 /-- Two points `(p, q)` and `(p', q')` of the fibre product are equal exactly when `p = p'` and
 `q = q'`. -/
+@[simp]
 theorem mk_inj {p p' : P b} {q q' : Q b} : mk p q = mk p' q' ↔ p = p' ∧ q = q' :=
   Prod.mk_inj (α := P b) (β := Q b)
 
@@ -171,13 +172,9 @@ variable {G H} [Group G] [Group H] [∀ b, MulAction Gᵐᵒᵖ (P b)] [∀ b, M
 `(p, q) • (g, h) = (p • g, q • h)`. -/
 instance instMulAction (b : B) : MulAction (G × H)ᵐᵒᵖ (FiberProd P Q b) where
   smul g z := mk (op g.unop.1 • z.fst) (op g.unop.2 • z.snd)
-  one_smul z := by
-    change mk (op (1 : G) • z.fst) (op (1 : H) • z.snd) = z
-    simp only [op_one, one_smul, mk_fst_snd]
-  mul_smul g g' z := by
-    change mk (op (g'.unop.1 * g.unop.1) • z.fst) (op (g'.unop.2 * g.unop.2) • z.snd) =
-      mk (op g.unop.1 • op g'.unop.1 • z.fst) (op g.unop.2 • op g'.unop.2 • z.snd)
-    simp only [op_mul, mul_smul]
+  one_smul z := ext (one_smul Gᵐᵒᵖ z.fst) (one_smul Hᵐᵒᵖ z.snd)
+  mul_smul g g' z := ext (mul_smul (op g.unop.1) (op g'.unop.1) z.fst)
+    (mul_smul (op g.unop.2) (op g'.unop.2) z.snd)
 
 @[simp]
 theorem op_smul_mk (p : P b) (q : Q b) (g : G) (h : H) :
