@@ -236,7 +236,7 @@ theorem iIndepFun.measureReal_matrix_l2_opNorm_gt_le [DecidableEq n] [IsProbabil
 /-- For a matrix with at least half as many rows as columns and independent sub-Gaussian
 entries of variance proxy `L²`, the probability that its Euclidean operator norm exceeds
 `28 L √(card m)` is at most `2 exp(-card m)`. -/
-theorem iIndepFun.measureReal_l2_opNorm_gt_le_of_card_le [DecidableEq n]
+theorem iIndepFun.measureReal_l2_opNorm_gt_le_of_card_le_two_mul [DecidableEq n]
     (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ A ω ij.1 ij.2) μ)
     {L : ℝ≥0} (hA : ∀ i j, HasSubgaussianMGF (fun ω ↦ A ω i j) (L ^ 2) μ)
     (hdim : Fintype.card n ≤ 2 * Fintype.card m) :
@@ -244,16 +244,17 @@ theorem iIndepFun.measureReal_l2_opNorm_gt_le_of_card_le [DecidableEq n]
       2 * Real.exp (-(Fintype.card m : ℝ)) := by
   have : IsProbabilityMeasure μ := hind.isProbabilityMeasure
   let d : ℝ := Fintype.card m
+  have hd_nonneg : 0 ≤ d := by positivity
   have hnorm := hind.measureReal_matrix_l2_opNorm_gt_le hA (t := Real.sqrt d) (by positivity)
-  rw [Real.sq_sqrt (by positivity)] at hnorm
+  rw [Real.sq_sqrt hd_nonneg] at hnorm
   refine (measureReal_mono ?_ (measure_ne_top _ _)).trans hnorm
   intro ω hω
   have hcard : (Fintype.card n : ℝ) ≤ 2 * d := by dsimp only [d]; exact_mod_cast hdim
-  -- `√(card n) ≤ √2 √(card m) ≤ (3 / 2) √(card m)`, compared through squares.
+  -- `√(card n) ≤ (3 / 2) √(card m)`, since `card n ≤ 2 card m ≤ (3 / 2)² card m`.
   have hsqrt : Real.sqrt (Fintype.card n) ≤ 3 / 2 * Real.sqrt d := by
-    have hn := Real.sq_sqrt (Nat.cast_nonneg (α := ℝ) (Fintype.card n))
-    have hd := Real.sq_sqrt (show 0 ≤ d by positivity)
-    nlinarith [Real.sqrt_nonneg (Fintype.card n : ℝ), Real.sqrt_nonneg d]
+    refine (Real.sqrt_le_left (by positivity)).2 ?_
+    rw [mul_pow, Real.sq_sqrt hd_nonneg]
+    linarith
   have hthreshold : 8 * (L : ℝ) * (Real.sqrt d + Real.sqrt (Fintype.card n) +
       Real.sqrt d) ≤ 28 * (L : ℝ) * Real.sqrt d := by
     have hh := mul_nonneg L.coe_nonneg (sub_nonneg.mpr hsqrt)

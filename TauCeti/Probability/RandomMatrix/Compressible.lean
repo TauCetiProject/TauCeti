@@ -29,8 +29,9 @@ measurable matrix entries.
 
 * M. Rudelson and R. Vershynin, *The Littlewood–Offord problem and invertibility of random
   matrices*, Advances in Mathematics 218 (2008), Lemma 3.3.
-* M. Rudelson and R. Vershynin, *Smallest singular value of a random rectangular matrix*,
-  Communications on Pure and Applied Mathematics 62 (2009), Lemma 2.6.
+* M. Rudelson and R. Vershynin, *The smallest singular value of a random rectangular matrix*,
+  Communications on Pure and Applied Mathematics 62 (2009); Lemma 2.6 of the preprint
+  arXiv:0802.3956v4.
 -/
 
 public section
@@ -134,7 +135,7 @@ private theorem measureReal_compressible_le_exp
   have hnet := hind.measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le
     hA hmom hk hρ₁ hρ M
   rw [one_mul, one_pow] at hnet
-  have hnorm := hind.measureReal_l2_opNorm_gt_le_of_card_le hA hdim
+  have hnorm := hind.measureReal_l2_opNorm_gt_le_of_card_le_two_mul hA hdim
   have hsub : {ω | ∃ x, TauCeti.IsCompressibleVector k ρ x ∧
         ‖toEuclideanLin (A ω) x‖ < Real.sqrt d / 4} ⊆
       {ω | M < ‖A ω‖} ∪ {ω | ‖A ω‖ ≤ M ∧ ∃ x, TauCeti.IsCompressibleVector k ρ x ∧
