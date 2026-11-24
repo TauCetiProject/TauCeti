@@ -17,7 +17,6 @@ import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Distortion
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 import TauCeti.Geometry.Manifold.Riemannian.Restriction.Distance
-import TauCeti.Topology.EMetricSpace.Component
 
 /-!
 # Smoothness of distance-preserving maps of Riemannian manifolds
@@ -311,88 +310,6 @@ end Isometry
 
 end CompleteTarget
 
-/-! ### Finite-distance components
-
-Distances in a Riemannian manifold may be infinite, between points of different components. The
-points at finite distance from `p` form an open submanifold whose distance is finite, so the
-results above apply to it, and they transfer back since smoothness is local.
--/
-
-section Component
-
-open TopologicalSpace
-open scoped TauCeti
-
-namespace Isometry
-
-/-- The finite-distance component of `p`, as an open subset. -/
-private def component {X : Type*} [EMetricSpace X] (p : X) : Opens X :=
-  ⟨Metric.eball p ∞, Metric.isOpen_eball⟩
-
-@[simp]
-private theorem coe_component {X : Type*} [EMetricSpace X] (p : X) :
-    (component p : Set X) = Metric.eball p ∞ :=
-  rfl
-
-@[simp]
-private theorem mem_component_iff {X : Type*} [EMetricSpace X] {p x : X} :
-    x ∈ component p ↔ edist x p < ⊤ := by
-  rw [← SetLike.mem_coe, coe_component, Metric.mem_eball]
-
-private theorem mem_component {X : Type*} [EMetricSpace X] (p : X) : p ∈ component p :=
-  mem_component_iff.2 (by simp)
-
-/-- The metric of a finite-distance component. It is built with `EMetricSpace.toMetricSpace`
-rather than taken from `TauCeti.instMetricSpaceEBallTop`, so that its topology unfolds reducibly
-to the subtype topology carrying the charts of the open subset. -/
-private instance {X : Type*} [EMetricSpace X] (p : X) : MetricSpace (component p) :=
-  EMetricSpace.toMetricSpace fun x y ↦ ((edist_triangle_right (x : X) y p).trans_lt
-    (ENNReal.add_lt_top.2
-      ⟨mem_component_iff.1 x.property, mem_component_iff.1 y.property⟩)).ne
-
-/-- A finite-distance component of a complete space is complete. -/
-private instance {X : Type*} [EMetricSpace X] [CompleteSpace X] (p : X) :
-    CompleteSpace (component p) :=
-  -- The subtype of `component p` is that of `Metric.eball p ∞` (`coe_component`).
-  TauCeti.instCompleteSpaceEBallTop p
-
-variable
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [EMetricSpace M] [ChartedSpace H M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-
-/-- The distance of a finite-distance component is its own Riemannian distance. -/
-private instance (p : M) : IsRiemannianManifold I (component p) := by
-  refine ⟨fun x y ↦ ((component p).riemannianEDist_open_eq_edist_of_eball_subset x y ?_
-    (edist_lt_top x y)).symm⟩
-  rw [coe_component, TauCeti.eball_top_eq_of_edist_ne_top (mem_component_iff.1 x.property).ne]
-
-variable {N : Type*} [EMetricSpace N] {f : M → N}
-
-/-- A distance-preserving map restricts to the finite-distance components of `p` and `f p`. -/
-private def componentMap (hf : Isometry f) (p : M) : component p → component (f p) :=
-  fun x ↦ ⟨f x, by rw [mem_component_iff, hf.edist_eq]; exact mem_component_iff.1 x.property⟩
-
-@[simp]
-private theorem coe_componentMap (hf : Isometry f) (p : M) (x : component p) :
-    (componentMap hf p x : N) = f x :=
-  rfl
-
-private theorem val_comp_componentMap (hf : Isometry f) (p : M) :
-    Subtype.val ∘ componentMap hf p = f ∘ Subtype.val :=
-  funext (coe_componentMap hf p)
-
-/-- The restriction of a distance-preserving map to finite-distance components preserves
-distances. -/
-private theorem isometry_componentMap (hf : Isometry f) (p : M) :
-    Isometry (componentMap hf p) :=
-  fun x y ↦ by simp only [Subtype.edist_eq, coe_componentMap, hf.edist_eq]
-
-end Isometry
-
-end Component
-
 /-! ### Palais's smoothness theorem for extended distances -/
 
 section CompleteTargetEMetric
@@ -422,10 +339,14 @@ Riemannian distances, and the target is complete; no connectedness, completeness
 surjectivity is needed on the source. -/
 theorem contMDiff (hf : Isometry f) : ContMDiff I J ∞ f := by
   intro p
-  have h : ContMDiffAt I J ∞ (Subtype.val ∘ componentMap hf p)
-      (⟨p, mem_component p⟩ : component p) :=
-    (contMDiff_subtypeVal.comp (isometry_componentMap hf p).contMDiff_of_metricSpace) _
-  rw [val_comp_componentMap] at h
+  -- Restrict `f` to the finite-distance components of `p` and `f p`, open submanifolds with
+  -- finite distances (`TauCeti.eballTopOpens`).
+  let g : TauCeti.eballTopOpens p → TauCeti.eballTopOpens (f p) :=
+    (hf.mapsTo_eball p ∞).restrict _ _ _
+  have h : ContMDiffAt I J ∞ (Subtype.val ∘ g)
+      (⟨p, Metric.mem_eball_self ENNReal.zero_lt_top⟩ : TauCeti.eballTopOpens p) :=
+    (contMDiff_subtypeVal.comp (hf.mapsToRestrict _).contMDiff_of_metricSpace) _
+  rw [show Subtype.val ∘ g = f ∘ Subtype.val from Set.MapsTo.restrict_commutes ..] at h
   exact contMDiffAt_subtype_iff.1 h
 
 /-- **A distance-preserving map preserves the Riemannian metric.** The differential of a map
