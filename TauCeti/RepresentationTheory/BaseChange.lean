@@ -146,6 +146,12 @@ theorem baseChange_comp {H : Type*} [Monoid H]
     baseChange A (ρ.comp φ) = (baseChange A ρ).comp φ := by
   simp only [baseChange, MonoidHom.comp_assoc]
 
+/-- Extension of scalars can only enlarge the kernel. -/
+theorem ker_le_ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra R A]
+    (ρ : Representation R G V) : ρ.ker ≤ (baseChange A ρ).ker := fun g hg ↦ by
+  rw [MonoidHom.mem_ker] at hg ⊢
+  simp [baseChange_apply, hg, Module.End.one_eq_id]
+
 end BaseChange
 
 section Invariants
