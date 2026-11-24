@@ -116,15 +116,15 @@ theorem stalkPrecomp_assoc_bijective (p : (E × ℂ) × ℂ) :
 
 /-- The associator `((b, x), y) ↦ (b, x, y)` carries the local equation of `N_s` in the
 coordinates of `OffNodeChart` to the node equation in the coordinates of `Node.NormalForm`. -/
-theorem stalkPrecomp_assoc_smoothingEquation (b : E)
+theorem stalkPrecomp_assoc_smoothingEquation (b : E) (x y : ℂ)
     (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b) :
     stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) (fun z ↦ (z.1.1, z.1.2, z.2))
-        (contMDiff_iff_contDiff.mpr (by fun_prop)) ((b, 0), 0)
-        (smoothingEquation (b, 0, 0) s) = nodeEquation b 0 0 s := by
+        (contMDiff_iff_contDiff.mpr (by fun_prop)) ((b, x), y)
+        (smoothingEquation (b, x, y) s) = nodeEquation b x y s := by
   obtain ⟨S, -, hS⟩ := exists_toFilterGerm_eq b s
-  apply toFilterGerm_nhds_injective ((b, (0 : ℂ)), (0 : ℂ))
+  apply toFilterGerm_nhds_injective ((b, x), y)
   rw [toFilterGerm_stalkPrecomp, toFilterGerm_smoothingEquation (S := S) (hS _ le_rfl),
-    toFilterGerm_nodeEquation b 0 0 s (hS _ le_rfl), Germ.coe_compTendsto]
+    toFilterGerm_nodeEquation b x y s (hS _ le_rfl), Germ.coe_compTendsto]
   -- Both sides are the germ of `((b, x), y) ↦ x * y - S b`.
   rfl
 

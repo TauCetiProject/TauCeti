@@ -70,7 +70,7 @@ private theorem flat_quotientMk_comp_stalkPrecomp_smoothingEquation_node (b : E)
     (Ideal.span {nodeEquation b 0 0 s})
     (RingEquiv.ofBijective _ (stalkPrecomp_assoc_bijective ((b, 0), 0))) (by
       rw [Ideal.map_span, Set.image_singleton]
-      exact congrArg (Ideal.span {·}) (stalkPrecomp_assoc_smoothingEquation b s).symm)
+      exact congrArg (Ideal.span {·}) (stalkPrecomp_assoc_smoothingEquation b 0 0 s).symm)
   have key : Q.toRingHom.comp ((Ideal.Quotient.mk _).comp
       (stalkPrecomp 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ) Prod.fst
         (contMDiff_iff_contDiff.mpr contDiff_fst) (b, 0, 0))) =
