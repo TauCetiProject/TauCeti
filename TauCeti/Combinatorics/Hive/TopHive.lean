@@ -25,8 +25,8 @@ hive. Hence `hiveCount (productBoundary λ μ (λ + μ)) = 1`.
 ## Main results
 
 * `TauCeti.Hive.boundary_topHive`: the boundary of the top hive.
-* `TauCeti.Hive.eq_topHive_of_boundary`, `TauCeti.Hive.hiveCount_productBoundary_add`: the top hive
-  is the only integer hive with its boundary.
+* `TauCeti.Hive.eq_topHive_of_productBoundary`, `TauCeti.Hive.hiveCount_productBoundary_add`: the
+  top hive is the only integer hive with its boundary.
 
 ## References
 
@@ -68,7 +68,7 @@ theorem isGTCompletable_highest (lam μ : DominantWeight n) :
 /-- The **top hive** of `(λ, μ)`: the hive of the highest-weight pattern of `μ` over `λ`, with value
 `λ₁ + ⋯ + λ_{y+z} + μ₁ + ⋯ + μ_z` at `(x, y, z)` (`TauCeti.Hive.topHive_apply`). Its boundary is
 `(λ, μ, (λ + μ)*)` (`TauCeti.Hive.boundary_topHive`), and it is the only integer hive with that
-boundary (`TauCeti.Hive.eq_topHive_of_boundary`). -/
+boundary (`TauCeti.Hive.eq_topHive_of_productBoundary`). -/
 def topHive (lam μ : DominantWeight n) : IntegerHive n :=
   ofGTPattern lam (GTPattern.highest μ) (isGTCompletable_highest lam μ)
 
@@ -94,7 +94,7 @@ theorem topHive_add (lam₁ lam₂ μ₁ μ₂ : DominantWeight n) :
 
 /-- **Uniqueness of the top hive**: every integer hive with boundary `(λ, μ, (λ + μ)*)` is
 `TauCeti.Hive.topHive λ μ`. -/
-theorem eq_topHive_of_boundary {lam μ : DominantWeight n} {h : IntegerHive n}
+theorem eq_topHive_of_productBoundary {lam μ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ (lam + μ)) : h = topHive lam μ := by
   refine eq_of_boundary_zero_eq_of_toGTPattern_eq
     (by rw [hb, topHive, boundary_ofGTPattern_zero, productBoundary_zero]) ?_
@@ -107,7 +107,7 @@ is `TauCeti.Hive.topHive λ μ`. -/
 instance (lam μ : DominantWeight n) :
     Unique (FixedIntegerHive (productBoundary lam μ (lam + μ))) where
   default := ⟨topHive lam μ, boundary_topHive lam μ⟩
-  uniq h := Subtype.ext (eq_topHive_of_boundary h.property)
+  uniq h := Subtype.ext (eq_topHive_of_productBoundary h.property)
 
 /-- **The top coefficient is one**: the hive count of `(λ, μ, (λ + μ)*)` is `1`. For partitions
 `λ` and `μ` this says that `V_{λ + μ}` occurs exactly once in `V_λ ⊗ V_μ`. -/
@@ -117,7 +117,7 @@ instance (lam μ : DominantWeight n) :
 
 /-- For `λ = μ = (1, 0)`, the top hive is the hive `exampleTwo` of the output `(2, 0)`. -/
 theorem topHive_two_std_std : topHive ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ = exampleTwo :=
-  (eq_topHive_of_boundary (boundary_exampleTwo.trans (by
+  (eq_topHive_of_productBoundary (boundary_exampleTwo.trans (by
     congr 1; ext i; fin_cases i <;> rfl))).symm
 
 end TauCeti.Hive

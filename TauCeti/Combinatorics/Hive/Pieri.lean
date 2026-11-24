@@ -208,19 +208,19 @@ theorem le_and_le_add_one_of_productBoundary_of_zero_le_le_one {h : IntegerHive 
     (hb : h.boundary = productBoundary lam μ γ) (hμ : ∀ i, 0 ≤ μ.val i ∧ μ.val i ≤ 1) (k : Fin n) :
     lam.val k ≤ γ.val k ∧ γ.val k ≤ lam.val k + 1 := by
   have := k.isLt
-  have hk := h.toGTPattern.rowWeight_mem_Icc k
-  rw [topRow_toGTPattern_of_productBoundary hb, rowWeight_toGTPattern_of_productBoundary hb] at hk
+  have hk := sub_mem_Icc_of_productBoundary hb k
   have := hμ ⟨n - 1, by omega⟩
   have := hμ ⟨0, by omega⟩
-  simp only [Set.mem_Icc, Pi.sub_apply] at hk
+  simp only [Set.mem_Icc] at hk
   omega
 
 /-- **Uniqueness for vertical Pieri**: an integer hive with boundary `(λ, μ, γ*)` for a `0`/`1`
-weight `μ` is `TauCeti.Hive.verticalPieriHive λ γ _`. Its difference pattern has entries in
-`{0, 1}`, so it is a row-subset pattern, and its weight `γ - λ` identifies the subset. -/
+weight `μ` is `TauCeti.Hive.verticalPieriHive λ γ _`. -/
 theorem eq_verticalPieriHive_of_productBoundary_of_zero_le_le_one {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) (hμ : ∀ i, 0 ≤ μ.val i ∧ μ.val i ≤ 1) :
     h = verticalPieriHive lam γ (le_and_le_add_one_of_productBoundary_of_zero_le_le_one hb hμ) := by
+  -- The difference pattern has entries in `{0, 1}`, so it is a row-subset pattern, and its weight
+  -- `γ - λ` identifies the subset.
   have h01 (i j : ℕ) : h.toGTPattern i j = 0 ∨ h.toGTPattern i j = 1 := by
     by_cases hij : i < j ∧ j ≤ n
     · have hk := h.toGTPattern.entry_mem_Icc hij.1 hij.2
@@ -309,19 +309,30 @@ end VerticalPieri
 
 section Checks
 
-/-- Rank-`2` vertical Pieri checks with `μ = (1, 0)`: for `λ = (2, 0)` the outputs `(3, 0)` and
-`(2, 1)` each occur once; for `λ = (1, 1)` the output `(2, 1)` occurs once, while `(2, 0)`, whose
-difference `(1, -1)` with `λ` is not a `0`/`1` vector, does not occur. -/
-theorem hiveCount_two_verticalPieri_checks :
-    hiveCount (productBoundary ⟨![2, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![3, 0], by decide⟩) = 1
-      ∧ hiveCount
-        (productBoundary ⟨![2, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 1], by decide⟩) = 1
-      ∧ hiveCount
-        (productBoundary ⟨![1, 1], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 1], by decide⟩) = 1
-      ∧ hiveCount
-        (productBoundary ⟨![1, 1], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 0], by decide⟩) = 0 := by
-  simp only [hiveCount_productBoundary_of_zero_le_le_one (μ := ⟨![1, 0], by decide⟩) (by decide)]
-  decide
+/-- Rank-`2` vertical Pieri check `c^{(3, 0)}_{(2, 0), (1, 0)} = 1`. -/
+theorem hiveCount_two_sym_std_three_zero :
+    hiveCount
+      (productBoundary ⟨![2, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![3, 0], by decide⟩) = 1 := by
+  rw [hiveCount_productBoundary_of_zero_le_le_one (by decide)]; decide
+
+/-- Rank-`2` vertical Pieri check `c^{(2, 1)}_{(2, 0), (1, 0)} = 1`. -/
+theorem hiveCount_two_sym_std_two_one :
+    hiveCount
+      (productBoundary ⟨![2, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 1], by decide⟩) = 1 := by
+  rw [hiveCount_productBoundary_of_zero_le_le_one (by decide)]; decide
+
+/-- Rank-`2` vertical Pieri check `c^{(2, 1)}_{(1, 1), (1, 0)} = 1`. -/
+theorem hiveCount_two_det_std_two_one :
+    hiveCount
+      (productBoundary ⟨![1, 1], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 1], by decide⟩) = 1 := by
+  rw [hiveCount_productBoundary_of_zero_le_le_one (by decide)]; decide
+
+/-- Rank-`2` vertical Pieri exclusion `c^{(2, 0)}_{(1, 1), (1, 0)} = 0`: the difference `(1, -1)`
+of `(2, 0)` with `λ = (1, 1)` is not a `0`/`1` vector. -/
+theorem hiveCount_two_det_std_two_zero :
+    hiveCount
+      (productBoundary ⟨![1, 1], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![2, 0], by decide⟩) = 0 := by
+  rw [hiveCount_productBoundary_of_zero_le_le_one (by decide)]; decide
 
 /-- For `λ = (1, 1)`, of the two `0`/`1` candidates `λ + (1, 0) = (2, 1)` and `λ + (0, 1) = (1, 2)`
 for `k = 1`, the dominance criterion rejects `(1, 2)`. -/

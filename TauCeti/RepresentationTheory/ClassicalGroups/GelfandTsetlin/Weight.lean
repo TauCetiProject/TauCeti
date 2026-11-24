@@ -247,8 +247,8 @@ theorem rowWeight_nonneg {P : GTPattern n} (hP : 0 ≤ P) (r : Fin n) : 0 ≤ P.
 /-! ### The highest-weight pattern -/
 
 /-- The **highest-weight pattern** of a dominant weight `μ`: every row is an initial segment of
-`μ`, that is `λᵢ,ⱼ = μᵢ` for `i < j ≤ n`. Its top row and its weight are both `μ`, and it is the
-only pattern with this property (`TauCeti.GTPattern.eq_highest_iff`). -/
+`μ`, that is `highest μ i j = μ i` for `i < j ≤ n`. Its top row and its weight are both `μ`, and it
+is the only pattern with this property (`TauCeti.GTPattern.eq_highest_iff`). -/
 def highest (μ : DominantWeight n) : GTPattern n where
   entry i j := if h : i < j ∧ j ≤ n then μ.val ⟨i, by omega⟩ else 0
   zeros' h := dite_eq_right (by omega)
@@ -281,11 +281,12 @@ theorem rowSum_highest (μ : DominantWeight n) {j : ℕ} (hj : j ≤ n) :
   rw [rowWeight_eq_rowSum_sub, rowSum_highest μ r.isLt, rowSum_highest μ r.isLt.le,
     TauCeti.prefixSum_succ r.isLt, add_sub_cancel_left]
 
-/-- **A pattern whose weight is its top row is the highest-weight pattern**: each row sum is then
-the matching prefix sum of the top row, while each entry is at most the top-row entry above it,
-so every row is an initial segment of the top row. -/
+/-- **A pattern whose weight is its top row is the highest-weight pattern**: `P` is the
+highest-weight pattern of `μ` exactly when its top row and its weight are both `μ`. -/
 theorem eq_highest_iff {P : GTPattern n} {μ : DominantWeight n} :
     P = highest μ ↔ P.topRow = μ.val ∧ P.rowWeight = μ.val := by
+  -- Each row sum is the matching prefix sum of the top row, while each entry is at most the
+  -- top-row entry above it, so every row is an initial segment of the top row.
   refine ⟨fun h => h ▸ ⟨topRow_highest μ, rowWeight_highest μ⟩, fun ⟨htop, hw⟩ => ?_⟩
   have hrow {j : ℕ} (hj : j ≤ n) : ∀ k ∈ Finset.range j, P k j = P k n :=
     (Finset.sum_eq_sum_iff_of_le fun k hk =>
