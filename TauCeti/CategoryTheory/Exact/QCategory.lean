@@ -125,7 +125,6 @@ theorem homMk_eq_homMk_iff {X Y M M' : C} {p : M ⟶ X} {i : M ⟶ Y} {p' : M' �
     exact ⟨Span.SpanBicat.mkIso₂ e hl hr⟩
 
 /-- The identity of `Q(E)` is represented by the span of identities. -/
-@[simp]
 theorem homMk_id_id (X : C) :
     homMk (𝟙 X) (𝟙 X) (E.isDeflation_id X) (E.isInflation_id X) = 𝟙 (mk X : E.QCategory) :=
   Bicategory.HomotopyCategory.homMk_id _
@@ -157,6 +156,19 @@ noncomputable def ofInflation {X Y : C} (i : X ⟶ Y) (hi : E.IsInflation i) :
 noncomputable def ofDeflation {X Y : C} (p : X ⟶ Y) (hp : E.IsDeflation p) :
     (mk Y : E.QCategory) ⟶ mk X :=
   homMk p (𝟙 X) hp (E.isInflation_id X)
+
+/-- A span whose deflation leg is an identity represents the morphism of its inflation leg. -/
+@[simp]
+theorem homMk_id_left {X Y : C} (i : X ⟶ Y) (hp : E.IsDeflation (𝟙 X)) (hi : E.IsInflation i) :
+    homMk (𝟙 X) i hp hi = ofInflation i hi :=
+  (rfl)
+
+/-- A span whose inflation leg is an identity represents the reversed morphism of its deflation
+leg. -/
+@[simp]
+theorem homMk_id_right {X Y : C} (p : X ⟶ Y) (hp : E.IsDeflation p) (hi : E.IsInflation (𝟙 X)) :
+    homMk p (𝟙 X) hp hi = ofDeflation p hp :=
+  (rfl)
 
 @[simp]
 theorem ofInflation_id (X : C) : ofInflation (𝟙 X) (E.isInflation_id X) = 𝟙 (mk X) :=
@@ -430,6 +442,22 @@ theorem fromZeroEquiv_homMk {Y M : C} (p : M ⟶ 0) (i : M ⟶ Y) (hp : E.IsDefl
       Subobject.mk i := by
   dsimp only [fromZeroEquiv, Equiv.coe_fn_mk]
   rw [homMk, Bicategory.HomotopyCategory.homEquiv_homMk, Quotient.lift_mk]
+
+/-- The admissible subobject attached to the inflation `i : 0 ↣ Y` is the subobject represented
+by `i`. -/
+@[simp]
+theorem fromZeroEquiv_ofInflation {Y : C} (i : 0 ⟶ Y) (hi : E.IsInflation i) :
+    (fromZeroEquiv Y (ofInflation i hi) : Subobject Y) =
+      haveI := ConflationClass.IsInflation.mono hi
+      Subobject.mk i :=
+  fromZeroEquiv_homMk _ _ _ _
+
+/-- The admissible subobject attached to the reversed deflation `X ↠ 0` is the whole
+subobject of `X`. -/
+@[simp]
+theorem fromZeroEquiv_ofDeflation {X : C} (p : X ⟶ 0) (hp : E.IsDeflation p) :
+    (fromZeroEquiv X (ofDeflation p hp) : Subobject X) = Subobject.mk (𝟙 X) :=
+  fromZeroEquiv_homMk _ _ _ _
 
 @[simp]
 theorem fromZeroEquiv_symm_apply {Y : C} (P : {P : Subobject Y // E.IsInflation P.arrow}) :
