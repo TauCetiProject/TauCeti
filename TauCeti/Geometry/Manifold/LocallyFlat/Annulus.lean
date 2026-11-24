@@ -9,9 +9,9 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.Normed.Module.FilledHull
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
-import Mathlib.Analysis.Normed.Module.Span
 import Mathlib.Analysis.SpecialFunctions.Exp
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 
 /-!
@@ -299,20 +299,15 @@ theorem coboundAnnulus_of_range_eq_sphere {f g : sphere (0 : E) 1 → E}
   have hcont : Continuous (roundAnnulusMap c c' r R) := by
     unfold roundAnnulusMap
     fun_prop
-  -- a translated rescaled unit sphere is a round sphere
-  have hsph : ∀ (a : E) {ρ : ℝ}, 0 < ρ →
-      range (fun u : sphere (0 : E) 1 => a + ρ • (u : E)) = sphere a ρ := fun a ρ hρ => by
-    rw [range_comp' (a + ·) (fun u : sphere (0 : E) 1 => ρ • (u : E)), range_smul_coe_sphere hρ]
-    simp
   refine ⟨roundAnnulusMap c c' r R,
     ⟨(antilipschitzWith_roundAnnulusMap hr hcR).isInducing hcont,
       injective_roundAnnulusMap hr hcR⟩, ?_, ?_, ?_⟩
   · rw [hf, hg, filledHull_sphere _ hR.le, filledHull_sphere _ hr.le]
     exact range_roundAnnulusMap hr hcR
-  · rw [hf, ← hsph c' hR, ← image_univ]
+  · rw [hf, ← range_add_smul_coe_sphere c' hR, ← image_univ]
     ext y
     simp [roundAnnulusMap]
-  · rw [hg, ← hsph c hr, ← image_univ]
+  · rw [hg, ← range_add_smul_coe_sphere c hr, ← image_univ]
     ext y
     simp [roundAnnulusMap, add_sub_cancel]
 
@@ -335,17 +330,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- In a line, identified with `ℝ` by `φ`, the image of any map of the unit sphere `{±φ 1}` is a
 round sphere, of positive radius when the map is injective. -/
-private theorem exists_range_eq_sphere (φ : ℝ ≃ₗᵢ[ℝ] E) (f : sphere (0 : E) 1 → E) :
+private theorem exists_range_eq_sphere (hE : Module.finrank ℝ E = 1) (φ : ℝ ≃ₗᵢ[ℝ] E)
+    (f : sphere (0 : E) 1 → E) :
     ∃ μ ρ : ℝ, 0 ≤ ρ ∧ (Function.Injective f → 0 < ρ) ∧ range f = sphere (φ μ) ρ := by
   have hu : φ 1 ∈ sphere (0 : E) 1 := by simp
   have hv : φ (-1) ∈ sphere (0 : E) 1 := by simp
-  have hsph : ∀ x : sphere (0 : E) 1, x = ⟨φ 1, hu⟩ ∨ x = ⟨φ (-1), hv⟩ := by
-    intro x
-    have hx : |φ.symm x| = 1 := by
-      rw [← Real.norm_eq_abs, φ.symm.norm_map, norm_eq_of_mem_sphere x]
-    rcases (abs_eq zero_le_one).1 hx with h | h
-    · exact .inl (Subtype.ext ((φ.apply_symm_apply _).symm.trans (congrArg φ h)))
-    · exact .inr (Subtype.ext ((φ.apply_symm_apply _).symm.trans (congrArg φ h)))
+  have hsph : ∀ x : sphere (0 : E) 1, x = ⟨φ 1, hu⟩ ∨ x = ⟨φ (-1), hv⟩ := fun x => by
+    simpa [Subtype.ext_iff] using
+      eq_or_eq_neg_of_norm_eq_of_finrank_eq_one hE (x := (x : E)) (y := φ 1) (by simp)
   set α := φ.symm (f ⟨φ 1, hu⟩)
   set β := φ.symm (f ⟨φ (-1), hv⟩)
   refine ⟨(α + β) / 2, |α - β| / 2, by positivity, fun hf => ?_, ?_⟩
@@ -386,14 +378,9 @@ theorem coboundAnnulus_of_finrank_eq_one (hE : Module.finrank ℝ E = 1) {f g : 
     (hg : Function.Injective g) (hfg : range g ⊆ filledHull (range f) \ range f) :
     CoboundAnnulus f g := by
   -- identify the line with `ℝ` isometrically
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
-  obtain ⟨v, hv⟩ := exists_ne (0 : E)
-  have hspan : Submodule.span ℝ {‖v‖⁻¹ • v} = ⊤ :=
-    (Submodule.span_singleton_eq_top_iff ℝ _).2 (exists_smul_eq_of_finrank_eq_one hE (by simp [hv]))
-  let φ : ℝ ≃ₗᵢ[ℝ] E := (LinearIsometryEquiv.toSpanUnitSingleton (‖v‖⁻¹ • v)
-    (by simp [norm_smul, hv])).trans (LinearIsometryEquiv.ofTop _ _ hspan)
-  obtain ⟨μ, R, hR, -, hfR⟩ := exists_range_eq_sphere φ f
-  obtain ⟨γ, r, -, hr, hgr⟩ := exists_range_eq_sphere φ g
+  obtain ⟨φ⟩ := nonempty_linearIsometryEquiv_of_finrank_eq_one hE
+  obtain ⟨μ, R, hR, -, hfR⟩ := exists_range_eq_sphere hE φ f
+  obtain ⟨γ, r, -, hr, hgr⟩ := exists_range_eq_sphere hE φ g
   have hr := hr hg
   refine coboundAnnulus_of_range_eq_sphere hfR hgr hr ?_
   rw [hfR, hgr, filledHull_sphere _ hR] at hfg
