@@ -53,8 +53,8 @@ inside the ball carry no data. The size of the derivatives is measured by the op
   quadratic form `Σᵢⱼ g_ij(x) vᵢ vⱼ` of the pulled-back metric coefficients.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image_of_subset`: an end maps open subsets of the
   exterior of its ball to open subsets of `M`.
-* `TauCeti.IsAsymptoticallyEuclideanEnd.toPartialDiffeomorph_symm_apply`: the inverse of an end,
-  as a partial diffeomorphism, undoes the end on the exterior of its ball.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.toPartialDiffeomorph_symm_apply_apply`: the inverse of an
+  end, as a partial diffeomorphism, undoes the end on the exterior of its ball.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.eventually_notMem_image_compl_closedBall`: every point of
   `M` lies outside the image of the exterior of all large balls.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image` and
@@ -317,7 +317,7 @@ theorem coe_toPartialDiffeomorph [IsManifold I ∞ M]
 
 /-- The inverse of an end, as a partial diffeomorphism, undoes the end on the exterior of its
 ball. -/
-theorem toPartialDiffeomorph_symm_apply [IsManifold I ∞ M]
+theorem toPartialDiffeomorph_symm_apply_apply [IsManifold I ∞ M]
     (h : IsAsymptoticallyEuclideanEnd I t R φ) {y : EuclideanSpace ℝ (Fin n)}
     (hy : y ∈ (closedBall 0 R)ᶜ) : h.toPartialDiffeomorph.symm (φ y) = y := by
   simpa using h.toPartialDiffeomorph.left_inv (x := y) (by simpa using hy)

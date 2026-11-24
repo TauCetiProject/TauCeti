@@ -165,7 +165,7 @@ private theorem mem_image_annulus_of_pathELength_lt (h : IsAsymptoticallyEuclide
   set ψ := h.toPartialDiffeomorph.symm
   have hmem {r} (hr : r ∈ Icc 0 s) : ψ (γ r) ∈ S ∧ φ (ψ (γ r)) = γ r := by
     obtain ⟨y, hy, hyr⟩ := hsub hr
-    rw [← hyr, h.toPartialDiffeomorph_symm_apply (hSR hy)]
+    rw [← hyr, h.toPartialDiffeomorph_symm_apply_apply (hSR hy)]
     exact ⟨hy, rfl⟩
   have hy : ContDiffOn ℝ 1 (ψ ∘ γ) (Icc 0 s) :=
     contMDiffOn_iff_contDiffOn.1 ((ψ.contMDiffOn.of_le (by simp)).comp hγ fun r hr ↦ by
@@ -178,7 +178,8 @@ private theorem mem_image_annulus_of_pathELength_lt (h : IsAsymptoticallyEuclide
       (hSR (hmem hr).1))).mdifferentiableAt (by simp)
   have hlen := Manifold.ofReal_mul_eNorm_sub_le_pathELength_comp hs hy hdiff
     fun r hr ↦ hc _ (hmem hr).1
-  have hx : ψ (φ x) = x := h.toPartialDiffeomorph_symm_apply (by simpa using hb.trans hbx)
+  have hx : ψ (φ x) = x :=
+    h.toPartialDiffeomorph_symm_apply_apply (by simpa using hb.trans hbx)
   rw [pathELength_congr (γ := φ ∘ ψ ∘ γ) (γ' := γ) fun r hr ↦ (hmem hr).2,
     Function.comp_apply, Function.comp_apply, hγ0, hx] at hlen
   -- The coordinates have moved by less than `‖x‖ - b`.
