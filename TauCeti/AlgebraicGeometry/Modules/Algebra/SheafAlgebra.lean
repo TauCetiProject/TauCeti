@@ -105,6 +105,15 @@ lemma ofQuasicoherentAlgebra_obj_obj_X (A : QuasicoherentAlgebra X) :
     ((ofQuasicoherentAlgebra X).obj A).obj.X = A.obj.X :=
   (rfl)
 
+/-- The underlying morphism of modules of the image of a morphism of commutative algebras is
+the original one, transported along `ofQuasicoherentAlgebra_obj_obj_X`. -/
+@[simp]
+lemma ofQuasicoherentAlgebra_map_hom_hom {A B : QuasicoherentAlgebra X} (f : A ⟶ B) :
+    ((ofQuasicoherentAlgebra X).map f).hom.hom =
+      eqToHom (ofQuasicoherentAlgebra_obj_obj_X A) ≫ f.hom.hom.hom ≫
+        eqToHom (ofQuasicoherentAlgebra_obj_obj_X B).symm :=
+  ((Category.id_comp (obj := X.Modules) _).trans (Category.comp_id (obj := X.Modules) _)).symm
+
 /-- The functor from commutative quasi-coherent algebras is fully faithful: a morphism of sheaves
 of algebras between commutative ones is a morphism of commutative algebras. -/
 def fullyFaithfulOfQuasicoherentAlgebra : (ofQuasicoherentAlgebra X).FullyFaithful :=
@@ -187,6 +196,12 @@ private def ofMonCompToMonIso : ofMon X ⋙ toMon X ≅ 𝟭 (Mon (Quasicoherent
     intro A B f
     apply Mon.Hom.ext
     rfl)
+
+/-- The components of `ofMonCompToMonIso` are identities. -/
+@[simp]
+private lemma ofMonCompToMonIso_hom_app (A : Mon (QuasicoherentSheaf X)) :
+    (ofMonCompToMonIso X).hom.app A = 𝟙 _ :=
+  Mon.Hom.ext rfl
 
 /-- Converting a sheaf of algebras to a monoid in quasi-coherent sheaves and back is the
 identity. -/
@@ -310,17 +325,14 @@ theorem pullbackComp_hom_app_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : SheafAlgeb
         (Scheme.Modules.pullbackComp f g).hom.app A.obj.X ≫
           eqToHom (pullback_obj_X (f ≫ g) A).symm := by
   refine Eq.trans ?_ (QuasicoherentSheaf.pullbackComp_hom_app_hom f g ⟨A.obj.X, A.property⟩)
-  -- The component of `ofMonCompToMonIso` is the identity, and the remaining composite with the
-  -- identity components of the conversions reduces definitionally.
-  have h : (ofMonCompToMonIso Y).hom.app
-      ((QuasicoherentSheaf.pullback g).mapMon.obj ((toMon Z).obj A)) = 𝟙 _ :=
-    Mon.Hom.ext rfl
   dsimp only [pullbackComp]
   -- The intermediate functors of `pullbackComp` agree with those of `Iso.trans` only up to
-  -- unfolding `Functor.comp`, so the composite is split with `erw`.
+  -- unfolding `Functor.comp`, so the composite is split with `erw`. After the identity component
+  -- of `ofMonCompToMonIso` is removed, the composite with the identity components of the
+  -- conversions reduces definitionally.
   erw [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
-    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, h, CategoryTheory.Functor.map_id,
-    Category.id_comp]
+    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, ofMonCompToMonIso_hom_app,
+    CategoryTheory.Functor.map_id, Category.id_comp]
   rfl
 
 /-- The inverse composition comparison of algebra pullback is Mathlib's inverse composition
@@ -330,17 +342,12 @@ theorem pullbackComp_inv_app_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : SheafAlgeb
     ((pullbackComp f g).inv.app A).hom.hom =
       eqToHom (pullback_obj_X (f ≫ g) A) ≫ (Scheme.Modules.pullbackComp f g).inv.app A.obj.X ≫
         eqToHom ((pullback_obj_X f _).trans (congrArg _ (pullback_obj_X g A))).symm := by
-  refine Eq.trans ?_ (QuasicoherentSheaf.pullbackComp_inv_app_hom f g ⟨A.obj.X, A.property⟩)
-  have h : (ofMonCompToMonIso Y).inv.app
-      ((QuasicoherentSheaf.pullback g).mapMon.obj ((toMon Z).obj A)) = 𝟙 _ :=
-    Mon.Hom.ext rfl
-  dsimp only [pullbackComp]
-  -- As in `pullbackComp_hom_app_hom_hom`.
-  erw [Iso.trans_inv, NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
-    Functor.isoWhiskerRight_inv, Functor.whiskerRight_app, Functor.isoWhiskerLeft_inv,
-    Functor.whiskerLeft_app, Functor.isoWhiskerRight_inv, Functor.whiskerRight_app, h,
-    CategoryTheory.Functor.map_id, Category.comp_id]
-  rfl
+  -- The inverse of the underlying module isomorphism, computed from the forward component.
+  refine Iso.inv_ext (f := (ObjectProperty.ι _ ⋙ Mon.forget X.Modules).mapIso
+    ((pullbackComp f g).app A)) ?_
+  change ((pullbackComp f g).hom.app A).hom.hom ≫ _ = 𝟙 _
+  rw [pullbackComp_hom_app_hom_hom]
+  simp
 
 end SheafAlgebra
 

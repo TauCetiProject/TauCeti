@@ -77,15 +77,17 @@ def sectionsAlgHom {A B : CommMon X.Modules}
 lemma sectionsAlgHom_apply {A B : CommMon X.Modules}
     (f : A ⟶ B) (U : X.Opens) (x : Γ(A.X, U)) :
     CommMon.sectionsAlgHom f U x = f.hom.hom.app U x :=
-  (rfl)
+  Mon.sectionsAlgHom_apply f.hom U x
 
 /-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras commutes with
 restriction of sections. -/
 lemma sectionsAlgHom_restrictSections {A B : CommMon X.Modules}
     (f : A ⟶ B) {U V : X.Opens} (i : V ⟶ U) (x : Γ(A.X, U)) :
     CommMon.sectionsAlgHom f V (A.restrictSections i x) =
-      B.restrictSections i (CommMon.sectionsAlgHom f U x) :=
-  Mon.sectionsAlgHom_restrictSections f.hom i x
+      B.restrictSections i (CommMon.sectionsAlgHom f U x) := by
+  rw [CommMon.sectionsAlgHom_apply, CommMon.sectionsAlgHom_apply, CommMon.restrictSections_apply]
+  exact (PresheafOfModules.naturality_apply f.hom.hom.val i.op x).trans
+    (B.restrictSections_apply i _).symm
 
 /-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
 sections. -/
@@ -96,14 +98,14 @@ lemma hom_ext_of_sectionsAlgHom {A B : CommMon X.Modules}
 @[simp]
 lemma sectionsAlgHom_id (A : CommMon X.Modules) (U : X.Opens) :
     CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) :=
-  (rfl)
+  Mon.sectionsAlgHom_id A.toMon U
 
 @[simp]
 lemma sectionsAlgHom_comp {A B C : CommMon X.Modules}
     (f : A ⟶ B) (g : B ⟶ C) (U : X.Opens) :
     CommMon.sectionsAlgHom (f ≫ g) U =
       (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) :=
-  (rfl)
+  Mon.sectionsAlgHom_comp f.hom g.hom U
 
 /-- The `Γ(X, U)`-algebra isomorphism of sections over `U` induced by an isomorphism of
 commutative `𝒪ₓ`-algebras: that of the underlying isomorphism of monoid objects. -/
@@ -115,13 +117,13 @@ def sectionsAlgEquiv {A B : CommMon X.Modules} (e : A ≅ B)
 lemma sectionsAlgEquiv_apply {A B : CommMon X.Modules} (e : A ≅ B)
     (U : X.Opens) (x : Γ(A.X, U)) :
     CommMon.sectionsAlgEquiv e U x = CommMon.sectionsAlgHom e.hom U x :=
-  (rfl)
+  Mon.sectionsAlgEquiv_apply ((CommMon.forget₂Mon X.Modules).mapIso e) U x
 
 @[simp]
 lemma sectionsAlgEquiv_symm_apply {A B : CommMon X.Modules}
     (e : A ≅ B) (U : X.Opens) (x : Γ(B.X, U)) :
     (CommMon.sectionsAlgEquiv e U).symm x = CommMon.sectionsAlgHom e.inv U x :=
-  (rfl)
+  Mon.sectionsAlgEquiv_symm_apply ((CommMon.forget₂Mon X.Modules).mapIso e) U x
 
 /-- A morphism of commutative sheaf algebras induces a morphism of their presheaves of rings. -/
 def sectionsPresheafMap {A B : CommMon X.Modules}
@@ -202,8 +204,7 @@ lemma homOfSectionsPresheaf_sectionsPresheafMap
       (CommMon.toSectionsPresheaf_comp_sectionsPresheafMap f) = f :=
   CommMon.hom_ext_of_sectionsAlgHom fun U ↦ AlgHom.ext fun x ↦
     (CommMon.sectionsAlgHom_apply _ U x).trans
-      ((CommMon.homOfSectionsPresheaf_hom_hom_app_apply _ _ U x).trans
-        (CommMon.sectionsAlgHom_apply f U x))
+      (CommMon.homOfSectionsPresheaf_hom_hom_app_apply _ _ U x)
 
 /-- Two morphisms into the presheaf of section rings of a commutative `𝒪ₓ`-algebra agree as soon
 as they agree on affine opens. -/

@@ -132,7 +132,6 @@ variable {A} {B C : Mon X.Modules}
 
 /-- The algebra map on sections induced by a morphism of `𝒪ₓ`-algebras. It sends each section to
 its image under the morphism and preserves the structure map from `Γ(X, U)`. -/
-@[expose]
 def _root_.CategoryTheory.Mon.sectionsAlgHom (f : A ⟶ B) (U : X.Opens) :
     Γ(A.X, U) →ₐ[Γ(X, U)] Γ(B.X, U) :=
   (ModuleCat.MonModuleEquivalenceAlgebra.functor.map
@@ -169,7 +168,6 @@ lemma _root_.CategoryTheory.Mon.sectionsAlgHom_comp (f : A ⟶ B) (g : B ⟶ C) 
 
 /-- The `Γ(X, U)`-algebra isomorphism of sections over `U` induced by an isomorphism of
 `𝒪ₓ`-algebras. -/
-@[expose]
 def _root_.CategoryTheory.Mon.sectionsAlgEquiv (e : A ≅ B) (U : X.Opens) :
     Γ(A.X, U) ≃ₐ[Γ(X, U)] Γ(B.X, U) :=
   AlgEquiv.ofAlgHom (Mon.sectionsAlgHom e.hom U) (Mon.sectionsAlgHom e.inv U)
@@ -226,7 +224,6 @@ lemma _root_.CategoryTheory.CommMon.sections_algebraMap_def (U : X.Opens) (r : �
 
 /-- Restriction of sections of a commutative `𝒪ₓ`-algebra along an inclusion of opens `V ≤ U`,
 as a ring homomorphism: that of the underlying monoid object. -/
-@[expose]
 def _root_.CategoryTheory.CommMon.restrictSections {U V : X.Opens} (i : V ⟶ U) :
     Γ(A.X, U) →+* Γ(A.X, V) :=
   A.toMon.restrictSections i
