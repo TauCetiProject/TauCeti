@@ -145,11 +145,10 @@ otherwise. -/
 private theorem finrank_dualNumberIntegerGrade (p : ℤ) :
     (Module.finrank k (dualNumberIntegerGrade k p) : ℤ) =
       (1 + T 2 : LaurentPolynomial ℤ).coeff p := by
-  rw [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, ← mul_one (T 2 : LaurentPolynomial ℤ),
-    coeff_T_mul, coeff_one, coeff_one]
+  rw [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, coeff_one, T_apply]
   rcases lt_or_ge p 0 with hp | hp
   · rw [dualNumberIntegerGrade_eq_bot_of_neg k hp, finrank_bot]
-    simp [hp.ne, show p - 2 ≠ 0 by omega]
+    simp [hp.ne, (hp.trans zero_lt_two).ne']
   obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hp
   rw [dualNumberIntegerGrade_ofNat]
   rcases eq_or_ne n 0 with rfl | h0
@@ -157,7 +156,7 @@ private theorem finrank_dualNumberIntegerGrade (p : ℤ) :
   rcases eq_or_ne n 2 with rfl | h2
   · simp [(dualNumberGradeTwoEquiv k).finrank_eq]
   rw [dualNumberGrade_eq_bot k h0 h2, finrank_bot]
-  simp [h0, show (n : ℤ) - 2 ≠ 0 by omega]
+  simpa [h0] using (Nat.cast_injective (R := ℤ)).ne h2.symm
 
 /-- **The graded Cartan matrix of the dual numbers is `1 + q²`**, with `ε` in degree two, in the
 bases `[A]` and `[S]`: the regular module has the graded composition factors `S` and `S{2}`. At

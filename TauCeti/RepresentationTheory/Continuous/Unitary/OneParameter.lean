@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Group.Unitary
-public import TauCeti.RepresentationTheory.Continuous.OneParameter
+public import TauCeti.RepresentationTheory.Continuous.OneParameter.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 
 /-!

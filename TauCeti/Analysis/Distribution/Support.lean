@@ -39,6 +39,9 @@ near the support.
 
 ## Main declarations
 
+* `Distribution.IsVanishingOn.zero`, `Distribution.IsVanishingOn.neg`,
+  `Distribution.IsVanishingOn.add`, `Distribution.IsVanishingOn.sub`,
+  `Distribution.IsVanishingOn.smul`: maps vanishing on a set form a subspace.
 * `Distribution.dsupport_zero`, `Distribution.dsupport_neg`, `Distribution.dsupport_smul_subset`,
   `Distribution.dsupport_smul_of_ne_zero`: support under zero, negation, and scalar multiplication.
 * `Distribution.isVanishingOn_of_forall_inter`: an additive map on test functions vanishes on an
@@ -53,7 +56,10 @@ near the support.
   of the support in `Ω`.
 * `Distribution.dsupport_eq_empty_iff`, `Distribution.eq_zero_of_dsupport_subset_empty`: an
   additive map on test functions vanishes when and only when its support is empty.
-* `Distribution.dsupport_comp_smulLeftCLM_subset`, `Distribution.dsupport_comp_cutoffCLM_subset`,
+* `Distribution.dsupport_comp_subset_inter_of_tsupport_subset`,
+  `Distribution.dsupport_comp_smulLeftCLM_subset`,
+  `Distribution.dsupport_comp_smulLeftCLMOfContDiffOn_subset`,
+  `Distribution.dsupport_comp_cutoffCLM_subset`,
   `Distribution.dsupport_comp_monoCLM_subset`,
   `Distribution.isCompact_dsupport_and_subset_of_eventually_eq_one`,
   `Distribution.exists_eventually_eq_one_nhdsSet_dsupport_iff`,
@@ -96,6 +102,29 @@ namespace Distribution
 section Basic
 
 variable {α β 𝓕 R V : Type*} [FunLike 𝓕 α β] [TopologicalSpace α] [Zero β]
+
+/-- The zero map vanishes on every set. -/
+theorem IsVanishingOn.zero [Zero V] {s : Set α} : IsVanishingOn (0 : 𝓕 → V) s := fun _ _ ↦ rfl
+
+/-- The negation of a map vanishing on a set vanishes on it. -/
+theorem IsVanishingOn.neg [NegZeroClass V] {f : 𝓕 → V} {s : Set α} (hf : IsVanishingOn f s) :
+    IsVanishingOn (-f) s := fun φ hφ ↦ by
+  simp [hf φ hφ]
+
+/-- The sum of two maps vanishing on a set vanishes on it. -/
+theorem IsVanishingOn.add [AddZeroClass V] {f g : 𝓕 → V} {s : Set α} (hf : IsVanishingOn f s)
+    (hg : IsVanishingOn g s) : IsVanishingOn (f + g) s := fun φ hφ ↦ by
+  simp [hf φ hφ, hg φ hφ]
+
+/-- The difference of two maps vanishing on a set vanishes on it. -/
+theorem IsVanishingOn.sub [SubNegZeroMonoid V] {f g : 𝓕 → V} {s : Set α}
+    (hf : IsVanishingOn f s) (hg : IsVanishingOn g s) : IsVanishingOn (f - g) s := fun φ hφ ↦ by
+  simp [hf φ hφ, hg φ hφ]
+
+/-- A scalar multiple of a map vanishing on a set vanishes on it. -/
+theorem IsVanishingOn.smul [Zero V] [SMulZeroClass R V] {f : 𝓕 → V} {s : Set α} (a : R)
+    (hf : IsVanishingOn f s) : IsVanishingOn (a • f) s := fun φ hφ ↦ by
+  simp [hf φ hφ]
 
 /-- The distributional support of the zero map is empty. -/
 @[simp]
@@ -286,24 +315,38 @@ section SmoothMultiple
 
 variable [Zero V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [ZeroHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
 
+/-- The support of `T ∘ P`, for a map `P` of test functions on `Ω'` to test functions on `Ω` that
+sends each test function to one supported both in a closed set `S` and in its own support, lies
+both in `S` and in the support of `T`. Multiplication of test functions by `g` is such a map, with
+`S` the support of `g`. -/
+theorem dsupport_comp_subset_inter_of_tsupport_subset {Ω' : Opens E} {S : Set E} (hS : IsClosed S)
+    {P : 𝓓^{n}(Ω', F) → 𝓓^{n}(Ω, F)} (hP : ∀ φ, tsupport (P φ) ⊆ S ∩ tsupport φ) :
+    dsupport (T ∘ P) ⊆ S ∩ dsupport T := by
+  refine subset_inter (compl_subset_compl.1 fun x hx ↦ ?_) (compl_subset_compl.1 fun x hx ↦ ?_)
+  · -- Off `S`, the map `P` sends every test function to zero.
+    refine (notMem_dsupport_iff x).2 ⟨Sᶜ, fun φ hφ ↦ ?_, hS.isOpen_compl, hx⟩
+    have hPφ : P φ = 0 := TestFunction.ext fun y ↦
+      image_eq_zero_of_notMem_tsupport fun hy ↦ hφ (hP φ hy).2 (hP φ hy).1
+    simp [hPφ]
+  · obtain ⟨s, hT, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
+    exact (notMem_dsupport_iff x).2
+      ⟨s, fun φ hφ ↦ hT _ (((hP φ).trans inter_subset_right).trans hφ), hs, hxs⟩
+
 /-- The support of a smooth multiple `T ∘ (g ·)` of a map on test functions lies both in the
 support of `g` and in the support of `T`. In particular, multiplying by a test function `g`
 produces a compactly supported map. -/
 theorem dsupport_comp_smulLeftCLM_subset {g : E → ℝ} (hg : ContDiff ℝ n g) :
-    dsupport (T ∘ TestFunction.smulLeftCLM hg) ⊆ tsupport g ∩ dsupport T := by
-  refine subset_inter (compl_subset_compl.1 fun x hx ↦ ?_) (compl_subset_compl.1 fun x hx ↦ ?_)
-  · -- Off the support of `g`, every product `g • φ` vanishes identically.
-    refine (notMem_dsupport_iff x).2
-      ⟨(tsupport g)ᶜ, fun φ hφ ↦ ?_, (isClosed_tsupport g).isOpen_compl, hx⟩
-    have hgφ : TestFunction.smulLeftCLM hg φ = 0 := TestFunction.ext fun y ↦ by
-      by_cases hy : y ∈ tsupport φ
-      · simp [image_eq_zero_of_notMem_tsupport (hφ hy)]
-      · simp [image_eq_zero_of_notMem_tsupport hy]
-    simp [hgφ]
-  · obtain ⟨s, hT, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
-    exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hT _
-      (((TestFunction.tsupport_smulLeftCLM_subset hg φ).trans inter_subset_right).trans hφ),
-      hs, hxs⟩
+    dsupport (T ∘ TestFunction.smulLeftCLM hg) ⊆ tsupport g ∩ dsupport T :=
+  dsupport_comp_subset_inter_of_tsupport_subset T (isClosed_tsupport g)
+    (TestFunction.tsupport_smulLeftCLM_subset hg)
+
+/-- The support of `T ∘ (g ·)`, for a function `g` that is `C^n` on `Ω` only, lies both in the
+support of `g` and in the support of `T`. -/
+theorem dsupport_comp_smulLeftCLMOfContDiffOn_subset [FiniteDimensional ℝ E] {g : E → ℝ}
+    (hg : ContDiffOn ℝ n g Ω) :
+    dsupport (T ∘ TestFunction.smulLeftCLMOfContDiffOn hg) ⊆ tsupport g ∩ dsupport T :=
+  dsupport_comp_subset_inter_of_tsupport_subset T (isClosed_tsupport g)
+    (TestFunction.tsupport_smulLeftCLMOfContDiffOn_subset hg)
 
 /-- The support of `T ∘ (χ ·)`, where multiplication by `χ` sends tests on `Ω'` to tests on `Ω`
 (`TestFunction.cutoffCLM`), lies both in the support of `χ` and in the support of `T`. For a test
@@ -311,20 +354,9 @@ function `χ` on `Ω` and `Ω' = ⊤`, the map `T ∘ (χ ·)` is the extension 
 to the whole space. -/
 theorem dsupport_comp_cutoffCLM_subset {Ω' : Opens E} {χ : E → ℝ} (hχ : ContDiff ℝ n χ)
     (hχΩ : tsupport χ ∩ Ω' ⊆ Ω) :
-    dsupport (T ∘ TestFunction.cutoffCLM (F := F) hχ hχΩ) ⊆ tsupport χ ∩ dsupport T := by
-  refine subset_inter (compl_subset_compl.1 fun x hx ↦ ?_) (compl_subset_compl.1 fun x hx ↦ ?_)
-  · -- Off the support of `χ`, every product `χ • φ` vanishes identically.
-    refine (notMem_dsupport_iff x).2
-      ⟨(tsupport χ)ᶜ, fun φ hφ ↦ ?_, (isClosed_tsupport χ).isOpen_compl, hx⟩
-    have hχφ : TestFunction.cutoffCLM hχ hχΩ φ = 0 := TestFunction.ext fun y ↦ by
-      by_cases hy : y ∈ tsupport φ
-      · simp [image_eq_zero_of_notMem_tsupport (hφ hy)]
-      · simp [image_eq_zero_of_notMem_tsupport hy]
-    simp [hχφ]
-  · obtain ⟨s, hT, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
-    exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hT _
-      (((TestFunction.tsupport_cutoffCLM_subset hχ hχΩ φ).trans inter_subset_right).trans hφ),
-      hs, hxs⟩
+    dsupport (T ∘ TestFunction.cutoffCLM (F := F) hχ hχΩ) ⊆ tsupport χ ∩ dsupport T :=
+  dsupport_comp_subset_inter_of_tsupport_subset T (isClosed_tsupport χ)
+    (TestFunction.tsupport_cutoffCLM_subset hχ hχΩ)
 
 /-- Composing a map on test functions with a map that fixes zero does not enlarge its support. In
 particular `dsupport (mapCLM A T) ⊆ dsupport T` for a distribution `T`. -/
