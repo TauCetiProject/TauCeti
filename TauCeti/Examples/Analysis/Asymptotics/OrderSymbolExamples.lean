@@ -21,7 +21,7 @@ sector `|ph z| ≤ π/2 - δ` with `δ > 0` but not in the open half-plane `|ph 
 ## Main results
 
 * `Int.abs_sin_pi_mul_intCast_add_le`: `|sin(πn + x)| ≤ |x|` for `n ∈ ℤ` and real `x`.
-* `TauCeti.sin_pi_mul_add_inv_isBigO`: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ`, hence as
+* `TauCeti.sin_pi_mul_intCast_add_inv_isBigO_inv`: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ`, hence as
   `n → ±∞` (DLMF 2.1.6).
 
 The other examples are `example`s citing the general results: DLMF 2.1.4, `tanh z ∼ z` as
@@ -55,7 +55,7 @@ namespace TauCeti
 
 /-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` on all of `ℤ` (the filter `⊤`), the case `x = n⁻¹` of
 `Int.abs_sin_pi_mul_intCast_add_le`. -/
-theorem sin_pi_mul_add_inv_isBigO :
+theorem sin_pi_mul_intCast_add_inv_isBigO_inv :
     (fun n : ℤ => Real.sin (π * n + (n : ℝ)⁻¹)) =O[⊤] fun n => (n : ℝ)⁻¹ :=
   IsBigO.of_bound 1 (Eventually.of_forall fun n => by
     simpa [Real.norm_eq_abs] using n.abs_sin_pi_mul_intCast_add_le (n : ℝ)⁻¹)
@@ -83,9 +83,9 @@ example :
   not_cexp_neg_isLittleO_one_halfPlane
 
 /-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ`, from the global bound
-`TauCeti.sin_pi_mul_add_inv_isBigO`. -/
+`TauCeti.sin_pi_mul_intCast_add_inv_isBigO_inv`. -/
 example : (fun n : ℤ => Real.sin (π * n + (n : ℝ)⁻¹)) =O[atTop ⊔ atBot] fun n => (n : ℝ)⁻¹ :=
-  sin_pi_mul_add_inv_isBigO.mono le_top
+  sin_pi_mul_intCast_add_inv_isBigO_inv.mono le_top
 
 /-- DLMF 2.1.7: `e^{ix} = O(1)` for `x ∈ ℝ`, on the whole real line (the filter `⊤`). -/
 example : (fun x : ℝ => exp (x * I)) =O[⊤] fun _ => (1 : ℝ) :=
