@@ -19,7 +19,8 @@ the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`.
 For `ω ≠ 0` the function `t ↦ t sinc (ω t)` is `t ↦ sin (ω t) / ω`, and for `ω = 0` it is the
 identity. Either way its derivative is `t ↦ cos (ω t)`, so it is the solution of
 `f'' = -ω² f` with `f 0 = 0` and `f' 0 = 1`, uniformly in the frequency `ω`, including the
-degenerate frequency `0`.
+degenerate frequency `0`. Together with `t ↦ cos (ω t)` it satisfies the subtraction formulas of
+`sin` and `cos` (`Real.sub_mul_sinc_sub_mul`, `Real.cos_sub_mul`), again for every `ω`.
 -/
 
 public section
@@ -45,6 +46,25 @@ theorem hasDerivAt_mul_sinc_mul (ω t : ℝ) :
   · simp_rw [mul_sinc_mul_of_ne_zero hω]
     convert ((hasDerivAt_id' t).const_mul ω).sin.div_const ω using 1
     field_simp
+
+/-- The subtraction formula for `t ↦ t sinc (t a)`, which is `sin (t a) / a` for `a ≠ 0`:
+`(t - s) sinc ((t - s) a) = t sinc (t a) cos (s a) - cos (t a) s sinc (s a)`. -/
+theorem sub_mul_sinc_sub_mul (a s t : ℝ) :
+    (t - s) * sinc ((t - s) * a) =
+      t * sinc (t * a) * cos (s * a) - cos (t * a) * (s * sinc (s * a)) := by
+  rcases eq_or_ne a 0 with rfl | h
+  · simp
+  · rw [mul_comm (t - s) a, mul_comm t a, mul_comm s a, mul_sinc_mul_of_ne_zero h,
+      mul_sinc_mul_of_ne_zero h, mul_sinc_mul_of_ne_zero h, mul_sub, sin_sub]
+    ring
+
+/-- The subtraction formula for `cos (t a)`, in terms of `t ↦ t sinc (t a)`:
+`cos ((t - s) a) = cos (s a) cos (t a) + a² s sinc (s a) t sinc (t a)`. -/
+theorem cos_sub_mul (a s t : ℝ) :
+    cos ((t - s) * a) =
+      cos (s * a) * cos (t * a) + s * sinc (s * a) * (t * sinc (t * a)) * a ^ 2 := by
+  rw [sub_mul, cos_sub, ← mul_sinc (s * a), ← mul_sinc (t * a)]
+  ring
 
 /-- The function `sinc` is nonnegative on `[-π, π]`. -/
 theorem sinc_nonneg {x : ℝ} (hx : |x| ≤ π) : 0 ≤ sinc x := by
