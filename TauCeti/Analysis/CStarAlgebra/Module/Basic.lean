@@ -45,8 +45,7 @@ Riesz theorem.
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
   `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`.
-* `CStarModule.lipschitzWith_const_smul`, `CStarModule.continuous_const_smul`: continuity of
-  `x ↦ a • x`.
+* `CStarModule.lipschitzWith_const_smul`: Lipschitz continuity of `x ↦ a • x`.
 * `CStarModule.inner_map_map_le_norm_sq_smul`: Paschke's inequality
   `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A` for any bounded `A`-linear operator `T : E →L[ℂ] F`.
 * `CStarModule.tendsto_smul`: the action is essential, `e x → x` along an approximate unit.
@@ -363,13 +362,6 @@ theorem lipschitzWith_const_smul [SMul A E] [CStarModule A E] (a : A) :
     { smul := (· • ·)
       smul_zero b := ext_inner_left (A := A) fun z ↦ by simp }
   exact lipschitzWith_smul a
-
-/-- Coefficient multiplication `x ↦ a • x` is continuous on any seminormed pre-Hilbert
-C⋆-module. -/
-@[continuity, fun_prop]
-theorem continuous_const_smul [SMul A E] [CStarModule A E] (a : A) :
-    Continuous (fun x : E ↦ a • x) :=
-  ContinuousConstSMul.continuous_const_smul a
 
 end Essential
 
