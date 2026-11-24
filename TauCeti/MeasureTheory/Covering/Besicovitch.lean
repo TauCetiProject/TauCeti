@@ -23,6 +23,9 @@ Besicovitch covering property, Mathlib's density theorem
 We extend it to null-measurable sets and record its set form: a null-measurable set agrees almost
 everywhere with its set of density-one points. That set is a canonical representative of the
 `μ`-a.e. class of `s`, since it depends only on that class.
+Dually, a set filling at most a fraction `c < 1` of every small closed ball around every point is
+null (`TauCeti.measure_eq_zero_of_forall_measure_inter_closedBall_le`), with no measurability
+assumed.
 
 The Besicovitch covering property passes to subspaces (`Isometry.hasBesicovitchCovering`), so
 an open subset of a finite-dimensional real normed space has it too. This lets differentiation

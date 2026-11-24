@@ -60,6 +60,8 @@ over the parts of `S` in the balls about a point tend to `0` with the radius
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
 * `MeasureTheory.Measure.measure_ball_le_of_forall_lt`: a bound on the measures of the open balls
   of radius less than `ρ` bounds the open ball of radius `ρ`.
+* `TauCeti.isClosed_setOf_forall_measure_inter_ball_le`: the points around which a set fills at
+  most `K r` of every open ball of radius `r < ρ` form a closed set.
 * `TauCeti.tendsto_measure_ball_nhdsGT_zero`: shrinking balls about `z` have measures tending to
   `μ {z}`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`: as `r → R⁻`, the integral over

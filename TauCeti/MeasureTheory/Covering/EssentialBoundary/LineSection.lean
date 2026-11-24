@@ -179,21 +179,20 @@ private theorem volume_inter_closedBall_le (e : E) (he : ‖e‖ = 1) {A C : Set
     rintro ⟨q, τ⟩ ⟨hq, hτ⟩
     obtain ⟨⟨tq, hLq, hjq⟩, hqz⟩ := hq
     have hqW : σ * tq ≤ sSup W := le_csSup hWbdd ⟨q, ⟨⟨tq, hLq, hjq⟩, hqz⟩, tq, hLq, hjq, rfl⟩
-    have := hjq.1
-    have := hjb.2
-    have := hyb.2
-    rw [mem_closedBall] at hqz this
+    have hjq₁ := hjq.1
+    have hjb₂ := hjb.2
+    have hyb₂ := hyb.2
+    rw [mem_closedBall] at hqz hyb₂
     rw [mem_preimage, orthogonalLineEquiv_apply]
-    exact add_smul_mem_inter_ball e he hσ hr hrδ hLq.2 (by push_cast at *; linarith)
-      (by linarith) hτ ((dist_triangle_right q yb z).trans (by linarith))
+    exact add_smul_mem_inter_ball e he hσ hr hrδ hLq.2 (by linarith [hjq₁, hjb₂])
+      (by linarith [hqW, hb]) hτ ((dist_triangle_right q yb z).trans (by linarith [hqz, hyb₂]))
   have hσ0 : σ ≠ 0 := by rcases hσ with rfl | rfl <;> norm_num
   have hσabs : |σ⁻¹| = 1 := by rcases hσ with rfl | rfl <;> norm_num
   refine volume_le_inv_two_mul e he hc z hr ?_
   calc volume S * ENNReal.ofReal (r / 2)
       = (volume.prod volume) (S ×ˢ ((σ * ·) ⁻¹' Icc (σ * tb + r / 2) (σ * tb + r))) := by
-        rw [Measure.prod_prod, Real.volume_preimage_mul_left hσ0, Real.volume_Icc, hσabs]
-        norm_num
-        ring_nf
+        rw [Measure.prod_prod, Real.volume_preimage_mul_left hσ0, Real.volume_Icc, hσabs,
+          ENNReal.ofReal_one, one_mul, show σ * tb + r - (σ * tb + r / 2) = r / 2 by ring]
     _ ≤ (volume.prod volume)
           (orthogonalLineEquiv e he ⁻¹' (C ∩ ball ((yb : E) + tb • e) (4 * r))) :=
         measure_mono hreg

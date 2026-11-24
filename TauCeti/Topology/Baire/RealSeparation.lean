@@ -152,7 +152,4 @@ theorem disjoint_or_disjoint_of_isPreconnected_of_closed_covers {T P N : Set ℝ
       ⟨⟨z.property.1, z.property.2.2, z.property.2.1⟩, hzV⟩
     exact hbN k a δ σ ha hδ hσ haP
 
-
-/-! ### The main theorem -/
-
 end TauCeti
