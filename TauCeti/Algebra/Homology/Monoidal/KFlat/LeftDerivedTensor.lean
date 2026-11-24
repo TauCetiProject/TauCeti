@@ -77,7 +77,8 @@ and
 For the canonical bifunctor `TauCeti.derivedTensor C`, the unit `𝟙_ C` placed in degree `0` is a
 unit on both sides (`TauCeti.derivedTensorLeftUnitor`, `TauCeti.derivedTensorRightUnitor`), and
 `TauCeti.derivedTensorFlipIso C` provides the canonical symmetry isomorphism
-`(derivedTensor C).flip ≅ derivedTensor C` (with `TauCeti.derivedTensorFlipIso_hom_app_app_Q`,
+`(derivedTensor C).flip ≅ derivedTensor C` (with `TauCeti.derivedTensorFlipIso_hom_fac`,
+`TauCeti.derivedTensorFlipIso_inv_fac`, `TauCeti.derivedTensorFlipIso_hom_app_app_Q`,
 `TauCeti.derivedTensorFlipIso_inv_app_app_Q`, component formulas
 `TauCeti.derivedTensorFlipIso_app_app_Q_hom`, `TauCeti.derivedTensorFlipIso_app_app_Q_inv`,
 `TauCeti.derivedTensorFlipIso_app_app_Q`, unit compatibility
@@ -868,7 +869,6 @@ lemma leftDerivedTensorFlipIso_inv_app_app_Q (K L : CochainComplex C ℤ) :
 
 /-- Forward component formula for `leftDerivedTensorFlipIso` on `(Q.obj K, Q.obj L)` when the
 target model comparison `(α.app K).app L` is invertible. -/
-@[simp]
 lemma leftDerivedTensorFlipIso_app_app_Q_hom (K L : CochainComplex C ℤ)
     [IsIso ((α.app K).app L)] :
     ((leftDerivedTensorFlipIso LF α).hom.app (DerivedCategory.Q.obj K)).app
@@ -879,7 +879,6 @@ lemma leftDerivedTensorFlipIso_app_app_Q_hom (K L : CochainComplex C ℤ)
 
 /-- Inverse component formula for `leftDerivedTensorFlipIso` on `(Q.obj K, Q.obj L)` when the
 model comparison `(α.app L).app K` is invertible. -/
-@[simp]
 lemma leftDerivedTensorFlipIso_app_app_Q_inv (K L : CochainComplex C ℤ)
     [IsIso ((α.app L).app K)] :
     ((leftDerivedTensorFlipIso LF α).inv.app (DerivedCategory.Q.obj K)).app
@@ -965,6 +964,27 @@ isomorphism `(derivedTensor C).flip ≅ derivedTensor C`. -/
 def derivedTensorFlipIso : (derivedTensor C).flip ≅ derivedTensor C :=
   leftDerivedTensorFlipIso (derivedTensor C) (derivedTensorCounit C)
 
+/-- Whiskered counit compatibility of `(derivedTensorFlipIso C).hom` with `derivedTensorCounit C`
+and `koszulDerivedFlipIso`. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_hom_fac :
+    (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj DerivedCategory.Q).map
+        (derivedTensorFlipIso C).hom ≫ derivedTensorCounit C =
+      (DerivedCategory.Q.whiskeringLeft₂FlipIso DerivedCategory.Q (derivedTensor C)).hom ≫
+        (flipFunctor _ _ _).map (derivedTensorCounit C) ≫ (koszulDerivedFlipIso (C := C)).hom :=
+  leftDerivedTensorFlipIso_hom_fac (derivedTensor C) (derivedTensorCounit C)
+
+/-- Whiskered counit compatibility of `(derivedTensorFlipIso C).inv` with `derivedTensorCounit C`
+and `koszulDerivedFlipIso`. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_inv_fac :
+    (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj DerivedCategory.Q).map
+        (derivedTensorFlipIso C).inv ≫
+        (DerivedCategory.Q.whiskeringLeft₂FlipIso DerivedCategory.Q (derivedTensor C)).hom ≫
+        (flipFunctor _ _ _).map (derivedTensorCounit C) =
+      derivedTensorCounit C ≫ (koszulDerivedFlipIso (C := C)).inv :=
+  leftDerivedTensorFlipIso_inv_fac (derivedTensor C) (derivedTensorCounit C)
+
 /-- Compatibility of `derivedTensorFlipIso` with the Koszul braiding on images of complexes. -/
 @[reassoc (attr := simp)]
 lemma derivedTensorFlipIso_hom_app_app_Q (K L : CochainComplex C ℤ) :
@@ -984,7 +1004,6 @@ lemma derivedTensorFlipIso_inv_app_app_Q (K L : CochainComplex C ℤ) :
 
 /-- Forward component formula for `derivedTensorFlipIso` on `(Q.obj K, Q.obj L)` when the target
 comparison `((derivedTensorCounit C).app K).app L` is invertible. -/
-@[simp]
 lemma derivedTensorFlipIso_app_app_Q_hom (K L : CochainComplex C ℤ)
     [IsIso (((derivedTensorCounit C).app K).app L)] :
     ((derivedTensorFlipIso C).hom.app (DerivedCategory.Q.obj K)).app
@@ -995,7 +1014,6 @@ lemma derivedTensorFlipIso_app_app_Q_hom (K L : CochainComplex C ℤ)
 
 /-- Inverse component formula for `derivedTensorFlipIso` on `(Q.obj K, Q.obj L)` when the source
 comparison `((derivedTensorCounit C).app L).app K` is invertible. -/
-@[simp]
 lemma derivedTensorFlipIso_app_app_Q_inv (K L : CochainComplex C ℤ)
     [IsIso (((derivedTensorCounit C).app L).app K)] :
     ((derivedTensorFlipIso C).inv.app (DerivedCategory.Q.obj K)).app

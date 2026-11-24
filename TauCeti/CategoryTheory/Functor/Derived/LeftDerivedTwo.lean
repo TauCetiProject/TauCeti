@@ -229,7 +229,6 @@ lemma leftDerived₂FlipIso_inv_app_app_L (e : F.flip ≅ F) (X Y : C) :
 
 /-- Forward component formula for `leftDerived₂FlipIso` on `(L.obj X, L.obj Y)` when the target
 comparison `(α.app X).app Y` is invertible. -/
-@[simp]
 lemma leftDerived₂FlipIso_app_app_L_hom (e : F.flip ≅ F) (X Y : C)
     [IsIso ((α.app X).app Y)] :
     ((leftDerived₂FlipIso LF α W e).hom.app (L.obj X)).app (L.obj Y) =
@@ -239,7 +238,6 @@ lemma leftDerived₂FlipIso_app_app_L_hom (e : F.flip ≅ F) (X Y : C)
 
 /-- Inverse component formula for `leftDerived₂FlipIso` on `(L.obj X, L.obj Y)` when the source
 comparison `(α.app Y).app X` is invertible. -/
-@[simp]
 lemma leftDerived₂FlipIso_app_app_L_inv (e : F.flip ≅ F) (X Y : C)
     [IsIso ((α.app Y).app X)] :
     ((leftDerived₂FlipIso LF α W e).inv.app (L.obj X)).app (L.obj Y) =
@@ -255,7 +253,7 @@ lemma leftDerived₂FlipIso_app_app_L (e : F.flip ≅ F) (X Y : C)
     ((leftDerived₂FlipIso LF α W e).app (L.obj X)).app (L.obj Y) =
       asIso ((α.app Y).app X) ≪≫ (e.app X).app Y ≪≫ (asIso ((α.app X).app Y)).symm := by
   ext
-  simp
+  simp [leftDerived₂FlipIso_app_app_L_hom]
 
 /-- If `e : F.flip ≅ F` is involutive, then `leftDerived₂FlipIso LF α W e` is involutive as a
 natural transformation. -/
