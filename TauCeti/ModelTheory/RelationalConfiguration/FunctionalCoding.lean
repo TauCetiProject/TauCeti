@@ -530,11 +530,7 @@ symbols of each arity. -/
 theorem isGδ_setOf_isGraphCode [∀ n, Countable (L.Functions n)] [Countable V] :
     IsGδ {c : RelationalConfiguration L.graphLanguage V | IsGraphCode c} := by
   -- Totality of each graph relation at each tuple is an open condition, and so is the failure of
-  -- two distinct values.
-  have hopen (g : Bool → Bool → Prop) (a b : Atom L.graphLanguage V) :
-      IsOpen {c : RelationalConfiguration L.graphLanguage V | g (c.eval a) (c.eval b)} :=
-    (isOpen_discrete {q : Bool × Bool | g q.1 q.2}).preimage
-      ((continuous_eval a).prodMk (continuous_eval b))
+  -- two distinct values: both are built from the clopen sets `{c | c.eval a = true}`.
   have : {c : RelationalConfiguration L.graphLanguage V | IsGraphCode c} =
       ⋂ (p : Arg L V), ((⋃ y, {c | c.eval (atom (L := L.graphLanguage)
           (GraphRelation.graph p.1.2) (Fin.snoc p.2 y)) = true}) ∩
@@ -554,7 +550,14 @@ theorem isGδ_setOf_isGraphCode [∀ n, Countable (L.Functions n)] [Countable V]
   · exact isOpen_iUnion fun y => (isClopen_setOf_eval _ true).isOpen
   · by_cases hyy : y = y'
     · simp [hyy]
-    · simpa [hyy] using hopen (fun s t => ¬(s = true ∧ t = true)) _ _
+    · have hset : ∀ a b : Atom L.graphLanguage V,
+          {c : RelationalConfiguration L.graphLanguage V |
+            c.eval a = true → c.eval b = true → y = y'} =
+          {c | c.eval a = true}ᶜ ∪ {c | c.eval b = true}ᶜ := fun a b => by
+        ext; simp [hyy, imp_iff_not_or]
+      rw [hset]
+      exact (isClopen_setOf_eval _ true).isClosed.isOpen_compl.union
+        (isClopen_setOf_eval _ true).isClosed.isOpen_compl
 
 /-- **The graph codes are not closed** when `L` has a function symbol and the carrier is
 infinite. -/
@@ -700,13 +703,15 @@ instance instContinuousSMulPerm :
     -- The value of `σ • F` at `(f, v)` reads `σ⁻¹` at the finitely many entries of `v`, then `F`
     -- at a point of the discrete space of tuples, then applies `σ`.
     refine continuous_iff.2 ⟨continuous_pi fun p => ?_, ?_⟩
-    · -- Reading the table at the argument `(f, w)` is continuous in the table and, trivially, in
+    · induction p using Arg.induction_arg with | h f v => ?_
+      simp only [table_perm_smul_arg]
+      -- Reading the table at the argument `(f, w)` is continuous in the table and, trivially, in
       -- the tuple `w`, which ranges over a discrete space.
-      have hread : Continuous fun q : (Arg L V → V) × (Fin p.1.1 → V) => q.1 ⟨p.1, q.2⟩ :=
+      have hread : Continuous fun q : (Arg L V → V) × (Fin _ → V) => q.1 (arg f q.2) :=
         continuous_prod_of_discrete_right.2 fun w =>
-          (continuous_apply _ : Continuous fun T : Arg L V → V => T ⟨p.1, w⟩)
+          (continuous_apply _ : Continuous fun T : Arg L V → V => T (arg f w))
       have hinv : Continuous fun q : Equiv.Perm V × FunctionalConfiguration L V =>
-          (⇑q.1⁻¹ ∘ p.2 : Fin p.1.1 → V) :=
+          (⇑q.1⁻¹ ∘ v : Fin _ → V) :=
         continuous_pi fun i => (Equiv.Perm.continuous_inv_apply _).comp continuous_fst
       exact Equiv.Perm.continuous_eval.comp (continuous_fst.prodMk
         (hread.comp ((continuous_table.comp continuous_snd).prodMk hinv)))
