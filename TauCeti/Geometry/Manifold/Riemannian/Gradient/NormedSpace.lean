@@ -50,6 +50,14 @@ theorem inner_tangentSpace_vectorSpace {F : Type*} [NormedAddCommGroup F]
   -- Mathlib's `norm_tangentSpace_vectorSpace`.
   rfl
 
+/-- Evaluating `riemannianMetricVectorSpace F` on tangent vectors at `x : F` gives their fibre
+inner product. -/
+@[simp]
+theorem riemannianMetricVectorSpace_inner {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (x : F) (v w : TangentSpace 𝓘(ℝ, F) x) :
+    (riemannianMetricVectorSpace F).inner x v w = inner ℝ v w :=
+  ((riemannianMetricVectorSpace F).inner_riemannianBundle x v w).symm
+
 /-- On a flat inner product space with its standard Riemannian metric, the manifold gradient is
 Mathlib's `gradient`. -/
 theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]

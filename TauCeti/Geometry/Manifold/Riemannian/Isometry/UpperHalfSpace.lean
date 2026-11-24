@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Ext
+import TauCeti.Geometry.Manifold.MFDeriv.Congr
 
 /-!
 # The isometry group of the upper half-space model
@@ -45,6 +46,12 @@ exchanges the vertical vector with its image.
 * `TauCeti.UpperHalfSpace.tangentSpaceCastModel_mfderiv_inversion`: the differential of an
   inversion is a positive multiple of a reflection.
 * `TauCeti.UpperHalfSpace.inversion_mul_self`: inversions are involutions.
+* `TauCeti.UpperHalfSpace.similarity_one_mul_self_of_involutive`,
+  `TauCeti.UpperHalfSpace.similarity_neg_mul_self`, and
+  `TauCeti.UpperHalfSpace.similarity_one_comm_inversion_zero`: involutive horizontal orthogonal
+  similarities and their commutation with inversions centred at the origin.
+* `TauCeti.UpperHalfSpace.tangentSpaceCastModel_mfderiv_inversion_zero_one_mul_similarity_one`: the
+  differential at `(0, 1)` of unit inversion composed with a horizontal orthogonal similarity.
 * `TauCeti.UpperHalfSpace.inversion_eq_similarity_mul_inversion_mul_similarity`: every inversion
   is the horizontal translation by `-a`, then the unit inversion about the origin, then the
   scaling by `R ^ 2` about the origin, then the horizontal translation by `a`.
@@ -230,6 +237,121 @@ theorem inversion_eq_similarity_mul_inversion_mul_similarity (a : E) (R : ℝ) (
   -- Apply the Euclidean transport identity and compare coordinates.
   rw [← h]
   exact (WithLp.ext_iff 2).2 (Prod.ext (by simp [add_comm]) (by simp))
+
+/-- A horizontal orthogonal transformation `A` that is an involution yields an involutive
+similarity `(x, t) ↦ (A x, t)` of the upper half-space. -/
+theorem similarity_one_mul_self_of_involutive {A : E ≃ₗᵢ[ℝ] E} (hA : Function.Involutive A) :
+    similarity 1 one_pos A 0 * similarity 1 one_pos A 0 = 1 := by
+  rw [similarity_mul_similarity]
+  have hA' : A.trans A = .refl ℝ E := by
+    ext x
+    exact hA x
+  simp [hA']
+
+/-- Horizontal negation `(x, t) ↦ (-x, t)` is an involutive isometry of the upper half-space. -/
+theorem similarity_neg_mul_self :
+    similarity 1 one_pos (LinearIsometryEquiv.neg ℝ (E := E)) 0 *
+      similarity 1 one_pos (LinearIsometryEquiv.neg ℝ (E := E)) 0 = 1 :=
+  similarity_one_mul_self_of_involutive neg_neg
+
+/-- Any horizontal orthogonal transformation `(x, t) ↦ (A x, t)` commutes with inversion in a
+sphere centred at the origin `(0, 0)`. -/
+theorem similarity_one_comm_inversion_zero (A : E ≃ₗᵢ[ℝ] E) {R : ℝ} (hR : R ≠ 0) :
+    similarity 1 one_pos A 0 * inversion 0 R hR =
+      inversion 0 R hR * similarity 1 one_pos A 0 := by
+  refine RiemannianIsometry.ext fun x ↦ ?_
+  have hdist :
+      dist (WithLp.toLp 2 (A (x : WithLp 2 (E × ℝ)).fst, x.height)) (WithLp.toLp 2 (0, 0)) =
+        dist (x : WithLp 2 (E × ℝ)) (WithLp.toLp 2 (0, 0)) := by
+    rw [Prod.mk_zero_zero, WithLp.toLp_zero, dist_zero_right, dist_zero_right]
+    have hsq : ‖WithLp.toLp 2 (A (x : WithLp 2 (E × ℝ)).fst, x.height)‖ ^ 2 =
+        ‖(x : WithLp 2 (E × ℝ))‖ ^ 2 := by
+      simp [WithLp.prod_norm_sq_eq_of_L2, snd_coe]
+    exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 hsq
+  apply ext_fst_height
+  · simp [RiemannianIsometry.mul_apply, coe_inversion_apply,
+      EuclideanGeometry.inversion_def, hdist]
+  · simp [RiemannianIsometry.mul_apply, height_inversion_apply, hdist]
+
+/-- Every horizontal orthogonal similarity `(x, t) ↦ (A x, t)` fixes `(0, 1)`. -/
+@[simp]
+theorem similarity_one_apply_zero_one (A : E ≃ₗᵢ[ℝ] E) :
+    similarity 1 one_pos A 0 (mk (WithLp.toLp 2 (0, 1)) (by simp)) =
+      mk (WithLp.toLp 2 (0, 1)) (by simp) :=
+  ext_fst_height (by simp) (by simp)
+
+/-- Unit inversion about `(0, 0)` fixes `(0, 1)`. -/
+@[simp]
+theorem inversion_zero_one_apply_zero_one :
+    inversion (E := E) 0 1 one_ne_zero (mk (WithLp.toLp 2 (0, 1)) (by simp)) =
+      mk (WithLp.toLp 2 (0, 1)) (by simp) := by
+  apply ext
+  rw [coe_inversion_apply, Prod.mk_zero_zero, WithLp.toLp_zero]
+  simp [EuclideanGeometry.inversion_def, dist_zero_right]
+
+/-- At `(0, 1)`, the composite of unit inversion about `(0, 0)` with a horizontal orthogonal
+similarity `(x, t) ↦ (A x, t)` has differential `(u, s) ↦ (A u, -s)` in model coordinates. -/
+theorem tangentSpaceCastModel_mfderiv_inversion_zero_one_mul_similarity_one (A : E ≃ₗᵢ[ℝ] E)
+    (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) (mk (WithLp.toLp 2 (0, 1)) (by simp))) :
+    let p₀ : UpperHalfSpace E := mk (WithLp.toLp 2 (0, 1)) (by simp)
+    let Φ := inversion (E := E) 0 1 one_ne_zero * similarity 1 one_pos A 0
+    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (Φ p₀)
+        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) Φ p₀ v) =
+      LinearIsometryEquiv.withLpProdCongr 2 A (.neg ℝ)
+        (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ v) := by
+  dsimp only
+  let p₀ : UpperHalfSpace E := mk (WithLp.toLp 2 (0, 1)) (by simp)
+  let S : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E) := similarity 1 one_pos A 0
+  let J : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E) := inversion (E := E) 0 1 one_ne_zero
+  have hp₀_coe : (p₀ : WithLp 2 (E × ℝ)) = WithLp.toLp 2 (0, 1) := coe_mk _ _
+  have hp₀_norm : ‖(p₀ : WithLp 2 (E × ℝ))‖ = 1 := by
+    have hsq : ‖(p₀ : WithLp 2 (E × ℝ))‖ ^ 2 = 1 := by
+      rw [hp₀_coe, WithLp.prod_norm_sq_eq_of_L2]
+      simp
+    exact (pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero).1 (by simpa using hsq)
+  have hS_p₀ : S p₀ = p₀ := similarity_one_apply_zero_one A
+  let u : WithLp 2 (E × ℝ) := tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ v
+  let w : WithLp 2 (E × ℝ) := LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ) u
+  let w' : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ :=
+    (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀).symm w
+  have hw' : tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (S p₀)
+      (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) S p₀ v) =
+      tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) p₀ w' := by
+    rw [tangentSpaceCastModel_mfderiv_similarity, one_smul, ContinuousLinearEquiv.apply_symm_apply]
+  have hmul :
+      tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) ((J * S) p₀)
+          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (J * S) p₀ v) =
+        tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (J (S p₀))
+          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) J (S p₀)
+            (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) S p₀ v)) := by
+    have hc : mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (J * S) p₀ =
+        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) J (S p₀)).comp
+          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) S p₀) := by
+      rw [RiemannianIsometry.coe_mul]
+      exact mfderiv_comp p₀ (J.mdifferentiableAt (S p₀)) (S.mdifferentiableAt p₀)
+    -- `(J * S) p₀ = J (S p₀)` definitionally via `RiemannianIsometry.mul_apply`.
+    exact congrArg (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (J (S p₀)))
+      (DFunLike.congr_fun hc v)
+  have hJS :
+      tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) ((J * S) p₀)
+          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (J * S) p₀ v) =
+        tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (J p₀)
+          (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) J p₀ w') :=
+    hmul.trans (tangentSpaceCastModel_mfderiv_congr_point hS_p₀ hw')
+  rw [hJS, tangentSpaceCastModel_mfderiv_inversion, ContinuousLinearEquiv.apply_symm_apply]
+  have hdist : dist (p₀ : WithLp 2 (E × ℝ)) (WithLp.toLp 2 (0, 0)) = 1 := by
+    rw [Prod.mk_zero_zero, WithLp.toLp_zero, dist_zero_right, hp₀_norm]
+  have hsub : (p₀ : WithLp 2 (E × ℝ)) - WithLp.toLp 2 (0, 0) = WithLp.toLp 2 (0, 1) := by
+    rw [hp₀_coe, Prod.mk_zero_zero, WithLp.toLp_zero, sub_zero]
+  have hnorm01 : ‖WithLp.toLp 2 ((0 : E), (1 : ℝ))‖ = 1 := by rwa [← hp₀_coe]
+  have hinner01 : inner ℝ (WithLp.toLp 2 ((0 : E), (1 : ℝ))) w = u.snd := by
+    simp [w, LinearIsometryEquiv.withLpProdCongr_apply, WithLp.prod_inner_apply]
+  rw [hdist, div_one, one_pow, one_smul, hsub, Submodule.reflection_orthogonal_apply,
+    Submodule.reflection_singleton_apply, hnorm01, hinner01]
+  simp only [RCLike.ofReal_real_eq_id, id_eq, one_pow, div_one]
+  refine (WithLp.ext_iff 2).2 (Prod.ext ?_ ?_)
+  · simp [w, u, p₀, LinearIsometryEquiv.withLpProdCongr_apply]
+  · simp [w, u, p₀, LinearIsometryEquiv.withLpProdCongr_apply, two_smul]
 
 section Classification
 

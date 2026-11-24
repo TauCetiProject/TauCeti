@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Symmetric.Basic
 import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.MFDeriv.Congr
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 
 /-!
@@ -29,6 +31,11 @@ Riemannian covering, and specifically to the universal cover equipped with the p
 
 ## Main results
 
+* `IsCoveringMap.leftInverse_of_comp_eq`: two continuous lifts along a covering map on a
+  preconnected space that cover a left-inverse pair and satisfy `R (L x) = x` at one point satisfy
+  `LeftInverse R L`.
+* `TauCeti.IsLocalRiemannianIsometry.inner_mfderiv_of_comp_eq`: a differentiable map intertwined
+  with a local Riemannian isometry by local Riemannian isometries preserves inner products.
 * `TauCeti.IsLocalRiemannianIsometry.existsUnique_lift_isom_of_isCoveringMap`: every Riemannian
   isometry of the base lifts uniquely to a Riemannian isometry of a simply connected covering space
   with prescribed value at one point.
@@ -59,6 +66,26 @@ open scoped ContDiff Manifold
 
 noncomputable section
 
+section CoveringLeftInverse
+
+/-- On a preconnected covering space, if continuous maps `L, R : M → M` lift maps `φ, ψ : N → N`
+with `LeftInverse ψ φ` and `R (L x) = x` at one point `x`, then `R` is a left inverse of `L`. -/
+theorem IsCoveringMap.leftInverse_of_comp_eq {M N : Type*} [TopologicalSpace M]
+    [TopologicalSpace N] [PreconnectedSpace M] {f : M → N} (hcov : IsCoveringMap f)
+    {L R : M → M} {φ ψ : N → N} (hL_cont : Continuous L) (hR_cont : Continuous R)
+    (hL : f ∘ L = φ ∘ f) (hR : f ∘ R = ψ ∘ f) (hψφ : Function.LeftInverse ψ φ)
+    {x : M} (hx : R (L x) = x) :
+    Function.LeftInverse R L := by
+  have hcomp : f ∘ (R ∘ L) = f ∘ id := by
+    funext z
+    calc
+      f (R (L z)) = ψ (f (L z)) := congrFun hR (L z)
+      _ = ψ (φ (f z)) := congrArg ψ (congrFun hL z)
+      _ = f z := hψφ (f z)
+  exact congrFun (hcov.eq_of_comp_eq (hR_cont.comp hL_cont) continuous_id hcomp x hx)
+
+end CoveringLeftInverse
+
 namespace TauCeti.IsLocalRiemannianIsometry
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -69,6 +96,45 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+
+/-- If `f₁` and `f₂` are local Riemannian isometries, `Φ` is a local Riemannian isometry, and `L`
+is differentiable at `z` with `f₂ ∘ L = Φ ∘ f₁`, then `dL_z` preserves inner products. -/
+theorem inner_mfderiv_of_comp_eq
+    {E₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
+    {H₁ : Type*} [TopologicalSpace H₁] {I₁ : ModelWithCorners ℝ E₁ H₁}
+    {M₁ : Type*} [TopologicalSpace M₁] [ChartedSpace H₁ M₁]
+    [RiemannianBundle (fun x : M₁ ↦ TangentSpace I₁ x)]
+    {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+    {H₂ : Type*} [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂}
+    {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
+    [RiemannianBundle (fun x : M₂ ↦ TangentSpace I₂ x)]
+    {f₁ : M₁ → M} {f₂ : M₂ → N} {Φ : M → N} {L : M₁ → M₂} {z : M₁}
+    (hf₁ : IsLocalRiemannianIsometry I₁ I f₁)
+    (hf₂ : IsLocalRiemannianIsometry I₂ J f₂)
+    (hΦ : IsLocalRiemannianIsometry I J Φ)
+    (hLz : MDifferentiableAt I₁ I₂ L z) (hcomp : f₂ ∘ L = Φ ∘ f₁)
+    (u v : TangentSpace I₁ z) :
+    inner ℝ (mfderiv I₁ I₂ L z u) (mfderiv I₁ I₂ L z v) = inner ℝ u v := by
+  have hd : ∀ w : TangentSpace I₁ z,
+      (mfderiv I₂ J f₂ (L z) (mfderiv I₁ I₂ L z w) : F) =
+        mfderiv I J Φ (f₁ z) (mfderiv I₁ I f₁ z w) := fun w ↦ by
+    have h1 := DFunLike.congr_fun (mfderiv_comp z (hf₂.mdifferentiableAt (L z)) hLz) w
+    have h2 := DFunLike.congr_fun (mfderiv_comp z (hΦ.mdifferentiableAt (f₁ z))
+      (hf₁.mdifferentiableAt z)) w
+    have h12 : (mfderiv I₁ J (f₂ ∘ L) z w : F) = mfderiv I₁ J (Φ ∘ f₁) z w := by
+      rw [hcomp]
+    exact h1.symm.trans (h12.trans h2)
+  calc
+    inner ℝ (mfderiv I₁ I₂ L z u) (mfderiv I₁ I₂ L z v) =
+        inner ℝ (mfderiv I₂ J f₂ (L z) (mfderiv I₁ I₂ L z u))
+          (mfderiv I₂ J f₂ (L z) (mfderiv I₁ I₂ L z v)) :=
+      (hf₂.inner_mfderiv (L z) _ _).symm
+    _ = inner ℝ (mfderiv I J Φ (f₁ z) (mfderiv I₁ I f₁ z u))
+          (mfderiv I J Φ (f₁ z) (mfderiv I₁ I f₁ z v)) :=
+      inner_tangentSpace_congr (congrFun hcomp z) (hd u) (hd v)
+    _ = inner ℝ (mfderiv I₁ I f₁ z u) (mfderiv I₁ I f₁ z v) :=
+      hΦ.inner_mfderiv (f₁ z) _ _
+    _ = inner ℝ u v := hf₁.inner_mfderiv z u v
 
 section Lifting
 
@@ -87,28 +153,8 @@ theorem existsUnique_lift_isom_of_isCoveringMap (hf : IsLocalRiemannianIsometry 
   let ΦinvC : C(N, N) := ⟨⇑(Φ⁻¹), (Φ⁻¹).toDiffeomorph.continuous⟩
   obtain ⟨L, ⟨hLx, hL⟩, hLuniq⟩ :=
     hcov.existsUnique_continuousMap_lifts (ΦC.comp fC) x y hxy
-  have hxy_inv : f x = (ΦinvC.comp fC) y := by
-    simp [ΦinvC, fC, hxy]
   obtain ⟨R, ⟨hRy, hR⟩, -⟩ :=
-    hcov.existsUnique_continuousMap_lifts (ΦinvC.comp fC) y x hxy_inv
-  have hRL_eq : R.comp L = ContinuousMap.id M := by
-    obtain ⟨_, -, huniq⟩ := hcov.existsUnique_continuousMap_lifts fC x x rfl
-    have h1 : R.comp L = _ := huniq (R.comp L) ⟨by simp [hLx, hRy], by
-      funext z
-      have hLz : f (L z) = Φ (f z) := congrFun hL z
-      have hRz : f (R (L z)) = (Φ⁻¹) (f (L z)) := congrFun hR (L z)
-      simpa [fC, Function.comp_apply, RiemannianIsometry.inv_apply, hLz] using hRz⟩
-    have h2 : ContinuousMap.id M = _ := huniq (ContinuousMap.id M) ⟨rfl, rfl⟩
-    exact h1.trans h2.symm
-  have hLR_eq : L.comp R = ContinuousMap.id M := by
-    obtain ⟨_, -, huniq⟩ := hcov.existsUnique_continuousMap_lifts fC y y rfl
-    have h1 : L.comp R = _ := huniq (L.comp R) ⟨by simp [hRy, hLx], by
-      funext z
-      have hRz : f (R z) = (Φ⁻¹) (f z) := congrFun hR z
-      have hLz : f (L (R z)) = Φ (f (R z)) := congrFun hL (R z)
-      simpa [fC, Function.comp_apply, RiemannianIsometry.inv_apply, hRz] using hLz⟩
-    have h2 : ContinuousMap.id M = _ := huniq (ContinuousMap.id M) ⟨rfl, rfl⟩
-    exact h1.trans h2.symm
+    hcov.existsUnique_continuousMap_lifts (ΦinvC.comp fC) y x (by simp [ΦinvC, fC, hxy])
   have hloc : IsLocalDiffeomorph I J ∞ f := hf.isLocalDiffeomorph (n := ∞) (by simp) le_rfl
   have hL_smooth : ContMDiff I I ∞ L :=
     ContMDiff.of_comp_isLocalDiffeomorph hloc L.continuous
@@ -116,42 +162,22 @@ theorem existsUnique_lift_isom_of_isCoveringMap (hf : IsLocalRiemannianIsometry 
   have hR_smooth : ContMDiff I I ∞ R :=
     ContMDiff.of_comp_isLocalDiffeomorph hloc R.continuous
       (by rw [hR]; exact (Φ⁻¹).toDiffeomorph.contMDiff.comp hf.contMDiff)
-  let Φ' : Isom I M :=
+  let d : M ≃ₘ^∞⟮I, I⟯ M :=
     { toEquiv :=
         { toFun := L
           invFun := R
-          left_inv := fun z ↦ DFunLike.congr_fun hRL_eq z
-          right_inv := fun z ↦ DFunLike.congr_fun hLR_eq z }
+          left_inv := hcov.leftInverse_of_comp_eq L.continuous R.continuous hL hR
+            Φ.symm_apply_apply (by rw [hLx, hRy])
+          right_inv := hcov.leftInverse_of_comp_eq R.continuous L.continuous hR hL
+            Φ.apply_symm_apply (by rw [hRy, hLx]) }
       contMDiff_toFun := hL_smooth
-      contMDiff_invFun := hR_smooth
+      contMDiff_invFun := hR_smooth }
+  let Φ' : Isom I M :=
+    { toDiffeomorph := d
       inner_mfderiv' := fun z u v ↦ by
-        change inner ℝ (mfderiv I I L z u) (mfderiv I I L z v) = inner ℝ u v
-        have hcomp : ∀ w : TangentSpace I z,
-            (mfderiv I J f (L z) (mfderiv I I L z w) : F) =
-              mfderiv J J Φ (f z) (mfderiv I J f z w) := fun w ↦ by
-          have h1 := DFunLike.congr_fun
-            (mfderiv_comp z (hf.mdifferentiableAt (L z)) (hL_smooth.mdifferentiableAt (by simp))) w
-          have h2 := DFunLike.congr_fun
-            (mfderiv_comp z (Φ.mdifferentiableAt (f z)) (hf.mdifferentiableAt z)) w
-          have h12 : (mfderiv I J (f ∘ L) z w : F) = mfderiv I J (Φ ∘ f) z w := by
-            rw [show (f ∘ L : M → N) = Φ ∘ f from hL]
-          exact h1.symm.trans (h12.trans h2)
-        have hinner : ∀ {q₁ q₂ : N} (_ : q₁ = q₂) (a₁ b₁ : TangentSpace J q₁)
-            (a₂ b₂ : TangentSpace J q₂), (a₁ : F) = a₂ → (b₁ : F) = b₂ →
-            inner ℝ a₁ b₁ = inner ℝ a₂ b₂ := by
-          rintro q _ rfl a b _ _ rfl rfl
-          rfl
-        calc
-          inner ℝ (mfderiv I I L z u) (mfderiv I I L z v) =
-              inner ℝ (mfderiv I J f (L z) (mfderiv I I L z u))
-                (mfderiv I J f (L z) (mfderiv I I L z v)) :=
-            (hf.inner_mfderiv (L z) _ _).symm
-          _ = inner ℝ (mfderiv J J Φ (f z) (mfderiv I J f z u))
-                (mfderiv J J Φ (f z) (mfderiv I J f z v)) :=
-            hinner (congrFun hL z) _ _ _ _ (hcomp u) (hcomp v)
-          _ = inner ℝ (mfderiv I J f z u) (mfderiv I J f z v) :=
-            Φ.inner_mfderiv (f z) _ _
-          _ = inner ℝ u v := hf.inner_mfderiv z u v }
+        rw [← d.coe_toEquiv]
+        exact hf.inner_mfderiv_of_comp_eq hf Φ.isLocalRiemannianIsometry
+          (hL_smooth.mdifferentiableAt (by simp)) hL u v }
   refine ⟨Φ', ⟨hLx, hL⟩, fun Ψ ⟨hΨx, hΨ⟩ ↦ ?_⟩
   have hΨC : (⟨Ψ, Ψ.toDiffeomorph.continuous⟩ : C(M, M)) = L := hLuniq _ ⟨hΨx, hΨ⟩
   exact RiemannianIsometry.ext fun z ↦ DFunLike.congr_fun hΨC z
@@ -165,17 +191,13 @@ theorem existsUnique_isGeodesicSymmetryAt_of_isCoveringMap (hf : IsLocalRiemanni
     hf.existsUnique_lift_isom_of_isCoveringMap hcov Φ hΦ.apply_eq.symm
   have hsym : IsGeodesicSymmetryAt Φ' x := by
     refine ⟨hΦ'x, ?_, ?_⟩
-    · obtain ⟨_, -, huniq1⟩ :=
-        hf.existsUnique_lift_isom_of_isCoveringMap hcov (1 : Isom J N) (x := x) (y := x) (by simp)
-      have hsq : Φ' * Φ' = _ := huniq1 (Φ' * Φ') ⟨by simp [hΦ'x], by
-        funext z
-        have h1 : f (Φ' z) = Φ (f z) := congrFun hΦ' z
-        have h2 : f (Φ' (Φ' z)) = Φ (f (Φ' z)) := congrFun hΦ' (Φ' z)
-        simpa [RiemannianIsometry.mul_apply, h1, hΦ.apply_apply] using h2⟩
-      have hone : (1 : Isom I M) = _ := huniq1 1 ⟨by simp, by funext z; simp⟩
-      exact hsq.trans hone.symm
-    · ext v
-      apply hf.mfderiv_injective x
+    · have hΦ'_cont : Continuous ⇑Φ' := Φ'.toDiffeomorph.continuous
+      have hinv := hcov.leftInverse_of_comp_eq hΦ'_cont hΦ'_cont hΦ' hΦ' hΦ.involutive
+        (by rw [hΦ'x, hΦ'x])
+      ext z
+      rw [RiemannianIsometry.mul_apply, RiemannianIsometry.one_apply]
+      exact hinv z
+    · refine eq_neg_id_of_apply hΦ'x fun v ↦ ?_
       have h1 : (mfderiv I J (f ∘ Φ') x v : F) = mfderiv I J f (Φ' x) (mfderiv I I Φ' x v) :=
         DFunLike.congr_fun
           (mfderiv_comp x (hf.mdifferentiableAt (Φ' x)) (Φ'.mdifferentiableAt x)) v
@@ -184,19 +206,15 @@ theorem existsUnique_isGeodesicSymmetryAt_of_isCoveringMap (hf : IsLocalRiemanni
           (mfderiv_comp x (Φ.mdifferentiableAt (f x)) (hf.mdifferentiableAt x)) v
       have h12 : (mfderiv I J (f ∘ Φ') x v : F) = mfderiv I J (Φ ∘ f) x v := by
         rw [hΦ']
-      have hstep : ∀ {q : M} (_ : q = x) (w : TangentSpace I q) (w' : TangentSpace I x),
-          (w : E) = w' → (mfderiv I J f q w : F) = mfderiv I J f x w' := by
-        rintro q rfl w _ rfl
-        rfl
-      have hlhs : (mfderiv I J f x (mfderiv I I Φ' x v) : F) =
-          -(mfderiv I J f x v : F) :=
-        (hstep hΦ'x _ _ rfl).symm.trans
+      let w : TangentSpace I x := tangentSpaceCast I (Φ' x) x (mfderiv I I Φ' x v)
+      have hw : (mfderiv I I Φ' x v : E) = w :=
+        (coe_tangentSpaceCast I (Φ' x) x (mfderiv I I Φ' x v)).symm
+      have hlhs : (mfderiv I J f x w : F) = -(mfderiv I J f x v : F) :=
+        (mfderiv_apply_congr_point hΦ'x hw).symm.trans
           (h1.symm.trans (h12.trans (h2.trans (hΦ.mfderiv_apply _))))
-      have hrhs : (mfderiv I J f x ((-ContinuousLinearMap.id ℝ (TangentSpace I x)) v) : F) =
-          -(mfderiv I J f x v : F) := by
-        change (mfderiv I J f x (-v) : F) = -(mfderiv I J f x v : F)
-        rw [map_neg]
-      exact hlhs.trans hrhs.symm
+      have hwx : mfderiv I J f x w = mfderiv I J f x (-v) :=
+        hlhs.trans (map_neg (mfderiv I J f x) v).symm
+      exact hw.trans (hf.mfderiv_injective x hwx)
   exact ⟨Φ', ⟨hsym, hΦ'⟩,
     fun Ψ ⟨hΨsym, hΨ⟩ ↦ huniq Ψ ⟨hΨsym.apply_eq, hΨ⟩⟩
 

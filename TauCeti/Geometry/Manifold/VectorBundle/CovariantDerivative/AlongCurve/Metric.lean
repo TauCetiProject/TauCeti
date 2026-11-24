@@ -47,9 +47,11 @@ the same theorem.
   a field of locally constant length is orthogonal to its covariant derivative.
 * `CovariantDerivative.IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero`: parallel fields
   along a curve have constant inner product.
-* `CovariantDerivative.IsMetricCompatible.eq_of_alongCurveWithin_eq_zero` and
-  `CovariantDerivative.IsMetricCompatible.eq_of_alongCurve_eq_zero`: parallel fields that agree at
-  one parameter agree on the whole preconnected parameter set.
+* `CovariantDerivative.IsMetricCompatible.eq_of_alongCurveWithin_eq_zero`,
+  `CovariantDerivative.IsMetricCompatible.eq_of_alongCurve_eq_zero`, and
+  `CovariantDerivative.IsMetricCompatible.totalSpace_eq_of_alongCurve_eq_zero`: parallel fields that
+  agree at one parameter agree on the whole preconnected parameter set (and in the tangent-bundle
+  total space along equal curves).
 
 ## References
 
@@ -544,6 +546,27 @@ theorem IsMetricCompatible.eq_of_alongCurve_eq_zero
     (fun t ht ↦ (hV t ht).differentiableWithinAt)
     (fun t ht ↦ (hW t ht).differentiableWithinAt)
     (hrestrict V hV hV₀) (hrestrict W hW hW₀) ha hb hinit
+
+/-- **Uniqueness of parallel fields in the tangent bundle**, along equal curves: on a preconnected
+parameter set, two parallel tangent fields along equal differentiable curves whose lifts to the
+tangent bundle agree at one parameter have equal lifts at every parameter of the set. -/
+theorem IsMetricCompatible.totalSpace_eq_of_alongCurve_eq_zero
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hconn : IsPreconnected s) {γ₁ γ₂ : ℝ → M} (hγ_eq : γ₁ = γ₂)
+    (hγ : ∀ t ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ) I γ₁ t)
+    {V : ∀ r, TangentSpace I (γ₁ r)} {W : ∀ r, TangentSpace I (γ₂ r)}
+    (hV : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ₁ V (γ₁ t)) t)
+    (hW : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ₂ W (γ₂ t)) t)
+    (hV₀ : ∀ t ∈ s, alongCurve cov γ₁ V t = 0)
+    (hW₀ : ∀ t ∈ s, alongCurve cov γ₂ W t = 0)
+    {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s)
+    (hinit : TotalSpace.mk' E (γ₁ a) (V a) = TotalSpace.mk' E (γ₂ a) (W a)) :
+    TotalSpace.mk' E (γ₁ b) (V b) = TotalSpace.mk' E (γ₂ b) (W b) := by
+  subst hγ_eq
+  have hinit' : V a = W a := by simpa using hinit
+  exact congrArg (TotalSpace.mk' E (γ₁ b))
+    (hcov.eq_of_alongCurve_eq_zero hconn hγ hV hW hV₀ hW₀ ha hb hinit')
 
 end Riemannian
 

@@ -13,6 +13,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LocallySymmetric
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod.Basic
 
 import TauCeti.Algebra.Group.Subgroup.Normalizer
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Congr
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Ext
@@ -93,6 +95,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
+/-- In any module over a division ring of characteristic zero (such as `ℝ`), `-v = v` implies
+`v = 0`. -/
+theorem eq_zero_of_neg_eq_self (𝕜 : Type*) {V : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] {v : V} (h : -v = v) : v = 0 := by
+  rwa [neg_eq_iff_add_eq_zero, ← two_smul 𝕜, smul_eq_zero, or_iff_right (two_ne_zero' 𝕜)] at h
+
 /-! ### Geodesic symmetries at a point -/
 
 /-- A Riemannian self-isometry `Φ` of `M` is a **geodesic symmetry** (or **point reflection**) at
@@ -128,9 +136,8 @@ theorem symm_eq (hΦ : IsGeodesicSymmetryAt Φ p) : Φ.symm = Φ :=
 
 /-- The differential of a geodesic symmetry at `p` negates every tangent vector at `p`. -/
 theorem mfderiv_apply (hΦ : IsGeodesicSymmetryAt Φ p) (v : TangentSpace I p) :
-    mfderiv I I Φ p v = -v := by
-  rw [hΦ.mfderiv_eq]
-  rfl
+    mfderiv I I Φ p v = -v :=
+  apply_of_eq_neg_id hΦ.apply_eq hΦ.mfderiv_eq v
 
 /-- Conjugating a geodesic symmetry at `p` by a Riemannian isometry `Ψ : M → N` produces a
 geodesic symmetry at `Ψ p`. -/
@@ -155,27 +162,21 @@ theorem conj {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     have hΦΨ : (Φ ∘ Ψ.symm) (Ψ p) = p := by simp [hΦ.apply_eq]
     rw [hcomp, mfderiv_comp (Ψ p) hd3 (hd2.comp (Ψ p) hd1),
       mfderiv_comp (Ψ p) hd2 hd1]
-    ext v
+    refine eq_neg_id_of_apply (by simp [hΦ.apply_eq]) fun v ↦ ?_
     simp only [ContinuousLinearMap.comp_apply, Function.comp_apply]
-    have hstep : ∀ {q₁ q₂ : M} (_ : q₁ = p) (_ : q₂ = p)
-        (w₁ : TangentSpace I q₁) (w₂ : TangentSpace I q₂),
-        (w₁ : E) = -(w₂ : E) →
-        (mfderiv I J Ψ q₁ w₁ : F) = -(mfderiv I J Ψ q₂ w₂ : F) := by
-      rintro q₁ q₂ rfl rfl w₁ w₂ h
-      have hw : w₁ = -w₂ := h
-      rw [hw, map_neg]
-    have hv : (mfderiv I I Φ (Ψ.symm (Ψ p)) (mfderiv J I Ψ.symm (Ψ p) v) : E) =
-        -(mfderiv J I Ψ.symm (Ψ p) v : E) := by
-      rw [Ψ.symm_apply_apply]
-      exact hΦ.mfderiv_apply _
-    have hid : (mfderiv I J Ψ (Ψ.symm (Ψ p)) (mfderiv J I Ψ.symm (Ψ p) v) : F) = v := by
+    let w : TangentSpace I (Ψ.symm (Ψ p)) := mfderiv J I Ψ.symm (Ψ p) v
+    let u : TangentSpace I p := tangentSpaceCast I (Ψ.symm (Ψ p)) p w
+    have hwu : (w : E) = u := (coe_tangentSpaceCast I (Ψ.symm (Ψ p)) p w).symm
+    have hv : (mfderiv I I Φ (Ψ.symm (Ψ p)) w : E) = (-u : TangentSpace I p) :=
+      (mfderiv_apply_congr_point (Ψ.symm_apply_apply p) hwu).trans (hΦ.mfderiv_apply u)
+    have hid : (mfderiv I J Ψ p u : F) = v := by
       have hcomp_id : (⇑Ψ ∘ ⇑Ψ.symm : N → N) = id := funext Ψ.apply_symm_apply
-      have h := DFunLike.congr_fun
-        (mfderiv_comp (Ψ p) (Ψ.mdifferentiableAt (Ψ.symm (Ψ p)))
-          (Ψ.symm.mdifferentiableAt (Ψ p))) v
-      rw [hcomp_id, mfderiv_id] at h
-      exact h.symm
-    exact (hstep hΦΨ (Ψ.symm_apply_apply p) _ _ hv).trans (congrArg Neg.neg hid)
+      have h := mfderiv_apply_mfderiv_of_eventuallyEq_comp (.of_eq hcomp_id)
+        (Ψ.mdifferentiableAt (Ψ.symm (Ψ p))) hd1 v
+      rw [mfderiv_id, ContinuousLinearMap.id_apply] at h
+      exact (mfderiv_apply_congr_point (Ψ.symm_apply_apply p) hwu).symm.trans h
+    exact (mfderiv_apply_congr_point hΦΨ hv).trans
+      ((map_neg (mfderiv I J Ψ p) u).trans (congrArg Neg.neg hid))
 
 /-- Conjugating a geodesic symmetry at `p` by `Ψ ∈ Isom I M` gives a geodesic symmetry at
 `Ψ p`. -/
@@ -215,21 +216,16 @@ variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
 namespace IsGeodesicSymmetryAt
 
-/-- **Vanishing of `∇R` at the centre of a geodesic symmetry.** The differential of a geodesic
-symmetry at `p` is `-id`, which negates the left-hand side of naturality of `∇R` while multiplying
-the four multilinear arguments on the right-hand side by `(-1) ^ 4 = 1`. -/
+/-- **Vanishing of `∇R` at the centre of a geodesic symmetry.** If `M` admits a geodesic symmetry
+at `p`, then the covariant derivative of the curvature tensor of the Levi-Civita connection
+vanishes at `p`. -/
 theorem derivCurvatureTensor_eq_zero {Φ : Isom I M} {p : M} (hΦ : IsGeodesicSymmetryAt Φ p) :
     (leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p = 0 := by
+  -- Naturality of `∇R` under `dΦ_p = -id` negates the output while multiplying the four
+  -- multilinear inputs by `(-1) ^ 4 = 1`, forcing `(∇R)_p = -(∇R)_p`.
   ext v u w s
+  simp only [LinearMap.zero_apply]
   have hnat := Φ.isLocalRiemannianIsometry.mfderiv_derivCurvatureTensor p v u w s
-  have hcongr : ∀ {q : M} (_ : q = p) {v' u' w' s' : TangentSpace I q},
-      (v' : E) = -v → (u' : E) = -u → (w' : E) = -w → (s' : E) = -s →
-      ((leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) q v' u' w' s' :
-          E) =
-        (leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p
-          (-v) (-u) (-w) (-s) := by
-    rintro q rfl v' u' w' s' rfl rfl rfl rfl
-    rfl
   have h : -((leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p
       v u w s) =
       (leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p
@@ -240,22 +236,11 @@ theorem derivCurvatureTensor_eq_zero {Φ : Isom I M} {p : M} (hΦ : IsGeodesicSy
         (leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p
           (-v) (-u) (-w) (-s) :=
       (hΦ.mfderiv_apply _).symm.trans (hnat.trans
-        (hcongr hΦ.apply_eq (hΦ.mfderiv_apply v) (hΦ.mfderiv_apply u)
+        (derivCurvatureTensor_tangentSpace_congr (leviCivitaConnection I M)
+          (leviCivitaConnection I M) hΦ.apply_eq (hΦ.mfderiv_apply v) (hΦ.mfderiv_apply u)
           (hΦ.mfderiv_apply w) (hΦ.mfderiv_apply s)))
     simpa only [map_neg, LinearMap.neg_apply, neg_neg] using h1
-  have h2 : (2 : ℝ) •
-      ((leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p v u w s) = 0 :=
-    calc
-      (2 : ℝ) •
-          ((leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p v u w s) =
-          (leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p v u w s +
-            (leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p v u w s :=
-        two_smul ℝ _
-      _ = -((leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p v u w s) +
-            (leviCivitaConnection I M).derivCurvatureTensor (leviCivitaConnection I M) p v u w s :=
-        congrArg (· + _) h.symm
-      _ = 0 := neg_add_cancel _
-  exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+  exact eq_zero_of_neg_eq_self ℝ h
 
 end IsGeodesicSymmetryAt
 
@@ -269,18 +254,13 @@ theorem isGeodesicSymmetryAt_of_mfderiv_eq_neg_id [PreconnectedSpace M] {Φ : Is
   apply_eq := hp
   mul_self := by
     refine RiemannianIsometry.ext_of_mfderiv_eq (Φ * Φ) 1 (p := p) (by simp [hp]) ?_
-    rw [RiemannianIsometry.coe_mul, RiemannianIsometry.coe_one,
-      mfderiv_comp p (Φ.mdifferentiableAt (Φ p)) (Φ.mdifferentiableAt p), mfderiv_id]
-    ext v
-    have hstep : ∀ {q : M} (_ : q = p) (w : TangentSpace I q) (w' : TangentSpace I p),
-        (w : E) = w' → mfderiv I I Φ q w = mfderiv I I Φ p w' := by
-      rintro q rfl w _ rfl
-      rfl
-    have hdv : ∀ w : TangentSpace I p, mfderiv I I Φ p w = -w := fun w ↦ by
-      rw [hd]
-      rfl
-    simp only [ContinuousLinearMap.comp_apply]
-    exact (hstep hp _ (-v) (hdv v)).trans (by rw [hdv (-v), neg_neg]; rfl)
+    have hf : HasMFDerivAt I I Φ p (-ContinuousLinearMap.id ℝ (TangentSpace I p)) :=
+      hd ▸ (Φ.mdifferentiableAt p).hasMFDerivAt
+    have hf2 := (hf.iterate hp 2).mfderiv
+    rw [Function.iterate_succ, Function.iterate_one, sq, ContinuousLinearMap.mul_def,
+      ContinuousLinearMap.neg_comp, ContinuousLinearMap.comp_neg, neg_neg,
+      ContinuousLinearMap.id_comp] at hf2
+    rw [RiemannianIsometry.coe_mul, RiemannianIsometry.coe_one, hf2, mfderiv_id]
   mfderiv_eq := hd
 
 namespace IsGeodesicSymmetryAt
@@ -301,19 +281,12 @@ theorem exists_nhds_eq_of_apply_eq (hΦ : IsGeodesicSymmetryAt Φ p) :
   obtain ⟨r, -, hU⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
   refine ⟨riemannianExp I M p '' Metric.ball 0 r, hU.image_mem_nhds, ?_⟩
   rintro q ⟨v, hv, rfl⟩ hq
-  have hΦv : (mfderiv I I Φ p v : TangentSpace I p) ∈ Metric.ball (0 : TangentSpace I p) r := by
-    have hneg : (-v : TangentSpace I p) ∈ Metric.ball (0 : TangentSpace I p) r := by
-      simpa [Metric.mem_ball, dist_zero_right] using hv
-    exact Eq.mpr (congrArg (· ∈ Metric.ball (0 : TangentSpace I p) r) (hΦ.mfderiv_apply v)) hneg
+  have hΦv : (mfderiv I I Φ p v : TangentSpace I p) ∈ Metric.ball (0 : TangentSpace I p) r :=
+    mfderiv_mem_ball_of_apply_eq_self hΦ.apply_eq (Φ.inner_mfderiv p) hv
   have hv_neg : -v = v := by
     rw [← hΦ.mfderiv_apply]
     exact (Φ.apply_riemannianExp_eq_self_iff hU hΦ.apply_eq hv hΦv).1 hq
-  have hv2 : (2 : ℝ) • v = 0 := calc
-    (2 : ℝ) • v = v + v := two_smul ℝ v
-    _ = -v + v := congrArg (· + v) hv_neg.symm
-    _ = 0 := neg_add_cancel v
-  have hv0 : v = 0 := (smul_eq_zero.1 hv2).resolve_left two_ne_zero
-  rw [hv0, riemannianExp_zero]
+  rw [eq_zero_of_neg_eq_self ℝ hv_neg, riemannianExp_zero]
 
 /-- In a punctured neighbourhood of `p`, a geodesic symmetry at `p` has no fixed points. -/
 theorem eventually_apply_ne (hΦ : IsGeodesicSymmetryAt Φ p) :
@@ -327,11 +300,7 @@ omit [T2Space M] [I.Boundaryless] in
 theorem geodesicInterval_neg_eq (hΦ : IsGeodesicSymmetryAt Φ p) (v : TangentSpace I p) :
     geodesicInterval I M p (-v) = geodesicInterval I M p v := by
   rw [← Φ.geodesicInterval_mfderiv p v]
-  have hcongr : ∀ {q : M} (_ : q = p) {w : TangentSpace I q},
-      (w : E) = -v → geodesicInterval I M p (-v) = geodesicInterval I M q w := by
-    rintro q rfl w rfl
-    rfl
-  exact hcongr hΦ.apply_eq (hΦ.mfderiv_apply v)
+  exact (geodesicInterval_congr hΦ.apply_eq (hΦ.mfderiv_apply v)).symm
 
 omit [T2Space M] [I.Boundaryless] in
 /-- The maximal geodesic interval of any tangent vector at `p` is symmetric about `0` whenever `p`
@@ -401,26 +370,6 @@ theorem mul_apply_isGeodesicCurve {γ : ℝ → M} {a b : ℝ}
   rw [RiemannianIsometry.mul_apply, hΦ.apply_isGeodesicCurve hγ, hΨ.apply_isGeodesicCurve hγ]
   ring_nf
 
-omit [T2Space M] [I.Boundaryless] in
-/-- Parallel fields along equal curves that agree at one parameter agree everywhere, expressed in
-the tangent bundle total space to avoid fibre casts. -/
-private theorem totalSpace_eq_of_alongCurve_eq_zero {δ₁ δ₂ : ℝ → M} (hδ : δ₁ = δ₂)
-    (hγ : ∀ t, MDifferentiableAt 𝓘(ℝ, ℝ) I δ₁ t)
-    {V₁ : ∀ r, TangentSpace I (δ₁ r)} {V₂ : ∀ r, TangentSpace I (δ₂ r)}
-    (hV₁ : ∀ t, DifferentiableAt ℝ (sectionCoord (F := E) δ₁ V₁ (δ₁ t)) t)
-    (hV₂ : ∀ t, DifferentiableAt ℝ (sectionCoord (F := E) δ₂ V₂ (δ₂ t)) t)
-    (hV₁₀ : ∀ t, alongCurve (leviCivitaConnection I M) δ₁ V₁ t = 0)
-    (hV₂₀ : ∀ t, alongCurve (leviCivitaConnection I M) δ₂ V₂ t = 0)
-    {a : ℝ}
-    (hinit : TotalSpace.mk' E (δ₁ a) (V₁ a) = TotalSpace.mk' E (δ₂ a) (V₂ a)) (t : ℝ) :
-    TotalSpace.mk' E (δ₁ t) (V₁ t) = TotalSpace.mk' E (δ₂ t) (V₂ t) := by
-  subst hδ
-  have hinit' : V₁ a = V₂ a := by simpa using hinit
-  have ht := (isMetricCompatible_leviCivitaConnection (I := I) (M := M)).eq_of_alongCurve_eq_zero
-    isPreconnected_univ (fun r _ ↦ hγ r) (fun r _ ↦ hV₁ r) (fun r _ ↦ hV₂ r)
-    (fun r _ ↦ hV₁₀ r) (fun r _ ↦ hV₂₀ r) (mem_univ a) (mem_univ t) hinit'
-  exact congrArg (TotalSpace.mk' E (δ₁ t)) ht
-
 /-- **Action of a geodesic symmetry on parallel fields along a geodesic.** If `Φ` is a geodesic
 symmetry at `γ a` and `V` is a parallel tangent field along an all-time geodesic `γ`, then `dΦ`
 maps `(γ t, V t)` to `(γ (2 * a - t), -V (2 * a - t))`. -/
@@ -471,9 +420,11 @@ theorem tangentMap_of_alongCurve_eq_zero {γ : ℝ → M} {a : ℝ}
     · rw [Function.comp_apply, hΦ.apply_eq, h2a]
     · rw [h2a]
       exact heq_of_eq (hΦ.mfderiv_apply (V a))
-  exact totalSpace_eq_of_alongCurve_eq_zero hΦγ
-    (fun r ↦ (Φ.mdifferentiableAt (γ r)).comp r (hγd r))
-    hdiff₁ hdiff₂ hpar₁ hpar₂ hinit t
+  exact (isMetricCompatible_leviCivitaConnection (I := I) (M := M)
+    ).totalSpace_eq_of_alongCurve_eq_zero isPreconnected_univ hΦγ
+    (fun r _ ↦ (Φ.mdifferentiableAt (γ r)).comp r (hγd r))
+    (fun r _ ↦ hdiff₁ r) (fun r _ ↦ hdiff₂ r) (fun r _ ↦ hpar₁ r) (fun r _ ↦ hpar₂ r)
+    (mem_univ a) (mem_univ t) hinit
 
 /-- **Transvections realize parallel transport along geodesics.** If `Φ` is a geodesic symmetry at
 `γ a`, `Ψ` is a geodesic symmetry at `γ b`, and `V` is a parallel tangent field along an all-time
@@ -704,12 +655,14 @@ theorem geodesicSymmetry_conj [PreconnectedSpace M] [IsRiemannianSymmetricSpace 
     Ψ * geodesicSymmetry I M p * Ψ⁻¹ = geodesicSymmetry I M (Ψ p) :=
   ((isGeodesicSymmetryAt_geodesicSymmetry (I := I) p).conj_isom Ψ).eq_geodesicSymmetry
 
-/-- **Maximal geodesic intervals are all of `ℝ` on a Riemannian symmetric space.** If the maximal
-interval `J` of `(p, v)` had a finite supremum `b > 0`, reflecting at `t₀ ∈ (b / 2, b)` via the
-geodesic symmetry at `γ(t₀)` would show `2 * t₀ ∈ J`, contradicting `2 * t₀ > b`. -/
+/-- **Maximal geodesic intervals are all of `ℝ` on a Riemannian symmetric space.** For every base
+point `p` and initial velocity `v`, `geodesicInterval I M p v = Set.univ`. -/
 theorem geodesicInterval_eq_univ_of_isRiemannianSymmetricSpace
     [IsRiemannianSymmetricSpace I M] (p : M) (v : TangentSpace I p) :
     geodesicInterval I M p v = univ := by
+  -- If `geodesicInterval I M p v` had a finite supremum `b > 0`, reflecting the geodesic at
+  -- `t₀ ∈ (b / 2, b)` via the geodesic symmetry at `γ(t₀)` would give `2 * t₀ ∈ J`,
+  -- contradicting `2 * t₀ > b`.
   have hsym : ∀ t : ℝ, -t ∈ geodesicInterval I M p v ↔ t ∈ geodesicInterval I M p v :=
     fun _ ↦ (isGeodesicSymmetryAt_geodesicSymmetry (I := I) p).neg_mem_geodesicInterval_iff
   have hup : ¬ BddAbove (geodesicInterval I M p v) := by
