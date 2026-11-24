@@ -9,9 +9,8 @@ public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.FieldTheory.MilnorKTheory.Grading
-import TauCeti.Algebra.Order.Ring.Units
-import TauCeti.Data.ZMod.IntUnitsPower
-import Mathlib.GroupTheory.IndexNormal
+import Mathlib.Algebra.Order.Ring.Units
+import TauCeti.GroupTheory.Index.Two
 
 /-!
 # Order-sign detector on Milnor K-theory
@@ -75,24 +74,17 @@ theorem orderSign_eq_zero_iff {a : Rˣ} : orderSign a = 0 ↔ 0 < (a : R) := by
 variable (R) in
 /-- The additive homomorphism `Additive Rˣ →+ ZMod 2` recording the sign of a unit. -/
 noncomputable def orderSignHom : Additive Rˣ →+ ZMod 2 :=
-  letI : (Units.posSubgroup R).Normal :=
-    Subgroup.normal_of_index_eq_two (Units.index_posSubgroup R)
-  additiveIntUnitsAddEquiv.toAddMonoidHom.comp
-    (MonoidHom.toAdditive
-      ((Units.signEquiv R).toMonoidHom.comp (QuotientGroup.mk' (Units.posSubgroup R))))
+  MonoidHom.toAdditiveLeft ((Units.posSubgroup R).indexTwoCharacter (Units.index_posSubgroup R))
 
 @[simp] theorem orderSignHom_ofMul (a : Rˣ) :
     orderSignHom R (Additive.ofMul a) = orderSign a := by
-  simp only [orderSignHom, AddMonoidHom.comp_apply, AddEquiv.toAddMonoidHom_eq_coe,
-    MonoidHom.coe_toAdditive, Function.comp_apply, toMul_ofMul, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, QuotientGroup.coe_mk', orderSign_def]
+  rw [orderSignHom, MonoidHom.coe_toAdditiveLeft, Function.comp_apply, Function.comp_apply,
+    toMul_ofMul]
   rcases lt_or_gt_of_ne a.ne_zero with ha | ha
-  · have hs : Units.signEquiv R (QuotientGroup.mk a) = -1 :=
-      (Units.signEquiv_mk_eq_neg_one_iff a).mpr ha
-    simp [hs, ha]
-  · have hs : Units.signEquiv R (QuotientGroup.mk a) = 1 :=
-      (Units.signEquiv_mk_eq_one_iff a).mpr ha
-    simp [hs, ha.le]
+  · have hmem : a ∉ Units.posSubgroup R := by simp [Units.mem_posSubgroup, ha.le]
+    rw [Subgroup.toAdd_indexTwoCharacter_of_notMem _ hmem, orderSign_of_neg ha]
+  · have hmem : a ∈ Units.posSubgroup R := (Units.mem_posSubgroup a).mpr ha
+    rw [Subgroup.toAdd_indexTwoCharacter_of_mem _ hmem, orderSign_of_pos ha]
 
 /-- Unfolding lemma for `TauCeti.orderSignHom`. -/
 theorem orderSignHom_apply (u : Additive Rˣ) :
@@ -151,8 +143,10 @@ end SymbolGroup
 
 namespace MilnorK
 
-private noncomputable def orderSignPolyHom (R : Type*) [CommRing R] [LinearOrder R]
-    [IsStrictOrderedRing R] : MilnorK R →+* Polynomial (ZMod 2) :=
+variable (R) in
+/-- The order-sign ring homomorphism `MilnorK R →+* Polynomial (ZMod 2)`, sending `ofUnit a` to
+`C (orderSign a) * X`. -/
+noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
   MilnorK.lift R
     { toFun := fun u => Polynomial.C (orderSignHom R u) * Polynomial.X
       map_zero' := by simp
@@ -166,32 +160,32 @@ private noncomputable def orderSignPolyHom (R : Type*) [CommRing R] [LinearOrder
           simp only [orderSignHom_ofMul, map_mul]; ring
         _ = 0 := by rw [h0, map_zero, zero_mul]
 
-private theorem orderSignPolyHom_ofUnit (a : Rˣ) :
-    orderSignPolyHom R (ofUnit a) = Polynomial.C (orderSign a) * Polynomial.X :=
+@[simp] theorem orderSignPoly_ofUnit (a : Rˣ) :
+    orderSignPoly R (ofUnit a) = Polynomial.C (orderSign a) * Polynomial.X :=
   (lift_ofUnit _ _ a).trans (by simp)
 
-private theorem orderSignPolyHom_symbol (l : List Rˣ) :
-    orderSignPolyHom R (symbol l) =
-      Polynomial.C (l.map orderSign).prod * Polynomial.X ^ l.length := by
+@[simp] theorem orderSignPoly_symbol (l : List Rˣ) :
+    orderSignPoly R (symbol l) = Polynomial.C (l.map orderSign).prod * Polynomial.X ^ l.length := by
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [symbol_cons, map_mul, orderSignPolyHom_ofUnit, ih, List.map_cons, List.prod_cons,
+    rw [symbol_cons, map_mul, orderSignPoly_ofUnit, ih, List.map_cons, List.prod_cons,
       List.length_cons, map_mul, pow_succ']; ring
 
-private theorem coeff_orderSignPolyHom_symbol (l : List Rˣ) (n : ℕ) :
-    (orderSignPolyHom R (symbol l)).coeff n =
+theorem coeff_orderSignPoly_symbol (l : List Rˣ) (n : ℕ) :
+    (orderSignPoly R (symbol l)).coeff n =
       if l.length = n then (l.map orderSign).prod else 0 := by
-  rw [orderSignPolyHom_symbol, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
+  rw [orderSignPoly_symbol, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
   by_cases h : l.length = n <;> simp [h, Ne.symm]
 
-private theorem coeff_orderSignPolyHom_of_mem_degree_ne {n k : ℕ} (hkn : k ≠ n) {x : MilnorK R}
-    (hx : x ∈ degree R n) : (orderSignPolyHom R x).coeff k = 0 := by
+/-- For every `x ∈ MilnorK.degree R n`, `orderSignPoly R x` is homogeneous of degree `n`. -/
+theorem coeff_orderSignPoly_of_mem_degree_ne {n k : ℕ} (hkn : k ≠ n) {x : MilnorK R}
+    (hx : x ∈ degree R n) : (orderSignPoly R x).coeff k = 0 := by
   rw [degree_eq_span] at hx
   induction hx using Submodule.span_induction with
   | mem _ hy =>
     obtain ⟨l, rfl, rfl⟩ := hy
-    rw [coeff_orderSignPolyHom_symbol, ite_eq_right hkn.symm]
+    rw [coeff_orderSignPoly_symbol, ite_eq_right hkn.symm]
   | zero => simp
   | add _ _ _ _ hy hz => simp [hy, hz]
   | smul _ _ _ hy =>
@@ -203,43 +197,19 @@ graded by monomial degree. -/
 noncomputable def gradedOrderSignPoly :
     degree R →+*ᵍ fun n : ℕ =>
       LinearMap.range (Polynomial.monomial n : ZMod 2 →ₗ[ZMod 2] Polynomial (ZMod 2)) where
-  toRingHom := orderSignPolyHom R
+  toRingHom := orderSignPoly R
   map_mem {n x} hx := by
-    refine ⟨(orderSignPolyHom R x).coeff n, ?_⟩
+    refine ⟨(orderSignPoly R x).coeff n, ?_⟩
     ext k
     simp only [Polynomial.coeff_monomial_apply]
     split_ifs with hkn
     · rw [hkn]
-    · exact (coeff_orderSignPolyHom_of_mem_degree_ne (Ne.symm hkn) hx).symm
-
-variable (R) in
-/-- The order-sign ring homomorphism `MilnorK R →+* Polynomial (ZMod 2)`, sending `ofUnit a` to
-`C (orderSign a) * X`. -/
-noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
-  (gradedOrderSignPoly R).toRingHom
+    · exact (coeff_orderSignPoly_of_mem_degree_ne (Ne.symm hkn) hx).symm
 
 @[simp] theorem gradedOrderSignPoly_toRingHom :
-    (gradedOrderSignPoly R).toRingHom = orderSignPoly R := by rw [orderSignPoly]
+    (gradedOrderSignPoly R).toRingHom = orderSignPoly R := by rfl
 @[simp] theorem gradedOrderSignPoly_apply (x : MilnorK R) :
-    gradedOrderSignPoly R x = orderSignPoly R x := by
-  rw [← gradedOrderSignPoly_toRingHom]; rfl
-
-@[simp] theorem orderSignPoly_ofUnit (a : Rˣ) :
-    orderSignPoly R (ofUnit a) = Polynomial.C (orderSign a) * Polynomial.X :=
-  orderSignPolyHom_ofUnit a
-@[simp] theorem orderSignPoly_symbol (l : List Rˣ) :
-    orderSignPoly R (symbol l) = Polynomial.C (l.map orderSign).prod * Polynomial.X ^ l.length :=
-  orderSignPolyHom_symbol l
-
-theorem coeff_orderSignPoly_symbol (l : List Rˣ) (n : ℕ) :
-    (orderSignPoly R (symbol l)).coeff n =
-      if l.length = n then (l.map orderSign).prod else 0 :=
-  coeff_orderSignPolyHom_symbol l n
-
-/-- For every `x ∈ MilnorK.degree R n`, `orderSignPoly R x` is homogeneous of degree `n`. -/
-theorem coeff_orderSignPoly_of_mem_degree_ne {n k : ℕ} (hkn : k ≠ n) {x : MilnorK R}
-    (hx : x ∈ degree R n) : (orderSignPoly R x).coeff k = 0 :=
-  coeff_orderSignPolyHom_of_mem_degree_ne hkn hx
+    gradedOrderSignPoly R x = orderSignPoly R x := by rfl
 
 variable (R) in
 /-- The degree-`n` order-sign homomorphism `MilnorK.degree R n →ₗ[ℤ] ZMod 2`, extracting the

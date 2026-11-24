@@ -71,11 +71,10 @@ noncomputable def twoEquiv : M ⊗[R] M ≃ₗ[R] TensorPower R 2 M :=
 @[simp]
 theorem twoEquiv_tmul (a b : M) :
     twoEquiv R M (a ⊗ₜ[R] b) = PiTensorProduct.tprod R ![a, b] := by
-  rw [twoEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, oneEquiv_symm_apply,
-    oneEquiv_symm_apply, ← TensorPower.gMul_def, TensorPower.tprod_mul_tprod]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
+  have h : Fin.append (fun _ : Fin 1 ↦ a) (fun _ : Fin 1 ↦ b) = ![a, b] := by
+    ext i; fin_cases i <;> rfl
+  simp only [twoEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, oneEquiv_symm_apply]
+  rw [← TensorPower.gMul_def, TensorPower.tprod_mul_tprod, h]
 
 section map
 

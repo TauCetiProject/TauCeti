@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # Bilinear Steinberg pairings and the degree-two symbol group
@@ -311,9 +312,8 @@ def map {S : Type*} [CommSemiring S] (f : R →+* S) : SymbolGroup R →ₗ[ℤ]
 @[simp] theorem map_comp {S T : Type*} [CommSemiring S] [CommSemiring T] (g : S →+* T)
     (f : R →+* S) : map (g.comp f) = (map g).comp (map f) :=
   hom_ext fun a b => by
-    have hcomp : (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
-      MonoidHom.ext fun x => RingHom.comp_apply g f x
-    simp only [LinearMap.comp_apply, map_symbol, hcomp, Units.map_comp, MonoidHom.comp_apply]
+    simp only [LinearMap.comp_apply, map_symbol, RingHom.toMonoidHom_comp, Units.map_comp,
+      MonoidHom.comp_apply]
 
 end SymbolGroup
 

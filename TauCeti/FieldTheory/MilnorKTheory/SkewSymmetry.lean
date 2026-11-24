@@ -52,8 +52,9 @@ theorem ofUnit_mul_symbol (a : Fˣ) (l : List Fˣ) :
   induction l with
   | nil => simp
   | cons b l ih =>
-    rw [symbol_cons, List.length_cons, pow_succ', mul_zsmul, neg_one_zsmul, ← mul_assoc,
-      ofUnit_mul_comm a b, neg_mul (α := MilnorK F), mul_assoc, ih, mul_smul_comm, ← mul_assoc]
+    rw [symbol_cons, ← mul_assoc, ofUnit_mul_comm a b, neg_mul (α := MilnorK F), mul_assoc, ih,
+      mul_smul_comm]
+    simp [pow_succ', mul_assoc]
 
 /-- Commuting two Milnor symbols multiplies by `(-1) ^ (l₁.length * l₂.length)`. -/
 theorem symbol_mul_symbol (l₁ l₂ : List Fˣ) :
@@ -61,8 +62,8 @@ theorem symbol_mul_symbol (l₁ l₂ : List Fˣ) :
   induction l₁ with
   | nil => simp
   | cons a l₁ ih =>
-    rw [symbol_cons, List.length_cons, add_mul, one_mul, pow_add, mul_zsmul, mul_assoc, ih,
-      mul_smul_comm, ← mul_assoc, ofUnit_mul_symbol a l₂, smul_mul_assoc, mul_assoc]
+    rw [symbol_cons, mul_assoc, ih, mul_smul_comm, ← mul_assoc, ofUnit_mul_symbol a l₂]
+    simp [add_mul, pow_add, mul_assoc]
 
 /-- **Graded commutativity of `MilnorK F`**: homogeneous elements of degrees `m` and `n` satisfy
 `x * y = (-1)^(m * n) • (y * x)`. -/
@@ -122,8 +123,8 @@ theorem symbol_ofFn_comp_perm {n : ℕ} (v : Fin n → Fˣ) (σ : Equiv.Perm (Fi
   | swap_mul f i j hij ih =>
     have hcomp : v ∘ ⇑(Equiv.swap i j * f) = (v ∘ Equiv.swap i j) ∘ f :=
       funext fun k => congrArg v (Equiv.Perm.mul_apply (Equiv.swap i j) f k)
-    rw [hcomp, ih (v ∘ Equiv.swap i j), symbol_ofFn_comp_swap v hij, smul_neg, map_mul,
-      Equiv.Perm.sign_swap hij, Units.val_mul, Units.val_neg, Units.val_one, neg_one_mul, neg_zsmul]
+    rw [hcomp, ih (v ∘ Equiv.swap i j), symbol_ofFn_comp_swap v hij]
+    simp [Equiv.Perm.sign_swap hij]
 
 /-! ### Repeated and opposite entries -/
 

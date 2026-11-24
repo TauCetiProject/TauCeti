@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.RingQuot
 public import Mathlib.LinearAlgebra.TensorAlgebra.Basic
 public import TauCeti.FieldTheory.MilnorKTheory.SteinbergPairing
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # The Milnor K-theory ring of a commutative semiring
@@ -267,9 +268,8 @@ def map {S : Type*} [CommSemiring S] (f : R →+* S) : MilnorK R →+* MilnorK S
 @[simp] theorem map_comp {S T : Type*} [CommSemiring S] [CommSemiring T] (g : S →+* T)
     (f : R →+* S) : map (g.comp f) = (map g).comp (map f) :=
   ringHom_ext fun _ => by
-    have hcomp : (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
-      MonoidHom.ext fun x => RingHom.comp_apply g f x
-    simp only [RingHom.comp_apply, map_ofUnit, hcomp, Units.map_comp, MonoidHom.comp_apply]
+    simp only [RingHom.comp_apply, map_ofUnit, RingHom.toMonoidHom_comp, Units.map_comp,
+      MonoidHom.comp_apply]
 
 end
 

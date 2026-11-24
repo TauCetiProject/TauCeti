@@ -42,6 +42,8 @@ along field and completion isomorphisms.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
 * `RingEquiv.exists_eq_sq_sub_mul_sq_map_iff`: a ring equivalence preserves solvability of
   `b = x² - a y²`.
+* `RingHom.toMonoidHom_comp`: the monoid homomorphism underlying a composite of ring homomorphisms
+  is the composite of the underlying monoid homomorphisms.
 -/
 
 public section
@@ -116,3 +118,14 @@ theorem exists_eq_sq_sub_mul_sq_map_iff {R S : Type*} [Ring R] [Ring S] (e : R �
     exact ⟨e x, e y, by simp [h]⟩
 
 end RingEquiv
+
+namespace RingHom
+
+/-- The monoid homomorphism underlying a composite of ring homomorphisms is the composite of the
+underlying monoid homomorphisms. -/
+theorem toMonoidHom_comp {α β γ : Type*} [NonAssocSemiring α] [NonAssocSemiring β]
+    [NonAssocSemiring γ] (g : β →+* γ) (f : α →+* β) :
+    (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
+  rfl
+
+end RingHom
