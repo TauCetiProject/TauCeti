@@ -15,21 +15,19 @@ import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Probability.Distributions.Gaussian.QuadraticForm.Basic
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 import TauCeti.Probability.Moments.SubExponential
+import TauCeti.Probability.Moments.SubGaussian.Vector
 
 /-!
-# Sub-Gaussian linear forms and squared and directional exponential moments
+# Squared and directional exponential moments of sub-Gaussian variables
 
-For independent sub-Gaussian coordinates, a fixed linear form has a sub-Gaussian tail with
-variance proxy equal to the sum of the coordinate proxies weighted by the squared coefficients.
-Applying this to coefficients of the form `u i * v j` gives the fixed-bilinear-form estimate
-used in the operator-norm tail bound for random matrices.
-
-We also develop squared-variable exponential moment bounds for
+We develop squared-variable exponential moment bounds for
 `ProbabilityTheory.HasSubgaussianMGF` (`integrable_exp_mul_sq`, `integral_exp_mul_sq_le`,
-`mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, dot-product sub-Gaussian bounds for
-independent real and complex vectors, and Gaussianization and decoupled bilinear MGF bounds for
-jointly sub-Gaussian vectors (`TauCeti.integral_exp_half_mul_sum_mulVec_sq_le`,
+`mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, and
+Gaussianization and decoupled bilinear MGF bounds for jointly sub-Gaussian vectors
+(`TauCeti.integral_exp_half_mul_sum_mulVec_sq_le`,
 `TauCeti.mgf_dotProduct_mulVec_prod_le`; Vershynin 2018, §2.5–2.7, §6.2; Rudelson–Vershynin 2013).
+The exponential moment bounds for dot products of independent real and complex coordinates are in
+`TauCeti.Probability.Moments.SubGaussian.LinearForms`.
 -/
 
 public section
@@ -39,12 +37,6 @@ open scoped ENNReal NNReal Matrix Matrix.Norms.L2Operator
 
 namespace ProbabilityTheory
 
-/-- A random variable with centred Gaussian law `gaussianReal 0 v` is `v`-sub-Gaussian. -/
-theorem HasLaw.hasSubgaussianMGF {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
-    {v : ℝ≥0} (hX : HasLaw X (gaussianReal 0 v) μ) : HasSubgaussianMGF X v μ := by
-  rw [← HasSubgaussianMGF.id_map_iff hX.aemeasurable, hX.map_eq]
-  exact ⟨integrable_exp_mul_gaussianReal, fun t ↦ by simp [mgf_id_gaussianReal]⟩
-
 namespace HasSubgaussianMGF
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ} {c : ℝ≥0}
@@ -53,8 +45,7 @@ private theorem lintegral_ofReal_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s
     (hs0 : 0 ≤ s) (hs : 2 * (c : ℝ) * s < 1) :
     ∫⁻ ω, ENNReal.ofReal (exp (s * X ω ^ 2)) ∂μ ≤
       ENNReal.ofReal ((1 - 2 * (c : ℝ) * s) ^ (-1 / 2 : ℝ)) := by
-  have : IsFiniteMeasure μ := TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet (X := X)
-    (by simpa [integrableExpSet] using h.integrable_exp_mul 0)
+  have : IsFiniteMeasure μ := h.isFiniteMeasure
   let X₀ : Ω → ℝ := h.aemeasurable.mk X
   have hX₀_meas : Measurable X₀ := h.aemeasurable.measurable_mk
   have hX₀_eq : X =ᵐ[μ] X₀ := h.aemeasurable.ae_eq_mk; have h₀ := h.congr hX₀_eq
@@ -96,8 +87,7 @@ private theorem lintegral_ofReal_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s
 /-- For `c`-sub-Gaussian `X`, `exp (s * X ^ 2)` is integrable whenever `2 * c * s < 1`. -/
 theorem integrable_exp_mul_sq (h : HasSubgaussianMGF X c μ) {s : ℝ} (hs : 2 * (c : ℝ) * s < 1) :
     Integrable (fun ω ↦ exp (s * X ω ^ 2)) μ := by
-  have : IsFiniteMeasure μ := TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet (X := X)
-    (by simpa [integrableExpSet] using h.integrable_exp_mul 0)
+  have : IsFiniteMeasure μ := h.isFiniteMeasure
   have haesm : AEStronglyMeasurable (fun ω ↦ exp (s * X ω ^ 2)) μ :=
     (Real.measurable_exp.comp_aemeasurable
       ((h.aemeasurable.pow_const 2).const_mul s)).aestronglyMeasurable
@@ -179,24 +169,15 @@ theorem hasSubgaussianMGF_im_of_star_mul
 /-- Every directionally sub-Gaussian complex random variable is Bochner integrable. -/
 theorem integrable_of_hasSubgaussianMGF_re_star_mul
     (hZ : ∀ u : ℂ, HasSubgaussianMGF (fun ω ↦ (star u * Z ω).re) (‖u‖₊ ^ 2 * K) μ) :
-    Integrable Z μ := by
-  have hZ_eq : Z = fun ω ↦ ((Z ω).re : ℂ) + ((Z ω).im : ℂ) * Complex.I :=
-    funext fun ω ↦ (Complex.re_add_im (Z ω)).symm
-  rw [hZ_eq]
-  exact (hasSubgaussianMGF_re_of_star_mul hZ).integrable.ofReal.add
-    ((hasSubgaussianMGF_im_of_star_mul hZ).integrable.ofReal.mul_const Complex.I)
+    Integrable Z μ :=
+  (TauCeti.isSubgaussianVector_iff_hasSubgaussianMGF_re_star_mul.2 hZ).integrable
 
 /-- Under a zero or probability measure, every directionally sub-Gaussian complex random variable
 has expectation zero. -/
 theorem integral_eq_zero_of_hasSubgaussianMGF_re_star_mul [IsZeroOrProbabilityMeasure μ]
     (hZ : ∀ u : ℂ, HasSubgaussianMGF (fun ω ↦ (star u * Z ω).re) (‖u‖₊ ^ 2 * K) μ) :
-    ∫ ω, Z ω ∂μ = 0 := by
-  have hZ_int := integrable_of_hasSubgaussianMGF_re_star_mul hZ
-  apply Complex.ext
-  · simpa using (Complex.reCLM.integral_comp_comm hZ_int).symm.trans
-      (hasSubgaussianMGF_re_of_star_mul hZ).integral_eq_zero
-  · simpa using (Complex.imCLM.integral_comp_comm hZ_int).symm.trans
-      (hasSubgaussianMGF_im_of_star_mul hZ).integral_eq_zero
+    ∫ ω, Z ω ∂μ = 0 :=
+  (TauCeti.isSubgaussianVector_iff_hasSubgaussianMGF_re_star_mul.2 hZ).integral_eq_zero
 
 /-- **Sub-exponential MGF bound for the centred squared norm of a directionally `K`-sub-Gaussian
 complex variable.** -/
@@ -254,121 +235,6 @@ theorem hasSubgaussianMGF_re_star_mul_of_indepFun_re_im
 
 end ComplexSubGaussian
 
-namespace iIndepFun
-
-/-- Two-sided sub-Gaussian tail bound for a linear combination of independent coordinates. -/
-theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
-    {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {μ : Measure Ω}
-    {X : ι → Ω → ℝ} (h_indep : iIndepFun X μ) {c : ι → ℝ≥0}
-    (hX : ∀ i, HasSubgaussianMGF (X i) (c i) μ) (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t) :
-    μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
-      2 * Real.exp
-        (-t ^ 2 / (2 * ∑ i, (a i) ^ 2 * (c i : ℝ))) := by
-  let Y : ι → Ω → ℝ := fun i ω ↦ a i * X i ω
-  let a2 : ι → ℝ≥0 := fun i ↦ ⟨(a i) ^ 2, sq_nonneg (a i)⟩
-  let S : Ω → ℝ := fun ω ↦ ∑ i, Y i ω
-  have hY_indep : iIndepFun Y μ :=
-    h_indep.comp (fun i x ↦ a i * x) (by intro i; fun_prop)
-  have hY : ∀ i, HasSubgaussianMGF (Y i) (a2 i * c i) μ := by
-    intro i
-    exact (hX i).const_mul (a i)
-  have hS : HasSubgaussianMGF S (∑ i, a2 i * c i) μ := by
-    exact HasSubgaussianMGF.sum_of_iIndepFun hY_indep
-      (c := fun i ↦ a2 i * c i) (s := Finset.univ) (by
-        intro i _
-        exact hY i)
-  have hset : {ω | t ≤ |S ω|} =
-      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
-    ext ω
-    simpa only [Set.mem_ofPred_eq, Set.mem_union] using (le_abs : t ≤ |S ω| ↔ _)
-  have hset' : {ω | t ≤ |∑ i, a i * X i ω|} =
-      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := hset
-  have hbound : μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
-      2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by
-    calc
-      μ.real {ω | t ≤ |∑ i, a i * X i ω|} =
-          μ.real ({ω | t ≤ S ω} ∪ {ω | t ≤ -S ω}) := by
-            rw [hset']
-      _ ≤ μ.real {ω | t ≤ S ω} + μ.real {ω | t ≤ -S ω} :=
-        measureReal_union_le _ _
-      _ ≤ Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) +
-          Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) :=
-        add_le_add (hS.measure_ge_le ht) (hS.neg.measure_ge_le ht)
-      _ = 2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by ring
-  have hproxy : ((∑ i, a2 i * c i : ℝ≥0) : ℝ) =
-      ∑ i, (a i) ^ 2 * (c i : ℝ) := by
-    rw [NNReal.coe_sum]
-    apply Finset.sum_congr rfl
-    intro i _
-    rw [NNReal.coe_mul]
-    rfl
-  simpa only [hproxy] using hbound
-
-/-- The linear-form tail bound when all coordinates have the same variance proxy. -/
-theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun_const
-    {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {μ : Measure Ω}
-    {X : ι → Ω → ℝ} (h_indep : iIndepFun X μ) {c : ℝ≥0}
-    (hX : ∀ i, HasSubgaussianMGF (X i) c μ) (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t) :
-    μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
-      2 * Real.exp (-t ^ 2 / (2 * ((c : ℝ) * ∑ i, (a i) ^ 2))) := by
-  simpa only [Finset.mul_sum, mul_comm] using
-    h_indep.measureReal_abs_sum_mul_ge_le_of_iIndepFun hX a ht
-
-variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω}
-
-/-- The dot product of independent sub-Gaussian random variables with a deterministic vector `w`
-is sub-Gaussian with variance proxy `∑ i, ‖w i‖₊ ^ 2 * K i`. -/
-theorem hasSubgaussianMGF_dotProduct {X : ι → Ω → ℝ} (hindep : iIndepFun X P) {K : ι → ℝ≥0}
-    (hX : ∀ i, HasSubgaussianMGF (X i) (K i) P) (w : ι → ℝ) :
-    HasSubgaussianMGF (fun ω ↦ (fun i ↦ X i ω) ⬝ᵥ w) (∑ i, ‖w i‖₊ ^ 2 * K i) P := by
-  have hproxy (i : ι) : (⟨w i ^ 2, sq_nonneg (w i)⟩ : ℝ≥0) = ‖w i‖₊ ^ 2 :=
-    Subtype.ext <| (sq_abs (w i)).symm.trans <|
-      (congrArg (· ^ 2) (Real.norm_eq_abs (w i)).symm).trans (NNReal.coe_pow ‖w i‖₊ 2).symm
-  have hsum : HasSubgaussianMGF (fun ω ↦ ∑ i, w i * X i ω) (∑ i, ‖w i‖₊ ^ 2 * K i) P :=
-    HasSubgaussianMGF.sum_of_iIndepFun
-      (hindep.comp (fun i x ↦ w i * x) fun i ↦ measurable_const_mul (w i))
-      fun i _ ↦ hproxy i ▸ (hX i).const_mul (w i)
-  simpa only [dotProduct, mul_comm] using hsum
-
-/-- Exponential moment bound for the dot product of independent `K`-sub-Gaussian random variables
-with a deterministic vector `w`. -/
-theorem integral_exp_mul_dotProduct_le {X : ι → Ω → ℝ} (hindep : iIndepFun X P) {K : ℝ≥0}
-    (hX : ∀ i, HasSubgaussianMGF (X i) K P) (w : ι → ℝ) (r : ℝ) :
-    Integrable (fun ω ↦ exp (r * ((fun i ↦ X i ω) ⬝ᵥ w))) P ∧
-      ∫ ω, exp (r * ((fun i ↦ X i ω) ⬝ᵥ w)) ∂P ≤ exp ((K : ℝ) * r ^ 2 / 2 * ∑ i, w i ^ 2) := by
-  have hsub := hindep.hasSubgaussianMGF_dotProduct hX w
-  refine ⟨hsub.integrable_exp_mul r, ?_⟩; rw [← mgf]; refine (hsub.mgf_le r).trans_eq ?_
-  congr 1; push_cast; simp only [Real.norm_eq_abs, sq_abs, ← Finset.sum_mul]; ring
-
-/-- Exponential moment bound for the split-coordinate dot product of independent directionally
-`K`-sub-Gaussian complex random variables with `w : ι ⊕ ι → ℝ`. -/
-theorem integral_exp_mul_sum_elim_re_im_dotProduct_le {Z : ι → Ω → ℂ} (hindep : iIndepFun Z P)
-    {K : ℝ≥0}
-    (hZ : ∀ i (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * Z i ω).re) (‖u‖₊ ^ 2 * K) P)
-    (w : ι ⊕ ι → ℝ) (r : ℝ) :
-    Integrable (fun ω ↦ exp (r * (Sum.elim (fun i ↦ (Z i ω).re) (fun i ↦ (Z i ω).im) ⬝ᵥ w))) P ∧
-      ∫ ω, exp (r * (Sum.elim (fun i ↦ (Z i ω).re) (fun i ↦ (Z i ω).im) ⬝ᵥ w)) ∂P ≤
-        exp ((K : ℝ) * r ^ 2 / 2 * ∑ q, w q ^ 2) := by
-  let u : ι → ℂ := fun i ↦ ⟨w (.inl i), w (.inr i)⟩
-  have hsum : HasSubgaussianMGF (fun ω ↦ ∑ i, (star (u i) * Z i ω).re)
-      (∑ i, ‖u i‖₊ ^ 2 * K) P :=
-    HasSubgaussianMGF.sum_of_iIndepFun
-      (hindep.comp (fun i z ↦ (star (u i) * z).re) fun _ ↦ by fun_prop) fun i _ ↦ hZ i (u i)
-  have hdot (ω : Ω) : Sum.elim (fun i ↦ (Z i ω).re) (fun i ↦ (Z i ω).im) ⬝ᵥ w =
-      ∑ i, (star (u i) * Z i ω).re := by
-    simp only [dotProduct, Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr,
-      ← Finset.sum_add_distrib, u, Complex.mul_re, Complex.star_def, Complex.conj_re,
-      Complex.conj_im]
-    exact Finset.sum_congr rfl fun _ _ ↦ by ring
-  have hsub : HasSubgaussianMGF
-      (fun ω ↦ Sum.elim (fun i ↦ (Z i ω).re) (fun i ↦ (Z i ω).im) ⬝ᵥ w)
-      (∑ i, ‖u i‖₊ ^ 2 * K) P := by simpa only [hdot] using hsum
-  refine ⟨hsub.integrable_exp_mul r, ?_⟩; rw [← mgf]; refine (hsub.mgf_le r).trans_eq ?_
-  congr 1; push_cast
-  simp only [Complex.sq_norm, Complex.normSq_apply, u, Fintype.sum_sum_type, ← sq,
-    Finset.sum_add_distrib, ← Finset.sum_mul]; ring
-
-end iIndepFun
 end ProbabilityTheory
 
 namespace TauCeti
