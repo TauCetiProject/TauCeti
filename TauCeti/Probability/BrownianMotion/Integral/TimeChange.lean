@@ -43,29 +43,13 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter
-open scoped NNReal InnerProductSpace
+open scoped NNReal
 
 namespace ProbabilityTheory.IsPreBrownianReal
 
 open TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
-
-/-- The inner product of the extensions of two square-integrable representatives of `k` to a
-common horizon is the integral of `k²` up to the smaller of their horizons. -/
-private theorem inner_timeMeasureExtendLp {k : ℝ≥0 → ℝ} {S S' T : ℝ≥0} (hS : S ≤ T)
-    (hS' : S' ≤ T) {f : Lp ℝ 2 (timeMeasure S)} {f' : Lp ℝ 2 (timeMeasure S')}
-    (hf : f =ᵐ[timeMeasure S] k) (hf' : f' =ᵐ[timeMeasure S'] k) :
-    ⟪timeMeasureExtendLp ℝ hS f, timeMeasureExtendLp ℝ hS' f'⟫_ℝ =
-      ∫ s, k s ^ 2 ∂timeMeasure (min S S') := by
-  rw [L2.inner_def, ← timeMeasure_restrict_of_le (min_le_of_left_le hS),
-    ← integral_indicator measurableSet_Ioc]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := ℝ) hS hf,
-    coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := ℝ) hS' hf'] with s hs hs'
-  rw [hs, hs', RCLike.inner_apply, conj_trivial]
-  by_cases h : s ∈ Ioc 0 S <;> by_cases h' : s ∈ Ioc 0 S' <;>
-    simp_all [sq, mem_Ioc, le_min_iff, mul_comm]
 
 /-- **Wiener integrals along a time change form a pre-Brownian motion.** Let `f t` be an `L²`
 class on the horizon `a t` represented by a fixed integrand `k`, normalized by
@@ -136,6 +120,6 @@ theorem isBrownianReal_of_ae_eq_mul_sub_integral (hb : IsBrownianReal b P) {a : 
     simp only [Real.coe_toNNReal r hr.1]
   · exact (hX t).trans (hb'.wienerIntegral_ae_eq_mul_sub_integral (hh.mono Icc_subset_Ici_self)
       (fun x hx ↦ hderiv x hx.1) (hint t) (MemLp.coeFn_toLp _)
-      (hb.aestronglyMeasurable_uncurry _)).symm
+      (hb.aestronglyMeasurable_uncurry_toNNReal _)).symm
 
 end ProbabilityTheory.IsBrownianReal

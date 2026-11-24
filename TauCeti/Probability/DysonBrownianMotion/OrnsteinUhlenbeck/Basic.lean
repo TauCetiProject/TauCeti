@@ -414,11 +414,15 @@ theorem ouTimeChangeInvForcing_apply (w : ℝ≥0 → Fin n → ℝ) (s : ℝ≥
       ∫ r in (0 : ℝ)..s, w (Real.log (1 + r)).toNNReal i / (2 * √(1 + r)) :=
   (rfl)
 
-private theorem coe_toNNReal_exp_sub_one {u : ℝ} (hu : 0 ≤ u) :
+/-- The exponential time `e^u - 1` of a nonnegative `u` is nonnegative, so it survives the round
+trip through `ℝ≥0`. -/
+theorem coe_toNNReal_exp_sub_one {u : ℝ} (hu : 0 ≤ u) :
     ((Real.exp u - 1).toNNReal : ℝ) = Real.exp u - 1 :=
   Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp hu))
 
-private theorem coe_toNNReal_log_one_add {r : ℝ} (hr : 0 ≤ r) :
+/-- The logarithmic time `log (1 + r)` of a nonnegative `r` is nonnegative, so it survives the
+round trip through `ℝ≥0`. -/
+theorem coe_toNNReal_log_one_add {r : ℝ} (hr : 0 ≤ r) :
     ((Real.log (1 + r)).toNNReal : ℝ) = Real.log (1 + r) :=
   Real.coe_toNNReal _ (Real.log_nonneg (by linarith))
 

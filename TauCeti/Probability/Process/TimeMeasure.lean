@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+public import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -22,13 +23,15 @@ integration. Integrals for time measure are interval integrals over `(0,T]`
 of a finite horizon (`Continuous.memLp_timeMeasure`).
 The isometry `timeMeasureExtendLp` extends finite-horizon `Lᵖ` functions by zero to
 longer horizons. Initial-interval indicator classes depend only on their endpoint
-clipped to the horizon; the extension lemmas describe their images.
+clipped to the horizon; the extension lemmas describe their images. The `L²` inner product of
+the extensions of two representatives of one function is the integral of its square up to the
+shorter horizon (`TauCeti.Probability.inner_timeMeasureExtendLp`).
 -/
 
 public section
 
 open MeasureTheory Set
-open scoped NNReal ENNReal
+open scoped NNReal ENNReal InnerProductSpace
 
 namespace TauCeti.Probability
 
@@ -229,5 +232,21 @@ theorem timeMeasureExtendLp_indicatorConstLp_Ioc (hST : S ≤ T) (s t : ℝ≥0)
   simp [min_comm]
 
 end ExtendLp
+
+/-- The inner product of the extensions of two square-integrable representatives of `k` to a
+common horizon is the integral of `k²` up to the smaller of their horizons. -/
+theorem inner_timeMeasureExtendLp {k : ℝ≥0 → ℝ} {S S' T : ℝ≥0} (hS : S ≤ T)
+    (hS' : S' ≤ T) {f : Lp ℝ 2 (timeMeasure S)} {f' : Lp ℝ 2 (timeMeasure S')}
+    (hf : f =ᵐ[timeMeasure S] k) (hf' : f' =ᵐ[timeMeasure S'] k) :
+    ⟪timeMeasureExtendLp ℝ hS f, timeMeasureExtendLp ℝ hS' f'⟫_ℝ =
+      ∫ s, k s ^ 2 ∂timeMeasure (min S S') := by
+  rw [L2.inner_def, ← timeMeasure_restrict_of_le (min_le_of_left_le hS),
+    ← integral_indicator measurableSet_Ioc]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := ℝ) hS hf,
+    coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := ℝ) hS' hf'] with s hs hs'
+  rw [hs, hs', RCLike.inner_apply, conj_trivial]
+  by_cases h : s ∈ Ioc 0 S <;> by_cases h' : s ∈ Ioc 0 S' <;>
+    simp_all [sq, mem_Ioc, le_min_iff, mul_comm]
 
 end TauCeti.Probability

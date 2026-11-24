@@ -20,7 +20,7 @@ the integration by parts formula
 As an identity in `L²(P)` the last integral is the Bochner integral of the continuous `L²` curve
 `u ↦ B_u` (`ProbabilityTheory.IsPreBrownianReal.wienerIntegral_eq_smul_toL2_sub_integral`). When
 the sample paths are jointly measurable in time and sample, which holds for Brownian motion
-(`ProbabilityTheory.IsBrownianReal.aestronglyMeasurable_uncurry`), it is almost surely the
+(`ProbabilityTheory.IsBrownianReal.aestronglyMeasurable_uncurry_toNNReal`), it is almost surely the
 samplewise time integral of the paths
 (`ProbabilityTheory.IsPreBrownianReal.wienerIntegral_ae_eq_mul_sub_integral`). This expresses
 Wiener integrals of smooth deterministic integrands through ordinary integrals of the paths, and

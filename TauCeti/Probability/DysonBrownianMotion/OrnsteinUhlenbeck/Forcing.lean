@@ -22,8 +22,9 @@ change carries Ornstein–Uhlenbeck Dyson trajectories driven by `w` back to Dys
 driven by `ouTimeChangeInvForcing w`. This file shows that both transformed forcings of a Brownian
 motion are again Brownian motions, coordinate by coordinate
 (`TauCeti.Probability.isBrownianReal_ouTimeChangeForcing` and
-`TauCeti.Probability.isBrownianReal_ouTimeChangeInvForcing`). So the time changes relate Dyson
-and Ornstein–Uhlenbeck Dyson systems driven by Brownian motions in both directions.
+`TauCeti.Probability.isBrownianReal_ouTimeChangeInvForcing`). So, in both directions, the time
+changes relate Dyson and Ornstein–Uhlenbeck Dyson systems whose forcings are coordinatewise
+Brownian. Independence of the coordinates of the transformed forcings is not established here.
 
 The pathwise formulas defining the two forcings are the integration by parts forms of the Wiener
 integrals `∫₀^{e^t - 1} (1 + r)^{-1/2} dB_r` and `∫₀^{log (1 + s)} e^{u/2} dB_u`
@@ -50,6 +51,23 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
 
+/-- The negated derivative of `r ↦ (1 + r)^{-1/2}` is continuous on `[0, ∞)`. -/
+private theorem continuousOn_inv_sqrt_one_add_div :
+    ContinuousOn (fun r : ℝ ↦ (√(1 + r))⁻¹ / (2 * (1 + r))) (Ici 0) := by
+  refine ContinuousOn.div (ContinuousOn.inv₀ (by fun_prop) fun r hr ↦ ?_) (by fun_prop)
+    fun r hr ↦ ?_
+  · exact (Real.sqrt_pos.2 (by linarith [mem_Ici.1 hr])).ne'
+  · linarith [mem_Ici.1 hr]
+
+/-- The derivative of `r ↦ (1 + r)^{-1/2}`. -/
+private theorem hasDerivAt_inv_sqrt_one_add {x : ℝ} (hx : 0 < x) :
+    HasDerivAt (fun r ↦ (√(1 + r))⁻¹) (-((√(1 + x))⁻¹ / (2 * (1 + x)))) x := by
+  have hx1 : 0 < 1 + x := by linarith
+  have hs : 0 < √(1 + x) := Real.sqrt_pos.2 hx1
+  refine ((((hasDerivAt_id' x).const_add 1).sqrt hx1.ne').inv hs.ne').congr_deriv ?_
+  field_simp
+  rw [Real.sq_sqrt hx1.le]
+
 /-- The forcing of the exponential time change is the integration by parts form of the Wiener
 integral of `(1 + r)^{-1/2}` up to `e^t - 1`. -/
 private theorem ouTimeChangeForcing_eq_mul_sub_integral {w : ℝ≥0 → Fin n → ℝ} {i : Fin n}
@@ -59,11 +77,8 @@ private theorem ouTimeChangeForcing_eq_mul_sub_integral {w : ℝ≥0 → Fin n �
         ∫ r in (0 : ℝ)..(Real.exp t - 1).toNNReal,
           -((√(1 + r))⁻¹ / (2 * (1 + r))) * w r.toNNReal i := by
   let g : ℝ → ℝ := fun r ↦ (√(1 + r))⁻¹ / (2 * (1 + r)) * w r.toNNReal i
-  have hg : ContinuousOn g (Ici 0) := by
-    refine ContinuousOn.mul (ContinuousOn.div (ContinuousOn.inv₀ (by fun_prop) fun r hr ↦ ?_)
-      (by fun_prop) fun r hr ↦ ?_) (hw.comp continuous_real_toNNReal).continuousOn
-    · exact (Real.sqrt_pos.2 (by linarith [mem_Ici.1 hr])).ne'
-    · linarith [mem_Ici.1 hr]
+  have hg : ContinuousOn g (Ici 0) :=
+    continuousOn_inv_sqrt_one_add_div.mul (hw.comp continuous_real_toNNReal).continuousOn
   -- Substitute `r = e^u - 1` in `∫₀^{e^t - 1} g`.
   have hsub := intervalIntegral.integral_comp_mul_deriv' (a := 0) (b := t)
     (f := fun u ↦ Real.exp u - 1) (f' := Real.exp) (g := g)
@@ -72,20 +87,17 @@ private theorem ouTimeChangeForcing_eq_mul_sub_integral {w : ℝ≥0 → Fin n �
       rintro _ ⟨u, hu, rfl⟩
       rw [uIcc_of_le t.coe_nonneg] at hu
       exact sub_nonneg.2 (Real.one_le_exp hu.1)))
-  have hc : ((Real.exp t - 1).toNNReal : ℝ) = Real.exp t - 1 :=
-    Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp t.coe_nonneg))
   simp only [Real.exp_zero, sub_self] at hsub
   have hneg : ∫ r in (0 : ℝ)..Real.exp t - 1, -((√(1 + r))⁻¹ / (2 * (1 + r))) * w r.toNNReal i =
       -∫ r in (0 : ℝ)..Real.exp t - 1, g r := by
     rw [← intervalIntegral.integral_neg]
     simp only [g, neg_mul]
-  rw [ouTimeChangeForcing_apply, hc, hneg, ← hsub, sub_neg_eq_add, add_sub_cancel,
-    ← Real.exp_half, ← Real.exp_neg]
+  rw [ouTimeChangeForcing_apply, coe_toNNReal_exp_sub_one t.coe_nonneg, hneg, ← hsub,
+    sub_neg_eq_add, add_sub_cancel, ← Real.exp_half, ← Real.exp_neg]
   congr 1
   refine intervalIntegral.integral_congr fun u _ ↦ ?_
   simp only [g, Function.comp_apply, add_sub_cancel, ← Real.exp_half]
-  rw [show Real.exp u = Real.exp (u / 2) * Real.exp (u / 2) by rw [← Real.exp_add, add_halves],
-    Real.exp_neg]
+  rw [← Real.exp_half_mul_exp_half u, Real.exp_neg]
   field_simp
 
 /-- The forcing of the logarithmic time change is the integration by parts form of the Wiener
@@ -107,21 +119,16 @@ private theorem ouTimeChangeInvForcing_eq_mul_sub_integral {w : ℝ≥0 → Fin 
       rw [uIcc_of_le s.coe_nonneg] at hr
       linarith [hr.1])
     (by fun_prop)
-  have hc : ((Real.log (1 + s)).toNNReal : ℝ) = Real.log (1 + s) :=
-    Real.coe_toNNReal _ (Real.log_nonneg (by linarith [s.coe_nonneg]))
   simp only [add_zero, Real.log_one] at hsub
-  rw [ouTimeChangeInvForcing_apply, hc, ← hsub, Real.exp_half,
+  rw [ouTimeChangeInvForcing_apply, coe_toNNReal_log_one_add s.coe_nonneg, ← hsub, Real.exp_half,
     Real.exp_log (by positivity)]
   congr 1
   refine intervalIntegral.integral_congr fun r hr ↦ ?_
   rw [uIcc_of_le s.coe_nonneg] at hr
   have hr1 : 0 < 1 + r := by linarith [hr.1]
   simp only [Function.comp_apply, Real.exp_half, Real.exp_log hr1]
-  have hs : 0 < √(1 + r) := Real.sqrt_pos.2 hr1
-  have hsq : 1 + r = √(1 + r) ^ 2 := (Real.sq_sqrt hr1.le).symm
-  generalize √(1 + r) = q at hs hsq ⊢
-  rw [hsq]
   field_simp
+  rw [Real.sq_sqrt hr1.le, mul_comm]
 
 /-- **The exponential time change of a Brownian forcing is Brownian.** If the `i`-th coordinate of
 `B` is a Brownian motion, then so is the `i`-th coordinate of its exponential time-change forcing
@@ -129,30 +136,19 @@ private theorem ouTimeChangeInvForcing_eq_mul_sub_integral {w : ℝ≥0 → Fin 
 theorem isBrownianReal_ouTimeChangeForcing {B : Fin n → ℝ≥0 → Ω → ℝ} {i : Fin n}
     (hB : IsBrownianReal (B i) P) :
     IsBrownianReal (fun t ω ↦ ouTimeChangeForcing (fun s j ↦ B j s ω) t i) P := by
-  have hh' : ContinuousOn (fun r : ℝ ↦ -((√(1 + r))⁻¹ / (2 * (1 + r)))) (Ici 0) := by
-    refine ContinuousOn.neg (ContinuousOn.div (ContinuousOn.inv₀ (by fun_prop) fun r hr ↦ ?_)
-      (by fun_prop) fun r hr ↦ ?_)
-    · exact (Real.sqrt_pos.2 (by linarith [mem_Ici.1 hr])).ne'
-    · linarith [mem_Ici.1 hr]
+  have hh' : ContinuousOn (fun r : ℝ ↦ -((√(1 + r))⁻¹ / (2 * (1 + r)))) (Ici 0) :=
+    continuousOn_inv_sqrt_one_add_div.neg
   refine hB.isBrownianReal_of_ae_eq_mul_sub_integral (a := fun t ↦ (Real.exp t - 1).toNNReal)
     (h := fun r ↦ (√(1 + r))⁻¹) (ContinuousOn.inv₀ (by fun_prop) fun r hr ↦ (Real.sqrt_pos.2 (by
       linarith [mem_Ici.1 hr])).ne')
-    (fun x hx ↦ ?_)
+    (fun _ ↦ hasDerivAt_inv_sqrt_one_add)
     (fun t ↦ (hh'.mono (uIcc_of_le (Real.exp t - 1).toNNReal.coe_nonneg ▸
       Icc_subset_Ici_self)).intervalIntegrable) (fun t ↦ ?_)
     (fun t ↦ hB.cont.mono fun ω hω ↦
       ouTimeChangeForcing_eq_mul_sub_integral (w := fun s j ↦ B j s ω) hω t) ?_
-  · have hx1 : 0 < 1 + x := by linarith
-    have hs : 0 < √(1 + x) := Real.sqrt_pos.2 hx1
-    refine ((((hasDerivAt_id' x).const_add 1).sqrt hx1.ne').inv hs.ne').congr_deriv ?_
-    have hsq : 1 + x = √(1 + x) ^ 2 := (Real.sq_sqrt hx1.le).symm
-    generalize √(1 + x) = q at hs hsq ⊢
-    rw [hsq]
-    field_simp
   · -- `∫₀^{e^t - 1} (1 + r)⁻¹ dr = log (e^t) = t`.
-    have hc : ((Real.exp t - 1).toNNReal : ℝ) = Real.exp t - 1 :=
-      Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp t.coe_nonneg))
-    rw [hc, intervalIntegral.integral_congr (g := fun r ↦ (1 + r)⁻¹) fun r hr ↦ ?_,
+    rw [coe_toNNReal_exp_sub_one t.coe_nonneg,
+      intervalIntegral.integral_congr (g := fun r ↦ (1 + r)⁻¹) fun r hr ↦ ?_,
       intervalIntegral.integral_comp_add_left (fun r ↦ r⁻¹), add_zero, add_sub_cancel,
       integral_inv_of_pos one_pos (Real.exp_pos t), div_one, Real.log_exp]
     rw [uIcc_of_le (sub_nonneg.2 (Real.one_le_exp t.coe_nonneg))] at hr
@@ -175,11 +171,9 @@ theorem isBrownianReal_ouTimeChangeInvForcing {B : Fin n → ℝ≥0 → Ω → 
       ouTimeChangeInvForcing_eq_mul_sub_integral (w := fun r j ↦ B j r ω) hω s) ?_
   · exact ((hasDerivAt_id' x).div_const 2).exp.congr_deriv (by ring)
   · -- `∫₀^{log (1 + s)} e^u du = s`.
-    have hc : ((Real.log (1 + s)).toNNReal : ℝ) = Real.log (1 + s) :=
-      Real.coe_toNNReal _ (Real.log_nonneg (by linarith [s.coe_nonneg]))
     have hsq (r : ℝ) : Real.exp (r / 2) ^ 2 = Real.exp r := by
-      rw [sq, ← Real.exp_add, add_halves]
-    simp only [hsq, hc]
+      rw [sq, Real.exp_half_mul_exp_half]
+    simp only [hsq, coe_toNNReal_log_one_add s.coe_nonneg]
     rw [integral_exp, Real.exp_zero, Real.exp_log (by positivity)]
     ring
   · filter_upwards [hB.cont] with ω hω
