@@ -113,7 +113,7 @@ theorem exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le (hp : 1 < p)
       ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (fun x ↦ TotalSpace.mk' F x (s x)) →
       eLpNorm (A.coord i fun x ↦ χ x • s x) p (volume.restrict (A.image i)) +
           eLpNorm (fderiv ℝ (A.coord i fun x ↦ χ x • s x)) p (volume.restrict (A.image i)) ≤
-        C * (eLpNorm (A.tangentHom.coord i (D s)) p (volume.restrict (A.image i)) +
+        C * (eLpNorm ((A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s)) p (volume.restrict (A.image i)) +
           eLpNorm (A.coord i s) p (volume.restrict (A.image i))) := by
   have := A.compactSpace
   have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
@@ -136,7 +136,7 @@ theorem exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le (hp : 1 < p)
       (IsManifold.chart_mem_maximalAtlas _) (A.triv i)).congr fun y _ ↦ A.coord_def i s y).mono
         ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i))
   -- In chart `i`, `D s` is `\bar∂ u + Zᵢ u`.
-  have hDs' := hC₀ u (A.tangentHom.coord i (D s)) hu fun z hz ↦ by
+  have hDs' := hC₀ u ((A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s)) hu fun z hz ↦ by
     rw [A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hz
       ((hs _).mdifferentiableAt (by simp)), add_sub_cancel_left]
     exact (hZ z (subset_closure hz) _).trans (by gcongr; exact Real.le_coe_toNNReal Z)
@@ -148,7 +148,7 @@ theorem exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le (hp : 1 < p)
     fun y hy ↦ A.coord_fun_smul i χ s hy
   have hχ'U : DifferentiableOn ℝ χ' U :=
     ((A.contDiffOn_comp_chart_symm hχ i).mono (subset_closure.trans hcl)).differentiableOn (by simp)
-  set G := eLpNorm (A.tangentHom.coord i (D s)) p (volume.restrict U)
+  set G := eLpNorm ((A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s)) p (volume.restrict U)
   set Y := eLpNorm u p (volume.restrict U)
   have h₁ : eLpNorm (A.coord i fun x ↦ χ x • s x) p (volume.restrict U) ≤ B * Y := by
     rw [eLpNorm_congr_ae ((ae_restrict_mem hU.measurableSet).mono fun y hy ↦ hvU hy)]
@@ -173,15 +173,15 @@ private theorem norm_chartValueL_add_norm_chartDerivL_le (s : Cₛ^1⟮𝓘(ℝ,
     {χ : M → ℝ} (hχ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ χ) {c : ℝ≥0}
     (h : eLpNorm (A.coord i fun x ↦ χ x • s x) p (volume.restrict (A.image i)) +
         eLpNorm (fderiv ℝ (A.coord i fun x ↦ χ x • s x)) p (volume.restrict (A.image i)) ≤
-      c * (eLpNorm (A.tangentHom.coord i (D s)) p (volume.restrict (A.image i)) +
+      c * (eLpNorm ((A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s)) p (volume.restrict (A.image i)) +
         eLpNorm (A.coord i s) p (volume.restrict (A.image i)))) :
     ‖A.sectionChartData.chartValueL volume p 1 i (SobolevSection.contMDiffSMulL A volume p 1 hχ
         (SobolevSection.ofContMDiffSection A volume p 1 s))‖ +
       ‖A.sectionChartData.chartDerivL volume p i (SobolevSection.contMDiffSMulL A volume p 1 hχ
         (SobolevSection.ofContMDiffSection A volume p 1 s))‖ ≤
-      c * (‖A.tangentHom.sectionChartData.chartValueL volume p 0 i
+      c * (‖(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
           (hD.sobolevL A hDs volume p (SobolevSection.ofContMDiffSection A volume p 1 s) :
-            SobolevSection A.tangentHom volume p 0)‖ +
+            SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0)‖ +
         ‖A.sectionChartData.chartValueL volume p 0 i (A.sectionChartData.lowerOrderL volume p 0
           (SobolevSection.ofContMDiffSection A volume p 1 s))‖) := by
   set w := SobolevSection.ofContMDiffSection A volume p 1 s
@@ -203,10 +203,10 @@ private theorem norm_chartValueL_add_norm_chartDerivL_le (s : Cₛ^1⟮𝓘(ℝ,
       (volume.restrict (A.image i)) =
         eLpNorm (fderiv ℝ (A.coord i fun x ↦ χ x • s x)) p (volume.restrict (A.image i)) :=
     eLpNorm_congr_ae hd
-  have e₃ : eLpNorm (A.tangentHom.sectionChartData.chartValueL volume p 0 i
-      (hD.sobolevL A hDs volume p w : SobolevSection A.tangentHom volume p 0)) p
-      (volume.restrict (A.tangentHom.sectionChartData.image i : Set ℂ)) =
-        eLpNorm (A.tangentHom.coord i (D s)) p (volume.restrict (A.image i)) := by
+  have e₃ : eLpNorm ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
+      (hD.sobolevL A hDs volume p w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0)) p
+      (volume.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i : Set ℂ)) =
+        eLpNorm ((A.tangentHom 𝓘(ℝ, ℂ)).coord i (D s)) p (volume.restrict (A.image i)) := by
     rw [eLpNorm_congr_ae ((ae_image_tangentHom_iff A volume i).2
       (hD.chartValueL_sobolevL_ofContMDiffSection_ae A hDs volume p s i)),
       sectionChartData_image_tangentHom]
@@ -236,7 +236,7 @@ private theorem exists_norm_contMDiffSMulL_component_le (hp : 1 < p) (hp_top : p
             (SobolevSection.ofContMDiffSection A volume p 1 s)‖) := by
   obtain ⟨Cc, hCc⟩ := hD.exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le A hDs hp hp_top hχ hχi
   set cB : ℝ := ∑ j, ‖LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)‖
-  set T := A.tangentHom.sectionChartData.chartValueL volume p 0 i
+  set T := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL volume p 0 i
   set S := A.sectionChartData.chartValueL volume p 0 i
   refine ⟨cB * (Cc * (‖T‖ + ‖S‖)), fun s hs ↦ ?_⟩
   set w := SobolevSection.ofContMDiffSection A volume p 1 s
@@ -244,8 +244,8 @@ private theorem exists_norm_contMDiffSMulL_component_le (hp : 1 < p) (hp_top : p
   have hchart := norm_chartValueL_add_norm_chartDerivL_le A hD hDs s hχ (hCc s hs)
   set X := ‖hD.sobolevL A hDs volume p w‖
   set Y := ‖A.sectionChartData.lowerOrderL volume p 0 w‖
-  have hT : ‖T (hD.sobolevL A hDs volume p w : SobolevSection A.tangentHom volume p 0)‖ ≤
-      ‖T‖ * X := T.le_opNorm _
+  have hT : ‖T (hD.sobolevL A hDs volume p w :
+      SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) volume p 0)‖ ≤ ‖T‖ * X := T.le_opNorm _
   have hS : ‖S (A.sectionChartData.lowerOrderL volume p 0 w)‖ ≤ ‖S‖ * Y := S.le_opNorm _
   have hX : 0 ≤ X := by positivity
   have hY : 0 ≤ Y := by positivity
