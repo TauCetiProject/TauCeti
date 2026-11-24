@@ -182,7 +182,7 @@ private theorem mul_ringInverse_one_add_smul_regular {s : Set ℝ} (hA : Continu
   · rw [← (hsa t ht).cfc_div_one_add_mul (hk t ht)]
     exact cfc_predicate _ _
   · obtain ⟨u, hu⟩ := hk t ht
-    rw [← hu, Ring.inverse_unit]
+    rw [← hu, Ring.inverse_unit, ContinuousLinearMap.mul_def]
     exact (hF t ht).comp (ContinuousLinearMap.isInvertible_iff_isUnit.2 u⁻¹.isUnit).isFredholm
 
 /-- **Spectral flow under a fractional linear change of operator.** Let `A` be a continuous path of

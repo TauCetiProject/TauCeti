@@ -79,7 +79,7 @@ def shiftedResolventTransform (ι A : D →L[𝕜] H) (c : ℝ) : H →L[𝕜] H
 variable {ι A : D →L[𝕜] H} {c c' : ℝ}
 
 /-- When `c ι - A` is invertible, its inverse sends `c ι x - A x` back to `x`. -/
-theorem inverse_smul_sub_apply (h : ((c : 𝕜) • ι - A).IsInvertible) (x : D) :
+private theorem inverse_smul_sub_apply (h : ((c : 𝕜) • ι - A).IsInvertible) (x : D) :
     ((c : 𝕜) • ι - A).inverse ((c : 𝕜) • ι x - A x) = x := by
   simpa only [sub_apply, smul_apply] using h.inverse_apply_self x
 
