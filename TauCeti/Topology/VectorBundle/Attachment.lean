@@ -82,6 +82,7 @@ identifies `(T, A)` with the attachment, to which the results above apply.
   of the disc-sphere pair.
 * `TauCeti.exists_isIso_singularCohomologyMap_of_homotopyRel_attach_discBundle`: the same in
   cohomology.
+* `TauCeti.exists_isIso_of_homotopyRel_attach_discBundle`: both, through a single map of pairs.
 * `TauCeti.isColimitCofanSingularHomologyOfAttachGaugeDiscBundle`: attaching finitely many disc
   bundles `D_ρₐ(Eₐ)` along their sphere bundles with disjoint images gives
   `Hₙ(Z, X) ≅ ∐ₐ Hₙ(D_ρₐ(Eₐ), S_ρₐ(Eₐ))`.
@@ -340,9 +341,12 @@ variable (hρ : IsFiberGauge ρ) (hAT : A ⊆ T) (hA : IsClosed A)
     {x | (x : Y) ∈ A ∪ D})
 
 include hρ hA hg hgD hDT hgA G in
-/-- A space which strong deformation retracts onto a subset with a disc bundle attached has the
-relative homology and cohomology of the disc-sphere pair, through a single map of pairs. -/
-private lemma exists_isIso_of_homotopyRel_attach_discBundle :
+/-- **A deformation retract onto a disc bundle attachment, in homology and cohomology.** Under the
+hypotheses of `TauCeti.exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle`, `g`
+induces a single map of pairs `(D_ρ(E), S_ρ(E)) ⟶ (T, A)` which is an isomorphism on relative
+singular homology and on relative singular cohomology, with arbitrary coefficients, in every
+degree. -/
+theorem exists_isIso_of_homotopyRel_attach_discBundle :
     ∃ ψ : gaugeDiscSpherePair ρ ⟶ TopPair.ofInclusion (X := TopCat.of Y) hAT,
       (∀ v : gaugeDiscBundle ρ, Subtype.val (TopPair.Hom.fst ψ v) = g v) ∧
       (∀ {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ),

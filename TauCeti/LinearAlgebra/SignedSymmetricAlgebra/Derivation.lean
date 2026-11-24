@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Supercommutativity
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.DirectSum.HomogeneousExtend
+import TauCeti.RingTheory.GradedAlgebra.SignedDerivation.Generators
 import TauCeti.LinearAlgebra.Matrix.Triangular.Derivation
 
 /-!
@@ -35,7 +36,8 @@ lower-triangular `2 × 2` matrix construction in `TauCeti.LinearAlgebra.Matrix.T
 (`TauCeti.triangularDerivationMap`, `TauCeti.triangularDerivation`): the matrices
 `[[a, 0], [d a, σ a]]`, where `σ` is the grade involution `a ↦ (-1) ^ |a| • a`, multiply as
 `a + ε d a` in the dual numbers over `A(V)` with one odd generator `ε`. The signed Leibniz rule
-for `d` is multiplicativity of `a ↦ [[a, 0], [d a, σ a]]`.
+for `d` is multiplicativity of `a ↦ [[a, 0], [d a, σ a]]`. Uniqueness, homogeneity, and square-zero
+reduction instantiate `TauCeti.RingTheory.GradedAlgebra.SignedDerivation.Generators`.
 
 ## Main definitions
 
@@ -45,7 +47,7 @@ for `d` is multiplicativity of `a ↦ [[a, 0], [d a, σ a]]`.
 ## Main results
 
 * `TauCeti.SignedSym.apply_map_eq_map_apply_of_leibniz`: a graded algebra map out of `A(V)`
-  intertwines signed Leibniz maps whenever it does so on generators.
+  intertwines signed Leibniz maps as soon as it does so on generators.
 * `TauCeti.SignedSym.liftDerivation_mul`: the signed Leibniz rule.
 * `TauCeti.SignedSym.isHomogeneous_liftDerivation`: the extension has degree `k`.
 * `TauCeti.SignedSym.eq_liftDerivation` and `TauCeti.SignedSym.existsUnique_odd_extension`:
@@ -76,35 +78,6 @@ section General
 variable {ι : Type*} [DecidableEq ι] [CommSemiring ι] [Module ι (Additive ℤˣ)]
 variable {G : InternalGrading R V ι}
 
-/-- A linear map out of `A(V)` satisfying a Leibniz rule along an algebra map `f`, with an
-arbitrary sign `s p` for a left factor of degree `p`, and vanishing on generators, is zero.
-This covers differences of intertwined odd derivations and squares of odd derivations. -/
-private theorem eq_zero_of_leibniz {A : Type*} [Ring A] [Algebra R A]
-    (s : ι → ℤˣ) (f : SignedSym G →ₐ[R] A) {D : SignedSym G →ₗ[R] A}
-    (hD : ∀ {p : ι} {a : SignedSym G}, a ∈ signedSymPiece G p → ∀ b : SignedSym G,
-      D (a * b) = D a * f b + s p • (f a * D b))
-    (hgen : ∀ x, D (generator G x) = 0) : D = 0 := by
-  have hone : D 1 = 0 := by
-    have h := hD (SetLike.GradedOne.one_mem (A := signedSymPiece G)) 1
-    simp only [map_one, mul_one, one_mul, left_eq_add] at h
-    exact (smul_eq_zero_iff_eq (s 0)).1 h
-  have hhom : ∀ {p : ι} {a : SignedSym G}, a ∈ signedSymPiece G p → D a = 0 := by
-    intro p a ha
-    refine (homogeneous_induction G (P := fun p a => a ∈ signedSymPiece G p ∧ D a = 0)
-      ⟨SetLike.GradedOne.one_mem, hone⟩
-      (fun p x hx => ⟨generator_mem_signedSymPiece G hx, hgen x⟩)
-      (fun p q a b ha hb => ⟨SetLike.mul_mem_graded ha.1 hb.1, by
-        rw [hD ha.1, ha.2, hb.2, zero_mul, mul_zero, smul_zero, zero_add]⟩)
-      (fun p => ⟨zero_mem _, map_zero D⟩)
-      (fun p a b ha hb => ⟨add_mem ha.1 hb.1, by rw [map_add, ha.2, hb.2, add_zero]⟩)
-      (fun p r a ha => ⟨Submodule.smul_mem _ r ha.1, by rw [map_smul, ha.2, smul_zero]⟩)
-      ha).2
-  ext a
-  induction a using DirectSum.Decomposition.inductionOn (signedSymPiece G) with
-  | zero => simp
-  | homogeneous a => exact hhom a.property
-  | add a b ha hb => simp_all
-
 /-- A graded algebra map out of `A(V)` intertwines signed Leibniz maps if it does so on
 all generators. Neither degree-shift nor square-zero hypotheses are needed. -/
 theorem apply_map_eq_map_apply_of_leibniz {A : Type*} [Ring A] [Algebra R A]
@@ -117,16 +90,10 @@ theorem apply_map_eq_map_apply_of_leibniz {A : Type*} [Ring A] [Algebra R A]
       ∀ b, d (a * b) = d a * b + ((-1 : ℤˣ) ^ p) • (a * d b))
     (f : signedSymPiece G →ₐᵍ[R] 𝒜)
     (hgen : ∀ x, d (f (generator G x)) = f (dV (generator G x)))
-    (a : SignedSym G) : d (f a) = f (dV a) := by
-  have hzero : d ∘ₗ f.toAlgHom.toLinearMap - f.toAlgHom.toLinearMap ∘ₗ dV = 0 := by
-    refine eq_zero_of_leibniz (fun p ↦ (-1 : ℤˣ) ^ p) f.toAlgHom (fun {p a} ha b => ?_)
-      (fun x => by simp [hgen x])
-    simp only [LinearMap.sub_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-      GradedAlgHom.coe_toAlgHom, map_mul,
-      hd (Graded.map_mem f ha), hV ha, map_add, map_zsmul, sub_mul, mul_sub,
-      Units.smul_def, zsmul_sub]
-    abel
-  exact sub_eq_zero.mp (LinearMap.congr_fun hzero a)
+    (a : SignedSym G) : d (f a) = f (dV a) :=
+  apply_map_eq_map_apply_of_signedLeibniz_of_adjoin_eq_top
+    (𝒜 := signedSymPiece G) (ℬ := 𝒜) hV hd f (fun ha ↦ Graded.map_mem f ha)
+    (adjoin_range_generator G) (Set.forall_mem_range.2 hgen) a
 
 section Lift
 
@@ -198,11 +165,8 @@ theorem liftDerivation_mul {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece
     (b : SignedSym G) :
     liftDerivation δ hδ hk (a * b) =
       liftDerivation δ hδ hk a * b + ((-1 : ℤˣ) ^ p) • (a * liftDerivation δ hδ hk b) := by
-  have htop : Algebra.adjoin R (Set.range (generator G)) = ⊤ :=
-    top_unique fun x _ ↦ SignedSym.induction G (algebraMap_mem _)
-      (fun m ↦ Algebra.subset_adjoin ⟨m, rfl⟩) (fun _ _ ↦ mul_mem) (fun _ _ ↦ add_mem) x
-  rw [liftDerivation, triangularDerivation_mul (twist G) htop (by rintro _ ⟨x, rfl⟩; simp),
-    twist_of_mem ha, smul_mul_assoc]
+  rw [liftDerivation, triangularDerivation_mul (twist G) (adjoin_range_generator G)
+    (by rintro _ ⟨x, rfl⟩; simp), twist_of_mem ha, smul_mul_assoc]
 
 /-- The odd derivation annihilates the unit. -/
 @[simp]
@@ -217,21 +181,11 @@ theorem liftDerivation_algebraMap (r : R) : liftDerivation δ hδ hk (algebraMap
 /-- The odd derivation shifts degree by `k`. -/
 theorem isHomogeneous_liftDerivation :
     LinearMap.IsHomogeneous (liftDerivation δ hδ hk) (signedSymPiece G) (signedSymPiece G) k := by
-  refine LinearMap.isHomogeneous_def.2 fun p a ha => ?_
-  refine (homogeneous_induction G
-    (P := fun p a => a ∈ signedSymPiece G p ∧ liftDerivation δ hδ hk a ∈ signedSymPiece G (p + k))
-    ⟨SetLike.GradedOne.one_mem, by simp⟩
-    (fun p x hx => ⟨generator_mem_signedSymPiece G hx, by simpa using hδ.map_mem hx⟩)
-    (fun p q a b ha hb => ⟨SetLike.mul_mem_graded ha.1 hb.1, by
-      rw [liftDerivation_mul hδ hk ha.1]
-      refine add_mem ?_ (Submodule.smul_of_tower_mem _ _ ?_)
-      · simpa [add_right_comm] using SetLike.mul_mem_graded ha.2 hb.1
-      · simpa [add_assoc] using SetLike.mul_mem_graded ha.1 hb.2⟩)
-    (fun p => ⟨zero_mem _, by simp⟩)
-    (fun p a b ha hb => ⟨add_mem ha.1 hb.1, by rw [map_add]; exact add_mem ha.2 hb.2⟩)
-    (fun p r a ha => ⟨Submodule.smul_mem _ r ha.1, by
-      rw [map_smul]; exact Submodule.smul_mem _ r ha.2⟩)
-    ha).2
+  have hcomp : liftDerivation δ hδ hk ∘ₗ generator G = δ :=
+    LinearMap.ext (liftDerivation_generator hδ hk)
+  exact isHomogeneous_of_signedLeibniz_of_adjoin_range_eq_top (𝒜 := signedSymPiece G)
+    (liftDerivation_mul hδ hk) (adjoin_range_generator G) G.isInternal.submodule_iSup_eq_top
+    (isHomogeneous_signedSymGenerator G) (by rwa [hcomp])
 
 /-- **Uniqueness of odd derivations**: a linear endomorphism of `A(V)` satisfying the signed
 Leibniz rule and agreeing with `δ` on generators is `liftDerivation δ hδ hk`. No degree condition
@@ -239,10 +193,10 @@ on the endomorphism is needed. -/
 theorem eq_liftDerivation {d : SignedSym G →ₗ[R] SignedSym G}
     (hleibniz : ∀ {p : ι} {a : SignedSym G}, a ∈ signedSymPiece G p → ∀ b : SignedSym G,
       d (a * b) = d a * b + ((-1 : ℤˣ) ^ p) • (a * d b))
-    (hgen : ∀ x, d (generator G x) = δ x) : d = liftDerivation δ hδ hk := by
-  ext a
-  exact apply_map_eq_map_apply_of_leibniz (liftDerivation_mul hδ hk) hleibniz
-    (.id R _) (fun x => by simp [hgen x]) a
+    (hgen : ∀ x, d (generator G x) = δ x) : d = liftDerivation δ hδ hk :=
+  eq_of_signedLeibniz_of_adjoin_eq_top (𝒜 := signedSymPiece G) hleibniz
+    (liftDerivation_mul hδ hk) (adjoin_range_generator G)
+    (Set.forall_mem_range.2 fun x => (hgen x).trans (liftDerivation_generator hδ hk x).symm)
 
 end Lift
 
@@ -268,17 +222,9 @@ theorem comp_self_eq_zero_iff {d : SignedSym G →ₗ[R] SignedSym G} {k : ι}
     (hleibniz : ∀ {p : ι} {a : SignedSym G}, a ∈ signedSymPiece G p → ∀ b : SignedSym G,
       d (a * b) = d a * b + ((-1 : ℤˣ) ^ p) • (a * d b)) :
     d ∘ₗ d = 0 ↔ ∀ x, d (d (generator G x)) = 0 := by
-  refine ⟨fun h x => LinearMap.congr_fun h (generator G x), fun h => ?_⟩
-  refine eq_zero_of_leibniz 1 (AlgHom.id R _) (fun {p a} ha b => ?_) h
-  simp only [AlgHom.id_apply]
-  have hda := hdeg.map_mem ha
-  have hpk : (-1 : ℤˣ) ^ (p + k) = -((-1 : ℤˣ) ^ p) := by
-    rw [uzpow_add, hk, mul_neg, mul_one]
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, hleibniz ha, map_add,
-    map_zsmul_unit, hleibniz hda, hleibniz ha, hpk]
-  simp only [Units.smul_def, Units.val_neg, neg_zsmul, zsmul_add, smul_smul, ← Units.val_mul,
-    Int.units_mul_self, Units.val_one, one_zsmul, Pi.one_apply]
-  abel
+  rw [comp_self_eq_zero_iff_of_signedLeibniz_of_adjoin_eq_top hdeg hleibniz
+    (fun i => by rw [uzpow_add, hk, mul_neg, mul_one]) (adjoin_range_generator G),
+    Set.forall_mem_range]
 
 end General
 

@@ -78,11 +78,8 @@ def ofIso {F : FormalGroup A} [F.IsComm] (e : FormalGroupIso (F.map π) F₀) :
     MarkedFormalGroupLift π F₀ where
   formalGroup := F
   isComm := inferInstance
-  marking :=
-    { toPowerSeries := e.toHom.toPowerSeries
-      constantCoeff_toPowerSeries := e.toHom.zero_constantCoeff
-      isUnit_coeff_one := e.isUnit_coeff_one }
-  smul_map_eq := e.toHom.smul_eq rfl
+  marking := e.toFormalCoordinate
+  smul_map_eq := e.toFormalCoordinate_smul
 
 /-- Encoding a bundled marking does not change the lifted law. -/
 @[simp]
@@ -93,7 +90,8 @@ theorem formalGroup_ofIso {F : FormalGroup A} [F.IsComm]
 @[simp]
 theorem marking_ofIso_toPowerSeries {F : FormalGroup A} [F.IsComm]
     (e : FormalGroupIso (F.map π) F₀) :
-    (ofIso e).marking.toPowerSeries = e.toHom.toPowerSeries := (rfl)
+    (ofIso e).marking.toPowerSeries = e.toHom.toPowerSeries :=
+  e.toFormalCoordinate_toPowerSeries
 
 /-- Decoding an encoded bundled marking recovers the original isomorphism. -/
 @[simp]

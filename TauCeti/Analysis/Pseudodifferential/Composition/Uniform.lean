@@ -8,10 +8,12 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Pseudodifferential.LatticeDecomposition
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -258,10 +260,14 @@ private theorem IsBallFamily.exists_norm_sub_pow_mul_norm_sharp_le (N : ℕ) :
         ((hB j i x ξ).trans (mul_le_mul_of_nonneg_left hwB (hB0 j))) zero_le_two))
         ((hC j i x ξ).trans (mul_le_mul_of_nonneg_left hwC (hC0 j)))).trans_eq (by ring)
     calc ‖x - z i‖ ^ (2 * (N + 1)) * ‖(p.sharp (c i) hci).coefficient (x, ξ)‖
-        = ∑ j, ‖x - z i‖ ^ (2 * N) * (((x - z i) j) ^ 2 *
-            ‖(p.sharp (c i) hci).coefficient (x, ξ)‖) :=
-          norm_pow_two_mul_succ_mul_eq_sum (x - z i) N _
-      _ ≤ ∑ j, (A j + 2 * B j + C j) * w := Finset.sum_le_sum fun j _ ↦ hj j
+        = ‖x - z i‖ ^ ENNReal.toReal 2 *
+            (‖x - z i‖ ^ (2 * N) * ‖(p.sharp (c i) hci).coefficient (x, ξ)‖) := by
+          rw [ENNReal.toReal_ofNat, Real.rpow_two]
+          ring
+      _ ≤ ∑ j, (A j + 2 * B j + C j) * w :=
+          PiLp.norm_rpow_mul_le_sum (x - z i) (by simp) fun j ↦ by
+            rw [ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs, sq_abs]
+            exact (mul_left_comm _ _ _).trans_le (hj j)
       _ = _ := by rw [Finset.sum_mul]
 
 /-- **Decay of the derivatives away from the centres.** Every mixed derivative
@@ -334,7 +340,8 @@ private theorem IsBallFamily.exists_norm_mixedDeriv_sharp_le {p : Symbol n W U m
   refine ⟨2 ^ (n - 1) * (C₀ + C₁), by positivity, fun i x ξ ↦ ?_⟩
   have h₀ := hC₀ i x ξ
   rw [mul_zero, pow_zero, one_mul] at h₀
-  exact (le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) h₀ (hC₁ i x ξ)).trans_eq (by ring)
+  exact (Real.le_mul_one_add_sq_pow_inv ‖x - z i‖ (norm_nonneg _) h₀ (hC₁ i x ξ)).trans_eq
+    (by ring)
 
 
 omit [CompleteSpace V] in
@@ -436,7 +443,8 @@ private theorem IsBallFamily.exists_norm_mixedDeriv_sharpRemainder_le {p : Symbo
             simpa only [F, hc.mixedDeriv_sharpRemainder_eq _ _ _ hx] using hA i x ξ hx
         _ ≤ (|r| ^ (2 * n) * B + A) * w :=
             mul_le_mul_of_nonneg_right (le_add_of_nonneg_left (by positivity)) (by positivity)
-  exact (le_mul_one_add_norm_sq_pow_inv (norm_nonneg _) (hB i x ξ) h₁).trans_eq (by ring)
+  exact (Real.le_mul_one_add_sq_pow_inv ‖x - z i‖ (norm_nonneg _) (hB i x ξ) h₁).trans_eq
+    (by ring)
 
 end Sharp
 
