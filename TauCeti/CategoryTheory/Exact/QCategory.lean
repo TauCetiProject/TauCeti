@@ -9,7 +9,7 @@ public import TauCeti.CategoryTheory.Bicategory.HomotopyCategory
 public import TauCeti.CategoryTheory.Exact.BaseChange
 public import TauCeti.CategoryTheory.Exact.Split
 public import Mathlib.CategoryTheory.Bicategory.Span.Basic
-public import Mathlib.CategoryTheory.Subobject.Basic
+public import Mathlib.CategoryTheory.Subobject.Lattice
 
 /-!
 # Quillen's category `Q(E)` of an exact category
@@ -443,21 +443,21 @@ theorem fromZeroEquiv_homMk {Y M : C} (p : M ⟶ 0) (i : M ⟶ Y) (hp : E.IsDefl
   dsimp only [fromZeroEquiv, Equiv.coe_fn_mk]
   rw [homMk, Bicategory.HomotopyCategory.homEquiv_homMk, Quotient.lift_mk]
 
-/-- The admissible subobject attached to the inflation `i : 0 ↣ Y` is the subobject represented
-by `i`. -/
+/-- The admissible subobject attached to the inflation `i : 0 ↣ Y` is the zero subobject `⊥`
+of `Y`. -/
 @[simp]
 theorem fromZeroEquiv_ofInflation {Y : C} (i : 0 ⟶ Y) (hi : E.IsInflation i) :
-    (fromZeroEquiv Y (ofInflation i hi) : Subobject Y) =
-      haveI := ConflationClass.IsInflation.mono hi
-      Subobject.mk i :=
-  fromZeroEquiv_homMk _ _ _ _
+    (fromZeroEquiv Y (ofInflation i hi) : Subobject Y) = ⊥ :=
+  haveI := ConflationClass.IsInflation.mono hi
+  (fromZeroEquiv_homMk _ _ _ _).trans
+    (Subobject.mk_eq_bot_iff_zero.2 ((isZero_zero C).eq_of_src _ _))
 
 /-- The admissible subobject attached to the reversed deflation `X ↠ 0` is the whole
-subobject of `X`. -/
+subobject `⊤` of `X`. -/
 @[simp]
 theorem fromZeroEquiv_ofDeflation {X : C} (p : X ⟶ 0) (hp : E.IsDeflation p) :
-    (fromZeroEquiv X (ofDeflation p hp) : Subobject X) = Subobject.mk (𝟙 X) :=
-  fromZeroEquiv_homMk _ _ _ _
+    (fromZeroEquiv X (ofDeflation p hp) : Subobject X) = ⊤ :=
+  (fromZeroEquiv_homMk _ _ _ _).trans (Subobject.top_eq_id X).symm
 
 @[simp]
 theorem fromZeroEquiv_symm_apply {Y : C} (P : {P : Subobject Y // E.IsInflation P.arrow}) :
