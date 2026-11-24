@@ -1,12 +1,13 @@
 # CI runner routing
 
-Namespace is retired from CI dispatch. PR builds prefer GitHub-hosted runners, then
-eligible Fleet PR runners; when neither has observed spare capacity, they wait on
-GitHub-hosted capacity. Maintenance builds use GitHub-hosted capacity. The full clean nightly build uses
-the Fleet PR pool and retains its twelve-hour budget; staging-only and queue-control
-reservations cannot be taken by that class. The shared
-picker ignores retired Namespace entries in older configuration, and consumers reject
-Namespace targets even when an old picker output matches the current attempt.
+PR builds prefer eligible Fleet PR runners (with a small bounded waiting queue),
+then Namespace (when enabled via `NAMESPACE_ENABLED` and `NAMESPACE_BUILD_CAP`),
+then GitHub-hosted runners. Maintenance builds (bot Mathlib bump and lint-repair PRs
+and their dispatched rebuilds) take a priority Namespace runner outside the capped
+scheduler groups when `NAMESPACE_ENABLED` is unset, empty or `true` and
+`NAMESPACE_BUILD_CAP` is not `0`; otherwise they use the GitHub-hosted bulk slots
+(see `scripts/namespace-controls.md`). The full clean nightly build uses the Fleet PR pool and retains its twelve-hour budget;
+staging-only and queue-control reservations cannot be taken by that class.
 
 Staging runs only on tauchonki2. It prefers the exact available staging guest and
 otherwise waits for the next guest with tauchonki2's permanent machine and staging
@@ -14,13 +15,19 @@ class labels. Missing or stale picker outputs cannot send staging into another p
 The staging picker, finalizer, and isolated publisher retain their reserved queue-control
 slots. Publisher and sandbox must use distinct fresh runners.
 
-Ordinary picker/control jobs and fixed Linux CI workflows use GitHub-hosted Ubuntu
-24.04. `PICKER_GITHUB_FALLBACK` and `STAGING_RUNS_ON` cannot re-enable Namespace.
+Ordinary non-staging picker jobs and the CI label dispatcher (`full-lint-label.yml`)
+run on the Fleet PR pool when `FLEET_CI_ENABLED` is `true` so GitHub-hosted backlogs
+cannot starve runner selection. The API docs build (`api-docs.yml`) uses the same pool, so
+its hours-long re-analysis after a pin bump does not hold a GitHub-hosted runner. Setting
+`PICKER_GITHUB_FALLBACK` to `true` returns all three to GitHub-hosted `ubuntu-24.04`
+without a source PR. None of them receives
+`APP_PRIVATE_KEY`.
 
-Nineteen native Actions concurrency groups cap GitHub-hosted bulk builds across
-workflows, leaving one of the organization's twenty hosted slots for control work.
-The runner picker uses the existing observed hosted budget and complete Fleet
-inventory; these are advisory observations rather than capacity reservations.
+Native Actions concurrency groups cap GitHub-hosted bulk builds across workflows at
+`HOSTED_RUNNER_BUDGET` (default `12`, clamped to `1..19`), reserving the remaining
+organization hosted slots for control work (`pr-status`, `pr-labels`, `labels-from-comments`,
+and fallback pickers). The runner picker uses the existing observed hosted budget and
+complete Fleet inventory; these are advisory observations rather than capacity reservations.
 PR placement names the shared runner group so another enrolled host can replace a
 busy guest. Staging retains its reserved machine and class.
 

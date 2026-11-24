@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Minpoly
+public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.PowerBasis
 
 /-!
@@ -25,6 +26,8 @@ along `x ^ 0 = 1` is an `R`-linear map `S → R` sending `1` to `1`. So `R · 1`
 * `PowerBasis.charpoly_lmul_gen`: multiplication by the generator of a power basis has
   characteristic polynomial the minimal polynomial of the generator. This is the endomorphism form
   of Mathlib's `charpoly_leftMulMatrix`.
+* `PowerBasis.norm_gen_sub_algebraMap`: the norm of `pb.gen - a` for a scalar `a` is
+  `(-1) ^ pb.dim` times the minimal polynomial of the generator evaluated at `a`.
 * `PowerBasis.roots_map_minpoly_eq_map_algHom`: in a domain `E`, the roots of the minimal
   polynomial of the generator are the images of the generator under the `R`-algebra embeddings
   `S →ₐ[R] E`, each counted once.
@@ -70,6 +73,21 @@ theorem PowerBasis.charpoly_lmul_gen {R S : Type*} [CommRing R] [Ring S] [Algebr
     charpoly_leftMulMatrix]
 
 open Polynomial in
+/-- For a power basis of `S` over `R` and `a : R`, the norm of `pb.gen - algebraMap R S a` is
+`(-1) ^ pb.dim` times the minimal polynomial of the generator evaluated at `a`. -/
+theorem PowerBasis.norm_gen_sub_algebraMap {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
+    (pb : PowerBasis R S) (a : R) :
+    Algebra.norm R (pb.gen - algebraMap R S a) = (-1) ^ pb.dim * (minpoly R pb.gen).eval a := by
+  nontriviality R
+  have := Module.Free.of_basis pb.basis
+  have := Module.Finite.of_basis pb.basis
+  have h : Algebra.lmul R S (pb.gen - algebraMap R S a) =
+      (-1 : R) • (algebraMap R (Module.End R S) a - Algebra.lmul R S pb.gen) := by
+    ext; simp [Algebra.algebraMap_eq_smul_one]
+  rw [← pb.charpoly_lmul_gen, LinearMap.eval_charpoly, Algebra.norm_apply, h, LinearMap.det_smul,
+    pb.finrank]
+
+open Polynomial in
 /-- The roots in a domain `E` of the minimal polynomial of the generator of a power basis are the
 images of the generator under the `R`-algebra embeddings `S →ₐ[R] E`, each counted once, for any
 numbering `e` of the embeddings by `Fin pb.dim`. -/
@@ -89,7 +107,7 @@ theorem PowerBasis.roots_map_minpoly_eq_map_algHom {R S E : Type*} [CommRing R] 
     (Multiset.le_iff_subset hrnodup).2 (by
       intro x hx
       obtain ⟨i, _, rfl⟩ := Multiset.mem_map.mp hx
-      exact (pb.liftEquiv' (e i)).2)
+      exact (pb.liftEquiv' (e i)).property)
   refine (Multiset.eq_of_le_of_card_le hle ?_).symm
   rw [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin]
   exact (card_roots' _).trans (by

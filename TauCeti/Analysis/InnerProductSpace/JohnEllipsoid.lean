@@ -18,7 +18,7 @@ import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Convex.Caratheodory
 import TauCeti.Analysis.InnerProductSpace.Contraction
-import TauCeti.Analysis.InnerProductSpace.Frame
+import TauCeti.Analysis.InnerProductSpace.Frame.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 
 /-!

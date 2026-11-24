@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Trace
-public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
+public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.SignedCheckedR
 public import TauCeti.LinearAlgebra.Finsupp.ProductDensity
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # Atomic tensor models of Markov traces on the type-A Hecke algebra
@@ -123,8 +124,8 @@ theorem commute_productDensity_signedChecked (p : ι → R) (x : TypeAHeckeAlgeb
     Commute (productDensity p) (signedChecked pos q x) := by
   have hx : signedChecked pos q x ∈
       Algebra.adjoin R (Set.range (signedChecked pos q ∘ T (n := n) q)) := by
-    rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
-    exact ⟨x, trivial, rfl⟩
+    rw [Set.range_comp, Algebra.adjoin_image_eq_range _ adjoin_range_T]
+    exact AlgHom.mem_range_self _ x
   refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx ?_
   rintro _ ⟨i, rfl⟩
   simpa using (commute_productDensity_signedCheckedR pos p (q : R) _ _).smul_right _

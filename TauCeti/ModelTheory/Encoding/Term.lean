@@ -7,6 +7,7 @@ module
 
 public import Mathlib.ModelTheory.Encoding
 public import TauCeti.Computability.Partrec.List
+public import TauCeti.Logic.Equiv.List
 public import TauCeti.ModelTheory.Encoding.Symbols
 public import TauCeti.ModelTheory.Term.Substitution
 
@@ -40,6 +41,9 @@ are primitively encoded and the arity of a function symbol is primitive recursiv
   `listDecode` reads it as a single term whose spelling is the list,
   `FirstOrder.Language.Term.exists_listEncode_eq_iff`. For natural-number codes, the set of
   codes of terms is primitive recursive by Mathlib's `Primcodable.mem_range_encode`.
+* `FirstOrder.Language.Term.listDecode_map_sumMap`, `FirstOrder.Language.Term.encode_relabel`:
+  reading a list commutes with renaming its variable letters, and relabelling along a map that
+  preserves the codes of variables preserves the codes of terms.
 
 On spellings, relabelling the variables of a term along `g` replaces each variable letter `a` by
 `g a` (`FirstOrder.Language.Term.listEncode_relabel`), and substituting terms for the variables
@@ -102,6 +106,19 @@ theorem exists_listEncode_eq_iff {l : List (α ⊕ Σ i, L.Functions i)} :
   · obtain ⟨t, -, ht⟩ := List.map_eq_singleton_iff.1 h
     exact ⟨t, ht⟩
 
+/-- Reading a list whose variable letters have been renamed gives the terms read from the list,
+with their variables renamed. -/
+theorem listDecode_map_sumMap (g : α → β) (l : List (α ⊕ Σ i, L.Functions i)) :
+    listDecode (l.map (Sum.map g id)) = (listDecode l).map (relabel g) := by
+  induction l with
+  | nil => simp [listDecode]
+  | cons x l ih =>
+    rcases x with a | ⟨n, f⟩
+    · simp [listDecode, ih]
+    · by_cases h : n ≤ (listDecode l).length
+      · simp [listDecode, ih, h, List.map_drop]
+      · simp [listDecode, ih, h]
+
 /-- A function symbol of positive arity without arguments decodes to no term. -/
 @[simp]
 theorem listDecode_singleton_inr_add_one {n : ℕ} (f : L.Functions (n + 1)) :
@@ -117,9 +134,9 @@ theorem listEncode_ne_singleton_inr_add_one {n : ℕ} (f : L.Functions (n + 1)) 
 /-- Spelling the terms `l[0], …, l[n - 1]` of a list one after the other. -/
 private theorem flatMap_finRange_listEncode_getElem (l : List (L.Term α)) {n : ℕ}
     (h : n ≤ l.length) :
-    ((List.finRange n).flatMap fun i => (l[i.1]'(i.2.trans_le h)).listEncode) =
+    ((List.finRange n).flatMap fun i => (l[i.val]'(i.isLt.trans_le h)).listEncode) =
       ((l.map listEncode).take n).flatten := by
-  have : (List.finRange n).map (fun i => l[i.1]'(i.2.trans_le h)) = l.take n :=
+  have : (List.finRange n).map (fun i => l[i.val]'(i.isLt.trans_le h)) = l.take n :=
     List.ext_getElem (by simp [h]) (by simp)
   rw [← List.map_take, ← this, List.map_map, List.flatMap_def]
   rfl
@@ -222,6 +239,13 @@ theorem encode_map_listEncode (l : List (L.Term α)) : encode (l.map listEncode)
   induction l with
   | nil => rfl
   | cons t l ih => simp [encode_list_cons, ih, encode_eq_encode_listEncode]
+
+/-- Relabelling the variables of a term along a map that preserves their codes preserves the code
+of the term. -/
+theorem encode_relabel [Encodable β] {g : α → β} (hg : ∀ a, encode (g a) = encode a)
+    (t : L.Term α) : encode (t.relabel g) = encode t := by
+  rw [encode_eq_encode_listEncode, encode_eq_encode_listEncode, listEncode_relabel]
+  exact encode_list_map fun x _ => by rcases x with a | F <;> simp [hg]
 
 end Encodable
 

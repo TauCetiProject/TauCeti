@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.CalderonVaillancourt
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The bounded extension of uniform symbols of order zero to `L²`
@@ -69,14 +70,15 @@ theorem IsUniform.exists_eLpNorm_quantizeSchwartzValue_le (ha : a.IsUniform) :
 
 end InnerProductSpace
 
-variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {a : Symbol n V W 0}
+section FiniteDimensional
+
+variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W] {a : Symbol n V W 0}
 
 /-- **`L²` boundedness of uniform symbols of order zero** for finite-dimensional coefficient
 spaces: there is a constant `C` with `‖Op(a) u‖_{L²} ≤ C ‖u‖_{L²}` for every Schwartz
 function `u`. -/
-theorem IsUniform.exists_eLpNorm_quantizeSchwartzValue_le_of_finiteDimensional
-    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] (ha : a.IsUniform) :
+theorem IsUniform.exists_eLpNorm_quantizeSchwartzValue_le_of_finiteDimensional (ha : a.IsUniform) :
     ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(CoordinateSpace n, V),
       eLpNorm (quantizeSchwartzValue a.coefficient u) 2 volume ≤
         ENNReal.ofReal C * eLpNorm u 2 volume := by
@@ -87,16 +89,13 @@ theorem IsUniform.exists_eLpNorm_quantizeSchwartzValue_le_of_finiteDimensional
     ext φ
     rw [hT, SchwartzMap.toDistr_toBesselPotentialSpaceCLM, SchwartzMap.coe_apply,
       coe_quantizeUniformCLM]
-  have hle := T.le_opNorm (SchwartzMap.toBesselPotentialSpaceCLM 0 2 u)
-  rw [hTu, SchwartzMap.norm_toBesselPotentialSpaceCLM_zero,
-    SchwartzMap.norm_toBesselPotentialSpaceCLM_zero, coe_quantizeUniformCLM] at hle
-  have hfin := ((quantizeUniformCLM a ha u).memLp 2).eLpNorm_ne_top
-  rw [coe_quantizeUniformCLM] at hfin
-  rw [← ENNReal.ofReal_toReal hfin]
-  refine (ENNReal.ofReal_le_ofReal hle).trans ?_
-  rw [ENNReal.ofReal_mul (norm_nonneg T)]
-  gcongr
-  exact ENNReal.ofReal_toReal_le
+  simpa only [coe_quantizeUniformCLM] using
+    SchwartzMap.eLpNorm_le_of_toBesselPotentialSpaceCLM_eq hTu
+
+end FiniteDimensional
+
+variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {a : Symbol n V W 0}
 
 /-- An `L²` estimate for `Op(a)` on Schwartz functions, in `H^0` norms. -/
 private theorem norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le (ha : a.IsUniform) {C : ℝ}

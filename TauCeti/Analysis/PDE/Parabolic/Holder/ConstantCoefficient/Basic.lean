@@ -75,7 +75,7 @@ theorem exists_continuousLinearEquiv_euclideanParabolicOperatorL_compSpatialL_eq
           HolderSpace.compLipschitzL _
             (lipschitzWith_slabSpaceMap (e : _ →L[ℝ] _).lipschitzWith)
             (euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const (A i j)) 0 0 u) := by
-  obtain ⟨e, he₁, he₂, he⟩ :=
+  obtain ⟨e, -, he₁, he₂, he⟩ :=
     PDE.exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
   refine ⟨e, he₁, he₂, fun u ↦ HolderSpace.ext fun p ↦ ?_⟩
   obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩

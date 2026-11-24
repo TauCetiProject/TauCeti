@@ -11,9 +11,9 @@ public import TauCeti.NumberTheory.NumberField.Cyclotomic.SeventhCyclotomic.Basi
 public import TauCeti.NumberTheory.NumberField.Index.Discriminant
 public import TauCeti.NumberTheory.NumberField.IntrinsicLabel
 public import TauCeti.NumberTheory.NumberField.Monogenic
+import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.NumberTheory.NumberField.ClassNumber.SmallDiscriminant
-import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Units
 
 /-!
 # The maximal real subfield of a seventh cyclotomic field
@@ -39,8 +39,9 @@ domain of class number `1`.
 
 * `IsPrimitiveRoot.add_inv_pow_three_add_sq_sub_two_mul_sub_one`:
   `(ζ + ζ⁻¹)³ + (ζ + ζ⁻¹)² - 2 (ζ + ζ⁻¹) - 1 = 0`.
-* `IsPrimitiveRoot.minpoly_addInvMaximalRealInteger_seven`:
-  `minpoly ℤ (ζ + ζ⁻¹) = X³ + X² - 2 X - 1`.
+* `IsPrimitiveRoot.minpoly_addInvMaximalRealInteger_seven` and
+  `IsPrimitiveRoot.discr_minpoly_addInvMaximalRealInteger_seven`:
+  `minpoly ℤ (ζ + ζ⁻¹) = X³ + X² - 2 X - 1`, of discriminant `49`.
 * `IsPrimitiveRoot.index_addInvMaximalRealInteger_seven` and
   `IsPrimitiveRoot.adjoin_addInvMaximalRealInteger_seven`: `[𝓞 L⁺ : ℤ[ζ + ζ⁻¹]] = 1` and
   `𝓞 L⁺ = ℤ[ζ + ζ⁻¹]`.
@@ -120,7 +121,7 @@ end CyclotomicSeven
 theorem finrank_maximalRealSubfield_seven {L : Type*} [Field L] [CharZero L]
     [IsCyclotomicExtension {7} ℚ L] :
     Module.finrank ℚ (maximalRealSubfield L) = 3 := by
-  rw [TauCeti.IsCyclotomicExtension.Rat.finrank_maximalRealSubfield 7 L (by decide)]
+  rw [TauCeti.IsCyclotomicExtension.Rat.finrank_rat_maximalRealSubfield_of_two_lt 7 L (by decide)]
   decide
 
 end TauCeti.NumberField
@@ -169,6 +170,15 @@ theorem minpoly_addInvMaximalRealInteger_seven {L : Type*} [Field L] [CharZero L
       (minpoly.dvd ℚ _ hp_aeval) (hp_deg.trans_le hmin_deg.ge)).symm
   exact Polynomial.map_injective (algebraMap ℤ ℚ) (RingHom.injective_int (algebraMap ℤ ℚ)) hminℚ
 
+/-- **The minimal polynomial over `ℤ` of `ζ₇ + ζ₇⁻¹` in `𝓞 (ℚ(ζ₇)⁺)` has discriminant `49`.** -/
+@[simp]
+theorem discr_minpoly_addInvMaximalRealInteger_seven {L : Type*} [Field L] [CharZero L]
+    [IsCyclotomicExtension {7} ℚ L] {ζ : L} (hζ : IsPrimitiveRoot ζ 7) :
+    (minpoly ℤ hζ.addInvMaximalRealInteger).discr = 49 := by
+  rw [hζ.minpoly_addInvMaximalRealInteger_seven,
+    Polynomial.discr_of_degree_eq_three (by compute_degree <;> norm_num)]
+  norm_num [coeff_add, coeff_sub, coeff_X_pow, coeff_one, coeff_X, coeff_C_mul]
+
 /-- **`ζ₇ + ζ₇⁻¹` has index `1` in `𝓞 (ℚ(ζ₇)⁺)`.** -/
 @[simp]
 theorem index_addInvMaximalRealInteger_seven {L : Type*} [Field L] [NumberField L]
@@ -179,8 +189,7 @@ theorem index_addInvMaximalRealInteger_seven {L : Type*} [Field L] [NumberField 
   let t : IntegralPrimitiveElement (maximalRealSubfield L) :=
     ⟨hζ.addInvMaximalRealInteger, hζ.adjoin_rat_addInvMaximalRealInteger_eq_top⟩
   have hd := t.discr_minpoly_eq_index_sq_mul_discr
-  rw [hζ.minpoly_addInvMaximalRealInteger_seven,
-    Cubic23.discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one] at hd
+  rw [hζ.discr_minpoly_addInvMaximalRealInteger_seven] at hd
   -- In `49 = t.index ^ 2 * |discr L⁺|`, `|discr L⁺| > 2` forces `t.index = 1`.
   have hgt : 2 < |NumberField.discr (maximalRealSubfield L)| :=
     NumberField.abs_discr_gt_two (by rw [finrank_maximalRealSubfield_seven]; decide)
@@ -229,8 +238,7 @@ theorem discr_maximalRealSubfield_seven :
   let t : IntegralPrimitiveElement (maximalRealSubfield L) :=
     ⟨hζ.addInvMaximalRealInteger, hζ.adjoin_rat_addInvMaximalRealInteger_eq_top⟩
   have hd := t.discr_minpoly_eq_index_sq_mul_discr
-  rw [hζ.minpoly_addInvMaximalRealInteger_seven,
-    Cubic23.discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one,
+  rw [hζ.discr_minpoly_addInvMaximalRealInteger_seven,
     hζ.index_addInvMaximalRealInteger_seven] at hd
   simpa using hd.symm
 
