@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Ring.Action.ConjAct
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
+-- Non-public: `forall_conj_eq_iff_exists_scalar_mul_eq` is used only in a proof.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 
 /-!
@@ -108,9 +110,13 @@ theorem ker_innerAut : (innerAut (n := n) (R := R)).ker = Subgroup.center (GL n 
 inner automorphism exactly when they differ by an invertible scalar. -/
 theorem innerAut_eq_innerAut_iff {g g' : GL n R} :
     innerAut g = innerAut g' ↔ ∃ u : Rˣ, g' = g * scalar n u := by
-  rw [← inv_mul_eq_one, ← map_inv, ← map_mul, innerAut_eq_one_iff, center_eq_range_scalar,
-    MonoidHom.mem_range]
-  exact exists_congr fun u ↦ by rw [eq_inv_mul_iff_mul_eq, eq_comm]
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · -- Equal inner automorphisms conjugate every element of `GL n R` in the same way.
+    obtain ⟨u, hu⟩ := (forall_conj_eq_iff_exists_scalar_mul_eq (g := g') (h := g)).1
+      fun x ↦ Units.ext (by simpa using (DFunLike.congr_fun h (x : Matrix n n R)).symm)
+    exact ⟨u, by rw [← hu, scalar_commute]⟩
+  · rintro ⟨u, rfl⟩
+    rw [map_mul, innerAut_scalar, mul_one]
 
 section LocallyInner
 

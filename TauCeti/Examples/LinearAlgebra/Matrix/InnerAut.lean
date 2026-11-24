@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
 
@@ -42,29 +43,15 @@ example (σ : Matrix (Fin 1) (Fin 1) R →ₐ[R] Matrix (Fin 1) (Fin 1) R) : σ 
     simp [algebraMap_eq_diagonal]
   rw [hx, AlgHom.commutes, AlgHom.id_apply]
 
-/-- The unipotent matrix `!![1, 1; 0, 1]` over `ℤ₃`. -/
-noncomputable def unipotent : GL (Fin 2) ℤ_[3] where
-  val := !![1, 1; 0, 1]
-  inv := !![1, -1; 0, 1]
-  val_inv := by simp [Matrix.one_fin_two]
-  inv_val := by simp [Matrix.one_fin_two]
-
-/-- The underlying matrix of `unipotent`. -/
-@[simp]
-theorem coe_unipotent : (unipotent : Matrix (Fin 2) (Fin 2) ℤ_[3]) = !![1, 1; 0, 1] :=
-  (rfl)
-
-/-- The underlying matrix of the inverse of `unipotent`. -/
-theorem coe_unipotent_inv : ((unipotent⁻¹ : GL (Fin 2) ℤ_[3]) : Matrix (Fin 2) (Fin 2) ℤ_[3]) =
-    !![1, -1; 0, 1] :=
-  (rfl)
-
 /-- Over `ℤ₃`, conjugation by `!![1, 1; 0, 1]` sends `E₀₀` to `!![1, -1; 0, 0]`. -/
-example : innerAut unipotent (single 0 0 1) = !![1, -1; 0, 0] := by
+example : innerAut (upperRightHom (1 : ℤ_[3])) (single 0 0 1) = !![1, -1; 0, 0] := by
   have hE : (single 0 0 1 : Matrix (Fin 2) (Fin 2) ℤ_[3]) = !![1, 0; 0, 0] := by
     ext i j
     fin_cases i <;> fin_cases j <;> rfl
-  rw [innerAut_apply, hE, coe_unipotent, coe_unipotent_inv]
+  have hg : (upperRightHom (1 : ℤ_[3]) : Matrix (Fin 2) (Fin 2) ℤ_[3]) = !![1, 1; 0, 1] := rfl
+  have hg' : (((upperRightHom (1 : ℤ_[3]))⁻¹ : GL (Fin 2) ℤ_[3]) : Matrix (Fin 2) (Fin 2) ℤ_[3]) =
+      !![1, -1; 0, 1] := rfl
+  rw [innerAut_apply, hE, hg, hg']
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
 
