@@ -315,6 +315,25 @@ theorem chartMetric_extChartAt_apply_basis {ι : Type*} (b : Module.Basis ι ℝ
   simp only [g.chartMetric_extChartAt_apply hy, ← symmL_basis_eq_localFrame b hbase,
     Trivialization.symmL_apply _ hbase]
 
+/-- At the centre of its chart, the chart metric is the metric itself. -/
+theorem chartMetric_extChartAt_self_apply (x₀ : M) (u w : E) :
+    g.chartMetric x₀ (extChartAt I x₀ x₀) u w = g x₀ u w := by
+  have hbase : x₀ ∈ (trivializationAt E (TangentSpace I) x₀).baseSet :=
+    FiberBundle.mem_baseSet_trivializationAt' x₀
+  rw [g.chartMetric_extChartAt_apply (mem_extChartAt_source x₀),
+    ← Trivialization.symmL_apply (R := ℝ) _ hbase, ← Trivialization.symmL_apply (R := ℝ) _ hbase,
+    symmL_trivializationAt_self, symmL_trivializationAt_self]
+
+/-- At the centre of its chart, the Gram matrix of the chart metric in a basis `b` of the model
+space is the Gram matrix of the metric. -/
+theorem toMatrix₂_chartMetric_extChartAt_self {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℝ E) (x₀ : M) :
+    LinearMap.toMatrix₂ b b (g.chartMetric x₀ (extChartAt I x₀ x₀)).toBilinForm =
+      Matrix.of fun i j ↦ g x₀ (b i) (b j) := by
+  ext i j
+  rw [LinearMap.toMatrix₂_apply, ContinuousLinearMap.toBilinForm_apply, Matrix.of_apply,
+    g.chartMetric_extChartAt_self_apply]
+
 /-- The chart metric is symmetric at every point of the chart target. -/
 theorem isSymm_chartMetric {z : E} (hz : z ∈ (extChartAt I x₀).target) :
     LinearMap.IsSymm (g.chartMetric x₀ z).toBilinForm :=
