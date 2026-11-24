@@ -181,7 +181,7 @@ private theorem norm_trace_mapL_le_of_forall_re_le
       re (trace 𝕜 E (mapL (.id 𝕜 _) T u)) ≤ C)
     {T : E →L[𝕜] E} (hT : T.toLinearMap.HasFiniteRange) :
     ‖trace 𝕜 E (mapL (.id 𝕜 _) T u)‖ ≤ C * ‖T‖ := by
-  set z := trace 𝕜 E (mapL (.id 𝕜 _) T u)
+  set z := trace 𝕜 E (mapL (.id 𝕜 _) T u) with hz_def
   rcases eq_or_ne z 0 with hz | hz
   · rw [hz, norm_zero]
     exact mul_nonneg (nonneg_of_forall_re_trace_mapL_le h) (norm_nonneg _)
@@ -190,14 +190,17 @@ private theorem norm_trace_mapL_le_of_forall_re_le
   -- Rescale `T` to a contraction `c • T` with `tr ((1 ⊗ c • T) u) = ‖z‖ / ‖T‖ ≥ 0`.
   have hTn : 0 < ‖T‖ := norm_pos_iff.2 hT0
   set c : 𝕜 := (starRingEnd 𝕜) z / ((‖z‖ * ‖T‖ : ℝ) : 𝕜)
-  have hS := h (c • T) (by simpa using hT.smul c) (le_of_eq <| by
-    simp [c, norm_smul]
-    field_simp)
+  have hc : ‖c‖ * ‖T‖ = 1 := by
+    simp only [c, norm_div, RCLike.norm_conj, RCLike.norm_ofReal,
+      abs_of_pos (mul_pos (norm_pos_iff.2 hz) hTn)]
+    field_simp
   have hcz : c * z = ((‖z‖ / ‖T‖ : ℝ) : 𝕜) := by
     simp only [c, div_mul_eq_mul_div, RCLike.conj_mul]
     push_cast
     field_simp
-  rw [mapL_smul_right, _root_.smul_apply, map_smul, smul_eq_mul, hcz, RCLike.ofReal_re] at hS
+  have hS := h (c • T) (by simpa using hT.smul c) (by rw [norm_smul, hc])
+  simp only [mapL_smul_right, _root_.smul_apply, map_smul, smul_eq_mul, ← hz_def, hcz,
+    RCLike.ofReal_re] at hS
   rwa [div_le_iff₀ hTn] at hS
 
 /-- If the real part of the trace of `u` composed with every finite-rank contraction is at most
