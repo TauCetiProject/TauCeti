@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
+public import Mathlib.RingTheory.Polynomial.Pochhammer
 import TauCeti.Topology.MetricSpace.EBall
 
 /-!
@@ -18,6 +19,8 @@ This result does not assume that the function extends across the center: isolate
 singularities are allowed. When `f` is complex-differentiable on a circle with circle-integrable
 derivative, integrating around the circle also expresses the Laurent coefficients of `deriv f` in
 terms of those of `f` (`circleLaurentCoeff_deriv_of_differentiableAt`, `circleLaurentCoeff_deriv`).
+Iterating, the coefficient of degree `n - m` of the `m`-th derivative is the falling factorial
+`n (n - 1) ⋯ (n - m + 1)` times the coefficient of degree `n` (`circleLaurentCoeff_iteratedDeriv`).
 
 The construction uses Mathlib's Cauchy-Goursat theorem for annuli,
 `Complex.circleIntegral_eq_of_differentiable_on_annulus_off_countable`.
@@ -101,6 +104,18 @@ theorem circleLaurentCoeff_add {f g : ℂ → E} {c : ℂ} {R : ℝ}
   simp only [circleLaurentCoeff_def, smul_add]
   rw [circleIntegral.integral_add (hf.sub_zpow_smul (-n - 1) hc)
     (hg.sub_zpow_smul (-n - 1) hc), smul_add]
+
+/-- Extracting coefficients is subtractive for functions integrable on the circle. -/
+theorem circleLaurentCoeff_sub {f g : ℂ → E} {c : ℂ} {R : ℝ}
+    (hf : CircleIntegrable f c R) (hg : CircleIntegrable g c R) (n : ℤ) :
+    circleLaurentCoeff (fun z => f z - g z) c R n =
+      circleLaurentCoeff f c R n - circleLaurentCoeff g c R n := by
+  rcases eq_or_ne R 0 with (rfl | hR)
+  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero, sub_zero]
+  have hc : c ∉ sphere c |R| := by simpa [eq_comm] using hR
+  simp only [circleLaurentCoeff_def, smul_sub]
+  rw [circleIntegral.integral_sub (hf.sub_zpow_smul (-n - 1) hc)
+    (hg.sub_zpow_smul (-n - 1) hc), smul_sub]
 
 /-- The Cauchy estimate for any integer Laurent coefficient, including negative degrees
 and the degenerate circle of radius zero. -/
@@ -250,5 +265,24 @@ theorem circleLaurentCoeff_deriv {f : ℂ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ
   exact circleLaurentCoeff_deriv_of_differentiableAt hρ_pos
     (fun z hz => (hf z (hsphere hz)).differentiableAt (hopen.mem_nhds (hsphere hz)))
     ((hdf.continuousOn.mono hsphere).circleIntegrable hρ_pos.le) n
+
+/-- For `f` complex-differentiable on an open concentric annulus
+`Metric.eball c R \ Metric.closedBall c r` and any interior circle radius `ρ ∈ (r, R)`, the
+coefficient of degree `n - m` of the `m`-th derivative of `f` is the falling factorial
+`n (n - 1) ⋯ (n - m + 1)` times the coefficient of degree `n` of `f`. -/
+theorem circleLaurentCoeff_iteratedDeriv {f : ℂ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ≥0∞}
+    (hf : DifferentiableOn ℂ f (eball c R \ closedBall c r))
+    (hr : 0 ≤ r) (hrρ : r < ρ) (hρR : ENNReal.ofReal ρ < R) (m : ℕ) (n : ℤ) :
+    circleLaurentCoeff (iteratedDeriv m f) c ρ (n - m) =
+      (descPochhammer ℂ m).eval (n : ℂ) • circleLaurentCoeff f c ρ n := by
+  induction m generalizing f n with
+  | zero => simp
+  | succ m ih =>
+    have hopen : IsOpen (eball c R \ closedBall c r) := isOpen_eball.sdiff isClosed_closedBall
+    rw [iteratedDeriv_succ', show n - ((m + 1 : ℕ) : ℤ) = (n - 1) - m by push_cast; ring,
+      ih (hf.deriv hopen), circleLaurentCoeff_deriv hf hr hrρ hρR, sub_add_cancel, smul_smul,
+      descPochhammer_succ_left, Polynomial.eval_mul, Polynomial.eval_X,
+      Polynomial.eval_comp, Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_one, mul_comm,
+      Int.cast_sub, Int.cast_one]
 
 end TauCeti

@@ -5,10 +5,15 @@ Authors: Robby Sneiderman, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 
 /-!
-# Riemann--Lebesgue for sine modulation and along a vertical line
+# Riemann--Lebesgue for Fourier coefficients, sine modulation and along a vertical line
+
+The Fourier coefficients `fourierCoeffOn hab f n` of any function on an interval `[a, b]` tend to
+`0` as `n → ±∞`. They are the Fourier transform of `f` restricted to `(a, b]` at the frequency
+`n / (b - a)`, and these frequencies leave every compact set.
 
 Testing a function on the vertical line `Re s = c` against a Dirichlet series produces the
 oscillating factor `x ^ (i t)`, which is the Fourier character of frequency `-(2π)⁻¹ log x` in
@@ -21,6 +26,8 @@ simple-pole factor `1 / (σ + i t - 1)` for `σ > 1`.
 
 ## Main declarations
 
+* `TauCeti.tendsto_fourierCoeffOn`: the Fourier coefficients on an interval tend to `0` along
+  the cofinite filter on `ℤ`.
 * `MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop`: sine-modulated integrals
   tend to zero as the real frequency tends to positive infinity.
 
@@ -41,6 +48,31 @@ open scoped FourierTransform Real Topology
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **Riemann--Lebesgue for Fourier coefficients on an interval**: the coefficients
+`fourierCoeffOn hab f n` tend to `0` as `n → ±∞`.
+
+No hypothesis is needed on `f`: when `f` is not integrable on `[a, b]`, every coefficient is `0`. -/
+theorem tendsto_fourierCoeffOn {a b : ℝ} (hab : a < b) (f : ℝ → E) :
+    Tendsto (fourierCoeffOn hab f) cofinite (𝓝 0) := by
+  have hT : b - a ≠ 0 := (sub_pos.2 hab).ne'
+  have hfreq : Tendsto (fun n : ℤ ↦ (n : ℝ) * (b - a)⁻¹) cofinite (cocompact ℝ) :=
+    (Homeomorph.mulRight₀ _ (inv_ne_zero hT)).isClosedEmbedding.tendsto_cocompact.comp
+      Int.tendsto_coe_cofinite
+  have h := ((Real.tendsto_integral_exp_smul_cocompact (Set.indicator (Set.Ioc a b) f)).comp
+    hfreq).const_smul (1 / (b - a))
+  rw [smul_zero] at h
+  refine h.congr fun n ↦ ?_
+  rw [fourierCoeffOn_eq_integral, intervalIntegral.integral_of_le hab.le,
+    ← integral_indicator measurableSet_Ioc, Function.comp_apply]
+  congr 1
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  by_cases hx : x ∈ Set.Ioc a b
+  · simp only [Set.indicator_of_mem hx, fourier_coe_apply, Circle.smul_def, Real.fourierChar_apply]
+    congr 2
+    push_cast
+    field_simp
+  · simp [Set.indicator_of_notMem hx]
 
 /-- **Riemann--Lebesgue on a vertical line**: the integral of `f` against the oscillating factor
 `x ^ (i t)` tends to `0` as `x → ∞`.
