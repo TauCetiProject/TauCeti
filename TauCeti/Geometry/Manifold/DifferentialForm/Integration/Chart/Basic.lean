@@ -9,8 +9,8 @@ public import TauCeti.MeasureTheory.Function.L1Space.Integrable
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
-public import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 public import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
