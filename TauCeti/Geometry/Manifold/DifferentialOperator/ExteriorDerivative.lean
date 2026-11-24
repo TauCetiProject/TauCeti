@@ -36,9 +36,9 @@ exterior multiplication by `ξ`:
 `ContinuousAlternatingMap.pairedWedge` of the `1`-form `ξ` with `ω`, whose degree `1 + k` is
 identified with `k + 1`. In the Fourier convention, where `∂ⱼ` has symbol `i ξⱼ`, the symbol is
 `i ξ ∧ ·`. Since `d ∘ d = 0` (`TauCeti.mextDerivSection_comp_mextDerivSection`) and principal
-symbols multiply under composition, the symbols form a complex,
-`σ(d)(ξ) ∘ σ(d)(ξ) = 0` (`TauCeti.sectionPrincipalSymbol_mextDerivSection_comp`): the symbol
-sequence of the de Rham complex.
+symbols multiply under composition, the symbols form a complex, `σ(d)(ξ) ∘ σ(d)(ξ) = 0`
+(`TauCeti.sectionPrincipalSymbol_mextDerivSection_comp_sectionPrincipalSymbol_mextDerivSection`):
+the symbol sequence of the de Rham complex.
 
 ## Main results
 
@@ -50,8 +50,8 @@ sequence of the de Rham complex.
 * `TauCeti.sectionPrincipalSymbol_mextDerivSection_apply`: the principal symbol of `d` at `ξ` is
   `ξ ∧ ·`.
 * `TauCeti.mextDerivSection_comp_mextDerivSection`: `d ∘ d = 0`.
-* `TauCeti.sectionPrincipalSymbol_mextDerivSection_comp`: the principal symbols of `d` form a
-  complex.
+* `TauCeti.sectionPrincipalSymbol_mextDerivSection_comp_sectionPrincipalSymbol_mextDerivSection`:
+  the principal symbols of `d` form a complex.
 
 ## References
 
@@ -84,17 +84,9 @@ def mextDerivSection (k : ℕ) :
         fun x : M ↦ TangentSpace I x [⋀^Fin (k + 1)]→L[ℝ] Trivial M ℝ x⟯ where
   toFun s := (mextDerivₗ I k (SmoothBundleForm.ofContMDiffSection s)).toContMDiffSection
   map_add' s t := by
-    have : SmoothBundleForm.ofContMDiffSection (s + t) =
-        SmoothBundleForm.ofContMDiffSection s + SmoothBundleForm.ofContMDiffSection t :=
-      Subtype.ext (by simp)
-    rw [this, map_add]
     ext x : 1
     simp
   map_smul' c s := by
-    have : SmoothBundleForm.ofContMDiffSection (c • s) =
-        c • SmoothBundleForm.ofContMDiffSection s :=
-      Subtype.ext (by simp)
-    rw [this, map_smul]
     ext x : 1
     simp
 
@@ -165,6 +157,7 @@ variable [FiniteDimensional ℝ E] [T2Space M] {x : M}
 /-- **The principal symbol of the exterior derivative** at a covector `ξ ∈ T_x*M` is exterior
 multiplication by `ξ`, `σ_geom(d)(ξ) α = ξ ∧ α`: the wedge of the `1`-form `ξ` with `α`, whose
 degree `1 + k` is identified with `k + 1`. -/
+@[simp]
 theorem sectionPrincipalSymbol_mextDerivSection_apply (hx : I.IsInteriorPoint x)
     (ξ : TangentSpace I x →L[ℝ] ℝ) (α : TangentSpace I x [⋀^Fin k]→L[ℝ] Trivial M ℝ x)
     (v : Fin (k + 1) → TangentSpace I x) :
@@ -185,8 +178,8 @@ theorem sectionPrincipalSymbol_mextDerivSection_apply (hx : I.IsInteriorPoint x)
 /-- **The symbols of the de Rham complex form a complex**: since `d ∘ d = 0` and principal symbols
 multiply under composition, `σ(d)(ξ) ∘ σ(d)(ξ) = 0`, that is `ξ ∧ ξ ∧ α = 0`. -/
 @[simp]
-theorem sectionPrincipalSymbol_mextDerivSection_comp (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+theorem sectionPrincipalSymbol_mextDerivSection_comp_sectionPrincipalSymbol_mextDerivSection
+    (hx : I.IsInteriorPoint x) (ξ : TangentSpace I x →L[ℝ] ℝ) :
     sectionPrincipalSymbol I hx
         ⟨mextDerivSection I M (k + 1), mextDerivSection_mem_differentialOperators_one I M (k + 1)⟩
           ξ ∘ₗ
