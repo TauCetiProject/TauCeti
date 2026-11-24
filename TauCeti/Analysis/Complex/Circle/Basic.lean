@@ -46,9 +46,10 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
   `Circle.coordinate_mem_unitary`.
-* `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
-  `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
-  identity for a point of `sphere (0 : ℂ) 1`.
+* `Circle.re_sq_add_im_sq`, `Circle.coe_mul_conj` and `Circle.coe_add_inv_coe`:
+  `Re z ^ 2 + Im z ^ 2 = 1`, `z * conj z = 1` and `z + z⁻¹ = 2 Re z` on the circle,
+  and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first identity for a point of
+  `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
   of `sphere (0 : ℂ) 1`, and `Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere`: there
   `z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a))`.
@@ -76,6 +77,7 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
+* `Circle.continuous_toUnits`: the inclusion `Circle →* ℂˣ` is continuous.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 * `TauCeti.hasFDerivAt_circleExp_mul_ofReal` and `TauCeti.fderiv_circleExp_mul_ofReal_apply`: the
   differential of a map `e^{iθ} r` in polar form, with real-valued angle `θ` and radius `r`, is
@@ -118,6 +120,11 @@ theorem coe_homeomorphSphere_exp_im (x : ℝ) : (homeomorphSphere (exp x) : ℂ)
 /-- The real and imaginary parts of a point of the circle satisfy `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
   simpa [Complex.normSq_apply, sq] using normSq_coe z
+
+/-- A point of the circle times its conjugate is `1`. -/
+@[simp]
+theorem coe_mul_conj (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
+  rw [Complex.mul_conj, normSq_coe, Complex.ofReal_one]
 
 /-- The real and imaginary parts of a point of the unit sphere of `ℂ` satisfy
 `Re z ^ 2 + Im z ^ 2 = 1`. -/
@@ -397,6 +404,14 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
 /-- Every point of `Circle` belongs to `unitary ℂ`. -/
 theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
   simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
+
+/-- The inclusion `Circle →* ℂˣ` is continuous for the topology of the unit group. -/
+@[fun_prop]
+theorem continuous_toUnits : Continuous toUnits := by
+  refine Units.continuous_iff.2 ⟨?_, ?_⟩ <;>
+    simp only [Function.comp_def, toUnits_apply, Units.val_mk0]
+  · exact continuous_subtypeVal
+  · exact continuous_subtypeVal.comp (continuous_inv (G := Circle))
 
 /-! ### Elements of order two in powers of the circle -/
 

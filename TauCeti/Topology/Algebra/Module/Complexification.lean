@@ -290,7 +290,7 @@ def baseChangeComplex (f : W →L[ℝ] W') : ℂ ⊗[ℝ] W →L[ℂ] ℂ ⊗[�
     imaginaryPart W' (f.baseChangeComplex u) = f (imaginaryPart W u) :=
   imaginaryPart_baseChange f.toLinearMap u
 /-- Continuous complex base change commutes with `tmulConj`. -/
-theorem tmulConj_baseChangeComplex (f : W →L[ℝ] W') (u : ℂ ⊗[ℝ] W) :
+@[simp] theorem tmulConj_baseChangeComplex (f : W →L[ℝ] W') (u : ℂ ⊗[ℝ] W) :
     tmulConj W' (f.baseChangeComplex u) = f.baseChangeComplex (tmulConj W u) :=
   tmulConj_baseChange f.toLinearMap u
 @[simp] theorem baseChangeComplex_id :
@@ -669,7 +669,7 @@ def compactDualRealPointsCLE : (E →L_c[ℝ] ℝ) ≃L[ℝ]
         (complexificationCompactDualEquiv E).symm A.val := by
       apply (complexificationCompactDualEquiv E).injective
       rw [complexificationCompactDualEquiv_tmulConj, ContinuousLinearEquiv.apply_symm_apply]
-      exact TauCeti.mem_realPoints.mp A.property
+      exact TauCeti.map_coe_realPoints A
     obtain ⟨f, hf⟩ := (tmulConj_eq_self_iff (E →L_c[ℝ] ℝ) _).mp hc
     simp [compactDualComplexExtension, hf]
   map_add' f g := Subtype.ext (map_add (compactDualComplexExtension E) f g)
