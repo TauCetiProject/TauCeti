@@ -46,6 +46,13 @@ the invariant form `κ₀ = κ_L / (2 h^∨)` and `S(z) = ½ ∑ :J^a J_a:` for 
 Segal--Sugawara modes are `h^∨ Sₙ`, and at the level `κ = k κ₀` the formula above becomes
 `[z_m, h^∨ Sₙ] = (k + h^∨) m z_{n+m}`.
 
+The homothety `t ↦ u t` scales `Sₙ` by `u ^ n` at every central value
+(`TauCeti.CurrentAlgebra.coordinateCompletedEnvelopingAut_homothety_sugawaraMode`). The finite
+Killing-dual contraction uses finite-dimensionality of `L` and nondegeneracy of its Killing form.
+The normal-order scaling law applies to every Lie algebra over the field. At the critical level
+the coordinate action preserves the center, and the scaling law computes the transport of
+central characters on the Sugawara modes.
+
 ## Main definitions
 
 * `TauCeti.CurrentAlgebra.sugawaraMode`: the Segal--Sugawara modes `Sₙ = ∑ᵢ :xᵢ yᵢ:_n`.
@@ -53,6 +60,8 @@ Segal--Sugawara modes are `h^∨ Sₙ`, and at the level `κ = k κ₀` the form
 ## Main results
 
 * `TauCeti.CurrentAlgebra.sugawaraMode_eq_sum`: `Sₙ` may be computed in any basis.
+* `TauCeti.CurrentAlgebra.coordinateCompletedEnvelopingAut_homothety_sugawaraMode`: a homothety
+  scales `Sₙ` by `u ^ n` at every central value.
 * `TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_sugawaraMode_sub_mul`: the commutator
   `[z_k, Sₙ] = k (z - 2 a w)_{n+k}`.
 * `TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm`:
@@ -109,6 +118,19 @@ theorem sugawaraMode_eq_sum {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Modu
     (n : ℤ) :
     sugawaraMode Φ hΦ hΦs a n = ∑ i, normalOrderedMode Φ hΦ hΦs a n (b i) (killingDualBasis b i) :=
   (normalOrderedMode Φ hΦ hΦs a n).sum_apply_dualBasis_eq _ (Module.finBasis K L) b
+
+/-- Under the coordinate substitution `t ↦ u t`, the Segal--Sugawara mode `Sₙ` maps to
+`u ^ n • Sₙ`. This holds at every central value, without a critical-level assumption. -/
+@[simp]
+theorem coordinateCompletedEnvelopingAut_homothety_sugawaraMode
+    (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : K)
+    (u : Kˣ) (n : ℤ) :
+    coordinateCompletedEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv
+        (sugawaraMode Φ hΦ hΦs a n) =
+      (u : K) ^ n • sugawaraMode Φ hΦ hΦs a n := by
+  rw [sugawaraMode_eq_sum (Module.finBasis K L), map_sum, Finset.smul_sum]
+  exact Finset.sum_congr rfl fun i _ ↦
+    coordinateCompletedEnvelopingAut_homothety_normalOrderedMode Φ hΦ hΦs a u n _ _
 
 /-- **The commutator of a current with the Segal--Sugawara modes.** For the current generator `z_k`
 of the mode `z ⊗ tᵏ` and the vector `w` dual to `Φ(z, ·)` under the Killing form,

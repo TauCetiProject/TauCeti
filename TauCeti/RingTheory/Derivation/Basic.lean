@@ -27,6 +27,10 @@ linear combinations. On products they satisfy the general Leibniz rule
 `Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`, and they commute with multiplication by an element
 whose derivative vanishes. If `D (D N) = 0`, then `Dⁱ (N ^ p)` is `p (p - 1) ⋯ (p - i + 1)` times
 `D N ^ i * N ^ (p - i)`; so when also `D (D L) = 0`, `Dᵏ` kills `N ^ p * L ^ q` once `p + q < k`.
+The iterates of a multiple `b • D` by `b : A` are combinations
+`(b • D)^[n] = ∑ k ≤ n, c n k * D^[k]` of the iterates of `D`, with coefficients
+`c n k = smulIterCoeff D b n k` given by an explicit recursion; the coefficient of `D` in
+`(b • D)^[n + 1]` is `(b • D)^[n] b`.
 
 The derivative of the total inverse `Ring.inverse a` is `-(Ring.inverse a) ^ 2 • D a`, as for
 `⅟a`; for instance a derivation kills the inverse of every invertible natural number. Hence, if
@@ -54,8 +58,14 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 * `Derivation.iterate_apply_pow`: the iterated derivatives of `N ^ p` when `D (D N) = 0`.
 * `Derivation.iterate_apply_pow_mul_pow_eq_zero`: `Dᵏ (N ^ p * L ^ q) = 0` when `p + q < k` and
   `N`, `L` have vanishing second derivative.
+* `Derivation.iterate_apply_pow_of_apply_eq_one`: if `D x = 1`, then `D^[j] (x ^ k)` is the
+  descending factorial `k (k - 1) ⋯ (k - j + 1)` times `x ^ (k - j)`.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
+* `Derivation.smulIterCoeff`: the coefficients of the expansion of `(b • D)^[n]`, `b : A`.
+* `Derivation.iterate_smul_apply_eq_sum`: `(b • D)^[n]` as a combination of the `D^[k]`.
+* `Derivation.smulIterCoeff_succ_one`: the coefficient of `D` in `(b • D)^[n + 1]`.
+* `Derivation.map_smulIterCoeff`: the coefficients are natural in the ring.
 * `Derivation.leibniz_ringInverse`: the derivative of `Ring.inverse a`.
 * `Derivation.leibniz_ringInverse_factorial_mul_pow_succ`: the derivative of the divided power
   `x ^ (j + 1) / (j + 1)!` when `D x = 1`.
@@ -167,6 +177,13 @@ theorem iterate_apply_pow_mul_pow_eq_zero (D : Derivation R A A) {N L : A} (hN :
   · simp [Nat.descFactorial_eq_zero_iff_lt.2 hp]
   · simp [Nat.descFactorial_eq_zero_iff_lt.2 (by omega : q < ij.2)]
 
+/-- **Iterated derivatives of powers of a coordinate.** If `D x = 1`, then
+`D^[j] (x ^ k)` is the descending factorial `k (k - 1) ⋯ (k - j + 1)` times `x ^ (k - j)`. In
+particular `D^[k] (x ^ k) = k !`, and `D^[j] (x ^ k) = 0` for `j > k`. -/
+theorem iterate_apply_pow_of_apply_eq_one (D : Derivation R A A) {x : A} (hx : D x = 1)
+    (k j : ℕ) : D^[j] (x ^ k) = k.descFactorial j * x ^ (k - j) := by
+  rw [iterate_apply_pow D (by simp [hx]), hx, one_pow, one_mul, nsmul_eq_mul]
+
 /-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
 theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :
     (r • D)^[n] a = r ^ n • D^[n] a := by
@@ -178,6 +195,99 @@ theorem exists_iterate_smul_eq_zero (D : Derivation R A A)
     (hD : ∀ a, ∃ n, D^[n] a = 0) (r : R) (a : A) : ∃ n, (r • D)^[n] a = 0 := by
   obtain ⟨n, hn⟩ := hD a
   exact ⟨n, by rw [iterate_smul_apply, hn, smul_zero]⟩
+
+/-- The coefficients `c n k` of the expansion `(b • D)^[n] = ∑ k ≤ n, c n k * D^[k]` for `b : A`
+(`iterate_smul_apply_eq_sum`): `c 0 k` is `1` for `k = 0` and `0` otherwise, and
+`c (n + 1) k = b * D (c n k) + b * c n (k - 1)`, the second term absent for `k = 0`. -/
+def smulIterCoeff (D : Derivation R A A) (b : A) : ℕ → ℕ → A
+  | 0, k => if k = 0 then 1 else 0
+  | n + 1, 0 => b * D (smulIterCoeff D b n 0)
+  | n + 1, k + 1 => b * D (smulIterCoeff D b n (k + 1)) + b * smulIterCoeff D b n k
+
+/-- The coefficients of `(b • D)^[0]`: `1` for `k = 0` and `0` otherwise. -/
+theorem smulIterCoeff_zero_left (D : Derivation R A A) (b : A) (k : ℕ) :
+    smulIterCoeff D b 0 k = if k = 0 then 1 else 0 := by
+  rw [smulIterCoeff]
+
+/-- The recursion for the coefficients of `(b • D)^[n + 1]` beyond the constant term. -/
+theorem smulIterCoeff_succ_succ (D : Derivation R A A) (b : A) (n k : ℕ) :
+    smulIterCoeff D b (n + 1) (k + 1) =
+      b * D (smulIterCoeff D b n (k + 1)) + b * smulIterCoeff D b n k := by
+  rw [smulIterCoeff]
+
+/-- For `n ≥ 1`, the expansion of `(b • D)^[n]` has no constant term. -/
+@[simp]
+theorem smulIterCoeff_succ_zero (D : Derivation R A A) (b : A) (n : ℕ) :
+    smulIterCoeff D b (n + 1) 0 = 0 := by
+  induction n with
+  | zero => simp [smulIterCoeff]
+  | succ n ih => rw [smulIterCoeff, ih, map_zero, mul_zero]
+
+/-- The expansion of `(b • D)^[n]` involves only the iterates `D^[k]` with `k ≤ n`. -/
+theorem smulIterCoeff_eq_zero_of_lt (D : Derivation R A A) (b : A) {n k : ℕ} (h : n < k) :
+    smulIterCoeff D b n k = 0 := by
+  induction n generalizing k with
+  | zero => simp [smulIterCoeff_zero_left, h.ne']
+  | succ n ih =>
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : k ≠ 0)
+    simp [smulIterCoeff_succ_succ, ih (by omega : n < k + 1), ih (by omega : n < k)]
+
+/-- The leading coefficient of the expansion of `(b • D)^[n]` is `b ^ n`. -/
+@[simp]
+theorem smulIterCoeff_self (D : Derivation R A A) (b : A) (n : ℕ) :
+    smulIterCoeff D b n n = b ^ n := by
+  induction n with
+  | zero => simp [smulIterCoeff_zero_left]
+  | succ n ih =>
+    simp [smulIterCoeff_succ_succ, ih, smulIterCoeff_eq_zero_of_lt D b n.lt_succ_self, pow_succ']
+
+/-- The coefficient of `D` in the expansion of `(b • D)^[n + 1]` is `(b • D)^[n] b`. -/
+theorem smulIterCoeff_succ_one (D : Derivation R A A) (b : A) (n : ℕ) :
+    smulIterCoeff D b (n + 1) 1 = (b • D)^[n] b := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [smulIterCoeff_succ_succ, ih, smulIterCoeff_succ_zero, mul_zero, add_zero,
+      Function.iterate_succ_apply', smul_apply, smul_eq_mul]
+
+/-- The coefficients `smulIterCoeff` are natural: a ring homomorphism `f` intertwining `D` with
+`E` carries the coefficients of `D` and `b` to those of `E` and `f b`. -/
+theorem map_smulIterCoeff {S B : Type*} [CommSemiring S] [CommSemiring B] [Algebra S B]
+    (f : A →+* B) (D : Derivation R A A) (E : Derivation S B B) (hf : ∀ y, f (D y) = E (f y))
+    (b : A) (n k : ℕ) : f (smulIterCoeff D b n k) = smulIterCoeff E (f b) n k := by
+  induction n generalizing k with
+  | zero => simp only [smulIterCoeff_zero_left]; split_ifs <;> simp
+  | succ n ih =>
+    cases k with
+    | zero => simp
+    | succ k => simp [smulIterCoeff_succ_succ, hf, ih]
+
+/-- **Iterates of `b • D`** for `b : A`: the `n`-th iterate is a combination of the iterates
+`D^[k]`, `k ≤ n`, with coefficients `smulIterCoeff D b n k`. -/
+theorem iterate_smul_apply_eq_sum (D : Derivation R A A) (b y : A) (n : ℕ) :
+    (b • D)^[n] y = ∑ k ∈ Finset.range (n + 1), smulIterCoeff D b n k * D^[k] y := by
+  induction n with
+  | zero => simp [smulIterCoeff_zero_left]
+  | succ n ih =>
+    -- Differentiating the coefficients shifts the index by one; the top term vanishes.
+    have hshift : ∑ k ∈ Finset.range (n + 1), b * (D^[k] y * D (smulIterCoeff D b n k)) =
+        ∑ k ∈ Finset.range (n + 1), b * D (smulIterCoeff D b n (k + 1)) * D (D^[k] y) +
+          b * D (smulIterCoeff D b n 0) * y := by
+      have key (f : ℕ → A) (hf : f (n + 1) = 0) :
+          ∑ k ∈ Finset.range (n + 1), f k = ∑ k ∈ Finset.range (n + 1), f (k + 1) + f 0 := by
+        rw [← Finset.sum_range_succ', Finset.sum_range_succ f (n + 1), hf, add_zero]
+      rw [key]
+      · simp only [Function.iterate_succ_apply', Function.iterate_zero_apply]
+        congr 1
+        · exact Finset.sum_congr rfl fun k _ ↦ by ring
+        · ring
+      · simp [smulIterCoeff_eq_zero_of_lt D b n.lt_succ_self]
+    rw [Function.iterate_succ_apply', ih, smul_apply, map_sum, Finset.sum_range_succ' _ (n + 1)]
+    simp only [leibniz, smul_eq_mul, smulIterCoeff, Finset.sum_add_distrib, add_mul,
+      Function.iterate_succ_apply', Function.iterate_zero_apply]
+    rw [mul_add, Finset.mul_sum, Finset.mul_sum, hshift]
+    simp only [mul_assoc]
+    ring
 
 /-- An element whose derivative is a unit is squarefree: if `a = x * x * y`, then `x` divides
 `D a = x * D (x * y) + x * y * D x`. -/
@@ -264,5 +374,18 @@ theorem conjAlgEquiv_apply (D : Derivation R A A) (e : A ≃ₐ[R] B) (x : B) :
   (rfl)
 
 end ConjAlgEquiv
+
+section CompDer
+
+variable {R A M N : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M]
+  [AddCommMonoid N] [Algebra R A] [Module A M] [Module R M] [IsScalarTower R A M]
+  [Module A N] [Module R N] [IsScalarTower R A N]
+
+/-- Pushing a derivation forward along an `A`-linear map evaluates pointwise as composition. -/
+theorem _root_.LinearMap.compDer_apply (f : M →ₗ[A] N) (D : Derivation R A M) (a : A) :
+    (f.compDer D) a = f (D a) :=
+  (rfl)
+
+end CompDer
 
 end Derivation

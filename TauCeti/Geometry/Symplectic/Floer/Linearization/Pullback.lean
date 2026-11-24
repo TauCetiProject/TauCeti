@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
+import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # The linearized Floer operator under holomorphic changes of domain coordinates
@@ -31,7 +33,9 @@ Let `dφ_w` be complex linear, so that it is multiplication by a complex number 
   (`TauCeti.SymplecticForm.floerOperator_perturbationPullback`). Multiplication by `a - b J` is
   multiplication by the complex conjugate of `a + i b` in the complex structure `J`. In
   particular the Floer equation `F(u) = 0` is preserved, as in
-  `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback`.
+  `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback`, and since
+  `a - b J` is invertible when `dφ_w ≠ 0`, the two equations have the same solutions
+  (`TauCeti.SymplecticForm.floerOperator_perturbationPullback_eq_zero_iff`).
 * **The linearized operator.** At a solution of the Floer equation, the linearized operator of the
   pulled-back data in the direction `ξ ∘ φ` is again `(a - b J)` times the linearized operator
   in the direction `ξ` at `φ w`
@@ -47,6 +51,28 @@ Let `dφ_w` be complex linear, so that it is multiplication by a complex number 
   (`TauCeti.SymplecticForm.associatedBilinForm_floerLinearization_perturbationPullback`). With the
   change of variables formula, the integral of `g(D ξ, D ξ)` over a region is the same computed in
   either chart (`TauCeti.SymplecticForm.integral_associatedBilinForm_floerLinearization_image`).
+* **The `L²` norm in the ambient norm.** Since `|a - b J|` is comparable to `|dφ_w|`, with
+  constants depending only on a bound `M` for `J`, the ambient norm of the linearized operator
+  scales by `det dφ_w` up to the factor `1 + M²`
+  (`TauCeti.SymplecticForm.norm_floerLinearization_perturbationPullback_sq_le`,
+  `TauCeti.SymplecticForm.det_mul_norm_floerLinearization_sq_le`). Over a set `s` on which `φ` is
+  injective, along a solution,
+  `∫_s ‖D'_{u ∘ φ}(ξ ∘ φ)‖² ≤ (1 + M²) ∫_{φ '' s} ‖D_u ξ‖²` and conversely
+  (`TauCeti.SymplecticForm.setIntegral_norm_floerLinearization_perturbationPullback_sq_le`,
+  `TauCeti.SymplecticForm.setIntegral_image_norm_floerLinearization_sq_le`).
+
+* **The formal adjoint.** A covector field `η` is read in the new coordinates as the
+  `(0, 1)`-form `η'(w) = η (φ w) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`), with `a`, `b`
+  and `J` taken at `w`, `φ w` and `(φ w, u (φ w))`. At a solution of the Floer equation, and for
+  `φ` of class `C²` and holomorphic near `w`, the formal adjoint of the pulled-back data on `η'` is
+  the Jacobian determinant `det dφ_w = a² + b²` times the formal adjoint on `η` at `φ w`
+  (`TauCeti.SymplecticForm.floerLinearizationAdjoint_perturbationPullback`). The proof uses the
+  zeroth-order coefficient `a C - b J C` of the pulled-back operator
+  (`TauCeti.SymplecticForm.floerLinearizationCoeff_perturbationPullback`) and the Cauchy–Riemann
+  equations for `w ↦ (a, b)`, which follow from the symmetry of the second derivative of `φ`
+  (`TauCeti.isComplexLinearMap_fderiv_fderiv_apply_stdComplexLineReal`). So the transformation
+  law of the adjoint carries the factor `a² + b²` that the `L²` pairing `∫ η (D ξ)` acquires under
+  the change of variables, and no derivative of `J`.
 
 Away from solutions, `floerLinearization_perturbationPullback_eq_sub` gives the correction
 `-b (dJ ξ) F(u)` for endomorphism-valued families with `J² = -1` near the target point.
@@ -68,6 +94,37 @@ public section
 
 open Filter Function MeasureTheory Set
 open scoped Topology
+
+namespace TauCeti.Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- The covector field `η` read in the coordinates of a holomorphic map `φ`, as a `(0, 1)`-form:
+at `w` it is `η (φ w)` composed with `a + b J(φ w, u (φ w))`, multiplication by the complex
+derivative `a + i b` of `φ` at `w` in the complex structure `J`, where `(a, b) = dφ_w (1, 0)`.
+This is how the formal adjoint transforms under `φ`
+(`TauCeti.SymplecticForm.floerLinearizationAdjoint_perturbationPullback`). -/
+noncomputable def covectorPullback (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (u : ℝ × ℝ → V) (η : ℝ × ℝ → V →L[ℝ] ℝ) (w : ℝ × ℝ) : V →L[ℝ] ℝ :=
+  (η (φ w)).comp ((fderiv ℝ φ w stdComplexLineReal).1 • (1 : V →L[ℝ] V) +
+    (fderiv ℝ φ w stdComplexLineReal).2 • J (φ w) (u (φ w)))
+
+theorem covectorPullback_apply (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (u : ℝ × ℝ → V) (η : ℝ × ℝ → V →L[ℝ] ℝ) (w : ℝ × ℝ) :
+    covectorPullback φ J u η w =
+      (η (φ w)).comp ((fderiv ℝ φ w stdComplexLineReal).1 • (1 : V →L[ℝ] V) +
+        (fderiv ℝ φ w stdComplexLineReal).2 • J (φ w) (u (φ w))) :=
+  (rfl)
+
+/-- The pulled-back covector field is `a η + b (η ∘ J)`, with `η` and `J` taken at `φ w`. -/
+theorem covectorPullback_eq_add (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (u : ℝ × ℝ → V) (η : ℝ × ℝ → V →L[ℝ] ℝ) (w : ℝ × ℝ) :
+    covectorPullback φ J u η w = (fderiv ℝ φ w stdComplexLineReal).1 • η (φ w) +
+      (fderiv ℝ φ w stdComplexLineReal).2 • (η (φ w)).comp (J (φ w) (u (φ w))) := by
+  rw [covectorPullback_apply, ContinuousLinearMap.comp_add, ContinuousLinearMap.comp_smul,
+    ContinuousLinearMap.comp_smul, ContinuousLinearMap.one_def, ContinuousLinearMap.comp_id]
+
+end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
@@ -120,6 +177,39 @@ theorem floerOperator_perturbationPullback (ω : SymplecticForm V)
   simp only [LinearMap.coe_toContinuousLinearMap', map_add, map_smul, map_neg,
     AlmostComplexStructure.apply_apply, neg_smul]
   module
+
+/-- Under a change of domain coordinates `φ` with complex linear derivative `dφ_w ≠ 0`, `u ∘ φ`
+solves the Floer equation for the pulled back data at `w` exactly when `u` solves it at `φ w`. -/
+theorem floerOperator_perturbationPullback_eq_zero_iff (ω : SymplecticForm V)
+    (hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hφ₀ : fderiv ℝ φ w ≠ 0) (hu : DifferentiableAt ℝ u (φ w))
+    (hKs : DifferentiableAt ℝ (Ks (φ w)) (u (φ w)))
+    (hKt : DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
+    ω.floerOperator (fun w' y ↦ (J (φ w') y).toLinearMap.toContinuousLinearMap)
+        (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w = 0 ↔
+      ω.floerOperator (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w) = 0 := by
+  have hφ : DifferentiableAt ℝ φ w := by
+    by_contra h
+    exact hφ₀ (fderiv_zero_of_not_differentiableAt h)
+  rw [ω.floerOperator_perturbationPullback hφ hφJ hu hKs hKt]
+  set a := (fderiv ℝ φ w stdComplexLineReal).1
+  set b := (fderiv ℝ φ w stdComplexLineReal).2
+  set F := ω.floerOperator (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w)
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  -- A complex-linear map of the plane vanishes when its value at `1` does.
+  have hab : a ^ 2 + b ^ 2 ≠ 0 := by
+    intro h₀
+    have h0 : ((fderiv ℝ φ w : ℝ × ℝ →L[ℝ] ℝ × ℝ) : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) = 0 := by
+      rw [hφJ.eq_zero_iff_apply_stdComplexLineReal, ContinuousLinearMap.coe_coe]
+      exact Prod.ext (pow_eq_zero_iff two_ne_zero |>.1 (by nlinarith : a ^ 2 = 0))
+        (pow_eq_zero_iff two_ne_zero |>.1 (by nlinarith : b ^ 2 = 0))
+    exact hφ₀ (ContinuousLinearMap.coe_injective
+      (h0.trans ContinuousLinearMap.toLinearMap_zero.symm))
+  have hF := (J (φ w) (u (φ w))).smul_add_smul_apply_smul_sub_smul a b F
+  rw [h, AlmostComplexStructure.apply_zero, smul_zero, smul_zero, add_zero] at hF
+  exact (smul_eq_zero.1 hF.symm).resolve_left hab
 
 /-- **Holomorphic changes of coordinates multiply the linearized Floer operator by `a - b J`.** Let
 `dφ_w` be complex linear, with `(a, b) = dφ_w (1, 0)`, and let `u` solve the Floer equation at
@@ -233,6 +323,79 @@ theorem associatedBilinForm_floerLinearization_perturbationPullback (ω : Symple
     associatedBilinForm_apply]
   ring
 
+/-- **The linearized operator is conformally bounded under a change of coordinates.** Under the
+hypotheses of `TauCeti.SymplecticForm.floerLinearization_perturbationPullback`, the norm of the
+linearization in the coordinates `w`, squared, is at most `(1 + M²) det dφ_w` times that in the
+coordinates `φ w`, squared, where `M` bounds the norm of `J(φ w, u(φ w))`. -/
+theorem norm_floerLinearization_perturbationPullback_sq_le (ω : SymplecticForm V) {M : ℝ}
+    (hφ : DifferentiableAt ℝ φ w)
+    (hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hu : DifferentiableAt ℝ u (φ w)) (hξ : DifferentiableAt ℝ ξ (φ w))
+    (hKs : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) (u (φ w)))
+    (hXt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) (u (φ w)))
+    (hF : ω.floerOperator (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w) =
+      0)
+    (hM : ‖(J (φ w) (u (φ w))).toLinearMap.toContinuousLinearMap‖ ≤ M) :
+    ‖ω.floerLinearization (fun w' y ↦ (J (φ w') y).toLinearMap.toContinuousLinearMap)
+        (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) (ξ ∘ φ) w‖ ^ 2 ≤
+      (1 + M ^ 2) * (fderiv ℝ φ w).det *
+        ‖ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+          Ks Kt u ξ (φ w)‖ ^ 2 := by
+  rw [ω.floerLinearization_perturbationPullback hφ hφJ hu hξ hKs hKt hXs hXt hF,
+    ContinuousLinearMap.det, hφJ.det_eq_sq_add_sq, ContinuousLinearMap.coe_coe]
+  set a := (fderiv ℝ φ w stdComplexLineReal).1
+  set b := (fderiv ℝ φ w stdComplexLineReal).2
+  have h := ContinuousLinearMap.norm_smul_add_smul_apply_sq_le _ hM a (-b)
+    (ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (φ w))
+  rwa [neg_sq, neg_smul, ← sub_eq_add_neg] at h
+
+/-- **The linearized operator is conformally bounded below under a change of coordinates.** Under
+the hypotheses of `TauCeti.SymplecticForm.floerLinearization_perturbationPullback`, `det dφ_w`
+times the norm of the linearization in the coordinates `φ w`, squared, is at most `1 + M²` times
+that in the coordinates `w`, squared, where `M` bounds the norm of `J(φ w, u(φ w))`. -/
+theorem det_mul_norm_floerLinearization_sq_le (ω : SymplecticForm V) {M : ℝ}
+    (hφ : DifferentiableAt ℝ φ w)
+    (hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hu : DifferentiableAt ℝ u (φ w)) (hξ : DifferentiableAt ℝ ξ (φ w))
+    (hKs : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) (u (φ w)))
+    (hXt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) (u (φ w)))
+    (hF : ω.floerOperator (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w) =
+      0)
+    (hM : ‖(J (φ w) (u (φ w))).toLinearMap.toContinuousLinearMap‖ ≤ M) :
+    (fderiv ℝ φ w).det *
+        ‖ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+          Ks Kt u ξ (φ w)‖ ^ 2 ≤
+      (1 + M ^ 2) *
+        ‖ω.floerLinearization (fun w' y ↦ (J (φ w') y).toLinearMap.toContinuousLinearMap)
+          (perturbationPullback φ Ks Kt stdComplexLineReal)
+          (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) (ξ ∘ φ) w‖ ^ 2 := by
+  rw [ω.floerLinearization_perturbationPullback hφ hφJ hu hξ hKs hKt hXs hXt hF,
+    ContinuousLinearMap.det, hφJ.det_eq_sq_add_sq, ContinuousLinearMap.coe_coe]
+  set a := (fderiv ℝ φ w stdComplexLineReal).1
+  set b := (fderiv ℝ φ w stdComplexLineReal).2
+  set D := ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+    Ks Kt u ξ (φ w)
+  set D' := a • D - b • J (φ w) (u (φ w)) D
+  have hD : a • D' + b • J (φ w) (u (φ w)) D' = (a ^ 2 + b ^ 2) • D :=
+    (J (φ w) (u (φ w))).smul_add_smul_apply_smul_sub_smul a b D
+  have h : ‖a • D' + b • J (φ w) (u (φ w)) D'‖ ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖D'‖ ^ 2 :=
+    ContinuousLinearMap.norm_smul_add_smul_apply_sq_le _ hM a b D'
+  rw [hD, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow] at h
+  rcases (by positivity : 0 ≤ a ^ 2 + b ^ 2).eq_or_lt with h₀ | hpos
+  · rw [← h₀, zero_mul]
+    positivity
+  refine le_of_mul_le_mul_left ?_ hpos
+  calc (a ^ 2 + b ^ 2) * ((a ^ 2 + b ^ 2) * ‖D‖ ^ 2) = (a ^ 2 + b ^ 2) ^ 2 * ‖D‖ ^ 2 := by ring
+    _ ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖D'‖ ^ 2 := h
+    _ = (a ^ 2 + b ^ 2) * ((1 + M ^ 2) * ‖D'‖ ^ 2) := by ring
+
 variable {s : Set (ℝ × ℝ)}
 
 /-- **Invariance of the `L²` norm of the linearized operator under holomorphic changes of
@@ -269,6 +432,82 @@ theorem integral_associatedBilinForm_floerLinearization_image (ω : SymplecticFo
     rw [abs_of_nonneg hdet, smul_eq_mul,
       ω.associatedBilinForm_floerLinearization_perturbationPullback (hφ w hw) (hφJ w hw)
         (hu w hw) (hξ w hw) (hKs w hw) (hKt w hw) (hXs w hw) (hXt w hw) (hF w hw)]
+
+/-- **Comparison of the ambient `L²` norm of the linearized operator under holomorphic changes of
+coordinates, upper bound.** Let `φ` be injective on a measurable set `s`, with complex linear
+derivative, and let `u` solve the Floer equation on `φ '' s`, with `J` bounded by `M` there. Then
+the `L²` norm over `s` of the linearization along `u ∘ φ` for the pulled back data, applied to
+`ξ ∘ φ`, squared, is at most `1 + M²` times the `L²` norm of `D_u ξ` over `φ '' s`, squared. -/
+theorem setIntegral_norm_floerLinearization_perturbationPullback_sq_le (ω : SymplecticForm V)
+    {M : ℝ} (hs : MeasurableSet s) (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
+    (hφJ : ∀ w ∈ s, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hu : ∀ w ∈ s, DifferentiableAt ℝ u (φ w)) (hξ : ∀ w ∈ s, DifferentiableAt ℝ ξ (φ w))
+    (hKs : ∀ w ∈ s, ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ w ∈ s, ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : ∀ w ∈ s, DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) (u (φ w)))
+    (hXt : ∀ w ∈ s, DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) (u (φ w)))
+    (hF : ∀ w ∈ s,
+      ω.floerOperator (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w) = 0)
+    (hM : ∀ w ∈ s, ‖(J (φ w) (u (φ w))).toLinearMap.toContinuousLinearMap‖ ≤ M)
+    (hint : IntegrableOn (fun z ↦ ‖ω.floerLinearization
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) (φ '' s)) :
+    ∫ w in s, ‖ω.floerLinearization (fun w' y ↦ (J (φ w') y).toLinearMap.toContinuousLinearMap)
+        (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) (ξ ∘ φ) w‖ ^ 2 ≤
+      (1 + M ^ 2) * ∫ z in φ '' s, ‖ω.floerLinearization
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 := by
+  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  have hφ' (w : ℝ × ℝ) (hw : w ∈ s) : HasFDerivWithinAt φ (fderiv ℝ φ w) s w :=
+    (hφ w hw).hasFDerivAt.hasFDerivWithinAt
+  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs hφ' hinj, ← integral_const_mul]
+  refine integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ by positivity)
+    ((((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hs hφ' hinj _).1
+      hint).const_mul (1 + M ^ 2))) ((ae_restrict_iff' hs).2 (Eventually.of_forall fun w hw ↦ ?_))
+  dsimp only
+  rw [smul_eq_mul, ContinuousLinearMap.det, abs_of_nonneg (hφJ w hw).det_nonneg, ← mul_assoc]
+  exact ω.norm_floerLinearization_perturbationPullback_sq_le (hφ w hw) (hφJ w hw) (hu w hw)
+    (hξ w hw) (hKs w hw) (hKt w hw) (hXs w hw) (hXt w hw) (hF w hw) (hM w hw)
+
+/-- **Comparison of the ambient `L²` norm of the linearized operator under holomorphic changes of
+coordinates, lower bound.** Let `φ` be injective on a measurable set `s`, with complex linear
+derivative, and let `u` solve the Floer equation on `φ '' s`, with `J` bounded by `M` there. Then
+the `L²` norm of `D_u ξ` over `φ '' s`, squared, is at most `1 + M²` times the `L²` norm over `s`
+of the linearization along `u ∘ φ` for the pulled back data, applied to `ξ ∘ φ`, squared. -/
+theorem setIntegral_image_norm_floerLinearization_sq_le (ω : SymplecticForm V) {M : ℝ}
+    (hs : MeasurableSet s) (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
+    (hφJ : ∀ w ∈ s, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hu : ∀ w ∈ s, DifferentiableAt ℝ u (φ w)) (hξ : ∀ w ∈ s, DifferentiableAt ℝ ξ (φ w))
+    (hKs : ∀ w ∈ s, ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ w ∈ s, ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : ∀ w ∈ s, DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) (u (φ w)))
+    (hXt : ∀ w ∈ s, DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) (u (φ w)))
+    (hF : ∀ w ∈ s,
+      ω.floerOperator (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w) = 0)
+    (hM : ∀ w ∈ s, ‖(J (φ w) (u (φ w))).toLinearMap.toContinuousLinearMap‖ ≤ M)
+    (hint : IntegrableOn (fun w ↦ ‖ω.floerLinearization
+      (fun w' y ↦ (J (φ w') y).toLinearMap.toContinuousLinearMap)
+      (perturbationPullback φ Ks Kt stdComplexLineReal)
+      (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) (ξ ∘ φ) w‖ ^ 2) s) :
+    ∫ z in φ '' s, ‖ω.floerLinearization
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 ≤
+      (1 + M ^ 2) * ∫ w in s, ‖ω.floerLinearization
+        (fun w' y ↦ (J (φ w') y).toLinearMap.toContinuousLinearMap)
+        (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) (ξ ∘ φ) w‖ ^ 2 := by
+  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  have hφ' (w : ℝ × ℝ) (hw : w ∈ s) : HasFDerivWithinAt φ (fderiv ℝ φ w) s w :=
+    (hφ w hw).hasFDerivAt.hasFDerivWithinAt
+  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs hφ' hinj, ← integral_const_mul]
+  refine integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ by positivity)
+    (hint.const_mul (1 + M ^ 2)) ((ae_restrict_iff' hs).2 (Eventually.of_forall fun w hw ↦ ?_))
+  dsimp only
+  rw [smul_eq_mul, ContinuousLinearMap.det, abs_of_nonneg (hφJ w hw).det_nonneg]
+  exact ω.det_mul_norm_floerLinearization_sq_le (hφ w hw) (hφJ w hw) (hu w hw) (hξ w hw)
+    (hKs w hw) (hKt w hw) (hXs w hw) (hXt w hw) (hF w hw) (hM w hw)
 
 section
 
@@ -338,5 +577,120 @@ theorem floerLinearization_perturbationPullback_eq_sub (ω : SymplecticForm V)
         hanti (ω.hamiltonianVectorField (Kt (φ w)) (u (φ w)))
 
 end
+
+/-! ### The formal adjoint -/
+
+section Adjoint
+
+variable {η : ℝ × ℝ → V →L[ℝ] ℝ}
+
+/-- **The zeroth-order coefficient under a holomorphic change of coordinates.** Under the
+hypotheses of `floerLinearization_perturbationPullback`, the zeroth-order part of the linearized
+operator of the pulled-back data at `w` is `a C - b J C`, for the zeroth-order part `C` of the
+linearized operator at `φ w` and `(a, b) = dφ_w (1, 0)`. -/
+theorem floerLinearizationCoeff_perturbationPullback (ω : SymplecticForm V)
+    (hφ : DifferentiableAt ℝ φ w)
+    (hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hu : DifferentiableAt ℝ u (φ w))
+    (hKs : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) (u (φ w)))
+    (hXt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) (u (φ w)))
+    (hF : ω.floerOperator (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w) =
+      0) :
+    ω.floerLinearizationCoeff (fun w' y ↦ (J (φ w') y).toLinearMap.toContinuousLinearMap)
+        (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w =
+      (fderiv ℝ φ w stdComplexLineReal).1 • ω.floerLinearizationCoeff
+          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w) -
+        (fderiv ℝ φ w stdComplexLineReal).2 •
+          ((J (φ w) (u (φ w))).toLinearMap.toContinuousLinearMap.comp (ω.floerLinearizationCoeff
+            (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w))) := by
+  ext v
+  -- On the constant direction `v` the linearized operator is its zeroth-order part.
+  have h := ω.floerLinearization_perturbationPullback (J := J) (ξ := fun _ ↦ v) hφ hφJ hu
+    (differentiableAt_const v) hKs hKt hXs hXt hF
+  have hc : (fun _ : ℝ × ℝ ↦ v) ∘ φ = fun _ ↦ v := rfl
+  simp only [hc, floerLinearization_eq_add] at h
+  simpa using h
+
+/-- **Holomorphic changes of coordinates multiply the formal adjoint by the Jacobian.** Let `φ` be
+`C²` at `w` with complex-linear derivative near `w`, with `(a, b) = dφ_w (1, 0)`, and let `u` solve
+the Floer equation at `φ w`. Read the covector field `η` in the new coordinates as the
+`(0, 1)`-form `η' (w') = η (φ w') ∘ (a + b J(φ w', u (φ w')))` (`TauCeti.Floer.covectorPullback`).
+Then the formal adjoint of the linearized Floer operator of the pulled-back data along `u ∘ φ`,
+applied to `η'` at `w`, is `det dφ_w = a² + b²` times the formal adjoint along `u` applied to `η`
+at `φ w`. -/
+theorem floerLinearizationAdjoint_perturbationPullback (ω : SymplecticForm V)
+    (hφ : ContDiffAt ℝ 2 φ w)
+    (hφJ : ∀ᶠ w' in 𝓝 w, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w' : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hu : DifferentiableAt ℝ u (φ w))
+    (hKs : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) (u (φ w)))
+    (hXt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) (u (φ w)))
+    (hF : ω.floerOperator (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (φ w) =
+      0)
+    (hη : DifferentiableAt ℝ η (φ w))
+    (hJu : DifferentiableAt ℝ (fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap) (φ w)) :
+    ω.floerLinearizationAdjoint (fun w' y ↦ (J (φ w') y).toLinearMap.toContinuousLinearMap)
+        (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ)
+        (covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) w =
+      (fderiv ℝ φ w).det • ω.floerLinearizationAdjoint
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η (φ w) := by
+  have hφd : DifferentiableAt ℝ φ w := hφ.differentiableAt (by norm_num)
+  have hφJw := hφJ.self_of_nhds
+  set Ψ : ℝ × ℝ → V →L[ℝ] ℝ := fun z ↦ (η z).comp (J z (u z)).toLinearMap.toContinuousLinearMap
+  set A : ℝ × ℝ → ℝ × ℝ := fun w' ↦ fderiv ℝ φ w' stdComplexLineReal
+  -- The pulled-back field is `a (η ∘ φ) + b (Ψ ∘ φ)` for `Ψ = η ∘ J`, and since `J² = -1` its
+  -- composite with `J` is `a (Ψ ∘ φ) - b (η ∘ φ)`.
+  have hηe : covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η =
+      fun w' ↦ (A w').1 • η (φ w') + (A w').2 • Ψ (φ w') := funext (covectorPullback_eq_add _ _ u η)
+  have hηeJ : (fun w' ↦ (covectorPullback φ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+      u η w').comp ((J (φ w') ((u ∘ φ) w')).toLinearMap.toContinuousLinearMap)) =
+      fun w' ↦ (A w').1 • Ψ (φ w') - (A w').2 • η (φ w') := by
+    ext w' v
+    simp [covectorPullback_apply, Ψ, A, sub_eq_add_neg]
+  -- The derivatives of the composites with `φ` and of the coefficients `a`, `b`.
+  have hA : DifferentiableAt ℝ A w :=
+    ((hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).clm_apply
+      (differentiableAt_const _)
+  have hηφ : HasFDerivAt (fun w' ↦ η (φ w')) ((fderiv ℝ η (φ w)).comp (fderiv ℝ φ w)) w :=
+    hη.hasFDerivAt.comp w hφd.hasFDerivAt
+  have hΨφ : HasFDerivAt (fun w' ↦ Ψ (φ w')) ((fderiv ℝ Ψ (φ w)).comp (fderiv ℝ φ w)) w :=
+    (hη.clm_comp hJu).hasFDerivAt.comp w hφd.hasFDerivAt
+  have ha := hA.hasFDerivAt.fst
+  have hb := hA.hasFDerivAt.snd
+  have hLi : fderiv ℝ φ w stdComplexLineImag = (-(A w).2, (A w).1) := by
+    simpa only [ContinuousLinearMap.coe_coe] using hφJw.apply_stdComplexLineImag_eq
+  have hCR := (isComplexLinearMap_fderiv_fderiv_apply_stdComplexLineReal hφ
+    hφJ).apply_stdComplexLineImag_eq
+  simp only [ContinuousLinearMap.coe_coe] at hCR
+  have hdet : (fderiv ℝ φ w).det = (A w).1 ^ 2 + (A w).2 ^ 2 := by
+    rw [ContinuousLinearMap.det, hφJw.det_eq_sq_add_sq, ContinuousLinearMap.coe_coe]
+  rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def, hηeJ, hηe,
+    ((ha.fun_smul hηφ).fun_add (hb.fun_smul hΨφ)).fderiv,
+    ((ha.fun_smul hΨφ).fun_sub (hb.fun_smul hηφ)).fderiv,
+    ω.floerLinearizationCoeff_perturbationPullback hφd hφJw hu hKs hKt hXs hXt hF, hdet]
+  -- Expand everything on a vector; the derivatives of `a` and `b` cancel by the Cauchy–Riemann
+  -- equations.
+  ext v
+  simp only [add_apply, sub_apply, smul_apply, ContinuousLinearMap.comp_apply, neg_apply, hLi, A,
+    ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_sub, ContinuousLinearMap.comp_smul,
+    ContinuousLinearMap.add_comp]
+  rw [(fderiv ℝ η (φ w)).apply_stdComplexLine (fderiv ℝ φ w stdComplexLineReal),
+    (fderiv ℝ η (φ w)).apply_stdComplexLine (-_, _),
+    (fderiv ℝ Ψ (φ w)).apply_stdComplexLine (fderiv ℝ φ w stdComplexLineReal),
+    (fderiv ℝ Ψ (φ w)).apply_stdComplexLine (-_, _)]
+  simp only [Ψ, add_apply, smul_apply, ContinuousLinearMap.comp_apply, smul_eq_mul,
+    LinearMap.coe_toContinuousLinearMap', AlmostComplexStructure.apply_apply, map_neg,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst',
+    ContinuousLinearMap.coe_snd', hCR]
+  ring
+
+end Adjoint
 
 end TauCeti.SymplecticForm

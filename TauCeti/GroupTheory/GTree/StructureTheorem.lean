@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GTree.QuotientGraphOfGroups
-public import TauCeti.GroupTheory.GraphOfGroups.BassSerreTree
+public import TauCeti.GroupTheory.GraphOfGroups.BassSerre.Tree
 
 /-!
 # The structure theorem for groups acting on trees

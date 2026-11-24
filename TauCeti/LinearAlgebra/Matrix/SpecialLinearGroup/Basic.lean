@@ -89,6 +89,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
   `SL₂(R)` matrix over a commutative ring gives the Bézout relation `a d - b c = 1` for its top
   row `(a, b)`.
+* `Matrix.SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero`: an
+  upper triangular `(a b; 0 d)` in `SL₂(R)` has `a d = 1`.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one` and
@@ -295,6 +297,11 @@ lemma mul_sub_mul_eq_one_of_lowerRow {R : Type*} [CommRing R] {c d : R} {σ : SL
     (hσ10 : σ 1 0 = c) (hσ11 : σ 1 1 = d) : σ 0 0 * d - σ 0 1 * c = 1 := by
   simpa only [hσ10, hσ11] using fin_two_mul_sub_mul_eq_one σ
 
+/-- For an upper triangular `σ = (a b; 0 d)` of `SL₂(R)`, the determinant is `a d = 1`. -/
+lemma apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero {R : Type*} [CommRing R]
+    {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 0 0 * σ 1 1 = 1 := by
+  simpa [hσ] using fin_two_mul_sub_mul_eq_one σ
+
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
 noncomputable def centerMulEquivRootsOfUnityFin (n : ℕ) (hn : 0 < n)
     (A : Type*) [CommRing A] :
@@ -413,12 +420,10 @@ theorem not_exists_isComplement'_center [NeZero (2 : R)] :
     ¬ ∃ D : Subgroup (SpecialLinearGroup (Fin 2) R),
       (Subgroup.center (SpecialLinearGroup (Fin 2) R)).IsComplement' D := by
   rintro ⟨D, hD⟩
-  let S : SpecialLinearGroup (Fin 2) R := ⟨!![0, -1; 1, 0], by simp⟩
+  let S : SpecialLinearGroup (Fin 2) R := .mk !![0, -1; 1, 0] (by simp)
   have hS2 : S ^ 2 = -1 := by
-    apply Subtype.ext
-    rw [sq, coe_mul, coe_neg, coe_one]
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [S, Matrix.mul_apply]
+    fin_cases i <;> fin_cases j <;> simp [S, sq, Matrix.mul_apply]
   obtain ⟨⟨⟨z, hz⟩, ⟨d, hd⟩⟩, hzd⟩ := (hD.existsUnique S).exists
   have hz2 : z ^ 2 = 1 := by
     obtain ⟨r, hr, hscal⟩ := mem_center_iff.mp hz
