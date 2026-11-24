@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Contractible
-public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.SpectralSequence
 import TauCeti.Order.Fin.Basic
