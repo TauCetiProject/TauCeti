@@ -158,7 +158,9 @@ theorem contMDiff_of_groupLieAlgebraMap_ne_zero {f : G →* G'}
   have hd : MDifferentiableAt I I' f 1 := by
     by_contra h
     refine hf (ContinuousLinearMap.ext fun ξ ↦ ?_)
-    rw [MonoidHom.groupLieAlgebraMap_apply, mfderiv_zero_of_not_mdifferentiableAt h]
+    rw [MonoidHom.groupLieAlgebraMap_apply, mfderiv_zero_of_not_mdifferentiableAt h, zero_apply,
+      zero_apply]
+    -- The zero of `TangentSpace I' (f 1)` is the zero of `GroupLieAlgebra I' G'`: both are `E'`.
     rfl
   have := topologicalGroup_of_lieGroup (G := G) I ∞
   have := topologicalGroup_of_lieGroup (G := G') I' ∞
@@ -171,7 +173,8 @@ theorem contMDiff_of_surjective_groupLieAlgebraMap [Nontrivial E'] {f : G →* G
   contMDiff_of_groupLieAlgebraMap_ne_zero fun h ↦ by
     obtain ⟨ξ, hξ⟩ := exists_ne (0 : E')
     obtain ⟨η, hη⟩ := hf ξ
-    exact hξ (by rw [← hη, h]; rfl)
+    -- The zero of `GroupLieAlgebra I' G'` is the zero of the model space `E'`.
+    exact hξ (by rw [← hη, h, zero_apply]; rfl)
 
 end TauCeti.Lie
 
