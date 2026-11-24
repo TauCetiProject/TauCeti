@@ -11,6 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Tactic.Linarith
 public import Mathlib.RingTheory.Valuation.Basic
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.Analysis.Normed.Ring.UnitBall
 
 /-!
 # Real additive valuations attached to ultrametric norms and base-change comparisons
@@ -27,8 +29,14 @@ zero, whose value remains infinity. In particular, fixing the base determines th
 additive valuation uniquely (`AddValuation.eq_of_norm_eq_rpow`,
 `AddValuation.eq_ofNorm_of_norm_eq_rpow`); no choice of scale is installed as a global instance.
 Under norm recovery, the sphere `‖x‖ = b ^ σ` is the level set `v x = -σ`
-(`AddValuation.norm_eq_rpow_iff`). A norm recovered from an additive valuation with base at least
+(`AddValuation.norm_eq_rpow_iff`), and the open unit ball is the set of positive valuation
+(`AddValuation.norm_lt_one_iff`). A norm recovered from an additive valuation with base at least
 one is ultrametric (`AddValuation.isUltrametricDist`).
+
+On a discrete valuation ring `O` mapped into the closed unit ball, with a uniformiser of norm
+`b⁻¹`, the base-`b` valuation is the normalised valuation `IsDiscreteValuationRing.addVal O`
+(`AddValuation.ofNorm_map_eq_addVal`). This identifies the coefficient heights of a power series
+over the valuation ring of a discretely valued field with their normalised valuations.
 
 ## Main definitions
 
@@ -45,6 +53,8 @@ one is ultrametric (`AddValuation.isUltrametricDist`).
   the real additive valuation recovering a norm at a fixed base `b > 1`.
 * `AddValuation.eq_map_of_norm_eq_rpow` and `AddValuation.ofNorm_eq_map_ofNorm`: changing base
   from `b` to `b'` scales values by `Real.log b / Real.log b'`.
+* `AddValuation.ofNorm_map_eq_addVal`: at the base `‖π‖⁻¹` of a uniformiser `π`, the restriction
+  to a discrete valuation ring is its normalised valuation.
 * `AddValuation.ofNorm_algebraMap`, `AddValuation.comap_ofNorm`, and
   `AddValuation.ofNorm_algebraMap_eq`: scalar restriction of `AddValuation.ofNorm` along a normed
   algebra map.
@@ -98,6 +108,15 @@ theorem norm_eq_rpow_iff (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < 
   rw [hv x hx, Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne',
     ← WithTop.coe_untop₀_of_ne_top (v.ne_top_iff.mpr hx), WithTop.coe_eq_coe,
     WithTop.untop₀_coe, neg_eq_iff_eq_neg]
+
+/-- Under norm recovery with base `b > 1`, the points of norm less than one are exactly those of
+positive valuation, zero included. -/
+theorem norm_lt_one_iff (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {x : K} : ‖x‖ < 1 ↔ 0 < v x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [hv x hx, ← Real.rpow_zero b, Real.rpow_lt_rpow_left_iff hb, neg_lt_zero,
+    ← WithTop.coe_untop₀_of_ne_top (v.ne_top_iff.mpr hx), WithTop.coe_pos, WithTop.untop₀_coe]
 
 /-- A norm that is given by an additive valuation, `‖x‖ = b ^ (-v x)` for `x ≠ 0` with `1 ≤ b`, is
 ultrametric. -/
@@ -289,6 +308,28 @@ theorem ofNorm_eq_map_ofNorm {b b' : ℝ} (hb : 1 < b) (hb' : 1 < b') (x : R) :
     WithTop.coe_eq_coe, Real.logb, Real.logb]
   have hlog : Real.log b ≠ 0 := (Real.log_pos hb).ne'
   field_simp [hlog]
+
+/-- **Comparison with a discrete valuation ring.** Let `φ : O →+* R` map a discrete valuation ring
+into the closed unit ball and an irreducible `π` to an element of norm `b⁻¹`, as for the inclusion
+of the valuation ring of a discretely valued field with `b = ‖π‖⁻¹`. Then `AddValuation.ofNorm b`
+restricts along `φ` to the normalised valuation `IsDiscreteValuationRing.addVal O`, with its
+values in `ℕ∞` read in `WithTop ℝ`. -/
+theorem ofNorm_map_eq_addVal {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
+    (φ : O →+* R) (hφ : ∀ a, ‖φ a‖ ≤ 1) {b : ℝ} (hb : 1 < b) {π : O} (hπ : Irreducible π)
+    (hπb : ‖φ π‖ = b⁻¹) (a : O) :
+    ofNorm b hb (φ a) = (IsDiscreteValuationRing.addVal O a).map ((↑) : ℕ → ℝ) := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible ha hπ
+  have hu : ofNorm b hb (φ u) = ((0 : ℝ) : WithTop ℝ) := by
+    rw [ofNorm_eq_coe_iff, neg_zero, Real.rpow_zero]
+    exact TauCeti.norm_map_eq_one_of_isUnit hφ u.isUnit
+  have hπ' : ofNorm b hb (φ π) = ((1 : ℝ) : WithTop ℝ) := by
+    rw [ofNorm_eq_coe_iff, Real.rpow_neg_one, hπb]
+  rw [IsDiscreteValuationRing.addVal_def' u hπ n, _root_.map_mul, _root_.map_pow,
+    AddValuation.map_mul, AddValuation.map_pow, hu, hπ']
+  norm_cast
+  simp
 
 end SeminormedRing
 

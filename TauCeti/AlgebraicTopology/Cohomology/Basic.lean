@@ -153,6 +153,22 @@ lemma singularCohomologyMap_comp {X Y Z : TopCat.{w}} (f : X ⟶ Y) (g : Y ⟶ Z
   simp [TopCat.singularCohomologyMap, singularCochainComplexMap_comp,
     HomologicalComplex.homologyMap_comp]
 
+omit [Linear k C] in
+variable (R M) in
+/-- Singular cohomology does not depend on how the `k`-linear structure of `C` is presented: along
+an equality `L₁ = L₂` of `k`-linear structures, the identification `eqToHom` of the two cohomology
+modules commutes with the maps induced by continuous maps. -/
+lemma singularCohomologyMap_comp_eqToHom (L₁ L₂ : Linear k C) (h : L₁ = L₂) {X Y : TopCat.{w}}
+    (f : X ⟶ Y) (n : ℕ) :
+    @TopCat.singularCohomologyMap _ _ _ _ R k _ L₁ M X Y f n ≫
+        eqToHom (congrArg (fun L : Linear k C ↦
+          @TopCat.singularCohomology _ _ _ _ R k _ L M X n) h) =
+      eqToHom (congrArg (fun L : Linear k C ↦
+          @TopCat.singularCohomology _ _ _ _ R k _ L M Y n) h) ≫
+        @TopCat.singularCohomologyMap _ _ _ _ R k _ L₂ M X Y f n := by
+  subst h
+  simp
+
 end TopCat
 
 namespace TauCeti

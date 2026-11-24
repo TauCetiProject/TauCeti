@@ -88,47 +88,46 @@ private theorem exists_lintegral_renewalCountNat_div_sq_le (hT : ∀ n, Measurab
         rw [ENNReal.inv_mul_cancel ht0 htop, one_mul, ENNReal.coe_mul, ENNReal.coe_ofNat]
 
 /-- **Uniform integrability of the renewal counts per unit time.** For independent, identically
-distributed increments that are not almost surely zero, the family `N t / t`, `t ≥ 1`, is
-uniformly integrable. No assumption is made on the mean of the increments. -/
+distributed increments, the family `N t / t`, `t ≥ 1`, is uniformly integrable. If the increments
+vanish almost surely, `renewalCountNat` is zero almost surely by its explosive-path convention. -/
 theorem uniformIntegrable_renewalCountNat_div (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hzero : P {ω | T 0 ω = 0} < 1) :
+    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
     UniformIntegrable (fun (t : Ici (1 : ℝ≥0)) ω ↦ (renewalCountNat T t ω : ℝ) / t) 1 P := by
   have := hindep.isProbabilityMeasure
-  obtain ⟨C, hC⟩ := exists_lintegral_renewalCountNat_div_sq_le hT hindep hid hzero
-  have hm (t : Ici (1 : ℝ≥0)) :
-      AEStronglyMeasurable (fun ω ↦ (renewalCountNat T t ω : ℝ) / t) P := by
-    have := measurable_renewalCountNat hT t
-    fun_prop
-  have hΦ : Tendsto (fun x : ℝ ↦ x ^ 2 / x) atTop atTop :=
-    tendsto_id.congr fun x ↦ by simp only [id, sq, mul_self_div_self]
-  have hu : UnifIntegrable (fun (t : Ici (1 : ℝ≥0)) ω ↦ (renewalCountNat T t ω : ℝ) / t) 1 P :=
-    unifIntegrable_of_lintegral_ofReal_le hΦ hm ENNReal.coe_ne_top fun t ↦ hC t t.property
-  refine ⟨hu, lt_of_le_of_lt (iSup_le fun t ↦ ?_) (ENNReal.coe_lt_top (r := 1 + C))⟩
-  -- The bound `x ≤ 1 + x ^ 2` turns the second-moment bound into a first-moment bound.
-  have hsq (x : ℝ) : x ≤ 1 + x ^ 2 := by nlinarith [sq_nonneg (x - 1)]
-  rw [eLpNorm_one_eq_lintegral_eNorm (hm t)]
-  calc ∫⁻ ω, ‖(renewalCountNat T t ω : ℝ) / t‖ₑ ∂P
-      ≤ ∫⁻ ω, 1 + ENNReal.ofReal (‖(renewalCountNat T t ω : ℝ) / t‖ ^ 2) ∂P := by
-        refine lintegral_mono fun ω ↦ ?_
-        rw [← ofReal_norm, ← ENNReal.ofReal_one,
-          ← ENNReal.ofReal_add zero_le_one (by positivity)]
-        exact ENNReal.ofReal_le_ofReal (hsq _)
-    _ = 1 + ∫⁻ ω, ENNReal.ofReal (‖(renewalCountNat T t ω : ℝ) / t‖ ^ 2) ∂P := by
-        rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one]
-    _ ≤ 1 + C := by gcongr; exact hC t t.property
-    _ = ↑(1 + C) := by rw [ENNReal.coe_add, ENNReal.coe_one]
+  by_cases hzero : P {ω | T 0 ω = 0} < 1
+  · obtain ⟨C, hC⟩ := exists_lintegral_renewalCountNat_div_sq_le hT hindep hid hzero
+    have hm (t : Ici (1 : ℝ≥0)) :
+        AEStronglyMeasurable (fun ω ↦ (renewalCountNat T t ω : ℝ) / t) P := by
+      have := measurable_renewalCountNat hT t
+      fun_prop
+    have hΦ : Tendsto (fun x : ℝ ↦ x ^ 2 / x) atTop atTop :=
+      tendsto_id.congr fun x ↦ by simp only [id, sq, mul_self_div_self]
+    exact uniformIntegrable_of_lintegral_ofReal_le hΦ hm ENNReal.coe_ne_top fun t ↦ hC t t.property
+  · have h0 : ∀ᵐ ω ∂P, T 0 ω ∈ ({0} : Set ℝ≥0) :=
+      (mem_ae_iff_prob_eq_one ((measurableSet_singleton 0).preimage (hT 0))).2
+        (le_antisymm prob_le_one (le_of_not_gt hzero))
+    have hvanish : ∀ᵐ ω ∂P, ∀ n, T n ω = 0 := by
+      rw [ae_all_iff]
+      intro n
+      simpa only [mem_singleton_iff] using
+        (hid n).symm.ae_mem_snd (measurableSet_singleton 0) h0
+    refine (uniformIntegrable_const (ι := Ici (1 : ℝ≥0)) le_rfl ENNReal.one_ne_top
+      (memLp_const (0 : ℝ) (μ := P))).ae_eq fun t ↦ ?_
+    filter_upwards [hvanish] with ω hω
+    have h : ¬ Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
+      simpa only [arrival_def, hω, Finset.sum_const_zero] using
+        not_tendsto_const_atTop (0 : ℝ≥0) (atTop : Filter ℕ)
+    simp [renewalCountNat_eq_zero_of_not_tendsto T h]
 
 /-- **The renewal law of large numbers in `L¹`.** For independent, identically distributed
-increments that are not almost surely zero, `N t / t` converges in `L¹` to the reciprocal of the
-extended mean increment, with rate zero for infinite mean. -/
+increments, `N t / t` converges in `L¹` to the reciprocal of the extended mean converted to `ℝ`
+by `ENNReal.toReal`. The rate is zero for infinite mean and for almost surely zero increments. -/
 theorem tendsto_eLpNorm_renewalCountNat_div_sub (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hzero : P {ω | T 0 ω = 0} < 1) :
+    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
     Tendsto (fun t : ℝ≥0 ↦ eLpNorm (fun ω ↦ (renewalCountNat T t ω : ℝ) / t -
       (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹.toReal) 1 P) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
-  have hui := uniformIntegrable_renewalCountNat_div hT hindep hid hzero
+  have hui := uniformIntegrable_renewalCountNat_div hT hindep hid
   have hlim := ae_tendsto_renewalCountNat_div (fun _ _ hij ↦ hindep.indepFun hij) hid
   refine tendsto_of_seq_tendsto fun x hx ↦ ?_
   -- Vitali's theorem applies along the times `max (x n) 1 ≥ 1`, which eventually equal `x n`.
@@ -159,7 +158,7 @@ theorem tendsto_integral_renewalCountNat_div (hT : ∀ n, Measurable (T n))
       filter_upwards [ae_natCast_renewalCountNat hindep hid hzero] with ω hω
       rw [← hω t, ENNReal.toReal_natCast]).div_const _
   have h := tendsto_integral_of_L1' (fun _ ↦ r) (Eventually.of_forall hint)
-    (tendsto_eLpNorm_renewalCountNat_div_sub hT hindep hid hzero)
+    (tendsto_eLpNorm_renewalCountNat_div_sub hT hindep hid)
   simpa only [integral_div, integral_const, probReal_univ, one_smul] using h
 
 end TauCeti.Probability
