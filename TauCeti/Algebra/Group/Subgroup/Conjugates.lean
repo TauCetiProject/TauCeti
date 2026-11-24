@@ -203,9 +203,9 @@ theorem exists_map_conj_comap_eq_iff (e : G ≃* Γ) (H K : Subgroup Γ) :
 containing `⊤` such that every maximal subgroup `M` of a member of `𝓡` with `P M` is conjugate to a
 member of `𝓡`. Then every subgroup with property `P` is conjugate to a member of `𝓡`.
 
-Applied to the transitive subgroups of a finite symmetric group, this reduces the classification
-of transitive groups up to conjugacy to the transitive maximal subgroups of a candidate list of
-representatives. -/
+Applied to the transitive subgroups of a finite symmetric group, this reduces the completeness of
+a list of representatives of transitive groups up to conjugacy to a check on the transitive maximal
+subgroups of its members. -/
 theorem exists_map_conj_mem_of_forall_covBy [Finite G] {P : Subgroup G → Prop}
     (hP : ∀ ⦃H K : Subgroup G⦄, H ≤ K → P H → P K)
     (hPconj : ∀ (g : G) ⦃H : Subgroup G⦄, P H → P (H.map (MulAut.conj g).toMonoidHom))
