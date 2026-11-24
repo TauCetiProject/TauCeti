@@ -20,8 +20,10 @@ coefficients change the norm of `∑ i ∈ s, a i • v i` by a bounded factor:
   give `2 * t * S`;
 * `TauCeti.norm_sum_smul_le_four_mul`: scalar coefficients of norm at most `t` give `4 * t * S`.
 
-Conversely, if every `±1`-signed combination `∑ i ∈ s, ε i • v i` has norm at most `S`, then real
-coefficients of absolute value at most `t` give `t * S` without losing a factor of `2`
+Conversely, if every `±1`-signed combination `∑ i ∈ s, ε i • v i` has norm at most `S`, then any
+subsum over `u ⊆ s` has norm at most `(‖∑ i ∈ s, v i‖ + S) / 2`
+(`TauCeti.norm_sum_subset_le_of_forall_abs_eq_one`), real coefficients of absolute value at most
+`t` give `t * S` without losing a factor of `2`
 (`TauCeti.norm_sum_ofReal_smul_le_of_forall_abs_eq_one`), and scalar coefficients of norm at most
 `t` give `2 * t * S` (`TauCeti.norm_sum_smul_le_two_mul_of_forall_abs_eq_one`). For a sequence
 indexed by `ℕ`, a uniform bound `S` on `±1`-signed combinations along initial segments
@@ -171,6 +173,29 @@ theorem norm_sum_smul_le_two_mul_of_forall_abs_eq_one
         (norm_sum_ofReal_smul_le_of_forall_abs_eq_one hS ht fun i hi ↦
           (RCLike.abs_im_le_norm _).trans (ha i hi)))
     _ = 2 * t * S := by ring
+
+/-- If every `±1`-signed combination `∑ i ∈ s, ε i • v i` with `|ε i| = 1` has norm at most `S`,
+then any subsum over `u ⊆ s` has norm at most `(‖∑ i ∈ s, v i‖ + S) / 2`. -/
+theorem norm_sum_subset_le_of_forall_abs_eq_one {u : Finset ι} (hu : u ⊆ s)
+    (hS : ∀ ε : ι → ℝ, (∀ i, |ε i| = 1) → ‖∑ i ∈ s, (ε i : 𝕜) • v i‖ ≤ S) :
+    ‖∑ i ∈ u, v i‖ ≤ (‖∑ i ∈ s, v i‖ + S) / 2 := by
+  classical
+  -- Averaging the full sum and the signed combination `+1` on `u`, `-1` on `s \ u` isolates `u`.
+  let ε : ι → ℝ := fun i ↦ if i ∈ u then 1 else -1
+  have hε (i : ι) : |ε i| = 1 := by dsimp only [ε]; split_ifs <;> norm_num
+  have h2 : ∑ i ∈ s, v i + ∑ i ∈ s, (ε i : 𝕜) • v i = (2 : 𝕜) • ∑ i ∈ u, v i := by
+    rw [Finset.smul_sum, ← Finset.sum_add_distrib,
+      ← Finset.sum_subset hu fun i _ hi ↦ by simp [ε, hi]]
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    simp [ε, hi, ← one_add_one_eq_two, add_smul]
+  have hnorm2 : ‖(2 : 𝕜) • ∑ i ∈ u, v i‖ = 2 * ‖∑ i ∈ u, v i‖ := by
+    rw [norm_smul, RCLike.norm_ofNat]
+  have hle : 2 * ‖∑ i ∈ u, v i‖ ≤ ‖∑ i ∈ s, v i‖ + S := by
+    calc 2 * ‖∑ i ∈ u, v i‖ = ‖∑ i ∈ s, v i + ∑ i ∈ s, (ε i : 𝕜) • v i‖ := by
+          rw [h2, hnorm2]
+      _ ≤ ‖∑ i ∈ s, v i‖ + ‖∑ i ∈ s, (ε i : 𝕜) • v i‖ := norm_add_le _ _
+      _ ≤ ‖∑ i ∈ s, v i‖ + S := add_le_add_right (hS ε hε) _
+  linarith
 
 section InitialSegments
 

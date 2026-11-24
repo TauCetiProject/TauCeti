@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Base
+public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -28,6 +28,8 @@ height reaches a simple root from anywhere.
   index under the Weyl group.**
 * `RootPairing.Base.induction_simple_reflect`: a property of root indices holding at the simple
   roots and preserved by the simple reflections holds at every root.
+* `RootPairing.Base.exists_weylGroupToPerm_eq_of_isSimplyLaced`: **in a simply laced irreducible
+  root system the Weyl group is transitive on the roots.**
 * `RootPairing.RootPositiveForm.rootLength_weylGroupToPerm`: root length is a Weyl-group
   invariant, with `RootPairing.RootPositiveForm.rootLength_reflectionPerm` the special case
   of a single reflection.
@@ -94,6 +96,56 @@ theorem _root_.RootPairing.Base.induction_simple_reflect [CharZero R] [Finite ι
       ((P.root_eq_neg_iff).mp (by simp [P.root_reflectionPerm])).symm
     rw [hneg]
     exact h₂ _ j hk.2 hj
+
+/-- Two roots whose Cartan integers against each other are both `-1` are exchanged by a product of
+two reflections: `sᵢ (sⱼ αᵢ) = sᵢ (αᵢ + αⱼ) = -αᵢ + (αⱼ + αᵢ) = αⱼ`. -/
+theorem _root_.RootPairing.reflectionPerm_reflectionPerm_of_pairing_eq_neg_one {i j : ι}
+    (hij : P.pairing i j = -1) (hji : P.pairing j i = -1) :
+    P.reflectionPerm i (P.reflectionPerm j i) = j := by
+  refine P.root.injective ?_
+  simp only [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_root, hij, map_sub,
+    map_smul, RootPairing.pairing_same, hji]
+  module
+
+/-- **In a simply laced irreducible root system the Weyl group is transitive on the roots.** Stated
+on root indices: any root index `i` is carried to any other `j` by some Weyl-group element.
+
+The simple roots are Weyl-conjugate to one another, because adjacent simple roots `αᵢ`, `αⱼ` of a
+simply laced base satisfy `sᵢ sⱼ αᵢ = αⱼ` and the Dynkin diagram of an irreducible system is
+connected; every root is Weyl-conjugate to a simple root by
+`TauCeti.exists_mem_support_weylGroupToPerm_eq`.
+
+Both hypotheses are needed. In `A₁ × A₁` the two simple roots lie in different orbits, and in
+`B₂` the long and the short roots do. -/
+theorem _root_.RootPairing.Base.exists_weylGroupToPerm_eq_of_isSimplyLaced [CharZero R] [Finite ι]
+    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] (b : P.Base)
+    (hsl : b.cartanMatrix.IsSimplyLaced) (i j : ι) :
+    ∃ w : P.weylGroup, P.weylGroupToPerm w i = j := by
+  -- the simple roots are Weyl-conjugate, by induction along the connected Dynkin diagram
+  have hsimple (k l : b.support) : ∃ w : P.weylGroup, P.weylGroupToPerm w k = l := by
+    refine b.induction_on_cartanMatrix (i := k) (j := l) (fun l : b.support ↦ ∃ w : P.weylGroup,
+      P.weylGroupToPerm w k = l) ⟨1, by simp⟩ fun u v ⟨w, hw⟩ hvu ↦ ?_
+    rcases eq_or_ne u v with rfl | hne
+    · exact ⟨w, hw⟩
+    have hpairing (x y : b.support) (hxy : x ≠ y) (h : b.cartanMatrix x y ≠ 0) :
+        P.pairing x y = -1 := by
+      have : P.pairingIn ℤ x y = -1 := by
+        simpa [RootPairing.Base.cartanMatrix, RootPairing.Base.cartanMatrixIn_def] using
+          (hsl hxy).resolve_left h
+      rw [← P.algebraMap_pairingIn ℤ, this]
+      simp
+    refine ⟨RootPairing.weylGroup.ofIdx P u * (RootPairing.weylGroup.ofIdx P v * w), ?_⟩
+    rw [RootPairing.weylGroupToPerm_ofIdx_mul_apply, RootPairing.weylGroupToPerm_ofIdx_mul_apply,
+      hw, RootPairing.reflectionPerm_reflectionPerm_of_pairing_eq_neg_one
+        (hpairing u v hne (b.cartanMatrix_apply_eq_zero_iff_symm.not.mp hvu))
+        (hpairing v u hne.symm hvu)]
+  obtain ⟨k, hk, u, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b i
+  obtain ⟨l, hl, v, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b j
+  obtain ⟨w, hw⟩ := hsimple ⟨k, hk⟩ ⟨l, hl⟩
+  refine ⟨v * w * u⁻¹, ?_⟩
+  rw [map_mul, map_mul, map_inv, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply,
+    Equiv.Perm.inv_def, Equiv.symm_apply_apply]
+  exact congrArg (P.weylGroupToPerm v) hw
 
 section
 

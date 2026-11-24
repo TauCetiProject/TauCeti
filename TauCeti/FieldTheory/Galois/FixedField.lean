@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
 import Mathlib.RingTheory.Invariant.Basic
+import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.GroupAction.Hom
 
@@ -63,6 +64,9 @@ intersection over the finite simple subextensions of their open fixing subgroups
 unchanged by cutting `E` down to its part inside `separableClosure K M`, because every element of
 `E` has a `q`-th power iterate there. The second is why a Galois correspondence over an
 inseparable extension can only be indexed by the intermediate fields of the separable closure.
+Closedness of fixing subgroups also means that a subgroup and its closure
+cut out the same field, so over a Galois `M / K` the fixers of the field fixed by `H` are exactly
+the closure of `H`.
 
 ## Main results
 
@@ -73,6 +77,9 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.fixingSubgroup_inf`
 * `IntermediateField.fixingSubgroup_iSup`
 * `IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic`
+* `IntermediateField.fixedField_topologicalClosure` and
+  `IntermediateField.fixingSubgroup_fixedField_eq_topologicalClosure`: a subgroup and its Krull
+  closure have the same fixed field, whose fixers are that closure when `M / K` is Galois
 * `IntermediateField.fixingSubgroup_inf_separableClosure`
 * `IntermediateField.fixedField_fixingSubgroup`: the correspondence over an intermediate field
   with Galois extension above it, without a Galois assumption on the original base
@@ -80,6 +87,13 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField`:
   Artin's theorem on the fixed field of a finite subgroup, with no hypothesis on `M / K`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
+* `IntermediateField.fixedField_le_iff_fixingSubgroup_le_of_isClosed` and
+  `IntermediateField.finiteDimensional_fixedField_of_isOpen`: the infinite Galois correspondence
+  for a closed subgroup, and finiteness of the field fixed by an open one
+* `IntermediateField.fixingSubgroup_fixedField_of_isOpen`,
+  `IntermediateField.finrank_fixedField_of_isOpen` and
+  `IntermediateField.finrank_fixedField_stabilizer_of_isOpen`: an open subgroup is the fixing
+  subgroup of its fixed field, whose degree is the index, or the orbit size for a stabilizer
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
   `IntermediateField.mem_fixedField_stabilizer`,
@@ -198,6 +212,51 @@ instance isGalois_fixedField (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     IsGalois (fixedField H) M :=
   IsGalois.of_fixed_field M H
 
+/-- **The fixed field of a closed subgroup lies in `E` exactly when the fixers of `E` lie in the
+subgroup**, for a Galois extension `M / K` of any degree. Mathlib's
+`IsGalois.fixedField_le_iff_fixingSubgroup_le` is the finite-dimensional case, in which every
+subgroup is closed for the Krull topology. -/
+theorem fixedField_le_iff_fixingSubgroup_le_of_isClosed [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsClosed (H : Set (M ≃ₐ[K] M)))
+    {E : IntermediateField K M} :
+    fixedField H ≤ E ↔ E.fixingSubgroup ≤ H :=
+  ⟨fun h ↦ (fixingSubgroup_antitone h).trans
+      (InfiniteGalois.fixingSubgroup_fixedField ⟨H, hH⟩).le,
+    fun h ↦ (fixedField_le h).trans (InfiniteGalois.fixedField_fixingSubgroup E).le⟩
+
+/-- **An open subgroup is recovered from its fixed field**, for a Galois extension `M / K` of any
+degree: an open subgroup is closed for the Krull topology, and Mathlib's
+`InfiniteGalois.fixingSubgroup_fixedField` recovers closed subgroups. -/
+theorem fixingSubgroup_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    (fixedField H).fixingSubgroup = H :=
+  InfiniteGalois.fixingSubgroup_fixedField ⟨H, Subgroup.isClosed_of_isOpen H hH⟩
+
+/-- **The fixed field of an open subgroup is finite** over the base, for a Galois extension
+`M / K` of any degree: the open subgroup is the fixing subgroup of its fixed field, and Mathlib's
+`InfiniteGalois.isOpen_iff_finite` identifies the intermediate fields with open fixers. -/
+theorem finiteDimensional_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    FiniteDimensional K (fixedField H) := by
+  rw [← InfiniteGalois.isOpen_iff_finite, fixingSubgroup_fixedField_of_isOpen hH]
+  exact hH
+
+/-- **The degree of the fixed field of an open subgroup is its index**, for a Galois extension
+`M / K` of any degree. -/
+theorem finrank_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    Module.finrank K (fixedField H) = H.index := by
+  rw [finrank_eq_fixingSubgroup_index, fixingSubgroup_fixedField_of_isOpen hH]
+
+/-- **The degree of the field fixed by an open point stabilizer is the size of the orbit**, for
+an action of the automorphisms of a Galois extension `M / K` of any degree. -/
+theorem finrank_fixedField_stabilizer_of_isOpen [IsGalois K M] {X : Type*}
+    [MulAction (M ≃ₐ[K] M) X] {x : X}
+    (hx : IsOpen (MulAction.stabilizer (M ≃ₐ[K] M) x : Set (M ≃ₐ[K] M))) :
+    Module.finrank K (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) =
+      Nat.card (MulAction.orbit (M ≃ₐ[K] M) x) := by
+  rw [finrank_fixedField_of_isOpen hx, MulAction.index_stabilizer, Nat.card_coe_set_eq]
+
 end IntermediateField
 
 namespace Subgroup
@@ -311,6 +370,24 @@ theorem fixingSubgroup_isClosed_of_isAlgebraic (E : IntermediateField K M)
     adjoin.finiteDimensional
       (isAlgebraic_iff.mp (Algebra.IsAlgebraic.isAlgebraic (R := K) x)).isIntegral
   exact fixingSubgroup_isClosed _
+
+/-- **A subgroup and its closure have the same fixed field** for the Krull topology: over an
+algebraic `M / K` the fixing subgroup of `fixedField H` is closed and contains `H`, hence contains
+its closure. -/
+theorem fixedField_topologicalClosure [Algebra.IsAlgebraic K M] (H : Subgroup (M ≃ₐ[K] M)) :
+    fixedField H.topologicalClosure = fixedField H :=
+  le_antisymm (fixedField_antitone H.le_topologicalClosure)
+    ((le_fixedField_iff_le_fixingSubgroup _ _).2 (H.topologicalClosure_minimal
+      ((le_fixedField_iff_le_fixingSubgroup _ _).1 le_rfl)
+      (fixingSubgroup_isClosed_of_isAlgebraic _)))
+
+/-- **The automorphisms fixing the fixed field of `H` form the closure of `H`.** For a Galois
+extension `M / K`, possibly infinite, this is the Galois correspondence applied to the closed
+subgroup `H.topologicalClosure`, which has the same fixed field as `H`. -/
+theorem fixingSubgroup_fixedField_eq_topologicalClosure [IsGalois K M]
+    (H : Subgroup (M ≃ₐ[K] M)) : (fixedField H).fixingSubgroup = H.topologicalClosure := by
+  rw [← fixedField_topologicalClosure]
+  exact InfiniteGalois.fixingSubgroup_fixedField ⟨_, H.isClosed_topologicalClosure⟩
 
 /-- **A fixing subgroup sees only the separable closure.** For an intermediate field `E` algebraic
 over `K` a `K`-automorphism of `M` fixing `E ⊓ separableClosure K M` pointwise already fixes `E`

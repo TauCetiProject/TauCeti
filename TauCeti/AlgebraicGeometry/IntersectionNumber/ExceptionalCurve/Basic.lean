@@ -176,10 +176,6 @@ theorem subsingleton_cohomology_succ_trivial (n : ℕ) :
   -- Regard `E` as a curve over `κ` through `e`, and compare with `ℙ¹_κ` over `κ`.
   let : I.subscheme.Over (Spec (.of κ)) := ⟨e.inv ≫ (projectiveLine κ ↘ Spec (.of κ))⟩
   have : e.inv.IsOver (Spec (.of κ)) := ⟨rfl⟩
-  have : Subsingleton (Cohomology (InvertibleSheaf.trivial (projectiveLine κ)).obj (n + 1)) := by
-    rcases n with _ | n
-    · exact inferInstanceAs (Subsingleton (Cohomology _ 1))
-    · exact (Pi.basisFun κ (Fin 2)).subsingleton_cohomology_proj_of_card_le _ (n + 2) (by simp)
   exact (e.inv.cohomologyTrivialBaseLinearEquivOfIsIso κ (n + 1)).toEquiv.subsingleton
 
 /-- **An exceptional curve has genus zero over its constant field**:

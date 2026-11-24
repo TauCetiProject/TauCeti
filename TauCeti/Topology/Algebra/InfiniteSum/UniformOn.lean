@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
 import Mathlib.Topology.Algebra.InfiniteSum.Group
+import TauCeti.Order.Filter.AtTopBot.Finset
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
-# Empty-domain, finite-support, and Cauchy-vanishing lemmas for `HasProdUniformlyOn`
+# Empty-domain, finite-support, Cauchy-vanishing, and regrouping lemmas for `HasProdUniformlyOn`
 
-This file supplements `Mathlib.Topology.Algebra.InfiniteSum.UniformOn` with three basic pieces of
-infrastructure for uniform infinite products and sums on a set `s`:
+This file supplements `Mathlib.Topology.Algebra.InfiniteSum.UniformOn` with infrastructure for
+uniform and locally uniform infinite products and sums on a set `s`:
 
 1. **Empty set**: `HasProdUniformlyOn` and `MultipliableUniformlyOn` hold vacuously on `∅`.
 2. **Finite support**: finite index types (`[Fintype ι]`) and families whose factors equal `1` on
@@ -20,6 +22,8 @@ infrastructure for uniform infinite products and sums on a set `s`:
    assumptions on the remaining factors.
 3. **Uniform Cauchy vanishing**: `MultipliableUniformlyOn.vanishing` (and its additive counterpart
    `SummableUniformlyOn.vanishing`) lifts `Multipliable.vanishing` to uniform convergence on `s`.
+4. **Finite-fibre regrouping and reindexing**: `sigma_of_finite` and `Equiv` invariance for uniform
+   and locally uniform convergence.
 
 ## Main declarations
 
@@ -32,6 +36,13 @@ infrastructure for uniform infinite products and sums on a set `s`:
   many factors are `1` on `s` (and additive `0` counterparts).
 * `MultipliableUniformlyOn.vanishing`, `SummableUniformlyOn.vanishing`: uniform disjoint-finset
   tail vanishing into any neighborhood of `1` (resp. `0`).
+* `HasProdUniformlyOn.sigma_of_finite` / `HasSumUniformlyOn.sigma_of_finite`: regrouping along
+  finite fibres preserves uniform convergence to the same limit function.
+* `HasProdLocallyUniformlyOn.sigma_of_finite` / `HasSumLocallyUniformlyOn.sigma_of_finite`:
+  regrouping along finite fibres preserves locally uniform convergence to the same limit function.
+* `Equiv.hasProdUniformlyOn_iff` / `Equiv.hasSumUniformlyOn_iff` and
+  `Equiv.hasProdLocallyUniformlyOn_iff` / `Equiv.hasSumLocallyUniformlyOn_iff`: reindexing by an
+  equivalence preserves uniform and locally uniform convergence to the same limit function.
 -/
 
 public section
@@ -129,3 +140,65 @@ theorem vanishing {ι β G : Type*} [CommGroup G] [UniformSpace G] [IsUniformGro
   simpa [← UniformOnFun.ofFun_prod, Finset.prod_apply] using ht r hrt x hx
 
 end MultipliableUniformlyOn
+
+/-- **Regrouping a uniformly convergent product along finite fibres.** If a family over a sigma
+type with finite fibres has product `g` uniformly on `s`, then so does the family of its fibre
+products. -/
+@[to_additive /-- **Regrouping a uniformly convergent series along finite fibres.** If a family
+over a sigma type with finite fibres sums to `g` uniformly on `s`, then so does the family of its
+fibre sums. -/]
+theorem HasProdUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι → Type*}
+    [CommMonoid α] [UniformSpace α] [∀ i, Fintype (γ i)]
+    {f : (Σ i, γ i) → β → α} {g : β → α} {s : Set β}
+    (h : HasProdUniformlyOn f g s) :
+    HasProdUniformlyOn (fun i x ↦ ∏ c, f ⟨i, c⟩ x) g s := by
+  classical
+  rw [hasProdUniformlyOn_iff_tendstoUniformlyOn] at h ⊢
+  simpa only [Function.comp_def, Finset.prod_sigma] using
+    h.comp_tendsto TauCeti.tendsto_finset_sigma_univ_atTop
+
+/-- **Regrouping a locally uniformly convergent product along finite fibres.** If a family over a
+sigma type with finite fibres has product `g` locally uniformly on `s`, then so does the family of
+its fibre products. -/
+@[to_additive /-- **Regrouping a locally uniformly convergent series along finite fibres.** If a
+family over a sigma type with finite fibres sums to `g` locally uniformly on `s`, then so does the
+family of its fibre sums. -/]
+theorem HasProdLocallyUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι → Type*}
+    [CommMonoid α] [UniformSpace α] [TopologicalSpace β] [∀ i, Fintype (γ i)]
+    {f : (Σ i, γ i) → β → α} {g : β → α} {s : Set β}
+    (h : HasProdLocallyUniformlyOn f g s) :
+    HasProdLocallyUniformlyOn (fun i x ↦ ∏ c, f ⟨i, c⟩ x) g s := by
+  classical
+  rw [hasProdLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn] at h ⊢
+  simpa only [Function.comp_def, Finset.prod_sigma] using
+    h.comp_tendsto TauCeti.tendsto_finset_sigma_univ_atTop
+
+/-- Reindexing a family by an equivalence preserves uniform convergence of its infinite product to
+the same limit function. -/
+@[to_additive /-- Reindexing a family by an equivalence preserves uniform convergence of its
+infinite sum to the same limit function. -/]
+theorem Equiv.hasProdUniformlyOn_iff {ι κ β α : Type*} [CommMonoid α] [UniformSpace α]
+    (e : κ ≃ ι) {f : ι → β → α} {g : β → α} {s : Set β} :
+    HasProdUniformlyOn (f ∘ e) g s ↔ HasProdUniformlyOn f g s := by
+  classical
+  simp only [hasProdUniformlyOn_iff_tendstoUniformlyOn]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa [Function.comp_def, Finset.prod_image] using
+      h.comp_tendsto (tendsto_finset_image_atTop_atTop e.symm_apply_apply)
+  · simpa [Function.comp_def, Finset.prod_image] using
+      h.comp_tendsto (tendsto_finset_image_atTop_atTop e.apply_symm_apply)
+
+/-- Reindexing a family by an equivalence preserves locally uniform convergence of its infinite
+product to the same limit function. -/
+@[to_additive /-- Reindexing a family by an equivalence preserves locally uniform convergence of its
+infinite sum to the same limit function. -/]
+theorem Equiv.hasProdLocallyUniformlyOn_iff {ι κ β α : Type*} [CommMonoid α] [UniformSpace α]
+    [TopologicalSpace β] (e : κ ≃ ι) {f : ι → β → α} {g : β → α} {s : Set β} :
+    HasProdLocallyUniformlyOn (f ∘ e) g s ↔ HasProdLocallyUniformlyOn f g s := by
+  classical
+  simp only [hasProdLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa [Function.comp_def, Finset.prod_image] using
+      h.comp_tendsto (tendsto_finset_image_atTop_atTop e.symm_apply_apply)
+  · simpa [Function.comp_def, Finset.prod_image] using
+      h.comp_tendsto (tendsto_finset_image_atTop_atTop e.apply_symm_apply)
