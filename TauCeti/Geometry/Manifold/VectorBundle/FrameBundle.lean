@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.FiberBundle.MapFiber
 public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # The smooth frame bundle of a smooth vector bundle
@@ -123,7 +124,7 @@ theorem contMDiffOn_frameBundle_symm :
     rw [frameBundle_symm_apply]
     exact e.coe_smul_frameAt σ hq.1 q.2
   -- A map into the open subset of frames is `C^k` when its composite with the inclusion is.
-  exact (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1
+  exact (TauCeti.ContMDiffWithinAt.subtypeVal_comp_iff (frameBundleOpens 𝕜 n F E) _ _ _).1
     ((hval p hp).congr key (key p hp))
 
 end Bundle.Trivialization

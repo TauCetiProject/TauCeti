@@ -54,6 +54,11 @@ theorem toContinuousLinearEquiv_apply (g : GL ι R) (w : ι → R) :
     toContinuousLinearEquiv g w = (g : Matrix ι ι R) *ᵥ w :=
   (rfl)
 
+@[simp]
+theorem toContinuousLinearEquiv_symm_apply (g : GL ι R) (w : ι → R) :
+    (toContinuousLinearEquiv g).symm w = ((g⁻¹ : GL ι R) : Matrix ι ι R) *ᵥ w :=
+  (rfl)
+
 end Matrix.GeneralLinearGroup
 
 namespace ContinuousLinearEquiv
