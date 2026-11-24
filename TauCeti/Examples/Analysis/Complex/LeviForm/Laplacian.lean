@@ -42,17 +42,6 @@ example (hn : finrank ℂ E = n) (x : E)
   rw [h.sum_relEigenvalues_eq_sum_re_apply hn ((stdOrthonormalBasis ℂ E).reindex (finCongr hn))]
   simp [mul_comm]
 
-/-- On `ℂ`, `(Re w)² = (1/2) |w|² + Re ((1/2) w²)`, a Hermitian plus holomorphic quadratic
-function. -/
-theorem LeviFormLaplacianExample.re_sq_eq_half_norm_sq_add_re :
-    (fun w : ℂ ↦ w.re ^ 2) = fun w ↦
-      (1 / 2 : ℝ) * ‖w‖ ^ 2 + (∑ _ : Unit, (1 / 2 : ℂ) * ContinuousLinearMap.id ℂ ℂ w ^ 2).re := by
-  funext w
-  rw [Complex.sq_norm, normSq_apply]
-  simp only [Finset.univ_unique, Finset.sum_singleton, ContinuousLinearMap.id_apply, sq, mul_re]
-  norm_num
-  ring
-
 -- `Δ_ω (x₁²) = 1` on `ℂⁿ⁺¹`, with `x₁ = Re z₁` the real part of the first coordinate.
 example (x : EuclideanSpace ℂ (Fin (n + 1)))
     (h : ((2 : ℂ) • leviForm (fun z : EuclideanSpace ℂ (Fin (n + 1)) ↦ (z 0).re ^ 2) x).IsSymm) :
@@ -61,9 +50,17 @@ example (x : EuclideanSpace ℂ (Fin (n + 1)))
     (reCLM.contDiff.pow 2).contDiffAt
   have hp : ContDiffAt ℂ 2 (EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1))) x :=
     by fun_prop
+  -- `(Re w)² = (1/2) |w|² + Re ((1/2) w²)`, a Hermitian plus holomorphic quadratic function.
+  have hre : (fun w : ℂ ↦ w.re ^ 2) = fun w ↦
+      (1 / 2 : ℝ) * ‖w‖ ^ 2 + (∑ _ : Unit, (1 / 2 : ℂ) * ContinuousLinearMap.id ℂ ℂ w ^ 2).re := by
+    funext w
+    rw [Complex.sq_norm, normSq_apply]
+    simp only [Finset.univ_unique, Finset.sum_singleton, ContinuousLinearMap.id_apply, sq, mul_re]
+    norm_num
+    ring
   have h2 : leviForm (fun w : ℂ ↦ w.re ^ 2) (EuclideanSpace.proj (𝕜 := ℂ) (0 : Fin (n + 1)) x) =
       ((1 / 2 : ℝ) : ℂ) • innerₛₗ ℂ := by
-    rw [LeviFormLaplacianExample.re_sq_eq_half_norm_sq_add_re]
+    rw [hre]
     exact leviForm_mul_norm_sq_add_re_sum_mul_sq _ _ _ _
   have hL (v w : EuclideanSpace ℂ (Fin (n + 1))) :
       leviForm (fun z : EuclideanSpace ℂ (Fin (n + 1)) ↦ (z 0).re ^ 2) x v w =

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Complex.LeviForm.Basic
-public import TauCeti.Analysis.InnerProductSpace.Orthonormal.ComplexToReal
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues
 
 /-!
