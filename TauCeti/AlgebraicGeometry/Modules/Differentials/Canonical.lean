@@ -152,8 +152,7 @@ private lemma range_differentialCoordinateHom_app (U : X.Opens)
     · rintro ⟨a, ha⟩
       refine ⟨a, (Scheme.rationalFunctionsEquiv U).injective ?_⟩
       rw [differentialCoordinateHom_app, ha, LinearEquiv.apply_symm_apply]
-  · have hbot : U = ⊥ := TopologicalSpace.Opens.not_nonempty_iff_eq_bot U |>.mp
-      (fun ⟨x, hx⟩ ↦ hU ⟨⟨x, hx⟩⟩)
+  · have hbot : U = ⊥ := Scheme.eq_bot_of_not_nonempty hU
     have := Scheme.subsingleton_rationalFunctions U hbot
     simp only [SchemeWeilDivisor.sections_eq_top_of_eq_bot K hbot, Submodule.mem_top,
       iff_true]
@@ -238,9 +237,7 @@ lemma relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι :
       Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same, smul_eq_mul,
       mul_one]
     exact mul_comm _ _
-  · have hbot : U = ⊥ := TopologicalSpace.Opens.not_nonempty_iff_eq_bot U |>.mp
-      (fun ⟨x, hx⟩ ↦ hU ⟨⟨x, hx⟩⟩)
-    exact (Scheme.subsingleton_rationalFunctions U hbot).elim _ _
+  · exact (Scheme.subsingleton_rationalFunctions U (Scheme.eq_bot_of_not_nonempty hU)).elim _ _
 
 end ChangeOfSeparatingFunction
 

@@ -253,12 +253,14 @@ theorem repartitionToRelativeDifferentialsCohomologyOne_eq_repartitionMul
   rw [← Scheme.Modules.coe_cohomologyMapBaseLinear k X] at hR
   apply (Scheme.Modules.cohomologyBaseLinearEquivOfIso k
     (relativeDifferentialsIsoDivisorSheaf ht' hF hk hdim _ hK') 1).injective
+  -- Both sides are classes in `H¹(𝒪_X(K'))`; the right side is the image of the class of `a` in
+  -- `H¹(𝒪_X(K))` under multiplication by `dt/dt'`, that is, under `H¹` of the comparison `hφ`.
   rw [Scheme.Modules.cohomologyBaseLinearEquivOfIso_apply,
     Scheme.Modules.cohomologyBaseLinearEquivOfIso_apply, hR, ← hg,
     ← SchemeWeilDivisor.repartitionToCohomologyOne_sheafMul hex hdim hF g K a, ← hφ,
-    repartitionToRelativeDifferentialsCohomologyOne, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Scheme.Modules.cohomologyBaseLinearEquivOfIso_symm_apply, ← LinearMap.comp_apply,
-    ← Scheme.Modules.cohomologyMapBaseLinear_comp]
+    Scheme.Modules.cohomologyMapBaseLinear_comp]
+  simp only [repartitionToRelativeDifferentialsCohomologyOne, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, Scheme.Modules.cohomologyBaseLinearEquivOfIso_symm_apply]
 
 /-- **The residue trace does not depend on the separating function**: the traces built from two
 separating functions `t` and `t'` and the divisors of `dt` and `dt'` are equal. -/
@@ -277,8 +279,9 @@ end ChangeOfSeparatingFunction
 
 /-- **The residue trace** `tr_{X/k} : H¹(X, Ω_{X/k}) → k` of an integral curve over an exact
 constant field, with invertible differentials and all the places of its function field: on the
-class represented by a repartition of differentials `(η_P)_P` it is `Σ_P res_P(η_P)`, the sum of
-the local components at `1` of the Weil differentials attached to the `η_P`. It is
+class represented by a repartition of differentials `(η_P)_P` it is the sum over the places `P`
+of the local components at `1` of the Weil differentials attached to the `η_P` (by Tate's theory,
+these are the `k`-valued residues of the `η_P`). It is
 `relativeDifferentialsTrace` for any separating function `t` and the divisor of `dt`
 (`relativeDifferentialsResidueTrace_eq`); a separating function exists because the
 differentials are invertible. -/
@@ -317,8 +320,8 @@ theorem relativeDifferentialsResidueTrace_repartitionToRelativeDifferentialsCoho
     relativeDifferentialsTrace_repartitionToRelativeDifferentialsCohomologyOne]
 
 /-- **The residue formula.** On the class of the repartition of differentials `(a_P dt)_P`, the
-residue trace is the sum over the places `P` of the residues of `a_P dt` at `P`, the local
-components at `1` of the attached Weil differentials. -/
+residue trace is the sum over the places `P` of the local components at `1` of the Weil
+differentials attached to `a_P dt` (by Tate's theory, the `k`-valued residues of `a_P dt`). -/
 theorem relativeDifferentialsResidueTrace_eq_finsum_residue
     (a : repartitionSpace k X.functionField) :
     relativeDifferentialsResidueTrace hF hk hex hdim
