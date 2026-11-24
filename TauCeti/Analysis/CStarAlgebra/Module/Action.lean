@@ -157,8 +157,7 @@ noncomputable def smulCLM (A : Type*) [NonUnitalCStarAlgebra A] [PartialOrder A]
       map_smul' := fun c a ↦ by simp [smul_assoc] }
     ‖x‖ fun a ↦ (CStarModule.norm_smul_le a x).trans_eq (mul_comm ‖a‖ ‖x‖)
 
-@[simp]
-theorem smulCLM_apply [SMul A E] [CStarModule A E] (x : E) (a : A) :
+@[simp] theorem smulCLM_apply [SMul A E] [CStarModule A E] (x : E) (a : A) :
     smulCLM A x a = a • x := (rfl)
 
 /-- The operator norm of `a ↦ a • x` is at most `‖x‖`. -/
@@ -174,8 +173,7 @@ noncomputable def opSMulCLM (A : Type*) [NonUnitalCStarAlgebra A] [PartialOrder 
     [CStarModule Aᵐᵒᵖ E] (x : E) : A →L[ℂ] E :=
   (smulCLM Aᵐᵒᵖ x).comp (MulOpposite.opContinuousLinearEquiv ℂ).toContinuousLinearMap
 
-@[simp]
-theorem opSMulCLM_apply [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : E) (a : A) :
+@[simp] theorem opSMulCLM_apply [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : E) (a : A) :
     opSMulCLM A x a = MulOpposite.op a • x := by simp [opSMulCLM]
 
 /-- The operator norm of `a ↦ MulOpposite.op a • x` is at most `‖x‖`. -/

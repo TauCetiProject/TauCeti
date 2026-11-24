@@ -169,23 +169,21 @@ def mulVecLinearMap [Ring A] :
     (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (m → A)).symm.toLinearMap ∘ₗ
       Matrix.mulVecBilin ℤ Aᵐᵒᵖ (ofMatrix.symm M) ∘ₗ
       (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (n → A)).toLinearMap
-  map_add' M N := by ext1 v; simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearMap.add_apply, show ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N from rfl,
-    map_add]
+  map_add' M N := by
+    ext1 v; simp [show ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N from rfl]
   map_smul' c M := by ext1 v; simp only [RingHom.id_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe, LinearMap.smul_apply,
     show ofMatrix.symm (c • M) = c • ofMatrix.symm M from rfl, map_zsmul]
 
 @[simp] theorem mulVecLinearMap_one [DecidableEq n] [Ring A] :
     mulVecLinearMap (1 : _root_.CStarMatrix n n A) = LinearMap.id := by
-  ext1 v; simp [mulVecLinearMap, show ofMatrix.symm (1 : _root_.CStarMatrix n n A) = 1 from rfl,
-    Matrix.one_mulVec]
+  ext1 v; simp [mulVecLinearMap, show ofMatrix.symm (1 : _root_.CStarMatrix n n A) = 1 from rfl]
 
 @[simp] theorem mulVecCLM_one [DecidableEq n] [NormedRing A] [NormedSpace ℂ A]
     [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] :
     mulVecCLM (1 : _root_.CStarMatrix n n A) = .id ℂ _ := by
   ext1 v; simp [_root_.CStarMatrix.mulVecCLM_apply,
-    show ofMatrix.symm (1 : _root_.CStarMatrix n n A) = 1 from rfl, Matrix.one_mulVec]
+    show ofMatrix.symm (1 : _root_.CStarMatrix n n A) = 1 from rfl]
 
 end TauCeti.CStarMatrix
 

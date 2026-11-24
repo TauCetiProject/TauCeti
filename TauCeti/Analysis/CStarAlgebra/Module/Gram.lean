@@ -99,8 +99,7 @@ variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A�
 /-- Every Gram matrix is self-adjoint, by the conjugate symmetry of the module inner product. -/
 theorem isSelfAdjoint_gram (x : n → E) : IsSelfAdjoint (_root_.CStarMatrix.gram A x) := by
   ext i j
-  simp [_root_.CStarMatrix.star_apply, _root_.CStarMatrix.gram_apply, ← unop_star,
-    CStarModule.star_inner]
+  simp [_root_.CStarMatrix.star_apply, _root_.CStarMatrix.gram_apply, ← unop_star]
 
 end SelfAdjoint
 
@@ -114,8 +113,7 @@ a right linear combination `∑ j, op (c j) • x j` recovers the `i`-th coeffic
 theorem inner_sum_op_smul_of_gram_eq_one {x : n → E} (hx : _root_.CStarMatrix.gram A x = 1)
     (c : n → A) (i : n) :
     inner Aᵐᵒᵖ (x i) (∑ j, op (c j) • x j) = op (c i) := by
-  apply unop_injective
-  rw [TauCeti.CStarModule.inner_sum_right', Finset.unop_sum]
+  apply unop_injective; rw [TauCeti.CStarModule.inner_sum_right', Finset.unop_sum]
   have hgram (j : n) : unop (inner Aᵐᵒᵖ (x i) (x j)) = (1 : _root_.CStarMatrix n n A) i j := by
     rw [← _root_.CStarMatrix.gram_apply, hx]
   simp [CStarModule.inner_op_smul_right, hgram, _root_.CStarMatrix.one_apply]

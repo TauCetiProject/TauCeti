@@ -58,15 +58,11 @@ def piOpLinearEquiv (A ι : Type*) [Ring A] :
   _root_.WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (ι → A) ≪≫ₗ
     LinearEquiv.piCongrRight (fun _ ↦ MulOpposite.opLinearEquiv Aᵐᵒᵖ)
 
-@[simp]
-theorem piOpLinearEquiv_apply {A ι : Type*} [Ring A] (w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) (i : ι) :
-    piOpLinearEquiv A ι w i = op (w i) := by
-  simp [piOpLinearEquiv]
+@[simp] theorem piOpLinearEquiv_apply {A ι : Type*} [Ring A] (w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) (i : ι) :
+    piOpLinearEquiv A ι w i = op (w i) := by simp [piOpLinearEquiv]
 
-@[simp]
-theorem piOpLinearEquiv_symm_apply {A ι : Type*} [Ring A] (v : ι → Aᵐᵒᵖ) (i : ι) :
-    (piOpLinearEquiv A ι).symm v i = unop (v i) := by
-  simp [piOpLinearEquiv]
+@[simp] theorem piOpLinearEquiv_symm_apply {A ι : Type*} [Ring A] (v : ι → Aᵐᵒᵖ) (i : ι) :
+    (piOpLinearEquiv A ι).symm v i = unop (v i) := by simp [piOpLinearEquiv]
 
 end TauCeti.WithCStarModule
 

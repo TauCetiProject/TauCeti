@@ -633,7 +633,7 @@ private theorem isStrictlyPositive_gram_splitting {ι : Type*} [Fintype ι] [Dec
       (f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))),
         (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)) -
           g (f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)))))) = h w := by
-    simp_rw [← hh, ← map_smul, ← map_sum]; rw [WithCStarModule.sum_op_smul_single_one]
+    simp_rw [← hh, ← map_smul, ← map_sum, WithCStarModule.sum_op_smul_single_one]
   rw [hw_sum, hh w, WithCStarModule.prod_inner, WithCStarModule.equiv_symm_fst,
     WithCStarModule.equiv_symm_snd, unop_add]
   set u := unop (inner Aᵐᵒᵖ (f w) (f w)); set v := unop (inner Aᵐᵒᵖ (w - g (f w)) (w - g (f w)))
@@ -650,7 +650,7 @@ private theorem isStrictlyPositive_gram_splitting {ι : Type*} [Fintype ι] [Dec
   have hCu : ‖gL‖ ^ 2 • u + v ≤ (1 + ‖gL‖ ^ 2) • (u + v) :=
     (add_le_add (le_add_of_nonneg_left hu)
       (le_add_of_nonneg_right (smul_nonneg (sq_nonneg _) hv))).trans_eq
-        (by rw [add_add_add_comm, add_smul, one_smul, smul_add])
+      (by rw [add_add_add_comm, add_smul, one_smul, smul_add])
   exact hw_split.trans
     ((smul_le_smul_of_nonneg_left hCu zero_le_two).trans_eq (mul_smul _ _ _).symm)
 
