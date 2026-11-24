@@ -507,23 +507,22 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
 
 /-! ### Truncations with one end cut short -/
 
-/-- **The energy identity on a rectangle of an end.** Let `u` be `C²` on `S` and let `[a, b]`
-lie in the part `±s > 0` of the end `q`. For the cylindrical datum `h(t) dt` of a `C¹`
-Hamiltonian `h` of period one, the energy of `u ∘ φ_q` over the rectangle `[a, b] × [0, 1]` in the
-end coordinates is the change of action `A_h(u ∘ φ_q(b, ·)) - A_h(u ∘ φ_q(a, ·))`. -/
+/-- **The energy identity on a rectangle of an end.** Let `u` be `C²` on an open set `U`
+containing the image under the end chart `φ_q` of the rectangle `[a, b] × [0, 1]`, for instance on
+`S` when `[a, b]` lies in the part `±s > 0` of the end `q`. For the cylindrical datum `h(t) dt` of a
+`C¹` Hamiltonian `h` of period one, the energy of `u ∘ φ_q` over the rectangle in the end
+coordinates is the change of action `A_h(u ∘ φ_q(b, ·)) - A_h(u ∘ φ_q(a, ·))`. -/
 theorem integral_floerEnergyDensity_endChart_eq_hamiltonianAction_sub (ω : SymplecticForm V)
-    {h : ℝ → V → ℝ} (hh : ContDiff ℝ 1 (uncurry h)) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) (q : Puncture) {a b : ℝ} (hab : a ≤ b)
-    (hpos : ∀ s ∈ Icc a b, 0 < q.endSign * s) :
+    {h : ℝ → V → ℝ} (hh : ContDiff ℝ 1 (uncurry h)) {u : ℝ × ℝ → V} {U : Set (ℝ × ℝ)}
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (q : Puncture) {a b : ℝ} (hab : a ≤ b)
+    (hUq : ∀ w ∈ Icc a b ×ˢ Icc (0 : ℝ) 1, endChart q w ∈ U) :
     ∫ w in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ h w.2)
         (u ∘ endChart q) w =
       ω.hamiltonianAction h (fun t ↦ u (endChart q (b, t))) -
         ω.hamiltonianAction h (fun t ↦ u (endChart q (a, t))) := by
-  have hUo : IsOpen {w : ℝ × ℝ | 0 < q.endSign * w.1} :=
-    isOpen_lt continuous_const (continuous_const.mul continuous_fst)
-  refine ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hh hUo
-    (hu.comp (contDiff_endChart q 2).contDiffOn fun w hw ↦
-      endChart_mem_thricePuncturedSphereReal hw) hab (fun w hw ↦ hpos w.1 hw.1) fun s _ ↦ ?_
+  refine ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hh
+    (hU.preimage (contDiff_endChart q 0).continuous)
+    (hu.comp (contDiff_endChart q 2).contDiffOn fun _ hw ↦ hw) hab hUq fun s _ ↦ ?_
   -- The end loops close up: `φ_q(s + i) = φ_q(s)`.
   simpa using congrArg u (endChart_add_one q s 0)
 
@@ -576,8 +575,9 @@ private theorem integral_floerEnergyDensity_image_endChart_eq (ω : SymplecticFo
       ω.floerEnergyDensity_congr_perturbation (Ks' := fun _ _ ↦ 0) (Kt' := fun w ↦ H q w.2) _
         (funext (pairOfPantsEndComponent_one_of_pos (by linarith [h2 w.1 hw.1])))
         (pairOfPantsEndComponent_I_of_two_le (hH q) (h2 w.1 hw.1))]
-    exact ω.integral_floerEnergyDensity_endChart_eq_hamiltonianAction_sub (hHs q) hu q hab
-      fun s hs ↦ by linarith [h2 s hs]
+    exact ω.integral_floerEnergyDensity_endChart_eq_hamiltonianAction_sub (hHs q)
+      isOpen_thricePuncturedSphereReal hu q hab fun w hw ↦
+        endChart_mem_thricePuncturedSphereReal (by linarith [h2 w.1 hw.1])
   simp only [← endChart_mk]
   rcases endSign_eq_one_or_eq_neg_one q with h | h
   · have hP : P = Ioc c R := by ext s; simp [P, h]

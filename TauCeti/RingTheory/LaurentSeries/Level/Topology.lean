@@ -144,6 +144,15 @@ theorem homeomorphForm_symm_apply (ω : TauCeti.ContinuousKaehlerDifferential K)
   apply (homeomorphForm K d).injective
   simp
 
+/-- The level differential `d_u : L → Ω¹_cont(L/K)` is continuous in every characteristic. -/
+@[fun_prop]
+theorem continuous_D : Continuous (D K d) := by
+  apply (homeomorphForm K d).comp_continuous_iff.mp
+  simpa only [Function.comp_def, homeomorphForm_apply, addEquivContinuousKaehlerDifferential_D,
+    homeomorphLaurentSeries_apply]
+    using (TauCeti.ContinuousKaehlerDifferential.continuous_D K).comp
+      (homeomorphLaurentSeries K d).continuous
+
 /-- Pulling back one-forms along `t = u ^ d` is continuous, in every characteristic. -/
 theorem continuous_map : Continuous (map K d) := by
   apply (homeomorphForm K d).comp_continuous_iff.mp
