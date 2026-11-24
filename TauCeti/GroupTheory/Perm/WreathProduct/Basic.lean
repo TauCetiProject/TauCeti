@@ -688,13 +688,14 @@ section DotProduct
 
 variable [Fintype ι]
 
-/-- Signed permutations of the coordinates preserve the dot product. -/
-theorem smul_dotProduct_smul (w : WreathProduct ℤˣ ι) (x y : ι → ℤ) :
+/-- Signed permutations of the coordinates preserve the dot product, over any commutative ring
+on which `ℤˣ` acts through `ℤ`-scalar multiplication. -/
+theorem smul_dotProduct_smul {R : Type*} [CommRing R] (w : WreathProduct ℤˣ ι) (x y : ι → R) :
     (w • x) ⬝ᵥ (w • y) = x ⬝ᵥ y := by
-  simp only [dotProduct, product_smul, Units.smul_def]
-  calc ∑ i, (w.left i : ℤ) * x (w.right⁻¹ i) * ((w.left i : ℤ) * y (w.right⁻¹ i))
+  simp only [dotProduct, product_smul]
+  calc ∑ i, w.left i • x (w.right⁻¹ i) * w.left i • y (w.right⁻¹ i)
       = ∑ i, x (w.right⁻¹ i) * y (w.right⁻¹ i) := Finset.sum_congr rfl fun i _ ↦ by
-        rw [mul_mul_mul_comm, ← Units.val_mul, Int.units_mul_self, Units.val_one, one_mul]
+        rw [smul_mul_smul_comm, Int.units_mul_self, one_smul]
     _ = ∑ i, x i * y i := Equiv.sum_comp w.right⁻¹ fun i ↦ x i * y i
 
 end DotProduct
