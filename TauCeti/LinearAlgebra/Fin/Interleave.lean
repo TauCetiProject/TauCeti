@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Data.Fin.Sum
 public import TauCeti.Topology.Algebra.Module.ExtendByZero
 
 /-!
@@ -17,7 +18,8 @@ second in the odd positions, filling unused positions with zero. The ambient dim
 coordinate injection used for block sums of finite Grassmannians; see the references in
 `TauCeti.Topology.Grassmannian.WhitneySum` for the classical disjoint-coordinate construction.
 
-The linear construction uses Mathlib's `Function.ExtendByZero.linearMap` and
+The index embedding is `TauCeti.interleaveIndex` from `TauCeti.Data.Fin.Sum`. The linear
+construction uses Mathlib's `Function.ExtendByZero.linearMap` and
 `LinearEquiv.sumArrowLequivProdArrow`. Continuity uses
 `Function.ExtendByZero.continuousLinearMap`.
 -/
@@ -25,24 +27,6 @@ The linear construction uses Mathlib's `Function.ExtendByZero.linearMap` and
 public section
 
 namespace TauCeti
-
-/-- The disjoint even/odd positions for two finite coordinate blocks. -/
-def interleaveIndex (a b : ℕ) : Fin a ⊕ Fin b ↪ Fin (2 * max a b) where
-  toFun := Sum.elim
-    (fun i ↦ ⟨2 * i.val, by have := i.isLt; have := Nat.le_max_left a b; omega⟩)
-    (fun i ↦ ⟨2 * i.val + 1, by have := i.isLt; have := Nat.le_max_right a b; omega⟩)
-  inj' := by
-    rintro (i | i) (j | j) h <;> simp only [Sum.elim_inl, Sum.elim_inr, Fin.mk.injEq] at h
-    · exact congrArg Sum.inl (Fin.ext (by omega))
-    · omega
-    · omega
-    · exact congrArg Sum.inr (Fin.ext (by omega))
-
-@[simp] theorem interleaveIndex_inl_val (a b : ℕ) (i : Fin a) :
-    (interleaveIndex a b (.inl i)).val = 2 * i.val := (rfl)
-
-@[simp] theorem interleaveIndex_inr_val (a b : ℕ) (i : Fin b) :
-    (interleaveIndex a b (.inr i)).val = 2 * i.val + 1 := (rfl)
 
 variable (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] (a b : ℕ)
 

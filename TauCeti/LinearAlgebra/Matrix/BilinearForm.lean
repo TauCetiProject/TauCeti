@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.BilinearForm.Dual.Basis
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -30,7 +31,8 @@ normal form of such forms.
 In the other direction, `LinearMap.BilinForm.toMatrix` reads a bilinear form in a basis as its
 Gram matrix. For a nondegenerate form, the Gram matrix in the `B`-dual basis is the inverse
 transpose of the Gram matrix in the original basis; for a symmetric form it is the inverse Gram
-matrix, which is how the dual of a lattice is described in coordinates. Likewise, the
+matrix, which is how the dual of a lattice is described in coordinates. The `B`-dual basis itself
+is obtained from the original basis by the inverse Gram matrix. Likewise, the
 coordinates of a vector are recovered from its pairings with the basis vectors through the inverse
 Gram matrix.
 
@@ -69,6 +71,8 @@ the diagonal condition remains necessary in characteristic two.
   basis is the inverse transpose of its Gram matrix in the original basis.
 * `LinearMap.BilinForm.det_toMatrix_dualBasis_mul_det_toMatrix`: the Gram determinants of a
   nondegenerate form in a basis and in its `B`-dual basis are inverse to each other.
+* `LinearMap.BilinForm.dualBasis_apply_eq_sum_inv_toMatrix_smul`: the `B`-dual basis is obtained
+  from the basis by the inverse Gram matrix.
 * `LinearMap.BilinForm.Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply`: the coordinates of a
   vector in a basis are its pairings with the basis, contracted against the inverse Gram matrix.
 * `LinearMap.BilinForm.separatingLeft_of_toMatrix_mul_eq_smul`: over a domain, a form whose Gram
@@ -241,11 +245,10 @@ theorem toMatrix_dualBasis (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate) 
   refine (Matrix.inv_eq_left_inv ?_).symm
   ext i j
   calc (toMatrix (B.dualBasis hB b) B * (toMatrix b B)ᵀ) i j
-      = B (B.dualBasis hB b i)
-          (∑ k, (B.dualBasis hB b).repr (b j) k • B.dualBasis hB b k) := by
-        simp [Matrix.mul_apply, toMatrix_apply, dualBasis_repr_apply, mul_comm]
+      = ∑ k, B (b j) (b k) • B (B.dualBasis hB b i) (B.dualBasis hB b k) := by
+        simp only [Matrix.mul_apply, toMatrix_apply, transpose_apply, smul_eq_mul, mul_comm]
     _ = (1 : Matrix ι ι K) i j := by
-        rw [(B.dualBasis hB b).sum_repr, apply_dualBasis_left, Matrix.one_apply]
+        rw [sum_apply_smul_apply_dualBasis B hB b, apply_dualBasis_left, Matrix.one_apply]
         simp only [eq_comm]
 
 /-- The Gram determinants of a nondegenerate bilinear form in a basis and in its `B`-dual basis
@@ -254,6 +257,17 @@ theorem det_toMatrix_dualBasis_mul_det_toMatrix (B : LinearMap.BilinForm K V) (h
     (b : Basis ι K V) : (toMatrix (B.dualBasis hB b) B).det * (toMatrix b B).det = 1 := by
   rw [toMatrix_dualBasis, det_nonsing_inv, det_transpose,
     Ring.inverse_mul_cancel _ (isUnit_iff_ne_zero.mpr ((nondegenerate_iff_det_ne_zero b).mp hB))]
+
+/-- **The dual basis through the inverse Gram matrix**: the `i`-th vector of the `B`-dual basis
+of `b` is `∑ⱼ (G⁻¹)ᵢⱼ bⱼ`, where `G = (B (b i) (b j))` is the Gram matrix of `B` in `b`. -/
+theorem dualBasis_apply_eq_sum_inv_toMatrix_smul (B : LinearMap.BilinForm K V)
+    (hB : B.Nondegenerate) (b : Basis ι K V) (i : ι) :
+    B.dualBasis hB b i = ∑ j, (toMatrix b B)⁻¹ i j • b j := by
+  -- Expand `B.dualBasis hB b i` in `b`: its coefficients are entries of the Gram matrix of the
+  -- dual basis, which is the inverse transpose of the Gram matrix in `b`.
+  conv_lhs => rw [← sum_apply_dualBasis_smul hB b (B.dualBasis hB b i)]
+  simp_rw [← toMatrix_apply, toMatrix_dualBasis, ← Matrix.transpose_nonsing_inv,
+    Matrix.transpose_apply]
 
 /-- **Coordinates from pairings.** For a nondegenerate bilinear form `B` and a basis `b`, the
 `k`-th coordinate of a vector `v` is `Σ_l B^(kl) B(b l, v)`, where `B^(kl)` is the inverse of the

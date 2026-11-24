@@ -60,7 +60,7 @@ theorem isEffective_iff_toWeilDivisor_nonneg [IsNormalScheme X] (D : CartierDivi
   · obtain ⟨U, -, hxU, f, hf⟩ := D.exists_localEquation_le ⊤ (trivial : x ∈ (⊤ : X.Opens))
     have : Nonempty U := ⟨⟨x, hxU⟩⟩
     refine ⟨f, isLocalEquationAt_iff.mpr ⟨U, hxU, hf⟩,
-      exists_algebraMap_stalk_eq_of_ord_nonneg_of_isNormalScheme fun η hηx ↦ ?_⟩
+      exists_algebraMap_stalk_eq_of_forall_ord_nonneg fun η hηx ↦ ?_⟩
     rw [← D.coeff_toWeilDivisor_eq_ord η (hηx.mem_open U.isOpen hxU) f hf]
     exact WeilDivisor.coeff_nonneg hD η
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Topology.Algebra.ProperAction.Basic
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Manifold.Algebra.TypeTags
@@ -105,6 +106,9 @@ nonempty `dim G ≤ dim M` (`TauCeti.finrank_le_of_properSMul_of_isCancelSMul`,
   `ProperSMul.existsUnique_contMDiff_comp_quotientMk_eq`,
   `ProperSMul.contMDiff_orbitRelQuotientMap` (and their `ProperVAdd.*` counterparts): smooth
   descent, universal property, and functoriality for `m ≤ ∞`.
+* `ProperSMul.contMDiffSMul_orbitRelQuotient`, `ProperSMul.contMDiffConstSMul_orbitRelQuotient`
+  (and their `ProperVAdd.*` counterparts): a smooth action commuting with that of `G`, or an action
+  by smooth maps commuting with it, descends to one on `M ⧸ G`.
 
 ## References
 
@@ -663,6 +667,40 @@ theorem existsUnique_contMDiff_comp_quotientMk_eq (hm : m ≤ ∞) {f : M → N}
   obtain ⟨g, rfl⟩ := _root_.MulAction.orbitRel_apply.1 (Quotient.exact hxy)
   exact hf_inv g y
 
+/-- **Commuting actions descend smoothly to the orbit manifold.** For a free proper smooth Lie
+group action of `G` on `M` and `m ≤ ∞`, a `C^m` action of `L` on `M` commuting with that of `G`
+induces a `C^m` action `l • [x] = [l • x]` on `M ⧸ G`
+(`MulAction.orbitRel.Quotient.instSMulOfSMulCommClass`), for a manifold `L` with boundaryless
+model. -/
+theorem contMDiffSMul_orbitRelQuotient (hm : m ≤ ∞) {EL HL L : Type*} [NormedAddCommGroup EL]
+    [NormedSpace ℝ EL] [TopologicalSpace HL] {IL : ModelWithCorners ℝ EL HL} [IL.Boundaryless]
+    [TopologicalSpace L] [ChartedSpace HL L] [IsManifold IL ∞ L] [SMul L M]
+    [SMulCommClass L G M] [ContMDiffSMul IL I' m L M] :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    ContMDiffSMul IL 𝓘(ℝ, QuotientModelSpace E E') m L
+      (_root_.MulAction.orbitRel.Quotient G M) := by
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  have hπ := isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)
+  refine ⟨((IsSubmersion.id.prodMap hπ).contMDiff_comp_iff
+    (surjective_id.prodMap Quotient.mk_surjective) hm).1 ?_⟩
+  rw [_root_.MulAction.orbitRel.Quotient.smul_comp_prodMap_mk]
+  exact (hπ.contMDiff.of_le hm).comp ContMDiffSMul.contMDiff_smul
+
+/-- **Commuting actions by smooth maps descend to the orbit manifold.** For a free proper smooth Lie
+group action of `G` on `M` and `m ≤ ∞`, an action of `L` on `M` by `C^m` maps commuting with that
+of `G` induces an action `l • [x] = [l • x]` on `M ⧸ G` by `C^m` maps. No topology on `L` is
+needed. -/
+theorem contMDiffConstSMul_orbitRelQuotient (hm : m ≤ ∞) {L : Type*} [SMul L M]
+    [SMulCommClass L G M] [ContMDiffConstSMul I' m L M] :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    ContMDiffConstSMul 𝓘(ℝ, QuotientModelSpace E E') m L
+      (_root_.MulAction.orbitRel.Quotient G M) := by
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  have hπ := isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)
+  refine ⟨fun l ↦ (hπ.contMDiff_comp_iff Quotient.mk_surjective hm).1 ?_⟩
+  rw [_root_.MulAction.orbitRel.Quotient.smul_comp_mk]
+  exact (hπ.contMDiff.of_le hm).comp (contMDiff_const_smul l)
+
 variable (I) in
 /-- **Canonical `C^m` diffeomorphism with any `C^m` orbit submersion.** For a free proper smooth
 Lie group action of `G` on a boundaryless manifold `M` and `m ≤ ∞`, if `p : M → Q` is a surjective
@@ -1097,6 +1135,37 @@ theorem existsUnique_contMDiff_comp_quotientMk_eq (hm : m ≤ ∞) {f : M → N}
   rintro x y hxy
   obtain ⟨g, rfl⟩ := _root_.AddAction.orbitRel_apply.1 (Quotient.exact hxy)
   exact hf_inv g y
+
+/-- For a free proper smooth additive Lie group action of `G` on `M` and `m ≤ ∞`, a `C^m` additive
+action of `L` on `M` commuting with that of `G` induces a `C^m` additive action
+`l +ᵥ [x] = [l +ᵥ x]` on `M ⧸ G`, for a manifold `L` with boundaryless model. -/
+theorem contMDiffVAdd_orbitRelQuotient (hm : m ≤ ∞) {EL HL L : Type*} [NormedAddCommGroup EL]
+    [NormedSpace ℝ EL] [TopologicalSpace HL] {IL : ModelWithCorners ℝ EL HL} [IL.Boundaryless]
+    [TopologicalSpace L] [ChartedSpace HL L] [IsManifold IL ∞ L] [VAdd L M]
+    [VAddCommClass L G M] [ContMDiffVAdd IL I' m L M] :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    ContMDiffVAdd IL 𝓘(ℝ, QuotientModelSpace E E') m L
+      (_root_.AddAction.orbitRel.Quotient G M) := by
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  have hπ := isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)
+  refine ⟨((IsSubmersion.id.prodMap hπ).contMDiff_comp_iff
+    (surjective_id.prodMap Quotient.mk_surjective) hm).1 ?_⟩
+  rw [_root_.AddAction.orbitRel.Quotient.vadd_comp_prodMap_mk]
+  exact (hπ.contMDiff.of_le hm).comp ContMDiffVAdd.contMDiff_vadd
+
+/-- For a free proper smooth additive Lie group action of `G` on `M` and `m ≤ ∞`, an additive
+action of `L` on `M` by `C^m` maps commuting with that of `G` induces an additive action
+`l +ᵥ [x] = [l +ᵥ x]` on `M ⧸ G` by `C^m` maps. No topology on `L` is needed. -/
+theorem contMDiffConstVAdd_orbitRelQuotient (hm : m ≤ ∞) {L : Type*} [VAdd L M]
+    [VAddCommClass L G M] [ContMDiffConstVAdd I' m L M] :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    ContMDiffConstVAdd 𝓘(ℝ, QuotientModelSpace E E') m L
+      (_root_.AddAction.orbitRel.Quotient G M) := by
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  have hπ := isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)
+  refine ⟨fun l ↦ (hπ.contMDiff_comp_iff Quotient.mk_surjective hm).1 ?_⟩
+  rw [_root_.AddAction.orbitRel.Quotient.vadd_comp_mk]
+  exact (hπ.contMDiff.of_le hm).comp (contMDiff_const_vadd l)
 
 variable (I) in
 /-- For a free proper smooth action of an additive Lie group `G` on a boundaryless manifold `M` and

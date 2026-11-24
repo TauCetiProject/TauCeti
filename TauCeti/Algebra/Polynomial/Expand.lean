@@ -23,6 +23,12 @@ The statements hold over commutative semirings, including rings with zero diviso
 include `e = 0`, when the only permitted order in the multiplication identity is zero.
 Unlike ordinary differentiation, these identities also control orders between `p` and `p^e`.
 
+The power `f ^ p^e` is the expansion of the polynomial whose coefficients are the
+`p^e`-th powers of the coefficients of `f` (Mathlib's `Polynomial.map_iterateFrobenius_expand`).
+So its Hasse derivatives also vanish at every order not divisible by `p^e`
+(`Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`, and `Polynomial.hasseDeriv_pow_expChar_eq_zero`
+for `e = 1`).
+
 The binomial-coefficient argument is the one underlying Iwaniec–Kowalski,
 *Analytic Number Theory*, §11.6, Lemma 11.17. We use Mathlib's `Polynomial.expand`
 and `Polynomial.hasseDeriv` throughout.
@@ -50,6 +56,20 @@ theorem hasseDeriv_expand_eq_zero {e k : ℕ} (hk : ¬p ^ e ∣ k)
       rw [← coeff_X_add_one_pow R, hpoly, coeff_expand hq, ite_eq_right hk]
     simp only [expand_monomial, hasseDeriv_monomial, hchoose, zero_mul,
       monomial_zero_right]
+
+/-- A Hasse derivative of order not divisible by `p^e` annihilates every `p^e`-th power, over any
+commutative semiring of exponential characteristic `p`. -/
+@[simp]
+theorem hasseDeriv_pow_expChar_pow_eq_zero {e k : ℕ} (hk : ¬p ^ e ∣ k) (f : R[X]) :
+    hasseDeriv k (f ^ p ^ e) = 0 := by
+  rw [← map_iterateFrobenius_expand p f e, map_expand, hasseDeriv_expand_eq_zero hk]
+
+/-- A Hasse derivative of order not divisible by `p` annihilates every `p`-th power, over any
+commutative semiring of exponential characteristic `p`. -/
+@[simp]
+theorem hasseDeriv_pow_expChar_eq_zero {k : ℕ} (hk : ¬p ∣ k) (f : R[X]) :
+    hasseDeriv k (f ^ p) = 0 := by
+  simpa using hasseDeriv_pow_expChar_pow_eq_zero (e := 1) (by simpa using hk) f
 
 /-- Hasse differentiation of order below `p^e` is linear over polynomials in `X^(p^e)`:
 an expanded factor can be pulled outside the derivative. No factorial is inverted. -/
