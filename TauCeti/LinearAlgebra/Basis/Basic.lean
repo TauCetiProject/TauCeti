@@ -69,6 +69,7 @@ vectors indexed by `ι`.
   finite basis over an algebra `F` of a commutative semiring `T`.
 * `Module.Basis.sum_coord_add_smul`: a vector whose coordinates in a basis `B` are those of `X`
   plus the matrix of a linear map `Z` applied to `v` is `X + Z (∑ j, v j • b j)`.
+* `Module.Basis.map_sum_smul`: a linear map applied to `∑ i, c i • b i`, expanded in `b`.
 -/
 
 public section
@@ -381,6 +382,13 @@ theorem sum_coord_add_smul {R F H : Type*} [CommSemiring R] [AddCommMonoid F] [M
   · rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     simp_rw [mul_comm _ (v j), mul_smul, ← Finset.smul_sum, B.sum_repr]
+
+/-- A linear map applied to a combination of a finite basis, expanded in the same basis: the new
+coefficients are those of `c` transformed by the matrix of `f` in `b`. -/
+theorem map_sum_smul {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Fintype ι]
+    {F : Type*} [FunLike F M M] [LinearMapClass F R M M] (b : Basis ι R M) (f : F) (c : ι → R) :
+    f (∑ i, c i • b i) = ∑ i, (∑ j, b.repr (f (b j)) i * c j) • b i := by
+  simpa using (b.sum_coord_add_smul b 0 (f : M →ₗ[R] M) c).symm
 
 end SumCoord
 

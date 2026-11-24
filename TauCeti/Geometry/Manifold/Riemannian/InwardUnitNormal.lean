@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction
-public import TauCeti.Geometry.Manifold.Riemannian.OutwardUnitNormal
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
 
 /-!
 # The inward unit normal and the sign test
