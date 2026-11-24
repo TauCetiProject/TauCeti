@@ -16,7 +16,8 @@ public import TauCeti.Topology.VectorBundle.Orientation.Cover
 Let `E → B` be a real vector bundle with model fibre `F`, and let `ι` have cardinality the rank of
 `E`. The units `ℤˣ = {1, -1}` act on the orientation double cover `B'` of `E`, with `-1` reversing
 the orientation and fixing the base point, so that `-1` acts by the deck involution
-(`TauCeti.VectorBundleOrientationCover.neg_one_smul_eq_deck`). The projection `B' → B` is then
+(`TauCeti.VectorBundleOrientationCover.neg_one_smul_eq_deck`), a continuous action since the deck
+involution is continuous. The projection `B' → B` is then
 the quotient map of this action in the strong sense of Mathlib's `IsQuotientCoveringMap`: its
 fibres are the orbits, and every point has a neighbourhood disjoint from its image under the deck
 involution, namely its sheet in a trivialization
@@ -132,6 +133,16 @@ theorem neg_one_smul_eq_deck (p : VectorBundleOrientationCover F E ι) : (-1 : �
   rw [smul_def, deck_apply]
   refine congrArg (mk p.proj) (Module.Ray.units_smul_of_neg _ ?_ _)
   simp
+
+/-- The units act continuously on the orientation double cover: `-1` acts by the deck involution.
+-/
+instance : ContinuousConstSMul ℤˣ (VectorBundleOrientationCover F E ι) where
+  continuous_const_smul u := by
+    rcases Int.units_eq_one_or u with rfl | rfl
+    · simp_rw [one_smul]
+      exact continuous_id
+    · simp_rw [neg_one_smul_eq_deck]
+      exact (deck (F := F) (E := E) (ι := ι)).continuous
 
 /-- Each unit acts on the orientation double cover as the identity or as the deck involution. -/
 private theorem smul_eq_or (u : ℤˣ) :

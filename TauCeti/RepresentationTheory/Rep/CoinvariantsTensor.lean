@@ -49,6 +49,8 @@ adjoint, `X ↦ (A ⊗ X)_G` preserves colimits (`Rep.preservesColimits_coinvari
   and `v`.
 * `Rep.coinvariantsHomLinearEquiv`: `Hom(X_G, N) ≃ₗ[k] Hom_G(X, N)`.
 * `Rep.coinvariantsTensorHomLinearEquiv`: `Hom((A ⊗ X)_G, N) ≃ₗ[k] Hom_G(X, Homₖ(A, N))`.
+* `Rep.tensorLeftCompCoinvariantsTensorTrivialIso`: `(k ⊗ (A ⊗ X))_G ≅ (A ⊗ X)_G`, naturally in
+  `X`.
 
 ## Main results
 
@@ -170,6 +172,29 @@ theorem coinvariantsHomLinearEquiv_symm_apply_mk {X : Rep.{u} k G} (φ : X ⟶ R
   have h := coinvariantsHomLinearEquiv_apply_hom_apply N ((coinvariantsHomLinearEquiv N X).symm φ) x
   rw [LinearEquiv.apply_symm_apply] at h
   exact h.symm
+
+/-- **Tensor coinvariants against the trivial line absorb a left tensor factor.** For a
+representation `A`, the functor `X ↦ (k ⊗ (A ⊗ X))_G` is `X ↦ (A ⊗ X)_G`, through the associator
+and the left unitor of the trivial line `k`, the unit of the tensor product. -/
+def tensorLeftCompCoinvariantsTensorTrivialIso (A : Rep.{u} k G) :
+    tensorLeft A ⋙ (coinvariantsTensor k G).obj (trivial k G k) ≅
+      (coinvariantsTensor k G).obj A :=
+  NatIso.ofComponents (fun X ↦ (coinvariantsFunctor k G).mapIso
+    ((α_ (trivial k G k) A X).symm ≪≫ whiskerRightIso (λ_ A) X)) fun f ↦ by
+      dsimp
+      simp only [← Functor.map_comp]
+      congr 1
+      rw [whiskerRightIso_hom, whiskerRightIso_hom, associator_inv_naturality_right_assoc,
+        whisker_exchange, Category.assoc]
+
+/-- The identification `tensorLeftCompCoinvariantsTensorTrivialIso` sends the class of
+`r ⊗ (a ⊗ x)` to the class of `r • a ⊗ x`. -/
+theorem tensorLeftCompCoinvariantsTensorTrivialIso_hom_app_coinvariantsTensorMk
+    (A X : Rep.{u} k G) (r : k) (a : A) (x : X) :
+    ((tensorLeftCompCoinvariantsTensorTrivialIso A).hom.app X).hom
+        (coinvariantsTensorMk (trivial k G k) (A ⊗ X) r (a ⊗ₜ x)) =
+      coinvariantsTensorMk A X (r • a) x :=
+  (rfl)
 
 end Monoid
 
