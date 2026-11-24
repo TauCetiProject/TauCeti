@@ -163,7 +163,7 @@ theorem isSemisimpleModule_tensorProduct_of_perfectField [FiniteDimensional k M]
     Module.compHom _ (BialgebraModule.tensorPairAction k L M).toRingHom
   let φ := (Algebra.TensorProduct.map (AlgHom.id k L)
     (Algebra.lsmul k (A := A) k M).rangeRestrict).toRingHom
-  refine (isSemisimpleModule_iff_of_surjective (M := L ⊗[k] M) φ
+  refine (RingHom.isSemisimpleModule_iff_of_surjective (M := L ⊗[k] M) φ
     (Algebra.TensorProduct.map_surjective _ _ Function.surjective_id
       (AlgHom.rangeRestrict_surjective _)) fun t x ↦ ?_).mpr inferInstance
   -- Both actions are pulled back along ring maps (`Module.compHom`), so `•` unfolds to them.

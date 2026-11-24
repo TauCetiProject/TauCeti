@@ -77,7 +77,7 @@ instance isSemisimpleRepresentation_baseChange [PerfectField k] [FiniteDimension
   -- those of `V`, through which `asModule`'s own actions factor.
   let : Module ρ.asAlgebraHom.range ρ.asModule := (inferInstance : Module ρ.asAlgebraHom.range V)
   have : IsSemisimpleModule ρ.asAlgebraHom.range V :=
-    (TauCeti.isSemisimpleModule_iff_of_surjective (M := ρ.asModule) ψ.toRingHom
+    (RingHom.isSemisimpleModule_iff_of_surjective (M := ρ.asModule) ψ.toRingHom
       (AlgHom.rangeRestrict_surjective _) fun _ _ ↦ rfl).mp ‹_›
   let act := TauCeti.BialgebraModule.tensorPairAction k L V (A := L) (B := ρ.asAlgebraHom.range)
   let : Module (L ⊗[k] ρ.asAlgebraHom.range) (L ⊗[k] V) := Module.compHom _ act.toRingHom
@@ -88,7 +88,7 @@ instance isSemisimpleRepresentation_baseChange [PerfectField k] [FiniteDimension
       simp [act]
   let : Module (L ⊗[k] ρ.asAlgebraHom.range) (ρ.baseChange L).asModule :=
     (inferInstance : Module (L ⊗[k] ρ.asAlgebraHom.range) (L ⊗[k] V))
-  exact (TauCeti.isSemisimpleModule_iff_of_surjective (M := (ρ.baseChange L).asModule)
+  exact (RingHom.isSemisimpleModule_iff_of_surjective (M := (ρ.baseChange L).asModule)
     (liftBaseChange L ψ).toRingHom
     ((Algebra.TensorProduct.map_surjective _ _ Function.surjective_id
       (AlgHom.rangeRestrict_surjective _)).comp
