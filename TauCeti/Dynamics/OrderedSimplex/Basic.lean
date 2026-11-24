@@ -496,7 +496,8 @@ theorem span_orderedCone_eq_coneSpan (d : ℕ) :
   refine le_antisymm (Submodule.span_le.2 (orderedCone_subset_coneSpan d)) fun y hy => ?_
   have hval : y = ∑ j : Fin (d + 1),
       (coneSpanBasis d).repr ⟨y, hy⟩ j • (coneSpanBasis d j : Fin (d + 2) → ℝ) := by
-    simpa using congrArg Subtype.val ((coneSpanBasis d).sum_repr ⟨y, hy⟩).symm
+    simpa only [Submodule.coe_sum, Submodule.coe_smul] using
+      congrArg Subtype.val ((coneSpanBasis d).sum_repr ⟨y, hy⟩).symm
   rw [hval]
   exact Submodule.sum_mem _ fun j _ =>
     Submodule.smul_mem _ _ (coneSpanBasis_mem_span_orderedCone d j)
