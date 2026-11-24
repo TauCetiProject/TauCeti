@@ -11,7 +11,9 @@ public import Mathlib.Topology.CWComplex.Classical.Subcomplex
 # The zero-skeleton of a CW complex
 
 The points of the zero-skeleton correspond to zero-cells. Its topology is discrete, while the
-preceding skeleton is empty.
+preceding skeleton is empty. A point of the zero-skeleton is a subcomplex by itself
+(`TauCeti.singletonSubcomplex`), whose only cell is the zero-cell at that point; this is how a
+CW complex based at a zero-cell is regarded as a CW complex relative to its basepoint.
 -/
 
 public section
@@ -74,6 +76,41 @@ lemma eq_zero_of_mem_skeletonLT_one_of_mem_openCell {y : X} (hy : y ∈ skeleton
   by_contra hn
   exact Set.disjoint_left.1 (CWComplex.disjoint_skeletonLT_openCell
     (by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn)) hy h
+
+variable {C} in
+/-- The closed cell whose open cell contains a point `x` of the zero-skeleton is `{x}`. -/
+lemma closedCell_eq_singleton_of_mem_openCell {x : X} (hx : x ∈ skeletonLT C 1) {n : ℕ}
+    {j : cell C n} (hj : x ∈ openCell n j) : closedCell n j = {x} := by
+  obtain rfl := eq_zero_of_mem_skeletonLT_one_of_mem_openCell hx hj
+  rw [openCell_zero_eq_singleton, Set.mem_singleton_iff] at hj
+  rw [closedCell_zero_eq_singleton, hj]
+
+variable {C} in
+/-- **A zero-cell is a subcomplex.** A point `x` of the zero-skeleton of `C` forms a subcomplex of
+`C`, whose cells are the cells whose open cell contains `x`: the zero-cell at `x`, and no others. -/
+def singletonSubcomplex {x : X} (hx : x ∈ skeletonLT C 1) : CWComplex.Subcomplex C :=
+  CWComplex.Subcomplex.mk' C {x} (fun n ↦ {j | x ∈ openCell n j})
+    (fun _ j ↦ (closedCell_eq_singleton_of_mem_openCell hx j.property).subset)
+    (by
+      refine Set.Subset.antisymm (Set.iUnion₂_subset fun _ j ↦ ?_) (Set.singleton_subset_iff.2 ?_)
+      · exact (openCell_subset_closedCell _ _).trans
+          (closedCell_eq_singleton_of_mem_openCell hx j.property).subset
+      · obtain ⟨n, -, j, hj⟩ := CWComplex.mem_skeletonLT_iff.1 hx
+        exact Set.mem_iUnion₂.2 ⟨n, ⟨j, hj⟩, hj⟩)
+
+variable {C} in
+/-- The subcomplex of a zero-cell `x` is the singleton `{x}`. -/
+@[simp]
+theorem coe_singletonSubcomplex {x : X} (hx : x ∈ skeletonLT C 1) :
+    (singletonSubcomplex hx : Set X) = {x} :=
+  (rfl)
+
+variable {C} in
+/-- The cells of the subcomplex of a zero-cell `x` are the cells whose open cell contains `x`. -/
+@[simp]
+theorem mem_singletonSubcomplex_I {x : X} (hx : x ∈ skeletonLT C 1) {n : ℕ} (j : cell C n) :
+    j ∈ (singletonSubcomplex hx).I n ↔ x ∈ openCell n j :=
+  Iff.rfl
 
 /-- The stage before the zero-skeleton is empty for an absolute CW complex. -/
 instance zeroSkeletonPreviousIsEmpty : IsEmpty (↑(skeletonLT C ((0 : ℕ) : ℕ∞))) :=

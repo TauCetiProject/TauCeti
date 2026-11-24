@@ -73,6 +73,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   exponent vectors of degree `n` and at most `n`.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
+* `Finsupp.single_mod_add_single_div`: for `μ 0 < B`, division with remainder by `B` recovers `μ`
+  from `μ 0 + B * μ 1`.
 * `Finsupp.injOn_weight_pow`: uniqueness of base-`B` digits; the weight `i ↦ B ^ i` on `Fin m`,
   `d ↦ ∑ i, d i * B ^ i`, is injective on the exponent vectors with entries `< B`.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
@@ -353,6 +355,14 @@ theorem injOn_weight_vecCons_one (B : ℕ) :
     simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
       congrArg (· / B) h
   exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
+
+/-- Division with remainder by `B` recovers an exponent `μ` with `μ 0 < B` from its weight
+`μ 0 + B * μ 1`: the remainder is `μ 0` and the quotient is `μ 1`. -/
+theorem single_mod_add_single_div {B : ℕ} {μ : Fin 2 →₀ ℕ} (hμ : μ 0 < B) :
+    single 0 ((μ 0 + B * μ 1) % B) + single 1 ((μ 0 + B * μ 1) / B) = μ := by
+  refine Finsupp.ext (Fin.forall_fin_two.mpr ⟨?_, ?_⟩)
+  · simp [Nat.mod_eq_of_lt hμ]
+  · simp [Nat.add_mul_div_left _ _ ((Nat.zero_le _).trans_lt hμ), Nat.div_eq_of_lt hμ]
 
 /-- **Uniqueness of base-`B` digits.** The base-`B` weight `d ↦ ∑ i, d i * B ^ i` of exponent
 vectors in `m` variables is injective on the vectors all of whose entries are `< B`. For `B ≤ 1`

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.BaseChange
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 import Mathlib.LinearAlgebra.Contraction
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 
@@ -24,10 +25,15 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `TauCeti.Module.Dual.baseChangeEvaluation_one_tmul`: evaluation at a scalar-extended
   functional with coefficient one is its base change.
 * `TauCeti.Module.Dual.baseChangeEvaluation_tmul`: its value on two pure tensors.
+* `AlgHom.baseChangeEvaluation_rTensor`: naturality of evaluation in the scalar algebra.
 * `Module.Dual.baseChangeEvaluation_one_tmul_baseChange`: naturality of evaluation
   with respect to a base-changed linear map.
-* `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_one`: the value of a
-  base-changed functional at `1 ⊗ m`, and at the unit of a base-changed algebra.
+* `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_toAddMonoidHom_mk_one`,
+  `Module.Dual.baseChange_apply_one`: the value of a base-changed functional at `1 ⊗ m`, at
+  `(TensorProduct.mk ℤ A M 1).toAddMonoidHom m`, and at the unit of a base-changed algebra.
+* `AddMonoidHom.apply_liftBaseChangeSemilinear_baseChange`: compatibility between a semilinear
+  extension of `f : X →+ V` and the base change of an integral linear form agreeing with a linear
+  form on `f(X)`.
 * `TauCeti.Module.Dual.baseChangeEvaluationEquiv`: scalar extension commutes with the dual of a
   finite projective module.
 * `TauCeti.Module.Dual.baseChange_coord`: base-changed dual basis elements recover the
@@ -79,6 +85,21 @@ theorem baseChangeEvaluation_tmul (a b : A) (φ : Module.Dual R M) (m : M) :
   rw [Algebra.algebraMap_self_apply]
   ac_rfl
 
+/-- Scalar-extended evaluation is natural in the scalar algebra: extending scalars along
+`f : A →ₐ[R] B` and then evaluating is `f` of the evaluation over `A`. -/
+theorem _root_.AlgHom.baseChangeEvaluation_rTensor {B : Type*} [CommSemiring B] [Algebra R B]
+    (f : A →ₐ[R] B) (ξ : A ⊗[R] Module.Dual R M) (v : A ⊗[R] M) :
+    baseChangeEvaluation (R := R) (M := M) (A := B)
+        (LinearMap.rTensor (Module.Dual R M) f.toLinearMap ξ)
+        (LinearMap.rTensor M f.toLinearMap v) =
+      f (baseChangeEvaluation (R := R) (M := M) (A := A) ξ v) := by
+  induction ξ using TensorProduct.inductionOn with
+  | add ξ ξ' hξ hξ' => simp only [map_add, LinearMap.add_apply, hξ, hξ']
+  | tmul a φ =>
+    induction v using TensorProduct.inductionOn with
+    | add v v' hv hv' => simp only [map_add, hv, hv']
+    | tmul b m => simp [map_mul]
+
 /-- Evaluation against a base-changed functional is natural with respect to the base change of
 a linear map. -/
 @[simp]
@@ -96,12 +117,31 @@ theorem _root_.Module.Dual.baseChange_apply_one_tmul (φ : Module.Dual R M) (m :
     φ.baseChange A (1 ⊗ₜ[R] m) = algebraMap R A (φ m) := by
   rw [Module.Dual.baseChange_apply_tmul, Algebra.algebraMap_eq_smul_one]
 
+/-- The base change of an integral functional `φ : Module.Dual ℤ M` evaluated at
+`(TensorProduct.mk ℤ A M 1).toAddMonoidHom m` yields `(φ m : A)`. -/
+theorem _root_.Module.Dual.baseChange_apply_toAddMonoidHom_mk_one {M A : Type*} [AddCommGroup M]
+    [CommRing A] (φ : Module.Dual ℤ M) (m : M) :
+    φ.baseChange A ((TensorProduct.mk ℤ A M 1).toAddMonoidHom m) = (φ m : A) := by
+  rw [LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply,
+    Module.Dual.baseChange_apply_one_tmul, eq_intCast]
+
 /-- The base change of a functional `φ` on an `R`-algebra `S` takes the unit of `A ⊗[R] S` to
 the image of `φ 1` in `A`. -/
 @[simp]
 theorem _root_.Module.Dual.baseChange_apply_one {S : Type*} [Semiring S] [Algebra R S]
     (φ : Module.Dual R S) : φ.baseChange A 1 = algebraMap R A (φ 1) := by
   rw [Algebra.TensorProduct.one_def, Module.Dual.baseChange_apply_one_tmul]
+
+/-- Evaluating `F : V →ₗ[T] T` on `f.liftBaseChangeSemilinear σ z` agrees with
+`σ (Module.Dual.baseChange S φ z)` whenever `F` agrees with an integral linear form `φ` on
+`f(X)`. -/
+theorem _root_.AddMonoidHom.apply_liftBaseChangeSemilinear_baseChange {S T X V : Type*}
+    [CommRing S] [Ring T] [AddCommGroup X] [AddCommGroup V] [Module T V]
+    (f : X →+ V) (σ : S →+* T) (F : V →ₗ[T] T) (φ : Module.Dual ℤ X)
+    (hF : ∀ x : X, F (f x) = (φ x : T)) (z : S ⊗[ℤ] X) :
+    F (f.liftBaseChangeSemilinear σ z) = σ (Module.Dual.baseChange S φ z) :=
+  f.apply_liftBaseChangeSemilinear σ F (Module.Dual.baseChange S φ)
+    (fun x ↦ by rw [Module.Dual.baseChange_apply_one_tmul, eq_intCast, map_intCast, hF x]) z
 
 section FiniteProjective
 

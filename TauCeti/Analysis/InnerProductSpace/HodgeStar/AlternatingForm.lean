@@ -62,6 +62,9 @@ metric this expresses the star through the inverse metric and the volume of the 
 * `Orientation.formHodgeStar_apply_eq_sum`: the star in an arbitrary basis.
 * `Orientation.formHodgeStar_apply_eq_volumeForm_mul_sum`: the star through the inverse Gram
   matrix of an arbitrary basis.
+* `Orientation.alternatingFormInner_wedge_curryLeft_add_formHodgeStar`: for a unit vector `T` of
+  an oriented four-dimensional space, with covector `σ = ⟪T, ·⟫`, a two-form `F` satisfies
+  `⟨σ ∧ ι_T F, F + ⋆F⟩ = |ι_T F|² + ⟨F, ⋆F⟩ / 2`.
 
 ## References
 
@@ -346,5 +349,27 @@ theorem formHodgeStar_apply_eq_volumeForm_mul_sum {k l : ℕ} (hkl : k + l = fin
     simp
   rw [hdual, hvol]
   ring
+
+/-! ### Two-forms split along a unit vector -/
+
+/-- **The energy identity of a two-form split along a unit vector, for alternating forms.** Let
+`T` be a unit vector of an oriented four-dimensional real inner product space, `σ = ⟪T, ·⟫` its
+covector and `F` an alternating two-form. Then
+`⟨σ ∧ ι_T F, F + ⋆F⟩ = |ι_T F|² + ⟨F, ⋆F⟩ / 2`, where `ι_T F` is the interior product
+`F.curryLeft T` and `⟨·, ·⟩` the inner product of forms. Since `F ∧ F = ⟨F, ⋆F⟩ vol`, the last
+term is half the volume of `F ∧ F`. -/
+theorem alternatingFormInner_wedge_curryLeft_add_formHodgeStar (hkk : 2 + 2 = finrank ℝ V)
+    {T : V} (hT : ‖T‖ = 1) (F : V [⋀^Fin 2]→L[ℝ] ℝ) :
+    alternatingFormInner V 2
+        ((ContinuousAlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ T)).wedge
+          (F.curryLeft T)) (F + o.formHodgeStar hkk F) =
+      alternatingFormInner V 1 (F.curryLeft T) (F.curryLeft T) +
+        alternatingFormInner V 2 F (o.formHodgeStar hkk F) / 2 := by
+  obtain ⟨x, rfl⟩ := (alternatingFormEquiv V 2).surjective F
+  rw [← alternatingFormEquiv_ιMulti_twoVectorContraction, ← alternatingFormEquiv_ιMulti_pair,
+    formHodgeStar_alternatingFormEquiv, ← map_add]
+  simp only [alternatingFormInner_alternatingFormEquiv,
+    o.inner_ιMulti_twoVectorContraction_add_hodgeStar hkk hT x, inner_ιMulti_ιMulti]
+  simp [real_inner_comm (o.hodgeStar hkk x), inner_hodgeStar_apply]
 
 end Orientation

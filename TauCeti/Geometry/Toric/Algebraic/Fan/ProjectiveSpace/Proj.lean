@@ -93,6 +93,16 @@ theorem projectiveSpaceRatioMonomial_def {k : Option ι}
           (projectiveSpaceRatioCharacter_mem_dualSemigroup b hi j k (by simp))⟩) 1 :=
   (rfl)
 
+/-- Raising monomials to the `q`-th power sends the ratio `X_j / X_k` to its `q`-th power. This
+ring map is the coordinate-ring map of the toric power morphism on the chart
+(`TauCeti.Toric.Fan.affineToricChartι_comp_algebraicMap_nsmulHom`), so in homogeneous coordinates
+that morphism is `[X_j] ↦ [X_j ^ q]`. -/
+theorem mapDomainRingHom_powMonoidHom_projectiveSpaceRatioMonomial (q : ℕ) {k : Option ι}
+    (hσ : σ ≤ projectiveSpaceCone b i {k}ᶜ) (j : Option ι) :
+    MonoidAlgebra.mapDomainRingHom ℂ (powMonoidHom q) (projectiveSpaceRatioMonomial b hi hσ j) =
+      projectiveSpaceRatioMonomial b hi hσ j ^ q := by
+  simp [projectiveSpaceRatioMonomial_def, MonoidAlgebra.single_pow]
+
 /-- The ratio `X_k / X_k` is `1`. -/
 @[simp]
 theorem projectiveSpaceRatioMonomial_self {k : Option ι}
@@ -235,9 +245,8 @@ private theorem val_awayRatio (j : Option ι) :
     ← TauCeti.Localization.mk'_pow_eq_invSelf_pow_mul]
 
 omit [Fintype ι] in
-private theorem awayRatio_self : awayRatio k k = 1 := by
-  apply val_injective
-  rw [val_awayRatio, val_one, mul_comm, IsLocalization.Away.mul_invSelf]
+private theorem awayRatio_self : awayRatio k k = 1 :=
+  Away.mk_self _ _
 
 /-- The characters of the maximal cone omitting `k` act on the chart `D₊(X_k)`: a character with
 exponents `a_j` along the rays `j ≠ k` goes to `∏ (X_j / X_k) ^ a_j`. -/

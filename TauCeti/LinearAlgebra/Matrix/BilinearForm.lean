@@ -53,7 +53,8 @@ parity condition holds.
 
 Pullback along a rectangular matrix preserves alternation over a commutative semiring. Over a
 commutative ring, alternation is equivalent to skew-symmetry together with a zero diagonal;
-the diagonal condition remains necessary in characteristic two.
+the diagonal condition remains necessary in characteristic two. In a basis, the Gram matrix of an
+alternating form is `Z - Zᵀ`, with `Z` its strictly upper triangular part.
 
 ## Main results
 
@@ -93,6 +94,8 @@ the diagonal condition remains necessary in characteristic two.
   up to isometry by `B` and conversely: such pairs `(B₁, D₁)` and `(B₂, D₂)` have `B₁ ≅ B₂` exactly
   when `D₁ ≅ D₂`. On a lattice `D` is the form `c B⁻¹`, read on the dual lattice, so this compares
   isometry classes of lattices with those of their `c`-scaled duals.
+* `LinearMap.BilinForm.exists_toMatrix_eq_sub_transpose_of_isAlt`: an alternating form has a Gram
+  matrix of the form `Z - Zᵀ`.
 * `LinearMap.BilinForm.det_toMatrix_comp`, `LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det`:
   the Gram determinant under a linear map and under a change of basis.
 * `LinearMap.BilinForm.toMatrix_reindex`, `LinearMap.BilinForm.det_toMatrix_reindex`: reindexing
@@ -489,6 +492,24 @@ theorem equivalent_iff_equivalent_of_toMatrix_mul_eq_smul {B₁ D₁ : BilinForm
       ((Matrix.mul_eq_smul_one_comm hc).mp h₂)⟩
 
 end Dual
+
+section Alternating
+
+open LinearMap (BilinForm)
+
+/-- The Gram matrix of an alternating bilinear form is of the form `Z - Zᵀ`. -/
+theorem exists_toMatrix_eq_sub_transpose_of_isAlt {R M ι : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [Fintype ι] [DecidableEq ι] (b : Basis ι R M) {D : BilinForm R M}
+    (hD : D.IsAlt) : ∃ Z : Matrix ι ι R, D.toMatrix b = Z - Zᵀ := by
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
+  refine ⟨Matrix.of fun i j => if i < j then D (b i) (b j) else 0, ?_⟩
+  ext i j
+  rcases lt_trichotomy i j with h | rfl | h
+  · simp [toMatrix_apply, Function.swap, h, h.not_gt]
+  · simp [toMatrix_apply, hD.self_eq_zero]
+  · simp [toMatrix_apply, Function.swap, h, h.not_gt, ← hD.neg_eq (b j) (b i)]
+
+end Alternating
 
 /-! ### Gram determinants -/
 
