@@ -170,9 +170,8 @@ theorem finrank_dvd_index_of_le_center [Finite H] (ρ : Representation k H V) [�
       have hzg : Commute (z : H) g := (Subgroup.mem_center_iff.mp (hZ z.property) g).symm
       rw [← mul_apply_eq_comp, (hzg.map ρ).eq, mul_apply_eq_comp]
   choose lam hlam using hscal
-  have hd : finrank k V ≠ 0 := (IsIrreducible.finrank_pos (inferInstance : ρ.IsIrreducible)).ne'
   have hZc : Nat.card Z ≠ 0 := Nat.card_pos.ne'
-  refine Nat.dvd_of_forall_pow_dvd_mul_pow hd hZc fun m => ?_
+  refine Nat.dvd_of_forall_pow_dvd_mul_pow hZc fun m => ?_
   have key := finrank_mul_pow_dvd_aux ρ Z hZ lam hlam m ρ inferInstance Z.subtype
     (fun z => hZ z.property) hlam ⊥ bot_le (by simp)
   rw [Subgroup.card_bot, one_mul, ← Z.card_mul_index] at key
