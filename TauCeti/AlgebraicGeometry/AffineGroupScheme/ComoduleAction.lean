@@ -142,10 +142,12 @@ def specModObj :
 
 /-- The action is the spectrum of the coaction after flipping and inverting its group leg. -/
 theorem specModObj_smul :
-    letI := specModObj R H A
+    letI : ModObj
+      ((AlgebraicGeometry.algSpec (CommRingCat.of R)).obj (op (CommAlgCat.of R H)))
+      ((AlgebraicGeometry.algSpec (CommRingCat.of R)).obj (op (CommAlgCat.of R A))) :=
+        specModObj R H A
     ModObj.smul
-      (M := ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
-        (op (CommHopfAlgCat.of R H))).X)
+      (M := (AlgebraicGeometry.algSpec (CommRingCat.of R)).obj (op (CommAlgCat.of R H)))
       (X := (AlgebraicGeometry.algSpec (CommRingCat.of R)).obj (op (CommAlgCat.of R A))) =
       Functor.LaxMonoidal.μ (AlgebraicGeometry.algSpec (CommRingCat.of R))
         (op (CommAlgCat.of R H)) (op (CommAlgCat.of R A)) ≫
@@ -173,18 +175,14 @@ theorem specModObj_smul_map (T : Type u) [CommRing T] [Algebra R T]
       ((AlgebraicGeometry.algSpec (CommRingCat.of R)).obj (op (CommAlgCat.of R H)))
       ((AlgebraicGeometry.algSpec (CommRingCat.of R)).obj (op (CommAlgCat.of R A))) :=
         specModObj R H A
-  rw [Hom.smul_def]
-  -- The Hopf-spectrum and algebra-spectrum monoid instances agree after unfolding their
-  -- bundled wrappers; `erw` crosses this instance boundary.
-  erw [specModObj_smul]
-  rw [← Category.assoc, Functor.Monoidal.lift_μ, ← Functor.map_comp]
+  rw [Hom.smul_def, specModObj_smul, ← Category.assoc, Functor.Monoidal.lift_μ,
+    ← Functor.map_comp]
   congr 1
   simp only [comp_lift_assoc, GrpObj.comp_inv, lift_snd, lift_fst]
   apply Quiver.Hom.unop_inj
   apply CommAlgCat.hom_ext
-  -- In the opposite category, the cartesian lift is `Algebra.TensorProduct.lift`, and
-  -- inversion of the group point is precomposition with the antipode.
-  rfl
+  simp only [unop_comp, Quiver.Hom.unop_op, CommAlgCat.hom_comp, CommAlgCat.lift_unop_hom,
+    Hom.inv_def, CommAlgCat.inv_op_of_unop_hom, CommAlgCat.hom_ofHom]
 
 variable {R H A} {B : Type u} [CommRing B] [Algebra R B] [ComoduleAlgebra R H B]
 

@@ -96,6 +96,15 @@ theorem lieAlgebraOverIso_hom_left : (lieAlgebraOverIso k H).hom.left =
     Iso.symm_hom]
   exact Category.id_comp _
 
+/-- The inverse polynomial presentation is the existing tangent comparison. -/
+@[simp]
+theorem lieAlgebraOverIso_inv_left : (lieAlgebraOverIso k H).inv.left =
+    (lieAlgebraSchemeIso k H).hom := by
+  simp only [lieAlgebraOverIso, Iso.trans_inv, Over.comp_left,
+    TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk_inv_left, Over.isoMk_inv_left,
+    Iso.symm_inv]
+  exact Category.comp_id _
+
 end Over
 
 end TauCeti

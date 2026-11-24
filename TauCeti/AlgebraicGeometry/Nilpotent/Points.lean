@@ -61,6 +61,7 @@ noncomputable def nilpotentConePointEquiv :
 
 /-- Lifting the linear coordinates of a cone point gives its algebra homomorphism
 precomposed with the coordinate-ring quotient map. -/
+@[simp]
 theorem lift_nilpotentConePointEquiv
     (f : {f : Spec (.of A) ⟶ nilpotentCone k H // f.IsOver (Spec (.of k))}) :
     SymmetricAlgebra.lift (nilpotentConePointEquiv k H f).val =
