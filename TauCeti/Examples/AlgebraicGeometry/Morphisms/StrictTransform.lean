@@ -47,12 +47,8 @@ def origin : Spec (CommRingCat.of R) ⟶ Spec (CommRingCat.of R[X]) :=
 /-- The preimage of `𝔾_m = D(t)` under the origin is empty. -/
 theorem origin_preimage_basicOpen_X :
     origin R ⁻¹ᵁ (PrimeSpectrum.basicOpen (X : R[X])) = ⊥ := by
-  refine le_bot_iff.1 fun x hx ↦ ?_
-  have hx' := (origin R).mem_preimage.mp hx
-  rw [origin, Spec.map_apply] at hx'
-  -- The points and opens of `Spec R[X]` are by definition those of `PrimeSpectrum R[X]`
-  -- (`Spec_carrier`), so `PrimeSpectrum.mem_basicOpen` applies to `hx'`.
-  exact (PrimeSpectrum.mem_basicOpen _ _).mp hx' (Ideal.mem_comap.mpr (by simp))
+  rw [origin, SpecMap_preimage_basicOpen]
+  exact (PrimeSpectrum.basicOpen_eq_bot_iff _).2 (by simp)
 
 /-- With the witness `U = 𝔸¹`, the strict transform of the origin along the identity is the zero
 ideal sheaf. -/
