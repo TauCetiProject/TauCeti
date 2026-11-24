@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
 public import TauCeti.Topology.Homotopy.AddCircle
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Null-homotopy of periodic loops in semilocally simply connected spaces
@@ -52,20 +53,24 @@ theorem exists_nullhomotopic_slice_iff_of_isPreconnected {P : Type*} [Topologica
       ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (p₂, t) := by
   have : Fact (0 < T) := ⟨hT⟩
   let _ : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.1 hU
-  have hslice (p : U) : Continuous fun t ↦ u (p.1, t) :=
-    hu.comp_continuous (continuous_const.prodMk continuous_id) fun t ↦ ⟨p.2, mem_univ t⟩
-  let γ (p : U) : Path (u (p.1, 0)) (u (p.1, 0)) := (hper p.1 p.2).loop (hslice p) 0
+  have hslice (p : U) : Continuous fun t ↦ u (p.val, t) :=
+    hu.comp_continuous (continuous_const.prodMk continuous_id) fun t ↦ ⟨p.property, mem_univ t⟩
+  let γ (p : U) : Path (u (p.val, 0)) (u (p.val, 0)) := (hper p.val p.property).loop (hslice p) 0
+  have hγ_eq : ↿γ = fun q : U × I ↦ u (q.1.val, (0 : ℝ) + (q.2 : ℝ) * T) :=
+    funext fun q ↦ (hper q.1.val q.1.property).loop_apply (hslice q.1) 0 q.2
   have hγ : Continuous ↿γ := by
-    rw [show ↿γ = fun q : U × I ↦ u (q.1.1, (0 : ℝ) + (q.2 : ℝ) * T) from
-      funext fun q ↦ (hper q.1.1 q.1.2).loop_apply (hslice q.1) 0 q.2]
-    exact hu.comp_continuous ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_const.add ((continuous_subtype_val.comp continuous_snd).mul continuous_const)))
-      fun q ↦ ⟨q.1.2, mem_univ _⟩
+    rw [hγ_eq]
+    exact hu.comp_continuous ((continuous_subtypeVal.comp continuous_fst).prodMk
+      (continuous_const.add ((continuous_subtypeVal.comp continuous_snd).mul continuous_const)))
+      fun q ↦ ⟨q.1.property, mem_univ _⟩
   rw [(hper p₁ hp₁).exists_nullhomotopic_iff_loop_homotopic_refl (hslice ⟨p₁, hp₁⟩) 0,
     (hper p₂ hp₂).exists_nullhomotopic_iff_loop_homotopic_refl (hslice ⟨p₂, hp₂⟩) 0]
-  change (⟨p₁, hp₁⟩ : U) ∈ {y : U | (γ y).Homotopic (Path.refl (u (y.1, 0)))} ↔
-    (⟨p₂, hp₂⟩ : U) ∈ {y : U | (γ y).Homotopic (Path.refl (u (y.1, 0)))}
-  rcases isClopen_iff.1 (isClopen_setOf_homotopic_refl γ hγ) with h | h <;> simp [h]
+  let S : Set U := {y : U | (γ y).Homotopic (Path.refl (u (y.val, 0)))}
+  have hmem (p : P) (hp : p ∈ U) :
+      ((hper p hp).loop (hslice ⟨p, hp⟩) 0).Homotopic (Path.refl (u (p, 0))) ↔
+        (⟨p, hp⟩ : U) ∈ S := Iff.rfl
+  rw [hmem p₁ hp₁, hmem p₂ hp₂]
+  rcases isClopen_iff.1 (isClopen_setOf_homotopic_refl γ hγ) with h | h <;> simp [S, h]
 
 /-- **Null-homotopic periodic lifts form a clopen set in the topology of uniform convergence.**
 Inside the uniform-convergence space of continuous `T`-periodic curves (`0 < T`) in `e '' K`, where
@@ -77,41 +82,39 @@ theorem isClopen_setOf_exists_nullhomotopic_of_isCompact {F : Type*} [UniformSpa
     (hT : 0 < T) :
     IsClopen {f : {f : ℝ →ᵤ F | Continuous (UniformFun.toFun f) ∧
         Periodic (UniformFun.toFun f) T ∧ ∀ t, UniformFun.toFun f t ∈ e '' K} |
-      ∃ γ : ℝ → X, (∀ t, γ t ∈ K) ∧ e ∘ γ = UniformFun.toFun f.1 ∧
+      ∃ γ : ℝ → X, (∀ t, γ t ∈ K) ∧ e ∘ γ = UniformFun.toFun f.val ∧
         ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t} := by
   have : Fact (0 < T) := ⟨hT⟩
-  have := isCompact_iff_compactSpace.1 hK
   -- On the compact domain `K`, `e` restricts to a closed embedding, giving a continuous inverse.
-  have hemb : IsClosedEmbedding fun p : K ↦ e p :=
-    (he.comp_continuous continuous_subtype_val Subtype.prop).isClosedEmbedding fun p q h ↦
-      Subtype.ext (he_inj p.2 q.2 h)
-  let φ : range (fun p : K ↦ e p) ≃ₜ K := hemb.isEmbedding.toHomeomorph.symm
+  have hemb : IsClosedEmbedding (K.domRestrict e) := hK.isClosedEmbedding_domRestrict he he_inj
+  let φ : range (K.domRestrict e) ≃ₜ K := hemb.isEmbedding.toHomeomorph.symm
   let L := {f : ℝ →ᵤ F | Continuous (UniformFun.toFun f) ∧ Periodic (UniformFun.toFun f) T ∧
     ∀ t, UniformFun.toFun f t ∈ e '' K}
-  have hmem (f : L) (t : ℝ) : UniformFun.toFun f.1 t ∈ range fun p : K ↦ e p :=
-    let ⟨p, hp, hp'⟩ := f.2.2.2 t; ⟨⟨p, hp⟩, hp'⟩
-  let lift (f : L) (t : ℝ) : X := (φ ⟨UniformFun.toFun f.1 t, hmem f t⟩ : K)
-  have hliftK (f : L) (t : ℝ) : lift f t ∈ K := (φ _).2
-  have helift (f : L) : e ∘ lift f = UniformFun.toFun f.1 := funext fun t ↦
+  have hmem (f : L) (t : ℝ) : UniformFun.toFun f.val t ∈ range (K.domRestrict e) :=
+    let ⟨p, hp, hp'⟩ := f.property.2.2 t; ⟨⟨p, hp⟩, hp'⟩
+  let lift (f : L) (t : ℝ) : X := (φ ⟨UniformFun.toFun f.val t, hmem f t⟩ : K).val
+  have hliftK (f : L) (t : ℝ) : lift f t ∈ K := (φ _).property
+  have helift (f : L) : e ∘ lift f = UniformFun.toFun f.val := funext fun t ↦
     congrArg Subtype.val (hemb.isEmbedding.toHomeomorph.apply_symm_apply _)
   have hliftc (f : L) : Continuous (lift f) :=
-    continuous_subtype_val.comp (φ.continuous.comp (f.2.1.subtype_mk (hmem f)))
+    continuous_subtypeVal.comp (φ.continuous.comp (f.property.1.subtype_mk (hmem f)))
   have hliftp (f : L) : Periodic (lift f) T := fun t ↦ by
-    dsimp only [lift]; congr 2; exact Subtype.ext (f.2.2.1 t)
+    dsimp only [lift]; congr 2; exact Subtype.ext (f.property.2.1 t)
   -- Joint continuity of evaluation follows from uniform convergence and continuity of each curve.
-  have heval : Continuous fun q : L × I ↦ UniformFun.toFun q.1.1 ((0 : ℝ) + (q.2 : ℝ) * T) :=
+  have heval : Continuous fun q : L × I ↦ UniformFun.toFun q.1.val ((0 : ℝ) + (q.2 : ℝ) * T) :=
     continuous_iff_continuousAt.2 fun q₀ ↦
       (UniformFun.tendsto_iff_tendstoUniformly.1
-        (continuous_subtype_val.comp continuous_fst).continuousAt).tendsto_comp
-        q₀.1.2.1.continuousAt (continuous_const.add
-          ((continuous_subtype_val.comp continuous_snd).mul continuous_const)).continuousAt
+        (continuous_subtypeVal.comp continuous_fst).continuousAt).tendsto_comp
+        q₀.1.property.1.continuousAt (continuous_const.add
+          ((continuous_subtypeVal.comp continuous_snd).mul continuous_const)).continuousAt
+  have hfam_eq : (↿fun f : L ↦ (hliftp f).loop (hliftc f) 0) =
+      fun q : L × I ↦ lift q.1 ((0 : ℝ) + (q.2 : ℝ) * T) :=
+    funext fun q ↦ (hliftp q.1).loop_apply (hliftc q.1) 0 q.2
   have hfam : Continuous ↿fun f : L ↦ (hliftp f).loop (hliftc f) 0 := by
-    rw [show (↿fun f : L ↦ (hliftp f).loop (hliftc f) 0) =
-        fun q : L × I ↦ lift q.1 ((0 : ℝ) + (q.2 : ℝ) * T) from
-      funext fun q ↦ (hliftp q.1).loop_apply (hliftc q.1) 0 q.2]
-    exact continuous_subtype_val.comp
+    rw [hfam_eq]
+    exact continuous_subtypeVal.comp
       (φ.continuous.comp (heval.subtype_mk fun q ↦ hmem q.1 ((0 : ℝ) + (q.2 : ℝ) * T)))
-  have hset : {f : L | ∃ γ : ℝ → X, (∀ t, γ t ∈ K) ∧ e ∘ γ = UniformFun.toFun f.1 ∧
+  have hset : {f : L | ∃ γ : ℝ → X, (∀ t, γ t ∈ K) ∧ e ∘ γ = UniformFun.toFun f.val ∧
         ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t} =
       {f : L | ((hliftp f).loop (hliftc f) 0).Homotopic (Path.refl (lift f 0))} := by
     ext f
@@ -138,10 +141,10 @@ theorem eventually_exists_nullhomotopic_iff_of_tendstoUniformly_comp {F : Type*}
       ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ₀ t := by
   let L := {f : ℝ →ᵤ F | Continuous (UniformFun.toFun f) ∧ Periodic (UniformFun.toFun f) T ∧
     ∀ t, UniformFun.toFun f t ∈ e '' K}
-  let P : Set L := {f | ∃ γ' : ℝ → X, (∀ t, γ' t ∈ K) ∧ e ∘ γ' = UniformFun.toFun f.1 ∧
+  let P : Set L := {f | ∃ γ' : ℝ → X, (∀ t, γ' t ∈ K) ∧ e ∘ γ' = UniformFun.toFun f.val ∧
     ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ' t}
   have hcl : IsClopen P := isClopen_setOf_exists_nullhomotopic_of_isCompact hK he he_inj hT
-  have hmemP {δ : ℝ → X} (hδK : ∀ t, δ t ∈ K) (f : L) (hf : UniformFun.toFun f.1 = e ∘ δ) :
+  have hmemP {δ : ℝ → X} (hδK : ∀ t, δ t ∈ K) (f : L) (hf : UniformFun.toFun f.val = e ∘ δ) :
       f ∈ P ↔ ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = δ t :=
     ⟨fun ⟨γ', hγ'K, heγ', hnull⟩ ↦
       (funext fun t ↦ he_inj (hγ'K t) (hδK t) (congrFun (heγ'.trans hf) t)) ▸ hnull,

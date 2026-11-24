@@ -50,6 +50,7 @@ the dimension.
   resolvent*, whose coefficients are these polynomials in `A`.
 * `Module.Basis.reverse_charpoly_of_apply`: for an endomorphism diagonal in a finite basis with
   eigenvalues `aᵢ`, the reverse of its characteristic polynomial is `∏ᵢ (1 - aᵢ X)`.
+* `LinearMap.reverse_charpoly_smul_id`: `det (1 - X (c • id)) = (1 - c X) ^ rank`.
 * `Matrix.charpolyRev_mul_comm`: `det (1 - X A B) = det (1 - X B A)` for rectangular matrices `A`
   and `B` of transposed shapes. Unlike `Matrix.charpoly_mul_comm'`, no power of `X` corrects for
   the different sizes of `A B` and `B A`.
@@ -240,8 +241,8 @@ theorem charpolyRev_submatrix_blockDiagonal' {o : Type*} {m : o → Type*}
   classical
   let fiber := fun i ↦ S.preimage (Sigma.mk i) sigma_mk_injective.injOn
   let e : (Σ i, fiber i) ≃ S := {
-    toFun x := ⟨⟨x.1, x.2.1⟩, Finset.mem_preimage.mp x.2.2⟩
-    invFun x := ⟨x.1.1, ⟨x.1.2, Finset.mem_preimage.mpr x.2⟩⟩
+    toFun x := ⟨⟨x.1, x.2.val⟩, Finset.mem_preimage.mp x.2.property⟩
+    invFun x := ⟨x.val.1, ⟨x.val.2, Finset.mem_preimage.mpr x.property⟩⟩
     left_inv _ := rfl
     right_inv _ := rfl }
   have hmatrix :
@@ -316,3 +317,18 @@ theorem reverse_charpoly_of_apply (b : Basis κ R M) (f : M →ₗ[R] M) (a : κ
     (b.toMatrix_eq_diagonal_iff b f a).2 hf, Matrix.charpolyRev_diagonal]
 
 end Module.Basis
+
+namespace LinearMap
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
+  [Module.Finite R M]
+
+/-- The polynomial `det (1 - X f)` of the scalar endomorphism `f = c • id` of a finite free module
+is `(1 - c X) ^ rank`. -/
+theorem reverse_charpoly_smul_id (c : R) :
+    (c • LinearMap.id : Module.End R M).charpoly.reverse = (1 - C c * X) ^ Module.finrank R M := by
+  nontriviality R
+  rw [(Module.Free.chooseBasis R M).reverse_charpoly_of_apply _ (fun _ ↦ c) (by simp),
+    Finset.prod_const, Finset.card_univ, Module.finrank_eq_card_chooseBasisIndex]
+
+end LinearMap

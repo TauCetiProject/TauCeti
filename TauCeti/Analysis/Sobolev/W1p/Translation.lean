@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
+import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.WeakDeriv.Translation
 import TauCeti.MeasureTheory.Function.Lp.Translation
 
@@ -24,6 +25,8 @@ and on a domain mapped onto itself by the translation it preserves zero boundary
   `V + h ⊆ Ω`.
 * `TauCeti.W1p.value_translate_ae`: the value of a local translation.
 * `TauCeti.W1p.gradient_translate_ae`: the weak gradient of a local translation.
+* `TauCeti.W1p.translateL`, `TauCeti.W1p.continuous_translate`: local translation is a bounded
+  linear operator.
 * `TauCeti.W1p.translate_mem_w1p0Submodule`: translation preserves `W^{1,p}_0(Ω)` when it maps
   `Ω` onto itself.
 -/
@@ -76,6 +79,39 @@ theorem W1p.gradient_translate_ae {Omega V : Opens E} {h : E}
       fun x => W1p.gradient u (x + h) := by
   simp only [W1p.translate, W1p.gradient_mk]
   exact MemLp.coeFn_toLp _
+
+/-- **Local translation is a bounded operator.** The local translation `TauCeti.W1p.translate`
+from `W^{1,p}(Ω)` to `W^{1,p}(V)`, for `V + h ⊆ Ω`, as a continuous linear map
+(`TauCeti.W1p.translateL_apply`): composition with the measure-preserving map `x ↦ x + h`,
+followed by restriction from `Ω - h` to `V`. -/
+def W1p.translateL {Omega V : Opens E} {h : E} (hVO : MapsTo (· + h) V Omega) :
+    W1p mu Omega p →L[ℝ] W1p mu V p :=
+  (W1p.restrictL (Omega := ⟨(· + h) ⁻¹' Omega,
+      Omega.isOpen.preimage (continuous_id.add continuous_const)⟩) hVO.subset_preimage).comp
+    (W1p.compMeasurePreservingL (M := 1) (measurePreserving_add_right mu h) rfl
+      (isometry_add_right h).lipschitzWith.locallyLipschitz.locallyLipschitzOn fun x _ => by
+        rw [fderiv_add_const, fderiv_fun_id]
+        exact ContinuousLinearMap.norm_id_le)
+
+@[simp]
+theorem W1p.translateL_apply {Omega V : Opens E} {h : E} (hVO : MapsTo (· + h) V Omega)
+    (u : W1p mu Omega p) : W1p.translateL hVO u = W1p.translate hVO u := by
+  refine W1p.ext_value (Lp.ext ?_)
+  have hcomp := W1p.value_compMeasurePreservingL_ae (M := 1) (measurePreserving_add_right mu h)
+    (U := ⟨(· + h) ⁻¹' Omega, Omega.isOpen.preimage (continuous_id.add continuous_const)⟩) rfl
+    (isometry_add_right h).lipschitzWith.locallyLipschitz.locallyLipschitzOn
+    (fun x _ => by
+      rw [fderiv_add_const, fderiv_fun_id]
+      exact ContinuousLinearMap.norm_id_le) u
+  exact (W1p.value_restrictL_ae _ _).trans <| Filter.EventuallyEq.trans
+    (ae_restrict_of_ae_restrict_of_subset hVO.subset_preimage hcomp)
+    (W1p.value_translate_ae hVO u).symm
+
+/-- Local translation `TauCeti.W1p.translate` is continuous. -/
+theorem W1p.continuous_translate {Omega V : Opens E} {h : E} (hVO : MapsTo (· + h) V Omega) :
+    Continuous (W1p.translate (mu := mu) (p := p) hVO) := by
+  simpa only [← funext (W1p.translateL_apply (mu := mu) (p := p) hVO)] using
+    (W1p.translateL hVO).continuous
 
 /-- **Translation preserves zero boundary values.** If translation by `h` maps `Ω` onto itself,
 that is `x + h ∈ Ω ↔ x ∈ Ω`, then the translate `x ↦ u (x + h)` of

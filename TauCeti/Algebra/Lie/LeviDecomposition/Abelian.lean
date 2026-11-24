@@ -196,7 +196,7 @@ private theorem exists_projection [CharZero K] [FiniteDimensional K L] [IsLieAbe
   let B := ((zeroOnIdeal I).comap C.incl).map (LieSubmodule.Quotient.mk' A)
   -- `L` carries `C` into `B`, and `I` carries `C` into `A`.
   have hLB (x : L) (φ : C) : ⁅x, LieSubmodule.Quotient.mk' A φ⁆ ∈ B := by
-    obtain ⟨hφ, c, hc⟩ := φ.2
+    obtain ⟨hφ, c, hc⟩ := φ.property
     rw [← LieModuleHom.map_lie]
     refine LieSubmodule.mem_map_of_mem ?_
     rw [LieSubmodule.mem_comap, LieSubmodule.incl_apply, LieSubmodule.coe_bracket]
@@ -206,7 +206,7 @@ private theorem exists_projection [CharZero K] [FiniteDimensional K L] [IsLieAbe
     rw [LieModule.mem_ker]
     intro q
     obtain ⟨φ, rfl⟩ := LieSubmodule.Quotient.surjective_mk' A q
-    obtain ⟨hφ, c, hc⟩ := φ.2
+    obtain ⟨hφ, c, hc⟩ := φ.property
     rw [← LieModuleHom.map_lie, LieSubmodule.Quotient.mk'_apply,
       LieSubmodule.Quotient.mk_eq_zero', LieSubmodule.mem_comap, LieSubmodule.incl_apply,
       LieSubmodule.coe_bracket, lie_eq_ad_of_mem hφ hc hr]
@@ -221,7 +221,7 @@ private theorem exists_projection [CharZero K] [FiniteDimensional K L] [IsLieAbe
   have hBD {q} (hqB : q ∈ B) (hqD : q ∈ D) : q = 0 := by
     rw [← LieSubmodule.mem_bot (R := K) (L := L), ← hD.inf_eq_bot]
     exact ⟨hqB, hqD⟩
-  obtain ⟨hφ, c, hc⟩ := φ.2
+  obtain ⟨hφ, c, hc⟩ := φ.property
   have hc0 : c ≠ 0 := by
     rintro rfl
     refine hv0 (hBD (LieSubmodule.mem_map_of_mem ?_) hv)
@@ -285,7 +285,7 @@ theorem _root_.LieIdeal.exists_lieSubalgebra_isCompl_of_isLieAbelian [CharZero K
   -- The ideal `I ∩ S` of `S` is central, with quotient `L ⧸ I`, so it has a complement in `S`.
   have := I.isKilling_quotient_comap_incl hIS
   obtain ⟨J, hJ⟩ := (I.comap S.incl).exists_isCompl_of_le_center fun x hx ↦ by
-    have hx := hSI x x.2 (LieIdeal.mem_comap.1 hx)
+    have hx := hSI x x.property (LieIdeal.mem_comap.1 hx)
     rw [← self_module_ker_eq_center, LieModule.mem_ker] at hx ⊢
     intro y
     ext

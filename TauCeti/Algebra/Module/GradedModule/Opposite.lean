@@ -29,7 +29,9 @@ opposite DG and `A∞` objects without changing their sign convention.
 ## Main results
 
 * `InternalGrading.op_mem_opposite_piece_iff`: `op` preserves each degree.
-* `InternalGrading.oppositeGradedAlgebra`: a graded algebra induces one on its opposite.
+* `InternalGrading.oppositeGradedAlgebra` and
+  `InternalGrading.ofDecompositionOppositeGradedAlgebra`: a graded algebra induces one on its
+  opposite.
 * `instGradedSMulOppositeSelf`: right multiplication respects an internal grading whenever
   multiplication does, including for nonunital multiplication.
 * `instGradedSMulTrivialGradingOpposite`: any action of an opposite module that vanishes when
@@ -87,13 +89,13 @@ theorem mem_opposite_piece_iff (G : InternalGrading R M ℤ) (p : ℤ) (x : Mᵐ
 
 /-- Passage to the multiplicative opposite is homogeneous of degree zero. -/
 theorem isHomogeneous_op (G : InternalGrading R M ℤ) :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       (opLinearEquiv R).toLinearMap G.piece G.opposite.piece 0 :=
   G.isHomogeneous_map (opLinearEquiv R)
 
 /-- Returning from the multiplicative opposite is homogeneous of degree zero. -/
 theorem isHomogeneous_unop (G : InternalGrading R M ℤ) :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       (opLinearEquiv R).symm.toLinearMap G.opposite.piece G.piece 0 :=
   G.isHomogeneous_map_symm (opLinearEquiv R)
 
@@ -189,6 +191,14 @@ variable (G : InternalGrading R A ℤ) [SetLike.GradedMonoid G.piece]
 opposite. -/
 noncomputable instance oppositeGradedAlgebra : GradedAlgebra G.opposite.piece :=
   G.opposite.isInternal.gradedAlgebra
+
+/-- A graded algebra induces the internal graded algebra on the multiplicative opposite of
+`InternalGrading.ofDecomposition 𝒜`. -/
+noncomputable instance ofDecompositionOppositeGradedAlgebra (𝒜 : ℤ → Submodule R A)
+    [GradedAlgebra 𝒜] : GradedAlgebra (InternalGrading.ofDecomposition 𝒜).opposite.piece :=
+  have : SetLike.GradedMonoid (InternalGrading.ofDecomposition 𝒜).piece :=
+    (InternalGrading.ofDecomposition_piece 𝒜).symm ▸ inferInstance
+  (InternalGrading.ofDecomposition 𝒜).oppositeGradedAlgebra
 
 end GradedAlgebra
 

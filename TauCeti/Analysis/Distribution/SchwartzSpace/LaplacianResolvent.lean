@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 public import TauCeti.Analysis.Normed.Module.Complexification
+import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
 # The resolvent of the Laplacian on Schwartz space
@@ -59,17 +60,7 @@ rescaling of the Bessel potential `(1 + ‖ξ‖²)⁻¹`. -/
 theorem hasTemperateGrowth_inv_mul_norm_sq_add {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] {a c : ℝ} (ha : 0 ≤ a) (hc : 0 < c) :
     (fun ξ : E ↦ (a * ‖ξ‖ ^ 2 + c)⁻¹).HasTemperateGrowth := by
-  have h := ((Function.hasTemperateGrowth_one_add_norm_sq_rpow E (-1)).comp
-    (√(a / c) • ContinuousLinearMap.id ℝ E).hasTemperateGrowth).mul
-    (Function.HasTemperateGrowth.const c⁻¹)
-  convert h using 1
-  ext ξ
-  have : 0 < a * ‖ξ‖ ^ 2 + c := by positivity
-  simp only [Pi.mul_apply, Function.comp_apply, _root_.smul_apply,
-    ContinuousLinearMap.id_apply, norm_smul, Real.rpow_neg_one, mul_pow, Real.norm_eq_abs, sq_abs,
-    Real.sq_sqrt (div_nonneg ha hc.le)]
-  field_simp
-  ring
+  simpa only [Real.rpow_neg_one] using hasTemperateGrowth_mul_norm_sq_add_rpow (H := E) ha hc (-1)
 
 end TauCeti
 

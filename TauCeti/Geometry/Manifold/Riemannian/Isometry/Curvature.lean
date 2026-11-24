@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
@@ -44,7 +45,8 @@ In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 * `mfderiv_curvatureOperator_mpullback`: the curvature operator of pulled-back smooth vector fields
   is the pullback of the curvature operator; `curvatureOperator_mpullback` is its vector-field
   form.
-* `mfderiv_curvatureTensor`: **naturality of the Riemann curvature tensor**.
+* `mfderiv_curvatureTensor`: **naturality of the Riemann curvature tensor**, and
+  `curvatureTensor_eq_zero_iff`: vanishing of the curvature tensor is preserved and reflected.
 * `inner_curvatureTensor_mfderiv` and `sectionalCurvature_mfderiv`: preservation of the curvature
   tensor paired with the metric, and of sectional curvature.
 * `ricciTensor_mfderiv` and `scalarCurvature_map`: preservation of the Ricci tensor and of the
@@ -152,6 +154,25 @@ theorem mfderiv_curvatureTensor (hf : IsLocalRiemannianIsometry I J f) (x : M)
       (hf.contMDiff_mpullback hZ)]
   exact hf.mfderiv_curvatureOperator_mpullback hX hY hZ x
 
+/-- Vanishing of the Riemann curvature tensor is preserved and reflected by a local Riemannian
+isometry. -/
+theorem curvatureTensor_eq_zero_iff (hf : IsLocalRiemannianIsometry I J f) (x : M) :
+    (leviCivitaConnection J N).curvatureTensor (f x) = 0 ↔
+      (leviCivitaConnection I M).curvatureTensor x = 0 := by
+  constructor
+  · intro h
+    ext u v w
+    apply hf.mfderiv_injective x
+    rw [hf.mfderiv_curvatureTensor, h]
+    simp
+  · intro h
+    ext u v w
+    obtain ⟨u', rfl⟩ := hf.mfderiv_surjective x u
+    obtain ⟨v', rfl⟩ := hf.mfderiv_surjective x v
+    obtain ⟨w', rfl⟩ := hf.mfderiv_surjective x w
+    rw [← hf.mfderiv_curvatureTensor, h]
+    simp
+
 /-- A local Riemannian isometry preserves the curvature tensor paired with the metric:
 `⟪R(df_x u, df_x v) (df_x w), df_x z⟫ = ⟪R(u, v) w, z⟫`. -/
 @[simp]
@@ -209,26 +230,20 @@ theorem hasSectionalCurvatureAt_map_iff (Φ : RiemannianIsometry I J M N) (x : M
         (isMetricCompatible_leviCivitaConnection J) (Φ x) k ↔
       (leviCivitaConnection I M).HasSectionalCurvatureAt
         (isMetricCompatible_leviCivitaConnection I) x k := by
-  let e := (Φ.mfderivToLinearIsometryEquiv x).toLinearEquiv
-  have he : ∀ u, e u = mfderiv I J Φ x u := Φ.mfderivToLinearIsometryEquiv_apply x
-  have hli : ∀ u v : TangentSpace I x,
-      LinearIndependent ℝ ![e u, e v] ↔ LinearIndependent ℝ ![u, v] := fun u v ↦ by
-    -- `LinearMap.linearIndependent_iff` is stated for a composite `e ∘ f`, so rewrite the
-    -- pair of images as the image of the pair.
-    have hcomp : e ∘ ![u, v] = ![e u, e v] := by ext i; fin_cases i <;> simp
-    rw [← hcomp]
-    exact e.toLinearMap.linearIndependent_iff (LinearEquiv.ker e)
+  let e := Φ.mfderivToLinearIsometryEquiv x
+  have he : ∀ u, e.toLinearIsometry u = mfderiv I J Φ x u := fun u ↦ by simp [e]
   rw [CovariantDerivative.hasSectionalCurvatureAt_iff,
     CovariantDerivative.hasSectionalCurvatureAt_iff]
   constructor
   · intro h u v huv
     rw [← Φ.isLocalRiemannianIsometry.sectionalCurvature_mfderiv, ← he, ← he]
-    exact h _ _ ((hli u v).2 huv)
+    exact h _ _ (e.toLinearIsometry.linearIndependent_pair_iff.2 huv)
   · intro h u' v' huv
     obtain ⟨u, rfl⟩ := e.surjective u'
     obtain ⟨v, rfl⟩ := e.surjective v'
+    simp only [← LinearIsometryEquiv.coe_toLinearIsometry] at huv ⊢
     rw [he, he, Φ.isLocalRiemannianIsometry.sectionalCurvature_mfderiv]
-    exact h u v ((hli u v).1 huv)
+    exact h u v (e.toLinearIsometry.linearIndependent_pair_iff.1 huv)
 
 /-- Riemannian isometric manifolds have the same constant sectional curvatures. -/
 theorem hasConstantSectionalCurvature_iff (Φ : RiemannianIsometry I J M N) (k : ℝ) :

@@ -54,17 +54,17 @@ theorem ContinuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub {f : E �
   have hs1 (x : E) : 1 ≤ s x := le_max_left _ _
   have hsc : Continuous s :=
     continuous_const.max ((continuous_id.dist continuous_const).div_const r)
-  have hfρ : Continuous fun x ↦ f (centeredRadialRetraction x₀ r x) :=
+  have hfρ : Continuous fun x ↦ f (TauCeti.centeredRadialRetraction x₀ r x) :=
     hf.comp_continuous (lipschitzWith_centeredRadialRetraction hr.le).continuous
       (centeredRadialRetraction_mem_closedBall hr.le)
   let g : C(E, F) :=
-    ⟨fun x ↦ y₀ + s x • (f (centeredRadialRetraction x₀ r x) - y₀),
+    ⟨fun x ↦ y₀ + s x • (f (TauCeti.centeredRadialRetraction x₀ r x) - y₀),
       continuous_const.add (hsc.smul (hfρ.sub continuous_const))⟩
-  have hg (x : E) : g x = y₀ + s x • (f (centeredRadialRetraction x₀ r x) - y₀) := rfl
+  have hg (x : E) : g x = y₀ + s x • (f (TauCeti.centeredRadialRetraction x₀ r x) - y₀) := rfl
   -- Outside the open ball, `g x - y₀` is `s x` times the value of `f - y₀` at the point of the
   -- sphere on the ray through `x`.
   have hout (x : E) (hx : r ≤ dist x x₀) : s x * δ ≤ ‖g x - y₀‖ := by
-    have hmem : centeredRadialRetraction x₀ r x ∈ sphere x₀ r := by
+    have hmem : TauCeti.centeredRadialRetraction x₀ r x ∈ sphere x₀ r := by
       rw [mem_sphere, dist_centeredRadialRetraction hr.le, min_eq_right hx]
     rw [hg, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg (zero_le_one.trans (hs1 x))]
     exact mul_le_mul_of_nonneg_left (hfδ _ hmem) (zero_le_one.trans (hs1 x))

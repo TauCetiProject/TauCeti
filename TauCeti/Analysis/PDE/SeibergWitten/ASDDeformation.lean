@@ -248,17 +248,18 @@ theorem coe_deformationTargetMulRight_apply_snd (f : SmoothForm I M ℝ 0)
 theorem asdDeformationOperator_wedge_sub_fst_apply (a : SmoothForm I M ℝ 1)
     (f : SmoothForm I M ℝ 0) (x : M) (u : Fin 0 → TangentSpace I x) :
     ((asdDeformationOperator o (SmoothForm.wedge a f) -
-        deformationTargetMulRight o f (asdDeformationOperator o a)).1).1 x u =
-      alternatingFormInner (TangentSpace I x) 1 ((mextDerivₗ I 0 f).1 x) (a.1 x) := by
+        deformationTargetMulRight o f (asdDeformationOperator o a)).1).val x u =
+      alternatingFormInner (TangentSpace I x) 1 ((mextDerivₗ I 0 f).val x) (a.val x) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   let _ := o.fact_finrank_tangentSpace x
   have h13 : 0 + 1 + 3 = 2 + 2 := rfl
   let g : C^∞⟮I, M; ℝ⟯ :=
-    ⟨fun y ↦ f.1 y 0, isSmoothForm_ofFunction_iff.1 (RoughForm.eq_ofFunction f.1 ▸ f.isSmoothForm)⟩
+    ⟨fun y ↦ f.val y 0, isSmoothForm_ofFunction_iff.1 (RoughForm.eq_ofFunction f.val ▸
+        f.isSmoothForm)⟩
   have hwa : SmoothForm.wedge a f = SmoothForm.funSMulₗ g a := by
     apply Subtype.ext
-    rw [SmoothForm.coe_wedge, RoughForm.eq_ofFunction f.1, RoughForm.wedge_ofFunction,
+    rw [SmoothForm.coe_wedge, RoughForm.eq_ofFunction f.val, RoughForm.wedge_ofFunction,
       SmoothForm.coe_funSMulₗ]
     simp only [g, ContMDiffMap.coeFn_mk]
   have hgrad : Manifold.mgradient I g x =
@@ -312,11 +313,11 @@ theorem asdDeformationOperator_commutator_eq_deformationSymbol (a : SmoothForm I
     (f : SmoothForm I M ℝ 0) (x : M) :
     (letI := o.fact_finrank_tangentSpace x
      (((asdDeformationOperator o (SmoothForm.wedge a f) -
-          deformationTargetMulRight o f (asdDeformationOperator o a)).1).1 x 0,
+          deformationTargetMulRight o f (asdDeformationOperator o a)).1).val x 0,
        (alternatingFormEquiv (TangentSpace I x) 2).symm
          (((asdDeformationOperator o (SmoothForm.wedge a f) -
             deformationTargetMulRight o f
-              (asdDeformationOperator o a)).2 : SmoothForm I M ℝ 2).1 x))) =
+              (asdDeformationOperator o a)).2 : SmoothForm I M ℝ 2).val x))) =
       (letI := o.fact_finrank_tangentSpace x
        deformationSymbol (o.orientationAt x) (o.fact_finrank_tangentSpace x).out.symm
          (Riemannian.Tensor.rieszDual (I := I) x (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x))
@@ -327,7 +328,7 @@ theorem asdDeformationOperator_commutator_eq_deformationSymbol (a : SmoothForm I
   have hξ := SmoothForm.alternatingFormEquiv_rieszDual_degreeOneEquiv (mextDerivₗ I 0 f) x
   have hv := SmoothForm.alternatingFormEquiv_rieszDual_degreeOneEquiv a x
   have hzv : (alternatingFormEquiv (TangentSpace I x) 2).symm
-      ((SmoothForm.wedge (mextDerivₗ I 0 f) a).1 x) = ιMulti ℝ 2 ![ξ, v] := by
+      ((SmoothForm.wedge (mextDerivₗ I 0 f) a).val x) = ιMulti ℝ 2 ![ξ, v] := by
     apply (alternatingFormEquiv (TangentSpace I x) 2).injective
     rw [LinearEquiv.apply_symm_apply]
     ext w

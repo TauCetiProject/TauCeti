@@ -41,6 +41,8 @@ the everywhere-integral units together with the principal finite ideles.
   of `toFractionalIdeal`.
 * `IsDedekindDomain.FiniteAdeleRing.integralUnits_eq_units_integralAdeles`: the
   everywhere-integral units are the unit group of the integral finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.mem_integralUnits_iff_val_mem_and_inv_mem`: membership
+  means that both the idele and its inverse are integral finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits_eq_units_sIntegralAdeles`: the analogous
   description of the `S`-integral units.
 * `IsDedekindDomain.FiniteAdeleRing.mem_sIntegralUnits_iff_subset`: the restricted-product
@@ -329,7 +331,7 @@ theorem mem_sIntegralUnits_iff_mem_sIntegralAdeles
     exact ⟨fun v hv ↦ (h v hv).le, fun v hv ↦ by rw [h v hv, inv_one]⟩
   · rintro ⟨h₁, h₂⟩ v hv
     have hpos : 0 < Valued.v ((x : 𝔸ᶠ[R, K]) v) :=
-      zero_lt_iff.mpr (valued_coe_units_apply_ne_zero x v)
+      pos_iff_ne_zero.mpr (valued_coe_units_apply_ne_zero x v)
     exact le_antisymm (h₁ v hv) ((inv_le_one₀ hpos).mp (h₂ v hv))
 
 variable (R K) in
@@ -355,6 +357,14 @@ finite idele lies in `integralUnits` exactly when it and its inverse are integra
 theorem integralUnits_eq_units_integralAdeles :
     integralUnits R K = (integralAdeles R K).toSubmonoid.units := by
   rw [← sIntegralUnits_empty, sIntegralUnits_eq_units_sIntegralAdeles, sIntegralAdeles_empty]
+
+/-- An idele is an everywhere-integral unit if and only if it and its inverse
+are integral finite adeles. -/
+theorem mem_integralUnits_iff_val_mem_and_inv_mem {x : 𝔸ᶠ[R, K]ˣ} :
+    x ∈ integralUnits R K ↔
+      (x : 𝔸ᶠ[R, K]) ∈ integralAdeles R K ∧ (↑x⁻¹ : 𝔸ᶠ[R, K]) ∈ integralAdeles R K := by
+  rw [integralUnits_eq_units_integralAdeles]
+  exact Submonoid.mem_units_iff _ _
 
 /-- Every finite idele is `S`-integral for some finite set `S` of places. -/
 theorem exists_finset_mem_sIntegralUnits (x : 𝔸ᶠ[R, K]ˣ) :

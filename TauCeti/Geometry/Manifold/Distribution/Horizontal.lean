@@ -122,14 +122,11 @@ theorem isHorizontalMap_diffeomorph_comp_iff {D' : Π z : P, Submodule 𝕜 (Tan
     (hψ : ∀ x (v : TangentSpace I x), v ∈ D x ↔ mfderiv I K ψ x v ∈ D' (ψ x)) :
     IsHorizontalMap J D' (ψ ∘ f) ↔ IsHorizontalMap J D f := by
   refine forall_congr' fun y ↦ ?_
-  have hcoe (v : TangentSpace I (f y)) :
-      (ψ.mfderivToContinuousLinearEquiv hn (f y)).toLinearEquiv.toLinearMap v =
-        mfderiv I K ψ (f y) v :=
-    congr($(ψ.mfderivToContinuousLinearEquiv_coe (x := f y) hn) v)
-  rw [ψ.range_mfderiv_diffeomorph_comp hn, Function.comp_apply, Submodule.map_le_iff_le_comap]
+  rw [ψ.range_mfderiv_diffeomorph_comp hn, Function.comp_apply, Submodule.map_le_iff_le_comap,
+    ψ.mfderivToContinuousLinearEquiv_toLinearMap hn]
   refine ⟨fun h v hv ↦ (hψ (f y) v).2 ?_, fun h v hv ↦ ?_⟩
-  · simpa only [Submodule.mem_comap, hcoe] using h hv
-  · simpa only [Submodule.mem_comap, hcoe] using (hψ (f y) v).1 (h hv)
+  · simpa only [Submodule.mem_comap, ContinuousLinearMap.coe_coe] using h hv
+  · simpa only [Submodule.mem_comap, ContinuousLinearMap.coe_coe] using (hψ (f y) v).1 (h hv)
 
 end Transport
 
