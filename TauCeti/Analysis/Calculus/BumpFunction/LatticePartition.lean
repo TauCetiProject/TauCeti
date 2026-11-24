@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
-import Mathlib.Analysis.PSeries
 import Mathlib.Data.Pi.Interval
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.PSeries.Shifted
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Topology.Algebra.InfiniteSum.PiProd
 
@@ -144,6 +144,14 @@ theorem latticePoint_sub {ι : Type*} (j j' : ι → ℤ) :
     latticePoint (j - j') = latticePoint j - latticePoint j' := by
   ext i
   simp
+
+/-- The lattice point with coordinates `j` is the integer combination `∑ i, j i • eᵢ` of the
+standard basis vectors. -/
+theorem latticePoint_eq_sum {ι : Type*} [Fintype ι] (j : ι → ℤ) :
+    latticePoint j = ∑ i, (j i : ℝ) • EuclideanSpace.basisFun ι ℝ i := by
+  classical
+  ext k
+  simp [EuclideanSpace.basisFun_apply, Pi.single_apply]
 
 /-- Only finitely many lattice points lie in a ball. -/
 theorem finite_setOf_norm_latticePoint_lt {ι : Type*} [Fintype ι] (R : ℝ) :
@@ -314,14 +322,9 @@ theorem latticeWeight_nonneg (d : Fin n → ℤ) : 0 ≤ latticeWeight d :=
 theorem summable_latticeWeight : Summable (latticeWeight (n := n)) := by
   refine Summable.prod_pi_of_nonneg (ι := Fin n) (f := fun _ (m : ℤ) ↦ ((1 + |(m : ℝ)|) ^ 2)⁻¹)
     (fun _ ↦ ?_) fun _ m ↦ by positivity
-  rw [summable_int_iff_summable_nat_and_neg]
-  have h : Summable fun m : ℕ ↦ (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ :=
-    (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
-  have e : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((m : ℤ) : ℝ)|) ^ 2)⁻¹ := fun m ↦ by
-    rw [Int.cast_natCast, abs_of_nonneg (Nat.cast_nonneg m), Nat.cast_succ, add_comm]
-  have e' : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((-(m : ℤ) : ℤ) : ℝ)|) ^ 2)⁻¹ :=
-    fun m ↦ by rw [Int.cast_neg, abs_neg, ← e]
-  exact ⟨h.congr e, h.congr e'⟩
+  refine (summable_one_add_abs_int_rpow (r := -2) (by norm_num)).congr fun m ↦ ?_
+  rw [Real.rpow_neg (by positivity)]
+  norm_cast
 
 /-- Decay like `(1 + ‖x - j‖²)⁻ⁿ` around a point `x` of `ℝⁿ` is dominated by the lattice weight of
 the displacement of `j` from the integer part `⌊x⌋` of `x`. -/

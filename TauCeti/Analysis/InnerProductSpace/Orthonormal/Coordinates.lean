@@ -46,6 +46,8 @@ Rotating each coordinate so that `c j ω j²` is real diagonalizes the real quad
   the coordinates of `S x` are those of `x` scaled by the eigenvalues.
 * `OrthonormalBasis.toBasis_equiv_refl`: for two finite orthonormal bases over the same index type,
   `Basis.equiv` along `Equiv.refl` agrees with `d₀.repr.trans c.repr.symm`.
+* `LinearMap.toMatrix_orthonormalBasis_apply`: the entries of the matrix of a linear map in
+  orthonormal bases `(bⱼ)` and `(cᵢ)` are `⟪cᵢ, T bⱼ⟫`.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
   coordinate `i`, there is a linear isometry equivalence `f` with
   `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
@@ -58,20 +60,18 @@ open scoped InnerProductSpace
 namespace TauCeti
 
 /-- Choose orthonormal coordinates in which the inner product with `v` is its norm times the
-prescribed coordinate. This also holds for `v = 0`. For `v ≠ 0` the coordinates are those of an
-orthonormal basis whose `i`-th vector is `‖v‖⁻¹ • v`, obtained by extending this unit vector with
-Mathlib's `Orthonormal.exists_orthonormalBasis_extension_of_card_eq`. -/
+prescribed coordinate `i`. This also holds for `v = 0`. For `v ≠ 0`, coordinate `i` is
+therefore the inner product with the unit vector `‖v‖⁻¹ • v`. -/
 theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (v : E) (i : Fin (Module.finrank 𝕜 E)) :
     ∃ f : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E)),
       ∀ x, ⟪v, x⟫_𝕜 = ‖v‖ * f x i := by
   -- In infinite dimension `finrank = 0`, so there is no coordinate `i`.
-  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by
-    have := i.isLt
-    omega)
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (Fin.pos i)
   rcases eq_or_ne v 0 with rfl | hv
   · exact ⟨(stdOrthonormalBasis 𝕜 E).repr, by simp⟩
-  -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis whose `i`-th vector it is.
+  -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis whose `i`-th vector it is, by
+  -- Mathlib's `Orthonormal.exists_orthonormalBasis_extension_of_card_eq`.
   obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq
     (Fintype.card_fin _).symm (v := fun _ ↦ (‖v‖⁻¹ : 𝕜) • v) (s := {i})
     (orthonormal_subsingleton_iff.mpr fun _ ↦ norm_smul_inv_norm (𝕜 := 𝕜) hv)
@@ -194,3 +194,16 @@ theorem rotatedRealCoords_symm_apply (b : OrthonormalBasis ι ℂ E) (ω : ι �
   rfl
 
 end OrthonormalBasis
+
+namespace LinearMap
+
+/-- The `(i, j)` entry of the matrix of `T : V → W` with respect to orthonormal bases `(bⱼ)` of
+`V` and `(cᵢ)` of `W` is `⟪cᵢ, T bⱼ⟫`. -/
+theorem toMatrix_orthonormalBasis_apply {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] {ι κ : Type*}
+    [Fintype ι] [DecidableEq ι] [Fintype κ] (b : OrthonormalBasis ι 𝕜 V)
+    (c : OrthonormalBasis κ 𝕜 W) (T : V →ₗ[𝕜] W) (i : κ) (j : ι) :
+    toMatrix b.toBasis c.toBasis T i j = ⟪c i, T (b j)⟫_𝕜 := by
+  simp [toMatrix_apply, OrthonormalBasis.repr_apply_apply]
+
+end LinearMap

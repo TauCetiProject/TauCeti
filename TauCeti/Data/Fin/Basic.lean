@@ -30,7 +30,8 @@ import Mathlib.Tactic.Ring
 # Basic results about finite ordinal types
 
 This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2`, sums of indices and of reversed indices, indicator sums indexed by
+permutations of `Fin 2`, the consecutive pair `(castSucc i, succ i)` that is the extreme pair
+`(0, n)` of `Fin (n + 1)`, sums of indices and of reversed indices, indicator sums indexed by
 `Fin n`, the final value of a partial product, sums of families vanishing beyond an index, and the
 cyclic index arithmetic of `Fin 3`.
 
@@ -56,6 +57,9 @@ range, so the value is a `dite` rather than a plain application.
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Fin.coe_finRotate_eq_ite`: the value of `finRotate n` on any `Fin n`, with wrap-around
   determined by whether the index plus one equals `n`.
+* `Fin.finRotate_ofNat`: reading natural times modulo `k`, `finRotate k` moves to the next time;
+  `Fin.image_range_ofNat_eq_image_univ`: at least `k` consecutive times visit every entry of a
+  tuple of length `k`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
@@ -220,6 +224,20 @@ theorem card_filter_val_lt_le {n : ℕ} (S : Finset (Fin n)) (j : ℕ) : #{s ∈
 end Finset
 
 namespace Fin
+
+/-- Two consecutive indices `castSucc i < succ i` of `Fin (n + 1)` are the extreme pair `(0, n)`
+only when `n = 1`. -/
+theorem castSucc_eq_zero_and_succ_eq_last_iff {n : ℕ} (i : Fin n) :
+    i.castSucc = 0 ∧ i.succ = last n ↔ n = 1 := by
+  rw [Fin.ext_iff, Fin.ext_iff, val_castSucc, val_zero, val_succ, val_last]
+  have := i.isLt
+  constructor <;> intro h <;> omega
+
+/-- For `n ≥ 2`, two consecutive indices `castSucc i < succ i` of `Fin (n + 1)` are never the
+extreme pair `(0, n)`. -/
+theorem not_castSucc_eq_zero_and_succ_eq_last {n : ℕ} (hn : 2 ≤ n) (i : Fin n) :
+    ¬ (i.castSucc = 0 ∧ i.succ = last n) :=
+  mt (castSucc_eq_zero_and_succ_eq_last_iff i).1 (by omega)
 
 /-- The last index of the initial segment ending at `i` embeds as `i`. -/
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
@@ -425,6 +443,27 @@ theorem coe_finRotate_eq_ite {n : ℕ} (i : Fin n) :
   | succ m =>
     rw [coe_finRotate]
     simp [Fin.ext_iff]
+
+/-- Reading the times `i : ℕ` modulo `k`, the cyclic successor `finRotate k` of the index at time
+`i` is the index at time `i + 1`. -/
+theorem finRotate_ofNat {k : ℕ} [NeZero k] (i : ℕ) :
+    finRotate k (Fin.ofNat k i) = Fin.ofNat k (i + 1) := by
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by have := NeZero.ne k; omega⟩
+  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+
+/-- Reading a tuple of length `k` along at least `k` consecutive times modulo `k` visits exactly
+the entries of the tuple. -/
+theorem image_range_ofNat_eq_image_univ {α : Type*} [DecidableEq α] {k m : ℕ} [NeZero k]
+    (w : Fin k → α) (hkm : k ≤ m) :
+    (Finset.range m).image (fun i => w (Fin.ofNat k i)) = Finset.univ.image w := by
+  ext x
+  constructor
+  · rintro hx
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    exact Finset.mem_image.mpr ⟨_, Finset.mem_univ _, rfl⟩
+  · rintro hx
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    exact Finset.mem_image.mpr ⟨i.val, Finset.mem_range.mpr (by omega), by simp⟩
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.RepresentationTheory.Rep.Ihom
+import TauCeti.RepresentationTheory.Rep.Free
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 
@@ -40,7 +41,8 @@ all three variables: in `X`, in `N` (postcomposition with a linear map correspon
 map of internal homs) and, contravariantly, in `A` (precomposition with the map induced by
 `f : A ⟶ A'` corresponds to Mathlib's `MonoidalClosed.pre f`). It also commutes with change of
 group, with precomposition by the compatible coefficient map on the internal-hom side
-(`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`).
+(`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`). Being a left adjoint followed by a left
+adjoint, `X ↦ (A ⊗ X)_G` preserves colimits (`Rep.preservesColimits_coinvariantsTensor_obj`).
 
 ## Main definitions
 
@@ -260,6 +262,15 @@ theorem coinvariantsTensorHomLinearEquiv_coinvariantsTensor_map_app_comp {A' : R
   rw [Adjunction.homEquiv_naturality_left]
   exact (MonoidalClosed.curry_pre_app f _).symm
 
+variable (A) in
+/-- **Tensor coinvariants preserve colimits** in the second representation: `X ↦ (A ⊗ X)_G` is
+tensoring with `A`, a left adjoint since the representations of a group form a closed monoidal
+category, followed by taking coinvariants, which is left adjoint to the trivial representation
+(`Rep.coinvariantsAdjunction`). -/
+instance preservesColimits_coinvariantsTensor_obj :
+    Limits.PreservesColimits ((coinvariantsTensor k G).obj A) :=
+  inferInstanceAs (Limits.PreservesColimits (tensorLeft A ⋙ coinvariantsFunctor k G))
+
 end Group
 
 section Exactness
@@ -333,14 +344,7 @@ theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
     (hS : S.ShortExact) (P : Rep.{u} k G) [Projective P] :
     (S.map ((coinvariantsTensor k G).flip.obj P)).ShortExact := by
   classical
-  -- Split the canonical free cover using projectivity.
-  let ε : Rep.free k G P ⟶ P := Rep.freeLift k G P id
-  have hε : Function.Surjective ε.hom := fun x ↦
-    ⟨Finsupp.single x (MonoidAlgebra.single 1 1), by
-      simp [ε, Rep.freeLift, Representation.freeLift_single_single]⟩
-  have : Epi ε := (Rep.epi_iff_surjective ε).mpr hε
-  let r : Retract P (Rep.free k G P) :=
-    ⟨Projective.factorThru (𝟙 P) ε, ε, Projective.factorThru_comp _ _⟩
+  let r := Rep.retractFree P
   let i := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.i)
   let p := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.r)
   have hip : i ≫ p = 𝟙 _ := by

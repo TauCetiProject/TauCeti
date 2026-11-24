@@ -556,6 +556,14 @@ theorem pullbackThomPairMap_fst_apply (v : TotalSpace F ((⇑f) *ᵖ E)) :
   unfold pullbackThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
+/-- On nonzero vectors, the map of Thom pairs `(f*E, (f*E)₀) ⟶ (E, E₀)` is the canonical map of the
+pull-back. -/
+@[simp]
+theorem pullbackThomPairMap_snd_apply (v : (thomPair F ((⇑f) *ᵖ E)).snd) :
+    (TopPair.Hom.snd (pullbackThomPairMap F E f) v).val = Pullback.lift f v.val := by
+  unfold pullbackThomPairMap
+  exact TopPair.ofSubsetMap_snd_apply _ _ _
+
 variable [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
 
 /-- The fibre of the Thom pair of `f*E` over `b'` is included in the Thom pair of `E` as the fibre

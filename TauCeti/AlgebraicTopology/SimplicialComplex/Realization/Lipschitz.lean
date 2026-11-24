@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Convex.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Data.Fintype.Order
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.MultivariateLogNormal.Basic
-public import TauCeti.Probability.Distributions.Gaussian.Sum
+public import TauCeti.Probability.Distributions.Gaussian.Sum.Multivariate
 
 /-!
 # Products of independent multivariate log-normal vectors

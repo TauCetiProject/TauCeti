@@ -50,8 +50,8 @@ of the nonzero cyclic classes of the preprojective algebras of the affine `E₆`
 graphs.
 
 Some of the quartic deformations are trivial modulo `A∞` isomorphism
-(`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack`) and, when `2` is invertible,
-some are not (`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`).
+(`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack`) and, over every nontrivial
+commutative ring, some are not (`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`).
 
 ## Main definitions
 
@@ -84,7 +84,8 @@ some are not (`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`).
 
 ## References
 
-* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Junyang Liu and Zhengfang Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
+  algebras*,
   Section 4, for minimal `A∞` deformations of zigzag algebras and Example 4.7.
 * B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.1, for the Stasheff
   identities.

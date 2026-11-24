@@ -15,9 +15,10 @@ import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 # Cone operations, compression, and the completely positive order on `A₁ →CP A₂`
 
 Completely positive maps between C⋆-algebras are closed under addition, `ℝ≥0`-scaling, identity,
-composition, and operator compression `ContinuousLinearMap.conjAdjoint` (`V.conjAdjoint :
-T ↦ V† ∘L T ∘L V`). Every positive linear functional is completely positive
-(`PositiveLinearMap.toCompletelyPositiveMap`, `PositiveLinearMap.toCompletelyPositiveMapCLM`).
+composition, algebra conjugation `CompletelyPositiveMap.conj` (`a ↦ star b * a * b`), and operator
+compression `ContinuousLinearMap.conjAdjoint` (`V.conjAdjoint : T ↦ V† ∘L T ∘L V`). Every positive
+linear functional is completely positive (`PositiveLinearMap.toCompletelyPositiveMap`,
+`PositiveLinearMap.toCompletelyPositiveMapCLM`).
 Equipping `A₁ →CP A₂` with the *completely positive order* `ψ ≤ φ ↔ ∃ θ : A₁ →CP A₂, φ = ψ + θ`
 makes it a partially ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's
 Radon–Nikodym theorem.
@@ -66,6 +67,10 @@ theorem toLinearMap_injective : Function.Injective (toLinearMap : (A₁ →CP A�
 def toPositiveLinearMap (φ : A₁ →CP A₂) : A₁ →ₚ[ℂ] A₂ := .ofClass φ
 
 @[simp] theorem coe_toPositiveLinearMap (φ : A₁ →CP A₂) : ⇑φ.toPositiveLinearMap = φ := (rfl)
+
+/-- A completely positive map preserves adjoints. -/
+@[simp] protected theorem map_star (φ : A₁ →CP A₂) (a : A₁) : φ (star a) = star (φ a) := by
+  simpa only [coe_toPositiveLinearMap] using map_star φ.toPositiveLinearMap a
 
 /-- Reinterpret a completely positive map as a continuous linear map. -/
 noncomputable def toContinuousLinearMap (φ : A₁ →CP A₂) : A₁ →L[ℂ] A₂ :=
@@ -181,7 +186,39 @@ theorem zero_le (φ : A₁ →CP A₂) : 0 ≤ φ := bot_le
 instance : IsOrderedAddMonoid (A₁ →CP A₂) where
   add_le_add_left ψ _ h χ := by obtain ⟨θ, rfl⟩ := h; exact ⟨θ, add_right_comm ψ θ χ⟩
 
+/-- Conjugation `a ↦ star b * a * b` on a C⋆-algebra as a completely positive map. -/
+def conj (b : A₁) : A₁ →CP A₁ where
+  toLinearMap := LinearMap.mulLeftRight ℂ (star b, b)
+  map_cstarMatrix_nonneg' k M hM := by
+    let d := CStarMatrix.diagonalNonUnitalStarAlgHom ℂ (Fin k) A₁
+    have hD : M.map (LinearMap.mulLeftRight ℂ (star b, b)) = star (d b) * M * d b := by
+      apply CStarMatrix.ofMatrix.symm.injective
+      have hd (x : A₁) : CStarMatrix.ofMatrix.symm (d x) = Matrix.diagonal fun _ => x := by
+        ext i j
+        simp [d, Matrix.diagonal_apply]
+      rw [← map_star, CStarMatrix.ofMatrix_symm_mul, CStarMatrix.ofMatrix_symm_mul, hd, hd]
+      ext i j
+      simp [Matrix.mul_diagonal, Matrix.diagonal_mul]
+    exact hD ▸ star_left_conjugate_nonneg hM (d b)
+
+@[simp] theorem conj_apply (b a : A₁) : conj b a = star b * a * b := (rfl)
+
+@[simp] theorem toLinearMap_conj (b : A₁) :
+    (conj b).toLinearMap = LinearMap.mulLeftRight ℂ (star b, b) := (rfl)
+
 end General
+
+section UnitalDomain
+
+/-- A completely positive map from a unital C⋆-algebra attains its operator norm at `1`:
+`‖φ.toContinuousLinearMap‖ = ‖φ 1‖`. -/
+@[simp] theorem norm_toContinuousLinearMap {D A₂ : Type*}
+    [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
+    [NonUnitalCStarAlgebra A₂] [PartialOrder A₂] [StarOrderedRing A₂]
+    (φ : D →CP A₂) : ‖φ.toContinuousLinearMap‖ = ‖φ 1‖ :=
+  (φ.isNPositive 2).opNorm_eq_norm_map_one
+
+end UnitalDomain
 
 end CompletelyPositiveMap
 

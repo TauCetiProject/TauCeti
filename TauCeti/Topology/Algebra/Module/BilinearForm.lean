@@ -78,6 +78,10 @@ use.
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
   among all continuous bilinear forms in finite dimensions, without imposing symmetry.
+* `TauCeti.isOpen_setOf_forall_bilinear_apply_endomorphism_pos`: the pairs `(B, A)` of a
+  continuous bilinear form and an endomorphism with `B(u, A u) > 0` for `u ≠ 0` form an open set;
+  `TauCeti.isOpen_setOf_forall_endomorphism_pos` is its case of a fixed form, the openness of
+  taming in the endomorphism.
 * `IsCompact.exists_forall_le_mul_norm_sq`: a family of continuous bilinear forms continuous on a
   compact set is bounded by a uniform multiple of `‖v‖²`.
 * `ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul`: the diagonal of a
@@ -376,6 +380,25 @@ theorem isOpen_setOf_forall_bilinear_apply_self_pos
   rw [heq]
   simpa only [star_trivial, RCLike.re_to_real] using
     (isOpen_setOfPred_re_dotProduct_pos (𝕜 := ℝ)).preimage hA
+
+/-- The pairs `(B, A)` of a continuous bilinear form and a continuous linear endomorphism of a
+finite-dimensional space with `B(u, A u) > 0` for every `u ≠ 0` form an open set. -/
+theorem isOpen_setOf_forall_bilinear_apply_endomorphism_pos
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] :
+    IsOpen {p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E) | ∀ u, u ≠ 0 → 0 < p.1 u (p.2 u)} := by
+  -- `(B, A) ↦ B(·, A ·)` is continuous, and positive definite forms form an open set.
+  have hc : Continuous fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E) ↦
+      ((ContinuousLinearMap.compL ℝ E E ℝ).flip p.2).comp p.1 := by fun_prop
+  exact isOpen_setOf_forall_bilinear_apply_self_pos.preimage hc
+
+/-- The continuous linear endomorphisms `A` of a finite-dimensional space tamed by a fixed
+continuous bilinear form `B`, that is with `B(u, A u) > 0` for every `u ≠ 0`, form an open set. -/
+theorem isOpen_setOf_forall_endomorphism_pos
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    (B : E →L[ℝ] E →L[ℝ] ℝ) :
+    IsOpen {A : E →L[ℝ] E | ∀ u, u ≠ 0 → 0 < B u (A u)} :=
+  isOpen_setOf_forall_bilinear_apply_endomorphism_pos.preimage
+    (continuous_const.prodMk continuous_id)
 
 /-- The diagonal of a continuous bilinear form at `v` is `‖v‖²` times its value at the unit
 vector `‖v‖⁻¹ • v` (both sides vanish at `v = 0`). -/

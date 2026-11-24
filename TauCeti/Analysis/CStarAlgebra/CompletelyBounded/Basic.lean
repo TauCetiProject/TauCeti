@@ -122,9 +122,7 @@ theorem norm_map_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded
     [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ ≤ cbNorm φ * ‖x‖ := by
   classical
   let e := Fintype.equivFin κ
-  have hmap : CStarMatrix.reindexₐ ℂ B e (x.map φ) = (CStarMatrix.reindexₐ ℂ A e x).map φ := by
-    simpa using CStarMatrix.mapₗ_reindexₐ (M := x) (e := e) φ
-  rw [← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ B e), hmap,
+  rw [← CStarMatrix.norm_map_reindexₐ_linearMap x e φ,
     ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
   exact norm_map_le_cbNorm_mul_fin hφ _
 
@@ -144,18 +142,8 @@ theorem isCompletelyBounded_iff_exists_bound {φ : A →ₗ[ℂ] B} :
 /-- The level-one comparison `‖φ a‖ ≤ ‖φ‖_cb ‖a‖` for a completely bounded map. -/
 theorem norm_apply_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) (a : A) :
     ‖φ a‖ ≤ cbNorm φ * ‖a‖ := by
-  let eA := (CStarMatrix.toOneByOne (Fin 1) ℂ A).toNonUnitalStarAlgHom
-  let eB := (CStarMatrix.toOneByOne (Fin 1) ℂ B).toNonUnitalStarAlgHom
-  have hmap : eB (φ a) = (eA a).map φ := by
-    ext i j
-    -- Mathlib's `StarAlgEquiv.toNonUnitalStarAlgHom_apply` does not rewrite here: the
-    -- `Add`/`Mul`/`SMul` instances `toOneByOne` is stated with differ syntactically from those
-    -- `toNonUnitalStarAlgHom` expects, so we unfold the coercion definitionally.
-    change CStarMatrix.toOneByOne (Fin 1) ℂ B (φ a) i j =
-      φ (CStarMatrix.toOneByOne (Fin 1) ℂ A a i j)
-    simp
-  rw [← NonUnitalStarAlgHom.norm_map eB (CStarMatrix.toOneByOne (Fin 1) ℂ B).injective, hmap,
-    ← NonUnitalStarAlgHom.norm_map eA (CStarMatrix.toOneByOne (Fin 1) ℂ A).injective a]
+  rw [← CStarMatrix.norm_map_toOneByOne_linearMap (ι := Fin 1) a φ,
+    ← CStarMatrix.norm_toOneByOne (ι := Fin 1) a]
   exact norm_map_le_cbNorm_mul hφ _
 
 section Zero

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Wedge
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.Homology
 public import TauCeti.Geometry.Manifold.SmoothSingular.Period
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
+import TauCeti.Geometry.Manifold.SmoothSingular.Torus
 
 /-!
 # Periods of the suspension forms on the cross summand
@@ -37,6 +39,16 @@ Since `ω_v` is pulled back from `Y_φ`, its period on `α × a` is the period o
 Consequently, on the cross summand the period of `Ω` is the period of `ds ∧ dt`
 (`SmoothMappingTorus.closedFormHomologyPeriod_suspensionClosedForm_singularHomologyCrossBilinear`).
 
+On the class `[S¹_s] × [γ]` of the orbit torus over the closed orbit `γ` of a periodic point of
+period `d > 0`, the period of `Ω` is `d`
+(`SmoothMappingTorus.closedFormHomologyPeriod_suspensionClosedForm_orbitTorusHomologyClass`), and
+the period of `ω_v` is `0`. The class is the image of the class of the parameter torus
+`ℝ / ℤ × ℝ / dℤ` under the orbit torus `(s, θ) ↦ (s, [θ, x])`, which pulls `Ω` back to
+`ds ∧ dt_d`, so its `Ω`-period is the integral of `ds ∧ dt_d` over the parameter torus
+(`TauCeti.closedFormHomologyPeriod_addCircleProdFundamentalClass`). Since traversing a closed
+orbit `k` times gives the class of the periodic point of period `k d`, the `k`-fold orbit torus
+has `Ω`-period `k d`.
+
 These are the homological input for compact pseudoholomorphic curves in `X_φ` whose class lies in
 the cross summand: once the vertical area `∫_C u^* ω_v` of such a curve `u : C → X_φ` is identified
 with the period of `ω_v` on its class, it vanishes, and the classification of curves of zero
@@ -58,6 +70,10 @@ No compactness of `M` and no nondegeneracy of `σ` is needed.
   `ω_v` has zero period on every cross product with a positive-degree class of the circle.
 * `SmoothMappingTorus.closedFormHomologyPeriod_suspensionClosedForm_singularHomologyCrossBilinear`:
   on such cross products the periods of `Ω` and of `ds ∧ dt` agree.
+* `SmoothMappingTorus.closedFormHomologyPeriod_suspensionClosedForm_orbitTorusHomologyClass`: the
+  class of the orbit torus over a closed orbit of period `d` has `Ω`-period `d`.
+* `SmoothMappingTorus.closedFormHomologyPeriod_verticalForm_orbitTorusHomologyClass_eq_zero`: it has
+  `ω_v`-period `0`.
 
 ## References
 
@@ -169,5 +185,32 @@ theorem closedFormHomologyPeriod_suspensionClosedForm_singularHomologyCrossBilin
           (TopCat.of (SmoothMappingTorus φ)) p q 2 h α a) := by
   rw [suspensionClosedForm_eq_add, closedFormHomologyPeriod_add, AddMonoidHom.add_apply,
     closedFormHomologyPeriod_verticalForm_singularHomologyCrossBilinear_eq_zero hσc h hp, add_zero]
+
+section OrbitTorus
+
+variable {d : ℕ} {x : M} (hx : Function.IsPeriodicPt φ d x)
+
+/-- **The vertical form has zero period on the class of an orbit torus.** -/
+@[simp]
+theorem closedFormHomologyPeriod_verticalForm_orbitTorusHomologyClass_eq_zero (hσc : σ.IsClosed) :
+    closedFormHomologyPeriod (verticalForm hσ hσc) (orbitTorusHomologyClass hx) = 0 := by
+  rw [orbitTorusHomologyClass_def]
+  exact closedFormHomologyPeriod_verticalForm_singularHomologyCrossBilinear_eq_zero hσc rfl
+    one_ne_zero _ _
+
+/-- **The period of `Ω` on the class of an orbit torus is the period of the orbit.** For a periodic
+point `x` of `φ` of period `d > 0`, the period of `Ω = ds ∧ dt + ω_v` on the class
+`[S¹_s] × [γ]` of the orbit torus over the closed orbit `γ` of `x` is `d`. -/
+@[simp]
+theorem closedFormHomologyPeriod_suspensionClosedForm_orbitTorusHomologyClass
+    [Fact (0 < (d : ℝ))] (hσc : σ.IsClosed) :
+    closedFormHomologyPeriod (suspensionClosedForm hσ hσc) (orbitTorusHomologyClass hx) = d := by
+  rw [← singularHomologyMap_orbitTorus_addCircleProdFundamentalClass,
+    ← closedFormHomologyPeriod_mpullback (contMDiff_orbitTorus hx),
+    closedFormHomologyPeriod_addCircleProdFundamentalClass, closedForms.coe_mpullback,
+    coe_suspensionClosedForm, mpullback_orbitTorus_suspensionForm,
+    AddCircle.integralTopForm_wedge_timeForm, one_mul]
+
+end OrbitTorus
 
 end TauCeti.SmoothMappingTorus

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Divisors and orders of meromorphic functions
@@ -42,8 +43,13 @@ of support finite and bounds sums over their subsets by the corresponding closed
   meromorphic orders.
 * `MeromorphicOn.zero_lt_divisor_iff_of_analyticAt` — at a point of analyticity and finite order,
   the divisor is positive exactly at a zero.
-* `AnalyticOnNhd.divisor_apply_eq_zero_iff`: on a preconnected set where `f` is analytic and
-  somewhere nonzero, the divisor vanishes exactly off the zeros.
+* `MeromorphicOn.coe_divisor_eq_meromorphicOrderAt` and
+  `AnalyticOnNhd.coe_divisor_eq_meromorphicOrderAt` — at a point of finite meromorphic order in
+  `U` (in particular on a preconnected set where `f` is analytic and nonzero somewhere), the
+  divisor agrees with `meromorphicOrderAt`.
+* `AnalyticOnNhd.one_le_divisor_of_eq_zero` and `AnalyticOnNhd.divisor_apply_eq_zero_iff` — on a
+  preconnected set where `f` is analytic and somewhere nonzero, the divisor is at least `1` at
+  every zero and vanishes exactly off the zeros.
 * `MeromorphicOn.divisor_finite_inter_support_of_isCompact` — finite divisor support on a
   subset of a compact set in the meromorphic domain.
 * `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
@@ -233,6 +239,36 @@ theorem MeromorphicOn.zero_lt_divisor_iff_of_analyticAt {𝕜 E : Type*} [Nontri
   have h : analyticOrderAt f z ≠ ⊤ := fun h ↦ htop (by simp [h])
   rw [hm.divisor_eq_analyticOrderNatAt hf hz, Nat.cast_pos, Nat.pos_iff_ne_zero,
     ← hf.analyticOrderAt_ne_zero, ← Nat.cast_analyticOrderNatAt h, Nat.cast_ne_zero]
+
+/-- At a point `z ∈ U` where a function meromorphic on `U` has finite meromorphic order, its
+divisor on `U` agrees with `meromorphicOrderAt f z`. -/
+theorem MeromorphicOn.coe_divisor_eq_meromorphicOrderAt
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : MeromorphicOn f U) {z : 𝕜} (hz : z ∈ U)
+    (hfin : meromorphicOrderAt f z ≠ ⊤) :
+    (divisor f U z : WithTop ℤ) = meromorphicOrderAt f z := by
+  rw [hf.divisor_apply hz, WithTop.coe_untop₀_of_ne_top hfin]
+
+/-- On a preconnected set `U` where `f` is analytic and nonzero at some point, the divisor of `f`
+agrees with `meromorphicOrderAt f` at every point of `U` (in particular, the meromorphic order is
+finite everywhere on `U`). -/
+theorem AnalyticOnNhd.coe_divisor_eq_meromorphicOrderAt
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f U) (hU : IsPreconnected U)
+    (h0 : ∃ z₀ ∈ U, f z₀ ≠ 0) {z : 𝕜} (hz : z ∈ U) :
+    (MeromorphicOn.divisor f U z : WithTop ℤ) = meromorphicOrderAt f z :=
+  hf.meromorphicOn.coe_divisor_eq_meromorphicOrderAt hz
+    (hf.meromorphicOrderAt_ne_top_of_exists_ne_zero ⟨⟨z, hz⟩, hU⟩ h0 hz)
+
+/-- On a preconnected set `U` where `f` is analytic and nonzero at some point, the divisor of `f`
+on `U` is at least `1` at every zero `ρ ∈ U` of `f`. -/
+theorem AnalyticOnNhd.one_le_divisor_of_eq_zero
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f U) (hU : IsPreconnected U)
+    (h0 : ∃ z₀ ∈ U, f z₀ ≠ 0) {ρ : 𝕜} (hρ : ρ ∈ U) (hfρ : f ρ = 0) :
+    1 ≤ MeromorphicOn.divisor f U ρ :=
+  Int.add_one_le_iff.2 <| (hf.meromorphicOn.zero_lt_divisor_iff_of_analyticAt (hf ρ hρ) hρ
+    (hf.meromorphicOrderAt_ne_top_of_exists_ne_zero ⟨⟨ρ, hρ⟩, hU⟩ h0 hρ)).2 hfρ
 
 /-- On a preconnected set where `f` is analytic and somewhere nonzero, the divisor of `f`
 vanishes exactly where `f` does not. The converse direction

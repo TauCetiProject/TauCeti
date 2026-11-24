@@ -685,7 +685,7 @@ private theorem coe_mem_closure_image_weightSubst
   obtain ⟨q, hq, hqp⟩ := exists_aeval_eq_of_forall_coeff_mem ht p hpU
   refine ⟨(weightedPolynomialHom T hT p : Completion (weightedRestrictedSubring T hT)), ?_,
     _, ⟨weightedPolynomialHom _ isWeightFamily_one_weight q,
-      mem_weightedNhd.mpr fun μ ↦ by simpa using hq μ, rfl⟩,
+      weightedPolynomialHom_mem_weightedNhd.mpr fun μ ↦ by simpa using hq μ, rfl⟩,
     by rw [weightSubst_coe_weightedPolynomialHom, hqp]⟩
   have hpN : ((h - (h - weightedPolynomialHom T hT p) : weightedRestrictedSubring T hT) :
       Completion (weightedRestrictedSubring T hT)) ∈ N :=
