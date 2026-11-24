@@ -90,7 +90,7 @@ theorem inf_ker_le_ker_wallBracketNormal {Λ : Type*} [AddCommGroup Λ]
   obtain ⟨hf, hg⟩ := AddSubgroup.mem_inf.mp hx
   simp [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker.mp hf, AddMonoidHom.mem_ker.mp hg]
 
-/-- Contracting twice at the same direction gives a normal vanishing on that direction. -/
+/-- The contracted normal with both directions equal to `n` vanishes at `ρ n`. -/
 @[simp↓]
 theorem wallBracketNormal_apply_same (ρ : Γ →+ Λ) (n : Γ) (f g : Λ →+ ℤ) :
     wallBracketNormal ρ n n f g (ρ n) = 0 := by
@@ -156,7 +156,8 @@ theorem wall_le_wall_wallBracketNormal_of_inf_ker_le (f g m : Λ →+ ℤ) {n : 
   · simp [hmn]
 
 /-- If `ρ n` lies outside `f.ker ⊓ g.ker`, the sum of the wall spaces
-with normals vanishing on the kernel is the wall space with the contracted normal. -/
+with normals vanishing on the common kernel `f.ker ⊓ g.ker`
+is the wall space with the contracted normal. -/
 theorem iSup_wall_eq_wall_wallBracketNormal_of_notMem_inf_ker (f g : Λ →+ ℤ) {n : Γ}
     (hn : ρ n ∉ f.ker ⊓ g.ker) :
     (⨆ (m : Λ →+ ℤ) (_ : f.ker ⊓ g.ker ≤ m.ker), H.wall n m) =
