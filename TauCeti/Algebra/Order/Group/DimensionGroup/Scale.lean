@@ -84,7 +84,8 @@ structure IsScale [AddMonoid G] [LE G] (S : Set G) : Prop where
 nonnegative. -/
 theorem nonneg_of_mem_addSubmonoidClosure [AddMonoid G] [Preorder G] [AddLeftMono G]
     {S : Set G} (hS : ∀ s ∈ S, 0 ≤ s) {s : G} (hs : s ∈ AddSubmonoid.closure S) : 0 ≤ s :=
-  (AddSubmonoid.closure_le (S := AddSubmonoid.nonneg G)).2 hS hs
+  AddSubmonoid.mem_nonneg.1
+    ((AddSubmonoid.closure_le.2 fun _ h ↦ AddSubmonoid.mem_nonneg.2 (hS _ h)) hs)
 
 namespace HasRieszInterpolation
 

@@ -310,7 +310,7 @@ section Iso
 variable {G H : Type*} [AddCommGroup G] [Preorder G] [AddCommGroup H] [Preorder H]
 
 /-- Preimage of an order ideal under an ordered additive isomorphism. -/
-def comap (I : OrderIdeal H) (e : G ≃+o H) : OrderIdeal G where
+def comap (e : G ≃+o H) (I : OrderIdeal H) : OrderIdeal G where
   toAddSubgroup := AddSubgroup.comap (e.toAddEquiv : G →+ H) I.toAddSubgroup
   directedOn' x hx y hy := by
     obtain ⟨z, hz, hxz, hyz⟩ := I.directedOn (e x) hx (e y) hy
@@ -322,20 +322,20 @@ def comap (I : OrderIdeal H) (e : G ≃+o H) : OrderIdeal G where
     simpa using OrderHomClass.mono e ha
 
 @[simp]
-theorem mem_comap {I : OrderIdeal H} {e : G ≃+o H} {x : G} :
+theorem mem_comap {e : G ≃+o H} {I : OrderIdeal H} {x : G} :
     x ∈ I.comap e ↔ e x ∈ I :=
   Iff.rfl
 
 /-- Forward image of an order ideal under an ordered additive isomorphism. -/
-def map (I : OrderIdeal G) (e : G ≃+o H) : OrderIdeal H :=
+def map (e : G ≃+o H) (I : OrderIdeal G) : OrderIdeal H :=
   I.comap e.symm
 
 @[simp]
-theorem mem_map {I : OrderIdeal G} {e : G ≃+o H} {y : H} :
+theorem mem_map {e : G ≃+o H} {I : OrderIdeal G} {y : H} :
     y ∈ I.map e ↔ e.symm y ∈ I :=
   Iff.rfl
 
-theorem mem_map_iff_mem {I : OrderIdeal G} {e : G ≃+o H} {x : G} :
+theorem mem_map_iff_mem {e : G ≃+o H} {I : OrderIdeal G} {x : G} :
     e x ∈ I.map e ↔ x ∈ I := by
   simp
 

@@ -148,8 +148,8 @@ instance isOrderedAddMonoid (I : OrderIdeal G) : IsOrderedAddMonoid (G ⧸ I) wh
     induction b using Quotient.inductionOn with | _ y =>
     induction c using Quotient.inductionOn with | _ z =>
     obtain ⟨h, hh, hxy⟩ := hab
-    exact ⟨h, hh,
-      (add_le_add hxy le_rfl).trans_eq (by rw [add_assoc, add_comm h z, ← add_assoc])⟩
+    have heq : y + h + z = y + z + h := by abel
+    exact ⟨h, hh, (add_le_add hxy le_rfl).trans_eq heq⟩
 
 /-- The canonical monotone quotient homomorphism `G →+o G ⧸ I`. -/
 def mk (I : OrderIdeal G) : G →+o G ⧸ I where
@@ -284,13 +284,11 @@ noncomputable def liftOrderAddMonoidIso (I : OrderIdeal G) (f : G →+o H)
     intro q hq
     induction q using induction_on with | _ x =>
     rw [lift_mk] at hq
-    obtain ⟨h₁, hh₁, hpos⟩ := hlift x (hq ▸ le_rfl)
-    obtain ⟨h₂, hh₂, hneg⟩ := hlift (-x) (by simp [hq])
-    have hxlo : -h₁ ≤ x := neg_le_iff_add_nonneg.2 hpos
-    have hxhi : x ≤ h₂ := by
-      have := add_le_add_right hneg x
-      simpa using this
-    exact mk_eq_zero_iff.2 (I.mem_of_le_of_le (neg_mem hh₁) hh₂ hxlo hxhi)
+    have h0le : 0 ≤ mk I x := mk_nonneg_iff.2 (hlift x (hq ▸ le_rfl))
+    have hle0 : mk I x ≤ 0 := by
+      rw [← neg_nonneg, ← map_neg]
+      exact mk_nonneg_iff.2 (hlift (-x) (by simp [hq]))
+    exact le_antisymm hle0 h0le
   have hsurj' : Function.Surjective (lift I f hf) := by
     intro y
     obtain ⟨x, rfl⟩ := hsurj y
