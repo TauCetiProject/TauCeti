@@ -198,7 +198,8 @@ noncomputable def curve11a3TorsionAddEquiv :
     AddCommGroup.torsion (curve11a3.baseChange ℚ).toAffine.Point ≃+ ZMod 5 :=
   (zmodAddEquivOfGenerator (g := ⟨curve11a3Point, curve11a3Point_mem_torsion⟩)
     (fun Q ↦ by
-      obtain ⟨n, hn⟩ := AddSubgroup.mem_zmultiples_iff.1 (torsion_curve11a3_eq_zmultiples.le Q.2)
+      obtain ⟨n, hn⟩ := AddSubgroup.mem_zmultiples_iff.1 (torsion_curve11a3_eq_zmultiples.le
+          Q.property)
       exact ⟨n, Subtype.ext hn⟩)
     card_torsion_curve11a3).symm
 

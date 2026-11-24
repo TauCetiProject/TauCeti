@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.VectorField
 public import TauCeti.Analysis.Normed.Operator.Bilinear
+public import TauCeti.Analysis.Calculus.Bilinear
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -19,8 +19,7 @@ Defines `TauCeti.lieDerivBilinWithin` and `TauCeti.lieDerivBilin` for fields of 
 maps `b : E → E →L[𝕜] E →L[𝕜] F` along `V : E → E` by
 `L_V b (x) (u, w) = Db(x)(V x)(u, w) + b(x)(DV(x) u, w) + b(x)(u, DV(x) w)`,
 and proves linearity, the scalar Leibniz rule, symmetry preservation, `C^n` regularity, the bracket
-formula, and pullback differentiation (`HasDerivAt.pullbackBilinL`,
-`hasDerivAt_pullbackBilinL_fderiv`).
+formula, and pullback differentiation (`hasDerivAt_pullbackBilinL_fderiv`).
 
 The flat API layout (`Within`/global pairs, congruence lemmas, regularity, and the bracket formula)
 follows the model of `VectorField.lieBracketWithin` in `Mathlib.Analysis.Calculus.VectorField`.
@@ -315,38 +314,8 @@ end LieDeriv
 
 section PullbackFlow
 
-variable {𝕜 V W G : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-
-/-- Product rule within `s` for pulling `B r` back along `L r`. -/
-theorem _root_.HasDerivWithinAt.pullbackBilinL
-    {B : 𝕜 → V →L[𝕜] V →L[𝕜] G} {B' : V →L[𝕜] V →L[𝕜] G}
-    {L : 𝕜 → W →L[𝕜] V} {L' : W →L[𝕜] V} {s : Set 𝕜} {t : 𝕜}
-    (hB : HasDerivWithinAt B B' s t) (hL : HasDerivWithinAt L L' s t) :
-    HasDerivWithinAt (fun r ↦ ContinuousLinearMap.pullbackBilinL (L r) (B r))
-      (ContinuousLinearMap.pullbackBilinL (L t) B' +
-        (B t).bilinearComp L' (L t) + (B t).bilinearComp (L t) L') s t := by
-  let Φ : (W →L[𝕜] V) →L[𝕜] (V →L[𝕜] G) →L[𝕜] W →L[𝕜] G := (compL 𝕜 W V G).flip
-  have heq : (fun r ↦ ContinuousLinearMap.pullbackBilinL (L r) (B r)) =
-      fun r ↦ (Φ (L r)).comp ((B r).comp (L r)) := by ext r v w; simp [Φ]
-  rw [heq]
-  refine ((Φ.hasFDerivAt.comp_hasDerivWithinAt t hL).clm_comp (hB.clm_comp hL)).congr_deriv ?_
-  ext v w; simp only [Φ, add_apply, pullbackBilinL_apply, bilinearComp_apply, comp_apply,
-    flip_apply, compL_apply, map_add]; abel
-
-/-- Product rule for pulling `B r` back along `L r`. -/
-theorem _root_.HasDerivAt.pullbackBilinL
-    {B : 𝕜 → V →L[𝕜] V →L[𝕜] G} {B' : V →L[𝕜] V →L[𝕜] G}
-    {L : 𝕜 → W →L[𝕜] V} {L' : W →L[𝕜] V} {t : 𝕜}
-    (hB : HasDerivAt B B' t) (hL : HasDerivAt L L' t) :
-    HasDerivAt (fun r ↦ ContinuousLinearMap.pullbackBilinL (L r) (B r))
-      (ContinuousLinearMap.pullbackBilinL (L t) B' +
-        (B t).bilinearComp L' (L t) + (B t).bilinearComp (L t) L') t := by
-  rw [← hasDerivWithinAt_univ] at hB hL ⊢; exact hB.pullbackBilinL hL
-
 /-- **The time derivative of a pulled-back family of bilinear forms.** -/
-theorem hasDerivAt_pullbackBilinL_fderiv {E F : Type*}
+theorem hasDerivAt_pullbackBilinL_fderiv {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {b : 𝕜 → E → E →L[𝕜] E →L[𝕜] F} {b' : E →L[𝕜] E →L[𝕜] F}
     {ψ : 𝕜 → E → E} {V : E → E} {x : E} {t : 𝕜}

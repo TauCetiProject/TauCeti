@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.LocalRing.Defs
 
@@ -12,6 +13,7 @@ import Mathlib.LinearAlgebra.PID
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.LocalRing.Module
+import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NoncommRing
 
@@ -34,6 +36,9 @@ and the kernel of an idempotent endomorphism of a finite free module are direct 
 free, so its trace is the rank of its range. This is what computes a trace modulo a power of a
 maximal ideal.
 
+On a plane over a field, an idempotent of trace one has a line as its range and a line as its
+kernel, so it is the projection `diag(1, 0)` in a basis adapted to the two.
+
 ## Main statements
 
 * `TauCeti.LinearMap.trace_mul_eq_mul_trace_restrict_range`: if `c * c = a • c` and `f` commutes
@@ -45,6 +50,8 @@ maximal ideal.
   `trace f = a * finrank (range f)`, the case `f = 1` of the previous statement.
 * `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
   an idempotent endomorphism of a finite free module is the rank of its range.
+* `LinearMap.exists_basis_toMatrix_eq_of_isIdempotentElem_of_trace_eq_one`: an idempotent
+  endomorphism of trace one of a plane is the projection `diag(1, 0)` in some basis.
 * `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero`: over a field of characteristic zero, an
   idempotent matrix of trace zero is zero.
 * `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
@@ -90,7 +97,7 @@ theorem LinearMap.trace_mul_eq_mul_trace_restrict_range {c f : Module.End K M} {
     have hres : (a⁻¹ • c * f).restrict (fun x _ => hmem x) = f.restrict hf :=
       LinearMap.ext fun x => Subtype.ext <| by
         rw [LinearMap.coe_restrict_apply, LinearMap.coe_restrict_apply, mul_apply_eq_comp,
-          hfix _ (hf x x.2)]
+          hfix _ (hf x x.property)]
     have htrace := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ (a⁻¹ • c * f) hmem
     rw [hres, smul_mul_assoc, map_smul, smul_eq_mul] at htrace
     rw [htrace, ← mul_assoc, mul_inv_cancel₀ ha, one_mul]
@@ -111,7 +118,7 @@ theorem LinearMap.trace_sub_mul_eq_mul_trace_restrict_ker {c f : Module.End K M}
     simpa [mul_apply_eq_comp] using sub_eq_zero.mpr hcx.symm
   have hres : ((a • 1 - c) * f).restrict (fun x _ ↦ hmem x) = a • f.restrict hf := by
     ext x
-    simp [mul_apply_eq_comp, _root_.LinearMap.mem_ker.mp (hf x x.2)]
+    simp [mul_apply_eq_comp, _root_.LinearMap.mem_ker.mp (hf x x.property)]
   have h := _root_.LinearMap.trace_restrict_eq_of_forall_mem _ ((a • 1 - c) * f) hmem
   rw [hres, map_smul, smul_eq_mul] at h
   exact h.symm
@@ -191,6 +198,43 @@ theorem trace_eq_finrank_range_of_isIdempotentElem {f : Module.End A N}
   have := Module.free_of_flat_of_isLocalRing (R := A) (P := LinearMap.range f)
   have := Module.free_of_flat_of_isLocalRing (R := A) (P := LinearMap.ker f)
   exact (LinearMap.IsIdempotentElem.isProj_range f hf).trace
+
+/-- **An idempotent of trace one on a plane** is the projection `diag(1, 0)` in some basis: its
+range and the range of `1 - P` are lines, and a nonzero vector of each gives the basis. -/
+theorem exists_basis_toMatrix_eq_of_isIdempotentElem_of_trace_eq_one {K V : Type*} [Field K]
+    [AddCommGroup V] [Module K V] (hV : finrank K V = 2) {P : Module.End K V}
+    (hP : IsIdempotentElem P) (htr : LinearMap.trace K V P = 1) :
+    ∃ b : Basis (Fin 2) K V, LinearMap.toMatrix b b P = !![1, 0; 0, 0] := by
+  have := Module.finite_of_finrank_eq_succ hV
+  have htr' : LinearMap.trace K V (1 - P) = 1 := by
+    rw [map_sub, LinearMap.trace_one, hV, htr]; norm_num
+  obtain ⟨v, hv⟩ : ∃ v, P v ≠ 0 := by
+    by_contra! h
+    rw [show P = 0 from LinearMap.ext fun x => by simpa using h x, map_zero] at htr
+    exact zero_ne_one htr
+  obtain ⟨w, hw⟩ : ∃ w, (1 - P) w ≠ 0 := by
+    by_contra! h
+    rw [show 1 - P = 0 from LinearMap.ext fun x => by simpa using h x, map_zero] at htr'
+    exact zero_ne_one htr'
+  have hPP (x : V) : P (P x) = P x := LinearMap.congr_fun hP.eq x
+  have hPv : P (P v) = P v := hPP v
+  have hPw : P ((1 - P) w) = 0 := by simp [hPP]
+  have hli : LinearIndependent K ![P v, (1 - P) w] := by
+    rw [LinearIndependent.pair_iff]
+    intro s t hst
+    have hs : s = 0 := by
+      have := congrArg P hst
+      rw [map_add, map_smul, map_smul, hPv, hPw, smul_zero, add_zero, map_zero] at this
+      exact (smul_eq_zero.mp this).resolve_right hv
+    subst hs
+    rw [zero_smul, zero_add] at hst
+    exact ⟨rfl, (smul_eq_zero.mp hst).resolve_right hw⟩
+  let b := basisOfLinearIndependentOfCardEqFinrank hli (by rw [hV, Fintype.card_fin])
+  have hb₀ : P (b 0) = b 0 := by simpa [b] using hPv
+  have hb₁ : P (b 1) = 0 := by simpa [b] using hPw
+  refine ⟨b, ?_⟩
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [LinearMap.toMatrix_apply, hb₀, hb₁]
 
 end LinearMap
 

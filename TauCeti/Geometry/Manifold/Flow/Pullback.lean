@@ -5,11 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.Flow.Eulerian
-import TauCeti.Analysis.Calculus.ParametricFDeriv
-import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
-import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Tensor-independent pullback variation along flows and isotopies
@@ -19,12 +15,13 @@ two-tensor) along a smooth family of maps `φ_u` splits into two parts:
 
 1. a tensor-specific identity-case calculation at a time `t` where `ψ_t = id` near `y`, which reads
    the spatial variational derivative in the preferred chart via
-   `TauCeti.hasDerivAt_fderiv_extChartAt_family_of_eq_id` and combines it with the flat calculus
-   formula for that fibre; and
+   `TauCeti.hasDerivAt_fderiv_extChartAt_family_of_eq_id` (or its `C¹` counterpart
+   `TauCeti.hasDerivAt_fderiv_extChartAt_family_of_eq_id_of_eventually_nhds_prod`) and combines it
+   with the flat calculus formula for that fibre; and
 2. tensor-independent geometric reductions — moving the base point along `ψ_u =ᶠ χ_u ∘ g`,
    constancy from zero velocity, and the reductions for smooth isotopies
-   (`TauCeti.eulerianField`), autonomous maximal flows (`TauCeti.flowOf`), and time-dependent flows
-   (`TauCeti.timeDependentFlowOf`).
+   (`TauCeti.eulerianField`), autonomous maximal flows of `C¹` vector fields (`TauCeti.flowOf`), and
+   time-dependent flows (`TauCeti.timeDependentFlowOf`).
 
 `TauCeti.PullbackAction` packages a contravariant fibrewise continuous-linear pullback on a
 section type `S` with model fibre `F`, and proves all of the tensor-independent reductions once so
@@ -35,9 +32,6 @@ submodules).
 
 ## Main declarations
 
-* `TauCeti.hasDerivAt_fderiv_extChartAt_family_of_eq_id`: the chart spatial derivative of a
-  jointly `C²` family `ψ_u` that equals `id` near `y` at time `t` differentiates in `u` to the
-  derivative of the chart representation of its velocity field.
 * `TauCeti.PullbackAction`: a contravariant fibrewise continuous-linear pullback action on a
   section type `S` with model fibre `F`.
 * `TauCeti.PullbackAction.hasDerivAt_of_eq_comp`: moving the base point of a pullback derivative
@@ -50,11 +44,12 @@ submodules).
   along smooth isotopies.
 * `TauCeti.PullbackAction.hasDerivAt_flowOf_zero`, `TauCeti.PullbackAction.hasDerivAt_flowOf`,
   `TauCeti.PullbackAction.eval_pull_flowOf_eq_of_eq_zero`: pullback variation and invariance along
-  autonomous maximal flows.
+  autonomous maximal flows of `C¹` vector fields.
 * `TauCeti.PullbackAction.hasDerivAt_timeDependentFlowOf_self`,
+  `TauCeti.PullbackAction.hasDerivAt_timeDependentFlowOf_of_mem`,
   `TauCeti.PullbackAction.hasDerivAt_timeDependentFlowOf`,
   `TauCeti.PullbackAction.forall_pull_timeDependentFlowOf_eq_self_iff`: pullback variation and
-  invariance along time-dependent flows.
+  invariance along maximal and complete time-dependent flows.
 
 ## References
 
@@ -72,37 +67,6 @@ open Set Filter Bundle
 open scoped Manifold Topology ContDiff
 
 namespace TauCeti
-
-section ChartVariation
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M]
-
-/-- **Chart variational equation at the identity.** If a jointly `C²` family `ψ : ℝ → M → M` equals
-the identity near `y` at time `t` and moves points near `y` with velocity `V` at time `t`, then the
-spatial Fréchet derivative of its chart representation at `extChartAt I y y` has time derivative
-equal to the Fréchet derivative of the chart representation of `V`. -/
-theorem hasDerivAt_fderiv_extChartAt_family_of_eq_id [I.Boundaryless] [IsManifold I 2 M]
-    {ψ : ℝ → M → M} {V : (x : M) → TangentSpace I x} {t : ℝ} (y : M)
-    (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
-    (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y))
-    (hvel : ∀ᶠ x in 𝓝 y,
-      HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u x) t ((1 : ℝ →L[ℝ] ℝ).smulRight (V (ψ t x)))) :
-    HasDerivAt
-      (fun u ↦ fderiv ℝ (fun z ↦ extChartAt I y (ψ u ((extChartAt I y).symm z)))
-        (extChartAt I y y))
-      (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I))
-        (extChartAt I y y)) t := by
-  have hsmooth' : ContDiffAt ℝ (minSmoothness ℝ 2)
-      (fun p : ℝ × E ↦ extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2)))
-      (t, extChartAt I y y) := by
-    simpa only [minSmoothness_of_isRCLikeNormedField] using
-      Manifold.contDiffAt_extChartAt_family hid.self_of_nhds hsmooth
-  exact hsmooth'.hasDerivAt_fderiv_slice_of_eventually_hasDerivAt
-    (eventually_hasDerivAt_extChartAt_family hid hvel)
-
-end ChartVariation
 
 /-- A contravariant fibrewise continuous-linear pullback action on sections of type `S` over a
 manifold `M` with model fibre `F`. Instances include rough differential forms (with
@@ -272,28 +236,30 @@ variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I 2 
 
 section MaximalFlow
 
+/-- The flow lemmas are applied at smoothness `1`, read in `ℕ∞`. -/
+local instance : IsManifold I ((1 : ℕ∞) : WithTop ℕ∞) M := IsManifold.of_le (n := 2) (by norm_num)
+
 variable {Z : (x : M) → TangentSpace I x}
-  (hZ : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, Z y⟩ : TangentBundle I M)))
+  (hZ : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, Z y⟩ : TangentBundle I M)))
 include hZ
 
 /-- **Pullback derivative at time zero along a maximal flow.** Reduces the derivative of
-`r ↦ ((flowOf Z r)^* s_r)_y` at `r = 0` to the identity-case derivative theorem along `Z`. -/
+`r ↦ ((flowOf Z r)^* s_r)_y` at `r = 0` to the `C¹` identity-case derivative theorem along `Z`. -/
 theorem hasDerivAt_flowOf_zero {s : ℝ → S} {β : S} (y : M)
     (hid : ∀ {ψ : ℝ → M → M},
       (∀ᶠ x in 𝓝 y, ψ 0 x = x) →
-      ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ ψ p.1 p.2) (0, y) →
-      (∀ᶠ x in 𝓝 y, HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u x) 0
-        ((1 : ℝ →L[ℝ] ℝ).smulRight (Z (ψ 0 x)))) →
+      ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1 (fun p : ℝ × M ↦ ψ p.1 p.2) (0, y) →
+      ContMDiffAt I I.tangent 1 (fun x ↦ (⟨x, Z x⟩ : TangentBundle I M)) y →
+      (∀ᶠ p in 𝓝 (0, y), HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u p.2) p.1
+        ((1 : ℝ →L[ℝ] ℝ).smulRight (Z (ψ p.1 p.2)))) →
       HasDerivAt (fun r ↦ A.eval (A.pull (ψ r) (s r)) y) (A.eval β y) 0) :
     HasDerivAt (fun r ↦ A.eval (A.pull (flowOf Z r) (s r)) y) (A.eval β y) 0 := by
-  have hZ1 := hZ.of_le one_le_two
+  have hD := isOpen_flowDomain hZ
   refine hid (Eventually.of_forall (flowOf_zero Z))
-    ((contMDiffOn_flowOf (n := 2) one_le_two hZ).contMDiffAt
-      ((isOpen_flowDomain hZ1).mem_nhds (mem_flowDomain_zero hZ1 y)))
-    (Eventually.of_forall fun x ↦ ?_)
-  exact ((isMIntegralCurveOn_flowOf hZ1 x).isMIntegralCurveAt
-    (((isOpen_flowDomain hZ1).preimage (continuous_id.prodMk continuous_const)).mem_nhds
-      (mem_flowDomain_zero hZ1 x))).hasMFDerivAt
+    ((contMDiffOn_flowOf (n := 1) le_rfl hZ).contMDiffAt
+      (hD.mem_nhds (mem_flowDomain_zero hZ y))) (hZ y) ?_
+  filter_upwards [hD.mem_nhds (mem_flowDomain_zero hZ y)] with p hp
+  exact (isMIntegralCurveAt_flowOf hZ hp).hasMFDerivAt
 
 /-- **Pullback derivative at arbitrary time along a maximal flow.** Uses the local group law
 `flowOf Z r = flowOf Z (r - t) ∘ flowOf Z t` near `x` for `r` near `t` to reduce the velocity of
@@ -304,15 +270,14 @@ theorem hasDerivAt_flowOf {s : ℝ → S} {β : S} {t : ℝ} {x : M} (hx : (t, x
       (A.eval β (flowOf Z t x)) 0) :
     HasDerivAt (fun r ↦ A.eval (A.pull (flowOf Z r) (s r)) x)
       (A.eval (A.pull (flowOf Z t) β) x) t := by
-  have hZ1 := hZ.of_le one_le_two
-  have hD := isOpen_flowDomain hZ1
-  have hφ : ContMDiffAt I I 2 (flowOf Z t) x :=
-    contMDiffAt_flowOf_comp (n := 2) one_le_two hZ contMDiffAt_const contMDiffAt_id hx
+  have hD := isOpen_flowDomain hZ
+  have hφ : ContMDiffAt I I 1 (flowOf Z t) x :=
+    contMDiffAt_flowOf_comp (n := 1) le_rfl hZ contMDiffAt_const contMDiffAt_id hx
   have hev : ∀ᶠ p in 𝓝 ((0 : ℝ), x),
       (t, p.2) ∈ flowDomain Z ∧ (p.1, flowOf Z t p.2) ∈ flowDomain Z :=
     ((continuous_const.prodMk continuous_snd).continuousAt.eventually_mem (hD.mem_nhds hx)).and
       ((continuousAt_fst.prodMk (hφ.continuousAt.comp continuousAt_snd)).eventually_mem
-        (hD.mem_nhds (mem_flowDomain_zero hZ1 _)))
+        (hD.mem_nhds (mem_flowDomain_zero hZ _)))
   rw [nhds_prod_eq] at hev
   have hsub : Tendsto (fun r ↦ r - t) (𝓝 t) (𝓝 0) := by
     simpa using (continuous_sub_right t).tendsto t
@@ -324,15 +289,15 @@ theorem hasDerivAt_flowOf {s : ℝ → S} {β : S} {t : ℝ} {x : M} (hx : (t, x
         (fun u ↦ A.eval (A.pull (flowOf Z (r - t)) (s u)) (flowOf Z t x))
         (sub_add_cancel r t).symm)
   refine A.hasDerivAt_of_eq_comp (ψ := flowOf Z) (χ := fun r ↦ flowOf Z (r - t))
-    ?_ (hφ.mdifferentiableAt two_ne_zero) ?_ h0_sub
+    ?_ (hφ.mdifferentiableAt one_ne_zero) ?_ h0_sub
   · filter_upwards [hsub.eventually hev.curry] with r hr
     refine hr.mono fun z hz ↦ ?_
-    have h := (flowOf_add hZ1 hz.1 hz.2).2
+    have h := (flowOf_add hZ hz.1 hz.2).2
     rw [add_sub_cancel] at h
     exact h.symm
   · filter_upwards [hsub.eventually hev.curry] with r hr
-    exact (contMDiffAt_flowOf_comp (n := 2) one_le_two hZ contMDiffAt_const contMDiffAt_id
-      hr.self_of_nhds.2).mdifferentiableAt two_ne_zero
+    exact (contMDiffAt_flowOf_comp (n := 1) le_rfl hZ contMDiffAt_const contMDiffAt_id
+      hr.self_of_nhds.2).mdifferentiableAt one_ne_zero
 
 /-- **Maximal flows preserve stationary sections with zero pullback velocity.** If at every time
 `r` where the maximal flow through `x` is defined the pullback `u ↦ ((flowOf Z u)^* s)_x` has
@@ -344,10 +309,9 @@ theorem eval_pull_flowOf_eq_of_eq_zero {s β : S}
         (A.eval (A.pull (flowOf Z r) β) x) r)
     (hβ : β = 0) {t : ℝ} (hx : (t, x) ∈ flowDomain Z) :
     A.eval (A.pull (flowOf Z t) s) x = A.eval s x := by
-  have hZ1 := hZ.of_le one_le_two
   set J : Set ℝ := {r | (r, x) ∈ flowDomain Z}
   have hJopen : IsOpen J :=
-    (isOpen_flowDomain hZ1).preimage (continuous_id.prodMk continuous_const)
+    (isOpen_flowDomain hZ).preimage (continuous_id.prodMk continuous_const)
   have hJc : J.OrdConnected := by
     rw [show J = maximalIntegralCurveInterval Z x from Set.ext fun _ ↦ mem_flowDomain]
     exact ordConnected_maximalIntegralCurveInterval
@@ -359,7 +323,7 @@ theorem eval_pull_flowOf_eq_of_eq_zero {s β : S}
     simp only [P, show flowOf Z 0 = id from funext (flowOf_zero Z), A.pull_id]
   refine (hJc.convex.is_const_of_fderivWithin_eq_zero
     (fun r hr ↦ (hP r hr).differentiableAt.differentiableWithinAt) (fun r hr ↦ ?_) hx
-    (mem_flowDomain_zero hZ1 x)).trans hP0
+    (mem_flowDomain_zero hZ x)).trans hP0
   rw [((hP r hr).hasFDerivAt.hasFDerivWithinAt (s := J)).fderivWithin
     (hJopen.uniqueDiffWithinAt hr)]
   ext
@@ -373,9 +337,8 @@ variable {X : ℝ → (x : M) → TangentSpace I x}
   (hc : IsCompleteVectorField (timeDependentSuspensionField X))
   (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
-include hc hX
+include hX
 
-omit hc in
 /-- **Pullback derivative at the base time of a time-dependent flow.** Reduces the derivative of
 `u ↦ ((timeDependentFlowOf X t u)^* s_u)_y` at `u = t` to the identity-case derivative theorem
 along `X t`. No completeness is needed. -/
@@ -395,23 +358,46 @@ theorem hasDerivAt_timeDependentFlowOf_self {s : ℝ → S} {β : S} (t : ℝ) (
     (Eventually.of_forall fun x ↦
       hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t x))
 
-/-- **Moving the pullback derivative along a complete time-dependent flow from the base time.**
-Uses the two-time composition law `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}` to deduce the derivative of
-`u ↦ ((timeDependentFlowOf X s u)^* b_u)_x` at `t` from the base-time derivative at `t`. -/
-theorem hasDerivAt_timeDependentFlowOf {b : ℝ → S} {β : S} (s t : ℝ) (x : M)
+/-- **Moving the pullback derivative along a maximal time-dependent flow from the base time.**
+Uses the local two-time composition law `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}` on `timeDependentFlowDomain X`
+to deduce the derivative of `u ↦ ((timeDependentFlowOf X s u)^* b_u)_x` at `t` from the base-time
+derivative at `t`. No completeness is needed. -/
+theorem hasDerivAt_timeDependentFlowOf_of_mem {b : ℝ → S} {β : S} {s t : ℝ} {x : M}
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X)
     (hself : HasDerivAt
       (fun u ↦ A.eval (A.pull (timeDependentFlowOf X t u) (b u)) (timeDependentFlowOf X s t x))
       (A.eval β (timeDependentFlowOf X s t x)) t) :
     HasDerivAt (fun u ↦ A.eval (A.pull (timeDependentFlowOf X s u) (b u)) x)
       (A.eval (A.pull (timeDependentFlowOf X s t) β) x) t := by
   have hX₁ := hX.of_le (m := 1) one_le_two
-  have hsmooth (a c : ℝ) : MDifferentiable I I (timeDependentFlowOf X a c) :=
-    ((contMDiff_timeDependentFlowOf hc (n := 2) one_le_two hX).comp
-      ((contMDiff_const (c := (a, c))).prodMk contMDiff_id)).mdifferentiable two_ne_zero
-  exact A.hasDerivAt_of_eq_comp (χ := timeDependentFlowOf X t)
-    (Eventually.of_forall fun u ↦ Eventually.of_forall fun z ↦
-      (timeDependentFlowOf_trans hc hX₁ s t u z).symm)
-    (hsmooth s t x) (Eventually.of_forall fun u ↦ hsmooth t u _) hself
+  have hD := isOpen_timeDependentFlowDomain hX₁
+  have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
+    mdifferentiableAt_timeDependentFlowOf hX₁ h
+  have hev : ∀ᶠ p in 𝓝 (t, x), ((s, t), p.2) ∈ timeDependentFlowDomain X ∧
+      ((t, p.1), timeDependentFlowOf X s t p.2) ∈ timeDependentFlowDomain X :=
+    ((continuous_const.prodMk continuous_snd).continuousAt.eventually_mem (hD.mem_nhds h)).and
+      (((continuous_const.prodMk continuous_fst).continuousAt.prodMk
+        (hφ.continuousAt.comp continuousAt_snd)).eventually_mem
+          (hD.mem_nhds (mem_timeDependentFlowDomain_self hX₁ t _)))
+  rw [nhds_prod_eq] at hev
+  refine A.hasDerivAt_of_eq_comp (χ := timeDependentFlowOf X t) ?_ hφ ?_ hself
+  · filter_upwards [hev.curry] with u hu
+    filter_upwards [hu] with y hy
+    exact (timeDependentFlowOf_trans_of_mem hX₁ hy.1 hy.2).2.symm
+  · filter_upwards [hev.curry] with u hu
+    exact mdifferentiableAt_timeDependentFlowOf hX₁ hu.self_of_nhds.2
+
+include hc
+
+/-- **Moving the pullback derivative along a complete time-dependent flow from the base time.** -/
+theorem hasDerivAt_timeDependentFlowOf {b : ℝ → S} {β : S} (s t : ℝ) (x : M)
+    (hself : HasDerivAt
+      (fun u ↦ A.eval (A.pull (timeDependentFlowOf X t u) (b u)) (timeDependentFlowOf X s t x))
+      (A.eval β (timeDependentFlowOf X s t x)) t) :
+    HasDerivAt (fun u ↦ A.eval (A.pull (timeDependentFlowOf X s u) (b u)) x)
+      (A.eval (A.pull (timeDependentFlowOf X s t) β) x) t :=
+  A.hasDerivAt_timeDependentFlowOf_of_mem hX
+    (mem_timeDependentFlowDomain.2 (hc.mem_flowDomain _ _)) hself
 
 /-- **Invariance of a stationary section under a complete time-dependent flow.** Given the
 base-time derivative `L (X t)` of `u ↦ ((timeDependentFlowOf X t u)^* b)_y`, the flow preserves

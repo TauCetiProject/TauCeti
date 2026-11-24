@@ -41,6 +41,8 @@ differences of the remaining columns.
   sum, over the choices of one summand in each row, of the determinants of the resulting matrices.
 * `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
   is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
+* `RingHom.det_map_ne_zero_of_isUnit_det`: the image of a matrix with unit determinant under a ring
+  homomorphism to a nontrivial commutative ring has nonzero determinant.
 -/
 
 public section
@@ -160,3 +162,15 @@ theorem det_of_sum_rows {ι R : Type*} {κ : ι → Type*} [Fintype ι] [Decidab
   exact key
 
 end Matrix
+
+namespace RingHom
+
+/-- The image of a matrix with unit determinant under a ring homomorphism to a nontrivial
+commutative ring has nonzero determinant. -/
+theorem det_map_ne_zero_of_isUnit_det {ι R K : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    [CommRing K] [Nontrivial K] (f : R →+* K) {A : Matrix ι ι R} (hdet : IsUnit A.det) :
+    (A.map f).det ≠ 0 := by
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  exact (hdet.map _).ne_zero
+
+end RingHom

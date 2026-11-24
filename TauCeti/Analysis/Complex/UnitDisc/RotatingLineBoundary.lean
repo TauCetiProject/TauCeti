@@ -251,7 +251,7 @@ theorem mem_unitDiscCauchyRiemannKernel_iff_exists_eval :
   refine ⟨?_, ?_⟩
   · rintro ⟨u, hu, hb, rfl⟩
     obtain ⟨p, hp, h⟩ := hu.exists_mem_conjReciprocalPolynomials_eqOn hb
-    exact ⟨p, hp, funext fun z => (h z.2).symm⟩
+    exact ⟨p, hp, funext fun z => (h z.property).symm⟩
   · rintro ⟨p, hp, rfl⟩
     exact ⟨fun z => p.eval z, p.differentiable.diffContOnCl,
       fun w hw => eval_eq_zpow_mul_conj_eval hp (by simpa using hw), rfl⟩
@@ -414,7 +414,7 @@ theorem unitDiscCauchyRiemannKernelJetEquiv_apply (hu : DiffContOnCl ℂ u (ball
   have hsymm : (conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel _).symm g = ⟨p, hp⟩ := by
     rw [LinearEquiv.symm_apply_eq]
     ext z
-    simp [← hg, h z.2]
+    simp [← hg, h z.property]
   simp only [unitDiscCauchyRiemannKernelJetEquiv, LinearEquiv.trans_apply, hsymm,
     conjReciprocalLowerCoeffEquiv_apply]
   rw [iteratedDeriv_zero_div_factorial_eq_coeff h]
@@ -431,7 +431,7 @@ theorem unitDiscCauchyRiemannKernelJetEquiv_symm_apply (a : Fin (m + 1) → ℂ)
     coeff_conjReciprocalLowerCoeffEquiv_symm_apply a j
   simp only [unitDiscCauchyRiemannKernelJetEquiv, LinearEquiv.symm_trans_apply,
     LinearEquiv.symm_symm, conjReciprocalPolynomialsEquivUnitDiscCauchyRiemannKernel_apply]
-  rw [eq_sum_of_mem_conjReciprocalPolynomials q.2, eval_finsetSum, Finset.sum_range]
+  rw [eq_sum_of_mem_conjReciprocalPolynomials q.property, eval_finsetSum, Finset.sum_range]
   simp [hc]
 
 end TauCeti

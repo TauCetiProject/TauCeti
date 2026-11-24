@@ -84,6 +84,12 @@ variable [Fintype I]
 theorem typeDGraphMatrix_mul_self : typeDGraphMatrix c A * typeDGraphMatrix c A = 1 := by
   simp [typeDGraphMatrix, ← Matrix.permMatrix_mul, typeDGraphIndex]
 
+/-- The graph matrix exchanges exactly the chosen pair of vector coordinates. -/
+@[simp]
+theorem typeDGraphMatrix_mulVec (x : I ⊕ I → A) (s : I ⊕ I) :
+    (typeDGraphMatrix c A *ᵥ x) s = x (typeDGraphIndex c s) := by
+  rw [typeDGraphMatrix, Matrix.permMatrix_mulVec, Function.comp_apply]
+
 private theorem typeDGraphMatrix_conj (X : Matrix (I ⊕ I) (I ⊕ I) A) :
     typeDGraphMatrix c A * X * typeDGraphMatrix c A =
       Matrix.reindexAlgEquiv A A (typeDGraphIndex c) X := by

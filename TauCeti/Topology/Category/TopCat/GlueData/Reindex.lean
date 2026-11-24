@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Gluing
+public import TauCeti.Topology.Category.TopCat.GlueData.Map
 
 /-!
 # Subfamilies of open gluing data
@@ -16,9 +16,10 @@ the union of the selected pieces. No injectivity of the index map is needed: rep
 are identified by their full overlaps. In particular, an empty subfamily gives an empty open
 subspace, and a subfamily covering the original gluing gives a homeomorphism.
 
-The construction uses Mathlib's gluing carrier and multicoequalizer universal property.
-The key injectivity argument uses the cocycle theorem `TopCat.GlueData.ι_eq_iff_rel`, so
-identifications through omitted pieces introduce no additional identifications.
+The map `reindexMap` is the glued map `TopCat.GlueData.gluedMap` of the identity maps of the
+selected pieces. The key injectivity argument uses the cocycle theorem
+`TopCat.GlueData.ι_eq_iff_rel`, so identifications through omitted pieces introduce no
+additional identifications.
 
 ## References
 
@@ -57,52 +58,56 @@ theorem reindex_rel (r : K → D.J) (i j : K) (x : D.U (r i)) (y : D.U (r j)) :
     (D.reindex r).Rel ⟨i, x⟩ ⟨j, y⟩ ↔ D.Rel ⟨r i, x⟩ ⟨r j, y⟩ :=
   Iff.rfl
 
-/-- The canonical continuous map from a selected gluing to the full gluing. -/
+/-- The canonical continuous map from a selected gluing to the full gluing, gluing the identity
+maps of the selected pieces. -/
 noncomputable def reindexMap (r : K → D.J) :
     (D.reindex r).toGlueData.glued ⟶ D.toGlueData.glued :=
-  Multicoequalizer.desc _ _ (fun i ↦ D.toGlueData.ι (r i))
-    (fun ⟨i, j⟩ ↦ (D.toGlueData.glue_condition (r i) (r j)).symm)
+  gluedMap r (fun i ↦ ContinuousMap.id (D.U (r i)))
+    fun i j x ↦ (D.glue_condition_apply (r i) (r j) x).symm
+
+/-- The canonical map of a selected gluing is the glued map of the identity maps of the selected
+pieces. -/
+theorem reindexMap_eq_gluedMap (r : K → D.J) :
+    D.reindexMap r = gluedMap r (fun i ↦ ContinuousMap.id (D.U (r i)))
+      fun i j x ↦ (D.glue_condition_apply (r i) (r j) x).symm :=
+  (rfl)
 
 /-- The canonical map of a selected gluing agrees with the original inclusion on each piece. -/
 @[simp]
 theorem reindexMap_ι (r : K → D.J) (i : K) (x : D.U (r i)) :
-    D.reindexMap r ((D.reindex r).toGlueData.ι i x) = D.toGlueData.ι (r i) x :=
-  ConcreteCategory.congr_hom
-    (Multicoequalizer.π_desc (D.reindex r).toGlueData.diagram _
-      (fun i ↦ D.toGlueData.ι (r i)) _ i) x
+    D.reindexMap r ((D.reindex r).toGlueData.ι i x) = D.toGlueData.ι (r i) x := by
+  rw [reindexMap_eq_gluedMap]
+  refine (gluedMap_ι (D := D.reindex r) i x).trans ?_
+  -- Specialize the piece family to its value at i, using (D.reindex r).U i = D.U (r i)
+  -- by definition. Keep ContinuousMap.id bundled so its public evaluation lemma applies.
+  change D.toGlueData.ι (r i) (ContinuousMap.id (D.U (r i)) x) = D.toGlueData.ι (r i) x
+  rw [ContinuousMap.id_apply]
 
 /-- The image of the selected gluing is precisely the union of the selected pieces. -/
 theorem range_reindexMap (r : K → D.J) :
     range (D.reindexMap r) = ⋃ i, range (D.toGlueData.ι (r i)) := by
-  ext x
-  constructor
-  · rintro ⟨y, rfl⟩
-    obtain ⟨i, z, rfl⟩ := (D.reindex r).ι_jointly_surjective y
-    exact mem_iUnion.2 ⟨i, z, (D.reindexMap_ι r i z).symm⟩
-  · intro hx
-    obtain ⟨i, z, rfl⟩ := mem_iUnion.1 hx
-    exact ⟨(D.reindex r).toGlueData.ι i z, D.reindexMap_ι r i z⟩
+  rw [reindexMap_eq_gluedMap]
+  refine (range_gluedMap _ _ _).trans ?_
+  -- Expose the identity piece family over (D.reindex r).U i = D.U (r i) by definition;
+  -- the range computation then uses the public coercion lemma for ContinuousMap.id.
+  change (⋃ i, D.toGlueData.ι (r i) '' range (ContinuousMap.id (D.U (r i)))) = _
+  simp only [ContinuousMap.coe_id, range_id, image_univ]
 
 /-- Selecting a subfamily, even with repeated indices, embeds its gluing as an open subspace. -/
 theorem isOpenEmbedding_reindexMap (r : K → D.J) : IsOpenEmbedding (D.reindexMap r) := by
-  refine .of_continuous_injective_isOpenMap (D.reindexMap r).hom.continuous ?_ ?_
-  · intro x y hxy
-    obtain ⟨i, x, rfl⟩ := (D.reindex r).ι_jointly_surjective x
-    obtain ⟨j, y, rfl⟩ := (D.reindex r).ι_jointly_surjective y
-    rw [D.reindexMap_ι r i x, D.reindexMap_ι r j y] at hxy
-    exact ((D.reindex r).ι_eq_iff_rel i j x y).2
-      ((D.reindex_rel r i j x y).2 ((D.ι_eq_iff_rel _ _ _ _).1 hxy))
-  · -- Test openness after the continuous surjection from the disjoint union of pieces.
-    refine IsOpenMap.of_comp
-      (f := fun x : Σ i, (D.reindex r).U i ↦ (D.reindex r).toGlueData.ι x.1 x.2)
-      (continuous_sigma fun i ↦ ((D.reindex r).toGlueData.ι i).hom.continuous) ?_ ?_
-    · intro x
-      obtain ⟨i, y, rfl⟩ := (D.reindex r).ι_jointly_surjective x
-      exact ⟨⟨i, y⟩, rfl⟩
-    · apply isOpenMap_sigma.2
-      intro i
-      simpa only [Function.comp_def, D.reindexMap_ι] using
-        (D.ι_isOpenEmbedding (r i)).isOpenMap
+  rw [reindexMap_eq_gluedMap]
+  refine isOpenEmbedding_gluedMap_iff.2 ⟨fun i ↦ ?_, fun i j x y hxy ↦ ?_⟩
+  · -- Specialize the piece family at i and identify (D.reindex r).U i with D.U (r i)
+    -- by definition, leaving the identity-map coercion to ContinuousMap.coe_id.
+    change IsOpenMap (ContinuousMap.id (D.U (r i)))
+    simpa only [ContinuousMap.coe_id] using (IsOpenMap.id : IsOpenMap (id : D.U (r i) → _))
+  -- Evaluate the piece family at i and j, whose reindexed domains are definitionally
+  -- D.U (r i) and D.U (r j); reduce the bundled identities with their public lemma below.
+  change D.toGlueData.ι (r i) (ContinuousMap.id _ x) =
+    D.toGlueData.ι (r j) (ContinuousMap.id _ y) at hxy
+  simp only [ContinuousMap.id_apply] at hxy
+  exact ((D.reindex r).ι_eq_iff_rel i j x y).2
+    ((D.reindex_rel r i j x y).2 ((D.ι_eq_iff_rel _ _ _ _).1 hxy))
 
 /-- The selected gluing covers the full gluing exactly when the selected pieces cover it. -/
 theorem surjective_reindexMap_iff (r : K → D.J) :

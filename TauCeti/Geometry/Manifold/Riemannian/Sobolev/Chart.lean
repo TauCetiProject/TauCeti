@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
 import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # Elements of `H¹(M)` read in a chart
@@ -219,13 +220,11 @@ private theorem exists_compL_extChartAt_symm {p : M} {r m : ℝ} (L : E ≃L[ℝ
           fun y ↦ G ((extChartAt I p).symm (L.symm y)) := by
   let _ : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
-  have : ((volume : Measure F).map L.symm).IsAddHaarMeasure := L.symm.isAddHaarMeasure_map volume
   -- The image of the Haar measure of `F` is a multiple of the Haar measure of the model space.
-  obtain ⟨c, hc⟩ : ∃ c : ℝ≥0, (volume : Measure F).map L.symm = c • (Module.finBasis ℝ E).addHaar :=
-    ⟨_, Measure.isAddLeftInvariant_eq_smul _ _⟩
+  obtain ⟨c, -, hc⟩ := L.symm.exists_map_restrict_preimage_eq_smul_addHaar (volume : Measure F)
   have hres : ((volume : Measure F).restrict (coordBall (I := I) L p r : Set F)).map L.symm =
-      ((volume : Measure F).map L.symm).restrict (ball (extChartAt I p p) r) :=
-    (L.symm.toHomeomorph.toMeasurableEquiv.restrict_map volume _).symm
+      c • (Module.finBasis ℝ E).addHaar.restrict (ball (extChartAt I p p) r) :=
+    hc _
   have hf : Measurable (ballChartInv (I := I) p r ∘ L.symm) :=
     (measurable_ballChartInv hr).comp L.symm.continuous.measurable
   -- The inverse chart pushes the Haar measure on the coordinate ball forward to at most a finite
@@ -233,15 +232,15 @@ private theorem exists_compL_extChartAt_symm {p : M} {r m : ℝ} (L : E ≃L[ℝ
   have hmap : ((volume : Measure F).restrict (coordBall (I := I) L p r : Set F)).map
       (ballChartInv (I := I) p r ∘ L.symm) ≤ ((c : ℝ≥0∞) * ENNReal.ofReal m⁻¹) •
         riemannianVolume I M := by
-    rw [← Measure.map_map (measurable_ballChartInv hr) L.symm.continuous.measurable, hres, hc,
-      Measure.restrict_smul, Measure.map_smul, ENNReal.smul_def, mul_smul]
+    rw [← Measure.map_map (measurable_ballChartInv hr) L.symm.continuous.measurable, hres,
+      Measure.map_smul, ENNReal.smul_def, mul_smul]
     exacts [smul_le_smul_left _ (map_restrict_ballChartInv_le hr hm hρ),
       (measurable_ballChartInv hr).aemeasurable]
   have hK : (c : ℝ≥0∞) * ENNReal.ofReal m⁻¹ ≠ ⊤ :=
     ENNReal.mul_ne_top ENNReal.coe_ne_top ENNReal.ofReal_ne_top
-  refine ⟨Lp.compOfMapLeSmul ℝ hf hK hmap, fun {g G} hg ↦ ?_⟩
-  filter_upwards [Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hf hK hmap g,
-    (QuasiMeasurePreserving.of_map_le_smul hf hmap).ae_eq_comp hg,
+  refine ⟨Lp.compOfMapLeSmul ℝ hf.aemeasurable hK hmap, fun {g G} hg ↦ ?_⟩
+  filter_upwards [Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hf.aemeasurable hK hmap g,
+    (QuasiMeasurePreserving.of_map_le_smul hf.aemeasurable hmap).ae_eq_comp hg,
     ae_restrict_mem (coordBall (I := I) L p r).isOpen.measurableSet] with y h1 h2 hy
   simp only [Function.comp_apply] at h1 h2
   rw [h1, h2, ballChartInv_of_mem (mem_coordBall.1 hy)]

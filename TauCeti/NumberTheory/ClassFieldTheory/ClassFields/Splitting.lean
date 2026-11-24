@@ -75,7 +75,7 @@ theorem ncard_primesOver_rayClassField_eq_finrank_iff (𝔪 : Modulus K)
         Module.finrank K (rayClassField 𝔪) ↔
       ∃ α : 𝓞 K, α - 1 ∈ 𝔪.finitePart ∧
         (∀ w ∈ 𝔪.infinitePart,
-          0 < InfinitePlace.embedding_of_isReal w.2 (algebraMap (𝓞 K) K α)) ∧
+          0 < InfinitePlace.embedding_of_isReal w.property (algebraMap (𝓞 K) K α)) ∧
         (J : Ideal (𝓞 K)) = Ideal.span {α} := by
   rw [ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one
       (isAdmissibleModulus_rayClassField 𝔪),
@@ -104,7 +104,7 @@ theorem ncard_primesOver_narrowHilbertClassField_eq_finrank_iff (K : Type) [Fiel
     (p.primesOver (𝓞 (narrowHilbertClassField K))).ncard =
         Module.finrank K (narrowHilbertClassField K) ↔
       ∃ α : 𝓞 K, (∀ w : {w : InfinitePlace K // w.IsReal},
-        0 < InfinitePlace.embedding_of_isReal w.2 (algebraMap (𝓞 K) K α)) ∧
+        0 < InfinitePlace.embedding_of_isReal w.property (algebraMap (𝓞 K) K α)) ∧
         p = Ideal.span {α} := by
   let J : integralIdealsPrimeTo (narrowModulus K) := ⟨p, by
     rw [Modulus.mem_integralIdealsPrimeTo, Modulus.isCoprimeTo_iff,

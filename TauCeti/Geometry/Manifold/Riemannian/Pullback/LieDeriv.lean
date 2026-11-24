@@ -106,7 +106,15 @@ theorem mlieDerivBilin_mgradient_inner_apply
     (contMDiffAt_mgradient (I := I) (f := f) (x := x) (n := 1)
       (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt one_ne_zero
   rw [mlieDerivBilin_inner_eq_leviCivitaConnection hgrad, real_inner_comm _ u,
-    ← hessian_def, ← hessian_def, hessian_symm x hf v u, two_mul]
+    ← I.hessian_eq_inner_leviCivitaConnection_mgradient,
+    ← I.hessian_eq_inner_leviCivitaConnection_mgradient, hessian_symm x hf v u, two_mul]
+
+/-- **Bundled gradient–Hessian identity:** `L_{grad f} g = 2 • Hess f` as continuous bilinear forms
+on `T_x M`. -/
+theorem mlieDerivBilin_mgradient_inner {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
+    mlieDerivBilin I (mgradient I f) RiemannianBundle.g.inner x = 2 • I.hessianForm f x := by
+  ext u v
+  simp [mlieDerivBilin_mgradient_inner_apply hf]
 
 end LeviCivita
 

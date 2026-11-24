@@ -46,15 +46,14 @@ def smoothFormIntegration (k : ℕ) :
     SmoothForm I M ℝ k →ₗ[ℝ]
       (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).linearYonedaObj
         ℝ (ModuleCat.of ℝ ℝ)).X k where
-  toFun φ := integrationCochain φ.1
-  map_add' φ ψ := integrationCochain_add (φ.isSmoothForm.of_le (by simp))
-    (ψ.isSmoothForm.of_le (by simp))
-  map_smul' a φ := integrationCochain_smul a φ.1
+  toFun φ := integrationCochain φ.val
+  map_add' := SmoothForm.integrationCochain_add
+  map_smul' a φ := integrationCochain_smul a φ.val
 
 /-- Integration of a smooth form is its integration cochain. -/
 @[simp]
 theorem smoothFormIntegration_apply (k : ℕ) (φ : SmoothForm I M ℝ k) :
-    smoothFormIntegration I M k φ = integrationCochain φ.1 := (rfl)
+    smoothFormIntegration I M k φ = integrationCochain φ.val := (rfl)
 
 /-- Integration of forms as a map from the de Rham complex to the dual of smooth singular
 chains. Its commutation with differentials is Stokes' theorem. -/
@@ -68,7 +67,7 @@ def deRhamIntegration : deRhamComplex I M ⟶
       ext φ
       -- The objects of the Hom complex are morphism modules; expose their precomposition
       -- differential and the degreewise linear map to compare them with Stokes.
-      change _ ≫ integrationCochain (((deRhamComplexXIso I k).hom φ).1) =
+      change _ ≫ integrationCochain (((deRhamComplexXIso I k).hom φ).val) =
         smoothFormIntegration I M (k + 1)
           ((deRhamComplexXIso I (k + 1)).hom ((deRhamComplex I M).d k (k + 1) φ))
       rw [deRhamComplex_d_apply, Iso.inv_hom_id_apply, smoothFormIntegration_apply,
@@ -81,7 +80,7 @@ of the de Rham complex, is its integration cochain. -/
 @[simp]
 theorem deRhamIntegration_f_inv_apply (k : ℕ) (φ : SmoothForm I M ℝ k) :
     (deRhamIntegration I M).f k ((deRhamComplexXIso I k).inv φ) =
-      integrationCochain φ.1 := by
+      integrationCochain φ.val := by
   -- CochainComplex.ofHom uses the supplied family as its components definitionally;
   -- expose that component and its composite of module morphisms before cancelling the iso.
   change smoothFormIntegration I M k
@@ -121,25 +120,25 @@ theorem deRhamIntegration_naturality {f : M → N} (hf : ContMDiff I J ∞ f) :
   rw [deRhamComplex.map_f_inv_apply, deRhamIntegration_f_inv_apply,
     deRhamIntegration_f_inv_apply]
   exact (congrArg integrationCochain (SmoothForm.coe_mpullback f hf ψ)).trans
-    ((integrationCochain_naturality hf ψ.1).symm.trans
+    ((integrationCochain_naturality hf ψ.val).symm.trans
       (SSet.cochainComplexMap_f_apply _ k _).symm)
 
 /-- The integration cochain of a closed smooth form, bundled as a cocycle. -/
 def integrationCocycle (k : ℕ) (φ : closedForms I M k) :
     (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).linearYonedaObj
       ℝ (ModuleCat.of ℝ ℝ)).cycles k :=
-  HomologicalComplex.moduleCatCyclesMk _ (integrationCochain φ.1.1) (k + 1)
+  HomologicalComplex.moduleCatCyclesMk _ (integrationCochain φ.val.val) (k + 1)
     (CochainComplex.next ℕ k) (by
       exact (ChainComplex.linearYonedaObj_d_apply k (k + 1) _).trans
         (d_comp_integrationCochain_eq_zero
-          (φ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I φ.1).mp φ.2)))
+          (φ.val.isSmoothForm.of_le (by simp)) ((mem_closedForms I φ.val).mp φ.property)))
 
 /-- The cochain underlying the integration cocycle is the integration cochain. -/
 @[simp]
 theorem iCycles_integrationCocycle (k : ℕ) (φ : closedForms I M k) :
     (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).linearYonedaObj
       ℝ (ModuleCat.of ℝ ℝ)).iCycles k (integrationCocycle I M k φ) =
-        integrationCochain φ.1.1 := by
+        integrationCochain φ.val.val := by
   exact HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _
 
 namespace deRhamCohomology
@@ -168,7 +167,7 @@ theorem integration_mk (k : ℕ) (φ : closedForms I M k) :
     HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
   simp only [LinearMap.comp_apply, integrationCocycle]
   congr 2
-  exact deRhamIntegration_f_inv_apply I M k φ.1
+  exact deRhamIntegration_f_inv_apply I M k φ.val
 
 /-- The integration homomorphism is natural under smooth pullback. -/
 theorem integration_naturality {f : M → N} (hf : ContMDiff I J ∞ f) (k : ℕ)

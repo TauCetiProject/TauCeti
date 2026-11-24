@@ -46,7 +46,7 @@ def torusFamilyFiberMap :
   letI := periodAddAction P
   Quotient.map (fun v ↦ (y, v)) fun v w h ↦ by
     obtain ⟨l, hl⟩ := (AddAction.mem_orbit_iff.mp h)
-    obtain ⟨a, ha⟩ := l.2
+    obtain ⟨a, ha⟩ := l.property
     apply (mem_orbit_periodAddAction_iff P).2
     refine ⟨rfl, a, ?_⟩
     rw [ha]
@@ -120,7 +120,7 @@ noncomputable def torusFamilyFiberHomeomorph :
 /-- The fibre homeomorphism is the canonical inclusion on underlying points. -/
 @[simp] theorem coe_torusFamilyFiberHomeomorph
     (z : AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) :
-    (torusFamilyFiberHomeomorph P y hcont z).1 = torusFamilyFiberMap P y z := (rfl)
+    (torusFamilyFiberHomeomorph P y hcont z).val = torusFamilyFiberMap P y z := (rfl)
 
 /-- On representatives, the canonical fibre homeomorphism sends `[v]` to `[y, v]`. -/
 @[simp] theorem torusFamilyFiberHomeomorph_mk (v : E) :

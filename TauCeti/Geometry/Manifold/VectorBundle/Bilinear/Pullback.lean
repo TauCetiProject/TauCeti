@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Pullback and chart expressions of covariant two-tensors on manifolds
@@ -231,23 +231,9 @@ def inChartAtBilin (I : ModelWithCorners 𝕜 E H) (x₀ : M)
 theorem inChartAtBilin_extChartAt_self (x : M)
     (b : (y : M) → TangentSpace I y →L[𝕜] TangentSpace I y →L[𝕜] G) :
     inChartAtBilin I x b (extChartAt I x x) = b x := by
-  have hm := mem_extChartAt_target (I := I) x
-  have hmf : HasMFDerivWithinAt 𝓘(𝕜, E) I (extChartAt I x).symm (range I) (extChartAt I x x)
-      (ContinuousLinearMap.id 𝕜 E) := by
-    refine ⟨(continuousAt_extChartAt_symm'' hm).continuousWithinAt, ?_⟩
-    simp only [writtenInExtChartAt, extChartAt_to_inv, extChartAt_model_space_eq_id,
-      PartialEquiv.refl_coe, PartialEquiv.refl_symm, preimage_id, modelWithCornersSelf_coe,
-      range_id, inter_univ]
-    refine (hasFDerivWithinAt_id _ _).congr_of_eventuallyEq ?_ ((extChartAt I x).right_inv hm)
-    filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hm] with u hu
-    exact (extChartAt I x).right_inv hu
-  have hd : (mfderivWithin 𝓘(𝕜, E) I (extChartAt I x).symm (range I) (extChartAt I x x) :
-      E →L[𝕜] E) = ContinuousLinearMap.id 𝕜 E :=
-    hmf.mfderivWithin (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2
-      (I.uniqueDiffOn _ (extChartAt_target_subset_range x hm)))
   ext v w; rw [inChartAtBilin_apply]
   exact congrArg₂ (fun (B : E →L[𝕜] E →L[𝕜] G) (L : E →L[𝕜] E) ↦ B (L v) (L w))
-    (by rw [extChartAt_to_inv]) hd
+    (by rw [extChartAt_to_inv]) (mfderivWithin_extChartAt_symm_eq_id x)
 
 @[simp] theorem inChartAtBilin_modelSpace (x₀ : E)
     (b : (x : E) → TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E) x →L[𝕜] G) :

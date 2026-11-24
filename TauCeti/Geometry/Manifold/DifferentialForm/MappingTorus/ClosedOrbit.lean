@@ -86,14 +86,8 @@ theorem mpullback_closedOrbit_fiberForm (hk : k ≠ 0) :
   rw [← SmoothForm.coe_mpullback _ (AddCircle.contMDiff_coe (d : ℝ) ∞),
     mpullback_coe_mpullback_closedOrbit h, mpullback_uncurry_mk_fiberForm]
   simp only [SmoothForm.coe_mpullback, ZeroMemClass.coe_zero, mpullback_zero]
-  rw [← mpullback_comp (hline.mdifferentiable (by simp)) mdifferentiable_snd, hsnd]
-  -- The constant map `t ↦ x` has derivative zero, and a form of positive degree vanishes on
-  -- zero vectors.
-  funext t
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [TauCeti.mpullback_apply, mfderiv_const, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
-    Pi.zero_apply]
-  exact (σ.1 x).map_coord_zero ⟨0, Nat.pos_of_ne_zero hk⟩ (zero_apply _)
+  rw [← mpullback_comp (hline.mdifferentiable (by simp)) mdifferentiable_snd, hsnd,
+    TauCeti.mpullback_const hk]
 
 /-- Every fiber form of positive degree, pulled back to `(ℝ / ℤ) × Y_φ`, vanishes on the orbit
 torus. -/
@@ -103,11 +97,8 @@ theorem mpullback_orbitTorus_mpullback_snd_fiberForm {F : Type*} [NormedAddCommG
     {hτ : SmoothForm.mpullback φ φ.contMDiff τ = τ} (hk : k ≠ 0) :
     SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
         (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ τ hτ)) = 0 := by
-  have hsnd : Prod.snd ∘ orbitTorus φ h = closedOrbit φ h ∘ Prod.snd :=
-    funext fun p ↦ congrArg Prod.snd (orbitTorus_apply h p)
-  rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-  simp only [hsnd]
-  rw [SmoothForm.mpullback_comp _ _ contMDiff_snd (contMDiff_closedOrbit h), LinearMap.comp_apply,
+  simp only [orbitTorus_eq_prodMap]
+  rw [SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id (contMDiff_closedOrbit h),
     mpullback_closedOrbit_fiberForm h hk, map_zero]
 
 end TauCeti.SmoothMappingTorus
