@@ -180,6 +180,14 @@ def padicKummerMap (hp : IsUnit (p : K)) :
 
 variable {p K}
 
+/-- The `m`-th coordinate of the limit Kummer map is the Kummer isomorphism at level `p^m`. -/
+private theorem padicKummerMap_apply (hp : IsUnit (p : K))
+    (x : Additive (padicCompletionUnits p K)) (m : ℕ) :
+    (padicKummerMap p K hp x).val m = Multiplicative.toAdd (kummerCoord hp m (x.toMul.val m)) := by
+  simp only [padicKummerMap, kummerH1LimitLift_apply, MonoidHom.coe_toAdditiveLeft,
+    Function.comp_apply, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Subgroup.coe_subtype,
+    Pi.evalMonoidHom_apply]
+
 /-- **The coordinates of the limit Kummer map.** If the `m`-th coordinate of `x ∈ A(K)` is the
 power class of `a ∈ Kˣ`, the `m`-th coordinate of its image is the Kummer class of `a` in
 `H¹(G_K, μ_{p^m})`. -/
@@ -187,7 +195,7 @@ theorem padicKummerMap_apply_of_eq (hp : IsUnit (p : K))
     {x : Additive (padicCompletionUnits p K)} {m : ℕ} {a : Kˣ} (h : x.toMul.val m = a) :
     (padicKummerMap p K hp x).val m =
       Multiplicative.toAdd (kummerMap K (p ^ m) (hp.natCast_pow m) a) := by
-  simp [padicKummerMap, h, kummerCoord_mk]
+  rw [padicKummerMap_apply, h, kummerCoord_mk]
 
 /-- The limit Kummer map sends the class of a unit `a ∈ Kˣ` in `A(K)` to the family of its Kummer
 classes in `H¹(G_K, μ_{p^m})`. -/
@@ -202,7 +210,8 @@ theorem padicKummerMap_padicCompletionUnitsOf (hp : IsUnit (p : K)) (a : Kˣ) (m
 theorem padicKummerMap_injective (hp : IsUnit (p : K)) :
     Function.Injective (padicKummerMap p K hp) := fun x y h ↦ by
   refine Additive.toMul.injective (Subtype.ext (funext fun m ↦ ?_))
-  simpa [padicKummerMap] using congrArg (fun z ↦ z.val m) h
+  exact (kummerCoord hp m).injective (Multiplicative.toAdd.injective (by
+    rw [← padicKummerMap_apply hp x m, ← padicKummerMap_apply hp y m, h]))
 
 /-- **The limit Kummer map is surjective.** -/
 theorem padicKummerMap_surjective (hp : IsUnit (p : K)) :
@@ -219,7 +228,7 @@ theorem padicKummerMap_surjective (hp : IsUnit (p : K)) :
     exact (kummerH1Tower p K).mem_lim.1 y.property m
   refine ⟨Additive.ofMul ⟨x, hcompat⟩, ?_⟩
   ext m
-  simp [padicKummerMap, hx m]
+  rw [padicKummerMap_apply, toMul_ofMul, hx m, toAdd_ofAdd]
 
 /-- **The limit Kummer map is bijective.** -/
 theorem padicKummerMap_bijective (hp : IsUnit (p : K)) :
@@ -286,7 +295,8 @@ theorem padicKummerMap_smul (hp : IsUnit (p : K)) (a : ℤ_[p])
     (x : Additive (padicCompletionUnits p K)) :
     padicKummerMap p K hp (a • x) = a • padicKummerMap p K hp x := by
   ext m
-  simp [padicKummerMap, padicCompletionUnits_smul_apply, map_pow, toAdd_pow]
+  rw [padicKummerMap_apply, padicCompletionUnits_smul_apply, map_pow, toAdd_pow,
+    kummerH1Limit_smul_apply, padicKummerMap_apply]
 
 variable (p K)
 
