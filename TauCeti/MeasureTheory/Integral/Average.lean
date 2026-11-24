@@ -161,9 +161,7 @@ applied to an integrable function that is almost everywhere at least `a`.
 * `TauCeti.tendsto_measureReal_inter_of_monotone`, `TauCeti.tendsto_setAverage_inter_of_monotone`:
   along an increasing sequence of sets covering `s`, the measures of and averages over the pieces
   of `s` converge to those over `s`.
-* `TauCeti.tendsto_average_of_L1`, `TauCeti.tendsto_average_of_L1'`,
-  `TauCeti.tendsto_setAverage_of_L1`, `TauCeti.tendsto_setAverage_of_L1'`: averages and fixed-set
-  averages pass to `L¹` limits along arbitrary filters.
+* `TauCeti.tendsto_average_of_L1'`: averages pass to `L¹` limits along arbitrary filters.
 * `TauCeti.exists_lt_of_measure_lt_of_le_setIntegral`: a set of measure below `δ / c` with
   integral at least `δ` contains a point where the function exceeds `c`.
 * `TauCeti.setAverage_mul_setAverage_le_of_setLIntegral_mul_le`: a bound `C μ(B)²` on the product of
@@ -1168,33 +1166,11 @@ variable {X F ι : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGro
   [NormedSpace ℝ F]
 
 /-- If `F i → f` in `L¹(μ)`, then `⨍ x, F i x ∂μ → ⨍ x, f x ∂μ`. -/
-theorem tendsto_average_of_L1 (f : X → F) (hfi : AEStronglyMeasurable f μ) {F : ι → X → F}
-    {l : Filter ι} (hFi : ∀ᶠ i in l, Integrable (F i) μ)
-    (hF : Tendsto (fun i ↦ ∫⁻ x, ‖F i x - f x‖ₑ ∂μ) l (𝓝 0)) :
-    Tendsto (fun i ↦ ⨍ x, F i x ∂μ) l (𝓝 (⨍ x, f x ∂μ)) := by
-  simpa only [average_eq] using (tendsto_integral_of_L1 f hfi hFi hF).const_smul (μ.real Set.univ)⁻¹
-
-/-- If `F i → f` in `L¹(μ)`, then `⨍ x, F i x ∂μ → ⨍ x, f x ∂μ`. -/
 theorem tendsto_average_of_L1' (f : X → F) {F : ι → X → F} {l : Filter ι}
     (hFi : ∀ᶠ i in l, Integrable (F i) μ)
     (hF : Tendsto (fun i ↦ eLpNorm (F i - f) 1 μ) l (𝓝 0)) :
     Tendsto (fun i ↦ ⨍ x, F i x ∂μ) l (𝓝 (⨍ x, f x ∂μ)) := by
   simpa only [average_eq] using (tendsto_integral_of_L1' f hFi hF).const_smul (μ.real Set.univ)⁻¹
-
-/-- If `F i → f` in `L¹` on `s`, then `⨍ x in s, F i x ∂μ → ⨍ x in s, f x ∂μ`. -/
-theorem tendsto_setAverage_of_L1 (f : X → F) {s : Set X}
-    (hfi : AEStronglyMeasurable f (μ.restrict s)) {F : ι → X → F} {l : Filter ι}
-    (hFi : ∀ᶠ i in l, IntegrableOn (F i) s μ)
-    (hF : Tendsto (fun i ↦ ∫⁻ x in s, ‖F i x - f x‖ₑ ∂μ) l (𝓝 0)) :
-    Tendsto (fun i ↦ ⨍ x in s, F i x ∂μ) l (𝓝 (⨍ x in s, f x ∂μ)) :=
-  tendsto_average_of_L1 f hfi hFi hF
-
-/-- If `F i → f` in `L¹` on `s`, then `⨍ x in s, F i x ∂μ → ⨍ x in s, f x ∂μ`. -/
-theorem tendsto_setAverage_of_L1' (f : X → F) {s : Set X} {F : ι → X → F} {l : Filter ι}
-    (hFi : ∀ᶠ i in l, IntegrableOn (F i) s μ)
-    (hF : Tendsto (fun i ↦ eLpNorm (F i - f) 1 (μ.restrict s)) l (𝓝 0)) :
-    Tendsto (fun i ↦ ⨍ x in s, F i x ∂μ) l (𝓝 (⨍ x in s, f x ∂μ)) :=
-  tendsto_average_of_L1' f hFi hF
 
 end L1
 

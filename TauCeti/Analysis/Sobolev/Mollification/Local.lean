@@ -40,8 +40,8 @@ locally `Lᵖ` on `V`). If `u` is continuous on `Ω`, the mollifications also co
 * `TauCeti.HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator` and
   `TauCeti.HasWeakFDerivOn.fderiv_normed_convolution_indicator`: interior derivative identity
   `D(φ ⋆ V.indicator u) = φ ⋆ V.indicator Du`.
-* `TauCeti.HasWeakFDerivOn.contDiff_normed_convolution_indicator`: smoothness of the zero-extended
-  mollification.
+* `MeasureTheory.LocallyIntegrableOn.contDiff_normed_convolution_indicator`: smoothness of the
+  zero-extended mollification.
 * `TauCeti.HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le`: `Lᵖ` gradient bound
   `‖D(φ ⋆ V.indicator u)‖_{Lᵖ(s)} ≤ ‖Du‖_{Lᵖ(V)}` for `1 ≤ p ≤ ∞`.
 * `TauCeti.HasWeakFDerivOn.tendsto_eLpNorm_fderiv_normed_convolution_indicator_sub`: `Lᵖ`
@@ -63,6 +63,22 @@ noncomputable section
 
 open ContinuousLinearMap Filter MeasureTheory Metric Set TopologicalSpace
 open scoped ContDiff Convolution ENNReal Topology
+
+/-- **Smoothness of the interior mollification.** If `u` is locally integrable on `Ω` and `V` is a
+null-measurable set with compact closure in `Ω`, then convolving the zero extension of `u` from `V`
+with a normalized smooth bump yields a globally smooth function. -/
+theorem MeasureTheory.LocallyIntegrableOn.contDiff_normed_convolution_indicator
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {Ω : Set E} {u : E → F} (hu : LocallyIntegrableOn u Ω μ) {V : Set E}
+    (hV : NullMeasurableSet V μ) (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω)
+    (φ : ContDiffBump (0 : E)) :
+    ContDiff ℝ ∞ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] V.indicator u) := by
+  have huV : Integrable (V.indicator u) μ :=
+    (hu.integrableOn_of_isCompact_closure hVc hVΩ).integrable_indicator₀ hV
+  exact φ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) φ.contDiff_normed
+    huV.locallyIntegrable
 
 namespace TauCeti
 
@@ -97,20 +113,6 @@ theorem HasWeakFDerivOn.fderiv_normed_convolution_indicator (hu : HasWeakFDerivO
     fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) x =
       (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) x :=
   (hu.hasFDerivAt_normed_convolution_indicator hVc hVΩ φ hx).fderiv
-
-/-- **Smoothness of the interior mollification.** If `u` has a weak Fréchet derivative on `Ω` and
-`V` is an open set with compact closure in `Ω`, then convolving the zero extension of `u` from `V`
-with a normalized smooth bump yields a globally smooth function. -/
-theorem HasWeakFDerivOn.contDiff_normed_convolution_indicator (hu : HasWeakFDerivOn μ Ω u Du)
-    {V : Opens E} (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Ω)
-    (φ : ContDiffBump (0 : E)) :
-    ContDiff ℝ ∞ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) := by
-  have : CompleteSpace F := hu.completeSpace
-  have huV : Integrable ((V : Set E).indicator u) μ :=
-    (hu.locallyIntegrableOn.integrableOn_of_isCompact_closure hVc hVΩ).integrable_indicator
-      V.isOpen.measurableSet
-  exact φ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) φ.contDiff_normed
-    huV.locallyIntegrable
 
 /-- **`Lᵖ` gradient bound for interior mollifications.** If `V` has compact closure in `Ω`,
 `1 ≤ p ≤ ∞`, and every point of a measurable set `s` has `closedBall x φ.rOut ⊆ V`, then
@@ -200,7 +202,8 @@ private theorem exists_interior_mollification (hu : HasWeakFDerivOn μ Ω u Du)
       exact (div_le_self hδ2.le (by linarith [n.cast_nonneg' (α := ℝ)])).trans_lt
         (half_lt_self hδ)⟩
   refine ⟨fun n => (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] (W : Set E).indicator u,
-    fun n => hu.contDiff_normed_convolution_indicator hWc hWΩ (φ n),
+    fun n => hu.locallyIntegrableOn.contDiff_normed_convolution_indicator
+      W.isOpen.measurableSet.nullMeasurableSet hWc hWΩ (φ n),
     fun n => (hu.eLpNorm_fderiv_normed_convolution_indicator_le hWc hWΩ U.isOpen.measurableSet
       (φ n) (hball n) hp1).trans
       (eLpNorm_mono_measure _ (Measure.restrict_mono (subset_closure.trans hclW) le_rfl)),
