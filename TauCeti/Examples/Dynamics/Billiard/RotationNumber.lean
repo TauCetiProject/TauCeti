@@ -17,9 +17,10 @@ periodic orbits on invariant graphs of the billiard map
 (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_eq_div_iff`,
 `TauCeti.StrictConvexBilliardTable.IsInvariantGraph.iterate_nextCollision_ne_of_irrational`).
 
-* The translations `g₁(x) = x + α` and `g₂(x) = x + α + 1/10`, with `α = √2/2`: the choice
-  `q = 7`, `p = 5` of the proof satisfies `0 < p - q α < 1/10`, and the translation number of
-  `g₂` is larger than `α`.
+* The translations `g₁(x) = x + α` and `g₂(x) = x + α + 1/10`, with `α = √2/2`: `q = 7`, `p = 5`
+  is one admissible choice of the `q`, `p` given by `Irrational.exists_int_sub_nat_mul_mem_Ioo`
+  for `ε = 1/10`, that is `0 < p - q α < 1/10`, and the translation number of `g₂` is larger
+  than `α`.
 * On the circular table of radius `R`, the constant graph `v = 0` (angle `δ = π / 2`) has
   rotation number `1/2` and carries a periodic orbit of type `(1, 2)`; the constant graph
   `v = cos (π √2/2)` (angle `δ = π √2/2`) has rotation number `√2/2` and carries no periodic orbit.
@@ -33,7 +34,7 @@ open Real Set
 
 namespace TauCeti.Examples.BilliardRotationNumber
 
-/-- The choice `q = 7`, `p = 5` for `α = √2/2` and `ε = 1/10`: `0 < 5 - 7 α < 1/10`. -/
+/-- An admissible choice `q = 7`, `p = 5` for `α = √2/2` and `ε = 1/10`: `0 < 5 - 7 α < 1/10`. -/
 theorem five_sub_seven_mul_mem_Ioo : (5 : ℝ) - 7 * (√2 / 2) ∈ Ioo 0 (1 / 10) := by
   have h₁ : √2 < 1.4143 := by
     rw [sqrt_lt' (by norm_num)]

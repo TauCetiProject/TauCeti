@@ -54,7 +54,8 @@ theorem exists_pos_forall_add_le_of_forall_lt {f g : CircleDeg1Lift} (hf : Conti
     hx₀ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩
   linarith [f.map_fract_sub_fract_eq x, g.map_fract_sub_fract_eq x]
 
-/-- A uniform margin `f + ε ≤ g` between two lifts, with `g` monotone, survives iteration. -/
+/-- A uniform margin `f + ε ≤ g` between two lifts, with `0 ≤ ε`, persists for every iterate:
+`f^[n] + ε ≤ g^[n]` for `n ≠ 0`. -/
 theorem iterate_add_le_iterate {f g : CircleDeg1Lift} {ε : ℝ} (hε : 0 ≤ ε)
     (h : ∀ x, f x + ε ≤ g x) {n : ℕ} (hn : n ≠ 0) (x : ℝ) : f^[n] x + ε ≤ g^[n] x := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
