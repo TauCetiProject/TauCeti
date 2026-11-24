@@ -289,7 +289,10 @@ variable (K) in
 /-- The inclusions `K⁺ ≤ E_K ≤ K` form a scalar tower. -/
 instance isScalarTower_maximalRealSubfield_maximalRealOrCMSubfield :
     IsScalarTower (maximalRealSubfield K) (maximalRealOrCMSubfield K) K :=
-  .of_algebraMap_eq fun _ ↦ rfl
+  .of_algebraMap_eq fun x ↦ by
+    rw [Algebra.algebraMap_ofSubsemiring_apply,
+      Algebra.algebraMap_ofSubsemiring_apply,
+      coe_algebraMap_maximalRealSubfield_maximalRealOrCMSubfield]
 
 /-- The image of `K⁺` in `E_K` is the maximal real subfield of `E_K`. -/
 private theorem fieldRange_algebraMap_maximalRealSubfield :
@@ -304,12 +307,14 @@ private theorem fieldRange_algebraMap_maximalRealSubfield :
       rw [map_maximalRealSubfield_maximalRealOrCMSubfield]
       exact x.property
     obtain ⟨z, hz, hzx⟩ := Subfield.mem_map.mp hx
-    rwa [show z = algebraMap _ _ x from Subtype.ext hzx] at hz
+    have hz' : z = algebraMap _ _ x := Subtype.ext <| by
+      rw [coe_algebraMap_maximalRealSubfield_maximalRealOrCMSubfield, ← hzx, Subfield.subtype_apply]
+    rwa [hz'] at hz
   · intro hy
     have hy' : (y : K) ∈ maximalRealSubfield K := by
       rw [← map_maximalRealSubfield_maximalRealOrCMSubfield]
       exact Subfield.mem_map.mpr ⟨y, hy, rfl⟩
-    exact ⟨⟨y, hy'⟩, rfl⟩
+    exact ⟨⟨y, hy'⟩, Subtype.ext (coe_algebraMap_maximalRealSubfield_maximalRealOrCMSubfield _)⟩
 
 /-- **`[E_K : K⁺]` is `1` or `2`**, for the algebra structure given by the inclusion
 `K⁺ ≤ E_K`: `E_K` is `K⁺` if it is totally real, and a quadratic extension of its maximal real
@@ -321,16 +326,37 @@ theorem finrank_maximalRealSubfield_maximalRealOrCMSubfield_eq_one_or_eq_two :
   rcases isTotallyReal_or_isCMField_maximalRealOrCMSubfield K with hE | hE
   · -- `E_K = K⁺`, so the algebra map is bijective.
     have hsurj : Function.Surjective (algebraMap (maximalRealSubfield K) E) := fun y ↦
-      ⟨⟨y, isTotallyReal_iff_le_maximalRealSubfield.mp hE y.property⟩, rfl⟩
+      ⟨⟨y, isTotallyReal_iff_le_maximalRealSubfield.mp hE y.property⟩,
+        Subtype.ext (coe_algebraMap_maximalRealSubfield_maximalRealOrCMSubfield _)⟩
     let i : maximalRealSubfield K ≃+* E := .ofBijective _ ⟨RingHom.injective _, hsurj⟩
-    rw [Algebra.finrank_eq_of_equiv_equiv i (RingEquiv.refl E) (RingHom.ext fun _ ↦ rfl),
+    have hc : (algebraMap E E).comp i.toRingHom =
+        (RingEquiv.refl E).toRingHom.comp (algebraMap (maximalRealSubfield K) E) :=
+      RingHom.ext fun x ↦ by
+        simp only [i, RingHom.comp_apply, Algebra.algebraMap_self_apply,
+          RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.refl_apply]
+        exact RingEquiv.ofBijective_apply _ _ x
+    rw [Algebra.finrank_eq_of_equiv_equiv i (RingEquiv.refl E) hc,
       Module.finrank_self]
     exact .inl rfl
   · -- `K⁺` is identified with the maximal real subfield of `E_K`, over which `E_K` is quadratic.
-    let i : maximalRealSubfield K ≃+* maximalRealSubfield E :=
-      (algebraMap (maximalRealSubfield K) E).rangeRestrictFieldEquiv.trans
-        (RingEquiv.subfieldCongr fieldRange_algebraMap_maximalRealSubfield)
-    rw [Algebra.finrank_eq_of_equiv_equiv i (RingEquiv.refl E) (RingHom.ext fun _ ↦ rfl)]
+    have hmem (x : maximalRealSubfield K) :
+        algebraMap (maximalRealSubfield K) E x ∈ maximalRealSubfield E := by
+      rw [← fieldRange_algebraMap_maximalRealSubfield (K := K)]
+      exact RingHom.mem_fieldRange_self _ x
+    let j := (algebraMap (maximalRealSubfield K) E).codRestrict _ hmem
+    have hj : Function.Bijective j := by
+      refine ⟨RingHom.injective_codRestrict.mpr (RingHom.injective _), fun ⟨y, hy⟩ ↦ ?_⟩
+      rw [← fieldRange_algebraMap_maximalRealSubfield (K := K)] at hy
+      obtain ⟨x, hx⟩ := RingHom.mem_fieldRange.mp hy
+      exact ⟨x, Subtype.ext (by rw [RingHom.codRestrict_apply, hx])⟩
+    let i : maximalRealSubfield K ≃+* maximalRealSubfield E := .ofBijective j hj
+    have hc : (algebraMap (maximalRealSubfield E) E).comp i.toRingHom =
+        (RingEquiv.refl E).toRingHom.comp (algebraMap (maximalRealSubfield K) E) :=
+      RingHom.ext fun x ↦ by
+        simp only [i, j, RingHom.comp_apply, Algebra.algebraMap_ofSubsemiring_apply,
+          RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.ofBijective_apply,
+          RingHom.codRestrict_apply, RingEquiv.refl_apply]
+    rw [Algebra.finrank_eq_of_equiv_equiv i (RingEquiv.refl E) hc]
     exact .inr (Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield E) E)
 
 /-- **`[E_K : ℚ]` is `[K⁺ : ℚ]` or `2 [K⁺ : ℚ]`**, by the tower law and
