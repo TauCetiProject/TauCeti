@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 
 /-!
 # The chain rule for the Riemannian Hessian
@@ -72,10 +73,11 @@ theorem hessian_comp {h : ℝ → ℝ} {f : M → ℝ} {x : M} (hh : ContDiffAt 
       inner_mgradient]
   have hcov := cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hgrad hprod
     Filter.univ_mem heq
-  rw [hessian_def, hcov, cov.isCovariantDerivativeOnUniv.leibniz hG hg]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
-    inner_add_left,
-    real_inner_smul_left, inner_mgradient, hdg, hessian_def, G, g, cov, Function.comp_apply]
+  rw [I.hessian_eq_inner_leviCivitaConnection_mgradient, hcov,
+    cov.isCovariantDerivativeOnUniv.leibniz hG hg]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, inner_add_left,
+    real_inner_smul_left, inner_mgradient, hdg, I.hessian_eq_inner_leviCivitaConnection_mgradient,
+    G, g, cov, Function.comp_apply]
 
 /-- The Hessian of the square of a `C²` function. -/
 theorem hessian_sq {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)

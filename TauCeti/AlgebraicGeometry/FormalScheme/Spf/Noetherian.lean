@@ -6,18 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Basic
-public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood.Noetherian
 public import Mathlib.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.FormalScheme.Spf.FromSpec
 import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 
 /-!
-# Noetherian properties of formal spectra
+# Noetherian topological spaces and scheme immersions into formal spectra
 
-Let `A` be a complete separated noetherian adic ring. Then `Spf A` has a noetherian underlying
-topological space (`TauCeti.FormalScheme.Spf.noetherianSpace_carrier`, as a subspace of
-`PrimeSpectrum A`) and noetherian local stalks (`TauCeti.FormalScheme.Spf.stalk_isNoetherianRing`,
-via EGA I, Ch. 0, 7.6.17).
+Let `A` be a noetherian topological ring. Then `Spf A` has a noetherian underlying topological space
+(`TauCeti.FormalScheme.Spf.noetherianSpace_carrier`, as a subspace of `PrimeSpectrum A`);
+noetherianity of its local stalks is `TauCeti.FormalScheme.Spf.isNoetherianRing_stalk` in
+`TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk`.
 
 Moreover, if an affine scheme `Spec R` maps into `Spf C` (for a noetherian adic ring `C`) via a
 morphism of locally ringed spaces whose base map is an open embedding and whose stalk maps are
@@ -28,8 +27,6 @@ noetherian affine scheme, which is locally of finite type.
 
 ## Main results
 
-* `TauCeti.FormalScheme.Spf.stalk_isNoetherianRing`: the stalks of `Spf A` are noetherian when `A`
-  is a noetherian adic ring.
 * `TauCeti.FormalScheme.Spf.noetherianSpace_carrier`: `Spf.carrier A` is a `NoetherianSpace` when
   `A` is noetherian.
 * `TauCeti.FormalScheme.Spf.isNoetherianRing_of_isOpenEmbedding_fromSpec`: a morphism
@@ -38,8 +35,7 @@ noetherian affine scheme, which is locally of finite type.
 
 ## References
 
-* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, 7.6.17, and
-  Ch. I, 10.1.6, 10.4.2.
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. I, 10.4.2 and 10.6.5.
 * [Stacks Project, Tag 0AHY](https://stacks.math.columbia.edu/tag/0AHY) and
   [Tag 01OU](https://stacks.math.columbia.edu/tag/01OU).
 -/
@@ -51,15 +47,6 @@ open CategoryTheory TopologicalSpace AlgebraicGeometry
 universe u
 
 namespace TauCeti.FormalScheme.Spf
-
-/-- The stalks of `Spf A` for a noetherian adic ring `A` are noetherian local rings. -/
-instance stalk_isNoetherianRing {A : Type u} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] [IsAdicRing A] [IsNoetherianRing A] (p : Spf A) :
-    IsNoetherianRing ((Spf A).presheaf.stalk p) := by
-  let p' : carrier A := p
-  let e : Limits.colimit (completedNeighbourhoodDiagram p') ≅ (Spf A).presheaf.stalk p :=
-    completedNeighbourhoodColimitIso p' (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1
-  exact isNoetherianRing_of_ringEquiv _ e.commRingCatIsoToRingEquiv
 
 /-- The underlying space of `Spf A` for a noetherian topological ring `A` is a noetherian
 topological space. -/
@@ -78,14 +65,15 @@ theorem isNoetherianRing_of_isOpenEmbedding_fromSpec {C R : Type u} [CommRing C]
     IsNoetherianRing R := by
   obtain ⟨m, hm⟩ := exists_ideal_pow_le_ker_fromSpecGlobalMap α
   let K := IsAdicRing.ideal C ^ (m + 1)
-  let ψbar := fromSpecQuotientLift α hm
+  have hK : IsAdic K := is_ideal_adic_pow (IsAdicRing.ideal_spec C).2.1 m.succ_pos
+  let ψbar := fromSpecLift α hm
   let g : Spec (CommRingCat.of R) ⟶ Spec (CommRingCat.of (C ⧸ K)) :=
     Spec.map (CommRingCat.ofHom ψbar)
   have hopen : Topology.IsOpenEmbedding (PrimeSpectrum.comap ψbar) :=
-    isOpenEmbedding_comap_fromSpecQuotientLift α hα_open hm
+    isOpenEmbedding_comap_fromSpecLift α hα_open hK hm
   have hpre : IsPreimmersion g :=
     { isEmbedding := hopen.isEmbedding
-      stalkMap_surjective := stalkMap_fromSpecQuotientLift_surjective α hα_stalk hm }
+      stalkMap_surjective := stalkMap_fromSpecLift_surjective α hα_stalk hK hm }
   have : IsImmersion g := { hpre with isLocallyClosed_range := hopen.isOpen_range.isLocallyClosed }
   have : AlgebraicGeometry.IsLocallyNoetherian (Spec (CommRingCat.of R)) :=
     LocallyOfFiniteType.isLocallyNoetherian g

@@ -41,6 +41,8 @@ the level divides `2 · det L`, and for a nondegenerate lattice it kills the dis
   `N • G⁻¹` is integral with even diagonal.
 * `TauCeti.IntegralLattice.IsEven.level_dvd_iff`: for an even lattice, the level divides `N`
   exactly when `N` kills the discriminant quadratic form.
+* `TauCeti.IntegralLattice.IsEven.level_dvd_of_odd`: for odd `n`, an even lattice whose
+  discriminant group is killed by `n` has level dividing `n`.
 * `TauCeti.IntegralLattice.IsEven.level_eq_addOrderOf`: when the discriminant group is cyclic,
   the level is the additive order of the quadratic value of a generator.
 * `TauCeti.IntegralLattice.IsEven.level_eq_den`: when that quadratic value is the class of a
@@ -138,7 +140,7 @@ theorem exponent_discriminantGroup_dvd_level (L : IntegralLattice V) [L.IsNondeg
   induction a using Submodule.Quotient.induction_on with
   | H x =>
     rw [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff]
-    exact level_nsmul_mem_carrier x.2
+    exact level_nsmul_mem_carrier x.property
 
 /-- **The level divides twice the determinant.** -/
 theorem level_dvd_two_mul_determinant (L : IntegralLattice V) :
@@ -207,14 +209,14 @@ theorem level_dvd_iff_gramMatrix {ι : Type v} [Fintype ι] [DecidableEq ι] (b 
     (N : ℤ) :
     (L.level : ℤ) ∣ N ↔ ∃ M : Matrix ι ι ℤ, (∀ i, Even (M i i)) ∧
       M.map (Int.cast : ℤ → ℚ) = (N : ℚ) • ((L.gramMatrix b).map (Int.cast : ℤ → ℚ))⁻¹ := by
-  set f := (L.dualCarrierBasis b).extendOfIsLattice ℚ
+  set f := (L.dualCarrierBasis b).extendOfIsFullLattice ℚ
   -- The inverse Gram matrix is the Gram matrix of the dual basis.
   have hinv (i j : ι) : ((L.gramMatrix b).map (Int.cast : ℤ → ℚ))⁻¹ i j = L.form (f i) (f j) := by
     have h := congrFun (congrFun (L.toMatrix_dualCarrierBasis b) i) j
     simpa only [LinearMap.BilinForm.toMatrix_apply,
       algebraMap_int_eq, Int.coe_castRingHom] using h.symm
   rw [L.level_dvd_iff_of_dualCarrier_eq_span f (by
-    simpa only [f, L.extendOfIsLattice_dualCarrierBasis] using
+    simpa only [f, L.extendOfIsFullLattice_dualCarrierBasis] using
       L.dualCarrier_eq_span_dualBasis b) N]
   constructor
   · rintro ⟨hint, heven⟩
@@ -265,7 +267,7 @@ theorem IsEven.level_dvd_iff {L : IntegralLattice V} (hL : L.IsEven) (N : ℤ) :
   · intro h a
     induction a using Submodule.Quotient.induction_on with
     | H x =>
-      obtain ⟨k, hk⟩ := h x x.2
+      obtain ⟨k, hk⟩ := h x x.property
       rw [discriminantQuadraticMap_mk]
       refine AddCircle.zsmul_coe_eq_zero (c := k) ?_
       rw [norm_apply] at hk
@@ -279,6 +281,31 @@ theorem IsEven.level_dvd_iff {L : IntegralLattice V} (hL : L.IsEven) (N : ℤ) :
     refine ⟨k, ?_⟩
     rw [norm_apply]
     linear_combination -2 * hk
+
+/-- **For odd `n`, an even lattice whose discriminant group is killed by `n` has level dividing
+`n`.** For `x ∈ Lᵛ` the integer `m = n · B(x, x) = B(x, n x)` satisfies `n m = B(n x, n x) ∈ 2ℤ`,
+so `m` is even when `n` is odd. At `n = 2` this fails: `⟨2⟩` has discriminant group `ℤ/2` and
+level `4`. -/
+theorem IsEven.level_dvd_of_odd {L : IntegralLattice V} (hL : L.IsEven) {n : ℕ} (hodd : Odd n)
+    (hn : ∀ x : L.DiscriminantGroup, n • x = 0) : L.level ∣ n := by
+  rw [← Int.natCast_dvd_natCast, L.level_dvd_iff]
+  intro x hx
+  have hnx : n • x ∈ L.carrier := L.nsmul_mem_carrier n hn ⟨x, hx⟩
+  obtain ⟨m, hm⟩ := Submodule.mem_one.mp
+    ((LinearMap.BilinForm.mem_dualSubmodule _).mp hx _ hnx)
+  obtain ⟨z, hz⟩ := hL.exists_norm_eq_two_mul ⟨n • x, hnx⟩
+  rw [Submodule.coe_mk] at hz
+  rw [eq_intCast, map_nsmul, nsmul_eq_mul] at hm
+  simp only [norm_apply, map_nsmul, LinearMap.smul_apply, nsmul_eq_mul] at hz
+  -- `n m = n² B(x, x) = B(n x, n x) = 2 z` in `ℤ`, so `m` is even since `n` is odd.
+  have hnm : (n : ℤ) * m = 2 * z := by
+    have : ((n : ℤ) * m : ℚ) = (2 * z : ℤ) := by push_cast; rw [hm, ← hz]
+    exact_mod_cast this
+  obtain ⟨k, hk⟩ : Even m := by
+    rcases Int.even_mul.mp ⟨z, by rw [hnm]; ring⟩ with h | h
+    · exact absurd h (Int.not_even_iff_odd.mpr (by exact_mod_cast hodd.natCast))
+    · exact h
+  exact ⟨k, by rw [norm_apply, Int.cast_natCast, ← hm, hk]; push_cast; ring⟩
 
 /-- If a class generates the discriminant group of an even lattice, the level is the additive
 order of its quadratic value. No nondegeneracy hypothesis is needed. -/
@@ -316,7 +343,7 @@ theorem level_eq_one_iff (L : IntegralLattice V) [L.IsNondegenerate] :
   · intro h
     refine ⟨L.isEven_iff_forall_norm.mpr fun x ↦ ?_,
       L.isUnimodular_iff_dualCarrier_le.mpr fun x hx ↦ ?_⟩
-    · obtain ⟨k, hk⟩ := (L.level_dvd_iff 1).mp (by simp [h]) x (L.le_dualCarrier x.2)
+    · obtain ⟨k, hk⟩ := (L.level_dvd_iff 1).mp (by simp [h]) x (L.le_dualCarrier x.property)
       exact ⟨k, by simpa using hk⟩
     · simpa [h] using level_nsmul_mem_carrier hx
   · rintro ⟨he, hu⟩

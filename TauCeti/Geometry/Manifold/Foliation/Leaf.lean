@@ -112,14 +112,14 @@ theorem JoinedByTangentCurve.sameLeaf (h : F.JoinedByTangentCurve x y) : F.SameL
 variable (F) in
 /-- Lying on the same leaf of `F` is an equivalence relation. -/
 theorem sameLeaf_equivalence : Equivalence F.SameLeaf :=
-  Relation.EqvGen.is_equivalence _
+  Relation.EqvGen.equivalence _
 
 /-- Lying on the same leaf of `F` is the least equivalence relation relating the ends of every curve
 tangent to `F`. -/
 theorem sameLeaf_le {r : M → M → Prop} (hr : Equivalence r) (h : F.JoinedByTangentCurve ≤ r) :
     F.SameLeaf ≤ r := by
   have := hr.isEquiv
-  exact Relation.EqvGen.eqvGen_le h
+  exact Relation.eqvGen_le h
 
 variable (F) in
 /-- Every point lies on its own leaf. -/

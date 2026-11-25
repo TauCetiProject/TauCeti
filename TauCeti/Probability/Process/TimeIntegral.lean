@@ -60,7 +60,7 @@ theorem IsStronglyProgressive.integral_Ioc_kernel (hH : IsStronglyProgressive F 
         (⟨min p.2 T, min_le_right _ _⟩, p.1.2) : (Iic T × Ω) × ι → Iic T × Ω) :=
       ((measurable_snd.min measurable_const).subtype_mk).prodMk measurable_fst.snd
     exact ((hH T).comp_measurable hinput).indicator
-      (measurableSet_le measurable_snd measurable_fst.fst.subtype_val)
+      (measurableSet_le measurable_snd measurable_fst.fst.subtypeVal)
   have hm := hG.integral_kernel_prod_right' (κ := η)
   convert hm using 1
   ext p

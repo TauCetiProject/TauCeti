@@ -171,10 +171,10 @@ theorem homogeneousSubmodule_ext_prod_dp {d : ℕ}
         g ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩) :
     f = g := by
   refine homogeneousSubmodule_ext fun l hl ↦ ?_
-  have hk : ∑ j : Fin l.length, l[j.1].1 = d := by
+  have hk : ∑ j : Fin l.length, l[j.val].1 = d := by
     simpa using hl
   have hp := Fin.prod_univ_fun_getElem l (fun nm : ℕ × M ↦ dp R nm.1 nm.2)
-  simpa only [hp] using h l.length (fun j ↦ l[j.1].2) (fun j ↦ l[j.1].1) hk
+  simpa only [hp] using h l.length (fun j ↦ l[j.val].2) (fun j ↦ l[j.val].1) hk
 
 /-- The functorial map on divided power algebras preserves every homogeneous piece, including
 when it changes the base ring to an `R`-algebra `S`. -/
@@ -218,7 +218,7 @@ def mapHomogeneousSubmodule (f : M →ₗ[R] N) (d : ℕ) :
   LinearMap.codRestrict _
     ((map R f).toLinearMap.comp
       (homogeneousSubmodule (R := R) (M := M) d).subtype)
-    (fun x ↦ map_mem_homogeneousSubmodule f x.2)
+    (fun x ↦ map_mem_homogeneousSubmodule f x.property)
 
 /-- The map on homogeneous pieces is the restriction of `DividedPowerAlgebra.map`. -/
 @[simp]
@@ -267,8 +267,8 @@ def homogeneousProdMul (d e : ℕ) :
       homogeneousSubmodule (R := R) (M := M × N) (d + e) :=
   TensorProduct.lift <| LinearMap.mk₂ R
     (fun x y ↦ ⟨map R (LinearMap.inl R M N) x * map R (LinearMap.inr R M N) y,
-      mul_mem_homogeneousSubmodule (map_mem_homogeneousSubmodule _ x.2)
-        (map_mem_homogeneousSubmodule _ y.2)⟩)
+      mul_mem_homogeneousSubmodule (map_mem_homogeneousSubmodule _ x.property)
+        (map_mem_homogeneousSubmodule _ y.property)⟩)
     (fun _ _ _ ↦ Subtype.ext <| by simp [add_mul])
     (fun _ _ _ ↦ Subtype.ext <| by simp)
     (fun _ _ _ ↦ Subtype.ext <| by simp [mul_add])

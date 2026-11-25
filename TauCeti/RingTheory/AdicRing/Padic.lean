@@ -9,26 +9,27 @@ public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Huber.Padic.Basic
 
 /-!
-# The p-adic integers as a complete adic ring
+# The `p`-adic integers as a complete adic ring
 
-The ring `ℤ_[p]` of `p`-adic integers with its norm topology is a complete separated adic ring of
-finite ideal type (`TauCeti.IsAdicRing`), with the maximal ideal `(p)` as ideal of definition.
+This bridge module combines `TauCeti.Huber.PadicInt.isAdic_maximalIdeal` with
+`TauCeti.IsAdicRing` so that clients needing `IsAdicRing ℤ_[p]` can import it without pulling
+`TauCeti.RingTheory.AdicRing.Basic` into `TauCeti.RingTheory.Huber.Padic.Basic`.
 
-## References
+## Main instances
 
-* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §7.1.4.
-* [Wedhorn, *Adic Spaces*][wedhorn_adic], §6.
+* `TauCeti.IsAdicRing.padicInt`: `ℤ_[p]` is a complete separated adic ring of finite ideal type,
+  with ideal of definition `(p)`.
 -/
 
 public section
 
 namespace TauCeti.IsAdicRing
 
-/-- The `p`-adic integers `ℤ_[p]` with their norm topology form a complete separated adic ring of
-finite ideal type, with ideal of definition `(p)`. -/
-instance padicInt {p : ℕ} [Fact p.Prime] : IsAdicRing ℤ_[p] :=
+/-- **`ℤ_[p]` is a complete separated adic ring of finite ideal type**, with ideal of definition
+`(p)`. -/
+instance padicInt (p : ℕ) [Fact p.Prime] : IsAdicRing ℤ_[p] :=
   ⟨IsLocalRing.maximalIdeal ℤ_[p],
-    by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
+    PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Submodule.fg_span_singleton _,
     Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
 
 end TauCeti.IsAdicRing

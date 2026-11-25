@@ -112,15 +112,16 @@ private theorem subsingleton_ofSpf_infSqZero : Subsingleton (ofSpf (InfSqZero k)
 private def prefixIdeal (n : ℕ) : Ideal (InfSqZero k) where
   carrier := {x | x.fst = 0 ∧ ∀ m ≥ n, x.snd m = 0}
   zero_mem' := ⟨rfl, fun _ _ ↦ rfl⟩
-  add_mem' ha hb := ⟨by simp [ha.1, hb.1], fun m hm ↦ by simp [ha.2 m hm, hb.2 m hm]⟩
-  smul_mem' a x hx :=
-    ⟨by simp [smul_eq_mul, hx.1],
-      fun m hm ↦ by simp [smul_eq_mul, TrivSqZeroExt.snd_mul, hx.1, hx.2 m hm]⟩
+  add_mem' := fun ⟨ha₁, ha₂⟩ ⟨hb₁, hb₂⟩ ↦
+    ⟨by simp [ha₁, hb₁], fun m hm ↦ by simp [ha₂ m hm, hb₂ m hm]⟩
+  smul_mem' := fun a x ⟨hx₁, hx₂⟩ ↦
+    ⟨by simp [smul_eq_mul, hx₁],
+      fun m hm ↦ by simp [smul_eq_mul, TrivSqZeroExt.snd_mul, hx₁, hx₂ m hm]⟩
 
 private theorem not_isNoetherianRing_infSqZero : ¬ IsNoetherianRing (InfSqZero k) := by
   intro hnoeth
   have hmono : Monotone (prefixIdeal k) :=
-    fun i j hij _ hx ↦ ⟨hx.1, fun m hm ↦ hx.2 m (hij.trans hm)⟩
+    fun i j hij _ ⟨hx₁, hx₂⟩ ↦ ⟨hx₁, fun m hm ↦ hx₂ m (hij.trans hm)⟩
   obtain ⟨n, hn⟩ := monotone_stabilizes_iff_noetherian.mpr hnoeth ⟨prefixIdeal k, hmono⟩
   let e : InfSqZero k := TrivSqZeroExt.inr fun m ↦ if m = n then (1 : k) else 0
   have he_succ : e ∈ prefixIdeal k (n + 1) := by
@@ -129,7 +130,7 @@ private theorem not_isNoetherianRing_infSqZero : ¬ IsNoetherianRing (InfSqZero 
     simp [e, hmn]
   have heq : prefixIdeal k n = prefixIdeal k (n + 1) := hn (n + 1) (Nat.le_succ n)
   have he_n : e ∈ prefixIdeal k n := heq ▸ he_succ
-  have h := he_n.2 n le_rfl
+  have h := he_n.right n le_rfl
   simp [e] at h
 
 -- Counterexample: `ofSpf (InfSqZero k)` has a noetherian (in fact subsingleton) underlying space,

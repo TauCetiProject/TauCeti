@@ -51,36 +51,36 @@ variable (P : PreAbstractSimplicialComplex α) (f : α ↪ β)
   (hK : P ≤ K.toPreAbstractSimplicialComplex)
   (hL : P.map f ≤ L.toPreAbstractSimplicialComplex)
 
-private def relabelingForward (x : {x : Realization K // x.1.support ∈ P}) :
-    {y : Realization L // y.1.support ∈ P.map f} :=
-  let σ : Face (P.map f) := ⟨x.1.1.support.image f, mem_map_iff.mpr ⟨_, x.2, rfl⟩⟩
-  let z : StandardSimplex x.1.1.support := ⟨x.1.1, by
-    simpa only [carrier_val] using mem_convexHull_carrier K x.1⟩
-  ⟨faceInclusion L ⟨σ.1, hL σ.2⟩ (StandardSimplex.map z f),
-    support_faceInclusion_mem hL σ.2 _⟩
+private def relabelingForward (x : {x : Realization K // x.val.support ∈ P}) :
+    {y : Realization L // y.val.support ∈ P.map f} :=
+  let σ : Face (P.map f) := ⟨x.val.val.support.image f, mem_map_iff.mpr ⟨_, x.property, rfl⟩⟩
+  let z : StandardSimplex x.val.val.support :=
+    ⟨x.val.val, Realization.mem_convexHull_of_support_subset K x.val subset_rfl⟩
+  ⟨faceInclusion L ⟨σ.val, hL σ.property⟩ (StandardSimplex.map z f),
+    support_faceInclusion_mem hL σ.property _⟩
 
-private theorem relabelingForward_val (x : {x : Realization K // x.1.support ∈ P}) :
-    (relabelingForward P f hL x).1.1 = Finsupp.mapDomain f x.1.1 := by
+private theorem relabelingForward_val (x : {x : Realization K // x.val.support ∈ P}) :
+    (relabelingForward P f hL x).val.val = Finsupp.mapDomain f x.val.val := by
   simp only [relabelingForward, faceInclusion_val, StandardSimplex.map_val]
 
 include hK in
-private theorem exists_relabelingBackward (y : {y : Realization L // y.1.support ∈ P.map f}) :
-    ∃ x : {x : Realization K // x.1.support ∈ P},
-      x.1.1 = Finsupp.comapDomain f y.1.1 f.injective.injOn := by
-  obtain ⟨σ, hσ, heq⟩ := mem_map_iff.mp y.2
-  let z : StandardSimplex (σ.image f) := ⟨y.1.1, by
+private theorem exists_relabelingBackward (y : {y : Realization L // y.val.support ∈ P.map f}) :
+    ∃ x : {x : Realization K // x.val.support ∈ P},
+      x.val.val = Finsupp.comapDomain f y.val.val f.injective.injOn := by
+  obtain ⟨σ, hσ, heq⟩ := mem_map_iff.mp y.property
+  let z : StandardSimplex (σ.image f) := ⟨y.val.val, by
     rw [heq]
-    simpa only [carrier_val] using mem_convexHull_carrier L y.1⟩
+    simpa only [carrier_val] using mem_convexHull_carrier L y.val⟩
   exact ⟨⟨faceInclusion K ⟨σ, hK hσ⟩ (StandardSimplex.comap (f := f) z),
     support_faceInclusion_mem hK hσ _⟩, by
       simp only [faceInclusion_val, StandardSimplex.comap_val]; rfl⟩
 
-private def relabelingBackward (y : {y : Realization L // y.1.support ∈ P.map f}) :
-    {x : Realization K // x.1.support ∈ P} :=
+private def relabelingBackward (y : {y : Realization L // y.val.support ∈ P.map f}) :
+    {x : Realization K // x.val.support ∈ P} :=
   (exists_relabelingBackward P f hK y).choose
 
-private theorem relabelingBackward_val (y : {y : Realization L // y.1.support ∈ P.map f}) :
-    (relabelingBackward P f hK y).1.1 = Finsupp.comapDomain f y.1.1 f.injective.injOn :=
+private theorem relabelingBackward_val (y : {y : Realization L // y.val.support ∈ P.map f}) :
+    (relabelingBackward P f hK y).val.val = Finsupp.comapDomain f y.val.val f.injective.injOn :=
   (exists_relabelingBackward P f hK y).choose_spec
 
 include hK in
@@ -91,7 +91,7 @@ private theorem continuous_relabelingForward : Continuous (relabelingForward (K 
       (⟨faceInclusion L ⟨σ.image f, hL (mem_map_iff.mpr ⟨σ, hσ, rfl⟩)⟩
         (StandardSimplex.map z f),
         support_faceInclusion_mem hL (mem_map_iff.mpr ⟨σ, hσ, rfl⟩) _⟩ :
-          {y : Realization L // y.1.support ∈ P.map f})) :=
+          {y : Realization L // y.val.support ∈ P.map f})) :=
     ((continuous_faceInclusion L ⟨σ.image f,
       hL (mem_map_iff.mpr ⟨σ, hσ, rfl⟩)⟩).comp
       (StandardSimplex.continuous_map f (σ := σ))).subtype_mk
@@ -112,7 +112,7 @@ private theorem continuous_relabelingBackward :
   have hc : Continuous (fun z : StandardSimplex (σ.image f) =>
       (⟨faceInclusion K ⟨σ, hK hσ⟩ (StandardSimplex.comap (f := f) z),
         support_faceInclusion_mem hK hσ _⟩ :
-          {x : Realization K // x.1.support ∈ P})) :=
+          {x : Realization K // x.val.support ∈ P})) :=
     ((continuous_faceInclusion K ⟨σ, hK hσ⟩).comp
       (StandardSimplex.continuous_comap f (σ := σ))).subtype_mk
         (fun z => support_faceInclusion_mem hK hσ _)
@@ -129,8 +129,8 @@ contribute no points. -/
 def relabelingHomeomorph
     (hK : P ≤ K.toPreAbstractSimplicialComplex)
     (hL : P.map f ≤ L.toPreAbstractSimplicialComplex) :
-    {x : Realization K // x.1.support ∈ P} ≃ₜ
-      {y : Realization L // y.1.support ∈ P.map f} where
+    {x : Realization K // x.val.support ∈ P} ≃ₜ
+      {y : Realization L // y.val.support ∈ P.map f} where
   toFun := relabelingForward P f hL
   invFun := relabelingBackward P f hK
   left_inv x := by
@@ -143,7 +143,7 @@ def relabelingHomeomorph
     apply Subtype.ext
     rw [relabelingForward_val, relabelingBackward_val]
     apply Finsupp.mapDomain_comapDomain f f.injective
-    obtain ⟨σ, -, heq⟩ := mem_map_iff.mp y.2
+    obtain ⟨σ, -, heq⟩ := mem_map_iff.mp y.property
     intro b hb
     obtain ⟨a, -, rfl⟩ := Finset.mem_image.mp (heq.symm ▸ hb)
     exact mem_range_self a
@@ -161,16 +161,16 @@ noncomputable def topRealizationHomeomorph
     (P : PreAbstractSimplicialComplex ι)
     {A : AbstractSimplicialComplex ι}
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.1.support ∈ P} ≃ₜ
-      {x : Realization A // x.1.support ∈ P} := by
+    {x : Realization (⊤ : AbstractSimplicialComplex ι) // x.val.support ∈ P} ≃ₜ
+      {x : Realization A // x.val.support ∈ P} := by
   classical
   have hid : P.map (Function.Embedding.refl ι) = P := by
     simpa only [Function.Embedding.coe_refl] using (map_id (K := P))
   exact (P.relabelingHomeomorph (Function.Embedding.refl ι) (le_top P)
     (by rw [hid]; exact hA)).trans
     (Homeomorph.setCongr
-      (s := {x : Realization A | x.1.support ∈ P.map (Function.Embedding.refl ι)})
-      (t := {x : Realization A | x.1.support ∈ P}) (by rw [hid]))
+      (s := {x : Realization A | x.val.support ∈ P.map (Function.Embedding.refl ι)})
+      (t := {x : Realization A | x.val.support ∈ P}) (by rw [hid]))
 
 /-- An injective relabeling carrying the underlying precomplex of `K` onto `R` identifies the
 realization of `K` with the polyhedron of `R`, inside any ambient weak realization containing
@@ -178,21 +178,21 @@ realization of `K` with the polyhedron of `R`, inside any ambient weak realizati
 def realizationRelabelingHomeomorph {R : PreAbstractSimplicialComplex β}
     (hmap : P.map f = R) (hP : P = K.toPreAbstractSimplicialComplex)
     (hR : R ≤ L.toPreAbstractSimplicialComplex) :
-    Realization K ≃ₜ {y : Realization L // y.1.support ∈ R} :=
+    Realization K ≃ₜ {y : Realization L // y.val.support ∈ R} :=
   ((Homeomorph.Set.univ _).symm.trans
-    (Homeomorph.setCongr (s := Set.univ) (t := {x : Realization K | x.1.support ∈ P})
+    (Homeomorph.setCongr (s := Set.univ) (t := {x : Realization K | x.val.support ∈ P})
       (Set.eq_univ_of_forall fun x => by
         rw [hP]
         exact AbstractSimplicialComplex.support_mem _ x).symm)).trans
     ((P.relabelingHomeomorph f hP.le (by rw [hmap]; exact hR)).trans
-      (Homeomorph.setCongr (s := {x : Realization L | x.1.support ∈ P.map f})
-        (t := {x : Realization L | x.1.support ∈ R}) (by rw [hmap])))
+      (Homeomorph.setCongr (s := {x : Realization L | x.val.support ∈ P.map f})
+        (t := {x : Realization L | x.val.support ∈ R}) (by rw [hmap])))
 
 /-- Relabeling pushes forward the finitely supported barycentric coordinate vector. -/
 @[simp]
 theorem relabelingHomeomorph_val
-    (x : {x : Realization K // x.1.support ∈ P}) :
-    (P.relabelingHomeomorph f hK hL x).1.1 = Finsupp.mapDomain f x.1.1 :=
+    (x : {x : Realization K // x.val.support ∈ P}) :
+    (P.relabelingHomeomorph f hK hL x).val.val = Finsupp.mapDomain f x.val.val :=
   relabelingForward_val P f hL x
 
 /-- Changing the ambient complex leaves the barycentric coordinate vector unchanged. -/
@@ -200,8 +200,8 @@ theorem relabelingHomeomorph_val
 theorem topRealizationHomeomorph_val
     (P : PreAbstractSimplicialComplex α) {A : AbstractSimplicialComplex α}
     (hA : P ≤ A.toPreAbstractSimplicialComplex)
-    (x : {x : Realization (⊤ : AbstractSimplicialComplex α) // x.1.support ∈ P}) :
-    ((P.topRealizationHomeomorph hA x).1.1 : α → ℝ) = (x.1.1 : α → ℝ) := by
+    (x : {x : Realization (⊤ : AbstractSimplicialComplex α) // x.val.support ∈ P}) :
+    ((P.topRealizationHomeomorph hA x).val.val : α → ℝ) = (x.val.val : α → ℝ) := by
   classical
   rw [topRealizationHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply,
     relabelingHomeomorph_val]
@@ -213,17 +213,17 @@ theorem topRealizationHomeomorph_val
 theorem topRealizationHomeomorph_symm_val
     (P : PreAbstractSimplicialComplex α) {A : AbstractSimplicialComplex α}
     (hA : P ≤ A.toPreAbstractSimplicialComplex)
-    (x : {x : Realization A // x.1.support ∈ P}) :
-    (((P.topRealizationHomeomorph hA).symm x).1.1 : α → ℝ) = (x.1.1 : α → ℝ) := by
+    (x : {x : Realization A // x.val.support ∈ P}) :
+    (((P.topRealizationHomeomorph hA).symm x).val.val : α → ℝ) = (x.val.val : α → ℝ) := by
   rw [← P.topRealizationHomeomorph_val hA ((P.topRealizationHomeomorph hA).symm x),
     (P.topRealizationHomeomorph hA).apply_symm_apply]
 
 /-- Inverse relabeling pulls back the barycentric coordinate vector. -/
 @[simp]
 theorem relabelingHomeomorph_symm_val
-    (y : {y : Realization L // y.1.support ∈ P.map f}) :
-    ((P.relabelingHomeomorph f hK hL).symm y).1.1 =
-      Finsupp.comapDomain f y.1.1 f.injective.injOn :=
+    (y : {y : Realization L // y.val.support ∈ P.map f}) :
+    ((P.relabelingHomeomorph f hK hL).symm y).val.val =
+      Finsupp.comapDomain f y.val.val f.injective.injOn :=
   relabelingBackward_val P f hK y
 
 /-- The relabeling of a realization pushes forward the barycentric coordinate vector. -/
@@ -231,7 +231,7 @@ theorem relabelingHomeomorph_symm_val
 theorem realizationRelabelingHomeomorph_val {R : PreAbstractSimplicialComplex β}
     (hmap : P.map f = R) (hP : P = K.toPreAbstractSimplicialComplex)
     (hR : R ≤ L.toPreAbstractSimplicialComplex) (x : Realization K) :
-    (P.realizationRelabelingHomeomorph f hmap hP hR x).1.1 = Finsupp.mapDomain f x.1 := by
+    (P.realizationRelabelingHomeomorph f hmap hP hR x).val.val = Finsupp.mapDomain f x.val := by
   -- The set-congruence transports preserve the underlying point.
   simp only [realizationRelabelingHomeomorph, Homeomorph.trans_apply,
     Homeomorph.setCongr_apply]
@@ -241,9 +241,9 @@ theorem realizationRelabelingHomeomorph_val {R : PreAbstractSimplicialComplex β
 @[simp]
 theorem realizationRelabelingHomeomorph_symm_val {R : PreAbstractSimplicialComplex β}
     (hmap : P.map f = R) (hP : P = K.toPreAbstractSimplicialComplex)
-    (hR : R ≤ L.toPreAbstractSimplicialComplex) (y : {y : Realization L // y.1.support ∈ R}) :
-    ((P.realizationRelabelingHomeomorph f hmap hP hR).symm y).1 =
-      Finsupp.comapDomain f y.1.1 f.injective.injOn := by
+    (hR : R ≤ L.toPreAbstractSimplicialComplex) (y : {y : Realization L // y.val.support ∈ R}) :
+    ((P.realizationRelabelingHomeomorph f hmap hP hR).symm y).val =
+      Finsupp.comapDomain f y.val.val f.injective.injOn := by
   -- The set-congruence transports preserve the underlying point.
   simp only [realizationRelabelingHomeomorph, Homeomorph.symm_trans_apply,
     Homeomorph.setCongr_symm_apply]
@@ -258,24 +258,24 @@ and its barycentric coordinates. No finiteness assumption is needed. -/
 def ambientHomeomorph
     (hK : P ≤ K'.toPreAbstractSimplicialComplex)
     (hL : P ≤ L'.toPreAbstractSimplicialComplex) :
-    {x : Realization K' // x.1.support ∈ P} ≃ₜ
-      {x : Realization L' // x.1.support ∈ P} := by
+    {x : Realization K' // x.val.support ∈ P} ≃ₜ
+      {x : Realization L' // x.val.support ∈ P} := by
   have hmap : P.map (Function.Embedding.refl α) = P := by
     rw [Function.Embedding.coe_refl]
     exact PreAbstractSimplicialComplex.map_id
   exact (P.relabelingHomeomorph (Function.Embedding.refl α) hK
     (by simpa only [hmap] using hL)).trans
     (Homeomorph.setCongr
-      (s := {x : Realization L' | x.1.support ∈ P.map (Function.Embedding.refl α)})
-      (t := {x : Realization L' | x.1.support ∈ P}) (by rw [hmap]))
+      (s := {x : Realization L' | x.val.support ∈ P.map (Function.Embedding.refl α)})
+      (t := {x : Realization L' | x.val.support ∈ P}) (by rw [hmap]))
 
 /-- Changing the ambient complex leaves the barycentric coordinate vector unchanged. -/
 @[simp]
 theorem ambientHomeomorph_val
     (hK : P ≤ K'.toPreAbstractSimplicialComplex)
     (hL : P ≤ L'.toPreAbstractSimplicialComplex)
-    (x : {x : Realization K' // x.1.support ∈ P}) :
-    (P.ambientHomeomorph hK hL x).1.1 = x.1.1 := by
+    (x : {x : Realization K' // x.val.support ∈ P}) :
+    (P.ambientHomeomorph hK hL x).val.val = x.val.val := by
   -- `erw` reduces the `SetLike` coercions identifying the intermediate subtype.
   erw [ambientHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   simp
@@ -295,24 +295,24 @@ variable {α ι : Type*} [Fintype α] [DecidableEq ι] (K : AbstractSimplicialCo
 enumerating type with the closed simplex of that face in the weak realization of `K`. -/
 def realizationTopHomeomorphFace :
     Realization (⊤ : AbstractSimplicialComplex α) ≃ₜ
-      {x : Realization K // x.1.support ⊆ Finset.univ.image f} :=
+      {x : Realization K // x.val.support ⊆ Finset.univ.image f} :=
   ((simplex (Finset.univ : Finset α)).realizationRelabelingHomeomorph f
     (map_simplex _) (by rw [simplex_univ, top_toPreAbstractSimplicialComplex])
     (simplex_le_iff.mpr fun _ => hf)).trans
     (Homeomorph.setCongr
-      (s := {x : Realization K | x.1.support ∈ simplex (Finset.univ.image f)})
-      (t := {x : Realization K | x.1.support ⊆ Finset.univ.image f}) (by
+      (s := {x : Realization K | x.val.support ∈ simplex (Finset.univ.image f)})
+      (t := {x : Realization K | x.val.support ⊆ Finset.univ.image f}) (by
       ext x
       -- The set-congruence goal is membership in two set comprehensions; expose their
       -- predicates before applying the criterion for membership in a simplex.
-      change x.1.support ∈ simplex _ ↔ x.1.support ⊆ _
+      change x.val.support ∈ simplex _ ↔ x.val.support ⊆ _
       rw [mem_simplex]
       exact and_iff_right (K.isRelLowerSet_faces.prop_of_mem (support_mem K x))))
 
 /-- The face homeomorphism pushes forward the barycentric coordinate vector. -/
 @[simp]
 theorem realizationTopHomeomorphFace_val (x : Realization (⊤ : AbstractSimplicialComplex α)) :
-    (realizationTopHomeomorphFace K f hf x).1.1 = Finsupp.mapDomain f x.1 := by
+    (realizationTopHomeomorphFace K f hf x).val.val = Finsupp.mapDomain f x.val := by
   -- The set-congruence transport preserves the underlying point.
   rw [realizationTopHomeomorphFace, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   exact realizationRelabelingHomeomorph_val _ f (map_simplex _)
@@ -321,9 +321,9 @@ theorem realizationTopHomeomorphFace_val (x : Realization (⊤ : AbstractSimplic
 /-- The inverse face homeomorphism pulls back the barycentric coordinate vector. -/
 @[simp]
 theorem realizationTopHomeomorphFace_symm_val
-    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
-    ((realizationTopHomeomorphFace K f hf).symm y).1 =
-      Finsupp.comapDomain f y.1.1 f.injective.injOn := by
+    (y : {x : Realization K // x.val.support ⊆ Finset.univ.image f}) :
+    ((realizationTopHomeomorphFace K f hf).symm y).val =
+      Finsupp.comapDomain f y.val.val f.injective.injOn := by
   -- The set-congruence transport preserves the underlying point.
   rw [realizationTopHomeomorphFace, Homeomorph.symm_trans_apply,
     Homeomorph.setCongr_symm_apply]

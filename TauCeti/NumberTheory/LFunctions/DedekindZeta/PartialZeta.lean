@@ -142,7 +142,7 @@ theorem rayClassCoeff_apply_of_not_isCoprimeTo {𝔪 : Modulus K} (c : RayClassG
 theorem rayClassCoeff_idealClass {𝔪 : Modulus K} (J : integralIdealsPrimeTo 𝔪)
     (hJ : (J : Ideal (𝓞 K)) ∈ (Ideal (𝓞 K))⁰) :
     rayClassCoeff 𝔪 (idealClass 𝔪 J) ⟨J, hJ⟩ = 1 := by
-  rw [rayClassCoeff_apply_of_isCoprimeTo _ (Modulus.mem_integralIdealsPrimeTo.mp J.2),
+  rw [rayClassCoeff_apply_of_isCoprimeTo _ (Modulus.mem_integralIdealsPrimeTo.mp J.property),
     ite_eq_left rfl]
 
 /-- The class indicator vanishes at an ideal prime to the modulus lying in another class. -/
@@ -191,13 +191,13 @@ theorem idealSummatory_rayClassCoeff (𝔪 : Modulus K) (c : RayClassGroup 𝔪)
   -- An ideal of norm at most `x` in the class `c` is the same as an ideal of the prime-to carrier
   -- in the class `c` of norm at most `x`; the two carriers differ only in their nonvanishing proof.
   refine Nat.card_congr
-    { toFun := fun I ↦ ⟨⟨I.1, Modulus.mem_integralIdealsPrimeTo.mpr
-          (Finset.mem_filter.mp I.2).2.1⟩,
-        (Finset.mem_filter.mp I.2).2.2, (hle _).mp (Finset.mem_filter.mp I.2).1⟩
-      invFun := fun J ↦ ⟨⟨J.1, mem_nonZeroDivisors_of_ne_zero
-          (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp J.1.2)).1⟩,
-        Finset.mem_filter.mpr ⟨(hle _).mpr J.2.2,
-          Modulus.mem_integralIdealsPrimeTo.mp J.1.2, J.2.1⟩⟩
+    { toFun := fun I ↦ ⟨⟨I.val, Modulus.mem_integralIdealsPrimeTo.mpr
+          (Finset.mem_filter.mp I.property).2.1⟩,
+        (Finset.mem_filter.mp I.property).2.2, (hle _).mp (Finset.mem_filter.mp I.property).1⟩
+      invFun := fun J ↦ ⟨⟨J.val, mem_nonZeroDivisors_of_ne_zero
+          (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp J.val.property)).1⟩,
+        Finset.mem_filter.mpr ⟨(hle _).mpr J.property.2,
+          Modulus.mem_integralIdealsPrimeTo.mp J.val.property, J.property.1⟩⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl }
 
@@ -271,7 +271,7 @@ theorem finiteEulerCorrection_eq_one_iff (𝔪 : Modulus K) {s : ℝ} (hs : 0 < 
   classical
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [finiteEulerCorrection_def, h, Finset.prod_empty]⟩
   by_contra hne
-  obtain ⟨𝔮, h𝔮⟩ := Finset.nonempty_iff_ne_empty.mpr hne
+  obtain ⟨𝔮, h𝔮⟩ := Finset.ne_empty_iff_nonempty.mp hne
   -- each factor is the real number `1 - N(𝔭) ^ (-s)`, which lies in `(0, 1)`
   have hfac (𝔭 : HeightOneSpectrum (𝓞 K)) :
       1 - (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-(s : ℂ)) =

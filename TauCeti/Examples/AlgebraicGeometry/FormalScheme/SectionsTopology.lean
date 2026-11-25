@@ -79,8 +79,7 @@ example :
   intro Y hU
   refine ⟨inferInstance, fun hred ↦ ?_⟩
   let e : ZMod 4 ≃+* hU.Sections :=
-    (asIso (toSpecΓ (CommRingCat.of (ZMod 4)))).commRingCatIsoToRingEquiv.trans
-      hU.sectionsRingEquiv.symm
+    (asIso (toSpecΓ (CommRingCat.of (ZMod 4)))).commRingCatIsoToRingEquiv
   have h2_sq : (e (2 : ZMod 4)) ^ 2 = 0 := by
     rw [← map_pow, show (2 : ZMod 4) ^ 2 = 0 by decide, map_zero]
   have h2_zero : e (2 : ZMod 4) = 0 := eq_zero_of_pow_eq_zero h2_sq
@@ -91,9 +90,9 @@ example (X : FormalScheme) (hbot : X.IsAffineOpen ⊥) : X.sectionsTopology ⊥ 
   X.sectionsTopology_bot hbot
 
 example : (ofSpf (ZMod 1)).sectionsTopology ⊤ (isAffineOpen_top_ofSpf (ZMod 1)) = ⊥ := by
-  let := (ofSpf (ZMod 1)).sectionsTopology ⊤ (isAffineOpen_top_ofSpf (ZMod 1))
+  let _ := (ofSpf (ZMod 1)).sectionsTopology ⊤ (isAffineOpen_top_ofSpf (ZMod 1))
   have : Subsingleton ((ofSpf (ZMod 1)).presheaf.obj (op ⊤)) :=
-    (ofSpfGlobalSectionsIso (ZMod 1)).commRingCatIsoToRingEquiv.subsingleton
+    (Spf.topSectionsIso (ZMod 1)).commRingCatIsoToRingEquiv.subsingleton
   exact Subsingleton.elim _ _
 
 end DiscreteAndNonreduced

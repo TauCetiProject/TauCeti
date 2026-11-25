@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Representation
-public import TauCeti.Analysis.InnerProductSpace.TensorProduct
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 
 /-!
 # The spinor tensor metric and the exterior metric

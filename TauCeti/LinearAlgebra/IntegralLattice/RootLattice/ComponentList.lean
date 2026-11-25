@@ -77,38 +77,38 @@ abbrev Component : Type := {t : DynkinType // t.Valid ∧ t.IsSimplyLaced}
 namespace Component
 
 /-- The rank of a component, the number of simple roots. -/
-@[expose] def rank (c : Component) : ℕ := c.1.rank
+@[expose] def rank (c : Component) : ℕ := c.val.rank
 
 /-- The positive root lattice of a component, on its simple-root coordinate space. -/
 @[expose] noncomputable def rootLattice (c : Component) : IntegralLattice (Fin c.rank → ℚ) :=
-  c.1.rootLattice c.2.2
+  c.val.rootLattice c.property.2
 
 /-- The root lattice of a component is the root lattice of its underlying Dynkin type. -/
-theorem rootLattice_eq (c : Component) : c.rootLattice = c.1.rootLattice c.2.2 :=
+theorem rootLattice_eq (c : Component) : c.rootLattice = c.val.rootLattice c.property.2 :=
   (rfl)
 
 /-- The root lattice of a component is even. -/
 theorem isEven_rootLattice (c : Component) : c.rootLattice.IsEven :=
-  c.1.isEven_rootLattice c.2.2
+  c.val.isEven_rootLattice c.property.2
 
 /-- The root lattice of a component is nondegenerate. -/
 instance isNondegenerate_rootLattice (c : Component) : c.rootLattice.IsNondegenerate :=
-  inferInstanceAs (c.1.rootLattice c.2.2).IsNondegenerate
+  inferInstanceAs (c.val.rootLattice c.property.2).IsNondegenerate
 
 /-- The glue alphabet of a component: the finite quadratic module of its glue labels. -/
 @[expose] noncomputable def glueAlphabet (c : Component) : FiniteQuadraticModule :=
-  c.1.glueAlphabet c.2.2
+  c.val.glueAlphabet c.property.2
 
 /-- The glue alphabet of a component is the discriminant quadratic module of its root lattice. -/
 noncomputable def glueAlphabetIsometry (c : Component) :
     FiniteQuadraticModule.Isometry c.glueAlphabet
       (c.rootLattice.discriminantQuadraticModule c.isEven_rootLattice) :=
-  c.1.glueAlphabetIsometry c.2.1 c.2.2
+  c.val.glueAlphabetIsometry c.property.1 c.property.2
 
 /-- The glue isometry of a component acts as the glue isometry of its underlying Dynkin type. -/
 @[simp]
 theorem glueAlphabetIsometry_apply (c : Component) (x : c.glueAlphabet) :
-    c.glueAlphabetIsometry x = c.1.glueAlphabetIsometry c.2.1 c.2.2 x :=
+    c.glueAlphabetIsometry x = c.val.glueAlphabetIsometry c.property.1 c.property.2 x :=
   (rfl)
 
 end Component
@@ -261,8 +261,21 @@ namespace TauCeti.DynkinType
 noncomputable def componentGlueAlphabetIsometry {c d : Component}
     (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) :
     FiniteQuadraticModule.Isometry c.glueAlphabet d.glueAlphabet :=
-  c.glueAlphabetIsometry.trans
-    ((f.discriminantQuadraticIsometry c.isEven_rootLattice).trans d.glueAlphabetIsometry.symm)
+  glueAlphabetIsometryOfIsometry c.property.1 d.property.1 f
+
+/-- `componentGlueAlphabetIsometry` is `glueAlphabetIsometryOfIsometry` on the underlying Dynkin
+types of the two components. -/
+theorem componentGlueAlphabetIsometry_def {c d : Component}
+    (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) :
+    componentGlueAlphabetIsometry f = glueAlphabetIsometryOfIsometry c.property.1 d.property.1 f :=
+  (rfl)
+
+/-- The identity root-lattice isometry of a component induces the identity on its glue alphabet. -/
+@[simp]
+theorem componentGlueAlphabetIsometry_refl (c : Component) :
+    componentGlueAlphabetIsometry (IntegralLattice.Isometry.refl c.rootLattice) =
+      QuadraticMap.IsometryEquiv.refl c.glueAlphabet.quadratic :=
+  glueAlphabetIsometryOfIsometry_refl c.val c.property.1 c.property.2
 
 /-- An isometry of component root lattices is compatible with the component glue isometries: the
 component glue isometry of the target component carries the transported label to the transport of
@@ -270,10 +283,8 @@ the source label. -/
 theorem glueAlphabetIsometry_componentGlueAlphabetIsometry {c d : Component}
     (f : IntegralLattice.Isometry c.rootLattice d.rootLattice) (x : c.glueAlphabet) :
     d.glueAlphabetIsometry (componentGlueAlphabetIsometry f x) =
-      f.discriminantQuadraticIsometry c.isEven_rootLattice (c.glueAlphabetIsometry x) := by
-  rw [componentGlueAlphabetIsometry, FiniteQuadraticModule.Isometry.trans_apply,
-    FiniteQuadraticModule.Isometry.trans_apply]
-  exact QuadraticMap.IsometryEquiv.apply_symm_apply _ _
+      f.discriminantQuadraticIsometry c.isEven_rootLattice (c.glueAlphabetIsometry x) :=
+  glueAlphabetIsometry_glueAlphabetIsometryOfIsometry c.property.1 d.property.1 f x
 
 /-- A componentwise isometry of two ordered component lists: an isometry of the root lattice of each
 component of the first list onto the root lattice of the corresponding component of the second.
@@ -329,8 +340,7 @@ theorem componentAlphabetIsometry_cons {c d : Component} {cs ds : List Component
     (x₁ : c.glueAlphabet) (x₂ : componentAlphabet cs) :
     componentAlphabetIsometry (.cons f rest) (x₁, x₂) =
       (componentGlueAlphabetIsometry f x₁, componentAlphabetIsometry rest x₂) :=
-  FiniteQuadraticModule.Isometry.prod_apply (componentGlueAlphabetIsometry f)
-    (componentAlphabetIsometry rest) x₁ x₂
+  (rfl)
 
 /-- **Naturality of the component-list discriminant isometry passes to an adjoined component.**  If
 the component-list discriminant isometry is natural for the tails `cs` and `ds`, then it is natural

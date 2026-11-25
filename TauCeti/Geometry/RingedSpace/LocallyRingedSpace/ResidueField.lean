@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.RingedSpace.LocallyRingedSpace.ResidueField
+public import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Restrict
 
 /-!
 # Residue-field evaluation and vanishing ideals on locally ringed spaces
@@ -13,9 +14,8 @@ public import Mathlib.Geometry.RingedSpace.LocallyRingedSpace.ResidueField
 On an open restriction `L.restrict U.isOpenEmbedding` of a locally ringed space `L` to
 `U : Opens L`, evaluating a section `s ∈ Γ(U, O_L)` at `x ∈ U` and applying the canonical
 residue-field map of `L.ofRestrict U.isOpenEmbedding` agrees with global evaluation `Γevaluation`
-on `L.restrict U.isOpenEmbedding` after transporting `s` along `Opens.isOpenEmbedding_obj_top U`.
-In particular, the restricted global section vanishes in the residue field at `x` if and only if
-`s` vanishes in the residue field of `L` at `x`.
+on `L.restrict U.isOpenEmbedding` after transporting `s` along
+`PresheafedSpace.restrictTopSectionsIso`.
 
 The file also defines `AlgebraicGeometry.LocallyRingedSpace.vanishingIdeal X U`, the radical ideal
 in `Γ(U, O_X)` of sections vanishing in the residue field at every point of `U`, together with its
@@ -35,8 +35,6 @@ restrictions.
 * `AlgebraicGeometry.LocallyRingedSpace.residueFieldMap_ofRestrict_evaluation`: compatibility of
   `LocallyRingedSpace.evaluation` on `U` with `LocallyRingedSpace.Γevaluation` on
   `L.restrict U.isOpenEmbedding`.
-* `AlgebraicGeometry.LocallyRingedSpace.Γevaluation_restrict_eq_zero_iff`: vanishing of the
-  restricted global section at `x` is equivalent to `L.evaluation ⟨x.1, x.2⟩ s = 0`.
 * `AlgebraicGeometry.LocallyRingedSpace.mem_vanishingIdeal`,
   `AlgebraicGeometry.LocallyRingedSpace.mem_vanishingIdeal_top`: membership characterizations for
   `vanishingIdeal`.
@@ -49,8 +47,9 @@ restrictions.
 * `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_of_iso`,
   `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_top_of_iso`: pullback of
   `vanishingIdeal` along isomorphisms of locally ringed spaces.
-* `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_restrict_top`: compatibility of
-  `vanishingIdeal` with open restriction `X.restrict U.isOpenEmbedding`.
+* `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_restrictTopSectionsIso_hom`,
+  `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_restrictTopSectionsIso_inv`:
+  compatibility of `vanishingIdeal` with open restriction `X.restrict U.isOpenEmbedding`.
 -/
 
 public section
@@ -76,7 +75,7 @@ theorem residueFieldMap_eq_zero_iff {X Y : LocallyRingedSpace.{u}} (f : X ⟶ Y)
 
 /-- Evaluating `s ∈ Γ(U, O_L)` at `x ∈ U` and mapping into the residue field of
 `L.restrict U.isOpenEmbedding` agrees with global evaluation on `L.restrict U.isOpenEmbedding`
-under the canonical identification `Opens.isOpenEmbedding_obj_top U`. -/
+under `PresheafedSpace.restrictTopSectionsIso`. -/
 theorem residueFieldMap_ofRestrict_evaluation (L : LocallyRingedSpace.{u}) (U : Opens L)
     (x : L.restrict U.isOpenEmbedding) (s : L.presheaf.obj (op U)) :
     have hx : x ∈ (Opens.map (L.ofRestrict U.isOpenEmbedding).base).obj U :=
@@ -84,18 +83,18 @@ theorem residueFieldMap_ofRestrict_evaluation (L : LocallyRingedSpace.{u}) (U : 
     residueFieldMap (L.ofRestrict U.isOpenEmbedding) x
         (L.evaluation ⟨(L.ofRestrict U.isOpenEmbedding).base x, hx⟩ s) =
       (L.restrict U.isOpenEmbedding).Γevaluation x
-        (L.presheaf.map (eqToHom (congrArg op (Opens.isOpenEmbedding_obj_top U)).symm) s) := by
+        ((L.toPresheafedSpace.restrictTopSectionsIso U).hom s) := by
   let j : L.restrict U.isOpenEmbedding ⟶ L := L.ofRestrict U.isOpenEmbedding
   have hU : (Opens.map j.base).obj U = (⊤ : Opens (L.restrict U.isOpenEmbedding)) :=
     Opens.inclusion'_map_eq_top U
   have hxU : x ∈ (Opens.map j.base).obj U := hU.symm ▸ Opens.mem_top x
   let sTop : (L.restrict U.isOpenEmbedding).presheaf.obj (op ⊤) :=
-    L.presheaf.map (eqToHom (congrArg op (Opens.isOpenEmbedding_obj_top U)).symm) s
-  have hmap : L.presheaf.map (eqToHom (congrArg op (Opens.isOpenEmbedding_obj_top U)).symm) ≫
+    (L.toPresheafedSpace.restrictTopSectionsIso U).hom s
+  have hmap : (L.toPresheafedSpace.restrictTopSectionsIso U).hom ≫
       (L.restrict U.isOpenEmbedding).presheaf.map (homOfLE hU.le).op = j.c.app (op U) := by
     have hjc : j.c.app (op U) = (L.toPresheafedSpace.ofRestrict U.isOpenEmbedding).c.app (op U) :=
       rfl
-    rw [hjc, PresheafedSpace.ofRestrict_c_app]
+    rw [hjc, PresheafedSpace.ofRestrict_c_app, PresheafedSpace.restrictTopSectionsIso_hom]
     exact (L.presheaf.map_comp _ _).symm.trans (congrArg L.presheaf.map (Subsingleton.elim _ _))
   have hs : j.c.app (op U) s =
       (L.restrict U.isOpenEmbedding).presheaf.map (homOfLE hU.le).op sTop :=
@@ -111,18 +110,6 @@ theorem residueFieldMap_ofRestrict_evaluation (L : LocallyRingedSpace.{u}) (U : 
     rw [Γevaluation, evaluation, evaluation, ConcreteCategory.comp_apply,
       ConcreteCategory.comp_apply, hgerm]
   exact (evaluation_naturality_apply j ⟨x, hxU⟩ s).trans heval
-
-/-- The restricted global section corresponding to `s ∈ Γ(U, O_L)` vanishes in the residue field
-at `x ∈ L.restrict U.isOpenEmbedding` if and only if `s` vanishes in the residue field of `L` at
-`x`. -/
-@[simp]
-theorem Γevaluation_restrict_eq_zero_iff (L : LocallyRingedSpace.{u}) (U : Opens L)
-    (x : L.restrict U.isOpenEmbedding) (s : L.presheaf.obj (op U)) :
-    (L.restrict U.isOpenEmbedding).Γevaluation x
-        (L.presheaf.map (eqToHom (congrArg op (Opens.isOpenEmbedding_obj_top U)).symm) s) = 0 ↔
-      L.evaluation ⟨x.1, x.2⟩ s = 0 := by
-  rw [← residueFieldMap_ofRestrict_evaluation, residueFieldMap_eq_zero_iff]
-  rfl
 
 section VanishingIdeal
 
@@ -169,7 +156,8 @@ theorem vanishingIdeal_le_comap {X Y : LocallyRingedSpace.{u}} (f : X ⟶ Y) (V 
   intro s hs
   refine Ideal.mem_comap.mpr (mem_vanishingIdeal.mpr fun x ↦ ?_)
   exact (evaluation_naturality_apply f x s).symm.trans
-    ((residueFieldMap_eq_zero_iff f x.1 _).mpr (mem_vanishingIdeal.mp hs ⟨f.base x.1, x.2⟩))
+    ((residueFieldMap_eq_zero_iff f x.val _).mpr
+      (mem_vanishingIdeal.mp hs ⟨f.base x.val, x.property⟩))
 
 /-- If `V ⊆ Set.range f.base`, the preimage of `X.vanishingIdeal (f ⁻¹' V)` along `f.c.app (op V)`
 equals `Y.vanishingIdeal V`. -/
@@ -181,8 +169,8 @@ theorem comap_vanishingIdeal_of_subset_range {X Y : LocallyRingedSpace.{u}} (f :
   intro s hs
   have hs' := mem_vanishingIdeal.mp (Ideal.mem_comap.mp hs)
   refine mem_vanishingIdeal.mpr fun y ↦ ?_
-  obtain ⟨x, hx⟩ := hV y.2
-  have hxV : x ∈ (Opens.map f.base).obj V := Opens.mem_map.mpr (hx.symm ▸ y.2)
+  obtain ⟨x, hx⟩ := hV y.property
+  have hxV : x ∈ (Opens.map f.base).obj V := Opens.mem_map.mpr (hx.symm ▸ y.property)
   have hev : residueFieldMap f x (Y.evaluation ⟨f.base x, hxV⟩ s) = 0 :=
     (evaluation_naturality_apply f ⟨x, hxV⟩ s).trans (hs' ⟨x, hxV⟩)
   have hyx : (⟨f.base x, hxV⟩ : V) = y := Subtype.ext hx
@@ -210,22 +198,34 @@ theorem comap_vanishingIdeal_top_of_iso {X Y : LocallyRingedSpace.{u}} (e : X �
   comap_vanishingIdeal_top_of_surjective e.hom
     (TopCat.homeoOfIso (forgetToTop.mapIso e)).surjective
 
-/-- Under the canonical identification `Γ(⊤, O_{X|_U}) ⟶ Γ(U, O_X)`, `X.vanishingIdeal U` pulls
-back to the global vanishing ideal on `X.restrict U.isOpenEmbedding`. -/
-theorem comap_vanishingIdeal_restrict_top (X : LocallyRingedSpace.{u}) (U : Opens X) :
+/-- Under `PresheafedSpace.restrictTopSectionsIso`, the global vanishing ideal on
+`X.restrict U.isOpenEmbedding` pulls back to `X.vanishingIdeal U`. -/
+theorem comap_vanishingIdeal_restrictTopSectionsIso_hom (X : LocallyRingedSpace.{u}) (U : Opens X) :
+    ((X.restrict U.isOpenEmbedding).vanishingIdeal ⊤).comap
+        (CommRingCat.Hom.hom (R := X.presheaf.obj (op U))
+          (S := (X.restrict U.isOpenEmbedding).presheaf.obj (op ⊤))
+          (X.toPresheafedSpace.restrictTopSectionsIso U).hom) =
+      X.vanishingIdeal U :=
+  Ideal.ext fun s ↦ Ideal.mem_comap.trans <| mem_vanishingIdeal_top.trans <|
+    (forall_congr' fun x ↦
+      (X.evaluation_eq_zero_iff_restrict_Γevaluation_eq_zero U x s).symm).trans
+      mem_vanishingIdeal.symm
+
+/-- Under `(PresheafedSpace.restrictTopSectionsIso U).inv`, `X.vanishingIdeal U` pulls back to the
+global vanishing ideal on `X.restrict U.isOpenEmbedding`. -/
+theorem comap_vanishingIdeal_restrictTopSectionsIso_inv (X : LocallyRingedSpace.{u}) (U : Opens X) :
     (X.vanishingIdeal U).comap
         (CommRingCat.Hom.hom (R := (X.restrict U.isOpenEmbedding).presheaf.obj (op ⊤))
-          (X.presheaf.map (eqToHom (congrArg op (Opens.isOpenEmbedding_obj_top U))))) =
+          (S := X.presheaf.obj (op U))
+          (X.toPresheafedSpace.restrictTopSectionsIso U).inv) =
       (X.restrict U.isOpenEmbedding).vanishingIdeal ⊤ := by
-  let e : (X.restrict U.isOpenEmbedding).presheaf.obj (op ⊤) ≅ X.presheaf.obj (op U) :=
-    X.presheaf.mapIso (eqToIso (congrArg op (Opens.isOpenEmbedding_obj_top U)))
-  ext s
-  rw [Ideal.mem_comap, mem_vanishingIdeal, mem_vanishingIdeal_top]
-  have hs : e.inv (e.hom s) = s := Iso.hom_inv_id_apply e s
-  exact ⟨fun h x ↦ by
-      rw [← hs]
-      exact (Γevaluation_restrict_eq_zero_iff X U x (e.hom s)).mpr (h ⟨x.1, x.2⟩),
-    fun h x ↦ (Γevaluation_restrict_eq_zero_iff X U x (e.hom s)).mp (hs.symm ▸ h x)⟩
+  refine Ideal.ext fun s ↦ Ideal.mem_comap.trans ?_
+  rw [← comap_vanishingIdeal_restrictTopSectionsIso_hom X U]
+  refine Ideal.mem_comap.trans (Iff.of_eq ?_)
+  have hs : (X.toPresheafedSpace.restrictTopSectionsIso U).hom
+      ((X.toPresheafedSpace.restrictTopSectionsIso U).inv s) = s :=
+    Iso.inv_hom_id_apply (X.toPresheafedSpace.restrictTopSectionsIso U) s
+  exact congrArg (· ∈ (X.restrict U.isOpenEmbedding).vanishingIdeal ⊤) hs
 
 end VanishingIdeal
 

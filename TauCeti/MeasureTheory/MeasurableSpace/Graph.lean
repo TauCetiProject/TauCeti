@@ -83,5 +83,5 @@ protected theorem MeasurableSet.graphOn [MeasurableEq β] {s : Set α} {f : α �
       Prod.mk.injEq, Subtype.exists, domRestrict_apply]
     grind
   rw [this]
-  exact ((MeasurableEmbedding.subtype_coe hs).prodMap .id).measurableSet_image.2
+  exact ((MeasurableEmbedding.subtypeVal hs).prodMap .id).measurableSet_image.2
     hf.measurableSet_graph

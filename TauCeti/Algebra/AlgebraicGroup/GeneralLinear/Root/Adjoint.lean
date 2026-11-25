@@ -70,9 +70,9 @@ theorem mem_nontrivialAdjointWeights_iff_exists_diagonalRoot
     refine ⟨p, ?_⟩
     rw [diagonalRootDatum_root, ofAdd_diagonalRoot]
   · rintro ⟨p, rfl⟩
-    refine ⟨p.1.1.down, p.1.2.down, ?_, ?_⟩
+    refine ⟨p.val.1.down, p.val.2.down, ?_, ?_⟩
     · intro h
-      exact p.2 (congrArg ULift.up h)
+      exact p.property (congrArg ULift.up h)
     · rw [diagonalRootDatum_root, ofAdd_diagonalRoot]
 
 /-- The multiplicative roots of the diagonal coordinate root datum are exactly the nontrivial

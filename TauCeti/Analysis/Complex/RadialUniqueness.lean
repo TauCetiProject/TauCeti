@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
-public import TauCeti.Analysis.Complex.IsolatedZero
-public import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
+public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
+public import Mathlib.MeasureTheory.Integral.CircleAverage
+import TauCeti.Analysis.Complex.IsolatedZero
 import TauCeti.Analysis.Complex.JensenFormula
+import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
@@ -31,15 +32,17 @@ boundary point along almost every radius ending in an arc of the circle.
 ## Main results
 
 * `TauCeti.eqOn_zero_ball_of_tendsto_circleMap_of_circleAverage_posLog_le` — the sequential form:
-  a function whose circle averages of `log⁺ ‖f‖` are bounded on a sequence of circles with radii in
-  `[s, R)`, and whose values on these circles tend to `0` at every angle of a set of positive
-  measure, vanishes on the disc.
+  a function holomorphic on the disc whose circle averages of `log⁺ ‖f‖` are bounded on a sequence
+  of circles with radii in `[s, R)`, and whose values on these circles tend to `0` at every angle
+  of a set of positive measure, vanishes on the disc.
 * `TauCeti.eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le` — a function
-  whose circle averages of `log⁺ ‖f‖` are bounded on circles with radii accumulating at `R`, and
-  whose radial limit is `0` on a set of angles of positive measure, vanishes on the disc.
+  holomorphic on the disc whose circle averages of `log⁺ ‖f‖` are bounded on circles with radii
+  accumulating at `R`, and whose radial limit is `0` on a set of angles of positive measure,
+  vanishes on the disc.
 * `TauCeti.eqOn_const_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le` — a function
-  whose circle averages of `log⁺ ‖f‖` are bounded on circles with radii accumulating at `R`, and
-  whose radial limit is `a` on a set of angles of positive measure, is the constant `a`.
+  holomorphic on the disc whose circle averages of `log⁺ ‖f‖` are bounded on circles with radii
+  accumulating at `R`, and whose radial limit is `a` on a set of angles of positive measure, is the
+  constant `a`.
 * `TauCeti.eqOn_const_ball_of_tendsto_circleMap` — a bounded holomorphic function with radial limit
   `a` on a set of angles of positive measure is the constant `a`.
 

@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.FormalScheme.SectionsTopology
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Noetherian
 
+import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 
 /-!
@@ -25,15 +26,14 @@ if `ofSpf B` is locally noetherian for an adic ring `B`, then `B` itself is a no
 formal scheme `X`, the section ring `Γ(U, O_X)` over *every* affine formal open `U` is noetherian
 (`TauCeti.FormalScheme.IsAffineOpen.isNoetherianRing`).
 
-To prove EGA I, Ch. I, 10.6.5 without assuming any general morphism correspondence into `Spf`:
-for an ideal of definition `J` of `B`, the thickening `Spec (B ⧸ J) ⟶ Spf B` is a homeomorphism
-that is surjective on stalks (`TauCeti.FormalScheme.Spf.fromSpecQuotient`). Around every prime of
-`B ⧸ J`, shrinking to a principal open `D(g) ≅ Spec ((B ⧸ J)_g)` lands inside a noetherian chart
-`Spf C ⟶ Spf B`. Lifting `Spec ((B ⧸ J)_g) ⟶ Spf B` into `Spf C` yields an open embedding on
-underlying spaces that is surjective on stalks, so
-`TauCeti.FormalScheme.Spf.isNoetherianRing_of_isOpenEmbedding_fromSpec` implies that `(B ⧸ J)_g` is
-noetherian for `g` spanning the unit ideal of `B ⧸ J`. Hence `B ⧸ J` is noetherian, and
-`Ideal.isNoetherianRing_of_isAdicComplete` concludes that `B` is noetherian.
+To prove EGA I, Ch. I, 10.6.5: for an ideal of definition `J` of `B`, the thickening
+`Spec (B ⧸ J) ⟶ Spf B` is a homeomorphism that is surjective on stalks
+(`TauCeti.FormalScheme.Spf.fromSpecQuotient`). Around every prime of `B ⧸ J`, shrinking to a
+principal open `D(g) ≅ Spec ((B ⧸ J)_g)` lands inside a noetherian chart `Spf C ⟶ Spf B`. Lifting
+`Spec ((B ⧸ J)_g) ⟶ Spf B` into `Spf C` yields an open embedding on underlying spaces that is
+surjective on stalks, so `TauCeti.FormalScheme.Spf.isNoetherianRing_of_isOpenEmbedding_fromSpec`
+implies that `(B ⧸ J)_g` is noetherian for `g` spanning the unit ideal of `B ⧸ J`. Hence `B ⧸ J` is
+noetherian, and `Ideal.isNoetherianRing_of_isAdicComplete` concludes that `B` is noetherian.
 
 ## Main definitions
 
@@ -192,6 +192,7 @@ instance stalk_isNoetherianRing (X : FormalScheme) [X.IsLocallyNoetherian] (x : 
     IsNoetherianRing (X.presheaf.stalk x) := by
   obtain ⟨A, _, _, _, _, _, f, hf, y, rfl⟩ := IsLocallyNoetherian.exists_noetherian_spf x
   have := hf
+  have : IsNoetherianRing ((Spf A).presheaf.stalk y) := Spf.isNoetherianRing_stalk y
   let e := asIso (f.stalkMap y)
   exact isNoetherianRing_of_ringEquiv _ e.symm.commRingCatIsoToRingEquiv
 
@@ -236,7 +237,7 @@ private theorem isNoetherianRing_away_quotient_of_chart {B : Type u} [CommRing B
   have hβ_stalk (x : Spec (CommRingCat.of R)) : Function.Surjective (β.stalkMap x) := by
     have hcomp := PresheafedSpace.stalkMap.comp ιg.toPshHom qJ.toHom x
     intro z
-    obtain ⟨w, hw⟩ := ((ConcreteCategory.bijective_of_isIso (ιg.stalkMap x)).2.comp
+    obtain ⟨w, hw⟩ := ((ConcreteCategory.bijective_of_isIso (ιg.stalkMap x)).surjective.comp
       (Spf.fromSpecQuotient_stalk_surjective hJ (ιg x))) z
     exact ⟨w, (ConcreteCategory.congr_hom hcomp w).trans hw⟩
   exact ⟨g, hyg, Spf.isNoetherianRing_of_isOpenEmbedding_fromSpec _
@@ -263,7 +264,7 @@ theorem isLocallyNoetherian_ofSpf_iff (A : Type u) [CommRing A] [TopologicalSpac
   have hSspan : Ideal.span (S : Set (A ⧸ J)) = ⊤ := Ideal.eq_top_of_isUnit_mem _ hS1 isUnit_one
   have : IsNoetherianRing (A ⧸ J) := by
     refine AlgebraicGeometry.isNoetherianRing_of_away S hSspan fun s ↦ ?_
-    obtain ⟨y, hy⟩ := hSsub s.2
+    obtain ⟨y, hy⟩ := hSsub s.property
     exact hy ▸ hnoeth y
   exact Ideal.isNoetherianRing_of_isAdicComplete J hJfg
 
@@ -291,14 +292,14 @@ instance IsAffineOpen.isNoetherianRing_sections {X : FormalScheme} [X.IsLocallyN
 formal open `U` (EGA I, Ch. I, 10.6.5). -/
 theorem IsAffineOpen.isNoetherianRing {X : FormalScheme} [X.IsLocallyNoetherian]
     {U : Opens X} (hU : X.IsAffineOpen U) : IsNoetherianRing (X.presheaf.obj (op U)) :=
-  isNoetherianRing_of_ringEquiv hU.Sections hU.sectionsRingEquiv
+  inferInstanceAs (IsNoetherianRing hU.Sections)
 
 /-- An affine formal open `U` whose section ring `Γ(U, O_X)` is noetherian has a noetherian
 underlying topological space. -/
 theorem noetherianSpace_of_isAffineOpen {X : FormalScheme} (U : Opens X) (hU : X.IsAffineOpen U)
     [IsNoetherianRing (X.presheaf.obj (op U))] : NoetherianSpace U := by
   have : IsNoetherianRing hU.Sections :=
-    isNoetherianRing_of_ringEquiv _ hU.sectionsRingEquiv.symm
+    inferInstanceAs (IsNoetherianRing (X.presheaf.obj (op U)))
   have : NoetherianSpace
       (LocallyRingedSpace.forgetToTop.obj
         (forgetToLocallyRingedSpace.obj (ofSpf hU.Sections))) :=
@@ -321,9 +322,7 @@ theorem isLocallyNoetherian_iff_of_iSup_eq_top {X : FormalScheme} {ι : Type*} {
     X.IsLocallyNoetherian ↔ ∀ i, IsNoetherianRing (X.presheaf.obj (op (U i))) := by
   refine ⟨fun _ i ↦ (hU i).isNoetherianRing, fun hnoeth ↦ ⟨fun x ↦ ?_⟩⟩
   obtain ⟨i, hxi⟩ := Opens.mem_iSup.mp (hcov ▸ Opens.mem_top x)
-  have : IsNoetherianRing (X.presheaf.obj (op (U i))) := hnoeth i
-  have : IsNoetherianRing (hU i).Sections :=
-    isNoetherianRing_of_ringEquiv _ (hU i).sectionsRingEquiv.symm
+  have : IsNoetherianRing (hU i).Sections := hnoeth i
   exact ⟨(hU i).Sections, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, forgetToLocallyRingedSpace.map (hU i).fromSpf, (hU i).isOpenImmersion_fromSpf,
     ((hU i).range_fromSpf).ge hxi⟩
@@ -341,7 +340,7 @@ every affine formal open `U` of `X`. -/
 theorem isLocallyNoetherian_iff_forall_isAffineOpen (X : FormalScheme) :
     X.IsLocallyNoetherian ↔
       ∀ (U : Opens X), X.IsAffineOpen U → IsNoetherianRing (X.presheaf.obj (op U)) :=
-  (isLocallyNoetherian_iff_of_iSup_eq_top (fun U : {U : Opens X // X.IsAffineOpen U} ↦ U.2)
+  (isLocallyNoetherian_iff_of_iSup_eq_top (fun U : {U : Opens X // X.IsAffineOpen U} ↦ U.property)
     X.iSup_affineOpens_eq_top).trans Subtype.forall
 
 /-- Given a finite affine open cover `⨆ i, U i = ⊤` of `X`, `X` is noetherian if and only if every
@@ -400,7 +399,7 @@ theorem isLocallyNoetherian_toFormalScheme_iff (Y : Scheme.{u}) :
   constructor
   · intro h
     refine ⟨fun U ↦ ?_⟩
-    exact h U.1 ((Y.isAffineOpen_toFormalScheme_iff U.1).mpr U.2)
+    exact h U.val ((Y.isAffineOpen_toFormalScheme_iff U.val).mpr U.property)
   · intro h U hU
     exact AlgebraicGeometry.IsLocallyNoetherian.component_noetherian
       ⟨U, (Y.isAffineOpen_toFormalScheme_iff U).mp hU⟩
