@@ -57,7 +57,7 @@ theorem smul_eq_grassmannianCongr (u : unitary (E →L[𝕜] E)) (P : grassmanni
 theorem coe_smul (u : unitary (E →L[𝕜] E)) (P : grassmannian 𝕜 E k) :
     ((u • P : grassmannian 𝕜 E k) : E →L[𝕜] E) =
       (u : E →L[𝕜] E) * P * star (u : E →L[𝕜] E) := by
-  rw [smul_eq_grassmannianCongr, LinearIsometryEquiv.coe_grassmannianCongr_apply,
+  simp only [smul_eq_grassmannianCongr, LinearIsometryEquiv.coe_grassmannianCongr_apply,
     Unitary.conjStarAlgEquiv_unitaryLinearIsometryEquiv, Unitary.conjStarAlgAut_apply]
 
 /-- The unitary group of `E →L[𝕜] E` acts on `G(E, k)` by conjugation, `u • P = u P u*`. For
@@ -65,8 +65,8 @@ theorem coe_smul (u : unitary (E →L[𝕜] E)) (P : grassmannian 𝕜 E k) :
 noncomputable instance instMulActionUnitary :
     MulAction (unitary (E →L[𝕜] E)) (grassmannian 𝕜 E k) where
   one_smul P := by
-    rw [smul_eq_grassmannianCongr, map_one, LinearIsometryEquiv.one_def,
-      LinearIsometryEquiv.grassmannianCongr_refl, Homeomorph.refl_apply, id]
+    simp only [smul_eq_grassmannianCongr, map_one, LinearIsometryEquiv.one_def,
+      LinearIsometryEquiv.grassmannianCongr_refl, Homeomorph.refl_apply, id_eq]
   mul_smul u v P := by
     simp only [smul_eq_grassmannianCongr, map_mul, LinearIsometryEquiv.mul_def,
       LinearIsometryEquiv.grassmannianCongr_trans, Homeomorph.trans_apply]
