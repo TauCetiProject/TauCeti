@@ -35,7 +35,7 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
 ## Main declarations
 
 * `TauCeti.ConstructionB.lattice`: the Construction B carrier, characterized by `mem_lattice`
-  and `intCast_mem_lattice`.
+  and `intCast_mem_lattice`; its vectors are integral by `exists_intCast_eq_of_mem`.
 * `TauCeti.ConstructionB.val_add_two_mul_mem_lattice_iff`: the parity description of membership
   for doubly even codes.
 * `TauCeti.ConstructionB.sumHalf`: half the coordinate sum modulo two, with kernel
@@ -100,6 +100,13 @@ theorem intCast_mem_lattice (z : ι → ℤ) :
   refine and_congr Iff.rfl ⟨fun ⟨k, hk⟩ ↦ ⟨k, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨k, ?_⟩⟩
   · exact_mod_cast hk
   · exact_mod_cast hk
+
+variable {C} in
+/-- Every vector of Construction B is an integer vector. -/
+theorem exists_intCast_eq_of_mem {x : ι → ℚ} (hx : x ∈ lattice C) :
+    ∃ z : ι → ℤ, x = fun i ↦ (z i : ℚ) := by
+  obtain ⟨z, -, rfl⟩ := (ConstructionA.mem_lattice 2).mp (lattice_le C hx)
+  exact ⟨z, rfl⟩
 
 /-- **The parity form of Construction B.** For a doubly even code, the Construction A vector
 `c + 2z`, with `c` the `0`/`1` lift of a codeword, lies in Construction B exactly when `∑ zᵢ` is

@@ -23,9 +23,10 @@ of a Lebesgue-measurable set is the integral of the lengths of its parallel line
 Replacing a set by a volume-a.e. equal representative changes almost every section only
 on a one-dimensional null set. This permits line-section arguments for measurable sets
 without choosing a Borel representative permanently.
-The length of a line section is independent of its base point along the line, in any real module.
-For a null-measurable set of finite volume, these real section lengths form an integrable function
-on the orthogonal hyperplane
+The length of a line section is independent of its base point along the line, in any real module,
+and the restriction of an indicator to a line is the indicator of the line section
+(`Set.indicator_one_line`). For a null-measurable set of finite volume, these real section lengths
+form an integrable function on the orthogonal hyperplane
 (`MeasureTheory.NullMeasurableSet.integrable_measureReal_lineSection`).
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
@@ -385,6 +386,12 @@ theorem lintegral_line_indicator_norm_sq_eq (e : E) (he : ‖e‖ = 1) {u : Set 
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, norm_add_smul_sq e he]
 
 end TauCeti
+
+/-- The restriction of the indicator of a set to the line `t ↦ y + t • e` is the indicator of the
+line section. -/
+theorem Set.indicator_one_line {E : Type*} [Add E] [SMul ℝ E] (s : Set E) (y e : E) :
+    (fun t : ℝ ↦ s.indicator (1 : E → ℝ) (y + t • e)) = {t : ℝ | y + t • e ∈ s}.indicator 1 :=
+  funext fun _ ↦ (indicator_comp_right (fun t : ℝ ↦ y + t • e)).symm
 
 namespace Submodule
 
