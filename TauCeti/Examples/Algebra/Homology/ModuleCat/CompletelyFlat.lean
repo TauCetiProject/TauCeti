@@ -50,22 +50,17 @@ example : IsCompletelyFaithfullyFlat (Ideal.span {(p : ℤ)})
   (ModuleCat.isCompletelyFaithfullyFlat_single_iff _).mpr
     (isCompletelyFaithfullyFlatModule_padicInt p)
 
--- `F_p ⊗^L_ℤ F_p` has a nonzero term in degree `-1`.
+-- `F_p ⊗^L_ℤ F_p` has a nonzero term in degree `-1`, so `F_p[0]` is not `p`-completely flat in
+-- `D(ℤ)`.
 example : ¬ Limits.IsZero ((homologyFunctor (ModuleCat (ℤ ⧸ Ideal.span {(p : ℤ)})) (-1)).obj
-    ((derivedReduction (Ideal.span {(p : ℤ)})).obj
-      ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ (ℤ ⧸ Ideal.span {(p : ℤ)}))))) :=
-  not_isZero_homology_derivedReduction_quotient
-    (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast (Fact.out : p.Prime).ne_zero : (p : ℤ) ≠ 0))
-    (by simpa [Ideal.span_singleton_eq_top] using
-      (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).not_isUnit)
-
--- `F_p[0]` is not `p`-completely flat in `D(ℤ)`.
-example : ¬ IsCompletelyFlat (Ideal.span {(p : ℤ)})
-    ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ (ℤ ⧸ Ideal.span {(p : ℤ)}))) :=
-  not_isCompletelyFlat_quotient
-    (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast (Fact.out : p.Prime).ne_zero : (p : ℤ) ≠ 0))
-    (by simpa [Ideal.span_singleton_eq_top] using
-      (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).not_isUnit)
+      ((derivedReduction (Ideal.span {(p : ℤ)})).obj
+        ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ (ℤ ⧸ Ideal.span {(p : ℤ)}))))) ∧
+    ¬ IsCompletelyFlat (Ideal.span {(p : ℤ)})
+      ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ (ℤ ⧸ Ideal.span {(p : ℤ)}))) :=
+  have hp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
+  have hf := mem_nonZeroDivisors_of_ne_zero hp.ne_zero
+  have hI := Ideal.span_singleton_ne_top hp.not_isUnit
+  ⟨not_isZero_homology_derivedReduction_quotient hf hI, not_isCompletelyFlat_quotient hf hI⟩
 
 -- `(ℤ_p ⧸ p)[0]` is not `p`-completely flat in `D(ℤ_p)`.
 example [HasDerivedCategory.{w} (ModuleCat.{0} ℤ_[p])]
@@ -73,7 +68,7 @@ example [HasDerivedCategory.{w} (ModuleCat.{0} ℤ_[p])]
     ¬ IsCompletelyFlat (Ideal.span {(p : ℤ_[p])})
       ((singleFunctor (ModuleCat ℤ_[p]) 0).obj (.of ℤ_[p] (ℤ_[p] ⧸ Ideal.span {(p : ℤ_[p])}))) :=
   not_isCompletelyFlat_quotient (mem_nonZeroDivisors_of_ne_zero PadicInt.prime_p.ne_zero)
-    (by simpa [Ideal.span_singleton_eq_top] using PadicInt.prime_p.not_isUnit)
+    (Ideal.span_singleton_ne_top PadicInt.prime_p.not_isUnit)
 
 end Padic
 

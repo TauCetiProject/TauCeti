@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
-public import Mathlib.RingTheory.Ideal.Quotient.Defs
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.Algebra.Homology.HomologicalComplex.Double
+import TauCeti.Algebra.Category.ModuleCat.ExtendScalarsQuotient
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The two-term resolution of the quotient by a nonzerodivisor
@@ -30,6 +33,11 @@ map, is a projective resolution of `A ⧸ (f)`.
 * `TauCeti.regularElementProjectiveResolution f hf`: for `f ∈ nonZeroDivisors A`, the projective
   resolution of `A ⧸ (f)` with complex `regularElementComplex f` and augmentation the quotient
   map (`TauCeti.regularElementProjectiveResolution_π_f_zero`).
+
+## Main results
+
+* `TauCeti.extendScalars_map_regularElementMul`: multiplication by `f` reduces to zero modulo
+  `(f)`.
 -/
 
 public section
@@ -58,47 +66,39 @@ abbrev regularElementComplex : ChainComplex (ModuleCat.{u} A) ℕ :=
 abbrev regularElementAugmentation :
     (regularElementComplex f).X 0 ⟶ ModuleCat.of A (A ⧸ Ideal.span {f}) :=
   (HomologicalComplex.doubleXIso₁ (regularElementMul f) (c := ComplexShape.down ℕ) rfl
-      one_ne_zero).hom ≫ ModuleCat.ofHom (Ideal.span {f}).mkQ
+      one_ne_zero).hom ≫ ModuleCat.ofHom (Ideal.Quotient.mkₐ A (Ideal.span {f})).toLinearMap
 
 /-- The augmentation kills the image of the differential. -/
 theorem regularElementComplex_d_comp_augmentation :
     (regularElementComplex f).d 1 0 ≫ regularElementAugmentation f = 0 := by
-  rw [HomologicalComplex.double_d _ _ one_ne_zero]
-  ext x
-  simp [Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton_self f)]
+  rw [HomologicalComplex.double_d _ _ one_ne_zero, Category.assoc, Category.assoc,
+    Iso.inv_hom_id_assoc, ← ModuleCat.ofHom_comp,
+    (Ideal.exact_mulLeft_mkₐ_span_singleton (R := A) f).linearMap_comp_eq_zero,
+    ModuleCat.ofHom_zero, comp_zero]
 
-/-- The short complex `A --f--> A ⟶ A ⧸ (f)` of modules. -/
-abbrev regularElementShortComplex : ShortComplex (ModuleCat.{u} A) :=
-  ShortComplex.mk (regularElementMul f) (ModuleCat.ofHom (Ideal.span {f}).mkQ) (by
-    ext
-    simp [Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton_self f)])
-
-/-- `A --f--> A ⟶ A ⧸ (f)` is exact. -/
-theorem regularElementShortComplex_exact : (regularElementShortComplex f).Exact := by
-  rw [ShortComplex.moduleCat_exact_iff]
-  intro x hx
-  obtain ⟨y, hy⟩ :=
-    Ideal.mem_span_singleton'.1 (Ideal.Quotient.eq_zero_iff_mem.1 (by simpa using hx))
-  exact ⟨y, by simpa [mul_comm] using hy⟩
-
-variable {f}
-
-/-- For a nonzerodivisor `f`, the kernel of multiplication by `f` is zero. -/
-theorem isZero_kernel_regularElementMul (hf : f ∈ nonZeroDivisors A) :
-    IsZero (ModuleCat.of A (LinearMap.ker (LinearMap.mulLeft A f))) := by
-  have : Subsingleton (LinearMap.ker (LinearMap.mulLeft A f)) := ⟨fun a b ↦ Subtype.ext <| by
-    have ha := LinearMap.mem_ker.1 a.property
-    have hb := LinearMap.mem_ker.1 b.property
-    rw [LinearMap.mulLeft_apply] at ha hb
-    rw [mem_nonZeroDivisors_iff_left.1 hf _ ha, mem_nonZeroDivisors_iff_left.1 hf _ hb]⟩
-  exact ModuleCat.isZero_of_subsingleton _
-
-variable (f)
+/-- Reducing multiplication by `f` modulo `(f)` gives the zero map. -/
+theorem extendScalars_map_regularElementMul :
+    (ModuleCat.extendScalars (Ideal.Quotient.mk (Ideal.span {f}))).map (regularElementMul f) =
+      0 := by
+  ext m
+  apply (Ideal.extendScalarsMkEquivQuotSMul (Ideal.span {f}) A).injective
+  -- `ext` states the goal on `1 ⊗ₜ m` with `1 : A ⧸ (f)`, whereas the `tmul` lemmas expect `1`
+  -- in the restriction of scalars of `A ⧸ (f)`; the two types agree only after unfolding
+  -- `ModuleCat.restrictScalars`, so both lemmas need `erw`.
+  erw [ModuleCat.ExtendScalars.map_tmul]
+  rw [← map_one (Ideal.Quotient.mk (Ideal.span {f}))]
+  erw [Ideal.extendScalarsMkEquivQuotSMul_mk_tmul]
+  have h0 : (Submodule.Quotient.mk ((1 : A) • (regularElementMul f).hom m) :
+      A ⧸ (Ideal.span {f} • ⊤ : Submodule A A)) = 0 := by
+    rw [ModuleCat.hom_ofHom, LinearMap.mulLeft_apply, one_smul, Submodule.Quotient.mk_eq_zero,
+      Ideal.smul_top_eq_map]
+    simpa using Ideal.mul_mem_right m _ (Ideal.mem_span_singleton_self f)
+  exact h0.trans ((Ideal.extendScalarsMkEquivQuotSMul (Ideal.span {f}) A).map_zero).symm
 
 /-- **The two-term resolution of `A ⧸ (f)`.** For a nonzerodivisor `f`, the complex
 `A --f--> A` in degrees `1` and `0`, augmented by the quotient map, is a projective resolution of
 `A ⧸ (f)`. -/
-@[expose] def regularElementProjectiveResolution (hf : f ∈ nonZeroDivisors A) :
+def regularElementProjectiveResolution (hf : f ∈ nonZeroDivisors A) :
     ProjectiveResolution (ModuleCat.of A (A ⧸ Ideal.span {f})) where
   complex := regularElementComplex f
   projective n := by
@@ -114,9 +114,10 @@ variable (f)
     rcases n with _ | _ | n
     · rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros']
       · dsimp
-        refine (ShortComplex.exact_and_epi_g_iff_of_iso ?_).2
-          ⟨regularElementShortComplex_exact f, (ModuleCat.epi_iff_surjective _).2
-            (Ideal.span {f}).mkQ_surjective⟩
+        have hex := Ideal.exact_mulLeft_mkₐ_span_singleton (R := A) f
+        refine (ShortComplex.exact_and_epi_g_iff_of_iso (S₂ := ModuleCat.shortComplexOfCompEqZero
+          _ _ hex.linearMap_comp_eq_zero) ?_).2 ⟨ModuleCat.shortComplex_exact _ hex,
+            (ModuleCat.epi_iff_surjective _).2 (Ideal.Quotient.mkₐ_surjective A _)⟩
         exact ShortComplex.isoMk
           (HomologicalComplex.doubleXIso₀ (regularElementMul f) (c := ComplexShape.down ℕ) rfl)
           (HomologicalComplex.doubleXIso₁ (regularElementMul f) (c := ComplexShape.down ℕ) rfl
@@ -125,11 +126,18 @@ variable (f)
       all_goals first | rfl | exact (regularElementComplex f).shape _ _ (by simp)
     · rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _),
         HomologicalComplex.exactAt_iff_isZero_homology]
-      exact (isZero_kernel_regularElementMul hf).of_iso
-        (HomologicalComplex.doubleHomologyIso₀ one_ne_zero (ModuleCat.kernelIsLimit _))
+      have : Mono (regularElementMul f) := (ModuleCat.mono_iff_injective _).2 fun _ _ h ↦
+        (isRegular_iff_mem_nonZeroDivisors.2 hf).left h
+      exact (isZero_kernel_of_mono _).of_iso
+        (HomologicalComplex.doubleHomologyIso₀ one_ne_zero (limit.isLimit _))
     · rw [quasiIsoAt_iff_exactAt' _ _ (ChainComplex.exactAt_succ_single_obj _ _),
         HomologicalComplex.exactAt_iff_isZero_homology]
       exact HomologicalComplex.isZero_double_homology _ _ _ (by omega) (by omega)⟩
+
+/-- The complex of `regularElementProjectiveResolution f hf` is `regularElementComplex f`. -/
+theorem regularElementProjectiveResolution_complex (hf : f ∈ nonZeroDivisors A) :
+    (regularElementProjectiveResolution f hf).complex = regularElementComplex f := by
+  rfl
 
 /-- The degree-one term of `regularElementProjectiveResolution f hf` is the regular module. -/
 def regularElementProjectiveResolutionXIso₁ (hf : f ∈ nonZeroDivisors A) :
@@ -158,7 +166,10 @@ theorem isZero_regularElementProjectiveResolution_complex_X (hf : f ∈ nonZeroD
 map. -/
 theorem regularElementProjectiveResolution_π_f_zero (hf : f ∈ nonZeroDivisors A) :
     (regularElementProjectiveResolution f hf).π.f 0 =
-      regularElementAugmentation f ≫ (HomologicalComplex.singleObjXSelf _ 0 _).inv := by
-  simp [regularElementProjectiveResolution, ChainComplex.toSingle₀Equiv_symm_apply_f_zero]
+      (regularElementProjectiveResolutionXIso₀ f hf).hom ≫
+        ModuleCat.ofHom (Ideal.Quotient.mkₐ A (Ideal.span {f})).toLinearMap ≫
+          (HomologicalComplex.singleObjXSelf _ 0 _).inv := by
+  simp [regularElementProjectiveResolution, regularElementProjectiveResolutionXIso₀,
+    ChainComplex.toSingle₀Equiv_symm_apply_f_zero]
 
 end TauCeti

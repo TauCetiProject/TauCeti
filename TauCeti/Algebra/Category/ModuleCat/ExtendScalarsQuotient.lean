@@ -19,6 +19,8 @@ the quotient map `R → R ⧸ J` gives `(R ⧸ J) ⊗[R] M ≃ M ⧸ J • M`, a
 
 * `Ideal.extendScalarsMkEquivQuotSMul J M`: the `R ⧸ J`-linear isomorphism between the extension
   of scalars of `M` along `Ideal.Quotient.mk J` and `M ⧸ J • M`.
+* `Ideal.not_isZero_extendScalars_mk_of_ne_top`: for `J ≠ ⊤`, the extension of scalars of `R`
+  along `R → R ⧸ J` is nonzero.
 -/
 
 public section
@@ -55,5 +57,15 @@ theorem extendScalarsMkEquivQuotSMul_mk_tmul (r : R) (m : M) :
   (congrArg (TensorProduct.quotTensorEquivQuotSMul M J)
     (ModuleCat.extendScalarsAlgebraMapIso_hom_tmul (S := R ⧸ J) (ModuleCat.of R M)
       (Ideal.Quotient.mk J r) m)).trans (TensorProduct.quotTensorEquivQuotSMul_mk_tmul J r m)
+
+variable {J} in
+/-- The extension of scalars of the regular module along `R → R ⧸ J` is nonzero when `J ≠ ⊤`. -/
+theorem not_isZero_extendScalars_mk_of_ne_top (hJ : J ≠ ⊤) :
+    ¬ Limits.IsZero ((ModuleCat.extendScalars (Ideal.Quotient.mk J)).obj (ModuleCat.of R R)) := by
+  intro h
+  have := ModuleCat.subsingleton_of_isZero h
+  have : Subsingleton (R ⧸ (J • ⊤ : Submodule R R)) :=
+    (extendScalarsMkEquivQuotSMul J R).symm.injective.subsingleton
+  exact hJ (by simpa using Submodule.Quotient.subsingleton_iff.1 this)
 
 end Ideal
