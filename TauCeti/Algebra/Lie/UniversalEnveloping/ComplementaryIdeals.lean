@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Prod
-public import TauCeti.Algebra.Lie.UniversalEnveloping.ProductCenter
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Product.Center
 
 /-!
 # The enveloping algebra of a Lie algebra with complementary ideals
@@ -100,6 +100,25 @@ theorem envelopingEquivOfIsCompl_ι' (x : L) :
   simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using
     envelopingEquivOfIsCompl_ι R I J h x
 
+/-- The algebra homomorphism underlying `envelopingEquivOfIsCompl`: the map induced by the inverse
+of addition `I × J ≃ L`, followed by `productEnveloping`. -/
+theorem envelopingEquivOfIsCompl_toAlgHom :
+    (envelopingEquivOfIsCompl R I J h).toAlgHom = (productEnveloping R I J).toAlgHom.comp
+      (map R (LieIdeal.prodEquivOfIsCompl I J h).symm.toLieHom) :=
+  AlgHom.ext fun x ↦ by
+    rw [← mapEquiv_toAlgHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, AlgEquiv.toAlgHom_apply,
+      AlgEquiv.toAlgHom_apply, envelopingEquivOfIsCompl, AlgEquiv.trans_apply]
+
+/-- On the image of the map induced by a Lie homomorphism `g` into `L`,
+`envelopingEquivOfIsCompl` is `productEnveloping` on the image of the map induced by `g` followed
+by the inverse of addition. -/
+private theorem _root_.UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_map {M : Type*}
+    [LieRing M] [LieAlgebra R M] (g : M →ₗ⁅R⁆ L) (a : _root_.UniversalEnvelopingAlgebra R M) :
+    envelopingEquivOfIsCompl R I J h (map R g a) = productEnveloping R I J
+      (map R ((LieIdeal.prodEquivOfIsCompl I J h).symm.toLieHom.comp g) a) := by
+  rw [map_comp]
+  exact AlgHom.congr_fun (envelopingEquivOfIsCompl_toAlgHom R I J h) (map R g a)
+
 /-- On the inclusion of `I`, `envelopingEquivOfIsCompl` is the inverse abelian comparison
 tensored with one. -/
 @[simp]
@@ -107,17 +126,15 @@ theorem _root_.UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_map_incl_left
     (a : _root_.UniversalEnvelopingAlgebra R I) :
     envelopingEquivOfIsCompl R I J h (map R I.incl a) =
       (symmetricAlgebraEquiv R I).symm a ⊗ₜ[R] (1 : UJ) := by
-  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply, ← AlgEquiv.toAlgHom_apply (mapEquiv R _),
-    mapEquiv_toAlgHom, ← AlgHom.comp_apply, ← map_comp,
-    LieIdeal.prodEquivOfIsCompl_symm_comp_incl_left, productEnveloping_map_inl]
+  rw [envelopingEquivOfIsCompl_map, LieIdeal.prodEquivOfIsCompl_symm_comp_incl_left,
+    productEnveloping_map_inl]
 
 /-- On the inclusion of `J`, `envelopingEquivOfIsCompl` is one tensored with the element. -/
 @[simp]
 theorem _root_.UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_map_incl_right (u : UJ) :
     envelopingEquivOfIsCompl R I J h (map R J.incl u) = (1 : SI) ⊗ₜ[R] u := by
-  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply, ← AlgEquiv.toAlgHom_apply (mapEquiv R _),
-    mapEquiv_toAlgHom, ← AlgHom.comp_apply, ← map_comp,
-    LieIdeal.prodEquivOfIsCompl_symm_comp_incl_right, productEnveloping_map_inr]
+  rw [envelopingEquivOfIsCompl_map, LieIdeal.prodEquivOfIsCompl_symm_comp_incl_right,
+    productEnveloping_map_inr]
 
 /-- The inverse of `envelopingEquivOfIsCompl` sends a pure tensor `a ⊗ u` to the product of the
 images of `a` and `u` under the inclusions of `I` and of `J`. -/
@@ -127,15 +144,6 @@ theorem _root_.UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_symm_tmul (a 
       map R I.incl (symmetricAlgebraEquiv R I a) * map R J.incl u := by
   apply (envelopingEquivOfIsCompl R I J h).injective
   simp [Algebra.TensorProduct.tmul_mul_tmul]
-
-/-- The algebra homomorphism underlying `envelopingEquivOfIsCompl`: the map induced by the inverse
-of addition `I × J ≃ L`, followed by `productEnveloping`. -/
-theorem envelopingEquivOfIsCompl_toAlgHom :
-    (envelopingEquivOfIsCompl R I J h).toAlgHom = (productEnveloping R I J).toAlgHom.comp
-      (map R (LieIdeal.prodEquivOfIsCompl I J h).symm.toLieHom) :=
-  AlgHom.ext fun x ↦ by
-    rw [← mapEquiv_toAlgHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply, AlgEquiv.toAlgHom_apply,
-      AlgEquiv.toAlgHom_apply, envelopingEquivOfIsCompl, AlgEquiv.trans_apply]
 
 end IsCompl
 

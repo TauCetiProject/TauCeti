@@ -529,8 +529,7 @@ theorem centerDerivedEquiv_map (f : L →ₗ⁅K⁆ L') (hf : ∀ z ∈ center K
     (x : L) :
     centerDerivedEquiv K L' (f x) =
       (f.restrictIdeal hf (centerDerivedEquiv K L x).1,
-        f.restrictIdeal (fun _ hx ↦ LieIdeal.derivedSeries_map_le (f := f) 1 (LieIdeal.mem_map hx))
-          (centerDerivedEquiv K L x).2) :=
+        f.restrictIdeal (fun _ ↦ f.map_mem_derivedSeries 1) (centerDerivedEquiv K L x).2) :=
   LieIdeal.prodEquivOfIsCompl_symm_map _ _ _ _ f hf _ x
 
 end Splitting

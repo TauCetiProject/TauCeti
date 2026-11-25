@@ -139,8 +139,7 @@ theorem reductiveEnveloping_naturality (f : L →ₗ⁅K⁆ L')
     (hf : ∀ z ∈ center K L, f z ∈ center K L') :
     (Algebra.TensorProduct.map
         (SymmetricAlgebra.map K ((f.restrictIdeal hf : center K L →ₗ[K] center K L')))
-        (map K (f.restrictIdeal fun _ hx ↦
-          LieIdeal.derivedSeries_map_le (f := f) 1 (LieIdeal.mem_map hx)))).comp
+        (map K (f.restrictIdeal fun _ ↦ f.map_mem_derivedSeries 1))).comp
         (reductiveEnveloping K L).toAlgHom =
       (reductiveEnveloping K L').toAlgHom.comp (map K f) :=
   envelopingEquivOfIsCompl_naturality _ _ f hf _
