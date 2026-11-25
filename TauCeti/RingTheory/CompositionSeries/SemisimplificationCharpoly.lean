@@ -45,11 +45,6 @@ theorem finiteDimensional_submodule [FiniteDimensional k M] (N : Submodule A M) 
     FiniteDimensional k N :=
   .of_injective (N.subtype.restrictScalars k) Subtype.val_injective
 
-/-- A quotient of a finite-dimensional module over a `k`-algebra is finite-dimensional. -/
-theorem finiteDimensional_quotient [FiniteDimensional k M] (N : Submodule A M) :
-    FiniteDimensional k (M ⧸ N) :=
-  .of_surjective (N.mkQ.restrictScalars k) N.mkQ_surjective
-
 variable [IsNoetherian A M] [IsArtinian A M]
 
 /-- The `k`-vector space structure of the semisimplification of an `A`-module, for a
@@ -68,7 +63,7 @@ instance semisimplification.instFiniteDimensional [FiniteDimensional k M] :
   have (i : Fin s.length) :
       FiniteDimensional k (↥(s i.succ) ⧸ Submodule.comap (s i.succ).subtype (s i.castSucc)) :=
     have := finiteDimensional_submodule (k := k) (s i.succ)
-    finiteDimensional_quotient _
+    inferInstance
   inferInstanceAs (FiniteDimensional k (seriesSemisimplification _))
 
 end Instances
@@ -99,11 +94,9 @@ theorem charpoly_lsmul_prod (a : A) :
 `M ⧸ N`. -/
 theorem charpoly_lsmul_eq_mul_quotient (P : Submodule A M) (a : A) :
     haveI := finiteDimensional_submodule (k := k) P
-    haveI := finiteDimensional_quotient (k := k) P
     (Algebra.lsmul k k M a).charpoly =
       (Algebra.lsmul k k P a).charpoly * (Algebra.lsmul k k (M ⧸ P) a).charpoly := by
   have := finiteDimensional_submodule (k := k) P
-  have := finiteDimensional_quotient (k := k) P
   let W := P.restrictScalars k
   have hW : W ≤ W.comap (Algebra.lsmul k k M a) := fun x hx ↦ P.smul_mem a hx
   let eW : W ≃ₗ[k] P := { AddEquiv.refl _ with map_smul' := fun _ _ ↦ rfl }
@@ -128,12 +121,10 @@ theorem charpoly_lsmul_semisimplification (a : A) :
   by_cases hP : ∃ P : Submodule A M, P ≠ ⊥ ∧ P ≠ ⊤
   · obtain ⟨P, hbot, htop⟩ := hP
     have := finiteDimensional_submodule (k := k) P
-    have := finiteDimensional_quotient (k := k) P
     obtain ⟨e⟩ := nonempty_linearEquiv_semisimplification_prod_quotient P
     have hW : Module.finrank k P = Module.finrank k (P.restrictScalars k) := rfl
-    have hsum : Module.finrank k (M ⧸ P) + Module.finrank k P = n := by
-      rw [← hn, ← (Submodule.Quotient.restrictScalarsEquiv k P).finrank_eq, hW]
-      exact (P.restrictScalars k).finrank_quotient_add_finrank
+    have hsum : Module.finrank k (M ⧸ P) = n - Module.finrank k P :=
+      hn ▸ Submodule.finrank_quotient (R := k) P
     have hP : Module.finrank k P < n := by
       rw [← hn, hW]
       exact Submodule.finrank_lt (by rwa [Ne, Submodule.restrictScalars_eq_top_iff])
