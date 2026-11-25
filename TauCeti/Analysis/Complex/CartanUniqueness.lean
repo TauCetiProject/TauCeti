@@ -44,8 +44,9 @@ linear maps of `U(1, n)`, this is the step towards describing every biholomorphi
 * `AnalyticOnNhd.exists_linearIsometryEquiv_eqOn_ball`: a biholomorphism of `ball 0 r` fixing `0`
   is the restriction of a linear isometric equivalence.
 
-Holomorphy is stated as analyticity, which in finite dimension is equivalent to complex
-differentiability on an open set (`DifferentiableOn.analyticOnNhd_of_finiteDimensional`).
+Holomorphy is stated as analyticity, which in finite dimension follows from complex
+differentiability on an open set by Tau Ceti's `DifferentiableOn.analyticOnNhd_of_finiteDimensional`
+(in `TauCeti.Analysis.Complex.CauchyIntegralPolydisc`).
 
 ## The argument
 

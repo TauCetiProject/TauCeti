@@ -62,10 +62,8 @@ theorem isBigO_apply_const_sub (hk : 2 ≤ k)
       fun y => ‖y‖ ^ (k - 1) * ‖y‖ ^ k :=
     ((hw1.norm_left.add (isBigO_refl _ _)).pow (k - 1)).mul hwy.norm_left
   have h3 : (fun y : E => ‖y‖ ^ (k - 1) * ‖y‖ ^ k) =O[𝓝 0] fun y => ‖y‖ ^ (k + 1) := by
-    simp only [← pow_add]
-    rcases (show k + 1 ≤ k - 1 + k by omega).eq_or_lt with h | h
-    · rw [h]
-    · exact (isLittleO_norm_pow_norm_pow h).isBigO
+    simpa only [← pow_add] using
+      isBigO_norm_pow_norm_pow_nhds_zero_of_le (E := E) (by omega : k + 1 ≤ k - 1 + k)
   exact h1.trans (h2.trans h3)
 
 /-- If `g y = c • P y + O(‖y‖ ^ (k + 1))` near `0` for a homogeneous polynomial `P` of degree `k`,
