@@ -138,7 +138,7 @@ theorem integral_integral_update_pi {E : Type*} [NormedAddCommGroup E] [NormedSp
   refine (integral_prod _ hint).symm.trans ?_
   exact hmp.hasLaw.integral_comp hh.aestronglyMeasurable
 
-/-- **Fubini for a function of one coordinate.** If `x ↦ T x * h (xᵢ)` is integrable under a
+/-- **Fubini against a function of one coordinate.** If `x ↦ T x * h (xᵢ)` is integrable under a
 product of σ-finite measures whose `i`-th factor is a probability measure, its integral is the
 integral under `P i` of `a ↦ E(T | Xᵢ = a) * h a`. -/
 theorem integral_mul_comp_eval_eq (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)]
