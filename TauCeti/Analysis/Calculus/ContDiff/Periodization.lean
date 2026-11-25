@@ -38,13 +38,13 @@ namespace TauCeti
 variable {X W : Type*} [AddCommMonoid W] [TopologicalSpace W]
 
 /-- The periodization `z ↦ Σₖ h(z.1, z.2 + k)` of a map on `X × ℝ` in the second variable. -/
-@[expose] def periodizeSnd (h : X × ℝ → W) (z : X × ℝ) : W :=
+def periodizeSnd (h : X × ℝ → W) (z : X × ℝ) : W :=
   ∑' k : ℤ, h (z.1, z.2 + k)
 
 /-- The periodization is the sum of the integer translates in the second variable. -/
 theorem periodizeSnd_apply (h : X × ℝ → W) (z : X × ℝ) :
-    periodizeSnd h z = ∑' k : ℤ, h (z.1, z.2 + k) :=
-  rfl
+    periodizeSnd h z = ∑' k : ℤ, h (z.1, z.2 + k) := by
+  rw [periodizeSnd]
 
 /-- The periodization has period one in the second variable. -/
 theorem periodizeSnd_add_one (h : X × ℝ → W) (x : X) (t : ℝ) :
@@ -73,9 +73,9 @@ theorem periodizeSnd_eq_sum {h : X × ℝ → W} {a b : ℝ} (hh : ∀ z, h z �
 its two translates by `±1` in the second variable. -/
 theorem periodizeSnd_eq_of_mem_Icc {h : X × ℝ → W}
     (hh : ∀ z, h z ≠ 0 → z.2 ∈ Ioo (-1 : ℝ) 2) {x : X} {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    periodizeSnd h (x, t) = h (x, t + 1) + h (x, t) + h (x, t + -1) := by
+    periodizeSnd h (x, t) = h (x, t + 1) + h (x, t) + h (x, t - 1) := by
   rw [periodizeSnd, tsum_eq_sum (s := {1, 0, -1}) fun k hk ↦ ?_]
-  · simp [add_assoc]
+  · simp [add_assoc, sub_eq_add_neg]
   by_contra hne
   obtain ⟨h₁, h₂⟩ := hh _ hne
   simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hk

@@ -84,11 +84,11 @@ private theorem eLpNorm_sub_periodizeSnd_le {g h : ℝ × ℝ → W}
     have hg_add : g (s, t + 1) = 0 := by
       by_contra hne
       exact absurd (hg _ hne).2 (by simp only; linarith [ht.1])
-    have hg_sub : g (s, t + -1) = 0 := by
+    have hg_sub : g (s, t - 1) = 0 := by
       by_contra hne
       exact absurd (hg _ hne).1 (by simp only; linarith [ht.2])
     simp only [Pi.sub_apply, Pi.neg_apply, Pi.add_apply, comp_apply, Prod.mk_add_mk, add_zero,
-      e, periodizeSnd_eq_of_mem_Icc hh ht, hg_add, hg_sub, sub_zero]
+      e, ← sub_eq_add_neg, periodizeSnd_eq_of_mem_Icc hh ht, hg_add, hg_sub, sub_zero]
     abel
   -- Each of the three terms has `L²` norm on the strip at most that of `e` on the plane.
   have htr (v : ℝ × ℝ) : eLpNorm (e ∘ (· + v)) 2 stripMeasure ≤ eLpNorm e 2 volume := by
