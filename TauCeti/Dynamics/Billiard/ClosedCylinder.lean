@@ -485,7 +485,7 @@ theorem cylinderInclusion_apply (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
   (rfl)
 
 /-- The inclusion of the open cylinder in the closed cylinder is injective. -/
-theorem injective_cylinderInclusion : Injective χ.cylinderInclusion :=
+theorem cylinderInclusion_injective : Injective χ.cylinderInclusion :=
   injective_id.prodMap (inclusion_injective _)
 
 /-- The image of the open cylinder consists of the points with tangential component in
