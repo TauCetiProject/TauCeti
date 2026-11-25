@@ -81,10 +81,15 @@ saying that the trivial ring has regular module of length `0`, and are stated wi
 presentations are compared, nonemptiness is needed for one of them only: it makes the ring
 nontrivial, and the other index is then nonempty as well.
 
-Everything is stated for the *left* regular module, matching the convention of `IsSemisimpleRing`,
-so the simple module is the column module -- on which a matrix acts by `Matrix.mulVec` -- and the
-endomorphism ring, acting on the other side, comes out as `Dᵐᵒᵖ` rather than `D`.  This is also
-Mathlib's convention in `IsSimpleRing.exists_ringEquiv_matrix_end_mulOpposite`.
+The Artin--Wedderburn invariance results are stated for the *left* regular module, matching the
+convention of `IsSemisimpleRing`, so the simple module is the column module -- on which a matrix
+acts by `Matrix.mulVec` -- and the endomorphism ring, acting on the other side, comes out as `Dᵐᵒᵖ`
+rather than `D`.  This is also Mathlib's convention in
+`IsSimpleRing.exists_ringEquiv_matrix_end_mulOpposite`.  The *right* regular module appears only
+in `TauCeti.Matrix.mopLinearEquivPi`, which decomposes it into rows -- on which a matrix acts by
+`Matrix.vecMul` -- and in the `TauCeti.Matrix.rowLinearMap` block, which identifies the row module
+with the corner right ideal `e_{ii} Matᵢ(D)`.  Both serve the right-module Morita isomorphism
+`TauCeti.KZero.matrixEquiv`.
 
 Note that `DecidableEq ι` is needed to make `Matᵢ(D)` a ring, but not to state the ring-equivalence
 transport results, whose types mention only the multiplication and addition of `Matᵢ(D)`; those are
