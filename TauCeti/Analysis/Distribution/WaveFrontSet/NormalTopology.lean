@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
-import TauCeti.Analysis.Distribution.TestFunction.Convergence
-import TauCeti.Analysis.Distribution.TestFunction.FourierAtom
 import TauCeti.Analysis.Normed.Module.Seminorm.WeightedSup
 
 /-!
@@ -43,9 +41,10 @@ locally convex topology defined by these seminorms. Here `𝓓'(Ω)` carries Mat
 uniform convergence on compact sets of test functions; Brouder, Dang and Hélein use the strong
 topology of uniform convergence on bounded sets, which is the same since bounded sets of test
 functions are relatively compact. The normal topology makes `𝓓'_Γ(Ω)` a Hausdorff topological
-group in which a net converges exactly when it converges in `𝓓'(Ω)` and in every seminorm, and a
-linear map into `𝓓'_Γ(Ω)` is continuous exactly when its composite with the inclusion into
-`𝓓'(Ω)` and its composites with all the seminorms are continuous. For `Γ ⊆ Γ'` the inclusion
+group in which a net converges exactly when it converges in `𝓓'(Ω)` and in every seminorm (in fact,
+convergence in `𝓓'(Ω)` with eventual boundedness in every seminorm suffices), and a map into
+`𝓓'_Γ(Ω)` is continuous exactly when its composite with the inclusion into `𝓓'(Ω)` and its
+composites with all the seminorms are continuous. For `Γ ⊆ Γ'` the inclusion
 `𝓓'_Γ(Ω) → 𝓓'_Γ'(Ω)` is continuous, and multiplication by a smooth real-valued function,
 differentiation and restriction to an open subset are continuous linear maps of these spaces.
 
@@ -57,8 +56,10 @@ differentiation and restriction to an open subset are continuous linear maps of 
 * `TauCeti.WaveFrontSpace.seminorm`: the seminorm `‖T‖_{φ,V,N}`, the best constant in the
   decay estimate (`TauCeti.WaveFrontSpace.seminorm_le_iff`).
 * `TauCeti.WaveFrontSpace.tendsto_nhds_iff`,
-  `TauCeti.WaveFrontSpace.continuous_linearMap_iff`: convergence and continuity of linear
-  maps into `𝓓'_Γ(Ω)`.
+  `TauCeti.WaveFrontSpace.tendsto_nhds_of_eventually_seminorm_le`,
+  `TauCeti.WaveFrontSpace.continuous_iff`, `TauCeti.WaveFrontSpace.continuous_of_le`,
+  `TauCeti.WaveFrontSpace.continuous_linearMap_iff`: convergence and continuity of maps into
+  `𝓓'_Γ(Ω)`.
 * `TauCeti.WaveFrontSpace.inclusionCLM`, `TauCeti.WaveFrontSpace.smulLeftCLM`,
   `TauCeti.WaveFrontSpace.lineDerivCLM`, `TauCeti.WaveFrontSpace.restrictCLM`: the
   inclusion for a larger cone, multiplication by a smooth real-valued function, differentiation
@@ -249,45 +250,6 @@ theorem restrict_order {Ω' : Opens E} (hΓ : Γ ∩ (Ω' : Set E) ×ˢ univ ⊆
 end WaveFrontSeminormIndex
 
 end SeminormIndex
-
-/-- Convergence of distributions in `𝓓'(Ω, ℂ)` gives uniform convergence of localized Fourier
-transforms on compact sets of frequencies. -/
-private theorem eventually_norm_localFourier_lt_of_tendsto {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] {Ω : Opens E} {α : Type*} {l : Filter α}
-    {f : α → 𝓓'(Ω, ℂ)} {T : 𝓓'(Ω, ℂ)} (h : Tendsto f l (𝓝 T))
-    (φ : 𝓓(Ω, ℂ)) {K : Set E} (hK : IsCompact K) {δ : ℝ} (hδ : 0 < δ) :
-    ∀ᶠ a in l, ∀ η ∈ K, ‖(f a - T).localFourier φ η‖ < δ := by
-  set ψ : E → 𝓓(Ω, ℂ) := fun η ↦
-    TestFunction.bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ
-  have hψ : Continuous ψ := by
-    refine TestFunction.continuous_of_contDiff_uncurry
-      φ.hasCompactSupport.isCompact φ.tsupport_subset (fun η ↦ ?_) ?_
-    · simp only [ψ, TestFunction.bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
-      exact tsupport_mul_subset_left
-    · simp only [ψ, TestFunction.bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
-      exact (φ.contDiff.comp contDiff_snd).mul TauCeti.contDiff_uncurry_fourierAtom
-  have hre : TendstoUniformlyOn (fun a g ↦ f a g) T l
-      ((fun η ↦ TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM (ψ η)) '' K) :=
-    (UniformConvergenceCLM.tendsto_iff_tendstoUniformlyOn _ _ _).1 h _
-      (hK.image ((TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM).continuous.comp hψ))
-  have him : TendstoUniformlyOn (fun a g ↦ f a g) T l
-      ((fun η ↦ TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM (ψ η)) '' K) :=
-    (UniformConvergenceCLM.tendsto_iff_tendstoUniformlyOn _ _ _).1 h _
-      (hK.image ((TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM).continuous.comp hψ))
-  rw [Metric.tendstoUniformlyOn_iff] at hre him
-  filter_upwards [hre (δ / 2) (half_pos hδ), him (δ / 2) (half_pos hδ)] with a ha_re ha_im η hη
-  have h1 : ‖(f a - T) (TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM (ψ η))‖ < δ / 2 := by
-    simpa [dist_eq_norm, norm_sub_rev] using ha_re _ ⟨η, hη, rfl⟩
-  have h2 : ‖(f a - T) (TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM (ψ η))‖ < δ / 2 := by
-    simpa [dist_eq_norm, norm_sub_rev] using ha_im _ ⟨η, hη, rfl⟩
-  rw [localFourier_def, complexPairing_apply]
-  calc ‖(f a - T) (TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM (ψ η)) +
-        Complex.I * (f a - T) (TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM (ψ η))‖
-      ≤ ‖(f a - T) (TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM (ψ η))‖ +
-        ‖(f a - T) (TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM (ψ η))‖ :=
-        (norm_add_le _ _).trans (by simp)
-    _ < δ / 2 + δ / 2 := add_lt_add h1 h2
-    _ = δ := add_halves δ
 
 /-! ### The space `𝓓'_Γ(Ω)` -/
 
@@ -482,8 +444,8 @@ theorem tendsto_nhds_iff {α : Type*} {l : Filter α} {f : α → WaveFrontSpace
 /-- A filter converging in `𝓓'(Ω, ℂ)` along which every seminorm `‖·‖_{φ,V,N}` is eventually
 bounded converges in the normal topology: the extra order `N + 1` controls large frequencies and
 convergence in `𝓓'(Ω, ℂ)` controls bounded frequencies uniformly. -/
-private theorem tendsto_nhds_of_tendsto_toDistribution_of_eventually_seminorm_le {α : Type*}
-    {l : Filter α} {f : α → WaveFrontSpace Ω Γ} {u : WaveFrontSpace Ω Γ}
+theorem tendsto_nhds_of_eventually_seminorm_le {α : Type*} {l : Filter α}
+    {f : α → WaveFrontSpace Ω Γ} {u : WaveFrontSpace Ω Γ}
     (h₁ : Tendsto (fun a ↦ (f a).toDistribution) l (𝓝 u.toDistribution))
     (h₂ : ∀ i : WaveFrontSeminormIndex Ω Γ, ∃ M, ∀ᶠ a in l, WaveFrontSpace.seminorm i (f a) ≤ M) :
     Tendsto f l (𝓝 u) := by
@@ -492,17 +454,26 @@ private theorem tendsto_nhds_of_tendsto_toDistribution_of_eventually_seminorm_le
   set B : ℝ := max M 0 + WaveFrontSpace.seminorm (i.withOrder (i.order + 1)) u
   have hB : 0 ≤ B := add_nonneg (le_max_right _ _) (apply_nonneg _ _)
   set R : ℝ := 2 * B / ε
-  have hball := eventually_norm_localFourier_lt_of_tendsto h₁ i.cutoff
-    (isCompact_closedBall (0 : E) R) (δ := (ε / 2) / (1 + R) ^ i.order) (by positivity)
+  have hball := Metric.tendstoUniformlyOn_iff.1
+    (tendstoUniformlyOn_localFourier h₁ i.cutoff (isCompact_closedBall (0 : E) R))
+    ((ε / 2) / (1 + R) ^ i.order) (by positivity)
   filter_upwards [hM, hball] with a haM haball
   refine (seminorm_le_bound i (f a - u) (by positivity) fun η hη ↦ ?_).trans_lt (half_lt_self hε)
   by_cases hηR : ‖η‖ ≤ R
-  · have hlt := haball η (by simpa [mem_closedBall, dist_zero_right] using hηR)
+  · have hlt :
+        ‖(f a - u).toDistribution.localFourier i.cutoff η‖ < (ε / 2) / (1 + R) ^ i.order := by
+      have hsub : (f a - u).toDistribution.localFourier i.cutoff η =
+          (f a).toDistribution.localFourier i.cutoff η -
+            u.toDistribution.localFourier i.cutoff η := by
+        rw [map_sub, sub_eq_add_neg, ← neg_one_smul ℂ, localFourier_add, localFourier_smul]
+        ring
+      rw [hsub]
+      simpa [dist_eq_norm, norm_sub_rev] using
+        haball η (by simpa [mem_closedBall, dist_zero_right] using hηR)
     have hpow : (1 + ‖η‖) ^ i.order ≤ (1 + R) ^ i.order := by gcongr
     calc (1 + ‖η‖) ^ i.order * ‖(f a - u).toDistribution.localFourier i.cutoff η‖
-        ≤ (1 + R) ^ i.order * ((ε / 2) / (1 + R) ^ i.order) := by
-          rw [map_sub]
-          exact mul_le_mul hpow hlt.le (norm_nonneg _) (by positivity)
+        ≤ (1 + R) ^ i.order * ((ε / 2) / (1 + R) ^ i.order) :=
+          mul_le_mul hpow hlt.le (norm_nonneg _) (by positivity)
       _ = ε / 2 := mul_div_cancel₀ _ (by positivity)
   · push Not at hηR
     have hsub : WaveFrontSpace.seminorm (i.withOrder (i.order + 1)) (f a - u) ≤ B :=
@@ -523,19 +494,39 @@ private theorem tendsto_nhds_of_tendsto_toDistribution_of_eventually_seminorm_le
       _ ≤ B / (1 + R) := div_le_div₀ hB hle h1R h1η
       _ ≤ ε / 2 := hBR
 
+/-- A map from a topological space into `𝓓'_Γ(Ω)` whose composite with the inclusion into `𝓓'(Ω)`
+is continuous, and each of whose seminorms `‖f ·‖_{φ,V,N}` is bounded pointwise by a continuous
+real-valued function, is continuous. -/
+theorem continuous_of_le {X : Type*} [TopologicalSpace X] {f : X → WaveFrontSpace Ω Γ}
+    (h₁ : Continuous fun x ↦ (f x).toDistribution)
+    (h₂ : ∀ i, ∃ g : X → ℝ, Continuous g ∧ ∀ x, WaveFrontSpace.seminorm i (f x) ≤ g x) :
+    Continuous f := by
+  refine continuous_iff_continuousAt.2 fun x₀ ↦
+    tendsto_nhds_of_eventually_seminorm_le h₁.continuousAt fun i ↦ ?_
+  obtain ⟨g, hg, hle⟩ := h₂ i
+  refine ⟨g x₀ + 1, ?_⟩
+  filter_upwards [hg.continuousAt.eventually (gt_mem_nhds (lt_add_one (g x₀)))] with x hx
+  exact (hle x).trans hx.le
+
+/-- **Continuity of maps into `𝓓'_Γ(Ω)`.** A map from a topological space into `𝓓'_Γ(Ω)` is
+continuous exactly when its composite with the inclusion into `𝓓'(Ω)` and its composites with all
+the seminorms `‖·‖_{φ,V,N}` are continuous. -/
+theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → WaveFrontSpace Ω Γ} :
+    Continuous f ↔ Continuous (fun x ↦ (f x).toDistribution) ∧
+      ∀ i, Continuous fun x ↦ WaveFrontSpace.seminorm i (f x) :=
+  ⟨fun h ↦ ⟨continuous_toDistribution.comp h, fun i ↦ (continuous_seminorm i).comp h⟩,
+    fun ⟨h₁, h₂⟩ ↦ continuous_of_le h₁ fun i ↦ ⟨_, h₂ i, fun _ ↦ le_rfl⟩⟩
+
 /-- A linear map into `𝓓'_Γ(Ω)` whose composite with the inclusion into `𝓓'(Ω)` is continuous,
 and each of whose seminorms `‖A ·‖_{φ,V,N}` is bounded by a continuous seminorm, is continuous. -/
 theorem continuous_linearMap_of_le {F : Type*} [AddCommGroup F] [Module ℂ F] [TopologicalSpace F]
     (A : F →ₗ[ℂ] WaveFrontSpace Ω Γ)
     (h₁ : Continuous (toDistribution ∘ₗ A))
     (h₂ : ∀ i, ∃ q : Seminorm ℂ F, Continuous q ∧ (WaveFrontSpace.seminorm i).comp A ≤ q) :
-    Continuous A := by
-  refine continuous_iff_continuousAt.2 fun x₀ ↦
-    tendsto_nhds_of_tendsto_toDistribution_of_eventually_seminorm_le h₁.continuousAt fun i ↦ ?_
-  obtain ⟨q, hq, hle⟩ := h₂ i
-  refine ⟨q x₀ + 1, ?_⟩
-  filter_upwards [hq.continuousAt.eventually (gt_mem_nhds (lt_add_one (q x₀)))] with x hx
-  exact (hle x).trans hx.le
+    Continuous A :=
+  continuous_of_le h₁ fun i ↦
+    let ⟨q, hq, hle⟩ := h₂ i
+    ⟨q, hq, hle⟩
 
 /-- **Continuity of linear maps into `𝓓'_Γ(Ω)`.** A linear map from a topological space into
 `𝓓'_Γ(Ω)` is continuous exactly when its composite with the inclusion into `𝓓'(Ω)` and its
@@ -544,8 +535,7 @@ theorem continuous_linearMap_iff {F : Type*} [AddCommGroup F] [Module ℂ F] [To
     (A : F →ₗ[ℂ] WaveFrontSpace Ω Γ) :
     Continuous A ↔ Continuous (toDistribution ∘ₗ A) ∧
       ∀ i, Continuous ((WaveFrontSpace.seminorm i).comp A) :=
-  ⟨fun h ↦ ⟨continuous_toDistribution.comp h, fun i ↦ (continuous_seminorm i).comp h⟩,
-    fun ⟨h₁, h₂⟩ ↦ continuous_linearMap_of_le A h₁ fun i ↦ ⟨_, h₂ i, le_rfl⟩⟩
+  continuous_iff
 
 end Topology
 
@@ -569,29 +559,24 @@ private theorem seminorm_eq_of_localFourier_eq {Ω' : Opens E} {i : WaveFrontSem
       rw [← horder, ← h η (hcone ▸ hη)]
       exact le_seminorm i u (hcone ▸ hη))
 
-/-- Lift a continuous `ℂ`-linear map of distributions that sends `𝓓'_Γ(Ω)` into `𝓓'_Γ'(Ω')` to a
-continuous linear map `𝓓'_Γ(Ω) →L[ℂ] 𝓓'_Γ'(Ω')`, given a continuous seminorm bound for each target
-seminorm. -/
-private def mkCLM {Ω' : Opens E} (f : 𝓓'(Ω, ℂ) → 𝓓'(Ω', ℂ))
-    (hadd : ∀ S T, f (S + T) = f S + f T) (hsmul : ∀ (c : ℂ) T, f (c • T) = c • f T)
-    (hcont : Continuous f) (hwf : ∀ T, T.waveFrontSet ⊆ Γ → (f T).waveFrontSet ⊆ Γ')
-    (hsem : ∀ i : WaveFrontSeminormIndex Ω' Γ', ∃ q : Seminorm ℂ (WaveFrontSpace Ω Γ),
-      Continuous q ∧ ∀ u, WaveFrontSpace.seminorm i
-        (mk (f u.toDistribution) (hwf u.toDistribution u.waveFrontSet_toDistribution_subset)) ≤
-        q u) :
-    WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace Ω' Γ' :=
-  let A : WaveFrontSpace Ω Γ →ₗ[ℂ] WaveFrontSpace Ω' Γ' :=
-    { toFun u := mk (f u.toDistribution) (hwf u.toDistribution u.waveFrontSet_toDistribution_subset)
-      map_add' _ _ := ext (by simp [hadd])
-      map_smul' _ _ := ext (by simp [hsmul]) }
-  ⟨A, continuous_linearMap_of_le A (hcont.comp continuous_toDistribution) hsem⟩
+/-- Lift a `ℂ`-linear map of distributions that sends `𝓓'_Γ(Ω)` into `𝓓'_Γ'(Ω')` to a `ℂ`-linear
+map `𝓓'_Γ(Ω) →ₗ[ℂ] 𝓓'_Γ'(Ω')`. -/
+private def mkLinearMap {Ω' : Opens E} (f : 𝓓'(Ω, ℂ) →ₗ[ℝ] 𝓓'(Ω', ℂ))
+    (hsmul : ∀ (c : ℂ) T, f (c • T) = c • f T)
+    (hwf : ∀ T, T.waveFrontSet ⊆ Γ → (f T).waveFrontSet ⊆ Γ') :
+    WaveFrontSpace Ω Γ →ₗ[ℂ] WaveFrontSpace Ω' Γ' where
+  toFun u := mk (f u.toDistribution) (hwf u.toDistribution u.waveFrontSet_toDistribution_subset)
+  map_add' _ _ := ext (by simp)
+  map_smul' _ _ := ext (by simp [hsmul])
 
 /-- The inclusion `𝓓'_Γ(Ω) → 𝓓'_Γ'(Ω)` for `Γ ⊆ Γ'`, a continuous linear map. -/
 def inclusionCLM (h : Γ ⊆ Γ') : WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace Ω Γ' :=
-  mkCLM id (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) continuous_id (fun _ hT ↦ hT.trans h) fun i ↦
+  let A := mkLinearMap (LinearMap.id : 𝓓'(Ω, ℂ) →ₗ[ℝ] 𝓓'(Ω, ℂ)) (fun _ _ ↦ rfl)
+    (fun _ hT ↦ hT.trans h)
+  ⟨A, continuous_linearMap_of_le A continuous_toDistribution fun i ↦
     ⟨WaveFrontSpace.seminorm (i.mono h), continuous_seminorm _, fun u ↦
       (seminorm_eq_of_localFourier_eq (i := i) (j := i.mono h) (v := u) rfl rfl
-        fun _ _ ↦ rfl).le⟩
+        fun _ _ ↦ rfl).le⟩⟩
 
 @[simp]
 theorem toDistribution_inclusionCLM (h : Γ ⊆ Γ') (u : WaveFrontSpace Ω Γ) :
@@ -612,12 +597,13 @@ variable {g : E → ℝ}
 /-- Multiplication `T ↦ g T` by a smooth real function on `𝓓'_Γ(Ω)`, a continuous linear map:
 the seminorm `‖g T‖_{φ,V,N}` is the seminorm `‖T‖_{gφ,V,N}`. -/
 def smulLeftCLM (hg : ContDiff ℝ ∞ g) : WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace Ω Γ :=
-  mkCLM (Distribution.smulLeftCLM hg) (map_add _) (fun _ _ ↦ by ext; simp)
-    (Distribution.smulLeftCLM hg).continuous
+  let A := mkLinearMap (Distribution.smulLeftCLM hg).toLinearMap (fun _ _ ↦ by ext; simp)
     (fun T hT ↦ ((waveFrontSet_smulLeftCLM_subset T hg).trans inter_subset_left).trans hT)
-    fun i ↦ ⟨WaveFrontSpace.seminorm (i.smulLeft hg), continuous_seminorm _, fun u ↦
-      (seminorm_eq_of_localFourier_eq (i := i) (j := i.smulLeft hg) (v := u) rfl rfl
-        fun _ _ ↦ localFourier_smulLeftCLM _ hg _ _).le⟩
+  ⟨A, continuous_linearMap_of_le A
+    ((Distribution.smulLeftCLM hg).continuous.comp continuous_toDistribution) fun i ↦
+      ⟨WaveFrontSpace.seminorm (i.smulLeft hg), continuous_seminorm _, fun u ↦
+        (seminorm_eq_of_localFourier_eq (i := i) (j := i.smulLeft hg) (v := u) rfl rfl
+          fun _ _ ↦ localFourier_smulLeftCLM _ hg _ _).le⟩⟩
 
 @[simp]
 theorem toDistribution_smulLeftCLM (hg : ContDiff ℝ ∞ g) (u : WaveFrontSpace Ω Γ) :
@@ -653,17 +639,18 @@ private theorem seminorm_lineDerivOp_le (v : E) (i : WaveFrontSeminormIndex Ω �
 /-- Differentiation `T ↦ ∂_v T` on `𝓓'_Γ(Ω)`, a continuous linear map: the seminorm
 `‖∂_v T‖_{φ,V,N}` is at most `2π ‖v‖ ‖T‖_{φ,V,N+1} + ‖T‖_{∂_v φ,V,N}`. -/
 def lineDerivCLM (v : E) : WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace Ω Γ :=
-  mkCLM (∂_{v} ·) (fun _ _ ↦ lineDerivOp_add _ _ _) (fun _ _ ↦ by ext; simp)
-    (Distribution.lineDerivCLM v).continuous
+  let A := mkLinearMap (Distribution.lineDerivCLM v).toLinearMap
+    (fun _ _ ↦ by ext; simp [Distribution.lineDerivCLM_apply])
     (fun T hT ↦ (waveFrontSet_lineDerivOp_subset T v).trans hT)
-    fun i ↦
+  ⟨A, continuous_linearMap_of_le A
+    ((Distribution.lineDerivCLM v).continuous.comp continuous_toDistribution) fun i ↦
       ⟨(2 * π * ‖v‖).toNNReal • WaveFrontSpace.seminorm (i.withOrder (i.order + 1)) +
           WaveFrontSpace.seminorm (i.lineDeriv v),
         ((continuous_seminorm _).const_smul (2 * π * ‖v‖).toNNReal).add (continuous_seminorm _),
         fun u ↦ by
           have h2π : (0 : ℝ) ≤ 2 * π * ‖v‖ := by positivity
           simpa [NNReal.smul_def, Real.coe_toNNReal _ h2π] using
-            seminorm_lineDerivOp_le v i u _ (rfl)⟩
+            seminorm_lineDerivOp_le v i u _ (rfl)⟩⟩
 
 @[simp]
 theorem toDistribution_lineDerivCLM (v : E) (u : WaveFrontSpace Ω Γ) :
@@ -703,12 +690,13 @@ in `Γ'`, a continuous linear map (zero unless `Ω' ≤ Ω`): the seminorm `‖T
 seminorm `‖T‖_{φ,V,N}` with `φ` extended by zero. -/
 def restrictCLM (hΓ : Γ ∩ (Ω' : Set E) ×ˢ univ ⊆ Γ') :
     WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace Ω' Γ' :=
-  mkCLM (Distribution.restrictCLM (n := ⊤) (F := ℂ)) (map_add _) (fun _ _ ↦ by ext; simp)
-    (Distribution.restrictCLM (n := ⊤) (F := ℂ)).continuous
-    (fun _ hT ↦ waveFrontSet_restrictCLM_subset hΓ hT)
-    fun i ↦ ⟨WaveFrontSpace.seminorm (i.restrict Ω hΓ), continuous_seminorm _, fun u ↦
-      (seminorm_eq_of_localFourier_eq (i := i) (j := i.restrict Ω hΓ) (v := u) rfl rfl
-        fun _ _ ↦ localFourier_restrictCLM _ _ _).le⟩
+  let A := mkLinearMap (Distribution.restrictCLM (n := ⊤) (F := ℂ)).toLinearMap
+    (fun _ _ ↦ by ext; simp) (fun _ hT ↦ waveFrontSet_restrictCLM_subset hΓ hT)
+  ⟨A, continuous_linearMap_of_le A
+    ((Distribution.restrictCLM (n := ⊤) (F := ℂ)).continuous.comp continuous_toDistribution)
+      fun i ↦ ⟨WaveFrontSpace.seminorm (i.restrict Ω hΓ), continuous_seminorm _, fun u ↦
+        (seminorm_eq_of_localFourier_eq (i := i) (j := i.restrict Ω hΓ) (v := u) rfl rfl
+          fun _ _ ↦ localFourier_restrictCLM _ _ _).le⟩⟩
 
 @[simp]
 theorem toDistribution_restrictCLM (hΓ : Γ ∩ (Ω' : Set E) ×ˢ univ ⊆ Γ')
