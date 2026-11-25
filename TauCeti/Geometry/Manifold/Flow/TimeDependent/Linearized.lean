@@ -27,10 +27,10 @@ depends continuously on the pair `(t, v)` (`TauCeti.continuous_linearizedFlowAlo
 regularity of `Φ` as a family of linear maps along the curve that the Conley–Zehnder index of a
 capped orbit takes as input.
 
-For a `T`-periodic solution, `Φ(T)` is the differential of the return map `φ_{0,T}` at its fixed
-point `γ 0`, and the solution is nondegenerate, in the sense that `γ 0` is a nondegenerate fixed
-point of the return map, exactly when `Φ(T)` fixes no nonzero tangent vector
-(`TauCeti.isNondegenerateFixedPt_iff_linearizedFlowAlong`).
+For a solution with `γ T = γ 0` (for instance a `T`-periodic one), `Φ(T)` is the differential of
+the return map `φ_{0,T}` at its fixed point `γ 0`, and the solution is nondegenerate, in the sense
+that `γ 0` is a nondegenerate fixed point of the return map, exactly when `Φ(T)` fixes no nonzero
+tangent vector (`TauCeti.isNondegenerateFixedPt_iff_linearizedFlowAlong`).
 
 For a contractible `1`-periodic solution `x`, the family `Φ(t)`, `t ∈ [0, 1]`, is read along the
 based loop `TauCeti.orbitLoop x` of the orbit (`TauCeti.orbitLinearizedFlow`), the form in which
@@ -45,8 +45,8 @@ the Conley–Zehnder index of the cap classes of the orbit takes it.
 
 * `TauCeti.linearizedFlowAlong_apply`: it is the differential of the time map of the flow.
 * `TauCeti.continuous_linearizedFlowAlong`: it is continuous as a family of tangent vectors.
-* `TauCeti.isNondegenerateFixedPt_iff_linearizedFlowAlong`: nondegeneracy of a periodic solution in
-  terms of its linearized flow over one period.
+* `TauCeti.isNondegenerateFixedPt_iff_linearizedFlowAlong`: nondegeneracy of a solution returning
+  to its starting point, in terms of its linearized flow up to the return time.
 * `TauCeti.continuous_orbitLinearizedFlow`,
   `TauCeti.isNondegenerateFixedPt_iff_orbitLinearizedFlow`: the same along the loop of an orbit.
 
@@ -107,14 +107,15 @@ theorem continuous_linearizedFlowAlong :
   -- The flow carries `γ 0` to `γ t`, so the two tangent vectors have the same base point.
   rw [linearizedFlowAlong_apply, timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX hγ 0 p.1]
 
-/-- **Nondegeneracy of a periodic solution through its linearized flow.** A `T`-periodic solution
-`γ` is nondegenerate, in the sense that `γ 0` is a nondegenerate fixed point of the return map
-`φ_{0,T}`, exactly when the linearized flow over one period fixes no nonzero tangent vector. -/
-theorem isNondegenerateFixedPt_iff_linearizedFlowAlong {T : ℝ} (hγT : ∀ t, γ (t + T) = γ t) :
+/-- **Nondegeneracy of a returning solution through its linearized flow.** A solution `γ` that
+returns to its starting point at time `T` (for instance a `T`-periodic solution) is nondegenerate,
+in the sense that `γ 0` is a nondegenerate fixed point of the return map `φ_{0,T}`, exactly when the
+linearized flow up to time `T` fixes no nonzero tangent vector. -/
+theorem isNondegenerateFixedPt_iff_linearizedFlowAlong {T : ℝ} (hγT : γ T = γ 0) :
     IsNondegenerateFixedPt I (timeDependentFlowOf X 0 T) (γ 0) ↔
       ∀ v : TangentSpace I (γ 0), linearizedFlowAlong hX hγ T v = v → v = 0 := by
   have hfix : Function.IsFixedPt (timeDependentFlowOf X 0 T) (γ 0) :=
-    (timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX hγ 0 T).trans (by simpa using hγT 0)
+    (timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX hγ 0 T).trans hγT
   simp only [isNondegenerateFixedPt_iff, hfix, mdifferentiableAt_timeDependentFlowOf hX
     (mem_timeDependentFlowDomain_of_forall_hasMFDerivAt hγ 0 T), linearizedFlowAlong_apply,
     true_and]
@@ -166,7 +167,7 @@ nonzero tangent vector. -/
 theorem isNondegenerateFixedPt_iff_orbitLinearizedFlow (x : contractiblePeriodicSolutions X 1) :
     IsNondegenerateFixedPt I (timeDependentFlowOf X 0 1) (x.val 0) ↔
       ∀ v : TangentSpace I (orbitLoop x 0), orbitLinearizedFlow hX x 1 v = v → v = 0 :=
-  isNondegenerateFixedPt_iff_linearizedFlowAlong hX _
-    (mem_periodicSolutions.1 (contractiblePeriodicSolutions_subset x.property)).2
+  isNondegenerateFixedPt_iff_linearizedFlowAlong hX _ <| by
+    simpa using (mem_periodicSolutions.1 (contractiblePeriodicSolutions_subset x.property)).2 0
 
 end TauCeti
