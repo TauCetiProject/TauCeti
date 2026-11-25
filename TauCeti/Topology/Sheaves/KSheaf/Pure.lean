@@ -170,23 +170,26 @@ private theorem isZero_obj_of_forall_isZero_singleton_aux (G : KPresheaf (Module
   -- `x` is the restriction of a class `y` on a compact neighbourhood `L` of `K`
   obtain ⟨hc⟩ := hcolim K
   obtain ⟨⟨L, hL⟩, y, rfl⟩ := Concrete.isColimit_exists_rep _ hc x
+  rw [coconeOfCompacts_ι_app]
   -- near each point `p` of `K`, the class `y` vanishes, since the stalk at `p` does
   have hloc : ∀ p ∈ K, ∃ M : Compacts X, (M : Set X) ∈ 𝓝 p ∧
       ∃ hM : M ≤ L, (G.map (opHomOfLE hM)).hom y = 0 := by
     intro p hp
     obtain ⟨hcp⟩ := hcolim {p}
     have hLp : L ∈ ({p} : Compacts X).compactNhds := by
-      rintro ⟨q, rfl⟩
-      exact hL ⟨q, hp⟩
+      intro q
+      rw [(Compacts.mem_singleton _ _).1 q.property]
+      exact hL ⟨p, hp⟩
     obtain ⟨k, f, _, hfg⟩ := Concrete.isColimit_exists_of_rep_eq _ hcp
       (i := op ⟨L, hLp⟩) (j := op ⟨L, hLp⟩) y 0
       ((ModuleCat.subsingleton_of_isZero (hstalk p (hKW hp))).elim _ _)
-    refine ⟨k.unop, k.unop.property ⟨p, rfl⟩, leOfHom f.unop, ?_⟩
+    refine ⟨k.unop, k.unop.property ⟨p, (Compacts.mem_singleton _ _).2 rfl⟩, leOfHom f.unop, ?_⟩
     rw [Subsingleton.elim (opHomOfLE _) ((Set.mono_coe _).functor.map f.unop).op]
     simpa using hfg
   choose! M hM hML hMy using hloc
   obtain ⟨t, ht, hKt⟩ := K.isCompact.elim_nhds_subcover (fun p ↦ M p) hM
-  refine eq_zero_of_forall_map_inf_eq_zero G hbot hpb M t K hKW hKt _ fun p hp ↦ ?_
+  refine eq_zero_of_forall_map_inf_eq_zero G hbot hpb M t K hKW hKt
+    ((G.map (opHomOfLE (Compacts.subset_of_mem_compactNhds hL))).hom y) fun p hp ↦ ?_
   -- restricting from `L` to `K ∩ M p` factors through `M p`
   refine (map_opHomOfLE_comp_map_opHomOfLE_apply G (Compacts.subset_of_mem_compactNhds hL)
     inf_le_left y).trans ?_
