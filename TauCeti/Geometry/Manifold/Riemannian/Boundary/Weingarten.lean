@@ -106,8 +106,7 @@ theorem boundaryWeingarten_eq_smul_id_iff (q : (𝓡∂ (n + 1)).boundary M) (c 
       boundarySecondFundamentalForm q = c • boundaryInducedForm q := by
   rw [eq_comm, eq_boundaryWeingarten_iff, LinearMap.ext_iff₂]
   refine forall₂_congr fun u w ↦ ?_
-  rw [LinearMap.smul_apply, LinearMap.id_apply, map_smul, LinearMap.smul_apply,
-    LinearMap.smul_apply, LinearMap.smul_apply, eq_comm]
+  simp only [LinearMap.smul_apply, LinearMap.id_apply, map_smul, eq_comm]
 
 /-- **The Weingarten map is self-adjoint** for the induced metric: `h(S_q u, w) = h(u, S_q w)`. -/
 theorem boundaryInducedForm_boundaryWeingarten_comm (q : (𝓡∂ (n + 1)).boundary M)
