@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.ContDiff.SymbolClass.Matrix
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Decay of the metric coefficients of an asymptotically Euclidean end
@@ -21,6 +22,9 @@ their first derivatives like `‖x‖ ^ (-t - 1)` and their second derivatives l
 `‖x‖ ^ (-t - 2)`. In the language of `TauCeti.IsSymbolAtInfinity` they are symbols of order
 `-t` and regularity `2` at infinity
 (`TauCeti.IsAsymptoticallyEuclideanEnd.isSymbolAtInfinity_pullbackMetricCoeff_sub_one`).
+In particular, for `t > 0`, `g_ij → δ_ij` and `∂g_ij = o(‖x‖⁻¹)` as `‖x‖ → ∞`
+(`TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_pullbackMetricCoeff` and
+`TauCeti.IsAsymptoticallyEuclideanEnd.isLittleO_fderiv_pullbackMetricCoeff`).
 
 This file shows that the other metric quantities expressed through `g_ij` differ from their
 Euclidean values at the same rate. The matrix `g` is positive definite at every point of the end
@@ -94,6 +98,28 @@ theorem isSymbolAtInfinity_pullbackMetricCoeff_sub_one (h : IsAsymptoticallyEucl
     have hx0 : 0 < ‖x‖ := h.radius_pos.trans (by simpa using hx)
     rw [Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _)]
     exact hC k hk i j x hx
+
+/-- The metric coefficients of an end of positive order tend to `δ_ij` at infinity, since
+`|g_ij - δ_ij| ≤ C |x| ^ (-t)`. -/
+theorem tendsto_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht : 0 < t)
+    (i j : Fin n) :
+    Tendsto (fun x ↦ pullbackMetricCoeff I φ x i j) (Bornology.cobounded _)
+      (𝓝 (if i = j then 1 else 0)) := by
+  simpa [Matrix.sub_apply, Matrix.one_apply] using
+    (h.isSymbolAtInfinity_pullbackMetricCoeff_sub_one i j).tendsto_of_sub (neg_lt_zero.2 ht)
+
+/-- The derivatives of the metric coefficients of an end of positive order are `o(|x|⁻¹)` at
+infinity, since `|∂g_ij| ≤ C |x| ^ (-t - 1)`. -/
+theorem isLittleO_fderiv_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I t R φ)
+    (ht : 0 < t) (i j : Fin n) :
+    (fun x ↦ fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x) =o[Bornology.cobounded _]
+      fun x ↦ ‖x‖⁻¹ := by
+  have h1 : (fun x ↦ fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x)
+      =O[Bornology.cobounded _] fun x ↦ ‖x‖ ^ (-t - 1) :=
+    (h.isSymbolAtInfinity_pullbackMetricCoeff_sub_one i j).fderiv.isBigO.congr_left fun x ↦ by
+      simp [Matrix.sub_apply, fderiv_sub_const]
+  exact h1.trans_isLittleO ((isLittleO_norm_rpow_norm_rpow_cobounded (by linarith)).congr_right
+    fun _ ↦ Real.rpow_neg_one _)
 
 end IsAsymptoticallyEuclideanEnd
 

@@ -29,6 +29,9 @@ records the derivatives of a section cut off by a function of `s`.
 * `TauCeti.Floer.continuous_sobolevDensity`: the density of a `C¹` map is continuous.
 * `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
   germ of the map at `z`.
+* `TauCeti.Floer.integrableOn_sobolevDensity_of_eventuallyEq_zero`: a map with continuous density
+  that vanishes beyond some `N` in `s` has integrable density over every half-cylinder
+  `(a, ∞) × [0, 1]`.
 * `TauCeti.Floer.fderiv_smul_fst_apply_stdComplexLineReal`,
   `TauCeti.Floer.fderiv_smul_fst_apply_stdComplexLineImag`: the derivatives of a section cut off
   by a function `β(s)` are `∂s (β ξ) = β ∂s ξ + β' ξ` and `∂t (β ξ) = β ∂t ξ`.
@@ -79,6 +82,20 @@ theorem sobolevDensity_congr_of_eventuallyEq {ξ η : ℝ × ℝ → V} {z : ℝ
     (h : ξ =ᶠ[𝓝 z] η) :
     sobolevDensity ξ z = sobolevDensity η z := by
   rw [sobolevDensity_apply, sobolevDensity_apply, h.fderiv_eq, h.eq_of_nhds]
+
+/-- A map with continuous `W^{1,2}` energy density (for instance a `C¹` map,
+`continuous_sobolevDensity`) that vanishes near every point beyond `N` in the longitudinal
+coordinate has integrable density over every half-cylinder `(a, ∞) × [0, 1]`. -/
+theorem integrableOn_sobolevDensity_of_eventuallyEq_zero {g : ℝ × ℝ → V}
+    (hg : Continuous (sobolevDensity g)) {N : ℝ} (hzero : ∀ ζ : ℝ × ℝ, N < ζ.1 → g =ᶠ[𝓝 ζ] 0)
+    (a : ℝ) : IntegrableOn (sobolevDensity g) (Ioi a ×ˢ Icc 0 1) := by
+  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (hg.continuousOn.integrableOn_compact hK).of_forall_sdiff_eq_zero
+    (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+  have hζN : N < ζ.1 := by
+    by_contra! h
+    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
+  rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
 
 /-- The `s`-derivative of a section cut off by a function `β(s)`: `∂s (β ξ) = β ∂s ξ + β' ξ`. -/
 theorem fderiv_smul_fst_apply_stdComplexLineReal {ξ : ℝ × ℝ → V} {β : ℝ → ℝ} {β' : ℝ}
