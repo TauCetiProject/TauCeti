@@ -362,8 +362,7 @@ theorem IsWeakForm.eventually_exists_modularForm_coe_eq_mul_discriminant_pow [Γ
     ⟨hweight ▸ hf.mul (hΔm.mono (le_top : Γ ≤ ⊤)), fun g ↦ ?_⟩
   rw [hweight, mul_slash_SL2, hΔm.slash_eq g (Subgroup.mem_top g)]
   refine ((hC g).mul (hΔ.pow m)).trans (isBigO_of_le _ fun τ ↦ ?_)
-  rw [← Real.exp_natCast_mul, ← Real.exp_add, Real.norm_eq_abs, Real.abs_exp, Pi.one_apply,
-    norm_one, Real.exp_le_one_iff]
+  simp [← Real.exp_natCast_mul, ← Real.exp_add, Real.exp_le_one_iff]
   nlinarith [τ.im_pos]
 
 /-- **Weak forms are quotients of modular forms by powers of `Δ`.** On a finite-index subgroup
