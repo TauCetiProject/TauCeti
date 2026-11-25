@@ -21,7 +21,7 @@ that use them.
 
 * `TauCeti.MapsBoundaryInto`, with its eliminators `TauCeti.MapsBoundaryInto.mapsTo` and
   `TauCeti.MapsBoundaryInto.mem_range`, and its behaviour under constant maps, `congr`, `mono` and
-  composition.
+  composition; `TauCeti.mapsBoundaryInto_comp_iff` for composition with an injective map.
 * `TauCeti.mapsBoundaryInto_of_boundaryless`: on a manifold without boundary every map satisfies
   every boundary condition.
 * `TauCeti.MapsBoundaryInto.of_tendsto`: closedness under pointwise limits when `range ι` is
@@ -120,5 +120,13 @@ theorem of_subset_closure [TopologicalSpace M] {D : Set X} (hι : IsClosed (rang
     (((hu x hx).mono hD).mem_closure_image (hdense hx))
 
 end MapsBoundaryInto
+
+/-- **Transport along an injective map.** For an injective `g : M → N`, the map `g ∘ u` maps the
+boundary into `L` along `g ∘ ι` exactly when `u` maps it into `L` along `ι`. -/
+theorem mapsBoundaryInto_comp_iff {g : M → N} (hg : Function.Injective g) :
+    MapsBoundaryInto IX (g ∘ u) (g ∘ ι) ↔ MapsBoundaryInto IX u ι := by
+  refine ⟨fun h x hx ↦ ?_, fun h ↦ h.comp g⟩
+  obtain ⟨y, hy⟩ := h hx
+  exact ⟨y, hg hy⟩
 
 end TauCeti

@@ -60,9 +60,6 @@ section Padic
 
 variable {p : ℕ} [Fact p.Prime]
 
-local instance : IsAdicHom (algebraMap ℤ ℤ) := by
-  simpa using (IsAdicHom.id (A := ℤ))
-
 -- Non-adic outgoing maps are deliberately permitted by the universal property.
 example : ¬ IsAdicHom (Int.castRingHom ℤ_[p]) := by
   intro hf

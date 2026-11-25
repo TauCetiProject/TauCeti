@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
 public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.NumberTheory.PrimeCounting
 public import Mathlib.Topology.Algebra.GroupWithZero
+import Mathlib.Tactic.Linarith
 import TauCeti.Order.Filter.AtTopBot
 
 /-!
@@ -19,6 +20,9 @@ so a finite product `∏ p ∈ primesLE n, f p` is the product of `f` over the f
 Since the prime counting function `π` tends to infinity and never increases by more than one at a
 time, the ordered products over the primes `p ≤ n` converge exactly when the products over the
 first `k` primes do.
+
+There are at most `n` primes `p ≤ n`, and iterating the same unit-step bound shows that an
+interval `(x, x + y]` of length `y ≥ 0` contains at most `y + 1` primes.
 
 The same comparison applies to any sequence of cutoffs `B k` tending to infinity such that,
 eventually, each interval `(B k, B (k + 1)]` contains at most one prime: the products over the
@@ -40,10 +44,15 @@ convergence of the cutoffs therefore transports in both directions with this exp
 ## Main results
 
 * `Nat.primesLE_filter_lt`: filtering `Nat.primesLE n` by `· < n` recovers `Nat.primesBelow n`.
+* `Nat.Prime.filter_dvd_primesLE`: the only prime `r ≤ n` divisible by a prime `p` is `p`.
 * `Nat.primesBelow_eq_image_nth`, `Nat.primesLE_eq_image_nth`: the primes below a bound are the
   first primes in increasing order.
 * `Nat.prod_primesLE_eq_prod_range_nth`: a product over the primes `p ≤ n` is the product over
   the first `π n` primes.
+* `Nat.primeCounting_le_self`, `Nat.primeCounting_floor_add_sub_le_add_one`: there are at most
+  `n` primes `p ≤ n`, and at most `y + 1` primes in an interval `(x, x + y]`.
+* `Nat.primeCounting_floor_add_sub_le_max`: an interval `(x, x + y]` with `x < 0` contains no
+  more primes than `(0, y]`.
 * `Nat.prod_primesLE_floor_eq_mul_filter_gt`, `Nat.sum_primesLE_floor_eq_add_filter_gt`: splitting
   products and sums over `Nat.primesLE ⌊x⌋₊` at an intermediate cutoff `y ≤ x`.
 * `Nat.tendsto_prod_primesLE_iff`: the ordered products over the primes `p ≤ n` converge exactly
@@ -69,6 +78,18 @@ theorem primesLE_filter_lt (n : ℕ) :
   ext p
   simp only [mem_filter, mem_primesLE, mem_primesBelow]
   exact ⟨fun ⟨⟨_, hp⟩, hlt⟩ ↦ ⟨hlt, hp⟩, fun ⟨hlt, hp⟩ ↦ ⟨⟨hlt.le, hp⟩, hlt⟩⟩
+
+/-- The only prime `r ≤ n` divisible by a prime `p` is `p` itself, present when `p ≤ n`. -/
+theorem Prime.filter_dvd_primesLE {p : ℕ} (hp : p.Prime) (n : ℕ) :
+    {r ∈ primesLE n | p ∣ r} = if p ≤ n then {p} else ∅ := by
+  ext r
+  simp only [mem_filter, mem_primesLE]
+  split_ifs with h
+  · simp only [mem_singleton]
+    exact ⟨fun ⟨⟨_, hr⟩, hpr⟩ ↦ ((prime_dvd_prime_iff_eq hp hr).1 hpr).symm,
+      by rintro rfl; exact ⟨⟨h, hp⟩, dvd_rfl⟩⟩
+  · simp only [notMem_empty, iff_false, not_and]
+    exact fun ⟨hrn, hr⟩ hpr ↦ h <| ((prime_dvd_prime_iff_eq hp hr).1 hpr) ▸ hrn
 
 /-- The primes below `n` are the first `π' n` primes. -/
 theorem primesBelow_eq_image_nth (n : ℕ) :
@@ -116,10 +137,49 @@ theorem primeCounting_add_one_le (n : ℕ) : primeCounting (n + 1) ≤ primeCoun
     count_succ]
   split_ifs <;> omega
 
+/-- The prime counting function increases by at most `k` over `k` steps. -/
+theorem primeCounting_add_le_add (m k : ℕ) : primeCounting (m + k) ≤ primeCounting m + k := by
+  induction k with
+  | zero => rfl
+  | succ k ih => exact (primeCounting_add_one_le (m + k)).trans (by omega)
+
 /-- There are at most `n` primes `p ≤ n`. -/
 theorem primeCounting_le_self (n : ℕ) : primeCounting n ≤ n := by
   rw [← primesLE_card_eq_primeCounting, primesLE_eq_filter_Ioc_zero]
   exact (card_filter_le _ _).trans (by simp)
+
+/-- In an ordered commutative ring with a floor, an interval `(x, x + y]` of length `y ≥ 0`
+contains at most `y + 1` primes. -/
+theorem primeCounting_floor_add_sub_le_add_one {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorSemiring R] (x : R) {y : R} (hy : 0 ≤ y) :
+    (primeCounting ⌊x + y⌋₊ : R) - primeCounting ⌊x⌋₊ ≤ y + 1 := by
+  have hfloor : (⌊x + y⌋₊ : R) ≤ ⌊x⌋₊ + y + 1 := by
+    rcases le_total 0 x with hx | hx
+    · linarith [floor_le (add_nonneg hx hy), lt_floor_add_one x]
+    · rw [floor_of_nonpos hx, cast_zero, zero_add]
+      rcases le_total 0 (x + y) with hxy | hxy
+      · linarith [floor_le hxy]
+      · rw [floor_of_nonpos hxy, cast_zero]
+        linarith
+  have hmono : ⌊x⌋₊ ≤ ⌊x + y⌋₊ := floor_le_floor (le_add_of_nonneg_right hy)
+  have hπ := primeCounting_add_le_add ⌊x⌋₊ (⌊x + y⌋₊ - ⌊x⌋₊)
+  rw [Nat.add_sub_cancel' hmono] at hπ
+  have hπR : (primeCounting ⌊x + y⌋₊ : R) ≤ primeCounting ⌊x⌋₊ + (⌊x + y⌋₊ - ⌊x⌋₊ : ℕ) := by
+    exact_mod_cast hπ
+  rw [cast_sub hmono] at hπR
+  linarith
+
+/-- In an ordered commutative ring with a floor, an interval `(x, x + y]` starting at a negative
+`x` contains no more primes than the interval `(0, y]` of the same length. -/
+theorem primeCounting_floor_add_sub_le_max {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorSemiring R] (x y : R) :
+    (primeCounting ⌊x + y⌋₊ : R) - primeCounting ⌊x⌋₊ ≤
+      (primeCounting ⌊max x 0 + y⌋₊ : R) - primeCounting ⌊max x 0⌋₊ := by
+  rcases le_total 0 x with hx | hx
+  · rw [max_eq_left hx]
+  · rw [max_eq_right hx, floor_of_nonpos hx, zero_add, floor_zero]
+    gcongr
+    exact monotone_primeCounting (floor_mono (by linarith))
 
 /-- The prime counting function at the `k`-th prime, counting from `nth Nat.Prime 0 = 2`,
 is `k + 1`. -/

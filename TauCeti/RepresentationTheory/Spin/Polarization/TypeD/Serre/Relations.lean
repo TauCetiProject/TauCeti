@@ -122,12 +122,12 @@ theorem lie_typeDSimpleCorootBivector_typeDSimpleCorootBivector
 private theorem lie_diagonalProduct_typeDSimpleRootBivector
     (hn : 4 ≤ n) (i j : Fin n) :
     ⁅P.diagonalProduct b i, P.typeDSimpleRootBivector b (by omega) j⁆ =
-      algebraMap ℤ K (DynkinType.typeDSimpleRoot n hn j i) •
+      algebraMap ℤ K (DynkinType.typeDSimpleRoot n (by omega) j i) •
         P.typeDSimpleRootBivector b (by omega) j := by
   rw [diagonalProduct, P.typeDSimpleRootBivector_def b]
   split
   · rename_i h
-    rw [lie_ι_mul_ι_ι_mul_ι, DynkinType.typeDSimpleRoot_of_add_one_lt hn h]
+    rw [lie_ι_mul_ι_ι_mul_ι, DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) h]
     simp only [P.polar_W_eq_zero, P.polar_W'_eq_zero, P.polar_dualVector,
       zero_smul, add_zero, sub_zero, Pi.sub_apply, Pi.single_apply]
     by_cases h1 : i = j
@@ -138,7 +138,7 @@ private theorem lie_diagonalProduct_typeDSimpleRootBivector
         simp [Fin.ext_iff, h1]
       · simp [h1, h2, Ne.symm h1]
   · rename_i h
-    rw [lie_ι_mul_ι_ι_mul_ι, DynkinType.typeDSimpleRoot_of_not_add_one_lt hn h]
+    rw [lie_ι_mul_ι_ι_mul_ι, DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega) h]
     simp only [P.polar_W_eq_zero, P.polar_dualVector,
       zero_smul, sub_zero, Pi.add_apply, Pi.single_apply]
     by_cases h1 : i = ⟨n - 2, by omega⟩
@@ -153,7 +153,7 @@ private theorem lie_diagonalProduct_typeDSimpleRootBivector
 private theorem lie_diagonalProduct_typeDSimpleNegativeRootBivector
     (hn : 4 ≤ n) (i j : Fin n) :
     ⁅P.diagonalProduct b i, P.typeDSimpleNegativeRootBivector b (by omega) j⁆ =
-      -algebraMap ℤ K (DynkinType.typeDSimpleRoot n hn j i) •
+      -algebraMap ℤ K (DynkinType.typeDSimpleRoot n (by omega) j i) •
         P.typeDSimpleNegativeRootBivector b (by omega) j := by
   have polar_dual_basis (k l : Fin n) :
       polar Q (P.dualVector b k : V) (b l : V) = if l = k then 1 else 0 := by
@@ -161,7 +161,7 @@ private theorem lie_diagonalProduct_typeDSimpleNegativeRootBivector
   rw [diagonalProduct, P.typeDSimpleNegativeRootBivector_def b]
   split
   · rename_i h
-    rw [lie_ι_mul_ι_ι_mul_ι, DynkinType.typeDSimpleRoot_of_add_one_lt hn h]
+    rw [lie_ι_mul_ι_ι_mul_ι, DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) h]
     simp only [P.polar_W_eq_zero, P.polar_W'_eq_zero, P.polar_dualVector,
       zero_smul, add_zero, sub_zero, Pi.sub_apply, Pi.single_apply]
     by_cases h1 : i = ⟨(j : ℕ) + 1, h⟩
@@ -172,7 +172,7 @@ private theorem lie_diagonalProduct_typeDSimpleNegativeRootBivector
         simp [Fin.ext_iff, h1]
       · simp [h1, h2, Ne.symm h1]
   · rename_i h
-    rw [lie_ι_mul_ι_ι_mul_ι, DynkinType.typeDSimpleRoot_of_not_add_one_lt hn h]
+    rw [lie_ι_mul_ι_ι_mul_ι, DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega) h]
     simp only [P.polar_W'_eq_zero, P.polar_dualVector, polar_dual_basis,
       zero_smul, add_zero, Pi.add_apply, Pi.single_apply]
     by_cases h1 : i = ⟨n - 1, by omega⟩
@@ -198,8 +198,8 @@ theorem lie_typeDSimpleCorootBivector_typeDSimpleRootBivector
   · rw [dite_eq_left hi, sub_lie,
       P.lie_diagonalProduct_typeDSimpleRootBivector b hn,
       P.lie_diagonalProduct_typeDSimpleRootBivector b hn]
-    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j
-    rw [DynkinType.typeDSimpleRoot_of_add_one_lt hn hi, sub_dotProduct,
+    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j
+    rw [DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) hi, sub_dotProduct,
       single_dotProduct, single_dotProduct, one_mul] at hdot
     have hcoeff := congrArg (algebraMap ℤ K) hdot
     simp only [map_sub, one_mul] at hcoeff
@@ -210,8 +210,8 @@ theorem lie_typeDSimpleCorootBivector_typeDSimpleRootBivector
     have hone : ⁅(1 : CliffordAlgebra Q), P.typeDSimpleRootBivector b (by omega) j⁆ = 0 := by
       simp [Ring.lie_def]
     rw [hone, sub_zero]
-    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j
-    rw [DynkinType.typeDSimpleRoot_of_not_add_one_lt hn hi, add_dotProduct,
+    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j
+    rw [DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega) hi, add_dotProduct,
       single_dotProduct, single_dotProduct, one_mul] at hdot
     have hcoeff := congrArg (algebraMap ℤ K) hdot
     simp only [map_add, one_mul] at hcoeff
@@ -231,8 +231,8 @@ theorem lie_typeDSimpleCorootBivector_typeDSimpleNegativeRootBivector
   · rw [dite_eq_left hi, sub_lie,
       P.lie_diagonalProduct_typeDSimpleNegativeRootBivector b hn,
       P.lie_diagonalProduct_typeDSimpleNegativeRootBivector b hn]
-    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j
-    rw [DynkinType.typeDSimpleRoot_of_add_one_lt hn hi, sub_dotProduct,
+    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j
+    rw [DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) hi, sub_dotProduct,
       single_dotProduct, single_dotProduct, one_mul] at hdot
     rw [← congrArg (algebraMap ℤ K) hdot]
     module
@@ -243,8 +243,8 @@ theorem lie_typeDSimpleCorootBivector_typeDSimpleNegativeRootBivector
         P.typeDSimpleNegativeRootBivector b (by omega) j⁆ = 0 := by
       simp [Ring.lie_def]
     rw [hone, sub_zero]
-    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j
-    rw [DynkinType.typeDSimpleRoot_of_not_add_one_lt hn hi, add_dotProduct,
+    have hdot := DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j
+    rw [DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega) hi, add_dotProduct,
       single_dotProduct, single_dotProduct, one_mul] at hdot
     rw [← congrArg (algebraMap ℤ K) hdot]
     module

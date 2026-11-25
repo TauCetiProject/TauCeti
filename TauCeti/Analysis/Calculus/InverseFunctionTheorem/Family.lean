@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.TaylorInverse
 public import TauCeti.Analysis.Calculus.ContDiff.TendstoAt
 public import TauCeti.Analysis.Calculus.FDeriv.Equiv

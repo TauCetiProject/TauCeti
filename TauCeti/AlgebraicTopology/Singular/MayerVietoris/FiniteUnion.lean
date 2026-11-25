@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import TauCeti.AlgebraicTopology.Singular.Reduced
-import Mathlib.Topology.Algebra.Module.LocallyConvex
 import TauCeti.AlgebraicTopology.Singular.Basic
 import TauCeti.Topology.Connected.PathConnected
 
@@ -27,7 +26,8 @@ epimorphism, then `ψ (U ∪ V)` is an isomorphism (`TauCeti.isIso_union_of_maye
 inverse is glued on the middle term of the sequence from the inverses over `U` and over `V`. By
 induction on their number, `ψ` is an isomorphism over every finite union of open sets from a family
 closed under subsets on which it is an isomorphism and the sequence is exact on the right
-(`TauCeti.isIso_biUnion_of_mayerVietoris`).
+(`TauCeti.isIso_biUnion_of_mayerVietoris`), and so over the whole space when it is compact and
+covered by open sets from the family (`TauCeti.isIso_univ_of_mayerVietoris`).
 
 This is the gluing step in the computations of the homology of the Thom pair of a vector bundle in
 the rank degree: there `M W` is that homology over `W`, with constant or local coefficients, the
@@ -44,6 +44,8 @@ they are read near each point as a common multiple of the classes of the points
 * `TauCeti.isIso_union_of_mayerVietoris`: the Mayer–Vietoris step over a union of two open sets.
 * `TauCeti.isIso_biUnion_of_mayerVietoris`: `ψ` is an isomorphism over a finite union of open sets
   with `P`.
+* `TauCeti.isIso_univ_of_mayerVietoris`: `ψ` is an isomorphism over a compact space covered by open
+  sets with `P`.
 * `TauCeti.eq_of_path_of_mono`: classes compatible with the restrictions which are locally
   multiples of the classes of the points are constant along paths.
 
@@ -171,6 +173,32 @@ theorem isIso_biUnion_of_mayerVietoris [TopologicalSpace B]
     exact isIso_union_of_mayerVietoris res ψ hψ (hA _ _ hUo hVo) (hw _ _) (hS _ _ hUo hVo)
       (hg _ _ hUo hVo hUP)
 
+/-- **Compact spaces**: under the hypotheses of `TauCeti.isIso_biUnion_of_mayerVietoris`, if `B` is
+compact and every point has an open neighbourhood with `P`, then `ψ` is an isomorphism over the
+whole space. -/
+theorem isIso_univ_of_mayerVietoris [TopologicalSpace B] [CompactSpace B]
+    (hψ : ∀ ⦃W W' : Set B⦄ (h : W ⊆ W'), A.map (homOfLE h) ≫ ψ W' = ψ W ≫ res h)
+    (hA : ∀ U V : Set B, IsOpen U → IsOpen V →
+      Epi (biprod.desc (A.map (homOfLE (subset_union_left : U ⊆ U ∪ V)))
+        (A.map (homOfLE (subset_union_right : V ⊆ U ∪ V)))))
+    (P : Set B → Prop) (hP : ∀ ⦃W W' : Set B⦄, W ⊆ W' → P W' → P W)
+    (hψP : ∀ W, P W → IsIso (ψ W)) (hψ_empty : IsIso (ψ ∅))
+    (hw : ∀ U V : Set B, biprod.lift (res (inter_subset_left : U ∩ V ⊆ U))
+        (-res (inter_subset_right : U ∩ V ⊆ V)) ≫
+      biprod.desc (res (subset_union_left : U ⊆ U ∪ V)) (res (subset_union_right : V ⊆ U ∪ V)) =
+        0)
+    (hS : ∀ U V : Set B, IsOpen U → IsOpen V → (ShortComplex.mk _ _ (hw U V)).Exact)
+    (hg : ∀ U V : Set B, IsOpen U → IsOpen V → P U →
+      Epi (biprod.desc (res (subset_union_left : U ⊆ U ∪ V))
+        (res (subset_union_right : V ⊆ U ∪ V))))
+    (hcover : ∀ b : B, ∃ U, IsOpen U ∧ b ∈ U ∧ P U) :
+    IsIso (ψ univ) := by
+  choose U hUo hbU hUP using hcover
+  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover U hUo fun b _ ↦ mem_iUnion.2 ⟨b, hbU b⟩
+  have h := isIso_biUnion_of_mayerVietoris res ψ hψ hA P hP hψP hψ_empty hw hS hg t
+    (fun b _ ↦ hUo b) fun b _ ↦ hUP b
+  rwa [univ_subset_iff.1 ht] at h
+
 end Gluing
 
 section PathConstancy
@@ -206,16 +234,8 @@ theorem eq_of_path_of_mono (c : ∀ W : Set B, W → M W)
       rw [hφc, hφc, singularHomology₀Section_eq_of_joined _ hj]
     have := congrArg (res (inter_subset_left : W ∩ N b ⊆ W)) hxy
     rwa [hc, hc] at this
-  have : LocallyPathConnectedSpace unitInterval :=
-    Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
-  refine γ.eq_of_eventually_eq (f := c W) fun t ↦ ?_
-  have hγ : Continuous fun s ↦ ((γ s : W) : B) := continuous_subtypeVal.comp γ.continuous
-  have hO : {s : unitInterval | ((γ s : W) : B) ∈ N (γ t)} ∈ 𝓝 t :=
-    (hγ.tendsto t).eventually (hN _)
-  filter_upwards [pathComponentIn_mem_nhds hO] with s hs
-  refine (hj (γ t : B) ((hs.map γ.continuous.continuousOn).mono ?_)).symm
-  rintro _ ⟨u, hu, rfl⟩
-  exact hu
+  exact γ.eq_of_joinedIn_nhds (f := c W) fun z ↦ ⟨{z' : W | (z' : B) ∈ N z},
+    continuous_subtypeVal.continuousAt.preimage_mem_nhds (hN z), fun _ _ ↦ hj z⟩
 
 end PathConstancy
 
