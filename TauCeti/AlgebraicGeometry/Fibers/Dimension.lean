@@ -123,38 +123,6 @@ variable [LocallyOfFiniteType (X ↘ Spec (.of k))]
 
 variable [LocallyOfFiniteType (Y ↘ Spec (.of k))]
 
-variable {k} in
-/-- Let `F` be a scheme over a field `K`, through `p : F ⟶ Spec K`, with `p` a morphism over a
-field `k`. Then for every point `z` of `F`, `trdeg_k κ(z) = trdeg_k κ(p z) + trdeg_K κ(z)`, where
-`κ(p z)` is the residue field of the unique point of `Spec K`, isomorphic to `K` as a
-`K`-algebra. -/
-private theorem trdeg_residueField_eq_add_of_over (K : Type u) [Field K] {F : Scheme.{u}}
-    [F.Over (Spec (.of k))] [F.Over (Spec (.of K))] [(Spec (.of K)).Over (Spec (.of k))]
-    [(F ↘ Spec (.of K)).IsOver (Spec (.of k))] (z : F) :
-    Algebra.trdeg k (F.residueField z) =
-      Algebra.trdeg k ((Spec (.of K)).residueField ((F ↘ Spec (.of K)) z)) +
-        Algebra.trdeg K (F.residueField z) := by
-  let p := F ↘ Spec (.of K)
-  let _ : (Spec (.of K)).Over (Spec (.of K)) := ⟨𝟙 _⟩
-  have : p.IsOver (Spec (.of K)) := ⟨Category.comp_id _⟩
-  have : LocallyOfFiniteType ((Spec (.of K)) ↘ Spec (.of K)) :=
-    inferInstanceAs (LocallyOfFiniteType (𝟙 _))
-  -- The towers `k → L → κ(z)` and `K → L → κ(z)`, with `L` the residue field of `Spec K`.
-  let L := (Spec (.of K)).residueField (p z)
-  let : Algebra L (F.residueField z) := (p.residueFieldMap z).hom.toAlgebra
-  have : IsScalarTower K L (F.residueField z) :=
-    IsScalarTower.of_algebraMap_eq fun c ↦ (p.residueFieldMap_algebraMap K z c).symm
-  have : IsScalarTower k L (F.residueField z) :=
-    IsScalarTower.of_algebraMap_eq fun c ↦ (p.residueFieldMap_algebraMap k z c).symm
-  -- `L` has height zero in `Spec K`, so it is algebraic over `K`.
-  have hKL : Algebra.trdeg K L = 0 := by
-    have h0 := height_eq_toNat_trdeg_residueField K (p z)
-    rw [Order.height_eq_zero.mpr (Subsingleton.isMin _)] at h0
-    exact (Cardinal.toNat_eq_zero.mp (by exact_mod_cast h0.symm)).resolve_right
-      (not_le.mpr (trdeg_residueField_lt_aleph0 K (p z)))
-  rw [← trdeg_add_eq k L, ← trdeg_add_eq K L, hKL, zero_add]
-
-
 /-- **Dimension of a point and of its fibre.** Let `f : X ⟶ Y` be a morphism over a field `k`
 between schemes locally of finite type over `k`. Then the closure of a point `x` has dimension
 that of the closure of `f x` plus that of the closure of `x` in the scheme-theoretic fibre of `f`
@@ -166,38 +134,34 @@ theorem height_eq_height_add_height_asFiber (f : X ⟶ Y) [f.IsOver (Spec (.of k
   let F := f.fiber y
   let x' : F := f.asFiber x
   let p : F ⟶ Spec (.of K) := f.fiberToSpecResidueField y
-  let g : Spec (.of K) ⟶ Y := Y.fromSpecResidueField y
   have : LocallyOfFiniteType f := by
     have : LocallyOfFiniteType (f ≫ Y ↘ Spec (.of k)) := by
       rw [comp_over]
       infer_instance
     exact locallyOfFiniteType_of_comp f (Y ↘ Spec (.of k))
-  -- The fibre and `Spec κ(y)` lie over `k` through `X` and `Y`, and the fibre lies over `κ(y)`.
+  -- The fibre lies over `k` through `X`, and over `κ(y)`.
   let _ : F.Over (Spec (.of k)) := ⟨f.fiberι y ≫ X ↘ Spec (.of k)⟩
-  let _ : (Spec (.of K)).Over (Spec (.of k)) := ⟨g ≫ Y ↘ Spec (.of k)⟩
   let _ : F.Over (Spec (.of K)) := ⟨p⟩
   have : (f.fiberι y).IsOver (Spec (.of k)) := ⟨rfl⟩
-  have : g.IsOver (Spec (.of k)) := ⟨rfl⟩
-  have : (F ↘ Spec (.of K)).IsOver (Spec (.of k)) := ⟨by
-    -- The structure morphisms chosen above are `p`, `g ≫ Y ↘ Spec k` and `fiberι y ≫ X ↘ Spec k`;
-    -- `change` unfolds `↘` and `IsOver` to these composites.
-    change p ≫ g ≫ Y ↘ Spec (.of k) = f.fiberι y ≫ X ↘ Spec (.of k)
-    rw [← comp_over f (Spec (.of k)), ← Category.assoc, ← Category.assoc]
-    exact congrArg (· ≫ Y ↘ Spec (.of k)) (f.fiber_fac y).symm⟩
+  have hF : F ↘ Spec (.of K) ≫ Spec.map (CommRingCat.ofHom (algebraMap k K)) =
+      F ↘ Spec (.of k) := by
+    -- The structure morphisms chosen above are `p` and `fiberι y ≫ X ↘ Spec k`; `change`
+    -- unfolds `↘` to them.
+    change p ≫ _ = f.fiberι y ≫ X ↘ Spec (.of k)
+    rw [← Y.fromSpecResidueField_comp_over k y, ← comp_over f (Spec (.of k)), ← Category.assoc,
+      ← Category.assoc]
+    exact congrArg (· ≫ Y ↘ Spec (.of k)) (f.fiber_fac y).symm
   have : LocallyOfFiniteType (F ↘ Spec (.of K)) :=
     inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Y.fromSpecResidueField y)))
   have e1 : height x = (Algebra.trdeg k (X.residueField (f.fiberι y x'))).toNat := by
     rw [← height_eq_toNat_trdeg_residueField k]
     exact congrArg height (f.fiberι_asFiber x).symm
-  have e2 :
-      height y = (Algebra.trdeg k (Y.residueField (g ((F ↘ Spec (.of K)) x')))).toNat := by
-    rw [← height_eq_toNat_trdeg_residueField k]
-    exact congrArg height (Y.fromSpecResidueField_apply y _).symm
   have e3 : height x' = (Algebra.trdeg K (F.residueField x')).toNat :=
     height_eq_toNat_trdeg_residueField K x'
-  rw [e1, e2, e3, ← (f.fiberι y).trdeg_residueField_eq_of_isIso_residueFieldMap x',
-    trdeg_residueField_eq_add_of_over K x', g.trdeg_residueField_eq_of_isIso_residueFieldMap,
-    Cardinal.toNat_add (trdeg_residueField_lt_aleph0 k _) (trdeg_residueField_lt_aleph0 K x')]
+  rw [e1, height_eq_toNat_trdeg_residueField k y, e3,
+    ← (f.fiberι y).trdeg_residueField_eq_of_isIso_residueFieldMap x',
+    trdeg_residueField_eq_add_of_over k K hF x',
+    Cardinal.toNat_add (trdeg_residueField_lt_aleph0 k y) (trdeg_residueField_lt_aleph0 K x')]
   push_cast
   rfl
 

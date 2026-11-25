@@ -62,6 +62,9 @@ All in the namespace `TauCeti.AlgebraicGeometry`, except the last, which is in
 * `height_apply_of_isOpenImmersion`: an open immersion into `X` preserves the height of points.
 * `trdeg_residueField_lt_aleph0`: every residue field `κ(x)` has finite transcendence degree
   over `k`.
+* `trdeg_residueField_eq_add_of_over`: for a scheme `F` over a field `K` whose structure
+  morphism to `Spec k` factors through `Spec K ⟶ Spec k`,
+  `trdeg_k κ(z) = trdeg_k K + trdeg_K κ(z)`.
 * `AlgebraicGeometry.Scheme.Hom.trdeg_residueField_eq_of_isIso_residueFieldMap`: over any
   commutative ring `k`, a morphism over `Spec k` inducing an isomorphism `κ(f x) ≅ κ(x)` preserves
   the transcendence degree over `k` of the residue field.
@@ -280,6 +283,26 @@ theorem trdeg_residueField_lt_aleph0 [LocallyOfFiniteType (X ↘ Spec (.of k))] 
   exact trdeg_lt_aleph0 k _
 
 end ResidueFieldTrdeg
+
+/-- **Additivity of transcendence degrees of residue fields.** Let `F` be a scheme over fields
+`k` and `K`, with `K` a `k`-algebra, such that the structure morphism `F ⟶ Spec k` is the one to
+`Spec K` followed by `Spec K ⟶ Spec k`. Then for every point `z` of `F`,
+`trdeg_k κ(z) = trdeg_k K + trdeg_K κ(z)`. -/
+theorem trdeg_residueField_eq_add_of_over (k K : Type u) [Field k] [Field K] [Algebra k K]
+    {F : Scheme.{u}} [F.Over (Spec (.of k))] [F.Over (Spec (.of K))]
+    (h : F ↘ Spec (.of K) ≫ Spec.map (CommRingCat.ofHom (algebraMap k K)) = F ↘ Spec (.of k))
+    (z : F) :
+    Algebra.trdeg k (F.residueField z) =
+      Algebra.trdeg k K + Algebra.trdeg K (F.residueField z) := by
+  have : IsScalarTower k K (F.residueField z) := by
+    refine IsScalarTower.of_algebraMap_eq fun c ↦ ?_
+    simp only [Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk, RingHom.comp_apply,
+      Scheme.baseRingToStalk_apply, Scheme.Modules.baseRingToGlobalSections_apply, ← h,
+      Scheme.Hom.comp_appTop, CommRingCat.comp_apply]
+    -- Both sides pull back `c` to global sections of `Spec K`, through `Spec k` or directly.
+    exact congr(F.residue z (F.presheaf.germ ⊤ z trivial ((F ↘ Spec (.of K)).appTop
+      ($(Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom (algebraMap k K))) c)))).symm
+  exact (trdeg_add_eq k K).symm
 
 /-- A morphism over `Spec k` inducing an isomorphism of residue fields at `x` preserves the
 transcendence degree of the residue field over `k`. -/
