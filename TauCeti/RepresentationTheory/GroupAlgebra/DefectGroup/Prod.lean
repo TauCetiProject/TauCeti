@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
+public import TauCeti.Algebra.Group.Center
 public import TauCeti.Algebra.Group.Subgroup.Prod
+public import TauCeti.Algebra.MonoidAlgebra.TensorProduct
 public import TauCeti.GroupTheory.PGroup
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 
@@ -15,20 +16,18 @@ public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 
 For groups `G₁`, `G₂` and a commutative semiring `R`, Mathlib's
 `MonoidAlgebra.tensorEquiv R : R[G₁] ⊗[R] R[G₂] ≃ₗ[R] R[G₁ × G₂]` sends `x ⊗ y` to the element
-`x ⊗ y` of `R[G₁ × G₂]` with coefficient `x(g₁) y(g₂)` at `(g₁, g₂)`.
+`x ⊗ y` of `R[G₁ × G₂]` with coefficient `x(g₁) y(g₂)` at `(g₁, g₂)`
+(`MonoidAlgebra.coeff_tensorEquiv_tmul`).
 
 A subgroup `Q ≤ G₁ × G₂` with projections `Q₁ ≤ G₁` and `Q₂ ≤ G₂` has centralizer
-`C(Q) = C(Q₁) × C(Q₂)`. Hence, over a semiring without zero divisors,
-`Br_Q(x ⊗ y) ≠ 0` exactly when `Br_{Q₁}(x) ≠ 0` and `Br_{Q₂}(y) ≠ 0`, and the defect groups of
-`x ⊗ y` are exactly the products `D₁ × D₂` of a defect group `D₁` of `x` and a defect group `D₂`
-of `y`. This is the defect-group part of the direct-product bullet of ModularCharactersAndBlocks
-§6.2; that the blocks of `k[G₁ × G₂]` are the `e_{B₁} ⊗ e_{B₂}` needs `k` to split both groups
-and is not proved here.
+`C(Q) = C(Q₁) × C(Q₂)` (`Set.mem_centralizer_prod_iff`). Hence, over a semiring without zero
+divisors, `Br_Q(x ⊗ y) ≠ 0` exactly when `Br_{Q₁}(x) ≠ 0` and `Br_{Q₂}(y) ≠ 0`, and the defect
+groups of `x ⊗ y` are exactly the products `D₁ × D₂` of a defect group `D₁` of `x` and a defect
+group `D₂` of `y`. Applied to block idempotents, this computes the defect groups of the products
+`e₁ ⊗ e₂` of block idempotents of `k[G₁]` and `k[G₂]` inside `k[G₁ × G₂]`.
 
 ## Main results
 
-* `TauCeti.coeff_tensorEquiv_tmul`: the coefficient of `x ⊗ y` at `(g₁, g₂)` is `x(g₁) y(g₂)`.
-* `TauCeti.mem_centralizer_prod_iff`: `C(Q) = C(Q₁) × C(Q₂)`.
 * `TauCeti.brauerProjection_tensorEquiv_tmul_ne_zero_iff`: `Br_Q(x ⊗ y) ≠ 0` exactly when
   `Br_{Q₁}(x) ≠ 0` and `Br_{Q₂}(y) ≠ 0`.
 * `TauCeti.isDefectGroup_tensorEquiv_tmul_iff`: the defect groups of `x ⊗ y` are the
@@ -41,37 +40,11 @@ and is not proved here.
 
 public section
 
-namespace TauCeti
-
 open MonoidAlgebra TensorProduct
 
-variable {G₁ G₂ : Type*} [Group G₁] [Group G₂]
+namespace TauCeti
 
-section Subgroup
-
-/-- **Centralizers in a direct product.** An element `c` of `G₁ × G₂` centralizes `Q` exactly when
-its components centralize the projections `Q₁` and `Q₂` of `Q`. -/
-theorem mem_centralizer_prod_iff {Q : Subgroup (G₁ × G₂)} {c : G₁ × G₂} :
-    c ∈ Subgroup.centralizer (Q : Set (G₁ × G₂)) ↔
-      c.1 ∈ Subgroup.centralizer (Q.map (MonoidHom.fst G₁ G₂) : Set G₁) ∧
-        c.2 ∈ Subgroup.centralizer (Q.map (MonoidHom.snd G₁ G₂) : Set G₂) := by
-  simp only [Subgroup.mem_centralizer_iff, SetLike.mem_coe, Subgroup.mem_map, MonoidHom.coe_fst,
-    MonoidHom.coe_snd, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, Prod.ext_iff,
-    Prod.fst_mul, Prod.snd_mul]
-  exact ⟨fun h ↦ ⟨fun q hq ↦ (h q hq).1, fun q hq ↦ (h q hq).2⟩, fun h q hq ↦ ⟨h.1 q hq, h.2 q hq⟩⟩
-
-end Subgroup
-
-variable {R : Type*} [CommSemiring R]
-
-omit [Group G₁] [Group G₂] in
-/-- The coefficient of `x ⊗ y ∈ R[G₁ × G₂]` at `(g₁, g₂)` is `x(g₁) y(g₂)`. -/
-theorem coeff_tensorEquiv_tmul (x : MonoidAlgebra R G₁) (y : MonoidAlgebra R G₂)
-    (g : G₁ × G₂) : (tensorEquiv R (x ⊗ₜ y)).coeff g = x.coeff g.1 * y.coeff g.2 := by
-  obtain ⟨g₁, g₂⟩ := g
-  simp [finsuppTensorFinsupp'_apply_apply]
-
-variable [NoZeroDivisors R]
+variable {G₁ G₂ : Type*} [Group G₁] [Group G₂] {R : Type*} [CommSemiring R] [NoZeroDivisors R]
 
 /-- **The Brauer projection of `x ⊗ y`.** Over a semiring without zero divisors,
 `Br_Q(x ⊗ y) ≠ 0` exactly when `Br_{Q₁}(x) ≠ 0` and `Br_{Q₂}(y) ≠ 0`, for the projections
@@ -82,9 +55,10 @@ theorem brauerProjection_tensorEquiv_tmul_ne_zero_iff {Q : Subgroup (G₁ × G�
       brauerProjection (Q.map (MonoidHom.fst G₁ G₂)) x ≠ 0 ∧
         brauerProjection (Q.map (MonoidHom.snd G₁ G₂)) y ≠ 0 := by
   simp only [ne_eq, brauerProjection_eq_zero_iff, not_forall, exists_prop,
-    coeff_tensorEquiv_tmul, mul_eq_zero, not_or, mem_centralizer_prod_iff]
-  exact ⟨fun ⟨c, ⟨h₁, h₂⟩, hx, hy⟩ ↦ ⟨⟨c.1, h₁, hx⟩, ⟨c.2, h₂, hy⟩⟩,
-    fun ⟨⟨a, ha, hx⟩, ⟨b, hb, hy⟩⟩ ↦ ⟨(a, b), ⟨ha, hb⟩, hx, hy⟩⟩
+    coeff_tensorEquiv_tmul, mul_eq_zero, not_or]
+  have hC {c : G₁ × G₂} := Set.mem_centralizer_prod_iff (S := (Q : Set (G₁ × G₂))) (c := c)
+  exact ⟨fun ⟨c, hc, hx, hy⟩ ↦ ⟨⟨c.1, (hC.1 hc).1, hx⟩, ⟨c.2, (hC.1 hc).2, hy⟩⟩,
+    fun ⟨⟨a, ha, hx⟩, ⟨b, hb, hy⟩⟩ ↦ ⟨(a, b), hC.2 ⟨ha, hb⟩, hx, hy⟩⟩
 
 /-- `Br_{D₁ × D₂}(x ⊗ y) ≠ 0` exactly when `Br_{D₁}(x) ≠ 0` and `Br_{D₂}(y) ≠ 0`. -/
 theorem brauerProjection_prod_tensorEquiv_tmul_ne_zero_iff {D₁ : Subgroup G₁}
