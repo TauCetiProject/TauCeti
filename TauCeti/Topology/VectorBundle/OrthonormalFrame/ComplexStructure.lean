@@ -289,8 +289,9 @@ complex structure `J`, as a lift of the orthonormal frame bundle along
     (hF : finrank ℝ F = 4) :
     OrthonormalFrameLift F E 4 (Subgroup.centralizer {J₀})
       ((euclideanLinearEquivHom ℝ (Fin 4)).comp (Subgroup.centralizer {J₀}).subtype) :=
-  reductionLift <| isLocallyTrivialReduction_iff.2 <|
-    exists_trivialization_unitaryFrames hJ hJ₂ hJ₀ finrank_euclideanSpace_fin hF
+  reductionLift <| isLocallyTrivialReduction_iff.2 fun x ↦
+    (exists_trivialization_unitaryFrames hJ hJ₂ hJ₀ finrank_euclideanSpace_fin hF x).imp
+      fun _ ht ↦ ⟨ht.1, fun g p _ ↦ ht.2 g p⟩
 
 variable (hJ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, J v.proj v.snd⟩ : TotalSpace F E))
   (hJ₂ : ∀ x v, J x (J x v) = -v)
