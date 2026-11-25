@@ -101,6 +101,14 @@ structure IsPrimitiveIdempotent (e : A) : Prop where
 theorem IsPrimitiveIdempotent.nontrivial (he : IsPrimitiveIdempotent e) : Nontrivial A :=
   ⟨e, 0, he.ne_zero⟩
 
+/-- The sum of two orthogonal primitive idempotents is not primitive: it splits into two nonzero
+orthogonal idempotents. -/
+theorem not_isPrimitiveIdempotent_add {f : A} (he : IsPrimitiveIdempotent e)
+    (hf : IsPrimitiveIdempotent f) (hef : e * f = 0) (hfe : f * e = 0) :
+    ¬ IsPrimitiveIdempotent (e + f) := fun h ↦
+  (h.eq_zero_or_eq_zero_of_add he.isIdempotentElem hf.isIdempotentElem hef hfe rfl).elim
+    he.ne_zero hf.ne_zero
+
 /-- An idempotent whose corner ring contains no idempotent besides `0` and `e` is primitive: both
 summands of a decomposition of `e` lie in that corner ring. -/
 theorem isPrimitiveIdempotent_of_eq_zero_or_eq (he : IsIdempotentElem e) (h0 : e ≠ 0)

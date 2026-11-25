@@ -89,9 +89,9 @@ need only be continuous, and their nondegeneracy as Hamiltonian orbits is replac
 shifted fields.
 
 The Fredholm property and the index of `D_u` depend only on the asymptotic orbits and on the end
-data of the Floer data, and in a unitary trivialization, for Floer data with the data `(i, 0, H_t)`
-of a Hamiltonian `H` with a nondegenerate one-periodic orbit `x` at both ends, `D_u` is Fredholm of
-index zero along maps `u` from `x` to itself; both are proved by deformation in
+Hamiltonians of the Floer data, and in a unitary trivialization, for Floer data with a Hamiltonian
+`H` with a nondegenerate one-periodic orbit `x` at both ends, `D_u` is Fredholm of index zero along
+maps `u` from `x` to itself; both are proved by deformation in
 `TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`, which proves
 `TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`,
 `TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical_data`,
@@ -105,8 +105,10 @@ along a Floer trajectory, with a version for data cylindrical near the ends (suf
 `_of_cylindrical`). In a unitary trivialization the Fredholm property for distinct ends
 `x₋ ≠ x₊` follows from a parametrix built from the invertible end models, without the adjoint
 (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical` in
-`TauCeti.Geometry.Symplectic.Floer.Sobolev.Parametrix`); the value of the index for distinct ends
-remains open.
+`TauCeti.Geometry.Symplectic.Floer.Sobolev.Parametrix`), and for every compatible almost complex
+structure it follows by deformation
+(`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible`); the value
+of the index for distinct ends remains open.
 
 ## References
 
@@ -161,6 +163,20 @@ theorem floerJetCoeff_jet (ω : SymplecticForm V) (J : ℝ × ℝ → V → V �
     ω.floerJetCoeff J Ks Kt u z (jet ξ z) = ω.floerLinearization J Ks Kt u ξ z := by
   simp only [floerJetCoeff_apply, floerLinearization_eq_add, jet_apply, stdComplexLineReal_eq,
     stdComplexLineImag_eq]
+
+/-- **The coefficients of the linearized operator for a constant almost complex structure.** For a
+constant `J`, the perturbation `K = H dt` of an autonomous Hamiltonian and any map `u`, the
+coefficient field of the linearized Floer operator on jets is that of `∂s + J ∂t - J dX_H(u)`. -/
+theorem floerJetCoeff_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H) u z =
+      firstOrderJetCoeff J.toLinearMap.toContinuousLinearMap
+        (-(J.toLinearMap.toContinuousLinearMap.comp
+          (fderiv ℝ (ω.hamiltonianVectorField H) (u z)))) := by
+  rw [floerJetCoeff_def]
+  congr 1
+  ext v
+  simp [floerLinearizationCoeff_apply, hamiltonianVectorField_const]
 
 /-- The linearized Floer operator `D_u` along `u`, as an operator from the Sobolev space
 `W^{1,2}(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.H1`) to `L²(ℝ × S¹, V)`. It is `0` by convention

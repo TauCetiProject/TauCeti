@@ -21,7 +21,7 @@ essentially bounded family of operators `D →L[ℝ] H`, given as a class `AL` i
 is the inclusion of a dense domain, this says that `A(s)` is a symmetric operator on `H` with
 domain `D`. The operator `D_A u = (ι ∘ u)' + A(s) u(s)` from `L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` to
 `L²(ℝ, H)` is `TauCeti.WeakDerivStep.familyDomainTrajectoryOperator ι AL`. This file identifies its
-cokernel with the kernel of its formal adjoint, and deduces that `D_A` is Fredholm when `ι` is
+cokernel with the kernel of its formal adjoint, and deduces the index of `D_A` when `ι` is
 compact, the limits `B₋` and `B₊` of `A` at `±∞` are invertible, and `A(s) - B₊` is uniformly
 bounded through `ι`: `‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s`.
 
@@ -57,15 +57,15 @@ of the range of `D_A` is exactly the image of the kernel of `D_{-A}` under `z �
 (`TauCeti.WeakDerivStep.orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker`). No density
 of the range of `ι` is needed.
 
-**Fredholmness.** Now let `ι` be compact, let `A(s)` converge to invertible operators `B₋` and
+**The index.** Now let `ι` be compact, let `A(s)` converge to invertible operators `B₋` and
 `B₊` as `s → -∞` and `s → ∞`, and take `B = B₊`. The semi-Fredholm estimate
-(`TauCeti.WeakDerivStep.finiteDimensional_ker_familyDomainTrajectoryOperator`,
-`TauCeti.WeakDerivStep.isClosed_range_familyDomainTrajectoryOperator`) gives `D_A` and `D_{-A}`,
-whose coefficient has the limits `-B₋` and `-B₊`, finite-dimensional kernels and closed ranges.
-Since the cokernel of `D_A` is the image of the kernel of `D_{-A}`, it is finite dimensional, and
-`D_A` is Fredholm (`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`). On the
-kernel of `D_{-A}` the map `z ↦ ι ∘ z` is injective, since `ι ∘ z = 0` forces `B₊ z = A z = 0`, so
-the index of `D_A` is `dim ker D_A - dim ker D_{-A}`
+(`TauCeti.WeakDerivStep.isClosed_range_familyDomainTrajectoryOperator`) gives `D_A` a closed
+range, so its cokernel is the orthogonal complement of the range, the image of the kernel of
+`D_{-A}`. That `D_A` is Fredholm is
+`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`, proved in
+`TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm` by a parametrix under weaker
+hypotheses. On the kernel of `D_{-A}` the map `z ↦ ι ∘ z` is injective, since `ι ∘ z = 0`
+forces `B₊ z = A z = 0`, so the index of `D_A` is `dim ker D_A - dim ker D_{-A}`
 (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator`).
 
 This is the infinite-dimensional counterpart of
@@ -83,10 +83,9 @@ finite-dimensional space, where the regularity of the cokernel is automatic.
   `TauCeti.WeakDerivStep`): the paths orthogonal to the range of `D_A` lie in the graph space.
 * `TauCeti.WeakDerivStep.orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker`: the
   orthogonal complement of the range of `D_A` is the image of the kernel of `D_{-A}`.
-* `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`: for compact `ι`, `A(s)`
+* `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator`: for compact `ι`, `A(s)`
   `ι`-symmetric for almost every `s` with invertible limits `B₋` and `B₊`, and
-  `‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s`, `D_A` is Fredholm.
-* `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator`: its index is
+  `‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s`, the index of `D_A` is
   `dim ker D_A - dim ker D_{-A}`.
 
 ## References
@@ -329,7 +328,7 @@ private theorem ae_of_ae_eq (hAL : AL =ᵐ[μ₀] A) {P : (D →L[ℝ] H) → Pr
     (h : ∀ᵐ s ∂volume, P (A s)) : ∀ᵐ s ∂μ₀, P (AL s) :=
   (hAL.and (ae_restrict_of_ae h)).mono fun _ hs ↦ hs.1 ▸ hs.2
 
-/-- Under the hypotheses of `isFredholm_familyDomainTrajectoryOperator`, the range of `D_A` is
+/-- Under the hypotheses of `index_familyDomainTrajectoryOperator`, the range of `D_A` is
 closed. -/
 private theorem isClosed_range_familyDomainTrajectoryOperator_of_ae (hι : IsCompactOperator ι)
     (hSymm : ∀ᵐ s ∂volume, ∀ x y : D, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
@@ -346,25 +345,7 @@ private theorem isClosed_range_familyDomainTrajectoryOperator_of_ae (hι : IsCom
     hBtop hAL hbot htop
     fun _ ↦ ⟨c, hc.mono fun _ hs _ ↦ hs⟩
 
-/-- The formal adjoint `D_{-A}` has a finite-dimensional kernel: the coefficient `-A` satisfies the
-hypotheses of the semi-Fredholm estimate, with the limits `-B₋` and `-B₊`. -/
-private theorem finiteDimensional_ker_familyDomainTrajectoryOperator_neg
-    (hι : IsCompactOperator ι) (hSymmbot : ∀ x y : D, ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ)
-    (hBbot : Bbot.IsInvertible) (hSymmtop : ∀ x y : D, ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ)
-    (hBtop : Btop.IsInvertible) (hAL : AL =ᵐ[μ₀] A)
-    (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop)) {c : ℝ}
-    (hc : ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
-    FiniteDimensional ℝ (familyDomainTrajectoryOperator (p := 2) ι (-AL)).ker := by
-  refine finiteDimensional_ker_familyDomainTrajectoryOperator (A := -A) hι
-    (fun x y ↦ ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply (hSymmbot x y))
-    (ContinuousLinearMap.isInvertible_neg_iff.2 hBbot)
-    (fun x y ↦ ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply (hSymmtop x y))
-    (ContinuousLinearMap.isInvertible_neg_iff.2 hBtop)
-    ((Lp.coeFn_neg AL).trans hAL.neg) hbot.neg htop.neg fun _ ↦ ⟨c, hc.mono fun s hs _ x ↦ ?_⟩
-  -- `(-A s) - (-B₊) = -(A s - B₊)`.
-  simpa only [Pi.neg_apply, neg_sub_neg, ← neg_sub (A s), neg_apply, norm_neg] using hs x
-
-/-- Under the hypotheses of `isFredholm_familyDomainTrajectoryOperator`, the orthogonal
+/-- Under the hypotheses of `index_familyDomainTrajectoryOperator`, the orthogonal
 complement of the range of `D_A` is the image of the kernel of `D_{-A}`. -/
 private theorem orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker_of_tendsto
     (hSymm : ∀ᵐ s ∂volume, ∀ x y : D, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
@@ -378,7 +359,7 @@ private theorem orthogonal_range_familyDomainTrajectoryOperator_eq_map_ker_of_te
     (ae_of_ae_eq hAL (P := fun T ↦ ∀ x y, ⟪T x, ι y⟫_ℝ = ⟪ι x, T y⟫_ℝ) hSymm)
     (ae_of_ae_eq hAL (P := fun T ↦ ∀ x, ‖(T - Btop) x‖ ≤ c * ‖ι x‖) hc)
 
-/-- Under the hypotheses of `isFredholm_familyDomainTrajectoryOperator`, the cokernel of `D_A` is
+/-- Under the hypotheses of `index_familyDomainTrajectoryOperator`, the cokernel of `D_A` is
 linearly equivalent, through the orthogonal complement of the range, to the image of the kernel
 of `D_{-A}` under `z ↦ ι ∘ z`. -/
 private noncomputable def quotientRangeEquivMapKer (hι : IsCompactOperator ι)
@@ -396,36 +377,12 @@ private noncomputable def quotientRangeEquivMapKer (hι : IsCompactOperator ι)
       hSymm (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
         (frequently_atTop_of_ae (hSymm.mono fun _ hs ↦ hs x y))) hBtop hAL hc))
 
-/-- **The trajectory operator over a compactly embedded domain is Fredholm.** Let `ι : D →L[ℝ] H`
-be a compact operator, and let `A : ℝ → (D →L[ℝ] H)` be a family of operators, `ι`-symmetric for
-almost every `s`, with an `L∞` class `AL`, converging to invertible operators `B₋` and `B₊`
-as `s → -∞` and `s → ∞` and differing from `B₊` by operators bounded through `ι`:
-`‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s`. Then `D_A u = (ι ∘ u)' + A u` from
-`L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` to `L²(ℝ, H)` is Fredholm. -/
-theorem isFredholm_familyDomainTrajectoryOperator (hι : IsCompactOperator ι)
-    (hSymm : ∀ᵐ s ∂volume, ∀ x y : D, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
-    (hBbot : Bbot.IsInvertible) (hBtop : Btop.IsInvertible) (hAL : AL =ᵐ[μ₀] A)
-    (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
-    (hc : ∃ c, ∀ᵐ s ∂volume, ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
-    (familyDomainTrajectoryOperator (p := 2) ι AL).IsFredholm := by
-  obtain ⟨c, hc⟩ := hc
-  have hSymmbot (x y : D) := ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot
-    (frequently_atBot_of_ae (hSymm.mono fun _ hs ↦ hs x y))
-  have hSymmtop (x y : D) := ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
-    (frequently_atTop_of_ae (hSymm.mono fun _ hs ↦ hs x y))
-  have := finiteDimensional_ker_familyDomainTrajectoryOperator_neg hι hSymmbot hBbot hSymmtop hBtop
-    hAL hbot htop hc
-  refine ContinuousLinearMap.IsFredholm.of_finite_ker_coker _
-    (finiteDimensional_ker_familyDomainTrajectoryOperator hι hSymmbot hBbot hSymmtop hBtop hAL hbot
-      htop fun _ ↦ ⟨c, hc.mono fun _ hs _ ↦ hs⟩) ?_
-  -- The cokernel is the orthogonal complement of the range, the image of a finite-dimensional
-  -- kernel.
-  exact (quotientRangeEquivMapKer hι hSymm hBbot hBtop hAL hbot htop hc).symm.finiteDimensional
-
-/-- **The index of the trajectory operator over a compactly embedded domain.** Under the
-hypotheses of `isFredholm_familyDomainTrajectoryOperator`, the index of `D_A u = (ι ∘ u)' + A u` is
-`dim ker D_A - dim ker D_{-A}`: its cokernel is the kernel of the formal adjoint `-d/ds + A`, whose
-solutions are those of `D_{-A} z = 0`. -/
+/-- **The index of the trajectory operator over a compactly embedded domain.** Let `ι` be
+compact, and let `A(s)` be `ι`-symmetric for almost every `s`, with an `L∞` class `AL`, converging
+to invertible operators `B₋` and `B₊` as `s → -∞` and `s → ∞` and differing from `B₊` by operators
+bounded through `ι`: `‖(A(s) - B₊) x‖ ≤ c ‖ι x‖` for almost every `s`. Then the index of
+`D_A u = (ι ∘ u)' + A u` is `dim ker D_A - dim ker D_{-A}`: its cokernel is the kernel of the
+formal adjoint `-d/ds + A`, whose solutions are those of `D_{-A} z = 0`. -/
 theorem index_familyDomainTrajectoryOperator (hι : IsCompactOperator ι)
     (hSymm : ∀ᵐ s ∂volume, ∀ x y : D, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
     (hBbot : Bbot.IsInvertible) (hBtop : Btop.IsInvertible) (hAL : AL =ᵐ[μ₀] A)

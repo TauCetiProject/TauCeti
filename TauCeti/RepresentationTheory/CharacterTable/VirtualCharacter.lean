@@ -340,13 +340,6 @@ theorem irreducibleCharacter_mem_virtualCharacters (i : Fin (Nat.card (ConjClass
   rw [virtualCharacters_eq_closure_irreducibleCharacters]
   exact AddSubgroup.subset_closure (irreducibleCharacter_mem k i)
 
-/-- The enumerated irreducible characters exhaust the irreducible characters. -/
-theorem range_irreducibleCharacter :
-    Set.range (irreducibleCharacter (G := G) k) = irreducibleCharacters k G := by
-  ext f
-  exact ⟨by rintro ⟨i, rfl⟩; exact irreducibleCharacter_mem k i,
-    fun hf => exists_irreducibleCharacter_eq k hf⟩
-
 /-- **A function `G → k` is a virtual character exactly when it is an integer combination of the
 irreducible characters.**
 

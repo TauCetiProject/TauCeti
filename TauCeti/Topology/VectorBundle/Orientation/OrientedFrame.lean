@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.SpecialOrthogonal
 public import TauCeti.Topology.VectorBundle.Orientation.OrthonormalFrame
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction.Basic
 
 /-!
 # The oriented orthonormal frame bundle

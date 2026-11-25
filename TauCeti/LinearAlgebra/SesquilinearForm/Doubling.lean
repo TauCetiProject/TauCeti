@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.Prod
+public import TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup
 
 /-!
 # The doubled space of a sesquilinear form
@@ -49,6 +50,12 @@ split quadratic algebra `F × F` with the coordinate swap, where no field struct
 ## Main definitions
 
 * `LinearMap.doubled`: the doubled form `B ⊕ (-B)` on `M × M`.
+* `LinearMap.doubledIsometryHom`: the blockwise embedding `U(B) × U(-B) → U(B ⊕ (-B))` of
+  isometry groups.
+* `LinearMap.doubledSimilitudeDomain`: the equal-multiplier fibre product of the similitude groups
+  of `B` and `-B`.
+* `LinearMap.doubledSimilitudeHom`: the blockwise embedding of this fibre product into the
+  similitude group of `B ⊕ (-B)`.
 
 ## Main results
 
@@ -68,6 +75,8 @@ split quadratic algebra `F × F` with the coordinate swap, where no field struct
 * `LinearMap.forall_doubled_prodMap_eq_smul_iff`: `f × g` scales the doubled forms by `c` if and
   only if `f` and `g` both scale the original forms by the same `c`; for `c = 1` this is the
   blockwise embedding of isometries.
+* `LinearMap.doubledIsometryHom_injective`, `LinearMap.doubledSimilitudeHom_injective`: the
+  blockwise embeddings of isometry and similitude groups are injective.
 * `LinearMap.BilinForm.doubled_eq_prod_neg`: for a bilinear form, `B.doubled` is the product
   form `B.prod (-B)`.
 
@@ -223,6 +232,101 @@ theorem forall_doubled_prodMap_eq_iff (B' : M' →ₛₗ[I₁] M' →ₛₗ[I₂
 theorem BilinForm.doubled_eq_prod_neg (B : LinearMap.BilinForm R M) :
     B.doubled = B.prod (-B) :=
   ext₂ fun u v ↦ by simp [sub_eq_add_neg]
+
+/-! ### Blockwise embeddings of the isometry and similitude groups -/
+
+/-- The blockwise embedding `(f, g) ↦ f × g` of the isometry groups of `B` and `-B` into the
+isometry group of the doubled form. For a hermitian form on `V` this is the embedding
+`U(V) × U(-V) → U(V ⊕ (-V))` of the doubling method. -/
+def doubledIsometryHom : B.isometryGroup × (-B).isometryGroup →* B.doubled.isometryGroup where
+  toFun p := ⟨(p.1 : M ≃ₗ[R] M).prodCongr (p.2 : M ≃ₗ[R] M), mem_isometryGroup_iff.2 fun u v ↦ by
+    have h₂ (x y : M) : B ((p.2 : M ≃ₗ[R] M) x) ((p.2 : M ≃ₗ[R] M) y) = B x y := by
+      simpa using (-B).isometryGroup_map_app p.2 x y
+    simp [isometryGroup_map_app, h₂]⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+@[simp]
+theorem doubledIsometryHom_apply (p : B.isometryGroup × (-B).isometryGroup) (u : M × M) :
+    (B.doubledIsometryHom p : (M × M) ≃ₗ[R] (M × M)) u =
+      ((p.1 : M ≃ₗ[R] M) u.1, (p.2 : M ≃ₗ[R] M) u.2) := (rfl)
+
+/-- The blockwise embedding `(f, g) ↦ f × g` of the isometry groups of `B` and `-B` into the
+isometry group of the doubled form is injective. -/
+theorem doubledIsometryHom_injective : Function.Injective B.doubledIsometryHom := by
+  intro p q h
+  have h' (u : M × M) := congrArg (fun e : B.doubled.isometryGroup ↦
+    (e : (M × M) ≃ₗ[R] (M × M)) u) h
+  refine Prod.ext (Subtype.ext (LinearEquiv.ext fun x ↦ ?_))
+    (Subtype.ext (LinearEquiv.ext fun x ↦ ?_))
+  · simpa using congrArg Prod.fst (h' (x, 0))
+  · simpa using congrArg Prod.snd (h' (0, x))
+
+section Similitude
+
+variable (S : Type*) [Monoid S] [DistribMulAction S N]
+
+/-- The equal-multiplier fibre product of the similitude groups of `B` and `-B`: the pairs of
+similitudes of `B` and of `-B` with the same multiplier. For a hermitian form on `V` this is the
+group `G(U(V) × U(-V))` of the doubling method. -/
+def doubledSimilitudeDomain : Subgroup (B.similitudeGroup S × (-B).similitudeGroup S) :=
+  ((B.similitudeMultiplier S).comp (MonoidHom.fst _ _)).eqLocus
+    (((-B).similitudeMultiplier S).comp (MonoidHom.snd _ _))
+
+/-- A pair of similitudes of `B` and of `-B` lies in the equal-multiplier fibre product exactly
+when the two multipliers agree. -/
+@[simp]
+theorem mem_doubledSimilitudeDomain_iff {p : B.similitudeGroup S × (-B).similitudeGroup S} :
+    p ∈ B.doubledSimilitudeDomain S ↔
+      B.similitudeMultiplier S p.1 = (-B).similitudeMultiplier S p.2 :=
+  Iff.rfl
+
+/-- The two similitudes in an element of the equal-multiplier fibre product have the same
+multiplier. -/
+theorem similitudeMultiplier_eq_of_doubledSimilitudeDomain (p : B.doubledSimilitudeDomain S) :
+    B.similitudeMultiplier S p.val.1 = (-B).similitudeMultiplier S p.val.2 :=
+  (B.mem_doubledSimilitudeDomain_iff S).1 p.property
+
+/-- The blockwise embedding `((f, λ), (g, λ)) ↦ (f × g, λ)` of the equal-multiplier fibre product
+of the similitude groups of `B` and `-B` into the similitude group of the doubled form. For a
+hermitian form on `V` this is the embedding of the fibre product `G(U(V) × U(-V))` into
+`GU(V ⊕ (-V))` of the doubling method. -/
+def doubledSimilitudeHom : B.doubledSimilitudeDomain S →* B.doubled.similitudeGroup S where
+  toFun p := ⟨((p.val.1 : (M ≃ₗ[R] M) × Sˣ).1.prodCongr (p.val.2 : (M ≃ₗ[R] M) × Sˣ).1,
+      (p.val.1 : (M ≃ₗ[R] M) × Sˣ).2), mem_similitudeGroup_iff.2 fun u v ↦ by
+    have hc := B.similitudeMultiplier_eq_of_doubledSimilitudeDomain S p
+    simp only [similitudeMultiplier_apply] at hc
+    have h₂ (x y : M) : B ((p.val.2 : (M ≃ₗ[R] M) × Sˣ).1 x) ((p.val.2 : (M ≃ₗ[R] M) × Sˣ).1 y) =
+        (p.val.2 : (M ≃ₗ[R] M) × Sˣ).2 • B x y := by
+      simpa [smul_neg] using (-B).similitudeGroup_map_app S p.val.2 x y
+    simp [similitudeGroup_map_app, h₂, hc, smul_sub]⟩
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+@[simp]
+theorem coe_doubledSimilitudeHom (p : B.doubledSimilitudeDomain S) :
+    (B.doubledSimilitudeHom S p : ((M × M) ≃ₗ[R] (M × M)) × Sˣ) =
+      ((p.val.1 : (M ≃ₗ[R] M) × Sˣ).1.prodCongr (p.val.2 : (M ≃ₗ[R] M) × Sˣ).1,
+        (p.val.1 : (M ≃ₗ[R] M) × Sˣ).2) := (rfl)
+
+/-- The blockwise embedding `((f, λ), (g, λ)) ↦ (f × g, λ)` of the equal-multiplier fibre product
+of the similitude groups of `B` and `-B` into the similitude group of the doubled form is
+injective. -/
+theorem doubledSimilitudeHom_injective : Function.Injective (B.doubledSimilitudeHom S) := by
+  intro p q h
+  have hp := B.similitudeMultiplier_eq_of_doubledSimilitudeDomain S p
+  have hq := B.similitudeMultiplier_eq_of_doubledSimilitudeDomain S q
+  have h' := congrArg (fun e : B.doubled.similitudeGroup S ↦
+    (e : ((M × M) ≃ₗ[R] (M × M)) × Sˣ)) h
+  simp only [coe_doubledSimilitudeHom, Prod.mk.injEq] at h'
+  have hc : B.similitudeMultiplier S p.val.1 = B.similitudeMultiplier S q.val.1 := by
+    simpa using h'.2
+  refine Subtype.ext (Prod.ext (B.similitudeGroup_ext S (LinearEquiv.ext fun x ↦ ?_) hc)
+    ((-B).similitudeGroup_ext S (LinearEquiv.ext fun x ↦ ?_) (hp.symm.trans (hc.trans hq))))
+  · simpa using congrArg (fun e : (M × M) ≃ₗ[R] (M × M) ↦ (e (x, 0)).1) h'.1
+  · simpa using congrArg (fun e : (M × M) ≃ₗ[R] (M × M) ↦ (e (0, x)).2) h'.1
+
+end Similitude
 
 /-! ### Gram matrices -/
 

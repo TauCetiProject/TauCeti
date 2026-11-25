@@ -22,6 +22,8 @@ for constructing and differentiating Picard residuals.
 
 * `ContinuousMap.applyContinuousLinearMap`: pointwise application of a continuous family of
   continuous linear maps, as a bounded bilinear operator.
+* `ContinuousMap.smulContinuousLinearMap`: pointwise multiplication by a continuous scalar
+  function, as a bounded bilinear operator.
 * `ContinuousMap.intervalIntegralOperator` and `ContinuousMap.unitIntervalIntegral`: the Volterra
   integral operator on continuous paths over a compact real interval and over the unit interval.
 * `ContinuousMap.hasFDerivAt_of_apply`: pointwise differentiation of a parameter family in
@@ -71,6 +73,39 @@ def applyContinuousLinearMap :
 theorem applyContinuousLinearMap_apply (A : C(K, E →L[𝕜] F)) (f : C(K, E)) (x : K) :
     applyContinuousLinearMap A f x = A x (f x) := by
   simp [applyContinuousLinearMap]
+
+/-- Pointwise scalar multiplication of a continuous map by a continuous scalar function, as a
+bounded bilinear operator. -/
+def smulContinuousLinearMap : C(K, 𝕜) →L[𝕜] C(K, E) →L[𝕜] C(K, E) := by
+  let L : C(K, 𝕜) →ₗ[𝕜] C(K, E) →ₗ[𝕜] C(K, E) :=
+    { toFun := fun g =>
+        { toFun := fun f => g • f
+          map_add' := fun _ _ => by ext x; simp
+          map_smul' := fun _ _ => by ext x; simp [smul_comm (g x)] }
+      map_add' := fun _ _ => by ext f x; simp [add_smul]
+      map_smul' := fun _ _ => by ext f x; simp [smul_smul] }
+  exact LinearMap.mkContinuous₂ L 1 fun g f => by
+    rw [one_mul]
+    refine (norm_le _ (mul_nonneg (norm_nonneg g) (norm_nonneg f))).2 fun x => ?_
+    exact (norm_smul_le (g x) (f x)).trans <|
+      mul_le_mul (norm_coe_le_norm g x) (norm_coe_le_norm f x) (norm_nonneg _) (norm_nonneg _)
+
+/-- `smulContinuousLinearMap g f` is the action `g • f` of `C(K, 𝕜)` on `C(K, E)`. -/
+theorem smulContinuousLinearMap_apply_eq_smul (g : C(K, 𝕜)) (f : C(K, E)) :
+    smulContinuousLinearMap g f = g • f := by
+  simp [smulContinuousLinearMap]
+
+/-- Evaluating `smulContinuousLinearMap g f` at `x` multiplies `f x` by `g x`. -/
+@[simp]
+theorem smulContinuousLinearMap_apply (g : C(K, 𝕜)) (f : C(K, E)) (x : K) :
+    smulContinuousLinearMap g f x = g x • f x := by
+  rw [smulContinuousLinearMap_apply_eq_smul, smul_apply']
+
+/-- Pointwise scalar multiplication has operator norm at most one. -/
+theorem norm_smulContinuousLinearMap_le :
+    ‖smulContinuousLinearMap (K := K) (𝕜 := 𝕜) (E := E)‖ ≤ 1 := by
+  rw [smulContinuousLinearMap]
+  exact LinearMap.mkContinuous₂_norm_le _ zero_le_one _
 
 end Apply
 
