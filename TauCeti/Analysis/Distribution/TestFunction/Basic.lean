@@ -55,8 +55,11 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
   a test function on the target of `e` is compact.
 * `OpenPartialHomeomorph.tsupport_subset_symm_image_tsupport`: a function on `M` vanishing off the
   source of `e` and wherever `φ ∘ e` vanishes is supported in `e⁻¹(supp φ)`.
+* `TestFunction.compOfIsProperMap`: the composite of a test function with a smooth proper map,
+  with its values, support bound, behaviour under identity and composition, and linearity.
 * `TestFunction.compOfIsClosedEmbedding`: the pullback of a test function along a smooth closed
-  embedding, with its support bound and linearity, and `TestFunction.lineTestFunction`: its
+  embedding, the case of `TestFunction.compOfIsProperMap` with target `f ⁻¹' Ω`, with its support
+  bound and linearity, and `TestFunction.lineTestFunction`: its
   restriction `t ↦ ψ (y + t • e)` to an affine line, the pullback along the closed embedding
   `TauCeti.isClosedEmbedding_add_smul_left`.
 -/
@@ -163,14 +166,84 @@ theorem postcompCLM_postcompCLM_toSpanSingleton (f : F →L[ℝ] ℝ) (ψ : 𝓓
   rw [postcompCLM_postcompCLM, postcompCLM_apply]
   simp [mul_comm]
 
+/-- The composite `ψ ∘ f` of a test function on `Ω` with a `C^n` proper map `f : D → E`, as a test
+function on any open set `Ω'` containing `f ⁻¹' Ω`. -/
+noncomputable def compOfIsProperMap {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {Ω' : Opens D} (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') : 𝓓^{n}(Ω', F) :=
+  ⟨fun x => ψ (f x), ψ.contDiff.comp hf,
+    (hfp.isCompact_preimage ψ.hasCompactSupport.isCompact).of_isClosed_subset isClosed_closure
+      (tsupport_comp_subset_preimage (ψ : E → F) hfp.continuous),
+    (tsupport_comp_subset_preimage (ψ : E → F) hfp.continuous).trans
+      ((Set.preimage_mono ψ.tsupport_subset).trans hΩ)⟩
+
+/-- Evaluating the composite of a test function with a proper map. -/
+@[simp]
+theorem compOfIsProperMap_apply {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {Ω' : Opens D} (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') (x : D) :
+    ψ.compOfIsProperMap hf hfp hΩ x = ψ (f x) :=
+  (rfl)
+
+/-- The support of the composite of `ψ` with a proper map `f` lies in the preimage of the support
+of `ψ`. -/
+theorem tsupport_compOfIsProperMap_subset {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {Ω' : Opens D} (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') :
+    tsupport (ψ.compOfIsProperMap hf hfp hΩ) ⊆ f ⁻¹' tsupport ψ :=
+  tsupport_comp_subset_preimage (ψ : E → F) hfp.continuous
+
+/-- The composite with the identity is the test function itself. -/
+@[simp]
+theorem compOfIsProperMap_id (ψ : 𝓓^{n}(Ω, F)) (hΩ : (id : E → E) ⁻¹' Ω ⊆ Ω) :
+    ψ.compOfIsProperMap contDiff_id isProperMap_id hΩ = ψ :=
+  (rfl)
+
+/-- Composing with `f` and then with `g` is composing with `f ∘ g`. -/
+theorem compOfIsProperMap_compOfIsProperMap {D D' : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup D'] [NormedSpace ℝ D'] {Ω' : Opens D} {Ω'' : Opens D'}
+    (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') {g : D' → D} (hg : ContDiff ℝ n g) (hgp : IsProperMap g)
+    (hΩ' : g ⁻¹' Ω' ⊆ Ω'') :
+    (ψ.compOfIsProperMap hf hfp hΩ).compOfIsProperMap hg hgp hΩ' =
+      ψ.compOfIsProperMap (hf.comp hg) (hfp.comp hgp) ((Set.preimage_mono hΩ).trans hΩ') :=
+  (rfl)
+
+/-- The composite of the zero test function with a proper map is zero. -/
+@[simp]
+theorem compOfIsProperMap_zero {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {Ω' : Opens D} {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') :
+    (0 : 𝓓^{n}(Ω, F)).compOfIsProperMap hf hfp hΩ = 0 := by
+  ext x
+  simp
+
+/-- The composite with a proper map is additive. -/
+@[simp]
+theorem compOfIsProperMap_add {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {Ω' : Opens D} (ψ ψ' : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') :
+    (ψ + ψ').compOfIsProperMap hf hfp hΩ =
+      ψ.compOfIsProperMap hf hfp hΩ + ψ'.compOfIsProperMap hf hfp hΩ := by
+  ext x
+  simp
+
+/-- The composite with a proper map commutes with real scalar multiplication. -/
+@[simp]
+theorem compOfIsProperMap_smul {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {Ω' : Opens D} (c : ℝ) (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f)
+    (hfp : IsProperMap f) (hΩ : f ⁻¹' Ω ⊆ Ω') :
+    (c • ψ).compOfIsProperMap hf hfp hΩ = c • ψ.compOfIsProperMap hf hfp hΩ := by
+  ext x
+  simp
+
 /-- The pullback `ψ ∘ f` of a test function on `Ω` along a `C^n` closed embedding `f : D → E`,
-as a test function on the open set `f ⁻¹' Ω`. -/
+as a test function on the open set `f ⁻¹' Ω`: the composite `TestFunction.compOfIsProperMap` with
+the proper map `f`. -/
 noncomputable def compOfIsClosedEmbedding {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
     (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfe : IsClosedEmbedding f) :
     𝓓^{n}(Opens.comap ⟨f, hfe.continuous⟩ Ω, F) :=
-  ⟨fun x => ψ (f x), ψ.contDiff.comp hf, ψ.hasCompactSupport.comp_isClosedEmbedding hfe,
-    (tsupport_comp_subset_preimage (ψ : E → F) hfe.continuous).trans
-      fun _ hx => ψ.tsupport_subset hx⟩
+  ψ.compOfIsProperMap hf hfe.isProperMap fun _ hx => hx
 
 /-- Evaluating the pullback of a test function along a closed embedding. -/
 @[simp]
@@ -184,14 +257,14 @@ theorem tsupport_compOfIsClosedEmbedding_subset {D : Type*} [NormedAddCommGroup 
     [NormedSpace ℝ D] (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f)
     (hfe : IsClosedEmbedding f) :
     tsupport (ψ.compOfIsClosedEmbedding hf hfe) ⊆ f ⁻¹' tsupport ψ :=
-  tsupport_comp_subset_preimage (ψ : E → F) hfe.continuous
+  ψ.tsupport_compOfIsProperMap_subset hf hfe.isProperMap _
 
 /-- The pullback along the identity is the test function itself; the open sets agree
 definitionally (`Opens.comap_id`). -/
 @[simp]
 theorem compOfIsClosedEmbedding_id (ψ : 𝓓^{n}(Ω, F)) :
     ψ.compOfIsClosedEmbedding contDiff_id IsClosedEmbedding.id = ψ :=
-  (rfl)
+  ψ.compOfIsProperMap_id _
 
 /-- Pulling back along `f` and then along `g` is pulling back along `f ∘ g`; the open sets agree
 definitionally (`Opens.comap_comp`). -/
@@ -201,32 +274,29 @@ theorem compOfIsClosedEmbedding_compOfIsClosedEmbedding {D D' : Type*} [NormedAd
     (hge : IsClosedEmbedding g) :
     (ψ.compOfIsClosedEmbedding hf hfe).compOfIsClosedEmbedding hg hge =
       ψ.compOfIsClosedEmbedding (hf.comp hg) (hfe.comp hge) :=
-  (rfl)
+  ψ.compOfIsProperMap_compOfIsProperMap hf hfe.isProperMap _ hg hge.isProperMap _
 
 /-- The pullback of the zero test function is zero. -/
 @[simp]
 theorem compOfIsClosedEmbedding_zero {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
     {f : D → E} (hf : ContDiff ℝ n f) (hfe : IsClosedEmbedding f) :
-    (0 : 𝓓^{n}(Ω, F)).compOfIsClosedEmbedding hf hfe = 0 := by
-  ext x
-  simp
+    (0 : 𝓓^{n}(Ω, F)).compOfIsClosedEmbedding hf hfe = 0 :=
+  compOfIsProperMap_zero _ _ _
 
 /-- The pullback along a closed embedding is additive. -/
 @[simp]
 theorem compOfIsClosedEmbedding_add {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
     (ψ ψ' : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfe : IsClosedEmbedding f) :
     (ψ + ψ').compOfIsClosedEmbedding hf hfe =
-      ψ.compOfIsClosedEmbedding hf hfe + ψ'.compOfIsClosedEmbedding hf hfe := by
-  ext x
-  simp
+      ψ.compOfIsClosedEmbedding hf hfe + ψ'.compOfIsClosedEmbedding hf hfe :=
+  compOfIsProperMap_add _ _ _ _ _
 
 /-- The pullback along a closed embedding commutes with real scalar multiplication. -/
 @[simp]
 theorem compOfIsClosedEmbedding_smul {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
     (c : ℝ) (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfe : IsClosedEmbedding f) :
-    (c • ψ).compOfIsClosedEmbedding hf hfe = c • ψ.compOfIsClosedEmbedding hf hfe := by
-  ext x
-  simp
+    (c • ψ).compOfIsClosedEmbedding hf hfe = c • ψ.compOfIsClosedEmbedding hf hfe :=
+  compOfIsProperMap_smul _ _ _ _ _
 
 /-- The restriction `t ↦ ψ (y + t • e)` of a test function on `Ω` to the line through `y` in a
 nonzero direction `e`, as a test function on the open set of parameters of the line lying in

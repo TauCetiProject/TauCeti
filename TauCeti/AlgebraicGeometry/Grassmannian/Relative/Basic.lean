@@ -55,6 +55,8 @@ over arbitrary `X`-schemes are not treated here.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianChartMap_comp`: the comparison morphisms compose.
 * `AlgebraicGeometry.Scheme.Modules.isPullback_grassmannianι_fromSpec`: over an affine open `U`,
   the relative Grassmannian is `G(k, Γ(E, U))` over `Spec Γ(X, U)`.
+* `AlgebraicGeometry.Scheme.Modules.isIso_grassmannianι_top`: over an affine scheme `X`, the part
+  over `⊤` is the whole relative Grassmannian.
 
 ## References
 
@@ -329,5 +331,14 @@ theorem isPullback_grassmannianι_fromSpec (U : X.affineOpens) :
     (by simp) (by simp)
     (by rw [Iso.refl_hom, Category.comp_id]; exact (IsAffineOpen.isoSpec_hom_fromSpec _).symm)
     (by simp)
+
+/-- Over an affine scheme `X`, the part of the relative Grassmannian over the affine open `⊤` is
+all of it, because `Spec Γ(X, ⊤) ⟶ X` is an isomorphism. -/
+instance isIso_grassmannianι_top [IsAffine X] :
+    IsIso (grassmannianι E k ⟨⊤, isAffineOpen_top X⟩) := by
+  have : IsIso (isAffineOpen_top X).fromSpec := by
+    rw [IsAffineOpen.fromSpec_top]
+    infer_instance
+  exact (isPullback_grassmannianι_fromSpec E k ⟨⊤, isAffineOpen_top X⟩).isIso_snd_of_isIso
 
 end AlgebraicGeometry.Scheme.Modules

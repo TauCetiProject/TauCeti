@@ -219,25 +219,21 @@ theorem hilbertSchmidtNorm_eq_zero {A : W →L[ℝ] V} :
   rw [← sq_eq_zero_iff, ← hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm,
     hilbertSchmidtInner_self_eq_zero_iff]
 
-private theorem norm_toLp_stdOrthonormalBasis_eq_hilbertSchmidtNorm (A : W →L[ℝ] V) :
-    ‖(WithLp.toLp 2 fun i ↦ A (stdOrthonormalBasis ℝ W i) :
-        PiLp 2 fun _ : Fin (Module.finrank ℝ W) ↦ V)‖ = A.hilbertSchmidtNorm := by
-  rw [← sq_eq_sq₀ (norm_nonneg _) A.hilbertSchmidtNorm_nonneg, PiLp.norm_sq_eq_of_L2,
-    ← A.hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm,
-    hilbertSchmidtInner_eq_sum A A (stdOrthonormalBasis ℝ W)]
-  simp only [real_inner_self_eq_norm_sq]
-
 /-- **Cauchy–Schwarz inequality for the Hilbert–Schmidt inner product.** -/
 theorem abs_hilbertSchmidtInner_le (A B : W →L[ℝ] V) :
     |A.hilbertSchmidtInner B| ≤ A.hilbertSchmidtNorm * B.hilbertSchmidtNorm := by
-  let e := stdOrthonormalBasis ℝ W
-  let u : PiLp 2 (fun _ : Fin (Module.finrank ℝ W) ↦ V) := WithLp.toLp 2 fun i ↦ A (e i)
-  let v : PiLp 2 (fun _ : Fin (Module.finrank ℝ W) ↦ V) := WithLp.toLp 2 fun i ↦ B (e i)
-  have hinner : A.hilbertSchmidtInner B = ⟪u, v⟫_ℝ := by
-    rw [hilbertSchmidtInner_eq_sum A B e, PiLp.inner_apply]
-  rw [hinner, ← norm_toLp_stdOrthonormalBasis_eq_hilbertSchmidtNorm A,
-    ← norm_toLp_stdOrthonormalBasis_eq_hilbertSchmidtNorm B]
-  exact abs_real_inner_le_norm u v
+  let Φ : LinearMap.BilinForm ℝ (W →L[ℝ] V) :=
+    LinearMap.mk₂ ℝ (hilbertSchmidtInner (W := W) (V := V)) hilbertSchmidtInner_add_left
+      (fun c S T ↦ by simpa only [smul_eq_mul] using hilbertSchmidtInner_smul_left c S T)
+      hilbertSchmidtInner_add_right
+      (fun c S T ↦ by simpa only [smul_eq_mul] using hilbertSchmidtInner_smul_right c S T)
+  have hsq : (A.hilbertSchmidtInner B) ^ 2 ≤
+      (A.hilbertSchmidtNorm * B.hilbertSchmidtNorm) ^ 2 := by
+    simpa only [Φ, LinearMap.mk₂_apply, hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm,
+      mul_pow] using
+      Φ.apply_sq_le_of_symm hilbertSchmidtInner_self_nonneg ⟨hilbertSchmidtInner_comm⟩ A B
+  exact abs_le.2 (abs_le_of_sq_le_sq' hsq
+    (mul_nonneg A.hilbertSchmidtNorm_nonneg B.hilbertSchmidtNorm_nonneg))
 
 /-- Precomposing both arguments with a linear isometric equivalence preserves the Hilbert–Schmidt
 inner product. -/

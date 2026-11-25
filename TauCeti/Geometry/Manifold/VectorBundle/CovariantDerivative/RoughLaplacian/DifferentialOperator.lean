@@ -299,7 +299,8 @@ theorem IsMetricCompatible.integral_inner_smoothFormalAdjoint
         ∂riemannianVolume I M := by
   simp only [ContMDiffSection.mem_compactlySupported, ContMDiffSection.tsupport_def] at hsupp
   simp only [smoothFormalAdjoint_apply, smoothCovariantDerivative_apply]
-  exact hcov.integral_inner_formalAdjoint_of_or η.contMDiff τ.contMDiff hsupp
+  exact hsupp.elim (hcov.integral_inner_formalAdjoint_of_isCompact_left η.contMDiff τ.contMDiff)
+    (hcov.integral_inner_formalAdjoint η.contMDiff τ.contMDiff)
 
 /-- **The rough Laplacian is formally self-adjoint.** For a metric connection `∇` on a Riemannian
 vector bundle over a Riemannian manifold without boundary, with the Levi-Civita connection on the
@@ -312,7 +313,7 @@ theorem IsMetricCompatible.isFormalAdjoint_smoothRoughLaplacian
       (cov.smoothRoughLaplacian (leviCivitaConnection I M)) (riemannianVolume I M) := by
   refine LinearMap.isFormalAdjoint_iff.2 fun σ τ hστ ↦ ?_
   simp only [smoothRoughLaplacian_apply, ContMDiffSection.tsupport_def] at hστ ⊢
-  exact hcov.integral_inner_roughLaplacian_left_eq_right_of_or σ.contMDiff τ.contMDiff hστ
+  exact hcov.integral_inner_roughLaplacian_left_eq_right σ.contMDiff τ.contMDiff hστ
 
 /-- **Bundled characterization of compactly supported rough-harmonic smooth sections.** -/
 theorem IsMetricCompatible.smoothRoughLaplacian_eq_zero_iff

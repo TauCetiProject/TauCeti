@@ -53,23 +53,6 @@ section Family
 variable {g₀ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
   {g : ℝ → ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)} {t₀ : ℝ}
 
-/-- The integrand `(t, x) ↦ J(g_{t₀}, g_t)(x) - 1` of the relative volume with respect to
-`g_{t₀}`, on the copy of `M` carrying `g_{t₀}`, is `C^k` at `(t₀, x)` for every `x` when the
-inner products of `g_t` are `C^k` jointly in `(t, x)` at every point `(t₀, x)`. -/
-private theorem contMDiffAt_relativeVolume_integrand {k : ℕ∞ω} [IsManifold I (k + 1) M]
-    (hg : ∀ x : M, ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) k
-      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
-        ((g p.1).inner p.2)) (t₀, x)) (x : WithMetric (g t₀)) :
-    ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ) k
-      (uncurry fun (t : ℝ) (y : WithMetric (g t₀)) ↦
-        relativeVolumeDensity (g t₀) (g t) y.ofWithMetric - 1) (t₀, x) :=
-  ((contMDiffAt_uncurry_relativeVolumeDensity
-    ((hg x.ofWithMetric).comp x.ofWithMetric (contMDiffAt_const.prodMk contMDiffAt_id))
-    (hg x.ofWithMetric)).comp (t₀, x) (contMDiffAt_fst.prodMk
-      ((WithMetric.contMDiff_ofWithMetric (g := g t₀)).contMDiffAt.comp _ contMDiffAt_snd))).sub
-    contMDiffAt_const
-
 variable [CompactSpace M]
 
 /-- On a compact manifold, the relative volume of `g_t` with respect to `g₀` differs from the
@@ -93,7 +76,9 @@ theorem contDiffAt_relativeVolume [T2Space M] {k : ℕ∞} [IsManifold I (k + 1)
   rw [relativeVolume_eq_add_const (t₀ := t₀)]
   simp only [relativeVolume_def]
   exact (contMDiffAt_parametric_integral (I := 𝓘(ℝ)) (J := I)
-    (contMDiffAt_relativeVolume_integrand hg)).contDiffAt.add contDiffAt_const
+    (fun x ↦ contMDiffAt_relativeVolume_integrand
+      ((hg _).comp _ (contMDiffAt_const.prodMk contMDiffAt_id)) (hg _))).contDiffAt.add
+    contDiffAt_const
 
 /-- **The first variation of the relative volume of a family of metrics.** On a compact manifold,
 if the inner products of a family of metrics `g_t` are `C^1` jointly in `(t, x)` at every point
@@ -110,7 +95,8 @@ theorem hasDerivAt_relativeVolume [IsManifold I 2 M]
   have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
   rw [relativeVolume_eq_add_const (t₀ := t₀)]
   simpa only [relativeVolume_def, deriv_sub_const] using
-    (hasDerivAt_parametric_integral (J := I) (contMDiffAt_relativeVolume_integrand hg)).add_const
+    (hasDerivAt_parametric_integral (J := I) (fun x ↦ contMDiffAt_relativeVolume_integrand
+      ((hg _).comp _ (contMDiffAt_const.prodMk contMDiffAt_id)) (hg _))).add_const
       (relativeVolume g₀ (g t₀))
 
 /-- **The second variation of the relative volume of a family of metrics.** On a compact manifold,
@@ -130,7 +116,8 @@ theorem hasDerivAt_deriv_relativeVolume [IsManifold I 3 M]
   rw [relativeVolume_eq_add_const (t₀ := t₀)]
   simpa only [relativeVolume_def, deriv_sub_const, deriv_add_const'] using
     hasDerivAt_deriv_parametric_integral (J := I) (μ := riemannianVolume I (WithMetric (g t₀)))
-      (contMDiffAt_relativeVolume_integrand hg)
+      (fun x ↦ contMDiffAt_relativeVolume_integrand
+        ((hg _).comp _ (contMDiffAt_const.prodMk contMDiffAt_id)) (hg _))
 
 end Family
 

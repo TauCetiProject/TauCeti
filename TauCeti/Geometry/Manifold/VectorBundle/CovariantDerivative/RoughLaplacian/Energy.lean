@@ -52,9 +52,8 @@ divergence theorem. The one-form `∇σ` has compact support as soon as `σ` has
 * `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian` and
   `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_of_isCompact_left`:
   **the energy identity**, when `τ`, respectively `σ`, has compact support.
-* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right_of_or` and
-  `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right`:
-  the rough Laplacian is formally self-adjoint.
+* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right`:
+  the rough Laplacian is formally self-adjoint when either section has compact support.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_self_nonneg`: it is
   nonnegative.
 * `CovariantDerivative.IsMetricCompatible.apply_eq_zero_of_roughLaplacian_eq_zero`,
@@ -136,7 +135,7 @@ theorem integral_inner_roughLaplacian_of_isCompact_left (hcov : cov.IsMetricComp
 
 /-- **Green's second identity / formal self-adjointness of `∇*∇`**, when either `σ` or `τ` has
 compact support: `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪σ, ∇*∇ τ⟫ dV`. -/
-theorem integral_inner_roughLaplacian_left_eq_right_of_or (hcov : cov.IsMetricCompatible)
+theorem integral_inner_roughLaplacian_left_eq_right (hcov : cov.IsMetricCompatible)
     (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
     (hsupp : IsCompact (closure {x | σ x ≠ 0}) ∨ IsCompact (closure {x | τ x ≠ 0})) :
     ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
@@ -150,14 +149,6 @@ theorem integral_inner_roughLaplacian_left_eq_right_of_or (hcov : cov.IsMetricCo
         (hsupp.elim (hcov.integral_inner_roughLaplacian hτ hσ)
           (hcov.integral_inner_roughLaplacian_of_isCompact_left hτ hσ)).symm
     _ = _ := integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _)
-
-/-- **The rough Laplacian is formally self-adjoint.** For a metric connection and smooth sections
-`σ` and `τ` where `τ` has compact support, `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪σ, ∇*∇ τ⟫ dV`. -/
-theorem integral_inner_roughLaplacian_left_eq_right (hcov : cov.IsMetricCompatible)
-    (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ)) (hτc : IsCompact (closure {x | τ x ≠ 0})) :
-    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
-      ∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫ ∂riemannianVolume I M :=
-  hcov.integral_inner_roughLaplacian_left_eq_right_of_or hσ hτ (.inr hτc)
 
 /-- **The rough Laplacian is nonnegative.** For a metric connection and a compactly supported
 smooth section `σ`, `∫ ⟪∇*∇ σ, σ⟫ dV = ∫ |∇σ|² dV ≥ 0`. -/

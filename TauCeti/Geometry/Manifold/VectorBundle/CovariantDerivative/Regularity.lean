@@ -41,6 +41,7 @@ local frame.
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
 * `CovariantDerivative.alongVectorField`: hence a smooth covariant derivative along a smooth vector
   field `X` is a linear operator `∇_X` on smooth sections.
+* `CovariantDerivative.apply_smul`: the Leibniz rule `∇(a σ) = a ∇σ + da ⊗ σ` for smooth sections.
 * `CovariantDerivative.alongVectorField_smul`: the Leibniz rule for `∇_X`.
 * `ContMDiffCovariantDerivativeOn.mono_of_isOpen_of_eventuallyEq`: on a smooth real manifold, an
   operator from sections to one-forms which is `C^n` on a set and local at the points of an open
@@ -115,6 +116,15 @@ theorem coe_smoothCovariantDerivative (cov : CovariantDerivative I F V)
     ⇑(cov.smoothCovariantDerivative σ) = cov σ :=
   (rfl)
 
+omit [IsManifold I 1 M] in
+/-- **The Leibniz rule for smooth sections**: `∇(a σ) = a ∇σ + da ⊗ σ` for a smooth function `a`
+and a smooth section `σ`. -/
+theorem apply_smul (cov : CovariantDerivative I F V) (a : C^∞⟮I, M; 𝕜⟯) (σ : Cₛ^∞⟮I; F, V⟯)
+    (x : M) : cov ⇑(a • σ) x = a x • cov σ x + (mvfderiv I a x).smulRight (σ x) := by
+  have hfun : ⇑(a • σ) = (⇑a : M → 𝕜) • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply a σ y
+  rw [hfun, cov.isCovariantDerivativeOnUniv.leibniz σ.mdifferentiableAt
+    (a.contMDiff.mdifferentiableAt (by simp))]
+
 /-- **The Leibniz rule for `smoothCovariantDerivative`**:
 `∇(a • σ) x v = a x • ∇σ x v + da(v) • σ x`. -/
 theorem smoothCovariantDerivative_smul (cov : CovariantDerivative I F V)
@@ -122,10 +132,7 @@ theorem smoothCovariantDerivative_smul (cov : CovariantDerivative I F V)
     (x : M) (v : TangentSpace I x) :
     cov.smoothCovariantDerivative (a • σ) x v =
       a x • cov.smoothCovariantDerivative σ x v + d% a x v • σ x := by
-  have hfun : ⇑(a • σ) = (⇑a : M → 𝕜) • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply a σ y
-  rw [smoothCovariantDerivative_apply, smoothCovariantDerivative_apply, hfun,
-    cov.isCovariantDerivativeOnUniv.leibniz_apply σ.mdifferentiableAt
-      (a.contMDiff.mdifferentiableAt (by simp)) v]
+  simp [cov.apply_smul]
 
 /-- Covariant differentiation does not enlarge the closed support of a smooth section. -/
 theorem tsupport_smoothCovariantDerivative_subset (cov : CovariantDerivative I F V)
@@ -178,8 +185,7 @@ theorem alongVectorField_smul (cov : CovariantDerivative I F V)
     (a : C^∞⟮I, M; 𝕜⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
     cov.alongVectorField X (a • σ) x =
       a x • cov.alongVectorField X σ x + mvfderiv I a x (X x) • σ x := by
-  rw [alongVectorField_apply, ← smoothCovariantDerivative_apply, smoothCovariantDerivative_smul,
-    smoothCovariantDerivative_apply, alongVectorField_apply]
+  simp [cov.apply_smul]
 
 /-- Adding a `C^n` endomorphism-valued one-form preserves the regularity of a connection.
 The model fibre need not have finite dimension. -/

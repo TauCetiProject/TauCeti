@@ -82,9 +82,8 @@ of the rough Laplacian, in `RoughLaplacian/Energy.lean`.
   smooth.
 * `CovariantDerivative.IsMetricCompatible.divergence_rieszDual_innerSL_comp`: pointwise divergence
   identity on `C²` Riemannian manifolds.
-* `CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint`,
-  `CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint_of_isCompact_left`, and
-  `CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint_of_or`:
+* `CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint` and
+  `CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint_of_isCompact_left`:
   **integration by parts**, `∫ ⟪∇*α, τ⟫ dV = ∫ ⟪α, ∇τ⟫ dV`, when `τ` or `α` has compact support.
 
 ## References
@@ -574,18 +573,6 @@ theorem integral_inner_formalAdjoint_of_isCompact_left (hcov : cov.IsMetricCompa
     (fun y hy ↦ ?_) (fun y hy ↦ ?_)
   · simp [hαy hy, LinearIsometryEquiv.map_zero]
   · simp [hαy hy]
-
-/-- **Integration by parts for the formal adjoint of a connection**, when either the one-form `α`
-or the section `τ` has compact support. -/
-theorem integral_inner_formalAdjoint_of_or (hcov : cov.IsMetricCompatible)
-    (hα : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (α x)))
-    (hτ : CMDiff ∞ (T% τ))
-    (hsupp : IsCompact (closure {x | α x ≠ 0}) ∨ IsCompact (closure {x | τ x ≠ 0})) :
-    ∫ x, ⟪cov.formalAdjoint (leviCivitaConnection I M) α x, τ x⟫ ∂riemannianVolume I M =
-      ∫ x, (α x).hilbertSchmidtInner (cov τ x) ∂riemannianVolume I M :=
-  hsupp.elim (hcov.integral_inner_formalAdjoint_of_isCompact_left hα hτ)
-    (hcov.integral_inner_formalAdjoint hα hτ)
 
 end IsMetricCompatible
 

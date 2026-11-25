@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import TauCeti.Analysis.Normed.Ring.WithAbs
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Normalized absolute values on archimedean completions
@@ -24,6 +25,9 @@ completion are determined by their values on it. The normalized value is continu
 
 Archimedean completions are nontrivially normed fields of characteristic zero, and the diagonal
 embeddings form scalar towers over any commutative semiring base.
+
+Since there is no ring homomorphism `ℂ →+* ℝ`, the completion at a real place is not isomorphic
+to `ℂ` (`NumberField.InfinitePlace.IsReal.not_nonempty_ringEquiv_complex`).
 
 ## References
 
@@ -133,5 +137,10 @@ theorem continuous_completionNormalizedAbsValue (w : InfinitePlace K) :
   convert continuous_norm.pow w.mult using 1
   ext x
   exact completionNormalizedAbsValue_apply w x
+
+/-- The completion of a field at a real place is not isomorphic to `ℂ` as a ring. -/
+theorem IsReal.not_nonempty_ringEquiv_complex {w : InfinitePlace K} (hw : w.IsReal) :
+    ¬ Nonempty (w.val.Completion ≃+* ℂ) := fun ⟨e⟩ =>
+  IsEmpty.false ((Completion.ringEquivRealOfIsReal hw).toRingHom.comp e.symm.toRingHom)
 
 end NumberField.InfinitePlace
