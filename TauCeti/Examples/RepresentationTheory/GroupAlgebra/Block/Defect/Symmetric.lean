@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.IndexNormal
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.TraceMinimality
+public import TauCeti.GroupTheory.Perm.FinThree.Complement
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.NormalPSubgroup
 
@@ -20,9 +20,9 @@ with `ρ` the `3`-cycle `finRotate 3`.
 * At `p = 2`, the principal block `1 + ρ + ρ²` of `𝔽₂[S₃]` has defect `1`: its defect groups are
   the Sylow `2`-subgroups, of order `2 = 2¹`. The block `ρ + ρ² = Tr_1^{S₃}(ρ)` has defect `0`:
   the trivial subgroup is minimal with `ρ + ρ² ∈ Tr_1^{S₃}(𝔽₂[S₃])`, so it is the defect group.
-* At `p = 3`, the subgroup `Q = ⟨ρ⟩ ≅ C₃` is a normal `3`-subgroup of `S₃`, so it lies in every
-  defect group of the single block `1` of `𝔽₃[S₃]` (`Br_Q(1) = 1 ≠ 0`). As `|S₃|₃ = 3`, the
-  defect group is `⟨ρ⟩` itself, and the defect of the block is `1`.
+* At `p = 3`, the alternating group `Q = A₃ = ⟨ρ⟩ ≅ C₃` is a normal `3`-subgroup of `S₃`, so it
+  lies in every defect group of the single block `1` of `𝔽₃[S₃]` (`Br_Q(1) = 1 ≠ 0`). As
+  `|S₃|₃ = 3`, the defect group is `A₃` itself, and the defect of the block is `1`.
 -/
 
 public section
@@ -56,62 +56,37 @@ theorem blockDefect_blockTwoS₃ :
 
 /-! ### `p = 3` -/
 
-/-- `⟨ρ⟩` has order `3`. -/
-theorem card_zpowers_ρ : Nat.card (Subgroup.zpowers ρ) = 3 := by
-  rw [Nat.card_zpowers, orderOf_eq_prime (p := 3) (by decide) (by decide)]
-
-/-- `⟨ρ⟩` has index `2` in `S₃`. -/
-theorem index_zpowers_ρ : (Subgroup.zpowers ρ).index = 2 := by
-  have h := (Subgroup.zpowers ρ).index_mul_card
-  rw [card_zpowers_ρ, Nat.card_perm, Nat.card_fin] at h
-  simp only [Nat.factorial] at h
-  omega
-
-/-- `⟨ρ⟩`, of index `2`, is normal in `S₃`. -/
-instance normal_zpowers_ρ : (Subgroup.zpowers ρ).Normal :=
-  Subgroup.normal_of_index_eq_two index_zpowers_ρ
-
-/-- `⟨ρ⟩` is a `3`-group. -/
-theorem isPGroup_zpowers_ρ : IsPGroup 3 (Subgroup.zpowers ρ) :=
-  IsPGroup.of_card (n := 1) (by rw [card_zpowers_ρ, pow_one])
-
 /-- The identity `1` is a block of `𝔽₃[S₃]`, the only one. -/
 theorem isBlockIdempotent_one_zmod_three :
     IsBlockIdempotent (1 : Subalgebra.center (ZMod 3) (MonoidAlgebra (ZMod 3) S₃)) :=
   (isBlockIdempotent_iff_eq_one_zmod_three_s₃ 1).2 rfl
 
-/-- `Br_{⟨ρ⟩}(1) = 1 ≠ 0` in `𝔽₃[S₃]`. -/
-theorem brauerProjection_zpowers_ρ_one_ne_zero :
-    brauerProjection (Subgroup.zpowers ρ) (1 : MonoidAlgebra (ZMod 3) S₃) ≠ 0 := by
-  rw [brauerProjection_one]
-  exact one_ne_zero
-
-/-- **The normal `3`-subgroup route on `S₃`.** The normal `3`-subgroup `⟨ρ⟩` lies in every defect
-group of the block `1` of `𝔽₃[S₃]`. -/
-theorem zpowers_ρ_le_of_isDefectGroup {D : Subgroup S₃}
+/-- **The normal `3`-subgroup route on `S₃`.** The normal `3`-subgroup `A₃ = ⟨ρ⟩` lies in every
+defect group of the block `1` of `𝔽₃[S₃]`. -/
+theorem alternatingGroup_le_of_isDefectGroup {D : Subgroup S₃}
     (hD : IsDefectGroup (ZMod 3) 3 (1 : MonoidAlgebra (ZMod 3) S₃) D) :
-    Subgroup.zpowers ρ ≤ D :=
-  isBlockIdempotent_one_zmod_three.le_of_isDefectGroup_of_isPGroup_of_normal isPGroup_zpowers_ρ
-    hD
+    alternatingGroup (Fin 3) ≤ D :=
+  isBlockIdempotent_one_zmod_three.le_of_isDefectGroup_of_isPGroup_of_normal
+    isPGroup_three_alternatingGroup_fin_three hD
 
-/-- A `3`-subgroup of `S₃` containing `⟨ρ⟩` is `⟨ρ⟩`: of index `2`, `⟨ρ⟩` is a Sylow
-`3`-subgroup, hence maximal among `3`-subgroups. -/
-theorem eq_zpowers_ρ_of_le {D : Subgroup S₃} (hD : IsPGroup 3 D) (hle : Subgroup.zpowers ρ ≤ D) :
-    D = Subgroup.zpowers ρ :=
-  (isPGroup_zpowers_ρ.toSylow (by rw [index_zpowers_ρ]; decide)).maximal_isPGroup.eq_of_ge hD hle
-
-/-- **The defect group of the block of `𝔽₃[S₃]` is `⟨ρ⟩ ≅ C₃`.** -/
+/-- **The defect group of the block of `𝔽₃[S₃]` is `A₃ = ⟨ρ⟩ ≅ C₃`**: it contains the Sylow
+`3`-subgroup `A₃`, which is maximal among `3`-subgroups. -/
 theorem isDefectGroup_one_zmod_three_iff {D : Subgroup S₃} :
-    IsDefectGroup (ZMod 3) 3 (1 : MonoidAlgebra (ZMod 3) S₃) D ↔ D = Subgroup.zpowers ρ := by
-  refine ⟨fun hD => eq_zpowers_ρ_of_le hD.isPGroup (zpowers_ρ_le_of_isDefectGroup hD), ?_⟩
+    IsDefectGroup (ZMod 3) 3 (1 : MonoidAlgebra (ZMod 3) S₃) D ↔ D = alternatingGroup (Fin 3) := by
+  have hmax {D : Subgroup S₃}
+      (hD : IsDefectGroup (ZMod 3) 3 (1 : MonoidAlgebra (ZMod 3) S₃) D) :
+      D = alternatingGroup (Fin 3) :=
+    (coe_alternatingGroupSylowThree ▸ alternatingGroupSylowThree.maximal_isPGroup).eq_of_ge
+      hD.isPGroup (alternatingGroup_le_of_isDefectGroup hD)
+  refine ⟨hmax, ?_⟩
   rintro rfl
   obtain ⟨D, hD⟩ := exists_isDefectGroup 3 (one_ne_zero : (1 : MonoidAlgebra (ZMod 3) S₃) ≠ 0)
-  rwa [← eq_zpowers_ρ_of_le hD.isPGroup (zpowers_ρ_le_of_isDefectGroup hD)]
+  rwa [← hmax hD]
 
-/-- **The block of `𝔽₃[S₃]` has defect `1`**: its defect group `⟨ρ⟩` has order `3 = 3¹`. -/
+/-- **The block of `𝔽₃[S₃]` has defect `1`**: its defect group `A₃` has order `3 = 3¹`. -/
 theorem blockDefect_one_zmod_three :
     blockDefect 3 (1 : MonoidAlgebra (ZMod 3) S₃) = 1 :=
   blockDefect_eq_of_forall_card (isDefectGroup_one_zmod_three_iff.2 rfl) fun D hD => by
-    rw [isDefectGroup_one_zmod_three_iff.1 hD, card_zpowers_ρ, pow_one]
+    rw [isDefectGroup_one_zmod_three_iff.1 hD, card_alternatingGroup_fin_three, pow_one]
 
 end TauCeti.Examples.BlockDefectSymmetric
