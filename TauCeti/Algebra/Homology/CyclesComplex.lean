@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Homology.HomologySequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.CategoryTheory.Exact.KernelCokernelPair
+import Mathlib.Algebra.Homology.HomologySequenceLemmas
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import TauCeti.CategoryTheory.Exact.HomologicalComplex
 
 /-!
@@ -52,6 +54,11 @@ tensor products of homology, which is how it enters the Künneth formula.
   this holds in every degree `q` which is not of the form `q' + 1`, such as degree zero for chain
   complexes indexed by `ℕ`
   (`HomologicalComplex.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne`).
+* `HomologicalComplex.homologyPresentation`, `HomologicalComplex.homologyPresentation_shortExact`,
+  `HomologicalComplex.homologyPresentationX₁Iso`, `HomologicalComplex.homologyPresentationX₂Iso`,
+  and `HomologicalComplex.homologyPresentationMap`: in an abelian category, the short exact
+  presentation `0 ⟶ H_i(K / Z(K)) ⟶ H_j(Z(K)) ⟶ H_j(K) ⟶ 0` for `c.Rel i j`, the canonical
+  identifications of its first two terms with `K_i / Z_i(K)` and `Z_j(K)`, and its functoriality.
 
 ## Implementation notes
 
@@ -294,6 +301,126 @@ instance mono_δ_cyclesComplexShortComplex {i j : ι} (hij : c.Rel i j) :
     Mono (K.cyclesComplexShortComplex_shortExact.δ i j hij) :=
   (K.cyclesComplexShortComplex_shortExact.homology_exact₃ i j hij).mono_g
     (K.homologyMap_cyclesComplexShortComplex_g i)
+
+/-- For `c.Rel i j`, the short complex `H_i(K / Z(K)) ⟶ H_j(Z(K)) ⟶ H_j(K)` formed by the
+connecting morphism of `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0` and the map induced by the inclusion of the
+cycles. It is short exact (`HomologicalComplex.homologyPresentation_shortExact`), and since `Z(K)`
+and `K / Z(K)` have zero differentials its first two terms are canonically isomorphic to
+`K_i / Z_i(K)` (`HomologicalComplex.homologyPresentationX₁Iso`) and `Z_j(K)`
+(`HomologicalComplex.homologyPresentationX₂Iso`). -/
+abbrev homologyPresentation (i j : ι) (hij : c.Rel i j) : ShortComplex C :=
+  ShortComplex.mk (K.cyclesComplexShortComplex_shortExact.δ i j hij)
+    (homologyMap K.cyclesComplexShortComplex.f j ≫
+      eqToHom (congrArg (·.homology j) K.cyclesComplexShortComplex_X₂)) (by simp)
+
+/-- `H_i(K / Z(K)) ⟶ H_j(Z(K)) ⟶ H_j(K)` is short exact: it is a piece of the long exact homology
+sequence of `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0`, whose connecting morphisms are monomorphisms and whose
+map `H(Z(K)) ⟶ H(K)` is an epimorphism. -/
+lemma homologyPresentation_shortExact (i j : ι) (hij : c.Rel i j) :
+    (K.homologyPresentation i j hij).ShortExact where
+  exact := (ShortComplex.exact_iff_of_iso (ShortComplex.isoMk
+    (S₂ := K.homologyPresentation i j hij)
+    (S₁ := ShortComplex.mk (K.cyclesComplexShortComplex_shortExact.δ i j hij)
+      (homologyMap K.cyclesComplexShortComplex.f j)
+      (K.cyclesComplexShortComplex_shortExact.δ_comp i j hij))
+    (Iso.refl _) (Iso.refl _) (eqToIso (congrArg (·.homology j) K.cyclesComplexShortComplex_X₂))
+    (by simp) (by simp))).1
+    (K.cyclesComplexShortComplex_shortExact.homology_exact₁ i j hij)
+  mono_f := K.mono_δ_cyclesComplexShortComplex hij
+  epi_g := epi_comp _ _
+
+/-- The first term `H_i(K / Z(K))` of `HomologicalComplex.homologyPresentation` is canonically
+isomorphic to `K_i / Z_i(K)` because `K / Z(K)` has zero differential. -/
+def homologyPresentationX₁Iso (i j : ι) (hij : c.Rel i j) :
+    (K.homologyPresentation i j hij).X₁ ≅ cokernel (K.iCycles i) :=
+  (K.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero i (by simp) (by simp)).symm ≪≫
+    eqToIso (by simp)
+
+/-- The forward map of `HomologicalComplex.homologyPresentationX₁Iso`. -/
+@[simp]
+lemma homologyPresentationX₁Iso_hom (i j : ι) (hij : c.Rel i j) :
+    (K.homologyPresentationX₁Iso i j hij).hom =
+      (K.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero i (by simp) (by simp)).inv ≫
+        eqToHom (by simp) :=
+  (rfl)
+
+/-- The inverse map of `HomologicalComplex.homologyPresentationX₁Iso`. -/
+@[simp]
+lemma homologyPresentationX₁Iso_inv (i j : ι) (hij : c.Rel i j) :
+    (K.homologyPresentationX₁Iso i j hij).inv =
+      eqToHom (by simp) ≫
+        (K.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero i (by simp) (by simp)).hom :=
+  (rfl)
+
+/-- The middle term `H_j(Z(K))` of `HomologicalComplex.homologyPresentation` is canonically
+isomorphic to `Z_j(K)` because `Z(K)` has zero differential. -/
+def homologyPresentationX₂Iso (i j : ι) (hij : c.Rel i j) :
+    (K.homologyPresentation i j hij).X₂ ≅ K.cycles j :=
+  (K.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero j (by simp) (by simp)).symm ≪≫
+    eqToIso (by simp)
+
+/-- The forward map of `HomologicalComplex.homologyPresentationX₂Iso`. -/
+@[simp]
+lemma homologyPresentationX₂Iso_hom (i j : ι) (hij : c.Rel i j) :
+    (K.homologyPresentationX₂Iso i j hij).hom =
+      (K.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero j (by simp) (by simp)).inv ≫
+        eqToHom (by simp) :=
+  (rfl)
+
+/-- The inverse map of `HomologicalComplex.homologyPresentationX₂Iso`. -/
+@[simp]
+lemma homologyPresentationX₂Iso_inv (i j : ι) (hij : c.Rel i j) :
+    (K.homologyPresentationX₂Iso i j hij).inv =
+      eqToHom (by simp) ≫
+        (K.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero j (by simp) (by simp)).hom :=
+  (rfl)
+
+/-- The first term `H_i(K / Z(K))` of `HomologicalComplex.homologyPresentation` is projective when
+`K_i / Z_i(K)` is projective. -/
+instance projective_homologyPresentation_X₁ (i j : ι) (hij : c.Rel i j)
+    [Projective (cokernel (K.iCycles i))] : Projective (K.homologyPresentation i j hij).X₁ :=
+  Projective.of_iso (K.homologyPresentationX₁Iso i j hij).symm inferInstance
+
+/-- The middle term `H_j(Z(K))` of `HomologicalComplex.homologyPresentation` is projective when
+`Z_j(K)` is projective. -/
+instance projective_homologyPresentation_X₂ (i j : ι) (hij : c.Rel i j)
+    [Projective (K.cycles j)] : Projective (K.homologyPresentation i j hij).X₂ :=
+  Projective.of_iso (K.homologyPresentationX₂Iso i j hij).symm inferInstance
+
+variable {K} {L : HomologicalComplex C c}
+
+/-- The morphism of presentations `K.homologyPresentation i j hij ⟶ L.homologyPresentation i j hij`
+induced by a chain map `ψ : K ⟶ L`. -/
+def homologyPresentationMap (ψ : K ⟶ L) (i j : ι) (hij : c.Rel i j) :
+    K.homologyPresentation i j hij ⟶ L.homologyPresentation i j hij where
+  τ₁ := homologyMap (cyclesComplexShortComplexMap ψ).τ₃ i
+  τ₂ := homologyMap (cyclesComplexShortComplexMap ψ).τ₁ j
+  τ₃ := homologyMap ψ j
+  comm₁₂ := (HomologySequence.δ_naturality (cyclesComplexShortComplexMap ψ)
+    K.cyclesComplexShortComplex_shortExact L.cyclesComplexShortComplex_shortExact i j hij).symm
+  comm₂₃ := by
+    dsimp only [homologyPresentation]
+    rw [← homologyMap_comp_assoc, (cyclesComplexShortComplexMap ψ).comm₁₂, homologyMap_comp_assoc,
+      homologyMap_comp_eqToHom ψ K.cyclesComplexShortComplex_X₂ L.cyclesComplexShortComplex_X₂ _
+        (cyclesComplexShortComplexMap_τ₂ ψ), Category.assoc]
+
+/-- The first component of `HomologicalComplex.homologyPresentationMap`. -/
+@[simp]
+lemma homologyPresentationMap_τ₁ (ψ : K ⟶ L) (i j : ι) (hij : c.Rel i j) :
+    (homologyPresentationMap ψ i j hij).τ₁ = homologyMap (cyclesComplexShortComplexMap ψ).τ₃ i :=
+  (rfl)
+
+/-- The second component of `HomologicalComplex.homologyPresentationMap`. -/
+@[simp]
+lemma homologyPresentationMap_τ₂ (ψ : K ⟶ L) (i j : ι) (hij : c.Rel i j) :
+    (homologyPresentationMap ψ i j hij).τ₂ = homologyMap (cyclesComplexShortComplexMap ψ).τ₁ j :=
+  (rfl)
+
+/-- The third component of `HomologicalComplex.homologyPresentationMap`. -/
+@[simp]
+lemma homologyPresentationMap_τ₃ (ψ : K ⟶ L) (i j : ι) (hij : c.Rel i j) :
+    (homologyPresentationMap ψ i j hij).τ₃ = homologyMap ψ j :=
+  (rfl)
 
 end Abelian
 
