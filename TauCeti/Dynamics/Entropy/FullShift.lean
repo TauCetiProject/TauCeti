@@ -15,7 +15,7 @@ import Mathlib.Analysis.Asymptotics.ExpGrowth
 /-!
 # Topological entropy of the full shift
 
-For a finite nonempty alphabet `α` with the discrete uniformity, the one-sided full shift on
+For a finite alphabet `α` with the discrete uniformity, the one-sided full shift on
 `ℕ → α` and the two-sided full shift on `ℤ → α` (Mathlib's `SymbolicDynamics.FullShift.shift 1`,
 `x ↦ (h ↦ x (1 + h))`) have topological entropy `log (card α)`.
 
@@ -215,7 +215,14 @@ private lemma coverEntropy_shift_of_window [UniformSpace α] [DiscreteUniformity
 
 end Shift
 
-variable [Fintype α] [Nonempty α] [UniformSpace α] [DiscreteUniformity α]
+variable [Fintype α] [UniformSpace α] [DiscreteUniformity α]
+
+omit [DiscreteUniformity α] in
+/-- Over an empty alphabet the configuration space is empty and both sides are `⊥`. -/
+private lemma coverEntropy_shift_of_isEmpty [AddMonoidWithOne G] [IsEmpty α] :
+    coverEntropy (shift (1 : G)) (univ : Set (G → α)) = ENNReal.log (Fintype.card α) ∧
+      coverEntropyInf (shift (1 : G)) (univ : Set (G → α)) = ENNReal.log (Fintype.card α) := by
+  simp [univ_eq_empty_iff.2 inferInstance, coverEntropy_empty, coverEntropyInf_empty]
 
 private lemma window_nat (S : Set ℕ) (hS : S.Finite) :
     ∃ a : ℕ, ∃ c : ℕ, S ⊆ (fun j : ℕ ↦ (j : ℕ) + a) '' Iio c := by
@@ -232,26 +239,30 @@ private lemma window_int (S : Set ℤ) (hS : S.Finite) :
   · have := hl hi
     simp only; omega
 
-/-- The one-sided full shift on a finite nonempty discrete alphabet `α` has topological entropy
+/-- The one-sided full shift on a finite discrete alphabet `α` has topological entropy
 `log (card α)`. -/
 theorem coverEntropy_shift_nat :
     coverEntropy (shift (1 : ℕ)) (univ : Set (ℕ → α)) = ENNReal.log (Fintype.card α) :=
-  (coverEntropy_shift_of_window Nat.cast_injective window_nat).1
+  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty.1)
+    fun _ ↦ (coverEntropy_shift_of_window Nat.cast_injective window_nat).1
 
 /-- The `liminf` topological entropy of the one-sided full shift is `log (card α)`. -/
 theorem coverEntropyInf_shift_nat :
     coverEntropyInf (shift (1 : ℕ)) (univ : Set (ℕ → α)) = ENNReal.log (Fintype.card α) :=
-  (coverEntropy_shift_of_window Nat.cast_injective window_nat).2
+  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty.2)
+    fun _ ↦ (coverEntropy_shift_of_window Nat.cast_injective window_nat).2
 
-/-- The two-sided full shift on a finite nonempty discrete alphabet `α` has topological entropy
+/-- The two-sided full shift on a finite discrete alphabet `α` has topological entropy
 `log (card α)`. -/
 theorem coverEntropy_shift_int :
     coverEntropy (shift (1 : ℤ)) (univ : Set (ℤ → α)) = ENNReal.log (Fintype.card α) :=
-  (coverEntropy_shift_of_window Nat.cast_injective window_int).1
+  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty.1)
+    fun _ ↦ (coverEntropy_shift_of_window Nat.cast_injective window_int).1
 
 /-- The `liminf` topological entropy of the two-sided full shift is `log (card α)`. -/
 theorem coverEntropyInf_shift_int :
     coverEntropyInf (shift (1 : ℤ)) (univ : Set (ℤ → α)) = ENNReal.log (Fintype.card α) :=
-  (coverEntropy_shift_of_window Nat.cast_injective window_int).2
+  (isEmpty_or_nonempty α).elim (fun _ ↦ coverEntropy_shift_of_isEmpty.2)
+    fun _ ↦ (coverEntropy_shift_of_window Nat.cast_injective window_int).2
 
 end TauCeti
