@@ -29,7 +29,7 @@ descent for:
   (`TauCeti.DescentDatum.Hom.descendGrpIso`);
 * group schemes affine over the base change `G₀ ×_S S'` of an arbitrary group scheme `G₀` over `S`
   (`Hom.exists_grp_baseChange_hom_isIso_of_mem`) and finite locally free homomorphisms into
-  `G₀ ×_S S'` (`Hom.exists_grp_finiteLocallyFree_baseChange_hom_isIso`); for closed subgroup
+  `G₀ ×_S S'` (`Hom.exists_finiteLocallyFree_grp_baseChange_hom_isIso`); for closed subgroup
   immersions without an explicit `IsMon` assumption, see
   `TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Descent`.
 
@@ -44,7 +44,7 @@ descent for:
   (with uniqueness of the descended `FiniteFlatCommGroupScheme` given by
   `FiniteFlatCommGroupScheme.isoMk (f.descendGrpIso g)`).
 * `TauCeti.DescentDatum.Hom.exists_grp_baseChange_hom_isIso_of_mem` and
-  `TauCeti.DescentDatum.Hom.exists_grp_finiteLocallyFree_baseChange_hom_isIso`: effective fpqc
+  `TauCeti.DescentDatum.Hom.exists_finiteLocallyFree_grp_baseChange_hom_isIso`: effective fpqc
   descent of group schemes affine over a descended group scheme `G₀`, preserving morphism
   properties and finite-flat rank.
 
@@ -144,7 +144,7 @@ Let `p : S' ⟶ S` be surjective, flat and quasi-compact, let `G₀` be a group 
 `Over S'` is a group homomorphism. Then `(Z, f)` descends to a finite locally free homomorphism
 `i₀ : K₀ ⟶ G₀` of group schemes over `S`, and the rank of `f` is the rank of `i₀` pulled back
 along `G₀ ×_S S' ⟶ G₀`. -/
-theorem Hom.exists_grp_finiteLocallyFree_baseChange_hom_isIso
+theorem Hom.exists_finiteLocallyFree_grp_baseChange_hom_isIso
     {G₀ : Grp (Over S)} {Z : Over S'} [GrpObj Z] {D : DescentDatum p Z} [D.IsMon]
     (f : Hom D (baseChange p G₀.X)) [IsMonHom f.hom] [IsFinite f.hom.left] [Flat f.hom.left]
     [LocallyOfFinitePresentation f.hom.left] :

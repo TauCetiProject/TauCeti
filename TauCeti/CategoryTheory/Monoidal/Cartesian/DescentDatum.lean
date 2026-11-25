@@ -283,10 +283,8 @@ noncomputable def baseChangeProdHom (X₀ Y₀ : Over S) :
 /-- The underlying morphism of `baseChangeProdHom p X₀ Y₀` is `Functor.OplaxMonoidal.δ`. -/
 @[simp]
 theorem baseChangeProdHom_hom (p : S' ⟶ S) (X₀ Y₀ : Over S) :
-    (baseChangeProdHom p X₀ Y₀).hom = Functor.OplaxMonoidal.δ (Over.pullback p) X₀ Y₀ := by
-  rw [baseChangeProdHom, Hom.lift_hom, baseChangeHom_hom, baseChangeHom_hom,
-    Functor.OplaxMonoidal.δ_of_cartesianMonoidalCategory]
-  rfl
+    (baseChangeProdHom p X₀ Y₀).hom = Functor.OplaxMonoidal.δ (Over.pullback p) X₀ Y₀ :=
+  CartesianMonoidalCategory.hom_ext _ _ (by simp [baseChangeProdHom]) (by simp [baseChangeProdHom])
 
 /-- `baseChangeProdHom p X₀ Y₀` is an isomorphism of descent data. -/
 instance isIso_baseChangeProdHom_hom (p : S' ⟶ S) (X₀ Y₀ : Over S) :

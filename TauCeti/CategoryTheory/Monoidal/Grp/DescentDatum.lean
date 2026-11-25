@@ -104,15 +104,16 @@ theorem mulHom_hom {X : Over S'} [MonObj X] (D : DescentDatum p X) [D.IsMon] :
   (rfl)
 
 /-- **Automatic equivariance of inversion.** If `D` is a monoid-compatible descent datum on a
-group object `G` in `Over S'`, then the inversion `ι[G] : G ⟶ G` automatically intertwines `D.act`:
-in the group of morphisms `Over.mk (pullback.fst p (G.hom ≫ p)) ⟶ G` in `Over S'`, the
-shifted-inversion map `(s, g) ↦ s · g⁻¹` is a right inverse to `D.act` because `D` preserves
-multiplication and the identity. -/
+group object `G` in `Over S'`, then the inversion `ι[G] : G ⟶ G` commutes with `D.act`
+(informally, `s · g⁻¹ = (s · g)⁻¹`). -/
 @[reassoc]
 theorem IsMon.inv_act {G : Over S'} [GrpObj G] (D : DescentDatum p G) [D.IsMon] :
     pullback.map p (G.hom ≫ p) p (G.hom ≫ p) (𝟙 S') ι[G].left (𝟙 S)
         (by simp) (by simp) ≫ D.act =
       D.act ≫ ι[G].left := by
+  -- In the group of morphisms `A ⟶ G` in `Over S'` under pointwise multiplication, the morphism
+  -- `β` representing `(s, g) ↦ s · g⁻¹` satisfies `α * β = 1` for `α` representing `D.act`,
+  -- because `D` preserves multiplication and the identity; hence `β = α⁻¹`.
   let A : Over S' := Over.mk (pullback.fst p (G.hom ≫ p))
   let α : A ⟶ G := Over.homMk D.act (by simp [A])
   let β : A ⟶ G := Over.homMk
@@ -189,33 +190,13 @@ theorem Hom.isMon_of_mono {X Y : Over S'} [MonObj X] [MonObj Y]
     {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E)
     [Mono f.hom.left] [IsMonHom f.hom] [E.IsMon] : D.IsMon where
   one_act := by
-    let g₁ : Hom (unit p) E := oneHom E
-    have hg₁ : g₁.hom = η[X] ≫ f.hom := by simp [g₁]
-    have h₁ := g₁.map_act
-    simp only [hg₁, Over.comp_left] at h₁
-    have hmap : pullback.map p ((𝟙_ (Over S')).hom ≫ p) p (Y.hom ≫ p) (𝟙 S')
-          (η[X].left ≫ f.hom.left) (𝟙 S) (by simp) (by simp [Over.w_assoc]) =
-        pullback.map p ((𝟙_ (Over S')).hom ≫ p) p (X.hom ≫ p) (𝟙 S') η[X].left (𝟙 S)
-          (by simp) (by simp) ≫
-        pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.hom.left (𝟙 S)
-          (by simp) (by simp) := by
-      refine pullback.hom_ext ?_ ?_ <;> simp
-    rw [← cancel_mono f.hom.left]
-    simpa only [hmap, Category.assoc, f.map_act] using h₁
+    let φ := Hom.mkOfCompMono η[X] f (oneHom E) (by simp)
+    have hφ : φ.hom = η[X] := Hom.mkOfCompMono_hom _ _ _ _
+    simpa only [hφ] using φ.map_act
   mul_act := by
-    let g₂ : Hom (D.prod D) E := (mulHom E).comp (f.prodMap f)
-    have hg₂ : g₂.hom = μ[X] ≫ f.hom := by simp [g₂]
-    have h₂ := g₂.map_act
-    simp only [hg₂, Over.comp_left] at h₂
-    have hmap : pullback.map p ((X ⊗ X).hom ≫ p) p (Y.hom ≫ p) (𝟙 S')
-          (μ[X].left ≫ f.hom.left) (𝟙 S) (by simp) (by simp [Over.w_assoc]) =
-        pullback.map p ((X ⊗ X).hom ≫ p) p (X.hom ≫ p) (𝟙 S') μ[X].left (𝟙 S)
-          (by simp) (by simp) ≫
-        pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.hom.left (𝟙 S)
-          (by simp) (by simp) := by
-      refine pullback.hom_ext ?_ ?_ <;> simp
-    rw [← cancel_mono f.hom.left]
-    simpa only [hmap, Category.assoc, f.map_act] using h₂
+    let ψ := Hom.mkOfCompMono μ[X] f ((mulHom E).comp (f.prodMap f)) (by simp)
+    have hψ : ψ.hom = μ[X] := Hom.mkOfCompMono_hom _ _ _ _
+    simpa only [hψ] using ψ.map_act
 
 /-- If `f : D ⟶ E` is an isomorphism of descent data whose underlying morphism in `Over S'` is a
 monoid isomorphism, then `D` is compatible with the monoid structure if and only if `E` is. -/

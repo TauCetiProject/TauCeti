@@ -327,12 +327,12 @@ theorem Hom.isMonHom_hom_descendMonObj :
     letI := f.descendMonObj
     IsMonHom f.hom := by
   let := f.descendMonObj
-  have h := f.monObjObj_descendMonObj
+  -- Rewrite the pulled-back `f.descendMonObj` structure on `X₀ ×_S S'` to the transported
+  -- `MonObj.ofIso (asIso f.hom).symm` structure, for which `f.hom` is `IsMonHom` by construction.
+  rw [f.monObjObj_descendMonObj]
   let _ : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
-  have hm : IsMonHom (M := (Over.pullback p).obj X₀) (N := Y) f.hom := by
-    have : IsMonHom (asIso f.hom).symm.hom := inferInstance
-    simpa using (inferInstance : IsMonHom (asIso f.hom).symm.inv)
-  exact cast (by rw [h]) hm
+  have : IsMonHom (asIso f.hom).symm.hom := inferInstance
+  simpa using (inferInstance : IsMonHom (asIso f.hom).symm.inv)
 
 /-- **Uniqueness of `Hom.descendMonObj`.** Any monoid object structure on `X₀` for which
 `f.hom : X₀ ×_S S' ⟶ Y` is a monoid homomorphism coincides with `f.descendMonObj`. -/

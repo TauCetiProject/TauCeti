@@ -941,6 +941,16 @@ end OverBaseChange
 
 section MonoRestrict
 
+/-- An action `act : pullback p (X.hom ≫ p) ⟶ X.left` intertwining `f.left` with `E.act` lies over
+`pullback.fst p (X.hom ≫ p)`. -/
+private theorem ofMono_act_hom {X Y : Over S'} (E : DescentDatum p Y) (f : X ⟶ Y)
+    (act : pullback p (X.hom ≫ p) ⟶ X.left)
+    (hact : act ≫ f.left = pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S)
+      (by simp) (by simp) ≫ E.act) :
+    act ≫ X.hom = pullback.fst p (X.hom ≫ p) :=
+  (congrArg (act ≫ ·) (Over.w f)).symm.trans <| by
+    rw [reassoc_of% hact, E.act_hom, pullback.lift_fst, Category.comp_id]
+
 /-- **Restriction of a descent datum along a monomorphism.** If `f : X ⟶ Y` in `Over S'` has monic
 underlying morphism in `C` and `act : pullback p (X.hom ≫ p) ⟶ X.left` intertwines `f.left` with
 the action of `E : DescentDatum p Y`, then `act` automatically satisfies `act_hom`, `lift_act`, and
@@ -951,8 +961,7 @@ noncomputable def ofMono {X Y : Over S'} (E : DescentDatum p Y) (f : X ⟶ Y) [M
       (by simp) (by simp) ≫ E.act) :
     DescentDatum p X where
   act := act
-  act_hom := (congrArg (act ≫ ·) (Over.w f)).symm.trans <| by
-    rw [reassoc_of% hact, E.act_hom, pullback.lift_fst, Category.comp_id]
+  act_hom := ofMono_act_hom E f act hact
   lift_act := by
     rw [← cancel_mono f.left, Category.id_comp, Category.assoc, hact]
     have hmap : pullback.lift X.hom (𝟙 X.left) (by simp) ≫
@@ -961,9 +970,6 @@ noncomputable def ofMono {X Y : Over S'} (E : DescentDatum p Y) (f : X ⟶ Y) [M
       refine pullback.hom_ext ?_ ?_ <;> simp
     rw [reassoc_of% hmap, E.lift_act, Category.comp_id]
   act_assoc := by
-    have hhom : act ≫ X.hom = pullback.fst p (X.hom ≫ p) :=
-      (congrArg (act ≫ ·) (Over.w f)).symm.trans <| by
-        rw [reassoc_of% hact, E.act_hom, pullback.lift_fst, Category.comp_id]
     rw [← cancel_mono f.left]
     simp only [Category.assoc, hact]
     let m := pullback.map p (X.hom ≫ p) p (Y.hom ≫ p) (𝟙 S') f.left (𝟙 S) (by simp) (by simp)
@@ -971,7 +977,9 @@ noncomputable def ofMono {X Y : Over S'} (E : DescentDatum p Y) (f : X ⟶ Y) [M
       p (pullback.fst p (Y.hom ≫ p) ≫ p) (𝟙 S') m (𝟙 S) (by simp) (by simp [m])
     have h₁ : pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
           (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ act)
-          (by rw [Category.assoc, reassoc_of% hhom]; exact pullback.condition) ≫ m =
+          (by
+            rw [Category.assoc, reassoc_of% ofMono_act_hom E f act hact]
+            exact pullback.condition) ≫ m =
         M ≫ pullback.lift (pullback.fst p (pullback.fst p (Y.hom ≫ p) ≫ p))
           (pullback.snd p (pullback.fst p (Y.hom ≫ p) ≫ p) ≫ E.act)
           (by rw [Category.assoc, reassoc_of% E.act_hom]; exact pullback.condition) := by
