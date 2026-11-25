@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.BoundedVariation.Ball
@@ -206,36 +206,18 @@ private theorem variationMeasure_closedBall_ne_zero (hr : 0 < r) (hx : x ∈ sph
     obtain ⟨y, hy, hyU⟩ := ((ae_restrict_of_ae_restrict_of_subset hUx hP0).and
       (ae_restrict_mem hU.measurableSet)).exists
     exact (hb y hyU).symm.trans (sub_eq_zero.1 (eNorm_eq_zero.1 hy))
-  -- Points `c + (1 ± t) (x - c)` near `x`, inside the ball and outside the closed ball.
-  have hxc : ‖x - c‖ = r := by rw [← dist_eq_norm, mem_sphere.1 hx]
-  set t := min (1 / 2) (ρ / (2 * r))
-  have ht : 0 < t := lt_min (by norm_num) (by positivity)
-  have htρ : t * r < ρ := by
-    calc t * r ≤ ρ / (2 * r) * r := by gcongr; exact min_le_right _ _
-      _ = ρ / 2 := by field_simp
-      _ < ρ := half_lt_self hρ
-  have hdist (s : ℝ) : dist (c + s • (x - c)) x = |s - 1| * r ∧
-      dist (c + s • (x - c)) c = |s| * r := by
-    refine ⟨?_, ?_⟩
-    · rw [dist_eq_norm, show c + s • (x - c) - x = (s - 1) • (x - c) by
-        rw [sub_smul, one_smul]; abel, norm_smul, Real.norm_eq_abs, hxc]
-    · rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, hxc]
-  have h1 : (1 : ℝ) = a := by
-    refine hconst (ball x ρ ∩ ball c r) (isOpen_ball.inter isOpen_ball) inter_subset_left
-      ⟨c + (1 - t) • (x - c), ?_, ?_⟩ 1 fun y hy => by simp [hy.2]
-    · rw [mem_ball, (hdist _).1, show 1 - t - 1 = -t by ring, abs_neg, abs_of_pos ht]
-      exact htρ
-    · rw [mem_ball, (hdist _).2, abs_of_pos (by linarith [min_le_left (1 / 2 : ℝ) (ρ / (2 * r))])]
-      nlinarith
-  have h0 : (0 : ℝ) = a := by
-    refine hconst (ball x ρ ∩ (closedBall c r)ᶜ)
+  -- `x` is on the frontier of the ball and of the exterior of the closed ball, so `ball x ρ`
+  -- meets both.
+  have hcl (s : Set E) (hs : frontier s = sphere c r) : (ball x ρ ∩ s).Nonempty :=
+    mem_closure_iff_nhds.1 (frontier_subset_closure (hs ▸ hx)) _ (ball_mem_nhds x hρ)
+  have h1 : (1 : ℝ) = a :=
+    hconst (ball x ρ ∩ ball c r) (isOpen_ball.inter isOpen_ball) inter_subset_left
+      (hcl _ (frontier_ball c hr.ne')) 1 fun y hy => by simp [hy.2]
+  have h0 : (0 : ℝ) = a :=
+    hconst (ball x ρ ∩ (closedBall c r)ᶜ)
       (isOpen_ball.inter isClosed_closedBall.isOpen_compl) inter_subset_left
-      ⟨c + (1 + t) • (x - c), ?_, ?_⟩ 0 fun y hy => by
+      (hcl _ (by rw [frontier_compl, frontier_closedBall c hr.ne'])) 0 fun y hy => by
         simp [show y ∉ ball c r from fun h => hy.2 (ball_subset_closedBall h)]
-    · rw [mem_ball, (hdist _).1, show 1 + t - 1 = t by ring, abs_of_pos ht]
-      exact htρ
-    · rw [mem_compl_iff, mem_closedBall, not_le, (hdist _).2, abs_of_pos (by linarith)]
-      nlinarith
   exact one_ne_zero (h1.trans h0.symm)
 
 /-- The polar density of the ball is `-(y - c) / r` at `|Dχ|`-almost every point, and its averages
@@ -253,7 +235,7 @@ private theorem tendsto_setAverage_polarDensity_ball (hr : 0 < r) (hx : x ∈ sp
   rw [Metric.tendsto_nhdsWithin_nhds]
   intro ε hε
   refine ⟨ε * r / 2, by positivity, fun ρ hρ hρd => ?_⟩
-  have hρ : 0 < ρ := hρ
+  rw [mem_Ioi] at hρ
   rw [dist_zero_right, Real.norm_of_nonneg hρ.le] at hρd
   have hSm : MeasurableSet (((↑) : (⊤ : Opens E) → E) ⁻¹' closedBall x ρ) :=
     continuous_subtypeVal.measurable measurableSet_closedBall
@@ -267,7 +249,7 @@ private theorem tendsto_setAverage_polarDensity_ball (hr : 0 < r) (hx : x ∈ sp
   · exact (mem_closedBall.1 hmem).trans_lt (half_lt_self hε)
   · rw [hy, mem_closedBall, dist_eq_norm, neg_sub_neg, ← smul_sub, sub_sub_sub_cancel_right,
       norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hr.le), ← dist_eq_norm, dist_comm]
-    calc r⁻¹ * dist (y : E) x ≤ r⁻¹ * ρ := by gcongr; exact hyS
+    calc r⁻¹ * dist (y : E) x ≤ r⁻¹ * ρ := by gcongr; exact mem_closedBall.1 (mem_preimage.1 hyS)
       _ ≤ r⁻¹ * (ε * r / 2) := by gcongr
       _ = ε / 2 := by field_simp
 
