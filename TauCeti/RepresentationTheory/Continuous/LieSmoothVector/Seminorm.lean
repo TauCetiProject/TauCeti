@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector
+import Mathlib.Data.List.Sort
 
 /-!
 # Word and Sobolev seminorms on the smooth vectors of a Lie group representation
@@ -46,6 +47,8 @@ Every ordered monomial is a word, so `Q_k ≤ P_k`
   seminorms as explicit sums.
 * `ContRepresentation.wordSeminorm_zero`: `P_0` is the norm.
 * `ContRepresentation.sobolevSeminorm_le_wordSeminorm`: `Q_k ≤ P_k`.
+* `TauCeti.monomialWord_count`: a sorted word is the ordered monomial word of its letter counts,
+  and `TauCeti.exists_sobolevIndex_monomialWord_eq` gives its index in `SobolevIndex m k`.
 
 ## References
 
@@ -126,6 +129,31 @@ theorem SobolevIndex.toBoundedWord_injective {k : ℕ} :
   have := congrArg (fun w : BoundedWord (Fin m) k ↦ List.ofFn w.2) h
   simp only [SobolevIndex.ofFn_toBoundedWord] at this
   exact SobolevIndex.exponent_injective (monomialWord_injective this)
+
+/-- **Ordered monomial words are sorted.** -/
+theorem pairwise_monomialWord (α : Fin m → ℕ) : (monomialWord α).Pairwise (· ≤ ·) := by
+  rw [monomialWord, List.pairwise_flatMap]
+  refine ⟨fun i _ ↦ List.pairwise_replicate.2 (Or.inr le_rfl), ?_⟩
+  refine (List.pairwise_le_finRange m).imp fun {i j} hij x hx y hy ↦ ?_
+  rw [List.eq_of_mem_replicate hx, List.eq_of_mem_replicate hy]
+  exact hij
+
+/-- **A sorted word is the ordered monomial word of its letter counts.** -/
+theorem monomialWord_count {w : List (Fin m)} (hw : w.Pairwise (· ≤ ·)) :
+    monomialWord (fun i ↦ w.count i) = w :=
+  List.Perm.eq_of_pairwise' (pairwise_monomialWord _) hw
+    (List.perm_iff_count.2 fun i ↦ count_monomialWord _ i)
+
+/-- A sorted word of length at most `k` is the ordered monomial word of an index in
+`SobolevIndex m k`. -/
+theorem exists_sobolevIndex_monomialWord_eq {k : ℕ} {w : List (Fin m)}
+    (hw : w.Pairwise (· ≤ ·)) (hk : w.length ≤ k) :
+    ∃ α : SobolevIndex m k, monomialWord α.exponent = w := by
+  have hsum : ∑ i, w.count i = w.length := by
+    rw [← length_monomialWord, monomialWord_count hw]
+  refine ⟨⟨fun i ↦ ⟨w.count i, Nat.lt_succ_of_le (List.count_le_length.trans hk)⟩, ?_⟩, ?_⟩
+  · simpa [hsum] using hk
+  · exact monomialWord_count hw
 
 end TauCeti
 
