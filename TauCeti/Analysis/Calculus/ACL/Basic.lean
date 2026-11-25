@@ -15,8 +15,9 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 /-!
 # `ACL` and `ACL^p` maps
 
-Let `Ω ⊆ ℝⁿ` be open, with `ℝⁿ = EuclideanSpace ℝ (Fin n)`, coordinates `xᵢ` and standard basis
-`eᵢ`, and let `F` be a real normed space.
+Let `Ω ⊆ ℝⁿ` be an arbitrary subset (open in the intended applications), with
+`ℝⁿ = EuclideanSpace ℝ (Fin n)`, coordinates `xᵢ` and standard basis `eᵢ`, and let `F` be a real
+normed space. Openness of `Ω` is assumed only for the `C¹` result.
 
 * `TauCeti.formalDeriv u x` is the *formal derivative* of `u : ℝⁿ → F` at `x`: the continuous
   linear map `ℝⁿ → F` sending `eᵢ` to the partial derivative `∂ᵢu(x) = lineDeriv ℝ u x eᵢ`, which
@@ -39,9 +40,12 @@ are `ACL` on `Ω` (`LocallyLipschitzOn.isACLOn`); locally Lipschitz maps are `AC
 for every `p`, in particular `ACL^∞` (`LocallyLipschitz.isACLpOn`); maps that are `C¹` on an open
 set `Ω` are `ACL^p` on `Ω` for every `p` (`ContDiffOn.isACLpOn`).
 
-This is Layer 5, §5.1 of the QuasiregularMaps roadmap, after Martio, Rickman and Väisälä
-(Definition 2.16 of their 1969 paper on quasiregular mappings), with closed coordinate boxes in
-place of open `n`-intervals with closure in `Ω`.
+## References
+
+* O. Martio, S. Rickman, J. Väisälä, *Definitions for quasiregular mappings*,
+  Ann. Acad. Sci. Fenn. Ser. A I 448 (1969). The formal derivative and Definition 2.16 (`ACL` and
+  `ACL^p` maps) follow this paper, with closed coordinate boxes in place of open `n`-intervals
+  with closure in `Ω`.
 -/
 
 public section
@@ -78,16 +82,21 @@ theorem formalDeriv_apply_single (u : EuclideanSpace ℝ (Fin n) → F) (x : Euc
     formalDeriv u x (EuclideanSpace.single i 1) = lineDeriv ℝ u x (EuclideanSpace.single i 1) := by
   simp [formalDeriv_apply, PiLp.single_apply]
 
-/-- Two continuous linear maps on `ℝⁿ` agreeing on the standard basis are equal. -/
-private theorem ext_single {L L' : EuclideanSpace ℝ (Fin n) →L[ℝ] F}
-    (h : ∀ i, L (EuclideanSpace.single i 1) = L' (EuclideanSpace.single i 1)) : L = L' :=
-  ContinuousLinearMap.coe_injective <| (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.ext fun i ↦ by
+/-- Two continuous linear maps on `EuclideanSpace 𝕜 ι` agreeing on the standard basis vectors
+`EuclideanSpace.single i 1` are equal. -/
+theorem _root_.EuclideanSpace.ext_continuousLinearMap_single {𝕜 ι E : Type*} [RCLike 𝕜]
+    [Finite ι] [DecidableEq ι] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+    {L L' : EuclideanSpace 𝕜 ι →L[𝕜] E}
+    (h : ∀ i, L (EuclideanSpace.single i 1) = L' (EuclideanSpace.single i 1)) : L = L' := by
+  have := Fintype.ofFinite ι
+  exact ContinuousLinearMap.coe_injective <| (EuclideanSpace.basisFun ι 𝕜).toBasis.ext fun i ↦ by
     simpa using h i
 
 /-- Where `u` is differentiable, its formal derivative is its Fréchet derivative. -/
 theorem formalDeriv_eq_fderiv {u : EuclideanSpace ℝ (Fin n) → F} {x : EuclideanSpace ℝ (Fin n)}
     (hu : DifferentiableAt ℝ u x) : formalDeriv u x = fderiv ℝ u x :=
-  ext_single fun i ↦ by rw [formalDeriv_apply_single, hu.lineDeriv_eq_fderiv]
+  EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by
+    rw [formalDeriv_apply_single, hu.lineDeriv_eq_fderiv]
 
 /-- The norm of the formal derivative is at most the sum of the norms of the partial
 derivatives. -/
@@ -115,7 +124,7 @@ theorem _root_.Continuous.stronglyMeasurable_formalDeriv [CompleteSpace F]
 /-! ### Coordinate boxes and line functions -/
 
 /-- The closed coordinate box `Π_j [a_j, b_j]` in `ℝⁿ`. -/
-@[expose] def coordinateBox (a b : Fin n → ℝ) : Set (EuclideanSpace ℝ (Fin n)) :=
+def coordinateBox (a b : Fin n → ℝ) : Set (EuclideanSpace ℝ (Fin n)) :=
   {x | ∀ j, x j ∈ Icc (a j) (b j)}
 
 @[simp]
@@ -123,30 +132,38 @@ theorem mem_coordinateBox {a b : Fin n → ℝ} {x : EuclideanSpace ℝ (Fin n)}
     x ∈ coordinateBox a b ↔ ∀ j, x j ∈ Icc (a j) (b j) :=
   Iff.rfl
 
+/-- A closed coordinate box is the preimage of the order interval `Icc a b` under the
+identification of `ℝⁿ` with `Fin n → ℝ`. -/
+theorem coordinateBox_eq_preimage_Icc (a b : Fin n → ℝ) :
+    coordinateBox a b = (EuclideanSpace.equiv (Fin n) ℝ) ⁻¹' Icc a b := by
+  ext x
+  simp [Pi.le_def, forall_and]
+
 /-- A closed coordinate box is compact. -/
 theorem isCompact_coordinateBox (a b : Fin n → ℝ) : IsCompact (coordinateBox a b) := by
-  have : coordinateBox a b = (EuclideanSpace.equiv (Fin n) ℝ) ⁻¹' Icc a b := by
-    ext x
-    simp [Pi.le_def, forall_and]
-  rw [this]
+  rw [coordinateBox_eq_preimage_Icc]
   exact (EuclideanSpace.equiv (Fin n) ℝ).toHomeomorph.isCompact_preimage.2 isCompact_Icc
 
 /-- A closed coordinate box is closed. -/
 theorem isClosed_coordinateBox (a b : Fin n → ℝ) : IsClosed (coordinateBox a b) :=
   (isCompact_coordinateBox a b).isClosed
 
+/-- A closed coordinate box is measurable. -/
+theorem measurableSet_coordinateBox (a b : Fin n → ℝ) : MeasurableSet (coordinateBox a b) :=
+  (isClosed_coordinateBox a b).measurableSet
+
 /-- The **line function** of `u` through `x` in the `i`-th coordinate direction,
 `t ↦ u(x + (t - xᵢ) eᵢ)`: its value at `t` is the value of `u` at the point obtained from `x` by
 replacing the `i`-th coordinate with `t`. -/
-@[expose] def lineFunction (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n))
+def lineFunction (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n))
     (i : Fin n) (t : ℝ) : F :=
   u (x + (t - x i) • EuclideanSpace.single i 1)
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
 theorem lineFunction_apply (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n))
     (i : Fin n) (t : ℝ) :
-    lineFunction u x i t = u (x + (t - x i) • EuclideanSpace.single i 1) :=
-  rfl
+    lineFunction u x i t = u (x + (t - x i) • EuclideanSpace.single i 1) := by
+  simp [lineFunction]
 
 /-- The coordinates of the point `x + (t - xᵢ) eᵢ`: the `i`-th one is `t`, the others are
 those of `x`. -/
@@ -173,8 +190,9 @@ theorem lineFunction_add_smul_single (u : EuclideanSpace ℝ (Fin n) → F)
   simp only [lineFunction]
   congr 1
   ext j
-  by_cases h : j = i
-  · subst h; simp
+  rw [add_sub_smul_single_apply, add_sub_smul_single_apply]
+  split_ifs with h
+  · rfl
   · simp [h]
 
 /-- For `x` in a coordinate box and `t ∈ [aᵢ, bᵢ]`, the point `x + (t - xᵢ) eᵢ` lies in the box:
@@ -189,11 +207,22 @@ theorem add_sub_smul_single_mem_coordinateBox {a b : Fin n → ℝ} {x : Euclide
   · exact hx j
 
 /-- The map `t ↦ x + (t - xᵢ) eᵢ` is an isometry, so `1`-Lipschitz. -/
-private theorem lipschitzWith_add_sub_smul_single (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
-    LipschitzWith 1 fun t : ℝ ↦ x + (t - x i) • EuclideanSpace.single i (1 : ℝ) := by
-  refine LipschitzWith.of_dist_le_mul fun s t ↦ ?_
-  rw [dist_add_left, dist_eq_norm, ← sub_smul, norm_smul, PiLp.norm_single, norm_one,
-    mul_one, sub_sub_sub_cancel_right, NNReal.coe_one, one_mul, Real.dist_eq, Real.norm_eq_abs]
+theorem lipschitzWith_add_sub_smul_single (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    LipschitzWith 1 fun t : ℝ ↦ x + (t - x i) • EuclideanSpace.single i (1 : ℝ) :=
+  LipschitzWith.of_dist_le_mul fun s t ↦ by
+    simp [dist_eq_norm, ← sub_smul, norm_smul]
+
+omit [NormedSpace ℝ F] in
+/-- If `u` is `C`-Lipschitz on a closed coordinate box containing `x`, the line function of `u`
+through `x` in the `i`-th direction is `C`-Lipschitz on `[aᵢ, bᵢ]`. -/
+theorem _root_.LipschitzOnWith.lineFunction {u : EuclideanSpace ℝ (Fin n) → F} {C : ℝ≥0}
+    {a b : Fin n → ℝ} (hu : LipschitzOnWith C u (coordinateBox a b))
+    {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ coordinateBox a b) (i : Fin n) :
+    LipschitzOnWith C (lineFunction u x i) (Icc (a i) (b i)) := by
+  have h := hu.comp (lipschitzWith_add_sub_smul_single x i).lipschitzOnWith
+    fun t ht ↦ add_sub_smul_single_mem_coordinateBox hx ht
+  rwa [mul_one, show u ∘ _ = TauCeti.lineFunction u x i from
+    funext fun t ↦ (lineFunction_apply u x i t).symm] at h
 
 /-! ### `ACL` and `ACL^p` maps -/
 
@@ -264,11 +293,9 @@ theorem _root_.LocallyLipschitzOn.isACLOn (hu : LocallyLipschitzOn Ω u) : IsACL
   continuousOn := hu.continuousOn
   ae_absolutelyContinuousOnInterval a b hab hQ i := by
     obtain ⟨C, hC⟩ := (hu.mono hQ).exists_lipschitzOnWith_of_compact (isCompact_coordinateBox a b)
-    refine (ae_restrict_mem (isClosed_coordinateBox a b).measurableSet).mono fun x hx ↦ ?_
-    refine LipschitzOnWith.absolutelyContinuousOnInterval (K := C * 1) ?_
-    refine hC.comp (lipschitzWith_add_sub_smul_single x i).lipschitzOnWith fun t ht ↦ ?_
-    exact add_sub_smul_single_mem_coordinateBox hx (by
-      simpa [uIcc_of_le (hab i).le] using ht)
+    refine (ae_restrict_mem (measurableSet_coordinateBox a b)).mono fun x hx ↦ ?_
+    refine LipschitzOnWith.absolutelyContinuousOnInterval (K := C) ?_
+    simpa [uIcc_of_le (hab i).le] using hC.lineFunction hx i
 
 /-- A locally Lipschitz map is `ACL^p` on every set, for every exponent `p`; in particular it is
 `ACL^∞`. -/
