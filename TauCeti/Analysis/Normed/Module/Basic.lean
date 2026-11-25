@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
 
@@ -62,8 +63,27 @@ normed spaces:
   of the locus where `‖y‖` vanishes.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
+* `Units.norm_coe_zpow_smul`, `Units.exists_zpow_smul_mem_annulus`: on the nonzero vectors of a
+  normed space, the dilation by `cᵏ` for a unit `c` of the scalar field multiplies norms by
+  `‖c‖ ^ k`, so for `1 < ‖c‖` every orbit meets the annulus `1 ≤ ‖v‖ < ‖c‖`.
+* `Units.coe_zpow_smul_of_eq_algebraMap`: a unit that is the image of a real `r` acts on nonzero
+  vectors by powers of `r`.
 * `LipschitzWith.smul_const`: if a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is
   `K ‖c‖`-Lipschitz.
+* `LinearMap.norm_apply_le_sum_norm_mul`: for a semilinear map `L : (ι → R) →ₛₗ[σ] F` on a
+  finite product over a semiring, into a seminormed group with a bounded scalar action of a
+  seminormed ring `S`, the values at the coordinate vectors bound every value:
+  `‖L v‖ ≤ ∑ j, ‖σ (v j)‖ * ‖L (Pi.single j 1)‖`. For the sup norm, `‖σ r‖ ≤ ‖r‖` and a bound `M`
+  on the values at the coordinate vectors this gives `‖L v‖ ≤ #ι * ‖v‖ * M`.
+* `LinearMap.norm_inv_smul_sub_apply`: for a semilinear map `L : E →ₛₗ[σ] F` from any module `E`
+  over a semiring, neither of which needs a norm, into a seminormed group with a bounded scalar
+  action of a normed division ring, and `σ t ≠ 0`, rescaling by `(σ t)⁻¹` turns the error at
+  `t • v` into the error at `v`: `‖(σ t)⁻¹ • w - L v‖ = ‖σ t‖⁻¹ * ‖w - L (t • v)‖`. No continuity
+  of `L` is needed.
+
+The coordinate bound is adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean),
+commit `65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/Sard/Disk.lean`.
 -/
 
 public section
@@ -265,6 +285,41 @@ theorem IsOpen.diam_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
     _ = Metric.diam (Metric.ball x r) := (Metric.diam_ball_eq x hr.le).symm
     _ ≤ Metric.diam s := Metric.diam_mono hball hb
 
+namespace Units
+
+section Norm
+
+/-! ### Norms of dilated nonzero vectors -/
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
+
+/-- The dilation by `cᵏ` multiplies the norm of a nonzero vector by `‖c‖ ^ k`. -/
+theorem norm_coe_zpow_smul (c : 𝕜ˣ) (k : ℤ) (v : {v : E // v ≠ 0}) :
+    ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ = ‖(c : 𝕜)‖ ^ k * ‖(v : E)‖ := by
+  rw [Units.smul_coe, Units.smul_def, norm_smul, Units.val_zpow_eq_zpow_val, norm_zpow]
+
+/-- For `1 < ‖c‖` every nonzero vector has a multiple by a power of `c` in the annulus
+`1 ≤ ‖v‖ < ‖c‖`. -/
+theorem exists_zpow_smul_mem_annulus {c : 𝕜ˣ} (hc : 1 < ‖(c : 𝕜)‖) (v : {v : E // v ≠ 0}) :
+    ∃ k : ℤ, 1 ≤ ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ ∧
+      ‖((c ^ k • v : {v : E // v ≠ 0}) : E)‖ < ‖(c : 𝕜)‖ := by
+  obtain ⟨k, -, hk₂, hk₁, -⟩ := rescale_to_shell_zpow hc (one_pos.trans hc) v.property
+  rw [div_self (one_pos.trans hc).ne'] at hk₁
+  refine ⟨k, ?_, ?_⟩ <;>
+    rwa [Units.smul_coe, Units.smul_def, Units.val_zpow_eq_zpow_val]
+
+/-- A power of a unit of a normed `ℝ`-algebra `𝕜` that is the image of a real `r` acts on
+nonzero vectors as the real scalar `r ^ k`. -/
+theorem coe_zpow_smul_of_eq_algebraMap [NormedAlgebra ℝ 𝕜] [NormedSpace ℝ E]
+    [IsScalarTower ℝ 𝕜 E] {c : 𝕜ˣ} {r : ℝ} (hc : (c : 𝕜) = algebraMap ℝ 𝕜 r) (k : ℤ)
+    (v : {v : E // v ≠ 0}) : ((c ^ k • v : {v : E // v ≠ 0}) : E) = (r ^ k) • (v : E) := by
+  rw [Units.smul_coe, Units.smul_def, Units.val_zpow_eq_zpow_val, hc, ← map_zpow₀,
+    algebraMap_smul]
+
+end Norm
+
+end Units
 /-- If a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is `K ‖c‖`-Lipschitz. -/
 theorem LipschitzWith.smul_const {α 𝕜 E : Type*} [PseudoEMetricSpace α] [SeminormedRing 𝕜]
     [SeminormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {K : NNReal} {f : α → 𝕜}
@@ -274,6 +329,39 @@ theorem LipschitzWith.smul_const {α 𝕜 E : Type*} [PseudoEMetricSpace α] [Se
     exact norm_smul_le _ _
   rw [mul_comm]
   exact hc.comp hf
+
+namespace LinearMap
+
+/-- The value of a semilinear map `L : (ι → R) →ₛₗ[σ] F` on a finite product at a vector `v` is
+bounded by `∑ j, ‖σ (v j)‖ * ‖L (Pi.single j 1)‖`, its values at the coordinate vectors weighted
+by the coordinates of `v`, when `S` acts on `F` with bounded scalar action. -/
+theorem norm_apply_le_sum_norm_mul {ι R S F : Type*} [Fintype ι] [DecidableEq ι] [Semiring R]
+    [SeminormedRing S] [SeminormedAddCommGroup F] [Module S F] [IsBoundedSMul S F] {σ : R →+* S}
+    (L : (ι → R) →ₛₗ[σ] F) (v : ι → R) :
+    ‖L v‖ ≤ ∑ j, ‖σ (v j)‖ * ‖L (Pi.single j 1)‖ := by
+  -- Expand `v` in the coordinate vectors.
+  have hv : L v = ∑ j, σ (v j) • L (Pi.single j 1) := by
+    conv_lhs => rw [← Finset.univ_sum_single v]
+    simp only [map_sum, ← map_smulₛₗ, ← Pi.single_smul', smul_eq_mul, mul_one]
+  exact hv ▸ norm_sum_le_of_le _ fun j _ ↦ norm_smul_le _ _
+
+section Rescale
+
+variable {𝕜 𝕜₂ E F : Type*} [Semiring 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
+  [AddCommMonoid E] [Module 𝕜 E] [SeminormedAddCommGroup F] [Module 𝕜₂ F] [IsBoundedSMul 𝕜₂ F]
+
+/-- A first-order error at `t • v` rescales to one at `v`: for a semilinear map `L` into a
+seminormed group with a bounded scalar action of a normed division ring `𝕜₂`, and `σ t ≠ 0`, the
+distance from `(σ t)⁻¹ • w` to `L v` is `‖σ t‖⁻¹` times the distance from `w` to `L (t • v)`.
+Neither `E` nor `𝕜` needs a norm. -/
+theorem norm_inv_smul_sub_apply (L : E →ₛₗ[σ] F) {t : 𝕜} (ht : σ t ≠ 0) (w : F) (v : E) :
+    ‖(σ t)⁻¹ • w - L v‖ = ‖σ t‖⁻¹ * ‖w - L (t • v)‖ := by
+  have := NormedDivisionRing.toNormSMulClass (α := 𝕜₂) (β := F)
+  rw [← norm_inv, ← norm_smul, smul_sub, map_smulₛₗ, inv_smul_smul₀ ht]
+
+end Rescale
+
+end LinearMap
 
 open Filter Topology in
 /-- **Continuity of a radial rescaling.** If `τ` and `y` are continuous and `τ` vanishes on the

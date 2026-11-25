@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.EvolutionSpace.Basic
-import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
+import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate.Basic
 import TauCeti.Analysis.PDE.Parabolic.Existence
 import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.Lp.Norm

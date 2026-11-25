@@ -20,7 +20,7 @@ Over a commutative ultrametric seminormed ring `R`:
   `R` is complete, so `∏' i, (1 + f i)`, `∏' i, (1 - f i)`, and more generally `∏' i, g i` for any
   `g → 1` cofinitely are unconditionally multipliable without assuming the factors are units.
 * In the Hausdorff complete case, `∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i`
-  (`Filter.Tendsto.tprod_one_add_eq_tsum_prod`).
+  (`IsUltrametricDist.tprod_one_add_eq_tsum_prod_of_tendsto_cofinite_zero`).
 * Conversely, when every factor satisfies `‖f i - 1‖ < 1`, convergence of `HasProd f a` forces
   `f → 1` along `cofinite` (`HasProd.tendsto_cofinite_one_of_norm_sub_one_lt_one`), giving the
   characterisation `TauCeti.multipliable_iff_tendsto_cofinite_one_of_norm_sub_one_lt_one` in the
@@ -49,8 +49,9 @@ Over a commutative ultrametric seminormed ring `R`:
   `TauCeti.multipliable_iff_tendsto_cofinite_one_of_norm_sub_one_lt_one`: in a complete
   ultrametric seminormed commutative ring, any family tending to `1` cofinitely is unconditionally
   multipliable, and conversely when every factor satisfies `‖f i - 1‖ < 1`.
-* `Filter.Tendsto.tprod_one_add_eq_tsum_prod`: in the Hausdorff complete ultrametric case, factors
-  `1 + f i` with `f → 0` cofinitely satisfy `∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i`.
+* `IsUltrametricDist.tprod_one_add_eq_tsum_prod_of_tendsto_cofinite_zero`: in the Hausdorff complete
+  ultrametric case, factors `1 + f i` with `f → 0` cofinitely satisfy
+  `∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i`.
 -/
 
 public section
@@ -189,7 +190,7 @@ theorem multipliable_iff_tendsto_cofinite_one_of_norm_sub_one_lt_one
 
 /-- In a complete Hausdorff ultrametric seminormed commutative ring, if `f → 0` along `cofinite`,
 then `∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i`. -/
-theorem _root_.Filter.Tendsto.tprod_one_add_eq_tsum_prod {ι R : Type*}
+theorem _root_.IsUltrametricDist.tprod_one_add_eq_tsum_prod_of_tendsto_cofinite_zero {ι R : Type*}
     [SeminormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] [T2Space R] {f : ι → R}
     (hf : Tendsto f cofinite (𝓝 0)) :
     ∏' i, (1 + f i) = ∑' s : Finset ι, ∏ i ∈ s, f i :=

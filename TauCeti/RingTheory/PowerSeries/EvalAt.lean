@@ -69,6 +69,10 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
+* `PowerSeries.evalAt_add_of_summable` and `PowerSeries.evalAt_sum_of_summable`: evaluation
+  commutes with binary and finite sums of series whose terms at the point are summable.
+* `PowerSeries.evalAt_smul_of_summable`: evaluation commutes with scalar multiplication when
+  the evaluation terms are summable.
 * `PowerSeries.norm_evalAt_le_gaussNorm` and `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm`:
   the Gauss-norm bound in an ultrametric algebra, in particular for restricted series.
 * `PowerSeries.norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le`: a coefficient map
@@ -188,6 +192,33 @@ theorem evalAt_eq_ofScalarsSum {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra �
 theorem commute_evalAt [IsTopologicalSemiring A] [T2Space A] (f : R⟦X⟧) (b : A) :
     Commute b (f.evalAt b) :=
   Commute.tsum_right _ fun n ↦ ((Commute.refl b).pow_right n).smul_right _
+
+/-- Multiplying a series with summable evaluation terms by a scalar gives a series summing to
+that scalar times its value. -/
+theorem hasSum_evalAt_smul_of_summable [ContinuousConstSMul R A] {f : R⟦X⟧} {b : A}
+    (hf : Summable fun n ↦ coeff n f • b ^ n) (a : R) :
+    HasSum (fun n ↦ coeff n (a • f) • b ^ n) (a • f.evalAt b) := by
+  simpa only [evalAt_def, coeff_smul, smul_eq_mul, mul_smul] using hf.hasSum.const_smul a
+
+/-- Evaluation commutes with scalar multiplication when the evaluation terms are summable. -/
+theorem evalAt_smul_of_summable [ContinuousConstSMul R A] [T2Space A] {f : R⟦X⟧} {b : A}
+    (hf : Summable fun n ↦ coeff n f • b ^ n) (a : R) :
+    (a • f).evalAt b = a • f.evalAt b :=
+  (hasSum_evalAt_smul_of_summable hf a).tsum_eq
+
+/-- Evaluation is additive on series whose terms at `b` are summable. -/
+theorem evalAt_add_of_summable [ContinuousAdd A] [T2Space A] {f g : R⟦X⟧} {b : A}
+    (hf : Summable fun n ↦ coeff n f • b ^ n) (hg : Summable fun n ↦ coeff n g • b ^ n) :
+    (f + g).evalAt b = f.evalAt b + g.evalAt b := by
+  simp only [evalAt_def, map_add, add_smul]
+  exact hf.tsum_add hg
+
+/-- Evaluation commutes with finite sums of series whose terms at `b` are summable. -/
+theorem evalAt_sum_of_summable [ContinuousAdd A] [T2Space A] {ι : Type*} (s : Finset ι)
+    {f : ι → R⟦X⟧} {b : A} (hf : ∀ i ∈ s, Summable fun n ↦ coeff n (f i) • b ^ n) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
+  simp only [evalAt_def, map_sum, Finset.sum_smul]
+  exact Summable.tsum_finsetSum hf
 
 end Semiring
 
@@ -489,17 +520,14 @@ variable {R A : Type*} [CommSemiring R] [NormedRing A] [Algebra R A] [CompleteSp
 /-- Evaluation at `b` is additive on series whose terms at `b` are absolutely summable. -/
 theorem evalAt_add_of_summable_norm (hf : Summable fun n ↦ ‖coeff n f • b ^ n‖)
     (hg : Summable fun n ↦ ‖coeff n g • b ^ n‖) :
-    (f + g).evalAt b = f.evalAt b + g.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [add_smul] using
-    (hasSum_evalAt_of_summable_norm hf).add (hasSum_evalAt_of_summable_norm hg))
+    (f + g).evalAt b = f.evalAt b + g.evalAt b :=
+  evalAt_add_of_summable hf.of_norm hg.of_norm
 
 /-- Evaluation commutes with finite sums of series whose terms at `b` are absolutely summable. -/
 theorem evalAt_sum_of_summable_norm {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
     (hf : ∀ i ∈ s, Summable fun n ↦ ‖coeff n (f i) • b ^ n‖) :
-    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
-  have h := hasSum_sum (fun i hi ↦ hasSum_evalAt_of_summable_norm (hf i hi))
-  simpa only [evalAt_def, map_sum, Finset.sum_smul] using h.tsum_eq
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b :=
+  evalAt_sum_of_summable s fun i hi ↦ (hf i hi).of_norm
 
 /-- Evaluation at `b` is multiplicative on series whose terms at `b` are absolutely summable: this
 is the Cauchy product formula for absolutely convergent series. -/
@@ -565,26 +593,21 @@ variable [IsUltrametricDist A] [CompleteSpace A]
 
 /-- Evaluation at a point of norm at most `c` is additive on series restricted at `c`. -/
 theorem IsRestricted.evalAt_add (hf : f.IsRestricted c) (hg : g.IsRestricted c) (hb : ‖b‖ ≤ c) :
-    (f + g).evalAt b = f.evalAt b + g.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq
-    (by simpa [add_smul] using (hf.hasSum_evalAt hb).add (hg.hasSum_evalAt hb))
+    (f + g).evalAt b = f.evalAt b + g.evalAt b :=
+  evalAt_add_of_summable (hf.summable_smul_pow hb) (hg.summable_smul_pow hb)
 
 /-- Evaluation at a point of norm at most `c` commutes with scalar multiplication of a series
 restricted at `c`. -/
 theorem IsRestricted.evalAt_smul (hf : f.IsRestricted c) (a : R) (hb : ‖b‖ ≤ c) :
-    (a • f).evalAt b = a • f.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [mul_smul] using HasSum.const_smul a (hf.hasSum_evalAt hb))
+    (a • f).evalAt b = a • f.evalAt b :=
+  evalAt_smul_of_summable (R := R) (A := A) (hf.summable_smul_pow hb) a
 
 /-- Evaluation at a point of norm at most `c` commutes with finite sums of series restricted
 at `c`. -/
 theorem IsRestricted.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
     (hf : ∀ i ∈ s, (f i).IsRestricted c) (hb : ‖b‖ ≤ c) :
-    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
-  have h := hasSum_sum fun i hi ↦ (hf i hi).hasSum_evalAt hb
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [Finset.sum_smul] using h)
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b :=
+  evalAt_sum_of_summable s fun i hi ↦ (hf i hi).summable_smul_pow hb
 
 /-- Evaluation at a point of norm at most `c` is multiplicative on series restricted at `c`: this
 is the Cauchy product formula, which holds in a complete ultrametric ring as soon as the terms of

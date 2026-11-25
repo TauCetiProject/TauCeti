@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 public import Mathlib.RingTheory.Valuation.Basic
 public import Mathlib.Algebra.Order.GroupWithZero.Canonical
 public import Mathlib.Algebra.Order.Monoid.Prod
+public import TauCeti.RingTheory.PowerSeries.GaussNorm.FiniteSum
 public import TauCeti.RingTheory.PowerSeries.Restricted
 import Mathlib.Algebra.Order.GroupWithZero.Finset
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
@@ -162,14 +163,6 @@ theorem tendsto_gaussNorm_zero_of_coeff_bound {α : Type*} {l : Filter α}
 section Ultrametric
 
 variable [IsUltrametricDist R]
-
-variable (f g) in
-/-- Over an ultrametric ring, each weighted coefficient norm of a sum is at most the larger of the
-two summands' weighted coefficient norms, at a nonnegative radius. -/
-theorem norm_coeff_add_mul_pow_le_max (hc : 0 ≤ c) (m : ℕ) :
-    ‖(f + g).coeff m‖ * c ^ m ≤ max (‖f.coeff m‖ * c ^ m) (‖g.coeff m‖ * c ^ m) := by
-  rw [map_add, ← max_mul_of_nonneg _ _ (pow_nonneg hc m)]
-  exact mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _) (pow_nonneg hc m)
 
 /-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
 coefficient norms at a nonnegative radius. -/

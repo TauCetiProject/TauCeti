@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Generator
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
+import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Separation
 
 /-!
 # Meromorphic functions with a single pole, and point separation
@@ -25,12 +26,12 @@ pole of order exactly `k + 1` at `x` and no other pole
 (`TauCeti.RiemannSurface.MeromorphicFunction.exists_order_eq_neg_of_finrank_lt`). Consequently:
 
 * the meromorphic functions separate points: every point is the only pole of some meromorphic
-  function;
+  function, so two distinct points take different values under some meromorphic function;
 * the order `ord_x : M(X) → ℤ ∪ {∞}` at a point is surjective, so it is a normalized discrete
   valuation, and different points have different orders;
 * for a finite holomorphic map `β : X → ℙ¹`, the field `M(X)` has degree exactly `deg β` over the
-  rational functions `ℂ(t)` pulled back along `β`, since the points of an unbranched fibre are
-  pairwise separated.
+  rational functions `ℂ(t)` pulled back along `β`, and is generated over `ℂ(t)` by a single
+  meromorphic function, since the points of an unbranched fibre are pairwise separated.
 
 The finiteness of `H¹(X, 𝒪)` is taken as an instance argument, as in
 `TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch`; once an instance is available,
@@ -42,8 +43,12 @@ these results hold unconditionally by instance resolution.
   a meromorphic function with a pole of order exactly `k` at `x` and no other pole.
 * `TauCeti.RiemannSurface.MeromorphicFunction.exists_apply_eq_infty_and_forall_ne_infty`: a
   meromorphic function whose only pole is `x`.
+* `TauCeti.RiemannSurface.MeromorphicFunction.exists_apply_ne_apply_of_ne`: meromorphic functions
+  separate points.
 * `TauCeti.RiemannSurface.MeromorphicFunction.order_surjective`: `ord_x` is surjective.
 * `TauCeti.RiemannSurface.MeromorphicFunction.order_injective`: `x ↦ ord_x` is injective.
+* `TauCeti.RiemannSurface.MeromorphicFunction.exists_adjoin_simple_eq_top`: `M(X)` is a simple
+  extension of `ℂ(t)`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.finrank_ratFunc_eq_degree`: the degree theorem
   `[M(X) : ℂ(t)] = deg β`.
 
@@ -100,6 +105,14 @@ theorem exists_apply_eq_infty_and_forall_ne_infty (x : X) :
   rw [hfx]
   exact_mod_cast (by omega : (-(N + 1 : ℕ) : ℤ) < 0)
 
+/-- **Meromorphic functions separate points.** On a compact connected Riemann surface with
+finite-dimensional `H¹(X, 𝒪)`, two distinct points take different values under some meromorphic
+function. -/
+theorem exists_apply_ne_apply_of_ne {x y : X} (hxy : x ≠ y) :
+    ∃ f : MeromorphicFunction X, f x ≠ f y := by
+  obtain ⟨f, hfx, hf⟩ := exists_apply_eq_infty_and_forall_ne_infty x
+  exact ⟨f, by rw [hfx]; exact (hf y hxy.symm).symm⟩
+
 /-- **The order at a point is surjective.** On a compact connected Riemann surface with
 finite-dimensional `H¹(X, 𝒪)`, every integer is the order at `x` of some meromorphic function, so
 `ord_x` is a normalized discrete valuation of `M(X)`. -/
@@ -139,6 +152,19 @@ section RatFunc
 variable (β : FiniteHolomorphicMap X (OnePoint ℂ))
   [Algebra (RatFunc ℂ) (MeromorphicFunction X)]
 
+/-- **The meromorphic function field is a simple extension of `ℂ(t)`.** Let `β : X → ℙ¹` be a
+finite holomorphic map from a compact connected Riemann surface with finite-dimensional
+`H¹(X, 𝒪)`, and let `ℂ(t)` act on `M(X)` by pullback along `β`. Then some meromorphic function
+generates `M(X)` over `ℂ(t)`. -/
+theorem exists_adjoin_simple_eq_top
+    (h : algebraMap (RatFunc ℂ) (MeromorphicFunction X) =
+      ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom) :
+    ∃ f : MeromorphicFunction X, IntermediateField.adjoin (RatFunc ℂ) {f} = ⊤ := by
+  obtain ⟨y₀, hy₀⟩ := β.finite_branchValues.infinite_compl.nonempty
+  obtain ⟨f, hf, hinj⟩ := exists_forall_ne_infty_and_injOn (β.finite_fiber y₀)
+    fun _ _ _ _ hxx' ↦ exists_apply_ne_apply_of_ne hxx'
+  exact ⟨f, adjoin_simple_eq_top_of_injOn_fiber β h f hy₀ hf hinj⟩
+
 /-- **The degree theorem.** Let `β : X → ℙ¹` be a finite holomorphic map from a compact connected
 Riemann surface with finite-dimensional `H¹(X, 𝒪)`, and let `ℂ(t)` act on `M(X)` by pullback along
 `β`. Then `M(X)` has degree exactly `deg β` over `ℂ(t)`. -/
@@ -147,9 +173,8 @@ theorem finrank_ratFunc_eq_degree
       ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom) :
     Module.finrank (RatFunc ℂ) (MeromorphicFunction X) = degree β := by
   obtain ⟨y₀, hy₀⟩ := β.finite_branchValues.infinite_compl.nonempty
-  refine finrank_ratFunc_eq_degree_of_pairwise_separated_fiber β h hy₀ fun x _ x' _ hxx' ↦ ?_
-  obtain ⟨f, hfx, hf⟩ := exists_apply_eq_infty_and_forall_ne_infty x
-  exact ⟨f, by rw [hfx]; exact (hf x' hxx'.symm).symm⟩
+  exact finrank_ratFunc_eq_degree_of_pairwise_separated_fiber β h hy₀
+    fun _ _ _ _ hxx' ↦ exists_apply_ne_apply_of_ne hxx'
 
 end RatFunc
 

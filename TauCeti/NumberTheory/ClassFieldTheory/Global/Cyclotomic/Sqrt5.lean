@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Prime
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Five
@@ -84,9 +84,7 @@ private lemma globalArtinMap_Qsqrt5_prime_apply_eq_self_iff (ι : E →ₐ[ℚ] 
   have := Multiquadratic.isMulCommutative_of_adjoin_eq_top (d := fun _ : Unit ↦ (5 : ℚ))
     (fun _ ↦ by rw [hs, map_ofNat]) htop
   obtain ⟨p, hpv⟩ : ∃ p, Ideal.absNorm v.asIdeal = p := ⟨_, rfl⟩
-  have : Fact p.Prime := ⟨by
-    rw [← hpv, Rat.HeightOneSpectrum.absNorm_asIdeal]
-    exact Rat.HeightOneSpectrum.prime_natGenerator v⟩
+  have : Fact p.Prime := ⟨hpv ▸ Rat.HeightOneSpectrum.prime_absNorm_asIdeal v⟩
   have hp5 : ¬ (p : ℤ) ∣ 5 := by
     have := mt (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd v (n := 5)).mpr
       (by exact_mod_cast hv)

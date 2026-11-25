@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.WeakKernel
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Gauge covariance of the weak kernel and the weak right inverse of the vortex operator
