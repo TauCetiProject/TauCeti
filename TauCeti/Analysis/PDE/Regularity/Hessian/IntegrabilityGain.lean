@@ -299,7 +299,7 @@ omit [MeasurableSpace E] [BorelSpace E] in
 /-- After the change of variables `e` with `e e† = (A + A†) / 2` and `‖e⁻¹‖ ≤ λ^{-1/2}`, the
 symmetric part of `a` becomes `e⁻¹ ((a + a†) / 2) e⁻†`, which lies within `‖a - A‖ / λ` of the
 identity. -/
-private theorem norm_conj_symmPart_sub_id_le {lam : ℝ} (hlam : 0 < lam) {A : E →L[ℝ] E}
+theorem norm_conj_symmPart_sub_id_le {lam : ℝ} (hlam : 0 < lam) {A : E →L[ℝ] E}
     (e : E ≃L[ℝ] E)
     (hee : (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = (2⁻¹ : ℝ) • (A + A.adjoint))
     (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) (a : E →L[ℝ] E) :
