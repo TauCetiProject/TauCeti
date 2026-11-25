@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Parameter derivatives of one-parameter families of vector fields
@@ -15,7 +17,8 @@ Let `W_s` be a one-parameter family of vector fields on `M` which is jointly `C^
 `(t, x)`, as a map into the tangent bundle. This file shows that the parameter derivative
 `y ↦ ∂ₛ W_s(y)` at `s = t` is read, in the tangent-bundle trivialization at `x`, by the parameter
 derivative of the coordinates of `W_s`, and deduces that it is a `C^m` vector field at `x` for
-`m + 1 ≤ n`.
+`m + 1 ≤ n`. It also shows that the segment `s ↦ (1 - s) • X₀ + s • X₁` between two `C^n` vector
+fields is such a family, jointly `C^n` in `(s, y)`.
 
 ## Main results
 
@@ -23,6 +26,8 @@ derivative of the coordinates of `W_s`, and deduces that it is a `C^m` vector fi
   of `W_s` is the vector with coordinates the parameter derivative of the coordinates of `W_s`.
 * `TauCeti.Manifold.contMDiffAt_deriv_vectorField_of_contMDiffAt`: the parameter derivative of a
   jointly `C^n` family of vector fields is `C^m` for `m + 1 ≤ n`.
+* `ContMDiff.one_sub_smul_add_smul_vectorField`: the segment `s ↦ (1 - s) • X₀ + s • X₁` between
+  two `C^n` vector fields is jointly `C^n`.
 -/
 
 public section
@@ -83,3 +88,23 @@ theorem contMDiffAt_deriv_vectorField_of_contMDiffAt {m n : WithTop ℕ∞}
   rw [hy, e.apply_mk_symm hyb]
 
 end TauCeti.Manifold
+
+section Segment
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {X₀ X₁ : Π y : M, TangentSpace I y} {n : WithTop ℕ∞}
+
+/-- **The segment between two vector fields is a jointly smooth family.** If `X₀` and `X₁` are
+`C^n` vector fields, then `(s, y) ↦ (1 - s) • X₀ y + s • X₁ y` is `C^n` as a map from `ℝ × M` to
+the tangent bundle. -/
+theorem ContMDiff.one_sub_smul_add_smul_vectorField
+    (hX₀ : ContMDiff I I.tangent n (fun y ↦ (⟨y, X₀ y⟩ : TangentBundle I M)))
+    (hX₁ : ContMDiff I I.tangent n (fun y ↦ (⟨y, X₁ y⟩ : TangentBundle I M))) :
+    ContMDiff (𝓘(ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, (1 - p.1) • X₀ p.2 + p.1 • X₁ p.2⟩ : TangentBundle I M)) :=
+  ((contMDiff_const.sub contMDiff_fst).smul_totalSpace (hX₀.comp contMDiff_snd)).add_sectionAlong
+    (contMDiff_fst.smul_totalSpace (hX₁.comp contMDiff_snd))
+
+end Segment
