@@ -40,6 +40,8 @@ the form used by Mathlib's Cauchy theorem for rectangles,
 * `Complex.image_rectBoundary`: the trace of the curve is `frontier (Rectangle z w)`.
 * `Complex.integral_rectBoundary`: its contour integral is the signed sum of the four edge
   integrals.
+* `Complex.integral_contourCycle_rectPolygon`: the same signed sum for
+  `TauCeti.Contour.Cycle.integral` over `(Complex.rectPolygon z w).contourCycle`.
 * `Complex.integral_rectBoundary_congr_codiscreteWithin`: codiscrete changes on the frontier
   do not affect the derivative-weighted integral, including for collapsed edges.
 -/
@@ -152,6 +154,49 @@ theorem isPiecewiseC1On_rectBoundary (z w : ℂ) :
   simpa [rectBoundary_def] using
     (rectPolygon z w).isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
 
+/-- Two rectangles with the same real-part bounds have `rectBoundary` curves with identical real
+parts at every time `t`. -/
+theorem re_rectBoundary_eq_of_re_eq {z₁ w₁ z₂ w₂ : ℂ} (hz : z₁.re = z₂.re) (hw : w₁.re = w₂.re)
+    (t : ℝ) : (rectBoundary z₁ w₁ t).re = (rectBoundary z₂ w₂ t).re := by
+  simp only [rectBoundary_def, Polygon.boundaryParam_eq_edgePath_edgeIndexAt,
+    Polygon.edgePath, AffineMap.lineMap_apply_module]
+  generalize Polygon.edgeIndexAt 4 t = i
+  fin_cases i <;> simp [finRotate_apply, hz, hw]
+
+/-- Two rectangles with the same imaginary-part bounds have `rectBoundary` curves with identical
+imaginary parts at every time `t`. -/
+theorem im_rectBoundary_eq_of_im_eq {z₁ w₁ z₂ w₂ : ℂ} (hz : z₁.im = z₂.im) (hw : w₁.im = w₂.im)
+    (t : ℝ) : (rectBoundary z₁ w₁ t).im = (rectBoundary z₂ w₂ t).im := by
+  simp only [rectBoundary_def, Polygon.boundaryParam_eq_edgePath_edgeIndexAt,
+    Polygon.edgePath, AffineMap.lineMap_apply_module]
+  generalize Polygon.edgeIndexAt 4 t = i
+  fin_cases i <;> simp [finRotate_apply, hz, hw]
+
+private theorem rectBoundary_eq_linear_comb (z w : ℂ) (t : ℝ) :
+    rectBoundary z w t =
+      z.re • rectBoundary 1 0 t + z.im • rectBoundary I 0 t +
+        w.re • rectBoundary 0 1 t + w.im • rectBoundary 0 I t := by
+  simp only [rectBoundary_def, Polygon.boundaryParam_eq_edgePath_edgeIndexAt,
+    Polygon.edgePath, AffineMap.lineMap_apply_module]
+  generalize Polygon.edgeIndexAt 4 t = i
+  fin_cases i <;> (apply Complex.ext <;> simp [finRotate_apply] <;> ring)
+
+/-- The rectangle boundary `rectBoundary z w` is continuous on `ℝ`. -/
+theorem continuous_rectBoundary (z w : ℂ) : Continuous (rectBoundary z w) :=
+  (rectPolygon z w).continuous_boundaryParam
+
+/-- The rectangle boundary `rectBoundary z w t` is jointly continuous in `(z, w)` and `t : ℝ`. -/
+theorem continuous_uncurry_rectBoundary :
+    Continuous (fun p : (ℂ × ℂ) × ℝ ↦ rectBoundary p.1.1 p.1.2 p.2) := by
+  have hbase (a b : ℂ) : Continuous (rectBoundary a b) := continuous_rectBoundary a b
+  have heq : (fun p : (ℂ × ℂ) × ℝ ↦ rectBoundary p.1.1 p.1.2 p.2) =
+      fun p : (ℂ × ℂ) × ℝ ↦
+        p.1.1.re • rectBoundary 1 0 p.2 + p.1.1.im • rectBoundary I 0 p.2 +
+          p.1.2.re • rectBoundary 0 1 p.2 + p.1.2.im • rectBoundary 0 I p.2 :=
+    funext fun p ↦ rectBoundary_eq_linear_comb p.1.1 p.1.2 p.2
+  rw [heq]
+  fun_prop
+
 /-- The trace of the rectangle boundary over `[0, 4]` is the frontier of the rectangle. -/
 theorem image_rectBoundary (z w : ℂ) :
     rectBoundary z w '' Icc 0 4 = frontier (Rectangle z w) := by
@@ -202,8 +247,8 @@ theorem integral_rectBoundary {f : ℂ → E} (hf : ContinuousOn f (frontier (Re
         I • (∫ y : ℝ in z.im..w.im, f (w.re + y * I)) -
         I • (∫ y : ℝ in z.im..w.im, f (z.re + y * I)) := by
   have hpoly := (rectPolygon z w).integral_contourCycle (boundary_rectPolygon z w ▸ hf)
-  rw [Polygon.contourCycle_def, Polygon.contourCurve_def, TauCeti.Contour.Cycle.integral_of_raw,
-    Nat.cast_ofNat, ← rectBoundary_def] at hpoly
+  rw [(rectPolygon z w).integral_contourCycle_eq_integral_boundaryParam, Nat.cast_ofNat,
+    ← rectBoundary_def] at hpoly
   -- The four edges are alternately horizontal and vertical segments.
   rw [hpoly, Fin.sum_univ_four]
   simp only [Polygon.edgePath]
@@ -213,6 +258,18 @@ theorem integral_rectBoundary {f : ℂ → E} (hf : ContinuousOn f (frontier (Re
     simp [intervalIntegral.integral_symm z.re w.re, intervalIntegral.integral_symm z.im w.im]
     abel
   all_goals simp [finRotate_apply]
+
+/-- **The cycle integral along the rectangle polygon** of a function continuous on the frontier of
+the rectangle is the signed sum of its four edge integrals, matching
+`Complex.integral_rectBoundary`. -/
+theorem integral_contourCycle_rectPolygon {f : ℂ → E}
+    (hf : ContinuousOn f (frontier (Rectangle z w))) :
+    TauCeti.Contour.Cycle.integral f (rectPolygon z w).contourCycle =
+      (∫ x : ℝ in z.re..w.re, f (x + z.im * I)) - (∫ x : ℝ in z.re..w.re, f (x + w.im * I)) +
+        I • (∫ y : ℝ in z.im..w.im, f (w.re + y * I)) -
+        I • (∫ y : ℝ in z.im..w.im, f (z.re + y * I)) := by
+  rw [(rectPolygon z w).integral_contourCycle_eq_integral_boundaryParam, Nat.cast_ofNat,
+    ← rectBoundary_def, integral_rectBoundary hf]
 
 end Integral
 

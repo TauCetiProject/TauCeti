@@ -5,161 +5,203 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Slope
+public import Mathlib.Analysis.Convex.Function
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
+import Mathlib.Analysis.Convex.Slope
+import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Order.IntermediateValue
 
 /-!
-# The Herbrand function and upper ramification groups of a local ring
+# The Herbrand function of a group acting on a local ring
 
-For a group `G` acting by ring automorphisms on a local ring `S`, with real-indexed lower
-ramification filtration `G_t = ramificationGroupReal G S t = G_{⌈t⌉}`, this file defines the
-**Herbrand function** `φ(u) = ∫_0^u #G_t / #G_0 dt`, its **inverse** `ψ(v) = sInf {u | v ≤ φ(u)}`,
-the **upper ramification groups** `G^v = G_{ψ(v)}`, the integral inverse `ψℕ(n) = ⌊ψ(n)⌋₊`, and
-lower/upper jumps.
+Let a group `G` act by ring automorphisms on a local ring `S`, with lower ramification groups
+`G_t = TauCeti.IsLocalRing.ramificationGroupReal G S t`, the groups `G_{⌈t⌉}` of the elements
+acting trivially on `S ⧸ 𝔪 ^ (⌈t⌉ + 1)`. The **Herbrand function** of the action is
 
-When `G` is finite, `φ` is a continuous, strictly increasing, concave bijection of `ℝ` (and of
-`[-1, ∞)`) with two-sided inverse `ψ`, equal to the identity on `[-1, 0]`, affine of slope
-`#G_{m+1} / #G_0` on `[m, m + 1]` (`m : ℕ`), and with `ψ(n) ∈ ℕ` for `n : ℕ`. Neither a discrete
-valuation, completeness, nor residue-field finiteness is required.
+`φ(u) = ∫_0^u #G_t / #G_0 dt`,
+
+its **inverse Herbrand function** `ψ(v)` is the infimum of the `u` with `v ≤ φ(u)` (the least
+such `u` when `G` is finite), and the **upper numbering** of the ramification groups is
+`G^v = G_{ψ(v)}`. For a finite Galois extension `L/K` of fields complete for a discrete
+valuation, with `G = Gal(L/K)` acting on the integer ring of `L`, these are the classical
+`φ_{L/K}`, `ψ_{L/K}` and `Gal(L/K)^v`; nothing here uses completeness, a discrete valuation, or
+finiteness of the residue field.
+
+For finite `G` the integrand is an antitone step function, constant on each interval `(i - 1, i]`
+with `i : ℤ`, equal to `#G / #G_0` on `(-∞, -1]` and to `1` on `(-1, 0]`, and bounded below by
+`1 / #G_0`. Hence `φ` is a continuous, strictly increasing, concave, piecewise linear bijection of
+`ℝ`, the identity on `[-1, 0]`, with the finite-sum formula `φ(m) = (#G_1 + ⋯ + #G_m) / #G_0` at
+every natural number `m`. It is packaged as the order automorphism `herbrandOrderIso G S` of `ℝ`,
+whose inverse is `ψ`. Only values on `[-1, ∞)` carry arithmetic meaning, and `φ` and `ψ` preserve
+that half-line. Although `φ(m)` need not be an integer, `ψ(n)` is a natural number for every
+natural number `n`, since `#G_{m+1}` divides `#G_i` for `i ≤ m + 1`; `psiNat G S : ℕ → ℕ`
+packages these natural values.
+
+The upper numbering is related to the lower one by `G^{φ(u)} = G_u`, restricts to any subgroup
+`H ≤ G` by `H ∩ G^u = H^{φ_H(ψ_G(u))}`, and has its breaks (`UpperJump`) matched bijectively with
+those of the lower filtration (`LowerJump`) by `φ` and `ψ`. Its compatibility
+`(G / H)^v = G^v H / H` with quotients over discrete valuation rings is proved in
+`TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Tower`.
 
 ## Main definitions
 
-* `TauCeti.IsLocalRing.herbrandFun`, `TauCeti.IsLocalRing.inverseHerbrandFun`,
-  `TauCeti.IsLocalRing.herbrandOrderIso`, `TauCeti.IsLocalRing.herbrandOrderIsoIci`,
-  `TauCeti.IsLocalRing.psiNat`
-* `TauCeti.IsLocalRing.upperRamificationGroup`
-* `TauCeti.IsLocalRing.LowerJump`, `TauCeti.IsLocalRing.UpperJump`
+* `TauCeti.IsLocalRing.herbrandFun G S`: the Herbrand function `φ`.
+* `TauCeti.IsLocalRing.inverseHerbrandFun G S`: the inverse Herbrand function `ψ`.
+* `TauCeti.IsLocalRing.psiNat G S`: the integral inverse Herbrand function `ψℕ : ℕ → ℕ`.
+* `TauCeti.IsLocalRing.upperRamificationGroup G S v`: the upper ramification group `G^v`.
+* `TauCeti.IsLocalRing.UpperJump G S v`: an upper ramification break.
+* `TauCeti.IsLocalRing.herbrandOrderIso G S`: `φ` as an order automorphism of `ℝ`, for finite `G`.
+
+## Main results
+
+* `TauCeti.IsLocalRing.herbrandFun_strictMono`, `TauCeti.IsLocalRing.continuous_herbrandFun`,
+  `TauCeti.IsLocalRing.concaveOn_herbrandFun`: `φ` is strictly increasing, continuous and
+  concave.
+* `TauCeti.IsLocalRing.herbrandFun_sub_herbrandFun_of_forall_eq`: `φ` is affine of slope
+  `#H / #G_0` on an interval where the filtration is constantly `H`.
+* `TauCeti.IsLocalRing.herbrandFun_eq_self_of_mem_Icc`,
+  `TauCeti.IsLocalRing.inverseHerbrandFun_eq_self_of_mem_Icc`: `φ` and `ψ` are the identity on
+  `[-1, 0]`.
+* `TauCeti.IsLocalRing.herbrandFun_of_mem_Icc`, `TauCeti.IsLocalRing.herbrandFun_natCast`: the
+  finite-sum formula.
+* `TauCeti.IsLocalRing.herbrandFun_inverseHerbrandFun`,
+  `TauCeti.IsLocalRing.inverseHerbrandFun_herbrandFun`: `φ ∘ ψ = id` and `ψ ∘ φ = id`.
+* `TauCeti.IsLocalRing.inverseHerbrandFun_natCast_eq_natCast_iff`,
+  `TauCeti.IsLocalRing.exists_inverseHerbrandFun_natCast_eq_natCast`,
+  `TauCeti.IsLocalRing.coe_psiNat`, `TauCeti.IsLocalRing.psiNat_eq_iff`: `ψ(n) = m` exactly when
+  `#G_1 + ⋯ + #G_m = n · #G_0`, and `ψ(n)` is a natural number.
+* `TauCeti.IsLocalRing.upperRamificationGroup_herbrandFun`: `G^{φ(u)} = G_u`.
+* `TauCeti.IsLocalRing.subgroupOf_upperRamificationGroup`: `H ∩ G^u = H^{φ_H(ψ_G(u))}` for any
+  `H ≤ G`.
+* `TauCeti.IsLocalRing.upperJump_herbrandFun_iff`,
+  `TauCeti.IsLocalRing.lowerJump_inverseHerbrandFun_iff`: `φ` and `ψ` match lower and upper jumps.
+* `TauCeti.IsLocalRing.upperRamificationGroup_eq_of_herbrandFun_lt_of_le`: `G^v = G_i` for
+  `φ(i - 1) < v ≤ φ(i)`.
+* `TauCeti.IsLocalRing.exists_forall_upperRamificationGroup_eq_bot`: for a faithful action on a
+  Noetherian local ring, `G^v = 1` for all large `v`.
+* `TauCeti.IsLocalRing.herbrandFun_eq_of_surjective_ringEquiv`,
+  `TauCeti.IsLocalRing.herbrandFun_eq_of_ringEquiv`, and their `inverseHerbrandFun` and
+  `upperRamificationGroup` counterparts: equivariant transport along local-ring isomorphisms.
 
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §3.
 * J.-P. Serre, *Sur les corps locaux à corps résiduel algébriquement clos*, Bull. Soc. Math.
-  France **89** (1961), n° 3.1.
-* Adapts `TauCeti/NumberTheory/LocalField/Herbrand/{Basic,Jump}.lean` to arbitrary local rings.
+  France 89 (1961), n° 3.1, formula (5) and the properties of `φ` and `ψ`, for totally ramified
+  extensions with algebraically closed residue field.
 -/
 
 public section
 noncomputable section
 
-open MeasureTheory Set intervalIntegral
+open MeasureTheory Set intervalIntegral Filter
 
 namespace TauCeti.IsLocalRing
 
-section Defs
+section SingleRing
 
 variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
 
-/-- The **Herbrand function** `φ(u) = ∫_0^u #G_t / #G_0 dt` of `G` acting on a local ring `S`. -/
+/-! ### Definitions -/
+
+/-- The **Herbrand function** `φ(u) = ∫_0^u #G_t / #G_0 dt` of a group `G` acting on a local ring
+`S`, where `G_t = ramificationGroupReal G S t` is the lower ramification group `G_{⌈t⌉}`. For
+`t > -1` the group `G_t` lies in `G_0`, so the integrand is `1 / [G_0 : G_t]` there. Only the
+values on `[-1, ∞)` carry arithmetic meaning; for finite `G` the function is an order
+automorphism of `ℝ` (`herbrandOrderIso`). -/
 def herbrandFun (u : ℝ) : ℝ :=
   ∫ t in (0 : ℝ)..u,
     (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0)
 
-/-- The integral formula defining `herbrandFun`. -/
+/-- The integral formula defining the Herbrand function. -/
 theorem herbrandFun_def (u : ℝ) :
     herbrandFun G S u = ∫ t in (0 : ℝ)..u,
-      (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0) := (rfl)
+      (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0) :=
+  (rfl)
 
-/-- The **inverse Herbrand function** `ψ(v) = sInf {u : ℝ | v ≤ φ(u)}`. -/
-def inverseHerbrandFun (v : ℝ) : ℝ := sInf {u : ℝ | v ≤ herbrandFun G S u}
+/-- The **inverse Herbrand function** `ψ(v)`, the infimum of the `u` with `v ≤ φ(u)`. For finite
+`G` this infimum is attained and `ψ` is the inverse of the Herbrand function
+(`herbrandOrderIso_symm_apply`). -/
+def inverseHerbrandFun (v : ℝ) : ℝ :=
+  sInf {u : ℝ | v ≤ herbrandFun G S u}
 
-/-- Unfolding lemma for `inverseHerbrandFun`. -/
+/-- The defining formula of the inverse Herbrand function. -/
 theorem inverseHerbrandFun_def (v : ℝ) :
-    inverseHerbrandFun G S v = sInf {u : ℝ | v ≤ herbrandFun G S u} := (rfl)
+    inverseHerbrandFun G S v = sInf {u : ℝ | v ≤ herbrandFun G S u} :=
+  (rfl)
 
-/-- The **upper-numbering ramification group** `G^v = G_{ψ(v)}` of `G` acting on `S`. -/
+/-- The **integral inverse Herbrand function** `ψℕ(n) = ⌊ψ(n)⌋₊`. For finite `G`, `ψ(n)` is
+already a natural number (`coe_psiNat`). -/
+def psiNat (n : ℕ) : ℕ :=
+  ⌊inverseHerbrandFun G S n⌋₊
+
+/-- Defining formula for `psiNat`. -/
+theorem psiNat_def (n : ℕ) : psiNat G S n = ⌊inverseHerbrandFun G S n⌋₊ :=
+  (rfl)
+
+/-- The **upper ramification group** `G^v = G_{ψ(v)}` of a group `G` acting on a local ring `S`,
+the numbering under which `G^{φ(u)} = G_u` (`upperRamificationGroup_herbrandFun`). -/
 def upperRamificationGroup (v : ℝ) : Subgroup G :=
   ramificationGroupReal G S (inverseHerbrandFun G S v)
 
-/-- Unfolding lemma for `upperRamificationGroup`. -/
+/-- The upper ramification group at `v` is the lower one at `ψ(v)`. -/
 theorem upperRamificationGroup_def (v : ℝ) :
-    upperRamificationGroup G S v = ramificationGroupReal G S (inverseHerbrandFun G S v) := (rfl)
+    upperRamificationGroup G S v = ramificationGroupReal G S (inverseHerbrandFun G S v) :=
+  (rfl)
 
-/-- The **integral inverse Herbrand function** `ψℕ(n) = ⌊ψ(n)⌋₊`. -/
-def psiNat (n : ℕ) : ℕ := ⌊inverseHerbrandFun G S n⌋₊
-
-/-- A **lower jump** (break) of the lower ramification filtration. -/
-def LowerJump (u : ℝ) : Prop :=
-  ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u
-
-/-- An **upper jump** (break) of the upper ramification filtration. -/
+/-- An **upper jump** (break) of the upper ramification filtration: an index `v` at which `G^v`
+strictly contains `G^w` for every `w > v`. -/
 def UpperJump (v : ℝ) : Prop :=
   ∀ w : ℝ, v < w → upperRamificationGroup G S w < upperRamificationGroup G S v
 
-theorem lowerJump_iff (u : ℝ) :
-    LowerJump G S u ↔ ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u :=
-  Iff.rfl
-
+/-- Unfolding criterion for `UpperJump`. -/
 theorem upperJump_iff (v : ℝ) :
     UpperJump G S v ↔
-      ∀ w : ℝ, v < w → upperRamificationGroup G S w < upperRamificationGroup G S v := Iff.rfl
-
-/-- `φ(0) = 0`. -/
-@[simp]
-theorem herbrandFun_zero : herbrandFun G S 0 = 0 := by rw [herbrandFun_def, integral_same]
+      ∀ w : ℝ, v < w → upperRamificationGroup G S w < upperRamificationGroup G S v :=
+  Iff.rfl
 
 variable {G S} in
-/-- Membership in an upper ramification group: `σ ∈ G^v ↔ σ ∈ G_{ψ(v)}`. -/
+/-- An upper jump requires `G` to be nontrivial. -/
+theorem UpperJump.nontrivial {v : ℝ} (hv : UpperJump G S v) : Nontrivial G := by
+  rcases subsingleton_or_nontrivial G with _ | h
+  · exact absurd (Subsingleton.elim _ _) ((upperJump_iff G S v).1 hv (v + 1) (lt_add_one v)).ne
+  · exact h
+
+variable {G S} in
+/-- Membership in the upper ramification groups: `σ ∈ G^v ↔ σ ∈ G_{ψ(v)}`. -/
 @[simp]
 theorem mem_upperRamificationGroup_iff {v : ℝ} {σ : G} :
-    σ ∈ upperRamificationGroup G S v ↔ σ ∈ ramificationGroupReal G S (inverseHerbrandFun G S v) :=
-  by rw [upperRamificationGroup_def]
+    σ ∈ upperRamificationGroup G S v ↔
+      σ ∈ ramificationGroupReal G S (inverseHerbrandFun G S v) := by
+  rw [upperRamificationGroup_def]
 
-/-- Every upper ramification group is normal in `G`. -/
+/-- Every upper ramification group is normal. -/
 instance instNormalUpperRamificationGroup (v : ℝ) : (upperRamificationGroup G S v).Normal := by
-  rw [upperRamificationGroup_def]; infer_instance
+  rw [upperRamificationGroup_def]
+  infer_instance
 
-end Defs
-
-section LowerJump
-
-variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
-
-/-- Every lower jump is at least `-1`. -/
-theorem neg_one_le_of_lowerJump {u : ℝ} (h : LowerJump G S u) : -1 ≤ u := by
-  by_contra hlt
-  replace hlt : u < -1 := not_le.1 hlt
-  have hstrict := h ((u + -1) / 2) (by linarith)
-  rw [ramificationGroupReal_def, ramificationGroupReal_def,
-    ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by push_cast; linarith)),
-    ramificationGroup_eq_top_of_le_neg_one G S
-      (Int.ceil_le.2 (by exact_mod_cast hlt.le))] at hstrict
-  exact lt_irrefl _ hstrict
-
-/-- Every lower jump is an integer `≥ -1`. -/
-theorem lowerJump_eq_intCast {u : ℝ} (h : LowerJump G S u) :
-    ∃ i : ℤ, -1 ≤ i ∧ u = (i : ℝ) := by
-  refine ⟨⌈u⌉, by exact_mod_cast (neg_one_le_of_lowerJump G S h).trans (Int.le_ceil u), ?_⟩
-  rcases eq_or_lt_of_le (Int.le_ceil u) with heq | hlt
-  · exact heq
-  · have hstrict := h ⌈u⌉ hlt
-    rw [ramificationGroupReal_intCast, ramificationGroupReal_def] at hstrict
-    exact absurd hstrict (lt_irrefl _)
-
-/-- At an integer `i`, a lower jump is a strict drop from `G_i` to `G_{i+1}`. -/
+/-- The Herbrand function vanishes at `0`. -/
 @[simp]
-theorem lowerJump_intCast_iff {i : ℤ} :
-    LowerJump G S (i : ℝ) ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i := by
-  refine ⟨fun h ↦ by
-      simpa only [ramificationGroupReal_intCast] using h ((i + 1 : ℤ) : ℝ) (by push_cast; linarith),
-    fun h v hv ↦ ?_⟩
-  rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
-  exact (ramificationGroup_antitone G S (by have := Int.lt_ceil.2 hv; omega)).trans_lt h
+theorem herbrandFun_zero : herbrandFun G S 0 = 0 :=
+  integral_same
 
-end LowerJump
+/-! ### The integrand -/
 
 section Finite
 
-variable (G : Type*) [Group G] [Finite G] (S : Type*) [CommRing S] [IsLocalRing S]
-  [MulSemiringAction G S]
+variable [Finite G]
 
 /-- The integrand `#G_t / #G_0` of the Herbrand function. -/
 private def herbrandDensity (t : ℝ) : ℝ :=
-  (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0)
+  Nat.card (ramificationGroupReal G S t) / Nat.card (ramificationGroup G S 0)
 
-private theorem herbrandDensity_antitone : Antitone (herbrandDensity G S) := fun _ _ hst ↦ by
+private theorem natCard_ramificationGroup_zero_pos :
+    (0 : ℝ) < Nat.card (ramificationGroup G S 0) := by
+  exact_mod_cast Nat.card_pos
+
+private theorem herbrandDensity_antitone : Antitone (herbrandDensity G S) := fun s t hst ↦ by
   unfold herbrandDensity
   gcongr
   exact Subgroup.card_le_of_le (ramificationGroupReal_antitone G S hst)
@@ -171,311 +213,287 @@ private theorem intervalIntegrable_herbrandDensity (a b : ℝ) :
 private theorem inv_le_herbrandDensity (t : ℝ) :
     (Nat.card (ramificationGroup G S 0) : ℝ)⁻¹ ≤ herbrandDensity G S t := by
   rw [herbrandDensity, div_eq_mul_inv]
-  exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast Nat.card_pos)
+  refine le_mul_of_one_le_left (by positivity) ?_
+  exact_mod_cast Nat.card_pos
 
-/-- Increment formula: `φ(b) - φ(a) = ∫_a^b #G_t / #G_0 dt`. -/
-theorem herbrandFun_sub (a b : ℝ) :
+/-! ### The Herbrand function -/
+
+/-- The increment of the Herbrand function over `[a, b]` is the integral of `#G_t / #G_0`. -/
+theorem herbrandFun_sub_herbrandFun (a b : ℝ) :
     herbrandFun G S b - herbrandFun G S a = ∫ t in a..b,
       (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0) :=
   integral_interval_sub_left (intervalIntegrable_herbrandDensity G S 0 b)
     (intervalIntegrable_herbrandDensity G S 0 a)
 
-/-- On an interval `[a, b]` where `G_t = H` on `(a, b]`, `φ` is affine of slope `#H / #G_0`. -/
-theorem herbrandFun_sub_of_forall_eq {a b : ℝ} (hab : a ≤ b) {H : Subgroup G}
+/-- On an interval `[a, b]` over which the lower ramification filtration is constantly `H`, that
+is `G_t = H` for every `a < t ≤ b`, the Herbrand function is affine of slope `#H / #G_0`. -/
+theorem herbrandFun_sub_herbrandFun_of_forall_eq {a b : ℝ} (hab : a ≤ b) {H : Subgroup G}
     (h : ∀ t : ℝ, a < t → t ≤ b → ramificationGroupReal G S t = H) :
     herbrandFun G S b - herbrandFun G S a =
-      (b - a) * ((Nat.card H : ℝ) / Nat.card (ramificationGroup G S 0)) := by
-  rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun t ht ↦ ?_)
+      (b - a) * (Nat.card H / Nat.card (ramificationGroup G S 0)) := by
+  rw [herbrandFun_sub_herbrandFun, ← smul_eq_mul, ← intervalIntegral.integral_const]
+  refine integral_congr_ae (Eventually.of_forall fun t ht ↦ ?_)
   rw [uIoc_of_le hab] at ht
   rw [h t ht.1 ht.2]
 
-/-- On an interval `[a, b] ⊆ [i - 1, i]`, `φ` is affine of slope `#G_i / #G_0`. -/
-theorem herbrandFun_sub_of_le {i : ℤ} {a b : ℝ} (ha : (i : ℝ) - 1 ≤ a) (hab : a ≤ b)
+/-- On an interval `[a, b] ⊆ [i - 1, i]` with `i : ℤ` the Herbrand function is affine of slope
+`#G_i / #G_0`. -/
+theorem herbrandFun_sub_herbrandFun_of_le {i : ℤ} {a b : ℝ} (ha : (i : ℝ) - 1 ≤ a) (hab : a ≤ b)
     (hb : b ≤ i) :
     herbrandFun G S b - herbrandFun G S a =
-      (b - a) * ((Nat.card (ramificationGroup G S i) : ℝ) /
-        Nat.card (ramificationGroup G S 0)) :=
-  herbrandFun_sub_of_forall_eq G S hab fun _ ht₁ ht₂ ↦
+      (b - a) * (Nat.card (ramificationGroup G S i) / Nat.card (ramificationGroup G S 0)) :=
+  herbrandFun_sub_herbrandFun_of_forall_eq G S hab fun _ ht₁ ht₂ ↦
     ramificationGroupReal_eq_of_sub_one_lt_of_le G S (ha.trans_lt ht₁) (ht₂.trans hb)
 
-/-- Lower linear growth bound: `(b - a) / #G_0 ≤ φ(b) - φ(a)` for `a ≤ b`. -/
-theorem div_sub_le_herbrandFun_sub {a b : ℝ} (hab : a ≤ b) :
+private theorem div_le_herbrandFun_sub {a b : ℝ} (hab : a ≤ b) :
     (b - a) / Nat.card (ramificationGroup G S 0) ≤ herbrandFun G S b - herbrandFun G S a := by
-  rw [herbrandFun_sub, div_eq_mul_inv, ← smul_eq_mul, ← intervalIntegral.integral_const]
+  rw [herbrandFun_sub_herbrandFun, div_eq_mul_inv, ← smul_eq_mul,
+    ← intervalIntegral.integral_const]
   exact integral_mono_on hab intervalIntegrable_const (intervalIntegrable_herbrandDensity G S a b)
     fun t _ ↦ inv_le_herbrandDensity G S t
 
 private theorem herbrandFun_sub_le_mul {a b : ℝ} (hab : a ≤ b) :
     herbrandFun G S b - herbrandFun G S a ≤ (b - a) * herbrandDensity G S a := by
-  rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
+  rw [herbrandFun_sub_herbrandFun, ← smul_eq_mul, ← intervalIntegral.integral_const]
   exact integral_mono_on hab (intervalIntegrable_herbrandDensity G S a b) intervalIntegrable_const
-    fun _ ht ↦ herbrandDensity_antitone G S ht.1
+    fun t ht ↦ herbrandDensity_antitone G S ht.1
 
 private theorem mul_le_herbrandFun_sub {a b : ℝ} (hab : a ≤ b) :
     (b - a) * herbrandDensity G S b ≤ herbrandFun G S b - herbrandFun G S a := by
-  rw [herbrandFun_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
+  rw [herbrandFun_sub_herbrandFun, ← smul_eq_mul, ← intervalIntegral.integral_const]
   exact integral_mono_on hab intervalIntegrable_const (intervalIntegrable_herbrandDensity G S a b)
-    fun _ ht ↦ herbrandDensity_antitone G S ht.2
+    fun t ht ↦ herbrandDensity_antitone G S ht.2
 
-/-- The Herbrand function is strictly increasing on `ℝ`. -/
+/-- The Herbrand function of a finite group is strictly increasing. -/
 theorem herbrandFun_strictMono : StrictMono (herbrandFun G S) := fun a b hab ↦ by
-  have h := div_sub_le_herbrandFun_sub G S hab.le
-  have hpos : 0 < (b - a) / Nat.card (ramificationGroup G S 0) :=
-    div_pos (sub_pos.2 hab) (Nat.cast_pos.2 Nat.card_pos)
+  have h := div_le_herbrandFun_sub G S hab.le
+  have : 0 < (b - a) / Nat.card (ramificationGroup G S 0) :=
+    div_pos (sub_pos.2 hab) (natCard_ramificationGroup_zero_pos G S)
   linarith
 
-/-- The Herbrand function is continuous on `ℝ`. -/
+/-- The Herbrand function of a finite group is continuous. -/
 @[fun_prop]
 theorem continuous_herbrandFun : Continuous (herbrandFun G S) :=
   continuous_primitive (intervalIntegrable_herbrandDensity G S) 0
 
-/-- The slopes of `herbrandFun` decrease over adjacent intervals. -/
-theorem herbrandFun_slope_anti_adjacent {u v w : ℝ} (huv : u < v) (hvw : v < w) :
-    (herbrandFun G S w - herbrandFun G S v) / (w - v) ≤
-      (herbrandFun G S v - herbrandFun G S u) / (v - u) :=
-  calc (herbrandFun G S w - herbrandFun G S v) / (w - v)
-      ≤ herbrandDensity G S v :=
-        (div_le_iff₀' (sub_pos.2 hvw)).2 (herbrandFun_sub_le_mul G S hvw.le)
-    _ ≤ (herbrandFun G S v - herbrandFun G S u) / (v - u) :=
-        (le_div_iff₀' (sub_pos.2 huv)).2 (mul_le_herbrandFun_sub G S huv.le)
-
-/-- The Herbrand function is concave on `ℝ`. -/
-theorem concaveOn_herbrandFun : ConcaveOn ℝ Set.univ (herbrandFun G S) :=
-  concaveOn_of_slope_anti_adjacent convex_univ fun _ _ huv hvw ↦
-    herbrandFun_slope_anti_adjacent G S huv hvw
+/-- The Herbrand function of a finite group is **concave**: the integrand `#G_t / #G_0` is
+antitone. -/
+theorem concaveOn_herbrandFun : ConcaveOn ℝ univ (herbrandFun G S) :=
+  concaveOn_of_slope_anti_adjacent convex_univ fun {u v w} _ _ huv hvw ↦
+    calc (herbrandFun G S w - herbrandFun G S v) / (w - v)
+        ≤ herbrandDensity G S v :=
+          (div_le_iff₀' (sub_pos.2 hvw)).2 (herbrandFun_sub_le_mul G S hvw.le)
+      _ ≤ (herbrandFun G S v - herbrandFun G S u) / (v - u) :=
+          (le_div_iff₀' (sub_pos.2 huv)).2 (mul_le_herbrandFun_sub G S huv.le)
 
 /-- The Herbrand function is the identity on `[-1, 0]`. -/
-theorem herbrandFun_of_neg_one_le_of_le_zero {u : ℝ} (h₁ : -1 ≤ u) (h₀ : u ≤ 0) :
+theorem herbrandFun_eq_self_of_mem_Icc {u : ℝ} (hu : u ∈ Icc (-1 : ℝ) 0) :
     herbrandFun G S u = u := by
-  have h := herbrandFun_sub_of_le G S (i := 0) (by simpa using h₁) h₀ (by simp)
-  rw [div_self (by exact_mod_cast (Nat.card_pos (α := ramificationGroup G S 0)).ne'),
-    herbrandFun_zero] at h
+  have h := herbrandFun_sub_herbrandFun_of_le G S (i := 0) (by simpa using hu.1) hu.2 (by simp)
+  rw [div_self (natCard_ramificationGroup_zero_pos G S).ne', herbrandFun_zero] at h
   linarith
 
-/-- `φ(-1) = -1`. -/
+/-- The Herbrand function fixes `-1`. -/
 @[simp]
 theorem herbrandFun_neg_one : herbrandFun G S (-1) = -1 :=
-  herbrandFun_of_neg_one_le_of_le_zero G S le_rfl (by norm_num)
+  herbrandFun_eq_self_of_mem_Icc G S ⟨le_rfl, by norm_num⟩
 
-/-- On `(-∞, -1]`, `φ(u) = -1 + (u + 1) · #G / #G_0`. -/
+/-- On `(-∞, -1]`, `φ(u) = -1 + (u + 1) * (#G / #G_0)`. -/
 theorem herbrandFun_of_le_neg_one {u : ℝ} (hu : u ≤ -1) :
     herbrandFun G S u =
       -1 + (u + 1) * ((Nat.card G : ℝ) / Nat.card (ramificationGroup G S 0)) := by
-  have h := herbrandFun_sub_of_forall_eq G S (H := ⊤) hu fun _ _ ht₂ ↦ by
+  have h := herbrandFun_sub_herbrandFun_of_forall_eq G S (H := ⊤) hu fun _ _ ht₂ ↦ by
     rw [ramificationGroupReal_def]
     exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by exact_mod_cast ht₂))
   rw [herbrandFun_neg_one, Subgroup.card_top] at h
   linarith
 
-/-- For `m : ℕ` and `m ≤ u ≤ m + 1`, `φ(u) = (#G_1 + ⋯ + #G_m + (u - m) #G_{m+1}) / #G_0`. -/
+/-- The Herbrand function is the identity on `[-1, u]` as long as the lower ramification
+filtration is constant from `0` through `u`. For `u ≤ 0` the hypothesis `h` is vacuous and the
+conclusion is `herbrandFun_eq_self_of_mem_Icc`. -/
+theorem herbrandFun_eq_self_of_forall_eq {u : ℝ} (hu : -1 ≤ u)
+    (h : ∀ t : ℝ, 0 < t → t ≤ u → ramificationGroupReal G S t = ramificationGroup G S 0) :
+    herbrandFun G S u = u := by
+  rcases le_total u 0 with hu₀ | hu₀
+  · exact herbrandFun_eq_self_of_mem_Icc G S ⟨hu, hu₀⟩
+  have h' := herbrandFun_sub_herbrandFun_of_forall_eq G S hu₀ h
+  rw [div_self (natCard_ramificationGroup_zero_pos G S).ne', herbrandFun_zero] at h'
+  linarith
+
+/-- The **finite-sum formula** for the Herbrand function: for `m : ℕ` and `m ≤ u ≤ m + 1`,
+`φ(u) = (#G_1 + ⋯ + #G_m + (u - m) #G_{m+1}) / #G_0`. -/
 theorem herbrandFun_of_mem_Icc (m : ℕ) {u : ℝ} (h₁ : (m : ℝ) ≤ u) (h₂ : u ≤ m + 1) :
     herbrandFun G S u =
       (∑ i ∈ Finset.Icc 1 m, (Nat.card (ramificationGroup G S i) : ℝ) +
         (u - m) * Nat.card (ramificationGroup G S (m + 1 : ℕ))) /
         Nat.card (ramificationGroup G S 0) := by
-  have hstep := herbrandFun_sub_of_le G S (i := (m + 1 : ℕ)) (by push_cast; linarith) h₁
-    (by push_cast; linarith)
+  have hstep := herbrandFun_sub_herbrandFun_of_le G S (i := (m + 1 : ℕ)) (by push_cast; linarith)
+    h₁ (by push_cast; linarith)
   induction m generalizing u with
   | zero =>
     rw [Nat.cast_zero, herbrandFun_zero] at hstep
     rw [Finset.Icc_eq_empty (by norm_num), Finset.sum_empty]
     linear_combination hstep
-  | succ k ih =>
-    have hk := ih (u := (k + 1 : ℕ)) (by push_cast; linarith) (by push_cast; linarith)
-      (herbrandFun_sub_of_le G S (i := (k + 1 : ℕ)) (by push_cast; linarith)
+  | succ m ih =>
+    have hm := ih (u := (m + 1 : ℕ)) (by push_cast; linarith) (by push_cast; linarith)
+      (herbrandFun_sub_herbrandFun_of_le G S (i := (m + 1 : ℕ)) (by push_cast; linarith)
         (by push_cast; linarith) (by push_cast; linarith))
     rw [Finset.sum_Icc_succ_top (by omega)]
-    rw [hk] at hstep
+    rw [hm] at hstep
     push_cast at hstep ⊢
     linear_combination hstep
 
-/-- At `m : ℕ`, `φ(m) = (#G_1 + ⋯ + #G_m) / #G_0`. -/
+/-- The Herbrand function at a natural number `m`: `φ(m) = (#G_1 + ⋯ + #G_m) / #G_0`. -/
 theorem herbrandFun_natCast (m : ℕ) :
     herbrandFun G S m =
       (∑ i ∈ Finset.Icc 1 m, (Nat.card (ramificationGroup G S i) : ℝ)) /
         Nat.card (ramificationGroup G S 0) := by
   rw [herbrandFun_of_mem_Icc G S m le_rfl (by linarith), sub_self, zero_mul, add_zero]
 
-/-- The Herbrand function is surjective onto `ℝ`. -/
-theorem herbrandFun_surjective : Function.Surjective (herbrandFun G S) := fun y ↦ by
-  set g : ℝ := (Nat.card (ramificationGroup G S 0) : ℝ)
-  have hg : 0 < g := Nat.cast_pos.2 Nat.card_pos
-  have ha : herbrandFun G S (min 0 (y * g)) ≤ y := by
-    have h := div_sub_le_herbrandFun_sub G S (min_le_left 0 (y * g))
-    have h2 : min 0 (y * g) / g ≤ y := (div_le_iff₀ hg).2 (min_le_right _ _)
-    rw [herbrandFun_zero, zero_sub, neg_div] at h
-    linarith
-  have hb : y ≤ herbrandFun G S (max 0 (y * g)) := by
-    have h := div_sub_le_herbrandFun_sub G S (le_max_left 0 (y * g))
-    have h2 : y ≤ max 0 (y * g) / g := (le_div_iff₀ hg).2 (le_max_right _ _)
-    rw [herbrandFun_zero, sub_zero, sub_zero] at h
-    linarith
-  obtain ⟨u, _, hu⟩ := intermediate_value_Icc ((min_le_left 0 _).trans (le_max_left 0 _))
-    (continuous_herbrandFun G S).continuousOn ⟨ha, hb⟩
-  exact ⟨u, hu⟩
+/-- The Herbrand function of a finite group is a bijection of `ℝ`: its slope is at least
+`1 / #G_0` everywhere. -/
+theorem herbrandFun_surjective : Function.Surjective (herbrandFun G S) := by
+  have hg := natCard_ramificationGroup_zero_pos G S
+  -- The linear bounds `φ(u) ≥ u / #G_0` for `u ≥ 0` and `φ(u) ≤ u / #G_0` for `u ≤ 0`.
+  have htop : Tendsto (herbrandFun G S) atTop atTop := by
+    refine tendsto_atTop_mono' atTop ?_ (tendsto_id.atTop_div_const hg)
+    filter_upwards [eventually_ge_atTop 0] with u hu
+    simpa only [id, herbrandFun_zero, sub_zero] using div_le_herbrandFun_sub G S hu
+  have hbot : Tendsto (herbrandFun G S) atBot atBot := by
+    refine tendsto_atBot_mono' atBot ?_ (tendsto_id.atBot_div_const hg)
+    filter_upwards [eventually_le_atBot 0] with u hu
+    have h := div_le_herbrandFun_sub G S hu
+    rw [herbrandFun_zero, zero_sub, zero_sub, neg_div, neg_le_neg_iff] at h
+    exact h
+  exact (continuous_herbrandFun G S).surjective htop hbot
 
-/-- `φ(ψ(v)) = v`. -/
+/-- The Herbrand function of a finite group as an order automorphism of `ℝ`. Its forward map is
+`herbrandFun G S` and its inverse is `inverseHerbrandFun G S`. -/
+def herbrandOrderIso : ℝ ≃o ℝ :=
+  StrictMono.orderIsoOfSurjective (herbrandFun G S) (herbrandFun_strictMono G S)
+    (herbrandFun_surjective G S)
+
+@[simp]
+theorem herbrandOrderIso_apply (u : ℝ) : herbrandOrderIso G S u = herbrandFun G S u :=
+  (rfl)
+@[simp]
+theorem herbrandOrderIso_symm_apply (v : ℝ) :
+    (herbrandOrderIso G S).symm v = inverseHerbrandFun G S v := by
+  have hset : {u : ℝ | v ≤ herbrandFun G S u} = Ici ((herbrandOrderIso G S).symm v) := by
+    ext u
+    rw [mem_ofPred_eq, mem_Ici, ← herbrandOrderIso_apply, OrderIso.symm_apply_le]
+  rw [inverseHerbrandFun_def, hset, csInf_Ici]
+
+/-- The inverse of `herbrandOrderIso G S` is the inverse Herbrand function. -/
+theorem coe_herbrandOrderIso_symm : ⇑(herbrandOrderIso G S).symm = inverseHerbrandFun G S :=
+  funext (herbrandOrderIso_symm_apply G S)
+
+/-! ### The inverse Herbrand function -/
+
+/-- The Herbrand function undoes its inverse: `φ(ψ(v)) = v`. -/
 @[simp]
 theorem herbrandFun_inverseHerbrandFun (v : ℝ) :
     herbrandFun G S (inverseHerbrandFun G S v) = v := by
-  obtain ⟨u₀, rfl⟩ := herbrandFun_surjective G S v
-  have hset : {u : ℝ | herbrandFun G S u₀ ≤ herbrandFun G S u} = Set.Ici u₀ :=
-    Set.ext fun _ ↦ (herbrandFun_strictMono G S).le_iff_le
-  rw [inverseHerbrandFun_def, hset, csInf_Ici]
+  rw [← herbrandOrderIso_symm_apply, ← herbrandOrderIso_apply, OrderIso.apply_symm_apply]
 
-/-- `ψ(φ(u)) = u`. -/
+/-- The inverse Herbrand function undoes the Herbrand function: `ψ(φ(u)) = u`. -/
 @[simp]
 theorem inverseHerbrandFun_herbrandFun (u : ℝ) :
-    inverseHerbrandFun G S (herbrandFun G S u) = u :=
-  (herbrandFun_strictMono G S).injective (herbrandFun_inverseHerbrandFun G S _)
+    inverseHerbrandFun G S (herbrandFun G S u) = u := by
+  rw [← herbrandOrderIso_symm_apply, ← herbrandOrderIso_apply, OrderIso.symm_apply_apply]
 
-/-- The Herbrand function as an order automorphism of `ℝ`, with inverse `inverseHerbrandFun`. -/
-def herbrandOrderIso : ℝ ≃o ℝ where
-  toFun := herbrandFun G S
-  invFun := inverseHerbrandFun G S
-  left_inv := inverseHerbrandFun_herbrandFun G S
-  right_inv := herbrandFun_inverseHerbrandFun G S
-  map_rel_iff' := (herbrandFun_strictMono G S).le_iff_le
+variable {G S} in
+/-- `ψ(v) ≤ u` exactly when `v ≤ φ(u)`. -/
+theorem inverseHerbrandFun_le_iff {u v : ℝ} :
+    inverseHerbrandFun G S v ≤ u ↔ v ≤ herbrandFun G S u := by
+  rw [← herbrandOrderIso_symm_apply, OrderIso.symm_apply_le, herbrandOrderIso_apply]
 
-@[simp]
-theorem herbrandOrderIso_apply (u : ℝ) : herbrandOrderIso G S u = herbrandFun G S u := (rfl)
+variable {G S} in
+/-- `u ≤ ψ(v)` exactly when `φ(u) ≤ v`. -/
+theorem le_inverseHerbrandFun_iff {u v : ℝ} :
+    u ≤ inverseHerbrandFun G S v ↔ herbrandFun G S u ≤ v := by
+  rw [← herbrandOrderIso_symm_apply, OrderIso.le_symm_apply, herbrandOrderIso_apply]
 
-@[simp]
-theorem herbrandOrderIso_symm_apply (v : ℝ) :
-    (herbrandOrderIso G S).symm v = inverseHerbrandFun G S v := (rfl)
+variable {G S} in
+/-- `u < ψ(v)` exactly when `φ(u) < v`. -/
+theorem lt_inverseHerbrandFun_iff {u v : ℝ} :
+    u < inverseHerbrandFun G S v ↔ herbrandFun G S u < v := by
+  rw [← herbrandOrderIso_symm_apply, OrderIso.lt_symm_apply, herbrandOrderIso_apply]
 
-/-- The inverse Herbrand function is strictly increasing on `ℝ`. -/
+variable {G S} in
+/-- `ψ(v) < u` exactly when `v < φ(u)`. -/
+theorem inverseHerbrandFun_lt_iff {u v : ℝ} :
+    inverseHerbrandFun G S v < u ↔ v < herbrandFun G S u := by
+  rw [← herbrandOrderIso_symm_apply, OrderIso.symm_apply_lt, herbrandOrderIso_apply]
+
+/-- The inverse Herbrand function of a finite group is strictly increasing. -/
 theorem inverseHerbrandFun_strictMono : StrictMono (inverseHerbrandFun G S) :=
-  (herbrandOrderIso G S).symm.strictMono
+  coe_herbrandOrderIso_symm G S ▸ (herbrandOrderIso G S).symm.strictMono
 
-/-- The inverse Herbrand function is continuous on `ℝ`. -/
+/-- The inverse Herbrand function of a finite group is continuous. -/
 @[fun_prop]
 theorem continuous_inverseHerbrandFun : Continuous (inverseHerbrandFun G S) :=
-  (herbrandOrderIso G S).symm.continuous
+  coe_herbrandOrderIso_symm G S ▸ (herbrandOrderIso G S).symm.continuous
 
 /-- The inverse Herbrand function is the identity on `[-1, 0]`. -/
-theorem inverseHerbrandFun_of_neg_one_le_of_le_zero {v : ℝ} (h₁ : -1 ≤ v) (h₀ : v ≤ 0) :
+theorem inverseHerbrandFun_eq_self_of_mem_Icc {v : ℝ} (hv : v ∈ Icc (-1 : ℝ) 0) :
     inverseHerbrandFun G S v = v := by
-  conv_lhs => rw [← herbrandFun_of_neg_one_le_of_le_zero G S h₁ h₀]
+  conv_lhs => rw [← herbrandFun_eq_self_of_mem_Icc G S hv]
   exact inverseHerbrandFun_herbrandFun G S v
 
-/-- `ψ(-1) = -1`. -/
+/-- The inverse Herbrand function fixes `-1`. -/
 @[simp]
 theorem inverseHerbrandFun_neg_one : inverseHerbrandFun G S (-1) = -1 :=
-  inverseHerbrandFun_of_neg_one_le_of_le_zero G S le_rfl (by norm_num)
+  inverseHerbrandFun_eq_self_of_mem_Icc G S ⟨le_rfl, by norm_num⟩
 
-/-- `ψ(0) = 0`. -/
+/-- The inverse Herbrand function vanishes at `0`. -/
 @[simp]
 theorem inverseHerbrandFun_zero : inverseHerbrandFun G S 0 = 0 :=
-  inverseHerbrandFun_of_neg_one_le_of_le_zero G S (by norm_num) le_rfl
+  inverseHerbrandFun_eq_self_of_mem_Icc G S ⟨by norm_num, le_rfl⟩
 
-/-- `φ` preserves `[-1, ∞)`. -/
+variable {G S} in
+/-- The Herbrand function preserves the half-line `[-1, ∞)`: `-1 ≤ φ(u) ↔ -1 ≤ u`. -/
+@[simp]
 theorem neg_one_le_herbrandFun_iff {u : ℝ} : -1 ≤ herbrandFun G S u ↔ -1 ≤ u := by
   conv_lhs => rw [← herbrandFun_neg_one G S]
   exact (herbrandFun_strictMono G S).le_iff_le
 
-/-- `ψ` preserves `[-1, ∞)`. -/
+variable {G S} in
+/-- The inverse Herbrand function preserves the half-line `[-1, ∞)`: `-1 ≤ ψ(v) ↔ -1 ≤ v`. -/
+@[simp]
 theorem neg_one_le_inverseHerbrandFun_iff {v : ℝ} : -1 ≤ inverseHerbrandFun G S v ↔ -1 ≤ v := by
   conv_lhs => rw [← inverseHerbrandFun_neg_one G S]
   exact (inverseHerbrandFun_strictMono G S).le_iff_le
 
-/-- The Herbrand function as an order automorphism of `[-1, ∞)`. -/
-def herbrandOrderIsoIci : Set.Ici (-1 : ℝ) ≃o Set.Ici (-1 : ℝ) where
-  toFun u := ⟨herbrandFun G S u, (neg_one_le_herbrandFun_iff G S).2 u.2⟩
-  invFun v := ⟨inverseHerbrandFun G S v, (neg_one_le_inverseHerbrandFun_iff G S).2 v.2⟩
-  left_inv u := Subtype.ext (inverseHerbrandFun_herbrandFun G S u)
-  right_inv v := Subtype.ext (herbrandFun_inverseHerbrandFun G S v)
-  map_rel_iff' := (herbrandFun_strictMono G S).le_iff_le
+variable {G S} in
+/-- At natural numbers, `ψ(n) = m` exactly when `#G_1 + ⋯ + #G_m = n · #G_0`, that is when
+`φ(m) = n`. -/
+theorem inverseHerbrandFun_natCast_eq_natCast_iff {n m : ℕ} :
+    inverseHerbrandFun G S n = m ↔
+      ∑ i ∈ Finset.Icc 1 m, Nat.card (ramificationGroup G S i) =
+        n * Nat.card (ramificationGroup G S 0) := by
+  rw [← herbrandOrderIso_symm_apply, OrderIso.symm_apply_eq, herbrandOrderIso_apply,
+    herbrandFun_natCast, eq_comm, div_eq_iff (natCard_ramificationGroup_zero_pos G S).ne']
+  norm_cast
 
-@[simp]
-theorem coe_herbrandOrderIsoIci (u : Set.Ici (-1 : ℝ)) :
-    (herbrandOrderIsoIci G S u : ℝ) = herbrandFun G S u := (rfl)
-
-@[simp]
-theorem coe_herbrandOrderIsoIci_symm (v : Set.Ici (-1 : ℝ)) :
-    ((herbrandOrderIsoIci G S).symm v : ℝ) = inverseHerbrandFun G S v := (rfl)
-
-/-! ### Upper ramification groups and jumps -/
-
-/-- `G^{φ(u)} = G_u`. -/
-@[simp]
-theorem upperRamificationGroup_herbrandFun (u : ℝ) :
-    upperRamificationGroup G S (herbrandFun G S u) = ramificationGroupReal G S u := by
-  rw [upperRamificationGroup_def, inverseHerbrandFun_herbrandFun]
-
-/-- On `[-1, 0]` the upper and lower numberings agree. -/
-theorem upperRamificationGroup_of_neg_one_le_of_le_zero {v : ℝ} (h₁ : -1 ≤ v) (h₀ : v ≤ 0) :
-    upperRamificationGroup G S v = ramificationGroupReal G S v := by
-  rw [upperRamificationGroup_def, inverseHerbrandFun_of_neg_one_le_of_le_zero G S h₁ h₀]
-
-/-- `G^0 = G_0`. -/
-@[simp]
-theorem upperRamificationGroup_zero :
-    upperRamificationGroup G S 0 = ramificationGroup G S 0 := by
-  rw [upperRamificationGroup_of_neg_one_le_of_le_zero G S (by norm_num) le_rfl,
-    ← Int.cast_zero, ramificationGroupReal_intCast]
-
-/-- For `v ≤ -1`, `G^v = ⊤`. -/
-theorem upperRamificationGroup_eq_top_of_le_neg_one {v : ℝ} (hv : v ≤ -1) :
-    upperRamificationGroup G S v = ⊤ := by
-  have hψ : inverseHerbrandFun G S v ≤ -1 := by
-    rw [← inverseHerbrandFun_neg_one G S]
-    exact (inverseHerbrandFun_strictMono G S).monotone hv
-  rw [upperRamificationGroup_def, ramificationGroupReal_def]
-  exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by exact_mod_cast hψ))
-
-/-- The upper ramification filtration is decreasing. -/
-theorem upperRamificationGroup_antitone : Antitone (upperRamificationGroup G S) :=
-  fun _ _ h ↦ ramificationGroupReal_antitone G S ((inverseHerbrandFun_strictMono G S).monotone h)
-
-/-- **Finite-level subgroup identity:** `H ∩ G^u = H^{φ_H(ψ_G(u))}` for any `H ≤ G`. -/
-theorem subgroupOf_upperRamificationGroup (H : Subgroup G) (u : ℝ) :
-    (upperRamificationGroup G S u).subgroupOf H =
-      upperRamificationGroup H S (herbrandFun H S (inverseHerbrandFun G S u)) := by
-  rw [upperRamificationGroup_def, subgroupOf_ramificationGroupReal, upperRamificationGroup_def,
-    inverseHerbrandFun_herbrandFun]
-
-/-- `φ` carries lower jumps precisely to upper jumps. -/
-@[simp]
-theorem upperJump_herbrandFun_iff (u : ℝ) :
-    UpperJump G S (herbrandFun G S u) ↔ LowerJump G S u := by
-  refine ⟨fun h v huv ↦ by
-      simpa only [upperRamificationGroup_herbrandFun] using
-        h (herbrandFun G S v) (herbrandFun_strictMono G S huv),
-    fun h w hvw ↦ ?_⟩
-  have hlt : u < inverseHerbrandFun G S w := by
-    simpa only [inverseHerbrandFun_herbrandFun] using inverseHerbrandFun_strictMono G S hvw
-  simpa only [upperRamificationGroup_def, inverseHerbrandFun_herbrandFun] using h _ hlt
-
-/-- `ψ` carries upper jumps precisely to lower jumps. -/
-@[simp]
-theorem lowerJump_inverseHerbrandFun_iff (v : ℝ) :
-    LowerJump G S (inverseHerbrandFun G S v) ↔ UpperJump G S v := by
-  simpa only [herbrandFun_inverseHerbrandFun] using
-    (upperJump_herbrandFun_iff G S (inverseHerbrandFun G S v)).symm
-
-/-- Every upper jump is at least `-1`. -/
-theorem neg_one_le_of_upperJump {v : ℝ} (h : UpperJump G S v) : -1 ≤ v :=
-  (neg_one_le_inverseHerbrandFun_iff G S).1 <|
-    neg_one_le_of_lowerJump G S ((lowerJump_inverseHerbrandFun_iff G S v).2 h)
-
-/-! ### Integrality of the inverse Herbrand function at natural numbers -/
-
-/-- For every `n : ℕ`, `ψ(n)` is a natural number equal to `psiNat G S n`. -/
-@[simp]
-theorem coe_psiNat (n : ℕ) : (psiNat G S n : ℝ) = inverseHerbrandFun G S n := by
+/-- The inverse Herbrand function takes natural numbers to natural numbers, although the Herbrand
+function need not: `#G_{m+1}` divides `#G_i` for `i ≤ m + 1`. -/
+theorem exists_inverseHerbrandFun_natCast_eq_natCast (n : ℕ) :
+    ∃ m : ℕ, inverseHerbrandFun G S n = m := by
   set u : ℝ := inverseHerbrandFun G S n
-  set m := ⌊u⌋₊
-  have hu0 : 0 ≤ u := by
+  have hu : 0 ≤ u := by
     rw [← inverseHerbrandFun_zero G S]
     exact (inverseHerbrandFun_strictMono G S).monotone (Nat.cast_nonneg n)
-  have hm₁ : (m : ℝ) ≤ u := Nat.floor_le hu0
+  set m := ⌊u⌋₊
+  have hm₁ : (m : ℝ) ≤ u := Nat.floor_le hu
   have hm₂ : u < m + 1 := Nat.lt_floor_add_one u
+  refine ⟨m, ?_⟩
+  -- The finite-sum formula at `u = ψ(n)`, with `φ(u) = n` and denominators cleared.
   have hφ := herbrandFun_of_mem_Icc G S m hm₁ hm₂.le
   rw [herbrandFun_inverseHerbrandFun,
-    eq_div_iff (by exact_mod_cast (Nat.card_pos (α := ramificationGroup G S 0)).ne')] at hφ
+    eq_div_iff (natCard_ramificationGroup_zero_pos G S).ne'] at hφ
   set g : ℤ → ℕ := fun i ↦ Nat.card (ramificationGroup G S i)
+  -- `#G_{m+1}` divides `n #G_0 - (#G_1 + ⋯ + #G_m)`.
   have hdvd : ∀ i : ℤ, i ≤ (m + 1 : ℕ) → g (m + 1 : ℕ) ∣ g i := fun i hi ↦
     Subgroup.card_dvd_of_le (ramificationGroup_antitone G S hi)
   have h₁ : g (m + 1 : ℕ) ∣ n * g 0 := dvd_mul_of_dvd_right (hdvd 0 (by omega)) _
@@ -484,24 +502,28 @@ theorem coe_psiNat (n : ℕ) : (psiNat G S n : ℝ) = inverseHerbrandFun G S n :
   obtain ⟨c, hc⟩ := (Int.natCast_dvd_natCast.2 h₁).sub (Int.natCast_dvd_natCast.2 h₂)
   have hcR : (n : ℝ) * g 0 - ∑ i ∈ Finset.Icc 1 m, (g i : ℝ) = g (m + 1 : ℕ) * c := by
     exact_mod_cast hc
-  have hcu : u - m = c := mul_right_cancel₀ (by exact_mod_cast Nat.card_pos.ne') <|
+  -- Hence `u - m` is an integer `c` with `0 ≤ c < 1`.
+  have hg : (g (m + 1 : ℕ) : ℝ) ≠ 0 := by exact_mod_cast Nat.card_pos.ne'
+  have hcu : u - m = c := mul_right_cancel₀ hg <|
     (by rw [← hcR]; linarith : (u - m) * g (m + 1 : ℕ) = g (m + 1 : ℕ) * c).trans (mul_comm _ _)
   have hc0 : 0 ≤ c := by exact_mod_cast (hcu ▸ sub_nonneg.2 hm₁ : (0 : ℝ) ≤ c)
   have hc1 : c < 1 := by exact_mod_cast (hcu ▸ by linarith : (c : ℝ) < 1)
-  have hcz : c = 0 := by omega
-  rw [hcz, Int.cast_zero, sub_eq_zero] at hcu
-  exact hcu.symm
+  have hc_zero : c = 0 := by omega
+  rw [hc_zero, Int.cast_zero, sub_eq_zero] at hcu
+  exact hcu
+
+/-- For every `n : ℕ`, `ψ(n)` equals its natural floor `psiNat G S n`. -/
+@[simp]
+theorem coe_psiNat (n : ℕ) : (psiNat G S n : ℝ) = inverseHerbrandFun G S n := by
+  obtain ⟨m, hm⟩ := exists_inverseHerbrandFun_natCast_eq_natCast G S n
+  rw [psiNat_def, hm, Nat.floor_natCast]
 
 /-- `psiNat G S n = m` iff `#G_1 + ⋯ + #G_m = n · #G_0`. -/
 theorem psiNat_eq_iff {n m : ℕ} :
     psiNat G S n = m ↔
       ∑ i ∈ Finset.Icc 1 m, Nat.card (ramificationGroup G S i) =
         n * Nat.card (ramificationGroup G S 0) := by
-  have h0 : (Nat.card (ramificationGroup G S 0) : ℝ) ≠ 0 := by
-    exact_mod_cast (Nat.card_pos (α := ramificationGroup G S 0)).ne'
-  rw [← Nat.cast_inj (R := ℝ), coe_psiNat, ← (herbrandFun_strictMono G S).injective.eq_iff,
-    herbrandFun_inverseHerbrandFun, herbrandFun_natCast, eq_comm, div_eq_iff h0]
-  norm_cast
+  rw [← Nat.cast_inj (R := ℝ), coe_psiNat, inverseHerbrandFun_natCast_eq_natCast_iff]
 
 /-- `ψℕ(0) = 0`. -/
 @[simp]
@@ -524,8 +546,91 @@ theorem psiNat_le_iff_le_floor_herbrandFun {n i : ℕ} :
   have h0 : 0 ≤ herbrandFun G S i := by
     rw [← herbrandFun_zero G S]
     exact (herbrandFun_strictMono G S).monotone (Nat.cast_nonneg i)
-  rw [Nat.le_floor_iff h0, ← Nat.cast_le (α := ℝ), coe_psiNat,
-    ← (herbrandFun_strictMono G S).le_iff_le, herbrandFun_inverseHerbrandFun]
+  rw [Nat.le_floor_iff h0, ← Nat.cast_le (α := ℝ), coe_psiNat, inverseHerbrandFun_le_iff]
+
+/-- `ψℕ(v) = v` iff `G_v = G_0`, that is when the lower filtration is constant through `v`. -/
+@[simp]
+theorem psiNat_eq_self_iff {v : ℕ} :
+    psiNat G S v = v ↔ ramificationGroup G S v = ramificationGroup G S 0 := by
+  have hle : ∀ i : ℕ, ramificationGroup G S i ≤ ramificationGroup G S 0 := fun i ↦
+    ramificationGroup_antitone G S (Int.natCast_nonneg i)
+  rw [psiNat_eq_iff]
+  constructor
+  · intro h
+    rcases v with _ | k
+    · simp
+    have hk := Finset.sum_le_card_nsmul (Finset.Icc 1 k)
+      (fun i : ℕ ↦ Nat.card (ramificationGroup G S i)) _
+      fun i _ ↦ Subgroup.card_le_of_le (hle i)
+    rw [Finset.sum_Icc_succ_top (by omega)] at h
+    simp only [Nat.card_Icc, Nat.add_sub_cancel, smul_eq_mul] at hk
+    exact Subgroup.eq_of_le_of_card_ge (hle _) (by rw [add_mul, one_mul] at h; omega)
+  · intro hv
+    calc ∑ i ∈ Finset.Icc 1 v, Nat.card (ramificationGroup G S i)
+        = ∑ _i ∈ Finset.Icc 1 v, Nat.card (ramificationGroup G S 0) := by
+          refine Finset.sum_congr rfl fun i hi ↦ ?_
+          have hi : (i : ℤ) ≤ v := by have := (Finset.mem_Icc.1 hi).2; omega
+          rw [le_antisymm (hle i) (hv.symm.le.trans (ramificationGroup_antitone G S hi))]
+      _ = v * Nat.card (ramificationGroup G S 0) := by simp
+
+/-- If `G_t = G_0` and `G_{t+1} = ⊥`, then `ψℕ(v) = t + #G_0 · (v - t)` for every `v ≥ t`. -/
+theorem psiNat_eq_add_card_mul_sub {t v : ℕ}
+    (ht : ramificationGroup G S t = ramificationGroup G S 0)
+    (ht' : ramificationGroup G S (t + 1 : ℕ) = ⊥) (hv : t ≤ v) :
+    psiNat G S v = t + Nat.card (ramificationGroup G S 0) * (v - t) := by
+  set g₀ := Nat.card (ramificationGroup G S 0)
+  have hsum : ∀ m, t ≤ m →
+      ∑ i ∈ Finset.Icc 1 m, Nat.card (ramificationGroup G S i) = t * g₀ + (m - t) := by
+    intro m hm
+    induction m, hm using Nat.le_induction with
+    | base =>
+      rw [(psiNat_eq_iff G S).1 ((psiNat_eq_self_iff G S).2 ht), Nat.sub_self, add_zero]
+    | succ m _ ih =>
+      have hbot : ramificationGroup G S (m + 1 : ℕ) = ⊥ := le_bot_iff.1 <|
+        (ramificationGroup_antitone G S (by push_cast; omega)).trans ht'.le
+      rw [Finset.sum_Icc_succ_top (by omega), ih, hbot, Subgroup.card_bot]
+      omega
+  refine (psiNat_eq_iff G S).2 ((hsum _ (by omega)).trans ?_)
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hv
+  simp only [Nat.add_sub_cancel_left]
+  ring
+
+/-! ### The upper numbering -/
+
+/-- The upper and lower numberings are related by `G^{φ(u)} = G_u`. -/
+@[simp]
+theorem upperRamificationGroup_herbrandFun (u : ℝ) :
+    upperRamificationGroup G S (herbrandFun G S u) = ramificationGroupReal G S u := by
+  rw [upperRamificationGroup_def, inverseHerbrandFun_herbrandFun]
+
+/-- The upper ramification filtration is decreasing. -/
+theorem upperRamificationGroup_antitone : Antitone (upperRamificationGroup G S) :=
+  fun _ _ h ↦
+    ramificationGroupReal_antitone G S ((inverseHerbrandFun_strictMono G S).monotone h)
+
+/-- Up to `0` the upper and lower numberings agree. Below `-1` both are all of `G`. -/
+theorem upperRamificationGroup_of_le_zero {v : ℝ} (hv : v ≤ 0) :
+    upperRamificationGroup G S v = ramificationGroupReal G S v := by
+  rcases le_total (-1) v with hv₁ | hv₁
+  · rw [upperRamificationGroup_def, inverseHerbrandFun_eq_self_of_mem_Icc G S ⟨hv₁, hv⟩]
+  have htop {w : ℝ} (hw : w ≤ -1) : ramificationGroupReal G S w = ⊤ := by
+    rw [ramificationGroupReal_def]
+    exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by simpa using hw))
+  rw [upperRamificationGroup_def, htop hv₁, htop ?_]
+  rw [← inverseHerbrandFun_neg_one G S]
+  exact (inverseHerbrandFun_strictMono G S).monotone hv₁
+
+/-- `G^0 = G_0`. -/
+@[simp]
+theorem upperRamificationGroup_zero :
+    upperRamificationGroup G S 0 = ramificationGroup G S 0 := by
+  rw [upperRamificationGroup_of_le_zero G S le_rfl, ← Int.cast_zero, ramificationGroupReal_intCast]
+
+/-- For `v ≤ -1`, `G^v = ⊤`. -/
+theorem upperRamificationGroup_eq_top_of_le_neg_one {v : ℝ} (hv : v ≤ -1) :
+    upperRamificationGroup G S v = ⊤ := by
+  rw [upperRamificationGroup_of_le_zero G S (hv.trans (by norm_num)), ramificationGroupReal_def]
+  exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by simpa using hv))
 
 /-- At `n : ℕ`, `G^n = G_{ψℕ(n)}`. -/
 @[simp]
@@ -533,47 +638,108 @@ theorem upperRamificationGroup_natCast (n : ℕ) :
     upperRamificationGroup G S (n : ℝ) = ramificationGroup G S (psiNat G S n) := by
   rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast, ramificationGroupReal_intCast]
 
+/-- For `φ(i - 1) < v ≤ φ(i)` with `i : ℤ`, the upper ramification group `G^v` is the lower
+ramification group `G_i`. -/
+theorem upperRamificationGroup_eq_of_herbrandFun_lt_of_le {i : ℤ} {v : ℝ}
+    (hv₁ : herbrandFun G S (i - 1) < v) (hv₂ : v ≤ herbrandFun G S i) :
+    upperRamificationGroup G S v = ramificationGroup G S i := by
+  rw [upperRamificationGroup_def]
+  exact ramificationGroupReal_eq_of_sub_one_lt_of_le G S (lt_inverseHerbrandFun_iff.2 hv₁)
+    (inverseHerbrandFun_le_iff.2 hv₂)
+
+/-- **Finite-level subgroup identity:** `H ∩ G^u = H^{φ_H(ψ_G(u))}` for any subgroup `H ≤ G`. -/
+theorem subgroupOf_upperRamificationGroup (H : Subgroup G) (u : ℝ) :
+    (upperRamificationGroup G S u).subgroupOf H =
+      upperRamificationGroup H S (herbrandFun H S (inverseHerbrandFun G S u)) := by
+  rw [upperRamificationGroup_def, subgroupOf_ramificationGroupReal, upperRamificationGroup_def,
+    inverseHerbrandFun_herbrandFun]
+
 /-- For a faithful action of a finite group on a Noetherian local ring, the upper ramification
-groups vanish for all sufficiently large real indices. -/
+groups are trivial from some index on. -/
 theorem exists_forall_upperRamificationGroup_eq_bot [IsNoetherianRing S] [FaithfulSMul G S] :
-    ∃ N : ℝ, ∀ v : ℝ, N ≤ v → upperRamificationGroup G S v = ⊥ := by
-  obtain ⟨M, hM⟩ := exists_forall_ramificationGroup_eq_bot G S
-  refine ⟨herbrandFun G S M, fun v hv ↦ ?_⟩
-  have hψ : (M : ℝ) ≤ inverseHerbrandFun G S v := by
-    simpa only [inverseHerbrandFun_herbrandFun] using
-      (inverseHerbrandFun_strictMono G S).monotone hv
+    ∃ v : ℝ, ∀ w : ℝ, v ≤ w → upperRamificationGroup G S w = ⊥ := by
+  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
+  refine ⟨herbrandFun G S N, fun w hw ↦ ?_⟩
   rw [upperRamificationGroup_def, ramificationGroupReal_def]
-  exact hM ⌈inverseHerbrandFun G S v⌉ (Int.le_ceil_iff.2 (by linarith))
+  exact hN _ (Int.cast_le.1 ((le_inverseHerbrandFun_iff.2 hw).trans (Int.le_ceil _)))
+
+/-! ### Correspondence of lower and upper jumps -/
+
+/-- The Herbrand function carries lower jumps precisely to upper jumps. -/
+@[simp]
+theorem upperJump_herbrandFun_iff (u : ℝ) :
+    UpperJump G S (herbrandFun G S u) ↔ LowerJump G S u := by
+  rw [upperJump_iff, lowerJump_iff]
+  refine ⟨fun h v huv ↦ by
+      simpa only [upperRamificationGroup_herbrandFun] using
+        h (herbrandFun G S v) (herbrandFun_strictMono G S huv),
+    fun h w hvw ↦ ?_⟩
+  simpa only [upperRamificationGroup_def, inverseHerbrandFun_herbrandFun] using
+    h _ (lt_inverseHerbrandFun_iff.2 hvw)
+
+/-- The inverse Herbrand function carries upper jumps precisely to lower jumps. -/
+@[simp]
+theorem lowerJump_inverseHerbrandFun_iff (v : ℝ) :
+    LowerJump G S (inverseHerbrandFun G S v) ↔ UpperJump G S v := by
+  simpa only [herbrandFun_inverseHerbrandFun] using
+    (upperJump_herbrandFun_iff G S (inverseHerbrandFun G S v)).symm
+
+/-- Every upper jump is at least `-1`. -/
+theorem neg_one_le_of_upperJump {v : ℝ} (h : UpperJump G S v) : -1 ≤ v :=
+  neg_one_le_inverseHerbrandFun_iff.1 <|
+    neg_one_le_of_lowerJump G S ((lowerJump_inverseHerbrandFun_iff G S v).2 h)
+
+/-- When `#G` is prime, an upper jump at `t : ℕ` forces `G_t = ⊤`. -/
+theorem ramificationGroup_natCast_eq_top_of_upperJump (hℓ : (Nat.card G).Prime)
+    {t : ℕ} (ht : UpperJump G S t) :
+    ramificationGroup G S t = ⊤ := by
+  have : Fact (Nat.card G).Prime := ⟨hℓ⟩
+  have hlt := (upperJump_iff G S _).1 ht ((t + 1 : ℕ) : ℝ) (by push_cast; linarith)
+  have hne := (bot_le.trans_lt hlt).ne'
+  rw [upperRamificationGroup_natCast] at hne
+  have hψ : ramificationGroup G S (psiNat G S t) = ⊤ :=
+    (ramificationGroup G S _).eq_bot_or_eq_top_of_prime_card.resolve_left hne
+  exact top_le_iff.1 <| hψ ▸ ramificationGroup_antitone G S (by exact_mod_cast self_le_psiNat G S t)
+
+/-- When `#G` is prime, `psiNat G S` fixes every depth at or below a natural upper jump. -/
+theorem psiNat_eq_self_of_le_upperJump (hℓ : (Nat.card G).Prime)
+    {v t : ℕ} (hvt : v ≤ t) (ht : UpperJump G S t) :
+    psiNat G S v = v := by
+  have hGi (i : ℕ) (hi : i ≤ t) : ramificationGroup G S i = ⊤ :=
+    top_le_iff.1 <| ramificationGroup_natCast_eq_top_of_upperJump G S hℓ ht ▸
+      ramificationGroup_antitone G S (by exact_mod_cast hi)
+  exact (psiNat_eq_self_iff G S).2 (by rw [hGi v hvt, ← Nat.cast_zero, hGi 0 (Nat.zero_le t)])
+
+/-- When `#G` is prime, an upper jump at `t : ℕ` forces `G_{t+1} = ⊥`. -/
+theorem ramificationGroup_natCast_add_one_eq_bot_of_upperJump (hℓ : (Nat.card G).Prime)
+    {t : ℕ} (ht : UpperJump G S t) :
+    ramificationGroup G S (t + 1) = ⊥ := by
+  have : Fact (Nat.card G).Prime := ⟨hℓ⟩
+  refine (ramificationGroup G S _).eq_bot_or_eq_top_of_prime_card.resolve_right fun htop ↦ ?_
+  have hlt := (upperJump_iff G S _).1 ht ((t + 1 : ℕ) : ℝ) (by push_cast; linarith)
+  have hne := (hlt.trans_le le_top).ne
+  have hG0 : ramificationGroup G S 0 = ⊤ :=
+    top_le_iff.1 (htop ▸ ramificationGroup_antitone G S (by positivity))
+  have hψ : psiNat G S (t + 1) = t + 1 :=
+    (psiNat_eq_self_iff G S).2 (by push_cast; rw [htop, hG0])
+  rw [upperRamificationGroup_natCast, hψ] at hne
+  push_cast at hne
+  exact hne htop
 
 end Finite
+
+end SingleRing
+
+/-! ### Equivariant transport along local-ring isomorphisms -/
 
 section Transport
 
 variable {G S G' S' : Type*} [Group G] [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
   [Group G'] [CommRing S'] [IsLocalRing S'] [MulSemiringAction G' S']
 
-/-- A ring isomorphism equivariant along a group homomorphism pulls back `ramificationGroup`. -/
-theorem ramificationGroup_eq_comap_of_ringEquiv (φ : G →* G') (eS : S ≃+* S')
-    (he : ∀ (g : G) (x : S), eS (g • x) = φ g • eS x) (i : ℤ) :
-    ramificationGroup G S i = (ramificationGroup G' S' i).comap φ := by
-  have hmax : (_root_.IsLocalRing.maximalIdeal S).map eS.toRingHom =
-      _root_.IsLocalRing.maximalIdeal S' :=
-    _root_.IsLocalRing.map_ringEquiv_maximalIdeal eS
-  have hpow (n : ℕ) : (_root_.IsLocalRing.maximalIdeal S' ^ n).comap eS.toRingHom =
-      _root_.IsLocalRing.maximalIdeal S ^ n := by
-    rw [← hmax, ← Ideal.map_pow, Ideal.comap_map_of_bijective eS.toRingHom eS.bijective]
-  exact ramificationGroup_eq_comap_of_comap_maximalIdeal_pow φ eS.toRingHom he hpow
-    (fun _ y ↦ ⟨eS.symm y, by simp⟩) i
-
-/-- A ring isomorphism equivariant along a group homomorphism pulls back `ramificationGroupReal`. -/
-theorem ramificationGroupReal_eq_comap_of_ringEquiv (φ : G →* G') (eS : S ≃+* S')
-    (he : ∀ (g : G) (x : S), eS (g • x) = φ g • eS x) (u : ℝ) :
-    ramificationGroupReal G S u = (ramificationGroupReal G' S' u).comap φ := by
-  rw [ramificationGroupReal_def, ramificationGroupReal_def]
-  exact ramificationGroup_eq_comap_of_ringEquiv φ eS he ⌈u⌉
-
 /-- A ring isomorphism equivariant along a surjective homomorphism of finite groups preserves
-`herbrandFun`. -/
+`herbrandFun`: each ramification group pulls back with kernel `ker φ`, scaling `#G_t` and `#G_0`
+by the same factor `#(ker φ)`. -/
 theorem herbrandFun_eq_of_surjective_ringEquiv [Finite G] (φ : G →* G')
     (hφ : Function.Surjective φ) (eS : S ≃+* S')
     (he : ∀ (g : G) (x : S), eS (g • x) = φ g • eS x) (u : ℝ) :
@@ -611,20 +777,6 @@ theorem upperRamificationGroup_eq_comap_of_surjective_ringEquiv [Finite G] (φ :
     inverseHerbrandFun_eq_of_surjective_ringEquiv φ hφ eS he v,
     ramificationGroupReal_eq_comap_of_ringEquiv φ eS he]
 
-/-- An equivariant isomorphism of local rings transports `ramificationGroup`. -/
-theorem ramificationGroup_map_of_ringEquiv (eG : G ≃* G') (eS : S ≃+* S')
-    (he : ∀ (g : G) (x : S), eS (g • x) = eG g • eS x) (i : ℤ) :
-    (ramificationGroup G S i).map eG.toMonoidHom = ramificationGroup G' S' i := by
-  rw [ramificationGroup_eq_comap_of_ringEquiv eG.toMonoidHom eS he i,
-    Subgroup.map_comap_eq_self_of_surjective eG.surjective]
-
-/-- An equivariant isomorphism of local rings transports `ramificationGroupReal`. -/
-theorem ramificationGroupReal_map_of_ringEquiv (eG : G ≃* G') (eS : S ≃+* S')
-    (he : ∀ (g : G) (x : S), eS (g • x) = eG g • eS x) (u : ℝ) :
-    (ramificationGroupReal G S u).map eG.toMonoidHom = ramificationGroupReal G' S' u := by
-  rw [ramificationGroupReal_def, ramificationGroupReal_def]
-  exact ramificationGroup_map_of_ringEquiv eG eS he ⌈u⌉
-
 /-- An equivariant isomorphism of local rings preserves `herbrandFun`. -/
 theorem herbrandFun_eq_of_ringEquiv (eG : G ≃* G') (eS : S ≃+* S')
     (he : ∀ (g : G) (x : S), eS (g • x) = eG g • eS x) (u : ℝ) :
@@ -642,13 +794,20 @@ theorem inverseHerbrandFun_eq_of_ringEquiv (eG : G ≃* G') (eS : S ≃+* S')
     inverseHerbrandFun G S v = inverseHerbrandFun G' S' v := by
   simp only [inverseHerbrandFun_def, herbrandFun_eq_of_ringEquiv eG eS he]
 
+/-- Pullback form of `upperRamificationGroup_map_of_ringEquiv`. -/
+theorem upperRamificationGroup_eq_comap_of_ringEquiv (eG : G ≃* G') (eS : S ≃+* S')
+    (he : ∀ (g : G) (x : S), eS (g • x) = eG g • eS x) (v : ℝ) :
+    upperRamificationGroup G S v = (upperRamificationGroup G' S' v).comap eG.toMonoidHom := by
+  rw [upperRamificationGroup_def, upperRamificationGroup_def,
+    inverseHerbrandFun_eq_of_ringEquiv eG eS he v,
+    ramificationGroupReal_eq_comap_of_ringEquiv eG.toMonoidHom eS he]
+
 /-- An equivariant isomorphism of local rings transports `upperRamificationGroup`. -/
 theorem upperRamificationGroup_map_of_ringEquiv (eG : G ≃* G') (eS : S ≃+* S')
     (he : ∀ (g : G) (x : S), eS (g • x) = eG g • eS x) (v : ℝ) :
     (upperRamificationGroup G S v).map eG.toMonoidHom = upperRamificationGroup G' S' v := by
-  rw [upperRamificationGroup_def, upperRamificationGroup_def,
-    ← inverseHerbrandFun_eq_of_ringEquiv eG eS he v,
-    ramificationGroupReal_map_of_ringEquiv eG eS he]
+  rw [upperRamificationGroup_eq_comap_of_ringEquiv eG eS he v,
+    Subgroup.map_comap_eq_self_of_surjective eG.surjective]
 
 end Transport
 

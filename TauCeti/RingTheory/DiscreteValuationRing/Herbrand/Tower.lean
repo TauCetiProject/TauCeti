@@ -11,27 +11,44 @@ import TauCeti.RingTheory.Invariant.Galois
 /-!
 # Tower transitivity and upper-numbering Herbrand's theorem for DVRs
 
-Building on the lower-numbering Herbrand's lemma in
+Building on Herbrand's lower-numbering theorem in
 `TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Quotient`, this file proves — for any finite
-group `G` acting on a discrete valuation ring `B` with normal subgroup `H ⊴ G` and separable
-residue extension `𝓀(B) / 𝓀(B^G)`, without completeness, residue finiteness, or faithfulness:
+group `G` acting on a discrete valuation ring `B` over a local ring `A` with normal subgroup
+`H ⊴ G` and separable residue extension `𝓀(B) / 𝓀(A)`, without completeness, residue finiteness,
+faithfulness, or `A = B^G`:
 
 * **Tower transitivity**: `φ_G = φ_{G ⧸ H} ∘ φ_H`, `ψ_G = ψ_H ∘ ψ_{G ⧸ H}`, and
   `ψℕ_G = ψℕ_H ∘ ψℕ_{G ⧸ H}`.
 * **Herbrand's theorem in the upper numbering**: `(G ⧸ H)^v = G^v H / H` for all `v : ℝ`.
 * **Upper numbering of a normal subgroup**: `H ∩ G^v = H^{ψ_{G ⧸ H}(v)}` for all `v : ℝ`.
+* **Upper breaks in a tower**: `v` is an upper break of `G` iff it is an upper break of `G ⧸ H`
+  or `ψ_{G ⧸ H}(v)` is an upper break of `H`.
 
-Each result is proved in base-free form for `FixedPoints.subring B H`, transferred to
-`FixedPoints.subalgebra A B H` over any invariant local ring `A`, and stated in field form for
-`integralClosure A L` and `IntermediateField.fixedField H` via `IsGalois.normalAutEquivQuotient`
-and `AlgEquiv.restrictNormalHom`.
+The analytic and group-theoretic propagation from `(G_u).map π = G'_{φ_H(u)}` is first isolated for
+arbitrary finite groups acting on local rings so that both the DVR API (`FixedPoints.subalgebra`,
+`FixedPoints.subring`, and `integralClosure` / `IntermediateField.fixedField`) and the
+nonarchimedean local-field API (`TauCeti.NumberTheory.LocalField.Herbrand.{Tower,UpperQuotient}`)
+share the same proofs.
+
+## Main results
+
+* `TauCeti.IsLocalRing.herbrandFun_eq_comp_of_map_ramificationGroupReal_eq`,
+  `TauCeti.IsLocalRing.map_upperRamificationGroup_of_map_ramificationGroupReal_eq`,
+  `TauCeti.IsLocalRing.comap_upperRamificationGroup_of_map_ramificationGroupReal_eq`,
+  `TauCeti.IsLocalRing.upperJump_iff_or_of_map_ramificationGroupReal_eq`: abstract local-ring
+  deductions from Herbrand's lower-numbering theorem.
+* `TauCeti.IsLocalRing.herbrandFun_tower`, `TauCeti.IsLocalRing.inverseHerbrandFun_tower`,
+  `TauCeti.IsLocalRing.psiNat_tower`: tower transitivity on `FixedPoints.subalgebra A B H`.
+* `TauCeti.IsLocalRing.upperRamificationGroup_quotient_eq_map`,
+  `TauCeti.IsLocalRing.subgroupOf_upperRamificationGroup_quotient`,
+  `TauCeti.IsLocalRing.upperJump_iff_upperJump_quotient_or`: upper numbering and upper breaks on
+  `FixedPoints.subalgebra A B H` (plus `FixedPoints.subring` and Galois field corollaries).
 
 ## References
 
-* [J.-P. Serre, *Local Fields*][serre1979], Chapter IV, §3, Propositions 14 and 15.
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §3, Propositions 14 and 15.
 * J.-P. Serre, *Sur les corps locaux à corps résiduel algébriquement clos*, Bull. Soc. Math.
   France **89** (1961), 105–154, n° 3.1, Propositions 3 and 4.
-* Adapts `TauCeti/NumberTheory/LocalField/Herbrand/{Tower,UpperQuotient}.lean` to arbitrary DVRs.
 -/
 
 public section
@@ -39,45 +56,82 @@ noncomputable section
 
 namespace TauCeti.IsLocalRing
 
-section SubringTower
+/-! ### Abstract local-ring propagation from Herbrand's lower-numbering theorem -/
 
-variable (B G : Type*) [CommRing B] [IsDomain B] [IsDiscreteValuationRing B]
-  [Group G] [Finite G] [MulSemiringAction G B]
-  (H : Subgroup G) [H.Normal]
-  [Algebra.IsSeparable (_root_.IsLocalRing.ResidueField (FixedPoints.subring B G))
-    (_root_.IsLocalRing.ResidueField B)]
+section AbstractTower
 
-/-- Inertia cardinality is multiplicative in a quotient: `#(G ⧸ H)_0 · #H_0 = #G_0`. -/
-private theorem natCard_ramificationGroup_zero_quotient_mul :
-    (Nat.card (ramificationGroup (G ⧸ H) (FixedPoints.subring B H) 0) : ℝ) *
-        Nat.card (ramificationGroup H B 0) =
-      Nat.card (ramificationGroup G B 0) := by
-  have h0 := natCard_ramificationGroupReal_quotient_subring_mul B G H 0
-  rw [herbrandFun_zero, ← Int.cast_zero, ramificationGroupReal_intCast,
-    ramificationGroupReal_intCast, ramificationGroupReal_intCast] at h0
-  exact_mod_cast h0
+private theorem ramificationGroupReal_eq_top_of_le_neg_one (G : Type*) [Group G] (S : Type*)
+    [CommRing S] [_root_.IsLocalRing S] [MulSemiringAction G S] {w : ℝ} (hw : w ≤ -1) :
+    ramificationGroupReal G S w = ⊤ := by
+  rw [ramificationGroupReal_def]
+  exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by simpa using hw))
 
-/-- If `G_t` is constant on `(a, b]`, then `(G ⧸ H)_t` is constant on `(φ_H(a), φ_H(b)]`. -/
-private theorem ramificationGroupReal_quotient_eq_of_forall_eq {a b t : ℝ}
-    (ht₁ : herbrandFun H B a < t) (ht₂ : t ≤ herbrandFun H B b)
+variable {C B : Type*} [CommRing C] [_root_.IsLocalRing C] [CommRing B] [_root_.IsLocalRing B]
+  {G G' H : Type*} [Group G] [Finite G] [MulSemiringAction G B]
+  [Group G'] [Finite G'] [MulSemiringAction G' C]
+  [Group H] [Finite H] [MulSemiringAction H B]
+
+omit [Finite G] [Finite G'] in
+/-- If `(G_u).map π = G'_{φ_H(u)}` holds for all `u ≥ -1`, then it holds for all `u : ℝ`, since
+both lower filtrations are constantly `⊤` on `(-∞, -1]`. -/
+theorem map_ramificationGroupReal_of_forall_neg_one_le (π : G →* G')
+    (hmap : ∀ u : ℝ, -1 ≤ u →
+      (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u))
+    (u : ℝ) :
+    (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u) := by
+  rcases le_or_gt (-1) u with hu | hu
+  · exact hmap u hu
+  have hφ : herbrandFun H B u ≤ -1 := by
+    rw [← herbrandFun_neg_one H B]
+    exact (herbrandFun_strictMono H B).monotone hu.le
+  rw [ramificationGroupReal_eq_top_of_le_neg_one G B hu.le,
+    ramificationGroupReal_eq_top_of_le_neg_one G' C hφ,
+    ← ramificationGroupReal_eq_top_of_le_neg_one G B (w := -1) le_rfl, hmap (-1) le_rfl,
+    herbrandFun_neg_one, ramificationGroupReal_eq_top_of_le_neg_one G' C le_rfl]
+
+omit [Finite G] [Finite G'] [Finite H] in
+/-- **Abstract counting form of Herbrand's theorem**: `#G'_{φ_H(u)} · #H_u = #G_u`. -/
+theorem natCard_ramificationGroupReal_herbrandFun_mul_of_map_eq
+    (π : G →* G') (ι : H →* G) (hι : Function.Injective ι)
+    (hι_smul : ∀ (τ : H) (b : B), ι τ • b = τ • b) (hexact : ι.range = π.ker) {u : ℝ}
+    (hu : (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u)) :
+    Nat.card (ramificationGroupReal G' C (herbrandFun H B u)) *
+        Nat.card (ramificationGroupReal H B u) =
+      Nat.card (ramificationGroupReal G B u) := by
+  have hcomap : (ramificationGroupReal G B u).comap ι = ramificationGroupReal H B u :=
+    (ramificationGroupReal_eq_comap_of_ringEquiv ι (RingEquiv.refl B)
+      (fun τ b ↦ (hι_smul τ b).symm) u).symm
+  rw [← hu, ← MonoidHom.domRestrict_range, ← Subgroup.card_map_of_injective hι, ← hcomap,
+    Subgroup.map_comap_eq, hexact, ← Subgroup.subgroupOf_map_subtype, Subgroup.card_subtype,
+    ← MonoidHom.ker_domRestrict, mul_comm, Subgroup.card_ker_mul_card_range]
+
+omit [Finite G] [Finite G'] in
+/-- If `G_s` is constant on `(a, b]`, then `G'_t` is constant on `(φ_H(a), φ_H(b)]`. -/
+theorem ramificationGroupReal_eq_of_forall_eq_of_map_eq (π : G →* G')
+    (hmap : ∀ u : ℝ, -1 ≤ u →
+      (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u))
+    {a b t : ℝ} (ht₁ : herbrandFun H B a < t) (ht₂ : t ≤ herbrandFun H B b)
     (hG : ∀ s : ℝ, a < s → s ≤ b → ramificationGroupReal G B s = ramificationGroupReal G B b) :
-    ramificationGroupReal (G ⧸ H) (FixedPoints.subring B H) t =
-      ramificationGroupReal (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B b) := by
+    ramificationGroupReal G' C t = ramificationGroupReal G' C (herbrandFun H B b) := by
+  have hmap' := map_ramificationGroupReal_of_forall_neg_one_le π hmap
   have hs₁ : a < inverseHerbrandFun H B t := by
     simpa only [inverseHerbrandFun_herbrandFun] using inverseHerbrandFun_strictMono H B ht₁
   have hs₂ : inverseHerbrandFun H B t ≤ b := by
     simpa only [inverseHerbrandFun_herbrandFun] using
       (inverseHerbrandFun_strictMono H B).monotone ht₂
-  rw [← herbrandFun_inverseHerbrandFun H B t,
-    ramificationGroupReal_quotient_subring_herbrandFun_eq_map,
-    ramificationGroupReal_quotient_subring_herbrandFun_eq_map, hG _ hs₁ hs₂]
+  rw [← herbrandFun_inverseHerbrandFun H B t, ← hmap', ← hmap', hG _ hs₁ hs₂]
 
-/-- Propagating `φ_G = φ_{G/H} ∘ φ_H` across an integer interval `[m, m + 1]`. -/
-private theorem herbrandFun_tower_of_mem_Icc_of_eq (m : ℕ) {u : ℝ} (h₁ : (m : ℝ) ≤ u)
-    (h₂ : u ≤ m + 1)
-    (hm : herbrandFun G B m =
-      herbrandFun (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B m)) :
-    herbrandFun G B u = herbrandFun (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B u) := by
+/-- Propagating `φ_G = φ_{G'} ∘ φ_H` from the left endpoint `m` of `[m, m + 1]` across the
+interval. -/
+private theorem herbrandFun_eq_comp_of_mem_Icc_of_eq
+    (π : G →* G') (ι : H →* G) (hι : Function.Injective ι)
+    (hι_smul : ∀ (τ : H) (b : B), ι τ • b = τ • b) (hexact : ι.range = π.ker)
+    (hmap : ∀ u : ℝ, -1 ≤ u →
+      (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u))
+    (m : ℕ) {u : ℝ} (h₁ : (m : ℝ) ≤ u) (h₂ : u ≤ m + 1)
+    (hm : herbrandFun G B m = herbrandFun G' C (herbrandFun H B m)) :
+    herbrandFun G B u = herbrandFun G' C (herbrandFun H B u) := by
+  have hmap' := map_ramificationGroupReal_of_forall_neg_one_le π hmap
   have hG : ∀ t : ℝ, (m : ℝ) < t → t ≤ u →
       ramificationGroupReal G B t = ramificationGroupReal G B u := fun _ _ _ ↦ by
     rw [ramificationGroupReal_eq_of_sub_one_lt_of_le G B (i := (m + 1 : ℕ))
@@ -90,204 +144,377 @@ private theorem herbrandFun_tower_of_mem_Icc_of_eq (m : ℕ) {u : ℝ} (h₁ : (
         (by push_cast; linarith) (by push_cast; linarith),
       ramificationGroupReal_eq_of_sub_one_lt_of_le H B (i := (m + 1 : ℕ))
         (by push_cast; linarith) (by push_cast; linarith)]
-  have hGdiff := herbrandFun_sub_of_forall_eq G B h₁ hG
-  have hHdiff := herbrandFun_sub_of_forall_eq H B h₁ hH
-  have hQdiff := herbrandFun_sub_of_forall_eq (G ⧸ H) (FixedPoints.subring B H)
+  have hGdiff := herbrandFun_sub_herbrandFun_of_forall_eq G B h₁ hG
+  have hHdiff := herbrandFun_sub_herbrandFun_of_forall_eq H B h₁ hH
+  have hQdiff := herbrandFun_sub_herbrandFun_of_forall_eq G' C
     ((herbrandFun_strictMono H B).monotone h₁) fun _ ht₁ ht₂ ↦
-      ramificationGroupReal_quotient_eq_of_forall_eq B G H ht₁ ht₂ hG
-  have hcard :
-      (Nat.card (ramificationGroupReal (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B u)) : ℝ) *
-        Nat.card (ramificationGroupReal H B u) = Nat.card (ramificationGroupReal G B u) := by
-    exact_mod_cast natCard_ramificationGroupReal_quotient_subring_mul B G H u
+      ramificationGroupReal_eq_of_forall_eq_of_map_eq π hmap ht₁ ht₂ hG
+  have hcard : (Nat.card (ramificationGroupReal G' C (herbrandFun H B u)) : ℝ) *
+      Nat.card (ramificationGroupReal H B u) = Nat.card (ramificationGroupReal G B u) := by
+    exact_mod_cast natCard_ramificationGroupReal_herbrandFun_mul_of_map_eq
+      π ι hι hι_smul hexact (hmap' u)
+  have hcard₀ : (Nat.card (ramificationGroup G' C 0) : ℝ) *
+      Nat.card (ramificationGroup H B 0) = Nat.card (ramificationGroup G B 0) := by
+    have h0 := natCard_ramificationGroupReal_herbrandFun_mul_of_map_eq
+      π ι hι hι_smul hexact (hmap' 0)
+    rw [herbrandFun_zero, ← Int.cast_zero, ramificationGroupReal_intCast,
+      ramificationGroupReal_intCast, ramificationGroupReal_intCast] at h0
+    exact_mod_cast h0
   have hslope : (Nat.card (ramificationGroupReal G B u) : ℝ) / Nat.card (ramificationGroup G B 0) =
       (Nat.card (ramificationGroupReal H B u) / Nat.card (ramificationGroup H B 0)) *
-        (Nat.card (ramificationGroupReal (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B u)) /
-          Nat.card (ramificationGroup (G ⧸ H) (FixedPoints.subring B H) 0)) := by
-    rw [div_mul_div_comm, ← hcard, ← natCard_ramificationGroup_zero_quotient_mul B G H,
+        (Nat.card (ramificationGroupReal G' C (herbrandFun H B u)) /
+          Nat.card (ramificationGroup G' C 0)) := by
+    rw [div_mul_div_comm, ← hcard, ← hcard₀,
       mul_comm (Nat.card (ramificationGroupReal H B u) : ℝ),
       mul_comm (Nat.card (ramificationGroup H B 0) : ℝ)]
   rw [hslope] at hGdiff
   rw [hHdiff] at hQdiff
   linear_combination hGdiff - hQdiff + hm
 
-/-- Tower transitivity of the Herbrand function for `u ≤ -1`. -/
-private theorem herbrandFun_tower_of_le_neg_one {u : ℝ} (hu1 : u ≤ -1) :
-    herbrandFun G B u =
-      herbrandFun (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B u) := by
-  have hφH : herbrandFun H B u ≤ -1 := by
-    rw [← herbrandFun_neg_one H B]
-    exact (herbrandFun_strictMono H B).monotone hu1
-  rw [herbrandFun_of_le_neg_one G B hu1, herbrandFun_of_le_neg_one (G ⧸ H) _ hφH,
-    herbrandFun_of_le_neg_one H B hu1]
-  have hcardG : (Nat.card (G ⧸ H) : ℝ) * Nat.card H = Nat.card G := by
-    exact_mod_cast (by rw [← Subgroup.index_eq_card, mul_comm, Subgroup.card_mul_index] :
-      Nat.card (G ⧸ H) * Nat.card H = Nat.card G)
-  have hratio : (Nat.card G : ℝ) / Nat.card (ramificationGroup G B 0) =
-      ((Nat.card H : ℝ) / Nat.card (ramificationGroup H B 0)) *
-        ((Nat.card (G ⧸ H) : ℝ) /
-          Nat.card (ramificationGroup (G ⧸ H) (FixedPoints.subring B H) 0)) := by
-    rw [div_mul_div_comm, ← hcardG, ← natCard_ramificationGroup_zero_quotient_mul B G H,
-      mul_comm (Nat.card H : ℝ), mul_comm (Nat.card (ramificationGroup H B 0) : ℝ)]
-  rw [hratio]
-  ring
-
-/-- **Tower transitivity of the Herbrand function** for `B^H`:
-`φ_G(u) = φ_{G ⧸ H}(φ_H(u))` for every `u : ℝ`. -/
-theorem herbrandFun_tower_subring (u : ℝ) :
-    herbrandFun G B u =
-      herbrandFun (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B u) := by
+/-- **Abstract tower transitivity of the Herbrand function**: `φ_G = φ_{G'} ∘ φ_H`. -/
+theorem herbrandFun_eq_comp_of_map_ramificationGroupReal_eq
+    (π : G →* G') (ι : H →* G) (hι : Function.Injective ι)
+    (hι_smul : ∀ (τ : H) (b : B), ι τ • b = τ • b) (hexact : ι.range = π.ker)
+    (hmap : ∀ u : ℝ, -1 ≤ u →
+      (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u))
+    (u : ℝ) :
+    herbrandFun G B u = herbrandFun G' C (herbrandFun H B u) := by
+  have hmap' := map_ramificationGroupReal_of_forall_neg_one_le π hmap
   rcases le_or_gt u (-1) with hu1 | hu1
-  · exact herbrandFun_tower_of_le_neg_one B G H hu1
+  · have hφH : herbrandFun H B u ≤ -1 := by
+      rw [← herbrandFun_neg_one H B]
+      exact (herbrandFun_strictMono H B).monotone hu1
+    rw [herbrandFun_of_le_neg_one G B hu1, herbrandFun_of_le_neg_one G' C hφH,
+      herbrandFun_of_le_neg_one H B hu1]
+    have hcardG : (Nat.card G' : ℝ) * Nat.card H = Nat.card G := by
+      have hm1 := natCard_ramificationGroupReal_herbrandFun_mul_of_map_eq
+        π ι hι hι_smul hexact (hmap' (-1))
+      rw [herbrandFun_neg_one, ramificationGroupReal_eq_top_of_le_neg_one _ _ le_rfl,
+        ramificationGroupReal_eq_top_of_le_neg_one _ _ le_rfl,
+        ramificationGroupReal_eq_top_of_le_neg_one _ _ le_rfl,
+        Subgroup.card_top, Subgroup.card_top, Subgroup.card_top] at hm1
+      exact_mod_cast hm1
+    have hcard₀ : (Nat.card (ramificationGroup G' C 0) : ℝ) *
+        Nat.card (ramificationGroup H B 0) = Nat.card (ramificationGroup G B 0) := by
+      have h0 := natCard_ramificationGroupReal_herbrandFun_mul_of_map_eq
+        π ι hι hι_smul hexact (hmap' 0)
+      rw [herbrandFun_zero, ← Int.cast_zero, ramificationGroupReal_intCast,
+        ramificationGroupReal_intCast, ramificationGroupReal_intCast] at h0
+      exact_mod_cast h0
+    have hratio : (Nat.card G : ℝ) / Nat.card (ramificationGroup G B 0) =
+        ((Nat.card H : ℝ) / Nat.card (ramificationGroup H B 0)) *
+          ((Nat.card G' : ℝ) / Nat.card (ramificationGroup G' C 0)) := by
+      rw [div_mul_div_comm, ← hcardG, ← hcard₀, mul_comm (Nat.card H : ℝ),
+        mul_comm (Nat.card (ramificationGroup H B 0) : ℝ)]
+    rw [hratio]
+    ring
   · rcases le_or_gt u 0 with hu0 | hu0
-    · rw [herbrandFun_of_neg_one_le_of_le_zero H B hu1.le hu0,
-        herbrandFun_of_neg_one_le_of_le_zero (G ⧸ H) _ hu1.le hu0,
-        herbrandFun_of_neg_one_le_of_le_zero G B hu1.le hu0]
+    · rw [herbrandFun_eq_self_of_mem_Icc H B ⟨hu1.le, hu0⟩,
+        herbrandFun_eq_self_of_mem_Icc G' C ⟨hu1.le, hu0⟩,
+        herbrandFun_eq_self_of_mem_Icc G B ⟨hu1.le, hu0⟩]
     · have hind : ∀ m : ℕ, ∀ x : ℝ, (m : ℝ) ≤ x → x ≤ m + 1 →
-          herbrandFun G B x =
-            herbrandFun (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B x) := by
+          herbrandFun G B x = herbrandFun G' C (herbrandFun H B x) := by
         intro m
         induction m with
-        | zero => exact fun _ hx₁ hx₂ ↦ herbrandFun_tower_of_mem_Icc_of_eq B G H 0 hx₁ hx₂ (by simp)
+        | zero =>
+          exact fun _ hx₁ hx₂ ↦ herbrandFun_eq_comp_of_mem_Icc_of_eq
+            π ι hι hι_smul hexact hmap 0 hx₁ hx₂ (by simp)
         | succ k ih =>
-          exact fun _ hx₁ hx₂ ↦ herbrandFun_tower_of_mem_Icc_of_eq B G H (k + 1) hx₁ hx₂
+          exact fun _ hx₁ hx₂ ↦ herbrandFun_eq_comp_of_mem_Icc_of_eq
+            π ι hι hι_smul hexact hmap (k + 1) hx₁ hx₂
             (ih _ (by push_cast; linarith) (by push_cast; linarith))
       exact hind ⌊u⌋₊ u (Nat.floor_le hu0.le) (Nat.lt_floor_add_one u).le
 
-/-- **Tower transitivity of the inverse Herbrand function** for `B^H`:
-`ψ_G(v) = ψ_H(ψ_{G ⧸ H}(v))` for every `v : ℝ`. -/
-theorem inverseHerbrandFun_tower_subring (v : ℝ) :
-    inverseHerbrandFun G B v =
-      inverseHerbrandFun H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subring B H) v) := by
+/-- **Abstract tower transitivity of the inverse Herbrand function**:
+`ψ_G = ψ_H ∘ ψ_{G'}`. -/
+theorem inverseHerbrandFun_eq_comp_of_map_ramificationGroupReal_eq
+    (π : G →* G') (ι : H →* G) (hι : Function.Injective ι)
+    (hι_smul : ∀ (τ : H) (b : B), ι τ • b = τ • b) (hexact : ι.range = π.ker)
+    (hmap : ∀ u : ℝ, -1 ≤ u →
+      (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u))
+    (v : ℝ) :
+    inverseHerbrandFun G B v = inverseHerbrandFun H B (inverseHerbrandFun G' C v) := by
   apply (herbrandFun_strictMono G B).injective
-  rw [herbrandFun_inverseHerbrandFun, herbrandFun_tower_subring B G H,
+  rw [herbrandFun_inverseHerbrandFun,
+    herbrandFun_eq_comp_of_map_ramificationGroupReal_eq π ι hι hι_smul hexact hmap,
     herbrandFun_inverseHerbrandFun, herbrandFun_inverseHerbrandFun]
 
-/-- **Tower transitivity of the integral inverse Herbrand function** for `B^H`:
-`ψℕ_G(n) = ψℕ_H(ψℕ_{G ⧸ H}(n))`. -/
-theorem psiNat_tower_subring (n : ℕ) :
-    psiNat G B n = psiNat H B (psiNat (G ⧸ H) (FixedPoints.subring B H) n) := by
+/-- **Abstract tower transitivity of `psiNat`**: `ψℕ_G = ψℕ_H ∘ ψℕ_{G'}`. -/
+theorem psiNat_eq_comp_of_map_ramificationGroupReal_eq
+    (π : G →* G') (ι : H →* G) (hι : Function.Injective ι)
+    (hι_smul : ∀ (τ : H) (b : B), ι τ • b = τ • b) (hexact : ι.range = π.ker)
+    (hmap : ∀ u : ℝ, -1 ≤ u →
+      (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u))
+    (n : ℕ) :
+    psiNat G B n = psiNat H B (psiNat G' C n) := by
   apply Nat.cast_injective (R := ℝ)
-  rw [coe_psiNat, coe_psiNat, coe_psiNat, inverseHerbrandFun_tower_subring B G H]
+  rw [coe_psiNat, coe_psiNat, coe_psiNat,
+    inverseHerbrandFun_eq_comp_of_map_ramificationGroupReal_eq π ι hι hι_smul hexact hmap]
 
-/-- **Herbrand's theorem in the upper numbering** for `B^H`:
-`(G ⧸ H)^v = G^v H / H` for every `v : ℝ`. -/
-theorem upperRamificationGroup_quotient_subring_eq_map (v : ℝ) :
-    upperRamificationGroup (G ⧸ H) (FixedPoints.subring B H) v =
-      (upperRamificationGroup G B v).map (QuotientGroup.mk' H) := by
-  rw [upperRamificationGroup_def, upperRamificationGroup_def,
-    inverseHerbrandFun_tower_subring B G H v,
-    ← ramificationGroupReal_quotient_subring_herbrandFun_eq_map B G H,
-    herbrandFun_inverseHerbrandFun]
+/-- **Abstract Herbrand's theorem in the upper numbering**: `(G^v).map π = (G')^v`. -/
+theorem map_upperRamificationGroup_of_map_ramificationGroupReal_eq
+    (π : G →* G') (ι : H →* G) (hι : Function.Injective ι)
+    (hι_smul : ∀ (τ : H) (b : B), ι τ • b = τ • b) (hexact : ι.range = π.ker)
+    (hmap : ∀ u : ℝ, -1 ≤ u →
+      (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u))
+    (v : ℝ) :
+    (upperRamificationGroup G B v).map π = upperRamificationGroup G' C v := by
+  rw [upperRamificationGroup_def, map_ramificationGroupReal_of_forall_neg_one_le π hmap,
+    inverseHerbrandFun_eq_comp_of_map_ramificationGroupReal_eq π ι hι hι_smul hexact hmap,
+    herbrandFun_inverseHerbrandFun, ← upperRamificationGroup_def]
 
-/-- **Upper numbering of a normal subgroup** for `B^H`:
-`H ∩ G^v = H^{ψ_{G ⧸ H}(v)}` for every `v : ℝ`. -/
-theorem subgroupOf_upperRamificationGroup_subring (v : ℝ) :
-    (upperRamificationGroup G B v).subgroupOf H =
-      upperRamificationGroup H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subring B H) v) := by
-  rw [upperRamificationGroup_def, subgroupOf_ramificationGroupReal, upperRamificationGroup_def,
-    inverseHerbrandFun_tower_subring B G H v]
+/-- **Abstract upper numbering of a normal subgroup**: `(G^v).comap ι = H^{ψ_{G'}(v)}`. -/
+theorem comap_upperRamificationGroup_of_map_ramificationGroupReal_eq
+    (π : G →* G') (ι : H →* G) (hι : Function.Injective ι)
+    (hι_smul : ∀ (τ : H) (b : B), ι τ • b = τ • b) (hexact : ι.range = π.ker)
+    (hmap : ∀ u : ℝ, -1 ≤ u →
+      (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u))
+    (v : ℝ) :
+    (upperRamificationGroup G B v).comap ι =
+      upperRamificationGroup H B (inverseHerbrandFun G' C v) := by
+  have hcomap (u : ℝ) : (ramificationGroupReal G B u).comap ι = ramificationGroupReal H B u :=
+    (ramificationGroupReal_eq_comap_of_ringEquiv ι (RingEquiv.refl B)
+      (fun τ b ↦ (hι_smul τ b).symm) u).symm
+  rw [upperRamificationGroup_def, hcomap,
+    inverseHerbrandFun_eq_comp_of_map_ramificationGroupReal_eq π ι hι hι_smul hexact hmap,
+    ← upperRamificationGroup_def]
 
-end SubringTower
+omit [Finite G'] [Finite H] in
+/-- If `(G^w).map π = (G')^w` for all `w ≥ v`, any upper break `v` of `G'` is an upper break of
+`G`. -/
+theorem UpperJump.of_map_upperRamificationGroup_eq {π : G →* G'} {v : ℝ}
+    (hupper : ∀ w : ℝ, v ≤ w → (upperRamificationGroup G B w).map π = upperRamificationGroup G' C w)
+    (hv : UpperJump G' C v) :
+    UpperJump G B v := by
+  refine (upperJump_iff G B v).2 fun w hvw ↦
+    lt_of_le_of_ne (upperRamificationGroup_antitone G B hvw.le) fun heq ↦
+      ((upperJump_iff G' C v).1 hv w hvw).ne ?_
+  rw [← hupper w hvw.le, heq, hupper v le_rfl]
+
+/-- **Abstract upper breaks in a tower**: `v` is an upper break of `G` iff it is an upper break of
+`G'` or `ψ_{G'}(v)` is an upper break of `H`. -/
+theorem upperJump_iff_or_of_map_ramificationGroupReal_eq
+    (π : G →* G') (ι : H →* G) (hι : Function.Injective ι)
+    (hι_smul : ∀ (τ : H) (b : B), ι τ • b = τ • b) (hexact : ι.range = π.ker)
+    (hmap : ∀ u : ℝ, -1 ≤ u →
+      (ramificationGroupReal G B u).map π = ramificationGroupReal G' C (herbrandFun H B u))
+    (v : ℝ) :
+    UpperJump G B v ↔ UpperJump G' C v ∨ UpperJump H B (inverseHerbrandFun G' C v) := by
+  have hupper := map_upperRamificationGroup_of_map_ramificationGroupReal_eq
+    π ι hι hι_smul hexact hmap
+  have hcomap := comap_upperRamificationGroup_of_map_ramificationGroupReal_eq
+    π ι hι hι_smul hexact hmap
+  constructor
+  · intro hv
+    refine or_iff_not_imp_left.2 fun hG' ↦ (upperJump_iff H B _).2 fun x hx ↦ ?_
+    obtain ⟨w₀, hvw₀, hw₀⟩ : ∃ w₀, v < w₀ ∧
+        upperRamificationGroup G' C w₀ = upperRamificationGroup G' C v := by
+      simp only [upperJump_iff, not_forall] at hG'
+      obtain ⟨w₀, hvw₀, hlt⟩ := hG'
+      exact ⟨w₀, hvw₀, (upperRamificationGroup_antitone G' C hvw₀.le).eq_of_not_lt hlt⟩
+    set w := min w₀ (herbrandFun G' C x)
+    have hvw : v < w := lt_min hvw₀ <| by
+      simpa only [herbrandFun_inverseHerbrandFun] using herbrandFun_strictMono G' C hx
+    have hw : upperRamificationGroup G' C w = upperRamificationGroup G' C v :=
+      le_antisymm (upperRamificationGroup_antitone G' C hvw.le)
+        (hw₀ ▸ upperRamificationGroup_antitone G' C (min_le_left _ _))
+    have hxw : inverseHerbrandFun G' C w ≤ x := by
+      simpa only [inverseHerbrandFun_herbrandFun] using
+        (inverseHerbrandFun_strictMono G' C).monotone (min_le_right w₀ (herbrandFun G' C x))
+    refine (upperRamificationGroup_antitone H B hxw).trans_lt ?_
+    rw [← hcomap w, ← hcomap v]
+    refine lt_of_le_of_ne (Subgroup.comap_mono (upperRamificationGroup_antitone G B hvw.le))
+      fun heq ↦ ((upperJump_iff G B v).1 hv w hvw).not_ge fun σ hσ ↦ ?_
+    obtain ⟨τ, hτ, hτσ⟩ : π σ ∈ (upperRamificationGroup G B w).map π := by
+      rw [hupper w, hw, ← hupper v]
+      exact Subgroup.mem_map_of_mem _ hσ
+    obtain ⟨ρ, hρ⟩ : τ⁻¹ * σ ∈ ι.range := by
+      rw [hexact, MonoidHom.mem_ker, map_mul, map_inv, hτσ, inv_mul_cancel]
+    have hρw : ρ ∈ (upperRamificationGroup G B w).comap ι := by
+      rw [heq, Subgroup.mem_comap, hρ]
+      exact mul_mem (inv_mem (upperRamificationGroup_antitone G B hvw.le hτ)) hσ
+    rw [Subgroup.mem_comap, hρ] at hρw
+    simpa only [mul_inv_cancel_left] using mul_mem hτ hρw
+  · rintro (hG' | hH)
+    · exact hG'.of_map_upperRamificationGroup_eq fun w _ ↦ hupper w
+    · refine (upperJump_iff G B v).2 fun w hvw ↦
+        lt_of_le_of_ne (upperRamificationGroup_antitone G B hvw.le) fun heq ↦ ?_
+      have hlt := (upperJump_iff H B _).1 hH _ (inverseHerbrandFun_strictMono G' C hvw)
+      rw [← hcomap w, ← hcomap v, heq] at hlt
+      exact hlt.ne rfl
+
+end AbstractTower
+
+/-! ### Tower and upper-numbering theorems for `FixedPoints.subalgebra A B H` -/
 
 section Subalgebra
-
-/-- `FixedPoints.subalgebraEquivSubring` is equivariant for the quotient `G ⧸ H`-action. -/
-private theorem subalgebraEquivSubring_smul (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
-    (G : Type*) [Group G] [MulSemiringAction G B] [SMulCommClass G A B] (H : Subgroup G)
-    [H.Normal] (q : G ⧸ H) (x : FixedPoints.subalgebra A B H) :
-    TauCeti.FixedPoints.subalgebraEquivSubring A B H (q • x) =
-      MulEquiv.refl (G ⧸ H) q • TauCeti.FixedPoints.subalgebraEquivSubring A B H x :=
-  QuotientGroup.induction_on q fun g ↦ Subtype.ext <| by
-    change (TauCeti.FixedPoints.subalgebraEquivSubring A B H
-        ((QuotientGroup.mk g : G ⧸ H) • x) : B) =
-      g • (TauCeti.FixedPoints.subalgebraEquivSubring A B H x : B)
-    simp; rfl
 
 variable (A B : Type*) [CommRing A] [_root_.IsLocalRing A]
   [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
   [IsLocalHom (algebraMap A B)]
   [Algebra.IsSeparable (_root_.IsLocalRing.ResidueField A) (_root_.IsLocalRing.ResidueField B)]
   (G : Type*) [Group G] [Finite G] [MulSemiringAction G B] [SMulCommClass G A B]
-  [Algebra.IsInvariant A B G] (H : Subgroup G) [H.Normal]
+  (H : Subgroup G) [H.Normal]
 
-/-- **Herbrand's lemma in the lower numbering** for `FixedPoints.subalgebra A B H`:
-`(G ⧸ H)_{φ_H(u)} = G_u H / H` for every `u : ℝ`. -/
-theorem ramificationGroupReal_quotient_herbrandFun_eq_map (u : ℝ) :
-    ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) =
-      (ramificationGroupReal G B u).map (QuotientGroup.mk' H) := by
-  have := isSeparable_residueField_subring_of_isInvariant A B G
-  rw [← ramificationGroupReal_quotient_subring_herbrandFun_eq_map B G H u]
-  simpa using ramificationGroupReal_map_of_ringEquiv (MulEquiv.refl (G ⧸ H))
-    (TauCeti.FixedPoints.subalgebraEquivSubring A B H)
-    (subalgebraEquivSubring_smul A B G H) (herbrandFun H B u)
+/-- **Counting form of Herbrand's lemma** for `FixedPoints.subalgebra A B H`:
+`#(G ⧸ H)_{φ_H(u)} · #H_u = #G_u` for every `u : ℝ`. -/
+theorem natCard_ramificationGroupReal_quotient_mul (u : ℝ) :
+    Nat.card (ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u)) *
+        Nat.card (ramificationGroupReal H B u) =
+      Nat.card (ramificationGroupReal G B u) :=
+  natCard_ramificationGroupReal_herbrandFun_mul_of_map_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (ramificationGroupReal_quotient_herbrandFun_eq_map A B G H u).symm
 
-/-- **Tower transitivity of the Herbrand function** for `FixedPoints.subalgebra A B H`. -/
+/-- **Tower transitivity of the Herbrand function** for `FixedPoints.subalgebra A B H`:
+`φ_G(u) = φ_{G ⧸ H}(φ_H(u))` for every `u : ℝ`. -/
 theorem herbrandFun_tower (u : ℝ) :
     herbrandFun G B u =
-      herbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) := by
-  have := isSeparable_residueField_subring_of_isInvariant A B G
-  rw [herbrandFun_eq_of_ringEquiv (MulEquiv.refl (G ⧸ H))
-    (TauCeti.FixedPoints.subalgebraEquivSubring A B H) (subalgebraEquivSubring_smul A B G H)]
-  exact herbrandFun_tower_subring B G H u
+      herbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) :=
+  herbrandFun_eq_comp_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_herbrandFun_eq_map A B G H w).symm) u
 
-/-- **Tower transitivity of the inverse Herbrand function** for `FixedPoints.subalgebra A B H`. -/
+/-- **Tower transitivity of the inverse Herbrand function** for `FixedPoints.subalgebra A B H`:
+`ψ_G(v) = ψ_H(ψ_{G ⧸ H}(v))` for every `v : ℝ`. -/
 theorem inverseHerbrandFun_tower (v : ℝ) :
     inverseHerbrandFun G B v =
-      inverseHerbrandFun H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) v) := by
-  have := isSeparable_residueField_subring_of_isInvariant A B G
-  rw [inverseHerbrandFun_eq_of_ringEquiv (MulEquiv.refl (G ⧸ H))
-    (TauCeti.FixedPoints.subalgebraEquivSubring A B H) (subalgebraEquivSubring_smul A B G H)]
-  exact inverseHerbrandFun_tower_subring B G H v
+      inverseHerbrandFun H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) v) :=
+  inverseHerbrandFun_eq_comp_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_herbrandFun_eq_map A B G H w).symm) v
 
-/-- **Tower transitivity of the integral inverse Herbrand function** for
-`FixedPoints.subalgebra A B H`. -/
+/-- **Tower transitivity of `psiNat`** for `FixedPoints.subalgebra A B H`:
+`ψℕ_G(n) = ψℕ_H(ψℕ_{G ⧸ H}(n))`. -/
 theorem psiNat_tower (n : ℕ) :
-    psiNat G B n = psiNat H B (psiNat (G ⧸ H) (FixedPoints.subalgebra A B H) n) := by
-  apply Nat.cast_injective (R := ℝ)
-  rw [coe_psiNat, coe_psiNat, coe_psiNat, inverseHerbrandFun_tower A B G H]
+    psiNat G B n = psiNat H B (psiNat (G ⧸ H) (FixedPoints.subalgebra A B H) n) :=
+  psiNat_eq_comp_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_herbrandFun_eq_map A B G H w).symm) n
 
 /-- **Herbrand's theorem in the upper numbering** for `FixedPoints.subalgebra A B H`:
 `(G ⧸ H)^v = G^v H / H` for every `v : ℝ`. -/
 theorem upperRamificationGroup_quotient_eq_map (v : ℝ) :
     upperRamificationGroup (G ⧸ H) (FixedPoints.subalgebra A B H) v =
-      (upperRamificationGroup G B v).map (QuotientGroup.mk' H) := by
-  have := isSeparable_residueField_subring_of_isInvariant A B G
-  rw [← upperRamificationGroup_quotient_subring_eq_map B G H v]
-  simpa using upperRamificationGroup_map_of_ringEquiv (MulEquiv.refl (G ⧸ H))
-    (TauCeti.FixedPoints.subalgebraEquivSubring A B H) (subalgebraEquivSubring_smul A B G H) v
+      (upperRamificationGroup G B v).map (QuotientGroup.mk' H) :=
+  (map_upperRamificationGroup_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_herbrandFun_eq_map A B G H w).symm) v).symm
 
 /-- **Upper numbering of a normal subgroup** for `FixedPoints.subalgebra A B H`:
 `H ∩ G^v = H^{ψ_{G ⧸ H}(v)}` for every `v : ℝ`. -/
 theorem subgroupOf_upperRamificationGroup_quotient (v : ℝ) :
     (upperRamificationGroup G B v).subgroupOf H =
-      upperRamificationGroup H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) v) := by
-  rw [upperRamificationGroup_def, subgroupOf_ramificationGroupReal, upperRamificationGroup_def,
-    inverseHerbrandFun_tower A B G H v]
+      upperRamificationGroup H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) v) :=
+  comap_upperRamificationGroup_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_herbrandFun_eq_map A B G H w).symm) v
+
+/-- **Upper breaks in a quotient** for `FixedPoints.subalgebra A B H`: `v` is an upper break of
+`G` iff it is an upper break of `G ⧸ H` or `ψ_{G ⧸ H}(v)` is an upper break of `H`. -/
+theorem upperJump_iff_upperJump_quotient_or (v : ℝ) :
+    UpperJump G B v ↔
+      UpperJump (G ⧸ H) (FixedPoints.subalgebra A B H) v ∨
+        UpperJump H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) v) :=
+  upperJump_iff_or_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_herbrandFun_eq_map A B G H w).symm) v
 
 end Subalgebra
+
+/-! ### Base-free corollaries for `FixedPoints.subring B H` -/
+
+section Subring
+
+variable (B G : Type*) [CommRing B] [IsDomain B] [IsDiscreteValuationRing B]
+  [Group G] [Finite G] [MulSemiringAction G B]
+  (H : Subgroup G) [H.Normal]
+  [Algebra.IsSeparable (_root_.IsLocalRing.ResidueField (FixedPoints.subring B G))
+    (_root_.IsLocalRing.ResidueField B)]
+
+/-- **Counting form of Herbrand's lemma** for `B^H`: `#(G ⧸ H)_{φ_H(u)} · #H_u = #G_u`. -/
+theorem natCard_ramificationGroupReal_quotient_subring_mul (u : ℝ) :
+    Nat.card (ramificationGroupReal (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B u)) *
+        Nat.card (ramificationGroupReal H B u) =
+      Nat.card (ramificationGroupReal G B u) :=
+  natCard_ramificationGroupReal_herbrandFun_mul_of_map_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (ramificationGroupReal_quotient_subring_herbrandFun_eq_map B G H u).symm
+
+/-- **Tower transitivity of the Herbrand function** for `B^H`:
+`φ_G(u) = φ_{G ⧸ H}(φ_H(u))` for every `u : ℝ`. -/
+theorem herbrandFun_tower_subring (u : ℝ) :
+    herbrandFun G B u =
+      herbrandFun (G ⧸ H) (FixedPoints.subring B H) (herbrandFun H B u) :=
+  herbrandFun_eq_comp_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_subring_herbrandFun_eq_map B G H w).symm) u
+
+/-- **Tower transitivity of the inverse Herbrand function** for `B^H`:
+`ψ_G(v) = ψ_H(ψ_{G ⧸ H}(v))` for every `v : ℝ`. -/
+theorem inverseHerbrandFun_tower_subring (v : ℝ) :
+    inverseHerbrandFun G B v =
+      inverseHerbrandFun H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subring B H) v) :=
+  inverseHerbrandFun_eq_comp_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_subring_herbrandFun_eq_map B G H w).symm) v
+
+/-- **Tower transitivity of `psiNat`** for `B^H`: `ψℕ_G(n) = ψℕ_H(ψℕ_{G ⧸ H}(n))`. -/
+theorem psiNat_tower_subring (n : ℕ) :
+    psiNat G B n = psiNat H B (psiNat (G ⧸ H) (FixedPoints.subring B H) n) :=
+  psiNat_eq_comp_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_subring_herbrandFun_eq_map B G H w).symm) n
+
+/-- **Herbrand's theorem in the upper numbering** for `B^H`:
+`(G ⧸ H)^v = G^v H / H` for every `v : ℝ`. -/
+theorem upperRamificationGroup_quotient_subring_eq_map (v : ℝ) :
+    upperRamificationGroup (G ⧸ H) (FixedPoints.subring B H) v =
+      (upperRamificationGroup G B v).map (QuotientGroup.mk' H) :=
+  (map_upperRamificationGroup_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_subring_herbrandFun_eq_map B G H w).symm) v).symm
+
+/-- **Upper numbering of a normal subgroup** for `B^H`:
+`H ∩ G^v = H^{ψ_{G ⧸ H}(v)}` for every `v : ℝ`. -/
+theorem subgroupOf_upperRamificationGroup_subring (v : ℝ) :
+    (upperRamificationGroup G B v).subgroupOf H =
+      upperRamificationGroup H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subring B H) v) :=
+  comap_upperRamificationGroup_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_subring_herbrandFun_eq_map B G H w).symm) v
+
+/-- **Upper breaks in a quotient** for `B^H`. -/
+theorem upperJump_iff_upperJump_quotient_subring_or (v : ℝ) :
+    UpperJump G B v ↔
+      UpperJump (G ⧸ H) (FixedPoints.subring B H) v ∨
+        UpperJump H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subring B H) v) :=
+  upperJump_iff_or_of_map_ramificationGroupReal_eq (QuotientGroup.mk' H) H.subtype
+    Subtype.val_injective (fun _ _ ↦ rfl)
+    ((Subgroup.range_subtype H).trans (QuotientGroup.ker_mk' H).symm)
+    (fun w _ ↦ (ramificationGroupReal_quotient_subring_herbrandFun_eq_map B G H w).symm) v
+
+end Subring
+
+/-! ### Field / integral-closure form -/
 
 section FieldForm
 
 variable (A K L : Type*) [CommRing A] [Field K] [Field L]
   [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
-
-/-- The canonical ring isomorphism identifying the `H`-fixed points of `integralClosure A L` with
-`integralClosure A (IntermediateField.fixedField H)`. -/
-def fixedPointsIntegralClosureEquivFixedField (H : Subgroup (L ≃ₐ[K] L)) :
-    FixedPoints.subring (integralClosure A L) H ≃+*
-      integralClosure A (IntermediateField.fixedField H) where
-  toFun x :=
-    ⟨⟨x.1.1, fun σ ↦ congrArg Subtype.val (x.2 σ)⟩,
-      (isIntegral_algHom_iff ((IntermediateField.fixedField H).val.restrictScalars A)
-        Subtype.val_injective).1 x.1.2⟩
-  invFun y :=
-    ⟨⟨y.1.1, (isIntegral_algHom_iff ((IntermediateField.fixedField H).val.restrictScalars A)
-        Subtype.val_injective).2 y.2⟩,
-      fun σ ↦ Subtype.ext (y.1.2 σ)⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
 
 /-- If `integralClosure A L` is a DVR and `H ≤ Gal(L/K)` is finite, then
 `integralClosure A (IntermediateField.fixedField H)` is also a DVR. -/
@@ -295,35 +522,11 @@ instance isDiscreteValuationRing_integralClosure_fixedField
     [IsDiscreteValuationRing (integralClosure A L)] (H : Subgroup (L ≃ₐ[K] L)) [Finite H] :
     IsDiscreteValuationRing (integralClosure A (IntermediateField.fixedField H)) :=
   IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
-    (fixedPointsIntegralClosureEquivFixedField A K L H)
-
-/-- Equivariance of `fixedPointsIntegralClosureEquivFixedField` along
-`IsGalois.normalAutEquivQuotient`. -/
-private theorem fixedPointsIntegralClosureEquivFixedField_smul
-    [FiniteDimensional K L] [IsGalois K L] (H : Subgroup (L ≃ₐ[K] L)) [H.Normal]
-    (q : (L ≃ₐ[K] L) ⧸ H) (x : FixedPoints.subring (integralClosure A L) H) :
-    fixedPointsIntegralClosureEquivFixedField A K L H (q • x) =
-      IsGalois.normalAutEquivQuotient H q •
-        fixedPointsIntegralClosureEquivFixedField A K L H x := by
-  refine QuotientGroup.induction_on q fun σ ↦ ?_
-  ext
-  simp only [fixedPointsIntegralClosureEquivFixedField, RingEquiv.coe_mk, Equiv.coe_fn_mk,
-    integralClosure.coe_smul, IsGalois.normalAutEquivQuotient_apply]
-  exact (AlgEquiv.restrictNormal_commutes σ (IntermediateField.fixedField H)
-    ⟨x.1.1, fun τ ↦ congrArg Subtype.val (x.2 τ)⟩).symm
-
-/-- If `A` is integrally closed in `K` and `L / K` is Galois, then `A → integralClosure A L` is
-an invariant extension for `Gal(L/K)`. -/
-private theorem isInvariant_integralClosure_of_isIntegrallyClosedIn [IsGalois K L]
-    [IsIntegrallyClosedIn A K] :
-    Algebra.IsInvariant A (integralClosure A L) (L ≃ₐ[K] L) where
-  isInvariant x hx := by
-    obtain ⟨a, ha⟩ := (TauCeti.InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed K
-      x.1).2 ⟨x.2, fun τ ↦ congrArg Subtype.val (hx τ)⟩
-    exact ⟨a, Subtype.ext ha⟩
+    (TauCeti.fixedPointsIntegralClosureEquivFixedField A K L H)
 
 section GaloisField
-variable [_root_.IsLocalRing A] [IsIntegrallyClosedIn A K] [FiniteDimensional K L] [IsGalois K L]
+
+variable [_root_.IsLocalRing A] [FiniteDimensional K L] [IsGalois K L]
   [IsDiscreteValuationRing (integralClosure A L)] [IsLocalHom (algebraMap A (integralClosure A L))]
   [Algebra.IsSeparable (_root_.IsLocalRing.ResidueField A)
     (_root_.IsLocalRing.ResidueField (integralClosure A L))]
@@ -337,12 +540,14 @@ theorem upperRamificationGroup_fixedField_eq_map_normalAutEquivQuotient (v : ℝ
       upperRamificationGroup
         (IntermediateField.fixedField H ≃ₐ[K] IntermediateField.fixedField H)
         (integralClosure A (IntermediateField.fixedField H)) v := by
-  have := isInvariant_integralClosure_of_isIntegrallyClosedIn A K L
-  have := isSeparable_residueField_subring_of_isInvariant A (integralClosure A L) (L ≃ₐ[K] L)
-  rw [← upperRamificationGroup_quotient_subring_eq_map (integralClosure A L) (L ≃ₐ[K] L) H v]
+  rw [← upperRamificationGroup_quotient_eq_map A (integralClosure A L) (L ≃ₐ[K] L) H v]
   exact upperRamificationGroup_map_of_ringEquiv (IsGalois.normalAutEquivQuotient H)
-    (fixedPointsIntegralClosureEquivFixedField A K L H)
-    (fixedPointsIntegralClosureEquivFixedField_smul A K L H) v
+    ((TauCeti.FixedPoints.subalgebraEquivSubring A (integralClosure A L) H).trans
+      (TauCeti.fixedPointsIntegralClosureEquivFixedField A K L H))
+    (fun q x ↦ by
+      simp only [RingEquiv.trans_apply, TauCeti.FixedPoints.subalgebraEquivSubring_smul]
+      exact TauCeti.fixedPointsIntegralClosureEquivFixedField_smul A K L H q _)
+    v
 
 /-- **Herbrand's theorem in field form** via `AlgEquiv.restrictNormalHom`: restriction from `L` to
 `L^H` maps `Gal(L / K)^v` onto `Gal(L^H / K)^v` for every `v : ℝ`. -/

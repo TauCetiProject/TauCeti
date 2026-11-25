@@ -52,6 +52,8 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
   integral of `∏ i, g (x i)` over the half-space `∑ i, x i ≤ s`, by the `card ι`-th power of the
   one-dimensional integral of `exp (-(l * x)) * g x`.
+* `TauCeti.integral_pi_comp_perm`: a function invariant under a permutation of the coordinates
+  has the same integral under the product measure and under the product of the permuted factors.
 * `TauCeti.ae_slice_pi_eq_zero`: for a binary kernel whose second-variable slices are a.e.
   integrable with integral zero, fixing one coordinate and integrating another against
   `Measure.pi μ` yields an a.e. integrable function with integral zero.
@@ -314,5 +316,20 @@ theorem ae_slice_pi_eq_zero {ι : Type*} [Fintype ι] {α : ι → Type*}
   have ha : AEMeasurable (Function.eval b) (Measure.pi μ) := (measurable_pi_apply b).aemeasurable
   exact ⟨(integrable_map_measure (heval ▸ hz_int.aestronglyMeasurable) ha).mp (heval.symm ▸ hz_int),
     (heval ▸ integral_map ha (heval ▸ hz_int.aestronglyMeasurable)).symm.trans hz_zero⟩
+
+/-- **Symmetric integrands do not see the order of the factors.** A function on `ι → β` that is
+invariant under precomposition with a permutation `σ` has the same integral under the product
+measure `Measure.pi μ` and under the product `Measure.pi (μ ∘ σ)` of the permuted factors. -/
+theorem integral_pi_comp_perm {ι β E : Type*} [Fintype ι] [MeasurableSpace β]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (μ : ι → Measure β) [∀ i, SigmaFinite (μ i)]
+    (σ : Equiv.Perm ι) {g : (ι → β) → E} (hg : ∀ x, g (x ∘ σ) = g x) :
+    ∫ x, g x ∂Measure.pi (fun i ↦ μ (σ i)) = ∫ x, g x ∂Measure.pi μ := by
+  rw [← (measurePreserving_piCongrLeft μ σ).integral_comp']
+  congr 1
+  funext x
+  rw [MeasurableEquiv.coe_piCongrLeft, ← hg (Equiv.piCongrLeft _ σ x)]
+  congr 1
+  funext i
+  exact (Equiv.piCongrLeft_apply_apply (fun _ ↦ β) σ x i).symm
 
 end TauCeti

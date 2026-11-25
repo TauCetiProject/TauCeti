@@ -29,6 +29,7 @@ derivatives are `aᵢ xᵢ`; over `ℝ` its second derivative is the diagonal bi
 
 ## Main results
 
+* `TauCeti.hasFDerivAt_sum_sq`: the derivative of `∑ᵢ xᵢ²` is `v ↦ ∑ᵢ 2 xᵢ vᵢ`.
 * `TauCeti.hasFDerivAt_diagonalQuadratic`: the derivative of `∑ᵢ aᵢ xᵢ² / 2` is
   `v ↦ ∑ᵢ aᵢ xᵢ vᵢ`.
 * `TauCeti.fderiv_diagonalQuadratic_apply_single`: the partial derivatives of
@@ -61,6 +62,14 @@ theorem contDiff_diagonalQuadratic (a : ι → 𝕜) {n : WithTop ℕ∞} :
     ContDiff 𝕜 n (diagonalQuadratic a) := by
   unfold diagonalQuadratic
   fun_prop
+
+/-- The sum of squares `∑ᵢ xᵢ²` on `𝕜^ι` has derivative `v ↦ ∑ᵢ 2 xᵢ vᵢ` at `x`. -/
+theorem hasFDerivAt_sum_sq (x : ι → 𝕜) :
+    HasFDerivAt (fun y : ι → 𝕜 ↦ ∑ i, y i ^ 2)
+      (∑ i, (2 * x i) • ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ 𝕜) i) x := by
+  refine HasFDerivAt.fun_sum fun i _ ↦ ?_
+  convert (hasFDerivAt_apply (𝕜 := 𝕜) i x).pow 2 using 1
+  simp
 
 /-- The diagonal quadratic function `∑ᵢ aᵢ xᵢ² / 2` has derivative `v ↦ ∑ᵢ aᵢ xᵢ vᵢ` at `x`. -/
 theorem hasFDerivAt_diagonalQuadratic [NeZero (2 : 𝕜)] (a x : ι → 𝕜) :

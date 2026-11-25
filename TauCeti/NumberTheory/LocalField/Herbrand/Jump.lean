@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.Basic
-import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # Jumps of the ramification filtrations
@@ -20,7 +19,9 @@ In prime degree, an upper break at a natural number `t` implies that the lower r
 group `G_t` is the full Galois group and that `G_{t+1}` is trivial. The natural inverse Herbrand
 function fixes every depth up to `t`.
 
-These statements identify the breaks used by the norm filtration and Hasse–Arf theory.
+These statements identify the breaks used by the norm filtration and Hasse–Arf theory; all proofs
+specialize the local-ring results of `TauCeti.RingTheory.LocalRing.Herbrand` to `Gal(L/K)` acting
+on `𝒪[L]`.
 
 ## References
 
@@ -29,6 +30,8 @@ These statements identify the breaks used by the norm filtration and Hasse–Arf
 
 public section
 noncomputable section
+
+open ValuativeRel
 
 namespace TauCeti.LocalFieldsRamification
 
@@ -48,42 +51,34 @@ theorem upperJump_iff (u : RamificationIndexDomain) :
     UpperJump K L u ↔ ∀ v : RamificationIndexDomain, u < v →
       upperRamificationGroup K L v < upperRamificationGroup K L u := Iff.rfl
 
+/-- The local-field upper breaks are the upper breaks of `Gal(L/K)` acting on `𝒪[L]`. -/
+theorem upperJump_iff_isLocalRing_upperJump (u : RamificationIndexDomain) :
+    UpperJump K L u ↔ TauCeti.IsLocalRing.UpperJump (L ≃ₐ[K] L) 𝒪[L] u := by
+  rw [upperJump_iff, TauCeti.IsLocalRing.upperJump_iff]
+  refine ⟨fun h v huv ↦ ?_, fun h v huv ↦ ?_⟩
+  · have hv := h ⟨v, u.property.trans huv.le⟩ huv
+    rwa [upperRamificationGroup_eq_isLocalRing_upperRamificationGroup,
+      upperRamificationGroup_eq_isLocalRing_upperRamificationGroup, Subtype.coe_mk] at hv
+  · simpa only [upperRamificationGroup_eq_isLocalRing_upperRamificationGroup] using h v huv
+
 /-- An upper break requires a nontrivial Galois group. -/
 theorem UpperJump.nontrivial {u : RamificationIndexDomain} (hu : UpperJump K L u) :
-    Nontrivial (L ≃ₐ[K] L) := by
-  rcases subsingleton_or_nontrivial (L ≃ₐ[K] L) with h | h
-  · have hdrop := (upperJump_iff K L u).1 hu
-      ⟨(u : ℝ) + 1, u.property.trans (by linarith)⟩
-      (Subtype.mk_lt_mk.2 (by linarith))
-    exact absurd (Subsingleton.elim _ _) hdrop.ne
-  · exact h
+    Nontrivial (L ≃ₐ[K] L) :=
+  ((upperJump_iff_isLocalRing_upperJump K L u).1 hu).nontrivial
 
 /-- The Herbrand function takes lower breaks precisely to upper breaks. -/
 @[simp]
 theorem upperJump_herbrand_iff (u : RamificationIndexDomain) :
     UpperJump K L (herbrand K L u) ↔ LowerJump K L u := by
-  constructor
-  · intro h
-    apply (lowerJump_iff K L u).mpr
-    intro v huv
-    have h' := (upperJump_iff K L _).mp h (herbrand K L v)
-      ((herbrand_strictMono K L) huv)
-    simpa only [upperRamificationGroup_herbrand] using h'
-  · intro h
-    apply (upperJump_iff K L _).mpr
-    intro v huv
-    have h' : u < inverseHerbrand K L v := by
-      have hv := (inverseHerbrand_strictMono K L) huv
-      rwa [inverseHerbrand_herbrand] at hv
-    simpa only [upperRamificationGroup_def, inverseHerbrand_herbrand] using
-      (lowerJump_iff K L u).mp h (inverseHerbrand K L v) h'
+  rw [upperJump_iff_isLocalRing_upperJump, lowerJump_iff_isLocalRing_lowerJump,
+    coe_herbrand_eq_herbrandFun, TauCeti.IsLocalRing.upperJump_herbrandFun_iff]
 
 /-- The inverse Herbrand function takes upper breaks precisely to lower breaks. -/
 @[simp]
 theorem lowerJump_inverseHerbrand_iff (u : RamificationIndexDomain) :
     LowerJump K L (inverseHerbrand K L u) ↔ UpperJump K L u := by
-  simpa only [herbrand_inverseHerbrand] using
-    (upperJump_herbrand_iff K L (inverseHerbrand K L u)).symm
+  rw [lowerJump_iff_isLocalRing_lowerJump, upperJump_iff_isLocalRing_upperJump,
+    coe_inverseHerbrand_eq_inverseHerbrandFun, TauCeti.IsLocalRing.lowerJump_inverseHerbrandFun_iff]
 
 /-- In prime degree, an upper break at a natural number `t` has `G_t = Gal(L/K)`: the group
 `G^t = G_{ψ(t)}` strictly contains every later upper group, so it is nontrivial, hence the whole
@@ -91,16 +86,10 @@ Galois group, and `t ≤ ψ(t)`. -/
 theorem lowerRamificationGroup_natCast_eq_top_of_upperJump (hℓ : (Module.finrank K L).Prime)
     {t : ℕ} (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     lowerRamificationGroup K L t = ⊤ := by
-  have : Fact (Nat.card (L ≃ₐ[K] L)).Prime := ⟨IsGalois.card_aut_eq_finrank K L ▸ hℓ⟩
-  have hlt := (upperJump_iff K L _).1 ht ⟨(t + 1 : ℕ), Nat.cast_mem_ramificationIndexDomain (t + 1)⟩
-    (Subtype.mk_lt_mk.2 (by push_cast; linarith))
-  have hne := (bot_le.trans_lt hlt).ne'
-  rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast,
-    lowerRamificationGroupReal_intCast] at hne
-  have hψ : lowerRamificationGroup K L (psiNat K L t) = ⊤ :=
-    ((lowerRamificationGroup K L _).eq_bot_or_eq_top_of_prime_card).resolve_left hne
-  have htψ : (t : ℤ) ≤ psiNat K L t := by exact_mod_cast self_le_psiNat K L t
-  exact top_le_iff.1 <| hψ ▸ lowerRamificationGroup_antitone K L htψ
+  rw [lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.ramificationGroup_natCast_eq_top_of_upperJump (L ≃ₐ[K] L) 𝒪[L]
+    (IsGalois.card_aut_eq_finrank K L ▸ hℓ)
+    ((upperJump_iff_isLocalRing_upperJump K L _).1 ht)
 
 /-- In prime degree, the natural inverse Herbrand function fixes every depth at or below a
 natural upper break. -/
@@ -108,10 +97,10 @@ theorem psiNat_eq_self_of_le_break (hℓ : (Module.finrank K L).Prime)
     {v t : ℕ} (hvt : v ≤ t)
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     psiNat K L v = v := by
-  have hGi (i : ℕ) (hi : i ≤ t) : lowerRamificationGroup K L i = ⊤ :=
-    top_le_iff.1 <| lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht ▸
-      lowerRamificationGroup_antitone K L (by exact_mod_cast hi)
-  exact (psiNat_eq_self_iff K L).2 (by rw [hGi v hvt, ← Nat.cast_zero, hGi 0 (Nat.zero_le t)])
+  rw [psiNat_eq_isLocalRing_psiNat]
+  exact TauCeti.IsLocalRing.psiNat_eq_self_of_le_upperJump (L ≃ₐ[K] L) 𝒪[L]
+    (IsGalois.card_aut_eq_finrank K L ▸ hℓ) hvt
+    ((upperJump_iff_isLocalRing_upperJump K L _).1 ht)
 
 /-- In prime degree, an upper break at a natural number `t` has `G_{t+1} = 1`. Together with
 `G_t = Gal(L/K)` (`lowerRamificationGroup_natCast_eq_top_of_upperJump`), this says that the lower
@@ -121,19 +110,9 @@ theorem lowerRamificationGroup_natCast_add_one_eq_bot_of_upperJump
     (hℓ : (Module.finrank K L).Prime) {t : ℕ}
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     lowerRamificationGroup K L (t + 1) = ⊥ := by
-  have : Fact (Nat.card (L ≃ₐ[K] L)).Prime := ⟨IsGalois.card_aut_eq_finrank K L ▸ hℓ⟩
-  refine ((lowerRamificationGroup K L _).eq_bot_or_eq_top_of_prime_card).resolve_right
-    fun htop ↦ ?_
-  have hlt := (upperJump_iff K L _).1 ht ⟨(t + 1 : ℕ), Nat.cast_mem_ramificationIndexDomain (t + 1)⟩
-    (Subtype.mk_lt_mk.2 (by push_cast; linarith))
-  have hne := (hlt.trans_le le_top).ne
-  have hG0 : lowerRamificationGroup K L 0 = ⊤ :=
-    top_le_iff.1 (htop ▸ lowerRamificationGroup_antitone K L (by positivity))
-  have hψ : psiNat K L (t + 1) = t + 1 :=
-    (psiNat_eq_self_iff K L).2 (by push_cast; rw [htop, hG0])
-  rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast,
-    lowerRamificationGroupReal_intCast, hψ] at hne
-  push_cast at hne
-  exact hne htop
+  rw [lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.ramificationGroup_natCast_add_one_eq_bot_of_upperJump (L ≃ₐ[K] L) 𝒪[L]
+    (IsGalois.card_aut_eq_finrank K L ▸ hℓ)
+    ((upperJump_iff_isLocalRing_upperJump K L _).1 ht)
 
 end TauCeti.LocalFieldsRamification

@@ -224,7 +224,7 @@ theorem exists_monic_natDegree_eq_degree_eval₂_eq_zero :
     simp only [Q]
     rw [Multiset.prod_X_sub_C_coeff _ (hcard y ▸ hi), hcard]
   have hmero (i : Fin n) (y : OnePoint ℂ) : MeromorphicAt (fun y ↦ (Q y).coeff i) y := by
-    rw [hQ i i.2.le]
+    rw [hQ i i.isLt.le]
     exact (meromorphicAt_const _ y).mul (meromorphicAt_esymm_map_finitePart_fiberMultiset β f _ y)
   set A : Fin n → MeromorphicFunction (OnePoint ℂ) := fun i ↦ ofMeromorphic (hmero i)
   refine ⟨TauCeti.Polynomial.monicOfCoeff A, TauCeti.Polynomial.monic_monicOfCoeff A,

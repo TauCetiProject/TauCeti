@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.BadPrime.Basic
 import Mathlib.Algebra.Field.ZMod
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.NumberTheory.ModularForms.Fricke.CharacterSpace
-import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Ring
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # `U_p 𝒲_N U_p` when the nebentypus is not defined modulo `N / p`
@@ -63,18 +63,22 @@ variable {N p : ℕ} {k : ℤ}
 
 /-- The matrix `!![1, b; c M, c M b + 1] = !![1, 0; c M, 1] * !![1, b; 0, 1]` of `SL(2, ℤ)`. -/
 private def lowerShear (M : ℕ) (c b : ℤ) : SL(2, ℤ) :=
-  ⟨!![1, b; c * M, c * M * b + 1], by rw [Matrix.det_fin_two_of]; ring⟩
+  Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (c * M) *
+    Matrix.SpecialLinearGroup.transvection (zero_ne_one : (0 : Fin 2) ≠ 1) b
 
 /-- The entries of `lowerShear M c b`. -/
 private lemma coe_lowerShear (M : ℕ) (c b : ℤ) :
-    (lowerShear M c b : Matrix (Fin 2) (Fin 2) ℤ) = !![1, b; c * M, c * M * b + 1] := (rfl)
+    (lowerShear M c b : Matrix (Fin 2) (Fin 2) ℤ) = !![1, b; c * M, c * M * b + 1] := by
+  simp [lowerShear]
 
 /-- The lower-left entry of `lowerShear M c b` is `c M`. -/
-private lemma lowerShear_one_zero (M : ℕ) (c b : ℤ) : lowerShear M c b 1 0 = c * M := (rfl)
+private lemma lowerShear_one_zero (M : ℕ) (c b : ℤ) : lowerShear M c b 1 0 = c * M := by
+  simp [coe_lowerShear]
 
 /-- The lower-right entry of `lowerShear M c b` is `c M b + 1`. -/
 private lemma lowerShear_one_one (M : ℕ) (c b : ℤ) :
-    lowerShear M c b 1 1 = c * M * b + 1 := (rfl)
+    lowerShear M c b 1 1 = c * M * b + 1 := by
+  simp [coe_lowerShear]
 
 /-- The slash by `lowerShear M c b` depends only on `c` and `b` modulo `p`, where `M = N / p`. -/
 private lemma slash_lowerShear_congr {G : ℍ → ℂ} {ψ : (ZMod N)ˣ →* ℂˣ}
@@ -105,7 +109,7 @@ private lemma slash_mul_lowerShear [Fact p.Prime] (hpN : p ∣ N) {G : ℍ → �
         (b + t * ((v : ZMod p) * c)⁻¹).val) := by
   set M := N / p
   have hMp : (M : ℤ) * p = N := by exact_mod_cast Nat.div_mul_cancel hpN
-  obtain ⟨z, hz⟩ : (N : ℤ) ∣ (g : SL(2, ℤ)) 1 0 := mem_Gamma0_iff_dvd.mp g.2
+  obtain ⟨z, hz⟩ : (N : ℤ) ∣ (g : SL(2, ℤ)) 1 0 := mem_Gamma0_iff_dvd.mp g.property
   -- the two congruences modulo `p` behind the lower rows
   obtain ⟨y₁, hy₁⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub ((g : SL(2, ℤ)) 1 1 * c.val)
     (((v : ZMod p) * c).val) p).mp (by push_cast; simp [hv])

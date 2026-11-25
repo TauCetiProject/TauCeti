@@ -114,7 +114,7 @@ theorem disjoint_unblockedRectangles_XHomotopyRectangles (k : Fin n) (x y : Grid
   have h₁ := G.disjoint_XSet_of_mem_unblockedRectangles hU
   have h₂ := ((G.mem_XHomotopyRectangles k r).mp hH).2
   rw [Finset.disjoint_iff_inter_eq_empty, h₂] at h₁
-  exact Finset.singleton_ne_empty _ h₁
+  exact (Finset.singleton_nonempty _).ne_empty h₁
 
 /-- A rectangle counted by `H_k` lowers the Alexander grading by one, once its weight `V^{O(r)}`
 is charged `-1` per variable, since it covers the single `X`-marking `X_k`: the term
@@ -258,7 +258,7 @@ theorem mem_XHomotopyDecompositions_iff_of_disjoint (k : Fin n) {x z : GridState
     · rcases hb with hb | hb
       · exact Or.inr ⟨⟨h₁, ha⟩, h₂, hb⟩
       · rw [ha, hb, Finset.disjoint_self_iff_empty] at hab
-        exact absurd hab (Finset.singleton_ne_empty _)
+        exact absurd hab ((Finset.singleton_nonempty _).ne_empty)
 
 /-- The matrix entries of `∂⁻ ∘ H_k + H_k ∘ ∂⁻`, written as the sum over intermediate states of
 the products of matrix coefficients, are the weighted sums over the decompositions counted by

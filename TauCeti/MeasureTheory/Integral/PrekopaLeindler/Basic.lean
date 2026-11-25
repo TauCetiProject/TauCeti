@@ -80,6 +80,8 @@ largest. This is the form in which Vaaler's cube-slicing theorem uses the inequa
   log-concave.
 * `Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero`: the central slice of a
   symmetric convex set is the largest.
+* `Convex.measure_preimage_add_le`: a symmetric convex set has at least the measure of each
+  of its translates (Anderson's inequality).
 
 ## References
 
@@ -142,7 +144,8 @@ theorem HasPrekopaLeindler.lintegral {μ : Measure E} {θ : ℝ}
     (∫⁻ x, f x ∂μ) ^ (1 - θ) * (∫⁻ x, g x ∂μ) ^ θ ≤ ∫⁻ x, h x ∂μ := by
   obtain ⟨f', hf', hle_f, hIf⟩ := exists_measurable_le_lintegral_eq μ f
   obtain ⟨g', hg', hle_g, hIg⟩ := exists_measurable_le_lintegral_eq μ g
-  obtain ⟨h', hh', hle_h, heq_h⟩ := hh.exists_measurable_ge_ae_eq
+  obtain ⟨h', hh', hle_h, heq_h⟩ :=
+    hh.exists_measurable_ge_ae_eq_of_ae_le Filter.EventuallyLE.rfl measurable_const fun _ => le_top
   rw [hIf, hIg, lintegral_congr_ae heq_h]
   exact hμ hf' hg' hh' fun x y =>
     (mul_le_mul' (ENNReal.rpow_le_rpow (hle_f x) (sub_nonneg.mpr hθ₁))
@@ -495,5 +498,17 @@ theorem _root_.Convex.measure_preimage_prodMk_le_measure_preimage_prodMk_zero
     exact ⟨fun h ↦ by simpa using hneg _ h, fun h ↦ by simpa using hneg _ h⟩
   dsimp only
   rw [hslice, Measure.measure_neg]
+
+/-- **Anderson's inequality for Prékopa–Leindler measures.** For a measurable convex set
+`C ⊆ F` with `-C = C` and a negation-invariant measure `ν` with the Prékopa–Leindler property at
+every weight, no translate `(a + ·) ⁻¹' C` of `C` has larger measure than `C`. -/
+theorem _root_.Convex.measure_preimage_add_le [MeasurableAdd₂ F] [MeasurableNeg F]
+    [ν.IsNegInvariant] (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {C : Set F}
+    (hC : MeasurableSet C) (hCc : Convex ℝ C) (hneg : ∀ x ∈ C, -x ∈ C) (a : F) :
+    ν ((a + ·) ⁻¹' C) ≤ ν C := by
+  have h := (hCc.linear_preimage (LinearMap.fst ℝ F F + LinearMap.snd ℝ F F))
+    |>.measure_preimage_prodMk_le_measure_preimage_prodMk_zero hν
+      ((measurable_fst.add measurable_snd) hC) (fun p hp ↦ by simpa [add_comm] using hneg _ hp) a
+  simpa [Set.preimage, zero_add] using h
 
 end TauCeti

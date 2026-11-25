@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The generalized normal distribution
@@ -50,7 +51,7 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-variable {m s p q x : ℝ}
+variable {m s p q : ℝ}
 
 /-! ### The density -/
 
@@ -266,7 +267,8 @@ theorem integrable_generalizedNormalMeasure_iff (m s p : ℝ) {g : ℝ → E} :
     Integrable g (generalizedNormalMeasure m s p) ↔
       Integrable fun x => generalizedNormalPDFReal m s p x • g x := by
   rw [generalizedNormalMeasure_eq_withDensity, funext (generalizedNormalPDF_eq_ofReal m s p)]
-  exact integrable_withDensity_ofReal_iff (measurable_generalizedNormalPDFReal m s p).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
+    (measurable_generalizedNormalPDFReal m s p).aemeasurable
     (ae_of_all _ (generalizedNormalPDFReal_nonneg m s p))
 
 /-- An integral against a generalized normal law is the density-weighted Lebesgue integral. This
@@ -274,7 +276,8 @@ holds at every parameter. -/
 theorem integral_generalizedNormalMeasure_eq (m s p : ℝ) (g : ℝ → E) :
     ∫ x, g x ∂generalizedNormalMeasure m s p = ∫ x, generalizedNormalPDFReal m s p x • g x := by
   rw [generalizedNormalMeasure_eq_withDensity, funext (generalizedNormalPDF_eq_ofReal m s p)]
-  exact integral_withDensity_ofReal (measurable_generalizedNormalPDFReal m s p).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal
+    (measurable_generalizedNormalPDFReal m s p).aemeasurable
     (ae_of_all _ (generalizedNormalPDFReal_nonneg m s p)) g
 
 end Transfer

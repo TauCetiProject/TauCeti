@@ -67,8 +67,9 @@ theorem card_algHom_comp_eq_rankAtStalk [IsFiniteSplit K B] [Module.Flat A B] (�
     rfl
   -- The points of the fibre are the points of `B` above `χ`.
   let e : {ψ : B →ₐ[K] K // ψ.comp (IsScalarTower.toAlgHom K A B) = χ} ≃ (B →ₐ[A] K) :=
-    { toFun ψ := { ψ.1.toRingHom with
-        commutes' a := by simpa [RingHom.algebraMap_toAlgebra] using DFunLike.congr_fun ψ.2 a }
+    { toFun ψ := { ψ.val.toRingHom with
+        commutes' a := by simpa [RingHom.algebraMap_toAlgebra] using DFunLike.congr_fun ψ.property a
+            }
       invFun f := ⟨f.restrictScalars K, by ext a; simp [RingHom.algebraMap_toAlgebra]⟩
       left_inv ψ := rfl
       right_inv f := rfl }
@@ -99,7 +100,7 @@ theorem nonempty_algEquiv_fun_of_rankAtStalk_eq [IsFiniteSplit K A] [IsFiniteSpl
       (Equiv.sigmaCongrRight fun χ ↦ (Finite.equivFinOfCardEq
         ((card_algHom_comp_eq_rankAtStalk χ).trans (hd _))).symm).trans (Equiv.sigmaFiberEquiv r)
   have hσ (χ : A →ₐ[K] K) (i : Fin d) : r (σ (χ, i)) = χ :=
-    ((Finite.equivFinOfCardEq ((card_algHom_comp_eq_rankAtStalk χ).trans (hd _))).symm i).2
+    ((Finite.equivFinOfCardEq ((card_algHom_comp_eq_rankAtStalk χ).trans (hd _))).symm i).property
   -- Both algebras are the algebras of functions on their points.
   let eA : A ≃ₐ[K] ((A →ₐ[K] K) → K) := .ofBijective _ pi_id_bijective
   let eB : B ≃ₐ[K] ((B →ₐ[K] K) → K) := .ofBijective _ pi_id_bijective

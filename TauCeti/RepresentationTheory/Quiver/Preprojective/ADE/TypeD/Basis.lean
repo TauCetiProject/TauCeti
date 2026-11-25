@@ -371,7 +371,7 @@ private theorem forkRep_relator (hn : 3 ≤ n) (v : Q) :
   simp only [backtrackElem_eq_ofPath, QuiverRep.toEnd_ofPath]
   have hzero : (∑ w : (DG).neighborSet i,
       QuiverRep.mapₗ k Q (forkRep k n)
-        (backtrackPath DG (((DG).mem_neighborSet i w).1 w.2))) = 0 := by
+        (backtrackPath DG (((DG).mem_neighborSet i w).1 w.property))) = 0 := by
     apply LinearMap.ext
     intro z
     obtain ⟨x, rfl⟩ := (forkVertexEquiv k (vertex DG i)).surjective z

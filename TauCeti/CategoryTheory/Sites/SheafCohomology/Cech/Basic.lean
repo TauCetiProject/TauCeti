@@ -42,6 +42,8 @@ be added or removed.
 
 ## Main definitions
 
+* `TauCeti.CategoryTheory.cechXIso`: the canonical product coordinates on each Čech term.
+
 * `TauCeti.CategoryTheory.cechAugmentation U hT P`: the augmentation of the Čech complex of `P`
   for `U`; its degree `0` component restricts a section over `T` along each map to `T`
   (`TauCeti.CategoryTheory.cechAugmentation_f_zero_comp_π`).
@@ -116,20 +118,31 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {A : Type u'} [Cate
 
 variable [Preadditive A] [HasProducts.{w} A]
 
+/-! ### Product coordinates
+
+The Čech complex functor is a composite of several functors. Its native tuple objects and
+explicit section products agree after unfolding, but their dependent indices block rewriting
+across module boundaries. The canonical `cechXIso` and its component laws provide the common
+product-coordinate API for differentials, presheaf maps and refinements. -/
+
+/-- The degree `n` term of the Čech complex is, up to unfolding, the product of the values of `P`
+on the `(n + 1)`-fold products of members. -/
+def cechXIso (n : ℕ) :
+    ((cechComplexFunctor U).obj P).X n ≅
+      ∏ᶜ fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) :=
+  Iso.refl _
+
+/-- Product-coordinate readings agree with the native Čech term projections. -/
+@[reassoc]
+lemma cechXIso_hom_π (n : ℕ) (a : Fin (n + 1) → ι) :
+    (cechXIso U P n).hom ≫ Pi.π _ a = (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) :=
+  Category.id_comp _
+
 /-! ### The Čech complex in degrees `0` and `1`
 
-Mathlib's `cechComplexFunctor` is a composite of several functors, so its terms agree only up to
-unfolding with the products that define them. The identity isomorphisms `cechXIso₀` and
-`cechXIso₁` record these identifications once, so that every later statement composes maps
-between syntactically equal objects. A `0`-cochain is determined by its restrictions `restrict`
-to the members `U i`, and it is killed by the differential `Č⁰(U, P) ⟶ Č¹(U, P)` exactly when
-these restrictions agree on the products of pairs of members (`comp_d_eq_zero_iff`). -/
-
-private def cechXIso₀ : ((cechComplexFunctor U).obj P).X 0 ≅
-    ∏ᶜ fun a : Fin 1 → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) := Iso.refl _
-
-private def cechXIso₁ : ((cechComplexFunctor U).obj P).X 1 ≅
-    ∏ᶜ fun k : Fin 2 → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (k j))) := Iso.refl _
+A `0`-cochain is determined by its restrictions `restrict` to the members `U i`. It is killed by
+the differential exactly when these restrictions agree on pairwise products
+(`comp_d_eq_zero_iff`). -/
 
 private def cechδ (m : Fin 2) : ((cechComplexFunctor U).obj P).X 0 ⟶
     ((cechComplexFunctor U).obj P).X 1 :=
@@ -143,47 +156,49 @@ private lemma cechComplexFunctor_obj_d_zero_one :
     rfl
 
 private lemma cechδ_comp_π (m : Fin 2) (k : Fin 2 → ι) :
-    cechδ U P m ≫ (cechXIso₁ U P).hom ≫ Pi.π _ k =
-      (cechXIso₀ U P).hom ≫ Pi.π _ (fun x ↦ k (m.succAbove x)) ≫
+    cechδ U P m ≫ (cechXIso U P 1).hom ≫ Pi.π _ k =
+      (cechXIso U P 0).hom ≫ Pi.π _ (fun x ↦ k (m.succAbove x)) ≫
         P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op :=
-  -- `cechXIso₀` and `cechXIso₁` are identities, and `cechδ m` unfolds to a `Pi.lift`
+  -- `cechXIso` is the identity, and `cechδ m` unfolds to a `Pi.lift`
   (_ ≫= Category.id_comp _).trans <| (Pi.lift_comp_π _ _).trans (Category.id_comp _).symm
 
 private def restrict (a : Fin 1 → ι) :
     ((cechComplexFunctor U).obj P).X 0 ⟶ P.obj (op (U (a default))) :=
-  (cechXIso₀ U P).hom ≫ Pi.π _ a ≫ P.map (productUniqueIso _).inv.op
+  (cechXIso U P 0).hom ≫ Pi.π _ a ≫ P.map (productUniqueIso (fun j : Fin 1 ↦ U (a j))).inv.op
 
 private lemma restrict_eq_restrict_const (a : Fin 1 → ι) :
     restrict U P a = restrict U P (fun _ ↦ a default) :=
   eq_const_of_unique a ▸ rfl
 
 @[reassoc]
-private lemma cechXIso₀_hom_comp_π (a : Fin 1 → ι) : (cechXIso₀ U P).hom ≫ Pi.π _ a =
+private lemma cechXIso_zero_hom_comp_π (a : Fin 1 → ι) : (cechXIso U P 0).hom ≫ Pi.π _ a =
     restrict U P a ≫ P.map (productUniqueIso fun j ↦ U (a j)).hom.op :=
-  -- `restrict a` is the left-hand side followed by `P.map (productUniqueIso _).inv.op`
-  (P.mapIso (productUniqueIso _).op).comp_inv_eq.1 (Category.assoc _ _ _)
+  -- Restriction composes the native product reading with the inverse singleton comparison.
+  (P.mapIso (productUniqueIso (fun j : Fin 1 ↦ U (a j))).op).comp_inv_eq.1
+    (Category.assoc _ _ _)
 
 private lemma cechComplexFunctor_obj_X_zero_hom_ext {W : A}
     {y y' : W ⟶ ((cechComplexFunctor U).obj P).X 0}
     (h : ∀ i, y ≫ restrict U P (fun _ ↦ i) = y' ≫ restrict U P (fun _ ↦ i)) : y = y' :=
-  (cancel_mono (cechXIso₀ U P).hom).1 <| Pi.hom_ext _ _ fun a ↦ by
-    grind [cechXIso₀_hom_comp_π, restrict_eq_restrict_const]
+  (cancel_mono (cechXIso U P 0).hom).1 <| Pi.hom_ext _ _ fun a ↦ by
+    grind [cechXIso_zero_hom_comp_π, restrict_eq_restrict_const]
 
 private lemma comp_d_eq_zero_iff {W : A} (y : W ⟶ ((cechComplexFunctor U).obj P).X 0) :
     y ≫ ((cechComplexFunctor U).obj P).d 0 1 = 0 ↔ ∀ k : Fin 2 → ι,
       y ≫ restrict U P (fun _ ↦ k 1) ≫ P.map (Pi.π (fun j ↦ U (k j)) 1).op =
         y ≫ restrict U P (fun _ ↦ k 0) ≫ P.map (Pi.π (fun j ↦ U (k j)) 0).op := by
-  have key (m : Fin 2) (k : Fin 2 → ι) : cechδ U P m ≫ (cechXIso₁ U P).hom ≫ Pi.π _ k =
+  have key (m : Fin 2) (k : Fin 2 → ι) : cechδ U P m ≫ (cechXIso U P 1).hom ≫ Pi.π _ k =
       restrict U P (fun _ ↦ k (m.succAbove default)) ≫
         P.map (Pi.π (fun j ↦ U (k j)) (m.succAbove default)).op := by
-    rw [cechδ_comp_π, cechXIso₀_hom_comp_π_assoc, ← P.map_comp, ← op_comp, productUniqueIso_hom,
+    rw [cechδ_comp_π, cechXIso_zero_hom_comp_π_assoc, ← P.map_comp, ← op_comp, productUniqueIso_hom,
       Pi.lift_comp_π, restrict_eq_restrict_const]
-  rw [← cancel_mono (cechXIso₁ U P).hom, zero_comp, Pi.hom_ext_iff]
+  rw [← cancel_mono (cechXIso U P 1).hom, zero_comp, Pi.hom_ext_iff]
   simp [cechComplexFunctor_obj_d_zero_one, key, sub_eq_zero, Fin.one_succAbove_zero]
 
 private def lift₀ {W : A} (x : ∀ i, W ⟶ P.obj (op (U i))) :
     W ⟶ ((cechComplexFunctor U).obj P).X 0 :=
-  (Pi.lift fun a ↦ x (a default) ≫ P.map (productUniqueIso _).hom.op) ≫ (cechXIso₀ U P).inv
+  (Pi.lift fun a ↦ x (a default) ≫
+    P.map (productUniqueIso (fun j : Fin 1 ↦ U (a j))).hom.op) ≫ (cechXIso U P 0).inv
 
 @[reassoc]
 private lemma lift₀_comp_restrict {W : A} (x : ∀ i, W ⟶ P.obj (op (U i))) (a : Fin 1 → ι) :
@@ -249,6 +264,27 @@ theorem cechComplexFunctor_map_f_π {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ)
       Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
   Pi.map_π (fun _ ↦ α.app _) a
 
+/-- The native Čech differential in product coordinates is the alternating face sum. -/
+@[reassoc]
+lemma cechComplexFunctor_obj_d_comp_cechXIso_hom_π (U : ι → C) (P : Cᵒᵖ ⥤ A) (n : ℕ)
+    (k : Fin (n + 2) → ι) :
+    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ (cechXIso U P (n + 1)).hom ≫ Pi.π _ k =
+      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • ((cechXIso U P n).hom ≫ Pi.π _ (k ∘ m.succAbove) ≫
+        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) :=
+  -- `cechXIso` is the identity
+  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_obj_d_comp_π U P n k).trans <|
+    Finset.sum_congr rfl fun _ _ ↦ congrArg _ (Category.id_comp _).symm
+
+/-- A presheaf morphism acts on the product coordinates by its component maps. -/
+@[reassoc]
+lemma cechComplexFunctor_map_f_comp_cechXIso_hom_π (V : ι → C) {P P' : Cᵒᵖ ⥤ A}
+    (α : P ⟶ P') (n : ℕ) (a : Fin (n + 1) → ι) :
+    ((cechComplexFunctor V).map α).f n ≫ (cechXIso V P' n).hom ≫ Pi.π _ a =
+      (cechXIso V P n).hom ≫ Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ V (a j))) :=
+  -- `cechXIso` is the identity
+  (_ ≫= Category.id_comp _).trans <|
+    (cechComplexFunctor_map_f_π V P α n a).trans (Category.id_comp _).symm
+
 /-- The degree `n` component of `(cechComplexFunctor U).map α` is the product of the components of
 `α` at the products `U (a 0) × ⋯ × U (a n)`. -/
 theorem cechComplexFunctor_map_f {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
@@ -267,6 +303,15 @@ instance : (cechComplexFunctor U : (Cᵒᵖ ⥤ A) ⥤ CochainComplex A ℕ).Add
       (congrArg _ (NatTrans.app_add _ α β)).trans <| (Preadditive.comp_add _ _ _ _ _ _).trans <|
         (congrArg₂ (· + ·) (cechComplexFunctor_map_f_π U P α n a).symm
           (cechComplexFunctor_map_f_π U P β n a).symm).trans (Preadditive.add_comp _ _ _ _ _ _).symm
+
+/-- An empty family has zero Čech complex, without requiring any value of the presheaf to
+vanish. -/
+lemma isZero_cechComplexFunctor_obj [IsEmpty ι] :
+    IsZero ((cechComplexFunctor U).obj P) := by
+  refine (IsZero.iff_id_eq_zero _).2 ?_
+  apply HomologicalComplex.hom_ext
+  intro p
+  exact Pi.hom_ext _ _ fun a ↦ isEmptyElim (a 0)
 
 /-! ### Maps of families
 
@@ -782,7 +827,7 @@ private def augmentation₀ : P.obj (op T) ⟶ ((cechComplexFunctor U).obj P).X 
 @[reassoc]
 private lemma augmentation₀_comp_restrict (a : Fin 1 → ι) :
     augmentation₀ U hT P ≫ restrict U P a = P.map (hT.from (U (a default))).op :=
-  -- `singleObjXSelf _ 0 _` and `cechXIso₀` are identities
+  -- `singleObjXSelf _ 0 _` and `cechXIso` are identities
   (Category.assoc _ _ _).trans <| (Category.id_comp _).trans <| (_ ≫= Category.id_comp _).trans <|
     (Category.assoc _ _ _).symm.trans <| (cechAugmentation_f_zero_comp_π U hT P a =≫ _).trans <|
       (P.map_comp _ _).symm.trans <| P.congr_map (congrArg Quiver.Hom.op (hT.hom_ext _ _))

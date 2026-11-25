@@ -182,4 +182,20 @@ theorem sigmoid_gaussianReal {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} 
   rw [TauCeti.Probability.logitNormalMeasure_def]
   exact (hasLaw_map (by fun_prop : Measurable Real.sigmoid).aemeasurable).comp hX
 
+/-- Taking the logit of a logit-normal variable recovers its Gaussian source law. -/
+theorem logit_logitNormalMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0}
+    (hX : HasLaw X (TauCeti.Probability.logitNormalMeasure m v) P) :
+    HasLaw (fun ω ↦ Real.log (X ω / (1 - X ω))) (gaussianReal m v) P :=
+  HasLaw.comp
+    ⟨by fun_prop, TauCeti.Probability.map_logit_logitNormalMeasure m v⟩ hX
+
+/-- Reflecting a logit-normal variable about one half negates its Gaussian location. -/
+theorem one_sub_logitNormalMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0}
+    (hX : HasLaw X (TauCeti.Probability.logitNormalMeasure m v) P) :
+    HasLaw (fun ω ↦ 1 - X ω) (TauCeti.Probability.logitNormalMeasure (-m) v) P :=
+  HasLaw.comp
+    ⟨by fun_prop, TauCeti.Probability.map_one_sub_logitNormalMeasure m v⟩ hX
+
 end ProbabilityTheory.HasLaw

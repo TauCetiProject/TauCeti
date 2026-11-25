@@ -52,6 +52,10 @@ coordinate `±1`.
 * `TauCeti.Montgomery.diffAdd_cross_eq_zero_of_cross_eq_zero` and
   `TauCeti.Montgomery.diffAdd_ne_zero_iff_of_cross_eq_zero`: the same for arbitrary
   representatives of the coordinate pairs.
+* `TauCeti.Montgomery.diffAdd_zero_left`, `TauCeti.Montgomery.diffAdd_zero_right`,
+  `TauCeti.Montgomery.diffAdd_zero_diff`, `TauCeti.Montgomery.diffAdd_eq_zero_of_z_eq_zero`, and
+  `TauCeti.Montgomery.diffAdd_eq_zero_of_x_eq_zero_of_z_eq_zero`: vanishing on zero and
+  coordinate-degenerate raw pairs over any commutative ring.
 
 ## References
 
@@ -136,6 +140,32 @@ theorem diffAdd_one_zero (P : Pair R) : diffAdd P ⟨1, 0⟩ P = (4 * P.x * P.z)
 theorem map_diffAdd (f : R →+* S) (P Q D : Pair R) :
     (diffAdd P Q D).map f = diffAdd (P.map f) (Q.map f) (D.map f) := by
   ext <;> simp [diffAdd]
+
+/-- Differential addition vanishes when its first argument is the zero raw pair. -/
+@[simp]
+theorem diffAdd_zero_left (Q D : Pair R) : diffAdd 0 Q D = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z]
+
+/-- Differential addition vanishes when its second argument is the zero raw pair. -/
+@[simp]
+theorem diffAdd_zero_right (P D : Pair R) : diffAdd P 0 D = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z]
+
+/-- Differential addition vanishes when its difference argument is the zero raw pair. -/
+@[simp]
+theorem diffAdd_zero_diff (P Q : Pair R) : diffAdd P Q 0 = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z]
+
+/-- Differential addition vanishes when all three arguments have vanishing second field. -/
+theorem diffAdd_eq_zero_of_z_eq_zero {P Q D : Pair R} (hP : P.z = 0) (hQ : Q.z = 0)
+    (hD : D.z = 0) : diffAdd P Q D = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z, Pair.cross_def, hP, hQ, hD]
+
+/-- Differential addition vanishes when the first and difference arguments have vanishing first
+field and the second argument has vanishing second field. -/
+theorem diffAdd_eq_zero_of_x_eq_zero_of_z_eq_zero {P Q D : Pair R} (hP : P.x = 0)
+    (hQ : Q.z = 0) (hD : D.x = 0) : diffAdd P Q D = 0 := by
+  ext <;> simp [diffAdd_x, diffAdd_z, Pair.cross_def, hP, hQ, hD]
 
 end CommRing
 

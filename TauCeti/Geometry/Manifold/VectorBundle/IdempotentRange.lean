@@ -59,8 +59,7 @@ theorem contMDiffOn_coordChangeL_rangeTrivialization (hp : ContMDiff I 𝓘(𝕜
     (ContinuousLinearMap.compL 𝕜' F' F F' P).comp
       ((ContinuousLinearMap.compL 𝕜' F' F F).flip Q)
   have hA : ContMDiffOn I 𝓘(𝕜, F →L[𝕜'] F) n
-      (fun x ↦ (p x * p x₁ + (1 - p x) * (1 - p x₁))⁻¹ʳ * p x *
-        (p x * p x₀ + (1 - p x) * (1 - p x₀)))
+      (fun x ↦ (intertwiner (p x₁) (p x))⁻¹ʳ * p x * intertwiner (p x₀) (p x))
       ((rangeTrivialization hp.continuous hidem x₀ φ).baseSet ∩
         (rangeTrivialization hp.continuous hidem x₁ φ₁).baseSet) := by
     have hi := (contMDiffOn_inverse_intertwiner hp x₁).mono
@@ -73,8 +72,7 @@ theorem contMDiffOn_coordChangeL_rangeTrivialization (hp : ContMDiff I 𝓘(𝕜
         ((hi x hx).prodMk_space (hp x).contMDiffWithinAt)).prodMk_space
         ((contMDiff_intertwiner hp x₀) x).contMDiffWithinAt)
   have hD : ContMDiffOn I 𝓘(𝕜, F' →L[𝕜'] F') n
-      (fun x ↦ D ((p x * p x₁ + (1 - p x) * (1 - p x₁))⁻¹ʳ * p x *
-        (p x * p x₀ + (1 - p x) * (1 - p x₀))))
+      (fun x ↦ D ((intertwiner (p x₁) (p x))⁻¹ʳ * p x * intertwiner (p x₀) (p x)))
       ((rangeTrivialization hp.continuous hidem x₀ φ).baseSet ∩
         (rangeTrivialization hp.continuous hidem x₁ φ₁).baseSet) :=
     fun x hx ↦ (D.restrictScalars 𝕜).contDiff.comp_contMDiffWithinAt (hA x hx)
@@ -122,7 +120,7 @@ theorem contMDiff_range_inclusion
     let _ := rangeVectorBundle hp.continuous hidem hF'
     let _ := VectorBundle.restrictScalars 𝕜 𝕜' F' (fun x ↦ (p x).range)
     ContMDiff (I.prod 𝓘(𝕜, F')) (I.prod 𝓘(𝕜, F)) n
-      (fun v : TotalSpace F' (fun x ↦ (p x).range) ↦ (v.proj, (v.2 : F))) := by
+      (fun v : TotalSpace F' (fun x ↦ (p x).range) ↦ (v.proj, (v.snd : F))) := by
   let _ := rangeFiberBundle hp.continuous hidem hF'
   let _ := rangeVectorBundle hp.continuous hidem hF'
   let _ := VectorBundle.restrictScalars 𝕜 𝕜' F' (fun x ↦ (p x).range)
@@ -146,7 +144,7 @@ theorem contMDiff_range_inclusion
   have hu := (contMDiff_intertwiner hp v.proj v.proj).comp v hb
   have hur : ContMDiffAt (I.prod 𝓘(𝕜, F')) 𝓘(𝕜, F →L[𝕜] F) n
       (fun w : TotalSpace F' (fun x ↦ (p x).range) ↦
-        (p w.proj * p v.proj + (1 - p w.proj) * (1 - p v.proj)).restrictScalars 𝕜) v :=
+        (intertwiner (p v.proj) (p w.proj)).restrictScalars 𝕜) v :=
     (ContinuousLinearMap.restrictScalarsIsometry 𝕜' F F 𝕜 𝕜
       ).toContinuousLinearMap.contDiff.comp_contMDiffAt hu
   have hq := (Q.restrictScalars 𝕜).contDiff.comp_contMDiffAt hc
@@ -156,14 +154,13 @@ theorem contMDiff_range_inclusion
       ).toContinuousLinearMap.contDiff.comp_contMDiffAt ((hp v.proj).comp v hb)
   refine hb.prodMk ((hpr.clm_apply (hur.clm_apply hq)).congr_of_eventuallyEq ?_)
   filter_upwards [e.open_source.mem_nhds hv] with w hw
-  have he := congrArg (fun z : TotalSpace F' (fun x ↦ (p x).range) ↦ (z.proj, (z.2 : F)))
+  have he := congrArg (fun z : TotalSpace F' (fun x ↦ (p x).range) ↦ (z.proj, (z.snd : F)))
     (e.toOpenPartialHomeomorph.left_inv hw)
   rw [rangeTrivialization_symm_apply] at he
   have he' := congrArg Prod.snd he
   -- Remove the range subtype before rewriting the base coordinate.
   change p (e w).1
-    ((p (e w).1 * p v.proj + (1 - p (e w).1) * (1 - p v.proj))
-      (φ (e w).2)) = (w.2 : F) at he'
+    (intertwiner (p v.proj) (p (e w).1) (φ (e w).2)) = (w.snd : F) at he'
   rw [e.coe_fst' (e.mem_source.mp hw)] at he'
   exact he'.symm
 
@@ -204,9 +201,9 @@ theorem contMDiffAt_range_mk
   let P : F →L[𝕜'] F' := (φ.symm : (p (b x)).range →L[𝕜'] F') ∘L (p (b x)).rangeRestrict
   have hi := (contMDiffOn_inverse_intertwiner hp (b x)).contMDiffAt
     ((isOpen_setOf_isUnit_intertwiner hp.continuous (b x)).mem_nhds
-      (ContinuousLinearMap.IsIdempotentElem.isUnit_mul_self_add_one_sub_mul_one_sub (hidem (b x))))
+      (hidem (b x)).isUnit_intertwiner_self)
   have hir : ContMDiffAt J 𝓘(𝕜, F →L[𝕜] F) n
-      (fun y ↦ ((p (b y) * p (b x) + (1 - p (b y)) * (1 - p (b x)))⁻¹ʳ).restrictScalars 𝕜) x :=
+      (fun y ↦ ((intertwiner (p (b x)) (p (b y)))⁻¹ʳ).restrictScalars 𝕜) x :=
     (ContinuousLinearMap.restrictScalarsIsometry 𝕜' F F 𝕜 𝕜
       ).toContinuousLinearMap.contDiff.comp_contMDiffAt (hi.comp x hb)
   have hh := (P.restrictScalars 𝕜).contDiff.comp_contMDiffAt (hir.clm_apply hv)
@@ -224,7 +221,7 @@ theorem contMDiffAt_range_iff
     let _ := rangeVectorBundle hp.continuous hidem hF'
     let _ := VectorBundle.restrictScalars 𝕜 𝕜' F' (fun x ↦ (p x).range)
     ContMDiffAt J (I.prod 𝓘(𝕜, F')) n f x ↔
-      ContMDiffAt J (I.prod 𝓘(𝕜, F)) n (fun y ↦ ((f y).proj, ((f y).2 : F))) x := by
+      ContMDiffAt J (I.prod 𝓘(𝕜, F)) n (fun y ↦ ((f y).proj, ((f y).snd : F))) x := by
   let _ := rangeFiberBundle hp.continuous hidem hF'
   let _ := rangeVectorBundle hp.continuous hidem hF'
   let _ := VectorBundle.restrictScalars 𝕜 𝕜' F' (fun x ↦ (p x).range)
@@ -233,7 +230,7 @@ theorem contMDiffAt_range_iff
   · intro h
     exact (contMDiff_range_inclusion hp hidem hF' (f x)).comp x h
   · intro h
-    exact contMDiffAt_range_mk hp hidem hF' h.fst h.snd (fun y ↦ (f y).2.2)
+    exact contMDiffAt_range_mk hp hidem hF' h.fst h.snd (fun y ↦ (f y).snd.property)
 
 /-- The given projection, valued in its native range bundle, is a smooth map of total spaces. -/
 theorem contMDiff_range_projection
@@ -288,9 +285,9 @@ noncomputable def rangeProdRangeOneSubDiffeomorph
   · intro v
     have hc := Bundle.contMDiffAt_totalSpace_prod_iff.mp (contMDiffAt_id
       (I := I.prod 𝓘(𝕜, F' × F'')) (n := n) (x := v))
-    have h₁ := (contMDiff_range_inclusion hp hidem hF' ⟨v.proj, v.2.1⟩).comp v hc.1
+    have h₁ := (contMDiff_range_inclusion hp hidem hF' ⟨v.proj, v.snd.1⟩).comp v hc.1
     have h₂ := (contMDiff_range_inclusion hp' (fun x ↦ (hidem x).one_sub)
-      hF'' ⟨v.proj, v.2.2⟩).comp v hc.2
+      hF'' ⟨v.proj, v.snd.2⟩).comp v hc.2
     have h := h₁.fst.prodMk
       ((contDiff_fst.add contDiff_snd).comp_contMDiffAt (h₁.snd.prodMk_space h₂.snd))
     exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w ↦
@@ -302,14 +299,14 @@ noncomputable def rangeProdRangeOneSubDiffeomorph
         (Filter.Eventually.of_forall fun y ↦ congrArg
           (fun w : TotalSpace (F' × F'')
               ((fun x ↦ (p x).range) ×ᵇ fun x ↦ (1 - p x).range) ↦
-            (⟨w.proj, w.2.1⟩ : TotalSpace F' (fun x ↦ (p x).range)))
+            (⟨w.proj, w.snd.1⟩ : TotalSpace F' (fun x ↦ (p x).range)))
           (rangeProdRangeOneSubHomeomorph_symm_apply F' F'' hp.continuous hidem y))
     · exact (contMDiff_range_projection hp' (fun x ↦ (hidem x).one_sub) hF'' q
       ).congr_of_eventuallyEq
         (Filter.Eventually.of_forall fun y ↦ congrArg
           (fun w : TotalSpace (F' × F'')
               ((fun x ↦ (p x).range) ×ᵇ fun x ↦ (1 - p x).range) ↦
-            (⟨w.proj, w.2.2⟩ : TotalSpace F'' (fun x ↦ (1 - p x).range)))
+            (⟨w.proj, w.snd.2⟩ : TotalSpace F'' (fun x ↦ (1 - p x).range)))
           (rangeProdRangeOneSubHomeomorph_symm_apply F' F'' hp.continuous hidem y))
 
 /- As for the underlying homeomorphism, these getters are not simp lemmas: simplification of
@@ -325,7 +322,7 @@ theorem rangeProdRangeOneSubDiffeomorph_apply
     let _ := rangeFiberBundle (continuous_const.sub hp.continuous)
       (fun x ↦ (hidem x).one_sub) hF''
     rangeProdRangeOneSubDiffeomorph hp hidem hF' hF'' v =
-      (v.proj, (v.2.1 : F) + v.2.2) :=
+      (v.proj, (v.snd.1 : F) + v.snd.2) :=
   rangeProdRangeOneSubHomeomorph_apply F' F'' hp.continuous hidem v
 
 /-- The inverse smooth splitting applies the two complementary projections. -/

@@ -25,8 +25,10 @@ elements.
 
 * `TauCeti.IsNonUnitalDGAlgebra.leibniz_koszulTwist`: the Leibniz rule for an arbitrary left
   factor.
-* `TauCeti.IsNonUnitalDGAlgebra.koszulTwist_map`: the differential anticommutes with the Koszul
-  twist.
+* `TauCeti.IsNonUnitalDGAlgebra.koszulTwist_map`: the differential commutes with the Koszul twist
+  of parameter `n` up to the sign `(-1) ^ n`.
+* `TauCeti.IsNonUnitalDGAlgebra.koszulTwist_one_map`: the differential anticommutes with the
+  Koszul twist.
 
 ## References
 
@@ -52,13 +54,19 @@ theorem isHomogeneous (h : IsNonUnitalDGAlgebra 𝒜 d) :
   rw [InternalGrading.ofDecomposition_piece]
   exact LinearMap.isHomogeneous_def.mpr fun _ _ ha ↦ h.map_mem ha
 
+/-- **The differential commutes with the Koszul twist** `a ↦ (-1) ^ (n |a|) a` up to the sign
+`(-1) ^ n`, since it has degree one. -/
+theorem koszulTwist_map (h : IsNonUnitalDGAlgebra 𝒜 d) (n : ℤ) (a : A) :
+    (InternalGrading.ofDecomposition 𝒜).koszulTwist n (d a) =
+      n.negOnePow • d ((InternalGrading.ofDecomposition 𝒜).koszulTwist n a) := by
+  rw [h.isHomogeneous.koszulTwist_apply n a, mul_one, Units.smul_def, Int.cast_smul_eq_zsmul]
+
 /-- **The differential anticommutes with the Koszul twist** `a ↦ (-1) ^ |a| a`, since it has odd
 degree. -/
-theorem koszulTwist_map (h : IsNonUnitalDGAlgebra 𝒜 d) (a : A) :
+theorem koszulTwist_one_map (h : IsNonUnitalDGAlgebra 𝒜 d) (a : A) :
     (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 (d a) =
       -d ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a) := by
-  rw [h.isHomogeneous.koszulTwist_apply 1 a, mul_one, Int.negOnePow_one, Units.val_neg,
-    Units.val_one, Int.cast_neg, Int.cast_one, neg_one_smul]
+  rw [h.koszulTwist_map 1 a, Int.negOnePow_one, Units.neg_smul, one_smul]
 
 /-- **The Leibniz rule for an arbitrary left factor**: the sign `(-1) ^ |a|` of the graded Leibniz
 rule is the Koszul twist `a ↦ (-1) ^ |a| a` of the left factor. -/

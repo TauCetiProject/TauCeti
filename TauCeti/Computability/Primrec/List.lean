@@ -72,11 +72,18 @@ theorem list_product {β : Type*} [Primcodable β] :
   (list_flatMap fst (list_map (snd.comp fst) (pair (snd.comp fst) snd).to₂).to₂).to₂.of_eq
     fun _ _ => rfl
 
-/-- The sum of a list is primitive recursive when addition is. -/
-theorem list_sum [Add α] [Zero α] (hadd : Primrec₂ ((· + ·) : α → α → α)) :
+/-- The sum of a list is primitive recursive when addition is. Mathlib's `Primrec.list_sum` is
+the special case of lists of natural numbers. -/
+theorem list_sum_of_add [Add α] [Zero α] (hadd : Primrec₂ ((· + ·) : α → α → α)) :
     Primrec (List.sum : List α → α) :=
   (list_foldr .id (const 0) (hadd.comp (fst.comp snd) (snd.comp snd)).to₂).of_eq fun l => by
     induction l <;> simp_all
+
+/-- Looking up an entry of a `List (Option α)` and flattening the nested option is primitive
+recursive. -/
+theorem list_getElem?_bind_id :
+    Primrec₂ fun (l : List (Option α)) (z : ℕ) => l[z]?.bind id :=
+  (option_bind₁ Primrec.id).comp list_getElem?
 
 end Primrec
 
