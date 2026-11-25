@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCu
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.TangentCone.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
 # Metric compatibility along a curve
@@ -362,8 +363,7 @@ theorem IsMetricCompatible.hasDerivWithinAt_inner_alongCurveWithin
           innerSL ℝ (cov Y (γ t) v) (Z (γ t)) + innerSL ℝ (Y (γ t)) (cov Z (γ t) v) := by
     intro Y Z hY hZ v
     simp only [innerSL_apply_apply]
-    simpa only [FiberBundle.extend_apply_self] using
-      hcov.mvfderiv_inner_eq (FiberBundle.extend E v) hY hZ
+    exact hcov.mvfderiv_inner_apply hY hZ v
   -- `innerSL ℝ v w` unfolds to `inner ℝ v w` (`innerSL_apply_apply` is proved by `rfl`), but
   -- `simp` does not rewrite it under the instances found for `TangentSpace I (γ r)`.
   exact hasDerivWithinAt_apply_alongCurveWithin hdiff hcompat hγ hV hW

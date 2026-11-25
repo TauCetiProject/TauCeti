@@ -22,6 +22,10 @@ This module characterizes metric compatibility as the vanishing of `derivMetricT
 assuming manifold regularity
 (`CovariantDerivative.isMetricCompatible_iff_derivMetricTensor_eq_zero`).
 
+It also states metric compatibility in a single tangent direction `v`,
+`v ⟪σ, τ⟫ = ⟪∇_v σ, τ⟫ + ⟪σ, ∇_v τ⟫`
+(`CovariantDerivative.IsMetricCompatible.mvfderiv_inner_apply`).
+
 For differentiable sections with locally constant inner product, metric compatibility gives
 the skew-symmetry identity for their covariant derivatives, including orthogonality to a
 section of locally constant length.
@@ -82,6 +86,16 @@ theorem IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero (hcov : cov.IsMetricCom
       inner_zero_left, inner_zero_right, add_zero, map_zero] using
       hcov.mvfderiv_inner_eq (fun _ ↦ w) hσ hτ
   simpa only [hd] using (hσ.inner_bundle hτ).hasMFDerivAt
+
+/-- Metric compatibility in a single tangent direction: for sections differentiable at `x`,
+`v ⟪σ, τ⟫ = ⟪∇_v σ, τ⟫ + ⟪σ, ∇_v τ⟫` for every `v ∈ T_x M`. -/
+theorem IsMetricCompatible.mvfderiv_inner_apply (hcov : cov.IsMetricCompatible)
+    {σ τ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x)
+    (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ inner ℝ (σ y) (τ y)) x v =
+      inner ℝ (cov σ x v) (τ x) + inner ℝ (σ x) (cov τ x v) := by
+  classical
+  simpa only [Pi.single_eq_same] using hcov.mvfderiv_inner_eq (Pi.single x v) hσ hτ
 
 /-- For a metric-compatible connection, two differentiable sections with locally constant
 inner product have skew-symmetric covariant derivatives at the point. -/
