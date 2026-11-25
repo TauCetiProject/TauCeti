@@ -379,7 +379,7 @@ theorem ConvexAlongGeneralizedGeodesics.mem_wassersteinSubdifferential_iff {m : 
     rw [Measure.snd, Measure.map_map measurable_snd hg]
     simp [Function.comp_def]
   have h := convexAlongGeneralizedGeodesicPlan_def.1 (convexAlongGeneralizedGeodesics_def.1 hφ htop
-    hν (hγc.isGeneralizedGeodesicPlan_map hγopt)) t ht ν' (by
+    hν (hγc.isGeneralizedGeodesicPlan_map hγopt measurable_edist.aemeasurable)) t ht ν' (by
     rw [hν', generalizedGeodesic_def, Measure.map_map (by fun_prop) hg, Function.comp_def])
   rwa [hsnd, ← WassersteinSpace.dist_sq_eq_integral hγ] at h
 

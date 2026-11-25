@@ -141,16 +141,19 @@ end ThreePlan
 
 section Diagonal
 
-variable {X : Type*} [PseudoEMetricSpace X] [MeasurableSpace X] [MeasurableEq X] {p : ℝ≥0∞}
+variable {X : Type*} [PseudoEMetricSpace X] [MeasurableSpace X] {p : ℝ≥0∞}
   {π : Measure (X × X)} {μ ν : Measure X}
 
 /-- **Optimal couplings out of the base law are generalized-geodesic plans.** If `π` is a coupling
 of `μ` and `ν` realizing `W_p (μ, ν)`, then the law of `(x, x, y)` under `π` is a
 generalized-geodesic plan from `μ` to `ν` based at `μ`: its projection to the first two
 coordinates is the diagonal coupling of `μ`, of cost `0`, and its projection to the first and last
-coordinates is `π`. -/
+coordinates is `π`. The ground distance only has to be almost everywhere measurable under the
+diagonal coupling; this holds when it is measurable, and also when the diagonal is measurable,
+since the distance then vanishes almost everywhere under the diagonal coupling. -/
 theorem IsCoupling.isGeneralizedGeodesicPlan_map (hπ : IsCoupling π μ ν)
-    (hopt : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π = wassersteinEDist p μ ν) :
+    (hopt : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π = wassersteinEDist p μ ν)
+    (hd : AEMeasurable (fun z : X × X ↦ edist z.1 z.2) (graphPlan id μ)) :
     IsGeneralizedGeodesicPlan p (π.map fun z ↦ (z.1, z.1, z.2)) μ μ ν := by
   have hg : Measurable fun z : X × X ↦ (z.1, z.1, z.2) := by fun_prop
   have hleft : (π.map fun z ↦ (z.1, z.1, z.2)).map (Prod.map id Prod.fst) = graphPlan id μ := by
@@ -160,11 +163,11 @@ theorem IsCoupling.isGeneralizedGeodesicPlan_map (hπ : IsCoupling π μ ν)
   have hright : (π.map fun z ↦ (z.1, z.1, z.2)).map (Prod.map id Prod.snd) = π := by
     rw [Measure.map_map (by fun_prop) hg]
     simp [Function.comp_def]
-  -- The diagonal coupling has zero displacement almost everywhere.
+  -- The diagonal coupling has zero displacement.
   have hzero : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (graphPlan id μ) = 0 := by
-    refine eLpNorm_eq_zero_of_ae_zero ?_
-    filter_upwards [ae_snd_eq_graphPlan (T := (id : X → X)) (μ := μ) aemeasurable_id] with z hz
-    simp [hz]
+    rw [graphPlan_def] at hd ⊢
+    rw [eLpNorm_map_measure hd.aestronglyMeasurable (by fun_prop)]
+    exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ by simp)
   refine ⟨by rw [hleft]; exact isCoupling_graphPlan_id μ, ?_, by rw [hright]; exact hπ,
     by rw [hright]; exact hopt⟩
   rw [hleft, hzero]
