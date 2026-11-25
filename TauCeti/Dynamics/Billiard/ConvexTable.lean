@@ -57,6 +57,8 @@ in this sense are the tables on which the billiard ball map of a convex billiard
   curvature transforms by `κ ↦ κ (· + c)` under a shift of the origin and is unchanged by
   rotations and translations.
 * `TauCeti.ConvexTable.curvature_circle`: the circle of radius `R` has curvature `1 / R`.
+* `TauCeti.ConvexTable.apply_notMem_openSegment`, `TauCeti.ConvexTable.not_segment_subset_range`:
+  no point of a table lies strictly between two others, so its image contains no segment.
 * `TauCeti.ConvexTable.coe_ne_comp_neg`: reversing the orientation of a table never gives a
   table.
 
@@ -434,6 +436,44 @@ theorem isClosedEmbedding_circleParam : IsClosedEmbedding T.circleParam :=
 /-- **The boundary of a table is a Jordan curve.** -/
 theorem isJordanCurve_range : IsJordanCurve (range T) :=
   T.toStrictConvexBilliardTable.isJordanCurve_range
+
+/-- **No point of a table lies strictly between two others.** If `p ≠ q` are points of the image
+of a table, no point of the image lies on the open segment between them: the tangent line at such
+a point would have `p` and `q` strictly on the same side, while they lie on opposite sides of the
+point along a line. In particular a line meets the image in at most two points. -/
+theorem apply_notMem_openSegment {p q : ℂ} (hp : p ∈ range T) (hq : q ∈ range T) (hpq : p ≠ q)
+    (s : ℝ) : T s ∉ openSegment ℝ p q := by
+  rintro ⟨a, b, ha, hb, hab, hs⟩
+  obtain ⟨t, rfl⟩ := hp
+  obtain ⟨u, rfl⟩ := hq
+  have hmem : T s ∈ openSegment ℝ (T t) (T u) := ⟨a, b, ha, hb, hab, hs⟩
+  have hts : (s : AddCircle ℓ) ≠ t := fun h => by
+    rw [← T.apply_eq_apply_iff] at h
+    exact hpq (left_mem_openSegment_iff.1 (h ▸ hmem))
+  have hus : (s : AddCircle ℓ) ≠ u := fun h => by
+    rw [← T.apply_eq_apply_iff] at h
+    exact hpq (right_mem_openSegment_iff.1 (h ▸ hmem))
+  have h₁ := T.im_conj_deriv_mul_sub_pos hts
+  have h₂ := T.im_conj_deriv_mul_sub_pos hus
+  have h0 : a * (conj (deriv T s) * (T t - T s)).im + b * (conj (deriv T s) * (T u - T s)).im
+      = 0 := by
+    have : (a : ℂ) * (T t - T s) + (b : ℂ) * (T u - T s) = 0 := by
+      rw [real_smul, real_smul] at hs
+      have hab' : (a : ℂ) + b = 1 := by exact_mod_cast hab
+      linear_combination hs - T s * hab'
+    have h := congrArg (fun w => (conj (deriv T s) * w).im) this
+    simp only [mul_add, add_im, mul_zero, zero_im] at h
+    rw [← h, mul_left_comm, mul_left_comm (conj _) (b : ℂ), im_ofReal_mul, im_ofReal_mul]
+  nlinarith [mul_pos ha h₁, mul_pos hb h₂]
+
+/-- **The image of a table contains no segment.** No nondegenerate segment lies in the image of a
+table: its midpoint would lie strictly between its endpoints. So the stadium, whose boundary
+contains two segments, is not the image of a table. -/
+theorem not_segment_subset_range {p q : ℂ} (hpq : p ≠ q) : ¬segment ℝ p q ⊆ range T := by
+  intro h
+  obtain ⟨s, hs⟩ := h (openSegment_subset_segment ℝ p q (midpoint_mem_openSegment p q))
+  exact T.apply_notMem_openSegment (h (left_mem_segment ℝ p q)) (h (right_mem_segment ℝ p q)) hpq
+    s (hs ▸ midpoint_mem_openSegment p q)
 
 /-- The convex table `circle R` is the circle billiard table
 `TauCeti.StrictConvexBilliardTable.circle`. -/
