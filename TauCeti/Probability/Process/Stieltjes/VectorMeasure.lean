@@ -17,7 +17,7 @@ horizon. This supplies finite-variation integrators without assuming that the or
 increasing or globally BV. The open initial endpoint excludes an initial atom.
 
 For continuous real paths, the predictable variation parts from
-`MeasureTheory.StronglyAdapted.exists_stieltjesFunction_sub` identify the signed measure with
+`MeasureTheory.StronglyAdapted.exists_stieltjesFunction_sub_stieltjesFunction` identify it with
 the difference of the parts' restricted Stieltjes measures via
 `BoundedVariationOn.vectorMeasureIcc_eq_toSignedMeasure_sub`.
 -/

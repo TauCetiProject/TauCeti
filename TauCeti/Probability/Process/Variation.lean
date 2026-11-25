@@ -106,7 +106,7 @@ variable {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
 /-- The positive and negative variation parts of a continuous adapted locally BV process can
 be chosen continuously and predictably on its raw filtration. Both start at zero; their sum
 is the accumulated variation, and their difference is the process minus its initial value. -/
-theorem exists_stieltjesFunction_sub (hX : StronglyAdapted ℱ X)
+theorem exists_stieltjesFunction_sub_stieltjesFunction (hX : StronglyAdapted ℱ X)
     (hc : ∀ ω, Continuous (fun t => X t ω))
     (hv : ∀ ω, LocallyBoundedVariationOn (fun t => X t ω) univ) :
     ∃ p q : Ω → StieltjesFunction ℝ≥0,
@@ -117,11 +117,15 @@ theorem exists_stieltjesFunction_sub (hX : StronglyAdapted ℱ X)
       (∀ t ω, X t ω - X 0 ω = p ω t - q ω t) ∧
       ∀ t ω, p ω t + q ω t = _root_.variationOnFromTo (fun s => X s ω) univ 0 t := by
   let V := fun t ω => _root_.variationOnFromTo (fun s => X s ω) univ 0 t
-  have hVc (ω) : Continuous (fun t => V t ω) := by
-    exact continuous_iff_continuousAt.mpr fun t =>
+  have hVc (ω) : Continuous (fun t => V t ω) :=
+    continuous_iff_continuousAt.mpr fun t =>
       ((hv ω).continuousWithinAt_variationOnFromTo_iff (mem_univ 0) (mem_univ t)).mpr
         (hc ω |>.continuousAt.continuousWithinAt) |>.continuousAt (by simp)
   -- The canonical signed-variation parts preserve adaptation, unlike arbitrary pathwise choices.
+  have hpc (ω) : Continuous (fun t => (V t ω + X t ω - X 0 ω) / 2) :=
+    (((hVc ω).add (hc ω)).sub continuous_const).div_const 2
+  have hqc (ω) : Continuous (fun t => (V t ω - X t ω + X 0 ω) / 2) :=
+    (((hVc ω).sub (hc ω)).add continuous_const).div_const 2
   let p : Ω → StieltjesFunction ℝ≥0 := fun ω =>
     { toFun := fun t => (V t ω + X t ω - X 0 ω) / 2
       mono' := fun s t hst => by
@@ -130,9 +134,7 @@ theorem exists_stieltjesFunction_sub (hX : StronglyAdapted ℱ X)
         dsimp only [Pi.add_apply] at h
         dsimp only [V]
         linarith
-      right_continuous' := fun t =>
-        (((hVc ω).add (hc ω)).sub continuous_const).div_const 2
-          |>.continuousAt.continuousWithinAt }
+      right_continuous' := fun _ => (hpc ω).continuousAt.continuousWithinAt }
   let q : Ω → StieltjesFunction ℝ≥0 := fun ω =>
     { toFun := fun t => (V t ω - X t ω + X 0 ω) / 2
       mono' := fun s t hst => by
@@ -141,13 +143,7 @@ theorem exists_stieltjesFunction_sub (hX : StronglyAdapted ℱ X)
         dsimp only [Pi.sub_apply] at h
         dsimp only [V]
         linarith
-      right_continuous' := fun t =>
-        (((hVc ω).sub (hc ω)).add continuous_const).div_const 2
-          |>.continuousAt.continuousWithinAt }
-  have hpc (ω) : Continuous (p ω) :=
-    (((hVc ω).add (hc ω)).sub continuous_const).div_const 2
-  have hqc (ω) : Continuous (q ω) :=
-    (((hVc ω).sub (hc ω)).add continuous_const).div_const 2
+      right_continuous' := fun _ => (hqc ω).continuousAt.continuousWithinAt }
   -- Transfer the fixed-time variation measurability to the parts, then use their continuity.
   have hVa := hX.variationOnFromTo hc
   have hp : StronglyAdapted ℱ (fun t ω => p ω t) := fun t =>
