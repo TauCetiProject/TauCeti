@@ -97,21 +97,11 @@ variable {A₁ : Type u₁} {A₂ : Type u₂} {Q : Type v} [Ring A₁] [Ring A�
 matrix `u` over `Q`, for ring homomorphisms `π₁ : A₁ →+* Q` and `π₂ : A₂ →+* Q`. It is a right
 module over the fibre product `π₁.pullback π₂`, encoded as a left module over its opposite ring
 (`RingHom.patchedSubgroup.instModule`). -/
-def patchedSubgroup (u : GL n Q) : AddSubgroup ((n → A₁) × (n → A₂)) where
-  carrier := {x | (u : Matrix n n Q) *ᵥ (π₁ ∘ x.1) = π₂ ∘ x.2}
-  add_mem' {x y} hx hy := by
-    simp only [Set.mem_ofPred_eq, Prod.fst_add, Prod.snd_add] at hx hy ⊢
-    rw [show π₁ ∘ (x.1 + y.1) = π₁ ∘ x.1 + π₁ ∘ y.1 from funext fun _ ↦ map_add π₁ _ _,
-      show π₂ ∘ (x.2 + y.2) = π₂ ∘ x.2 + π₂ ∘ y.2 from funext fun _ ↦ map_add π₂ _ _, mulVec_add,
-      hx, hy]
-  zero_mem' := by
-    simp only [Set.mem_ofPred_eq, Prod.fst_zero, Prod.snd_zero]
-    rw [show π₁ ∘ (0 : n → A₁) = 0 from funext fun _ ↦ map_zero π₁,
-      show π₂ ∘ (0 : n → A₂) = 0 from funext fun _ ↦ map_zero π₂, mulVec_zero]
-  neg_mem' {x} hx := by
-    simp only [Set.mem_ofPred_eq, Prod.fst_neg, Prod.snd_neg] at hx ⊢
-    rw [show π₁ ∘ (-x.1) = -(π₁ ∘ x.1) from funext fun _ ↦ map_neg π₁ _,
-      show π₂ ∘ (-x.2) = -(π₂ ∘ x.2) from funext fun _ ↦ map_neg π₂ _, mulVec_neg, hx]
+def patchedSubgroup (u : GL n Q) : AddSubgroup ((n → A₁) × (n → A₂)) :=
+  AddMonoidHom.eqLocus
+    ((AddMonoidHom.mk' ((u : Matrix n n Q) *ᵥ ·) (mulVec_add _)).comp
+      ((π₁.toAddMonoidHom.compLeft n).comp (AddMonoidHom.fst _ _)))
+    ((π₂.toAddMonoidHom.compLeft n).comp (AddMonoidHom.snd _ _))
 
 variable {π₁ π₂}
 
@@ -455,51 +445,50 @@ theorem patchedFiniteProjective_obj (h : Function.Surjective π₁ ∨ Function.
     (patchedFiniteProjective π₁ π₂ h u).obj = ModuleCat.of _ (π₁.patchedSubgroup π₂ u) :=
   (rfl)
 
-variable (h : Function.Surjective π₁ ∨ Function.Surjective π₂)
+section Fact
 
+/-! The class `[M(u)] - n[D]` and its properties only make sense when one leg is surjective. This
+hypothesis is carried by a `Fact`, so that the finiteness and projectivity of the patched modules
+are found by instance search. -/
+
+variable [Fact (Function.Surjective π₁ ∨ Function.Surjective π₂)]
+
+@[local instance]
+private theorem finite_patchedSubgroup_of_fact (u : GL n Q) :
+    Module.Finite (π₁.pullback π₂)ᵐᵒᵖ (π₁.patchedSubgroup π₂ u) :=
+  finite_patchedSubgroup Fact.out u
+
+@[local instance]
+private theorem projective_patchedSubgroup_of_fact (u : GL n Q) :
+    Module.Projective (π₁.pullback π₂)ᵐᵒᵖ (π₁.patchedSubgroup π₂ u) :=
+  projective_patchedSubgroup Fact.out u
+
+variable (π₁ π₂) in
 /-- The class `[M(u)] - n[D]` in `K₀(D)` of the patched module of `u ∈ GLₙ(Q)`. -/
 private def patchedClass (u : GL ι Q) : KZero (π₁.pullback π₂) :=
-  have := finite_patchedSubgroup h u
-  have := projective_patchedSubgroup h u
   FiniteProjectiveModules.classOf _ (π₁.patchedSubgroup π₂ u) (Fintype.card ι)
 
 /-- Isomorphic patched modules of matrices of the same size have the same class. -/
 private theorem patchedClass_congr {u u' : GL ι Q}
     (e : π₁.patchedSubgroup π₂ u ≃ₗ[(π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ u') :
-    patchedClass h u = patchedClass h u' :=
-  have := finite_patchedSubgroup h u
-  have := projective_patchedSubgroup h u
-  have := finite_patchedSubgroup h u'
-  have := projective_patchedSubgroup h u'
+    patchedClass π₁ π₂ u = patchedClass π₁ π₂ u' :=
   FiniteProjectiveModules.classOf_congr e _
 
 /-- The patched module of the identity is free, so its class vanishes. -/
-private theorem patchedClass_one : patchedClass h (1 : GL ι Q) = 0 := by
-  have := finite_patchedSubgroup h (1 : GL ι Q)
-  have := projective_patchedSubgroup h (1 : GL ι Q)
+private theorem patchedClass_one : patchedClass π₁ π₂ (1 : GL ι Q) = 0 := by
   rw [patchedClass, FiniteProjectiveModules.classOf_congr ((patchedSubgroupOneEquiv π₁ π₂ ι).trans
     (LinearEquiv.funCongrLeft _ _ (Fintype.equivFin ι).symm)), FiniteProjectiveModules.classOf_free]
 
 /-- The class of the patched module of a block sum is the sum of the classes. -/
 private theorem patchedClass_fromBlocksGL (u : GL ι Q) (v : GL κ Q) :
-    patchedClass h (fromBlocksGL (u, v)) = patchedClass h u + patchedClass h v := by
-  have := finite_patchedSubgroup h u
-  have := projective_patchedSubgroup h u
-  have := finite_patchedSubgroup h v
-  have := projective_patchedSubgroup h v
-  have := finite_patchedSubgroup h (fromBlocksGL (u, v))
-  have := projective_patchedSubgroup h (fromBlocksGL (u, v))
+    patchedClass π₁ π₂ (fromBlocksGL (u, v)) = patchedClass π₁ π₂ u + patchedClass π₁ π₂ v := by
   rw [patchedClass, patchedClass, patchedClass,
     FiniteProjectiveModules.classOf_congr (patchedSubgroupProdEquiv π₁ π₂ u v).symm,
     Fintype.card_sum, FiniteProjectiveModules.classOf_prod]
 
 /-- Relabelling the indices does not change the class of the patched module. -/
 private theorem patchedClass_reindexGL (e : ι ≃ κ) (u : GL ι Q) :
-    patchedClass h (e.reindexGL Q u) = patchedClass h u := by
-  have := finite_patchedSubgroup h u
-  have := projective_patchedSubgroup h u
-  have := finite_patchedSubgroup h (e.reindexGL Q u)
-  have := projective_patchedSubgroup h (e.reindexGL Q u)
+    patchedClass π₁ π₂ (e.reindexGL Q u) = patchedClass π₁ π₂ u := by
   rw [patchedClass, patchedClass, Fintype.card_congr e,
     FiniteProjectiveModules.classOf_congr (patchedSubgroupReindexEquiv π₁ π₂ e u).symm]
 
@@ -507,28 +496,29 @@ private theorem patchedClass_reindexGL (e : ι ≃ κ) (u : GL ι Q) :
 of `M(u)` and `M(v)`. The block matrix `uv ⊕ 1` is `(u ⊕ v)(v ⊕ v⁻¹)` and also
 `(u ⊕ u⁻¹)(v ⊕ u)`, and the elementary factor lifts along whichever leg is surjective. -/
 private theorem patchedClass_mul (u v : GL ι Q) :
-    patchedClass h (u * v) = patchedClass h u + patchedClass h v := by
-  rw [← add_zero (patchedClass h (u * v)), ← patchedClass_one h (ι := ι),
+    patchedClass π₁ π₂ (u * v) = patchedClass π₁ π₂ u + patchedClass π₁ π₂ v := by
+  rw [← add_zero (patchedClass π₁ π₂ (u * v)), ← patchedClass_one (ι := ι),
     ← patchedClass_fromBlocksGL]
-  have h₀ := h
-  rcases h₀ with hπ₁ | hπ₂
+  rcases (Fact.out : Function.Surjective π₁ ∨ Function.Surjective π₂) with hπ₁ | hπ₂
   · have hw : fromBlocksGL (u * v, 1) = fromBlocksGL (u, v) * fromBlocksGL (v, v⁻¹) := by
       rw [← map_mul, Prod.mk_mul_mk, mul_inv_cancel]
     obtain ⟨e⟩ := nonempty_patchedSubgroup_mul_elementary_equiv (π₂ := π₂) hπ₁ (fromBlocksGL (u, v))
       (fromBlocksGL_inv_mem_elementarySubgroup v)
-    rw [hw, patchedClass_congr h e, patchedClass_fromBlocksGL]
+    rw [hw, patchedClass_congr e, patchedClass_fromBlocksGL]
   · have hw : fromBlocksGL (u * v, 1) = fromBlocksGL (u, u⁻¹) * fromBlocksGL (v, u) := by
       rw [← map_mul, Prod.mk_mul_mk, inv_mul_cancel]
     obtain ⟨e⟩ := nonempty_patchedSubgroup_elementary_mul_equiv (π₁ := π₁) hπ₂ (fromBlocksGL (v, u))
       (fromBlocksGL_inv_mem_elementarySubgroup u)
-    rw [hw, patchedClass_congr h e, patchedClass_fromBlocksGL, add_comm]
+    rw [hw, patchedClass_congr e, patchedClass_fromBlocksGL, add_comm]
 
 /-- Stabilization `u ↦ u ⊕ 1` does not change the class of the patched module. -/
 private theorem patchedClass_stabilizeGL {m k : ℕ} (hmk : m ≤ k) (u : GL (Fin m) Q) :
-    patchedClass h (stabilizeGL Q hmk u) = patchedClass h u := by
+    patchedClass π₁ π₂ (stabilizeGL Q hmk u) = patchedClass π₁ π₂ u := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hmk
   rw [stabilizeGL_eq_reindexGL_fromBlocksGL, patchedClass_reindexGL, patchedClass_fromBlocksGL,
     patchedClass_one, add_zero]
+
+end Fact
 
 /-! ## The boundary homomorphism -/
 
@@ -540,15 +530,19 @@ projective `K₀` of the fibre product `D = π₁.pullback π₂`, sending the c
 `Additive (TauCeti.AlgebraicK1 Q)`. -/
 def milnorBoundary (h : Function.Surjective π₁ ∨ Function.Surjective π₂) :
     Additive (AlgebraicK1 Q) →+ KZero (π₁.pullback π₂) :=
+  have : Fact (Function.Surjective π₁ ∨ Function.Surjective π₂) := ⟨h⟩
   MonoidHom.toAdditiveLeft <| AlgebraicK1.lift
     (fun _ ↦
-      { toFun u := Multiplicative.ofAdd (patchedClass h u)
-        map_one' := congrArg Multiplicative.ofAdd (patchedClass_one h)
-        map_mul' u v := congrArg Multiplicative.ofAdd (patchedClass_mul h u v) })
-    fun _ _ hmk u ↦ congrArg Multiplicative.ofAdd (patchedClass_stabilizeGL h hmk u)
+      { toFun u := Multiplicative.ofAdd (patchedClass π₁ π₂ u)
+        map_one' := congrArg Multiplicative.ofAdd patchedClass_one
+        map_mul' u v := congrArg Multiplicative.ofAdd (patchedClass_mul u v) })
+    fun _ _ hmk u ↦ congrArg Multiplicative.ofAdd (patchedClass_stabilizeGL hmk u)
 
-private theorem milnorBoundary_mk_eq_patchedClass (k : ℕ) (u : GL (Fin k) Q) :
-    milnorBoundary π₁ π₂ h (Additive.ofMul (AlgebraicK1.mk Q k u)) = patchedClass h u := by
+variable (h : Function.Surjective π₁ ∨ Function.Surjective π₂)
+
+private theorem milnorBoundary_mk_eq_patchedClass [Fact (Function.Surjective π₁ ∨
+    Function.Surjective π₂)] (k : ℕ) (u : GL (Fin k) Q) :
+    milnorBoundary π₁ π₂ h (Additive.ofMul (AlgebraicK1.mk Q k u)) = patchedClass π₁ π₂ u := by
   simp [milnorBoundary]
 
 /-- **The boundary formula** `δ([u]) = [M(u)] - n[D]` for `u ∈ GLₙ(Q)`. -/
@@ -557,18 +551,21 @@ theorem milnorBoundary_mk (k : ℕ) (u : GL (Fin k) Q) :
     milnorBoundary π₁ π₂ h (Additive.ofMul (AlgebraicK1.mk Q k u)) =
       SplitK0.of.{max u₁ u₂} (patchedFiniteProjective π₁ π₂ h u) -
         k • SplitK0.of.{max u₁ u₂} (finiteProjectiveModulesRegular (π₁.pullback π₂)ᵐᵒᵖ) := by
+  have : Fact (Function.Surjective π₁ ∨ Function.Surjective π₂) := ⟨h⟩
+  -- Unfolding `patchedFiniteProjective` and `finiteProjectiveModulesRegular` exhibits them as the
+  -- two objects of `classOf_def`.
   rw [milnorBoundary_mk_eq_patchedClass, patchedClass, FiniteProjectiveModules.classOf_def,
-    Fintype.card_fin]
-  rfl
+    Fintype.card_fin, patchedFiniteProjective, finiteProjectiveModulesRegular]
 
 /-- **The boundary vanishes on the image of `K₁(A₁)`**: for `g ∈ GLₙ(A₁)` the patched module of
 `π₁(g)` is free, `M(π₁(g)) ≅ M(1) ≅ Dⁿ`. -/
 @[simp]
 theorem milnorBoundary_map_fst (x : AlgebraicK1 A₁) :
     milnorBoundary π₁ π₂ h (Additive.ofMul (AlgebraicK1.map π₁ x)) = 0 := by
+  have : Fact (Function.Surjective π₁ ∨ Function.Surjective π₂) := ⟨h⟩
   obtain ⟨k, g, rfl⟩ := AlgebraicK1.exists_mk x
   obtain ⟨e⟩ := nonempty_patchedSubgroup_map_fst_equiv (π₂ := π₂) g
-  rw [AlgebraicK1.map_mk, milnorBoundary_mk_eq_patchedClass, patchedClass_congr h e,
+  rw [AlgebraicK1.map_mk, milnorBoundary_mk_eq_patchedClass, patchedClass_congr e,
     patchedClass_one]
 
 /-- **The boundary vanishes on the image of `K₁(A₂)`**: for `g ∈ GLₙ(A₂)` the patched module of
@@ -576,9 +573,10 @@ theorem milnorBoundary_map_fst (x : AlgebraicK1 A₁) :
 @[simp]
 theorem milnorBoundary_map_snd (x : AlgebraicK1 A₂) :
     milnorBoundary π₁ π₂ h (Additive.ofMul (AlgebraicK1.map π₂ x)) = 0 := by
+  have : Fact (Function.Surjective π₁ ∨ Function.Surjective π₂) := ⟨h⟩
   obtain ⟨k, g, rfl⟩ := AlgebraicK1.exists_mk x
   obtain ⟨e⟩ := nonempty_patchedSubgroup_map_snd_equiv (π₁ := π₁) g
-  rw [AlgebraicK1.map_mk, milnorBoundary_mk_eq_patchedClass, patchedClass_congr h e,
+  rw [AlgebraicK1.map_mk, milnorBoundary_mk_eq_patchedClass, patchedClass_congr e,
     patchedClass_one]
 
 end KZero
