@@ -8,6 +8,9 @@ module
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
+import TauCeti.FieldTheory.FunctionField.Different.Radical
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # The maximal extension unramified outside a set of places
@@ -58,6 +61,9 @@ subextensions of `A / F` unramified outside `S`
   the family is closed under composita, smaller fields and embeddings, and contains `F`.
 * `IntermediateField.IsUnramifiedOutside.mono_set` and `TauCeti.maximalUnramifiedOutside_mono`:
   enlarging `S` keeps a subextension unramified outside it and enlarges the maximal one.
+* `IntermediateField.isUnramifiedOutside_adjoin_simple_of_pow_eq`: in characteristic zero, a
+  radical extension `y ^ n = u` is unramified outside the places where `n` does not divide the
+  order of `u`.
 * `TauCeti.le_maximalUnramifiedOutside_iff`: a finite subextension lies in the maximal one
   exactly when it is unramified outside `S`.
 * `TauCeti.mem_maximalUnramifiedOutside_iff`: an element lies in the maximal subextension exactly
@@ -68,7 +74,7 @@ subextensions of `A / F` unramified outside `S`
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Definition 3.1.13 and Corollary 3.9.3.
+  Definition 3.1.13, Proposition 3.7.3 and Corollary 3.9.3.
 * T. Szamuely, *Galois Groups and Fundamental Groups*, Cambridge Studies in Advanced Mathematics
   117, Cambridge University Press, 2009, Section 4.6, for the Galois group of the maximal
   extension of a function field unramified outside finitely many places as a fundamental group.
@@ -172,6 +178,28 @@ theorem IsUnramifiedOutside.mono (hF : TauCeti.IsFunctionField k F)
 theorem IsUnramifiedOutside.mono_set {T : Set (TauCeti.Place k F)} (h : E.IsUnramifiedOutside S)
     (hST : S ⊆ T) : E.IsUnramifiedOutside T :=
   ⟨h.finiteDimensional, h.isSeparable, h.branchPlaces_subset.trans hST⟩
+
+/-- **A radical extension is unramified outside the places where the exponent fails to divide the
+order of the radicand** (Stichtenoth, Proposition 3.7.3(b)), over a field `k` of characteristic
+zero: if `y ^ n = u` with `u ∈ F` and `n ≠ 0`, and `n` divides `ord_P u` at every place `P` of `F`
+outside `S`, then `F(y)` is unramified outside `S`. -/
+theorem isUnramifiedOutside_adjoin_simple_of_pow_eq [CharZero k] (hF : TauCeti.IsFunctionField k F)
+    {y : A} {n : ℕ} {u : F} (hy : y ^ n = algebraMap F A u) (hn : n ≠ 0)
+    (hdvd : ∀ P ∉ S, (n : ℤ) ∣ P.ord u) : F⟮y⟯.IsUnramifiedOutside S := by
+  have : FiniteDimensional F F⟮y⟯ := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral y)
+  have : CharZero F := charZero_of_injective_algebraMap (algebraMap k F).injective
+  have hy' : AdjoinSimple.gen F y ^ n = algebraMap F F⟮y⟯ u :=
+    Subtype.ext (by simpa only [SubmonoidClass.coe_pow, AdjoinSimple.coe_gen,
+      coe_algebraMap_apply] using hy)
+  refine .of_isUnramified fun P hP ↦ (TauCeti.Place.isUnramified_iff P).mpr
+    ⟨TauCeti.Place.restrict_surjective_of_finiteDimensional hF hF.finite_extension P,
+      fun P' hP' ↦ ⟨?_, ?_⟩⟩
+  · exact TauCeti.Place.ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k F
+      (adjoin_adjoinSimple_gen_eq_top y) hy' (Nat.cast_ne_zero.mpr hn) (hP' ▸ hdvd P hP)
+  · -- In characteristic zero the residue fields have characteristic zero, hence are perfect.
+    have : CharZero (P'.restrict k F).ResidueField :=
+      charZero_of_injective_algebraMap (algebraMap k _).injective
+    infer_instance
 
 end Algebraic
 

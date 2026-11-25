@@ -8,9 +8,6 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.MaximalUnramified
 import TauCeti.FieldTheory.FunctionField.Belyi.Radical
-import TauCeti.FieldTheory.FunctionField.Different.Radical
-import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
@@ -130,25 +127,10 @@ theorem adjoin_le_maximalUnramifiedOutside_zeroOneInfty {y : K} {n : ℕ} {c : k
     (hy : y ^ n = algebraMap (RatFunc k) K
       (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b))
     (hn : n ≠ 0) (hc : c ≠ 0) :
-    (RatFunc k)⟮y⟯ ≤ maximalUnramifiedOutside K (Place.zeroOneInfty k) := by
-  have : FiniteDimensional (RatFunc k) (RatFunc k)⟮y⟯ :=
-    adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral y)
-  have hy' : AdjoinSimple.gen (RatFunc k) y ^ n = algebraMap (RatFunc k) (RatFunc k)⟮y⟯
-      (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b) :=
-    Subtype.ext (by simpa only [SubmonoidClass.coe_pow, AdjoinSimple.coe_gen,
-      coe_algebraMap_apply] using hy)
-  refine IsUnramifiedOutside.le_maximalUnramifiedOutside <| .of_isUnramified fun P hP ↦
-    (Place.isUnramified_iff P).mpr ⟨Place.restrict_surjective_of_finiteDimensional
-      (IsFunctionField.ratFunc k) (IsFunctionField.ratFunc k).finite_extension P,
-      fun P' hP' ↦ ⟨?_, ?_⟩⟩
-  · refine Place.ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k (RatFunc k)
-      (adjoin_adjoinSimple_gen_eq_top y) hy' (Nat.cast_ne_zero.mpr hn) ?_
-    rw [hP', Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP hc]
-    exact dvd_zero _
-  · -- In characteristic zero the residue fields have characteristic zero, hence are perfect.
-    have : CharZero (P'.restrict k (RatFunc k)).ResidueField :=
-      charZero_of_injective_algebraMap (algebraMap k _).injective
-    infer_instance
+    (RatFunc k)⟮y⟯ ≤ maximalUnramifiedOutside K (Place.zeroOneInfty k) :=
+  (isUnramifiedOutside_adjoin_simple_of_pow_eq (IsFunctionField.ratFunc k) hy hn fun _ hP ↦ by
+    rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP hc]
+    exact dvd_zero _).le_maximalUnramifiedOutside
 
 section Embedding
 
