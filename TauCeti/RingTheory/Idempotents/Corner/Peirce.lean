@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
+public import TauCeti.RingTheory.Idempotents.LinearIndependent
 
 /-!
 # The two-sided Peirce decomposition
@@ -45,18 +46,6 @@ namespace OrthogonalIdempotents
 variable {k A ι : Type*} [Semiring k] [Semiring A] [Module k A] [SMulCommClass k A A]
   [IsScalarTower k A A] {e : ι → A}
 
-/-- An element of the corner `eᵢ A eⱼ` is killed on the left by every `eₗ` with `l ≠ i`. -/
-theorem mul_eq_zero_of_mem_cornerSubmodule (he : OrthogonalIdempotents e) {i j l : ι}
-    (hli : l ≠ i) {x : A} (hx : x ∈ TauCeti.cornerSubmodule k (e i) (e j)) : e l * x = 0 := by
-  rw [← TauCeti.mul_eq_self_of_mem_cornerSubmodule (he.idem i) hx, ← mul_assoc, he.ortho hli,
-    zero_mul]
-
-/-- An element of the corner `eᵢ A eⱼ` is killed on the right by every `eₗ` with `l ≠ j`. -/
-theorem mul_eq_zero_of_mem_cornerSubmodule_right (he : OrthogonalIdempotents e) {i j l : ι}
-    (hjl : j ≠ l) {x : A} (hx : x ∈ TauCeti.cornerSubmodule k (e i) (e j)) : x * e l = 0 := by
-  rw [← TauCeti.mul_eq_self_of_mem_cornerSubmodule_right (he.idem j) hx, mul_assoc, he.ortho hjl,
-    mul_zero]
-
 /-- **Cutting a sum down to one corner reads off a component**: if `z` is a family of elements
 `zᵢⱼ ∈ eᵢ A eⱼ`, then `eₖ (∑ zᵢⱼ) eₗ = zₖₗ`. This is what makes the two-sided Peirce
 decomposition direct. -/
@@ -69,15 +58,13 @@ theorem mul_coeLinearMap_cornerSubmodule_mul [DecidableEq ι] (he : OrthogonalId
   | of p x =>
     obtain ⟨i', j'⟩ := p
     obtain ⟨x, hx⟩ := x
-    rw [DirectSum.coeLinearMap_of]
-    rcases eq_or_ne (i, j) (i', j') with h | h
-    · obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
-      rw [DirectSum.of_eq_same, (TauCeti.mem_cornerSubmodule_iff k (he.idem i) (he.idem j)).1 hx]
-    · rw [DirectSum.of_eq_of_ne _ _ _ h, ZeroMemClass.coe_zero]
-      rcases eq_or_ne i i' with rfl | hi
-      · have hj : j' ≠ j := fun hj ↦ h (by rw [hj])
-        rw [mul_assoc, he.mul_eq_zero_of_mem_cornerSubmodule_right hj hx, mul_zero]
-      · rw [he.mul_eq_zero_of_mem_cornerSubmodule hi hx, zero_mul]
+    rw [DirectSum.coeLinearMap_of,
+      he.mul_mul_eq_ite (TauCeti.mul_eq_self_of_mem_cornerSubmodule (he.idem i') hx)
+        (TauCeti.mul_eq_self_of_mem_cornerSubmodule_right (he.idem j') hx)]
+    split_ifs with h
+    · obtain ⟨rfl, rfl⟩ := h
+      rw [DirectSum.of_eq_same]
+    · rw [DirectSum.of_eq_of_ne _ _ _ fun h' ↦ h (Prod.mk.inj h'), ZeroMemClass.coe_zero]
   | add z w hz hw =>
     rw [map_add, mul_add, add_mul, hz, hw, DFinsupp.add_apply, Submodule.coe_add]
 
