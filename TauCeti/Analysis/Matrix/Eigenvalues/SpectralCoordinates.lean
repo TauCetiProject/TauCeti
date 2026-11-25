@@ -189,6 +189,24 @@ theorem abs_det_fderiv_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
     ContinuousLinearMap.det_id, det_spectralGapMap, abs_mul, abs_det_unitaryConjCoordinates,
     Finset.abs_prod, abs_pow, one_mul, mul_comm]
 
+/-- The absolute determinant of the angular differential is continuous in the base angle. -/
+theorem continuous_abs_det_spectralAngularFDeriv :
+    Continuous fun a : FinStrictUpper n → 𝕜 ↦ |(spectralAngularFDeriv a).det| := by
+  -- At a fixed simple diagonal, the full Jacobian differs by a nonzero constant factor.
+  let d₀ (i : Fin n) : ℝ := (i : ℕ)
+  let g : ℝ := ∏ ij : FinStrictUpper n, |d₀ ij.val.2 - d₀ ij.val.1| ^ Module.finrank ℝ 𝕜
+  have hg : g ≠ 0 := Finset.prod_ne_zero_iff.mpr fun ij _ ↦ by
+    have hij : d₀ ij.val.1 < d₀ ij.val.2 := Nat.cast_lt.mpr ij.property
+    exact pow_ne_zero _ (abs_ne_zero.mpr (sub_ne_zero.mpr hij.ne'))
+  have h : (fun a : FinStrictUpper n → 𝕜 ↦ |(spectralAngularFDeriv a).det|) =
+      fun a ↦ |(fderiv ℝ spectralCoordinates (d₀, a)).det| / g := by
+    funext a
+    rw [abs_det_fderiv_spectralCoordinates, mul_div_cancel_right₀ _ hg]
+  rw [h]
+  exact ((ContinuousLinearMap.continuous_det.comp
+    ((contDiff_spectralCoordinates (k := 1)).continuous_fderiv one_ne_zero)).comp
+      (continuous_const.prodMk continuous_id)).abs.div_const _
+
 /-- At a diagonal with distinct entries, spectral coordinates give a local chart
 centered at zero angle, in any fixed unitary frame. -/
 theorem exists_spectralCoordinates_openPartialHomeomorph (d : Fin n → ℝ)
@@ -229,6 +247,15 @@ spectral parametrization. -/
       unitaryConjCoordinates U (spectralCoordinates x) :=
   selfAdjointCoordinates.apply_symm_apply _
 
+/-- For any fixed unitary frame, the spectral chart is continuous in the diagonal and angles. -/
+theorem continuous_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) :
+    Continuous (spectralMatrix U) := by
+  have h := selfAdjointCoordinates.symm.continuous.comp
+    ((unitaryConjCoordinates U).continuous.comp (contDiff_spectralCoordinates (k := 0)).continuous)
+  refine h.congr fun x ↦ selfAdjointCoordinates.injective ?_
+  simp only [Function.comp_apply, ContinuousLinearEquiv.apply_symm_apply,
+    selfAdjointCoordinates_spectralMatrix]
+
 /-- The fixed-frame chart conjugates the self-adjoint diagonal by the product of the fixed frame
 and the transverse unitary exponential. -/
 theorem spectralMatrix_eq_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)
@@ -238,6 +265,11 @@ theorem spectralMatrix_eq_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)
   rw [spectralMatrix, spectralCoordinates,
     unitaryConjCoordinates_selfAdjointCoordinatesLinearMap_conjStarAlgAut,
     ← selfAdjointCoordinates_selfAdjointConj, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- At zero angles the spectral chart conjugates the diagonal by the fixed frame. -/
+@[simp] theorem spectralMatrix_zero (U : unitaryGroup (Fin n) 𝕜) (d : Fin n → ℝ) :
+    spectralMatrix U (d, 0) = UnitaryGroup.selfAdjointConj U (selfAdjointDiagonal d) := by
+  rw [spectralMatrix_eq_selfAdjointConj, expStrictUpper_zero, mul_one]
 
 /-- Ambient matrix formula for spectral coordinates in a fixed unitary frame. -/
 theorem coe_spectralMatrix (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :

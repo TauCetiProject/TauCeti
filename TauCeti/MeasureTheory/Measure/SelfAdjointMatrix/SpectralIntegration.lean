@@ -57,20 +57,6 @@ private theorem ordered_spectralMatrix (U : Frames) (d : Fin n → ℝ) (a : Ang
   funext i
   simp [ordered, eigenvalues₀_spectralMatrix U (d, a) hd]
 
-private theorem spectralMatrix_one (d : Fin n → ℝ) (a : Angles) :
-    spectralMatrix (1 : Frames) (d, a) =
-      selfAdjointConj (expStrictUpper a) (selfAdjointDiagonal d) := by
-  rw [spectralMatrix_eq_selfAdjointConj, one_mul]
-
-private theorem selfAdjointConj_one_apply (A : Herm) :
-    selfAdjointConj (1 : Frames) A = A := by
-  apply Subtype.ext
-  simp
-
-private theorem spectralMatrix_one_zero (d : Fin n → ℝ) :
-    spectralMatrix (1 : Frames) (d, (0 : Angles)) = selfAdjointDiagonal d := by
-  rw [spectralMatrix_one, expStrictUpper_zero, selfAdjointConj_one_apply]
-
 private theorem exists_selfAdjointConj_diagonal (A : Herm) :
     ∃ U : Frames, A = selfAdjointConj U (selfAdjointDiagonal (ordered A)) := by
   let hA := selfAdjoint.isHermitian_coe A
@@ -82,8 +68,9 @@ private theorem exists_selfAdjointConj_diagonal (A : Herm) :
     exact congrFun (ordered_spectralMatrix 1 (ordered A) 0 hd) (Fin.cast (Fintype.card_fin n) i)
   obtain ⟨U, hU, h⟩ := (selfAdjoint.isHermitian_coe B).exists_unitary_conj_of_eigenvalues₀_eq hA he
   refine ⟨⟨U, hU⟩, Subtype.ext ?_⟩
-  rw [coe_selfAdjointConj_apply, ← spectralMatrix_one_zero (𝕜 := 𝕜), ← star_eq_conjTranspose]
-  exact h
+  rw [coe_selfAdjointConj_apply, ← star_eq_conjTranspose]
+  simpa only [B, spectralMatrix_zero, selfAdjointConj_one, LinearIsometryEquiv.coe_refl, id_eq]
+    using h
 
 private theorem selfAdjointConj_diagonal_eq_iff {d : Fin n → ℝ}
     (hd : Function.Injective d) (U V : Frames) :
@@ -93,22 +80,6 @@ private theorem selfAdjointConj_diagonal_eq_iff {d : Fin n → ℝ}
   simpa only [coe_selfAdjointConj_apply, coe_selfAdjointDiagonal, Unitary.conjStarAlgAut_apply,
     star_eq_conjTranspose, Function.comp_def] using
     (conjStarAlgAut_diagonal_eq_conjStarAlgAut_iff (RCLike.ofReal_injective.comp hd) U V)
-
-private theorem continuous_conjugation :
-    Continuous fun p : Herm × Frames ↦ selfAdjointConj p.2 p.1 := by
-  refine Continuous.subtype_mk (f := fun p : Herm × Frames ↦
-    (selfAdjointConj p.2 p.1 : Matrix (Fin n) (Fin n) 𝕜)) ?_ _
-  simp only [coe_selfAdjointConj_apply]
-  fun_prop
-
-private theorem continuous_spectralMatrix_one :
-    Continuous (spectralMatrix (1 : Frames)) := by
-  have h := selfAdjointCoordinates.symm.continuous.comp
-    ((unitaryConjCoordinates (1 : Frames)).continuous.comp
-      (contDiff_spectralCoordinates (k := 0)).continuous)
-  refine h.congr fun x ↦ selfAdjointCoordinates.injective ?_
-  simp only [Function.comp_apply, ContinuousLinearEquiv.apply_symm_apply,
-    selfAdjointCoordinates_spectralMatrix]
 
 private theorem isOpen_chamber : IsOpen (chamber n) := by
   have h : (chamber n) =
@@ -128,11 +99,11 @@ private theorem injOn_spectralMatrix_one {d₀ : Fin n → ℝ} (hd₀ : StrictA
     rwa [ordered_spectralMatrix 1 d a (StrictAnti.antitone hd),
       ordered_spectralMatrix 1 e b (StrictAnti.antitone he)] at hh
   subst e
-  rw [spectralMatrix_one, spectralMatrix_one,
+  simp only [spectralMatrix_eq_selfAdjointConj, one_mul,
     selfAdjointConj_diagonal_eq_iff (StrictAnti.injective hd)] at h
   have h' : spectralMatrix (1 : Frames) (d₀, a) = spectralMatrix 1 (d₀, b) := by
-    rw [spectralMatrix_one, spectralMatrix_one, selfAdjointConj_diagonal_eq_iff hd₀.injective]
-    exact h
+    simpa only [spectralMatrix_eq_selfAdjointConj, one_mul,
+      selfAdjointConj_diagonal_eq_iff hd₀.injective] using h
   have ha₀ : (d₀, a) ∈ {d₀} ×ˢ B := ⟨mem_singleton _, ha⟩
   have hb₀ : (d₀, b) ∈ {d₀} ×ˢ B := ⟨mem_singleton _, hb⟩
   have hab : a = b := congrArg Prod.snd (hB ha₀ hb₀ h')
@@ -150,44 +121,29 @@ private theorem conj_diagonal_mem_spectralPatch_iff {d d₀ : Fin n → ℝ}
   intro e he
   constructor
   · rintro ⟨⟨b, a⟩, ⟨hb, ha⟩, h⟩
-    have h' : spectralMatrix U (e, (0 : Angles)) = selfAdjointConj U (selfAdjointDiagonal e) := by
-      rw [spectralMatrix_eq_selfAdjointConj, expStrictUpper_zero, mul_one]
     have hbe : b = e := by
-      have hh := congrArg ordered (h.trans h'.symm)
+      have hh := congrArg ordered (h.trans (spectralMatrix_zero U e).symm)
       rwa [ordered_spectralMatrix 1 b a (StrictAnti.antitone hb),
         ordered_spectralMatrix U e 0 he.antitone] at hh
     subst b
-    rw [spectralMatrix_one, eq_comm, selfAdjointConj_diagonal_eq_iff he.injective] at h
-    exact ⟨a, ha, h⟩
+    have h' := h.symm
+    simp only [spectralMatrix_eq_selfAdjointConj, one_mul,
+      selfAdjointConj_diagonal_eq_iff he.injective] at h'
+    exact ⟨a, ha, h'⟩
   · rintro ⟨a, ha, h⟩
     refine ⟨(e, a), ⟨he, ha⟩, ?_⟩
-    rw [spectralMatrix_one, eq_comm, selfAdjointConj_diagonal_eq_iff he.injective]
-    exact h
+    symm
+    simpa only [spectralMatrix_eq_selfAdjointConj, one_mul,
+      selfAdjointConj_diagonal_eq_iff he.injective] using h
 
 private abbrev gap (𝕜 : Type*) [RCLike 𝕜] (d : Fin n → ℝ) : ℝ :=
   ∏ ij : FinStrictUpper n, |d ij.val.2 - d ij.val.1| ^ Module.finrank ℝ 𝕜
-
-private theorem gap_pos {d : Fin n → ℝ} (hd : StrictAnti d) : 0 < gap 𝕜 d :=
-  Finset.prod_pos fun ij _ ↦ pow_pos (abs_pos.mpr (sub_ne_zero.mpr (hd ij.property).ne)) _
 
 private theorem continuous_gap : Continuous (gap (n := n) 𝕜) :=
   continuous_finsetProd _ fun _ _ ↦ by fun_prop
 
 private theorem strictAnti_neg_fin_val : StrictAnti (fun i : Fin n ↦ -((i : ℕ) : ℝ)) :=
   fun _ _ hij ↦ neg_lt_neg (Nat.cast_lt.mpr hij)
-
-private theorem continuous_angularDet :
-    Continuous fun a : Angles ↦ |(spectralAngularFDeriv a).det| := by
-  let d₀ (i : Fin n) := -((i : ℕ) : ℝ)
-  have h : (fun a : Angles ↦ |(spectralAngularFDeriv a).det|) =
-      fun a ↦ |(fderiv ℝ spectralCoordinates (d₀, a)).det| / gap 𝕜 d₀ := by
-    funext a
-    have hg : 0 < gap 𝕜 d₀ := gap_pos strictAnti_neg_fin_val
-    rw [abs_det_fderiv_spectralCoordinates, mul_div_cancel_right₀ _ hg.ne']
-  rw [h]
-  exact ((ContinuousLinearMap.continuous_det.comp
-    ((contDiff_spectralCoordinates (k := 1)).continuous_fderiv one_ne_zero)).comp
-      (continuous_const.prodMk continuous_id)).abs.div_const _
 
 section Measure
 
@@ -234,7 +190,9 @@ private theorem exists_angularBall (d₀ : Fin n → ℝ) (hd₀ : StrictAnti d�
   refine ⟨r, hr, ?_, ?_⟩
   · rw [← hE]
     exact E.injOn.mono ((prod_mono (singleton_subset_iff.2 hdu) subset_rfl).trans hsub)
-  · rw [← spectralMatrix_one_zero (𝕜 := 𝕜), ← hE]
+  · have hcenter : spectralMatrix (1 : Frames) (d₀, 0) = selfAdjointDiagonal d₀ := by
+      simp only [spectralMatrix_zero, selfAdjointConj_one, LinearIsometryEquiv.coe_refl, id_eq]
+    rw [← hcenter, ← hE]
     refine mem_interior_iff_mem_nhds.mpr (mem_of_superset
       ((E.isOpen_image_of_subset_source (huo.prod Metric.isOpen_ball) hsub).mem_nhds
         (mem_image_of_mem _ ⟨hdu, Metric.mem_ball_self hr⟩)) ?_)
@@ -245,7 +203,7 @@ private theorem lintegral_angularDet_pos_lt_top (ν : Measure Angles) [ν.IsAddH
     (∫⁻ a in Metric.ball 0 r, ENNReal.ofReal |(spectralAngularFDeriv a).det| ∂ν) ∈
       Ioo 0 ⊤ := by
   let j : Angles → ℝ := fun a ↦ |(spectralAngularFDeriv a).det|
-  have hj : Continuous j := continuous_angularDet
+  have hj : Continuous j := continuous_abs_det_spectralAngularFDeriv
   have hj₀ : 0 < j 0 := by simp [j, spectralAngularFDeriv_zero, ContinuousLinearMap.det_id]
   have hball : 0 ∈ Metric.ball (0 : Angles) r := Metric.mem_ball_self hr
   let s := Metric.ball (0 : Angles) r ∩ {a | 0 < j a}
@@ -290,7 +248,7 @@ private theorem haarProb_spectralPatch_preimage {d₀ : Fin n → ℝ} (hd₀ : 
   obtain ⟨V, hV⟩ := exists_selfAdjointConj_diagonal A
   let J : Set Herm := spectralMatrix 1 '' (chamber n ×ˢ B)
   let f : Frames → Herm := fun U ↦ selfAdjointConj U (selfAdjointDiagonal (ordered A))
-  have hf : Continuous f := continuous_conjugation.comp (continuous_const.prodMk continuous_id)
+  have hf : Continuous f := continuous_selfAdjointConj.comp (continuous_const.prodMk continuous_id)
   have hpre : (fun U : Frames ↦ selfAdjointConj U A) ⁻¹' J = (· * V) ⁻¹' (f ⁻¹' J) := by
     ext U
     simp only [mem_preimage, f, selfAdjointConj_mul_apply]
@@ -305,7 +263,7 @@ private theorem lintegral_eq_lintegral_haarProb_conj {f : Herm → ℝ≥0∞} (
     (∫⁻ A, f A ∂volume) =
       ∫⁻ A, ∫⁻ U : Frames, f (selfAdjointConj U A) ∂haarProb Frames ∂volume := by
   let F (A : Herm) (U : Frames) := f (selfAdjointConj U A)
-  have hF : Measurable (Function.uncurry F) := hf.comp continuous_conjugation.measurable
+  have hF : Measurable (Function.uncurry F) := hf.comp continuous_selfAdjointConj.measurable
   calc
     (∫⁻ A, f A ∂volume) = ∫⁻ U, ∫⁻ A, F A U ∂volume ∂haarProb Frames := by
       simp_rw [F, (measurePreserving_selfAdjointConj_volume _).lintegral_comp hf]
@@ -332,7 +290,7 @@ private theorem setLIntegral_ordered_spectralPatch {d₀ : Fin n → ℝ} (hd₀
       rw [← lintegral_const_mul _ hm]
       refine lintegral_congr_ae (ordered_mem_chamber_ae.mono fun A hA ↦ ?_)
       have hconj : Measurable (fun U : Frames ↦ selfAdjointConj U A) :=
-        (continuous_conjugation.comp (continuous_const.prodMk continuous_id)).measurable
+        (continuous_selfAdjointConj.comp (continuous_const.prodMk continuous_id)).measurable
       -- On this orbit the test is constant, so only the Haar fraction contributes.
       have heq : (fun U : Frames ↦ J.indicator (fun M ↦ g (ordered M)) (selfAdjointConj U A)) =
           fun U ↦ J.indicator (fun _ ↦ g (ordered A)) (selfAdjointConj U A) := by
@@ -353,7 +311,8 @@ private theorem setLIntegral_spectralPatch_eq_prod
         ∫⁻ d in chamber n, ENNReal.ofReal (gap 𝕜 d) * g d ∂volume := by
   let j (a : Angles) := ENNReal.ofReal |(spectralAngularFDeriv a).det|
   let w (d : Fin n → ℝ) := ENNReal.ofReal (gap 𝕜 d) * g d
-  have hj : Measurable j := (continuous_angularDet (𝕜 := 𝕜)).measurable.ennreal_ofReal
+  have hj : Measurable j :=
+    (continuous_abs_det_spectralAngularFDeriv (𝕜 := 𝕜)).measurable.ennreal_ofReal
   have hw : Measurable w := (continuous_gap (𝕜 := 𝕜)).measurable.ennreal_ofReal.mul hg
   have hs := (isOpen_chamber (n := n)).measurableSet.prod hB
   rw [lintegral_image_spectralMatrix volume 1 hs.nullMeasurableSet hinj
@@ -387,15 +346,15 @@ private theorem exists_lintegral_ordered_eq :
   have hinj := injOn_spectralMatrix_one hd₀ hslice
   have hB : MeasurableSet B := Metric.isOpen_ball.measurableSet
   have hJ : MeasurableSet J := (isOpen_chamber.measurableSet.prod hB)
-    |>.image_of_continuousOn_injOn continuous_spectralMatrix_one.continuousOn hinj
+    |>.image_of_continuousOn_injOn (continuous_spectralMatrix 1).continuousOn hinj
   let P : Set Frames := (fun U : Frames ↦ selfAdjointConj U (selfAdjointDiagonal d₀)) ⁻¹' J
   let q := haarProb Frames P
   have hcF : Continuous (fun U : Frames ↦ selfAdjointConj U (selfAdjointDiagonal d₀)) :=
-    continuous_conjugation.comp (continuous_const.prodMk continuous_id)
+    continuous_selfAdjointConj.comp (continuous_const.prodMk continuous_id)
   have hq : 0 < q := Measure.measure_pos_of_nonempty_interior _ ⟨1, mem_interior_iff_mem_nhds.2
     (hcF.continuousAt.preimage_mem_nhds (by
-      rw [selfAdjointConj_one_apply]
-      exact mem_interior_iff_mem_nhds.1 hD))⟩
+      simpa only [selfAdjointConj_one, LinearIsometryEquiv.coe_refl, id_eq] using
+        mem_interior_iff_mem_nhds.1 hD))⟩
   have hqfin : q ≠ ⊤ := measure_ne_top _ _
   let ν : Measure Angles := Measure.addHaar
   let μ := (volume : Measure Herm).map selfAdjointCoordinates
@@ -430,7 +389,7 @@ theorem exists_lintegral_selfAdjoint_spectral :
   refine ⟨c, hc, fun f hf ↦ ?_⟩
   let G (A : Herm) (U : Frames) := f (selfAdjointConj U A)
   let g (d : Fin n → ℝ) := ∫⁻ U : Frames, G (selfAdjointDiagonal d) U ∂haarProb Frames
-  have hG : Measurable (Function.uncurry G) := hf.comp continuous_conjugation.measurable
+  have hG : Measurable (Function.uncurry G) := hf.comp continuous_selfAdjointConj.measurable
   have hg : Measurable g := Measurable.lintegral_prod_right (hG.comp
     ((selfAdjointDiagonal.continuous.measurable.comp measurable_fst).prodMk measurable_snd))
   calc
@@ -458,7 +417,7 @@ theorem exists_volume_eq_smul_map_selfAdjointConj_diagonal :
   obtain ⟨c, hc, h⟩ := exists_lintegral_selfAdjoint_spectral (n := n) (𝕜 := 𝕜)
   refine ⟨c, hc, Measure.ext_of_lintegral _ fun f hf ↦ ?_⟩
   let F (p : (Fin n → ℝ) × Frames) := selfAdjointConj p.2 (selfAdjointDiagonal p.1)
-  have hF : Measurable F := continuous_conjugation.measurable.comp
+  have hF : Measurable F := continuous_selfAdjointConj.measurable.comp
     ((selfAdjointDiagonal.continuous.measurable.comp measurable_fst).prodMk measurable_snd)
   have htest : Measurable (fun p ↦ f (F p)) := hf.comp hF
   rw [lintegral_smul_measure, lintegral_map hf hF,

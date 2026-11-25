@@ -182,6 +182,16 @@ def selfAdjointConj (U : Matrix.unitaryGroup (Fin p) 𝕜) :
     (selfAdjointConj U A : Matrix (Fin p) (Fin p) 𝕜) =
       (U : Matrix (Fin p) (Fin p) 𝕜) * A * (U : Matrix (Fin p) (Fin p) 𝕜)ᴴ := by rfl
 
+/-- Unitary conjugation of self-adjoint matrices is jointly continuous in the matrix and frame. -/
+theorem continuous_selfAdjointConj :
+    Continuous fun q : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜) ×
+      Matrix.unitaryGroup (Fin p) 𝕜 ↦ selfAdjointConj q.2 q.1 := by
+  refine Continuous.subtype_mk (f := fun q : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜) ×
+    Matrix.unitaryGroup (Fin p) 𝕜 ↦
+    (selfAdjointConj q.2 q.1 : Matrix (Fin p) (Fin p) 𝕜)) ?_ _
+  simp only [coe_selfAdjointConj_apply]
+  fun_prop
+
 /-- Ambient matrix coercion of the inverse of `Matrix.UnitaryGroup.selfAdjointConj`. -/
 @[simp] theorem coe_selfAdjointConj_symm_apply (U : Matrix.unitaryGroup (Fin p) 𝕜)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
