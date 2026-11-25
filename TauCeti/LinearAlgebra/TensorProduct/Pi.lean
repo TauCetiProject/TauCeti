@@ -41,6 +41,8 @@ equivalence and is compatible with identities, composition and inverses.
 
 * `LinearEquiv.extendScalarsPi`: the scalar extension of a linear equivalence between coordinate
   spaces.
+* `Module.Basis.tensorPiEquiv`: for a basis `e` of an `A`-module `W`, the identification
+  `A ⊗[R] (ι → R) ≃ W` of the base change of the coordinate space with `W`.
 
 ## Main results
 
@@ -58,6 +60,8 @@ equivalence and is compatible with identities, composition and inverses.
 * `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
   corresponds to the pure tensor `1 ⊗ v`.
 * `TensorProduct.piScalarRight_rTensor`: `piScalarRight` is natural in the module.
+* `Module.Basis.piScalarRight_tensorPiEquiv_symm`: read in `ι → A`, the inverse of
+  `e.tensorPiEquiv R` takes a vector to its coordinates in `e`.
 
 ## References
 
@@ -230,3 +234,35 @@ theorem extendScalarsPi_symm (e : (ι → R) ≃ₗ[R] (κ → R)) :
   simp only [extendScalarsPi, baseChange_symm, trans_apply, symm_trans_apply, symm_symm]
 
 end LinearEquiv
+
+namespace Module.Basis
+
+variable (R : Type*) {A W ι : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid W] [Module A W] [Fintype ι] [DecidableEq ι]
+
+/-- For a basis `e` of an `A`-module `W` and an `R`-algebra `A`, the identification
+`A ⊗[R] (ι → R) ≃ W` of the base change of `ι → R` with `W`, sending `a ⊗ x` to
+`a • ∑ i, algebraMap R A (x i) • e i`. -/
+noncomputable def tensorPiEquiv (e : Basis ι A W) : A ⊗[R] (ι → R) ≃ₗ[A] W :=
+  (TensorProduct.piScalarRight R A A ι).trans e.equivFun.symm
+
+/-- The pure tensor `a ⊗ x` corresponds to `a • ∑ i, algebraMap R A (x i) • e i`. -/
+@[simp]
+theorem tensorPiEquiv_tmul (e : Basis ι A W) (a : A) (x : ι → R) :
+    e.tensorPiEquiv R (a ⊗ₜ x) = a • ∑ i, algebraMap R A (x i) • e i := by
+  simp [tensorPiEquiv, Finset.smul_sum, smul_smul, Algebra.smul_def, mul_comm]
+
+/-- The inverse of `e.tensorPiEquiv R` takes a vector to its coordinates in `e`, read in
+`A ⊗[R] (ι → R)`. -/
+@[simp]
+theorem tensorPiEquiv_symm_apply (e : Basis ι A W) (v : W) :
+    (e.tensorPiEquiv R).symm v = (TensorProduct.piScalarRight R A A ι).symm (e.repr v) := by
+  simp [tensorPiEquiv]
+
+/-- Read in `ι → A`, the inverse of `e.tensorPiEquiv R` takes a vector to its coordinates
+in `e`. -/
+theorem piScalarRight_tensorPiEquiv_symm (e : Basis ι A W) (v : W) :
+    TensorProduct.piScalarRight R A A ι ((e.tensorPiEquiv R).symm v) = e.repr v := by
+  simp [tensorPiEquiv]
+
+end Module.Basis

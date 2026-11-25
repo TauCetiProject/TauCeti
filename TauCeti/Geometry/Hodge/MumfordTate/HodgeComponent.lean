@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Hodge
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
-public import TauCeti.Geometry.Hodge.MumfordTate
-import TauCeti.LinearAlgebra.TensorProduct.Pi
+public import TauCeti.Geometry.Hodge.MumfordTate.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Pi
 
 /-!
 # The Hodge components of the representation of `S` of a Hodge structure
@@ -18,10 +18,10 @@ Let `hs` be a pure Hodge structure of weight `n` on a complex vector space `W` w
 (`TauCeti.Hodge.HodgeStructureOn.realCoordinateBialgHom`) makes `ℝ^d` a representation of `S`,
 the standard comodule corestricted along `h` (`TauCeti.GeneralLinear.corestrictStandardComodule`).
 Its complexification `ℂ ⊗[ℝ] ℝ^d` is identified with `W` through `e`
-(`TauCeti.Hodge.HodgeStructureOn.complexCoordinateEquiv`), and this file shows that the Hodge
-components of the representation (`TauCeti.DeligneTorus.hodgeComponent`) are the Hodge
-components of `hs`: `(ℝ^d)^{p,n-p}` corresponds to `H^{p,n-p}`, and `(ℝ^d)^{p,q} = 0` for
-`p + q ≠ n`. So passing from a Hodge structure to its representation of `S` and back through
+(`Module.Basis.tensorPiEquiv`), and this file shows that the Hodge components of the
+representation (`TauCeti.DeligneTorus.hodgeComponent`) are the Hodge components of `hs`:
+`(ℝ^d)^{p,n-p}` corresponds to `H^{p,n-p}`, and `(ℝ^d)^{p,q} = 0` for `p + q ≠ n`. So passing
+from a Hodge structure to its representation of `S` and back through
 `TauCeti.DeligneTorus.isHodgeDecomposition_hodgeComponent` returns the Hodge decomposition of
 `hs`, read in the coordinates `e`.
 
@@ -29,11 +29,6 @@ The proof evaluates the action at the universal point of `S_ℂ ≅ 𝔾ₘ × �
 matrix `∑ p, P p * X^{(-p, p - n)}` of `TauCeti.Hodge.HodgeStructureOn.splitCoordinateMatrix`;
 on the coordinates of a vector of `H^{p,n-p}` this matrix is multiplication by `X^{(-p, p - n)}`.
 This gives one inclusion, and the two decompositions are both internal direct sums.
-
-## Main definitions
-
-* `TauCeti.Hodge.HodgeStructureOn.complexCoordinateEquiv e`: the identification
-  `ℂ ⊗[ℝ] ℝ^d ≃ W`, `a ⊗ x ↦ a • ∑ i, x i • e i`.
 
 ## Main results
 
@@ -84,15 +79,9 @@ theorem splitCoordinateMatrix_mulVec_of_mem {p : ℤ} {v : W} (hv : v ∈ hs.pie
   have hp' (p' : ℤ) : ∑ j, MonoidAlgebra.single (Multiplicative.ofAdd (-p', p' - n))
       (e.repr (hs.proj p' (e j)) i * e.repr v j) =
         MonoidAlgebra.single (Multiplicative.ofAdd (-p', p' - n)) (e.repr (hs.proj p' v) i) := by
-    rw [show ∑ j, MonoidAlgebra.single (Multiplicative.ofAdd (-p', p' - n))
-        (e.repr (hs.proj p' (e j)) i * e.repr v j) = MonoidAlgebra.single
-          (Multiplicative.ofAdd (-p', p' - n)) (∑ j, e.repr (hs.proj p' (e j)) i * e.repr v j) from
-      (map_sum (MonoidAlgebra.singleAddHom _) _ _).symm]
-    congr 1
-    have hsum := congrArg (fun w ↦ e.repr (hs.proj p' w) i) (e.sum_repr v)
-    simp only [map_sum, map_smul, Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul] at hsum
-    rw [← hsum]
-    exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
+    simp_rw [← MonoidAlgebra.singleAddHom_apply, ← map_sum,
+      ← LinearMap.toMatrix_mulVec_repr e e (hs.proj p') v, Matrix.mulVec, dotProduct,
+      LinearMap.toMatrix_apply]
   simp_rw [hp']
   by_cases hmem : p ∈ hs.hodgeSupport
   · rw [Finset.sum_eq_single p (fun p' _ hp'p ↦ by
@@ -103,24 +92,12 @@ theorem splitCoordinateMatrix_mulVec_of_mem {p : ℤ} {v : W} (hv : v ∈ hs.pie
       simpa [hbot] using hv
     simp [hv0]
 
-/-- The identification `ℂ ⊗[ℝ] ℝ^d ≃ W` of the complexification of `ℝ^d` with `W`, through the
-basis `e`: `a ⊗ x ↦ a • ∑ i, x i • e i`. -/
-noncomputable def complexCoordinateEquiv (e : Module.Basis (Fin d) ℂ W) :
-    ℂ ⊗[ℝ] (Fin d → ℝ) ≃ₗ[ℂ] W :=
-  (TensorProduct.piScalarRight ℝ ℂ ℂ (Fin d)).trans e.equivFun.symm
-
-/-- Read in `ℂ^d`, the inverse of `complexCoordinateEquiv e` takes a vector to its coordinates
-in `e`. -/
-theorem piScalarRight_complexCoordinateEquiv_symm (v : W) :
-    TensorProduct.piScalarRight ℝ ℂ ℂ (Fin d) ((complexCoordinateEquiv e).symm v) = e.repr v := by
-  simp [complexCoordinateEquiv]
-
 /-- A vector of `H^{p,n-p}` lies in the Hodge component `(ℝ^d)^{p,n-p}` of the representation of
 `S` given by `h`. -/
-theorem complexCoordinateEquiv_symm_mem_hodgeComponent (he : ∀ i, ω.toEquiv (e i) = e i)
+theorem tensorPiEquiv_symm_mem_hodgeComponent (he : ∀ i, ω.toEquiv (e i) = e i)
     {p : ℤ} {v : W} (hv : v ∈ hs.piece p) :
     letI := corestrictStandardComodule ℝ d (hs.realCoordinateBialgHom he)
-    (complexCoordinateEquiv e).symm v ∈ hodgeComponent (Fin d → ℝ) p (n - p) := by
+    (e.tensorPiEquiv ℝ).symm v ∈ hodgeComponent (Fin d → ℝ) p (n - p) := by
   let _ := corestrictStandardComodule ℝ d (hs.realCoordinateBialgHom he)
   rw [mem_hodgeComponent_iff]
   apply (TensorProduct.piScalarRight ℝ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
@@ -144,7 +121,7 @@ theorem complexCoordinateEquiv_symm_mem_hodgeComponent (he : ∀ i, ω.toEquiv (
     rw [pointToGeneralLinear_apply, toConv_ofConv, ← genericMatrix_apply, AlgHom.comp_apply]
     exact hs.splittingPoint_realCoordinateBialgHom_genericMatrix he i j
   rw [hend, h, map_smul, TensorProduct.piScalarRight_rTensor (S := ℂ),
-    piScalarRight_complexCoordinateEquiv_symm, Matrix.GeneralLinearGroup.toLin_apply,
+    e.piScalarRight_tensorPiEquiv_symm ℝ, Matrix.GeneralLinearGroup.toLin_apply,
     Matrix.mulVecLin_apply, hM, neg_sub]
   exact hs.splitCoordinateMatrix_mulVec_of_mem hv
 
@@ -155,10 +132,10 @@ component `(ℝ^d)^{p,q}` is the image of `H^{p,q}` under `ℂ ⊗[ℝ] ℝ^d �
 theorem hodgeComponent_corestrictStandardComodule (he : ∀ i, ω.toEquiv (e i) = e i) (p q : ℤ) :
     let _ := corestrictStandardComodule ℝ d (hs.realCoordinateBialgHom he)
     hodgeComponent (Fin d → ℝ) p q =
-      if p + q = n then (hs.piece p).map (complexCoordinateEquiv e).symm.toLinearMap else ⊥ := by
+      if p + q = n then (hs.piece p).map (e.tensorPiEquiv ℝ).symm.toLinearMap else ⊥ := by
   let _ := corestrictStandardComodule ℝ d (hs.realCoordinateBialgHom he)
   let G : ℤ × ℤ → Submodule ℂ (ℂ ⊗[ℝ] (Fin d → ℝ)) := fun pq ↦
-    if pq.1 + pq.2 = n then (hs.piece pq.1).map (complexCoordinateEquiv e).symm.toLinearMap else ⊥
+    if pq.1 + pq.2 = n then (hs.piece pq.1).map (e.tensorPiEquiv ℝ).symm.toLinearMap else ⊥
   have hle : G ≤ fun pq ↦ hodgeComponent (Fin d → ℝ) pq.1 pq.2 := fun pq ↦ by
     simp only [G]
     split_ifs with h
@@ -166,13 +143,13 @@ theorem hodgeComponent_corestrictStandardComodule (he : ∀ i, ω.toEquiv (e i) 
       intro v hv
       have hq : pq.2 = n - pq.1 := by omega
       rw [Submodule.mem_comap, hq]
-      exact hs.complexCoordinateEquiv_symm_mem_hodgeComponent he hv
+      exact hs.tensorPiEquiv_symm_mem_hodgeComponent he hv
     · exact bot_le
   have htop : ⨆ pq, G pq = ⊤ := by
     refine top_unique ?_
-    calc ⊤ = (⨆ p, hs.piece p).map (complexCoordinateEquiv e).symm.toLinearMap := by
+    calc ⊤ = (⨆ p, hs.piece p).map (e.tensorPiEquiv ℝ).symm.toLinearMap := by
           rw [hs.iSup_piece_eq_top, Submodule.map_top, LinearEquiv.range]
-      _ = ⨆ p, (hs.piece p).map (complexCoordinateEquiv e).symm.toLinearMap :=
+      _ = ⨆ p, (hs.piece p).map (e.tensorPiEquiv ℝ).symm.toLinearMap :=
           Submodule.map_iSup _ _
       _ ≤ ⨆ pq, G pq := iSup_le fun p ↦ le_iSup_of_le (p, n - p) (by simp [G])
   have hG := ((isInternal_hodgeComponent (Fin d → ℝ)).submodule_iSupIndep.le_iff_eq_of_iSup_eq_top
@@ -185,7 +162,7 @@ is `H^{p,n-p}`. -/
 theorem map_hodgeComponent_corestrictStandardComodule (he : ∀ i, ω.toEquiv (e i) = e i)
     (p : ℤ) :
     let _ := corestrictStandardComodule ℝ d (hs.realCoordinateBialgHom he)
-    (hodgeComponent (Fin d → ℝ) p (n - p)).map (complexCoordinateEquiv e).toLinearMap =
+    (hodgeComponent (Fin d → ℝ) p (n - p)).map (e.tensorPiEquiv ℝ).toLinearMap =
       hs.piece p := by
   intro _
   rw [hs.hodgeComponent_corestrictStandardComodule he, add_sub_cancel, ite_eq_left rfl,
