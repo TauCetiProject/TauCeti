@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
-import Mathlib.Data.EReal.Inv
+import TauCeti.Data.EReal.Operations
 
 /-!
 # Topological entropy of iterates
@@ -29,6 +29,12 @@ of `T`.
 * `TauCeti.coverEntropy_iterate`, `TauCeti.coverEntropyInf_iterate` — equality for uniformly
   continuous `T`, and `TauCeti.coverEntropy_iterate_of_compactSpace` for continuous `T` on a
   compact space.
+
+## References
+
+* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Problem 4.13, p. 131.
+* P. Walters, *An Introduction to Ergodic Theory*, Graduate Texts in Mathematics 79, Springer,
+  1982, Theorem 7.10.
 -/
 
 public section
@@ -54,8 +60,8 @@ theorem dynEntourage_iterate (T : X → X) (U : SetRel X X) (k n : ℕ) :
       _ = k * (j + 1) := by ring
       _ ≤ k * n := Nat.mul_le_mul_left k hj
 
-/-- Minimal dynamical covers of `T^[k]` at the entourage `dynEntourage T U k` and time `n` are the
-minimal dynamical covers of `T` at `U` and time `k * n`. -/
+/-- The minimal cardinality of a dynamical cover of `F` for `T^[k]` at the entourage
+`dynEntourage T U k` and time `n` equals that for `T` at `U` and time `k * n`. -/
 theorem coverMincard_iterate (T : X → X) (F : Set X) (U : SetRel X X) (k n : ℕ) :
     coverMincard (T^[k]) F (dynEntourage T U k) n = coverMincard T F U (k * n) := by
   simp only [coverMincard, IsDynCoverOf, dynEntourage_iterate]
@@ -78,10 +84,6 @@ theorem coverEntropyInfEntourage_iterate (hk : k ≠ 0) (T : X → X) (F : Set X
   exact Monotone.expGrowthInf_comp_mul
     (fun _ _ h ↦ ENat.toENNReal_mono (coverMincard_monotone_time T F U h)) hk
 
-private lemma dynEntourage_subset (hk : k ≠ 0) (T : X → X) (U : SetRel X X) :
-    dynEntourage T U k ⊆ U := fun p hp ↦
-  (mem_dynEntourage (x := p.1) (y := p.2)).1 hp 0 (Nat.pos_of_ne_zero hk)
-
 variable [UniformSpace X]
 
 /-- The topological entropy of `T^[k]` is at most `k` times that of `T`. -/
@@ -90,7 +92,8 @@ theorem coverEntropy_iterate_le (hk : k ≠ 0) (T : X → X) (F : Set X) :
   refine iSup₂_le fun U hU ↦ ?_
   calc coverEntropyEntourage (T^[k]) F U
       ≤ coverEntropyEntourage (T^[k]) F (dynEntourage T U k) :=
-        coverEntropyEntourage_antitone _ F (dynEntourage_subset hk T U)
+        coverEntropyEntourage_antitone _ F
+          ((dynEntourage_antitone T U (Nat.one_le_iff_ne_zero.2 hk)).trans_eq dynEntourage_one)
     _ = k * coverEntropyEntourage T F U := coverEntropyEntourage_iterate hk T F U
     _ ≤ k * coverEntropy T F :=
         mul_le_mul_of_nonneg_left (coverEntropyEntourage_le_coverEntropy T F hU)
@@ -102,27 +105,21 @@ theorem coverEntropyInf_iterate_le (hk : k ≠ 0) (T : X → X) (F : Set X) :
   refine iSup₂_le fun U hU ↦ ?_
   calc coverEntropyInfEntourage (T^[k]) F U
       ≤ coverEntropyInfEntourage (T^[k]) F (dynEntourage T U k) :=
-        coverEntropyInfEntourage_antitone _ F (dynEntourage_subset hk T U)
+        coverEntropyInfEntourage_antitone _ F
+          ((dynEntourage_antitone T U (Nat.one_le_iff_ne_zero.2 hk)).trans_eq dynEntourage_one)
     _ = k * coverEntropyInfEntourage T F U := coverEntropyInfEntourage_iterate hk T F U
     _ ≤ k * coverEntropyInf T F :=
         mul_le_mul_of_nonneg_left (coverEntropyInfEntourage_le_coverEntropyInf T F hU)
           (Nat.cast_nonneg' k)
 
-/-- If `k * a ≤ c` for every `a` in a family with supremum `s`, then `k * s ≤ c`. -/
-private lemma natCast_mul_le_of_forall {k : ℕ} (hk : k ≠ 0) {ι : Sort*} {p : ι → Prop}
-    {f : ι → EReal} {c : EReal} (h : ∀ i, p i → k * f i ≤ c) : k * ⨆ i, ⨆ (_ : p i), f i ≤ c := by
-  have hk₀ : (0 : EReal) < k := by exact_mod_cast Nat.pos_of_ne_zero hk
-  have hkt : (k : EReal) ≠ ⊤ := EReal.natCast_ne_top k
-  rw [mul_comm, ← EReal.le_div_iff_mul_le hk₀ hkt]
-  refine iSup₂_le fun i hi ↦ ?_
-  rw [EReal.le_div_iff_mul_le hk₀ hkt, mul_comm]
-  exact h i hi
-
 /-- For a uniformly continuous `T` and `k ≥ 1`, the topological entropy of `T^[k]` is `k` times
 that of `T`. -/
 theorem coverEntropy_iterate (hT : UniformContinuous T) (hk : k ≠ 0) (F : Set X) :
     coverEntropy (T^[k]) F = k * coverEntropy T F := by
-  refine (coverEntropy_iterate_le hk T F).antisymm (natCast_mul_le_of_forall hk fun U hU ↦ ?_)
+  have hk₀ : (0 : EReal) < k := by exact_mod_cast Nat.pos_of_ne_zero hk
+  refine (coverEntropy_iterate_le hk T F).antisymm <|
+    EReal.mul_iSup_le hk₀ (EReal.natCast_ne_top k) fun U ↦
+      EReal.mul_iSup_le hk₀ (EReal.natCast_ne_top k) fun hU ↦ ?_
   rw [← coverEntropyEntourage_iterate hk T F U]
   exact coverEntropyEntourage_le_coverEntropy _ F (dynEntourage_mem_uniformity hT hU k)
 
@@ -130,7 +127,10 @@ theorem coverEntropy_iterate (hT : UniformContinuous T) (hk : k ≠ 0) (F : Set 
 times that of `T`. -/
 theorem coverEntropyInf_iterate (hT : UniformContinuous T) (hk : k ≠ 0) (F : Set X) :
     coverEntropyInf (T^[k]) F = k * coverEntropyInf T F := by
-  refine (coverEntropyInf_iterate_le hk T F).antisymm (natCast_mul_le_of_forall hk fun U hU ↦ ?_)
+  have hk₀ : (0 : EReal) < k := by exact_mod_cast Nat.pos_of_ne_zero hk
+  refine (coverEntropyInf_iterate_le hk T F).antisymm <|
+    EReal.mul_iSup_le hk₀ (EReal.natCast_ne_top k) fun U ↦
+      EReal.mul_iSup_le hk₀ (EReal.natCast_ne_top k) fun hU ↦ ?_
   rw [← coverEntropyInfEntourage_iterate hk T F U]
   exact coverEntropyInfEntourage_le_coverEntropyInf _ F (dynEntourage_mem_uniformity hT hU k)
 
