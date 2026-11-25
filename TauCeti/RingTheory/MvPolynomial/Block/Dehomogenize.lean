@@ -336,7 +336,7 @@ theorem coe_blockDehomogenizeEquiv_symm_apply
 
 /-- The block homogenization of the monomial `X^m`, `m ≤ e`, is
 `∏ i, X (i, 1) ^ m i * X (i, 0) ^ (e i - m i)`. -/
-theorem blockDehomogenizeEquiv_symm_monomial {m : κ →₀ ℕ} (hm : ∀ h, m h ≤ e h) :
+theorem coe_blockDehomogenizeEquiv_symm_monomial {m : κ →₀ ℕ} (hm : ∀ h, m h ≤ e h) :
     (((blockDehomogenizeEquiv R e).symm ⟨monomial m 1, by simp [hm]⟩ :
         multiHomogeneousSubmodule R (Fin 2) e) : MvPolynomial (κ × Fin 2) R) =
       ∏ i, X (i, (1 : Fin 2)) ^ m i * X (i, 0) ^ (e i - m i) := by

@@ -236,7 +236,7 @@ theorem coe_algWeightMatrixRep_monomial {n : ι → ℕ} (γ : (ι → Matrix (F
       ∏ i, (C (γ.unop i 0 0) * X i + C (γ.unop i 0 1)) ^ m i *
         (C (γ.unop i 1 0) * X i + C (γ.unop i 1 1)) ^ (n i - m i) := by
   rw [coe_algWeightMatrixRep_apply, ← coe_blockDehomogenizeEquiv_symm_apply,
-    blockDehomogenizeEquiv_symm_monomial hm]
+    coe_blockDehomogenizeEquiv_symm_monomial hm]
   simp only [map_prod, map_mul, map_pow, linearSubst_algWeightSubstMatrix_X_one,
     linearSubst_algWeightSubstMatrix_X_zero, map_add, algHom_C, algebraMap_eq,
     blockDehomogenize_X_one, blockDehomogenize_X_zero, mul_one]
