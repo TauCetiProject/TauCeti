@@ -30,6 +30,8 @@ The proof is by induction on `k`, starting from the order-one bound
 ## Main declarations
 
 * `TauCeti.exists_eLpNormWkp_succ_bilin_le`: the bound at every positive order.
+* `TauCeti.eLpNormWkp_succ_bilin_le_of_hasWeakFDerivOn`: its Leibniz step, which takes the bounds
+  for `B(f, g)` in `L^q` and for the two terms of its weak derivative as hypotheses.
 * `TauCeti.exists_eLpNormWkp_succ_clm_apply_le`: the field form `z ↦ A z (u z)` for a coefficient
   field `A` of linear maps.
 * `TauCeti.exists_eLpNormWkp_succ_compL_le`: the composition form `z ↦ A z ∘L T z`, for
@@ -52,6 +54,35 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimen
   [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ} {p q : ℝ≥0}
+
+/-- **The Leibniz step of the local product bounds.** Let `1 ≤ q` and let
+`B(Df, g) + B(f, Dg)` be a weak derivative of `B(f, g)` on `interior U`. If
+`‖B(f, g)‖_{L^q(U)} ≤ C₀ ‖B‖ X Y` and the two terms are bounded in `W^{k,q}(U)` by
+`Cl ‖B‖ X Y` and `Cr ‖B‖ X Y`, then
+`‖B(f, g)‖_{W^{k+1,q}(U)} ≤ (C₀ + Cl + Cr + 1) ‖B‖ X Y`. This is the inductive step of
+`TauCeti.exists_eLpNormWkp_succ_bilin_le` and of the bounds for `kp > 2`. -/
+theorem eLpNormWkp_succ_bilin_le_of_hasWeakFDerivOn {F G H : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H]
+    [NormedSpace ℝ H] (B : F →L[ℝ] G →L[ℝ] H) {q : ℝ≥0∞} (hq : 1 ≤ q) {U : Set ℂ} {k : ℕ}
+    {f : ℂ → F} {Df : ℂ → ℂ →L[ℝ] F} {g : ℂ → G} {Dg : ℂ → ℂ →L[ℝ] G} {C₀ Cl Cr : ℝ≥0}
+    {X Y : ℝ≥0∞}
+    (hD : HasWeakFDerivOn volume (Opens.interior U) (fun z => B (f z) (g z))
+      (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)))
+    (h₀ : eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) ≤ C₀ * ‖B‖ₑ * X * Y)
+    (hl : eLpNormWkp q U k (fun z => B.precompL ℂ (Df z) (g z)) ≤ Cl * ‖B‖ₑ * X * Y)
+    (hr : eLpNormWkp q U k (fun z => B.precompR ℂ (f z) (Dg z)) ≤ Cr * ‖B‖ₑ * X * Y) :
+    eLpNormWkp q U (k + 1) (fun z => B (f z) (g z)) ≤ ↑(C₀ + Cl + Cr + 1) * ‖B‖ₑ * X * Y :=
+  calc
+    _ ≤ eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) +
+        eLpNormWkp q U k (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)) :=
+      eLpNormWkp_succ_le hD
+    _ ≤ eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) +
+        (eLpNormWkp q U k (fun z => B.precompL ℂ (Df z) (g z)) +
+          eLpNormWkp q U k (fun z => B.precompR ℂ (f z) (Dg z))) :=
+      add_le_add le_rfl (eLpNormWkp_add_le hq)
+    _ ≤ C₀ * ‖B‖ₑ * X * Y + (Cl * ‖B‖ₑ * X * Y + Cr * ‖B‖ₑ * X * Y) := by gcongr
+    _ = ↑(C₀ + Cl + Cr) * ‖B‖ₑ * X * Y := by push_cast; ring
+    _ ≤ _ := by gcongr ?_ * _ * _ * _; exact_mod_cast le_self_add
 
 /-- **Local bound for mixed-exponent products at every positive order.** Fix real normed spaces
 `F`, `G` and `H` with `F` and `G` finite-dimensional and `H` complete. For `p > 2`, `1 < q ≤ p`,
@@ -96,24 +127,13 @@ theorem exists_eLpNormWkp_succ_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 <
       ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top)
       (memLp_of_eLpNormWkp_ne_top hDfk).memLpLoc hDg (memLp_of_eLpNormWkp_ne_top hg).memLpLoc
       (memLp_of_eLpNormWkp_ne_top hDgk).memLpLoc
-    calc
-      _ ≤ eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) +
-          eLpNormWkp q U (k + 1)
-            (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)) :=
-        eLpNormWkp_succ_le (hLeib.mono fun z hz => hUΩ' (interior_subset hz))
-      _ ≤ eLpNormWkp q U (k + 1) (fun z => B (f z) (g z)) +
-          (eLpNormWkp q U (k + 1) (fun z => B.precompL ℂ (Df z) (g z)) +
-            eLpNormWkp q U (k + 1) (fun z => B.precompR ℂ (f z) (Dg z))) :=
-        add_le_add eLpNorm_le_eLpNormWkp (eLpNormWkp_add_le hq1)
-      _ ≤ C₀ * ‖B‖ₑ * X * Y + (Cl * ‖B‖ₑ * X * Y + Cr * ‖B‖ₑ * X * Y) := by
-        gcongr
-        · exact (hC₀ B f g).trans (by gcongr)
-        · exact (hCl (B.precompL ℂ) Df g).trans
-            (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompL_le ℂ))
-        · exact (hCr (B.precompR ℂ) f Dg).trans
-            (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompR_le ℂ))
-      _ = ↑(C₀ + Cl + Cr) * ‖B‖ₑ * X * Y := by push_cast; ring
-      _ ≤ _ := by gcongr ?_ * _ * _ * _; exact_mod_cast le_self_add
+    exact eLpNormWkp_succ_bilin_le_of_hasWeakFDerivOn B hq1
+      (hLeib.mono fun z hz => hUΩ' (interior_subset hz))
+      (eLpNorm_le_eLpNormWkp.trans ((hC₀ B f g).trans (by gcongr)))
+      ((hCl (B.precompL ℂ) Df g).trans
+        (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompL_le ℂ)))
+      ((hCr (B.precompR ℂ) f Dg).trans
+        (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompR_le ℂ)))
 
 /-- **Local bound for coefficient fields acting on local Sobolev maps.** Fix finite-dimensional
 real normed spaces `F` and `G`. For `p > 2`, `1 < q ≤ p`, every `k` and a set `U` whose closure

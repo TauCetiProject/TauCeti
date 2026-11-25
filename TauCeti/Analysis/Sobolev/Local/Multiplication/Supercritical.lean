@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Function.Holder
-import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound
+import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
 
@@ -453,30 +453,16 @@ theorem exists_eLpNormWkp_bilin_le_of_two_lt_add_sub_mul [CompleteSpace H] {p : 
     -- Weak derivatives of the factors realizing their norms on `Ω`.
     obtain ⟨Df, hDf, -, hfΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hf
     obtain ⟨Dg, hDg, -, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
-    set X := eLpNormWkp p Ω (a + 1) f
-    set Y := eLpNormWkp p Ω (b + 1) g
-    have hDfX : eLpNormWkp p Ω a Df ≤ X := hfΩ ▸ le_add_self
-    have hDgY : eLpNormWkp p Ω b Dg ≤ Y := hgΩ ▸ le_add_self
     have hLeib := hDf.bilin_of_two_lt_add_mul B hp hDg (memWkpLoc_of_eLpNormWkp_ne_top hf)
       (memWkpLoc_of_eLpNormWkp_ne_top hg) (hle (by omega))
-    calc
-      _ ≤ eLpNorm (fun z => B (f z) (g z)) p (volume.restrict U) +
-          eLpNormWkp p U c
-            (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)) :=
-        eLpNormWkp_succ_le (hLeib.mono fun z hz => hUΩ' (interior_subset hz))
-      _ ≤ eLpNorm (fun z => B (f z) (g z)) p (volume.restrict U) +
-          (eLpNormWkp p U c (fun z => B.precompL ℂ (Df z) (g z)) +
-            eLpNormWkp p U c (fun z => B.precompR ℂ (f z) (Dg z))) :=
-        add_le_add le_rfl (eLpNormWkp_add_le hp1)
-      _ ≤ C₀ * ‖B‖ₑ * X * Y + (Cl * ‖B‖ₑ * X * Y + Cr * ‖B‖ₑ * X * Y) := by
+    exact eLpNormWkp_succ_bilin_le_of_hasWeakFDerivOn B hp1
+      (hLeib.mono fun z hz => hUΩ' (interior_subset hz)) (hC₀ B f g)
+      ((hCl (B.precompL ℂ) Df g).trans (by
         gcongr
-        · exact hC₀ B f g
-        · exact (hCl (B.precompL ℂ) Df g).trans
-            (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompL_le ℂ))
-        · exact (hCr (B.precompR ℂ) f Dg).trans
-            (by gcongr; exact eNorm_le_iff_norm_le.2 (B.norm_precompR_le ℂ))
-      _ = ↑(C₀ + Cl + Cr) * ‖B‖ₑ * X * Y := by push_cast; ring
-      _ ≤ _ := by gcongr ?_ * _ * _ * _; exact_mod_cast le_self_add
+        exacts [eNorm_le_iff_norm_le.2 (B.norm_precompL_le ℂ), hfΩ ▸ le_add_self]))
+      ((hCr (B.precompR ℂ) f Dg).trans (by
+        gcongr
+        exacts [eNorm_le_iff_norm_le.2 (B.norm_precompR_le ℂ), hgΩ ▸ le_add_self]))
 
 /-- **Local bound for the algebra property for `kp > 2`.** Let `1 < p` and `k p > 2`, and let
 `U` have compact closure contained in `Ω`. There is a constant `C` such that
