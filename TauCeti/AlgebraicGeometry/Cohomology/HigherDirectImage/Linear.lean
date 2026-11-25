@@ -145,6 +145,26 @@ def higherDirectImageGlobalSectionsAddEquiv :
       (f.cohomologyOnTopEquivPreimageTop M n)).toAddEquiv.trans
     (f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y))
 
+/-- `higherDirectImageGlobalSectionsAddEquiv` transports a class in `Hⁿ(X, M)` to `Hⁿ(f⁻¹ ⊤, M)`
+and applies `higherDirectImageSectionsAddEquiv` on `⊤`. -/
+lemma higherDirectImageGlobalSectionsAddEquiv_apply (x : Cohomology M n) :
+    f.higherDirectImageGlobalSectionsAddEquiv M n x =
+      f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y)
+        (cohomologyOnResLinear M n (le_of_eq f.preimage_top)
+          ((cohomologyOnTopLinearEquiv M n).symm x)) :=
+  (rfl)
+
+/-- The inverse of `higherDirectImageGlobalSectionsAddEquiv` pulls back a global section of
+`Rⁿ f_* M` via `higherDirectImageSectionsAddEquiv` on `⊤` and identifies `Hⁿ(f⁻¹ ⊤, M)` with
+`Hⁿ(X, M)`. -/
+lemma higherDirectImageGlobalSectionsAddEquiv_symm_apply
+    (x : Γ((f.higherDirectImage n).obj M, ⊤)) :
+    (f.higherDirectImageGlobalSectionsAddEquiv M n).symm x =
+      cohomologyOnTopLinearEquiv M n
+        (cohomologyOnResLinear M n (le_of_eq f.preimage_top.symm)
+          ((f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y)).symm x)) :=
+  (rfl)
+
 /-- `higherDirectImageGlobalSectionsAddEquiv` respects the action of global functions on `Y`:
 pulling back `r : Γ(Y, ⊤)` along `f` corresponds to scalar multiplication by `r` on
 `Γ(Rⁿ f_* M, ⊤)`. -/
@@ -156,16 +176,13 @@ lemma higherDirectImageGlobalSectionsAddEquiv_smul (r : Γ(Y, ⊤)) (x : Cohomol
     change Y.presheaf.map (𝟙 (.op (⊤ : Y.Opens))) r = r
     rw [CategoryTheory.Functor.map_id]
     rfl
-  let g : Cohomology M n ≃ₗ[Γ(X, ⊤)] cohomologyOn M n (f ⁻¹ᵁ ⊤) :=
-    (cohomologyOnTopLinearEquiv M n).symm.trans (f.cohomologyOnTopEquivPreimageTop M n)
-  -- Express `higherDirectImageGlobalSectionsAddEquiv` explicitly in terms of the `Γ(X, ⊤)`-linear
-  -- equivalence `g` so `g.map_smul` applies cleanly without unfolding `AddEquiv.trans`.
-  change f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y)
-      (g (f.appTop r • x)) =
-    r • f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y) (g x)
-  rw [g.map_smul (f.appTop r) x]
-  simpa only [htop] using
-    f.higherDirectImageSectionsAddEquiv_smul M n (isAffineOpen_top Y) r (g x)
+  rw [higherDirectImageGlobalSectionsAddEquiv_apply, higherDirectImageGlobalSectionsAddEquiv_apply]
+  have h1 := (cohomologyOnTopLinearEquiv M n).symm.map_smul (f.appTop r) x
+  have h2 := (cohomologyOnResLinear M n (le_of_eq f.preimage_top)).map_smul (f.appTop r)
+    ((cohomologyOnTopLinearEquiv M n).symm x)
+  refine (congrArg (f.higherDirectImageSectionsAddEquiv M n (isAffineOpen_top Y))
+    ((congrArg (cohomologyOnResLinear M n (le_of_eq f.preimage_top)) h1).trans h2)).trans ?_
+  simpa only [htop] using f.higherDirectImageSectionsAddEquiv_smul M n (isAffineOpen_top Y) r _
 
 end Affine
 

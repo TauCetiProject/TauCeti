@@ -39,8 +39,6 @@ The localization combines `Scheme.Hom.higherDirectImageRestrictIso` with the iso
 * `AlgebraicGeometry.Scheme.IsProjectiveOver.isFinitePresentation_higherDirectImage`:
   higher direct images of coherent sheaves on a scheme projective over a Noetherian ring `R` are
   finitely presented.
-* `TauCeti.SymmetricAlgebra.isFinitePresentation_higherDirectImage_projToSpec`:
-  specialization to `projToSpec R M : Proj (Sym_R M) ⟶ Spec R`.
 * `AlgebraicGeometry.Scheme.Hom.isFinitePresentation_higherDirectImage_of_locally_isProjectiveOver`:
   higher direct images of coherent sheaves along a morphism locally projective over a locally
   Noetherian base are finitely presented.
@@ -104,16 +102,3 @@ theorem Hom.isFinitePresentation_higherDirectImage_of_locally_isProjectiveOver
     ((f.higherDirectImageRestrictIso (U i) q).app F).symm hUi
 
 end AlgebraicGeometry.Scheme
-
-namespace TauCeti.SymmetricAlgebra
-
-/-- The higher direct images of a coherent sheaf along `Proj (Sym_R M) ⟶ Spec R` are finitely
-presented for any finite module `M` over a Noetherian ring `R`. -/
-theorem isFinitePresentation_higherDirectImage_projToSpec (R M : Type u) [CommRing R]
-    [IsNoetherianRing R] [AddCommMonoid M] [Module R M] [Module.Finite R M]
-    (F : (Proj (homogeneousSubmodule R M)).Modules) [F.IsQuasicoherent] [F.IsFiniteType]
-    (q : ℕ) :
-    (((projToSpec R M).higherDirectImage q).obj F).IsFinitePresentation :=
-  AlgebraicGeometry.Scheme.IsProjectiveOver.isFinitePresentation_higherDirectImage R F q
-
-end TauCeti.SymmetricAlgebra

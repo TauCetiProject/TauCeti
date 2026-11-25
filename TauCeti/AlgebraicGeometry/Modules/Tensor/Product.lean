@@ -10,8 +10,6 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Evaluation
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
-import Mathlib.Data.Fintype.Card
-import TauCeti.CategoryTheory.Monoidal.Epi
 
 /-!
 # The tensor product of `𝒪ₓ`-modules on a scheme
@@ -44,9 +42,10 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   `AlgebraicGeometry.Scheme.Modules.sectionsFunctorAdditive`: sections over an open as a lax
   braided monoidal, additive functor `X.Modules ⥤ ModuleCat Γ(X, U)`;
 * `AlgebraicGeometry.Scheme.Modules.sectionsFunctorPreservesLimitsOfSize`: it preserves limits;
-* `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_generatingSections_tensor`: finite
-  generating sections of `F ⊗ M` and an inverse `M ⊗ K ≅ 𝒪_X` yield an epimorphism from a finite
-  biproduct of copies of `K` onto `F`.
+* `AlgebraicGeometry.Scheme.Modules.hasFiniteBiproducts` and
+  `AlgebraicGeometry.Scheme.Modules.freeTensorIsoBiproduct`: `X.Modules` has finite biproducts, and
+  tensoring a finite free module `𝒪ₓ^{⊕I}` with `L` identifies with the `I`-indexed biproduct of
+  copies of `L`.
 
 -/
 
@@ -208,47 +207,78 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_ε
   rw [Functor.LaxMonoidal.comp_ε, hε]
   rfl
 
-variable {X} in
-open BraidedCategory in
-/-- From finite generating sections of `F ⊗ M` and a right inverse `K` (`M ⊗ K ≅ 𝒪_X`),
-tensoring on the left with `K` produces an epimorphism from a finite direct sum of copies of `K`
-onto `F`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_generatingSections_tensor
-    (F M K : X.Modules) (σ : (F ⊗ M).GeneratingSections) [σ.IsFiniteType]
-    (e : M ⊗ K ≅ 𝟙_ X.Modules) :
-    ∃ (k : ℕ) (_ : Limits.HasBiproduct (fun _ : Fin k ↦ K))
-      (π : (⨁ fun _ : Fin k ↦ K) ⟶ F), Epi π := by
-  have : Finite σ.I := _root_.SheafOfModules.GeneratingSections.IsFiniteType.finite (σ := σ)
-  have : Fintype σ.I := Fintype.ofFinite σ.I
-  let I : Type v := σ.I
-  let k := Fintype.card I
-  let eqv : I ≃ Fin k := Fintype.equivFin I
-  let freeI : X.Modules := _root_.SheafOfModules.free I
-  have : Limits.HasBiproduct (C := X.Modules) fun _ : I ↦ 𝟙_ X.Modules :=
-    Limits.HasBiproduct.of_hasCoproduct _
-  have : Limits.HasBiproduct (C := X.Modules) fun _ : Fin k ↦ 𝟙_ X.Modules :=
-    Limits.HasBiproduct.of_hasCoproduct _
-  have : Limits.HasBiproduct (C := X.Modules) fun _ : Fin k ↦ K ⊗ 𝟙_ X.Modules :=
-    Limits.HasBiproduct.of_hasCoproduct _
-  have : Limits.HasBiproduct (C := X.Modules) fun _ : Fin k ↦ K :=
-    Limits.HasBiproduct.of_hasCoproduct _
-  let e₀ : (⨁ fun _ : I ↦ 𝟙_ X.Modules) ≅ freeI :=
-    SheafOfModules.biproductIsoFree (R := X.sheaf) I
-  let freeIso : (⨁ fun _ : Fin k ↦ 𝟙_ X.Modules) ≅ freeI :=
-    Limits.biproduct.whiskerEquiv (f := fun _ : Fin k ↦ 𝟙_ X.Modules)
-      (g := fun _ : I ↦ 𝟙_ X.Modules) eqv.symm (fun _ ↦ Iso.refl _) ≪≫ e₀
-  let distIso : (⨁ fun _ : Fin k ↦ K) ≅ K ⊗ (⨁ fun _ : Fin k ↦ 𝟙_ X.Modules) :=
-    Limits.biproduct.mapIso (fun _ ↦ (ρ_ K).symm) ≪≫ ((tensorLeft K).mapBiproduct _).symm
-  let cancelIso : K ⊗ (F ⊗ M) ≅ F :=
-    (α_ K F M).symm ≪≫ whiskerRightIso (β_ K F) M ≪≫ α_ F K M ≪≫
-      whiskerLeftIso F (β_ K M ≪≫ e) ≪≫ ρ_ F
-  let π₀ : freeI ⟶ F ⊗ M := σ.π
-  have : Epi π₀ := σ.epi
-  have : (tensorLeft K).PreservesEpimorphisms :=
-    Functor.preservesEpimorphisms_of_isLeftAdjoint (tensorLeft K)
-  refine ⟨k, inferInstance, distIso.hom ≫ (K ◁ freeIso.hom) ≫ (K ◁ π₀) ≫ cancelIso.hom, ?_⟩
-  infer_instance
-
 end
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open CategoryTheory Limits MonoidalCategory TauCeti
+
+universe v
+
+noncomputable section FreeTensor
+
+/-- `𝒪ₓ`-modules have finite biproducts. -/
+instance hasFiniteBiproducts (X : Scheme.{v}) : HasFiniteBiproducts X.Modules :=
+  SheafOfModules.hasFiniteBiproducts X.ringCatSheaf
+
+variable {X : Scheme.{v}}
+
+private lemma preservesBiproduct_unit_tensorRight (I : Type v) [Finite I] (L : X.Modules) :
+    PreservesBiproduct (fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) (tensorRight L) := by
+  have := Fintype.ofFinite I
+  let F := tensorRight L
+  exact ⟨fun {b} hb ↦ ⟨isBilimitOfTotal _ (by
+    change (∑ i, F.map (b.π i) ≫ F.map (b.ι i)) = 𝟙 _
+    simpa only [← F.map_comp, ← F.map_sum, F.map_id] using
+      congrArg F.map (IsBilimit.total hb))⟩⟩
+
+variable (I : Type v) [Finite I] (L : X.Modules)
+
+/-- Tensoring a finite free `𝒪ₓ`-module `𝒪ₓ^{⊕I}` with `L` identifies with the `I`-indexed
+biproduct of copies of `L`. -/
+def freeTensorIsoBiproduct :
+    ((_root_.SheafOfModules.free I : X.Modules) ⊗ L : X.Modules) ≅ (⨁ fun _ : I ↦ L : X.Modules) :=
+  have := preservesBiproduct_unit_tensorRight I L
+  let e₀ : Iso (C := X.Modules) (_root_.SheafOfModules.free I)
+      (⨁ fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) :=
+    (SheafOfModules.biproductIsoFree (R := X.sheaf) I).symm
+  whiskerRightIso e₀ L ≪≫
+    (tensorRight L).mapBiproduct _ ≪≫
+    biproduct.mapIso fun _ ↦ λ_ L
+
+variable {I} in
+/-- On the `i`-th summand, `(freeTensorIsoBiproduct I L).inv` includes `L` via the left unitor and
+the `i`-th basis section `ιFree i`. -/
+@[reassoc (attr := simp)]
+theorem biproduct_ι_freeTensorIsoBiproduct_inv (i : I) :
+    biproduct.ι (fun _ : I ↦ L) i ≫ (freeTensorIsoBiproduct I L).inv =
+      (λ_ L).inv ≫ (_root_.SheafOfModules.ιFree i : (𝟙_ X.Modules : X.Modules) ⟶ _) ▷ L := by
+  have := preservesBiproduct_unit_tensorRight I L
+  let e₀ : Iso (C := X.Modules) (_root_.SheafOfModules.free I)
+      (⨁ fun _ : I ↦ (𝟙_ X.Modules : X.Modules)) :=
+    (SheafOfModules.biproductIsoFree (R := X.sheaf) I).symm
+  change biproduct.ι (fun _ : I ↦ L) i ≫
+      (biproduct.map (fun _ : I ↦ (λ_ L).inv) ≫
+        ((tensorRight L).mapBiproduct _).inv ≫ (e₀.inv ▷ L)) = _
+  rw [biproduct.ι_map_assoc, Functor.mapBiproduct_inv, biproduct.ι_desc_assoc]
+  exact congrArg ((λ_ L).inv ≫ ·) ((comp_whiskerRight _ _ L).symm.trans
+    (congrArg (· ▷ L) (SheafOfModules.biproduct_ι_biproductIsoFree_hom (R := X.sheaf) i)))
+
+variable {I} in
+/-- On the `i`-th basis section `ιFree i ▷ L`, `(freeTensorIsoBiproduct I L).hom` applies the left
+unitor and includes into the `i`-th summand. -/
+@[reassoc]
+theorem ιFree_whiskerRight_freeTensorIsoBiproduct_hom (i : I) :
+    (_root_.SheafOfModules.ιFree i : (𝟙_ X.Modules : X.Modules) ⟶ _) ▷ L ≫
+      (freeTensorIsoBiproduct I L).hom =
+    (λ_ L).hom ≫ biproduct.ι (fun _ : I ↦ L) i := by
+  have h := congrArg (· ≫ (freeTensorIsoBiproduct I L).hom)
+    (biproduct_ι_freeTensorIsoBiproduct_inv L i)
+  rw [Category.assoc, Iso.inv_hom_id, Category.comp_id] at h
+  exact (Iso.inv_comp_eq (λ_ L)).mp ((Category.assoc _ _ _).symm.trans h.symm)
+
+end FreeTensor
+
+end AlgebraicGeometry.Scheme.Modules

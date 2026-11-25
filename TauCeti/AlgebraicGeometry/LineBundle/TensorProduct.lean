@@ -24,9 +24,7 @@ for the trivial line bundle.
 * `InvertibleSheaf.tensorProduct_obj` identifies its underlying sheaf, and
   `InvertibleSheaf.tensorProductObjIso` identifies it with the monoidal tensor product of the
   underlying sheaves, through `SheafOfModules.tensorProductIso` and
-  `SheafOfModules.tensorUnderlyingIso` (`InvertibleSheaf.tensorProductObjIso_hom`), so
-  `AlgebraicGeometry.Scheme.Modules.isInvertible_tensorObj` registers that the monoidal tensor
-  product of two invertible sheaves is invertible;
+  `SheafOfModules.tensorUnderlyingIso` (`InvertibleSheaf.tensorProductObjIso_hom`);
 * `InvertibleSheaf.tensorProductCongrLeft` and `InvertibleSheaf.tensorProductCongrRight` transport
   isomorphisms through either tensor factor, so `InvertibleSheaf.isIsomorphic_tensorProduct`
   shows that tensor product respects isomorphism; through `tensorProductObjIso` these transports
@@ -87,13 +85,6 @@ def tensorProductObjIso (L K : InvertibleSheaf X) :
     (tensorProduct L K).obj ≅ L.obj ⊗ K.obj :=
   eqToIso (tensorProduct_obj L K) ≪≫ SheafOfModules.tensorProductIso X.sheaf L.obj K.obj ≪≫
     (L.obj.tensorUnderlyingIso K.obj).symm
-
-/-- The monoidal tensor product of two invertible sheaves on a scheme is invertible. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isInvertible_tensorObj (M N : X.Modules)
-    [hM : SheafOfModules.isInvertible X M] [hN : SheafOfModules.isInvertible X N] :
-    SheafOfModules.isInvertible X (M ⊗ N) :=
-  TauCeti.SheafOfModules.IsInvertible.of_iso (R := X.ringCatSheaf)
-    (tensorProductObjIso ⟨M, hM⟩ ⟨N, hN⟩)
 
 /-- The sheaf isomorphism underlying transport through the first tensor factor. -/
 def tensorProductCongrLeftIso {L L' K : InvertibleSheaf X} (e : L ≅ L') :
