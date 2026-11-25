@@ -69,17 +69,17 @@ theorem toHomology_eq_zero_of_contMDiffOn_sub
   simp only [b, ofContMDiff_apply]
   abel
 
-/-- On a finite-dimensional complex manifold, it suffices that the commonly corrected
+/-- On a boundaryless finite-dimensional complex manifold, it suffices that the commonly corrected
 potentials be manifold differentiable on the covering opens. -/
-theorem toHomology_eq_zero_of_mdifferentiableOn_sub [ChartedSpace E X]
-    [FiniteDimensional ℂ E] [IsManifold 𝓘(ℂ, E) 1 X]
+theorem toHomology_eq_zero_of_mdifferentiableOn_sub [I.Boundaryless]
+    [FiniteDimensional ℂ E] [IsManifold I 1 X]
     {κ : Type u} {U : κ → Opens (TopCat.of X)}
-    (c : Topology.CechOne.cocycles₁ (holomorphicStructureSheafModules 𝓘(ℂ, E) X).obj U)
+    (c : Topology.CechOne.cocycles₁ (𝒪).obj U)
     {g : κ → X → ℂ}
     (hg : ∀ i j (x : X) (hi : x ∈ U i) (hj : x ∈ U j),
       c.val i j ⟨x, hi, hj⟩ = g j x - g i x)
-    (u : X → ℂ) (hu : ∀ i, MDifferentiableOn 𝓘(ℂ, E) 𝓘(ℂ) (g i - u) (U i)) :
-    Topology.CechOne.toHomology (holomorphicStructureSheafModules 𝓘(ℂ, E) X).obj U c = 0 :=
+    (u : X → ℂ) (hu : ∀ i, MDifferentiableOn I 𝓘(ℂ) (g i - u) (U i)) :
+    Topology.CechOne.toHomology (𝒪).obj U c = 0 :=
   toHomology_eq_zero_of_contMDiffOn_sub c hg u fun i ↦ (hu i).contMDiffOn (U i).isOpen
 
 end TauCeti.holomorphicStructureSheafModules
