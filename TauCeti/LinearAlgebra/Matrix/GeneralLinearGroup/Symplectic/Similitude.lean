@@ -25,7 +25,7 @@ is Mathlib's `Matrix.transpose_mul_J_mul_eq_smul_iff`, read through the reindexi
   is one in the column form `Mᵀ Jₘ M = r Jₘ`.
 * `TauCeti.mul_JFin_mul_transpose_eq_smul_iff`: the similitude condition read in
   `Fin m ⊕ Fin m` coordinates.
-* `Matrix.mul_JFin_one_mul_transpose_eq_smul_iff` and
+* `TauCeti.mul_JFin_one_mul_transpose_eq_smul_iff` and
   `Matrix.mul_JFin_one_mul_transpose_eq_det_smul`: in rank two, `M J₁ Mᵀ = d J₁` exactly when
   `det M = d`.
 -/
@@ -59,7 +59,7 @@ theorem mul_JFin_mul_transpose_eq_smul_iff {M : Matrix (Fin (m + m)) (Fin (m + m
 
 /-- **In rank two the similitude multiplier is the determinant**: `M J₁ Mᵀ = d J₁` exactly when
 `det M = d`. This is `Matrix.transpose_mul_J_mul_eq_smul_iff` read through the reindexing. -/
-theorem _root_.Matrix.mul_JFin_one_mul_transpose_eq_smul_iff
+theorem mul_JFin_one_mul_transpose_eq_smul_iff
     {M : Matrix (Fin (1 + 1)) (Fin (1 + 1)) R} {d : R} :
     M * JFin 1 R * Mᵀ = d • JFin 1 R ↔ M.det = d := by
   rw [mul_JFin_mul_transpose_eq_smul_iff, Matrix.transpose_mul_J_mul_eq_smul_iff,
@@ -69,6 +69,6 @@ theorem _root_.Matrix.mul_JFin_one_mul_transpose_eq_smul_iff
 theorem _root_.Matrix.mul_JFin_one_mul_transpose_eq_det_smul
     (M : Matrix (Fin (1 + 1)) (Fin (1 + 1)) R) :
     M * JFin 1 R * Mᵀ = M.det • JFin 1 R :=
-  Matrix.mul_JFin_one_mul_transpose_eq_smul_iff.mpr rfl
+  mul_JFin_one_mul_transpose_eq_smul_iff.mpr rfl
 
 end TauCeti

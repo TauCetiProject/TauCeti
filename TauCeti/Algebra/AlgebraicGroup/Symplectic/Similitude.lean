@@ -181,7 +181,7 @@ theorem mk_one_mem_pointsSubgroup {h : GL (Fin (m + m)) A} (hh : h ∈ GLSymplec
 `r = det h`. -/
 theorem mem_pointsSubgroup_one_iff (p : GL (Fin (1 + 1)) A × Aˣ) :
     p ∈ pointsSubgroup R 1 A ↔ p.2 = Matrix.GeneralLinearGroup.det p.1 := by
-  rw [mem_pointsSubgroup_iff, Matrix.mul_JFin_one_mul_transpose_eq_smul_iff, Units.ext_iff,
+  rw [mem_pointsSubgroup_iff, mul_JFin_one_mul_transpose_eq_smul_iff, Units.ext_iff,
     Matrix.GeneralLinearGroup.val_det_apply, eq_comm]
 
 variable (R A)
