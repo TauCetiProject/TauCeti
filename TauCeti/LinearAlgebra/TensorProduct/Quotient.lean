@@ -133,11 +133,8 @@ noncomputable def quotTensorQuotEquivQuotSup (I J : Ideal R) :
 theorem quotTensorQuotEquivQuotSup_mk_tmul_mk (I J : Ideal R) (a b : R) :
     quotTensorQuotEquivQuotSup I J (Ideal.Quotient.mk I a ⊗ₜ Ideal.Quotient.mk J b) =
       Ideal.Quotient.mk (I ⊔ J) (a * b) := by
-  rw [quotTensorQuotEquivQuotSup, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    LinearEquiv.trans_apply, quotTensorEquivQuotSMul_mk_tmul, ← Ideal.Quotient.mk_eq_mk,
-    ← Submodule.Quotient.mk_smul, smul_eq_mul, Submodule.quotEquivOfEq_mk,
-    Submodule.quotientQuotientEquivQuotientSup_mk_mk, Submodule.quotEquivOfEq_mk,
-    Ideal.Quotient.mk_eq_mk]
+  simp only [quotTensorQuotEquivQuotSup, LinearEquiv.trans_apply, quotTensorEquivQuotSMul_mk_tmul]
+  simp [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul]
 
 /-- The inverse of `TensorProduct.quotTensorQuotEquivQuotSup` sends `[a]` to `[a] ⊗ [1]`. -/
 @[simp]

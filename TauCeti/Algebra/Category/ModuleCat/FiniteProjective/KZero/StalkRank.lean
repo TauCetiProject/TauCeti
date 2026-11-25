@@ -230,7 +230,8 @@ theorem of_clopenProjective_compl (U : Clopens (PrimeSpectrum R)) :
     (AlgEquiv.prodQuotientOfIsIdempotentElem R e.prop.one_sub e.prop (sub_add_cancel 1 e.val)
       e.prop.one_sub_mul_self).toLinearEquiv ≪≫ₗ
     (eqToIso (clopenProjective_obj R U)).toLinearEquiv.symm.prodCongr
-      (Submodule.quotEquivOfEq _ _ (by simp [e]) ≪≫ₗ
+      (Submodule.quotEquivOfEq _ _
+        (by rw [isIdempotentElemEquivClopens_symm_compl, sub_sub_cancel]) ≪≫ₗ
         (eqToIso (clopenProjective_obj R Uᶜ)).toLinearEquiv.symm)
 
 /-! ### The rank section -/
