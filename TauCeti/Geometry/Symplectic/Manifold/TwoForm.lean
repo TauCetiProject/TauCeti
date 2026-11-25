@@ -523,7 +523,8 @@ theorem eval₂_constSmooth_mfderiv_eq (omegaForm : SymplecticForm V) (f : M →
 lemma isNondegenerate_constSmooth (omegaForm : SymplecticForm V) :
     omegaForm.constSmooth.IsNondegenerate :=
   (SmoothTwoForm.isNondegenerate_const_iff omegaForm.toBilinForm.toContinuousBilinearMap
-    omegaForm.isAlt).2 fun v hv ↦ omegaForm.nondegenerate.1 v hv
+    omegaForm.isAlt).2 fun v hv ↦ omegaForm.nondegenerate.1 v fun w ↦ by
+      simpa only [LinearMap.toContinuousBilinearMap_apply] using hv w
 
 /-- On every tangent fiber, the symplectic form of a constant smooth symplectic form is the
 defining algebraic form. -/

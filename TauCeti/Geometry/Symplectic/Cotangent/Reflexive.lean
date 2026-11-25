@@ -18,13 +18,14 @@ continuous dual `StrongDual ℝ V`, carries the canonical form
 `ω((q, α), (q', β)) = β(q) - α(q')`
 
 (`TauCeti.strongDualCotangentSymplecticForm`). It is always weakly nondegenerate: by Hahn–Banach,
-no nonzero vector is `ω`-orthogonal to everything. This file shows that it is **strongly
-nondegenerate exactly when `V` is reflexive**, that is, when the inclusion `V → V**` into the
-double dual is onto. A continuous linear form `ℓ` on `V × V*` splits as
+no nonzero vector is `ω`-orthogonal to everything. It is **strongly nondegenerate exactly
+when `V` is reflexive**, that is, when the inclusion `V → V**` into the double dual is onto. A
+continuous linear form `ℓ` on `V × V*` splits as
 `ℓ(q', β) = a(q') + Ψ(β)` with `a ∈ V*` and `Ψ ∈ V**`, while the flat map
 `v ↦ ω(v, ·)` (`TauCeti.strongDualCotangentFlat`) sends `(q, α)` to the form
 `(q', β) ↦ β(q) - α(q')`, whose `V**`-part is evaluation at `q`. So `ℓ` is hit exactly when `Ψ`
-is evaluation at a point of `V` (`TauCeti.surjective_strongDualCotangentFlat_iff`).
+is evaluation at a point of `V` (`TauCeti.surjective_strongDualCotangentFlat_iff`, in
+`TauCeti.Geometry.Symplectic.Cotangent.StrongDual`).
 
 Read as a constant two-form on the manifold `V × V*`
 (`TauCeti.strongDualCotangentTwoForm`), the same holds pointwise: the flat maps are all onto the
@@ -66,8 +67,6 @@ pinned Hamiltonian vector field is not a Hamiltonian vector field
 
 ## Main results
 
-* `TauCeti.surjective_strongDualCotangentFlat_iff`: the flat map is onto the continuous dual
-  exactly when `V` is reflexive.
 * `TauCeti.surjective_flat_strongDualCotangentTwoForm_iff`: the constant two-form is strongly
   nondegenerate exactly when `V` is reflexive.
 * `TauCeti.isHamiltonianVectorField_strongDualCotangentTwoForm_comp_fst`,
@@ -98,30 +97,6 @@ open scoped Manifold ZeroAtInfty
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-! ### The reflexivity criterion -/
-
-/-- **The canonical form on `V × V*` is strongly nondegenerate exactly when `V` is reflexive**:
-its flat map is onto the continuous dual exactly when the inclusion of `V` into its double dual
-is. A form `ℓ` is `ω(x, ·)` for `x = (q, -ℓ ∘ inl)` as soon as `ℓ ∘ inr` is evaluation at `q`,
-and conversely `ω((q, α), (0, ·))` is evaluation at `q`. -/
-theorem surjective_strongDualCotangentFlat_iff :
-    Function.Surjective (strongDualCotangentFlat V) ↔
-      Function.Surjective (inclusionInDoubleDual ℝ V) := by
-  refine ⟨fun h Ψ ↦ ?_, fun h ℓ ↦ ?_⟩
-  · -- The form `(q', β) ↦ Ψ β` is `ω((q, α), ·)`; testing on `(0, β)` gives `β q = Ψ β`.
-    obtain ⟨x, hx⟩ := h (Ψ.comp (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V)))
-    refine ⟨x.1, ContinuousLinearMap.ext fun β ↦ ?_⟩
-    simpa using congrArg (fun φ ↦ φ ((0 : V), β)) hx
-  · -- Write `ℓ (q', β) = a q' + Ψ β` and take `q` with `Ψ = ev_q`.
-    obtain ⟨q, hq⟩ := h (ℓ.comp (ContinuousLinearMap.inr ℝ V (StrongDual ℝ V)))
-    refine ⟨(q, -ℓ.comp (ContinuousLinearMap.inl ℝ V (StrongDual ℝ V))),
-      ContinuousLinearMap.ext fun y ↦ ?_⟩
-    have hβ := congrArg (fun Φ ↦ Φ y.2) hq
-    simp only [NormedSpace.dual_def, ContinuousLinearMap.coe_comp, Function.comp_apply,
-      ContinuousLinearMap.inr_apply] at hβ
-    rw [strongDualCotangentFlat_apply_apply, hβ]
-    simp [← map_add]
 
 /-! ### The constant two-form -/
 
