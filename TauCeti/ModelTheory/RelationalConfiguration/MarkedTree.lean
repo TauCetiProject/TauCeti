@@ -21,8 +21,8 @@ The language `markedGraphLanguage` has a binary symbol `adj` and a unary symbol 
 class `markedTreeClass` consists of the codes whose relation is symmetric and irreflexive, whose
 graph `markedGraph c` is a tree (Mathlib's `SimpleGraph.IsTree`: connected and acyclic), and
 which mark exactly one vertex. It is isomorphism invariant, and on a countable carrier it is
-Borel, by the measurability of being a tree in a family of graphs with measurable adjacency
-(`TauCeti.measurableSet_setOf_isTree`).
+Borel: the graph depends measurably on the code (`measurable_markedGraph`), and being a tree is
+a measurable set of graphs (`TauCeti.measurableSet_setOf_isTree`).
 
 The cover graph of a coded order `c` (`coverGraphCode c`) joins `u` and `v` when one covers the
 other, and marks the least elements. Each of its coordinates is the indicator of a closed set of
@@ -228,9 +228,10 @@ theorem isomorphismInvariant_markedTreeClass :
 
 section Measurable
 
-private theorem measurableSet_setOf_markedGraph_adj (x y : V) :
-    MeasurableSet {c : RelationalConfiguration markedGraphLanguage V |
-      (markedGraph c).Adj x y} := by
+/-- The graph of a code depends measurably on the code. -/
+theorem measurable_markedGraph :
+    Measurable (markedGraph : RelationalConfiguration markedGraphLanguage V → SimpleGraph V) := by
+  refine SimpleGraph.measurable_iff_adj.2 fun x y => measurableSet_setOfPred.1 ?_
   simp only [markedGraph_adj, ofPred_and, ofPred_or]
   exact (MeasurableSet.const _).inter
     ((measurableSet_setOf_codeRel adjSymb x y).union (measurableSet_setOf_codeRel adjSymb y x))
@@ -267,7 +268,7 @@ theorem measurableSet_markedTreeClass : MeasurableSet (markedTreeClass (V := V))
   have hUm := MeasurableSet.iUnion fun v => (hM v).inter
     (MeasurableSet.iInter fun w => MeasurableSet.iInter fun (_ : w ≠ v) => (hM w).compl)
   exact hSymm.inter (hIrr.inter
-    ((measurableSet_setOf_isTree measurableSet_setOf_markedGraph_adj).inter hUm))
+    ((measurableSet_setOf_isTree.preimage measurable_markedGraph).inter hUm))
 
 end Measurable
 
@@ -348,14 +349,11 @@ theorem measurable_coverGraphCode [Countable V] :
 theorem coverGraphCode_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration Language.order V) :
     coverGraphCode (σ • c) = σ • coverGraphCode c := by
   refine ext_markedGraph (fun x y => ?_) fun x => ?_
-  · rw [codeRel_perm_smul, codeRel_coverGraphCode, codeRel_coverGraphCode]
-    simp only [relCovBy_iff, codeRel_perm_smul]
-    refine or_congr (and_congr Iff.rfl ⟨fun h w => ?_, fun h w => ?_⟩)
-      (and_congr Iff.rfl ⟨fun h w => ?_, fun h w => ?_⟩)
-    · simpa using h (σ w)
-    · simpa using h (σ.symm w)
-    · simpa using h (σ w)
-    · simpa using h (σ.symm w)
+  · have h : codeRel leSymb (σ • c) = fun a b => codeRel leSymb c (σ.symm a) (σ.symm b) := by
+      ext a b
+      exact codeRel_perm_smul leSymb σ c a b
+    rw [codeRel_perm_smul, codeRel_coverGraphCode, codeRel_coverGraphCode, h,
+      relCovBy_comap_equiv, relCovBy_comap_equiv]
   · rw [isMarked_perm_smul, isMarked_coverGraphCode, isMarked_coverGraphCode]
     simp only [codeRel_perm_smul]
     exact ⟨fun h w => by simpa using h (σ w), fun h w => h (σ.symm w)⟩

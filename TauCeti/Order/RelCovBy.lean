@@ -23,6 +23,7 @@ reading `r` as a non-strict order, `RelCovBy r u v` says that `u < v` and that n
 ## Main results
 
 * `TauCeti.relCovBy_le_iff_covBy`: for the order of a preorder, `RelCovBy` is `CovBy`.
+* `TauCeti.relCovBy_comap_equiv`: `RelCovBy` is unchanged by relabelling along an equivalence.
 -/
 
 public section
@@ -41,6 +42,13 @@ def RelCovBy (r : V → V → Prop) (u v : V) : Prop :=
 theorem relCovBy_iff {r : V → V → Prop} {u v : V} :
     RelCovBy r u v ↔ (r u v ∧ ¬ r v u) ∧ ∀ w, ¬ ((r u w ∧ ¬ r w u) ∧ (r w v ∧ ¬ r v w)) :=
   Iff.rfl
+
+/-- `RelCovBy` is unchanged by relabelling along an equivalence: `u` is covered by `v` for the
+relation `r` pulled back along `e` exactly when `e u` is covered by `e v` for `r`. -/
+theorem relCovBy_comap_equiv {W : Type*} (e : V ≃ W) {r : W → W → Prop} {u v : V} :
+    RelCovBy (fun a b => r (e a) (e b)) u v ↔ RelCovBy r (e u) (e v) := by
+  simp only [relCovBy_iff]
+  exact and_congr Iff.rfl (e.forall_congr fun _ => Iff.rfl)
 
 /-- For the order of a preorder, `RelCovBy` is Mathlib's `CovBy`. -/
 @[simp]
