@@ -47,6 +47,11 @@ variable {F} in
 theorem mem_unitBallOpens {v : F} : v ∈ unitBallOpens F ↔ ‖v‖ < 1 := by
   rw [← SetLike.mem_coe, coe_unitBallOpens, mem_ball_zero_iff]
 
+variable {F} in
+/-- A point lies in the open unit ball, as an open subset, exactly when it lies in `ball 0 1`. -/
+theorem mem_unitBallOpens_iff_mem_ball {v : F} : v ∈ unitBallOpens F ↔ v ∈ ball 0 1 := by
+  rw [← SetLike.mem_coe, coe_unitBallOpens]
+
 /-- The centre of the open unit ball. -/
 theorem zero_mem_unitBallOpens : (0 : F) ∈ unitBallOpens F :=
   mem_unitBallOpens.2 (by simp)

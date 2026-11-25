@@ -26,6 +26,10 @@ conditions for the Cauchy–Riemann operator on the disc.
 
 * `TauCeti.CkHolderSpaceOn.closureExtend`: the extension `extendFrom Ω f` of an element to `E`; it
   agrees with the element on `Ω` (`TauCeti.CkHolderSpaceOn.closureExtend_apply`).
+* `TauCeti.CkHolderSpaceOn.closureExtend_eq_of_continuousWithinAt`: it is the value at the point
+  of any function agreeing with the element on `Ω` and continuous within `Ω` there.
+* `TauCeti.CkHolderSpaceOn.differentiableOn_closureExtend`: from order one on, the extension to the
+  closure is differentiable on `Ω`.
 * `TauCeti.CkHolderSpaceOn.lipschitzOnWith_extend`: on a convex open set an element of
   `C^{k+1,α}(Ω)` is Lipschitz on `Ω` with constant its norm.
 * `TauCeti.CkHolderSpaceOn.tendsto_closureExtend`,
@@ -81,6 +85,23 @@ theorem lipschitzOnWith_extend (hΩ : Convex ℝ (Ω : Set E)) (f : CkHolderSpac
       (Ω.isOpen.mem_nhds hx)
   · rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm, ← norm_iteratedFDeriv_one (𝕜 := ℝ)]
     exact f.norm_iteratedFDeriv_extend_le (i := 1) (by omega) ⟨x, hx⟩
+
+/-- From order one on, the extension to the closure is differentiable on `Ω`. -/
+theorem differentiableOn_closureExtend (f : CkHolderSpaceOn (k + 1) α Ω F) :
+    DifferentiableOn ℝ f.closureExtend Ω := fun x hx ↦
+  (((f.contDiffOn_extend.differentiableOn (by simp)).differentiableAt
+    (Ω.isOpen.mem_nhds hx)).congr_of_eventuallyEq
+      (f.closureExtend_eventuallyEq_extend hx)).differentiableWithinAt
+
+/-- **Uniqueness of the extension to the closure.** At a point of the closure of `Ω`, the
+extension to the closure takes the value of any function that agrees with the element on `Ω` and
+is continuous within `Ω` at that point. -/
+theorem closureExtend_eq_of_continuousWithinAt (f : CkHolderSpaceOn k α Ω F) {g : E → F}
+    (hfg : ∀ x : Ω, f x = g x) {x : E} (hx : x ∈ closure (Ω : Set E))
+    (hg : ContinuousWithinAt g Ω x) : f.closureExtend x = g x := by
+  refine extendFrom_eq hx (hg.tendsto.congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with y hy
+  rw [f.extend_apply_of_mem hy, hfg]
 
 variable [CompleteSpace F]
 
