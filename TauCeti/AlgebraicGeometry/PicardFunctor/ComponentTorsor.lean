@@ -363,10 +363,13 @@ theorem picardComponentRepresentableBy_homEquiv_diff_val {T : Over S}
 /-- `Pic⁰_{X/S}` acts on itself by its group law. -/
 theorem picardComponentSMul_zero : picardComponentSMul f 0 = μ[picardComponent f 0] := by
   refine (picardComponentRepresentableBy f 0).homEquiv.injective (Subtype.ext ?_)
-  rw [← Category.id_comp (picardComponentSMul f 0),
-    picardComponentRepresentableBy_homEquiv_comp_smul_val, Category.id_comp, Category.id_comp,
-    ← Category.id_comp μ, ← lift_fst_snd, ← Hom.mul_def,
-    picardComponentRepresentableBy_homEquiv_mul_val]
+  -- Both sides represent the sum of the classes of the two projections.
+  have hsmul := picardComponentRepresentableBy_homEquiv_comp_smul_val f 0 (𝟙 _)
+  have hmul := picardComponentRepresentableBy_homEquiv_mul_val f
+    (fst (picardComponent f 0) (picardComponent f 0)) (snd _ _)
+  simp only [Category.id_comp] at hsmul
+  rw [Hom.mul_def, lift_fst_snd, Category.id_comp] at hmul
+  exact hsmul.trans hmul.symm
 
 /-- In degree zero the difference is computed by the group law: `δ(L, M) = M * L⁻¹`, so
 `Pic⁰_{X/S}` is the trivial torsor under itself, with the unit section as origin. -/
