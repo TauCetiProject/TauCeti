@@ -11,8 +11,8 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 # Examples of represented operators of scalar forms
 
 `ContinuousLinearMap.closedFormOperator_smul_id_smul_innerSL` computes the operator represented by
-the scalar form `q(u, v) = b ⟪u, v⟫` along `j = a • id` as `(b / a ^ 2) • id`. Three worked
-examples:
+the scalar form `q(u, v) = b ⟪u, v⟫` along `j = a • id` as `(conj b / ‖a‖ ^ 2) • id`. Three
+worked examples:
 
 * `V = H = ℂ`, `j = id`, `q(u, v) = 2 conj(u) v` represents `A = 2 I`, at `u = 1`, `v = i` both
   sides of `q(u, v) = ⟪A u, v⟫` are `2 i`, and `q` is coercive with `α = 0` and `c = 2`;
@@ -40,7 +40,7 @@ theorem closedFormOperator_id_two_smul_innerSL
       ((2 : ℂ) • LinearMap.id).toPMap ⊤ := by
   have := closedFormOperator_smul_id_smul_innerSL (𝕜 := ℂ) (H := ℂ) (a := 1) one_ne_zero 2
     (by simpa using hj) (by simpa using hd)
-  norm_num at this ⊢
+  norm_num [Complex.conj_ofNat] at this ⊢
   exact this
 
 /-- At `u = 1` and `v = i`, both sides of `q(u, v) = ⟪2 u, v⟫` are `2 i`. -/
@@ -62,7 +62,7 @@ theorem closedFormOperator_id_zero (hj : Function.Injective (ContinuousLinearMap
     closedFormOperator (ContinuousLinearMap.id 𝕜 H) hj hd 0 = (0 : H →ₗ[𝕜] H).toPMap ⊤ := by
   have := closedFormOperator_smul_id_smul_innerSL (𝕜 := 𝕜) (H := H) (a := 1) one_ne_zero 0
     (by simpa using hj) (by simpa using hd)
-  simp only [RCLike.ofReal_one, one_smul, RCLike.ofReal_zero, zero_smul, zero_div] at this
+  simp only [one_smul, map_zero, zero_smul, zero_div] at this
   convert this using 2
   ext u v
   simp
@@ -83,7 +83,7 @@ theorem closedFormOperator_two_smul_id_innerSL
       ((1 / 4 : ℂ) • LinearMap.id).toPMap ⊤ := by
   have := closedFormOperator_smul_id_smul_innerSL (𝕜 := ℂ) (H := ℂ) (a := 2) two_ne_zero 1
     (by simpa using hj) (by simpa using hd)
-  norm_num at this ⊢
+  norm_num [Complex.norm_ofNat] at this ⊢
   exact this
 
 /-- With `A = (1 / 4) I` and `j = 2 id`, `⟪A (2 u), 2 v⟫ = conj(u) v`; with `A = I` the pairing
