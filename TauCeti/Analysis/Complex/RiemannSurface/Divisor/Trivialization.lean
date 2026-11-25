@@ -296,6 +296,26 @@ private theorem divisorSheaf_hom_ext_nhdsNE {D E : WeilDivisor X}
 
 /-! ### Multiplication morphisms -/
 
+/-- A constant multiplier satisfies the order bound `D - E` of a multiplication `𝒪_D ⟶ 𝒪_E`
+when `D ≤ E`. -/
+theorem sub_le_meromorphicOrderAt_const {D E : WeilDivisor X} (hDE : D ≤ E) (c : ℂ) (x : X) :
+    ((D x - E x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (fun _ ↦ c) x := by
+  classical
+  rw [meromorphicOrderAt_const]
+  split_ifs
+  · exact le_top
+  · exact_mod_cast sub_nonpos.2 (hDE x)
+
+/-- Order bounds of multipliers add up along products: if `h` and `k` satisfy the bounds `D - E`
+and `E - F` at `x`, then `h * k` satisfies the bound `D - F`. -/
+theorem sub_le_meromorphicOrderAt_mul {D E F : WeilDivisor X} {h k : X → ℂ} {x : X}
+    (hh : MeromorphicAt h x) (hk : MeromorphicAt k x)
+    (ho : ((D x - E x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt h x)
+    (hok : ((E x - F x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt k x) :
+    ((D x - F x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (h * k) x := by
+  rw [meromorphicOrderAt_mul hh hk, ← sub_add_sub_cancel (D x) (E x) (F x), WithTop.coe_add]
+  exact add_le_add ho hok
+
 /-- **Multiplication by a meromorphic function as a morphism `𝒪_D ⟶ 𝒪_E`.** If `h` is meromorphic
 at every point and its order at each point is at least the difference of the coefficients of `D`
 and `E`, multiplication by `h` sends sections of `𝒪_D` to sections of `𝒪_E`. Sections are
@@ -351,6 +371,24 @@ theorem divisorSheafGlobalMul_congr {D E : WeilDivisor X} {h k : X → ℂ}
     divisorSheafGlobalMul_hom_app_eventuallyEq k hk hok U f x,
     (tendsto_subtype_val_nhdsNE x).eventually (heq x)] with y hy hy' hhk
   rw [hy, hy', hhk]
+
+/-- **Composition.** Multiplying by `h` and then by `k` is multiplication by `h * k`. -/
+@[reassoc (attr := simp)]
+theorem divisorSheafGlobalMul_comp {D E F : WeilDivisor X} {h k : X → ℂ}
+    (hh : ∀ x, MeromorphicAt h x)
+    (ho : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt h x)
+    (hk : ∀ x, MeromorphicAt k x)
+    (hok : ∀ x, ((E x - F x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt k x) :
+    divisorSheafGlobalMul D E h hh ho ≫ divisorSheafGlobalMul E F k hk hok =
+      divisorSheafGlobalMul D F (h * k) (fun x ↦ (hh x).mul (hk x))
+        fun x ↦ sub_le_meromorphicOrderAt_mul (hh x) (hk x) (ho x) (hok x) := by
+  refine divisorSheaf_hom_ext_nhdsNE fun U f x ↦ ?_
+  rw [TopCat.Sheaf.comp_app, ConcreteCategory.comp_apply]
+  filter_upwards [divisorSheafGlobalMul_hom_app_eventuallyEq k hk hok U _ x,
+    divisorSheafGlobalMul_hom_app_eventuallyEq h hh ho U f x,
+    divisorSheafGlobalMul_hom_app_eventuallyEq (h * k) _ _ U f x] with y hy hy' hy''
+  rw [hy, hy', hy'', Pi.mul_apply]
+  ring
 
 /-- Multiplication by a function meromorphic at every point, whose order at each point is the
 difference of the coefficients of two divisors, identifies their sheaves on the whole surface.
@@ -487,13 +525,10 @@ theorem divisorSheafGlobalMulIso_trans {D E F : WeilDivisor X} {h g k : X → �
     (heq : ∀ x, k =ᶠ[𝓝[≠] x] h * g) :
     divisorSheafGlobalMulIso D E h hh ho ≪≫ divisorSheafGlobalMulIso E F g hg hog =
       divisorSheafGlobalMulIso D F k hk hok := by
-  refine Iso.ext (divisorSheaf_hom_ext_nhdsNE fun U f x ↦ ?_)
-  rw [Iso.trans_hom, TopCat.Sheaf.comp_app, ConcreteCategory.comp_apply]
-  filter_upwards [divisorSheafGlobalMulIso_hom_app_eventuallyEq h hh ho U f x,
-    divisorSheafGlobalMulIso_hom_app_eventuallyEq g hg hog U _ x,
-    divisorSheafGlobalMulIso_hom_app_eventuallyEq k hk hok U f x,
-    (tendsto_subtype_val_nhdsNE x).eventually (heq x)] with y hy hy' hy'' hkhg
-  rw [hy', hy, hy'', hkhg, Pi.mul_apply, mul_left_comm, mul_assoc]
+  refine Iso.ext ?_
+  rw [Iso.trans_hom, divisorSheafGlobalMulIso_hom, divisorSheafGlobalMulIso_hom,
+    divisorSheafGlobalMulIso_hom, divisorSheafGlobalMul_comp]
+  exact divisorSheafGlobalMul_congr _ _ _ _ fun x ↦ (heq x).symm
 
 /-- **Additivity in the multiplier.** The multiplication morphisms by `h` and by `k` add up to
 the multiplication morphism by `h + k`. -/
@@ -516,12 +551,8 @@ theorem divisorSheafGlobalMul_add {D E : WeilDivisor X} {h k : X → ℂ}
 /-- **Constant multipliers.** For `D ≤ E`, multiplication by a constant `c` is `c` times the
 inclusion `𝒪_D ⟶ 𝒪_E`. The scalar multiple is taken in the `ℂ`-linear category of presheaves. -/
 theorem divisorSheafGlobalMul_const_hom {D E : WeilDivisor X} (hDE : D ≤ E) (c : ℂ) :
-    (divisorSheafGlobalMul D E (fun _ ↦ c) (fun x ↦ meromorphicAt_const c x) (fun x ↦ by
-      classical
-      rw [meromorphicOrderAt_const]
-      split_ifs
-      · exact le_top
-      · exact_mod_cast sub_nonpos.2 (hDE x))).hom = c • (divisorSheafMapOfLE hDE).hom := by
+    (divisorSheafGlobalMul D E (fun _ ↦ c) (fun x ↦ meromorphicAt_const c x)
+      (sub_le_meromorphicOrderAt_const hDE c)).hom = c • (divisorSheafMapOfLE hDE).hom := by
   refine divisorPresheaf_hom_ext_nhdsNE fun U f x ↦ ?_
   filter_upwards [divisorSheafGlobalMul_hom_app_eventuallyEq _ _ _ U f x,
     divisorSheafMapOfLE_app_eventuallyEq hDE U f x] with y hy hy'

@@ -43,8 +43,8 @@ isomorphism-invariance statements consumed by Riemann–Roch for `𝒪(K - D)` a
 * `TauCeti.RiemannSurface.divisorSheafIsoSubPrincipalDivisor`: `𝒪(D) ≅ 𝒪(D - (f))`.
 * `TauCeti.RiemannSurface.divisorSheafIsoOfLinearlyEquivalent`: `𝒪(D) ≅ 𝒪(E)` for linearly
   equivalent `D` and `E`.
-* `TauCeti.RiemannSurface.divisorSheafMul`: multiplication by a meromorphic function `g` whose
-  order is at least `D - E`, as a morphism `𝒪(D) ⟶ 𝒪(E)`.
+* `TauCeti.RiemannSurface.divisorSheafMeromorphicMul`: multiplication by a meromorphic function
+  `g` whose order is at least `D - E`, as a morphism `𝒪(D) ⟶ 𝒪(E)`.
 * `TauCeti.RiemannSurface.divisorCechCohomologyIsoOfPrincipalDivisorEq` and
   `TauCeti.RiemannSurface.divisorCechCohomologyIsoOfLinearlyEquivalent`: the induced
   isomorphisms `Hⁿ(X, 𝒪(D)) ≅ Hⁿ(X, 𝒪(E))`.
@@ -57,10 +57,12 @@ isomorphism-invariance statements consumed by Riemann–Roch for `𝒪(K - D)` a
   identity for `f = 1`, and is compatible with inverses and products of multipliers.
 * `TauCeti.RiemannSurface.toMeromorphic_divisorSheafIsoOfPrincipalDivisorEq_hom_app_top`: on
   global sections, viewed as meromorphic functions, the isomorphism is multiplication by `f`.
-* `TauCeti.RiemannSurface.divisorSheafMul_add`, `divisorSheafMul_algebraMap_hom`,
-  `divisorSheafMapOfLE_comp_divisorSheafMul` and `divisorSheafMul_comp_divisorSheafMapOfLE`:
-  multiplication is additive in the multiplier, is `c` times the inclusion for a constant `c`,
-  and commutes with the inclusions of divisor sheaves.
+* `TauCeti.RiemannSurface.divisorSheafMeromorphicMul_add`,
+  `divisorSheafMeromorphicMul_comp`, `divisorSheafMeromorphicMul_algebraMap_hom`,
+  `divisorSheafMapOfLE_comp_divisorSheafMeromorphicMul` and
+  `divisorSheafMeromorphicMul_comp_divisorSheafMapOfLE`: multiplication is additive in the
+  multiplier, takes products to composites, is `c` times the inclusion for a constant `c`, and
+  commutes with the inclusions of divisor sheaves.
 * `TauCeti.RiemannSurface.divisorSheafIsoOfPrincipalDivisorEq_hom_comp_divisorSheafMapOfLE`:
   multiplication by a nonzero `f` is the isomorphism `𝒪(D) ≅ 𝒪(D - (f))` followed by an
   inclusion.
@@ -296,106 +298,137 @@ variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘
 /-- **Multiplication by a meromorphic function, `𝒪_D ⟶ 𝒪_E`.** If the order of the meromorphic
 function `g` is at least `D - E` at every point, multiplication by `g` sends sections of `𝒪_D` to
 sections of `𝒪_E`. For an effective divisor `P` with `(g) ≥ -P` this is the multiplication map
-`𝒪_D ⟶ 𝒪_{D + P}`. It is multiplication by the finite part of `g`, followed by the normalization
-of divisor sections; `g` may be zero. -/
-def divisorSheafMul {D E : WeilDivisor X} (g : MeromorphicFunction X)
+`𝒪_D ⟶ 𝒪_{D + P}`. It is `divisorSheafGlobalMul` for the finite part of `g`, so it is defined on
+the whole surface; `g` may be zero. -/
+def divisorSheafMeromorphicMul {D E : WeilDivisor X} (g : MeromorphicFunction X)
     (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) :
     divisorSheaf D ⟶ divisorSheaf E :=
   divisorSheafGlobalMul D E g.finitePart g.meromorphicAt_finitePart fun x ↦
     (hg x).trans_eq (MeromorphicFunction.order_apply x g)
 
-/-- `divisorSheafMul` is `divisorSheafGlobalMul` for the finite part of `g`. -/
-theorem divisorSheafMul_def {D E : WeilDivisor X} (g : MeromorphicFunction X)
+/-- `divisorSheafMeromorphicMul` is `divisorSheafGlobalMul` for the finite part of `g`. -/
+theorem divisorSheafMeromorphicMul_def {D E : WeilDivisor X} (g : MeromorphicFunction X)
     (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) :
-    divisorSheafMul g hg = divisorSheafGlobalMul D E g.finitePart g.meromorphicAt_finitePart
-      fun x ↦ (hg x).trans_eq (MeromorphicFunction.order_apply x g) :=
+    divisorSheafMeromorphicMul g hg =
+      divisorSheafGlobalMul D E g.finitePart g.meromorphicAt_finitePart
+        fun x ↦ (hg x).trans_eq (MeromorphicFunction.order_apply x g) :=
   (rfl)
 
-/-- On a punctured neighbourhood of each point, `divisorSheafMul` sends a section `s` of `𝒪_D`
-to `g s`. -/
-theorem divisorSheafMul_hom_app_eventuallyEq {D E : WeilDivisor X} (g : MeromorphicFunction X)
+/-- On a punctured neighbourhood of each point, `divisorSheafMeromorphicMul` sends a section `s`
+of `𝒪_D` to `g s`. -/
+theorem divisorSheafMeromorphicMul_hom_app_eventuallyEq {D E : WeilDivisor X}
+    (g : MeromorphicFunction X)
     (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (U : Opens X)
     (s : (divisorSheaf D).obj.obj (op U)) (x : U) :
-    (divisorSheafSectionsEquiv E U ((divisorSheafMul g hg).hom.app (op U) s)).val =ᶠ[𝓝[≠] x]
-      fun y ↦ g.finitePart y * (divisorSheafSectionsEquiv D U s).val y :=
+    (divisorSheafSectionsEquiv E U ((divisorSheafMeromorphicMul g hg).hom.app (op U) s)).val
+      =ᶠ[𝓝[≠] x] fun y ↦ g.finitePart y * (divisorSheafSectionsEquiv D U s).val y :=
   divisorSheafGlobalMul_hom_app_eventuallyEq _ _ _ U s x
 
-/-- On global sections, `divisorSheafMul` is multiplication by `g` in the field of meromorphic
-functions. -/
-theorem toMeromorphic_divisorSheafMul_hom_app_top {D E : WeilDivisor X}
+/-- On global sections, `divisorSheafMeromorphicMul` is multiplication by `g` in the field of
+meromorphic functions. -/
+theorem toMeromorphic_divisorSheafMeromorphicMul_hom_app_top {D E : WeilDivisor X}
     (g : MeromorphicFunction X)
     (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g)
     (s : (divisorSheaf D).obj.obj (op ⊤)) :
     divisorSections.toMeromorphic E (divisorSheafSectionsEquiv E ⊤
-        ((divisorSheafMul g hg).hom.app (op ⊤) s)) =
+        ((divisorSheafMeromorphicMul g hg).hom.app (op ⊤) s)) =
       g * divisorSections.toMeromorphic D (divisorSheafSectionsEquiv D ⊤ s) :=
   toMeromorphic_eq_mul_of_eventuallyEq _ (fun _ ↦ EventuallyEq.rfl) _ _
-    (divisorSheafMul_hom_app_eventuallyEq g hg ⊤ s)
+    (divisorSheafMeromorphicMul_hom_app_eventuallyEq g hg ⊤ s)
 
-/-- **Additivity in the multiplier.** Multiplication by `g₁` and by `g₂` add up to multiplication
-by `g₁ + g₂`. -/
-theorem divisorSheafMul_add {D E : WeilDivisor X} (g₁ g₂ : MeromorphicFunction X)
+/-- **Additivity in the multiplier.** Multiplication by `g₁ + g₂` is the sum of the
+multiplications by `g₁` and by `g₂`. -/
+theorem divisorSheafMeromorphicMul_add {D E : WeilDivisor X} (g₁ g₂ : MeromorphicFunction X)
     (hg₁ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
     (hg₂ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₂) :
-    divisorSheafMul (g₁ + g₂)
+    divisorSheafMeromorphicMul (g₁ + g₂)
         (fun x ↦ (le_min (hg₁ x) (hg₂ x)).trans ((MeromorphicFunction.order x).map_add _ _)) =
-      divisorSheafMul g₁ hg₁ + divisorSheafMul g₂ hg₂ := by
-  rw [divisorSheafMul_def, divisorSheafMul_def, divisorSheafMul_def, ← divisorSheafGlobalMul_add]
+      divisorSheafMeromorphicMul g₁ hg₁ + divisorSheafMeromorphicMul g₂ hg₂ := by
+  rw [divisorSheafMeromorphicMul_def, divisorSheafMeromorphicMul_def,
+    divisorSheafMeromorphicMul_def, ← divisorSheafGlobalMul_add]
   exact divisorSheafGlobalMul_congr _ _ _ _ fun x ↦
     MeromorphicFunction.finitePart_add_eventuallyEq g₁ g₂ x
 
 /-- Multiplication by `g₁ - g₂` is the difference of the multiplications by `g₁` and by `g₂`. -/
-theorem divisorSheafMul_sub {D E : WeilDivisor X} (g₁ g₂ : MeromorphicFunction X)
+theorem divisorSheafMeromorphicMul_sub {D E : WeilDivisor X} (g₁ g₂ : MeromorphicFunction X)
     (hg₁ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
     (hg₂ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₂) :
-    divisorSheafMul (g₁ - g₂)
+    divisorSheafMeromorphicMul (g₁ - g₂)
         (fun x ↦ (le_min (hg₁ x) (hg₂ x)).trans ((MeromorphicFunction.order x).map_sub _ _)) =
-      divisorSheafMul g₁ hg₁ - divisorSheafMul g₂ hg₂ := by
-  rw [eq_sub_iff_add_eq, ← divisorSheafMul_add]
+      divisorSheafMeromorphicMul g₁ hg₁ - divisorSheafMeromorphicMul g₂ hg₂ := by
+  rw [eq_sub_iff_add_eq, ← divisorSheafMeromorphicMul_add]
   congr 1
   exact sub_add_cancel g₁ g₂
+
+/-- Order bounds of meromorphic multipliers add up along products: if `g₁` and `g₂` satisfy the
+bounds `D - E` and `E - F` at `x`, then `g₁ g₂` satisfies the bound `D - F`. -/
+theorem sub_le_order_mul {D E F : WeilDivisor X} {g₁ g₂ : MeromorphicFunction X} {x : X}
+    (hg₁ : ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
+    (hg₂ : ((E x - F x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₂) :
+    ((D x - F x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x (g₁ * g₂) := by
+  rw [(MeromorphicFunction.order x).map_mul, ← sub_add_sub_cancel (D x) (E x) (F x),
+    WithTop.coe_add]
+  exact add_le_add hg₁ hg₂
+
+/-- **Composition.** Multiplying by `g₁` and then by `g₂` is multiplication by `g₁ g₂`. -/
+@[reassoc (attr := simp)]
+theorem divisorSheafMeromorphicMul_comp {D E F : WeilDivisor X} (g₁ g₂ : MeromorphicFunction X)
+    (hg₁ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
+    (hg₂ : ∀ x, ((E x - F x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₂) :
+    divisorSheafMeromorphicMul g₁ hg₁ ≫ divisorSheafMeromorphicMul g₂ hg₂ =
+      divisorSheafMeromorphicMul (g₁ * g₂) fun x ↦ sub_le_order_mul (hg₁ x) (hg₂ x) := by
+  rw [divisorSheafMeromorphicMul_def, divisorSheafMeromorphicMul_def,
+    divisorSheafMeromorphicMul_def, divisorSheafGlobalMul_comp]
+  exact divisorSheafGlobalMul_congr _ _ _ _ fun x ↦
+    (MeromorphicFunction.finitePart_mul_eventuallyEq g₁ g₂ x).symm
+
+/-- A constant multiplier satisfies the order bound `D - E` of a multiplication `𝒪_D ⟶ 𝒪_E`
+when `D ≤ E`. -/
+theorem sub_le_order_algebraMap {D E : WeilDivisor X} (hDE : D ≤ E) (c : ℂ) (x : X) :
+    ((D x - E x : ℤ) : WithTop ℤ) ≤
+      MeromorphicFunction.order x (algebraMap ℂ (MeromorphicFunction X) c) := by
+  rw [MeromorphicFunction.order_apply, MeromorphicFunction.finitePart_algebraMap]
+  exact sub_le_meromorphicOrderAt_const hDE c x
 
 /-- **Constant multipliers.** For `D ≤ E`, multiplication by a constant `c` is `c` times the
 inclusion `𝒪_D ⟶ 𝒪_E`, as morphisms of the underlying presheaves, whose category is
 `ℂ`-linear. -/
-theorem divisorSheafMul_algebraMap_hom {D E : WeilDivisor X} (hDE : D ≤ E) (c : ℂ) :
-    (divisorSheafMul (algebraMap ℂ (MeromorphicFunction X) c) (fun x ↦ by
-      rcases eq_or_ne c 0 with rfl | hc
-      · simp
-      · rw [MeromorphicFunction.order_algebraMap hc]
-        exact_mod_cast sub_nonpos.2 (hDE x))).hom = c • (divisorSheafMapOfLE hDE).hom := by
-  rw [← divisorSheafGlobalMul_const_hom hDE c, divisorSheafMul_def]
+theorem divisorSheafMeromorphicMul_algebraMap_hom {D E : WeilDivisor X} (hDE : D ≤ E) (c : ℂ) :
+    (divisorSheafMeromorphicMul (algebraMap ℂ (MeromorphicFunction X) c)
+      (sub_le_order_algebraMap hDE c)).hom = c • (divisorSheafMapOfLE hDE).hom := by
+  rw [← divisorSheafGlobalMul_const_hom hDE c, divisorSheafMeromorphicMul_def]
   congr 1
   exact divisorSheafGlobalMul_congr _ _ _ _ fun x ↦ by
     rw [MeromorphicFunction.finitePart_algebraMap]
 
 /-- For `D ≤ E`, multiplication by `1` is the inclusion `𝒪_D ⟶ 𝒪_E`. -/
 @[simp]
-theorem divisorSheafMul_one {D E : WeilDivisor X} (hDE : D ≤ E) :
-    divisorSheafMul 1 (fun x ↦ by
-      rw [(MeromorphicFunction.order x).map_one]
-      exact_mod_cast sub_nonpos.2 (hDE x)) = divisorSheafMapOfLE hDE := by
+theorem divisorSheafMeromorphicMul_one {D E : WeilDivisor X} (hDE : D ≤ E) :
+    divisorSheafMeromorphicMul 1
+        (fun x ↦ map_one (algebraMap ℂ (MeromorphicFunction X)) ▸ sub_le_order_algebraMap hDE 1 x) =
+      divisorSheafMapOfLE hDE := by
   apply Sheaf.hom_ext
-  rw [← one_smul ℂ (divisorSheafMapOfLE hDE).hom, ← divisorSheafMul_algebraMap_hom hDE 1]
+  rw [← one_smul ℂ (divisorSheafMapOfLE hDE).hom,
+    ← divisorSheafMeromorphicMul_algebraMap_hom hDE 1]
   simp only [map_one]
 
 /-- Multiplication by `g` commutes with the inclusions of divisor sheaves in the source. -/
 @[reassoc (attr := simp)]
-theorem divisorSheafMapOfLE_comp_divisorSheafMul {D D' E : WeilDivisor X} (hDD' : D ≤ D')
-    (g : MeromorphicFunction X)
+theorem divisorSheafMapOfLE_comp_divisorSheafMeromorphicMul {D D' E : WeilDivisor X}
+    (hDD' : D ≤ D') (g : MeromorphicFunction X)
     (hg : ∀ x, ((D' x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) :
-    divisorSheafMapOfLE hDD' ≫ divisorSheafMul g hg =
-      divisorSheafMul g
+    divisorSheafMapOfLE hDD' ≫ divisorSheafMeromorphicMul g hg =
+      divisorSheafMeromorphicMul g
         (fun x ↦ (WithTop.coe_le_coe.2 (sub_le_sub_right (hDD' x) _)).trans (hg x)) :=
   divisorSheafMapOfLE_comp_divisorSheafGlobalMul hDD' _ _ _
 
 /-- Multiplication by `g` commutes with the inclusions of divisor sheaves in the target. -/
 @[reassoc (attr := simp)]
-theorem divisorSheafMul_comp_divisorSheafMapOfLE {D E E' : WeilDivisor X}
+theorem divisorSheafMeromorphicMul_comp_divisorSheafMapOfLE {D E E' : WeilDivisor X}
     (g : MeromorphicFunction X)
     (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (hEE' : E ≤ E') :
-    divisorSheafMul g hg ≫ divisorSheafMapOfLE hEE' =
-      divisorSheafMul g
+    divisorSheafMeromorphicMul g hg ≫ divisorSheafMapOfLE hEE' =
+      divisorSheafMeromorphicMul g
         (fun x ↦ (WithTop.coe_le_coe.2 (sub_le_sub_left (hEE' x) _)).trans (hg x)) :=
   divisorSheafGlobalMul_comp_divisorSheafMapOfLE _ _ _ hEE'
 
@@ -406,12 +439,12 @@ theorem divisorSheafIsoOfPrincipalDivisorEq_hom_comp_divisorSheafMapOfLE [Compac
     {D E F : WeilDivisor X} (f : Additive (MeromorphicFunction X)ˣ)
     (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - F) (hFE : F ≤ E) :
     (divisorSheafIsoOfPrincipalDivisorEq f hf).hom ≫ divisorSheafMapOfLE hFE =
-      divisorSheafMul (f.toMul : MeromorphicFunction X) (fun x ↦ by
+      divisorSheafMeromorphicMul (f.toMul : MeromorphicFunction X) (fun x ↦ by
         rw [← MeromorphicFunction.coe_coeff_principalDivisor_orderSystem, hf,
           WeilDivisor.coeff, Finsupp.sub_apply]
         exact_mod_cast sub_le_sub_left (hFE x) _) := by
   rw [divisorSheafIsoOfPrincipalDivisorEq, divisorSheafGlobalMulIso_hom,
-    divisorSheafGlobalMul_comp_divisorSheafMapOfLE, divisorSheafMul_def]
+    divisorSheafGlobalMul_comp_divisorSheafMapOfLE, divisorSheafMeromorphicMul_def]
 
 end Multiplication
 
