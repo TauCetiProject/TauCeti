@@ -70,6 +70,13 @@ lemma app_ofDescentDataMap {D D' : F.DescentData f} (φ : D ⟶ D') ⦃T : C⦄ 
       (F.map a.op.toLoc).toFunctor.map (φ.hom i) ≫ D'.hom (a ≫ f i) a b rfl w.symm :=
   Hom.app_ofApp _ _ _ _ _ _
 
+/-- The local evaluations of `ofDescentDataMap φ` along a single morphism `a : T ⟶ X i`. -/
+@[simp]
+lemma app_ofDescentDataMap_self {D D' : F.DescentData f} (φ : D ⟶ D') ⦃T : C⦄ ⦃i : ι⦄
+    (a : T ⟶ X i) (w : a ≫ f i = a ≫ f i) :
+    Hom.app (ofDescentDataMap (hf := hf) φ) a a w = (F.map a.op.toLoc).toFunctor.map (φ.hom i) := by
+  rw [app_ofDescentDataMap, DescentData.hom_self _ _ _ rfl, Category.comp_id]
+
 variable (f hf) in
 /-- Descent data along a fixed covering family embed into `Obj J F U`. -/
 abbrev ofDescentDataFunctor : F.DescentData f ⥤ Obj.{w} J F U where
@@ -154,11 +161,9 @@ morphism `b : T ⟶ U`. -/
 lemma app_toObjFunctor_map_self {U : C} {M M' : F.obj (.mk (op U))} (φ : M ⟶ M') ⦃T : C⦄
     (b : T ⟶ U) (w : b ≫ 𝟙 U = b ≫ 𝟙 U) :
     Hom.app ((toObjFunctor.{w} J F U).map φ) (i := PUnit.unit) (j := PUnit.unit) b b w =
-      (F.map b.op.toLoc).toFunctor.map ((F.map (𝟙 U).op.toLoc).toFunctor.map φ) := by
-  rw [app_toObjFunctor_map, toObjFunctor_obj_hom_self]
-  -- The identity is on `((toObjFunctor J F U).obj M').D.obj _`, which is
-  -- `(F.map (𝟙 U).op.toLoc).toFunctor.obj M'` only after unfolding, so `rw` cannot remove it.
-  exact Category.comp_id _
+      (F.map b.op.toLoc).toFunctor.map ((F.map (𝟙 U).op.toLoc).toFunctor.map φ) :=
+  app_ofDescentDataMap_self (hf := ofArrows_id_mem.{w} U)
+    ((F.toDescentData (fun _ : PUnit.{w + 1} ↦ 𝟙 U)).map φ) (i := PUnit.unit) b w
 
 /-- Morphisms between descent data along the identity of `U` are determined by their local
 evaluations along single morphisms `b : T ⟶ U`. -/

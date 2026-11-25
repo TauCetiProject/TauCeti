@@ -92,6 +92,14 @@ lemma toObjPullbackIso_hom {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) ⦃T
       (F.mapComp' (𝟙 U).op.toLoc c.op.toLoc c.op.toLoc (by simp)).hom.toNatTrans.app M :=
   (rfl)
 
+lemma toObjPullbackIso_inv {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) ⦃T : C⦄ (b : T ⟶ V)
+    (c : T ⟶ U) (h : b ≫ q = c) :
+    (toObjPullbackIso q M b c h).inv =
+      (F.mapComp' (𝟙 U).op.toLoc c.op.toLoc c.op.toLoc (by simp)).inv.toNatTrans.app M ≫
+      (F.mapComp' q.op.toLoc b.op.toLoc c.op.toLoc (by rw [← h]; rfl)).hom.toNatTrans.app M ≫
+      (F.mapComp' (𝟙 V).op.toLoc b.op.toLoc b.op.toLoc (by simp)).hom.toNatTrans.app _ :=
+  Category.assoc _ _ _
+
 /-- The identifications `toObjPullbackIso` are natural in `M`. -/
 @[reassoc]
 lemma toObjPullbackIso_hom_naturality {U V : C} (q : V ⟶ U) {M M' : F.obj (.mk (op U))}
@@ -160,10 +168,10 @@ def toObjPullbackData {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) :
     -- `toObjFunctor`.
     erw [pullHom_comp (f₂ := b) (M₂ := (F.map q.op.toLoc).toFunctor.obj M) _ _ g gb gb gc hgb
       hgb hgc, pullHom_comp (f₂ := c) (M₂ := M) _ _ g gb gc gc hgb hgc hgc]
-    erw [pullHom_mapComp'_inv, pullHom_mapComp'_inv, pullHom_mapComp'_hom]
-    -- The main goal holds up to the proofs of the factorizations; the side conditions are the
-    -- factorizations `c ≫ 𝟙 U = c`, `b ≫ q = c` and `b ≫ 𝟙 V = b`.
-    exacts [rfl, Category.comp_id c, h, Category.comp_id b]
+    erw [pullHom_mapComp'_inv _ _ _ _ (Category.comp_id b), pullHom_mapComp'_inv _ _ _ _ h,
+      pullHom_mapComp'_hom _ _ _ _ (Category.comp_id c)]
+    -- The two sides differ only in the proofs of the factorizations.
+    rfl
   hom_eq T j j' q' b b' hb hb' c c' h h' := by
     obtain rfl : b = q' := by simpa using hb
     obtain rfl : b' = b := by simpa using hb'
@@ -345,7 +353,7 @@ def toStackificationNatIso {U V : C} (q : V ⟶ U) :
       -- after unfolding, and rewriting with `Functor.comp_map` first unfolds the abbreviation
       -- `toObjFunctor`, so `toObjFunctor_map_map` is matched by `erw`.
       erw [toObjFunctor_map_map, pullFunctor_map]
-      rw [transport_comp, transport_comp, Category.comp_id, Category.id_comp]
+      simp only [transport_comp, Category.comp_id, Category.id_comp]
 
 /-- The components of `toStackificationNatIso` are transports of identities. -/
 lemma toStackificationNatIso_hom_app {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) :
@@ -365,8 +373,8 @@ lemma toStackificationNatIso_hom_app_comp_pullFunctorId_hom_app {U : C}
     (toStackificationNatIso.{w} J F (𝟙 U)).hom.app M ≫
         (pullFunctorId J F U).hom.app ((toObjFunctor.{w} J F U).obj M) =
       (toObjFunctor.{w} J F U).map ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M) := by
-  rw [toStackificationNatIso_hom_app, pullFunctorId_hom_app, transport_comp, Category.comp_id,
-    transport_toObjPullbackData_refl]
+  rw [← transport_toObjPullbackData_refl, toStackificationNatIso_hom_app, pullFunctorId_hom_app]
+  simp only [transport_comp, Category.comp_id]
 
 /-- The composition condition for the naturality isomorphisms `toStackificationNatIso`. -/
 lemma toStackificationNatIso_hom_app_comp_pullFunctorComp_hom_app {U V W : C} (q : V ⟶ U)
@@ -377,12 +385,15 @@ lemma toStackificationNatIso_hom_app_comp_pullFunctorComp_hom_app {U V W : C} (q
           ((F.mapComp' q.op.toLoc r.op.toLoc (r ≫ q).op.toLoc rfl).hom.toNatTrans.app M) ≫
         (toStackificationNatIso.{w} J F r).hom.app ((F.map q.op.toLoc).toFunctor.obj M) ≫
           (pullFunctor J F r).map ((toStackificationNatIso.{w} J F q).hom.app M) := by
-  rw [toStackificationNatIso_hom_app, toStackificationNatIso_hom_app,
-    toStackificationNatIso_hom_app, pullFunctorComp_hom_app, transport_comp, Category.comp_id,
-    pullFunctor_map, transport_transport _ _ _ _ _ (r ≫ q) rfl,
-    ← transport_id (toObjPullbackData q M),
-    transport_transport _ _ _ _ _ (r ≫ q) rfl, transport_comp, Category.comp_id,
-    ← transport_toObjPullbackData_trans, transport_comp, Category.comp_id]
+  -- Write every morphism as a transport: the embedded composition isomorphism of `F` by
+  -- `transport_toObjPullbackData_trans`, and the identity before the pullback of the naturality
+  -- isomorphism along `r` as the transport of the identity along `toObjPullbackData q M`.
+  rw [← transport_toObjPullbackData_trans, toStackificationNatIso_hom_app,
+    toStackificationNatIso_hom_app, toStackificationNatIso_hom_app, pullFunctorComp_hom_app,
+    pullFunctor_map, ← transport_id (toObjPullbackData q M),
+    transport_transport _ _ _ _ _ (r ≫ q) rfl, transport_transport _ _ _ _ _ (r ≫ q) rfl]
+  -- Compose the transports.
+  simp only [transport_comp, Category.comp_id]
   -- The two sides differ only in writing `pullObj q ((toObjFunctor J F U).obj M)` as
   -- `(toObjFunctor J F U ⋙ pullFunctor J F q).obj M`, equal by `Functor.comp_obj` and the
   -- definition of the abbreviation `pullFunctor`. Rewriting with `Functor.comp_obj` fails (the
