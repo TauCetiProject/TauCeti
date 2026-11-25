@@ -140,7 +140,7 @@ theorem algebraMap_apply_eq_algebraMap {S : Type*} [CommSemiring S] [Algebra S K
     HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply]
 
 /-- Scalar multiplication on finite adeles is computed place by place. -/
-theorem smul_apply {S : Type*} [CommSemiring S] [Algebra S K]
+@[simp] theorem smul_apply {S : Type*} [CommSemiring S] [Algebra S K]
     [Algebra S (FiniteAdeleRing R K)] [IsScalarTower S K (FiniteAdeleRing R K)]
     (c : S) (a : FiniteAdeleRing R K) (v : HeightOneSpectrum R) :
     (c • a) v = c • a v := by
@@ -359,6 +359,15 @@ theorem sub_algebraMap_add_algebraMap_mem_integralAdeles {f : FiniteAdeleRing R 
     f - algebraMap K (FiniteAdeleRing R K) (x + algebraMap R K y) ∈ integralAdeles R K := by
   rw [map_add, ← IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), sub_add_eq_sub_sub]
   exact sub_mem hx ((integralAdeles R K).algebraMap_mem y)
+
+variable (K) in
+/-- If `R` is not a field, the diagonal map `K → 𝔸_f` is injective: `R` then has a maximal
+ideal, hence a finite place, and `K` embeds in its completion there. -/
+theorem algebraMap_injective (hR : ¬ IsField R) :
+    Function.Injective (algebraMap K (FiniteAdeleRing R K)) := by
+  obtain ⟨M, hM⟩ := Ideal.exists_maximal R
+  let v : HeightOneSpectrum R := ⟨M, hM.isPrime, Ring.ne_bot_of_isMaximal_of_not_isField hM hR⟩
+  exact fun x y h ↦ by simpa using congr($h v)
 
 end IsDedekindDomain.FiniteAdeleRing
 

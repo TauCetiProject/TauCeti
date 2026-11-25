@@ -14,26 +14,28 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
+import TauCeti.Analysis.Sobolev.BesselPotential.OrderInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 
 /-!
-# Multiplication by functions with bounded derivatives on `H^s` for every real `s`
+# Multiplication by functions with bounded derivatives on `H^{s,p}` for every real `s`
 
 Let `g : E → ℂ` be a function whose iterated derivatives of order at most `⌈|s|⌉` are bounded.
 This file proves that multiplication by `g` is a bounded operator on the
 Hilbert Bessel-potential space `H^s = H^{s,2}(E, F)`, for every real order `s`, including negative
-orders, where the elements of `H^s` are genuine tempered distributions. Unlike multiplication by a
-Schwartz function (`BesselPotentialSpace.smulLeftCLM`), the multiplier need not decay: smooth
-functions whose derivatives up to order `⌈|s|⌉` are bounded, such as constants and cut-off entries
-of transition matrices of vector bundles, are allowed. If `g` does not have temperate growth,
-multiplication by `g` is the junk value `0`.
+orders, where the elements of `H^s` are genuine tempered distributions, and that it preserves the
+Bessel-potential spaces `H^{s,p}` of tempered distributions for every real `s` and `1 < p < ∞`.
+Unlike multiplication by a Schwartz function (`BesselPotentialSpace.smulLeftCLM`), the multiplier
+need not decay: smooth functions whose derivatives up to order `⌈|s|⌉` are bounded, such as
+constants and cut-off entries of transition matrices of vector bundles, are allowed. If `g` does
+not have temperate growth, multiplication by `g` is the junk value `0`.
 
 The matrix-valued versions follow for finite-dimensional complex Hilbert spaces `F` and `G`. For
 `A : E → (F →L[ℂ] G)` of temperate growth with bounded derivatives of order at most `⌈|s|⌉`, the
 pointwise multiplication `u ↦ (x ↦ A x (u x))` of Schwartz functions extends to a bounded operator
 `H^s(E, F) → H^s(E, G)` (`SchwartzMap.hasSobolevExtension_bilinLeftCLM_apply`). On tempered
 distributions, for `A : E → (F →L[ℂ] G)` of class `C^{⌈|s|⌉}` with bounded derivatives of order at
-most `⌈|s|⌉`, `TemperedDistribution.mulLeftCLM A` preserves `H^s`
+most `⌈|s|⌉`, `TemperedDistribution.mulLeftCLM A` preserves `H^{s,p}` for `1 < p < ∞`
 (`TemperedDistribution.MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`); this is
 multiplication by `A` when `A` has temperate growth, and a junk value otherwise (see
 `TemperedDistribution.mulLeftCLM`). These are the estimates that make localization by cutoff
@@ -41,15 +43,15 @@ functions and changes of frame bounded on the Sobolev scale of a vector bundle.
 
 ## The argument
 
-* **Integer orders.** Multiplication by `g` maps `H^k` into itself for every integer `k`
-  (`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast`), so by the
-  closed graph theorem (`BesselPotentialSpace.continuous_of_continuous_toDistr`) it is bounded on
-  `H^k`.
+* **Integer orders.** Multiplication by `g` maps `H^{k,p}` into itself for every integer `k` and
+  `1 < p < ∞` (`TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast`),
+  so for `p = 2`, by the closed graph theorem
+  (`BesselPotentialSpace.continuous_of_continuous_toDistr`), it is bounded on `H^k`.
 * **Real orders.** Between two consecutive integers by the interpolation theorem for the Hilbert
-  scale (`SchwartzMap.HasSobolevExtension.interpolate`).
-* **Distributions.** The bounded extension agrees with Mathlib's multiplication of tempered
-  distributions `TemperedDistribution.smulLeftCLM` on the dense subspace of Schwartz functions,
-  hence everywhere.
+  scale (`SchwartzMap.HasSobolevExtension.interpolate`) for the bounded extension on Schwartz
+  functions, and by the complex interpolation of the spaces `H^{s,p}`
+  (`TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`, applied through
+  `TemperedDistribution.MemSobolev.map_of_forall_intCast`) for tempered distributions.
 * **Matrices.** Expanding `A` in a basis `(Lᵢ)` of `F →L[ℂ] G`, multiplication by `A` is the sum
   of the scalar multiplications by the coordinates of `A` followed by the constant maps `Lᵢ`.
 
@@ -57,14 +59,14 @@ functions and changes of frame bounded on the Sobolev scale of a vector bundle.
 
 * `SchwartzMap.hasSobolevExtension_smulLeftCLM`: multiplication by `g` extends to a bounded operator
   `H^s(E, F) → H^s(E, F)`, for every real `s`.
-* `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: if `f ∈ H^s`
-  then `g f ∈ H^s`, for every real `s`.
+* `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: for
+  `1 < p < ∞`, if `f ∈ H^{s,p}` then `g f ∈ H^{s,p}`, for every real `s`.
 * `SchwartzMap.hasSobolevExtension_bilinLeftCLM_apply`: multiplication by a matrix-valued `A` of
   temperate growth with bounded derivatives extends to a bounded operator `H^s(E, F) → H^s(E, G)`.
 * `TemperedDistribution.MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: for `A` of class
-  `C^{⌈|s|⌉}` with bounded derivatives up to order `⌈|s|⌉`, if `f ∈ H^s` then
-  `TemperedDistribution.mulLeftCLM A f ∈ H^s`, for every real `s` (multiplication by `A` when `A`
-  has temperate growth, and a junk value otherwise).
+  `C^{⌈|s|⌉}` with bounded derivatives up to order `⌈|s|⌉` and `1 < p < ∞`, if `f ∈ H^{s,p}` then
+  `TemperedDistribution.mulLeftCLM A f ∈ H^{s,p}`, for every real `s` (multiplication by `A` when
+  `A` has temperate growth, and a junk value otherwise).
 
 ## References
 
@@ -79,7 +81,7 @@ public section
 noncomputable section
 
 open MeasureTheory TemperedDistribution
-open scoped SchwartzMap BesselPotentialSpace
+open scoped ENNReal SchwartzMap BesselPotentialSpace
 
 namespace SchwartzMap
 
@@ -175,47 +177,33 @@ namespace TemperedDistribution
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-  [CompleteSpace F]
+  [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **Multipliers with bounded derivatives preserve `H^s`, for every real `s`.** If the iterated
-derivatives of `g` of order at most `⌈|s|⌉` are bounded, then `g f ∈ H^s` for every tempered
-distribution `f ∈ H^s`. If `g` does not have temperate growth, `g f` is the junk value `0`. -/
-theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil {s : ℝ} {g : E → ℂ}
+/-- **Multipliers with bounded derivatives preserve `H^{s,p}`, for every real `s`.** Let
+`1 < p < ∞`. If the iterated derivatives of `g` of order at most `⌈|s|⌉` are bounded, then
+`g f ∈ H^{s,p}` for every tempered distribution `f ∈ H^{s,p}`. If `g` does not have temperate
+growth, `g f` is the junk value `0`. -/
+theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil (hp : 1 < p) (hp_top : p ≠ ∞)
+    {s : ℝ} {g : E → ℂ}
     (hbd : ∀ n ≤ ⌈|s|⌉₊, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
-    {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f) : MemSobolev s 2 (smulLeftCLM F g f) := by
-  obtain ⟨T, hT⟩ := SchwartzMap.hasSobolevExtension_iff.1
-    (SchwartzMap.hasSobolevExtension_smulLeftCLM (F := F) s hbd)
-  -- The extension acts on the underlying tempered distributions as multiplication by `g`: both
-  -- sides are continuous and agree on the dense subspace of Schwartz functions.
-  have hdist : (fun U : H^{s}(E, F) ↦ (T U).toDistr) = fun U ↦ smulLeftCLM F g U.toDistr := by
-    refine (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (E := E) (F := F) s (p := 2)
-      ENNReal.ofNat_ne_top).equalizer
-      (BesselPotentialSpace.continuous_toDistr.comp T.continuous)
-      ((smulLeftCLM F g).continuous.comp BesselPotentialSpace.continuous_toDistr) ?_
-    funext u
-    have hu : T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
-        SchwartzMap.toBesselPotentialSpaceCLM s 2 (SchwartzMap.smulLeftCLM F g u) :=
-      congrArg (fun L ↦ L u) hT
-    simp [hu, smulLeftCLM_toTemperedDistributionCLM_eq]
-  have h := congrFun hdist hf.toBesselPotentialSpace
-  simp only [MemSobolev.toBesselPotentialSpace_toDistr] at h
-  rw [← h]
-  exact BesselPotentialSpace.memSobolev_toDistr _
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s p (smulLeftCLM F g f) :=
+  hf.map_of_forall_intCast hp hp_top _ fun _ hk _ hu ↦
+    hu.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top fun n hn ↦ hbd n (hn.trans hk)
 
-/-- **Matrix multipliers with bounded derivatives preserve `H^s`, for every real `s`.** Let `F`
-and `G` be finite-dimensional and let `A : E → (F →L[ℂ] G)` be `⌈|s|⌉` times continuously
-differentiable, with bounded iterated derivatives of order at most `⌈|s|⌉`. Then
-`mulLeftCLM A f ∈ H^s(E, G)` for every tempered distribution `f ∈ H^s(E, F)`. This is
+/-- **Matrix multipliers with bounded derivatives preserve `H^{s,p}`, for every real `s`.** Let
+`1 < p < ∞`, let `F` and `G` be finite-dimensional and let `A : E → (F →L[ℂ] G)` be `⌈|s|⌉` times
+continuously differentiable, with bounded iterated derivatives of order at most `⌈|s|⌉`. Then
+`mulLeftCLM A f ∈ H^{s,p}(E, G)` for every tempered distribution `f ∈ H^{s,p}(E, F)`. This is
 multiplication by `A` when `A` has temperate growth; otherwise `mulLeftCLM A` is a junk value (see
 `TemperedDistribution.mulLeftCLM`). -/
 theorem MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil [FiniteDimensional ℂ F]
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] [FiniteDimensional ℂ G]
-    {s : ℝ} {A : E → F →L[ℂ] G} (hA : ContDiff ℝ ⌈|s|⌉₊ A)
+    (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ} {A : E → F →L[ℂ] G} (hA : ContDiff ℝ ⌈|s|⌉₊ A)
     (hbd : ∀ n ≤ ⌈|s|⌉₊, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C) {f : 𝓢'(E, F)}
-    (hf : MemSobolev s 2 f) : MemSobolev s 2 (mulLeftCLM A f) :=
+    (hf : MemSobolev s p f) : MemSobolev s p (mulLeftCLM A f) :=
   -- Each scalar function `ℓ ∘ A` inherits the derivative bounds of `A`.
   MemSobolev.mulLeftCLM_of_forall_smulLeftCLM fun ℓ ↦
-    hf.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil
+    hf.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top
       (ℓ.exists_bound_iteratedFDeriv_comp_left hA hbd)
 
 end TemperedDistribution

@@ -25,8 +25,9 @@ completion characterization of `S`-integers of `F`, see
 
 * `TauCeti.SIntegers`: the subalgebra `𝒪_{F,S}` of `S`-integers of a number field `F`.
 * `TauCeti.sIntegers_mono`: enlarging `S` enlarges `SIntegers F S`.
-* `TauCeti.sIntegersAlgebraOfSubset`, `TauCeti.sIntegersTowerOfSubset`: canonical inclusion algebra
-  structure and scalar tower `𝒪_{F,S} → 𝒪_{F,T} → F` for `S ⊆ T`.
+* `TauCeti.sIntegersAlgebraOfSubset`, `TauCeti.isScalarTower_sIntegersAlgebraOfSubset`,
+  `TauCeti.toAlgHom_sIntegers_injective`: canonical inclusion algebra structure, scalar tower
+  `𝒪_{F,S} → 𝒪_{F,T} → F`, and injectivity of `𝒪_{F,T} →ₐ[𝒪_{F,S}] F` for `S ⊆ T`.
 
 ## References
 
@@ -52,7 +53,7 @@ variable {F}
 /-- Enlarging the finite exceptional set `S` enlarges the subalgebra of `S`-integers. -/
 theorem sIntegers_mono {S T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
     SIntegers F S ≤ SIntegers F T :=
-  Set.integer_mono (Finset.coe_subset.mpr hST)
+  Set.integer_mono F (Finset.coe_subset.mpr hST)
 
 /-- For `S ⊆ T`, the canonical `𝒪_{F,S}`-algebra structure on `𝒪_{F,T}` induced by the subalgebra
 inclusion `SIntegers F S ≤ SIntegers F T`. -/
@@ -63,11 +64,21 @@ noncomputable def sIntegersAlgebraOfSubset {S T : Finset (HeightOneSpectrum (�
 
 /-- For `S ⊆ T`, the `𝒪_{F,S}`-algebra structure `sIntegersAlgebraOfSubset hST` on `𝒪_{F,T}` forms
 a scalar tower with `F`. -/
-theorem sIntegersTowerOfSubset {S T : Finset (HeightOneSpectrum (𝓞 F))}
+theorem isScalarTower_sIntegersAlgebraOfSubset {S T : Finset (HeightOneSpectrum (𝓞 F))}
     (hST : S ⊆ T) :
     @IsScalarTower (SIntegers F S) (SIntegers F T) F
       (sIntegersAlgebraOfSubset hST).toSMul Algebra.toSMul Algebra.toSMul :=
-  Set.integerTowerOfSubset F (Finset.coe_subset.mpr hST)
+  Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+
+/-- For `S ⊆ T`, the canonical `𝒪_{F,S}`-algebra map `𝒪_{F,T} →ₐ[𝒪_{F,S}] F` is injective. -/
+theorem toAlgHom_sIntegers_injective {S T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
+    letI := isScalarTower_sIntegersAlgebraOfSubset hST
+    Function.Injective (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F) := by
+  let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
+  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
+  rw [IsScalarTower.coe_toAlgHom']
+  exact FaithfulSMul.algebraMap_injective (SIntegers F T) F
 
 end TauCeti
 

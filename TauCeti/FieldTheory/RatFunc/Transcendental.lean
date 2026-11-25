@@ -9,9 +9,11 @@ public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.FieldTheory.RatFunc.IntermediateField
 public import Mathlib.FieldTheory.Separable
 public import TauCeti.RingTheory.Algebraic.Basic
+import Mathlib.RingTheory.Localization.Algebra
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.RatFunc.Automorphism
 import TauCeti.FieldTheory.Separable.SimpleRoot
+import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
 # The rational function field as a base for a transcendental element
@@ -89,6 +91,8 @@ characteristic.
   when `q′ ≠ 0`.
 * `TauCeti.isFractionRing_polynomial_aeval`: if `x` is transcendental over `k` and `k⟮x⟯ = ⊤`, then
   `F` is the fraction field of `k[X]` acting through `X ↦ x`.
+* `Transcendental.isFractionRing_adjoin_simple`: if `K` is a fraction field of `R` and `y` is
+  transcendental over `K`, then `K(y)` is a fraction field of `R[X]` by evaluation at `y`.
 * `TauCeti.transcendental_ratFunc_X_sub_inv`: `X - X⁻¹` is transcendental.
 * `TauCeti.isIntegrallyClosedIn_ratFunc`: `k` is integrally closed in `k(X)`.
 * `Transcendental.algHomAdjoin_gen`: `Transcendental.algHomAdjoin` sends the generator `x` to `z`.
@@ -526,5 +530,31 @@ theorem isFractionRing_polynomial_aeval (hx : Transcendental k x) (hxtop : k⟮x
     ((IntermediateField.equivOfEq hxtop).trans IntermediateField.topEquiv)
   refine IsLocalization.isLocalization_of_algEquiv _ { e with commutes' := fun p ↦ ?_ }
   simp [e, RingHom.algebraMap_toAlgebra]
+
+open Polynomial in
+/-- **A simple transcendental extension of a fraction field is a fraction field of a polynomial
+ring.** Let `K` be a fraction field of `R` and `y` an element of a field extension of `K`,
+transcendental over `K`. Then `K(y)` is a fraction field of `R[X]` by evaluation at `y`. -/
+theorem _root_.Transcendental.isFractionRing_adjoin_simple {R K E : Type*} [CommRing R] [Field K]
+    [Algebra R K] [IsFractionRing R K] [Field E] [Algebra K E] [Algebra R E] [IsScalarTower R K E]
+    {y : E} (hy : Transcendental K y) :
+    letI := (aeval (R := R) (IntermediateField.AdjoinSimple.gen K y)).toAlgebra
+    IsFractionRing R[X] K⟮y⟯ := by
+  let := (aeval (R := R) (IntermediateField.AdjoinSimple.gen K y)).toAlgebra
+  have := (IsFractionRing.injective R K).isDomain (algebraMap R K)
+  -- `K(y)` is a fraction field of `K[X]`, transported from `RatFunc K`.
+  let := (aeval (R := K) (IntermediateField.AdjoinSimple.gen K y)).toAlgebra
+  let e : RatFunc K ≃ₐ[K[X]] K⟮y⟯ :=
+    { RatFunc.algEquivOfTranscendental y hy with
+      commutes' := RatFunc.algEquivOfTranscendental_algebraMap y hy }
+  have : IsFractionRing K[X] K⟮y⟯ := IsLocalization.isLocalization_of_algEquiv _ e
+  -- `K[X]` is the localization of `R[X]` at the nonzero constants.
+  let : Algebra R[X] K[X] := Polynomial.algebra R K
+  have : IsScalarTower R[X] K[X] K⟮y⟯ := .of_algebraMap_eq fun f ↦ by
+    simp only [RingHom.algebraMap_toAlgebra, coe_mapRingHom,
+      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, aeval_map_algebraMap]
+  have := Polynomial.isLocalization (nonZeroDivisors R) K
+  exact TauCeti.IsFractionRing.of_isLocalization_of_isFractionRing ((nonZeroDivisors R).map C)
+    K[X] _ (map_le_nonZeroDivisors_of_injective C C_injective le_rfl)
 
 end TauCeti

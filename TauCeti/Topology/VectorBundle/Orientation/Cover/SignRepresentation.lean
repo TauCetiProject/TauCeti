@@ -157,7 +157,6 @@ orientation double cover `B'`, tensored with the sign representation. The class 
 the simplex `p ∘ τ` with the coefficient of `o(E)` whose value at the initial orientation of `τ` is
 `a` (`coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk`). -/
 def coinvariantsTensorSingularChainsRepIsoTwisted :
-    haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
     (singularChainsRep k (TopCat.of (VectorBundleOrientationCover F E ι)) ℤˣ).coinvariantsTensorObj
         (Rep.ofDistribMulAction k ℤˣ k) ≅
       twistedChainComplex (signLocalSystem F E k hι) :=
@@ -171,7 +170,6 @@ orientation-twisted chains of the base sends the class of `a ⊗ τ` to the simp
 coefficient of `o(E)` whose value at the initial orientation of `τ` is `a`. -/
 theorem coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk (n : ℕ) (a : k)
     (τ : (TopCat.toSSet.obj (TopCat.of (VectorBundleOrientationCover F E ι))) _⦋n⦌) :
-    haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
     ((coinvariantsTensorSingularChainsRepIsoTwisted hι k).hom.f n).hom
         (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
           (Rep.of (singularChainsRepresentation k
@@ -181,7 +179,6 @@ theorem coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk (n : ℕ) (a : k)
           ((signLocalSystemObjEquiv hι _).symm
             ((signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
               (initialSheet τ)).symm a)) := by
-  have := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
   rw [coinvariantsTensorSingularChainsRepIsoTwisted, Iso.trans_hom, HomologicalComplex.comp_f,
     twistedChainComplexCoefficientIso_hom, ModuleCat.hom_comp]
   refine (LinearMap.comp_apply _ _ _).trans ?_

@@ -551,7 +551,7 @@ noncomputable def globalIntegralHom (M : IntegralModel F H S)
     WithConv (M.coordinate →ₐ[SIntegers F S] SIntegers F T) →*
       WithConv (H →ₐ[F] F) :=
   letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  letI := sIntegersTowerOfSubset hST
+  letI := isScalarTower_sIntegersAlgebraOfSubset hST
   M.integralPointsHom (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F)
     (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm
 
@@ -559,7 +559,7 @@ theorem globalIntegralHom_def (M : IntegralModel F H S)
     (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
     M.globalIntegralHom T hST =
       (letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-       letI := sIntegersTowerOfSubset hST
+       letI := isScalarTower_sIntegersAlgebraOfSubset hST
        M.integralPointsHom (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F)
          (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm) := by
   rw [globalIntegralHom]
@@ -574,7 +574,7 @@ theorem globalIntegralHom_ofConv_toBase (M : IntegralModel F H S)
     letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
     (M.globalIntegralHom T hST x).ofConv (M.toBase a) = (x.ofConv a : F) := by
   let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := sIntegersTowerOfSubset hST
+  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
   rw [M.globalIntegralHom_def, M.integralPointsHom_ofConv_toBase
     (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F)
     (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm]
@@ -585,23 +585,17 @@ theorem globalIntegralHom_injective (M : IntegralModel F H S)
     (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
     Function.Injective (M.globalIntegralHom T hST) := by
   let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := sIntegersTowerOfSubset hST
-  refine M.integralPointsHom_injective ?_ (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm
-  rw [IsScalarTower.coe_toAlgHom']
-  intro x y h
-  exact Subtype.ext h
+  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
+  exact M.integralPointsHom_injective (toAlgHom_sIntegers_injective hST)
+    (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm
 
 private theorem mem_range_globalIntegralHom_iff (M : IntegralModel F H S)
     (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) {g : WithConv (H →ₐ[F] F)} :
     g ∈ (M.globalIntegralHom T hST).range ↔
       ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ SIntegers F T := by
   let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := sIntegersTowerOfSubset hST
-  have hinj : Function.Injective (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F) := by
-    rw [IsScalarTower.coe_toAlgHom']
-    intro x y h
-    exact Subtype.ext h
-  rw [M.globalIntegralHom_def, M.mem_range_integralPointsHom_iff hinj
+  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
+  rw [M.globalIntegralHom_def, M.mem_range_integralPointsHom_iff (toAlgHom_sIntegers_injective hST)
     (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm]
   simp [IsScalarTower.coe_toAlgHom']
 
@@ -639,13 +633,9 @@ theorem mem_globalPoints_iff_of_adjoin_eq_top (M : IntegralModel F H S)
     g ∈ M.globalPoints T hST ↔
       ∀ i, g.ofConv (M.toBase (a i)) ∈ SIntegers F T := by
   let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := sIntegersTowerOfSubset hST
-  have hinj : Function.Injective (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F) := by
-    rw [IsScalarTower.coe_toAlgHom']
-    intro x y h
-    exact Subtype.ext h
+  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
   rw [← M.range_globalIntegralHom T hST, M.globalIntegralHom_def,
-    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top hinj
+    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top (toAlgHom_sIntegers_injective hST)
       (IsScalarTower.algebraMap_eq (SIntegers F S) F F).symm ha]
   simp [IsScalarTower.coe_toAlgHom']
 
@@ -698,7 +688,7 @@ noncomputable def enlarge (M : IntegralModel F H S) {T : Finset (HeightOneSpectr
     inferInstance
   baseChangeIso :=
     letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    letI := sIntegersTowerOfSubset hST
+    letI := isScalarTower_sIntegersAlgebraOfSubset hST
     TauCeti.CommHopfAlgCat.baseChangeTowerIso (SIntegers F S) F M.coordinate ≪≫
       M.baseChangeIso
 
@@ -716,13 +706,13 @@ noncomputable def enlargeCoordinateIso (M : IntegralModel F H S)
 theorem enlarge_baseChangeIso (M : IntegralModel F H S)
     {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
     letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    letI := sIntegersTowerOfSubset hST
+    letI := isScalarTower_sIntegersAlgebraOfSubset hST
     (M.enlarge hST).baseChangeIso =
       (TauCeti.CommHopfAlgCat.baseChangeFunctor (K := F)).mapIso (M.enlargeCoordinateIso hST) ≪≫
         TauCeti.CommHopfAlgCat.baseChangeTowerIso (SIntegers F S) F M.coordinate ≪≫
           M.baseChangeIso := by
   let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := sIntegersTowerOfSubset hST
+  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
   dsimp only [enlarge, enlargeCoordinateIso]
   rw [Functor.mapIso_refl, Iso.refl_trans]
 
@@ -732,13 +722,13 @@ theorem enlarge_baseChangeIso_hom_tmul (M : IntegralModel F H S)
     {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T)
     (c : F) (x : (M.enlarge hST).coordinate) :
     letI : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-    letI := sIntegersTowerOfSubset hST
+    letI := isScalarTower_sIntegersAlgebraOfSubset hST
     (M.enlarge hST).baseChangeIso.hom.hom (c ⊗ₜ[SIntegers F T] x) =
       M.baseChangeIso.hom.hom
         ((TauCeti.CommHopfAlgCat.baseChangeTowerIso (SIntegers F S) F M.coordinate).hom.hom
           (c ⊗ₜ[SIntegers F T] (M.enlargeCoordinateIso hST).hom.hom x)) := by
   let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := sIntegersTowerOfSubset hST
+  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
   rw [M.enlarge_baseChangeIso hST]
   simp
 
@@ -753,7 +743,7 @@ theorem enlarge_toBase_tmul (M : IntegralModel F H S)
       ((M.enlargeCoordinateIso hST).inv.hom (r ⊗ₜ[SIntegers F S] a)) =
       (r : F) • M.toBase a := by
   let _ : Algebra (SIntegers F S) (SIntegers F T) := sIntegersAlgebraOfSubset hST
-  let _ := sIntegersTowerOfSubset hST
+  let _ := isScalarTower_sIntegersAlgebraOfSubset hST
   rw [(M.enlarge hST).toBase_apply, M.enlarge_baseChangeIso_hom_tmul hST,
     (M.enlargeCoordinateIso hST).inv_hom_id_apply,
     TauCeti.CommHopfAlgCat.baseChangeTowerIso_hom_apply, M.baseChangeIso_hom_tmul]

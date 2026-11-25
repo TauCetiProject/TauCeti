@@ -21,8 +21,9 @@ Let `β` be integrable and almost everywhere nonnegative on `[a, b]`, and let `u
 `u t ≤ α exp (∫ₐᵗ β)` at every `t ∈ [a, b]` where the inequality itself holds
 (`TauCeti.le_mul_exp_integral_of_le_add_integral_mul`); in particular at every `t ∈ [a, b]` if it
 holds everywhere there. The backward form, with `∫ₜᵇ` in place of `∫ₐᵗ`, is
-`TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev`. The kernel need not be bounded, nor `u`
-continuous.
+`TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev`, and
+`TauCeti.le_mul_exp_abs_integral_of_le_add_abs_integral_mul` combines the two on either side of a
+base point. The kernel need not be bounded, nor `u` continuous.
 
 Energy estimates for evolution equations produce such a recurrence with a constant kernel
 `K ≥ 0`. For an integrable `φ` with `φ s ≤ c + K ∫ₐˢ φ` at almost every `s ∈ [a, b]`, the bound
@@ -145,5 +146,41 @@ theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K t : ℝ}
     (by simpa only [intervalIntegral.integral_const_mul] using h) ht
     (by rwa [intervalIntegral.integral_const_mul])
   rwa [intervalIntegral.integral_const, smul_eq_mul, mul_comm (t - a)] at hgr
+
+/-- **Grönwall's inequality on either side of the base point.** Let `β` be integrable and almost
+everywhere nonnegative between `t₀` and `t`, and let `u` be nonnegative there with `β u`
+integrable. If `u s ≤ α + |∫ r in t₀..s, β r * u r|` for every `s` between `t₀` and `t`, then
+`u t ≤ α exp |∫ r in t₀..t, β r|`. This combines `le_mul_exp_integral_of_le_add_integral_mul` and
+its backward form `le_mul_exp_integral_of_le_add_integral_mul_rev`. -/
+theorem le_mul_exp_abs_integral_of_le_add_abs_integral_mul {u β : ℝ → ℝ} {t₀ t α : ℝ}
+    (hβ : IntegrableOn β (uIcc t₀ t)) (hβ₀ : ∀ᵐ s ∂volume.restrict (uIcc t₀ t), 0 ≤ β s)
+    (hβu : IntegrableOn (fun s ↦ β s * u s) (uIcc t₀ t)) (hu₀ : ∀ s ∈ uIcc t₀ t, 0 ≤ u s)
+    (h : ∀ s ∈ uIcc t₀ t, u s ≤ α + |∫ r in t₀..s, β r * u r|) :
+    u t ≤ α * exp |∫ r in t₀..t, β r| := by
+  rcases le_total t₀ t with hle | hle
+  · rw [uIcc_of_le hle] at hβ hβ₀ hβu hu₀ h
+    rw [abs_of_nonneg (intervalIntegral.integral_nonneg_of_ae_restrict hle hβ₀)]
+    have h' : ∀ s ∈ Icc t₀ t, u s ≤ α + ∫ r in t₀..s, β r * u r := fun s hs ↦ by
+      have hβu₀ : ∀ᵐ r ∂volume.restrict (Icc t₀ s), 0 ≤ β r * u r := by
+        filter_upwards [ae_restrict_of_ae_restrict_of_subset (Icc_subset_Icc_right hs.2) hβ₀,
+          ae_restrict_mem measurableSet_Icc] with r hr hrI
+        exact mul_nonneg hr (hu₀ r ⟨hrI.1, hrI.2.trans hs.2⟩)
+      rw [← abs_of_nonneg (intervalIntegral.integral_nonneg_of_ae_restrict hs.1 hβu₀)]
+      exact h s hs
+    exact le_mul_exp_integral_of_le_add_integral_mul hβ hβ₀ hβu
+      (ae_restrict_of_forall_mem measurableSet_Icc h') ⟨hle, le_rfl⟩ (h' t ⟨hle, le_rfl⟩)
+  · rw [uIcc_of_ge hle] at hβ hβ₀ hβu hu₀ h
+    rw [intervalIntegral.integral_symm, abs_neg,
+      abs_of_nonneg (intervalIntegral.integral_nonneg_of_ae_restrict hle hβ₀)]
+    have h' : ∀ s ∈ Icc t t₀, u s ≤ α + ∫ r in s..t₀, β r * u r := fun s hs ↦ by
+      have hβu₀ : ∀ᵐ r ∂volume.restrict (Icc s t₀), 0 ≤ β r * u r := by
+        filter_upwards [ae_restrict_of_ae_restrict_of_subset (Icc_subset_Icc_left hs.1) hβ₀,
+          ae_restrict_mem measurableSet_Icc] with r hr hrI
+        exact mul_nonneg hr (hu₀ r ⟨hs.1.trans hrI.1, hrI.2⟩)
+      rw [← abs_of_nonneg (intervalIntegral.integral_nonneg_of_ae_restrict hs.2 hβu₀), ← abs_neg,
+        ← intervalIntegral.integral_symm]
+      exact h s hs
+    exact le_mul_exp_integral_of_le_add_integral_mul_rev hβ hβ₀ hβu
+      (ae_restrict_of_forall_mem measurableSet_Icc h') ⟨le_rfl, hle⟩ (h' t ⟨le_rfl, hle⟩)
 
 end TauCeti

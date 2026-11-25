@@ -68,16 +68,16 @@ example : IsFractionRing (S.integer K) K := inferInstance
 @[simp] lemma _root_.Set.mem_integer_iff {x : K} :
     x ∈ S.integer K ↔ ∀ v ∉ S, v.valuation K x ≤ 1 := Iff.rfl
 
+/-- The `S`-integers grow with `S`: enlarging the set of allowed primes only weakens the
+condition `v x ≤ 1` for `v ∉ S`. -/
+lemma _root_.Set.integer_mono {S S' : Set (HeightOneSpectrum R)} (h : S ⊆ S') :
+    S.integer K ≤ S'.integer K :=
+  fun _ hx ↦ (Set.mem_integer_iff ..).2 fun v hv ↦ (Set.mem_integer_iff ..).1 hx v (hv <| h ·)
+
 /-- The integers outside the empty set of primes are exactly the images of the base ring. -/
 lemma _root_.Set.mem_integer_empty_iff {x : K} :
     x ∈ (∅ : Set (HeightOneSpectrum R)).integer K ↔ ∃ a : R, algebraMap R K a = x := by
   rw [integer_empty, Algebra.mem_bot, Set.mem_range]
-
-variable {K S} in
-/-- Enlarging the set of inverted primes enlarges the subalgebra of `S`-integers. -/
-lemma _root_.Set.integer_mono {T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) :
-    S.integer K ≤ T.integer K :=
-  fun _ hx v hv ↦ hx v fun hvS ↦ hv (hST hvS)
 
 variable {S} in
 /-- For `S ⊆ T`, the canonical `S.integer K`-algebra structure on `T.integer K` induced by the
@@ -85,12 +85,13 @@ subalgebra inclusion `S.integer K ≤ T.integer K`. -/
 @[instance_reducible]
 noncomputable def _root_.Set.integerAlgebraOfSubset {T : Set (HeightOneSpectrum R)}
     (hST : S ⊆ T) : Algebra (S.integer K) (T.integer K) :=
-  (Subalgebra.inclusion (Set.integer_mono hST)).toAlgebra
+  (Subalgebra.inclusion (Set.integer_mono K hST)).toAlgebra
 
 variable {S} in
 /-- For `S ⊆ T`, the `S.integer K`-algebra structure `Set.integerAlgebraOfSubset K hST` on
 `T.integer K` forms a scalar tower with `K`. -/
-lemma _root_.Set.integerTowerOfSubset {T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) :
+lemma _root_.Set.isScalarTower_integerAlgebraOfSubset {T : Set (HeightOneSpectrum R)}
+    (hST : S ⊆ T) :
     @IsScalarTower (S.integer K) (T.integer K) K
       (Set.integerAlgebraOfSubset K hST).toSMul Algebra.toSMul Algebra.toSMul := by
   let : Algebra (S.integer K) (T.integer K) := Set.integerAlgebraOfSubset K hST

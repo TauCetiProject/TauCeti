@@ -43,17 +43,6 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*} {K : AbstractSimplicialComplex ι}
   {P X : Type*} [TopologicalSpace P] [TopologicalSpace X]
 
-/-- The closed simplices present the weak realization as a quotient of their disjoint union. -/
-theorem isQuotientMap_sigma_faceInclusion (K : AbstractSimplicialComplex ι) :
-    IsQuotientMap (fun p : Σ σ : Face K, StandardSimplex σ.val => faceInclusion K p.1 p.2) := by
-  apply isQuotientMap_iff_isClosed.mpr
-  refine ⟨?_, fun s => ?_⟩
-  · intro x
-    exact ⟨⟨carrier K x, ⟨x.val, mem_convexHull_carrier K x⟩⟩,
-      Subtype.ext (faceInclusion_val _ _ _)⟩
-  · rw [isClosed_iff_faceInclusion, isClosed_sigma_iff]
-    rfl
-
 /-- Joint continuity with a locally compact parameter can be checked on closed simplex
 cylinders. Neither the realization nor the vertex type needs to be locally compact or finite. -/
 theorem continuous_prod_iff_faceInclusion [LocallyCompactSpace P]
@@ -84,9 +73,9 @@ theorem isQuotientMap_sigma_subtype_faceInclusion {L : PreAbstractSimplicialComp
   apply isQuotientMap_iff_isClosed.mpr
   refine ⟨?_, fun s => ?_⟩
   · intro x
-    exact ⟨⟨⟨x.val.val.support, x.property⟩, ⟨x.val.val, by
-      simpa only [carrier_val] using mem_convexHull_carrier K x.val⟩⟩,
-      Subtype.ext (Subtype.ext (faceInclusion_val _ _ _))⟩
+    exact ⟨⟨⟨x.val.val.support, x.property⟩, ⟨x.val.val,
+      Realization.mem_convexHull_of_support_subset K x.val subset_rfl⟩⟩,
+      Subtype.ext (faceInclusion_mk_val _ _ _ _)⟩
   · constructor
     · intro hs
       apply isClosed_sigma_iff.mpr
@@ -193,10 +182,10 @@ def homotopyOfFaces : f₀.Homotopy f₁ where
         (Subtype.ext (by simp only [faceInclusion_val])) p.1
   map_zero_left x := by
     simp only [ContinuousMap.Homotopy.apply_zero, ContinuousMap.comp_apply]
-    exact congrArg f₀ (Subtype.ext (faceInclusion_val _ _ _))
+    exact congrArg f₀ (faceInclusion_mk_val _ _ _ _)
   map_one_left x := by
     simp only [ContinuousMap.Homotopy.apply_one, ContinuousMap.comp_apply]
-    exact congrArg f₁ (Subtype.ext (faceInclusion_val _ _ _))
+    exact congrArg f₁ (faceInclusion_mk_val _ _ _ _)
 
 /-- The glued homotopy agrees with the specified homotopy on every closed simplex. -/
 @[simp]
@@ -212,8 +201,7 @@ theorem homotopyOfFaces_unique (G : f₀.Homotopy f₁)
     (hG : ∀ (σ : Face K) (t : unitInterval) (x : StandardSimplex σ.val),
       G (t, faceInclusion K σ x) = H σ (t, x)) : G = homotopyOfFaces K H hH := by
   ext ⟨t, x⟩
-  have hx : faceInclusion K (carrier K x) ⟨x.val, mem_convexHull_carrier K x⟩ = x :=
-    Subtype.ext (faceInclusion_val _ _ _)
+  have hx := faceInclusion_mk_val K (carrier K x) x (mem_convexHull_carrier K x)
   rw [← hx, homotopyOfFaces_apply_faceInclusion]
   exact hG _ _ _
 
@@ -227,8 +215,7 @@ def homotopyRelOfFaces : f₀.HomotopyRel f₁ S where
   toHomotopy := homotopyOfFaces K H hH
   prop' t x hx := by
     have hfixed : homotopyOfFaces K H hH (t, x) = f₀ x := by
-      have he : faceInclusion K (carrier K x) ⟨x.val, mem_convexHull_carrier K x⟩ = x :=
-        Subtype.ext (faceInclusion_val _ _ _)
+      have he := faceInclusion_mk_val K (carrier K x) x (mem_convexHull_carrier K x)
       rw [← he, homotopyOfFaces_apply_faceInclusion]
       exact hfix _ _ _ (he.symm ▸ hx)
     exact hfixed
