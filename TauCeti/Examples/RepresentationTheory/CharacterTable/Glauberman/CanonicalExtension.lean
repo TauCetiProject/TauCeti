@@ -36,7 +36,8 @@ variable {k : Type*} [Field k]
 
 /-- **Trivial action**: for the trivial action, `Γ ⋊[1] S ≅ Γ × S`, and the canonical extension of
 an irreducible character `χ` of `Γ` is `χ × 1_S`, read through the first coordinate. -/
-example {Γ S : Type*} [Group Γ] [Group S] {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) :
+theorem isCanonicalExtension_one_left {Γ S : Type*} [Group Γ] [Group S] {χ : Γ → k}
+    (hχ : χ ∈ irreducibleCharacters k Γ) :
     IsCanonicalExtension (1 : S →* MulAut Γ) χ fun x => χ x.left := by
   obtain ⟨n, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.1 hχ
   let π : Γ ⋊[(1 : S →* MulAut Γ)] S →* Γ := (MonoidHom.fst Γ S).comp mulEquivProd.toMonoidHom
@@ -75,7 +76,6 @@ example (χ : Multiplicative (ZMod 3) →* ℂˣ) (ζ : ℂ) (hζ : χ (.ofAdd 1
     (hψ : IsCanonicalExtension 1 (fun g => (χ g : ℂ)) ψ) :
     (∀ s, ψ (inr s) = 1) ∧ IntermediateField.adjoin ℚ (Set.range ψ) = ℚ⟮ζ⟯ ∧
       IntermediateField.adjoin ℚ (Set.range fun g => (χ g : ℂ)) = ℚ⟮ζ⟯ := by
-  let φ : Multiplicative (ZMod 2) →* MulAut (Multiplicative (ZMod 3)) := 1
   have hcop :
       (Nat.card (Multiplicative (ZMod 3))).Coprime (Nat.card (Multiplicative (ZMod 2))) := by
     rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
@@ -83,27 +83,19 @@ example (χ : Multiplicative (ZMod 3) →* ℂˣ) (ζ : ℂ) (hζ : χ (.ofAdd 1
   have hχ : (fun g => (χ g : ℂ)) ∈ irreducibleCharacters ℂ (Multiplicative (ZMod 3)) :=
     χ.coe_mem_irreducibleCharacters
   -- The canonical extension is `χ × 1`, read through the first coordinate.
-  have hext : IsCanonicalExtension φ (fun g => (χ g : ℂ)) fun x => (χ x.left : ℂ) := by
-    obtain ⟨n, ρ, -, hρ⟩ := mem_irreducibleCharacters_iff.1 hχ
-    let π : Multiplicative (ZMod 3) ⋊[φ] Multiplicative (ZMod 2) →* Multiplicative (ZMod 3) :=
-      (MonoidHom.fst _ _).comp mulEquivProd.toMonoidHom
-    have hπ : Function.Surjective π := fun g => ⟨inl g, rfl⟩
-    refine isCanonicalExtension_iff.2 ⟨π.comp_mem_irreducibleCharacters hπ hχ, rfl, n, ρ.comp π,
-      by rw [Representation.character_comp, hρ]; rfl, fun s => ?_⟩
-    have hπs : π (inr s) = 1 := rfl
-    rw [MonoidHom.comp_apply, hπs, map_one, map_one]
   have hψ' : ψ = fun x => (χ x.left : ℂ) :=
-    (existsUnique_canonicalExtension hcop hχ fun _ _ => rfl).unique hψ hext
+    (existsUnique_canonicalExtension hcop hχ fun _ _ => by simp).unique hψ
+      (isCanonicalExtension_one_left hχ)
   have hrange : Set.range ψ = Set.range fun g => (χ g : ℂ) := by
     rw [hψ']
-    exact Set.ext fun z => ⟨fun ⟨x, hx⟩ => ⟨x.left, hx⟩, fun ⟨g, hg⟩ => ⟨inl g, hg⟩⟩
+    exact Function.Surjective.range_comp (fun g => ⟨inl g, rfl⟩) fun g => (χ g : ℂ)
   have hadj : IntermediateField.adjoin ℚ (Set.range fun g => (χ g : ℂ)) = ℚ⟮ζ⟯ := by
     refine le_antisymm (IntermediateField.adjoin_le_iff.2 ?_)
       (IntermediateField.adjoin_simple_le_iff.2 (IntermediateField.subset_adjoin _ _ ⟨_, hζ⟩))
     rintro _ ⟨g, rfl⟩
     have hg : g = Multiplicative.ofAdd 1 ^ (Multiplicative.toAdd g).val := by
       rw [← ofAdd_nsmul, nsmul_one, ZMod.natCast_zmod_val, ofAdd_toAdd]
-    simp only
+    beta_reduce
     rw [hg, map_pow, Units.val_pow_eq_pow_val, hζ]
     exact pow_mem (IntermediateField.mem_adjoin_simple_self ℚ ζ) _
   refine ⟨fun s => ?_, hrange ▸ hadj, hadj⟩
