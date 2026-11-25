@@ -36,6 +36,8 @@ any universe, independent of the universe of `X`.
   iff the rank is bounded below `ω₁` on it.
 * `TauCeti.countable_toType_add_one_of_lt_omega_one`: the successor of a countable ordinal has a
   countable canonical well-order.
+* `TauCeti.not_countable_Ico_omega0_omega_one`: the countable infinite ordinals are uncountably
+  many.
 * `TauCeti.exists_surjective_Iio_omega_one`: an uncountable type maps onto the countable ordinals,
   so a rank below `ω₁` can be unbounded on it.
 
@@ -120,6 +122,17 @@ type. -/
 theorem countable_toType_add_one_of_lt_omega_one {α : Ordinal.{w}} (hα : α < ω₁) :
     Countable (α + 1).ToType :=
   countable_toType_of_lt_omega_one ((isSuccLimit_omega 1).add_one_lt hα)
+
+/-- The interval `[ω, ω₁)` of countable infinite ordinals is uncountable. -/
+theorem not_countable_Ico_omega0_omega_one : ¬ (Ico ω ω₁ : Set Ordinal.{w}).Countable := by
+  intro h
+  have hIio : (Iio ω₁ : Set Ordinal.{w}).Countable := by
+    refine ((countable_Iio_of_lt_omega_one omega0_lt_omega_one).union h).mono fun β hβ ↦ ?_
+    by_cases hβω : β < ω
+    · exact .inl hβω
+    · exact .inr ⟨not_lt.1 hβω, hβ⟩
+  rw [← le_aleph0_iff_set_countable, cardinalMk_Iio, card_omega, lift_le_aleph0] at hIio
+  exact aleph0_lt_aleph_one.not_ge hIio
 
 /-- **An uncountable type maps onto the countable ordinals.** Some rank on an uncountable type
 takes every value below `ω₁`, in any universe of ordinals. -/

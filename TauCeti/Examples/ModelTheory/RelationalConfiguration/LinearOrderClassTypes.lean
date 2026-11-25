@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.OrderClass
 public import TauCeti.ModelTheory.RelationalConfiguration.WellOrder
+public import TauCeti.SetTheory.Cardinal.AlephOne
 
 /-!
 # Examples: the coded linear orders meet uncountably many isomorphism classes
@@ -26,35 +27,30 @@ open scoped Ordinal
 
 namespace TauCeti.Examples.ModelTheory.LinearOrderClassTypes
 
-/-- The code obtained by adding the diagonal to the relation of `c`. -/
+/-- The code obtained by adding the diagonal to the relation of `c`, written as the order
+`x = y ∨ r x y` of Mathlib's `partialOrderOfSO`. -/
 noncomputable def addDiag (c : RelationalConfiguration Language.order ℕ) :
     RelationalConfiguration Language.order ℕ :=
-  ofRel fun x y => codeRel leSymb c x y ∨ x = y
+  ofRel fun x y => x = y ∨ codeRel leSymb c x y
 
-/-- Adding the diagonal to a coded strict well-order gives a coded linear order. -/
+/-- The relation of `addDiag c` is the relation of `c` with the diagonal added. -/
+@[simp]
+theorem codeRel_addDiag (c : RelationalConfiguration Language.order ℕ) (x y : ℕ) :
+    codeRel leSymb (addDiag c) x y ↔ x = y ∨ codeRel leSymb c x y := by
+  rw [addDiag, codeRel_ofRel]
+
+/-- Adding the diagonal to a coded strict well-order gives a coded linear order: its relation is
+the order of Mathlib's `linearOrderOfSTO`. -/
 theorem addDiag_mem_linearOrderClass {c : RelationalConfiguration Language.order ℕ}
     (hc : c ∈ wellOrderClass leSymb) : addDiag c ∈ linearOrderClass := by
   rw [mem_wellOrderClass] at hc
-  rw [addDiag, mem_linearOrderClass, codeRel_ofRel]
-  exact
-    { refl := fun _ => .inr rfl
-      trans := by
-        rintro a b d (hab | rfl) (hbd | rfl)
-        · exact .inl (_root_.trans hab hbd)
-        · exact .inl hab
-        · exact .inl hbd
-        · exact .inr rfl
-      antisymm := by
-        rintro a b (hab | rfl) (hba | hba)
-        · exact absurd (_root_.trans hab hba) (irrefl a)
-        · exact hba.symm
-        · rfl
-        · rfl
-      total := fun a b => by
-        rcases trichotomous_of (codeRel leSymb c) a b with h | rfl | h
-        · exact .inl (.inl h)
-        · exact .inl (.inr rfl)
-        · exact .inr (.inl h) }
+  classical
+  have h : codeRel leSymb (addDiag c) = (linearOrderOfSTO (codeRel leSymb c)).le := by
+    ext x y
+    exact codeRel_addDiag c x y
+  rw [mem_linearOrderClass, h]
+  let := linearOrderOfSTO (codeRel leSymb c)
+  infer_instance
 
 /-- Isomorphic codes with the diagonal added come from coded strict well-orders of the same
 type. -/
@@ -68,30 +64,16 @@ theorem type_eq_of_isoSetoid_addDiag {c d : RelationalConfiguration Language.ord
   obtain ⟨σ, hσ⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
   -- `σ` carries the reflexive closure of `codeRel leSymb c` to that of `codeRel leSymb d`.
   have hrefl (x y : ℕ) :
-      codeRel leSymb d (σ x) (σ y) ∨ σ x = σ y ↔ codeRel leSymb c x y ∨ x = y := by
+      σ x = σ y ∨ codeRel leSymb d (σ x) (σ y) ↔ x = y ∨ codeRel leSymb c x y := by
     have := codeRel_perm_smul leSymb σ (addDiag c) (σ x) (σ y)
     rw [hσ] at this
-    simpa [addDiag] using this
+    simpa using this
   refine RelIso.ordinalType_congr ⟨σ, fun {x y} => ?_⟩
   by_cases hxy : x = y
   · subst hxy
     exact ⟨fun h => absurd h (irrefl _), fun h => absurd h (irrefl _)⟩
   · have hσxy : σ x ≠ σ y := σ.injective.ne hxy
     simpa [hxy, hσxy] using hrefl x y
-
-/-- The interval `[ω, ω₁)` of countable infinite ordinals is uncountable. -/
-theorem not_countable_Ico_omega0_omega_one :
-    ¬ (Ico ω ω₁ : Set Ordinal.{0}).Countable := by
-  intro h
-  have hIio : (Iio ω₁ : Set Ordinal.{0}).Countable := by
-    refine ((Cardinal.countable_Iio_of_lt_omega_one Ordinal.omega0_lt_omega_one).union h).mono
-      fun β hβ => ?_
-    by_cases hβω : β < ω
-    · exact .inl hβω
-    · exact .inr ⟨not_lt.1 hβω, hβ⟩
-  rw [← Cardinal.le_aleph0_iff_set_countable, Ordinal.cardinalMk_Iio, Ordinal.card_omega,
-    Cardinal.lift_le_aleph0] at hIio
-  exact Cardinal.aleph0_lt_aleph_one.not_ge hIio
 
 /-- **The coded linear orders on `ℕ` meet uncountably many isomorphism classes.** -/
 theorem not_countable_image_mk_linearOrderClass :
