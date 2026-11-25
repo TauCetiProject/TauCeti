@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Kummer
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
-import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Connected
 
 /-!

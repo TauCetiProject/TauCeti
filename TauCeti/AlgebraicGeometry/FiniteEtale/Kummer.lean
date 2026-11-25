@@ -13,6 +13,7 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.RootsOfUnity.PowFiber
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # Kummer covers and their geometric fibres
@@ -410,16 +411,14 @@ cardinality `n`: the nonzero element `algebraMap R Ω t` has exactly `n` distinc
 theorem card_kummerCoverFiber :
     Nat.card ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj
       (kummerCover t n hn)) = n := by
-  classical
   have := neZero_natCast_of_isUnit Ω hn
   have := neZero_of_isUnit_natCast Ω hn
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω n
   obtain ⟨y⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hn
   rw [Nat.card_congr ((kummerCoverFiberEquiv t Ω n hn).trans (Equiv.subtypeEquivRight
-      fun ω ↦ (Polynomial.mem_nthRootsFinset (NeZero.pos n) _).symm)), Nat.card_eq_finsetCard,
-    Polynomial.nthRootsFinset_def, Multiset.toFinset_card_of_nodup
-      (hζ.nthRoots_nodup (t.isUnit.map (algebraMap R Ω)).ne_zero), hζ.card_nthRoots,
-    ite_eq_left ⟨_, (kummerCoverFiberEquiv t Ω n hn y).property⟩]
+      fun ω ↦ (Polynomial.mem_nthRootsFinset (NeZero.pos n) _).symm)), Nat.card_eq_finsetCard]
+  exact hζ.card_nthRootsFinset_of_pow_eq (kummerCoverFiberEquiv t Ω n hn y).property
+    (t.isUnit.map (algebraMap R Ω)).ne_zero
 
 /-- **The fibre over `1` of a Kummer cover is `μ_n`.** When `t` maps to `1` in the separably
 closed field `Ω`, for instance for the power map `z ↦ z ^ n` of `𝔾_m` at a geometric point over

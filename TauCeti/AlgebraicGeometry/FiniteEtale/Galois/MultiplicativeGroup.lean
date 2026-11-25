@@ -234,7 +234,6 @@ theorem proj_multiplicativeGroupPrimeToPMonodromy (p : ℕ) [ExpChar K p]
 /-- On the degree-`m` power cover of `𝔾_{m, K}`, an automorphism `σ ∈ π₁^ét(𝔾_{m, K}, 1)` multiplies
 points of the fibre `μ_m(K)` over `1` by the level-`m` projection of
 `multiplicativeGroupPrimeToPMonodromy K p σ`. -/
-@[simp]
 theorem multiplicativeGroupPowerCoverFiberEquiv_smul (p : ℕ) [ExpChar K p]
     (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p})
     (hn : IsUnit ((m : ℕ) : (CommRingCat.of K[T;T⁻¹])))
