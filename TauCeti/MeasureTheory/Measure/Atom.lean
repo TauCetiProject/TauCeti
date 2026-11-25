@@ -36,9 +36,10 @@ atom while vanishing on every singleton.
 * `MeasureTheory.Measure.exists_eq_smul_dirac_of_forall_restrict_eq_smul` — a finite measure on a
   standard Borel space that is proportional to each of its restrictions is a multiple of a point
   mass;
-* `MeasureTheory.Measure.nullSingletonClass_map_of_injective` — an injective measurable map
-  into a space whose singletons are measurable preserves the property that singletons have
-  measure zero;
+* `MeasureTheory.Measure.nullSingletonClass_map_of_countable_preimage`,
+  `MeasureTheory.Measure.nullSingletonClass_map_of_injective` — an a.e.-measurable map with
+  countable fibres, or an injective measurable map, into a space whose singletons are
+  measurable preserves the property that singletons have measure zero;
 * `MeasureTheory.Measure.IsAtom.measure_ne_top` — an atom on which the measure is σ-finite has
   finite mass;
 * `MeasureTheory.Measure.IsAtom.exists_measure_sdiff_singleton_eq_zero_of_measure_ne_top`,
@@ -135,6 +136,18 @@ theorem _root_.MeasureTheory.Measure.exists_eq_smul_dirac_of_forall_restrict_eq_
   obtain ⟨z, hz⟩ := aemeasurable_id.exists_map_restrict_eq_smul_dirac_of_atom
     (measure_ne_top ν Set.univ) hatom
   exact ⟨z, by simpa using hz⟩
+
+/-- An almost everywhere measurable map with countable fibres into a space whose singletons are
+measurable sends a measure with null singletons to a measure with null singletons: each singleton
+has a countable preimage, which is null. -/
+theorem _root_.MeasureTheory.Measure.nullSingletonClass_map_of_countable_preimage
+    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} [NullSingletonClass μ] {f : α → β}
+    [MeasurableSingletonClass β] (hf : AEMeasurable f μ) (hfib : ∀ y, (f ⁻¹' {y}).Countable) :
+    NullSingletonClass (Measure.map f μ) :=
+  ⟨fun y ↦ by
+    rw [Measure.map_apply_of_aemeasurable hf (measurableSet_singleton y)]
+    exact (hfib y).measure_zero μ⟩
 
 /-- An injective measurable map into a space whose singletons are measurable sends a measure
 with null singletons to a measure with null singletons: each singleton has an at-most-singleton
