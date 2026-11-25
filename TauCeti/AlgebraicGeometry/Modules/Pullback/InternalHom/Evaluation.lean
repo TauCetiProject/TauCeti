@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
 
 /-!
 # Pullback and global sections of internal Homs
@@ -31,7 +32,7 @@ theorem pullback_map_uncurry' {X Y : Scheme.{u}} (f : X ⟶ Y)
     {M N : Y.Modules} (s : 𝟙_ Y.Modules ⟶ (ihom M).obj N) :
     (pullback f).map (uncurry' s) =
       uncurry' ((pullbackObjUnitIso f).inv ≫ (pullback f).map s ≫
-        (TauCeti.AlgebraicGeometry.pullbackIhomComparison M f).app N) := by
+        ((pullback f).ihomComparison M).app N) := by
   have hu : (ρ_ ((pullback f).obj M)).inv ≫ (pullback f).obj M ◁ (pullbackObjUnitIso f).inv =
       (pullback f).map (ρ_ M).inv ≫ δ (pullback f) M (𝟙_ Y.Modules) := by
     rw [oplax_right_unitality (pullback f) M, pullback_η f]
@@ -39,7 +40,9 @@ theorem pullback_map_uncurry' {X Y : Scheme.{u}} (f : X ⟶ Y)
       MonoidalCategory.whiskerLeft_id, Category.comp_id]
   simp only [uncurry', uncurry_eq, Functor.map_comp, MonoidalCategory.whiskerLeft_comp,
     Category.assoc]
-  rw [TauCeti.AlgebraicGeometry.whiskerLeft_pullbackIhomComparison_app_comp_ev M f N,
-    ← Category.assoc (ρ_ _).inv, hu, Category.assoc, δ_natural_right_assoc, IsIso.hom_inv_id_assoc]
+  rw [Functor.ihomComparison_ev, ← Category.assoc (ρ_ _).inv, hu, Category.assoc,
+    δ_natural_right_assoc]
+  -- The canonical oplax comparison is definitionally the one in the monoidal instance.
+  erw [Functor.Monoidal.δ_μ_assoc (pullback f) M ((ihom M).obj N)]
 
 end AlgebraicGeometry.Scheme.Hom

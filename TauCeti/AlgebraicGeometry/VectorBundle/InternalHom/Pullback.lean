@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.VectorBundle.InternalHom.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
+import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # Pullback of internal Hom from a finite locally free sheaf
@@ -15,9 +17,8 @@ For a finite locally free sheaf `E` and an arbitrary sheaf of modules `F` on `Y`
 comparison `f* 𝓗om(E, F) ⟶ 𝓗om(f* E, f* F)` is an isomorphism for every scheme morphism
 `f : X ⟶ Y`. No flatness assumption on `f` or finiteness assumption on `F` is needed.
 
-The comparison for quasicoherent sources and its evaluation and curry equations are defined in
-`TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic`. This module specializes its
-exact-pairing invertibility criterion to the internal-Hom dual of a finite locally free sheaf.
+The comparison is `CategoryTheory.Functor.ihomComparison` for module pullback. Its
+exact-pairing criterion applies using the internal-Hom dual of a finite locally free sheaf.
 
 ## References
 
@@ -45,21 +46,20 @@ local instance : ExactPairing (dual E).obj E.obj :=
 /-- The canonical internal-Hom base-change comparison is invertible for a finite locally free
 source and an arbitrary target sheaf of modules. -/
 instance isIso_pullbackIhomComparison :
-    IsIso (pullbackIhomComparison E.obj f) := by
-  have : (dual E).obj.IsQuasicoherent := ((toQuasicoherent Y).obj (dual E)).property
-  exact isIso_pullbackIhomComparison_of_exactPairing E.obj f (dual E).obj
+    IsIso ((Scheme.Modules.pullback f).ihomComparison E.obj) :=
+  (Scheme.Modules.pullback f).ihomComparison_isIso_of_exactPairing (dual E).obj E.obj
 
 /-- Arbitrary pullback commutes with internal Hom from a finite locally free sheaf, naturally
 in every target sheaf of modules. -/
 def pullbackIhomIso :
     ihom E.obj ⋙ Scheme.Modules.pullback f ≅
       Scheme.Modules.pullback f ⋙ ihom ((Scheme.Modules.pullback f).obj E.obj) :=
-  asIso (pullbackIhomComparison E.obj f)
+  asIso ((Scheme.Modules.pullback f).ihomComparison E.obj)
 
 /-- The forward map of the base-change isomorphism is the canonical comparison. -/
 @[simp]
 theorem pullbackIhomIso_hom :
-    (pullbackIhomIso E f).hom = pullbackIhomComparison E.obj f :=
+    (pullbackIhomIso E f).hom = (Scheme.Modules.pullback f).ihomComparison E.obj :=
   (rfl)
 
 end

@@ -70,7 +70,7 @@ theorem totalSpaceIhomHomEquiv_apply (E F : FiniteLocallyFreeSheaf X) (T : Over 
     (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj ((ihom E).obj F))) :
     totalSpaceIhomHomEquiv E F T t =
       uncurry' (totalSpaceHomEquiv ((ihom E).obj F) T t ≫
-        (pullbackIhomComparison E.obj T.hom).app F.obj) :=
+        ((Scheme.Modules.pullback T.hom).ihomComparison E.obj).app F.obj) :=
   -- Unfolding the bijection leaves the identity of the conjugation by `Iso.refl`.
   congrArg uncurry' ((Category.id_comp _).trans
     (congrArg (_ ≫ ·) (NatTrans.congr_app (pullbackIhomIso_hom E T.hom) F.obj)))
@@ -105,7 +105,8 @@ theorem totalSpaceIhomHomEquiv_comp_map_ihom_map (E : FiniteLocallyFreeSheaf X)
   apply curry'_injective
   rw [curry'_uncurry', ← curry'_ihom_map, curry'_uncurry']
   exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
-    ((pullbackIhomComparison E.obj T.hom).naturality b.hom)).trans (Category.assoc _ _ _).symm)
+    (((Scheme.Modules.pullback T.hom).ihomComparison E.obj).naturality b.hom)).trans
+      (Category.assoc _ _ _).symm)
 
 /-- **Naturality in the source bundle.** Composing a point of `𝕍(𝓗om(E', F))` with the map of
 total spaces induced by precomposition with `a : E ⟶ E'` corresponds to precomposing its
@@ -124,7 +125,8 @@ theorem totalSpaceIhomHomEquiv_comp_map_pre_app {E E' : FiniteLocallyFreeSheaf X
   apply curry'_injective
   rw [curry'_uncurry', ← curry'_pre_app, curry'_uncurry']
   exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
-    (pullback_map_pre_app_comp_pullbackIhomComparison_app T.hom a.hom F.obj)).trans
+    (congrArg (fun s ↦ s.app F.obj)
+      (Functor.ihomComparison_whiskerLeft (Scheme.Modules.pullback T.hom) a.hom).symm)).trans
       (Category.assoc _ _ _).symm)
 
 /-- **Sections of the internal-Hom bundle are bundle maps.** Sections of

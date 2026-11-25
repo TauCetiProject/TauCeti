@@ -59,7 +59,7 @@ the identification `f* 𝒪_Y ≅ 𝒪_X`. -/
 theorem pullbackDualIso_hom_hom :
     (pullbackDualIso f E).hom.hom =
       eqToHom (pullback_obj_obj f (dual E)) ≫
-        (pullbackIhomComparison E.obj f).app (𝟙_ Y.Modules) ≫
+        ((Scheme.Modules.pullback f).ihomComparison E.obj).app (𝟙_ Y.Modules) ≫
           (ihom ((Scheme.Modules.pullback f).obj E.obj)).map
             (Scheme.Modules.pullbackObjUnitIso f).hom ≫
               eqToHom (congrArg (fun M : X.Modules ↦ (ihom M).obj (𝟙_ X.Modules))
@@ -85,7 +85,10 @@ theorem pullbackDualIso_naturality {F : FiniteLocallyFreeSheaf Y} (g : E ⟶ F) 
     simp only [ObjectProperty.FullSubcategory.comp_hom, pullback_map_hom,
       ObjectProperty.homMk_hom, pullbackDualIso_hom_hom, pre_map, NatTrans.comp_app,
       pre_eqToHom_app, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc]
-    rw [pullback_map_pre_app_comp_pullbackIhomComparison_app_assoc, NatTrans.naturality_assoc]
+    have hpre := congrArg (fun s ↦ s.app (𝟙_ Y.Modules))
+      (Functor.ihomComparison_whiskerLeft (Scheme.Modules.pullback f) g.hom).symm
+    simp only [TwoSquare.whiskerTop_app, TwoSquare.whiskerBottom_app] at hpre
+    rw [reassoc_of% hpre, NatTrans.naturality_assoc]
   exact h
 
 /-- Pulling back duals of finite locally free sheaves is naturally isomorphic to dualizing
@@ -159,10 +162,11 @@ theorem pullbackDualIso_hom_comp (g : Y ⟶ Z) (E : FiniteLocallyFreeSheaf Z) :
           ((ihom ((Scheme.Modules.pullback g).obj E.obj)).obj (𝟙_ Y.Modules)) =
             (Scheme.Modules.pullback f).obj ((ihom M).obj (𝟙_ Y.Modules)))
         (q : (ihom ((Scheme.Modules.pullback f).obj M)).obj (𝟙_ X.Modules) = T) :
-        eqToHom p ≫ (pullbackIhomComparison M f).app (𝟙_ Y.Modules) ≫
+        eqToHom p ≫ ((Scheme.Modules.pullback f).ihomComparison M).app (𝟙_ Y.Modules) ≫
           (ihom ((Scheme.Modules.pullback f).obj M)).map
             (Scheme.Modules.pullbackObjUnitIso f).hom ≫ eqToHom q =
-        (pullbackIhomComparison ((Scheme.Modules.pullback g).obj E.obj) f).app (𝟙_ Y.Modules) ≫
+        ((Scheme.Modules.pullback f).ihomComparison ((Scheme.Modules.pullback g).obj E.obj)).app
+          (𝟙_ Y.Modules) ≫
           (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj E.obj))).map
             (Scheme.Modules.pullbackObjUnitIso f).hom ≫ eqToHom (by rw [← q, e]) := by
       subst e

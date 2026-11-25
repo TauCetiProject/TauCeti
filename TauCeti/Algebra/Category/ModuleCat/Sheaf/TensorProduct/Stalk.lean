@@ -261,12 +261,8 @@ def tensorStalkEquivMonoidal :
       ↑(TopCat.Presheaf.stalk M.val.presheaf x) ⊗[↑(TopCat.Presheaf.stalk R.obj x)]
         ↑(TopCat.Presheaf.stalk N.val.presheaf x) :=
   let e := M.tensorUnderlyingIso N ≪≫ (tensorProductIso R M N).symm
-  let eStalk := LinearEquiv.ofBijective
-    (PresheafOfModules.stalkMapCommRing (S := R.obj) x e.hom.val) (by
-      have : IsIso e.hom.val :=
-        inferInstanceAs (IsIso ((_root_.SheafOfModules.forget _).map e.hom))
-      exact (PresheafOfModules.bijective_stalkMapCommRing_iff_isIso
-        (S := R.obj) x e.hom.val).mpr (by infer_instance))
+  let eStalk := PresheafOfModules.stalkLinearEquivCommRing (S := R.obj) x
+    ((_root_.SheafOfModules.forget (ringCatSheaf R)).mapIso e)
   eStalk ≪≫ₗ tensorStalkEquiv R M N x
 
 /-- The monoidal tensor stalk equivalence sends the germ of a pure tensor, mapped into the
@@ -287,26 +283,20 @@ theorem tensorStalkEquivMonoidal_germ (U : Opens X) (hx : x ∈ U)
         (M.tensorUnderlyingIso N ≪≫ (tensorProductIso R M N).symm).hom =
       (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) ≫
         (_root_.SheafOfModules.forget (ringCatSheaf R)).map (tensorProductIso R M N).inv := by
-    have he : (_root_.SheafOfModules.forget (ringCatSheaf R)).map
-        (M.tensorUnderlyingIso N).inv ≫
-        (_root_.SheafOfModules.forget (ringCatSheaf R)).map
-          (M.tensorUnderlyingIso N ≪≫ (tensorProductIso R M N).symm).hom =
-        (_root_.SheafOfModules.forget (ringCatSheaf R)).map (tensorProductIso R M N).inv := by
-      rw [← Functor.map_comp]
-      simp only [Iso.trans_hom, Iso.symm_hom, Iso.inv_hom_id_assoc]
-    exact (congrArg (· ≫ _) (forget_μ (R := R) M N)).trans
-      ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) he))
-  -- The monoidal tensor and the sheafified sectionwise tensor have different presentations.
-  -- Their stalk modules agree after reading the canonical tensor isomorphism as a linear map.
+    rw [Iso.trans_hom, Functor.map_comp, ← Category.assoc]
+    exact congrArg (· ≫ (_root_.SheafOfModules.forget (ringCatSheaf R)).map
+      (tensorProductIso R M N).inv) (forget_μ_comp_tensorUnderlyingIso_hom R M N)
+  -- Expose the composite of stalk equivalences so the stalk map of the first can be computed.
   change tensorStalkEquiv R M N x
-    (PresheafOfModules.stalkMapCommRing (S := R.obj) x
-      (M.tensorUnderlyingIso N ≪≫ (tensorProductIso R M N).symm).hom.val
+    (PresheafOfModules.stalkLinearEquivCommRing (S := R.obj) x
+      ((_root_.SheafOfModules.forget (ringCatSheaf R)).mapIso
+        (M.tensorUnderlyingIso N ≪≫ (tensorProductIso R M N).symm))
       (TopCat.Presheaf.germ (M ⊗ N).val.presheaf U x hx
         ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
           (op U) (m ⊗ₜ[R.obj.obj (op U)] n)))) = _
-  -- `erw` unfolds `PresheafOfModules.presheaf` to identify the germ
-  -- section types `.val.presheaf.obj` and `.val.obj` in the stalk-map equation.
-  erw [PresheafOfModules.stalkMapCommRing_germ]
+  -- These equations unfold the forgetful functor and `PresheafOfModules.presheaf`
+  -- to identify the section types in the stalk map.
+  erw [PresheafOfModules.stalkLinearEquivCommRing_apply, PresheafOfModules.stalkMapCommRing_germ]
   refine (congrArg (fun k : M.val ⊗ N.val ⟶ (tensorProduct R M N).val ↦
     tensorStalkEquiv R M N x (TopCat.Presheaf.germ (tensorProduct R M N).val.presheaf
       U x hx (k.app (op U) (m ⊗ₜ[R.obj.obj (op U)] n)))) h).trans ?_

@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Flat
+public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
 import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Coherence
 import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Restriction
 import TauCeti.CategoryTheory.Monoidal.Closed.Presentation
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.InternalHom.Quasicoherent
+import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # Flat pullback of internal Hom
@@ -30,8 +31,8 @@ Restriction commutes with internal Hom, and composition coherence identifies the
 comparisons with the restrictions of the canonical comparison.
 
 The kernel comparison uses
-`CategoryTheory.Functor.ihomComparison_isIso_of_cokernel_of_naturality`.
-The canonical internal-Hom comparison uses the oplax tensor comparison of module pullback.
+`CategoryTheory.Functor.ihomComparison_isIso_of_cokernel`.
+The canonical comparison is `CategoryTheory.Functor.ihomComparison` for module pullback.
 
 ## Main declarations
 
@@ -66,7 +67,7 @@ invertible under flat pullback, for every target, without assuming the base affi
 theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_presentation
     (M N : Y.Modules)
     (P : M.Presentation) [P.IsFinite] :
-    IsIso ((pullbackIhomComparison M f).app N) := by
+    IsIso (((Scheme.Modules.pullback f).ihomComparison M).app N) := by
   let F := Scheme.Modules.pullback f
   let A : Y.Modules := SheafOfModules.free P.relations.I
   let B : Y.Modules := SheafOfModules.free P.generators.I
@@ -82,25 +83,18 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_
   have : P.relations.IsFiniteType := ‹P.IsFinite›.isFiniteType_relations
   have : Finite P.generators.I := SheafOfModules.GeneratingSections.IsFiniteType.finite
   have : Finite P.relations.I := SheafOfModules.GeneratingSections.IsFiniteType.finite
-  have freeComparison (I : Type u) [Finite I] :
-      IsIso (pullbackIhomComparison (SheafOfModules.free (R := Y.ringCatSheaf) I) f) := by
-    let L : Y.Modules := SheafOfModules.free I
-    let : ExactPairing L L := Scheme.Modules.exactPairingFree Y I
-    exact isIso_pullbackIhomComparison_of_exactPairing (M := L) (f := f) (D := L)
-  have := freeComparison P.generators.I
-  have := freeComparison P.relations.I
-  apply F.ihomComparison_isIso_of_cokernel_of_naturality a b w hp N
-    ((pullbackIhomComparison A f).app N) ((pullbackIhomComparison B f).app N)
-    ((pullbackIhomComparison M f).app N)
-  · exact (pullback_map_pre_app_comp_pullbackIhomComparison_app f a N).symm
-  · exact (pullback_map_pre_app_comp_pullbackIhomComparison_app f b N).symm
+  let : ExactPairing A A := Scheme.Modules.exactPairingFree Y P.relations.I
+  let : ExactPairing B B := Scheme.Modules.exactPairingFree Y P.generators.I
+  have := F.ihomComparison_isIso_of_exactPairing A A
+  have := F.ihomComparison_isIso_of_exactPairing B B
+  exact F.ihomComparison_isIso_of_cokernel a b w hp N
 
 /-- Over an affine base, flat pullback commutes with internal Hom from a finitely presented
 sheaf into any sheaf of modules. The source scheme is arbitrary. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_isAffine
     [IsAffine Y]
     (M N : Y.Modules) [M.IsFinitePresentation] :
-    IsIso ((pullbackIhomComparison M f).app N) := by
+    IsIso (((Scheme.Modules.pullback f).ihomComparison M).app N) := by
   obtain ⟨P, hP⟩ := Scheme.Modules.exists_isFinite_presentation_of_isAffine M
   have : P.IsFinite := hP
   exact f.isIso_pullbackIhomComparison_app_of_presentation M N P
@@ -109,7 +103,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_
 module sheaf. Neither scheme needs to be affine or Noetherian. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app
     (M N : Y.Modules) [M.IsFinitePresentation] :
-    IsIso ((pullbackIhomComparison M f).app N) := by
+    IsIso (((Scheme.Modules.pullback f).ihomComparison M).app N) := by
   refine (Scheme.Modules.isIso_iff_of_isOpenCover
     (TopologicalSpace.IsOpenCover.comap (iSup_affineOpens_eq_top Y) f.base.hom) _).mpr
       fun V ↦ ?_

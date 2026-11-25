@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Dual
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
+public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
 
 /-!
 # Coherence of internal Hom under pullback
@@ -58,7 +58,7 @@ variable {X Y Z : Scheme.{u}}
 canonical identity isomorphism of module pullback. -/
 @[reassoc (attr := simp)]
 theorem pullbackIhomComparison_id (M N : X.Modules) :
-    (pullbackIhomComparison M (𝟙 X)).app N ≫
+    ((Scheme.Modules.pullback (𝟙 X)).ihomComparison M).app N ≫
         (ihom ((Scheme.Modules.pullback (𝟙 X)).obj M)).map
           ((Scheme.Modules.pullbackId X).hom.app N) =
       (Scheme.Modules.pullbackId X).hom.app ((ihom M).obj N) ≫
@@ -68,9 +68,11 @@ theorem pullbackIhomComparison_id (M N : X.Modules) :
   -- Instantiate precomposition before normalizing the identity functor objects.
   rw [uncurry_pre ((Scheme.Modules.pullbackId X).hom.app M) N, uncurry_eq]
   dsimp only [Functor.id_obj]
-  rw [whiskerLeft_pullbackIhomComparison_app_comp_ev]
+  rw [Functor.ihomComparison_ev]
   rw [← cancel_epi (δ (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N))]
-  simp only [Category.assoc, IsIso.hom_inv_id_assoc]
+  simp only [Category.assoc]
+  -- The canonical oplax comparison is definitionally the one in the monoidal instance.
+  erw [Functor.Monoidal.δ_μ_assoc (Scheme.Modules.pullback (𝟙 X)) M ((ihom M).obj N)]
   rw [← dsimp% tensorHom_def'_assoc (C := X.Modules)
     ((Scheme.Modules.pullbackId X).hom.app M)
     ((Scheme.Modules.pullbackId X).hom.app ((ihom M).obj N))]
@@ -82,13 +84,13 @@ using the canonical composition isomorphism on its source, target, and argument.
 @[reassoc]
 theorem pullbackIhomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
     (M N : Z.Modules) :
-    (Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app N) ≫
-        (pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app
+    (Scheme.Modules.pullback f).map (((Scheme.Modules.pullback g).ihomComparison M).app N) ≫
+        ((Scheme.Modules.pullback f).ihomComparison ((Scheme.Modules.pullback g).obj M)).app
           ((Scheme.Modules.pullback g).obj N) ≫
         (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj M))).map
           ((Scheme.Modules.pullbackComp f g).hom.app N) =
       (Scheme.Modules.pullbackComp f g).hom.app ((ihom M).obj N) ≫
-        (pullbackIhomComparison M (f ≫ g)).app N ≫
+        ((Scheme.Modules.pullback (f ≫ g)).ihomComparison M).app N ≫
         (pre ((Scheme.Modules.pullbackComp f g).hom.app M)).app
           ((Scheme.Modules.pullback (f ≫ g)).obj N) := by
   -- Compare both routes after evaluation, normalizing composite functor objects.
@@ -101,22 +103,25 @@ theorem pullbackIhomComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
     ((Scheme.Modules.pullbackComp f g).hom.app M)
     ((Scheme.Modules.pullback (f ≫ g)).obj N)]
   dsimp only [Functor.comp_obj]
-  rw [whiskerLeft_pullbackIhomComparison_app_comp_ev_assoc
-    ((Scheme.Modules.pullback g).obj M) f ((Scheme.Modules.pullback g).obj N)]
+  rw [Functor.ihomComparison_ev_assoc (Scheme.Modules.pullback f)
+    ((Scheme.Modules.pullback g).obj M) ((Scheme.Modules.pullback g).obj N)]
   rw [whisker_exchange_assoc]
-  rw [whiskerLeft_pullbackIhomComparison_app_comp_ev]
+  rw [Functor.ihomComparison_ev]
   -- Cancel the two tensor comparisons to reduce to monoidal composition coherence.
   rw [← cancel_epi (δ (Scheme.Modules.pullback f) ((Scheme.Modules.pullback g).obj M)
     ((Scheme.Modules.pullback g).obj ((ihom M).obj N)))]
   rw [δ_natural_right_assoc]
-  rw [IsIso.hom_inv_id_assoc, ← Functor.map_comp_assoc,
-    whiskerLeft_pullbackIhomComparison_app_comp_ev]
+  -- These cancellations unfold the oplax field of the strong monoidal instance.
+  erw [Functor.Monoidal.δ_μ_assoc (Scheme.Modules.pullback f) ((Scheme.Modules.pullback g).obj M)
+    ((ihom ((Scheme.Modules.pullback g).obj M)).obj ((Scheme.Modules.pullback g).obj N))]
+  rw [← Functor.map_comp_assoc, Functor.ihomComparison_ev]
   rw [← tensorHom_def'_assoc]
   rw [← cancel_epi ((Scheme.Modules.pullback f).map
     (δ (Scheme.Modules.pullback g) M ((ihom M).obj N)))]
-  simp only [← Functor.map_comp_assoc, IsIso.hom_inv_id_assoc]
+  rw [← Functor.map_comp_assoc]
+  erw [Functor.Monoidal.δ_μ_assoc (Scheme.Modules.pullback g) M ((ihom M).obj N)]
   rw [← pullbackComp_hom_app_comp_δ_assoc]
-  simp only [IsIso.hom_inv_id_assoc]
+  erw [Functor.Monoidal.δ_μ_assoc (Scheme.Modules.pullback (f ≫ g)) M ((ihom M).obj N)]
   exact (Scheme.Modules.pullbackComp f g).hom.naturality ((ihom.ev M).app N)
 
 /-- If the internal-Hom comparison along `f` is invertible on the pullbacks of `M` and `N`,
@@ -124,10 +129,11 @@ then invertibility along `f ≫ g` is equivalent to invertibility of the pullbac
 of the comparison along `g`. This allows invertibility to be checked on open covers. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_comp_iff
     (f : X ⟶ Y) (g : Y ⟶ Z) (M N : Z.Modules)
-    [IsIso ((pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app
+    [IsIso (((Scheme.Modules.pullback f).ihomComparison ((Scheme.Modules.pullback g).obj M)).app
       ((Scheme.Modules.pullback g).obj N))] :
-    IsIso ((pullbackIhomComparison M (f ≫ g)).app N) ↔
-      IsIso ((Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app N)) := by
+    IsIso (((Scheme.Modules.pullback (f ≫ g)).ihomComparison M).app N) ↔
+      IsIso ((Scheme.Modules.pullback f).map
+        (((Scheme.Modules.pullback g).ihomComparison M).app N)) := by
   have hpre := pre_isIso ((Scheme.Modules.pullbackComp f g).app M)
   have : IsIso ((pre ((Scheme.Modules.pullbackComp f g).hom.app M)).app
       ((Scheme.Modules.pullback (f ≫ g)).obj N)) :=
@@ -145,18 +151,20 @@ along `f`, through the composition isomorphism of pullback. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.pullbackIhomComparison_app_unit_comp
     (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) :
     (Scheme.Modules.pullbackComp f g).inv.app ((ihom M).obj (𝟙_ Z.Modules)) ≫
-        (Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app (𝟙_ Z.Modules) ≫
+        (Scheme.Modules.pullback f).map
+          (((Scheme.Modules.pullback g).ihomComparison M).app (𝟙_ Z.Modules) ≫
           (ihom ((Scheme.Modules.pullback g).obj M)).map
             (Scheme.Modules.pullbackObjUnitIso g).hom) ≫
-        (pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app (𝟙_ Y.Modules) ≫
+        ((Scheme.Modules.pullback f).ihomComparison ((Scheme.Modules.pullback g).obj M)).app
+          (𝟙_ Y.Modules) ≫
         (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj M))).map
           (Scheme.Modules.pullbackObjUnitIso f).hom =
-      (pullbackIhomComparison M (f ≫ g)).app (𝟙_ Z.Modules) ≫
+      ((Scheme.Modules.pullback (f ≫ g)).ihomComparison M).app (𝟙_ Z.Modules) ≫
         (ihom ((Scheme.Modules.pullback (f ≫ g)).obj M)).map
           (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom ≫
         (pre ((Scheme.Modules.pullbackComp f g).hom.app M)).app (𝟙_ X.Modules) := by
-  have hn := (pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).naturality
-    (Scheme.Modules.pullbackObjUnitIso g).hom
+  have hn := ((Scheme.Modules.pullback f).ihomComparison
+    ((Scheme.Modules.pullback g).obj M)).naturality (Scheme.Modules.pullbackObjUnitIso g).hom
   dsimp only [Functor.comp_obj, Functor.comp_map] at hn
   have hu : (Scheme.Modules.pullback f).map (Scheme.Modules.pullbackObjUnitIso g).hom ≫
       (Scheme.Modules.pullbackObjUnitIso f).hom =
@@ -179,25 +187,27 @@ theorem
     _root_.AlgebraicGeometry.Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp
     (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) [M.IsLocallyFree]
     [M.IsFiniteType]
-    [IsIso ((pullbackIhomComparison M (f ≫ g)).app (𝟙_ Z.Modules) ≫
+    [IsIso (((Scheme.Modules.pullback (f ≫ g)).ihomComparison M).app (𝟙_ Z.Modules) ≫
       (ihom ((Scheme.Modules.pullback (f ≫ g)).obj M)).map
         (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom)]
-    [IsIso ((pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app (𝟙_ Y.Modules) ≫
+    [IsIso (((Scheme.Modules.pullback f).ihomComparison ((Scheme.Modules.pullback g).obj M)).app
+      (𝟙_ Y.Modules) ≫
       (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj M))).map
         (Scheme.Modules.pullbackObjUnitIso f).hom)]
     (ψ : (Scheme.Modules.pullback f).obj
       ((ihom ((Scheme.Modules.pullback g).obj M)).obj (𝟙_ Y.Modules)) ⟶ 𝟙_ X.Modules) :
     Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback (f ≫ g)).obj M)
-        (inv ((pullbackIhomComparison M (f ≫ g)).app (𝟙_ Z.Modules) ≫
+        (inv (((Scheme.Modules.pullback (f ≫ g)).ihomComparison M).app (𝟙_ Z.Modules) ≫
             (ihom ((Scheme.Modules.pullback (f ≫ g)).obj M)).map
               (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom) ≫
           (Scheme.Modules.pullbackComp f g).inv.app ((ihom M).obj (𝟙_ Z.Modules)) ≫
-          (Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app (𝟙_ Z.Modules) ≫
+          (Scheme.Modules.pullback f).map
+          (((Scheme.Modules.pullback g).ihomComparison M).app (𝟙_ Z.Modules) ≫
             (ihom ((Scheme.Modules.pullback g).obj M)).map
               (Scheme.Modules.pullbackObjUnitIso g).hom) ≫ ψ) =
       Scheme.Modules.dualHomUnitEquiv ((Scheme.Modules.pullback f).obj
           ((Scheme.Modules.pullback g).obj M))
-          (inv ((pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app
+          (inv (((Scheme.Modules.pullback f).ihomComparison ((Scheme.Modules.pullback g).obj M)).app
               (𝟙_ Y.Modules) ≫
             (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj M))).map
               (Scheme.Modules.pullbackObjUnitIso f).hom) ≫ ψ) ≫
@@ -213,12 +223,12 @@ theorem
 when the scheme morphism is replaced by an equal one. -/
 @[reassoc]
 theorem pullbackIhomComparison_app_unit_congr {f f' : X ⟶ Y} (h : f = f') (M : Y.Modules) :
-    (pullbackIhomComparison M f').app (𝟙_ Y.Modules) ≫
+    ((Scheme.Modules.pullback f').ihomComparison M).app (𝟙_ Y.Modules) ≫
         (ihom ((Scheme.Modules.pullback f').obj M)).map
           (Scheme.Modules.pullbackObjUnitIso f').hom ≫
         (pre ((Scheme.Modules.pullbackCongr h).hom.app M)).app (𝟙_ X.Modules) =
       (Scheme.Modules.pullbackCongr h).inv.app ((ihom M).obj (𝟙_ Y.Modules)) ≫
-        (pullbackIhomComparison M f).app (𝟙_ Y.Modules) ≫
+        ((Scheme.Modules.pullback f).ihomComparison M).app (𝟙_ Y.Modules) ≫
         (ihom ((Scheme.Modules.pullback f).obj M)).map
           (Scheme.Modules.pullbackObjUnitIso f).hom := by
   subst h
@@ -233,23 +243,25 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.pullback_map_evaluation_comp_pullbac
     (f : X ⟶ Y) (M : Y.Modules) (s : 𝟙_ Y.Modules ⟶ M) :
     (Scheme.Modules.pullback f).map ((λ_ _).inv ≫ s ▷ (ihom M).obj (𝟙_ Y.Modules) ≫
         (ihom.ev M).app (𝟙_ Y.Modules)) ≫ (Scheme.Modules.pullbackObjUnitIso f).hom =
-      (pullbackIhomComparison M f).app (𝟙_ Y.Modules) ≫
+      ((Scheme.Modules.pullback f).ihomComparison M).app (𝟙_ Y.Modules) ≫
         (ihom ((Scheme.Modules.pullback f).obj M)).map (Scheme.Modules.pullbackObjUnitIso f).hom ≫
         (λ_ _).inv ≫
         ((Scheme.Modules.pullbackObjUnitIso f).inv ≫ (Scheme.Modules.pullback f).map s) ▷
           (ihom ((Scheme.Modules.pullback f).obj M)).obj (𝟙_ X.Modules) ≫
         (ihom.ev ((Scheme.Modules.pullback f).obj M)).app (𝟙_ X.Modules) := by
   -- Move the base-change map past the section and evaluate, using the characterization
-  -- `whiskerLeft_pullbackIhomComparison_app_comp_ev` of the comparison by evaluation.
+  -- `Functor.ihomComparison_ev` of the comparison by evaluation.
   rw [leftUnitor_inv_naturality_assoc, leftUnitor_inv_naturality_assoc,
     whisker_exchange_assoc, whisker_exchange_assoc, ihom.ev_naturality,
-    whiskerLeft_pullbackIhomComparison_app_comp_ev_assoc]
+    Functor.ihomComparison_ev_assoc]
   dsimp only [Functor.comp_obj]
   -- Oplax left unitality of pullback, whose unit comparison is `f^* 𝒪_Y ≅ 𝒪_X`, and naturality
   -- of the tensor comparison in the section reduce both sides to the same pulled-back composite.
   rw [left_unitality (Scheme.Modules.pullback f), Scheme.Modules.pullback_η]
   simp only [comp_whiskerRight, Category.assoc, hom_inv_whiskerRight_assoc, δ_natural_left_assoc,
-    IsIso.hom_inv_id_assoc, Functor.map_comp]
+    Functor.map_comp]
+  -- The canonical oplax comparison is definitionally the one in the monoidal instance.
+  erw [Functor.Monoidal.δ_μ_assoc (Scheme.Modules.pullback f) M ((ihom M).obj (𝟙_ Y.Modules))]
 
 end Unit
 
