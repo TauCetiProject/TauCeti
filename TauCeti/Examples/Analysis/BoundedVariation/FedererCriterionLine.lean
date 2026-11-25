@@ -14,9 +14,9 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 /-!
 # Federer's criterion on the line: locally finite but infinite perimeter
 
-In `ℝ`, let `s = ⋃_{k ≥ 1} (1/(2k + 1), 1/(2k))` (`intervals`) and `Ω = (0, 1)`
-(`unitIoo`). This file checks the second Check of §5.4 of
-`TauCetiRoadmap/GeometricMeasureTheory/README.md`:
+In `ℝ`, let `s = ⋃_{k ≥ 1} (1/(2k + 1), 1/(2k))` (`intervals`) and `Ω = (0, 1)` (`unitIoo`). The
+set `s` has locally finite perimeter in `(0, 1)` but infinite perimeter there, so Federer's
+criterion gives only local finiteness:
 
 * every compact `K ⊆ (0, 1)` meets the essential boundary of `s` in finitely many points
   (`encard_essentialBoundary_inter_ne_top`), so Federer's criterion
@@ -28,86 +28,86 @@ In `ℝ`, let `s = ⋃_{k ≥ 1} (1/(2k + 1), 1/(2k))` (`intervals`) and `Ω = (
   (`perimeter_eq_euclideanHausdorffMeasure`, `infinite_essentialBoundary_inter`).
 -/
 
-@[expose] public section
+public section
 
 open MeasureTheory Set TopologicalSpace Module
 open scoped ENNReal
 
 namespace TauCeti.Examples.FedererCriterionLine
 
-/-- The interval `(1/(2k + 3), 1/(2k + 2))`, the `(k + 1)`-st interval of the Check. -/
-noncomputable def piece (k : ℕ) : Set ℝ := Ioo (1 / (2 * k + 3)) (1 / (2 * k + 2))
+/-- The interval `(1/(2k + 3), 1/(2k + 2))`, the `(k + 1)`-st interval of `intervals`. -/
+private noncomputable def piece (k : ℕ) : Set ℝ := Ioo (1 / (2 * k + 3)) (1 / (2 * k + 2))
 
 /-- The set `⋃_{k ≥ 1} (1/(2k + 1), 1/(2k))`. -/
 noncomputable def intervals : Set ℝ := ⋃ k : ℕ, piece k
 
+/-- `x ∈ intervals` exactly when `x ∈ (1/(2k + 3), 1/(2k + 2))` for some `k : ℕ`. -/
+theorem mem_intervals_iff {x : ℝ} :
+    x ∈ intervals ↔ ∃ k : ℕ, x ∈ Ioo (1 / (2 * (k : ℝ) + 3)) (1 / (2 * k + 2)) :=
+  mem_iUnion
+
 /-- The open interval `(0, 1)`. -/
 def unitIoo : Opens ℝ := ⟨Ioo 0 1, isOpen_Ioo⟩
 
+/-- `unitIoo` is the open interval `(0, 1)`. -/
+@[simp]
+theorem coe_unitIoo : (unitIoo : Set ℝ) = Ioo 0 1 :=
+  (rfl)
+
 /-- The window `(1/(2k + 3), 1/(2k + 1))` around the left end of the gap `[1/(2k + 2), 1/(2k + 1)]`
 and the interval `piece k`. -/
-noncomputable def window (k : ℕ) : Opens ℝ := ⟨Ioo (1 / (2 * k + 3)) (1 / (2 * k + 1)), isOpen_Ioo⟩
+private noncomputable def window (k : ℕ) : Opens ℝ :=
+  ⟨Ioo (1 / (2 * k + 3)) (1 / (2 * k + 1)), isOpen_Ioo⟩
 
 theorem measurableSet_intervals : MeasurableSet intervals :=
   MeasurableSet.iUnion fun _ => measurableSet_Ioo
 
+/-- For `j < k`, the left end `1/(2k + 1)` of the `k`-th gap lies left of `piece j`. -/
+private theorem one_div_two_mul_add_one_le_of_lt {j k : ℕ} (hjk : j < k) :
+    1 / (2 * (k : ℝ) + 1) ≤ 1 / (2 * j + 3) := by
+  have : (j : ℝ) + 1 ≤ k := by exact_mod_cast hjk
+  exact one_div_le_one_div_of_le (by positivity) (by linarith)
+
 /-- The gaps `(1/(2k + 2), 1/(2k + 1))` lie outside `intervals`. -/
-theorem Ioo_subset_compl_intervals (k : ℕ) :
+private theorem Ioo_subset_compl_intervals (k : ℕ) :
     Ioo (1 / (2 * (k : ℝ) + 2)) (1 / (2 * k + 1)) ⊆ intervalsᶜ := by
   rintro x ⟨hx₁, hx₂⟩ hx
-  obtain ⟨j, hj₁, hj₂⟩ := mem_iUnion.1 hx
+  obtain ⟨j, hj₁, hj₂⟩ := mem_intervals_iff.1 hx
   rcases le_or_gt k j with hkj | hjk
-  · have : (k : ℝ) ≤ j := by exact_mod_cast hkj
-    have : 1 / (2 * (j : ℝ) + 2) ≤ 1 / (2 * k + 2) :=
-      one_div_le_one_div_of_le (by positivity) (by linarith)
+  · have : 1 / (2 * (j : ℝ) + 2) ≤ 1 / (2 * k + 2) := by gcongr
     linarith
-  · have : (j : ℝ) + 1 ≤ k := by exact_mod_cast hjk
-    have : 1 / (2 * (k : ℝ) + 1) ≤ 1 / (2 * j + 3) :=
-      one_div_le_one_div_of_le (by positivity) (by linarith)
-    linarith
-
-private theorem volume_ne_zero_of_Ioo_subset {a b : ℝ} {t : Set ℝ} (hab : a < b)
-    (h : Ioo a b ⊆ t) : volume t ≠ 0 :=
-  ((ENNReal.ofReal_pos.2 (sub_pos.2 hab)).trans_le
-    (by rw [← Real.volume_Ioo]; exact measure_mono h)).ne'
+  · linarith [one_div_two_mul_add_one_le_of_lt hjk]
 
 /-- Each window carries perimeter at least `1`. -/
-theorem one_le_perimeter_window (k : ℕ) : 1 ≤ perimeter volume (window k) intervals := by
-  have h₁ : 1 / (2 * (k : ℝ) + 3) < 1 / (2 * k + 2) :=
-    one_div_lt_one_div_of_lt (by positivity) (by linarith)
-  have h₂ : 1 / (2 * (k : ℝ) + 2) < 1 / (2 * k + 1) :=
-    one_div_lt_one_div_of_lt (by positivity) (by linarith)
-  refine Real.one_le_perimeter_of_ordConnected measurableSet_intervals.nullMeasurableSet
-    ordConnected_Ioo (volume_ne_zero_of_Ioo_subset h₁ fun x hx => ⟨mem_iUnion.2 ⟨k, hx⟩, ?_⟩)
-    (volume_ne_zero_of_Ioo_subset h₂ fun x hx => ⟨Ioo_subset_compl_intervals k hx, ?_⟩)
-  · exact ⟨hx.1, hx.2.trans h₂⟩
-  · exact ⟨h₁.trans hx.1, hx.2⟩
+private theorem one_le_perimeter_window (k : ℕ) :
+    1 ≤ perimeter volume (window k) intervals := by
+  have h₁ : 1 / (2 * (k : ℝ) + 3) < 1 / (2 * k + 2) := by gcongr; norm_num
+  have h₂ : 1 / (2 * (k : ℝ) + 2) < 1 / (2 * k + 1) := by gcongr; norm_num
+  have hs : Ioo (1 / (2 * (k : ℝ) + 3)) (1 / (2 * k + 2)) ⊆ intervals ∩ window k :=
+    fun x hx => ⟨mem_iUnion.2 ⟨k, hx⟩, hx.1, hx.2.trans h₂⟩
+  have hc : Ioo (1 / (2 * (k : ℝ) + 2)) (1 / (2 * k + 1)) ⊆ intervalsᶜ ∩ window k :=
+    fun x hx => ⟨Ioo_subset_compl_intervals k hx, h₁.trans hx.1, hx.2⟩
+  exact Real.one_le_perimeter_of_ordConnected measurableSet_intervals.nullMeasurableSet
+    ordConnected_Ioo
+    (fun h0 => ((Measure.measure_Ioo_pos volume).2 h₁).ne' (measure_mono_null hs h0))
+    (fun h0 => ((Measure.measure_Ioo_pos volume).2 h₂).ne' (measure_mono_null hc h0))
 
 /-- Distinct windows are disjoint. -/
-theorem disjoint_window {j k : ℕ} (hjk : j < k) : Disjoint (window j) (window k) := by
-  have hset : Disjoint (window j : Set ℝ) (window k) := by
-    refine disjoint_left.2 fun x hj hk => ?_
-    have : (j : ℝ) + 1 ≤ k := by exact_mod_cast hjk
-    have : 1 / (2 * (k : ℝ) + 1) ≤ 1 / (2 * j + 3) :=
-      one_div_le_one_div_of_le (by positivity) (by linarith)
-    exact absurd (hj.1.trans hk.2) (not_lt.2 this)
-  rw [disjoint_iff, ← SetLike.coe_set_eq]
-  simpa [← disjoint_iff_inter_eq_empty] using hset
+private theorem disjoint_window {j k : ℕ} (hjk : j < k) : Disjoint (window j) (window k) :=
+  Opens.coe_disjoint.1 <| disjoint_left.2 fun _ hj hk =>
+    absurd (hj.1.trans hk.2) (not_lt.2 (one_div_two_mul_add_one_le_of_lt hjk))
 
 /-- The first `N` windows carry perimeter at least `N`. -/
-theorem natCast_le_perimeter_sup_window (N : ℕ) :
+private theorem natCast_le_perimeter_sup_window (N : ℕ) :
     (N : ℝ≥0∞) ≤ perimeter volume ((Finset.range N).sup window) intervals := by
   induction N with
   | zero => simp
   | succ N ih =>
     have hdisj : Disjoint ((Finset.range N).sup window) (window N) :=
       Finset.disjoint_sup_left.2 fun j hj => disjoint_window (Finset.mem_range.1 hj)
-    have hli : LocallyIntegrableOn (intervals.indicator (1 : ℝ → ℝ))
-        (((Finset.range N).sup window ⊔ window N : Opens ℝ) : Set ℝ) volume :=
-      locallyIntegrableOn_indicator_const measurableSet_intervals.nullMeasurableSet 1
-    rw [Finset.range_add_one, Finset.sup_insert, sup_comm, perimeter_def,
-      totalVariationOn_sup_of_disjoint hli hdisj,
-      ← perimeter_def, ← perimeter_def, Nat.cast_add, Nat.cast_one]
+    rw [Finset.range_add_one, Finset.sup_insert, sup_comm,
+      perimeter_sup_of_disjoint measurableSet_intervals.nullMeasurableSet hdisj, Nat.cast_add,
+      Nat.cast_one]
     exact add_le_add ih (one_le_perimeter_window N)
 
 /-- **Infinite perimeter.** `P(s; (0, 1)) = ∞`. -/
@@ -124,12 +124,12 @@ theorem perimeter_eq_top : perimeter volume unitIoo intervals = ∞ := by
     _ ≤ _ := natCast_le_perimeter_sup_window _
     _ ≤ _ := perimeter_mono hsub
 
-/-- **The perimeter is `H⁰` of the essential boundary.** Both are infinite: the sharp bound
-`TauCeti.perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter` forces
-`H⁰(∂ᵉs ∩ (0, 1)) = ∞`. -/
+/-- **The perimeter is `H⁰` of the essential boundary.** `P(s; (0, 1)) = H⁰(∂ᵉs ∩ (0, 1))`; both
+sides are `∞`. -/
 theorem perimeter_eq_euclideanHausdorffMeasure :
     perimeter volume unitIoo intervals =
       μHE[0] (essentialBoundary volume intervals ∩ unitIoo) := by
+  -- The sharp bound `P(s; Ω) ≤ H⁰(∂ᵉs ∩ Ω)` forces `H⁰(∂ᵉs ∩ (0, 1)) = ∞`.
   have h := perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter unitIoo
     measurableSet_intervals.nullMeasurableSet
   rw [finrank_self, Nat.sub_self, perimeter_eq_top, top_le_iff] at h
@@ -151,32 +151,15 @@ private theorem intervals_inter_Ioi {t : ℝ} {N : ℕ} (hN : 1 / (2 * (N : ℝ)
   obtain ⟨k, hk⟩ := mem_iUnion.1 hx
   refine mem_biUnion (Finset.mem_range.2 ?_) hk
   by_contra! hNk
-  have : (N : ℝ) ≤ k := by exact_mod_cast hNk
-  have : 1 / (2 * (k : ℝ) + 2) ≤ 1 / (2 * N + 2) :=
-    one_div_le_one_div_of_le (by positivity) (by linarith)
+  have : 1 / (2 * (k : ℝ) + 2) ≤ 1 / (2 * N + 2) := by gcongr
   exact absurd (hk.2.trans_le (this.trans hN)) (not_lt.2 hxt.le)
 
 /-- The frontier of the first `N` intervals is finite. -/
 private theorem finite_frontier_biUnion (N : ℕ) :
-    (frontier (⋃ k ∈ Finset.range N, piece k)).Finite := by
-  refine ((Finset.range N).finite_toSet.biUnion
-    (t := fun k : ℕ => ({1 / (2 * (k : ℝ) + 3), 1 / (2 * (k : ℝ) + 2)} : Set ℝ))
-    fun k _ => toFinite _).subset ?_
-  have ho : IsOpen (⋃ k ∈ Finset.range N, piece k) :=
-    isOpen_biUnion fun k _ => isOpen_Ioo
-  rw [ho.frontier_eq, Finset.closure_biUnion]
-  rintro x ⟨hx, hxs⟩
-  obtain ⟨k, hk, hxk⟩ := mem_iUnion₂.1 hx
-  have hlt : 1 / (2 * (k : ℝ) + 3) < 1 / (2 * k + 2) :=
-    one_div_lt_one_div_of_lt (by positivity) (by linarith)
-  rw [piece, closure_Ioo hlt.ne] at hxk
-  refine mem_biUnion hk ?_
-  have hxk' : x ∉ piece k := fun h => hxs (mem_biUnion hk h)
-  rcases hxk.1.eq_or_lt with h | h
-  · exact Or.inl h.symm
-  rcases hxk.2.eq_or_lt with h' | h'
-  · exact Or.inr h'
-  exact absurd ⟨h, h'⟩ hxk'
+    (frontier (⋃ k ∈ Finset.range N, piece k)).Finite :=
+  ((Finset.range N).finite_toSet.biUnion fun k _ => by
+    rw [piece, frontier_Ioo (by gcongr; norm_num)]
+    exact toFinite _).subset (Finset.frontier_biUnion_subset _ _)
 
 /-- Every compact subset of `(0, 1)` meets the essential boundary of `s` in finitely many
 points. -/
