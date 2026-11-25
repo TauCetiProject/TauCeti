@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Comma.Groupoid
+public import TauCeti.CategoryTheory.Comma.WeakPullback
 public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.Proper.Basic
 
@@ -28,6 +29,9 @@ hypothesis on `T`. With these topologies:
   are in `A` and `B`;
 * objects and arrows are Hausdorff, respectively second countable, when the spaces they are
   recorded in are;
+* the objects are homeomorphic to the fiber product of `Prod.map L.obj R.obj` and
+  `(left, right) : Quiver.Total T → T × T` (`CategoryTheory.Comma.objectHomeomorph`), with no
+  continuity hypotheses on `L`, `R`, or `T`;
 * when `A` is a groupoid, the arrows are homeomorphic to the fiber product of the objects with the
   total arrows of `A` and `B` over the objects of `A` and `B`
   (`CategoryTheory.Comma.totalHomeomorph`), provided `L` and `R` are continuous on total arrows
@@ -112,6 +116,35 @@ instance instT2Space [T2Space A] [T2Space B] [T2Space (Quiver.Total T)] : T2Spac
 instance instSecondCountableTopology [SecondCountableTopology A] [SecondCountableTopology B]
     [SecondCountableTopology (Quiver.Total T)] : SecondCountableTopology (Comma L R) :=
   isEmbedding_left_totalHom_right.isInducing.secondCountableTopology
+
+/-- The objects of `Comma L R` are homeomorphic to the fiber product of `Prod.map L.obj R.obj` and
+`(left, right) : Quiver.Total T → T × T`, with no continuity hypotheses on `L`, `R`, or `T`. -/
+def objectHomeomorph (L : A ⥤ T) (R : B ⥤ T) :
+    Comma L R ≃ₜ
+      {p : (A × B) × Quiver.Total T // Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)} where
+  toEquiv := objectEquiv L R
+  continuous_toFun :=
+    (((continuous_left.prodMk continuous_right).prodMk continuous_totalHom).subtype_mk
+      fun _ ↦ rfl).congr fun X ↦ Subtype.ext (objectEquiv_apply_coe L R X).symm
+  continuous_invFun := continuous_iff.mpr
+    ⟨(continuous_fst.comp (continuous_fst.comp continuous_subtypeVal)).congr
+        fun p ↦ (objectEquiv_symm_apply_left L R p).symm,
+      (continuous_snd.comp continuous_subtypeVal).congr
+        fun p ↦ (objectEquiv_symm_apply_totalHom L R p).symm,
+      (continuous_snd.comp (continuous_fst.comp continuous_subtypeVal)).congr
+        fun p ↦ (objectEquiv_symm_apply_right L R p).symm⟩
+
+/-- The homeomorphism `CategoryTheory.Comma.objectHomeomorph` is
+`CategoryTheory.Comma.objectEquiv`. -/
+@[simp]
+theorem coe_objectHomeomorph (L : A ⥤ T) (R : B ⥤ T) :
+    ⇑(objectHomeomorph L R) = ⇑(objectEquiv L R) := (rfl)
+
+/-- The inverse of `CategoryTheory.Comma.objectHomeomorph` is the inverse of
+`CategoryTheory.Comma.objectEquiv`. -/
+@[simp]
+theorem coe_objectHomeomorph_symm (L : A ⥤ T) (R : B ⥤ T) :
+    ⇑(objectHomeomorph L R).symm = ⇑(objectEquiv L R).symm := (rfl)
 
 variable [TopologicalSpace (Quiver.Total A)] [TopologicalSpace (Quiver.Total B)]
 

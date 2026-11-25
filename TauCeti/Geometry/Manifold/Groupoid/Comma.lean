@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.FiberProduct.Submersion
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
-public import TauCeti.Topology.CategoryTheory.Functor.Comma
+public import TauCeti.Topology.CategoryTheory.Comma
 
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic

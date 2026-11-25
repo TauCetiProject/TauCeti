@@ -52,8 +52,8 @@ def objectEquiv (L : A ⥤ T) (R : B ⥤ T) :
     Comma L R ≃
       {p : (A × B) × Quiver.Total T // Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)} where
   toFun X := ⟨((X.left, X.right), ⟨L.obj X.left, R.obj X.right, X.hom⟩), rfl⟩
-  invFun p := ⟨p.1.1.1, p.1.1.2,
-    Quiver.homOfEq p.1.2.hom (Prod.mk.inj p.2).1.symm (Prod.mk.inj p.2).2.symm⟩
+  invFun p := ⟨p.val.1.1, p.val.1.2,
+    Quiver.homOfEq p.val.2.hom (Prod.mk.inj p.property).1.symm (Prod.mk.inj p.property).2.symm⟩
   left_inv X := by cases X; rfl
   right_inv := by
     rintro ⟨⟨⟨a, b⟩, ⟨t₁, t₂, h⟩⟩, hp⟩
@@ -67,16 +67,16 @@ def objectEquiv (L : A ⥤ T) (R : B ⥤ T) :
 
 @[simp] theorem objectEquiv_symm_apply_left (L : A ⥤ T) (R : B ⥤ T)
     (p : {p : (A × B) × Quiver.Total T // Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)}) :
-    ((objectEquiv L R).symm p).left = p.1.1.1 := (rfl)
+    ((objectEquiv L R).symm p).left = p.val.1.1 := (rfl)
 
 @[simp] theorem objectEquiv_symm_apply_right (L : A ⥤ T) (R : B ⥤ T)
     (p : {p : (A × B) × Quiver.Total T // Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)}) :
-    ((objectEquiv L R).symm p).right = p.1.1.2 := (rfl)
+    ((objectEquiv L R).symm p).right = p.val.1.2 := (rfl)
 
 @[simp] theorem objectEquiv_symm_apply_totalHom (L : A ⥤ T) (R : B ⥤ T)
     (p : {p : (A × B) × Quiver.Total T // Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)}) :
-    (⟨_, _, ((objectEquiv L R).symm p).hom⟩ : Quiver.Total T) = p.1.2 :=
-  Quiver.Total.mk_homOfEq p.1.2 (Prod.mk.inj p.2).1.symm (Prod.mk.inj p.2).2.symm
+    (⟨_, _, ((objectEquiv L R).symm p).hom⟩ : Quiver.Total T) = p.val.2 :=
+  Quiver.Total.mk_homOfEq p.val.2 (Prod.mk.inj p.property).1.symm (Prod.mk.inj p.property).2.symm
 
 end ObjectEquiv
 
