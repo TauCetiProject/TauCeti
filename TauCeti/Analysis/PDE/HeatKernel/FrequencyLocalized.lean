@@ -56,6 +56,8 @@ Littlewood–Paley block, from which it follows on the Besov spaces `B^s_{p,q}`,
 
 ## Main declarations
 
+* `TauCeti.cutoffHeatSymbol`: the frequency-localized heat multiplier `χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)`
+  as a Schwartz function.
 * `TauCeti.exists_integral_norm_fourierInv_mul_exp_le`: the `L¹` norm of the kernel of the
   frequency-localized heat multiplier `χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)` is
   `O(exp(-π² r² ν² t))` when `χ` vanishes on the ball of radius `r`.
@@ -177,9 +179,9 @@ private theorem mul_exp_eq_comp_smul {ν : ℝ} (hν : 0 < ν) (t : ℝ) :
   congr 3
   field_simp
 
-/-- The frequency-localized heat multiplier `χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)`, as a Schwartz function
-with complex values. -/
-private def cutoffHeatSymbol (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ) {ν : ℝ}
+/-- The frequency-localized heat multiplier `χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)`, for a smooth compactly
+supported cutoff `χ`, as a Schwartz function with complex values. -/
+def cutoffHeatSymbol (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ) {ν : ℝ}
     (hν : ν ≠ 0) (t : ℝ) : 𝓢(E, ℂ) :=
   HasCompactSupport.toSchwartzMap
     (f := fun ξ : E ↦ ((χ (ν⁻¹ • ξ) * rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ))
@@ -188,7 +190,8 @@ private def cutoffHeatSymbol (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSuppo
       (contDiff_const.mul (contDiff_norm_sq ℝ)).neg.exp))
 
 /-- The values of `cutoffHeatSymbol`. -/
-private theorem cutoffHeatSymbol_apply (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+@[simp]
+theorem cutoffHeatSymbol_apply (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
     {ν : ℝ} (hν : ν ≠ 0) (t : ℝ) (ξ : E) :
     cutoffHeatSymbol hχ hχc hν t ξ = ((χ (ν⁻¹ • ξ) * rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ) :=
   HasCompactSupport.toSchwartzMap_toFun _ _ _
