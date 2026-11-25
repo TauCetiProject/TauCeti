@@ -109,7 +109,7 @@ private lemma isBigO_iterate_sub {f : E → E} {p : E} {k : ℕ} (hk : 2 ≤ k)
       abel
     rw [key]
     exact (((hf.comp_tendsto hw0).trans (hw1.norm_left.pow (k + 1))).add ih).add
-      (q.isBigO_apply_const_sub hk hw1 hwy)
+      (q.isBigO_apply_const_sub hk hwy)
 
 /-- **Schwarz's lemma for the iterates.** Under the hypotheses of `isBigO_iterate_sub`, if
 `f` is a holomorphic self-map of `U` with `ball p r ⊆ U ⊆ closedBall p R`, then
