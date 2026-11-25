@@ -1,0 +1,767 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+public import Mathlib.RingTheory.Polynomial.Pochhammer
+public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.Asymptotics.Fourier.Endpoint
+import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
+
+/-!
+# The Fourier analogue of Watson's lemma
+
+Let `α : ℕ → ℂ` have `Re α_s > 0`, let `c : ℕ → ℂ`, and let `q : ℝ → ℂ` be smooth on `(0, ∞)`
+with an expansion at `0+` that may be differentiated termwise: for all `k` and `N`,
+
+`q^{(k)}(t) - ∑_{s<N} c_s (α_s - 1)(α_s - 2)⋯(α_s - k) t^{α_s - 1 - k} = O(t^{Re α_N - 1 - k})`
+
+as `t → 0+`. If every `∫ e^{ixt} q^{(k)}(t) dt` converges at `∞` uniformly for all large `x`,
+then the improper integral `∫₀^∞ e^{ixt} q(t) dt` exists for all large `x`, and
+
+`∫₀^∞ e^{ixt} q(t) dt ∼ ∑ e^{iπα_s/2} Γ(α_s) c_s x^{-α_s}`   as `x → +∞`
+
+(DLMF 2.3.19–2.3.20, where `α_s = (s + λ)/μ`). The conclusion is an
+`Asymptotics.HasAsymptoticExpansion` in the scale `x^{-α_s}`: for every `N` the remainder after
+`N` terms is `O(x^{-Re α_N})`. It is an asymptotic expansion in DLMF's sense when `Re α_s` is
+strictly increasing. This is the Fourier counterpart of Watson's lemma
+`Asymptotics.hasAsymptoticExpansion_laplace`. Unlike a Laplace integral, the Fourier integral of
+a single term `t^{α-1}` diverges at `∞` once `Re α ≥ 1`, so the terms cannot be integrated
+separately over `(0, ∞)`.
+
+## Main results
+
+* `Asymptotics.hasAsymptoticExpansion_fourier`: the expansion.
+* `Asymptotics.eventually_exists_tendsto_integral_cexp_mul`: existence of the improper integral.
+
+## Implementation notes
+
+Fix `N`, an integer `n` exceeding `Re α_s` for `s ≤ N`, and `b > 0` such that the remainders
+`R_k` of the expansions of the derivatives satisfy `‖R_k(t)‖ ≤ C t^{Re α_N - 1 - k}` on `(0, b]`
+for `k ≤ n`. The integral over `(b, ∞)` has the endpoint expansion at `b` of DLMF 2.3.5
+(`Asymptotics.hasAsymptoticExpansion_of_tendsto_integral_cexp_smul`). The integral over `(0, b)` is
+split at `1/x` and integrated by parts `n` times over `(1/x, b)`, and its endpoint terms at `b`
+cancel those of the integral over `(b, ∞)`. For the remainders every resulting piece is
+`O(x^{-Re α_N})`. For a model term `t^{α-1}` the pieces, with the last integral taken over
+`(1/x, ∞)`, are exactly `e^{iπα/2} Γ(α) x^{-α}`: they are the value at `z = -ix` of the Gamma
+integral `∫₀^∞ t^{α-1} e^{-zt} dt = Γ(α) z^{-α}` for `Re z > 0`
+(`Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`), split and integrated by parts in the
+same way, which is continuous up to `Re z = 0`.
+
+## References
+
+* DLMF §2.3(iii), <https://dlmf.nist.gov/2.3.iii>.
+-/
+
+public section
+
+noncomputable section
+
+open Complex Filter Finset MeasureTheory Set intervalIntegral
+open scoped ContDiff Real Topology
+
+namespace Asymptotics
+
+section Model
+
+/-- For `Re z > 0` and `δ > 0`, `t ↦ t^γ e^{-zt}` is integrable on `(δ, ∞)` for every `γ`. -/
+private theorem integrableOn_Ioi_cpow_mul_cexp_neg_mul (γ : ℂ) {z : ℂ} (hz : 0 < z.re) {δ : ℝ}
+    (hδ : 0 < δ) : IntegrableOn (fun t : ℝ => (t : ℂ) ^ γ * cexp (-(z * t))) (Ioi δ) := by
+  set b : ℝ := max γ.re 0
+  have hb : -1 < ((b : ℂ)).re := by simp only [ofReal_re]; linarith [le_max_right γ.re 0]
+  have hI := ((integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi hb hz 0).mono_set
+    (Ioi_subset_Ioi hδ.le)).norm.const_mul (δ ^ (γ.re - b))
+  refine Integrable.mono' hI (by fun_prop) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
+  have ht0 : 0 < t := hδ.trans ht
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0, pow_zero, mul_one, norm_mul,
+    norm_cpow_eq_rpow_re_of_pos ht0, ofReal_re, ← mul_assoc]
+  refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg (cexp (-(z * t))))
+  have h1 : t ^ γ.re = t ^ (γ.re - b) * t ^ b := by
+    rw [← Real.rpow_add ht0]; ring_nf
+  rw [h1]
+  exact mul_le_mul_of_nonneg_right
+    (Real.rpow_le_rpow_of_nonpos hδ ht.le (by linarith [le_max_left γ.re 0])) (by positivity)
+
+/-- One integration by parts in `∫_δ^∞ t^γ e^{-zt} dt`, for `Re z > 0`. -/
+private theorem integral_Ioi_cpow_mul_cexp_neg_mul (γ : ℂ) {z : ℂ} (hz : 0 < z.re) {δ : ℝ}
+    (hδ : 0 < δ) :
+    ∫ t in Ioi δ, (t : ℂ) ^ γ * cexp (-(z * t)) =
+      z⁻¹ * ((δ : ℂ) ^ γ * cexp (-(z * δ))) +
+        z⁻¹ * (γ * ∫ t in Ioi δ, (t : ℂ) ^ (γ - 1) * cexp (-(z * t))) := by
+  have hz0 : z ≠ 0 := fun h => by simp [h] at hz
+  have hint₁ := integrableOn_Ioi_cpow_mul_cexp_neg_mul γ hz hδ
+  have hu : ∀ t ∈ Ioi δ, HasDerivAt (fun t : ℝ => (t : ℂ) ^ γ) (γ * (t : ℂ) ^ (γ - 1)) t :=
+    fun t (ht : δ < t) => by
+      simpa using ((hasDerivAt_id (t : ℂ)).cpow_const (c := γ)
+        (ofReal_mem_slitPlane.2 (hδ.trans ht))).comp_ofReal
+  have hv : ∀ t ∈ Ioi δ, HasDerivAt (fun t : ℝ => -z⁻¹ * cexp (-(z * t))) (cexp (-(z * t))) t :=
+    fun t _ => by
+      have h : HasDerivAt (fun w : ℂ => -z⁻¹ * cexp (-(z * w)))
+          (-z⁻¹ * (cexp (-(z * t)) * -(z * 1))) (t : ℂ) :=
+        (((hasDerivAt_id (t : ℂ)).const_mul z).fun_neg.cexp).const_mul (-z⁻¹)
+      convert h.comp_ofReal using 1
+      field_simp
+  have hint : IntegrableOn (fun t : ℝ => γ * (t : ℂ) ^ (γ - 1) * (-z⁻¹ * cexp (-(z * t))))
+      (Ioi δ) := by
+    have h : IntegrableOn (fun t : ℝ => -(γ * z⁻¹) * ((t : ℂ) ^ (γ - 1) * cexp (-(z * t))))
+        (Ioi δ) := (integrableOn_Ioi_cpow_mul_cexp_neg_mul (γ - 1) hz hδ).const_mul _
+    exact h.congr_fun (fun t _ => by ring) measurableSet_Ioi
+  have hzero : Tendsto (fun t : ℝ => (t : ℂ) ^ γ * (-z⁻¹ * cexp (-(z * t)))) (𝓝[>] δ)
+      (𝓝 ((δ : ℂ) ^ γ * (-z⁻¹ * cexp (-(z * δ))))) := by
+    refine Tendsto.mono_left (ContinuousAt.tendsto ?_) nhdsWithin_le_nhds
+    exact (((hasDerivAt_id (δ : ℂ)).cpow_const (c := γ)
+      (ofReal_mem_slitPlane.2 hδ)).comp_ofReal.continuousAt).mul (by fun_prop)
+  have hinf : Tendsto (fun t : ℝ => (t : ℂ) ^ γ * (-z⁻¹ * cexp (-(z * t)))) atTop (𝓝 0) := by
+    have h := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero γ.re z.re hz).const_mul ‖z⁻¹‖
+    rw [mul_zero] at h
+    refine squeeze_zero_norm' ?_ h
+    filter_upwards [eventually_gt_atTop 0] with t ht
+    rw [norm_mul, norm_mul, norm_neg, norm_cpow_eq_rpow_re_of_pos ht, norm_exp]
+    simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, neg_mul]
+    exact le_of_eq (by ring)
+  have h := integral_Ioi_mul_deriv_eq_deriv_mul hu hv hint₁ hint hzero hinf
+  have hc : ∫ t in Ioi δ, γ * (t : ℂ) ^ (γ - 1) * (-z⁻¹ * cexp (-(z * t))) =
+      -(z⁻¹ * γ) * ∫ t in Ioi δ, (t : ℂ) ^ (γ - 1) * cexp (-(z * t)) := by
+    rw [← MeasureTheory.integral_const_mul]
+    exact integral_congr_ae (Eventually.of_forall fun t => by ring)
+  rw [h, hc]
+  ring
+
+/-- `n` integrations by parts in `∫_δ^∞ t^{α-1} e^{-zt} dt`, for `Re z > 0`. -/
+private theorem integral_Ioi_cpow_mul_cexp_neg_mul_eq_sum (α : ℂ) {z : ℂ} (hz : 0 < z.re)
+    {δ : ℝ} (hδ : 0 < δ) (n : ℕ) :
+    ∫ t in Ioi δ, (t : ℂ) ^ (α - 1) * cexp (-(z * t)) =
+      ∑ k ∈ range n, z⁻¹ ^ (k + 1) * ((descPochhammer ℂ k).eval (α - 1) *
+          ((δ : ℂ) ^ (α - 1 - k) * cexp (-(z * δ)))) +
+        z⁻¹ ^ n * ((descPochhammer ℂ n).eval (α - 1) *
+          ∫ t in Ioi δ, (t : ℂ) ^ (α - 1 - n) * cexp (-(z * t))) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [ih, integral_Ioi_cpow_mul_cexp_neg_mul (α - 1 - n) hz hδ, sum_range_succ,
+      descPochhammer_succ_eval, show α - 1 - (n : ℂ) - 1 = α - 1 - ((n + 1 : ℕ) : ℂ) by
+        push_cast; ring]
+    ring
+
+/-- The Gamma integral `∫₀^∞ t^{α-1} e^{-wt} dt` split at `δ`, with the part over `(δ, ∞)`
+integrated by parts `n` times. For `0 < Re α < n` each term is defined and continuous on the closed
+half-plane `Re w ≥ 0` away from `w = 0`, so this continues the Gamma integral to the imaginary
+axis. -/
+private def gammaSplit (α : ℂ) (δ : ℝ) (n : ℕ) (w : ℂ) : ℂ :=
+  (∫ t in (0 : ℝ)..δ, (t : ℂ) ^ (α - 1) * cexp (-(w * t))) +
+    ∑ k ∈ range n, w⁻¹ ^ (k + 1) * ((descPochhammer ℂ k).eval (α - 1) *
+      ((δ : ℂ) ^ (α - 1 - k) * cexp (-(w * δ)))) +
+    w⁻¹ ^ n * ((descPochhammer ℂ n).eval (α - 1) *
+      ∫ t in Ioi δ, (t : ℂ) ^ (α - 1 - n) * cexp (-(w * t)))
+
+/-- On `Re z > 0` the split Gamma integral is `Γ(α) z^{-α}`. -/
+private theorem gammaSplit_of_re_pos {α z : ℂ} (hα : 0 < α.re) (hz : 0 < z.re) {δ : ℝ}
+    (hδ : 0 < δ) (n : ℕ) : gammaSplit α δ n z = Gamma α * z ^ (-α) := by
+  have hint := integrableOn_cpow_mul_exp_neg_mul_Ioi hα hz
+  rw [gammaSplit, add_assoc, ← integral_Ioi_cpow_mul_cexp_neg_mul_eq_sum α hz hδ n,
+    intervalIntegral.integral_of_le hδ.le,
+    ← setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
+      (hint.mono_set Ioc_subset_Ioi_self) (hint.mono_set (Ioi_subset_Ioi hδ.le)),
+    Ioc_union_Ioi_eq_Ioi hδ.le, integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hα hz]
+
+/-- For `Re w ≥ 0` and `t > 0`, `‖t^γ e^{-wt}‖ ≤ t^{Re γ}`. -/
+private theorem norm_cpow_mul_cexp_neg_mul_le (γ : ℂ) {w : ℂ} (hw : 0 ≤ w.re) {t : ℝ}
+    (ht : 0 < t) : ‖(t : ℂ) ^ γ * cexp (-(w * t))‖ ≤ t ^ γ.re := by
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, norm_exp]
+  refine mul_le_of_le_one_right (by positivity) (Real.exp_le_one_iff.2 ?_)
+  simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, Left.neg_nonpos_iff]
+  positivity
+
+/-- The split Gamma integral is continuous at the boundary point `-ix`, approached along
+`ε - ix` as `ε → 0+`; the integrals converge by dominated convergence. -/
+private theorem tendsto_gammaSplit {α : ℂ} (hα : 0 < α.re) {n : ℕ} (hn : α.re < n) {x δ : ℝ}
+    (hx : x ≠ 0) (hδ : 0 < δ) :
+    Tendsto (fun ε : ℝ => gammaSplit α δ n (ε - x * I)) (𝓝[>] 0)
+      (𝓝 (gammaSplit α δ n (-(x * I)))) := by
+  set z : ℝ → ℂ := fun ε => (ε : ℂ) - x * I with hzdef
+  have hz0 : z 0 = -(x * I) := by simp [hzdef]
+  have hzc : Continuous z := by fun_prop
+  have hzne : z 0 ≠ 0 := by simp [hz0, hx]
+  have hpos : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 ≤ (z ε).re :=
+    eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) => by simpa [hzdef] using hε.le
+  have hk : ∀ t : ℝ, Tendsto (fun ε => cexp (-(z ε * t))) (𝓝[>] 0) (𝓝 (cexp (-(z 0 * t)))) :=
+    fun t => ((by fun_prop : Continuous fun ε => cexp (-(z ε * t))).tendsto 0).mono_left
+      nhdsWithin_le_nhds
+  have hinv := ((hzc.tendsto 0).inv₀ hzne).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
+  rw [← hz0]
+  refine Tendsto.add (Tendsto.add ?_ (tendsto_finsetSum _ fun k _ => (hinv.pow (k + 1)).mul
+    (((hk δ).const_mul _).const_mul _))) ((hinv.pow n).mul (Tendsto.const_mul _ ?_))
+  · refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence
+      (fun t => t ^ (α.re - 1)) (Eventually.of_forall fun ε => by fun_prop) ?_
+      (intervalIntegral.intervalIntegrable_rpow' (by linarith))
+      (Eventually.of_forall fun t _ => (hk t).const_mul _)
+    filter_upwards [hpos] with ε hε
+    refine Eventually.of_forall fun t ht => ?_
+    rw [uIoc_of_le hδ.le] at ht
+    simpa using norm_cpow_mul_cexp_neg_mul_le (α - 1) hε ht.1
+  · refine tendsto_integral_filter_of_dominated_convergence (fun t => t ^ (α.re - 1 - n))
+      (Eventually.of_forall fun ε => by fun_prop) ?_
+      (integrableOn_Ioi_rpow_of_lt (by linarith) hδ)
+      (Eventually.of_forall fun t => (hk t).const_mul _)
+    filter_upwards [hpos] with ε hε
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
+    simpa using norm_cpow_mul_cexp_neg_mul_le (α - 1 - n) hε (hδ.trans ht)
+
+/-- The value of the split Gamma integral at `-ix`, `x > 0`, is `Γ(α) (-ix)^{-α} =
+e^{iπα/2} Γ(α) x^{-α}`. -/
+private theorem gammaSplit_neg_mul_I {α : ℂ} (hα : 0 < α.re) {n : ℕ} (hn : α.re < n) {x δ : ℝ}
+    (hx : 0 < x) (hδ : 0 < δ) :
+    gammaSplit α δ n (-(x * I)) = cexp (π * I * α / 2) * Gamma α * (x : ℂ) ^ (-α) := by
+  have hslit : -((x : ℂ) * I) ∈ slitPlane := by simp [mem_slitPlane_iff, hx.ne']
+  have hlim : Tendsto (fun ε : ℝ => gammaSplit α δ n (ε - x * I)) (𝓝[>] 0)
+      (𝓝 (Gamma α * (-(x * I)) ^ (-α))) := by
+    have hc : Tendsto (fun ε : ℝ => ((ε : ℂ) - x * I)) (𝓝 0) (𝓝 (-(x * I))) := by
+      simpa using ((by fun_prop : Continuous fun ε : ℝ => ((ε : ℂ) - x * I)).tendsto 0)
+    refine ((((continuousAt_cpow_const hslit).tendsto.comp hc).const_mul _).mono_left
+      nhdsWithin_le_nhds).congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
+    exact (gammaSplit_of_re_pos hα (by simpa using hε) hδ n).symm
+  rw [tendsto_nhds_unique (tendsto_gammaSplit hα hn hx.ne' hδ) hlim,
+    show -((x : ℂ) * I) = x * (-I) by ring, ofReal_mul_cpow hx.le,
+    cpow_def_of_ne_zero (neg_ne_zero.2 I_ne_zero), log_neg_I]
+  ring_nf
+
+end Model
+
+section Remainder
+
+/-- The part near `0` of the Fourier integral of a family `g` of successive derivatives: the
+integral of `e^{ixt} g₀(t)` over `(0, δ)`, the first `n` endpoint terms at `δ`, and the integral
+of `e^{ixt} gₙ(t)` over `(δ, b)` left after `n` integrations by parts. -/
+private def nearZero (x δ b : ℝ) (n : ℕ) (g : ℕ → ℝ → ℂ) : ℂ :=
+  (∫ t in (0 : ℝ)..δ, cexp (((x * t : ℝ) : ℂ) * I) * g 0 t) +
+    ∑ k ∈ range n, (I / x) ^ (k + 1) * (cexp (((x * δ : ℝ) : ℂ) * I) * g k δ) +
+    (I / x) ^ n * ∫ t in δ..b, cexp (((x * t : ℝ) : ℂ) * I) * g n t
+
+/-- Splitting `(0, b)` at `δ` and integrating by parts `n` times on `(δ, b)`. -/
+private theorem integral_eq_nearZero_sub {g : ℕ → ℝ → ℂ} {x δ b : ℝ} (hx : x ≠ 0) (hδb : δ ≤ b)
+    {n : ℕ} (hcont : ∀ i ≤ n, ContinuousOn (g i) (Icc δ b))
+    (hderiv : ∀ i < n, ∀ t ∈ Ioo δ b, HasDerivAt (g i) (g (i + 1) t) t)
+    (h0 : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * g 0 t) volume 0 δ) :
+    ∫ t in (0 : ℝ)..b, cexp (((x * t : ℝ) : ℂ) * I) * g 0 t =
+      nearZero x δ b n g -
+        ∑ k ∈ range n, (I / x) ^ (k + 1) * (cexp (((x * b : ℝ) : ℂ) * I) * g k b) := by
+  have hδ : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * g 0 t) volume δ b :=
+    (((by fun_prop : Continuous fun t : ℝ => cexp (((x * t : ℝ) : ℂ) * I))).continuousOn.mul
+      (hcont 0 (Nat.zero_le n))).intervalIntegrable_of_Icc hδb
+  have h := integral_cexp_smul_eq_sum_add_of_hasDerivAt hδb hx (fun i hi => hcont i hi.le)
+    hderiv ((hcont n le_rfl).intervalIntegrable_of_Icc hδb)
+  simp only [smul_eq_mul] at h
+  rw [← integral_add_adjacent_intervals h0 hδ, h, nearZero]
+  simp only [mul_sub, sum_sub_distrib]
+  ring
+
+/-- `nearZero` is linear in the family. -/
+private theorem nearZero_add_sum {g : ℕ → ℝ → ℂ} {m : ℕ → ℕ → ℝ → ℂ} (c : ℕ → ℂ)
+    {x δ b : ℝ} {n : ℕ} (N : ℕ)
+    (hg0 : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * g 0 t) volume 0 δ)
+    (hgn : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * g n t) volume δ b)
+    (hm0 : ∀ s ∈ range N,
+      IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * m s 0 t) volume 0 δ)
+    (hmn : ∀ s ∈ range N,
+      IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * m s n t) volume δ b) :
+    nearZero x δ b n (fun k t => g k t + ∑ s ∈ range N, c s * m s k t) =
+      nearZero x δ b n g + ∑ s ∈ range N, c s * nearZero x δ b n (m s) := by
+  have hsum : ∀ {u v : ℝ} (k : ℕ),
+      IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * g k t) volume u v →
+      (∀ s ∈ range N,
+        IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * m s k t) volume u v) →
+      ∫ t in u..v, cexp (((x * t : ℝ) : ℂ) * I) * (g k t + ∑ s ∈ range N, c s * m s k t) =
+        (∫ t in u..v, cexp (((x * t : ℝ) : ℂ) * I) * g k t) +
+          ∑ s ∈ range N, c s * ∫ t in u..v, cexp (((x * t : ℝ) : ℂ) * I) * m s k t := by
+    intro u v k hg hm
+    have hm' : ∀ s ∈ range N, IntervalIntegrable
+        (fun t => c s * (cexp (((x * t : ℝ) : ℂ) * I) * m s k t)) volume u v :=
+      fun s hs => (hm s hs).const_mul (c s)
+    simp_rw [← intervalIntegral.integral_const_mul]
+    have hs : IntervalIntegrable
+        (fun t => ∑ s ∈ range N, c s * (cexp (((x * t : ℝ) : ℂ) * I) * m s k t)) volume u v := by
+      simpa only [Finset.sum_fn] using IntervalIntegrable.sum (range N) hm'
+    rw [← intervalIntegral.integral_finsetSum hm', ← intervalIntegral.integral_add hg hs]
+    refine intervalIntegral.integral_congr fun t _ => ?_
+    simp only [mul_add, mul_sum]
+    congr 1
+    exact sum_congr rfl fun s _ => by ring
+  simp only [nearZero]
+  rw [hsum 0 hg0 hm0, hsum n hgn hmn]
+  simp only [mul_add, sum_add_distrib]
+  have hmid : ∑ k ∈ range n, (I / x) ^ (k + 1) * (cexp (((x * δ : ℝ) : ℂ) * I) *
+      ∑ s ∈ range N, c s * m s k δ) = ∑ s ∈ range N, c s * ∑ k ∈ range n, (I / x) ^ (k + 1) *
+        (cexp (((x * δ : ℝ) : ℂ) * I) * m s k δ) := by
+    simp only [mul_sum]
+    rw [sum_comm]
+    exact sum_congr rfl fun s _ => sum_congr rfl fun k _ => by ring
+  have hlast : (I / x) ^ n * ∑ s ∈ range N, c s * ∫ t in δ..b, cexp (((x * t : ℝ) : ℂ) * I) *
+      m s n t = ∑ s ∈ range N, c s * ((I / x) ^ n * ∫ t in δ..b, cexp (((x * t : ℝ) : ℂ) * I) *
+        m s n t) := by
+    rw [mul_sum]
+    exact sum_congr rfl fun s _ => by ring
+  rw [hmid, hlast]
+  ring
+
+/-- A Fourier integral over `(δ, b)` of a function bounded by `C t^a`, `a < -1`, is at most
+`C ∫_δ^∞ t^a dt = -C δ^{a+1}/(a+1)`. -/
+private theorem norm_integral_cexp_mul_le_of_norm_le {g : ℝ → ℂ} {x δ b a C : ℝ} (ha : a < -1)
+    (hδ : 0 < δ) (hδb : δ ≤ b) (hC : 0 ≤ C) (hg : ∀ t ∈ Ioc δ b, ‖g t‖ ≤ C * t ^ a) :
+    ‖∫ t in δ..b, cexp (((x * t : ℝ) : ℂ) * I) * g t‖ ≤ C * (-δ ^ (a + 1) / (a + 1)) := by
+  have hint := integrableOn_Ioi_rpow_of_lt ha hδ
+  have hCi : IntegrableOn (fun t => C * t ^ a) (Ioc δ b) :=
+    (hint.mono_set Ioc_subset_Ioi_self).const_mul C
+  refine (intervalIntegral.norm_integral_le_of_norm_le hδb (g := fun t => C * t ^ a)
+    (Eventually.of_forall fun t ht => ?_)
+    ((intervalIntegrable_iff_integrableOn_Ioc_of_le hδb).2 hCi)).trans ?_
+  · rw [norm_mul, norm_exp_ofReal_mul_I, one_mul]
+    exact hg t ht
+  · rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_of_le hδb,
+      ← integral_Ioi_rpow_of_lt ha hδ]
+    refine mul_le_mul_of_nonneg_left (setIntegral_mono_set hint ?_
+      (Eventually.of_forall Ioc_subset_Ioi_self)) hC
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
+    exact Real.rpow_nonneg (hδ.trans ht).le a
+
+/-- If `‖gₖ(t)‖ ≤ C t^{β-1-k}` on `(0, b]` for `k ≤ n`, with `0 < β < n`, then at `x = δ⁻¹` the
+part of the Fourier integral near `0` is `O(δ^β)`. -/
+private theorem norm_nearZero_inv_le {g : ℕ → ℝ → ℂ} {δ b β C : ℝ} {n : ℕ} (hβ : 0 < β)
+    (hβn : β < n) (hδ : 0 < δ) (hδb : δ ≤ b)
+    (hg : ∀ k ≤ n, ∀ t ∈ Ioc 0 b, ‖g k t‖ ≤ C * t ^ (β - 1 - k)) :
+    ‖nearZero δ⁻¹ δ b n g‖ ≤ C * (β⁻¹ + n + (n - β)⁻¹) * δ ^ β := by
+  have hC : 0 ≤ C := by
+    have h := (norm_nonneg _).trans (hg 0 (Nat.zero_le n) δ ⟨hδ, hδb⟩)
+    exact nonneg_of_mul_nonneg_left h (by positivity)
+  have hnorm : ∀ (t : ℝ) (z : ℂ), ‖cexp (((δ⁻¹ * t : ℝ) : ℂ) * I) * z‖ = ‖z‖ := fun t z => by
+    rw [norm_mul, norm_exp_ofReal_mul_I, one_mul]
+  have hI : ∀ k : ℕ, ‖(I / ((δ⁻¹ : ℝ) : ℂ)) ^ k‖ = δ ^ k := fun k => by
+    rw [norm_pow, norm_div, norm_I, norm_real, Real.norm_of_nonneg (inv_nonneg.2 hδ.le), one_div,
+      inv_inv]
+  -- the integral over `(0, δ)`
+  have h1 : ‖∫ t in (0 : ℝ)..δ, cexp (((δ⁻¹ * t : ℝ) : ℂ) * I) * g 0 t‖ ≤ C * β⁻¹ * δ ^ β := by
+    refine (intervalIntegral.norm_integral_le_of_norm_le hδ.le (g := fun t => C * t ^ (β - 1))
+      (Eventually.of_forall fun t ht => ?_)
+      ((intervalIntegral.intervalIntegrable_rpow' (by linarith)).const_mul C)).trans_eq ?_
+    · rw [hnorm]
+      simpa using hg 0 (Nat.zero_le n) t ⟨ht.1, ht.2.trans hδb⟩
+    · rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl (by linarith)),
+        sub_add_cancel, Real.zero_rpow hβ.ne']
+      ring
+  -- the endpoint terms at `δ`
+  have h2 : ‖∑ k ∈ range n, (I / ((δ⁻¹ : ℝ) : ℂ)) ^ (k + 1) *
+      (cexp (((δ⁻¹ * δ : ℝ) : ℂ) * I) * g k δ)‖ ≤ n * (C * δ ^ β) := by
+    refine (norm_sum_le _ _).trans ?_
+    refine (sum_le_sum fun k hk => ?_).trans_eq (by rw [sum_const, card_range, nsmul_eq_mul])
+    rw [norm_mul, hI, hnorm]
+    calc δ ^ (k + 1) * ‖g k δ‖ ≤ δ ^ (k + 1) * (C * δ ^ (β - 1 - k)) :=
+          mul_le_mul_of_nonneg_left (hg k (mem_range.1 hk).le δ ⟨hδ, hδb⟩) (by positivity)
+      _ = C * δ ^ β := by
+          rw [mul_left_comm, show β - 1 - k = β - ((k + 1 : ℕ) : ℝ) by push_cast; ring,
+            Real.rpow_sub_natCast hδ.ne', mul_div_cancel₀ _ (pow_ne_zero _ hδ.ne')]
+  -- the integral over `(δ, b)` after `n` integrations by parts
+  have h3 : ‖(I / ((δ⁻¹ : ℝ) : ℂ)) ^ n * ∫ t in δ..b, cexp (((δ⁻¹ * t : ℝ) : ℂ) * I) * g n t‖ ≤
+      C * (n - β)⁻¹ * δ ^ β := by
+    rw [norm_mul, hI]
+    calc δ ^ n * ‖∫ t in δ..b, cexp (((δ⁻¹ * t : ℝ) : ℂ) * I) * g n t‖
+        ≤ δ ^ n * (C * (-δ ^ (β - 1 - n + 1) / (β - 1 - n + 1))) := by
+          gcongr
+          exact norm_integral_cexp_mul_le_of_norm_le (by linarith) hδ hδb hC
+            fun t ht => hg n le_rfl t ⟨hδ.trans ht.1, ht.2⟩
+      _ = C * (n - β)⁻¹ * δ ^ β := by
+          have hne : (n : ℝ) - β ≠ 0 := by linarith
+          rw [show β - 1 - n + 1 = β - n by ring, Real.rpow_sub_natCast hδ.ne', neg_div, ← div_neg,
+            neg_sub]
+          field_simp
+  calc _ ≤ _ := norm_add₃_le
+    _ ≤ C * β⁻¹ * δ ^ β + n * (C * δ ^ β) + C * (n - β)⁻¹ * δ ^ β := add_le_add_three h1 h2 h3
+    _ = _ := by ring
+
+/-- For `δ > 0` and `Re α < n`, `t ↦ t^{α-1-n} e^{ixt}` is integrable on `(δ, ∞)`. -/
+private theorem integrableOn_Ioi_cpow_mul_cexp_mul_I {α : ℂ} {n : ℕ} (hn : α.re < n) (x : ℝ)
+    {δ : ℝ} (hδ : 0 < δ) :
+    IntegrableOn (fun t : ℝ => (t : ℂ) ^ (α - 1 - n) * cexp (((x * t : ℝ) : ℂ) * I)) (Ioi δ) := by
+  refine Integrable.mono' (integrableOn_Ioi_rpow_of_lt (a := α.re - 1 - n) (by linarith) hδ)
+    (by fun_prop) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
+  rw [norm_mul, norm_exp_ofReal_mul_I, mul_one, norm_cpow_eq_rpow_re_of_pos (hδ.trans ht)]
+  simp
+
+/-- The part near `0` of the Fourier integral of the model family `t^{α-1}` and its
+derivatives: the model value `e^{iπα/2} Γ(α) x^{-α}` minus the tail over `(b, ∞)` after `n`
+integrations by parts. -/
+private theorem nearZero_cpow_eq {α : ℂ} (hα : 0 < α.re) {n : ℕ} (hn : α.re < n) {x δ b : ℝ}
+    (hx : 0 < x) (hδ : 0 < δ) (hδb : δ ≤ b) :
+    nearZero x δ b n (fun k t => (descPochhammer ℂ k).eval (α - 1) * (t : ℂ) ^ (α - 1 - k)) =
+      cexp (π * I * α / 2) * Gamma α * (x : ℂ) ^ (-α) -
+        (I / x) ^ n * ((descPochhammer ℂ n).eval (α - 1) *
+          ∫ t in Ioi b, (t : ℂ) ^ (α - 1 - n) * cexp (((x * t : ℝ) : ℂ) * I)) := by
+  have hint := integrableOn_Ioi_cpow_mul_cexp_mul_I hn x hδ
+  have hinv : (-((x : ℂ) * I))⁻¹ = I / x := by
+    have : (x : ℂ) ≠ 0 := ofReal_ne_zero.2 hx.ne'
+    field_simp
+    ring_nf
+    simp
+  have hexp : ∀ t : ℝ, cexp (-(-((x : ℂ) * I) * t)) = cexp (((x * t : ℝ) : ℂ) * I) := fun t => by
+    push_cast; ring_nf
+  rw [eq_sub_iff_add_eq, ← gammaSplit_neg_mul_I hα hn hx hδ, gammaSplit,
+    ← Ioc_union_Ioi_eq_Ioi hδb]
+  simp only [hinv, hexp]
+  rw [setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
+      (hint.mono_set Ioc_subset_Ioi_self) (hint.mono_set (Ioi_subset_Ioi hδb)),
+    ← intervalIntegral.integral_of_le hδb]
+  have h0 : ∫ t in (0 : ℝ)..δ, cexp (((x * t : ℝ) : ℂ) * I) *
+      ((descPochhammer ℂ 0).eval (α - 1) * (t : ℂ) ^ (α - 1 - ((0 : ℕ) : ℂ))) =
+      ∫ t in (0 : ℝ)..δ, (t : ℂ) ^ (α - 1) * cexp (((x * t : ℝ) : ℂ) * I) :=
+    intervalIntegral.integral_congr fun t _ => by simp [mul_comm]
+  have hn' : ∫ t in δ..b, cexp (((x * t : ℝ) : ℂ) * I) *
+      ((descPochhammer ℂ n).eval (α - 1) * (t : ℂ) ^ (α - 1 - n)) =
+      (descPochhammer ℂ n).eval (α - 1) *
+        ∫ t in δ..b, (t : ℂ) ^ (α - 1 - n) * cexp (((x * t : ℝ) : ℂ) * I) := by
+    rw [← intervalIntegral.integral_const_mul]
+    exact intervalIntegral.integral_congr fun t _ => by ring
+  have hk : ∑ k ∈ range n, (I / x) ^ (k + 1) * (cexp (((x * δ : ℝ) : ℂ) * I) *
+      ((descPochhammer ℂ k).eval (α - 1) * (δ : ℂ) ^ (α - 1 - k))) =
+      ∑ k ∈ range n, (I / x) ^ (k + 1) * ((descPochhammer ℂ k).eval (α - 1) *
+        ((δ : ℂ) ^ (α - 1 - k) * cexp (((x * δ : ℝ) : ℂ) * I))) :=
+    sum_congr rfl fun k _ => by ring
+  simp only [nearZero, h0, hn', hk]
+  ring
+
+/-- A family of `O(t^{β-1-k})` bounds as `t → 0+` holds with one constant on one interval
+`(0, b]`, `b ≤ 1`, for the indices `k ≤ n`. -/
+private theorem exists_norm_le_of_isBigO {f : ℕ → ℝ → ℂ} {β : ℝ} (n : ℕ)
+    (hf : ∀ k, f k =O[𝓝[>] 0] fun t => t ^ (β - 1 - k)) :
+    ∃ C b : ℝ, 0 < b ∧ b ≤ 1 ∧ ∀ k ≤ n, ∀ t ∈ Ioc 0 b, ‖f k t‖ ≤ C * t ^ (β - 1 - k) := by
+  have h : ∀ k, ∃ C, ∀ᶠ t in 𝓝[>] (0 : ℝ), ‖f k t‖ ≤ C * t ^ (β - 1 - k) := fun k => by
+    obtain ⟨C, hC⟩ := (hf k).bound
+    refine ⟨C, ?_⟩
+    filter_upwards [hC, self_mem_nhdsWithin] with t h (ht : 0 < t)
+    rwa [Real.norm_of_nonneg (Real.rpow_nonneg ht.le _)] at h
+  choose C hC using h
+  have hall : ∀ᶠ t in 𝓝[>] (0 : ℝ), ∀ k ∈ range (n + 1),
+      ‖f k t‖ ≤ (∑ j ∈ range (n + 1), |C j|) * t ^ (β - 1 - k) := by
+    refine (eventually_all_finset _).2 fun k hk => ?_
+    filter_upwards [hC k, self_mem_nhdsWithin] with t h (ht : 0 < t)
+    exact h.trans (mul_le_mul_of_nonneg_right ((le_abs_self _).trans
+      (Finset.single_le_sum (fun j _ => abs_nonneg (C j)) hk)) (Real.rpow_nonneg ht.le _))
+  obtain ⟨u, hu, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hall
+  have hu : 0 < u := hu
+  refine ⟨_, min (u / 2) 1, by positivity, min_le_right _ _, fun k hk t ht =>
+    hsub ⟨ht.1, ?_⟩ k (mem_range.2 (by omega))⟩
+  exact ht.2.trans_lt ((min_le_left _ _).trans_lt (half_lt_self hu))
+
+/-- A function continuous on `(0, b]` and bounded there by `C t^a` with `a > -1` has integrable
+Fourier integrand on `(0, b)`. -/
+private theorem intervalIntegrable_cexp_mul_of_norm_le {g : ℝ → ℂ} (x : ℝ) {b C a : ℝ}
+    (ha : -1 < a) (hb : 0 ≤ b) (hg : ContinuousOn g (Ioc 0 b))
+    (hgb : ∀ t ∈ Ioc 0 b, ‖g t‖ ≤ C * t ^ a) :
+    IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * g t) volume 0 b := by
+  refine IntervalIntegrable.mono_fun' ((intervalIntegral.intervalIntegrable_rpow' ha).const_mul C)
+    ?_ ?_
+  · rw [uIoc_of_le hb]
+    exact ((by fun_prop : Continuous fun t : ℝ => cexp (((x * t : ℝ) : ℂ) * I)).continuousOn.mul
+      hg).aestronglyMeasurable measurableSet_Ioc
+  · rw [uIoc_of_le hb]
+    filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
+    rw [norm_mul, norm_exp_ofReal_mul_I, one_mul]
+    exact hgb t ht
+
+end Remainder
+
+section Expansion
+
+/-- On `[b, ∞)` with `b > 0`, the derivatives within `[b, ∞)` of a function smooth on `(0, ∞)`
+are its derivatives within `(0, ∞)`. -/
+private theorem iteratedDerivWithin_Ici_eq {q : ℝ → ℂ} (hq : ContDiffOn ℝ ∞ q (Ioi 0)) {b : ℝ}
+    (hb : 0 < b) (k : ℕ) {t : ℝ} (ht : t ∈ Ici b) :
+    iteratedDerivWithin k q (Ici b) t = iteratedDerivWithin k q (Ioi 0) t := by
+  have h0 : t ∈ Ioi (0 : ℝ) := hb.trans_le ht
+  rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici b)
+    ((hq.contDiffAt (Ioi_mem_nhds h0)).of_le (by exact_mod_cast le_top)) ht,
+    iteratedDerivWithin_of_isOpen isOpen_Ioi h0]
+
+/-- `(i/x)^n = O(x^{-β})` as `x → +∞` when `β ≤ n`. -/
+private theorem isBigO_I_div_pow {β : ℝ} {n : ℕ} (hβn : β ≤ n) :
+    (fun x : ℝ => (I / (x : ℂ)) ^ n) =O[atTop] fun x => x ^ (-β) := by
+  refine IsBigO.of_bound 1 ?_
+  filter_upwards [eventually_ge_atTop 1] with x hx
+  have hx0 : 0 < x := zero_lt_one.trans_le hx
+  rw [norm_pow, norm_div, norm_I, norm_real, Real.norm_of_nonneg hx0.le,
+    Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _), one_mul, one_div, inv_pow,
+    ← Real.rpow_natCast, ← Real.rpow_neg hx0.le]
+  exact Real.rpow_le_rpow_of_exponent_le hx (neg_le_neg hβn)
+
+/-- **Existence of the Fourier integral.** If `q` is integrable on `(0, 1)` and continuous on
+`(0, ∞)`, and `∫ e^{ixt} q(t) dt` converges at `∞` uniformly for all large `x`, then the improper
+integral `∫₀^∞ e^{ixt} q(t) dt` exists for all large `x`. Under the hypotheses of
+`Asymptotics.hasAsymptoticExpansion_fourier`, the integrability on `(0, 1)` follows from
+`q(t) = O(t^{Re α₀ - 1})` as `t → 0+`. -/
+theorem eventually_exists_tendsto_integral_cexp_mul {q : ℝ → ℂ} (hq : ContinuousOn q (Ioi 0))
+    (hint : IntervalIntegrable q volume 0 1)
+    (hunif : ∃ x₀ : ℝ, ∀ ε > 0, ∃ T₀ : ℝ, ∀ x ≥ x₀, ∀ T ≥ T₀, ∀ T' ≥ T,
+      ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) * q t‖ ≤ ε) :
+    ∀ᶠ x : ℝ in atTop, ∃ F : ℂ,
+      Tendsto (fun T : ℝ => ∫ t in (0 : ℝ)..T, cexp (((x * t : ℝ) : ℂ) * I) * q t) atTop
+        (𝓝 F) := by
+  obtain ⟨x₀, hx₀⟩ := hunif
+  filter_upwards [eventually_ge_atTop x₀] with x hx
+  have hc : Continuous fun t : ℝ => cexp (((x * t : ℝ) : ℂ) * I) := by fun_prop
+  have hq1 : ContinuousOn q (Ici 1) := hq.mono fun t (ht : 1 ≤ t) => zero_lt_one.trans_le ht
+  obtain ⟨L, hL⟩ := exists_tendsto_integral_cexp_smul hq1 (x := x) fun ε hε => by
+    obtain ⟨T₀, hT₀⟩ := hx₀ ε hε
+    exact ⟨T₀, fun T hT T' hT' => by simpa only [smul_eq_mul] using hT₀ x hx T hT T' hT'⟩
+  refine ⟨(∫ t in (0 : ℝ)..1, cexp (((x * t : ℝ) : ℂ) * I) * q t) + L, ?_⟩
+  refine (tendsto_const_nhds.add (by simpa only [smul_eq_mul] using hL)).congr' ?_
+  filter_upwards [eventually_ge_atTop 1] with T hT
+  exact intervalIntegral.integral_add_adjacent_intervals (hint.continuousOn_mul hc.continuousOn)
+    ((hc.continuousOn.mul (hq1.mono Icc_subset_Ici_self)).intervalIntegrable_of_Icc hT)
+
+/-- The part beyond `b > 0` of the Fourier integral: `F'(x) = ∫_b^∞ e^{ixt} q(t) dt` minus its
+first `n` endpoint terms at `b` is `O(x^{-β})` for `β ≤ n + 1`, by DLMF 2.3.5. -/
+private theorem isBigO_sub_sum_of_tendsto_integral_Ioi {q : ℝ → ℂ} {F' : ℝ → ℂ}
+    (hq : ContDiffOn ℝ ∞ q (Ioi 0)) {b : ℝ} (hb : 0 < b)
+    (hunif : ∀ k : ℕ, ∃ x₀ : ℝ, ∀ ε > 0, ∃ T₀ : ℝ, ∀ x ≥ x₀, ∀ T ≥ T₀, ∀ T' ≥ T,
+      ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) * iteratedDerivWithin k q (Ioi 0) t‖ ≤ ε)
+    (hF' : ∀ᶠ x : ℝ in atTop, Tendsto
+      (fun T : ℝ => ∫ t in b..T, cexp (((x * t : ℝ) : ℂ) * I) * q t) atTop (𝓝 (F' x)))
+    (n : ℕ) {β : ℝ} (hβ : β ≤ n + 1) :
+    (fun x : ℝ => F' x - ∑ k ∈ range n, (I / x) ^ (k + 1) *
+      (cexp (((x * b : ℝ) : ℂ) * I) * iteratedDerivWithin k q (Ioi 0) b))
+      =O[atTop] fun x => x ^ (-β) := by
+  have hqb : ContDiffOn ℝ ∞ q (Ici b) := hq.mono fun t (ht : b ≤ t) => hb.trans_le ht
+  have hunif' : ∀ k : ℕ, ∃ x₀ : ℝ, ∀ ε > 0, ∃ T₀ : ℝ, ∀ x ≥ x₀, ∀ T ≥ T₀, ∀ T' ≥ T,
+      ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) • iteratedDerivWithin k q (Ici b) t‖ ≤ ε :=
+    fun k => by
+      obtain ⟨x₀, h⟩ := hunif k
+      refine ⟨x₀, fun ε hε => ?_⟩
+      obtain ⟨T₀, hT₀⟩ := h ε hε
+      refine ⟨max T₀ b, fun x hx T hT T' hT' => ?_⟩
+      rw [intervalIntegral.integral_congr fun t ht => ?_]
+      · exact hT₀ x hx T (le_of_max_le_left hT) T' hT'
+      · rw [uIcc_of_le hT'] at ht
+        simp only [smul_eq_mul,
+          iteratedDerivWithin_Ici_eq hq hb k ((le_of_max_le_right hT).trans ht.1)]
+  have h := (hasAsymptoticExpansion_of_tendsto_integral_cexp_smul hqb hunif'
+    (by simpa only [smul_eq_mul] using hF')).isBigO n
+  refine (h.congr_left fun x => ?_).trans <| IsBigO.trans ?_
+    (isBigO_I_div_pow (n := n + 1) (by push_cast; linarith))
+  · refine congrArg _ (sum_congr rfl fun k _ => ?_)
+    rw [smul_eq_mul, iteratedDerivWithin_Ici_eq hq hb k (le_refl b)]
+    ring
+  · refine IsBigO.of_bound 1 (Eventually.of_forall fun x => ?_)
+    rw [norm_mul, norm_exp_ofReal_mul_I, one_mul]
+
+/-- The tail `(i/x)^n P ∫_b^∞ e^{ixt} t^{α-1-n} dt` of a model term is `O(x^{-β})` for `β ≤ n`. -/
+private theorem isBigO_tail {α : ℂ} {n : ℕ} (hn : α.re < n) {b β : ℝ} (hb : 0 < b)
+    (hβ : β ≤ n) (P : ℂ) :
+    (fun x : ℝ => (I / x) ^ n * (P * ∫ t in Ioi b, (t : ℂ) ^ (α - 1 - n) *
+      cexp (((x * t : ℝ) : ℂ) * I))) =O[atTop] fun x => x ^ (-β) := by
+  refine IsBigO.trans (g := fun x : ℝ => (I / (x : ℂ)) ^ n) ?_ (isBigO_I_div_pow hβ)
+  refine IsBigO.of_bound (‖P‖ * ∫ t in Ioi b, t ^ (α.re - 1 - n))
+    (Eventually.of_forall fun x => ?_)
+  have hK : ‖∫ t in Ioi b, (t : ℂ) ^ (α - 1 - n) * cexp (((x * t : ℝ) : ℂ) * I)‖ ≤
+      ∫ t in Ioi b, t ^ (α.re - 1 - n) := by
+    refine norm_integral_le_of_norm_le (integrableOn_Ioi_rpow_of_lt (by linarith) hb) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : b < t)
+    rw [norm_mul, norm_exp_ofReal_mul_I, mul_one, norm_cpow_eq_rpow_re_of_pos (hb.trans ht)]
+    simp
+  rw [norm_mul, norm_mul, mul_comm]
+  gcongr
+
+/-- If `‖gₖ(t)‖ ≤ C t^{β-1-k}` on `(0, b]` for `k ≤ n`, with `0 < β < n`, the part near `0` of
+the Fourier integral, split at `1/x`, is `O(x^{-β})`. -/
+private theorem isBigO_nearZero_inv {g : ℕ → ℝ → ℂ} {b β C : ℝ} {n : ℕ} (hβ : 0 < β)
+    (hβn : β < n) (hb : 0 < b) (hg : ∀ k ≤ n, ∀ t ∈ Ioc 0 b, ‖g k t‖ ≤ C * t ^ (β - 1 - k)) :
+    (fun x : ℝ => nearZero x x⁻¹ b n g) =O[atTop] fun x => x ^ (-β) := by
+  refine IsBigO.of_bound (C * (β⁻¹ + n + (n - β)⁻¹)) ?_
+  filter_upwards [eventually_gt_atTop b⁻¹] with x hx
+  have hx0 : 0 < x := (inv_pos.2 hb).trans hx
+  have h := norm_nearZero_inv_le hβ hβn (inv_pos.2 hx0) ((inv_lt_comm₀ hx0 hb).2 hx).le hg
+  rwa [inv_inv, Real.inv_rpow hx0.le, ← Real.rpow_neg hx0.le,
+    ← Real.norm_of_nonneg (Real.rpow_nonneg hx0.le (-β))] at h
+
+/-- The model family `t^{α_s - 1}` and its derivatives have integrable Fourier integrands on
+`(0, b)`. -/
+private theorem intervalIntegrable_cexp_mul_cpow {α : ℂ} (hα : 0 < α.re) (x : ℝ) {b : ℝ}
+    (hb : 0 ≤ b) : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) *
+      ((descPochhammer ℂ 0).eval (α - 1) * (t : ℂ) ^ (α - 1 - ((0 : ℕ) : ℂ)))) volume 0 b :=
+  intervalIntegrable_cexp_mul_of_norm_le x (C := 1) (a := α.re - 1) (by linarith) hb
+    (fun t ht => by
+      simpa using ((continuousAt_ofReal_cpow_const t (α - 1)
+        (Or.inr ht.1.ne')).continuousWithinAt))
+    fun t ht => by simp [norm_cpow_eq_rpow_re_of_pos ht.1]
+
+/-- The remainder after `N` terms of the expansion of the `k`-th derivative is continuous on
+`(0, ∞)`. -/
+private theorem continuousOn_iteratedDerivWithin_sub_sum {q : ℝ → ℂ}
+    (hq : ContDiffOn ℝ ∞ q (Ioi 0)) (c α : ℕ → ℂ) (N k : ℕ) :
+    ContinuousOn (fun t : ℝ => iteratedDerivWithin k q (Ioi 0) t - ∑ s ∈ range N,
+      c s * ((descPochhammer ℂ k).eval (α s - 1) * (t : ℂ) ^ (α s - 1 - k))) (Ioi 0) :=
+  (hq.continuousOn_iteratedDerivWithin (by exact_mod_cast le_top) (uniqueDiffOn_Ioi 0)).sub
+    (continuousOn_finsetSum _ fun s _ => continuousOn_const.mul fun t ht =>
+      ((continuousAt_ofReal_cpow_const t _ (Or.inr (ne_of_gt ht))).const_mul
+        _).continuousWithinAt)
+
+/-- If `∫₀^T e^{ixt} q(t) dt → F(x)` and `q` is integrable near `0`, then
+`∫_b^T e^{ixt} q(t) dt → F(x) - ∫₀^b e^{ixt} q(t) dt`. -/
+private theorem tendsto_integral_sub_of_tendsto {q F : ℝ → ℂ} (hq : ContDiffOn ℝ ∞ q (Ioi 0))
+    {b : ℝ} (hb : 0 < b)
+    (hint : ∀ x : ℝ, IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * q t) volume 0 b)
+    (hF : ∀ᶠ x : ℝ in atTop, Tendsto
+      (fun T : ℝ => ∫ t in (0 : ℝ)..T, cexp (((x * t : ℝ) : ℂ) * I) * q t) atTop (𝓝 (F x))) :
+    ∀ᶠ x : ℝ in atTop, Tendsto (fun T : ℝ => ∫ t in b..T, cexp (((x * t : ℝ) : ℂ) * I) * q t)
+      atTop (𝓝 (F x - ∫ t in (0 : ℝ)..b, cexp (((x * t : ℝ) : ℂ) * I) * q t)) := by
+  filter_upwards [hF] with x hx
+  refine (hx.sub_const _).congr' ?_
+  filter_upwards [eventually_ge_atTop b] with T hT
+  rw [← intervalIntegral.integral_add_adjacent_intervals (hint x)
+    (ContinuousOn.intervalIntegrable_of_Icc hT ((by fun_prop : Continuous fun t : ℝ =>
+      cexp (((x * t : ℝ) : ℂ) * I)).continuousOn.mul
+        (hq.continuousOn.mono fun t ht => hb.trans_le ht.1)))]
+  simp
+
+/-- If the derivatives of `q` are `gₖ + ∑_{s<N} c_s (d/dt)^k t^{α_s - 1}` with `Re α_s > 0` and
+`e^{ixt} g₀(t)` is integrable on `(0, b)`, then so is `e^{ixt} q(t)`. -/
+private theorem intervalIntegrable_cexp_mul_of_eq_add_sum {q : ℝ → ℂ} {α c : ℕ → ℂ} {N n : ℕ}
+    (hα : ∀ s < N, 0 < (α s).re ∧ (α s).re < n) {g : ℕ → ℝ → ℂ}
+    (hg : ∀ k t, iteratedDerivWithin k q (Ioi 0) t = g k t + ∑ s ∈ range N,
+      c s * ((descPochhammer ℂ k).eval (α s - 1) * (t : ℂ) ^ (α s - 1 - k))) {b x : ℝ}
+    (hb : 0 ≤ b)
+    (hg0 : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * g 0 t) volume 0 b) :
+    IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * q t) volume 0 b := by
+  have h := hg0.add (IntervalIntegrable.sum (range N) fun s hs =>
+    (intervalIntegrable_cexp_mul_cpow (hα s (mem_range.1 hs)).1 x hb).const_mul (c s))
+  refine h.congr_ae (Eventually.of_forall fun t => ?_)
+  have hq0 := hg 0 t
+  rw [iteratedDerivWithin_zero] at hq0
+  simp only [Finset.sum_apply, hq0, mul_add, mul_sum]
+  exact congrArg _ (sum_congr rfl fun s _ => by ring)
+
+/-- The decomposition of the Fourier integral over `(0, b)`, for `x > 1/b`. Write the
+derivatives of `q` as `gₖ + ∑_{s<N} c_s (d/dt)^k t^{α_s - 1}`. Split at `1/x` and integrate by
+parts `n` times on `(1/x, b)`: the integral is the part of `g` near `0`, plus the model terms
+`e^{iπα_s/2} Γ(α_s) c_s x^{-α_s}` less their tails over `(b, ∞)`, minus the endpoint terms at
+`b`. -/
+private theorem integral_eq_nearZero_add_sum {q : ℝ → ℂ} (hq : ContDiffOn ℝ ∞ q (Ioi 0))
+    {α c : ℕ → ℂ} {N n : ℕ} (hα : ∀ s < N, 0 < (α s).re ∧ (α s).re < n) {g : ℕ → ℝ → ℂ}
+    (hg : ∀ k t, iteratedDerivWithin k q (Ioi 0) t = g k t + ∑ s ∈ range N,
+      c s * ((descPochhammer ℂ k).eval (α s - 1) * (t : ℂ) ^ (α s - 1 - k)))
+    (hgc : ∀ k, ContinuousOn (g k) (Ioi 0)) {b x : ℝ} (hb : 0 < b) (hx : b⁻¹ < x)
+    (hg0 : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * g 0 t) volume 0 b) :
+    ∫ t in (0 : ℝ)..b, cexp (((x * t : ℝ) : ℂ) * I) * q t =
+      nearZero x x⁻¹ b n g + ∑ s ∈ range N,
+        ((x : ℂ) ^ (-α s) • (cexp (π * I * α s / 2) * Gamma (α s) * c s) -
+          c s * ((I / x) ^ n * ((descPochhammer ℂ n).eval (α s - 1) *
+            ∫ t in Ioi b, (t : ℂ) ^ (α s - 1 - n) * cexp (((x * t : ℝ) : ℂ) * I)))) -
+      ∑ k ∈ range n, (I / x) ^ (k + 1) *
+        (cexp (((x * b : ℝ) : ℂ) * I) * iteratedDerivWithin k q (Ioi 0) b) := by
+  have hx0 : 0 < x := (inv_pos.2 hb).trans hx
+  have hδ : 0 < x⁻¹ := inv_pos.2 hx0
+  have hδb : x⁻¹ ≤ b := (inv_lt_comm₀ hx0 hb).2 hx |>.le
+  have hsub : uIcc 0 x⁻¹ ⊆ uIcc 0 b := uIcc_subset_uIcc_left (mem_uIcc_of_le hδ.le hδb)
+  have hIcc : Icc x⁻¹ b ⊆ Ioi 0 := fun t ht => hδ.trans_le ht.1
+  have hcont : ∀ f : ℝ → ℂ, ContinuousOn f (Ioi 0) → IntervalIntegrable
+      (fun t => cexp (((x * t : ℝ) : ℂ) * I) * f t) volume x⁻¹ b := fun f hf =>
+    (((by fun_prop : Continuous fun t : ℝ => cexp (((x * t : ℝ) : ℂ) * I))).continuousOn.mul
+      (hf.mono hIcc)).intervalIntegrable_of_Icc hδb
+  have hmc : ∀ s k, ContinuousOn (fun t : ℝ => (descPochhammer ℂ k).eval (α s - 1) *
+      (t : ℂ) ^ (α s - 1 - k)) (Ioi 0) := fun s k t ht =>
+    ((continuousAt_ofReal_cpow_const t _ (Or.inr (ne_of_gt ht))).const_mul _).continuousWithinAt
+  have hm0 : ∀ s ∈ range N, IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) *
+      ((descPochhammer ℂ 0).eval (α s - 1) * (t : ℂ) ^ (α s - 1 - ((0 : ℕ) : ℂ)))) volume 0 b :=
+    fun s hs => intervalIntegrable_cexp_mul_cpow (hα s (mem_range.1 hs)).1 x hb.le
+  have hA := integral_eq_nearZero_sub (g := fun k => iteratedDerivWithin k q (Ioi 0)) hx0.ne'
+    hδb (n := n) (fun i _ => (hq.continuousOn_iteratedDerivWithin (by exact_mod_cast le_top)
+      (uniqueDiffOn_Ioi 0)).mono hIcc)
+    (fun i _ t ht => hq.hasDerivAt_iteratedDerivWithin (by exact_mod_cast ENat.natCast_lt_top i)
+      (Ioi_mem_nhds (hδ.trans ht.1)))
+    (by simpa using (intervalIntegrable_cexp_mul_of_eq_add_sum hα hg hb.le hg0).mono_set hsub)
+  have hB := nearZero_add_sum (m := fun s k t => (descPochhammer ℂ k).eval (α s - 1) *
+    (t : ℂ) ^ (α s - 1 - k)) c N (hg0.mono_set hsub) (hcont _ (hgc n))
+    (fun s hs => (hm0 s hs).mono_set hsub) (fun s _ => hcont _ (hmc s n))
+  have hfam : (fun k t => g k t + ∑ s ∈ range N, c s * ((descPochhammer ℂ k).eval (α s - 1) *
+      (t : ℂ) ^ (α s - 1 - k))) = fun k => iteratedDerivWithin k q (Ioi 0) := by
+    funext k t; rw [hg]
+  rw [hfam] at hB
+  simp only [iteratedDerivWithin_zero] at hA
+  rw [hA, hB]
+  congr 2
+  exact sum_congr rfl fun s hs => by
+    rw [nearZero_cpow_eq (hα s (mem_range.1 hs)).1 (hα s (mem_range.1 hs)).2 hx0 hδ hδb,
+      smul_eq_mul]
+    ring
+
+/-- **The Fourier analogue of Watson's lemma** (DLMF 2.3.20). Let `Re α_s > 0` for all `s`, and
+let `q` be smooth on `(0, ∞)` with, for all `k` and `N`,
+`q^{(k)}(t) - ∑_{s<N} c_s (α_s - 1)⋯(α_s - k) t^{α_s - 1 - k} = O(t^{Re α_N - 1 - k})` as
+`t → 0+`, the derivatives taken within `(0, ∞)`. Suppose each `∫ e^{ixt} q^{(k)}(t) dt` converges
+at `∞` uniformly for all large `x`. If `F x` is the improper integral `∫₀^∞ e^{ixt} q(t) dt` for
+all large `x` (it exists by `Asymptotics.eventually_exists_tendsto_integral_cexp_mul`), then
+`F x ∼ ∑ e^{iπα_s/2} Γ(α_s) c_s x^{-α_s}` as `x → +∞`, in the sense of `HasAsymptoticExpansion`:
+for every `N` the remainder after `N` terms is `O(x^{-Re α_N})`. -/
+theorem hasAsymptoticExpansion_fourier {q : ℝ → ℂ} {α c : ℕ → ℂ} {F : ℝ → ℂ}
+    (hα : ∀ s, 0 < (α s).re) (hq : ContDiffOn ℝ ∞ q (Ioi 0))
+    (hexp : ∀ k N, (fun t : ℝ => iteratedDerivWithin k q (Ioi 0) t -
+        ∑ s ∈ range N, c s * (descPochhammer ℂ k).eval (α s - 1) * (t : ℂ) ^ (α s - 1 - k))
+      =O[𝓝[>] 0] fun t => t ^ ((α N).re - 1 - k))
+    (hunif : ∀ k : ℕ, ∃ x₀ : ℝ, ∀ ε > 0, ∃ T₀ : ℝ, ∀ x ≥ x₀, ∀ T ≥ T₀, ∀ T' ≥ T,
+      ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) * iteratedDerivWithin k q (Ioi 0) t‖ ≤ ε)
+    (hF : ∀ᶠ x : ℝ in atTop, Tendsto
+      (fun T : ℝ => ∫ t in (0 : ℝ)..T, cexp (((x * t : ℝ) : ℂ) * I) * q t) atTop (𝓝 (F x))) :
+    HasAsymptoticExpansion atTop (fun s (x : ℝ) => (x : ℂ) ^ (-α s))
+      (fun s => cexp (π * I * α s / 2) * Gamma (α s) * c s) F := by
+  refine HasAsymptoticExpansion.of_isBigO fun N => ?_
+  set β := (α N).re
+  -- the number `n` of integrations by parts exceeds the real parts of the exponents up to `N`
+  obtain ⟨n, hn⟩ := exists_nat_gt (∑ s ∈ range (N + 1), (α s).re)
+  have hαn : ∀ s ≤ N, (α s).re < n := fun s hs => (Finset.single_le_sum
+    (fun j _ => (hα j).le) (mem_range.2 (Nat.lt_succ_of_le hs))).trans_lt hn
+  -- the remainders `R k` of the expansions of the derivatives, bounded on some `(0, b]`
+  set R : ℕ → ℝ → ℂ := fun k t => iteratedDerivWithin k q (Ioi 0) t - ∑ s ∈ range N,
+    c s * ((descPochhammer ℂ k).eval (α s - 1) * (t : ℂ) ^ (α s - 1 - k)) with hRdef
+  obtain ⟨C, b, hb, -, hRb⟩ := exists_norm_le_of_isBigO (f := R) (β := β) n fun k =>
+    (hexp k N).congr_left fun t => by simp only [hRdef, mul_assoc]
+  have hRc : ∀ k, ContinuousOn (R k) (Ioi 0) := fun k =>
+    continuousOn_iteratedDerivWithin_sub_sum hq c α N k
+  have hR0 : ∀ x : ℝ, IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) * R 0 t)
+      volume 0 b := fun x =>
+    intervalIntegrable_cexp_mul_of_norm_le x (a := β - 1) (by linarith [hα N]) hb.le
+      ((hRc 0).mono Ioc_subset_Ioi_self) fun t ht => by simpa using hRb 0 (Nat.zero_le n) t ht
+  have hg : ∀ k t, iteratedDerivWithin k q (Ioi 0) t = R k t + ∑ s ∈ range N,
+      c s * ((descPochhammer ℂ k).eval (α s - 1) * (t : ℂ) ^ (α s - 1 - k)) := fun k t =>
+    (sub_add_cancel _ _).symm
+  have hαN : ∀ s < N, 0 < (α s).re ∧ (α s).re < n := fun s hs => ⟨hα s, hαn s hs.le⟩
+  -- the part of the integral beyond `b`
+  have hF' := tendsto_integral_sub_of_tendsto hq hb
+    (fun x => intervalIntegrable_cexp_mul_of_eq_add_sum hαN hg hb.le (hR0 x)) hF
+  -- the decomposition, and the bound `O(x^{-β})` on each part
+  have hdec : ∀ᶠ x : ℝ in atTop, F x - ∑ s ∈ range N,
+      (x : ℂ) ^ (-α s) • (cexp (π * I * α s / 2) * Gamma (α s) * c s) =
+      nearZero x x⁻¹ b n R - ∑ s ∈ range N, c s * ((I / x) ^ n * ((descPochhammer ℂ n).eval
+        (α s - 1) * ∫ t in Ioi b, (t : ℂ) ^ (α s - 1 - n) * cexp (((x * t : ℝ) : ℂ) * I))) +
+      ((F x - ∫ t in (0 : ℝ)..b, cexp (((x * t : ℝ) : ℂ) * I) * q t) -
+        ∑ k ∈ range n, (I / x) ^ (k + 1) *
+          (cexp (((x * b : ℝ) : ℂ) * I) * iteratedDerivWithin k q (Ioi 0) b)) := by
+    filter_upwards [eventually_gt_atTop b⁻¹] with x hx
+    rw [integral_eq_nearZero_add_sum hq hαN hg hRc hb hx (hR0 x), sum_sub_distrib]
+    ring
+  have hT := IsBigO.fun_sum fun s hs => (isBigO_tail (hαn s (mem_range.1 hs).le) hb
+    (hαn N le_rfl).le ((descPochhammer ℂ n).eval (α s - 1))).const_mul_left (c s)
+  have hE := isBigO_sub_sum_of_tendsto_integral_Ioi hq hb hunif hF' n (β := β)
+    (by linarith [hαn N le_rfl])
+  have hnorm : (fun x : ℝ => x ^ (-β)) =ᶠ[atTop] fun x => ‖(x : ℂ) ^ (-α N)‖ := by
+    filter_upwards [eventually_gt_atTop 0] with x hx
+    rw [norm_cpow_eq_rpow_re_of_pos hx, neg_re]
+  exact isBigO_norm_right.mp (((((isBigO_nearZero_inv (hα N) (hαn N le_rfl) hb hRb).sub
+    hT).add hE).congr' (hdec.mono fun x hx => hx.symm) EventuallyEq.rfl).congr'
+      EventuallyEq.rfl hnorm)
+
+end Expansion
+
+end Asymptotics
