@@ -75,12 +75,8 @@ def projectiveLine :
       (AlgebraicGeometry.projectiveLine K ↘ Spec (.of K)) where
   total := AlgebraicGeometry.projectiveLine R
   toBase := AlgebraicGeometry.projectiveLine R ↘ Spec (.of R)
-  flat := by
-    have := SmoothOfRelativeDimension.smooth 1 (AlgebraicGeometry.projectiveLine R ↘ Spec (.of R))
-    infer_instance
-  locallyOfFinitePresentation := by
-    have := SmoothOfRelativeDimension.smooth 1 (AlgebraicGeometry.projectiveLine R ↘ Spec (.of R))
-    infer_instance
+  flat := inferInstance
+  locallyOfFinitePresentation := inferInstance
   quasiCompact := inferInstance
   quasiSeparated := inferInstance
   genericFiberIso := projectiveLineGenericFiberIso R K

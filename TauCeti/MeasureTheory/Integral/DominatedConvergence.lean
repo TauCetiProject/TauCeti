@@ -27,7 +27,8 @@ which converge uniformly, and of `∫ Φ_i(t, y_i(t)) dt` for uniformly convergi
 depends continuously on `x ∈ s` as soon as `f` is jointly continuous on `s ×ˢ uIcc a b`, including
 at boundary points of `s` (such as the endpoints of a closed interval), where Mathlib's
 `intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'` would require continuity
-on the whole space.
+on the whole space. Finally, an almost-everywhere pointwise sum of integrable functions whose
+integrated norms are summable is integrable.
 
 ## Main declarations
 
@@ -59,6 +60,8 @@ on the whole space.
   continuous on `U` and the norms are dominated on compact subsets of `U`.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
+* `TauCeti.integrable_of_hasSum_of_summable_integral_norm`: an a.e. pointwise sum of integrable
+  functions whose integrated norms are summable is integrable.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
   `∫ g(t, F i t) dt → ∫ g(t, f t) dt` over `a..b` for every jointly continuous `g`.
 -/
@@ -83,6 +86,33 @@ theorem aestronglyMeasurable_of_tendsto_ae_of_eventually {ι β : Type*} [Topolo
     (fun n ↦ hN _ (Nat.le_add_left N n)) ?_
   filter_upwards [lim] with x hx
   exact hx.comp (hu.comp (tendsto_add_atTop_nat N))
+
+/-- **Integrability of an a.e. series.** If the integrals of the norms of integrable functions
+`G n` are summable and `g x` is the sum of the `G n x` for almost every `x`, then `g` is
+integrable. Mathlib's `MeasureTheory.hasSum_integral_of_summable_integral_norm` computes the
+integral of `∑' n, G n`; this lemma identifies an a.e. pointwise sum `g` as integrable. When `E` is
+complete the series of the `G n` converges in `L¹`, and the statement also follows from
+`MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`; the proof here does not use completeness. -/
+theorem integrable_of_hasSum_of_summable_integral_norm {E : Type*} [NormedAddCommGroup E]
+    {G : ℕ → α → E} {g : α → E} (hG : ∀ n, Integrable (G n) μ)
+    (hsum : Summable fun n ↦ ∫ x, ‖G n x‖ ∂μ) (hg : ∀ᵐ x ∂μ, HasSum (fun n ↦ G n x) (g x)) :
+    Integrable g μ := by
+  have hmeas : AEStronglyMeasurable g μ :=
+    aestronglyMeasurable_of_tendsto_ae atTop
+      (fun N ↦ (integrable_finsetSum (Finset.range N) fun n _ ↦ hG n).aestronglyMeasurable)
+      (hg.mono fun x hx ↦ hx.tendsto_sum_nat)
+  have hle : ∀ᵐ x ∂μ, ‖g x‖ₑ ≤ ∑' n, ‖G n x‖ₑ := by
+    filter_upwards [hg] with x hx
+    rw [← hx.tsum_eq]
+    exact eNorm_tsum_le_tsum_eNorm
+  refine ⟨hmeas, hasFiniteIntegral_iff_eNorm.2 ?_⟩
+  calc ∫⁻ x, ‖g x‖ₑ ∂μ ≤ ∫⁻ x, ∑' n, ‖G n x‖ₑ ∂μ := lintegral_mono_ae hle
+    _ = ∑' n, ∫⁻ x, ‖G n x‖ₑ ∂μ := lintegral_tsum fun n ↦ (hG n).aestronglyMeasurable.eNorm
+    _ = ∑' n, ENNReal.ofReal (∫ x, ‖G n x‖ ∂μ) :=
+      tsum_congr fun n ↦ (ofReal_integral_norm_eq_lintegral_eNorm (hG n)).symm
+    _ = ENNReal.ofReal (∑' n, ∫ x, ‖G n x‖ ∂μ) :=
+      (ENNReal.ofReal_tsum_of_nonneg (fun n ↦ integral_nonneg fun _ ↦ norm_nonneg _) hsum).symm
+    _ < ⊤ := ENNReal.ofReal_lt_top
 
 /-- **Dominated convergence away from one point.** Suppose `K i` is eventually a.e.-strongly
 measurable, and `K i` is eventually dominated by `K₀` and converges to it away from a point
