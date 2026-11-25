@@ -21,7 +21,8 @@ The element `s = ζ + ζ³` satisfies `s² = -2` (`s_sq`), so `F = ℚ(s) ⊆ K`
 most two (`finrank_F_le`), while `[K : ℚ] = 4` (`finrank_K`). Every complex embedding sends `s`
 to `±i√2` (`apply_eq_or_apply_eq_neg`), and the embeddings sending `s` to `i√2` form a CM type
 `Φ` (`TauCeti.EighthCyclotomicCMType.sqrtNegTwoType`). They are the two embeddings
-`ζ ↦ ζ₈` and `ζ ↦ ζ₈³`, for `ζ₈ = (1 + i)/√2` (`mem_Φ_iff`). Membership only depends on the value
+`ζ ↦ ζ₈` and `ζ ↦ ζ₈³`, for the primitive eighth root of unity `ζ₈ = (1 + i)/√2`
+(`isPrimitiveRoot_ζ₈`, `mem_Φ_iff`). Membership only depends on the value
 at `s`, so `Φ` is induced from the corresponding type on `ℚ(√-2)` (`induced_Φ₀`) and is not
 primitive (`not_isPrimitive_Φ`). An induced type has the reflex field of the type it is induced
 from, so the reflex field of `Φ` is `ℚ(i√2) ⊆ ℂ` (`reflexField_Φ`), of degree two
@@ -39,23 +40,24 @@ open NumberField Polynomial IntermediateField Complex
 
 namespace TauCeti.EighthCyclotomicCMType
 
-/-! ### Square roots of `-2` -/
+/-! ### Square roots of `-2`
+
+The CM type `sqrtNegTwoType` is stated for any field with a square root of `-2` so that the same
+construction gives both the type `Φ` on `ℚ(ζ₈)` and the type `Φ₀` on `ℚ(√-2)` it is induced
+from; it is kept in this example because its only uses are these two types. The general field
+lemmas it relies on are private helpers of this file. -/
 
 section SqrtNegTwo
 
 variable {L : Type*} [Field L]
 
-/-- `i√2` is a square root of `-2` in `ℂ`. -/
-theorem I_mul_sqrt_two_sq : (I * √2) ^ 2 = -2 := by
-  rw [mul_pow, I_sq, sq_ofReal_sqrt zero_le_two, ofReal_ofNat]
-  ring
-
 /-- A square root of `-2` is integral over `ℚ`: it is a root of `X ^ 2 + 2`. -/
-theorem isIntegral_of_sq_eq_neg_two [Algebra ℚ L] {x : L} (hx : x ^ 2 = -2) : IsIntegral ℚ x :=
+private theorem isIntegral_of_sq_eq_neg_two [Algebra ℚ L] {x : L} (hx : x ^ 2 = -2) :
+    IsIntegral ℚ x :=
   ⟨X ^ 2 + C 2, monic_X_pow_add_C 2 two_ne_zero, by simp [hx]⟩
 
 /-- **A square root of `-2` generates an extension of `ℚ` of degree at most two.** -/
-theorem finrank_adjoin_le_two [Algebra ℚ L] {x : L} (hx : x ^ 2 = -2) :
+private theorem finrank_adjoin_le_two [Algebra ℚ L] {x : L} (hx : x ^ 2 = -2) :
     Module.finrank ℚ ℚ⟮x⟯ ≤ 2 := by
   have hp : aeval x (X ^ 2 + C 2 : ℚ[X]) = 0 := by simp [hx]
   rw [adjoin.finrank (isIntegral_of_sq_eq_neg_two hx)]
@@ -64,18 +66,13 @@ theorem finrank_adjoin_le_two [Algebra ℚ L] {x : L} (hx : x ^ 2 = -2) :
   rw [natDegree_X_pow_add_C]
 
 /-- **Every complex embedding sends a square root of `-2` to `±i√2`.** -/
-theorem apply_eq_or_apply_eq_neg {t : L} (ht : t ^ 2 = -2) (ψ : L →+* ℂ) :
+private theorem apply_eq_or_apply_eq_neg {t : L} (ht : t ^ 2 = -2) (ψ : L →+* ℂ) :
     ψ t = I * √2 ∨ ψ t = -(I * √2) := by
   refine sq_eq_sq_iff_eq_or_eq_neg.1 ?_
-  rw [← map_pow, ht, map_neg, map_ofNat, I_mul_sqrt_two_sq]
+  rw [← map_pow, ht, map_neg, map_ofNat, I_mul_ofReal_sqrt_two_sq]
 
-theorem I_mul_sqrt_two_ne_neg : I * √2 ≠ -(I * √2) := by
-  intro h
-  have := congrArg Complex.im h
-  simp only [mul_im, I_re, ofReal_im, mul_zero, I_im, ofReal_re, one_mul, zero_add,
-    neg_im] at this
-  have h2 : (0 : ℝ) < √2 := Real.sqrt_pos.2 two_pos
-  linarith
+private theorem I_mul_sqrt_two_ne_neg : I * √2 ≠ -(I * √2) :=
+  self_ne_neg.2 (mul_ne_zero I_ne_zero (ofReal_sqrt_ne_zero two_pos))
 
 /-- The CM type of the embeddings sending a square root `t` of `-2` to `i√2`. -/
 noncomputable def sqrtNegTwoType (t : L) (ht : t ^ 2 = -2) : CMType L where
@@ -128,16 +125,27 @@ theorem mem_Φ {φ : K →+* ℂ} : φ ∈ Φ ↔ φ s = I * √2 :=
 /-- The primitive eighth root of unity `ζ₈ = (1 + i)/√2` in `ℂ`. -/
 noncomputable def ζ₈ : ℂ := (1 + I) / √2
 
+theorem ζ₈_def : ζ₈ = (1 + I) / √2 :=
+  (rfl)
+
 theorem ζ₈_sq : ζ₈ ^ 2 = I := by
-  rw [ζ₈, div_pow, sq_ofReal_sqrt zero_le_two, ofReal_ofNat]
+  rw [ζ₈_def, div_pow, sq_ofReal_sqrt zero_le_two, ofReal_ofNat]
   linear_combination (1 / 2 : ℂ) * I_sq
 
+/-- `ζ₈` is a primitive eighth root of unity, since `ζ₈ ^ 4 = i ^ 2 = -1`. -/
+theorem isPrimitiveRoot_ζ₈ : IsPrimitiveRoot ζ₈ 8 := by
+  have h4 : ζ₈ ^ 4 = -1 := by rw [show 4 = 2 * 2 from rfl, pow_mul, ζ₈_sq, I_sq]
+  rw [IsPrimitiveRoot.iff_orderOf]
+  refine orderOf_eq_prime_pow (p := 2) (n := 2) ?_ ?_
+  · norm_num [h4]
+  · norm_num [show ζ₈ ^ 8 = (ζ₈ ^ 4) ^ 2 by ring, h4]
+
 theorem ζ₈_add_ζ₈_pow_three : ζ₈ + ζ₈ ^ 3 = I * √2 := by
-  have h : ζ₈ * √2 = 1 + I := by rw [ζ₈, div_mul_cancel₀ _ (ofReal_sqrt_ne_zero two_pos)]
+  have h : ζ₈ * √2 = 1 + I := by rw [ζ₈_def, div_mul_cancel₀ _ (ofReal_sqrt_ne_zero two_pos)]
   have h3 : ζ₈ ^ 3 = ζ₈ * I := by rw [pow_succ, ζ₈_sq, mul_comm]
   rw [h3]
   refine mul_right_cancel₀ (ofReal_sqrt_ne_zero two_pos) ?_
-  linear_combination (1 + I) * h + I * I_mul_sqrt_two_sq - (I * (√2 : ℂ) ^ 2 - 1) * I_sq
+  linear_combination (1 + I) * h + I * I_mul_ofReal_sqrt_two_sq - (I * (√2 : ℂ) ^ 2 - 1) * I_sq
 
 theorem ζ₈_mul_ζ₈_pow_three : ζ₈ * ζ₈ ^ 3 = -1 := by
   linear_combination (ζ₈ ^ 2 + I) * ζ₈_sq + I_sq
@@ -154,11 +162,11 @@ theorem mem_Φ_iff {φ : K →+* ℂ} : φ ∈ Φ ↔ φ ζ = ζ₈ ∨ φ ζ = 
   constructor
   · intro h
     have hpq : (φ ζ ^ 2 - I * √2 * φ ζ - 1) * (φ ζ ^ 2 + I * √2 * φ ζ - 1) = 0 := by
-      linear_combination hx4 - φ ζ ^ 2 * I_mul_sqrt_two_sq
+      linear_combination hx4 - φ ζ ^ 2 * I_mul_ofReal_sqrt_two_sq
     refine (mul_eq_zero.1 hpq).resolve_right fun hq => I_mul_sqrt_two_ne_neg ?_
-    linear_combination -h - (I * √2 - φ ζ) * hq + φ ζ * I_mul_sqrt_two_sq
+    linear_combination -h - (I * √2 - φ ζ) * hq + φ ζ * I_mul_ofReal_sqrt_two_sq
   · intro h
-    linear_combination (φ ζ + I * √2) * h + φ ζ * I_mul_sqrt_two_sq
+    linear_combination (φ ζ + I * √2) * h + φ ζ * I_mul_ofReal_sqrt_two_sq
 
 /-! ### The subfield `ℚ(√-2)` and non-primitivity -/
 
@@ -193,27 +201,30 @@ theorem not_isPrimitive_Φ : ¬ Φ.IsPrimitive := fun h => by
 
 /-! ### The reflex field -/
 
+/-- `Φ` has two embeddings, half of the four embeddings of `ℚ(ζ₈)`. -/
+theorem card_Φ : Nat.card Φ = 2 := by
+  have := Φ.two_mul_card_eq_finrank
+  rw [finrank_K] at this
+  omega
+
 theorem typeTrace_Φ_s : Φ.typeTrace s = 2 * (I * √2) := by
-  classical
-  have hcard : Nat.card Φ = 2 := by
-    have := Φ.two_mul_card_eq_finrank
-    rw [finrank_K] at this
-    omega
-  rw [Nat.card_eq_fintype_card, Fintype.card_subtype] at hcard
-  rw [CMType.typeTrace_eq_sum, Finset.sum_congr rfl fun φ hφ => mem_Φ.1 (Finset.mem_filter.1 hφ).2,
-    Finset.sum_const, nsmul_eq_mul, hcard, Nat.cast_ofNat]
+  rw [CMType.typeTrace_apply, finsum_mem_congr rfl fun φ hφ => mem_Φ.1 hφ,
+    finsum_mem_eq_finite_toFinset_sum _ (Set.toFinite _), Finset.sum_const,
+    ← Nat.card_eq_card_finite_toFinset, SetLike.coe_sort_coe, card_Φ, nsmul_eq_mul, Nat.cast_ofNat]
+
+/-- A ring homomorphism to `ℂ` maps `ℚ(x)` into `ℚ(ψ x)`. -/
+private theorem apply_mem_adjoin_simple {E : Type*} [Field E] [Algebra ℚ E] {x a : E}
+    (ha : a ∈ ℚ⟮x⟯) (ψ : E →+* ℂ) : ψ a ∈ ℚ⟮ψ x⟯ := by
+  have h : ψ.toRatAlgHom a ∈ ℚ⟮x⟯.map ψ.toRatAlgHom := (mem_map _).2 ⟨a, ha, rfl⟩
+  rwa [adjoin_map, Set.image_singleton] at h
+
+/-- `t` generates `F = ℚ⟮s⟯`. -/
+theorem adjoin_t : ℚ⟮t⟯ = ⊤ :=
+  lift_injective _ (by rw [lift_adjoin_simple, AdjoinSimple.coe_gen, lift_top])
 
 theorem apply_mem_of_mem_Φ₀ {ψ : F →+* ℂ} (hψ : ψ ∈ Φ₀) (a : F) : ψ a ∈ ℚ⟮I * √2⟯ := by
-  have ha : a ∈ Algebra.adjoin ℚ {t} := by
-    have h := PowerBasis.adjoin_gen_eq_top (adjoin.powerBasis (IsIntegral.of_finite ℚ s))
-    rw [adjoin.powerBasis_gen] at h
-    rw [h]
-    trivial
-  have hψa : ψ.toRatAlgHom a ∈ (Algebra.adjoin ℚ {t}).map ψ.toRatAlgHom :=
-    Subalgebra.mem_map.2 ⟨a, ha, rfl⟩
-  rw [AlgHom.map_adjoin, Set.image_singleton, RingHom.toRatAlgHom_apply,
-    mem_sqrtNegTwoType.1 hψ] at hψa
-  exact algebra_adjoin_le_adjoin ℚ _ hψa
+  rw [← mem_sqrtNegTwoType.1 hψ]
+  exact apply_mem_adjoin_simple (adjoin_t ▸ mem_top) ψ
 
 /-- **The reflex field of `Φ` is `ℚ(i√2) ⊆ ℂ`.** -/
 theorem reflexField_Φ : Φ.reflexField = ℚ⟮I * √2⟯ := by
@@ -231,14 +242,14 @@ theorem reflexField_Φ : Φ.reflexField = ℚ⟮I * √2⟯ := by
 /-- **The reflex field of `Φ` has degree two**, whereas `[ℚ(ζ₈) : ℚ] = 4` (`finrank_K`). -/
 theorem finrank_reflexField_Φ : Module.finrank ℚ Φ.reflexField = 2 := by
   rw [reflexField_Φ]
-  have hle := finrank_adjoin_le_two I_mul_sqrt_two_sq
+  have hle := finrank_adjoin_le_two I_mul_ofReal_sqrt_two_sq
   have hne : Module.finrank ℚ ℚ⟮I * √2⟯ ≠ 1 := by
     intro h1
     rw [IntermediateField.finrank_eq_one_iff, adjoin_simple_eq_bot_iff, mem_bot] at h1
     obtain ⟨q, hq⟩ := h1
     have h0 : (0 : ℝ) = √2 := by simpa using congrArg Complex.im hq
     exact Real.sqrt_ne_zero'.2 two_pos h0.symm
-  have := adjoin.finiteDimensional (isIntegral_of_sq_eq_neg_two I_mul_sqrt_two_sq)
+  have := adjoin.finiteDimensional (isIntegral_of_sq_eq_neg_two I_mul_ofReal_sqrt_two_sq)
   have hpos : 0 < Module.finrank ℚ ℚ⟮I * √2⟯ := Module.finrank_pos
   omega
 
