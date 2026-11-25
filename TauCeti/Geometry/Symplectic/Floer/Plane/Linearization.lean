@@ -13,7 +13,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Plane.ExponentialDecay
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
-import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Topology.Instances.Real.TSupport
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
@@ -748,37 +747,29 @@ private theorem exists_band_covectorPullback_realChart_cylindricalEndLift
   refine ⟨a, b, hab, fun s hs ↦ by simpa only [endSign_positive, one_mul] using hband s hs,
     ?_, fun s t ↦ ?_, fun s t hs ↦ ?_⟩
   · -- The form is `C²`, since `J` is `J_e` and `u` is `C²` beyond `r`.
-    have hU : IsOpen {ζ : ℝ × ℝ | r < ζ.1} := isOpen_lt continuous_const continuous_fst
-    have hA : ContDiff ℝ 2 fun ζ ↦ fderiv ℝ φ ζ stdComplexLineReal :=
-      (hφ.fderiv_right (by norm_num)).clm_apply contDiff_const
-    refine contDiff_covectorPullback_of_contDiffOn hU (fun ζ hζ ↦ ?_)
+    refine contDiff_covectorPullback_of_eqOn
+      (Je := fun ζ y ↦ (Je ζ.2 y).toLinearMap.toContinuousLinearMap)
+      (isOpen_lt continuous_const continuous_fst) hφ
+      (hJe.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd))
+      (fun ζ hζ ↦ by simp only [Function.comp_apply, hJeq ζ hζ])
+      (fun ζ hζ ↦ hu _ (positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
+        (by rwa [endSign_positive, one_mul])))
       (hη.comp (hφ.of_le (by norm_num))) fun ζ hζ ↦ ?_
-    · have hJζ : ContDiffAt ℝ 2 (fun ζ' : ℝ × ℝ ↦
-          (Je ζ'.2 ((u ∘ φ) ζ')).toLinearMap.toContinuousLinearMap) ζ :=
-        hJe.contDiffAt.comp ζ (contDiffAt_snd.prodMk ((hu _
-          (positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
-            (by rwa [endSign_positive, one_mul]))).comp _ (hφ.contDiffAt.of_le (by norm_num))))
-      refine (ContDiffAt.congr_of_eventuallyEq (((contDiff_fst.comp hA).contDiffAt.smul
-        (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add
-        ((contDiff_snd.comp hA).contDiffAt.smul hJζ)) ?_).contDiffWithinAt
-      filter_upwards [hU.mem_nhds hζ] with ζ' hζ'
-      simp only [hJeq ζ' hζ', Function.comp_apply, Pi.smul_apply']
-    · obtain h := hηR (tsupport_comp_subset_preimage _ hφ.continuous hζ)
-      rw [mem_ofPred_eq, positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff,
-        endSign_positive, one_mul] at h
-      exact hrR.trans h
+    obtain h := hηR (tsupport_comp_subset_preimage _ hφ.continuous hζ)
+    rw [mem_ofPred_eq, positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff,
+      endSign_positive, one_mul] at h
+    exact hrR.trans h
   · -- The form has period one, as the end lift has.
-    simp only [φ, covectorPullback_apply, realChart_cylindricalEndLift_add_one,
-      fderiv_add_snd_of_periodic_snd (realChart_cylindricalEndLift_add_one positive)]
+    exact covectorPullback_add_snd_of_periodic_snd (realChart_cylindricalEndLift_add_one positive)
+      _ u η s t
   · -- Off the open band, `η ∘ φ` vanishes.
-    have h₀ : η (φ (s, t)) = 0 := by
-      by_cases hs' : s ∈ Icc a b
-      · rcases eq_or_lt_of_le hs'.1 with rfl | has
-        · exact ha t
-        · rw [le_antisymm hs'.2 (not_lt.1 fun hsb ↦ hs ⟨has, hsb⟩)]
-          exact hb t
-      · exact (hout (s, t) hs').eq_of_nhds
-    simp only [covectorPullback_apply, h₀, ContinuousLinearMap.zero_comp]
+    refine covectorPullback_eq_zero_of_apply_eq_zero _ _ u ?_
+    by_cases hs' : s ∈ Icc a b
+    · rcases eq_or_lt_of_le hs'.1 with rfl | has
+      · exact ha t
+      · rw [le_antisymm hs'.2 (not_lt.1 fun hsb ↦ hs ⟨has, hsb⟩)]
+        exact hb t
+    · exact (hout (s, t) hs').eq_of_nhds
 
 /-- **The end estimate of the formal adjoint on the positive PSS plane.** Let `u` be `C²` on a part
 `‖w‖ > exp (2π r)` of the end of the positive PSS plane, solving there the Floer equation for the
@@ -845,9 +836,9 @@ theorem
       Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm (φ ζ)‖ :=
     positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 (by simpa using h)
   -- `J_e` has period one, as the end lift has.
-  have hJe1 : Je 1 = Je 0 := by
-    rw [← hJeq (r + 1, 1) (by simp), ← hJeq (r + 1, 0) (by simp)]
-    exact congrArg J (by simpa using realChart_cylindricalEndLift_add_one positive (r + 1) 0)
+  have hJe1 : Je 1 = Je 0 :=
+    (periodic_of_forall_comp_eq (realChart_cylindricalEndLift_add_one positive (r + 1))
+      fun t ↦ hJeq (r + 1, t) (by simp)).eq
   -- The end estimate of the adjoint on the half-cylinder of the end data.
   obtain ⟨C₁, -, R₂, hest⟩ :=
     ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint hX hHs hx hnd
