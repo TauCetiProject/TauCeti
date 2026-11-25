@@ -48,7 +48,9 @@ range and `Q` is symmetric:
   (`IsCoercive.finiteDimensional_eigenspace_formSolutionOperator`);
 * when `J` is compact, `H` has a Hilbert basis of eigenvectors with eigenvalues greater than
   `-c`, only finitely many below any bound
-  (`IsCoercive.exists_hilbertBasis_formOperator`).
+  (`IsCoercive.exists_hilbertBasis_formOperator`);
+* when `J` is compact, the spectrum consists of the `μ` for which `Q(u, v) = μ ⟪J u, J v⟫` has a
+  nonzero solution `u` (`IsCoercive.mem_spectrum_formOperator_iff`).
 
 For `V = W¹,²₀(D)` and `H = L²(D)` this is the **Dirichlet realization** of the operator, and for
 the form of the normal Jacobi operator it is the Dirichlet Jacobi operator.
@@ -278,5 +280,34 @@ theorem isSelfAdjoint_formOperator (hB : IsCoercive B) (hJ : DenseRange J)
     simp [subScalar_apply, LinearPMap.vadd_apply, sub_eq_neg_add]
   rw [heq]
   exact LinearPMap.isSelfAdjoint_perturb_bounded hS hT
+
+/-- **The spectrum of the form operator.** If `B(u, v) = Q(u, v) + c ⟪J u, J v⟫` and `J` is
+compact with dense range, `μ` lies in the spectrum of the form operator exactly when
+`Q(u, v) = μ ⟪J u, J v⟫` for some nonzero `u ∈ V` and every `v ∈ V`. -/
+theorem mem_spectrum_formOperator_iff (hB : IsCoercive B) (hJc : IsCompactOperator J)
+    (hJ : DenseRange J) (hBQ : ∀ u v, B u v = Q u v + c * ⟪J u, J v⟫_ℝ) {μ : ℝ} :
+    μ ∈ (hB.formOperator J c).spectrum ↔ ∃ u : V, u ≠ 0 ∧ ∀ v, Q u v = μ * ⟪J u, J v⟫_ℝ := by
+  -- The eigenvalue equation of `Q` for `μ` is that of `B` for `μ + c`.
+  have hQB (u : V) : (∀ v, Q u v = μ * ⟪J u, J v⟫_ℝ) ↔
+      ∀ v, B u v = (μ + c) * ⟪J u, J v⟫_ℝ :=
+    forall_congr' fun v ↦ by rw [hBQ, add_mul, add_left_inj]
+  simp only [hQB]
+  rcases eq_or_ne (μ + c) 0 with hμ | hμ
+  · -- At `μ = -c` there is no spectrum, and coercivity rules out a nonzero solution.
+    obtain rfl : μ = -c := by linarith
+    refine iff_of_false (fun h ↦ (LinearPMap.mem_spectrum_iff _ _).1 h
+      (hB.neg_mem_resolventSet_formOperator hJ)) ?_
+    rintro ⟨u, hu, h⟩
+    obtain ⟨C, hC, hcoer⟩ := hB
+    have hle := hcoer u
+    rw [h u, hμ, zero_mul, mul_assoc] at hle
+    exact hle.not_gt (mul_pos hC (mul_self_pos.2 (norm_ne_zero_iff.2 hu)))
+  · -- Otherwise the spectrum of `S⁻¹ - c` at `μ` is that of `S⁻¹` at `μ + c`, which for the
+    -- compact operator `S` is the eigenvalue `(μ + c)⁻¹` of `S`.
+    rw [LinearPMap.mem_spectrum_iff, formOperator_def, formGenerator_def, neg_neg,
+      TauCeti.LinearPMap.mem_resolventSet_subScalar_iff, ← LinearPMap.mem_spectrum_iff,
+      ContinuousLinearMap.mem_spectrum_inverse_toPMap_top_iff_hasEigenvalue _
+        (hB.formSolutionOperator_injective hJ) (hB.isCompactOperator_formSolutionOperator hJc) hμ,
+      hB.hasEigenvalue_formSolutionOperator_iff J hμ]
 
 end IsCoercive
