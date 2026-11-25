@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Lie.Subgroup.Atlas
 public import TauCeti.Geometry.Lie.Subgroup.Immersion
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import TauCeti.Geometry.Manifold.Immersion.Differential
-import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
 # Embedded Lie subgroups and the closed-subgroup theorem
@@ -138,9 +137,7 @@ theorem isImmersion_codRestrict [FiniteDimensional ℝ E] [FiniteDimensional ℝ
     Manifold.IsImmersion IM 𝓘(ℝ, E') ∞ (fun x ↦ (⟨f x, hf x⟩ : K)) := by
   let _ := d.chartedSpace
   let _ := d.lieGroup
-  have he := d.isSmoothEmbedding_subtypeVal
-  exact (he.contMDiff_iff_comp.2 himm.contMDiff).isImmersion_of_isImmersion_comp (by simp)
-    (fun _ ↦ he.contMDiff.mdifferentiableAt (by simp)) himm
+  exact d.isSmoothEmbedding_subtypeVal.isImmersion_of_isImmersion_comp (by simp) himm
 
 /-- An embedded Lie subgroup acts smoothly on every manifold on which the ambient group acts
 smoothly, for instance on the ambient group itself by left multiplication. -/

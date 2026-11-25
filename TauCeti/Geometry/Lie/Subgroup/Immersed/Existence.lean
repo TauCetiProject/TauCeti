@@ -39,9 +39,10 @@ its parametrization an injective immersive homomorphism. The image of its differ
 identity is the fibre of the distribution there, which is `S`.
 
 Second countability of `G` is part of the definition of a manifold in the reference below. The
-presentation is modelled on Euclidean space, the model of the Frobenius leaf, while
-`TauCeti.Lie.ImmersedLieSubgroupData` takes its source model in the universes of the model of `G`,
-so the model of `G` is taken in `Type`.
+presentation is modelled on Euclidean space, the model of the Frobenius leaf, in `Type`. The data
+`TauCeti.Lie.ImmersedLieSubgroupData` allows a source model in any universe, but the predicate
+`TauCeti.Lie.IsImmersedLieSubgroup` pins it to the universes of the model of `G`, so the model of
+`G` is taken in `Type`.
 
 ## Main definitions
 
