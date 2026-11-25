@@ -92,32 +92,6 @@ namespace AbstractSimplicialComplex
 variable {ι κ : Type*} [DecidableEq κ] {K : AbstractSimplicialComplex ι}
   {L : AbstractSimplicialComplex κ}
 
-/-- A face of `K` is the support of a point of `|K|`, namely its barycenter. -/
-theorem exists_support_eq {σ : Finset ι} (hσ : σ ∈ K) :
-    ∃ x : Realization K, x.val.support = σ := by
-  refine ⟨⟨faceBarycenter K ⟨σ, hσ⟩,
-    mem_realization_iff.2 ⟨σ, hσ, faceBarycenter_mem K ⟨σ, hσ⟩⟩⟩, ?_⟩
-  ext v
-  by_cases hv : v ∈ σ
-  · have hcard : (σ.card : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Finset.card_ne_zero_of_mem hv)
-    simp [Finsupp.mem_support_iff, faceBarycenter_apply, hv, hcard]
-  · simp [Finsupp.mem_support_iff, faceBarycenter_apply, hv]
-
-/-- The segment between two points of `|L|` whose supports together span a face of `L` lies
-in `|L|`. -/
-theorem lineMap_mem_realization {x y : Realization L} (h : x.val.support ∪ y.val.support ∈ L)
-    (t : unitInterval) :
-    AffineMap.lineMap x.val y.val (t : ℝ) ∈ (standardGeometricComplex L).space := by
-  have hmem (z : Realization L) (hz : z.val.support ⊆ x.val.support ∪ y.val.support) :
-      z.val ∈ convexHull ℝ ((fun v => Finsupp.single v (1 : ℝ)) ''
-        ((x.val.support ∪ y.val.support : Finset κ) : Set κ)) :=
-    mem_standardSimplex_iff.2 ⟨Realization.nonneg L z, Realization.sum_eq_one L z, hz⟩
-  refine mem_realization_iff.2 ⟨_, h, ?_⟩
-  convert (convex_convexHull ℝ _).lineMap_mem (hmem x Finset.subset_union_left)
-    (hmem y Finset.subset_union_right) t.property using 2
-  ext
-  simp
-
 /-- The straight-line family between two continuous maps into `|L|` whose values at each point
 lie in a common closed simplex is jointly continuous. -/
 private theorem continuous_lineMap_realization (g₀ g₁ : C(Realization K, Realization L))
@@ -210,6 +184,16 @@ theorem isSimplicialApproximation_iff :
   simp only [IsSimplicialApproximation,
     TauCeti.PreAbstractSimplicialComplex.SimplicialMap.support_realizationMap]
 
+/-- If `φ` maps the open star of every vertex `v` of `K` into the open star of `g v`, then `g`
+sends the support of every point `x` into the support of `φ x`. -/
+theorem image_support_subset_of_mapsTo {g : α → β}
+    (h : ∀ v, MapsTo φ (K.openStarRealization v) (L.openStarRealization (g v)))
+    (x : Realization K) : x.val.support.image g ⊆ (φ x).val.support := by
+  intro w hw
+  obtain ⟨v, hv, rfl⟩ := Finset.mem_image.1 hw
+  exact (L.mem_openStarRealization_iff_mem_support).1
+    (h v ((K.mem_openStarRealization_iff_mem_support).2 hv))
+
 /-- **The star condition.** A simplicial map `f` is a simplicial approximation of `φ` exactly
 when `φ` maps the open star of every vertex `v` of `K` into the open star of `f v`. -/
 theorem isSimplicialApproximation_iff_mapsTo :
@@ -220,10 +204,7 @@ theorem isSimplicialApproximation_iff_mapsTo :
   · intro h v x hx
     exact (L.mem_openStarRealization_iff_mem_support).2
       (h x (Finset.mem_image_of_mem f ((K.mem_openStarRealization_iff_mem_support).1 hx)))
-  · intro h x w hw
-    obtain ⟨v, hv, rfl⟩ := Finset.mem_image.1 hw
-    exact (L.mem_openStarRealization_iff_mem_support).1
-      (h v ((K.mem_openStarRealization_iff_mem_support).2 hv))
+  · exact fun h => image_support_subset_of_mapsTo h
 
 /-- A simplicial approximation of `φ` sends each vertex `v` into the support of `φ` at `v`. -/
 theorem IsSimplicialApproximation.apply_mem_support (hf : f.IsSimplicialApproximation φ)
@@ -261,12 +242,8 @@ def ofMapsTo (φ : Realization K → Realization L) (g : α → β)
   toFun := g
   map_face' σ hσ := by
     obtain ⟨x, rfl⟩ := exists_support_eq hσ
-    refine L.isRelLowerSet_faces.mem_of_le (support_mem L (φ x)) ?_
-      ((K.isRelLowerSet_faces.prop_of_mem hσ).image g)
-    intro w hw
-    obtain ⟨v, hv, rfl⟩ := Finset.mem_image.1 hw
-    exact (L.mem_openStarRealization_iff_mem_support).1
-      (h v ((K.mem_openStarRealization_iff_mem_support).2 hv))
+    exact L.isRelLowerSet_faces.mem_of_le (support_mem L (φ x))
+      (image_support_subset_of_mapsTo h x) ((K.isRelLowerSet_faces.prop_of_mem hσ).image g)
 
 /-- The simplicial map given by a vertex map satisfying the star condition is that vertex map. -/
 @[simp]
