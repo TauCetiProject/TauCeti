@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.Eigenvector
-public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
@@ -24,8 +23,9 @@ block algebras, `R[G] ≃ₐ[R] ∏_B e_B R[G]`, by `x ↦ (e_B x)_B` with inver
 (`TauCeti.exists_completeOrthogonalIdempotents_isBlockIdempotent`), and it is unique up to
 reindexing (`TauCeti.complete_blockIdempotents_unique`).
 
-If every `g ∈ G` acts on a block idempotent `b` of `K[G]` by a scalar, over a field `K`, then the
-block algebra `b K[G]` is the line `K b`, so it is isomorphic to `K = M₁(K)`.
+If every `g ∈ G` acts on an idempotent `e` of `R[G]` by a scalar, then the corner `e R[G] e` is
+spanned by `e`. In particular, over a field `K`, the block algebra `b K[G]` of such a block
+idempotent `b` is the line `K b`, so it is isomorphic to `K`.
 
 ## Main definitions
 
@@ -33,17 +33,17 @@ block algebra `b K[G]` is the line `K b`, so it is isomorphic to `K = M₁(K)`.
   `e_B`, Mathlib's corner ring of `e_B` in `R[G]`, an `R`-algebra with identity `e_B`.
 * `TauCeti.algEquivPiBlockAlgebra`: the block decomposition `R[G] ≃ₐ[R] ∏_B e_B R[G]` defined by
   a complete orthogonal family of block idempotents.
-* `TauCeti.blockAlgebraAlgEquivMatrixOfMulOfEqSmul`: the block algebra of a block idempotent on
-  which `G` acts by scalars is isomorphic to `M₁(K)`.
+* `TauCeti.blockAlgebraAlgEquivOfMulOfEqSmul`: the block algebra of a block idempotent of `K[G]`
+  on which `G` acts by scalars is isomorphic to `K`.
 
 ## Main results
 
 * `TauCeti.val_algEquivPiBlockAlgebra_apply`: the component of `x` in the block `B` is `e_B x`.
-* `TauCeti.algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul`: the block algebra of a block
-  idempotent of `R[G]` on which `G` acts by scalars is spanned by its identity.
-* `TauCeti.blockAlgebraAlgEquivMatrixOfMulOfEqSmul_apply`,
-  `TauCeti.val_blockAlgebraAlgEquivMatrixOfMulOfEqSmul_symm_apply`: the isomorphism with `M₁(K)`
-  sends `a b` to the matrix with entry `a`.
+* `IsIdempotentElem.algebraMap_surjective_corner_of_mul_of_eq_smul`: the corner of an idempotent
+  of `R[G]` on which `G` acts by scalars is spanned by its identity.
+* `TauCeti.blockAlgebraAlgEquivOfMulOfEqSmul_apply`,
+  `TauCeti.val_blockAlgebraAlgEquivOfMulOfEqSmul_symm_apply`: the isomorphism with `K` sends
+  `a b` to `a`.
 
 ## References
 
@@ -114,15 +114,15 @@ section Scalar
 
 variable [Finite G]
 
-/-- If every `g ∈ G` acts on the block idempotent `b` by a scalar, `b g = c(g) b`, then every
-element of the block algebra `b R[G]` is a scalar multiple of its identity `b`. -/
-theorem algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul
-    {b : Subalgebra.center R (MonoidAlgebra R G)} (hb : IsBlockIdempotent b) {c : G → R}
-    (hc : ∀ g, (b : MonoidAlgebra R G) * MonoidAlgebra.of R G g = c g • (b : MonoidAlgebra R G)) :
-    Function.Surjective (algebraMap R hb.BlockAlgebra) := by
+/-- If every `g ∈ G` acts on the idempotent `e` of `R[G]` by a scalar, `e g = c(g) e`, then every
+element of the corner `e R[G] e` is a scalar multiple of its identity `e`. -/
+theorem _root_.IsIdempotentElem.algebraMap_surjective_corner_of_mul_of_eq_smul
+    {e : MonoidAlgebra R G} (he : IsIdempotentElem e) {c : G → R}
+    (hc : ∀ g, e * MonoidAlgebra.of R G g = c g • e) :
+    Function.Surjective (algebraMap R he.Corner) := by
   have := Fintype.ofFinite G
   intro x
-  have hx : x.val = (b : MonoidAlgebra R G) * x.val := (IsIdempotentElem.mul_corner_val _ x).symm
+  have hx : x.val = e * x.val := (IsIdempotentElem.mul_corner_val _ x).symm
   rw [mul_eq_smul_of_mul_of_eq_smul hc] at hx
   exact ⟨_, Subtype.ext (by rw [IsIdempotentElem.Corner.val_algebraMap, ← hx])⟩
 
@@ -130,33 +130,31 @@ variable {K : Type*} [Field K]
   {b : Subalgebra.center K (MonoidAlgebra K G)} (hb : IsBlockIdempotent b)
 
 /-- If every `g ∈ G` acts on the block idempotent `b` by a scalar, then the block algebra
-`b K[G]` is isomorphic to `K = M₁(K)`. -/
-noncomputable def blockAlgebraAlgEquivMatrixOfMulOfEqSmul {c : G → K}
+`b K[G]` is isomorphic to `K`. -/
+noncomputable def blockAlgebraAlgEquivOfMulOfEqSmul {c : G → K}
     (hc : ∀ g, (b : MonoidAlgebra K G) * MonoidAlgebra.of K G g = c g • (b : MonoidAlgebra K G)) :
-    hb.BlockAlgebra ≃ₐ[K] Matrix (Fin 1) (Fin 1) K :=
+    hb.BlockAlgebra ≃ₐ[K] K :=
   -- The `show` keeps the bijectivity proof at type `Function.Bijective` rather than its unfolding
   -- `Injective ∧ Surjective`, so that `AlgEquiv.ofBijective` lemmas rewrite this term.
-  (AlgEquiv.ofBijective (Algebra.ofId K _) (show Function.Bijective _ from
-    ⟨(algebraMap K _).injective, algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul hb hc⟩)).symm
-    |>.trans (Matrix.finOneAlgEquiv K K)
+  (AlgEquiv.ofBijective (Algebra.ofId K hb.BlockAlgebra) (show Function.Bijective _ from
+    ⟨(algebraMap K hb.BlockAlgebra).injective,
+      hb.isIdempotentElem_val.algebraMap_surjective_corner_of_mul_of_eq_smul hc⟩)).symm
 
-/-- The isomorphism `b K[G] ≃ₐ[K] M₁(K)` sends `a b` to the matrix with entry `a`. -/
-theorem blockAlgebraAlgEquivMatrixOfMulOfEqSmul_apply {c : G → K}
+/-- The isomorphism `b K[G] ≃ₐ[K] K` sends `a b` to `a`. -/
+theorem blockAlgebraAlgEquivOfMulOfEqSmul_apply {c : G → K}
     (hc : ∀ g, (b : MonoidAlgebra K G) * MonoidAlgebra.of K G g = c g • (b : MonoidAlgebra K G))
-    {x : hb.BlockAlgebra} {a : K} (hx : x.val = a • (b : MonoidAlgebra K G)) (i j : Fin 1) :
-    blockAlgebraAlgEquivMatrixOfMulOfEqSmul hb hc x i j = a := by
+    {x : hb.BlockAlgebra} {a : K} (hx : x.val = a • (b : MonoidAlgebra K G)) :
+    blockAlgebraAlgEquivOfMulOfEqSmul hb hc x = a := by
   obtain rfl : x = algebraMap K _ a := Subtype.ext hx
-  simp [Matrix.algebraMap_matrix_apply, Subsingleton.elim i j]
+  simp [blockAlgebraAlgEquivOfMulOfEqSmul]
 
-/-- The inverse of the isomorphism `b K[G] ≃ₐ[K] M₁(K)` sends a matrix with entry `a` to `a b`. -/
+/-- The inverse of the isomorphism `b K[G] ≃ₐ[K] K` sends `a` to `a b`. -/
 @[simp]
-theorem val_blockAlgebraAlgEquivMatrixOfMulOfEqSmul_symm_apply {c : G → K}
+theorem val_blockAlgebraAlgEquivOfMulOfEqSmul_symm_apply {c : G → K}
     (hc : ∀ g, (b : MonoidAlgebra K G) * MonoidAlgebra.of K G g = c g • (b : MonoidAlgebra K G))
-    (M : Matrix (Fin 1) (Fin 1) K) :
-    ((blockAlgebraAlgEquivMatrixOfMulOfEqSmul hb hc).symm M).val =
-      M 0 0 • (b : MonoidAlgebra K G) := by
-  simp [blockAlgebraAlgEquivMatrixOfMulOfEqSmul, AlgEquiv.symm_trans_apply,
-    IsIdempotentElem.Corner.val_algebraMap]
+    (a : K) :
+    ((blockAlgebraAlgEquivOfMulOfEqSmul hb hc).symm a).val = a • (b : MonoidAlgebra K G) := by
+  simp [blockAlgebraAlgEquivOfMulOfEqSmul, IsIdempotentElem.Corner.val_algebraMap]
 
 end Scalar
 

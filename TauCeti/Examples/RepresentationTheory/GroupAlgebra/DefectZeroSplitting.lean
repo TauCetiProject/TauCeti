@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
+public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Algebra
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 
@@ -138,13 +139,15 @@ variable {K : Type*} [Field K] [CharP K 2] {α : K}
 instance `𝔽₄`, the block algebra of `1 + α² r + α r²` is isomorphic to `K = M₁(K)`. -/
 noncomputable def blockAlgebraEOneAlgEquivMatrix (hα : α ^ 2 + α + 1 = 0) :
     (isBlockIdempotent_eOne hα).BlockAlgebra ≃ₐ[K] Matrix (Fin 1) (Fin 1) K :=
-  blockAlgebraAlgEquivMatrixOfMulOfEqSmul _ (by simpa only [coe_toCenter] using eOne_mul_of hα)
+  (blockAlgebraAlgEquivOfMulOfEqSmul _ (by simpa only [coe_toCenter] using eOne_mul_of hα)).trans
+    (Matrix.finOneAlgEquiv K K)
 
 /-- **Check.** Over a field `K` of characteristic `2` containing a root `α` of `X² + X + 1`, for
 instance `𝔽₄`, the block algebra of `1 + α r + α² r²` is isomorphic to `K = M₁(K)`. -/
 noncomputable def blockAlgebraETwoAlgEquivMatrix (hα : α ^ 2 + α + 1 = 0) :
     (isBlockIdempotent_eTwo hα).BlockAlgebra ≃ₐ[K] Matrix (Fin 1) (Fin 1) K :=
-  blockAlgebraAlgEquivMatrixOfMulOfEqSmul _ (by simpa only [coe_toCenter] using eTwo_mul_of hα)
+  (blockAlgebraAlgEquivOfMulOfEqSmul _ (by simpa only [coe_toCenter] using eTwo_mul_of hα)).trans
+    (Matrix.finOneAlgEquiv K K)
 
 end Split
 
