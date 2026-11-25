@@ -17,6 +17,7 @@ public import TauCeti.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.Unimodular
 public import TauCeti.RingTheory.LocalRing.Residue
 import Mathlib.Algebra.Module.Shrink
+import TauCeti.Algebra.Module.Projective.Schanuel
 
 /-!
 # Generators of modules over a local ring
@@ -54,6 +55,9 @@ Splitting off these summands one at a time shows that `M` is free.
   `𝔪 • M` is sent to `1` by a linear map `M → R ⧸ 𝔪`.
 * `Module.isUnimodular_iff_notMem_jacobson_smul_top`: over a possibly noncommutative local ring,
   an element of a projective module `M` is unimodular exactly when it lies outside `J • M`.
+* `TauCeti.IsLocalRing.free_ker_of_apply_eq_one` and
+  `TauCeti.IsLocalRing.finrank_ker_add_one_of_apply_eq_one`: the kernel of a linear form taking the
+  value `1` on a finite projective module is free of rank one less.
 * `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a
   possibly noncommutative local ring is free, for any `AddCommMonoid` module.
 
@@ -169,6 +173,26 @@ theorem exists_linearMap_quotient_eq_one {m : M}
     Module.Projective.exists_dual_eq_one (R ⧸ _root_.IsLocalRing.maximalIdeal R) hx
   exact ⟨(φ.restrictScalars R) ∘ₗ Submodule.mkQ _, hφ⟩
 
+/-- **The kernel of a linear form taking the value `1` is free.** If `φ : M → R` takes the value
+`1` on a finite projective module `M` over a local ring, then `ker φ` is a finite projective direct
+summand of `M`, hence free. -/
+theorem free_ker_of_apply_eq_one [Module.Finite R M] [Module.Projective R M]
+    {φ : M →ₗ[R] R} {w : M} (hw : φ w = 1) : Module.Free R (LinearMap.ker φ) :=
+  have := LinearMap.finite_ker_of_apply_eq_one hw
+  have := φ.projective_ker_of_surjective fun r ↦ ⟨r • w, by simp [hw]⟩
+  Module.free_of_flat_of_isLocalRing
+
+/-- **The kernel of a linear form taking the value `1` has rank one less.** If `φ : M → R` takes
+the value `1` on a finite projective module `M` over a local ring, then `M ≃ ker φ × R`, so
+`rank (ker φ) + 1 = rank M`. -/
+theorem finrank_ker_add_one_of_apply_eq_one [Module.Finite R M] [Module.Projective R M]
+    {φ : M →ₗ[R] R} {w : M} (hw : φ w = 1) :
+    Module.finrank R (LinearMap.ker φ) + 1 = Module.finrank R M := by
+  have := free_ker_of_apply_eq_one hw
+  have := LinearMap.finite_ker_of_apply_eq_one hw
+  rw [← (LinearMap.kerProdEquivOfApplyEqOne hw).finrank_eq, Module.finrank_prod,
+    Module.finrank_self]
+
 /-- A scalar killing a nonzero element lies in the maximal ideal, since a unit kills only zero.
 This holds for any distributive action of a local semiring on an additive monoid, in particular
 for a module over a local ring. -/
@@ -230,8 +254,7 @@ private theorem free_of_span_finset_eq_top (n : ℕ) :
     let π : M →ₗ[R] LinearMap.ker φ := LinearMap.fst R _ R ∘ₗ e.symm.toLinearMap
     have hπ : Function.Surjective π := Prod.fst_surjective.comp e.symm.surjective
     have hπp : π p = 0 := Subtype.ext (by simp [π, e, hφ])
-    have : Module.Projective R (LinearMap.ker φ) :=
-      .of_split (LinearMap.ker φ).subtype π (LinearMap.ext fun x ↦ Subtype.ext (by simp [π, e]))
+    have := φ.projective_ker_of_surjective fun r ↦ ⟨r • p, by simp [hφ]⟩
     have : Module.Free R (LinearMap.ker φ) := by
       refine ih ((s.erase p).image π) (Finset.card_image_le.trans ?_) ?_
       · rw [Finset.card_erase_of_mem hps]
