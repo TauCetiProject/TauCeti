@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.Topology.EMetricSpace.VariationOnFromTo
 
 /-!
 # Total variation and the metric speed of absolutely continuous curves
@@ -95,15 +96,8 @@ theorem absolutelyContinuousOnInterval_variationOnFromTo_Icc
     AbsolutelyContinuousOnInterval (variationOnFromTo γ (Icc a b) a) a b := by
   rcases le_or_gt a b with hab | hba
   · simpa only [uIcc_of_le hab] using hγ.absolutelyContinuousOnInterval_variationOnFromTo
-  · have h0 : variationOnFromTo γ (Icc a b) a = fun _ ↦ 0 := by
-      funext t
-      rw [Icc_eq_empty_of_lt hba]
-      rcases le_total a t with hat | hta
-      · rw [variationOnFromTo.eq_of_le _ _ hat, empty_inter,
-          eVariationOn.subsingleton γ subsingleton_empty, ENNReal.toReal_zero]
-      · rw [variationOnFromTo.eq_of_ge _ _ hta, empty_inter,
-          eVariationOn.subsingleton γ subsingleton_empty, ENNReal.toReal_zero, neg_zero]
-    rw [h0]
+  · rw [Icc_eq_empty_of_lt hba,
+      funext (variationOnFromTo.eq_zero_of_subsingleton γ subsingleton_empty a)]
     exact (LipschitzWith.const 0).lipschitzOnWith.absolutelyContinuousOnInterval
 
 /-- Total variation of an absolutely continuous metric-valued curve is its integrated metric

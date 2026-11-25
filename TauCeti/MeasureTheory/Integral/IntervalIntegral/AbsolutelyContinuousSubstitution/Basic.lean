@@ -107,20 +107,17 @@ theorem ae_notMem_of_deriv_ne_zero_of_monotoneOn {θ : ℝ → ℝ} {a b : ℝ}
     ∀ᵐ t, t ∈ Icc a b → deriv θ t ≠ 0 → θ t ∉ N := by
   rcases lt_or_ge b a with hba | hab
   · exact Filter.Eventually.of_forall fun t ht ↦ absurd (ht.1.trans ht.2) (not_le.2 hba)
-  set M := toMeasurable (volume.restrict (Icc (θ a) (θ b))) N
-  have hM : volume.restrict (Icc (θ a) (θ b)) M = 0 := by rwa [measure_toMeasurable]
   have hθμ : AEMeasurable θ (volume.restrict (Icc a b)) := by
     simpa only [uIcc_of_le hab] using hθ.continuousOn.aemeasurable measurableSet_uIcc
   have hθν := hθμ.mono_ac (withDensity_absolutelyContinuous _
     fun t ↦ ENNReal.ofReal (deriv θ t))
-  rw [← hθ.map_withDensity_deriv_of_monotoneOn hab hmono,
-    Measure.map_apply_of_aemeasurable hθν (measurableSet_toMeasurable _ _),
-    withDensity_apply_eq_zero' (measurable_deriv θ).ennreal_ofReal.aemeasurable] at hM
-  filter_upwards [(ae_restrict_iff' measurableSet_Icc).1 (measure_eq_zero_iff_ae_notMem.1 hM),
+  have hN' := measure_eq_zero_iff_ae_notMem.1 hN
+  rw [← hθ.map_withDensity_deriv_of_monotoneOn hab hmono] at hN'
+  filter_upwards [(ae_restrict_iff' measurableSet_Icc).1
+      ((ae_withDensity_iff (measurable_deriv θ).ennreal_ofReal).1 (ae_of_ae_map hθν hN')),
     (ae_restrict_iff' measurableSet_Icc).1 (ae_deriv_nonneg_of_monotoneOn hmono)]
-    with t ht hnn hmem hd hN
-  exact ht hmem ⟨(ENNReal.ofReal_pos.2 ((hnn hmem).lt_of_ne' hd)).ne',
-    subset_toMeasurable _ _ hN⟩
+    with t ht hnn hmem hd
+  exact ht hmem (ENNReal.ofReal_pos.2 ((hnn hmem).lt_of_ne' hd)).ne'
 
 /-- Under a monotone absolutely continuous substitution, integrability of the derivative-weighted
 composition is equivalent to integrability on the image interval. -/
