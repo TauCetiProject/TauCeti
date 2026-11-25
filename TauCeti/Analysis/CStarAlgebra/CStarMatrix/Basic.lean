@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
@@ -46,6 +47,7 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instIsSimpleRing`: square matrices over a simple ring form a simple ring.
 * `CStarMatrix.instSeparableSpace`: finite matrices over a separable C⋆-algebra form a separable
   space.
 * `CStarMatrix.instModuleFinite`: `CStarMatrix m n A` is a finite module over finite index
@@ -103,6 +105,9 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
   `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
   `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
   `b = z* z`; no unit is needed.
+* `CStarMatrix.norm_ofMatrix_diagonal`: a diagonal matrix `diag(d₁, …, dₙ)` over a C⋆-algebra has
+  norm `maxᵢ ‖dᵢ‖`, the sup norm of `d`; `CStarMatrix.norm_ofMatrix_diagonal_fin_two` is the
+  `2 × 2` case `‖diag(a, b)‖ = max ‖a‖ ‖b‖`.
 
 ## References
 
@@ -588,6 +593,12 @@ lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module 
 
 end Algebraic
 
+/-- Square matrices over a simple ring form a simple ring: their two-sided ideals are the matrices
+over the two-sided ideals of the coefficient ring. -/
+instance instIsSimpleRing {n A : Type*} [Fintype n] [Nonempty n] [Ring A] [IsSimpleRing A] :
+    IsSimpleRing (CStarMatrix n n A) :=
+  inferInstanceAs (IsSimpleRing (Matrix n n A))
+
 /-- A matrix space over a separable C⋆-algebra with finite index types is separable. -/
 instance instSeparableSpace {m n A : Type*} [Finite m] [Finite n] [NonUnitalCStarAlgebra A]
     [TopologicalSpace.SeparableSpace A] :
@@ -936,5 +947,50 @@ theorem norm_sum_smul_le (x : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(ℂ, m → �
   nlinarith
 
 end Compression
+
+section DiagonalNorm
+
+open WithCStarModule CStarModule
+
+variable {n A : Type*} [Fintype n] [DecidableEq n] [NonUnitalCStarAlgebra A] [PartialOrder A]
+  [StarOrderedRing A]
+
+/-- A diagonal matrix over a C⋆-algebra has norm the largest norm of its diagonal entries: the
+diagonal matrices form a copy of `Aⁿ` with the sup norm. -/
+theorem norm_ofMatrix_diagonal (d : n → A) : ‖ofMatrix (Matrix.diagonal d)‖ = ‖d‖ := by
+  refine le_antisymm ?_ ((pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => ?_)
+  · rw [norm_def]
+    refine (toCLM (ofMatrix (Matrix.diagonal d))).opNorm_le_bound (norm_nonneg d) fun v => ?_
+    have hv : toCLM (ofMatrix (Matrix.diagonal d)) v =
+        (equiv A (n → A)).symm fun j => v j * d j := by
+      simp [toCLM_apply_eq_sum, Matrix.diagonal_apply]
+    rw [hv, ← sq_le_sq₀ (norm_nonneg _) (by positivity), mul_pow, norm_sq_eq A (x := v),
+      norm_sq_eq A (x := (equiv A (n → A)).symm _), pi_inner, pi_inner]
+    simp only [equiv_symm_pi_apply, inner_def]
+    -- Each term `vⱼ dⱼ (vⱼ dⱼ)⋆` is the conjugate of `dⱼ dⱼ⋆ ≤ ‖d‖²` by `vⱼ`.
+    calc ‖∑ j, v j * d j * star (v j * d j)‖ ≤ ‖∑ j, ‖d‖ ^ 2 • (v j * star (v j))‖ := by
+          refine CStarAlgebra.norm_le_norm_of_le_of_nonneg (Finset.sum_le_sum fun j _ => ?_)
+            (Finset.sum_nonneg fun j _ => mul_star_self_nonneg _)
+          calc v j * d j * star (v j * d j) = v j * (d j * star (d j)) * star (v j) := by
+                simp [star_mul, mul_assoc]
+            _ ≤ ‖d j * star (d j)‖ • (v j * star (v j)) :=
+                CStarAlgebra.star_right_conjugate_le_norm_smul _ _
+            _ ≤ ‖d‖ ^ 2 • (v j * star (v j)) := by
+                refine smul_le_smul_of_nonneg_right ?_ (mul_star_self_nonneg _)
+                rw [CStarRing.norm_self_mul_star, ← sq]
+                exact pow_le_pow_left₀ (norm_nonneg _) (norm_le_pi_norm d j) 2
+      _ = ‖d‖ ^ 2 * ‖∑ j, v j * star (v j)‖ := by
+          rw [← Finset.smul_sum, norm_smul, Real.norm_of_nonneg (by positivity)]
+  · simpa using norm_entry_le_norm (M := ofMatrix (Matrix.diagonal d)) (i := i) (j := i)
+
+/-- A `2 × 2` diagonal matrix `diag(a, b)` over a C⋆-algebra has norm `max ‖a‖ ‖b‖`. -/
+theorem norm_ofMatrix_diagonal_fin_two (a b : A) :
+    ‖ofMatrix (Matrix.diagonal ![a, b])‖ = max ‖a‖ ‖b‖ := by
+  rw [norm_ofMatrix_diagonal]
+  refine le_antisymm ((pi_norm_le_iff_of_nonneg (by positivity)).2 fun i => ?_)
+    (max_le (norm_le_pi_norm ![a, b] 0) (norm_le_pi_norm ![a, b] 1))
+  fin_cases i <;> simp
+
+end DiagonalNorm
 
 end CStarMatrix
