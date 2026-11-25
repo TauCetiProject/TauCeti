@@ -129,8 +129,9 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
   · have h1 : TopCat.ofHom ⟨((⟨1⟩ : ULift.{w} ℤˣ) • · : (thomPair F
         ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst → _),
         continuous_const_smul _⟩ = 𝟙 _ := TopCat.ext fun v ↦ one_smul (ULift.{w} ℤˣ) v
-    rw [h1, CategoryTheory.Functor.map_id, HomologicalComplex.id_f, Category.id_comp,
-      uliftIntUnitsSign_apply, Units.val_one, Int.cast_one, one_smul]
+    have hχ : (uliftIntUnitsSign.{w} R ⟨1⟩ : R) = 1 := by simp
+    rw [h1, CategoryTheory.Functor.map_id, HomologicalComplex.id_f, Category.id_comp, hχ,
+      one_smul]
     -- The two sides differ only in the instance composing the quotient onto the relative chains:
     -- the category of chain complexes of the singular simplicial set or of `singularChains R`.
     rfl
@@ -150,8 +151,8 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
         continuous_const_smul _⟩ = TopPair.Hom.fst (deckThomPairMap F E ι) := by
       simp only [ULift.smul_def]
       exact neg_one_smul_eq_deckThomPairMap_fst
-    rw [hδ, uliftIntUnitsSign_apply, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one,
-      neg_one_smul]
+    have hχ : (uliftIntUnitsSign.{w} R ⟨-1⟩ : R) = -1 := by simp
+    rw [hδ, hχ, neg_one_smul]
     erw [reassoc_of% hd, reassoc_of% hΛ, Preadditive.neg_comp, Preadditive.comp_neg]
     -- As in the case `1`, the two sides differ only in the instances of the composites.
     rfl
