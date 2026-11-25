@@ -164,6 +164,19 @@ theorem gardingCone_C {c : ℝ} (hc : c ≠ 0) (a : σ → ℝ) :
   ext x
   simpa [mem_gardingCone] using fun _ _ ↦ hc
 
+/-- The Gårding cone of `1` is the whole space. -/
+@[simp]
+theorem gardingCone_one (a : σ → ℝ) : gardingCone (1 : MvPolynomial σ ℝ) a = Set.univ := by
+  rw [← C_1]
+  exact gardingCone_C one_ne_zero a
+
+/-- The Gårding cone of a numeral `n ≥ 2` is the whole space. -/
+@[simp]
+theorem gardingCone_ofNat (n : ℕ) [n.AtLeastTwo] (a : σ → ℝ) :
+    gardingCone (ofNat(n) : MvPolynomial σ ℝ) a = Set.univ := by
+  rw [← map_ofNat C n]
+  exact gardingCone_C (OfNat.ofNat_ne_zero n) a
+
 /-- For a homogeneous polynomial with `p(a) ≠ 0`, a point `x` lies in the Gårding cone `Γ(p, a)`
 if and only if `p` does not vanish on the closed segment from `a` to `x`. -/
 theorem mem_gardingCone_iff_forall_mem_segment (hp : p.IsHomogeneous m) (ha : eval a p ≠ 0) :

@@ -111,11 +111,15 @@ example : IsHyperbolic (C 2 : MvPolynomial (Fin 2) ℝ) 0 1 ∧
 example {σ : Type*} (a : σ → ℝ) : -a ∈ gardingCone (C 1 : MvPolynomial σ ℝ) a := by
   simp
 
-/-- The cone of `D_e (x + y) = 2` is the whole plane, which contains the cone of `x + y`. -/
-example : gardingCone (X 0 + X 1 : MvPolynomial (Fin 2) ℝ) 1 ⊆
-    gardingCone (∑ i, (1 : Fin 2 → ℝ) i • pderiv i (X 0 + X 1 : MvPolynomial (Fin 2) ℝ)) 1 := by
+/-- The cone of `D_e (x + y) = 2` is the whole plane. -/
+example : gardingCone
+    (∑ i, (1 : Fin 2 → ℝ) i • pderiv i (X 0 + X 1 : MvPolynomial (Fin 2) ℝ)) 1 = univ := by
   rw [sum_smul_pderiv_X_add_X, gardingCone_C two_ne_zero]
-  exact subset_univ _
+
+/-- The cone of `x + y` lies in the cone of its derivative `D_e (x + y)`. -/
+example : gardingCone (X 0 + X 1 : MvPolynomial (Fin 2) ℝ) 1 ⊆
+    gardingCone (∑ i, (1 : Fin 2 → ℝ) i • pderiv i (X 0 + X 1 : MvPolynomial (Fin 2) ℝ)) 1 :=
+  isHyperbolic_X_add_X.gardingCone_subset_sum_smul_pderiv le_rfl
 
 /-- The positive-degree conclusions fail in degree `0`: `D_b 1 = 0` is not hyperbolic. -/
 example {σ : Type*} [Fintype σ] (b : σ → ℝ) :
@@ -208,8 +212,7 @@ theorem gardingCone_familyPoly {c : ℝ} (hc : 0 ≤ c) :
 theorem closure_gardingCone_familyPoly_subset {c : ℝ} (hc : 0 ≤ c) :
     closure (gardingCone (familyPoly c) 1) ⊆ {x | √c * |x 0 - x 1| ≤ x 0 + x 1} := by
   rw [gardingCone_familyPoly hc]
-  exact closure_minimal (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
-    (isClosed_le (by fun_prop) (by fun_prop))
+  exact closure_lt_subset_le (by fun_prop) (by fun_prop)
 
 /-- The coordinate vector `e₁ = (1, 0)` lies in the closure of the cone of `p_c` exactly when
 `c ≤ 1`. -/
