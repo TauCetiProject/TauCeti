@@ -184,7 +184,9 @@ theorem toContinuousAlgEquiv_symm_apply (σ : Field.absoluteGaloisGroup K)
 /-- `σ_C` is an isometry. -/
 theorem isometry_toContinuousAlgEquiv (σ : Field.absoluteGaloisGroup K) :
     Isometry σ.toContinuousAlgEquiv := by
-  rw [show ⇑σ.toContinuousAlgEquiv = _ from funext (toContinuousAlgEquiv_apply σ)]
+  have h : ⇑σ.toContinuousAlgEquiv = Completion.map (absoluteGaloisGroupEquiv K σ) :=
+    funext (toContinuousAlgEquiv_apply σ)
+  rw [h]
   exact (absoluteGaloisGroupEquiv K σ).toAlgHom.isometry.completion_map
 
 /-- `σ_C` preserves the norm. -/

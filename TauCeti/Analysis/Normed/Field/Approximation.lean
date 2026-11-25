@@ -139,7 +139,8 @@ theorem dense_separableClosure (K' L : Type*) [NontriviallyNormedField K']
     rw [natDegree_sub_eq_left_of_natDegree_lt] <;> rw [natDegree_X_pow]
     exact natDegree_linear_le.trans_lt hN2
   have hcoeff (i : ℕ) : ‖g.coeff i - f.coeff i‖ < (δ / M) ^ N / (N + 1) := by
-    rw [← coeff_sub, show g - f = -(C (algebraMap K' _ t) * X) by ring, coeff_neg, coeff_C_mul_X]
+    have hgf : g - f = -(C (algebraMap K' _ t) * X) := by ring
+    rw [← coeff_sub, hgf, coeff_neg, coeff_C_mul_X]
     split_ifs
     · rwa [norm_neg, norm_algebraMap']
     · simpa using hε
