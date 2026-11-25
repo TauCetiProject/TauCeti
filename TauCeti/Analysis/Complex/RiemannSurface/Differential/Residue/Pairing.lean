@@ -265,16 +265,22 @@ theorem exists_residuePairing_single_ne_zero [IsManifold 𝓘(ℂ) 1 X] [Preconn
     (differentialSections.order_toOneForm_ne_top hω a)
   exact ⟨_, residuePairing_single_coordinate_zpow_ne_zero ω hn.symm⟩
 
-/-- **The residue pairing is nondegenerate in the differential.** On a nonempty connected Riemann
-surface, a global section of `Ω_{-D}` is determined by its residue pairings with Mittag-Leffler
-distributions relative to `D`. -/
-theorem residuePairing_flip_injective [IsManifold 𝓘(ℂ) 1 X] [PreconnectedSpace X] [Nonempty X] :
+/-- **The residue pairing is nondegenerate in the differential.** On a Riemann surface, a global
+section of `Ω_{-D}` is determined by its residue pairings with Mittag-Leffler distributions
+relative to `D`: a nonzero section has finite order at some point `a`, and pairs nontrivially with
+a principal part at `a`. -/
+theorem residuePairing_flip_injective [IsManifold 𝓘(ℂ) 1 X] :
     Function.Injective (residuePairing D).flip := by
   classical
   refine (injective_iff_map_eq_zero _).2 fun ω hω ↦ by_contra fun hω₀ ↦ ?_
-  obtain ⟨a⟩ := ‹Nonempty X›
-  obtain ⟨m, hm⟩ := exists_residuePairing_single_ne_zero hω₀ a
-  exact hm (by rw [← LinearMap.flip_apply, hω, LinearMap.zero_apply])
+  obtain ⟨a, ha⟩ : ∃ a, (differentialSections.toOneForm (-D) ω).order a ≠ ⊤ := by
+    by_contra! h
+    refine hω₀ (differentialSections.ext_of_eventually_nhdsNE fun x ↦ ?_)
+    filter_upwards [OneForm.eventually_apply_eq_zero_of_order_eq_top (h x)] with y hy
+    rw [hy, map_zero, Pi.zero_apply]
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 ha
+  exact residuePairing_single_coordinate_zpow_ne_zero ω hn.symm
+    (by rw [← LinearMap.flip_apply, hω, LinearMap.zero_apply])
 
 end PrincipalParts
 
