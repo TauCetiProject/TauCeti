@@ -38,7 +38,7 @@ invertible there: its determinant is `w₁ w₂ sin(θ + φ)`, and at a zero
 
 * V. Gorin, *Lectures on random lozenge tilings*, Cambridge Stud. Adv. Math. 193 (2021),
   Theorem 4.11.
-* R. Kenyon, *Lectures on dimers*, in *Statistical mechanics*, IAS/Park City Math. Ser. 16 (2009),
+* R. Kenyon, *Lectures on dimers*, IAS/Park City Math. Ser. 16 (2009),
   Section 6.1.
 * R. Kenyon, A. Okounkov, S. Sheffield, *Dimers and amoebae*, Ann. of Math. 163 (2006),
   Theorem 4.3.
