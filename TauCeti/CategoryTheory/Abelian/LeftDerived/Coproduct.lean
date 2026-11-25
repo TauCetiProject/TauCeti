@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.LeftDerived
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
+public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # Left derived functors commute with coproducts
@@ -20,10 +21,11 @@ let `F : C ⥤ D` be an additive functor preserving them. Then every left derive
 
 The proof computes on resolutions. The coproduct of projective resolutions `Pⱼ` of objects `Xⱼ`
 is a projective resolution of `∐ Xⱼ` (`CategoryTheory.ProjectiveResolution.sigma`): coproducts
-of projectives are projective, and since coproducts are exact the coproduct of the
-quasi-isomorphisms `Pⱼ ⟶ Xⱼ` is a quasi-isomorphism (`TauCeti.quasiIsoAt_sigmaMap_iff`). Then
-`Lₙ F (∐ Xⱼ)` is the `n`-th homology of `F (∐ Pⱼ) ≅ ∐ F Pⱼ`, and homology commutes with exact
-coproducts (`TauCeti.homologicalComplexHomologyFunctor_preservesColimitsOfShape`).
+of projectives are projective (`CategoryTheory.Projective.of_isColimit_cofan`), and since
+coproducts are exact the coproduct of the quasi-isomorphisms `Pⱼ ⟶ Xⱼ` is a quasi-isomorphism
+(`TauCeti.quasiIsoAt_sigmaMap_iff`). Then `Lₙ F (∐ Xⱼ)` is the `n`-th homology of
+`F (∐ Pⱼ) ≅ ∐ F Pⱼ`, and homology commutes with exact coproducts
+(`TauCeti.homologicalComplexHomologyFunctor_preservesColimitsOfShape`).
 
 ## References
 
@@ -44,13 +46,6 @@ universe w
 variable {C : Type*} [Category* C] [Abelian C] {J : Type w} [HasColimitsOfShape (Discrete J) C]
   [HasExactColimitsOfShape (Discrete J) C]
 
-omit [Abelian C] in
-/-- A coproduct of projective objects is projective, for an index type in any universe. -/
-theorem Projective.sigma {β : Type*} (g : β → C) [HasCoproduct g] [∀ b, Projective (g b)] :
-    Projective (∐ g) :=
-  ⟨fun f e _ ↦ ⟨Sigma.desc fun b ↦ Projective.factorThru (Sigma.ι g b ≫ f) e,
-    Sigma.hom_ext _ _ fun b ↦ by simp⟩⟩
-
 namespace ProjectiveResolution
 
 /-- The coproduct of projective resolutions `Pⱼ` of objects `Xⱼ` is a projective resolution of
@@ -60,7 +55,7 @@ namespace ProjectiveResolution
   complex := ∐ fun j ↦ (P j).complex
   projective k := Projective.of_iso
     (PreservesCoproduct.iso (HomologicalComplex.eval C _ k) fun j ↦ (P j).complex).symm
-    (Projective.sigma fun j ↦ (P j).complex.X k)
+    (Projective.of_isColimit_cofan (X := fun j ↦ (P j).complex.X k) (coproductIsCoproduct _))
   π := Sigma.desc fun j ↦ (P j).π ≫ (ChainComplex.single₀ C).map (Sigma.ι X j)
   quasiIso := by
     have h : (Sigma.desc fun j ↦ (P j).π ≫ (ChainComplex.single₀ C).map (Sigma.ι X j)) =
@@ -70,6 +65,12 @@ namespace ProjectiveResolution
       ⟨fun q ↦ (TauCeti.quasiIsoAt_sigmaMap_iff _).2 fun j ↦ inferInstance⟩
     rw [h]
     infer_instance
+
+/-- The complex of the coproduct resolution is the coproduct of the complexes `Pⱼ`. -/
+@[simp]
+lemma sigma_complex {X : J → C} (P : ∀ j, ProjectiveResolution (X j)) :
+    (sigma P).complex = ∐ fun j ↦ (P j).complex :=
+  rfl
 
 /-- On the summand `Pⱼ`, the augmentation of the coproduct resolution is that of `Pⱼ` followed by
 the inclusion `Xⱼ ⟶ ∐ X`. -/

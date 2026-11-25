@@ -20,9 +20,8 @@ direct sums of `R`-modules indexed by small types are exact. So for every `n` th
 direct sums, and so does `Torₙ^R(-, Y)`: the comparison maps `⨁ⱼ Torₙ(X, Yⱼ) ⟶ Torₙ(X, ⨁ⱼ Yⱼ)`
 and `⨁ⱼ Torₙ(Xⱼ, Y) ⟶ Torₙ(⨁ⱼ Xⱼ, Y)` are isomorphisms
 (`TauCeti.isIso_sigmaComparison_moduleCat_Tor_obj`,
-`TauCeti.isIso_sigmaComparison_moduleCat_Tor_flip_obj`). For `R = ℤ` and `n = 1` this is the
-statement of OperatorKTheory K8.2 that `Tor₁` over `ℤ` commutes with direct sums in either
-variable.
+`TauCeti.isIso_sigmaComparison_moduleCat_Tor_flip_obj`). In particular, for `R = ℤ` and
+`n = 1`, `Tor₁` of abelian groups commutes with direct sums in either variable.
 -/
 
 public section
