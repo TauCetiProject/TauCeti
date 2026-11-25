@@ -78,8 +78,8 @@ invariant under positive dilations. -/
 theorem mem_shiftedQuadrant_and_smul_notMem :
     (![-1 / 2, 1] : Fin 2 → ℝ) ∈ shiftedQuadrant ∧
       (3 : ℝ) • (![-1 / 2, 1] : Fin 2 → ℝ) ∉ shiftedQuadrant := by
-  refine ⟨fun i ↦ by fin_cases i <;> norm_num, fun h ↦ ?_⟩
-  have := h 0
+  refine ⟨mem_shiftedQuadrant.2 fun i ↦ by fin_cases i <;> norm_num, fun h ↦ ?_⟩
+  have := mem_shiftedQuadrant.1 h 0
   norm_num at this
 
 /-- The shifted quadrant contains `(-1/2, -1/2)`, whose coordinate sum is negative: it is not
@@ -87,7 +87,7 @@ contained in `Γ_1`. -/
 theorem mem_shiftedQuadrant_and_sum_neg :
     (![-1 / 2, -1 / 2] : Fin 2 → ℝ) ∈ shiftedQuadrant ∧
       ∑ i, (![-1 / 2, -1 / 2] : Fin 2 → ℝ) i < 0 := by
-  refine ⟨fun i ↦ by fin_cases i <;> norm_num, by norm_num [Fin.sum_univ_two]⟩
+  exact ⟨mem_shiftedQuadrant.2 fun i ↦ by fin_cases i <;> norm_num, by norm_num [Fin.sum_univ_two]⟩
 
 /-- The shifted quadrant is not an admissible cone. -/
 theorem not_isAdmissibleCone_shiftedQuadrant : ¬ IsAdmissibleCone shiftedQuadrant := fun h ↦
@@ -210,14 +210,14 @@ theorem not_isOpen_iInter_epsCone : ¬ IsOpen (⋂ ε > (0 : ℝ), epsCone ε) :
   have h0 : (0 : ℝ) ∈ γ ⁻¹' ⋂ ε > (0 : ℝ), epsCone ε := by
     simp only [mem_preimage, mem_iInter]
     intro ε hε
-    refine ⟨by simp [γ], by simp [γ]; linarith, by simp [γ]; linarith⟩
+    refine mem_epsCone.2 ⟨by simp [γ], by simp [γ]; linarith, by simp [γ]; linarith⟩
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (h.preimage hγ) 0 h0
   set t := min (r / 2) (1 / 2)
   have ht : 0 < t := by positivity
   have htr : t < r := (min_le_left _ _).trans_lt (by linarith)
   have hmem := hball (by rw [Metric.mem_ball, Real.dist_0_eq_abs, abs_of_pos ht]; exact htr)
   simp only [mem_preimage, mem_iInter] at hmem
-  obtain ⟨-, -, h1⟩ := hmem t ht
+  obtain ⟨-, -, h1⟩ := mem_epsCone.1 (hmem t ht)
   simp only [γ, Matrix.cons_val_zero, Matrix.cons_val_one] at h1
   nlinarith
 
