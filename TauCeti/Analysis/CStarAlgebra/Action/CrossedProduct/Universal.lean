@@ -221,17 +221,6 @@ theorem forall_mem_range_fullCrossedProductMap_integratedFull_eq_zero_iff
   simp only [NonUnitalStarAlgHom.mem_range, forall_exists_index, forall_apply_eq_imp_iff,
     NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.zero_apply]
 
-variable (μ) in
-/-- `M.integratedFull μ` vanishes on `(hI.subtypeHom.fullCrossedProductMap μ).range` precisely when
-`M.coefficient` vanishes on `I`. -/
-theorem forall_mem_range_fullCrossedProductMap_subtypeHom_integratedFull_eq_zero_iff
-    {I : NonUnitalStarSubalgebra ℂ A} [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
-    (∀ y ∈ (hI.subtypeHom.fullCrossedProductMap μ).range, M.integratedFull μ y = 0) ↔
-      ∀ x ∈ I, M.coefficient x = 0 := by
-  rw [M.forall_mem_range_fullCrossedProductMap_integratedFull_eq_zero_iff μ hI.subtypeHom]
-  simp only [IsInvariant.subtypeHom_apply, Subtype.forall]
-
 /-- `M.integratedFull μ` sends `(i_A(a)).fst x` to `M.coefficient a * M.integratedFull μ x`. -/
 @[simp]
 theorem integratedFull_coefficientMultiplier_fst (a : A) (x : FullCrossedProduct α μ) :

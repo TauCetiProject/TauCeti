@@ -76,11 +76,9 @@ universe u v
 
 section StarSubalgebra
 
-variable {G : Type u} {A B : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  {α : CStarAction G A} {β : CStarAction G B}
-  {I : NonUnitalStarSubalgebra ℂ A} [IsClosed (I : Set A)]
+variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
+  {α : CStarAction G A} {I : NonUnitalStarSubalgebra ℂ A} [IsClosed (I : Set A)]
   (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
   (μ : Measure G) [μ.IsHaarMeasure]
 
@@ -111,21 +109,6 @@ theorem forall_mem_range_fullCrossedProductMap_subtypeHom_integratedFull_eq_zero
       ∀ x ∈ I, P.coefficient x = 0 := by
   rw [P.forall_mem_range_fullCrossedProductMap_integratedFull_eq_zero_iff μ hI.subtypeHom]
   simp only [subtypeHom_apply, Subtype.forall]
-
-/-- When `q : Hom α β` vanishes on `I`, the composite of `q.fullCrossedProductMap μ` with
-`hI.subtypeHom.fullCrossedProductMap μ` is zero. -/
-theorem fullCrossedProductMap_comp_fullCrossedProductMap_subtypeHom_eq_zero
-    (q : Hom α β) (hqI : ∀ a ∈ I, q a = 0) :
-    (q.fullCrossedProductMap μ).comp (hI.subtypeHom.fullCrossedProductMap μ) = 0 :=
-  hI.subtypeHom.fullCrossedProductMap_comp_fullCrossedProductMap_eq_zero μ q
-    fun x => by simpa using hqI x x.property
-
-/-- Pointwise form of `fullCrossedProductMap_comp_fullCrossedProductMap_subtypeHom_eq_zero`. -/
-theorem fullCrossedProductMap_fullCrossedProductMap_subtypeHom_eq_zero
-    (q : Hom α β) (hqI : ∀ a ∈ I, q a = 0) (x : FullCrossedProduct hI.restrict μ) :
-    q.fullCrossedProductMap μ (hI.subtypeHom.fullCrossedProductMap μ x) = 0 :=
-  hI.subtypeHom.fullCrossedProductMap_fullCrossedProductMap_eq_zero μ q
-    (fun y => by simpa using hqI y y.property) x
 
 /-- The induced full crossed-product map from a closed invariant two-sided star ideal preserves
 norms identically. -/

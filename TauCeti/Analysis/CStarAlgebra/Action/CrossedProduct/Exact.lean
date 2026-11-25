@@ -10,7 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Ideal
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Surjective
 
 /-!
-# Exactness and quotient isomorphisms of full crossed products
+# Exactness and quotient isomorphism of full crossed products
 
 Let `α` be a point-norm continuous action of a locally compact group `G` on a (possibly nonunital)
 C⋆-algebra `A` with left Haar measure `μ`, and let `I` be a closed `α`-invariant two-sided ideal of
@@ -18,35 +18,31 @@ C⋆-algebra `A` with left Haar measure `μ`, and let `I` be a closed `α`-invar
 
 `0 → I ⋊_α G → A ⋊_α G → (A ⧸ I) ⋊_α G → 0`
 
-form a short exact sequence of C⋆-algebras, so `(A ⋊_α G) ⧸ (I ⋊_α G) ≃⋆ₐ[ℂ] (A ⧸ I) ⋊_α G`.
+form a short exact sequence of C⋆-algebras.
 
 Isometric injectivity on the left
 (`TauCeti.CStarAction.Hom.isometry_fullCrossedProductMap_of_injective`,
-`IsInvariant.isometry_fullCrossedProductMap_subtypeHom`) and surjectivity on the right
+`IsInvariant.isometry_fullCrossedProductMap_subtypeHom`,
+`IsInvariant.isometry_fullCrossedProductMap_idealSubtypeHom`) and surjectivity on the right
 (`TauCeti.CStarAction.Hom.surjective_fullCrossedProductMap`) were established separately. Here we
 prove exactness in the middle for any right-exact sequence `D --(φ)--> A --(q)--> B → 0` of
-`G`-C⋆-algebras (without requiring `φ` to be injective), identify the two-sided ideal kernels of
-induced surjective crossed-product maps, and construct the canonical `⋆`-isomorphisms of quotient
-full crossed products.
+`G`-C⋆-algebras (without requiring `φ` to be injective), deduce exactness for the quotient action
+`α.quotient I hI`, identify the two-sided ideal kernel of `q.fullCrossedProductMap μ` for any
+surjective `q`, and construct the canonical `⋆`-isomorphism
+`(A ⋊_α G) ⧸ (ker q ⋊_α G) ≃⋆ₐ[ℂ] B ⋊_β G`.
 
-None of the results require `T2Space G`, separability, σ-finiteness, or unitality. All resulting
-`StarAlgEquiv`s between C⋆-algebras are automatically isometric via `StarAlgEquiv.isometry`.
+None of the results require `T2Space G`, separability, σ-finiteness, or unitality. The resulting
+`StarAlgEquiv` between C⋆-algebras is automatically isometric via `StarAlgEquiv.isometry`.
 
 ## Main declarations
 
-* `TauCeti.CStarAction.Hom.fullCrossedProductMap_exact`,
-  `IsInvariant.fullCrossedProductMap_subtypeHom_exact`, and
-  `IsInvariant.fullCrossedProductMap_idealSubtypeHom_exact`: exactness in the middle of full
-  crossed-product sequences (Williams, Proposition 3.19).
-* `IsInvariant.ker_fullCrossedProductMap_eq_fullCrossedProductIdeal`,
-  `IsInvariant.ker_fullCrossedProductMap_eq_idealFullCrossedProductIdeal`,
-  `TauCeti.CStarAction.Hom.ker_fullCrossedProductMap`, and
-  `TauCeti.CStarAction.ker_fullCrossedProductMap_quotientMkHom`: two-sided ideal kernel
-  identifications for surjective crossed-product maps.
-* `IsInvariant.quotientFullCrossedProductEquiv`, `IsInvariant.quotientIdealFullCrossedProductEquiv`,
-  `TauCeti.CStarAction.Hom.quotientKerFullCrossedProductEquiv`, and
-  `TauCeti.CStarAction.quotientFullCrossedProductEquiv`: canonical `⋆`-isomorphisms identifying
-  `(A ⋊_α G) ⧸ (I ⋊_α G)` with `B ⋊_β G` and `(A ⧸ I) ⋊_α G`.
+* `TauCeti.CStarAction.Hom.fullCrossedProductMap_exact` and
+  `TauCeti.CStarAction.fullCrossedProductMap_idealSubtypeHom_quotientMkHom_exact`: exactness in the
+  middle of full crossed-product sequences (Williams, Proposition 3.19).
+* `TauCeti.CStarAction.Hom.ker_fullCrossedProductMap`: two-sided ideal kernel identification for
+  surjective induced crossed-product maps.
+* `TauCeti.CStarAction.Hom.quotientKerFullCrossedProductEquiv`: canonical `⋆`-isomorphism
+  `(A ⋊_α G) ⧸ (ker q ⋊_α G) ≃⋆ₐ[ℂ] B ⋊_β G` for a surjective equivariant `q : Hom α β`.
 
 ## References
 
@@ -146,225 +142,29 @@ theorem fullCrossedProductMap_exact
   exact (hmemJ x).mp <| TwoSidedIdeal.Quotient.eq_zero_iff_mem.mp <|
     (TwoSidedIdeal.Quotient.mkStarAlgHom_apply J x).symm.trans hmk
 
-end Hom
-
-end ExactSequence
-
-end TauCeti.CStarAction
-
-/-! ### Invariant-ideal exactness and canonical quotient `⋆`-isomorphisms -/
-
-namespace IsInvariant
-
-open CStarAction CStarAction.FullCrossedProduct
-
-section StarSubalgebra
-
-variable {G : Type u} {A B : Type v} [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  {α : CStarAction G A} {β : CStarAction G B}
-  {I : NonUnitalStarSubalgebra ℂ A} [IsClosed (I : Set A)]
-  (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
-  (μ : Measure G) [μ.IsHaarMeasure]
-
-/-- Exactness of the ideal sequence of full crossed products: if `q : Hom α β` is surjective with
-kernel the closed `α`-invariant subalgebra `I`, then `I ⋊_α G → A ⋊_α G → B ⋊_β G` is exact. -/
-theorem fullCrossedProductMap_subtypeHom_exact
-    {q : Hom α β} (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    Function.Exact (hI.subtypeHom.fullCrossedProductMap μ) (q.fullCrossedProductMap μ) :=
-  hI.subtypeHom.fullCrossedProductMap_exact μ q hq fun a => by simp [hker a]
-
-/-- For a surjective equivariant `q : Hom α β` with kernel `I : NonUnitalStarSubalgebra ℂ A`, the
-two-sided ideal kernel of `q.fullCrossedProductMap μ` is `hI.fullCrossedProductIdeal μ _`. -/
-theorem ker_fullCrossedProductMap_eq_fullCrossedProductIdeal
-    (q : Hom α β) (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    TwoSidedIdeal.ker (q.fullCrossedProductMap μ) =
-      hI.fullCrossedProductIdeal μ
-        (fun a _ hx => (hker _).mp (by rw [map_mul, (hker _).mpr hx, mul_zero])) := by
-  ext x
-  rw [TwoSidedIdeal.mem_ker, ← SetLike.mem_coe, hI.coe_fullCrossedProductIdeal]
-  exact hI.fullCrossedProductMap_subtypeHom_exact μ hq hker x
-
-/-- Canonical `⋆`-isomorphism `(A ⋊_α G) ⧸ (I ⋊_α G) ≃⋆ₐ[ℂ] B ⋊_β G` associated to a surjective
-equivariant homomorphism `q : Hom α β` with kernel `I : NonUnitalStarSubalgebra ℂ A`. -/
-def quotientFullCrossedProductEquiv (q : Hom α β) (hq : Function.Surjective q)
-    (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    (FullCrossedProduct α μ) ⧸
-        hI.fullCrossedProductIdeal μ
-          (fun a _ hx => (hker _).mp (by rw [map_mul, (hker _).mpr hx, mul_zero])) ≃⋆ₐ[ℂ]
-      FullCrossedProduct β μ :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective
-    (q.surjective_fullCrossedProductMap μ hq.denseRange)
-    (hI.ker_fullCrossedProductMap_eq_fullCrossedProductIdeal μ q hq hker)
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_mk (q : Hom α β) (hq : Function.Surjective q)
-    (hker : ∀ a, q a = 0 ↔ a ∈ I) (x : FullCrossedProduct α μ) :
-    hI.quotientFullCrossedProductEquiv μ q hq hker
-        (TwoSidedIdeal.Quotient.mk
-          (hI.fullCrossedProductIdeal μ
-            (fun a _ hx => (hker _).mp (by rw [map_mul, (hker _).mpr hx, mul_zero]))) x) =
-      q.fullCrossedProductMap μ x :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective_mk _ _ x
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_comp_mkStarAlgHom (q : Hom α β)
-    (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    (hI.quotientFullCrossedProductEquiv μ q hq hker).toNonUnitalStarAlgHom.comp
-        (TwoSidedIdeal.Quotient.mkStarAlgHom
-          (hI.fullCrossedProductIdeal μ
-            (fun a _ hx => (hker _).mp (by rw [map_mul, (hker _).mpr hx, mul_zero])))) =
-      q.fullCrossedProductMap μ :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective_comp_mkStarAlgHom _ _
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_symm_fullCrossedProductMap (q : Hom α β)
-    (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) (x : FullCrossedProduct α μ) :
-    (hI.quotientFullCrossedProductEquiv μ q hq hker).symm (q.fullCrossedProductMap μ x) =
-      TwoSidedIdeal.Quotient.mk
-        (hI.fullCrossedProductIdeal μ
-          (fun a _ hx => (hker _).mp (by rw [map_mul, (hker _).mpr hx, mul_zero]))) x :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective_symm_apply _ _ x
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_symm_of_convolutionMap (q : Hom α β)
-    (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I)
-    (f : ConvolutionAlgebra α μ) :
-    (hI.quotientFullCrossedProductEquiv μ q hq hker).symm (of β μ (q.convolutionMap μ f)) =
-      TwoSidedIdeal.Quotient.mk
-        (hI.fullCrossedProductIdeal μ
-          (fun a _ hx => (hker _).mp (by rw [map_mul, (hker _).mpr hx, mul_zero]))) (of α μ f) := by
-  rw [← q.fullCrossedProductMap_of μ f,
-    hI.quotientFullCrossedProductEquiv_symm_fullCrossedProductMap]
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_symm_comp_fullCrossedProductMap (q : Hom α β)
-    (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    (hI.quotientFullCrossedProductEquiv μ q hq hker).symm.toNonUnitalStarAlgHom.comp
-        (q.fullCrossedProductMap μ) =
-      TwoSidedIdeal.Quotient.mkStarAlgHom
-        (hI.fullCrossedProductIdeal μ
-          (fun a _ hx => (hker _).mp (by rw [map_mul, (hker _).mpr hx, mul_zero]))) :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective_symm_comp _ _
-
-end StarSubalgebra
-
-section TwoSidedIdeal
-
-variable {G : Type u} {A B : Type v} [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  {α : CStarAction G A} {β : CStarAction G B}
-  {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
-  (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
-  (μ : Measure G) [μ.IsHaarMeasure]
-
-/-- Exactness in the middle for `I : TwoSidedIdeal A` and a surjective `q : Hom α β` with kernel
-`I`. -/
-theorem fullCrossedProductMap_idealSubtypeHom_exact
-    {q : Hom α β} (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    Function.Exact (hI.idealSubtypeHom.fullCrossedProductMap μ) (q.fullCrossedProductMap μ) :=
-  hI.idealSubtypeHom.fullCrossedProductMap_exact μ q hq fun a => by simp [hker a]
-
-/-- For a surjective `q : Hom α β` with kernel `I : TwoSidedIdeal A`, the two-sided ideal kernel of
-`q.fullCrossedProductMap μ` is `hI.idealFullCrossedProductIdeal μ`. -/
-theorem ker_fullCrossedProductMap_eq_idealFullCrossedProductIdeal
-    (q : Hom α β) (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    TwoSidedIdeal.ker (q.fullCrossedProductMap μ) = hI.idealFullCrossedProductIdeal μ := by
-  ext x
-  rw [TwoSidedIdeal.mem_ker, ← SetLike.mem_coe, hI.coe_idealFullCrossedProductIdeal]
-  exact hI.fullCrossedProductMap_idealSubtypeHom_exact μ hq hker x
-
-/-- Canonical `⋆`-isomorphism `(A ⋊_α G) ⧸ (I ⋊_α G) ≃⋆ₐ[ℂ] B ⋊_β G` associated to a surjective
-equivariant homomorphism `q : Hom α β` with kernel `I : TwoSidedIdeal A`. -/
-def quotientIdealFullCrossedProductEquiv (q : Hom α β) (hq : Function.Surjective q)
-    (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    (FullCrossedProduct α μ) ⧸ hI.idealFullCrossedProductIdeal μ ≃⋆ₐ[ℂ]
-      FullCrossedProduct β μ :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective
-    (q.surjective_fullCrossedProductMap μ hq.denseRange)
-    (hI.ker_fullCrossedProductMap_eq_idealFullCrossedProductIdeal μ q hq hker)
-
-@[simp]
-theorem quotientIdealFullCrossedProductEquiv_mk (q : Hom α β) (hq : Function.Surjective q)
-    (hker : ∀ a, q a = 0 ↔ a ∈ I) (x : FullCrossedProduct α μ) :
-    hI.quotientIdealFullCrossedProductEquiv μ q hq hker
-        (TwoSidedIdeal.Quotient.mk (hI.idealFullCrossedProductIdeal μ) x) =
-      q.fullCrossedProductMap μ x :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective_mk _ _ x
-
-@[simp]
-theorem quotientIdealFullCrossedProductEquiv_comp_mkStarAlgHom (q : Hom α β)
-    (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    (hI.quotientIdealFullCrossedProductEquiv μ q hq hker).toNonUnitalStarAlgHom.comp
-        (TwoSidedIdeal.Quotient.mkStarAlgHom (hI.idealFullCrossedProductIdeal μ)) =
-      q.fullCrossedProductMap μ :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective_comp_mkStarAlgHom _ _
-
-@[simp]
-theorem quotientIdealFullCrossedProductEquiv_symm_fullCrossedProductMap (q : Hom α β)
-    (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) (x : FullCrossedProduct α μ) :
-    (hI.quotientIdealFullCrossedProductEquiv μ q hq hker).symm (q.fullCrossedProductMap μ x) =
-      TwoSidedIdeal.Quotient.mk (hI.idealFullCrossedProductIdeal μ) x :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective_symm_apply _ _ x
-
-@[simp]
-theorem quotientIdealFullCrossedProductEquiv_symm_of_convolutionMap (q : Hom α β)
-    (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I)
-    (f : ConvolutionAlgebra α μ) :
-    (hI.quotientIdealFullCrossedProductEquiv μ q hq hker).symm (of β μ (q.convolutionMap μ f)) =
-      TwoSidedIdeal.Quotient.mk (hI.idealFullCrossedProductIdeal μ) (of α μ f) := by
-  rw [← q.fullCrossedProductMap_of μ f,
-    hI.quotientIdealFullCrossedProductEquiv_symm_fullCrossedProductMap]
-
-@[simp]
-theorem quotientIdealFullCrossedProductEquiv_symm_comp_fullCrossedProductMap (q : Hom α β)
-    (hq : Function.Surjective q) (hker : ∀ a, q a = 0 ↔ a ∈ I) :
-    (hI.quotientIdealFullCrossedProductEquiv μ q hq hker).symm.toNonUnitalStarAlgHom.comp
-        (q.fullCrossedProductMap μ) =
-      TwoSidedIdeal.Quotient.mkStarAlgHom (hI.idealFullCrossedProductIdeal μ) :=
-  NonUnitalStarAlgHom.quotientEquivOfSurjective_symm_comp _ _
-
-end TwoSidedIdeal
-
-end IsInvariant
-
-namespace TauCeti.CStarAction
+/-! ### Kernel identification and canonical quotient `⋆`-isomorphism -/
 
 open FullCrossedProduct
-
-variable {G : Type u} {A B : Type v} [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  {α : CStarAction G A} {β : CStarAction G B} (μ : Measure G) [μ.IsHaarMeasure]
-
-namespace Hom
 
 /-- For any surjective equivariant homomorphism `q : Hom α β`, the kernel of
 `q.fullCrossedProductMap μ` is the embedded crossed product of `ker q`. -/
 theorem ker_fullCrossedProductMap (q : Hom α β) (hq : Function.Surjective q) :
     TwoSidedIdeal.ker (q.fullCrossedProductMap μ) =
-      (IsInvariant.ker q).idealFullCrossedProductIdeal μ :=
-  (IsInvariant.ker q).ker_fullCrossedProductMap_eq_idealFullCrossedProductIdeal μ q hq fun _ =>
-    (TwoSidedIdeal.mem_ker q.toNonUnitalStarAlgHom).symm
-
-/-- Exactness of `(ker q) ⋊_α G → A ⋊_α G → B ⋊_β G` for any surjective equivariant homomorphism
-`q : Hom α β`. -/
-theorem fullCrossedProductMap_idealSubtypeHom_ker_exact
-    (q : Hom α β) (hq : Function.Surjective q) :
-    Function.Exact ((IsInvariant.ker q).idealSubtypeHom.fullCrossedProductMap μ)
-      (q.fullCrossedProductMap μ) :=
-  (IsInvariant.ker q).fullCrossedProductMap_idealSubtypeHom_exact μ hq fun _ =>
-    (TwoSidedIdeal.mem_ker q.toNonUnitalStarAlgHom).symm
+      (IsInvariant.ker q).idealFullCrossedProductIdeal μ := by
+  ext x
+  rw [TwoSidedIdeal.mem_ker, ← SetLike.mem_coe,
+    (IsInvariant.ker q).coe_idealFullCrossedProductIdeal]
+  exact (IsInvariant.ker q).idealSubtypeHom.fullCrossedProductMap_exact μ q hq
+    (fun a => by simp [TwoSidedIdeal.mem_ker]) x
 
 /-- Canonical `⋆`-isomorphism `(A ⋊_α G) ⧸ (ker q ⋊_α G) ≃⋆ₐ[ℂ] B ⋊_β G` induced by a surjective
 equivariant homomorphism `q : Hom α β`. -/
 def quotientKerFullCrossedProductEquiv (q : Hom α β) (hq : Function.Surjective q) :
     (FullCrossedProduct α μ) ⧸ (IsInvariant.ker q).idealFullCrossedProductIdeal μ ≃⋆ₐ[ℂ]
       FullCrossedProduct β μ :=
-  (IsInvariant.ker q).quotientIdealFullCrossedProductEquiv μ q hq fun _ =>
-    (TwoSidedIdeal.mem_ker q.toNonUnitalStarAlgHom).symm
+  NonUnitalStarAlgHom.quotientEquivOfSurjective
+    (q.surjective_fullCrossedProductMap μ hq.denseRange)
+    (q.ker_fullCrossedProductMap μ hq)
 
 @[simp]
 theorem quotientKerFullCrossedProductEquiv_mk (q : Hom α β) (hq : Function.Surjective q)
@@ -372,7 +172,7 @@ theorem quotientKerFullCrossedProductEquiv_mk (q : Hom α β) (hq : Function.Sur
     q.quotientKerFullCrossedProductEquiv μ hq
         (TwoSidedIdeal.Quotient.mk ((IsInvariant.ker q).idealFullCrossedProductIdeal μ) x) =
       q.fullCrossedProductMap μ x :=
-  (IsInvariant.ker q).quotientIdealFullCrossedProductEquiv_mk μ q hq _ x
+  NonUnitalStarAlgHom.quotientEquivOfSurjective_mk _ _ x
 
 @[simp]
 theorem quotientKerFullCrossedProductEquiv_comp_mkStarAlgHom (q : Hom α β)
@@ -381,22 +181,23 @@ theorem quotientKerFullCrossedProductEquiv_comp_mkStarAlgHom (q : Hom α β)
         (TwoSidedIdeal.Quotient.mkStarAlgHom
           ((IsInvariant.ker q).idealFullCrossedProductIdeal μ)) =
       q.fullCrossedProductMap μ :=
-  (IsInvariant.ker q).quotientIdealFullCrossedProductEquiv_comp_mkStarAlgHom μ q hq _
+  NonUnitalStarAlgHom.quotientEquivOfSurjective_comp_mkStarAlgHom _ _
 
 @[simp]
 theorem quotientKerFullCrossedProductEquiv_symm_fullCrossedProductMap
     (q : Hom α β) (hq : Function.Surjective q) (x : FullCrossedProduct α μ) :
     (q.quotientKerFullCrossedProductEquiv μ hq).symm (q.fullCrossedProductMap μ x) =
       TwoSidedIdeal.Quotient.mk ((IsInvariant.ker q).idealFullCrossedProductIdeal μ) x :=
-  (IsInvariant.ker q).quotientIdealFullCrossedProductEquiv_symm_fullCrossedProductMap μ q hq _ x
+  NonUnitalStarAlgHom.quotientEquivOfSurjective_symm_apply _ _ x
 
 @[simp]
 theorem quotientKerFullCrossedProductEquiv_symm_of_convolutionMap
     (q : Hom α β) (hq : Function.Surjective q) (f : ConvolutionAlgebra α μ) :
     (q.quotientKerFullCrossedProductEquiv μ hq).symm (of β μ (q.convolutionMap μ f)) =
       TwoSidedIdeal.Quotient.mk
-        ((IsInvariant.ker q).idealFullCrossedProductIdeal μ) (of α μ f) :=
-  (IsInvariant.ker q).quotientIdealFullCrossedProductEquiv_symm_of_convolutionMap μ q hq _ f
+        ((IsInvariant.ker q).idealFullCrossedProductIdeal μ) (of α μ f) := by
+  rw [← q.fullCrossedProductMap_of μ f,
+    q.quotientKerFullCrossedProductEquiv_symm_fullCrossedProductMap μ hq]
 
 @[simp]
 theorem quotientKerFullCrossedProductEquiv_symm_comp_fullCrossedProductMap
@@ -404,21 +205,9 @@ theorem quotientKerFullCrossedProductEquiv_symm_comp_fullCrossedProductMap
     (q.quotientKerFullCrossedProductEquiv μ hq).symm.toNonUnitalStarAlgHom.comp
         (q.fullCrossedProductMap μ) =
       TwoSidedIdeal.Quotient.mkStarAlgHom ((IsInvariant.ker q).idealFullCrossedProductIdeal μ) :=
-  (IsInvariant.ker q).quotientIdealFullCrossedProductEquiv_symm_comp_fullCrossedProductMap μ q hq _
+  NonUnitalStarAlgHom.quotientEquivOfSurjective_symm_comp _ _
 
 end Hom
-
-/-- The kernel of `(α.quotientMkHom I hI).fullCrossedProductMap μ` is
-`hI.idealFullCrossedProductIdeal μ`. -/
-@[simp]
-theorem ker_fullCrossedProductMap_quotientMkHom (α : CStarAction G A)
-    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
-    TwoSidedIdeal.ker ((α.quotientMkHom I hI).fullCrossedProductMap μ) =
-      hI.idealFullCrossedProductIdeal μ :=
-  hI.ker_fullCrossedProductMap_eq_idealFullCrossedProductIdeal μ (α.quotientMkHom I hI)
-    (α.quotientMkHom_surjective I hI) fun a =>
-      (α.quotientMkHom_apply I hI a ▸ TwoSidedIdeal.Quotient.eq_zero_iff_mem)
 
 /-- Exactness of `I ⋊_α G → A ⋊_α G → (A ⧸ I) ⋊_α G` for any closed `α`-invariant two-sided ideal
 `I`. -/
@@ -427,63 +216,10 @@ theorem fullCrossedProductMap_idealSubtypeHom_quotientMkHom_exact (α : CStarAct
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
     Function.Exact (hI.idealSubtypeHom.fullCrossedProductMap μ)
       ((α.quotientMkHom I hI).fullCrossedProductMap μ) :=
-  hI.fullCrossedProductMap_idealSubtypeHom_exact μ (α.quotientMkHom_surjective I hI) fun a =>
-    (α.quotientMkHom_apply I hI a ▸ TwoSidedIdeal.Quotient.eq_zero_iff_mem)
+  hI.idealSubtypeHom.fullCrossedProductMap_exact μ (α.quotientMkHom I hI)
+    (α.quotientMkHom_surjective I hI) fun a => by
+      simp [TwoSidedIdeal.Quotient.eq_zero_iff_mem]
 
-/-- Canonical `⋆`-isomorphism `(A ⋊_α G) ⧸ (I ⋊_α G) ≃⋆ₐ[ℂ] (A ⧸ I) ⋊_α G` for a closed
-`α`-invariant two-sided ideal `I : TwoSidedIdeal A`. -/
-def quotientFullCrossedProductEquiv (α : CStarAction G A)
-    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
-    (FullCrossedProduct α μ) ⧸ hI.idealFullCrossedProductIdeal μ ≃⋆ₐ[ℂ]
-      FullCrossedProduct (α.quotient I hI) μ :=
-  hI.quotientIdealFullCrossedProductEquiv μ (α.quotientMkHom I hI)
-    (α.quotientMkHom_surjective I hI) fun a =>
-      (α.quotientMkHom_apply I hI a ▸ TwoSidedIdeal.Quotient.eq_zero_iff_mem)
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_mk (α : CStarAction G A)
-    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (x : FullCrossedProduct α μ) :
-    α.quotientFullCrossedProductEquiv μ I hI
-        (TwoSidedIdeal.Quotient.mk (hI.idealFullCrossedProductIdeal μ) x) =
-      (α.quotientMkHom I hI).fullCrossedProductMap μ x :=
-  hI.quotientIdealFullCrossedProductEquiv_mk μ _ _ _ x
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_comp_mkStarAlgHom (α : CStarAction G A)
-    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
-    (α.quotientFullCrossedProductEquiv μ I hI).toNonUnitalStarAlgHom.comp
-        (TwoSidedIdeal.Quotient.mkStarAlgHom (hI.idealFullCrossedProductIdeal μ)) =
-      (α.quotientMkHom I hI).fullCrossedProductMap μ :=
-  hI.quotientIdealFullCrossedProductEquiv_comp_mkStarAlgHom μ _ _ _
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_symm_fullCrossedProductMap (α : CStarAction G A)
-    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (x : FullCrossedProduct α μ) :
-    (α.quotientFullCrossedProductEquiv μ I hI).symm
-        ((α.quotientMkHom I hI).fullCrossedProductMap μ x) =
-      TwoSidedIdeal.Quotient.mk (hI.idealFullCrossedProductIdeal μ) x :=
-  hI.quotientIdealFullCrossedProductEquiv_symm_fullCrossedProductMap μ _ _ _ x
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_symm_of_convolutionMap (α : CStarAction G A)
-    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (f : ConvolutionAlgebra α μ) :
-    (α.quotientFullCrossedProductEquiv μ I hI).symm
-        (of (α.quotient I hI) μ ((α.quotientMkHom I hI).convolutionMap μ f)) =
-      TwoSidedIdeal.Quotient.mk (hI.idealFullCrossedProductIdeal μ) (of α μ f) :=
-  hI.quotientIdealFullCrossedProductEquiv_symm_of_convolutionMap μ _ _ _ f
-
-@[simp]
-theorem quotientFullCrossedProductEquiv_symm_comp_fullCrossedProductMap (α : CStarAction G A)
-    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
-    (α.quotientFullCrossedProductEquiv μ I hI).symm.toNonUnitalStarAlgHom.comp
-        ((α.quotientMkHom I hI).fullCrossedProductMap μ) =
-      TwoSidedIdeal.Quotient.mkStarAlgHom (hI.idealFullCrossedProductIdeal μ) :=
-  hI.quotientIdealFullCrossedProductEquiv_symm_comp_fullCrossedProductMap μ _ _ _
+end ExactSequence
 
 end TauCeti.CStarAction
