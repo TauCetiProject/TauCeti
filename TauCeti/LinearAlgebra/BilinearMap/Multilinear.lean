@@ -36,8 +36,8 @@ map can likewise be read as an `AlternatingMap` on `Fin 2`, and these two readin
 ## Main results
 
 * `MultilinearMap.map_vecCons_add_left`, `map_vecCons_add_right`, `map_vecCons_smul_left` and
-  `map_vecCons_smul_right`: a multilinear map in two variables is linear in each argument of a
-  pair `![x, y]`.
+  `map_vecCons_smul_right`: a (semilinear) multilinear map in two variables is additive and
+  semilinear in each argument of a pair `![x, y]`.
 * `MultilinearMap.isSymm_toBilinMap`: the scalar-valued form is symmetric when `m` is unchanged by
   swapping its two arguments.
 * `MultilinearMap.isAlt_toBilinMap`: the map is alternating when `m` vanishes on a repeated
@@ -101,8 +101,8 @@ namespace MultilinearMap
 
 section VecCons
 
-variable {S M P : Type*} [Semiring S] [AddCommMonoid M] [Module S M] [AddCommMonoid P]
-  [Module S P] (m : MultilinearMap (RingHom.id S) (fun _ : Fin 2 => M) P)
+variable {S S' M P : Type*} [Semiring S] [Semiring S'] {σ : S →+* S'} [AddCommMonoid M]
+  [Module S M] [AddCommMonoid P] [Module S' P] (m : (Fin 2 → M) →ₘₛₗ[σ] P)
 
 /-- A multilinear map in two variables is additive in its first argument. -/
 theorem map_vecCons_add_left (x x' y : M) : m ![x + x', y] = m ![x, y] + m ![x', y] :=
@@ -112,12 +112,12 @@ theorem map_vecCons_add_left (x x' y : M) : m ![x + x', y] = m ![x, y] + m ![x',
 theorem map_vecCons_add_right (x y y' : M) : m ![x, y + y'] = m ![x, y] + m ![x, y'] := by
   simpa using m.snoc_add ![x] y y'
 
-/-- A multilinear map in two variables is linear in its first argument. -/
-theorem map_vecCons_smul_left (c : S) (x y : M) : m ![c • x, y] = c • m ![x, y] :=
+/-- A multilinear map in two variables is `σ`-semilinear in its first argument. -/
+theorem map_vecCons_smul_left (c : S) (x y : M) : m ![c • x, y] = σ c • m ![x, y] :=
   m.cons_smul ![y] c x
 
-/-- A multilinear map in two variables is linear in its second argument. -/
-theorem map_vecCons_smul_right (c : S) (x y : M) : m ![x, c • y] = c • m ![x, y] := by
+/-- A multilinear map in two variables is `σ`-semilinear in its second argument. -/
+theorem map_vecCons_smul_right (c : S) (x y : M) : m ![x, c • y] = σ c • m ![x, y] := by
   simpa using m.snoc_smul ![x] c y
 
 end VecCons
