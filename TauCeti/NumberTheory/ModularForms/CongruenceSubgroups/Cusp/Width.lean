@@ -60,9 +60,10 @@ theorem conj_T_zpow_mem_Gamma0_iff (N : ℕ) (γ : SL(2, ℤ)) (j : ℤ) :
   simp [neg_mul]
 
 /-- **The width of the cusp `γ ∞` of `Γ₀(N)`**: `N / gcd(N,c²)` for `c = γ₁₀` the lower-left
-entry of `γ`, so that `γ ∞ = a / c`. The translations in `Γ₀(N)` fixing `γ ∞` are the
-conjugates `γ Tʲ γ⁻¹` with `j` a multiple of the width
-(`conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd`). At level `0` it is `0`. -/
+entry of `γ`, so that `γ ∞ = a / c`. At positive level, the translations in `Γ₀(N)` fixing
+`γ ∞` are the conjugates `γ Tʲ γ⁻¹` with `j` a multiple of the width
+(`conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd`). At level `0` the width is `0`
+(`cuspWidthGamma0_zero`). -/
 def cuspWidthGamma0 (N : ℕ) (γ : SL(2, ℤ)) : ℕ :=
   N / Nat.gcd N ((γ 1 0).natAbs ^ 2)
 
@@ -138,10 +139,11 @@ theorem cuspWidthGamma0_mul_mul (N : ℕ) {h : SL(2, ℤ)} (hh : h ∈ Gamma0 N)
     exact (Subgroup.mul_mem_cancel_left _ hh).mp
       ((Subgroup.mul_mem_cancel_right _ (inv_mem hh)).mp hmem)
 
-/-- **The generator of the stabilizer of the cusp `γ ∞` in `Γ₀(N)`**, up to sign: the conjugate
-`γ T^w γ⁻¹ = [1 - wac, wa²; -wc², 1 + wac]` of the translation by the width
+/-- **The generator of the stabilizer of the cusp `γ ∞` in `Γ₀(N)`** at positive level, up to
+sign: the conjugate `γ T^w γ⁻¹ = [1 - wac, wa²; -wc², 1 + wac]` of the translation by the width
 `w = cuspWidthGamma0 N γ`. In the coordinate `γ⁻¹ z` it acts as `z ↦ z + w`
-(`cuspGeneratorGamma0_smul_smul`). -/
+(`cuspGeneratorGamma0_smul_smul`). At level `0` the width is `0`, so this element is the
+identity. -/
 def cuspGeneratorGamma0 (N : ℕ) (γ : SL(2, ℤ)) : Gamma0 N :=
   ⟨γ * ModularGroup.T ^ (cuspWidthGamma0 N γ : ℤ) * γ⁻¹,
     (conj_T_zpow_mem_Gamma0_iff N γ _).mpr (natCast_dvd_cuspWidthGamma0_mul_sq N γ)⟩
