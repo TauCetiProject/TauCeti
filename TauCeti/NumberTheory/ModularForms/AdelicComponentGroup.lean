@@ -47,10 +47,10 @@ number whose principal finite idele lies in `Ô^×` is a unit of `ℤ`, hence eq
   `Γ_{g,U}` exactly when its diagonal image lies in `gUg⁻¹`.
 * `TauCeti.AdelicExamples.GL2.map_Gamma_le_componentGroup`: `Γ(M) ⊆ Γ_{g,U}` when
   `K(M) ⊆ gUg⁻¹`.
-* `TauCeti.AdelicExamples.GL2.mapGL_mem_componentGroup_principalLevel_one_iff`: at principal
-  level `N ≠ 0`, the integral matrices of `Γ_{1,K(N)}` form `Γ(N)`.
 * `TauCeti.AdelicExamples.GL2.isCongruenceSubgroup_comap_mapGL_componentGroup`: then, for
   `M ≠ 0`, `Γ_{g,U} ∩ SL₂(ℤ)` is a congruence subgroup of `SL₂(ℤ)`, hence of finite index.
+* `TauCeti.AdelicExamples.GL2.mapGL_mem_componentGroup_principalLevel_one_iff`: at principal
+  level `N ≠ 0`, the integral matrices of `Γ_{1,K(N)}` form `Γ(N)`.
 
 ## References
 

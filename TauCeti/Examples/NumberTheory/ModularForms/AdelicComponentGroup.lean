@@ -12,9 +12,10 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.ResidueField
 /-!
 # Checks for the congruence groups of the `GL₂` components
 
-This file checks the congruence groups `Γ_{g,U} = GL₂(ℚ)^+ ∩ gUg⁻¹`
-(`TauCeti.AdelicExamples.GL2.componentGroup`) at principal levels `K(N)` and `g = 1`, through
-`TauCeti.AdelicExamples.GL2.mapGL_mem_componentGroup_principalLevel_one_iff`.
+The first two checks concern the congruence groups `Γ_{g,U} = GL₂(ℚ)^+ ∩ gUg⁻¹`
+(`TauCeti.AdelicExamples.GL2.componentGroup`) at principal levels `K(N)` and `g = 1`, and go
+through `TauCeti.AdelicExamples.GL2.mapGL_mem_componentGroup_principalLevel_one_iff`. The last
+concerns only the congruence subgroups `Γ₀(3)`, `Γ₁(3)` and `Γ(3)` of `SL₂(ℤ)`.
 
 * At principal level `1` the component of `1` has group `Γ(1) = SL₂(ℤ)`.
 * The scalar `-1` lies in the component group at principal level `2`, but not at principal
