@@ -45,6 +45,9 @@ here needs a nonempty-carrier hypothesis.
   each edge read in its own graphon.  The integrand of `homDensity` is the special case of one
   graphon on the edges of `F`, and the telescoping proof of the counting lemma needs the general
   form;
+* `prod_edgeFactor_eq_ite_of_apply_eq_ite` — for a graphon that is the adjacency indicator of a
+  graph on its carrier, the edge product of `F` is the indicator that the vertex assignment carries
+  every edge of `F` to an edge of that graph;
 * `homDensity_nonneg`, `homDensity_le_one` — `t(F, W) ∈ [0, 1]`, with no hypotheses;
 * `homDensity_const` — the Erdős–Rényi value `t(F, W_p) = p ^ e(F)`, the first real consumer of both
   the graphon carrier and this definition.
@@ -126,6 +129,23 @@ theorem prod_edgeFactor_le_one (E : Finset (Sym2 V)) (G : Sym2 V → Graphon Ω 
     ∏ e ∈ E, edgeFactor (G e) x e ≤ 1 :=
   Finset.prod_le_one₀ (fun e _ => edgeFactor_nonneg (G e) x e)
     fun e _ => edgeFactor_le_one (G e) x e
+
+open scoped Classical in
+/-- **The edge product of an adjacency indicator.** If the graphon `W` is the adjacency indicator
+of a graph `G` on its carrier, the product of `edgeFactor` over the edges of `F` at `x` is `1`
+exactly when `x` carries every edge of `F` to an edge of `G`, and `0` otherwise. -/
+theorem prod_edgeFactor_eq_ite_of_apply_eq_ite (F : SimpleGraph V) [Fintype F.edgeSet]
+    {W : Graphon Ω μ} {G : SimpleGraph Ω} [DecidableRel G.Adj]
+    (hW : ∀ a b, W a b = if G.Adj a b then 1 else 0) (x : V → Ω) :
+    ∏ e ∈ F.edgeFinset, edgeFactor W x e
+      = if ∀ a b, F.Adj a b → G.Adj (x a) (x b) then (1 : ℝ) else 0 := by
+  -- each edge factor is the indicator of the edge set of the pulled-back graph `G.comap x`
+  have hfac : ∀ e : Sym2 V, edgeFactor W x e = if e ∈ (G.comap x).edgeSet then 1 else 0 := by
+    intro e
+    induction e using Sym2.ind with
+    | _ a b => simp [hW]
+  rw [Finset.prod_congr rfl fun e _ => hfac e, Finset.prod_boole]
+  simp [Sym2.forall]
 
 variable [Fintype V]
 

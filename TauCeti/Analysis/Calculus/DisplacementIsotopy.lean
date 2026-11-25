@@ -30,7 +30,7 @@ realized by an actual isotopy, so that the modification can be spread over the s
 **Slices.** Each slice `h_τ` perturbs the identity by `ρ τ • (h - id)`, which is `c`-Lipschitz,
 so it is `(1 - c)⁻¹`-antilipschitz (`TauCeti.antilipschitzWith_displacementIsotopy`) and a
 homeomorphism of `E` (`TauCeti.displacementIsotopyHomeomorph`, by
-`LipschitzWith.idAddHomeomorph`). Its inverse is `(1 - c)⁻¹`-Lipschitz
+`LipschitzWith.idAddSmulHomeomorph`). Its inverse is `(1 - c)⁻¹`-Lipschitz
 (`TauCeti.lipschitzWith_displacementIsotopyHomeomorph_symm`). The differential
 `1 + ρ τ • (Dh - 1)` of `h_τ` is invertible, since `‖ρ τ • (Dh - 1)‖ ≤ c < 1`
 (`TauCeti.displacementIsotopyFDerivEquiv`), and the differential of the inverse is its inverse
@@ -149,37 +149,34 @@ section Homeomorph
 
 variable {h : E → E} {ρ : ℝ → ℝ} {c : ℝ≥0}
 
-/-- The displacement `ρ τ • (h - id)` of a slice of the displacement isotopy is `c`-Lipschitz when
-`h - id` is and `|ρ τ| ≤ 1`. -/
-private theorem lipschitzWith_smul_sub (hu : LipschitzWith c fun z ↦ h z - z) {τ : ℝ}
-    (hτ : |ρ τ| ≤ 1) : LipschitzWith c fun z ↦ ρ τ • (h z - z) := by
-  refine ((lipschitzWith_smul (ρ τ)).comp hu).weaken ?_
-  have hτ' : ‖ρ τ‖₊ ≤ 1 := by
-    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, NNReal.coe_one]
-    exact hτ
-  calc ‖ρ τ‖₊ * c ≤ 1 * c := by gcongr
-    _ = c := one_mul c
-
 /-- **A slice of the displacement isotopy is `(1 - c)⁻¹`-antilipschitz** when the displacement
 `h - id` is `c`-Lipschitz with `c < 1` and `|ρ τ| ≤ 1`. -/
 theorem antilipschitzWith_displacementIsotopy (hu : LipschitzWith c fun z ↦ h z - z) (hc : c < 1)
     {τ : ℝ} (hτ : |ρ τ| ≤ 1) : AntilipschitzWith (1 - c)⁻¹ (displacementIsotopy h ρ τ) :=
-  (lipschitzWith_smul_sub hu hτ).antilipschitzWith_id_add hc
+  (hu.const_smul_of_norm_le_one ((Real.norm_eq_abs _).trans_le hτ)).antilipschitzWith_id_add hc
 
 variable [CompleteSpace E]
 
 /-- **A slice of the displacement isotopy is a homeomorphism** of `E` when the displacement
 `h - id` is `c`-Lipschitz with `c < 1` and `|ρ τ| ≤ 1`. It is the perturbation
-`LipschitzWith.idAddHomeomorph` of the identity by `ρ τ • (h - id)`. -/
+`LipschitzWith.idAddSmulHomeomorph` of the identity by `ρ τ • (h - id)`. -/
 def displacementIsotopyHomeomorph (hu : LipschitzWith c fun z ↦ h z - z) (hc : c < 1) (τ : ℝ)
     (hτ : |ρ τ| ≤ 1) : E ≃ₜ E :=
-  (lipschitzWith_smul_sub hu hτ).idAddHomeomorph ℝ hc
+  hu.idAddSmulHomeomorph hc (ρ τ) ((Real.norm_eq_abs _).trans_le hτ)
 
 @[simp]
 theorem coe_displacementIsotopyHomeomorph (hu : LipschitzWith c fun z ↦ h z - z) (hc : c < 1)
     (τ : ℝ) (hτ : |ρ τ| ≤ 1) :
     ⇑(displacementIsotopyHomeomorph hu hc τ hτ) = displacementIsotopy h ρ τ :=
-  LipschitzWith.coe_idAddHomeomorph ℝ _ hc
+  hu.coe_idAddSmulHomeomorph hc _ _
+
+/-- A slice is the perturbation `LipschitzWith.idAddHomeomorph` of the identity by
+`ρ τ • (h - id)`. -/
+private theorem displacementIsotopyHomeomorph_eq (hu : LipschitzWith c fun z ↦ h z - z)
+    (hc : c < 1) (τ : ℝ) (hτ : |ρ τ| ≤ 1) :
+    displacementIsotopyHomeomorph hu hc τ hτ =
+      (hu.const_smul_of_norm_le_one ((Real.norm_eq_abs _).trans_le hτ)).idAddHomeomorph ℝ hc :=
+  hu.idAddSmulHomeomorph_def hc _ _
 
 /-- The inverse of a slice moves `y` back by the displacement at its preimage:
 `h_τ⁻¹ y = y - ρ(τ) • (h w - w)` for `w = h_τ⁻¹ y`. -/
@@ -204,8 +201,9 @@ theorem displacementIsotopyHomeomorph_symm_apply_of_apply_eq
 /-- **The inverse of a slice is `(1 - c)⁻¹`-Lipschitz.** -/
 theorem lipschitzWith_displacementIsotopyHomeomorph_symm (hu : LipschitzWith c fun z ↦ h z - z)
     (hc : c < 1) (τ : ℝ) (hτ : |ρ τ| ≤ 1) :
-    LipschitzWith (1 - c)⁻¹ (displacementIsotopyHomeomorph hu hc τ hτ).symm :=
-  LipschitzWith.lipschitzWith_idAddHomeomorph_symm ℝ _ hc
+    LipschitzWith (1 - c)⁻¹ (displacementIsotopyHomeomorph hu hc τ hτ).symm := by
+  rw [displacementIsotopyHomeomorph_eq]
+  exact LipschitzWith.lipschitzWith_idAddHomeomorph_symm ℝ _ hc
 
 end Homeomorph
 
@@ -220,7 +218,7 @@ continuous linear equivalence: it is invertible since `‖ρ τ • (Dh z - 1)�
 `LipschitzWith.idAddFDerivEquiv` for the displacement `ρ τ • (h - id)`. -/
 def displacementIsotopyFDerivEquiv (hu : LipschitzWith c fun z ↦ h z - z) (hc : c < 1) (τ : ℝ)
     (hτ : |ρ τ| ≤ 1) (z : E) : E ≃L[ℝ] E :=
-  (lipschitzWith_smul_sub hu hτ).idAddFDerivEquiv ℝ hc z
+  (hu.const_smul_of_norm_le_one ((Real.norm_eq_abs _).trans_le hτ)).idAddFDerivEquiv ℝ hc z
 
 theorem coe_displacementIsotopyFDerivEquiv (hu : LipschitzWith c fun z ↦ h z - z) (hc : c < 1)
     (τ : ℝ) (hτ : |ρ τ| ≤ 1) {z : E} (hh : DifferentiableAt ℝ h z) :
@@ -243,15 +241,18 @@ theorem hasFDerivAt_displacementIsotopyHomeomorph_symm (hu : LipschitzWith c fun
     (hh : DifferentiableAt ℝ h ((displacementIsotopyHomeomorph hu hc τ hτ).symm y)) :
     HasFDerivAt (displacementIsotopyHomeomorph hu hc τ hτ).symm
       ((displacementIsotopyFDerivEquiv hu hc τ hτ
-        ((displacementIsotopyHomeomorph hu hc τ hτ).symm y)).symm : E →L[ℝ] E) y :=
-  LipschitzWith.hasFDerivAt_idAddHomeomorph_symm _ hc
+        ((displacementIsotopyHomeomorph hu hc τ hτ).symm y)).symm : E →L[ℝ] E) y := by
+  rw [displacementIsotopyHomeomorph_eq] at hh ⊢
+  exact LipschitzWith.hasFDerivAt_idAddHomeomorph_symm _ hc
     ((hh.sub differentiableAt_id).const_smul (ρ τ))
 
 /-- **The inverse of a slice is `C^n`** when `h` is `C^n`, `1 ≤ n`. -/
 theorem contDiff_displacementIsotopyHomeomorph_symm (hu : LipschitzWith c fun z ↦ h z - z)
     (hc : c < 1) (τ : ℝ) (hτ : |ρ τ| ≤ 1) (hh : ContDiff ℝ n h) (hn : 1 ≤ n) :
-    ContDiff ℝ n (displacementIsotopyHomeomorph hu hc τ hτ).symm :=
-  LipschitzWith.contDiff_idAddHomeomorph_symm _ hc (contDiff_const.smul (hh.sub contDiff_id)) hn
+    ContDiff ℝ n (displacementIsotopyHomeomorph hu hc τ hτ).symm := by
+  rw [displacementIsotopyHomeomorph_eq]
+  exact LipschitzWith.contDiff_idAddHomeomorph_symm _ hc
+    (contDiff_const.smul (hh.sub contDiff_id)) hn
 
 /-- **A slice of the displacement isotopy as a `C^n` diffeomorphism** of `E`, when `h` is `C^n`
 with `1 ≤ n` and its displacement `h - id` is `c`-Lipschitz with `c < 1`. It is the perturbation
@@ -259,7 +260,8 @@ with `1 ≤ n` and its displacement `h - id` is `c`-Lipschitz with `c < 1`. It i
 def displacementIsotopyDiffeomorph (hu : LipschitzWith c fun z ↦ h z - z) (hc : c < 1) (τ : ℝ)
     (hτ : |ρ τ| ≤ 1) (hh : ContDiff ℝ n h) (hn : 1 ≤ n) :
     E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E :=
-  (lipschitzWith_smul_sub hu hτ).idAddDiffeomorph hc (contDiff_const.smul (hh.sub contDiff_id)) hn
+  (hu.const_smul_of_norm_le_one ((Real.norm_eq_abs _).trans_le hτ)).idAddDiffeomorph hc
+    (contDiff_const.smul (hh.sub contDiff_id)) hn
 
 @[simp]
 theorem coe_displacementIsotopyDiffeomorph (hu : LipschitzWith c fun z ↦ h z - z) (hc : c < 1)
@@ -271,8 +273,9 @@ theorem coe_displacementIsotopyDiffeomorph (hu : LipschitzWith c fun z ↦ h z -
 theorem displacementIsotopyDiffeomorph_symm_apply (hu : LipschitzWith c fun z ↦ h z - z)
     (hc : c < 1) (τ : ℝ) (hτ : |ρ τ| ≤ 1) (hh : ContDiff ℝ n h) (hn : 1 ≤ n) (y : E) :
     (displacementIsotopyDiffeomorph hu hc τ hτ hh hn).symm y =
-      (displacementIsotopyHomeomorph hu hc τ hτ).symm y :=
-  LipschitzWith.idAddDiffeomorph_symm_apply _ hc _ hn y
+      (displacementIsotopyHomeomorph hu hc τ hτ).symm y := by
+  rw [displacementIsotopyHomeomorph_eq]
+  exact LipschitzWith.idAddDiffeomorph_symm_apply _ hc _ hn y
 
 end Diffeomorph
 
@@ -281,40 +284,6 @@ end Diffeomorph
 section Total
 
 variable [CompleteSpace E] {h : E → E} {ρ : ℝ → ℝ} {c : ℝ≥0} {n : WithTop ℕ∞}
-
-/-- The inverses of the slices depend continuously on the parameter and the point. -/
-private theorem continuous_displacementIsotopyHomeomorph_symm
-    (hu : LipschitzWith c fun z ↦ h z - z) (hc : c < 1) (hρ : ∀ τ, |ρ τ| ≤ 1)
-    (hρc : Continuous ρ) :
-    Continuous fun p : ℝ × E ↦ (displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)).symm p.2 := by
-  set ψ := fun p : ℝ × E ↦ (displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)).symm p.2
-  have hψ : ∀ p, displacementIsotopy h ρ p.1 (ψ p) = p.2 := fun p ↦ by
-    rw [← coe_displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)]
-    exact (displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)).apply_symm_apply p.2
-  -- `‖ψ p - ψ p₀‖ ≤ (1 - c)⁻¹ (‖p.2 - p₀.2‖ + |ρ p.1 - ρ p₀.1| ‖h (ψ p₀) - ψ p₀‖)`, by the
-  -- antilipschitz bound for the slice at `p.1`; the right side tends to zero at `p₀`.
-  refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  have hbound : ∀ p : ℝ × E, ‖ψ p - ψ p₀‖ ≤
-      ((1 - c)⁻¹ : ℝ≥0) * (‖p.2 - p₀.2‖ + |ρ p.1 - ρ p₀.1| * ‖h (ψ p₀) - ψ p₀‖) := fun p ↦ by
-    have hp₀ : displacementIsotopy h ρ p.1 (ψ p₀) =
-        p₀.2 + (ρ p.1 - ρ p₀.1) • (h (ψ p₀) - ψ p₀) := by
-      rw [displacementIsotopy_apply, ← hψ p₀, displacementIsotopy_apply]
-      module
-    calc ‖ψ p - ψ p₀‖ = dist (ψ p) (ψ p₀) := (dist_eq_norm _ _).symm
-      _ ≤ ((1 - c)⁻¹ : ℝ≥0) *
-          dist (displacementIsotopy h ρ p.1 (ψ p)) (displacementIsotopy h ρ p.1 (ψ p₀)) :=
-        (antilipschitzWith_displacementIsotopy hu hc (hρ p.1)).le_mul_dist _ _
-      _ ≤ _ := by
-        rw [hψ, hp₀, dist_eq_norm, sub_add_eq_sub_sub]
-        gcongr
-        refine (norm_sub_le _ _).trans_eq ?_
-        rw [norm_smul, Real.norm_eq_abs]
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) hbound ?_
-  have hcont : Continuous fun p : ℝ × E ↦
-      ((1 - c)⁻¹ : ℝ≥0) * (‖p.2 - p₀.2‖ + |ρ p.1 - ρ p₀.1| * ‖h (ψ p₀) - ψ p₀‖) := by
-    fun_prop
-  simpa using hcont.tendsto p₀
 
 /-- **The total map of the displacement isotopy**, `(τ, z) ↦ (τ, h_τ z)`, as a homeomorphism of
 `ℝ × E`, for continuous `ρ` with `|ρ| ≤ 1`, when the displacement `h - id` is `c`-Lipschitz with
@@ -337,7 +306,7 @@ def displacementIsotopyTotalHomeomorph (hu : LipschitzWith c fun z ↦ h z - z) 
     exact continuous_fst.prodMk (continuous_snd.add ((hρc.comp continuous_fst).smul
       ((hh.comp continuous_snd).sub continuous_snd)))
   continuous_invFun := continuous_fst.prodMk
-    (continuous_displacementIsotopyHomeomorph_symm hu hc hρ hρc)
+    (hu.continuous_idAddSmulHomeomorph_symm hc hρc fun τ ↦ (Real.norm_eq_abs _).trans_le (hρ τ))
 
 @[simp]
 theorem displacementIsotopyTotalHomeomorph_apply (hu : LipschitzWith c fun z ↦ h z - z)
