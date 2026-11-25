@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.QuotSMulTop
+public import Mathlib.RingTheory.Support
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Localization.Ideal
 import TauCeti.Algebra.Module.LocalizedModule.Map
@@ -37,6 +38,9 @@ submonoid `S`:
 * `Module.FinitePresentation.exists_bijective_map_of_isLocalizedModule`: if `M` is finitely
   presented, an isomorphism between localizations of `M` and `N` at `S` gives a map `M → N` whose
   localization at `S` is bijective.
+* `Module.FinitePresentation.exists_notMem_surjective_map_powers`: if `M` is finitely presented
+  and `N` is finite, a surjection between their localizations at a prime `p` comes from a map
+  `M → N` that is surjective after inverting some `s ∉ p`.
 * `LocalizedModule.bijective_map_dual_eval_iff`: if `M` and its dual are finitely presented, the
   map `M → M**` becomes bijective after localizing at `S` exactly when the localization `Mₛ` is
   reflexive over `Rₛ`. Taking duals commutes with localization for finitely presented modules,
@@ -226,6 +230,33 @@ theorem exists_bijective_map_of_isLocalizedModule [FinitePresentation R M] (l : 
     simpa using congr($hh x)
   rw [this]
   exact ((Module.End.isUnit_iff _).mp (IsLocalizedModule.map_units g s)).comp l.bijective
+
+end Module.FinitePresentation
+
+namespace Module.FinitePresentation
+
+variable {R M N Mₚ Nₚ : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] [AddCommGroup Mₚ] [Module R Mₚ] [AddCommGroup Nₚ] [Module R Nₚ]
+
+/-- **Spreading out a surjection.** Let `M` be finitely presented and `N` finite over `R`, and let
+`fM : M → Mₚ`, `fN : N → Nₚ` be localizations at a prime `p`. If there is a surjective
+`R`-linear map `Mₚ → Nₚ`, then there are an `R`-linear map `φ : M → N` and `s ∉ p` such that
+`φ` becomes surjective after inverting `s`.
+
+The map lifts by Mathlib's `Module.exists_localizedMap_surjective_of_surjective` and spreads out
+by `Module.exists_localizedMap_away_surjective_of_localizedMap_atPrime_surjective` (Stacks,
+Tags 0583 and 00L2), following the first step of Mathlib's
+`Module.Free.away_of_finite_of_flat_of_rankAtStalk_constant`. -/
+theorem exists_notMem_surjective_map_powers [Module.FinitePresentation R M] [Module.Finite R N]
+    (p : Ideal R) [p.IsPrime] (fM : M →ₗ[R] Mₚ) (fN : N →ₗ[R] Nₚ)
+    [IsLocalizedModule p.primeCompl fM] [IsLocalizedModule p.primeCompl fN] (g : Mₚ →ₗ[R] Nₚ)
+    (hg : Function.Surjective g) :
+    ∃ φ : M →ₗ[R] N, ∃ s ∉ p, Function.Surjective (LocalizedModule.map (.powers s) φ) := by
+  obtain ⟨φ, -, -, hsurj⟩ := exists_localizedMap_surjective_of_surjective p.primeCompl fM fN hg
+  rw [IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective fM fN] at hsurj
+  obtain ⟨t, ht, h⟩ := exists_localizedMap_away_surjective_of_localizedMap_atPrime_surjective
+    p φ hsurj
+  exact ⟨φ, t, ht, h⟩
 
 end Module.FinitePresentation
 
