@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Operator
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.TimeReversal
+import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
 # The backward parabolic operator at every order
@@ -34,6 +35,8 @@ and follow their proofs.
 
 * `TauCeti.ParabolicCkHolderSpace.backwardParabolicOperatorL`: the backward operator.
 * `TauCeti.ParabolicCkHolderSpace.terminalDataL`: the operator `u ↦ (P_back u, u(·, b))`.
+* `TauCeti.ParabolicCkHolderSpace.norm_terminalDataL_sub_le`: its Lipschitz dependence on the
+  coefficients.
 * `TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_timeReverseLIE`: its time reversal.
 * `TauCeti.ParabolicCkHolderSpace.initialDataL_timeReverseLIE`: the initial data of `u ∘ R` are the
   reversed terminal data of `u`.
@@ -162,6 +165,26 @@ theorem terminalDataL_snd (hα : α ≤ 1)
     (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
     (terminalDataL hα A B C u).2 = u.spatialTrace ⟨b, right_mem_Icc.2 hab.le⟩ := by
   simp [terminalDataL]
+
+/-- Terminal traces cancel in a difference of terminal-data operators, which is bounded like the
+difference of the spatial operators:
+`‖(P_back, ·(b)) - (P_back', ·(b))‖ ≤
+  21 (k + 1)² 2ᵏ (‖A - A'‖ + 8 (k + 1)² ‖B - B'‖ + 64 (k + 1)² (k + 2)² ‖C - C'‖)`. This is the
+terminal-data form of `TauCeti.ParabolicCkHolderSpace.norm_initialDataL_sub_le`. -/
+theorem norm_terminalDataL_sub_le (hα : α ≤ 1)
+    (A A' : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+    (B B' : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+    (C C' : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab) :
+    ‖terminalDataL hα A B C - terminalDataL hα A' B' C'‖ ≤
+      21 * (k + 1) ^ 2 * 2 ^ k *
+        (‖A - A'‖ + 8 * (k + 1) ^ 2 * ‖B - B'‖ + 64 * (k + 1) ^ 2 * (k + 2) ^ 2 * ‖C - C'‖) := by
+  have h : terminalDataL hα A B C - terminalDataL hα A' B' C' =
+      (spatialOperatorL hα (A - A') (B - B') (C - C')).prod 0 := by
+    rw [spatialOperatorL_sub, terminalDataL_def, terminalDataL_def, backwardParabolicOperatorL_def,
+      backwardParabolicOperatorL_def]
+    ext u <;> simp
+  rw [h, ContinuousLinearMap.opNorm_prod, Prod.norm_def, norm_zero, max_eq_left (norm_nonneg _)]
+  exact norm_spatialOperatorL_le hα _ _ _
 
 /-! ### Time reversal -/
 
