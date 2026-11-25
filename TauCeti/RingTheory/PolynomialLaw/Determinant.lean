@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.PolynomialLaw.Power
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -330,11 +331,6 @@ section CommRing
 
 variable {A : Type u} [CommRing A] {R : Type*} [Semiring R] [Algebra A R] {d : ℕ}
   (D : Determinant A R d)
-
-/-- The sign `(-1) ^ n` cancels against itself: `(-1) ^ n ((-1) ^ n a) = a`. -/
-private theorem neg_one_pow_mul_neg_one_pow_mul (n : ℕ) (a : A) :
-    (-1) ^ n * ((-1) ^ n * a) = a := by
-  rw [← mul_assoc, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_mul]
 
 /-- The characteristic polynomial `χ(x, X) = D(X − x) ∈ A[X]` of a determinant at `x ∈ R`,
 computed after scalar extension to the polynomial ring `A[X]`. -/
