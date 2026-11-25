@@ -64,7 +64,7 @@ lemma tendsto_E2_slash_scaleGL_slash_atImInfty (γ : SL(2, ℤ)) :
       (𝓝 ((Int.gcd (γ 1 0) t : ℂ) ^ 2 / t)) := by
   obtain ⟨δ, ha, hc⟩ := γ.exists_scaled_cusp_reduction (t := t)
   let β := (mapGL ℝ δ)⁻¹ * (scaleGL t * mapGL ℝ γ)
-  obtain ⟨h10, h11⟩ := γ.scaled_cusp_upperTriangular δ ha hc
+  obtain ⟨-, h10, h11⟩ := γ.scaled_cusp_upperTriangular δ ha hc
   have hdet : (β.det : ℝ) = t := by simp [β]
   have hdetpos : 0 < (β : Matrix (Fin 2) (Fin 2) ℝ).det := by
     rw [← GeneralLinearGroup.val_det_apply, hdet]
@@ -75,7 +75,7 @@ lemma tendsto_E2_slash_scaleGL_slash_atImInfty (γ : SL(2, ℤ)) :
       (Nat.cast_ne_zero.mpr (NeZero.ne t))).ne'
   have hlim := tendsto_slash_atImInfty_of_upperTriangular 2 β h10
     (tendsto_E2_slash_atImInfty δ)
-  rw [SL_slash, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] at hlim
+  rw [SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] at hlim
   have hmul : mapGL ℝ δ * β = scaleGL t * mapGL ℝ γ := by
     simp [β]
   rw [← SlashAction.slash_mul, hmul] at hlim
@@ -96,7 +96,7 @@ lemma tendsto_correctedE2_slash_atImInfty (γ : SL(2, ℤ)) :
     ← sub_eq_add_neg]
   have h := (tendsto_E2_slash_atImInfty γ).sub
     (tendsto_E2_slash_scaleGL_slash_atImInfty t γ)
-  rw [SL_slash, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] at h
+  rw [SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] at h
   simpa only [Pi.sub_def] using h
 
 /-- **The constant term of the corrected weight-two Eisenstein series at every cusp.**

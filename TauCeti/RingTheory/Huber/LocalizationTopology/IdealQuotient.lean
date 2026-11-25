@@ -544,11 +544,11 @@ private theorem adjoin_plus_map_awayMap_quotientMk_le
   rintro _ (⟨a, rfl⟩ | ⟨t, rfl⟩)
   · rw [SetLike.mem_coe, Subring.mem_comap, IsScalarTower.algebraMap_apply Aplus A S,
       Algebra.algebraMap_ofSubsemiring_apply, IsLocalization.Away.map, IsLocalization.map_eq]
-    exact Subalgebra.algebraMap_mem _ (⟨_, hplus a a.2⟩ : Aplus')
+    exact Subalgebra.algebraMap_mem _ (⟨_, hplus a a.property⟩ : Aplus')
   · rw [SetLike.mem_coe, Subring.mem_comap, RingHom.awayMap_divBy]
     have ht : Ideal.Quotient.mk J (t : A) ∈ T' := by
       rw [← Finset.mem_coe, hT']
-      exact Set.mem_image_of_mem _ t.2
+      exact Set.mem_image_of_mem _ t.property
     exact Algebra.subset_adjoin ⟨⟨_, ht⟩, rfl⟩
 
 omit [TopologicalSpace A] [IsTopologicalRing A] in

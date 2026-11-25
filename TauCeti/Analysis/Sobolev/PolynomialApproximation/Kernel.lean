@@ -44,9 +44,6 @@ depends neither on the target function nor on the normalization of the additive 
 ## Main declarations
 
 * `TauCeti.taylorRemainderWeight`: the scalar ray integral along `s ∈ (0, 1)`.
-* `TauCeti.norm_mul_fullContractL_le_of_support_subset_closedBall`: uniform bound on a
-  cutoff-weighted full contraction `φ y * IteratedGradient.fullContractL m (x - y) v` when
-  `support φ ⊆ closedBall x R`.
 * `TauCeti.taylorRemainderKernel`: the operator-valued remainder kernel
   `x z ↦ ((m !)⁻¹ * taylorRemainderWeight φ x z) • IteratedGradient.fullContractL m (x - z)`.
 * `TauCeti.support_taylorRemainderKernel_subset_convexHull`,
@@ -220,27 +217,6 @@ end Weight
 section Kernel
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- If `support φ ⊆ closedBall x R` (`0 ≤ R`) and `‖φ y‖ ≤ M`, then the cutoff-weighted full
-contraction `φ y * IteratedGradient.fullContractL m (x - y) v` has norm at most
-`M * R ^ (m + 1) * ‖v‖`. -/
-theorem norm_mul_fullContractL_le_of_support_subset_closedBall {φ : E → ℝ} {x y : E} {R M : ℝ}
-    (hR : 0 ≤ R) (hsupp : Function.support φ ⊆ closedBall x R) (hφ : ‖φ y‖ ≤ M) (m : ℕ)
-    (v : IteratedGradient E m) :
-    ‖φ y * IteratedGradient.fullContractL m (x - y) v‖ ≤ M * R ^ (m + 1) * ‖v‖ := by
-  have hM : 0 ≤ M := (norm_nonneg (φ y)).trans hφ
-  by_cases hy : y ∈ Function.support φ
-  · have hxy : ‖x - y‖ ≤ R := by
-      rw [norm_sub_rev, ← dist_eq_norm]
-      exact mem_closedBall.1 (hsupp hy)
-    rw [norm_mul]
-    refine (mul_le_mul hφ
-      ((IteratedGradient.norm_fullContractL_apply_le m (x - y) v).trans
-        (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) hxy (m + 1))
-          (norm_nonneg v))) (norm_nonneg _) hM).trans_eq ?_
-    ring
-  · rw [Function.notMem_support.1 hy, zero_mul, norm_zero]
-    positivity
 
 /-- The operator-valued kernel for the degree-`m` Taylor remainder (order `m + 1` in Brenner–Scott)
 associated with a cutoff `φ`: at `(x, z)` it scales the full contraction

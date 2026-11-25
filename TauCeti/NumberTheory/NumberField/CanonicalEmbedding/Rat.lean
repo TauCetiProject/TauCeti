@@ -48,7 +48,7 @@ private def mixedRatEquivReal : mixedSpace ℚ ≃ₗ[ℝ] ℝ where
   invFun r := (fun _ ↦ r, isEmptyElim)
   left_inv x := by
     ext w
-    · exact congrArg x.1 (Subtype.ext (Subsingleton.elim Rat.infinitePlace w.1))
+    · exact congrArg x.1 (Subtype.ext (Subsingleton.elim Rat.infinitePlace w.val))
     · exact isEmptyElim w
   right_inv _ := rfl
 
@@ -60,7 +60,7 @@ def mixedSpaceRatEquivReal : NumberField.mixedEmbedding.euclidean.mixedSpace ℚ
     norm_map' x := by
       let _ : Unique {w : InfinitePlace ℚ // w.IsReal} :=
         { default := ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩
-          uniq w := Subtype.ext (Subsingleton.elim w.1 Rat.infinitePlace) }
+          uniq w := Subtype.ext (Subsingleton.elim w.val Rat.infinitePlace) }
       have hinner : ⟪x, x⟫ =
           ((NumberField.mixedEmbedding.euclidean.toMixed ℚ x).1
             ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩) ^ 2 := by

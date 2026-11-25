@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GammaOneThreeForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 
 /-!
@@ -131,21 +132,29 @@ variable {R : Type*} [CommRing R]
 /-- The Weierstrass curve `Y² + 3μXY + (μ³ - 1)Y = X³` in **level-three normal form**:
 `a₁ = 3μ`, `a₃ = μ³ - 1` and `a₂ = a₄ = a₆ = 0`. With a root `ζ` of `ζ² + ζ + 1`, the points
 `(0, 0)` and `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` form a basis of its `3`-torsion when it is
-elliptic, that is, when `3` and `μ³ - 1` are units. -/
-def levelThreeNormalForm (μ : R) : WeierstrassCurve R where
-  a₁ := 3 * μ
-  a₂ := 0
-  a₃ := μ ^ 3 - 1
-  a₄ := 0
-  a₆ := 0
+elliptic, that is, when `3` and `μ³ - 1` are units. It is the case `a₁ = 3μ`, `a₃ = μ³ - 1` of
+`WeierstrassCurve.gammaOneThreeForm`. -/
+def levelThreeNormalForm (μ : R) : WeierstrassCurve R :=
+  gammaOneThreeForm (3 * μ) (μ ^ 3 - 1)
 
 variable (μ : R)
 
-@[simp] theorem levelThreeNormalForm_a₁ : (levelThreeNormalForm μ).a₁ = 3 * μ := (rfl)
-@[simp] theorem levelThreeNormalForm_a₂ : (levelThreeNormalForm μ).a₂ = 0 := (rfl)
-@[simp] theorem levelThreeNormalForm_a₃ : (levelThreeNormalForm μ).a₃ = μ ^ 3 - 1 := (rfl)
-@[simp] theorem levelThreeNormalForm_a₄ : (levelThreeNormalForm μ).a₄ = 0 := (rfl)
-@[simp] theorem levelThreeNormalForm_a₆ : (levelThreeNormalForm μ).a₆ = 0 := (rfl)
+/-- The level-three normal form is the curve `Y² + a₁XY + a₃Y = X³` with `a₁ = 3μ` and
+`a₃ = μ³ - 1`. -/
+theorem levelThreeNormalForm_eq_gammaOneThreeForm :
+    levelThreeNormalForm μ = gammaOneThreeForm (3 * μ) (μ ^ 3 - 1) :=
+  (rfl)
+
+@[simp] theorem levelThreeNormalForm_a₁ : (levelThreeNormalForm μ).a₁ = 3 * μ :=
+  gammaOneThreeForm_a₁ _ _
+@[simp] theorem levelThreeNormalForm_a₂ : (levelThreeNormalForm μ).a₂ = 0 :=
+  gammaOneThreeForm_a₂ _ _
+@[simp] theorem levelThreeNormalForm_a₃ : (levelThreeNormalForm μ).a₃ = μ ^ 3 - 1 :=
+  gammaOneThreeForm_a₃ _ _
+@[simp] theorem levelThreeNormalForm_a₄ : (levelThreeNormalForm μ).a₄ = 0 :=
+  gammaOneThreeForm_a₄ _ _
+@[simp] theorem levelThreeNormalForm_a₆ : (levelThreeNormalForm μ).a₆ = 0 :=
+  gammaOneThreeForm_a₆ _ _
 
 @[simp]
 theorem levelThreeNormalForm_b₂ : (levelThreeNormalForm μ).b₂ = 9 * μ ^ 2 := by
@@ -166,15 +175,14 @@ theorem levelThreeNormalForm_b₈ : (levelThreeNormalForm μ).b₈ = 0 := by
 
 @[simp]
 theorem levelThreeNormalForm_c₄ : (levelThreeNormalForm μ).c₄ = 9 * μ * (μ ^ 3 + 8) := by
-  rw [c₄, levelThreeNormalForm_b₂, levelThreeNormalForm_b₄]
+  rw [levelThreeNormalForm_eq_gammaOneThreeForm, gammaOneThreeForm_c₄]
   ring
 
 /-- The discriminant of the level-three normal form `Y² + 3μXY + (μ³ - 1)Y = X³` is
 `27 (μ³ - 1)³`. -/
 @[simp]
 theorem levelThreeNormalForm_Δ : (levelThreeNormalForm μ).Δ = 27 * (μ ^ 3 - 1) ^ 3 := by
-  rw [Δ, levelThreeNormalForm_b₂, levelThreeNormalForm_b₄, levelThreeNormalForm_b₆,
-    levelThreeNormalForm_b₈]
+  rw [levelThreeNormalForm_eq_gammaOneThreeForm, gammaOneThreeForm_Δ]
   ring
 
 /-- The level-three normal form is elliptic exactly when `3` and `μ³ - 1` are units. -/
@@ -187,9 +195,8 @@ theorem isElliptic_levelThreeNormalForm_iff :
 `27μ³ (μ³ + 8)³ / (μ³ - 1)³`. -/
 theorem levelThreeNormalForm_j {F : Type*} [Field F] (μ : F) [(levelThreeNormalForm μ).IsElliptic] :
     (levelThreeNormalForm μ).j = 27 * μ ^ 3 * (μ ^ 3 + 8) ^ 3 / (μ ^ 3 - 1) ^ 3 := by
-  obtain ⟨h3, hμ⟩ := (isElliptic_levelThreeNormalForm_iff μ).mp inferInstance
+  obtain ⟨h3, _⟩ := (isElliptic_levelThreeNormalForm_iff μ).mp inferInstance
   have h3 : (3 : F) ≠ 0 := h3.ne_zero
-  have hμ : μ ^ 3 - 1 ≠ 0 := hμ.ne_zero
   rw [j_eq, levelThreeNormalForm_c₄, levelThreeNormalForm_Δ, show (27 : F) = 3 ^ 3 by norm_num]
   field_simp
   ring
@@ -241,7 +248,7 @@ theorem evalEval_ψ₂_levelThreeNormalForm_basisPoint (ζ : R) :
 @[simp]
 theorem map_levelThreeNormalForm {A : Type*} [CommRing A] (φ : R →+* A) :
     (levelThreeNormalForm μ).map φ = levelThreeNormalForm (φ μ) := by
-  ext <;> simp [map_ofNat]
+  simp [levelThreeNormalForm_eq_gammaOneThreeForm, map_ofNat]
 
 /-! ### Bases of the `3`-torsion -/
 
@@ -322,17 +329,17 @@ private theorem isUnit_scaling {a₁ a₃ x y : R} (h3 : IsUnit (3 : R))
   exact (isUnit_pow_iff two_ne_zero).mp (hv₂ ▸ h3.neg.mul (hψ.pow 2))
 
 /-- The scaling step. On `Y² + a₁XY + a₃Y = X³`, let `(x, y)` be a point with `x` a unit at which
-`3x³ + a₁²x² + 3a₁a₃x + 3a₃² = Ψ₃(x) / x` vanishes and `v = 3a₃ + a₁x` is a unit. If
-`u (3x) = v`, `μ v = a₁x` and `ζ v = a₁x + 3y`, then the scaling by `u` carries the curve to the
-level-three normal form with parameter `μ`, and `(x, y)` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`.
--/
+`3x³ + a₁²x² + 3a₁a₃x + 3a₃² = Ψ₃(x) / x` vanishes. If `u (3x) = v = 3a₃ + a₁x`, `μ v = a₁x` and
+`ζ v = a₁x + 3y`, then the scaling by `u` carries the curve to the level-three normal form with
+parameter `μ`, and `(x, y)` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`. -/
 private theorem scaling_spec {a₁ a₃ x y : R} (h3 : IsUnit (3 : R)) (hx : IsUnit x)
-    (hv : IsUnit (3 * a₃ + a₁ * x)) (hE : y ^ 2 + a₁ * x * y + a₃ * y = x ^ 3)
+    (hE : y ^ 2 + a₁ * x * y + a₃ * y = x ^ 3)
     (hF : 3 * x ^ 3 + a₁ ^ 2 * x ^ 2 + 3 * a₁ * a₃ * x + 3 * a₃ ^ 2 = 0) {u : Rˣ} {μ ζ : R}
     (hu : (u : R) * (3 * x) = 3 * a₃ + a₁ * x) (hμ : μ * (3 * a₃ + a₁ * x) = a₁ * x)
     (hζ : ζ * (3 * a₃ + a₁ * x) = a₁ * x + 3 * y) :
     ζ ^ 2 + ζ + 1 = 0 ∧ a₁ = u * (3 * μ) ∧ a₃ = u ^ 3 * (μ ^ 3 - 1) ∧
       x = u ^ 2 * -(μ ^ 2 + μ + 1) ∧ y = u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) := by
+  have hv : IsUnit (3 * a₃ + a₁ * x) := hu ▸ u.isUnit.mul (h3.mul hx)
   -- `x = u² x₀`, after multiplying by the unit `(3x)² v²`
   have hx₀ : x = u ^ 2 * -(μ ^ 2 + μ + 1) := by
     refine ((hv.pow 2).mul (h3.mul hx |>.pow 2)).mul_left_cancel ?_
@@ -543,7 +550,7 @@ private theorem toLevelThreeNormalForm_spec :
       3 * (y₂ - y₁ - C.s * (x₂ - x₁)) * ↑h.isUnit_sub.unit⁻¹ * (x₂ - x₁) * hu' +
       3 * (y₂ - y₁ - C.s * (x₂ - x₁)) * hwₓ
   obtain ⟨hζ₀, ha₁, ha₃, hX, hY⟩ :=
-    scaling_spec h.isUnit_three h.isUnit_sub hv hE hF hu hμv hζv
+    scaling_spec h.isUnit_three h.isUnit_sub hE hF hu hμv hζv
   exact ⟨hζ₀, smul_eq_levelThreeNormalForm hr ht hσ hP ha₁ ha₂ ha₃, by linear_combination hX,
     by linear_combination hY + C.s * hX⟩
 
@@ -590,15 +597,13 @@ theorem isElliptic_levelThreeNormalForm_levelThreeParameter :
   ring
 
 /-- The identities satisfied by a change of variables to level-three normal form: they determine
-`s`, `u`, `μ` and `ζ` in turn. -/
-private theorem variableChange_levelThreeNormalForm_spec {C : VariableChange R} {μ ζ : R}
+`s`, `u` and `μ` in turn. -/
+private theorem variableChange_levelThreeNormalForm_spec {C : VariableChange R} {μ : R}
     (hr : C.r = x₁) (ht : C.t = y₁) (hC : C • W = levelThreeNormalForm μ)
-    (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r)
-    (hy₂ : y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t) :
+    (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r) :
     C.s * (2 * y₁ + W.a₁ * x₁ + W.a₃) = W.a₄ + 2 * x₁ * W.a₂ - y₁ * W.a₁ + 3 * x₁ ^ 2 ∧
       C.u * (3 * (x₂ - x₁)) = 3 * (2 * y₁ + W.a₁ * x₁ + W.a₃) + (W.a₁ + 2 * C.s) * (x₂ - x₁) ∧
-      C.u * (3 * μ) = W.a₁ + 2 * C.s ∧
-      C.u * (x₂ - x₁) * ζ = y₂ - y₁ - C.s * (x₂ - x₁) + C.u * (x₂ - x₁) * μ := by
+      C.u * (3 * μ) = W.a₁ + 2 * C.s := by
   have h₁ : (C • W).a₁ = 3 * μ := by rw [hC, levelThreeNormalForm_a₁]
   have h₃ : (C • W).a₃ = μ ^ 3 - 1 := by rw [hC, levelThreeNormalForm_a₃]
   have h₄ : (C • W).a₄ = 0 := by rw [hC, levelThreeNormalForm_a₄]
@@ -608,27 +613,25 @@ private theorem variableChange_levelThreeNormalForm_spec {C : VariableChange R} 
   rw [variableChange_a₃, hr, ht] at h₃
   rw [variableChange_a₄, hr, ht, (hw.pow 4).mul_right_eq_zero] at h₄
   rw [hr] at hx₂
-  rw [ht] at hy₂
   have hu₁ : C.u * (3 * μ) = W.a₁ + 2 * C.s := by
     linear_combination -(C.u : R) * h₁ + (W.a₁ + 2 * C.s) * hu
   have hu₃ : C.u ^ 3 * (μ ^ 3 - 1) = 2 * y₁ + W.a₁ * x₁ + W.a₃ := by
     linear_combination -(C.u : R) ^ 3 * h₃ +
       (W.a₃ + x₁ * W.a₁ + 2 * y₁) * (((C.u : R) * ↑C.u⁻¹) ^ 2 + (C.u : R) * ↑C.u⁻¹ + 1) * hu
-  refine ⟨by linear_combination -h₄, ?_, hu₁, ?_⟩
-  · linear_combination 3 * hu₃ + (x₂ - x₁) * hu₁ + 3 * C.u * (1 - μ) * hx₂
-  · linear_combination -hy₂ + (C.s - C.u * (μ - ζ)) * hx₂
+  refine ⟨by linear_combination -h₄, ?_, hu₁⟩
+  linear_combination 3 * hu₃ + (x₂ - x₁) * hu₁ + 3 * C.u * (1 - μ) * hx₂
 
 /-- **Uniqueness of level-three normal form.** A change of variables carrying `W` to a level-three
-normal form, `P` to `(0, 0)` (that is, with `r = x₁` and `t = y₁`) and `Q` to
-`(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` is `toLevelThreeNormalForm h`. -/
-theorem eq_toLevelThreeNormalForm {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ ζ : R}
-    (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r)
-    (hy₂ : y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t) :
+normal form, `P` to `(0, 0)` (that is, with `r = x₁` and `t = y₁`) and `Q` to a point whose
+`x`-coordinate is `-(μ² + μ + 1)` (that is, with `x₂ = u² * -(μ² + μ + 1) + r`) is
+`toLevelThreeNormalForm h`; the `y`-coordinate of `Q` is not needed. -/
+theorem eq_toLevelThreeNormalForm {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ : R}
+    (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r) :
     C = toLevelThreeNormalForm h := by
-  obtain ⟨-, hC₀, hx₀, hy₀⟩ := toLevelThreeNormalForm_spec h
-  obtain ⟨hs, hu, -, -⟩ := variableChange_levelThreeNormalForm_spec hr ht hC hx₂ hy₂
-  obtain ⟨hs₀, hu₀, -, -⟩ := variableChange_levelThreeNormalForm_spec
-    (toLevelThreeNormalForm_r h) (toLevelThreeNormalForm_t h) hC₀ hx₀ hy₀
+  obtain ⟨-, hC₀, hx₀, -⟩ := toLevelThreeNormalForm_spec h
+  obtain ⟨hs, hu, -⟩ := variableChange_levelThreeNormalForm_spec hr ht hC hx₂
+  obtain ⟨hs₀, hu₀, -⟩ := variableChange_levelThreeNormalForm_spec
+    (toLevelThreeNormalForm_r h) (toLevelThreeNormalForm_t h) hC₀ hx₀
   have hss : C.s = (toLevelThreeNormalForm h).s :=
     h.isUnit_ψ₂_fst'.mul_right_cancel (hs.trans hs₀.symm)
   ext : 1
@@ -639,27 +642,39 @@ theorem eq_toLevelThreeNormalForm {C : VariableChange R} (hr : C.r = x₁) (ht :
 
 /-- The parameter of the level-three normal form reached in `eq_toLevelThreeNormalForm` is
 `levelThreeParameter h`. -/
-theorem eq_levelThreeParameter {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ ζ : R}
-    (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r)
-    (hy₂ : y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t) :
+theorem eq_levelThreeParameter {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ : R}
+    (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r) :
     μ = levelThreeParameter h := by
-  obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂ hy₂
-  obtain ⟨-, hC₀, hx₀, hy₀⟩ := toLevelThreeNormalForm_spec h
-  obtain ⟨-, -, hμ, -⟩ := variableChange_levelThreeNormalForm_spec hr ht hC hx₂ hy₂
-  obtain ⟨-, -, hμ₀, -⟩ := variableChange_levelThreeNormalForm_spec hr ht hC₀ hx₀ hy₀
+  obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂
+  obtain ⟨-, hC₀, hx₀, -⟩ := toLevelThreeNormalForm_spec h
+  obtain ⟨-, -, hμ⟩ := variableChange_levelThreeNormalForm_spec hr ht hC hx₂
+  obtain ⟨-, -, hμ₀⟩ := variableChange_levelThreeNormalForm_spec hr ht hC₀ hx₀
   exact ((toLevelThreeNormalForm h).u.isUnit.mul h.isUnit_three).mul_left_cancel
     (by linear_combination hμ - hμ₀)
 
-/-- The root of unity in `eq_toLevelThreeNormalForm` is `levelThreeRootOfUnity h`. -/
+/-- For a change of variables as in `eq_toLevelThreeNormalForm` carrying `Q` to
+`(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))`, the root of unity `ζ` is `levelThreeRootOfUnity h`. -/
 theorem eq_levelThreeRootOfUnity {C : VariableChange R} (hr : C.r = x₁) (ht : C.t = y₁) {μ ζ : R}
     (hC : C • W = levelThreeNormalForm μ) (hx₂ : x₂ = C.u ^ 2 * -(μ ^ 2 + μ + 1) + C.r)
     (hy₂ : y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t) :
     ζ = levelThreeRootOfUnity h := by
-  obtain rfl := eq_levelThreeParameter h hr ht hC hx₂ hy₂
-  obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂ hy₂
+  obtain rfl := eq_levelThreeParameter h hr ht hC hx₂
+  obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂
   obtain ⟨-, hC₀, hx₀, hy₀⟩ := toLevelThreeNormalForm_spec h
-  obtain ⟨-, -, -, hζ⟩ := variableChange_levelThreeNormalForm_spec hr ht hC hx₂ hy₂
-  obtain ⟨-, -, -, hζ₀⟩ := variableChange_levelThreeNormalForm_spec hr ht hC₀ hx₀ hy₀
+  have hζ : (toLevelThreeNormalForm h).u * (x₂ - x₁) * ζ = y₂ - y₁ -
+      (toLevelThreeNormalForm h).s * (x₂ - x₁) +
+        (toLevelThreeNormalForm h).u * (x₂ - x₁) * levelThreeParameter h := by
+    rw [hr] at hx₂
+    rw [ht] at hy₂
+    linear_combination -hy₂ + ((toLevelThreeNormalForm h).s -
+      (toLevelThreeNormalForm h).u * (levelThreeParameter h - ζ)) * hx₂
+  have hζ₀ : (toLevelThreeNormalForm h).u * (x₂ - x₁) * levelThreeRootOfUnity h =
+      y₂ - y₁ - (toLevelThreeNormalForm h).s * (x₂ - x₁) +
+        (toLevelThreeNormalForm h).u * (x₂ - x₁) * levelThreeParameter h := by
+    rw [toLevelThreeNormalForm_r] at hx₀
+    rw [toLevelThreeNormalForm_t] at hy₀
+    linear_combination -hy₀ + ((toLevelThreeNormalForm h).s -
+      (toLevelThreeNormalForm h).u * (levelThreeParameter h - levelThreeRootOfUnity h)) * hx₀
   exact ((toLevelThreeNormalForm h).u.isUnit.mul h.isUnit_sub).mul_left_cancel
     (by linear_combination hζ - hζ₀)
 
@@ -675,7 +690,7 @@ theorem existsUnique_variableChange_levelThreeNormalForm :
       y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t := by
   obtain ⟨hζ, hC, hx₂, hy₂⟩ := toLevelThreeNormalForm_spec h
   exact ⟨toLevelThreeNormalForm h, ⟨rfl, rfl, _, _, hζ, hC, hx₂, hy₂⟩,
-    fun _ ⟨hr, ht, _, _, _, hC, hx₂, hy₂⟩ ↦ eq_toLevelThreeNormalForm h hr ht hC hx₂ hy₂⟩
+    fun _ ⟨hr, ht, _, _, _, hC, hx₂, _⟩ ↦ eq_toLevelThreeNormalForm h hr ht hC hx₂⟩
 
 /-- For elliptic `W`, a change of variables carrying `W` to a level-three normal form, `(x₁, y₁)`
 to `(0, 0)` and `(x₂, y₂)` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` exists exactly when
@@ -732,8 +747,8 @@ private theorem toLevelThreeNormalForm_map_spec {A : Type*} [CommRing A] (φ : R
   replace hx₂ := congr_arg φ hx₂
   replace hy₂ := congr_arg φ hy₂
   simp only [map_add, map_mul, map_pow, map_neg, map_one, map_sub] at hx₂ hy₂
-  exact ⟨eq_toLevelThreeNormalForm (h.map φ) rfl rfl hC' hx₂ hy₂,
-    eq_levelThreeParameter (h.map φ) rfl rfl hC' hx₂ hy₂,
+  exact ⟨eq_toLevelThreeNormalForm (h.map φ) rfl rfl hC' hx₂,
+    eq_levelThreeParameter (h.map φ) rfl rfl hC' hx₂,
     eq_levelThreeRootOfUnity (h.map φ) rfl rfl hC' hx₂ hy₂⟩
 
 /-- **Level-three normal form commutes with base change.** The image of `toLevelThreeNormalForm h`
@@ -936,9 +951,9 @@ theorem existsUnique_lift :
   rintro ⟨f, C⟩ ⟨hr, ht, hC, hx₂, hy₂⟩
   simp only [map_neg, map_add, map_mul, map_pow, map_one, map_sub] at hx₂ hy₂
   rw [curve_eq, map_levelThreeNormalForm] at hC
-  have hfμ := eq_levelThreeParameter h hr ht hC hx₂ hy₂
+  have hfμ := eq_levelThreeParameter h hr ht hC hx₂
   have hfζ := eq_levelThreeRootOfUnity h hr ht hC hx₂ hy₂
-  obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂ hy₂
+  obtain rfl := eq_toLevelThreeNormalForm h hr ht hC hx₂
   simp only [Prod.mk.injEq, and_true]
   ext
   · rw [hfμ, classifyingHom_parameter]

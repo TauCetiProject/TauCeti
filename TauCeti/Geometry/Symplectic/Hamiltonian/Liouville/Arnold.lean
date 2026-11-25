@@ -42,6 +42,10 @@ component of a level is compact, and every `X_{Fᵢ}` is complete when `F` is an
   of a regular point is discrete.
 * `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_eq_iff`: two vectors act alike
   on `x` exactly when they differ by an element of its stabilizer.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_hamiltonianFlowAction_apply`: the
+  points of an orbit have the same stabilizer.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_mpullback_subtype_val`: restricting
+  the family to an open subset where its flows stay complete does not change the stabilizers.
 * `eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer`, in the namespace
   `TauCeti.SmoothTwoForm.IsSymplectic`: the derivative of the action of an element of the
   stabilizer of `y` at `y` is a linear symplectic map of `T_y M`.
@@ -298,6 +302,34 @@ theorem hamiltonianFlowAction_apply_eq_iff {x : M} {v w : ι → ℝ} :
   (AddAction.injective_ofQuotientStabilizer (ι → ℝ) x).eq_iff
     (a := (v : (ι → ℝ) ⧸ AddAction.stabilizer (ι → ℝ) x)) (b := w) |>.trans QuotientAddGroup.eq
 
+/-- **Points of one orbit have the same stabilizer.** Since `ι → ℝ` is commutative, `v • x` and
+`x` have the same stabilizer: the Liouville tori carry a single period lattice. This is Mathlib's
+`AddAction.stabilizer_vadd_eq_right` for the flow action. -/
+@[simp]
+theorem hamiltonianFlowStabilizer_hamiltonianFlowAction_apply (v : ι → ℝ) (x : M) :
+    hσ.hamiltonianFlowStabilizer hF hcomm hc ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) =
+      hσ.hamiltonianFlowStabilizer hF hcomm hc x :=
+  letI := hσ.hamiltonianFlowAddAction hF hcomm hc
+  AddAction.stabilizer_vadd_eq_right v x
+
+/-- **Stabilizers on open subsets.** Let `V` be an open subset of `M` on which the restrictions of
+the `Fᵢ` have complete Hamiltonian vector fields for the restriction of `σ`, as when `V` is a union
+of level sets of `F`. Then the stabilizer of a point of `V` for the flow action of the restricted
+family is its stabilizer for the flow action of `F`: the period lattices of the Liouville tori in
+`V` are those of `M`. -/
+theorem hamiltonianFlowStabilizer_mpullback_subtype_val {V : TopologicalSpace.Opens M}
+    (hF' : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ (F ∘ Subtype.val : V → ι → ℝ))
+    (hcomm' : ∀ i j x, poissonBracket (SmoothForm.mpullback (Subtype.val : V → M)
+      contMDiff_subtypeVal σ) ((F ∘ Subtype.val) · i) ((F ∘ Subtype.val) · j) x = 0)
+    (hc' : ∀ i, IsCompleteVectorField (hamiltonianVectorField (SmoothForm.mpullback
+      (Subtype.val : V → M) contMDiff_subtypeVal σ) ((F ∘ Subtype.val) · i)))
+    (y : V) :
+    (hσ.mpullback_subtype_val V).hamiltonianFlowStabilizer hF' hcomm' hc' y =
+      hσ.hamiltonianFlowStabilizer hF hcomm hc y := by
+  ext v
+  rw [mem_hamiltonianFlowStabilizer, mem_hamiltonianFlowStabilizer, ← Subtype.val_injective.eq_iff,
+    hσ.coe_hamiltonianFlowAction_mpullback_subtype_val_apply hF hcomm hc hF' hcomm' hc']
+
 /-- **The linearized return map of a period is symplectic.** If `v` is a period of `y`, the action
 of `v` fixes `y`, and its derivative at `y` is a linear symplectic map of `T_y M`. -/
 theorem eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer {y : M}
@@ -311,11 +343,8 @@ theorem eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer {
   rw [hσ.mpullback_hamiltonianFlowAction] at hφ
   rw [hφ]
   -- The derivative lands in `T_{v • y} M`, which is `T_y M` since `v • y = y`.
-  have key : ∀ z, z = y → ∀ a' b' : E,
-      SmoothBundleForm.eval₂ σ z a' b' = SmoothBundleForm.eval₂ σ y a' b' := by
-    rintro _ rfl _ _
-    rfl
-  exact (key _ ((hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hv) _ _).symm
+  exact (SmoothForm.eval₂_congr_basePoint σ
+    ((hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hv) _ _).symm
 
 /-- **The orbit map has injective derivative at regular points.** If `v • x` is a regular point of
 `F`, the derivative `w ↦ ∑ i, wᵢ X_{Fᵢ}(v • x)` of the orbit map `v ↦ v • x` at `v` is injective,

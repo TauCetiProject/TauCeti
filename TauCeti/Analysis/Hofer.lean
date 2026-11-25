@@ -83,7 +83,7 @@ theorem hofer_of_continuousOn_closedBall (x : X) {ε : ℝ} (hε : 0 < ε) {ϕ :
   have : CompleteSpace S := isClosed_closedBall.completeSpace_coe
   -- Apply Hofer's lemma in the complete metric space `S`, on which `ϕ` is continuous.
   obtain ⟨ε', hε', x', hε'ε, hx'x, hϕx, hball⟩ := hofer (X := S)
-    ⟨x, mem_closedBall_self (by positivity)⟩ ε hε hϕ.domRestrict fun y ↦ hϕ₀ y y.2
+    ⟨x, mem_closedBall_self (by positivity)⟩ ε hε hϕ.domRestrict fun y ↦ hϕ₀ y y.property
   rw [Subtype.dist_eq] at hx'x
   refine ⟨ε', hε', x', hε'ε, hx'x, by simpa using hϕx, fun y hy ↦ ?_⟩
   -- Every point within `ε'` of `x'` lies in `S`, so the conclusion of the lemma applies to it.

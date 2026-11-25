@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Pi
-public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import TauCeti.Combinatorics.Network.Augmentation
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Algebra.Order.Group.Int
 
 /-!
 # Path–cycle decomposition of nonnegative arrow assignments
 
-Every nonnegative arrow assignment `f` on a finite arrow family is a finite sum of positively
+Every nonnegative arrow assignment `f` on a finite arrow family, with values in a linearly
+ordered additive commutative group, is a finite sum of positively
 weighted directed paths and directed cycles, with equality on every arrow. No conservation or
 capacity condition is needed: each path runs from a vertex of negative excess of `f` (a supply
 vertex) to a vertex of positive excess (a demand vertex), and its interior vertices are
@@ -114,9 +114,40 @@ structure WeightedClosedWalk (Q : V → V → Type v) (K : Type w) where
   /-- The weight of the closed walk. -/
   weight : K
 
-section AddCommMonoid
+/-- Two weighted walks are equal when their endpoints, walks after transporting those endpoints,
+and weights are equal. -/
+@[ext (iff := false)]
+theorem WeightedWalk.ext {p₁ p₂ : WeightedWalk Q K}
+    (hsource : p₁.source = p₂.source) (htarget : p₁.target = p₂.target)
+    (hwalk : @Quiver.Path.cast V ⟨Q⟩ _ _ _ _ hsource htarget p₁.walk = p₂.walk)
+    (hweight : p₁.weight = p₂.weight) : p₁ = p₂ := by
+  obtain ⟨s₁, t₁, p₁, q₁⟩ := p₁
+  obtain ⟨s₂, t₂, p₂, q₂⟩ := p₂
+  dsimp at hsource htarget hwalk hweight
+  cases hsource
+  cases htarget
+  cases hwalk
+  cases hweight
+  rfl
 
-variable [AddCommMonoid K]
+/-- Two weighted closed walks are equal when their bases, walks after transporting those bases,
+and weights are equal. -/
+@[ext (iff := false)]
+theorem WeightedClosedWalk.ext {c₁ c₂ : WeightedClosedWalk Q K}
+    (hbase : c₁.base = c₂.base)
+    (hwalk : @Quiver.Path.cast V ⟨Q⟩ _ _ _ _ hbase hbase c₁.walk = c₂.walk)
+    (hweight : c₁.weight = c₂.weight) : c₁ = c₂ := by
+  obtain ⟨s₁, p₁, q₁⟩ := c₁
+  obtain ⟨s₂, p₂, q₂⟩ := c₂
+  dsimp at hbase hwalk hweight
+  cases hbase
+  cases hwalk
+  cases hweight
+  rfl
+
+section AddMonoid
+
+variable [AddMonoid K]
 
 /-- The assignment of a weighted walk: its walk weighted by its weight. -/
 noncomputable def WeightedWalk.assignment (p : WeightedWalk Q K) : Assignment Q K :=
@@ -134,23 +165,9 @@ theorem WeightedClosedWalk.assignment_def (c : WeightedClosedWalk Q K) :
     c.assignment = walkAssignment c.walk c.weight :=
   (rfl)
 
-end AddCommMonoid
+end AddMonoid
 
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
-
-/-- The excess at `v` of a sum of weighted walks is the total weight of the walks ending at `v`
-minus the total weight of the walks starting at `v`. -/
-theorem WeightedWalk.excessAt_sum_map_assignment [DecidableEq V] (l : List (WeightedWalk Q K))
-    (v : V) :
-    excessAt (l.map WeightedWalk.assignment).sum v =
-      ((l.filter fun p ↦ p.target = v).map WeightedWalk.weight).sum -
-        ((l.filter fun p ↦ p.source = v).map WeightedWalk.weight).sum := by
-  induction l with
-  | nil => simp
-  | cons p l ih =>
-    rw [List.map_cons, List.sum_cons, excessAt_add, ih, assignment_def, excessAt_walkAssignment]
-    by_cases hs : p.source = v <;> by_cases ht : p.target = v <;>
-      simp [hs, ht, Ne.symm] <;> abel
 
 /-- The total excess on a vertex set `S` of a sum of weighted walks is the total weight of the walks
 ending in `S` minus the total weight of the walks starting in `S`. -/
@@ -162,9 +179,18 @@ theorem WeightedWalk.sum_excessAt_sum_map_assignment [DecidableEq V]
   induction l with
   | nil => simp
   | cons p l ih =>
-    simp only [List.map_cons, List.sum_cons, excessAt_add, sum_add_distrib, ih, assignment_def,
-      excessAt_walkAssignment, sum_sub_distrib, sum_ite_eq']
+    simp only [List.map_cons, List.sum_cons, excessAt_add_apply, sum_add_distrib, ih,
+      assignment_def, excessAt_walkAssignment, sum_sub_distrib, sum_ite_eq']
     by_cases hs : p.source ∈ S <;> by_cases ht : p.target ∈ S <;> simp [hs, ht] <;> abel
+
+/-- The excess at `v` of a sum of weighted walks is the total weight of the walks ending at `v`
+minus the total weight of the walks starting at `v`. -/
+theorem WeightedWalk.excessAt_sum_map_assignment [DecidableEq V] (l : List (WeightedWalk Q K))
+    (v : V) :
+    excessAt (l.map WeightedWalk.assignment).sum v =
+      ((l.filter fun p ↦ p.target = v).map WeightedWalk.weight).sum -
+        ((l.filter fun p ↦ p.source = v).map WeightedWalk.weight).sum := by
+  simpa using WeightedWalk.sum_excessAt_sum_map_assignment l {v}
 
 /-- The excess of a sum of weighted closed walks vanishes. -/
 theorem WeightedClosedWalk.isCirculation_sum_map_assignment (l : List (WeightedClosedWalk Q K)) :
@@ -220,6 +246,7 @@ theorem cycleAssignment_def :
     D.cycleAssignment = (D.cycles.map WeightedClosedWalk.assignment).sum :=
   (rfl)
 
+/-- The path and cycle components of a decomposition sum to the decomposed assignment. -/
 @[simp]
 theorem pathAssignment_add_cycleAssignment : D.pathAssignment + D.cycleAssignment = f :=
   D.sum_paths_add_sum_cycles
@@ -232,7 +259,7 @@ theorem isCirculation_cycleAssignment : IsCirculation D.cycleAssignment :=
 @[simp]
 theorem excessAt_pathAssignment (v : V) : excessAt D.pathAssignment v = excessAt f v := by
   conv_rhs => rw [← D.pathAssignment_add_cycleAssignment]
-  rw [excessAt_add, (isCirculation_iff _).1 D.isCirculation_cycleAssignment, add_zero]
+  rw [excessAt_add_apply, (isCirculation_iff _).1 D.isCirculation_cycleAssignment, add_zero]
 
 /-- The excess of the decomposed assignment at `v` is the total weight of the paths ending at `v`
 minus the total weight of the paths starting at `v`. -/
@@ -260,6 +287,13 @@ theorem assignment_apply_of_mem_arrows {p : WeightedWalk Q K} (hp : p ∈ D.path
   rw [WeightedWalk.assignment_def]
   exact walkAssignment_eq_of_mem (D.isPath_walk p hp).nodup_arrows _ he
 
+/-- A cycle component of a decomposition places its weight on each of its arrows. -/
+theorem assignment_apply_of_mem_arrows_of_mem_cycles {c : WeightedClosedWalk Q K}
+    (hc : c ∈ D.cycles) {x y : V} {e : Q x y} (he : ⟨x, y, e⟩ ∈ c.walk.arrows) :
+    c.assignment e = c.weight := by
+  rw [WeightedClosedWalk.assignment_def]
+  exact walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ he
+
 /-- A decomposition of a circulation has no path components. -/
 theorem paths_eq_nil (hf : IsCirculation f) : D.paths = [] :=
   List.eq_nil_iff_forall_not_mem.2 fun p hp ↦
@@ -267,10 +301,17 @@ theorem paths_eq_nil (hf : IsCirculation f) : D.paths = [] :=
 
 /-- A path component of a decomposition is nonnegative. -/
 theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
-    0 ≤ p.assignment := fun x y e ↦ by
-  by_cases he : ⟨x, y, e⟩ ∈ p.walk.arrows
-  · exact (D.assignment_apply_of_mem_arrows hp he).symm ▸ (D.weight_pos_of_mem_paths p hp).le
-  · simp [WeightedWalk.assignment_def, walkAssignment_eq_zero_of_notMem p.walk p.weight he]
+    0 ≤ p.assignment := by
+  have hq := (D.weight_pos_of_mem_paths p hp).le
+  rw [WeightedWalk.assignment_def]
+  exact walkAssignment_nonneg_of_nodup (D.isPath_walk p hp).nodup_arrows hq
+
+/-- A cycle component of a decomposition is nonnegative. -/
+theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
+    0 ≤ c.assignment := by
+  have hq := (D.weight_pos_of_mem_cycles c hc).le
+  rw [WeightedClosedWalk.assignment_def]
+  exact walkAssignment_nonneg_of_nodup (D.isCycle_walk c hc).nodup_arrows hq
 
 end Preorder
 
@@ -279,13 +320,10 @@ section PartialOrder
 variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
   (D : PathCycleDecomposition f)
 
-theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
-    0 ≤ c.assignment :=
-  walkAssignment_nonneg _ (D.weight_pos_of_mem_cycles c hc).le
-
 theorem pathAssignment_nonneg : 0 ≤ D.pathAssignment :=
   List.sum_nonneg <| by simpa using fun p hp ↦ D.assignment_nonneg_of_mem_paths hp
 
+/-- The sum of the cycle components of a decomposition is nonnegative. -/
 theorem cycleAssignment_nonneg : 0 ≤ D.cycleAssignment :=
   List.sum_nonneg <| by simpa using fun c hc ↦ D.assignment_nonneg_of_mem_cycles hc
 
@@ -295,10 +333,12 @@ theorem nonneg : 0 ≤ f := by
   rw [← D.pathAssignment_add_cycleAssignment]
   exact add_nonneg D.pathAssignment_nonneg D.cycleAssignment_nonneg
 
+/-- The path components of a decomposition sum to at most the decomposed assignment. -/
 theorem pathAssignment_le : D.pathAssignment ≤ f := by
   conv_rhs => rw [← D.pathAssignment_add_cycleAssignment]
   exact le_add_of_nonneg_right D.cycleAssignment_nonneg
 
+/-- The cycle components of a decomposition sum to at most the decomposed assignment. -/
 theorem cycleAssignment_le : D.cycleAssignment ≤ f := by
   conv_rhs => rw [← D.pathAssignment_add_cycleAssignment]
   exact le_add_of_nonneg_left D.pathAssignment_nonneg
@@ -319,8 +359,7 @@ theorem assignment_le_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.c
 theorem pos_of_mem_arrows_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles)
     {a : Σ x y, Q x y} (ha : a ∈ c.walk.arrows) : 0 < f a.2.2 := by
   have hle := D.assignment_le_of_mem_cycles hc a.1 a.2.1 a.2.2
-  rw [WeightedClosedWalk.assignment_def,
-    walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ ha] at hle
+  rw [D.assignment_apply_of_mem_arrows_of_mem_cycles hc ha] at hle
   exact (D.weight_pos_of_mem_cycles c hc).trans_le hle
 
 /-- A decomposition has no components exactly when it decomposes the zero assignment. -/
@@ -354,18 +393,18 @@ theorem source_eq_of_mem_paths [Preorder K] {f : Flow cap s t} (D : PathCycleDec
   · exact (f.conserve _ h ht).ge
 
 /-- Every path of a decomposition of an ordinary `s`–`t` flow ends at `t`. -/
-theorem target_eq_of_mem_paths [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+theorem target_eq_of_mem_paths [Preorder K] {f : Flow cap s t}
     (D : PathCycleDecomposition f.toFun) {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
     p.target = t := by
-  by_contra h
-  refine D.target_ne_of_mem_paths hp ?_ rfl
-  by_cases hs : p.target = s
-  · rw [hs, f.excessAt_source]
-    exact neg_nonpos.2 f.val_nonneg
-  · exact (f.conserve _ hs h).le
+  by_contra ht
+  have hs : p.target ≠ s := by
+    intro hs
+    have h : p.target = p.source := hs.trans (D.source_eq_of_mem_paths hp).symm
+    exact lt_asymm (D.excessAt_source_neg p hp) (h ▸ D.excessAt_target_pos p hp)
+  exact (D.excessAt_target_pos p hp).ne' (f.conserve _ hs ht)
 
 /-- The path weights of a decomposition of an ordinary `s`–`t` flow add up to its value. -/
-theorem sum_weight_paths_eq_val [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+theorem sum_weight_paths_eq_val [Preorder K] {f : Flow cap s t}
     (D : PathCycleDecomposition f.toFun) : (D.paths.map WeightedWalk.weight).sum = f.val := by
   classical
   have hs : (D.paths.filter fun p ↦ p.source = t) = [] :=
@@ -382,10 +421,8 @@ theorem pathAssignment_apply_le_val [PartialOrder K] [IsOrderedAddMonoid K] {f :
     (D : PathCycleDecomposition f.toFun) {x y : V} (e : Q x y) : D.pathAssignment e ≤ f.val := by
   rw [← D.sum_weight_paths_eq_val, pathAssignment_def]
   simp only [Pi.list_sum_apply, List.map_map, Function.comp_def, WeightedWalk.assignment_def]
-  refine List.sum_le_sum fun p hp ↦ ?_
-  have hq := (D.weight_pos_of_mem_paths p hp).le
-  exact (walkAssignment_mem_Icc (D.isPath_walk p hp).nodup_arrows hq (fun _ _ _ ↦ hq)
-    fun _ _ ↦ le_rfl).2 _ _ e
+  exact List.sum_le_sum fun p hp ↦
+    walkAssignment_le (D.isPath_walk p hp).nodup_arrows (D.weight_pos_of_mem_paths p hp).le e
 
 end Flow
 
@@ -442,11 +479,11 @@ private def PathCycleDecomposition.consCycle {g : Assignment Q K} (D : PathCycle
   weight_pos_of_mem_paths := D.weight_pos_of_mem_paths
   weight_pos_of_mem_cycles := List.forall_mem_cons.2 ⟨hpos, D.weight_pos_of_mem_cycles⟩
   excessAt_source_neg p hp := by
-    rw [hfg, excessAt_add, WeightedClosedWalk.assignment_def,
+    rw [hfg, excessAt_add_apply, WeightedClosedWalk.assignment_def,
       (isCirculation_iff _).1 (isCirculation_walkAssignment _ _), add_zero]
     exact D.excessAt_source_neg p hp
   excessAt_target_pos p hp := by
-    rw [hfg, excessAt_add, WeightedClosedWalk.assignment_def,
+    rw [hfg, excessAt_add_apply, WeightedClosedWalk.assignment_def,
       (isCirculation_iff _).1 (isCirculation_walkAssignment _ _), add_zero]
     exact D.excessAt_target_pos p hp
   sum_paths_add_sum_cycles := by

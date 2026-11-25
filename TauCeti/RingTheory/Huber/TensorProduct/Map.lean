@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
+public import Mathlib.Topology.Algebra.Algebra.Equiv
 
 /-!
 # Functoriality of completed tensor products
@@ -22,12 +23,17 @@ morphism of completed tensor products of Huber pairs `(B, B⁺) ⊗̂_A (C, C⁺
 (C', C'⁺)`, again functorially. Both constructions are instances of the universal property of the
 completed tensor product, applied to the composites of `φ` and `ψ` with the target coprojections.
 
+Continuous `A`-algebra isomorphisms `B ≃A[A] B'` and `C ≃A[A] C'` induce a continuous
+`A`-algebra isomorphism `B ⊗̂_A C ≃A[A] B' ⊗̂_A C'` of completed tensor rings.
+
 ## Main definitions
 
 * `TauCeti.Huber.CompletedTensor.map`: the continuous ring homomorphism of completed tensor rings
   induced by compatible continuous ring homomorphisms of the factors.
 * `TauCeti.Huber.Pair.completedTensor.map`: the induced morphism of completed tensor products of
   Huber pairs.
+* `TauCeti.Huber.CompletedTensor.congr`: the continuous `A`-algebra isomorphism of completed
+  tensor rings induced by continuous `A`-algebra isomorphisms of the factors.
 
 ## Main results
 
@@ -161,6 +167,51 @@ theorem map_comp (α' : A' →+* A'') (φ' : B' →+* B'') (ψ' : C' →+* C'')
     fun_prop
   exact Eq.symm <| (eq_map_iff hc).mpr ⟨by ext; simp, by ext; simp⟩
 
+section Congr
+
+variable [Algebra A B'] [Algebra A C'] [IsAdicHom (algebraMap A B')] [IsAdicHom (algebraMap A C')]
+  (e : B ≃A[A] B') (f : C ≃A[A] C')
+
+/-- The isomorphism `B ⊗̂_A C ≃A[A] B' ⊗̂_A C'` of completed tensor rings induced by continuous
+`A`-algebra isomorphisms `B ≃A[A] B'` and `C ≃A[A] C'`. -/
+noncomputable def congr : CompletedTensor A B C ≃A[A] CompletedTensor A B' C' where
+  toAlgEquiv := AlgEquiv.ofRingEquiv (f := RingEquiv.ofRingHom
+    (map (RingHom.id A) e f (by ext; simp [AlgHomClass.commutes])
+      (by ext; simp [AlgHomClass.commutes]) (by rw [RingHom.coe_coe]; fun_prop)
+      (by rw [RingHom.coe_coe]; fun_prop))
+    (map (RingHom.id A) e.symm f.symm (by ext; simp [AlgHomClass.commutes])
+      (by ext; simp [AlgHomClass.commutes])
+      (by rw [RingHom.coe_coe]; fun_prop) (by rw [RingHom.coe_coe]; fun_prop))
+    (hom_ext ((continuous_map ..).comp (continuous_map ..)) continuous_id
+      (by ext; simp) (by ext; simp))
+    (hom_ext ((continuous_map ..).comp (continuous_map ..)) continuous_id
+      (by ext; simp) (by ext; simp)))
+    fun a ↦ by simp [← inl_algebraMap, AlgHomClass.commutes]
+  continuous_toFun := continuous_map ..
+  continuous_invFun := continuous_map ..
+
+/-- The induced isomorphism sends the left coprojection of `b` to that of `e b`. -/
+@[simp] theorem congr_inl (b : B) : congr e f (inl A B C b) = inl A B' C' (e b) :=
+  map_inl ..
+
+/-- The induced isomorphism sends the right coprojection of `c` to that of `f c`. -/
+@[simp] theorem congr_inr (c : C) : congr e f (inr A B C c) = inr A B' C' (f c) :=
+  map_inr ..
+
+/-- The inverse of the induced isomorphism sends the left coprojection of `b'` to that of
+`e.symm b'`. -/
+@[simp] theorem congr_symm_inl (b : B') :
+    (congr e f).symm (inl A B' C' b) = inl A B C (e.symm b) :=
+  map_inl ..
+
+/-- The inverse of the induced isomorphism sends the right coprojection of `c'` to that of
+`f.symm c'`. -/
+@[simp] theorem congr_symm_inr (c : C') :
+    (congr e f).symm (inr A B' C' c) = inr A B C (f.symm c) :=
+  map_inr ..
+
+end Congr
+
 end CompletedTensor
 
 namespace Pair.completedTensor
@@ -222,3 +273,30 @@ theorem map_comp (α' : A' →+* A'') (f' : Hom S' S'') (g' : Hom T' T'')
 end Pair.completedTensor
 
 end TauCeti.Huber
+
+namespace TauCeti.Huber.CompletedTensor
+
+variable {A B A' B' : Type*}
+  [CommRing A] [CommRing B] [CommRing A'] [CommRing B']
+  [Algebra A B] [Algebra A' B']
+  [TopologicalSpace A] [IsTopologicalRing A]
+  [TopologicalSpace A'] [IsTopologicalRing A']
+  [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T0Space B]
+  [UniformSpace B'] [IsUniformAddGroup B'] [NonarchimedeanRing B'] [CompleteSpace B'] [T0Space B']
+  [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A' B')]
+
+/-- The map on completed diagonals commutes with multiplication. -/
+@[simp] theorem mulRingHom_map (α : A →+* A') (φ : B →+* B')
+    (hφ : φ.comp (algebraMap A B) = (algebraMap A' B').comp α)
+    (hφc : Continuous φ) (x : CompletedTensor A B B) :
+    mulRingHom A' B' (CompletedTensor.map α φ φ hφ hφ hφc hφc x) =
+      φ (mulRingHom A B x) := by
+  have h : (mulRingHom A' B').comp (CompletedTensor.map α φ φ hφ hφ hφc hφc) =
+      φ.comp (mulRingHom A B) := by
+    apply CompletedTensor.hom_ext (f := (mulRingHom A' B').comp
+      (CompletedTensor.map α φ φ hφ hφ hφc hφc)) (g := φ.comp (mulRingHom A B))
+      ((continuous_mulRingHom A' B').comp (CompletedTensor.continuous_map ..))
+      (hφc.comp (continuous_mulRingHom A B)) <;> ext b <;> simp
+  exact congrArg (fun f : CompletedTensor A B B →+* B' ↦ f x) h
+
+end TauCeti.Huber.CompletedTensor

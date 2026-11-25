@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 import Mathlib.LinearAlgebra.FreeModule.PID
+import TauCeti.LinearAlgebra.Complex.Finrank
 
 /-!
 # A rank criterion for discrete integer submodules
@@ -23,12 +24,16 @@ discrete from their rank and real span, without a separate compactness argument.
 
 - `TauCeti.discreteTopology_iff_finrank_eq_finrank_span`: discreteness of a finitely generated
   integer submodule is equivalent to equality of its integer rank and its real span's dimension.
+- `Submodule.moduleFinite_of_discreteTopology_of_finiteDimensional_span`: a discrete integer
+  submodule with finite-dimensional real span is finitely generated.
 - `setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology` and
-  `setFinrank_real_eq_finrank_int`: in finite dimension, a set of vectors of a discrete integer
-  submodule has the same real and integer rank, and the real rank of the submodule itself is its
-  integer rank. These two statements and their names follow Kevin H. Wilson's successive-minima
-  proposal for Mathlib, `Mathlib/Algebra/Module/ZLattice/Basic.lean` at revision `8423d1c` of
+  `setFinrank_real_eq_finrank_int`: a set of vectors of a discrete integer submodule has the same
+  real and integer rank, and the real rank of the submodule itself is its integer rank. These two
+  statements and their names follow Kevin H. Wilson's successive-minima proposal for Mathlib,
+  `Mathlib/Algebra/Module/ZLattice/Basic.lean` at revision `8423d1c` of
   <https://github.com/khwilson/mathlib4>.
+- `TauCeti.ZLattice.finrank_eq_two_mul_finrank_complex`: a full lattice in a finite-dimensional
+  complex space has rank twice the complex dimension.
 
 Apply `(TauCeti.discreteTopology_iff_finrank_eq_finrank_span (L := L)).mpr hr` to obtain
 discreteness from a rank equality `hr`.
@@ -63,6 +68,21 @@ private theorem discreteTopology_of_span_eq_top_of_finrank_eq
   rw [← he]
   infer_instance
 
+/-- A discrete integer submodule whose real span `F` is finite-dimensional is finitely generated:
+it is isomorphic to its pullback to `F`, a discrete subgroup of a finite-dimensional space. -/
+theorem _root_.Submodule.moduleFinite_of_discreteTopology_of_finiteDimensional_span
+    (L : Submodule ℤ E) [DiscreteTopology L] [FiniteDimensional ℝ (Submodule.span ℝ (L : Set E))] :
+    Module.Finite ℤ L := by
+  let F := Submodule.span ℝ (L : Set E)
+  let L' : Submodule ℤ F := ZLattice.comap ℝ L F.subtype
+  have : DiscreteTopology L' :=
+    ZLattice.comap_discreteTopology ℝ L continuous_subtypeVal Subtype.val_injective
+  -- `ZLattice.comap` is the pullback of `L` along the subtype map, viewed `ℤ`-linearly.
+  have hL' : L' = L.comap (F.restrictScalars ℤ).subtype := rfl
+  have e : L' ≃ₗ[ℤ] L := hL' ▸
+    Submodule.comapSubtypeEquivOfLe (p := L) (q := F.restrictScalars ℤ) Submodule.subset_span
+  exact Module.Finite.equiv e
+
 /-- A finitely generated integer submodule is discrete exactly when its integer rank is
 the dimension of its real span. The ambient space need not be finite-dimensional. -/
 theorem discreteTopology_iff_finrank_eq_finrank_span
@@ -76,9 +96,9 @@ theorem discreteTopology_iff_finrank_eq_finrank_span
   let e := Submodule.comapSubtypeEquivOfLe hLF
   -- After coercing to E, both directions are subtype projections.
   have he : Continuous e := by
-    exact (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    exact (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
   have he' : Continuous e.symm := by
-    exact (continuous_subtype_val.subtype_mk _).subtype_mk _
+    exact (continuous_subtypeVal.subtype_mk _).subtype_mk _
   have : Module.Finite ℤ L' := Module.Finite.equiv e.symm
   -- L' has carrier Subtype.val ⁻¹' (L : Set E) by definition of comap and restrictScalars.
   have hs : Submodule.span ℝ (L' : Set F) = ⊤ := Submodule.span_span_coe_preimage
@@ -98,17 +118,44 @@ theorem discreteTopology_iff_finrank_eq_finrank_span
 
 end TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (L : Submodule ℤ E) [DiscreteTopology L]
 
 /-- A set of vectors of a discrete integer submodule has the same rank over `ℝ` as over `ℤ`. -/
 theorem setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology {s : Set E}
-    (hs : s ⊆ L) : Set.finrank ℝ s = Set.finrank ℤ s :=
-  Real.finrank_eq_int_finrank_of_discrete <|
-    ‹DiscreteTopology L›.of_subset (Submodule.span_le.mpr hs)
+    (hs : s ⊆ L) : Set.finrank ℝ s = Set.finrank ℤ s := by
+  have : DiscreteTopology (span ℤ s) := ‹DiscreteTopology L›.of_subset (Submodule.span_le.mpr hs)
+  have hspan : Submodule.span ℝ ((span ℤ s : Submodule ℤ E) : Set E) = Submodule.span ℝ s :=
+    Submodule.span_span_of_tower ℤ ℝ s
+  by_cases hM : Module.Finite ℤ (span ℤ s)
+  · rw [Set.finrank, Set.finrank, TauCeti.discreteTopology_iff_finrank_eq_finrank_span.mp ‹_›,
+      hspan]
+  -- Otherwise the real span is infinite-dimensional, and so is the integer rank.
+  have hinf : ¬ FiniteDimensional ℝ (Submodule.span ℝ s) := fun h ↦ by
+    have : FiniteDimensional ℝ (Submodule.span ℝ ((span ℤ s : Submodule ℤ E) : Set E)) := by
+      rw [hspan]
+      exact h
+    exact hM (span ℤ s).moduleFinite_of_discreteTopology_of_finiteDimensional_span
+  rw [Set.finrank, Set.finrank, Module.finrank_of_not_finite hinf]
+  have hle : Cardinal.aleph0 ≤ Module.rank ℤ (span ℤ s) := by
+    refine le_trans ?_ (Submodule.rank_span_le_rank_span (R := ℤ) (K := ℝ) s)
+    rw [← not_lt, Module.rank_lt_aleph0_iff]
+    exact fun h ↦ hinf h
+  rw [Module.finrank, Cardinal.toNat_apply_of_aleph0_le hle]
 
 /-- The real rank of a discrete integer submodule is its integer rank. -/
 @[simp]
 theorem setFinrank_real_eq_finrank_int : Set.finrank ℝ (L : Set E) = Module.finrank ℤ L := by
   rw [setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology L le_rfl, Set.finrank,
     Submodule.span_eq]
+
+namespace TauCeti
+
+/-- A full lattice in a finite-dimensional complex space `E`, such as the period lattice of a
+complex torus `E / L`, has rank `2 * dim_ℂ E`. -/
+theorem ZLattice.finrank_eq_two_mul_finrank_complex {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [FiniteDimensional ℂ E] (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] : Module.finrank ℤ L = 2 * Module.finrank ℂ E := by
+  rw [_root_.ZLattice.rank ℝ L, finrank_real_eq_two_mul_finrank_complex]
+
+end TauCeti

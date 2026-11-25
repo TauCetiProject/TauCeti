@@ -233,7 +233,7 @@ theorem posDefProperClassToPic_mk_eq_inv_of_eq_reflected
     (hg : (g : BinaryQuadraticForm ℤ) = (f : BinaryQuadraticForm ℤ).reflected) :
     posDefProperClassToPic n hn (Quotient.mk _ g) =
       (posDefProperClassToPic n hn (Quotient.mk _ f))⁻¹ := by
-  obtain ⟨hfD, -, hfp⟩ := (mem_posDef_inf_primitiveForms n).mp f.2
+  obtain ⟨hfD, -, hfp⟩ := (mem_posDef_inf_primitiveForms n).mp f.property
   obtain ⟨g, hgm⟩ := g
   simp only at hg
   subst hg
@@ -251,7 +251,7 @@ theorem properClassToNarrowPic_mk_eq_inv_of_eq_reflected {f g : primitiveForms D
     (hg : (g : BinaryQuadraticForm ℤ) = (f : BinaryQuadraticForm ℤ).reflected) :
     properClassToNarrowPic D hD (Quotient.mk'' g) =
       (properClassToNarrowPic D hD (Quotient.mk'' f))⁻¹ := by
-  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.2
+  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.property
   obtain ⟨g, hgm⟩ := g
   simp only at hg
   subst hg

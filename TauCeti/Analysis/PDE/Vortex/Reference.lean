@@ -227,14 +227,6 @@ theorem hasCompactSupport_referenceConnection_sub (f g : ContDiffBump (0 : ℝ))
 
 /-! ### Bounded derivatives and Sobolev multiplication -/
 
-/-- The winding phase is homogeneous of degree `0`. -/
-private theorem phase_smul (m : ℕ) {t : ℝ} (ht : 0 < t) (z : ℂ) :
-    (t • z / (‖t • z‖ : ℂ)) ^ m = (z / (‖z‖ : ℂ)) ^ m := by
-  rcases eq_or_ne z 0 with rfl | _
-  · simp
-  rw [norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
-    mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
-
 /-- The angular connection `-i m dθ` is smooth away from the origin. -/
 private theorem contDiffOn_angular (m : ℕ) {N : WithTop ℕ∞} :
     ContDiffOn ℝ N (fun z : ℂ ↦ (-(m : ℂ) * I) •
@@ -262,7 +254,7 @@ theorem exists_norm_iteratedFDeriv_referenceSection_le (f : ContDiffBump (0 : �
     ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (referenceSection f m) z‖ ≤ C :=
   exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq (d := 0) le_rfl
     ((contDiff_referenceSection f m).of_le (by exact_mod_cast le_top)) (contDiffOn_div_norm_pow m)
-    (fun t ht z _ ↦ by rw [zpow_zero, one_smul, phase_smul m ht])
+    (fun t ht z _ ↦ by rw [zpow_zero, one_smul, smul_div_norm_smul ht])
     (fun _ hz ↦ referenceSection_eq_phase f m (rOut_le_norm_sq f hz)) n le_rfl
 
 /-- Every iterated derivative of the reference connection is bounded. -/
@@ -314,8 +306,8 @@ natural order `k`. -/
 theorem memSobolev_smulLeftCLM_referenceSection (hp : 1 < p) (hp_top : p ≠ ⊤)
     (f : ContDiffBump (0 : ℝ)) (m : ℕ) {k : ℕ} {u : 𝓢'(ℂ, F)} (hu : MemSobolev k p u) :
     MemSobolev k p (smulLeftCLM F (referenceSection f m) u) :=
-  hu.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top (hasTemperateGrowth_referenceSection f m)
-    fun n _ ↦ exists_norm_iteratedFDeriv_referenceSection_le f m n
+  hu.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top fun n _ ↦
+    exists_norm_iteratedFDeriv_referenceSection_le f m n
 
 /-- **Multiplication by a coefficient `z ↦ a_m(z) v` of the reference connection preserves
 `H^{k,p}`**, for `1 < p < ∞` and every natural order `k`. -/
@@ -323,7 +315,6 @@ theorem memSobolev_smulLeftCLM_referenceConnection_apply (hp : 1 < p) (hp_top : 
     (f : ContDiffBump (0 : ℝ)) (m : ℕ) (v : ℂ) {k : ℕ} {u : 𝓢'(ℂ, F)} (hu : MemSobolev k p u) :
     MemSobolev k p (smulLeftCLM F (fun z ↦ referenceConnection f m z v) u) :=
   hu.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
-    (hasTemperateGrowth_referenceConnection_apply f m v)
     fun n _ ↦ exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n v
 
 end Sobolev

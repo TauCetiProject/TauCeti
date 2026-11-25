@@ -85,9 +85,12 @@ The rubrics are **adversarial**, including instructions to find mis-formalizatio
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
 Content CI builds and audits the mathematics without running regression suites for
-the CI machinery. **Infrastructure tests** runs those suites separately, only when
-`scripts/` or `.github/` changes. Its results do not gate content builds, merge
-statuses, lint, or cache publication.
+the CI machinery. Those suites live with the shared tooling and run in
+[TauCetiTools](https://github.com/TauCetiProject/TauCetiTools) CI. Their results do not
+gate content builds, merge statuses, lint, or cache publication.
+
+Operators can [enable, disable, or resize Namespace runners](scripts/namespace-controls.md)
+through Actions variables, without a source PR or staging batch.
 
 Human-owned infrastructure changes still require human review. After reviewing a PR,
 repository admins can issue `bors r+` or `bors merge`: bors records approval
@@ -101,14 +104,15 @@ Other users follow the existing review policy. See the
 [bors rollout and behavior documentation](https://github.com/TauCetiProject/bors-ng/blob/master/deploy/manual-approval.md).
 
 Stacked PRs are prohibited, including drafts: land prerequisites first, then rebase and
-submit a standalone diff. The trusted [no-stacking policy](scripts/stack-policy.md)
+submit a standalone diff. The trusted [no-stacking policy](https://github.com/TauCetiProject/TauCetiTools/blob/main/tauceti_tools/assets/scripts/stack-policy.md)
 checks current source evidence, comments and closes confirmed stacks, and blocks their
 bors admission. Keep/hold/human labels do not exempt stacks. Reviewers should follow
 the same policy; shared files, imports and roadmap areas alone do not establish stacking.
 
 ## Changing labels by comment
 
-Anyone who can comment can add or remove the labels below, without triage access.
+Anyone who can comment can add or remove the general labels below, without triage access.
+The author-only `self-tested` command is described separately below.
 Post a new issue or pull request conversation comment with the exact label on its own
 line to add it, or prefix it with `-` to remove it. For example:
 
@@ -132,7 +136,18 @@ Review bodies and inline review comments are not processed.
 
 A hold does not withdraw a contribution already admitted to staging or exempt a PR from
 the no-stacking policy. Generated CI, review, queue, and roadmap-attribution labels are
-managed by their owning automation and cannot be changed by comment commands.
+managed by their owning automation and cannot be changed by comment commands, except
+`self-tested` as described below.
+
+The author of a pull request may also post `self-tested` to add the `self-tested` label,
+or `-self-tested` to remove it. Comments from anyone else, and comments on issues, are
+ignored for this label. The label is a persistent declaration that the author runs local verification: leave it in
+place through fix and rebase pushes, and remove it if verification fails or is incomplete.
+The label counts from any author. Admission checks source scope directly; no separate Actions
+receipt is required. Since the label skips PR CI, admission also runs PR CI's diff guards (the
+ones `lake lint` runs) on the exact head, and explains on the PR any head that fails them.
+If a PR build runs on the current head and fails, the label is removed and the PR follows the
+ordinary failed-build path. Reviews on the current head and staging tests still run.
 
 ## Mathlib dependency
 
@@ -230,10 +245,15 @@ lake lint
 ```
 
 `lake test` runs the inexpensive local axiom checks on changed modules and the module-system
-check. `lake lint` runs source guards, source style, shim checks and changed-module environment
-and documentation lint. They calculate scope offline from local Git history, including edits
-and new files. Full transitive axiom and declaration-ownership audits remain in staging CI.
-Use `--iofail` explicitly: it rejects informational output as PR/staging builds do.
+check. `lake lint` runs source guards, source style, shim checks, changed-module environment
+and documentation lint, and PR CI's diff guards: review size (3000 added lines, 2000 removed
+lines, 2000 files; a Lake-pin bump is exempt from the line caps), new `.lean` files of at most
+1250 lines, and changes only under `TauCeti/`, `TauCeti.lean`, the Lake pins and
+`docbuild/docs/references.bib`. They calculate scope offline from local Git history, against the
+merge base with the canonical `main`, including edits and new library files; untracked files
+outside `TauCeti/` are ignored. `lake lint -- --base <rev>` measures from another base. Full
+transitive axiom and declaration-ownership audits remain in staging CI. Use `--iofail`
+explicitly: it rejects informational output as PR/staging builds do.
 
 Both fetches matter, and they come from different places. `lake exe cache get` is Mathlib's own
 cache and covers only Mathlib. Tau Ceti's oleans live in a separate public cache that

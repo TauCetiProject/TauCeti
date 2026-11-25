@@ -94,9 +94,9 @@ the entries of its tuples together form a face of `K`, it is a chain for the coo
 order, and every entry of every tuple is at most every later entry of every tuple. -/
 def edgewiseSubdivision (K : PreAbstractSimplicialComplex ι) (k : ℕ) :
     AbstractSimplicialComplex (K.EdgewiseVertex k) where
-  faces := {ρ | ρ.Nonempty ∧ ρ.biUnion (fun u => univ.image u.1) ∈ K ∧
+  faces := {ρ | ρ.Nonempty ∧ ρ.biUnion (fun u => univ.image u.val) ∈ K ∧
     IsChain (· ≤ ·) (ρ : Set (K.EdgewiseVertex k)) ∧
-    ∀ u ∈ ρ, ∀ w ∈ ρ, ∀ j j' : Fin k, j < j' → u.1 j ≤ w.1 j'}
+    ∀ u ∈ ρ, ∀ w ∈ ρ, ∀ j j' : Fin k, j < j' → u.val j ≤ w.val j'}
   isRelLowerSet_faces := by
     rintro ρ ⟨hne, hK, hchain, hcross⟩
     refine ⟨hne, fun τ hτρ hτ => ⟨hτ, ?_, hchain.mono (coe_subset.mpr hτρ),
@@ -104,20 +104,20 @@ def edgewiseSubdivision (K : PreAbstractSimplicialComplex ι) (k : ℕ) :
     -- The entries of any vertex of `τ` already form a nonempty face of `K`.
     obtain ⟨u, hu⟩ := hτ
     refine (K.isRelLowerSet_faces hK).2 (biUnion_subset_biUnion_of_subset_left _ hτρ) ?_
-    exact ((K.isRelLowerSet_faces u.2.2).1).mono (subset_biUnion_of_mem _ hu)
+    exact ((K.isRelLowerSet_faces u.property.2).1).mono (subset_biUnion_of_mem _ hu)
   singleton_mem u := by
-    refine ⟨singleton_nonempty u, by simpa using u.2.2, Set.Subsingleton.isChain (by simp),
+    refine ⟨singleton_nonempty u, by simpa using u.property.2, Set.Subsingleton.isChain (by simp),
       ?_⟩
     simp only [mem_singleton]
     intro a ha b hb j j' hjj'
     rw [ha, hb]
-    exact u.2.1 hjj'.le
+    exact u.property.1 hjj'.le
 
 /-- Only finitely many vertices of an edgewise subdivision have all their entries in a given
 finite set of original vertices. -/
 theorem finite_edgewiseVertex_entries_subset (K : PreAbstractSimplicialComplex ι) (k : ℕ)
     (σ : Finset ι) :
-    {u : K.EdgewiseVertex k | ∀ l, u.1 l ∈ σ}.Finite := by
+    {u : K.EdgewiseVertex k | ∀ l, u.val l ∈ σ}.Finite := by
   exact (Set.Finite.pi' fun _ : Fin k => σ.finite_toSet).preimage Subtype.val_injective.injOn
 
 variable {K : PreAbstractSimplicialComplex ι} {k : ℕ} {ρ : Finset (K.EdgewiseVertex k)}
@@ -127,21 +127,21 @@ variable {K : PreAbstractSimplicialComplex ι} {k : ℕ} {ρ : Finset (K.Edgewis
 a vertex form a nonempty face. -/
 theorem EdgewiseVertex.ne_zero (u : K.EdgewiseVertex k) : k ≠ 0 := by
   rintro rfl
-  simpa using K.isRelLowerSet_faces.prop_of_mem u.2.2
+  simpa using K.isRelLowerSet_faces.prop_of_mem u.property.2
 
 /-- A finite set of vertices is a face of the edgewise subdivision exactly when it is nonempty,
 the entries of its tuples form a face of `K`, it is a chain for the coordinatewise order, and
 every entry of every tuple is at most every later entry of every tuple. -/
 @[simp]
 theorem mem_edgewiseSubdivision_iff :
-    ρ ∈ K.edgewiseSubdivision k ↔ ρ.Nonempty ∧ ρ.biUnion (fun u => univ.image u.1) ∈ K ∧
+    ρ ∈ K.edgewiseSubdivision k ↔ ρ.Nonempty ∧ ρ.biUnion (fun u => univ.image u.val) ∈ K ∧
       IsChain (· ≤ ·) (ρ : Set (K.EdgewiseVertex k)) ∧
-      ∀ u ∈ ρ, ∀ w ∈ ρ, ∀ j j' : Fin k, j < j' → u.1 j ≤ w.1 j' :=
+      ∀ u ∈ ρ, ∀ w ∈ ρ, ∀ j j' : Fin k, j < j' → u.val j ≤ w.val j' :=
   Iff.rfl
 
 /-- The entries of the vertices of a face of the edgewise subdivision form a face of `K`. -/
 theorem biUnion_image_mem_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdivision k) :
-    ρ.biUnion (fun u => univ.image u.1) ∈ K :=
+    ρ.biUnion (fun u => univ.image u.val) ∈ K :=
   (mem_edgewiseSubdivision_iff.mp hρ).2.1
 
 /-- Two vertices of a face of the edgewise subdivision are comparable coordinatewise. -/
@@ -160,7 +160,7 @@ theorem lt_or_eq_or_lt_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdiv
 /-- In a face of the edgewise subdivision, every entry of every vertex is at most every later
 entry of every vertex. -/
 theorem le_of_lt_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdivision k) (hu : u ∈ ρ)
-    (hw : w ∈ ρ) {j j' : Fin k} (hjj' : j < j') : u.1 j ≤ w.1 j' :=
+    (hw : w ∈ ρ) {j j' : Fin k} (hjj' : j < j') : u.val j ≤ w.val j' :=
   (mem_edgewiseSubdivision_iff.mp hρ).2.2.2 u hu w hw j j' hjj'
 
 /-- In a face of the edgewise subdivision, the number of entries of a vertex `u` in a lower set
@@ -168,16 +168,16 @@ exceeds that of any other vertex `w` by at most one. -/
 theorem card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision
     (hρ : ρ ∈ K.edgewiseSubdivision k)
     (hu : u ∈ ρ) (hw : w ∈ ρ) {p : ι → Prop} [DecidablePred p] (hp : Antitone p) :
-    #{l | p (u.1 l)} ≤ #{l | p (w.1 l)} + 1 := by
+    #{l | p (u.val l)} ≤ #{l | p (w.val l)} + 1 := by
   cases k with
   | zero => simp
   | succ m =>
     -- Drop the first entry of `u`; the `l + 1`-st entry of `u` dominates the `l`-th of `w`.
     rw [Fin.card_filter_univ_succ']
-    have h₁ : #{l : Fin m | p (u.1 l.succ)} ≤ #{l : Fin m | p (w.1 l.castSucc)} :=
+    have h₁ : #{l : Fin m | p (u.val l.succ)} ≤ #{l : Fin m | p (w.val l.castSucc)} :=
       card_le_card (monotone_filter_right _ fun l _ hl =>
         hp (le_of_lt_of_mem_edgewiseSubdivision hρ hw hu (Fin.castSucc_lt_succ (i := l))) hl)
-    have h₂ : #{l : Fin m | p (w.1 l.castSucc)} ≤ #{l | p (w.1 l)} :=
+    have h₂ : #{l : Fin m | p (w.val l.castSucc)} ≤ #{l | p (w.val l)} :=
       card_le_card_of_injOn Fin.castSucc (fun l hl => by simpa using hl)
         (Fin.castSucc_injective m).injOn
     split_ifs <;> omega

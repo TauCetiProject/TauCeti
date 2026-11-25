@@ -1,0 +1,234 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.HalfSpin
+public import TauCeti.Geometry.Manifold.VectorBundle.Associated.Metric
+public import TauCeti.Topology.VectorBundle.Associated.Determinant
+
+/-!
+# Spinor bundles and the determinant line of a principal Spinᶜ(4)-bundle
+
+A `Spinᶜ` structure on an oriented Riemannian four-manifold `X` is a principal
+`Spinᶜ(4)`-bundle `P` lifting the oriented orthonormal frame bundle along
+`Spinᶜ(4) → SO(4)`. Its spinor bundles `W^±` and its determinant line `L` are the vector bundles
+associated with `P` through the half-spin representations `[s, z] ↦ z ρ^±(s)` and through the
+determinant character `[s, z] ↦ z²`. This file constructs them for an arbitrary principal
+`Spinᶜ(4)`-bundle `P`, as instances of the associated-bundle construction
+`TauCeti.AssociatedBundle`, and equips their fibers with the determinant structure of the model
+representations.
+
+The model fibers are the representation spaces
+
+* `Orientation.SpinCHalfSpinor o hQ b ρ ε`, the `ε`-eigenspace of the chirality element on a
+  Clifford module `W`, with the smooth half-spin action `Orientation.realSpinCHalfSpinSmoothHom`;
+* `CliffordAlgebra.spinCGroup.DetFiber n hQ`, the line `ℂ` with `Spinᶜ(n)` acting through the
+  determinant character `CliffordAlgebra.spinCGroup.det`.
+
+The associated bundles are `Orientation.spinorBundle o hQ b ρ ε P`, the spinor bundle
+`W^ε = P ×_{Spinᶜ(4)} W^ε`, and `CliffordAlgebra.spinCGroup.detLineBundle n hQ P`, the
+determinant line `L = P ×_{Spinᶜ(n)} ℂ`. They are complex vector bundles, and `C^k` vector bundles
+when `P` is a `C^k` principal bundle.
+
+A point `p` of `P` over `x` identifies the model with the fiber over `x` by `v ↦ [p, v]`, and
+changing `p` acts on the model by the representation. Structure on the model that is compatible
+with the representation therefore descends to the fibers:
+
+* `Spinᶜ(4)` acts on a two-dimensional `W^ε` with determinant `z²`
+  (`Orientation.det_realSpinCHalfSpinSmoothHom`), so every alternating two-form `η` on the model,
+  with values in the model of `L`, is equivariant
+  (`Orientation.SpinCHalfSpinor.alternatingMap_apply_smul`) and descends to a pairing of `W^ε_x`
+  with values in `L_x`, which reads `[p, v 0], [p, v 1] ↦ [p, η v]` in every frame
+  (`Orientation.alternatingMap_spinorBundle_mk`).
+  For `η ≠ 0` it induces, for each `x`, a linear isomorphism `det W^ε_x ≃ L_x` from the fiber of
+  the determinant line bundle `TauCeti.DetBundle` of `W^ε` (`Orientation.spinorDetEquiv`). These
+  isomorphisms form an isomorphism of topological line bundles `det W^ε ≃ L`
+  (`Orientation.spinorDetHomeomorph`), a homeomorphism of total spaces that is linear on each
+  fiber, by the descent of determinant maps to associated bundles
+  (`TauCeti.AssociatedBundle.detHomeomorph`). That it is smooth, or unitary for the descended
+  metrics, is not established here.
+* When the Clifford generators act skew-adjointly, `Spinᶜ(4)` acts isometrically on `W^ε`
+  (`Orientation.SpinCHalfSpinor.isIsometricSMul`). Given this, the fibers of the spinor bundle
+  carry the Hermitian inner product of the associated bundle
+  (`TauCeti.AssociatedBundle.instInnerProductSpace`), which is the model inner product in every
+  frame (`TauCeti.AssociatedBundle.inner_mk`) and is smooth along smooth sections
+  (`ContMDiff.inner_associatedBundle`).
+
+The identification of `P ×_{Spinᶜ(4)} ℝ⁴` with the tangent bundle for a lift of the frame bundle,
+Clifford multiplication as a bundle map, and `Spinᶜ` connections are not constructed here.
+
+## References
+
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Appendix D.
+* J. W. Morgan, *The Seiberg–Witten equations and applications to the topology of smooth
+  four-manifolds*, Mathematical Notes 44, Princeton University Press, 1996, §3.1–§3.2.
+* I. Kolář, P. W. Michor, J. Slovák, *Natural Operations in Differential Geometry*, Springer,
+  1993, §10.7.
+-/
+
+public section
+
+noncomputable section
+
+open Bundle Module Module.End Manifold MulOpposite TauCeti TauCeti.CliffordAlgebra CliffordAlgebra
+open scoped Manifold ContDiff InnerProductSpace
+
+local notation "hpos" => QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm 4 0)
+local notation "SpinC" => spinCGroup (realCliffordForm 4 0) hpos
+local notation "I" => ModelWithCorners.prod 𝓘(ℝ, realSpinLieModel 4) (𝓡 1)
+
+/-! ### The determinant line -/
+
+namespace CliffordAlgebra.spinCGroup
+
+variable (n : ℕ) (hQ : realCliffordForm n 0 ≠ 0)
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  (P : B → Type*) [TopologicalSpace (TotalSpace (spinCGroup (realCliffordForm n 0) hQ) P)]
+  [∀ x, TopologicalSpace (P x)] [FiberBundle (spinCGroup (realCliffordForm n 0) hQ) P]
+  [∀ x, MulAction (spinCGroup (realCliffordForm n 0) hQ)ᵐᵒᵖ (P x)]
+  [PrincipalBundle (spinCGroup (realCliffordForm n 0) hQ) P]
+
+/-- The determinant line `L = P ×_{Spinᶜ(n)} ℂ` of a principal `Spinᶜ(n)`-bundle `P`, associated
+with the determinant character `[s, z] ↦ z²`. -/
+abbrev detLineBundle : B → Type _ :=
+  AssociatedBundle (spinCGroup (realCliffordForm n 0) hQ) P (DetFiber n hQ)
+
+/-- The determinant line of a `C^k` principal `Spinᶜ(n)`-bundle is a `C^k` line bundle. -/
+instance {k : ℕ∞ω} [ENat.LEInfty k] [ContMDiffFiberBundle k (spinCGroup (realCliffordForm n 0) hQ)
+      P IB (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1))] :
+    ContMDiffVectorBundle k (DetFiber n hQ) (detLineBundle n hQ P) IB :=
+  AssociatedBundle.contMDiffVectorBundle (𝕜 := ℝ) (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1))
+
+/-- The fibers of the determinant line are lines. -/
+theorem finrank_detLineBundle (x : B) : finrank ℂ (detLineBundle n hQ P x) = 1 :=
+  (AssociatedBundle.finrank_eq ℂ _ (DetFiber n hQ) P x).trans (DetFiber.finrank_eq n hQ)
+
+end CliffordAlgebra.spinCGroup
+
+namespace Orientation
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [Fact (finrank ℝ V = 4)] {Q : QuadraticForm ℝ V}
+  (o : Orientation ℝ V (Fin 4)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+  (b : OrthonormalBasis (Fin 4) ℝ V)
+
+section Normed
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
+
+/-! ### The spinor bundles -/
+
+variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  (P : B → Type*) [TopologicalSpace (TotalSpace SpinC P)] [∀ x, TopologicalSpace (P x)]
+  [FiberBundle SpinC P] [∀ x, MulAction SpinCᵐᵒᵖ (P x)] [PrincipalBundle SpinC P]
+
+/-- The spinor bundle `W^ε = P ×_{Spinᶜ(4)} W^ε` of a principal `Spinᶜ(4)`-bundle `P`. -/
+abbrev spinorBundle : B → Type _ :=
+  AssociatedBundle SpinC P (SpinCHalfSpinor o hQ b ρ ε)
+
+/-- The spinor bundle of a `C^k` principal `Spinᶜ(4)`-bundle is a `C^k` vector bundle. -/
+instance {k : ℕ∞ω} [ENat.LEInfty k] [ContMDiffFiberBundle k SpinC P IB I] :
+    ContMDiffVectorBundle k (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P) IB :=
+  AssociatedBundle.contMDiffVectorBundle (𝕜 := ℝ) I
+
+/-! ### The determinant line of the spinor bundles -/
+
+/-- **The determinant pairing in a frame.** If `W^ε` has complex dimension two, an alternating
+form `η` on the model half-spinors induces a pairing of the fiber `W^ε_x` with values in `L_x`
+that, in every frame `p` of `P` over `x`, sends the classes `[p, v i]` to `[p, η v]`. -/
+@[simp]
+theorem alternatingMap_spinorBundle_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) {x : B} (p : P x)
+    (v : Fin 2 → SpinCHalfSpinor o hQ b ρ ε) :
+    AssociatedBundle.alternatingMap SpinC P η x (fun i ↦ AssociatedBundle.mk SpinC p (v i)) =
+      AssociatedBundle.mk SpinC p (η v) :=
+  AssociatedBundle.alternatingMap_mk (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η) p v
+
+/-- **The determinant line of the spinor bundle.** If `W^ε` has complex dimension two, a nonzero
+alternating form `η` on the model half-spinors induces, for each `x`, a linear isomorphism from
+the fiber `det W^ε_x = ⋀² W^ε_x` of the determinant line bundle `TauCeti.DetBundle` of `W^ε` onto
+the fiber `L_x` of the determinant line bundle, sending `[p, v 0] ∧ [p, v 1]` to `[p, η v]` in
+every frame `p` (`Orientation.spinorDetEquiv_ιMulti_mk`). It is the determinant line
+isomorphism `TauCeti.AssociatedBundle.detEquiv` of `η`, given by the determinant map
+`TauCeti.AssociatedBundle.detMap` (`Orientation.spinorDetEquiv_apply`). -/
+def spinorDetEquiv (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
+    (x : B) :
+    DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P) x ≃ₗ[ℂ]
+      spinCGroup.detLineBundle 4 hpos P x :=
+  AssociatedBundle.detEquiv SpinC P h₂ (spinCGroup.DetFiber.finrank_eq 4 hpos) hη x
+
+/-- `spinorDetEquiv` is the determinant map of `η`. -/
+theorem spinorDetEquiv_apply (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
+    (x : B) (w : DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P) x) :
+    o.spinorDetEquiv hQ b ρ ε P h₂ η hη x w = AssociatedBundle.detMap SpinC P h₂ η x w :=
+  AssociatedBundle.detEquiv_apply h₂ _ hη x w
+
+/-- **The determinant line isomorphism in a frame.** In every frame `p` of `P` over `x`,
+`spinorDetEquiv` sends `[p, v 0] ∧ [p, v 1]` to `[p, η v]`. -/
+@[simp]
+theorem spinorDetEquiv_ιMulti_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
+    {x : B} (p : P x) (v : Fin 2 → SpinCHalfSpinor o hQ b ρ ε) :
+    o.spinorDetEquiv hQ b ρ ε P h₂ η hη x
+        (exteriorPower.ιMulti ℂ (finrank ℂ (SpinCHalfSpinor o hQ b ρ ε)) fun i ↦
+          AssociatedBundle.mk SpinC p (v (Fin.cast h₂ i))) =
+      AssociatedBundle.mk SpinC p (η v) :=
+  (spinorDetEquiv_apply o hQ b ρ ε P h₂ η hη x _).trans <|
+    AssociatedBundle.detMap_ιMulti_mk h₂ (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η)
+      p v
+
+/-- **The inverse determinant line isomorphism in a frame.** In every frame `p` of `P` over `x`,
+the inverse of `spinorDetEquiv` sends `[p, η v]` to `[p, v 0] ∧ [p, v 1]`. -/
+@[simp]
+theorem spinorDetEquiv_symm_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
+    {x : B} (p : P x) (v : Fin 2 → SpinCHalfSpinor o hQ b ρ ε) :
+    (o.spinorDetEquiv hQ b ρ ε P h₂ η hη x).symm (AssociatedBundle.mk SpinC p (η v)) =
+      exteriorPower.ιMulti ℂ (finrank ℂ (SpinCHalfSpinor o hQ b ρ ε)) fun i ↦
+        AssociatedBundle.mk SpinC p (v (Fin.cast h₂ i)) :=
+  AssociatedBundle.detEquiv_symm_mk h₂ _ (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η)
+    hη p v
+
+/-- **The determinant line of the spinor bundle as a line bundle.** If `W^ε` has complex dimension
+two, a nonzero alternating form `η` on the model half-spinors induces an isomorphism of
+topological complex line bundles `det W^ε ≃ L` from the determinant line bundle
+`TauCeti.DetBundle` of the spinor bundle `W^ε` to the determinant line `L` of the principal
+`Spinᶜ(4)`-bundle `P`: a homeomorphism of total spaces over the identity of the base, given on
+each fiber by `Orientation.spinorDetEquiv` (`Orientation.spinorDetHomeomorph_apply`). -/
+def spinorDetHomeomorph (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0) :
+    TotalSpace ℂ (DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P)) ≃ₜ
+      TotalSpace (spinCGroup.DetFiber 4 hpos) (spinCGroup.detLineBundle 4 hpos P) :=
+  AssociatedBundle.detHomeomorph SpinC P h₂ (spinCGroup.DetFiber.finrank_eq 4 hpos)
+    (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η) hη
+
+@[simp]
+theorem spinorDetHomeomorph_apply (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
+    (w : TotalSpace ℂ (DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P))) :
+    o.spinorDetHomeomorph hQ b ρ ε P h₂ η hη w =
+      ⟨w.proj, o.spinorDetEquiv hQ b ρ ε P h₂ η hη w.proj w.snd⟩ := by
+  rw [spinorDetEquiv_apply]
+  exact AssociatedBundle.detHomeomorph_apply _ _ _ _ w
+
+@[simp]
+theorem spinorDetHomeomorph_symm_apply (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
+    (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
+    (z : TotalSpace (spinCGroup.DetFiber 4 hpos) (spinCGroup.detLineBundle 4 hpos P)) :
+    (o.spinorDetHomeomorph hQ b ρ ε P h₂ η hη).symm z =
+      ⟨z.proj, (o.spinorDetEquiv hQ b ρ ε P h₂ η hη z.proj).symm z.snd⟩ :=
+  AssociatedBundle.detHomeomorph_symm_apply _ _ _ _ z
+
+end Normed
+
+end Orientation

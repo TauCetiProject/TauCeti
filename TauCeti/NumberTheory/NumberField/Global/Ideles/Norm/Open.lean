@@ -72,7 +72,7 @@ theorem exists_ideleCongruenceSubgroup_le_range_ideleNormMap :
   -- The finite set `S` of finite places of `K` ramified in `L`.
   obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)), ∀ v ∉ S,
       ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal := by
+        Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal := by
     have hfin := Filter.eventually_cofinite.mp (eventually_isUnramifiedAt_liesOver K L)
     exact ⟨hfin.toFinset, fun v hv ↦ by simpa using hv⟩
   -- At each finite place, the `n`-th powers contain a step of the unit filtration.

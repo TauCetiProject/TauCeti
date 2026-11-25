@@ -47,28 +47,6 @@ noncomputable section
 
 variable (R : Type u) [CommRing R] (m : Nat)
 
-private theorem pointsMulEquivGLSymplectic_mapValue
-    {A : Type u} {B : Type v} [CommRing A] [CommRing B]
-    [Algebra R A] [Algebra R B] (phi : A →ₐ[R] B)
-    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
-    pointsMulEquivGLSymplectic R m (A := B)
-        (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f) =
-      GLSymplectic.map (Fin m) (phi : A →+* B)
-        (pointsMulEquivGLSymplectic R m (A := A) f) := by
-  apply Subtype.ext
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
-  have hlhs := coe_pointsMulEquivGLSymplectic R m
-    (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f)
-  have hrhs := coe_pointsMulEquivGLSymplectic R m f
-  rw [pointsMulEquiv_mapValue] at hlhs
-  rw [GLSymplecticFin.coe_map] at hlhs
-  rw [GLSymplectic.coe_map]
-  rw [hlhs, hrhs]
-  simp only [Equiv.coe_reindexGL, Equiv.symm_symm,
-    Matrix.GeneralLinearGroup.map_apply,
-    Matrix.submatrix_apply]
-
 /-- The symplectic coordinate algebra is formally smooth over its ground ring. -/
 private instance instFormallySmoothCoordinateHopfAlgebra :
     Algebra.FormallySmooth R (coordinateHopfAlgebra R m) := by
@@ -92,18 +70,8 @@ private instance instFormallySmoothCoordinateHopfAlgebra :
 /-- The coordinate algebra of `Sp_{2m}` is smooth over every commutative ring. -/
 instance instSmoothCoordinateHopfAlgebra :
     Algebra.Smooth R (coordinateHopfAlgebra R m) := by
-  have hfg : (definingHopfIdeal R m).toIdeal.FG := by
-    rw [ConstantForm.definingHopfIdeal_toIdeal]
-    apply Submodule.fg_span
-    let f := fun ij : Fin (m + m) × Fin (m + m) ↦
-      ConstantForm.relationMatrix R (m + m) (JFin m R) ij.1 ij.2
-    refine (Set.finite_range f).subset ?_
-    intro x hx
-    obtain ⟨i, j, hij⟩ :=
-      (ConstantForm.mem_relationSet_iff (R := R) (n := m + m) (C := JFin m R)).mp hx
-    exact ⟨(i, j), hij⟩
   let _ : Algebra.FinitePresentation R (coordinateHopfAlgebra R m) :=
-    Algebra.FinitePresentation.quotient hfg
+    Algebra.FinitePresentation.quotient (ConstantForm.definingHopfIdeal_toIdeal_fg R _ _)
   exact ⟨inferInstance, inferInstance⟩
 
 /-- The finite-type commutative Hopf algebra representing `Sp_{2m}` has smooth coordinate ring. -/

@@ -61,12 +61,12 @@ theorem exists_lift_openBox_of_mem_serreFibrations {E B : TopCat.{u}} {p : E ⟶
     (Homeomorph.piCongrLeft (Y := fun _ ↦ I) (Finite.equivFin N)))
   let f' : C({y : Unit × (I × (N → I)) |
       y.2 ∈ cylinderExtensionDomain (Cube.boundary N)}, E) :=
-    f.comp ⟨fun y ↦ ⟨y.1.2, y.2⟩, by fun_prop⟩
+    f.comp ⟨fun y ↦ ⟨y.val.2, y.property⟩, by fun_prop⟩
   obtain ⟨G, hG, hGJ⟩ := (h.of_homeomorph (Homeomorph.uniqueProd Unit _)).exists_lift_openBox
-    f' (H.comp ContinuousMap.snd) (fun y ↦ hf ⟨y.1.2, y.2⟩)
+    f' (H.comp ContinuousMap.snd) (fun y ↦ hf ⟨y.val.2, y.property⟩)
   refine ⟨G.comp ⟨fun x ↦ ((), x), by fun_prop⟩,
     funext fun x ↦ congrFun hG ((), x), fun x ↦ ?_⟩
-  exact hGJ ⟨((), x.1), x.2⟩
+  exact hGJ ⟨((), x.val), x.property⟩
 
 end TopCat
 

@@ -11,7 +11,7 @@ public import TauCeti.Probability.Exchangeability.IID
 -- Public: `cylinder` appears in the hypothesis of `measure_eq_zero_or_one_of_exchangeableSigma`.
 public import Mathlib.MeasureTheory.Constructions.Cylinders
 -- Non-public: used only inside proofs.
-import TauCeti.MeasureTheory.Constructions.CylinderApproximation
+import TauCeti.MeasureTheory.Constructions.Cylinder.Approximation
 import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 import TauCeti.Probability.Independence.InfinitePi
 import TauCeti.MeasureTheory.Measure.ZeroOne
@@ -104,12 +104,12 @@ variable {α : Type*}
 change of variables that turns a `π`-reindexed cylinder over `F` into a cylinder over `F.map π`. -/
 private def pullMoved (π : Equiv.Perm ℕ) (F : Finset ℕ) (α : Type*)
     (g : ∀ _j : F.map (Equiv.toEmbedding π), α) : ∀ _i : F, α :=
-  fun i => g ⟨π ↑i, Finset.mem_map_of_mem _ i.2⟩
+  fun i => g ⟨π ↑i, Finset.mem_map_of_mem _ i.property⟩
 
 @[simp]
 private theorem pullMoved_apply (π : Equiv.Perm ℕ) (F : Finset ℕ)
     (g : ∀ _j : F.map (Equiv.toEmbedding π), α) (i : F) :
-    pullMoved π F α g i = g ⟨π ↑i, Finset.mem_map_of_mem _ i.2⟩ :=
+    pullMoved π F α g i = g ⟨π ↑i, Finset.mem_map_of_mem _ i.property⟩ :=
   rfl
 
 /-- Reindexing a cylinder over `F` by `π` is a cylinder over the moved index set `F.map π`: both

@@ -49,27 +49,27 @@ squares commute. Neither module needs to be finitely generated. -/
 @[stacks 05ER "full faithfulness for faithfully flat ring maps"]
 theorem existsUnique_formalGlueing_lift
     (fS : S ⊗[R] M →ₗ[S] S ⊗[R] N)
-    (fg : (g : G) → LocalizedModule (.powers g.1) M →ₗ[R] LocalizedModule (.powers g.1) N)
+    (fg : (g : G) → LocalizedModule (.powers g.val) M →ₗ[R] LocalizedModule (.powers g.val) N)
     (hI : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
       (algebraMap R S) Ideal.le_comap_map))
     (hcompat : ∀ g : G,
-      IsLocalizedModule.map (.powers g.1)
-          (LocalizedModule.mkLinearMap (.powers g.1) (S ⊗[R] M))
-          (LocalizedModule.mkLinearMap (.powers g.1) (S ⊗[R] N)) (fS.restrictScalars R) ∘ₗ
-        IsLocalizedModule.map (.powers g.1) (LocalizedModule.mkLinearMap (.powers g.1) M)
-          (LocalizedModule.mkLinearMap (.powers g.1) (S ⊗[R] M)) (TensorProduct.mk R S M 1) =
-        IsLocalizedModule.map (.powers g.1) (LocalizedModule.mkLinearMap (.powers g.1) N)
-          (LocalizedModule.mkLinearMap (.powers g.1) (S ⊗[R] N)) (TensorProduct.mk R S N 1) ∘ₗ
+      IsLocalizedModule.map (.powers g.val)
+          (LocalizedModule.mkLinearMap (.powers g.val) (S ⊗[R] M))
+          (LocalizedModule.mkLinearMap (.powers g.val) (S ⊗[R] N)) (fS.restrictScalars R) ∘ₗ
+        IsLocalizedModule.map (.powers g.val) (LocalizedModule.mkLinearMap (.powers g.val) M)
+          (LocalizedModule.mkLinearMap (.powers g.val) (S ⊗[R] M)) (TensorProduct.mk R S M 1) =
+        IsLocalizedModule.map (.powers g.val) (LocalizedModule.mkLinearMap (.powers g.val) N)
+          (LocalizedModule.mkLinearMap (.powers g.val) (S ⊗[R] N)) (TensorProduct.mk R S N 1) ∘ₗ
             fg g) :
     ∃! f : M →ₗ[R] N, f.baseChange S = fS ∧
-      ∀ g : G, IsLocalizedModule.map (.powers g.1)
-        (LocalizedModule.mkLinearMap (.powers g.1) M)
-        (LocalizedModule.mkLinearMap (.powers g.1) N) f = fg g := by
+      ∀ g : G, IsLocalizedModule.map (.powers g.val)
+        (LocalizedModule.mkLinearMap (.powers g.val) M)
+        (LocalizedModule.mkLinearMap (.powers g.val) N) f = fg g := by
   have hη := Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := S) N
   -- Apply element reconstruction to the image of each element of the source.
   have hex (m : M) := (TensorProduct.existsUnique_formalGlueing_lift (fS (1 ⊗ₜ m))
-    (fun g ↦ fg g (LocalizedModule.mkLinearMap (.powers g.1) M m)) hI (fun g ↦ by
-      have h := congrArg (fun k ↦ k (LocalizedModule.mkLinearMap (.powers g.1) M m))
+    (fun g ↦ fg g (LocalizedModule.mkLinearMap (.powers g.val) M m)) hI (fun g ↦ by
+      have h := congrArg (fun k ↦ k (LocalizedModule.mkLinearMap (.powers g.val) M m))
         (hcompat g)
       simpa only [LinearMap.comp_apply, IsLocalizedModule.map_apply,
         LinearMap.restrictScalars_apply, TensorProduct.mk_apply] using h.symm)).exists
@@ -84,12 +84,12 @@ theorem existsUnique_formalGlueing_lift
   have hbase : F.baseChange S = fS := by
     ext m
     exact hF m
-  have hloc (g : G) : IsLocalizedModule.map (.powers g.1)
-      (LocalizedModule.mkLinearMap (.powers g.1) M)
-      (LocalizedModule.mkLinearMap (.powers g.1) N) F = fg g := by
-    apply IsLocalizedModule.linearMap_ext (.powers g.1)
-      (LocalizedModule.mkLinearMap (.powers g.1) M)
-      (LocalizedModule.mkLinearMap (.powers g.1) N)
+  have hloc (g : G) : IsLocalizedModule.map (.powers g.val)
+      (LocalizedModule.mkLinearMap (.powers g.val) M)
+      (LocalizedModule.mkLinearMap (.powers g.val) N) F = fg g := by
+    apply IsLocalizedModule.linearMap_ext (.powers g.val)
+      (LocalizedModule.mkLinearMap (.powers g.val) M)
+      (LocalizedModule.mkLinearMap (.powers g.val) N)
     ext m
     obtain ⟨n, hn⟩ := hex m
     have hFm : F m = n := hη ((hF m).trans hn.1.symm)

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
-public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import Mathlib.RingTheory.IsTensorProduct
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # A full lattice as an integral form of its ambient space
@@ -25,11 +26,15 @@ representation (`TauCeti.TateCohomology.herbrandQuotient_eq_of_isBaseChange`).
 
 * `ZLattice.isBaseChange_subtype`: the inclusion of a full `ℤ`-lattice exhibits the ambient space
   as its base change to `K`.
+* `TauCeti.ZLattice.baseChangeEquiv`: the resulting identification `K ⊗[ℤ] L ≃ E`,
+  `r ⊗ x ↦ r • x`.
+* `TauCeti.ZLattice.baseChangeEquiv_baseChange_restrict`: this identification is natural in
+  `K`-linear maps `f : E → E'` with `f(L) ⊆ L'`.
 -/
 
 public section
 
-open Module
+open Module TensorProduct
 
 namespace ZLattice
 
@@ -41,13 +46,51 @@ variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K]
 /-- **A full lattice is an integral form of its ambient space**: the inclusion of a discrete
 `ℤ`-submodule `L` spanning `E` over `K` exhibits `E` as the base change `K ⊗[ℤ] L`. -/
 theorem isBaseChange_subtype : IsBaseChange K L.subtype := by
-  have := ZLattice.module_finite K L
   have := ZLattice.module_free K L
+  -- `L.subtype` carries a `ℤ`-basis `b` of `L` to the `K`-basis `b.ofZLatticeBasis K L` of `E`
   let b := Free.chooseBasis ℤ L
-  -- `L.subtype` is the linear combination of the `K`-basis `b` of `E`, read in `b`-coordinates
-  have h : (Fintype.linearCombination ℤ (b.ofZLatticeBasis K L)).comp b.equivFun.toLinearMap =
-      L.subtype := b.ext fun i ↦ by
-    simp [Fintype.linearCombination_apply, Basis.equivFun_apply, Finsupp.single_apply]
-  exact h ▸ (IsBaseChange.of_fintype_basis ℤ (b.ofZLatticeBasis K L)).comp_equiv b.equivFun
+  exact b.isBaseChange_of_map_basis (b.ofZLatticeBasis K L) L.subtype
+    fun i ↦ (b.ofZLatticeBasis_apply K L i).symm
 
 end ZLattice
+
+namespace TauCeti.ZLattice
+
+variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K]
+  [HasSolidNorm K] [FloorRing K]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E] [ProperSpace E]
+  (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice K L]
+
+/-- The base change `K ⊗[ℤ] L` of a full lattice `L ⊆ E` is identified with `E`, by
+`r ⊗ x ↦ r • x`. -/
+noncomputable def baseChangeEquiv : K ⊗[ℤ] L ≃ₗ[K] E :=
+  (_root_.ZLattice.isBaseChange_subtype K L).equiv
+
+/-- The identification sends a pure tensor `r ⊗ x` to `r • x`. -/
+@[simp]
+theorem baseChangeEquiv_tmul (r : K) (x : L) :
+    baseChangeEquiv K L (r ⊗ₜ x) = r • (x : E) :=
+  (_root_.ZLattice.isBaseChange_subtype K L).equiv_tmul r x
+
+/-- A lattice vector `x` corresponds to `1 ⊗ x` in the base change. -/
+@[simp]
+theorem baseChangeEquiv_symm_coe (x : L) :
+    (baseChangeEquiv K L).symm x = 1 ⊗ₜ x :=
+  (_root_.ZLattice.isBaseChange_subtype K L).equiv_symm_apply x
+
+variable {K L} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace K E'] [FiniteDimensional K E']
+  [ProperSpace E'] {L' : Submodule ℤ E'} [DiscreteTopology L'] [IsZLattice K L']
+
+/-- **Naturality of `baseChangeEquiv`**: for a `K`-linear map `f : E → E'` carrying `L` into
+`L'`, the base change of its restriction `L → L'` corresponds to `f` under the identifications
+`K ⊗[ℤ] L ≃ E` and `K ⊗[ℤ] L' ≃ E'`. -/
+@[simp]
+theorem baseChangeEquiv_baseChange_restrict (f : E →ₗ[K] E')
+    (hf : ∀ x ∈ L, f.restrictScalars ℤ x ∈ L') (x : K ⊗[ℤ] L) :
+    baseChangeEquiv K L' (LinearMap.baseChange K ((f.restrictScalars ℤ).restrict hf) x) =
+      f (baseChangeEquiv K L x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul r x => simp
+  | add x y hx hy => simp [hx, hy]
+
+end TauCeti.ZLattice

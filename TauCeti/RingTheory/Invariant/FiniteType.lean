@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Coeff
-public import Mathlib.Data.Finsupp.Weight
-public import Mathlib.RingTheory.Adjoin.Tower
-public import Mathlib.RingTheory.FiniteType
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
+import Mathlib.Data.Nat.Factorial.NatCast
+import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Algebra.MvPolynomial.Coeff
 
 /-!
 # Finite generation of invariant algebras of finite groups
@@ -128,15 +128,9 @@ private theorem sum_smul_prod_pow_mem_adjoin_of_finite [Finite ι] (x : ι → A
   have hcoeff (k : ℕ) (e : ι →₀ ℕ) : (∑ g, y g ^ k).coeff e =
       if e.degree = k then (e.multinomial : A) * ∑ g : G, g • e.prod fun i n ↦ x i ^ n
       else 0 := by
-    simp only [y, coeff_sum, coeff_linearCombination_X_pow_of_fintype]
     have hdeg : (e.sum fun _ m ↦ m) = e.degree := (Finsupp.degree_apply e).symm
-    rw [hdeg]
-    split_ifs
-    · rw [mul_sum]
-      refine sum_congr rfl fun g _ ↦ ?_
-      rw [Finsupp.prod, Finsupp.prod, smul_prod']
-      simp only [smul_pow']
-    · simp
+    simp only [y, coeff_sum_linearCombination_X_pow_of_fintype, hdeg, Finsupp.prod, smul_prod',
+      smul_pow']
   -- The polynomials over `A` with all coefficients in `B`.
   let T : Subalgebra R (MvPolynomial ι A) := (mapAlgHom B.val).range
   have hT (P : MvPolynomial ι A) : P ∈ T ↔ ∀ e, P.coeff e ∈ B := by
@@ -150,7 +144,7 @@ private theorem sum_smul_prod_pow_mem_adjoin_of_finite [Finite ι] (x : ι → A
   have hmem (k : ℕ) : ∑ g, y g ^ k ∈ T := by
     rw [← hps]
     refine s.sum_map_pow_mem_of_sum_map_pow_mem
-      (TauCeti.isUnit_natCast_of_ne_zero (Nat.factorial_ne_zero _)) (fun j _ hj ↦ ?_) k
+      (IsUnit.natCast_factorial_of_algebra ℚ _) (fun j _ hj ↦ ?_) k
     rw [hps, hT]
     intro e
     rw [hcoeff]
@@ -160,7 +154,7 @@ private theorem sum_smul_prod_pow_mem_adjoin_of_finite [Finite ι] (x : ι → A
   -- Compare the coefficients of `u ^ d` and divide by the multinomial coefficient.
   have hd := (hT _).1 (hmem d.degree) d
   simp only [hcoeff, ↓reduceIte] at hd
-  refine (B.natCast_mul_mem_iff (TauCeti.isUnit_natCast_of_ne_zero ?_)).1 hd
+  refine (B.natCast_mul_mem_iff (TauCeti.isUnit_natCast_of_ne_zero ℚ ?_)).1 hd
   rw [Finsupp.multinomial_eq]
   exact (Nat.multinomial_pos _ _).ne'
 
@@ -208,7 +202,7 @@ theorem subalgebra_eq_adjoin_sum_smul_prod_pow (x : ι → A)
       rw [aeval_monomial, ← Algebra.smul_def, smul_sum]
       exact sum_congr rfl fun g _ ↦ smul_comm g (P.coeff d) _
     rw [← Subalgebra.natCast_mul_mem_iff _
-        (TauCeti.isUnit_natCast_of_ne_zero (Fintype.card_ne_zero (α := G))),
+        (TauCeti.isUnit_natCast_of_ne_zero ℚ (Fintype.card_ne_zero (α := G))),
       ← hsum, P.as_sum, map_sum]
     simp_rw [smul_sum]
     rw [sum_comm]

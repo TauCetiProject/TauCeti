@@ -47,9 +47,9 @@ theorem finiteDimensional_ext_succ_iff_of_subsingleton (n : ℕ)
       FiniteDimensional k (Ext.{w} P S.X₂ (n + 1)) := by
   constructor
   · intro _
-    exact finiteDimensional_of_exact (exact_postcompOfLinear k hS P (n + 1))
+    exact (exact_postcompOfLinear k hS P (n + 1)).moduleFinite
   · intro _
-    exact finiteDimensional_of_exact (exact_postcompOfLinear₁ k hS P n (n + 1) rfl)
+    exact (exact_postcompOfLinear₁ k hS P n (n + 1) rfl).moduleFinite
 
 /-- The degree-zero/one dimension difference is additive across a short exact sequence with
 vanishing Ext¹ of the quotient. This needs only the displayed low-degree finiteness. -/
@@ -61,7 +61,7 @@ theorem finrank_ext_zero_sub_finrank_ext_one_add
       ((finrank k (Ext.{w} P S.X₁ 0) : ℤ) - finrank k (Ext.{w} P S.X₁ 1)) +
         finrank k (Ext.{w} P S.X₃ 0) := by
   have : FiniteDimensional k (Ext.{w} P S.X₃ 0) :=
-    finiteDimensional_of_exact (exact_postcompOfLinear₃ k hS P 0 1 rfl)
+    (exact_postcompOfLinear₃ k hS P 0 1 rfl).moduleFinite
   have : FiniteDimensional k (Ext.{w} P S.X₂ 1) :=
     (finiteDimensional_ext_succ_iff_of_subsingleton k hS P 0).1 inferInstance
   have := hS.mono_f

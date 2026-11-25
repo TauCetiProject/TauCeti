@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
 import Mathlib.MeasureTheory.Measure.ContinuousPreimage
+import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
 # Continuity of Steiner symmetrization
@@ -18,8 +19,9 @@ direction and the input set vary. These statements allow identification of limit
 successive symmetrizations without regularity or boundedness assumptions on the sets.
 
 The proof combines the covariance and contraction theorems of `Steiner.Basic` with Mathlib's
-`MeasureTheory.tendsto_measure_symmDiff_preimage_nhds_zero`. A local pair of hyperplane
-reflections carries the limiting direction to nearby directions and tends to the identity.
+`MeasureTheory.tendsto_measure_symmDiff_preimage_nhds_zero`. The rotation
+`TauCeti.pairRotation` carries the limiting direction to nearby directions and tends to the
+identity.
 -/
 
 public noncomputable section
@@ -74,30 +76,14 @@ theorem tendsto_volume_steinerSymmetrization_symmDiff_direction
     (hvol : volume s ≠ ∞) :
     Tendsto (fun a ↦ volume (steinerSymmetrization (v a) (hv a) s ∆
       steinerSymmetrization e he s)) l (𝓝 0) := by
-  -- The two reflections agree at the limiting direction, so their composite is the identity.
-  let R (w : E) : E ≃ₗᵢ[ℝ] E :=
-    (ℝ ∙ e)ᗮ.reflection.trans (ℝ ∙ (e + w))ᗮ.reflection
-  have hRe : R e = LinearIsometryEquiv.refl ℝ E := by
-    have hspan : (ℝ ∙ (e + e)) = ℝ ∙ e := by
-      rw [← two_smul ℝ e]
-      exact Submodule.span_singleton_smul_eq (isUnit_iff_ne_zero.mpr two_ne_zero) e
-    simp [R, hspan]
-  have hRv (a : α) : R (v a) e = v a := by
-    simp only [R, LinearIsometryEquiv.trans_apply,
-      Submodule.reflection_orthogonalComplement_singleton_eq_neg]
-    simpa only [sub_neg_eq_add, map_neg, neg_neg] using
-      congrArg Neg.neg (Submodule.reflection_sub (by simpa using he.trans (hv a).symm) :
-        (ℝ ∙ (e - -v a))ᗮ.reflection e = -v a)
-  -- Away from the antipode the rank-one reflection formula is jointly continuous.
+  let R : E → E ≃ₗᵢ[ℝ] E := pairRotation e
+  have hRe : R e = LinearIsometryEquiv.refl ℝ E := pairRotation_self e
+  have hRv (a : α) : R (v a) e = v a := pairRotation_apply_self (he.trans (hv a).symm)
+  -- Away from the antipode the rotation depends continuously on its target.
   have hcont : ContinuousOn (fun w ↦ (⟨R w, (R w).continuous⟩ : C(E, E)))
-      {w : E | e + w ≠ 0} := by
-    apply ContinuousMap.continuousOn_of_continuousOn_uncurry
-    intro p hp
-    simp only [ContinuousMap.coe_mk, R, LinearIsometryEquiv.trans_apply,
-      Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply,
-      RCLike.ofReal_real_eq_id, id_eq]
-    apply ContinuousAt.continuousWithinAt
-    fun_prop (disch := simp_all)
+      {w : E | e + w ≠ 0} :=
+    ContinuousMap.continuousOn_of_continuousOn_uncurry _
+      (continuousOn_fst.pairRotation_apply continuousOn_snd fun p hp ↦ hp.1)
   have heU : e + e ≠ 0 := by
     rw [← two_smul ℝ e]
     exact smul_ne_zero two_ne_zero (by intro h; simp [h] at he)

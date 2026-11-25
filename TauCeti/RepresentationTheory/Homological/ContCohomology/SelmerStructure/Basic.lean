@@ -79,7 +79,17 @@ structure SelmerStructure where
 
 namespace SelmerStructure
 
-variable {G M H N} (𝓕 : SelmerStructure G M H N)
+variable {G M H N}
+
+omit [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- Selmer structures with the same local groups, coefficient maps and local conditions are
+equal. -/
+@[ext]
+theorem ext {𝓕 𝓖 : SelmerStructure G M H N} (h₁ : 𝓕.groupHom = 𝓖.groupHom)
+    (h₂ : 𝓕.coeffHom = 𝓖.coeffHom) (h₃ : 𝓕.localCondition = 𝓖.localCondition) : 𝓕 = 𝓖 := by
+  cases 𝓕; cases 𝓖; cases h₁; cases h₂; cases h₃; rfl
+
+variable (𝓕 : SelmerStructure G M H N)
 
 /-- **The localisation map** `H¹(G, M) → H¹(H i, N i)` of a Selmer structure: pullback along the
 compatible pair `(groupHom i, coeffHom i)`. -/
@@ -107,7 +117,7 @@ theorem mem_selmerGroup_iff {c : H1 G M} :
 /-- Every localisation of a Selmer class satisfies the corresponding local condition. -/
 theorem localization_mem (c : 𝓕.selmerGroup) (i : ι) :
     𝓕.localization i c ∈ 𝓕.localCondition i :=
-  (mem_selmerGroup_iff 𝓕).mp c.2 i
+  (mem_selmerGroup_iff 𝓕).mp c.property i
 
 end SelmerStructure
 
