@@ -149,7 +149,7 @@ theorem mem_diagonalProjection_kernelPoints_iff
     g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R n)
         (CommHopfAlgCat.kernelHopfIdeal (diagonalProjectionCoordinateMap R n))
         (CommAlgCat.of R A) ↔
-      Matrix.SpecialLinearGroup.toGL (pointsMulEquiv R n (A := A) g).1 ∈
+      Matrix.SpecialLinearGroup.toGL (pointsMulEquiv R n (A := A) g).val ∈
         upperUnitriangularGroup (Fin n) A := by
   rw [← CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff]
   rw [← (pointsMulEquiv R n).map_eq_one_iff,

@@ -433,6 +433,22 @@ theorem Marking.mem_specialPoints_iff {L : Type*} {m : Marking d L} {i : ι} {x 
     x ∈ m.specialPoints i ↔ (⟨i, x⟩ : Σ i, X i) ∈ flagPointSet d ∨ ∃ l, m.point l = ⟨i, x⟩ :=
   Iff.rfl
 
+variable {d} in
+/-- The marks of `m` relabelled along an embedding `e : L' ↪ L` of labels: the mark `l` is the
+mark `e l` of `m`. Forgetting the mark `none` of marks labelled by `Option L` is relabelling along
+`Function.Embedding.some`. -/
+def Marking.reindex {L L' : Type*} (m : Marking d L) (e : L' ↪ L) : Marking d L' where
+  point l := m.point (e l)
+  point_injective := m.point_injective.comp e.injective
+  point_notMem_flagPointSet l := m.point_notMem_flagPointSet (e l)
+
+variable {d} in
+/-- The mark `l` of a relabelled marking is the mark `e l`. -/
+@[simp]
+theorem Marking.point_reindex {L L' : Type*} (m : Marking d L) (e : L' ↪ L) (l : L') :
+    (m.reindex e).point l = m.point (e l) :=
+  (rfl)
+
 /-- The generated relation relates two points of the disjoint union only when they are equal or
 when both of them are flag points. -/
 theorem eq_or_mem_flagPointSet_of_gluedRel (d : FlagPairData ι Flag X) {a b : Σ i, X i}
@@ -653,6 +669,14 @@ theorem eq_of_mk_eq_of_notMem_flagPointSet {d : FlagPairData ι Flag X} {x y : �
     (h : Quotient.mk (gluedRelSetoid d) x = Quotient.mk (gluedRelSetoid d) y) : x = y := by
   by_contra hne
   exact hx (mem_flagPointSet_of_gluedRelSetoid_of_ne d (Quotient.exact h) hne)
+
+/-- A point of the disjoint union has the same image in the glued curve as a mark exactly when it
+is that mark, since marks are not flag points. -/
+theorem Marking.mk_eq_mk_point_iff {d : FlagPairData ι Flag X} {L : Type*} (m : Marking d L)
+    (l : L) (z : Σ i, X i) :
+    Quotient.mk (gluedRelSetoid d) z = Quotient.mk _ (m.point l) ↔ z = m.point l :=
+  ⟨fun h ↦ (eq_of_mk_eq_of_notMem_flagPointSet (m.point_notMem_flagPointSet l) h.symm).symm,
+    fun h ↦ h ▸ rfl⟩
 
 /-- **The node set is closed.**  The node set of the glued curve is a closed subset of it, so its
 complement is open. -/

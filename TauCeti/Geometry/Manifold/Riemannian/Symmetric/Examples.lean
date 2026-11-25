@@ -286,7 +286,7 @@ theorem not_isRiemannianSymmetricSpace_opens_innerProductSpace {U : Opens F}
     riemannianExp_model_space] at hexp
   have hy_eq : (riemannianExp 𝓘(ℝ, F) U p v : F) = y := by
     rw [← hexp, ContinuousLinearEquiv.apply_symm_apply, add_sub_cancel]
-  exact hy (hy_eq ▸ (riemannianExp 𝓘(ℝ, F) U p v).2)
+  exact hy (hy_eq ▸ (riemannianExp 𝓘(ℝ, F) U p v).property)
 
 /-- Punctured Euclidean space `F \ {x₀}` is not a Riemannian symmetric space; contrast
 `TauCeti.hasParallelCurvature_opens_innerProductSpace`. -/

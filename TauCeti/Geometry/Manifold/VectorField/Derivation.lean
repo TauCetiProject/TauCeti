@@ -142,6 +142,22 @@ end ContMDiffSection
 
 namespace TauCeti
 
+section VectorFieldDerivation
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-- The support of the derivative of a smooth function along a smooth vector field lies in the
+support of the function. -/
+theorem tsupport_vectorFieldDerivation_apply_subset
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; 𝕜⟯) :
+    tsupport (vectorFieldDerivation X f) ⊆ tsupport f :=
+  tsupport_mvfderiv_apply_subset f (X ·)
+
+end VectorFieldDerivation
+
 section LineDerivation
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
@@ -159,6 +175,11 @@ def lineDerivation (v : E) : Derivation 𝕜 C^∞⟮𝓘(𝕜, E), E; 𝕜⟯ C
 theorem lineDerivation_apply_apply (v : E) (f : C^∞⟮𝓘(𝕜, E), E; 𝕜⟯) (x : E) :
     lineDerivation 𝕜 v f x = fderiv 𝕜 f x v :=
   (ContMDiffSection.vectorFieldDerivation_apply_apply _ f x).trans (mvfderiv_eq_fderiv_apply f x v)
+
+/-- The support of a directional derivative lies in the support of the function. -/
+theorem tsupport_lineDerivation_apply_subset (v : E) (f : C^∞⟮𝓘(𝕜, E), E; 𝕜⟯) :
+    tsupport (lineDerivation 𝕜 v f) ⊆ tsupport f :=
+  tsupport_vectorFieldDerivation_apply_subset _ f
 
 /-- Directional derivatives of smooth functions commute, by the symmetry of second
 derivatives. -/
@@ -350,6 +371,15 @@ theorem vectorField_vectorFieldDerivation (X : Cₛ^∞⟮I; E, (TangentSpace I 
   (Derivation.eq_vectorField_iff.mpr fun f ↦ (X.vectorFieldDerivation_apply_apply f x).symm).symm
 
 end ContMDiffSection
+
+namespace TauCeti
+
+/-- The vector field of the directional derivative `∂_w` is the constant field `w`. -/
+@[simp]
+theorem vectorField_lineDerivation (w x : E) : (lineDerivation ℝ w).vectorField x = w :=
+  ContMDiffSection.vectorField_vectorFieldDerivation _ x
+
+end TauCeti
 
 namespace TauCeti
 

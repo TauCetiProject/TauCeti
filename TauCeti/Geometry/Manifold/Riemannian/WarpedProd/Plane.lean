@@ -9,16 +9,16 @@ public import Mathlib.Analysis.Convex.Contractible
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.WithMetric
 public import TauCeti.Geometry.Manifold.Riemannian.WarpedProd
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.LocallySymmetric
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Homogeneous
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Euclidean
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Prod.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Isometry.WithMetric
 import TauCeti.Geometry.Manifold.Riemannian.Laplacian
+import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Isometry
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Scalar
 
@@ -87,7 +87,8 @@ theorem warpedPlaneMetric_inner (f : ℝ → ℝ) (hf : ContDiff ℝ ∞ f) (hf�
         f p.1 ^ 2 * inner ℝ (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 := by
   rw [warpedPlaneMetric, ContMDiffRiemannianMetric.warpedProdTangentSpace_inner,
     ContMDiffRiemannianMetric.ofLE_inner, riemannianMetricVectorSpace_inner,
-    riemannianMetricVectorSpace_inner]
+    riemannianMetricVectorSpace_inner, ← inner_tangentSpace_vectorSpace,
+    ← inner_tangentSpace_vectorSpace]
 
 /-- Explicit coordinate formula `u₁ w₁ + f(x)² u₂ w₂` for `warpedPlaneMetric`. -/
 theorem warpedPlaneMetric_inner_eq_mul (f : ℝ → ℝ) (hf : ContDiff ℝ ∞ f) (hf₀ : ∀ x, f x ≠ 0)
@@ -193,8 +194,9 @@ theorem not_hasParallelCurvature_withMetric_warpedPlaneMetric (f : ℝ → ℝ)
         g.scalarCurvature q.ofWithMetric := fun q ↦ by
     let : RiemannianBundle (fun x : ℝ × ℝ ↦ TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x) :=
       ⟨g.toRiemannianMetric⟩
-    rw [ContMDiffRiemannianMetric.scalarCurvature_def g q.ofWithMetric]
-    exact ((WithMetric.isLocalRiemannianIsometry_ofWithMetric g).scalarCurvature_map q).symm
+    rw [ContMDiffRiemannianMetric.scalarCurvature_def g q.ofWithMetric,
+      ← WithMetric.coe_riemannianIsometry g]
+    exact ((WithMetric.riemannianIsometry g).isLocalRiemannianIsometry.scalarCurvature_map q).symm
   have heq := hloc.apply_eq_of_preconnectedSpace
     (WithMetric.toWithMetric g (x₁, 0)) (WithMetric.toWithMetric g (x₂, 0))
   rw [hscal, hscal, WithMetric.ofWithMetric_toWithMetric, WithMetric.ofWithMetric_toWithMetric,

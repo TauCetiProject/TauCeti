@@ -43,19 +43,14 @@ theorem isPositiveDefiniteSub
         (fun g : G => (χ (Multiplicative.ofAdd g) : ℂ)) := by
   constructor
   · have hco : Continuous ((↑) : Circle → ℂ) :=
-      (LipschitzWith.subtype_val (Submonoid.unitSphere ℂ).carrier).continuous
+      (LipschitzWith.subtypeVal (Submonoid.unitSphere ℂ).carrier).continuous
     have hid : Continuous (fun g : G => (g : Multiplicative G)) := continuous_ofAdd
     exact hco.comp (χ.continuous.comp hid)
   · rw [isPositiveDefiniteSub_iff_posSemidef]
-    have heq : (fun g w : G => (χ (Multiplicative.ofAdd (g - w)) : ℂ)) =
-        (fun g w : G => (χ (Multiplicative.ofAdd g) : ℂ) *
-          ((χ (Multiplicative.ofAdd w) : ℂ))⁻¹) := by
-      funext g w
-      rw [ofAdd_sub, map_div, div_eq_mul_inv, Circle.coe_mul, Circle.coe_inv]
-    rw [heq]
-    simpa only [RCLike.star_def, ← Circle.coe_inv, Circle.coe_inv_eq_conj,
-      Complex.conj_conj] using
-      (posSemidef_rankOne (R := ℂ)
-        (fun g : G => conj (χ (Multiplicative.ofAdd g))))
+    refine (congrArg Matrix.PosSemidef ?_).mp
+      (Matrix.posSemidef_vecMulVec_star_self fun g : G => conj (χ (Multiplicative.ofAdd g) : ℂ))
+    ext g w
+    simp [ofAdd_sub, div_eq_mul_inv, -Circle.coe_inv, Circle.coe_inv_eq_conj,
+      Matrix.vecMulVec_apply]
 
 end PontryaginDual

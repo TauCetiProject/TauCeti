@@ -36,6 +36,8 @@ and hence also its opposite group.
 * `TauCeti.ModularGroup.tPrime`, `TauCeti.ModularGroup.coe_tPrime`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix `T′ = (1 0; 1 1)` and
   `U² * S = T′`.
+* `TauCeti.ModularGroup.coe_tPrime_sq`, `TauCeti.ModularGroup.tPrime_sq_eq`: the matrix
+  `T′² = (1 0; 2 1)` and `T′² = S T⁻² S⁻¹`.
 -/
 
 public section
@@ -141,12 +143,24 @@ theorem _root_.Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S (g : PSL(
   rw [mul_assoc, ← sq, coe_S_sq, mul_one]
 
 /-- Popa and Zagier's `T′ = (1 0; 1 1)`, the lower-triangular counterpart of `T`. -/
-def tPrime : SL(2, ℤ) := ⟨!![1, 0; 1, 1], by decide +kernel⟩
+def tPrime : SL(2, ℤ) := .mk !![1, 0; 1, 1] (by decide +kernel)
 
 /-- The matrix of `T′`. -/
 @[simp]
 theorem coe_tPrime : (tPrime : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; 1, 1] :=
   (rfl)
+
+/-- The matrix of `T′² = (1 0; 2 1)`. -/
+theorem coe_tPrime_sq : ((tPrime ^ 2 : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; 2, 1] := by
+  rw [SpecialLinearGroup.coe_pow, coe_tPrime]
+  decide
+
+/-- `T′² = (1 0; 2 1)` is the conjugate `S T⁻² S⁻¹` of the translation by `-2`. -/
+theorem tPrime_sq_eq : tPrime ^ 2 = S * T ^ (-2 : ℤ) * S⁻¹ := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [sq, Matrix.mul_apply, Fin.sum_univ_two, ModularGroup.coe_S,
+      Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two]
 
 /-- In `PSL(2, ℤ)`, `U² * S = T′` for `U = T * S`; in `SL(2, ℤ)` the product is `-T′`. -/
 @[simp]

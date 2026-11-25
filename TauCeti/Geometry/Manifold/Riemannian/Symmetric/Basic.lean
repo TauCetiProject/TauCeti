@@ -376,7 +376,7 @@ maps `(γ t, V t)` to `(γ (2 * a - t), -V (2 * a - t))`. -/
 theorem tangentMap_of_alongCurve_eq_zero {γ : ℝ → M} {a : ℝ}
     (hΦ : IsGeodesicSymmetryAt Φ (γ a)) (hγ : IsGeodesicCurve I γ)
     {V : ∀ r, TangentSpace I (γ r)}
-    (hV : ∀ t, DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hV : ∀ t, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
     (hV₀ : ∀ t, alongCurve (leviCivitaConnection I M) γ V t = 0) (t : ℝ) :
     tangentMap I I Φ (TotalSpace.mk' E (γ t) (V t)) =
       TotalSpace.mk' E (γ (2 * a - t)) (-V (2 * a - t)) := by
@@ -385,19 +385,19 @@ theorem tangentMap_of_alongCurve_eq_zero {γ : ℝ → M} {a : ℝ}
   have hΦγ : Φ ∘ γ = fun r ↦ γ (2 * a - r) :=
     funext fun r ↦ hΦ.apply_isGeodesicCurve hγ r
   have hdiff₁ : ∀ r, DifferentiableAt ℝ
-      (sectionCoord (F := E) (Φ ∘ γ) (fun s ↦ mfderiv I I Φ (γ s) (V s))
+      (sectionCoord ℝ (F := E) (Φ ∘ γ) (fun s ↦ mfderiv I I Φ (γ s) (V s))
         ((Φ ∘ γ) r)) r := by
     intro r
     rw [← differentiableWithinAt_univ]
     exact Φ.toDiffeomorph.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv
       (by simp) (hγd r).mdifferentiableWithinAt (hV r).differentiableWithinAt
   have hdiff₂ : ∀ r, DifferentiableAt ℝ
-      (sectionCoord (F := E) (fun s ↦ γ (2 * a - s)) (fun s ↦ -V (2 * a - s))
+      (sectionCoord ℝ (F := E) (fun s ↦ γ (2 * a - s)) (fun s ↦ -V (2 * a - s))
         (γ (2 * a - r))) r := by
     intro r
-    have hsc : sectionCoord (F := E) (fun s ↦ γ (2 * a - s)) (fun s ↦ -V (2 * a - s))
+    have hsc : sectionCoord ℝ (F := E) (fun s ↦ γ (2 * a - s)) (fun s ↦ -V (2 * a - s))
         (γ (2 * a - r)) =
-        fun s ↦ -(sectionCoord (F := E) γ V (γ (2 * a - r)) (2 * a - s)) := by
+        fun s ↦ -(sectionCoord ℝ (F := E) γ V (γ (2 * a - r)) (2 * a - s)) := by
       funext s
       simp [sectionCoord_apply]
     rw [hsc]
@@ -433,14 +433,14 @@ geodesic `γ`, then the differential of the transvection `Ψ * Φ` maps `(γ t, 
 theorem tangentMap_mul_of_alongCurve_eq_zero {γ : ℝ → M} {a b : ℝ}
     (hΦ : IsGeodesicSymmetryAt Φ (γ a)) (hΨ : IsGeodesicSymmetryAt Ψ (γ b))
     (hγ : IsGeodesicCurve I γ) {V : ∀ r, TangentSpace I (γ r)}
-    (hV : ∀ t, DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hV : ∀ t, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
     (hV₀ : ∀ t, alongCurve (leviCivitaConnection I M) γ V t = 0) (t : ℝ) :
     tangentMap I I (Ψ * Φ) (TotalSpace.mk' E (γ t) (V t)) =
       TotalSpace.mk' E (γ (t + 2 * (b - a))) (V (t + 2 * (b - a))) := by
   have hnegV : ∀ r, DifferentiableAt ℝ
-      (sectionCoord (F := E) γ (fun s ↦ -V s) (γ r)) r := fun r ↦ by
-    have hsc : sectionCoord (F := E) γ (fun s ↦ -V s) (γ r) =
-        fun s ↦ -(sectionCoord (F := E) γ V (γ r) s) := by
+      (sectionCoord ℝ (F := E) γ (fun s ↦ -V s) (γ r)) r := fun r ↦ by
+    have hsc : sectionCoord ℝ (F := E) γ (fun s ↦ -V s) (γ r) =
+        fun s ↦ -(sectionCoord ℝ (F := E) γ V (γ r) s) := by
       funext s
       simp [sectionCoord_apply]
     rw [hsc]

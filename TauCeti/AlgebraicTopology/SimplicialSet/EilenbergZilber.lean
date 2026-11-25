@@ -475,8 +475,7 @@ private lemma tensorHom_ιTensorObj_tensorHom_f {K K' L L' : SSet.{w}} (f : K �
     (K.ιChainComplex (R := R) x ⊗ₘ L.ιChainComplex (R := S) y) ≫ ιTensorObj _ _ p q n h ≫
         (chainComplexMap f R ⊗ₘ chainComplexMap g S).f n =
       (K'.ιChainComplex (f.app _ x) ⊗ₘ L'.ιChainComplex (g.app _ y)) ≫ ιTensorObj _ _ p q n h := by
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom, tensorHom_comp_tensorHom_assoc,
-    ι_chainComplexMap_f, ι_chainComplexMap_f]
+  rw [ι_tensorHom_f, tensorHom_comp_tensorHom_assoc, ι_chainComplexMap_f, ι_chainComplexMap_f]
 
 /-- The tensor product of the chain maps classifying a pair of simplices `(x, y)`, followed by the
 tensor product of the chain maps of `f` and `g`, is the tensor product of the chain maps
@@ -500,7 +499,7 @@ private lemma tensorHom_ιTensorObj_eq_model {K L : SSet.{w}} {p q n : ℕ} (x :
       ((Δ[p] : SSet.{w}).ιChainComplex (yonedaEquiv (𝟙 _)) ⊗ₘ
           (Δ[q] : SSet.{w}).ιChainComplex (yonedaEquiv (𝟙 _))) ≫ ιTensorObj _ _ p q n h ≫
         (chainComplexMap (yonedaEquiv.symm x) R ⊗ₘ chainComplexMap (yonedaEquiv.symm y) S).f n := by
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom, tensorHom_comp_tensorHom_assoc,
+  rw [ι_tensorHom_f, tensorHom_comp_tensorHom_assoc,
     ιChainComplex_id_chainComplexMap_f, ιChainComplex_id_chainComplexMap_f]
 
 /-- A natural family of maps out of the tensor products of simplicial chains is determined by its

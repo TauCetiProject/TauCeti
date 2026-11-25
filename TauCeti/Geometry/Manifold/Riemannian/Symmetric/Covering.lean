@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
-public import TauCeti.Geometry.Manifold.Instances.UniversalCover
+public import TauCeti.Geometry.Manifold.Riemannian.Covering.Universal
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Symmetric.Basic
 import Mathlib.Topology.Homotopy.Lifting
@@ -278,21 +278,41 @@ theorem isRiemannianSymmetricSpace_pullback_of_isCoveringMap [BoundarylessManifo
     ).isRiemannianSymmetricSpace_of_isCoveringMap hcov
 
 /-- **The universal cover of a Riemannian symmetric space is a Riemannian symmetric space** when
-endowed with the metric pulled back along the covering projection. -/
+endowed with `g.universalCover x₀` (the metric pulled back along the covering projection). -/
 theorem isRiemannianSymmetricSpace_universalCover [I.Boundaryless]
     [LocallyPathConnectedSpace M] [SemilocallySimplyConnectedSpace M]
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x₀ : M)
     (h : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
       IsRiemannianSymmetricSpace I M) :
     letI : RiemannianBundle (fun x : UniversalCover x₀ ↦ TangentSpace I x) :=
-      ⟨(g.pullback (UniversalCover.proj (x₀ := x₀)) (UniversalCover.contMDiff_proj x₀)
-        fun x ↦ (((UniversalCover.isLocalDiffeomorph_proj x₀ (I := I) (n := ∞)) x
-          ).isInvertible_mfderiv (by simp)).injective).toRiemannianMetric⟩
+      ⟨(g.universalCover x₀).toRiemannianMetric⟩
     IsRiemannianSymmetricSpace I (UniversalCover x₀) :=
-  g.isRiemannianSymmetricSpace_pullback_of_isCoveringMap
-    (UniversalCover.contMDiff_proj x₀)
-    (fun x ↦ ((UniversalCover.isLocalDiffeomorph_proj x₀ (I := I) (n := ∞)) x
-      ).isInvertible_mfderiv (by simp))
-    (UniversalCover.isCoveringMap x₀) h
+  letI : RiemannianBundle (fun x : UniversalCover x₀ ↦ TangentSpace I x) :=
+    ⟨(g.universalCover x₀).toRiemannianMetric⟩
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  letI : IsRiemannianSymmetricSpace I M := h
+  (g.isLocalRiemannianIsometry_universalCoverProj x₀
+    ).isRiemannianSymmetricSpace_of_isCoveringMap (UniversalCover.isCoveringMap x₀)
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti.UniversalCover
+
+open scoped TauCeti
+
+/-- Under `open scoped TauCeti`, the universal cover of a Riemannian symmetric space inherits a
+`IsRiemannianSymmetricSpace` structure from the pullback `RiemannianBundle` instance. -/
+theorem instIsRiemannianSymmetricSpace
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+    [LocallyPathConnectedSpace M] [SemilocallySimplyConnectedSpace M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianSymmetricSpace I M]
+    (x₀ : M) :
+    IsRiemannianSymmetricSpace I (UniversalCover x₀) :=
+  (isLocalRiemannianIsometry_proj (I := I) x₀).isRiemannianSymmetricSpace_of_isCoveringMap
+    (isCoveringMap x₀)
+
+scoped[TauCeti] attribute [instance] TauCeti.UniversalCover.instIsRiemannianSymmetricSpace
+
+end TauCeti.UniversalCover
