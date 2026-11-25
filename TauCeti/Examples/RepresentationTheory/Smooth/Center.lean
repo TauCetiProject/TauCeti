@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Smooth.Centre
+public import TauCeti.RepresentationTheory.Smooth.Center
 
 /-!
 # Examples for the smooth centre
@@ -20,19 +20,19 @@ open CategoryTheory Representation
 
 namespace TauCeti
 
-/-- For `G` trivial, `SmoothCentre A G ≅ A`. -/
-noncomputable example (A : Type) [CommRing A] : A ≃ₐ[A] SmoothCentre.{0} A Unit :=
-  SmoothCentre.algEquivOfSubsingleton A Unit
+/-- For `G` trivial, `SmoothCenter A G ≅ A`. -/
+noncomputable example (A : Type) [CommRing A] : A ≃ₐ[A] SmoothCenter.{0} A Unit :=
+  SmoothCenter.algEquivOfSubsingleton A Unit
 
 variable {A G : Type*} [CommRing A] [Group G] [TopologicalSpace G]
 
 /-- The image of `a : A` in the smooth centre acts on the trivial representation `A` by `a`. -/
 example (a b : A) :
-    ((algebraMap A (SmoothCentre A G) a).app (SmoothRep.of (trivial A G A))).hom.hom b = a * b :=
-  rfl
+    ((algebraMap A (SmoothCenter A G) a).app (SmoothRep.of (trivial A G A))).hom.hom b = a * b :=
+  SmoothCenter.algebraMap_app_hom_hom_apply (V := SmoothRep.of (trivial A G A)) a b
 
 /-- The centre acts on `Hom_G(V, W)` compatibly from both sides. -/
-example (z : SmoothCentre A G) {V W : SmoothRep A G} (f : V ⟶ W) :
+example (z : SmoothCenter A G) {V W : SmoothRep A G} (f : V ⟶ W) :
     z.app V ≫ f = f ≫ z.app W :=
   (z.naturality f).symm
 
