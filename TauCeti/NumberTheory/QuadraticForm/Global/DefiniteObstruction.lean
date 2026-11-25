@@ -85,7 +85,7 @@ theorem exists_anisotropic_and_not_anisotropic_away_from_realPlace
     cases i using Fin.cases <;> simp [c]
   set Q : _root_.QuadraticForm K (Fin (n + 1) → K) := weightedSumSquares K c
   have hQ : Q.Nondegenerate :=
-    nondegenerate_weightedSumSquares fun i => isRegular_iff_ne_zero.mpr (hc i)
+    nondegenerate_weightedSumSquares_iff.mpr fun i => isRegular_iff_ne_zero.mpr (hc i)
   -- At `w₀` every coefficient is positive, so `Q` is positive definite there.
   have hQ₀ : (Q.atRealPlace w₀).Anisotropic := by
     refine (_root_.QuadraticForm.anisotropic_atRealPlace_weightedSumSquares_iff c w₀).mpr

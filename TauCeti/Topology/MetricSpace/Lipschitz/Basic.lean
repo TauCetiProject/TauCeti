@@ -19,6 +19,8 @@ This file collects elementary `LipschitzWith` facts and bounded-gauge estimates:
 * A `K`-Lipschitz map with `1 ≤ K` scales the bounded-metric gauge `d / (1 + d)` by at most `K`,
   and a `K`-Lipschitz binary map on a product pseudometric space bounds the output gauge by `K`
   times the sum of the component gauges.
+* The positive part `ENNReal.ofReal ∘ h` of a real `K`-Lipschitz function satisfies the extended
+  Lipschitz bound `ENNReal.ofReal (h x) ≤ ENNReal.ofReal (h y) + K * edist x y`.
 
 ## Main results
 
@@ -29,6 +31,8 @@ This file collects elementary `LipschitzWith` facts and bounded-gauge estimates:
   with `1 ≤ K`.
 * `LipschitzWith.dist_div_one_add_dist_prod_le`: bounded-gauge estimate for a `K`-Lipschitz binary
   map `α × β → γ` with `1 ≤ K`.
+* `LipschitzWith.ofReal_le_ofReal_add_mul_edist`: the extended Lipschitz bound for the positive
+  part of a real Lipschitz function.
 
 ## References
 
@@ -102,5 +106,16 @@ theorem dist_div_one_add_dist_prod_le {α β γ : Type*} [PseudoMetricSpace α] 
           exact le_add_of_nonneg_right (TauCeti.div_one_add_nonneg dist_nonneg)
     _ = (K : ℝ) * (dist p.1 q.1 / (1 + dist p.1 q.1)) +
           (K : ℝ) * (dist p.2 q.2 / (1 + dist p.2 q.2)) := mul_add _ _ _
+
+/-- The positive part of a real `K`-Lipschitz function satisfies the extended Lipschitz bound
+`ENNReal.ofReal (h x) ≤ ENNReal.ofReal (h y) + K * edist x y`. -/
+theorem ofReal_le_ofReal_add_mul_edist {α : Type*} [PseudoMetricSpace α] {K : ℝ≥0} {h : α → ℝ}
+    (hh : LipschitzWith K h) (x y : α) :
+    ENNReal.ofReal (h x) ≤ ENNReal.ofReal (h y) + K * edist x y :=
+  calc ENNReal.ofReal (h x) ≤ ENNReal.ofReal (h y + K * dist x y) :=
+        ENNReal.ofReal_le_ofReal (hh.le_add_mul x y)
+    _ ≤ ENNReal.ofReal (h y) + K * edist x y := by
+      rw [edist_dist, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul K.coe_nonneg]
+      exact ENNReal.ofReal_add_le
 
 end LipschitzWith

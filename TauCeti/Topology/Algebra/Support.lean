@@ -38,6 +38,10 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
+* `HasCompactSupport.comp_prodMk_right` and `HasCompactSupport.comp_prodMk_left`: the slices
+  `y ↦ f (x, y)` and `x ↦ f (x, y)` of a compactly supported function on a product are compactly
+  supported, with multiplicative versions `HasCompactMulSupport.comp_prodMk_right` and
+  `HasCompactMulSupport.comp_prodMk_left`.
 * `HasCompactSupport.of_tsupport_subset_ball`: in a proper space, a function whose topological
   support lies in a ball is compactly supported, with multiplicative version
   `HasCompactMulSupport.of_mulTSupport_subset_ball`.
@@ -167,6 +171,26 @@ theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [Topologica
     (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → Z}
     (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
   HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
+
+/-- A slice `y ↦ f (x, y)` of a function with compact multiplicative support on a product has
+compact multiplicative support. -/
+@[to_additive HasCompactSupport.comp_prodMk_right /-- A slice `y ↦ f (x, y)` of a compactly
+supported function on a product is compactly supported. -/]
+theorem HasCompactMulSupport.comp_prodMk_right {X Y M : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [R1Space Y] [One M] {f : X × Y → M} (hf : HasCompactMulSupport f)
+    (x : X) : HasCompactMulSupport fun y ↦ f (x, y) :=
+  .intro (hf.isCompact.image continuous_snd) fun y hy ↦
+    image_eq_one_of_notMem_mulTSupport fun h ↦ hy ⟨(x, y), h, rfl⟩
+
+/-- A slice `x ↦ f (x, y)` of a function with compact multiplicative support on a product has
+compact multiplicative support. -/
+@[to_additive HasCompactSupport.comp_prodMk_left /-- A slice `x ↦ f (x, y)` of a compactly
+supported function on a product is compactly supported. -/]
+theorem HasCompactMulSupport.comp_prodMk_left {X Y M : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [R1Space X] [One M] {f : X × Y → M} (hf : HasCompactMulSupport f)
+    (y : Y) : HasCompactMulSupport fun x ↦ f (x, y) :=
+  .intro (hf.isCompact.image continuous_fst) fun x hx ↦
+    image_eq_one_of_notMem_mulTSupport fun h ↦ hx ⟨(x, y), h, rfl⟩
 
 /-- In a proper space, a function whose topological multiplicative support lies in a ball has
 compact multiplicative support. -/
