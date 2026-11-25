@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -26,10 +25,11 @@ to `F₀` and taking differences `F₀.symm.trans F` are mutually inverse up to 
 the ends (`Homotopic.trans_symm_trans`, `Homotopic.symm_trans_trans`), and differences satisfy
 the cocycle law (`Homotopic.symm_trans_trans_symm_trans`). For a constant map `f₁ = const X y`,
 the self-homotopies of `f₁` are the continuous families of loops at `y`
-(`ContinuousMap.Homotopy.evalAtEquiv`), and the relation above becomes ordinary homotopy of maps
-into the loop space (`ContinuousMap.Homotopy.homotopic_iff_evalAtEquiv`). Together these
-identify the classes of nullhomotopies of a map, once one of them is chosen, with the homotopy
-classes of maps `X → Ω Y y`.
+(`ContinuousMap.Homotopy.evalAtEquiv`, in `TauCeti.Topology.Homotopy.Path`), and the relation
+above becomes ordinary homotopy of maps into the loop space
+(`ContinuousMap.Homotopy.homotopic_iff_evalAtEquiv`). Together these identify the classes of
+nullhomotopies of a map, once one of them is chosen, with the homotopy classes of maps
+`X → Ω Y y`.
 
 ## Main declarations
 
@@ -41,9 +41,8 @@ classes of maps `X → Ω Y y`.
   `symm_trans`: the groupoid laws.
 * `ContinuousMap.Homotopy.Homotopic.trans_symm_trans`, `symm_trans_trans`: appending and taking
   differences are inverse up to homotopy.
-* `ContinuousMap.Homotopy.evalAtEquiv`: homotopies between constant maps are families of paths;
-  it matches `Homotopy.trans` and `Homotopy.symm` with the pointwise operations
-  `ContinuousMap.pathTrans` and `ContinuousMap.pathSymm` of `TauCeti.Topology.Homotopy.Path`.
+* `ContinuousMap.Homotopy.homotopic_iff_evalAtEquiv`: for homotopies between constant maps, the
+  relation is homotopy of the corresponding families of paths.
 
 ## References
 
@@ -57,29 +56,6 @@ open unitInterval Set
 namespace ContinuousMap.Homotopy
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f₀ f₁ f₂ f₃ : C(X, Y)}
-
-/-! ### Paths traced by concatenated and reversed homotopies -/
-
-@[simp]
-theorem evalAt_refl (f : C(X, Y)) (x : X) : (Homotopy.refl f).evalAt x = Path.refl (f x) := by
-  ext
-  simp
-
-@[simp]
-theorem evalAt_symm (F : Homotopy f₀ f₁) (x : X) : F.symm.evalAt x = (F.evalAt x).symm := by
-  ext
-  simp
-
-@[simp]
-theorem evalAt_trans (F : Homotopy f₀ f₁) (G : Homotopy f₁ f₂) (x : X) :
-    (F.trans G).evalAt x = (F.evalAt x).trans (G.evalAt x) := by
-  ext t
-  simp only [evalAt_apply, trans_apply, Path.trans_apply]
-
-@[simp]
-theorem symm_refl (f : C(X, Y)) : (Homotopy.refl f).symm = Homotopy.refl f := by
-  ext
-  simp
 
 /-! ### Homotopy relative to the ends -/
 
@@ -234,76 +210,6 @@ theorem symm_trans_trans_symm_trans (F : Homotopy f₀ f₁) (G : Homotopy f₀ 
 
 end Homotopic
 
-/-! ### Homotopies between constant maps -/
-
-/-- A homotopy between the constant maps at `y₀` and `y₁` is a continuous family, indexed by
-`X`, of paths from `y₀` to `y₁`: the path traced by each point. -/
-def evalAtEquiv {y₀ y₁ : Y} : Homotopy (const X y₀) (const X y₁) ≃ C(X, Path y₀ y₁) where
-  toFun F := ⟨F.evalAt, Path.continuous_uncurry_iff.1 (F.continuous.comp continuous_swap)⟩
-  invFun α :=
-    { toFun p := α p.2 p.1
-      continuous_toFun := (Path.continuous_uncurry_iff.2 α.continuous).comp continuous_swap
-      map_zero_left := by simp
-      map_one_left := by simp }
-  left_inv _ := (rfl)
-  right_inv _ := (rfl)
-
-@[simp]
-theorem evalAtEquiv_apply {y₀ y₁ : Y} (F : Homotopy (const X y₀) (const X y₁)) (x : X) :
-    evalAtEquiv F x = F.evalAt x :=
-  (rfl)
-
-@[simp]
-theorem evalAt_evalAtEquiv_symm {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) (x : X) :
-    (evalAtEquiv.symm α).evalAt x = α x :=
-  (rfl)
-
-@[simp]
-theorem evalAtEquiv_symm_apply {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) (t : I) (x : X) :
-    evalAtEquiv.symm α (t, x) = α x t :=
-  (rfl)
-
-/-- The constant homotopy at a constant map is the constant family of constant paths. -/
-@[simp]
-theorem evalAtEquiv_refl (y : Y) :
-    evalAtEquiv (Homotopy.refl (const X y)) = const X (Path.refl y) := by
-  ext
-  simp
-
-/-- Concatenating homotopies between constant maps concatenates their families of paths. -/
-@[simp]
-theorem evalAtEquiv_trans {y₀ y₁ y₂ : Y} (F : Homotopy (const X y₀) (const X y₁))
-    (G : Homotopy (const X y₁) (const X y₂)) :
-    evalAtEquiv (F.trans G) = (evalAtEquiv F).pathTrans (evalAtEquiv G) := by
-  ext x : 1
-  simp
-
-/-- Reversing a homotopy between constant maps reverses its family of paths. -/
-@[simp]
-theorem evalAtEquiv_homotopySymm {y₀ y₁ : Y} (F : Homotopy (const X y₀) (const X y₁)) :
-    evalAtEquiv F.symm = (evalAtEquiv F).pathSymm := by
-  ext x : 1
-  simp
-
-/-- The constant family of constant paths corresponds to the constant homotopy. -/
-@[simp]
-theorem evalAtEquiv_symm_const_refl (y : Y) :
-    evalAtEquiv.symm (const X (Path.refl y)) = Homotopy.refl (const X y) := by
-  rw [Equiv.symm_apply_eq, evalAtEquiv_refl]
-
-@[simp]
-theorem evalAtEquiv_symm_pathTrans {y₀ y₁ y₂ : Y} (α : C(X, Path y₀ y₁))
-    (β : C(X, Path y₁ y₂)) :
-    evalAtEquiv.symm (α.pathTrans β) = (evalAtEquiv.symm α).trans (evalAtEquiv.symm β) := by
-  rw [Equiv.symm_apply_eq]
-  simp
-
-@[simp]
-theorem evalAtEquiv_symm_pathSymm {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) :
-    evalAtEquiv.symm α.pathSymm = (evalAtEquiv.symm α).symm := by
-  rw [Equiv.symm_apply_eq]
-  simp
-
 /-- Homotopies between constant maps are homotopic relative to their ends exactly when their
 families of paths are homotopic as maps into the space of paths. -/
 theorem homotopic_iff_evalAtEquiv {y₀ y₁ : Y} {F G : Homotopy (const X y₀) (const X y₁)} :
@@ -311,11 +217,20 @@ theorem homotopic_iff_evalAtEquiv {y₀ y₁ : Y} {F G : Homotopy (const X y₀)
   rw [homotopic_iff_exists]
   constructor
   · rintro ⟨H, h₀, h₁⟩
-    exact ⟨{ toContinuousMap := evalAtEquiv (X := I × X) H
-             map_zero_left x := Path.ext <| funext fun t ↦ h₀ t x
-             map_one_left x := Path.ext <| funext fun t ↦ h₁ t x }⟩
+    refine ⟨{ toContinuousMap := evalAtEquiv (X := I × X) H
+              map_zero_left x := Path.ext <| funext fun t ↦ ?_
+              map_one_left x := Path.ext <| funext fun t ↦ ?_ }⟩
+    · exact (DFunLike.congr_fun (evalAtEquiv_apply (X := I × X) H (0, x)) t).trans <|
+        (h₀ t x).trans (DFunLike.congr_fun (evalAtEquiv_apply F x) t).symm
+    · exact (DFunLike.congr_fun (evalAtEquiv_apply (X := I × X) H (1, x)) t).trans <|
+        (h₁ t x).trans (DFunLike.congr_fun (evalAtEquiv_apply G x) t).symm
   · rintro ⟨K⟩
-    exact ⟨evalAtEquiv.symm K.toContinuousMap, fun t x ↦ DFunLike.congr_fun (K.apply_zero x) t,
-      fun t x ↦ DFunLike.congr_fun (K.apply_one x) t⟩
+    refine ⟨evalAtEquiv.symm K.toContinuousMap, fun t x ↦ ?_, fun t x ↦ ?_⟩
+    · exact (evalAtEquiv_symm_apply _ t (0, x)).trans <|
+        (DFunLike.congr_fun (K.apply_zero x) t).trans <|
+          DFunLike.congr_fun (evalAtEquiv_apply F x) t
+    · exact (evalAtEquiv_symm_apply _ t (1, x)).trans <|
+        (DFunLike.congr_fun (K.apply_one x) t).trans <|
+          DFunLike.congr_fun (evalAtEquiv_apply G x) t
 
 end ContinuousMap.Homotopy
