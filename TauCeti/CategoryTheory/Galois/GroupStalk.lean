@@ -63,11 +63,8 @@ noncomputable instance instMulDistribMulActionGrpStalk :
 
 /-- **The stabilizers of the `G`-action on the stalk of a presheaf of groups are open.** -/
 theorem isOpen_stabilizer_grpStalk (p : (point G).GrpStalk P) :
-    IsOpen (MulAction.stabilizer G p : Set G) := by
-  obtain ⟨S, s, a, rfl⟩ := (point G).exists_grpGerm_eq P p
-  refine Subgroup.isOpen_mono (fun g hg ↦ MulAction.mem_stabilizer_iff.2 ?_)
-    (isOpen_stabilizer S s)
-  rw [smul_grpGerm, MulAction.mem_stabilizer_iff.1 hg]
+    IsOpen (MulAction.stabilizer G p : Set G) :=
+  (Action.isSmooth_iff _).1 (isSmooth_stalk (P ⋙ forget GrpCat)) p
 
 variable {P} {Q : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ GrpCat.{u}}
 
