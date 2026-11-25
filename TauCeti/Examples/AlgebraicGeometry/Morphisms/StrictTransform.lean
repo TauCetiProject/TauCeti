@@ -12,7 +12,7 @@ public import Mathlib.Algebra.DualNumber
 import TauCeti.AlgebraicGeometry.IdealSheaf.Reduced
 
 /-!
-# Strict transforms of the origin of `𝔸¹` and along blowups away from `X`
+# Strict transforms of the origin of `𝔸¹`, along blowups away from `X`, and of the dual numbers
 
 The strict transform `strictTransform f φ U` depends on the open `U`, not only on `φ`. For the
 identity of `𝔸¹ = Spec R[t]` and `X` the origin, `f : Spec R ⟶ Spec R[t]` given by `t ↦ 0`:
@@ -29,9 +29,10 @@ strict transform of `X` with respect to `U = S ∖ V(I)` is the zero ideal sheaf
 `X ×_S Bl_I S`, and the projection `X ×_S Bl_I S ⟶ X` is an isomorphism: the strict transform
 is `X` itself.
 
-For `X = Spec k[ε] ⟶ Spec k`, `φ = 𝟙` and `U = Spec k`, the strict transform is `X`. Both `X` and
-its reduction `X_red` are flat over `Spec k`, and they have the same support, but `X_red` does not
-agree with `X` over `U` as a closed subscheme: the nilradical of `X ×_k k ≅ X` is not zero, so by
+For `X = Spec k[ε] ⟶ Spec k`, `φ = 𝟙` and `U = Spec k`, the strict transform is `X`. Its
+reduction `X_red` has the same support as `X` (and, informally, is also flat over `Spec k`, as is
+every scheme over a field; this is not formalized here), but `X_red` does not agree with `X` over
+`U` as a closed subscheme: the nilradical of `X ×_k k ≅ X` is not zero, so by
 the uniqueness of flat closed subschemes agreeing with `X` over `U`
 (`AlgebraicGeometry.Scheme.Hom.strictTransform_unique_of_flat_of_dense`) it does not vanish over
 `U`. Agreement of supports over `U` alone does not characterize the strict transform.
@@ -96,7 +97,7 @@ example : (dualNumberToBase k).strictTransform (𝟙 _) ⊤ = ⊥ :=
 /-- **Uniqueness for `Spec k[ε]`.** A closed subscheme of `Spec k[ε] ×_k k` agreeing with it over
 `U = Spec k` as closed subschemes is the strict transform `Spec k[ε] ×_k k` itself; flatness over
 `Spec k` is automatic. -/
-theorem eq_bot_of_comap_strictTransformOpen_eq_bot
+theorem eq_bot_of_comap_strictTransformOpen_eq_bot_dualNumberToBase
     (I : (pullback (dualNumberToBase k) (𝟙 _)).IdealSheafData)
     (hI : I.comap (Scheme.Hom.strictTransformOpen (dualNumberToBase k) (𝟙 _) ⊤).ι = ⊥) :
     I = ⊥ := by
@@ -116,9 +117,10 @@ theorem not_isReduced_pullback_dualNumberToBase :
   simp at h0
 
 /-- **The reduction of `Spec k[ε]` is not the strict transform.** The nilradical of
-`Spec k[ε] ×_k k` cuts out a closed subscheme that is flat over `Spec k` (as is everything over a
-field) with the same support as `Spec k[ε] ×_k k`, but it is not the strict transform. -/
-theorem nilradical_ne_strictTransform :
+`Spec k[ε] ×_k k` is not the strict transform `⊥`, since `Spec k[ε] ×_k k` is not reduced.
+Informally, its closed subscheme is still flat over `Spec k`, as is every scheme over a field; this
+is not formalized here. -/
+theorem nilradical_ne_strictTransform_dualNumberToBase :
     (pullback (dualNumberToBase k) (𝟙 _)).nilradical ≠
       (dualNumberToBase k).strictTransform (𝟙 _) ⊤ := by
   rw [Scheme.Hom.strictTransform_top, Ne, Scheme.nilradical_eq_bot_iff]
@@ -126,12 +128,12 @@ theorem nilradical_ne_strictTransform :
 
 /-- **Supports do not detect agreement over `U`.** The reduction of `Spec k[ε] ×_k k` has the
 full support, but does not agree with `Spec k[ε] ×_k k` over `U = Spec k` as a closed subscheme. -/
-theorem support_nilradical_eq_top_and_comap_ne_bot :
+theorem support_nilradical_eq_top_and_comap_ne_bot_dualNumberToBase :
     (pullback (dualNumberToBase k) (𝟙 _)).nilradical.support = ⊤ ∧
       (pullback (dualNumberToBase k) (𝟙 _)).nilradical.comap
         (Scheme.Hom.strictTransformOpen (dualNumberToBase k) (𝟙 _) ⊤).ι ≠ ⊥ :=
-  ⟨Scheme.support_nilradical _, fun h ↦ nilradical_ne_strictTransform k
-    ((eq_bot_of_comap_strictTransformOpen_eq_bot k _ h).trans
+  ⟨Scheme.support_nilradical _, fun h ↦ nilradical_ne_strictTransform_dualNumberToBase k
+    ((eq_bot_of_comap_strictTransformOpen_eq_bot_dualNumberToBase k _ h).trans
       (Scheme.Hom.strictTransform_top _ _).symm)⟩
 
 end DualNumber
