@@ -587,27 +587,49 @@ theorem lowerBlockGL_single (b : k) (a : m) (c : A) :
   ext (p | p) (q | q) <;>
     simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
 
+/-- A subgroup containing the elementary matrices `1 + X a b E_(inl a, inr b)` of the entries of
+`X` contains the upper block unipotent matrix of `X`, which is their product. -/
+theorem upperBlockGL_mem_of_forall_transvectionUnit_mem {H : Subgroup (GL (m ⊕ k) A)}
+    {X : Matrix m k A}
+    (h : ∀ a b, transvectionUnit (Sum.inl_ne_inr (a := a) (b := b)) (X a b) ∈ H) :
+    upperBlockGL X ∈ H := by
+  have hadd (Y Z : Matrix m k A) (hY : upperBlockGL Y ∈ H) (hZ : upperBlockGL Z ∈ H) :
+      upperBlockGL (Y + Z) ∈ H := by
+    simpa only [upperBlockGL_add] using mul_mem hY hZ
+  rw [X.matrix_eq_sum_single]
+  refine Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ H) hadd (by simp) fun a _ ↦
+    Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ H) hadd (by simp) fun b _ ↦ ?_
+  rw [upperBlockGL_single]
+  exact h a b
+
+/-- A subgroup containing the elementary matrices `1 + Y b a E_(inr b, inl a)` of the entries of
+`Y` contains the lower block unipotent matrix of `Y`, which is their product. -/
+theorem lowerBlockGL_mem_of_forall_transvectionUnit_mem {H : Subgroup (GL (m ⊕ k) A)}
+    {Y : Matrix k m A}
+    (h : ∀ b a, transvectionUnit (Sum.inr_ne_inl (a := a) (b := b)) (Y b a) ∈ H) :
+    lowerBlockGL Y ∈ H := by
+  have hadd (Z W : Matrix k m A) (hZ : lowerBlockGL Z ∈ H) (hW : lowerBlockGL W ∈ H) :
+      lowerBlockGL (Z + W) ∈ H := by
+    simpa only [lowerBlockGL_add] using mul_mem hZ hW
+  rw [Y.matrix_eq_sum_single]
+  refine Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ H) hadd (by simp) fun b _ ↦
+    Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ H) hadd (by simp) fun a _ ↦ ?_
+  rw [lowerBlockGL_single]
+  exact h b a
+
 /-- Upper block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + X a b E_(inl a, inr b)`. -/
 theorem upperBlockGL_mem_elementarySubgroup (X : Matrix m k A) :
-    upperBlockGL X ∈ elementarySubgroup (m ⊕ k) A := by
-  induction X using Matrix.induction_on' with
-  | h_zero => simp
-  | h_add X Y hX hY => simpa only [upperBlockGL_add] using mul_mem hX hY
-  | h_std_basis a b c =>
-    rw [upperBlockGL_single]
-    exact transvectionUnit_mem_elementarySubgroup _ c
+    upperBlockGL X ∈ elementarySubgroup (m ⊕ k) A :=
+  upperBlockGL_mem_of_forall_transvectionUnit_mem fun _ _ ↦
+    transvectionUnit_mem_elementarySubgroup _ _
 
 /-- Lower block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + Y b a E_(inr b, inl a)`. -/
 theorem lowerBlockGL_mem_elementarySubgroup (Y : Matrix k m A) :
-    lowerBlockGL Y ∈ elementarySubgroup (m ⊕ k) A := by
-  induction Y using Matrix.induction_on' with
-  | h_zero => simp
-  | h_add X Y hX hY => simpa only [lowerBlockGL_add] using mul_mem hX hY
-  | h_std_basis b a c =>
-    rw [lowerBlockGL_single]
-    exact transvectionUnit_mem_elementarySubgroup _ c
+    lowerBlockGL Y ∈ elementarySubgroup (m ⊕ k) A :=
+  lowerBlockGL_mem_of_forall_transvectionUnit_mem fun _ _ ↦
+    transvectionUnit_mem_elementarySubgroup _ _
 
 end Matrix
 
@@ -667,15 +689,9 @@ theorem upperBlockGL_mem_commutator_elementarySubgroup_ker (hn : 3 ≤ Fintype.c
     {X : Matrix m k A} (hX : ∀ a b, X a b ∈ I) :
     upperBlockGL X ∈ ⁅elementarySubgroup (m ⊕ k) A,
       (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker⁆ := by
-  rw [matrix_eq_sum_single X]
-  refine Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ _) (fun Y Z hY hZ ↦ ?_) (by simp)
-    fun a _ ↦ Finset.sum_induction _ (fun Y ↦ upperBlockGL Y ∈ _) (fun Y Z hY hZ ↦ ?_) (by simp)
-      fun b _ ↦ ?_
-  · simpa only [upperBlockGL_add] using mul_mem hY hZ
-  · simpa only [upperBlockGL_add] using mul_mem hY hZ
+  refine upperBlockGL_mem_of_forall_transvectionUnit_mem fun a b ↦ ?_
   obtain ⟨l, hla, hlb⟩ := Cardinal.exists_ne_ne_of_three_le (α := m ⊕ k)
     (by rw [Cardinal.mk_fintype]; exact_mod_cast hn) (.inl a) (.inr b)
-  rw [upperBlockGL_single]
   exact transvectionUnit_mem_commutator_elementarySubgroup_ker _ hla.symm hlb (hX a b)
 
 /-- In size at least three, a lower block unipotent matrix whose block has entries in `I` lies in
@@ -684,15 +700,9 @@ theorem lowerBlockGL_mem_commutator_elementarySubgroup_ker (hn : 3 ≤ Fintype.c
     {Y : Matrix k m A} (hY : ∀ b a, Y b a ∈ I) :
     lowerBlockGL Y ∈ ⁅elementarySubgroup (m ⊕ k) A,
       (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk I)).ker⁆ := by
-  rw [matrix_eq_sum_single Y]
-  refine Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ _) (fun Z Z' hZ hZ' ↦ ?_) (by simp)
-    fun b _ ↦ Finset.sum_induction _ (fun Z ↦ lowerBlockGL Z ∈ _) (fun Z Z' hZ hZ' ↦ ?_)
-      (by simp) fun a _ ↦ ?_
-  · simpa only [lowerBlockGL_add] using mul_mem hZ hZ'
-  · simpa only [lowerBlockGL_add] using mul_mem hZ hZ'
+  refine lowerBlockGL_mem_of_forall_transvectionUnit_mem fun b a ↦ ?_
   obtain ⟨l, hlb, hla⟩ := Cardinal.exists_ne_ne_of_three_le (α := m ⊕ k)
     (by rw [Cardinal.mk_fintype]; exact_mod_cast hn) (.inr b) (.inl a)
-  rw [lowerBlockGL_single]
   exact transvectionUnit_mem_commutator_elementarySubgroup_ker _ hlb.symm hla (hY b a)
 
 end Matrix
