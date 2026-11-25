@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Hodge.PeriodDomain
-public import TauCeti.Geometry.Hodge.WeightOne.RiemannForm
+public import TauCeti.Geometry.Hodge.WeightOne.RiemannForm.Basic
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.SymplecticGroup
