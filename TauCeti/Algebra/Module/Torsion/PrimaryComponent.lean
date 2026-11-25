@@ -290,20 +290,6 @@ theorem pow_smul_mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMon
   | zero => rw [pow_zero, one_smul]
   | succ k ih => rw [pow_succ', mul_smul, smul_mem_primaryComponent_span_singleton_iff, ih]
 
-/-- The primary component of `(r)` vanishes exactly when `r` acts regularly. -/
-theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] [Module R N]
-    (r : R) : (span {r}).primaryComponent N = ⊥ ↔ IsSMulRegular N r := by
-  constructor
-  · intro h
-    apply (isSMulRegular_iff_torsionBy_eq_bot N r).mpr
-    refine eq_bot_iff.mpr fun x hx ↦ h.le ?_
-    exact (mem_primaryComponent_span_singleton_iff r).mpr ⟨1, by simpa using hx⟩
-  · intro h
-    refine eq_bot_iff.mpr fun x hx ↦ ?_
-    obtain ⟨n, hn⟩ := (mem_primaryComponent_span_singleton_iff r).mp hx
-    rw [Submodule.mem_bot]
-    exact (h.pow n) (hn.trans (smul_zero _).symm)
-
 /-- The `𝔞`-primary component vanishes when, for every nonzero `x` and every `n`, some `a ∈ 𝔞` has
 `aⁿ • x ≠ 0`: then no power `𝔞ⁿ` kills a nonzero element. -/
 theorem primaryComponent_eq_bot_of_forall_exists_pow_smul_ne_zero {N : Type*} [AddCommMonoid N]
@@ -322,6 +308,16 @@ theorem primaryComponent_eq_bot_of_isSMulRegular {N : Type*} [AddCommMonoid N] [
     𝔞.primaryComponent N = ⊥ :=
   primaryComponent_eq_bot_of_forall_exists_pow_smul_ne_zero fun _ hx n ↦
     ⟨a, ha, fun h ↦ hx (hreg.pow n (h.trans (smul_zero _).symm))⟩
+
+/-- The primary component of `(r)` vanishes exactly when `r` acts regularly. -/
+theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] [Module R N]
+    (r : R) : (span {r}).primaryComponent N = ⊥ ↔ IsSMulRegular N r := by
+  constructor
+  · intro h
+    apply (isSMulRegular_iff_torsionBy_eq_bot N r).mpr
+    refine eq_bot_iff.mpr fun x hx ↦ h.le ?_
+    exact (mem_primaryComponent_span_singleton_iff r).mpr ⟨1, by simpa using hx⟩
+  · exact primaryComponent_eq_bot_of_isSMulRegular (mem_span_singleton_self r)
 
 /-- Over a domain, the `𝔞`-primary component of a torsion-free module vanishes for a nonzero
 ideal `𝔞`: a nonzero element of `𝔞` is regular. -/
