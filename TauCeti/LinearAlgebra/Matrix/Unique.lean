@@ -9,31 +9,25 @@ public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.Matrix.Unique
 
 /-!
-# Star and algebra equivalences for `1 × 1` matrices
+# Star equivalence for `1 × 1` matrices
 
 For a singleton index type `m` (`[Unique m]`) and a non-unital, non-associative semiring `A`
 equipped with a `Star` operation, reading off the unique entry upgrades `Matrix.uniqueRingEquiv` to
-a `⋆`-ring equivalence `Matrix.uniqueStarRingEquiv : Matrix m m A ≃⋆+* A`. For an `R`-algebra `A`,
-it is an `R`-algebra equivalence `Matrix.uniqueAlgEquivOfFintype : Matrix m m A ≃ₐ[R] A`.
+a `⋆`-ring equivalence `Matrix.uniqueStarRingEquiv : Matrix m m A ≃⋆+* A`.
 
-These equivalences take `[Fintype m]` (and, for the algebra equivalence, `[DecidableEq m]`) as
-explicit typeclass arguments alongside `[Unique m]`, so that the multiplication and algebra
-instances on `Matrix m m A` agree definitionally with any ambient `Fintype m` and `DecidableEq m`
-instances (such as on `Fin 1`). Mathlib's `Matrix.uniqueAlgEquiv` instead uses the instances
-derived from `[Unique m]`.
+The equivalence takes `[Fintype m]` as an explicit typeclass argument alongside `[Unique m]` so
+that the multiplication instance on `Matrix m m A` agrees definitionally with any ambient
+`Fintype m` instance (such as on `Fin 1`), while still synthesizing automatically from `[Unique m]`
+when no separate `Fintype m` is in scope.
 
 ## Main definitions
 
 * `Matrix.uniqueStarRingEquiv`: the `⋆`-ring equivalence `Matrix m m A ≃⋆+* A` for `[Unique m]`.
-* `Matrix.uniqueAlgEquivOfFintype`: the `R`-algebra equivalence `Matrix m m A ≃ₐ[R] A` for
-  `[Unique m]`, with any `Fintype m` and `DecidableEq m` instances.
 -/
 
 public section
 
 namespace Matrix
-
-section Star
 
 variable {m A : Type*} [Fintype m] [Unique m] [NonUnitalNonAssocSemiring A] [Star A]
 
@@ -54,31 +48,5 @@ theorem uniqueStarRingEquiv_apply (M : Matrix m m A) :
 theorem uniqueStarRingEquiv_symm_apply (a : A) :
     (uniqueStarRingEquiv (m := m)).symm a = Matrix.of fun _ _ ↦ a :=
   (rfl)
-
-end Star
-
-section Algebra
-
-variable {m R A : Type*} [Fintype m] [DecidableEq m] [Unique m] [CommSemiring R] [Semiring A]
-  [Algebra R A]
-
-/-- `M₁(A)` and `A` are equivalent as `R`-algebras by reading off the unique entry, for any
-`Fintype m` and `DecidableEq m` instances. -/
-def uniqueAlgEquivOfFintype : Matrix m m A ≃ₐ[R] A where
-  __ := uniqueAddEquiv
-  map_mul' M N := by simp [Matrix.mul_apply]
-  commutes' r := by simp [Matrix.algebraMap_matrix_apply]
-
-@[simp]
-theorem uniqueAlgEquivOfFintype_apply (M : Matrix m m A) :
-    uniqueAlgEquivOfFintype (R := R) M = M default default :=
-  (rfl)
-
-@[simp]
-theorem uniqueAlgEquivOfFintype_symm_apply (a : A) :
-    (uniqueAlgEquivOfFintype (m := m) (R := R)).symm a = Matrix.of fun _ _ ↦ a :=
-  (rfl)
-
-end Algebra
 
 end Matrix

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.Eigenvector
-public import TauCeti.LinearAlgebra.Matrix.Unique
+public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
@@ -135,7 +135,7 @@ noncomputable def blockAlgebraAlgEquivMatrixOfMulOfEqSmul {c : G → K}
   -- `Injective ∧ Surjective`, so that `AlgEquiv.ofBijective` lemmas rewrite this term.
   (AlgEquiv.ofBijective (Algebra.ofId K _) (show Function.Bijective _ from
     ⟨(algebraMap K _).injective, algebraMap_surjective_blockAlgebra_of_mul_of_eq_smul hb hc⟩)).symm
-    |>.trans Matrix.uniqueAlgEquivOfFintype.symm
+    |>.trans (Matrix.finOneAlgEquiv K K)
 
 /-- The isomorphism `b K[G] ≃ₐ[K] M₁(K)` sends `a b` to the matrix with entry `a`. -/
 theorem blockAlgebraAlgEquivMatrixOfMulOfEqSmul_apply {c : G → K}
