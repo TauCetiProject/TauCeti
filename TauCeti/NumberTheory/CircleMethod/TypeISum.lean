@@ -141,7 +141,7 @@ theorem sum_min_inv_distInt_le_of_separated {ι : Type*} (s : Finset ι) (x : ι
               (by exact_mod_cast card_filter_floor_distInt_div_eq_le_two s x hδ hsep k) (hb0 k)
     _ = 2 * Y + 2 / δ * harmonic K := by
         rw [Finset.sum_range_succ', add_comm]
-        simp only [hb, harmonic_cast_eq_sum_range, Finset.mul_sum, Nat.succ_ne_zero, ↓reduceIte]
+        simp only [hb, cast_harmonic_eq_sum_range, Finset.mul_sum, Nat.succ_ne_zero, ↓reduceIte]
         congr 1
         refine Finset.sum_congr rfl fun k _ ↦ ?_
         field_simp
@@ -263,7 +263,7 @@ private theorem sum_block_bounds_le {q M : ℕ} (hq : 0 < q) (hM : 0 < M) {X : �
   set J := M / L
   rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
   have hharm : ∑ j ∈ Finset.range J, 2 * (X / ((j + 1 : ℕ) * L)) = 2 * X / L * harmonic J := by
-    simp only [harmonic_cast_eq_sum_range, Finset.mul_sum]
+    simp only [cast_harmonic_eq_sum_range, Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     field_simp
   rw [hharm]

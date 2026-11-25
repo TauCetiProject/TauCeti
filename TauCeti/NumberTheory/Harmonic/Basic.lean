@@ -14,7 +14,7 @@ public import Mathlib.NumberTheory.Harmonic.Defs
 
 Mathlib defines the harmonic number `harmonic n = ∑_{i < n} 1 / (i + 1)` as a rational number.
 This file records its cast to a characteristic-zero division ring as the corresponding sum
-(`TauCeti.harmonic_cast_eq_sum_range`) and its nonnegativity (`TauCeti.harmonic_nonneg`).
+(`TauCeti.cast_harmonic_eq_sum_range`) and its nonnegativity (`TauCeti.harmonic_nonneg`).
 -/
 
 public section
@@ -23,7 +23,7 @@ namespace TauCeti
 
 /-- The harmonic number `H_n` cast to a characteristic-zero division ring is the sum
 `∑_{i < n} 1 / (i + 1)` there. -/
-theorem harmonic_cast_eq_sum_range {K : Type*} [DivisionRing K] [CharZero K] (n : ℕ) :
+theorem cast_harmonic_eq_sum_range {K : Type*} [DivisionRing K] [CharZero K] (n : ℕ) :
     (harmonic n : K) = ∑ i ∈ Finset.range n, ((i + 1 : ℕ) : K)⁻¹ := by
   induction n with
   | zero => simp
