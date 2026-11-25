@@ -136,21 +136,23 @@ theorem connectedSpace_annihilatorPunctured_iff [PreconnectedSpace M]
 
 omit [T2Space M] [SigmaCompactSpace M] in
 /-- **The two components of the symplectization of a cooriented contact structure.** Let `α` be a
-one-form vanishing nowhere whose kernel is the contact structure `ξ`, on a connected boundaryless
-manifold. The covectors `eᵗ α_x`, the image of the trivialization `κ_α`, form a connected
-component of `ξ⁰ ∖ 0`. Applied to `-α`, the covectors `-eᵗ α_x` form the other one. -/
+one-form whose kernel is the contact structure `ξ`, on a connected boundaryless manifold. The
+covectors `eᵗ α_x`, the image of the trivialization `κ_α`, form a connected component of
+`ξ⁰ ∖ 0`. Applied to `-α`, the covectors `-eᵗ α_x` form the other one. -/
 theorem connectedComponent_eq_preimage_range_symplectizationToAnnihilator [PreconnectedSpace M]
     [BoundarylessManifold I M] (hξ : IsContactDistribution I ∞ ξ) {α : SmoothForm I M ℝ 1}
-    (hαξ : α.kerDistribution = ξ) (hα₀ : ∀ x, α.val x ≠ 0) (p : ℝ × M) :
+    (hαξ : α.kerDistribution = ξ) (p : ℝ × M) :
     letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
     connectedComponent (⟨α.symplectizationToAnnihilator hαξ p, hξ.mem_annihilatorPunctured.2
-        (SmoothForm.symplectizationToAnnihilator_snd_ne_zero hαξ hα₀ p)⟩ :
+        (SmoothForm.symplectizationToAnnihilator_snd_ne_zero hαξ
+          (hξ.apply_ne_zero_of_kerDistribution_eq hαξ) p)⟩ :
           hξ.annihilatorPunctured) =
       Subtype.val ⁻¹' range (α.symplectizationToAnnihilator hαξ) := by
   let := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
   let := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
   let := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
   have hαξ' : (-α).kerDistribution = ξ := SmoothForm.kerDistribution_neg.trans hαξ
+  have hα₀ := hξ.apply_ne_zero_of_kerDistribution_eq hαξ
   set A : Set hξ.annihilatorPunctured :=
     Subtype.val ⁻¹' range (α.symplectizationToAnnihilator hαξ)
   -- In `ξ⁰ ∖ 0`, the complement of the image of `κ_α` is the image of `κ_(-α)`.

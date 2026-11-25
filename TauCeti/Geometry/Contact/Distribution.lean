@@ -260,6 +260,15 @@ theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
   rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
   exact hD.ne_top x
 
+/-- **A one-form defining a contact structure vanishes nowhere.** If the kernel of a smooth one-form
+`α` is the contact structure `D`, then `α_x ≠ 0` at every point `x`, since `D x` is a proper
+subspace of `T_x M`. -/
+theorem IsContactDistribution.apply_ne_zero_of_kerDistribution_eq
+    (hD : IsContactDistribution I n D) {α : SmoothForm I M ℝ 1} (hαD : α.kerDistribution = D)
+    (x : M) : α.val x ≠ 0 := by
+  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD]
+  exact hD.ne_top x
+
 /-! ### Kernels of contact forms -/
 
 /-- **A smooth one-form is a contact form exactly when its kernel is a contact structure.** -/

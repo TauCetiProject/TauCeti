@@ -9,6 +9,7 @@ public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.LinearAlgebra.Orientation.Basis
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # The nonzero vectors of a real line bundle and its orientation double cover
@@ -80,23 +81,36 @@ namespace TauCeti
 namespace VectorBundleOrientationCover
 
 variable (F E) in
+/-- Each fibre of a vector bundle whose model fibre is a line is a line. -/
+theorem finrank_fiber_eq_one (hF : finrank ℝ F = 1) (b : B) : finrank ℝ (E b) = 1 :=
+  (VectorBundle.finrank_eq ℝ F E b).trans hF
+
+variable (F E) in
 /-- The orientation of a fibre of a real line bundle given by a nonzero vector `v`, as a point of
 the orientation double cover: the base point of `v` together with the orientation of the basis
 `(v)` of its fibre. -/
 def ofZeroSectionCompl (hF : finrank ℝ F = 1) (v : zeroSectionCompl F E) :
     VectorBundleOrientationCover F E (Fin 1) :=
-  ⟨v.val.proj, (FiniteDimensional.basisSingleton (Fin 1)
-    ((VectorBundle.finrank_eq ℝ F E v.val.proj).trans hF) v.val.snd
-      (mem_zeroSectionCompl.1 v.property)).orientation⟩
+  ⟨v.val.proj, (FiniteDimensional.basisSingleton (Fin 1) (finrank_fiber_eq_one F E hF v.val.proj)
+    v.val.snd (mem_zeroSectionCompl.1 v.property)).orientation⟩
 
 variable (hF : finrank ℝ F = 1)
 
 /-- A nonzero vector `v` of the fibre over `b` gives the orientation of the basis `(v)`. -/
+@[simp]
 theorem ofZeroSectionCompl_mk {b : B} {v : E b} (hv : v ≠ 0) :
     ofZeroSectionCompl F E hF ⟨⟨b, v⟩, mem_zeroSectionCompl.2 hv⟩ =
-      ⟨b, (FiniteDimensional.basisSingleton (Fin 1)
-        ((VectorBundle.finrank_eq ℝ F E b).trans hF) v hv).orientation⟩ :=
+      ⟨b, (FiniteDimensional.basisSingleton (Fin 1) (finrank_fiber_eq_one F E hF b) v
+        hv).orientation⟩ :=
   (rfl)
+
+/-- Negating a nonzero vector reverses the orientation of its fibre that it gives: the image of
+`-v` is the image of `v` under the deck involution of the orientation double cover. -/
+theorem ofZeroSectionCompl_mk_neg {b : B} {v : E b} (hv : v ≠ 0) :
+    ofZeroSectionCompl F E hF ⟨⟨b, -v⟩, mem_zeroSectionCompl.2 (neg_ne_zero.2 hv)⟩ =
+      deck (ofZeroSectionCompl F E hF ⟨⟨b, v⟩, mem_zeroSectionCompl.2 hv⟩) := by
+  rw [ofZeroSectionCompl_mk hF hv, ofZeroSectionCompl_mk hF (neg_ne_zero.2 hv), deck_apply,
+    orientation_basisSingleton_neg]
 
 @[simp]
 theorem proj_ofZeroSectionCompl (v : zeroSectionCompl F E) :
@@ -107,8 +121,7 @@ theorem proj_ofZeroSectionCompl (v : zeroSectionCompl F E) :
 theorem continuous_ofZeroSectionCompl : Continuous (ofZeroSectionCompl F E hF) :=
   continuous_mk_basis_orientation ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
     (fun v : zeroSectionCompl F E ↦ FiniteDimensional.basisSingleton (Fin 1)
-      ((VectorBundle.finrank_eq ℝ F E v.val.proj).trans hF) v.val.snd
-        (mem_zeroSectionCompl.1 v.property))
+      (finrank_fiber_eq_one F E hF v.val.proj) v.val.snd (mem_zeroSectionCompl.1 v.property))
     fun _ ↦ by
       simpa only [FiniteDimensional.basisSingleton_apply, Function.comp_apply] using
         continuous_subtypeVal
@@ -119,7 +132,7 @@ theorem ofZeroSectionCompl_mk_eq_iff {b : B} {v w : E b} (hv : v ≠ 0) (hw : w 
     ofZeroSectionCompl F E hF ⟨⟨b, w⟩, mem_zeroSectionCompl.2 hw⟩ =
         ofZeroSectionCompl F E hF ⟨⟨b, v⟩, mem_zeroSectionCompl.2 hv⟩ ↔
       ∃ c : ℝ, 0 < c ∧ w = c • v := by
-  have hb : finrank ℝ (E b) = 1 := (VectorBundle.finrank_eq ℝ F E b).trans hF
+  have hb : finrank ℝ (E b) = 1 := finrank_fiber_eq_one F E hF b
   rw [ofZeroSectionCompl_mk hF hw, ofZeroSectionCompl_mk hF hv, mk_eq_mk_iff]
   constructor
   · intro h
@@ -143,7 +156,7 @@ theorem ofZeroSectionCompl_mk_eq_iff {b : B} {v w : E b} (hv : v ≠ 0) (hw : w 
 /-- Every orientation of a fibre of a line bundle is given by a nonzero vector. -/
 theorem surjective_ofZeroSectionCompl : Function.Surjective (ofZeroSectionCompl F E hF) := by
   rintro ⟨b, o⟩
-  have hb : finrank ℝ (E b) = 1 := (VectorBundle.finrank_eq ℝ F E b).trans hF
+  have hb : finrank ℝ (E b) = 1 := finrank_fiber_eq_one F E hF b
   have : Nontrivial (E b) := Module.nontrivial_of_finrank_eq_succ hb
   obtain ⟨v, hv⟩ := exists_ne (0 : E b)
   -- The orientation `o` is that of `(v)` or of `(-v)`.
@@ -151,8 +164,7 @@ theorem surjective_ofZeroSectionCompl : Function.Surjective (ofZeroSectionCompl 
   · exact ⟨⟨⟨b, v⟩, mem_zeroSectionCompl.2 hv⟩, by
       rw [ofZeroSectionCompl_mk hF hv, mk_eq_mk_iff, h]⟩
   · refine ⟨⟨⟨b, -v⟩, mem_zeroSectionCompl.2 (neg_ne_zero.2 hv)⟩, ?_⟩
-    rw [ofZeroSectionCompl_mk hF (neg_ne_zero.2 hv), mk_eq_mk_iff, h]
-    exact orientation_basisSingleton_neg hb (neg_ne_zero.2 hv)
+    rw [ofZeroSectionCompl_mk_neg hF hv, ofZeroSectionCompl_mk hF hv, deck_apply, h]
 
 /-- The nonzero vectors giving a fixed orientation of a fibre form a connected set: the open
 half-line of positive multiples of one of them. -/
@@ -217,9 +229,7 @@ theorem isOpenMap_ofZeroSectionCompl : IsOpenMap (ofZeroSectionCompl F E hF) := 
   replace hv : v ≠ 0 := mem_zeroSectionCompl.1 hv
   set e := trivializationAt F E b
   have hb : b ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' b
-  have hw : (e ⟨b, v⟩).2 ≠ 0 := by
-    rw [← e.linearEquivAt_apply (R := ℝ) b hb]
-    exact (map_ne_zero_iff _ (e.linearEquivAt ℝ _ hb).injective).2 hv
+  have hw : (e ⟨b, v⟩).2 ≠ 0 := (e.snd_apply_ne_zero_iff ℝ (v := ⟨b, v⟩) hb).2 hv
   set w : F := (e ⟨b, v⟩).2
   set o := (FiniteDimensional.basisSingleton (Fin 1) hF w hw).orientation
   -- The section `g` of the map over the sheet of `e` read as `o`.
@@ -228,10 +238,8 @@ theorem isOpenMap_ofZeroSectionCompl : IsOpenMap (ofZeroSectionCompl F E hF) := 
   have hgS : ContinuousOn g (sheet e o) :=
     e.continuousOn_symm.comp (continuous_proj.prodMk continuous_const).continuousOn
       fun p hp ↦ ⟨(mem_sheet_iff.1 hp).1, mem_univ _⟩
-  have hg₀ {p} (hp : p ∈ sheet e o) : e.symm p.proj w ≠ 0 := by
-    obtain ⟨hp, -⟩ := mem_sheet_iff.1 hp
-    rw [← e.linearEquivAt_symm_apply (R := ℝ) _ hp]
-    exact (map_ne_zero_iff _ (e.linearEquivAt ℝ _ hp).symm.injective).2 hw
+  have hg₀ {p} (hp : p ∈ sheet e o) : e.symm p.proj w ≠ 0 :=
+    (e.symm_apply_ne_zero_iff ℝ (mem_sheet_iff.1 hp).1).2 hw
   have hvS : ofZeroSectionCompl F E hF ⟨⟨b, v⟩, mem_zeroSectionCompl.2 hv⟩ ∈ sheet e o := by
     rw [ofZeroSectionCompl_mk hF hv]
     exact mem_sheet_iff.2 ⟨hb, e.mapOrientation_orientation_basisSingleton hb _ hF hv hw⟩

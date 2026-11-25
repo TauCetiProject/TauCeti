@@ -224,8 +224,6 @@ theorem TauCeti.orientation_basisSingleton_smul {R V ι : Type*} [Field R] [Line
     (FiniteDimensional.basisSingleton ι hV (c • v) (smul_ne_zero hc.ne' hv)).orientation =
       (FiniteDimensional.basisSingleton ι hV v hv).orientation := by
   -- The determinant of the basis `(c • v)` with respect to the basis `(v)` is `c`.
-  have h := (FiniteDimensional.basisSingleton ι hV v hv).repr_self default
-  rw [FiniteDimensional.basisSingleton_apply] at h
-  rw [eq_comm, Module.Basis.orientation_eq_iff_det_pos, Module.Basis.det_apply, Matrix.det_unique,
-    Module.Basis.toMatrix_apply, FiniteDimensional.basisSingleton_apply, map_smul, h]
-  simpa using hc
+  rw [eq_comm, Module.Basis.orientation_eq_iff_det_pos]
+  simp [Module.Basis.det_apply, Matrix.det_unique, Module.Basis.toMatrix_apply, div_self,
+    Module.basisUnique_repr_eq_zero_iff, hv, hc]
