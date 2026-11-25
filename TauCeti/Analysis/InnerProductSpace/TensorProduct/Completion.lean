@@ -57,8 +57,8 @@ space, whether or not `E` and `F` are complete. This file develops the operators
   amplifications (`ContinuousLinearMap.lTensorCompletion_commIsometry_completion`,
   `ContinuousLinearMap.rTensorCompletion_commIsometry_completion`) and the factors of `f ⊗ g`
   (`TensorProduct.mapLCompletion_commIsometry_completion`). Scalar unit identifications
-  `TensorProduct.lidCompletionEquiv` and `TensorProduct.ridCompletionEquiv` identify `𝕜 ⊗̂ E` and
-  `E ⊗̂ 𝕜` with `E` when `E` is complete.
+  `TensorProduct.lidIsometryCompletion` and `TensorProduct.ridIsometryCompletion` identify
+  `𝕜 ⊗̂ E` and `E ⊗̂ 𝕜` with `E` when `E` is complete.
 * Completing a factor first does not change the completed tensor product: `E ⊗[𝕜] F` is dense in
   `Ê ⊗[𝕜] F` (`TensorProduct.denseRange_rTensor_toComplₗᵢ`, an instance of
   `ContinuousLinearMap.denseRange_rTensor`), which gives the unitaries
@@ -902,55 +902,59 @@ theorem conjStarAlgEquiv_commIsometry_completion_lTensorCompletion (g : F →L[�
       LinearIsometryEquiv.completion_apply_coe]
 
 variable (𝕜 E) in
-/-- Left scalar unit identification `Completion (𝕜 ⊗[𝕜] E) ≃ₗᵢ[𝕜] E` for complete `E`. -/
-def lidCompletionEquiv [CompleteSpace E] : Completion (𝕜 ⊗[𝕜] E) ≃ₗᵢ[𝕜] E :=
+/-- Left scalar unit identification `Completion (𝕜 ⊗[𝕜] E) ≃ₗᵢ[𝕜] E` for complete `E`, extending
+`TensorProduct.lidIsometry`. -/
+def lidIsometryCompletion [CompleteSpace E] : Completion (𝕜 ⊗[𝕜] E) ≃ₗᵢ[𝕜] E :=
   (lidIsometry 𝕜 E).toLinearEquiv.extendOfIsometry Completion.toComplₗᵢ.toLinearMap LinearMap.id
     Completion.denseRange_coe Function.surjective_id.denseRange fun _ ↦ by simp
 
 @[simp]
-theorem lidCompletionEquiv_tmul [CompleteSpace E] (c : 𝕜) (x : E) :
-    lidCompletionEquiv 𝕜 E (c ⊗ₜ[𝕜] x : 𝕜 ⊗[𝕜] E) = c • x :=
+theorem lidIsometryCompletion_tmul [CompleteSpace E] (c : 𝕜) (x : E) :
+    lidIsometryCompletion 𝕜 E (c ⊗ₜ[𝕜] x : 𝕜 ⊗[𝕜] E) = c • x :=
   LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ (c ⊗ₜ[𝕜] x)
 
 @[simp]
-theorem lidCompletionEquiv_symm_apply [CompleteSpace E] (x : E) :
-    (lidCompletionEquiv 𝕜 E).symm x = ((1 : 𝕜) ⊗ₜ[𝕜] x : 𝕜 ⊗[𝕜] E) :=
+theorem lidIsometryCompletion_symm_apply [CompleteSpace E] (x : E) :
+    (lidIsometryCompletion 𝕜 E).symm x = ((1 : 𝕜) ⊗ₜ[𝕜] x : 𝕜 ⊗[𝕜] E) :=
   LinearEquiv.extendOfIsometry_symm_eq _ _ _ _ _ _ x
 
-theorem lidCompletionEquiv_comp_lTensorCompletion [CompleteSpace E] [CompleteSpace F]
-    (f : E →L[𝕜] F) : (lidCompletionEquiv 𝕜 F : _ →L[𝕜] F) ∘L f.lTensorCompletion 𝕜 =
-      f ∘L (lidCompletionEquiv 𝕜 E : _ →L[𝕜] E) :=
+theorem lidIsometryCompletion_comp_lTensorCompletion [CompleteSpace E] [CompleteSpace F]
+    (f : E →L[𝕜] F) : (lidIsometryCompletion 𝕜 F : _ →L[𝕜] F) ∘L f.lTensorCompletion 𝕜 =
+      f ∘L (lidIsometryCompletion 𝕜 E : _ →L[𝕜] E) :=
   completion_ext fun _ _ ↦ by simp
 
 @[simp]
-theorem conjStarAlgEquiv_lidCompletionEquiv_lTensorCompletion [CompleteSpace E]
-    (f : E →L[𝕜] E) : (lidCompletionEquiv 𝕜 E).conjStarAlgEquiv (f.lTensorCompletion 𝕜) = f := by
+theorem conjStarAlgEquiv_lidIsometryCompletion_lTensorCompletion [CompleteSpace E]
+    (f : E →L[𝕜] E) :
+    (lidIsometryCompletion 𝕜 E).conjStarAlgEquiv (f.lTensorCompletion 𝕜) = f := by
   ext; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
 
 variable (𝕜 E) in
-/-- Right scalar unit identification `Completion (E ⊗[𝕜] 𝕜) ≃ₗᵢ[𝕜] E` for complete `E`. -/
-def ridCompletionEquiv [CompleteSpace E] : Completion (E ⊗[𝕜] 𝕜) ≃ₗᵢ[𝕜] E :=
+/-- Right scalar unit identification `Completion (E ⊗[𝕜] 𝕜) ≃ₗᵢ[𝕜] E` for complete `E`, extending
+`TensorProduct.ridIsometry`. -/
+def ridIsometryCompletion [CompleteSpace E] : Completion (E ⊗[𝕜] 𝕜) ≃ₗᵢ[𝕜] E :=
   (ridIsometry 𝕜 E).toLinearEquiv.extendOfIsometry Completion.toComplₗᵢ.toLinearMap LinearMap.id
     Completion.denseRange_coe Function.surjective_id.denseRange fun _ ↦ by simp
 
 @[simp]
-theorem ridCompletionEquiv_tmul [CompleteSpace E] (x : E) (c : 𝕜) :
-    ridCompletionEquiv 𝕜 E (x ⊗ₜ[𝕜] c : E ⊗[𝕜] 𝕜) = c • x :=
+theorem ridIsometryCompletion_tmul [CompleteSpace E] (x : E) (c : 𝕜) :
+    ridIsometryCompletion 𝕜 E (x ⊗ₜ[𝕜] c : E ⊗[𝕜] 𝕜) = c • x :=
   LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ (x ⊗ₜ[𝕜] c)
 
 @[simp]
-theorem ridCompletionEquiv_symm_apply [CompleteSpace E] (x : E) :
-    (ridCompletionEquiv 𝕜 E).symm x = (x ⊗ₜ[𝕜] (1 : 𝕜) : E ⊗[𝕜] 𝕜) :=
+theorem ridIsometryCompletion_symm_apply [CompleteSpace E] (x : E) :
+    (ridIsometryCompletion 𝕜 E).symm x = (x ⊗ₜ[𝕜] (1 : 𝕜) : E ⊗[𝕜] 𝕜) :=
   LinearEquiv.extendOfIsometry_symm_eq _ _ _ _ _ _ x
 
-theorem ridCompletionEquiv_comp_rTensorCompletion [CompleteSpace E] [CompleteSpace F]
-    (f : E →L[𝕜] F) : (ridCompletionEquiv 𝕜 F : _ →L[𝕜] F) ∘L f.rTensorCompletion 𝕜 =
-      f ∘L (ridCompletionEquiv 𝕜 E : _ →L[𝕜] E) :=
+theorem ridIsometryCompletion_comp_rTensorCompletion [CompleteSpace E] [CompleteSpace F]
+    (f : E →L[𝕜] F) : (ridIsometryCompletion 𝕜 F : _ →L[𝕜] F) ∘L f.rTensorCompletion 𝕜 =
+      f ∘L (ridIsometryCompletion 𝕜 E : _ →L[𝕜] E) :=
   completion_ext fun _ _ ↦ by simp
 
 @[simp]
-theorem conjStarAlgEquiv_ridCompletionEquiv_rTensorCompletion [CompleteSpace E]
-    (f : E →L[𝕜] E) : (ridCompletionEquiv 𝕜 E).conjStarAlgEquiv (f.rTensorCompletion 𝕜) = f := by
+theorem conjStarAlgEquiv_ridIsometryCompletion_rTensorCompletion [CompleteSpace E]
+    (f : E →L[𝕜] E) :
+    (ridIsometryCompletion 𝕜 E).conjStarAlgEquiv (f.rTensorCompletion 𝕜) = f := by
   ext; simp [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
 
 theorem completionLeftIsometry_comp_lTensorCompletion (g : F →L[𝕜] F') :

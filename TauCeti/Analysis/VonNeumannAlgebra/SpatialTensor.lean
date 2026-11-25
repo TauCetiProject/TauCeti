@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
-public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
+public import TauCeti.Analysis.VonNeumannAlgebra.Factor
 
 /-!
 # Spatial tensor products of von Neumann algebras
@@ -28,7 +28,8 @@ completeness and sharp injectivity / isometry characterizations (`inlSpatialTens
 `TensorProduct.assocIsometryCompletion`; `B(K)` commutation (`commutant_spatialTensor_top_right`,
 `commutant_spatialTensor_bot_right`), equivalences `inlSpatialTensorBotEquiv` /
 `inrSpatialTensorBotEquiv`, unique splitting (`spatialTensor_bot_top_le_iff_existsUnique`), and
-center formulas (`spatialTensor_inf_commutant_eq_bot`, `spatialTensor_inf_commutant_eq_bot_iff`).
+center and factoriality theorems (`spatialTensor_inf_commutant_eq_bot`,
+`spatialTensor_inf_commutant_eq_bot_iff`, `IsFactor.spatialTensor`, `isFactor_spatialTensor_iff`).
 
 ## References
 
@@ -336,15 +337,15 @@ section MonoidalCoherence
 variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
   [NormedAddCommGroup F] [InnerProductSpace ℂ F] [NormedAddCommGroup G] [InnerProductSpace ℂ G]
 /-- **Left scalar unit law**: `spatialTensor ⊥ M` on `ℂ ⊗[ℂ] F` maps onto `M`. -/
-theorem mapLinearIsometryEquiv_lidCompletionEquiv_spatialTensor [CompleteSpace F]
+theorem mapLinearIsometryEquiv_lidIsometryCompletion_spatialTensor [CompleteSpace F]
     (M : VonNeumannAlgebra F) :
-    mapLinearIsometryEquiv (lidCompletionEquiv ℂ F)
+    mapLinearIsometryEquiv (lidIsometryCompletion ℂ F)
       (spatialTensor ((⊥ : VonNeumannAlgebra ℂ) : Set (ℂ →L[ℂ] ℂ)) (M : Set (F →L[ℂ] F))) = M := by
   rw [spatialTensor_bot_left]; simp [spatialTensor_def, Set.image_image]
 /-- **Right scalar unit law**: `spatialTensor M ⊥` on `E ⊗[ℂ] ℂ` maps onto `M`. -/
-theorem mapLinearIsometryEquiv_ridCompletionEquiv_spatialTensor [CompleteSpace E]
+theorem mapLinearIsometryEquiv_ridIsometryCompletion_spatialTensor [CompleteSpace E]
     (M : VonNeumannAlgebra E) :
-    mapLinearIsometryEquiv (ridCompletionEquiv ℂ E)
+    mapLinearIsometryEquiv (ridIsometryCompletion ℂ E)
       (spatialTensor (M : Set (E →L[ℂ] E)) ((⊥ : VonNeumannAlgebra ℂ) : Set (ℂ →L[ℂ] ℂ))) = M := by
   rw [spatialTensor_bot_right]; simp [spatialTensor_def, Set.image_image]
 /-- **Associativity** of the spatial tensor product along
@@ -541,7 +542,7 @@ theorem spatialTensor_top_bot_le_iff_existsUnique [Nontrivial E]
     rw [← mapLinearIsometryEquiv_commIsometry_spatialTensor, φ.injective.eq_iff]
 end TopCommutantAndSplitting
 
-/-! ### Center and trivial-center inheritance for spatial tensor products -/
+/-! ### Center and factoriality of spatial tensor products -/
 
 section CenterAndFactors
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
@@ -588,8 +589,8 @@ theorem spatialTensor_inf_commutant_eq_of_inf_commutant_eq_bot_right
   simpa [OrderIso.map_inf] using congrArg (mapLinearIsometryEquiv (commIsometry ℂ F E).completion)
     (spatialTensor_inf_commutant_eq_of_inf_commutant_eq_bot_left (E := F) hN M)
 /-- **Trivial center of spatial tensor products**: if `M ⊓ M.commutant = ⊥` and
-`N ⊓ N.commutant = ⊥`, then `spatialTensor M N` has scalar center (`⊓ commutant = ⊥`), yielding
-factoriality when `E` and `F` are nontrivial (`TensorProduct.nontrivial_completion_iff`). -/
+`N ⊓ N.commutant = ⊥`, then `spatialTensor M N` has scalar center (`⊓ commutant = ⊥`); see
+`IsFactor.spatialTensor` and `isFactor_spatialTensor_iff` for `VonNeumannAlgebra.IsFactor`. -/
 theorem spatialTensor_inf_commutant_eq_bot {M : VonNeumannAlgebra E} {N : VonNeumannAlgebra F}
     (hM : M ⊓ M.commutant = ⊥) (hN : N ⊓ N.commutant = ⊥) :
     spatialTensor (M : Set (E →L[ℂ] E)) (N : Set (F →L[ℂ] F)) ⊓
@@ -619,6 +620,22 @@ theorem spatialTensor_inf_commutant_eq_bot_iff [Nontrivial E] [Nontrivial F]
       simpa [OrderIso.map_inf] using
         congrArg (mapLinearIsometryEquiv (commIsometry ℂ E F).completion) hMN⟩,
    fun ⟨hM, hN⟩ ↦ spatialTensor_inf_commutant_eq_bot hM hN⟩
+/-- **Factoriality of spatial tensor products**: `spatialTensor M N` is a factor if and only if
+both `M` and `N` are factors. -/
+theorem isFactor_spatialTensor_iff (M : VonNeumannAlgebra E) (N : VonNeumannAlgebra F) :
+    (spatialTensor (M : Set (E →L[ℂ] E)) (N : Set (F →L[ℂ] F))).IsFactor ↔
+      M.IsFactor ∧ N.IsFactor := by
+  rw [isFactor_iff_inf_commutant_eq_bot, isFactor_iff_inf_commutant_eq_bot,
+    isFactor_iff_inf_commutant_eq_bot, TensorProduct.nontrivial_completion_iff]
+  refine ⟨fun ⟨⟨hE, hF⟩, hMN⟩ ↦ ?_, fun ⟨⟨hE, hM⟩, ⟨hF, hN⟩⟩ ↦
+    ⟨⟨hE, hF⟩, spatialTensor_inf_commutant_eq_bot hM hN⟩⟩
+  obtain ⟨hM, hN⟩ := (spatialTensor_inf_commutant_eq_bot_iff M N).1 hMN
+  exact ⟨⟨hE, hM⟩, ⟨hF, hN⟩⟩
+/-- The spatial tensor product of two factors is a factor. -/
+theorem IsFactor.spatialTensor {M : VonNeumannAlgebra E} {N : VonNeumannAlgebra F}
+    (hM : M.IsFactor) (hN : N.IsFactor) :
+    (VonNeumannAlgebra.spatialTensor (M : Set (E →L[ℂ] E)) (N : Set (F →L[ℂ] F))).IsFactor :=
+  (isFactor_spatialTensor_iff M N).2 ⟨hM, hN⟩
 end CenterAndFactors
 
 end VonNeumannAlgebra
