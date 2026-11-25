@@ -65,8 +65,8 @@ sets of `p`, by `TauCeti.hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt`.
 * `TauCeti.Amenable.exists_sum_tsum_abs_sub_lt`, `TauCeti.amenable_iff_exists_sum_tsum_abs_sub_lt`:
   Reiter's condition in coordinate form.
 * `TauCeti.Amenable.hasFoelnerSets`, `TauCeti.amenable_iff_hasFoelnerSets`,
-  `TauCeti.amenable_iff_exists_finset`: equivalence of amenability and Følner sets on discrete
-  groups.
+  `TauCeti.amenable_iff_exists_finite_set`, `TauCeti.amenable_iff_exists_finset`: equivalence of
+  amenability and Følner sets (`Set.Finite` / `Set.ncard` and `Finset`) on discrete groups.
 * `TauCeti.amenable_iff_maxFoelner_neBot`: for any measurable space with measurable singletons, a
   discrete group is amenable exactly when `maxFoelner G Measure.count` is nontrivial.
 * `TauCeti.amenable_iff_exists_finset_of_closure_eq_top` and
@@ -284,6 +284,14 @@ nontrivial. -/
 theorem amenable_iff_maxFoelner_neBot [MeasurableSpace G] [MeasurableSingletonClass G] :
     Amenable G ↔ NeBot (maxFoelner G (MeasureTheory.Measure.count : MeasureTheory.Measure G)) :=
   amenable_iff_hasFoelnerSets.trans hasFoelnerSets_iff_maxFoelner_neBot
+
+/-- `DecidableEq`-free finite-`Set` characterization of discrete group amenability. -/
+theorem amenable_iff_exists_finite_set :
+    Amenable G ↔
+      ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
+        ∃ F : Set G, F.Finite ∧ F.Nonempty ∧
+          ∀ g ∈ K, (((g • F) ∆ F).ncard : ℝ) < ε * F.ncard :=
+  amenable_iff_hasFoelnerSets.trans hasFoelnerSets_iff_exists_finite_set
 
 /-- A discrete group is amenable exactly when for every finite `K ⊆ G` and every `ε > 0` there is
 a finite nonempty `F ⊆ G` with `|gF △ F| < ε · |F|` for all `g ∈ K`. -/

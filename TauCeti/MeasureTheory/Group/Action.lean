@@ -9,8 +9,9 @@ public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
-public import Mathlib.Topology.MetricSpace.IsometricSMul
 public import Mathlib.Probability.ConditionalProbability
+public import Mathlib.Topology.MetricSpace.IsometricSMul
+import Mathlib.Algebra.Order.BigOperators.Group.List
 
 /-!
 # Invariant measures of a scalar multiplication
@@ -35,6 +36,12 @@ s-finite invariant measure `ν` equals `ν univ • μ.map (· • x)`
 (`eq_measure_univ_smul_map_smul_const`), so any invariant probability measure equals this law.
 This identifies, for instance, the uniform law on a sphere, which is invariant under rotations,
 with the law of a Haar-random rotation of a fixed unit vector.
+
+For a group action preserving a measure `μ`, the symmetric difference of translated sets has
+invariant measure (`measure_smul_symmDiff_smul`), inversion symmetry
+(`measure_inv_smul_symmDiff_self`), and subadditivity under products and list words
+(`measure_mul_smul_symmDiff_le`, `measure_list_prod_smul_symmDiff_le`), together with their
+additive counterparts.
 -/
 
 public section
@@ -180,5 +187,55 @@ theorem eq_measure_univ_smul_map_smul_const [MeasurableSMul₂ G X] [IsProbabili
       rw [lintegral_const, smul_apply, smul_eq_mul, mul_comm]
 
 end OrbitLaw
+
+section SMulSymmDiff
+
+open scoped symmDiff
+
+variable {G X : Type*} [Group G] [MulAction G X] [MeasurableSpace X]
+  (μ : Measure X) [SMulInvariantMeasure G X μ]
+
+/-- A measure-preserving group action preserves the measure of symmetric differences. -/
+@[to_additive (attr := simp)
+/-- A measure-preserving additive group action preserves the measure of symmetric differences. -/]
+theorem measure_smul_symmDiff_smul (g : G) (s t : Set X) :
+    μ ((g • s) ∆ (g • t)) = μ (s ∆ t) := by
+  rw [← smul_set_symmDiff, measure_smul]
+
+/-- Translating a set by `g⁻¹` gives a symmetric difference of the same invariant measure as
+translating by `g`. -/
+@[to_additive
+/-- Translating a set by `-g` gives a symmetric difference of the same invariant measure as
+translating by `g`. -/]
+theorem measure_inv_smul_symmDiff_self (g : G) (s : Set X) :
+    μ ((g⁻¹ • s) ∆ s) = μ ((g • s) ∆ s) := by
+  rw [measure_inv_smul_symmDiff, symmDiff_comm]
+
+/-- Subadditivity of `μ ((g • s) ∆ s)` under group multiplication. -/
+@[to_additive
+/-- Subadditivity of `μ ((g +ᵥ s) ∆ s)` under group addition. -/]
+theorem measure_mul_smul_symmDiff_le (g h : G) (s : Set X) :
+    μ (((g * h) • s) ∆ s) ≤ μ ((g • s) ∆ s) + μ ((h • s) ∆ s) :=
+  calc
+    μ (((g * h) • s) ∆ s) = μ ((g • (h • s)) ∆ s) := by rw [mul_smul]
+    _ ≤ μ ((g • (h • s)) ∆ (g • s)) + μ ((g • s) ∆ s) := measure_symmDiff_le _ (g • s) _
+    _ = μ ((h • s) ∆ s) + μ ((g • s) ∆ s) := by rw [measure_smul_symmDiff_smul]
+    _ = μ ((g • s) ∆ s) + μ ((h • s) ∆ s) := add_comm _ _
+
+/-- Subadditivity of `μ ((g +ᵥ s) ∆ s)` along a list sum in an additive group `A`. -/
+theorem measure_list_sum_vadd_symmDiff_le {A X : Type*} [AddGroup A] [AddAction A X]
+    [MeasurableSpace X] (μ : Measure X) [VAddInvariantMeasure A X μ] (L : List A) (s : Set X) :
+    μ ((L.sum +ᵥ s) ∆ s) ≤ (L.map fun g ↦ μ ((g +ᵥ s) ∆ s)).sum :=
+  L.le_sum_of_subadditive (fun g ↦ μ ((g +ᵥ s) ∆ s)) (by simp) fun g h ↦
+    measure_add_vadd_symmDiff_le μ g h s
+
+/-- Subadditivity of `μ ((g • s) ∆ s)` along a list product in `G`. -/
+@[to_additive existing]
+theorem measure_list_prod_smul_symmDiff_le (L : List G) (s : Set X) :
+    μ ((L.prod • s) ∆ s) ≤ (L.map fun g ↦ μ ((g • s) ∆ s)).sum :=
+  L.apply_prod_le_sum_map (fun g ↦ μ ((g • s) ∆ s)) (by simp) fun g h ↦
+    measure_mul_smul_symmDiff_le μ g h s
+
+end SMulSymmDiff
 
 end MeasureTheory
