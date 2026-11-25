@@ -41,7 +41,7 @@ The construction of the isomorphism follows the ideal case `reesAlgebra.awayEqui
 `TauCeti/RingTheory/ReesAlgebra/AffineBlowup.lean`, which is `C = B` with `J` an ideal and
 `#S = 1`: it is the lift of evaluation at `T = 1` through `HomogeneousLocalization.Away.lift`. The
 description `mem_fractionSubalgebra_iff` of the elements of `C[F/S]` parallels
-`Ideal.mem_affineBlowup_iff` in `TauCeti/RingTheory/Ideal/AffineBlowup.lean`.
+`Ideal.mem_affineBlowup_iff` in `TauCeti/RingTheory/Ideal/AffineBlowup/Basic.lean`.
 
 ## Main definitions
 

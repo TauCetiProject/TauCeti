@@ -45,6 +45,8 @@ such as `ℝ` or `ℂ`, the finite-rank projection `P` is a compact operator.
   kernel.
 * `ContinuousLinearMap.tendsto_subseq_of_cauchySeq_comp`: when the kernel is moreover
   finite-dimensional, a bounded sequence whose image is Cauchy has a convergent subsequence.
+* `ContinuousLinearMap.not_cauchySeq_comp_of_le_dist`: consequently, such an operator is not
+  Cauchy along a bounded sequence whose terms stay a fixed distance apart under a continuous map.
 
 `TauCeti.Analysis.Fredholm.Proper` uses the estimate below to prove
 that a map with Fredholm derivative is proper near a point (Smale, *An infinite dimensional version
@@ -229,5 +231,20 @@ theorem tendsto_subseq_of_cauchySeq_comp [ProperSpace 𝕜] (T : E →L[𝕜] F)
       gcongr
       simpa using h₂
     _ = ε := by field_simp
+
+open Filter in
+/-- **A closed-range operator with finite-dimensional complemented kernel has no separated
+approximate kernel.** If `x` is a bounded sequence whose images under a continuous map `P` stay at
+least `δ > 0` apart, then `T ∘ x` is not Cauchy; in particular `T (x n)` does not tend to `0`. -/
+theorem not_cauchySeq_comp_of_le_dist [ProperSpace 𝕜] (T : E →L[𝕜] F)
+    (hclosed : IsClosed (T.range : Set F)) (hfinite : FiniteDimensional 𝕜 T.ker)
+    (hcompl : T.ker.ClosedComplemented) {G : Type*} [PseudoMetricSpace G] {P : E → G}
+    (hP : Continuous P) {x : ℕ → E} (hx : Bornology.IsBounded (Set.range x)) {δ : ℝ}
+    (hδ : 0 < δ) (hsep : ∀ m n, m ≠ n → δ ≤ dist (P (x m)) (P (x n))) :
+    ¬ CauchySeq (T ∘ x) := by
+  intro hTx
+  obtain ⟨a, φ, hφ, hlim⟩ := T.tendsto_subseq_of_cauchySeq_comp hclosed hfinite hcompl hx hTx
+  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff'.1 ((hP.tendsto a).comp hlim).cauchySeq δ hδ
+  exact (hN (N + 1) N.le_succ).not_ge (hsep _ _ (hφ N.lt_succ_self).ne')
 
 end ContinuousLinearMap
