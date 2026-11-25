@@ -16,7 +16,7 @@ import TauCeti.Algebra.Lie.Orthogonal.Cartan
 * `𝔤𝔩_n(ℝ)` for `n ≥ 1` has real rank `0` because it is not semisimple
   (`TauCeti.not_hasTrivialRadical_matrix`), so it has no Cartan involution.
 * `𝔰𝔬(n)` for `n ≥ 3`, for instance `𝔰𝔬(3)`, has negative definite Killing form
-  (`LieAlgebra.Orthogonal.killingForm_so_neg`), so it has real rank `0`.
+  (`LieAlgebra.Orthogonal.killingForm_so_self_neg`), so it has real rank `0`.
 -/
 
 public section
@@ -35,7 +35,7 @@ theorem realRank_matrix {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n] :
 /-- `𝔰𝔬(n)`, `n ≥ 3`, has real rank `0`. -/
 theorem realRank_so {l : Type*} [Fintype l] [DecidableEq l] (hl : 3 ≤ Fintype.card l) :
     realRank (Orthogonal.so l ℝ) = 0 :=
-  realRank_eq_zero_of_killingForm_neg (Orthogonal.killingForm_so_neg hl)
+  realRank_eq_zero_of_killingForm_neg (Orthogonal.killingForm_so_self_neg hl)
 
 /-- The compact Lie algebra `𝔰𝔬(3)` has real rank `0`. -/
 example : realRank (Orthogonal.so (Fin 3) ℝ) = 0 :=

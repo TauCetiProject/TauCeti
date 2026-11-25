@@ -22,8 +22,8 @@ Killing form of `𝔰𝔬(n)` is negative definite: `𝔰𝔬(n)` is compact.
 
 * `LieAlgebra.Orthogonal.isCartanInvolution_restrictNegConjTranspose_so'`: `X ↦ -Xᵀ` is a
   Cartan involution of `𝔰𝔬(p, q)` for `p + q ≥ 3`.
-* `LieAlgebra.Orthogonal.killingForm_so_neg`: the Killing form of `𝔰𝔬(n)`, `n ≥ 3`, is negative
-  definite.
+* `LieAlgebra.Orthogonal.killingForm_so_self_neg`: the Killing form of `𝔰𝔬(n)`, `n ≥ 3`, is
+  negative definite.
 
 ## References
 
@@ -47,7 +47,7 @@ variable {l : Type*} [Fintype l] [DecidableEq l]
 
 /-- The Killing form of `𝔰𝔬(n)`, `n ≥ 3`, is negative definite: `X ↦ -Xᵀ` is a Cartan involution
 of `𝔰𝔬(n)` (Knapp, Prop. 6.28) fixing every `X`, since `Xᵀ = -X`. -/
-theorem killingForm_so_neg (hl : 3 ≤ Fintype.card l) (X : so l ℝ) (hX : X ≠ 0) :
+theorem killingForm_so_self_neg (hl : 3 ≤ Fintype.card l) (X : so l ℝ) (hX : X ≠ 0) :
     killingForm ℝ (so l ℝ) X X < 0 := by
   have := TauCeti.hasTrivialRadical_so ℝ hl
   have hθ := (so l ℝ).isCartanInvolution_restrictNegConjTranspose fun _ ↦ conjTranspose_mem_so
