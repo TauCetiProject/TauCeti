@@ -83,9 +83,9 @@ theorem isSelfDual_iff_forall_conj_coeff_eq (f : Newform N k) :
   refine ⟨fun h n ↦ ?_, fun h ↦ Newform.ext <| CuspForm.qExpansion_injective one_pos
     (one_mem_strictPeriods_Gamma1_map N) ?_⟩
   · have hn := congrArg (fun g : Newform N k ↦ (qExpansion 1 g.toCuspForm).coeff n) h
-    simpa only [qExpansion_conj, PowerSeries.coeff_map] using hn
+    simpa only [qExpansion_coeff_conj] using hn
   · ext n
-    simp only [qExpansion_conj, PowerSeries.coeff_map, h]
+    simp only [qExpansion_coeff_conj, h]
 
 /-- **A newform is self-dual if and only if all of its Fourier coefficients are real.** -/
 theorem isSelfDual_iff_forall_im_coeff_eq_zero (f : Newform N k) :
@@ -146,13 +146,13 @@ theorem coe_primitiveTwist_dirichletLift (hf : f.IsSelfDual) :
 
 /-- **The coefficients of a self-dual newform vanish where its nebentypus is not `1`**: at a prime
 `p ∤ N` with `χ(p) ≠ 1`, `a_p(f) = 0`. Indeed `f` is its own twist by `χ`
-(`coe_primitiveTwist_dirichletLift`), so `a_p = χ(p) a_p`. -/
+(`coe_primitiveTwist_dirichletLift`), so `a_p = χ(p) a_p`
+(`qExpansion_coeff_eq_zero_of_coe_primitiveTwist_eq`). -/
 theorem qExpansion_coeff_eq_zero_of_dirichletLift_ne_one (hf : f.IsSelfDual) {p : ℕ}
     (hp : p.Prime) (hpN : p.Coprime N) (hχ : f.dirichletLift p ≠ 1) :
-    (qExpansion 1 f.toCuspForm).coeff p = 0 := by
-  have h := f.qExpansion_coeff_primitiveTwist f.dirichletLift hp hpN hpN
-  rw [hf.coe_primitiveTwist_dirichletLift] at h
-  exact by_contra fun ha ↦ hχ ((mul_eq_right₀ ha).mp h.symm)
+    (qExpansion 1 f.toCuspForm).coeff p = 0 :=
+  f.qExpansion_coeff_eq_zero_of_coe_primitiveTwist_eq f.dirichletLift
+    hf.coe_primitiveTwist_dirichletLift hp hpN hpN hχ
 
 end IsSelfDual
 
