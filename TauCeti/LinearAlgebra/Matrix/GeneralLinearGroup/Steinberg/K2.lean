@@ -27,7 +27,6 @@ a commutative group, functorial in `R`, and fits into the exact sequence
 * `TauCeti.AlgebraicK2.instCommGroup`: `AlgebraicK2 R` is a commutative group.
 * `TauCeti.AlgebraicK2.map_id`, `TauCeti.AlgebraicK2.map_comp`, `TauCeti.AlgebraicK2.map_map`:
   functoriality of `AlgebraicK2`.
-* `TauCeti.SteinbergGroup.ker_toStableGL_eq_center`: `K₂(R)` is the center of `St(R)`.
 * `TauCeti.AlgebraicK2.mulExact_subtype_toStableGL`,
   `TauCeti.SteinbergGroup.mulExact_toStableGL_abelianizationOf`: exactness at `St(R)` and `GL_∞(R)`
   of `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`.
@@ -146,19 +145,6 @@ theorem map_map (f : R →+* S) (g : S →+* T) (x : AlgebraicK2 R) :
 end AlgebraicK2
 
 namespace SteinbergGroup
-
-/-- **`K₂(R)` is the center of the Steinberg group `St(R)`.** The kernel of `St(R) →* GL_∞(R)` is
-central by `TauCeti.SteinbergGroup.ker_toStableGL_le_center`; conversely a central element of
-`St(R)` maps to an element of `GL_∞(R)` commuting with the image `E_∞(R)`, whose centralizer is
-trivial. -/
-theorem ker_toStableGL_eq_center :
-    (toStableGL R).ker = Subgroup.center (SteinbergGroup R) := by
-  refine le_antisymm ker_toStableGL_le_center fun z hz ↦ ?_
-  rw [MonoidHom.mem_ker, ← Subgroup.mem_bot,
-    ← StableGeneralLinearGroup.centralizer_elementarySubgroup, ← range_toStableGL,
-    Subgroup.mem_centralizer_iff]
-  rintro _ ⟨w, rfl⟩
-  rw [← map_mul, ← map_mul, Subgroup.mem_center_iff.1 hz w]
 
 /-- Exactness at `GL_∞(R)` of `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`: `toStableGL R` and
 `Group.Abelianization.of` form an exact pair. -/
