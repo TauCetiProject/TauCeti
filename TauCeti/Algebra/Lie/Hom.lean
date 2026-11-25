@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Basic
+public import Mathlib.Algebra.Lie.Ideal
 
 /-!
 # Intertwining Lie algebra homomorphisms
@@ -13,8 +13,10 @@ public import Mathlib.Algebra.Lie.Basic
 Basic constructors, simp, and intertwining lemmas for `LieHom`, `LieEquiv`, and `LinearEquiv`:
 construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`), composition of
 intertwining homomorphisms, and intertwining of inverse equivalences on Lie algebras and bracket
-actions (`LieEquiv.symm_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`), and the transport
-`e ∘ θ ∘ e⁻¹` of an automorphism along an isomorphism (`LieEquiv.conj`).
+actions (`LieEquiv.symm_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`), the transport
+`e ∘ θ ∘ e⁻¹` of an automorphism along an isomorphism (`LieEquiv.conj`), and the restriction of a
+Lie homomorphism to Lie subalgebras or Lie ideals it maps into each other (`LieHom.restrict`,
+`LieHom.restrictIdeal`).
 -/
 
 public section
@@ -106,3 +108,44 @@ theorem symm_lie_eq_of_lie_eq {L' M₀ M₀' : Type*}
   e.injective <| by simpa using (he (φ.symm y) (e.symm m')).symm
 
 end LinearEquiv
+
+namespace LieHom
+
+variable (f : L →ₗ⁅R⁆ M)
+
+/-- The restriction of a Lie homomorphism `f` to Lie subalgebras `S` and `T` with `f(S) ⊆ T`, as
+a Lie homomorphism `S → T`. Its linear map is `LinearMap.restrict`. -/
+def restrict {S : LieSubalgebra R L} {T : LieSubalgebra R M} (hf : ∀ x ∈ S, f x ∈ T) :
+    S →ₗ⁅R⁆ T :=
+  { (f : L →ₗ[R] M).restrict (p := S.toSubmodule) (q := T.toSubmodule) hf with
+    map_lie' := Subtype.ext (f.map_lie _ _) }
+
+@[simp]
+theorem coe_restrict_apply {S : LieSubalgebra R L} {T : LieSubalgebra R M}
+    (hf : ∀ x ∈ S, f x ∈ T) (x : S) : (f.restrict hf x : M) = f x :=
+  (rfl)
+
+/-- The restriction of `f`, followed by the inclusion of `T`, is `f` on `S`. -/
+@[simp]
+theorem incl_comp_restrict {S : LieSubalgebra R L} {T : LieSubalgebra R M}
+    (hf : ∀ x ∈ S, f x ∈ T) : T.incl.comp (f.restrict hf) = f.comp S.incl :=
+  LieHom.ext fun _ ↦ (rfl)
+
+/-- The restriction of a Lie homomorphism `f` to Lie ideals `J` and `J'` with `f(J) ⊆ J'`, as a Lie
+homomorphism `J → J'`: `LieHom.restrict` for the underlying Lie subalgebras. -/
+def restrictIdeal {J : LieIdeal R L} {J' : LieIdeal R M} (hf : ∀ x ∈ J, f x ∈ J') :
+    J →ₗ⁅R⁆ J' :=
+  f.restrict (S := J) (T := J') hf
+
+@[simp]
+theorem coe_restrictIdeal_apply {J : LieIdeal R L} {J' : LieIdeal R M}
+    (hf : ∀ x ∈ J, f x ∈ J') (x : J) : (f.restrictIdeal hf x : M) = f x :=
+  (rfl)
+
+/-- The restriction of `f` to ideals, followed by the inclusion of `J'`, is `f` on `J`. -/
+@[simp]
+theorem incl_comp_restrictIdeal {J : LieIdeal R L} {J' : LieIdeal R M}
+    (hf : ∀ x ∈ J, f x ∈ J') : J'.incl.comp (f.restrictIdeal hf) = f.comp J.incl :=
+  LieHom.ext fun _ ↦ (rfl)
+
+end LieHom

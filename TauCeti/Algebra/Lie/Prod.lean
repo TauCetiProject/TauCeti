@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
+public import TauCeti.Algebra.Lie.Basic
+public import TauCeti.Algebra.Lie.Hom
 
 /-!
 # Products of Lie modules
@@ -40,6 +42,9 @@ product.
 * `TauCeti.lie_prod_apply`: the componentwise bracket on a product.
 * `LieHom.prodRepresentation`: the product of two explicit Lie representations.
 * `LieHom.piRepresentation`: the product of a family of explicit Lie representations.
+* `LieIdeal.prodEquivOfIsCompl`: for complementary ideals `I` and `J` of a Lie algebra `L`,
+  addition `I × J ≃ₗ⁅R⁆ L`; its inverse is natural for Lie maps preserving both ideals
+  (`LieIdeal.prodEquivOfIsCompl_symm_map`).
 -/
 
 public section
@@ -394,3 +399,70 @@ theorem piRepresentation_injective_iff
 end Pi
 
 end LieHom
+
+namespace LieIdeal
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+variable (I J : LieIdeal R L) (h : IsCompl I J)
+
+/-- For complementary ideals `I` and `J` of a Lie algebra `L`, addition `I × J → L` is an
+equivalence of Lie algebras: the cross brackets vanish because `I ⊓ J = ⊥`. -/
+noncomputable def prodEquivOfIsCompl : (I × J) ≃ₗ⁅R⁆ L :=
+  { Submodule.prodEquivOfIsCompl I.toSubmodule J.toSubmodule
+      (LieSubmodule.isCompl_toSubmodule.mpr h) with
+    map_lie' := by
+      rintro ⟨a, b⟩ ⟨c, d⟩
+      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+        Submodule.coe_prodEquivOfIsCompl', LieAlgebra.Prod.bracket_apply, lie_add, add_lie,
+        lie_eq_zero_of_disjoint h.disjoint a.property d.property,
+        lie_eq_zero_of_disjoint h.symm.disjoint b.property c.property]
+      abel }
+
+/-- `prodEquivOfIsCompl` is addition. -/
+@[simp]
+theorem prodEquivOfIsCompl_apply (p : I × J) : prodEquivOfIsCompl I J h p = (p.1 : L) + p.2 :=
+  (rfl)
+
+/-- The inverse of `prodEquivOfIsCompl` on an element of the first ideal. -/
+@[simp]
+theorem prodEquivOfIsCompl_symm_apply_left (x : I) : (prodEquivOfIsCompl I J h).symm x = (x, 0) :=
+  (prodEquivOfIsCompl I J h).symm_apply_eq.2 <| by simp
+
+/-- The inverse of `prodEquivOfIsCompl` on an element of the second ideal. -/
+@[simp]
+theorem prodEquivOfIsCompl_symm_apply_right (x : J) :
+    (prodEquivOfIsCompl I J h).symm x = (0, x) :=
+  (prodEquivOfIsCompl I J h).symm_apply_eq.2 <| by simp
+
+/-- The two components of the inverse of `prodEquivOfIsCompl` add up to the original element. -/
+@[simp]
+theorem prodEquivOfIsCompl_symm_fst_add_snd (x : L) :
+    (((prodEquivOfIsCompl I J h).symm x).1 : L) + ((prodEquivOfIsCompl I J h).symm x).2 = x := by
+  rw [← prodEquivOfIsCompl_apply I J h, LieEquiv.apply_symm_apply]
+
+/-- The inverse of `prodEquivOfIsCompl` composed with the inclusion of the first ideal is the first
+factor inclusion. -/
+@[simp]
+theorem prodEquivOfIsCompl_symm_comp_incl_left :
+    (prodEquivOfIsCompl I J h).symm.toLieHom.comp I.incl = LieHom.inl R I J := by
+  ext x <;> simp
+
+/-- The inverse of `prodEquivOfIsCompl` composed with the inclusion of the second ideal is the
+second factor inclusion. -/
+@[simp]
+theorem prodEquivOfIsCompl_symm_comp_incl_right :
+    (prodEquivOfIsCompl I J h).symm.toLieHom.comp J.incl = LieHom.inr R I J := by
+  ext x <;> simp
+
+/-- The inverse of `prodEquivOfIsCompl` is natural for Lie maps `f` sending `I` into `I'` and `J`
+into `J'`: it acts on the components through the restrictions of `f`. -/
+theorem prodEquivOfIsCompl_symm_map {I' J' : LieIdeal R L'} (h' : IsCompl I' J')
+    (f : L →ₗ⁅R⁆ L') (hI : ∀ x ∈ I, f x ∈ I') (hJ : ∀ x ∈ J, f x ∈ J') (x : L) :
+    (prodEquivOfIsCompl I' J' h').symm (f x) =
+      (f.restrictIdeal hI ((prodEquivOfIsCompl I J h).symm x).1,
+        f.restrictIdeal hJ ((prodEquivOfIsCompl I J h).symm x).2) := by
+  rw [LieEquiv.symm_apply_eq, prodEquivOfIsCompl_apply, LieHom.coe_restrictIdeal_apply,
+    LieHom.coe_restrictIdeal_apply, ← map_add, prodEquivOfIsCompl_symm_fst_add_snd]
+
+end LieIdeal
