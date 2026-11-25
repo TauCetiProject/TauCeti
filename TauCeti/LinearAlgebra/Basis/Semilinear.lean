@@ -50,6 +50,8 @@ induces the conjugate-linear coordinate equivalence `Module.Basis.conjEquivFun`.
 * `Module.Basis.conjEquivFun`: the conjugate-linear coordinate equivalence `M ≃ₛₗ[starRingEnd R]
   (ι → R)` of a finite basis.
 * `LinearEquiv.finrank_eqₛₗ`: semilinear equivalences along ring isomorphisms preserve `finrank`.
+* `LinearMap.map_sum_smul_eq_of_eq_single`: a `σ`-semilinear map to `ι → S` sending a family to
+  the standard basis applies `σ` to the coefficients of a linear combination of the family.
 -/
 
 public section
@@ -219,3 +221,17 @@ theorem finrank_eqₛₗ (f : M ≃ₛₗ[σ] M') : Module.finrank R M = Module.
   simpa [Module.finrank] using congrArg Cardinal.toNat this
 
 end LinearEquiv
+
+namespace LinearMap
+
+variable {ι R S M : Type*} [Semiring R] [Semiring S] {σ : R →+* S} [AddCommMonoid M] [Module R M]
+  [Fintype ι] [DecidableEq ι]
+
+/-- A `σ`-semilinear map `f` to `ι → S` sending a family `e` to the standard basis sends
+`∑ᵢ cᵢ • eᵢ` to the family of images `σ (cᵢ)` of the coefficients. -/
+theorem map_sum_smul_eq_of_eq_single (f : M →ₛₗ[σ] ι → S) {e : ι → M}
+    (he : ∀ i, f (e i) = Pi.single i 1) (c : ι → R) : f (∑ i, c i • e i) = fun i ↦ σ (c i) := by
+  ext j
+  simp [map_sum, he, Finset.sum_apply, Pi.single_apply]
+
+end LinearMap

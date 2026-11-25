@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RingTheory.Deformation.Lift
 
+import TauCeti.LinearAlgebra.Basis.Semilinear
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -164,14 +165,6 @@ instance (D : ModuleDeformation ρbar A) : Module.Finite A.obj.left D :=
   have := (D.linearIndependent_reduction (Module.Free.chooseBasis A.obj.left D)).finite
   Module.Finite.of_basis (Module.Free.chooseBasis A.obj.left D)
 
-/-- A semilinear map to `kⁿ` sending a family `e` to the standard basis sends `∑ cᵢ • eᵢ` to the
-images of the coefficients `cᵢ`. -/
-private theorem map_sum_smul_eq_of_eq_single {R M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] {σ : R →+* k} (r : M →ₛₗ[σ] n → k) {e : n → M}
-    (he : ∀ i, r (e i) = Pi.single i 1) (c : n → R) : r (∑ i, c i • e i) = fun i ↦ σ (c i) := by
-  ext j
-  simp [map_sum, he, Finset.sum_apply, Pi.single_apply]
-
 /-- Every module deformation has a basis lifting the standard basis of `kⁿ`. -/
 theorem exists_basis (D : ModuleDeformation ρbar A) :
     ∃ e : Module.Basis n A.obj.left D, ∀ i, D.reduction (e i) = Pi.single i 1 := by
@@ -196,7 +189,8 @@ theorem exists_basis (D : ModuleDeformation ρbar A) :
     refine ⟨∑ i, a (D.reduction v i) • e i, Submodule.sum_mem _ fun i _ ↦
       Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩), ?_⟩
     rw [Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq,
-      ← reduction_eq_zero_iff, map_sub, map_sum_smul_eq_of_eq_single D.reduction he, sub_eq_zero]
+      ← reduction_eq_zero_iff, map_sub, LinearMap.map_sum_smul_eq_of_eq_single D.reduction he,
+      sub_eq_zero]
     exact funext fun i ↦ ha _
   exact ⟨basisOfTopLeSpanOfCardEqFinrank e hspan' hcard, fun i ↦ by simp [he]⟩
 
@@ -206,7 +200,7 @@ theorem reduction_eq_augmentation_repr (D : ModuleDeformation ρbar A)
     (e : Module.Basis n A.obj.left D) (he : ∀ i, D.reduction (e i) = Pi.single i 1) (v : D) :
     D.reduction v = fun i ↦ A.augmentation (e.repr v i) := by
   conv_lhs => rw [← e.sum_repr v]
-  exact map_sum_smul_eq_of_eq_single D.reduction he _
+  exact LinearMap.map_sum_smul_eq_of_eq_single D.reduction he _
 
 /-- Over the residue field `k`, the reduction map of a module deformation is injective. -/
 theorem reduction_injective_residue (D : ModuleDeformation ρbar (residue Λ k)) :
@@ -254,6 +248,11 @@ theorem coe_toRepresentationEquiv (e : D.Equiv D') : ⇑e.toRepresentationEquiv 
 @[simp]
 theorem reduction_apply (e : D.Equiv D') (v : D) : D'.reduction (e v) = D.reduction v :=
   e.reduction_apply' v
+
+/-- An isomorphism of module deformations is equivariant. -/
+@[simp]
+theorem map_action (e : D.Equiv D') (g : G) (v : D) : e (D.action g v) = D'.action g (e v) :=
+  Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g v
 
 /-- An isomorphism of module deformations is determined by its values. -/
 @[ext]
@@ -363,7 +362,7 @@ noncomputable def baseChange (D : ModuleDeformation ρbar A) : ModuleDeformation
       rw [← e'.sum_repr t]
       refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem_smul ?_ trivial
       have h := congrFun (LinearMap.mem_ker.mp ht) i
-      rw [← e'.sum_repr t, map_sum_smul_eq_of_eq_single _ he'] at h
+      rw [← e'.sum_repr t, LinearMap.map_sum_smul_eq_of_eq_single _ he'] at h
       exact augmentation_eq_zero_iff.mp h
     reduction_action g t := by
       induction t using TensorProduct.inductionOn with
@@ -697,6 +696,11 @@ theorem coe_toModuleDeformationEquiv (e : D.Equiv D') : ⇑e.toModuleDeformation
 @[simp]
 theorem reduction_apply (e : D.Equiv D') (v : D) : D'.reduction (e v) = D.reduction v :=
   e.toModuleDeformationEquiv.reduction_apply v
+
+/-- An isomorphism of framed module deformations is equivariant. -/
+@[simp]
+theorem map_action (e : D.Equiv D') (g : G) (v : D) : e (D.action g v) = D'.action g (e v) :=
+  e.toModuleDeformationEquiv.map_action g v
 
 /-- An isomorphism of framed module deformations preserves the framings. -/
 @[simp]
