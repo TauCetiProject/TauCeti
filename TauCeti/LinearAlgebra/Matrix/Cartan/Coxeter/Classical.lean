@@ -14,6 +14,7 @@ import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.GroupTheory.Perm.Coxeter
 import TauCeti.LinearAlgebra.Charpoly.Permutation
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Companion
 import TauCeti.LinearAlgebra.Matrix.Permutation
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 
@@ -40,8 +41,8 @@ Rather than expanding `c` entry by entry, each family is intertwined with its co
   (`TauCeti.permCoxeterSystem_wordProd_finRange`), whose characteristic polynomial `X ^ (n + 1) - 1`
   factors as `(∑ k < n + 1, X ^ k) * (X - 1)`.
 * In **type `Bₙ`** (`n = m + 1`), the same unimodular matrix `ε₀ - ε₁, …, εₘ₋₁ - εₘ, εₘ` conjugates
-  `coxB (m + 1)` over `ℤ` to the negacyclic shift `ε₀ ↦ ε₁ ↦ ⋯ ↦ εₘ ↦ -ε₀`, which satisfies
-  `N ^ n = -1` and has cyclic vector `ε₀`, giving `charpoly = X ^ n + 1` and `orderOf = 2 * n`.
+  `coxB (m + 1)` over `ℤ` to the negacyclic shift `ε₀ ↦ ε₁ ↦ ⋯ ↦ εₘ ↦ -ε₀` — the companion matrix
+  of `X ^ n + 1`, satisfying `N ^ n = -1` — giving `charpoly = X ^ n + 1` and `orderOf = 2 * n`.
 * **Type `Cₙ`** is intertwined with type `Bₙ` by `diagonal (1, …, 1, 2)`, so `coxC n` and `coxB n`
   have the same order and characteristic polynomial for every `n`.
 * In **type `Dₙ`** (`n = m + 2`), the root columns `ε₀ - ε₁, …, εₘ - εₘ₊₁, εₘ + εₘ₊₁` have integer
@@ -104,19 +105,10 @@ theorem coxD_def (n : ℕ) : coxD n = coxeterElement (CartanMatrix.D n) := (rfl)
 
 /-! ### One-degenerate orders of the classical diagrams -/
 
-private theorem isOneDegenerateOrder_finRange {n : ℕ} {adj : Fin n → Fin n → Prop}
-    (h : ∀ z x y : Fin n, x < z → y < z → adj z x → adj z y → x = y) :
-    List.IsOneDegenerateOrder adj (List.finRange n) := by
-  rw [List.isOneDegenerateOrder_iff]
-  intro S₁ z S₂ hS x hx y hy hzx hzy
-  have hp := List.pairwise_lt_finRange n
-  rw [hS, List.pairwise_append] at hp
-  exact h z x y (hp.2.2 x hx z List.mem_cons_self) (hp.2.2 y hy z List.mem_cons_self) hzx hzy
-
 /-- `List.finRange n` is a one-degenerate order of the Dynkin diagram of `CartanMatrix.A n`. -/
 theorem isOneDegenerateOrder_A (n : ℕ) :
     List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.A n i j ≠ 0) (List.finRange n) := by
-  refine isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
+  refine List.isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
   rw [Fin.lt_def] at hxz hyz
   simp only [CartanMatrix.A, Matrix.of_apply, Fin.ext_iff] at h1 h2
   split_ifs at h1 h2 <;> omega
@@ -124,7 +116,7 @@ theorem isOneDegenerateOrder_A (n : ℕ) :
 /-- `List.finRange n` is a one-degenerate order of the Dynkin diagram of `CartanMatrix.B n`. -/
 theorem isOneDegenerateOrder_B (n : ℕ) :
     List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.B n i j ≠ 0) (List.finRange n) := by
-  refine isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
+  refine List.isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
   rw [Fin.lt_def] at hxz hyz
   simp only [CartanMatrix.B, Matrix.of_apply, Fin.ext_iff] at h1 h2
   split_ifs at h1 h2 <;> omega
@@ -132,7 +124,7 @@ theorem isOneDegenerateOrder_B (n : ℕ) :
 /-- `List.finRange n` is a one-degenerate order of the Dynkin diagram of `CartanMatrix.C n`. -/
 theorem isOneDegenerateOrder_C (n : ℕ) :
     List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.C n i j ≠ 0) (List.finRange n) := by
-  refine isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
+  refine List.isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
   rw [Fin.lt_def] at hxz hyz
   simp only [CartanMatrix.C, Matrix.of_apply, Fin.ext_iff] at h1 h2
   split_ifs at h1 h2 <;> omega
@@ -140,7 +132,7 @@ theorem isOneDegenerateOrder_C (n : ℕ) :
 /-- `List.finRange n` is a one-degenerate order of the Dynkin diagram of `CartanMatrix.D n`. -/
 theorem isOneDegenerateOrder_D (n : ℕ) :
     List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.D n i j ≠ 0) (List.finRange n) := by
-  refine isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
+  refine List.isOneDegenerateOrder_finRange fun z x y hxz hyz h1 h2 => Fin.ext ?_
   have _ := z.isLt; rw [Fin.lt_def] at hxz hyz
   simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff] at h1 h2
   split_ifs at h1 h2 <;> omega
@@ -242,29 +234,16 @@ private theorem negShift_pow_self {n : ℕ} (hn : 0 < n) : negShift n ^ n = -1 :
 
 private theorem charpoly_negShift {n : ℕ} (hn : 0 < n) :
     (negShift n).charpoly = X ^ n + 1 := by
-  have hmon : (X ^ n + 1 : ℤ[X]).IsMonicOfDegree n :=
-    (isMonicOfDegree_iff _ _).mpr
-      ⟨(natDegree_add_le _ _).trans (max_le (natDegree_X_pow_le n) (by simp)),
-        by simp [coeff_one, hn.ne']⟩
-  have hdeg := IsMonicOfDegree.natDegree_sub_lt hn.ne'
-    ⟨by rw [Matrix.charpoly_natDegree_eq_dim, Fintype.card_fin], Matrix.charpoly_monic (negShift n)⟩
-    hmon
-  have h0 : aeval (negShift n) ((negShift n).charpoly - (X ^ n + 1)) = 0 := by
-    simp [Matrix.aeval_self_charpoly, negShift_pow_self hn]
-  rw [← sub_eq_zero]; ext j; rw [coeff_zero]
-  rcases lt_or_ge j n with hj | hj
-  · have hv := congrFun (congrArg (· *ᵥ Pi.single ⟨0, hn⟩ 1) h0) ⟨j, hj⟩
-    rw [aeval_eq_sum_range' hdeg, Matrix.sum_mulVec] at hv
-    simp only [Matrix.zero_mulVec, Pi.zero_apply, Finset.sum_apply, Matrix.smul_mulVec,
-      Pi.smul_apply, smul_eq_mul] at hv
-    rw [Finset.sum_eq_single_of_mem j (Finset.mem_range.mpr hj)] at hv
-    · rw [negShift_pow_mulVec_single hn hj.le] at hv
-      simpa [hj, Nat.mod_eq_of_lt hj] using hv
-    · intro i hi hij
-      have hi' := Finset.mem_range.mp hi
-      rw [negShift_pow_mulVec_single hn hi'.le]
-      simp [hi', Nat.mod_eq_of_lt hi', Fin.ext_iff, hij]
-  · exact coeff_eq_zero_of_natDegree_lt (hdeg.trans_le hj)
+  have hdeg : (X ^ n + 1 : ℤ[X]).natDegree = n := by simp
+  have hcomp : reindex (finCongr hdeg) (finCongr hdeg) (X ^ n + 1 : ℤ[X]).companion =
+      negShift n := by
+    ext i j
+    have := i.isLt; have := j.isLt
+    simp only [reindex_apply, submatrix_apply, finCongr_symm, finCongr_apply, Fin.val_cast,
+      companion_apply, hdeg, coeff_add, coeff_X_pow, coeff_one, negShift, Matrix.of_apply]
+    split_ifs <;> omega
+  rw [← hcomp, Matrix.charpoly_reindex,
+    Polynomial.charpoly_companion (by simpa using monic_X_pow_add_C (1 : ℤ) hn.ne')]
 
 private theorem orderOf_negShift {n : ℕ} (hn : 0 < n) : orderOf (negShift n) = 2 * n := by
   have h0 {k : ℕ} (hk0 : 0 < k) (hk : k < n) :
