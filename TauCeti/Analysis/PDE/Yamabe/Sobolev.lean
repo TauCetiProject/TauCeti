@@ -41,6 +41,10 @@ finite, norm-continuous, and positive away from `0`. We establish:
   `forall_hasDerivAt_weakYamabeQuotient_add_smul_iff_exists_energyForm_eq`,
   `forall_ofSmooth_hasDerivAt_weakYamabeQuotient_iff_exists_energyForm_eq`,
   `weakYamabeQuotient_eq_of_energyForm_eq`);
+* **Coercivity** (`isCoercive_energyForm_of_forall_mul_norm_toLp_sq_le`): a lower bound
+  `E_g(w, w) ≥ μ ‖w‖²_{L²}` with `μ > 0` makes `E_g` coercive on `H¹(M)`, since `Scal_g` is
+  bounded below (`CovariantDerivative.exists_nonneg_forall_neg_le_scalarCurvature`,
+  `neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul`, `neg_mul_norm_toLp_sq_le_energyForm`);
 * **Absolute values** (`energyForm_self_le_of_toLp_eq_abs`,
   `weakYamabeQuotient_le_of_toLp_eq_abs`, `exists_toLp_eq_abs_and_weakYamabeQuotient_le`,
   `sInf_weakYamabeQuotient_nonneg_eq`): replacing `w` by its absolute value in `H¹(M)`
@@ -193,6 +197,64 @@ theorem energyForm_self_nonneg_of_scalarCurvature_nonneg (w : SobolevH1 I M)
     (SobolevH1.dirichletForm_self_nonneg w)) (integral_nonneg fun x ↦ ?_)
   dsimp only [Pi.zero_apply]; rw [mul_assoc]
   exact mul_nonneg (hS x) (mul_self_nonneg (SobolevH1.toLp w x))
+
+/-- If `Scal_g ≥ -K`, then the scalar-curvature term of `E_g(w, w)` is at least `-K ‖w‖²_{L²}`. -/
+theorem neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul {K : ℝ}
+    (hS : ∀ x, -K ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x)
+    (w : SobolevH1 I M) :
+    -K * ‖SobolevH1.toLp w‖ ^ 2 ≤
+      ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
+        SobolevH1.toLp w x * SobolevH1.toLp w x ∂riemannianVolume I M := by
+  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
+    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.continuousOn
+  have hsq : Integrable (fun x ↦ SobolevH1.toLp w x ^ 2) (riemannianVolume I M) :=
+    (Lp.memLp (SobolevH1.toLp w)).integrable_sq
+  have hSff : Integrable (fun x ↦ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
+      SobolevH1.toLp w x * SobolevH1.toLp w x) (riemannianVolume I M) := by
+    simpa only [mul_assoc, ← sq] using hsq.bdd_mul
+      (Continuous.aestronglyMeasurable
+        (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous)
+      (.of_forall fun x ↦ hC x (mem_univ x))
+  rw [← SobolevH1.integral_toLp_sq_eq_norm_sq, ← integral_const_mul]
+  refine integral_mono (hsq.const_mul _) hSff fun x ↦ ?_
+  dsimp only
+  rw [mul_assoc, ← sq]
+  exact mul_le_mul_of_nonneg_right (hS x) (sq_nonneg _)
+
+/-- If `Scal_g ≥ -K`, then `E_g(w, w) ≥ -K ‖w‖²_{L²}`, since the Dirichlet term is nonnegative. -/
+theorem neg_mul_norm_toLp_sq_le_energyForm {K : ℝ}
+    (hS : ∀ x, -K ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x)
+    (w : SobolevH1 I M) :
+    -K * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
+  rw [energyForm_apply]
+  exact le_add_of_nonneg_of_le (mul_nonneg (conformalCoefficient_nonneg _)
+    (SobolevH1.dirichletForm_self_nonneg w))
+    (neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul hS w)
+
+/-- **An `L²` lower bound makes the energy form coercive.** In dimension `n > 2`, if
+`μ ‖w‖²_{L²} ≤ E_g(w, w)` for some `μ > 0` and every `w ∈ H¹(M)`, then `E_g` is coercive on
+`H¹(M)`. -/
+theorem isCoercive_energyForm_of_forall_mul_norm_toLp_sq_le (hn : 2 < finrank ℝ E) {μ : ℝ}
+    (hμ : 0 < μ) (h : ∀ w : SobolevH1 I M, μ * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w) :
+    IsCoercive (energyForm I (M := M)) := by
+  -- The scalar curvature is bounded below, so `E_g` controls the Dirichlet energy.
+  obtain ⟨K, hK0, hS⟩ :=
+    (CovariantDerivative.leviCivitaConnection I M).exists_nonneg_forall_neg_le_scalarCurvature
+  have ha := conformalCoefficient_pos hn
+  set B := (1 + K / μ) / conformalCoefficient (finrank ℝ E) + 1 / μ
+  refine ⟨B⁻¹, inv_pos.2 (by positivity), fun w ↦ ?_⟩
+  have hf : ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w / μ := (le_div_iff₀' hμ).2 (h w)
+  have hD : SobolevH1.dirichletForm w w ≤
+      (energyForm I w w + K * (energyForm I w w / μ)) / conformalCoefficient (finrank ℝ E) := by
+    have hpot := neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul hS w
+    rw [le_div_iff₀' ha]
+    rw [energyForm_apply] at hf ⊢
+    nlinarith [mul_le_mul_of_nonneg_left hf hK0]
+  rw [mul_assoc, ← sq, SobolevH1.norm_sq_eq_dirichletForm_add, inv_mul_le_iff₀ (by positivity)]
+  calc SobolevH1.dirichletForm w w + ‖SobolevH1.toLp w‖ ^ 2 ≤
+      (energyForm I w w + K * (energyForm I w w / μ)) / conformalCoefficient (finrank ℝ E) +
+        energyForm I w w / μ := add_le_add hD hf
+    _ = B * energyForm I w w := by ring
 
 variable (I) in
 /-- The **weak Yamabe quotient** `Q_g(w) = E_g(w, w) / (∫ |w| ^ pₙ dV_g) ^ (2 / pₙ)` of an element

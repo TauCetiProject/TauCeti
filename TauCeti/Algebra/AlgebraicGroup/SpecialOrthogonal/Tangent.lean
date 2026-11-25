@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Orthogonal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
-public import TauCeti.LinearAlgebra.Matrix.Alternating
+public import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 
 /-!
 # The tangent Lie algebra of the special orthogonal group

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.NatCast
+public import TauCeti.Data.Nat.Cast.IsUnit
 public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 public import Mathlib.RingTheory.RingHom.Unramified

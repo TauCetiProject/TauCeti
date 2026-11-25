@@ -36,7 +36,10 @@ that the rest of the file consumes. Finally, the quotient covering map of a fini
 finite fibres (and hence a compact covering space whenever the base is compact), which is what
 makes it a finite covering with a transfer on singular chains. The acting group may be replaced by
 any isomorphic group acting compatibly, which is how an abstract group identified with a
-fundamental group is made to act on a universal cover.
+fundamental group is made to act on a universal cover. Over a subset `s` of the base, the
+restriction `q ⁻¹' s → s` is again a quotient covering map for the restricted action, which is how
+a quotient covering of spaces becomes a quotient covering of the topological pairs `(E, q ⁻¹' s)`
+and `(X, s)`.
 
 For a discrete additive subgroup `L` of a topological additive group `E`, the orbit projection
 `E → AddAction.orbitRel.Quotient L E` for translation by `L` is a quotient covering map. Unlike
@@ -72,11 +75,15 @@ Neither normality nor a separation axiom is needed.
   map is invariant under the action.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
+* `TauCeti.involutive_of_forall_eq_neg_one_smul`: for any action of `ℤˣ`, the action of `-1` is an
+  involution.
 * `IsQuotientCoveringMap.comp_eq_of_forall_eq_neg_one_smul`,
   `IsQuotientCoveringMap.ne_self_of_forall_eq_neg_one_smul`,
   `IsQuotientCoveringMap.eq_or_eq_of_forall_eq_neg_one_smul`: for a quotient cover by `ℤˣ`, the
   involution `e ↦ -1 • e` lies over the base, fixes no point, and exchanges the two points of each
   fibre.
+* `IsQuotientCoveringMap.restrict`: the restriction of a quotient covering map to the full
+  preimage of a subset of the base is a quotient covering map onto that subset.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
   discrete additive subgroup is a quotient covering map.
 
@@ -340,6 +347,11 @@ theorem _root_.IsQuotientCoveringMap.of_smul_eq {G' : Type*} [Group G'] [MulActi
 
 /-! ### Quotient covers by `ℤˣ` -/
 
+/-- For any action of `ℤˣ`, the action of `-1` is an involution. -/
+theorem involutive_of_forall_eq_neg_one_smul {α : Type*} [MulAction ℤˣ α] {σ : α → α}
+    (hσ : ∀ a, σ a = (-1 : ℤˣ) • a) : Function.Involutive σ := fun a ↦ by
+  rw [hσ, hσ, smul_smul, neg_one_mul, neg_neg, one_smul]
+
 section Units
 
 variable [MulAction ℤˣ E] (hq : IsQuotientCoveringMap q ℤˣ) {σ : E → E}
@@ -369,6 +381,26 @@ theorem _root_.IsQuotientCoveringMap.eq_or_eq_of_forall_eq_neg_one_smul (e e' : 
   · exact .inr (hσ e).symm
 
 end Units
+
+/-- **A quotient covering map restricts to a quotient covering map over any subset.** Let `t` be
+the full preimage `q ⁻¹' s` of a subset `s` of the base, given as a subset of `E` with
+`Set.MapsTo q t s` and `q ⁻¹' s ⊆ t`, and let `G` act on `t` through its action on `E`. Then the
+restriction `t → s` of `q` is the quotient covering map of the restricted action. -/
+theorem _root_.IsQuotientCoveringMap.restrict (hq : IsQuotientCoveringMap q G) {t : Set E}
+    {s : Set X} [MulAction G t] (hsmul : ∀ (g : G) (e : t), ((g • e : t) : E) = g • (e : E))
+    (h : Set.MapsTo q t s) (ht : q ⁻¹' s ⊆ t) : IsQuotientCoveringMap (h.restrict q t s) G := by
+  have := hq.toContinuousConstSMul
+  -- The restriction is `Set.restrictPreimage`, once `t` is identified with `q ⁻¹' s`.
+  obtain rfl : t = q ⁻¹' s := h.subset_preimage.antisymm ht
+  refine (isQuotientCoveringMap_iff_isCoveringMap_and _ G).2
+    ⟨hq.isCoveringMap.restrictPreimage s, s.restrictPreimage_surjective hq.surjective,
+      ⟨fun g ↦ ?_⟩, isCancelSMul_iff_eq_one_of_smul_eq.2 fun g e he ↦ ?_, fun {e₁ e₂} ↦ ?_⟩
+  · refine Topology.IsInducing.subtypeVal.continuous_iff.2 ?_
+    simpa only [Function.comp_def, hsmul] using (continuous_const_smul g).comp continuous_subtypeVal
+  · have := hq.isCancelSMul
+    exact IsCancelSMul.eq_one_of_smul (x := e.val) (by rw [← hsmul, he])
+  · simp only [Subtype.ext_iff, Set.MapsTo.val_restrict_apply, MulAction.mem_orbit_iff, hsmul]
+    exact hq.apply_eq_iff_mem_orbit
 
 end TauCeti
 

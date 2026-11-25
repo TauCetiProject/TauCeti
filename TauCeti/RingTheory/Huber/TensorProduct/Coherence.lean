@@ -127,4 +127,71 @@ theorem assoc_plus :
     refine ⟨(CompletedTensor.assoc A B C D).symm x, ?_, by simp⟩
     exact assoc_symm_plus_le A S T U hx
 
+/-- The completed tensor associator `(B ⊗̂ C) ⊗̂ D → B ⊗̂ (C ⊗̂ D)` as a morphism of Huber pairs. -/
+noncomputable def assocHom :
+    Hom ((S.completedTensor A T).completedTensor A U)
+      (S.completedTensor A (T.completedTensor A U)) where
+  toRingHom := (CompletedTensor.assoc A B C D).toRingHom
+  continuous_toRingHom := CompletedTensor.continuous_assoc A B C D
+  map_mem_plus _ hx := (assoc_mem_plus_iff A S T U _).mpr hx
+
+/-- The inverse completed tensor associator `B ⊗̂ (C ⊗̂ D) → (B ⊗̂ C) ⊗̂ D` as a morphism of Huber
+pairs. -/
+noncomputable def assocSymmHom :
+    Hom (S.completedTensor A (T.completedTensor A U))
+      ((S.completedTensor A T).completedTensor A U) where
+  toRingHom := (CompletedTensor.assoc A B C D).symm.toRingHom
+  continuous_toRingHom := CompletedTensor.continuous_assoc_symm A B C D
+  map_mem_plus _ hx := assoc_symm_plus_le A S T U hx
+
+/-- The underlying ring map of `assocHom` is the completed tensor associator. -/
+@[simp]
+theorem toRingHom_assocHom :
+    (assocHom A S T U).toRingHom = (CompletedTensor.assoc A B C D).toRingHom := (rfl)
+
+/-- The underlying ring map of `assocSymmHom` is the inverse completed tensor associator. -/
+@[simp]
+theorem toRingHom_assocSymmHom :
+    (assocSymmHom A S T U).toRingHom = (CompletedTensor.assoc A B C D).symm.toRingHom := (rfl)
+
+/-- The inverse pair associator is a left inverse of the pair associator. -/
+@[simp]
+theorem assocSymmHom_comp_assocHom :
+    (assocSymmHom A S T U).comp (assocHom A S T U) =
+      Hom.id ((S.completedTensor A T).completedTensor A U) := by
+  ext x
+  simp [Hom.toRingHom_comp]
+
+/-- The inverse pair associator is a right inverse of the pair associator. -/
+@[simp]
+theorem assocHom_comp_assocSymmHom :
+    (assocHom A S T U).comp (assocSymmHom A S T U) =
+      Hom.id (S.completedTensor A (T.completedTensor A U)) := by
+  ext x
+  simp [Hom.toRingHom_comp]
+
+/-- The inverse pair associator preserves the first coprojection. -/
+@[simp]
+theorem assocSymmHom_comp_inl :
+    (assocSymmHom A S T U).comp (inl A S (T.completedTensor A U)) =
+      (inl A (S.completedTensor A T) U).comp (inl A S T) := by
+  ext b
+  simp [Hom.toRingHom_comp]
+
+/-- The inverse pair associator preserves the middle coprojection. -/
+@[simp]
+theorem assocSymmHom_comp_inr_comp_inl :
+    (assocSymmHom A S T U).comp ((inr A S (T.completedTensor A U)).comp (inl A T U)) =
+      (inl A (S.completedTensor A T) U).comp (inr A S T) := by
+  ext c
+  simp [Hom.toRingHom_comp]
+
+/-- The inverse pair associator preserves the last coprojection. -/
+@[simp]
+theorem assocSymmHom_comp_inr_comp_inr :
+    (assocSymmHom A S T U).comp ((inr A S (T.completedTensor A U)).comp (inr A T U)) =
+      inr A (S.completedTensor A T) U := by
+  ext d
+  simp [Hom.toRingHom_comp]
+
 end TauCeti.Huber.Pair.completedTensor

@@ -33,10 +33,10 @@ finitely many bubbling points, uniformly in the heights, from two facts.
 
 * **One equation for all heights.** Beyond `s = 2` the perturbation of the positive plane pulls
   back to the cylindrical datum `H'(t) dt` along `φ`
-  (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive`). It does
-  not depend on `s`, so if the almost complex structures `J` are cylindrical far out on the end,
-  `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`, every translated end `vₖ` solves the same Floer
-  equation for `H'(t) dt` and `J_∞`, whatever the height.
+  (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift`).
+  It does not depend on `s`, so if the almost complex structures `J` are cylindrical far out on
+  the end, `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`, every translated end `vₖ` solves the same
+  Floer equation for `H'(t) dt` and `J_∞`, whatever the height.
 * **Energy.** The energy of a translated end over a window of angular width one is the energy of
   `uₖ ∘ φ` over the translated window, so it is at most the energy of `uₖ` over the plane
   (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_positive_add_le`).
@@ -58,7 +58,10 @@ half-cylinder.
   translated ends map `Ω` into a compact subset `C` of the source of a symplectic chart; the
   coordinate maps converge locally uniformly off `Z`, and the maps converge pointwise in `M`
   (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add` in
-  the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`).
+  the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`). In a manifold, the two facts above are
+  `contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add` in the same
+  namespace, which also gives the version in a closed manifold with no condition on the images
+  (`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.Closed`).
 
 For smooth solutions the convergence holds in `C¹` off `Z`, and the limit `v` is a `C¹` solution
 on `Ω \ Z` of the Floer equation for the cylindrical datum
@@ -160,9 +163,12 @@ private theorem contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_p
   have hvfl (z : ℝ × ℝ) (hz : z ∈ Ω) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (Jend z.2 (v z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) v z : ℝ × ℝ →ₗ[ℝ] V) := by
     obtain ⟨h₁, -⟩ := hΩT z hz
-    have h := ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_positive hH
-      (hHs.of_le (by norm_num)) ((le_max_right _ _).trans (mem_Ioi.1 h₁).le)
-      (hu.differentiable (by norm_num) _) (hfl (e (z + (R, 0))))
+    have h := isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift (T₀ := 2)
+      (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x) hH
+      (by simpa using (le_max_right _ _).trans (mem_Ioi.1 h₁).le)
+      (hu.differentiable (by norm_num) _)
+      (((hHs.differentiable (by norm_num)).comp
+        (differentiable_const _ |>.prodMk differentiable_id)) _) (hfl (e (z + (R, 0))))
     rw [hJ _ _ _ ((le_max_left _ _).trans (mem_Ioi.1 h₁).le)] at h
     have heq := ω.perturbedFDeriv_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) (u ∘ e) (R, 0) z
     simp only [Prod.snd_add, add_zero, comp_apply] at heq
@@ -352,7 +358,7 @@ most `E`, for structures `J` with `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀
 `v(z) = u(φ(z + (R, 0)))` maps `Ω` into a set on which `J_∞(t)` is tamed by `ω` for `(s, t) ∈ Ω`,
 then `v` is `C³`, solves the Floer equation for `H(t) dt` and `J_∞` on `Ω`, and its energy density
 is integrable on `Ω` with integral at most `E`. -/
-private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add
+theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add
     (hω : ω.IsNondegenerate) (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry H)) {T₀ : ℝ}
     {Jend : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
@@ -435,10 +441,7 @@ private theorem contMDiff_and_exists_isOpen_and_contDiffOn_comp_symm (p : PSSPla
         ContDiffOn ℝ 3 (fun q : (ℝ × ℝ) × V ↦ p.endSign * H (p.endSign * q.1.2) (φ.symm q.2)) W' ∧
         ContDiffOn ℝ 2
           (fun q : (ℝ × ℝ) × V ↦ (J' q.1 q.2).toLinearMap.toContinuousLinearMap) W' := by
-  have hHs' : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3
-      (uncurry fun t x ↦ p.endSign * H (p.endSign * t) x) :=
-    (contDiff_const.mul contDiff_id).contMDiff.comp (hHs.comp
-      (((contDiff_const.mul contDiff_id).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
+  have hHs' := contMDiff_uncurry_const_mul_comp_const_mul p.endSign hHs
   -- The datum is `C³` on `ℝ² × φ(U)`, which contains `D × φ(C)`.
   refine ⟨hHs', W ∩ univ ×ˢ φ.target, hW.inter (isOpen_univ.prod φ.open_target), ?_,
     (φ.contDiffOn_comp_symm_of_contMDiffOn

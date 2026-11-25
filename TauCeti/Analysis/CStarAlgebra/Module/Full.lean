@@ -641,7 +641,7 @@ theorem idealSubmodule_comap_innerIdeal (J : TwoSidedIdeal A) [IsClosed (J : Set
       idealSubmodule J E := by
   have : IsClosed
       (TwoSidedIdeal.comap (innerIdeal A E).starAlgHom J : Set (innerIdeal A E)) :=
-    TwoSidedIdeal.isClosed_comap (innerIdeal A E).isometry_starAlgHom.continuous J
+    TwoSidedIdeal.isClosed_comap (innerIdeal A E).isometry_starAlgHom.continuous ‹_›
   ext x
   rw [mem_idealSubmodule_iff, TwoSidedIdeal.mem_comap, TwoSidedIdeal.starAlgHom_apply,
     coe_inner_innerIdeal, mem_idealSubmodule_iff]
@@ -663,7 +663,7 @@ theorem innerIdeal_quotient (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
     exact ⟨inner A x y, inner_mem_innerIdeal x y, rfl⟩
   · rw [TwoSidedIdeal.map_le_iff_le_comap]
     have := TwoSidedIdeal.isClosed_comap (TwoSidedIdeal.Quotient.continuous_mk J)
-      (innerIdeal (A ⧸ J) (E ⧸ idealSubmodule J E))
+      (isClosed_innerIdeal (A := A ⧸ J) (E := E ⧸ idealSubmodule J E))
     rw [innerIdeal_le_iff]
     exact fun x y => (TwoSidedIdeal.mem_comap _).mpr (inner_mk_mk J x y ▸ inner_mem_innerIdeal _ _)
 
@@ -734,7 +734,7 @@ theorem rightInnerIdeal_quotient (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
     exact ⟨unop (inner Aᵐᵒᵖ x y), unop_inner_mem_rightInnerIdeal x y, rfl⟩
   · rw [TwoSidedIdeal.map_le_iff_le_comap]
     have := TwoSidedIdeal.isClosed_comap (TwoSidedIdeal.Quotient.continuous_mk J)
-      (rightInnerIdeal (A ⧸ J) (E ⧸ idealSubmodule J.op E))
+      (isClosed_rightInnerIdeal (A := A ⧸ J) (E := E ⧸ idealSubmodule J.op E))
     rw [rightInnerIdeal_le_iff]
     exact fun x y =>
       (TwoSidedIdeal.mem_comap _).mpr (unop_inner_mk_mk J x y ▸ unop_inner_mem_rightInnerIdeal _ _)

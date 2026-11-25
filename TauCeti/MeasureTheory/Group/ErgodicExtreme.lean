@@ -113,6 +113,9 @@ variable {X : Type*} {m : MeasurableSpace X} {μ ν : Measure X}
 /-- **An almost invariant function under an ergodic action is almost everywhere constant.** The
 target may be any nonempty countably separated measurable space; the action-level analogue of
 `Ergodic.ae_eq_const_of_ae_eq_comp₀`. -/
+@[to_additive ae_eq_const_of_forall_ae_eq_comp_vadd₀ /-- **An almost invariant function under an
+ergodic additive action is almost everywhere constant.** The target may be any nonempty countably
+separated measurable space. -/]
 theorem ae_eq_const_of_forall_ae_eq_comp_smul₀ (G : Type*) [SMul G X]
     {β : Type*} [Nonempty β] [MeasurableSpace β] [MeasurableSpace.CountablySeparated β]
     [ErgodicSMul G X μ] {g : X → β} (hgm : NullMeasurable g μ)

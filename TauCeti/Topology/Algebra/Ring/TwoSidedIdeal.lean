@@ -12,6 +12,7 @@ public import Mathlib.Topology.ApproximateUnit
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.TwoSidedIdeal.Annihilator
+import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 
 /-!
 # Closed two-sided ideals
@@ -33,10 +34,17 @@ We also define *full* elements of a topological ring (`TauCeti.IsFull`, generati
 two-sided ideal), together with basic facts for units (`TauCeti.IsFull.of_isUnit`,
 `TauCeti.isFull_one`) and zero (`TauCeti.not_isFull_zero`).
 
-The annihilator of any two-sided ideal of a `T₁` topological ring is closed
-(`TwoSidedIdeal.isClosed_annihilator`). Hence, in a proper star ring, a self-adjoint ideal is
-essential as soon as it meets every nonzero closed two-sided ideal
+The preimage of a closed two-sided ideal under a continuous ring homomorphism is closed
+(`TwoSidedIdeal.isClosed_comap`). The annihilator of any two-sided ideal of a `T₁` topological
+ring is closed (`TwoSidedIdeal.isClosed_annihilator`). Hence, in a proper star ring, a
+self-adjoint ideal is essential as soon as it meets every nonzero closed two-sided ideal
 (`TwoSidedIdeal.isEssential_iff_forall_isClosed`).
+
+Closure commutes with passing to the underlying left ideal
+(`TwoSidedIdeal.asIdeal_topologicalClosure`). Hence, in a topological ring whose units form an open
+set, such as a unital Banach algebra, the closure of a proper two-sided ideal is proper
+(`TwoSidedIdeal.topologicalClosure_ne_top_of_isOpen_isUnit`), so the ring is simple as soon as
+its closed two-sided ideals are trivial (`TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed`).
 
 The quotient-ring construction generalizes Patrick Massot's
 `QuotientRing.topologicalRing_quotient` in Mathlib from commutative rings, using
@@ -183,18 +191,40 @@ instance isClosed_inf (I J : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
     [hJ : IsClosed (J : Set A)] : IsClosed ((I ⊓ J : TwoSidedIdeal A) : Set A) :=
   hI.inter hJ
 
-/-- Preimage of a closed two-sided ideal under a continuous nonunital ring homomorphism is closed.
--/
-theorem isClosed_comap {B F : Type*} [NonUnitalNonAssocRing B] [TopologicalSpace B]
-    [FunLike F A B] [NonUnitalRingHomClass F A B] {f : F} (hf : Continuous f)
-    (J : TwoSidedIdeal B) [hJ : IsClosed (J : Set B)] :
-    IsClosed (TwoSidedIdeal.comap f J : Set A) := by
-  have hset : (TwoSidedIdeal.comap f J : Set A) = f ⁻¹' (J : Set B) :=
-    Set.ext fun _ => TwoSidedIdeal.mem_comap f
-  rw [hset]
-  exact hJ.preimage hf
-
 end ClosedOps
+
+section OpenUnits
+
+variable {A : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A]
+
+/-- The underlying left ideal of the topological closure of a two-sided ideal is the closure of its
+underlying left ideal. -/
+@[simp]
+theorem asIdeal_topologicalClosure (I : TwoSidedIdeal A) :
+    I.topologicalClosure.asIdeal = I.asIdeal.closure :=
+  SetLike.ext' (by simp [coe_asIdeal])
+
+/-- In a topological ring whose units form an open set (for instance a unital Banach algebra), the
+topological closure of a proper two-sided ideal is proper. This is
+`Ideal.closure_ne_top_of_isOpen_isUnit` applied to the underlying left ideal `I.asIdeal`. -/
+theorem topologicalClosure_ne_top_of_isOpen_isUnit (hU : IsOpen {a : A | IsUnit a})
+    {I : TwoSidedIdeal A} (hI : I ≠ ⊤) : I.topologicalClosure ≠ ⊤ := by
+  intro htop
+  refine Ideal.closure_ne_top_of_isOpen_isUnit hU ?_
+    (by rw [← asIdeal_topologicalClosure, htop, top_asIdeal])
+  simpa [Ideal.eq_top_iff_one, one_mem_iff] using hI
+
+/-- In a topological ring whose units form an open set (for instance a unital Banach algebra), if
+every closed two-sided ideal is `⊥` or `⊤`, then so is every two-sided ideal. -/
+theorem eq_bot_or_eq_top_of_forall_isClosed (hU : IsOpen {a : A | IsUnit a})
+    (h : ∀ I : TwoSidedIdeal A, IsClosed (I : Set A) → I = ⊥ ∨ I = ⊤) (I : TwoSidedIdeal A) :
+    I = ⊥ ∨ I = ⊤ := by
+  refine or_iff_not_imp_right.mpr fun hI ↦ eq_bot_iff.mpr ?_
+  rw [← (h _ I.isClosed_topologicalClosure).resolve_right
+    (topologicalClosure_ne_top_of_isOpen_isUnit hU hI)]
+  exact I.le_topologicalClosure
+
+end OpenUnits
 
 section ClosedKer
 
@@ -212,6 +242,20 @@ theorem isClosed_ker {f : F} (hf : Continuous f) : IsClosed (TwoSidedIdeal.ker f
   exact isClosed_singleton.preimage hf
 
 end ClosedKer
+
+section ClosedComap
+
+variable {F R S : Type*} [NonUnitalNonAssocRing R] [NonUnitalNonAssocRing S] [TopologicalSpace R]
+  [TopologicalSpace S] [FunLike F R S] [NonUnitalRingHomClass F R S]
+
+/-- The preimage of a closed two-sided ideal under a continuous ring homomorphism is closed. -/
+theorem isClosed_comap {φ : F} (hφ : Continuous φ) {J : TwoSidedIdeal S}
+    (hJ : IsClosed (J : Set S)) : IsClosed (J.comap φ : Set R) := by
+  have : (J.comap φ : Set R) = φ ⁻¹' J := Set.ext fun _ => mem_comap φ
+  rw [this]
+  exact hJ.preimage hφ
+
+end ClosedComap
 
 section Annihilator
 

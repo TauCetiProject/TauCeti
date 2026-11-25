@@ -102,6 +102,34 @@ lemma associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk
     (isQuotientCoveringMap_proj hι) k
     (σ := (deck (F := F) (E := E) (ι := ι) : C(_, _))) (fun p ↦ (neg_one_smul_eq_deck p).symm) o a r
 
+/-- The identification of the local system of the sign representation with the orientation local
+system sends the class of `a ⊗ f`, for a formal sum `f` of orientations of the fibre, to `a` times
+the function `o ↦ f o - f (-o)` on the orientations of the fibre. -/
+-- Not a simp lemma: `simp` unfolds `Rep.coinvariantsTensorMk` on the left-hand side first.
+lemma signLocalSystemObjEquiv_associatedLocalSystemSignIso_hom_app_apply
+    {x : FundamentalGroupoid (TopCat.of B)} (a : k)
+    (f : (TopCat.ofHom (projection (F := F) (E := E) (ι := ι))) ⁻¹' {x.as} →₀ k)
+    (o : (TopCat.ofHom (projection (F := F) (E := E) (ι := ι))) ⁻¹' {x.as}) :
+    (signLocalSystemObjEquiv hι x (((associatedLocalSystemSignIso hι k).hom.app x).hom
+        (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
+          (Rep.of (IsQuotientCoveringMap.fiberRepresentation
+            (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+            (isQuotientCoveringMap_proj hι) k x.as)) a f)) : _ → k) o =
+      a * (f o - f (Function.fiberMap deck (funext proj_deck) x.as o)) := by
+  -- `o(E)` is the sign local system of the deck involution by definition.
+  rw [← signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_hom_app]
+  refine (congrArg (fun w ↦ ((isCoveringMap_proj (F := F) (E := E) hι).signLocalSystemObjEquiv _
+      proj_comp_deck x w : _ → k) o)
+    (IsQuotientCoveringMap.associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk_eq_smul
+      (E := TopCat.of (VectorBundleOrientationCover F E ι)) (p := TopCat.ofHom projection)
+      (isQuotientCoveringMap_proj hι) k
+      (σ := (deck (F := F) (E := E) (ι := ι) : C(_, _))) (fun p ↦ (neg_one_smul_eq_deck p).symm)
+      a f)).trans ?_
+  rw [map_smul, Submodule.coe_smul, Pi.smul_apply, smul_eq_mul]
+  -- The fibres of `proj` and of the projection as a morphism of spaces are the same sets.
+  exact congrArg (a * ·) ((isQuotientCoveringMap_proj (F := F) (E := E) hι).isCoveringMap
+    |>.signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply k _ _ x f o)
+
 /-- The inverse identification of the orientation local system with the local system of the sign
 representation sends `f` to the class of `f o ⊗ [o]`, for any orientation `o` of the fibre. -/
 -- Not a simp lemma: the orientation `o` occurs only on the right-hand side.
@@ -129,7 +157,6 @@ orientation double cover `B'`, tensored with the sign representation. The class 
 the simplex `p ∘ τ` with the coefficient of `o(E)` whose value at the initial orientation of `τ` is
 `a` (`coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk`). -/
 def coinvariantsTensorSingularChainsRepIsoTwisted :
-    haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
     (singularChainsRep k (TopCat.of (VectorBundleOrientationCover F E ι)) ℤˣ).coinvariantsTensorObj
         (Rep.ofDistribMulAction k ℤˣ k) ≅
       twistedChainComplex (signLocalSystem F E k hι) :=
@@ -143,7 +170,6 @@ orientation-twisted chains of the base sends the class of `a ⊗ τ` to the simp
 coefficient of `o(E)` whose value at the initial orientation of `τ` is `a`. -/
 theorem coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk (n : ℕ) (a : k)
     (τ : (TopCat.toSSet.obj (TopCat.of (VectorBundleOrientationCover F E ι))) _⦋n⦌) :
-    haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
     ((coinvariantsTensorSingularChainsRepIsoTwisted hι k).hom.f n).hom
         (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
           (Rep.of (singularChainsRepresentation k
@@ -153,7 +179,6 @@ theorem coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk (n : ℕ) (a : k)
           ((signLocalSystemObjEquiv hι _).symm
             ((signFiberEquiv deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
               (initialSheet τ)).symm a)) := by
-  have := (isQuotientCoveringMap_proj (F := F) (E := E) hι).toContinuousConstSMul
   rw [coinvariantsTensorSingularChainsRepIsoTwisted, Iso.trans_hom, HomologicalComplex.comp_f,
     twistedChainComplexCoefficientIso_hom, ModuleCat.hom_comp]
   refine (LinearMap.comp_apply _ _ _).trans ?_
