@@ -77,6 +77,10 @@ for the adjoint of `d₀`. -/
 def harmonicSpace : Submodule 𝕜 F :=
   d₁.ker ⊓ d₀†.ker
 
+/-- The harmonic space is the intersection of the kernel of `d₁` with the kernel of `d₀†`. -/
+theorem harmonicSpace_def : harmonicSpace d₀ d₁ = d₁.ker ⊓ d₀†.ker :=
+  (rfl)
+
 @[simp]
 theorem mem_harmonicSpace_iff {x : F} : x ∈ harmonicSpace d₀ d₁ ↔ x ∈ d₁.ker ∧ x ∈ d₀†.ker :=
   Submodule.mem_inf
@@ -97,7 +101,7 @@ theorem isClosed_harmonicSpace (hd₀ : Dense (d₀.domain : Set E)) (hc₁ : d�
 /-- The harmonic space consists of the vectors of `ker d₁` orthogonal to the range of `d₀`. -/
 theorem harmonicSpace_eq_ker_inf_orthogonal_range (hd₀ : Dense (d₀.domain : Set E)) :
     harmonicSpace d₀ d₁ = d₁.ker ⊓ (LinearMap.range d₀.toFun)ᗮ := by
-  rw [harmonicSpace, orthogonal_range_eq_ker_adjoint hd₀]
+  rw [harmonicSpace_def, orthogonal_range_eq_ker_adjoint hd₀]
 
 /-- **Harmonic vectors are orthogonal to exact and coexact ones.** For `d₀` densely defined and
 `d₁` closed and densely defined, the harmonic space is the orthogonal complement of
@@ -110,7 +114,7 @@ theorem harmonicSpace_eq_orthogonal_sup [CompleteSpace F] [CompleteSpace G]
     topologicalClosure_range_adjoint_eq_orthogonal_ker hc₁ hd₁,
     Submodule.orthogonal_orthogonal_eq_closure, Submodule.orthogonal_orthogonal_eq_closure,
     (adjoint_isClosed hd₀).isClosed_ker.submodule_topologicalClosure_eq,
-    hc₁.isClosed_ker.submodule_topologicalClosure_eq, harmonicSpace, inf_comm]
+    hc₁.isClosed_ker.submodule_topologicalClosure_eq, harmonicSpace_def, inf_comm]
 
 omit [CompleteSpace E] in
 /-- In a complex `range d₀ ≤ ker d₁` with `d₁` closed, the closure of the range of `d₀` is still
