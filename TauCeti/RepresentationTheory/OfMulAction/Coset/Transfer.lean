@@ -78,13 +78,22 @@ private def cosetSum : MonoidAlgebra A (G ⧸ U') :=
   relNorm ((ofMulAction A G (G ⧸ U')).comp U.subtype) (U'.subgroupOf U)
     (MonoidAlgebra.single ((1 : G) : G ⧸ U') 1)
 
+/-- An element of a subgroup `H` lying in `U` fixes the coset `U` under the restriction of
+`A[G ⧸ U]` to `H`. -/
+private theorem comp_subtype_apply_single_one {H : Subgroup G} (u : H) (hu : (u : G) ∈ U) :
+    (ofMulAction A G (G ⧸ U)).comp H.subtype u (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) =
+      MonoidAlgebra.single ((1 : G) : G ⧸ U) 1 := by
+  rw [MonoidHom.comp_apply, Subgroup.subtype_apply]
+  exact mem_stabilizer.1 (le_stabilizer_ofMulAction_single_one A hu)
+
 private theorem le_stabilizer_cosetSum :
     U ≤ (ofMulAction A G (G ⧸ U')).stabilizer (cosetSum A U' U) := fun u hu ↦ by
-  rw [mem_stabilizer]
-  exact relNorm_apply_eq_self ((ofMulAction A G (G ⧸ U')).comp U.subtype) (H := U'.subgroupOf U)
-    (fun h ↦ (mem_stabilizer.1 <|
-      le_stabilizer_ofMulAction_single_one A (Subgroup.mem_subgroupOf.1 h.property) :))
-    (⟨u, hu⟩ : U)
+  rw [mem_stabilizer, cosetSum]
+  have := relNorm_apply_eq_self ((ofMulAction A G (G ⧸ U')).comp U.subtype)
+    (H := U'.subgroupOf U)
+    (fun h ↦ comp_subtype_apply_single_one (h : U) (Subgroup.mem_subgroupOf.1 h.property))
+    ⟨u, hu⟩
+  rwa [MonoidHom.comp_apply, Subgroup.subtype_apply] at this
 
 variable (A U') in
 /-- The **transfer** `A[G ⧸ U] → A[G ⧸ U']`, `g U ↦ ∑_{u ∈ U ⧸ U'} g u U'`, for `U'` of finite
@@ -118,7 +127,7 @@ theorem cosetProjection_comp_cosetTransfer (hU : U' ≤ U) :
   simp only [IntertwiningMap.comp_apply, cosetTransfer_single_one_eq_cosetSum, cosetSum,
     IntertwiningMap.map_relNorm_comp, cosetProjection_single]
   rw [relNorm_apply_of_forall_apply_eq ((ofMulAction A G (G ⧸ U)).comp U.subtype) fun u ↦
-      (mem_stabilizer.1 (le_stabilizer_ofMulAction_single_one A u.property) :)]
+      comp_subtype_apply_single_one u u.property]
   simp [Subgroup.relIndex]
 
 end Semiring
