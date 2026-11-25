@@ -194,8 +194,8 @@ it is a block idempotent (`isBlockIdempotent_eTwo`). -/
 noncomputable abbrev eTwo (α : K) : MonoidAlgebra K C₃ :=
   1 + α • of K C₃ r + α ^ 2 • of K C₃ (r ^ 2)
 
-/-- Sums over `C₃`. -/
-private theorem sum_c₃ {M : Type*} [AddCommMonoid M] (f : C₃ → M) :
+/-- A sum over `C₃` is the sum of the values at `1`, `r` and `r²`. -/
+theorem sum_c₃ {M : Type*} [AddCommMonoid M] (f : C₃ → M) :
     ∑ g, f g = f 1 + f r + f (r ^ 2) := by
   rw [show (Finset.univ : Finset C₃) = {1, r, r ^ 2} by decide, Finset.sum_insert (by decide),
     Finset.sum_pair (by decide), add_assoc]
