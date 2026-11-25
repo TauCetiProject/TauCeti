@@ -102,7 +102,7 @@ private theorem contDiffSMul_normalCutoff_normalTranslate {a s : ℝ} (hs : 0 < 
   · rw [normalCutoff_eq_one (by rw [div_mul_eq_mul_div, le_div_iff₀ hs]; linarith), one_mul]
   · have hnot : x + WithLp.toLp 2 (-s, (0 : E)) ∉ normalHalfSpace (E := E) a := by
       rw [mem_normalHalfSpace]
-      simp only [WithLp.ofLp_add, Prod.fst_add, WithLp.ofLp_fst, lt_add_neg_iff_add_lt, not_lt]
+      simp only [WithLp.add_fst, WithLp.toLp_fst, lt_add_neg_iff_add_lt, not_lt]
       linarith
     rw [hx3 hnot, mul_zero]
 
@@ -113,7 +113,7 @@ private theorem restrictL_normalTranslate_mem_w1p0Submodule (hp : p ≠ (∞ : �
     (hw : ∀ᵐ x ∂volume, x ∉ normalHalfSpace (E := E) a → W1p.value w x = 0) :
     W1p.restrictL le_top (normalTranslate s w) ∈
       w1p0Submodule volume (normalHalfSpace (E := E) a) p := by
-  obtain ⟨M, hM, hθM, hθgradM⟩ := exists_normalCutoff_bound (E := E) a (c := 2 / s) (by positivity)
+  obtain ⟨M, hM, hθM, hθgradM⟩ := exists_normalCutoff_bound (E := E) a (2 / s)
   have h := W1p.restrictL_contDiffSMul_mem_w1p0Submodule hp (contDiff_normalCutoff a (2 / s)) hM
     (fun x _ => hθM x) (fun x _ => hθgradM x) (tsupport_normalCutoff_subset a (by positivity))
     (normalTranslate s w)
@@ -127,20 +127,14 @@ theorem W1p.restrictL_mem_w1p0Submodule_normalHalfSpace (hp : p ≠ (∞ : ℝ�
     (hw : ∀ᵐ x ∂volume, x ∉ normalHalfSpace (E := E) a → W1p.value w x = 0) :
     W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤) w ∈
       w1p0Submodule volume (normalHalfSpace (E := E) a) p := by
-  -- The translates of `w` by `s` in the normal direction depend continuously on `s`.
-  have hg : Continuous fun s : ℝ => WithLp.toLp 2 (-s, (0 : E)) :=
-    (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.continuous.comp
+  -- The translates of `w` by `s` in the normal direction tend to `w` as `s → 0`.
+  have hg : Tendsto (fun s : ℝ => WithLp.toLp 2 (-s, (0 : E))) (𝓝[>] 0) (𝓝 0) := by
+    refine Continuous.tendsto' ?_ 0 0 (by simp) |>.mono_left nhdsWithin_le_nhds
+    exact (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.continuous.comp
       (continuous_neg.prodMk continuous_const)
-  have hcont : Continuous fun s : ℝ => normalTranslate s w :=
-    ((Wkp.continuous_translate hp 1 w).comp hg).congr fun s =>
-      Wkp.translate_one_eq_W1p_translate _ w
-  have h0 : normalTranslate 0 w = w :=
-    (Wkp.translate_one_eq_W1p_translate (WithLp.toLp 2 (-(0 : ℝ), (0 : E))) w).symm.trans <| by
-      rw [neg_zero, Prod.mk_zero_zero, WithLp.toLp_zero]
-      exact Wkp.translate_zero 1 w
-  have htend := ((W1p.restrictL (U := normalHalfSpace a) le_top).continuous.comp hcont).tendsto 0
-    |>.mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-  rw [Function.comp_apply, h0] at htend
+  have htend : Tendsto (fun s => W1p.restrictL (U := normalHalfSpace a) le_top
+      (normalTranslate s w)) (𝓝[>] 0) (𝓝 (W1p.restrictL le_top w)) :=
+    ((W1p.restrictL le_top).continuous.tendsto w).comp (W1p.tendsto_translate hp hg w)
   -- For `s > 0` the translates lie in the closed subspace `W^{1,p}_0(H)`, hence so does the limit.
   exact (w1p0Submodule volume (normalHalfSpace (E := E) a) p).isClosed.mem_of_tendsto htend
     (eventually_nhdsWithin_of_forall fun s hs =>
@@ -162,7 +156,8 @@ theorem W1p.mem_w1p0Submodule_normalHalfSpace_iff (hp : p ≠ (∞ : ℝ≥0∞)
   let w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p := ⟨_, hJ⟩
   have hw : ∀ᵐ x ∂volume, W1p.value w x =
       (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator (W1p.value u) x := by
-    have h := coeFn_extendByZeroLpₗᵢ ℝ hH (SetLike.coe_subset_coe.mpr le_top) (W1p.value u)
+    have h := coeFn_extendByZeroLpₗᵢ ℝ hH.nullMeasurableSet (SetLike.coe_subset_coe.mpr le_top)
+      (W1p.value u)
     filter_upwards [h.filter_mono (ae_mono (by rw [Opens.coe_top, Measure.restrict_univ]))]
       with x hx
     rw [W1p.value_coe, Sobolev1JetLp.value_extendByZeroₗᵢ, ← W1p.value_coe, hx]

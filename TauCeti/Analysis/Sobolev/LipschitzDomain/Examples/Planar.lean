@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Rotation
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
-public import TauCeti.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Planar examples and non-examples of Lipschitz domains
@@ -31,6 +32,9 @@ constant, is centred there.
 * `TauCeti.openUnitSquare`, `TauCeti.slitUnitDisc`, `TauCeti.sqrtAbsCusp`: the three planar sets,
   with membership lemmas `TauCeti.mem_openUnitSquare`, `TauCeti.mem_slitUnitDisc` and
   `TauCeti.mem_sqrtAbsCusp`.
+* `TauCeti.slitUnitDisc_eq_ball_inter`: the slit disc is the open unit disc minus the closed ray
+  `[0, ∞) × {0}`; hence `TauCeti.isOpen_slitUnitDisc` (it is open) and
+  `TauCeti.slitUnitDisc_ae_eq_ball` (it is a.e. equal to the open unit disc).
 * `TauCeti.isLipschitzChartWith_openUnitSquare_zero`: the corner chart of the square at the
   origin, with graph `|s|` after the rotation by `π / 4`.
 * `TauCeti.isLipschitzDomainWith_openUnitSquare`: the open unit square is a Lipschitz domain
@@ -50,7 +54,7 @@ public section
 
 noncomputable section
 
-open Metric Set Topology
+open MeasureTheory Metric Set Topology
 open scoped NNReal
 
 namespace TauCeti
@@ -228,6 +232,48 @@ def slitUnitDisc : Set (WithLp 2 (ℝ × ℝ)) :=
 theorem mem_slitUnitDisc {x : WithLp 2 (ℝ × ℝ)} :
     x ∈ slitUnitDisc ↔ ‖x‖ < 1 ∧ (x.fst ∈ Ico 0 1 → x.snd ≠ 0) := by
   simp [slitUnitDisc]
+
+/-- The slit plane `ℝ² ∖ [0, ∞) × {0}` is open. -/
+theorem isOpen_setOf_fst_lt_zero_or_snd_ne_zero :
+    IsOpen {x : WithLp 2 (ℝ × ℝ) | x.fst < 0 ∨ x.snd ≠ 0} :=
+  (isOpen_lt (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst continuous_const).union
+    (isOpen_ne_fun (WithLp.prod_continuous_ofLp 2 ℝ ℝ).snd continuous_const)
+
+/-- The slit disc is the open unit disc minus the closed ray `[0, ∞) × {0}`. -/
+theorem slitUnitDisc_eq_ball_inter :
+    slitUnitDisc = ball 0 1 ∩ {x | x.fst < 0 ∨ x.snd ≠ 0} := by
+  ext x
+  simp only [mem_slitUnitDisc, mem_inter_iff, mem_ball_zero_iff, mem_ofPred_eq, mem_Ico]
+  refine and_congr_right fun hx => ⟨fun h => ?_, ?_⟩
+  · by_contra! H
+    exact h ⟨H.1, (le_abs_self _).trans_lt ((WithLp.norm_fst_le (x := x)).trans_lt hx)⟩ H.2
+  · rintro (h | h) h'
+    · exact absurd h'.1 (not_le.2 h)
+    · exact h
+
+/-- The slit disc lies in the open unit disc. -/
+theorem slitUnitDisc_subset_ball : slitUnitDisc ⊆ ball 0 1 :=
+  slitUnitDisc_eq_ball_inter ▸ inter_subset_left
+
+/-- The slit disc lies in the slit plane `ℝ² ∖ [0, ∞) × {0}`. -/
+theorem slitUnitDisc_subset_setOf_fst_lt_zero_or_snd_ne_zero :
+    slitUnitDisc ⊆ {x | x.fst < 0 ∨ x.snd ≠ 0} :=
+  slitUnitDisc_eq_ball_inter ▸ inter_subset_right
+
+/-- The slit disc is open. -/
+theorem isOpen_slitUnitDisc : IsOpen slitUnitDisc :=
+  slitUnitDisc_eq_ball_inter ▸ isOpen_ball.inter isOpen_setOf_fst_lt_zero_or_snd_ne_zero
+
+/-- The slit disc differs from the open unit disc by a null set, contained in the axis
+`ℝ × {0}`. -/
+theorem slitUnitDisc_ae_eq_ball : slitUnitDisc =ᵐ[volume] ball (0 : WithLp 2 (ℝ × ℝ)) 1 := by
+  have h := (WithLp.volume_preserving_ofLp ℝ ℝ).measure_preimage (s := univ ×ˢ ({0} : Set ℝ))
+    (MeasurableSet.univ.prod (measurableSet_singleton 0)).nullMeasurableSet
+  rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_singleton, mul_zero] at h
+  refine ae_eq_set.2 ⟨by rw [sdiff_eq_bot_iff.2 slitUnitDisc_subset_ball, bot_eq_empty,
+    measure_empty], measure_mono_null (fun x hx => ?_) h⟩
+  by_contra h'
+  exact hx.2 (mem_slitUnitDisc.2 ⟨mem_ball_zero_iff.1 hx.1, fun _ => by simpa using h'⟩)
 
 /-- Every slit point lies on the frontier of the slit disc. -/
 theorem mem_frontier_slitUnitDisc {p : WithLp 2 (ℝ × ℝ)} (hp : p.fst ∈ Ico 0 1)

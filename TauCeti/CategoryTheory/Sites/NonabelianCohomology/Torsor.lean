@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Action.Pretransitive
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
+public import Mathlib.CategoryTheory.Sites.LocalProperties
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 
 /-!
@@ -35,12 +36,18 @@ relative to a fixed family of objects; here no covering is chosen.
   multiplication.
 * `CategoryTheory.Sheaf.Torsor.trivialHomEquiv`: morphisms from the trivial torsor to `P` are
   the global sections of `P`.
+* `CategoryTheory.Sheaf.Torsor.isoOfSection`: a section of `P` along a functor `u` identifies
+  the restrictions of `G` and of `P` along `u`.
 * `CategoryTheory.Sheaf.Torsor.exists_sections_eq_of_smul_invariant`: a `G`-invariant morphism
   from a torsor to a sheaf of sets is given by a global section.
+* `CategoryTheory.Sheaf.Torsor.isIso_of_bijective_app`: a morphism of sheaves of sets which is
+  bijective over every object over which a torsor has a section is an isomorphism.
 * `CategoryTheory.Sheaf.NonabelianH1 G`: the pointed set of isomorphism classes of `G`-torsors,
   with `NonabelianH1.mk`, `NonabelianH1.lift` and `NonabelianH1.mk_eq_mk_iff`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_eq_one_iff`: a torsor is trivial if and only if it has a
   global section.
+* `CategoryTheory.Sheaf.NonabelianH1.subsingleton_of_isTerminal_of_id_mem`: if every covering
+  sieve of a terminal object contains its identity, every torsor is trivial.
 
 ## References
 
@@ -50,7 +57,7 @@ relative to a fixed family of objects; here no covering is chosen.
 
 public section
 
-open CategoryTheory Opposite
+open CategoryTheory Limits Opposite
 
 universe w v u
 
@@ -69,7 +76,7 @@ structure Torsor (G : Sheaf J GrpCat.{w}) where
   map_smul ⦃U V : Cᵒᵖ⦄ (f : U ⟶ V) (g : G.obj.obj U) (p : sheaf.obj.obj U) :
     sheaf.obj.map f (g • p) = G.obj.map f g • sheaf.obj.map f p
   /-- The torsor is locally nonempty: the objects over which it has a section cover the site. -/
-  coversTop : J.CoversTop fun U : {U : C // Nonempty (sheaf.obj.obj (op U))} ↦ U.1
+  coversTop : J.CoversTop fun U : {U : C // Nonempty (sheaf.obj.obj (op U))} ↦ U.val
   /-- The action is simply transitive: `(g, p) ↦ (g • p, p)` is a bijection on sections. -/
   bijective (U : Cᵒᵖ) :
     Function.Bijective fun x : G.obj.obj U × sheaf.obj.obj U ↦ (x.1 • x.2, x.2)
@@ -183,11 +190,11 @@ def trivialHomEquiv (P : Torsor G) : (trivial G ⟶ P) ≃ P.sheaf.obj.sections 
     (NatTrans.naturality_apply f.hom.hom a (1 : G.obj.obj U)).symm.trans
       (congrArg (f.hom.hom.app V) (map_one (G.obj.map a).hom))⟩
   invFun s := ⟨ObjectProperty.homMk
-    { app U := ↾fun g : G.obj.obj U ↦ g • s.1 U
+    { app U := ↾fun g : G.obj.obj U ↦ g • s.val U
       naturality U V a := by
         ext (g : G.obj.obj U)
-        exact ((P.map_smul a g (s.1 U)).trans (congrArg _ (s.2 a))).symm },
-    fun U g (h : G.obj.obj U) ↦ mul_smul g h (s.1 U)⟩
+        exact ((P.map_smul a g (s.val U)).trans (congrArg _ (s.property a))).symm },
+    fun U g (h : G.obj.obj U) ↦ mul_smul g h (s.val U)⟩
   left_inv f := by
     ext U (g : G.obj.obj U)
     exact ((congrArg (f.hom.hom.app U) (mul_one g).symm).trans
@@ -198,14 +205,37 @@ def trivialHomEquiv (P : Torsor G) : (trivial G ⟶ P) ≃ P.sheaf.obj.sections 
 
 @[simp]
 lemma trivialHomEquiv_apply_coe (P : Torsor G) (f : trivial G ⟶ P) (U : Cᵒᵖ) :
-    (trivialHomEquiv P f).1 U = f.hom.hom.app U (1 : G.obj.obj U) := by
+    (trivialHomEquiv P f).val U = f.hom.hom.app U (1 : G.obj.obj U) := by
   rfl
 
 @[simp]
 lemma trivialHomEquiv_symm_apply_hom_app (P : Torsor G) (s : P.sheaf.obj.sections) (U : Cᵒᵖ)
     (g : G.obj.obj U) :
-    ((trivialHomEquiv P).symm s).hom.hom.app U g = g • s.1 U := by
+    ((trivialHomEquiv P).symm s).hom.hom.app U g = g • s.val U := by
   rfl
+
+/-- A section `s` of a `G`-torsor `P` along a functor `u : D ⥤ C`, that is a family of sections
+`s d` of `P` over `u d` compatible with restriction, identifies `u.op ⋙ G` with `u.op ⋙ P`: a
+section `g` of `G` over `u d` goes to `g • s d`. For `u` the forgetful functor from a slice
+category, this says that a torsor with a section over an object is trivial over that object. -/
+noncomputable def isoOfSection {D : Type*} [Category D] (P : Torsor G) (u : D ⥤ C)
+    (s : ∀ d : D, P.sheaf.obj.obj (op (u.obj d)))
+    (hs : ∀ ⦃d d' : D⦄ (f : d ⟶ d'), P.sheaf.obj.map (u.map f).op (s d') = s d) :
+    u.op ⋙ G.obj ⋙ forget GrpCat ≅ u.op ⋙ P.sheaf.obj :=
+  NatIso.ofComponents
+    (fun d ↦ (Equiv.ofBijective (fun g : G.obj.obj (op (u.obj d.unop)) ↦ g • s d.unop)
+      ⟨P.smul_left_injective _, fun q ↦ MulAction.exists_smul_eq _ _ q⟩).toIso)
+    fun {d d'} f ↦ by
+      ext (g : G.obj.obj (op (u.obj d.unop)))
+      exact ((P.map_smul _ g (s d.unop)).trans (congrArg _ (hs f.unop))).symm
+
+/-- The isomorphism `isoOfSection` acts on the section `s d`. -/
+lemma isoOfSection_hom_app_apply {D : Type*} [Category D] (P : Torsor G) (u : D ⥤ C)
+    (s : ∀ d : D, P.sheaf.obj.obj (op (u.obj d)))
+    (hs : ∀ ⦃d d' : D⦄ (f : d ⟶ d'), P.sheaf.obj.map (u.map f).op (s d') = s d) (d : Dᵒᵖ)
+    (g : G.obj.obj (op (u.obj d.unop))) :
+    (P.isoOfSection u s hs).hom.app d g = g • s d.unop :=
+  (rfl)
 
 /-- If every group of sections of `G` is trivial, every `G`-torsor has a global section: its
 sections are subsingletons, and the local sections glue. -/
@@ -215,26 +245,46 @@ lemma nonempty_sections_of_subsingleton (P : Torsor G) [∀ U, Subsingleton (G.o
     obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq (G.obj.obj U) p q
     rw [Subsingleton.elim g 1, one_smul]⟩
   obtain ⟨s, -, -⟩ := Presheaf.FamilyOfElementsOnObjects.IsCompatible.existsUnique_section
-    (x := fun i : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ i.2.some)
+    (x := fun i : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ i.property.some)
     (fun _ _ _ _ _ ↦ Subsingleton.elim _ _) P.coversTop P.sheaf.property
-  exact ⟨s.1, s.2⟩
+  exact ⟨s.val, s.property⟩
+
+/-- If `T` is a terminal object over which every covering sieve contains the identity, as for
+the whole space of a local scheme in its small Zariski site, every `G`-torsor has a global
+section: some object over which it has a section receives a map from `T`. -/
+lemma nonempty_sections_of_isTerminal_of_id_mem (P : Torsor G) {T : C} (hT : IsTerminal T)
+    (hJ : ∀ S ∈ J T, S (𝟙 T)) : P.sheaf.obj.sections.Nonempty := by
+  obtain ⟨⟨i, ⟨p⟩⟩, ⟨f⟩⟩ := hJ _ (P.coversTop T)
+  refine ⟨fun U ↦ P.sheaf.obj.map (hT.from U.unop ≫ f).op p, fun {U V} g ↦ ?_⟩
+  have : g.unop ≫ hT.from U.unop = hT.from V.unop := hT.hom_ext _ _
+  simp [← this, -IsTerminal.comp_from]
 
 /-- A `G`-invariant morphism from a torsor `P` to a sheaf of sets `F` is constant: its values
 are those of a global section of `F`. -/
 lemma exists_sections_eq_of_smul_invariant (P : Torsor G) {F : Sheaf J (Type w)}
     (f : P.sheaf ⟶ F) (hf : ∀ (U : Cᵒᵖ) (g : G.obj.obj U) (p : P.sheaf.obj.obj U),
       f.hom.app U (g • p) = f.hom.app U p) :
-    ∃ s : F.obj.sections, ∀ (U : Cᵒᵖ) (p : P.sheaf.obj.obj U), f.hom.app U p = s.1 U := by
+    ∃ s : F.obj.sections, ∀ (U : Cᵒᵖ) (p : P.sheaf.obj.obj U), f.hom.app U p = s.val U := by
   have key {U : Cᵒᵖ} (p p' : P.sheaf.obj.obj U) : f.hom.app U p = f.hom.app U p' := by
     obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq (G.obj.obj U) p' p
     exact hf U g p'
   obtain ⟨s, hs, -⟩ := Presheaf.FamilyOfElementsOnObjects.IsCompatible.existsUnique_section
-    (x := fun j : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ f.hom.app _ j.2.some)
+    (x := fun j : {U : C // Nonempty (P.sheaf.obj.obj (op U))} ↦ f.hom.app _ j.property.some)
     (fun Z j k a b ↦ by
       rw [← NatTrans.naturality_apply, ← NatTrans.naturality_apply]
       exact key _ _)
     P.coversTop F.property
   exact ⟨s, fun ⟨U⟩ p ↦ (key p _).trans (hs ⟨U, ⟨p⟩⟩).symm⟩
+
+/-- A morphism of sheaves of sets which is bijective on sections over every object over which a
+`G`-torsor `P` has a section is an isomorphism, because these objects cover the site. -/
+lemma isIso_of_bijective_app (P : Torsor G) {F F' : Sheaf J (Type w)} (f : F ⟶ F')
+    (hf : ∀ U : C, Nonempty (P.sheaf.obj.obj (op U)) → Function.Bijective (f.hom.app (op U))) :
+    IsIso f :=
+  Sheaf.isIso_of_coversTop P.coversTop fun i ↦ by
+    rw [← ObjectProperty.isIso_hom_iff, NatTrans.isIso_iff_isIso_app]
+    rintro ⟨V⟩
+    exact (isIso_iff_bijective _).2 (hf V.left ⟨P.sheaf.obj.map V.hom.op i.property.some⟩)
 
 end Torsor
 
@@ -294,16 +344,27 @@ lemma lift_mk {α : Sort*} (f : Torsor G → α) (hf : ∀ P Q : Torsor G, (P �
 (Stacks, Lemma 21.4.2 (03AI)). -/
 lemma mk_eq_one_iff (P : Torsor G) : mk P = 1 ↔ P.sheaf.obj.sections.Nonempty := by
   rw [one_def, eq_comm, mk_eq_mk_iff]
-  refine ⟨fun ⟨e⟩ ↦ ⟨_, (Torsor.trivialHomEquiv P e.hom).2⟩, fun ⟨s, hs⟩ ↦ ?_⟩
+  refine ⟨fun ⟨e⟩ ↦ ⟨_, (Torsor.trivialHomEquiv P e.hom).property⟩, fun ⟨s, hs⟩ ↦ ?_⟩
   exact ⟨asIso ((Torsor.trivialHomEquiv P).symm ⟨s, hs⟩)⟩
 
-/-- For a sheaf of trivial groups, every torsor is trivial. -/
-instance [∀ U, Subsingleton (G.obj.obj U)] : Subsingleton (NonabelianH1 G) where
+/-- If every `G`-torsor has a global section, every `G`-torsor is trivial. -/
+lemma subsingleton_of_forall_nonempty_sections
+    (h : ∀ P : Torsor G, P.sheaf.obj.sections.Nonempty) : Subsingleton (NonabelianH1 G) where
   allEq x y := by
     induction x using ind with | h P => ?_
     induction y using ind with | h Q => ?_
-    rw [(mk_eq_one_iff P).2 P.nonempty_sections_of_subsingleton,
-      (mk_eq_one_iff Q).2 Q.nonempty_sections_of_subsingleton]
+    rw [(mk_eq_one_iff P).2 (h P), (mk_eq_one_iff Q).2 (h Q)]
+
+/-- For a sheaf of trivial groups, every torsor is trivial. -/
+instance [∀ U, Subsingleton (G.obj.obj U)] : Subsingleton (NonabelianH1 G) :=
+  subsingleton_of_forall_nonempty_sections fun P ↦ P.nonempty_sections_of_subsingleton
+
+/-- If `T` is a terminal object over which every covering sieve contains the identity, every
+`G`-torsor is trivial. -/
+lemma subsingleton_of_isTerminal_of_id_mem {T : C} (hT : IsTerminal T)
+    (hJ : ∀ S ∈ J T, S (𝟙 T)) : Subsingleton (NonabelianH1 G) :=
+  subsingleton_of_forall_nonempty_sections fun P ↦
+    P.nonempty_sections_of_isTerminal_of_id_mem hT hJ
 
 end NonabelianH1
 

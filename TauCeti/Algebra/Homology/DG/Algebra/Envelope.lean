@@ -211,8 +211,9 @@ theorem envelopeDifferential_envelopeDifferential (hd : IsNonUnitalDGAlgebra �
   | tmul x y =>
     obtain ⟨y, rfl⟩ := (opLinearEquiv R).surjective y
     simp only [coe_opLinearEquiv, envelopeDifferential_tmul, map_add, map_smul, hd.sq_zero,
-      hd.koszulTwist_map, InternalGrading.koszulTwist_koszulTwist, op_zero, TensorProduct.tmul_zero,
-      TensorProduct.zero_tmul, smul_zero, add_zero, zero_add, TensorProduct.neg_tmul, smul_neg]
+      hd.koszulTwist_one_map, InternalGrading.koszulTwist_koszulTwist, op_zero,
+      TensorProduct.tmul_zero, TensorProduct.zero_tmul, smul_zero, add_zero, zero_add,
+      TensorProduct.neg_tmul, smul_neg]
     abel
 
 end DG

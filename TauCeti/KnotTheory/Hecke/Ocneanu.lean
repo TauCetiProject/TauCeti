@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
+public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Polynomial
 public import TauCeti.KnotTheory.Hecke
 import Mathlib.Tactic.Ring
 
@@ -48,7 +48,18 @@ theorem map_heckeTrace_ocneanuTrace {R S : Type*} [CommRing R] [CommRing S] (f :
     f (β.heckeTrace (ocneanuTrace R q z) C l) =
       β.heckeTrace (ocneanuTrace S (Units.map f.toMonoidHom q) (f z))
         (f C) (Units.map f.toMonoidHom l) := by
-  simp only [heckeTrace_def, map_mul, map_pow, InfiniteTypeAHeckeAlgebra.map_ocneanuTrace_braidHom]
+  let : Algebra R S := f.toAlgebra
+  have hq : algebraMap R S q = ((Units.map f.toMonoidHom q : Sˣ) : S) := by
+    simp [RingHom.algebraMap_toAlgebra]
+  have htr : f (ocneanuTrace R q z
+        (InfiniteTypeAHeckeAlgebra.braidHom R q (β.predStrands + 1) β.braid)) =
+      ocneanuTrace S (Units.map f.toMonoidHom q) (f z)
+        (InfiniteTypeAHeckeAlgebra.braidHom S (Units.map f.toMonoidHom q) (β.predStrands + 1)
+          β.braid) := by
+    simpa only [RingHom.algebraMap_toAlgebra] using
+      (InfiniteTypeAHeckeAlgebra.ocneanuTrace_braidHom_algebraMap hq z
+        (β.predStrands + 1) β.braid).symm
+  simp only [heckeTrace_def, map_mul, map_pow, htr]
   congr 2
   exact (Units.coe_map (f : R →* S) (l ^ _)).symm.trans
     (congrArg Units.val (map_zpow (Units.map (f : R →* S)) l _))
@@ -60,10 +71,11 @@ is identically `1`. -/
 theorem heckeTrace_ocneanuTrace_indexCharacter {R : Type*} [CommRing R] (q : Rˣ)
     (β : MarkovBraid) :
     β.heckeTrace (ocneanuTrace R q (q : R)) 1 q⁻¹ = 1 := by
-  obtain ⟨hpos, hneg⟩ :=
-    heckeNormalization_of_mul_eq_val_inv_sub (d := (q : R) - ↑q⁻¹) (z := (q : R)) (l := q⁻¹)
-      (one_mul (1 : R)) (by simp) (by simp)
-  rw [one_mul] at hpos hneg
+  have hnorm := IsHeckeNormalization.of_mul_eq_inv_sub (q := q) (z := (q : R)) (l := q⁻¹)
+    (one_mul (1 : R)) (by simp) (by simp)
+  have hpos : ((q⁻¹ : Rˣ) : R) * (q : R) = 1 := by simpa only [one_mul] using hnorm.stabilize
+  have hneg : (↑((q⁻¹ : Rˣ)⁻¹) : R) * ((q : R) - ((q : R) - ↑q⁻¹)) = 1 := by
+    simpa only [one_mul] using hnorm.stabilizeInv
   exact β.heckeTrace_eq_one (isMarkovTrace_ocneanuTrace (q : R)) hpos hneg
 
 /-- **Sign-character specialization (`z = -q⁻¹`, `C = 1`, `l = -q`).** Over any commutative ring `R`
@@ -73,10 +85,11 @@ and for any `q : Rˣ` (including `q = ±1`), the normalized Ocneanu trace at
 theorem heckeTrace_ocneanuTrace_signCharacter {R : Type*} [CommRing R] (q : Rˣ)
     (β : MarkovBraid) :
     β.heckeTrace (ocneanuTrace R q (-(↑q⁻¹ : R))) 1 (-q) = 1 := by
-  obtain ⟨hpos, hneg⟩ :=
-    heckeNormalization_of_mul_eq_val_inv_sub (d := (q : R) - ↑q⁻¹) (z := -(↑q⁻¹ : R)) (l := -q)
-      (one_mul (1 : R)) (by simp; ring) (by simp)
-  rw [one_mul] at hpos hneg
+  have hnorm := IsHeckeNormalization.of_mul_eq_inv_sub (q := q) (z := -(↑q⁻¹ : R)) (l := -q)
+    (one_mul (1 : R)) (by simp; ring) (by simp)
+  have hpos : ((-q : Rˣ) : R) * (-(↑q⁻¹ : R)) = 1 := by simpa only [one_mul] using hnorm.stabilize
+  have hneg : (↑((-q : Rˣ)⁻¹) : R) * (-(↑q⁻¹ : R) - ((q : R) - ↑q⁻¹)) = 1 := by
+    simpa only [one_mul] using hnorm.stabilizeInv
   exact β.heckeTrace_eq_one (isMarkovTrace_ocneanuTrace (-(↑q⁻¹ : R))) hpos hneg
 
 end MarkovBraid

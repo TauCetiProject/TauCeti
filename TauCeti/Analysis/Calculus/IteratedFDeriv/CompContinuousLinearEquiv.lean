@@ -18,15 +18,19 @@ For a continuous linear equivalence `e`, the iterated derivative of `f ∘ e` at
 derivative of `f` at `e y` precomposed with `e` in every slot. Hence the norm of the `i`-th
 derivative of `f ∘ e` at `y` is at most `‖e‖ ^ i` times that of `f` at `e y`, and the norm of the
 `i`-th derivative of `f` at `e y` is at most `‖e⁻¹‖ ^ i` times that of `f ∘ e` at `y`. A Hölder
-bound for the `i`-th derivative of `f ∘ e` transfers to one for the `i`-th derivative of `f`, at
-the cost of the factor `‖e⁻¹‖ ^ (i + r)`. The second Fréchet derivative of `f ∘ e` at `y`, applied
-to `v` and `w`, is that of `f` at `e y` applied to `e v` and `e w`; when `e` takes values in the
-scalar field, it is `e v * e w` times the second derivative of `f`. No differentiability of `f`
-is needed.
+bound for the `i`-th derivative of `f ∘ e` transfers to one for the `i`-th derivative of `f`, at the
+cost of the factor `‖e⁻¹‖ ^ (i + r)`; in the other direction, a Hölder bound for the `i`-th
+derivative of `f` gives one for `z ↦ f (e (z - c))`, at the cost of `‖e‖ ^ (i + r)`
+(`ContinuousLinearEquiv.holderOnWith_iteratedFDeriv_comp_sub`). The second Fréchet derivative of
+`f ∘ e` at `y`, applied to `v` and `w`, is that of `f` at `e y` applied to `e v` and `e w`; when
+`e` takes values in the scalar field, it is `e v * e w` times the second derivative of `f`. No
+differentiability of `f` is needed.
 
 In particular, for a rescaling `z ↦ f (a • z)` the `i`-th derivative at `x` is `a ^ i` times that
 of `f` at `a • x`, again without any differentiability of `f`
-(`TauCeti.iteratedFDeriv_comp_const_smul_apply`). A Hölder bound on a set `t` for the `i`-th
+(`TauCeti.iteratedFDeriv_comp_const_smul_apply`); for a dilation `z ↦ f (x + a • z)` about `x`
+its norm is `‖a‖ ^ i` times that of the `i`-th derivative of `f` at `x + a • z`
+(`TauCeti.norm_iteratedFDeriv_comp_add_const_smul`). A Hölder bound on a set `t` for the `i`-th
 derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
 (`HolderOnWith.iteratedFDeriv_comp_const_smul`).
 -/
@@ -125,6 +129,28 @@ theorem holderOnWith_iteratedFDeriv_of_comp_right (e : G ≃L[𝕜] E) {f : E �
       ≤ ‖(e.symm : E →L[𝕜] G)‖₊ ^ i * (C * ‖(e.symm : E →L[𝕜] G)‖₊ ^ (r : ℝ)) := by gcongr
     _ = _ := by ring
 
+open scoped NNReal in
+/-- **Hölder continuity of iterated derivatives under an affine change of variables.** If the
+`i`-th derivative of `f` is `r`-Hölder with constant `C` on `s`, then the `i`-th derivative of
+`z ↦ f (e (z - c))` is `r`-Hölder on `{z | e (z - c) ∈ s}`, with constant `C ‖e‖ ^ i ‖e‖ ^ r`. -/
+theorem holderOnWith_iteratedFDeriv_comp_sub (e : G ≃L[𝕜] E) (c : G) {f : E → F} {s : Set E}
+    {C r : ℝ≥0} {i : ℕ} (h : HolderOnWith C r (iteratedFDeriv 𝕜 i f) s) :
+    HolderOnWith (C * ‖(e : G →L[𝕜] E)‖₊ ^ i * ‖(e : G →L[𝕜] E)‖₊ ^ (r : ℝ)) r
+      (iteratedFDeriv 𝕜 i fun z ↦ f (e (z - c))) {z | e (z - c) ∈ s} := by
+  -- Read through `e⁻¹`, the map is the translate `w ↦ f (w - e c)`.
+  have hcomp : (fun z ↦ f (e (z - c))) ∘ e.symm = fun w ↦ f (w - e c) := by
+    funext w
+    simp [map_sub]
+  have ht : HolderOnWith C r (iteratedFDeriv 𝕜 i ((fun z ↦ f (e (z - c))) ∘ e.symm))
+      (e.symm ⁻¹' {z | e (z - c) ∈ s}) := by
+    rw [hcomp]
+    intro x hx y hy
+    have hx' : x - e c ∈ s := by simpa [map_sub] using hx
+    have hy' : y - e c ∈ s := by simpa [map_sub] using hy
+    rw [iteratedFDeriv_comp_sub, iteratedFDeriv_comp_sub]
+    simpa only [edist_sub_right] using h _ hx' _ hy'
+  simpa using e.symm.holderOnWith_iteratedFDeriv_of_comp_right ht
+
 end ContinuousLinearEquiv
 
 section Rescaling
@@ -158,6 +184,14 @@ theorem iteratedFDeriv_comp_const_smul_apply (f : E → F) (a : 𝕜) (x : E) (i
 theorem norm_iteratedFDeriv_comp_const_smul (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
     ‖iteratedFDeriv 𝕜 i (fun z ↦ f (a • z)) x‖ = ‖a‖ ^ i * ‖iteratedFDeriv 𝕜 i f (a • x)‖ := by
   rw [iteratedFDeriv_comp_const_smul_apply, norm_smul, norm_pow]
+
+/-- The norm of the `i`-th derivative of the dilation `z ↦ f (x + a • z)` about `x` at `z` is
+`‖a‖ ^ i` times that of the `i`-th derivative of `f` at `x + a • z`. No differentiability of `f`
+is needed. -/
+theorem norm_iteratedFDeriv_comp_add_const_smul (f : E → F) (x : E) (a : 𝕜) (z : E) (i : ℕ) :
+    ‖iteratedFDeriv 𝕜 i (fun y ↦ f (x + a • y)) z‖ =
+      ‖a‖ ^ i * ‖iteratedFDeriv 𝕜 i f (x + a • z)‖ := by
+  rw [norm_iteratedFDeriv_comp_const_smul (fun y ↦ f (x + y)) a z i, iteratedFDeriv_comp_add_left]
 
 end TauCeti
 

@@ -47,6 +47,18 @@ Consequently:
   value (`heckeTrace_hyperbolic_two_strand_unlink_ne_neg_param`).
 * V. F. R. Jones, *Hecke algebra representations of braid groups and link polynomials*, Ann. of
   Math. 126 (1987), 335–388, Section 6.
+
+## Main results
+
+* `TauCeti.isHeckeNormalization_hyperbolic`: the hyperbolic normalization constants satisfy
+  `TauCeti.IsHeckeNormalization`.
+* `TauCeti.MarkovBraid.heckeTrace_hyperbolic_skein`: the three-parameter hyperbolic skein relation
+  with `+exp (-α)`.
+* `TauCeti.MarkovBraid.heckeTrace_hyperbolic_eq_eval₂_reducedHomfly`: comparison with
+  `MarkovBraid.reducedHomfly`.
+* `TauCeti.MarkovBraid.heckeTrace_hyperbolic_two_strand_unlink` and
+  `TauCeti.MarkovBraid.heckeTrace_hyperbolic_two_strand_unlink_ne_neg_param`: explicit two-strand
+  unlink evaluation and disproof of the minus-sign second skein parameter.
 -/
 
 public noncomputable section
@@ -57,6 +69,19 @@ namespace TauCeti
 
 open InfiniteTypeAHeckeAlgebra (IsMarkovTrace)
 open LaurentPolynomial (eval₂)
+
+/-- At projection parameter `η = (1 - tanh α * tanh θ) / 2` (with `cosh α ≠ 0`, `cosh θ ≠ 0`, and
+`sinh θ ≠ 0`), `C = I * cosh α / sinh θ` and `l = hyperbolicWritheUnit α` satisfy
+`IsHeckeNormalization` for `q = hyperbolicHeckeParam θ` and
+`z = exp (-θ) * η - exp θ * (1 - η)`. -/
+theorem isHeckeNormalization_hyperbolic {α θ z η : ℂ}
+    (hz : z = exp (-θ) * η - exp θ * (1 - η))
+    (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) (hθ' : sinh θ ≠ 0)
+    (hη : η = (1 - tanh α * tanh θ) / 2) :
+    IsHeckeNormalization (hyperbolicHeckeParam θ) z
+      (I * cosh α / sinh θ) (hyperbolicWritheUnit α) :=
+  let h := hyperbolicHeckeNormalization hz hα hθ hθ' hη
+  ⟨h.left, h.right⟩
 
 namespace MarkovBraid
 
@@ -99,12 +124,13 @@ theorem heckeTrace_hyperbolic_eq_eval₂_reducedHomfly {K : Type*} [Field K] (φ
       eval₂
         (eval₂ φ (Units.mk0 (-2 * sinh θ) (mul_ne_zero (by norm_num) hθ')))
         (hyperbolicWritheUnit α)⁻¹ (β.reducedHomfly K) := by
-  obtain ⟨hpos, hneg⟩ := hyperbolicHeckeNormalization hz hα hθ hθ' hη
+  have hnorm := isHeckeNormalization_hyperbolic hz hα hθ hθ' hη
   have hu : ((Units.mk0 (-2 * sinh θ) (mul_ne_zero (by norm_num) hθ') : ℂˣ) : ℂ) =
       (hyperbolicHeckeParam θ : ℂ) - ↑(hyperbolicHeckeParam θ)⁻¹ := by
     rw [Units.val_mk0, val_hyperbolicHeckeParam, val_inv_hyperbolicHeckeParam, Complex.sinh]
     ring
-  exact (β.eval₂_reducedHomfly_eq_heckeTrace φ hτ hu hpos hneg).symm
+  exact (β.eval₂_reducedHomfly_eq_heckeTrace_of_isMarkovTrace K φ hτ
+    hnorm.stabilize hnorm.stabilizeInv hu).symm
 
 /-- On the two-strand unlink `⟨1, 1⟩`, the hyperbolic normalized Hecke trace equals
 `-(exp α + exp (-α)) / (2 * I * sinh θ) = I * cosh α / sinh θ`, matching the plus-sign skein

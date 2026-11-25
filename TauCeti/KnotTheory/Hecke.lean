@@ -16,19 +16,23 @@ The normalized braid trace `MarkovBraid.heckeTrace` and its Markov invariance ar
 factor and skein relations. This file proves its characterization by the skein relation and
 normalization.
 
-After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace`, the canonical specialization
-is obtained by taking `τ = ocneanuTrace R q z` and
+After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic`, the canonical
+specialization is obtained by taking `τ = ocneanuTrace R q z` and
 `hτ = isMarkovTrace_ocneanuTrace z`. In this case the invariant is the braid-closure invariant
-Jones constructs from the Ocneanu trace; its naturality and character specializations, its
-comparisons with the finite-colour Jimbo traces, and its comparison with the two-variable HOMFLY
-polynomial are proved in `TauCeti.KnotTheory.Hecke.Ocneanu`, `TauCeti.KnotTheory.Hecke.Jimbo`, and
-`TauCeti.KnotTheory.Hecke.Homfly`. The skein relation itself needs only linearity of `τ`.
+Jones constructs from the Ocneanu trace; its base-change naturality and character specializations
+are proved in `TauCeti.KnotTheory.Hecke.Ocneanu`, its comparison with the finite-colour Jimbo traces
+and the HOMFLY polynomial is proved in `TauCeti.KnotTheory.Hecke.Homfly`, its regular extensions
+across zero-factor specializations are constructed in `TauCeti.KnotTheory.Hecke.Regular`, and its
+hyperbolic `(α, θ)` specialization is proved in `TauCeti.KnotTheory.Hecke.Hyperbolic`. The skein
+relation itself needs only linearity of `τ`.
 
 ## Main results
 
 * `TauCeti.MarkovBraid.eq_heckeTrace_of_skein`: the skein characterization.
 * `TauCeti.MarkovBraid.heckeTrace_eq_one`: when both Markov normalization equations hold with
   `C = 1`, `heckeTrace` is identically `1`.
+* `TauCeti.MarkovBraid.heckeTrace_eq_pow_componentCount_of_sub_inv_eq_zero`: closed-form evaluation
+  of any normalized Hecke Markov trace at `(q : R) - ↑q⁻¹ = 0` as `C ^ (β.componentCount - 1)`.
 
 ## References
 
@@ -69,6 +73,31 @@ theorem MarkovBraid.eq_heckeTrace_of_skein (hτ : IsMarkovTrace z τ)
     (fun n b ↦ by rw [smul_eq_mul, τ.heckeTrace_strandIncl])
     (by rw [h₁, heckeTrace_one_strand hτ.map_one])
 
+/-- **Zero-factor evaluation of a normalized Hecke trace.** When `(q : R) - ↑q⁻¹ = 0`, any
+normalized Markov trace with normalization parameters `(C, l)` evaluates on every braid closure `β`
+to `C ^ (β.componentCount - 1)`. -/
+theorem MarkovBraid.heckeTrace_eq_pow_componentCount_of_sub_inv_eq_zero (β : MarkovBraid)
+    (hτ : IsMarkovTrace z τ) (hpos : C * l * z = 1)
+    (hneg : C * ↑l⁻¹ * (z - ((q : R) - ↑q⁻¹)) = 1) (hq : (q : R) - ↑q⁻¹ = 0) :
+    β.heckeTrace τ C l = C ^ (β.componentCount - 1) := by
+  have hl : (↑l⁻¹ : R) = (l : R) := by
+    have h := (IsHeckeNormalization.mk hpos hneg).mul_sub_inv_eq_inv_sub
+    rw [hq, mul_zero] at h
+    exact sub_eq_zero.mp h.symm
+  symm
+  refine congrFun (eq_heckeTrace_of_skein hτ hpos hneg
+    (F := fun γ ↦ C ^ (γ.componentCount - 1))
+    (fun _ _ h ↦ by rw [h.componentCount_eq]) ?_ ?_ ?_) β
+  · intro n c i
+    have hc := componentCount_mul_sigma_inv_mul 1 c i
+    simp only [one_mul] at hc
+    rw [hc, hl, hq, sub_self, zero_mul]
+  · intro n b
+    have hpos' : 1 ≤ componentCount ⟨n, b⟩ := componentCount_pos ⟨n, b⟩
+    have he : componentCount ⟨n, b⟩ + 1 - 1 = (componentCount ⟨n, b⟩ - 1) + 1 := by omega
+    rw [componentCount_strandIncl, he, pow_succ']
+  · simp
+
 /-- When both Markov normalization equations hold with unlink factor `C = 1`, the normalized Hecke
 trace of any Markov trace is identically `1`. -/
 theorem MarkovBraid.heckeTrace_eq_one (hτ : IsMarkovTrace z τ)
@@ -77,7 +106,7 @@ theorem MarkovBraid.heckeTrace_eq_one (hτ : IsMarkovTrace z τ)
     β.heckeTrace τ 1 l = 1 := by
   have hpos' : (1 : R) * (l : R) * z = 1 := by rwa [one_mul]
   have hneg' : (1 : R) * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1 := by rwa [one_mul]
-  have hd := mul_eq_val_inv_sub_of_heckeNormalization hpos' hneg'
+  have hd := (IsHeckeNormalization.mk hpos' hneg').mul_sub_inv_eq_inv_sub
   have heq := eq_heckeTrace_of_skein hτ hpos' hneg' (F := fun _ ↦ (1 : R))
     (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ by simpa only [mul_one, one_mul] using hd.symm)
     (fun _ _ ↦ (one_mul 1).symm) rfl
