@@ -33,11 +33,15 @@ subalgebras, the inclusion `A ⊗[𝕜] B → B(E) ⊗[𝕜] B(F)` is injective 
 flat.
 
 So `‖x‖_min = ‖(spatialTensorHom A B) x‖` is a norm on `A ⊗[𝕜] B`
-(`NonUnitalStarSubalgebra.spatialNorm`), the **spatial** (or minimal) C*-norm: it is
-submultiplicative, satisfies the C*-identity `‖x⋆ x‖_min = ‖x‖_min ^ 2`, and
-`‖a ⊗ b‖_min = ‖a‖ ‖b‖`. The **spatial tensor product** `A ⊗_min B`
-(`NonUnitalStarSubalgebra.minTensor A B`) is the norm closure of the image, a closed star
-subalgebra of `B(E ⊗₂ F)`.
+(`NonUnitalStarSubalgebra.spatialNorm`), the **spatial** C*-norm relative to the given
+representations `A ⊆ B(E)` and `B ⊆ B(F)`: it is submultiplicative, satisfies the C*-identity
+`‖x⋆ x‖_min = ‖x‖_min ^ 2`, and `‖a ⊗ b‖_min = ‖a‖ ‖b‖`. The **spatial tensor product**
+`A ⊗_min B` (`NonUnitalStarSubalgebra.minTensor A B`) is the norm closure of the image, a closed
+star subalgebra of `B(E ⊗₂ F)`.
+
+Both are defined from the chosen concrete representations. This file does not prove that they are
+independent of the representations (Takesaki I, Theorem IV.4.9), nor that the spatial norm is the
+smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventional name.
 
 ## Main declarations
 
