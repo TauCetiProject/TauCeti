@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Compactification
+public import TauCeti.Geometry.Manifold.Morse.Stable.Concatenation
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Trapping
 public import TauCeti.Topology.Closure
 public import TauCeti.Topology.PathSpace.Moore
@@ -40,14 +41,21 @@ evaluation into the Moore paths from `p` to `r` (`TauCeti.IsAdaptedPseudoGradien
 the point at time `t` of the path of a broken trajectory is its point on the level `f p - t`, and
 the path has length `f p - f r`.
 
-For levels `c i` that avoid the level of a critical point `q`, a record of a broken trajectory from
-`p` to `q` and one from `q` to `r` concatenate to a record of a broken trajectory from `p` to `r`
-(`TauCeti.concatLevelRecords`, `TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat`), and when the
-levels are dense the Moore path of the concatenation is the concatenation of the Moore paths
-(`TauCeti.IsAdaptedPseudoGradient.morseLevelPath_morseRecordsConcat`). These are the evaluation
-into Moore paths and the composition maps of the compactified trajectory spaces through which
-twisting chain systems give the Barraud–Cornea twisting cocycle
-(`TauCeti.TwistingChainSystem.mooreTwistingCocycle`).
+Records on the levels of a set `L` that avoids the level of a critical point `q` are concatenated
+at `q` (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryConcat`). When the levels are dense,
+the Moore path of a concatenation is the concatenation of the Moore paths
+(`TauCeti.IsAdaptedPseudoGradient.morseLevelPath_morseBrokenTrajectoryConcat`): both sides are
+continuous in the level and agree on the levels of `L`, where they are the recorded points. These
+are the evaluation into Moore paths and the composition maps of the compactified trajectory spaces
+through which twisting chain systems give the Barraud–Cornea twisting cocycle
+(`TauCeti.TwistingChainSystem.morseTwistingCocycle`).
+
+For records on the levels of a family `c` that avoid the level of `q`, the concatenation of records
+(`TauCeti.concatLevelRecords`, `TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat`) has the same
+property (`TauCeti.IsAdaptedPseudoGradient.morseLevelPath_morseRecordsConcat`); it gives the
+composition maps of `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecordsCocycle`, and,
+restricted to the trajectory spaces with boundary, those of
+`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`.
 
 The continuity is a consequence of two local estimates for the flow
 (`TauCeti.Geometry.Manifold.Morse.PseudoGradient.Trapping`). Let records `w n` of broken
@@ -74,7 +82,7 @@ trajectories converge to `w`, and levels `a n` to `a`.
   broken trajectory, its points on the successive levels.
 * `TauCeti.concatLevelRecords`: the concatenation of records above and below the level of `q`.
 * `TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat`: concatenation of records of broken
-  trajectories, as a continuous map.
+  trajectories on the levels of a family, as a continuous map.
 
 ## Main results
 
@@ -85,14 +93,22 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `apply_morseLevelPoint`, `morseLevelPoint_apply_level`: it lies on the level `a`, and on the
   recorded levels it is the recorded point.
 * `continuousOn_morseLevelPoint`: it depends continuously on the record and the level.
+* `continuous_morseLevelPoint`: for a fixed record, it depends continuously on the level.
+* `morseLevelPoint_eqOn_Icc`: records whose points agree on levels dense in an interval agree on
+  its closure.
 * `morseLevelPath_apply`, `length_morseLevelPath`, `source_morseLevelPath`,
   `target_morseLevelPath`: the Moore path of a record.
-* `concatLevelRecords_mem`: concatenating records of broken trajectories gives a record of a broken
-  trajectory.
-* `morseLevelPoint_concatLevelRecords_of_le`, `morseLevelPoint_concatLevelRecords_of_ge`: its points
-  are those of the first broken trajectory above the level of `q`, and of the second below.
-* `morseLevelPath_morseRecordsConcat`: the Moore path of a concatenation is the concatenation of
-  the Moore paths.
+* `morseLevelPoint_morseRecordConcat_of_le`, `morseLevelPoint_morseRecordConcat_of_ge`: the points
+  of a concatenation at `q` are those of the first broken trajectory above the level of `q`, and of
+  the second below.
+* `morseLevelPath_morseBrokenTrajectoryConcat`: the Moore path of a concatenation is the
+  concatenation of the Moore paths.
+* `concatLevelRecords_mem`, `morseLevelPoint_concatLevelRecords_of_le`,
+  `morseLevelPoint_concatLevelRecords_of_ge`, `morseLevelPath_morseRecordsConcat`: the same for
+  records on the levels of a family.
+* `TauCeti.concatLevelRecords_assoc`: concatenation of records is associative.
+* `concatLevelRecords_notMem_morseTrajectoryRecords`: a concatenation at `q ≠ r` is not the record
+  of an unbroken trajectory when some level lies between `f q` and `f p`.
 
 ## References
 
@@ -628,6 +644,29 @@ theorem continuousOn_morseLevelPoint (hf : IsMorse 𝓘(ℝ, E) f)
       isLevelPoint_morseLevelPoint (mem_prod.1 hq').1 q'.2)
     (isLevelPoint_morseLevelPoint hq.1 q.2)
 
+/-- **The point on a level of a recorded broken trajectory depends continuously on the level**,
+for a record on levels dense between `f r` and `f p`. -/
+theorem continuous_morseLevelPoint (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : Ioo (f r) (f p) ⊆ closure (range c))
+    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) : Continuous (hX.morseLevelPoint p r c w) :=
+  (hX.continuousOn_morseLevelPoint hf hdense).comp_continuous
+    (continuous_const.prodMk continuous_id) fun _ ↦ ⟨hw, mem_univ _⟩
+
+/-- **Recorded broken trajectories whose points agree on a set of levels dense in `Ioo a b` agree
+on `Icc a b`**, for records on levels dense between the levels of their ends: their points are
+continuous in the level. -/
+theorem morseLevelPoint_eqOn_Icc {ι' : Type*} {p' r' : M} {c' : ι' → ℝ} {w' : ι' → M}
+    (hf : IsMorse 𝓘(ℝ, E) f) (hdense : Ioo (f r) (f p) ⊆ closure (range c))
+    (hdense' : Ioo (f r') (f p') ⊆ closure (range c'))
+    (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c)
+    (hw' : w' ∈ hX.morseBrokenTrajectoryRecords p' r' c') {s : Set ℝ} {a b : ℝ} (hab : a < b)
+    (hs : Ioo a b ⊆ closure s)
+    (h : EqOn (hX.morseLevelPoint p r c w) (hX.morseLevelPoint p' r' c' w') s) :
+    EqOn (hX.morseLevelPoint p r c w) (hX.morseLevelPoint p' r' c' w') (Icc a b) :=
+  fun _ hx ↦ h.closure (hX.continuous_morseLevelPoint hf hdense hw)
+    (hX.continuous_morseLevelPoint hf hdense' hw')
+    (closure_minimal hs isClosed_closure (closure_Ioo hab.ne ▸ hx))
+
 end LevelPoint
 
 /-! ### The Moore path of a recorded broken trajectory -/
@@ -689,9 +728,96 @@ theorem target_morseLevelPath : (hX.morseLevelPath hf hdense w).target = r := by
 
 end LevelPath
 
+/-! ### Concatenation of broken trajectories -/
+
+section Concat
+
+variable {L : Set ℝ} {p q r : M}
+
+/-- **Above the level of `q`, the points of a concatenation are those of the first broken
+trajectory.** Let `w₁` and `w₂` record broken trajectories from `p` to `q` and from `q` to `r` on
+the levels of `L`, dense between `f r` and `f p`, and let `f q` not be a level of `L`. On a level
+`a ≥ f q`, the point of their concatenation at `q` is the point of `w₁`. -/
+theorem morseLevelPoint_morseRecordConcat_of_le (hf : IsMorse 𝓘(ℝ, E) f) (hq : f q ∉ L)
+    (hpr : Ioo (f r) (f p) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ)))
+    {w₁ : ↥(L ∩ Ioo (f q) (f p)) → M} {w₂ : ↥(L ∩ Ioo (f r) (f q)) → M}
+    (hw₁ : w₁ ∈ hX.morseBrokenTrajectoryRecords p q Subtype.val)
+    (hw₂ : w₂ ∈ hX.morseBrokenTrajectoryRecords q r Subtype.val) {a : ℝ} (ha : f q ≤ a) :
+    hX.morseLevelPoint p r Subtype.val (morseRecordConcat f L p q r w₁ w₂) a =
+      hX.morseLevelPoint p q Subtype.val w₁ a := by
+  rcases le_or_gt (f p) a with hpa | hap
+  · rw [morseLevelPoint_of_apply_le hpa, morseLevelPoint_of_apply_le hpa]
+  -- Both sides are continuous in the level, and on the levels of `L` between `f q` and `f p`,
+  -- which are dense there, both are the recorded point of `w₁`.
+  have hw := hX.morseRecordConcat_mem_morseBrokenTrajectoryRecords hq hw₁ hw₂
+  have hrq := hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₂
+  have hpq := subset_closure_range_subtypeVal_inter_of_subset isOpen_Ioo
+    (Ioo_subset_Ioo_left hrq) hpr
+  refine hX.morseLevelPoint_eqOn_Icc hf hpr hpq hw hw₁ (ha.trans_lt hap)
+    (Subtype.range_coe ▸ hpq) (fun d hd ↦ ?_) ⟨ha, hap.le⟩
+  exact ((hX.morseLevelPoint_apply_level hf hpr hw ⟨d, hd.1, hrq.trans_lt hd.2.1, hd.2.2⟩).trans
+    (morseRecordConcat_apply_of_lt _ _ _ hd.2.1)).trans
+      (hX.morseLevelPoint_apply_level hf hpq hw₁ ⟨d, hd⟩).symm
+
+/-- **Below the level of `q`, the points of a concatenation are those of the second broken
+trajectory.** Let `w₁` and `w₂` record broken trajectories from `p` to `q` and from `q` to `r` on
+the levels of `L`, dense between `f r` and `f p`, and let `f q` not be a level of `L`. On a level
+`a ≤ f q`, the point of their concatenation at `q` is the point of `w₂`. -/
+theorem morseLevelPoint_morseRecordConcat_of_ge (hf : IsMorse 𝓘(ℝ, E) f) (hq : f q ∉ L)
+    (hpr : Ioo (f r) (f p) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ)))
+    {w₁ : ↥(L ∩ Ioo (f q) (f p)) → M} {w₂ : ↥(L ∩ Ioo (f r) (f q)) → M}
+    (hw₁ : w₁ ∈ hX.morseBrokenTrajectoryRecords p q Subtype.val)
+    (hw₂ : w₂ ∈ hX.morseBrokenTrajectoryRecords q r Subtype.val) {a : ℝ} (ha : a ≤ f q) :
+    hX.morseLevelPoint p r Subtype.val (morseRecordConcat f L p q r w₁ w₂) a =
+      hX.morseLevelPoint q r Subtype.val w₂ a := by
+  have hw := hX.morseRecordConcat_mem_morseBrokenTrajectoryRecords hq hw₁ hw₂
+  rcases le_or_gt a (f r) with har | hra
+  · rw [hX.morseLevelPoint_of_le_apply hw har, hX.morseLevelPoint_of_le_apply hw₂ har]
+  -- Both sides are continuous in the level, and on the levels of `L` between `f r` and `f q`,
+  -- which are dense there, both are the recorded point of `w₂`.
+  have hqp := hX.value_le_of_mem_morseBrokenTrajectoryRecords hw₁
+  have hqr := subset_closure_range_subtypeVal_inter_of_subset isOpen_Ioo
+    (Ioo_subset_Ioo_right hqp) hpr
+  refine hX.morseLevelPoint_eqOn_Icc hf hpr hqr hw hw₂ (hra.trans_le ha)
+    (Subtype.range_coe ▸ hqr) (fun d hd ↦ ?_) ⟨hra.le, ha⟩
+  exact ((hX.morseLevelPoint_apply_level hf hpr hw ⟨d, hd.1, hd.2.1, hd.2.2.trans_le hqp⟩).trans
+    (morseRecordConcat_apply_of_gt _ _ _ hd.2.2)).trans
+      (hX.morseLevelPoint_apply_level hf hqr hw₂ ⟨d, hd⟩).symm
+
+/-- **The Moore path of a concatenation of broken trajectories is the concatenation of their Moore
+paths**, for broken trajectories recorded on the levels of `L`, dense between the levels of their
+ends, concatenated at a point `q` whose level is not in `L`. -/
+theorem morseLevelPath_morseBrokenTrajectoryConcat (hf : IsMorse 𝓘(ℝ, E) f) (hq : f q ∉ L)
+    (hpr : Ioo (f r) (f p) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ)))
+    (hpq : Ioo (f q) (f p) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f q) (f p)) → ℝ)))
+    (hqr : Ioo (f r) (f q) ⊆ closure (range (Subtype.val : ↥(L ∩ Ioo (f r) (f q)) → ℝ)))
+    (w : ↥(hX.morseBrokenTrajectoryRecords p q (Subtype.val : ↥(L ∩ Ioo (f q) (f p)) → ℝ)) ×
+      ↥(hX.morseBrokenTrajectoryRecords q r (Subtype.val : ↥(L ∩ Ioo (f r) (f q)) → ℝ))) :
+    hX.morseLevelPath hf hpr (hX.morseBrokenTrajectoryConcat hq w) =
+      (hX.morseLevelPath hf hpq w.1).trans (hX.morseLevelPath hf hqr w.2)
+        (by rw [target_morseLevelPath, source_morseLevelPath]) := by
+  have hqp := hX.value_le_of_mem_morseBrokenTrajectoryRecords w.1.property
+  have hrq := hX.value_le_of_mem_morseBrokenTrajectoryRecords w.2.property
+  refine MoorePath.ext ?_ fun t ↦ ?_
+  · rw [MoorePath.length_trans, length_morseLevelPath, length_morseLevelPath,
+      length_morseLevelPath, ← Real.toNNReal_add (sub_nonneg.2 hqp) (sub_nonneg.2 hrq),
+      sub_add_sub_cancel]
+  rw [MoorePath.trans_apply, length_morseLevelPath, morseLevelPath_apply,
+    coe_morseBrokenTrajectoryConcat_apply]
+  split_ifs with ht
+  · rw [morseLevelPath_apply]
+    exact hX.morseLevelPoint_morseRecordConcat_of_le hf hq hpr w.1.property w.2.property
+      (by linarith [(Real.le_toNNReal_iff_coe_le (sub_nonneg.2 hqp)).1 ht])
+  · rw [morseLevelPath_apply, NNReal.coe_sub (not_le.1 ht).le,
+      Real.coe_toNNReal _ (sub_nonneg.2 hqp), show f q - (t - (f p - f q)) = f p - t by ring]
+    exact hX.morseLevelPoint_morseRecordConcat_of_ge hf hq hpr w.1.property w.2.property
+      (by linarith [(Real.toNNReal_lt_iff_lt_coe (sub_nonneg.2 hqp)).1 (not_le.1 ht)])
+
+end Concat
+
 end IsAdaptedPseudoGradient
 
-/-! ### Concatenation of broken trajectories -/
+/-! ### Concatenation of records on the levels of a family -/
 
 section Concat
 
@@ -731,6 +857,21 @@ theorem continuous_concatLevelRecords :
       exact (continuous_apply _).comp continuous_fst
     · simp only [concatLevelRecords, h, ↓reduceDIte]
       exact (continuous_apply _).comp continuous_snd
+
+omit [TopologicalSpace M] [CompactSpace M] [T2Space M] in
+/-- **Concatenation of records is associative.** If `f s ≤ f q` and no level of `c` is the level
+of `q` or of `s`, concatenating at `q` and then at `s` is concatenating at `s` and then at `q`. -/
+theorem concatLevelRecords_assoc {s : M} (hs : ∀ i, c i ≠ f s) (hsq : f s ≤ f q)
+    (a : c ⁻¹' Ioo (f q) (f p) → M) (b : c ⁻¹' Ioo (f s) (f q) → M)
+    (d : c ⁻¹' Ioo (f r) (f s) → M) :
+    concatLevelRecords c hs (concatLevelRecords c hq a b) d =
+      concatLevelRecords c hq a (concatLevelRecords c hs b d) := by
+  funext i
+  -- Compare the level `c i` with `f q` and `f s`; it is neither of them.
+  have := hq i
+  have := hs i
+  simp only [concatLevelRecords]
+  split_ifs <;> first | rfl | (exfalso; grind)
 
 end Concat
 
@@ -807,6 +948,20 @@ theorem concatLevelRecords_mem :
   obtain ⟨x, z, hx0, hxk, hxc, hxne, hz, hrec, -, -⟩ := exists_chain_concatLevelRecords hq hx0₁ hxk₁
     hxc₁ hxne₁ hz₁ hrec₁ hx0₂ hxk₂ hxc₂ hxne₂ hz₂ hrec₂
   exact hX.mem_morseBrokenTrajectoryRecords.2 ⟨_, x, z, hx0, hxk, hxc, hxne, hz, hrec⟩
+
+/-- **Concatenations are not unbroken.** If `q ≠ r` and some level of `c` lies strictly between
+`f q` and `f p`, the concatenation at `q` of records of broken trajectories from `p` to `q` and
+from `q` to `r` is not the record of an unbroken trajectory from `p` to `r`. -/
+theorem concatLevelRecords_notMem_morseTrajectoryRecords (hqr : q ≠ r) {i₀ : ι}
+    (hi₀ : c i₀ ∈ Ioo (f q) (f p)) :
+    concatLevelRecords c hq w₁ w₂ ∉
+      hX.morseTrajectoryRecords p r ((c ⁻¹' Ioo (f r) (f p)).domRestrict c) := by
+  intro hw
+  -- On the level `c i₀`, the concatenation is a point of the first broken trajectory, which meets
+  -- no unbroken trajectory to `r` since `f r < f q`.
+  have hrq := hX.value_lt_of_mem_morseBrokenTrajectoryRecords hqr hw₂
+  exact hX.apply_ne_of_mem_morseBrokenTrajectoryRecords_of_mem_morseTrajectoryRecords hw₁ hw hrq
+    ⟨i₀, hi₀⟩ ⟨i₀, hrq.trans hi₀.1, hi₀.2⟩ (by rw [concatLevelRecords_of_lt hq w₁ w₂ hi₀.1])
 
 /-- **Above the level of `q`, the points of a concatenation are those of the first broken
 trajectory.** -/

@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Invariance
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
 public import TauCeti.Geometry.Lie.Functor
+public import TauCeti.GroupTheory.QuotientGroup.Congr
+public import TauCeti.RepresentationTheory.Stabilizer
 
 /-!
 # Coadjoint orbits along homomorphisms and through central covers
@@ -31,6 +33,14 @@ covering map (`ContMDiffMonoidMorphism.isCoveringMap_of_lieMap_bijective`). Such
   So a surjective cover has the same coadjoint orbits as its base.
 * If `dφ` is surjective, the coadjoint stabilizer of `ν ∘ dφ` is the preimage of that of `ν`,
   `K_{ν ∘ dφ} = φ⁻¹(G_ν)` (`MonoidHom.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap`).
+  So `[k] ↦ [φ k]` is a well-defined injective map `K ⧸ K_{ν ∘ dφ} → G ⧸ G_ν` of coadjoint orbits
+  (`MonoidHom.coadjointOrbitQuotientMap`, `MonoidHom.injective_coadjointOrbitQuotientMap`), the
+  coset-space map `TauCeti.QuotientGroup.mapComap` of `φ`. It is
+  equivariant along `φ` (`MonoidHom.coadjointOrbitQuotientMap_smul`), intertwines the orbit maps
+  into `𝔨*` and `𝔤*`
+  (`MonoidHom.orbitMap_coadjointOrbitQuotientMap_comp_groupLieAlgebraMap`), and is surjective
+  exactly when `φ` meets every coset of `G_ν`
+  (`MonoidHom.surjective_coadjointOrbitQuotientMap_iff`), for instance when `φ` is surjective.
 * If `dφ` is injective, the kernel of `φ` acts trivially on `𝔨*`
   (`MonoidHom.coadjointRepresentation_eq_one_of_mem_ker`), so it lies in every coadjoint
   stabilizer (`MonoidHom.ker_le_stabilizer_coadjointRepresentation`). For connected `K` this
@@ -152,6 +162,91 @@ theorem ker_le_stabilizer_coadjointRepresentation
     φ.ker ≤ (coadjointRepresentation 𝕜 J K).stabilizer ν := fun _ hk ↦ by
   rw [Representation.mem_stabilizer, φ.coadjointRepresentation_eq_one_of_mem_ker hdφ hk,
     one_apply_eq_self]
+
+/-! ### The induced map of coadjoint orbits -/
+
+variable (hdφ : Function.Surjective (φ.groupLieAlgebraMap J I)) (ν : Dual 𝕜 (GroupLieAlgebra I G))
+
+/-- **The map of coadjoint orbits induced by a homomorphism.** For `φ : K →* G` with surjective
+differential `dφ` at the identity, the map `[k] ↦ [φ k]` from the coadjoint orbit
+`K ⧸ K_{ν ∘ dφ}` of `ν ∘ dφ` to the coadjoint orbit `G ⧸ G_ν` of `ν`. It is the coset-space map
+`TauCeti.QuotientGroup.mapComap` of `φ`, read through
+`K_{ν ∘ dφ} = φ⁻¹(G_ν)` (`MonoidHom.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap`). -/
+def coadjointOrbitQuotientMap :
+    K ⧸ (coadjointRepresentation 𝕜 J K).stabilizer (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) →
+      G ⧸ (coadjointRepresentation 𝕜 I G).stabilizer ν :=
+  QuotientGroup.mapComap φ _ ∘
+    Subgroup.quotientEquivOfEq (φ.stabilizer_coadjointRepresentation_comp_groupLieAlgebraMap hdφ ν)
+
+/-- The induced map of coadjoint orbits sends the coset of `k` to the coset of `φ k`. -/
+@[simp]
+theorem coadjointOrbitQuotientMap_mk (k : K) :
+    φ.coadjointOrbitQuotientMap hdφ ν (k : K ⧸ (coadjointRepresentation 𝕜 J K).stabilizer
+        (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) =
+      (φ k : G ⧸ (coadjointRepresentation 𝕜 I G).stabilizer ν) := by
+  rw [coadjointOrbitQuotientMap, Function.comp_apply, Subgroup.quotientEquivOfEq_mk,
+    QuotientGroup.mapComap_mk]
+
+/-- The induced map of coadjoint orbits composed with the projection of `K` is the projection of
+`G` composed with `φ`. -/
+@[simp]
+theorem coadjointOrbitQuotientMap_comp_mk :
+    φ.coadjointOrbitQuotientMap hdφ ν ∘ (QuotientGroup.mk : K → K ⧸
+        (coadjointRepresentation 𝕜 J K).stabilizer
+          (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) =
+      (QuotientGroup.mk : G → G ⧸ (coadjointRepresentation 𝕜 I G).stabilizer ν) ∘ φ :=
+  funext fun k ↦ φ.coadjointOrbitQuotientMap_mk hdφ ν k
+
+/-- **The induced map of coadjoint orbits is equivariant along `φ`:** `[φ (k k')] = φ k • [φ k']`.
+-/
+@[simp]
+theorem coadjointOrbitQuotientMap_smul (k : K)
+    (x : K ⧸ (coadjointRepresentation 𝕜 J K).stabilizer
+      (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) :
+    φ.coadjointOrbitQuotientMap hdφ ν (k • x) = φ k • φ.coadjointOrbitQuotientMap hdφ ν x := by
+  induction x using QuotientGroup.induction_on with
+  | H a => exact QuotientGroup.mapComap_smul φ ((coadjointRepresentation 𝕜 I G).stabilizer ν) k a
+
+/-- **The induced map intertwines the orbit maps.** The image in `𝔨*` of a point `x` of the
+coadjoint orbit of `ν ∘ dφ` is the pullback along `dφ` of the image in `𝔤*` of its image in the
+coadjoint orbit of `ν`: `Ad*_k (ν ∘ dφ) = (Ad*_{φ k} ν) ∘ dφ`. -/
+@[simp]
+theorem orbitMap_coadjointOrbitQuotientMap_comp_groupLieAlgebraMap
+    (x : K ⧸ (coadjointRepresentation 𝕜 J K).stabilizer
+      (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) :
+    ((coadjointRepresentation 𝕜 I G).orbitMap ν (φ.coadjointOrbitQuotientMap hdφ ν x)).comp
+        (φ.groupLieAlgebraMap J I).toLinearMap =
+      (coadjointRepresentation 𝕜 J K).orbitMap
+        (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) x := by
+  induction x using QuotientGroup.induction_on with
+  | H k => simp only [coadjointOrbitQuotientMap_mk, Representation.orbitMap_mk,
+      coadjointRepresentation_comp_groupLieAlgebraMap]
+
+/-- **The induced map of coadjoint orbits is injective**, since `K_{ν ∘ dφ}` is the full preimage
+`φ⁻¹(G_ν)`. -/
+theorem injective_coadjointOrbitQuotientMap :
+    Function.Injective (φ.coadjointOrbitQuotientMap hdφ ν) :=
+  (QuotientGroup.injective_mapComap φ _).comp (Subgroup.quotientEquivOfEq _).injective
+
+/-- **The induced map of coadjoint orbits is surjective exactly when `φ` meets every coset of
+`G_ν`**, as it does for instance when `φ` is surjective. -/
+theorem surjective_coadjointOrbitQuotientMap_iff :
+    Function.Surjective (φ.coadjointOrbitQuotientMap hdφ ν) ↔
+      Function.Surjective
+        ((QuotientGroup.mk : G → G ⧸ (coadjointRepresentation 𝕜 I G).stabilizer ν) ∘ φ) :=
+  ((Subgroup.quotientEquivOfEq _).surjective.of_comp_iff _).trans
+    (QuotientGroup.surjective_mapComap_iff φ _)
+
+/-- **Bijectivity of the induced map of coadjoint orbits.** If `φ` has surjective differential and
+meets every coset of `G_ν`, for instance if `φ` is surjective, then the induced map of coadjoint
+orbits is a bijection. -/
+theorem bijective_coadjointOrbitQuotientMap
+    (hφ : Function.Surjective
+      ((QuotientGroup.mk : G → G ⧸ (coadjointRepresentation 𝕜 I G).stabilizer ν) ∘ φ)) :
+    Function.Bijective (φ.coadjointOrbitQuotientMap hdφ ν) := by
+  rw [coadjointOrbitQuotientMap, ← QuotientGroup.coe_congrComapOfSurjectiveMk φ _ hφ]
+  exact (QuotientGroup.congrComapOfSurjectiveMk φ _ hφ).bijective.comp
+    (Subgroup.quotientEquivOfEq _).bijective
 
 end General
 

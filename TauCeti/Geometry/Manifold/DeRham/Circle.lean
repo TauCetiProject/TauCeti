@@ -16,7 +16,7 @@ public import TauCeti.Geometry.Manifold.Orientation.AddCircle
 
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Parametrization
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.Topology.Circle.Arc

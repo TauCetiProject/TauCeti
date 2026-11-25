@@ -29,9 +29,10 @@ The chord length is minus the generating function `S(s, t) = -‖χ(t) - χ(s)�
 next collision parameter, `ℓ(s, v) = -S(s, t(s, v))`. The generating function recovers the
 tangential components, `∂_s S(s, t) = v` and `∂_t S(s, t) = -w`, so differentiating gives
 `dℓ = w dt - v ds` (`TauCeti.StrictConvexBilliardTable.hasFDerivAt_chordLength`), which is the
-exactness identity. It is proved for `C²` parametrizations `χ`, which make `B` differentiable.
-Applying `d` to it, `d(dℓ) = 0` and `d(B^*λ) = B^*(dλ)` give `B^*ω = ω`; this step is proved for
-`C³` parametrizations, which make `B` and `ℓ` `C²`. Equivalently, the Jacobian determinant of
+exactness identity. It holds at a state `(s, v)` at which `χ` is `C²` at `s` and at `t`, which
+makes `B` differentiable there. Applying `d` to it, `d(dℓ) = 0` and `d(B^*λ) = B^*(dλ)` give
+`B^*ω = ω`; this step needs `χ` to be `C³` at `s` and at `t`, which makes `B` and `ℓ` `C²` near
+`(s, v)`. Equivalently, the Jacobian determinant of
 `B` is one at every state of the strip
 (`TauCeti.StrictConvexBilliardTable.det_fderiv_nextCollision`).
 
@@ -104,34 +105,36 @@ theorem chordLength_add_period (hx : x.2 ∈ Ioo (-1) 1) :
     χ.chordLength (x.1 + χ.period, x.2) = χ.chordLength x := by
   rw [chordLength_def, chordLength_def, χ.nextParam_add_period hx, χ.periodic, χ.periodic]
 
-/-- **Smoothness of the chord length.** If `χ` is `C^(n+1)` with `n ≠ 0`, the chord length is `C^n`
-on the strip `ℝ × (-1, 1)`. -/
-theorem contDiffAt_chordLength (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ)
-    (hx : x.2 ∈ Ioo (-1) 1) : ContDiffAt ℝ n χ.chordLength x := by
-  have hχn : ContDiff ℝ n χ := hχ.of_le le_self_add
+/-- **Smoothness of the chord length.** If `χ` is `C^(n+1)` at `s` and `C^n` at the next collision
+parameter `t`, the chord length is `C^n` at the state `x = (s, v)` of the strip `ℝ × (-1, 1)`. -/
+theorem contDiffAt_chordLength (hs : ContDiffAt ℝ (n + 1) χ x.1)
+    (ht : ContDiffAt ℝ n χ (χ.nextParam x.1 x.2)) (hx : x.2 ∈ Ioo (-1) 1) :
+    ContDiffAt ℝ n χ.chordLength x := by
   have hd : ContDiffAt ℝ n (fun y : ℝ × ℝ ↦ χ (χ.nextParam y.1 y.2) - χ y.1) x :=
-    (hχn.contDiffAt.comp x (χ.contDiffAt_nextParam hn hχ hx)).sub
-      (hχn.contDiffAt.comp x contDiffAt_fst)
+    (ht.comp x (χ.contDiffAt_nextParam hs ht hx)).sub
+      ((hs.of_le le_self_add).comp x contDiffAt_fst)
   exact (contDiffAt_norm ℝ (sub_ne_zero.2 (χ.apply_nextParam_ne hx))).comp x hd
 
 /-! ### Exactness -/
 
 /-- **The differential of the chord length** is `dℓ = w dt - v ds`, where `(t, w)` is the next
 collision state of `(s, v)`: moving the initial point along the boundary shortens the chord at the
-rate `v`, and moving the final point lengthens it at the rate `w`. Here `χ` is `C²`. -/
-theorem hasFDerivAt_chordLength (hχ : ContDiff ℝ 2 χ) (hx : x.2 ∈ Ioo (-1) 1) :
+rate `v`, and moving the final point lengthens it at the rate `w`. Here `χ` is `C²` at `s` and at
+`t`. -/
+theorem hasFDerivAt_chordLength (hs : ContDiffAt ℝ 2 χ x.1)
+    (ht : ContDiffAt ℝ 2 χ (χ.nextParam x.1 x.2)) (hx : x.2 ∈ Ioo (-1) 1) :
     HasFDerivAt χ.chordLength
       ((χ.nextCollision x).2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ χ.nextCollision x) -
         x.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) x := by
   set B' := fderiv ℝ χ.nextCollision x
   set t := χ.nextParam x.1 x.2
   have hB : HasFDerivAt χ.nextCollision B' x :=
-    ((χ.contDiffAt_nextCollision one_ne_zero hχ hx).differentiableAt one_ne_zero).hasFDerivAt
+    ((χ.contDiffAt_nextCollision hs ht hx).differentiableAt one_ne_zero).hasFDerivAt
   -- The next collision parameter is the first component of `B`.
-  have ht : HasFDerivAt (fun y : ℝ × ℝ ↦ χ.nextParam y.1 y.2)
+  have hT : HasFDerivAt (fun y : ℝ × ℝ ↦ χ.nextParam y.1 y.2)
       ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp B') x := by
     simpa [Function.comp_def] using hasFDerivAt_fst.comp x hB
-  have hd := ((χ.differentiableAt t).hasDerivAt.hasFDerivAt.comp x ht).sub
+  have hd := ((χ.differentiableAt t).hasDerivAt.hasFDerivAt.comp x hT).sub
     ((χ.differentiableAt x.1).hasDerivAt.hasFDerivAt.comp x hasFDerivAt_fst)
   have hℓ := (hasFDerivAt_norm_of_ne (sub_ne_zero.2 (χ.apply_nextParam_ne hx))).comp x hd
   convert hℓ using 1
@@ -148,35 +151,41 @@ theorem hasFDerivAt_chordLength (hχ : ContDiff ℝ 2 χ) (hx : x.2 ∈ Ioo (-1)
   simp [t, nextTangential_def, real_inner_comm (deriv χ x.1), mul_comm]
 
 /-- **The billiard map is exact symplectic**: `B^*λ - λ = dℓ` at every state of the strip, for the
-Liouville form `λ = v ds` and the chord length `ℓ`, for a `C²` parametrization `χ`. -/
-theorem realPlaneYDx_compContinuousLinearMap_fderiv_nextCollision_sub (hχ : ContDiff ℝ 2 χ)
+Liouville form `λ = v ds` and the chord length `ℓ`, when `χ` is `C²` at `s` and at `t`. -/
+theorem realPlaneYDx_compContinuousLinearMap_fderiv_nextCollision_sub
+    (hs : ContDiffAt ℝ 2 χ x.1) (ht : ContDiffAt ℝ 2 χ (χ.nextParam x.1 x.2))
     (hx : x.2 ∈ Ioo (-1) 1) :
     (realPlaneYDx (χ.nextCollision x)).compContinuousLinearMap (fderiv ℝ χ.nextCollision x) -
         realPlaneYDx x =
       differentialOneForm ℝ χ.chordLength x := by
   ext v
-  simp [differentialOneForm_apply, (χ.hasFDerivAt_chordLength hχ hx).fderiv]
+  simp [differentialOneForm_apply, (χ.hasFDerivAt_chordLength hs ht hx).fderiv]
 
 /-! ### Area preservation -/
 
 /-- **The billiard map preserves the area form**: `B^*(ds ∧ dv) = ds ∧ dv` at every state of the
 strip. It follows from the exactness `B^*λ - λ = dℓ` by applying `d`, since `ds ∧ dv = -dλ`. The
-hypothesis that `χ` is `C³` makes `B` and `ℓ` `C²`, the regularity at which `d` commutes with
-pullback and `d(dℓ) = 0`. -/
-theorem wedge_compContinuousLinearMap_fderiv_nextCollision (hχ : ContDiff ℝ 3 χ)
-    (hx : x.2 ∈ Ioo (-1) 1) :
+hypothesis that `χ` is `C³` at `s` and at `t` makes `B` and `ℓ` `C²` near the state, the regularity
+at which `d` commutes with pullback and `d(dℓ) = 0`. -/
+theorem wedge_compContinuousLinearMap_fderiv_nextCollision (hs : ContDiffAt ℝ 3 χ x.1)
+    (ht : ContDiffAt ℝ 3 χ (χ.nextParam x.1 x.2)) (hx : x.2 ∈ Ioo (-1) 1) :
     ((realPlaneDx (χ.nextCollision x)).wedge
         (realPlaneDy (χ.nextCollision x))).compContinuousLinearMap (fderiv ℝ χ.nextCollision x) =
       (realPlaneDx x).wedge (realPlaneDy x) := by
-  have hχ2 : ContDiff ℝ 2 χ := hχ.of_le (by norm_num)
-  have hB : ContDiffAt ℝ 2 χ.nextCollision x := χ.contDiffAt_nextCollision two_ne_zero hχ hx
-  have hℓ : ContDiffAt ℝ 2 χ.chordLength x := χ.contDiffAt_chordLength two_ne_zero hχ hx
-  -- Near `x` the exactness identity reads `B^*λ = λ + dℓ`.
+  have ht2 : ContDiffAt ℝ 2 χ (χ.nextParam x.1 x.2) := ht.of_le (by norm_num)
+  have hB : ContDiffAt ℝ 2 χ.nextCollision x := χ.contDiffAt_nextCollision hs ht hx
+  have hℓ : ContDiffAt ℝ 2 χ.chordLength x := χ.contDiffAt_chordLength hs ht2 hx
+  -- Near `x`, `χ` is still `C²` at both endpoints, so the exactness identity reads
+  -- `B^*λ = λ + dℓ` there.
+  have hs' : ∀ᶠ y : ℝ × ℝ in 𝓝 x, ContDiffAt ℝ 2 χ y.1 :=
+    continuousAt_fst.eventually ((hs.of_le (by norm_num)).eventually (by simp))
+  have ht' : ∀ᶠ y : ℝ × ℝ in 𝓝 x, ContDiffAt ℝ 2 χ (χ.nextParam y.1 y.2) :=
+    (χ.contDiffAt_nextParam hs ht2 hx).continuousAt.eventually (ht2.eventually (by simp))
   have hEq : (fun y ↦ (realPlaneYDx (χ.nextCollision y)).compContinuousLinearMap
       (fderiv ℝ χ.nextCollision y)) =ᶠ[𝓝 x]
         fun y ↦ realPlaneYDx y + differentialOneForm ℝ χ.chordLength y := by
-    filter_upwards [(isOpen_Ioo.preimage continuous_snd).mem_nhds hx] with y hy
-    rw [← χ.realPlaneYDx_compContinuousLinearMap_fderiv_nextCollision_sub hχ2 hy,
+    filter_upwards [(isOpen_Ioo.preimage continuous_snd).mem_nhds hx, hs', ht'] with y hy hys hyt
+    rw [← χ.realPlaneYDx_compContinuousLinearMap_fderiv_nextCollision_sub hys hyt hy,
       add_sub_cancel]
   -- Apply `d` to both sides: `d(B^*λ) = B^*(dλ)` and `d(dℓ) = 0`.
   have hYDx : ∀ p, DifferentiableAt ℝ realPlaneYDx p := fun _ ↦
@@ -191,11 +200,13 @@ theorem wedge_compContinuousLinearMap_fderiv_nextCollision (hχ : ContDiff ℝ 3
   simpa using congr(-$hd v)
 
 /-- **The billiard map is area preserving**: the Jacobian determinant of `B` is one at every state
-of the strip, for a `C³` parametrization `χ`. -/
-theorem det_fderiv_nextCollision (hχ : ContDiff ℝ 3 χ) (hx : x.2 ∈ Ioo (-1) 1) :
+of the strip at which `χ` is `C³` at `s` and at `t`. -/
+theorem det_fderiv_nextCollision (hs : ContDiffAt ℝ 3 χ x.1)
+    (ht : ContDiffAt ℝ 3 χ (χ.nextParam x.1 x.2)) (hx : x.2 ∈ Ioo (-1) 1) :
     (fderiv ℝ χ.nextCollision x).det = 1 := by
   set A := fderiv ℝ χ.nextCollision x
-  have h := congr($(χ.wedge_compContinuousLinearMap_fderiv_nextCollision hχ hx) ![(1, 0), (0, 1)])
+  have h :=
+    congr($(χ.wedge_compContinuousLinearMap_fderiv_nextCollision hs ht hx) ![(1, 0), (0, 1)])
   -- Evaluate both sides on the standard basis, where `ds ∧ dv` is the `2 × 2` determinant.
   have hv : ⇑A ∘ ![((1 : ℝ), (0 : ℝ)), (0, 1)] = ![A (1, 0), A (0, 1)] := by
     funext i

@@ -123,19 +123,6 @@ private theorem orderOf_restrict_maximalUnramifiedFrobenius (f : ℕ) (hf : f �
   rw [← (AlgEquiv.autCongr e).orderOf_eq, heq, orderOf_frobeniusAlgEquiv,
     IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension hf]
 
-/-- The canonical generator generates every finite quotient of the defining copy of `ℤ`. -/
-private theorem mem_zpowers_quotientGenerator
-    (H : FiniteIndexNormalSubgroup (ULift.{w} (Multiplicative ℤ))) :
-    ∀ x : ULift.{w} (Multiplicative ℤ) ⧸ H.toSubgroup,
-      x ∈ Subgroup.zpowers
-        (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1))) := by
-  have hf : zpowersHom _ (QuotientGroup.mk (ULift.up (Multiplicative.ofAdd 1)) :
-      ULift.{w} (Multiplicative ℤ) ⧸ H.toSubgroup) =
-      (QuotientGroup.mk' H.toSubgroup).comp MulEquiv.ulift.symm.toMonoidHom :=
-    MonoidHom.ext_mint rfl
-  rw [← Subgroup.eq_top_iff', ← Subgroup.range_zpowersHom, hf, MonoidHom.range_eq_top]
-  exact (QuotientGroup.mk'_surjective _).comp MulEquiv.ulift.symm.surjective
-
 /-- Every finite coordinate of `ℤ̂` is detected by restriction to a finite unramified level. -/
 private theorem exists_finiteQuotient_maximalUnramifiedFrobenius :
     ∀ H : FiniteIndexNormalSubgroup (ULift.{max u v} (Multiplicative ℤ)),
@@ -169,7 +156,7 @@ private theorem exists_finiteQuotient_maximalUnramifiedFrobenius :
       (maximalUnramifiedFrobenius K Ω)) = Nat.card Gal(E/K)
     rw [orderOf_restrict_maximalUnramifiedFrobenius K Ω n hn, hcardE]
   have hgenQ : ∀ x : Q, x ∈ Subgroup.zpowers gQ :=
-    mem_zpowers_quotientGenerator H
+    zHat.mem_zpowers_mk_up_ofAdd_one H.toSubgroup
   let eE : Multiplicative (ZMod n) ≃* Gal(E/K) :=
     zmodMulEquivOfGenerator hgenE hcardE
   let eQ : Multiplicative (ZMod n) ≃* Q :=
@@ -367,9 +354,8 @@ theorem fixedField_zpowers_maximalUnramifiedFrobenius_pow (f : ℕ+) :
   refine le_antisymm ?_ ((le_fixedField_iff_le_fixingSubgroup _ _).2 ?_)
   · -- The closed subgroup fixing the fixed field of `H` contains the closure of `H`.
     rw [← InfiniteGalois.fixedField_fixingSubgroup E, fixingSubgroup_comap_unramifiedExtension]
-    exact (le_fixedField_iff_le_fixingSubgroup _ _).2 (Subgroup.topologicalClosure_minimal _
-      ((le_fixedField_iff_le_fixingSubgroup _ _).1 le_rfl)
-      (InfiniteGalois.fixingSubgroup_isClosed _))
+    exact (le_fixedField_iff_le_fixingSubgroup _ _).2
+      (fixingSubgroup_fixedField_eq_topologicalClosure H).ge
   · rw [fixingSubgroup_comap_unramifiedExtension]
     exact Subgroup.le_topologicalClosure H
 

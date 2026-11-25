@@ -16,7 +16,7 @@ Let `T : L²(μ; E) → L²(ν; F)` be a bounded operator between `L²` spaces o
 functions, and let `T†` be its Hilbert space adjoint. If `T†` is bounded from `L^{q'}` to
 `L^{p'}` on `L²`, that is `‖T† g‖_{p'} ≤ C ‖g‖_{q'}` for every `g ∈ L²`, then `T` is bounded from
 `Lᵖ` to `L^q` on `L²` with the same constant, where `p, p'` and `q, q'` are pairs of Hölder
-conjugate exponents and `q < ∞`.
+conjugate exponents and the target measure is σ-finite.
 
 This is the duality argument that transfers a bound in one range of exponents to the dual
 range: for instance the Calderón–Zygmund bound for `1 < p < 2` gives the bound for `2 < p < ∞`.
@@ -59,14 +59,14 @@ pairing of `V T f` with a bounded function `g` of finite-measure support is the 
 `u f` with `u⁻¹ T† (V g)`, and `V g` is an element of `L²`. -/
 private theorem eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le_of_le [SigmaFinite ν]
     (T : Lp E 2 μ →L[𝕜] Lp F 2 ν) {p p' q q' : ℝ≥0∞} [p.HolderConjugate p'] [q.HolderConjugate q']
-    (hq : q ≠ ∞) {u : α → ℝ} {w V : β → ℝ} (hu : ∀ᵐ x ∂μ, u x ≠ 0) (hw : AEStronglyMeasurable w ν)
+    {u : α → ℝ} {w V : β → ℝ} (hu : ∀ᵐ x ∂μ, u x ≠ 0) (hw : AEStronglyMeasurable w ν)
     (hV : AEStronglyMeasurable (fun y ↦ (V y : 𝕜)) ν) {M : ℝ} (hVM : ∀ y, ‖(V y : 𝕜)‖ ≤ M)
     (hVw : ∀ y, ‖(w y : 𝕜)⁻¹ * (V y : 𝕜)‖ ≤ 1) {C : ℝ≥0∞}
     (hT : ∀ g : Lp F 2 ν, eLpNorm (fun x ↦ (u x : 𝕜)⁻¹ • adjoint T g x) p' μ ≤
       C * eLpNorm (fun y ↦ (w y : 𝕜)⁻¹ • g y) q' ν) (f : Lp E 2 μ) :
     eLpNorm (fun y ↦ (V y : 𝕜) • T f y) q ν ≤ C * eLpNorm (fun x ↦ (u x : 𝕜) • f x) p μ := by
   refine (hV.smul (Lp.aestronglyMeasurable (T f))).eLpNorm_le_of_forall_enorm_integral_inner_le
-    (𝕜 := 𝕜) (q' := q') hq fun g s hs hgs hg ↦ ?_
+    (𝕜 := 𝕜) (q' := q') fun g s hs hgs hg ↦ ?_
   have hVg_top : MemLp (fun y ↦ (V y : 𝕜) • g y) ∞ ν :=
     hg.of_le_mul (hV.smul hg.aestronglyMeasurable)
       (ae_of_all _ fun y ↦ by rw [norm_smul]; gcongr; exact hVM y)
@@ -99,14 +99,14 @@ private theorem eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le_of_le [SigmaFinite ν
     _ = C * eLpNorm (fun x ↦ (u x : 𝕜) • f x) p μ * eLpNorm g q' ν := by ring
 
 /-- **Weighted duality for operators on `L²`.** Let `T : L²(μ; E) → L²(ν; F)` be a bounded operator
-on a σ-finite target, let `p, p'` and `q, q'` be Hölder conjugate with `q < ∞`, and let `u` and `w`
+on a σ-finite target, let `p, p'` and `q, q'` be Hölder conjugate, and let `u` and `w`
 be real weights on the source and the target, with `u` nonzero almost everywhere and `w` almost
 everywhere strongly measurable. If the adjoint satisfies `‖u⁻¹ T† g‖_{p'} ≤ C ‖w⁻¹ g‖_{q'}` for
 every `g ∈ L²`, then `‖w T f‖_q ≤ C ‖u f‖_p` for every `f ∈ L²`.
 
 Neither side of the conclusion is assumed finite, and the weights need not be bounded. -/
 theorem eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le [SigmaFinite ν] (T : Lp E 2 μ →L[𝕜] Lp F 2 ν)
-    {p p' q q' : ℝ≥0∞} [p.HolderConjugate p'] [q.HolderConjugate q'] (hq : q ≠ ∞)
+    {p p' q q' : ℝ≥0∞} [p.HolderConjugate p'] [q.HolderConjugate q']
     {u : α → ℝ} {w : β → ℝ} (hu : ∀ᵐ x ∂μ, u x ≠ 0) (hw : AEStronglyMeasurable w ν) {C : ℝ≥0∞}
     (hT : ∀ g : Lp F 2 ν, eLpNorm (fun x ↦ (u x : 𝕜)⁻¹ • adjoint T g x) p' μ ≤
       C * eLpNorm (fun y ↦ (w y : 𝕜)⁻¹ • g y) q' ν) (f : Lp E 2 μ) :
@@ -134,20 +134,20 @@ theorem eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le [SigmaFinite ν] (T : Lp E 2 
     have h := (tendsto_const_nhds (x := w y)).div hden_lim (by simp)
     rwa [mul_zero, add_zero, div_one] at h
   exact Lp.eLpNorm_le_of_ae_tendsto (u := Filter.atTop) (Filter.Eventually.of_forall fun n ↦
-      eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le_of_le T hq hu hw (hWm n) (hWb n) (hWw n) hT f)
+      eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le_of_le T hu hw (hWm n) (hWb n) (hWw n) hT f)
     (fun n ↦ (hWm n).smul (Lp.aestronglyMeasurable (T f)))
     ((RCLike.continuous_ofReal.comp_aestronglyMeasurable hw).smul (Lp.aestronglyMeasurable (T f)))
     (ae_of_all _ fun y ↦ ((RCLike.continuous_ofReal.tendsto _).comp (hlim y)).smul_const _)
 
 /-- **Duality for operators on `L²`.** Let `T : L²(μ; E) → L²(ν; F)` be a bounded operator on a
-σ-finite target, let `p, p'` and `q, q'` be Hölder conjugate with `q < ∞`, and suppose the
+σ-finite target, let `p, p'` and `q, q'` be Hölder conjugate, and suppose the
 adjoint satisfies `‖T† g‖_{p'} ≤ C ‖g‖_{q'}` for every `g ∈ L²`. Then
 `‖T f‖_q ≤ C ‖f‖_p` for every `f ∈ L²`. -/
 theorem eLpNorm_le_of_eLpNorm_adjoint_le [SigmaFinite ν] (T : Lp E 2 μ →L[𝕜] Lp F 2 ν)
-    {p p' q q' : ℝ≥0∞} [p.HolderConjugate p'] [q.HolderConjugate q'] (hq : q ≠ ∞) {C : ℝ≥0∞}
+    {p p' q q' : ℝ≥0∞} [p.HolderConjugate p'] [q.HolderConjugate q'] {C : ℝ≥0∞}
     (hT : ∀ g : Lp F 2 ν, eLpNorm (adjoint T g) p' μ ≤ C * eLpNorm g q' ν) (f : Lp E 2 μ) :
     eLpNorm (T f) q ν ≤ C * eLpNorm f p μ := by
-  simpa using eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le T hq (u := 1) (w := 1)
+  simpa using eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le T (u := 1) (w := 1)
     (ae_of_all _ fun _ ↦ one_ne_zero) aestronglyMeasurable_const (by simpa using hT) f
 
 end ContinuousLinearMap

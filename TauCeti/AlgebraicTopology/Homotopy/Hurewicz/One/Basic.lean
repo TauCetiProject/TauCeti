@@ -77,6 +77,7 @@ public section
 noncomputable section
 
 open CategoryTheory Convexity Simplicial unitInterval TauCeti.TopCat
+open Convexity.StdSimplex (faceInclusion faceInclusion_apply)
 
 universe u
 
@@ -85,56 +86,65 @@ namespace TauCeti.HurewiczOne
 /-- The parametrization of the standard `1`-simplex by the unit interval, as a continuous map. -/
 local notation "toI" => (StdSimplex.homeomorphI : C(StdSimplex ℝ (Fin 2), I))
 
-/-- The point of the standard `1`-simplex with a given parameter, as a continuous map. -/
-local notation "ofI" => (StdSimplex.homeomorphI.symm : C(I, StdSimplex ℝ (Fin 2)))
-
 variable {R : Type u} [Ring R] {X : TopCat.{u}}
-
-/-- The inclusion of the `i`-th facet of the standard `2`-simplex. -/
-private def face (i : Fin 3) : C(StdSimplex ℝ (Fin 2), StdSimplex ℝ (Fin 3)) :=
-  ⟨StdSimplex.map i.succAbove, StdSimplex.continuous_map ℝ _⟩
 
 section FaceWeights
 
 variable (a : StdSimplex ℝ (Fin 2))
 
-@[simp] private lemma face_zero_weights_zero : (face 0 a).weights 0 = 0 :=
-  StdSimplex.weights_map_succAbove_self 0 a
-@[simp] private lemma face_zero_weights_one : (face 0 a).weights 1 = a.weights 0 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (0 : Fin 3))
+private lemma face_zero_weights_zero : (faceInclusion 0 a).weights 0 = 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_succAbove_self 0 a
+private lemma face_zero_weights_one : (faceInclusion 0 a).weights 1 = a.weights 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (0 : Fin 3))
     Fin.succAbove_right_injective a 0
-@[simp] private lemma face_zero_weights_two : (face 0 a).weights 2 = a.weights 1 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (0 : Fin 3))
+private lemma face_zero_weights_two : (faceInclusion 0 a).weights 2 = a.weights 1 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (0 : Fin 3))
     Fin.succAbove_right_injective a 1
-@[simp] private lemma face_one_weights_zero : (face 1 a).weights 0 = a.weights 0 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (1 : Fin 3))
+private lemma face_one_weights_zero : (faceInclusion 1 a).weights 0 = a.weights 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (1 : Fin 3))
     Fin.succAbove_right_injective a 0
-@[simp] private lemma face_one_weights_one : (face 1 a).weights 1 = 0 :=
-  StdSimplex.weights_map_succAbove_self 1 a
-@[simp] private lemma face_one_weights_two : (face 1 a).weights 2 = a.weights 1 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (1 : Fin 3))
+private lemma face_one_weights_one : (faceInclusion 1 a).weights 1 = 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_succAbove_self 1 a
+private lemma face_one_weights_two : (faceInclusion 1 a).weights 2 = a.weights 1 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (1 : Fin 3))
     Fin.succAbove_right_injective a 1
-@[simp] private lemma face_two_weights_zero : (face 2 a).weights 0 = a.weights 0 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (2 : Fin 3))
+private lemma face_two_weights_zero : (faceInclusion 2 a).weights 0 = a.weights 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (2 : Fin 3))
     Fin.succAbove_right_injective a 0
-@[simp] private lemma face_two_weights_one : (face 2 a).weights 1 = a.weights 1 :=
-  StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (2 : Fin 3))
+private lemma face_two_weights_one : (faceInclusion 2 a).weights 1 = a.weights 1 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_apply_of_injective (f := Fin.succAbove (2 : Fin 3))
     Fin.succAbove_right_injective a 1
-@[simp] private lemma face_two_weights_two : (face 2 a).weights 2 = 0 :=
-  StdSimplex.weights_map_succAbove_self 2 a
+private lemma face_two_weights_two : (faceInclusion 2 a).weights 2 = 0 := by
+  rw [faceInclusion_apply]
+  exact StdSimplex.weights_map_succAbove_self 2 a
 
 end FaceWeights
 
+-- In this file `simp` computes the weights of points of the facets with the lemmas above, so it
+-- keeps the facet inclusion folded.
+attribute [local simp] face_zero_weights_zero face_zero_weights_one face_zero_weights_two
+  face_one_weights_zero face_one_weights_one face_one_weights_two
+  face_two_weights_zero face_two_weights_one face_two_weights_two
+attribute [-simp] faceInclusion_apply
+
 private lemma δ_toSSetObjEquiv_symm (f : C(StdSimplex ℝ (Fin 3), X)) (i : Fin 3)
-    (g : C(I, X)) (h : f.comp (face i) = g.comp toI) :
+    (g : C(I, X)) (h : f.comp (faceInclusion i) = g.comp toI) :
     (TopCat.toSSet.obj X).δ i ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) = simplex₁ g :=
-  (δ_toSSetObjEquiv_symm_eq f i _ fun w ↦ congr($h w)).trans
+  (δ_toSSetObjEquiv_symm_eq f i _ fun w ↦ (faceInclusion_apply i w).symm ▸ congr($h w)).trans
     ((X.toSSetObjEquiv _).symm_apply_eq.2 (toSSetObjEquiv_simplex₁ g).symm)
 
 private lemma d_simplexMapChain (f : C(StdSimplex ℝ (Fin 3), X)) (g₀ g₁ g₂ : C(I, X))
-    (h₀ : f.comp (face 0) = g₀.comp toI)
-    (h₁ : f.comp (face 1) = g₁.comp toI)
-    (h₂ : f.comp (face 2) = g₂.comp toI) :
+    (h₀ : f.comp (faceInclusion 0) = g₀.comp toI)
+    (h₁ : f.comp (faceInclusion 1) = g₁.comp toI)
+    (h₂ : f.comp (faceInclusion 2) = g₂.comp toI) :
     ((singularChains R).obj X).d 2 1 (simplexMapChain R f) =
       pathChain R g₀ - pathChain R g₁ + pathChain R g₂ := by
   rw [singularChains_d_simplexChain (n := 1), Fin.sum_univ_three,
@@ -371,26 +381,13 @@ lemma H₁.lift_mk (f : ((singularChains R).obj X).X 1 →ₗ[R] A)
     (@ModuleCat.ofHom R _ _ _ _ (cycles₁ R X).module _ _ (f.comp (cycles₁ R X).subtype))
     (ModuleCat.hom_ext (LinearMap.ext hf))).hom c)
 
-/-- An edge of the standard `2`-simplex, as a path. -/
-private def edgePath (i : Fin 3) :
-    Path (face i (StdSimplex.single 0)) (face i (StdSimplex.single 1)) where
-  toContinuousMap := (face i).comp ofI
-  source' := by simp
-  target' := by simp
-
-private lemma face_single (i : Fin 3) (j : Fin 2) :
-    face i (StdSimplex.single j) = StdSimplex.single (i.succAbove j) :=
-  StdSimplex.map_single _ _
-
-/-- The path of the `i`-th face of a singular `2`-simplex is the image of the `i`-th edge of the
-standard `2`-simplex. -/
-private lemma path₁_δ (τ : (TopCat.toSSet.obj X) _⦋2⦌) (i : Fin 3) :
-    path₁ ((TopCat.toSSet.obj X).δ i τ) = (edgePath i).map (X.toSSetObjEquiv _ τ).continuous := by
-  ext t
-  rw [path₁_apply, TopCat.toSSetObjEquiv_δ_apply]
-  -- By definition of `edgePath`, the right-hand side is `τ` at the image of
-  -- `homeomorphI.symm t` under the inclusion `face i` of the facet.
-  rfl
+/-- The path of the `i`-th face of a singular `2`-simplex is the image of the path along the
+`i`-th edge of the standard `2`-simplex. -/
+private lemma path₁_δ_apply (τ : (TopCat.toSSet.obj X) _⦋2⦌) (i : Fin 3) (t : I) :
+    path₁ ((TopCat.toSSet.obj X).δ i τ) t =
+      (StdSimplex.edgePath i.succAbove).map (X.toSSetObjEquiv _ τ).continuous t := by
+  rw [path₁_apply, TopCat.toSSetObjEquiv_δ_apply, Path.map_coe, Function.comp_apply,
+    StdSimplex.edgePath_apply]
 
 variable (f : ∀ {y z : X}, Path.Homotopic.Quotient y z → A)
 
@@ -407,13 +404,21 @@ private lemma map_eq_imageValue {Y : Type} [TopologicalSpace Y] [SimplyConnected
   rw [imageValue, Subsingleton.elim (Path.Homotopic.Quotient.mk γ)]
 
 omit [AddCommGroup A] in
+/-- The value of `f` on the class of a path depends only on the path as a function, its endpoints
+being its values at `0` and `1`. -/
+private lemma apply_mk_eq_of_coe_eq {y z y' z' : X} (γ : Path y z) (γ' : Path y' z')
+    (h : ⇑γ = ⇑γ') : f (.mk γ) = f (.mk γ') := by
+  obtain rfl : y = y' := γ.source.symm.trans ((congrFun h 0).trans γ'.source)
+  obtain rfl : z = z' := γ.target.symm.trans ((congrFun h 1).trans γ'.target)
+  rw [Path.ext h]
+
+omit [AddCommGroup A] in
 /-- The value of `f` on the path of the `i`-th face of a singular `2`-simplex `τ`. -/
 private lemma apply_path₁_δ (τ : (TopCat.toSSet.obj X) _⦋2⦌) (i : Fin 3) :
     f (.mk (path₁ ((TopCat.toSSet.obj X).δ i τ))) = imageValue f (X.toSSetObjEquiv _ τ)
       (StdSimplex.single (i.succAbove 0)) (StdSimplex.single (i.succAbove 1)) := by
-  rw [← face_single, ← face_single, ← map_eq_imageValue f _ (edgePath i),
-    ← Path.Homotopic.Quotient.mk_map]
-  exact congrArg (fun γ ↦ f (Path.Homotopic.Quotient.mk γ)) (path₁_δ τ i)
+  rw [← map_eq_imageValue f _ (StdSimplex.edgePath i.succAbove), ← Path.Homotopic.Quotient.mk_map]
+  exact apply_mk_eq_of_coe_eq f _ _ (funext (path₁_δ_apply τ i))
 
 variable {f}
 variable (hf : ∀ {y z w : X} (p : Path.Homotopic.Quotient y z) (q : Path.Homotopic.Quotient z w),

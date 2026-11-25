@@ -23,8 +23,8 @@ at one of the points `t₀ ≤ m` (`RingHom.exists_iteratedDeriv_gelfond_auxilia
 This file bounds `|σ ρ|` from below for nonzero `ρ`, which is the arithmetic half of the final
 contradiction in Gelfond's proof of the Gelfond–Schneider theorem. If `c₀ α`, `c₀ β`, `c₀ γ` are
 algebraic integers, then `c₀ ^ (r + 2 q m) ρ` is a nonzero algebraic integer, of house at most
-`X ^ r r ^ r` for a constant `X`, so Liouville's inequality
-(`NumberField.one_le_norm_mul_house_pow`) gives
+`X ^ r r ^ r` for a constant `X`, so Liouville's inequality for a number of known size
+(`NumberField.one_le_pow_mul_norm_embedding_mul_pow`) gives
 
 `1 ≤ c₂ ^ r r ^ ((h - 1) r) |σ ρ|`
 
@@ -180,7 +180,6 @@ theorem exists_one_le_pow_mul_norm_gelfond_value (α β γ : K) (m : ℕ) (c : �
     rw [hx]
     exact IsIntegral.sum _ fun a _ ↦ IsIntegral.sum _ fun b _ ↦
       (η a b).isIntegral_coe.mul (ht a b).1
-  have hx0 : (c₀ : K) ^ N * ρ ≠ 0 := mul_ne_zero (pow_ne_zero _ (Int.cast_ne_zero.2 hc₀)) hρ
   have hxhouse : NumberField.house ((c₀ : K) ^ N * ρ) ≤ X ^ r * (r : ℝ) ^ r := by
     refine le_trans ?_ (gelfond_value_bound_le hm hn hq hnr hH)
     rw [hx]
@@ -192,11 +191,9 @@ theorem exists_one_le_pow_mul_norm_gelfond_value (α β γ : K) (m : ℕ) (c : �
     · simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
       push_cast
       ring
-  -- Liouville's inequality for `x`, and `|σ x| = |c₀| ^ N |σ ρ| ≤ H' ^ r |σ ρ|`.
-  have hL := NumberField.one_le_norm_mul_house_pow hxint hx0 σ
-  have hσx : ‖σ ((c₀ : K) ^ N * ρ)‖ ≤ H' ^ r * ‖σ ρ‖ := by
-    rw [map_mul, norm_mul, map_pow, map_intCast, norm_pow, Complex.norm_intCast]
-    gcongr
+  -- Liouville's inequality for `ρ` of size `(N, max 1 X ^ r r ^ r)`, and `|c₀| ^ N ≤ H' ^ r`.
+  have hc : ‖σ (c₀ : K)‖ ^ N ≤ H' ^ r := by
+    rw [map_intCast, Complex.norm_intCast]
     calc |(c₀ : ℝ)| ^ N ≤ H ^ N := pow_le_pow_left₀ (abs_nonneg _) hc₀H N
       _ ≤ H' ^ r := by
         rw [← pow_mul]
@@ -207,11 +204,10 @@ theorem exists_one_le_pow_mul_norm_gelfond_value (α β γ : K) (m : ℕ) (c : �
   have hX : X ^ r * (r : ℝ) ^ r ≤ max 1 X ^ r * (r : ℝ) ^ r :=
     mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (by positivity) (le_max_right _ _) r)
       (by positivity)
-  calc (1 : ℝ) ≤ ‖σ ((c₀ : K) ^ N * ρ)‖ *
-        NumberField.house ((c₀ : K) ^ N * ρ) ^ (finrank ℚ K - 1) := hL
-    _ ≤ H' ^ r * ‖σ ρ‖ * (max 1 X ^ r * (r : ℝ) ^ r) ^ (finrank ℚ K - 1) :=
-        mul_le_mul hσx (pow_le_pow_left₀ (NumberField.house_nonneg _) (hxhouse.trans hX) _)
-          (pow_nonneg (NumberField.house_nonneg _) _) (by positivity)
+  calc (1 : ℝ) ≤ ‖σ (c₀ : K)‖ ^ N * ‖σ ρ‖ * (max 1 X ^ r * (r : ℝ) ^ r) ^ (finrank ℚ K - 1) :=
+        NumberField.one_le_pow_mul_norm_embedding_mul_pow (Int.cast_ne_zero.2 hc₀) hρ hxint
+          (hxhouse.trans hX) σ
+    _ ≤ H' ^ r * ‖σ ρ‖ * (max 1 X ^ r * (r : ℝ) ^ r) ^ (finrank ℚ K - 1) := by gcongr
     _ = (H' * max 1 X ^ (finrank ℚ K - 1)) ^ r * (r : ℝ) ^ ((finrank ℚ K - 1) * r) * ‖σ ρ‖ := by
         rw [mul_pow, mul_pow, ← pow_mul, ← pow_mul, ← pow_mul, mul_comm r]
         ring

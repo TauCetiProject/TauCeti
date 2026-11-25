@@ -59,6 +59,8 @@ Artinian ring, in the indecomposable-projective and simple bases.
 * `ModuleCat.isFG` and `TauCeti.finiteProjectiveModules`: the two object properties.
 * `TauCeti.finiteProjectiveModulesRegular`: the regular module `R`, as a finitely generated
   projective `R`-module.
+* `TauCeti.FiniteProjectiveModules.of R P`: a finitely generated projective `R`-module `P` as an
+  object of the subcategory of finitely generated projective modules.
 * `TauCeti.finiteModulesExactStructure`, `TauCeti.finiteProjectiveModulesExactStructure` and
   `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on them, and on
   the modules admitting finite resolutions by finitely generated projectives, by the canonical
@@ -183,6 +185,16 @@ instance : (finiteProjectiveModules R).ContainsZero where
 theorem finiteProjectiveModulesRegular_obj :
     (finiteProjectiveModulesRegular R).obj = ModuleCat.of R R :=
   (rfl)
+
+namespace FiniteProjectiveModules
+
+/-- A finitely generated projective module as an object of the subcategory of finitely generated
+projective modules. -/
+abbrev of (P : Type u) [AddCommGroup P] [Module R P] [Module.Finite R P]
+    [Module.Projective R P] : (finiteProjectiveModules R).FullSubcategory :=
+  ⟨ModuleCat.of R P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+
+end FiniteProjectiveModules
 
 /-! ### Essential smallness -/
 

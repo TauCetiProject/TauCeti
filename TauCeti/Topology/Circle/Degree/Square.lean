@@ -66,6 +66,10 @@ quarter turn, as the arguments of the corners `(±1 ± i) / 2` show.
   `TauCeti.squareBoundaryDegree_mul_of_continuous`,
   `TauCeti.squareBoundaryDegree_eq_of_homotopy`, `TauCeti.squareBoundaryDegree_eq_add`: the laws
   above.
+* `TauCeti.squareBoundaryDegree_mul_two_pi_eq`: the degree read from continuous lifts of `Γ`
+  along the four edges.
+* `TauCeti.squareBoundaryDegree_mul_two_pi_eq_of_edges`: a map constant on three edges and
+  equal to `g` on the fourth has the winding of `g` as its degree.
 * `TauCeti.squareBoundaryDegree_squareCenterDirection`: the direction from the centre has
   degree `1`.
 
@@ -321,6 +325,48 @@ private theorem squareBoundaryDegree_mul_two_pi (h : ContinuousOn Γ (Cube.bound
       comp_apply]
     split_ifs <;> rfl
 
+/-- Along a path of the square, the angle swept by a map is the change of any continuous lift of
+it along `Circle.exp`. -/
+private theorem pathAngle_eq_sub {a b : Fin 2 → I} (γ : Path a b) (h : ContinuousOn Γ (range γ))
+    {θ : I → ℝ} (hθ : Continuous θ) (hθΓ : ∀ t, Circle.exp (θ t) = Γ (γ t)) :
+    pathAngle γ Γ = θ 1 - θ 0 := by
+  rw [pathAngle_eq γ h]
+  exact Circle.angleChange_eq_sub _ hθ hθΓ
+
+/-- **The degree from lifts along the edges.** If `Γ` is continuous on the boundary of the square,
+and `θB`, `θR`, `θT`, `θL` are continuous lifts along `Circle.exp` of `Γ` on the bottom edge
+`s ↦ (s, 0)`, the right edge `t ↦ (1, t)`, the top edge `s ↦ (s, 1)` and the left edge `t ↦ (0, t)`,
+then `2π` times the degree of `Γ` around the boundary is the change of `θB` plus that of `θR`
+minus those of `θT` and `θL`. -/
+theorem squareBoundaryDegree_mul_two_pi_eq (h : ContinuousOn Γ (Cube.boundary (Fin 2)))
+    {θB θR θT θL : I → ℝ} (hθB : Continuous θB) (hθR : Continuous θR) (hθT : Continuous θT)
+    (hθL : Continuous θL) (hB : ∀ s, Circle.exp (θB s) = Γ ![s, 0])
+    (hR : ∀ t, Circle.exp (θR t) = Γ ![1, t]) (hT : ∀ s, Circle.exp (θT s) = Γ ![s, 1])
+    (hL : ∀ t, Circle.exp (θL t) = Γ ![0, t]) :
+    (squareBoundaryDegree Γ : ℝ) * (2 * Real.pi) =
+      (θB 1 - θB 0) + (θR 1 - θR 0) - (θT 1 - θT 0) - (θL 1 - θL 0) := by
+  rw [squareBoundaryDegree_mul_two_pi h,
+    pathAngle_eq_sub squareBottom (h.mono range_squareBottom) hθB hB,
+    pathAngle_eq_sub squareRight (h.mono range_squareRight) hθR hR,
+    pathAngle_eq_sub squareTop (h.mono range_squareTop) hθT hT,
+    pathAngle_eq_sub squareLeft (h.mono range_squareLeft) hθL hL]
+
+/-- The degree around the boundary of the square of a circle-valued map that is constant, equal
+to `c`, on the bottom, top and left edges and equal to `g t` on the right edge, is the winding of
+`g`: `2π` times it is `θ 1 - θ 0` for every continuous lift `θ` of `g`. -/
+theorem squareBoundaryDegree_mul_two_pi_eq_of_edges (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)))
+    {c : Circle} {g : I → Circle} (hB : ∀ s, Γ ![s, 0] = c) (hT : ∀ s, Γ ![s, 1] = c)
+    (hL : ∀ t, Γ ![0, t] = c) (hR : ∀ t, Γ ![1, t] = g t) {θ : I → ℝ}
+    (hθ : Continuous θ) (hθg : ∀ t, Circle.exp (θ t) = g t) :
+    (squareBoundaryDegree Γ : ℝ) * (2 * Real.pi) = θ 1 - θ 0 := by
+  obtain ⟨θc, hθc⟩ := Circle.exp_surjective c
+  -- Lifts along the edges: constant on three of them, `θ` on the right edge.
+  rw [squareBoundaryDegree_mul_two_pi_eq hΓ continuous_const hθ continuous_const continuous_const
+    (θB := fun _ ↦ θc) (θR := θ) (θT := fun _ ↦ θc) (θL := fun _ ↦ θc)
+    (fun s ↦ by rw [hB, hθc]) (fun t ↦ by rw [hR, hθg]) (fun s ↦ by rw [hT, hθc])
+    (fun t ↦ by rw [hL, hθc])]
+  ring
+
 /-- Along a horizontal edge, the angle swept by `Γ` is the sum of the angles swept by its two
 halves. -/
 private theorem pathAngle_horizontal_eq_add {a b : Fin 2 → I} (γ : Path a b) (c : I)
@@ -431,14 +477,6 @@ theorem continuousOn_squareCenterDirection :
       (Complex.continuous_ofReal.comp continuous_squareCenterOffset.norm).continuousOn
       fun y hy ↦ by simpa using squareCenterOffset_ne_zero_of_mem hy).congr
     fun y hy ↦ coe_squareCenterDirection (squareCenterOffset_ne_zero_of_mem hy)
-
-/-- Along a path of the square, the angle swept by a map is the change of any continuous lift of
-it along `Circle.exp`. -/
-private theorem pathAngle_eq_sub {a b : Fin 2 → I} (γ : Path a b) (h : ContinuousOn Γ (range γ))
-    {θ : I → ℝ} (hθ : Continuous θ) (hθΓ : ∀ t, Circle.exp (θ t) = Γ (γ t)) :
-    pathAngle γ Γ = θ 1 - θ 0 := by
-  rw [pathAngle_eq γ h]
-  exact Circle.angleChange_eq_sub _ hθ hθΓ
 
 /-- Along an edge of the square that avoids the closed negative real axis, as seen from the
 centre, the direction from the centre sweeps the angle between the arguments of the ends. -/
