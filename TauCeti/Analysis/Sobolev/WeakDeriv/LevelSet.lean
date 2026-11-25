@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.Analysis.Calculus.Deriv.CountableLevels
+import TauCeti.Analysis.Sobolev.WeakDeriv.AddHaar
 import TauCeti.MeasureTheory.Function.Gluing
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -43,39 +43,30 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens ℝ} {u v u' v' : ℝ → F}
 
-/-- On an interval with integrable weak derivative, the derivative vanishes almost everywhere
-on the preimage of a countable set of values, even for a discontinuous representative. -/
-private theorem HasWeakLineDerivOn.ae_eq_zero_on_preimage_Ioo {a b : ℝ}
-    (hu : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1)
-    (hu' : IntegrableOn u' (Ioo a b)) {C : Set F} (hC : C.Countable) :
-    ∀ᵐ t ∂volume.restrict (Ioo a b), u t ∈ C → u' t = 0 := by
-  rcases le_or_gt b a with hba | hab
-  · simp [Ioo_eq_empty_of_le hba]
-  obtain ⟨w, hw, huw⟩ := hu.exists_continuousOn_ae_eq hu'
-  have hd := hu.ae_hasDerivAt (hw.mono Ioo_subset_Icc_self) huw hab.le
-  filter_upwards [huw, ae_restrict_of_ae hd,
-    ae_restrict_of_ae (hC.ae_deriv_eq_zero_on_preimage w volume),
-    ae_restrict_mem measurableSet_Ioo] with t ht hdt hCt htI hval
-  have hderiv := hdt (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self htI)
-  exact hderiv.deriv.symm.trans (hCt (ht ▸ hval))
-
 /-- Localize countable-preimage vanishing for direction `1` and Lebesgue measure to intervals
 whose closures are contained in the domain. -/
 private theorem HasWeakLineDerivOn.ae_eq_zero_on_preimage_volume_one
     (hu : HasWeakLineDerivOn volume Ω u u' 1) {C : Set F} (hC : C.Countable) :
     ∀ᵐ t ∂volume.restrict Ω, u t ∈ C → u' t = 0 := by
   refine ae_restrict_of_subset_iUnion_isOpen
-    (t := fun p : {p : ℝ × ℝ // Icc p.1 p.2 ⊆ Ω} ↦ Ioo p.1.1 p.1.2)
+    (t := fun p : {p : ℝ × ℝ // Icc p.1 p.2 ⊆ Ω} ↦ Ioo p.val.1 p.val.2)
     (fun _ ↦ isOpen_Ioo) ?_ ?_
   · intro x hx
     obtain ⟨a, b, -, hIx, hI⟩ := exists_Icc_mem_subset_of_mem_nhds (Ω.isOpen.mem_nhds hx)
     apply mem_iUnion.2 ⟨⟨(a, b), hI⟩, ?_⟩
     simpa only [interior_Icc] using mem_interior_iff_mem_nhds.2 hIx
   · rintro ⟨⟨a, b⟩, hI⟩
-    have hsub : Ioo a b ⊆ Ω := Ioo_subset_Icc_self.trans hI
+    rcases le_or_gt b a with hba | hab
+    · simp [Ioo_eq_empty_of_le hba]
+    have huI := hu.mono (Ω' := ⟨Ioo a b, isOpen_Ioo⟩) (Ioo_subset_Icc_self.trans hI)
     have huint := hu.locallyIntegrableOn_deriv.integrableOn_compact_subset hI isCompact_Icc
-    exact (hu.mono (Ω' := ⟨Ioo a b, isOpen_Ioo⟩) hsub).ae_eq_zero_on_preimage_Ioo
-      (huint.mono_set Ioo_subset_Icc_self) hC
+    obtain ⟨w, hw, huw⟩ := huI.exists_continuousOn_ae_eq (huint.mono_set Ioo_subset_Icc_self)
+    have hd := huI.ae_hasDerivAt (hw.mono Ioo_subset_Icc_self) huw hab.le
+    filter_upwards [huw, ae_restrict_of_ae hd,
+      ae_restrict_of_ae (hC.ae_deriv_eq_zero_on_preimage w volume),
+      ae_restrict_mem measurableSet_Ioo] with t ht hdt hCt htI hval
+    have hderiv := hdt (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self htI)
+    exact hderiv.deriv.symm.trans (hCt (ht ▸ hval))
 
 variable {μ : Measure ℝ} [μ.IsAddHaarMeasure] {d : ℝ}
 
@@ -89,14 +80,9 @@ theorem HasWeakLineDerivOn.ae_eq_zero_on_preimage_real
     have := hu.completeSpace
     filter_upwards [hu.ae_eq (hasWeakLineDerivOn_zero_direction hu.locallyIntegrableOn)] with t ht
     exact fun _ ↦ ht
-  -- Rescaling the Haar measure multiplies both sides of the test function identity equally.
-  have huvol : HasWeakLineDerivOn volume Ω u u' d :=
-    hasWeakLineDerivOn_iff_testFunction.2 ⟨hu.completeSpace,
-      hu.locallyIntegrableOn.of_isAddHaarMeasure volume,
-      hu.locallyIntegrableOn_deriv.of_isAddHaarMeasure volume, fun φ ↦ by
-        rw [Measure.isAddLeftInvariant_eq_smul (volume : Measure ℝ) μ]
-        simp only [integral_smul_nnreal_measure,
-          hu.integral_lineDeriv_smul_eq_neg_integral_smul φ, smul_neg]⟩
+  have huvol : HasWeakLineDerivOn volume Ω u u' d := by
+    rw [Measure.isAddLeftInvariant_eq_smul (volume : Measure ℝ) μ]
+    exact hu.smul_measure ENNReal.coe_ne_top
   have hunit : HasWeakLineDerivOn volume Ω u (d⁻¹ • u') 1 := by
     simpa only [smul_eq_mul, inv_mul_cancel₀ hd] using huvol.smul_direction d⁻¹
   have hμ := (Measure.absolutelyContinuous_isAddHaarMeasure μ volume).restrict (Ω : Set ℝ)
