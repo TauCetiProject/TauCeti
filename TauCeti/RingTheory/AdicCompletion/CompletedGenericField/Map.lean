@@ -43,7 +43,9 @@ the affine line.
 * `completedGenericIntegersMap_surjective` and `completedGenericIntegersMap_bijective`:
   surjectivity and bijectivity when `f π` is associated to `π'` and `A ⧸ (π) → B ⧸ (π')` is
   surjective.
-* `completedGenericFieldMap`: the induced homomorphism of completed generic fields, with
+* `completedGenericFieldMap`: the induced homomorphism of completed generic fields, with its
+  uniqueness `completedGenericFieldMap_unique`, the functoriality laws
+  `completedGenericFieldMap_id` and `completedGenericFieldMap_comp`, and
   `valuation_completedGenericFieldMap` (it preserves valuations when `f π` is associated to `π'`).
 * `completedGenericIntegersMap_sub_pow_mem` and `residue_completedGenericIntegersMap`: the
   extension of a `q`-Frobenius lift is a `q`-Frobenius lift.
@@ -297,6 +299,41 @@ theorem completedGenericFieldMap_algebraMap (a : A) :
   rw [IsScalarTower.algebraMap_apply A (completedGenericIntegers π),
     completedGenericFieldMap_algebraMap_completedGenericIntegers,
     completedGenericIntegersMap_algebraMap, ← IsScalarTower.algebraMap_apply]
+
+/-- **Uniqueness of the extension.** A homomorphism of completed generic fields extending the map
+of completed generic rings is `completedGenericFieldMap f hf hπ hπ' hinj`. -/
+theorem completedGenericFieldMap_unique
+    (g : completedGenericField π hπ →+* completedGenericField π' hπ')
+    (hg : ∀ x, g (algebraMap (completedGenericIntegers π) _ x) =
+      algebraMap _ _ (completedGenericIntegersMap f hf x)) :
+    g = completedGenericFieldMap f hf hπ hπ' hinj :=
+  IsLocalization.ringHom_ext (nonZeroDivisors (completedGenericIntegers π)) (RingHom.ext fun x ↦ by
+    rw [RingHom.comp_apply, RingHom.comp_apply, hg,
+      completedGenericFieldMap_algebraMap_completedGenericIntegers])
+
+/-- The identity of `A` induces the identity of the completed generic field. -/
+@[simp]
+theorem completedGenericFieldMap_id
+    (hinj : Function.Injective (completedGenericIntegersMap (RingHom.id A) (Ideal.comap_id _))) :
+    completedGenericFieldMap (RingHom.id A) (Ideal.comap_id _) hπ hπ hinj =
+      RingHom.id (completedGenericField π hπ) :=
+  (completedGenericFieldMap_unique _ _ _ _ _ _ fun x ↦ by
+    rw [completedGenericIntegersMap_id, RingHom.id_apply, RingHom.id_apply]).symm
+
+/-- The map of completed generic fields induced by a composite is the composite of the induced
+maps. -/
+theorem completedGenericFieldMap_comp [IsNoetherianRing C] (hπ'' : π'' ∈ nonZeroDivisors C)
+    (g : B →+* C) (hg : (Ideal.span {π''}).comap g = Ideal.span {π'})
+    (hginj : Function.Injective (completedGenericIntegersMap g hg))
+    (hgfinj : Function.Injective
+      (completedGenericIntegersMap (g.comp f) (by rw [← Ideal.comap_comap, hg, hf]))) :
+    completedGenericFieldMap (g.comp f) _ hπ hπ'' hgfinj =
+      (completedGenericFieldMap g hg hπ' hπ'' hginj).comp
+        (completedGenericFieldMap f hf hπ hπ' hinj) :=
+  (completedGenericFieldMap_unique _ _ _ _ _ _ fun x ↦ by
+    rw [RingHom.comp_apply, completedGenericFieldMap_algebraMap_completedGenericIntegers,
+      completedGenericFieldMap_algebraMap_completedGenericIntegers,
+      completedGenericIntegersMap_comp f hf g hg, RingHom.comp_apply]).symm
 
 /-- On the image of the completed generic ring, the map of completed generic fields preserves
 valuations when `f π` is associated to `π'`. -/
