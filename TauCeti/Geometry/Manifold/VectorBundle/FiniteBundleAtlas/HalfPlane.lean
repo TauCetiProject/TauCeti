@@ -304,6 +304,24 @@ theorem halfImage_focus_le {i : Fin A.n} {L : Set M} (hL : IsClosed L) (hLi : L 
   rw [chart_focus] at hxz
   exact A.mem_halfImage.2 ⟨A.mem_image.2 ⟨x, A.focus_dom_subset hL hLi j hx, hxz⟩, hz0⟩
 
+/-- The readings of a section in the charts of `A.enlarge U hU hAU hUc hUs` are its readings in
+`A`. -/
+@[simp]
+theorem halfCoord_enlarge {U : Fin A.n → Set M} {hU : ∀ j, IsOpen (U j)}
+    {hAU : ∀ j, A.dom j ⊆ U j} {hUc : ∀ j, IsCompact (closure (U j))}
+    {hUs : ∀ j, closure (U j) ⊆ (A.chart j).source ∩ (A.triv j).baseSet} (j : Fin A.n)
+    (s : ∀ x, V x) : (A.enlarge U hU hAU hUc hUs).halfCoord j s = A.halfCoord j s := by
+  ext z
+  rw [(A.enlarge U hU hAU hUc hUs).halfCoord_def j s z, A.halfCoord_def j s z, coord_enlarge]
+
+/-- The interiors of the chart images of `A` lie in those of `A.enlarge U hU hAU hUc hUs`. -/
+theorem halfImage_le_halfImage_enlarge {U : Fin A.n → Set M} {hU : ∀ j, IsOpen (U j)}
+    {hAU : ∀ j, A.dom j ⊆ U j} {hUc : ∀ j, IsCompact (closure (U j))}
+    {hUs : ∀ j, closure (U j) ⊆ (A.chart j).source ∩ (A.triv j).baseSet} (j : Fin A.n) :
+    A.halfImage j ≤ (A.enlarge U hU hAU hUc hUs).halfImage j := fun _ hz ↦
+  (A.enlarge U hU hAU hUc hUs).mem_halfImage.2
+    ⟨image_le_image_enlarge j (A.mem_halfImage.1 hz).1, (A.mem_halfImage.1 hz).2⟩
+
 /-- The extended chart `i` sends a point to its image under the manifold chart, read in `ℂ`. -/
 theorem extChartAt_center_apply (i : Fin A.n) (x : M) :
     extChartAt closedUpperHalfPlaneModel (A.center i) x = (A.chart i x : ℂ) := by

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.ModelTheory.RelationalConfiguration.FunctionalCoding
+import TauCeti.ModelTheory.RelationalConfiguration.Functional.Coding
 import Mathlib.ModelTheory.Graph
 
 /-!
