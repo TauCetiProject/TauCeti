@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.LittlewoodPaley
-import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -19,7 +18,8 @@ The `L²` Fourier multiplier `T_σ` with symbol `σ` is convolution with the Sch
 
 `‖T_σ f‖_q ≤ ‖𝓕⁻ σ‖_c ‖f‖_p`, `1/c + 1/p = 1 + 1/q`,
 
-for every `f ∈ L²` (`SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le_of_inv_add_inv_eq`). For the
+for every `f ∈ L²` (`SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le_of_inv_add_inv_eq`, in
+`TauCeti.Analysis.Fourier.L2Multiplier`). For the
 dyadic multipliers `Mⱼ` of `ContDiffBump.dyadicMultiplier`, whose symbols are the dilates
 `σ₀ (2^{-j} ·)` of one Schwartz function, the kernels are the `L¹`-normalized dilates
 `2^{jn} 𝓕⁻ σ₀ (2^j ·)`, whose `L^c` norms grow like `2^{jn (1 - 1/c)}`. This gives
@@ -48,31 +48,11 @@ distributions, `TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier`, and of 
 public section
 
 open MeasureTheory
-open scoped ENNReal FourierTransform SchwartzMap Convolution
+open scoped ENNReal FourierTransform SchwartzMap
 
 variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
-
-/-- **Young's inequality for an `L²` multiplier with Schwartz symbol.** For a Schwartz symbol `σ`,
-exponents `1 ≤ c, p` with `1/c + 1/p = 1 + 1/q` and every `f ∈ L²`,
-`‖T_σ f‖_q ≤ ‖𝓕⁻ σ‖_c ‖f‖_p`: `T_σ f` is the convolution of `f` with `𝓕⁻ σ`. Neither side is
-assumed finite, so `T_σ` maps `L² ∩ Lᵖ` into `L^q`. For `c = 1` this is
-`SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le`. -/
-theorem SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le_of_inv_add_inv_eq (σ : 𝓢(V, ℂ))
-    (f : Lp F 2 (volume : Measure V)) {c p q : ℝ≥0∞} (hc : 1 ≤ c) (hp : 1 ≤ p)
-    (hcpq : c⁻¹ + p⁻¹ = 1 + q⁻¹) :
-    eLpNorm (Lp.fourierMultiplierCLM F (σ.toLp ∞) f) q volume ≤
-      eLpNorm (𝓕⁻ (σ : V → ℂ)) c volume * eLpNorm f p volume := by
-  have hconv : Lp.fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume]
-      (𝓕⁻ (σ : V → ℂ) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] (f : V → F)) := by
-    filter_upwards [σ.coeFn_fourierMultiplierCLM_toLp f] with x hx
-    rw [hx, convolution_lsmul, ← integral_sub_left_eq_self _ volume x]
-    simp_rw [sub_sub_cancel, SchwartzMap.fourierInv_coe]
-  rw [eLpNorm_congr_ae hconv, ← SchwartzMap.fourierInv_coe]
-  refine (eLpNorm_convolution_le_of_inv_add_inv_eq _ hc hp hcpq
-    (𝓕⁻ σ).continuous.aestronglyMeasurable (Lp.aestronglyMeasurable f)).trans ?_
-  grw [ContinuousLinearMap.opENorm_lsmul_le, one_mul]
 
 namespace ContDiffBump
 

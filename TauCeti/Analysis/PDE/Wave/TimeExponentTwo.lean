@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Wave.Endpoint
 import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
-import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Star
 
@@ -33,8 +32,9 @@ estimates of `TauCeti.Analysis.PDE.Wave.Endpoint`. This file proves them at the 
   pair `(2, r)`, the endpoint included
   (`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_of_le_endpoint`);
 * for `r < ∞`, with data in the homogeneous Sobolev space `\dot H^γ` in its Littlewood–Paley form,
-  `‖W₊(t) f‖_{L²_t L^r_x} ≤ C (∑ⱼ 2^{2jγ} ‖Pⱼ f‖₂²)^{1/2}` and the same for `W₋(t)`
-  (`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_lt_endpoint`).
+  `‖W₊(t) f‖_{L²_t L^r_x} ≤ C (∑ⱼ 2^{2jγ} ‖Pⱼ f‖₂²)^{1/2}` and the same for `W₋(t)`, again at every
+  pair `(2, r)`, the endpoint included
+  (`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_le_endpoint`).
 
 At the pairs `(2, r)` with `r > r₀` the abstract endpoint theorem does not apply directly. Instead
 the estimates come from the endpoint ones by **Bernstein's inequality**: some dyadic multiplier
@@ -62,26 +62,6 @@ namespace ContDiffBump
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (φ : ContDiffBump (0 : E)) {r r' : ℝ≥0∞}
-
-/-- Beyond the endpoint, `1 + (n - 1) / r < (n - 1) / 2` with `r ≠ 0`, the endpoint exponent `r₀`,
-`1 + (n - 1) / r₀ = (n - 1) / 2`, satisfies `r₀ ≤ r`. -/
-private theorem exists_waveEndpoint_le {n : ℝ} (hn : 3 < n) (hr0 : r ≠ 0)
-    (hr : 1 + (n - 1) * (r⁻¹).toReal < (n - 1) / 2) :
-    ∃ r₀ : ℝ≥0∞, 1 + (n - 1) * (r₀⁻¹).toReal = (n - 1) / 2 ∧ r₀ ≤ r := by
-  have hn1 : 0 < n - 1 := by linarith
-  set x : ℝ := (n - 3) / (2 * (n - 1))
-  have hx : 0 ≤ x := div_nonneg (by linarith) (by linarith)
-  have hxr : (r⁻¹).toReal ≤ x := by
-    refine le_of_lt ((lt_div_iff₀ (by linarith)).2 ?_)
-    nlinarith
-  refine ⟨(ENNReal.ofReal x)⁻¹, ?_, ?_⟩
-  · rw [inv_inv, ENNReal.toReal_ofReal hx]
-    simp only [x]
-    field_simp
-    ring
-  · rw [← ENNReal.inv_le_inv, inv_inv, ← ENNReal.ofReal_toReal (a := r⁻¹)
-      (ENNReal.inv_ne_top.2 hr0)]
-    exact ENNReal.ofReal_le_ofReal hxr
 
 /-- The powers of `2^j` in the Bernstein step: the endpoint power `n / 2 - n / r₀ - 1 / 2` and the
 cost `n (1 / r₀ - 1 / r)` of passing from `L^{r₀}` to `L^r` add up to `n / 2 - n / r - 1 / 2`. -/
@@ -269,15 +249,9 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_of_le_endpoint
   · exact ⟨0, fun _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   have hr2 := two_le_of_waveAdmissible (E := E) (q := 2) hr0 (by simpa using hr) (by omega)
   -- The frequency-localized estimate: Keel–Tao at the endpoint, Bernstein beyond it.
-  obtain ⟨C, hC⟩ : ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
-      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
-        eLpNorm (fun t ↦ eLpNorm (halfWavePropagator ℂ t (Lp.fourierMultiplierCLM ℂ m f)) r
-            volume) 2 volume ≤
-          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
-            Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)) * ‖f‖ₑ := by
-    rcases hr.lt_or_eq with hlt | heq
-    · exact φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_lt_endpoint hn hlt
-    · exact φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint hn heq
+  obtain ⟨C, hC⟩ := hr.lt_or_eq.elim
+    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_lt_endpoint hn)
+    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint hn)
   have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E) (by omega)
   obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum (F := ℂ) (β := ℝ) (ρ := volume)
     ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹) (q := 2) one_le_two
@@ -307,16 +281,16 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_neg_le_tsum_of_le_endpoint
   exact ⟨C, fun m hm f ↦ ((continuous_phasePropagator_apply _ f).aestronglyMeasurable
     |>.eLpNorm_eLpNorm_comp_neg).trans_le (hC m hm f)⟩
 
-/-- **The Strichartz estimate for the half-wave propagator at a non-sharp pair `(2, r)` with data
-in `\dot H^γ`.** Let `E` have dimension `n ≥ 4`, let `ψⱼ` be the Littlewood–Paley cutoffs built
-from `φ`, and let `Pⱼ` be the `L²` Fourier multiplier with symbol `ψⱼ`. Let
-`1 + (n - 1) / r < (n - 1) / 2` with `r < ∞`, and let `γ = n / 2 - n / r - 1 / 2`. There is `C`
-such that for every `f ∈ L²(E)`,
+/-- **The Strichartz estimate for the half-wave propagator at the pairs `(2, r)` with data in
+`\dot H^γ`.** Let `E` have dimension `n ≥ 4`, let `ψⱼ` be the Littlewood–Paley cutoffs built from
+`φ`, and let `Pⱼ` be the `L²` Fourier multiplier with symbol `ψⱼ`. Let
+`1 + (n - 1) / r ≤ (n - 1) / 2` with `r < ∞`, the endpoint exponent included, and let
+`γ = n / 2 - n / r - 1 / 2`. There is `C` such that for every `f ∈ L²(E)`,
 
 `‖W₊(t) f‖_{L²_t L^r_x} ≤ C (∑ⱼ 2^{2jγ} ‖Pⱼ f‖₂²)^{1/2}`. -/
-theorem exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_lt_endpoint
+theorem exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_le_endpoint
     (hn : 3 < Module.finrank ℝ E)
-    (hr : 1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal < ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hr : 1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤ ((Module.finrank ℝ E : ℝ) - 1) / 2)
     (hr_top : r ≠ ∞) :
     ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
       (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
@@ -327,9 +301,11 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_lt_endpoint
               ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
   rcases eq_or_ne r 0 with rfl | hr0
   · exact ⟨0, fun _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
-  have hr2 := two_le_of_waveAdmissible (E := E) (q := 2) hr0 (by simpa using hr.le) (by omega)
-  obtain ⟨C, hC⟩ :=
-    φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_lt_endpoint hn hr
+  have hr2 := two_le_of_waveAdmissible (E := E) (q := 2) hr0 (by simpa using hr) (by omega)
+  -- The frequency-localized estimate: Keel–Tao at the endpoint, Bernstein beyond it.
+  obtain ⟨C, hC⟩ := hr.lt_or_eq.elim
+    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_lt_endpoint hn)
+    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint hn)
   have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E) (by omega)
   obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (F := ℂ) (β := ℝ)
     (ρ := volume) ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)
@@ -341,15 +317,15 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_lt_endpoint
   push_cast
   ring
 
-/-- **The Strichartz estimate for the backward half-wave propagator at a non-sharp pair `(2, r)`
-with data in `\dot H^γ`.** Under the hypotheses of
-`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_lt_endpoint`, for
+/-- **The Strichartz estimate for the backward half-wave propagator at the pairs `(2, r)` with data
+in `\dot H^γ`.** Under the hypotheses of
+`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_le_endpoint`, for
 `W₋(t) = W₊(-t)` there is `C` such that for every `f ∈ L²(E)`,
 
 `‖W₊(-t) f‖_{L²_t L^r_x} ≤ C (∑ⱼ 2^{2jγ} ‖Pⱼ f‖₂²)^{1/2}`. -/
-theorem exists_eLpNorm_eLpNorm_halfWavePropagator_neg_le_tsum_sq_rpow_of_lt_endpoint
+theorem exists_eLpNorm_eLpNorm_halfWavePropagator_neg_le_tsum_sq_rpow_of_le_endpoint
     (hn : 3 < Module.finrank ℝ E)
-    (hr : 1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal < ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hr : 1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤ ((Module.finrank ℝ E : ℝ) - 1) / 2)
     (hr_top : r ≠ ∞) :
     ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
       (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
@@ -359,7 +335,7 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_neg_le_tsum_sq_rpow_of_lt_endp
             Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)) *
               ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
   obtain ⟨C, hC⟩ :=
-    φ.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_lt_endpoint hn hr hr_top
+    φ.exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_le_endpoint hn hr hr_top
   exact ⟨C, fun m hm f ↦ ((continuous_phasePropagator_apply _ f).aestronglyMeasurable
     |>.eLpNorm_eLpNorm_comp_neg).trans_le (hC m hm f)⟩
 

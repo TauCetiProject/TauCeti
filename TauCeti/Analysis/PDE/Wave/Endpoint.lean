@@ -31,11 +31,12 @@ weak form tested against `L²_t L^{r'}_x`
 (`TauCeti.exists_enorm_integral_inner_halfWavePropagator_fourierMultiplierCLM_le_of_endpoint`),
 and for the Littlewood–Paley blocks, where it also holds in mixed norm
 (`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint`). The
-endpoint exponent satisfies `2 ≤ r < ∞` (`TauCeti.two_le_and_ne_top_of_waveEndpoint`). The power
-of `2^j` is the one dictated by scaling, as at the non-endpoint pairs of
-`TauCeti.Analysis.PDE.Wave.Strichartz`. In dimension `3` the boundary pair with `q = 2` is
-`(2, ∞)`, which is excluded; there the time decay `|t|^(-1)` of the dispersive estimate is not
-integrable at infinity, and the argument below needs a decay rate above `1`.
+endpoint exponent satisfies `2 ≤ r < ∞` (`TauCeti.two_le_and_ne_top_of_waveEndpoint`), and it is
+at most every exponent `r` beyond the endpoint, `1 + (n - 1) / r < (n - 1) / 2`
+(`TauCeti.exists_waveEndpoint_le`). The power of `2^j` is the one dictated by scaling, as at the
+non-endpoint pairs of `TauCeti.Analysis.PDE.Wave.Strichartz`. In dimension `3` the boundary pair
+with `q = 2` is `(2, ∞)`, which is excluded; there the time decay `|t|^(-1)` of the dispersive
+estimate is not integrable at infinity, and the argument below needs a decay rate above `1`.
 
 ## The argument
 
@@ -246,6 +247,26 @@ theorem two_le_and_ne_top_of_waveEndpoint {n : ℝ} (hn : 3 < n)
     linarith [inv_pos.2 (show (0 : ℝ) < n - 1 by linarith)]
   · rw [h, ENNReal.inv_top, ENNReal.toReal_zero, mul_zero, add_zero] at hr
     linarith
+
+/-- Beyond the endpoint, `1 + (n - 1) / r < (n - 1) / 2` with `r ≠ 0`, the endpoint exponent `r₀`,
+`1 + (n - 1) / r₀ = (n - 1) / 2`, satisfies `r₀ ≤ r`. -/
+theorem exists_waveEndpoint_le {n : ℝ} (hn : 3 < n) (hr0 : r ≠ 0)
+    (hr : 1 + (n - 1) * (r⁻¹).toReal < (n - 1) / 2) :
+    ∃ r₀ : ℝ≥0∞, 1 + (n - 1) * (r₀⁻¹).toReal = (n - 1) / 2 ∧ r₀ ≤ r := by
+  have hn1 : 0 < n - 1 := by linarith
+  set x : ℝ := (n - 3) / (2 * (n - 1))
+  have hx : 0 ≤ x := div_nonneg (by linarith) (by linarith)
+  have hxr : (r⁻¹).toReal ≤ x := by
+    refine le_of_lt ((lt_div_iff₀ (by linarith)).2 ?_)
+    nlinarith
+  refine ⟨(ENNReal.ofReal x)⁻¹, ?_, ?_⟩
+  · rw [inv_inv, ENNReal.toReal_ofReal hx]
+    simp only [x]
+    field_simp
+    ring
+  · rw [← ENNReal.inv_le_inv, inv_inv, ← ENNReal.ofReal_toReal (a := r⁻¹)
+      (ENNReal.inv_ne_top.2 hr0)]
+    exact ENNReal.ofReal_le_ofReal hxr
 
 /-- The endpoint dual estimate for the rescaled family `V(t) = W₊(2^{jκ} t) Pⱼ`,
 `κ = (n + 1) / (n - 1)`, with a constant independent of `j`: the abstract endpoint theorem applies
