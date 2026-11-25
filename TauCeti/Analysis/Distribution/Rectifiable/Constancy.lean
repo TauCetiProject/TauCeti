@@ -16,19 +16,17 @@ import TauCeti.Analysis.Matrix.MeasurableSpace
 /-!
 # Integral constancy in top degree
 
-Let `V` be a real inner product space of dimension `k + 1`, `b` an orthonormal basis and `Ω ⊆ V` a
+Let `V` be a real inner product space of dimension `k + 1`, `o` an orientation and `Ω ⊆ V` a
 connected open set. The constancy theorem
 (`Orientation.existsUnique_eq_smul_integrationCurrent_of_comp_extDerivCLM_eq_zero`) says that a
 top-degree current `T` on `Ω` with `∂T = 0` is `c • [[Ω]]` for a unique real `c`. If `T` is moreover
 integer-rectifiable, in particular if it is locally integral, then `c` is an integer.
 
-Write `T ω = ∫ θ(x) ω_x(τ(x)) dx` with integer multiplicity `θ` and orthonormal frames `τ`. Since
-`τ(x)` and `b` are orthonormal bases of the same space, `ω_x(τ(x)) = d(x) ω_x(b)` with
-`d(x) = det ⟪b_i, τ(x)_j⟫ = ±1`. Testing against the forms `g • det_b` for scalar tests `g` gives
-`∫ g (θ d - c) = 0` for every test `g` on `Ω`, so `θ d = c` almost everywhere on `Ω`; as `Ω` has
-positive measure, `c = ±θ(x)` at some point.
-
-This is the integer constancy of G2 of the GeometricCurrents roadmap, in top degree.
+Write `T ω = ∫ θ(x) ω_x(τ(x)) dx` with integer multiplicity `θ` and orthonormal frames `τ`, and fix
+an orthonormal basis `b` with orientation `o`. Since `τ(x)` and `b` are orthonormal bases of the
+same space, `ω_x(τ(x)) = d(x) ω_x(b)` with `d(x) = det ⟪b_i, τ(x)_j⟫ = ±1`. Testing against the
+forms `g • det_b` for scalar tests `g` gives `∫ g (θ d - c) = 0` for every test `g` on `Ω`, so
+`θ d = c` almost everywhere on `Ω`; as `Ω` has positive measure, `c = ±θ(x)` at some point.
 
 ## Main results
 
@@ -36,6 +34,11 @@ This is the integer constancy of G2 of the GeometricCurrents roadmap, in top deg
   top-degree current with zero boundary on a connected open set is an integer multiple of `[[Ω]]`.
 * `Distribution.IsLocallyIntegral.exists_eq_zsmul_integrationCurrent`: the same for locally
   integral currents.
+
+## References
+
+* H. Federer, *Geometric Measure Theory*, 4.1.31.
+* L. Simon, *Introduction to Geometric Measure Theory*, Chapter 6, §2.
 -/
 
 public section
@@ -119,29 +122,30 @@ private theorem exists_int_eq_of_frameCurrent_eq_smul (b : OrthonormalBasis (Fin
 
 /-- **Integral constancy in top degree.** On a connected open subset `Ω` of a real inner product
 space of dimension `k + 1`, an integer-rectifiable top-degree current with zero boundary is an
-integer multiple of the integration current `[[Ω]]` (for the orientation of any orthonormal basis
-`b`). -/
+integer multiple of the integration current `[[Ω]]` (for any orientation `o`). -/
 theorem IsIntegerRectifiable.exists_eq_zsmul_integrationCurrent
-    (b : OrthonormalBasis (Fin (k + 1)) ℝ V) (hΩ : IsConnected (Ω : Set V))
-    {T : 𝓓(Ω, V [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ} (hT : IsIntegerRectifiable T)
-    (hdT : T ∘L extDerivCLM = 0) :
-    ∃ n : ℤ, T = (n : ℝ) • b.toBasis.orientation.integrationCurrent Ω := by
-  have hm : finrank ℝ V = k + 1 := by simpa using finrank_eq_card_basis b.toBasis
+    (o : Orientation ℝ V (Fin (k + 1))) (hV : finrank ℝ V = k + 1)
+    (hΩ : IsConnected (Ω : Set V)) {T : 𝓓(Ω, V [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ}
+    (hT : IsIntegerRectifiable T) (hdT : T ∘L extDerivCLM = 0) :
+    ∃ n : ℤ, T = n • o.integrationCurrent Ω := by
   obtain ⟨c, hc, -⟩ :=
-    b.toBasis.orientation.existsUnique_eq_smul_integrationCurrent_of_comp_extDerivCLM_eq_zero hm
-      hΩ hdT
+    o.existsUnique_eq_smul_integrationCurrent_of_comp_extDerivCLM_eq_zero hV hΩ hdT
+  -- An orthonormal basis with orientation `o`, used to compute the integration current.
+  let b₀ := (stdOrthonormalBasis ℝ V).reindex (finCongr hV)
+  set b := b₀.adjustToOrientation o
+  rw [← b₀.orientation_adjustToOrientation o] at hc ⊢
   obtain ⟨θ, τ, -, hτ, -, hθ, hτo, -, rfl⟩ := isIntegerRectifiable_iff.1 hT
   obtain ⟨n, rfl⟩ := exists_int_eq_of_frameCurrent_eq_smul b hΩ.nonempty hτ hθ hτo hc
-  exact ⟨n, hc⟩
+  exact ⟨n, hc.trans (Int.cast_smul_eq_zsmul ℝ n (b.toBasis.orientation.integrationCurrent Ω))⟩
 
 /-- **Integral constancy for locally integral currents in top degree.** On a connected open subset
 `Ω` of a real inner product space of dimension `k + 1`, a locally integral top-degree current with
-zero boundary is an integer multiple of `[[Ω]]`. -/
+zero boundary is an integer multiple of `[[Ω]]` (for any orientation `o`). -/
 theorem IsLocallyIntegral.exists_eq_zsmul_integrationCurrent
-    (b : OrthonormalBasis (Fin (k + 1)) ℝ V) (hΩ : IsConnected (Ω : Set V))
-    {T : 𝓓(Ω, V [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ} (hT : IsLocallyIntegral T)
-    (hdT : T ∘L extDerivCLM = 0) :
-    ∃ n : ℤ, T = (n : ℝ) • b.toBasis.orientation.integrationCurrent Ω :=
-  hT.isIntegerRectifiable.exists_eq_zsmul_integrationCurrent b hΩ hdT
+    (o : Orientation ℝ V (Fin (k + 1))) (hV : finrank ℝ V = k + 1)
+    (hΩ : IsConnected (Ω : Set V)) {T : 𝓓(Ω, V [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ}
+    (hT : IsLocallyIntegral T) (hdT : T ∘L extDerivCLM = 0) :
+    ∃ n : ℤ, T = n • o.integrationCurrent Ω :=
+  hT.isIntegerRectifiable.exists_eq_zsmul_integrationCurrent o hV hΩ hdT
 
 end Distribution
