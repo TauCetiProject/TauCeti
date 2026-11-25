@@ -21,7 +21,7 @@ Basic membership lemmas for `Set.centralizer`:
 * `Set.apply_mem_centralizer_range` (and its additive counterpart
   `Set.apply_mem_addCentralizer_range`): every value of a multiplicative homomorphism from a
   commutative magma lies in the centralizer of its range.
-* `Set.mem_centralizer_prod_iff` and `Set.centralizer_eq_prod_centralizer_image` (with their
+* `Set.mem_centralizer_iff_fst_snd` and `Set.centralizer_eq_prod_centralizer_image` (with their
   additive counterparts): an element of `M × N` centralizes a set `S` exactly when its components
   centralize the projections of `S`, so `C(S) = C(S₁) × C(S₂)`.
 -/
@@ -66,10 +66,10 @@ variable {M N : Type*} [Mul M] [Mul N]
 
 /-- **Centralizers in a product.** An element `c` of `M × N` centralizes a set `S` exactly when
 its components centralize the projections of `S`. -/
-@[to_additive mem_addCentralizer_prod_iff
+@[to_additive mem_addCentralizer_iff_fst_snd
   /-- An element `c` of `M × N` additively centralizes a set `S` exactly when its components
   additively centralize the projections of `S`. -/]
-theorem mem_centralizer_prod_iff {S : Set (M × N)} {c : M × N} :
+theorem mem_centralizer_iff_fst_snd {S : Set (M × N)} {c : M × N} :
     c ∈ S.centralizer ↔ c.1 ∈ (Prod.fst '' S).centralizer ∧ c.2 ∈ (Prod.snd '' S).centralizer := by
   simp only [mem_centralizer_iff, mem_image, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂, Prod.ext_iff, Prod.fst_mul, Prod.snd_mul]
@@ -82,7 +82,7 @@ of `S`. -/
   of the projections of `S`. -/]
 theorem centralizer_eq_prod_centralizer_image (S : Set (M × N)) :
     S.centralizer = (Prod.fst '' S).centralizer ×ˢ (Prod.snd '' S).centralizer :=
-  ext fun _ ↦ mem_centralizer_prod_iff
+  ext fun _ ↦ mem_centralizer_iff_fst_snd
 
 end Prod
 

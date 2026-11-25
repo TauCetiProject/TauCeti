@@ -20,7 +20,7 @@ For groups `G₁`, `G₂` and a commutative semiring `R`, Mathlib's
 (`MonoidAlgebra.coeff_tensorEquiv_tmul`).
 
 A subgroup `Q ≤ G₁ × G₂` with projections `Q₁ ≤ G₁` and `Q₂ ≤ G₂` has centralizer
-`C(Q) = C(Q₁) × C(Q₂)` (`Set.mem_centralizer_prod_iff`). Hence, over a semiring without zero
+`C(Q) = C(Q₁) × C(Q₂)` (`Set.mem_centralizer_iff_fst_snd`). Hence, over a semiring without zero
 divisors, `Br_Q(x ⊗ y) ≠ 0` exactly when `Br_{Q₁}(x) ≠ 0` and `Br_{Q₂}(y) ≠ 0`, and the defect
 groups of `x ⊗ y` are exactly the products `D₁ × D₂` of a defect group `D₁` of `x` and a defect
 group `D₂` of `y`. Applied to block idempotents, this computes the defect groups of the products
@@ -56,7 +56,7 @@ theorem brauerProjection_tensorEquiv_tmul_ne_zero_iff {Q : Subgroup (G₁ × G�
         brauerProjection (Q.map (MonoidHom.snd G₁ G₂)) y ≠ 0 := by
   simp only [ne_eq, brauerProjection_eq_zero_iff, not_forall, exists_prop,
     coeff_tensorEquiv_tmul, mul_eq_zero, not_or]
-  have hC {c : G₁ × G₂} := Set.mem_centralizer_prod_iff (S := (Q : Set (G₁ × G₂))) (c := c)
+  have hC {c : G₁ × G₂} := Set.mem_centralizer_iff_fst_snd (S := (Q : Set (G₁ × G₂))) (c := c)
   exact ⟨fun ⟨c, hc, hx, hy⟩ ↦ ⟨⟨c.1, (hC.1 hc).1, hx⟩, ⟨c.2, (hC.1 hc).2, hy⟩⟩,
     fun ⟨⟨a, ha, hx⟩, ⟨b, hb, hy⟩⟩ ↦ ⟨(a, b), hC.2 ⟨ha, hb⟩, hx, hy⟩⟩
 
