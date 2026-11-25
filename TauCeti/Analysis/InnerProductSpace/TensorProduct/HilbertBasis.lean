@@ -58,11 +58,11 @@ of two elliptic operators.
 The tensor sum of two operators with compact resolvent and real eigenvalues bounded below has
 compact resolvent (`LinearPMap.HasCompactResolvent.hasCompactResolvent_diagonalPMap_tensorProduct`).
 A diagonal operator has compact resolvent exactly when only finitely many of its coefficients lie in
-each bounded set (`HilbertBasis.hasCompactResolvent_diagonalPMap_iff`); for the real families `λ`
-and `μ` this means that `λ i` and `μ j` tend to infinity, and then only finitely many pairs have
-`λ i + μ j ≤ R` (`Northcott.prod_add`). The lower bounds are needed: for `λ n = n` and `μ n = -n`
-on `ℓ²(ℕ)` the tensor sum has the eigenvalue `0` with infinite multiplicity, although both diagonal
-operators with coefficients `λ` and `μ` have compact resolvent.
+each bounded set (`HilbertBasis.hasCompactResolvent_diagonalPMap_iff`); for real families `λ` and
+`μ` bounded below this means that `λ i` and `μ j` tend to `+∞`, and then only finitely many pairs
+have `λ i + μ j ≤ R` (`Northcott.prod_add`). The lower bounds are needed: for `λ n = n` and
+`μ n = -n` on `ℓ²(ℕ)` the tensor sum has the eigenvalue `0` with infinite multiplicity, although
+both diagonal operators with coefficients `λ` and `μ` have compact resolvent.
 
 ## Main definitions
 
