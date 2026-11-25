@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Basic
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Reciprocity
+import Mathlib.Analysis.Complex.HalfPlane
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.NumberTheory.DirichletCharacter.Bounds
@@ -15,6 +16,7 @@ import Mathlib.NumberTheory.LSeries.Deriv
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Quadratic.OddTwist
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
@@ -117,11 +119,6 @@ theorem quadraticDoubleSeriesTerm_eq_zero_of_not_odd (ψ ψ' : DirichletCharacte
   · rw [term_def (fun n ↦ (jacobiSym d n : ℂ) * ψ n), ψ.apply_eq_zero_of_even (by decide) h.natCast]
     simp
 
-/-- The coefficients `(d / n) ψ(n)` have absolute value at most one. -/
-private theorem norm_jacobiSym_mul_le_one (ψ : DirichletCharacter ℂ 8) (d : ℤ) (n : ℕ) :
-    ‖(jacobiSym d n : ℂ) * ψ n‖ ≤ 1 := by
-  rcases jacobiSym.trichotomy d n with h | h | h <;> simp [h, ψ.norm_le_one]
-
 /-- On `σ ≤ re s`, `σ ≤ re w`, the term at `(d, n)` is bounded by `d^(-σ) n^(-σ)`, written with
 the terms of the Riemann zeta series at `σ`. -/
 private theorem norm_quadraticDoubleSeriesTerm_le (ψ ψ' : DirichletCharacter ℂ 8) {σ : ℝ}
@@ -185,22 +182,13 @@ theorem quadraticDoubleSeries_eq_mul_tsum (ψ ψ' : DirichletCharacter ℂ 8) {p
         ∑' x, quadraticDoubleSeriesTerm ψ ψ' p x := by
   rw [quadraticDoubleSeries_def, (hasSum_quadraticDoubleSeriesTerm ψ ψ' hs hw).tsum_eq]
 
-/-- For `1 < σ`, the absolute values of the terms of the Riemann zeta series at `σ` sum to
-`Re ζ(σ)`. -/
-private theorem hasSum_norm_term_one {σ : ℝ} (hσ : 1 < σ) :
-    HasSum (fun n ↦ ‖term 1 (σ : ℂ) n‖) (riemannZeta σ).re := by
-  refine (hasSum_nat_rpow_neg_riemannZeta_re hσ).congr_fun fun n ↦ ?_
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp [Real.zero_rpow (by linarith : -σ ≠ 0)]
-  · simp [hn, Real.rpow_neg n.cast_nonneg]
-
 /-- **A uniform bound on closed subtubes.** If `1 < σ`, `σ ≤ re s` and `σ ≤ re w`, then
 `‖Z(s, w; ψ, ψ')‖ ≤ 2 (Re ζ(σ))³`. -/
 theorem norm_quadraticDoubleSeries_le (ψ ψ' : DirichletCharacter ℂ 8) {σ : ℝ} (hσ : 1 < σ)
     {p : ℂ × ℂ} (hs : σ ≤ p.1.re) (hw : σ ≤ p.2.re) :
     ‖quadraticDoubleSeries ψ ψ' p‖ ≤ 2 * (riemannZeta σ).re ^ 3 := by
   have hu : σ ≤ (2 * p.1 + 2 * p.2 - 1).re := by
-    simp only [sub_re, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero, one_re]
+    simp
     linarith
   -- The three factors: `1 - 2 ^ (-u)`, `ζ(u)` and the sum over pairs.
   have h₁ : ‖1 - (2 : ℂ) ^ (-(2 * p.1 + 2 * p.2 - 1))‖ ≤ 2 := by
@@ -215,7 +203,8 @@ theorem norm_quadraticDoubleSeries_le (ψ ψ' : DirichletCharacter ℂ 8) {σ : 
       (strictAntiOn_riemannZeta_re.antitoneOn hσ (hσ.trans_le hu) hu)
   have h₃ : ‖∑' x, quadraticDoubleSeriesTerm ψ ψ' p x‖ ≤ (riemannZeta σ).re ^ 2 := by
     rw [sq]
-    exact tsum_of_norm_bounded ((hasSum_norm_term_one hσ).mul (hasSum_norm_term_one hσ)
+    exact tsum_of_norm_bounded ((hasSum_norm_term_one_riemannZeta_re hσ).mul
+      (hasSum_norm_term_one_riemannZeta_re hσ)
       (summable_norm_term_one_mul_norm_term_one hσ)) (norm_quadraticDoubleSeriesTerm_le ψ ψ' hs hw)
   rw [quadraticDoubleSeries_eq_mul_tsum ψ ψ' (hσ.trans_le hs) (hσ.trans_le hw), norm_mul, norm_mul,
     pow_succ', ← mul_assoc]
@@ -233,12 +222,6 @@ private theorem differentiable_quadraticDoubleSeriesTerm (ψ ψ' : DirichletChar
       differentiableAt_fst
   simpa only [quadraticDoubleSeriesTerm_def] using h₁.fun_mul h₂
 
-/-- The tube `σ < re s`, `σ < re w` is open. -/
-private theorem isOpen_setOf_lt_re_and_lt_re (σ : ℝ) :
-    IsOpen {p : ℂ × ℂ | σ < p.1.re ∧ σ < p.2.re} :=
-  (isOpen_lt continuous_const (continuous_re.comp continuous_fst)).inter
-    (isOpen_lt continuous_const (continuous_re.comp continuous_snd))
-
 /-- On each tube `σ < re s`, `σ < re w` with `1 < σ`, the sum over pairs is holomorphic, as a
 uniform limit of finite sums of entire functions. -/
 private theorem differentiableOn_tsum_quadraticDoubleSeriesTerm (ψ ψ' : DirichletCharacter ℂ 8)
@@ -249,7 +232,8 @@ private theorem differentiableOn_tsum_quadraticDoubleSeriesTerm (ψ ψ' : Dirich
     (f := fun x p ↦ quadraticDoubleSeriesTerm ψ ψ' p x)
     (s := {p : ℂ × ℂ | σ < p.1.re ∧ σ < p.2.re})
     fun x p hp ↦ norm_quadraticDoubleSeriesTerm_le ψ ψ' hp.1.le hp.2.le x
-  refine hunif.differentiableOn (Eventually.of_forall fun t ↦ ?_) (isOpen_setOf_lt_re_and_lt_re σ)
+  refine hunif.differentiableOn (Eventually.of_forall fun t ↦ ?_)
+    ((isOpen_re_gt σ).prod (isOpen_re_gt σ))
   exact (Differentiable.fun_sum fun x _ ↦
     differentiable_quadraticDoubleSeriesTerm ψ ψ' x).differentiableOn
 
@@ -264,7 +248,7 @@ theorem differentiableOn_quadraticDoubleSeries (ψ ψ' : DirichletCharacter ℂ 
   have hσ : 1 < σ := by simp only [σ]; linarith
   have hσm : σ < min p₀.1.re p₀.2.re := by simp only [σ]; linarith
   set U := {p : ℂ × ℂ | σ < p.1.re ∧ σ < p.2.re}
-  have hU : IsOpen U := isOpen_setOf_lt_re_and_lt_re σ
+  have hU : IsOpen U := (isOpen_re_gt σ).prod (isOpen_re_gt σ)
   have hp₀U : p₀ ∈ U := ⟨hσm.trans_le (min_le_left _ _), hσm.trans_le (min_le_right _ _)⟩
   have hUt (p : ℂ × ℂ) (hp : p ∈ U) : 1 < p.1.re ∧ 1 < p.2.re := ⟨hσ.trans hp.1, hσ.trans hp.2⟩
   -- The factor `ζ₂(2s + 2w - 1)` is holomorphic there, since `re (2s + 2w - 1) > 3`.
@@ -274,7 +258,7 @@ theorem differentiableOn_quadraticDoubleSeries (ψ ψ' : DirichletCharacter ℂ 
     have hu : DifferentiableAt ℂ (fun p : ℂ × ℂ ↦ 2 * p.1 + 2 * p.2 - 1) p := by fun_prop
     have hne : 2 * p.1 + 2 * p.2 - 1 ≠ 1 := fun h ↦ by
       have := congrArg re h
-      simp only [sub_re, add_re, mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero, one_re] at this
+      simp at this
       linarith [hUt p hp]
     exact (((differentiableAt_const _).sub (hu.neg.const_cpow (Or.inl two_ne_zero))).mul
       ((differentiableAt_riemannZeta hne).comp p hu)).differentiableWithinAt

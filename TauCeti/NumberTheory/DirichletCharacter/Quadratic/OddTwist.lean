@@ -18,7 +18,8 @@ For a character `ψ` modulo eight and a nonzero natural number `d`,
 at an odd natural number `n` is `(d / n) * ψ(n)` and whose value at an even number is zero.
 The index `d` need not be squarefree: primes dividing its square factors still give zero
 coefficients. Its continued L-function agrees with the odd Jacobi-symbol series on the
-half-plane of absolute convergence.
+half-plane of absolute convergence. The coefficients `(a / b) χ(b)` of such a series have norm at
+most one, for a character `χ` of any level (`DirichletCharacter.norm_jacobiSym_mul_le_one`).
 
 The construction uses the existing Kronecker character of discriminant `4 * d`, lifted to
 level `8 * d`, rather than replacing `d` by a squarefree part.
@@ -180,6 +181,12 @@ theorem oddQuadraticTwist_mul_sq_natCast (ψ : DirichletCharacter R 8)
     · rw [MulChar.map_nonunit _ (by simpa [ZMod.isUnit_iff_coprime, hcop, hk] using hd),
         MulChar.map_nonunit _ (by simpa [ZMod.isUnit_iff_coprime] using hd)]
   · rw [ite_eq_right hk, MulChar.map_nonunit _ (by simp [ZMod.isUnit_iff_coprime, hcop, hk])]
+
+/-- The coefficients `(a / b) χ(b)` of a Jacobi-symbol twist of a Dirichlet character, of any
+level and valued in a normed field, have norm at most one. -/
+theorem norm_jacobiSym_mul_le_one {F : Type*} [NormedField F] {N : ℕ}
+    (χ : DirichletCharacter F N) (a : ℤ) (b : ℕ) : ‖(jacobiSym a b : F) * χ b‖ ≤ 1 := by
+  rcases jacobiSym.trichotomy a b with h | h | h <;> simp [h, χ.norm_le_one]
 
 /-- The continued L-function of the imprimitive twist is the odd Jacobi series
 on its half-plane of absolute convergence. -/

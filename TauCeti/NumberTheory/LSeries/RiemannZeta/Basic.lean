@@ -49,6 +49,8 @@ Siegel's theorem on real zeros.
 * `TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`: `∑ (n + 1) ^ (-s) = Re ζ(s)` for `s > 1`;
 * `TauCeti.hasSum_nat_rpow_neg_riemannZeta_re`: the same series indexed from `n = 0` with the
   vanishing term `0 ^ (-s)`;
+* `TauCeti.hasSum_norm_term_one_riemannZeta_re`: the norms of the terms `LSeries.term 1 σ n` of
+  the zeta series at real `σ > 1` sum to `Re ζ(σ)`;
 * `TauCeti.norm_riemannZeta_le`, `TauCeti.norm_riemannZeta_le_two`, and
   `TauCeti.riemannZeta_re_le_two`: `‖ζ(s)‖ ≤ Re ζ(Re s)` for `Re s > 1`, and `‖ζ(s)‖ ≤ 2` and
   `Re ζ(s) ≤ 2` for `Re s ≥ 2`;
@@ -107,6 +109,15 @@ theorem hasSum_nat_rpow_neg_riemannZeta_re {s : ℝ} (hs : 1 < s) :
   rw [← hasSum_nat_add_iff' 1]
   simpa [Real.zero_rpow (by linarith : -s ≠ 0)] using
     hasSum_nat_add_one_rpow_neg_riemannZeta_re hs
+
+/-- For real `σ > 1`, the norms `‖n⁻σ‖` of the terms of the Dirichlet series of `riemannZeta` at
+`σ` (with the vanishing term at `n = 0`) sum to the real part of `riemannZeta σ`. -/
+theorem hasSum_norm_term_one_riemannZeta_re {σ : ℝ} (hσ : 1 < σ) :
+    HasSum (fun n ↦ ‖LSeries.term 1 (σ : ℂ) n‖) (riemannZeta σ).re := by
+  refine (hasSum_nat_rpow_neg_riemannZeta_re hσ).congr_fun fun n ↦ ?_
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [Real.zero_rpow (by linarith : -σ ≠ 0)]
+  · simp [hn, Real.rpow_neg n.cast_nonneg]
 
 /-- On `Re s > 1`, `‖ζ(s)‖` is bounded by `Re ζ(Re s)`. -/
 theorem norm_riemannZeta_le {s : ℂ} (hs : 1 < s.re) :
