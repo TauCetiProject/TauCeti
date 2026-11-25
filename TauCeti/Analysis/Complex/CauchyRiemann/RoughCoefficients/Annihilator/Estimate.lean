@@ -91,6 +91,14 @@ private theorem hasCompactSupport_crApply (φ : 𝓓(Ω, V)) :
 
 variable {q : ℝ≥0∞} [Fact (1 ≤ q)] {ι : Type*} (b : Basis ι ℝ V)
 
+omit [FiniteDimensional ℝ V] [Fact (1 ≤ q)] in
+/-- A covector is the sum of its values on a basis weighted by the coordinates, Mathlib's
+`Basis.sum_dual_apply_smul_coord` evaluated at a vector. -/
+private theorem apply_eq_sum_coord_mul [Fintype ι] (f : V →L[ℝ] ℝ) (x : V) :
+    f x = ∑ c, b.coord c x * f (b c) := by
+  simpa [LinearMap.sum_apply, smul_eq_mul, mul_comm] using
+    (LinearMap.congr_fun (b.sum_dual_apply_smul_coord (f : V →ₗ[ℝ] ℝ)) x).symm
+
 /-- The coordinates of the real Cauchy–Riemann operator applied to a test function are in every
 `Lᵖ` space over `Ω`. -/
 private theorem memLp_coord_crApply (hJ : ContinuousOn J Ω) (hS : ContinuousOn S Ω) (c : ι)
@@ -115,8 +123,9 @@ private theorem integral_apply_crApply_eq_sum [Fintype ι] (hJ : ContinuousOn J 
       (memLp_coord_crApply b hJ hS c φ q.conjExponent))
   refine integral_congr_ae (.of_forall fun z ↦ ?_)
   -- The expansion of a covector in the coordinate functionals of `b`.
-  simpa [LinearMap.sum_apply, smul_eq_mul] using (LinearMap.congr_fun
-    (b.sum_dual_apply_smul_coord ((η z : V →L[ℝ] ℝ) : V →ₗ[ℝ] ℝ)) (crApply J S φ z)).symm
+  beta_reduce
+  rw [apply_eq_sum_coord_mul b (η z) (crApply J S φ z)]
+  exact Finset.sum_congr rfl fun c _ ↦ mul_comm _ _
 
 /-- **Regularity of a tuple of components.** A tuple `θ` of `L^q` functions on `Ω` that satisfies
 the weak equation in components, `∑_c ∫ θ_c (D φ)_c = 0`, is the tuple of components of a weak
@@ -296,10 +305,7 @@ theorem exists_norm_wkp_le_of_forall_integral_apply_cauchyRiemann_eq_zero {k : �
     filter_upwards [hsum,
       ae_all_iff.2 fun c ↦ Lp.coeFn_smul (b.coord c v) (Wkp.value (k + 1) (u c)),
       ae_all_iff.2 hu] with z h₁ h₂ h₃
-    have he : η z v = ∑ c, b.coord c v * η z (b c) := by
-      simpa [LinearMap.sum_apply, smul_eq_mul, mul_comm] using (LinearMap.congr_fun
-        (b.sum_dual_apply_smul_coord ((η z : V →L[ℝ] ℝ) : V →ₗ[ℝ] ℝ)) v).symm
-    rw [h₁, Finset.sum_apply, he]
+    rw [h₁, Finset.sum_apply, apply_eq_sum_coord_mul b (η z) v]
     refine Finset.sum_congr rfl fun c _ ↦ ?_
     rw [h₂ c, Pi.smul_apply, h₃ c, smul_eq_mul]
   · -- `|vᶜ| ≤ ‖b.coord c‖ ‖v‖` and `‖u c‖ ≤ max C₀ 0 ‖η‖`.
