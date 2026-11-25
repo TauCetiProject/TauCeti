@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import TauCeti.Algebra.Ring.QInteger
 public import TauCeti.RingTheory.DeltaRing.Basic
 import Mathlib.Algebra.Order.Ring.GeomSum
 import Mathlib.Tactic.IntervalCases
-import TauCeti.Algebra.Ring.FrobeniusLift
 import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.Ideal.Maps
 
@@ -31,11 +31,11 @@ modulo `p`, so that `φ^s(x) ≡ x ^ (p ^ s)`, the image of `I_r` modulo `p` lie
 `φ^r(I) A ⊆ I_r + (p)`.
 
 On the `q`-de Rham prism, where `φ(q) = q ^ p` and `I = ([p]_q)` with
-`[n]_q = 1 + q + ⋯ + q ^ (n - 1)`, one has `φ^s([p]_q) = [p]_(q ^ (p ^ s))` and the product
-telescopes: `I_r = ([p ^ r]_q)`. Moreover `[p ^ (r + 1)]_q ≡ p [p ^ r]_q` modulo `I_r ^ 2`, so the
-classes of the `[p ^ r]_q` in `I_r / I_r ^ 2` are compatible under the transition maps divided by
-`p`, which is how they define a generator of the Breuil–Kisin twist of the `q`-de Rham prism. Here
-`[n]_q` is written as the finite sum `∑ i ∈ range n, q ^ i`.
+`[n]_q = 1 + q + ⋯ + q ^ (n - 1)` (`TauCeti.QCrys.qInteger`), one has
+`φ^s([p]_q) = [p]_(q ^ (p ^ s))` and the product telescopes: `I_r = ([p ^ r]_q)`. Moreover
+`[p ^ (r + 1)]_q ≡ p [p ^ r]_q` modulo `I_r ^ 2`, so the classes of the `[p ^ r]_q` in
+`I_r / I_r ^ 2` are compatible under the transition maps divided by `p`, which is how they define
+a generator of the Breuil–Kisin twist of the `q`-de Rham prism.
 
 ## Main definitions
 
@@ -52,8 +52,8 @@ classes of the `[p ^ r]_q` in `I_r / I_r ^ 2` are compatible under the transitio
   `TauCeti.Prismatic.BKTwist.map_Ir_span_singleton`: `I_r` modulo `p` for a Frobenius lift.
 * `TauCeti.Prismatic.BKTwist.map_frobeniusIdeal_le_map_Ir`: `φ^r(I) A ⊆ I_r + (p)` for a
   Frobenius lift.
-* `TauCeti.Prismatic.BKTwist.Ir_span_geom_sum`: `([p]_q)_r = ([p ^ r]_q)` when `φ(q) = q ^ p`.
-* `TauCeti.Prismatic.BKTwist.geom_sum_pow_succ_sub_mem_Ir_sq`:
+* `TauCeti.Prismatic.BKTwist.Ir_span_qInteger`: `([p]_q)_r = ([p ^ r]_q)` when `φ(q) = q ^ p`.
+* `TauCeti.Prismatic.BKTwist.qInteger_pow_succ_sub_mem_Ir_sq`:
   `[p ^ (r + 1)]_q - p [p ^ r]_q ∈ I_r ^ 2` for `I = ([p]_q)`.
 
 ## References
@@ -270,23 +270,24 @@ end FrobeniusLift
 
 section QDeRham
 
+open QCrys
+
 variable {A : Type*} [CommSemiring A] {p : ℕ} {φ : A →+* A} {q : A}
 
-/-- If `φ(q) = q ^ p` then for `I = ([p]_q)` one has `I_r = ([p ^ r]_q)`, where
-`[n]_q = ∑ i ∈ range n, q ^ i`. -/
-theorem Ir_span_geom_sum (hq : φ q = q ^ p) (r : ℕ) :
-    Ir φ (span {∑ i ∈ range p, q ^ i}) r = span {∑ i ∈ range (p ^ r), q ^ i} := by
-  rw [Ir_span_singleton, prod_pow_apply_geom_sum hq]
+/-- If `φ(q) = q ^ p` then for `I = ([p]_q)` one has `I_r = ([p ^ r]_q)`. -/
+theorem Ir_span_qInteger (hq : φ q = q ^ p) (r : ℕ) :
+    Ir φ (span {qInteger q p}) r = span {qInteger q (p ^ r)} := by
+  rw [Ir_span_singleton, prod_pow_apply_qInteger hq]
 
 end QDeRham
 
-/-- If `φ(q) = q ^ p` and `I = ([p]_q)`, then `[p ^ (r + 1)]_q ≡ p [p ^ r]_q` modulo `I_r ^ 2`,
-where `[n]_q = ∑ i ∈ range n, q ^ i`. -/
-theorem geom_sum_pow_succ_sub_mem_Ir_sq {A : Type*} [CommRing A] {p : ℕ} {φ : A →+* A} {q : A}
+open QCrys in
+/-- If `φ(q) = q ^ p` and `I = ([p]_q)`, then `[p ^ (r + 1)]_q ≡ p [p ^ r]_q` modulo `I_r ^ 2`. -/
+theorem qInteger_pow_succ_sub_mem_Ir_sq {A : Type*} [CommRing A] {p : ℕ} {φ : A →+* A} {q : A}
     (hq : φ q = q ^ p) (r : ℕ) :
-    ∑ i ∈ range (p ^ (r + 1)), q ^ i - p * ∑ i ∈ range (p ^ r), q ^ i ∈
-      Ir φ (span {∑ i ∈ range p, q ^ i}) r ^ 2 := by
-  rw [Ir_span_geom_sum hq, span_singleton_pow, mem_span_singleton, pow_succ p r]
+    qInteger q (p ^ (r + 1)) - p * qInteger q (p ^ r) ∈ Ir φ (span {qInteger q p}) r ^ 2 := by
+  rw [Ir_span_qInteger hq, span_singleton_pow, mem_span_singleton, pow_succ p r]
+  simp only [qInteger_eq_sum]
   exact sq_geom_sum_dvd_geom_sum_range_mul_sub q _ p
 
 end TauCeti.Prismatic.BKTwist
