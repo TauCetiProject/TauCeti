@@ -288,6 +288,7 @@ theorem mem_range_normalizedPullbackLp_iff (hq : IsQuotientCoveringMap q G)
 
 /-- **Deck invariance in `Lᵖ`.** The normalized pullback of `f ∈ Lᵖ(N)` is invariant under
 composition with the translation by every `g : G`. -/
+@[simp]
 theorem compMeasurePreserving_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
