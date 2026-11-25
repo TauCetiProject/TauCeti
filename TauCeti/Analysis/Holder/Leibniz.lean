@@ -23,7 +23,9 @@ support inside that open set
 
 For two local `C^{n,α}` maps, `ContinuousLinearMap.exists_holderOnWith_iteratedFDeriv_comp₂`
 gives a common positive ball on which their bilinear product is `C^n` and its top derivative is
-`α`-Hölder, deriving the required lower-jet bounds locally.
+`α`-Hölder, deriving the required lower-jet bounds locally. The linear case, composition on the
+left with a continuous linear map `T` on an open set, multiplies the Hölder constant by `‖T‖`
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`).
 -/
 
 public section

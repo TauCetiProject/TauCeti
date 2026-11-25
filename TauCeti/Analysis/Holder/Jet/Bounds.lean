@@ -31,7 +31,8 @@ derivative Hölder there.
 `ContDiffOn.exists_ball_bounds_and_holderOnWith_iteratedFDeriv` gives common bounds and Hölder
 constants for every derivative field of local `C^{n,α}` data on a positive ball, without an extra
 derivative or finite-dimensional parameter assumption. Constant maps have zero Hölder constant at
-every derivative order (`TauCeti.holderWith_iteratedFDeriv_const`).
+every derivative order (`TauCeti.holderWith_iteratedFDeriv_const`), and adding a constant keeps
+the Hölder constant (`TauCeti.holderOnWith_iteratedFDeriv_add_const`).
 -/
 
 public section

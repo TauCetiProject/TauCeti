@@ -18,11 +18,13 @@ For a continuous linear equivalence `e`, the iterated derivative of `f ∘ e` at
 derivative of `f` at `e y` precomposed with `e` in every slot. Hence the norm of the `i`-th
 derivative of `f ∘ e` at `y` is at most `‖e‖ ^ i` times that of `f` at `e y`, and the norm of the
 `i`-th derivative of `f` at `e y` is at most `‖e⁻¹‖ ^ i` times that of `f ∘ e` at `y`. A Hölder
-bound for the `i`-th derivative of `f ∘ e` transfers to one for the `i`-th derivative of `f`, at
-the cost of the factor `‖e⁻¹‖ ^ (i + r)`. The second Fréchet derivative of `f ∘ e` at `y`, applied
-to `v` and `w`, is that of `f` at `e y` applied to `e v` and `e w`; when `e` takes values in the
-scalar field, it is `e v * e w` times the second derivative of `f`. No differentiability of `f`
-is needed.
+bound for the `i`-th derivative of `f ∘ e` transfers to one for the `i`-th derivative of `f`, at the
+cost of the factor `‖e⁻¹‖ ^ (i + r)`; in the other direction, a Hölder bound for the `i`-th
+derivative of `f` gives one for `z ↦ f (e (z - c))`, at the cost of `‖e‖ ^ (i + r)`
+(`ContinuousLinearEquiv.holderOnWith_iteratedFDeriv_comp_sub`). The second Fréchet derivative of
+`f ∘ e` at `y`, applied to `v` and `w`, is that of `f` at `e y` applied to `e v` and `e w`; when
+`e` takes values in the scalar field, it is `e v * e w` times the second derivative of `f`. No
+differentiability of `f` is needed.
 
 In particular, for a rescaling `z ↦ f (a • z)` the `i`-th derivative at `x` is `a ^ i` times that
 of `f` at `a • x`, again without any differentiability of `f`

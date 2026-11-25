@@ -33,6 +33,8 @@ then give the Hölder bound for the inverse chart.
 * `ContDiffOn.exists_holderOnWith_iteratedFDeriv_clm_inverse`: inverse-family estimates on a ball.
 * `ContDiffOn.exists_ckHolderSpaceOn_clm_inverse`: the inverse family in `CkHolderSpaceOn`.
 * `OpenPartialHomeomorph.exists_holderOnWith_iteratedFDeriv_symm`: the inverse-chart estimate.
+* `OpenPartialHomeomorph.exists_restr_holderOnWith_iteratedFDeriv_symm`: a restriction whose
+  inverse is `C^{m+1,α}` on its whole target.
 * `OpenPartialHomeomorph.exists_ckHolderSpaceOn_symm`: the inverse chart in `CkHolderSpaceOn`.
 -/
 
