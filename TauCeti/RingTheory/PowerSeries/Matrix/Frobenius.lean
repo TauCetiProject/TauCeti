@@ -110,8 +110,12 @@ private theorem langCoeff_succ [IsAlgClosed k] [CharP k p] (hf : f ≠ 0) (hq : 
     rw [show σ _ = _ ^ p ^ f from iterateFrobenius_def p f _]
     linear_combination artinSchreierRoot_spec p (dvd_pow_self p hf) hq (-((B₀⁻¹ * S) i j))
   have hlang : langCoeff p f A B₀ (m + 1) = B₀ * Y := by rw [langCoeff]
-  rw [hS, hlang, Matrix.map_mul, ← Matrix.mul_assoc, hAB₀, hY, Matrix.mul_sub,
-    ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hdet, Matrix.one_mul, sub_add_cancel]
+  rw [hS, hlang]
+  -- `A₀ σ(B₀ Y) + S = B₀ σ(Y) + S = B₀ (Y - B₀⁻¹ S) + S = B₀ Y`
+  calc A.map constantCoeff * (B₀ * Y).map σ + S = B₀ * Y.map σ + S := by
+        rw [Matrix.map_mul, ← Matrix.mul_assoc, hAB₀]
+    _ = B₀ * (Y - B₀⁻¹ * S) + S := by rw [hY]
+    _ = B₀ * Y := by simp [Matrix.mul_sub, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hdet]
 
 end Recursion
 
