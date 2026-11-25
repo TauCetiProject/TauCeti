@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.BrauerProjection
-public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
+public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 import TauCeti.GroupTheory.PGroup
 
 /-!
@@ -41,16 +41,6 @@ private theorem not_ne_one_and_cube_eq_one_of_commute :
     ∀ c q : S₃, q * q * q ≠ 1 → c * q = q * c → ¬(c ≠ 1 ∧ c * c * c = 1) := by
   decide +kernel
 
-/-- A `2`-subgroup of `S₃` has order `1` or `2`: its order is a power of `2` dividing `6`. -/
-private theorem card_eq_one_or_two_of_isPGroup {Q : Subgroup S₃} (hQ : IsPGroup 2 Q) :
-    Nat.card Q = 1 ∨ Nat.card Q = 2 := by
-  obtain ⟨n, hn⟩ := IsPGroup.iff_card.1 hQ
-  have hdvd : 2 ^ n ∣ 6 := hn ▸ (Subgroup.card_subgroup_dvd_card Q).trans
-    (by rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]; decide)
-  have hn1 : n ≤ 1 := (Nat.pow_dvd_pow_iff_le_right one_lt_two).1
-    ((Nat.Coprime.pow_left n (by norm_num : Nat.Coprime 2 3)).dvd_of_dvd_mul_right hdvd)
-  interval_cases n <;> simp [hn]
-
 /-- **Check.** `Br_{⟨(0 1)⟩}(ρ + ρ²) = 0`: neither `ρ` nor `ρ²` commutes with `(0 1)`. -/
 theorem brauerProjection_blockTwoS₃_eq_zero :
     brauerProjection BrauerProjectionS3.P (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) = 0 := by
@@ -75,11 +65,6 @@ theorem isDefectGroup_blockTwoS₃_bot :
     rw [coeff_blockTwoS₃]
     exact ite_eq_right (not_ne_one_and_cube_eq_one_of_commute c q h3 hcq)
 
-/-- `⟨(0 1)⟩` has order `2`. -/
-private theorem card_P : Nat.card BrauerProjectionS3.P = 2 := by
-  rw [Nat.card_zpowers]
-  exact orderOf_eq_prime (by decide) (by decide)
-
 /-- **Check.** `Br_Q(1 + ρ + ρ²) ≠ 0` for every subgroup `Q` of `S₃`: its coefficient at
 `1 ∈ C_{S₃}(Q)` is `1`. -/
 theorem brauerProjection_blockOneS₃_ne_zero (Q : Subgroup S₃) :
@@ -89,21 +74,21 @@ theorem brauerProjection_blockOneS₃_ne_zero (Q : Subgroup S₃) :
     decide)
 
 /-- **Check.** The defect groups of the principal block `1 + ρ + ρ²` of `𝔽₂[S₃]` are exactly the
-three subgroups of order `2`: every subgroup has nonzero Brauer projection, and a `2`-subgroup of
-`S₃` has order `1` or `2`. -/
+three subgroups of order `2`: `1 + ρ + ρ²` is central of augmentation `1`, so its defect groups are
+the Sylow `2`-subgroups, which have order `2` since `|S₃| = 2 · 3`. -/
 theorem isDefectGroup_blockOneS₃_iff {D : Subgroup S₃} :
     IsDefectGroup (ZMod 2) 2 (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) D ↔ Nat.card D = 2 := by
-  refine ⟨fun hD => (card_eq_one_or_two_of_isPGroup hD.isPGroup).resolve_left fun h1 => ?_,
-    fun hD => isDefectGroup_iff.2 ⟨IsPGroup.of_card (n := 1) (by rw [hD, pow_one]),
-      brauerProjection_blockOneS₃_ne_zero D, fun Q hQ _ hDQ =>
-        (Subgroup.eq_of_le_of_card_ge hDQ ?_).symm⟩⟩
-  · have hPD := (isDefectGroup_iff.1 hD).2.2 _ (IsPGroup.of_card (n := 1)
-      (by rw [card_P, pow_one])) (brauerProjection_blockOneS₃_ne_zero _)
-      (Subgroup.eq_bot_of_card_eq D h1 ▸ bot_le)
-    rw [← hPD, card_P] at h1
-    exact absurd h1 (by decide)
-  · rw [hD]
-    exact (card_eq_one_or_two_of_isPGroup hQ).elim (fun h => h.trans_le (by decide)) le_of_eq
+  have hcard : 2 ^ (Nat.card S₃).factorization 2 = 2 := by
+    rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin,
+      show Nat.factorial 3 = 2 ^ 1 * 3 by rfl, Nat.factorization_mul_apply_of_coprime (by decide),
+      Nat.prime_two.factorization_pow, Finsupp.single_eq_same,
+      Nat.factorization_eq_zero_of_not_dvd (by decide), add_zero, pow_one]
+  rw [isDefectGroup_iff_sylow_of_augmentation_ne_zero blockOneS₃.property (by
+    rw [coe_blockOneS₃, map_add, map_add, map_one, of_apply, of_apply, augmentation_single,
+      augmentation_single]
+    decide)]
+  refine ⟨fun ⟨S, hS⟩ => hS ▸ S.card_eq_multiplicity.trans hcard,
+    fun hD => ⟨Sylow.ofCard D (hD.trans hcard.symm), rfl⟩⟩
 
 /-! ### `𝔽₂[C₃]` -/
 
@@ -128,12 +113,13 @@ theorem brauerProjection_top_one_add_r_add_r_sq_ne_zero :
 `2`-subgroup of `C₃`. -/
 theorem isDefectGroup_one_add_r_add_r_sq_bot :
     IsDefectGroup (ZMod 2) 2 (1 + of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)) ⊥ := by
-  refine isDefectGroup_iff.2 ⟨IsPGroup.of_bot, ?_, fun Q hQ _ _ => ?_⟩
-  · rw [Ne, brauerProjection_bot_eq_zero_iff]
-    exact ne_zero_of_coeff_ne_zero 1 (by rw [coeff_one_add_r_add_r_sq]; exact one_ne_zero)
-  · exact (Subgroup.eq_bot_iff_forall Q).2 fun q hq => congrArg Subtype.val
-      (IsPGroup.eq_one_of_pow_eq_one_of_coprime hQ (g := ⟨q, hq⟩) (n := 3) (by norm_num)
-        (Subtype.ext (by simpa using pow_card_eq_one (x := q))))
+  refine (isDefectGroup_iff_sylow_of_augmentation_ne_zero
+    (by rw [Subalgebra.center_eq_top]; exact Algebra.mem_top) ?_).2
+    ⟨Sylow.ofCard ⊥ ?_, rfl⟩
+  · rw [map_add, map_add, map_one, of_apply, of_apply, augmentation_single, augmentation_single]
+    decide
+  · rw [Subgroup.card_bot, Nat.card_eq_fintype_card, Fintype.card_multiplicative, ZMod.card,
+      Nat.factorization_eq_zero_of_not_dvd (by decide), pow_zero]
 
 /-! ### The trivial group -/
 
