@@ -92,26 +92,7 @@ namespace TauCeti
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   {L P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-
-/-! ### Local operators -/
-
-/-- A local operator takes the same value at `x` on two functions that agree near `x`. -/
-private theorem apply_eq_of_eventuallyEq_of_local
-    (hL : ∀ f x, (∀ᶠ y in 𝓝 x, f y = 0) → L f x = 0)
-    {f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hfg : (f : M → ℂ) =ᶠ[𝓝 x] g) :
-    L f x = L g x := by
-  rw [← sub_eq_zero, ← Pi.sub_apply, ← ContMDiffMap.coe_sub, ← map_sub]
-  exact hL _ x (hfg.mono fun y hy ↦ by simp [hy])
-
-/-- A local operator does not enlarge supports. -/
-private theorem apply_eq_zero_of_notMem_tsupport_of_local
-    (hL : ∀ f x, (∀ᶠ y in 𝓝 x, f y = 0) → L f x = 0)
-    {f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hx : x ∉ tsupport f) :
-    L f x = 0 :=
-  hL f x (notMem_tsupport_iff_eventuallyEq.1 hx)
-
-variable [T2Space M]
+    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} [T2Space M]
 
 /-! ### Chart symbols of compositions -/
 

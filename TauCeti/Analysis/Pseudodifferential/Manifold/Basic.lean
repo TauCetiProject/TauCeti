@@ -48,7 +48,9 @@ values on compactly supported functions, and hence by its chart compressions.
 * `TauCeti.IsProperlySupported P`: the operator `P` is properly supported. The identity, sums,
   scalar multiples, compositions (`TauCeti.IsProperlySupported.comp`), products with smooth
   functions on either side and local operators (`TauCeti.IsProperlySupported.of_local`) are
-  properly supported.
+  properly supported. A local operator takes the same value at `x` on functions that agree near
+  `x` (`TauCeti.apply_eq_of_eventuallyEq_of_local`) and does not enlarge supports
+  (`TauCeti.apply_eq_zero_of_notMem_tsupport_of_local`).
 * `TauCeti.classicalPseudodifferentialOperators m`: the properly supported operators all of whose
   chart compressions are quantizations of classical symbols of order `m`, a complex submodule of
   the operators on `C^∞(M, ℂ)`.
@@ -183,6 +185,23 @@ theorem IsProperlySupported.comp (hP : IsProperlySupported P) (hQ : IsProperlySu
   exact Filter.mem_of_superset (isOpen_interior.mem_nhdsSet.2 hK₃L) fun y hy ↦
     hQf y (interior_subset hy)
 
+/-- A local operator, one such that `P f` vanishes at every point near which `f` vanishes, takes
+the same value at `x` on two functions that agree near `x`. -/
+theorem apply_eq_of_eventuallyEq_of_local
+    (hP : ∀ f x, (∀ᶠ y in 𝓝 x, f y = 0) → P f x = 0)
+    {f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hfg : (f : M → ℂ) =ᶠ[𝓝 x] g) :
+    P f x = P g x := by
+  rw [← sub_eq_zero, ← Pi.sub_apply, ← ContMDiffMap.coe_sub, ← map_sub]
+  exact hP _ x (hfg.mono fun y hy ↦ by simp [hy])
+
+/-- A local operator, one such that `P f` vanishes at every point near which `f` vanishes, does
+not enlarge supports. -/
+theorem apply_eq_zero_of_notMem_tsupport_of_local
+    (hP : ∀ f x, (∀ᶠ y in 𝓝 x, f y = 0) → P f x = 0)
+    {f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hx : x ∉ tsupport f) :
+    P f x = 0 :=
+  hP f x (notMem_tsupport_iff_eventuallyEq.1 hx)
+
 /-- A **local** operator, one such that `P f` vanishes at every point near which `f` vanishes, is
 properly supported, with `K' = K`. -/
 theorem IsProperlySupported.of_local
@@ -191,7 +210,7 @@ theorem IsProperlySupported.of_local
     fun f hf x hx ↦ hP f x (hf.filter_mono (nhds_le_nhdsSet hx))⟩
   refine (closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport f)).trans hf
   by_contra h
-  exact hx (hP f x (notMem_tsupport_iff_eventuallyEq.1 h))
+  exact hx (apply_eq_zero_of_notMem_tsupport_of_local hP h)
 
 end ProperSupport
 
