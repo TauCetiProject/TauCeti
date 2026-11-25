@@ -12,7 +12,6 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Checks for exact maps of the strip
@@ -65,12 +64,10 @@ theorem hasFDerivAt_shiftedShear (c : ℝ) (p : ℝ × ℝ) :
 
 /-- The first component of the derivative of the shifted shear is `dx + dy`. -/
 theorem fst_comp_fderiv_shiftedShear (c : ℝ) (p : ℝ × ℝ) :
-    (ContinuousLinearMap.fst ℝ ℝ ℝ).comp
-        (fderiv ℝ (shiftedShear c).toOpenPartialHomeomorph p) =
+    (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ (shiftedShear c) p) =
       ContinuousLinearMap.fst ℝ ℝ ℝ + ContinuousLinearMap.snd ℝ ℝ ℝ := by
-  have : ⇑(shiftedShear c).toOpenPartialHomeomorph = ⇑(shiftedShear c) := rfl
-  rw [this, (hasFDerivAt_shiftedShear c p).fderiv]
-  rfl
+  rw [(hasFDerivAt_shiftedShear c p).fderiv]
+  exact ContinuousLinearMap.fst_comp_prod _ _
 
 /-- The shifted shear is a monotone twist map of the plane with period `1`. -/
 theorem isMonotoneTwistMap_shiftedShear (c : ℝ) :
@@ -106,25 +103,18 @@ theorem isMonotoneTwistMap_shiftedShear (c : ℝ) :
     linarith
   · have h := congrArg (fun L : ℝ × ℝ →L[ℝ] ℝ => L (0, 1)) (fst_comp_fderiv_shiftedShear c p)
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst'] at h
-    rw [h]
+    rw [Homeomorph.toOpenPartialHomeomorph_apply, h]
     simp
 
 /-- The shifted shear preserves Lebesgue measure on the plane. -/
 theorem measurePreserving_shiftedShear (c : ℝ) :
     MeasurePreserving (shiftedShear c) volume volume := by
-  have h₁ : MeasurePreserving (fun z : ℝ × ℝ => (z.2, z.2 + z.1)) volume volume :=
-    measurePreserving_prod_add_swap volume volume
-  have h₂ := ((MeasurePreserving.id (volume : Measure ℝ)).prod
+  exact ((MeasurePreserving.id (volume : Measure ℝ)).prod
     (measurePreserving_add_right (volume : Measure ℝ) c)).comp
-    (Measure.measurePreserving_swap.comp h₁)
-  convert h₂ using 1
-  funext p
-  simp only [shiftedShear_apply, Function.comp_apply, Prod.swap_prod_mk, Prod.map_apply, id]
-  ext <;> simp [add_comm]
+    (measurePreserving_add_prod (volume : Measure ℝ) volume)
 
 /-- The shear `(x, y) ↦ (x + y, y)` is exact for `λ = y dx`, with `S = y²/2`. -/
-example : IsExactForPrimitive 1 univ (shiftedShear 0).toOpenPartialHomeomorph
-    fun p => p.2 := by
+example : IsExactForPrimitive 1 univ (shiftedShear 0) fun p => p.2 := by
   refine isExactForPrimitive_iff.2
     ⟨fun p => p.2 ^ 2 / 2, by fun_prop, fun _ _ _ => rfl, fun p _ => ?_⟩
   have hsq : HasDerivAt (fun t : ℝ => t ^ 2 / 2) p.2 p.2 :=
@@ -140,12 +130,12 @@ example : IsExactForPrimitive 1 univ (shiftedShear 0).toOpenPartialHomeomorph
 
 /-- For `c ≠ 0` the shifted shear is not exact for `λ = y dx`: its flux is `c`. -/
 example {c : ℝ} (hc : c ≠ 0) :
-    ¬ IsExactForPrimitive 1 univ (shiftedShear c).toOpenPartialHomeomorph fun p => p.2 := by
+    ¬ IsExactForPrimitive 1 univ (shiftedShear c) fun p => p.2 := by
   intro h
   refine hc (h.eq_zero_of_flux one_ne_zero (mem_univ 0) fun x => ?_)
   have h1 := congrArg (fun L : ℝ × ℝ →L[ℝ] ℝ => L (1, 0)) (fst_comp_fderiv_shiftedShear c (x, 0))
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst'] at h1
-  rw [h1, Homeomorph.toOpenPartialHomeomorph_apply, shiftedShear_apply]
+  rw [h1, shiftedShear_apply]
   simp
 
 end TauCeti.Examples.ExactTwistMap
