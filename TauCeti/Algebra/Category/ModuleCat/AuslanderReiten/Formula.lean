@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import TauCeti.Algebra.Module.AuslanderReiten.DefectFormula
+public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Defect
+public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.MatlisDualTranspose
+public import TauCeti.Algebra.Module.AuslanderReiten.Defect.Formula
 public import TauCeti.Algebra.Module.Projective.FinitePresentation
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.YonedaExt.Injective
@@ -42,20 +44,11 @@ naturality applied to a morphism of sequences extending `a : N ⟶ τX`. Thus `�
 
 No finiteness of `R` or `A` and no minimality of the presentation is needed.
 
-## Implementation notes
-
-An object of `ModuleCat A` remembers only its `A`-action. Its `R`-action, and the `R`-linear
-structure of `ModuleCat A`, come from the scoped instances of `ModuleCat.Algebra`. On the carrier
-`Hom_R(Tr X, E)` of `τX` this action agrees with the native `R`-action only propositionally. The
-bundled translate `ModuleCat.matlisDualTranspose` is therefore a plain definition, so that
-instance search sees only the categorical action on it, and `ModuleCat.matlisDualTransposeHomEquiv`
-compares the two actions on morphisms into it.
+The translate `τX` is `ModuleCat.matlisDualTranspose`, and the identifications of the defects
+of `N ⟶ I ⟶ N'` are in `TauCeti/Algebra/Category/ModuleCat/AuslanderReiten/Defect.lean`.
 
 ## Main definitions
 
-* `ModuleCat.matlisDualTranspose R E P`: the module `τX = D Tr X`.
-* `ModuleCat.contravariantDefectEquivExt1`: the contravariant defect of `N ⟶ I ⟶ N'` at `Y` is
-  `Ext¹(Y, N)`.
 * `ModuleCat.dualExt1EquivCostableHom`: `D Ext¹(X, N) ≅ (A/ℐ)(N, τX)` from the defect formula of
   `N ⟶ I ⟶ N'`.
 * `ModuleCat.auslanderReitenForm R E P`: the Auslander–Reiten form `Ext¹(X, τX) → E`.
@@ -84,118 +77,16 @@ namespace ModuleCat
 open CategoryTheory TauCeti TauCeti.ExactStructure LinearMap
 open scoped ModuleCat.Algebra
 
-universe u v w t
-
-/-! ### The contravariant defect is `Ext¹` -/
-
-section Defect
-
-variable {R : Type u} {A : Type v} [CommRing R] [Ring A] [Algebra R A]
-  {N N' : ModuleCat.{t} A}
-
-variable (R) in
-/-- **The contravariant defect is `Ext¹`.** For a short exact sequence `N ⟶ I ⟶ N'` of
-`A`-modules with `I` injective, the cokernel of `Hom_A(Y, I) → Hom_A(Y, N')` is `Ext¹(Y, N)`,
-through `u ↦ u^* [N ⟶ I ⟶ N']`. -/
-noncomputable def contravariantDefectEquivExt1
-    (e : (ExactStructure.abelian _).Extension N' N)
-    (he : (ExactStructure.abelian _).isInjective e.obj) (Y : ModuleCat.{t} A) :
-    contravariantDefect R e.g.hom Y ≃ₗ[R] (ExactStructure.abelian _).Ext1 Y N :=
-  (Submodule.Quotient.equiv _ _ (homLinearEquiv (S := R)) (by
-      ext g
-      simp only [Submodule.mem_map, LinearMap.mem_range]
-      constructor
-      · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
-        exact ⟨s.hom, rfl⟩
-      · rintro ⟨s, rfl⟩
-        exact ⟨_, ⟨ofHom s, rfl⟩, rfl⟩)).symm ≪≫ₗ
-    e.homQuotientEquivExt1 he R Y
-
-/-- The class of `g : Y → N'` in the contravariant defect is the base change `g^* [N ⟶ I ⟶ N']`.
--/
-@[simp]
-theorem contravariantDefectEquivExt1_mk
-    (e : (ExactStructure.abelian _).Extension N' N)
-    (he : (ExactStructure.abelian _).isInjective e.obj) {Y : ModuleCat.{t} A}
-    (g : Y →ₗ[A] N') :
-    contravariantDefectEquivExt1 R e he Y (Submodule.Quotient.mk g) =
-      (Ext1.mk e).pullback (ofHom g) := by
-  simp only [contravariantDefectEquivExt1, LinearEquiv.trans_apply, Submodule.Quotient.equiv_symm,
-    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, Extension.homQuotientEquivExt1_mk]
-  rfl
-
-end Defect
-
-/-! ### The translate `D Tr X` -/
+universe u v w
 
 variable (R : Type u) {A : Type v} (E : Type w) [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup E] [Module R E] {X : ModuleCat.{max u v w} A}
   (P : FiniteProjectivePresentation X)
 
-/-- The **Auslander–Reiten translate** `τX = D Tr X = Hom_R(Tr X, E)` of a module `X` with a
-presentation `P` by finitely generated projectives, as an object of `ModuleCat A`. -/
-@[expose] def matlisDualTranspose : ModuleCat.{max u v w} A :=
-  ModuleCat.of A (MatlisDual R E (AuslanderReitenTranspose P.p))
-
-/-- Morphisms into `D Tr X` are the `A`-linear maps into `Hom_R(Tr X, E)`. On the left, `R` acts
-through the `R`-linear structure of `ModuleCat A`, and on the right through its action on `E`. -/
-noncomputable def matlisDualTransposeHomEquiv (M : ModuleCat.{max u v w} A) :
-    (M ⟶ matlisDualTranspose R E P) ≃ₗ[R]
-      (M →ₗ[A] MatlisDual R E (AuslanderReitenTranspose P.p)) where
-  toFun f := f.hom
-  invFun g := ofHom g
-  map_add' _ _ := rfl
-  -- Both actions of `c` are the action of `algebraMap R A c`.
-  map_smul' c f := LinearMap.ext fun x ↦ (IsScalarTower.algebraMap_smul A c (f.hom x)).symm.trans
-    (IsScalarTower.algebraMap_smul (M := MatlisDual R E (AuslanderReitenTranspose P.p)) A c
-      (f.hom x))
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- `ModuleCat.matlisDualTransposeHomEquiv` keeps the underlying function. -/
-@[simp]
-theorem matlisDualTransposeHomEquiv_apply {M : ModuleCat.{max u v w} A}
-    (f : M ⟶ matlisDualTranspose R E P) (x : M) :
-    matlisDualTransposeHomEquiv R E P M f x = f x :=
-  (rfl)
-
-/-- The inverse of `ModuleCat.matlisDualTransposeHomEquiv` keeps the underlying function. -/
-@[simp]
-theorem matlisDualTransposeHomEquiv_symm_apply {M : ModuleCat.{max u v w} A}
-    (g : M →ₗ[A] MatlisDual R E (AuslanderReitenTranspose P.p)) (x : M) :
-    (matlisDualTransposeHomEquiv R E P M).symm g x = g x :=
-  (rfl)
-
 /-! ### The defect formula as `D Ext¹(X, N) ≅ (A/ℐ)(N, τX)` -/
 
 variable {N N' : ModuleCat.{max u v w} A} (e : (ExactStructure.abelian _).Extension N' N)
   (he : (ExactStructure.abelian _).isInjective e.obj)
-
-/-- **The covariant defect at `τX` is costable `Hom`.** For a short exact sequence `N ⟶ I ⟶ N'`
-with `I` injective, the cokernel of `Hom_A(I, τX) → Hom_A(N, τX)` is `(A/ℐ)(N, τX)`. -/
-noncomputable def covariantDefectEquivCostableHom :
-    covariantDefect R e.f.hom (MatlisDual R E (AuslanderReitenTranspose P.p)) ≃ₗ[R]
-      ((ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.obj N ⟶
-        (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.obj
-          (matlisDualTranspose R E P)) :=
-  Submodule.Quotient.equiv _ _ (matlisDualTransposeHomEquiv R E P N).symm (by
-      ext g
-      simp only [Submodule.mem_map, LinearMap.mem_range]
-      constructor
-      · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
-        exact ⟨ofHom s, rfl⟩
-      · rintro ⟨s, rfl⟩
-        exact ⟨_, ⟨s.hom, rfl⟩, rfl⟩) ≪≫ₗ
-    e.homQuotientEquivCostableHom he R _
-
-/-- The class of `u : N → D Tr X` in the covariant defect is the class of `u` modulo `ℐ`. -/
-@[simp]
-theorem covariantDefectEquivCostableHom_mk
-    (u : N →ₗ[A] MatlisDual R E (AuslanderReitenTranspose P.p)) :
-    covariantDefectEquivCostableHom R E P e he (Submodule.Quotient.mk u) =
-      (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.map
-        ((matlisDualTransposeHomEquiv R E P N).symm u) := by
-  simp [covariantDefectEquivCostableHom]
 
 variable [Module.Injective R E] [Small.{w} R]
 
@@ -209,17 +100,17 @@ noncomputable def dualExt1EquivCostableHom :
   (contravariantDefectEquivExt1 R e he X).symm.arrowCongr (LinearEquiv.refl R E) ≪≫ₗ
     Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
       e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact) ≪≫ₗ
-    covariantDefectEquivCostableHom R E P e he
+      e.function_exact ≪≫ₗ
+    covariantDefectEquivCostableHom R (matlisDualTransposeEquiv R E P) e he
 
 /-- The defect formula applied to `χ ∘ (δ^*(X) ≅ Ext¹(X, N))`, read in `(A/ℐ)(N, τX)`. -/
 theorem dualExt1EquivCostableHom_apply
     (χ : (ExactStructure.abelian _).Ext1 X N →ₗ[R] E) :
     dualExt1EquivCostableHom R E P e he χ =
-      covariantDefectEquivCostableHom R E P e he
+      covariantDefectEquivCostableHom R (matlisDualTransposeEquiv R E P) e he
         (Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
           e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
-          ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact)
+          e.function_exact
           (χ ∘ₗ (contravariantDefectEquivExt1 R e he X).toLinearMap)) :=
   (rfl)
 
@@ -252,11 +143,11 @@ theorem dualExt1EquivCostableHom_naturality (h₁ : e.f ≫ a₂ = a ≫ e'.f)
   rw [dualExt1EquivCostableHom_apply, hχ,
     Function.Exact.dualContravariantDefectEquivCovariantDefect_naturality _ _ _ _ _
       e'.shortExact.moduleCat_injective_f e'.shortExact.moduleCat_surjective_g
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e'.shortExact.exact) k₁ k₂,
+      e'.function_exact k₁ k₂,
     dualExt1EquivCostableHom_apply]
   generalize Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
     e'.shortExact.moduleCat_injective_f e'.shortExact.moduleCat_surjective_g
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e'.shortExact.exact)
+    e'.function_exact
     (χ ∘ₗ (contravariantDefectEquivExt1 R e' he' X).toLinearMap) = y
   induction y using Submodule.Quotient.induction_on with
   | _ u =>

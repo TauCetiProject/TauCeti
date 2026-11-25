@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
+public import TauCeti.Algebra.Module.GradedModule.Generated
 
 /-!
 # Graded free modules and projective presentations
@@ -19,7 +20,8 @@ module using the internal grading shift `-d i`, equivalently the categorical shi
 `shiftObj (d i)`, so basis vector `i` has degree `d i`.
 Its degree-`p` elements have coordinate `i` in `𝒜 (p - d i)`.
 Maps out of it are uniquely determined by the images of its homogeneous basis vectors. In rank
-one, maps out of the shifted regular module `A{n}` are the degree-`n` elements of the target.
+one, maps out of the shifted regular module `A{n}` are the degree-`n` elements of the target, and
+`A{n}` is generated in degree `n`, and over a nonnegatively graded algebra in no other degree.
 
 Every graded module is a quotient of such a free graded module: use all homogeneous elements as
 generators. If the underlying module is finitely generated, finitely many homogeneous elements
@@ -200,6 +202,39 @@ theorem hom_regularShiftHomEquiv_symm_apply (M : GradedModuleCat.{uA} 𝒜) (n :
     (m : M.grading.piece n) :
     ((regularShiftHomEquiv M n).symm m).hom = LinearMap.toSpanSingleton A M m :=
   (rfl)
+
+/-- The element `1` of the shifted regular module `A{n}` has degree `n`. -/
+theorem one_mem_regular_shiftObj_piece (n : ℤ) :
+    (1 : A) ∈ ((regular (𝒜 := 𝒜)).shiftObj n).grading.piece n := by
+  simpa using SetLike.one_mem_graded 𝒜
+
+/-- The shifted regular module `A{n}` is generated in degree `n`, by the element `1`. -/
+theorem isGeneratedInDegree_regular_shiftObj (n : ℤ) :
+    ((regular (𝒜 := 𝒜)).shiftObj n).grading.IsGeneratedInDegree A n := by
+  refine (InternalGrading.isGeneratedInDegree_iff _ _).2 fun x ↦ ?_
+  simpa using Submodule.smul_mem _ x
+    (Submodule.subset_span (one_mem_regular_shiftObj_piece (𝒜 := 𝒜) n))
+
+/-- **Over a nonnegatively graded nontrivial algebra, `A{n}` is generated in degree `d` exactly
+when `d = n`**: below `n` its pieces vanish, and above `n` they miss the generator `1`. -/
+theorem isGeneratedInDegree_regular_shiftObj_iff [Nontrivial A] (h𝒜 : ∀ i < 0, 𝒜 i = ⊥)
+    (n d : ℤ) :
+    ((regular (𝒜 := 𝒜)).shiftObj n).grading.IsGeneratedInDegree A d ↔ d = n := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by subst h; exact isGeneratedInDegree_regular_shiftObj d⟩
+  have h1 := one_mem_regular_shiftObj_piece (𝒜 := 𝒜) n
+  by_contra hne
+  rcases lt_or_gt_of_ne hne with hlt | hgt
+  · -- the degree-`d` piece is `𝒜 (d - n) = 0`, which generates nothing
+    have hbot : ((regular (𝒜 := 𝒜)).shiftObj n).grading.piece d = ⊥ := by
+      simpa [sub_eq_add_neg] using h𝒜 (d - n) (by omega)
+    have h1' := (InternalGrading.isGeneratedInDegree_iff _ _).1 h 1
+    rw [hbot, Submodule.bot_coe, Submodule.span_zero_singleton, Submodule.mem_bot] at h1'
+    exact one_ne_zero h1'
+  · -- generation in degree `d > n` kills the degree-`n` piece, which contains `1`
+    -- `piece_eq_bot_of_lt` needs the `GradedSMul` instance of `A{n}` for its scalar action
+    have := ((regular (𝒜 := 𝒜)).shiftObj n).gradedSMul
+    rw [h.piece_eq_bot_of_lt 𝒜 h𝒜 hgt, Submodule.mem_bot] at h1
+    exact one_ne_zero h1
 
 /-! ### Presentations -/
 

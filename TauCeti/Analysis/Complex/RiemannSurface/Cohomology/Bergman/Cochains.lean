@@ -66,7 +66,8 @@ round trips recover restrictions. No unbounded frame change is asserted to induc
 isomorphism, and no arbitrary section is asserted to be square-integrable up to the boundary
 of its original domain.
 
-The continuous linear `middleProjection` retains the middle cocycle of a compatible triple.
+The continuous linear `outerProjection` and `middleProjection` retain the outer and the middle
+cocycle of a compatible triple.
 Compact holomorphic realization identifies functions and cocycles with their native Bergman
 classes. `Bergman.Lifting` proves surjectivity and uniform bounded lifting of the middle projection.
 These Banach spaces and compact restrictions enter the analytic finiteness argument for `H¹`.
@@ -343,6 +344,18 @@ def middleProjection :
 theorem coe_middleProjection (t : compatibleTriples g hW h' h'') :
     (middleProjection g hW h' h'' t).val = t.val.2.1 := by
   unfold middleProjection
+  exact ContinuousLinearMap.coe_codRestrict_apply _ _ _ t
+
+/-- The continuous linear projection of a compatible triple to its outer cocycle. -/
+def outerProjection : compatibleTriples g hW h' h'' →L[ℂ] cocycles₁ g hW :=
+  ((ContinuousLinearMap.fst ℂ _ _).comp (compatibleTriples g hW h' h'').subtypeL).codRestrict _
+    fun t ↦ ((mem_compatibleTriples_iff g hW h' h'').mp t.property).1
+
+/-- The projection retains the outer cochain of the original compatible triple. -/
+@[simp]
+theorem coe_outerProjection (t : compatibleTriples g hW h' h'') :
+    (outerProjection g hW h' h'' t).val = t.val.1 := by
+  unfold outerProjection
   exact ContinuousLinearMap.coe_codRestrict_apply _ _ _ t
 
 end ChartBergman

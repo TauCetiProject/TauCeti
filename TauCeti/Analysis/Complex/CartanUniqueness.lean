@@ -276,8 +276,8 @@ private lemma fderiv_comp_fderiv_eq_id {f g : E → E} {U : Set E} (hf : Analyti
     (hg : AnalyticOnNhd ℂ g U) (hU : U ∈ 𝓝 0) (hinv : LeftInvOn g f U) (hf0 : f 0 = 0) :
     (fderiv ℂ g 0).comp (fderiv ℂ f 0) = ContinuousLinearMap.id ℂ E := by
   have h0 : (0 : E) ∈ U := mem_of_mem_nhds hU
-  have := fderiv_comp_fderiv_eq_id_of_eventuallyEq (by rw [hf0]; exact (hg 0 h0).differentiableAt)
-    (hf 0 h0).differentiableAt (eventually_of_mem hU fun z hz => hinv hz)
+  have := fderiv_comp_fderiv_eq_id_of_eqOn_comp_id (uniqueDiffWithinAt_of_mem_nhds hU)
+    (hf 0 h0).differentiableAt (by rw [hf0]; exact (hg 0 h0).differentiableAt) hinv.eqOn h0
   rwa [hf0] at this
 
 /-- A biholomorphism `f` of a bounded connected circular neighbourhood `U` of `0` fixing `0`

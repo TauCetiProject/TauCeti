@@ -346,9 +346,8 @@ theorem symm_mem_of_mul_norm_lt_fst (hc : IsLipschitzChart Ω e γ K h r) (hγ :
     {z : WithLp 2 (ℝ × E)} (hz : z ∈ normalCylinder h r) (hlt : K * ‖z.snd‖ < z.fst) :
     e.symm z ∈ Ω := by
   rw [hc.mem_iff (by simpa using hz), AffineIsometryEquiv.apply_symm_apply]
-  have := hc.lipschitzWith.dist_le_mul z.snd 0
-  rw [hγ, Real.dist_eq, sub_zero, dist_zero_right] at this
-  linarith [le_abs_self (γ z.snd)]
+  linarith [le_abs_self (γ z.snd), (Real.norm_eq_abs _).symm.trans_le
+    (hc.lipschitzWith.norm_le_mul hγ z.snd)]
 
 /-- **Downward cone.** If the graph of a Lipschitz chart passes through the origin, no point of
 the cylinder below the cone `t < -(K * ‖y‖)` corresponds to a point of `Ω`. -/
@@ -356,9 +355,8 @@ theorem symm_notMem_of_fst_lt_neg_mul_norm (hc : IsLipschitzChart Ω e γ K h r)
     {z : WithLp 2 (ℝ × E)} (hz : z ∈ normalCylinder h r)
     (hlt : z.fst < -(K * ‖z.snd‖)) : e.symm z ∉ Ω := by
   rw [hc.mem_iff (by simpa using hz), AffineIsometryEquiv.apply_symm_apply, not_lt]
-  have := hc.lipschitzWith.dist_le_mul z.snd 0
-  rw [hγ, Real.dist_eq, sub_zero, dist_zero_right] at this
-  linarith [neg_abs_le (γ z.snd)]
+  linarith [neg_abs_le (γ z.snd), (Real.norm_eq_abs _).symm.trans_le
+    (hc.lipschitzWith.norm_le_mul hγ z.snd)]
 
 /-- **The exterior chart.** If `e` is a Lipschitz chart of `Ω` with graph `γ`, then `e` followed by
 the reflection `(t, y) ↦ (-t, y)` of the normal coordinate is a Lipschitz chart of the exterior
