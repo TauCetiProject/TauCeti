@@ -452,6 +452,7 @@ theorem mem_edges_mapWalk_iff (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y)
     exact (f.edgeEquiv_mem_edges_mapWalk_iff p a).mpr ha
 
 /-- Transporting the graph traced by a walk gives the graph traced by the transported walk. -/
+@[simp, grind =]
 theorem mapSubgraph_walkGraph (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     f.mapSubgraph ⟨G.walkGraph p, p.walkGraph_le x.property⟩ = H.walkGraph (f.mapWalk p) := by
   refine (Compatible.of_le_le (f.mapSubgraph_le _)
