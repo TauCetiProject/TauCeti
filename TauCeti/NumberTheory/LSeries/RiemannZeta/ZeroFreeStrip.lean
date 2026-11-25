@@ -28,13 +28,12 @@ at most `C L` in norm. The region has no upper limit on `Re s`, so it contains e
 The extensions are Mathlib's entire functions: `riemannZeta₀`, equal to `ζ(s) - 1/(s - 1)` for
 `s ≠ 1` (`riemannZeta_eq_inv_sub_add`), and `riemannZeta₁`, equal to `(s - 1) ζ(s)` for `s ≠ 1`
 and to `1` at `1`. The extension of `1/ζ` is `R(s) = (s - 1) / riemannZeta₁ s`, which equals
-`(ζ s)⁻¹` for `s ≠ 1` (`TauCeti.sub_one_div_riemannZeta₁`) and vanishes at `1`.
+`(ζ s)⁻¹` for `s ≠ 1` (Mathlib's `inv_riemannZeta_eq_sub_mul_of_ne_one`) and vanishes at `1`.
 
 ## Main results
 
 * `TauCeti.norm_riemannZeta_inv_lt_one_add_one_div_sub_one`: `‖ζ(s)‖⁻¹ < 1 + 1/(Re s - 1)` on
   `1 < Re s`.
-* `TauCeti.sub_one_div_riemannZeta₁`: `(s - 1) / riemannZeta₁ s = (ζ s)⁻¹` for `s ≠ 1`.
 * `TauCeti.riemannZeta_zeroFreeStrip_bounds`: nonvanishing, analyticity of `R` on a
   neighbourhood of `Z`, and `‖G s‖, ‖R s‖ ≤ C L` on `Z`.
 
@@ -79,12 +78,6 @@ theorem norm_riemannZeta_inv_lt_one_add_one_div_sub_one {s : ℂ} (hs : 1 < s.re
   rw [norm_div] at h
   exact h.trans_lt ((div_le_self (norm_nonneg _) h2).trans_lt hσ)
 
-/-- Mathlib's entire `riemannZeta₁`, the completion of `(s - 1) ζ(s)`, gives the extension
-`(s - 1) / riemannZeta₁ s` of `1/ζ` across `1`. -/
-theorem sub_one_div_riemannZeta₁ {s : ℂ} (hs : s ≠ 1) :
-    (s - 1) / riemannZeta₁ s = (riemannZeta s)⁻¹ := by
-  rw [riemannZeta_eq_inv_sub_mul hs, mul_inv, inv_inv, div_eq_mul_inv]
-
 /-- **Grönwall along a segment.** If `f` is complex differentiable on the segment `[a, b]` and
 `‖f′‖ ≤ K ‖f‖` there, then `‖f b‖ ≤ ‖f a‖ exp (K ‖b - a‖)`. -/
 private lemma norm_le_norm_mul_exp_of_norm_deriv_le {f : ℂ → ℂ} {a b : ℂ} {K : ℝ}
@@ -118,7 +111,7 @@ private lemma norm_riemannZeta_inv_le_of_one_add_inv_le {s : ℂ}
     ‖riemannZeta s‖⁻¹ ≤ 3 * Real.log (|s.im| + 2) := by
   set L := Real.log (|s.im| + 2)
   have hL : 1 / 2 ≤ L := by
-    linarith [Real.log_two_le_log_add_two (abs_nonneg s.im), Real.log_two_gt_d9]
+    simpa [L, add_comm] using Real.one_half_le_log_two_add (abs_nonneg s.im)
   have hpos : 0 < s.re - 1 := by linarith [inv_pos.mpr (by linarith : (0 : ℝ) < L)]
   have h := norm_riemannZeta_inv_lt_one_add_one_div_sub_one (by linarith : 1 < s.re)
   have : 1 / (s.re - 1) ≤ L := by
@@ -135,7 +128,7 @@ private lemma norm_deriv_riemannZeta_le_of_one_le_abs_im {C₄ : ℝ} {z : ℂ} 
     ‖deriv riemannZeta z‖ ≤ (|C₄| + 2) * Real.log (|z.im| + 2) * ‖riemannZeta z‖ := by
   set L := Real.log (|z.im| + 2)
   have hL : 1 / 2 ≤ L := by
-    linarith [Real.log_two_le_log_add_two (abs_nonneg z.im), Real.log_two_gt_d9]
+    simpa [L, add_comm] using Real.one_half_le_log_two_add (abs_nonneg z.im)
   have hpole : ‖1 / (z - 1)‖ ≤ 1 := by simpa [one_div] using norm_inv_sub_one_le_one ht
   have hlog : ‖deriv riemannZeta z / riemannZeta z‖ ≤ (|C₄| + 2) * L := by
     have := norm_sub_le (deriv riemannZeta z / riemannZeta z + 1 / (z - 1)) (1 / (z - 1))
@@ -160,7 +153,7 @@ private lemma norm_riemannZeta_inv_le_of_one_le_abs_im {β C₄ : ℝ}
   set t := s.im with ht_def
   set L := Real.log (|t| + 2)
   have hL : 1 / 2 ≤ L := by
-    linarith [Real.log_two_le_log_add_two (abs_nonneg t), Real.log_two_gt_d9]
+    simpa [L, add_comm] using Real.one_half_le_log_two_add (abs_nonneg t)
   have hL0 : 0 < L := by linarith
   set s₁ : ℂ := ((1 + L⁻¹ : ℝ) : ℂ) + t * I
   obtain ⟨hs₁re, hs₁im⟩ : s₁.re = 1 + L⁻¹ ∧ s₁.im = t := by simp [s₁]
@@ -211,8 +204,8 @@ private lemma norm_riemannZeta_inv_le_of_one_le_abs_im {β C₄ : ℝ}
 compact. -/
 private lemma isCompact_strip_of_abs_im_le_one (β : ℝ) :
     IsCompact {s : ℂ | |s.im| ≤ 1 ∧ s.re ≤ 3 ∧ 1 - β / Real.log (|s.im| + 2) ≤ s.re} := by
-  have hlog : ∀ z : ℂ, 1 / 2 ≤ Real.log (|z.im| + 2) := fun z ↦ by
-    linarith [Real.log_two_le_log_add_two (abs_nonneg z.im), Real.log_two_gt_d9]
+  have hlog (z : ℂ) : 1 / 2 ≤ Real.log (|z.im| + 2) :=
+    add_comm |z.im| 2 ▸ Real.one_half_le_log_two_add (abs_nonneg z.im)
   refine (isCompact_closedBall (0 : ℂ) (4 + 2 * |β|)).of_isClosed_subset ?_ ?_
   · have hc : Continuous fun z : ℂ ↦ Real.log (|z.im| + 2) :=
       (continuous_im.abs.add continuous_const : Continuous fun z : ℂ ↦ |z.im| + 2).log
@@ -234,7 +227,7 @@ private lemma isCompact_strip_of_abs_im_le_one (β : ℝ) :
 /-- **The zero-free strip of `ζ` with logarithmic bounds.** There are `0 < β < 1` and `C > 0`
 such that, on the region `Z = {s | 1 - β / log (|Im s| + 2) ≤ Re s}`:
 * `ζ(s) ≠ 0` for `s ≠ 1`;
-* the extension `R(s) = (s - 1) / riemannZeta₁ s` of `1/ζ` (`TauCeti.sub_one_div_riemannZeta₁`),
+* the extension `R(s) = (s - 1) / riemannZeta₁ s` of `1/ζ` (`inv_riemannZeta_eq_sub_mul_of_ne_one`),
   which vanishes at `1`, is analytic on a neighbourhood of `Z`;
 * `‖riemannZeta₀ s‖ ≤ C log (|Im s| + 2)`, where `riemannZeta₀` is the entire extension of
   `ζ(s) - 1/(s - 1)`;
@@ -277,17 +270,18 @@ theorem riemannZeta_zeroFreeStrip_bounds :
   · have hs1 : s ≠ 1 := fun h ↦ by
       rw [h, one_re] at hsη
       linarith [inv_pos.mpr hL]
-    rw [sub_one_div_riemannZeta₁ hs1, norm_inv]
+    rw [div_eq_mul_inv, ← inv_riemannZeta_eq_sub_mul_of_ne_one hs1, norm_inv]
     refine (norm_riemannZeta_inv_le_of_one_add_inv_le hsη).trans (le_trans ?_ h3E)
     nlinarith
   rcases le_or_gt 1 |s.im| with ht | ht
-  · rw [sub_one_div_riemannZeta₁ (ne_one_of_one_le_abs_im ht), norm_inv]
+  · rw [div_eq_mul_inv, ← inv_riemannZeta_eq_sub_mul_of_ne_one (ne_one_of_one_le_abs_im ht),
+      norm_inv]
     have h4' := fun z hz1 hz ↦ And.intro (h4 z hz1 hz).1 (h4 z hz1 hz).2.2
     exact (norm_riemannZeta_inv_le_of_one_le_abs_im h4' ht hs hsη).trans h3E
   · have hs3 : s.re ≤ 3 := by
       have : L⁻¹ ≤ 2 := by
         rw [inv_le_comm₀ hL two_pos]
-        linarith [Real.log_two_gt_d9]
+        simpa [L, add_comm] using Real.one_half_le_log_two_add (abs_nonneg s.im)
       linarith
     calc _ ≤ M := hM s ⟨ht.le, hs3, hs⟩
       _ ≤ |M| := le_abs_self M
