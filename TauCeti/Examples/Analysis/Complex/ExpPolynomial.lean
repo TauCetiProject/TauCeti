@@ -8,13 +8,18 @@ module
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Complex.ExpPolynomial.Growth
 import TauCeti.Analysis.Complex.ExpPolynomial.LinearIndependence
+import TauCeti.Analysis.Complex.ExpPolynomial.TaylorCoeff
 import TauCeti.Analysis.SpecialFunctions.Exp.ExponentialPolynomial
 
 /-!
 # Examples and sharpness checks for complex exponential polynomials
 
-Worked checks and counterexamples for the growth and linear independence theorems on complex
-exponential polynomials:
+Worked checks and counterexamples for the Taylor coefficient formula, growth and linear
+independence theorems on complex exponential polynomials:
+
+* by `TauCeti.mvTaylorCoeff_prod_pow_mul_cexp`, the Taylor coefficient of order `1` of
+  `z ^ 2 * exp z` at `1` is `3 * exp 1`, the derivative `(2 z + z ^ 2) exp z` at `1`; the
+  factor `exp (w · ξ)` is taken at `ξ`, not at the origin;
 
 * evaluating `TauCeti.norm_prod_pow_mul_cexp_le` on `z ^ 2 * exp z` at `z = 1` gives
   `Real.exp 1 ≤ (1 + 1) ^ 2 * Real.exp 1`, and on the pure exponential `exp z` at `z = 1` both
@@ -32,6 +37,14 @@ exponential polynomials:
 open scoped Polynomial
 
 namespace TauCeti.ExpPolynomialExamples
+
+-- Taylor coefficient of `z ^ 2 * exp z` at `1` of order `1`: `exp 1 * (1 + 2) = 3 * exp 1`.
+example :
+    mvTaylorCoeff (fun z : Fin 1 → ℂ ↦ (∏ v, z v ^ 2) * Complex.exp (∑ v, 1 * z v)) 1 1 =
+      3 * Complex.exp 1 := by
+  rw [mvTaylorCoeff_prod_pow_mul_cexp]
+  simp [Finset.sum_range_succ]
+  ring
 
 -- Growth bound on `z ^ 2 * exp z` at `z = 1`: `exp 1 ≤ (1 + 1) ^ 2 * exp 1`.
 example :

@@ -9,7 +9,6 @@ public import TauCeti.Statistics.Experiments.Density
 public import TauCeti.Probability.Distributions.OrderStatistic.Basic
 import TauCeti.Probability.Distributions.OrderStatistic.Joint
 import TauCeti.Probability.Distributions.Beta.Basic
-import TauCeti.MeasureTheory.Measure.PiWithDensity
 
 /-!
 # Densities of order statistics
@@ -44,31 +43,18 @@ theorem hasDensity_map_orderStatistics_pi {α : Type*} [LinearOrder α] [Topolog
       (Measure.pi fun _ : Fin n ↦ ν)
       ({x | StrictMono x}.indicator (fun x ↦ (n.factorial : ℝ) * ∏ i, f (x i))) := by
   classical
-  let ρ := Measure.pi fun _ : Fin n ↦ ν
-  let g : (Fin n → α) → ℝ := fun x ↦ ∏ i, f (x i)
-  have hg : Measurable g := Finset.measurable_fun_prod _ fun i _ ↦
-    hf.measurable.comp (measurable_pi_apply i)
-  have hcoord : ∀ᵐ x ∂ρ, ∀ i, 0 ≤ f (x i) :=
-    ae_all_iff.2 fun i ↦ (Measure.quasiMeasurePreserving_eval (fun _ : Fin n ↦ ν) i).ae hf.ae_nonneg
+  have hprod := HasDensity.pi fun _ : Fin n ↦ hf
   have hmono : MeasurableSet {x : Fin n → α | StrictMono x} := measurableSet_setOf_strictMono
-  have hpi : (Measure.pi fun _ : Fin n ↦ P) = ρ.withDensity (fun x ↦ ENNReal.ofReal (g x)) := by
-    have : IsProbabilityMeasure (ν.withDensity fun x ↦ ENNReal.ofReal (f x)) :=
-      hf.eq_withDensity ▸ inferInstanceAs (IsProbabilityMeasure P)
-    rw [hf.eq_withDensity, pi_withDensity _ (fun _ ↦ hf.measurable.ennreal_ofReal)]
-    apply withDensity_congr_ae
-    filter_upwards [hcoord] with x hx
-    exact (ENNReal.ofReal_prod_of_nonneg fun i _ ↦ hx i).symm
-  refine ⟨(measurable_const.mul hg).indicator hmono, ?_, ?_⟩
-  · filter_upwards [hcoord] with x hx
-    exact indicator_nonneg (fun _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (Finset.prod_nonneg
-      fun i _ ↦ hx i)) x
-  rw [Probability.map_orderStatistics_pi, hpi, restrict_withDensity hmono,
+  refine ⟨(measurable_const.mul hprod.measurable).indicator hmono, ?_, ?_⟩
+  · filter_upwards [hprod.ae_nonneg] with x hx
+    exact indicator_nonneg (fun _ _ ↦ mul_nonneg (Nat.cast_nonneg _) hx) x
+  rw [Probability.map_orderStatistics_pi, hprod.eq_withDensity, restrict_withDensity hmono,
     ← withDensity_indicator hmono, ← Nat.cast_smul_eq_nsmul ℝ≥0∞,
-    ← withDensity_smul _ (hg.ennreal_ofReal.indicator hmono)]
+    ← withDensity_smul _ (hprod.measurable.ennreal_ofReal.indicator hmono)]
   congr 1
   funext x
   by_cases hx : StrictMono x <;>
-    simp [Set.indicator, hx, Pi.smul_apply, smul_eq_mul, ENNReal.ofReal_mul, g]
+    simp [Set.indicator, hx, Pi.smul_apply, smul_eq_mul, ENNReal.ofReal_mul]
 
 variable {P ν : Measure ℝ} {f : ℝ → ℝ}
 

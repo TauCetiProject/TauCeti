@@ -115,7 +115,7 @@ theorem mass_integrationCurrent (o : Orientation ℝ E (Fin m)) (hm : finrank �
   have hωb (x : E) : ω x b = ψ x := by
     have hx : ω x = b.toBasis.testTopFormEquiv.symm ψ x := by
       simp only [ω, monoCLM_apply, le_top, le_refl, and_self, ↓reduceIte]
-    rw [hx, ← b.coe_toBasis, Basis.testTopFormEquiv_symm_apply, Basis.det_self, mul_one]
+    rw [hx, ← b.coe_toBasis, Basis.testTopFormEquiv_symm_apply_self]
   have hω (x : E) : ‖ω x‖ ≤ 1 := by
     rw [(ω x).norm_eq_norm_apply_orthonormalBasis b, hωb]
     exact hψ x

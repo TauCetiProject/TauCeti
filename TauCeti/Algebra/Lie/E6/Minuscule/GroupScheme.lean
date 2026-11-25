@@ -42,6 +42,8 @@ is asserted here. Those are subsequent steps in the pinned Chevalley--Demazure c
 * `TauCeti.E6Minuscule.coe_rootSubgroupPoints_inl` and
   `TauCeti.E6Minuscule.coe_rootSubgroupPoints_inr`: their positive and negative simple-root
   matrices in the minuscule basis.
+* `TauCeti.E6Minuscule.rootSubgroupPoints_injective`: each of them is injective over every
+  commutative ring.
 * `TauCeti.E6Minuscule.weightTorus_conj_rootSubgroup`: the scheme-level pinning equation.
 
 ## References
@@ -332,6 +334,27 @@ theorem coe_rootSubgroupPoints_inr (i : Fin 6) (A : Type v) [CommRing A]
       (weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inr i))
       (weightTable.rep_serreRootGenerator_inr_coordinateLatticeBasis_eq_sum i)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
+
+/-- **Every numbered simple-root subgroup of the type-`E₆` minuscule carrier is injective**, over
+every commutative ring. Each simple root moves some minuscule weight to its reflection, so its
+matrix `1 + uEᵢ` or `1 + uFᵢ` determines `u`. -/
+theorem rootSubgroupPoints_injective (k : Fin 6 ⊕ Fin 6) (A : Type v) [CommRing A] :
+    Function.Injective (rootSubgroupPoints k A) := by
+  intro u v huv
+  have hmat := congrArg (fun g : points A =>
+    ((g : _root_.Matrix.GeneralLinearGroup (Fin 27) A) : Matrix (Fin 27) (Fin 27) A)) huv
+  apply Multiplicative.toAdd.injective
+  cases k with
+  | inl i =>
+      rw [coe_rootSubgroupPoints_inl, coe_rootSubgroupPoints_inl] at hmat
+      refine weightTable.one_add_smul_raisingMatrix_map_injective i ?_ hmat
+      rw [weightTable_weight]
+      exact (by decide : ∀ i : Fin 6, ∃ b, e6MinusculeWeight b i = -1) i
+  | inr i =>
+      rw [coe_rootSubgroupPoints_inr, coe_rootSubgroupPoints_inr] at hmat
+      refine weightTable.one_add_smul_loweringMatrix_map_injective i ?_ hmat
+      rw [weightTable_weight]
+      exact (by decide : ∀ i : Fin 6, ∃ b, e6MinusculeWeight b i = 1) i
 
 /-- The split weight torus on matrix-valued points of the type-`E₆` carrier. -/
 noncomputable def weightTorusPoints (A : Type v) [CommRing A] :

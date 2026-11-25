@@ -191,9 +191,10 @@ theorem exists_graph_iso_apply_eq_affineNode {t : AffineDynkinType} (ht : t.Vali
     ∃ σ : t.graph ≃g t.graph, σ i = t.affineNode := by
   cases t with
   | A n =>
-      refine ⟨⟨(TauCeti.cycleGraphSubIso i).toEquiv, fun {u v} ↦ ?_⟩, ?_⟩
-      · rw [graph_A]; exact (TauCeti.cycleGraphSubIso i).map_rel_iff
-      · rw [affineNode_A]; exact (TauCeti.cycleGraphSubIso_apply i i).trans (sub_self i)
+      refine ⟨⟨(TauCeti.cycleGraphAddRightIso (-i)).toEquiv, fun {u v} ↦ ?_⟩, ?_⟩
+      · rw [graph_A]; exact (TauCeti.cycleGraphAddRightIso (-i)).map_rel_iff
+      · rw [affineNode_A]
+        exact (TauCeti.cycleGraphAddRightIso_apply (-i) i).trans (add_neg_cancel i)
   | D n =>
       rw [valid_D] at ht; rw [marks_D_apply] at hi; rw [affineNode_D]
       have hi_lt : (i : ℕ) < n + 1 := by simpa [nodes_D] using i.isLt
