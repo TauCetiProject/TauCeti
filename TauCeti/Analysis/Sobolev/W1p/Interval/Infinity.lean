@@ -19,8 +19,10 @@ boundary values of the function. If the weak derivative of `u` has a continuous 
 test functions on `ℝ` supported away from `closure Γ`, is at least `|g t|` at every point
 `t ∈ [a,b]` of `closure Γ` (`TauCeti.W1p.abs_gradient_le_dist_of_mem_w1pVanishingOnSubmodule`).
 At `Γ = {a, b}` this says that the distance from `u` to any element of the closure-defined
-`W^{1,∞}_0(a,b)` is at least `max (|g a|) (|g b|)`. In particular, membership in that closure
-forces both endpoint derivatives to vanish.
+`W^{1,∞}_0(a,b)` is at least `max (|g a|) (|g b|)`. In particular, membership in
+`W^{1,∞}_Γ(a,b)` forces `g` to vanish on `closure Γ ∩ [a,b]`
+(`TauCeti.W1p.gradient_eq_zero_of_mem_w1pVanishingOnSubmodule`), so membership in
+`W^{1,∞}_0(a,b)` forces both endpoint derivatives to vanish.
 
 The polynomial `x(1-x)` on `(0,1)` has zero endpoint trace but is at distance at least one
 from `W^{1,∞}_0(0,1)`. Thus the kernel of the endpoint trace is not contained in the
@@ -71,6 +73,16 @@ theorem abs_gradient_le_dist_of_mem_w1pVanishingOnSubmodule {a b : ℝ} (hab : a
     Real.norm_eq_abs] at heq
   exact max_eq_right_iff.1 heq
 
+/-- A continuous weak derivative of an element of `W^{1,∞}_Γ(a,b)` vanishes at every point of
+`closure Γ` in `[a,b]`. This is the case `v = u` of
+`abs_gradient_le_dist_of_mem_w1pVanishingOnSubmodule`. -/
+theorem gradient_eq_zero_of_mem_w1pVanishingOnSubmodule {a b : ℝ} (hab : a < b) {Γ : Set ℝ}
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤} {g : ℝ → ℝ} (hg : ContinuousOn g (Icc a b))
+    (hu : gradient u =ᵐ[volume.restrict (Ioo a b)] g)
+    (hu0 : u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤ Γ) {t : ℝ}
+    (ht : t ∈ Icc a b) (htΓ : t ∈ closure Γ) : g t = 0 := by
+  simpa using abs_gradient_le_dist_of_mem_w1pVanishingOnSubmodule hab hg hu hu0 ht htΓ
+
 /-- A continuous representative of the weak derivative gives an endpoint lower bound on the
 `W^{1,∞}` distance to the closure of the test functions. This is the case `Γ = {a, b}` of
 `abs_gradient_le_dist_of_mem_w1pVanishingOnSubmodule`. -/
@@ -90,16 +102,21 @@ theorem max_abs_gradient_endpoints_le_dist {a b : ℝ} (hab : a < b)
       (subset_closure (by simp)))
 
 /-- A continuous weak derivative of an element of `W^{1,∞}_0(a,b)` vanishes at both
-endpoints. This is an additional boundary condition beyond zero trace of the function. -/
+endpoints. This is an additional boundary condition beyond zero trace of the function, and the
+case `Γ = {a, b}` of `gradient_eq_zero_of_mem_w1pVanishingOnSubmodule`. -/
 theorem gradient_endpoints_eq_zero_of_mem_w1p0Submodule {a b : ℝ} (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤} {g : ℝ → ℝ}
     (hg : ContinuousOn g (Icc a b))
     (hu : gradient u =ᵐ[volume.restrict (Ioo a b)] g)
     (hu0 : u ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤) :
     g a = 0 ∧ g b = 0 := by
-  have h := max_abs_gradient_endpoints_le_dist hab hg hu hu0
-  simp only [dist_self, max_le_iff, abs_nonpos_iff] at h
-  exact h
+  rw [← w1pVanishingOnSubmodule_frontier] at hu0
+  have hfr : frontier ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ) = {a, b} := frontier_Ioo hab
+  rw [hfr] at hu0
+  exact ⟨gradient_eq_zero_of_mem_w1pVanishingOnSubmodule hab hg hu hu0
+      (left_mem_Icc.2 hab.le) (subset_closure (by simp)),
+    gradient_eq_zero_of_mem_w1pVanishingOnSubmodule hab hg hu hu0
+      (right_mem_Icc.2 hab.le) (subset_closure (by simp))⟩
 
 /-- The polynomial `x(1-x)` has zero endpoint trace on `(0,1)`, but its `W^{1,∞}` distance
 from every zero-boundary element is at least one. In particular, zero trace does not imply

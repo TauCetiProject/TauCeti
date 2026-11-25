@@ -37,6 +37,8 @@ example : (intervalTraceL zero_lt_one (intervalCoord (a := 0) (b := 1) (p := ⊤
       (g := fun _ ↦ 1) continuousOn_const gradient_intervalCoord hv
       (left_mem_Icc.2 zero_le_one) (subset_closure rfl)
   exact ⟨by simp [intervalTraceL_intervalCoord], hdist,
-    fun h ↦ (not_le_of_gt zero_lt_one) (by simpa using hdist _ h)⟩
+    fun h ↦ one_ne_zero (gradient_eq_zero_of_mem_w1pVanishingOnSubmodule zero_lt_one
+      (g := fun _ ↦ (1 : ℝ)) continuousOn_const gradient_intervalCoord h
+      (left_mem_Icc.2 zero_le_one) (subset_closure rfl))⟩
 
 end TauCeti.W1pVanishingOnInfinityExamples
