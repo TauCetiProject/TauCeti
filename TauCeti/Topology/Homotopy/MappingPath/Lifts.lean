@@ -58,7 +58,7 @@ theorem proj_comp_liftOfHomotopy (H : (f.comp c).Homotopy (.const X k)) :
 def homotopyOfLift (l : C(X, MappingPathFiber f k)) (hl : (proj f k).comp l = c) :
     (f.comp c).Homotopy (.const X k) where
   toFun z := (l z.2).val.2 z.1
-  continuous_toFun := (continuous_subtype_val.snd.comp
+  continuous_toFun := (continuous_subtypeVal.snd.comp
     (l.continuous.comp continuous_snd)).eval continuous_fst
   map_zero_left x := (l x).property.1.trans
     (congrArg f (by simpa using ContinuousMap.congr_fun hl x))
@@ -146,7 +146,7 @@ private def homotopyRelOfHomotopyOver
       (homotopyOfLift f k c l₀ h₀).toContinuousMap
       (homotopyOfLift f k c l₁ h₁).toContinuousMap ({0, 1} ×ˢ Set.univ) where
   toFun z := (F (z.1, z.2.2)).val.2 z.2.1
-  continuous_toFun := (continuous_subtype_val.snd.comp
+  continuous_toFun := (continuous_subtypeVal.snd.comp
     (F.continuous.comp (continuous_fst.prodMk continuous_snd.snd))).eval continuous_snd.fst
   map_zero_left := by rintro ⟨t, x⟩; simp
   map_one_left := by rintro ⟨t, x⟩; simp
