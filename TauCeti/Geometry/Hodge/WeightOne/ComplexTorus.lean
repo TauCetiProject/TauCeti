@@ -16,15 +16,14 @@ import TauCeti.Algebra.Module.ZLattice.Rank
 
 Let `E` be a finite-dimensional complex vector space and `Λ ⊆ E` a full lattice, so that `E / Λ`
 is a complex torus. Since `Λ` spans `E` over `ℝ`, the realification `ℝ ⊗[ℤ] Λ` of `Λ` is
-identified with `E` (`ZLattice.isBaseChange_subtype`), and multiplication by `i` on `E` becomes an
-almost complex structure `J` on `ℝ ⊗[ℤ] Λ`
+identified with `E` (`TauCeti.ZLattice.baseChangeEquiv`), and multiplication by `i` on `E`
+becomes an almost complex structure `J` on `ℝ ⊗[ℤ] Λ`
 (`TauCeti.ComplexTorus.almostComplexStructure`). This is the datum `(Λ, J)` to which Riemann
 forms (`TauCeti.AlmostComplexStructure.IsRiemannForm`) and the weight-one Hodge structure
 `TauCeti.AlmostComplexStructure.latticeHodgeStructure` apply for the complex torus `E / Λ`.
 
 ## Main declarations
 
-* `TauCeti.ComplexTorus.realificationEquiv`: the identification `ℝ ⊗[ℤ] Λ ≃ E`.
 * `TauCeti.ComplexTorus.almostComplexStructure`: multiplication by `i`, transported to
   `ℝ ⊗[ℤ] Λ`.
 * `TauCeti.ComplexTorus.realForm`: the real extension of an integral form on `Λ`, as a real
@@ -37,8 +36,6 @@ forms (`TauCeti.AlmostComplexStructure.IsRiemannForm`) and the weight-one Hodge 
   `E_ℝ(i v, i w) = E_ℝ(v, w)` and `E_ℝ(i v, v) > 0` for `v ≠ 0`.
 * `TauCeti.ComplexTorus.hodgeNumber_latticeHodgeStructure`: the Hodge numbers of the associated
   weight-one Hodge structure are `h^{1,0} = h^{0,1} = dim_ℂ E`.
-* `TauCeti.ComplexTorus.realificationEquiv_baseChange_restrict`: the identification
-  `ℝ ⊗[ℤ] Λ ≃ E` is natural in real-linear maps `f : E → E'` with `f(Λ) ⊆ Λ'`.
 * `TauCeti.ComplexTorus.isComplexLinearMap_baseChange`: a complex-linear map `f : E → E'` with
   `f(Λ) ⊆ Λ'` is complex linear for the two structures `J` on the realifications.
 
@@ -50,57 +47,44 @@ forms (`TauCeti.AlmostComplexStructure.IsRiemannForm`) and the weight-one Hodge 
 
 public section
 
-open Module TensorProduct
+open Module
 
 namespace TauCeti.ComplexTorus
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   (Λ : Submodule ℤ E) [DiscreteTopology Λ] [IsZLattice ℝ Λ]
 
-/-- The realification `ℝ ⊗[ℤ] Λ` of a full lattice `Λ ⊆ E` is identified with `E`, by
-`r ⊗ x ↦ r • x`. -/
-noncomputable def realificationEquiv : Hodge.Realification Λ ≃ₗ[ℝ] E :=
-  (ZLattice.isBaseChange_subtype ℝ Λ).equiv
-
-@[simp]
-theorem realificationEquiv_tmul (r : ℝ) (x : Λ) :
-    realificationEquiv Λ (r ⊗ₜ x) = r • (x : E) :=
-  (ZLattice.isBaseChange_subtype ℝ Λ).equiv_tmul r x
-
-/-- A lattice vector `x` corresponds to `1 ⊗ x` in the realification. -/
-@[simp]
-theorem realificationEquiv_symm_coe (x : Λ) :
-    (realificationEquiv Λ).symm x = 1 ⊗ₜ x :=
-  (ZLattice.isBaseChange_subtype ℝ Λ).equiv_symm_apply x
-
 /-- The **complex structure of a complex torus** `E / Λ` on the realification of its lattice:
-multiplication by `i` on `E`, transported along `realificationEquiv Λ`. -/
+multiplication by `i` on `E`, transported along `ZLattice.baseChangeEquiv ℝ Λ`. -/
 noncomputable def almostComplexStructure : AlmostComplexStructure (Hodge.Realification Λ) :=
-  (AlmostComplexStructure.ofComplexModule E).transport (realificationEquiv Λ).symm
+  (AlmostComplexStructure.ofComplexModule E).transport (ZLattice.baseChangeEquiv ℝ Λ).symm
 
-/-- Under `realificationEquiv Λ`, the complex structure of the torus is multiplication by `i`. -/
+/-- Under `ZLattice.baseChangeEquiv ℝ Λ`, the complex structure of the torus is multiplication
+by `i`. -/
 @[simp]
-theorem realificationEquiv_almostComplexStructure (x : Hodge.Realification Λ) :
-    realificationEquiv Λ (almostComplexStructure Λ x) = Complex.I • realificationEquiv Λ x := by
+theorem baseChangeEquiv_almostComplexStructure (x : Hodge.Realification Λ) :
+    ZLattice.baseChangeEquiv ℝ Λ (almostComplexStructure Λ x) =
+      Complex.I • ZLattice.baseChangeEquiv ℝ Λ x := by
   simp [almostComplexStructure, AlmostComplexStructure.ofComplexModule_apply]
 
 /-- Multiplication by `i` on `E` corresponds to the complex structure of the torus on the
 realification. -/
-theorem realificationEquiv_symm_smul_I (v : E) :
-    (realificationEquiv Λ).symm (Complex.I • v) =
-      almostComplexStructure Λ ((realificationEquiv Λ).symm v) := by
-  rw [LinearEquiv.symm_apply_eq, realificationEquiv_almostComplexStructure,
+theorem baseChangeEquiv_symm_smul_I (v : E) :
+    (ZLattice.baseChangeEquiv ℝ Λ).symm (Complex.I • v) =
+      almostComplexStructure Λ ((ZLattice.baseChangeEquiv ℝ Λ).symm v) := by
+  rw [LinearEquiv.symm_apply_eq, baseChangeEquiv_almostComplexStructure,
     LinearEquiv.apply_symm_apply]
 
 /-- The real extension `E_ℝ` of an integral bilinear form on `Λ`, as a real bilinear form on
 `E = ℝ ⊗[ℤ] Λ`. -/
 noncomputable def realForm (B : LinearMap.BilinForm ℤ Λ) : LinearMap.BilinForm ℝ E :=
-  LinearMap.BilinForm.congr (realificationEquiv Λ) (B.baseChange ℝ)
+  LinearMap.BilinForm.congr (ZLattice.baseChangeEquiv ℝ Λ) (B.baseChange ℝ)
 
 /-- The real extension evaluates the base-changed form on the preimages in `ℝ ⊗[ℤ] Λ`. -/
 theorem realForm_apply (B : LinearMap.BilinForm ℤ Λ) (v w : E) :
     realForm Λ B v w =
-      B.baseChange ℝ ((realificationEquiv Λ).symm v) ((realificationEquiv Λ).symm w) :=
+      B.baseChange ℝ ((ZLattice.baseChangeEquiv ℝ Λ).symm v)
+        ((ZLattice.baseChangeEquiv ℝ Λ).symm w) :=
   LinearMap.BilinForm.congr_apply _ _ v w
 
 /-- On lattice vectors, the real extension is the integral form. -/
@@ -116,16 +100,16 @@ theorem isRiemannForm_iff (B : LinearMap.BilinForm ℤ Λ) :
     (almostComplexStructure Λ).IsRiemannForm B ↔
       B.IsAlt ∧ (∀ v w : E, realForm Λ B (Complex.I • v) (Complex.I • w) = realForm Λ B v w) ∧
         ∀ v : E, v ≠ 0 → 0 < realForm Λ B (Complex.I • v) v := by
-  simp only [realForm_apply, realificationEquiv_symm_smul_I]
+  simp only [realForm_apply, baseChangeEquiv_symm_smul_I]
   constructor
   · rintro ⟨halt, hinv, hpos⟩
     exact ⟨halt, fun v w ↦ hinv _ _, fun v hv ↦ hpos _ ((LinearEquiv.map_ne_zero_iff _).mpr hv)⟩
   · rintro ⟨halt, hinv, hpos⟩
     refine ⟨halt, fun x y ↦ ?_, fun x hx ↦ ?_⟩
     · simpa only [LinearEquiv.symm_apply_apply] using
-        hinv (realificationEquiv Λ x) (realificationEquiv Λ y)
+        hinv (ZLattice.baseChangeEquiv ℝ Λ x) (ZLattice.baseChangeEquiv ℝ Λ y)
     · simpa only [LinearEquiv.symm_apply_apply] using
-        hpos (realificationEquiv Λ x) ((LinearEquiv.map_ne_zero_iff _).mpr hx)
+        hpos (ZLattice.baseChangeEquiv ℝ Λ x) ((LinearEquiv.map_ne_zero_iff _).mpr hx)
 
 /-- **The Hodge numbers of a complex torus**: the weight-one Hodge structure on `Λ` associated
 with the complex structure of `E / Λ` has `h^{1,0} = h^{0,1} = dim_ℂ E`, and all other Hodge
@@ -142,18 +126,6 @@ theorem hodgeNumber_latticeHodgeStructure {Λℂ : Type*} [AddCommGroup Λℂ] [
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
   (Λ' : Submodule ℤ E') [DiscreteTopology Λ'] [IsZLattice ℝ Λ']
 
-/-- **Naturality of `realificationEquiv`**: for a real-linear map `f : E → E'` carrying `Λ`
-into `Λ'`, the real extension of its restriction `Λ → Λ'` corresponds to `f` under the
-identifications `ℝ ⊗[ℤ] Λ ≃ E` and `ℝ ⊗[ℤ] Λ' ≃ E'`. -/
-@[simp]
-theorem realificationEquiv_baseChange_restrict (f : E →ₗ[ℝ] E')
-    (hf : ∀ x ∈ Λ, f.restrictScalars ℤ x ∈ Λ') (x : Hodge.Realification Λ) :
-    realificationEquiv Λ' (LinearMap.baseChange ℝ ((f.restrictScalars ℤ).restrict hf) x) =
-      f (realificationEquiv Λ x) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul r x => simp
-  | add x y hx hy => simp [hx, hy]
-
 /-- **Complex-linear maps of tori give complex-linear maps of realifications**: if a complex-linear
 map `f : E → E'` carries `Λ` into `Λ'`, the real extension of its restriction `Λ → Λ'` is complex
 linear for the complex structures of the two tori. -/
@@ -162,12 +134,13 @@ theorem isComplexLinearMap_baseChange (f : E →ₗ[ℂ] E')
     IsComplexLinearMap (almostComplexStructure Λ) (almostComplexStructure Λ')
       (LinearMap.baseChange ℝ ((f.restrictScalars ℤ).restrict hf)) := by
   have h (y : Hodge.Realification Λ) :
-      realificationEquiv Λ' (LinearMap.baseChange ℝ ((f.restrictScalars ℤ).restrict hf) y) =
-        f (realificationEquiv Λ y) :=
-    realificationEquiv_baseChange_restrict Λ Λ' (f.restrictScalars ℝ) hf y
+      ZLattice.baseChangeEquiv ℝ Λ'
+          (LinearMap.baseChange ℝ ((f.restrictScalars ℤ).restrict hf) y) =
+        f (ZLattice.baseChangeEquiv ℝ Λ y) :=
+    ZLattice.baseChangeEquiv_baseChange_restrict (f.restrictScalars ℝ) hf y
   rw [isComplexLinearMap_iff_apply]
   intro x
-  apply (realificationEquiv Λ').injective
+  apply (ZLattice.baseChangeEquiv ℝ Λ').injective
   simp [h]
 
 end TauCeti.ComplexTorus
