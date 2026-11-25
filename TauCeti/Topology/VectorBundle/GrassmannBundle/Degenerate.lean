@@ -88,6 +88,7 @@ theorem coe_projHomeomorphOfForallEqSingleton_symm_apply {Q : ∀ b, E b →L[�
 
 omit [ContinuousFiberNorm F E] in
 /-- The fibre Grassmannian of full planes is the identity. -/
+@[simp]
 theorem grassmannian_finrank_fiber (b : B) :
     Euclidean.grassmannian ℝ (E b) (finrank ℝ F) = {1} := by
   have := VectorBundle.finiteDimensional ℝ F E b
