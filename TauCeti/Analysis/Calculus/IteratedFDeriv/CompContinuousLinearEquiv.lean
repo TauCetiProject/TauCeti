@@ -127,6 +127,28 @@ theorem holderOnWith_iteratedFDeriv_of_comp_right (e : G ≃L[𝕜] E) {f : E �
       ≤ ‖(e.symm : E →L[𝕜] G)‖₊ ^ i * (C * ‖(e.symm : E →L[𝕜] G)‖₊ ^ (r : ℝ)) := by gcongr
     _ = _ := by ring
 
+open scoped NNReal in
+/-- **Hölder continuity of iterated derivatives under an affine change of variables.** If the
+`i`-th derivative of `f` is `r`-Hölder with constant `C` on `s`, then the `i`-th derivative of
+`z ↦ f (e (z - c))` is `r`-Hölder on `{z | e (z - c) ∈ s}`, with constant `C ‖e‖ ^ i ‖e‖ ^ r`. -/
+theorem holderOnWith_iteratedFDeriv_comp_sub (e : G ≃L[𝕜] E) (c : G) {f : E → F} {s : Set E}
+    {C r : ℝ≥0} {i : ℕ} (h : HolderOnWith C r (iteratedFDeriv 𝕜 i f) s) :
+    HolderOnWith (C * ‖(e : G →L[𝕜] E)‖₊ ^ i * ‖(e : G →L[𝕜] E)‖₊ ^ (r : ℝ)) r
+      (iteratedFDeriv 𝕜 i fun z ↦ f (e (z - c))) {z | e (z - c) ∈ s} := by
+  -- Read through `e⁻¹`, the map is the translate `w ↦ f (w - e c)`.
+  have hcomp : (fun z ↦ f (e (z - c))) ∘ e.symm = fun w ↦ f (w - e c) := by
+    funext w
+    simp [map_sub]
+  have ht : HolderOnWith C r (iteratedFDeriv 𝕜 i ((fun z ↦ f (e (z - c))) ∘ e.symm))
+      (e.symm ⁻¹' {z | e (z - c) ∈ s}) := by
+    rw [hcomp]
+    intro x hx y hy
+    have hx' : x - e c ∈ s := by simpa [map_sub] using hx
+    have hy' : y - e c ∈ s := by simpa [map_sub] using hy
+    rw [iteratedFDeriv_comp_sub, iteratedFDeriv_comp_sub]
+    simpa only [edist_sub_right] using h _ hx' _ hy'
+  simpa using e.symm.holderOnWith_iteratedFDeriv_of_comp_right ht
+
 end ContinuousLinearEquiv
 
 section Rescaling

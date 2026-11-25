@@ -443,51 +443,12 @@ private theorem exists_standardizing_equiv {J : ℂ → ℂ →L[ℝ] ℂ} {c : 
 
 /-! ### Hölder fields -/
 
-/-- Adding a constant keeps a Hölder bound on a derivative field: at order zero the distances are
-unchanged, and at positive order the derivative field itself is unchanged. -/
-private theorem holderOnWith_iteratedFDeriv_add_const {X Y : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] {f : X → Y} {s : Set X} {n : ℕ}
-    {C α : ℝ≥0} (y : Y) (h : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
-    HolderOnWith C α (iteratedFDeriv ℝ n fun x ↦ f x + y) s := by
-  rcases n with _ | n
-  · rw [holderOnWith_iteratedFDeriv_zero_iff] at h ⊢
-    intro a ha b hb
-    simpa only [edist_add_right] using h a ha b hb
-  · rwa [iteratedFDeriv_succ_add_const]
-
-/-- Composing on the left with a continuous linear map keeps a Hölder bound on the top derivative
-field over an open set. -/
-private theorem exists_holderOnWith_iteratedFDeriv_clm_comp {X Y Z : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] [NormedAddCommGroup Z]
-    [NormedSpace ℝ Z] {f : X → Y} {s : Set X} {n : ℕ} {C α : ℝ≥0} (T : Y →L[ℝ] Z)
-    (hs : IsOpen s) (hf : ContDiffOn ℝ n f s) (h : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
-    ∃ K : ℝ≥0, HolderOnWith K α (iteratedFDeriv ℝ n fun x ↦ T (f x)) s := by
-  set Φ := ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin n ↦ X) Y Z T
-  have h' := (holderWith_one.mpr Φ.lipschitzWith).comp_holderOnWith h
-  simp only [NNReal.coe_one, NNReal.rpow_one, one_mul] at h'
-  refine ⟨‖Φ‖₊ * C, fun x hx y hy ↦ ?_⟩
-  have hd (z : X) (hz : z ∈ s) : iteratedFDeriv ℝ n (fun x ↦ T (f x)) z =
-      T.compContinuousMultilinearMap (iteratedFDeriv ℝ n f z) :=
-    T.iteratedFDeriv_comp_left (hf.contDiffAt (hs.mem_nhds hz)) le_rfl
-  rw [hd x hx, hd y hy]
-  exact h' x hx y hy
-
-/-- Precomposing with an affine automorphism `z ↦ A (z - c)` of the plane keeps a Hölder bound
-on a derivative field. -/
-private theorem exists_holderOnWith_iteratedFDeriv_comp_affine {f : ℂ → ℂ} {s : Set ℂ} {i : ℕ}
-    {C α : ℝ≥0} (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (h : HolderOnWith C α (iteratedFDeriv ℝ i f) s) :
-    ∃ K : ℝ≥0, HolderOnWith K α (iteratedFDeriv ℝ i fun z ↦ f (A (z - c))) {z | A (z - c) ∈ s} := by
-  have hcomp : (fun z ↦ f (A (z - c))) ∘ A.symm = fun w ↦ f (w - A c) := by
-    funext w
-    simp [map_sub]
-  refine ⟨_, ContinuousLinearEquiv.holderOnWith_iteratedFDeriv_of_comp_right (C := C) (r := α)
-    A.symm ?_⟩
-  rw [hcomp]
-  intro x hx y hy
-  have hx' : x - A c ∈ s := by simpa [map_sub] using hx
-  have hy' : y - A c ∈ s := by simpa [map_sub] using hy
-  rw [iteratedFDeriv_comp_sub, iteratedFDeriv_comp_sub]
-  simpa only [edist_sub_right] using h _ hx' _ hy'
+/-- For `z ≠ 0`, multiplication by `z⁻¹` is a two-sided inverse of multiplication by `z`, as
+real-linear maps of the plane. -/
+private theorem mul_inv_comp_mul_and_mul_comp_mul_inv {z : ℂ} (hz : z ≠ 0) :
+    ContinuousLinearMap.mul ℝ ℂ z⁻¹ ∘L ContinuousLinearMap.mul ℝ ℂ z = .id ℝ ℂ ∧
+      ContinuousLinearMap.mul ℝ ℂ z ∘L ContinuousLinearMap.mul ℝ ℂ z⁻¹ = .id ℝ ℂ := by
+  constructor <;> ext <;> simp [hz]
 
 /-- Near a point where `b ≠ -i`, the scalar normalizer `(i - b) / (conj b - i)` of a function `b`
 that is `C^n` with `α`-Hölder `n`-th derivative on an open set is again of this class. -/
@@ -507,34 +468,35 @@ private theorem exists_holderOnWith_iteratedFDeriv_normalizer {n : ℕ} {α C : 
     rw [hH]
     rcases eq_or_ne (conj (b u) - I) 0 with h0 | h0
     · simp [h0]
-    · exact ContinuousLinearMap.inverse_eq (by ext; simp [m]; field_simp)
-        (by ext; simp [m]; field_simp)
-  have hHc : ContDiffOn ℝ n H s := (T.contDiff.comp_contDiffOn hb).add contDiffOn_const
-  obtain ⟨K₁, hK₁⟩ := exists_holderOnWith_iteratedFDeriv_clm_comp T hs hb hbH
+    · exact ContinuousLinearMap.inverse_eq (mul_inv_comp_mul_and_mul_comp_mul_inv h0).2
+        (mul_inv_comp_mul_and_mul_comp_mul_inv h0).1
   have hinv : (H a).IsInvertible := by
     have h0 : conj (b a) - I ≠ 0 := by
       intro h
       apply hba
       simpa using congrArg conj (sub_eq_zero.mp h)
     rw [hH]
-    exact ContinuousLinearMap.IsInvertible.of_inverse (g := m (conj (b a) - I)⁻¹)
-      (by ext; simp [m]; field_simp) (by ext; simp [m]; field_simp)
+    exact ContinuousLinearMap.IsInvertible.of_inverse
+      (mul_inv_comp_mul_and_mul_comp_mul_inv h0).2 (mul_inv_comp_mul_and_mul_comp_mul_inv h0).1
+  have hHc : ContDiffOn ℝ n H s := (T.contDiff.comp_contDiffOn hb).add contDiffOn_const
   obtain ⟨r, hr, hrs, -, hIc, K₂, hK₂⟩ := hHc.exists_holderOnWith_iteratedFDeriv_clm_inverse
-    (hs.mem_nhds ha) hα (holderOnWith_iteratedFDeriv_add_const _ hK₁) hinv
+      (hs.mem_nhds ha) hα (holderOnWith_iteratedFDeriv_add_const _
+        (T.holderOnWith_iteratedFDeriv_comp_left hs hb hbH)) hinv
   -- The numerator `i - b`.
   set N : ℂ → ℂ := fun u ↦ (-ContinuousLinearMap.id ℝ ℂ) (b u) + I
   have hN : ContDiffOn ℝ n N s :=
     ((-ContinuousLinearMap.id ℝ ℂ).contDiff.comp_contDiffOn hb).add contDiffOn_const
-  obtain ⟨K₃, hK₃⟩ := exists_holderOnWith_iteratedFDeriv_clm_comp (-ContinuousLinearMap.id ℝ ℂ)
-    hs hb hbH
   obtain ⟨ρ, hρ, hρr, hC, K, hK⟩ := ContinuousLinearMap.exists_holderOnWith_iteratedFDeriv_comp₂
     (ContinuousLinearMap.apply ℝ ℂ) (ball_mem_nhds a hr) hα (hN.mono hrs) hIc
-    ((holderOnWith_iteratedFDeriv_add_const I hK₃).mono hrs) hK₂
+    ((holderOnWith_iteratedFDeriv_add_const I
+      ((-ContinuousLinearMap.id ℝ ℂ).holderOnWith_iteratedFDeriv_comp_left hs hb hbH)).mono hrs)
+    hK₂
   have heq : (fun u ↦ ContinuousLinearMap.apply ℝ ℂ (N u) (H u).inverse) =
       fun u ↦ (I - b u) / (conj (b u) - I) := by
     funext u
     rw [hHinv]
-    simp [N, m, div_eq_mul_inv, mul_comm, sub_eq_neg_add]
+    simp only [N, m, ContinuousLinearMap.apply_apply, ContinuousLinearMap.mul_apply',
+      neg_apply, ContinuousLinearMap.id_apply]
     ring
   rw [heq] at hC hK
   exact ⟨ρ, hρ, hρr.trans hrs, hC, K, hK⟩
@@ -549,11 +511,11 @@ private theorem exists_small_ckHolder_normalizer (ℓ : ℕ) {α H : ℝ≥0} (h
       ℓ α (closedBall (0 : ℂ) 2), ‖f‖ < δ ∧
       ∀ w ∈ ball (0 : ℂ) 1, ∀ v, linearMap (f w) (K (ε • w) v) = I * linearMap (f w) v := by
   -- The first column `b = K · 1` is `C^{ℓ,α}`, and so is its normalizer near `0`.
-  set b : ℂ → ℂ := fun u ↦ ContinuousLinearMap.apply ℝ ℂ (1 : ℂ) (K u)
-  have hb : ContDiffOn ℝ ℓ b s :=
-    (ContinuousLinearMap.apply ℝ ℂ (1 : ℂ)).contDiff.comp_contDiffOn hK
-  obtain ⟨Hb, hbH⟩ := exists_holderOnWith_iteratedFDeriv_clm_comp
-    (ContinuousLinearMap.apply ℝ ℂ (1 : ℂ)) hs hK hKH
+  set b : ℂ → ℂ := fun u ↦ K u 1
+  have hb : ContDiffOn ℝ ℓ b s := hK.clm_apply contDiffOn_const
+  have hbH := (ContinuousLinearMap.apply ℝ ℂ (1 : ℂ)).holderOnWith_iteratedFDeriv_comp_left hs hK
+    hKH
+  simp only [ContinuousLinearMap.apply_apply] at hbH
   have hb0 : b 0 = I := hK0
   obtain ⟨ρ₁, hρ₁, hρ₁s, hν, Hν, hνH⟩ := exists_holderOnWith_iteratedFDeriv_normalizer hs h0 hα1 hb
     hbH (by rw [hb0]; norm_num [Complex.ext_iff])
@@ -645,9 +607,9 @@ private theorem exists_ckHolder_isothermal_chart_rescale (ℓ : ℕ) {α H : ℝ
   exact hlin w (Jf w) (coefficientEquiv.symm _).property (by simp [Jf]) v
 
 /-- In the coordinates `u ↦ c + B u` of `exists_standardizing_equiv`, in which a field `J` is `i`
-at `c`, a `C^{ℓ,α}` field `J` stays `C^{ℓ,α}` on an open neighbourhood of `0`, by the Hölder chain
-rule, and still squares to `-1` there. -/
-private theorem exists_standardizing_equiv_ckHolder {ℓ : ℕ} {α H : ℝ≥0} (hα : α ≤ 1)
+at `c`, a `C^{ℓ,α}` field `J` stays `C^{ℓ,α}` on an open neighbourhood of `0`, and still squares
+to `-1` there. -/
+private theorem exists_standardizing_equiv_ckHolder {ℓ : ℕ} {α H : ℝ≥0}
     {J : ℂ → ℂ →L[ℝ] ℂ} {U : Set ℂ} {c : ℂ} (hU : IsOpen U) (hc : c ∈ U)
     (hJ : ContDiffOn ℝ ℓ J U) (hJH : HolderOnWith H α (iteratedFDeriv ℝ ℓ J) U)
     (hsq : ∀ z ∈ U, ∀ v, J z (J z v) = -v) :
@@ -663,47 +625,18 @@ private theorem exists_standardizing_equiv_ckHolder {ℓ : ℕ} {α H : ℝ≥0}
   obtain ⟨B, -, -, hK0, hconj⟩ := exists_standardizing_equiv (hJ.contDiffAt (hU.mem_nhds hc))
     (eventually_of_mem (hU.mem_nhds hc) hsq)
   refine ⟨B, ?_, hK0, hconj⟩
-  set τ : ℂ → ℂ := fun u ↦ c + B u
-  have hτ : ContDiff ℝ ∞ τ := contDiff_const.add B.contDiff
-  set s := τ ⁻¹' U
-  have hs : IsOpen s := hU.preimage hτ.continuous
-  have h0 : (0 : ℂ) ∈ s := by simpa [s, τ] using hc
-  have hJH' : HolderOnWith H α (iteratedFDerivWithin ℝ ℓ J U) U := fun x hx y hy ↦ by
-    rw [iteratedFDerivWithin_of_isOpen ℓ hU hx, iteratedFDerivWithin_of_isOpen ℓ hU hy]
-    exact hJH x hx y hy
-  obtain ⟨r, hr, L, hL⟩ := exists_holderOnWith_iteratedFDerivWithin_comp hα (hs.mem_nhds h0)
-    hU.uniqueDiffOn (hτ.contDiffOn.of_le (by exact_mod_cast le_top)) hJ (fun u hu ↦ hu)
-    self_mem_nhdsWithin hJH'
-  set s' := ball (0 : ℂ) r ∩ s
-  have hs' : IsOpen s' := isOpen_ball.inter hs
-  have hJτ : ContDiffOn ℝ ℓ (J ∘ τ) s' :=
-    hJ.comp (hτ.contDiffOn.of_le (by exact_mod_cast le_top)) fun u hu ↦ hu.2
-  have hJτH : HolderOnWith L α (iteratedFDeriv ℝ ℓ (J ∘ τ)) s' := fun x hx y hy ↦ by
-    rw [← iteratedFDerivWithin_of_isOpen ℓ hs hx.2, ← iteratedFDerivWithin_of_isOpen ℓ hs hy.2]
-    exact hL x hx.1 y hy.1
+  -- The field `J (c + B u)` is `J` precomposed with the affine map `u ↦ B (u - (-B⁻¹ c))`.
+  have hτ (u : ℂ) : B (u - -B.symm c) = c + B u := by simp [add_comm]
+  have hJτH := B.holderOnWith_iteratedFDeriv_comp_sub (-B.symm c) hJH
+  simp only [hτ] at hJτH
+  set s := {u : ℂ | c + B u ∈ U}
+  have hs : IsOpen s := hU.preimage (continuous_const.add B.continuous)
+  have hJτ : ContDiffOn ℝ ℓ (fun u ↦ J (c + B u)) s :=
+    hJ.comp (contDiff_const.add B.contDiff).contDiffOn fun u hu ↦ hu
   set Φ : (ℂ →L[ℝ] ℂ) →L[ℝ] ℂ →L[ℝ] ℂ := (B.symm.arrowCongr B.symm).toContinuousLinearMap
-  refine ⟨s', hs', ⟨mem_ball_self hr, h0⟩, Φ.contDiff.comp_contDiffOn hJτ,
-    exists_holderOnWith_iteratedFDeriv_clm_comp Φ hs' hJτ hJτH, fun u hu v ↦ ?_⟩
-  simp [ContinuousLinearEquiv.arrowCongr_apply, hsq (c + B u) hu.2]
-
-/-- A chart which is `C^{m+1}` on its source, with `α`-Hölder `(m+1)`-th derivative there and
-invertible derivative at `c`, restricts to a neighbourhood of `c` on which its inverse is `C^{m+1}`
-with `α`-Hölder `(m+1)`-th derivative. -/
-private theorem exists_restr_ckHolder_symm {m : ℕ} {α C : ℝ≥0} (hα : α ≤ 1)
-    (F : OpenPartialHomeomorph ℂ ℂ) {c : ℂ} (hc : c ∈ F.source)
-    (hF : ContDiffOn ℝ (m + 1 : ℕ) F F.source)
-    (hFH : HolderOnWith C α (iteratedFDeriv ℝ (m + 1) F) F.source)
-    (hinv : (fderiv ℝ F c).IsInvertible) :
-    ∃ E : OpenPartialHomeomorph ℂ ℂ, ⇑E = ⇑F ∧ c ∈ E.source ∧ E.source ⊆ F.source ∧
-      ContDiffOn ℝ (m + 1 : ℕ) E.symm E.target ∧
-      ∃ K : ℝ≥0, HolderOnWith K α (iteratedFDeriv ℝ (m + 1) E.symm) E.target := by
-  obtain ⟨ρ, hρ, -, hsymm, K, hK⟩ := F.exists_holderOnWith_iteratedFDeriv_symm hc hF hα
-    (F.open_source.mem_nhds hc) hFH hinv
-  set E := F.restrOpen (F.source ∩ F ⁻¹' ball (F c) ρ) (F.isOpen_inter_preimage isOpen_ball)
-  have hEt : E.target ⊆ ball (F c) ρ := fun w hw ↦ by
-    have h : F (E.symm w) ∈ ball (F c) ρ := (E.map_target hw).2.2
-    rwa [show F (E.symm w) = w from E.right_inv hw] at h
-  exact ⟨E, rfl, ⟨hc, hc, mem_ball_self hρ⟩, fun z hz ↦ hz.1, hsymm.mono hEt, K, hK.mono hEt⟩
+  refine ⟨s, hs, by simpa [s] using hc, Φ.contDiff.comp_contDiffOn hJτ,
+    ⟨_, Φ.holderOnWith_iteratedFDeriv_comp_left hs hJτ hJτH⟩, fun u hu v ↦ ?_⟩
+  simp [ContinuousLinearEquiv.arrowCongr_apply, hsq (c + B u) hu]
 
 /-- **Isothermal coordinates for a Hölder field.** Let `ℓ : ℕ` and `0 < α < 1`, and let `J` be a
 field of real-linear endomorphisms of the plane which squares to `-1` on a neighbourhood `U` of `c`
@@ -727,7 +660,7 @@ theorem exists_isothermal_chart_ckHolder (ℓ : ℕ) {α H : ℝ≥0} (hα0 : 0 
   have hV : IsOpen V := isOpen_interior
   have hc : c ∈ V := mem_interior_iff_mem_nhds.mpr hU
   obtain ⟨B, ⟨s, hs, h0, hK, ⟨HK, hKH⟩, hKsq⟩, hK0, hconj⟩ :=
-    exists_standardizing_equiv_ckHolder hα1.le hV hc (hJ.mono hVU) (hJH.mono hVU)
+    exists_standardizing_equiv_ckHolder hV hc (hJ.mono hVU) (hJH.mono hVU)
       fun z hz ↦ hsq z (hVU hz)
   -- Solve the Beltrami equation for the rescaled field and read the chart back in `z`.
   obtain ⟨ε, hε, e, he0, heval, he, heSym, ⟨He, heH⟩, heK⟩ :=
@@ -740,21 +673,22 @@ theorem exists_isothermal_chart_ckHolder (ℓ : ℕ) {α H : ℝ≥0} (hα0 : 0 
     (fun w hw ↦ he.contDiffAt (e.open_source.mem_nhds hw))
     (fun w hw ↦ heSym.contDiffAt (e.open_target.mem_nhds hw)) heK A c
     (fun z _ v ↦ hconj ε hε.ne' z v)
-  obtain ⟨HF, hFH⟩ := exists_holderOnWith_iteratedFDeriv_comp_affine A c heH
+  have hFH := A.holderOnWith_iteratedFDeriv_comp_sub c heH
   rw [← funext hFval, show {z | A (z - c) ∈ e.source} = F.source from
     Set.ext fun z ↦ (hFs z).symm] at hFH
   have hFc0 : F c = 0 := by simpa [hFval] using heval
   -- Restrict to `V`, then to a neighbourhood of `c` on which the inverse is `C^{ℓ+1,α}`.
   set F₁ := F.restrOpen V hV
   have hcF₁ : c ∈ F₁.source := ⟨(hFs c).mpr (by simpa using he0), hc⟩
-  obtain ⟨E, hE, hcE, hEs, hEsymm, hEH⟩ := exists_restr_ckHolder_symm hα1.le F₁ hcF₁
-    (fun z hz ↦ (hFc z hz.1).contDiffWithinAt) (hFH.mono fun z hz ↦ hz.1)
+  obtain ⟨E, hE, hcE, hEs, hEsymm, hEH⟩ := F₁.exists_restr_holderOnWith_iteratedFDeriv_symm hcF₁
+    (fun z hz ↦ (hFc z hz.1).contDiffWithinAt) hα1.le (hFH.mono fun z hz ↦ hz.1)
     (F₁.isInvertible_fderiv hcF₁ ((hFc c hcF₁.1).differentiableAt (by simp))
       ((hFsc _ (F.map_source hcF₁.1)).differentiableAt (by simp)))
-  have hE' : ⇑E = ⇑F := hE
-  refine ⟨E, hcE, hE' ▸ hFc0, fun z hz ↦ hVU (hEs hz).2,
-    hE' ▸ fun z hz ↦ (hFc z (hEs hz).1).contDiffWithinAt, hEsymm,
-    ⟨HF, hE' ▸ hFH.mono fun z hz ↦ (hEs hz).1⟩, hEH, fun z hz v ↦ hE' ▸ hFJ z (hEs hz).1 v⟩
+  refine ⟨E, hcE, ?_, fun z hz ↦ hVU (hEs hz).2, ?_, hEsymm, ?_, hEH, ?_⟩ <;> rw [hE]
+  · exact hFc0
+  · exact fun z hz ↦ (hFc z (hEs hz).1).contDiffWithinAt
+  · exact ⟨_, hFH.mono fun z hz ↦ (hEs hz).1⟩
+  · exact fun z hz v ↦ hFJ z (hEs hz).1 v
 
 /-! ### Finite-order and smooth fields -/
 

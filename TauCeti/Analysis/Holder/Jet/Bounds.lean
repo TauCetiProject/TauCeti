@@ -157,4 +157,15 @@ theorem _root_.ContDiffOn.exists_ball_bounds_and_holderOnWith_iteratedFDeriv
          _ ≤ max C (3 * A.toNNReal) := le_max_right _ _
   · exact (hH.mono hrs).mono_const (le_max_left _ _)
 
+/-- Adding a constant keeps a Hölder bound on a derivative field: at order zero the distances are
+unchanged, and at positive order the derivative field itself is unchanged. -/
+theorem holderOnWith_iteratedFDeriv_add_const {f : E → F} {s : Set E} {n : ℕ} {C α : ℝ≥0}
+    (y : F) (h : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
+    HolderOnWith C α (iteratedFDeriv ℝ n fun x ↦ f x + y) s := by
+  rcases n with _ | n
+  · rw [holderOnWith_iteratedFDeriv_zero_iff] at h ⊢
+    intro a ha b hb
+    simpa only [edist_add_right] using h a ha b hb
+  · rwa [iteratedFDeriv_succ_add_const]
+
 end TauCeti
