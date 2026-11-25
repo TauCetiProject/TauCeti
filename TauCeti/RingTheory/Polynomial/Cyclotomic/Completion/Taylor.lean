@@ -72,9 +72,11 @@ namespace CycloCompletion
 
 open PolyFamilyLimit
 
-variable {R : Type*} [CommRing R] {S : Set ℕ} {n : ℕ} {B : Type*} [CommRing B] [Algebra R B]
+variable {R : Type*} [CommRing R] {S : Set ℕ} {n : ℕ} {B : Type*}
 
 section EvalRoot
+
+variable [Semiring B] [Algebra R B]
 
 /-- The index `Φ_n` of `R[q]^S`. -/
 private noncomputable abbrev cyclotomicIndex (hn : n ∈ S) : cycloIndex R S :=
@@ -130,6 +132,8 @@ theorem continuous_evalRoot [TopologicalSpace B] : Continuous (evalRoot hn ζ h�
 end EvalRoot
 
 section Taylor
+
+variable [CommRing B] [Algebra R B]
 
 /-- The index `Φ_n ^ m` of `R[q]^S`. -/
 private noncomputable def cyclotomicPowIndex (hn : n ∈ S) (m : ℕ) : cycloIndex R S :=
@@ -303,6 +307,10 @@ end Taylor
 
 /-! ### Reference values -/
 
+section Examples
+
+variable [CommRing B] [Algebra R B]
+
 /-- `q` evaluates to the chosen root. -/
 example (hn : n ∈ S) (ζ : B) (hζ : aeval ζ (cyclotomic n R) = 0) :
     evalRoot hn ζ hζ (fromPoly R S X) = ζ := by
@@ -325,6 +333,8 @@ example (S : Set ℕ) (h1 : 1 ∈ S) :
     simpa using coeff_X_add_C_pow (1 : ZMod 2) 2 2
   · rw [coe_aeval_eq_eval, eval_iterate_derivative_eq_factorial_mul, Nat.factorial_two,
       show ((2 : ℕ) : ZMod 2) = 0 by decide, zero_mul]
+
+end Examples
 
 end CycloCompletion
 

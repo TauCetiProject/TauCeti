@@ -176,7 +176,7 @@ theorem exists_ker_proj_le_ker_of_continuous {T : Type*} [Semiring T] [Topologic
 
 /-- Under a continuous `R`-algebra map from `R[q]^S` to a discrete algebra, the image of `q` is a
 root of some index, a product of cyclotomic polynomials of orders in `S`. -/
-theorem exists_aeval_eq_zero_of_continuous {B : Type*} [CommRing B] [Algebra R B]
+theorem exists_aeval_eq_zero_of_continuous {B : Type*} [Semiring B] [Algebra R B]
     [TopologicalSpace B] [DiscreteTopology B] (φ : CycloCompletion R S →ₐ[R] B)
     (hφ : Continuous φ) : ∃ f : cycloIndex R S, aeval (φ (fromPoly R S X)) (f : R[X]) = 0 := by
   obtain ⟨f, hf⟩ := exists_ker_proj_le_ker_of_continuous φ.toRingHom hφ
