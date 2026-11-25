@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Sites.Proetale
 public import Mathlib.CategoryTheory.Sites.Subcanonical
 public import Mathlib.CategoryTheory.Sites.SubcanonicalOver
+public import TauCeti.AlgebraicGeometry.Sites.Fpqc
 
 /-!
 # The étale topologies are subcanonical
@@ -21,6 +22,10 @@ Consequently `(Scheme.smallEtaleTopology S).yoneda` is a fully faithful functor 
 étale over `S` to étale sheaves of sets on `S`. This is how an étale `S`-scheme, for example a
 finite étale cover, is regarded as an étale sheaf.
 
+The forgetful functor is also continuous for the fpqc topology on `Over S`, which is finer than
+the étale topology, so a sheaf on the big fpqc site over `S` restricts to a sheaf on the small
+étale site of `S` (`AlgebraicGeometry.Scheme.restrictSmallEtale`).
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.etaleTopology.Subcanonical`: the big étale topology is subcanonical.
@@ -28,6 +33,8 @@ finite étale cover, is regarded as an étale sheaf.
   étale site of `S` to `Over S` is continuous.
 * `(AlgebraicGeometry.Scheme.smallEtaleTopology S).Subcanonical`: the small étale topology is
   subcanonical.
+* `AlgebraicGeometry.Scheme.restrictSmallEtale S`: the restriction functor from sheaves on the big
+  fpqc site over `S` to sheaves on the small étale site of `S`.
 
 ## References
 
@@ -37,7 +44,7 @@ finite étale cover, is regarded as an étale sheaf.
 
 public section
 
-universe u
+universe v u
 
 open CategoryTheory
 
@@ -65,5 +72,19 @@ instance (S : Scheme.{u}) :
 /-- Representable presheaves on the small étale site of a scheme are sheaves. -/
 instance (S : Scheme.{u}) : (smallEtaleTopology S).Subcanonical :=
   GrothendieckTopology.subcanonical_of_full_of_faithful (Etale.forget S) _ (etaleTopology.over S)
+
+/-- The forgetful functor from the small étale site of `S` to the big site `Over S` is continuous
+for the small étale topology and the fpqc topology on `Over S`: it is continuous for the étale
+topology on `Over S`, which is coarser than the fpqc topology. -/
+instance isContinuous_etaleForget_fpqcTopology (S : Scheme.{u}) :
+    (Etale.forget S).IsContinuous (smallEtaleTopology S) (fpqcTopology.over S) :=
+  Functor.isContinuous_comp (Etale.forget S) (𝟭 (Over S)) (smallEtaleTopology S)
+    (etaleTopology.over S) (fpqcTopology.over S)
+
+/-- The restriction of sheaves on the big fpqc site over `S` to the small étale site of `S`, along
+the forgetful functor `S.Etale ⥤ Over S`. -/
+noncomputable abbrev restrictSmallEtale (S : Scheme.{u}) {A : Type*} [Category.{v} A] :
+    Sheaf (fpqcTopology.over S) A ⥤ Sheaf (smallEtaleTopology S) A :=
+  (Etale.forget S).sheafPushforwardContinuous A (smallEtaleTopology S) (fpqcTopology.over S)
 
 end AlgebraicGeometry.Scheme
