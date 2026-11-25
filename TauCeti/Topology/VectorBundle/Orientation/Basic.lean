@@ -179,6 +179,17 @@ theorem mapOrientation_eq_orientation_iff [Fintype ι] [DecidableEq ι]
   rw [mapOrientation_apply, Basis.orientation_map, ← Orientation.map_symm]
   exact (Equiv.eq_symm_apply _).symm
 
+/-- In rank one, a linear trivialization `e` reads the orientation of a fibre given by a nonzero
+vector `u` as the orientation of the model fibre given by the coordinate vector `w = (e u).2`. -/
+theorem mapOrientation_basisSingleton (e : Trivialization F (π F E')) [e.IsLinear ℝ] {b : B}
+    (hb : b ∈ e.baseSet) (hEb : finrank ℝ (E' b) = 1) (hF : finrank ℝ F = 1) {u : E' b}
+    (hu : u ≠ 0) {w : F} (hw : w ≠ 0) (huw : (e ⟨b, u⟩).2 = w) :
+    e.mapOrientation (Fin 1) hb (FiniteDimensional.basisSingleton (Fin 1) hEb u hu).orientation =
+      (FiniteDimensional.basisSingleton (Fin 1) hF w hw).orientation := by
+  rw [mapOrientation_apply, ← Basis.orientation_map]
+  exact congrArg Basis.orientation <| Basis.eq_of_apply_eq fun i ↦ by
+    simp [FiniteDimensional.basisSingleton_apply, huw]
+
 end AddCommGroup
 
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] [Fintype ι]

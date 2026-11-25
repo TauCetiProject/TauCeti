@@ -28,8 +28,9 @@ are connected: two nonzero vectors of a line give the same orientation exactly w
 positive multiple of the other (`TauCeti.orientation_basisSingleton_eq_iff`). So `E₀` is, up to
 connectedness, the orientation double cover, and over a connected base it is connected exactly
 when the bundle is not orientable
-(`TauCeti.connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation`). For a line
-bundle, being orientable is the same as having a continuous section vanishing nowhere.
+(`TauCeti.connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation`). Over a normal
+paracompact base, being orientable is the same as having a continuous section vanishing nowhere
+(`TauCeti.connectedSpace_zeroSectionCompl_iff_not_exists_continuous_section_ne_zero`).
 
 When the bundle is oriented by `o` over a connected base, `E₀` has exactly two connected
 components, the positive vectors `{v | [v] = o}` and the negative vectors `{v | [v] = -o}`
@@ -37,8 +38,9 @@ components, the positive vectors `{v | [v] = o}` and the negative vectors `{v | 
 sheet of the orientation double cover given by `o`, which is a copy of the base.
 
 For the contact line of a contact structure, `E₀` is the symplectization, and these statements
-say that the symplectization of a coorientable contact structure on a connected manifold has two
-components, while that of a contact structure which is not coorientable is connected.
+say that the symplectization of a coorientable contact structure on a connected Hausdorff
+σ-compact manifold has two components, while that of a contact structure which is not coorientable
+is connected.
 
 ## Main definitions
 
@@ -55,6 +57,9 @@ components, while that of a contact structure which is not coorientable is conne
   connected.
 * `TauCeti.connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation`: over a connected
   base, the nonzero vectors form a connected space exactly when the line bundle is not orientable.
+* `TauCeti.connectedSpace_zeroSectionCompl_iff_not_exists_continuous_section_ne_zero`: over a
+  connected normal paracompact base, the nonzero vectors form a connected space exactly when the
+  line bundle has no continuous section vanishing nowhere.
 * `TauCeti.connectedComponent_zeroSectionCompl_eq`: over a connected base, an orientation `o`
   splits the nonzero vectors into the two connected components `[v] = o` and `[v] = -o`.
 
@@ -80,7 +85,7 @@ variable (F E) in
 /-- The point `(b, [v])` of the orientation double cover of a real line bundle given by a nonzero
 vector `v` of the fibre over `b`: the orientation of that fibre in which the basis `(v)` is
 positive. -/
-def zeroSectionComplToOrientationCover (hF : finrank ℝ F = 1) (v : zeroSectionCompl F E) :
+@[expose] def zeroSectionComplToOrientationCover (hF : finrank ℝ F = 1) (v : zeroSectionCompl F E) :
     VectorBundleOrientationCover F E (Fin 1) :=
   ⟨(v : TotalSpace F E).proj, (FiniteDimensional.basisSingleton (Fin 1)
     ((VectorBundle.finrank_eq ℝ F E _).trans hF) (v : TotalSpace F E).snd
@@ -95,6 +100,15 @@ theorem proj_zeroSectionComplToOrientationCover (v : zeroSectionCompl F E) :
   (rfl)
 
 /-- The orientation given by a nonzero vector `v` is that of the one-vector basis `(v)`. -/
+@[simp]
+theorem orientation_zeroSectionComplToOrientationCover (v : zeroSectionCompl F E) :
+    (zeroSectionComplToOrientationCover F E hF v).orientation =
+      (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
+        (v : TotalSpace F E).snd (mem_zeroSectionCompl.1 v.property)).orientation :=
+  (rfl)
+
+/-- The point of the orientation double cover given by a nonzero vector `v` over `b` is `b` with
+the orientation of the one-vector basis `(v)`. -/
 theorem zeroSectionComplToOrientationCover_apply (v : zeroSectionCompl F E) :
     zeroSectionComplToOrientationCover F E hF v =
       ⟨(v : TotalSpace F E).proj, (FiniteDimensional.basisSingleton (Fin 1)
@@ -112,10 +126,10 @@ theorem zeroSectionComplToOrientationCover_eq_iff {b : B} {u w : E b} (hu : u �
     VectorBundleOrientationCover.mk_eq_mk_iff]
   exact orientation_basisSingleton_eq_iff ((VectorBundle.finrank_eq ℝ F E b).trans hF) hu hw
 
-/-- The map to the orientation double cover is continuous: the one-vector bases `(v)` vary
-continuously with `v`. -/
+/-- The map to the orientation double cover is continuous. -/
 theorem continuous_zeroSectionComplToOrientationCover :
     Continuous (zeroSectionComplToOrientationCover F E hF) :=
+  -- The one-vector bases `(v)` vary continuously with `v`.
   VectorBundleOrientationCover.continuous_mk_basis_orientation
     (FiberBundle.continuous_proj F E |>.comp continuous_subtypeVal) _
     fun _ ↦ by
@@ -138,23 +152,13 @@ theorem surjective_zeroSectionComplToOrientationCover :
       (VectorBundleOrientationCover.mk_eq_mk_iff).2 ?_⟩
     simp only [orientation_basisSingleton_neg, ← h]
 
-/-- A linear trivialization `e` reads the orientation of a fibre given by a nonzero vector `u` as
-the orientation of the model fibre given by the coordinate vector `(e u).2`. -/
-private theorem mapOrientation_basisSingleton (e : Trivialization F (π F E)) [e.IsLinear ℝ]
-    {b : B} (hb : b ∈ e.baseSet) {u : E b} (hu : u ≠ 0) {w : F} (hw : w ≠ 0)
-    (huw : (e ⟨b, u⟩).2 = w) :
-    e.mapOrientation (Fin 1) hb (FiniteDimensional.basisSingleton (Fin 1)
-        ((VectorBundle.finrank_eq ℝ F E b).trans hF) u hu).orientation =
-      (FiniteDimensional.basisSingleton (Fin 1) hF w hw).orientation := by
-  rw [Trivialization.mapOrientation_apply, ← Basis.orientation_map]
-  exact congrArg Basis.orientation <| Basis.eq_of_apply_eq fun i ↦ by
-    simp [FiniteDimensional.basisSingleton_apply, huw]
-
-/-- **The map to the orientation double cover is open.** Near the orientation given by a nonzero
-vector `v`, the vectors with constant coordinate `(e v).2` in the preferred trivialization `e`
-form a continuous local section of the map through `v`. -/
+/-- **The map to the orientation double cover is open.** The map `v ↦ (b, [v])` from the nonzero
+vectors of a real line bundle to its orientation double cover is an open map. -/
 theorem isOpenMap_zeroSectionComplToOrientationCover :
     IsOpenMap (zeroSectionComplToOrientationCover F E hF) := by
+  -- Near the orientation given by a nonzero vector `v`, the vectors with constant coordinate
+  -- `(e v).2` in the preferred trivialization `e` form a continuous local section of the map
+  -- through `v`.
   refine IsOpenMap.of_nhds_le fun v W hW ↦ ?_
   set e := trivializationAt F E (v : TotalSpace F E).proj
   have h₀ : (v : TotalSpace F E).proj ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' _
@@ -170,9 +174,8 @@ theorem isOpenMap_zeroSectionComplToOrientationCover :
       VectorBundleOrientationCover.continuous_proj.continuousAt
       (proj_zeroSectionComplToOrientationCover hF v)
   have hσv : σ (zeroSectionComplToOrientationCover F E hF v) = v := by
-    -- The base point of the orientation of `v` is that of `v`, by definition.
-    change (⟨(v : TotalSpace F E).proj, e.symm _ (e v).2⟩ : TotalSpace F E) = v
-    rw [e.symm_proj_apply _ h₀]
+    simp only [σ]
+    rw [proj_zeroSectionComplToOrientationCover, e.symm_proj_apply _ h₀]
   obtain ⟨U, hU, hUW⟩ := (mem_nhds_subtype _ v _).1 hW
   set o₀ := e.mapOrientation (Fin 1) h₀ (zeroSectionComplToOrientationCover F E hF v).orientation
   have hsheet : VectorBundleOrientationCover.sheet e o₀ ∈
@@ -189,8 +192,8 @@ theorem isOpenMap_zeroSectionComplToOrientationCover :
       ⟨b, o⟩ := by
     refine (VectorBundleOrientationCover.mk_eq_mk_iff).2
       ((e.mapOrientation (Fin 1) hp).injective ?_)
-    rw [hpo, mapOrientation_basisSingleton hF e hp hσ₀ hf₀ (by rw [e.apply_mk_symm hp])]
-    exact (mapOrientation_basisSingleton hF e h₀ _ hf₀ rfl).symm
+    rw [hpo, e.mapOrientation_basisSingleton hp _ hF hσ₀ hf₀ (by rw [e.apply_mk_symm hp])]
+    exact (e.mapOrientation_basisSingleton h₀ _ hF _ hf₀ rfl).symm
   rwa [mem_preimage, hfp] at hW'
 
 /-- **The fibres of the map to the orientation double cover are connected.** The nonzero vectors

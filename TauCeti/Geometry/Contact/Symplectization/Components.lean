@@ -12,8 +12,8 @@ import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
 /-!
 # The connected components of the symplectization
 
-Let `ξ` be a contact structure on a connected manifold `M`, and let `ξ⁰ ∖ 0` be its
-symplectization: the nonzero covectors annihilating `ξ`
+Let `ξ` be a contact structure on a connected Hausdorff σ-compact manifold `M`, and let `ξ⁰ ∖ 0`
+be its symplectization: the nonzero covectors annihilating `ξ`
 (`TauCeti.IsContactDistribution.annihilatorPunctured`), the complement of the zero section of the
 dual `L*` of the contact line. No contact form or coorientation is chosen. This file determines
 the connected components of `ξ⁰ ∖ 0`.
@@ -21,8 +21,8 @@ the connected components of `ξ⁰ ∖ 0`.
 * If `ξ` is **not coorientable**, that is, if it is the kernel of no global contact form, the
   symplectization is connected; and conversely
   (`TauCeti.IsContactDistribution.isConnected_annihilatorPunctured_iff`).
-* If `ξ = ker α` for a one-form `α` vanishing nowhere, for instance a contact form, the
-  symplectization has exactly two connected components: the covectors `eᵗ α_x`, which form the
+* If `ξ = ker α` for a one-form `α`, for instance a contact form, the symplectization has
+  exactly two connected components: the covectors `eᵗ α_x`, which form the
   image of the contact-form trivialization `κ_α : ℝ × M → ξ⁰`, and the covectors `-eᵗ α_x`, the
   image of `κ_(-α)`
   (`TauCeti.IsContactDistribution.connectedComponentIn_annihilatorPunctured_eq_range`). The
@@ -43,9 +43,9 @@ coorientable contact structures with those whose annihilator line has a section 
 
 ## Main results
 
-* `TauCeti.IsContactDistribution.isConnected_annihilatorPunctured_iff`: on a connected manifold,
-  the symplectization of a contact structure is connected exactly when the contact structure is
-  not coorientable.
+* `TauCeti.IsContactDistribution.isConnected_annihilatorPunctured_iff`: on a connected Hausdorff
+  σ-compact manifold, the symplectization of a contact structure is connected exactly when the
+  contact structure is not coorientable.
 * `TauCeti.IsContactDistribution.connectedComponentIn_annihilatorPunctured_eq_range`: on a
   connected manifold, the image of the trivialization `κ_α` of a defining form `α` is a connected
   component of the symplectization.
@@ -79,13 +79,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 `TauCeti.IsContMDiffDistribution.annihilatorFiberBundle` at smoothness `∞`. -/
 local instance : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
 
-/-- The symplectization is the complement of the zero section of the annihilator line. -/
-private theorem coe_annihilatorPunctured [Nonempty M] (hξ : IsContactDistribution I ∞ ξ) :
-    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
-    (hξ.annihilatorPunctured : Set (TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x)) =
-      zeroSectionCompl (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x :=
-  Set.ext fun _ ↦ hξ.mem_annihilatorPunctured.trans mem_zeroSectionCompl.symm
-
 /-- **The symplectization of a contact structure is connected exactly when the structure is not
 coorientable.** On a connected Hausdorff σ-compact manifold, the nonzero covectors annihilating a
 contact structure `ξ` form a connected set exactly when `ξ` is the kernel of no global contact
@@ -103,22 +96,17 @@ theorem isConnected_annihilatorPunctured_iff [ConnectedSpace M] [T2Space M] [Sig
   rw [coe_annihilatorPunctured, isConnected_iff_connectedSpace,
     connectedSpace_zeroSectionCompl_iff_not_exists_continuous_section_ne_zero
       (by simp : finrank ℝ (Fin 1 → ℝ) = 1),
-    hξ.exists_isContactForm_kerDistribution_eq_iff_exists_continuous]
-  -- A section of the annihilator line is a covector field with values in the annihilators.
-  refine not_congr ⟨fun ⟨s, hs, hs₀⟩ ↦ ⟨fun x ↦ s x,
-    continuous_totalSpaceMk_annihilatorSpace_iff.1 hs,
-    fun x ↦ ⟨fun h ↦ hs₀ x (Subtype.ext h), (s x).property⟩⟩, fun ⟨σ, hσ, hσ₀⟩ ↦
-      ⟨fun x ↦ ⟨σ x, (hσ₀ x).2⟩, continuous_totalSpaceMk_annihilatorSpace_iff.2 hσ,
-        fun x h ↦ (hσ₀ x).1 (congrArg Subtype.val h)⟩⟩
+    hξ.exists_isContactForm_kerDistribution_eq_iff_exists_continuous,
+    exists_continuous_totalSpaceMk_annihilatorSpace_ne_zero_iff]
 
 /-- **The components of the symplectization of a coorientable contact structure.** Let `α` be a
-one-form vanishing nowhere whose kernel is the contact structure `ξ`, on a preconnected manifold.
+one-form whose kernel is the contact structure `ξ`, on a preconnected manifold.
 The image of the trivialization `κ_α : (t, x) ↦ eᵗ α_x` is a connected component of the
 symplectization `ξ⁰ ∖ 0`: it is the connected component of each of its points. Applied to `-α`,
 the image of `κ_(-α)` is the other component. -/
 theorem connectedComponentIn_annihilatorPunctured_eq_range [PreconnectedSpace M] [Nonempty M]
     (hξ : IsContactDistribution I ∞ ξ) {α : SmoothForm I M ℝ 1} (hα : α.kerDistribution = ξ)
-    (hα₀ : ∀ x, α.val x ≠ 0) {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x}
+    {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x}
     (hz : z ∈ range (α.symplectizationToAnnihilator hα)) :
     letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
     connectedComponentIn (hξ.annihilatorPunctured :
@@ -128,6 +116,10 @@ theorem connectedComponentIn_annihilatorPunctured_eq_range [PreconnectedSpace M]
   haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
   by
   have hF : finrank ℝ (Fin 1 → ℝ) = 1 := by simp
+  -- `α` vanishes nowhere, since its kernel `ξ` is a hyperplane field.
+  have hα₀ (x : M) : α.val x ≠ 0 := by
+    rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hα]
+    exact hξ.ne_top x
   have hE (x : M) : finrank ℝ (annihilatorSpace I ξ x) = 1 :=
     (VectorBundle.finrank_eq ℝ (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x) x).trans hF
   -- `α` is a continuous section of the annihilator line vanishing nowhere; it orients the line.

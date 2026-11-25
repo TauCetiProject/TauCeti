@@ -50,7 +50,10 @@ dimension `k + r` form a `C^n` vector subbundle of rank `r` of the cotangent bun
   (`TauCeti.IsContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion`). In particular a
   covector field with values in the annihilators is a continuous section of `D⁰` exactly when it
   is a continuous section of `T*M`
-  (`TauCeti.CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff`).
+  (`TauCeti.CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff`), and `D⁰` has a
+  continuous section vanishing nowhere exactly when some continuous covector field vanishing
+  nowhere takes its values in the annihilators
+  (`TauCeti.CotangentBundle.exists_continuous_totalSpaceMk_annihilatorSpace_ne_zero_iff`).
 
 Along the zero section, the differential of the inclusion is the identity in the splitting of
 tangent spaces at zero vectors into base and fibre (`TauCeti.Bundle.zeroSectionTangentEquiv`): a
@@ -223,6 +226,23 @@ theorem continuous_totalSpaceMk_annihilatorSpace_iff {σ : Π x : M, annihilator
         (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x (σ x : TangentSpace I x →L[𝕜] 𝕜) := by
   rw [(isEmbedding_annihilatorInclusion I D P).continuous_iff]
   simp only [comp_def, annihilatorInclusion_mk']
+
+variable {I D} in
+/-- The annihilator bundle `D⁰` has a continuous section vanishing nowhere exactly when some
+continuous covector field vanishing nowhere takes its values in the annihilators of `D`. -/
+theorem exists_continuous_totalSpaceMk_annihilatorSpace_ne_zero_iff :
+    (∃ σ : Π x : M, annihilatorSpace I D x,
+        Continuous (fun x ↦ TotalSpace.mk' P (E := fun x ↦ annihilatorSpace I D x) x (σ x)) ∧
+          ∀ x, σ x ≠ 0) ↔
+      ∃ σ : Π x : M, TangentSpace I x →L[𝕜] 𝕜,
+        (Continuous fun x ↦ TotalSpace.mk' (E →L[𝕜] 𝕜)
+          (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x (σ x)) ∧
+        ∀ x, σ x ≠ 0 ∧ σ x ∈ annihilatorSpace I D x :=
+  ⟨fun ⟨σ, hσ, hσ₀⟩ ↦ ⟨fun x ↦ σ x, continuous_totalSpaceMk_annihilatorSpace_iff.1 hσ,
+      fun x ↦ ⟨fun h ↦ hσ₀ x (Subtype.ext h), (σ x).property⟩⟩,
+    fun ⟨σ, hσ, hσD⟩ ↦ ⟨fun x ↦ ⟨σ x, (hσD x).2⟩,
+      continuous_totalSpaceMk_annihilatorSpace_iff.2 hσ,
+      fun x h ↦ (hσD x).1 (congrArg Subtype.val h)⟩⟩
 
 end Inclusion
 

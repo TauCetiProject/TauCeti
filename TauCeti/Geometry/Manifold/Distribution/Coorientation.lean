@@ -174,20 +174,16 @@ theorem exists_smoothForm_ker_eq_iff_exists_trivialization [FiniteDimensional �
   let := hD.annihilatorVectorBundle hk
   let := hD.annihilatorContMDiffVectorBundle hk
   rw [ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero
-    (Module.finrank_fin_fun ℝ), hD.exists_smoothForm_ker_eq_iff_exists_continuous hk]
+    (Module.finrank_fin_fun ℝ), hD.exists_smoothForm_ker_eq_iff_exists_continuous hk,
+    ← CotangentBundle.exists_continuous_totalSpaceMk_annihilatorSpace_ne_zero_iff (Fin 1 → ℝ)]
   constructor
-  · rintro ⟨σ, hσ, hσD⟩
+  · rintro ⟨σ, hσ, hσ₀⟩
     -- A continuous nowhere-zero section of `D⁰` gives a smooth one.
-    obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_ne_zero_of_continuous (I := I) (n := ⊤)
-      ((CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff (P := Fin 1 → ℝ)
-        (σ := fun x ↦ ⟨σ x, (hσD x).2⟩)).2 hσ)
-      fun x h ↦ (hσD x).1 (congrArg Subtype.val h)
+    obtain ⟨t, ht⟩ :=
+      exists_contMDiffSection_forall_ne_zero_of_continuous (I := I) (n := ⊤) hσ hσ₀
     exact ⟨t, t.contMDiff, ht⟩
   · rintro ⟨σ, hσ, hσ₀⟩
-    exact ⟨fun x ↦ (σ x : TangentSpace I x →L[ℝ] ℝ),
-      (CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff (P := Fin 1 → ℝ)).1
-        hσ.continuous,
-      fun x ↦ ⟨fun h ↦ hσ₀ x (Subtype.ext h), (σ x).property⟩⟩
+    exact ⟨σ, hσ.continuous, hσ₀⟩
 
 end IsContMDiffDistribution
 
