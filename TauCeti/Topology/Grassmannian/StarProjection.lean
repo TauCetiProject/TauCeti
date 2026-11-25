@@ -43,7 +43,9 @@ This is the Grassmannian `G(E, k)` that carries the varifolds of a Euclidean spa
 * `Euclidean.grassmannian 𝕜 E k`: the orthogonal projections of `E` with range of rank `k`.
 * `Euclidean.grassmannian.submoduleEquiv`: the bijection with the `k`-dimensional subspaces.
 * `Euclidean.grassmannian.spanLine`: the line `𝕜 ∙ v` through a nonzero vector, as a point of
-  `G(E, 1)`; it depends continuously on `v` (`Euclidean.grassmannian.tendsto_spanLine`).
+  `G(E, 1)`; it depends continuously on `v` (`Euclidean.grassmannian.tendsto_spanLine`), because
+  the projection onto `𝕜 ∙ v` is `‖v‖⁻² • rankOne 𝕜 v v`
+  (`Submodule.starProjection_singleton_eq_smul_rankOne`).
 * `Euclidean.grassmannian.finiteGrassmannianHomeomorph`: the homeomorphism from
   `TauCeti.finiteGrassmannian 𝕜 k N` induced by a linear isometry
   `E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)`.
@@ -150,6 +152,14 @@ theorem eq_starProjection_range {P : E →L[𝕜] E}
     ∃ (_ : P.range.HasOrthogonalProjection), P = P.range.starProjection :=
   isStarProjection_iff_eq_starProjection_range.1 hP.1
 
+omit [CompleteSpace E] in
+/-- The orthogonal projection onto the line `𝕜 ∙ v` is the rank-one operator
+`w ↦ ⟪v, w⟫ • v` divided by `‖v‖ ^ 2`; both sides vanish when `v = 0`. -/
+theorem _root_.Submodule.starProjection_singleton_eq_smul_rankOne (v : E) :
+    (𝕜 ∙ v).starProjection = ((‖v‖ ^ 2 : ℝ) : 𝕜)⁻¹ • InnerProductSpace.rankOne 𝕜 v v := by
+  ext w
+  simp [Submodule.starProjection_singleton, div_eq_inv_mul, mul_smul]
+
 /-- The line `𝕜 ∙ v` through a nonzero vector `v`, as a point of `G(E, 1)`. -/
 noncomputable def spanLine {v : E} (hv : v ≠ 0) : grassmannian 𝕜 E 1 :=
   ⟨(𝕜 ∙ v).starProjection, starProjection_mem (finrank_span_singleton hv)⟩
@@ -172,13 +182,11 @@ theorem tendsto_spanLine {α : Type*} {l : Filter α} {u : α → E} {u₀ : E} 
     (hu₀ : u₀ ≠ 0) (h : Tendsto u l (𝓝 u₀)) :
     Tendsto (fun j => spanLine (𝕜 := 𝕜) (hu j)) l (𝓝 (spanLine hu₀)) := by
   refine tendsto_subtype_rng.2 ?_
-  have key (v : E) : (𝕜 ∙ v).starProjection =
-      ((‖v‖ ^ 2 : ℝ) : 𝕜)⁻¹ • (innerSL 𝕜 v).smulRight v := by
-    ext w
-    simp [Submodule.starProjection_singleton, div_eq_inv_mul, mul_smul]
-  simp only [coe_spanLine, key]
-  have hc : Continuous fun v : E => (innerSL 𝕜 v).smulRight v :=
-    isBoundedBilinearMap_smulRight.continuous.comp ((innerSL 𝕜).continuous.prodMk continuous_id)
+  simp only [coe_spanLine, Submodule.starProjection_singleton_eq_smul_rankOne]
+  have hc : Continuous fun v : E => InnerProductSpace.rankOne 𝕜 v v := by
+    simp only [InnerProductSpace.rankOne_def]
+    exact isBoundedBilinearMap_smulRight.continuous.comp
+      ((innerSL 𝕜).continuous.prodMk continuous_id)
   have hn : Continuous fun v : E => ((‖v‖ ^ 2 : ℝ) : 𝕜) := by fun_prop
   exact (((hn.tendsto u₀).comp h).inv₀ (by simpa using hu₀)).smul ((hc.tendsto u₀).comp h)
 
