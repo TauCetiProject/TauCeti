@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.Topology.Algebra.Support
 
 /-!
@@ -82,11 +83,6 @@ public section
 open Set Function Filter MeasureTheory Real TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
 open scoped Topology ENNReal NNReal Manifold
-
-/-- Lebesgue measure on the plane is invariant under translations. -/
-private local instance : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-  rw [Measure.volume_eq_prod]
-  infer_instance
 
 namespace TauCeti
 
