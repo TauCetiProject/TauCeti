@@ -72,8 +72,7 @@ theorem exists_finrank_eq_mul_dvd_relIndex_of_liesOver_inertia (V : FDRep k N) [
     (hU : U.LiesOver (Subgroup.inclusion (le_inertia V)) V) :
     ∃ m, finrank k U = finrank k V * m ∧ m ∣ N.relIndex (inertia V) := by
   have : Nontrivial V := (FDRep.isIrreducible_of_simple V).nontrivial
-  obtain ⟨ρ, β, h⟩ := exists_isProjectiveInertiaExtension V fun f =>
-    (endomorphism_simple_eq_smul_id k f).imp fun _ hc => hc
+  obtain ⟨ρ, β, h⟩ := exists_isProjectiveInertiaExtension V (endomorphism_simple_eq_smul_id k)
   obtain ⟨f, hf⟩ := liesOver_iff.1 hU
   have : Representation.IsIrreducible U.ρ := FDRep.isIrreducible_of_simple U
   let φ : Representation.IntertwiningMap V.ρ (U.ρ.comp (Subgroup.inclusion (le_inertia V))) :=
