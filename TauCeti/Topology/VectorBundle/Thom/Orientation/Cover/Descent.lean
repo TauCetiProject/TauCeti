@@ -76,6 +76,8 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   semi-invariant Thom cocycle of `E'`.
 * `nonempty_singularHomology_thomPair_iso_twistedHomology`: the same from a class of
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
+* `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`: over a compact base,
+  `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for every bundle, with no further hypothesis.
 
 ## References
 
@@ -201,5 +203,23 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
   rw [← h, ← thomPairSignCohomologyMap_def]
   exact hU
+
+/-- **The Thom isomorphism with coefficients in the orientation system over a compact base.** Let
+`E → B` be a real vector bundle of rank `r` over a compact base, `o(E)` its orientation local
+system, and `k` any commutative ring, for instance `ℤ`. Then `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for
+every `p`, with no orientation of `E`. For the Möbius line over the circle and `k = ℤ` this is
+`H₁(E, E₀; ℤ) ≅ ℤ/2`, while `H₀(S¹; ℤ) = ℤ`.
+
+It is the isomorphism of `nonempty_singularHomology_thomPair_iso_twistedHomology` for the Thom
+class with coefficients in the orientation system (`TauCeti.twistedThomClass`). -/
+theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [CompactSpace B]
+    (p : ℕ) :
+    Nonempty ((thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
+      twistedHomology (signLocalSystem F E k hι) p) := by
+  classical
+  -- An orientation of the model fibre normalizes the Thom class with coefficients in `o(E)`.
+  exact nonempty_singularHomology_thomPair_iso_twistedHomology hι k _
+    (isThomClass_thomPairSignCohomologyMap_twistedThomClass hι
+      ((Module.finBasis ℝ F).reindex (Fintype.equivFinOfCardEq hι).symm).orientation) p
 
 end TauCeti.VectorBundleOrientationCover
