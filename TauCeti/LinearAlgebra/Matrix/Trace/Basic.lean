@@ -36,6 +36,8 @@ it is real over `ℂ`).
   homomorphism commutes with taking the trace of its product.
 * `Matrix.star_trace_mul_of_conjTranspose_eq_neg`: the trace of a product of two skew-Hermitian
   matrices is fixed by `star`.
+* `Matrix.sum_map_mul_comm`: the trace property for rectangular matrices over a possibly
+  noncommutative ring, through an additive map `f` with `f (a * b) = f (b * a)`.
 -/
 
 public section
@@ -92,5 +94,17 @@ theorem star_trace_mul_of_conjTranspose_eq_neg {R : Type*} [NonUnitalNonAssocCom
     [StarRing R] {X Y : Matrix n n R} (hX : Xᴴ = -X) (hY : Yᴴ = -Y) :
     star (X * Y).trace = (X * Y).trace := by
   rw [← trace_conjTranspose, conjTranspose_mul, hX, hY, neg_mul_neg, trace_mul_comm]
+
+/-- **Trace property for rectangular matrices.** If an additive map `f` satisfies
+`f (a * b) = f (b * a)`, then for `u : Matrix m n R` and `v : Matrix n m R` the sums of `f` over the
+diagonals of `u * v` and `v * u` agree. For commutative `R` and `f = id` this is
+`Matrix.trace_mul_comm`. -/
+theorem sum_map_mul_comm {R M F : Type*} [AddCommMonoid R] [Mul R] [AddCommMonoid M]
+    [FunLike F R M] [AddMonoidHomClass F R M] (f : F) (hf : ∀ a b, f (a * b) = f (b * a))
+    (u : Matrix m n R) (v : Matrix n m R) :
+    ∑ i, f ((u * v) i i) = ∑ k, f ((v * u) k k) := by
+  simp only [Matrix.mul_apply, map_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun i _ ↦ hf _ _
 
 end Matrix
