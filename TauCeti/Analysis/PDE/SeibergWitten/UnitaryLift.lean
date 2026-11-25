@@ -160,6 +160,8 @@ open scoped RealInnerProductSpace
 
 namespace TauCeti.SeibergWitten
 
+open AlmostComplexStructure
+
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
   {W : Type*} [AddCommGroup W] [Module ℂ W] {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
@@ -241,32 +243,6 @@ private theorem coe_spinCGroupHalfSpinRep_apply_congr {hQ₀ : Q ≠ 0} (x : spi
   subst h
   rw [Subtype.ext hψ]
 
-/-- If `e` is a unitary frame of `J` with opposite orientation `o = -e.toBasis.orientation`, then
-`c₂(ω)` vanishes on `W⁺(o)`, so every eigenvector of `c₂(ω)` in `W⁺(o)` with nonzero eigenvalue is
-zero. -/
-private theorem eq_zero_of_bivectorExterior_apply_of_orientation_eq_neg
-    {e : OrthonormalBasis (Fin 4) ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (hne : o = -e.toBasis.orientation)
-    {μ : ℂ} (hμ : μ ≠ 0) {ψ : eigenspace (ρ (chirality Q o)) 1}
-    (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = μ • (ψ : W)) :
-    (ψ : W) = 0 := by
-  have hchir : chirality Q o = -chirality Q e.toBasis.orientation := by
-    rw [hne, chirality_eq_neg_volumeElement, volumeElement_neg_orientation,
-      ← chirality_eq_neg_volumeElement]
-  have hmem : (ψ : W) ∈ eigenspace (ρ (chirality Q e.toBasis.orientation)) (-1) := by
-    have hψ' : ρ (chirality Q o) (ψ : W) = (ψ : W) := by
-      simpa using mem_eigenspace_iff.1 ψ.property
-    have hneg : -ρ (chirality Q e.toBasis.orientation) (ψ : W) = (ψ : W) := by
-      calc -ρ (chirality Q e.toBasis.orientation) (ψ : W)
-          = ρ (-chirality Q e.toBasis.orientation) (ψ : W) := by rw [map_neg, LinearMap.neg_apply]
-        _ = ρ (chirality Q o) (ψ : W) := congrArg (fun a ↦ ρ a (ψ : W)) hchir.symm
-        _ = (ψ : W) := hψ'
-    rw [mem_eigenspace_iff, neg_one_smul, ← neg_eq_iff_eq_neg.1 hneg]
-  have h23 := map_ι_mul_ι_two_three_apply e hQ ρ rfl hmem
-  rw [AlmostComplexStructure.bivectorExterior_kahlerForm hQ h₀ h₂, map_add, LinearMap.add_apply,
-    h23, neg_one_smul, add_neg_cancel] at hψ
-  exact (smul_eq_zero.1 hψ.symm).resolve_left hμ
-
 /-- If `x` fixes a nonzero `-2i`-eigenvector of `c₂(ω)` in `W⁺`, its rotation commutes with `J`. -/
 private theorem toSpecialOrthogonal_mem_unitaryGroup_of_fixed_ne_zero
     {e : OrthonormalBasis (Fin 4) ℝ V} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
@@ -309,263 +285,6 @@ theorem spinCCircle_mem_canonicalLineFixingSubgroup {e : OrthonormalBasis (Fin 4
     simp [h0]
 
 section InvariantSubmodule
-
-/-- The four-dimensional complex subspace `span {u, c(e₀) c(e₂) u, c(e₀) u, c(e₂) u}` generated
-by a `-2i`-eigenvector `u` of `c₂(ω)`. -/
-private abbrev canonicalSubmodule (e : OrthonormalBasis (Fin 4) ℝ V) (u : W) : Submodule ℂ W :=
-  Submodule.span ℂ {u, ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), ρ (ι Q (e 0)) u, ρ (ι Q (e 2)) u}
-
-/-- Each frame generator `c(e k)` maps the four generators of `canonicalSubmodule e u` back into
-`canonicalSubmodule e u`. -/
-private theorem mapsTo_canonicalSubmodule_ι_basis {e : OrthonormalBasis (Fin 4) ℝ V}
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u)
-    (k : Fin 4) {y : W}
-    (hy : y ∈ ({u, ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), ρ (ι Q (e 0)) u, ρ (ι Q (e 2)) u} : Set W)) :
-    ρ (ι Q (e k)) y ∈ canonicalSubmodule (ρ := ρ) e u := by
-  set M := canonicalSubmodule (ρ := ρ) e u
-  have hb₀M : u ∈ M := Submodule.subset_span (by simp)
-  have hb₁M : ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ M := Submodule.subset_span (by simp)
-  have hb₂M : ρ (ι Q (e 0)) u ∈ M := Submodule.subset_span (by simp)
-  have hb₃M : ρ (ι Q (e 2)) u ∈ M := Submodule.subset_span (by simp)
-  obtain ⟨h1u, h3u⟩ :=
-    AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
-  obtain ⟨p10, p30⟩ :=
-    AlmostComplexStructure.ι_apply_ι_zero_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
-  obtain ⟨p12, p32⟩ :=
-    AlmostComplexStructure.ι_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
-  obtain ⟨p102, p302⟩ :=
-    AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hy
-  rcases hy with rfl | rfl | rfl | rfl <;>
-    match k with
-    | 0 => ?_
-    | 1 => ?_
-    | 2 => ?_
-    | 3 => ?_
-  · exact hb₂M
-  · rw [h1u]; exact M.smul_mem _ hb₂M
-  · exact hb₃M
-  · rw [h3u]; exact M.smul_mem _ hb₃M
-  · rw [e.map_ι_apply_map_ι_apply hQ ρ]; exact M.neg_mem hb₃M
-  · rw [p102]; exact M.smul_mem _ hb₃M
-  · rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide),
-      e.map_ι_apply_map_ι_apply hQ ρ, map_neg, neg_neg]
-    exact hb₂M
-  · rw [p302]; exact M.smul_mem _ hb₂M
-  · rw [e.map_ι_apply_map_ι_apply hQ ρ]; exact M.neg_mem hb₀M
-  · rw [p10]; exact M.smul_mem _ hb₀M
-  · rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide)]
-    exact M.neg_mem hb₁M
-  · rw [p30]; exact M.neg_mem (M.smul_mem _ hb₁M)
-  · exact hb₁M
-  · rw [p12]; exact M.smul_mem _ hb₁M
-  · rw [e.map_ι_apply_map_ι_apply hQ ρ]; exact M.neg_mem hb₀M
-  · rw [p32]; exact M.smul_mem _ hb₀M
-
-/-- `canonicalSubmodule e u` is invariant under every Clifford element `a : CliffordAlgebra Q`. -/
-private theorem mapsTo_canonicalSubmodule {e : OrthonormalBasis (Fin 4) ℝ V}
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u)
-    (a : CliffordAlgebra Q) :
-    ∀ w ∈ canonicalSubmodule (ρ := ρ) e u, ρ a w ∈ canonicalSubmodule (ρ := ρ) e u := by
-  set M := canonicalSubmodule (ρ := ρ) e u
-  induction a using CliffordAlgebra.induction with
-  | algebraMap r =>
-    intro w hw
-    rw [AlgHom.commutes]
-    exact M.smul_mem (r : ℂ) hw
-  | ι v =>
-    intro w hw
-    rw [e.map_ι_apply_eq_sum ρ v w]
-    refine Submodule.sum_mem M fun k _ ↦ M.smul_mem (⟪e k, v⟫ : ℂ) ?_
-    exact Submodule.span_induction (fun _ hy ↦ mapsTo_canonicalSubmodule_ι_basis hQ h₀ h₂ hu k hy)
-      (by simp) (fun _ _ _ _ hx hy ↦ by rw [map_add]; exact M.add_mem hx hy)
-      (fun c _ _ hx ↦ by rw [map_smul]; exact M.smul_mem c hx) hw
-  | mul a b ha hb =>
-    intro w hw
-    rw [map_mul, mul_apply_eq_comp]
-    exact ha _ (hb _ hw)
-  | add a b ha hb =>
-    intro w hw
-    rw [map_add, LinearMap.add_apply]
-    exact M.add_mem (ha _ hw) (hb _ hw)
-
-/-- The Clifford action `ρ` restricted to `canonicalSubmodule e u`. -/
-private def canonicalSubmoduleAlgHom {e : OrthonormalBasis (Fin 4) ℝ V}
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u) :
-    CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ (canonicalSubmodule (ρ := ρ) e u) where
-  toFun a := (ρ a).restrict (mapsTo_canonicalSubmodule hQ h₀ h₂ hu a)
-  map_one' := by ext ⟨w, hw⟩; simp
-  map_mul' a b := by ext ⟨w, hw⟩; simp
-  map_zero' := by ext ⟨w, hw⟩; simp
-  map_add' a b := by ext ⟨w, hw⟩; simp
-  commutes' r := by
-    ext ⟨w, hw⟩
-    simp [LinearMap.restrict_apply, Module.algebraMap_end_apply]
-
-/-- The restricted Clifford action on `canonicalSubmodule e u` agrees with `ρ` on underlying
-vectors. -/
-private theorem coe_canonicalSubmoduleAlgHom_apply {e : OrthonormalBasis (Fin 4) ℝ V}
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u)
-    (a : CliffordAlgebra Q) (w : canonicalSubmodule (ρ := ρ) e u) :
-    (canonicalSubmoduleAlgHom hQ h₀ h₂ hu a w : W) = ρ a w :=
-  rfl
-
-/-- `c(e₀) c(e₂) u` lies in `W⁺(o)` whenever `u ∈ W⁺(o)`. -/
-private theorem ι_zero_ι_two_mem_positive {e : OrthonormalBasis (Fin 4) ℝ V}
-    {u : eigenspace (ρ (chirality Q o)) 1} :
-    ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∈ eigenspace (ρ (chirality Q o)) 1 := by
-  rw [← mul_apply_eq_comp, ← map_mul]
-  exact mapsTo_genEigenspace_of_comm
-    ((commute_chirality_of_mem_even o (ι_mul_ι_mem_evenOdd_zero Q (e 0) (e 2))).map ρ)
-    1 1 u.property
-
-/-- Every positive half-spinor in `canonicalSubmodule e u` is a linear combination of `u` and
-`c(e₀) c(e₂) u`. -/
-private theorem mem_span_positive_canonicalSubmodule {e : OrthonormalBasis (Fin 4) ℝ V}
-    {u : eigenspace (ρ (chirality Q o)) 1} {w : W} (hwM : w ∈ canonicalSubmodule (ρ := ρ) e u)
-    (hwΓ : ρ (chirality Q o) w = w) :
-    ∃ c₀ c₁ : ℂ, w = c₀ • (u : W) + c₁ • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
-  rcases Submodule.mem_span_insert.1 hwM with ⟨c₀, _, hw1, rfl⟩
-  rcases Submodule.mem_span_insert.1 hw1 with ⟨c₁, _, hw2, rfl⟩
-  rcases Submodule.mem_span_insert.1 hw2 with ⟨c₂, _, hw3, rfl⟩
-  rcases Submodule.mem_span_singleton.1 hw3 with ⟨c₃, rfl⟩
-  have hΓ0 : ρ (chirality Q o) u = u := by simpa using mem_eigenspace_iff.1 u.property
-  have hΓ1 : ρ (chirality Q o) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u)) =
-      ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
-    simpa using mem_eigenspace_iff.1 (ι_zero_ι_two_mem_positive (e := e) (u := u))
-  have hΓ2 : ρ (chirality Q o) (ρ (ι Q (e 0)) u) = -ρ (ι Q (e 0)) u := by
-    simpa using mem_eigenspace_iff.1 (map_ι_apply_mem_eigenspace_chirality_neg o u.property (e 0))
-  have hΓ3 : ρ (chirality Q o) (ρ (ι Q (e 2)) u) = -ρ (ι Q (e 2)) u := by
-    simpa using mem_eigenspace_iff.1 (map_ι_apply_mem_eigenspace_chirality_neg o u.property (e 2))
-  simp only [map_add, map_smul, hΓ0, hΓ1, hΓ2, hΓ3] at hwΓ
-  have h2 : (2 : ℂ) • (c₂ • ρ (ι Q (e 0)) u + c₃ • ρ (ι Q (e 2)) u) = 0 := by
-    linear_combination (norm := module) -hwΓ
-  have h23 : c₂ • ρ (ι Q (e 0)) u + c₃ • ρ (ι Q (e 2)) u = 0 :=
-    (smul_eq_zero.1 h2).resolve_left two_ne_zero
-  exact ⟨c₀, c₁, by linear_combination (norm := module) h23⟩
-
-/-- For a nonzero `-2i`-eigenvector `u ∈ W⁺(o)` of `c₂(ω)`, `(u, c(e₀) c(e₂) u)` is a `ℂ`-basis of
-the positive half-spinors of `canonicalSubmodule e u`. -/
-private def canonicalSubmodulePositiveBasis {e : OrthonormalBasis (Fin 4) ℝ V}
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    {u : eigenspace (ρ (chirality Q o)) 1} (hu₀ : (u : W) ≠ 0)
-    (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W)) :
-    Basis (Fin 2) ℂ
-      (eigenspace (canonicalSubmoduleAlgHom hQ h₀ h₂ hu (chirality Q o)) 1) := by
-  let M := canonicalSubmodule (ρ := ρ) e u
-  let ρM := canonicalSubmoduleAlgHom hQ h₀ h₂ hu
-  let b₁ : W := ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u)
-  have hb₁ω : ρ (bivectorExterior Q J.kahlerForm) b₁ = (2 * Complex.I) • b₁ := by
-    open AlmostComplexStructure in
-    exact bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
-  have hb₁ne : b₁ ≠ 0 := fun h ↦ hu₀ <| by
-    have := congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) h
-    simpa [b₁, e.map_ι_apply_map_ι_apply hQ ρ] using this
-  let v₀ : eigenspace (ρM (chirality Q o)) 1 :=
-    ⟨⟨u, Submodule.subset_span (by simp)⟩,
-      mem_eigenspace_iff.2 (Subtype.ext (by
-        rw [coe_canonicalSubmoduleAlgHom_apply, Submodule.coe_smul]
-        exact mem_eigenspace_iff.1 u.property))⟩
-  let v₁ : eigenspace (ρM (chirality Q o)) 1 :=
-    ⟨⟨b₁, Submodule.subset_span (by simp [b₁])⟩,
-      mem_eigenspace_iff.2 (Subtype.ext (by
-        rw [coe_canonicalSubmoduleAlgHom_apply, Submodule.coe_smul]
-        exact mem_eigenspace_iff.1 (ι_zero_ι_two_mem_positive (e := e) (u := u))))⟩
-  refine Basis.mk (v := ![v₀, v₁]) ?_ ?_
-  · refine LinearIndependent.of_comp (M.subtype.comp (eigenspace (ρM (chirality Q o)) 1).subtype) ?_
-    have hcomp : (M.subtype.comp (eigenspace (ρM (chirality Q o)) 1).subtype) ∘ ![v₀, v₁] =
-        ![(u : W), b₁] := by
-      ext i
-      fin_cases i <;> rfl
-    rw [hcomp]
-    refine Module.End.eigenvectors_linearIndependent' (ρ (bivectorExterior Q J.kahlerForm))
-      ![-2 * Complex.I, 2 * Complex.I]
-      (fun i j hij ↦ by
-        fin_cases i <;> fin_cases j <;>
-          first | rfl | exact absurd (congrArg Complex.im hij) (by norm_num))
-      ![(u : W), b₁] (fun i ↦ ?_)
-    fin_cases i
-    · exact ⟨mem_eigenspace_iff.2 hu, hu₀⟩
-    · exact ⟨mem_eigenspace_iff.2 hb₁ω, hb₁ne⟩
-  · intro ⟨⟨w, hwM⟩, hwpos⟩ _
-    have hwΓ : ρ (chirality Q o) w = w := by
-      simpa [ρM, canonicalSubmoduleAlgHom] using congrArg Subtype.val (mem_eigenspace_iff.1 hwpos)
-    obtain ⟨c₀, c₁, rfl⟩ := mem_span_positive_canonicalSubmodule hwM hwΓ
-    have heq : (⟨⟨c₀ • (u : W) + c₁ • b₁, hwM⟩, hwpos⟩ : eigenspace (ρM (chirality Q o)) 1) =
-        c₀ • v₀ + c₁ • v₁ := by
-      ext; simp [v₀, v₁, b₁]
-    rw [heq]
-    exact Submodule.add_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
-      (Submodule.smul_mem _ _ (Submodule.subset_span ⟨1, rfl⟩))
-
-/-- The zeroth vector of `canonicalSubmodulePositiveBasis` has underlying vector `u`. -/
-private theorem coe_canonicalSubmodulePositiveBasis_zero {e : OrthonormalBasis (Fin 4) ℝ V}
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    {u : eigenspace (ρ (chirality Q o)) 1} (hu₀ : (u : W) ≠ 0)
-    (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W)) :
-    ((canonicalSubmodulePositiveBasis hQ h₀ h₂ hu₀ hu 0 :
-        canonicalSubmodule (ρ := ρ) e u) : W) = u := by
-  simp [canonicalSubmodulePositiveBasis]
-
-/-- The first vector of `canonicalSubmodulePositiveBasis` has underlying vector `c(e₀) c(e₂) u`. -/
-private theorem coe_canonicalSubmodulePositiveBasis_one {e : OrthonormalBasis (Fin 4) ℝ V}
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    {u : eigenspace (ρ (chirality Q o)) 1} (hu₀ : (u : W) ≠ 0)
-    (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W)) :
-    ((canonicalSubmodulePositiveBasis hQ h₀ h₂ hu₀ hu 1 :
-        canonicalSubmodule (ρ := ρ) e u) : W) = ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
-  simp [canonicalSubmodulePositiveBasis]
-
-/-- Applying `c(A e₀) c(A e₂)` to a `-2i`-eigenvector `u` of `c₂(ω)`, for
-`A = unitaryGroupFrameEquiv g`, scales `c(e₀) c(e₂) u` by `det g`. -/
-private theorem ι_apply_ι_apply_unitaryGroupFrameEquiv {e : OrthonormalBasis (Fin 4) ℝ V}
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    {u : W} (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • u)
-    (g : Matrix.unitaryGroup (Fin 2) ℂ) :
-    let A := (AlmostComplexStructure.unitaryGroupFrameEquiv hQ h₀ h₂ g :
-      TauCeti.QuadraticMap.specialOrthogonalGroup Q)
-    ρ (ι Q ((A : V ≃ₗ[ℝ] V) (e 0))) (ρ (ι Q ((A : V ≃ₗ[ℝ] V) (e 2))) u) =
-      (g : Matrix (Fin 2) (Fin 2) ℂ).det • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
-  intro A
-  let := J.complexModule
-  set B := AlmostComplexStructure.basisOfOrthonormalBasisFinFour h₀ h₂
-  rw [AlmostComplexStructure.ι_apply_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hu]
-  have hA_inner (v w : V) : ⟪(A : V ≃ₗ[ℝ] V) v, (A : V ≃ₗ[ℝ] V) w⟫ = ⟪v, w⟫ := by
-    have hpol := QuadraticMap.polar_eq_neg_two_inner hQ
-    have hAQ : ∀ z, Q ((A : V ≃ₗ[ℝ] V) z) = Q z :=
-      QuadraticMap.mem_orthogonalGroup_iff.1
-        (QuadraticMap.mem_specialOrthogonalGroup_iff.1 A.property).1
-    have hp : QuadraticMap.polar Q ((A : V ≃ₗ[ℝ] V) v) ((A : V ≃ₗ[ℝ] V) w) =
-        QuadraticMap.polar Q v w := by simp only [QuadraticMap.polar, ← map_add, hAQ]
-    rw [hpol, hpol] at hp; linarith
-  have h02 : ⟪(A : V ≃ₗ[ℝ] V) (e 0), (A : V ≃ₗ[ℝ] V) (e 2)⟫ = 0 := by
-    rw [hA_inner, e.orthonormal.2 (by decide)]
-  have h03 : ⟪(A : V ≃ₗ[ℝ] V) (e 0), J ((A : V ≃ₗ[ℝ] V) (e 2))⟫ = 0 := by
-    rw [← AlmostComplexStructure.mem_unitaryGroup_iff.1
-        (AlmostComplexStructure.unitaryGroupFrameEquiv hQ h₀ h₂ g).property (e 2),
-      h₂, hA_inner, e.orthonormal.2 (by decide)]
-  have hcoord (v : V) (i : Fin 2) : B.repr ((A : V ≃ₗ[ℝ] V) v) i =
-      ((g : Matrix (Fin 2) (Fin 2) ℂ).mulVec (B.repr v)) i := by
-    have h1 := AlmostComplexStructure.complexCoords_unitaryGroupFrameEquiv_apply hQ h₀ h₂ g v
-    rw [← AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply h₀ h₂,
-      ← AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply h₀ h₂] at h1
-    simpa only [Basis.equivFun_apply] using congrFun h1 i
-  have hre0 : B.repr (e 0) = Finsupp.single 0 1 := by
-    rw [← AlmostComplexStructure.basisOfOrthonormalBasisFinFour_zero h₀ h₂, B.repr_self]
-  have hre2 : B.repr (e 2) = Finsupp.single 1 1 := by
-    rw [← AlmostComplexStructure.basisOfOrthonormalBasisFinFour_one h₀ h₂, B.repr_self]
-  have hdet : B.repr ((A : V ≃ₗ[ℝ] V) (e 0)) 0 * B.repr ((A : V ≃ₗ[ℝ] V) (e 2)) 1 -
-      B.repr ((A : V ≃ₗ[ℝ] V) (e 0)) 1 * B.repr ((A : V ≃ₗ[ℝ] V) (e 2)) 0 =
-      (g : Matrix (Fin 2) (Fin 2) ℂ).det := by
-    rw [hcoord (e 0) 0, hcoord (e 2) 1, hcoord (e 0) 1, hcoord (e 2) 0, hre0, hre2,
-      Matrix.det_fin_two]
-    simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]; ring
-  rw [h02, h03, hdet]
-  simp
 
 /-- The half-spin representation on `canonicalSubmodule e u` agrees with that on `W`. -/
 private theorem coe_spinCGroupHalfSpinRep_canonicalSubmoduleAlgHom
@@ -613,8 +332,8 @@ private theorem exists_smul_of_mem_unitaryGroup {e : OrthonormalBasis (Fin 4) �
         hQ h₀ h₂ (h₀ ▸ hcl (e 0)) (h₂ ▸ hcl (e 2))
   have hb₁ω : ρ (bivectorExterior Q J.kahlerForm) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u)) =
       (2 * Complex.I) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
-    open AlmostComplexStructure in
-    exact bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
+    simpa using
+      bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hu
   have hb₁ne : ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ≠ 0 := fun h ↦ hu₀ <| by
     have := congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) h
     simpa [e.map_ι_apply_map_ι_apply hQ ρ] using this
@@ -638,7 +357,7 @@ private theorem exists_smul_and_det_of_mem_unitaryGroup {e : OrthonormalBasis (F
     ∃ c : ℂ,
       (spinCGroupHalfSpinRep o ρ 1 hQ₀ x u : W) = c • (u : W) ∧
       (spinCGroupHalfSpinRep o ρ 1 hQ₀ x ⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u),
-          ι_zero_ι_two_mem_positive⟩ : W) =
+          map_ι_apply_map_ι_apply_mem_eigenspace_chirality o u.property _ _⟩ : W) =
         (c * (g : Matrix (Fin 2) (Fin 2) ℂ).det) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) ∧
       c ^ 2 * (g : Matrix (Fin 2) (Fin 2) ℂ).det = (spinCGroup.det Q hQ₀ x : ℂ) := by
   intro g
@@ -653,14 +372,15 @@ private theorem exists_smul_and_det_of_mem_unitaryGroup {e : OrthonormalBasis (F
       AlmostComplexStructure.unitaryGroupFrameEquiv hQ h₀ h₂ g :=
     (congrArg Subtype.val ((AlmostComplexStructure.unitaryGroupFrameEquiv hQ h₀ h₂).apply_symm_apply
       ⟨_, hx⟩)).symm
+  have hb₁pos := map_ι_apply_map_ι_apply_mem_eigenspace_chirality o u.property (e 0) (e 2)
   have hxb₁ : (spinCGroupHalfSpinRep o ρ 1 hQ₀ x
-      ⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), ι_zero_ι_two_mem_positive⟩ : W) =
+      ⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), hb₁pos⟩ : W) =
       (c * (g : Matrix (Fin 2) (Fin 2) ℂ).det) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) := by
     have h1 := ι_apply_spinCGroupHalfSpinRep_apply o ρ 1 hQ₀ x (e 2) u
     have h2 := ι_apply_spinCGroupHalfSpinRep_apply o ρ (-1) hQ₀ x (e 0)
       (halfSpinCliffordMul o ρ 1 (e 2) u)
     rw [coe_spinCGroupHalfSpinRep_apply_congr x (neg_neg (1 : ℂ))
-      (ψ' := ⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), ι_zero_ι_two_mem_positive⟩) (by simp)] at h2
+      (ψ' := ⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), hb₁pos⟩) (by simp)] at h2
     rw [← h2, ← h1, hxu, map_smul, map_smul, hAg,
       ι_apply_ι_apply_unitaryGroupFrameEquiv hQ h₀ h₂ hu g, smul_smul]
   have hT0 : spinCGroupHalfSpinRep o ρM 1 hQ₀ x (B 0) = c • B 0 := by
@@ -671,7 +391,7 @@ private theorem exists_smul_and_det_of_mem_unitaryGroup {e : OrthonormalBasis (F
       (c * (g : Matrix (Fin 2) (Fin 2) ℂ).det) • B 1 := by
     ext
     simpa [B, hB1] using (coe_spinCGroupHalfSpinRep_canonicalSubmoduleAlgHom
-      hQ h₀ h₂ hQ₀ hu x (B 1) ⟨_, ι_zero_ι_two_mem_positive⟩ hB1).trans hxb₁
+      hQ h₀ h₂ hQ₀ hu x (B 1) ⟨_, hb₁pos⟩ hB1).trans hxb₁
   have hdetM := det_spinCGroupHalfSpinRep o ρM 1 hQ₀ hQ hM₂ x
   rw [← LinearMap.det_toMatrix B, Matrix.det_fin_two] at hdetM
   simp only [LinearMap.toMatrix_apply, hT0, hT1, map_smul, B.repr_self, Finsupp.single_eq_same,
@@ -720,7 +440,8 @@ theorem exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq_of_mem_uni
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (hQ₀ : Q ≠ 0)
     {A : TauCeti.QuadraticMap.specialOrthogonalGroup Q} (hA : A ∈ J.unitaryGroup Q) :
     ∃ x ∈ canonicalLineFixingSubgroup o ρ J hQ₀, spinCGroup.toSpecialOrthogonal Q hQ₀ x = A := by
-  obtain ⟨e, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
+  obtain ⟨e, -, h₀, h₂⟩ := exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation
+    (ω := J.symplecticForm hJ) (fun v w ↦ by rw [J.symplecticForm_apply hJ, hJ])
   set g := (AlmostComplexStructure.unitaryGroupFrameEquiv hQ h₀ h₂).symm ⟨A, hA⟩
   refine ⟨e.spinCUnitary hQ hQ₀ g,
     spinCUnitary_mem_canonicalLineFixingSubgroup hQ h₀ h₂ hQ₀ g, ?_⟩
@@ -742,35 +463,18 @@ theorem
   by_cases hβ₀ : (β : W) = 0
   · have h0 : β = 0 := Subtype.ext hβ₀
     simp [h0]
-  obtain ⟨e, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
+  obtain ⟨e, -, h₀, h₂⟩ := exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation
+    (ω := J.symplecticForm hJ) (fun v w ↦ by rw [J.symplecticForm_apply hJ, hJ])
   let u : eigenspace (ρ (chirality Q o)) 1 :=
-    ⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) β), ι_zero_ι_two_mem_positive⟩
+    ⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) β),
+      map_ι_apply_map_ι_apply_mem_eigenspace_chirality o β.property _ _⟩
   have hu_coe : (u : W) = ρ (ι Q (e 0)) (ρ (ι Q (e 2)) β) := rfl
   have hu₀ : (u : W) ≠ 0 := fun h ↦ hβ₀ <| by
     have := congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) h
     simpa [hu_coe, e.map_ι_apply_map_ι_apply hQ ρ] using this
   have hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W) := by
-    obtain ⟨h1, h3⟩ :=
-      AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply_eq_smul
-        hQ h₀ h₂ (by simp) hβ
-    have hdiv : 2 * Complex.I / 2 = Complex.I := by ring
-    rw [hdiv] at h1 h3
-    have h1u : ρ (ι Q (e 1)) u = Complex.I • ρ (ι Q (e 0)) u := by
-      rw [hu_coe, e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 1) (j := 0) (by decide),
-        e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 1) (j := 2) (by decide), h1, map_neg, map_smul,
-        map_smul, neg_neg, e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide),
-        map_neg, e.map_ι_apply_map_ι_apply hQ ρ]
-      module
-    have h3u : ρ (ι Q (e 3)) u = Complex.I • ρ (ι Q (e 2)) u := by
-      rw [hu_coe, e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 3) (j := 0) (by decide),
-        e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 3) (j := 2) (by decide), h3, map_neg, map_smul,
-        map_smul, neg_neg, e.map_ι_apply_map_ι_apply hQ ρ,
-        e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide),
-        e.map_ι_apply_map_ι_apply hQ ρ]
-      module
-    simpa [mul_assoc] using
-      AlmostComplexStructure.bivectorExterior_apply_eq_smul_of_ι_one_apply_of_ι_three_apply
-        hQ h₀ h₂ h1u h3u
+    simpa [hu_coe] using
+      bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hβ
   have hxu : spinCGroupHalfSpinRep o ρ 1 hQ₀ x u = u := hx u hu
   have hxA := toSpecialOrthogonal_mem_unitaryGroup_of_fixed_ne_zero hQ h₀ h₂ hu₀ hu hxu
   obtain ⟨c, hcu, hcb₁, hdet⟩ :=
@@ -781,7 +485,8 @@ theorem
   have hnegβ : ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u) = -(β : W) := by
     rw [hu_coe, e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide), map_neg,
       e.map_ι_apply_map_ι_apply hQ ρ, e.map_ι_apply_map_ι_apply hQ ρ, neg_neg]
-  have hsub : (⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u), ι_zero_ι_two_mem_positive⟩ :
+  have hsub : (⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u),
+      map_ι_apply_map_ι_apply_mem_eigenspace_chirality o u.property _ _⟩ :
       eigenspace (ρ (chirality Q o)) 1) = -β := Subtype.ext hnegβ
   rw [hc, one_pow, one_mul] at hdet
   rw [hc, one_mul, hdet, hsub, map_neg, Submodule.coe_neg, hnegβ, smul_neg] at hcb₁
@@ -877,74 +582,13 @@ variable [Nontrivial W] {J : AlmostComplexStructure V}
   (ho : J.orientation Fact.out = o) (hQ₀ : Q ≠ 0)
 
 include hQ hJ ho in
-/-- Any nontrivial complex Clifford module has a nonzero `-2i`-eigenvector of `c₂(ω)` in `W⁺(o)`
-when `J` induces the orientation `o`. -/
-private theorem exists_ne_zero_bivectorExterior_apply :
-    ∃ u : eigenspace (ρ (chirality Q o)) 1, (u : W) ≠ 0 ∧
-      ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W) := by
-  obtain ⟨e, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
-  have he : e.toBasis.orientation = o := by
-    rw [AlmostComplexStructure.toBasis_orientation_eq_symplecticForm_orientation_four
-        (J.symplecticForm_apply hJ) h₀ h₂,
-      ← J.orientation_eq_of_tames (J.symplecticForm_compatible hJ).tames Fact.out, ho]
-  obtain ⟨ψ, hψ₀⟩ := exists_ne_zero_eigenspace_chirality o hQ ρ (ε := 1) (by simp)
-  -- On `W⁺(o)`, `c₂(ω) = 2 T` where `T = c(e₀) c(e₁)` satisfies `T² = -1`.
-  set T : Module.End ℂ W := ρ (ι Q (e 0) * ι Q (e 1))
-  have hT_pos (z : eigenspace (ρ (chirality Q o)) 1) : T z ∈ eigenspace (ρ (chirality Q o)) 1 :=
-    mapsTo_genEigenspace_of_comm
-      ((commute_chirality_of_mem_even o (ι_mul_ι_mem_evenOdd_zero Q (e 0) (e 1))).map ρ)
-      1 1 z.property
-  have hω (z : eigenspace (ρ (chirality Q o)) 1) :
-      ρ (bivectorExterior Q J.kahlerForm) z = (2 : ℂ) • T z := by
-    rw [AlmostComplexStructure.bivectorExterior_kahlerForm hQ h₀ h₂, map_add, LinearMap.add_apply,
-      map_ι_mul_ι_two_three_apply e hQ ρ he z.property, one_smul, two_smul]
-  have hT2 (z : W) : T (T z) = -z := by
-    simp only [T, map_mul, mul_apply_eq_comp]
-    rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 1) (j := 0) (by decide), map_neg,
-      e.map_ι_apply_map_ι_apply hQ ρ, e.map_ι_apply_map_ι_apply hQ ρ, neg_neg]
-  have hT_anti (z : W) : T (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) z)) =
-      -ρ (ι Q (e 0)) (ρ (ι Q (e 2)) (T z)) := by
-    simp only [T, map_mul, mul_apply_eq_comp]
-    rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 1) (j := 0) (by decide),
-      e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 1) (j := 2) (by decide),
-      e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide)]
-    simp [e.map_ι_apply_map_ι_apply hQ ρ]
-  set u₁ : W := (ψ : W) + Complex.I • T ψ
-  set u₂ : W := (ψ : W) - Complex.I • T ψ
-  by_cases hu₁ : u₁ = 0
-  · have hu₂ : u₂ ≠ 0 := fun h ↦ hψ₀ <|
-      (smul_eq_zero.1 (by linear_combination (norm := module) hu₁ + h :
-        (2 : ℂ) • (ψ : W) = 0)).resolve_left two_ne_zero
-    have hu₂_pos : u₂ ∈ eigenspace (ρ (chirality Q o)) 1 :=
-      Submodule.sub_mem _ ψ.property (Submodule.smul_mem _ _ (hT_pos ψ))
-    have hu₂_T : T u₂ = Complex.I • u₂ := by
-      simp only [u₂, map_sub, map_smul, hT2, smul_neg, sub_neg_eq_add, smul_sub, smul_smul,
-        Complex.I_mul_I, neg_one_smul, add_comm]
-    let u : eigenspace (ρ (chirality Q o)) 1 :=
-      ⟨ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u₂), ι_zero_ι_two_mem_positive (u := ⟨u₂, hu₂_pos⟩)⟩
-    refine ⟨u, fun h ↦ hu₂ ?_, ?_⟩
-    · have := congrArg (fun z ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) z)) h
-      simpa [u, e.map_ι_apply_map_ι_apply hQ ρ] using this
-    · rw [hω u]
-      dsimp only [u]
-      rw [hT_anti u₂, hu₂_T, map_smul, map_smul, ← neg_smul, smul_smul]
-      ring_nf
-  · let u : eigenspace (ρ (chirality Q o)) 1 :=
-      ⟨u₁, Submodule.add_mem _ ψ.property (Submodule.smul_mem _ _ (hT_pos ψ))⟩
-    refine ⟨u, hu₁, ?_⟩
-    have hTu : T u = (-Complex.I) • (u : W) := by
-      simp only [u, u₁, map_add, map_smul, hT2, smul_neg, smul_add, smul_smul, neg_mul,
-        Complex.I_mul_I, neg_neg, one_smul, neg_smul, add_comm]
-    rw [hω u, hTu, smul_smul]
-    ring_nf
-
-include hQ hJ ho in
 /-- **An element fixing the canonical eigenspace rotates `V` complex linearly**: its rotation
 commutes with `J`. -/
 theorem toSpecialOrthogonal_mem_unitaryGroup_of_mem_canonicalLineFixingSubgroup
     {x : spinCGroup Q hQ₀} (hx : x ∈ canonicalLineFixingSubgroup o ρ J hQ₀) :
     spinCGroup.toSpecialOrthogonal Q hQ₀ x ∈ J.unitaryGroup Q := by
-  obtain ⟨e, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
+  obtain ⟨e, -, h₀, h₂⟩ := exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation
+    (ω := J.symplecticForm hJ) (fun v w ↦ by rw [J.symplecticForm_apply hJ, hJ])
   obtain ⟨u, hu₀, hu⟩ := exists_ne_zero_bivectorExterior_apply (ρ := ρ) hQ hJ ho
   exact toSpecialOrthogonal_mem_unitaryGroup_of_fixed_ne_zero hQ h₀ h₂ hu₀ hu (hx u hu)
 
@@ -1147,7 +791,8 @@ theorem det_unitaryLift (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (ho : J.orie
       LinearMap.det
         (AlmostComplexStructure.isComplexLinearMap_of_mem_unitaryGroup
             A.property).toComplexLinearMap := by
-  obtain ⟨e, h₀, h₂⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis hJ
+  obtain ⟨e, -, h₀, h₂⟩ := exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation
+    (ω := J.symplecticForm hJ) (fun v w ↦ by rw [J.symplecticForm_apply hJ, hJ])
   let := J.complexModule
   have := J.complexModule_isScalarTower
   set g := (unitaryGroupFrameEquiv hQ h₀ h₂).symm A

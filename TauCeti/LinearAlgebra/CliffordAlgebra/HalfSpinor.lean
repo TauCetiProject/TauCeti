@@ -19,6 +19,7 @@ import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.Eigenspace.Involution
 import TauCeti.LinearAlgebra.End.Adjugate
 
 /-!
@@ -298,6 +299,14 @@ theorem map_ι_apply_mem_eigenspace_chirality_neg {ε : ℂ} {ψ : W}
   rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_ι o, map_neg, map_mul,
     LinearMap.neg_apply, mul_apply_eq_comp, hψ, map_smul, neg_smul]
 
+omit hQ in
+/-- Two Clifford multiplications preserve each eigenspace of chirality. -/
+theorem map_ι_apply_map_ι_apply_mem_eigenspace_chirality {ε : ℂ} {ψ : W}
+    (hψ : ψ ∈ eigenspace (ρ (chirality Q o)) ε) (v w : V) :
+    ρ (ι Q v) (ρ (ι Q w) ψ) ∈ eigenspace (ρ (chirality Q o)) ε := by
+  simpa only [neg_neg] using
+    map_ι_apply_mem_eigenspace_chirality_neg o (map_ι_apply_mem_eigenspace_chirality_neg o hψ w) v
+
 variable (ρ) in
 omit hQ in
 /-- **Clifford multiplication between the eigenspaces of `Γ`**: `c(v)` restricted to the
@@ -424,26 +433,17 @@ theorem exists_ne_zero_eigenspace_chirality [Nontrivial W] {ε : ℂ} (hε : ε 
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   have hQv : Q v ≠ 0 := by simpa [hQ] using hv
-  obtain ⟨w, hw⟩ := exists_ne (0 : W)
-  have hΓ2 (z : W) : ρ (chirality Q o) (ρ (chirality Q o) z) = z := by
+  have hΓ : Function.Involutive (ρ (chirality Q o)) := by
+    intro z
     rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_self o hQ, map_one, one_apply_eq_self]
-  have hε2 : ε * ε = 1 := by simpa [sq] using hε
-  by_cases hp : w + ε • ρ (chirality Q o) w = 0
-  · have h2w : (2 : ℂ) • w = 0 → w = 0 := fun h ↦ (smul_eq_zero.1 h).resolve_left two_ne_zero
-    have hm : w - ε • ρ (chirality Q o) w ≠ 0 := fun h ↦ hw <| h2w <| by
-      linear_combination (norm := module) hp + h
-    have hmem_neg : w - ε • ρ (chirality Q o) w ∈ eigenspace (ρ (chirality Q o)) (-ε) := by
-      rw [mem_eigenspace_iff, map_sub, map_smul, hΓ2, smul_sub, neg_smul, smul_smul, neg_mul,
-        hε2, neg_one_smul]
-      abel
+  rcases hasEigenvalue_or_neg_of_involutive hΓ (by simpa [sq] using hε) with h | h
+  · obtain ⟨w, hw, hw₀⟩ := h.exists_hasEigenvector
+    exact ⟨⟨w, hw⟩, hw₀⟩
+  · obtain ⟨w, hw, hw₀⟩ := h.exists_hasEigenvector
     let e := halfSpinCliffordMulEquiv o ρ (-ε) hQv
-    refine ⟨⟨(e ⟨w - ε • ρ (chirality Q o) w, hmem_neg⟩ : W), ?_⟩, ?_⟩
-    · simpa only [neg_neg] using (e ⟨w - ε • ρ (chirality Q o) w, hmem_neg⟩).property
-    · intro h0
-      exact hm (congrArg Subtype.val ((map_eq_zero_iff e e.injective).1 (Subtype.ext h0)))
-  · refine ⟨⟨w + ε • ρ (chirality Q o) w, ?_⟩, hp⟩
-    rw [mem_eigenspace_iff, map_add, map_smul, hΓ2]
-    simp only [smul_add, smul_smul, hε2, one_smul, add_comm]
+    refine ⟨⟨(e ⟨w, hw⟩ : W), by simpa only [neg_neg] using (e ⟨w, hw⟩).property⟩, ?_⟩
+    intro h0
+    exact hw₀ (congrArg Subtype.val ((map_eq_zero_iff e e.injective).1 (Subtype.ext h0)))
 
 variable [FiniteDimensional ℂ W]
 

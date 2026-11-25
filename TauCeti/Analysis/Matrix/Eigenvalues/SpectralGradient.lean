@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction
+public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
 # The gradient of a spectral function
@@ -28,6 +31,13 @@ of the gradient is `∏ᵢ ∂ᵢ f(λ(A))`, the gradient is positive definite w
 positive, and `Re tr(∇F_f(A) A) = Df(λ(A)) λ(A)`, which is `f(λ(A))` when `f` is positively
 homogeneous of degree one (Euler's identity).
 
+For a symmetric `f` the gradient does not depend on the eigenbasis: the weights `∂ᵢ f(λ(A))` agree
+on each eigenvalue cluster, so `∇F_f(A)` acts on every eigenvector for `λₖ(A)` as multiplication by
+`∂ₖ f(λ(A))`, and `∇F_f(A) = V diag(∂ f(λ(A))) V*` for every unitary `V` diagonalizing `A` with the
+eigenvalues in any order. Consequently `∇F_f(U A U*) = U ∇F_f(A) U*` for unitary `U`. The gradient
+of the trace is the identity, that of `tr(A²)` is `2A`, and that of the determinant is the
+adjugate `adj A`, which is `det(A) A⁻¹` at an invertible `A`.
+
 ## Main definitions
 
 * `Matrix.IsHermitian.spectralGradient`: the gradient `∇F_f(A)` of the spectral function of `f`
@@ -42,6 +52,16 @@ homogeneous of degree one (Euler's identity).
   `∇F_f(A)` is positive definite.
 * `Matrix.IsHermitian.re_trace_spectralGradient_mul_self_of_homogeneous`: Euler's identity
   `Re tr(∇F_f(A) A) = f(λ(A))` for `f` positively homogeneous of degree one.
+* `Matrix.IsHermitian.spectralGradient_mulVec_of_mulVec_eq`,
+  `Matrix.IsHermitian.spectralGradient_eq_mul_diagonal_mul_star`: for a symmetric `f`, the gradient
+  computed in any eigenbasis.
+* `Matrix.IsHermitian.spectralGradient_mul_mul_star`: unitary equivariance
+  `∇F_f(U A U*) = U ∇F_f(A) U*`.
+* `Matrix.IsHermitian.commute_spectralGradient`: `∇F_f(A)` commutes with `A`.
+* `Matrix.IsHermitian.spectralGradient_sum`, `Matrix.IsHermitian.spectralGradient_sum_sq`,
+  `Matrix.IsHermitian.spectralGradient_prod`: the gradients of `tr`, `tr(A²)` and `det`, the
+  last being the adjugate; `Matrix.IsHermitian.spectralGradient_prod_eq_of_mul_eq` identifies the
+  gradient of `det` at an invertible `A` with any `B` satisfying `B A = det A • 1`.
 
 ## References
 
@@ -178,6 +198,180 @@ theorem re_trace_spectralGradient_mul_self_of_homogeneous (hA : A.IsHermitian)
   rw [re_trace_spectralGradient_mul_self]
   simpa using HasFDerivAt.apply_self_eq_smul_of_eventuallyEq hfd.hasFDerivAt (hasDerivAt_id (1 : ℝ))
     ((eventually_gt_nhds one_pos).mono fun t ht ↦ by simpa [smul_eq_mul] using hhom t ht)
+
+/-! ### Basis independence and unitary equivariance -/
+
+/-- For a symmetric `f`, the weights of the gradient agree at matrix indices with equal
+eigenvalues, since `∂ᵢ f(μ) = ∂ⱼ f(μ)` whenever `μᵢ = μⱼ`. -/
+theorem spectralGradientWeights_eq_of_eigenvalues_eq (hA : A.IsHermitian)
+    {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
+    (hf : ∀ σ : Equiv.Perm (Fin (Fintype.card ι)), ∀ μ, f (μ ∘ σ) = f μ) {i j : ι}
+    (h : hA.eigenvalues i = hA.eigenvalues j) :
+    hA.spectralGradientWeights f i = hA.spectralGradientWeights f j :=
+  TauCeti.fderiv_apply_single_eq_of_comp_swap (hf _) h 1
+
+/-- **The gradient acts on every eigenvector by its weight.** For a symmetric `f`, if `u` is an
+eigenvector of `A` for the sorted eigenvalue `λₖ(A)`, then `∇F_f(A) u = ∂ₖ f(λ(A)) u`. The vector
+`u` need not be a column of the eigenvector unitary chosen by Mathlib. -/
+theorem spectralGradient_mulVec_of_mulVec_eq (hA : A.IsHermitian)
+    {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
+    (hf : ∀ σ : Equiv.Perm (Fin (Fintype.card ι)), ∀ μ, f (μ ∘ σ) = f μ)
+    {k : Fin (Fintype.card ι)} {u : ι → 𝕜} (hu : A *ᵥ u = (hA.eigenvalues₀ k : 𝕜) • u) :
+    hA.spectralGradient f *ᵥ u = (fderiv ℝ f hA.eigenvalues₀ (Pi.single k 1) : 𝕜) • u := by
+  set U : Matrix ι ι 𝕜 := ↑hA.eigenvectorUnitary
+  -- In the eigen-coordinates `U* u`, the diagonal of weights acts as the scalar `∂ₖ f(λ(A))`.
+  have hD : diagonal (fun i ↦ (hA.spectralGradientWeights f i : 𝕜)) *ᵥ (star U *ᵥ u) =
+      (fderiv ℝ f hA.eigenvalues₀ (Pi.single k 1) : 𝕜) • (star U *ᵥ u) := by
+    funext i
+    rw [mulVec_diagonal, Pi.smul_apply, smul_eq_mul]
+    by_cases hi : hA.eigenvalues i = hA.eigenvalues₀ k
+    · rw [hA.spectralGradientWeights_eq_of_eigenvalues_eq hf
+        (hi.trans (hA.eigenvalues_apply_equivOfCardEq k).symm),
+        spectralGradientWeights_equivOfCardEq]
+    · rw [hA.star_eigenvectorUnitary_mulVec_apply_eq_zero hu hi, mul_zero, mul_zero]
+  rw [spectralGradient_def, ← mulVec_mulVec, ← mulVec_mulVec, hD, mulVec_smul, mulVec_mulVec,
+    Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property, one_mulVec]
+
+/-- **The gradient in any eigenbasis.** For a symmetric `f`, if the columns of `V` are eigenvectors
+of `A`, the column `i` for the sorted eigenvalue `λ_{σ i}(A)`, then
+`∇F_f(A) V = V diag(∂_{σ i} f(λ(A)))`. -/
+theorem spectralGradient_mul_eq_mul_diagonal (hA : A.IsHermitian)
+    {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
+    (hf : ∀ σ : Equiv.Perm (Fin (Fintype.card ι)), ∀ μ, f (μ ∘ σ) = f μ)
+    {V : Matrix ι ι 𝕜} (σ : ι → Fin (Fintype.card ι))
+    (hV : A * V = V * diagonal (fun i ↦ (hA.eigenvalues₀ (σ i) : 𝕜))) :
+    hA.spectralGradient f * V =
+      V * diagonal (fun i ↦ (fderiv ℝ f hA.eigenvalues₀ (Pi.single (σ i) 1) : 𝕜)) := by
+  ext a i
+  -- The column `i` of `V` is an eigenvector for `λ_{σ i}(A)`.
+  have hcol : A *ᵥ V.col i = (hA.eigenvalues₀ (σ i) : 𝕜) • V.col i := by
+    rw [← col_mul_eq_mulVec_col, hV]
+    ext b
+    simp [Matrix.mul_diagonal, mul_comm]
+  rw [Matrix.mul_diagonal, ← col_apply (hA.spectralGradient f * V), col_mul_eq_mulVec_col,
+    hA.spectralGradient_mulVec_of_mulVec_eq hf hcol, Pi.smul_apply, col_apply, smul_eq_mul,
+    mul_comm]
+
+/-- **The gradient does not depend on the eigenbasis.** For a symmetric `f` and any unitary `V`
+with `A = V diag(λ_{σ i}(A)) V*`, the gradient is `∇F_f(A) = V diag(∂_{σ i} f(λ(A))) V*`. -/
+theorem spectralGradient_eq_mul_diagonal_mul_star (hA : A.IsHermitian)
+    {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
+    (hf : ∀ σ : Equiv.Perm (Fin (Fintype.card ι)), ∀ μ, f (μ ∘ σ) = f μ)
+    {V : Matrix ι ι 𝕜} (hVu : V ∈ unitaryGroup ι 𝕜) (σ : ι → Fin (Fintype.card ι))
+    (hAV : A = V * diagonal (fun i ↦ (hA.eigenvalues₀ (σ i) : 𝕜)) * star V) :
+    hA.spectralGradient f =
+      V * diagonal (fun i ↦ (fderiv ℝ f hA.eigenvalues₀ (Pi.single (σ i) 1) : 𝕜)) * star V := by
+  have hV : A * V = V * diagonal (fun i ↦ (hA.eigenvalues₀ (σ i) : 𝕜)) := by
+    conv_lhs => rw [hAV]
+    rw [Matrix.mul_assoc, Unitary.star_mul_self_of_mem hVu, Matrix.mul_one]
+  rw [← hA.spectralGradient_mul_eq_mul_diagonal hf σ hV, Matrix.mul_assoc,
+    Unitary.mul_star_self_of_mem hVu, Matrix.mul_one]
+
+/-- **Unitary equivariance of the gradient.** For a symmetric `f` and a unitary `U`,
+`∇F_f(U A U*) = U ∇F_f(A) U*`. -/
+theorem spectralGradient_mul_mul_star (hA : A.IsHermitian) {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
+    (hf : ∀ σ : Equiv.Perm (Fin (Fintype.card ι)), ∀ μ, f (μ ∘ σ) = f μ)
+    {U : Matrix ι ι 𝕜} (hU : U ∈ unitaryGroup ι 𝕜) (hUA : (U * A * star U).IsHermitian) :
+    hUA.spectralGradient f = U * hA.spectralGradient f * star U := by
+  have he : hUA.eigenvalues₀ = hA.eigenvalues₀ := hA.eigenvalues₀_mul_mul_star hU hUA
+  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
+  set W : Matrix ι ι 𝕜 := ↑hA.eigenvectorUnitary
+  have hW : U * W ∈ unitaryGroup ι 𝕜 := mul_mem hU hA.eigenvectorUnitary.property
+  have hAW : A = W * diagonal (fun i ↦ (hA.eigenvalues₀ (e.symm i) : 𝕜)) * star W := by
+    have hev : (RCLike.ofReal ∘ hA.eigenvalues : ι → 𝕜) =
+        fun i ↦ (hA.eigenvalues₀ (e.symm i) : 𝕜) := by
+      funext i
+      rw [Function.comp_apply, hA.eigenvalues₀_equivOfCardEq_symm]
+    conv_lhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply, hev]
+  have hUAW : U * A * star U =
+      (U * W) * diagonal (fun i ↦ (hUA.eigenvalues₀ (e.symm i) : 𝕜)) * star (U * W) := by
+    rw [he]
+    conv_lhs => rw [hAW]
+    simp only [star_mul, Matrix.mul_assoc]
+  rw [hUA.spectralGradient_eq_mul_diagonal_mul_star hf hW e.symm hUAW, spectralGradient_def, he]
+  simp only [spectralGradientWeights_def, star_mul, Matrix.mul_assoc, e, W]
+
+/-- The gradient of a spectral function commutes with the matrix. -/
+theorem commute_spectralGradient (hA : A.IsHermitian) (f : (Fin (Fintype.card ι) → ℝ) → ℝ) :
+    Commute (hA.spectralGradient f) A := by
+  -- Both are conjugates of diagonal matrices by the same unitary.
+  have h := (commute_diagonal (fun i ↦ (hA.spectralGradientWeights f i : 𝕜))
+    (RCLike.ofReal ∘ hA.eigenvalues)).map (Unitary.conjStarAlgAut 𝕜 _ hA.eigenvectorUnitary)
+  rwa [← hA.spectral_theorem, Unitary.conjStarAlgAut_apply, ← spectralGradient_def] at h
+
+/-! ### The trace, the sum of squares and the determinant -/
+
+/-- **The gradient of the trace** is the identity: for `f = σ₁`, `∇F_f(A) = 1`. -/
+@[simp]
+theorem spectralGradient_sum (hA : A.IsHermitian) :
+    hA.spectralGradient (fun μ ↦ ∑ k, μ k) = 1 := by
+  have hd : ∀ μ : Fin (Fintype.card ι) → ℝ, HasFDerivAt (fun μ ↦ ∑ k, μ k)
+      (∑ k, ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (Fintype.card ι) ↦ ℝ) k) μ :=
+    fun μ ↦ HasFDerivAt.fun_sum fun k _ ↦ hasFDerivAt_apply k μ
+  have hw : ∀ i, (hA.spectralGradientWeights (fun μ ↦ ∑ k, μ k) i : 𝕜) = 1 := fun i ↦ by
+    rw [spectralGradientWeights_def, (hd _).fderiv]
+    simp
+  rw [spectralGradient_def]
+  simp only [hw, diagonal_one, Matrix.mul_one,
+    Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property]
+
+/-- **The gradient of `tr(A²)`**: for `f(μ) = ∑ₖ μₖ²`, `∇F_f(A) = 2 A`. -/
+@[simp]
+theorem spectralGradient_sum_sq (hA : A.IsHermitian) :
+    hA.spectralGradient (fun μ ↦ ∑ k, μ k ^ 2) = (2 : 𝕜) • A := by
+  have hd : ∀ μ : Fin (Fintype.card ι) → ℝ, HasFDerivAt (fun μ ↦ ∑ k, μ k ^ 2)
+      (∑ k, (2 * μ k) •
+        ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (Fintype.card ι) ↦ ℝ) k) μ :=
+    fun μ ↦ (HasFDerivAt.fun_sum fun k _ ↦ HasFDerivAt.pow (hasFDerivAt_apply k μ) 2).congr_fderiv
+      (by simp)
+  have hw : ∀ i, (hA.spectralGradientWeights (fun μ ↦ ∑ k, μ k ^ 2) i : 𝕜) =
+      2 * (hA.eigenvalues i : 𝕜) := fun i ↦ by
+    rw [spectralGradientWeights_def, (hd _).fderiv]
+    simp [hA.eigenvalues₀_equivOfCardEq_symm, Pi.single_apply, map_ofNat]
+  rw [spectralGradient_def]
+  conv_rhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply]
+  simp only [hw]
+  have h2 : (diagonal fun i ↦ 2 * (hA.eigenvalues i : 𝕜)) =
+      (2 : 𝕜) • diagonal (RCLike.ofReal ∘ hA.eigenvalues) := by
+    rw [← diagonal_smul]
+    exact congrArg diagonal (funext fun i ↦ by simp)
+  rw [h2, Matrix.mul_smul, Matrix.smul_mul]
+
+/-- **The gradient of the determinant** is the adjugate: for `f = σₙ`, `∇F_f(A) = adj A`. The
+weights `∏_{j ≠ i} λⱼ(A)` are the diagonal of the adjugate of `diag(λ(A))`, and the adjugate
+commutes with unitary conjugation. -/
+@[simp]
+theorem spectralGradient_prod (hA : A.IsHermitian) :
+    hA.spectralGradient (fun μ ↦ ∏ k, μ k) = A.adjugate := by
+  have hw : (fun i ↦ (hA.spectralGradientWeights (fun μ ↦ ∏ k, μ k) i : 𝕜)) =
+      fun i ↦ ∏ j ∈ univ.erase i, (RCLike.ofReal ∘ hA.eigenvalues) j := by
+    funext i
+    rw [spectralGradientWeights_def, TauCeti.fderiv_prod_apply_single, RCLike.ofReal_prod]
+    -- Reindex the product from sorted indices to matrix indices.
+    refine prod_equiv (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)))
+      (by simp [Equiv.eq_symm_apply]) fun j _ ↦ ?_
+    rw [Function.comp_apply, hA.eigenvalues_apply_equivOfCardEq]
+  rw [spectralGradient_def, hw, ← adjugate_diagonal]
+  conv_rhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply,
+    adjugate_mul_mul_of_mul_eq_one (Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property)]
+
+/-- The gradient of the determinant times the matrix is `det A • 1`: for `f = σₙ`,
+`∇F_f(A) A = det A • 1`. -/
+theorem spectralGradient_prod_mul_self (hA : A.IsHermitian) :
+    hA.spectralGradient (fun μ ↦ ∏ k, μ k) * A = A.det • 1 := by
+  rw [spectralGradient_prod, adjugate_mul]
+
+/-- At an invertible Hermitian `A`, the gradient of the determinant (`f = σₙ`) is the unique
+matrix `B` with `B A = det A • 1`. -/
+theorem spectralGradient_prod_eq_of_mul_eq (hA : A.IsHermitian) (h : IsUnit A.det)
+    {B : Matrix ι ι 𝕜} (hB : B * A = A.det • 1) :
+    hA.spectralGradient (fun μ ↦ ∏ k, μ k) = B :=
+  ((isUnit_iff_isUnit_det A).2 h).mul_left_inj.1 (hA.spectralGradient_prod_mul_self.trans hB.symm)
+
+/-- At an invertible Hermitian `A`, the gradient of the determinant is `det A • A⁻¹`. -/
+theorem spectralGradient_prod_eq_det_smul_inv (hA : A.IsHermitian) (h : IsUnit A.det) :
+    hA.spectralGradient (fun μ ↦ ∏ k, μ k) = A.det • A⁻¹ :=
+  hA.spectralGradient_prod_eq_of_mul_eq h (by rw [Matrix.smul_mul, nonsing_inv_mul A h])
 
 end IsHermitian
 

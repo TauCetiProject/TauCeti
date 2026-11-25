@@ -85,4 +85,18 @@ theorem eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg (hg : Function.Invol
   rw [← neg_smul] at h
   exact LinearMap.congr_fun h y
 
+/-- On a nontrivial module, an involution has a nonzero eigenvector for one of the
+complementary eigenvalues `μ` and `-μ`. -/
+theorem hasEigenvalue_or_neg_of_involutive [Nontrivial Y] (hg : Function.Involutive g)
+    {μ : k} (hμ : μ * μ = 1) : g.HasEigenvalue μ ∨ g.HasEigenvalue (-μ) := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
+  have hμ' := (neg_mul_neg μ μ).trans hμ
+  have hsum := eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hg hμ hμ' y
+  by_cases hp : (eigenProjOfInvolutive hg hμ y : Y) = 0
+  · right
+    rw [hp, zero_add] at hsum
+    exact hasEigenvalue_of_hasEigenvector
+      ⟨(eigenProjOfInvolutive hg hμ' y).property, hsum.trans_ne hy⟩
+  · exact Or.inl <| hasEigenvalue_of_hasEigenvector ⟨(eigenProjOfInvolutive hg hμ y).property, hp⟩
+
 end Module.End
