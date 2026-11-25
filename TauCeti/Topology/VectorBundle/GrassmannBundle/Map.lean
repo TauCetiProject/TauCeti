@@ -186,7 +186,8 @@ theorem continuous_map (hf : Continuous f)
   refine h₁₂₃.congr (.of_forall fun p ↦ ?_)
   dsimp only
   rw [coe_map_apply f U p, coe_map_apply f U p₀]
-  rfl
+  dsimp only
+  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply]
 
 variable (k) in
 /-- **The homeomorphism of Grassmann bundles induced by a homeomorphism of the bases** covered by
