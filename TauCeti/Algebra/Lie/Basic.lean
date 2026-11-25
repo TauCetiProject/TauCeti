@@ -38,9 +38,9 @@ This file supplies general constructions for Lie modules that are missing from M
   `TauCeti.lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top`: when `L = 𝔷(L) + ⁅L, L⁆`, every
   element splits as a central element plus a derived one, and the derived ideal is perfect.
 * `LieHom.center_eq_bot_of_range_eq_of_isCompl` and
-  `LieHom.derivedSeries_one_eq_top_of_range_eq_of_isCompl`: a Lie algebra embedded onto an ideal
+  `LieHom.derivedSeries_one_eq_top_of_range_eq_of_sup_eq_top`: a Lie algebra embedded onto an ideal
   complementary to the centre is centreless, and one embedded onto the derived ideal is perfect
-  when `L = 𝔷(L) ⊕ ⁅L, L⁆`. These read the Lie algebra of a subgroup integrating `⁅𝔤, 𝔤⁆`.
+  when `L = 𝔷(L) + ⁅L, L⁆`. These read the Lie algebra of a subgroup integrating `⁅𝔤, 𝔤⁆`.
 * `LieEquiv.apply_mem_center` and `LieEquiv.map_center`: a Lie algebra isomorphism maps the centre
   onto the centre.
 * `LieEquiv.isCompl_map`: a Lie algebra isomorphism maps complementary ideals to complementary
@@ -730,19 +730,19 @@ theorem center_eq_bot_of_range_eq_of_isCompl (f : L' →ₗ⁅R⁆ L) (hf : Func
   rw [LieIdeal.center_eq_bot_of_isCompl_center J hc, LieSubmodule.mem_bot] at hcen
   exact hf (by simpa using congrArg Subtype.val hcen)
 
-/-- **A Lie algebra embedded onto the derived ideal is perfect when the derived ideal complements
-the centre.** If `L = 𝔷(L) ⊕ ⁅L, L⁆` and `f : L' → L` is injective with range `⁅L, L⁆`, then
+/-- **A Lie algebra embedded onto the derived ideal is perfect when the centre and the derived
+ideal span.** If `L = 𝔷(L) + ⁅L, L⁆` and `f : L' → L` is injective with range `⁅L, L⁆`, then
 `⁅L', L'⁆ = L'`: the derived ideal `⁅L, L⁆` is perfect
 (`TauCeti.lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top`), and `f` identifies `L'` with
 it. -/
-theorem derivedSeries_one_eq_top_of_range_eq_of_isCompl (f : L' →ₗ⁅R⁆ L)
+theorem derivedSeries_one_eq_top_of_range_eq_of_sup_eq_top (f : L' →ₗ⁅R⁆ L)
     (hf : Function.Injective f)
     (hr : LinearMap.range f.toLinearMap = (derivedSeries R L 1).toSubmodule)
-    (hc : IsCompl (center R L) (derivedSeries R L 1)) : derivedSeries R L' 1 = ⊤ := by
+    (h : center R L ⊔ derivedSeries R L 1 = ⊤) : derivedSeries R L' 1 = ⊤ := by
   have hD : derivedSeries R (derivedSeries R L 1) 1 = ⊤ := by
     rw [LieIdeal.derivedSeries_eq_derivedSeriesOfIdeal_comap, derivedSeriesOfIdeal_succ,
       derivedSeriesOfIdeal_zero,
-      TauCeti.lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top hc.sup_eq_top,
+      TauCeti.lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top h,
       LieIdeal.comap_incl_self]
   have hs : (f.range : Set L) = (derivedSeries R L 1).toLieSubalgebra :=
     congrArg (fun p : Submodule R L ↦ (p : Set L)) (f.range_toSubmodule.trans hr)

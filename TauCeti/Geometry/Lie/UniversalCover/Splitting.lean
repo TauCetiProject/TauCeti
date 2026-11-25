@@ -320,9 +320,9 @@ theorem derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries
       ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
         LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) 1 =
       ⊤ :=
-  LieHom.derivedSeries_one_eq_top_of_range_eq_of_isCompl _
+  LieHom.derivedSeries_one_eq_top_of_range_eq_of_sup_eq_top _
     (ImmersedLieSubgroupData.injective_lieMap_toContMDiffMonoidMorphism _)
-    range_lieMap_integralLeafSubgroupData_derivedSeries hc
+    range_lieMap_integralLeafSubgroupData_derivedSeries hc.sup_eq_top
 
 /-! ### The centre factor is the centre of the Lie algebra -/
 
