@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
-public import TauCeti.Topology.Algebra.RestrictedProduct.Units
+public import TauCeti.Topology.Algebra.RestrictedProduct.Box
 
 /-!
 # The Haar character of units of a restricted product of rings
