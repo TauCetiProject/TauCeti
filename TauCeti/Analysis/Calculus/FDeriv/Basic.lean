@@ -28,7 +28,7 @@ scalar functions recover both functions as differentiable.
 * `Asymptotics.IsBigO.hasFDerivWithinAt_zero`, `Asymptotics.IsBigO.hasFDerivAt_zero`: a function
   dominated near a point by a function with zero value and zero derivative there has zero
   derivative there as well.
-* `LipschitzWith.enorm_fderiv_le`: a `C`-Lipschitz function has derivative of extended norm at
+* `LipschitzWith.eNorm_fderiv_le`: a `C`-Lipschitz function has derivative of extended norm at
   most `C`, restating Mathlib's `norm_fderiv_le_of_lipschitz` for the extended norm.
 -/
 
@@ -118,7 +118,7 @@ theorem Asymptotics.IsBigO.hasFDerivAt_zero (h : f =O[𝓝 x] g)
 end Domination
 
 /-- A `C`-Lipschitz function has derivative of extended norm at most `C` everywhere. -/
-theorem LipschitzWith.enorm_fderiv_le (𝕜 : Type*) [NontriviallyNormedField 𝕜] {G H : Type*}
+theorem LipschitzWith.eNorm_fderiv_le (𝕜 : Type*) [NontriviallyNormedField 𝕜] {G H : Type*}
     [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
     {f : G → H} {C : NNReal} (hf : LipschitzWith C f) {x : G} : ‖fderiv 𝕜 f x‖ₑ ≤ C := by
   rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]

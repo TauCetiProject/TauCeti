@@ -411,7 +411,7 @@ private theorem exists_measurable_ae_mass_slice_le_of_lipschitzWith [FiniteDimen
   obtain ⟨v, hv, -, hvL, -, hlim⟩ := hu.exists_seq_contDiff_lipschitzWith_tendsto
   refine exists_measurable_ae_mass_slice_le_of_tendsto hT hv hu.continuous.measurable
     (fun x _ => hlim x) fun j => lintegral_massMeasure_le_mul_mass hT.hasLocallyFiniteMass
-      fun _ => (hvL j).enorm_fderiv_le ℝ
+      fun _ => (hvL j).eNorm_fderiv_le ℝ
 
 /-- The Lipschitz slicing inequality on a strip, with a measurable majorant, for the truncation
 `max a (min u b)` of a Lipschitz function on all of `E`. -/
@@ -435,7 +435,7 @@ private theorem exists_measurable_ae_mass_slice_truncation_le [FiniteDimensional
   · refine (lintegral_mono fun x => ?_).trans (lintegral_indicator_const_le _ _)
     by_cases hx : (x : Ω) ∈ {x : Ω | u x ∈ Ioo a b}
     · rw [indicator_of_mem hx]
-      exact (hvL j).enorm_fderiv_le ℝ
+      exact (hvL j).eNorm_fderiv_le ℝ
     · rw [indicator_of_notMem hx, hv0 j x hx, ← ofReal_norm]
       simp
 
