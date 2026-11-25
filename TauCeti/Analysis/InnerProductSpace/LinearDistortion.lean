@@ -53,7 +53,8 @@ both at least `σ₁ / σₙ = ‖A‖ / ℓ(A) ≥ 1`.
   and their inner analogues: invariance under orientation-preserving isometries on either side and
   under scalars `c` with `cⁿ > 0`.
 * `Orientation.outerDistortion_smul_of_pow_neg`, `Orientation.innerDistortion_smul_of_pow_neg`:
-  scalars with `cⁿ < 0` (negative scalars in odd dimension) make both distortions degenerate.
+  scaling a map with `J(A) ≥ 0` by `c` with `cⁿ < 0` (a negative scalar in odd dimension) makes
+  `q_I = 0`, and also makes `q_O = ∞` when `A ≠ 0`.
 * `Orientation.outerDistortion_neg_neg`, `Orientation.innerDistortion_neg_neg`: reversing both
   orientations changes neither distortion.
 * `Orientation.outerDistortion_linearIsometryEquiv`,
