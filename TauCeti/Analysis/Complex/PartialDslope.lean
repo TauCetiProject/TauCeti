@@ -117,6 +117,15 @@ theorem partialDslope_of_eq [Finite ι] (hf : DifferentiableAt ℂ f z) (h : z i
     partialDslope i f ζ z = partialDeriv i f z := by
   rw [partialDslope_apply, h, dslope_same, ← h, partialDeriv_eq_deriv_update hf]
 
+/-- The divided difference of the zero function is zero. -/
+@[simp]
+theorem partialDslope_zero_fun (i : ι) (ζ : ℂ) : partialDslope i (0 : (ι → ℂ) → E) ζ = 0 := by
+  ext z
+  by_cases h : z i = ζ
+  · rw [partialDslope_apply, h, dslope_same]
+    simp
+  · simp [partialDslope_of_ne h]
+
 /-- **Uniqueness of the divided difference.** For entire `f`, a continuous function `g` with
 `f z = f (update z i ζ) + (z i - ζ) • g z` for every `z` is the divided difference of `f`. -/
 theorem eq_partialDslope [Finite ι] [CompleteSpace E] {g : (ι → ℂ) → E} (hf : Differentiable ℂ f)

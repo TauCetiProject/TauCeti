@@ -124,7 +124,7 @@ private theorem norm_form_le_one_of_mem_adelicTranslateCarrier {v w : V}
   have hg : (g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V) ∈
       (L.completedRationalForm p).isometryGroup :=
     L.orthogonalGroup_norm_baseChange p ▸ (g p).property
-  have h := LinearMap.BilinForm.mem_isometryGroup_iff.mp hg (L.localizationToCompletion p a)
+  have h := LinearMap.mem_isometryGroup_iff.mp hg (L.localizationToCompletion p a)
     (L.localizationToCompletion p b)
   have hva : (g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V) (L.localizationToCompletion p a) =
       1 ⊗ₜ v := by rw [ha, LinearEquiv.apply_symm_apply]
@@ -226,7 +226,7 @@ noncomputable def adelicTranslateDiagonalIsometry (γ : orthogonalGroup L.norm) 
     Isometry (L.adelicTranslate g)
       (L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ * g)) where
   toLinearEquiv := (γ : V ≃ₗ[ℚ] V)
-  map_app' := LinearMap.BilinForm.mem_isometryGroup_iff.mp (L.orthogonalGroup_norm ▸ γ.property)
+  map_app' := LinearMap.mem_isometryGroup_iff.mp (L.orthogonalGroup_norm ▸ γ.property)
   map_carrier := (L.adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier g γ).symm
 
 /-- The isometry `g • L ≅ γ g • L` is `γ` on the ambient space. -/
