@@ -23,10 +23,11 @@ of `K` (`TauCeti.frontierRadialProjection_mem_frontier`). When `K` is moreover c
 that frontier pointwise (`TauCeti.frontierRadialProjection_eq_self_of_mem_frontier`), and it is
 continuous away from `p`.
 
-The projection blows up only at its centre, at the rate `1 / ‖x - p‖`. Suppose that
-`ball p ρ ⊆ K ⊆ closedBall p R` with `ρ > 0`. The gauge is then `ρ⁻¹`-Lipschitz, and every value
-`ψ x` lies in `closedBall p R`. Writing `ψ x - ψ y` as `a (u - v) + a (g v - g u) (b v)` with
-`u = x - p`, `v = y - p`, `a = (g u)⁻¹`, `b = (g v)⁻¹` gives the bound
+The Lipschitz constant of the projection blows up only at its centre, at the rate `1 / ‖x - p‖`.
+Suppose that `ball p ρ ⊆ K ⊆ closedBall p R` with `ρ > 0`. The gauge is then `ρ⁻¹`-Lipschitz,
+and every value `ψ x` lies in `closedBall p R`. Writing `ψ x - ψ y` as
+`a (u - v) + a (g v - g u) (b v)` with `u = x - p`, `v = y - p`, `a = (g u)⁻¹`, `b = (g v)⁻¹`
+gives the bound
 
 `‖ψ x - ψ y‖ ≤ R / r * (1 + R / ρ) * ‖x - y‖`
 

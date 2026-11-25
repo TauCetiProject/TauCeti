@@ -57,8 +57,9 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
-* `TauCeti.lintegral_setLIntegral_enorm_sub_rpow_le`: the integral over a set of centres `p` of
-  the potential `∫ x in A, ‖x - p‖ ^ s dν` of an s-finite measure `ν`.
+* `TauCeti.lintegral_setLIntegral_enorm_sub_rpow_le`: an upper bound
+  `n μ(B(0, 1)) D ^ (n + s) / (n + s) · ν A` for the integral over a set of centres `p` of the
+  potential `∫ x in A, ‖x - p‖ ^ s dν` of an s-finite measure `ν`.
 * `TauCeti.ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le`: off-diagonal real-norm domination
   `‖f y‖ ≤ C * ‖x - y‖ ^ s` on a measurable set implies `∀ᵐ y, ‖f y‖ₑ ≤ ofReal C * ‖x - y‖ₑ ^ s`
   under any null-singleton measure.
