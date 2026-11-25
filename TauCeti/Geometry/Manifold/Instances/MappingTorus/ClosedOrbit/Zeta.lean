@@ -6,27 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
+public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.RingTheory.NovikovSeries.OrbitZeta.Basic
 import TauCeti.Dynamics.PeriodicPts.PeriodicPair
 
 /-!
 # The orbit zeta function of a mapping torus as a sum over fixed points
 
-Let `φ` be a diffeomorphism of a compact manifold `M`, modelled on a finite-dimensional real space,
-nondegenerate up to every period, and let `Y_φ` be its mapping torus. A point `y` with
+Let `φ` be a diffeomorphism of a locally compact manifold `M`, modelled on a finite-dimensional
+real space, each of whose positive iterates has only finitely many fixed points (for instance a
+diffeomorphism of a compact manifold nondegenerate up to every period), and let `Y_φ` be its
+mapping torus. A point `y` with
 `φ^[n] y = y`, `n > 0`, gives a closed orbit of the suspension flow of time period `n`, with class
-`[γ_(y, n)] ∈ H₁(Y_φ; ℤ)` (`TauCeti.SmoothMappingTorus.closedOrbitHomologyClass`), and a
-Lefschetz sign `sgn det (1 - d(φ^[n])_y)`. The *fixed-point form* of the zeta function of `φ` is
-the exponential of
+`[γ_(y, n)] ∈ H₁(Y_φ; ℤ)` (`TauCeti.SmoothMappingTorus.closedOrbitHomologyClass`), and a sign
+`sgn det (1 - d(φ^[n])_y)`: the local Lefschetz index of `y` as a fixed point of `φ^[n]` when `y`
+is nondegenerate, and `0` when it is degenerate. The *fixed-point form* of the zeta function of
+`φ` is the exponential of
 
 `∑_{n ≥ 1} (1 / n) ∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y) e^[γ_(y, n)]`
 
 in the Novikov completion `Nov(K, H₁(Y_φ; ℤ), N)` along the time period homomorphism `N`, over a
 `ℚ`-algebra `K`. Recording only the time period `N [γ_(y, n)] = n` would turn it into
-`exp (∑_{n ≥ 1} (∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y)) tⁿ / n)`, whose inner sums the
-Lefschetz fixed-point formula identifies with the Lefschetz numbers `L(φⁿ)`; this is how the
-fixed-point form compares the orbit zeta function with the homological zeta function. Neither
-that specialization nor the Lefschetz formula is proved here.
+`exp (∑_{n ≥ 1} (∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y)) tⁿ / n)`. When `M` is compact and
+`φ` is nondegenerate up to every period, the Lefschetz fixed-point formula identifies these inner
+sums with the Lefschetz numbers `L(φⁿ)`; this is how the fixed-point form compares the orbit zeta
+function with the homological zeta function. Neither that specialization nor the Lefschetz formula
+is proved here.
 
 This file proves that the fixed-point form is the orbit zeta function
 (`TauCeti.NovikovSeries.orbitZeta`) of the periodic orbits of `φ`, labelled by the return maps:
@@ -40,7 +45,7 @@ the pairs `(d i * k, φ^[j] (x i))` with `k ≥ 1` and `j < d i`, each exactly o
 (`Function.periodicPairEquiv`). The class of the closed orbit of `φ^[j] (x i)` of period `d i * k`
 is `k [γ_(x i)]`
 (`TauCeti.SmoothMappingTorus.closedOrbitHomologyClass_const_mul`,
-`TauCeti.SmoothMappingTorus.closedOrbitHomologyClass_apply_iterate`), its Lefschetz sign is that of
+`TauCeti.SmoothMappingTorus.closedOrbitHomologyClass_apply_iterate`), its sign is that of
 `x i` (`TauCeti.det_id_sub_fixedPointDerivative_apply_iterate`), and the `d i` points of the orbit
 together contribute `d i / (d i * k) = 1 / k`
 (`TauCeti.NovikovSeries.hasSum_orbitLog_sigma_fin`). Exponentiating,
@@ -80,19 +85,20 @@ open NovikovSeries
 
 variable {E H M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] [T2Space M] [CompactSpace M] {φ : M ≃ₘ⟮I, I⟯ M}
-  (hφ : ∀ N, IsNondegenerateUpToPeriod I φ N) {ι : Type*} {x : ι → M} {d : ι → ℕ}
+  [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] {φ : M ≃ₘ⟮I, I⟯ M}
+  (hfin : ∀ n, 0 < n → (ptsOfPeriod φ n).Finite) {ι : Type*} {x : ι → M} {d : ι → ℕ}
   (hxd : ∀ i, IsPeriodicPt φ (d i) (x i)) (hd : ∀ i, 0 < d i)
   (hmin : ∀ i, minimalPeriod φ (x i) = d i)
   (hrep : ∀ y ∈ periodicPts φ, ∃! i, ∃ j, (⇑φ)^[j] (x i) = y)
   (K : Type*) [CommRing K] [Algebra ℚ K]
 
-include hφ hxd hd hmin hrep in
+include hfin hxd hd hmin hrep in
 /-- **The fixed points of the iterates sum to the orbit logarithm.** Let `φ` be a diffeomorphism
-of a compact manifold, nondegenerate up to every period, and let `x i` be points of least periods
-`d i > 0` such that every periodic point of `φ` lies on the orbit of exactly one `x i`. Then over
-any `ℚ`-algebra `K`, the terms `sgn det (1 - d(φ^[n])_y) / n · e^[γ_(y, n)]`, one for each `n > 0`
-and each fixed point `y` of `φ^[n]`, sum in `Nov(K, H₁(Y_φ; ℤ), N)` to the orbit logarithm
+each of whose positive iterates has finitely many fixed points, and let `x i` be points of least
+periods `d i > 0` such that every periodic point of `φ` lies on the orbit of exactly one `x i`.
+Then over any `ℚ`-algebra `K`, the terms `sgn det (1 - d(φ^[n])_y) / n · e^[γ_(y, n)]`, one for
+each `n > 0` and each fixed point `y` of `φ^[n]`, sum in `Nov(K, H₁(Y_φ; ℤ), N)` to the orbit
+logarithm
 `∑ᵢ ∑_{k ≥ 1} sgn det (1 - d(φ^[d i * k])_(x i)) / k · e^(k [γ_(x i)])` of the periodic orbits,
 labelled by their return maps. -/
 theorem hasSum_single_sign_det_div_orbitLog :
@@ -108,7 +114,7 @@ theorem hasSum_single_sign_det_div_orbitLog :
     injective_of_existsUnique_iterate (fun i ↦ mk_mem_periodicPts (hd i) (hxd i)) hrep
   have key := hasSum_orbitLog_sigma_fin (K := K)
     (fun i ↦ timePeriodHom_closedOrbitHomologyClass_pos (hxd i) (hd i))
-    (tendsto_timePeriodHom_closedOrbitHomologyClass hφ hx hxd hd)
+    (tendsto_timePeriodHom_closedOrbitHomologyClass hfin hx hxd hd)
     (fun i n ↦ SignType.sign (LinearMap.det (LinearMap.id -
       fixedPointDerivative I (⇑φ)^[d i * n] ⟨x i, ((hxd i).mul_const n).eq⟩)))
     (fun i ↦ (hd i).ne')
@@ -116,7 +122,7 @@ theorem hasSum_single_sign_det_div_orbitLog :
   convert key using 2 with q
   obtain ⟨⟨i, k⟩, j⟩ := q
   -- The pair `(n, y)` is `(d i * (k + 1), φ^[j] (x i))`. The closed orbit through `y` of period
-  -- `n` has class `(k + 1) • [γ_(x i)]` and the Lefschetz sign of `x i`.
+  -- `n` has class `(k + 1) • [γ_(x i)]` and the sign of `x i`.
   have hq := coe_periodicPairEquiv_apply hmin hd hrep ⟨(i, k), j⟩
   have hn := congrArg Prod.fst hq
   have hy := congrArg Prod.snd hq
@@ -129,7 +135,7 @@ theorem hasSum_single_sign_det_div_orbitLog :
       (congrArg _ hn) hy, det_id_sub_fixedPointDerivative_apply_iterate
       ((hxd i).mul_const (k + 1)) (fun _ ↦ φ.contMDiff.mdifferentiable (by simp) _) j, hn]
 
-include hφ hxd hd hmin hrep in
+include hfin hxd hd hmin hrep in
 /-- **The orbit zeta function as a sum over fixed points.** Under the hypotheses of
 `TauCeti.SmoothMappingTorus.hasSum_single_sign_det_div_orbitLog`, the orbit zeta function of the
 periodic orbits of `φ`, labelled by their return maps, is
@@ -143,6 +149,6 @@ theorem orbitZeta_eq_exp_tsum_single_sign_det_div :
           ((SignType.sign (LinearMap.det (LinearMap.id -
             fixedPointDerivative I (⇑φ)^[q.val.1] ⟨q.val.2, q.property.2.eq⟩)) : ℤ) / q.val.1)) :
           NovikovSeries K _ (timePeriodHom φ))) := by
-  rw [orbitZeta_def, (hasSum_single_sign_det_div_orbitLog hφ hxd hd hmin hrep K).tsum_eq]
+  rw [orbitZeta_def, (hasSum_single_sign_det_div_orbitLog hfin hxd hd hmin hrep K).tsum_eq]
 
 end TauCeti.SmoothMappingTorus

@@ -142,7 +142,7 @@ theorem ιTensorObj_superTensorObj_d (τ : ZMod 2) (K L : CochainComplex (Module
           ((K.X p ◁ ((L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r).hom ≫ L.d r r' ≫
               (L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r').inv)) ≫
             HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p r' n' (by omega)) := by
-  simp only [HomologicalComplex.ι_tensorObj_d' K (L.signedDifferential τ) h hp hr hn,
+  simp only [HomologicalComplex.ιTensorObj_tensor_d' K (L.signedDifferential τ) h hp hr hn,
     CochainComplex.scaleDifferential_d_eq, whiskerLeft_zsmul, Preadditive.zsmul_comp,
     Units.smul_def, smul_smul, ← Units.val_mul, negOnePow_mul_uzpow]
 

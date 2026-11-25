@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Haar
 public import Mathlib.Topology.ContinuousMap.Compact
+public import TauCeti.MeasureTheory.Integral.LocallyConvex
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
@@ -17,7 +18,10 @@ continuous vector-valued functions. It records the norm bound, constants, and in
 and right translation needed for averaging representations.
 
 The implementation reuses Mathlib's Bochner integral, its commutation with continuous linear maps,
-and the generic left-, right-, and inversion-invariance lemmas for integrals on groups.
+and the generic left-, right-, and inversion-invariance lemmas for integrals on groups. On a Banach
+space the Haar average is the integral `ContinuousMap.compactIntegral` against normalized Haar
+measure (`TauCeti.haarAverage_eq_compactIntegral`), which extends averaging to complete locally
+convex spaces.
 -/
 
 public section
@@ -127,6 +131,12 @@ theorem haarAverage_comp_inv (f : C(G, V)) :
   simp only [haarAverage_apply, ContinuousMap.coe_comp, Function.comp_apply,
     ContinuousMap.coe_ofClass, Homeomorph.coe_inv]
   exact integral_inv_eq_self f (haarProb G)
+
+/-- On a Banach space, the Haar average is the integral against normalized Haar measure of
+continuous maps into a complete locally convex space. -/
+theorem haarAverage_eq_compactIntegral [CompleteSpace V] (f : C(G, V)) :
+    haarAverage G (𝕜 := 𝕜) f = f.compactIntegral (haarProb G) := by
+  rw [haarAverage_apply, ContinuousMap.compactIntegral_eq_integral]
 
 end NormedFieldScalars
 
