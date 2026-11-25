@@ -31,8 +31,7 @@ This file provides two parametrizations of circles in Euclidean planes:
   (`Orientation.inner_circleCurve_sub_deriv_eq_zero_iff`).
 
 It also records the derivative of a rotating curve `s ↦ o.rotation (θ s) (c s)`
-(`Orientation.hasDerivAt_rotation`) and that the quarter turn commutes with the rotations
-(`Orientation.rightAngleRotation_rotation`).
+(`Orientation.hasDerivAt_rotation`).
 -/
 
 public section
@@ -157,11 +156,6 @@ theorem periodic_circleCurve (o : Orientation ℝ E (Fin 2)) (c e : E) (R : ℝ)
   · simp
   · have hdiv : (s + 2 * Real.pi * R) / R = s / R + 2 * Real.pi := by field_simp
     simp only [circleCurve_def, hdiv, Real.cos_add_two_pi, Real.sin_add_two_pi]
-
-/-- The quarter turn commutes with the rotations. -/
-theorem rightAngleRotation_rotation (o : Orientation ℝ E (Fin 2)) (θ : Real.Angle) (v : E) :
-    o.rightAngleRotation (o.rotation θ v) = o.rotation θ (o.rightAngleRotation v) := by
-  rw [← o.rotation_pi_div_two, o.rotation_rotation, o.rotation_rotation, add_comm]
 
 /-- **Derivative of a rotating curve.** If `θ` and `c` have derivatives `θ'` and `c'` at `t`, then
 `s ↦ o.rotation (θ s) (c s)` has derivative `θ' J (o.rotation (θ t) (c t)) + o.rotation (θ t) c'`

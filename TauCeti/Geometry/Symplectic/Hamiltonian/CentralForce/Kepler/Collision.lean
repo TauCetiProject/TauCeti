@@ -234,14 +234,15 @@ theorem maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ (hm :
   rwa [Subtype.isCompact_iff, image_preimage_eq_of_subset fun y hy ↦
     ⟨⟨y, mem_puncturedPhaseSpace.2 (hK0 y hy)⟩, rfl⟩]
 
-/-- **Nonradial Kepler motions are global.** For `m, κ > 0`, through every state off the collision
-set with nonzero angular momentum, `‖q‖² ‖p‖² - ⟪q, p⟫² ≠ 0`, there is a solution of Hamilton's
+/-- **Nonradial Kepler motions are global.** For `m, κ > 0`, through every state with nonzero
+angular momentum, `‖q‖² ‖p‖² - ⟪q, p⟫² ≠ 0` (so that `q ≠ 0`), there is a solution of Hamilton's
 equations for the Kepler energy which is defined for all time and avoids the collision set. -/
-theorem exists_forall_hasDerivAt_kepler (hm : 0 < m) (hκ : 0 < κ) {x : V × V} (hq : x.1 ≠ 0)
+theorem exists_forall_hasDerivAt_kepler (hm : 0 < m) (hκ : 0 < κ) {x : V × V}
     (hx : ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 ≠ 0) :
     ∃ η : ℝ → V × V, η 0 = x ∧ ∀ t, (η t).1 ≠ 0 ∧
       HasDerivAt η ((stdSymplecticForm (V := V)).hamiltonianVectorField
         (centralForceHamiltonian m (fun r ↦ -κ / r)) (η t)) t := by
+  have hq : x.1 ≠ 0 := by rintro h; simp [h] at hx
   set x' : puncturedPhaseSpace V := ⟨x, mem_puncturedPhaseSpace.2 hq⟩
   have huniv := maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ hm hκ x' hx
   refine ⟨fun t ↦ ((maximalIntegralCurve (SmoothTwoForm.hamiltonianVectorField

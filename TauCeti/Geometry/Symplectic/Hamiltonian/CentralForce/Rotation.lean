@@ -9,8 +9,12 @@ public import TauCeti.Geometry.Lie.FundamentalVectorField.Circle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Linear
+public import Mathlib.Geometry.Euclidean.Angle.Oriented.Rotation
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Inner
+import TauCeti.Analysis.InnerProductSpace.TwoDim
+import TauCeti.Geometry.Euclidean.Circle
 
 /-!
 # The rotational moment map of planar central forces
@@ -48,6 +52,25 @@ This action is the symmetry behind the conservation of angular momentum:
 The conservation law `{H, L} = 0` for a central-force Hamiltonian `H` is
 `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`.
 
+The same holds in any real inner product plane `V`, without choosing an identification with `ℂ`.
+Applying a linear isometry to positions and momenta alike preserves every central-force
+Hamiltonian (`TauCeti.centralForceHamiltonian_linearIsometryEquiv`) and commutes with its
+Hamiltonian vector field
+(`TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv`).
+For a positively oriented orthonormal basis `b` of an oriented plane, with quarter turn `J` and
+rotations `R_t` (`Orientation.rotation`):
+
+* the angular momentum is the area form, `L(q, p) = ω(q, p)`
+  (`TauCeti.angularMomentum_eq_areaForm`), so the rotations preserve it
+  (`TauCeti.angularMomentum_rotation`);
+* the Hamiltonian vector field of `L` is `(J q, J p)`
+  (`TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation`), its
+  flow is `t ↦ (R_t q, R_t p)`
+  (`TauCeti.hasDerivAt_rotation_hamiltonianVectorField_angularMomentum`), and every solution of
+  Hamilton's equations for `L` is such a rotation of its initial state
+  (`TauCeti.eq_rotation_of_forall_hasDerivAt_angularMomentum`). So every such solution is
+  `2π`-periodic (`TauCeti.periodic_of_forall_hasDerivAt_angularMomentum`).
+
 ## Main results
 
 * `TauCeti.angularMomentum_circle_smul`: rotations preserve `L`.
@@ -59,6 +82,9 @@ The conservation law `{H, L} = 0` for a central-force Hamiltonian `H` is
   `TauCeti.hamiltonianTorusData_angularMomentum_puncturedPhaseSpace`: the rotations are a
   Hamiltonian circle action with moment map the angular momentum, on the phase space and on the
   punctured phase space.
+* `TauCeti.eq_rotation_of_forall_hasDerivAt_angularMomentum`,
+  `TauCeti.periodic_of_forall_hasDerivAt_angularMomentum`: in an oriented inner product plane, the
+  Hamiltonian flow of `L` is the rotation of the plane, so it is `2π`-periodic.
 
 ## References
 
@@ -172,5 +198,130 @@ theorem hamiltonianTorusData_angularMomentum_puncturedPhaseSpace :
         (imCLM ∘L mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1).toLinearMap :=
   hamiltonianTorusData_angularMomentum.mpullback contMDiff_subtypeVal
     coe_smul_puncturedPhaseSpace
+
+
+/-! ### Rotations of an oriented plane -/
+
+section OrientedPlane
+
+open Module
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- Applying a linear isometry to positions and momenta alike preserves every central-force
+Hamiltonian. -/
+theorem centralForceHamiltonian_linearIsometryEquiv (m : ℝ) (U : ℝ → ℝ) (φ : V ≃ₗᵢ[ℝ] V)
+    (x : V × V) :
+    centralForceHamiltonian m U (φ x.1, φ x.2) = centralForceHamiltonian m U x := by
+  obtain ⟨q, p⟩ := x
+  simp [centralForceHamiltonian_apply]
+
+/-- **Central forces are equivariant under linear isometries.** Off the collision set, applying a
+linear isometry `φ` to positions and momenta alike commutes with the Hamiltonian vector field of a
+central-force Hamiltonian: `X_H(φ q, φ p) = (φ X_H(q, p).1, φ X_H(q, p).2)`. -/
+theorem stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_linearIsometryEquiv
+    [FiniteDimensional ℝ V] {m : ℝ} {U : ℝ → ℝ} {U' : ℝ} (φ : V ≃ₗᵢ[ℝ] V) {x : V × V}
+    (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) :
+    (stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
+        (φ x.1, φ x.2) =
+      (φ ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) x).1,
+        φ ((stdSymplecticForm (V := V)).hamiltonianVectorField
+          (centralForceHamiltonian m U) x).2) := by
+  have hU' : HasDerivAt U U' ‖φ x.1‖ := by rwa [φ.norm_map]
+  have hq' : φ x.1 ≠ 0 := by simpa using hq
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian (x := (φ x.1, φ x.2))
+    hU' hq', stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU hq]
+  simp [map_smul]
+
+variable (b : OrthonormalBasis (Fin 2) ℝ V)
+
+section Fact
+
+variable [Fact (finrank ℝ V = 2)] {o : Orientation ℝ V (Fin 2)}
+
+attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
+
+/-- In the plane of a positively oriented orthonormal basis, the angular momentum `q₁p₂ - q₂p₁` is
+the area form `ω(q, p)`. -/
+theorem angularMomentum_eq_areaForm (hb : b.toBasis.orientation = o) (x : V × V) :
+    angularMomentum (b 0) (b 1) x = o.areaForm x.1 x.2 := by
+  obtain ⟨q, p⟩ := x
+  rw [← o.inner_rightAngleRotation_left, o.rightAngleRotation_eq_inner_smul_sub_inner_smul hb,
+    angularMomentum_apply, inner_sub_left, real_inner_smul_left, real_inner_smul_left,
+    real_inner_comm p (b 1), real_inner_comm p (b 0)]
+
+/-- Rotating positions and momenta alike preserves the angular momentum. -/
+theorem angularMomentum_rotation (hb : b.toBasis.orientation = o) (θ : Real.Angle)
+    (x : V × V) :
+    angularMomentum (b 0) (b 1) (o.rotation θ x.1, o.rotation θ x.2) =
+      angularMomentum (b 0) (b 1) x := by
+  simp only [angularMomentum_eq_areaForm b hb]
+  exact o.areaForm_comp_linearIsometryEquiv _ (by simp [o.det_rotation]) _ _
+
+/-- **The angular momentum generates the rotations.** In the plane of a positively oriented
+orthonormal basis, the Hamiltonian vector field of the angular momentum is `(J q, J p)`, for the
+quarter turn `J`. -/
+theorem stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation
+    (hb : b.toBasis.orientation = o) (x : V × V) :
+    (stdSymplecticForm (V := V)).hamiltonianVectorField (angularMomentum (b 0) (b 1)) x =
+      (o.rightAngleRotation x.1, o.rightAngleRotation x.2) := by
+  rw [stdSymplecticForm_hamiltonianVectorField_angularMomentum,
+    o.rightAngleRotation_eq_inner_smul_sub_inner_smul hb,
+    o.rightAngleRotation_eq_inner_smul_sub_inner_smul hb]
+
+/-- **The Hamiltonian flow of the angular momentum is the rotation of the plane.** In the plane of
+a positively oriented orthonormal basis, `t ↦ (R_t q, R_t p)` solves Hamilton's equations for the
+angular momentum. -/
+theorem hasDerivAt_rotation_hamiltonianVectorField_angularMomentum
+    (hb : b.toBasis.orientation = o) (x : V × V) (t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ (o.rotation s x.1, o.rotation s x.2))
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (angularMomentum (b 0) (b 1))
+        (o.rotation t x.1, o.rotation t x.2)) t := by
+  rw [stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation b hb]
+  have h (v : V) := o.hasDerivAt_rotation (hasDerivAt_id t) (hasDerivAt_const t v)
+  simpa using (h x.1).prodMk (h x.2)
+
+/-- **Every motion of the angular momentum is a rotation.** In the plane of a positively oriented
+orthonormal basis, a solution `γ` of Hamilton's equations for the angular momentum, defined for all
+time, is `γ t = (R_t q, R_t p)` for its initial state `(q, p)`. -/
+theorem eq_rotation_of_forall_hasDerivAt_angularMomentum
+    (hb : b.toBasis.orientation = o) {γ : ℝ → V × V}
+    (hγ : ∀ t, HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
+      (angularMomentum (b 0) (b 1)) (γ t)) t) (t : ℝ) :
+    γ t = (o.rotation t (γ 0).1, o.rotation t (γ 0).2) := by
+  simp_rw [stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation b hb]
+    at hγ
+  -- The quarter turn commutes with the rotations.
+  have hJ (θ : Real.Angle) (v : V) :=
+    o.linearIsometryEquiv_comp_rightAngleRotation (o.rotation θ) (by simp [o.det_rotation]) v
+  -- Rotating `γ s` back by the angle `s` gives a constant curve.
+  have hδ (s : ℝ) : HasDerivAt (fun s : ℝ ↦ (o.rotation (-s : ℝ) (γ s).1,
+      o.rotation (-s : ℝ) (γ s).2)) 0 s := by
+    have hθ := hasDerivAt_neg s
+    convert (o.hasDerivAt_rotation hθ (hγ s).fst).prodMk (o.hasDerivAt_rotation hθ (hγ s).snd)
+      using 1
+    ext <;> simp [← hJ]
+  have hconst := is_const_of_deriv_eq_zero (fun s ↦ (hδ s).differentiableAt)
+    (fun s ↦ (hδ s).deriv) t 0
+  simp only [neg_zero, Real.Angle.coe_zero, o.rotation_zero, LinearIsometryEquiv.coe_refl, id_eq,
+    Prod.mk.injEq] at hconst
+  rw [← hconst.1, ← hconst.2]
+  simp only [Real.Angle.coe_neg, ← o.rotation_symm, LinearIsometryEquiv.apply_symm_apply]
+
+end Fact
+
+/-- **The angular action is an action variable.** In the plane of an orthonormal basis, every
+solution of Hamilton's equations for the angular momentum, defined for all time, is `2π`-periodic.
+-/
+theorem periodic_of_forall_hasDerivAt_angularMomentum [FiniteDimensional ℝ V] {γ : ℝ → V × V}
+    (hγ : ∀ t, HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
+      (angularMomentum (b 0) (b 1)) (γ t)) t) :
+    Function.Periodic γ (2 * Real.pi) := fun t ↦ by
+  have : Fact (finrank ℝ V = 2) := ⟨by simp [finrank_eq_card_basis b.toBasis]⟩
+  rw [eq_rotation_of_forall_hasDerivAt_angularMomentum b rfl hγ,
+    eq_rotation_of_forall_hasDerivAt_angularMomentum b rfl hγ t,
+    Real.Angle.coe_add, Real.Angle.coe_two_pi, add_zero]
+
+end OrientedPlane
 
 end TauCeti
