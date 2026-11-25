@@ -9,8 +9,11 @@ public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Algebra.Ring.Action.Basic
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.Henselian
+public import Mathlib.Topology.Algebra.Constructions
+public import Mathlib.Topology.Algebra.Group.Defs
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # The units congruent to one modulo an ideal
@@ -60,6 +63,11 @@ so `1 + I` is an iterated extension of additive groups.
 * `Ideal.unitsMap_quotientMk_surjective_of_ne_top`: over a local ring, reduction of units modulo a
   proper ideal is surjective.
 * `Ideal.principalUnitGroup_pow_antitone`: the subgroups `1 + I ^ n` decrease with `n`.
+* `Ideal.isOpen_principalUnitGroup`: the principal unit group of an open ideal is open.
+* `Ideal.pow_pow_mem_principalUnitGroup_pow`: if the integer `n` lies in `J`, then the
+  `n ^ m`-th power of a principal unit of `J` is a principal unit of `J ^ (m + 1)`;
+  `Ideal.pow_pow_eq_one_of_mem_principalUnitGroup`: hence `1 + J` has exponent dividing `n ^ m`
+  when `J ^ (m + 1) = 0`.
 
 ## References
 
@@ -152,6 +160,12 @@ theorem principalUnitGroup_pow_antitone (I : Ideal R) :
     Antitone fun n : ℕ ↦ (I ^ n).principalUnitGroup :=
   fun _ _ h ↦ principalUnitGroup_mono (pow_le_pow_right h)
 
+/-- In a ring with continuous subtraction, the principal unit group of an open ideal is open in
+the units, which carry the topology of `Units.embedProduct`. -/
+theorem isOpen_principalUnitGroup [TopologicalSpace R] [ContinuousSub R] {I : Ideal R}
+    (hI : IsOpen (I : Set R)) : IsOpen (I.principalUnitGroup : Set Rˣ) :=
+  (hI.preimage (continuous_id.sub continuous_const)).preimage Units.continuous_val
+
 section CommRing
 
 variable {R : Type*} [CommRing R]
@@ -187,6 +201,21 @@ theorem unitsQuotientPrincipalUnitGroupEquiv_mk {I : Ideal R} (hI : I ≤ jacobs
   simp only [unitsQuotientPrincipalUnitGroupEquiv, MulEquiv.trans_apply,
     QuotientGroup.quotientMulEquivOfEq_mk,
     TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+
+/-- If the integer `n` lies in `J`, then the `n ^ m`-th power of a principal unit of `J` is a
+principal unit of `J ^ (m + 1)`. -/
+theorem pow_pow_mem_principalUnitGroup_pow {J : Ideal R} {n : ℕ} (hn : (n : R) ∈ J)
+    {u : Rˣ} (hu : u ∈ J.principalUnitGroup) (m : ℕ) :
+    u ^ n ^ m ∈ (J ^ (m + 1)).principalUnitGroup := by
+  rw [mem_principalUnitGroup, Units.val_pow_eq_pow_val]
+  simpa using pow_pow_sub_pow_pow_mem_pow_succ hn (mem_principalUnitGroup.mp hu) m
+
+/-- If the integer `n` lies in `J` and `J ^ (m + 1) = 0`, then every principal unit of `J` has
+order dividing `n ^ m`. For the maximal ideal of a local ring of residue characteristic `p` with
+`𝔪 ^ (m + 1) = 0`, this says that `1 + 𝔪` has exponent dividing `p ^ m`. -/
+theorem pow_pow_eq_one_of_mem_principalUnitGroup {J : Ideal R} {n m : ℕ} (hn : (n : R) ∈ J)
+    (hJ : J ^ (m + 1) = ⊥) {u : Rˣ} (hu : u ∈ J.principalUnitGroup) : u ^ n ^ m = 1 := by
+  simpa [hJ] using pow_pow_mem_principalUnitGroup_pow hn hu m
 
 /-- For ideals with `J * J ≤ J'`, the map `1 + x ↦ x mod J'` is a homomorphism from the principal
 unit group of `J` to the additive group of `J ⧸ (J ∩ J')` (written `Submodule.comap J.subtype J'`;
