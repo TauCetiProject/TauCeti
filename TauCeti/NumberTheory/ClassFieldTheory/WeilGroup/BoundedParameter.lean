@@ -173,7 +173,6 @@ theorem not_isBoundedParameter_logNormUnipotent : ¬ IsBoundedParameter logNormU
     Real.norm_eq_abs] at this
   linarith [le_abs_self (B + 1)]
 
-
 /-- **The unipotent parameter is not semisimple.** The line `ℂ e₀` is stable under
 `w ↦ [[1, log |norm w|], [0, 1]]`, but has no stable complement: a vector `v` with `v 1 ≠ 0` is
 moved by `v 1 • e₀` by an element `w` with `log |norm w| = 1`. -/
@@ -191,21 +190,17 @@ theorem not_isSemisimpleRepresentation_logNormUnipotent :
     refine ⟨fun ⟨c, hc⟩ ↦ by simp [← hc], fun hv ↦ ⟨v 0, ?_⟩⟩
     ext i
     fin_cases i <;> simp [hv]
-  let σ : Subrepresentation ρ :=
-    ⟨ℂ ∙ (Pi.single 0 1 : Fin 2 → ℂ), fun w v hv ↦ by
-      rw [hline] at hv ⊢
-      simp [hact, hv]⟩
-  obtain ⟨τ, hτ⟩ := exists_isCompl σ
-  have hdisj (x : Fin 2 → ℂ) (hxσ : x 1 = 0) (hxτ : x ∈ τ.toSubmodule) : x = 0 := by
-    have hx : x ∈ (σ ⊓ τ).toSubmodule :=
-      (Subrepresentation.toSubmodule_inf σ τ).symm ▸ ⟨(hline x).mpr hxσ, hxτ⟩
-    rwa [hτ.inf_eq_bot, Subrepresentation.toSubmodule_bot, Submodule.mem_bot] at hx
+  have he₀ (w : WeilGroupReal) : ∃ t : ℂ, ρ w (Pi.single 0 1) = t • Pi.single 0 1 :=
+    ⟨1, by ext i; fin_cases i <;> simp [hact]⟩
+  obtain ⟨τ, hτ⟩ := exists_isCompl (Subrepresentation.spanSingleton _ he₀)
+  have hc : IsCompl (ℂ ∙ (Pi.single 0 1 : Fin 2 → ℂ)) τ.toSubmodule := by
+    rw [← Subrepresentation.toSubmodule_spanSingleton _ he₀]
+    exact Subrepresentation.isCompl_toSubmodule.mpr hτ
+  have hdisj (x : Fin 2 → ℂ) (hxσ : x 1 = 0) (hxτ : x ∈ τ.toSubmodule) : x = 0 :=
+    Submodule.disjoint_def.mp hc.disjoint x ((hline x).mpr hxσ) hxτ
   -- `e₁` decomposes as `a + b` with `a ∈ ℂ e₀` and `b ∈ τ`, so `b 1 = 1`
-  have he₁ : (Pi.single 1 1 : Fin 2 → ℂ) ∈ (σ ⊔ τ).toSubmodule := by
-    rw [hτ.sup_eq_top, Subrepresentation.toSubmodule_top]
-    trivial
-  rw [Subrepresentation.toSubmodule_sup, Submodule.mem_sup] at he₁
-  obtain ⟨a, ha, b, hb, hab⟩ := he₁
+  obtain ⟨a, ha, b, hb, hab⟩ :=
+    Submodule.mem_sup.mp (hc.sup_eq_top ▸ Submodule.mem_top (x := (Pi.single 1 1 : Fin 2 → ℂ)))
   have hb₁ : b 1 = 1 := by
     have := congrFun hab 1
     rw [Pi.add_apply, (hline a).mp ha] at this
