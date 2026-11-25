@@ -87,22 +87,9 @@ theorem evensNorm_gradedCohomologyClass (t : U.toSubgroup.LeftTransversal) {n : 
         (smoothTensorInducedDiagonalClass.{0, u, u} U.toSubgroup U.isOpen' t
           ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
           (trivialF2_add_self U.toSubgroup) w hw hinv hdw) := by
-  classical
   -- A homogeneous invariant cocycle of the total resolution is an included homogeneous cocycle.
-  obtain ⟨z, rfl⟩ : ∃ z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n,
-      (trivialF2 U.toSubgroup).cochainToGradedResolution n z = w := by
-    obtain ⟨F, rfl⟩ := (SetLike.ext_iff.1
-      ((trivialF2 U.toSubgroup).gradedResolutionPiece_natCast n) w).1 hw
-    exact ⟨⟨F, fun g ↦ DirectSum.of_injective (β := fun n ↦
-      (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V) n
-        ((TopRep.gradedResolutionTopRep_ρ_lof _ n g F).symm.trans (hinv g))⟩,
-      TopRep.cochainToGradedResolution_apply _ n _⟩
-  have hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d n (n + 1)).hom z = 0 :=
-    Subtype.ext <| DirectSum.of_injective (β := fun n ↦
-      (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V) (n + 1) <|
-        (TopRep.cochainToGradedResolution_apply _ (n + 1) _).symm.trans <|
-          ((TopRep.gradedResolutionDifferential_cochainToGradedResolution _ n z).symm.trans
-            hdw).trans (map_zero _).symm
+  obtain ⟨z, rfl⟩ := (trivialF2 U.toSubgroup).exists_cochainToGradedResolution_eq hw hinv
+  have hz := (TopRep.gradedResolutionDifferential_cochainToGradedResolution_eq_zero_iff _ n z).1 hdw
   refine (congrArg U.evensNorm (TopRep.gradedCohomologyClass_eq_degreeCast_cochainClass _ rfl z hz
     _ rfl _ _ _)).trans ?_
   rw [ContinuousCohomology.degreeCast_rfl, CategoryTheory.Iso.refl_hom,

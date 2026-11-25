@@ -54,7 +54,7 @@ For cocycles only the last two terms survive, so `(-1)^m (a ∪₁ b)` is a prim
 `(m, n + 1)`. Bidegree `(m, 0)` is the case `(0, m)` for the opposite pairing.
 
 The same homotopy in bidegree `(1, 1)` is formalized on the explicit inhomogeneous model of
-`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product` as
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Comm` as
 `TauCeti.ContCohomology.cup11_add_cup11_flip_eq_d1`, with descent
 `TauCeti.ContCohomology.explicitCup11_eq_neg_flip`; this file works on Mathlib's
 `continuousCohomology`, so that it applies to `TauCeti.TopPairing.cup`.

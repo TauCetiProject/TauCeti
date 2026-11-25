@@ -59,6 +59,8 @@ with the markings, is canonically isomorphic to the chosen base change.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isPullback_pullbackMap_hom`: the base change of
   a morphism of pointed families is a base change of its map of total spaces, so it stays
   surjective (`TauCeti.AlgebraicGeometry.PointedPrestableFamily.surjective_pullbackMap_hom`).
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.pullbackMap_injective_of_epi`: base change
+  is injective on morphisms when the projection of total spaces is an epimorphism.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.mem_range_autToOver_iff`: an automorphism of
   the total space over `S` comes from the pointed family exactly when it fixes every marking.
 
@@ -245,6 +247,15 @@ spaces has surjective map of total spaces. -/
 instance surjective_pullbackMap_hom (g : T ⟶ S) (f : P ⟶ Q) [Surjective f.hom] :
     Surjective (pullbackMap g f).hom :=
   MorphismProperty.of_isPullback (P := @Surjective) (isPullback_pullbackMap_hom g f) ‹_›
+
+/-- Base change along `g` is injective on morphisms `P ⟶ Q` when the projection
+`P ×_S T ⟶ P` of total spaces is an epimorphism. -/
+theorem pullbackMap_injective_of_epi (g : T ⟶ S) [Epi (pullback.fst P.toBase g)] :
+    Function.Injective (pullbackMap g : (P ⟶ Q) → (P.pullback g ⟶ Q.pullback g)) := by
+  intro f f' hff'
+  refine hom_ext ?_
+  rw [← cancel_epi (pullback.fst P.toBase g), (isPullback_pullbackMap_hom g f).w,
+    (isPullback_pullbackMap_hom g f').w, hff']
 
 /-- Base change along `g : T ⟶ S` as a functor from pointed prestable families over `S` to
 pointed prestable families over `T`. -/
