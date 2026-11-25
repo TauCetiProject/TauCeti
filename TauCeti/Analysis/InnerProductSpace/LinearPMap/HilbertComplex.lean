@@ -132,8 +132,9 @@ theorem isOrtho_harmonicSpace_topologicalClosure_range_adjoint [CompleteSpace F]
     (hd₁ : Dense (d₁.domain : Set F)) :
     harmonicSpace d₀ d₁ ⟂ (LinearMap.range d₁†.toFun).topologicalClosure := by
   rw [Submodule.isOrtho_comm, Submodule.isOrtho_iff_le]
-  exact (Submodule.topologicalClosure_minimal _ (range_adjoint_le_orthogonal_ker hd₁)
-    (Submodule.isClosed_orthogonal _)).trans (Submodule.orthogonal_le harmonicSpace_le_ker)
+  exact (Submodule.topologicalClosure_minimal _
+    (adjoint_isFormalAdjoint hd₁).range_le_orthogonal_ker (Submodule.isClosed_orthogonal _)).trans
+    (Submodule.orthogonal_le harmonicSpace_le_ker)
 
 omit [CompleteSpace E] in
 /-- In a complex, the closures of the ranges of `d₀` and of `d₁†` are orthogonal. -/
@@ -142,8 +143,9 @@ theorem isOrtho_topologicalClosure_range_topologicalClosure_range_adjoint [Compl
     (LinearMap.range d₀.toFun).topologicalClosure ⟂
       (LinearMap.range d₁†.toFun).topologicalClosure := by
   rw [Submodule.isOrtho_comm, Submodule.isOrtho_iff_le, Submodule.orthogonal_closure]
-  exact (Submodule.topologicalClosure_minimal _ (range_adjoint_le_orthogonal_ker hd₁)
-    (Submodule.isClosed_orthogonal _)).trans (Submodule.orthogonal_le hcomplex)
+  exact (Submodule.topologicalClosure_minimal _
+    (adjoint_isFormalAdjoint hd₁).range_le_orthogonal_ker (Submodule.isClosed_orthogonal _)).trans
+    (Submodule.orthogonal_le hcomplex)
 
 /-- **The Hodge decomposition of the closed vectors.** In a complex `range d₀ ≤ ker d₁`, with `d₀`
 densely defined and `d₁` closed, the kernel of `d₁` is the sum of the closure of the range of
