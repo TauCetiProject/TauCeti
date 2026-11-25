@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 public import TauCeti.Analysis.Sobolev.Trace.ZeroBoundary
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Normed.Lp.ProdLp
+import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -43,6 +44,8 @@ is the local model for extension and trace on domains with Lipschitz boundary.
   `TauCeti.W1p.restrictL_extendByReflectionL`, `TauCeti.W1p.norm_extendByReflectionL_le`,
   `TauCeti.W1p.opNorm_extendByReflectionL_le`, and its value and gradient
   `TauCeti.W1p.value_extendByReflectionL_ae` and `TauCeti.W1p.gradient_extendByReflectionL_ae`.
+* `TauCeti.W1p.denseRange_restrictL_ofTestFunctionₗ_normalHalfSpace`: for `p < ∞`, restrictions
+  of test functions on the whole space are dense in `W^{1,p}(H)`.
 * `TauCeti.W1p.halfSpaceTrace`: the `Lᵖ` trace on `{a} × E` of a `W^{1,p}` function on the
   half-space, with `TauCeti.W1p.norm_halfSpaceTrace_rpow_le`, the bounds
   `TauCeti.W1p.norm_halfSpaceTrace_le` and `TauCeti.W1p.opNorm_halfSpaceTrace_le` with constant
@@ -63,7 +66,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace Filter
-open scoped ENNReal
+open scoped ENNReal Distributions
 
 namespace TauCeti
 
@@ -281,6 +284,15 @@ theorem W1p.restrictL_extendByReflectionL (a : ℝ)
     ae_restrict_of_ae (W1p.value_extendByReflectionL_ae a u), ae_restrict_mem hH] with x h1 h2 hx
   rw [h1, h2, indicator_of_mem hx,
     indicator_of_notMem (normalReflection_notMem_normalHalfSpace hx), add_zero]
+
+/-- **Density of functions smooth up to the boundary of a half-space.** For `p < ∞`, the
+restrictions to `H = normalHalfSpace a` of test functions on the whole space are dense in
+`W^{1,p}(H)`: restriction is onto, since it undoes the reflection extension. -/
+theorem W1p.denseRange_restrictL_ofTestFunctionₗ_normalHalfSpace (hp : p ≠ ∞) (a : ℝ) :
+    DenseRange fun φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ) =>
+      W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ) :=
+  (Function.RightInverse.surjective (W1p.restrictL_extendByReflectionL a)).denseRange.comp
+    (W1p.denseRange_ofTestFunctionₗ_top hp) (W1p.restrictL le_top).continuous
 
 /-- The reflection extension at most doubles the Sobolev norm. -/
 theorem W1p.norm_extendByReflectionL_le (a : ℝ)

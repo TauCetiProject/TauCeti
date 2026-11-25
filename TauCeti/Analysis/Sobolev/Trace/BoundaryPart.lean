@@ -296,16 +296,11 @@ theorem W1p.mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero (hp : p �
         (disjoint_setOf_fst_eq_and_normalHalfSpace a _)
         ((W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero hp a u).2
           (Lp.eq_zero_iff_ae_eq_zero.2 (hu.mono fun y hy => hy (by simpa using hc))))
-    · -- `Γ` is empty, and restrictions of test functions are dense: `restrictL` has the
-      -- reflection extension as a right inverse.
+    · -- `Γ` is empty, and restrictions of test functions are dense.
       have hΓ : {x : WithLp 2 (ℝ × E) | x.fst = a ∧ (0 : E →L[ℝ] ℝ) x.snd < c} = ∅ :=
         eq_empty_of_forall_notMem fun x hx => hc (by simpa using hx.2)
-      have hsurj : Function.Surjective (W1p.restrictL (p := p) (mu := volume)
-          (le_top : normalHalfSpace (E := E) a ≤ ⊤)) := fun u =>
-        ⟨W1p.extendByReflectionL a u, W1p.restrictL_extendByReflectionL a u⟩
       rw [hΓ, w1pVanishingOnSubmodule_empty_eq_top_iff.2
-        (hsurj.denseRange.comp (W1p.denseRange_ofTestFunctionₗ_top hp)
-          (W1p.restrictL le_top).continuous)]
+        (W1p.denseRange_restrictL_ofTestFunctionₗ_normalHalfSpace hp a)]
       exact ClosedSubmodule.mem_top
   -- `u` lies in `W^{1,p}_K(H)` for `K ⊇ Γ`.
   exact w1pVanishingOnSubmodule_antitone (setOf_fst_eq_and_lt_subset a c ℓ)
