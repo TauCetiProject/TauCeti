@@ -48,6 +48,7 @@ then `f ∘ ψ` is `C¹`-close to `f` at every point, not only on `S`
   maps.
 * `IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`: iterates of `C¹`-close
   maps.
+* `IsCompact.eventually_forall_norm_iterate_sub_le`: iterates of maps `C¹`-close everywhere.
 * `IsCompact.exists_pos_forall_norm_comp_sub_le`: composition with a compactly supported
   `C¹`-small perturbation of the identity.
 
@@ -178,6 +179,21 @@ theorem IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le {K 
     exact h₁ g^[k] g (fun x hx ↦ (hk x hx).1) (fun x hx ↦ (hk x hx).2.1)
       (fun x hx ↦ (hk x hx).2.2) hg (fun y hy ↦ (hg₀ y hy).trans (min_le_left _ _))
       (fun y hy ↦ (hg₁ y hy).trans (min_le_left _ _)) x hx
+
+/-- **Iterates of maps `C¹`-close everywhere.** Let `K` be compact and let `f` be `C¹`. For every
+`ε > 0` and all small enough `δ > 0`, every differentiable map `g` that is `δ`-close to `f` in
+value and derivative at every point has its iterate `g^[k]` `ε`-close to `f^[k]` on `K`. This is
+the global form of `IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`, stated
+as an eventual property so that several such conditions on `δ` can be combined. -/
+theorem IsCompact.eventually_forall_norm_iterate_sub_le {K : Set E} (hK : IsCompact K) {f : E → E}
+    (hf : ContDiff 𝕜 1 f) (k : ℕ) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ g : E → E, Differentiable 𝕜 g → (∀ y, ‖g y - f y‖ ≤ δ) →
+      (∀ y, ‖fderiv 𝕜 g y - fderiv 𝕜 f y‖ ≤ δ) → ∀ x ∈ K, ‖g^[k] x - f^[k] x‖ ≤ ε := by
+  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le
+    (k := k) (fun _ _ _ _ ↦ hf.contDiffAt) hε univ_mem
+  filter_upwards [Ioo_mem_nhdsGT hδ] with δ' hδ' g hg h₀ h₁ x hx
+  exact (h g (fun y _ ↦ hg y) (fun y _ ↦ (h₀ y).trans hδ'.2.le)
+    (fun y _ ↦ (h₁ y).trans hδ'.2.le) x hx).2.1
 
 /-- **Compactly supported `C¹`-small perturbations of the identity.** Let `S` be compact and let
 `f` be `C¹` at the points of `S`. For every `ε > 0` there is `δ > 0` with the following property.

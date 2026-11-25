@@ -117,19 +117,6 @@ private theorem isPerturbation_hamiltonianFlow {H : V → ℝ} (hH : ContDiff �
       1).of_le (by simp)), ω.apply_fderiv_hamiltonianFlow H hX (hH.of_le (by simp)) 1, S, hS, hSU,
     fun w hw ↦ (hid w fun hwW ↦ hw (hWS hwW)).eq_of_nhds⟩
 
-omit [FiniteDimensional ℝ V] in
-/-- The `C¹`-closeness of the iterates `g^[j]` to `φ^[j]` on a compact set holds for all maps `g`
-that are `δ`-close to `φ` in `C¹` everywhere, for all small enough `δ > 0`. -/
-private theorem eventually_forall_norm_iterate_sub_le {φ : V → V} (hφ : ContDiff ℝ 1 φ)
-    {A : Set V} (hA : IsCompact A) (j : ℕ) {η : ℝ} (hη : 0 < η) :
-    ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ g : V → V, Differentiable ℝ g → (∀ y, ‖g y - φ y‖ ≤ δ) →
-      (∀ y, ‖fderiv ℝ g y - fderiv ℝ φ y‖ ≤ δ) → ∀ y ∈ A, ‖g^[j] y - φ^[j] y‖ ≤ η := by
-  obtain ⟨δ, hδ, h⟩ := hA.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le
-    (k := j) (fun _ _ _ _ ↦ hφ.contDiffAt) hη univ_mem
-  filter_upwards [Ioo_mem_nhdsGT hδ] with δ' hδ' g hg h₀ h₁ y hy
-  exact (h g (fun y _ ↦ hg y) (fun y _ ↦ (h₀ y).trans hδ'.2.le)
-    (fun y _ ↦ (h₁ y).trans hδ'.2.le) y hy).2.1
-
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- **Balls that orbits leave with a margin.** If no iterate `φ^[j] x`, `0 < j < k`, equals `x`,
 there is `ρ > 0` with `closedBall x (2 * ρ) ⊆ U` such that `‖φ^[j] y - x‖ ≥ 3 * ρ` for all
@@ -257,9 +244,10 @@ private theorem exists_isPerturbation_of_forall_ne {φ : V → V} (hφ : ContDif
     fun y hy ↦ norm_pos_iff.2 (sub_ne_zero.2 fun h ↦ hy.2 (hcover ⟨hy.1, h⟩))
   -- Maps close enough to `φ` in `C¹` have iterates close to those of `φ` on the balls and on `K₀`.
   obtain ⟨δ₀, ⟨hδ₀, hδ₀K₀⟩, hδ₀pos⟩ := ((((eventually_all_finset t).2 fun x hx ↦
-    (eventually_all_finset (Finset.range k)).2 fun j _ ↦ eventually_forall_norm_iterate_sub_le hφ
-      (isCompact_closedBall x (2 * ρ x)) j (half_pos (hρ0 x (htP x hx)))).and
-    (eventually_forall_norm_iterate_sub_le hφ hK₀ k (half_pos hη))).and self_mem_nhdsWithin).exists
+    (eventually_all_finset (Finset.range k)).2 fun j _ ↦
+      (isCompact_closedBall x (2 * ρ x)).eventually_forall_norm_iterate_sub_le hφ j
+        (half_pos (hρ0 x (htP x hx)))).and
+    (hK₀.eventually_forall_norm_iterate_sub_le hφ k (half_pos hη))).and self_mem_nhdsWithin).exists
   have hsep : ∀ g : V → V, Differentiable ℝ g → (∀ y, ‖g y - φ y‖ ≤ δ₀) →
       (∀ y, ‖fderiv ℝ g y - fderiv ℝ φ y‖ ≤ δ₀) →
       ∀ x ∈ t, ∀ y ∈ ball x (2 * ρ x), ∀ j, 0 < j → j < k → g^[j] y ∉ ball x (2 * ρ x) := by
