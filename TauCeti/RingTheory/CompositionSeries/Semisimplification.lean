@@ -23,8 +23,9 @@ Applied to `R = k[Γ]` it is the semisimplification `V^ss` of a finite-dimension
 
 The semisimplification is computed by every composition series
 (`nonempty_linearEquiv_seriesSemisimplification`), `M^ss ≅ M` exactly when `M` is semisimple
-(`nonempty_linearEquiv_semisimplification_iff`), so `(M^ss)^ss ≅ M^ss`, and for a submodule `N`,
-`M^ss ≅ N^ss × (M/N)^ss` (`nonempty_linearEquiv_semisimplification_prod_quotient`). A one-step
+(`nonempty_linearEquiv_semisimplification_iff`), so `(M^ss)^ss ≅ M^ss`, and for a short exact
+sequence `0 → A → M → B → 0`, `M^ss ≅ A^ss × B^ss`
+(`nonempty_linearEquiv_semisimplification_prod_of_exact`). A one-step
 construction such as `soc(M) × M/soc(M)` is not semisimple in general (for a unipotent Jordan
 block of size three), which is why the full composition series is used.
 
@@ -43,7 +44,9 @@ block of size three), which is why the full composition series is used.
   `M^ss`.
 * `TauCeti.nonempty_linearEquiv_semisimplification_iff`: `M^ss ≅ M` iff `M` is semisimple.
 * `TauCeti.nonempty_linearEquiv_semisimplification_semisimplification`: `(M^ss)^ss ≅ M^ss`.
-* `TauCeti.nonempty_linearEquiv_semisimplification_prod_quotient`: `M^ss ≅ N^ss × (M/N)^ss`.
+* `TauCeti.nonempty_linearEquiv_semisimplification_prod_of_exact`: `M^ss ≅ A^ss × B^ss` for a
+  short exact sequence `0 → A → M → B → 0`, and
+  `TauCeti.nonempty_linearEquiv_semisimplification_prod_quotient`: `M^ss ≅ N^ss × (M/N)^ss`.
 * `TauCeti.nonempty_linearEquiv_semisimplification_of_linearEquiv`: isomorphic modules have
   isomorphic semisimplifications.
 -/
@@ -52,7 +55,7 @@ public section
 
 namespace TauCeti
 
-universe u v w
+universe u v w w'
 
 variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
 
@@ -94,11 +97,34 @@ theorem jordanHolderMultiplicity_seriesSemisimplification
 variable (R M) in
 /-- **The semisimplification `M^ss`** of a module of finite length: the product of the factors of a
 composition series from `⊥` to `⊤`. By `TauCeti.nonempty_linearEquiv_seriesSemisimplification`
-every such series gives an isomorphic module, so the choice below is immaterial. -/
-noncomputable abbrev semisimplification : Type v :=
+every such series gives an isomorphic module, so the choice below is immaterial. It is a `def`
+rather than an `abbrev`, so that it is used through the multiplicity lemma
+`TauCeti.jordanHolderMultiplicity_semisimplification` instead of through the chosen series. -/
+@[expose] noncomputable def semisimplification : Type v :=
   seriesSemisimplification (exists_compositionSeries_of_isNoetherian_isArtinian R M).choose
 
+/-- The additive group structure of `M^ss`, that of the product of the factors. -/
+noncomputable instance : AddCommGroup (semisimplification R M) :=
+  inferInstanceAs (AddCommGroup (seriesSemisimplification _))
+
+/-- The module structure of `M^ss`, that of the product of the factors. -/
+noncomputable instance : Module R (semisimplification R M) :=
+  inferInstanceAs (Module R (seriesSemisimplification _))
+
+/-- The semisimplification is semisimple, as a product of simple modules. -/
+instance : IsSemisimpleModule R (semisimplification R M) :=
+  inferInstanceAs (IsSemisimpleModule R (seriesSemisimplification _))
+
+/-- The semisimplification is Noetherian, as a finite product of simple modules. -/
+instance : IsNoetherian R (semisimplification R M) :=
+  inferInstanceAs (IsNoetherian R (seriesSemisimplification _))
+
+/-- The semisimplification is Artinian, as a finite product of simple modules. -/
+instance : IsArtinian R (semisimplification R M) :=
+  inferInstanceAs (IsArtinian R (seriesSemisimplification _))
+
 /-- The semisimplification has the Jordan-Hölder multiplicities of the module. -/
+@[simp]
 theorem jordanHolderMultiplicity_semisimplification (S : Type w) [AddCommGroup S] [Module R S] :
     jordanHolderMultiplicity R (semisimplification R M) S = jordanHolderMultiplicity R M S :=
   have h := (exists_compositionSeries_of_isNoetherian_isArtinian R M).choose_spec
@@ -138,15 +164,25 @@ theorem nonempty_linearEquiv_semisimplification_of_linearEquiv {N : Type w} [Add
     rw [jordanHolderMultiplicity_semisimplification, jordanHolderMultiplicity_semisimplification,
       jordanHolderMultiplicity_eq_of_linearEquiv e]
 
-/-- **Semisimplification is additive in short exact sequences**: for a submodule `N` of `M`,
-`M^ss ≅ N^ss × (M/N)^ss`. -/
-theorem nonempty_linearEquiv_semisimplification_prod_quotient (N : Submodule R M) :
-    Nonempty (semisimplification R M ≃ₗ[R]
-      semisimplification R N × semisimplification R (M ⧸ N)) :=
+/-- **Semisimplification is additive in short exact sequences**: for a short exact sequence
+`0 → A → M → B → 0` of modules of finite length, `M^ss ≅ A^ss × B^ss`. -/
+theorem nonempty_linearEquiv_semisimplification_prod_of_exact
+    {A : Type w} [AddCommGroup A] [Module R A] [IsNoetherian R A] [IsArtinian R A]
+    {B : Type w'} [AddCommGroup B] [Module R B] [IsNoetherian R B] [IsArtinian R B]
+    (f : A →ₗ[R] M) (g : M →ₗ[R] B) (hf : Function.Injective f) (hg : Function.Surjective g)
+    (hfg : Function.Exact f g) :
+    Nonempty (semisimplification R M ≃ₗ[R] semisimplification R A × semisimplification R B) :=
   IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq _ _ fun S _ _ _ ↦ by
     rw [jordanHolderMultiplicity_prod, jordanHolderMultiplicity_semisimplification,
       jordanHolderMultiplicity_semisimplification, jordanHolderMultiplicity_semisimplification,
-      jordanHolderMultiplicity_eq_submodule_add_quotient N]
+      jordanHolderMultiplicity_eq_add_of_exact f g hf hg hfg]
+
+/-- For a submodule `N` of `M`, `M^ss ≅ N^ss × (M/N)^ss`. -/
+theorem nonempty_linearEquiv_semisimplification_prod_quotient (N : Submodule R M) :
+    Nonempty (semisimplification R M ≃ₗ[R]
+      semisimplification R N × semisimplification R (M ⧸ N)) :=
+  nonempty_linearEquiv_semisimplification_prod_of_exact N.subtype N.mkQ N.injective_subtype
+    N.mkQ_surjective (LinearMap.exact_subtype_mkQ N)
 
 /-- The semisimplification of the zero module is zero. -/
 instance subsingleton_semisimplification [Subsingleton M] :
