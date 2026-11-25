@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Dynamics.Flow.Breaking
 import TauCeti.Dynamics.Flow.ConnectingOrbit
+import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
@@ -77,6 +78,11 @@ ambient space.
   an index-one level slice is closed.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finite_unstableSet_inter_stableSet_inter_level`:
   an index-one level slice is finite.
+* `IsMorseSmale.mem_of_tendsto_upperLevelPoint_of_mem_unstableSet` and its time reversal
+  `IsMorseSmale.mem_of_tendsto_lowerLevelPoint_of_mem_stableSet`, in the namespace
+  `TauCeti.IsAdaptedPseudoGradient`: when a sequence of `W^u(p)` (respectively `W^s(r)`) breaks at
+  a critical point of adjacent index, the limits of its points on an intermediate level lie on a
+  trajectory from `p` (respectively to `r`) to (respectively from) that critical point.
 
 ## References
 
@@ -401,6 +407,93 @@ theorem IsMorseSmale.finite_unstableSet_inter_stableSet_inter_level
     have hpq : p ≠ q := by rintro rfl; omega
     refine finite_empty.subset fun y hy ↦ hc ?_
     exact hy.2 ▸ hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq hy.1
+
+/-! ### Level points near a broken trajectory -/
+
+namespace IsMorseSmale
+
+omit hX in
+/-- **Level points of a sequence breaking at the source.** Let `u n` be points of `W^u(p)`
+converging to a point `y` of `W^u(a)`, where `ind p = ind a + 1`. If the points of their orbits on
+the levels `max (f (u n)) c`, for `f a < c < f p`, converge to `w`, then `w` lies on a trajectory
+from `p` to `a`, on the level `c`: the orbits of the `u n` break at `a`, and their level points
+follow the first component. -/
+theorem mem_of_tendsto_upperLevelPoint_of_mem_unstableSet {hX : IsAdaptedPseudoGradient f X}
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p a y w : M} (hpa : p ≠ a)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f a + 1)
+    (hy : y ∈ hX.flow.unstableSet a) {c : ℝ} (hac : f a < c) (hcp : c < f p) {u : ℕ → M}
+    (hu : ∀ n, u n ∈ hX.flow.unstableSet p) (hlim : Tendsto u atTop (𝓝 y))
+    (hw : Tendsto (fun n ↦ hX.upperLevelPoint c (u n)) atTop (𝓝 w)) :
+    w ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet a ∧ f w = c := by
+  have hcont : Continuous f := hX.mdifferentiable.continuous
+  -- Flowing backward, the `u n` accumulate at a point `z ≠ a` of `W^s(a)`.
+  obtain ⟨z, hz, hza, n, t, hn, -, hzlim⟩ :=
+    hX.exists_tendsto_mem_stableSet_of_tendsto_mem_unstableSet hf hy hlim
+      (Frequently.of_forall fun k ↦ (Flow.disjoint_unstableSet hpa).notMem_of_mem_left (hu k))
+  -- The backward limit of `z` is `p`, as no index fits strictly between those of `a` and `p`.
+  obtain ⟨p', -, hp'⟩ := hX.exists_tendsto_atBot hf z
+  have hzp' : z ∈ hX.flow.unstableSet p' := Flow.mem_unstableSet.2 hp'
+  have hzcl : z ∈ closure (hX.flow.unstableSet p) := mem_closure_of_tendsto hzlim
+    (.of_forall fun k ↦ (Flow.apply_mem_unstableSet_iff _ _).2 (hu _))
+  have hp'a : p' ≠ a := by
+    rintro rfl
+    exact hza (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hzp', hz⟩)
+  have hlt := h.manifoldMorseIndex_lt hf hp'a ⟨z, hzp', hz⟩
+  obtain rfl : p = p' := by
+    by_contra hne
+    have := h.manifoldMorseIndex_lt_of_reflTransGen hf
+      (reflTransGen_of_mem_closure_unstableSet hf hzcl hzp') (Ne.symm hne)
+    omega
+  -- Eventually the `u n` lie below the level `c`, so their orbits cross it.
+  have hya : f y ≤ f a :=
+    Flow.le_of_mem_unstableSet_of_antitone hy hcont.continuousAt (hX.antitone_flow y)
+  have hbelow₀ := (hcont.tendsto y).comp hlim |>.eventually (gt_mem_nhds (hya.trans_lt hac))
+  have hw' : Tendsto (fun m ↦ hX.levelPoint c (u m)) atTop (𝓝 w) :=
+    hw.congr' (hbelow₀.mono fun m hm ↦ hX.upperLevelPoint_of_lt hm)
+  have hbelow : ∀ᶠ k in atTop, f (u (n k)) < c := hn.eventually hbelow₀
+  have hex : ∀ᶠ k in atTop, ∃ s, f (hX.flow s (u (n k))) = c :=
+    hbelow.mono fun k hk ↦ hX.exists_flow_eq_of_mem_unstableSet hf (hu _) hcp hk
+  -- The level points of the shifted points converge to the level point of `z`.
+  have h1 := hX.tendsto_levelPoint ⟨hzp', hz⟩ hac hcp hzlim (hex.mono fun k ⟨s, hs⟩ ↦
+    ⟨s - t k, by rwa [← Flow.map_add, sub_add_cancel]⟩)
+  have h2 : ∀ᶠ k in atTop,
+      hX.levelPoint c (hX.flow (t k) (u (n k))) = hX.levelPoint c (u (n k)) := by
+    filter_upwards [hbelow, hex] with k hk hk'
+    obtain ⟨a', hpa', hxa'⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hf
+      (hu (n k)) (ne_of_apply_ne f (hk.trans hcp).ne)
+    exact hX.levelPoint_flow hpa' hxa' hk' _
+  obtain ⟨hmem, hc⟩ := hX.mapsTo_levelPoint hpa hac hcp ⟨hzp', hz⟩
+  exact tendsto_nhds_unique (hw'.comp hn) (h1.congr' h2) ▸ ⟨hmem, hc⟩
+
+omit hX in
+/-- **Level points of a sequence breaking at the target.** Let `u n` be points of `W^s(r)`
+converging to a point `y` of `W^s(b)`, where `ind b = ind r + 1`. If the points of their orbits on
+the levels `min (f (u n)) c`, for `f r < c < f b`, converge to `w`, then `w` lies on a trajectory
+from `b` to `r`, on the level `c`: the orbits of the `u n` break at `b`, and their level points
+follow the last component. -/
+theorem mem_of_tendsto_lowerLevelPoint_of_mem_stableSet {hX : IsAdaptedPseudoGradient f X}
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {b r y w : M} (hbr : b ≠ r)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f b = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
+    (hy : y ∈ hX.flow.stableSet b) {c : ℝ} (hrc : f r < c) (hcb : c < f b) {u : ℕ → M}
+    (hu : ∀ n, u n ∈ hX.flow.stableSet r) (hlim : Tendsto u atTop (𝓝 y))
+    (hw : Tendsto (fun n ↦ hX.lowerLevelPoint c (u n)) atTop (𝓝 w)) :
+    w ∈ hX.flow.unstableSet b ∩ hX.flow.stableSet r ∧ f w = c := by
+  -- Reversing the pseudo-gradient, the sequence breaks at the source for `-X`, with the Morse
+  -- indices `n - ind` of `-f`.
+  have hb := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    (hX.mfderiv_eq_zero_of_mem_stableSet hy)
+  have hr := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    (hX.mfderiv_eq_zero_of_mem_stableSet (hu 0))
+  have hrev := (h.neg hf).mem_of_tendsto_upperLevelPoint_of_mem_unstableSet hf.neg hbr.symm
+    (hb.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hr hind)
+    (by rwa [← hX.stableSet_eq_unstableSet_neg hf]) (neg_lt_neg hcb) (neg_lt_neg hrc)
+    (fun n ↦ by rw [← hX.stableSet_eq_unstableSet_neg hf]; exact hu n) hlim
+    (hw.congr fun n ↦ hX.lowerLevelPoint_eq_upperLevelPoint_neg hf (hu n) hrc)
+  rw [← hX.stableSet_eq_unstableSet_neg hf, ← hX.unstableSet_eq_stableSet_neg hf, Pi.neg_apply,
+    neg_inj] at hrev
+  exact ⟨⟨hrev.1.2, hrev.1.1⟩, hrev.2⟩
+
+end IsMorseSmale
 
 end IsAdaptedPseudoGradient
 

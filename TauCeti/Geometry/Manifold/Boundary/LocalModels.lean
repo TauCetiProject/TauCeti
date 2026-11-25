@@ -26,6 +26,14 @@ the counts of boundary points of compact one-dimensional manifolds from
   points with a half-open model along which the orientation points outward are as many as those
   along which it points inward (`TauCeti.ncard_eq_ncard_of_forall_exists_homeomorph_Ico`).
 
+A half-open local model also transports between two ways of recording the points of a
+compactified space: along maps `ι` and `π` identifying a set `R` near a point `a` with the closure
+of a set `P` near `ι a`, a half-open model of `R` at `a` gives one of the closure of `P` at `ι a`
+(`TauCeti.exists_homeomorph_Ico_closure_of_homeomorph_Ico`). Its two steps are that a half-open
+arc stays near its endpoint on a shorter interval (`TauCeti.exists_pos_forall_lt_mem`) and that a
+continuous map on `[0, δ)` sending the positive points into `P` sends `0` into the closure of `P`
+(`TauCeti.mem_closure_of_forall_ne_zero`).
+
 The second statement is the signed count of the endpoints of a compact oriented one-manifold,
 which makes the signed counts of broken trajectories cancel in the proof that the integral Morse
 boundary squares to zero, as the first makes them cancel modulo two.
@@ -261,7 +269,7 @@ theorem ncard_eq_ncard_of_forall_exists_homeomorph_Ico [T2Space X]
     exact hcomp c (he t ht0 c hc (hγt ▸ hsc))
 
 /-- A half-open arc stays in any neighbourhood of its endpoint on a shorter interval `[0, ε)`. -/
-private theorem exists_pos_forall_lt_mem {Y : Type*} [TopologicalSpace Y] {N U : Set Y} {δ : ℝ}
+theorem exists_pos_forall_lt_mem {Y : Type*} [TopologicalSpace Y] {N U : Set Y} {δ : ℝ}
     (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N) (hU : U ∈ 𝓝 (e ⟨0, left_mem_Ico.2 hδ⟩ : Y)) :
     ∃ ε > 0, ∀ s : Ico (0 : ℝ) δ, (s : ℝ) < ε → (e s : Y) ∈ U := by
   obtain ⟨V, hV, hVU⟩ := (mem_nhds_subtype _ _ _).1
@@ -273,7 +281,7 @@ private theorem exists_pos_forall_lt_mem {Y : Type*} [TopologicalSpace Y] {N U :
 
 /-- If a continuous map on `[0, δ)` sends every positive point into `P`, it sends `0` into the
 closure of `P`. -/
-private theorem mem_closure_of_forall_ne_zero {Z : Type*} [TopologicalSpace Z] {P : Set Z}
+theorem mem_closure_of_forall_ne_zero {Z : Type*} [TopologicalSpace Z] {P : Set Z}
     {δ : ℝ} (hδ : 0 < δ) {g : Ico (0 : ℝ) δ → Z} (hg : Continuous g)
     (hP : ∀ s : Ico (0 : ℝ) δ, (s : ℝ) ≠ 0 → g s ∈ P) : g ⟨0, left_mem_Ico.2 hδ⟩ ∈ closure P := by
   -- `g 0` is the limit of the points `g (δ / (n + 2))`.
@@ -350,11 +358,11 @@ theorem exists_homeomorph_Ico_closure_of_homeomorph_Ico {Y Z : Type*} [Topologic
     rw [mem_nhds_subtype_iff_nhdsWithin]
     filter_upwards [hπt (Filter.inter_mem hN (mem_nhdsWithin_of_mem_nhds (hO.mem_nhds haO))), hcov]
       with q hq hq'
-    have hqO : (⟨π q, hq.1⟩ : N) ∈ Subtype.val ⁻¹' O := hq.2
+    have hqO : (⟨π q, hq.1⟩ : N) ∈ Subtype.val ⁻¹' O := mem_preimage.2 hq.2
     rw [hOe] at hqO
     obtain ⟨s, hs, hsq⟩ := hqO
     refine ⟨G ⟨s, s.property.1, hs⟩, mem_range_self _, ?_⟩
-    change ι (e s : Y) = q
+    simp only [G, g, incl]
     rw [hsq, hq'.2]
   -- The homeomorphism onto the range is `G` itself, which sends `0` to `ι a = b`.
   exact ⟨hb, range G, hrange, δ', hδ', hG.toHomeomorph, Subtype.ext h0⟩

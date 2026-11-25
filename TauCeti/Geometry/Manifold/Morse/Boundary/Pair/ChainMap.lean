@@ -83,328 +83,8 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
-  {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
-
-/-! ### Levels separating a critical value -/
-
-section Levels
-
-omit [FiniteDimensional ℝ E] [T2Space M]
-
-/-- Some level `c < f p` lies above every critical value below `f p`. -/
-private theorem IsMorse.exists_lt_forall_lt (hf : IsMorse 𝓘(ℝ, E) f) (p : M) :
-    ∃ c < f p, ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x < f p → f x < c := by
-  have h : ∀ᶠ c in 𝓝[<] (f p), ∀ x ∈ {x ∈ criticalPoints 𝓘(ℝ, E) f | f x < f p}, f x < c :=
-    (hf.finite_criticalPoints.subset (sep_subset _ _)).eventually_all.2 fun _ hx ↦
-      nhdsWithin_le_nhds (lt_mem_nhds hx.2)
-  obtain ⟨c, hc, hcp⟩ := (h.and self_mem_nhdsWithin).exists
-  exact ⟨c, hcp, fun x hx hxp ↦ hc x ⟨hx, hxp⟩⟩
-
-/-- Some level `c > f r` lies below every critical value above `f r`. -/
-private theorem IsMorse.exists_gt_forall_gt (hf : IsMorse 𝓘(ℝ, E) f) (r : M) :
-    ∃ c > f r, ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f r < f x → c < f x := by
-  have h : ∀ᶠ c in 𝓝[>] (f r), ∀ x ∈ {x ∈ criticalPoints 𝓘(ℝ, E) f | f r < f x}, c < f x :=
-    (hf.finite_criticalPoints.subset (sep_subset _ _)).eventually_all.2 fun _ hx ↦
-      nhdsWithin_le_nhds (gt_mem_nhds hx.2)
-  obtain ⟨c, hc, hrc⟩ := (h.and self_mem_nhdsWithin).exists
-  exact ⟨c, hrc, fun x hx hrx ↦ hc x ⟨hx, hrx⟩⟩
-
-end Levels
 
 namespace IsAdaptedPseudoGradient
-
-/-! ### Points of an orbit on a level -/
-
-section LevelPoint
-
-variable (hX : IsAdaptedPseudoGradient f X)
-
-/-- The point of the orbit of `x` on the level `c`, at the crossing time
-`Flow.levelCrossingTime`, when the orbit meets that level, and `x` otherwise. -/
-private noncomputable def levelPoint (c : ℝ) (x : M) : M :=
-  hX.flow (Flow.levelCrossingTime hX.flow f c x) x
-
-/-- When the orbit of `x` meets the level `c`, its level point lies on that level and on that
-orbit. -/
-private theorem levelPoint_spec {c : ℝ} {x : M} (h : ∃ t, f (hX.flow t x) = c) :
-    f (hX.levelPoint c x) = c ∧ ∃ t, hX.flow t x = hX.levelPoint c x :=
-  ⟨Flow.apply_flow_levelCrossingTime h, _, rfl⟩
-
-/-- Along a trajectory between distinct critical points, the level point is the unique point of
-the orbit on the level. -/
-private theorem levelPoint_eq {a b x : M} (hab : a ≠ b)
-    (hx : x ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {t c : ℝ}
-    (ht : f (hX.flow t x) = c) : hX.levelPoint c x = hX.flow t x :=
-  congrArg (hX.flow · x) ((Flow.eq_levelCrossingTime_iff
-    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hx) ⟨t, ht⟩).2 ht).symm
-
-/-- **Level points converge.** If points `u i` whose orbits meet the level `c` converge to a point
-`w` of a trajectory from `a` to `b` crossing that level, then their level points converge to that
-of `w`. -/
-private theorem tendsto_levelPoint {a b w : M}
-    (hw : w ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {c : ℝ} (hbc : f b < c)
-    (hca : c < f a) {ι : Type*} {l : Filter ι} {u : ι → M} (hu : Tendsto u l (𝓝 w))
-    (hex : ∀ᶠ i in l, ∃ t, f (hX.flow t (u i)) = c) :
-    Tendsto (fun i ↦ hX.levelPoint c (u i)) l (𝓝 (hX.levelPoint c w)) := by
-  have hab : a ≠ b := by rintro rfl; exact (hbc.trans hca).false
-  set T := {i | ∃ t, f (hX.flow t (u i)) = c}
-  rw [← tendsto_comap'_iff (i := ((↑) : T → ι)) (by rwa [Subtype.range_coe])]
-  obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto hw hbc hca (hu.comp tendsto_comap)
-    (s := fun i : T ↦ Flow.levelCrossingTime hX.flow f c (u i))
-    fun i ↦ Flow.apply_flow_levelCrossingTime i.property
-  rw [hX.levelPoint_eq hab hw hσ]
-  exact hlim
-
-/-- A point of `W^s(r)` other than `r` lies on a trajectory from a critical point `b ≠ r` to `r`. -/
-private theorem exists_mem_unstableSet_inter_stableSet_of_mem_stableSet
-    (hf : IsMorse 𝓘(ℝ, E) f) {r x : M} (hx : x ∈ hX.flow.stableSet r) (hxr : x ≠ r) :
-    ∃ b, b ≠ r ∧ x ∈ hX.flow.unstableSet b ∩ hX.flow.stableSet r := by
-  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atBot hf x
-  refine ⟨b, ?_, Flow.mem_unstableSet.2 hb, hx⟩
-  rintro rfl
-  exact hxr (hX.eq_of_mem_unstableSet_inter_stableSet ⟨Flow.mem_unstableSet.2 hb, hx⟩)
-
-/-- The orbit of a point of `W^s(r)` above the level `c > f r` meets that level. -/
-private theorem exists_flow_eq_of_mem_stableSet (hf : IsMorse 𝓘(ℝ, E) f) {r x : M}
-    (hx : x ∈ hX.flow.stableSet r) {c : ℝ} (hrc : f r < c) (hcx : c < f x) :
-    ∃ t, f (hX.flow t x) = c := by
-  obtain ⟨b, hbr, hxb⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hf hx
-    (by rintro rfl; exact (hrc.trans hcx).false)
-  exact (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hbr hxb hrc
-    (hcx.trans (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr hxb).2)).exists
-
-/-- The orbit of a point of `W^u(p)` below the level `c < f p` meets that level. -/
-private theorem exists_flow_eq_of_mem_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) {p x : M}
-    (hx : x ∈ hX.flow.unstableSet p) {c : ℝ} (hcp : c < f p) (hxc : f x < c) :
-    ∃ t, f (hX.flow t x) = c := by
-  obtain ⟨a, hpa, hxa, hac⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hf hx
-    (t := 0) (by rwa [Flow.map_zero_apply]) hcp.le
-  exact (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpa hxa hac hcp).exists
-
-/-- The point of the orbit of `x` on the level `min (f x) c`: the point `x` itself when
-`f x ≤ c`, and otherwise the point where the orbit of `x` descends to the level `c`. -/
-private noncomputable def lowerLevelPoint (c : ℝ) (x : M) : M :=
-  if f x ≤ c then x else hX.levelPoint c x
-
-/-- The point of the orbit of `x` on the level `max (f x) c`: the point `x` itself when
-`c ≤ f x`, and otherwise the point where the orbit of `x` comes down from the level `c`. -/
-private noncomputable def upperLevelPoint (c : ℝ) (x : M) : M :=
-  if c ≤ f x then x else hX.levelPoint c x
-
-/-- **The lower level point is continuous on a stable manifold.** For `f r < c`, the point of
-the orbit of `x` on the level `min (f x) c` depends continuously on the point `x` of `W^s(r)`. -/
-private theorem continuousOn_lowerLevelPoint (hf : IsMorse 𝓘(ℝ, E) f) {r : M} {c : ℝ}
-    (hrc : f r < c) : ContinuousOn (hX.lowerLevelPoint c) (hX.flow.stableSet r) := by
-  intro y hy
-  have hcont : Continuous f := hX.mdifferentiable.continuous
-  have hsplit : hX.flow.stableSet r =
-      (hX.flow.stableSet r ∩ {x | f x ≤ c}) ∪ (hX.flow.stableSet r ∩ {x | c < f x}) := by
-    rw [← inter_union_distrib_left, ← ofPred_or]
-    simp only [le_or_gt, ofPred_true, inter_univ]
-  rw [hsplit]
-  refine ContinuousWithinAt.union ?_ ?_
-  · -- Below the level, the lower level point is the point itself.
-    by_cases hyc : f y ≤ c
-    · exact continuousWithinAt_id.congr (fun x hx ↦ ite_eq_left hx.2) (ite_eq_left hyc)
-    · exact continuousWithinAt_of_notMem_closure fun hcl ↦ hyc
-        (closure_minimal inter_subset_right (isClosed_le hcont continuous_const) hcl)
-  · -- Above the level, it is the level point, which converges along the trajectory through `y`.
-    by_cases hcl : y ∈ closure (hX.flow.stableSet r ∩ {x | c < f x})
-    · have hcy : c ≤ f y :=
-        closure_lt_subset_le continuous_const hcont (closure_mono inter_subset_right hcl)
-      obtain ⟨b, hbr, hyb⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hf hy
-        (by rintro rfl; linarith)
-      have hfy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr hyb
-      have hlim := hX.tendsto_levelPoint hyb hrc (hcy.trans_lt hfy.2) (u := id)
-        (l := 𝓝[hX.flow.stableSet r ∩ {x | c < f x}] y) nhdsWithin_le_nhds
-        (eventually_nhdsWithin_of_forall fun x hx ↦
-          hX.exists_flow_eq_of_mem_stableSet hf hx.1 hrc hx.2)
-      have hy' : hX.lowerLevelPoint c y = hX.levelPoint c y := by
-        rcases hcy.lt_or_eq with hcy | hcy
-        · exact ite_eq_right (not_le.2 hcy)
-        · rw [lowerLevelPoint, ite_eq_left hcy.ge,
-            hX.levelPoint_eq hbr hyb (t := 0) (by rw [Flow.map_zero_apply, hcy]),
-            Flow.map_zero_apply]
-      rw [ContinuousWithinAt, hy']
-      exact hlim.congr' (eventually_nhdsWithin_of_forall fun x hx ↦
-        (ite_eq_right (not_le.2 hx.2)).symm)
-    · exact continuousWithinAt_of_notMem_closure hcl
-
-/-- **The upper level point is continuous on an unstable manifold.** For `c < f p`, the point of
-the orbit of `x` on the level `max (f x) c` depends continuously on the point `x` of `W^u(p)`. -/
-private theorem continuousOn_upperLevelPoint (hf : IsMorse 𝓘(ℝ, E) f) {p : M} {c : ℝ}
-    (hcp : c < f p) : ContinuousOn (hX.upperLevelPoint c) (hX.flow.unstableSet p) := by
-  intro y hy
-  have hcont : Continuous f := hX.mdifferentiable.continuous
-  have hsplit : hX.flow.unstableSet p =
-      (hX.flow.unstableSet p ∩ {x | c ≤ f x}) ∪ (hX.flow.unstableSet p ∩ {x | f x < c}) := by
-    rw [← inter_union_distrib_left, ← ofPred_or]
-    simp only [le_or_gt, ofPred_true, inter_univ]
-  rw [hsplit]
-  refine ContinuousWithinAt.union ?_ ?_
-  · -- Above the level, the upper level point is the point itself.
-    by_cases hyc : c ≤ f y
-    · exact continuousWithinAt_id.congr (fun x hx ↦ ite_eq_left hx.2) (ite_eq_left hyc)
-    · exact continuousWithinAt_of_notMem_closure fun hcl ↦ hyc
-        (closure_minimal inter_subset_right (isClosed_le continuous_const hcont) hcl)
-  · -- Below the level, it is the level point, which converges along the trajectory through `y`.
-    by_cases hcl : y ∈ closure (hX.flow.unstableSet p ∩ {x | f x < c})
-    · have hcy : f y ≤ c :=
-        closure_lt_subset_le hcont continuous_const (closure_mono inter_subset_right hcl)
-      obtain ⟨a, hpa, hya, -⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hf hy
-        (t := 0) (by rw [Flow.map_zero_apply]; linarith) le_rfl
-      have hfy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa hya
-      have hlim := hX.tendsto_levelPoint hya (hfy.1.trans_le hcy) hcp (u := id)
-        (l := 𝓝[hX.flow.unstableSet p ∩ {x | f x < c}] y) nhdsWithin_le_nhds
-        (eventually_nhdsWithin_of_forall fun x hx ↦
-          hX.exists_flow_eq_of_mem_unstableSet hf hx.1 hcp hx.2)
-      have hy' : hX.upperLevelPoint c y = hX.levelPoint c y := by
-        rcases hcy.lt_or_eq with hcy | hcy
-        · exact ite_eq_right (not_le.2 hcy)
-        · rw [upperLevelPoint, ite_eq_left hcy.ge,
-            hX.levelPoint_eq hpa hya (t := 0) (by rw [Flow.map_zero_apply, hcy]),
-            Flow.map_zero_apply]
-      rw [ContinuousWithinAt, hy']
-      exact hlim.congr' (eventually_nhdsWithin_of_forall fun x hx ↦
-        (ite_eq_right (not_le.2 hx.2)).symm)
-    · exact continuousWithinAt_of_notMem_closure hcl
-
-/-- Moving a point of a trajectory between distinct critical points along its orbit does not move
-its level point, when the orbit crosses the level. -/
-private theorem levelPoint_flow {a b x : M} (hab : a ≠ b)
-    (hx : x ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {c : ℝ}
-    (hex : ∃ t, f (hX.flow t x) = c) (t : ℝ) :
-    hX.levelPoint c (hX.flow t x) = hX.levelPoint c x := by
-  obtain ⟨s, hs⟩ := hex
-  exact (Flow.flow_levelCrossingTime_flow
-    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hx) hs t).trans
-      (hX.levelPoint_eq hab hx hs).symm
-
-/-- On a trajectory between distinct critical points crossing the level `c`, the level point is a
-point of the orbit, on the trajectory and on the level. -/
-private theorem exists_levelPoint_eq {a b z : M} (hab : a ≠ b)
-    (hz : z ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {c : ℝ} (hbc : f b < c)
-    (hca : c < f a) :
-    ∃ s, hX.levelPoint c z = hX.flow s z ∧
-      hX.levelPoint c z ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b ∧
-        f (hX.levelPoint c z) = c := by
-  obtain ⟨s, hs, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hab hz hbc hca
-  rw [hX.levelPoint_eq hab hz hs]
-  exact ⟨s, rfl, hX.flow.isInvariant_unstableSet_inter_stableSet a b s hz, hs⟩
-
-end LevelPoint
-
-/-! ### Level points near a broken trajectory -/
-
-namespace IsMorseSmale
-
-variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-include h hf
-
-/-- **Level points of a sequence breaking at the source.** Let `u n` be points of `W^u(p)`
-converging to a point `y` of `W^u(a)`, where `ind p = ind a + 1`. If the points of their orbits on
-the levels `max (f (u n)) c`, for `f a < c < f p`, converge to `w`, then `w` lies on a trajectory
-from `p` to `a`, on the level `c`: the orbits of the `u n` break at `a`, and their level points
-follow the first component. -/
-private theorem mem_of_tendsto_upperLevelPoint_of_mem_unstableSet {p a y w : M} (hpa : p ≠ a)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f a + 1)
-    (hy : y ∈ hX.flow.unstableSet a) {c : ℝ} (hac : f a < c) (hcp : c < f p) {u : ℕ → M}
-    (hu : ∀ n, u n ∈ hX.flow.unstableSet p) (hlim : Tendsto u atTop (𝓝 y))
-    (hw : Tendsto (fun n ↦ hX.upperLevelPoint c (u n)) atTop (𝓝 w)) :
-    w ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet a ∧ f w = c := by
-  have hcont : Continuous f := hX.mdifferentiable.continuous
-  -- Flowing backward, the `u n` accumulate at a point `z ≠ a` of `W^s(a)`.
-  obtain ⟨z, hz, hza, n, t, hn, -, hzlim⟩ :=
-    hX.exists_tendsto_mem_stableSet_of_tendsto_mem_unstableSet hf hy hlim
-      (Frequently.of_forall fun k ↦ (Flow.disjoint_unstableSet hpa).notMem_of_mem_left (hu k))
-  -- The backward limit of `z` is `p`, as no index fits strictly between those of `a` and `p`.
-  obtain ⟨p', -, hp'⟩ := hX.exists_tendsto_atBot hf z
-  have hzp' : z ∈ hX.flow.unstableSet p' := Flow.mem_unstableSet.2 hp'
-  have hzcl : z ∈ closure (hX.flow.unstableSet p) := mem_closure_of_tendsto hzlim
-    (.of_forall fun k ↦ (Flow.apply_mem_unstableSet_iff _ _).2 (hu _))
-  have hp'a : p' ≠ a := by
-    rintro rfl
-    exact hza (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hzp', hz⟩)
-  have hlt := h.manifoldMorseIndex_lt hf hp'a ⟨z, hzp', hz⟩
-  obtain rfl : p = p' := by
-    by_contra hne
-    have := h.manifoldMorseIndex_lt_of_reflTransGen hf
-      (reflTransGen_of_mem_closure_unstableSet hf hzcl hzp') (Ne.symm hne)
-    omega
-  -- Eventually the `u n` lie below the level `c`, so their orbits cross it.
-  have hya : f y ≤ f a :=
-    Flow.le_of_mem_unstableSet_of_antitone hy hcont.continuousAt (hX.antitone_flow y)
-  have hbelow₀ := (hcont.tendsto y).comp hlim |>.eventually (gt_mem_nhds (hya.trans_lt hac))
-  have hw' : Tendsto (fun m ↦ hX.levelPoint c (u m)) atTop (𝓝 w) :=
-    hw.congr' (hbelow₀.mono fun m hm ↦ ite_eq_right (not_le.2 hm))
-  have hbelow : ∀ᶠ k in atTop, f (u (n k)) < c := hn.eventually hbelow₀
-  have hex : ∀ᶠ k in atTop, ∃ s, f (hX.flow s (u (n k))) = c :=
-    hbelow.mono fun k hk ↦ hX.exists_flow_eq_of_mem_unstableSet hf (hu _) hcp hk
-  -- The level points of the shifted points converge to the level point of `z`.
-  have h1 := hX.tendsto_levelPoint ⟨hzp', hz⟩ hac hcp hzlim (hex.mono fun k ⟨s, hs⟩ ↦
-    ⟨s - t k, by rwa [← Flow.map_add, sub_add_cancel]⟩)
-  have h2 : ∀ᶠ k in atTop,
-      hX.levelPoint c (hX.flow (t k) (u (n k))) = hX.levelPoint c (u (n k)) := by
-    filter_upwards [hbelow, hex] with k hk hk'
-    obtain ⟨a', hpa', hxa', -⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hf
-      (hu (n k)) (t := 0) (by rwa [Flow.map_zero_apply]) hcp.le
-    exact hX.levelPoint_flow hpa' hxa' hk' _
-  obtain ⟨-, -, hmem, hc⟩ := hX.exists_levelPoint_eq hpa ⟨hzp', hz⟩ hac hcp
-  exact tendsto_nhds_unique (hw'.comp hn) (h1.congr' h2) ▸ ⟨hmem, hc⟩
-
-/-- **Level points of a sequence breaking at the target.** Let `u n` be points of `W^s(r)`
-converging to a point `y` of `W^s(b)`, where `ind b = ind r + 1`. If the points of their orbits on
-the levels `min (f (u n)) c`, for `f r < c < f b`, converge to `w`, then `w` lies on a trajectory
-from `b` to `r`, on the level `c`: the orbits of the `u n` break at `b`, and their level points
-follow the last component. -/
-private theorem mem_of_tendsto_lowerLevelPoint_of_mem_stableSet {b r y w : M} (hbr : b ≠ r)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f b = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
-    (hy : y ∈ hX.flow.stableSet b) {c : ℝ} (hrc : f r < c) (hcb : c < f b) {u : ℕ → M}
-    (hu : ∀ n, u n ∈ hX.flow.stableSet r) (hlim : Tendsto u atTop (𝓝 y))
-    (hw : Tendsto (fun n ↦ hX.lowerLevelPoint c (u n)) atTop (𝓝 w)) :
-    w ∈ hX.flow.unstableSet b ∩ hX.flow.stableSet r ∧ f w = c := by
-  have hcont : Continuous f := hX.mdifferentiable.continuous
-  -- Flowing forward, the `u n` accumulate at a point `z ≠ b` of `W^u(b)`.
-  obtain ⟨z, hz, hzb, n, t, hn, -, hzlim⟩ :=
-    hX.exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet hf hy hlim
-      (Frequently.of_forall fun k ↦ (Flow.disjoint_stableSet hbr).notMem_of_mem_right (hu k))
-  -- The forward limit of `z` is `r`, as no index fits strictly between those of `r` and `b`.
-  obtain ⟨r', -, hr'⟩ := hX.exists_tendsto_atTop hf z
-  have hzr' : z ∈ hX.flow.stableSet r' := Flow.mem_stableSet.2 hr'
-  have hzcl : z ∈ closure (hX.flow.stableSet r) := mem_closure_of_tendsto hzlim
-    (.of_forall fun k ↦ (Flow.apply_mem_stableSet_iff _ _).2 (hu _))
-  have hbr' : b ≠ r' := by
-    rintro rfl
-    exact hzb (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hz, hzr'⟩)
-  have hlt := h.manifoldMorseIndex_lt hf hbr' ⟨z, hz, hzr'⟩
-  obtain rfl : r = r' := by
-    by_contra hne
-    have := h.manifoldMorseIndex_lt_of_reflTransGen hf
-      (reflTransGen_of_mem_closure_stableSet hf hzcl hzr') hne
-    omega
-  -- Eventually the `u n` lie above the level `c`, so their orbits cross it.
-  have hyb : f b ≤ f y :=
-    Flow.le_of_mem_stableSet_of_antitone hy hcont.continuousAt (hX.antitone_flow y)
-  have habove₀ := (hcont.tendsto y).comp hlim |>.eventually (lt_mem_nhds (hcb.trans_le hyb))
-  have hw' : Tendsto (fun m ↦ hX.levelPoint c (u m)) atTop (𝓝 w) :=
-    hw.congr' (habove₀.mono fun m hm ↦ ite_eq_right (not_le.2 hm))
-  have habove : ∀ᶠ k in atTop, c < f (u (n k)) := hn.eventually habove₀
-  have hex : ∀ᶠ k in atTop, ∃ s, f (hX.flow s (u (n k))) = c :=
-    habove.mono fun k hk ↦ hX.exists_flow_eq_of_mem_stableSet hf (hu _) hrc hk
-  -- The level points of the shifted points converge to the level point of `z`.
-  have h1 := hX.tendsto_levelPoint ⟨hz, hzr'⟩ hrc hcb hzlim (hex.mono fun k ⟨s, hs⟩ ↦
-    ⟨s - t k, by rwa [← Flow.map_add, sub_add_cancel]⟩)
-  have h2 : ∀ᶠ k in atTop,
-      hX.levelPoint c (hX.flow (t k) (u (n k))) = hX.levelPoint c (u (n k)) := by
-    filter_upwards [habove, hex] with k hk hk'
-    obtain ⟨b', hb'r, hxb'⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hf
-      (hu (n k)) (by rintro h; rw [h] at hk; exact (hrc.trans hk).false)
-    exact hX.levelPoint_flow hb'r hxb' hk' _
-  obtain ⟨-, -, hmem, hc⟩ := hX.exists_levelPoint_eq hbr ⟨hz, hzr'⟩ hrc hcb
-  exact tendsto_nhds_unique (hw'.comp hn) (h1.congr' h2) ▸ ⟨hmem, hc⟩
-
-end IsMorseSmale
-
 
 /-! ### The compactified intersection of a Morse–Smale pair -/
 
@@ -418,6 +98,10 @@ level `max (f₀ x) c₀`, the point itself, and the point of its `X₁`-orbit o
 `min (f₁ x) c₁`. -/
 private noncomputable def pairRecord (c₀ c₁ : ℝ) (x : M) : M × M × M :=
   (hX₀.upperLevelPoint c₀ x, x, hX₁.lowerLevelPoint c₁ x)
+
+private theorem pairRecord_apply (c₀ c₁ : ℝ) (x : M) :
+    hX₀.pairRecord hX₁ c₀ c₁ x = (hX₀.upperLevelPoint c₀ x, x, hX₁.lowerLevelPoint c₁ x) :=
+  rfl
 
 /-- The records of the configurations broken at the source: a point of a trajectory of `X₀` from
 `p` to a critical point `a` on the level `c₀`, a point `y` of `W^u_{X₀}(a) ∩ W^s_{X₁}(r)`, and the
@@ -463,24 +147,20 @@ private theorem sourceBrokenRecords_eq_image (hc₀ : c₀ < f₀ p)
     have ha := mem_criticalPoints_iff_mfderiv_eq_zero.2 (hX₀.mfderiv_eq_zero_of_mem_stableSet hw₁.2)
     have hpa' : p ≠ a := by rintro rfl; omega
     have hfa := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa' hw₁
-    -- Move the point of the trajectory to its middle level.
-    obtain ⟨t, ht, -⟩ := hX₀.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpa' hw₁
-      (c := (f₀ p + f₀ a) / 2) (by linarith [hfa.1, hfa.2]) (by linarith [hfa.1, hfa.2])
-    have hz := hX₀.flow.isInvariant_unstableSet_inter_stableSet p a t hw₁
-    refine ⟨(⟨a, ha⟩, hX₀.flow t w.1, w.2.1), (hX₀.mem_morseSourceBrokenPairSet hX₁).2
-      ⟨hpa, har, (hX₀.mem_morseTrajectorySlice).2 ⟨hz.1, hz.2, ht⟩, hy⟩, ?_⟩
-    have hlev : hX₀.levelPoint c₀ (hX₀.flow t w.1) = w.1 := by
-      rw [hX₀.levelPoint_eq hpa' hz (t := -t) (by rw [← Flow.map_add, neg_add_cancel,
-        Flow.map_zero_apply, hw₁c]), ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
-    exact Prod.ext hlev (Prod.ext rfl hw₃.symm)
+    -- `w.1` is the level point of a point of the middle-level slice.
+    obtain ⟨z, hz, hzw⟩ := ((hX₀.bijOn_flow_levelCrossingTime_midpoint hpa' (hw₁c ▸ hfa.1)
+      (hw₁c ▸ hfa.2)).congr fun z _ ↦ (hX₀.levelPoint_def c₀ z).symm).surjOn ⟨hw₁, hw₁c⟩
+    exact ⟨(⟨a, ha⟩, z, w.2.1), (hX₀.mem_morseSourceBrokenPairSet hX₁).2
+      ⟨hpa, har, (hX₀.mem_morseTrajectorySlice).2 ⟨hz.1.1, hz.1.2, hz.2⟩, hy⟩,
+      Prod.ext hzw (Prod.ext rfl hw₃.symm)⟩
   · rintro ⟨⟨a, z, y⟩, hx, rfl⟩
     obtain ⟨hpa, har, hz, hy⟩ := (hX₀.mem_morseSourceBrokenPairSet hX₁).1 hx
     dsimp only at hpa har hz hy
     rw [mem_morseTrajectorySlice] at hz
     have hpa' : p ≠ a := by rintro rfl; omega
     have hfa := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa' ⟨hz.1, hz.2.1⟩
-    obtain ⟨-, -, hmem, hc⟩ := hX₀.exists_levelPoint_eq hpa' ⟨hz.1, hz.2.1⟩
-      (hgap₀ a a.property (hfa.1.trans hfa.2)) hc₀
+    obtain ⟨hmem, hc⟩ := hX₀.mapsTo_levelPoint hpa' (hgap₀ a a.property (hfa.1.trans hfa.2)) hc₀
+      ⟨hz.1, hz.2.1⟩
     exact ⟨a, hpa, har, hmem, hc, hy, rfl⟩
 
 /-- Distinct configurations broken at the source have distinct records. -/
@@ -500,18 +180,18 @@ private theorem injOn_sourceBrokenRecords (hc₀ : c₀ < f₀ p)
   have hpa₂' : p ≠ a' := by rintro rfl; omega
   have hfa := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa' ⟨hz.1, hz.2.1⟩
   have hfa' := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa₂' ⟨hz'.1, hz'.2.1⟩
-  obtain ⟨s, hs, hmem, -⟩ := hX₀.exists_levelPoint_eq hpa' ⟨hz.1, hz.2.1⟩
-    (hgap₀ a a.property (hfa.1.trans hfa.2)) hc₀
-  obtain ⟨s', hs', hmem', -⟩ := hX₀.exists_levelPoint_eq hpa₂' ⟨hz'.1, hz'.2.1⟩
-    (hgap₀ a' a'.property (hfa'.1.trans hfa'.2)) hc₀
+  have hac := hgap₀ a a.property (hfa.1.trans hfa.2)
+  obtain ⟨hmem, -⟩ := hX₀.mapsTo_levelPoint hpa' hac hc₀ ⟨hz.1, hz.2.1⟩
+  obtain ⟨hmem', -⟩ := hX₀.mapsTo_levelPoint hpa₂' (hgap₀ a' a'.property (hfa'.1.trans hfa'.2))
+    hc₀ ⟨hz'.1, hz'.2.1⟩
   -- The common level point lies on the stable sets of `a` and `a'`, so `a = a'`.
   obtain rfl : a = a' := Subtype.ext <| by
     by_contra hne
     exact (Flow.disjoint_stableSet hne).notMem_of_mem_left hmem.2 (heq ▸ hmem'.2)
-  -- The points `z` and `z'` lie on one orbit, on the same middle level.
-  have hzz : z = z' := hX₀.eq_of_flow_eq_of_value_eq hpa' ⟨hz.1, hz.2.1⟩
-    (hs.symm.trans (heq.trans hs')) (hz.2.2.trans hz'.2.2.symm)
-  rw [hzz]
+  -- The level point is injective on the middle-level slice.
+  rw [((hX₀.bijOn_flow_levelCrossingTime_midpoint hpa' hac hc₀).congr fun z _ ↦
+    (hX₀.levelPoint_def c₀ z).symm).injOn ⟨⟨hz.1, hz.2.1⟩, hz.2.2⟩ ⟨⟨hz'.1, hz'.2.1⟩, hz'.2.2⟩
+    heq]
 
 /-- The records of the configurations broken at the target are the images of the configurations
 of `morseTargetBrokenPairSet`, moving the point of the trajectory to `r` to the level `c₁`. -/
@@ -528,24 +208,20 @@ private theorem targetBrokenRecords_eq_image (hc₁ : f₁ r < c₁)
       (hX₁.mfderiv_eq_zero_of_mem_unstableSet hw₃.1)
     have hbr' : b ≠ r := by rintro rfl; omega
     have hfb := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr' hw₃
-    -- Move the point of the trajectory to its middle level.
-    obtain ⟨t, ht, -⟩ := hX₁.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hbr' hw₃
-      (c := (f₁ b + f₁ r) / 2) (by linarith [hfb.1, hfb.2]) (by linarith [hfb.1, hfb.2])
-    have hz := hX₁.flow.isInvariant_unstableSet_inter_stableSet b r t hw₃
-    refine ⟨(⟨b, hb⟩, w.2.1, hX₁.flow t w.2.2), (hX₀.mem_morseTargetBrokenPairSet hX₁).2
-      ⟨hpb, hbr, hy, (hX₁.mem_morseTrajectorySlice).2 ⟨hz.1, hz.2, ht⟩⟩, ?_⟩
-    have hlev : hX₁.levelPoint c₁ (hX₁.flow t w.2.2) = w.2.2 := by
-      rw [hX₁.levelPoint_eq hbr' hz (t := -t) (by rw [← Flow.map_add, neg_add_cancel,
-        Flow.map_zero_apply, hw₃c]), ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
-    exact Prod.ext hw₁.symm (Prod.ext rfl hlev)
+    -- `w.2.2` is the level point of a point of the middle-level slice.
+    obtain ⟨z, hz, hzw⟩ := ((hX₁.bijOn_flow_levelCrossingTime_midpoint hbr' (hw₃c ▸ hfb.1)
+      (hw₃c ▸ hfb.2)).congr fun z _ ↦ (hX₁.levelPoint_def c₁ z).symm).surjOn ⟨hw₃, hw₃c⟩
+    exact ⟨(⟨b, hb⟩, w.2.1, z), (hX₀.mem_morseTargetBrokenPairSet hX₁).2
+      ⟨hpb, hbr, hy, (hX₁.mem_morseTrajectorySlice).2 ⟨hz.1.1, hz.1.2, hz.2⟩⟩,
+      Prod.ext hw₁.symm (Prod.ext rfl hzw)⟩
   · rintro ⟨⟨b, y, z⟩, hx, rfl⟩
     obtain ⟨hpb, hbr, hy, hz⟩ := (hX₀.mem_morseTargetBrokenPairSet hX₁).1 hx
     dsimp only at hpb hbr hy hz
     rw [mem_morseTrajectorySlice] at hz
     have hbr' : b ≠ r := by rintro rfl; omega
     have hfb := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr' ⟨hz.1, hz.2.1⟩
-    obtain ⟨-, -, hmem, hc⟩ := hX₁.exists_levelPoint_eq hbr' ⟨hz.1, hz.2.1⟩ hc₁
-      (hgap₁ b b.property (hfb.1.trans hfb.2))
+    obtain ⟨hmem, hc⟩ := hX₁.mapsTo_levelPoint hbr' hc₁ (hgap₁ b b.property (hfb.1.trans hfb.2))
+      ⟨hz.1, hz.2.1⟩
     exact ⟨b, hpb, hbr, hy, rfl, hmem, hc⟩
 
 /-- Distinct configurations broken at the target have distinct records. -/
@@ -565,19 +241,33 @@ private theorem injOn_targetBrokenRecords (hc₁ : f₁ r < c₁)
   have hbr₂' : b' ≠ r := by rintro rfl; omega
   have hfb := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr' ⟨hz.1, hz.2.1⟩
   have hfb' := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr₂' ⟨hz'.1, hz'.2.1⟩
-  obtain ⟨s, hs, hmem, -⟩ := hX₁.exists_levelPoint_eq hbr' ⟨hz.1, hz.2.1⟩ hc₁
-    (hgap₁ b b.property (hfb.1.trans hfb.2))
-  obtain ⟨s', hs', hmem', -⟩ := hX₁.exists_levelPoint_eq hbr₂' ⟨hz'.1, hz'.2.1⟩ hc₁
-    (hgap₁ b' b'.property (hfb'.1.trans hfb'.2))
+  have hcb := hgap₁ b b.property (hfb.1.trans hfb.2)
+  obtain ⟨hmem, -⟩ := hX₁.mapsTo_levelPoint hbr' hc₁ hcb ⟨hz.1, hz.2.1⟩
+  obtain ⟨hmem', -⟩ := hX₁.mapsTo_levelPoint hbr₂' hc₁ (hgap₁ b' b'.property (hfb'.1.trans hfb'.2))
+    ⟨hz'.1, hz'.2.1⟩
   -- The common level point lies on the unstable sets of `b` and `b'`, so `b = b'`.
   obtain rfl : b = b' := Subtype.ext <| by
     by_contra hne
     exact (Flow.disjoint_unstableSet hne).notMem_of_mem_left hmem.1 (heq ▸ hmem'.1)
-  -- The points `z` and `z'` lie on one orbit, on the same middle level.
-  have hzz : z = z' := hX₁.eq_of_flow_eq_of_value_eq hbr' ⟨hz.1, hz.2.1⟩
-    (hs.symm.trans (heq.trans hs')) (hz.2.2.trans hz'.2.2.symm)
-  rw [hzz]
+  -- The level point is injective on the middle-level slice.
+  rw [((hX₁.bijOn_flow_levelCrossingTime_midpoint hbr' hc₁ hcb).congr fun z _ ↦
+    (hX₁.levelPoint_def c₁ z).symm).injOn ⟨⟨hz.1, hz.2.1⟩, hz.2.2⟩ ⟨⟨hz'.1, hz'.2.1⟩, hz'.2.2⟩
+    heq]
 
+
+/-- **Reversing the pair reverses the records.** Reading triples backwards carries the records of
+the reversed pair `(-X₁, -X₀)`, on the levels `-c₁` and `-c₀`, to those of `(X₀, X₁)`. -/
+private theorem image_pairRecord_neg (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
+    (hc₀ : c₀ < f₀ p) (hc₁ : f₁ r < c₁) :
+    (fun q : M × M × M ↦ (q.2.2, q.2.1, q.1)) ''
+        ((hX₁.neg hf₁).pairRecord (hX₀.neg hf₀) (-c₁) (-c₀) ''
+          ((hX₁.neg hf₁).flow.unstableSet r ∩ (hX₀.neg hf₀).flow.stableSet p)) =
+      hX₀.pairRecord hX₁ c₀ c₁ '' (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r) := by
+  rw [← hX₀.unstableSet_inter_stableSet_eq_neg hX₁ hf₀ hf₁, image_image]
+  refine image_congr fun x hx ↦ ?_
+  rw [pairRecord_apply, pairRecord_apply,
+    ← hX₀.upperLevelPoint_eq_lowerLevelPoint_neg hf₀ hx.1 hc₀,
+    ← hX₁.lowerLevelPoint_eq_upperLevelPoint_neg hf₁ hx.2 hc₁]
 
 namespace IsMorseSmalePair
 
@@ -760,28 +450,24 @@ private theorem exists_homeomorph_Ico_of_mem_sourceBrokenRecords {w : M × M × 
       ((hcont₀.comp continuous_snd).tendsto (a₁, y)).eventually (gt_mem_nhds hyc)
     filter_upwards [nhdsWithin_le_nhds hev, self_mem_nhdsWithin] with v hv hvR
     obtain ⟨hvS, hv₁, t, ht⟩ := hvR.1.resolve_left hvR.2
-    refine ⟨v.2, hvS, Prod.ext ?_ rfl⟩
-    obtain ⟨a', hpa'', hva', -⟩ := hX₀.exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt
-      hf₀ hvS.1 (t := 0) (by rwa [Flow.map_zero_apply]) hc₀.le
-    change hX₀.upperLevelPoint c₀ v.2 = v.1
-    rw [upperLevelPoint, ite_eq_right (not_le.2 hv), hX₀.levelPoint_eq hpa'' hva' (t := -t)
-      (by rw [← ht, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply, hv₁, ha₁c]), ← ht,
-      ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
+    obtain ⟨a', hpa'', hva'⟩ := hX₀.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet
+      hf₀ hvS.1 (ne_of_apply_ne f₀ (hv.trans hc₀).ne)
+    have hup : hX₀.upperLevelPoint c₀ v.2 = v.1 := by
+      rw [hX₀.upperLevelPoint_of_lt hv, hX₀.levelPoint_eq hpa'' hva' (t := -t)
+        (by rw [← ht, Flow.map_neg_apply_map, hv₁, ha₁c]), ← ht, Flow.map_neg_apply_map]
+    exact ⟨v.2, hvS, by rw [pairRecord_apply, hup]⟩
   · -- Near the broken record, the records lie below the level `c₀` and come from the chart.
     have hev : ∀ᶠ q in 𝓝 (a₁, y, hX₁.lowerLevelPoint c₁ y), f₀ q.2.1 < c₀ :=
       (((hcont₀.comp continuous_fst).comp continuous_snd).tendsto _).eventually (gt_mem_nhds hyc)
     filter_upwards [hnear, nhdsWithin_le_nhds hev] with q hq hqc
     rcases hq with rfl | ⟨x, hxS, rfl⟩
     · exact ⟨mem_insert _ _, rfl⟩
-    · have hxc : f₀ x < c₀ := hqc
-      obtain ⟨hlc, t, ht⟩ :=
-        hX₀.levelPoint_spec (hX₀.exists_flow_eq_of_mem_unstableSet hf₀ hxS.1 hc₀ hxc)
-      have hup : hX₀.upperLevelPoint c₀ x = hX₀.levelPoint c₀ x := ite_eq_right (not_le.2 hxc)
-      refine ⟨Or.inr ⟨hxS, ?_, -t, ?_⟩, rfl⟩
-      · change f₀ (hX₀.upperLevelPoint c₀ x) = f₀ a₁
-        rw [hup, hlc, ha₁c]
-      · change hX₀.flow (-t) (hX₀.upperLevelPoint c₀ x) = x
-        rw [hup, ← ht, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
+    · rw [pairRecord_apply] at hqc ⊢
+      have hup := hX₀.upperLevelPoint_of_lt hqc
+      refine ⟨Or.inr ⟨hxS, ?_, -Flow.levelCrossingTime hX₀.flow f₀ c₀ x, ?_⟩, rfl⟩ <;> dsimp only
+      · rw [hup, hX₀.apply_levelPoint (hX₀.exists_flow_eq_of_mem_unstableSet hf₀ hxS.1 hc₀ hqc),
+          ha₁c]
+      · rw [hup, hX₀.levelPoint_def, Flow.map_neg_apply_map]
 
 /-- **A configuration broken at the target is an endpoint.** The record of a configuration broken
 at the target lies in the closure of the records of `W^u_{X₀}(p) ∩ W^s_{X₁}(r)`, and has a
@@ -796,57 +482,52 @@ private theorem exists_homeomorph_Ico_of_mem_targetBrokenRecords {w : M × M × 
         ∃ (δ : ℝ) (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N),
           (e ⟨0, left_mem_Ico.2 hδ⟩ : closure (hX₀.pairRecord hX₁ c₀ c₁ ''
             (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r))) = ⟨w, hb⟩ := by
-  have hcont₁ : Continuous f₁ := hX₁.mdifferentiable.continuous
-  have hnear := h.eventually_eq_or_mem_pairRecords h₀ h₁ hf₀ hf₁ hind hc₀ hgap₀ hc₁ hgap₁ w
-  obtain ⟨w₁, y, a₂⟩ := w
+  -- Reversing both fields, the configuration read backwards breaks at the source for the pair
+  -- `(-X₁, -X₀)` from `r` to `p`, with the Morse indices `n - ind` of `-f₁` and `-f₀`.
   obtain ⟨b, hpb, hbr, hy, hw₁, ha₂, ha₂c⟩ := hw
-  dsimp only at ha₂ ha₂c hy hw₁
-  subst hw₁
-  have hbr' : b ≠ r := by rintro rfl; omega
-  have hyc : c₁ < f₁ y :=
-    (ha₂c ▸ (hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr' ha₂).2).trans_le
-    (Flow.le_of_mem_stableSet_of_antitone hy.2 hcont₁.continuousAt (hX₁.antitone_flow y))
-  obtain ⟨N, δ, hδ, e, he, hNsub, hN⟩ :=
-    h.exists_homeomorph_Ico_of_target h₁ hf₀ hf₁ hbr hpb ha₂ hy
-  -- The gluing chart records a point by its `X₁`-orbit on the level `c₁`; the first component of
-  -- the records is a continuous function of the second.
-  have hup : ContinuousOn (fun v : M × M ↦ hX₀.upperLevelPoint c₀ v.2) (insert (a₂, y)
-      {v | v.2 ∈ hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r ∧ f₁ v.1 = f₁ a₂ ∧
-        ∃ t, hX₁.flow t v.1 = v.2}) :=
-    (hX₀.continuousOn_upperLevelPoint hf₀ hc₀).comp continuous_snd.continuousOn fun v hv ↦ by
-      rcases hv with rfl | hv
-      exacts [hy.1, hv.1.1]
-  refine exists_homeomorph_Ico_closure_of_homeomorph_Ico (fun q ↦ (q.2.2, q.2.1))
-    (fun v ↦ (hX₀.upperLevelPoint c₀ v.2, v.2, v.1)) (by fun_prop)
-    (hup.prodMk (continuousOn_snd.prodMk continuousOn_fst)) (fun _ _ ↦ rfl) rfl ?_ ?_ hδ e he
-    hNsub hN
-  · -- Near `(a₂, y)`, the points of the chart lie above the level `c₁`, so they are records.
-    have hev : ∀ᶠ v in 𝓝 (a₂, y), c₁ < f₁ v.2 :=
-      ((hcont₁.comp continuous_snd).tendsto (a₂, y)).eventually (lt_mem_nhds hyc)
-    filter_upwards [nhdsWithin_le_nhds hev, self_mem_nhdsWithin] with v hv hvR
-    obtain ⟨hvS, hv₁, t, ht⟩ := hvR.1.resolve_left hvR.2
-    refine ⟨v.2, hvS, Prod.ext rfl (Prod.ext rfl ?_)⟩
-    obtain ⟨b', hb'r, hvb'⟩ := hX₁.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet
-      hf₁ hvS.2 (by rintro h; rw [h] at hv; exact (hc₁.trans hv).false)
-    change hX₁.lowerLevelPoint c₁ v.2 = v.1
-    rw [lowerLevelPoint, ite_eq_right (not_le.2 hv), hX₁.levelPoint_eq hb'r hvb' (t := -t)
-      (by rw [← ht, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply, hv₁, ha₂c]), ← ht,
-      ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
-  · -- Near the broken record, the records lie above the level `c₁` and come from the chart.
-    have hev : ∀ᶠ q in 𝓝 (hX₀.upperLevelPoint c₀ y, y, a₂), c₁ < f₁ q.2.1 :=
-      (((hcont₁.comp continuous_fst).comp continuous_snd).tendsto _).eventually (lt_mem_nhds hyc)
-    filter_upwards [hnear, nhdsWithin_le_nhds hev] with q hq hqc
-    rcases hq with rfl | ⟨x, hxS, rfl⟩
-    · exact ⟨mem_insert _ _, rfl⟩
-    · have hxc : c₁ < f₁ x := hqc
-      obtain ⟨hlc, t, ht⟩ :=
-        hX₁.levelPoint_spec (hX₁.exists_flow_eq_of_mem_stableSet hf₁ hxS.2 hc₁ hxc)
-      have hlow : hX₁.lowerLevelPoint c₁ x = hX₁.levelPoint c₁ x := ite_eq_right (not_le.2 hxc)
-      refine ⟨Or.inr ⟨hxS, ?_, -t, ?_⟩, rfl⟩
-      · change f₁ (hX₁.lowerLevelPoint c₁ x) = f₁ a₂
-        rw [hlow, hlc, ha₂c]
-      · change hX₁.flow (-t) (hX₁.lowerLevelPoint c₁ x) = x
-        rw [hlow, ← ht, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
+  have hp := hf₀.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    (hX₀.mfderiv_eq_zero_of_mem_unstableSet hy.1)
+  have hb := hf₁.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    (hX₁.mfderiv_eq_zero_of_mem_stableSet hy.2)
+  have hr := hf₁.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    (hX₁.mfderiv_eq_zero_of_mem_stableSet ha₂.2)
+  have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  have := hb.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  have := hr.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  obtain ⟨hb', N, hN, δ, hδ, e, he⟩ :=
+    (h.neg hf₀ hf₁).exists_homeomorph_Ico_of_mem_sourceBrokenRecords (h₁.neg hf₁) (h₀.neg hf₀)
+      hf₁.neg hf₀.neg (p := r) (r := p) (c₀ := -c₁) (c₁ := -c₀) (by omega) (neg_lt_neg hc₁)
+      (fun x hx hxr ↦ neg_lt_neg (hgap₁ x (by rwa [criticalPoints_neg] at hx) (by simpa using hxr)))
+      (neg_lt_neg hc₀)
+      (fun x hx hpx ↦ neg_lt_neg (hgap₀ x (by rwa [criticalPoints_neg] at hx) (by simpa using hpx)))
+      (w := (w.2.2, w.2.1, w.1))
+      ⟨b, hb.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hr hbr, by omega,
+        hX₁.unstableSet_inter_stableSet_eq_neg hX₁ hf₁ hf₁ b r ▸ ha₂,
+        congrArg Neg.neg ha₂c, hX₀.unstableSet_inter_stableSet_eq_neg hX₁ hf₀ hf₁ p b ▸ hy,
+        hw₁.trans (hX₀.upperLevelPoint_eq_lowerLevelPoint_neg hf₀ hy.1 hc₀)⟩
+  -- Reading triples backwards carries the records of `(-X₁, -X₀)` to those of `(X₀, X₁)`, hence
+  -- the closure of the former onto that of the latter.
+  let σ : M × M × M ≃ₜ M × M × M :=
+    { toFun q := (q.2.2, q.2.1, q.1)
+      invFun q := (q.2.2, q.2.1, q.1)
+      left_inv _ := rfl
+      right_inv _ := rfl
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+  have hσ (q : M × M × M) : σ q = (q.2.2, q.2.1, q.1) := rfl
+  have hcl (q : M × M × M) : q ∈ closure ((hX₁.neg hf₁).pairRecord (hX₀.neg hf₀) (-c₁) (-c₀) ''
+      ((hX₁.neg hf₁).flow.unstableSet r ∩ (hX₀.neg hf₀).flow.stableSet p)) ↔
+      σ q ∈ closure (hX₀.pairRecord hX₁ c₀ c₁ ''
+        (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r)) := by
+    rw [← hX₀.image_pairRecord_neg hX₁ hf₀ hf₁ hc₀ hc₁, ← funext hσ, ← σ.image_closure,
+      σ.injective.mem_set_image]
+  -- Transport the half-open chart along the induced homeomorphism of the closures.
+  let Φ := σ.subtype hcl
+  have hΦ : Φ ⟨_, hb'⟩ = ⟨w, (hcl _).1 hb'⟩ :=
+    Subtype.ext ((Homeomorph.subtype_apply_coe _ _ _).trans (hσ _))
+  refine ⟨(hcl _).1 hb', Φ '' N, hΦ ▸ Φ.isOpenMap.image_mem_nhds hN, δ, hδ, e.trans (Φ.image N),
+    ?_⟩
+  rw [Homeomorph.trans_apply, Homeomorph.image_apply_coe, he, hΦ]
 
 end IsMorseSmalePair
 
@@ -878,8 +559,8 @@ theorem even_ncard_morseSourceBrokenPairSet_add_ncard_morseTargetBrokenPairSet
       omega
     simp [hs, ht]
   -- Record the points of the intersection on levels `c₀` below `p` and `c₁` above `r`.
-  obtain ⟨c₀, hc₀, hgap₀⟩ := hf₀.exists_lt_forall_lt (p : M)
-  obtain ⟨c₁, hc₁, hgap₁⟩ := hf₁.exists_gt_forall_gt (r : M)
+  obtain ⟨c₀, hc₀, hgap₀⟩ := hf₀.exists_lt_forall_lt (f₀ p)
+  obtain ⟨c₁, hc₁, hgap₁⟩ := hf₁.exists_gt_forall_gt (f₁ r)
   set P := hX₀.pairRecord hX₁ c₀ c₁ '' (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r)
   have hcl := h.closure_pairRecords_subset h₀ h₁ hf₀ hf₁ hind hc₀ hgap₀ hc₁ hgap₁
   have hs (w : M × M × M) (hw : w ∈ hX₀.sourceBrokenRecords hX₁ p r c₀ c₁) :=
