@@ -66,9 +66,11 @@ lemma node_coord_notMem_span {i j : Fin 2} (hij : i ≠ j) :
   let p : Fin 2 → PowerSeries k := fun l ↦ if l = i then PowerSeries.X else 0
   have hp : p 0 * p 1 = algebraMap k _ 0 := by
     fin_cases i <;> simp [p]
-  refine algebraMap_notMem_span_singleton (ker_le_comap_maximalIdeal_of_adjoin_eq_top
-    (NodeAlgebra.adjoin_range_coord 0) (NodeAlgebra.origin k) (by rintro _ ⟨l, rfl⟩; simp)
-    (NodeAlgebra.lift 0 (p 0) (p 1) hp) ?_) ?_
+  refine algebraMap_notMem_span_singleton
+    (M := (RingHom.ker (NodeAlgebra.origin k).toRingHom).primeCompl)
+    (fun m ↦ isUnit_apply_of_notMem_ker (ker_le_comap_maximalIdeal_of_adjoin_eq_top
+      (NodeAlgebra.adjoin_range_coord 0) (NodeAlgebra.origin k) (by rintro _ ⟨l, rfl⟩; simp)
+      (NodeAlgebra.lift 0 (p 0) (p 1) hp) ?_) m.property) ?_
   · rintro _ ⟨l, rfl⟩
     rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, PowerSeries.isUnit_iff_constantCoeff]
     fin_cases i <;> fin_cases l <;> simp [p]
@@ -106,10 +108,12 @@ abbrev yc : CuspLocalRing k := algebraMap (CuspRing k) (CuspLocalRing k) (cuspY 
 lemma yc_notMem_span_xc_sq : yc (k := k) ∉ Ideal.span {xc ^ 2} := by
   -- Map to `k⟦t⟧` by `(x, y) ↦ (t ^ 2, t ^ 3)`.
   rw [← map_pow]
-  refine algebraMap_notMem_span_singleton (ker_le_comap_maximalIdeal_of_adjoin_eq_top
-    (adjoin_cuspX_cuspY_eq_top k) (cuspOrigin k) (by simp)
-    (AdjoinRoot.liftAlgHom _ (Polynomial.aeval (PowerSeries.X ^ 2 : PowerSeries k))
-      (PowerSeries.X ^ 3) (by rw [eval₂_cuspPolynomial]; simp [← pow_mul])) ?_) ?_
+  refine algebraMap_notMem_span_singleton
+    (M := (RingHom.ker (cuspOrigin k).toRingHom).primeCompl)
+    (fun m ↦ isUnit_apply_of_notMem_ker (ker_le_comap_maximalIdeal_of_adjoin_eq_top
+      (adjoin_cuspX_cuspY_eq_top k) (cuspOrigin k) (by simp)
+      (AdjoinRoot.liftAlgHom _ (Polynomial.aeval (PowerSeries.X ^ 2 : PowerSeries k))
+        (PowerSeries.X ^ 3) (by rw [eval₂_cuspPolynomial]; simp [← pow_mul])) ?_) m.property) ?_
   · rintro a (rfl | rfl) <;>
       simp [cuspX_def, cuspY_def, PowerSeries.isUnit_iff_constantCoeff]
   · simp [cuspX_def, cuspY_def, ← pow_mul, Ideal.mem_span_singleton, PowerSeries.X_pow_dvd_iff]
@@ -123,10 +127,12 @@ lemma xc_sq_notMem_span_yc : xc (k := k) ^ 2 ∉ Ideal.span {yc} := by
   have : IsLocalRing (PowerSeries k ⧸ I) :=
     .of_surjective' (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
   rw [← map_pow]
-  refine algebraMap_notMem_span_singleton (ker_le_comap_maximalIdeal_of_adjoin_eq_top
-    (adjoin_cuspX_cuspY_eq_top k) (cuspOrigin k) (by simp)
-    (AdjoinRoot.liftAlgHom _ (Polynomial.aeval (Ideal.Quotient.mk I PowerSeries.X)) 0
-      (by rw [eval₂_cuspPolynomial]; simp [I, ← map_pow])) ?_) ?_
+  refine algebraMap_notMem_span_singleton
+    (M := (RingHom.ker (cuspOrigin k).toRingHom).primeCompl)
+    (fun m ↦ isUnit_apply_of_notMem_ker (ker_le_comap_maximalIdeal_of_adjoin_eq_top
+      (adjoin_cuspX_cuspY_eq_top k) (cuspOrigin k) (by simp)
+      (AdjoinRoot.liftAlgHom _ (Polynomial.aeval (Ideal.Quotient.mk I PowerSeries.X)) 0
+        (by rw [eval₂_cuspPolynomial]; simp [I, ← map_pow])) ?_) m.property) ?_
   · rintro a (rfl | rfl)
     · simp only [cuspX_def, AdjoinRoot.liftAlgHom_of, Polynomial.aeval_X]
       refine (IsNilpotent.not_isUnit ⟨3, ?_⟩)

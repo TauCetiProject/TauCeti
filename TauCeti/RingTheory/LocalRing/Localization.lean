@@ -30,7 +30,8 @@ the polynomial ring localized at `(𝔪_R, X_i)`.
 Similarly, let `ε : A →ₐ[k] k` be a `k`-point of a `k`-algebra `A` over a field `k`, and let
 `ψ : A →ₐ[k] B` be a map to a local `k`-algebra sending the kernel of `ε` into the maximal ideal
 (it suffices to check this on generators of `A` at which `ε` vanishes). Then `ψ` extends to the
-local ring `L` of `A` at `ε`, so a divisibility `u ∈ (v)` in `L` forces `ψ u ∈ (ψ v)` in `B`.
+local ring of `A` at `ε`. More generally, a divisibility `u ∈ (v)` in a localization of `A` at
+a submonoid `M` forces `ψ u ∈ (ψ v)` for every ring map `ψ` sending `M` to units.
 
 A homomorphism `ψ : R →+* T` to a local ring which inverts the complement of a prime
 `p` and maps `p` into the maximal ideal lifts to a local homomorphism from the localization of `R`
@@ -53,8 +54,8 @@ kernel.
   generators that vanish at a `k`-point `ε` into the maximal ideal sends the kernel of `ε` there.
 * `TauCeti.isUnit_apply_of_notMem_ker`: such a map sends every element outside the kernel of `ε`
   to a unit.
-* `TauCeti.algebraMap_notMem_span_singleton`: if `ψ u ∉ (ψ v)`, then `u ∉ (v)` in the local ring
-  of `A` at `ε`.
+* `TauCeti.algebraMap_notMem_span_singleton`: if `ψ` inverts `M` and `ψ u ∉ (ψ v)`, then
+  `u ∉ (v)` in a localization of `A` at `M`.
 -/
 
 public section
@@ -148,6 +149,20 @@ theorem algebraMap_notMem_maximalIdeal_pow {L : Type*} [CommSemiring L] [Algebra
   rw [← IsLocalization.lift_eq (S := L) hf a]
   exact le_comap_pow _ n (maximalIdeal_comap (IsLocalization.lift (S := L) hf) ▸ h)
 
+/-- Let `L` be a localization of `A` at a submonoid `M`, and let `ψ` be a ring homomorphism from `A`
+sending `M` to units. If `ψ u ∉ (ψ v)`, then `u ∉ (v)` in `L`. -/
+theorem algebraMap_notMem_span_singleton {B L F : Type*} [CommSemiring B] [CommSemiring L]
+    [Algebra A L] {M : Submonoid A} [IsLocalization M L] [FunLike F A B] [RingHomClass F A B]
+    {ψ : F} (hψ : ∀ m : M, IsUnit (ψ m)) {u v : A} (h : ψ u ∉ span {ψ v}) :
+    algebraMap A L u ∉ span {algebraMap A L v} := by
+  have hM (m : M) : IsUnit ((ψ : A →+* B) m) := hψ m
+  have hL (a : A) : IsLocalization.lift (S := L) hM (algebraMap A L a) = ψ a :=
+    IsLocalization.lift_eq hM a
+  intro hmem
+  obtain ⟨c, hc⟩ := mem_span_singleton'.mp hmem
+  refine h (mem_span_singleton'.mpr ⟨IsLocalization.lift (S := L) hM c, ?_⟩)
+  rw [← hL, ← hL, ← hc, map_mul]
+
 section Point
 
 variable {k A B : Type*} [CommRing A] [CommRing B] [IsLocalRing B]
@@ -189,22 +204,6 @@ theorem isUnit_apply_of_notMem_ker {ε : A →ₐ[k] k} {ψ : A →ₐ[k] B}
     (isUnit_iff_ne_zero.mpr fun h ↦ ha (by simpa using h)).map _
   by_contra hn
   exact (mem_maximalIdeal _).mp (by simpa using sub_mem ((mem_maximalIdeal _).mpr hn) hm) hu
-
-/-- Let `L` be the local ring of a `k`-algebra `A` at a `k`-point `ε`, and let `ψ : A →ₐ[k] B` be a
-map to a local `k`-algebra sending the kernel of `ε` into the maximal ideal. If `ψ u ∉ (ψ v)`,
-then `u ∉ (v)` in `L`. -/
-theorem algebraMap_notMem_span_singleton {L : Type*} [CommRing L] [Algebra A L] {ε : A →ₐ[k] k}
-    [(RingHom.ker ε.toRingHom).IsPrime] [IsLocalization.AtPrime L (RingHom.ker ε.toRingHom)]
-    {ψ : A →ₐ[k] B} (hψ : RingHom.ker ε.toRingHom ≤ (maximalIdeal B).comap ψ) {u v : A}
-    (h : ψ u ∉ span {ψ v}) : algebraMap A L u ∉ span {algebraMap A L v} := by
-  have hM (m : (RingHom.ker ε.toRingHom).primeCompl) : IsUnit ((ψ : A →+* B) m) :=
-    isUnit_apply_of_notMem_ker hψ m.property
-  have hL (a : A) : IsLocalization.lift (S := L) hM (algebraMap A L a) = ψ a :=
-    IsLocalization.lift_eq hM a
-  intro hmem
-  obtain ⟨c, hc⟩ := mem_span_singleton'.mp hmem
-  refine h (mem_span_singleton'.mpr ⟨IsLocalization.lift (S := L) hM c, ?_⟩)
-  rw [← hL, ← hL, ← hc, map_mul]
 
 end Point
 
