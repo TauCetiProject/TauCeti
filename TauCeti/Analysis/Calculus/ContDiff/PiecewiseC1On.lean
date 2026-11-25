@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import TauCeti.Order.Interval.Finite
+import TauCeti.Order.Interval.Set.Piecewise
 import TauCeti.Topology.Order.Interval
 
 /-!
@@ -256,12 +257,10 @@ theorem IsPiecewiseC1On.if_le {δ : ℝ → E} {c : ℝ} (h₁ : IsPiecewiseC1On
   obtain ⟨p₁, -, hC₁⟩ := h₁.exists_breakpoints
   obtain ⟨p₂, -, hC₂⟩ := h₂.exists_breakpoints
   have hac : a ≤ c := hab.trans hbc
-  have hη₁ : EqOn (fun t => if t ≤ b then γ t else δ t) γ (Icc a b) := fun t ht =>
-    ite_eq_left ht.2
-  have hη₂ : EqOn (fun t => if t ≤ b then γ t else δ t) δ (Icc b c) := fun t ht => by
-    rcases ht.1.eq_or_lt with rfl | hlt
-    · simp [hb]
-    · exact ite_eq_right (not_le.2 hlt)
+  have hη₁ : EqOn (fun t => if t ≤ b then γ t else δ t) γ (Icc a b) :=
+    (eqOn_ite_le_Iic γ δ b).mono Icc_subset_Iic_self
+  have hη₂ : EqOn (fun t => if t ≤ b then γ t else δ t) δ (Icc b c) :=
+    (eqOn_ite_le_Ici hb).mono Icc_subset_Ici_self
   refine IsPiecewiseC1On.of_breakpoints ?_ ((p₁ ∪ p₂ ∪ {b}).filter (· ∈ Ioo a c)) ?_
     fun d e hde hdisj => ?_
   · rw [uIcc_of_le hac, ← Icc_union_Icc_eq_Icc hab hbc]

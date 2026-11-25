@@ -22,6 +22,7 @@ import TauCeti.Analysis.Contour.Curve.Integrability
 import TauCeti.Analysis.Contour.HomologyCauchy
 import TauCeti.Analysis.Contour.Winding.StarConvex
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
+import TauCeti.Order.Interval.Set.Piecewise
 import TauCeti.Order.Interval.Set.UnorderedInterval
 
 /-!
@@ -84,26 +85,6 @@ open Set Filter Topology MeasureTheory
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {U : Set ℂ} {f : ℂ → E}
 
-/-- The concatenation `t ↦ if t ≤ b then γ t else δ t` of a curve `γ` on `[a, b]` with a curve `δ`
-on `[b, c]` that starts where `γ` ends agrees with `γ` on `[a, b]` and with `δ` on `[b, c]`, and it
-maps `[a, c]` into any set into which both curves map their intervals. -/
-private theorem eqOn_ite_le_and_mapsTo {γ δ : ℝ → ℂ} {a b c : ℝ} (hab : a ≤ b) (hbc : b ≤ c)
-    (hjoin : γ b = δ b) (hγU : MapsTo γ (uIcc a b) U) (hδU : MapsTo δ (uIcc b c) U) :
-    EqOn (fun t ↦ if t ≤ b then γ t else δ t) γ (Icc a b) ∧
-      EqOn (fun t ↦ if t ≤ b then γ t else δ t) δ (Icc b c) ∧
-      MapsTo (fun t ↦ if t ≤ b then γ t else δ t) (uIcc a c) U := by
-  have hleft : EqOn (fun t ↦ if t ≤ b then γ t else δ t) γ (Icc a b) :=
-    fun t ht ↦ ite_eq_left ht.2
-  have hright : EqOn (fun t ↦ if t ≤ b then γ t else δ t) δ (Icc b c) := fun t ht ↦ by
-    rcases ht.1.eq_or_lt with rfl | hlt
-    · simp [hjoin]
-    · exact ite_eq_right (not_le.2 hlt)
-  refine ⟨hleft, hright, fun t ht ↦ ?_⟩
-  rw [uIcc_of_le (hab.trans hbc)] at ht
-  rcases le_total t b with htb | hbt
-  · exact hleft ⟨ht.1, htb⟩ ▸ hγU (by rw [uIcc_of_le hab]; exact ⟨ht.1, htb⟩)
-  · exact hright ⟨hbt, ht.2⟩ ▸ hδU (by rw [uIcc_of_le hbc]; exact ⟨hbt, ht.2⟩)
-
 /-- **Path independence.** If the contour integral of a continuous `f` vanishes along every closed
 piecewise-`C¹` curve in `U`, then its contour integrals along two piecewise-`C¹` curves in `U` with
 the same endpoints agree. -/
@@ -136,9 +117,12 @@ theorem intervalIntegral_deriv_smul_eq_of_forall_closed_integral_eq_zero (hf : C
     rw [uIcc_of_le hcd]
     exact ⟨by linarith [ht.2], by linarith [ht.1]⟩
   set σ : ℝ → ℂ := fun t => if t ≤ b then γ t else δ (b + d - t)
-  obtain ⟨hσγ, hσρ, hσU⟩ : EqOn σ γ (Icc a b) ∧
-      EqOn σ (fun t => δ (b + d - t)) (Icc b (b + d - c)) ∧ MapsTo σ (uIcc a (b + d - c)) U :=
-    eqOn_ite_le_and_mapsTo hab hbe (by simpa using hend) hγU hρU
+  have hσγ : EqOn σ γ (Icc a b) := (eqOn_ite_le_Iic _ _ b).mono Icc_subset_Iic_self
+  have hσρ : EqOn σ (fun t => δ (b + d - t)) (Icc b (b + d - c)) :=
+    (eqOn_ite_le_Ici (by simpa using hend)).mono Icc_subset_Ici_self
+  have hσU : MapsTo σ (uIcc a (b + d - c)) U := by
+    rw [uIcc_of_le (hab.trans hbe)]
+    exact (uIcc_of_le hab ▸ hγU).ite_le_Icc (uIcc_of_le hbe ▸ hρU)
   have hσpc : IsPiecewiseC1On σ a (b + d - c) := hγ.if_le hρ hab hbe (by simpa using hend)
   have hσclosed : σ a = σ (b + d - c) := by
     rw [hσγ ⟨le_rfl, hab⟩, hσρ ⟨hbe, le_rfl⟩]
@@ -188,8 +172,13 @@ private theorem exists_intervalIntegral_deriv_smul_eq_add_curveIntegral_segment
     rw [segment_eq_image_lineMap]
     exact ⟨t - 1, ⟨by linarith [ht.1], by linarith [ht.2]⟩, AffineMap.lineMap_apply_module' _ _ _⟩
   set η : ℝ → ℂ := fun t => if t ≤ 1 then γ t else σ t
-  obtain ⟨hηγ, hησ, hηU⟩ : EqOn η γ (Icc 0 1) ∧ EqOn η σ (Icc 1 2) ∧ MapsTo η (uIcc 0 2) U :=
-    eqOn_ite_le_and_mapsTo zero_le_one one_le_two (by simp [σ, hz]) hγU hσU
+  have hηγ : EqOn η γ (Icc 0 1) := (eqOn_ite_le_Iic _ _ 1).mono Icc_subset_Iic_self
+  have hησ : EqOn η σ (Icc 1 2) := (eqOn_ite_le_Ici (by simp [σ, hz])).mono Icc_subset_Ici_self
+  have hηU : MapsTo η (uIcc 0 2) U := by
+    rw [uIcc_of_le zero_le_one] at hγU
+    rw [uIcc_of_le one_le_two] at hσU
+    rw [uIcc_of_le zero_le_two]
+    exact hγU.ite_le_Icc hσU
   have hσpc : IsPiecewiseC1On σ 1 2 := .of_contDiffOn (by fun_prop)
   have hηpc : IsPiecewiseC1On η 0 2 := hγ.if_le hσpc zero_le_one one_le_two (by simp [σ, hz])
   refine ⟨η, hηpc, hηU, hηγ ⟨le_rfl, zero_le_one⟩, by rw [hησ ⟨one_le_two, le_rfl⟩]; norm_num [σ],
