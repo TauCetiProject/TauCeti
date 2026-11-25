@@ -240,6 +240,25 @@ def rawCubicalChainComplex : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ w
 
 variable {k}
 
+/-- The raw cubical chain complex of a space is the native raw complex with coefficients in `k`. -/
+theorem rawCubicalChainComplex_obj (X : TopCat.{u}) :
+    (rawCubicalChainComplex k).obj X = rawCubicalChainComplexObj X (ModuleCat.of k k) :=
+  (rfl)
+
+/-- In each degree, the map of raw cubical chain complexes induced by a map of spaces is the
+push-forward of raw cubical chains along composition with the map. -/
+theorem rawCubicalChainComplex_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
+    ((rawCubicalChainComplex k).map f).f n =
+      ModuleCat.ofHom (lmapDomain (ModuleCat.of k k) k f.hom.comp) :=
+  (rfl)
+
+/-- The map of raw cubical chains induced by a map of spaces acts by `Finsupp.mapDomain`. -/
+@[simp]
+theorem rawCubicalChainComplex_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
+    (x : SingularCube X n →₀ k) :
+    ((rawCubicalChainComplex k).map f).f n x = mapDomain f.hom.comp x :=
+  (rfl)
+
 /-- A singular cube, as a raw cubical chain with coefficient one. -/
 def rawCubicalChainOfCube {X : TopCat.{u}} {n : ℕ} (c : SingularCube X n) :
     ((rawCubicalChainComplex k).obj X).X n :=
@@ -263,9 +282,8 @@ theorem rawCubicalChainComplex_X_linearMap_ext {X : TopCat.{u}} {n : ℕ} {M : T
 theorem rawCubicalChainComplex_map_f_rawCubicalChainOfCube {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
     (c : SingularCube X n) :
     ((rawCubicalChainComplex k).map f).f n (rawCubicalChainOfCube c) =
-      rawCubicalChainOfCube (f.hom.comp c) := by
-  rw [rawCubicalChainOfCube_def, rawCubicalChainOfCube_def]
-  exact mapDomain_single
+      rawCubicalChainOfCube (f.hom.comp c) :=
+  (rawCubicalChainComplex_map_f_apply f n _).trans mapDomain_single
 
 /-- The boundary of the raw chain of a cube is the signed sum of the raw chains of its faces. -/
 theorem rawCubicalChainComplex_d_rawCubicalChainOfCube {X : TopCat.{u}} {n : ℕ}
