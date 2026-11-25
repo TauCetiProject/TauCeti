@@ -359,7 +359,7 @@ private theorem indicator_ae_eq_add_indicator_comp_normalReflection {a : ℝ}
       rw [indicator_of_mem hxU, indicator_of_notMem h1, indicator_of_mem h2, hg x hxU, zero_add]
     · have h1 : x ∈ U ∩ H := ⟨hxU, (mem_normalHalfSpace a x).2 hgt⟩
       have h2 : normalReflection E a x ∉ U ∩ H := fun h =>
-        absurd ((normalReflection_mem_normalHalfSpace_iff a x).1 h.2) (not_lt.2 hgt.le)
+        normalReflection_notMem_normalHalfSpace h1.2 h.2
       rw [indicator_of_mem hxU, indicator_of_mem h1, indicator_of_notMem h2, add_zero]
   · have h1 : x ∉ U ∩ H := fun h => hxU h.1
     have h2 : normalReflection E a x ∉ U ∩ H := fun h => hxU (hρU.1 h.1)
