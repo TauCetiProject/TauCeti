@@ -284,11 +284,7 @@ private abbrev finiteZero : GradedModuleCat.{uA} 𝒜 where
   gradedSMul := ⟨fun _ _ => by simp⟩
 
 private theorem isZero_finiteZero : IsZero (finiteZero (𝒜 := 𝒜)) :=
-  (IsZero.iff_id_eq_zero _).2 (by
-    apply GradedModuleCat.hom_ext
-    apply LinearMap.ext
-    intro x
-    exact Subsingleton.elim (α := PUnit) _ _)
+  GradedModuleCat.isZero_of_subsingleton _
 
 private theorem finite_finiteZero : Module.Finite A (finiteZero (𝒜 := 𝒜)) :=
   inferInstance

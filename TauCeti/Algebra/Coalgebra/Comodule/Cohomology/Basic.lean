@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ConcreteCategory
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RingTheory.Bialgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
+public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -43,6 +45,7 @@ needs the acyclicity of cofree comodules, is not part of this file.
 * `TauCeti.Comodule.Cohomology.d`: the differential `∑ᵢ (-1)ⁱ δᵢ`.
 * `TauCeti.Comodule.Cohomology.cochainComplex`: the Hochschild cochain complex.
 * `TauCeti.Comodule.Cohomology.cochainComplexMap`: the cochain map induced by a comodule morphism.
+* `TauCeti.Comodule.Cohomology.cocyclesMk`: a cochain with zero differential, as a cocycle.
 * `TauCeti.Comodule.Cohomology.cohomologyZeroIso`: the degree-zero cohomology is `Mᴴ`.
 
 ## Main results
@@ -398,6 +401,51 @@ theorem coe_cohomologyZeroIso_hom_homologyπ (x : (cochainComplex R H M).cycles 
   -- identification.
   exact hx
 
+section Cocycles
+
+variable {R H M}
+
+/-- An invariant vector has zero Hochschild differential. -/
+theorem d_zero_eq_zero_of_mem_fixedSubcomodule {m : M} (hm : m ∈ fixedSubcomodule R H M) :
+    d R H M 0 m = 0 := by
+  rw [← LinearMap.mem_ker, ker_d_zero]
+  exact hm
+
+/-- An `n`-cochain whose differential vanishes, as an `n`-cocycle of the Hochschild complex. -/
+noncomputable def cocyclesMk {n : ℕ} (x : cochains R H M n) (hx : d R H M n x = 0) :
+    (cochainComplex R H M).cycles n :=
+  (cochainComplex R H M).cyclesMk x (n + 1) (by simp) (by
+    rw [cochainComplex_d_succ]
+    exact hx)
+
+/-- `cocyclesMk` is Mathlib's cycle constructor `HomologicalComplex.cyclesMk` for the Hochschild
+complex. -/
+theorem cocyclesMk_eq_cyclesMk {n : ℕ} (x : cochains R H M n) (hx : d R H M n x = 0) :
+    cocyclesMk x hx = (cochainComplex R H M).cyclesMk x (n + 1) (by simp) (by
+      rw [cochainComplex_d_succ]
+      exact hx) :=
+  (rfl)
+
+/-- The cocycle `cocyclesMk x hx` is the cochain `x`. -/
+@[simp]
+theorem iCycles_cocyclesMk {n : ℕ} (x : cochains R H M n) (hx : d R H M n x = 0) :
+    ((cochainComplex R H M).iCycles n).hom (cocyclesMk x hx) = x :=
+  (cochainComplex R H M).i_cyclesMk x (n + 1) (by simp) _
+
+/-- In degree zero, the class of an invariant vector, as a cocycle, is its preimage under
+`cohomologyZeroIso`. -/
+theorem homologyπ_cocyclesMk_zero (m : fixedSubcomodule R H M) :
+    ((cochainComplex R H M).homologyπ 0).hom
+        (cocyclesMk (n := 0) (m : M) (d_zero_eq_zero_of_mem_fixedSubcomodule m.property)) =
+      (cohomologyZeroIso R H M).inv.hom m := by
+  have h : (cohomologyZeroIso R H M).hom.hom (((cochainComplex R H M).homologyπ 0).hom
+      (cocyclesMk (n := 0) (m : M) (d_zero_eq_zero_of_mem_fixedSubcomodule m.property))) = m :=
+    Subtype.ext ((coe_cohomologyZeroIso_hom_homologyπ R H M _).trans (iCycles_cocyclesMk _ _))
+  conv_rhs => rw [← h]
+  exact ((cohomologyZeroIso R H M).hom_inv_id_apply _).symm
+
+end Cocycles
+
 /-! ### Functoriality in the coefficients -/
 
 section Functoriality
@@ -455,6 +503,17 @@ theorem cochainsMap_comp (g : Hom R H N P) (f : Hom R H M N) (n : ℕ) :
   | succ n ih =>
     rw [cochainsMap_succ, cochainsMap_succ, cochainsMap_succ, ih, LinearMap.rTensor_comp]
 
+/-- The map induced on cochains by a sum of comodule morphisms is the sum of the induced maps. -/
+@[simp]
+theorem cochainsMap_add (f f' : Hom R H M N) (n : ℕ) :
+    cochainsMap (f + f') n = cochainsMap f n + cochainsMap f' n := by
+  induction n with
+  | zero =>
+    rw [cochainsMap_zero, cochainsMap_zero, cochainsMap_zero]
+    exact Hom.add_toLinearMap f f'
+  | succ n ih =>
+    rw [cochainsMap_succ, cochainsMap_succ, cochainsMap_succ, ih, LinearMap.rTensor_add]
+
 /-- The map induced by a comodule morphism commutes with the Hochschild differential. -/
 theorem d_comp_cochainsMap (f : Hom R H M N) (n : ℕ) :
     d R H N n ∘ₗ cochainsMap f n = cochainsMap f (n + 1) ∘ₗ d R H M n := by
@@ -509,6 +568,18 @@ theorem cochainComplexMap_comp (g : Hom R H N P) (f : Hom R H M N) :
   -- As in `cochainComplexMap_id`, the objects of the composite are the modules
   -- `ModuleCat.of R (cochains _ n)` only by unfolding `CochainComplex.of` (`cochainComplex_X`).
   exact ModuleCat.ofHom_comp _ _
+
+/-- The cochain map induced by a sum of comodule morphisms is the sum of the induced cochain
+maps. -/
+@[simp]
+theorem cochainComplexMap_add (f f' : Hom R H M N) :
+    cochainComplexMap (f + f') = cochainComplexMap f + cochainComplexMap f' := by
+  ext n : 1
+  rw [cochainComplexMap_f, cochainsMap_add, HomologicalComplex.add_f_apply, cochainComplexMap_f,
+    cochainComplexMap_f]
+  -- As in `cochainComplexMap_id`, the objects are the modules `ModuleCat.of R (cochains _ n)` only
+  -- by unfolding `CochainComplex.of` (`cochainComplex_X`).
+  exact ModuleCat.ofHom_add _ _
 
 /-- The identification of degree-zero cohomology with the invariants is natural in the
 coefficients: a comodule morphism acts on invariant vectors by restriction. -/

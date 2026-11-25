@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # The absolute Galois group of a finite separable extension as an open subgroup
@@ -500,9 +501,8 @@ variable {K} in
 /-- **The fixed field of an open subgroup of `G_K` is a finite extension of `K`**: the subgroup
 fixing it is the open subgroup itself. -/
 instance finiteDimensional_fixedField_toSubgroup (U : OpenSubgroup (AbsoluteGaloisGroup K)) :
-    FiniteDimensional K (fixedField U.toSubgroup) := by
-  rw [← InfiniteGalois.isOpen_iff_finite, ← toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl]
-  exact U.isOpen
+    FiniteDimensional K (fixedField U.toSubgroup) :=
+  IntermediateField.finiteDimensional_fixedField_of_isOpen U.isOpen
 
 variable {K} in
 /-- Below every open subgroup `W` of `G_K` lies an open subgroup whose fixed field contains the

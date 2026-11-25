@@ -9,20 +9,25 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Coordinates
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Analysis.Calculus.ContDiff.Matrix
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Kronecker
 
 /-!
 # Exterior powers of coordinate operators
 
 For a continuous linear operator `g` between coordinate spaces over a normed field,
 `g.exteriorPowerCoords j` is its `j`th exterior power read in the coordinates
-`exteriorPower.piEquiv`, that is, the `j`th compound matrix of `g`, as a continuous linear
-operator between the coordinate spaces of dimensions `m.choose j` and `n.choose j`. The
-construction preserves identities and composition, and it depends continuously on the
-operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), even by a `C^k` or analytic map
-(`ContinuousLinearMap.contDiff_exteriorPowerCoords`), since its matrix entries are minors of the
+`exteriorPower.piEquiv`, that is, the `j`th compound matrix of `g`, as a continuous linear operator
+between the coordinate spaces of dimensions `m.choose j` and `n.choose j`. The construction
+preserves identities and composition, is homogeneous of degree `j` in the operator
+(`ContinuousLinearMap.exteriorPowerCoords_smul`), sends reindexings of coordinates to reindexings
+(`ContinuousLinearMap.exteriorPowerCoords_piCongrLeft_finCongr`), turns a Kronecker product
+`(c • id) ⊗ g` with one-dimensional first factor into `(c ^ j • id) ⊗ ⋀^j g` up to reindexing
+(`ContinuousLinearMap.piCongrLeft_comp_exteriorPowerCoords_kronecker`), and it depends continuously
+on the operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), even by a `C^k` or analytic
+map (`ContinuousLinearMap.contDiff_exteriorPowerCoords`), since its matrix entries are minors of the
 matrix of `g`. It can therefore be applied to continuous, smooth or holomorphic families of
-transition matrices. For an endomorphism of `Fin m → 𝕜` the compound matrix in the top degree `m`
-is multiplication by the determinant (`ContinuousLinearMap.exteriorPowerCoords_self`).
+transition matrices. For an endomorphism of `Fin m → 𝕜` the compound matrix in the top degree `m` is
+multiplication by the determinant (`ContinuousLinearMap.exteriorPowerCoords_self`).
 
 In degrees zero and one the compound matrices are identified explicitly, through the continuous
 coordinate equivalences `exteriorPower.piZeroContinuousEquiv` with the coordinate line and
@@ -60,6 +65,43 @@ noncomputable def exteriorPowerCoords (j : ℕ) (g : (Fin m → 𝕜) →L[𝕜]
     (g.comp f).exteriorPowerCoords j = (g.exteriorPowerCoords j).comp (f.exteriorPowerCoords j) :=
   coe_injective (LinearMap.exteriorPowerCoords_comp j (g : (Fin m → 𝕜) →ₗ[𝕜] (Fin n → 𝕜))
     (f : (Fin l → 𝕜) →ₗ[𝕜] (Fin m → 𝕜)))
+
+/-- The compound matrix of `c • g` in degree `j` is `c ^ j` times the compound matrix of `g`. -/
+@[simp] theorem exteriorPowerCoords_smul (j : ℕ) (c : 𝕜) (g : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) :
+    (c • g).exteriorPowerCoords j = c ^ j • g.exteriorPowerCoords j :=
+  coe_injective (LinearMap.exteriorPowerCoords_smul j c (g : (Fin m → 𝕜) →ₗ[𝕜] (Fin n → 𝕜)))
+
+/-- The compound matrix of the reindexing of coordinates along `a = b` is the reindexing of
+coordinates along `a.choose j = b.choose j`. -/
+@[simp] theorem exteriorPowerCoords_piCongrLeft_finCongr (j : ℕ) {a b : ℕ} (h : a = b) :
+    (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin b ↦ 𝕜) (finCongr h) :
+        (Fin a → 𝕜) →L[𝕜] (Fin b → 𝕜)).exteriorPowerCoords j =
+      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin (b.choose j) ↦ 𝕜)
+        (finCongr (congrArg (Nat.choose · j) h)) :
+        (Fin (a.choose j) → 𝕜) →L[𝕜] (Fin (b.choose j) → 𝕜)) := by
+  subst h
+  exact exteriorPowerCoords_id j a
+
+open ContinuousLinearEquiv in
+/-- For one-dimensional first factors, the `j`th compound matrix of the Kronecker product
+`(c • id) ⊗ g` is `(c ^ j • id) ⊗ ⋀^j g`, once the two coordinate spaces of equal dimension are
+identified by reindexing. -/
+theorem piCongrLeft_comp_exteriorPowerCoords_kronecker {n N r r' : ℕ} (j : ℕ)
+    (hn : n = 1) (hN : N = 1) (c : 𝕜) (g : (Fin r → 𝕜) →L[𝕜] (Fin r' → 𝕜))
+    (hr : (n * r).choose j = N * r.choose j) (hr' : (n * r').choose j = N * r'.choose j) :
+    (piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr hr') : _ →L[𝕜] _).comp
+        (((c • ContinuousLinearMap.id 𝕜 (Fin n → 𝕜)).kronecker g).exteriorPowerCoords j) =
+      ((c ^ j • ContinuousLinearMap.id 𝕜 (Fin N → 𝕜)).kronecker (g.exteriorPowerCoords j)).comp
+        (piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr hr) : _ →L[𝕜] _) := by
+  subst hn hN
+  rw [smul_kronecker, exteriorPowerCoords_smul, smul_kronecker, comp_smul, smul_comp]
+  congr 1
+  rw [id_kronecker_eq_kroneckerLid_symm_comp, id_kronecker_eq_kroneckerLid_symm_comp,
+    exteriorPowerCoords_comp, exteriorPowerCoords_comp]
+  simp only [kroneckerLid_eq_piCongrLeft_finCongr, piCongrLeft_finCongr_symm,
+    exteriorPowerCoords_piCongrLeft_finCongr]
+  ext v i
+  simp
 
 /-- In the top degree, the compound matrix of an endomorphism of `Fin m → 𝕜` is multiplication
 by its determinant on the coordinate line `Fin (m.choose m) → 𝕜`. -/

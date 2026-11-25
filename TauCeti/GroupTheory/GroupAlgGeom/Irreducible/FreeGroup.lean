@@ -239,7 +239,7 @@ private theorem isDiscriminatedBy_coordGroup_commutatorElement_of_nontrivial [No
   refine isDiscriminatedBy_coordGroup_commutatorElement_of_gHom
     isDiscriminatedBy_centralizerExt_inr_of (fun b => CentralizerExt.t (cond b 1 0))
     (CentralizerExt.commute_t_t _ _) fun v hv => ?_
-  obtain ⟨r, m, n, hm, hn⟩ := (IsFreeGroup.commute_iff_exists_common_zpow _ _).1 hv
+  obtain ⟨r, m, n, hm, hn⟩ := IsFreeGroup.commute_iff_exists_zpow.1 hv
   refine ⟨⟨(eval (.id _) fun _ => r).comp (CentralizerExt.retraction ![m, n]),
     fun g => by simp⟩, funext fun b => ?_⟩
   cases b <;> simp [hm, hn]
@@ -273,7 +273,7 @@ theorem V_unionEquations_commutatorElement_of (x : X) (a b : α) :
   · -- In rank one `F` is abelian: every commutator vanishes and `⟨a⟩ = C(a) = F`.
     have hc : IsMulCommutative (FreeGroup α) := FreeGroup.isMulCommutative_iff_subsingleton.2 hα
     have htop (c : α) (g : FreeGroup α) : g ∈ zpowers (of c) := by
-      rw [← centralizer_singleton_of]
+      rw [← centralizer_of]
       exact mem_centralizer_singleton_iff.2 (mul_comm' _ _)
     ext v
     simp only [Set.mem_ofPred_eq, htop, or_self, iff_true, mem_V, mem_unionEquations]

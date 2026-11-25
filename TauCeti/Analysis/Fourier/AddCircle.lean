@@ -11,11 +11,13 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Projection
 public import TauCeti.MeasureTheory.Function.Lp.PiLp
 
 import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # The continuous characters of the circle are the Fourier monomials
@@ -67,6 +69,7 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   characters.
 * `TauCeti.fourier_apply_ne_zero`, `TauCeti.fourier_neg_mul_fourier`: the monomials vanish
   nowhere, and `fourier (-n)` is the pointwise inverse of `fourier n`.
+* `TauCeti.star_fourier_mul_fourier`: `fourier n` is unitary in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
   `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
 * `TauCeti.fourier_apply_eq_coe_toCircle_zpow`: `fourier n` is the `n`-th power of the point of
@@ -84,6 +87,10 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   multiplicative unit circle is a unique integer power.
 * `TauCeti.norm_fourierLp`, `TauCeti.fourierLp_smul_fourierLp`, `TauCeti.star_fourierLp`: norm,
   multiplication, and conjugation of `Lᵖ` Fourier monomials.
+* `TauCeti.inner_fourierBasis_left`, `TauCeti.innerSL_fourierBasis_apply`: taking the inner product
+  with the `n`-th Fourier basis vector in the first slot gives the `n`-th Fourier coefficient.
+* `TauCeti.fourierCoeff_fourierBasis_projection`, `TauCeti.fourierBasis_projection_fourierLp`:
+  projection onto a set of Fourier modes restricts the coefficients and modes to that set.
 * `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
@@ -97,6 +104,9 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   `n`-th Fourier coefficient to the conjugate of the `(k - n)`-th one.
 * `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
+* `TauCeti.fourierCoeff_comp_add_right`: translation by `θ` multiplies the `n`-th Fourier
+  coefficient by `fourier n θ`; at the half period `fourier n (T / 2) = (-1) ^ n`
+  (`TauCeti.fourier_coe_half_period`).
 * `ContinuousLinearMap.fourierCoeff_comp`, `ContinuousLinearMap.fourierCoeff_compLpL`: Fourier
   coefficients commute with continuous linear maps on integrable and `Lᵖ` functions.
 * `MeasureTheory.Integrable.fourierCoeff_piLp_apply`, `MeasureTheory.Lp.fourierCoeff_piLp_apply`:
@@ -116,7 +126,7 @@ Fourier, additive circle, character, Pontryagin dual
 public section
 
 open MeasureTheory AddCircle
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 variable {T : ℝ}
 
@@ -169,6 +179,12 @@ theorem fourier_neg_one_coe_apply (t : ℝ) :
   rw [fourier_coe_apply, this, Complex.exp_mul_I]
   simp [sub_eq_add_neg]
 
+/-- At the half period `T / 2` the Fourier monomial of frequency `n` is `(-1) ^ n`. -/
+theorem fourier_coe_half_period (hT : T ≠ 0) (n : ℤ) :
+    fourier n ((T / 2 : ℝ) : AddCircle T) = (-1) ^ n := by
+  rw [fourier_apply, toCircle_zsmul, toCircle_half_period hT, Circle.coe_zpow, Circle.coe_neg,
+    Circle.coe_one]
+
 /-- The Fourier monomials take values in the unit circle, so they vanish nowhere. -/
 theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 := by
   rw [fourier_apply]
@@ -177,6 +193,11 @@ theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 :=
 /-- The monomial `fourier (-n)` is the pointwise inverse of `fourier n`. -/
 theorem fourier_neg_mul_fourier (n : ℤ) (x : AddCircle T) : fourier (-n) x * fourier n x = 1 := by
   rw [← fourier_add, neg_add_cancel, fourier_zero]
+
+/-- The Fourier monomials are unitary elements of `C(AddCircle T, ℂ)`. -/
+theorem star_fourier_mul_fourier (n : ℤ) : star (fourier (T := T) n) * fourier n = 1 := by
+  ext x
+  rw [star_fourier, ContinuousMap.mul_apply, fourier_neg_mul_fourier, ContinuousMap.one_apply]
 
 /-- The Fourier monomial `fourier n` is the `n`-th power of the point `toCircle x` of the unit
 circle. -/
@@ -286,6 +307,33 @@ end ContinuousMap
 
 namespace TauCeti
 
+/-- The inner product with the `n`-th Fourier basis vector in the first slot is the `n`-th
+Fourier coefficient. -/
+theorem inner_fourierBasis_left (f : Lp ℂ 2 (haarAddCircle (T := T))) (n : ℤ) :
+    ⟪fourierBasis (T := T) n, f⟫_ℂ = fourierCoeff f n := by
+  rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr]
+
+/-- The continuous linear functional given by the `n`-th Fourier basis vector extracts the
+`n`-th Fourier coefficient. -/
+theorem innerSL_fourierBasis_apply (f : Lp ℂ 2 (haarAddCircle (T := T))) (n : ℤ) :
+    innerSL ℂ (fourierBasis (T := T) n) f = fourierCoeff f n := by
+  rw [innerSL_apply_apply, inner_fourierBasis_left]
+
+/-- Fourier coefficients of the projection onto a set of modes are restricted to that set. -/
+@[simp↓]
+theorem fourierCoeff_fourierBasis_projection (s : Set ℤ) (f : Lp ℂ 2 (haarAddCircle (T := T)))
+    (n : ℤ) : fourierCoeff ((fourierBasis (T := T)).projection s f) n =
+      s.indicator (fourierCoeff f) n := by
+  rw [← fourierBasis_repr, HilbertBasis.repr_projection]
+  exact congrArg (fun g : ℤ → ℂ ↦ s.indicator g n) (funext (fourierBasis_repr f))
+
+/-- The Fourier projection fixes the modes in the given set and kills those outside it. -/
+@[simp]
+theorem fourierBasis_projection_fourierLp (s : Set ℤ) (n : ℤ) :
+    (fourierBasis (T := T)).projection s (fourierLp (T := T) 2 n) =
+      s.indicator (fourierLp (T := T) 2) n := by
+  rw [← coe_fourierBasis, HilbertBasis.projection_apply_self]
+
 /-- The zero-frequency Fourier coefficient is the integral against normalized Haar measure. -/
 theorem fourierCoeff_zero_eq_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (f : AddCircle T → E) :
@@ -300,6 +348,19 @@ theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   congr 1
   funext x
   simp only [fourier_apply, smul_neg, neg_smul, neg_neg]
+
+/-- Translating a circle function by `θ` multiplies its `n`-th Fourier coefficient by
+`fourier n θ`. -/
+theorem fourierCoeff_comp_add_right {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (f : AddCircle T → E) (θ : AddCircle T) (n : ℤ) :
+    fourierCoeff (fun x ↦ f (x + θ)) n = fourier n θ • fourierCoeff f n := by
+  rw [fourierCoeff, fourierCoeff, ← integral_smul,
+    ← integral_add_right_eq_self (fun x ↦ fourier n θ • fourier (-n) x • f x) θ]
+  congr 1
+  funext x
+  rw [fourier_apply_add, smul_smul]
+  congr 1
+  linear_combination -fourier (-n) x * fourier_neg_mul_fourier n θ
 
 /-- The Fourier coefficients of a difference of integrable functions. -/
 theorem fourierCoeff_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]

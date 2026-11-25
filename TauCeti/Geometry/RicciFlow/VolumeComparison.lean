@@ -5,7 +5,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Variation
 import TauCeti.Analysis.ODE.ScalarComparison
 

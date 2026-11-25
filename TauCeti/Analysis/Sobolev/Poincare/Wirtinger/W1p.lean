@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import Mathlib.Topology.LocallyConstant.Basic
 import TauCeti.Analysis.Convex.Exhaustion
+import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
@@ -67,6 +69,11 @@ measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
   for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`: on a preconnected `Ω`, a Sobolev
   function with vanishing weak gradient is almost everywhere constant.
+* `TauCeti.W1p.gradient_eq_zero_iff_exists_isLocallyConstant`: on any open `Ω`, a Sobolev
+  function has vanishing weak gradient exactly when it is almost everywhere equal to a function
+  locally constant on `Ω`.
+* `TauCeti.W1p.eq_zero_of_gradient_eq_zero`: for `p < ∞`, a Sobolev function on the whole of a
+  nontrivial space with vanishing weak gradient is zero.
 * `TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`: on a preconnected `Ω`, a Sobolev
   function whose weak gradient agrees almost everywhere with `∇ q` for a `C¹` function `q` equals
   `q + c` almost everywhere.
@@ -536,17 +543,77 @@ private theorem W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero {u : W1p m
     (hP.antisymm (integral_nonneg fun _ ↦ abs_nonneg _))
   exact ⟨m, hzero.mono fun y hy ↦ sub_eq_zero.1 (abs_eq_zero.1 hy)⟩
 
+/-- A Sobolev function with vanishing weak gradient is almost everywhere constant near each point
+of its domain. -/
+private theorem W1p.forall_mem_exists_nhds_ae_eq_const_of_gradient_eq_zero
+    {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
+    ∀ x ∈ (Omega : Set E), ∃ c : ℝ, ∃ U ∈ 𝓝 x, ∀ᵐ y ∂mu.restrict U, W1p.value u y = c := by
+  intro x hx
+  obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
+  exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+
 /-- **A Sobolev function with vanishing gradient on a connected domain is constant.** If `Ω` is
 preconnected and the weak gradient of `u ∈ W^{1,p}(Ω)` vanishes, then `u` agrees almost everywhere
 on `Ω` with a constant. -/
 theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
     (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
-    ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
-  refine hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
-    fun x hx => ?_
-  obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
-  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
-  exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+    ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c :=
+  hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
+    (W1p.forall_mem_exists_nhds_ae_eq_const_of_gradient_eq_zero hu)
+
+/-- **A Sobolev function with vanishing gradient is locally constant.** If the weak gradient of
+`u ∈ W^{1,p}(Ω)` vanishes, then `u` agrees almost everywhere on `Ω` with a function that is
+locally constant on `Ω`, hence constant on each connected component of `Ω`. No connectedness or
+regularity of `Ω` is needed. -/
+theorem W1p.exists_isLocallyConstant_ae_eq_of_gradient_eq_zero {u : W1p mu Omega p}
+    (hu : W1p.gradient u = 0) :
+    ∃ g : E → ℝ, IsLocallyConstant ((Omega : Set E).domRestrict g) ∧
+      W1p.value u =ᵐ[mu.restrict Omega] g :=
+  IsOpen.exists_isLocallyConstant_ae_eq_of_forall_nhds Omega.isOpen
+    (HereditarilyLindelofSpace.isLindelof _)
+    (W1p.forall_mem_exists_nhds_ae_eq_const_of_gradient_eq_zero hu)
+
+/-- **A locally constant Sobolev function has vanishing gradient.** If `u ∈ W^{1,p}(Ω)` agrees
+almost everywhere on `Ω` with a function that is locally constant on `Ω`, then the weak gradient
+of `u` vanishes. -/
+theorem W1p.gradient_eq_zero_of_ae_eq_isLocallyConstant {u : W1p mu Omega p} {g : E → ℝ}
+    (hg : IsLocallyConstant ((Omega : Set E).domRestrict g))
+    (hug : W1p.value u =ᵐ[mu.restrict Omega] g) : W1p.gradient u = 0 := by
+  refine Lp.ext ?_
+  filter_upwards [((W1p.hasWeakFDerivOn u).congr_ae hug).ae_eq
+    (hg.hasWeakFDerivOn_zero (μ := mu)), Lp.coeFn_zero E p (mu.restrict Omega)] with x hx h0
+  rw [h0, Pi.zero_apply]
+  exact innerSL_inj.mp (hx.trans (map_zero _).symm)
+
+/-- **The Sobolev functions with vanishing gradient are the locally constant ones.** The weak
+gradient of `u ∈ W^{1,p}(Ω)` vanishes exactly when `u` agrees almost everywhere on `Ω` with a
+function that is locally constant on `Ω`. -/
+theorem W1p.gradient_eq_zero_iff_exists_isLocallyConstant {u : W1p mu Omega p} :
+    W1p.gradient u = 0 ↔ ∃ g : E → ℝ, IsLocallyConstant ((Omega : Set E).domRestrict g) ∧
+      W1p.value u =ᵐ[mu.restrict Omega] g :=
+  ⟨W1p.exists_isLocallyConstant_ae_eq_of_gradient_eq_zero,
+    fun ⟨_, hg, hug⟩ => W1p.gradient_eq_zero_of_ae_eq_isLocallyConstant hg hug⟩
+
+/-- **A Sobolev function on the whole space with vanishing gradient is zero.** For `p < ∞` and a
+nontrivial space `E`, if the weak gradient of `u ∈ W^{1,p}(E)` vanishes, then `u = 0`: it is
+almost everywhere constant, and the only constant in `Lᵖ(E)` is zero, since `E` has infinite
+measure. -/
+theorem W1p.eq_zero_of_gradient_eq_zero [Nontrivial E] (hp : p ≠ ∞) {u : W1p mu ⊤ p}
+    (hu : W1p.gradient u = 0) : u = 0 := by
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+    (by simpa using isPreconnected_univ) hu
+  simp only [Opens.coe_top, Measure.restrict_univ] at hc
+  have hc0 : c = 0 := by
+    refine ((memLp_const_iff (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hp).1
+      ((W1p.memLp_value u).ae_eq hc)).resolve_right ?_
+    rw [measure_univ_of_isAddLeftInvariant]
+    exact lt_irrefl _
+  subst hc0
+  refine W1p.ext_value (Lp.ext ?_)
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  filter_upwards [hc] with x hx
+  simp [hx]
 
 /-- **Integration up to a constant on a preconnected domain.** If `Ω` is preconnected and the weak
 gradient of `u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with the classical gradient `∇ q` of

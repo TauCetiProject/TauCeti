@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.AlgebraicTopology.Singular.Torus.AddCircle
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
@@ -13,7 +14,6 @@ public import TauCeti.Geometry.Manifold.Morse.Polynomial
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Morse.Torus
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Perfect Morse functions
@@ -26,8 +26,14 @@ functions on a compact manifold (`TauCeti.IsPerfectMorse.criticalCount_le`), and
 critical points altogether (`TauCeti.IsPerfectMorse.totalCriticalCount_le`). In terms of the
 Morse polynomial identity `∑ cⱼ tʲ = ∑ bⱼ tʲ + (1 + t) Q(t)` of a Morse function on a compact
 manifold (`TauCeti.morse_inequalities`), the function is perfect exactly when `Q = 0`
-(`TauCeti.IsMorse.isPerfectMorse_iff_eq_zero`). Whether a perfect Morse function exists depends on
-the coefficients, as projective spaces show.
+(`TauCeti.IsMorse.isPerfectMorse_iff_eq_zero`). The Betti number `bⱼ` of a perfect Morse
+function vanishes exactly when it has no critical point of index `j`
+(`TauCeti.IsPerfectMorse.bettiNumber_eq_zero_iff`), and the sum of the Betti numbers is the number
+of critical points (`TauCeti.IsPerfectMorse.sum_bettiNumber_eq_totalCriticalCount`). As
+cardinalities of finite sets, `bⱼ` is the number of critical points of index `j`
+(`TauCeti.IsPerfectMorse.bettiNumber_eq_ncard`) and the sum of the Betti numbers is the number of
+critical points (`TauCeti.IsPerfectMorse.sum_bettiNumber_eq_ncard`). Whether a
+perfect Morse function exists depends on the coefficients, as projective spaces show.
 
 * **Spheres.** The height function on `Sⁿ` has one critical point of index `0` and one of index
   `n`, matching the homology of `Sⁿ`, so it is perfect over every division ring
@@ -36,9 +42,11 @@ the coefficients, as projective spaces show.
   `1` are adjacent.
 * **The lacunary principle.** A Morse function on a compact manifold no two of whose critical
   points have indices differing by one is perfect for every choice of coefficients
-  (`TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`). On `ℂℙⁿ` the moment function
-  `[z] ↦ (∑ⱼ wⱼ |zⱼ|²) / ∑ⱼ |zⱼ|²` with pairwise distinct weights has only even indices, so it is
-  perfect for every division ring of coefficients
+  (`TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`). In particular a Morse function all of
+  whose critical points have even index is perfect (`TauCeti.IsMorse.isPerfectMorse_of_even`),
+  and its odd Betti numbers vanish (`TauCeti.IsMorse.bettiNumber_eq_zero_of_odd`). On `ℂℙⁿ` the
+  moment function `[z] ↦ (∑ⱼ wⱼ |zⱼ|²) / ∑ⱼ |zⱼ|²` with pairwise distinct weights has only even
+  indices, so it is perfect for every division ring of coefficients
   (`TauCeti.isPerfectMorse_projectiveMomentFunction_complex`).
 * **Real projective space in characteristic two.** On `ℝPᴺ` the same moment function has one
   critical point of each index `0, …, N`, and `Hⱼ(ℝPᴺ; k)` is one-dimensional for `j ≤ N` when
@@ -59,6 +67,13 @@ the coefficients, as projective spaces show.
   coefficients are the ranks of the cellular differentials of the standard cell structure of
   `ℝPⁿ`, which has one cell in each dimension
   (`TauCeti.RealProjectiveSpace.finrank_range_cellularChainComplex_d_of_two_ne_zero`).
+* **Dimension zero and the empty manifold.** On a manifold modelled on a zero-dimensional space
+  every point is a critical point of index `0` of every function, and the manifold is discrete. So
+  every function is perfect exactly when the manifold is finite
+  (`TauCeti.isPerfectMorse_iff_finite_of_subsingleton`): `r` points give critical counts and Betti
+  numbers `r, 0, 0, …`, while on an infinite discrete manifold such as `ℕ` the count of index `0`
+  is `⊤` and `H₀` is infinite-dimensional. On the empty manifold every function is perfect, with
+  all counts and Betti numbers `0` (`TauCeti.isPerfectMorse_of_isEmpty`).
 * **Tori.** On the torus `Tᵐ = ∀ i, AddCircle (p i)` the cosine function
   `x ↦ ∑ᵢ cos (2π xᵢ / pᵢ)` has `(m choose j)` critical points of index `j`, which is the dimension
   of `Hⱼ(Tᵐ; k)`. So it is perfect over every field (`TauCeti.isPerfectMorse_torusCos`), although
@@ -106,6 +121,40 @@ structure IsPerfectMorse (k : Type u) [DivisionRing k] (f : M → ℝ) : Prop wh
     finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj
       (ModuleCat.of k k)).obj (TopCat.of M))
 
+variable {k : Type u} [DivisionRing k] in
+/-- **Vanishing Betti numbers of a perfect Morse function.** If `f` is a perfect Morse function,
+the Betti number `bⱼ(M; k)` vanishes exactly when `f` has no critical point of index `j`. -/
+theorem IsPerfectMorse.bettiNumber_eq_zero_iff (hf : IsPerfectMorse I k f) (j : ℕ) :
+    bettiNumber k M j = 0 ↔ ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≠ j := by
+  rw [← criticalCount_eq_zero_iff, hf.criticalCount_eq j, bettiNumber_def]
+  exact_mod_cast Iff.rfl
+
+variable {k : Type u} [DivisionRing k] in
+/-- **The total Betti number of a perfect Morse function.** If `f` is a perfect Morse function on
+a manifold, the sum of the Betti numbers of the manifold is the number of critical points
+of `f`. -/
+theorem IsPerfectMorse.sum_bettiNumber_eq_totalCriticalCount (hf : IsPerfectMorse I k f) :
+    ((∑ j ∈ Finset.range (finrank ℝ E + 1), bettiNumber k M j : ℕ) : ℕ∞) =
+      totalCriticalCount I f := by
+  rw [← sum_criticalCount_eq_totalCriticalCount, Nat.cast_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [hf.criticalCount_eq j, bettiNumber_def]
+
+variable {k : Type u} [DivisionRing k] in
+/-- **Betti numbers of a perfect Morse function count critical points.** If `f` is a perfect Morse
+function, the Betti number `bⱼ(M; k)` is the number of critical points of `f` of index `j`. -/
+theorem IsPerfectMorse.bettiNumber_eq_ncard (hf : IsPerfectMorse I k f) (j : ℕ) :
+    bettiNumber k M j = {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j}.ncard := by
+  rw [ncard_def, ← criticalCount_def, hf.criticalCount_eq j, bettiNumber_def, ENat.toNat_natCast]
+
+variable {k : Type u} [DivisionRing k] in
+/-- **The total Betti number of a perfect Morse function, as a number of points.** If `f` is a
+perfect Morse function on a manifold, the sum of the Betti numbers of the manifold is the number
+of critical points of `f`. -/
+theorem IsPerfectMorse.sum_bettiNumber_eq_ncard (hf : IsPerfectMorse I k f) :
+    ∑ j ∈ Finset.range (finrank ℝ E + 1), bettiNumber k M j = (criticalPoints I f).ncard := by
+  rw [ncard_def, ← totalCriticalCount_def, ← hf.sum_bettiNumber_eq_totalCriticalCount,
+    ENat.toNat_natCast]
+
 section Compact
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M]
@@ -149,6 +198,24 @@ theorem IsMorse.isPerfectMorse_of_forall_ne_add_one (hf : IsMorse I f)
     ModuleCat.finrank_of_self, mul_one,
     ENat.natCast_toNat_eq_self.2 (hf.criticalCount_ne_top n)]
 
+/-- **A Morse function with only even indices is perfect.** On a compact manifold, a Morse
+function all of whose critical points have even index is perfect for every division ring of
+coefficients, by the lacunary principle. -/
+theorem IsMorse.isPerfectMorse_of_even (hf : IsMorse I f)
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) :
+    IsPerfectMorse I k f :=
+  hf.isPerfectMorse_of_forall_ne_add_one fun x hx y hy h ↦
+    Nat.even_add_one.1 (h ▸ heven x hx) (heven y hy)
+
+/-- **Odd Betti numbers vanish for a Morse function with only even indices.** On a compact
+manifold carrying a Morse function all of whose critical points have even index, the odd Betti
+numbers vanish for every division ring of coefficients. -/
+theorem IsMorse.bettiNumber_eq_zero_of_odd (hf : IsMorse I f)
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) {j : ℕ} (hj : Odd j) :
+    bettiNumber k M j = 0 :=
+  ((hf.isPerfectMorse_of_even heven).bettiNumber_eq_zero_iff j).2 fun x hx hxj ↦
+    Nat.not_even_iff_odd.2 hj (hxj ▸ heven x hx)
+
 /-- **A Morse function is perfect exactly when its Morse polynomial vanishes.** If `Q` is the
 polynomial of the Morse polynomial identity `cⱼ = bⱼ + coeff ((1 + X) * Q) j` of a Morse function
 on a compact manifold, then the function is perfect if and only if `Q = 0`. -/
@@ -173,6 +240,56 @@ theorem IsPerfectMorse.finrank_singularHomology_finrank_ne_zero [Nonempty M]
   rw [hf.criticalCount_eq] at h
   exact_mod_cast h
 
+/-! ### Zero-dimensional and empty manifolds -/
+
+section Discrete
+
+variable {k : Type u} [DivisionRing k]
+
+/-- On a finite discrete space the homology is free on the points in degree `0` and vanishes in
+positive degrees, so a Morse function is perfect as soon as its critical points of index `0` are
+counted by the points and it has none of positive index. -/
+private theorem isPerfectMorse_of_discreteTopology [DiscreteTopology M] [Finite M]
+    (hf : IsMorse I f) (h₀ : criticalCount I f 0 = Nat.card M)
+    (hpos : ∀ j ≠ 0, criticalCount I f j = 0) : IsPerfectMorse I k f := by
+  refine ⟨hf, fun n ↦ ?_, fun n ↦ ?_⟩
+  · rcases eq_or_ne n 0 with rfl | hn
+    · exact (finite_singularHomology_zero_iff_of_totallyDisconnectedSpace k M).2 ‹_›
+    · have := subsingleton_singularHomology_of_totallyDisconnectedSpace k M hn
+      infer_instance
+  · rw [← bettiNumber_def]
+    rcases eq_or_ne n 0 with rfl | hn
+    · rw [h₀, bettiNumber_zero_of_totallyDisconnectedSpace]
+    · rw [hpos n hn, bettiNumber_eq_zero_of_totallyDisconnectedSpace k M hn, Nat.cast_zero]
+
+/-- **Perfect Morse functions in dimension zero.** On a manifold modelled on a zero-dimensional
+space, every function is a Morse function whose critical points are all the points, each of
+index `0`. The manifold is discrete, so its homology is free on its points in degree `0` and
+vanishes in positive degrees. Hence, for every division ring `k`, every function is perfect when
+the manifold is finite: with `r` points, the critical counts and the Betti numbers are both
+`r, 0, 0, …`. No function is perfect on an infinite such manifold, such as `ℕ`: there `H₀(M; k)`
+is infinite-dimensional. -/
+theorem isPerfectMorse_iff_finite_of_subsingleton [Subsingleton E] :
+    IsPerfectMorse I k f ↔ Finite M := by
+  have : Subsingleton H := I.injective.subsingleton
+  have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+  refine ⟨fun h ↦ (finite_singularHomology_zero_iff_of_totallyDisconnectedSpace k M).1
+    (h.finite_singularHomology 0), fun _ ↦ isPerfectMorse_of_discreteTopology
+      isMorse_of_subsingleton ?_ fun _ ↦ criticalCount_eq_zero_of_subsingleton⟩
+  rw [criticalCount_zero_of_subsingleton, ENat.card_eq_coe_natCard]
+
+/-- **Every function on the empty manifold is a perfect Morse function.** It has no critical
+points and the empty space has no homology, so the critical counts and the Betti numbers all
+vanish. -/
+theorem isPerfectMorse_of_isEmpty [IsEmpty M] : IsPerfectMorse I k f := by
+  have : DiscreteTopology M := ⟨Subsingleton.elim _ _⟩
+  have hcount (j : ℕ) : criticalCount I f j = 0 := by
+    rw [criticalCount_def, Set.eq_empty_of_isEmpty {x ∈ _ | _}, encard_empty]
+  exact isPerfectMorse_of_discreteTopology (isMorse_iff.2 ⟨isEmptyElim, isEmptyElim⟩)
+    (by rw [hcount, Nat.card_of_isEmpty, Nat.cast_zero]) fun j _ ↦ hcount j
+
+end Discrete
+
 /-! ### Projective spaces -/
 
 section Projective
@@ -184,13 +301,9 @@ function on `ℂℙⁿ` is a perfect Morse function for every division ring of c
 critical points all have even index. -/
 theorem isPerfectMorse_projectiveMomentFunction_complex (hw : Function.Injective w) (k : Type)
     [DivisionRing k] :
-    IsPerfectMorse 𝓘(ℝ, Fin n → ℂ) k (projectiveMomentFunction ℂ w) := by
-  refine (isMorse_projectiveMomentFunction hw).isPerfectMorse_of_forall_ne_add_one ?_
-  rw [criticalPoints_projectiveMomentFunction hw]
-  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-  rw [manifoldMorseIndex_projectiveMomentFunction, manifoldMorseIndex_projectiveMomentFunction,
-    Complex.finrank_real_complex]
-  omega
+    IsPerfectMorse 𝓘(ℝ, Fin n → ℂ) k (projectiveMomentFunction ℂ w) :=
+  (isMorse_projectiveMomentFunction hw).isPerfectMorse_of_forall_ne_add_one
+    (manifoldMorseIndex_projectiveMomentFunction_complex_ne_add_one hw)
 
 /-- **The moment function on `ℝPⁿ` is perfect in characteristic two.** For pairwise distinct
 weights, the moment function on `ℝPⁿ` has one critical point of each index `0, …, n`, and it is a
