@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Fatness
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension
 
-import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.LinearAlgebra.Finsupp.Pi
 import TauCeti.Data.Fintype.Card.FilterOrder
@@ -53,9 +52,6 @@ and the resulting homeomorphism, are proved in
   subdivision is sent to `edgewisePoint u`.
 * `AbstractSimplicialComplex.edgewiseSubdivisionRealizationMap_comp_faceInclusion`: on a simplex
   of the subdivision, the realization map is the face map followed by a face inclusion.
-* `AbstractSimplicialComplex.norm_edgewiseSubdivisionRealizationMap_faceInclusion_sub_le`: the
-  realization map sends each closed simplex of the `k`-th subdivision to a set of diameter at most
-  `1 / k`.
 * `AbstractSimplicialComplex.continuous_edgewiseSubdivisionRealizationMap`: the realization map
   is continuous.
 * `AbstractSimplicialComplex.edgewiseSubdivisionRealizationMap_injective`: the realization map is
@@ -193,33 +189,6 @@ theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
   funext x
   simp only [Function.comp_apply, edgewiseSubdivisionRealizationMap_val, linearExtension_apply,
     Finsupp.linearCombination_apply, Finsupp.coe_sum, Finsupp.coe_smul]
-
-open Set Metric in
-/-- **The mesh of the `k`-th edgewise subdivision is `1 / k`.** The realization map sends two
-points of a closed simplex of the `k`-th edgewise subdivision to points of `|K|` at distance at
-most `1 / k`, in the sup norm of the barycentric coordinates of `K`. -/
-theorem norm_edgewiseSubdivisionRealizationMap_faceInclusion_sub_le [Fintype ι]
-    (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.val) :
-    ‖((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val : ι → ℝ) -
-        (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y)).val‖ ≤ (k : ℝ)⁻¹ := by
-  -- Both points lie in the convex hull of the points `edgewisePoint u` of the vertices `u` of
-  -- `ρ`, which has the diameter of that finite set, at most `1 / k`.
-  set e : ρ.val → ι → ℝ := fun a => edgewisePoint a.val.val
-  have hmem (z : StandardSimplex ρ.val) :
-      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ z)).val : ι → ℝ) ∈
-        convexHull ℝ (range e) := by
-    rw [← range_edgewiseSubdivisionRealizationMap_faceInclusion]
-    exact mem_range_self z
-  rw [← dist_eq_norm]
-  refine (dist_le_diam_of_mem (isBounded_convexHull.mpr (finite_range e).isBounded) (hmem x)
-    (hmem y)).trans ?_
-  rw [convexHull_diam]
-  refine diam_le_of_forall_dist_le (by positivity) ?_
-  rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩
-  rw [dist_eq_norm]
-  refine (pi_norm_le_iff_of_nonneg (by positivity)).mpr fun i => ?_
-  refine (norm_le_pi_norm (fun j : (univ : Finset ι) => e a j - e b j) ⟨i, mem_univ i⟩).trans ?_
-  exact norm_edgewisePoint_sub_edgewisePoint_le ρ.property a.property b.property univ
 
 /-- The edgewise realization map is continuous for the weak topologies on both realizations. -/
 theorem continuous_edgewiseSubdivisionRealizationMap :

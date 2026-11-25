@@ -108,7 +108,8 @@ theorem eventually_exists_isStarImmersion_and_injective_and_eq_sum
   filter_upwards [h.eventually_isStarImmersion_and_injective_lineMap_secantMap hn hf
       (le_min hn (by exact_mod_cast le_top)) (φ := fun y => ψ (f y)) hφ,
     h.continuous.eventually_norm_secantMap_sub_lt_edgewiseSubdivision (toFinite K.faces) hδ,
-    h.continuous.eventually_norm_sub_lt_edgewiseSubdivision hδ] with k ⟨hsi, hinj⟩ happrox hsmall
+    h.continuous.eventually_norm_sub_lt_edgewiseSubdivision (toFinite K.faces) hδ]
+    with k ⟨hsi, hinj⟩ happrox hsmall
   set π := edgewiseSubdivisionRealizationMap K k
   set g := fun x => AffineMap.lineMap (f (π x)) ((K.edgewiseSubdivision k).secantMap (f ∘ π) x)
     (ψ (f (π x))) with hg
