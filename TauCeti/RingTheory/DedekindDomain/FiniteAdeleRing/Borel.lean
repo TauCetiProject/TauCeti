@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
 /-!
 # Borel structures on finite adele rings

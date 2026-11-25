@@ -215,14 +215,12 @@ open scoped Classical in
 Minkowski space. -/
 theorem infiniteAdeleHaar_apply (s : Set (InfiniteAdeleRing K)) :
     infiniteAdeleHaar K s = 2 ^ InfinitePlace.nrComplexPlaces K *
-      volume (InfiniteAdeleRing.homeomorphMixedSpace K '' s) := by
-  have he : ⇑(InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm =
-      ⇑(InfiniteAdeleRing.homeomorphMixedSpace K).symm := by
-    rw [InfiniteAdeleRing.coe_continuousAddEquivMixedSpace_symm,
-      InfiniteAdeleRing.coe_homeomorphMixedSpace_symm]
-  rw [infiniteAdeleHaar_def, he, ← Homeomorph.preimage_symm,
-    ← (InfiniteAdeleRing.homeomorphMixedSpace K).symm.measurableEmbedding.map_apply]
-  simp
+      volume (InfiniteAdeleRing.continuousAddEquivMixedSpace K '' s) := by
+  have he : MeasurableEmbedding (InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm :=
+    (InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm.toHomeomorph.measurableEmbedding
+  rw [infiniteAdeleHaar_def, _root_.smul_apply, he.map_apply, smul_eq_mul]
+  exact congrArg (_ * volume ·)
+    ((InfiniteAdeleRing.continuousAddEquivMixedSpace K).toHomeomorph.image_eq_preimage_symm s).symm
 
 open scoped Classical in
 instance isAddHaarMeasure_infiniteAdeleHaar : (infiniteAdeleHaar K).IsAddHaarMeasure := by

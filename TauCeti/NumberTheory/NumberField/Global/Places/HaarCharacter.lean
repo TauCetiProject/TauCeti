@@ -11,7 +11,6 @@ public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Basic
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Borel
-public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 import TauCeti.NumberTheory.NumberField.Global.Places.PowerClasses
 
