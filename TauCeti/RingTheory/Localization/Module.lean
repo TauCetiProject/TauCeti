@@ -38,9 +38,9 @@ submonoid `S`:
 * `Module.FinitePresentation.exists_bijective_map_of_isLocalizedModule`: if `M` is finitely
   presented, an isomorphism between localizations of `M` and `N` at `S` gives a map `M → N` whose
   localization at `S` is bijective.
-* `Module.FinitePresentation.exists_notMem_surjective_map_powers`: if `M` is finitely presented
-  and `N` is finite, a surjection between their localizations at a prime `p` comes from a map
-  `M → N` that is surjective after inverting some `s ∉ p`.
+* `Module.FinitePresentation.exists_notMem_surjective_map_powers`: if `M` is finitely presented,
+  `N` is finite and their localizations at a prime `p` admit a surjection, then some map
+  `M → N` becomes surjective after inverting some `s ∉ p`.
 * `LocalizedModule.bijective_map_dual_eval_iff`: if `M` and its dual are finitely presented, the
   map `M → M**` becomes bijective after localizing at `S` exactly when the localization `Mₛ` is
   reflexive over `Rₛ`. Taking duals commutes with localization for finitely presented modules,
