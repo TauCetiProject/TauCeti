@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Morrey
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 import Mathlib.Tactic.Module
-import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
 
