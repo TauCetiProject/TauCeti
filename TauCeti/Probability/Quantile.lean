@@ -701,13 +701,13 @@ theorem tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one (μ : Measure ℝ)
 taken in `EReal`, so this also states convergence to minus infinity for support unbounded below. -/
 theorem tendsto_upperQuantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     Tendsto (fun u ↦ (μ.upperQuantile u : EReal)) (𝓝[>] 0)
-      (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
+      (𝓝 (⨅ x : μ.support, (x.val : EReal))) := by
   refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
   · obtain ⟨c, hac, hc⟩ := EReal.exists_between_coe_real ha
     have hbound : ∀ᵐ x ∂μ, c < x := by
       filter_upwards [μ.support_mem_ae] with x hx
       exact EReal.coe_lt_coe_iff.mp
-        (hc.trans_le (iInf_le (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩))
+        (hc.trans_le (iInf_le (fun y : μ.support ↦ (y.val : EReal)) ⟨x, hx⟩))
     have hcdf : cdf μ c = 0 := cdf_eq_zero_of_ae_lt μ hbound
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
     have hq : c < μ.quantile u :=
@@ -717,7 +717,7 @@ theorem tendsto_upperQuantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasu
   · obtain ⟨y, hy⟩ := iInf_lt_iff.mp hb
     obtain ⟨c, hyc, hcb⟩ := EReal.exists_between_coe_real hy
     have hcdf : 0 < cdf μ c :=
-      cdf_pos_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hyc)
+      cdf_pos_of_mem_support_of_lt μ y.property (EReal.coe_lt_coe_iff.mp hyc)
     filter_upwards [Ioo_mem_nhdsGT hcdf] with u hu
     exact EReal.coe_le_coe_iff.2 (upperQuantile_le_of_lt_cdf μ hu.1 hu.2) |>.trans_lt hcb
 
@@ -725,12 +725,12 @@ theorem tendsto_upperQuantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasu
 taken in `EReal`, so this also states convergence to plus infinity for support unbounded above. -/
 theorem tendsto_upperQuantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     Tendsto (fun u ↦ (μ.upperQuantile u : EReal)) (𝓝[<] 1)
-      (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
+      (𝓝 (⨆ x : μ.support, (x.val : EReal))) := by
   refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
   · obtain ⟨y, hy⟩ := lt_iSup_iff.mp ha
     obtain ⟨c, hac, hcy⟩ := EReal.exists_between_coe_real hy
     have hcdf : cdf μ c < 1 :=
-      cdf_lt_one_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hcy)
+      cdf_lt_one_of_mem_support_of_lt μ y.property (EReal.coe_lt_coe_iff.mp hcy)
     filter_upwards [Ioo_mem_nhdsLT hcdf] with u hu
     have hq : c < μ.quantile u :=
       (lt_quantile_iff μ ((cdf_nonneg μ c).trans_lt hu.1) hu.2).2 hu.1
@@ -740,7 +740,7 @@ theorem tendsto_upperQuantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasur
     have hbound : ∀ᵐ x ∂μ, x ≤ c := by
       filter_upwards [μ.support_mem_ae] with x hx
       exact EReal.coe_le_coe_iff.mp
-        ((le_iSup (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩).trans hc.le)
+        ((le_iSup (fun y : μ.support ↦ (y.val : EReal)) ⟨x, hx⟩).trans hc.le)
     have hcdf : cdf μ c = 1 := cdf_eq_one_of_ae_le μ hbound
     filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
     exact EReal.coe_le_coe_iff.2
@@ -750,7 +750,7 @@ theorem tendsto_upperQuantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasur
 taken in `EReal`, so this also states convergence to minus infinity for support unbounded below. -/
 theorem tendsto_quantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0)
-      (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
+      (𝓝 (⨅ x : μ.support, (x.val : EReal))) := by
   have hU := Measure.tendsto_upperQuantile_nhdsGT_zero μ
   have hhalf : Tendsto (fun u : ℝ ↦ u / 2) (𝓝[>] 0) (𝓝[>] 0) := by
     refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
@@ -767,7 +767,7 @@ theorem tendsto_quantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasure μ
 taken in `EReal`, so this also states convergence to plus infinity for support unbounded above. -/
 theorem tendsto_quantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1)
-      (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
+      (𝓝 (⨆ x : μ.support, (x.val : EReal))) := by
   have hU := Measure.tendsto_upperQuantile_nhdsLT_one μ
   have htwo : Tendsto (fun u : ℝ ↦ 2 * u - 1) (𝓝[<] 1) (𝓝[<] 1) := by
     refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
@@ -844,15 +844,15 @@ theorem measurable_quantile_probabilityMeasure :
   have hcdf : Measurable fun P : ProbabilityMeasure ℝ ↦ cdf (P : Measure ℝ) x := by
     simp only [cdf_eq_real, Measure.real]
     exact ((Measure.measurable_coe measurableSet_Iic).comp
-      measurable_subtype_coe).ennreal_toReal
+      measurable_subtypeVal).ennreal_toReal
   have hset :
       (fun q : ProbabilityMeasure ℝ × Ioo (0 : ℝ) 1 ↦
         (q.1 : Measure ℝ).quantile q.2) ⁻¹' Iic x =
         {q | (q.2 : ℝ) ≤ cdf (q.1 : Measure ℝ) x} := by
     ext q
-    exact quantile_le_iff (q.1 : Measure ℝ) q.2.2.1 q.2.2.2
+    exact quantile_le_iff (q.1 : Measure ℝ) q.2.property.1 q.2.property.2
   rw [hset]
-  exact measurableSet_le (measurable_subtype_coe.comp measurable_snd)
+  exact measurableSet_le (measurable_subtypeVal.comp measurable_snd)
     (hcdf.comp measurable_fst)
 
 /-- The upper quantile is jointly measurable in a probability measure and a level in `(0, 1)`. -/
@@ -868,15 +868,15 @@ theorem measurable_upperQuantile_probabilityMeasure :
       (P : Measure ℝ).real (Iio x) := by
     simp only [Measure.real]
     exact ((Measure.measurable_coe measurableSet_Iio).comp
-      measurable_subtype_coe).ennreal_toReal
+      measurable_subtypeVal).ennreal_toReal
   have hset :
       (fun q : ProbabilityMeasure ℝ × Ioo (0 : ℝ) 1 ↦
         (q.1 : Measure ℝ).upperQuantile q.2) ⁻¹' Iio x =
         {q | (q.2 : ℝ) < (q.1 : Measure ℝ).real (Iio x)} := by
     ext q
-    exact upperQuantile_lt_iff (q.1 : Measure ℝ) q.2.2.1 q.2.2.2
+    exact upperQuantile_lt_iff (q.1 : Measure ℝ) q.2.property.1 q.2.property.2
   rw [hset]
-  exact measurableSet_lt (measurable_subtype_coe.comp measurable_snd)
+  exact measurableSet_lt (measurable_subtypeVal.comp measurable_snd)
     (hleft.comp measurable_fst)
 
 /-- Quantiles of a measurable family of probability measures are jointly measurable in the

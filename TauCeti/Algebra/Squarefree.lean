@@ -28,6 +28,13 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   holding `ha : Squarefree a` and `hu : ¬ IsUnit a` can write `ha.not_isSquare hu`.
 * `Squarefree.neg`: negation preserves squarefreeness in any ring with distributive negation.
 * `TauCeti.squarefree_map_iff`: a multiplicative equivalence preserves and reflects squarefreeness.
+* `TauCeti.squarefree_mul_iff`: in any commutative decomposition monoid, a product `x * y` is
+  squarefree iff `x` and `y` are relatively prime and individually squarefree, generalizing
+  Mathlib's `squarefree_mul_iff` without zero or cancellation.
+* `Finset.squarefree_prod_iff`: in any commutative decomposition monoid, a finite product is
+  squarefree iff its factors are pairwise relatively prime and individually squarefree,
+  generalizing Mathlib's `Finset.squarefree_prod_of_pairwise_isCoprime` (in both directions)
+  without zero or cancellation.
 * `not_isSquare_intCast_of_squarefree_of_ne_one`: a squarefree integer other than `1` is not a
   rational square.
 * `isSquare_mul_sq_iff`: in a commutative group with zero, multiplying by a nonzero square does
@@ -141,6 +148,40 @@ theorem TauCeti.squarefree_map_iff {F M N : Type*} [Monoid M] [Monoid N] [EquivL
   obtain ⟨x, rfl⟩ := EquivLike.surjective f y
   rw [← map_mul, map_dvd_iff] at hy
   exact (h x hy).map f
+
+/-- In a commutative decomposition monoid, `x * y` is squarefree if and only if `x` and `y` are
+relatively prime and each is squarefree. This drops the zero and cancellation assumptions of
+Mathlib's `squarefree_mul_iff`. -/
+theorem TauCeti.squarefree_mul_iff {M : Type*} [CommMonoid M] [DecompositionMonoid M] {x y : M} :
+    Squarefree (x * y) ↔ IsRelPrime x y ∧ Squarefree x ∧ Squarefree y := by
+  refine ⟨fun h ↦ ⟨IsRelPrime.of_squarefree_mul h, h.of_mul_left, h.of_mul_right⟩,
+    fun ⟨hxy, hx, hy⟩ d hd ↦ ?_⟩
+  obtain ⟨a, b, ha, hb, rfl⟩ := exists_dvd_and_dvd_of_dvd_mul ((dvd_mul_left d d).trans hd)
+  have hax : IsRelPrime a y := hxy.of_dvd_left ha
+  have hby : IsRelPrime x b := hxy.of_dvd_right hb
+  have ha' : IsUnit a := hx a ((hax.mul_left hax).dvd_of_dvd_mul_right
+    ((mul_dvd_mul (dvd_mul_right a b) (dvd_mul_right a b)).trans hd))
+  have hb' : IsUnit b := hy b ((hby.mul_right hby).symm.dvd_of_dvd_mul_left
+    ((mul_dvd_mul (dvd_mul_left b a) (dvd_mul_left b a)).trans hd))
+  exact ha'.mul hb'
+
+open scoped Function in
+/-- In a commutative decomposition monoid, a finite product is squarefree if and only if its factors
+are pairwise relatively prime and individually squarefree. The backward direction generalizes
+Mathlib's `Finset.squarefree_prod_of_pairwise_isCoprime` by dropping zero and cancellation. -/
+theorem Finset.squarefree_prod_iff {ι M : Type*} [CommMonoid M] [DecompositionMonoid M]
+    {s : Finset ι} {f : ι → M} :
+    Squarefree (∏ i ∈ s, f i) ↔
+      (s : Set ι).Pairwise (IsRelPrime on f) ∧ ∀ i ∈ s, Squarefree (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih =>
+    rw [Finset.prod_cons, TauCeti.squarefree_mul_iff, IsRelPrime.prod_right_iff, ih,
+      Finset.coe_cons, Set.pairwise_insert, Finset.forall_mem_cons]
+    exact ⟨fun ⟨hrel, ha', hp, hs⟩ ↦
+        ⟨⟨hp, fun i hi _ ↦ ⟨hrel i hi, (hrel i hi).symm⟩⟩, ha', hs⟩,
+      fun ⟨⟨hp, hrel⟩, ha', hs⟩ ↦
+        ⟨fun i hi ↦ (hrel i hi fun h ↦ ha (h ▸ hi)).1, ha', hp, hs⟩⟩
 
 /-- A squarefree integer other than `1` is not a rational square. -/
 theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}

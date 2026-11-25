@@ -104,7 +104,8 @@ variable {A ι : Type*} [Semiring A] [DecidableEq ι] (V : ι → Ideal A) [Deco
 `1 = ∑ᵢ eᵢ` with `eᵢ ∈ Vᵢ`, then `Vᵢ = Aeᵢ`: every `x ∈ Vᵢ` is its own `i`-th component, which is
 `x eᵢ`. -/
 theorem span_singleton_idempotent (i : ι) : Ideal.span {idempotent V i} = V i := by
-  refine le_antisymm ((Ideal.span_singleton_le_iff_mem _).2 (decompose V 1 i).2) fun x hx ↦ ?_
+  refine le_antisymm ((Ideal.span_singleton_le_iff_mem _).2 (decompose V 1 i).property) fun x hx ↦
+      ?_
   rw [← decompose_of_mem_same V hx, decompose_eq_mul_idempotent]
   exact Ideal.mul_mem_left _ x (Ideal.mem_span_singleton_self _)
 
@@ -221,6 +222,6 @@ theorem exists_completeOrthogonalIdempotents_isPrimitiveIdempotent [IsArtinianRi
     (CompleteOrthogonalIdempotents.equiv σ.symm).2 (completeOrthogonalIdempotents_idempotent V),
     fun i ↦ isPrimitiveIdempotent_of_isIndecomposableModule (isIdempotentElem_idempotent V _) ?_⟩
   rw [Function.comp_apply, span_singleton_idempotent]
-  exact hs _ (σ.symm i).2
+  exact hs _ (σ.symm i).property
 
 end TauCeti

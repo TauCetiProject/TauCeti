@@ -94,20 +94,6 @@ theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_dist_lt_abs_sub_l
     exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq (n := n) hp
       hp_top
   refine ⟨8 * 2 ^ n * C₀, δ, hδ, fun {lam Λ ρ} hlam hρ {a} ha hA haΛ hosc u f heq => ?_⟩
-  have hμ : (volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-      ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n))) = volume := by
-    simp
-  -- Elements of `Lᵖ` over `⊤` are `Lᵖ` functions for `volume`, with the same norm.
-  have hmem : ∀ {G : Type} [NormedAddCommGroup G]
-      (g : Lp G p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-        (⊤ : Opens (EuclideanSpace ℝ (Fin n))))), MemLp g p volume := fun g => by
-    convert Lp.memLp g using 1
-    exact hμ.symm
-  have hnorm : ∀ {G : Type} [NormedAddCommGroup G]
-      (g : Lp G p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-        (⊤ : Opens (EuclideanSpace ℝ (Fin n))))), ‖g‖ = lpNorm g p volume := fun g => by
-    rw [Lp.norm_def, ← toReal_eLpNorm]
-    exact congrArg (fun ν => (eLpNorm (⇑g) p ν).toReal) hμ
   set r := ρ / 2 with hr_def
   have hr : 0 < r := half_pos hρ
   have h2r : 2 * r = ρ := by rw [hr_def]; ring
@@ -133,9 +119,13 @@ theorem exists_norm_iteratedGradient_le_of_sum_mul_inner_eq_of_dist_lt_abs_sub_l
     rw [hr_def, hc₁_def, hc₂_def]
     field_simp
     ring
-  have hglobal := lpNorm_le_of_ae_lpNorm_restrict_ball_le_add hp.le hp_top (hmem _) (hmem f)
-    (hmem _) (by positivity) (by positivity) hr (Eventually.of_forall hlocal)
-  rw [finrank_euclideanSpace_fin, ← hnorm, ← hnorm, ← hnorm] at hglobal
+  have hglobal := lpNorm_le_of_ae_lpNorm_restrict_ball_le_add hp.le hp_top
+    (Lp.memLp_of_restrict_coe_opens_top _) (Lp.memLp_of_restrict_coe_opens_top f)
+    (Lp.memLp_of_restrict_coe_opens_top _) (by positivity) (by positivity) hr
+    (Eventually.of_forall hlocal)
+  rw [finrank_euclideanSpace_fin, ← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top,
+    ← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top,
+    ← Lp.norm_eq_lpNorm_of_restrict_coe_opens_top] at hglobal
   refine hglobal.trans_eq ?_
   rw [hc₁_def, hc₂_def]
   push_cast

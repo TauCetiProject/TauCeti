@@ -1,0 +1,574 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Geometry.Symplectic.Complex.Line
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
+public import TauCeti.Geometry.Symplectic.Prod.Metric
+public import TauCeti.Geometry.Symplectic.Prod.Skew
+public import TauCeti.Geometry.Symplectic.Rescale
+public import TauCeti.Geometry.Symplectic.StandardCompatible
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Geometry.Symplectic.JHolomorphic.Prod.Skew
+
+/-!
+# Gromov's graph construction for the inhomogeneous Floer equation
+
+Let `(V, ω)` be a symplectic vector space, `J` a family of almost complex structures on `V`
+depending on a domain point `z = (s, t)` and a target point `x`, and `K = K_s ds + K_t dt` a
+Hamiltonian perturbation. Write `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`
+(`TauCeti.SymplecticForm.hamiltonianOneForm`) and `j` for the standard complex structure on
+`ℝ × ℝ`. Following Gromov, put on `(ℝ × ℝ) × V` the almost complex structure
+
+`J_K(z, x)(ξ, v) = (j ξ, J(z, x) (v - X_K ξ) + X_K (j ξ))`,
+
+the skew product of `j` and `J(z, x)` along `X_K(z, x)`
+(`TauCeti.SymplecticForm.floerGraphAlmostComplex`). Then:
+
+* a map `u` solves the Floer equation `(du - X_K)^{0,1} = 0` at `z` exactly when its graph
+  `w ↦ (w, u w)` is `J_K`-holomorphic at `z`
+  (`TauCeti.SymplecticForm.isJHolomorphicAt_graph_floerGraphAlmostComplex_iff`);
+* the projection of a `J_K`-holomorphic map to `ℝ × ℝ` is `j`-holomorphic
+  (`TauCeti.IsJHolomorphicAt.fst_of_floerGraphAlmostComplex`), and a map into a
+  single fibre `{z} × V` is `J_K`-holomorphic exactly when it is holomorphic for the frozen
+  structure `J(z, ·)`
+  (`TauCeti.SymplecticForm.isJHolomorphicAt_prodMk_floerGraphAlmostComplex_iff`).
+
+Thus solutions of the inhomogeneous equation become pseudoholomorphic curves of a product, and
+the vertical maps, those lying in one fibre, are the pseudoholomorphic spheres for `J` frozen at a
+domain point.
+
+The same structure in complex coordinates `z = s + i t ∈ ℂ`, for a structure `J(z, x)` and a
+one-form `X(z, x) : ℂ →L[ℝ] V` that need not come from a symplectic form, is
+`J' = TauCeti.Floer.graphStructure J X`, a continuous-linear-map-valued function on the Euclidean
+product `WithLp 2 (ℂ × V)` sending `(ξ, v)` to `(i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`. For
+Floer data `ω`, `J`, `K_s`, `K_t` it is `J_K` read in the complex coordinate `z = s + i t`
+(`TauCeti.Floer.graphStructure_toLp_eq_floerGraphAlmostComplex`). This is the form consumed by
+the local compactness theory of pseudoholomorphic curves. The arbitrary-one-form operator is the
+native algebraic skew product in these coordinates
+(`TauCeti.Floer.graphStructure_toLp_eq_skewProd`),
+without a finite-dimensionality requirement on the target. It squares to `-1` wherever `J` does
+(`TauCeti.Floer.graphStructure_graphStructure`), is as regular as `J` and `X`
+(`TauCeti.Floer.contDiffOn_graphStructure`), is invariant under the translations along `(1, 0)`
+when `J` and `X` do not depend on `re z` (`TauCeti.Floer.graphStructure_periodic`), and `u` solves
+`∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` at `y` exactly when its graph `U` solves
+`∂ₜU = J'(U) ∂ₛU` there (`TauCeti.Floer.fderiv_toLp_prodMk_I_eq_graphStructure_iff`). The same
+holds for the graph `w ↦ (μ w, u w)` with the domain coordinate rescaled by `μ ≠ 0`, for the
+rescaled data `J(μ⁻¹ ζ, x)` and `μ⁻¹ X(μ⁻¹ ζ, x)`
+(`TauCeti.Floer.fderiv_toLp_smul_prodMk_I_eq_graphStructure_iff`). When the inner product of `V`
+is the metric `ω(·, J₀ ·)`, the split form `σ ⊕ ω` of the standard area form `σ` on `ℂ` and `ω`
+tames `J'` wherever `ω` tames `J` and `X` is small compared with the taming constant
+(`TauCeti.Floer.mul_norm_sq_le_prodL2_graphStructure`); rescaling makes `X` small.
+
+For a constant `c`, consider the two-form `Ω_c = pr₂^* ω + dK + c ds ∧ dt` on `(ℝ × ℝ) × V`, where
+`K` is read as the one-form `K_s ds + K_t dt` on the product
+(`TauCeti.Floer.perturbationOneForm`) and `dK` is its exterior derivative. Since `dK` is
+exact and the other two terms are constant, `Ω_c` is closed (for `C²` perturbations,
+`d(dK) = 0` by `extDeriv_extDeriv` and `TauCeti.Floer.contDiff_perturbationOneForm`). Its values
+are recorded by `TauCeti.SymplecticForm.floerGraphForm`, and the curvature `R_K` of
+`TauCeti.Geometry.Symplectic.Floer.Energy` measures how far it is from a split form:
+
+`Ω_c((ξ, v), (ξ', v')) = ω(v - X_K ξ, v' - X_K ξ') + (c + R_K) (ds ∧ dt)(ξ, ξ')`
+
+(`TauCeti.SymplecticForm.floerGraphForm_eq`). Consequently `Ω_c` is the skew product of
+`(c + R_K) ds ∧ dt` and `ω` along `X_K`, and it tames `J_K` wherever `c + R_K > 0` and `ω` tames
+`J` (`TauCeti.SymplecticForm.floerGraphForm_floerGraphAlmostComplex_pos`). On a graph,
+`Ω_c(∂_s Γ_u, ∂_t Γ_u)` is the Floer energy density plus `c + R_K`
+(`TauCeti.SymplecticForm.floerGraphForm_graph`). On a domain of finite area and with bounded
+curvature, a large constant `c` therefore makes the `Ω_c`-energy of the graph the Floer energy
+plus a bounded term. This is how compactness for pseudoholomorphic curves applies to solutions
+of the inhomogeneous Floer equation.
+
+## References
+
+* M. Gromov, *Pseudo holomorphic curves in symplectic manifolds*, Invent. Math. 82 (1985),
+  307–347.
+* D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, Section 8.1, on the
+  graph construction, its taming form and the energy of graphs.
+-/
+
+public section
+
+open Function
+
+namespace TauCeti.SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+section AlmostComplex
+
+variable (ω : SymplecticForm V) (J : ℝ × ℝ → V → AlmostComplexStructure V)
+  (Ks Kt : ℝ × ℝ → V → ℝ)
+
+/-- **Gromov's almost complex structure** of the Floer equation on `(ℝ × ℝ) × V`: at the point
+`p = (z, x)` it is the skew product of the standard structure `j` of `ℝ × ℝ` and `J(z, x)` along
+the Hamiltonian one-form `X_K(z, x)`, so it sends `(ξ, v)` to
+`(j ξ, J(z, x) (v - X_K ξ) + X_K (j ξ))`. -/
+noncomputable def floerGraphAlmostComplex (p : (ℝ × ℝ) × V) :
+    AlmostComplexStructure ((ℝ × ℝ) × V) :=
+  (AlmostComplexStructure.product ℝ).skewProd (J p.1 p.2)
+    (ω.hamiltonianOneForm Ks Kt p.1 p.2 : ℝ × ℝ →ₗ[ℝ] V)
+
+theorem floerGraphAlmostComplex_def (p : (ℝ × ℝ) × V) :
+    ω.floerGraphAlmostComplex J Ks Kt p =
+      (AlmostComplexStructure.product ℝ).skewProd (J p.1 p.2)
+        (ω.hamiltonianOneForm Ks Kt p.1 p.2 : ℝ × ℝ →ₗ[ℝ] V) :=
+  (rfl)
+
+@[simp]
+theorem floerGraphAlmostComplex_apply (p ζ : (ℝ × ℝ) × V) :
+    ω.floerGraphAlmostComplex J Ks Kt p ζ =
+      (AlmostComplexStructure.product ℝ ζ.1,
+        J p.1 p.2 (ζ.2 - ω.hamiltonianOneForm Ks Kt p.1 p.2 ζ.1) +
+          ω.hamiltonianOneForm Ks Kt p.1 p.2 (AlmostComplexStructure.product ℝ ζ.1)) := by
+  simp [floerGraphAlmostComplex_def]
+
+variable {ω J Ks Kt}
+
+/-- **Gromov's graph construction.** A map `u` solves the Floer equation
+`(du - X_K)^{0,1} = 0` at `z` exactly when its graph `w ↦ (w, u w)` is holomorphic at `z` from
+the standard structure of `ℝ × ℝ` to Gromov's structure `J_K`. -/
+theorem isJHolomorphicAt_graph_floerGraphAlmostComplex_iff {u : ℝ × ℝ → V} {z : ℝ × ℝ} :
+    IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.product ℝ)
+        (ω.floerGraphAlmostComplex J Ks Kt) (fun w ↦ (w, u w)) z ↔
+      DifferentiableAt ℝ u z ∧
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+          (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) := by
+  rw [perturbedFDeriv_eq_sub, ContinuousLinearMap.toLinearMap_sub]
+  exact AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff (J₁ := fun _ ↦ _)
+
+/-- **Gromov's graph construction, globally.** A map `u` solves the Floer equation everywhere
+exactly when its graph is `J_K`-holomorphic. -/
+theorem isJHolomorphic_graph_floerGraphAlmostComplex_iff {u : ℝ × ℝ → V} :
+    IsJHolomorphic (fun _ ↦ AlmostComplexStructure.product ℝ)
+        (ω.floerGraphAlmostComplex J Ks Kt) (fun w ↦ (w, u w)) ↔
+      Differentiable ℝ u ∧
+        ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+          (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) := by
+  simp only [isJHolomorphic_iff, isJHolomorphicAt_graph_floerGraphAlmostComplex_iff]
+  exact forall_and
+
+variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] {J' : U → AlmostComplexStructure U}
+
+/-- The projection to `ℝ × ℝ` of a `J_K`-holomorphic map is holomorphic for the standard structure
+of `ℝ × ℝ`. -/
+theorem _root_.TauCeti.IsJHolomorphicAt.fst_of_floerGraphAlmostComplex {f : U → (ℝ × ℝ) × V}
+    {y : U} (hf : IsJHolomorphicAt J' (ω.floerGraphAlmostComplex J Ks Kt) f y) :
+    IsJHolomorphicAt J' (fun _ ↦ AlmostComplexStructure.product ℝ) (fun y ↦ (f y).1) y :=
+  IsJHolomorphicAt.fst_of_skewProd (J₁ := fun _ ↦ _) hf
+
+/-- **Vertical maps.** A map `y ↦ (z, g y)` into the fibre over a fixed domain point `z` is
+`J_K`-holomorphic exactly when `g` is holomorphic for the structure `J(z, ·)` frozen at `z`. -/
+theorem isJHolomorphicAt_prodMk_floerGraphAlmostComplex_iff {g : U → V} {z : ℝ × ℝ} {y : U} :
+    IsJHolomorphicAt J' (ω.floerGraphAlmostComplex J Ks Kt) (fun y ↦ (z, g y)) y ↔
+      IsJHolomorphicAt J' (J z) g y :=
+  AlmostComplexStructure.isJHolomorphicAt_prodMk_right_skewProd_iff
+
+end AlmostComplex
+
+end TauCeti.SymplecticForm
+
+namespace TauCeti.Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+
+/-- The perturbation `K = K_s ds + K_t dt` as a one-form on `(ℝ × ℝ) × V`: at `p = (z, x)` it
+sends `(ξ, v)` to `K_s(z, x) ξ₁ + K_t(z, x) ξ₂`. -/
+noncomputable def perturbationOneForm (Ks Kt : ℝ × ℝ → V → ℝ) (p : (ℝ × ℝ) × V) :
+    ((ℝ × ℝ) × V) [⋀^Fin 1]→L[ℝ] ℝ :=
+  ContinuousAlternatingMap.ofSubsingleton ℝ ((ℝ × ℝ) × V) ℝ (0 : Fin 1)
+    (Ks p.1 p.2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.fst ℝ (ℝ × ℝ) V) +
+      Kt p.1 p.2 • (ContinuousLinearMap.snd ℝ ℝ ℝ).comp (ContinuousLinearMap.fst ℝ (ℝ × ℝ) V))
+
+@[simp]
+theorem perturbationOneForm_apply (Ks Kt : ℝ × ℝ → V → ℝ) (p : (ℝ × ℝ) × V)
+    (ζ : Fin 1 → (ℝ × ℝ) × V) :
+    perturbationOneForm Ks Kt p ζ = Ks p.1 p.2 * (ζ 0).1.1 + Kt p.1 p.2 * (ζ 0).1.2 := by
+  simp [perturbationOneForm]
+
+variable {Ks Kt : ℝ × ℝ → V → ℝ} {p : (ℝ × ℝ) × V}
+
+/-- The perturbation one-form is the linear isometry `ContinuousAlternatingMap.ofSubsingletonLIE`
+applied to the family of covectors `K_s ds + K_t dt`. -/
+private theorem perturbationOneForm_eq :
+    perturbationOneForm Ks Kt = fun q ↦
+      ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := (ℝ × ℝ) × V) (F := ℝ) (0 : Fin 1)
+        (uncurry Ks q • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.fst ℝ (ℝ × ℝ) V) +
+          uncurry Kt q • (ContinuousLinearMap.snd ℝ ℝ ℝ).comp
+            (ContinuousLinearMap.fst ℝ (ℝ × ℝ) V)) := by
+  funext ⟨z, x⟩
+  simp [perturbationOneForm]
+
+/-- The perturbation one-form is as smooth as its coefficients. In particular, for `C²`
+coefficients `d(dK) = 0` by `extDeriv_extDeriv`. -/
+theorem contDiff_perturbationOneForm {n : WithTop ℕ∞} (hKs : ContDiff ℝ n (uncurry Ks))
+    (hKt : ContDiff ℝ n (uncurry Kt)) : ContDiff ℝ n (perturbationOneForm Ks Kt) := by
+  rw [perturbationOneForm_eq]
+  exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := (ℝ × ℝ) × V) (F := ℝ)
+    (0 : Fin 1)).toContinuousLinearEquiv.contDiff.comp
+      ((hKs.smul contDiff_const).add (hKt.smul contDiff_const))
+
+/-- The exterior derivative of the perturbation one-form, in terms of the derivatives of `K_s`
+and `K_t` on the product. -/
+theorem extDeriv_perturbationOneForm_apply (hKs : DifferentiableAt ℝ (uncurry Ks) p)
+    (hKt : DifferentiableAt ℝ (uncurry Kt) p) (ζ ζ' : (ℝ × ℝ) × V) :
+    extDeriv (perturbationOneForm Ks Kt) p ![ζ, ζ'] =
+      fderiv ℝ (uncurry Ks) p ζ * ζ'.1.1 + fderiv ℝ (uncurry Kt) p ζ * ζ'.1.2 -
+        (fderiv ℝ (uncurry Ks) p ζ' * ζ.1.1 + fderiv ℝ (uncurry Kt) p ζ' * ζ.1.2) := by
+  set L₁ := (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.fst ℝ (ℝ × ℝ) V)
+  set L₂ := (ContinuousLinearMap.snd ℝ ℝ ℝ).comp (ContinuousLinearMap.fst ℝ (ℝ × ℝ) V)
+  set e := ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := (ℝ × ℝ) × V) (F := ℝ)
+    (0 : Fin 1)
+  have hderiv : HasFDerivAt (perturbationOneForm Ks Kt)
+      ((e.toContinuousLinearEquiv : _ →L[ℝ] _).comp
+        ((fderiv ℝ (uncurry Ks) p).smulRight L₁ + (fderiv ℝ (uncurry Kt) p).smulRight L₂)) p := by
+    rw [perturbationOneForm_eq]
+    exact e.toContinuousLinearEquiv.hasFDerivAt.comp p
+      ((hKs.hasFDerivAt.smul_const L₁).add (hKt.hasFDerivAt.smul_const L₂))
+  rw [extDeriv_apply_pair, hderiv.fderiv]
+  simp [e, L₁, L₂]
+
+end TauCeti.Floer
+
+namespace TauCeti.SymplecticForm
+
+open Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+section TamingForm
+
+variable {Ks Kt : ℝ × ℝ → V → ℝ} {p : (ℝ × ℝ) × V}
+
+/-- **Gromov's taming form** `Ω_c = pr₂^* ω + dK + c ds ∧ dt` on `(ℝ × ℝ) × V`, evaluated at the
+point `p` on the tangent vectors `ζ` and `ζ'`. Here `dK` is the exterior derivative of the
+perturbation one-form `TauCeti.Floer.perturbationOneForm`. -/
+noncomputable def floerGraphForm (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (c : ℝ)
+    (p ζ ζ' : (ℝ × ℝ) × V) : ℝ :=
+  ω ζ.2 ζ'.2 + extDeriv (perturbationOneForm Ks Kt) p ![ζ, ζ'] +
+    c * (ζ.1.1 * ζ'.1.2 - ζ.1.2 * ζ'.1.1)
+
+omit [FiniteDimensional ℝ V] in
+theorem floerGraphForm_def (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (c : ℝ)
+    (p ζ ζ' : (ℝ × ℝ) × V) :
+    ω.floerGraphForm Ks Kt c p ζ ζ' =
+      ω ζ.2 ζ'.2 + extDeriv (perturbationOneForm Ks Kt) p ![ζ, ζ'] +
+        c * (ζ.1.1 * ζ'.1.2 - ζ.1.2 * ζ'.1.1) :=
+  (rfl)
+
+/-- The derivative of a perturbation component on the product splits into its domain derivative
+and the contraction of its Hamiltonian vector field. -/
+private theorem fderiv_uncurry_apply (ω : SymplecticForm V) {K : ℝ × ℝ → V → ℝ}
+    (hK : DifferentiableAt ℝ (uncurry K) p) (ζ : (ℝ × ℝ) × V) :
+    fderiv ℝ (uncurry K) p ζ =
+      ζ.1.1 * fderiv ℝ (fun w ↦ K w p.2) p.1 stdComplexLineReal +
+        ζ.1.2 * fderiv ℝ (fun w ↦ K w p.2) p.1 stdComplexLineImag +
+          ω (ω.hamiltonianVectorField (K p.1) p.2) ζ.2 := by
+  obtain ⟨z, x⟩ := p
+  obtain ⟨ξ, v⟩ := ζ
+  have hleft : fderiv ℝ (fun w ↦ K w x) z ξ = fderiv ℝ (uncurry K) (z, x) (ξ, 0) :=
+    congrArg (· ξ) (fderiv_slice_left hK)
+  have hright : fderiv ℝ (K z) x v = fderiv ℝ (uncurry K) (z, x) (0, v) :=
+    congrArg (· v) (fderiv_slice_right hK)
+  have hsplit : fderiv ℝ (uncurry K) (z, x) (ξ, v) =
+      fderiv ℝ (uncurry K) (z, x) (ξ, 0) + fderiv ℝ (uncurry K) (z, x) (0, v) := by
+    rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
+  have hcoord := (fderiv ℝ (fun w ↦ K w x) z : (ℝ × ℝ) →ₗ[ℝ] ℝ).apply_stdComplexLine ξ
+  simp only [ContinuousLinearMap.coe_coe, smul_eq_mul] at hcoord
+  rw [hsplit, ← hleft, ← hright, apply_hamiltonianVectorField, hcoord]
+
+/-- The algebra behind the curvature identity for Gromov's taming form, shared by its vector-space
+and manifold versions. For vectors `X_s`, `X_t` and the one-form `X(a, b) = a X_s + b X_t`, the
+value `ω(v - X ξ, v' - X ξ')` plus `c + R` times `(ds ∧ dt)(ξ, ξ')`, where
+`R = D_ts - D_st - ω(X_s, X_t)`, expands to `ω(v, v')` plus the coordinate expression of `dK` for
+`K = K_s ds + K_t dt` plus `c (ds ∧ dt)(ξ, ξ')`. Here `D_ss`, `D_st`, `D_ts`, `D_tt` stand for the
+domain derivatives `∂_s K_s`, `∂_t K_s`, `∂_s K_t`, `∂_t K_t`, and the target derivatives of `K_s`
+and `K_t` are the contractions `ω(X_s, ·)` and `ω(X_t, ·)`. -/
+theorem apply_sub_smul_add_smul_add_mul {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (ω : SymplecticForm W) (Xs Xt v v' : W) (ξ ξ' : ℝ × ℝ) (Dss Dst Dts Dtt c : ℝ) :
+    ω (v - (ξ.1 • Xs + ξ.2 • Xt)) (v' - (ξ'.1 • Xs + ξ'.2 • Xt)) +
+        (c + (Dts - Dst - ω Xs Xt)) * (ξ.1 * ξ'.2 - ξ.2 * ξ'.1) =
+      ω v v' +
+          ((ξ.1 * Dss + ξ.2 * Dst + ω Xs v) * ξ'.1 + (ξ.1 * Dts + ξ.2 * Dtt + ω Xt v) * ξ'.2 -
+            ((ξ'.1 * Dss + ξ'.2 * Dst + ω Xs v') * ξ.1 +
+              (ξ'.1 * Dts + ξ'.2 * Dtt + ω Xt v') * ξ.2)) +
+        c * (ξ.1 * ξ'.2 - ξ.2 * ξ'.1) := by
+  simp only [map_sub, map_add, map_smul, LinearMap.sub_apply, LinearMap.add_apply,
+    LinearMap.smul_apply, smul_eq_mul]
+  have hXs : ω.toBilinForm Xs Xs = 0 := ω.self_eq_zero Xs
+  have hXt : ω.toBilinForm Xt Xt = 0 := ω.self_eq_zero Xt
+  have hXts : ω.toBilinForm Xt Xs = -ω.toBilinForm Xs Xt := (ω.neg_eq Xs Xt).symm
+  have hv : ω.toBilinForm v Xs = -ω.toBilinForm Xs v := (ω.neg_eq Xs v).symm
+  have hv' : ω.toBilinForm v Xt = -ω.toBilinForm Xt v := (ω.neg_eq Xt v).symm
+  linear_combination -ξ'.1 * hv - ξ'.2 * hv' + ξ.1 * ξ'.1 * hXs + ξ.2 * ξ'.2 * hXt +
+    ξ.2 * ξ'.1 * hXts
+
+/-- **The curvature identity for Gromov's taming form.** At `p = (z, x)`, the form
+`Ω_c = pr₂^* ω + dK + c ds ∧ dt` evaluates to `ω(v - X_K ξ, v' - X_K ξ')` plus `c + R_K(z, x)`
+times `(ds ∧ dt)(ξ, ξ')`, on tangent vectors `(ξ, v)` and `(ξ', v')`. -/
+theorem floerGraphForm_eq (ω : SymplecticForm V) (hKs : DifferentiableAt ℝ (uncurry Ks) p)
+    (hKt : DifferentiableAt ℝ (uncurry Kt) p) (c : ℝ) (ζ ζ' : (ℝ × ℝ) × V) :
+    ω.floerGraphForm Ks Kt c p ζ ζ' =
+      ω (ζ.2 - ω.hamiltonianOneForm Ks Kt p.1 p.2 ζ.1)
+          (ζ'.2 - ω.hamiltonianOneForm Ks Kt p.1 p.2 ζ'.1) +
+        (c + ω.hamiltonianCurvature Ks Kt p.1 p.2) * (ζ.1.1 * ζ'.1.2 - ζ.1.2 * ζ'.1.1) := by
+  rw [floerGraphForm_def, extDeriv_perturbationOneForm_apply hKs hKt,
+    fderiv_uncurry_apply ω hKs, fderiv_uncurry_apply ω hKs, fderiv_uncurry_apply ω hKt,
+    fderiv_uncurry_apply ω hKt, hamiltonianCurvature_def, poissonBracket_def]
+  simp only [hamiltonianOneForm_apply]
+  exact (ω.apply_sub_smul_add_smul_add_mul _ _ _ _ _ _ _ _ _ _ _).symm
+
+/-- Where `c + R_K ≠ 0`, Gromov's taming form at `p = (z, x)` is the skew product of
+`(c + R_K(z, x)) ds ∧ dt` and `ω` along the Hamiltonian one-form `X_K(z, x)`. -/
+theorem floerGraphForm_eq_skewProd (ω : SymplecticForm V) (hKs : DifferentiableAt ℝ (uncurry Ks) p)
+    (hKt : DifferentiableAt ℝ (uncurry Kt) p) {c : ℝ}
+    (hc : c + ω.hamiltonianCurvature Ks Kt p.1 p.2 ≠ 0) (ζ ζ' : (ℝ × ℝ) × V) :
+    ω.floerGraphForm Ks Kt c p ζ ζ' =
+      ((stdSymplecticForm (V := ℝ)).rescale _ hc).skewProd ω
+        (ω.hamiltonianOneForm Ks Kt p.1 p.2 : ℝ × ℝ →ₗ[ℝ] V) ζ ζ' := by
+  rw [floerGraphForm_eq ω hKs hKt, skewProd_apply, rescale_apply, stdSymplecticForm_apply]
+  simp only [ContinuousLinearMap.coe_coe, Real.inner_apply]
+  ring
+
+/-- **Gromov's taming form tames Gromov's almost complex structure** at every point
+`p = (z, x)` where `ω` tames `J(z, x)` and `c + R_K(z, x) > 0`. -/
+theorem floerGraphForm_floerGraphAlmostComplex_pos (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} (hKs : DifferentiableAt ℝ (uncurry Ks) p)
+    (hKt : DifferentiableAt ℝ (uncurry Kt) p) (hJ : ω.Tames (J p.1 p.2)) {c : ℝ}
+    (hc : 0 < c + ω.hamiltonianCurvature Ks Kt p.1 p.2) {ζ : (ℝ × ℝ) × V} (hζ : ζ ≠ 0) :
+    0 < ω.floerGraphForm Ks Kt c p ζ (ω.floerGraphAlmostComplex J Ks Kt p ζ) := by
+  rw [floerGraphForm_eq_skewProd ω hKs hKt hc.ne', floerGraphAlmostComplex_def]
+  exact skewProd_tames (stdSymplecticForm_tames_product.rescale_of_pos hc) hJ _ ζ hζ
+
+/-- **The energy of a graph.** On the coordinate derivatives `∂_s Γ_u = (1, ∂_s u)` and
+`∂_t Γ_u = (i, ∂_t u)` of the graph `Γ_u(w) = (w, u w)`, Gromov's taming form evaluates to the Floer
+energy density of `u` plus `c + R_K(z, u z)`. -/
+theorem floerGraphForm_graph (ω : SymplecticForm V) {u : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hKs : DifferentiableAt ℝ (uncurry Ks) (z, u z))
+    (hKt : DifferentiableAt ℝ (uncurry Kt) (z, u z)) (c : ℝ) :
+    ω.floerGraphForm Ks Kt c (z, u z) (stdComplexLineReal, fderiv ℝ u z stdComplexLineReal)
+        (stdComplexLineImag, fderiv ℝ u z stdComplexLineImag) =
+      ω.floerEnergyDensity Ks Kt u z + (c + ω.hamiltonianCurvature Ks Kt z (u z)) := by
+  rw [floerGraphForm_eq ω hKs hKt, floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
+    perturbedFDeriv_apply_stdComplexLineImag]
+  simp [stdComplexLineReal, stdComplexLineImag]
+
+end TamingForm
+
+end TauCeti.SymplecticForm
+
+namespace TauCeti.Floer
+
+open Complex ContinuousLinearMap Set
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+section GraphStructure
+
+variable (J : ℂ × V → V →L[ℝ] V) (X : ℂ × V → ℂ →L[ℝ] V)
+
+/-- **Gromov's structure in Euclidean graph coordinates.** For a domain-dependent structure
+`J(z, x)` on `V` and a Hamiltonian one-form `X(z, x) : ℂ →L[ℝ] V`, this is the matrix-valued
+structure on `WithLp 2 (ℂ × V)` sending `(ξ, v)` at `p = (z, x)` to
+`(i ξ, J(z, x)(v - X(z, x) ξ) + X(z, x)(i ξ))`. -/
+noncomputable def graphStructure (p : WithLp 2 (ℂ × V)) :
+    WithLp 2 (ℂ × V) →L[ℝ] WithLp 2 (ℂ × V) :=
+  (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ V).symm.toContinuousLinearMap ∘L
+    (inl ℝ ℂ V ∘L ContinuousLinearMap.mul ℝ ℂ I ∘L fst ℝ ℂ V +
+      inr ℝ ℂ V ∘L (J p.ofLp ∘L (snd ℝ ℂ V - X p.ofLp ∘L fst ℝ ℂ V) +
+        X p.ofLp ∘L ContinuousLinearMap.mul ℝ ℂ I ∘L fst ℝ ℂ V)) ∘L
+    (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ V).toContinuousLinearMap
+
+@[simp]
+theorem graphStructure_apply (p ζ : WithLp 2 (ℂ × V)) :
+    graphStructure J X p ζ = WithLp.toLp 2 (I * ζ.fst,
+      J p.ofLp (ζ.snd - X p.ofLp ζ.fst) + X p.ofLp (I * ζ.fst)) := by
+  simp [graphStructure, WithLp.ext_iff]
+
+/-- The arbitrary-one-form Euclidean graph operator is the existing algebraic skew product,
+read through the canonical `WithLp` product coordinates. A continuous-linear representation of
+the target structure at the point suffices, without a finite-dimensionality assumption. -/
+theorem graphStructure_toLp_eq_skewProd (p ζ : ℂ × V) (K : AlmostComplexStructure V)
+    (hK : ∀ v, J p v = K v) :
+    graphStructure J X (WithLp.toLp 2 p) (WithLp.toLp 2 ζ) =
+      WithLp.toLp 2 ((AlmostComplexStructure.ofComplexModule ℂ).skewProd K
+        (X p).toLinearMap ζ) := by
+  simp [AlmostComplexStructure.ofComplexModule_apply, hK]
+
+variable {J X}
+
+/-- Gromov's structure squares to `-1` wherever `J` does. -/
+theorem graphStructure_graphStructure {p : WithLp 2 (ℂ × V)}
+    (hJ : ∀ v, J p.ofLp (J p.ofLp v) = -v) (ζ : WithLp 2 (ℂ × V)) :
+    graphStructure J X p (graphStructure J X p ζ) = -ζ := by
+  rw [WithLp.ext_iff, Prod.ext_iff]
+  simp [← mul_assoc, hJ, map_neg]
+
+/-- Gromov's structure is as regular as the almost complex structure and the Hamiltonian
+one-form. -/
+theorem contDiffOn_graphStructure {n : WithTop ℕ∞} {W : Set (ℂ × V)}
+    (hJ : ContDiffOn ℝ n J W) (hX : ContDiffOn ℝ n X W) :
+    ContDiffOn ℝ n (graphStructure J X) (WithLp.ofLp ⁻¹' W) := by
+  have hJ' : ContDiffOn ℝ n (fun p : WithLp 2 (ℂ × V) ↦ J p.ofLp) (WithLp.ofLp ⁻¹' W) :=
+    hJ.comp WithLp.contDiff_ofLp.contDiffOn (mapsTo_preimage _ _)
+  have hX' : ContDiffOn ℝ n (fun p : WithLp 2 (ℂ × V) ↦ X p.ofLp) (WithLp.ofLp ⁻¹' W) :=
+    hX.comp WithLp.contDiff_ofLp.contDiffOn (mapsTo_preimage _ _)
+  exact contDiffOn_const.clm_comp ((contDiffOn_const.add (contDiffOn_const.clm_comp
+    ((hJ'.clm_comp (contDiffOn_const.sub (hX'.clm_comp contDiffOn_const))).add
+      (hX'.clm_comp contDiffOn_const)))).clm_comp contDiffOn_const)
+
+/-- Gromov's structure for data independent of `re z` is invariant under the translations along
+`(1, 0)`. -/
+theorem graphStructure_periodic (hJ : ∀ x (τ : ℝ), Periodic (fun z ↦ J (z, x)) τ)
+    (hX : ∀ x (τ : ℝ), Periodic (fun z ↦ X (z, x)) τ) (τ : ℝ) :
+    Periodic (graphStructure J X) (τ • WithLp.toLp 2 ((1 : ℂ), (0 : V))) := fun p ↦ by
+  have hp : (p + τ • WithLp.toLp 2 ((1 : ℂ), (0 : V))).ofLp = (p.ofLp.1 + τ, p.ofLp.2) := by
+    ext <;> simp
+  ext1 ζ
+  simp only [graphStructure_apply, hp, hJ p.ofLp.2 τ p.ofLp.1, hX p.ofLp.2 τ p.ofLp.1]
+
+end GraphStructure
+
+section EuclideanGraph
+
+variable {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {u : ℂ → V} {y : ℂ}
+
+/-- **Gromov's graph construction in Euclidean coordinates.** A map `u` differentiable at `y`
+solves the inhomogeneous equation `∂ₜu - X(y, u) i = J(y, u)(∂ₛu - X(y, u) 1)` at `y` exactly when
+its graph solves `∂ₜU = J'(U) ∂ₛU` there. -/
+theorem fderiv_toLp_prodMk_I_eq_graphStructure_iff (hu : DifferentiableAt ℝ u y) :
+    fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y I =
+        graphStructure J X (WithLp.toLp 2 (y, u y))
+          (fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, u w)) y 1) ↔
+      fderiv ℝ u y I - X (y, u y) I = J (y, u y) (fderiv ℝ u y 1 - X (y, u y) 1) := by
+  simp only [fderiv_toLp_prodMk_apply differentiableAt_fun_id hu, fderiv_fun_id,
+    graphStructure_apply, WithLp.ext_iff, Prod.ext_iff, WithLp.toLp_fst, WithLp.toLp_snd,
+    ContinuousLinearMap.id_apply, mul_one, true_and]
+  exact sub_eq_iff_eq_add.symm
+
+/-- **The rescaled graph.** For `μ ≠ 0`, a map `u` differentiable at `y` solves the inhomogeneous
+equation `∂ₜu - X(y, u) i = J(y, u)(∂ₛu - X(y, u) 1)` at `y` exactly when its graph
+`w ↦ (μ w, u w)`, with the domain coordinate rescaled by `μ`, solves the Cauchy–Riemann equation of
+Gromov's structure for the rescaled data `J(μ⁻¹ ζ, x)` and `μ⁻¹ X(μ⁻¹ ζ, x)` there. -/
+theorem fderiv_toLp_smul_prodMk_I_eq_graphStructure_iff {μ : ℝ} (hμ : μ ≠ 0)
+    (hu : DifferentiableAt ℝ u y) :
+    fderiv ℝ (fun w ↦ WithLp.toLp 2 (μ • w, u w)) y I =
+        graphStructure (fun q ↦ J (μ⁻¹ • q.1, q.2)) (fun q ↦ μ⁻¹ • X (μ⁻¹ • q.1, q.2))
+          (WithLp.toLp 2 (μ • y, u y)) (fderiv ℝ (fun w ↦ WithLp.toLp 2 (μ • w, u w)) y 1) ↔
+      fderiv ℝ u y I - X (y, u y) I = J (y, u y) (fderiv ℝ u y 1 - X (y, u y) 1) := by
+  have hfd : HasFDerivAt (fun w : ℂ ↦ μ • w) (μ • ContinuousLinearMap.id ℝ ℂ) y :=
+    (hasFDerivAt_id y).const_smul μ
+  have hI : I * (μ • (1 : ℂ)) = μ • I := by simp [Complex.real_smul, mul_comm]
+  simp only [fderiv_toLp_prodMk_apply hfd.differentiableAt hu, hfd.fderiv, graphStructure_apply,
+    WithLp.ext_iff, Prod.ext_iff, WithLp.toLp_fst, WithLp.toLp_snd, inv_smul_smul₀ hμ,
+    FunLike.coe_smul, ContinuousLinearMap.coe_id', Pi.smul_apply, id_eq, hI, map_smul,
+    smul_inv_smul₀ hμ, true_and]
+  exact sub_eq_iff_eq_add.symm
+
+end EuclideanGraph
+
+section FloerData
+
+variable [FiniteDimensional ℝ V]
+
+/-- **Gromov's structure in Euclidean coordinates is `floerGraphAlmostComplex`.** Read Floer
+data `ω`, `J`, `K_s`, `K_t` on `ℝ × ℝ` in the complex coordinate `Complex.equivRealProd`, so that
+the Hamiltonian one-form becomes `X(z, x) ξ = (re ξ) X_{K_s} + (im ξ) X_{K_t}`. Then
+`graphStructure J X` is `TauCeti.SymplecticForm.floerGraphAlmostComplex` in these coordinates. -/
+theorem graphStructure_toLp_eq_floerGraphAlmostComplex (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → AlmostComplexStructure V) (Ks Kt : ℝ × ℝ → V → ℝ) (z ξ : ℂ) (x v : V) :
+    graphStructure
+        (fun q ↦ LinearMap.toContinuousLinearMap (J (equivRealProd q.1) q.2).toLinearMap)
+        (fun q ↦ ω.hamiltonianOneForm Ks Kt (equivRealProd q.1) q.2 ∘L
+          (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ))
+        (WithLp.toLp 2 (z, x)) (WithLp.toLp 2 (ξ, v)) =
+      WithLp.toLp 2 (equivRealProd.symm
+          (ω.floerGraphAlmostComplex J Ks Kt (equivRealProd z, x) (equivRealProd ξ, v)).1,
+        (ω.floerGraphAlmostComplex J Ks Kt (equivRealProd z, x) (equivRealProd ξ, v)).2) := by
+  rw [graphStructure_toLp_eq_skewProd _ _ (z, x) (ξ, v) (J (equivRealProd z) x)
+    (fun _ ↦ rfl)]
+  simp [Complex.ext_iff]
+
+end FloerData
+
+end TauCeti.Floer
+
+namespace TauCeti.Floer
+
+open Complex
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {ω : SymplecticForm V}
+  {J₀ : AlmostComplexStructure V}
+
+/-- **The split form tames Gromov's structure when the Hamiltonian term is small.** Let the inner
+product of `V` be the metric `ω(·, J₀ ·)`, let `J(p)` be tamed by `ω` with constant `c`, with
+`‖J(p)‖ ≤ B`, and let `‖X(p)‖ ≤ η`, where `η ≤ 1/2` and `2 (η (B + 1))² ≤ c`. Then the split form
+`σ ⊕ ω` of the standard area form `σ` on `ℂ` and `ω` tames `graphStructure J X` at `p` with
+constant `min 1 c / 4`. -/
+theorem mul_norm_sq_le_prodL2_graphStructure (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
+    {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {p : WithLp 2 (ℂ × V)} {c B η : ℝ}
+    (hc : 0 < c) (hη : 0 ≤ η) (hη2 : η ≤ 1 / 2) (hηB : 2 * (η * (B + 1)) ^ 2 ≤ c)
+    (htame : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J p.ofLp v)) (hJ : ‖J p.ofLp‖ ≤ B)
+    (hX : ‖X p.ofLp‖ ≤ η) (ζ : WithLp 2 (ℂ × V)) :
+    min 1 c / 4 * ‖ζ‖ ^ 2 ≤ stdComplexSymplecticForm.prodL2 ω ζ (graphStructure J X p ζ) := by
+  obtain ⟨a, ha⟩ : ∃ a, ζ.snd = a + X p.ofLp ζ.fst := ⟨_, (sub_add_cancel _ _).symm⟩
+  -- Expand the form: `σ(ξ, i ξ) + ω(a, J a) + ω(X ξ, J a) + ω(v, X (i ξ))` with `v = a + X ξ`.
+  have hexp : stdComplexSymplecticForm.prodL2 ω ζ (graphStructure J X p ζ) =
+      ‖ζ.fst‖ ^ 2 + ω a (J p.ofLp a) + ω (X p.ofLp ζ.fst) (J p.ofLp a) +
+        ω ζ.snd (X p.ofLp (I * ζ.fst)) := by
+    rw [SymplecticForm.prodL2_apply, graphStructure_apply]
+    simp only [WithLp.toLp_fst, WithLp.toLp_snd, ha,
+      add_sub_cancel_right, stdComplexSymplecticForm_apply, map_add, LinearMap.add_apply,
+      mul_re, mul_im, I_re, I_im, Complex.sq_norm, Complex.normSq_apply]
+    ring
+  have h1 : c * ‖a‖ ^ 2 ≤ ω a (J p.ofLp a) := htame a
+  have h2 : -(η * ‖ζ.fst‖ * (B * ‖a‖)) ≤ ω (X p.ofLp ζ.fst) (J p.ofLp a) := by
+    refine neg_le_of_abs_le ((SymplecticForm.abs_apply_le_norm_mul_norm hg _ _).trans ?_)
+    gcongr
+    · exact (X p.ofLp).le_of_opNorm_le hX _
+    · exact (J p.ofLp).le_of_opNorm_le hJ a
+  have h3 : -(‖ζ.snd‖ * (η * ‖ζ.fst‖)) ≤ ω ζ.snd (X p.ofLp (I * ζ.fst)) := by
+    refine neg_le_of_abs_le ((SymplecticForm.abs_apply_le_norm_mul_norm hg _ _).trans ?_)
+    gcongr
+    simpa using (X p.ofLp).le_of_opNorm_le hX (I * ζ.fst)
+  have hn : ‖ζ.snd‖ ≤ ‖a‖ + η * ‖ζ.fst‖ := by
+    rw [ha]
+    exact (norm_add_le _ _).trans (by gcongr; exact (X p.ofLp).le_of_opNorm_le hX _)
+  have hζ : ‖ζ‖ ^ 2 = ‖ζ.fst‖ ^ 2 + ‖ζ.snd‖ ^ 2 := WithLp.prod_norm_sq_eq_of_L2 ζ
+  -- The cross terms are absorbed: `η (B + 1) ‖ξ‖ ‖a‖ ≤ c ‖a‖² / 2 + ‖ξ‖² / 4`.
+  have hη2' : η ^ 2 * ‖ζ.fst‖ ^ 2 ≤ ‖ζ.fst‖ ^ 2 / 4 := by
+    have : η ^ 2 ≤ 1 / 4 := by nlinarith
+    nlinarith [mul_le_mul_of_nonneg_right this (sq_nonneg ‖ζ.fst‖)]
+  have hcross : η * (B + 1) * ‖ζ.fst‖ * ‖a‖ ≤ c / 2 * ‖a‖ ^ 2 + ‖ζ.fst‖ ^ 2 / 4 := by
+    have hk : (η * (B + 1)) ^ 2 * ‖ζ.fst‖ ^ 2 ≤ c / 2 * ‖ζ.fst‖ ^ 2 := by
+      nlinarith [sq_nonneg ‖ζ.fst‖]
+    have : 2 * c * (η * (B + 1) * ‖ζ.fst‖ * ‖a‖) ≤
+        2 * c * (c / 2 * ‖a‖ ^ 2 + ‖ζ.fst‖ ^ 2 / 4) := by
+      nlinarith [sq_nonneg (c * ‖a‖ - η * (B + 1) * ‖ζ.fst‖)]
+    exact le_of_mul_le_mul_left this (by positivity)
+  have hlow : ‖ζ.fst‖ ^ 2 / 2 + c / 2 * ‖a‖ ^ 2 ≤
+      stdComplexSymplecticForm.prodL2 ω ζ (graphStructure J X p ζ) := by
+    rw [hexp]
+    have hnx : ‖ζ.snd‖ * (η * ‖ζ.fst‖) ≤ (‖a‖ + η * ‖ζ.fst‖) * (η * ‖ζ.fst‖) := by gcongr
+    nlinarith [norm_nonneg ζ.fst, norm_nonneg a, (norm_nonneg _).trans hJ]
+  have hm1 : min 1 c ≤ 1 := min_le_left _ _
+  have hmc : min 1 c ≤ c := min_le_right _ _
+  have hm0 : 0 < min 1 c := lt_min one_pos hc
+  have hn2 : ‖ζ.snd‖ ^ 2 ≤ 2 * ‖a‖ ^ 2 + ‖ζ.fst‖ ^ 2 / 2 := by
+    have h := pow_le_pow_left₀ (norm_nonneg _) hn 2
+    nlinarith [sq_nonneg (‖a‖ - η * ‖ζ.fst‖)]
+  rw [hζ]
+  nlinarith [norm_nonneg ζ.fst, norm_nonneg a]
+
+end TauCeti.Floer

@@ -214,10 +214,10 @@ private theorem toMatrix_apply_eq_sum_homogeneousComponent [NeZero n]
   refine eval_eq_sum_homogeneousComponent_of_eval_smul _ hζ a _ fun k => ?_
   -- The scalar matrix `ζ ^ k` has determinant one.
   let t : SpecialLinearGroup (Fin n) ℂ :=
-    ⟨_root_.Matrix.GeneralLinearGroup.scalar (Fin n) (u ^ k), by
+    .mk (_root_.Matrix.GeneralLinearGroup.scalar (Fin n) (u ^ k)) (by
       rw [← _root_.Matrix.GeneralLinearGroup.val_det_apply,
         _root_.Matrix.GeneralLinearGroup.det_scalar, Fintype.card_fin, ← pow_mul, mul_comm,
-        pow_mul, hu.pow_eq_one, one_pow, Units.val_one]⟩
+        pow_mul, hu.pow_eq_one, one_pow, Units.val_one])
   have ht : SpecialLinearGroup.toGL t = _root_.Matrix.GeneralLinearGroup.scalar (Fin n) (u ^ k) :=
     Units.ext rfl
   have htm : (t : Matrix (Fin n) (Fin n) ℂ) = Matrix.scalar (Fin n) (ζ ^ k) := by

@@ -85,7 +85,7 @@ theorem ncard_inversions_wordProd_le_length (l : List b.support) :
   induction l using List.reverseRecOn with
   | nil => simp
   | append_singleton l i ih =>
-    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b l) b i.2
+    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b l) b i.property
     rw [wordProd_append, wordProd_cons, wordProd_nil, mul_one]
     simp only [List.length_append, List.length_cons, List.length_nil]
     omega
@@ -97,7 +97,7 @@ theorem ncard_inversions_wordProd_modEq_length (l : List b.support) :
   induction l using List.reverseRecOn with
   | nil => simp [Nat.ModEq]
   | append_singleton l i ih =>
-    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b l) b i.2
+    have hstep := ncard_inversions_mul_ofIdx P (wordProd P b l) b i.property
     rw [wordProd_append, wordProd_cons, wordProd_nil, mul_one]
     simp only [Nat.ModEq, List.length_append, List.length_cons, List.length_nil] at ih ⊢
     omega
@@ -178,8 +178,9 @@ theorem ncard_inversions_mul_ofIdx_lt_of_mem (w : P.weylGroup) {i : ι}
     (inversions P b (w * RootPairing.weylGroup.ofIdx P i)).ncard < (inversions P b w).ncard := by
   obtain ⟨hipos, hineg⟩ := (mem_inversions P b w i).mp hi
   obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b w
-  obtain ⟨j, hj, hj'⟩ :=
-    exists_wordProd_eraseIdx_eq_mul_ofIdx P b hipos l (by rw [hl]; exact hineg)
+  obtain ⟨j, hj, -, hj'⟩ :=
+    P.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx b hipos l
+      (by rw [hl]; exact hineg)
   have hle := ncard_inversions_wordProd_le_length P b (l.eraseIdx j)
   rw [hj', hl] at hle
   have hlen' := List.length_eraseIdx_add_one hj

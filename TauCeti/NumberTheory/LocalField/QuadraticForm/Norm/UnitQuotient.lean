@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.OddDefect
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # The quadratic norm quotient is detected on units

@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
 public import TauCeti.Analysis.Normed.Affine.Interpolation
-import Mathlib.Analysis.Convex.Topology
 import Mathlib.Data.Set.UnionLift
 import Mathlib.Topology.LocallyFinite
+import TauCeti.Analysis.Convex.SimplicialComplex.Basic
 
 /-!
 # Interpolation of vertex values on geometric simplicial complexes
@@ -54,8 +54,7 @@ theorem eqOn_of_simplexwise_affine
   have hAB : EqOn A B (s : Set E) := by
     intro v hv
     have hvs := subset_convexHull ℝ (s : Set E) hv
-    have hvK : v ∈ K.vertices :=
-      K.down_closed hs (Finset.singleton_subset_iff.2 hv) (Finset.singleton_nonempty v)
+    have hvK : v ∈ K.vertices := mem_vertices_of_mem_faces hs hv
     exact (hA hvs).symm.trans ((hfg hvK).trans (hB hvs))
   exact (hA hxs).trans ((AffineMap.eqOn_affineSpan hAB
     (convexHull_subset_affineSpan (s : Set E) hxs)).trans (hB hxs).symm)
@@ -78,14 +77,14 @@ theorem exists_continuousOn_simplexwise_affine (K : SimplicialComplex ℝ E)
       ∀ s ∈ K.faces, ∃ A : E →ᴬ[ℝ] F,
         EqOn A h (s : Set E) ∧ EqOn f A (convexHull ℝ (s : Set E)) := by
   classical
-  choose A hA using fun s : K.faces => (K.indep s.2).exists_continuousAffineMap_eqOn h
+  choose A hA using fun s : K.faces => (K.indep s.property).exists_continuousAffineMap_eqOn h
   have hagree (s t : K.faces) (x : E)
       (hxs : x ∈ convexHull ℝ (s : Set E)) (hxt : x ∈ convexHull ℝ (t : Set E)) :
       A s x = A t x := by
     have heq : EqOn (A s).toAffineMap (A t).toAffineMap ((s : Set E) ∩ t) :=
       fun v hv => (hA s hv.1).trans (hA t hv.2).symm
     exact AffineMap.eqOn_affineSpan heq
-      (convexHull_subset_affineSpan _ (K.inter_subset_convexHull s.2 t.2 ⟨hxs, hxt⟩))
+      (convexHull_subset_affineSpan _ (K.inter_subset_convexHull s.property t.property ⟨hxs, hxt⟩))
   let H : K.space → F := iUnionLift
     (fun s : K.faces => convexHull ℝ (s : Set E)) (fun s x => A s x)
     (fun s t x hs ht => hagree s t x hs ht) K.space (by
@@ -95,7 +94,7 @@ theorem exists_continuousOn_simplexwise_affine (K : SimplicialComplex ℝ E)
   let f : E → F := fun x => if hx : x ∈ K.space then H ⟨x, hx⟩ else 0
   have hf (s : K.faces) : EqOn f (A s) (convexHull ℝ (s : Set E)) := by
     intro x hx
-    have hxK := K.convexHull_subset_space s.2 hx
+    have hxK := K.convexHull_subset_space s.property hx
     simp only [f, hxK, ↓reduceDIte]
     exact iUnionLift_of_mem _ hx
   refine ⟨f, ?_, ?_, fun s hs => ⟨A ⟨s, hs⟩, hA ⟨s, hs⟩, hf ⟨s, hs⟩⟩⟩
@@ -104,7 +103,7 @@ theorem exists_continuousOn_simplexwise_affine (K : SimplicialComplex ℝ E)
       simp only [mem_space_iff, mem_iUnion, Subtype.exists, exists_prop]
     rw [hspace]
     exact hK.continuousOn_iUnion
-      (fun s => (s.1.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).isClosed)
+      (fun s => (s.val.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).isClosed)
       (fun s => (A s).continuous.continuousOn.congr (hf s))
   · intro v hv
     have hvs : v ∈ convexHull ℝ (({v} : Finset E) : Set E) := by simp

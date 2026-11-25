@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
-public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import Mathlib.Data.Set.Card
 
 /-!
@@ -30,6 +29,8 @@ minimum cut values, such as cut trees, apply to the deletion-based invariant.
   minimum unit cut value, viewed in `ℕ∞`.
 * `Graph.edgeReachability_eq_pairMinimumValue_pairCapacity`: aggregating parallel unit edges by
   their unordered endpoint pairs preserves this value.
+* `SimpleGraph.edgeReachability_eq_pairMinimumValue_unitCutCapacity`: the native simple-graph
+  specialization.
 
 ## References
 
@@ -127,6 +128,18 @@ theorem edgeReachability_eq_pairMinimumValue [Finite V(G)] [Fintype E(G)] {s t :
   rw [← isEdgeReachable_iff_le_edgeReachability,
     isEdgeReachable_iff_le_pairMinimumValue hst, Nat.cast_le]
 
+/-- Local edge reachability is the pair minimum value extended to `ℕ∞`, with value `⊤` on
+the diagonal. -/
+theorem edgeReachability_eq_iInf_pairMinimumValue (G : Graph α β)
+    [Finite V(G)] [Fintype E(G)] (s t : V(G)) :
+    G.edgeReachability s t =
+      ⨅ (_ : s ≠ t),
+        ((TerminalCut.pairMinimumValue (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) s t : ℕ) : ℕ∞) := by
+  by_cases hst : s = t
+  · subst t
+    simp [G.edgeReachability_self s.property]
+  · simp [hst, G.edgeReachability_eq_pairMinimumValue hst]
+
 /-- Aggregating the unit capacities of parallel edges by their unordered pairs does not change
 the minimum cut value computing local edge reachability. The aggregated capacity of a pair is its
 edge multiplicity, rather than merely the adjacency indicator. -/
@@ -135,9 +148,51 @@ theorem edgeReachability_eq_pairMinimumValue_pairCapacity [Fintype V(G)] [Fintyp
     G.edgeReachability s t =
       ((TerminalCut.pairMinimumValue
         (pairCutCapacity (G.pairCapacity fun _ ↦ (1 : ℕ))) s t : ℕ) : ℕ∞) := by
-  have hcut : pairCutCapacity (G.pairCapacity fun _ ↦ (1 : ℕ)) =
-      G.edgeCutCapacity fun _ ↦ (1 : ℕ) :=
-    funext fun S ↦ G.pairCutCapacity_pairCapacity (fun _ ↦ (1 : ℕ)) S
-  rw [hcut, edgeReachability_eq_pairMinimumValue hst]
+  rw [G.pairCutCapacity_pairCapacity (fun _ ↦ (1 : ℕ)),
+    edgeReachability_eq_pairMinimumValue hst]
 
 end Graph
+
+open scoped Graph
+
+namespace SimpleGraph
+
+variable {V : Type*}
+
+/-- For distinct vertices, simple-graph edge reachability is the minimum unit cut value, viewed
+in `ℕ∞`. -/
+theorem edgeReachability_eq_pairMinimumValue_unitCutCapacity [Finite V] (G : SimpleGraph V)
+    {s t : V} (hst : s ≠ t) :
+    G.edgeReachability s t =
+      ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) := by
+  let _ := Fintype.ofFinite V
+  let e := G.ofSimpleGraphVertexEquiv
+  have hmap (S : Finset V) :
+      S.map e.toEmbedding = G.toOfSimpleGraphFinset S := by
+    exact (G.toOfSimpleGraphFinset_eq_map S).symm
+  have he (S : Finset V) :
+      (Graph.ofSimpleGraph G).edgeCutCapacity (fun _ ↦ (1 : ℕ))
+          (S.map e.toEmbedding) = G.unitCutCapacity S := by
+    rw [hmap]
+    exact (G.unitCutCapacity_eq_edgeCutCapacity S).symm
+  have hst' : e s ≠ e t := e.injective.ne hst
+  have hreach :=
+    (Graph.ofSimpleGraph G).edgeReachability_eq_pairMinimumValue (s := e s) (t := e t) hst'
+  have hmin := TerminalCut.pairMinimumValue_map G.unitCutCapacity e
+    ((Graph.ofSimpleGraph G).edgeCutCapacity fun _ ↦ (1 : ℕ)) he s t
+  simp only [e, Graph.edgeReachability_ofSimpleGraph,
+    G.ofSimpleGraphVertexEquiv_apply_val] at hreach
+  exact hreach.trans (congrArg (↑· : ℕ → ℕ∞) hmin)
+
+/-- Simple-graph edge reachability is the unit pair minimum value extended to `ℕ∞`, with
+value `⊤` on the diagonal. -/
+theorem edgeReachability_eq_iInf_pairMinimumValue_unitCutCapacity [Finite V]
+    (G : SimpleGraph V) (s t : V) :
+    G.edgeReachability s t =
+      ⨅ (_ : s ≠ t), ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) := by
+  by_cases hst : s = t
+  · subst t
+    simp
+  · simp [hst, G.edgeReachability_eq_pairMinimumValue_unitCutCapacity hst]
+
+end SimpleGraph

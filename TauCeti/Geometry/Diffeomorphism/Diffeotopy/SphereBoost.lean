@@ -181,7 +181,7 @@ theorem eventually_forall_lt_im_of_circleBoostDiffeotopy_final_notMem {z₀ : Ci
     ∀ᶠ a in atTop, ∀ w : Circle, (circleBoostDiffeotopy (m := m) (-a)).final w ∉ U →
       r < (w : ℂ).im := by
   obtain ⟨V, hVU, hVo, hz₀V⟩ := _root_.mem_nhds_iff.1 hU
-  have h := (hVo.isClosed_compl.isCompact.image continuous_subtype_val
+  have h := (hVo.isClosed_compl.isCompact.image continuous_subtypeVal
     ).eventually_forall_lt_inner_sphereBoost (v := Complex.I) (by simp)
       (by rintro _ ⟨z, -, rfl⟩; exact Circle.norm_coe z) (fun ⟨z, hz, hz'⟩ =>
         hz ((Subtype.ext (hz'.trans hz₀.symm) : z = z₀) ▸ hz₀V)) hr

@@ -48,7 +48,7 @@ def comp {p q j : ℤ}
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) q)
     (hpq : p + q = j) :
     dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := ℳP) j :=
-  ⟨dgRightModuleCochains.comp g.1 f.1 hpq, by
+  ⟨dgRightModuleCochains.comp g.val f.val hpq, by
     subst j
     apply mem_iff.mpr
     intro r a ha x
@@ -62,7 +62,7 @@ theorem comp_val {p q j : ℤ}
     (g : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := 𝒩) (𝒩 := ℳP) p)
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) q)
     (hpq : p + q = j) :
-    (comp g f hpq).1 = dgRightModuleCochains.comp g.1 f.1 hpq := (rfl)
+    (comp g f hpq).val = dgRightModuleCochains.comp g.val f.val hpq := (rfl)
 
 /-- Bimodule cochain composition is pointwise composition. -/
 @[simp↓]
@@ -70,7 +70,7 @@ theorem comp_apply {p q j : ℤ}
     (g : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := 𝒩) (𝒩 := ℳP) p)
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) q)
     (hpq : p + q = j) (x : M) :
-    (comp g f hpq).1.1 x = g.1.1 (f.1.1 x) := by
+    (comp g f hpq).val.val x = g.val.val (f.val.val x) := by
   rw [comp_val, dgRightModuleCochains.comp_apply]
 
 @[simp]
@@ -129,11 +129,11 @@ def id : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := ℳ) 0
 
 @[simp]
 theorem id_val :
-    (id (B := B) (𝒜 := 𝒜) (ℳ := ℳ)).1 = dgRightModuleCochains.id := (rfl)
+    (id (B := B) (𝒜 := 𝒜) (ℳ := ℳ)).val = dgRightModuleCochains.id := (rfl)
 
 /-- The degree-zero identity bimodule cochain acts as the identity map. -/
 @[simp↓]
-theorem id_apply (x : M) : (id (B := B) (𝒜 := 𝒜) (ℳ := ℳ)).1.1 x = x := by
+theorem id_apply (x : M) : (id (B := B) (𝒜 := 𝒜) (ℳ := ℳ)).val.val x = x := by
   rw [id_val, dgRightModuleCochains.id_apply]
 
 /-- Composing on the right with the identity bimodule cochain leaves the cochain unchanged. -/
@@ -190,7 +190,7 @@ theorem differential_comp {p q : ℤ}
   apply Subtype.ext
   simpa only [differential_val, comp_val, Submodule.coe_add, Submodule.coe_smul_of_tower] using
     dgRightModuleCochains.differential_comp
-      (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) (hP := hP.isDGRightModule) g.1 f.1
+      (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) (hP := hP.isDGRightModule) g.val f.val
 
 /-- The identity bimodule cochain is closed. -/
 @[simp]

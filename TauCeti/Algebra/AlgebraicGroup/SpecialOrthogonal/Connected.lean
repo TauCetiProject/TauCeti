@@ -161,7 +161,7 @@ private theorem rightTranslationAlgHom_eq_self_of_char_two
       (charTwoMatrixPath b h2)
   let eval (c : K) : Polynomial K →ₐ[K] K :=
     Polynomial.aevalTower (AlgHom.id K K) c
-  have hM := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp M.2
+  have hM := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp M.property
   have hM00 : M.val 0 0 = 1 + b := by
     have hab : M.val 0 0 + b = 1 := by
       apply CharTwo.sq_inj.mp
@@ -318,7 +318,8 @@ private theorem rightTranslationAlgHom_eq_self_of_invertibleTwo
   have hP : P = ⊤ := by
     refine eq_top_iff.mpr fun x _ => ?_
     obtain ⟨y, hy, hyx⟩ :=
-      hle ((closure_reflection_mul_eq_matrixSpecialOrthogonalGroup (n := Fin n) (K := K)).ge x.2)
+      hle ((closure_reflection_mul_eq_matrixSpecialOrthogonalGroup (n := Fin n) (K
+          := K)).ge x.property)
     exact Subtype.ext hyx ▸ hy
   have hg : E g ∈ P := by
     rw [hP]

@@ -37,7 +37,7 @@ theorem isStronglyConnected_iff_exists_toSubnetwork_le (S : N.Subnetwork) :
     obtain ⟨p⟩ := h ⟨x, hx⟩ ⟨y, hy⟩
     exact ⟨S.mapPath p, toSubnetwork_mapPath_le S p⟩
   · intro h x y
-    obtain ⟨p, hp⟩ := h x.1 x.2 y.1 y.2
+    obtain ⟨p, hp⟩ := h x.val x.property y.val y.property
     obtain ⟨q, -⟩ := (S.exists_mapPath_eq_iff p).2 hp
     exact ⟨q⟩
 

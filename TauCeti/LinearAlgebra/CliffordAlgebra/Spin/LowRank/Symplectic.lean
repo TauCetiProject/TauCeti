@@ -96,7 +96,7 @@ noncomputable def spinGroupEquivSymplecticGroup (Q : QuadraticForm K V) (hQ : Q.
       have hx : ((evenUnitaryGroupEquivSymplecticGroup Q e he).symm g : (CliffordAlgebra Q)ˣ) ∈
           (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range := by
         rw [range_spinGroup_toUnits_eq_evenUnitaryGroup Q hQ hV0 hV]
-        exact ((evenUnitaryGroupEquivSymplecticGroup Q e he).symm g).2
+        exact ((evenUnitaryGroupEquivSymplecticGroup Q e he).symm g).property
       obtain ⟨s, hs⟩ := hx
       refine ⟨s, ?_⟩
       have hs' : spinGroupToEvenUnitary Q s =
@@ -215,7 +215,7 @@ theorem exists_algEquiv_reverseEven_baseChange_eq_neg_J_mul_transpose_mul_J
   have : NeZero (2 : L) := ⟨Invertible.ne_zero 2⟩
   have hVL : finrank L (L ⊗[K] V) = 5 := by rw [Module.finrank_baseChange, hV]
   have hodd : Odd (finrank L (L ⊗[K] V)) := by rw [hVL]; decide
-  have hQL : (Q.baseChange L).Nondegenerate := QuadraticForm.Nondegenerate.baseChange (L := L) hQ
+  have hQL : (Q.baseChange L).Nondegenerate := QuadraticForm.Nondegenerate.baseChange (A := L) hQ
   -- The even Clifford algebra of the extended form is central simple of degree four, so it
   -- splits over the separably closed field `L`.
   have := TauCeti.CliffordAlgebra.isCentral_even_of_odd_finrank hQL hodd
@@ -254,7 +254,7 @@ theorem exists_injective_spinGroup_symplecticGroup_of_finrank_eq_five
     obtain ⟨s, hs⟩ : (x : (CliffordAlgebra Q)ˣ) ∈
         (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range := by
       rw [range_spinGroup_toUnits_eq_evenUnitaryGroup Q hQ (by omega) hV.le]
-      exact x.2
+      exact x.property
     exact ⟨s, Subtype.ext (Units.ext (by rw [coe_spinGroupToEvenUnitary_apply, ← hs]))⟩
   rw [hsurj, ← MonoidHom.range_eq_map]
 

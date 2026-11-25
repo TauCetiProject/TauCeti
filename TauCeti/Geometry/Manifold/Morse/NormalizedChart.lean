@@ -38,7 +38,8 @@ above the critical value; in dimension two this is the index-one saddle model
 ## Main declarations
 
 * `TauCeti.MorseChart.normalizedCoord`: the reordered, rescaled Euclidean coordinates of a Morse
-  chart.
+  chart, with `TauCeti.MorseChart.inner_normalizedCoord`: their Euclidean inner product is half
+  the dot product of the chart coordinates.
 * `TauCeti.MorseChart.normalizedChart`: a Morse chart as a partial diffeomorphism into Euclidean
   space, with `TauCeti.MorseChart.eq_quadratic_normalizedChart` its sum-of-squares equation.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_normalized_morseChart`: the normalized
@@ -125,6 +126,17 @@ theorem sum_ite_mul_normalizedCoord_sq (v : E) :
     Real.sq_sqrt zero_le_two]
   ring
 
+/-- The Euclidean inner product of normalized coordinates is half the dot product of the
+coordinates of the Morse chart. -/
+theorem inner_normalizedCoord (a b : E) :
+    inner ℝ (φ.normalizedCoord a) (φ.normalizedCoord b) = 2⁻¹ * (φ.coord a ⬝ᵥ φ.coord b) := by
+  have h2 : (√2)⁻¹ * (√2)⁻¹ = (2 : ℝ)⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt zero_le_two]
+  rw [PiLp.inner_apply, dotProduct, Finset.mul_sum,
+    ← Equiv.sum_comp (Tuple.sort φ.weight) fun j ↦ 2⁻¹ * (φ.coord a j * φ.coord b j)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp only [normalizedCoord_apply, RCLike.inner_apply, conj_trivial, ← h2]
+  ring
+
 /-- A Morse chart in normalized coordinates, as a partial diffeomorphism onto an open subset of
 Euclidean space. In these coordinates `f` is `f x` plus the signed sum of squares of its Morse
 index (`TauCeti.MorseChart.eq_quadratic_normalizedChart`). -/
@@ -207,15 +219,9 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_normalized_morseChart
   set e := BoundarylessModel.diffeomorph I (M := M) ∞
   set x' := BoundarylessModel.homeomorph I M x
   have hx' : (BoundarylessModel.homeomorph I M).symm x' = x := Homeomorph.symm_apply_apply _ _
-  have hsymm : ContMDiff 𝓘(ℝ, E) I ∞ (BoundarylessModel.homeomorph I M).symm := by
-    rw [← BoundarylessModel.coe_diffeomorph_symm I ∞]
-    exact e.symm.contMDiff
   have hg : ∀ᶠ y in 𝓝 x',
       ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ (f ∘ (BoundarylessModel.homeomorph I M).symm) y := by
-    rw [← hx'] at hf
-    filter_upwards
-      [((BoundarylessModel.homeomorph I M).symm.continuous.tendsto x').eventually hf] with y hy
-    exact hy.comp y (hsymm y)
+    rwa [BoundarylessModel.eventually_contMDiffAt_source_iff, hx']
   have hcrit : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E)
       (f ∘ (BoundarylessModel.homeomorph I M).symm) x' := by
     rwa [BoundarylessModel.isManifoldNondegenerateCriticalPoint_iff, hx']
@@ -274,11 +280,12 @@ theorem exists_pairwise_disjoint_normalized_morseCharts [T2Space M] {S : Set M} 
           f y = f p + ∑ i, (if i.val < manifoldMorseIndex I f p then -1 else 1) * ψ p y i ^ 2 := by
   -- Separate the points of `S` by open sets and choose each chart inside its separating set.
   obtain ⟨V, hV, hdisj⟩ := hS.t2_separation
-  choose ψ hψ using fun p : S ↦ (h p p.2).exists_normalized_morseChart_subset (hf p p.2)
-    (inter_mem (hU p p.2) ((hV p).2.mem_nhds (hV p).1))
+  choose ψ hψ using fun p : S ↦ (h p p.property).exists_normalized_morseChart_subset
+      (hf p p.property)
+    (inter_mem (hU p p.property) ((hV p).2.mem_nhds (hV p).1))
   refine ⟨ψ, fun p q hpq ↦ ?_, fun p ↦ ⟨(hψ p).1, (hψ p).2.1.trans inter_subset_left,
     (hψ p).2.2⟩⟩
-  exact (hdisj p.2 q.2 (Subtype.coe_injective.ne hpq)).mono
+  exact (hdisj p.property q.property (Subtype.coe_injective.ne hpq)).mono
     ((hψ p).2.1.trans inter_subset_right) ((hψ q).2.1.trans inter_subset_right)
 
 omit [FiniteDimensional ℝ E] in

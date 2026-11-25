@@ -154,7 +154,7 @@ with total mass `d`. -/
 abbrev equivFinsupp :
     EffectiveDivisorOfDegree X d ≃ {m : X →₀ ℕ // m.sum (fun _ n => n) = d} where
   toFun D := ⟨D.multiplicityFinsupp, D.sum_multiplicityFinsupp⟩
-  invFun m := ofFinsupp m.1 m.2
+  invFun m := ofFinsupp m.val m.property
   left_inv D := by simp
   right_inv m := by
     ext x
@@ -167,7 +167,7 @@ lemma equivFinsupp_apply_coe (D : EffectiveDivisorOfDegree X d) :
 
 @[simp]
 lemma equivFinsupp_symm_apply (m : {m : X →₀ ℕ // m.sum (fun _ n => n) = d}) :
-    (equivFinsupp.symm m : WeilDivisor X) = WeilDivisor.ofFinsupp m.1 :=
+    (equivFinsupp.symm m : WeilDivisor X) = WeilDivisor.ofFinsupp m.val :=
   rfl
 
 section Sym
@@ -179,7 +179,7 @@ def ofSym (s : Sym X d) : EffectiveDivisorOfDegree X d :=
 
 @[simp]
 lemma coe_ofSym (s : Sym X d) : (ofSym s : WeilDivisor X) =
-      WeilDivisor.ofFinsupp (letI := Classical.decEq X; (Sym.equivNatSum X d s).1) := by
+      WeilDivisor.ofFinsupp (letI := Classical.decEq X; (Sym.equivNatSum X d s).val) := by
   classical
   rfl
 

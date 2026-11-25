@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Geometry.Lie.Exponential.Classification
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
 # Compatibility with the circle exponential
@@ -23,7 +25,11 @@ generator to `1`; under that identification, the abstract Lie-group exponential 
 * `circleExpGenerator`: the unique left-invariant infinitesimal generator of
   `Circle.expContinuousMonoidHom`.
 * `circleLieAlgebraEquiv`: the identification `Lie(Circle) ≃ₗ[ℝ] ℝ` normalized by that generator.
+* `circleLieAlgebraEquiv_smul_circleExpGenerator`: the Lie algebra of the circle is the real line
+  spanned by that generator.
 * `lieExp_circle`: under this identification, the abstract exponential is `Circle.exp`.
+* `TauCeti.two_pi_smul_circleExpGenerator_mem_lieExpLattice`: the period `2π` of the circle
+  exponential lies in the exponential lattice.
 -/
 
 public section
@@ -53,6 +59,11 @@ theorem lieExp_circleExpGenerator (t : ℝ) :
     (Multiplicative.ofAdd t)
   simpa only [oneParameterSubgroup_apply, Circle.expContinuousMonoidHom_apply, toAdd_ofAdd]
     using h
+
+/-- The period `2π` of the circle exponential lies in the exponential lattice. -/
+theorem TauCeti.two_pi_smul_circleExpGenerator_mem_lieExpLattice :
+    (2 * Real.pi) • circleExpGenerator ∈ TauCeti.lieExpLattice (I := 𝓡 1) (G := Circle) := by
+  rw [TauCeti.mem_lieExpLattice, lieExp_circleExpGenerator, Circle.exp_two_pi]
 
 /-- The generator of `Circle.exp` is nonzero. -/
 theorem circleExpGenerator_ne_zero : circleExpGenerator ≠ 0 := by
@@ -93,15 +104,22 @@ theorem circleLieAlgebraEquiv_apply_generator :
   rw [circleLieAlgebraEquiv, LinearEquiv.trans_apply, Units.mulLeftLinearEquiv_apply]
   exact inv_mul_cancel₀ circleLieAlgebraEquivModel_generator_ne_zero
 
+/-- The normalized circle Lie-algebra identification sends one to the exponential generator. -/
+@[simp]
+theorem circleLieAlgebraEquiv_symm_one : circleLieAlgebraEquiv.symm 1 = circleExpGenerator :=
+  circleLieAlgebraEquiv.symm_apply_eq.mpr circleLieAlgebraEquiv_apply_generator.symm
+
+/-- The circle Lie algebra is the real line spanned by the exponential generator: every element
+is its normalized coordinate times the generator. -/
+@[simp]
+theorem circleLieAlgebraEquiv_smul_circleExpGenerator (X : LeftInvariantDerivation (𝓡 1) Circle) :
+    circleLieAlgebraEquiv X • circleExpGenerator = X := by
+  rw [← circleLieAlgebraEquiv_symm_one, ← map_smul, smul_eq_mul, mul_one,
+    LinearEquiv.symm_apply_apply]
+
 /-- Under the normalized identification `Lie(Circle) ≃ₗ[ℝ] ℝ`, the abstract Lie-group
 exponential is exactly Mathlib's `Circle.exp`. -/
 @[simp]
 theorem lieExp_circle (t : ℝ) : lieExp (circleLieAlgebraEquiv.symm t) = Circle.exp t := by
-  have hgen : circleLieAlgebraEquiv.symm 1 = circleExpGenerator := by
-    exact circleLieAlgebraEquiv.symm_apply_eq.mpr circleLieAlgebraEquiv_apply_generator.symm
-  calc
-    lieExp (circleLieAlgebraEquiv.symm t) =
-        lieExp (circleLieAlgebraEquiv.symm (t • (1 : ℝ))) := by rw [smul_eq_mul, mul_one]
-    _ = lieExp (t • circleLieAlgebraEquiv.symm 1) := by rw [map_smul]
-    _ = lieExp (t • circleExpGenerator) := by rw [hgen]
-    _ = Circle.exp t := lieExp_circleExpGenerator t
+  rw [← lieExp_circleExpGenerator, ← circleLieAlgebraEquiv_symm_one, ← map_smul, smul_eq_mul,
+    mul_one]
