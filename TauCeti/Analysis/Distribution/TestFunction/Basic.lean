@@ -59,6 +59,8 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
   embedding, with its support bound and linearity, and `TestFunction.lineTestFunction`: its
   restriction `t ↦ ψ (y + t • e)` to an affine line, the pullback along the closed embedding
   `TauCeti.isClosedEmbedding_add_smul_left`.
+* `TestFunction.compOfIsProperMap`: the composite of a test function with a smooth proper map,
+  with its values and support bound.
 -/
 
 public section
@@ -266,6 +268,33 @@ theorem lineTestFunction_add (ψ ψ' : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0)
 theorem lineTestFunction_smul (c : ℝ) (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) :
     (c • ψ).lineTestFunction y e he = c • ψ.lineTestFunction y e he :=
   compOfIsClosedEmbedding_smul _ _ _ _
+
+/-- The composite `ψ ∘ f` of a test function on `Ω` with a `C^n` proper map `f : D → E`, as a test
+function on any open set `Ω'` containing `f ⁻¹' Ω`. -/
+noncomputable def compOfIsProperMap {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {Ω' : Opens D} (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') : 𝓓^{n}(Ω', F) :=
+  ⟨fun x => ψ (f x), ψ.contDiff.comp hf,
+    (hfp.isCompact_preimage ψ.hasCompactSupport.isCompact).of_isClosed_subset isClosed_closure
+      (tsupport_comp_subset_preimage (ψ : E → F) hfp.continuous),
+    (tsupport_comp_subset_preimage (ψ : E → F) hfp.continuous).trans
+      ((Set.preimage_mono ψ.tsupport_subset).trans hΩ)⟩
+
+/-- Evaluating the composite of a test function with a proper map. -/
+@[simp]
+theorem compOfIsProperMap_apply {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {Ω' : Opens D} (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') (x : D) :
+    ψ.compOfIsProperMap hf hfp hΩ x = ψ (f x) :=
+  (rfl)
+
+/-- The support of the composite of `ψ` with a proper map `f` lies in the preimage of the support
+of `ψ`. -/
+theorem tsupport_compOfIsProperMap_subset {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {Ω' : Opens D} (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfp : IsProperMap f)
+    (hΩ : f ⁻¹' Ω ⊆ Ω') :
+    tsupport (ψ.compOfIsProperMap hf hfp hΩ) ⊆ f ⁻¹' tsupport ψ :=
+  tsupport_comp_subset_preimage (ψ : E → F) hfp.continuous
 
 end TestFunction
 

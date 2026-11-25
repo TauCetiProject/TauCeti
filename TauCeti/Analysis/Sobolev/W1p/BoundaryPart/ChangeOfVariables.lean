@@ -9,23 +9,22 @@ public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
-import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Changes of variables in the spaces `W^{1,p}_Γ(Ω)`
 
 The space `W^{1,p}_Γ(Ω)` of Sobolev functions vanishing on `Γ`
-(`TauCeti.w1pVanishingOnSubmodule`) is transported by changes of variables: if `Φ` is smooth and
-proper, `U = Φ⁻¹(V)` and `u ∈ W^{1,p}_Γ(V)`, then `u ∘ Φ ∈ W^{1,p}_{Φ⁻¹(Γ)}(U)`
-(`TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule`). The composite `φ ∘ Φ` of a generator `φ` is
-again a generator, since `tsupport (φ ∘ Φ) ⊆ Φ⁻¹(tsupport φ)` misses
+(`TauCeti.w1pVanishingOnSubmodule`) is transported by changes of variables: if `Φ` is smooth,
+proper and maps `U` injectively into `V`, and `u ∈ W^{1,p}_Γ(V)`, then
+`u ∘ Φ ∈ W^{1,p}_{Φ⁻¹(Γ)}(U)` (`TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule`). The composite
+`φ ∘ Φ` of a generator `φ` is again a generator, since `tsupport (φ ∘ Φ) ⊆ Φ⁻¹(tsupport φ)` misses
 `Φ⁻¹(closure Γ) ⊇ closure (Φ⁻¹(Γ))`, and the composition operator is continuous.
 
 With an inverse change of variables this is an equivalence. For an affine change of variables
 `x ↦ A x + b`, with `A` a continuous linear equivalence, it gives the invariance of `W^{1,p}_Γ`
-under the rigid motions and the dilations of the pair `(Ω, Γ)` asked for in the roadmap, for finite
-`p` (`TauCeti.W1p.compL_affine_mem_w1pVanishingOnSubmodule_iff`). For rigid motions the invariance
+under the rigid motions and the dilations of the pair `(Ω, Γ)`, for finite `p`
+(`TauCeti.W1p.compL_affine_mem_w1pVanishingOnSubmodule_iff`). For rigid motions the invariance
 also holds at `p = ∞`, through the composition operator of an affine isometry
 (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`).
 
@@ -39,10 +38,6 @@ also holds at `p = ∞`, through the composition operator of an affine isometry
   rigid motions and the dilations.
 * `TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`: rigid motions for every
   exponent `1 ≤ p ≤ ∞`.
-
-## References
-
-* TauCetiRoadmap, `PDE/README.md`, §1.8.
 -/
 
 public section
@@ -54,22 +49,20 @@ open scoped Distributions ENNReal Topology ContDiff
 
 namespace TauCeti
 
+/-- The composite `φ ∘ Φ` of a generator `φ` of `W^{1,p}_Γ` with a smooth proper map `Φ` is a
+generator for `Φ⁻¹(Γ)`: its support misses `closure (Φ⁻¹(Γ))`. -/
+private theorem disjoint_tsupport_compOfIsProperMap {D D' : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup D'] [NormedSpace ℝ D'] {Φ : D → D'}
+    (hΦc : ContDiff ℝ ∞ Φ) (hΦp : IsProperMap Φ) {Γ : Set D'} {φ : 𝓓((⊤ : Opens D'), ℝ)}
+    (hφ : Disjoint (tsupport φ) (closure Γ)) :
+    Disjoint (tsupport (φ.compOfIsProperMap hΦc hΦp (subset_univ _) : 𝓓((⊤ : Opens D), ℝ)))
+      (closure (Φ ⁻¹' Γ)) :=
+  ((hφ.preimage Φ).mono_left (φ.tsupport_compOfIsProperMap_subset hΦc hΦp _)).mono_right
+    (hΦp.continuous.closure_preimage_subset Γ)
+
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {U V : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] {Γ : Set E}
-
-/-- The composite `φ ∘ Φ` of a test function on the whole space with a smooth proper map, as a
-test function on the whole space. -/
-private def compTestFunction {Φ : E → E} (hΦc : ContDiff ℝ ∞ Φ) (hΦp : IsProperMap Φ)
-    (φ : 𝓓((⊤ : Opens E), ℝ)) : 𝓓((⊤ : Opens E), ℝ) :=
-  TestFunction.mk (fun x => φ (Φ x)) (φ.contDiff.comp hΦc)
-    ((hΦp.isCompact_preimage φ.hasCompactSupport.isCompact).of_isClosed_subset isClosed_closure
-      (tsupport_comp_subset_preimage φ hΦc.continuous)) (subset_univ _)
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
-private theorem coe_compTestFunction {Φ : E → E} (hΦc : ContDiff ℝ ∞ Φ) (hΦp : IsProperMap Φ)
-    (φ : 𝓓((⊤ : Opens E), ℝ)) : ⇑(compTestFunction hΦc hΦp φ) = fun x => φ (Φ x) :=
-  rfl
 
 section ChangeOfVariables
 
@@ -86,10 +79,9 @@ theorem W1p.compL_mem_w1pVanishingOnSubmodule (hΦc : ContDiff ℝ ∞ Φ) (hΦp
     ((w1pVanishingOnSubmodule mu U p (Φ ⁻¹' Γ)).isClosed.preimage
       (W1p.compL Φ hp hΦ hinj hmaps hL hc hdet).continuous) (fun φ hφ => ?_) hu
   -- The composite `φ ∘ Φ` is a generator for `Φ⁻¹(Γ)`.
-  set ψ := compTestFunction hΦc hΦp φ
+  set ψ : 𝓓((⊤ : Opens E), ℝ) := φ.compOfIsProperMap hΦc hΦp (subset_univ _)
   have hψ : Disjoint (tsupport ψ) (closure (Φ ⁻¹' Γ)) :=
-    ((hφ.preimage Φ).mono_left (tsupport_comp_subset_preimage φ hΦc.continuous)).mono_right
-      (closure_minimal (preimage_mono subset_closure) (isClosed_closure.preimage hΦc.continuous))
+    disjoint_tsupport_compOfIsProperMap hΦc hΦp hφ
   have heq : W1p.compL Φ hp hΦ hinj hmaps hL hc hdet
       (W1p.restrictL (le_top : V ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p φ)) =
       W1p.restrictL (le_top : U ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p ψ) := by
@@ -101,13 +93,13 @@ theorem W1p.compL_mem_w1pVanishingOnSubmodule (hΦc : ContDiff ℝ ∞ Φ) (hΦp
         (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : V ≤ ⊤) φ),
       W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : U ≤ ⊤) ψ]
       with x h1 h2 h3
-    rw [h1, h2, h3, coe_compTestFunction]
+    rw [h1, h2, h3, TestFunction.compOfIsProperMap_apply]
   rw [mem_preimage, heq]
   exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule hψ
 
-/-- **Invariance of `W^{1,p}_Γ` under changes of variables.** If `Φ` and `Ψ` are smooth, proper and
-inverse to each other, `U = Φ⁻¹(V)` and `V = Ψ⁻¹(U)`, then `u ∘ Φ` lies in `W^{1,p}_{Φ⁻¹(Γ)}(U)`
-exactly when `u` lies in `W^{1,p}_Γ(V)`. -/
+/-- **Invariance of `W^{1,p}_Γ` under changes of variables.** If `Φ` and `Ψ` are smooth and proper,
+`Φ` maps `U` injectively into `V`, `Ψ` maps `V` into `U` and `Φ ∘ Ψ = id`, then `u ∘ Φ` lies in
+`W^{1,p}_{Φ⁻¹(Γ)}(U)` exactly when `u` lies in `W^{1,p}_Γ(V)`. -/
 theorem W1p.compL_mem_w1pVanishingOnSubmodule_iff {Ψ : E → E} {L' c' : ℝ}
     (hΦc : ContDiff ℝ ∞ Φ) (hΦp : IsProperMap Φ) (hΨc : ContDiff ℝ ∞ Ψ) (hΨp : IsProperMap Ψ)
     (hΨ : DifferentiableOn ℝ Ψ V) (hΨinj : InjOn Ψ V) (hΨmaps : MapsTo Ψ V U)
@@ -185,13 +177,9 @@ theorem W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule (g : F ≃ᵃ�
       (W1p.compAffineIsometryEquivL g hUV).continuous) (fun φ hφ => ?_) hu
   -- The composite `φ ∘ g` is a generator for `g⁻¹(Γ)`.
   have hgc : ContDiff ℝ ∞ g := g.toAffineIsometry.toContinuousAffineMap.contDiff
-  let ψ : 𝓓((⊤ : Opens F), ℝ) := TestFunction.mk (fun x => φ (g x)) (φ.contDiff.comp hgc)
-    ((g.toHomeomorph.isProperMap.isCompact_preimage
-      φ.hasCompactSupport.isCompact).of_isClosed_subset isClosed_closure
-      (tsupport_comp_subset_preimage φ hgc.continuous)) (subset_univ _)
+  set ψ : 𝓓((⊤ : Opens F), ℝ) := φ.compOfIsProperMap hgc g.toHomeomorph.isProperMap (subset_univ _)
   have hψ : Disjoint (tsupport ψ) (closure (g ⁻¹' Γ)) :=
-    ((hφ.preimage g).mono_left (tsupport_comp_subset_preimage φ hgc.continuous)).mono_right
-      (closure_minimal (preimage_mono subset_closure) (isClosed_closure.preimage hgc.continuous))
+    disjoint_tsupport_compOfIsProperMap hgc g.toHomeomorph.isProperMap hφ
   have heq : W1p.compAffineIsometryEquivL g hUV
       (W1p.restrictL (le_top : V ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ)) =
       W1p.restrictL (le_top : U ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p ψ) := by
@@ -203,8 +191,7 @@ theorem W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule (g : F ≃ᵃ�
         (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := p) (le_top : V ≤ ⊤) φ),
       W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := p) (le_top : U ≤ ⊤) ψ]
       with x h1 h2 h3
-    rw [h1, h2, h3]
-    rfl
+    rw [h1, h2, h3, TestFunction.compOfIsProperMap_apply φ hgc g.toHomeomorph.isProperMap]
   rw [mem_preimage, heq]
   exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule hψ
 
