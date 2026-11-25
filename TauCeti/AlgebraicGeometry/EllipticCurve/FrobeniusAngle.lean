@@ -7,56 +7,44 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.LFunction
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
-public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.GoodPrimes
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
-public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.NumberTheory.Padics.RingHoms
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-import Mathlib.Tactic.NormNum.Prime
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.HasseBound
 import TauCeti.AlgebraicGeometry.EllipticCurve.LocalPolynomial
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
-import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
-# Good primes and Frobenius angles of a rational Weierstrass curve
+# Frobenius angles of a rational Weierstrass curve
 
 For a Weierstrass curve `E` over `ℚ` and a prime `p`, reduce the minimal equation of `E` over
-`ℚ_p` modulo `p`. If that reduction is nonsingular, `E` has good reduction at `p`, and the trace
+`ℚ_p` modulo `p`. If that reduction is nonsingular, `E` has good reduction at `p`
+(`WeierstrassCurve.HasGoodReductionAt`), and the trace
 of Frobenius `a_p = p + 1 - #E_p(𝔽_p)` satisfies the Hasse bound `|a_p| ≤ 2√p`. The
 **Frobenius angle** `θ_p ∈ [0, π]` is then defined by `a_p = 2√p cos θ_p`; equivalently, the
 normalized roots of the Frobenius polynomial `X² - a_p X + p` are `exp (± i θ_p)`.
 
 These are the objects of the Sato–Tate theorem: for a non-CM elliptic curve over `ℚ`, the angles
 `θ_p`, taken over the good primes `p ≤ x` as `x → ∞`, are equidistributed for the measure
-`(2/π) sin² θ dθ` on `[0, π]`. This file sets up the finite sets of good primes over which the
-averages are taken and the angles themselves, and proves the properties of both on which the
-statement and its proof through symmetric-power `L`-functions rest.
+`(2/π) sin² θ dθ` on `[0, π]`. The finite sets of good primes over which the averages are taken
+are `WeierstrassCurve.goodReductionPrimes`; this file defines the angles themselves and proves the
+properties on which the statement and its proof through symmetric-power `L`-functions rest.
 
-Both definitions are total. The minimal equation is the one chosen by Mathlib
-(`WeierstrassCurve.minimal`); every statement below is independent of that choice. At a bad
-prime the angle is still the arccosine of `(p + 1 - #E_p^{ns}(𝔽_p)) / (2√p)`, counting the
-nonsingular points of the minimal reduction, but no Frobenius interpretation is asserted there.
+The angle is defined at every prime. The minimal equation is the one chosen by Mathlib
+(`WeierstrassCurve.minimal`); for an elliptic curve the angle is independent of that choice
+(`WeierstrassCurve.frobeniusAngle_smul`), while for a singular `E` it may depend on the chosen
+minimal model. At a bad prime the angle is still the arccosine of
+`(p + 1 - #E_p^{ns}(𝔽_p)) / (2√p)`, counting the nonsingular points of the minimal reduction, but
+no Frobenius interpretation is asserted there.
 
 ## Main definitions
 
-* `WeierstrassCurve.HasGoodReductionAt E p`: the minimal equation of `E` over `ℚ_p` has good
-  reduction.
-* `WeierstrassCurve.goodReductionPrimes E x`: the finite set of primes `p ≤ x` of good reduction.
 * `WeierstrassCurve.frobeniusAngle E p`: the angle `arccos ((p + 1 - #E_p(𝔽_p)) / (2√p))`.
 
 ## Main results
 
-* `WeierstrassCurve.mem_goodReductionPrimes`: membership is `p ≤ x` together with good reduction.
-* `WeierstrassCurve.goodReductionPrimes_mono`, `WeierstrassCurve.goodReductionPrimes_inter` and
-  `WeierstrassCurve.iUnion_goodReductionPrimes`: the sets increase with the bound, meet at the
-  minimum of the bounds, and exhaust the good primes.
-* `WeierstrassCurve.hasGoodReductionAt_smul` and `WeierstrassCurve.goodReductionPrimes_smul`:
-  good reduction depends only on the isomorphism class over `ℚ`.
-* `WeierstrassCurve.hasGoodReductionAt_baseChange_iff`: for an integral equation that is minimal
-  at `p`, good reduction at `p` means that `p` does not divide the discriminant.
+* `WeierstrassCurve.frobeniusAngle_def`: the defining formula of the angle, at every prime.
 * `WeierstrassCurve.cos_frobeniusAngle`: at a good prime, `cos θ_p = a_p / (2√p)`.
 * `WeierstrassCurve.map_localPolynomial_eq_mul`: at a good prime, the local polynomial
   `1 - a_p T + p T²` of `E` factors over `ℂ` as `(1 - α T)(1 - conj α T)` with
@@ -77,138 +65,6 @@ open Polynomial
 
 variable (E : WeierstrassCurve ℚ)
 
-/-! ### Primes of good reduction -/
-
-/-- A Weierstrass curve `E` over `ℚ` **has good reduction at the prime `p`** when the minimal
-equation of `E` over `ℚ_p` reduces to a nonsingular curve over `𝔽_p`. This tests the minimal
-equation, not the given one: a nonminimal equation may have singular reduction at a prime of
-good reduction. -/
-def HasGoodReductionAt (p : Nat.Primes) : Prop :=
-  ((E.baseChange ℚ_[p]).minimal ℤ_[p]).HasGoodReduction ℤ_[p]
-
-/-- The defining property of `HasGoodReductionAt`. -/
-theorem hasGoodReductionAt_iff {p : Nat.Primes} :
-    E.HasGoodReductionAt p ↔ ((E.baseChange ℚ_[p]).minimal ℤ_[p]).HasGoodReduction ℤ_[p] :=
-  Iff.rfl
-
-/-- **Good reduction is a property of the curve**: isomorphic equations over `ℚ` have good
-reduction at the same primes. No ellipticity is needed. -/
-@[simp]
-theorem hasGoodReductionAt_smul (C : VariableChange ℚ) {p : Nat.Primes} :
-    (C • E).HasGoodReductionAt p ↔ E.HasGoodReductionAt p := by
-  rw [hasGoodReductionAt_iff, hasGoodReductionAt_iff, baseChange, ← map_variableChange,
-    ← VariableChange.baseChange, ← baseChange, hasGoodReduction_minimal_smul_iff]
-
-/-- The finite set of **primes `p ≤ x` at which `E` has good reduction**, the range over which
-the Frobenius angles of `E` are averaged in the Sato–Tate theorem. -/
-noncomputable def goodReductionPrimes (x : ℕ) : Finset Nat.Primes := by
-  classical
-  exact ((Finset.range (x + 1)).subtype Nat.Prime).filter E.HasGoodReductionAt
-
-/-- A prime lies in `goodReductionPrimes E x` exactly when it is at most `x` and `E` has good
-reduction there. -/
-@[simp]
-theorem mem_goodReductionPrimes {x : ℕ} {p : Nat.Primes} :
-    p ∈ E.goodReductionPrimes x ↔ (p : ℕ) ≤ x ∧ E.HasGoodReductionAt p := by
-  classical
-  exact Finset.mem_filter.trans
-    (and_congr_left' (Finset.mem_subtype.trans (Finset.mem_range.trans Nat.lt_succ_iff)))
-
-/-- The sets of good primes grow with the bound. -/
-theorem goodReductionPrimes_mono : Monotone E.goodReductionPrimes := fun _ _ hxy _ hp ↦ by
-  rw [mem_goodReductionPrimes] at hp ⊢
-  exact ⟨hp.1.trans hxy, hp.2⟩
-
-/-- The good primes up to `x` and up to `y` have in common the good primes up to `min x y`. -/
-theorem goodReductionPrimes_inter (x y : ℕ) :
-    E.goodReductionPrimes x ∩ E.goodReductionPrimes y = E.goodReductionPrimes (min x y) := by
-  ext p
-  simp only [Finset.mem_inter, mem_goodReductionPrimes, le_min_iff]
-  tauto
-
-/-- Below `2` there are no primes, so no good primes. -/
-theorem goodReductionPrimes_eq_empty {x : ℕ} (hx : x < 2) : E.goodReductionPrimes x = ∅ := by
-  ext p
-  simp only [mem_goodReductionPrimes, Finset.notMem_empty, iff_false, not_and]
-  exact fun hpx ↦ absurd (hpx.trans_lt hx) p.prop.two_le.not_gt
-
-/-- **Removing the bound recovers the good primes**: the sets `goodReductionPrimes E x` exhaust
-the primes of good reduction of `E`. -/
-theorem iUnion_goodReductionPrimes :
-    ⋃ x, (E.goodReductionPrimes x : Set Nat.Primes) = {p | E.HasGoodReductionAt p} := by
-  ext p
-  simp only [Set.mem_iUnion, Finset.mem_coe, mem_goodReductionPrimes, Set.mem_ofPred_eq]
-  exact ⟨fun ⟨_, h⟩ ↦ h.2, fun h ↦ ⟨p, le_rfl, h⟩⟩
-
-/-- **The sets of good primes depend only on the isomorphism class of `E` over `ℚ`.** -/
-@[simp]
-theorem goodReductionPrimes_smul (C : VariableChange ℚ) (x : ℕ) :
-    (C • E).goodReductionPrimes x = E.goodReductionPrimes x := by
-  ext p
-  simp
-
-/-! ### Good reduction of an integral equation -/
-
-section Integral
-
-variable (W : WeierstrassCurve ℤ) (p : Nat.Primes)
-
-/-- Reading an integral equation over `ℚ` and then over `ℚ_p` is reading it over `ℤ_p` and then
-over `ℚ_p`. -/
-private theorem baseChange_baseChange_padic :
-    (W.baseChange ℚ).baseChange ℚ_[p] = (W.baseChange ℤ_[p]).baseChange ℚ_[p] := by
-  simp only [baseChange, map_map]
-  congr 1
-
-/-- **An integral equation has good reduction at every prime not dividing its discriminant.** -/
-theorem hasGoodReductionAt_baseChange_of_not_dvd (h : ¬ (p : ℤ) ∣ W.Δ) :
-    (W.baseChange ℚ).HasGoodReductionAt p := by
-  rw [hasGoodReductionAt_iff, baseChange_baseChange_padic]
-  have : IsIntegral ℤ_[p] ((W.baseChange ℤ_[p]).baseChange ℚ_[p]) := ⟨⟨_, rfl⟩⟩
-  refine HasGoodReduction.hasGoodReduction_minimal ℤ_[p] ?_
-  rwa [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self, baseChange,
-    map_Δ, algebraMap_int_eq, eq_intCast, PadicInt.isUnit_intCast_iff]
-
-/-- **For an integral equation that is minimal at `p`, good reduction at `p` means that `p` does
-not divide the discriminant.** The minimality hypothesis is that `p ^ 12` does not divide the
-discriminant; without it, an equation such as `y² = x³ - p⁴ x + p⁶` can have good reduction at `p`
-while `p` divides its discriminant. -/
-theorem hasGoodReductionAt_baseChange_iff (h12 : ¬ (p : ℤ) ^ 12 ∣ W.Δ) :
-    (W.baseChange ℚ).HasGoodReductionAt p ↔ ¬ (p : ℤ) ∣ W.Δ := by
-  refine ⟨fun h ↦ ?_, W.hasGoodReductionAt_baseChange_of_not_dvd p⟩
-  rw [hasGoodReductionAt_iff, baseChange_baseChange_padic] at h
-  set V := (W.baseChange ℤ_[p]).baseChange ℚ_[p]
-  have : IsIntegral ℤ_[p] V := ⟨⟨_, rfl⟩⟩
-  have : IsMinimal ℤ_[p] V := isMinimal_baseChange_of_not_pow_twelve_dvd_Δ ℤ_[p] _
-    PadicInt.irreducible_p (by
-      rwa [baseChange, map_Δ, algebraMap_int_eq, eq_intCast, PadicInt.pow_p_dvd_int_iff])
-  obtain ⟨C, hC⟩ := V.exists_smul_eq_minimal ℤ_[p]
-  have hV : V.HasGoodReduction ℤ_[p] :=
-    ⟨(valuation_Δ_eq_of_isMinimal_smul ℤ_[p] C hC).symm.trans h.goodReduction⟩
-  rwa [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self, baseChange,
-    map_Δ, algebraMap_int_eq, eq_intCast, PadicInt.isUnit_intCast_iff] at hV
-
-/-! The curve `y² = x³ - x + 1`, with discriminant `-368 = -2⁴ · 23`, has good reduction at `5`
-but not at `23`, where its equation is minimal since `23¹²` does not divide `-368`. -/
-
-example : ((⟨0, 0, 0, -1, 1⟩ : WeierstrassCurve ℤ).baseChange ℚ).HasGoodReductionAt
-    ⟨5, by norm_num⟩ :=
-  hasGoodReductionAt_baseChange_of_not_dvd _ _ (by norm_num [Δ, b₂, b₄, b₆, b₈])
-
-example : ⟨5, by norm_num⟩ ∈
-    ((⟨0, 0, 0, -1, 1⟩ : WeierstrassCurve ℤ).baseChange ℚ).goodReductionPrimes 5 :=
-  mem_goodReductionPrimes _ |>.2
-    ⟨le_rfl, hasGoodReductionAt_baseChange_of_not_dvd _ _ (by norm_num [Δ, b₂, b₄, b₆, b₈])⟩
-
-example : ¬ ((⟨0, 0, 0, -1, 1⟩ : WeierstrassCurve ℤ).baseChange ℚ).HasGoodReductionAt
-    ⟨23, by norm_num⟩ :=
-  (hasGoodReductionAt_baseChange_iff _ _ (by norm_num [Δ, b₂, b₄, b₆, b₈])).not.2
-    (by norm_num [Δ, b₂, b₄, b₆, b₈])
-
-end Integral
-
-/-! ### Frobenius angles -/
-
 /-- The **Frobenius angle** `θ_p ∈ [0, π]` of `E` at the prime `p`: the arccosine of
 `(p + 1 - #E_p(𝔽_p)) / (2√p)`, where `#E_p(𝔽_p)` counts the nonsingular points, including the
 point at infinity, of the reduction modulo `p` of the minimal equation of `E` over `ℚ_p`.
@@ -220,6 +76,13 @@ noncomputable def frobeniusAngle (p : Nat.Primes) : ℝ :=
   Real.arccos (((p : ℝ) + 1 -
       Nat.card (((E.baseChange ℚ_[p]).minimal ℤ_[p]).reduction ℤ_[p]).toAffine.Point) /
     (2 * √(p : ℝ)))
+
+/-- The defining formula of `frobeniusAngle`, valid at every prime, good or bad. -/
+theorem frobeniusAngle_def (p : Nat.Primes) :
+    E.frobeniusAngle p = Real.arccos (((p : ℝ) + 1 -
+      Nat.card (((E.baseChange ℚ_[p]).minimal ℤ_[p]).reduction ℤ_[p]).toAffine.Point) /
+        (2 * √(p : ℝ))) :=
+  (rfl)
 
 /-- The Frobenius angle is nonnegative. -/
 theorem frobeniusAngle_nonneg (p : Nat.Primes) : 0 ≤ E.frobeniusAngle p :=
@@ -236,7 +99,8 @@ theorem cos_frobeniusAngle {p : Nat.Primes} (hp : E.HasGoodReductionAt p) :
     Real.cos (E.frobeniusAngle p) =
       (((E.baseChange ℚ_[p]).minimal ℤ_[p]).reduction ℤ_[p]).frobeniusTrace / (2 * √(p : ℝ)) := by
   set W := ((E.baseChange ℚ_[p]).minimal ℤ_[p]).reduction ℤ_[p]
-  have : W.IsElliptic := (hasGoodReduction_iff_isElliptic_reduction ℤ_[p]).1 hp
+  have : W.IsElliptic :=
+    (hasGoodReduction_iff_isElliptic_reduction ℤ_[p]).1 (E.hasGoodReductionAt_iff.1 hp)
   have hcard := PadicInt.card_residueField (p := p)
   have ha : (W.frobeniusTrace : ℝ) = (p : ℝ) + 1 - Nat.card W.toAffine.Point := by
     rw [frobeniusTrace_eq_card_point, hcard]
@@ -264,7 +128,8 @@ theorem map_localPolynomial_eq_mul {p : Nat.Primes} (hp : E.HasGoodReductionAt p
     ((E.baseChange ℚ_[p]).localPolynomial ℤ_[p]).map (Int.castRingHom ℂ) =
       (1 - C (√(p : ℝ) * Complex.exp (E.frobeniusAngle p * Complex.I)) * X) *
         (1 - C (√(p : ℝ) * Complex.exp (-(E.frobeniusAngle p * Complex.I))) * X) := by
-  rw [localPolynomial_eq_of_hasGoodReduction _ _ hp, PadicInt.card_residueField]
+  rw [localPolynomial_eq_of_hasGoodReduction _ _ (E.hasGoodReductionAt_iff.1 hp),
+    PadicInt.card_residueField]
   set θ := E.frobeniusAngle p
   set a := (((E.baseChange ℚ_[p]).minimal ℤ_[p]).reduction ℤ_[p]).frobeniusTrace
   have hp0 : (0 : ℝ) < p := by exact_mod_cast p.prop.pos
@@ -295,11 +160,11 @@ number of nonsingular points. -/
 @[simp]
 theorem frobeniusAngle_smul [E.IsElliptic] (C : VariableChange ℚ) (p : Nat.Primes) :
     (C • E).frobeniusAngle p = E.frobeniusAngle p := by
-  have hb : (C • E).baseChange ℚ_[p] = C.baseChange ℚ_[p] • E.baseChange ℚ_[p] := by
-    rw [baseChange, baseChange, VariableChange.baseChange, map_variableChange]
+  have hb : (C • E).baseChange ℚ_[p] = C.baseChange ℚ_[p] • E.baseChange ℚ_[p] :=
+    (baseChange_smul_baseChange _ _ _).symm
   obtain ⟨D, hD⟩ := exists_smul_minimal_eq_minimal ℤ_[p] (C.baseChange ℚ_[p]) (E.baseChange ℚ_[p])
   obtain ⟨D', hD'⟩ := exists_smul_reduction_eq_of_isMinimal_smul ℤ_[p] D hD
-  rw [frobeniusAngle, frobeniusAngle]
+  rw [frobeniusAngle_def, frobeniusAngle_def]
   simp only [hb]
   rw [← hD', Nat.card_congr (Affine.Point.equivVariableChange _ D')]
 
