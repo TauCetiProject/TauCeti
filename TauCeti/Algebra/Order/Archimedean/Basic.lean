@@ -10,7 +10,7 @@ import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 
 /-!
-# Choosing step counts and natural-number bounds in Archimedean ordered rings
+# Choosing multiples, step counts, and natural-number bounds in Archimedean ordered structures
 
 This file chooses a positive number of steps `n` with `L * n⁻¹ < c`, which splits a segment into `n`
 steps of length `n⁻¹` with an error of at most `c`.
@@ -26,6 +26,12 @@ an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n` (covering arguments with 
 a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`), and exhausts
 Archimedean ordered semirings and lower-bounded sets by natural-number upper bounds.
 
+Beyond ordered semifields, in an Archimedean linearly ordered additive group the integer
+multiples `k • ℓ` of a nonzero element `ℓ` are unbounded above, whatever the sign of `ℓ`. For maps
+of the strip `ℝ × Y` commuting with the translation by a period `ℓ`, it gives a multiple of the
+period exceeding any prescribed distance. This shows that such maps are onto along horizontal
+lines, and that the inverse of a positive twist lift twists negatively.
+
 ## Main results
 
 * `TauCeti.exists_pos_nat_mul_inv_lt`: for `0 < c` there is `n > 0` with `L * n⁻¹ < c`.
@@ -39,6 +45,8 @@ Archimedean ordered semirings and lower-bounded sets by natural-number upper bou
   ordered semiring.
 * `TauCeti.setOf_le_coe_eq_iUnion_le_natCast`: any set bounded below on a finite `R`-valued
   coordinate is exhausted by imposing natural-number upper bounds in `WithTop R`.
+* `TauCeti.exists_lt_zsmul`: in an Archimedean linearly ordered additive group, the integer
+  multiples of a nonzero element are unbounded above.
 -/
 
 public section
@@ -111,5 +119,15 @@ theorem setOf_le_coe_eq_iUnion_le_natCast {α R : Type*} [Semiring R] [PartialOr
   ext x
   simp only [Set.mem_ofPred_eq, Set.mem_iUnion, WithTop.coe_le_coe]
   exact ⟨fun h ↦ let ⟨m, hm⟩ := exists_nat_ge (g x); ⟨m, h, hm⟩, fun ⟨_, h, _⟩ ↦ h⟩
+
+/-- In an Archimedean linearly ordered additive group, some integer multiple of a nonzero element
+`ℓ` exceeds any given `r`, whatever the sign of `ℓ`. -/
+theorem exists_lt_zsmul {M : Type*} [AddCommGroup M] [LinearOrder M] [IsOrderedAddMonoid M]
+    [Archimedean M] {ℓ : M} (hℓ : ℓ ≠ 0) (r : M) : ∃ k : ℤ, r < k • ℓ := by
+  rcases hℓ.lt_or_gt with h | h
+  · obtain ⟨n, hn⟩ := exists_lt_nsmul (neg_pos.2 h) r
+    exact ⟨-n, by rwa [neg_zsmul, natCast_zsmul, ← neg_nsmul]⟩
+  · obtain ⟨n, hn⟩ := exists_lt_nsmul h r
+    exact ⟨n, by rwa [natCast_zsmul]⟩
 
 end TauCeti
