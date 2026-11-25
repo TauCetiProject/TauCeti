@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.RingTheory.TwoSidedIdeal.Basic
 public import TauCeti.Analysis.CStarAlgebra.TracialFunctional
+import TauCeti.Algebra.Star.Polarization
 
 /-!
 # Traces on C⋆-algebras and their square-integrable ideal
@@ -46,8 +47,11 @@ functional (`TauCeti.PositiveTracialFunctional`) defines a trace
 * `TauCeti.IsTrace.map_zero`, `TauCeti.IsTrace.mono`: `τ(0) = 0` and monotonicity on `B₊`.
 * `TauCeti.IsTrace.mem_finitePart_of_le`, `TauCeti.IsTrace.add_mem_finitePart`,
   `TauCeti.IsTrace.smul_mem_finitePart`: `𝔪_τ⁺` is a hereditary convex cone.
-* `TauCeti.IsTrace.star_mem_sqIntegrable`, `TauCeti.IsTrace.smul_mem_sqIntegrable`: `𝔫_τ` is
-  self-adjoint and a complex subspace.
+* `TauCeti.IsTrace.zero_mem_sqIntegrable`, `TauCeti.IsTrace.add_mem_sqIntegrable`,
+  `TauCeti.IsTrace.star_mem_sqIntegrable`, `TauCeti.IsTrace.smul_mem_sqIntegrable`,
+  `TauCeti.IsTrace.mul_mem_sqIntegrable_left`, `TauCeti.IsTrace.mul_mem_sqIntegrable_right`:
+  `𝔫_τ` is a self-adjoint complex subspace and a two-sided ideal; these are collected in
+  `TauCeti.IsTrace.sqIntegrable_ideal`.
 * `TauCeti.IsTrace.comp`, `TauCeti.IsFaithfulTrace.comp`: pullback along star homomorphisms.
 * `TauCeti.PositiveTracialFunctional.isTrace_toTrace`,
   `TauCeti.PositiveTracialFunctional.toTrace_lt_top`: a positive tracial functional is a trace
@@ -114,12 +118,6 @@ omit [PartialOrder B] [StarOrderedRing B] in
 @[simp]
 theorem mem_sqIntegrable {x : B} : x ∈ sqIntegrable τ ↔ τ (star x * x) < ∞ :=
   Iff.rfl
-
-omit [PartialOrder B] [StarOrderedRing B] in
-/-- `|c|² x⋆x = (cx)⋆(cx)` for a complex scalar `c`. -/
-private theorem star_smul_mul_smul (c : ℂ) (x : B) :
-    star (c • x) * (c • x) = ((‖c‖₊ ^ 2 : ℝ≥0) : ℝ) • (star x * x) := by
-  simp [star_smul, smul_mul_smul_comm, Complex.conj_mul', ← Complex.coe_smul]
 
 namespace IsTrace
 
@@ -198,26 +196,48 @@ theorem star_mem_sqIntegrable (hτ : IsTrace τ) {x : B} (hx : x ∈ sqIntegrabl
 /-- `𝔫_τ` is closed under multiplication by complex scalars. -/
 theorem smul_mem_sqIntegrable (hτ : IsTrace τ) (c : ℂ) {x : B} (hx : x ∈ sqIntegrable τ) :
     c • x ∈ sqIntegrable τ := by
-  rw [mem_sqIntegrable, star_smul_mul_smul,
+  rw [mem_sqIntegrable, star_smul_mul_smul, ← coe_nnNorm, ← NNReal.coe_pow,
     hτ.map_nnreal_smul_of_nonneg _ (star_mul_self_nonneg x)]
   exact ENNReal.mul_lt_top ENNReal.coe_lt_top hx
+
+omit [StarOrderedRing B] in
+/-- `0 ∈ 𝔫_τ`. -/
+theorem zero_mem_sqIntegrable (hτ : IsTrace τ) : (0 : B) ∈ sqIntegrable τ := by
+  simp [hτ.map_zero]
+
+/-- `𝔫_τ` is closed under addition. -/
+theorem add_mem_sqIntegrable (hτ : IsTrace τ) {x y : B} (hx : x ∈ sqIntegrable τ)
+    (hy : y ∈ sqIntegrable τ) : x + y ∈ sqIntegrable τ :=
+  (hτ.map_star_add_mul_add_le x y).trans_lt <| by
+    rw [mem_sqIntegrable] at hx hy
+    simp [ENNReal.add_lt_top, hx, hy]
+
+/-- `𝔫_τ` is a left ideal: `a x ∈ 𝔫_τ` for `x ∈ 𝔫_τ`. -/
+theorem mul_mem_sqIntegrable_left (hτ : IsTrace τ) (a : B) {x : B} (hx : x ∈ sqIntegrable τ) :
+    a * x ∈ sqIntegrable τ :=
+  (hτ.map_star_mul_mul_le a x).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hx)
+
+/-- `𝔫_τ` is a right ideal: `x a ∈ 𝔫_τ` for `x ∈ 𝔫_τ`. -/
+theorem mul_mem_sqIntegrable_right (hτ : IsTrace τ) (a : B) {x : B} (hx : x ∈ sqIntegrable τ) :
+    x * a ∈ sqIntegrable τ := by
+  simpa using hτ.star_mem_sqIntegrable
+    (hτ.mul_mem_sqIntegrable_left (star a) (hτ.star_mem_sqIntegrable hx))
+
+/-- **The square-integrable ideal.** `𝔫_τ` is closed under addition, complex scalars, left and
+right multiplication and the involution (Dixmier 1963, Lemme 3, p. 226). -/
+theorem sqIntegrable_ideal (hτ : IsTrace τ) {x y : B} (hx : x ∈ sqIntegrable τ)
+    (hy : y ∈ sqIntegrable τ) (c : ℂ) (a : B) :
+    x + y ∈ sqIntegrable τ ∧ c • x ∈ sqIntegrable τ ∧ a * x ∈ sqIntegrable τ ∧
+      x * a ∈ sqIntegrable τ ∧ star x ∈ sqIntegrable τ :=
+  ⟨hτ.add_mem_sqIntegrable hx hy, hτ.smul_mem_sqIntegrable c hx,
+    hτ.mul_mem_sqIntegrable_left a hx, hτ.mul_mem_sqIntegrable_right a hx,
+    hτ.star_mem_sqIntegrable hx⟩
 
 /-- The square-integrable elements `𝔫_τ` of a trace as a two-sided ideal
 (Dixmier 1963, Lemme 3, p. 226). -/
 def sqIntegrableIdeal (hτ : IsTrace τ) : TwoSidedIdeal B :=
-  .mk' (sqIntegrable τ)
-    (by simp [hτ.map_zero])
-    (fun {x y} hx hy ↦ (hτ.map_star_add_mul_add_le x y).trans_lt <| by
-      rw [mem_sqIntegrable] at hx hy
-      simp [ENNReal.add_lt_top, hx, hy])
-    (fun {x} hx ↦ by simpa using hx)
-    (fun {a x} hx ↦ (hτ.map_star_mul_mul_le a x).trans_lt
-      (ENNReal.mul_lt_top ENNReal.coe_lt_top hx))
-    (fun {x a} hx ↦ by
-      have h := hτ.map_star_mul_mul_le (star a) (star x)
-      rw [← star_mul, star_star] at h
-      rw [mem_sqIntegrable, hτ.map_star_mul_self]
-      exact h.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (hτ.star_mem_sqIntegrable hx)))
+  .mk' (sqIntegrable τ) hτ.zero_mem_sqIntegrable hτ.add_mem_sqIntegrable
+    (fun hx ↦ by simpa using hx) (hτ.mul_mem_sqIntegrable_left _) (hτ.mul_mem_sqIntegrable_right _)
 
 /-- The carrier of `hτ.sqIntegrableIdeal` is `𝔫_τ`. -/
 @[simp]
