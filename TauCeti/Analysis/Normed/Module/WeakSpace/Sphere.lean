@@ -99,8 +99,7 @@ variable {𝕜 V F G : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 
 topology to the norm topology. -/
 theorem continuous_comp_toWeakSpace_symm :
     Continuous fun w : WeakSpace 𝕜 V ↦ j ((toWeakSpace 𝕜 V).symm w) := by
-  rw [← coe_toWeakSpaceContinuousLinearEquiv_symm]
-  simpa [Function.comp_def, LinearMap.coe_ofClass] using
+  simpa [Function.comp_def] using
     (LinearMap.continuous_of_finiteDimensional (LinearMap.ofClass j : V →ₗ[𝕜] F)).comp
       (toWeakSpaceContinuousLinearEquiv 𝕜 V).symm.continuous
 
