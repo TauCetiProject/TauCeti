@@ -254,6 +254,14 @@ variable [ContinuousAdd V]
 private theorem sumDual_mem_inter (hC : C.IsRegular) (Λ : StrongDual 𝕜 C.SumSpace) :
     (Λ.comp C.fstToSum, Λ.comp C.sndToSum) ∈ (C.dual hC).inter :=
   (C.mem_dual_inter_iff hC).2 fun x => congrArg Λ (C.fstToSum_interFst x)
+private theorem norm_sumDual_le (hC : C.IsRegular) (Λ : StrongDual 𝕜 C.SumSpace) :
+    ‖(⟨(Λ.comp C.fstToSum, Λ.comp C.sndToSum), sumDual_mem_inter C hC Λ⟩ :
+      (C.dual hC).inter)‖ ≤ ‖Λ‖ :=
+  (norm_inter _ _).trans_le <| max_le
+    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₀ =>
+      (Λ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (C.norm_fstToSum_le x₀) (norm_nonneg Λ)))
+    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₁ =>
+      (Λ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (C.norm_sndToSum_le x₁) (norm_nonneg Λ)))
 
 /-- **Duality of the sum space (Bergh–Löfström, Theorem 2.7.1).** For a regular couple `C`,
 restricting a continuous linear functional on `X₀ + X₁` to `X₀` and `X₁` identifies
@@ -270,9 +278,7 @@ def sumDualEquivDualInter (hC : C.IsRegular) :
         (by dsimp only; rw [C.sumLift_comp_sndToSum, (C.dual hC).interSnd_apply])
       map_add' _ _ := Subtype.ext <| Prod.ext (by ext; rfl) (by ext; rfl)
       map_smul' _ _ := Subtype.ext <| Prod.ext (by ext; rfl) (by ext; rfl) }
-    (fun Λ => ((norm_inter _ _).trans <| (C.norm_sumLift _ _ _).symm.trans <|
-      congrArg norm (C.sumLift_unique _ _ ((C.mem_dual_inter_iff hC).1
-        (sumDual_mem_inter C hC Λ)) rfl rfl).symm).le) fun f =>
+    (norm_sumDual_le C hC) fun f =>
       (C.norm_sumLift_le _ _ _).trans_eq (by simp [(C.dual hC).norm_inter])
 
 @[simp] theorem coe_sumDualEquivDualInter_fst (hC : C.IsRegular) (Λ : StrongDual 𝕜 C.SumSpace) :

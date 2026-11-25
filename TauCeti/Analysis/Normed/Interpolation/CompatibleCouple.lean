@@ -39,8 +39,7 @@ We realise both spaces without choosing a norm on `V`:
 * `TauCeti.CompatibleCouple.toSum`: the factorisation through the sum space of a linear map into
   `V` whose values have bounded preimages in the sum.
 * `TauCeti.CompatibleCouple.sumLift`: the extension to the sum of continuous linear maps on `X₀`
-  and `X₁` that agree on the intersection, of norm `max ‖T₀‖ ‖T₁‖`
-  (`TauCeti.CompatibleCouple.norm_sumLift`).
+  and `X₁` that agree on the intersection.
 * `TauCeti.CompatibleCouple.norm_sumSpace_lt_iff`, `TauCeti.CompatibleCouple.le_norm_sumSpace_iff`:
   the infimum description of the sum norm.
 * `TauCeti.CompatibleCouple.refl`: the couple `(X, X)`, for which both norms are the norm of `X`.
@@ -417,25 +416,6 @@ theorem norm_sumLift_le {𝕜 X₀ X₁ V W : Type*} [NontriviallyNormedField �
         ((T₁.le_opNorm x.snd).trans
           (mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))))).trans_eq
         (by rw [← mul_add, ← prod_norm_eq_of_L1])
-
-/-- `sumLift T₀ T₁ h` has operator norm exactly `max ‖T₀‖ ‖T₁‖`, because the inclusions of `X₀`
-and `X₁` in the sum are norm-nonincreasing. For a regular couple and functionals, this gives the
-isometry `sumDualEquivDualInter` (Bergh–Löfström, Theorem 2.7.1). -/
-@[simp]
-theorem norm_sumLift {𝕜 X₀ X₁ V W : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup X₀] [NormedSpace 𝕜 X₀] [NormedAddCommGroup X₁] [NormedSpace 𝕜 X₁]
-    [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [ContinuousAdd V]
-    [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] (C : CompatibleCouple 𝕜 X₀ X₁ V)
-    (T₀ : X₀ →L[𝕜] W) (T₁ : X₁ →L[𝕜] W)
-    (h : ∀ x : C.inter, T₀ (C.interFst x) = T₁ (C.interSnd x)) :
-    ‖C.sumLift T₀ T₁ h‖ = max ‖T₀‖ ‖T₁‖ :=
-  (C.norm_sumLift_le T₀ T₁ h).antisymm <| max_le
-    (T₀.opNorm_le_bound (C.sumLift T₀ T₁ h).opNorm_nonneg fun x => by
-      rw [← C.sumLift_fstToSum T₀ T₁ h x]
-      exact ((C.sumLift T₀ T₁ h).le_opNorm _).trans (by gcongr; exact C.norm_fstToSum_le x))
-    (T₁.opNorm_le_bound (C.sumLift T₀ T₁ h).opNorm_nonneg fun x => by
-      rw [← C.sumLift_sndToSum T₀ T₁ h x]
-      exact ((C.sumLift T₀ T₁ h).le_opNorm _).trans (by gcongr; exact C.norm_sndToSum_le x))
 
 section Morphism
 
