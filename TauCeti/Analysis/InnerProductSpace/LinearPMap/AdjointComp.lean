@@ -149,6 +149,13 @@ theorem compAdjoint_apply (T : E →ₗ.[𝕜] F) (y : T.compAdjoint.domain) :
   -- by proof irrelevance of the membership witnesses.
   (rfl)
 
+/-- When `T.domain` is not dense, `T†` vanishes on its domain, so `T T†` also vanishes on its
+domain. -/
+theorem compAdjoint_apply_of_not_dense {T : E →ₗ.[𝕜] F} (hd : ¬Dense (T.domain : Set E))
+    (y : T.compAdjoint.domain) : T.compAdjoint y = 0 :=
+  (compAdjoint_apply T y).trans <|
+    (congrArg T (Subtype.ext (adjoint_apply_of_not_dense hd _))).trans T.map_zero
+
 /-- The form identity for `T T†` needs only density of the domain of `T`. -/
 theorem inner_compAdjoint {T : E →ₗ.[𝕜] F} (hd : Dense (T.domain : Set E))
     (x : T.compAdjoint.domain) {y : F} (hy : y ∈ T†.domain) :
@@ -164,11 +171,7 @@ theorem re_inner_compAdjoint_nonneg (T : E →ₗ.[𝕜] F) (x : T.compAdjoint.d
   by_cases hd : Dense (T.domain : Set E)
   · rw [inner_compAdjoint hd x (T.compAdjoint_domain_le x.property)]
     exact inner_self_nonneg
-  · rw [compAdjoint_apply]
-    have hz : (⟨T† ⟨x, compAdjoint_domain_le T x.property⟩,
-        (mem_compAdjoint_domain.mp x.property).choose_spec⟩ : T.domain) = 0 :=
-      Subtype.ext (adjoint_apply_of_not_dense hd _)
-    rw [hz, map_zero, inner_zero_left, _root_.map_zero]
+  · rw [compAdjoint_apply_of_not_dense hd, inner_zero_left, _root_.map_zero]
 
 variable [CompleteSpace F]
 
@@ -308,6 +311,20 @@ theorem IsClosed.hasCore_adjointComp_domain {T : E →ₗ.[𝕜] F} (hT : T.IsCl
     ⟨⟨L.symm p, hpK⟩, L.apply_symm_apply p⟩
   exact closure_mono (by rintro _ ⟨q, hq, rfl⟩; exact hq) hmem
 
+/-- When `T.domain` is not dense, `T†` vanishes on its domain, so `D((T†)† T†) = D(T†)`. -/
+theorem adjointComp_adjoint_domain_of_not_dense {T : E →ₗ.[𝕜] F}
+    (hd : ¬Dense (T.domain : Set E)) : (T†).adjointComp.domain = T†.domain :=
+  le_antisymm (adjointComp_domain_le (T†)) fun _ hy ↦ mem_adjointComp_domain.mpr
+    ⟨hy, by rw [adjoint_apply_of_not_dense hd]; exact zero_mem _⟩
+
+/-- When `T.domain` is not dense, `T†` vanishes on its domain, so `(T†)† T†` also vanishes on its
+domain. -/
+theorem adjointComp_adjoint_apply_of_not_dense {T : E →ₗ.[𝕜] F}
+    (hd : ¬Dense (T.domain : Set E)) (y : (T†).adjointComp.domain) :
+    (T†).adjointComp y = 0 :=
+  (adjointComp_apply (T†) y).trans <|
+    (congrArg (T††) (Subtype.ext (adjoint_apply_of_not_dense hd _))).trans (T††).map_zero
+
 /-- For a closed operator `T`, `T.compAdjoint` coincides with `(T†).adjointComp`. No density
 assumption on `T.domain` is needed: when `T.domain` is not dense, `T†` is `0` on its domain, so
 both operators are `0` on `T†.domain`. -/
@@ -321,19 +338,12 @@ theorem IsClosed.compAdjoint_eq_adjoint_adjointComp {T : E →ₗ.[𝕜] F} (hT 
     refine LinearPMap.ext hdom fun y hy₁ hy₂ ↦ ?_
     rw [compAdjoint_apply, adjointComp_apply]
     exact (LinearPMap.congr_fun hdd _ _).symm
-  · have hdom : T.compAdjoint.domain = (T†).adjointComp.domain := by
-      rw [compAdjoint_domain_of_not_dense hd]
-      exact (le_antisymm (adjointComp_domain_le (T†)) fun _ hy ↦ mem_adjointComp_domain.mpr
-        ⟨hy, by rw [adjoint_apply_of_not_dense hd]; exact zero_mem _⟩).symm
-    refine LinearPMap.ext hdom fun y hy₁ hy₂ ↦ ?_
-    rw [compAdjoint_apply, adjointComp_apply]
-    have h0 : T† ⟨y, compAdjoint_domain_le T hy₁⟩ = 0 := adjoint_apply_of_not_dense hd _
-    have h0' : T† ⟨y, adjointComp_domain_le (T†) hy₂⟩ = 0 := adjoint_apply_of_not_dense hd _
-    have hz₁ : (⟨T† ⟨y, compAdjoint_domain_le T hy₁⟩,
-        (mem_compAdjoint_domain.mp hy₁).choose_spec⟩ : T.domain) = 0 := Subtype.ext h0
-    have hz₂ : (⟨T† ⟨y, adjointComp_domain_le (T†) hy₂⟩,
-        (mem_adjointComp_domain.mp hy₂).choose_spec⟩ : T††.domain) = 0 := Subtype.ext h0'
-    rw [hz₁, hz₂, map_zero, map_zero]
+  · refine LinearPMap.ext
+        ((compAdjoint_domain_of_not_dense hd).trans
+          (adjointComp_adjoint_domain_of_not_dense hd).symm)
+        fun y hy₁ hy₂ ↦ ?_
+    rw [compAdjoint_apply_of_not_dense hd ⟨y, hy₁⟩,
+      adjointComp_adjoint_apply_of_not_dense hd ⟨y, hy₂⟩]
 
 /-- For a closed operator `T`, the domain of `T T†` is dense in the target space. -/
 theorem IsClosed.dense_compAdjoint_domain {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) :

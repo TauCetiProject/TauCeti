@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.AdjointComp
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
-import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
 # Composing bounded partial isometries with unbounded partial linear maps
@@ -129,11 +128,11 @@ theorem IsPartialIsometry.compPMap_adjointComp {u : E →L[𝕜] F} (hu : u.IsPa
     rw [LinearPMap.mem_adjointComp_domain, LinearPMap.mem_adjointComp_domain]
     refine ⟨fun ⟨hx, hux⟩ ↦ ?_, fun ⟨hx, hMx⟩ ↦ ?_⟩
     · have hx' : x ∈ M.domain := by simpa using hx
-      rw [hadj, LinearPMap.mem_comp_toPMap_comap_domain, coe_coe, hcomp_apply hx hx'] at hux
+      rw [hadj, LinearPMap.mem_compLinearMap_domain, coe_coe, hcomp_apply hx hx'] at hux
       exact ⟨hx', hux⟩
     · have hx' : x ∈ ((u : E →ₗ[𝕜] F).compPMap M).domain := by simpa using hx
       refine ⟨hx', ?_⟩
-      rw [hadj, LinearPMap.mem_comp_toPMap_comap_domain, coe_coe, hcomp_apply hx' hx]
+      rw [hadj, LinearPMap.mem_compLinearMap_domain, coe_coe, hcomp_apply hx' hx]
       exact hMx
   refine LinearPMap.ext hdom fun x hx₁ hx₂ ↦ ?_
   have hMx : M ⟨x, LinearPMap.adjointComp_domain_le M hx₂⟩ ∈ M†.domain :=
@@ -141,11 +140,10 @@ theorem IsPartialIsometry.compPMap_adjointComp {u : E →L[𝕜] F} (hu : u.IsPa
   have hux : (u.adjoint : F →ₗ[𝕜] E)
       (((u : E →ₗ[𝕜] F).compPMap M) ⟨x, LinearPMap.adjointComp_domain_le _ hx₁⟩) ∈ M†.domain := by
     simpa only [coe_coe, hcomp_apply _ (LinearPMap.adjointComp_domain_le M hx₂)] using hMx
-  have hcomp := (LinearPMap.mem_comp_toPMap_comap_domain (M†) (u.adjoint : F →ₗ[𝕜] E)
-    (by rintro ⟨_, hy⟩; simpa using hy)).mpr hux
+  have hcomp := (LinearPMap.mem_compLinearMap_domain (M†) (u.adjoint : F →ₗ[𝕜] E)).mpr hux
   rw [LinearPMap.adjointComp_apply _ ⟨x, hx₁⟩, LinearPMap.adjointComp_apply M ⟨x, hx₂⟩,
     LinearPMap.congr_fun hadj (LinearPMap.mem_adjointComp_domain.mp hx₁).choose_spec hcomp,
-    LinearPMap.comp_toPMap_comap_apply]
+    LinearPMap.compLinearMap_apply]
   exact congrArg (M†) (Subtype.ext (by simpa only [coe_coe] using hcomp_apply _ _))
 
 end Hilbert

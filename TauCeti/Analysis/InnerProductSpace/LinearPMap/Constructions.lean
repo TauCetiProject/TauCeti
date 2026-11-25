@@ -16,7 +16,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Conj
-import TauCeti.LinearAlgebra.LinearPMap.Basic
+public import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
 # Bounded perturbations, compositions, and unitary conjugation of partial linear maps
@@ -219,14 +219,11 @@ variable {𝕜 G E F : Type*} [RCLike 𝕜]
 `M` is `M† ∘ W†` on its maximal domain `{y | W† y ∈ M†.domain}`. No closedness or density
 assumption on `M` is needed. -/
 theorem compPMap_adjoint (W : E →L[𝕜] F) (M : G →ₗ.[𝕜] E) :
-    ((W : E →ₗ[𝕜] F).compPMap M)† =
-      M†.comp ((W.adjoint : F →ₗ[𝕜] E).toPMap (M†.domain.comap (W.adjoint : F →ₗ[𝕜] E)))
-        (by rintro ⟨_, hy⟩; simpa using hy) := by
+    ((W : E →ₗ[𝕜] F).compPMap M)† = M†.compLinearMap (W.adjoint : F →ₗ[𝕜] E) := by
   have hdom : ((W : E →ₗ[𝕜] F).compPMap M)†.domain =
-      (M†.comp ((W.adjoint : F →ₗ[𝕜] E).toPMap (M†.domain.comap (W.adjoint : F →ₗ[𝕜] E)))
-        (by rintro ⟨_, hy⟩; simpa using hy)).domain := by
+      (M†.compLinearMap (W.adjoint : F →ₗ[𝕜] E)).domain := by
     ext y
-    rw [LinearPMap.mem_comp_toPMap_comap_domain, coe_coe,
+    rw [LinearPMap.mem_compLinearMap_domain, coe_coe,
       LinearPMap.mem_adjoint_domain_iff, LinearPMap.mem_adjoint_domain_iff]
     have hfun : ⇑((innerₛₗ 𝕜 y).comp ((W : E →ₗ[𝕜] F).compPMap M).toFun) =
         ⇑((innerₛₗ 𝕜 (W.adjoint y)).comp M.toFun) := by
@@ -234,7 +231,7 @@ theorem compPMap_adjoint (W : E →L[𝕜] F) (M : G →ₗ.[𝕜] E) :
       exact (W.adjoint_inner_left (M x) y).symm
     exact Iff.of_eq congr(Continuous $hfun)
   refine LinearPMap.ext hdom fun y hy hy' ↦ ?_
-  rw [LinearPMap.comp_toPMap_comap_apply]
+  rw [LinearPMap.compLinearMap_apply]
   by_cases hd : Dense (M.domain : Set G)
   · have hd' : Dense (((W : E →ₗ[𝕜] F).compPMap M).domain : Set G) := by
       rwa [LinearMap.compPMap_domain]
