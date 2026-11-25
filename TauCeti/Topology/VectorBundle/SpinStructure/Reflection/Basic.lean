@@ -56,6 +56,9 @@ bundles with fibres in `Type`, as for `TauCeti.OrthonormalFrameLift.extendSpinC`
 
 ## Main results
 
+* `TauCeti.SpinCStructure.precompIsometryHom_refl`,
+  `TauCeti.SpinCStructure.precompIsometryHom_comp`: the automorphism of `Spinᶜ(n)` induced by an
+  isometry of `ℝⁿ` is functorial.
 * `TauCeti.SpinCStructure.toFrame_precompIsometry_inl`: the frame of `[p, 1]` in
   `s.precompIsometry f` is the frame of `p` precomposed with `f`.
 * `TauCeti.SpinCStructure.toOrientationCover_toFrame_reverse_inl`: the orientation reversal
@@ -113,6 +116,49 @@ theorem toSpecialOrthogonal_precompIsometryHom_apply
     QuadraticMap.IsometryEquiv.symm_apply_apply] at h
   rw [h, QuadraticMap.IsometryEquiv.apply_symm_apply]
 
+/-- **Frames precomposed with `f` are compatible with `σ`**: on `EuclideanSpace ℝ (Fin n)`,
+applying `π(g)` after `f` is applying `f` after the rotation of `σ(g)`. This is the compatibility
+hypothesis of `TauCeti.OrthonormalFrameLift.precomp` for `r = f` and `ρ' = π ∘ σ`. -/
+theorem toSpecialOrthogonal_realCliffordIsometryEquivEuclidean_apply
+    (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
+    (g : spinCGroup (realCliffordForm n 0) hQ) (v : Fin n → ℝ) :
+    (spinCGroup.toSpecialOrthogonal _ hQ g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
+        (realCliffordIsometryEquivEuclidean f (WithLp.toLp 2 v)).ofLp =
+      (realCliffordIsometryEquivEuclidean f (WithLp.toLp 2
+        ((spinCGroup.toSpecialOrthogonal _ hQ (precompIsometryHom f g) :
+          (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) v))).ofLp := by
+  simpa using toSpecialOrthogonal_precompIsometryHom_apply f g v
+
+/-- The automorphism of `Spinᶜ(n)` induced by the identity of `ℝⁿ` is the identity. -/
+@[simp]
+theorem precompIsometryHom_refl :
+    precompIsometryHom (QuadraticMap.IsometryEquiv.refl (realCliffordForm n 0)) =
+      MonoidHom.id _ :=
+  QuadraticMap.Isometry.spinCGroupMap_id hQ
+
+/-- The automorphism of `Spinᶜ(n)` induced by the identity of `ℝⁿ` fixes every element. (Not
+`@[simp]`: `simp` proves it from `TauCeti.SpinCStructure.precompIsometryHom_refl`.) -/
+theorem precompIsometryHom_refl_apply (h : spinCGroup (realCliffordForm n 0) hQ) :
+    precompIsometryHom (QuadraticMap.IsometryEquiv.refl (realCliffordForm n 0)) h = h :=
+  DFunLike.congr_fun precompIsometryHom_refl h
+
+/-- The automorphisms of `Spinᶜ(n)` induced by isometries `f` and `g` of `ℝⁿ` compose to the one
+induced by `f ∘ g`: `σ_g ∘ σ_f = σ_{f ∘ g}`. (Not `@[simp]`: `precompIsometryHom` is reducible,
+so `QuadraticMap.Isometry.spinCGroupMap_comp` already rewrites its left-hand side.) -/
+theorem precompIsometryHom_comp
+    (f g : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0)) :
+    (precompIsometryHom g).comp (precompIsometryHom f) = precompIsometryHom (g.trans f) :=
+  QuadraticMap.Isometry.spinCGroupMap_comp _ hQ hQ _ hQ
+
+/-- Pointwise form of `TauCeti.SpinCStructure.precompIsometryHom_comp`:
+`σ_g (σ_f h) = σ_{f ∘ g} h`. -/
+@[simp]
+theorem precompIsometryHom_comp_apply
+    (f g : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
+    (h : spinCGroup (realCliffordForm n 0) hQ) :
+    precompIsometryHom g (precompIsometryHom f h) = precompIsometryHom (g.trans f) h :=
+  DFunLike.congr_fun (precompIsometryHom_comp f g) h
+
 /-- The lift along `ρ ∘ σ`, for the rotation homomorphism `ρ` of `Spinᶜ(n)` and
 `σ = TauCeti.SpinCStructure.precompIsometryHom f`, with the principal bundle of a `Spinᶜ`
 structure `s` and its frames precomposed with `f` (`TauCeti.OrthonormalFrameLift.precomp`); its
@@ -123,8 +169,8 @@ noncomputable abbrev precompIsometryLift
     OrthonormalFrameLift F V n (spinCGroup (realCliffordForm n 0) hQ)
       (((QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)).subtype.comp
         (spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) _)).comp (precompIsometryHom f)) :=
-  s.precomp (realCliffordIsometryEquivEuclidean f) _ fun g v ↦ by
-    simpa using toSpecialOrthogonal_precompIsometryHom_apply f g v
+  s.precomp (realCliffordIsometryEquivEuclidean f) _
+    (toSpecialOrthogonal_realCliffordIsometryEquivEuclidean_apply f)
 
 /-- The **precomposition of a `Spinᶜ` structure** `s` with an isometry `f` of `ℝⁿ`: the `Spinᶜ`
 structure whose principal bundle is `P ×_σ Spinᶜ(n)`, for the automorphism

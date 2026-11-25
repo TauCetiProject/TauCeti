@@ -50,7 +50,8 @@ when they are continuous on `ℂˣ` (`WeilGroupReal.continuous_iff_continuous_co
 * `TauCeti.ClassFieldTheory.WeilGroupReal.j`: the element `j`.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.lift`: the homomorphism out of `W_ℝ` given by a
   homomorphism out of `W_ℂ` and an image of `j` satisfying the relations.
-* `TauCeti.ClassFieldTheory.WeilGroupReal.norm`: the norm `W_ℝ → ℝˣ`.
+* `TauCeti.ClassFieldTheory.WeilGroupReal.norm`: the norm `W_ℝ → ℝˣ`, and
+  `TauCeti.ClassFieldTheory.WeilGroupReal.normHom`, the same map as a continuous homomorphism.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.abelianizationEquiv`: `W_ℝ^{ab} ≃* ℝˣ`.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.topologicalAbelianizationEquiv`: the topological
   abelianization of `W_ℝ` is `ℝˣ` as a topological group.
@@ -384,6 +385,11 @@ theorem coe_norm_includeComplex (z : WeilGroupComplex) :
     (norm (includeComplex z) : ℝ) = Complex.normSq z := by
   simp [coe_norm, Complex.normSq_apply, sq]
 
+/-- On `ℂˣ` the norm is `z ↦ |z|²`, as a unit. -/
+theorem norm_includeComplex (z : WeilGroupComplex) :
+    norm (includeComplex z) = Units.map (Complex.normSq : ℂ →* ℝ) z :=
+  Units.ext (by simp)
+
 /-- The norm of `j` is `-1`. -/
 @[simp]
 theorem norm_j : norm j = -1 := by
@@ -398,6 +404,23 @@ theorem continuous_norm : Continuous norm := by
   have h := continuous_coe_quaternion
   exact ((((continuous_re.comp h).pow 2).add ((continuous_imI.comp h).pow 2)).sub
     ((continuous_imJ.comp h).pow 2)).sub ((continuous_imK.comp h).pow 2)
+
+/-- The norm `W_ℝ → ℝˣ`, `z ↦ |z|²`, `j ↦ -1`, as a continuous homomorphism. -/
+def normHom : WeilGroupReal →ₜ* ℝˣ :=
+  ⟨norm, continuous_norm⟩
+
+@[simp]
+theorem normHom_apply (w : WeilGroupReal) : normHom w = norm w :=
+  (rfl)
+
+/-- As a function, `normHom` is `norm`. -/
+theorem coe_normHom : ⇑normHom = ⇑norm :=
+  (rfl)
+
+/-- The underlying homomorphism of `normHom` is `norm`. -/
+@[simp]
+theorem toMonoidHom_normHom : (normHom : WeilGroupReal →* ℝˣ) = norm :=
+  (rfl)
 
 /-- **The norm is negative exactly on `jℂˣ`.** -/
 theorem coe_norm_neg_iff {w : WeilGroupReal} : (norm w : ℝ) < 0 ↔ w ∉ includeComplex.range := by
@@ -460,6 +483,11 @@ private theorem continuous_normSection : Continuous normSection := by
 /-- **The norm is a quotient map.** -/
 theorem isQuotientMap_norm : IsQuotientMap norm :=
   .of_inverse continuous_normSection continuous_norm norm_normSection
+
+/-- The norm is a quotient map, as a continuous homomorphism. -/
+theorem isQuotientMap_normHom : IsQuotientMap normHom := by
+  rw [coe_normHom]
+  exact isQuotientMap_norm
 
 /-- **The norm is surjective.** -/
 theorem norm_surjective : Function.Surjective norm :=
