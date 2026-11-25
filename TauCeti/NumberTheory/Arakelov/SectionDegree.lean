@@ -110,8 +110,7 @@ theorem sectionDegreeOfNorms_smul [Module.Finite (𝓞 K) E] [Module.IsTorsionFr
     sectionDegreeOfNorms ν (a • s) = sectionDegreeOfNorms ν s := by
   have hq : (span (𝓞 K) {s}).cardQuot ≠ 0 := by
     have := finite_quotient_span_singleton_of_finrank_eq_one hE hs
-    rw [cardQuot_apply]
-    exact Nat.card_pos.ne'
+    exact cardQuot_ne_zero _
   have hN : (Ideal.span {a}).cardQuot ≠ 0 := by
     rwa [← Ideal.absNorm_apply, Ne, Ideal.absNorm_eq_zero_iff, Ideal.span_singleton_eq_bot]
   have hσ (σ : K →+* ℂ) : σ (algebraMap (𝓞 K) K a) ≠ 0 :=
@@ -157,19 +156,12 @@ theorem sectionDegreeOfNorms_map_eq_add_log_cardQuot_range {ν : (K →+* ℂ) �
     rw [Submodule.map_span, Set.image_singleton]
   have hidx : (Submodule.span (𝓞 K) {f s}).cardQuot =
       (Submodule.span (𝓞 K) {s}).cardQuot * (LinearMap.range f).cardQuot := by
-    unfold Submodule.cardQuot
-    rw [hmap, Submodule.map_toAddSubgroup, AddSubgroup.index_map_of_injective _ hf]
-    -- `(LinearMap.range f).toAddSubgroup` is `(f : E →+ F).range` by definition. The rewrite
-    -- `LinearMap.range_toAddSubgroup` states this with `f.toAddMonoidHom` rather than the
-    -- coercion that `Submodule.map_toAddSubgroup` produces, so it does not match and `rfl` closes.
-    rfl
+    rw [hmap, Submodule.cardQuot_map_of_injective hf]
   simp only [sectionDegreeOfNorms_def, hnorm, hidx, Nat.cast_mul]
   rw [Real.log_mul]
   · ring
-  -- Both quotients are finite and nonempty, so both indices are nonzero.
-  all_goals
-    exact Nat.cast_ne_zero.2
-      ((Submodule.cardQuot_apply _).trans_ne (Nat.card_ne_zero.2 ⟨inferInstance, inferInstance⟩))
+  -- Both quotients are finite, so both indices are nonzero.
+  all_goals exact Nat.cast_ne_zero.2 (Submodule.cardQuot_ne_zero _)
 
 end Independence
 
