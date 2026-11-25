@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Regularity
 import TauCeti.Geometry.Manifold.Boundary.Charts
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Smoothness of the second fundamental form of the boundary
@@ -26,7 +27,7 @@ is given by the Hessian formula in that one chart
 regular: the normal coordinate is as smooth as the manifold, its Riemannian Hessian pairs `C^k`
 fields along a `C^k` map to a `C^k` function (`TauCeti.Manifold.contMDiffAt_hessian_pair`), the
 differential of the boundary inclusion carries `C^k` fields of `T∂M` to `C^k` fields of `TM`
-along the inclusion (`TauCeti.contMDiffAt_mfderiv_subtypeVal_boundary_apply`), and the norm of
+along the inclusion (`ContMDiffAt.mfderiv_apply_sectionAlong`), and the norm of
 the gradient is positive at boundary points (`TauCeti.mgradient_neg_chartAt_normal_ne_zero`), hence
 `C^(k + 1)` there (`TauCeti.Manifold.contMDiffAt_norm_mgradient`).
 In particular the coefficients of `II` in Tau Ceti's boundary charts are `C^k`.
@@ -88,16 +89,16 @@ theorem contMDiffAt_boundarySecondFundamentalForm_apply (hm : k + 2 ≤ m) (hl :
   set φ : M → ℝ := fun y ↦ -(c y).val 0
   have hφ : ContMDiffOn (𝓡∂ (n + 1)) 𝓘(ℝ) (k + 2) φ c.source := fun y hy ↦
     ((contMDiffAt_neg_chartAt_normal (k := m) hy).of_le hm).contMDiffWithinAt
-  have hι : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) k
+  have hι : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) m
       (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) :=
-    ((isSmoothEmbedding_subtypeVal_boundary (n := n) (k := m) M).contMDiff.of_le
-      (le_self_add.trans hm))
+    (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := m) M).contMDiff
   have hH := Manifold.contMDiffAt_hessian_pair (n := k) hm hl c.open_source hφ
     (γ := (Subtype.val : (𝓡∂ (n + 1)).boundary M → M)) (x := q₀) (mem_chart_source _ _)
-    (contMDiffAt_mfderiv_subtypeVal_boundary_apply hm1 hU)
-    (contMDiffAt_mfderiv_subtypeVal_boundary_apply hm1 hW)
+    ((hι q₀).mfderiv_apply_sectionAlong hU hm1)
+    ((hι q₀).mfderiv_apply_sectionAlong hW hm1)
   have hN := (contMDiffAt_inv_norm_mgradient_neg_chartAt_normal hm1
-    (le_self_add.trans hl) (mem_chart_source _ (q₀ : M))).comp q₀ (hι q₀)
+    (le_self_add.trans hl) (mem_chart_source _ (q₀ : M))).comp q₀
+    ((hι q₀).of_le (le_self_add.trans hm))
   refine (hN.mul hH).congr_of_eventuallyEq ?_
   filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
     (c.open_source.mem_nhds (mem_chart_source _ (q₀ : M)))] with q hq

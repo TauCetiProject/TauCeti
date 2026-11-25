@@ -57,8 +57,6 @@ the image point.
 * `TauCeti.mvfderiv_eq_zero_iff_mem_boundaryTangentSpace_of_isLocalMin`: a function with a local
   minimum and nonzero differential at `q` has differential vanishing exactly on `T_q∂M`.
 * `TauCeti.curveVelocity_mem_boundaryTangentSpace`: velocities of curves through the boundary.
-* `TauCeti.contMDiffAt_mfderiv_subtypeVal_boundary_apply`: the differential of the inclusion
-  carries `C^k` tangent fields of `∂M` to `C^k` fields of `TM` along the inclusion.
 * `TauCeti.map_mfderiv_boundaryTangentSpace`: naturality under diffeomorphisms.
 
 ## References
@@ -334,25 +332,6 @@ theorem curveVelocity_mem_boundaryTangentSpace (c : ℝ → M) {t : ℝ}
   rw [mfderivWithin_univ] at h
   rw [mem_boundaryTangentSpace_iff_proj]
   exact h
-
-/-! ### Regularity of the differential of the inclusion -/
-
-open Bundle in
-/-- The differential of the boundary inclusion carries a `C^k` tangent field of the boundary
-manifold to a `C^k` field of `TM` along the inclusion, on a `C^(k + 1)` manifold. -/
-theorem contMDiffAt_mfderiv_subtypeVal_boundary_apply {k m : WithTop ℕ∞}
-    [IsManifold (𝓡∂ (n + 1)) 1 M] [IsManifold (𝓡∂ (n + 1)) m M]
-    [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M)] (hm : k + 1 ≤ m)
-    {U : (q : (𝓡∂ (n + 1)).boundary M) → TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q}
-    {q₀ : (𝓡∂ (n + 1)).boundary M}
-    (hU : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)).tangent k
-      (T% U) q₀) :
-    ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)).tangent k
-      (fun q : (𝓡∂ (n + 1)).boundary M ↦ TotalSpace.mk' (EuclideanSpace ℝ (Fin (n + 1))) (q : M)
-        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q (U q))) q₀ := by
-  have hι := (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := m) M).contMDiff
-  exact ((hι.contMDiff_tangentMap hm) _).comp q₀ hU
 
 section Naturality
 
