@@ -359,6 +359,24 @@ theorem resolutionCubeι_resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' :
       PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e ((D.resolutionCubeι hD R j S).hom x) := by
   unfold resolutionCubeObjCongr; rfl
 
+variable {D hD R j} in
+/-- A map of cubes of resolutions of `D` which on every vertex reindexes the circle tensor along a
+bijection of the resolved circles is an isomorphism. -/
+theorem isIso_of_app_comp_resolutionCubeι (τ : D.resolutionCube hD R j ⟶ D.resolutionCube hD R j)
+    (e : ∀ S : Finset (Fin n), D.ResolvedCircle (cubeState S) ≃ D.ResolvedCircle (cubeState S))
+    (hτ : ∀ S, τ.app S ≫ D.resolutionCubeι hD R j S =
+      D.resolutionCubeι hD R j S ≫
+        ModuleCat.ofHom (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) (e S)).toLinearMap) :
+    IsIso τ := by
+  have (S : Finset (Fin n)) : IsIso (τ.app S) := by
+    have hS : τ.app S = (D.resolutionCubeObjCongr hD R j hD (e S) rfl).toModuleIso.hom := by
+      rw [← cancel_mono (D.resolutionCubeι hD R j S), hτ]
+      ext x
+      exact (D.resolutionCubeι_resolutionCubeObjCongr hD R j hD (e S) rfl x).symm
+    rw [hS]
+    infer_instance
+  exact NatIso.isIso_of_isIso_app τ
+
 private theorem resolutionCube_map_homOfLE_insert {S : Finset (Fin n)} {a : Fin n} (ha : a ∉ S) :
     (D.resolutionCube hD R j).map (homOfLE (subset_insert a S)) =
       resolutionCubeEdge D hD R j (covBy_insert ha) :=
@@ -474,3 +492,25 @@ theorem khovanovBracket_apply : D.khovanovBracket hD R j = (D.resolutionCube hD 
   (rfl)
 
 end TauCeti.PDCode
+
+namespace TauCeti.Khovanov
+
+universe u v
+
+variable {R : Type u} [CommRing R]
+
+/-- Reindexing circle tensors along `e₂`, as a map of modules, factors through reindexing along
+any `e₁`. -/
+theorem ofHom_reindex_eq_comp {α β γ : Type v} (e₁ : α ≃ β) (e₂ : α ≃ γ) :
+    ModuleCat.ofHom (X := ModuleCat.of R (CircleTensor R α))
+        (Y := ModuleCat.of R (CircleTensor R γ))
+        (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e₂).toLinearMap =
+      ModuleCat.ofHom (Y := ModuleCat.of R (CircleTensor R β))
+          (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e₁).toLinearMap ≫
+        ModuleCat.ofHom
+          (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) (e₁.symm.trans e₂)).toLinearMap := by
+  have he : e₁.trans (e₁.symm.trans e₂) = e₂ := by
+    rw [← Equiv.trans_assoc, Equiv.self_trans_symm, Equiv.refl_trans]
+  rw [← ModuleCat.ofHom_comp, ← LinearEquiv.coe_trans, PiTensorProduct.reindex_trans, he]
+
+end TauCeti.Khovanov
