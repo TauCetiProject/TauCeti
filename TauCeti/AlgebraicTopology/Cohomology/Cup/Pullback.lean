@@ -32,11 +32,9 @@ isomorphism asserts to be bijective when `u` is a Thom class.
 
 For a map `π : X ⟶ Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, restricting `u ∈ Hⁿ(X, Z)` to the pair
 `(π⁻¹ S, π⁻¹ S ∩ Z)` and `π` to `π⁻¹ S ⟶ S` gives the map over `S` (`TopCat.pullbackCupRestrict`).
-It is natural in `S` (`TopCat.pullbackCupRestrict_naturality`), compatible with restriction from the
-ambient base `Y` (`TopCat.pullbackCupRestrict_singularCohomologyMap_subtypeVal`), over the empty
-subset it is trivially bijective (`TopCat.bijective_pullbackCupRestrict_empty`), and over the whole
-base it is bijective exactly when `a ↦ π^*a ⌣ u` is
-(`TopCat.bijective_pullbackCupRestrict_univ_iff`).
+It is natural in `S` (`TopCat.pullbackCupRestrict_naturality`), over the empty subset it is
+trivially bijective (`TopCat.bijective_pullbackCupRestrict_empty`), and over the whole base it is
+bijective exactly when `a ↦ π^*a ⌣ u` is (`TopCat.bijective_pullbackCupRestrict_univ_iff`).
 For a vector bundle and `Z` its nonzero vectors, this pair is the Thom pair `(E|_S, E₀|_S)` of the
 restriction of the bundle to `S`.
 
@@ -50,9 +48,7 @@ restriction of the bundle to `S`.
 * `TopPair.bijective_pullbackCup_of_isEmpty`: bijectivity for an empty subspace, an isomorphism
   `g` and a degree-zero class with unit values.
 * `TopCat.pullbackCupRestrict`: the map over a subset of the base.
-* `TopCat.pullbackCupRestrict_naturality`,
-  `TopCat.pullbackCupRestrict_singularCohomologyMap_subtypeVal`: naturality in the subset and
-  compatibility with restriction from the ambient base `Y`.
+* `TopCat.pullbackCupRestrict_naturality`: its naturality in the subset.
 * `TopCat.bijective_pullbackCupRestrict_empty`: over the empty subset it is bijective.
 * `TopCat.bijective_pullbackCupRestrict_univ_iff`: over the whole base it is `a ↦ π^*a ⌣ u`.
 -/
@@ -258,24 +254,6 @@ theorem pullbackCupRestrict_naturality {S T : Set Y} (hST : S ⊆ T) {n p m : �
   rw [pullbackCupRestrict_apply, pullbackCupRestrict_apply,
     ← ofInclusionMap_inclusion_comp_restrictPreimagePairMap π Z hST,
     TopPair.singularCohomologyMap_comp_apply, TopPair.pullbackCup_naturality _ _ _ _ hg]
-
-/-- **Compatibility of `pullbackCupRestrict` with `pullbackCup` under restriction from `Y` to `S`**:
-evaluating the map over `S` at the restriction of `a ∈ Hᵖ(Y; M)` agrees with restricting `π^*a ⌣ u`
-to `(π⁻¹ S, π⁻¹ S ∩ Z)`. -/
-theorem pullbackCupRestrict_singularCohomologyMap_subtypeVal (S : Set Y) {n p m : ℕ}
-    (h : p + n = m)
-    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
-    (a : Y.singularCohomology (ModuleCat.of K K) K M p) :
-    pullbackCupRestrict π Z M S n p m h u
-        (TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal S)) p a) =
-      TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) m
-        ((TopPair.ofSubset Z).pullbackCup M π n p m h u a) := by
-  have hg : TopPair.Hom.fst (restrictPreimagePairMap π Z S) ≫ π =
-      ofHom (π.hom.restrictPreimage S) ≫ ofHom (ContinuousMap.subtypeVal S) :=
-    TopCat.ext fun v ↦ congrArg π (restrictPreimagePairMap_fst_apply π Z S v)
-  rw [pullbackCupRestrict_apply]
-  exact TopPair.pullbackCup_naturality (restrictPreimagePairMap π Z S)
-    (ofHom (π.hom.restrictPreimage S)) π (ofHom (ContinuousMap.subtypeVal S)) hg h u a
 
 /-- **The empty base case for `TopCat.pullbackCupRestrict`**: over the empty subset `∅ ⊆ Y`, both
 `Hᵖ(∅; M)` and `Hᵐ(π⁻¹ ∅, π⁻¹ ∅ ∩ Z; M)` vanish, so `TopCat.pullbackCupRestrict` is bijective in
