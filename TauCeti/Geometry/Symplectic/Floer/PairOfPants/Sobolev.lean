@@ -51,8 +51,10 @@ such as the semi-Fredholm estimate of the linearized Floer operator along a Floe
 transfer to the norm of `H1`. Pointwise, the weight is at least `|w - c_q|⁻²` for the center `c_q`
 of every end
 (`TauCeti.Floer.inv_norm_sub_endCenter_sq_le_cylindricalWeight`,
-`TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`): the distance `|w - c_q|` to the
-center of the end is, up to the constant `2π`, the conformal factor of the end chart.
+`TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`), and on the end `q` it is at most
+`5 |w - c_q|⁻²` (`TauCeti.Floer.norm_sub_endCenter_sq_mul_cylindricalWeight_le`): the distance
+`|w - c_q|` to the center of the end is, up to the constant `2π`, the conformal factor of the end
+chart.
 
 ## References
 
@@ -105,6 +107,11 @@ theorem isWeight_cylindricalWeight :
     obtain ⟨h₀, h₁⟩ := mem_thricePuncturedSphereReal_iff.1 hz
     exact add_pos (inv_pos.2 (Complex.normSq_pos.2 h₀))
       (inv_pos.2 (Complex.normSq_pos.2 (sub_ne_zero.2 h₁)))
+
+/-- The inverse of the cylindrical weight is continuous on the pair of pants. -/
+theorem continuousOn_inv_cylindricalWeight :
+    ContinuousOn (fun z ↦ (cylindricalWeight z)⁻¹) thricePuncturedSphereReal :=
+  isWeight_cylindricalWeight.continuousOn.inv₀ fun z hz ↦ (isWeight_cylindricalWeight.pos z hz).ne'
 
 /-- The arithmetic of the weight on an end: if a point lies at distance `x > 0` from the center of
 its end and at distance `y ≥ x / 2` from the other finite puncture, then
@@ -196,6 +203,27 @@ theorem inv_sqrt_cylindricalWeight_le_norm_sub_endCenter (q : Puncture) {z : ℝ
   have h := Real.sqrt_le_sqrt (inv_norm_sub_endCenter_sq_le_cylindricalWeight q z)
   rw [Real.sqrt_inv, Real.sqrt_sq hd.le] at h
   simpa using inv_anti₀ (inv_pos.2 hd) h
+
+/-- **The weight on the ends, from above.** On the part `±s ≥ 0` of the end `q`, the squared
+distance `|w - c_q|²` to the center of the end is at most `5` times the inverse of the cylindrical
+weight. Together with `inv_norm_sub_endCenter_sq_le_cylindricalWeight`, this makes `|w - c_q|²`
+and `ρ(w)⁻¹` comparable on the end: both are, up to constants, the inverse of the conformal factor
+of the end chart. -/
+theorem norm_sub_endCenter_sq_mul_cylindricalWeight_le (q : Puncture) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (h : 0 ≤ (positiveEndCoord q z).1) :
+    ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 * cylindricalWeight z ≤ 5 := by
+  have hc : Complex.equivRealProdCLM.symm z ≠ q.endCenter :=
+    ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q
+  set ζ := positiveEndCoord q z
+  -- The point is the end chart at `±ζ`, where the weight times the Jacobian is at most `20π²`.
+  have hφ : endChart q (q.endSign • ζ) = z := by
+    rw [← positiveEndChart_apply, positiveEndChart_positiveEndCoord q hc]
+  have hζ : 0 ≤ q.endSign * (q.endSign • ζ).1 := by
+    rwa [Prod.smul_fst, smul_eq_mul, ← mul_assoc, endSign_mul_self, one_mul]
+  have h' := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q hζ).2
+  rw [det_fderiv_endChart, hφ] at h'
+  have hπ : 0 < 4 * π ^ 2 := by positivity
+  nlinarith
 
 /-- **The `W^{1,2}` density on the ends, from the weighted density.** On the part `±s ≥ 0` of the
 end `q`, the `W^{1,2}` density `‖∂s ζ‖² + ‖∂t ζ‖² + ‖ζ‖²` of `ζ = ξ ∘ φ_q` in the end coordinates

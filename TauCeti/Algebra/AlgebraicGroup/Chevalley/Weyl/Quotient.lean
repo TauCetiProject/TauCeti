@@ -247,6 +247,20 @@ theorem weylSubgroupQuotientMulEquiv_symm_weylProjection (g : Nₖ) :
       QuotientGroup.mk g := by
   rw [MulEquiv.symm_apply_eq, D.weylSubgroupQuotientMulEquiv_mk]
 
+/-- On a product of a Weyl word and an actual torus point, `D.weylProjection K` evaluates to the
+Weyl-group element spelled by the word. -/
+theorem weylProjection_list_prod_mul_torusPoints (l : List (Fin t.rank))
+    (s : Fin t.rank → Kˣ) :
+    D.weylProjection K
+      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod * D.torusPoints K s,
+        mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
+          (D.torusPoints_mem_weylSubgroup K s)⟩ =
+      t.simplyConnectedWeylWordProd ht l := by
+  rw [← D.weylSubgroupQuotientMulEquiv_mk,
+    ← D.weylSubgroupQuotientMulEquiv_mk_list_prod_simpleWeylLift_mul_torusPoints K l s,
+    D.list_prod_map_simpleWeylLift K l]
+  rfl
+
 end
 
 end TauCeti.DynkinType.ChevalleyDatum

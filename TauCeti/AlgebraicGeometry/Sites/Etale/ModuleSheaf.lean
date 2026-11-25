@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
@@ -252,12 +253,12 @@ variable {S : Scheme.{u}} {Λ : Type u} [Ring Λ]
 constant sheaf on a finitely generated `Λ`-module: every étale `S`-scheme is covered by étale
 maps `V ⟶ U` over which the sheaf is the constant sheaf on a finitely generated module. -/
 abbrev IsFiniteLisse (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) : Prop :=
-  F.IsLocallyConstantIn (smallEtaleTopology S) fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M
+  F.IsLocallyConstantIn (smallEtaleTopology S) (ModuleCat.isFG Λ)
 
 /-- The constant étale sheaf on a finitely generated `Λ`-module is finite lisse. -/
 theorem isFiniteLisse_constantSheaf (M : ModuleCat.{u} Λ) [Module.Finite Λ M] :
     ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M).IsFiniteLisse :=
-  isLocallyConstantIn_constantSheaf (P := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M) ‹_›
+  isLocallyConstantIn_constantSheaf (P := ModuleCat.isFG Λ) ‹_›
 
 theorem IsFiniteLisse.of_iso {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
     (e : F ≅ G) (hF : F.IsFiniteLisse) : G.IsFiniteLisse :=
@@ -274,6 +275,7 @@ theorem IsFiniteLisse.finite_etaleStalk {F : Sheaf (smallEtaleTopology S) (Modul
     (hF : F.IsFiniteLisse) {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S) :
     Module.Finite Λ ((etaleStalk Λ s).obj F) := by
   obtain ⟨M, hM, ⟨e⟩⟩ := IsLocallyConstantIn.exists_sheafFiber_iso hF (pointSmallEtale s)
+  have := M.isFG_iff.1 hM
   exact Module.Finite.equiv e.symm.toLinearEquiv
 
 /-- On a scheme with a geometric point, the constant étale sheaf on a `Λ`-module `M` is finite
