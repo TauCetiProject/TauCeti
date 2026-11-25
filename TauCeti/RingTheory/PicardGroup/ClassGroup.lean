@@ -36,6 +36,9 @@ theorem ClassGroup.equivPic_mk {A : Type u} [CommRing A] [IsDomain A]
       Pic.mk A (FractionalIdeal.unitsMulEquivSubmodule I : Submodule A (FractionRing A)) := by
   rw [← ClassGroup.Quot_mk_eq_mk]
   -- `ClassGroup.equivPic` is defined by sending the class of `I` to the Picard class of `I`.
+  -- Mathlib has no `_mk` lemmas for its components, and rewriting with its `simps` lemma
+  -- `ClassGroup.equivPic_apply` fails: the resulting term is not type-correct at reducible
+  -- transparency, as Mathlib records at `ClassGroup.equivPic`. So we unfold definitionally.
   rfl
 
 /-- If `FractionRing A` has trivial Picard group, for instance if `A` is a domain, every invertible

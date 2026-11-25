@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Rank
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
@@ -57,10 +58,8 @@ theorem splitK0_of_finiteProjectiveModulesRegular :
   splitK0_of_self R
 
 /-- The class of the free module `Rⁿ` is the integer `n` in projective `K₀`. -/
-@[simp]
-theorem splitK0_of_fin (n : ℕ) : SplitK0.of.{u} (of R (Fin n → R)) = n := by
-  rw [SplitK0.of_eq_nsmul_of_linearEquiv_fin (R' := of R R) (.refl _ _) (.refl _ _),
-    splitK0_of_self, nsmul_one]
+theorem splitK0_of_fin (n : ℕ) : SplitK0.of.{u} (freeProjective R n) = n := by
+  rw [of_freeProjective, splitK0_of_finiteProjectiveModulesRegular, nsmul_one]
 
 variable {R}
 

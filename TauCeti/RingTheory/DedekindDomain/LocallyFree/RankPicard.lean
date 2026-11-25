@@ -163,10 +163,14 @@ private theorem rankSteinitz_eq_ringEquivOfAddEquiv (φ : M ≃+ Additive (Class
     (x : SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) :
     rankSteinitz A x = ((ringEquivOfAddEquiv A φ x).fst, φ (ringEquivOfAddEquiv A φ x).snd) := by
   conv_lhs => rw [← (ringEquivOfAddEquiv A φ).symm_apply_apply x]
-  rw [ringEquivOfAddEquiv_symm_apply, map_add, ← zsmul_one, map_zsmul,
-    ← splitK0_of_finiteProjectiveModulesRegular, rankSteinitz_of_finiteProjectiveModulesRegular,
-    rankSteinitz_idealClassHom]
-  ext <;> simp
+  -- `rankSteinitz` sends the unit `[A]` to `(1, 0)`, hence an integer `n` to `(n, 0)`.
+  have h1 : rankSteinitz A 1 = (1, 0) := by
+    rw [← splitK0_of_finiteProjectiveModulesRegular]
+    exact rankSteinitz_of_finiteProjectiveModulesRegular A
+  have hcast (n : ℤ) : rankSteinitz A n = (n, 0) := by
+    simpa [h1] using map_zsmul (rankSteinitz A) n 1
+  rw [ringEquivOfAddEquiv_symm_apply]
+  simp [hcast]
 
 /-- **Projective `K₀` of a Dedekind domain as a ring.** Rank and Steinitz class identify projective
 `K₀(A)` with the trivial square-zero extension `ℤ ⋉ Cl(A)`, so that
@@ -241,7 +245,7 @@ theorem rankPicRingEquiv_symm_apply (x : TrivSqZeroExt ℤ (Additive (Pic A))) :
 
 /-- The free module `Aⁿ` has rank `n` and trivial Picard class. -/
 theorem rankPicRingEquiv_of_fin (n : ℕ) :
-    rankPicRingEquiv A (SplitK0.of.{u} (of A (Fin n → A))) = n := by
+    rankPicRingEquiv A (SplitK0.of.{u} (freeProjective A n)) = n := by
   rw [splitK0_of_fin, map_natCast]
 
 /-- An invertible module `L` has rank one and Picard class `L`. -/
@@ -250,9 +254,8 @@ theorem rankPicRingEquiv_of_pic (L : Pic A) :
       TrivSqZeroExt.inl 1 + TrivSqZeroExt.inr (Additive.ofMul L) := by
   obtain ⟨I, ⟨e⟩⟩ := Module.Invertible.exists_linearEquiv_nonZeroDivisors (A := A) L
   have hL : Module.finrank A L = 1 :=
-    Module.finrank_eq_card_of_linearEquiv_pi (J := fun _ : Unit ↦ I)
-      (fun _ ↦ mem_nonZeroDivisors_iff_ne_zero.mp I.property)
-      (e.trans (LinearEquiv.piUnique A fun _ : Unit ↦ (I : Ideal A)).symm)
+    e.finrank_eq.trans
+      (Ideal.finrank_eq_one_of_ne_bot (mem_nonZeroDivisors_iff_ne_zero.mp I.property))
   ext
   · simp [hL]
   · simp [ClassGroup.equivPic_steinitzClass, -ClassGroup.equivPic_apply]
@@ -263,14 +266,18 @@ end RingEquiv
 
 end FiniteProjectiveModules
 
-/-- **The Steinitz class of a tensor product.** For finite projective modules `M` and `N` over a
-Dedekind domain, `st(M ⊗ N) = st(M) ^ rank N * st(N) ^ rank M`. -/
-theorem _root_.Module.steinitzClass_tensorProduct {A : Type u} [CommRing A] [IsDedekindDomain A]
-    (M N : Type u) [AddCommGroup M] [Module A M] [Module.Finite A M] [Module.Projective A M]
-    [AddCommGroup N] [Module A N] [Module.Finite A N] [Module.Projective A N] :
+/-- The Steinitz class of a tensor product of finite flat modules in the universe of the base
+ring, computed in projective `K₀`. -/
+private theorem steinitzClass_tensorProduct_aux {A : Type u} [CommRing A] [IsDedekindDomain A]
+    (M N : Type u) [AddCommGroup M] [Module A M] [Module.Finite A M] [Module.Flat A M]
+    [AddCommGroup N] [Module A N] [Module.Finite A N] [Module.Flat A N] :
     Module.steinitzClass A (M ⊗[A] N) =
       Module.steinitzClass A M ^ Module.finrank A N *
         Module.steinitzClass A N ^ Module.finrank A M := by
+  have := Module.finitePresentation_of_finite A M
+  have := Module.finitePresentation_of_finite A N
+  have : Module.Projective A M := Module.Flat.projective_of_finitePresentation
+  have : Module.Projective A N := Module.Flat.projective_of_finitePresentation
   -- Any central right action of `ℤ` serves to form the square-zero extension.
   let : Module ℤᵐᵒᵖ (Additive (ClassGroup A)) :=
     Module.compHom _ ((RingHom.id ℤ).fromOpposite mul_comm)
@@ -283,5 +290,24 @@ theorem _root_.Module.steinitzClass_tensorProduct {A : Type u} [CommRing A] [IsD
   apply_fun Additive.ofMul
   rw [h]
   simp [ofMul_mul, ofMul_pow, add_comm]
+
+/-- **The Steinitz class of a tensor product.** For finite flat modules `M` and `N` over a
+Dedekind domain, `st(M ⊗ N) = st(M) ^ rank N * st(N) ^ rank M`. -/
+theorem _root_.Module.steinitzClass_tensorProduct {A : Type u} [CommRing A] [IsDedekindDomain A]
+    (M N : Type*) [AddCommGroup M] [Module A M] [Module.Finite A M] [Module.Flat A M]
+    [AddCommGroup N] [Module A N] [Module.Finite A N] [Module.Flat A N] :
+    Module.steinitzClass A (M ⊗[A] N) =
+      Module.steinitzClass A M ^ Module.finrank A N *
+        Module.steinitzClass A N ^ Module.finrank A M := by
+  -- Replace `M` and `N` by isomorphic products of ideals, which live in the universe of `A`.
+  obtain ⟨m, I, ⟨eM⟩⟩ := Module.exists_linearEquiv_pi_nonZeroDivisors A M
+  obtain ⟨n, J, ⟨eN⟩⟩ := Module.exists_linearEquiv_pi_nonZeroDivisors A N
+  have : Module.Finite A ((i : Fin m) → (I i : Ideal A)) := .equiv eM
+  have : Module.Flat A ((i : Fin m) → (I i : Ideal A)) := .of_linearEquiv eM.symm
+  have : Module.Finite A ((i : Fin n) → (J i : Ideal A)) := .equiv eN
+  have : Module.Flat A ((i : Fin n) → (J i : Ideal A)) := .of_linearEquiv eN.symm
+  rw [Module.steinitzClass_congr (TensorProduct.congr eM eN), Module.steinitzClass_congr eM,
+    Module.steinitzClass_congr eN, eM.finrank_eq, eN.finrank_eq]
+  exact steinitzClass_tensorProduct_aux _ _
 
 end TauCeti
