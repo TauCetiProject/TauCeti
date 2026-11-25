@@ -26,11 +26,6 @@ the quadratic maps.
   between nondegenerate quadratic modules with equal Gauss-sum invariants.
 * `TauCeti.FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_and_gaussSign_eq`:
   the classification comparison theorem.
-* `TauCeti.FiniteQuadraticModule.isometryOfBilinearIsometryOfOdd` and
-  `TauCeti.FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd`: on a module of
-  odd order, every bilinear isometry already preserves the quadratic map.
-* `TauCeti.FiniteBilinearModule.toFiniteQuadraticModuleOfOdd`: the unique quadratic refinement
-  `q(x) = ((#B + 1) / 2) • b(x, x)` of a finite bilinear module of odd order.
 
 ## References
 
@@ -187,89 +182,5 @@ theorem nonempty_isometry_iff_bilinear_isometry_and_gaussSign_eq
     exact ⟨⟨f.toFiniteBilinearModule⟩, f.gaussSign_eq⟩
   · rintro ⟨⟨f⟩, h⟩
     exact ⟨isometryOfBilinearIsometry hA f h⟩
-
-/-- **On a module of odd order, every bilinear isometry is a quadratic isometry.** The discrepancy
-character `q_B(f x) - q_A(x)` is killed both by `2` and by `#A`, hence vanishes; neither
-nondegeneracy nor equality of Gauss-sum invariants is required. -/
-def isometryOfBilinearIsometryOfOdd (hm : Odd (Nat.card A))
-    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :
-    Isometry A B where
-  toLinearEquiv := f.toAddEquiv.toIntLinearEquiv
-  map_app' x := by
-    have h2 : 2 • discrepancy f x = 0 := by simpa only [ofNat_zsmul] using two_zsmul_discrepancy f x
-    have hm0 : Nat.card A • discrepancy f x = 0 := by
-      rw [← map_nsmul, card_nsmul_eq_zero', map_zero]
-    exact sub_eq_zero.mp ((nsmul_eq_zero_iff_of_coprime hm.coprime_two_right).mp ⟨hm0, h2⟩)
-
-@[simp]
-theorem isometryOfBilinearIsometryOfOdd_apply (hm : Odd (Nat.card A))
-    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) (x : A) :
-    isometryOfBilinearIsometryOfOdd hm f x = f x := by
-  rfl
-
-/-- **Polar pairings classify odd-order finite quadratic modules.** Two finite quadratic modules of
-odd order are isometric if and only if their polar bilinear modules are isometric. -/
-theorem nonempty_isometry_iff_bilinear_isometry_of_odd (hm : Odd (Nat.card A)) :
-    Nonempty (Isometry A B) ↔
-      Nonempty (FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :=
-  ⟨fun ⟨f⟩ ↦ ⟨f.toFiniteBilinearModule⟩, fun ⟨f⟩ ↦ ⟨isometryOfBilinearIsometryOfOdd hm f⟩⟩
-
-end TauCeti.FiniteQuadraticModule
-
-namespace TauCeti.FiniteBilinearModule
-
-/-- **The canonical quadratic refinement of a finite bilinear module of odd order**, given by
-`q(x) = ((#B + 1) / 2) • b(x, x)`. Since `2 * ((#B + 1) / 2) = #B + 1` acts as the identity on a
-group of odd order `#B`, the polar form of `q` is `b`, and every quadratic refinement of `b` is
-isometric to it (`TauCeti.FiniteQuadraticModule.isometryToFiniteQuadraticModuleOfOdd`). -/
-@[expose] noncomputable def toFiniteQuadraticModuleOfOdd (B : FiniteBilinearModule)
-    (hm : Odd (Nat.card B)) : FiniteQuadraticModule where
-  toFiniteBilinearModule := B
-  quadratic := LinearMap.BilinMap.toQuadraticMap (((Nat.card B + 1) / 2 : ℕ) • B.toBilin)
-  polar_eq_pairing' x y := by
-    obtain ⟨t, ht⟩ := hm
-    have hk : 2 * ((Nat.card B + 1) / 2) = Nat.card B + 1 := by omega
-    rw [LinearMap.BilinMap.polar_toQuadraticMap]
-    simp only [LinearMap.smul_apply, toBilin_apply, B.pairing_comm y x]
-    rw [← two_nsmul, ← mul_nsmul', hk, add_nsmul, one_nsmul, ← pairing_nsmul_left,
-      card_nsmul_eq_zero', B.pairing_zero_left, zero_add]
-
-/-- The polar bilinear module of `toFiniteQuadraticModuleOfOdd` is the original module. -/
-theorem toFiniteQuadraticModuleOfOdd_toFiniteBilinearModule (B : FiniteBilinearModule)
-    (hm : Odd (Nat.card B)) : (B.toFiniteQuadraticModuleOfOdd hm).toFiniteBilinearModule = B :=
-  rfl
-
-/-- Evaluating the canonical odd-order quadratic refinement gives `((#B + 1) / 2) • b(x, x)`. -/
-@[simp]
-theorem toFiniteQuadraticModuleOfOdd_quadratic (B : FiniteBilinearModule)
-    (hm : Odd (Nat.card B)) (x : B) :
-    (B.toFiniteQuadraticModuleOfOdd hm).quadratic x = ((Nat.card B + 1) / 2) • B.pairing x x :=
-  (LinearMap.BilinMap.toQuadraticMap_apply _ x).trans (by simp)
-
-/-- A bilinear isometry between modules of odd order preserves the Gauss-sum invariant of their
-canonical quadratic refinements. -/
-theorem Isometry.gaussSign_toFiniteQuadraticModuleOfOdd_eq {A B : FiniteBilinearModule}
-    (hm : Odd (Nat.card A)) (f : Isometry A B) :
-    (A.toFiniteQuadraticModuleOfOdd hm).gaussSign =
-      (B.toFiniteQuadraticModuleOfOdd (Nat.card_congr f.toAddEquiv.toEquiv ▸ hm)).gaussSign :=
-  (FiniteQuadraticModule.isometryOfBilinearIsometryOfOdd hm f).gaussSign_eq
-
-end TauCeti.FiniteBilinearModule
-
-namespace TauCeti.FiniteQuadraticModule
-
-/-- Every finite quadratic module of odd order is canonically isometric to the canonical quadratic
-refinement of its polar bilinear module. -/
-noncomputable def isometryToFiniteQuadraticModuleOfOdd (A : FiniteQuadraticModule)
-    (hm : Odd (Nat.card A)) :
-    Isometry A (A.toFiniteBilinearModule.toFiniteQuadraticModuleOfOdd hm) :=
-  isometryOfBilinearIsometryOfOdd hm (FiniteBilinearModule.Isometry.refl _)
-
-@[simp]
-theorem isometryToFiniteQuadraticModuleOfOdd_apply (A : FiniteQuadraticModule)
-    (hm : Odd (Nat.card A)) (x : A) :
-    A.isometryToFiniteQuadraticModuleOfOdd hm x = x :=
-  (isometryOfBilinearIsometryOfOdd_apply hm (FiniteBilinearModule.Isometry.refl _) x).trans
-    (FiniteBilinearModule.Isometry.refl_apply _ x)
 
 end TauCeti.FiniteQuadraticModule

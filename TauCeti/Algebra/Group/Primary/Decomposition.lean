@@ -26,7 +26,6 @@ cardinality of the group. The equivalence uses Mathlib's canonical
 ## Main results
 
 * `AddSubgroup.primaryPart`: the part of a subgroup in one primary component.
-* `AddEquiv.primaryComponent`: restriction of an additive equivalence to `n`-primary components.
 * `TauCeti.AddCommGroup.primaryDecomposition`: a finite abelian group is additively equivalent to
   the product of its prime-primary components.
 * `TauCeti.AddCommGroup.primaryDecomposition_apply`: the equivalence is the sum of the component
@@ -55,45 +54,6 @@ theorem mem_primaryPart_iff (H : AddSubgroup G) (p : ℕ)
   Iff.rfl
 
 end AddSubgroup
-
-namespace AddEquiv
-
-variable {G H : Type*} [AddCommGroup G] [AddCommGroup H]
-
-/-- An additive equivalence restricts to an additive equivalence between `n`-primary components. -/
-def primaryComponent (e : G ≃+ H) (n : ℕ) :
-    AddCommGroup.primaryComponent G n ≃+ AddCommGroup.primaryComponent H n where
-  toFun x := ⟨e x, by
-    obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
-    exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-  invFun y := ⟨e.symm y, by
-    obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.2
-    exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-  left_inv x := Subtype.ext (e.symm_apply_apply x)
-  right_inv y := Subtype.ext (e.apply_symm_apply y)
-  map_add' x y := Subtype.ext (e.map_add x y)
-
-@[simp]
-theorem coe_primaryComponent (e : G ≃+ H) (n : ℕ) (x : AddCommGroup.primaryComponent G n) :
-    (e.primaryComponent n x : H) = e x := by
-  rfl
-
-@[simp]
-theorem primaryComponent_symm (e : G ≃+ H) (n : ℕ) :
-    (e.primaryComponent n).symm = e.symm.primaryComponent n := by
-  rfl
-
-@[simp]
-theorem primaryComponent_refl (n : ℕ) :
-    (AddEquiv.refl G).primaryComponent n = AddEquiv.refl _ := by
-  rfl
-
-@[simp]
-theorem primaryComponent_trans {K : Type*} [AddCommGroup K] (e₁ : G ≃+ H) (e₂ : H ≃+ K) (n : ℕ) :
-    (e₁.trans e₂).primaryComponent n = (e₁.primaryComponent n).trans (e₂.primaryComponent n) := by
-  rfl
-
-end AddEquiv
 
 namespace TauCeti
 

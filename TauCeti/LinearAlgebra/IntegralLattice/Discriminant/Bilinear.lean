@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Group
+public import TauCeti.LinearAlgebra.IntegralLattice.Gram
+import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 
 /-!
 # Discriminant bilinear modules of integral lattices
@@ -35,6 +37,8 @@ The pairing `b_L` is `B(x, y) mod ℤ`; the even-lattice refinement
 * `TauCeti.IntegralLattice.discriminantBilinearModule`: the packaged finite bilinear module.
 * `TauCeti.IntegralLattice.isNondegenerate_discriminantBilinearModule`: nondegeneracy of the
   discriminant pairing.
+* `TauCeti.IntegralLattice.odd_natCard_discriminantBilinearModule`: odd cardinality of the
+  discriminant bilinear module when `L.discriminant` is odd.
 * `TauCeti.IntegralLattice.Isometry.discriminantBilinearIsometry`: functoriality under lattice
   isometry.
 
@@ -168,6 +172,13 @@ theorem isNondegenerate_discriminantBilinearModule (L : IntegralLattice V)
       (L.discriminantBilinearModule_pairing a z).symm
     _ = L.discriminantBilinearModule.pairing b z := DFunLike.congr_fun hab z
     _ = L.discriminantPairing b z := L.discriminantBilinearModule_pairing b z
+
+/-- For a nondegenerate lattice of odd discriminant, the carrier of `L.discriminantBilinearModule`
+has odd cardinality. -/
+theorem odd_natCard_discriminantBilinearModule (L : IntegralLattice V) [L.IsNondegenerate]
+    (hL : Odd L.discriminant) :
+    Odd (Nat.card L.discriminantBilinearModule) :=
+  L.natCard_discriminantGroup.symm ▸ hL
 
 namespace Isometry
 

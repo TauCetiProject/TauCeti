@@ -5,7 +5,7 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice
 public import TauCeti.LinearAlgebra.IntegralLattice.Milgram
@@ -19,9 +19,10 @@ import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.OrthogonalQuotient.Bili
 
 In a unimodular integral lattice, every characteristic vector has integral norm congruent to the
 signature difference modulo eight. More generally, when the discriminant `d = |det L|` is odd, the
-lattice still has a characteristic vector `w`, its discriminant bilinear module `b_L` of odd order
-`d` carries a unique quadratic refinement
-(`TauCeti.FiniteBilinearModule.toFiniteQuadraticModuleOfOdd`), and the signature difference modulo
+lattice still has a characteristic vector `w`
+(`TauCeti.IntegralLattice.exists_isCharacteristicVector_of_odd_discriminant`), its discriminant
+bilinear module `b_L` of odd order `d` carries a unique quadratic refinement
+(`TauCeti.FiniteBilinearModule.quadraticRefinement`), and the signature difference modulo
 eight splits as `w²` plus the Gauss-sum invariant of that refinement. Both statements apply to all
 signatures and to both even and odd lattices.
 
@@ -37,8 +38,6 @@ When `L` is unimodular, `b_L` is trivial and the odd-order Gauss-sum term vanish
 
 ## Main results
 
-* `TauCeti.IntegralLattice.exists_isCharacteristicVector_of_odd_discriminant`: every integral
-  lattice of odd discriminant has a characteristic vector.
 * `TauCeti.IntegralLattice.sigPos_sub_sigNeg_eq_integralNorm_add_gaussSign`: for
   `Odd L.discriminant` and characteristic `w`, `(L.sigPos : ZMod 8) - L.sigNeg` equals
   `(L.integralNorm w : ZMod 8)` plus the Gauss-sum invariant of the canonical quadratic refinement
@@ -64,38 +63,6 @@ namespace TauCeti.IntegralLattice
 
 universe u v
 variable {V : Type u} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
-
-/-- **Every integral lattice of odd discriminant has a characteristic vector.** Scaling the dual
-vector that pairs with a chosen basis `b` via `bᵢ ↦ B(bᵢ, bᵢ)` by the odd discriminant `d = #(Lᵛ/L)`
-lands in `L` and leaves all pairings unchanged modulo two. -/
-theorem exists_isCharacteristicVector_of_odd_discriminant (hL : Odd L.discriminant) :
-    ∃ w : L, L.IsCharacteristicVector w := by
-  classical
-  have : L.IsNondegenerate := ⟨L.discriminant_pos_iff.mp hL.pos⟩
-  let b := Module.finBasis ℤ L
-  let y : L.dualCarrier := L.dualPairingEquiv.symm (b.constr ℤ fun i ↦ L.integralNorm (b i))
-  have hy_mem : (L.discriminant • y : L.dualCarrier) ∈ L.carrierInDual := by
-    rw [← Submodule.Quotient.mk_eq_zero, Submodule.Quotient.mk_smul, ← L.natCard_discriminantGroup]
-    exact card_nsmul_eq_zero'
-  let w : L := ⟨(L.discriminant • y : L.dualCarrier), (L.mem_carrierInDual_iff _).mp hy_mem⟩
-  have hsq (r : ℤ) : 2 ∣ r ^ 2 - r := by
-    rcases Int.even_or_odd r with ⟨k, rfl⟩ | ⟨k, rfl⟩
-    · exact ⟨2 * k ^ 2 - k, by ring⟩
-    · exact ⟨2 * k ^ 2 + k, by ring⟩
-  refine ⟨w, (L.isCharacteristicVector_iff_isCharacteristic w).mpr
-    ((L.isSymm_integralForm.isCharacteristic_iff_forall_basis hsq b).mpr fun i ↦ ?_)⟩
-  have hform : L.integralForm w (b i) = (L.discriminant : ℤ) * L.integralNorm (b i) := by
-    apply Int.cast_injective (α := ℚ)
-    have hyb : L.form (y : V) (b i) = (L.integralNorm (b i) : ℚ) := by
-      rw [← L.dualPairingEquiv_cast y (b i), LinearEquiv.apply_symm_apply,
-        Module.Basis.constr_basis]
-    rw [L.integralForm_cast]
-    simp only [w]
-    rw [← natCast_zsmul, SetLike.val_smul, natCast_zsmul, map_nsmul, LinearMap.smul_apply, hyb,
-      nsmul_eq_mul, Int.cast_mul, Int.cast_natCast]
-  obtain ⟨k, hk⟩ := hL
-  rw [hform, ← L.integralNorm_apply, hk]
-  exact ⟨k * L.integralNorm (b i), by push_cast; ring⟩
 
 private theorem half_characteristic_mem_dual {w : L} (hw : L.IsCharacteristicVector w) :
     (1 / 2 : ℚ) • (w : V) ∈ L.evenSublattice.dualCarrier := by
@@ -280,8 +247,9 @@ private theorem gaussSign_primaryComponent_two_evenSublattice [L.IsNondegenerate
   obtain ⟨-, hcard2, -⟩ := natCard_evenSublattice_discriminantGroup_of_odd L hL
   have hcardH₂ : Nat.card H₂ ^ 2 = Nat.card A₂ := by
     have heq : Nat.card H₂ = Nat.card H := Nat.card_congr
-      { toFun := fun x ↦ ⟨x.1.1, (AddSubgroup.mem_primaryPart_iff H 2 x.1).mp x.2⟩
-        invFun := fun y ↦ ⟨⟨y.1, hHle y.2⟩, (AddSubgroup.mem_primaryPart_iff H 2 _).mpr y.2⟩
+      { toFun := fun x ↦ ⟨x.val.val, (AddSubgroup.mem_primaryPart_iff H 2 x.val).mp x.property⟩
+        invFun := fun y ↦
+          ⟨⟨y.val, hHle y.property⟩, (AddSubgroup.mem_primaryPart_iff H 2 _).mpr y.property⟩
         left_inv := fun _ ↦ rfl
         right_inv := fun _ ↦ rfl }
     exact (congrArg (· ^ 2) heq).trans hcard2.symm
@@ -293,20 +261,12 @@ private theorem gaussSign_primaryComponent_two_evenSublattice [L.IsNondegenerate
       mk_halfCharacteristicDual_mem_primaryComponent_two L hw⟩
   have ha₂ (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ :=
     quadratic_halfCharacteristicDual_add L hw
-      ⟨h.1.1, (AddSubgroup.mem_primaryPart_iff H 2 h.1).mp h.2⟩
+      ⟨h.val.val, (AddSubgroup.mem_primaryPart_iff H 2 h.val).mp h.property⟩
   have hqa₂ : A₂.quadratic a₂ = ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) :=
     quadratic_halfCharacteristicDual L hw
   refine FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq A₂ ?_
   rw [FiniteQuadraticModule.gaussSum_eq_natCard_mul_expCircle_of_bilinear_isLagrangian a₂ hH₂_lagr
     ha₂, hqa₂, ← hcardH₂, Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _), Complex.ofReal_natCast]
-
-/-- For a nondegenerate lattice of odd discriminant, the carrier of `L.discriminantBilinearModule`
-has odd cardinality. -/
-theorem odd_natCard_discriminantBilinearModule [L.IsNondegenerate] (hL : Odd L.discriminant) :
-    Odd (Nat.card L.discriminantBilinearModule) := by
-  -- `L.discriminantBilinearModule` is exposed with carrier `L.DiscriminantGroup`.
-  change Odd (Nat.card L.DiscriminantGroup)
-  rwa [L.natCard_discriminantGroup]
 
 /-- The `d`-torsion subgroup `ker(d • ·)` of the discriminant quadratic module of
 `L.evenSublattice`, where `d = L.discriminant`. -/
@@ -345,7 +305,7 @@ private noncomputable def evenSublatticeProdAddMonoidHom [L.IsNondegenerate] :
         (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2 ×
       evenSublatticeOddSubgroup L) →+
       (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) where
-  toFun p := p.1.1 + p.2.1
+  toFun p := p.1.val + p.2.val
   map_zero' := by simp
   map_add' p q := by simp [add_add_add_comm]
 
@@ -353,7 +313,7 @@ private theorem evenSublatticeProdAddMonoidHom_apply [L.IsNondegenerate]
     (p : AddCommGroup.primaryComponent
         (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2 ×
       evenSublatticeOddSubgroup L) :
-    evenSublatticeProdAddMonoidHom L p = p.1.1 + p.2.1 :=
+    evenSublatticeProdAddMonoidHom L p = p.1.val + p.2.val :=
   rfl
 
 /-- Bézout decomposition of the discriminant group of `L.evenSublattice` as `P₂ × K`, where `P₂` is
@@ -366,11 +326,11 @@ private theorem bijective_evenSublatticeProdAddMonoidHom [L.IsNondegenerate]
   let K := evenSublatticeOddSubgroup L
   obtain ⟨hcardA, -, r, hr⟩ := natCard_evenSublattice_discriminantGroup_of_odd L hL
   refine ⟨fun p q hpq ↦ ?_, fun z ↦ ?_⟩
-  · have hsub : p.1.1 - q.1.1 = q.2.1 - p.2.1 :=
+  · have hsub : p.1.val - q.1.val = q.2.val - p.2.val :=
       sub_eq_sub_iff_add_eq_add.mpr (hpq.trans (add_comm _ _))
-    have h0 : p.1.1 - q.1.1 = 0 :=
+    have h0 : p.1.val - q.1.val = 0 :=
       disjoint_primaryComponent_two_evenSublatticeOddSubgroup L hL
-        (sub_mem p.1.2 q.1.2) (hsub ▸ sub_mem q.2.2 p.2.2)
+        (sub_mem p.1.property q.1.property) (hsub ▸ sub_mem q.2.property p.2.property)
     exact Prod.ext (Subtype.ext (sub_eq_zero.mp h0))
       (Subtype.ext (sub_eq_zero.mp (hsub.symm.trans h0)).symm)
   · let q := 2 ^ (r * 2)
@@ -416,9 +376,10 @@ private theorem nonempty_evenSublatticeProdIsometry [L.IsNondegenerate]
   let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
   let P₂ := AddCommGroup.primaryComponent A 2
   let K := evenSublatticeOddSubgroup L
-  have hadd (x : P₂) (y : K) : A.quadratic (x.1 + y.1) = A.quadratic x.1 + A.quadratic y.1 := by
+  have hadd (x : P₂) (y : K) :
+      A.quadratic (x.val + y.val) = A.quadratic x.val + A.quadratic y.val := by
     rw [QuadraticMap.map_add A.quadratic, A.polar_eq_pairing,
-      pairing_primaryComponent_two_evenSublatticeOddSubgroup L hL x.2 y.2, add_zero]
+      pairing_primaryComponent_two_evenSublatticeOddSubgroup L hL x.property y.property, add_zero]
   exact ⟨
     { toLinearEquiv :=
         (AddEquiv.ofBijective (evenSublatticeProdAddMonoidHom L)
@@ -452,25 +413,26 @@ private theorem nonempty_evenSublatticeOddSubgroupBilinearIsometry [L.IsNondegen
   have hHle : HA ≤ AddCommGroup.primaryComponent A 2 := fun x hx ↦
     AddCommGroup.mem_primaryComponent.mpr
       ⟨1, two_nsmul_eq_zero_of_mem_evenSublattice_discriminantSubgroup L hx⟩
-  have hKperp (y : K) : y.1 ∈ L.evenSublattice.discriminantBilinearModule.orthogonalComplement H :=
-    (L.evenSublattice.discriminantBilinearModule.mem_orthogonalComplement_iff H y.1).mpr
-      fun h hh ↦ (A.toFiniteBilinearModule.pairing_comm y.1 h).trans
-        (pairing_primaryComponent_two_evenSublatticeOddSubgroup L hL (hHle hh) y.2)
+  have hKperp (y : K) :
+      y.val ∈ L.evenSublattice.discriminantBilinearModule.orthogonalComplement H :=
+    (L.evenSublattice.discriminantBilinearModule.mem_orthogonalComplement_iff H y.val).mpr
+      fun h hh ↦ (A.toFiniteBilinearModule.pairing_comm y.val h).trans
+        (pairing_primaryComponent_two_evenSublatticeOddSubgroup L hL (hHle hh) y.property)
   let qIso := (IntermediateCarrier.discriminantBilinearOrthogonalQuotientIsometry hI).symm.trans
     (Isometry.ofEq (L.toIntegralLattice_toIntermediateCarrier _ _ hI)).discriminantBilinearIsometry
   let φ : K →+ L.discriminantBilinearModule :=
     qIso.toAddEquiv.toAddMonoidHom.comp
       ((L.evenSublattice.discriminantBilinearModule.orthogonalQuotientMk H).comp
-        { toFun := fun y ↦ ⟨y.1, hKperp y⟩
+        { toFun := fun y ↦ ⟨y.val, hKperp y⟩
           map_zero' := rfl
           map_add' := fun _ _ ↦ rfl })
   have hφ_inj : Function.Injective φ := fun x y hxy ↦ by
     have hmk := qIso.toAddEquiv.injective hxy
-    have hmem : x.1 - y.1 ∈ HA :=
+    have hmem : x.val - y.val ∈ HA :=
       (L.evenSublattice.discriminantBilinearModule.orthogonalQuotientMk_eq_iff H _ _).mp hmk
     exact Subtype.ext (sub_eq_zero.mp
       (disjoint_primaryComponent_two_evenSublatticeOddSubgroup L hL
-        (hHle hmem) (sub_mem x.2 y.2)))
+        (hHle hmem) (sub_mem x.property y.property)))
   have hφ_bij : Function.Bijective φ := by
     let _ := Fintype.ofFinite K
     let _ := Fintype.ofFinite L.discriminantBilinearModule
@@ -493,7 +455,7 @@ private theorem gaussSign_evenSublattice_eq_add_odd [L.IsNondegenerate]
       ((L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).restrict
         (AddCommGroup.primaryComponent
           (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2)).gaussSign +
-      (L.discriminantBilinearModule.toFiniteQuadraticModuleOfOdd
+      (L.discriminantBilinearModule.quadraticRefinement
         (L.odd_natCard_discriminantBilinearModule hL)).gaussSign := by
   obtain ⟨eProd⟩ := nonempty_evenSublatticeProdIsometry L hL
   obtain ⟨fBilin⟩ := nonempty_evenSublatticeOddSubgroupBilinearIsometry L hL
@@ -507,10 +469,11 @@ private theorem gaussSign_evenSublattice_eq_add_odd [L.IsNondegenerate]
     exact hcard.symm ▸ L.odd_natCard_discriminantBilinearModule hL
   have hK_sign : ((L.evenSublattice.discriminantQuadraticModule
       L.isEven_evenSublattice).restrict (evenSublatticeOddSubgroup L)).gaussSign =
-      (L.discriminantBilinearModule.toFiniteQuadraticModuleOfOdd
+      (L.discriminantBilinearModule.quadraticRefinement
         (L.odd_natCard_discriminantBilinearModule hL)).gaussSign :=
-    (FiniteQuadraticModule.isometryToFiniteQuadraticModuleOfOdd _ hoddK).gaussSign_eq.trans
-      (fBilin.gaussSign_toFiniteQuadraticModuleOfOdd_eq hoddK)
+    (FiniteQuadraticModule.isometryOfBilinearIsometryOfOdd
+      (B := L.discriminantBilinearModule.quadraticRefinement
+        (L.odd_natCard_discriminantBilinearModule hL)) hoddK fBilin).gaussSign_eq
   rw [← eProd.gaussSign_eq, FiniteQuadraticModule.gaussSign_prod hP₂_nondeg hK_nondeg, hK_sign]
 
 /-- **Van der Blij–Milgram identity for odd-discriminant lattices.** For any nondegenerate integral
@@ -520,7 +483,7 @@ refinement of `b_L`. -/
 theorem sigPos_sub_sigNeg_eq_integralNorm_add_gaussSign [L.IsNondegenerate]
     (hL : Odd L.discriminant) {w : L} (hw : L.IsCharacteristicVector w) :
     ((L.sigPos : ZMod 8) - L.sigNeg) = (L.integralNorm w : ZMod 8) +
-      (L.discriminantBilinearModule.toFiniteQuadraticModuleOfOdd
+      (L.discriminantBilinearModule.quadraticRefinement
         (L.odd_natCard_discriminantBilinearModule hL)).gaussSign := by
   have := L.finiteDimensional
   have hm := L.evenSublattice.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg
@@ -545,9 +508,18 @@ theorem integralNorm_characteristicVector_modEq_of_odd_discriminant [L.IsNondege
   have hM : Odd M.discriminant := hcard ▸ hL
   have hL_eq := L.sigPos_sub_sigNeg_eq_integralNorm_add_gaussSign hL hw
   have hM_eq := M.sigPos_sub_sigNeg_eq_integralNorm_add_gaussSign hM hw'
+  have hsign : (L.discriminantBilinearModule.quadraticRefinement
+      (L.odd_natCard_discriminantBilinearModule hL)).gaussSign =
+      (M.discriminantBilinearModule.quadraticRefinement
+        (M.odd_natCard_discriminantBilinearModule hM)).gaussSign :=
+    (FiniteQuadraticModule.isometryOfBilinearIsometryOfOdd
+      (A := L.discriminantBilinearModule.quadraticRefinement
+        (L.odd_natCard_discriminantBilinearModule hL))
+      (B := M.discriminantBilinearModule.quadraticRefinement
+        (M.odd_natCard_discriminantBilinearModule hM))
+      (L.odd_natCard_discriminantBilinearModule hL) f).gaussSign_eq
   simp only [signature, Prod.mk.injEq] at hsig
-  rw [hsig.1, hsig.2.2, f.gaussSign_toFiniteQuadraticModuleOfOdd_eq
-    (L.odd_natCard_discriminantBilinearModule hL)] at hL_eq
+  rw [hsig.1, hsig.2.2, hsign] at hL_eq
   exact (ZMod.intCast_eq_intCast_iff _ _ 8).mp (add_right_cancel (hL_eq.symm.trans hM_eq))
 
 /-- **Van der Blij's congruence:** the signature difference of a unimodular
@@ -557,7 +529,7 @@ theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
     ((L.sigPos : ℤ) - L.sigNeg) ≡ L.integralNorm w [ZMOD 8] := by
   let _ : L.IsNondegenerate := ⟨hL.nondegenerate⟩
   have hodd : Odd L.discriminant := (L.isUnimodular_iff_discriminant_eq_one.mp hL) ▸ odd_one
-  have : Subsingleton (L.discriminantBilinearModule.toFiniteQuadraticModuleOfOdd
+  have : Subsingleton (L.discriminantBilinearModule.quadraticRefinement
       (L.odd_natCard_discriminantBilinearModule hodd)) :=
     (L.isUnimodular_iff_subsingleton_discriminantGroup).mp hL
   have h := L.sigPos_sub_sigNeg_eq_integralNorm_add_gaussSign hodd hw

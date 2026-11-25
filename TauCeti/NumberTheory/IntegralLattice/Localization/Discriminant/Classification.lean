@@ -11,6 +11,7 @@ import Mathlib.NumberTheory.LegendreSymbol.Basic
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Bilinear
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.IntegralLattice.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal
@@ -27,6 +28,9 @@ Let `L` and `M` be nondegenerate integral lattices and `p` an odd prime. The loc
 their determinants lie in one square class of `ℤ_p`, and the `p`-primary components of their
 discriminant bilinear modules are isometric
 (`TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent`).
+When `L` and `M` are even, odd-order polar comparison identifies isometry of the `p`-primary
+discriminant bilinear modules with isometry of the `p`-primary discriminant quadratic modules
+(`localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent_of_isEven`).
 
 Necessity is the invariance of the rank, of the determinant square class and of the discriminant
 form under local isometry. For sufficiency, diagonalize: `L_p` has an orthogonal basis with
@@ -51,6 +55,8 @@ signatures agree, their discriminant bilinear modules are isometric, and their l
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent`:
   at an odd prime, the localization of a nondegenerate lattice is determined up to isometry by
   the rank, the determinant square class and the `p`-primary discriminant bilinear form.
+* `localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent_of_isEven`: for even
+  lattices, the `p`-primary discriminant quadratic form replaces the bilinear one.
 * `TauCeti.IntegralLattice.sameGenus_iff_nonempty_isometry_and_localIntegralForm_two_equivalent`:
   the genus of a nondegenerate lattice is determined by its signature, its discriminant bilinear
   form and its localization at `2`.
@@ -211,6 +217,31 @@ theorem localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent (hp 
   refine ⟨fun h ↦ ⟨(L.localIntegralForm_equivalent_imp M p h).1,
     (L.localIntegralForm_equivalent_imp M p h).2, h.map primaryDiscriminantBilinearIsometry⟩,
     fun ⟨hrank, hdet, ⟨f⟩⟩ ↦ localIntegralForm_equivalent_of_isometry hp hrank hdet f⟩
+
+/-- **Localizations of even lattices at odd primes from the discriminant quadratic form.** At an odd
+prime `p`, the localizations of two even nondegenerate lattices are integrally isometric exactly
+when the lattices have the same rank, their determinants lie in one square class of `ℤ_p`, and the
+`p`-primary components of their discriminant quadratic modules are isometric. -/
+theorem localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent_of_isEven
+    (hL : L.IsEven) (hM : M.IsEven) (hp : p ≠ 2) :
+    (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
+      finrank ℤ L = finrank ℤ M ∧
+        IsSquare ((L.determinant : ℤ_[p]) * (M.determinant : ℤ_[p])) ∧
+          Nonempty (FiniteQuadraticModule.Isometry
+            ((L.discriminantQuadraticModule hL).restrict
+              (primaryComponent (L.discriminantQuadraticModule hL) p))
+            ((M.discriminantQuadraticModule hM).restrict
+              (primaryComponent (M.discriminantQuadraticModule hM) p))) := by
+  have hodd : Odd (Nat.card ((L.discriminantQuadraticModule hL).restrict
+      (primaryComponent (L.discriminantQuadraticModule hL) p))) :=
+    (TauCeti.AddCommGroup.natCard_primaryComponent (L.discriminantQuadraticModule hL)
+      (Fact.out : p.Prime)).symm ▸ ((Fact.out : p.Prime).odd_of_ne_two hp).pow
+  rw [localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent (L := L) (M := M) hp,
+    FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd,
+    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
+    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
+    L.discriminantQuadraticModule_toFiniteBilinearModule hL,
+    M.discriminantQuadraticModule_toFiniteBilinearModule hM]
 
 /-- **The genus away from `2`.** Two nondegenerate lattices lie in one genus exactly when their
 signatures agree, their discriminant bilinear modules are isometric, and their localizations at
