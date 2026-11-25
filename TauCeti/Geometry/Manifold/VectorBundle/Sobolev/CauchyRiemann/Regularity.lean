@@ -104,17 +104,6 @@ private theorem complexAntilinearPartL_apply_one (L : ℂ →L[ℝ] F) :
     complexAntilinearPartL L 1 = (2⁻¹ : ℝ) • (L 1 + lsmul ℝ ℂ Complex.I (L Complex.I)) := by
   simp
 
-omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- The chart reading of the zero `(0,1)`-form vanishes almost everywhere on the chart image. -/
-private theorem chartValueL_zero_ae (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL volume p 0 i
-        (((0 : zeroOneSobolevSections A volume p 0) : SobolevSection A.tangentHom volume p 0) :
-          A.tangentHom.sectionChartData.SobolevData volume p 0)
-      =ᵐ[volume.restrict (A.image i)] 0 := by
-  simp only [ZeroMemClass.coe_zero, map_zero]
-  exact (ae_image_tangentHom_iff A volume i).1
-    (Lp.coeFn_zero (ℂ →L[ℝ] F) p (volume.restrict (A.tangentHom.sectionChartData.image i : Set ℂ)))
-
 /-! ### The kernel -/
 
 include hD hDs in
@@ -140,7 +129,9 @@ theorem isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
   -- A weak derivative of the reading is one of the chart data, which give the chart formula.
   have hchart := chartValueL_sobolevL_ae A hD hDs volume p w (hDu.congr_ae (hae i).symm)
   rw [hw] at hchart
-  filter_upwards [hchart, chartValueL_zero_ae A (p := p) i, hae i] with y h₁ h₂ h₃
+  filter_upwards [hchart,
+    chartValueL_zero_zeroOneSobolevSections_ae (μ := volume) (p := p) (k := 0) i, hae i]
+    with y h₁ h₂ h₃
   rw [h₂, h₃] at h₁
   have h1 := congrArg (fun L : ℂ →L[ℝ] F ↦ L 1) h₁
   simp only [Pi.zero_apply, zero_apply, add_apply, complexAntilinearPartL_apply_one] at h1
@@ -204,7 +195,8 @@ theorem exists_contMDiff_of_sobolevL_eq_zero (hp : 2 < p) {w : SobolevSection A 
   have h := chartValueL_sobolevL_ofContMDiffSection_ae A hD hDs volume p s₁ i
   rw [← hws, hw] at h
   rw [A.image_tangentHom]
-  filter_upwards [h.symm.trans (chartValueL_zero_ae A (p := p) i),
+  filter_upwards [h.symm.trans
+      (chartValueL_zero_zeroOneSobolevSections_ae (μ := volume) (p := p) (k := 0) i),
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hyi
   exact hy.trans (A.tangentHom.coord_zero (i := (i : Fin A.tangentHom.n))
     (A.image_tangentHom i ▸ hyi)).symm
