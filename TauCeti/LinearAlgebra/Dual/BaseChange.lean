@@ -29,6 +29,8 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `AlgHom.baseChangeEvaluation_rTensor`: naturality of evaluation in the scalar algebra.
 * `Module.Dual.baseChangeEvaluation_one_tmul_baseChange`: naturality of evaluation
   with respect to a base-changed linear map.
+* `Module.Dual.baseChange_rTensor`: base change of a functional is compatible with a change of
+  coefficients `A ⟶ B`.
 * `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_toAddMonoidHom_mk_one`,
   `Module.Dual.baseChange_apply_one`: the value of a base-changed functional at `1 ⊗ m`, at
   `(TensorProduct.mk ℤ A M 1).toAddMonoidHom m`, and at the unit of a base-changed algebra.
@@ -127,6 +129,18 @@ theorem _root_.Module.Dual.baseChange_apply_toAddMonoidHom_mk_one {M A : Type*} 
     φ.baseChange A ((TensorProduct.mk ℤ A M 1).toAddMonoidHom m) = (φ m : A) := by
   rw [LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply,
     Module.Dual.baseChange_apply_one_tmul, eq_intCast]
+
+/-- Base change of a functional is compatible with a change of coefficients `A ⟶ B`: evaluating
+the base change to `B` on the image of `v : A ⊗[R] M` is the image in `B` of the base change to
+`A` evaluated on `v`. -/
+theorem _root_.Module.Dual.baseChange_rTensor {B : Type*} [CommSemiring B] [Algebra R B]
+    [Algebra A B] [IsScalarTower R A B] (φ : Module.Dual R M) (v : A ⊗[R] M) :
+    φ.baseChange B (((Algebra.linearMap A B).restrictScalars R).rTensor M v) =
+      algebraMap A B (φ.baseChange A v) := by
+  induction v using TensorProduct.inductionOn with
+  | tmul a m =>
+    simp [Algebra.smul_def, IsScalarTower.algebraMap_apply R A B]
+  | add v w hv hw => simp only [map_add, hv, hw]
 
 /-- The base change of a functional `φ` on an `R`-algebra `S` takes the unit of `A ⊗[R] S` to
 the image of `φ 1` in `A`. -/

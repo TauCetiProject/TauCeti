@@ -133,10 +133,8 @@ theorem numericalIntersectionNumberBaseChange_rTensor {A B : Type*} [CommRing A]
     [Algebra A B] (v : A ⊗[ℤ] Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x)) :
     numericalIntersectionNumberBaseChange x hi hC B
         (((Algebra.linearMap A B).restrictScalars ℤ).rTensor _ v) =
-      algebraMap A B (numericalIntersectionNumberBaseChange x hi hC A v) := by
-  induction v using TensorProduct.inductionOn with
-  | tmul a α => simp
-  | add v w hv hw => simp only [map_add, hv, hw]
+      algebraMap A B (numericalIntersectionNumberBaseChange x hi hC A v) :=
+  Module.Dual.baseChange_rTensor _ v
 
 /-- The real intersection number of the image of a rational numerical class is its rational
 intersection number. -/
@@ -225,10 +223,8 @@ theorem relNumericalIntersectionNumberBaseChange_rTensor {A B : Type*} [CommRing
     [Algebra A B] (v : A ⊗[ℤ] Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f)) :
     relNumericalIntersectionNumberBaseChange hi hC B
         (((Algebra.linearMap A B).restrictScalars ℤ).rTensor _ v) =
-      algebraMap A B (relNumericalIntersectionNumberBaseChange hi hC A v) := by
-  induction v using TensorProduct.inductionOn with
-  | tmul a α => simp
-  | add v w hv hw => simp only [map_add, hv, hw]
+      algebraMap A B (relNumericalIntersectionNumberBaseChange hi hC A v) :=
+  Module.Dual.baseChange_rTensor _ v
 
 /-- The real relative intersection number of the image of a rational relative numerical class is
 its rational relative intersection number. -/
