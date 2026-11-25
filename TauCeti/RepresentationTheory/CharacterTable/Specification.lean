@@ -53,6 +53,8 @@ orthonormality forbids repetitions, so the matching is a permutation.
   such a matrix sums to the sum of the character degrees.
 * `TauCeti.IsCharacterTableSpec.exists_eq_characterTable`: the row-by-row form of uniqueness, that
   every row is a row of the character table.
+* `TauCeti.IsCharacterTableSpec.irreducibleCharacters_eq_range`: the rows of such a matrix, read
+  as functions on `G`, are exactly the irreducible characters.
 
 ## Implementation notes
 
@@ -344,6 +346,14 @@ theorem IsCharacterTableSpec.sum_apply_mk_one_eq_sum_characterDegree
   obtain ⟨σ, rfl⟩ := characterTable_unique_rows hM
   simp only [Matrix.submatrix_apply, id_eq, characterTable_one]
   exact Equiv.sum_comp σ fun i => (characterDegree ℂ (G := G) i : ℂ)
+
+/-- **The rows of a matrix satisfying the specification are the irreducible characters**: the
+irreducible characters of `G` are exactly the class functions `g ↦ M i (ConjClasses.mk g)`. -/
+theorem IsCharacterTableSpec.irreducibleCharacters_eq_range (hM : IsCharacterTableSpec G M) :
+    irreducibleCharacters ℂ G = Set.range fun i g => M i (ConjClasses.mk g) := by
+  obtain ⟨σ, rfl⟩ := characterTable_unique_rows hM
+  rw [← range_irreducibleCharacter, ← σ.surjective.range_comp]
+  simp [Function.comp_def, characterTable_apply]
 
 end Spec
 
