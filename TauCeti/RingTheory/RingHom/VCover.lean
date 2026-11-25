@@ -53,7 +53,7 @@ integral ring maps have going up, so are integral ring homomorphisms surjective 
   isomorphisms and are stable under base change.
 * `RingHom.IsVCover.comap_surjective`: a v-cover is surjective on prime spectra.
 * `RingHom.IsVCover.pi_of_span_eq_top`: a covering by basic opens is a v-cover.
-* `RingHom.exists_lift_iff_exists_isPrime_le`: a single test map `A →+* V` lifts if and only if
+* `TauCeti.exists_lift_iff_exists_isPrime_le`: a single test map `A →+* V` lifts if and only if
   the prime spectrum of `V ⊗[A] B` contains such a pair.
 * `RingHom.isVCover_iff_exists_isPrime_le`: `f` is a v-cover if and only if, for every test map
   `A →+* V`, the prime spectrum of `V ⊗[A] B` contains such a pair.
@@ -76,6 +76,41 @@ public section
 universe u
 
 open IsLocalRing TensorProduct
+
+namespace TauCeti
+
+variable {A B : Type u} [CommRing A] [CommRing B]
+
+/-- Let `V` be a valuation domain and `B` an algebra over `A`, with `A →+* V` the structure map.
+It lifts along `A →+* B` after an injective local homomorphism `V →+* W` to a valuation domain
+if and only if there are primes `P ≤ Q` of `V ⊗[A] B` lying over the zero ideal and over the
+maximal ideal of `V`. -/
+theorem exists_lift_iff_exists_isPrime_le (V : Type u) [CommRing V] [IsDomain V]
+    [ValuationRing V] [Algebra A V] [Algebra A B] :
+    (∃ (W : Type u) (_ : CommRing W) (_ : IsDomain W) (_ : ValuationRing W) (e : V →+* W)
+      (ψ : B →+* W), Function.Injective e ∧ IsLocalHom e ∧
+        ψ.comp (algebraMap A B) = e.comp (algebraMap A V)) ↔
+      ∃ P Q : Ideal (V ⊗[A] B), P.IsPrime ∧ Q.IsPrime ∧ P ≤ Q ∧
+        P.comap (algebraMap V (V ⊗[A] B)) = ⊥ ∧
+        Q.comap (algebraMap V (V ⊗[A] B)) = maximalIdeal V := by
+  constructor
+  · rintro ⟨W, _, _, _, e, ψ, he, he', hψ⟩
+    let χ := Algebra.TensorProduct.liftRingHom e ψ hψ.symm
+    have hχ : χ.comp (algebraMap V (V ⊗[A] B)) = e := by
+      ext
+      simp [χ]
+    refine ⟨RingHom.ker χ, (maximalIdeal W).comap χ, RingHom.ker_isPrime χ, inferInstance,
+      Ideal.comap_mono bot_le, ?_, ?_⟩
+    · rw [RingHom.comap_ker, hχ, (RingHom.injective_iff_ker_eq_bot e).mp he]
+    · rw [Ideal.comap_comap, hχ, maximalIdeal_comap]
+  · rintro ⟨P, Q, _, _, hPQ, hP, hQ⟩
+    obtain ⟨W, i₁, i₂, i₃, g, hg, hg'⟩ := exists_valuationRing_of_isPrime_le hPQ hP hQ
+    refine ⟨W, i₁, i₂, i₃, g.comp (algebraMap V (V ⊗[A] B)),
+      g.comp Algebra.TensorProduct.includeRight.toRingHom, hg, hg', ?_⟩
+    ext a
+    simp
+
+end TauCeti
 
 namespace RingHom
 
@@ -194,41 +229,12 @@ theorem pi_of_span_eq_top {ι : Type u} (S : ι → Type u) [∀ i, CommRing (S 
 
 end IsVCover
 
-/-- Let `V` be a valuation domain and `B` an algebra over `A`, with `A →+* V` the structure map.
-It lifts along `A →+* B` after an injective local homomorphism `V →+* W` to a valuation domain
-if and only if there are primes `P ≤ Q` of `V ⊗[A] B` lying over the zero ideal and over the
-maximal ideal of `V`. -/
-theorem exists_lift_iff_exists_isPrime_le (V : Type u) [CommRing V] [IsDomain V]
-    [ValuationRing V] [Algebra A V] [Algebra A B] :
-    (∃ (W : Type u) (_ : CommRing W) (_ : IsDomain W) (_ : ValuationRing W) (e : V →+* W)
-      (ψ : B →+* W), Function.Injective e ∧ IsLocalHom e ∧
-        ψ.comp (algebraMap A B) = e.comp (algebraMap A V)) ↔
-      ∃ P Q : Ideal (V ⊗[A] B), P.IsPrime ∧ Q.IsPrime ∧ P ≤ Q ∧
-        P.comap (algebraMap V (V ⊗[A] B)) = ⊥ ∧
-        Q.comap (algebraMap V (V ⊗[A] B)) = maximalIdeal V := by
-  constructor
-  · rintro ⟨W, _, _, _, e, ψ, he, he', hψ⟩
-    let χ := Algebra.TensorProduct.liftRingHom e ψ hψ.symm
-    have hχ : χ.comp (algebraMap V (V ⊗[A] B)) = e := by
-      ext
-      simp [χ]
-    refine ⟨RingHom.ker χ, (maximalIdeal W).comap χ, RingHom.ker_isPrime χ, inferInstance,
-      Ideal.comap_mono bot_le, ?_, ?_⟩
-    · rw [RingHom.comap_ker, hχ, (RingHom.injective_iff_ker_eq_bot e).mp he]
-    · rw [Ideal.comap_comap, hχ, maximalIdeal_comap]
-  · rintro ⟨P, Q, _, _, hPQ, hP, hQ⟩
-    obtain ⟨W, i₁, i₂, i₃, g, hg, hg'⟩ := TauCeti.exists_valuationRing_of_isPrime_le hPQ hP hQ
-    refine ⟨W, i₁, i₂, i₃, g.comp (algebraMap V (V ⊗[A] B)),
-      g.comp Algebra.TensorProduct.includeRight.toRingHom, hg, hg', ?_⟩
-    ext a
-    simp
-
 /-- A ring homomorphism `f : A →+* B` is a v-cover if and only if, for every homomorphism
 `φ : A →+* V` to a valuation domain, there are primes `P ≤ Q` of `V ⊗[A] B` lying over the zero
 ideal and over the maximal ideal of `V`. On spectra: the specialization from the generic to the
 closed point of `Spec V` lifts to the base change of `Spec B → Spec A` along `Spec V → Spec A`.
 For a single test map with given algebra structures, see
-`RingHom.exists_lift_iff_exists_isPrime_le`. -/
+`TauCeti.exists_lift_iff_exists_isPrime_le`. -/
 theorem isVCover_iff_exists_isPrime_le (f : A →+* B) :
     f.IsVCover ↔ ∀ (V : Type u) [CommRing V] [IsDomain V] [ValuationRing V] (φ : A →+* V),
       letI := φ.toAlgebra
@@ -242,7 +248,7 @@ theorem isVCover_iff_exists_isPrime_le (f : A →+* B) :
   let := φ.toAlgebra
   let := f.toAlgebra
   simpa only [RingHom.algebraMap_toAlgebra] using
-    exists_lift_iff_exists_isPrime_le (A := A) (B := B) V
+    TauCeti.exists_lift_iff_exists_isPrime_le (A := A) (B := B) V
 
 namespace IsVCover
 
