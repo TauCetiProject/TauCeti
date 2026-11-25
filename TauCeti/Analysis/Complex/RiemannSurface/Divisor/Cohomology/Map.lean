@@ -29,8 +29,8 @@ Consequently `dim H¹(O(E)) ≤ dim H¹(O(D))`.
 * `divisorCechCohomologyMapOfLE_one_surjective`: surjectivity on `H¹`.
 * `finrank_divisorCechCohomology_one_le_of_le`: `h¹` is antitone in the divisor.
 * `divisorCechCohomologyMeromorphicMul`: the map `Hⁿ(O(D)) → Hⁿ(O(E))` induced by multiplication
-  by a meromorphic function, with `divisorCechCohomologyMeromorphicMul_sub`, `_algebraMap`, `_comp`
-  and `_one`.
+  by a meromorphic function, with `divisorCechCohomologyMeromorphicMul_add`, `_sub`,
+  `_algebraMap`, `_comp`, `_one`, and its compatibility with the inclusion maps.
 
 ## References
 
@@ -131,6 +131,24 @@ theorem divisorCechCohomologyMeromorphicMul_sub {D E : WeilDivisor X}
     Functor.map_sub,
     ModuleCat.hom_sub]
 
+/-- Multiplication by `g₁ + g₂` on cohomology is the sum of the multiplications by `g₁` and by
+`g₂`. -/
+theorem divisorCechCohomologyMeromorphicMul_add {D E : WeilDivisor X}
+    (g₁ g₂ : MeromorphicFunction X)
+    (hg₁ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
+    (hg₂ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₂) (n : ℕ) :
+    divisorCechCohomologyMeromorphicMul (g₁ + g₂)
+        (fun x ↦ (le_min (hg₁ x) (hg₂ x)).trans ((MeromorphicFunction.order x).map_add _ _)) n =
+      divisorCechCohomologyMeromorphicMul g₁ hg₁ n +
+        divisorCechCohomologyMeromorphicMul g₂ hg₂ n := by
+  -- `sheafToPresheaf` is additive, and its action on morphisms is `Sheaf.hom` (`ι_map`).
+  have hadd : (divisorSheafMeromorphicMul g₁ hg₁ + divisorSheafMeromorphicMul g₂ hg₂).hom =
+      (divisorSheafMeromorphicMul g₁ hg₁).hom + (divisorSheafMeromorphicMul g₂ hg₂).hom :=
+    (sheafToPresheaf _ _).map_add
+  rw [divisorCechCohomologyMeromorphicMul_def, divisorCechCohomologyMeromorphicMul_def,
+    divisorCechCohomologyMeromorphicMul_def, divisorSheafMeromorphicMul_add g₁ g₂ hg₁ hg₂, hadd,
+    Functor.map_add, ModuleCat.hom_add]
+
 /-- **Constant multipliers on cohomology.** For `D ≤ E`, multiplication by a constant `c` is `c`
 times the inclusion map `Hⁿ(O(D)) → Hⁿ(O(E))`. -/
 theorem divisorCechCohomologyMeromorphicMul_algebraMap {D E : WeilDivisor X} (hDE : D ≤ E)
@@ -142,6 +160,7 @@ theorem divisorCechCohomologyMeromorphicMul_algebraMap {D E : WeilDivisor X} (hD
 
 /-- **Composition on cohomology.** Multiplying by `g₁` and then by `g₂` on cohomology is
 multiplication by `g₁ g₂`. -/
+@[simp]
 theorem divisorCechCohomologyMeromorphicMul_comp {D E F : WeilDivisor X}
     (g₁ g₂ : MeromorphicFunction X)
     (hg₁ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
@@ -152,6 +171,67 @@ theorem divisorCechCohomologyMeromorphicMul_comp {D E F : WeilDivisor X}
   rw [divisorCechCohomologyMeromorphicMul_def, divisorCechCohomologyMeromorphicMul_def,
     divisorCechCohomologyMeromorphicMul_def, ← ModuleCat.hom_comp, ← Functor.map_comp,
     ← ObjectProperty.FullSubcategory.comp_hom, divisorSheafMeromorphicMul_comp]
+
+/-- Pointwise form of `divisorCechCohomologyMeromorphicMul_comp`. -/
+@[simp]
+theorem divisorCechCohomologyMeromorphicMul_comp_apply {D E F : WeilDivisor X}
+    (g₁ g₂ : MeromorphicFunction X)
+    (hg₁ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
+    (hg₂ : ∀ x, ((E x - F x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₂) (n : ℕ)
+    (c : divisorCechCohomology D n) :
+    divisorCechCohomologyMeromorphicMul g₂ hg₂ n (divisorCechCohomologyMeromorphicMul g₁ hg₁ n c) =
+      divisorCechCohomologyMeromorphicMul (g₁ * g₂)
+        (fun x ↦ sub_le_order_mul (hg₁ x) (hg₂ x)) n c := by
+  rw [← divisorCechCohomologyMeromorphicMul_comp g₁ g₂ hg₁ hg₂ n, LinearMap.comp_apply]
+
+/-- Multiplication by `g` on cohomology commutes with the inclusion maps in the source. -/
+@[simp]
+theorem divisorCechCohomologyMeromorphicMul_comp_divisorCechCohomologyMapOfLE
+    {D D' E : WeilDivisor X} (hDD' : D ≤ D') (g : MeromorphicFunction X)
+    (hg : ∀ x, ((D' x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (n : ℕ) :
+    divisorCechCohomologyMeromorphicMul g hg n ∘ₗ divisorCechCohomologyMapOfLE hDD' n =
+      divisorCechCohomologyMeromorphicMul g
+        (fun x ↦ (WithTop.coe_le_coe.2 (sub_le_sub_right (hDD' x) _)).trans (hg x)) n := by
+  rw [divisorCechCohomologyMeromorphicMul_def, divisorCechCohomologyMeromorphicMul_def,
+    divisorCechCohomologyMapOfLE_def, ← ModuleCat.hom_comp, ← Functor.map_comp,
+    ← ObjectProperty.FullSubcategory.comp_hom, divisorSheafMapOfLE_comp_divisorSheafMeromorphicMul]
+
+/-- Pointwise form of `divisorCechCohomologyMeromorphicMul_comp_divisorCechCohomologyMapOfLE`. -/
+@[simp]
+theorem divisorCechCohomologyMeromorphicMul_divisorCechCohomologyMapOfLE_apply
+    {D D' E : WeilDivisor X} (hDD' : D ≤ D') (g : MeromorphicFunction X)
+    (hg : ∀ x, ((D' x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (n : ℕ)
+    (c : divisorCechCohomology D n) :
+    divisorCechCohomologyMeromorphicMul g hg n (divisorCechCohomologyMapOfLE hDD' n c) =
+      divisorCechCohomologyMeromorphicMul g
+        (fun x ↦ (WithTop.coe_le_coe.2 (sub_le_sub_right (hDD' x) _)).trans (hg x)) n c := by
+  rw [← divisorCechCohomologyMeromorphicMul_comp_divisorCechCohomologyMapOfLE hDD' g hg n,
+    LinearMap.comp_apply]
+
+/-- Multiplication by `g` on cohomology commutes with the inclusion maps in the target. -/
+@[simp]
+theorem divisorCechCohomologyMapOfLE_comp_divisorCechCohomologyMeromorphicMul
+    {D E E' : WeilDivisor X} (g : MeromorphicFunction X)
+    (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (hEE' : E ≤ E')
+    (n : ℕ) :
+    divisorCechCohomologyMapOfLE hEE' n ∘ₗ divisorCechCohomologyMeromorphicMul g hg n =
+      divisorCechCohomologyMeromorphicMul g
+        (fun x ↦ (WithTop.coe_le_coe.2 (sub_le_sub_left (hEE' x) _)).trans (hg x)) n := by
+  rw [divisorCechCohomologyMeromorphicMul_def, divisorCechCohomologyMeromorphicMul_def,
+    divisorCechCohomologyMapOfLE_def, ← ModuleCat.hom_comp, ← Functor.map_comp,
+    ← ObjectProperty.FullSubcategory.comp_hom, divisorSheafMeromorphicMul_comp_divisorSheafMapOfLE]
+
+/-- Pointwise form of `divisorCechCohomologyMapOfLE_comp_divisorCechCohomologyMeromorphicMul`. -/
+@[simp]
+theorem divisorCechCohomologyMapOfLE_divisorCechCohomologyMeromorphicMul_apply
+    {D E E' : WeilDivisor X} (g : MeromorphicFunction X)
+    (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (hEE' : E ≤ E')
+    (n : ℕ) (c : divisorCechCohomology D n) :
+    divisorCechCohomologyMapOfLE hEE' n (divisorCechCohomologyMeromorphicMul g hg n c) =
+      divisorCechCohomologyMeromorphicMul g
+        (fun x ↦ (WithTop.coe_le_coe.2 (sub_le_sub_left (hEE' x) _)).trans (hg x)) n c := by
+  rw [← divisorCechCohomologyMapOfLE_comp_divisorCechCohomologyMeromorphicMul g hg hEE' n,
+    LinearMap.comp_apply]
 
 /-- For `D ≤ E`, multiplication by `1` on cohomology is the inclusion map. -/
 @[simp]

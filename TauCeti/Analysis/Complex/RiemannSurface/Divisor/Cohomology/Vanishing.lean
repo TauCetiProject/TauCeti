@@ -9,9 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.MittagL
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Map
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
-import TauCeti.Analysis.Complex.RiemannSurface.Divisor.LinearEquivalence
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
-import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Linear
 
 /-!
 # Vanishing of `H¹(X, 𝒪_E)` for large `E` and surjectivity of the Mittag-Leffler map
@@ -95,9 +93,10 @@ private theorem eq_zero_of_divisorCechCohomologyMeromorphicMul {E E₁ : WeilDiv
       MeromorphicFunction.order_eq_principalDivisor_mk0 hg0]
     simp [E₂, sub_add_cancel_left]
   apply hE hEE₂
-  have hcomp := divisorCechCohomologyMeromorphicMul_comp g g⁻¹ hg hginv 1
-  simp only [mul_inv_cancel₀ hg0, divisorCechCohomologyMeromorphicMul_one hEE₂] at hcomp
-  rw [map_zero, ← hcomp, LinearMap.comp_apply, hv, map_zero]
+  have hcomp := divisorCechCohomologyMeromorphicMul_comp_apply g g⁻¹ hg hginv 1 v
+  simp only [hv, map_zero, mul_inv_cancel₀ hg0, divisorCechCohomologyMeromorphicMul_one hEE₂]
+    at hcomp
+  rw [map_zero, ← hcomp]
 
 /-- At a divisor `E` from which all inclusions are injective on `H¹`, the group `H¹(𝒪_E)`
 vanishes. -/
