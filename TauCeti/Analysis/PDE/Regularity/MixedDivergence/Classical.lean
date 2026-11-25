@@ -1,0 +1,180 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.PDE.Regularity.MixedDivergence.Basic
+public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
+import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
+
+/-!
+# The classical equation after lifting a mixed divergence term
+
+The lifted divergence is the original mixed divergence minus the matching drift term,
+plus the solution itself, all multiplied by the exponential weight. The horizontal line
+derivatives are transported through the projection. The vertical derivative differentiates
+only the exponential, so the formula puts no differentiability hypothesis on the coefficients.
+-/
+
+public noncomputable section
+
+open Filter Set
+open scoped ContDiff Gradient InnerProductSpace Topology Real
+
+namespace TauCeti.PDE.MixedDivergence
+
+variable {ι : Type*} [Fintype ι]
+
+local notation "E" => EuclideanSpace ℝ ι
+local notation "E'" => EuclideanSpace ℝ (ι ⊕ Unit)
+local notation "e" => EuclideanSpace.basisFun ι ℝ
+local notation "e'" => EuclideanSpace.basisFun (ι ⊕ Unit) ℝ
+
+@[simp]
+private theorem horizontal_basis_inl (i : ι) : horizontal (e' (Sum.inl i)) = e i := by
+  classical
+  ext j
+  simp [EuclideanSpace.basisFun_apply, EuclideanSpace.single, PiLp.single_apply]
+
+@[simp]
+private theorem horizontal_basis_inr : horizontal (e' (Sum.inr ())) = 0 := by
+  classical
+  ext j
+  simp [EuclideanSpace.basisFun_apply, EuclideanSpace.single]
+
+@[simp]
+private theorem vertical_basis_inl (i : ι) : vertical (e' (Sum.inl i)) = 0 := by
+  classical
+  simp [vertical_apply, EuclideanSpace.basisFun_apply, EuclideanSpace.single]
+
+@[simp]
+private theorem vertical_basis_inr : vertical (e' (Sum.inr ())) = 1 := by
+  classical
+  simp [vertical_apply, EuclideanSpace.basisFun_apply, EuclideanSpace.single]
+
+private theorem fderiv_lift_apply {u : E → ℝ} {x : E'}
+    (hu : DifferentiableAt ℝ u (horizontal x)) (d : E') :
+    fderiv ℝ (lift u) x d =
+      rexp (vertical x) * (fderiv ℝ u (horizontal x) (horizontal d) +
+        u (horizontal x) * vertical d) := by
+  have h := hu.hasFDerivAt.comp x horizontal.hasFDerivAt
+  have hl : lift u = fun w ↦ rexp (vertical w) • (u ∘ horizontal) w := rfl
+  rw [hl]
+  simpa only [Function.comp_apply, smul_eq_mul, h.fderiv, ContinuousLinearMap.comp_apply,
+    mul_comm (vertical d)] using
+    fderiv_exp_smul_apply vertical.hasFDerivAt h.differentiableAt d
+
+/-- The horizontal component of the gradient of a lifted function. -/
+theorem horizontal_gradient_lift {u : E → ℝ} {x : E'}
+    (hu : DifferentiableAt ℝ u (horizontal x)) :
+    horizontal (∇ (lift u) x) = rexp (vertical x) • ∇ u (horizontal x) := by
+  classical
+  ext i
+  rw [horizontal_apply, gradient_apply_eq_fderiv_apply_single, ← EuclideanSpace.basisFun_apply,
+    fderiv_lift_apply hu, horizontal_basis_inl, vertical_basis_inl]
+  simp [gradient_apply_eq_fderiv_apply_single, EuclideanSpace.basisFun_apply]
+
+/-- The vertical derivative of the lifted function is the function itself. -/
+theorem vertical_gradient_lift {u : E → ℝ} {x : E'}
+    (hu : DifferentiableAt ℝ u (horizontal x)) :
+    vertical (∇ (lift u) x) = lift u x := by
+  classical
+  rw [vertical_apply, gradient_apply_eq_fderiv_apply_single, ← EuclideanSpace.basisFun_apply,
+    fderiv_lift_apply hu, horizontal_basis_inr, vertical_basis_inr]
+  simp [lift]
+
+/-- The divergence of the flux `a ∇u + b u` in the original coordinates. -/
+@[expose]
+def divMixedGradient (a : E → Matrix ι ι ℝ) (b : E → E) (u : E → ℝ) (x : E) : ℝ :=
+  ∑ i, lineDeriv ℝ (fun y ↦ matrixBilinearForm (a y) (e i) (∇ u y) + b y i * u y) x (e i)
+
+private theorem liftFlux_horizontal (a : E → Matrix ι ι ℝ) (b : E → E) {u : E → ℝ}
+    {x : E'} (hu : DifferentiableAt ℝ u (horizontal x)) (i : ι) :
+    matrixBilinearForm (skewBlock (a (horizontal x)) (b (horizontal x))) (e' (Sum.inl i))
+      (∇ (lift u) x) = rexp (vertical x) *
+        (matrixBilinearForm (a (horizontal x)) (e i) (∇ u (horizontal x)) +
+          b (horizontal x) i * u (horizontal x)) := by
+  classical
+  rw [matrixBilinearForm_skewBlock, horizontal_basis_inl, vertical_basis_inl,
+    horizontal_gradient_lift hu, vertical_gradient_lift hu]
+  simp [lift, EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
+  ring
+
+private theorem liftFlux_vertical (a : E → Matrix ι ι ℝ) (b : E → E) {u : E → ℝ}
+    {x : E'} (hu : DifferentiableAt ℝ u (horizontal x)) :
+    matrixBilinearForm (skewBlock (a (horizontal x)) (b (horizontal x))) (e' (Sum.inr ()))
+      (∇ (lift u) x) = rexp (vertical x) *
+        (u (horizontal x) - ⟪b (horizontal x), ∇ u (horizontal x)⟫_ℝ) := by
+  rw [matrixBilinearForm_skewBlock, horizontal_basis_inr, vertical_basis_inr,
+    horizontal_gradient_lift hu, vertical_gradient_lift hu]
+  simp [lift, real_inner_smul_right]
+  ring
+
+private theorem lineDeriv_liftFlux_horizontal (a : E → Matrix ι ι ℝ) (b : E → E)
+    {u : E → ℝ} {x : E'} (hu : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ u (horizontal y)) (i : ι) :
+    lineDeriv ℝ (fun y ↦ matrixBilinearForm
+      (skewBlock (a (horizontal y)) (b (horizontal y))) (e' (Sum.inl i)) (∇ (lift u) y)) x
+      (e' (Sum.inl i)) = rexp (vertical x) * lineDeriv ℝ
+      (fun y ↦ matrixBilinearForm (a y) (e i) (∇ u y) + b y i * u y) (horizontal x) (e i) := by
+  have h : (fun y ↦ matrixBilinearForm (skewBlock (a (horizontal y)) (b (horizontal y)))
+      (e' (Sum.inl i)) (∇ (lift u) y)) =ᶠ[𝓝 x] _ :=
+    hu.mono fun _ hy ↦ liftFlux_horizontal a b hy i
+  rw [h.lineDeriv_eq]
+  simp only [lineDeriv, map_add, map_smul, horizontal_basis_inl, vertical_basis_inl, smul_zero,
+    add_zero, deriv_const_mul_field]
+
+private theorem lineDeriv_liftFlux_vertical (a : E → Matrix ι ι ℝ) (b : E → E)
+    {u : E → ℝ} {x : E'} (hu : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ u (horizontal y)) :
+    lineDeriv ℝ (fun y ↦ matrixBilinearForm
+      (skewBlock (a (horizontal y)) (b (horizontal y))) (e' (Sum.inr ())) (∇ (lift u) y)) x
+      (e' (Sum.inr ())) = rexp (vertical x) *
+      (u (horizontal x) - ⟪b (horizontal x), ∇ u (horizontal x)⟫_ℝ) := by
+  have h : (fun y ↦ matrixBilinearForm (skewBlock (a (horizontal y)) (b (horizontal y)))
+      (e' (Sum.inr ())) (∇ (lift u) y)) =ᶠ[𝓝 x] _ :=
+    hu.mono fun _ hy ↦ liftFlux_vertical a b hy
+  rw [h.lineDeriv_eq]
+  simp only [lineDeriv, map_add, map_smul, horizontal_basis_inr, vertical_basis_inr, smul_zero,
+    add_zero, smul_eq_mul, mul_one, Real.exp_add, mul_assoc, deriv_const_mul_field]
+  have hexp := (Real.hasDerivAt_exp 0).mul_const
+    (u (horizontal x) - ⟪b (horizontal x), ∇ u (horizontal x)⟫_ℝ)
+  rw [hexp.deriv, Real.exp_zero, one_mul]
+
+/-- The lifted divergence includes the original mixed flux, drift and a single extra
+zeroth-order term. -/
+theorem divMatrixGradient_lift (a : E → Matrix ι ι ℝ) (b : E → E)
+    {u : E → ℝ} {x : E'} (hu : ∀ᶠ y in 𝓝 (horizontal x), DifferentiableAt ℝ u y) :
+    divMatrixGradient (fun y ↦ skewBlock (a (horizontal y)) (b (horizontal y))) (lift u) x =
+      rexp (vertical x) * (divMixedGradient a b u (horizontal x) -
+        ⟪b (horizontal x), ∇ u (horizontal x)⟫_ℝ + u (horizontal x)) := by
+  have h : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ u (horizontal y) :=
+    (horizontal.continuous.continuousAt (x := x)).tendsto.eventually hu
+  rw [divMatrixGradient_def, Fintype.sum_sum_type, Fintype.sum_unique (ι := Unit)]
+  simp only [Subsingleton.elim (default : Unit) (), lineDeriv_liftFlux_horizontal a b h,
+    lineDeriv_liftFlux_vertical a b h]
+  rw [← Finset.mul_sum, divMixedGradient]
+  ring
+
+/-- The lifted principal divergence equation is equivalent to the original mixed
+divergence equation at the projected point. The vertical derivative shifts the potential
+by one. -/
+theorem divMatrixGradient_lift_eq_iff (a : E → Matrix ι ι ℝ) (b : E → E)
+    {u c f : E → ℝ} {x : E'} (hu : ∀ᶠ y in 𝓝 (horizontal x), DifferentiableAt ℝ u y) :
+    divMatrixGradient (fun y ↦ skewBlock (a (horizontal y)) (b (horizontal y))) (lift u) x =
+        (c (horizontal x) + 1) * lift u x - lift f x ↔
+      divMixedGradient a b u (horizontal x) =
+        ⟪b (horizontal x), ∇ u (horizontal x)⟫_ℝ + c (horizontal x) * u (horizontal x) -
+          f (horizontal x) := by
+  rw [divMatrixGradient_lift a b hu]
+  simp only [lift]
+  constructor
+  · intro h
+    have h' := h.trans (show _ = rexp (vertical x) *
+      ((c (horizontal x) + 1) * u (horizontal x) - f (horizontal x)) by ring)
+    linarith only [mul_left_cancel₀ (Real.exp_ne_zero _) h']
+  · intro h
+    rw [h]
+    ring
+
+end TauCeti.PDE.MixedDivergence
