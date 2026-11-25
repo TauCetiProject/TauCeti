@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Parametric
 
 /-!
 # Lipschitz-small perturbations of the identity are diffeomorphisms
@@ -37,6 +38,11 @@ motions that move a point of a manifold continuously to every nearby point.
   `K`-Lipschitz with `K < 1` makes `x ↦ x + u x` a homeomorphism, and a `C^n` diffeomorphism when
   `u` is `C^n`; `LipschitzWith.hasFDerivAt_idAddHomeomorph_symm` gives the derivative of the
   inverse.
+* `LipschitzWith.idAddSmulHomeomorph`, `LipschitzWith.continuous_idAddSmulHomeomorph_symm`,
+  `LipschitzWith.contDiffAt_idAddSmulHomeomorph_symm`: for scalars `‖w p‖ ≤ 1` depending on a
+  parameter `p`, the homeomorphisms `x ↦ x + w p • u x`, whose inverses depend jointly continuously
+  on `(p, y)`, and jointly `C^n` where `w` is `C^n` and `u` is `C^n` on an open set, by the
+  parametric inverse function theorem `ContDiffOn.parametric_invFunOn`.
 * `ContDiff.exists_diffeomorph_apply_eq_of_norm_fderiv_sub_id_le`: a uniformly small derivative
   error supplies a global diffeomorphism over a real-like scalar field.
 * `TauCeti.exists_diffeomorph_family_apply_eq_add`: a jointly smooth family of diffeomorphisms of
@@ -158,6 +164,121 @@ theorem idAddDiffeomorph_symm_apply {n : WithTop ℕ∞}
     (hlip : LipschitzWith K u) (hK : K < 1) (hu : ContDiff 𝕜 n u) (hn : 1 ≤ n) (y : E) :
     (hlip.idAddDiffeomorph hK hu hn).symm y = (hlip.idAddHomeomorph 𝕜 hK).symm y :=
   (rfl)
+
+end LipschitzWith
+
+/-! ### Families of perturbations -/
+
+namespace LipschitzWith
+
+section Family
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {u : E → E} {K : ℝ≥0}
+
+/-- Scaling a `K`-Lipschitz map by a scalar of norm at most one keeps it `K`-Lipschitz. -/
+theorem const_smul_of_norm_le_one (hlip : LipschitzWith K u) {a : 𝕜} (ha : ‖a‖ ≤ 1) :
+    LipschitzWith K fun x ↦ a • u x :=
+  ((lipschitzWith_smul a).comp hlip).weaken
+    (mul_le_of_le_one_left zero_le (by exact_mod_cast ha))
+
+variable [CompleteSpace E]
+
+/-- For a scalar `a` with `‖a‖ ≤ 1`, the homeomorphism `x ↦ x + a • u x` of `E` given by
+`LipschitzWith.idAddHomeomorph`, since `a • u` is again `K`-Lipschitz. -/
+def idAddSmulHomeomorph (hlip : LipschitzWith K u) (hK : K < 1) (a : 𝕜) (ha : ‖a‖ ≤ 1) :
+    E ≃ₜ E :=
+  (hlip.const_smul_of_norm_le_one ha).idAddHomeomorph 𝕜 hK
+
+/-- `LipschitzWith.idAddSmulHomeomorph` is `LipschitzWith.idAddHomeomorph` for the perturbation
+`a • u`, so the API of the latter applies to it. -/
+theorem idAddSmulHomeomorph_def (hlip : LipschitzWith K u) (hK : K < 1) (a : 𝕜) (ha : ‖a‖ ≤ 1) :
+    hlip.idAddSmulHomeomorph hK a ha = (hlip.const_smul_of_norm_le_one ha).idAddHomeomorph 𝕜 hK :=
+  (rfl)
+
+@[simp]
+theorem coe_idAddSmulHomeomorph (hlip : LipschitzWith K u) (hK : K < 1) (a : 𝕜)
+    (ha : ‖a‖ ≤ 1) : ⇑(hlip.idAddSmulHomeomorph hK a ha) = fun x ↦ x + a • u x :=
+  (rfl)
+
+/-- The inverse of `x ↦ x + a • u x` solves `x + a • u x = y`. -/
+theorem idAddSmulHomeomorph_symm_add_smul (hlip : LipschitzWith K u) (hK : K < 1) (a : 𝕜)
+    (ha : ‖a‖ ≤ 1) (y : E) :
+    (hlip.idAddSmulHomeomorph hK a ha).symm y +
+      a • u ((hlip.idAddSmulHomeomorph hK a ha).symm y) = y :=
+  (hlip.idAddSmulHomeomorph hK a ha).apply_symm_apply y
+
+/-- **The inverses of a continuous family of perturbations depend continuously on the parameter
+and the point.** For a continuous `w : X → 𝕜` with `‖w p‖ ≤ 1`, the map
+`(p, y) ↦ (x ↦ x + w p • u x)⁻¹ y` is continuous. By the antilipschitz bound,
+`‖(x ↦ x + w p • u x)⁻¹ y - a‖ ≤ (1 - K)⁻¹ ‖y - (a + w p • u a)‖` for every `a`. -/
+theorem continuous_idAddSmulHomeomorph_symm {X : Type*} [TopologicalSpace X]
+    (hlip : LipschitzWith K u) (hK : K < 1) {w : X → 𝕜} (hw : Continuous w)
+    (hw₁ : ∀ p, ‖w p‖ ≤ 1) :
+    Continuous fun q : X × E ↦ (hlip.idAddSmulHomeomorph hK (w q.1) (hw₁ q.1)).symm q.2 := by
+  refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
+  set a₀ := (hlip.idAddSmulHomeomorph hK (w q₀.1) (hw₁ q₀.1)).symm q₀.2
+  have hle (q : X × E) : ‖(hlip.idAddSmulHomeomorph hK (w q.1) (hw₁ q.1)).symm q.2 - a₀‖ ≤
+      ((1 - K)⁻¹ : ℝ≥0) * ‖q.2 - (a₀ + w q.1 • u a₀)‖ := by
+    have h := ((hlip.const_smul_of_norm_le_one (hw₁ q.1)).antilipschitzWith_id_add hK).le_mul_dist
+      ((hlip.idAddSmulHomeomorph hK (w q.1) (hw₁ q.1)).symm q.2) a₀
+    rwa [dist_eq_norm, dist_eq_norm, idAddSmulHomeomorph_symm_add_smul] at h
+  have hc : Continuous fun q : X × E ↦ q.2 - (a₀ + w q.1 • u a₀) :=
+    continuous_snd.sub (continuous_const.add ((hw.comp continuous_fst).smul continuous_const))
+  have h0 : q₀.2 - (a₀ + w q₀.1 • u a₀) = 0 := by
+    rw [idAddSmulHomeomorph_symm_add_smul, sub_self]
+  refine tendsto_iff_norm_sub_tendsto_zero.2 (squeeze_zero (fun _ ↦ norm_nonneg _) hle ?_)
+  simpa using ((hc.tendsto q₀).mono_right (congrArg nhds h0).le).norm.const_mul
+    (((1 - K)⁻¹ : ℝ≥0) : ℝ)
+
+end Family
+
+section SmoothFamily
+
+variable {𝕂 : Type*} [RCLike 𝕂] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
+  [CompleteSpace E] {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕂 P] [CompleteSpace P]
+  {u : E → E} {K : ℝ≥0} {n : WithTop ℕ∞}
+
+/-- **The inverses of a smooth family of perturbations are jointly smooth.** Let `w : P → 𝕂` be
+`C^n`, `1 ≤ n`, with `‖w p‖ ≤ 1`, and let `u` be `C^n` on an open set `U`. Then
+`(p, y) ↦ (x ↦ x + w p • u x)⁻¹ y` is `C^n` at every point `(p, y)` for which this inverse lies
+in `U`. This is the parametric inverse function theorem `ContDiffOn.parametric_invFunOn`, applied
+to `(p, x) ↦ x + w p • u x` on `P × U`. -/
+theorem contDiffAt_idAddSmulHomeomorph_symm (hlip : LipschitzWith K u) (hK : K < 1)
+    {w : P → 𝕂} (hw : ContDiff 𝕂 n w) (hw₁ : ∀ p, ‖w p‖ ≤ 1) {U : Set E} (hU : IsOpen U)
+    (hu : ContDiffOn 𝕂 n u U) (hn : 1 ≤ n) {q : P × E}
+    (hq : (hlip.idAddSmulHomeomorph hK (w q.1) (hw₁ q.1)).symm q.2 ∈ U) :
+    ContDiffAt 𝕂 n (fun q : P × E ↦ (hlip.idAddSmulHomeomorph hK (w q.1) (hw₁ q.1)).symm q.2)
+      q := by
+  set φ := fun q : P × E ↦ (hlip.idAddSmulHomeomorph hK (w q.1) (hw₁ q.1)).symm q.2
+  set g : P × E → E := fun q ↦ q.2 + w q.1 • u q.2
+  have hS : IsOpen (univ ×ˢ U : Set (P × E)) := isOpen_univ.prod hU
+  have hg : ContDiffOn 𝕂 n g (univ ×ˢ U) := contDiffOn_snd.add
+    ((hw.comp_contDiffOn contDiffOn_fst).smul (hu.comp contDiffOn_snd fun _ hq ↦ hq.2))
+  have hinj (p : P) : InjOn (fun x ↦ g (p, x)) (Prod.mk p ⁻¹' (univ ×ˢ U)) :=
+    (hlip.idAddSmulHomeomorph hK (w p) (hw₁ p)).injective.injOn
+  have hinv (q : P × E) (hq : q ∈ univ ×ˢ U) :
+      (fderiv 𝕂 (fun x ↦ g (q.1, x)) q.2).IsInvertible := by
+    have hd : DifferentiableAt 𝕂 (fun x ↦ w q.1 • u x) q.2 :=
+      ((hu.contDiffAt (hU.mem_nhds hq.2)).differentiableAt
+        (zero_lt_one.trans_le hn).ne').const_smul (w q.1)
+    rw [((hlip.const_smul_of_norm_le_one (hw₁ q.1)).hasFDerivAt_id_add hK hd).fderiv]
+    exact ⟨_, rfl⟩
+  have happly (q : P × E) : g (q.1, φ q) = q.2 :=
+    hlip.idAddSmulHomeomorph_symm_add_smul hK (w q.1) (hw₁ q.1) q.2
+  -- Near `q`, the inverse stays in `U`, so it is the inverse of the slice on `U`.
+  have hnhds : {q' | φ q' ∈ U} ∈ nhds q :=
+    (hU.preimage (continuous_idAddSmulHomeomorph_symm hlip hK hw.continuous hw₁)).mem_nhds hq
+  refine ((hg.parametric_invFunOn hS hn hinj hinv).contDiffAt (Filter.mem_of_superset hnhds
+    fun q' hq' ↦ ⟨(q'.1, φ q'), ⟨mem_univ _, hq'⟩, Prod.ext rfl (happly q')⟩)
+    ).congr_of_eventuallyEq ?_
+  filter_upwards [hnhds] with q' hq'
+  calc φ q' = Function.invFunOn (fun x ↦ g (q'.1, x)) (Prod.mk q'.1 ⁻¹' (univ ×ˢ U))
+        (g (q'.1, φ q')) :=
+      ((hinj q'.1).leftInvOn_invFunOn (x := φ q') ⟨mem_univ _, hq'⟩).symm
+    _ = _ := by rw [happly q']
+
+end SmoothFamily
 
 end LipschitzWith
 

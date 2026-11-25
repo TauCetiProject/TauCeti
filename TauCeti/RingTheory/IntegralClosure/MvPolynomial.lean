@@ -256,7 +256,7 @@ theorem finite_integralClosure_polynomial_of_isSeparable {R K F : Type*} [CommRi
         IsScalarTower.toAlgHom R R[X] F :=
       Polynomial.algHom_ext (by simp [y])
     simpa [RingHom.algebraMap_toAlgebra] using AlgHom.congr_fun h.symm p
-  have : IsFractionRing R[X] K⟮y⟯ := isFractionRing_polynomial_adjoin hX
+  have : IsFractionRing R[X] K⟮y⟯ := hX.isFractionRing_adjoin_simple
   exact Ring.finite_integralClosure_of_isSeparable K⟮y⟯ K⟮y⟯ F
 
 end Separable

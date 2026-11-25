@@ -11,7 +11,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.AlgebraicGeometry.Normalization
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Normalization.Finite
 import TauCeti.RingTheory.IntegralClosure.DiscreteValuationRing
 

@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Normalization.DiscreteValuationRing
 import TauCeti.RingTheory.Localization.Integral
 

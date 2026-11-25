@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.Defs
-import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
+import Mathlib.Algebra.Algebra.Pi
 
 /-!
 # Minimal primes, radicals and domains
@@ -18,6 +19,10 @@ ideal `I` intersect in `I.radical` (`Ideal.sInf_minimalPrimes`), an element lies
 embeds into the product of its quotients by its minimal primes. No finiteness of the set of
 minimal primes is needed.
 
+A reduced `P`-algebra `B` is torsion-free as soon as no nonzerodivisor of `P` vanishes in `B ⧸ p`
+for any minimal prime `p` of `B`: each quotient `B ⧸ p` is then a torsion-free domain, and `B`
+embeds into their product.
+
 ## Main results
 
 * `IsDomain.uniqueMinimalPrimes`: an integral domain has a unique minimal prime.
@@ -26,6 +31,8 @@ minimal primes is needed.
   quotients by its minimal primes.
 * `Ideal.notMem_radical_iff_exists_mem_minimalPrimes_notMem`: an element lies outside `I.radical`
   if and only if some minimal prime over `I` does not contain it.
+* `TauCeti.isTorsionFree_of_algebraMap_quotient_minimalPrimes_ne_zero`: a reduced algebra in whose
+  components no nonzerodivisor of `P` vanishes is torsion-free over `P`.
 -/
 
 public section
@@ -57,3 +64,22 @@ theorem notMem_radical_iff_exists_mem_minimalPrimes_notMem {A : Type*} [CommSemi
   simp only [← I.sInf_minimalPrimes, Ideal.mem_sInf, not_forall, exists_prop]
 
 end Ideal
+
+namespace TauCeti
+
+/-- A reduced `P`-algebra `B` is torsion-free as soon as no nonzerodivisor of `P` vanishes in
+`B ⧸ p` for any minimal prime `p` of `B`: each such quotient is then a torsion-free domain, and `B`
+embeds into their product. -/
+theorem isTorsionFree_of_algebraMap_quotient_minimalPrimes_ne_zero {P B : Type*} [CommRing P]
+    [CommRing B] [Algebra P B] [IsReduced B]
+    (h : ∀ p ∈ minimalPrimes B, ∀ a ∈ nonZeroDivisors P, algebraMap P (B ⧸ p) a ≠ 0) :
+    Module.IsTorsionFree P B := by
+  have (p : minimalPrimes B) : Module.IsTorsionFree P (B ⧸ p.val) := by
+    have := p.property.1.1
+    refine ⟨fun a ha ↦ ?_⟩
+    rw [← isSMulRegular_algebraMap_iff (B ⧸ p.val)]
+    exact .of_ne_zero (h p.val p.property a (isRegular_iff_mem_nonZeroDivisors.mp ha))
+  exact (Ideal.injective_pi_quotient_mk_minimalPrimes B).moduleIsTorsionFree _
+    fun a b ↦ map_smul (AlgHom.pi fun p : minimalPrimes B ↦ Ideal.Quotient.mkₐ P p.val) a b
+
+end TauCeti

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.RingTheory.KrullDimension.DiscreteValuationRing
 
 /-!

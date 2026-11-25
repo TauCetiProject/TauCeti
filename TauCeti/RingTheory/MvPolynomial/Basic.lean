@@ -25,11 +25,15 @@ This file collects general algebraic properties of multivariate polynomial rings
 * When the variable type `ι` is a subsingleton (at most one variable), the univariate polynomial
   ring `R[X]` surjects onto `MvPolynomial ι R` via an `R`-algebra homomorphism.
 
+The coordinates of a polynomial in the monomial basis `MvPolynomial.basisMonomials` are its
+coefficients (`MvPolynomial.basisMonomials_repr_apply`).
+
 ## Main results
 
 * `TauCeti.MvPolynomial.finite_map`: `MvPolynomial.map f` is finite when `f` is.
 * `TauCeti.MvPolynomial.exists_surjective_algHom_of_subsingleton`: `R[X]` surjects onto
   `MvPolynomial ι R` whenever `ι` is a subsingleton.
+* `MvPolynomial.basisMonomials_repr_apply`: coordinates in the monomial basis are coefficients.
 
 ## Provenance
 
@@ -41,6 +45,16 @@ hence `R′[x^{1/q}]` is finite over `R[x]`"; the multivariate form is not claim
 public section
 
 open Polynomial
+
+namespace MvPolynomial
+
+/-- The coordinates of a polynomial in the monomial basis are its coefficients. -/
+@[simp]
+theorem basisMonomials_repr_apply {σ R : Type*} [CommSemiring R] (p : MvPolynomial σ R)
+    (s : σ →₀ ℕ) : (basisMonomials σ R).repr p s = p.coeff s :=
+  (rfl)
+
+end MvPolynomial
 
 namespace TauCeti
 
