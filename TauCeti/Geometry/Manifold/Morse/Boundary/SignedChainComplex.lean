@@ -133,8 +133,9 @@ theorem signedMorseComplex_d_apply (n : ℕ)
     (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ R) :
     (hX.signedMorseComplex 𝔬 hf R hsq).d (n + 1) n c = hX.signedMorseBoundaryAt 𝔬 hf R n c := by
   rw [signedMorseComplex_d]
-  -- The morphism `ModuleCat.ofHom g` applied to a chain is `g` applied to it, by definition.
-  rfl
+  -- Neither `rw [ModuleCat.hom_ofHom]` nor `simp` fires here: the morphism is still typed between
+  -- the terms `(signedMorseComplex _).X _`, which are the chain modules only by definition.
+  exact ModuleCat.ofHom_apply _ c
 
 /-- The integral Morse chain complex vanishes above the dimension of `M`. -/
 theorem isZero_signedMorseComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :

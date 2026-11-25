@@ -228,6 +228,18 @@ private theorem exists_forall_eq_projectiveMomentFunction_real (hw : Injective w
       criticalCount_projectiveMomentFunction_real hw, ite_eq_left_iff.2 fun h ↦ absurd hk h,
       ENat.toNat_one]
 
+/-- A chain supported on critical points of index `k`, when `p` is the only one, is a multiple of
+`p`. -/
+private theorem eq_single_of_forall_eq_projectiveMomentFunction_real {k : ℕ}
+    {p : {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = k}}
+    (hp : ∀ q, q = p) {R : Type*} [Zero R]
+    (c : {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = k} →₀ R) :
+    c = Finsupp.single p (c p) :=
+  letI : Unique _ := ⟨⟨p⟩, hp⟩
+  Finsupp.unique_single c
+
 /-- **`H₀(ℝℙ²) = R`.** For every pseudo-gradient adapted to the moment function on the real
 projective plane and every choice of orientations, the integral Morse homology in degree `0`, with
 coefficients in any ring `R`, is `R`, since the minimum is the only critical point of index `0`. -/
@@ -602,20 +614,14 @@ theorem mem_range_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real
     rintro ⟨k, hk⟩
     obtain ⟨p, -⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 2) le_rfl
     obtain ⟨q', hq'⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 1) (by norm_num)
-    have hc : c = Finsupp.single q (2 * k) := by
-      ext r
-      rw [hq' r, ← hq' q, Finsupp.single_eq_same, ← hk]
-    rcases hcoeff p with h | h
-    · exact ⟨Finsupp.single p k, by
-        ext r
-        rw [hc, hq' r, ← hq' q, signedMorseBoundaryAt_single_apply, h, Finsupp.single_eq_same]
-        push_cast
-        ring⟩
-    · exact ⟨Finsupp.single p (-k), by
-        ext r
-        rw [hc, hq' r, ← hq' q, signedMorseBoundaryAt_single_apply, h, Finsupp.single_eq_same]
-        push_cast
-        ring⟩
+    have hq (r) : r = q := (hq' r).trans (hq' q).symm
+    rw [eq_single_of_forall_eq_projectiveMomentFunction_real hq c, hk]
+    rcases hcoeff p with h | h <;>
+      [refine ⟨Finsupp.single p k, ?_⟩; refine ⟨Finsupp.single p (-k), ?_⟩] <;>
+    · ext r
+      rw [hq r, signedMorseBoundaryAt_single_apply, h, Finsupp.single_eq_same]
+      push_cast
+      ring
 
 include hX hXε in
 /-- **The differential `d₂` of `ℝℙ²` is injective over `ℤ`.** For an adapted pseudo-gradient of the
@@ -629,17 +635,14 @@ theorem injective_signedMorseBoundaryAt_one_projectiveMomentFunction_real
   have hw := isMorse_projectiveMomentFunction_iff.1 hf
   obtain ⟨p, hp⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 2) le_rfl
   obtain ⟨q, -⟩ := exists_forall_eq_projectiveMomentFunction_real hw (k := 1) (by norm_num)
-  have hc (c : {p : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
-      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) p = 1 + 1} →₀ ℤ) :
-      c = Finsupp.single p (c p) := by
-    ext r
-    rw [hp r, Finsupp.single_eq_same]
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro c hc0
   have h0 := congrArg (· q) hc0
   simp only [Finsupp.coe_zero, Pi.zero_apply] at h0
-  rw [hc c, signedMorseBoundaryAt_single_apply, Int.cast_id] at h0
-  rw [hc c, mul_eq_zero.1 h0 |>.resolve_right ?_, Finsupp.single_zero]
+  rw [eq_single_of_forall_eq_projectiveMomentFunction_real hp c, signedMorseBoundaryAt_single_apply,
+    Int.cast_id] at h0
+  rw [eq_single_of_forall_eq_projectiveMomentFunction_real hp c,
+    mul_eq_zero.1 h0 |>.resolve_right ?_, Finsupp.single_zero]
   rcases signedMorseBoundaryCoeff_eq_two_or_eq_neg_two_projectiveMomentFunction_real hX hXε hf 𝔬
     p.property q.property with h | h <;> simp [h]
 
@@ -665,15 +668,22 @@ theorem nonempty_linearEquiv_homology_one_signedMorseComplex_projectiveMomentFun
       (hX.isMorseSmale_projectiveMomentFunction_real hw)
       (subsingleton_setOf_manifoldMorseIndex_projectiveMomentFunction_real hw 0))
   -- The coefficient at the saddle modulo two vanishes exactly on the boundaries.
-  let ψ : K.X 1 →ₗ[ℤ] ZMod 2 := (Int.castAddHom (ZMod 2)).toIntLinearMap ∘ₗ Finsupp.lapply q
-  have hψ : Surjective ψ := fun a ↦ ⟨Finsupp.single q (a.cast : ℤ),
-    (congrArg (Int.cast : ℤ → ZMod 2) (Finsupp.single_eq_same (a := q))).trans
-      (ZMod.intCast_zmod_cast a)⟩
-  have hexact : Function.Exact (K.d ((ComplexShape.down ℕ).prev 1) 1).hom ψ := by
-    rw [ChainComplex.prev ℕ 1, show K.d (1 + 1) 1 = _ from signedMorseComplex_d hsq 1]
-    intro c
-    exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ 2).trans
-      (mem_range_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real hX hXε hf 𝔬 q c).symm
+  let ψ : ({q : criticalPoints 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ w) q = 1} →₀ ℤ) →ₗ[ℤ]
+      ZMod 2 :=
+    (Int.castAddHom (ZMod 2)).toIntLinearMap ∘ₗ Finsupp.lapply q
+  have hψ_apply (c) : ψ c = (c q : ZMod 2) := by simp [ψ]
+  have hψ : Surjective ψ := fun a ↦ ⟨Finsupp.single q (a.cast : ℤ), by
+    rw [hψ_apply, Finsupp.single_eq_same, ZMod.intCast_zmod_cast]⟩
+  have hexact : Function.Exact (hX.signedMorseBoundaryAt 𝔬 hf ℤ 1) ψ := fun c ↦ by
+    rw [hψ_apply, ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_ofNat,
+      ← mem_range_signedMorseBoundaryAt_one_iff_projectiveMomentFunction_real hX hXε hf 𝔬 q c,
+      LinearMap.mem_range, Set.mem_range]
+  -- The differential of `K` into degree one is the graded integral Morse boundary, and the terms
+  -- of `K` are the chain modules by definition (`signedMorseComplex_X`).
+  have hd : (K.d (1 + 1) 1).hom = hX.signedMorseBoundaryAt 𝔬 hf ℤ 1 :=
+    LinearMap.ext (signedMorseComplex_d_apply hsq 1)
+  rw [← hd, ← ChainComplex.prev ℕ 1] at hexact
   exact ⟨((K.isoHomologyι 1 0 hm hd0) ≪≫ (K.sc 1).moduleCatOpcyclesIso).toLinearEquiv.trans
     (hexact.linearEquivOfSurjective hψ)⟩
 
