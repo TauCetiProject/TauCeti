@@ -51,6 +51,8 @@ have locally finite mass.
 * `Distribution.dsupport_massRestrict_subset`: `T ⌞ A` is supported in the support of `T`.
 * `Distribution.tendsto_apply_smulLeftCLM_massRestrict`: smooth multiples `T (fᵢ φ)` converge to
   `(T ⌞ A) φ` when the bounded smooth functions `fᵢ` converge pointwise on `Ω` to `1_A`.
+* `Distribution.tendsto_massRestrict_apply`: `(T ⌞ Aᵢ) φ → (T ⌞ B) φ` when `‖T‖`-almost every point
+  eventually lies in `Aᵢ` exactly when it lies in `B`.
 
 ## References
 
@@ -356,5 +358,45 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
   · have h := ENNReal.Tendsto.mul_const ((hlim x).sub_const (A.indicator 1 x)).eNorm
       (Or.inr eNorm_ne_top) (b := ‖φ x‖ₑ)
     simpa [sub_self, eNorm_smul] using h
+
+open scoped symmDiff in
+/-- **Borel restrictions converge with their restricting sets.** If at `‖T‖`-almost every point
+`x`, eventually along `l` the point `x` lies in `Aᵢ` exactly when it lies in `B`, then
+`(T ⌞ Aᵢ) φ → (T ⌞ B) φ` for every test `φ`. -/
+theorem tendsto_massRestrict_apply {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    {A : ι → Set Ω} (hA : ∀ i, MeasurableSet (A i)) (hB : MeasurableSet B)
+    (hlim : ∀ᵐ x ∂massMeasure T, ∀ᶠ i in l, (x ∈ A i ↔ x ∈ B)) (φ : 𝓓^{n}(Ω, F)) :
+    Tendsto (fun i => massRestrict T (hA i) φ) l (𝓝 (massRestrict T hB φ)) := by
+  simp_rw [massRestrict_apply]
+  refine ((extendL1 T).continuous.tendsto _).comp ?_
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  -- The `L¹` distance is the integral of `‖φ‖` over the symmetric difference `Aᵢ ∆ B`.
+  have hpt (i : ι) (x : Ω) :
+      ‖(A i).indicator (fun y : Ω => φ y) x - B.indicator (fun y => φ y) x‖ₑ =
+        (A i ∆ B).indicator (fun y => ‖φ y‖ₑ) x := by
+    by_cases hx : x ∈ A i <;> by_cases hx' : x ∈ B <;> simp [hx, hx', mem_symmDiff]
+  have hnorm (i : ι) :
+      ‖TestFunction.indicatorToLp 1 (massMeasure T) (hA i) φ -
+          TestFunction.indicatorToLp 1 (massMeasure T) hB φ‖ =
+        (∫⁻ x, (A i ∆ B).indicator (fun y => ‖φ y‖ₑ) x ∂massMeasure T).toReal := by
+    rw [TestFunction.indicatorToLp_apply, TestFunction.indicatorToLp_apply, ← MemLp.toLp_sub,
+      Lp.norm_toLp, eLpNorm_one_eq_lintegral_eNorm]
+    · exact congrArg ENNReal.toReal (lintegral_congr (hpt i))
+    · exact (((TestFunction.memLp_subtype (p := 1) φ).indicator (hA i).nullMeasurableSet).sub
+        ((TestFunction.memLp_subtype φ).indicator hB.nullMeasurableSet)).aestronglyMeasurable
+  simp_rw [hnorm]
+  rw [← ENNReal.toReal_zero]
+  refine (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp ?_
+  rw [← lintegral_zero (μ := massMeasure T)]
+  refine tendsto_lintegral_filter_of_dominated_convergence (fun x => ‖φ x‖ₑ)
+    (.of_forall fun i => ?_) (.of_forall fun i => ae_of_all _ fun x => ?_) ?_ ?_
+  · exact (continuous_eNorm.comp (φ.continuous.comp continuous_subtypeVal)).measurable.indicator
+      ((hA i).symmDiff hB)
+  · exact indicator_le_self _ _ x
+  · rw [← TestFunction.enorm_toLp_one]
+    exact eNorm_ne_top
+  · filter_upwards [hlim] with x hx
+    refine tendsto_const_nhds.congr' (hx.mono fun i hi => ?_)
+    simp [mem_symmDiff, hi]
 
 end Distribution
