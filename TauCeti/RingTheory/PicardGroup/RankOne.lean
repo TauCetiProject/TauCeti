@@ -32,6 +32,7 @@ invertible.
 * `Module.invertible_iff_rankAtStalk_eq_one`: the resulting characterization.
 * `Module.Invertible.rankAtStalk_eq_rankAtStalk_algebra`: over a finite flat `R`-algebra `S`, an
   invertible `S`-module has the same rank over `R` as `S`.
+* `Module.Invertible.nontrivial`: an invertible module over a nontrivial ring is nontrivial.
 
 ## References
 
@@ -72,6 +73,13 @@ theorem rankAtStalk_eq_rankAtStalk_algebra {S : Type*} [CommRing S] [Algebra R S
     [Module.Invertible S M] (p : PrimeSpectrum R) :
     rankAtStalk (R := R) M p = rankAtStalk (R := R) S p := by
   rw [TauCeti.Module.rankAtStalk_eq_mul_of_rankAtStalk_eq (A := S) rankAtStalk_eq_one, one_mul]
+
+variable (R M) in
+/-- An invertible module over a nontrivial ring is nontrivial. -/
+theorem nontrivial [Nontrivial R] [Module.Invertible R M] : Nontrivial M := by
+  by_contra hM
+  rw [not_nontrivial_iff_subsingleton] at hM
+  exact not_subsingleton R (linearEquiv R M).symm.toEquiv.subsingleton
 
 end Module.Invertible
 

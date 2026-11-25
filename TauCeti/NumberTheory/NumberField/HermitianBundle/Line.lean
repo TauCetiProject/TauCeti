@@ -54,15 +54,18 @@ theorem form_eq_mul_form_fiberEquiv_symm_one (h : HermitianMetric K E) (σ : K �
   conv_lhs => rw [hc u, hc v]
   rw [LinearMap.map_smulₛₗ₂, map_smul, smul_eq_mul, smul_eq_mul, mul_assoc]
 
+private theorem fiberEquiv_one_tmul_ne_zero {x₀ : E} (hx₀ : ι x₀ ≠ 0) (σ : K →+* ℂ) :
+    fiberEquiv hι σ (1 ⊗ₜ x₀) ≠ 0 := by
+  rw [fiberEquiv_tmul, map_one, one_mul]
+  exact (map_ne_zero σ).mpr hx₀
+
 include hι in
 /-- **Hermitian metrics on a line agree when one norm does.** If `h` and `h'` give the vector
 `x₀`, with `ι x₀ ≠ 0`, the same norm at every complex embedding, they are equal. -/
 theorem ext_of_norm_eq {h h' : HermitianMetric K E} {x₀ : E} (hx₀ : ι x₀ ≠ 0)
     (hn : ∀ σ, h.norm σ (1 ⊗ₜ x₀) = h'.norm σ (1 ⊗ₜ x₀)) : h = h' := by
   refine ext_tmul _ fun σ x y ↦ ?_
-  have hF : fiberEquiv hι σ (1 ⊗ₜ x₀) ≠ 0 := by
-    rw [fiberEquiv_tmul, map_one, one_mul]
-    exact (map_ne_zero σ).mpr hx₀
+  have hF := fiberEquiv_one_tmul_ne_zero hι hx₀ σ
   have hgg : h.form σ ((fiberEquiv hι σ).symm 1) ((fiberEquiv hι σ).symm 1) =
       h'.form σ ((fiberEquiv hι σ).symm 1) ((fiberEquiv hι σ).symm 1) := by
     have he := congrArg (fun r : ℝ ↦ ((r ^ 2 : ℝ) : ℂ)) (hn σ)
@@ -77,17 +80,12 @@ theorem eq_ofIsBaseChange (h : HermitianMetric K E) {x₀ : E} (hx₀ : ι x₀ 
     h = ofIsBaseChange hι
       (fun v ↦ Real.log (v (ι x₀)) - Real.log (h.placeNorm v x₀)) := by
   refine ext_of_norm_eq hι hx₀ fun σ ↦ ?_
-  have hF : fiberEquiv hι σ (1 ⊗ₜ x₀) ≠ 0 := by
-    rw [fiberEquiv_tmul, map_one, one_mul]
-    exact (map_ne_zero σ).mpr hx₀
-  have h1 : (1 : Codomain σ) ⊗ₜ[𝓞 K] x₀ ≠ 0 := fun h0 ↦ hF (by rw [h0, map_zero])
-  have hpos : 0 < h.placeNorm (InfinitePlace.mk σ) x₀ := by
-    rw [placeNorm_mk]
-    exact h.norm_pos h1
-  have hv : 0 < InfinitePlace.mk σ (ι x₀) := InfinitePlace.pos_iff.mpr hx₀
-  rw [InfinitePlace.apply] at hv
-  rw [norm_ofIsBaseChange_tmul, InfinitePlace.apply, neg_sub, Real.exp_sub,
-    Real.exp_log hpos, Real.exp_log hv, div_mul_cancel₀ _ hv.ne', placeNorm_mk]
+  have h1 : (1 : Codomain σ) ⊗ₜ[𝓞 K] x₀ ≠ 0 :=
+    (fiberEquiv hι σ).map_ne_zero_iff.mp (fiberEquiv_one_tmul_ne_zero hι hx₀ σ)
+  have hpos : 0 < h.norm σ (1 ⊗ₜ x₀) := h.norm_pos h1
+  have hv : 0 < ‖σ (ι x₀)‖ := norm_pos_iff.mpr ((map_ne_zero σ).mpr hx₀)
+  rw [norm_ofIsBaseChange_tmul, placeNorm_mk]
+  simp [Real.exp_sub, Real.exp_log hpos, Real.exp_log hv, hv.ne']
 
 variable [NumberField K]
 

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PicardGroup
 public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.HermitianLine
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Line
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Submodule
+public import TauCeti.RingTheory.PicardGroup.RankOne
 
 /-!
 # Every hermitian line is the line of an Arakelov divisor
@@ -71,14 +71,6 @@ theorem exists_isometryEquiv_fractionalIdeal {I : FractionalIdeal (𝓞 K)⁰ K}
   have hm : (v.mult : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr mult_ne_zero
   simp [D, hm]
 
-/-- An invertible module over a nontrivial ring is nontrivial. -/
-private theorem nontrivial_of_invertible (R M : Type*) [CommRing R] [Nontrivial R]
-    [AddCommGroup M] [Module R M] [Module.Invertible R M] : Nontrivial M := by
-  by_contra hM
-  rw [not_nontrivial_iff_subsingleton] at hM
-  have : Subsingleton R := (Module.Invertible.linearEquiv R M).symm.toEquiv.subsingleton
-  exact not_subsingleton R this
-
 /-- **Every hermitian line is the line of an Arakelov divisor.** A hermitian metric on an
 invertible `𝓞 K`-module is isometric to `O(D)` for some Arakelov divisor `D`; so `D ↦ O(D)` is
 surjective onto the isometry classes of hermitian lines. -/
@@ -87,21 +79,16 @@ theorem exists_isometryEquiv_hermitianMetric {E : Type*} [AddCommGroup E] [Modul
     ∃ D : ArakelovDivisor K, Nonempty (HermitianMetric.IsometryEquiv h D.hermitianMetric) := by
   obtain ⟨I, ⟨e⟩⟩ := Module.Invertible.exists_linearEquiv_ideal (𝓞 K) E
   set J : FractionalIdeal (𝓞 K)⁰ K := (I : FractionalIdeal (𝓞 K)⁰ K)
-  have hJ : (J : Submodule (𝓞 K) K) = Submodule.map (Algebra.linearMap (𝓞 K) K) I := by
-    ext x
-    simp [J]
+  have hJ : (J : Submodule (𝓞 K) K) = Submodule.map (Algebra.linearMap (𝓞 K) K) I :=
+    coeToSubmodule_coeIdeal I
   let ee : E ≃ₗ[𝓞 K] J := e.trans ((Submodule.equivMapOfInjective
     (Algebra.linearMap (𝓞 K) K) (IsFractionRing.injective (𝓞 K) K) I).trans
       (LinearEquiv.ofEq _ _ hJ.symm))
-  have := nontrivial_of_invertible (𝓞 K) E
+  have := Module.Invertible.nontrivial (𝓞 K) E
   have : Nontrivial I := e.symm.toEquiv.nontrivial
   have hJ0 : J ≠ 0 := mt coeIdeal_eq_zero.mp (Submodule.nontrivial_iff_ne_bot.mp this)
   let h' : HermitianMetric K J := h.comap ee.symm.toLinearMap ee.symm.injective
-  have e₁ : HermitianMetric.IsometryEquiv h h' :=
-    { ee with
-      form_tmul σ x y := by
-        simp only [h', HermitianMetric.comap_form_tmul]
-        simp }
+  let e₁ : HermitianMetric.IsometryEquiv h h' := h.isometryEquivComap ee.symm
   obtain ⟨D, ⟨e₂⟩⟩ := exists_isometryEquiv_fractionalIdeal hJ0 h'
   exact ⟨D, ⟨e₁.trans e₂⟩⟩
 
