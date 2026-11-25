@@ -19,7 +19,9 @@ import TauCeti.MeasureTheory.Measure.Tilted
 The natural parameter space consists of the parameters at which the exponential weight is
 integrable. It is convex. The associated law is Mathlib's exponential tilt. Pushing the
 reference measure forward by the statistic preserves the parameter space and the log
-partition function, and gives the law of the statistic under each tilt.
+partition function, and gives the law of the statistic under each tilt. On the natural parameter
+space, integrability and a vanishing mean under the law are integrability and a vanishing integral
+of the exponentially weighted observable under the reference measure.
 
 ## References
 
@@ -75,6 +77,25 @@ theorem integral_exponentialFamilyMeasure_eq_div (g : X → ℝ) :
   congr with x
   simp only [smul_eq_mul]
   ring
+
+/-- On the natural parameter space, an observable is integrable under the exponential-family
+measure iff its product with the exponential weight is integrable under the reference measure. -/
+theorem integrable_exponentialFamilyMeasure_iff (hη : η ∈ naturalParameterSpace ν T)
+    {g : X → ℝ} :
+    Integrable g (exponentialFamilyMeasure ν T η) ↔
+      Integrable (fun x ↦ exp ⟪η, T x⟫ * g x) ν := by
+  simp [exponentialFamilyMeasure_def, integrable_tilted_iff (mem_naturalParameterSpace.mp hη)]
+
+/-- On the natural parameter space, a real observable has mean `0` under the exponential-family
+measure iff its product with the exponential weight has integral `0` under the reference
+measure. -/
+theorem integral_exponentialFamilyMeasure_eq_zero_iff (hη : η ∈ naturalParameterSpace ν T)
+    {g : X → ℝ} :
+    ∫ x, g x ∂exponentialFamilyMeasure ν T η = 0 ↔ ∫ x, exp ⟪η, T x⟫ * g x ∂ν = 0 := by
+  rcases eq_zero_or_neZero ν with rfl | _
+  · simp [exponentialFamilyMeasure_def]
+  rw [integral_exponentialFamilyMeasure_eq_div, div_eq_zero_iff,
+    or_iff_left (integral_exp_pos (mem_naturalParameterSpace.mp hη)).ne']
 
 @[simp]
 theorem exponentialFamilyMeasure_zero_measure (T : X → E) (η : E) :
