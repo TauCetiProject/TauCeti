@@ -34,7 +34,8 @@ special parameters `Sp(n)` have trivial inertial type.
 * `TauCeti.WeilDeligneParameter.Hom.inertialType`, `TauCeti.WeilDeligneParameter.Iso.inertialType`:
   the induced intertwining maps and equivalences.
 * `TauCeti.WeilDeligneParameter.kerDegMap`: the map `ker deg' →* ker deg` induced by a homomorphism
-  `ι : W' →* W` with `deg ∘ ι = f · deg'`.
+  `ι : W' →* W` sending `ker deg'` into `ker deg`, for instance when `deg ∘ ι = f · deg'`
+  (`TauCeti.WeilDeligneParameter.ker_le_comap_ker_of_deg`).
 
 ## Main results
 
@@ -200,18 +201,24 @@ variable {W' : Type*} [Group W'] [TopologicalSpace W'] {deg' : W' →* Multiplic
   {ι : W' →* W} {f : ℕ}
 
 omit [TopologicalSpace W] [TopologicalSpace W'] in
-/-- A homomorphism `ι : W' →* W` with `deg (ι w) = f · deg' w` maps the kernel of `deg'` (the
-inertia subgroup of `W'`) into the kernel of `deg`. -/
-def kerDegMap (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd) : deg'.ker →* deg.ker :=
-  (ι.comp deg'.ker.subtype).codRestrict deg.ker fun w ↦ by
-    have h := hf w
-    rw [MonoidHom.mem_ker.1 w.property, toAdd_one, mul_zero] at h
-    exact MonoidHom.mem_ker.2 (by simpa using h)
+/-- A homomorphism `ι : W' →* W` with `deg (ι w) = f · deg' w` maps the kernel of `deg'` into the
+kernel of `deg`. -/
+theorem ker_le_comap_ker_of_deg (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd) :
+    deg'.ker ≤ deg.ker.comap ι := fun w hw ↦ by
+  have h := hf w
+  rw [MonoidHom.mem_ker.1 hw, toAdd_one, mul_zero] at h
+  exact MonoidHom.mem_ker.2 (by simpa using h)
+
+omit [TopologicalSpace W] [TopologicalSpace W'] in
+/-- The map `ker deg' →* ker deg` induced by a homomorphism `ι : W' →* W` sending the kernel of
+`deg'` (the inertia subgroup of `W'`) into the kernel of `deg`. -/
+def kerDegMap (h : deg'.ker ≤ deg.ker.comap ι) : deg'.ker →* deg.ker :=
+  (ι.comp deg'.ker.subtype).codRestrict deg.ker fun w ↦ Subgroup.mem_comap.1 (h w.property)
 
 omit [TopologicalSpace W] [TopologicalSpace W'] in
 @[simp]
-theorem coe_kerDegMap_apply (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd) (w : deg'.ker) :
-    (kerDegMap hf w : W) = ι w := by
+theorem coe_kerDegMap_apply (h : deg'.ker ≤ deg.ker.comap ι) (w : deg'.ker) :
+    (kerDegMap h w : W) = ι w := by
   simp [kerDegMap]
 
 /-- The inertial type of a restriction along `ι` is the inertial type restricted along the induced
@@ -219,7 +226,8 @@ map `ker deg' → ker deg`. -/
 @[simp]
 theorem inertialType_restrict (hι : Continuous ι)
     (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd) :
-    (D.restrict ι hι f hf).inertialType = D.inertialType.comp (kerDegMap hf) := by
+    (D.restrict ι hι f hf).inertialType =
+      D.inertialType.comp (kerDegMap (ker_le_comap_ker_of_deg hf)) := by
   ext w : 1
   simp [inertialType_apply]
 
