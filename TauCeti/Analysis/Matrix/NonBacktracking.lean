@@ -35,6 +35,12 @@ negligible in Bai and Yin's analysis of the smallest eigenvalue.
   `b * d * (1 + ∑ j ≤ k, ‖nonbacktrackingPow H j‖)`.
 * `Matrix.IsHermitian.l2_opNorm_nonbacktrackingPow_le`: for entries of norm at most `1`, the walk
   matrix of length `k` has operator norm at most `(‖H‖ + 2 * d + 2) ^ k`.
+* `Matrix.IsHermitian.l2_opNorm_nonbacktrackingCorrection_le`: the correction
+  `Matrix.nonbacktrackingCorrection H k` of the recursion `Matrix.nonbacktrackingPow_add_two` has
+  operator norm at most `b * d * (1 + ∑ j < k, ‖nonbacktrackingPow H j‖)`.
+* `Matrix.tendsto_l2_opNorm_nonbacktrackingCorrection`: along a filter, for Hermitian matrices with
+  bounded norms and squared row norms whose entries tend to zero uniformly, the corrections of
+  each length tend to zero.
 
 ## References
 
@@ -44,7 +50,7 @@ negligible in Bai and Yin's analysis of the smallest eigenvalue.
 
 public section
 
-open Finset
+open Filter Finset Topology
 open scoped Matrix.Norms.L2Operator
 
 namespace Matrix
@@ -90,13 +96,12 @@ private theorem IsHermitian.l2_opNorm_of_mul_pow_le (hH : H.IsHermitian) (hb₀ 
 
 /-- The diagonal weights of the steps going back and forth, for the weights
 `H i j * (H j i * H i j) ^ r` with `r ≠ 0`, have operator norm at most `b * d`. -/
-private theorem IsHermitian.l2_opNorm_diagonal_sum_mul_pow_le (hH : H.IsHermitian) (hb₀ : 0 ≤ b)
+private theorem IsHermitian.l2_opNorm_diagonal_diag_mul_pow_le (hH : H.IsHermitian) (hb₀ : 0 ≤ b)
     (hb : b ≤ 1) (hd : 0 ≤ d) (hentry : ∀ i j, ‖H i j‖ ≤ b) (hrow : ∀ i, ∑ j, ‖H i j‖ ^ 2 ≤ d)
     {r : ℕ} (hr : r ≠ 0) :
-    ‖(diagonal fun i ↦
-        ∑ w, (of fun i j ↦ H i j * (H j i * H i j) ^ r : Matrix ι ι 𝕜) i w * H w i)‖ ≤ b * d := by
-  rw [l2_opNorm_diagonal]
-  refine (pi_norm_le_iff_of_nonneg (mul_nonneg hb₀ hd)).mpr fun i ↦ ?_
+    ‖diagonal ((of fun i j ↦ H i j * (H j i * H i j) ^ r : Matrix ι ι 𝕜) * H).diag‖ ≤ b * d := by
+  refine l2_opNorm_diagonal_le (mul_nonneg hb₀ hd) fun i ↦ ?_
+  rw [diag_apply, Matrix.mul_apply]
   calc _ ≤ ∑ w, ‖H i w * (H w i * H i w) ^ r * H w i‖ := norm_sum_le _ _
     _ = ∑ w, ‖H i w‖ ^ (2 * r + 2) := by
         refine sum_congr rfl fun w _ ↦ ?_
@@ -123,7 +128,7 @@ theorem IsHermitian.l2_opNorm_nonbacktrackingMul_le (hH : H.IsHermitian) (hb₀ 
   induction k using Nat.strong_induction_on generalizing r with
   | _ k ih =>
   have hG := hH.l2_opNorm_of_mul_pow_le hb₀ hb hd hentry hrow hr
-  have hD := hH.l2_opNorm_diagonal_sum_mul_pow_le hb₀ hb hd hentry hrow hr
+  have hD := hH.l2_opNorm_diagonal_diag_mul_pow_le hb₀ hb hd hentry hrow hr
   match k with
   | 0 =>
     rw [nonbacktrackingMul_zero]
@@ -143,13 +148,19 @@ theorem IsHermitian.l2_opNorm_nonbacktrackingMul_le (hH : H.IsHermitian) (hb₀ 
     rw [nonbacktrackingMul_add_two, hG']
     have ih' := ih k (by omega) (r := r + 1) (by omega)
     rw [sum_range_succ, sum_range_succ]
-    calc _ ≤ ‖(of fun i j ↦ H i j * (H j i * H i j) ^ r : Matrix ι ι 𝕜)‖ *
-          ‖nonbacktrackingPow H (k + 2)‖ + b * d * ‖nonbacktrackingPow H (k + 1)‖ +
-          b * d * (1 + ∑ j ∈ range (k + 1), ‖nonbacktrackingPow H j‖) :=
-          (norm_add_le _ _).trans (add_le_add ((norm_sub_le _ _).trans (add_le_add
-            (l2_opNorm_mul _ _) ((l2_opNorm_mul _ _).trans (by gcongr)))) ih')
+    set G : Matrix ι ι 𝕜 := of fun i j ↦ H i j * (H j i * H i j) ^ r
+    -- The triangle inequality, then the bounds on `G`, `diagonal (G * H).diag` and the next weight.
+    calc _ ≤ ‖G * nonbacktrackingPow H (k + 2)‖ +
+          ‖diagonal (G * H).diag * nonbacktrackingPow H (k + 1)‖ +
+          ‖nonbacktrackingMul (of fun i j ↦ H i j * (H j i * H i j) ^ (r + 1)) H k‖ := by
+          refine (norm_add_le _ _).trans ?_
+          gcongr
+          exact norm_sub_le _ _
       _ ≤ b * d * ‖nonbacktrackingPow H (k + 2)‖ + b * d * ‖nonbacktrackingPow H (k + 1)‖ +
-          b * d * (1 + ∑ j ∈ range (k + 1), ‖nonbacktrackingPow H j‖) := by gcongr
+          b * d * (1 + ∑ j ∈ range (k + 1), ‖nonbacktrackingPow H j‖) := by
+          refine add_le_add (add_le_add ?_ ?_) ih'
+          · exact (l2_opNorm_mul _ _).trans (by gcongr)
+          · exact (l2_opNorm_mul _ _).trans (by gcongr)
       _ = _ := by ring
 
 /-- `1 + ∑ j < k + 1, a ^ j ≤ a ^ (k + 1)` for `a ≥ 2`. -/
@@ -171,10 +182,10 @@ theorem IsHermitian.l2_opNorm_nonbacktrackingPow_le (hH : H.IsHermitian) (hd : 0
     ‖nonbacktrackingPow H k‖ ≤ (‖H‖ + 2 * d + 2) ^ k := by
   set a := ‖H‖ + 2 * d + 2
   have ha : 2 ≤ a := by have := norm_nonneg H; simp only [a]; linarith
-  have hD : ‖(diagonal fun i ↦ ∑ w, H i w * H w i)‖ ≤ d := by
-    rw [l2_opNorm_diagonal]
-    refine (pi_norm_le_iff_of_nonneg hd).mpr fun i ↦ (norm_sum_le _ _).trans ?_
-    refine le_of_eq_of_le (sum_congr rfl fun w _ ↦ ?_) (hrow i)
+  have hD : ‖diagonal (H * H).diag‖ ≤ d := by
+    refine l2_opNorm_diagonal_le hd fun i ↦ ?_
+    rw [diag_apply, Matrix.mul_apply]
+    refine (norm_sum_le _ _).trans (le_of_eq_of_le (sum_congr rfl fun w _ ↦ ?_) (hrow i))
     rw [norm_mul, ← hH.apply i w, norm_star, sq]
   induction k using Nat.strong_induction_on with
   | _ k ih =>
@@ -196,10 +207,17 @@ theorem IsHermitian.l2_opNorm_nonbacktrackingPow_le (hH : H.IsHermitian) (hd : 0
     have hak : 0 ≤ a ^ (k + 1) := pow_nonneg (by linarith) _
     simp only [pow_one] at hE
     rw [nonbacktrackingPow_add_three]
-    calc _ ≤ ‖H‖ * ‖nonbacktrackingPow H (k + 2)‖ + d * ‖nonbacktrackingPow H (k + 1)‖ +
-          1 * d * (1 + ∑ j ∈ range (k + 1), ‖nonbacktrackingPow H j‖) :=
-          (norm_add_le _ _).trans (add_le_add ((norm_sub_le _ _).trans (add_le_add
-            (l2_opNorm_mul _ _) ((l2_opNorm_mul _ _).trans (by gcongr)))) hE)
+    -- The triangle inequality, then the bounds on `H`, on the degrees and on the correction.
+    calc _ ≤ ‖H * nonbacktrackingPow H (k + 2)‖ +
+          ‖diagonal (H * H).diag * nonbacktrackingPow H (k + 1)‖ +
+          ‖nonbacktrackingMul (of fun i w ↦ H i w * (H w i * H i w)) H k‖ := by
+          refine (norm_add_le _ _).trans ?_
+          gcongr
+          exact norm_sub_le _ _
+      _ ≤ ‖H‖ * ‖nonbacktrackingPow H (k + 2)‖ + d * ‖nonbacktrackingPow H (k + 1)‖ +
+          1 * d * (1 + ∑ j ∈ range (k + 1), ‖nonbacktrackingPow H j‖) := by
+          refine add_le_add (add_le_add (l2_opNorm_mul _ _) ?_) hE
+          exact (l2_opNorm_mul _ _).trans (by gcongr)
       _ ≤ ‖H‖ * a ^ (k + 2) + d * a ^ (k + 1) + 1 * d * a ^ (k + 1) :=
           add_le_add (add_le_add (by gcongr) (by gcongr)) (mul_le_mul_of_nonneg_left hsum
             (by linarith))
@@ -211,5 +229,61 @@ theorem IsHermitian.l2_opNorm_nonbacktrackingPow_le (hH : H.IsHermitian) (hd : 0
         have hpow' : a ^ (k + 2) = a * a ^ (k + 1) := by ring
         rw [hpow, hpow']
         nlinarith [key]
+
+/-- **The correction of the non-backtracking recursion is small.** Let `H` be Hermitian with entries
+of norm at most `b`, where `0 ≤ b ≤ 1`, and rows of squared norm at most `d ≥ 0`. Then the
+correction `Matrix.nonbacktrackingCorrection H k` of the recursion
+`Matrix.nonbacktrackingPow_add_two` has operator norm at most
+`b * d * (1 + ∑ j < k, ‖nonbacktrackingPow H j‖)`. -/
+theorem IsHermitian.l2_opNorm_nonbacktrackingCorrection_le (hH : H.IsHermitian) (hb₀ : 0 ≤ b)
+    (hb : b ≤ 1) (hd : 0 ≤ d) (hentry : ∀ i j, ‖H i j‖ ≤ b) (hrow : ∀ i, ∑ j, ‖H i j‖ ^ 2 ≤ d)
+    (k : ℕ) :
+    ‖nonbacktrackingCorrection H k‖ ≤ b * d * (1 + ∑ j ∈ range k, ‖nonbacktrackingPow H j‖) := by
+  rcases k with _ | k
+  · simpa using mul_nonneg hb₀ hd
+  · simpa only [nonbacktrackingCorrection_succ, pow_one] using
+      hH.l2_opNorm_nonbacktrackingMul_le hb₀ hb hd hentry hrow one_ne_zero k
+
+/-- **The corrections of the non-backtracking recursion vanish asymptotically.** Along a filter, let
+`H i` be Hermitian matrices with eventually bounded operator norms and squared row norms, whose
+entries tend to zero uniformly. Then for each `k` the corrections
+`Matrix.nonbacktrackingCorrection (H i) k` tend to zero in operator norm. -/
+theorem tendsto_l2_opNorm_nonbacktrackingCorrection {κ : Type*} {F : Filter κ} {m : κ → Type*}
+    [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)] {H : (i : κ) → Matrix (m i) (m i) 𝕜}
+    (hH : ∀ i, (H i).IsHermitian) {R d : ℝ} (hnorm : ∀ᶠ i in F, ‖H i‖ ≤ R)
+    (hrow : ∀ᶠ i in F, ∀ x, ∑ y, ‖H i x y‖ ^ 2 ≤ d)
+    (hentry : ∀ η > 0, ∀ᶠ i in F, ∀ x y, ‖H i x y‖ ≤ η) (k : ℕ) :
+    Tendsto (fun i ↦ ‖nonbacktrackingCorrection (H i) k‖) F (𝓝 0) := by
+  obtain ⟨d', hd', hrow'⟩ : ∃ d', 0 ≤ d' ∧ ∀ᶠ i in F, ∀ x, ∑ y, ‖H i x y‖ ^ 2 ≤ d' :=
+    ⟨max d 0, le_max_right _ _, hrow.mono fun i h x ↦ (h x).trans (le_max_left _ _)⟩
+  -- The walk matrices of length below `k` are eventually bounded, through `S`.
+  obtain ⟨S, hS, hB⟩ : ∃ S, 0 ≤ S ∧
+      ∀ᶠ i in F, 1 + ∑ j ∈ range k, ‖nonbacktrackingPow (H i) j‖ ≤ S := by
+    have ha : 0 ≤ max R 0 + 2 * d' + 2 := by linarith [le_max_right R 0]
+    refine ⟨1 + ∑ j ∈ range k, (max R 0 + 2 * d' + 2) ^ j,
+      add_nonneg zero_le_one (sum_nonneg fun j _ ↦ pow_nonneg ha j), ?_⟩
+    filter_upwards [hnorm, hrow', hentry 1 one_pos] with i hHi hdi hei
+    gcongr with j
+    exact ((hH i).l2_opNorm_nonbacktrackingPow_le hd' hei hdi j).trans
+      (pow_le_pow_left₀ (by positivity) (by gcongr; exact hHi.trans (le_max_left _ _)) j)
+  -- For entries of norm at most `η ≤ 1`, the corrections are at most `η * d' * S`.
+  have key (ε : ℝ) (hε : 0 < ε) : ∀ᶠ i in F, ‖nonbacktrackingCorrection (H i) k‖ ≤ ε := by
+    set η := min 1 (ε / (d' * S + 1))
+    have hη₀ : 0 < η := lt_min one_pos (by positivity)
+    have hηε : η * d' * S ≤ ε :=
+      calc η * d' * S ≤ ε / (d' * S + 1) * (d' * S + 1) := by
+            rw [mul_assoc]
+            gcongr
+            exacts [min_le_right _ _, by linarith]
+        _ = ε := div_mul_cancel₀ _ (by positivity)
+    filter_upwards [hentry η hη₀, hrow', hB] with i hei hdi hBi
+    calc _ ≤ η * d' * (1 + ∑ j ∈ range k, ‖nonbacktrackingPow (H i) j‖) :=
+          (hH i).l2_opNorm_nonbacktrackingCorrection_le hη₀.le (min_le_left _ _) hd' hei hdi k
+      _ ≤ η * d' * S := mul_le_mul_of_nonneg_left hBi (mul_nonneg hη₀.le hd')
+      _ ≤ ε := hηε
+  refine tendsto_order.2 ⟨fun a ha ↦ .of_forall fun i ↦ ha.trans_le (norm_nonneg _),
+    fun ε hε ↦ ?_⟩
+  filter_upwards [key (ε / 2) (by positivity)] with i hi
+  linarith
 
 end Matrix

@@ -33,18 +33,21 @@ of length `k` that does not undo it.
 * `Matrix.nonbacktrackingPow H k`: the non-backtracking walk matrix of length `k`.
 * `Matrix.nonbacktrackingMul G H k`: a step weighted by `G` followed by a non-backtracking walk of
   `H` of length `k` that does not step back.
+* `Matrix.nonbacktrackingCorrection H k`: the correction term of the non-backtracking recursion.
 
 ## Main results
 
-* `Matrix.nonbacktrackingPow_apply`: the entries of `nonbacktrackingPow H k` are sums over the
-  non-backtracking walks.
+* `Matrix.nonbacktrackingPow_apply` and `Matrix.nonbacktrackingMul_apply`: the entries of
+  `nonbacktrackingPow H k` and `nonbacktrackingMul G H k` are sums over non-backtracking walks.
 * `Matrix.nonbacktrackingMul_add_two`: writing `B k` for `nonbacktrackingPow H k` and `G ⋆ B k`
   for `nonbacktrackingMul G H k`, the recursion
-  `G ⋆ B (k + 2) = G * B (k + 2) - D_G * B (k + 1) + G' ⋆ B k`, where `D_G` is the diagonal matrix
-  of the weights `∑ w, G i w * H w i` of the steps going back and forth, and `G'` reweighs the
-  first step by `H w i * H i w`.
+  `G ⋆ B (k + 2) = G * B (k + 2) - D_G * B (k + 1) + G' ⋆ B k`, where
+  `D_G = diagonal (G * H).diag` carries the weights `∑ w, G i w * H w i` of the steps going back
+  and forth, and `G'` reweighs the first step by `H w i * H i w`.
 * `Matrix.nonbacktrackingPow_add_three`: its case `G = H`, the non-backtracking recursion
-  `B (k + 3) = H * B (k + 2) - D * B (k + 1) + H' ⋆ B k`.
+  `B (k + 3) = H * B (k + 2) - D * B (k + 1) + H' ⋆ B k` with `D = diagonal (H * H).diag`.
+* `Matrix.nonbacktrackingPow_add_two`: the recursion `B (k + 2) = H * B (k + 1) - D * B k + E k`
+  for all `k`, with the correction `E k = nonbacktrackingCorrection H k`.
 
 ## References
 
@@ -107,6 +110,26 @@ theorem nonbacktrackingMul_zero (G H : Matrix ι ι R) : nonbacktrackingMul G H 
 theorem nonbacktrackingPow_one (H : Matrix ι ι R) : nonbacktrackingPow H 1 = H := by
   rw [nonbacktrackingPow_succ, nonbacktrackingMul_zero]
 
+/-- **The correction of the non-backtracking recursion** `Matrix.nonbacktrackingPow_add_two`. It
+vanishes for `k = 0`. For `k + 1` it is a step from `i` to `w` weighted by
+`H i w * (H w i * H i w)`, for the walks that traverse the edge between `i` and `w` three times in a
+row, followed by a non-backtracking walk of length `k` that does not step back. -/
+def nonbacktrackingCorrection (H : Matrix ι ι R) : ℕ → Matrix ι ι R
+  | 0 => 0
+  | k + 1 => nonbacktrackingMul (of fun i w ↦ H i w * (H w i * H i w)) H k
+
+/-- The correction of the recursion for the walks of length two vanishes. -/
+@[simp]
+theorem nonbacktrackingCorrection_zero (H : Matrix ι ι R) : nonbacktrackingCorrection H 0 = 0 :=
+  (rfl)
+
+/-- The correction of the recursion for the walks of length `k + 3` is the weight of the walks
+traversing their first edge three times. -/
+theorem nonbacktrackingCorrection_succ (H : Matrix ι ι R) (k : ℕ) :
+    nonbacktrackingCorrection H (k + 1) =
+      nonbacktrackingMul (of fun i w ↦ H i w * (H w i * H i w)) H k :=
+  (rfl)
+
 end Semiring
 
 section Ring
@@ -127,30 +150,30 @@ back, which carry the weight `D_G i = ∑ w, G i w * H w i`, plus those stepping
 forward along the same edge again, which were subtracted twice. -/
 theorem nonbacktrackingMul_add_two (G H : Matrix ι ι R) (k : ℕ) :
     nonbacktrackingMul G H (k + 2) =
-      G * nonbacktrackingPow H (k + 2) -
-        diagonal (fun i ↦ ∑ w, G i w * H w i) * nonbacktrackingPow H (k + 1) +
+      G * nonbacktrackingPow H (k + 2) - diagonal (G * H).diag * nonbacktrackingPow H (k + 1) +
         nonbacktrackingMul (of fun i w ↦ G i w * (H w i * H i w)) H k := by
   ext i j
-  rw [Matrix.add_apply, Matrix.sub_apply, Matrix.diagonal_mul, Matrix.mul_apply]
+  rw [Matrix.add_apply, Matrix.sub_apply, Matrix.diagonal_mul, Matrix.mul_apply, diag_apply,
+    Matrix.mul_apply]
   simp only [nonbacktrackingMul, of_apply, nonbacktrackingAux_succ_some, mul_sub, sum_sub_distrib,
     sum_mul, mul_assoc, (rfl : k + 1 + 1 = k + 2)]
   abel
 
 /-- The step weighted by `G` followed by a walk of length one that does not step back. -/
 theorem nonbacktrackingMul_one (G H : Matrix ι ι R) :
-    nonbacktrackingMul G H 1 = G * H - diagonal (fun i ↦ ∑ w, G i w * H w i) := by
+    nonbacktrackingMul G H 1 = G * H - diagonal (G * H).diag := by
   ext i j
   have h (w : ι) : nonbacktrackingAux H 1 (some i) w j = H w j - H w i * (1 : Matrix ι ι R) i j :=
     by simpa [nonbacktrackingAux] using nonbacktrackingAux_succ_some H 0 i w j
   simp only [nonbacktrackingMul, of_apply, h, Matrix.sub_apply, Matrix.mul_apply,
-    Matrix.diagonal_apply, mul_sub, sum_sub_distrib, Matrix.one_apply, mul_ite, mul_one,
-    mul_zero]
+    Matrix.diagonal_apply, diag_apply, mul_sub, sum_sub_distrib, Matrix.one_apply, mul_ite,
+    mul_one, mul_zero]
   split_ifs <;> simp
 
 /-- The non-backtracking walk matrix of length two is `H * H` minus the steps forward and straight
-back. -/
+back, that is, `H * H` with its diagonal removed. -/
 theorem nonbacktrackingPow_two (H : Matrix ι ι R) :
-    nonbacktrackingPow H 2 = H * H - diagonal (fun i ↦ ∑ w, H i w * H w i) := by
+    nonbacktrackingPow H 2 = H * H - diagonal (H * H).diag := by
   rw [nonbacktrackingPow_succ, nonbacktrackingMul_one]
 
 /-- **The non-backtracking recursion.** The walks of length `k + 3` are the walks of length `k + 2`
@@ -158,10 +181,20 @@ with a step in front, minus those whose second step undoes the first, plus those
 the same edge a third time. -/
 theorem nonbacktrackingPow_add_three (H : Matrix ι ι R) (k : ℕ) :
     nonbacktrackingPow H (k + 3) =
-      H * nonbacktrackingPow H (k + 2) -
-        diagonal (fun i ↦ ∑ w, H i w * H w i) * nonbacktrackingPow H (k + 1) +
+      H * nonbacktrackingPow H (k + 2) - diagonal (H * H).diag * nonbacktrackingPow H (k + 1) +
         nonbacktrackingMul (of fun i w ↦ H i w * (H w i * H i w)) H k := by
   rw [nonbacktrackingPow_succ, nonbacktrackingMul_add_two]
+
+/-- **The non-backtracking recursion with its correction.** For every `k`,
+`B (k + 2) = H * B (k + 1) - D * B k + E k`, where `D = diagonal (H * H).diag` and
+`E k = nonbacktrackingCorrection H k` vanishes for `k = 0`. -/
+theorem nonbacktrackingPow_add_two (H : Matrix ι ι R) (k : ℕ) :
+    nonbacktrackingPow H (k + 2) =
+      H * nonbacktrackingPow H (k + 1) - diagonal (H * H).diag * nonbacktrackingPow H k +
+        nonbacktrackingCorrection H k := by
+  rcases k with _ | k
+  · simp [nonbacktrackingPow_two]
+  · exact nonbacktrackingPow_add_three H k
 
 end Ring
 
@@ -242,6 +275,17 @@ theorem nonbacktrackingPow_apply (H : Matrix ι ι R) (k : ℕ) (i j : ι) :
           ∀ s t : Fin (k + 1), (s : ℕ) + 2 = t → w s ≠ w t,
         ∏ t : Fin k, H (w t.castSucc) (w t.succ) := by
   simp [nonbacktrackingPow, nonbacktrackingAux_apply]
+
+/-- **Weighted non-backtracking walk sums.** Entry `(i, j)` of `nonbacktrackingMul G H k` is the sum
+over `w` of `G i w` times the sum over the non-backtracking walks `v : Fin (k + 1) → ι` from `w` to
+`j` whose first step does not return to `i` of the products `∏ₜ H (v t) (v (t + 1))`. -/
+theorem nonbacktrackingMul_apply (G H : Matrix ι ι R) (k : ℕ) (i j : ι) :
+    nonbacktrackingMul G H k i j =
+      ∑ w, G i w * ∑ v : Fin (k + 1) → ι with v 0 = w ∧ v (Fin.last k) = j ∧
+          (∀ s t : Fin (k + 1), (s : ℕ) + 2 = t → v s ≠ v t) ∧
+          ∀ t : Fin (k + 1), (t : ℕ) = 1 → v t ≠ i,
+        ∏ t : Fin k, H (v t.castSucc) (v t.succ) := by
+  simp [nonbacktrackingMul, nonbacktrackingAux_apply]
 
 end Walks
 
