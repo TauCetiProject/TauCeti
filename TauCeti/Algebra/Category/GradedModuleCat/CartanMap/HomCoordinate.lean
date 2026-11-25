@@ -164,7 +164,7 @@ theorem gradedHomShiftCoordinate_of (M : GradedModuleCat.{uA} 𝒜) [Module.Fini
 
 /-- On the class `[A f]` of a degree-zero idempotent `f`, `gradedHomShiftCoordinate M` evaluates
 to the conjugate idempotent graded dimension `bar(gdim(f • M))`. -/
-@[simp]
+@[simp↓]
 theorem gradedHomShiftCoordinate_gradedIdempotentProjective (M : GradedModuleCat.{uA} 𝒜)
     [Module.Finite k M] {f : A} (hf : IsIdempotentElem f) (hf₀ : f ∈ 𝒜 0) :
     gradedHomShiftCoordinate M
