@@ -107,11 +107,17 @@ private theorem liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm (hfg : g ∘�
 noncomputable def quotientRangeToRange (hfg : g ∘ₗ f = 0) : M₂ ⧸ range f →ₗ[R] range g :=
   (range f).liftQ g.rangeRestrict (by rw [ker_rangeRestrict]; exact range_le_ker_iff.2 hfg)
 
+/-- The map `M₂ ⧸ range f → range g` induced by `g` sends the class of `m` to `g m`. -/
+@[simp]
+theorem coe_quotientRangeToRange_mk (hfg : g ∘ₗ f = 0) (m : M₂) :
+    (quotientRangeToRange hfg (Submodule.Quotient.mk m) : M₃) = g m :=
+  (rfl)
+
 /-- The map `M₂ ⧸ range f → range g` induced by `g` is surjective. -/
 theorem quotientRangeToRange_surjective (hfg : g ∘ₗ f = 0) :
     Function.Surjective (quotientRangeToRange hfg) := by
   rintro ⟨_, ⟨m, rfl⟩⟩
-  exact ⟨Submodule.Quotient.mk m, rfl⟩
+  exact ⟨Submodule.Quotient.mk m, Subtype.ext (coe_quotientRangeToRange_mk hfg m)⟩
 
 /-- The kernel of the map `M₂ ⧸ range f → range g` induced by `g` is the homology
 `(ker g).map (range f).mkQ`. -/
