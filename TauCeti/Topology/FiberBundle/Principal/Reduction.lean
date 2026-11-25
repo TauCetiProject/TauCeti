@@ -103,12 +103,10 @@ carries into itself: the right action of `G` on the total space, restricted. -/
 def reductionMulAction (hS : ∀ p ∈ S, ∀ g : G, op g • p ∈ S ↔ g ∈ H) : MulAction Hᵐᵒᵖ S where
   smul g p := ⟨op (g.unop : G) • (p : TotalSpace G P), (hS p p.property _).mpr g.unop.property⟩
   one_smul p := Subtype.ext (one_smul Gᵐᵒᵖ (p : TotalSpace G P))
-  mul_smul g h p := Subtype.ext <| by
-    change op ((g * h).unop : G) • (p : TotalSpace G P) =
-      op (g.unop : G) • op (h.unop : G) • (p : TotalSpace G P)
-    rw [unop_mul, Subgroup.coe_mul, op_mul, mul_smul]
+  mul_smul g h p := Subtype.ext (mul_smul (op (g.unop : G)) (op (h.unop : G)) (p : TotalSpace G P))
 
 /-- The action of `g ∈ H` on a point of `S` is that of `g` on the total space. -/
+@[simp]
 theorem coe_reductionMulAction_smul (hS : ∀ p ∈ S, ∀ g : G, op g • p ∈ S ↔ g ∈ H) (g : Hᵐᵒᵖ)
     (p : S) :
     letI := reductionMulAction hS
@@ -160,6 +158,14 @@ base, with the chosen trivializations as atlas. -/
 @[instance_reducible]
 noncomputable def fiberBundle : FiberBundle H (MapFiber fun p : S ↦ (p : TotalSpace G P).proj) :=
   hS.atlas.fiberBundle
+
+/-- The trivialization at `b` of the fibre bundle of a locally trivial reduction is the chosen
+equivariant trivialization of `S` at `b`, read on the fibres of `S`. -/
+theorem trivializationAt_fiberBundle (b : B) :
+    letI := hS.fiberBundle
+    trivializationAt H (MapFiber fun p : S ↦ (p : TotalSpace G P).proj) b =
+      (hS.atlas.trivAt b).toMapFiber :=
+  hS.atlas.trivializationAt_eq b
 
 /-- **A locally trivial reduction of a principal `G`-bundle to `H` is a principal `H`-bundle.** -/
 theorem principalBundle (hSH : ∀ p ∈ S, ∀ g : G, op g • p ∈ S ↔ g ∈ H) :
