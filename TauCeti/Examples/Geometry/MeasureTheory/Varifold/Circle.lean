@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation.Measure
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
-public import TauCeti.MeasureTheory.Function.AreaFormula.Curve
+public import TauCeti.MeasureTheory.Function.AreaFormula.Circle
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -17,13 +17,16 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 
 The unit circle `C ⊆ ℂ = ℝ²`, with its tangent line at each point, is a `1`-varifold `[C]` on the
 plane: the image of Lebesgue measure on `[0, 2π]` under `θ ↦ (e^{iθ}, span {i e^{iθ}})`
-(`TauCeti.Examples.CircleVarifold.circleVarifold`). Its first variation is
-`δ[C](X) = ∫_C ⟪x, X(x)⟫ dH¹(x)` (`firstVariation_circleVarifold_apply`): along the circle the
-tangential divergence is `⟪τ, DX τ⟫ = g' + ⟪X(γ), γ⟫` for `g(θ) = ⟪X(γ(θ)), τ(θ)⟫`, and `g'`
-integrates to `0` over a period. The field `x ↦ x` has norm one on `C`, so `[C]` has locally
-bounded first variation, and its total variation measure is the length measure of the circle:
-`‖δ[C]‖ = H¹⌞C` (`firstVariationMeasure_circleVarifold`). This is the circle Check of Varifolds
-§4.3; the generalized mean curvature vector of `C` is `-x`.
+(`TauCeti.Examples.CircleVarifold.circleVarifold`), whose weight is `‖[C]‖ = H¹⌞C`
+(`weight_circleVarifold`). Its first variation is
+`δ[C](X) = ∫_0^{2π} ⟪γ(θ), X(γ(θ))⟫ dθ` for `γ(θ) = e^{iθ}` (`firstVariation_circleVarifold_apply`):
+along the circle the tangential divergence is `⟪τ, DX τ⟫ = g' + ⟪X(γ), γ⟫` for
+`g(θ) = ⟪X(γ(θ)), τ(θ)⟫`, and `g'` integrates to `0` over a period. Against the weight this reads
+`δ[C](X) = ∫_C ⟪x, X(x)⟫ dH¹(x)` (`firstVariation_circleVarifold_eq_integral`). The field
+`x ↦ x` has norm one on `C`, so `[C]` has locally bounded first variation
+(`hasLocallyBoundedFirstVariation_circleVarifold`), and its total variation measure, read in the
+plane, is the length measure of the circle: `‖δ[C]‖ = H¹⌞C`
+(`map_firstVariationMeasure_circleVarifold`).
 
 ## References
 
@@ -40,22 +43,22 @@ open scoped Distributions RealInnerProductSpace
 namespace TauCeti.Examples.CircleVarifold
 
 /-- The unit tangent `i e^{iθ}` of the unit circle at `e^{iθ}`. -/
-def circleTangent (θ : ℝ) : ℂ := circleMap 0 1 θ * I
+private def circleTangent (θ : ℝ) : ℂ := circleMap 0 1 θ * I
 
 /-- The unit tangent has norm one. -/
-theorem norm_circleTangent (θ : ℝ) : ‖circleTangent θ‖ = 1 := by
+private theorem norm_circleTangent (θ : ℝ) : ‖circleTangent θ‖ = 1 := by
   simp [circleTangent]
 
 /-- The unit tangent is nonzero. -/
-theorem circleTangent_ne_zero (θ : ℝ) : circleTangent θ ≠ 0 :=
+private theorem circleTangent_ne_zero (θ : ℝ) : circleTangent θ ≠ 0 :=
   norm_ne_zero_iff.1 (by simp [norm_circleTangent])
 
 /-- The tangent line `span {i e^{iθ}}` of the unit circle at `e^{iθ}`. -/
-def circleTangentLine (θ : ℝ) : grassmannian ℝ ℂ 1 :=
+private def circleTangentLine (θ : ℝ) : grassmannian ℝ ℂ 1 :=
   grassmannian.spanLine ℝ (circleTangent θ) (circleTangent_ne_zero θ)
 
 /-- The projection onto the tangent line is `v ↦ ⟪τ, v⟫ τ`. -/
-theorem coe_circleTangentLine (θ : ℝ) :
+private theorem coe_circleTangentLine (θ : ℝ) :
     (circleTangentLine θ : ℂ →L[ℝ] ℂ) =
       (innerSL ℝ (circleTangent θ)).smulRight (circleTangent θ) := by
   ext1 v
@@ -64,33 +67,33 @@ theorem coe_circleTangentLine (θ : ℝ) :
   simp
 
 /-- The unit tangent depends continuously on the angle. -/
-theorem continuous_circleTangent : Continuous circleTangent :=
+private theorem continuous_circleTangent : Continuous circleTangent :=
   (continuous_circleMap 0 1).mul continuous_const
 
 /-- The tangent line depends continuously on the angle. -/
-theorem continuous_circleTangentLine : Continuous circleTangentLine := by
+private theorem continuous_circleTangentLine : Continuous circleTangentLine := by
   refine continuous_induced_rng.2 (continuous_clm_apply.2 fun v => ?_)
   simp only [Function.comp_apply, coe_circleTangentLine, ContinuousLinearMap.smulRight_apply,
     innerSL_apply_apply]
   exact ((continuous_circleTangent.inner (𝕜 := ℝ) continuous_const).smul continuous_circleTangent)
 
 /-- The point `e^{iθ}` of the circle, in the plane `(⊤ : Opens ℂ)`. -/
-def circlePoint (θ : ℝ) : (⊤ : Opens ℂ) := ⟨circleMap 0 1 θ, by simp⟩
+private def circlePoint (θ : ℝ) : (⊤ : Opens ℂ) := ⟨circleMap 0 1 θ, by simp⟩
 
 /-- The point `circlePoint θ` is `e^{iθ}`. -/
 @[simp]
-theorem coe_circlePoint (θ : ℝ) : (circlePoint θ : ℂ) = circleMap 0 1 θ := (rfl)
+private theorem coe_circlePoint (θ : ℝ) : (circlePoint θ : ℂ) = circleMap 0 1 θ := (rfl)
 
 /-- The point `e^{iθ}` depends continuously on the angle. -/
-theorem continuous_circlePoint : Continuous circlePoint :=
+private theorem continuous_circlePoint : Continuous circlePoint :=
   (continuous_circleMap 0 1).subtype_mk _
 
 /-- The parametrization `θ ↦ (e^{iθ}, span {i e^{iθ}})` of the circle varifold. -/
-def circleVarifoldParam (θ : ℝ) : (⊤ : Opens ℂ) × grassmannian ℝ ℂ 1 :=
+private def circleVarifoldParam (θ : ℝ) : (⊤ : Opens ℂ) × grassmannian ℝ ℂ 1 :=
   (circlePoint θ, circleTangentLine θ)
 
 /-- The parametrization of the circle varifold is continuous. -/
-theorem continuous_circleVarifoldParam : Continuous circleVarifoldParam :=
+private theorem continuous_circleVarifoldParam : Continuous circleVarifoldParam :=
   continuous_circlePoint.prodMk continuous_circleTangentLine
 
 /-- The **varifold `[C]` of the unit circle**: the image of Lebesgue measure on `[0, 2π]` under
@@ -103,18 +106,33 @@ instance isFiniteMeasure_circleVarifold : IsFiniteMeasure circleVarifold := by
   rw [circleVarifold]
   infer_instance
 
-/-- The weight-side measure: the image of Lebesgue measure on `[0, 2π]` under `θ ↦ e^{iθ}`, a
-measure on the plane `(⊤ : Opens ℂ)`. -/
-def circleMeasure : Measure (⊤ : Opens ℂ) :=
+/-- The image of Lebesgue measure on `[0, 2π]` under `θ ↦ e^{iθ}`, a measure on the plane
+`(⊤ : Opens ℂ)`. -/
+private def circleMeasure : Measure (⊤ : Opens ℂ) :=
   (volume.restrict (Icc 0 (2 * π))).map circlePoint
 
-/-- The length measure of the circle is finite. -/
-instance isFiniteMeasure_circleMeasure : IsFiniteMeasure circleMeasure := by
+/-- The image of Lebesgue measure on `[0, 2π]` under `θ ↦ e^{iθ}` is finite. -/
+private instance isFiniteMeasure_circleMeasure : IsFiniteMeasure circleMeasure := by
   rw [circleMeasure]
   infer_instance
 
+/-- The weight of the circle varifold is the image of Lebesgue measure on `[0, 2π]` under
+`θ ↦ e^{iθ}`. -/
+private theorem weight_circleVarifold_eq_map :
+    weight circleVarifold = (volume.restrict (Icc 0 (2 * π))).map (circleMap 0 1) := by
+  have hγ : (fun p : (⊤ : Opens ℂ) × grassmannian ℝ ℂ 1 ↦ (p.1 : ℂ)) ∘ circleVarifoldParam =
+      circleMap 0 1 := funext coe_circlePoint
+  rw [weight_def, circleVarifold, Measure.map_map (by fun_prop)
+    continuous_circleVarifoldParam.measurable, hγ]
+
+/-- **`‖[C]‖ = H¹⌞C`**: the weight of the circle varifold is the one-dimensional Hausdorff measure
+on the unit circle. -/
+theorem weight_circleVarifold : weight circleVarifold = μHE[1].restrict (sphere (0 : ℂ) 1) := by
+  rw [weight_circleVarifold_eq_map]
+  simpa using TauCeti.smul_map_volume_restrict_circleMap 0 1
+
 /-- Along the circle, the tangential divergence of `X` is `⟪τ, DX(γ) τ⟫`. -/
-theorem tangentialDivergence_circleTangentLine (X : ℂ → ℂ) (θ : ℝ) :
+private theorem tangentialDivergence_circleTangentLine (X : ℂ → ℂ) (θ : ℝ) :
     tangentialDivergence X (circleMap 0 1 θ) (circleTangentLine θ) =
       ⟪circleTangent θ, fderiv ℝ X (circleMap 0 1 θ) (circleTangent θ)⟫ := by
   rw [tangentialDivergence_def, coe_circleTangentLine]
@@ -128,7 +146,7 @@ theorem tangentialDivergence_circleTangentLine (X : ℂ → ℂ) (θ : ℝ) :
   simp
 
 /-- The derivative of `g(θ) = ⟪X(γ(θ)), τ(θ)⟫`. -/
-theorem hasDerivAt_inner_circleTangent {X : ℂ → ℂ} (hX : Differentiable ℝ X) (θ : ℝ) :
+private theorem hasDerivAt_inner_circleTangent {X : ℂ → ℂ} (hX : Differentiable ℝ X) (θ : ℝ) :
     HasDerivAt (fun t => ⟪X (circleMap 0 1 t), circleTangent t⟫)
       (⟪circleTangent θ, fderiv ℝ X (circleMap 0 1 θ) (circleTangent θ)⟫ -
         ⟪circleMap 0 1 θ, X (circleMap 0 1 θ)⟫) θ := by
@@ -136,7 +154,7 @@ theorem hasDerivAt_inner_circleTangent {X : ℂ → ℂ} (hX : Differentiable �
     simpa [circleTangent] using hasDerivAt_circleMap 0 1 θ
   have hτ : HasDerivAt circleTangent (-circleMap 0 1 θ) θ := by
     have := (hasDerivAt_circleMap 0 1 θ).mul_const I
-    rw [show circleTangent = fun y => circleMap 0 1 y * I from rfl]
+    unfold circleTangent
     convert this using 1
     rw [mul_assoc, I_mul_I, mul_neg_one]
   have hXγ : HasDerivAt (fun t => X (circleMap 0 1 t))
@@ -175,21 +193,31 @@ theorem firstVariation_circleVarifold_apply (X : 𝓓^{1}((⊤ : Opens ℂ), ℂ
     intervalIntegral.integral_of_le two_pi_pos.le] at hFTC
   rwa [integral_Icc_eq_integral_Ioc, integral_Icc_eq_integral_Ioc]
 
-/-- **The first variation of the circle** against its weight: `δ[C](X) = ∫ ⟪x, X(x)⟫ d‖[C]‖`. -/
-theorem firstVariation_circleVarifold_eq_integral (X : 𝓓^{1}((⊤ : Opens ℂ), ℂ)) :
+/-- The first variation of the circle as an integral against `circleMeasure`. -/
+private theorem firstVariation_circleVarifold_eq_integral_circleMeasure
+    (X : 𝓓^{1}((⊤ : Opens ℂ), ℂ)) :
     firstVariation circleVarifold X = ∫ x, ⟪(x : ℂ), X x⟫ ∂circleMeasure := by
   rw [firstVariation_circleVarifold_apply, circleMeasure,
     integral_map continuous_circlePoint.aemeasurable
       (continuous_subtypeVal.inner (X.continuous.comp continuous_subtypeVal)).aestronglyMeasurable]
-  rfl
+  simp only [coe_circlePoint]
 
-/-- The total variation measure of the circle varifold is its weight measure `circleMeasure`. -/
-theorem firstVariationMeasure_circleVarifold_eq :
+/-- **The first variation of the circle** against its weight `‖[C]‖ = H¹⌞C`:
+`δ[C](X) = ∫_C ⟪x, X(x)⟫ dH¹(x)`. -/
+theorem firstVariation_circleVarifold_eq_integral (X : 𝓓^{1}((⊤ : Opens ℂ), ℂ)) :
+    firstVariation circleVarifold X = ∫ x, ⟪x, X x⟫ ∂weight circleVarifold := by
+  rw [firstVariation_circleVarifold_apply, weight_circleVarifold_eq_map,
+    integral_map (continuous_circleMap 0 1).aemeasurable
+      (continuous_id.inner X.continuous).aestronglyMeasurable,
+    integral_Icc_eq_integral_Ioc]
+
+/-- The total variation measure of the circle varifold is `circleMeasure`. -/
+private theorem firstVariationMeasure_circleVarifold_eq :
     firstVariationMeasure circleVarifold = circleMeasure := by
   rw [firstVariationMeasure_def]
   refine Distribution.massMeasure_eq_of_apply_eq_integral_inner
     (η := fun x : (⊤ : Opens ℂ) => (x : ℂ)) continuous_subtypeVal.aestronglyMeasurable ?_
-    firstVariation_circleVarifold_eq_integral
+    firstVariation_circleVarifold_eq_integral_circleMeasure
   rw [circleMeasure]
   refine (ae_map_iff continuous_circlePoint.aemeasurable ?_).2
     (Filter.Eventually.of_forall fun θ => by simp)
@@ -208,31 +236,15 @@ theorem hasLocallyBoundedFirstVariation_circleVarifold :
   simp only [ENNReal.ofReal_eq_zero, sub_zero] at this
   linarith [pi_pos]
 
-/-- The image of Lebesgue measure on `[0, 2π]` under `θ ↦ e^{iθ}` is `H¹⌞C`. -/
-theorem map_volume_restrict_circleMap :
-    (volume.restrict (Icc 0 (2 * π))).map (circleMap 0 1) =
-      μHE[1].restrict (sphere (0 : ℂ) 1) := by
-  have hinj : InjOn (circleMap 0 1) (Ioo 0 (2 * π)) :=
-    (injOn_circleMap_of_abs_sub_le' (c := 0) one_ne_zero (by linarith)).mono Ioo_subset_Ico_self
-  have h := LipschitzOnWith.map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict
-    ((lipschitzWith_circleMap 0 1).lipschitzOnWith (s := Icc 0 (2 * π))) hinj
-  have himage : circleMap 0 1 '' Icc 0 (2 * π) = sphere 0 1 := by
-    refine Subset.antisymm
-      ((image_subset_range _ _).trans_eq (by simp)) ?_
-    simpa using (image_circleMap_Ioc 0 1).symm.subset.trans (image_mono Ioc_subset_Icc_self)
-  have hd : (fun t => ‖deriv (circleMap 0 1) t‖ₑ) = 1 := funext fun t => by
-    rw [deriv_circleMap, ← ofReal_norm]
-    simp
-  rwa [hd, withDensity_one, himage] at h
-
 /-- **`‖δ[C]‖ = H¹⌞C`**: the total variation measure of the first variation of the unit circle,
 read in the plane, is the one-dimensional Hausdorff measure on the circle. -/
 theorem map_firstVariationMeasure_circleVarifold :
     (firstVariationMeasure circleVarifold).map ((↑) : (⊤ : Opens ℂ) → ℂ) =
       μHE[1].restrict (sphere (0 : ℂ) 1) := by
+  have hγ : Subtype.val ∘ circlePoint = circleMap 0 1 := funext coe_circlePoint
   rw [firstVariationMeasure_circleVarifold_eq, circleMeasure,
     Measure.map_map continuous_subtypeVal.measurable
-      continuous_circlePoint.measurable]
-  exact map_volume_restrict_circleMap
+      continuous_circlePoint.measurable, hγ, ← weight_circleVarifold_eq_map]
+  exact weight_circleVarifold
 
 end TauCeti.Examples.CircleVarifold
