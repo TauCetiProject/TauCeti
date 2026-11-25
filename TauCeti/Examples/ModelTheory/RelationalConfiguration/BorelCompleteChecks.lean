@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.BorelComplete
+public import TauCeti.ModelTheory.Scott.NatPredicate
 
 /-!
 # Regression examples: relabelling on small carriers and Borel completeness
@@ -18,10 +19,10 @@ classes of codes.
 * On the carrier `Fin 0`, a language without nullary symbols has a single code, and its
   isomorphism relation has one class; with one nullary symbol there are two codes, both fixed by
   relabelling, in two classes.
-* In the language `unaryFamily` of countably many unary predicates `P_i`, the class
-  `constantClass` of codes in which each `P_i` is `∅` or `ℕ` is closed and isomorphism invariant,
-  and its isomorphism types are in bijection with `ℕ → Bool`. Hence a Borel complete class has
-  uncountably many isomorphism types.
+* In the language `TauCeti.natPredicateLanguage` of countably many unary predicates `P_i`, the
+  class `constantClass` of codes in which each `P_i` is `∅` or `ℕ` is closed and isomorphism
+  invariant, and its isomorphism types are in bijection with `ℕ → Bool`. Hence a Borel complete
+  class has uncountably many isomorphism types.
 * A class containing a Borel complete class, such as `K ∪ K₂`, is Borel complete.
 -/
 
@@ -131,82 +132,63 @@ example : Nat.card (RelationalConfiguration nullaryLanguage (Fin 0)) = 2 ∧
 
 /-! ### Countably many unary predicates -/
 
-/-- The language with one unary relation symbol `P_i` for each `i : ℕ`, and no other symbols. -/
-@[expose] def unaryFamily : Language.{0, 0} where
-  Functions _ := Empty
-  Relations
-    | 0 => Empty
-    | 1 => ℕ
-    | _ + 2 => Empty
+/-- The language of countably many unary predicates has countably many relation symbols of each
+arity. -/
+instance countable_relations_natPredicateLanguage (n : ℕ) :
+    Countable (natPredicateLanguage.Relations n) :=
+  Function.Injective.countable (f := Sigma.mk n) sigma_mk_injective
 
-/-- `unaryFamily` has no function symbols. -/
-instance isRelational_unaryFamily : unaryFamily.IsRelational :=
-  fun _ => inferInstanceAs (IsEmpty Empty)
-
-/-- `unaryFamily` has countably many relation symbols of each arity. -/
-instance countable_relations_unaryFamily : ∀ n, Countable (unaryFamily.Relations n)
-  | 0 => inferInstanceAs (Countable Empty)
-  | 1 => inferInstanceAs (Countable ℕ)
-  | _ + 2 => inferInstanceAs (Countable Empty)
-
-/-- The unary symbol `P_i` of `unaryFamily`. -/
-def unarySymbol (i : ℕ) : unaryFamily.Relations 1 := i
-
-/-- The atom `P_i(v)` of `unaryFamily`. -/
-def unaryAtom (i v : ℕ) : Atom unaryFamily ℕ :=
-  atom (unarySymbol i) ![v]
+/-- The atom `P_i(v)` of `natPredicateLanguage`. -/
+def unaryAtom (i v : ℕ) : Atom natPredicateLanguage ℕ :=
+  atom (NatPredicateRel.pred i) ![v]
 
 /-- Relabelling the atom `P_i(v)` along `f` gives `P_i(f v)`. -/
 @[simp]
-theorem map_unaryAtom (f : ℕ → ℕ) (i v : ℕ) : (unaryAtom i v).map f = unaryAtom i (f v) := by
-  rw [unaryAtom, unaryAtom, map_atom_unary]
+theorem map_unaryAtom (f : ℕ → ℕ) (i v : ℕ) : (unaryAtom i v).map f = unaryAtom i (f v) :=
+  map_atom_unary f _ v
 
-/-- Every atom of `unaryFamily` is some `P_i(v)`. -/
-theorem exists_eq_unaryAtom (a : Atom unaryFamily ℕ) : ∃ i v, a = unaryAtom i v := by
+/-- Every atom of `natPredicateLanguage` is some `P_i(v)`. -/
+theorem exists_eq_unaryAtom (a : Atom natPredicateLanguage ℕ) : ∃ i v, a = unaryAtom i v := by
   induction a using Atom.induction_atom with
-  | @h n R x =>
-    match n, R, x with
-    | 0, R, _ => exact (R : Empty).elim
-    | 1, i, x =>
-      refine ⟨i, x 0, (atom_eq_atom_iff (S := unarySymbol i)).2 ⟨rfl, heq_of_eq ?_⟩⟩
+  | h R x =>
+    cases R with
+    | pred i =>
+      refine ⟨i, x 0, congrArg _ ?_⟩
       rw [Matrix.vec_single_eq_const]
       exact funext fun j => congrArg x (Subsingleton.elim j 0)
-    | _ + 2, R, _ => exact (R : Empty).elim
 
-/-- The class of codes of `unaryFamily` on `ℕ` in which each `P_i` is `∅` or `ℕ`. -/
-def constantClass : Set (RelationalConfiguration unaryFamily ℕ) :=
+/-- The class of codes of `natPredicateLanguage` on `ℕ` in which each `P_i` is `∅` or `ℕ`. -/
+def constantClass : Set (RelationalConfiguration natPredicateLanguage ℕ) :=
   {c | ∀ i v w, c.eval (unaryAtom i v) = c.eval (unaryAtom i w)}
 
 /-- A code lies in `constantClass` when each `P_i` takes the same value at all points. -/
-theorem mem_constantClass_iff {c : RelationalConfiguration unaryFamily ℕ} :
+theorem mem_constantClass_iff {c : RelationalConfiguration natPredicateLanguage ℕ} :
     c ∈ constantClass ↔ ∀ i v w, c.eval (unaryAtom i v) = c.eval (unaryAtom i w) :=
   Iff.rfl
 
 /-- The truth values of `P_0, P_1, …` at the point `0`. -/
-def truthValues (c : RelationalConfiguration unaryFamily ℕ) : ℕ → Bool :=
+def truthValues (c : RelationalConfiguration natPredicateLanguage ℕ) : ℕ → Bool :=
   fun i => c.eval (unaryAtom i 0)
 
 /-- The `i`th truth value of a code is the value of `P_i` at `0`. -/
-theorem truthValues_apply (c : RelationalConfiguration unaryFamily ℕ) (i : ℕ) :
+theorem truthValues_apply (c : RelationalConfiguration natPredicateLanguage ℕ) (i : ℕ) :
     truthValues c i = c.eval (unaryAtom i 0) :=
   (rfl)
 
 /-- The value `f i` on the symbol `P_i`. -/
-private def symbolValue (f : ℕ → Bool) : (Σ n, unaryFamily.Relations n) → Bool
-  | ⟨0, R⟩ => (R : Empty).elim
-  | ⟨1, i⟩ => f i
-  | ⟨_ + 2, R⟩ => (R : Empty).elim
+private def symbolValue (f : ℕ → Bool) : (Σ n, natPredicateLanguage.Relations n) → Bool
+  | ⟨_, .pred i⟩ => f i
 
 /-- The code in which `P_i` is `ℕ` when `f i` holds and `∅` otherwise. -/
-def ofTruthValues (f : ℕ → Bool) : RelationalConfiguration unaryFamily ℕ :=
+def ofTruthValues (f : ℕ → Bool) : RelationalConfiguration natPredicateLanguage ℕ :=
   mk fun a => symbolValue f a.symbol
 
 /-- The code `ofTruthValues f` reads `f i` at every atom `P_i(v)`. -/
 @[simp]
 theorem eval_ofTruthValues (f : ℕ → Bool) (i v : ℕ) :
     (ofTruthValues f).eval (unaryAtom i v) = f i := by
-  rw [ofTruthValues, eval_mk, unaryAtom, Atom.symbol_atom]
-  rfl
+  rw [ofTruthValues, eval_mk]
+  exact congrArg (symbolValue f) (Atom.symbol_atom _ _)
 
 /-- The truth values of `ofTruthValues f` are `f`. -/
 @[simp]
@@ -218,7 +200,7 @@ theorem ofTruthValues_mem_constantClass (f : ℕ → Bool) : ofTruthValues f ∈
   fun _ _ _ => by rw [eval_ofTruthValues, eval_ofTruthValues]
 
 /-- A code in `constantClass` is determined by its truth values. -/
-theorem eq_of_truthValues_eq {c d : RelationalConfiguration unaryFamily ℕ}
+theorem eq_of_truthValues_eq {c d : RelationalConfiguration natPredicateLanguage ℕ}
     (hc : c ∈ constantClass) (hd : d ∈ constantClass) (h : truthValues c = truthValues d) :
     c = d := by
   ext a
@@ -237,7 +219,7 @@ theorem measurableSet_constantClass : MeasurableSet constantClass :=
   isClosed_constantClass.measurableSet
 
 /-- Relabelling preserves the truth values of a code in `constantClass`. -/
-theorem truthValues_perm_smul {c : RelationalConfiguration unaryFamily ℕ}
+theorem truthValues_perm_smul {c : RelationalConfiguration natPredicateLanguage ℕ}
     (hc : c ∈ constantClass) (σ : Equiv.Perm ℕ) : truthValues (σ • c) = truthValues c := by
   funext i
   rw [truthValues, eval_perm_smul, map_unaryAtom]
