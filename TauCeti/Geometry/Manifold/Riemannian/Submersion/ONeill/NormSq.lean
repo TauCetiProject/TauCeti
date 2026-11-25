@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
 import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
 
 /-!
 # The squared norm of O'Neill's horizontal tensor
@@ -200,9 +201,33 @@ def oneillAInnerForm (x : M) : BilinForm ℝ (TangentSpace I x) :=
 
 omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
 /-- The defining formula for `oneillAInnerForm`. -/
+@[simp]
 theorem oneillAInnerForm_apply (u u' : TangentSpace I x) :
     h.oneillAInnerForm x u u' = (h.oneillA x u).hilbertSchmidtInner (h.oneillA x u') :=
   (rfl)
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- `oneillAInnerForm` is symmetric. -/
+theorem oneillAInnerForm_comm (u u' : TangentSpace I x) :
+    h.oneillAInnerForm x u u' = h.oneillAInnerForm x u' u := by
+  simp only [oneillAInnerForm_apply, ContinuousLinearMap.hilbertSchmidtInner_comm]
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- `oneillAInnerForm` is nonnegative on the diagonal. -/
+theorem oneillAInnerForm_self_nonneg (u : TangentSpace I x) : 0 ≤ h.oneillAInnerForm x u u :=
+  (h.oneillA x u).hilbertSchmidtInner_self_nonneg
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- `oneillAInnerForm` vanishes on the diagonal at `u` exactly when `A_u = 0`. -/
+theorem oneillAInnerForm_self_eq_zero_iff (u : TangentSpace I x) :
+    h.oneillAInnerForm x u u = 0 ↔ h.oneillA x u = 0 :=
+  (h.oneillA x u).hilbertSchmidtInner_self_eq_zero_iff
+
+omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
+/-- `oneillAInnerForm` is positive semidefinite. -/
+theorem isPosSemidef_oneillAInnerForm (x : M) : (h.oneillAInnerForm x).IsPosSemidef where
+  isSymm := ⟨h.oneillAInnerForm_comm⟩
+  isNonneg := ⟨h.oneillAInnerForm_self_nonneg⟩
 
 omit [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y] in
 /-- In an orthonormal basis `e_j` of `T_x M`, `oneillAInnerForm` is `∑ j, ⟪A_u e_j, A_(u') e_j⟫`. -/
@@ -221,18 +246,14 @@ theorem metricTrace_oneillAInnerForm (x : M) :
   simp only [h.oneillAInnerForm_eq_sum e, real_inner_self_eq_norm_sq]
 
 /-- In the chart-local frame `e_i` at `a`, `|A|²` is half the contraction
-`gⁱʲ gᵏˡ ⟪A_(e_i) e_k, A_(e_j) e_l⟫` against the inverse Gram matrix of the frame. -/
+`gⁱʲ ⟪A_(e_i), A_(e_j)⟫_HS` against the inverse Gram matrix of the frame. -/
 private theorem oneillANormSq_eq_sum_chartInvGramMatrix (a : M) (hx : x ∈ (chartAt H a).source) :
     h.oneillANormSq x = (∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
-      ∑ k, ∑ l, chartInvGramMatrix (I := I) a x k l *
-        ⟪h.oneillA x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a k x),
-          h.oneillA x (chartLocalFrame (I := I) a j x) (chartLocalFrame (I := I) a l x)⟫_ℝ) /
-      2 := by
+      (h.oneillA x (chartLocalFrame (I := I) a i x)).hilbertSchmidtInner
+        (h.oneillA x (chartLocalFrame (I := I) a j x))) / 2 := by
   rw [eq_div_iff two_ne_zero, mul_comm, ← h.metricTrace_oneillAInnerForm x,
     metricTrace_eq_sum_chartInvGramMatrix a hx]
-  simp only [oneillAInnerForm_apply, ContinuousLinearMap.hilbertSchmidtInner_def,
-    metricTrace_eq_sum_chartInvGramMatrix a hx, LinearMap.compl₁₂_apply,
-    ContinuousLinearMap.coe_coe, innerₗ_apply_apply, smul_eq_mul]
+  simp only [oneillAInnerForm_apply, smul_eq_mul]
 
 variable [T2Space M]
 
@@ -240,24 +261,18 @@ variable [T2Space M]
 theorem contMDiff_oneillANormSq : ContMDiff I 𝓘(ℝ) ∞ h.oneillANormSq := by
   let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   intro a
-  set s := (trivializationAt E (TangentSpace I) a).baseSet
-  have hs : (chartAt H a).source = s := (TangentBundle.trivializationAt_baseSet (I := I) a).symm
-  have hA := h.contMDiff_oneillA.contMDiffOn (s := s)
-  have hfr (i : Fin (Module.finrank ℝ E)) := contMDiffOn_chartLocalFrame (I := I) (n := ∞) a i
-  have hG (i j : Fin (Module.finrank ℝ E)) :=
-    contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞) a i j
-  have hsum : ContMDiffOn I 𝓘(ℝ) ∞ (fun x ↦ (∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
-      ∑ k, ∑ l, chartInvGramMatrix (I := I) a x k l *
-        ⟪h.oneillA x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a k x),
-          h.oneillA x (chartLocalFrame (I := I) a j x) (chartLocalFrame (I := I) a l x)⟫_ℝ) / 2)
-      s :=
-    (contMDiffOn_finsetSum fun i _ ↦ contMDiffOn_finsetSum fun j _ ↦
-      (hG i j).mul <| contMDiffOn_finsetSum fun k _ ↦ contMDiffOn_finsetSum fun l _ ↦
-        (hG k l).mul <| ContMDiffOn.inner_bundle (IB := I) (n := ∞) (F := E)
-          (E := fun x : M ↦ TangentSpace I x) (hA.clm_bundle_apply₂ (hfr i) (hfr k))
-          (hA.clm_bundle_apply₂ (hfr j) (hfr l))).div_const 2
-  exact (hsum.congr fun x hx ↦ h.oneillANormSq_eq_sum_chartInvGramMatrix a (hs ▸ hx)).contMDiffAt
-    (hs ▸ (chartAt H a).open_source.mem_nhds (mem_chart_source H a))
+  have hAe (i : Fin (Module.finrank ℝ E)) := (h.contMDiff_oneillA a).clm_bundle_apply
+    (contMDiffAt_chartLocalFrame (I := I) (n := ∞) a i)
+  have hsum : ContMDiffAt I 𝓘(ℝ) ∞ (fun x ↦ (∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
+      (h.oneillA x (chartLocalFrame (I := I) a i x)).hilbertSchmidtInner
+        (h.oneillA x (chartLocalFrame (I := I) a j x))) / 2) a :=
+    (contMDiffAt_finsetSum fun i _ ↦ contMDiffAt_finsetSum fun j _ ↦
+      ((contMDiffOn_chartInvGramMatrix_entry (I := I) (n := ∞) a i j).contMDiffAt
+        ((trivializationAt E (TangentSpace I) a).open_baseSet.mem_nhds (by simp))).mul
+        ((hAe i).hilbertSchmidtInner_bundle (hAe j))).div_const 2
+  refine hsum.congr_of_eventuallyEq ?_
+  filter_upwards [(chartAt H a).open_source.mem_nhds (mem_chart_source H a)] with x hx
+  exact h.oneillANormSq_eq_sum_chartInvGramMatrix a hx
 
 /-- `|A|²` is continuous. -/
 theorem continuous_oneillANormSq : Continuous h.oneillANormSq :=
