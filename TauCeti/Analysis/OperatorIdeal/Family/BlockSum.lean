@@ -79,28 +79,22 @@ sum: `Φ(T₁) ≤ Φ(T₁ ⊕ T₂)`. -/
 theorem opGauge_le_opGauge_withLpProdMap_left (T₁ : E₁ →L[𝕜] F₁) (T₂ : E₂ →L[𝕜] F₂) :
     Φ.opGauge T₁ ≤ Φ.opGauge (T₁.withLpProdMap p T₂) := by
   -- `T₁` is the compression of `T₁ ⊕ T₂` to the first factors.
-  have h : T₁ = WithLp.fstL p 𝕜 F₁ F₂ ∘L T₁.withLpProdMap p T₂ ∘L
-      ((WithLp.prodContinuousLinearEquiv p 𝕜 E₁ E₂).symm.toContinuousLinearMap ∘L
-        ContinuousLinearMap.inl 𝕜 E₁ E₂) := by
+  have h : T₁ = WithLp.fstL p 𝕜 F₁ F₂ ∘L T₁.withLpProdMap p T₂ ∘L WithLp.inlL p 𝕜 E₁ E₂ := by
     ext x
     simp
   conv_lhs => rw [h]
-  exact Φ.opGauge_comp_comp_le_self (WithLp.norm_fstL_le_one ..) _
-    (WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one ..)
+  exact Φ.opGauge_comp_comp_le_self (WithLp.norm_fstL_le_one ..) _ (WithLp.norm_inlL_le_one ..)
 
 /-- **Lower bound by the second block.** The gauge of the second block is at most that of the block
 sum: `Φ(T₂) ≤ Φ(T₁ ⊕ T₂)`. -/
 theorem opGauge_le_opGauge_withLpProdMap_right (T₁ : E₁ →L[𝕜] F₁) (T₂ : E₂ →L[𝕜] F₂) :
     Φ.opGauge T₂ ≤ Φ.opGauge (T₁.withLpProdMap p T₂) := by
   -- `T₂` is the compression of `T₁ ⊕ T₂` to the second factors.
-  have h : T₂ = WithLp.sndL p 𝕜 F₁ F₂ ∘L T₁.withLpProdMap p T₂ ∘L
-      ((WithLp.prodContinuousLinearEquiv p 𝕜 E₁ E₂).symm.toContinuousLinearMap ∘L
-        ContinuousLinearMap.inr 𝕜 E₁ E₂) := by
+  have h : T₂ = WithLp.sndL p 𝕜 F₁ F₂ ∘L T₁.withLpProdMap p T₂ ∘L WithLp.inrL p 𝕜 E₁ E₂ := by
     ext x
     simp
   conv_lhs => rw [h]
-  exact Φ.opGauge_comp_comp_le_self (WithLp.norm_sndL_le_one ..) _
-    (WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one ..)
+  exact Φ.opGauge_comp_comp_le_self (WithLp.norm_sndL_le_one ..) _ (WithLp.norm_inrL_le_one ..)
 
 /-- A block sum with a zero second block has the gauge of its first block:
 `Φ(T₁ ⊕ 0) = Φ(T₁)`. -/
@@ -110,13 +104,11 @@ theorem opGauge_withLpProdMap_zero_right (T₁ : E₁ →L[𝕜] F₁) :
   refine le_antisymm ?_ (Φ.opGauge_le_opGauge_withLpProdMap_left T₁ 0)
   -- `T₁ ⊕ 0` factors through `T₁` by projecting onto and including the first factors.
   have h : T₁.withLpProdMap p (0 : E₂ →L[𝕜] F₂) =
-      ((WithLp.prodContinuousLinearEquiv p 𝕜 F₁ F₂).symm.toContinuousLinearMap ∘L
-        ContinuousLinearMap.inl 𝕜 F₁ F₂) ∘L T₁ ∘L WithLp.fstL p 𝕜 E₁ E₂ := by
+      WithLp.inlL p 𝕜 F₁ F₂ ∘L T₁ ∘L WithLp.fstL p 𝕜 E₁ E₂ := by
     ext x
     simp
   rw [h]
-  exact Φ.opGauge_comp_comp_le_self
-    (WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one ..) _ (WithLp.norm_fstL_le_one ..)
+  exact Φ.opGauge_comp_comp_le_self (WithLp.norm_inlL_le_one ..) _ (WithLp.norm_fstL_le_one ..)
 
 /-- A block sum with a zero first block has the gauge of its second block:
 `Φ(0 ⊕ T₂) = Φ(T₂)`. -/
@@ -126,13 +118,11 @@ theorem opGauge_withLpProdMap_zero_left (T₂ : E₂ →L[𝕜] F₂) :
   refine le_antisymm ?_ (Φ.opGauge_le_opGauge_withLpProdMap_right 0 T₂)
   -- `0 ⊕ T₂` factors through `T₂` by projecting onto and including the second factors.
   have h : (0 : E₁ →L[𝕜] F₁).withLpProdMap p T₂ =
-      ((WithLp.prodContinuousLinearEquiv p 𝕜 F₁ F₂).symm.toContinuousLinearMap ∘L
-        ContinuousLinearMap.inr 𝕜 F₁ F₂) ∘L T₂ ∘L WithLp.sndL p 𝕜 E₁ E₂ := by
+      WithLp.inrL p 𝕜 F₁ F₂ ∘L T₂ ∘L WithLp.sndL p 𝕜 E₁ E₂ := by
     ext x
     simp
   rw [h]
-  exact Φ.opGauge_comp_comp_le_self
-    (WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one ..) _ (WithLp.norm_sndL_le_one ..)
+  exact Φ.opGauge_comp_comp_le_self (WithLp.norm_inrL_le_one ..) _ (WithLp.norm_sndL_le_one ..)
 
 end Seminormed
 

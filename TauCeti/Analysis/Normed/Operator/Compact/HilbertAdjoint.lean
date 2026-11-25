@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
+import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 
 /-!
 # Compactness of Hilbert-space adjoints
@@ -29,12 +30,17 @@ approximation numbers.
 * `ContinuousLinearMap.isCompactOperator_adjoint_iff`: `T†` is compact exactly when `T` is.
 * `IsCompactOperator.star`: on a Hilbert space, `star T` is compact when `T` is.
 * `ContinuousLinearMap.isCompactOperator_star_iff`: `star T` is compact exactly when `T` is.
+* `ContinuousLinearMap.isCompactOperator_adjoint_comp_self_iff`,
+  `ContinuousLinearMap.isCompactOperator_comp_adjoint_self_iff`,
+  `ContinuousLinearMap.isCompactOperator_star_mul_self_iff`,
+  `ContinuousLinearMap.isCompactOperator_mul_star_self_iff`: a Gram operator `T† T` or `T T†` is
+  compact if and only if `T` is.
 * `IsCompactOperator.conjStarAlgEquiv`: conjugating by a unitary preserves compactness.
 -/
 
 public section
 
-open scoped InnerProduct
+open scoped InnerProduct InnerProductSpace
 
 namespace IsCompactOperator
 
@@ -83,5 +89,30 @@ theorem isCompactOperator_adjoint_iff {T : E →L[𝕜] F} :
 theorem isCompactOperator_star_iff {T : E →L[𝕜] E} :
     IsCompactOperator ⇑(star T) ↔ IsCompactOperator T := by
   rw [star_eq_adjoint, isCompactOperator_adjoint_iff]
+
+/-- The source Gram operator `T† ∘L T` of a bounded operator between Hilbert spaces is compact
+if and only if `T` is compact. -/
+@[simp]
+theorem isCompactOperator_adjoint_comp_self_iff {T : E →L[𝕜] F} :
+    IsCompactOperator ⇑(T† ∘L T) ↔ IsCompactOperator T :=
+  ⟨IsCompactOperator.of_adjoint_comp_self, fun h ↦ h.clm_comp (T†)⟩
+
+/-- The target Gram operator `T ∘L T†` of a bounded operator between Hilbert spaces is compact
+if and only if `T` is compact. -/
+@[simp]
+theorem isCompactOperator_comp_adjoint_self_iff {T : E →L[𝕜] F} :
+    IsCompactOperator ⇑(T ∘L T†) ↔ IsCompactOperator T := by
+  simpa using
+    (isCompactOperator_adjoint_comp_self_iff (T := T†)).trans isCompactOperator_adjoint_iff
+
+/-- On a Hilbert space, `star T * T` is compact if and only if `T` is compact. -/
+theorem isCompactOperator_star_mul_self_iff {T : E →L[𝕜] E} :
+    IsCompactOperator ⇑(star T * T) ↔ IsCompactOperator T := by
+  rw [star_eq_adjoint, mul_def, isCompactOperator_adjoint_comp_self_iff]
+
+/-- On a Hilbert space, `T * star T` is compact if and only if `T` is compact. -/
+theorem isCompactOperator_mul_star_self_iff {T : E →L[𝕜] E} :
+    IsCompactOperator ⇑(T * star T) ↔ IsCompactOperator T := by
+  rw [star_eq_adjoint, mul_def, isCompactOperator_comp_adjoint_self_iff]
 
 end ContinuousLinearMap

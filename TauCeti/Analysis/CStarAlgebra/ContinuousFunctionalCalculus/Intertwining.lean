@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import Mathlib.Topology.ContinuousMap.StoneWeierstrass
 
 /-!
@@ -24,15 +23,15 @@ Both `a` and `b` are evaluated on the compact set `spectrum a ∪ spectrum b`, w
 symbols satisfying this identity form a closed subalgebra containing the identity and its
 conjugate. By the Stone–Weierstrass theorem this subalgebra is everything. This is the
 two-space form of Mathlib's `Commute.cfc`, and the proof follows that of `Commute.cfcHom`.
+The same argument in a single topological `⋆`-algebra shows that `SemiconjBy x a b` and
+`SemiconjBy x (star a) (star b)` imply `SemiconjBy x (cfc f a) (cfc f b)`; in particular an
+element `x` anticommuting with `a` anticommutes with `cfc f a` for odd `f` and commutes with
+`cfc f a` for even `f`.
 
 For unitary operators the adjoint hypothesis is automatic, since the adjoint is the inverse;
 more generally it suffices that `a` is a coisometry and `b` an isometry.
 For normal operators it is the content of the Fuglede–Putnam–Rosenblum theorem, which Mathlib
 proves as `SemiconjBy.star_right` for elements of a single C⋆-algebra.
-
-Within a single C⋆-algebra, a unitary `u` that anticommutes with a self-adjoint `a` conjugates
-`a` to `-a`, so it anticommutes with `f(a)` for every odd real function `f`. This is how a grading
-passes through the functional calculus of an odd operator.
 
 ## Main results
 
@@ -41,8 +40,11 @@ passes through the functional calculus of an odd operator.
 * `ContinuousLinearMap.comp_star_eq_star_comp_of_mul_star_self_of_star_mul_self`: an operator
   intertwining a coisometry and an isometry, in particular two unitaries, intertwines their
   adjoints.
-* `Unitary.mul_cfc_eq_neg_cfc_mul`: a unitary anticommuting with a self-adjoint `a` anticommutes
-  with `cfc f a` for every odd `f`.
+* `SemiconjBy.cfc`, `IsSelfAdjoint.semiconjBy_cfc`: in a single topological `⋆`-algebra,
+  semiconjugacy of `a, b` and their stars passes to `cfc f a` and `cfc f b`.
+* `TauCeti.mul_cfc_of_mul_eq_neg_mul`, `TauCeti.mul_cfc_eq_neg_cfc_mul_of_odd`,
+  `TauCeti.commute_cfc_of_mul_eq_neg_mul_of_even`: anticommutation `x * a = -(a * x)` passes
+  through the real continuous functional calculus via `x * cfc f a = cfc (f ∘ Neg.neg) a * x`.
 
 ## References
 
@@ -54,6 +56,76 @@ passes through the functional calculus of an odd operator.
 public section
 
 open ContinuousMap
+
+section Core
+
+private theorem eq_cfc_of_intertwine {𝕜 A B C : Type*} {pa : A → Prop} {pb : B → Prop}
+    [RCLike 𝕜] [Ring A] [StarRing A] [Algebra 𝕜 A] [TopologicalSpace A]
+    [ContinuousFunctionalCalculus 𝕜 A pa]
+    [Ring B] [StarRing B] [Algebra 𝕜 B] [TopologicalSpace B]
+    [ContinuousFunctionalCalculus 𝕜 B pb]
+    [TopologicalSpace C] [T2Space C]
+    {L : A → C} {R : B → C} (hL : Continuous L) (hR : Continuous R)
+    {a : A} {b : B}
+    (hconst : ∀ r : 𝕜, L (algebraMap 𝕜 A r) = R (algebraMap 𝕜 B r))
+    (hid : L a = R b)
+    (hstar : L (star a) = R (star b))
+    (hadd : ∀ a₁ a₂ b₁ b₂, L a₁ = R b₁ → L a₂ = R b₂ → L (a₁ + a₂) = R (b₁ + b₂))
+    (hmul : ∀ a₁ a₂ b₁ b₂, L a₁ = R b₁ → L a₂ = R b₂ → L (a₁ * a₂) = R (b₁ * b₂))
+    (f : 𝕜 → 𝕜)
+    (hfa : ContinuousOn f (spectrum 𝕜 a))
+    (hfb : ContinuousOn f (spectrum 𝕜 b))
+    (ha : pa a) (hb : pb b) :
+    L (cfc f a) = R (cfc f b) := by
+  -- Both calculi are read on continuous symbols on the common compact set `K`.
+  set K := spectrum 𝕜 a ∪ spectrum 𝕜 b
+  have hca := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := pa) a
+  have hcb := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := pb) b
+  have : CompactSpace K := isCompact_iff_compactSpace.mp (hca.union hcb)
+  let ιa : C(spectrum 𝕜 a, K) := ⟨Set.inclusion Set.subset_union_left, continuous_inclusion _⟩
+  let ιb : C(spectrum 𝕜 b, K) := ⟨Set.inclusion Set.subset_union_right, continuous_inclusion _⟩
+  let φa := (cfcHom ha).comp (ιa.compStarAlgHom' 𝕜 𝕜)
+  let φb := (cfcHom hb).comp (ιb.compStarAlgHom' 𝕜 𝕜)
+  have hφa : Continuous φa := (cfcHom_continuous ha).comp (continuous_precomp ιa)
+  have hφb : Continuous φb := (cfcHom_continuous hb).comp (continuous_precomp ιb)
+  have hφa_id : φa (.restrict K (.id 𝕜)) = a := by
+    rw [← cfcHom_id (R := 𝕜) ha]
+    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
+  have hφb_id : φb (.restrict K (.id 𝕜)) = b := by
+    rw [← cfcHom_id (R := 𝕜) hb]
+    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
+  -- The symbols on `K` intertwined by `(L, R)` contain the constants, the identity and its
+  -- conjugate, and are closed under sums, products and limits, so by Stone–Weierstrass they are
+  -- all continuous symbols on `K`.
+  have key (g : C(K, 𝕜)) : L (φa g) = R (φb g) := by
+    induction g using ContinuousMap.induction_on_of_compact with
+    | const r =>
+      have hr : ContinuousMap.const K r = algebraMap 𝕜 C(K, 𝕜) r := by ext; simp
+      rw [hr, AlgHomClass.commutes, AlgHomClass.commutes]
+      exact hconst r
+    | id => rwa [hφa_id, hφb_id]
+    | star_id => rwa [map_star, map_star, hφa_id, hφb_id]
+    | add f g hf hg =>
+      rw [map_add, map_add]
+      exact hadd _ _ _ _ hf hg
+    | mul f g hf hg =>
+      rw [map_mul, map_mul]
+      exact hmul _ _ _ _ hf hg
+    | frequently g hg =>
+      have hclosed : IsClosed {g : C(K, 𝕜) | L (φa g) = R (φb g)} :=
+        isClosed_eq (hL.comp hφa) (hR.comp hφb)
+      exact hclosed.closure_subset_iff.mpr subset_rfl (mem_closure_iff_frequently.mpr hg)
+  have hf : ContinuousOn f K := hfa.union_of_isClosed hfb hca.isClosed hcb.isClosed
+  have hfa' : cfc f a = φa ⟨_, hf.domRestrict⟩ := by
+    rw [cfc_apply f a]
+    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
+  have hfb' : cfc f b = φb ⟨_, hf.domRestrict⟩ := by
+    rw [cfc_apply f b]
+    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
+  rw [hfa', hfb']
+  exact key _
+
+end Core
 
 namespace ContinuousLinearMap
 
@@ -72,50 +144,15 @@ theorem comp_cfc_eq_cfc_comp {p : (E →L[𝕜] E) → Prop} {q : (F →L[𝕜] 
     (hfa : ContinuousOn f (spectrum 𝕜 a) := by cfc_cont_tac)
     (hfb : ContinuousOn f (spectrum 𝕜 b) := by cfc_cont_tac)
     (ha : p a := by cfc_tac) (hb : q b := by cfc_tac) :
-    X ∘L cfc f a = cfc f b ∘L X := by
-  -- Both calculi are read on continuous symbols on the common compact set `K`.
-  set K := spectrum 𝕜 a ∪ spectrum 𝕜 b
-  have hca := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := p) a
-  have hcb := ContinuousFunctionalCalculus.isCompact_spectrum (R := 𝕜) (p := q) b
-  have : CompactSpace K := isCompact_iff_compactSpace.mp (hca.union hcb)
-  let ιa : C(spectrum 𝕜 a, K) := ⟨Set.inclusion Set.subset_union_left, continuous_inclusion _⟩
-  let ιb : C(spectrum 𝕜 b, K) := ⟨Set.inclusion Set.subset_union_right, continuous_inclusion _⟩
-  let φa := (cfcHom ha).comp (ιa.compStarAlgHom' 𝕜 𝕜)
-  let φb := (cfcHom hb).comp (ιb.compStarAlgHom' 𝕜 𝕜)
-  have hφa : Continuous φa := (cfcHom_continuous ha).comp (continuous_precomp ιa)
-  have hφb : Continuous φb := (cfcHom_continuous hb).comp (continuous_precomp ιb)
-  have hφa_id : φa (.restrict K (.id 𝕜)) = a := by
-    rw [← cfcHom_id (R := 𝕜) ha]
-    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
-  have hφb_id : φb (.restrict K (.id 𝕜)) = b := by
-    rw [← cfcHom_id (R := 𝕜) hb]
-    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
-  -- The symbols on `K` intertwined by `X` contain the constants, the identity and its conjugate,
-  -- and are closed under sums, products and limits, so by Stone–Weierstrass they are all symbols.
-  have key (g : C(K, 𝕜)) : X ∘L φa g = φb g ∘L X := by
-    induction g using ContinuousMap.induction_on_of_compact with
-    | const r =>
-      have hr : ContinuousMap.const K r = algebraMap 𝕜 C(K, 𝕜) r := by ext; simp
-      simp [hr, Algebra.algebraMap_eq_smul_one, one_def]
-    | id => rwa [hφa_id, hφb_id]
-    | star_id => rwa [map_star, map_star, hφa_id, hφb_id]
-    | add f g hf hg => rw [map_add, map_add, comp_add, add_comp, hf, hg]
-    | mul f g hf hg =>
-      rw [map_mul, map_mul, mul_def, mul_def, ← comp_assoc, hf, comp_assoc, hg, comp_assoc]
-    | frequently g hg =>
-      have hclosed : IsClosed {g : C(K, 𝕜) | X ∘L φa g = φb g ∘L X} :=
-        isClosed_eq (by fun_prop) (by fun_prop)
-      exact hclosed.closure_subset_iff.mpr subset_rfl (mem_closure_iff_frequently.mpr hg)
-  -- `cfc f a` and `cfc f b` are the two calculi at the restriction of `f` to `K`.
-  have hf : ContinuousOn f K :=
-    hfa.union_of_isClosed hfb hca.isClosed hcb.isClosed
-  have hfa' : cfc f a = φa ⟨_, hf.domRestrict⟩ := by
-    rw [cfc_apply f a]
-    exact congrArg (cfcHom ha) (ContinuousMap.ext fun _ => rfl)
-  have hfb' : cfc f b = φb ⟨_, hf.domRestrict⟩ := by
-    rw [cfc_apply f b]
-    exact congrArg (cfcHom hb) (ContinuousMap.ext fun _ => rfl)
-  rw [hfa', hfb', key]
+    X ∘L cfc f a = cfc f b ∘L X :=
+  eq_cfc_of_intertwine (L := fun u ↦ X ∘L u) (R := fun v ↦ v ∘L X)
+    (by fun_prop) (by fun_prop)
+    (fun r ↦ by simp [Algebra.algebraMap_eq_smul_one, one_def])
+    h h_star
+    (fun _ _ _ _ h₁ h₂ ↦ by rw [comp_add, add_comp, h₁, h₂])
+    (fun _ _ _ _ h₁ h₂ ↦ by
+      rw [mul_def, mul_def, ← comp_assoc, h₁, comp_assoc, h₂, comp_assoc])
+    f hfa hfb ha hb
 
 /-- If `X` intertwines a coisometry `u` and an isometry `v`, then it also intertwines their
 adjoints. In particular this holds for unitaries `u` and `v`. -/
@@ -129,41 +166,91 @@ theorem comp_star_eq_star_comp_of_mul_star_self_of_star_mul_self (X : E →L[�
 
 end ContinuousLinearMap
 
-section Unitary
+section SemiconjBy
 
-variable {A : Type*} [CStarAlgebra A]
+variable {𝕜 A : Type*} {p : A → Prop} [RCLike 𝕜] [Ring A] [StarRing A] [Algebra 𝕜 A]
+  [TopologicalSpace A] [ContinuousFunctionalCalculus 𝕜 A p] [IsSemitopologicalRing A] [T2Space A]
 
-namespace Unitary
+/-- If `x` semiconjugates `a` to `b` (`x * a = b * x`) and `star a` to `star b`, then `x`
+semiconjugates `cfc f a` to `cfc f b` for every symbol `f` continuous on both spectra. -/
+protected theorem SemiconjBy.cfc {x a b : A} (h : SemiconjBy x a b)
+    (h_star : SemiconjBy x (star a) (star b)) (f : 𝕜 → 𝕜)
+    (hfa : ContinuousOn f (spectrum 𝕜 a) := by cfc_cont_tac)
+    (hfb : ContinuousOn f (spectrum 𝕜 b) := by cfc_cont_tac)
+    (ha : p a := by cfc_tac) (hb : p b := by cfc_tac) :
+    SemiconjBy x (cfc f a) (cfc f b) :=
+  eq_cfc_of_intertwine (L := (x * ·)) (R := (· * x))
+    (by fun_prop) (by fun_prop)
+    (fun r ↦ by simp [Algebra.algebraMap_eq_smul_one])
+    h h_star
+    (fun _ _ _ _ h₁ h₂ ↦ SemiconjBy.add_right h₁ h₂)
+    (fun _ _ _ _ h₁ h₂ ↦ SemiconjBy.mul_right h₁ h₂)
+    f hfa hfb ha hb
 
-/-- **A unitary anticommuting with `a` anticommutes with odd functions of `a`.** If `u` is a
-unitary that anticommutes with a self-adjoint `a`, then `u` anticommutes with `f(a)` for every odd
-real function `f`. -/
-theorem mul_cfc_eq_neg_cfc_mul {u a : A} (hu : u ∈ unitary A) (ha : IsSelfAdjoint a)
-    (hua : u * a = -(a * u)) {f : ℝ → ℝ} (hf : ∀ x, f (-x) = -f x) :
-    u * cfc f a = -(cfc f a * u) := by
-  set φ := Unitary.conjStarAlgAut ℂ A ⟨u, hu⟩
-  have hφ (x : A) : φ x = u * x * star u := by simp [φ]
-  have hφa : φ a = -a := by
-    rw [hφ, hua, neg_mul, mul_assoc, Unitary.mul_star_self_of_mem hu, mul_one]
-  have hφc : Continuous φ := by
-    rw [show (φ : A → A) = fun x => u * x * star u from funext hφ]
-    fun_prop
-  have h : φ (cfc f a) = -cfc f a := by
-    by_cases hfc : ContinuousOn f (spectrum ℝ a)
-    · have hfc' : ContinuousOn f ((-·) '' spectrum ℝ a) := by
-        refine ((hfc.comp continuous_neg.continuousOn ?_).neg).congr fun y _ => ?_
-        · rintro _ ⟨x, hx, rfl⟩
-          simpa using hx
-        · simp [hf]
-      rw [StarAlgHomClass.map_cfc (S := ℂ) φ f a hfc hφc ha (hφa ▸ ha.neg), hφa,
-        ← cfc_comp_neg f a hfc', ← cfc_neg ..]
-      exact cfc_congr fun x _ => hf x
-    · rw [cfc_apply_of_not_continuousOn a hfc, map_zero, neg_zero]
-  rw [hφ] at h
-  calc u * cfc f a = u * cfc f a * star u * u := by
-        rw [mul_assoc _ (star u), Unitary.star_mul_self_of_mem hu, mul_one]
-    _ = -(cfc f a * u) := by rw [h, neg_mul]
+/-- For self-adjoint `a` and `b`, `SemiconjBy x a b` passes to `SemiconjBy x (cfc f a) (cfc f b)`
+without a separate star hypothesis. -/
+protected theorem IsSelfAdjoint.semiconjBy_cfc {x a b : A} (ha' : IsSelfAdjoint a)
+    (hb' : IsSelfAdjoint b) (h : SemiconjBy x a b) (f : 𝕜 → 𝕜)
+    (hfa : ContinuousOn f (spectrum 𝕜 a) := by cfc_cont_tac)
+    (hfb : ContinuousOn f (spectrum 𝕜 b) := by cfc_cont_tac)
+    (ha : p a := by cfc_tac) (hb : p b := by cfc_tac) :
+    SemiconjBy x (cfc f a) (cfc f b) :=
+  h.cfc (by rwa [ha'.star_eq, hb'.star_eq]) f hfa hfb ha hb
 
-end Unitary
+end SemiconjBy
 
-end Unitary
+namespace TauCeti
+
+/-- Continuity of `f` on `spectrum R (-a)` is equivalent to continuity of `f ∘ Neg.neg` on
+`spectrum R a`. -/
+theorem continuousOn_spectrum_neg_iff {R A β : Type*} [CommRing R] [Ring A] [Algebra R A]
+    [TopologicalSpace R] [ContinuousNeg R] [TopologicalSpace β] {f : R → β} {a : A} :
+    ContinuousOn f (spectrum R (-a)) ↔ ContinuousOn (f ∘ Neg.neg) (spectrum R a) := by
+  rw [← spectrum.neg_eq]
+  refine ⟨fun h ↦ h.comp continuous_neg.continuousOn fun _ hx ↦ Set.neg_mem_neg.mpr hx, fun h ↦ ?_⟩
+  simpa [Function.comp_def] using h.comp continuous_neg.continuousOn fun _ hx ↦ Set.mem_neg.mp hx
+
+variable {A : Type*} [Ring A] [StarRing A] [Algebra ℝ A] [TopologicalSpace A]
+  [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [ContinuousMap.UniqueHom ℝ A]
+  [IsSemitopologicalRing A] [T2Space A]
+
+/-- **Anticommutation through the real continuous functional calculus.** If `x` anticommutes with
+`a` (`x * a = -(a * x)`), then `x * cfc f a = cfc (fun t ↦ f (-t)) a * x` for every `f : ℝ → ℝ`
+continuous on `spectrum ℝ a` and `spectrum ℝ (-a)`. -/
+theorem mul_cfc_of_mul_eq_neg_mul {x a : A} (h : x * a = -(a * x)) (f : ℝ → ℝ)
+    (hfa : ContinuousOn f (spectrum ℝ a) := by cfc_cont_tac)
+    (hfa_neg : ContinuousOn f (spectrum ℝ (-a)) := by cfc_cont_tac) :
+    x * cfc f a = cfc (fun t ↦ f (-t)) a * x := by
+  by_cases ha : IsSelfAdjoint a
+  · have hsemi : SemiconjBy x a (-a) := by rw [SemiconjBy, neg_mul, ← h]
+    have hcfc : x * cfc f a = cfc f (-a) * x :=
+      ha.semiconjBy_cfc ha.neg hsemi f hfa hfa_neg ha ha.neg
+    have hneg_img : ContinuousOn f ((-·) '' spectrum ℝ a) := by
+      rwa [Set.image_neg_eq_neg, spectrum.neg_eq]
+    rw [hcfc, ← cfc_comp_neg (f := f) (a := a) hneg_img ha]
+  · rw [cfc_apply_of_not_predicate a ha, cfc_apply_of_not_predicate a ha, mul_zero, zero_mul]
+
+/-- If `x` anticommutes with `a` and `f : ℝ → ℝ` is odd, then `x` anticommutes with `cfc f a`. -/
+theorem mul_cfc_eq_neg_cfc_mul_of_odd {x a : A} (h : x * a = -(a * x)) {f : ℝ → ℝ}
+    (hf_odd : Function.Odd f) :
+    x * cfc f a = -(cfc f a * x) := by
+  by_cases hfa : ContinuousOn f (spectrum ℝ a)
+  · have hfa_neg : ContinuousOn f (spectrum ℝ (-a)) :=
+      continuousOn_spectrum_neg_iff.mpr <| hfa.neg.congr fun t _ ↦ hf_odd t
+    rw [mul_cfc_of_mul_eq_neg_mul h f hfa hfa_neg, show (fun t ↦ f (-t)) = fun t ↦ -(f t) from
+      funext hf_odd, cfc_neg, neg_mul]
+  · rw [cfc_apply_of_not_continuousOn a hfa, mul_zero, zero_mul, neg_zero]
+
+/-- If `x` anticommutes with `a` and `f : ℝ → ℝ` is even, then `x` commutes with `cfc f a`. -/
+theorem commute_cfc_of_mul_eq_neg_mul_of_even {x a : A} (h : x * a = -(a * x)) {f : ℝ → ℝ}
+    (hf_even : Function.Even f) :
+    Commute x (cfc f a) := by
+  by_cases hfa : ContinuousOn f (spectrum ℝ a)
+  · have hfa_neg : ContinuousOn f (spectrum ℝ (-a)) :=
+      continuousOn_spectrum_neg_iff.mpr <| hfa.congr fun t _ ↦ hf_even t
+    exact mul_cfc_of_mul_eq_neg_mul h f hfa hfa_neg |>.trans
+      (by rw [show (fun t ↦ f (-t)) = f from funext hf_even])
+  · rw [cfc_apply_of_not_continuousOn a hfa]
+    exact Commute.zero_right x
+
+end TauCeti

@@ -79,10 +79,12 @@ linear maps is identified with the product of their sources.
 * `ContinuousLinearMap.kerEquivProdOfInjective` — a kernel on `WithLp p (X × Y)` that is the
   product of the ranges of two injective linear maps is equivalent to the product of their
   sources.
-* `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`,
-  `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one`,
-  `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one` — the projections onto and the
-  inclusions of the factors are contractions.
+* `WithLp.inlL`, `WithLp.inrL` — continuous linear inclusions of the factors into
+  `WithLp p (α × β)`, together with their projection-composition, isometry (`WithLp.isometry_inlL`,
+  `WithLp.isometry_inrL`), and operator-norm (`WithLp.norm_inlL`, `WithLp.norm_inrL`) lemmas.
+* `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`, `WithLp.norm_inlL_le_one`,
+  `WithLp.norm_inrL_le_one` — the projections onto and the inclusions of the factors are
+  contractions.
 * `WithLp.isometry_toLp_prodMk_left`, `WithLp.isometry_toLp_prodMk_right` — fixing one coordinate
   embeds the other factor isometrically into `WithLp p (α × β)`.
 -/
@@ -580,6 +582,60 @@ end ContinuousLinearMap
 
 namespace WithLp
 
+section Inclusions
+
+variable (p : ℝ≥0∞) (𝕜 α β : Type*) [Semiring 𝕜]
+  [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
+  [TopologicalSpace β] [AddCommGroup β] [Module 𝕜 β]
+
+/-- Continuous linear inclusion `x ↦ WithLp.toLp p (x, 0)` of the first factor into
+`WithLp p (α × β)`. -/
+def inlL : α →L[𝕜] WithLp p (α × β) :=
+  (prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L ContinuousLinearMap.inl 𝕜 α β
+
+theorem inlL_def :
+    inlL p 𝕜 α β =
+      (prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
+        ContinuousLinearMap.inl 𝕜 α β :=
+  (rfl)
+
+@[simp]
+theorem inlL_apply (x : α) : inlL p 𝕜 α β x = toLp p (x, 0) :=
+  (rfl)
+
+/-- Continuous linear inclusion `y ↦ WithLp.toLp p (0, y)` of the second factor into
+`WithLp p (α × β)`. -/
+def inrL : β →L[𝕜] WithLp p (α × β) :=
+  (prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L ContinuousLinearMap.inr 𝕜 α β
+
+theorem inrL_def :
+    inrL p 𝕜 α β =
+      (prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
+        ContinuousLinearMap.inr 𝕜 α β :=
+  (rfl)
+
+@[simp]
+theorem inrL_apply (y : β) : inrL p 𝕜 α β y = toLp p (0, y) :=
+  (rfl)
+
+@[simp]
+theorem fstL_comp_inlL : fstL p 𝕜 α β ∘L inlL p 𝕜 α β = 1 := by
+  ext; simp
+
+@[simp]
+theorem sndL_comp_inrL : sndL p 𝕜 α β ∘L inrL p 𝕜 α β = 1 := by
+  ext; simp
+
+@[simp]
+theorem fstL_comp_inrL : fstL p 𝕜 α β ∘L inrL p 𝕜 α β = 0 := by
+  ext; simp
+
+@[simp]
+theorem sndL_comp_inlL : sndL p 𝕜 α β ∘L inlL p 𝕜 α β = 0 := by
+  ext; simp
+
+end Inclusions
+
 section Contraction
 
 variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β : Type*) [NontriviallyNormedField 𝕜]
@@ -593,16 +649,12 @@ theorem norm_fstL_le_one : ‖fstL p 𝕜 α β‖ ≤ 1 :=
 theorem norm_sndL_le_one : ‖sndL p 𝕜 α β‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simpa using norm_snd_le (x := x)
 
-/-- The inclusion of the first factor into `WithLp p (α × β)` is a contraction. -/
-theorem norm_prodContinuousLinearEquiv_symm_comp_inl_le_one :
-    ‖(prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
-      ContinuousLinearMap.inl 𝕜 α β‖ ≤ 1 :=
+/-- The inclusion `WithLp.inlL p 𝕜 α β` of the first factor is a contraction. -/
+theorem norm_inlL_le_one : ‖inlL p 𝕜 α β‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simp
 
-/-- The inclusion of the second factor into `WithLp p (α × β)` is a contraction. -/
-theorem norm_prodContinuousLinearEquiv_symm_comp_inr_le_one :
-    ‖(prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
-      ContinuousLinearMap.inr 𝕜 α β‖ ≤ 1 :=
+/-- The inclusion `WithLp.inrL p 𝕜 α β` of the second factor is a contraction. -/
+theorem norm_inrL_le_one : ‖inrL p 𝕜 α β‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simp
 
 end Contraction
@@ -625,5 +677,31 @@ theorem isometry_toLp_prodMk_right (p : ℝ≥0∞) [Fact (1 ≤ p)] {α β : Ty
     Isometry fun x : α ↦ toLp p (x, y) := by
   simpa [Function.comp_def] using
     (IsometryEquiv.withLpProdComm p β α).isometry.comp (isometry_toLp_prodMk_left p y)
+
+/-- `WithLp.inlL p 𝕜 α β` is an isometry. -/
+theorem isometry_inlL (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β : Type*) [Semiring 𝕜]
+    [SeminormedAddCommGroup α] [Module 𝕜 α] [SeminormedAddCommGroup β] [Module 𝕜 β] :
+    Isometry (inlL p 𝕜 α β) :=
+  isometry_toLp_prodMk_right p 0
+
+/-- `WithLp.inrL p 𝕜 α β` is an isometry. -/
+theorem isometry_inrL (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β : Type*) [Semiring 𝕜]
+    [SeminormedAddCommGroup α] [Module 𝕜 α] [SeminormedAddCommGroup β] [Module 𝕜 β] :
+    Isometry (inrL p 𝕜 α β) :=
+  isometry_toLp_prodMk_left p 0
+
+/-- On a nontrivial normed space `α`, `WithLp.inlL p 𝕜 α β` has operator norm `1`. -/
+@[simp]
+theorem norm_inlL (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β : Type*) [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup α] [NormedSpace 𝕜 α] [SeminormedAddCommGroup β] [NormedSpace 𝕜 β]
+    [Nontrivial α] : ‖inlL p 𝕜 α β‖ = 1 :=
+  (inlL p 𝕜 α β).homothety_norm fun _ ↦ by simp
+
+/-- On a nontrivial normed space `β`, `WithLp.inrL p 𝕜 α β` has operator norm `1`. -/
+@[simp]
+theorem norm_inrL (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β : Type*) [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup α] [NormedSpace 𝕜 α] [NormedAddCommGroup β] [NormedSpace 𝕜 β]
+    [Nontrivial β] : ‖inrL p 𝕜 α β‖ = 1 :=
+  (inrL p 𝕜 α β).homothety_norm fun _ ↦ by simp
 
 end WithLp

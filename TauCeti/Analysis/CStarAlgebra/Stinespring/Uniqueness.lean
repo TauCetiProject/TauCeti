@@ -369,8 +369,8 @@ theorem id_dilation_minimal :
 /-- The diagonal `⋆`-representation `a ↦ a ⊕ a` of `H →L[ℂ] H` on `WithLp 2 (H × H)`. -/
 noncomputable def prodDiagStarAlgHom :
     (H →L[ℂ] H) →⋆ₐ[ℂ] (WithLp 2 (H × H) →L[ℂ] WithLp 2 (H × H)) where
-  toFun a := (WithLp.inlL2 ℂ H H).comp (a.comp (WithLp.fstL 2 ℂ H H)) +
-    (WithLp.inrL2 ℂ H H).comp (a.comp (WithLp.sndL 2 ℂ H H))
+  toFun a := (WithLp.inlL 2 ℂ H H).comp (a.comp (WithLp.fstL 2 ℂ H H)) +
+    (WithLp.inrL 2 ℂ H H).comp (a.comp (WithLp.sndL 2 ℂ H H))
   map_one' := ContinuousLinearMap.ext fun _ => ext_inner_left ℂ fun _ => by simp
   map_mul' _ _ := ContinuousLinearMap.ext fun _ => ext_inner_left ℂ fun _ => by
     simp [ContinuousLinearMap.mul_def]
@@ -388,21 +388,21 @@ noncomputable def prodDiagStarAlgHom :
 /-- `(WithLp 2 (H × H), id ⊕ id, ξ ↦ (ξ, 0))` dilates `CompletelyPositiveMap.id (H →L[ℂ] H)`. -/
 theorem prodDiag_dilation_eq (a : H →L[ℂ] H) :
     CompletelyPositiveMap.id (H →L[ℂ] H) a =
-      (WithLp.inlL2 ℂ H H).adjoint.comp
-        ((prodDiagStarAlgHom H a).comp (WithLp.inlL2 ℂ H H)) := by
+      (WithLp.inlL 2 ℂ H H).adjoint.comp
+        ((prodDiagStarAlgHom H a).comp (WithLp.inlL 2 ℂ H H)) := by
   ext; simp
 
-/-- On any nontrivial `H`, the doubled dilation `(WithLp 2 (H × H), id ⊕ id, inlL2 ℂ H H)` is not
+/-- On any nontrivial `H`, the doubled dilation `(WithLp 2 (H × H), id ⊕ id, inlL 2 ℂ H H)` is not
 minimal. -/
 theorem topologicalClosure_span_prodDiag_ne_top [Nontrivial H] :
     (Submodule.span ℂ
       {x : WithLp 2 (H × H) | ∃ (a : H →L[ℂ] H) (ξ : H),
-        x = prodDiagStarAlgHom H a (WithLp.inlL2 ℂ H H ξ)}).topologicalClosure ≠ ⊤ := by
+        x = prodDiagStarAlgHom H a (WithLp.inlL 2 ℂ H H ξ)}).topologicalClosure ≠ ⊤ := by
   intro htop
   obtain ⟨η, hη⟩ := exists_ne (0 : H)
   have hle : (Submodule.span ℂ
       {x : WithLp 2 (H × H) | ∃ (a : H →L[ℂ] H) (ξ : H),
-        x = prodDiagStarAlgHom H a (WithLp.inlL2 ℂ H H ξ)}).topologicalClosure ≤
+        x = prodDiagStarAlgHom H a (WithLp.inlL 2 ℂ H H ξ)}).topologicalClosure ≤
       (WithLp.sndL 2 ℂ H H).ker :=
     Submodule.topologicalClosure_minimal _
       (Submodule.span_le.mpr fun _ ⟨a, ξ, h⟩ => by subst h; simp)

@@ -39,7 +39,9 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 * `Unitization.fstAlgEquivOfSubsingleton`, `Unitization.fstStarAlgEquivOfSubsingleton`: when `A`
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
-* `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
+* `Unitization.starLift_comp_inr`, `Unitization.starLift_inr`, `Unitization.starLift_inl`,
+  `Unitization.starLift_inl_add_inr`: evaluation of `Unitization.starLift` on `A`, scalars, and
+  canonical `inl r + inr a` decompositions.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
   `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
 * `IsStarProjection.exists_star_mul_self_eq_of_mem_unitary_unitization`: projections of a
@@ -208,6 +210,26 @@ algebra. -/
 theorem starLift_comp_inr (φ : A →⋆ₙₐ[R] C) :
     (starLift φ).toNonUnitalStarAlgHom.comp (inrNonUnitalStarAlgHom R A) = φ := by
   rw [← starLift_symm_apply, Equiv.symm_apply_apply]
+
+/-- The star-algebra lift of a nonunital star-algebra homomorphism restricts to the original
+homomorphism on `Unitization.inr`. -/
+@[simp↓]
+theorem starLift_inr (φ : A →⋆ₙₐ[R] C) (a : A) :
+    starLift φ (inr a) = φ a :=
+  DFunLike.congr_fun (starLift.symm_apply_apply φ) a
+
+/-- The star-algebra lift of a nonunital star-algebra homomorphism sends `Unitization.inl r` to
+`algebraMap R C r`. -/
+@[simp↓]
+theorem starLift_inl (φ : A →⋆ₙₐ[R] C) (r : R) :
+    starLift φ (inl r) = algebraMap R C r := by
+  rw [← algebraMap_eq_inl, AlgHomClass.commutes]
+
+/-- Evaluation of `Unitization.starLift φ` on the canonical decomposition `inl r + inr a`. -/
+@[simp↓]
+theorem starLift_inl_add_inr (φ : A →⋆ₙₐ[R] C) (r : R) (a : A) :
+    starLift φ (inl r + inr a) = algebraMap R C r + φ a := by
+  rw [map_add, starLift_inl, starLift_inr]
 
 end Unitization
 

@@ -40,6 +40,7 @@ A square-zero differential commutes with any element `e` satisfying a homotopy i
 * `Commute.pow_succ_mul_eq_pow_mul_of_mul_eq`: `C ^ (h + 1) W_h = C ^ h d_h` when `C` commutes
   with `u` and `Wₖ` satisfies the inhomogeneous recurrence `C W₀ = d₀`, `C Wₖ₊₁ = dₖ₊₁ + u Wₖ`
   for `k < h`, with `dⱼ = 0` for `j < h`.
+* `Commute.mul_self_of_mul_eq_neg_mul`: an element anticommuting with `a` commutes with `a * a`.
 * `TauCeti.commute_of_sq_zero_of_homotopy`: commutation of a square-zero differential with its
   homotopy projector.
 * `TauCeti.commute_mul_of_mul_eq_neg_mul`: a product of two elements anticommuting with `b`
@@ -106,6 +107,11 @@ theorem commute_mul_of_mul_eq_neg_mul {A : Type*} [Semigroup A] [HasDistribNeg A
   rw [commute_iff_eq, mul_assoc, hw, mul_neg, ← mul_assoc, ha, neg_mul, neg_neg, mul_assoc]
 
 end TauCeti
+
+/-- An element that anticommutes with `a` commutes with `a * a`. -/
+theorem Commute.mul_self_of_mul_eq_neg_mul {A : Type*} [Semigroup A] [HasDistribNeg A] {x a : A}
+    (h : x * a = -(a * x)) : Commute x (a * a) := by
+  rw [commute_iff_eq, ← mul_assoc, h, neg_mul, mul_assoc, h, mul_neg, neg_neg, ← mul_assoc]
 
 namespace Finset
 
