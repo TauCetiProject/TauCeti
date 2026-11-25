@@ -314,16 +314,16 @@ theorem bernsteinNumber_piLp_continuousLinearEquiv_le
   classical
   let e : EuclideanSpace 𝕜 ι ≃L[𝕜] ι → 𝕜 := PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι ↦ 𝕜)
   refine bernsteinNumber_le_of_forall_rank_eq fun M hM ↦ ?_
-  let M' : Submodule 𝕜 (ι → 𝕜) := M.map e.toLinearEquiv.toLinearMap
-  have hrankM' : Module.rank 𝕜 M' = n + 1 :=
-    (M.equivMapOfInjective _ e.injective).rank_eq.symm.trans hM
+  let M' : Submodule 𝕜 (ι → 𝕜) := M.map (e.toLinearEquiv : EuclideanSpace 𝕜 ι →ₗ[𝕜] ι → 𝕜)
   have hfinM' : Module.finrank 𝕜 M' = n + 1 :=
-    Module.finrank_eq_of_rank_eq (by exact_mod_cast hrankM')
+    (e.toLinearEquiv.finrank_map_eq M).trans (Module.finrank_eq_of_rank_eq (by exact_mod_cast hM))
   obtain ⟨y, hyM', hy1, hcard⟩ := M'.exists_mem_norm_le_one_le_ncard_norm_eq_one
   rw [hfinM'] at hcard
-  obtain ⟨x, hxM, rfl⟩ := hyM'
-  let S : Set ι := {i : ι | ‖e x i‖ = 1}
-  have hcardS : n + 1 ≤ S.ncard := hcard
+  obtain ⟨x, hxM, rfl⟩ := Submodule.mem_map.mp hyM'
+  simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] at hy1 hcard
+  have hex_apply (i : ι) : e x i = x i := by simp [e]
+  let S : Set ι := {i : ι | ‖x i‖ = 1}
+  have hcardS : n + 1 ≤ S.ncard := by simpa only [hex_apply] using hcard
   obtain ⟨i₀, hi₀⟩ := S.nonempty_of_ncard_ne_zero ((Nat.succ_pos n).trans_le hcardS).ne'
   have hx0 : x ≠ 0 := by
     rintro rfl
@@ -337,7 +337,9 @@ theorem bernsteinNumber_piLp_continuousLinearEquiv_le
     calc (n + 1 : ℝ≥0) ≤ (s.card : ℝ≥0) := by exact_mod_cast hs ▸ hcardS
       _ = ∑ _i ∈ s, (1 : ℝ≥0) := by simp
       _ ≤ ∑ i ∈ s, ‖x i‖₊ ^ 2 := Finset.sum_le_sum fun i hi ↦ by
-          have hi1 : ‖x i‖₊ = 1 := Subtype.ext (Set.mem_toFinset.mp hi)
+          have hi1 : ‖x i‖₊ = 1 := by
+            rw [← NNReal.coe_eq_one, coe_nnNorm]
+            exact Set.mem_toFinset.mp hi
           simp [hi1]
       _ ≤ ∑ i : ι, ‖x i‖₊ ^ 2 := Finset.sum_le_univ_sum_of_nonneg fun _ ↦ zero_le
   have hsqrt : NNReal.sqrt (n + 1) ≤ ‖x‖₊ := NNReal.sqrt_le_iff_le_sq.mpr hsq
@@ -360,18 +362,20 @@ theorem bernsteinNumber_piLp_continuousLinearEquiv_symm_le
   let e : EuclideanSpace 𝕜 ι ≃L[𝕜] ι → 𝕜 := PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι ↦ 𝕜)
   refine bernsteinNumber_le_iff.mpr fun M hM d hd ↦ ?_
   -- Transport `M` to `M₂ ≤ EuclideanSpace 𝕜 ι` and test coercivity on `x k = P_{M₂} e_k`.
-  let M₂ : Submodule 𝕜 (EuclideanSpace 𝕜 ι) := M.map e.symm.toLinearEquiv.toLinearMap
-  have hrankM₂ : Module.rank 𝕜 M₂ = n + 1 :=
-    (M.equivMapOfInjective _ e.symm.injective).rank_eq.symm.trans hM
+  let M₂ : Submodule 𝕜 (EuclideanSpace 𝕜 ι) :=
+    M.map (e.symm.toLinearEquiv : (ι → 𝕜) →ₗ[𝕜] EuclideanSpace 𝕜 ι)
   have hfinM₂ : Module.finrank 𝕜 M₂ = n + 1 :=
-    Module.finrank_eq_of_rank_eq (by exact_mod_cast hrankM₂)
+    (e.symm.toLinearEquiv.finrank_map_eq M).trans
+      (Module.finrank_eq_of_rank_eq (by exact_mod_cast hM))
   let x (k : ι) : EuclideanSpace 𝕜 ι := M₂.starProjection (EuclideanSpace.single k (1 : 𝕜))
   -- For each coordinate `k`, `e (x k) ∈ M` satisfies `‖x k‖² = (x k) k ≤ ‖e (x k)‖`,
   -- whence `d ‖x k‖² ≤ ‖x k‖` and therefore `d² ‖x k‖² ≤ 1`.
   have hdk (k : ι) : (d : ℝ) ^ 2 * ‖x k‖ ^ 2 ≤ 1 := by
     have hexM : e (x k) ∈ M := by
-      obtain ⟨y, hyM, hy⟩ := M₂.starProjection_apply_mem (EuclideanSpace.single k (1 : 𝕜))
-      exact ((congrArg e hy).symm.trans (e.apply_symm_apply y)) ▸ hyM
+      obtain ⟨y, hyM, hy⟩ := Submodule.mem_map.mp
+        (M₂.starProjection_apply_mem (EuclideanSpace.single k (1 : 𝕜)))
+      have hy' : e (x k) = y := by simpa [x] using (congrArg e hy).symm
+      rwa [hy']
     have hx_coord : ‖x k‖ ^ 2 ≤ ‖e (x k)‖ := by
       calc ‖x k‖ ^ 2 = |‖x k‖ ^ 2| := (abs_of_nonneg (sq_nonneg _)).symm
         _ = ‖((‖x k‖ ^ 2 : ℝ) : 𝕜)‖ := (RCLike.norm_ofReal _).symm
@@ -487,6 +491,12 @@ theorem IsStrictSNumberSequence.bernsteinNumber_le {s : SNumberFamily 𝕜}
 
 end NontriviallyNormedField
 
+/-- Arithmetic step for `not_multiplicative_bernstein`: `√(3 / 2) · (√2)⁻¹ < 1`. -/
+private theorem sqrt_three_div_two_mul_inv_sqrt_two_lt_one :
+    NNReal.sqrt (3 / 2) * (NNReal.sqrt 2)⁻¹ < 1 := by
+  rw [mul_inv_lt_iff₀ (NNReal.sqrt_pos.mpr (by norm_num)), one_mul]
+  exact NNReal.sqrt_lt_sqrt.mpr (by norm_num)
+
 /-- **Bernstein numbers are not multiplicative.** Over `ℝ` or `ℂ`, the factorization
 `id : ℓ₂³ → ℓ_∞³ → ℓ₂³` gives
 `1 = b₂(id) > √(3 / 2) · (√2)⁻¹ ≥ b₁(ℓ_∞³ → ℓ₂³) b₁(ℓ₂³ → ℓ_∞³)`. -/
@@ -509,13 +519,9 @@ theorem not_multiplicative_bernstein {𝕜 : Type u} [RCLike 𝕜] :
     simpa [S, one_add_one_eq_two] using
       ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_symm_le
         (𝕜 := 𝕜) (ι := Fin 3) 1
-  have hle : (1 : ℝ≥0) ≤ NNReal.sqrt (3 / 2) * (NNReal.sqrt 2)⁻¹ :=
-    hid ▸ (hmul S T 1 1).trans (mul_le_mul' hS hT)
-  have hsq : (1 : ℝ≥0) ^ 2 ≤ (NNReal.sqrt (3 / 2) * (NNReal.sqrt 2)⁻¹) ^ 2 :=
-    pow_le_pow_left₀ zero_le hle 2
-  rw [one_pow, mul_pow, inv_pow, NNReal.sq_sqrt, NNReal.sq_sqrt] at hsq
-  have hsq_real : (1 : ℝ) ≤ (3 : ℝ) / 2 * ((2 : ℝ)⁻¹) := by exact_mod_cast hsq
-  norm_num at hsq_real
+  exact lt_irrefl (1 : ℝ≥0) <|
+    ((hid.symm.trans_le (hmul S T 1 1)).trans (mul_le_mul' hS hT)).trans_lt
+      sqrt_three_div_two_mul_inv_sqrt_two_lt_one
 
 /-- On the graph `{(x, 3 e x)}` of `3 e`, the block anti-diagonal operator
 `inr ∘ e ∘ fst + (9 : 𝕜)⁻¹ • (inl ∘ e⁻¹ ∘ snd)` acts as `(3 : 𝕜)⁻¹ • ·`, yielding the
@@ -542,6 +548,16 @@ private theorem inv_three_le_bernstein_antiDiag {𝕜 X Y : Type u} [RCLike 𝕜
   have hact : (S + T) (φ x) = (3 : 𝕜)⁻¹ • φ x := by
     apply Prod.ext <;> simp [S, T, φ, smul_smul, h93]
   rw [hact, nnNorm_smul, h3]
+
+/-- Arithmetic step for `not_additive_bernstein`: `6⁻¹ + 9⁻¹ √(71 / 36) < 3⁻¹`. -/
+private theorem inv_six_add_inv_nine_mul_sqrt_lt_inv_three :
+    (6 : ℝ≥0)⁻¹ + 9⁻¹ * NNReal.sqrt (71 / 36) < 3⁻¹ := by
+  have h : NNReal.sqrt (71 / 36) < 3 / 2 := by
+    rw [← NNReal.sqrt_sq (3 / 2)]
+    exact NNReal.sqrt_lt_sqrt.mpr (by norm_num)
+  calc (6 : ℝ≥0)⁻¹ + 9⁻¹ * NNReal.sqrt (71 / 36)
+      < 6⁻¹ + 9⁻¹ * (3 / 2) := by gcongr
+    _ = 3⁻¹ := by norm_num
 
 /-- **Bernstein numbers are not additive** (Pietsch 2008, Theorem 3). Over `ℝ` or `ℂ`, a block
 anti-diagonal sum of `ℓ₂⁷¹ → ℓ_∞⁷¹` and `(9 : 𝕜)⁻¹` times `ℓ_∞⁷¹ → ℓ₂⁷¹` on `ℓ₂⁷¹ × ℓ_∞⁷¹` acts as
@@ -589,16 +605,8 @@ theorem not_additive_bernstein {𝕜 : Type u} [RCLike 𝕜] :
     norm_num
   have hST : (3 : ℝ≥0)⁻¹ ≤ bernstein (S + T) (35 + 35) :=
     inv_three_le_bernstein_antiDiag e hrank
-  have h1 : (3 : ℝ≥0)⁻¹ ≤ 6⁻¹ + 9⁻¹ * NNReal.sqrt (71 / 36) :=
-    hST.trans ((hadd S T 35 35).trans (add_le_add hS hT))
-  have h2 : (3 : ℝ≥0) ≤ 3 / 2 + NNReal.sqrt (71 / 36) := by
-    calc (3 : ℝ≥0) = 9 * 3⁻¹ := by norm_num
-      _ ≤ 9 * (6⁻¹ + 9⁻¹ * NNReal.sqrt (71 / 36)) := by gcongr
-      _ = 3 / 2 + NNReal.sqrt (71 / 36) := by rw [mul_add, ← mul_assoc]; norm_num
-  have hle_sqrt : (3 / 2 : ℝ≥0) ≤ NNReal.sqrt (71 / 36) :=
-    le_of_add_le_add_left (a := 3 / 2) (by convert h2 using 1; norm_num)
-  rw [NNReal.le_sqrt_iff_sq_le] at hle_sqrt
-  have hle_real : ((3 : ℝ) / 2) ^ 2 ≤ (71 : ℝ) / 36 := by exact_mod_cast hle_sqrt
-  norm_num at hle_real
+  exact lt_irrefl (3 : ℝ≥0)⁻¹ <|
+    (hST.trans ((hadd S T 35 35).trans (add_le_add hS hT))).trans_lt
+      inv_six_add_inv_nine_mul_sqrt_lt_inv_three
 
 end TauCeti.SNumbers
