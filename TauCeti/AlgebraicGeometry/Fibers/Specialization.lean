@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Birational.RationalMap
+public import TauCeti.AlgebraicGeometry.Birational.RationalMap.ValuationRing
 public import TauCeti.AlgebraicGeometry.Fibers.BaseChange
 public import TauCeti.AlgebraicGeometry.Fibers.Composition
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Section
