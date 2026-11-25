@@ -119,6 +119,18 @@ theorem gaussianPDFReal_add_lt_of_shift_right {a b a' b' : ℝ} (hsum : 0 ≤ a 
     hab.le (by linarith) hb (by linarith)
   linarith
 
+/-- **Shifting an interval to the left.** If `a + b ≤ 0`, `b' < b` and the intervals `(a, b)` and
+`(a', b')` have the same standard Gaussian measure, then `φ(a') + φ(b') < φ(a) + φ(b)`. -/
+theorem gaussianPDFReal_add_lt_of_shift_left {a b a' b' : ℝ} (hsum : a + b ≤ 0) (hb : b' < b)
+    (h : cdf (gaussianReal 0 1) b' - cdf (gaussianReal 0 1) a' =
+      cdf (gaussianReal 0 1) b - cdf (gaussianReal 0 1) a) :
+    gaussianPDFReal 0 1 a' + gaussianPDFReal 0 1 b' <
+      gaussianPDFReal 0 1 a + gaussianPDFReal 0 1 b := by
+  have := gaussianPDFReal_add_lt_of_shift_right (a := -b) (b := -a) (a' := -b') (b' := -a')
+    (by linarith) (by linarith) (by simp only [cdf_gaussianReal_zero_one_neg]; linarith)
+  simp only [gaussianPDFReal_zero_neg] at this
+  linarith
+
 /-- The case `a + b ≥ 0` of `TauCeti.Probability.gaussianPDFReal_lt_of_shift_right_Ioi`. -/
 private theorem gaussianPDFReal_lt_of_shift_right_Ioi_of_nonneg {a b a' : ℝ}
     (hsum : 0 ≤ a + b)
