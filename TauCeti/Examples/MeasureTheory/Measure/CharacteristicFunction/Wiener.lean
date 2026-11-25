@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Wiener
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Probability.Distributions.Uniform.Basic
 
 /-!
 # Checks for Wiener's lemma on the line
@@ -18,15 +17,16 @@ characteristic function `φ_σ = charFun σ`,
 
 * `σ = δ₀`: `|φ_σ|² = 1`, and the limit is `1`.
 * `σ = (δ₀ + δ₁)/2`: `|φ_σ(t)|² = (1 + cos t)/2`, and the limit is `1/2 = 1/4 + 1/4`.
-* `σ` Lebesgue measure on `[0, 1]`: for `t ≠ 0`, `|φ_σ(t)|² = (2 - 2 cos t)/t²`; at `t = 0` the
-  value is `1`; at `t = π` both sides are `4/π²`. The limit is `0`, since `σ` has no atoms.
+* `σ` Lebesgue measure on `[0, 1]`, which is the uniform law `uniformMeasure 0 1`: for `t ≠ 0`,
+  `|φ_σ(t)|² = (2 - 2 cos t)/t²`; at `t = 0` the value is `1`; at `t = π` both sides are `4/π²`.
+  The limit is `0`, since `σ` has no atoms.
 -/
 
 public section
 
 noncomputable section
 
-open Complex Filter MeasureTheory Real Set
+open Complex Filter MeasureTheory Real Set TauCeti.Probability
 open scoped Topology
 
 namespace TauCeti.Examples.Wiener
@@ -94,42 +94,42 @@ example :
 
 /-! ### Lebesgue measure on `[0, 1]` -/
 
+/-- Lebesgue measure on `[0, 1]` is the uniform law `uniformMeasure 0 1`, which is normalised
+Lebesgue measure on `Ioc 0 1`. -/
+example : uniformMeasure 0 1 = volume.restrict (Icc (0 : ℝ) 1) := by
+  rw [uniformMeasure_eq_smul, sub_zero, ENNReal.ofReal_one, inv_one, one_smul,
+    Measure.restrict_congr_set Ioc_ae_eq_Icc]
+
 /-- The characteristic function of Lebesgue measure on `[0, 1]` at `t ≠ 0` is
 `(e^{it} - 1)/(it)`. -/
-theorem charFun_volume_Icc {t : ℝ} (ht : t ≠ 0) :
-    charFun (volume.restrict (Icc (0 : ℝ) 1)) t = (cexp (t * I) - 1) / (t * I) := by
-  have hc : (t : ℂ) * I ≠ 0 := mul_ne_zero (ofReal_ne_zero.2 ht) I_ne_zero
-  rw [charFun_apply_real, integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le
-    zero_le_one]
-  simp_rw [show ∀ x : ℝ, (t : ℂ) * x * I = (t * I) * x from fun x => by ring]
-  rw [integral_exp_mul_complex hc]
-  simp
+example {t : ℝ} (ht : t ≠ 0) :
+    charFun (uniformMeasure 0 1) t = (cexp (t * I) - 1) / (t * I) := by
+  rw [charFun_uniformMeasure zero_lt_one ht]
+  simp [mul_comm]
 
 /-- For Lebesgue measure on `[0, 1]` and `t ≠ 0`, `|φ_σ(t)|² = (2 - 2 cos t)/t²`. -/
-theorem norm_charFun_volume_Icc_sq {t : ℝ} (ht : t ≠ 0) :
-    ‖charFun (volume.restrict (Icc (0 : ℝ) 1)) t‖ ^ 2 = (2 - 2 * Real.cos t) / t ^ 2 := by
-  rw [charFun_volume_Icc ht, norm_div, div_pow, norm_mul, norm_I, mul_one, norm_real,
-    Real.norm_eq_abs, sq_abs, ← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-  simp only [sub_re, sub_im, one_re, one_im, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im, sub_zero]
-  congr 1
-  nlinarith [Real.sin_sq_add_cos_sq t]
+private theorem norm_charFun_uniformMeasure_sq {t : ℝ} (ht : t ≠ 0) :
+    ‖charFun (uniformMeasure 0 1) t‖ ^ 2 = (2 - 2 * Real.cos t) / t ^ 2 := by
+  rw [charFun_uniformMeasure zero_lt_one ht, ← Complex.normSq_eq_norm_sq]
+  simp [normSq_apply, ← mul_comm (t : ℂ) I, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im, sq]
+  linear_combination Real.sin_sq_add_cos_sq t / (t * t)
 
-/-- At `t = 0` the value is `1`, the total mass, not the limit of `(2 - 2 cos t)/t²` read with
-`0 / 0 = 0`. -/
-example : ‖charFun (volume.restrict (Icc (0 : ℝ) 1)) 0‖ ^ 2 = 1 := by
-  simp
+/-- At `t = 0` the value is `1`, the total mass, which is the limit of `(2 - 2 cos t)/t²` as
+`t → 0`; the formula itself evaluates to `0` there because Lean defines `x / 0 = 0`. -/
+example : ‖charFun (uniformMeasure 0 1) 0‖ ^ 2 = 1 := by
+  simp [charFun_uniformMeasure_zero zero_lt_one]
 
 /-- At `t = π`, `|φ_σ(π)|² = 4/π²`. -/
-example : ‖charFun (volume.restrict (Icc (0 : ℝ) 1)) π‖ ^ 2 = 4 / π ^ 2 := by
-  rw [norm_charFun_volume_Icc_sq Real.pi_ne_zero, Real.cos_pi]
+example : ‖charFun (uniformMeasure 0 1) π‖ ^ 2 = 4 / π ^ 2 := by
+  rw [norm_charFun_uniformMeasure_sq Real.pi_ne_zero, Real.cos_pi]
   ring
 
 /-- For Lebesgue measure on `[0, 1]`, which has no atoms, the averages of `|φ_σ|²` tend to `0`. -/
 example :
     Tendsto (fun T : ℝ ↦ T⁻¹ * ∫ t in (0 : ℝ)..T,
-      ‖charFun (volume.restrict (Icc (0 : ℝ) 1)) t‖ ^ 2) atTop (𝓝 0) :=
+      ‖charFun (uniformMeasure 0 1) t‖ ^ 2) atTop (𝓝 0) :=
   (tendsto_average_norm_charFun_sq_zero_iff _).2 fun ξ => by
-    rw [Measure.restrict_apply (measurableSet_singleton ξ)]
-    exact measure_mono_null inter_subset_left Real.volume_singleton
+    rw [uniformMeasure_apply, measure_mono_null inter_subset_left
+      Real.volume_singleton, mul_zero]
 
 end TauCeti.Examples.Wiener
