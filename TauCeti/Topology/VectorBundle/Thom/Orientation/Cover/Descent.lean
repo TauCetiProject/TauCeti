@@ -63,7 +63,10 @@ Hence, whenever the lift of a class `U ∈ Hʳ(E, E₀; π^*o(E), k)` to `(E', E
 (`TauCeti.VectorBundleOrientationCover.nonempty_singularHomology_thomPair_iso_twistedHomology`).
 The natural class `U` is the Thom class with coefficients in the orientation system
 (`TauCeti.twistedThomClass`, over a compact base), which takes the value `1` on the fibre class
-over every point.
+over every point. Its lift is a Thom class, so over a compact base the isomorphism holds for every
+bundle and every commutative ring
+(`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
+`TauCeti.VectorBundleOrientationCover`).
 
 The lifts of cochains to the orientation cover are stated with the orientations indexed by a type
 `ι : Type`, so the base, the fibres and the ring live in `Type` here.
@@ -76,6 +79,8 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   semi-invariant Thom cocycle of `E'`.
 * `nonempty_singularHomology_thomPair_iso_twistedHomology`: the same from a class of
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
+* `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`: over a compact base,
+  `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for every bundle and every commutative ring `k`.
 
 ## References
 
@@ -201,5 +206,23 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
   rw [← h, ← thomPairSignCohomologyMap_def]
   exact hU
+
+/-- **The Thom isomorphism with coefficients in the orientation system over a compact base.** Let
+`E → B` be a real vector bundle of rank `r` over a compact base, orientable or not, with orientation
+local system `o(E)`, and let `k` be a commutative ring, for instance `ℤ`. Then
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` in every degree `p`. The lift to the orientation cover of the
+Thom class with coefficients in the orientation system (`TauCeti.twistedThomClass`) is a Thom class
+(`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so
+`nonempty_singularHomology_thomPair_iso_twistedHomology` applies to it. -/
+theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [CompactSpace B]
+    (p : ℕ) :
+    Nonempty ((thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
+      twistedHomology (signLocalSystem F E k hι) p) := by
+  classical
+  -- Normalize the Thom class by any orientation of the model fibre.
+  let ω : Orientation ℝ F ι :=
+    ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation
+  exact nonempty_singularHomology_thomPair_iso_twistedHomology hι k _
+    (isThomClass_thomPairSignCohomologyMap_twistedThomClass hι ω) p
 
 end TauCeti.VectorBundleOrientationCover
