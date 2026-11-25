@@ -64,6 +64,7 @@ theorem realize_sentence_iff_of_isoSetoid {F G : FunctionalConfiguration L V}
     (@Language.Equiv L V V F.toStructure G.toStructure) _ _ e φ
 
 /-- Relabelling by a permutation preserves the sentences satisfied. -/
+@[simp]
 theorem realize_sentence_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfiguration L V)
     (φ : L.Sentence) :
     @Sentence.Realize L V (σ • F).toStructure φ ↔ @Sentence.Realize L V F.toStructure φ :=
@@ -71,6 +72,15 @@ theorem realize_sentence_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfigurat
     (isoSetoid_iff_exists_perm_smul_eq.2 ⟨σ, rfl⟩) φ).symm
 
 /-! ### Terms and quantifier-free formulas -/
+
+/-- A family of continuous maps indexed by a discrete space, read at a continuously varying index,
+is continuous: on a discrete index space, continuity in the index is automatic. -/
+private theorem continuous_apply_of_discrete {X Y Z : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace Z] [DiscreteTopology Z] {g : X → Z → Y}
+    (hg : ∀ z, Continuous fun x => g x z) {a : X → Z} (ha : Continuous a) :
+    Continuous fun x => g x (a x) :=
+  ((continuous_prod_of_discrete_right (f := Function.uncurry g)).2 hg).comp
+    (continuous_id.prodMk ha)
 
 variable [TopologicalSpace V] [DiscreteTopology V]
 
@@ -82,9 +92,8 @@ theorem continuous_realize_term {β : Type u'} (t : L.Term β) (v : β → V) :
   | var => exact continuous_const
   | func f ts ih =>
     simp only [Term.realize_func, toStructure_funMap]
-    exact ((continuous_prod_of_discrete_right (f := fun p : FunctionalConfiguration L V × _ =>
-      p.1.table (arg f p.2))).2 fun w => (continuous_apply (arg f w)).comp continuous_table).comp
-      (continuous_id.prodMk (continuous_pi ih))
+    exact continuous_apply_of_discrete
+      (fun w => (continuous_apply (arg f w)).comp continuous_table) (continuous_pi ih)
 
 /-- **Quantifier-free formulas define clopen sets.** On a discrete carrier, the functional
 configurations realizing a quantifier-free formula at a fixed valuation form a clopen set. -/
@@ -105,11 +114,10 @@ theorem isClopen_setOf_realize_of_isQF {α : Type u'} {n : ℕ} {φ : L.BoundedF
       have h : Continuous fun F : FunctionalConfiguration L V =>
           F.rel.eval (RelationalConfiguration.atom R
             fun i => @Term.realize L V F.toStructure _ (Sum.elim v xs) (ts i)) :=
-        ((continuous_prod_of_discrete_right (f := fun p : FunctionalConfiguration L V × _ =>
-          p.1.rel.eval (RelationalConfiguration.atom R p.2))).2 fun w =>
-          (RelationalConfiguration.continuous_eval
-            (RelationalConfiguration.atom R w)).comp continuous_rel).comp
-          (continuous_id.prodMk (continuous_pi fun i => continuous_realize_term (ts i) _))
+        continuous_apply_of_discrete
+          (fun w => (RelationalConfiguration.continuous_eval
+            (RelationalConfiguration.atom R w)).comp continuous_rel)
+          (continuous_pi fun i => continuous_realize_term (ts i) _)
       simp only [Relations.boundedFormula, BoundedFormula.Realize, toStructure_relMap]
       exact (isClopen_discrete {true}).preimage h
   | imp _ _ ih₁ ih₂ =>
