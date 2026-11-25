@@ -60,7 +60,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 /-- The Floer energy of a translate `(s, t) ↦ u(s + s₀, t)` of a cylinder of period one, for a
 Hamiltonian `H_t` of period one in `t`, over the window `(-1, 1) × (-1/2, 3/2)` is at most three
 times the energy of `u` over the strip `ℝ × [0, 1]`. -/
-private theorem lintegral_ball_floerEnergyDensity_comp_add_le {H : ℝ → V → ℝ}
+theorem lintegral_ball_floerEnergyDensity_comp_add_le {H : ℝ → V → ℝ}
     (hHper : Function.Periodic H 1) {u : ℝ × ℝ → V} (hper : ∀ s t, u (s, t + 1) = u (s, t))
     (s₀ : ℝ) :
     ∫⁻ w in ball ((0 : ℝ), (1 / 2 : ℝ)) 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
@@ -93,7 +93,7 @@ private theorem lintegral_ball_floerEnergyDensity_comp_add_le {H : ℝ → V →
 
 /-- A translate `(s, t) ↦ u(s + s₀, t)` of a Floer cylinder of a Hamiltonian `H_t` for an almost
 complex structure `J_t(x)` is again one. -/
-private theorem isComplexLinearMap_perturbedFDeriv_comp_add_right {H : ℝ → V → ℝ}
+theorem isComplexLinearMap_perturbedFDeriv_comp_add_right {H : ℝ → V → ℝ}
     {J : ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
     (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u z))
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))

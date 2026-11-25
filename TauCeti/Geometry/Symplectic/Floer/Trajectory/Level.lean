@@ -82,7 +82,9 @@ orbit in `K`.
   tail of the sequence, normalizing at regular action values gives, up to translation, at most one
   level for each gap between consecutive orbit actions; this consequence is not stated here.
 
-The uniform bound on the derivatives excludes bubbling; it is assumed, not proved. The limit `g`
+The uniform bound on the derivatives excludes bubbling. It is a hypothesis here; for smooth
+trajectories with values in a compact set and bounded energy it holds by
+`TauCeti.SymplecticForm.exists_lipschitzWith_of_setLIntegral_floerEnergyDensity_le`. The limit `g`
 is only shown to be continuous here; its regularity is not treated. For smooth solutions with
 bounded derivatives, read in the complex coordinate `z = s + i t`, it is the subject of
 `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`.
