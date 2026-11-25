@@ -99,7 +99,7 @@ theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Fini
   -- The indicator of a null-measurable set is locally integrable.
   have hu (i : ι) : LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ :=
     locallyIntegrableOn_indicator_const ((hm i).mono Measure.restrict_le_self) 1
-  filter_upwards [ae_forall_exists_hasDensityAt_of_locallyFinitePerimeter hn hu hfin] with x hx hxS
+  filter_upwards [ae_forall_exists_hasDensityAt hn hu hfin] with x hx hxS
   choose d hd01 hdens hdhalf using hx (reducedBoundary_subset hxS)
   -- The cells in `S` have densities adding up to `1/2`, all cells densities adding up to `1`.
   have hS : ∑ i ∈ S, d i = 1 / 2 :=

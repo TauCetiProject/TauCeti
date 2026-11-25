@@ -62,9 +62,9 @@ is carried by the reduced boundary (`TauCeti.ae_mem_reducedBoundary`).
   **Federer's theorem**, `Hⁿ⁻¹((∂ᵉs ∩ Ω) \ ∂*s) = 0`.
 * `TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`: `∂ᵉs ∩ Ω = ∂*s` up to an `Hⁿ⁻¹`-null
   set.
-* `TauCeti.ae_forall_exists_hasDensityAt_of_locallyFinitePerimeter`: off an `Hⁿ⁻¹`-null set,
-  countably many sets of locally finite perimeter each have density `0`, `1/2` or `1` at every
-  point of `Ω`, with density `1/2` exactly on the reduced boundary.
+* `TauCeti.ae_forall_exists_hasDensityAt`: off an `Hⁿ⁻¹`-null set, countably many sets of
+  locally finite perimeter each have density `0`, `1/2` or `1` at every point of `Ω`, with density
+  `1/2` exactly on the reduced boundary.
 * `TauCeti.perimeter_eq_euclideanHausdorffMeasure_essentialBoundary_inter`: the perimeter is the
   measure of the essential boundary, `P(s; Ω) = Hⁿ⁻¹(∂ᵉs ∩ Ω)`.
 
@@ -214,7 +214,7 @@ theorem essentialBoundary_inter_ae_eq_reducedBoundary (hn : 2 ≤ finrank ℝ E)
 `s i` of locally finite perimeter in an open set `Ω`, off an `Hⁿ⁻¹`-null set every `s i` has
 density `0`, `1/2` or `1` at each point of `Ω`, and density `1/2` exactly on its reduced
 boundary. -/
-theorem ae_forall_exists_hasDensityAt_of_locallyFinitePerimeter {ι : Type*} [Countable ι]
+theorem ae_forall_exists_hasDensityAt {ι : Type*} [Countable ι]
     {s : ι → Set E} (hn : 2 ≤ finrank ℝ E)
     (hu : ∀ i, LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ i K, IsCompact K → K ⊆ Ω →

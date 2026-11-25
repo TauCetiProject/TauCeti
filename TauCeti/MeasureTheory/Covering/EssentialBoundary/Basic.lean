@@ -179,21 +179,6 @@ theorem biUnion_finset [OpensMeasurableSpace α] {ι : Type*} {s : ι → Set α
 
 end HasDensityAt
 
-/-- The whole space has density one at `x`, provided closed balls of small positive radius around
-`x` have positive finite measure. -/
-theorem hasDensityAt_univ
-    (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞) :
-    HasDensityAt μ univ x 1 :=
-  tendsto_const_nhds.congr' <| hx.mono fun r hr => by
-    simp only [univ_inter, ENNReal.div_self hr.1 hr.2]
-
-/-- A set whose complement is null has density one at `x`, provided closed balls of small positive
-radius around `x` have positive finite measure. -/
-theorem hasDensityAt_one_of_measure_compl_eq_zero
-    (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞) (hs : μ sᶜ = 0) :
-    HasDensityAt μ s x 1 :=
-  (hasDensityAt_univ hx).congr_ae (ae_eq_univ.2 hs).symm
-
 /-- For a null-measurable set `s`, if closed balls of small positive radius around `x` have
 positive finite measure, then `sᶜ` has density zero at `x` exactly when `s` has density one. -/
 theorem hasDensityAt_compl_zero_iff (hs : NullMeasurableSet s μ)
@@ -445,6 +430,14 @@ theorem mem_essentialInterior_of_mem_interior
   filter_upwards [Ioo_mem_nhdsGT hε, hμ] with r hr hr'
   rw [inter_eq_right.2 ((closedBall_subset_ball hr.2).trans (hεs.trans interior_subset)),
     ENNReal.div_self hr'.1 hr'.2]
+
+/-- A set whose complement is null has density one at `x`, provided closed balls of small positive
+radius around `x` have positive finite measure. -/
+theorem hasDensityAt_one_of_measure_compl_eq_zero
+    (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞) (hs : μ sᶜ = 0) :
+    HasDensityAt μ s x 1 :=
+  HasDensityAt.congr_ae (mem_essentialInterior_of_mem_interior hx (by simp))
+    (ae_eq_univ.2 hs).symm
 
 section OpenPos
 
