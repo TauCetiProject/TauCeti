@@ -16,10 +16,12 @@ public import TauCeti.RingTheory.Cyclotomic.ComplexField
 
 Let `F₁` and `F₂` be an `m`-th and an `n`-th cyclotomic extension of `ℚ` inside a field `K` of
 characteristic zero, with `m` and `n` coprime. Their compositum `F₁ ⊔ F₂` is an `mn`-th
-cyclotomic extension, of degree `φ(mn) = φ(m) φ(n)`, so `F₁` and `F₂` are linearly disjoint and
-`F₁ ⊓ F₂ = ℚ`. Every pair of automorphisms of `F₁` and `F₂` extends to a unique automorphism of
-the compositum: the restriction map `Gal(F₁ ⊔ F₂ / ℚ) → Gal(F₁/ℚ) × Gal(F₂/ℚ)` is injective, and
-both sides have `φ(m) φ(n)` elements (Glauberman 1968, Lemma 1, p. 1469).
+cyclotomic extension. For nonzero `m` and `n` it has degree `φ(mn) = φ(m) φ(n)`, so `F₁` and `F₂`
+are linearly disjoint and `F₁ ⊓ F₂ = ℚ`; if `m = 0` or `n = 0`, coprimality forces the other
+order to be `1`, and both fields are `ℚ`. Every pair of automorphisms of `F₁` and `F₂` extends to
+a unique automorphism of the compositum: the restriction map
+`Gal(F₁ ⊔ F₂ / ℚ) → Gal(F₁/ℚ) × Gal(F₂/ℚ)` is injective, and for nonzero `m` and `n` both sides
+have `φ(m) φ(n)` elements (Glauberman 1968, Lemma 1, p. 1469).
 
 For the cyclotomic fields `ℚ(ζ_m) = TauCeti.Cyclotomic.complexField m` of `ℂ` this reads
 `ℚ(ζ_m) ⊓ ℚ(ζ_n) = ℚ` and `ℚ(ζ_m) ⊔ ℚ(ζ_n) = ℚ(ζ_{mn})`. Coprimality is needed:
@@ -52,8 +54,8 @@ namespace IsCyclotomicExtension
 variable {K : Type*} [Field K] [CharZero K] {F₁ F₂ : IntermediateField ℚ K} {m n : ℕ}
   [IsCyclotomicExtension {m} ℚ F₁] [IsCyclotomicExtension {n} ℚ F₂]
 
-/-- **Cyclotomic fields of coprime orders are linearly disjoint**: the compositum has degree
-`φ(mn) = φ(m) φ(n)`. -/
+/-- **Cyclotomic fields of coprime orders are linearly disjoint**: for nonzero `m` and `n` the
+compositum has degree `φ(mn) = φ(m) φ(n)`, and otherwise one of the two fields is `ℚ`. -/
 theorem linearDisjoint_of_coprime (h : m.Coprime n) : F₁.LinearDisjoint F₂ := by
   rcases eq_or_ne m 0 with rfl | hm
   · obtain rfl := (Nat.coprime_zero_left n).mp h
