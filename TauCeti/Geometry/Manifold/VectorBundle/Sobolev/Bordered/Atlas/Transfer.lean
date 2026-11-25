@@ -24,10 +24,13 @@ charts of `A`. This file shows, for `1 ≤ p ≤ ∞` and every order `k ≤ n`,
 `W^{k,p}` components in the charts of `A` has `W^{k,p}` components in the charts of every other
 finite bundle atlas `B`, with bounds reaching the real axis
 (`TauCeti.BorderedSobolevSection.exists_chartValueL_ae_eq_halfCoord`). So sections transfer
-between any two finite bundle atlases (`TauCeti.BorderedSobolevSection.transfersTo_of_contMDiff`),
-and `TauCeti.BorderedSobolevSection.atlasEquiv` identifies the Sobolev spaces of sections of any two
-atlases, with equivalent norms (`TauCeti.BorderedSobolevSection.exists_norm_changeAtlas_le`): up
-to equivalence of norms, `W^{k,p}(V)` does not depend on the atlas.
+between any two finite bundle atlases
+(`TauCeti.BorderedSobolevSection.transfersTo_of_contMDiffVectorBundle`), and
+`TauCeti.BorderedSobolevSection.atlasEquiv` identifies their Sobolev spaces of sections, with
+equivalent norms (`TauCeti.BorderedSobolevSection.exists_norm_changeAtlas_le`). A finite bundle
+atlas uses the preferred charts `chartAt (A.center i)`, so this is the independence of `W^{k,p}(V)`,
+up to equivalence of norms, of the choice of centres and chart domains among the preferred
+charts.
 
 ## The argument
 
@@ -53,7 +56,7 @@ expression is a `W^{k,p}` function on `B.halfImage j` (`TauCeti.MemWkpLoc.exists
   whole chart targets over the bundle charts.
 * `TauCeti.BorderedSobolevSection.exists_chartValueL_ae_eq_halfCoord`: a section with `W^{k,p}`
   components in the charts of `A` has `W^{k,p}` components in the charts of `B`.
-* `TauCeti.BorderedSobolevSection.transfersTo_of_contMDiff`: the transfer property
+* `TauCeti.BorderedSobolevSection.transfersTo_of_contMDiffVectorBundle`: the transfer property
   `TauCeti.BorderedSobolevSection.TransfersTo` holds for any two finite bundle atlases.
 
 ## References
@@ -224,8 +227,11 @@ vector bundle over a `Cⁿ` manifold modelled on the closed upper half-plane, `n
 `k ≤ n` and `1 ≤ p ≤ ∞`, sections with `W^{k,p}` components in the charts of a finite bundle atlas
 `A` have `W^{k,p}` components in the charts of any finite bundle atlas `B`. So
 `TauCeti.BorderedSobolevSection.atlasEquiv` identifies the Sobolev spaces of sections of the two
-atlases, with equivalent norms (`TauCeti.BorderedSobolevSection.exists_norm_changeAtlas_le`). -/
-theorem transfersTo_of_contMDiff (hn : 1 ≤ n) (hkn : k ≤ n)
+atlases, with equivalent norms (`TauCeti.BorderedSobolevSection.exists_norm_changeAtlas_le`).
+Both atlases use preferred charts `chartAt (center i)`; they may differ in their centres and
+chart domains. This is the counterpart of
+`TauCeti.SobolevSection.transfersTo_of_contMDiffVectorBundle` for bases with boundary. -/
+theorem transfersTo_of_contMDiffVectorBundle (hn : 1 ≤ n) (hkn : k ≤ n)
     (B : FiniteBundleAtlas ClosedUpperHalfPlane M F V) : TransfersTo A B p k :=
   transfersTo_iff.2 fun w _ hs ↦ exists_chartValueL_ae_eq_halfCoord hn hkn w hs B
 
