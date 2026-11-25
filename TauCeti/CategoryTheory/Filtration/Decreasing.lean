@@ -132,11 +132,12 @@ variable [Abelian C]
 /-- The short complex `0 ⟶ F^{p+1} ⟶ F^p ⟶ gr^p ⟶ 0` is short exact. -/
 lemma shortExact_grShortComplex (F : FilteredObject C ℤᵒᵖ) (p : ℤ) :
     ((grShortComplex p).obj F).ShortExact :=
-  have hp : op (p + 1) ⟶ op p := (homOfLE (Int.le_add_one le_rfl)).op
-  have : Mono (F.stepMap hp) := mono_of_mono_fac (F.stepMap_stepι hp)
+  -- the first map of `grShortComplex p`, the inclusion `F^{p+1} ⟶ F^p`, verbatim
+  let f := F.stepMap (homOfLE (Int.le_add_one le_rfl)).op
+  have : Mono f := mono_of_mono_fac (F.stepMap_stepι _)
   { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel _)
     mono_f := this
-    epi_g := inferInstanceAs (Epi (cokernel.π (F.stepMap hp))) }
+    epi_g := inferInstanceAs (Epi (cokernel.π f)) }
 
 variable {F G : FilteredObject C ℤᵒᵖ} (φ : F ⟶ G)
 

@@ -33,8 +33,11 @@ step (`CategoryTheory.FilteredObject.isIso_iff`).
 ## References
 
 * [Stacks, Homological algebra, Definition 19.1, Tag 0121][stacks-project]
-* J. Helle and J. Rognes, *Boardman's whole-plane obstruction group for Cartan–Eilenberg
-  systems*, 2024, Definition 2.5
+* G. O. Helle and J. Rognes, *Boardman's whole-plane obstruction group for Cartan–Eilenberg
+  systems*, Documenta Math. 24 (2019), Definition 2.5. Their exhaustive filtrations are the
+  exhaustive ones here, but their *Hausdorff* (the limit of the steps is zero) and *complete* (the
+  derived limit of the steps is zero) are stated through limits of the steps, whereas
+  `IsSeparated` and `IsComplete` here use the lattice of subobjects and the quotients `X / F_i`.
 -/
 
 public section
