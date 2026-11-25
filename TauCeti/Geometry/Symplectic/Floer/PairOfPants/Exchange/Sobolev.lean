@@ -197,76 +197,6 @@ private theorem exists_positiveEndChart_inf_eq_add {c : ℝ} (hc : |c| ≤ 1) {T
     exact (lt_fst_positiveEndCoord_inf_iff hw0).2 hw
   · rw [positiveEndChart_endBandCoord inf (by rwa [endCenter_inf]), sub_add_cancel]
 
-/-- If the loops of a map `v` converge uniformly on `[0, 1]` to a loop continuous on `[0, 1]` and
-its slice defects for a jointly `C²` Hamiltonian `H` tend uniformly to zero, then far out, over
-the band `t ∈ [0, 1]`, the coefficient field on jets of the cylindrical datum `H_t dt` along `v`,
-with a `C¹` family `J_t` of structures, is bounded. -/
-private theorem exists_eventually_norm_floerJetCoeff_le (ω : SymplecticForm V)
-    {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (uncurry H)) {J : ℝ → V → AlmostComplexStructure V}
-    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    {v : ℝ × ℝ → V} {x : ℝ → V} (hx : ContinuousOn x (Icc 0 1))
-    (hvx : TendstoUniformlyOn (fun s t ↦ v (s, t)) x atTop (Icc 0 1))
-    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) v
-      (s, t)) 0 atTop (Icc 0 1)) :
-    ∃ B, ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
-      ‖ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun w ↦ H w.2) v (s, t)‖ ≤ B := by
-  obtain ⟨Mx, hMx⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn hx
-  obtain ⟨B, hB⟩ := ω.exists_forall_norm_floerJetCoeff_le hH hJ v (Mx + 1) 1
-  -- Far out, `v` is within `1` of its limit loop and the slice defect is less than `1`.
-  refine ⟨B, ((Metric.tendstoUniformlyOn_iff.1 hvx 1 one_pos).and
-    (Metric.tendstoUniformlyOn_iff.1 hδ 1 one_pos)).mono fun s hs t ht ↦ hB (s, t) ht ?_ ?_⟩
-  · have h : dist (x t) (v (s, t)) < 1 := hs.1 t ht
-    rw [dist_comm, dist_eq_norm] at h
-    linarith [norm_sub_norm_le (v (s, t)) (x t), hMx t ht]
-  · have h := hs.2 t ht
-    rw [Pi.zero_apply, dist_zero_left] at h
-    exact h.le
-
-/-- **The coefficient field on an input end.** Far out on an end `q`, beyond the height `T` of its
-positive end chart, let the data be cylindrical, `J(φ'_q(s, t)) = J_q(t)`, with the pair-of-pants
-perturbation of jointly `C²` period-one Hamiltonians `H_q`, and let `u` be `C¹` there and solve the
-Floer equation. If `B` bounds the coefficient field on jets of the end datum along `u ∘ φ'_q` over
-the band `t ∈ [0, 1]` beyond `T`, then the coefficient field on conformal jets is at most
-`1 + B + (1 + B) B / 2π` beyond `T`. -/
-private theorem norm_floerConformalJetCoeff_positiveEndChart_le_of_eq (ω : SymplecticForm V)
-    {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1) {q : Puncture}
-    (hHs : ContDiff ℝ 2 (uncurry (H q))) {J : ℝ × ℝ → V → AlmostComplexStructure V}
-    {Je : ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
-    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2) {Ks Kt : ℝ × ℝ → V → ℝ}
-    (hK : ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
-      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
-        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-    {u : ℝ × ℝ → V} (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
-    (hF : ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
-    {T B : ℝ} (hT : max 2 R₁ ≤ T)
-    (hB : ∀ ζ : ℝ × ℝ, T ≤ ζ.1 → ζ.2 ∈ Icc (0 : ℝ) 1 →
-      ‖ω.floerJetCoeff (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ‖ ≤ B)
-    {ζ : ℝ × ℝ} (hζ : T ≤ ζ.1) (hζ2 : ζ.2 ∈ Icc (0 : ℝ) 1) :
-    ‖ω.floerConformalJetCoeff cylindricalWeight
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (positiveEndChart q ζ)‖ ≤
-      1 + B + (1 + B) * B / (2 * π) := by
-  have h2 : 2 ≤ ζ.1 := (le_max_left _ _).trans (hT.trans hζ)
-  have hR : R₁ ≤ (positiveEndCoord q (positiveEndChart q ζ)).1 := by
-    rw [fst_positiveEndCoord_positiveEndChart]
-    exact (le_max_right _ _).trans (hT.trans hζ)
-  have hz : positiveEndChart q ζ ∈ thricePuncturedSphereReal :=
-    positiveEndChart_mem_thricePuncturedSphereReal (by linarith)
-  obtain ⟨hKsq, hKtq⟩ := hK _ hz hR
-  rw [ω.floerConformalJetCoeff_congr_data _ u rfl
-    (Ks' := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (Kt' := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-    hKsq hKtq]
-  refine ω.norm_floerConformalJetCoeff_positiveEndChart_le hH
-    (fun t ↦ hHs.comp (contDiff_const.prodMk contDiff_id)) h2
-    (hJeq ζ ((le_max_right _ _).trans (hT.trans hζ)))
-    ((hu _ hz).differentiableAt one_ne_zero) ?_ (hB ζ hζ hζ2)
-  rw [← ω.perturbedFDeriv_congr u (Ks := Ks) (Kt := Kt) hKsq hKtq]
-  exact hF _ hz hR
-
 /-- **The coefficient field on the recentred output end.** Let `|c| ≤ 1`, and far out on the output
 end, beyond the height `T` of the end chart `c + φ'_∞` recentred at `c`, let the data be
 cylindrical, `J(φ'_∞(s, t) + c) = J_∞(t)`, with the pair-of-pants perturbation of jointly `C²`
@@ -392,26 +322,25 @@ theorem memLp_floerConformalJetCoeff_of_recentered (ω : SymplecticForm V)
       (le_add_of_nonneg_right (abs_nonneg _)))
   have hB₀B : B₀ ≤ B :=
     (le_abs_self _).trans (le_add_of_nonneg_left (Finset.sum_nonneg fun _ _ ↦ abs_nonneg _))
-  -- On the compact truncation `S_{T + 1}` the field is continuous, hence bounded.
-  obtain ⟨A, hA⟩ := (isCompact_preimage_truncation (T + 1)).exists_bound_of_continuousOn
-    (hcont.mono (preimage_truncation_subset_thricePuncturedSphereReal (T + 1)))
-  refine memLp_top_of_bound
-    (hcont.aestronglyMeasurable isOpen_thricePuncturedSphereReal.measurableSet)
-    (max A (1 + B + (1 + B) * B / π)) ?_
-  filter_upwards [ae_restrict_mem isOpen_thricePuncturedSphereReal.measurableSet] with z hz
-  by_cases hzT : Complex.equivRealProdCLM.symm z ∈ truncation (T + 1)
-  · exact (hA z hzT).trans (le_max_left _ _)
-  refine le_max_of_le_right ?_
-  -- Beyond the truncation, `z` lies far out on one of the ends.
-  obtain ⟨q, ζ, ⟨hζ1, hζ2⟩, rfl⟩ := mem_iUnion.1
-    ((subset_preimage_truncation_union_iUnion_image_positiveEndChart (T + 1) hz).resolve_left hzT)
+  -- Beyond the height `T + 1` the point lies far out on an input end, where the data are the
+  -- pair-of-pants data, or far out on the recentred output end.
+  refine memLp_top_of_continuousOn_of_norm_positiveEndChart_le hcont (T := T + 1)
+    (M := 1 + B + (1 + B) * B / π) fun q ζ hζ1 hζ2 ↦ ?_
   by_cases hq : q = inf
   · subst hq
     exact ω.norm_floerConformalJetCoeff_positiveEndChart_inf_le_of_recentered hH (hHs inf) hc
       hJeq_inf hK_inf hu hF_inf hTR (fun ζ hζ ht ↦ ((hT ζ.1 hζ).2.1 ζ.2 ht).trans hB₀B) hζ1
-  refine (ω.norm_floerConformalJetCoeff_positiveEndChart_le_of_eq hH (hHs q) (hJeq q hq)
-    (hK q hq) hu (hF q hq) hTR (fun ζ hζ ht ↦ (((hT ζ.1 hζ).1 q hq ζ.2 ht)).trans (hBqB q))
-    (by linarith [mem_Ioi.1 hζ1]) (Ico_subset_Icc_self hζ2)).trans ?_
+  have h2 : 2 ≤ ζ.1 := by linarith [le_max_left 2 R₁]
+  have hR₁ : R₁ ≤ ζ.1 := by linarith [le_max_right 2 R₁]
+  have hR : R₁ ≤ (positiveEndCoord q (positiveEndChart q ζ)).1 := by
+    rwa [fst_positiveEndCoord_positiveEndChart]
+  have hz : positiveEndChart q ζ ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal (by linarith)
+  refine (ω.norm_floerConformalJetCoeff_positiveEndChart_le hH
+    (fun t ↦ (hHs q).comp (contDiff_const.prodMk contDiff_id)) h2 (hJeq q hq ζ hR₁)
+    (hK q hq _ hz hR).1 (hK q hq _ hz hR).2 ((hu _ hz).differentiableAt one_ne_zero)
+    (hF q hq _ hz hR)
+    (((hT ζ.1 (by linarith)).1 q hq ζ.2 (Ico_subset_Icc_self hζ2)).trans (hBqB q))).trans ?_
   gcongr
   linarith [pi_pos]
 
