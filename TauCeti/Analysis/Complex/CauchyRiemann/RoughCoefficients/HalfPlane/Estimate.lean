@@ -52,7 +52,9 @@ Both constants are uniform over coefficients whose reflections are bounded by `M
   the uniformity bound `M` on the norms of `J` in `W^{1,p}(Ω ∩ {0 ≤ t})` and of `S` in
   `Lᵖ(Ω ∩ {0 ≤ t})`.
 * `TauCeti.eLpNormWkp_crReflectionCoeff_le`: under the totally real boundary condition, the
-  reflection of `J` has at most twice the `W^{1,p}` norm of `J` up to the axis.
+  reflection of `J` has at most twice the `W^{1,p}` norm of `J` up to the axis, and
+  `TauCeti.isSobolevCRCoefficients_crReflection_of_le` combines it with
+  `TauCeti.isSobolevCRCoefficients_crReflection`.
 
 ## References
 
@@ -90,6 +92,32 @@ theorem eLpNormWkp_crReflectionCoeff_le {J : ℂ → V →L[ℝ] V} {DJ : ℂ �
     eLpNormWkp_succ_eq_of_hasWeakFDerivOn_interior (inter_setOf_im_nonneg_ae_eq_interior Ω) hJW,
     eLpNormWkp_zero, eLpNormWkp_zero, mul_add]
   exact add_le_add (eLpNorm_crReflectionCoeff_le hΩ hp J) (eLpNorm_crReflectionDeriv_le hΩ hp DJ)
+
+omit [CompleteSpace V] in
+/-- **The reflected coefficients are Sobolev coefficients with norms at most `2 M`.** Under the
+hypotheses of `TauCeti.isSobolevCRCoefficients_crReflection` for an isometry `R`, if
+`‖J‖_{W^{1,p}(Ω ∩ {0 ≤ t})} ≤ M` and `‖S‖_{Lᵖ(Ω ∩ {0 ≤ t})} ≤ M`, then the reflected coefficients
+are Sobolev coefficients on `Ω` whose norms `‖crReflectionCoeff R J‖_{W^{1,p}(Ω)}` and
+`‖crReflectionZeroth R S‖_{Lᵖ(Ω)}` are at most `2 M`. -/
+theorem isSobolevCRCoefficients_crReflection_of_le {J S : ℂ → V →L[ℝ] V}
+    {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {M : ℝ≥0} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hp : 1 ≤ p)
+    (hJW : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) J DJ)
+    (hJc : ContinuousOn J ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hJR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J x v) = -J x (R v))
+    (hDJ : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) DJ)
+    (hS : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) S)
+    (hJM : eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 J ≤ M)
+    (hSM : eLpNorm S p (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) ≤ M) :
+    IsSobolevCRCoefficients p Ω (crReflectionCoeff R.toContinuousLinearEquiv J)
+        (crReflectionDeriv R.toContinuousLinearEquiv DJ)
+        (crReflectionZeroth R.toContinuousLinearEquiv S) ∧
+      eLpNormWkp p Ω 1 (crReflectionCoeff R.toContinuousLinearEquiv J) ≤ ↑(2 * M) ∧
+      eLpNorm (crReflectionZeroth R.toContinuousLinearEquiv S) p (volume.restrict Ω) ≤
+        ↑(2 * M) :=
+  ⟨isSobolevCRCoefficients_crReflection hΩ hp hJW hJc hJR hDJ hS,
+    (eLpNormWkp_crReflectionCoeff_le hΩ hp hJW hJc hJR (hDJ.mono_exponent hp)).trans
+      (by push_cast; gcongr),
+    (eLpNorm_crReflectionZeroth_le hΩ hp S).trans (by push_cast; gcongr)⟩
 
 omit [CompleteSpace V] in
 /-- An estimate for the twisted reflection of `ξ` on `Ω` gives the estimate up to the real axis,
@@ -234,11 +262,10 @@ theorem exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_hasWeakFDerivOn
           eLpNorm ξ q (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))) := by
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf hR hΩ hΛ hp hpqr hr hr_top
     hUc hUΩ (2 * M)
-  exact ⟨C, fun J S DJ ξ η h hJW hJc hJR hDJ hS hJ2 hJM hSM => hC J S DJ ξ η h
-    (isSobolevCRCoefficients_crReflection hΩ (one_le_two.trans hp.le) hJW hJc hJR hDJ hS) hJ2
-    ((eLpNormWkp_crReflectionCoeff_le hΩ (one_le_two.trans hp.le) hJW hJc hJR
-      (hDJ.mono_exponent (one_le_two.trans hp.le))).trans (by push_cast; gcongr))
-    ((eLpNorm_crReflectionZeroth_le hΩ (one_le_two.trans hp.le) S).trans (by push_cast; gcongr))⟩
+  refine ⟨C, fun J S DJ ξ η h hJW hJc hJR hDJ hS hJ2 hJM hSM => ?_⟩
+  obtain ⟨hc, hJM', hSM'⟩ := isSobolevCRCoefficients_crReflection_of_le hΩ
+    (one_le_two.trans hp.le) hJW hJc hJR hDJ hS hJM hSM
+  exact hC J S DJ ξ η h hc hJ2 hJM' hSM'
 
 /-- **The `W^{1,r}` estimate up to the real axis for Sobolev coefficients** (McDuff–Salamon,
 Lemmas B.4.4 and B.4.6 with a totally real boundary condition). Under the hypotheses of
@@ -266,10 +293,9 @@ theorem exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_le_of_hasWeakFDerivO
           eLpNorm ξ q (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))) := by
   obtain ⟨C, hC⟩ := exists_eLpNormWkp_one_le_of_isWeakCRSolutionHalf_of_le hR hΩ hΛ hp hpq hr
     hr_top hrp hUc hUΩ (2 * M)
-  exact ⟨C, fun J S DJ ξ η h hJW hJc hJR hDJ hS hJ2 hJM hSM => hC J S DJ ξ η h
-    (isSobolevCRCoefficients_crReflection hΩ (one_le_two.trans hp.le) hJW hJc hJR hDJ hS) hJ2
-    ((eLpNormWkp_crReflectionCoeff_le hΩ (one_le_two.trans hp.le) hJW hJc hJR
-      (hDJ.mono_exponent (one_le_two.trans hp.le))).trans (by push_cast; gcongr))
-    ((eLpNorm_crReflectionZeroth_le hΩ (one_le_two.trans hp.le) S).trans (by push_cast; gcongr))⟩
+  refine ⟨C, fun J S DJ ξ η h hJW hJc hJR hDJ hS hJ2 hJM hSM => ?_⟩
+  obtain ⟨hc, hJM', hSM'⟩ := isSobolevCRCoefficients_crReflection_of_le hΩ
+    (one_le_two.trans hp.le) hJW hJc hJR hDJ hS hJM hSM
+  exact hC J S DJ ξ η h hc hJ2 hJM' hSM'
 
 end TauCeti

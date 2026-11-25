@@ -11,6 +11,7 @@ import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Reflection
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Analysis.Sobolev.Local.Reflection.Odd
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -332,15 +333,6 @@ section NormBounds
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃ₗᵢ[ℝ] W}
   {U : Set ℂ} {p : ℝ≥0∞}
 
-/-- Conjugation `M ↦ R M R⁻¹` by a linear isometry equivalence, as a continuous linear map, does
-not increase operator norms. -/
-theorem _root_.LinearIsometryEquiv.norm_conjContinuousAlgEquiv_apply_le (R : W ≃ₗᵢ[ℝ] W)
-    (M : W →L[ℝ] W) :
-    ‖(R.toContinuousLinearEquiv.conjContinuousAlgEquiv.toContinuousLinearEquiv :
-      (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W) M‖ ≤ ‖M‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg M) fun v => by
-    simpa using M.le_opNorm (R.symm v)
-
 /-- **The `Lᵖ` bound for the reflected zeroth-order coefficient.** On a conjugation-invariant set
 `U`, for `1 ≤ p` and an isometry `R`, the reflection of `S` has at most twice the `Lᵖ` norm of `S`
 up to the real axis. -/
@@ -349,7 +341,9 @@ theorem eLpNorm_crReflectionZeroth_le (hU : MapsTo (starRingEnd ℂ) U U) (hp : 
     eLpNorm (crReflectionZeroth R.toContinuousLinearEquiv S) p (volume.restrict U) ≤
       2 * eLpNorm S p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
   rw [crReflectionZeroth_def]
-  exact eLpNorm_twistedReflection_le hU R.norm_conjContinuousAlgEquiv_apply_le hp S
+  refine eLpNorm_twistedReflection_le hU (fun M => ?_) hp S
+  rw [ContinuousLinearEquiv.coe_coe]
+  exact (R.norm_conjContinuousAlgEquiv_apply M).le
 
 /-- **The `Lᵖ` bound for the reflected leading coefficient.** On a conjugation-invariant set `U`,
 for `1 ≤ p` and an isometry `R`, the reflection of `J` has at most twice the `Lᵖ` norm of `J` up
@@ -360,8 +354,8 @@ theorem eLpNorm_crReflectionCoeff_le (hU : MapsTo (starRingEnd ℂ) U U) (hp : 1
       2 * eLpNorm J p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
   rw [crReflectionCoeff_def]
   refine eLpNorm_twistedReflection_le hU (fun M => ?_) hp J
-  rw [neg_apply, norm_neg]
-  exact R.norm_conjContinuousAlgEquiv_apply_le M
+  rw [neg_apply, norm_neg, ContinuousLinearEquiv.coe_coe]
+  exact (R.norm_conjContinuousAlgEquiv_apply M).le
 
 /-- **The `Lᵖ` bound for the reflected derivative.** On a conjugation-invariant set `U`, for
 `1 ≤ p` and an isometry `R`, the reflection of `DJ` has at most twice the `Lᵖ` norm of `DJ` up to
@@ -373,9 +367,8 @@ theorem eLpNorm_crReflectionDeriv_le (hU : MapsTo (starRingEnd ℂ) U U) (hp : 1
   rw [crReflectionDeriv_def]
   refine eLpNorm_twistedReflection_le hU (fun D => ?_) hp DJ
   refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg D) fun h => ?_
-  calc _ = ‖(R.toContinuousLinearEquiv.conjContinuousAlgEquiv.toContinuousLinearEquiv :
-        (W →L[ℝ] W) →L[ℝ] W →L[ℝ] W) (D (conj h))‖ := by simp
-    _ ≤ ‖D (conj h)‖ := R.norm_conjContinuousAlgEquiv_apply_le _
+  calc _ = ‖R.toContinuousLinearEquiv.conjContinuousAlgEquiv (D (conj h))‖ := by simp
+    _ = ‖D (conj h)‖ := R.norm_conjContinuousAlgEquiv_apply _
     _ ≤ ‖D‖ * ‖h‖ := by simpa using D.le_opNorm (conj h)
 
 end NormBounds
