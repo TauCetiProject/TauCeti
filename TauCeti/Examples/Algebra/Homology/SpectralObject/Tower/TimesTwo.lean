@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.SpectralObject.Tower.FirstPage
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 import Mathlib.Algebra.Homology.HomologySequence
+import TauCeti.Algebra.Homology.HomologicalComplex.Double
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.Algebra.Homology.Subobject
 
@@ -71,14 +72,9 @@ abbrev spectralObject : SpectralObject (ModuleCat ℤ) EInt :=
 
 /-- **`H^0(K) = 0`** for `K = (ℤ →(×2) ℤ)`: the differential `×2` is injective. -/
 theorem isZero_homology_zero : IsZero (complex.homology 0) := by
-  rw [← exactAt_iff_isZero_homology, exactAt_iff' complex (-1) 0 1 (by simp) (by simp),
-    ShortComplex.exact_iff_mono _
-      (double_d_eq_zero₀ _ (ComplexShape.up_mk 0 1 (zero_add 1)) _ _ (by simp))]
-  dsimp
-  rw [double_d _ _ (by simp)]
   have : Mono (2 • 𝟙 (ModuleCat.of ℤ ℤ)) := (ModuleCat.mono_iff_injective _).2 fun x y h => by
     simpa using h
-  infer_instance
+  exact (isZero_kernel_of_mono _).of_iso (doubleHomologyIso₀ zero_ne_one (limit.isLimit _))
 
 /-- **`H^0(-2 ≤ 0) = 0`**: it is `H^0(G_0 / G_{-2}) = H^0(K)`. -/
 theorem isZero_H_zero : IsZero ((spectralObject.H 0).obj
