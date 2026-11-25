@@ -49,13 +49,10 @@ section Field
 
 /-- For `R = k` the conormal module is zero. -/
 theorem subsingleton_cotangent_self :
-    Subsingleton (RingHom.ker (algebraMap k (ResidueField k))).Cotangent := by
-  have h (x : RingHom.ker (algebraMap k (ResidueField k))) : x = 0 :=
-    Subtype.ext ((map_eq_zero_iff _ (algebraMap k _).injective).mp (RingHom.mem_ker.mp x.property))
-  refine ⟨fun x y ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := Ideal.toCotangent_surjective _ x
-  obtain ⟨y, rfl⟩ := Ideal.toCotangent_surjective _ y
-  rw [h x, h y]
+    Subsingleton (RingHom.ker (algebraMap k (ResidueField k))).Cotangent :=
+  (Ideal.cotangent_subsingleton_iff _).mpr <| by
+    rw [(RingHom.injective_iff_ker_eq_bot _).mp (algebraMap k (ResidueField k)).injective]
+    exact IsIdempotentElem.zero
 
 /-- For `R = k` the fibre of the differentials is zero. -/
 theorem subsingleton_tensor_self : Subsingleton (ResidueField k ⊗[k] Ω[k⁄k]) :=
