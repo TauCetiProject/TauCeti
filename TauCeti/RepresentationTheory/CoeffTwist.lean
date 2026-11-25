@@ -76,6 +76,7 @@ def of : V ≃+ CoeffTwist σ V := AddEquiv.refl V
 variable {σ V}
 
 /-- `a` acts on the `σ`-twist as `σ⁻¹(a)` acts on `V`. -/
+@[simp]
 theorem smul_of (a : A) (v : V) : a • of σ V v = of σ V (σ.symm a • v) :=
   (rfl)
 
@@ -128,7 +129,7 @@ def coeffTwist : Representation A G (CoeffTwist σ V) where
       map_add' x y := by simp
       map_smul' a x := by
         induction x using CoeffTwist.induction
-        simp [CoeffTwist.smul_of] }
+        simp }
   map_one' := by ext; simp
   map_mul' g h := by ext; simp
 
@@ -192,7 +193,7 @@ def IntertwiningMap.coeffTwist {W : Type*} [AddCommMonoid W] [Module A W]
   map_add' x y := by simp
   map_smul' a x := by
     induction x using CoeffTwist.induction
-    simp [CoeffTwist.smul_of]
+    simp
   isIntertwining' g := by
     ext x
     induction x using CoeffTwist.induction

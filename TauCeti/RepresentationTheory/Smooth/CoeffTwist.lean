@@ -114,14 +114,15 @@ def coeffTwistReflIso : coeffTwist.{w} (RingEquiv.refl A) ≅ 𝟭 (SmoothRep.{w
         map_add' := map_add _
         map_smul' a (x : CoeffTwist (RingEquiv.refl A) V.obj.V) := by
           induction x using CoeffTwist.induction
-          simp [CoeffTwist.smul_of, RingEquiv.symm_refl]
+          simp [RingEquiv.symm_refl]
         left_inv := (CoeffTwist.of _ _).apply_symm_apply
         right_inv := (CoeffTwist.of _ _).symm_apply_apply }
       fun _ ↦ rfl)
     fun _ ↦ rfl
 
 /-- `coeffTwistReflIso` sends `CoeffTwist.of _ V v` to `v`. Not `@[simp]`, like the component
-lemmas below: `simp` fails to rewrite with it, even on its own statement, so use it with `rw`. -/
+lemmas below: `simp` fails to rewrite with it, even on its own statement, because its index keeps
+the unfolded `Functor.mk` of the abbreviation `coeffTwist`; so use it with `rw`. -/
 theorem coeffTwistReflIso_hom_app_of (V : SmoothRep.{w} A G) (v : V.obj.V) :
     (coeffTwistReflIso.hom.app V).hom.hom (CoeffTwist.of (RingEquiv.refl A) V.obj.V v) = v :=
   (rfl)
@@ -143,7 +144,7 @@ def coeffTwistCongr {σ τ : A ≃+* A} (h : σ = τ) :
         map_smul' a (x : CoeffTwist σ V.obj.V) := by
           subst h
           induction x using CoeffTwist.induction
-          simp [CoeffTwist.smul_of]
+          simp
         left_inv _ := by simp
         right_inv _ := by simp }
       fun _ ↦ by subst h; rfl)
@@ -177,7 +178,7 @@ def coeffTwistTransIso (τ : A ≃+* A) :
         map_smul' a (x : CoeffTwist τ (CoeffTwist σ V.obj.V)) := by
           induction x using CoeffTwist.induction with | h y => ?_
           induction y using CoeffTwist.induction
-          simp [CoeffTwist.smul_of, RingEquiv.symm_trans_apply]
+          simp [RingEquiv.symm_trans_apply]
         left_inv _ := by simp
         right_inv _ := by simp }
       fun _ ↦ rfl)
@@ -210,18 +211,10 @@ def coeffTwistEquiv : SmoothRep.{w} A G ≌ SmoothRep.{w} A G where
     coeffTwistReflIso).symm
   counitIso := coeffTwistTransIso σ.symm σ ≪≫ coeffTwistCongr σ.symm_trans_self ≪≫
     coeffTwistReflIso
-  functor_unitIso_comp V := by
-    ext x
-    obtain ⟨v, rfl⟩ := (CoeffTwist.of σ V.obj.V).surjective x
-    simp only [Iso.trans_symm, Iso.trans_assoc, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
-      Functor.id_obj, Functor.comp_obj, ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp,
-      ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom, IntertwiningMap.comp_toLinearMap,
-      LinearMap.coe_comp, IntertwiningMap.coe_toLinearMap, Function.comp_apply,
-      IntertwiningMap.coeffTwist_apply_of, IntertwiningMap.comp_apply,
-      ObjectProperty.FullSubcategory.id_hom, Rep.hom_id, IntertwiningMap.toLinearMap_id,
-      LinearMap.id_coe, id_eq]
-    rw [coeffTwistReflIso_inv_app_apply, coeffTwistCongr_inv_app_of, coeffTwistTransIso_inv_app_of,
-      coeffTwistTransIso_hom_app_of, coeffTwistCongr_hom_app_of, coeffTwistReflIso_hom_app_of]
+  -- Every component is the identity on vectors by construction.
+  functor_unitIso_comp _ := by
+    ext
+    rfl
 
 /-- The unit of `coeffTwistEquiv σ` sends `v` to the vector `v` of `(V^σ)^(σ⁻¹)`. -/
 theorem coeffTwistEquiv_unitIso_hom_app_apply (V : SmoothRep.{w} A G) (v : V.obj.V) :
