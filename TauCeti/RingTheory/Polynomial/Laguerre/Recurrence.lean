@@ -25,7 +25,7 @@ parameters:
   `X Lₙ^{(α+1)} = (n + α + 1) Lₙ^{(α)} - (n + 1) Lₙ₊₁^{(α)}` (DLMF 18.9.14);
 * `Polynomial.laguerre_succ_succ`, the three-term recurrence (DLMF 18.9.1 with Table 18.9.1)
   `(n + 2) Lₙ₊₂^{(α)} = (2n + α + 3 - X) Lₙ₊₁^{(α)} - (n + α + 1) Lₙ^{(α)}`;
-* `Polynomial.X_mul_derivative_laguerre_add_one`, the raising relation
+* `TauCeti.X_mul_derivative_laguerre_add_one`, the raising relation
   `X (Lₙ^{(α+1)})' = (n + 1) Lₙ₊₁^{(α)} - (α + 1 - X) Lₙ^{(α+1)}`, the inductive step of
   the Rodrigues formula.
 
