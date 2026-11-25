@@ -165,6 +165,15 @@ lemma constToOver_comp_hom_app {F : Sheaf J A} {Y : C} {M : A}
   -- `e.inv.hom` has source `(Over.forget Y).op ⋙ sheafify J _` only up to unfolding `over`.
   exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) h).trans (Category.comp_id _))
 
+/-- `constToOver e` is the restricted sheafification map followed by an isomorphism. -/
+private lemma exists_isIso_constToOver_eq {F : Sheaf J A} {Y : C} {M : A}
+    (e : F.over Y ≅ ((constantSheaf J A).obj M).over Y) :
+    ∃ i : (Over.forget Y).op ⋙ sheafify J ((Functor.const Cᵒᵖ).obj M) ⟶ (F.over Y).obj,
+      IsIso i ∧ constToOver e =
+        Functor.whiskerLeft (Over.forget Y).op (toSheafify J ((Functor.const Cᵒᵖ).obj M)) ≫ i :=
+  -- The source of `e.inv.hom` is `(Over.forget Y).op ⋙ sheafify J _` after unfolding `over`.
+  ⟨e.inv.hom, inferInstanceAs (IsIso ((sheafToPresheaf _ _).map e.inv)), rfl⟩
+
 section LocallyBijective
 
 variable {FA : A → A → Type*} {CA : A → Type*} [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)]
@@ -176,11 +185,8 @@ instance isLocallySurjective_constToOver :
     Presheaf.IsLocallySurjective (J.over Y) (constToOver e) := by
   have := Presheaf.isLocallySurjective_whisker (J.over Y) J (Over.forget Y)
     (toSheafify J ((Functor.const Cᵒᵖ).obj M))
-  -- The source of `e.inv.hom` is `(Over.forget Y).op ⋙ sheafify J _` after unfolding `over`.
-  let i : (Over.forget Y).op ⋙ sheafify J ((Functor.const Cᵒᵖ).obj M) ⟶ (F.over Y).obj :=
-    e.inv.hom
-  have : IsIso i := inferInstanceAs (IsIso ((sheafToPresheaf _ _).map e.inv))
-  change Presheaf.IsLocallySurjective _ (_ ≫ i)
+  obtain ⟨i, _, h⟩ := exists_isIso_constToOver_eq e
+  rw [h]
   infer_instance
 
 /-- `constToOver e` is locally injective, as the sheafification map is. -/
@@ -188,10 +194,8 @@ instance isLocallyInjective_constToOver :
     Presheaf.IsLocallyInjective (J.over Y) (constToOver e) := by
   have := Presheaf.isLocallyInjective_whisker (J.over Y) J (Over.forget Y)
     (toSheafify J ((Functor.const Cᵒᵖ).obj M))
-  let i : (Over.forget Y).op ⋙ sheafify J ((Functor.const Cᵒᵖ).obj M) ⟶ (F.over Y).obj :=
-    e.inv.hom
-  have : IsIso i := inferInstanceAs (IsIso ((sheafToPresheaf _ _).map e.inv))
-  change Presheaf.IsLocallyInjective _ (_ ≫ i)
+  obtain ⟨i, _, h⟩ := exists_isIso_constToOver_eq e
+  rw [h]
   infer_instance
 
 end LocallyBijective

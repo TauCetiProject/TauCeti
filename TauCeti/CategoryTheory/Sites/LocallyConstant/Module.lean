@@ -166,6 +166,10 @@ theorem exists_mem_overPullback_map_eq_of_iso {F G : Sheaf J (ModuleCat.{w} Λ)}
   simp only [Over.mk_hom] at hg
   simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, reassoc_of% hg]
   simp only [constToOver_comp_hom_app, constToOver_comp_hom_app_assoc]
+  simp only [constantSheaf, Functor.comp_map, Over.mk_left,
+    Functor.sheafPushforwardContinuous_map_hom_app, Over.forget_obj]
+  simp only [NatTrans.comp_app, Functor.const_map_app] at hη
+  -- The terms now agree; the stated objects differ by unfolding `Functor.const` and `Sheaf.over`.
   exact hη
 
 /-- The sieve of morphisms `Y ⟶ X` over which a morphism `φ : F ⟶ G` of sheaves of `Λ`-modules is,
