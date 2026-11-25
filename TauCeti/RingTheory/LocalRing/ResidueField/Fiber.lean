@@ -16,7 +16,8 @@ import TauCeti.RingTheory.Localization.AtPrime.Extension
 For a prime `p` of `R` and a prime `Q` of the fibre ring `κ(p) ⊗[R] B` lying over the prime `q`
 of `B`, Mathlib's `Ideal.Fiber.algEquivAux₂` identifies the local ring `(κ(p) ⊗[R] B)_Q` with
 `B_q ⧸ p B_q`. This file records that this identification is compatible with the maps from `B`.
-It also records that the fibre ring of a Noetherian algebra is Noetherian.
+It also records that the fibre ring of a Noetherian algebra is Noetherian, and that the fibre ring
+over a maximal ideal `p` is the quotient `B ⧸ p B`.
 
 When `q` is the greatest ideal of `B` contracting into `p`, the localization of `B` at the image
 of `R \ p` is the localization of `B` at `q`
@@ -35,6 +36,11 @@ of `R \ p` is the localization of `B` at `q`
 * `Ideal.Fiber.algEquivQuotientLocalizationAtPrime`: for the greatest ideal `q` of `B`
   contracting into `p`, the fibre ring `κ(p) ⊗[R] B` is isomorphic to `B_q ⧸ p B_q`; it sends
   `1 ⊗ b` to the class of `b` (`Ideal.Fiber.algEquivQuotientLocalizationAtPrime_one_tmul`).
+* `Ideal.Fiber.algEquivQuotientMap`: for a maximal ideal `p`, the fibre ring `κ(p) ⊗[R] B` is
+  `B ⧸ p B`, sending `1 ⊗ b` to the class of `b` (`Ideal.Fiber.algEquivQuotientMap_one_tmul`).
+
+The identification `Ideal.Fiber.algEquivQuotientMap` follows the one in Mathlib's private
+`Algebra.QuasiFinite.finite_of_isArtinianRing_of_isLocalRing`.
 -/
 
 public section
@@ -104,6 +110,27 @@ theorem map_le_maximalIdeal (Q : Ideal (p.Fiber B)) [Q.IsPrime] :
 instance isNoetherianRing [IsNoetherianRing B] : IsNoetherianRing (p.Fiber B) :=
   let : Algebra B (p.Fiber B) := rightAlgebra
   isNoetherianRing_of_ringEquiv _ (algEquivQuotient p).symm.toRingEquiv
+
+/-- The fibre ring `κ(p) ⊗[R] B` over a maximal ideal `p` is the quotient `B ⧸ p B`, since then
+`κ(p) = R ⧸ p`. -/
+noncomputable def algEquivQuotientMap (p : Ideal R) [p.IsMaximal] :
+    p.Fiber B ≃ₐ[R] B ⧸ p.map (algebraMap R B) :=
+  (congr (.symm <| .ofBijective _ (Ideal.bijective_algebraMap_quotient_residueField p)) .refl).trans
+    <| (Algebra.TensorProduct.comm _ _ _).trans
+      ((quotIdealMapEquivTensorQuot B p).symm.restrictScalars _)
+
+/-- The isomorphism `κ(p) ⊗[R] B ≃ B ⧸ p B` of `Ideal.Fiber.algEquivQuotientMap` sends `1 ⊗ b` to
+the class of `b`. -/
+@[simp]
+theorem algEquivQuotientMap_one_tmul (p : Ideal R) [p.IsMaximal] (b : B) :
+    algEquivQuotientMap p ((1 : p.ResidueField) ⊗ₜ[R] b) = Ideal.Quotient.mk _ b := by
+  simp [algEquivQuotientMap, AlgEquiv.symm_apply_eq]
+
+/-- The inverse of `Ideal.Fiber.algEquivQuotientMap` sends the class of `b` to `1 ⊗ b`. -/
+@[simp]
+theorem algEquivQuotientMap_symm_mk (p : Ideal R) [p.IsMaximal] (b : B) :
+    (algEquivQuotientMap p).symm (Ideal.Quotient.mk _ b) = (1 : p.ResidueField) ⊗ₜ[R] b := by
+  rw [AlgEquiv.symm_apply_eq, algEquivQuotientMap_one_tmul]
 
 end Ideal.Fiber
 
