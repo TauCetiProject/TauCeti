@@ -22,9 +22,10 @@ then the identity on the length interval `[0, 2]`
 
 The arclength is constant on `[1, 2]`, so it is not injective
 (`TauCeti.Examples.Arclength.not_injOn_variationOnFromTo_pauseCurve`) and the arclength
-parametrization cannot be defined as `γ ∘ s⁻¹`; on `(1, 2)`, `γ' = 0 = s'`
-(`TauCeti.Examples.Arclength.deriv_pauseCurve_of_mem_Ioo`), and the factorization identities say
-nothing about `c'` there. This is a Check of GeometricMeasureTheory §1.1.
+parametrization cannot be defined as `γ ∘ s⁻¹`; on `(1, 2)`, `γ' = 0`
+(`TauCeti.Examples.Arclength.deriv_pauseCurve_eq_zero_of_mem_Ioo`) and `s' = 0`
+(`TauCeti.Examples.Arclength.deriv_variationOnFromTo_pauseCurve_eq_zero_of_mem_Ioo`), and the
+factorization identities say nothing about `c'` there.
 -/
 
 public section
@@ -52,7 +53,7 @@ theorem continuous_pauseCurve : Continuous pauseCurve := by
   fun_prop
 
 /-- The curve is constant equal to `1` on `[1, 2]`. -/
-theorem pauseCurve_of_mem_Icc {t : ℝ} (ht : t ∈ Icc (1 : ℝ) 2) : pauseCurve t = 1 := by
+theorem pauseCurve_eq_one_of_mem_Icc {t : ℝ} (ht : t ∈ Icc (1 : ℝ) 2) : pauseCurve t = 1 := by
   rw [pauseCurve_def, min_eq_right ht.1, max_eq_right (by linarith [ht.2])]
   ring
 
@@ -92,22 +93,24 @@ theorem not_injOn_variationOnFromTo_pauseCurve :
   have h₁ : (1 : ℝ) ∈ Icc (0 : ℝ) 3 := ⟨by norm_num, by norm_num⟩
   have h₂ : (2 : ℝ) ∈ Icc (0 : ℝ) 3 := ⟨by norm_num, by norm_num⟩
   have := h h₁ h₂ (by rw [variationOnFromTo_pauseCurve h₁, variationOnFromTo_pauseCurve h₂,
-    pauseCurve_of_mem_Icc ⟨le_rfl, by norm_num⟩, pauseCurve_of_mem_Icc ⟨by norm_num, le_rfl⟩])
+    pauseCurve_eq_one_of_mem_Icc ⟨le_rfl, by norm_num⟩,
+    pauseCurve_eq_one_of_mem_Icc ⟨by norm_num, le_rfl⟩])
   norm_num at this
 
-/-- On `(1, 2)` the curve, and hence its arclength, has derivative `0`. -/
-theorem deriv_pauseCurve_of_mem_Ioo {t : ℝ} (ht : t ∈ Ioo (1 : ℝ) 2) : deriv pauseCurve t = 0 := by
+/-- On `(1, 2)` the curve has derivative `0`. -/
+theorem deriv_pauseCurve_eq_zero_of_mem_Ioo {t : ℝ} (ht : t ∈ Ioo (1 : ℝ) 2) :
+    deriv pauseCurve t = 0 := by
   have h : pauseCurve =ᶠ[nhds t] fun _ ↦ 1 :=
     Filter.eventually_of_mem (Ioo_mem_nhds ht.1 ht.2) fun u hu ↦
-      pauseCurve_of_mem_Icc (Ioo_subset_Icc_self hu)
+      pauseCurve_eq_one_of_mem_Icc (Ioo_subset_Icc_self hu)
   rw [h.deriv_eq, deriv_const]
 
 /-- On `(1, 2)` the derivative of the arclength is `0`, like that of the curve. -/
-theorem deriv_variationOnFromTo_pauseCurve_of_mem_Ioo {t : ℝ} (ht : t ∈ Ioo (1 : ℝ) 2) :
+theorem deriv_variationOnFromTo_pauseCurve_eq_zero_of_mem_Ioo {t : ℝ} (ht : t ∈ Ioo (1 : ℝ) 2) :
     deriv (variationOnFromTo pauseCurve (Icc 0 3) 0) t = 0 := by
   have h : variationOnFromTo pauseCurve (Icc 0 3) 0 =ᶠ[nhds t] pauseCurve :=
     Filter.eventually_of_mem (Ioo_mem_nhds (by linarith [ht.1] : (0 : ℝ) < t)
       (by linarith [ht.2] : t < 3)) fun u hu ↦ variationOnFromTo_pauseCurve (Ioo_subset_Icc_self hu)
-  rw [h.deriv_eq, deriv_pauseCurve_of_mem_Ioo ht]
+  rw [h.deriv_eq, deriv_pauseCurve_eq_zero_of_mem_Ioo ht]
 
 end TauCeti.Examples.Arclength
