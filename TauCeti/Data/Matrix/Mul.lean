@@ -30,7 +30,8 @@ A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
 Transposing a product of rectangular matrices and passing to the opposite ring reverses the
-factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
+factors, intertwines `mulVec` with `vecMul`, and commutes with entrywise ring homomorphisms;
+transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
 
 Sandwiching a matrix over an `R`-algebra between two matrices with entries in `R` gives entries that
 are `R`-linear combinations of the entries of the middle factor. Over a commutative semiring, the
@@ -56,8 +57,10 @@ its entry covariance `∑ p, E p a b * E p c d`.
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
-* `Matrix.transpose_mul_map_op`: transposing a product and passing to the opposite ring reverses
-  the factors, `(M * N)ᵀ.map op = Nᵀ.map op * Mᵀ.map op`, for rectangular `M` and `N`.
+* `Matrix.transpose_mul_map_op`, `Matrix.transpose_mul_map_unop`, `Matrix.op_comp_mulVec`,
+  `Matrix.transpose_map_op_map_ringHom_op`: transposing a product and passing to or from the
+  opposite ring reverses the factors, intertwines `mulVec` with `vecMul`, and commutes with
+  entrywise ring homomorphisms.
 * `Matrix.map_algebraMap_mul_mul_map_algebraMap_apply`: the entries of `F * u * G`, for `F` and
   `G` with entries in `R` and `u` over an `R`-algebra, are `∑ q, ∑ p, (F i p * G q j) • u p q`.
 * `Matrix.sum_mul_mul_apply`: the entries of `∑ p, E p * M * E p` through the entry covariance
@@ -225,6 +228,28 @@ theorem transpose_mul_map_op [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix
     (M * N)ᵀ.map MulOpposite.op = Nᵀ.map MulOpposite.op * Mᵀ.map MulOpposite.op := by
   ext i j
   simp [Matrix.mul_apply]
+
+/-- Transposing a product of matrices over the opposite ring and returning to the ring reverses the
+factors. -/
+theorem transpose_mul_map_unop [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix m n αᵐᵒᵖ)
+    (N : Matrix n p αᵐᵒᵖ) :
+    (M * N)ᵀ.map MulOpposite.unop = Nᵀ.map MulOpposite.unop * Mᵀ.map MulOpposite.unop := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+/-- Applying `MulOpposite.op` to each coordinate intertwines matrix-vector multiplication by `M`
+with vector-matrix multiplication by `Mᵀ.map op`. -/
+theorem op_comp_mulVec [NonUnitalNonAssocSemiring α] [Fintype n]
+    (M : Matrix m n α) (v : n → α) :
+    MulOpposite.op ∘ (M *ᵥ v) = (MulOpposite.op ∘ v) ᵥ* Mᵀ.map MulOpposite.op := by
+  ext i
+  simp [mulVec, vecMul, dotProduct]
+
+/-- Applying `RingHom.op f` entrywise to `Mᵀ.map op` commutes with `(·)ᵀ.map op`. -/
+theorem transpose_map_op_map_ringHom_op {β : Type*} [NonAssocSemiring α] [NonAssocSemiring β]
+    (M : Matrix m n α) (f : α →+* β) :
+    (Mᵀ.map MulOpposite.op).map (RingHom.op f) = (M.map f)ᵀ.map MulOpposite.op :=
+  rfl
 
 end MulOpposite
 
