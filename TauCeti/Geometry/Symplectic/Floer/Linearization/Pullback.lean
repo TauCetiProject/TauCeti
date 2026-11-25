@@ -187,8 +187,7 @@ theorem contDiff_covectorPullback_of_eqOn {φ : ℝ × ℝ → ℝ × ℝ} {J : 
     (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add
     ((contDiff_snd.comp hA).contDiffAt.smul hJζ)) ?_).contDiffWithinAt
   filter_upwards [hU.mem_nhds hζ] with ζ' hζ'
-  rw [show J (φ ζ') = Je ζ' from hJeq hζ']
-  rfl
+  simp only [Pi.smul_apply', ← hJeq hζ', Function.comp_apply]
 
 /-- A family `J_e(t)` that agrees with `J ∘ φ` along a line `{s} × ℝ` has period `c` when `φ` has
 period `c` along it, as an end structure agreeing with `J` in an end chart of a cylindrical end
