@@ -16,8 +16,8 @@ A matrix `M` is a similitude of the standard alternating form `Jₘ = TauCeti.JF
 multiplier `r` when `M Jₘ Mᵀ = r Jₘ`. This file records two facts about this condition. Since
 `Jₘ² = -1`, the row convention `M Jₘ Mᵀ = r Jₘ` and the column convention `Mᵀ Jₘ M = r Jₘ` agree
 for a unit multiplier. In rank two, `m = 1`, the multiplier is forced to be the determinant: this
-is Mathlib's `Matrix.transpose_mul_J_mul_eq_smul_iff`, read through the reindexing along
-`finSumFinEquiv` that defines `Jₘ`.
+is `Matrix.transpose_mul_J_mul_eq_smul_iff` (`TauCeti.LinearAlgebra.Matrix.SymplecticMultiplier`),
+read through the reindexing along `finSumFinEquiv` that defines `Jₘ`.
 
 ## Main results
 
