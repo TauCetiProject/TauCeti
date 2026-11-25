@@ -16,11 +16,11 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 /-!
 # Discreteness of the spectrum over a compactly embedded common domain
 
-Let `ι : D →L H` be a compact operator between Banach spaces and `A : D →L H` a bounded operator,
-and suppose that one shift `c₀ • ι - A` is invertible. In the analysis of Floer trajectories
-`ι` is the compact inclusion `H¹ → L²` of a common domain and `A` the asymptotic operator
-`J₀ ∂ₜ + S`. This file shows that the scalars `c` at which the shift `c • ι - A` fails to be
-invertible form a discrete set, consisting of eigenvalues of the pencil.
+Let `ι : D →L H` be a compact operator from a Banach space `D` to a normed space `H` and
+`A : D →L H` a bounded operator, and suppose that one shift `c₀ • ι - A` is invertible. In the
+analysis of Floer trajectories `ι` is the compact inclusion `H¹ → L²` of a common domain and `A`
+the asymptotic operator `J₀ ∂ₜ + S`. This file shows that the scalars `c` at which the shift
+`c • ι - A` fails to be invertible form a discrete set, consisting of eigenvalues of the pencil.
 
 Write `K = (c₀ • ι - A)⁻¹ ∘ ι`, a compact operator on `D`. For `c ≠ c₀`, a vector `x` solves
 `A x = c • ι x` exactly when `K x = (c₀ - c)⁻¹ • x`, and `c • ι - A` is `c₀ • ι - A` composed with
@@ -33,10 +33,10 @@ eigenvalues away from `0` transfer to the shifts:
   (`ContinuousLinearMap.finite_inter_setOf_not_isInvertible_smul_sub`), so near every scalar all
   other shifts are invertible (`ContinuousLinearMap.eventually_isInvertible_smul_sub`).
 
-Neither injectivity of `ι` nor completeness of `H` is assumed. When `ι` is injective these are
-statements about the partial operator `ContinuousLinearMap.domainOperator ι A hι` with domain
-`range ι`: its spectrum meets every bounded set in finitely many points
-(`ContinuousLinearMap.finite_inter_spectrum_domainOperator`).
+Neither injectivity of `ι` nor completeness of `H` is assumed. When `ι` is injective and `H` is
+complete these are statements about the partial operator
+`ContinuousLinearMap.domainOperator ι A hι` with domain `range ι`: its spectrum meets every bounded
+set in finitely many points (`ContinuousLinearMap.finite_inter_spectrum_domainOperator`).
 
 Over `ℝ` or `ℂ`, the admissible real shifts, the real `c` at which `(c : 𝕜) • ι - A` is
 invertible, are dense (`ContinuousLinearMap.eventually_isInvertible_ofReal_smul_sub`,
@@ -96,8 +96,8 @@ private theorem smul_sub_apply_eq_zero_iff (h₀ : (c₀ • ι - A).IsInvertibl
     (x : D) :
     (c • ι - A) x = 0 ↔ ((c₀ • ι - A).inverse ∘L ι) x = (c₀ - c)⁻¹ • x := by
   have hc' : c₀ - c ≠ 0 := sub_ne_zero.2 hc.symm
-  rw [smul_sub_eq_smul_sub_sub c₀, sub_apply, smul_apply, sub_eq_zero, eq_comm,
-    ← h₀.inverse_apply_eq, map_smul, comp_apply, eq_inv_smul_iff₀ hc', eq_comm]
+  rw [smul_sub_eq_smul_sub_sub c₀, sub_apply, sub_eq_zero, comp_apply, eq_inv_smul_iff₀ hc',
+    ← map_smul, smul_apply, h₀.inverse_apply_eq, eq_comm (a := (c₀ • ι - A) x)]
 
 /-- **Fredholm alternative for shifts.** If `ι` is compact and one shift `c₀ • ι - A` is
 invertible, a shift `c • ι - A` is invertible exactly when it is injective. -/
@@ -126,8 +126,9 @@ theorem isInvertible_smul_sub_iff_injective [CompleteSpace D] (hcpt : IsCompactO
     have hu : (algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c) *
         (algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c)⁻¹ - K)) x = x - (c₀ - c) • K x := by
       simp [smul_sub, smul_smul, hc', -map_sub]
-    rw [comp_apply, hu, map_sub, map_smul, hKx, smul_sub_eq_smul_sub_sub c₀, sub_apply,
-      smul_apply]
+    rw [comp_apply, hu]
+    simp only [map_sub, map_smul, hKx, sub_apply, smul_apply, sub_smul]
+    abel
   rw [hfac]
   exact h₀.comp (isInvertible_iff_isUnit.2 ((isUnit_iff_ne_zero.2 hc').map _ |>.mul hres))
 
