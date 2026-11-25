@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.ResidualCharacter
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
-import TauCeti.RingTheory.Artinian.Socle.BaseChange
+import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.BaseChange
 import Mathlib.LinearAlgebra.FreeModule.PID
 
 /-!
@@ -97,7 +97,8 @@ theorem exists_valuationSubring_forall_baseChange_apply_eq_smul {ι : Type*}
   have : IsScalarTower O V L := IsScalarTower.of_algebraMap_eq fun x ↦
     (IsScalarTower.algebraMap_apply O K L x).trans (hcompat x).symm
   -- `ψ` occurs on a nonzero integral vector, which is a common eigenvector of the `T i`.
-  obtain ⟨n, hn0, hn⟩ := ψ.exists_ne_zero_forall_baseChange_lsmul_apply_eq_smul L (M := M)
+  have := Module.Finite.of_restrictScalars_finite O H M
+  obtain ⟨n, hn0, hn⟩ := ψ.exists_ne_zero_forall_baseChange_lsmul_apply_eq_smul L (L := M)
   have hT (i : ι) : Algebra.lsmul O O M (⟨T i, Algebra.subset_adjoin ⟨i, rfl⟩⟩ : H) = T i := by
     ext
     simp [Subalgebra.smul_def]
