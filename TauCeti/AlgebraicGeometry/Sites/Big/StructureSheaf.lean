@@ -46,6 +46,9 @@ fpqc topology, `μ_n`, regarded as a sheaf for `J`, is still the kernel of the `
   as a sheaf of rings, over which sheaves of modules on the big site are defined.
 * `AlgebraicGeometry.Scheme.Ga`, `AlgebraicGeometry.Scheme.Gm`, `AlgebraicGeometry.Scheme.mu`:
   the sheaves `𝔾_a`, `𝔾_m` and `μ_n`.
+* `AlgebraicGeometry.Scheme.gaObjSpecEquiv`, `AlgebraicGeometry.Scheme.gmObjSpecEquiv`,
+  `AlgebraicGeometry.Scheme.muObjSpecEquiv`: the values `R`, `Rˣ` and `μ_n(R)` of `𝔾_a`, `𝔾_m`
+  and `μ_n` on an affine `S`-scheme `Spec R`.
 * `AlgebraicGeometry.Scheme.powHom`: the `n`-th power map of `𝔾_m`.
 * `AlgebraicGeometry.Scheme.isLimitMuKernelFork`: `μ_n` is the kernel of `powHom`.
 * `AlgebraicGeometry.Scheme.isLimitMuKernelForkMap`: the same holds for every topology coarser
@@ -142,6 +145,16 @@ lemma Ga_obj (T : Over S) :
 lemma Ga_map_apply {T T' : Over S} (f : T ⟶ T') (a : Γ(T'.left, ⊤)) :
     (Ga S).obj.map f.op a = f.left.appTop a := rfl
 
+/-- The value of `𝔾_a` on an affine `S`-scheme `Spec R` is the additive group of `R`. -/
+noncomputable def gaObjSpecEquiv (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
+    (Ga S).obj.obj (op (Over.mk h)) ≃+ R :=
+  -- By `Ga_obj` (`rfl`), the value of `𝔾_a` is the additive group of the big structure sheaf.
+  (bigStructureSheafObjSpecIso S R h).commRingCatIsoToRingEquiv.toAddEquiv
+
+@[simp]
+lemma gaObjSpecEquiv_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S) (a : Γ(Spec R, ⊤)) :
+    gaObjSpecEquiv S R h a = (Scheme.ΓSpecIso R).hom a := (rfl)
+
 /-- The multiplicative group `𝔾_m : T ↦ Γ(T, O_T)ˣ` on the big fpqc site over `S`, written
 additively so that it is a sheaf of abelian groups. -/
 @[expose]
@@ -164,6 +177,20 @@ lemma Gm_obj (T : Over S) :
 @[simp]
 lemma Gm_map_apply {T T' : Over S} (f : T ⟶ T') (u : Additive Γ(T'.left, ⊤)ˣ) :
     (Gm S).obj.map f.op u = Additive.ofMul (Units.map f.left.appTop.hom.toMonoidHom u.toMul) := rfl
+
+/-- The value of `𝔾_m` on an affine `S`-scheme `Spec R` is the unit group of `R`, written
+additively. -/
+noncomputable def gmObjSpecEquiv (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
+    (Gm S).obj.obj (op (Over.mk h)) ≃+ Additive Rˣ :=
+  -- By `Gm_obj` (`rfl`), the value of `𝔾_m` on `Spec R` is `Additive Γ(Spec R, ⊤)ˣ`.
+  (MulEquiv.toAdditive (Units.mapEquiv (Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv.toMulEquiv) :
+    Additive Γ(Spec R, ⊤)ˣ ≃+ Additive Rˣ)
+
+@[simp]
+lemma coe_gmObjSpecEquiv_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S)
+    (u : Additive Γ(Spec R, ⊤)ˣ) :
+    ((gmObjSpecEquiv S R h u).toMul : R) = (Scheme.ΓSpecIso R).hom (u.toMul : Γ(Spec R, ⊤)) :=
+  (rfl)
 
 /-- The `n`-th power map `𝔾_m ⟶ 𝔾_m`, `t ↦ tⁿ`. In the additive notation of `Gm` it is
 multiplication by `n`. -/
@@ -234,6 +261,23 @@ lemma mu_map_apply (n : ℕ) {T T' : Over S} (f : T ⟶ T')
     (u : Additive (rootsOfUnity n Γ(T'.left, ⊤))) :
     (mu S n).obj.map f.op u =
       Additive.ofMul (restrictRootsOfUnity f.left.appTop.hom n u.toMul) := rfl
+
+/-- The value of `μ_n` on an affine `S`-scheme `Spec R` is the group of `n`-th roots of unity
+of `R`, written additively. -/
+noncomputable def muObjSpecEquiv (n : ℕ) (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
+    (mu S n).obj.obj (op (Over.mk h)) ≃+ Additive (rootsOfUnity n R) :=
+  -- By `mu_obj` (`rfl`), the value of `μ_n` on `Spec R` is
+  -- `Additive (rootsOfUnity n Γ(Spec R, ⊤))`.
+  (MulEquiv.toAdditive
+      ((Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv.toMulEquiv.restrictRootsOfUnity n) :
+    Additive (rootsOfUnity n Γ(Spec R, ⊤)) ≃+ Additive (rootsOfUnity n R))
+
+@[simp]
+lemma coe_muObjSpecEquiv_apply (n : ℕ) (R : CommRingCat.{u}) (h : Spec R ⟶ S)
+    (ζ : Additive (rootsOfUnity n Γ(Spec R, ⊤))) :
+    (((muObjSpecEquiv S n R h ζ).toMul : Rˣ) : R) =
+      (Scheme.ΓSpecIso R).hom ((ζ.toMul : Γ(Spec R, ⊤)ˣ) : Γ(Spec R, ⊤)) :=
+  (rfl)
 
 /-- The inclusion `μ_n ⟶ 𝔾_m`. -/
 noncomputable def muToGm (n : ℕ) : mu S n ⟶ Gm S where
