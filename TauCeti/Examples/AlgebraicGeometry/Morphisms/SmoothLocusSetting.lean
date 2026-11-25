@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Dense
-public import Mathlib.Algebra.DualNumber
+public import Mathlib.RingTheory.DualNumber
+public import TauCeti.Topology.PureDimension
 import TauCeti.RingTheory.Smooth.SeparablePoint
 
 /-!
@@ -20,8 +21,9 @@ geometrically reduced.
 * For an inseparable finite field extension `K / k`, such as `k(t ^ (1 / p))` over `𝔽_p(t)`, the
   scheme `Spec K` is reduced (a field), but its smooth locus over `k` is empty, so it is not
   geometrically reduced and is excluded by the setting.
-* `Spec k[ε]/(ε²)` is not reduced, so it is excluded; its reduction `Spec k` is smooth over `k`,
-  so its smooth locus is everything.
+* `Spec k[ε]/(ε²)` is not reduced, so it is excluded; its reduction `Spec k` (the kernel of
+  `k[ε] → k` is the nilradical) is reduced, pure of dimension `0` and smooth over `k`, so it
+  satisfies the setting with `d = 0`.
 -/
 
 public section
@@ -34,20 +36,10 @@ namespace TauCeti.SmoothLocusSettingExample
 
 variable (k K : Type u) [Field k] [Field K] [Algebra k K]
 
-/-- A field extension `K / k` with `Spec K ⟶ Spec k` smooth is separable: the residue field at a
-maximal ideal of a smooth `k`-algebra can be chosen separable, and `K` has only `⊥`. -/
-private theorem isSeparable_of_smooth
-    [Smooth (Spec.map (CommRingCat.ofHom (algebraMap k K)))] : Algebra.IsSeparable k K := by
-  have : Algebra.Smooth k K :=
-    RingHom.smooth_algebraMap.mp (HasRingHomProperty.Spec_iff (P := @Smooth) |>.mp ‹_›)
-  obtain ⟨m, hm, -, hsep⟩ := TauCeti.Algebra.Smooth.exists_isMaximal_isSeparable k K
-  obtain rfl : m = ⊥ := Ideal.eq_bot_of_prime m
-  exact AlgEquiv.Algebra.isSeparable (AlgEquiv.quotientBot k K)
-
 variable [Module.Finite k K]
 
 /-- `Spec K ⟶ Spec k` is locally of finite presentation for a finite extension `K / k`. -/
-instance locallyOfFinitePresentation_specMap :
+local instance locallyOfFinitePresentation_specMap :
     LocallyOfFinitePresentation (Spec.map (CommRingCat.ofHom (algebraMap k K))) :=
   HasRingHomProperty.Spec_iff.mpr (RingHom.finitePresentation_algebraMap.mpr
     (Algebra.FinitePresentation.of_finiteType.mp inferInstance))
@@ -60,7 +52,9 @@ theorem smoothLocus_eq_bot (hK : ¬ Algebra.IsSeparable k K) :
   have : Smooth (Spec.map (CommRingCat.ofHom (algebraMap k K))) := by
     refine Scheme.Hom.smoothLocus_eq_top_iff.mp (eq_top_iff.mpr fun y _ ↦ ?_)
     rwa [Subsingleton.elim y x]
-  exact isSeparable_of_smooth k K
+  have : Algebra.Smooth k K :=
+    RingHom.smooth_algebraMap.mp (HasRingHomProperty.Spec_iff (P := @Smooth) |>.mp ‹_›)
+  exact TauCeti.Algebra.Smooth.isSeparable k K
 
 /-- **Check.** For an inseparable finite field extension `K / k`, the reduced scheme `Spec K` is not
 geometrically reduced over `k`: its smooth locus is empty, hence not dense. -/
@@ -82,8 +76,17 @@ example : ¬ IsReduced (Spec (.of (DualNumber k))) := fun h ↦ by
     ⟨2, by simp [pow_two]⟩)
   simp at h0
 
--- **Check.** The reduction `Spec k` of `Spec k[ε]/(ε²)` has smooth locus everything over `k`.
-example : (Spec.map (𝟙 (CommRingCat.of k))).smoothLocus = ⊤ :=
-  Scheme.Hom.smoothLocus_eq_top _
+-- **Check.** The reduction of `Spec k[ε]/(ε²)` is `Spec k`: the kernel of `k[ε] → k` is the
+-- nilradical.
+example : RingHom.ker (TrivSqZeroExt.fstHom k k k) = nilradical (DualNumber k) := by
+  ext x
+  simp [mem_nilradical, TrivSqZeroExt.isNilpotent_iff_isNilpotent_fst]
+
+-- **Check.** `Spec k` satisfies the setting with `d = 0`: it is reduced, pure of dimension `0`, and
+-- its smooth locus over `k` is everything.
+example : IsReduced (Spec (.of k)) ∧ TauCeti.IsPureDimensional 0 (Spec (.of k)) ∧
+    (Spec.map (𝟙 (CommRingCat.of k))).smoothLocus = ⊤ :=
+  ⟨inferInstance, TauCeti.isPureDimensional_zero_of_discreteTopology _,
+    Scheme.Hom.smoothLocus_eq_top _⟩
 
 end TauCeti.SmoothLocusSettingExample
