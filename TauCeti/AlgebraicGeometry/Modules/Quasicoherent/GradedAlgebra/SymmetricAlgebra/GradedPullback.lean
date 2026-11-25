@@ -29,8 +29,8 @@ a morphism of graded quasicoherent algebras whose direct sum is an isomorphism i
 
 * `TauCeti.AlgebraicGeometry.pullbackGradedSymmetricAlgebraIso`: the isomorphism
   `g^* (Sym F) ≅ Sym (g^* F)` of graded quasicoherent algebras.
-* `TauCeti.AlgebraicGeometry.pullbackGradedSymmetricAlgebraIso_inv_degreeOne`: in degree one it
-  is the pullback of `F ≅ Sym¹ F`.
+* `TauCeti.AlgebraicGeometry.symmetricAlgebraPullbackToPullback_degreeOne`: in degree one, the
+  inverse `Sym (g^* F) ⟶ g^* (Sym F)` of this isomorphism is the pullback of `F ≅ Sym¹ F`.
 
 ## References
 
@@ -148,12 +148,13 @@ theorem pullbackGradedSymmetricAlgebraIso_inv :
     (pullbackGradedSymmetricAlgebraIso g F).inv = symmetricAlgebraPullbackToPullback g F :=
   (rfl)
 
-/-- In degree one, the inverse of `pullbackGradedSymmetricAlgebraIso` is the pullback of the
-identification `F ≅ Sym¹ F`, through `g^* F ≅ Sym¹ (g^* F)`. -/
+/-- In degree one, `symmetricAlgebraPullbackToPullback : Sym (g^* F) ⟶ g^* (Sym F)` (the inverse
+of `pullbackGradedSymmetricAlgebraIso`) is the pullback of the identification `F ≅ Sym¹ F`, through
+`g^* F ≅ Sym¹ (g^* F)`. -/
 @[reassoc]
-theorem pullbackGradedSymmetricAlgebraIso_inv_degreeOne :
+theorem symmetricAlgebraPullbackToPullback_degreeOne :
     (gradedSymmetricAlgebraDegreeOneIso X).inv.app _ ≫
-        degreeOne.map (pullbackGradedSymmetricAlgebraIso g F).inv =
+        degreeOne.map (symmetricAlgebraPullbackToPullback g F) =
       pullbackDegreeOneSymmetricAlgebra g F :=
   gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift _
 
