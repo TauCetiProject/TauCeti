@@ -34,6 +34,15 @@ structure, whose values lie in the contact line rather than in the scalars. Then
   zero exactly when `W` has half the dimension of `V`
   (`LinearMap.subsingleton_symplecticNormal_iff`).
 
+The construction is natural. A linear equivalence `e : V ≃ V'` that carries `B` to a form `B'` up
+to an injective linear map `ℓ : Q → Q'` of the value modules, `B' (e u) (e v) = ℓ (B u v)`, carries
+`B`-orthogonals to `B'`-orthogonals (`Submodule.map_orthogonalBilin`). So for `W' = e(W)` it induces
+an equivalence `[u] ↦ [e u]` of symplectic normal spaces (`LinearMap.symplecticNormalCongr`) which
+carries the induced forms to each other up to `ℓ`
+(`LinearMap.IsRefl.symplecticNormalForm_symplecticNormalCongr`), compatibly with composition
+(`LinearMap.symplecticNormalCongr_trans`). For a Levi form the map `ℓ` is the induced map of
+contact lines, and the equivalence is conformally symplectic.
+
 For a scalar-valued symplectic form `ω` the same quotient appears in linear reduction as the
 reduced space `TauCeti.SymplecticForm.ReducedSpace ω (ω.orthogonal W)`, written there as the
 quotient of `W^ω` by the kernel of the restricted form. The module-valued version is the one
@@ -105,6 +114,86 @@ theorem IsAlt.isAlt_symplecticNormalForm (hB : B.IsAlt) :
   intro x
   induction x using Submodule.Quotient.induction_on with
   | H u => simpa using hB u
+
+/-! ### Transport along equivalences -/
+
+section Congr
+
+variable {V' V'' Q' Q'' : Type*} [AddCommGroup V'] [Module K V'] [AddCommGroup V'']
+  [Module K V''] [AddCommGroup Q'] [Module K Q'] [AddCommGroup Q''] [Module K Q'']
+  {B' : V' →ₗ[K] V' →ₗ[K] Q'} {B'' : V'' →ₗ[K] V'' →ₗ[K] Q''} {W' : Submodule K V'}
+  {W'' : Submodule K V''} {e : V ≃ₗ[K] V'} {e' : V' ≃ₗ[K] V''} {ℓ : Q →ₗ[K] Q'}
+  {ℓ' : Q' →ₗ[K] Q''}
+
+/-- **Orthogonals under an equivalence.** If `e : V ≃ V'` carries `B` to `B'` up to an injective
+linear map `ℓ : Q → Q'` of the value modules, `B' (e u) (e v) = ℓ (B u v)`, then `e` carries the
+`B`-orthogonal of `W` onto the `B'`-orthogonal of `e(W)`. -/
+theorem _root_.Submodule.map_orthogonalBilin (W : Submodule K V) (hℓ : Function.Injective ℓ)
+    (h : ∀ u v, B' (e u) (e v) = ℓ (B u v)) :
+    (W.orthogonalBilin B).map (e : V →ₗ[K] V') = (W.map (e : V →ₗ[K] V')).orthogonalBilin B' := by
+  ext v
+  rw [Submodule.orthogonalBilin_map, Submodule.mem_map_equiv, Submodule.mem_orthogonalBilin,
+    Submodule.mem_orthogonalBilin]
+  refine forall₂_congr fun w _ ↦ ?_
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, ← e.apply_symm_apply v, h, e.apply_symm_apply,
+    ← map_zero ℓ, hℓ.eq_iff]
+
+variable (W W') in
+/-- **The symplectic normal spaces of corresponding subspaces.** An equivalence `e : V ≃ V'`
+carrying `B` to `B'` up to an injective linear map `ℓ : Q → Q'`, `B' (e u) (e v) = ℓ (B u v)`, and
+`W` onto `W'`, induces an equivalence `[u] ↦ [e u]` of symplectic normal spaces
+`W^⊥ ⧸ (W ∩ W^⊥) ≃ W'^⊥ ⧸ (W' ∩ W'^⊥)`. It carries the induced forms to each other up to `ℓ`
+(`LinearMap.IsRefl.symplecticNormalForm_symplecticNormalCongr`). -/
+def symplecticNormalCongr (e : V ≃ₗ[K] V') (hℓ : Function.Injective ℓ)
+    (h : ∀ u v, B' (e u) (e v) = ℓ (B u v)) (hW : W.map (e : V →ₗ[K] V') = W') :
+    SymplecticNormal B W ≃ₗ[K] SymplecticNormal B' W' :=
+  Submodule.Quotient.equiv _ _
+    (e.ofSubmodules _ _ (hW ▸ W.map_orthogonalBilin hℓ h)) <| by
+      ext v
+      rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, Submodule.mem_comap,
+        Submodule.mem_comap, LinearEquiv.coe_coe, Submodule.subtype_apply,
+        LinearEquiv.ofSubmodules_symm_apply, Submodule.subtype_apply, ← Submodule.mem_map_equiv,
+        hW]
+
+/-- The equivalence of symplectic normal spaces induced by `e` sends the class of `u` to the class
+of `e u`. -/
+@[simp]
+theorem symplecticNormalCongr_mk (hℓ : Function.Injective ℓ)
+    (h : ∀ u v, B' (e u) (e v) = ℓ (B u v)) (hW : W.map (e : V →ₗ[K] V') = W')
+    (u : W.orthogonalBilin B) :
+    symplecticNormalCongr W W' e hℓ h hW (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk ⟨e u, hW ▸ W.map_orthogonalBilin hℓ h ▸
+        Submodule.mem_map_of_mem u.property⟩ :=
+  (rfl)
+
+/-- **The induced equivalence is conformally symplectic.** The equivalence of symplectic normal
+spaces induced by `e` carries the form induced by `B'` to `ℓ` applied to the form induced by
+`B`. -/
+theorem IsRefl.symplecticNormalForm_symplecticNormalCongr (hB : B.IsRefl) (hB' : B'.IsRefl)
+    (hℓ : Function.Injective ℓ) (h : ∀ u v, B' (e u) (e v) = ℓ (B u v))
+    (hW : W.map (e : V →ₗ[K] V') = W') (a b : SymplecticNormal B W) :
+    hB'.symplecticNormalForm W' (symplecticNormalCongr W W' e hℓ h hW a)
+        (symplecticNormalCongr W W' e hℓ h hW b) =
+      ℓ (hB.symplecticNormalForm W a b) := by
+  induction a using Submodule.Quotient.induction_on with
+  | H u =>
+    induction b using Submodule.Quotient.induction_on with
+    | H v => simp [h]
+
+/-- The equivalences of symplectic normal spaces induced by two successive equivalences compose
+to the one induced by their composite. -/
+theorem symplecticNormalCongr_trans (hℓ : Function.Injective ℓ) (hℓ' : Function.Injective ℓ')
+    (h : ∀ u v, B' (e u) (e v) = ℓ (B u v)) (h' : ∀ u v, B'' (e' u) (e' v) = ℓ' (B' u v))
+    (hW : W.map (e : V →ₗ[K] V') = W') (hW' : W'.map (e' : V' →ₗ[K] V'') = W'') :
+    (symplecticNormalCongr W W' e hℓ h hW).trans (symplecticNormalCongr W' W'' e' hℓ' h' hW') =
+      symplecticNormalCongr W W'' (e.trans e') (ℓ := ℓ' ∘ₗ ℓ) (by simpa using hℓ'.comp hℓ)
+        (fun u v ↦ by simp [h, h'])
+        (by rw [LinearEquiv.coe_trans, Submodule.map_comp, hW, hW']) := by
+  ext a
+  induction a using Submodule.Quotient.induction_on with
+  | H u => simp
+
+end Congr
 
 end CommRing
 
