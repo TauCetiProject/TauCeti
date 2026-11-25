@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import Mathlib.RingTheory.PowerSeries.Expand
 import Mathlib.Algebra.CharP.Invertible
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -50,6 +51,10 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.derivative_rescale`: the chain rule `(f(a X))' = a f'(a X)` for rescaling.
 * `PowerSeries.rescale_X_mul_derivative`, `PowerSeries.evalNegHom_X_mul_derivative`: rescaling
   and negating the variable commute with the Euler operator `X * d⁄dX`.
+* `PowerSeries.X_mul_derivative_multiset_prod_rescale`: if `Q G = X Q'`, the logarithmic
+  derivative of `∏_{x ∈ s} Q(x t)` is `∑ₘ gₘ pₘ(s) tᵐ`, with `pₘ(s)` the power sums of `s`.
+* `PowerSeries.X_mul_derivative_expand`: the Euler operator `X * d⁄dX` commutes with `X ↦ Xᵖ` up to
+  the factor `p`.
 * `PowerSeries.iterate_derivative_coe`: iterated derivatives of a polynomial are computed as
   polynomials.
 * `PowerSeries.coeff_iterate_derivative_eq_descFactorial`: the `M`-th coefficient of `f⁽ⁱ⁾` is
@@ -77,9 +82,18 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   its `X *`-shifted form for all `e`.
 * `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative`: the `e = 1` case
   `coeff (n + 1) (v ^ (n + 1)) = coeff n (v ^ n * v')`.
+* `PowerSeries.eq_of_X_mul_derivative_eq_mul`: with unique division by positive integers, a series
+  with prescribed logarithmic derivative `X f' / f` is determined by its constant coefficient.
+* `PowerSeries.X_mul_derivative_mk_eq_mul_C_mul_X_iff`: `X f' = f · u X` for `f = ∑ γₖ Xᵏ` exactly
+  when `(k + 1) γ_{k+1} = u γ_k`.
 * `PowerSeries.mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_zero`:
   for a unit `u : R⟦X⟧ˣ` over a commutative ring and `e, k ≥ 1`,
   `(e : R) * coeff (e * k) (u ^ (-k)) + coeff (e * k - 1) (u ^ (-k - 1) * u') = 0`.
+* `PowerSeries.X_pow_dvd_X_mul_derivative_sub`: `X * d⁄dX` preserves congruence modulo
+  `X ^ (n + 1)`.
+* `PowerSeries.xLogDeriv`, `PowerSeries.toAdd_xLogDeriv`: `X` times the logarithmic derivative,
+  `u ↦ X * u' * u⁻¹`, as a homomorphism from the units of `R⟦X⟧` to the additive group of `R⟦X⟧`,
+  over any commutative ring.
 * `PowerSeries.eq_of_mul_derivative_eq_mul`: over a commutative ring with `HasUniqueDiv`, a series
   `P` solving `u * d⁄dX P = w * P` for `u` with non-zero-divisor constant coefficient is uniquely
   determined by `constantCoeff P`.
@@ -193,6 +207,43 @@ theorem coeff_succ_pow_succ_eq_coeff_pow_mul_derivative (v : R⟦X⟧) (n : ℕ)
     coeff (n + 1) (v ^ (n + 1)) = coeff n (v ^ n * d⁄dX v) := by
   simpa using nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative v one_ne_zero n
 
+/-- **Uniqueness of a series with prescribed logarithmic derivative.** Over a commutative
+semiring with unique division by positive integers, a power series `f` with `X f' = f P`, for a
+series `P` without constant term, is determined by `P` and its constant coefficient: comparing
+`k`-th coefficients gives `k f_k = ∑_{i + j = k, j ≥ 1} f_i P_j`. -/
+theorem eq_of_X_mul_derivative_eq_mul [HasUniqueDiv R] {f g P : R⟦X⟧} (hP : constantCoeff P = 0)
+    (hf : X * d⁄dX f = f * P) (hg : X * d⁄dX g = g * P) (h₀ : constantCoeff f = constantCoeff g) :
+    f = g := by
+  ext k
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+    rcases k with _ | k
+    · simpa using h₀
+    have hsum : ∀ h : R⟦X⟧, (∀ i < k + 1, coeff i h = coeff i f) →
+        coeff (k + 1) (h * P) = coeff (k + 1) (f * P) := fun h hh => by
+      rw [coeff_mul, coeff_mul]
+      refine Finset.sum_congr rfl fun p hp => ?_
+      rcases Nat.eq_zero_or_pos p.2 with h2 | h2
+      · simp [h2, hP]
+      · rw [hh p.1 (by have := Finset.mem_antidiagonal.1 hp; omega)]
+    refine (nsmul_right_injective (M := R) (Nat.succ_ne_zero k) ?_).symm
+    simp only [nsmul_eq_mul]
+    rw [← coeff_X_mul_derivative, ← coeff_X_mul_derivative, hf, hg,
+      hsum g fun i hi => (ih i hi).symm]
+
+/-- A power series `∑ γₖ Xᵏ` satisfies `X f' = f · u X` exactly when its coefficients satisfy
+`(k + 1) γ_{k+1} = u γ_k`, the recursion of the divided powers `uᵏ / k!`. -/
+theorem X_mul_derivative_mk_eq_mul_C_mul_X_iff {γ : ℕ → R} {u : R} :
+    X * d⁄dX (mk γ) = mk γ * (C u * X) ↔ ∀ k, (k + 1) • γ (k + 1) = u * γ k := by
+  have hc : ∀ k, coeff (k + 1) (mk γ * (C u * X)) = u * γ k := fun k => by
+    rw [← mul_assoc, coeff_succ_mul_X, mul_comm, coeff_C_mul, coeff_mk]
+  rw [PowerSeries.ext_iff]
+  refine ⟨fun h k => ?_, fun h k => ?_⟩
+  · rw [← hc, ← h, coeff_X_mul_derivative, coeff_mk, nsmul_eq_mul]
+  · rcases k with _ | k
+    · simp
+    · rw [hc, ← h, coeff_X_mul_derivative, coeff_mk, nsmul_eq_mul]
+
 end CommSemiring
 
 section CommRing
@@ -203,6 +254,18 @@ variable {R : Type*} [CommRing R]
 theorem evalNegHom_X_mul_derivative (φ : R⟦X⟧) :
     evalNegHom (X * d⁄dX φ) = X * d⁄dX (evalNegHom φ) :=
   rescale_X_mul_derivative (-1) φ
+
+/-- The Euler operator `X * d⁄dX` commutes with the expansion `X ↦ Xᵖ` up to the factor `p`. -/
+theorem X_mul_derivative_expand (p : ℕ) (hp : p ≠ 0) (f : R⟦X⟧) :
+    X * d⁄dX (expand p hp f) = (p : R⟦X⟧) * expand p hp (X * d⁄dX f) := by
+  ext m
+  rw [coeff_X_mul_derivative, ← map_natCast C p, coeff_C_mul, coeff_expand, coeff_expand]
+  split_ifs with h
+  · obtain ⟨j, rfl⟩ := h
+    rw [Nat.mul_div_cancel_left j (Nat.pos_of_ne_zero hp), coeff_X_mul_derivative]
+    push_cast
+    ring
+  · rw [mul_zero, mul_zero]
 
 /-- An operator intertwined with the derivative by substitution satisfies the iterated chain
 rule. -/
@@ -264,6 +327,35 @@ theorem mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_
   simpa [nsmul_eq_mul, hm, coeff_succ_X_mul] using
     nsmul_coeff_val_inv_pow_succ_add_coeff_X_mul_val_inv_pow_add_two_mul_derivative_eq_zero
       u e n
+
+/-- Congruence modulo `X ^ (n + 1)` is preserved by `X * d⁄dX`. -/
+theorem X_pow_dvd_X_mul_derivative_sub {a b : R⟦X⟧} {n : ℕ} (h : X ^ (n + 1) ∣ a - b) :
+    X ^ (n + 1) ∣ X * d⁄dX a - X * d⁄dX b := by
+  obtain ⟨c, hc⟩ := h
+  refine ⟨C ((n : R) + 1) * c + X * d⁄dX c, ?_⟩
+  rw [← mul_sub, ← map_sub, hc, Derivation.leibniz, derivative_X_pow, smul_eq_mul, smul_eq_mul,
+    Nat.add_sub_cancel]
+  push_cast
+  ring
+
+/-- `X` times the logarithmic derivative, `u ↦ X * u' * u⁻¹`, turns products of units into
+sums. Unlike the logarithmic derivative over a `ℚ`-algebra it is defined over every commutative
+ring. -/
+noncomputable def xLogDeriv : R⟦X⟧ˣ →* Multiplicative R⟦X⟧ where
+  toFun u := Multiplicative.ofAdd (X * d⁄dX (u : R⟦X⟧) * ↑u⁻¹)
+  map_one' := by simp
+  map_mul' u v := by
+    rw [← ofAdd_add, Units.val_mul, mul_inv_rev, Units.val_mul, Derivation.leibniz, smul_eq_mul,
+      smul_eq_mul]
+    congr 1
+    linear_combination (X * d⁄dX (v : R⟦X⟧) * ↑v⁻¹) * u.mul_inv +
+      (X * d⁄dX (u : R⟦X⟧) * ↑u⁻¹) * v.mul_inv
+
+/-- The defining equation of `xLogDeriv`: `xLogDeriv u = X * u' * u⁻¹`. -/
+@[simp]
+theorem toAdd_xLogDeriv (u : R⟦X⟧ˣ) :
+    (xLogDeriv u).toAdd = X * d⁄dX (u : R⟦X⟧) * (↑u⁻¹ : R⟦X⟧) := by
+  simp only [xLogDeriv, MonoidHom.coe_mk, OneHom.coe_mk, toAdd_ofAdd]
 
 /-- Over a commutative ring with unique division by positive integers, a formal power series `P`
 solving `u * d⁄dX P = w * P`, where `constantCoeff u` is not a zero divisor, is uniquely
@@ -412,6 +504,32 @@ theorem smul_derivative_mem {S : Submodule (Polynomial R) A⟦X⟧} {p : Polynom
     module
   rw [key]
   exact S.sub_mem (S.smul_mem _ (hS _ hx)) (S.smul_mem _ hx)
+
+/-- **Logarithmic derivative of `∏ Q(x t)`**: if `Q G = X Q'`, then for a multiset `s` of roots,
+`t F' = F · ∑ₘ gₘ pₘ(s) tᵐ` for `F = ∏_{x ∈ s} Q(x t)`, where `pₘ(s)` is the `m`-th power sum. -/
+theorem X_mul_derivative_multiset_prod_rescale {Q G : R⟦X⟧}
+    (hG : Q * G = X * d⁄dX Q) (s : Multiset A) :
+    X * d⁄dX (s.map fun x => rescale x (Q.map (algebraMap R A))).prod =
+      (s.map fun x => rescale x (Q.map (algebraMap R A))).prod *
+        mk fun m => algebraMap R A (coeff m G) * (s.map (· ^ m)).sum := by
+  induction s using Multiset.induction_on with
+  | empty => ext m; simp
+  | cons x s ih =>
+    have h₁ : X * d⁄dX (Q.map (algebraMap R A)) =
+        Q.map (algebraMap R A) * G.map (algebraMap R A) := by
+      simpa [derivative_map] using (congrArg (map (algebraMap R A)) hG).symm
+    have hx : X * d⁄dX (rescale x (Q.map (algebraMap R A))) =
+        rescale x (Q.map (algebraMap R A)) * rescale x (G.map (algebraMap R A)) := by
+      rw [derivative_rescale, ← mul_assoc, mul_comm X, ← rescale_X, ← map_mul, h₁, map_mul]
+    have hH : (mk fun m => algebraMap R A (coeff m G) * ((x ::ₘ s).map (· ^ m)).sum) =
+        rescale x (G.map (algebraMap R A)) +
+          mk fun m => algebraMap R A (coeff m G) * (s.map (· ^ m)).sum := by
+      ext m
+      simp only [Multiset.map_cons, Multiset.sum_cons, coeff_mk, map_add, coeff_rescale, coeff_map]
+      ring
+    rw [Multiset.map_cons, Multiset.prod_cons, Derivation.leibniz, smul_eq_mul, smul_eq_mul, hH]
+    linear_combination rescale x (Q.map (algebraMap R A)) * ih +
+      (s.map fun x => rescale x (Q.map (algebraMap R A))).prod * hx
 
 end AlgebraCommRing
 

@@ -62,6 +62,7 @@ K-flat. K-flat resolutions of unbounded complexes are constructed in
   K-flat.
 * `CochainComplex.isKFlat_of_d_eq_zero`: complexes with zero differentials and flat terms are
   K-flat.
+* `CochainComplex.isKFlat_tensorUnit'`: the monoidal unit `𝟙_ (CochainComplex C ℤ)` is K-flat.
 
 The tensor factor containing the K-flat complex is placed on the left. In a symmetric
 monoidal category this is the usual K-flat condition, with the two factors interchanged
@@ -386,21 +387,17 @@ theorem isKFlat_of_boundedAbove_flat [HasColimitsOfShape ℕ C] [HasExactColimit
 
 end Bounded
 
-end CochainComplex
-
 section TensorUnit
 
-variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
-  [∀ X₁ X₂ : GradedObject ℤ C, GradedObject.HasTensor X₁ X₂]
-  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
-  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
-  [∀ X₁ X₂ X₃ X₄ : GradedObject ℤ C, GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
-  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
-  [∀ X₁ X₂ X₃ : GradedObject ℤ C, GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
+variable [∀ (X Y : GradedObject ℤ C), GradedObject.HasTensor X Y]
+  [∀ X, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X)]
+  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensor₁₂Tensor X Y Z]
+  [∀ (X Y Z : GradedObject ℤ C), GradedObject.HasGoodTensorTensor₂₃ X Y Z]
 
-/-- When `CochainComplex C ℤ` carries its totalized monoidal structure, its monoidal unit `𝟙_` is
-K-flat. -/
-instance CochainComplex.isKFlat_tensorUnit' : (𝟙_ (CochainComplex C ℤ)).IsKFlat :=
-  inferInstanceAs (CochainComplex.IsKFlat (HomologicalComplex.tensorUnit C (.up ℤ)))
+/-- The monoidal unit of cochain complexes, the unit `𝟙_ C` placed in degree `0`, is K-flat. -/
+instance isKFlat_tensorUnit' : (𝟙_ (CochainComplex C ℤ)).IsKFlat :=
+  ⟨fun A hA i ↦ (hA i).of_iso (λ_ A).symm⟩
 
 end TensorUnit
+
+end CochainComplex

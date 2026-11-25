@@ -1,17 +1,21 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import Mathlib.RingTheory.Flat.Localization
+public import Mathlib.RingTheory.Spectrum.Prime.Defs
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.TensorProduct.Quotient
+import TauCeti.LinearAlgebra.TensorProduct.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Quotient
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 
@@ -33,6 +37,9 @@ of an `R`-flat module over a ring is the typical case. Over semirings, flatness 
 mono-flatness, as in Mathlib's `Module.Flat`. In particular, for an ideal `J` of `B` with
 `B ⧸ J` flat over `R`, `C ⧸ J C` is flat over `R` for every flat `B`-algebra `C`.
 
+For an injective `f : N →ₗ[R] P`, an element of `M ⊗[R] N` killed by `f.lTensor M` is also killed
+by `ψ.rTensor N` for any map `ψ` from `M` to a flat module.
+
 Two injectivity statements for tensoring with a module `M` over a ring are the diagram-chasing
 steps of the local criterion for flatness. If `f.rTensor M` is injective and `F` is flat, then so
 is `(f.rTensor F).rTensor M`. If `M ⧸ I M` is flat over `R ⧸ I`, then tensoring with `M` preserves
@@ -46,7 +53,14 @@ for flatness before the Artin–Rees lemma. For any ideal `P` in place of `Iⁿ`
 holds without the `Tor₁` hypothesis when `M ⧸ P M` is flat over `R ⧸ P`, since `J ⧸ (J ⊓ P)` and
 `R ⧸ P` are both killed by `P`.
 
+If `M` is flat at every prime outside the zero locus of a scalar `a`, powers of `a` kill
+each tensor kernel induced by an injective map. The quotient-ring variant applies to maps
+between modules annihilated by the quotient ideal, as in generic-freeness arguments.
+
 ## Main results
+
+* `Module.pow_smul_eq_zero_of_flat_localizedModule`: local flatness away from `a` makes tensor
+  kernels `a`-power torsion. The quotient variant applies to annihilated modules.
 
 * `Algebra.TensorProduct.map_injective_of_flat_flat`: the tensor product of two injective algebra
   homomorphisms is injective under the flatness hypotheses of
@@ -61,6 +75,9 @@ holds without the `Tor₁` hypothesis when `M ⧸ P M` is flat over `R ⧸ P`, s
   `R`, then `C ⧸ J C` is flat over `R`.
 * `Module.Flat.rTensor_rTensor_injective`: tensoring with a flat module preserves injectivity of
   `f.rTensor M`, over any commutative semiring.
+* `Module.Flat.rTensor_apply_eq_zero_of_lTensor_apply_eq_zero`: an element of `M ⊗[R] N` killed
+  by `f.lTensor M` for an injective `f` is killed by `ψ.rTensor N` for every map `ψ` from `M` to a
+  flat module.
 * `Ideal.rTensor_injective_of_isTorsionBySet`: if `M ⧸ I M` is flat over `R ⧸ I`, tensoring
   with `M` preserves injectivity of maps into a module killed by `I`.
 * `Ideal.subtype_rTensor_injective_of_pow_smul_top_le`: if moreover `Tor₁ᴿ(R ⧸ I, M) = 0`, then
@@ -207,6 +224,17 @@ theorem Flat.rTensor_rTensor_injective {N P : Type*} [AddCommMonoid N] [Module R
   refine .of_comp (f := rightComm R P F M) ?_
   rw [← LinearEquiv.coe_coe, ← coe_comp, h]
   exact (Flat.rTensor_preserves_injective_linearMap _ hf).comp (rightComm R N F M).injective
+
+/-- Let `f : N →ₗ[R] P` be injective and `ψ : M →ₗ[R] F` be a map to a flat module. An element of
+`M ⊗[R] N` killed by `f.lTensor M` is killed by `ψ.rTensor N`, since `f.lTensor F` is injective
+and commutes with `ψ`. -/
+theorem Flat.rTensor_apply_eq_zero_of_lTensor_apply_eq_zero {N P F : Type*} [AddCommMonoid N]
+    [Module R N] [AddCommMonoid P] [Module R P] [AddCommMonoid F] [Module R F] [Flat R F]
+    (ψ : M →ₗ[R] F) {f : N →ₗ[R] P} (hf : Function.Injective f) {x : M ⊗[R] N}
+    (hx : f.lTensor M x = 0) : ψ.rTensor N x = 0 :=
+  Flat.lTensor_preserves_injective_linearMap f hf <| by
+    rw [map_zero, ← comp_apply, lTensor_comp_rTensor, ← rTensor_comp_lTensor, comp_apply, hx,
+      map_zero]
 
 end Module
 
@@ -414,3 +442,80 @@ theorem injective_comp_include_of_disjoint_nonZeroDivisors {R A B L : Type*} [Co
         (AlgEquiv.injective _) (by simpa using hc'))
 
 end RingHom
+
+namespace Module
+
+section TensorKernel
+
+open TensorProduct
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- If `M` is flat at every prime not containing `a`, powers of `a` kill every element of a
+tensor kernel induced by an injective linear map. No finiteness hypothesis is needed. -/
+theorem pow_smul_eq_zero_of_flat_localizedModule {a : R}
+    (ha : ∀ p : PrimeSpectrum R, a ∉ p.asIdeal →
+      Module.Flat (Localization.AtPrime p.asIdeal) (LocalizedModule p.asIdeal.primeCompl M))
+    {N N' : Type*} [AddCommGroup N] [Module R N] [AddCommGroup N'] [Module R N']
+    (f : N →ₗ[R] N') (hf : Function.Injective f) (t : M ⊗[R] N)
+    (ht : f.lTensor M t = 0) : ∃ n : ℕ, a ^ n • t = 0 := by
+  let I : Ideal R := LinearMap.ker (LinearMap.toSpanSingleton R _ t)
+  have haI : a ∈ I.radical := by
+    rw [Ideal.radical_eq_sInf, Submodule.mem_sInf]
+    rintro (p : Ideal R) ⟨hIp, hp⟩
+    by_contra hap
+    let _ := hp
+    have : Module.Flat (Localization.AtPrime p) (LocalizedModule p.primeCompl M) :=
+      ha ⟨p, hp⟩ hap
+    have : Module.Flat R (Localization.AtPrime p) := IsLocalization.flat _ p.primeCompl
+    have : Module.Flat R (LocalizedModule p.primeCompl M) :=
+      Module.Flat.trans R (Localization.AtPrime p) _
+    let l := LocalizedModule.mkLinearMap p.primeCompl M
+    have hg : l.rTensor N t = 0 := by
+      apply Module.Flat.lTensor_preserves_injective_linearMap f hf
+      rw [map_zero, LinearMap.lTensor_rTensor_comm, ht, map_zero]
+    obtain ⟨s, hs⟩ := (IsLocalizedModule.eq_zero_iff p.primeCompl
+      (f := AlgebraTensorModule.rTensor R N l)).mp hg
+    exact s.property (hIp hs)
+  exact haI
+
+/-- If `M` is flat over `R ⧸ p` away from `a`, powers of `a` kill tensor kernels of injective
+`R`-linear maps into modules annihilated by `p`. -/
+theorem pow_smul_eq_zero_of_flat_localizedModule_quotient (p : Ideal R) [Module (R ⧸ p) M]
+    [IsScalarTower R (R ⧸ p) M] (a : R)
+    (hflat : ∀ q : PrimeSpectrum (R ⧸ p), Ideal.Quotient.mk p a ∉ q.asIdeal →
+      Module.Flat (Localization.AtPrime q.asIdeal) (LocalizedModule q.asIdeal.primeCompl M)) :
+    ∀ (N N' : Type*) [AddCommGroup N] [Module R N] [AddCommGroup N'] [Module R N'],
+      (∀ r ∈ p, ∀ n : N', r • n = 0) →
+      ∀ f : N →ₗ[R] N', Function.Injective f → ∀ t : M ⊗[R] N,
+        f.lTensor M t = 0 → ∃ n : ℕ, a ^ n • t = 0 := by
+  intro N N' _ _ _ _ hN' f hf t ht
+  have hN : ∀ r ∈ p, ∀ n : N, r • n = 0 := fun r hr n ↦
+    hf (by rw [map_smul, hN' r hr (f n), map_zero])
+  have hNt : Module.IsTorsionBySet R N p := fun n r ↦ hN r r.property n
+  have hN't : Module.IsTorsionBySet R N' p := fun n r ↦ hN' r r.property n
+  let _ := hNt.module
+  let _ := hN't.module
+  let f' : N →ₗ[R ⧸ p] N' :=
+    { toFun := f
+      map_add' := f.map_add
+      map_smul' := by
+        rintro ⟨r⟩ n
+        exact f.map_smul r n }
+  -- The quotient-linear lift keeps the original underlying map.
+  have hf' : f'.restrictScalars R = f := rfl
+  let e := quotientScalarEquiv p M N
+  let e' := quotientScalarEquiv p M N'
+  obtain ⟨n, hn⟩ := pow_smul_eq_zero_of_flat_localizedModule
+    (a := Ideal.Quotient.mk p a) hflat f' hf (e.symm t) (by
+      apply e'.injective
+      rw [quotientScalarEquiv_lTensor, LinearEquiv.apply_symm_apply, hf', ht, map_zero])
+  refine ⟨n, ?_⟩
+  have hn' := congrArg e hn
+  rw [← map_pow, ← Ideal.Quotient.algebraMap_eq, algebraMap_smul, map_smul,
+    LinearEquiv.apply_symm_apply, map_zero] at hn'
+  exact hn'
+
+end TensorKernel
+
+end Module

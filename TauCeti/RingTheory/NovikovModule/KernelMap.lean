@@ -318,6 +318,36 @@ theorem kernelComp_apply (m : S₁ → S₀ → R) (m' : S₀ → S₂ → R) (p
     kernelComp m m' p₁ p₂ = ∑ᶠ p₀, m p₁ p₀ * m' p₀ p₂ :=
   (rfl)
 
+/-- Composing with the zero kernel gives the zero kernel. -/
+@[simp]
+theorem kernelComp_zero (m : S₁ → S₀ → R) : kernelComp m (0 : S₀ → S₂ → R) = 0 := by
+  ext p₁ p₂
+  simp [kernelComp_apply]
+
+/-- Composing the zero kernel with a kernel gives the zero kernel. -/
+@[simp]
+theorem zero_kernelComp (m' : S₀ → S₂ → R) : kernelComp (0 : S₁ → S₀ → R) m' = 0 := by
+  ext p₁ p₂
+  simp [kernelComp_apply]
+
+/-- Composing with the identity kernel `if p = q then 1 else 0` on the output generators does not
+change a kernel. -/
+@[simp]
+theorem kernelComp_ite_eq [DecidableEq S₀] (m : S₁ → S₀ → R) :
+    kernelComp m (fun p q : S₀ ↦ if p = q then 1 else 0) = m := by
+  ext p₁ p₀
+  rw [kernelComp_apply, finsum_eq_single _ p₀ fun q hq ↦ by simp [hq]]
+  simp
+
+/-- Composing with the identity kernel `if p = q then 1 else 0` on the input generators does not
+change a kernel. -/
+@[simp]
+theorem ite_eq_kernelComp [DecidableEq S₀] (m : S₀ → S₂ → R) :
+    kernelComp (fun p q : S₀ ↦ if p = q then 1 else 0) m = m := by
+  ext p₀ p₂
+  rw [kernelComp_apply, finsum_eq_single _ p₀ fun q hq ↦ by simp [Ne.symm hq]]
+  simp
+
 variable {C C' : ℝ} {m : S₁ → S₀ → R} {m' : S₀ → S₂ → R}
 
 /-- **Potential bound of a composite kernel.** If the outputs of `m` at `p₁` have potential at

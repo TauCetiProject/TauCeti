@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+public import TauCeti.Algebra.MonoidAlgebra.Supported
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
@@ -53,13 +54,13 @@ theorem gradeBy_eq_supported (f : M → ι) (i : ι) :
 `f ⁻¹' {i}`, consisting of the elements `single m 1` with `f m = i`. -/
 noncomputable def basisGradeBy (f : M → ι) (i : ι) :
     Module.Basis (f ⁻¹' {i}) R (gradeBy R f i) :=
-  (Finsupp.basisSingleOne.map (supportedEquivFinsupp (f ⁻¹' {i})).symm).map
+  (basisSupported (f ⁻¹' {i})).map
     (LinearEquiv.ofEq _ _ (gradeBy_eq_supported R f i).symm)
 
 @[simp]
 theorem coe_basisGradeBy (f : M → ι) (i : ι) (m : f ⁻¹' {i}) :
     (basisGradeBy R f i m : R[M]) = single (m : M) 1 := by
-  simp [basisGradeBy, supportedEquivFinsupp]
+  simp [basisGradeBy]
 
 instance (f : M → ι) (i : ι) : Module.Free R (gradeBy R f i) :=
   .of_basis (basisGradeBy R f i)

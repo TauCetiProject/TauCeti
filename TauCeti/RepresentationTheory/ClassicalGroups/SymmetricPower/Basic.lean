@@ -31,6 +31,7 @@ elementary symmetric polynomial the exterior power gives.
 
 ## Main results
 
+* `TauCeti.symPowerRep_scalar`: a scalar matrix `z` acts on the `d`th symmetric power by `z ^ d`.
 * `TauCeti.char_symPowerRep_diagonal` identifies the character on diagonal matrices with a
   complete homogeneous symmetric polynomial.
 
@@ -61,6 +62,19 @@ noncomputable abbrev symPowerRep :
 /-- The symmetric power of the standard representation, bundled as an object of `FDRep`. -/
 noncomputable abbrev symPowerFDRep : FDRep k (GL (Fin n) k) :=
   FDRep.of (symPowerRep k n d)
+
+variable {k n d} in
+/-- A scalar matrix `z` acts on the `d`th symmetric power of the standard representation by
+`z ^ d`. -/
+theorem symPowerRep_scalar (z : kˣ) (x : Sym[k]^d(Fin n → k)) :
+    symPowerRep k n d (GeneralLinearGroup.scalar (Fin n) z) x = (z : k) ^ d • x := by
+  have h : symPowerRep k n d (GeneralLinearGroup.scalar (Fin n) z) =
+      (z : k) ^ d • LinearMap.id := by
+    ext m
+    rw [Representation.symmetricPower_apply_tprod_of_apply_eq_smul _ (c := fun _ ↦ (z : k))
+      fun i ↦ by simp]
+    simp
+  rw [h, LinearMap.smul_apply, LinearMap.id_apply]
 
 end CommRing
 
