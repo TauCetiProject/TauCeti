@@ -27,6 +27,8 @@ infinite-dimensional space every test function is zero (Riesz).
 
 ## Main declarations
 
+* `TestFunction.coe_monoCLM`: extending a test function by zero does not change it as a
+  function.
 * `TestFunction.exists_monoCLM_eq_of_tsupport_subset`: a test function supported in a smaller
   open set is the extension by zero of a test function on that set.
 * `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a `C^n` test function on `Ω`
@@ -61,6 +63,13 @@ theorem toBoundedContinuousFunction_eq_zero (φ : 𝓓^{n}(Ω, F)) :
     (φ : E →ᵇ F) = 0 ↔ φ = 0 := by
   simpa only [map_zero, toBoundedContinuousFunctionCLM_apply] using
     ((injective_toBoundedContinuousFunctionCLM ℝ).eq_iff (a := φ) (b := 0))
+
+/-- Extending a test function on an open set `Ω' ≤ Ω` by zero to `Ω` does not change it as a
+function on `E`. -/
+theorem coe_monoCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F] [Algebra ℝ 𝕜]
+    [IsScalarTower ℝ 𝕜 F] {Ω' : Opens E} (h : Ω' ≤ Ω) (φ : 𝓓^{n}(Ω', F)) :
+    ⇑(monoCLM 𝕜 φ : 𝓓^{n}(Ω, F)) = φ := by
+  simp [h]
 
 /-- A test function on `Ω` supported in an open set `Ω' ≤ Ω` is the extension by zero of a test
 function on `Ω'`. -/

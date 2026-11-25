@@ -240,7 +240,7 @@ theorem cutoffTempered_restrictCLM {Ω' : Opens E} (h : Ω' ≤ Ω) (T : 𝓓'(�
   rw [cutoffTempered_def, cutoffTempered_def, complexPairing_restrictCLM]
   congr 1
   ext x
-  simp [h]
+  simp only [coe_monoCLM h, bilinLeftCLM_apply]
 
 end Cutoff
 
