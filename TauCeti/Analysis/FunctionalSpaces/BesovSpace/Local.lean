@@ -150,13 +150,6 @@ theorem IsLocallyMemBesovAt.sub {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyMemBesovAt
   rw [sub_eq_add_neg]
   exact hS.add (isLocallyMemBesovAt_neg_iff.2 hT)
 
-/-- A finite sum of distributions `B^s_{p,q}` near a point `x` of `Ω` is `B^s_{p,q}` near `x`. -/
-theorem IsLocallyMemBesovAt.sum {ι : Type*} {t : Finset ι} {T : ι → 𝓓'(Ω, ℂ)} (hx : x ∈ Ω)
-    (h : ∀ i ∈ t, (T i).IsLocallyMemBesovAt φ s p q x) :
-    (∑ i ∈ t, T i).IsLocallyMemBesovAt φ s p q x :=
-  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsLocallyMemBesovAt φ s p q x) (fun _ _ ↦ .add)
-    (isLocallyMemBesovAt_zero_iff.2 hx) h
-
 /-- At a point of an open subset `Ω' ≤ Ω`, the restriction `T|_{Ω'}` is `B^s_{p,q}` near `x`
 exactly when `T` is. -/
 theorem isLocallyMemBesovAt_restrictCLM_iff {Ω' : Opens E} (h : Ω' ≤ Ω) (hx : x ∈ Ω') :
@@ -186,6 +179,16 @@ theorem IsLocallyMemBesovAt.smulLeftCLM (h : T.IsLocallyMemBesovAt φ s p q x) {
     exact hT _ ((TestFunction.tsupport_smulLeftCLM_subset hg ψ).trans
       (inter_subset_right.trans hψ))⟩
 
+/-- Multiplying a tempered distribution in `B^s_{p,q}` by a test function keeps it in
+`B^s_{p,q}`. -/
+theorem _root_.TemperedDistribution.MemBesov.smulLeftCLM_testFunction {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [Fact (1 ≤ q)] {u : 𝓢'(E, F)}
+    (hu : u.MemBesov φ s p q) (ψ : 𝓓(Ω, ℂ)) :
+    (TemperedDistribution.smulLeftCLM F (ψ : E → ℂ) u).MemBesov φ s p q := by
+  simpa [TestFunction.coe_toSchwartzMapCLM] using
+    hu.smulLeftCLM (g := TestFunction.toSchwartzMapCLM ℂ ψ) (SchwartzMap.hasTemperateGrowth _)
+      fun k _ ↦ ⟨_, SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ _ k⟩
+
 /-- **Testing with one cutoff.** A distribution is `B^s_{p,q}` near `x` exactly when `χ T` lies in
 `B^s_{p,q}` for some test function `χ` equal to one near `x`. -/
 theorem isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered [Fact (1 ≤ q)] :
@@ -201,10 +204,7 @@ theorem isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered [Fact (1 ≤ q)] 
     refine ⟨{y | χ y = 1} ∩ Ω, inter_mem hχ (Ω.isOpen.mem_nhds hxΩ), inter_subset_right,
       fun ψ hψ ↦ ?_⟩
     rw [← smulLeftCLM_cutoffTempered T fun y hy ↦ (hψ hy).1]
-    simpa [TestFunction.coe_toSchwartzMapCLM] using
-      hT.smulLeftCLM (g := TestFunction.toSchwartzMapCLM ℂ ψ)
-        (SchwartzMap.hasTemperateGrowth _)
-        fun k _ ↦ ⟨_, SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ _ k⟩
+    exact hT.smulLeftCLM_testFunction ψ
 
 /-- A tempered distribution in `B^s_{p,q}` is `B^s_{p,q}` near every point, as a distribution on
 `Ω`. -/
@@ -213,9 +213,7 @@ theorem _root_.TemperedDistribution.MemBesov.isLocallyMemBesovAt_toDistribution 
     (toDistribution Ω u).IsLocallyMemBesovAt φ s p q x := by
   refine ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun ψ _ ↦ ?_⟩
   rw [cutoffTempered_toDistribution]
-  simpa [TestFunction.coe_toSchwartzMapCLM] using
-    hu.smulLeftCLM (g := TestFunction.toSchwartzMapCLM ℂ ψ) (SchwartzMap.hasTemperateGrowth _)
-      fun k _ ↦ ⟨_, SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ _ k⟩
+  exact hu.smulLeftCLM_testFunction ψ
 
 /-- **From local to global regularity.** If `T` is `B^s_{p,q}` near every point of the support of
 a test function `χ`, then `χ T ∈ B^s_{p,q}`. -/
