@@ -12,7 +12,8 @@ public import TauCeti.Algebra.Order.Group.DimensionGroup.Scale
 /-!
 # Checks for scales of ordered abelian groups
 
-These are the order-theoretic Checks of CStarClassification §3.3 for `TauCeti.IsScale`.
+Examples and non-examples of scales (`TauCeti.IsScale`) in `ℤ` and in `ℤ²` with the product
+order.
 
 * In `ℤ`, `[0, 2] = {0, 1, 2}` is a scale (the scale of `M₂`), `{0, 1, 3}` is not, being not
   hereditary (`0 ≤ 2 ≤ 3` with `2` missing), the positive cone `ℕ` is a scale (the scale of the
