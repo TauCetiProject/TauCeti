@@ -24,7 +24,9 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
 * `TauCeti.padicValNat_factorial_eq_add_sum`: Legendre's formula truncated at level `h`,
   `v_p(n!) = v_p(⌊n / pʰ⌋!) + ∑_{k = 1}^{h} ⌊n / pᵏ⌋`.
 * `TauCeti.sub_one_mul_padicValNat_factorial_pow`: Legendre's formula for `(pᵏ)!`,
-  `(p - 1) v_p((pᵏ)!) = pᵏ - 1`.
+  `(p - 1) v_p((pᵏ)!) = pᵏ - 1`, and its real form `TauCeti.cast_multiplicity_factorial_pow`.
+* `TauCeti.multiplicity_factorial_lt_div`, `TauCeti.multiplicity_factorial_le_div`: Legendre's
+  bound `v_p(n!) < n / (p - 1)` for `n ≠ 0`, and its non-strict form for every `n`.
 * `TauCeti.norm_factorial_eq_norm_factorial_div_mul_pow`,
   `TauCeti.factorial_dvd_factorial_div_mul_pow`: its consequence that `n!` has the norm of, and
   divides, `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
@@ -74,6 +76,32 @@ theorem sub_one_mul_padicValNat_factorial_pow (p : ℕ) [hp : Fact p.Prime] (k :
     Nat.digits_base_pow_mul hp.out.one_lt one_pos, Nat.digits_of_lt p 1 one_ne_zero hp.out.one_lt]
   simp
 
+/-- **Legendre's formula for `(pᵏ)!`, in `ℝ`.** `v_p((pᵏ)!) = (pᵏ - 1) / (p - 1)`. -/
+theorem cast_multiplicity_factorial_pow (p : ℕ) [hp : Fact p.Prime] (k : ℕ) :
+    (multiplicity p (p ^ k).factorial : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) := by
+  have h : (((p - 1) * multiplicity p (p ^ k).factorial : ℕ) : ℝ) = ((p ^ k - 1 : ℕ) : ℝ) := by
+    rw [← Nat.padicValNat_def, sub_one_mul_padicValNat_factorial_pow p k]
+  push_cast [Nat.cast_sub hp.out.one_le, Nat.cast_sub (Nat.one_le_pow k p hp.out.pos)] at h
+  rw [eq_div_iff (sub_pos.mpr (by exact_mod_cast hp.out.one_lt : (1 : ℝ) < p)).ne']
+  linarith
+
+/-- **Legendre's bound.** `v_p(n!) < n / (p - 1)` for `n ≠ 0`, since the base-`p` digit sum of
+`n` is positive. -/
+theorem multiplicity_factorial_lt_div (p : ℕ) [hp : Fact p.Prime] {n : ℕ} (hn : n ≠ 0) :
+    (multiplicity p n.factorial : ℝ) < n / ((p : ℝ) - 1) := by
+  have h : (((p - 1) * multiplicity p n.factorial : ℕ) : ℝ) < n := by
+    exact_mod_cast sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn
+  push_cast [Nat.cast_sub hp.out.one_le] at h
+  rw [lt_div_iff₀ (sub_pos.mpr (by exact_mod_cast hp.out.one_lt : (1 : ℝ) < p))]
+  linarith
+
+/-- **Legendre's bound**, non-strict form: `v_p(n!) ≤ n / (p - 1)` for every `n`. -/
+theorem multiplicity_factorial_le_div (p : ℕ) [Fact p.Prime] (n : ℕ) :
+    (multiplicity p n.factorial : ℝ) ≤ n / ((p : ℝ) - 1) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · exact (multiplicity_factorial_lt_div p hn).le
+
 open Nat in
 /-- In `ℤ_p`, `n!` has the norm of `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`: by Legendre's formula
 both have valuation `v_p(n!)`. -/
@@ -107,18 +135,10 @@ variable {p : ℕ} [Fact p.Prime]
 formula. This gives the factorial denominator bound for the p-adic exponential. -/
 theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
     (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : ℚ_[p])‖ := by
-  have hp := (Fact.out : p.Prime)
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.one_lt
   rw [norm_natCast_eq_zpow (factorial_ne_zero _), ← Real.rpow_intCast]
-  simp only [Int.cast_neg, Int.cast_natCast]
-  refine Real.rpow_le_rpow_of_exponent_le hp1.le (neg_le_neg ?_)
-  rw [le_div_iff₀ (sub_pos.mpr hp1)]
-  have hleg : (p - 1) * padicValNat p n.factorial ≤ n := by
-    rw [Nat.padicValNat_def, Nat.Prime.sub_one_mul_multiplicity_factorial hp]
-    exact Nat.sub_le _ _
-  have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
-    rw [Nat.cast_sub hp.one_le, Nat.cast_one]
-  simpa only [Nat.cast_mul, hcast, mul_comm] using (Nat.cast_le (α := ℝ)).mpr hleg
+  simp only [Int.cast_neg, Int.cast_natCast, Nat.padicValNat_def]
+  exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast (Fact.out : p.Prime).one_le)
+    (neg_le_neg (TauCeti.multiplicity_factorial_le_div p n))
 
 /-- The factorial of `p k` has `p`-adic norm `p ^ (-k) ‖k!‖`: by Legendre's formula, passing from
 `k!` to `(p k)!` raises the valuation by `k`. -/

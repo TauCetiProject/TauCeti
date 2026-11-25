@@ -80,6 +80,8 @@ are the constant terms of the logarithm of the characteristic series of the Witt
   (`TauCeti.coeff_logOf_aHatSeries_of_odd`), and `TauCeti.coeff_two_logOf_aHatSeries` and
   `TauCeti.coeff_four_logOf_aHatSeries` give the `X²`- and `X⁴`-coefficients `-1/24` and
   `1/2880`.
+* `TauCeti.X_mul_derivative_hirzebruchLSeries`: the logarithmic derivative of the L series,
+  `X L'(X) = L(X) (1 + L(2X) - 2 L(X))`.
 
 ## References
 
@@ -417,9 +419,7 @@ theorem eq_hirzebruchLSeries_iff {f : A⟦X⟧} :
   refine ⟨fun h ↦ h ▸ hirzebruchLSeries_mul_sub A, fun h ↦ ?_⟩
   -- `e^X + e^{-X}` has constant coefficient `2`, hence is a unit.
   have hu : IsUnit (exp A + rescale (-1) (exp A)) := by
-    rw [isUnit_iff_constantCoeff, map_add, constantCoeff_rescale, constantCoeff_exp,
-      one_add_one_eq_two, ← map_ofNat (algebraMap ℚ A) 2]
-    exact (isUnit_iff_ne_zero.mpr (two_ne_zero' ℚ)).map _
+    simpa using isUnit_rescale_exp_add_rescale_neg_exp (1 : A)
   refine mul_X_cancel (hu.mul_right_cancel ?_)
   linear_combination hirzebruchLSeries A * h - f * hirzebruchLSeries_mul_sub A
 
@@ -468,6 +468,47 @@ theorem coeff_six_hirzebruchLSeries :
     norm_num [Finset.sum_range_succ, Nat.choose, bernoulli'_eq_zero_of_odd (n := 5) (by decide)]
   rw [coeff_hirzebruchLSeries A (by decide), h]
   norm_num [Nat.factorial]
+
+/-- **The logarithmic derivative of the L series**: `X L'(X) = L(X) (1 + L(2X) - 2 L(X))`. As
+functions, `x (log (x / tanh x))' = 1 - 2x / sinh 2x`, and `2x / tanh 2x - x / tanh x = x tanh x`.
+Applied to the series `P` with `P(X²) = L(X)`, this computes the coefficient of the top Pontryagin
+class in each L polynomial. -/
+theorem X_mul_derivative_hirzebruchLSeries :
+    X * d⁄dX (hirzebruchLSeries A) =
+      hirzebruchLSeries A * (1 + rescale 2 (hirzebruchLSeries A) - 2 * hirzebruchLSeries A) := by
+  set L := hirzebruchLSeries A
+  set e := exp A
+  set k := rescale (-1) e
+  have h₁ : L * (e - k) = X * (e + k) := hirzebruchLSeries_mul_sub A
+  have he : d⁄dX e = e := derivative_exp A
+  have hk : d⁄dX k = -k := by
+    simp [k, he, derivative_rescale]
+  -- Differentiating `L (e - k) = X (e + k)`, with `e' = e` and `k' = -k`.
+  have hd : X * d⁄dX L * (e - k) + X * L * (e + k) = X * (e + k) + X * X * (e - k) := by
+    have h := congrArg (fun f ↦ X * d⁄dX f) h₁
+    simp only [Derivation.leibniz, smul_eq_mul, map_sub, map_add, he, hk, derivative_X] at h
+    linear_combination h
+  -- The doubled argument: `L(2X) (e² - k²) = 2X (e² + k²)`.
+  have hee : rescale 2 e = e * e := by
+    simpa [e] using (rescale_exp_mul_self (1 : A)).symm
+  have hkk : rescale 2 k = k * k := by
+    simp only [k, e, rescale_rescale, rescale_exp_mul_self]
+    norm_num
+  have h₂ : rescale 2 L * (e * e - k * k) = 2 * X * (e * e + k * k) := by
+    simpa [rescale_X, hee, hkk, map_ofNat] using congrArg (rescale (2 : A)) h₁
+  set D := X * d⁄dX L - L * (1 + rescale 2 L - 2 * L)
+  have key : D * (e - k) ^ 2 * (e + k) = 0 := by
+    linear_combination (e - k) * (e + k) * hd - L * (e - k) * h₂ +
+      (-(e - k) * (e + k) + 2 * (e + k) * (L * (e - k) + X * (e + k)) - X * (e + k) ^ 2 -
+        2 * X * (e * e + k * k)) * h₁
+  -- Multiplying by `L²` turns `(e - k)²` into `X² (e + k)²`.
+  have key' : D * (e + k) ^ 3 * X * X = 0 := by
+    linear_combination L ^ 2 * key - D * (e + k) * (X * (e + k) + L * (e - k)) * h₁
+  have hu : IsUnit ((e + k) ^ 3) := by
+    simpa using (isUnit_rescale_exp_add_rescale_neg_exp (1 : A)).pow 3
+  have hX : D * (e + k) ^ 3 = 0 :=
+    mul_X_cancel (mul_X_cancel (by simpa only [zero_mul] using key'))
+  exact sub_eq_zero.1 (hu.mul_left_eq_zero.1 hX)
 
 /-- Hirzebruch's L series commutes with ring homomorphisms between `ℚ`-algebras. -/
 @[simp]

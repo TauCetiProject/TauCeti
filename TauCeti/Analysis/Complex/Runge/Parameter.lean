@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.Complex.Runge.Operator
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Complex.MixedDeriv
-import TauCeti.Analysis.Complex.Runge.Operator
 
 /-!
 # Finite-rank Runge operators with parameters
@@ -36,6 +37,14 @@ parameters.
   holomorphic in the complex variable (`ContDiffOn.differentiableOn_iteratedFDeriv_partial`), so
   the vector-valued form of the operator estimate (`TauCeti.norm_sub_sum_smul_le_of_scalar`)
   applies to them.
+* `TauCeti.norm_iteratedFDeriv_sub_sum_smul_apply_le`: the same estimate for the values of these
+  derivatives in fixed directions `m : Fin k → X`, with the bound on `L` taken for the same
+  directions. Evaluation at `m` commutes with complex scalars, so it is again holomorphic in the
+  complex variable. For coordinate vectors `m` this is the estimate
+  `sup_K ‖∂^α (h - A h)‖ ≤ ε sup_L ‖∂^α h‖` for every partial derivative `∂^α` of order `k`.
+* `TauCeti.exists_finite_rank_runge_operator_with_param`: a finite-rank Runge operator whose
+  directional estimate holds for all parameter derivatives of all smooth families of holomorphic
+  functions, with data independent of the family, the order, the point and the directions.
 
 These estimates control all parameter derivatives of the Runge corrections when solutions of
 the inhomogeneous Cauchy–Riemann equation depending smoothly or holomorphically on parameters
@@ -43,7 +52,7 @@ are built by exhaustion.
 
 ## References
 
-* A. Rainer, *Advanced Complex Analysis*, Theorems 10.3 and 11.1.
+* A. Rainer, *Advanced Complex Analysis*, Theorems 10.3, 11.1 and 12.2.
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed.,
   Theorem 1.3.1.
 
@@ -101,5 +110,70 @@ theorem norm_iteratedFDeriv_sub_sum_smul_le {X : Type*} [NormedAddCommGroup X]
   simp_rw [iteratedFDeriv_const_smul_apply' (hslice (hζ _))]
   exact norm_sub_sum_smul_le_of_scalar hA
     (hh.differentiableOn_iteratedFDeriv_partial hS hU hhol hk hx) hB hhB hz
+
+/-- **Parameter derivatives under the finite-rank Runge operator, in fixed directions.** Under
+the hypotheses of `TauCeti.norm_iteratedFDeriv_sub_sum_smul_le`, for directions `m : Fin k → X`
+the value at `m` of the `k`-th parameter derivative at `x` of `h - A h` at `z ∈ K` has norm at most
+`ε * B` for any nonnegative bound `B` on `L` for the value at `m` of the `k`-th parameter
+derivative of `h` at `x`. For coordinate vectors `m` this is the estimate for a partial derivative
+of order `k`. -/
+theorem norm_iteratedFDeriv_sub_sum_smul_apply_le {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {S : Set X} {h : X × ℂ → G} {n : WithTop ℕ∞}
+    (hA : ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U → ∀ B : ℝ, 0 ≤ B → (∀ y ∈ L, ‖f y‖ ≤ B) →
+      ∀ z ∈ K, ‖f z - ∑ j, w j * f (ζ j) * g j z‖ ≤ ε * B)
+    (hS : IsOpen S) (hU : IsOpen U) (hζ : ∀ j, ζ j ∈ U) (hKU : K ⊆ U)
+    (hh : ContDiffOn ℝ n h (S ×ˢ U)) (hhol : ∀ x ∈ S, DifferentiableOn ℂ (fun z ↦ h (x, z)) U)
+    {k : ℕ} (hk : k + 1 ≤ n) {x : X} (hx : x ∈ S) (m : Fin k → X) {B : ℝ} (hB : 0 ≤ B)
+    (hhB : ∀ y ∈ L, ‖iteratedFDeriv ℝ k (fun x' ↦ h (x', y)) x m‖ ≤ B) {z : ℂ} (hz : z ∈ K) :
+    ‖iteratedFDeriv ℝ k (fun x' ↦ h (x', z) - ∑ j, (w j * g j z) • h (x', ζ j)) x m‖ ≤
+      ε * B := by
+  have hslice {y : ℂ} (hy : y ∈ U) : ContDiffAt ℝ k (fun x' ↦ h (x', y)) x :=
+    ((hh.contDiffAt ((hS.prod hU).mem_nhds ⟨hx, hy⟩)).of_le
+      (le_trans (by exact_mod_cast Nat.le_succ k) hk)).comp x
+      (contDiffAt_id.prodMk contDiffAt_const)
+  -- Parameter derivatives commute with the operator, whose data do not depend on `x`.
+  rw [fun_iteratedFDeriv_sub_apply (hslice (hKU hz))
+      (ContDiffAt.sum fun j _ ↦ (hslice (hζ j)).const_smul _),
+    iteratedFDeriv_fun_sum_apply fun j _ ↦ (hslice (hζ j)).const_smul _]
+  simp_rw [iteratedFDeriv_const_smul_apply' (hslice (hζ _))]
+  simp only [sub_apply, sum_apply, smul_apply]
+  -- Evaluation at `m` commutes with complex scalars, so `D_xᵏ h (x, ·) m` is holomorphic.
+  exact norm_sub_sum_smul_le_of_scalar hA
+    (f := fun y ↦ iteratedFDeriv ℝ k (fun x' ↦ h (x', y)) x m)
+    ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ X) G m).comp_differentiableOn_of_map_smul
+      (fun _ _ ↦ by simp) (hh.differentiableOn_iteratedFDeriv_partial hS hU hhol hk hx))
+    hB hhB hz
+
+/-- **The finite-rank Runge operator on smooth families of holomorphic functions.** For a Runge
+compact pair `(Ω, K)` and an open neighbourhood `U ⊇ K`, there is a compact neighbourhood `L` of
+`K` inside `U ∩ Ω` such that for every `ε > 0` there are nodes `ζ j ∈ interior L`, weights `w j`
+and `Ω`-holomorphic functions `g j` with the following property. For every family
+`h : X × ℂ → G`, jointly `C^n` on `S ×ˢ U` with `S` open and holomorphic in its complex variable
+on `U`, every `k` with `k + 1 ≤ n`, every `x ∈ S` and all directions `m : Fin k → X`, the value at
+`m` of the `k`-th parameter derivative of `h - A h`, where
+`A h (x, z) = ∑ j, (w j * g j z) • h (x, ζ j)`, is bounded on `K` by `ε` times any nonnegative
+bound on `L` of the value at `m` of the same derivative of `h`. For coordinate vectors `m` this
+bounds each partial derivative of order `k` of `h - A h` by `ε` times the supremum on `L` of the
+same partial derivative of `h`. The data do not depend on the family. -/
+theorem exists_finite_rank_runge_operator_with_param {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {Ω : Set ℂ} (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U)
+    (hKU : K ⊆ U) :
+    ∃ L : Set ℂ, IsCompact L ∧ K ⊆ interior L ∧ L ⊆ U ∩ Ω ∧
+      ∀ ε : ℝ, 0 < ε →
+        ∃ N : ℕ, ∃ ζ : Fin N → ℂ, ∃ w : Fin N → ℂ, ∃ g : Fin N → ℂ → ℂ,
+          (∀ j, ζ j ∈ interior L) ∧ (∀ j, DifferentiableOn ℂ (g j) Ω) ∧
+          ∀ (n : WithTop ℕ∞) (S : Set X) (h : X × ℂ → G), IsOpen S →
+            ContDiffOn ℝ n h (S ×ˢ U) →
+            (∀ x ∈ S, DifferentiableOn ℂ (fun z ↦ h (x, z)) U) →
+            ∀ k : ℕ, k + 1 ≤ n → ∀ x ∈ S, ∀ m : Fin k → X, ∀ B : ℝ, 0 ≤ B →
+              (∀ y ∈ L, ‖iteratedFDeriv ℝ k (fun x' ↦ h (x', y)) x m‖ ≤ B) →
+              ∀ z ∈ K, ‖iteratedFDeriv ℝ k
+                (fun x' ↦ h (x', z) - ∑ j, (w j * g j z) • h (x', ζ j)) x m‖ ≤ ε * B := by
+  obtain ⟨L, hL, hKL, hLUΩ, hA⟩ := exists_finite_rank_runge_operator hRunge hU hKU
+  refine ⟨L, hL, hKL, hLUΩ, fun ε hε ↦ ?_⟩
+  obtain ⟨N, ζ, w, g, hζ, hg, hA⟩ := hA ε hε
+  refine ⟨N, ζ, w, g, hζ, hg, fun n S h hS hh hhol k hk x hx m B hB hhB z hz ↦ ?_⟩
+  exact norm_iteratedFDeriv_sub_sum_smul_apply_le hA hS hU
+    (fun j ↦ (hLUΩ (interior_subset (hζ j))).1) hKU hh hhol hk hx m hB hhB hz
 
 end TauCeti

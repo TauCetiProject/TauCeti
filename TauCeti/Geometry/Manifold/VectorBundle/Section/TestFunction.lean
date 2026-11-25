@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
 # Native test functions in bundle charts
@@ -64,11 +65,6 @@ private theorem testSection_eq_zero (φ : 𝓓^{n}(⟨c.target, c.open_target⟩
     simp [testSection, hs, image_eq_zero_of_notMem_tsupport hφ]
   · simp [testSection, hs]
 
-omit [T2Space M] in
-private theorem isCompact_symm_image_tsupport (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
-    IsCompact (c.symm '' tsupport φ) :=
-  φ.hasCompactSupport.image_of_continuousOn (c.continuousOn_symm.mono φ.tsupport_subset)
-
 include hc hce in
 private theorem contMDiff_testSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
     ContMDiff I (I.prod 𝓘(ℝ, F)) n (fun x ↦ TotalSpace.mk' F x (testSection e c φ x)) := by
@@ -81,7 +77,7 @@ private theorem contMDiff_testSection (φ : 𝓓^{n}(⟨c.target, c.open_target�
     rw [testSection_of_mem e c φ hy, ← e.continuousLinearMapAt_apply_of_mem (R := ℝ) (hce hy),
       e.continuousLinearMapAt_symmL (hce hy)]
     rfl
-  · have hclosed := (isCompact_symm_image_tsupport c φ).isClosed
+  · have hclosed := (c.isCompact_symm_image_tsupport φ).isClosed
     have hx' : x ∉ c.symm '' tsupport φ := by
       rintro ⟨y, hy, rfl⟩
       exact hx (c.map_target (φ.tsupport_subset hy))
@@ -93,7 +89,7 @@ private theorem contMDiff_testSection (φ : 𝓓^{n}(⟨c.target, c.open_target�
 private theorem tsupport_testSection_subset (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
     (⟨testSection e c φ, contMDiff_testSection e c hc hce φ⟩ : Cₛ^n⟮I; F, V⟯).tsupport ⊆
       c.symm '' tsupport φ := by
-  apply (ContMDiffSection.tsupport_subset_iff (isCompact_symm_image_tsupport c φ).isClosed).2
+  apply (ContMDiffSection.tsupport_subset_iff (c.isCompact_symm_image_tsupport φ).isClosed).2
   exact fun x hx ↦ testSection_eq_zero e c φ hx
 
 /-- Extend a native test function through a coordinate chart and a bundle frame, by zero
@@ -104,7 +100,7 @@ def chartTestSection : 𝓓^{n}(⟨c.target, c.open_target⟩, F) →ₗ[ℝ]
   toFun φ := by
     let s : Cₛ^n⟮I; F, V⟯ := ⟨testSection e c φ, contMDiff_testSection e c hc hce φ⟩
     refine ⟨s, ContMDiffSection.mem_compactlySupported.2 ?_⟩
-    exact (isCompact_symm_image_tsupport c φ).of_isClosed_subset s.isClosed_tsupport
+    exact (c.isCompact_symm_image_tsupport φ).of_isClosed_subset s.isClosed_tsupport
       (tsupport_testSection_subset e c hc hce φ)
   map_add' φ ψ := by
     apply Subtype.ext

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.DerivedCategory.RightDerivedFunctor.Plus
 public import TauCeti.CategoryTheory.Abelian.AcyclicResolution
 public import TauCeti.Topology.Sheaves.Flasque.Locality
 public import TauCeti.Topology.Sheaves.Flasque.Module
@@ -19,11 +20,14 @@ cokernel of a monomorphism between flasque sheaves is flasque, and `Γ` keeps a 
 `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `F₁` flasque exact
 (`CategoryTheory.ShortComplex.ShortExact.map_Γ_of_isFlasque`). Hence a
 flasque resolution `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯` computes the right derived functors of `Γ`:
-`RⁿΓ(F) ≅ Hⁿ(Γ(K))`. No hypothesis is made on `X`.
+`RⁿΓ(F) ≅ Hⁿ(Γ(K))`. More generally, a bounded below complex `K` of flasque sheaves computes the
+bounded below right derived functor of `Γ`: the natural map `Γ(K) ⟶ RΓ(K)` is an isomorphism in
+the bounded below derived category of `R`-modules. No hypothesis is made on `X`.
 
 The right derived functors of `Γ` are Mathlib's `CategoryTheory.Functor.rightDerived`, defined
-through injective resolutions. Additivity of `Γ`, which they require, is kept as an instance
-argument.
+through injective resolutions, and its bounded below right derived functor is Mathlib's
+`CategoryTheory.Functor.rightDerivedFunctorPlus`. Additivity of `Γ`, which they require, and the
+existence of the derived categories are kept as instance arguments.
 
 ## Main definitions and results
 
@@ -35,13 +39,15 @@ argument.
   by `CategoryTheory.Sheaf.toRightDerivedZero_app_comp_rightDerivedΓObjIsoOfIsFlasque_hom`.
 * `CategoryTheory.Sheaf.rightDerivedΓIsoOfIsFlasque`: the natural isomorphism for a functorial
   flasque resolution.
+* `CategoryTheory.Sheaf.isIso_rightDerivedFunctorPlusUnit_app_Γ_of_isFlasque`: for a bounded below
+  complex `K` of flasque sheaves, `Γ(K) ⟶ RΓ(K)` is an isomorphism in `D⁺(R)`.
 
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Proposition III.1.2A and
   Lemma III.2.4.
 * The Stacks Project, Cohomology of Sheaves, Lemma 20.12.3 (tag 09SY), and Derived Categories,
-  Lemma 13.15.6 (tag 05T8).
+  Lemma 13.15.6 (tag 05T8) and Lemma 13.16.7 (tag 015E).
 -/
 
 public section
@@ -152,5 +158,22 @@ lemma rightDerivedΓIsoOfIsFlasque_app
     (rightDerivedΓIsoOfIsFlasque K ι hK n).app F =
       rightDerivedΓObjIsoOfIsFlasque (ι.app F) (hK F) n := by
   simp [rightDerivedΓIsoOfIsFlasque, rightDerivedΓObjIsoOfIsFlasque]
+
+variable [HasDerivedCategory (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))]
+  [HasDerivedCategory (ModuleCat.{u} R)]
+
+/-- **Bounded below flasque complexes compute the derived functor of global sections.** For a
+bounded below complex `L` of flasque sheaves of `R`-modules, the natural map `Γ(L) ⟶ RΓ(L)` to
+the bounded below right derived functor of global sections is an isomorphism in the bounded below
+derived category of `R`-modules. -/
+theorem isIso_rightDerivedFunctorPlusUnit_app_Γ_of_isFlasque
+    (L : CochainComplex.Plus (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)))
+    (hL : ∀ n, TopCat.Presheaf.IsFlasque (L.obj.X n).obj) :
+    IsIso ((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).rightDerivedFunctorPlusUnit.app
+      L) :=
+  Functor.isIso_rightDerivedFunctorPlusUnit_app _ (isFlasque X _) isFlasque_X₃
+    shortExact_map_Γ_of_isFlasque
+    (fun _ _ ↦ isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _)) L
+    (fun n ↦ isFlasque_iff.mpr (hL n))
 
 end CategoryTheory.Sheaf
