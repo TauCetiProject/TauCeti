@@ -56,14 +56,11 @@ theorem length_ker_piece_add_length_piece_add (G : InternalGrading R M ι)
     (U.mkQ.restrictScalars R).restrict fun _ hx ↦ by
       rw [LinearMap.restrictScalars_apply, Submodule.mkQ_apply]
       exact H.mk_mem_quotient_piece U _ hx
-  have hf₁ (z) : (f₁ z : M) = ((z : LinearMap.ker f) : M) :=
-    (LinearMap.coe_restrict_apply _ z).trans <|
-      (LinearMap.restrictScalars_apply _ _ _).trans (Submodule.subtype_apply _)
-  have hf₂ (x) : (f₂ x : N) = f x :=
-    (LinearMap.coe_restrict_apply _ x).trans (LinearMap.restrictScalars_apply _ _ _)
-  have hf₃ (x) : (f₃ x : N ⧸ U) = Submodule.Quotient.mk (x : N) :=
-    (LinearMap.coe_restrict_apply _ x).trans <|
-      (LinearMap.restrictScalars_apply _ _ _).trans (Submodule.mkQ_apply _ _)
+  -- `LinearMap.restrict_apply` does not match `f₁` syntactically through the kernel's module
+  -- structure, so `simp` unfolds `LinearMap.restrict` there.
+  have hf₁ (z) : (f₁ z : M) = ((z : LinearMap.ker f) : M) := by simp [f₁, LinearMap.restrict]
+  have hf₂ (x) : (f₂ x : N) = f x := by simp [f₂]
+  have hf₃ (x) : (f₃ x : N ⧸ U) = Submodule.Quotient.mk (x : N) := by simp [f₃]
   refine length_add_length_eq_length_add_length_of_exact (f₁ := f₁) (f₂ := f₂) (f₃ := f₃)
     (fun z₁ z₂ h ↦ ?_) (fun y ↦ ?_) (fun y ↦ ?_) (fun y ↦ ?_)
   · exact Subtype.ext (Subtype.ext (by rw [← hf₁, ← hf₁, h]))
