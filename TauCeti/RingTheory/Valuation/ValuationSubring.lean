@@ -18,7 +18,8 @@ valuation subring back along a field homomorphism `f` detects nonunits through `
 valuation subring dominates its pullback, and conversely a valuation subring pulls back to any
 valuation subring that it dominates through `f`. Units of a valuation subring stay units in any
 valuation subring whose pullback contains it, and among finitely many elements of the field, not
-all zero, one of largest valuation divides all the others in the valuation subring. The
+all zero, one of largest valuation divides all the others in the valuation subring. A ring
+embedded in a field is itself a field if no proper valuation subring contains its image. The
 valuation ring of a surjective valuation is a proper subring once the units of its target are
 nontrivial.
 
@@ -39,6 +40,8 @@ subfield `K` do not change the restriction to `K`.
 * `ValuationSubring.comap_eq_of_map_maximalIdeal_le`: a valuation subring `W` of `L` pulls back to
   a valuation subring `V` of `K` when `V` maps through a ring `S` into `W`, with its maximal ideal
   landing in an ideal of `S` that is sent into the nonunits of `W`.
+* `RingHom.isField_of_forall_valuationSubring_eq_top`: a subring of a field lying in no proper
+  valuation subring is a field.
 * `ValuationSubring.pointwise_smul_eq_comap`: the translate `g • A` is the pullback of `A` along
   the action of `g⁻¹`.
 * `ValuationSubring.comap_algebraMap_pointwise_smul`: translates of `A` by automorphisms fixing
@@ -185,6 +188,22 @@ theorem exists_valuationSubring_mem_and_image_subset_nonunits {R L : Type*} [Com
   obtain ⟨W, hrange, hnon⟩ := Ideal.image_subset_nonunits_valuationSubring _ hQ'
   exact ⟨W, fun x ↦ hrange ⟨x, rfl⟩, fun x hx ↦
     hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩⟩
+
+/-- A ring embedded in a field `L` is a field if its image lies in no valuation subring of `L`
+other than `L` itself. -/
+theorem isField_of_forall_valuationSubring_eq_top {R L : Type*} [CommRing R] [Field L]
+    (ψ : R →+* L) (hψ : Function.Injective ψ)
+    (h : ∀ W : ValuationSubring L, (∀ x, ψ x ∈ W) → W = ⊤) : IsField R := by
+  have : Nontrivial R := ψ.domain_nontrivial
+  by_contra hR
+  obtain ⟨I, hbot, htop⟩ := Ring.not_isField_iff_exists_ideal_bot_lt_and_lt_top.mp hR
+  obtain ⟨x, hxI, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hbot.ne'
+  obtain ⟨W, hrange, hnon⟩ := ψ.exists_valuationSubring_mem_and_image_subset_nonunits htop.ne
+    (by simp [(injective_iff_ker_eq_bot ψ).mp hψ])
+  have := (h W hrange ▸ hnon x hxI : ψ x ∈ (⊤ : ValuationSubring L).nonunits)
+  rw [ValuationSubring.mem_nonunits_iff_or] at this
+  exact this.elim (fun h0 ↦ hx0 (hψ (h0.trans (map_zero ψ).symm)))
+    fun h' ↦ h' (ValuationSubring.mem_top _)
 
 end RingHom
 

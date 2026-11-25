@@ -50,6 +50,8 @@ and empty blocks.
 
 * `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`, `Matrix.toBlocks₂₁_mul`,
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
+* `Matrix.toBlocks₁₁_add`, `Matrix.toBlocks₁₁_sub`, `Matrix.toBlocks₁₁_smul` and their analogues
+  for the other three blocks: taking a block is linear.
 * `Matrix.toBlocks₁₁_one`, `Matrix.toBlocks₁₁_map` and their companions: the blocks of the
   identity matrix and of an entrywise image.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
@@ -139,6 +141,72 @@ public theorem toBlocks₁₁_mul_of_toBlocks₂₁_eq_zero {β : Type*} [NonUni
   rw [toBlocks₁₁_mul, hC, Matrix.mul_zero, add_zero]
 
 end ToBlocksMul
+
+section ToBlocksLinear
+
+variable {n o l m R α : Type*}
+
+/-- The upper-left block of a sum is the sum of the upper-left blocks. -/
+@[simp]
+public theorem toBlocks₁₁_add [Add α] (A B : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (A + B).toBlocks₁₁ = A.toBlocks₁₁ + B.toBlocks₁₁ := rfl
+
+/-- The upper-right block of a sum is the sum of the upper-right blocks. -/
+@[simp]
+public theorem toBlocks₁₂_add [Add α] (A B : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (A + B).toBlocks₁₂ = A.toBlocks₁₂ + B.toBlocks₁₂ := rfl
+
+/-- The lower-left block of a sum is the sum of the lower-left blocks. -/
+@[simp]
+public theorem toBlocks₂₁_add [Add α] (A B : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (A + B).toBlocks₂₁ = A.toBlocks₂₁ + B.toBlocks₂₁ := rfl
+
+/-- The lower-right block of a sum is the sum of the lower-right blocks. -/
+@[simp]
+public theorem toBlocks₂₂_add [Add α] (A B : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (A + B).toBlocks₂₂ = A.toBlocks₂₂ + B.toBlocks₂₂ := rfl
+
+/-- The upper-left block of a difference is the difference of the upper-left blocks. -/
+@[simp]
+public theorem toBlocks₁₁_sub [Sub α] (A B : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (A - B).toBlocks₁₁ = A.toBlocks₁₁ - B.toBlocks₁₁ := rfl
+
+/-- The upper-right block of a difference is the difference of the upper-right blocks. -/
+@[simp]
+public theorem toBlocks₁₂_sub [Sub α] (A B : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (A - B).toBlocks₁₂ = A.toBlocks₁₂ - B.toBlocks₁₂ := rfl
+
+/-- The lower-left block of a difference is the difference of the lower-left blocks. -/
+@[simp]
+public theorem toBlocks₂₁_sub [Sub α] (A B : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (A - B).toBlocks₂₁ = A.toBlocks₂₁ - B.toBlocks₂₁ := rfl
+
+/-- The lower-right block of a difference is the difference of the lower-right blocks. -/
+@[simp]
+public theorem toBlocks₂₂_sub [Sub α] (A B : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (A - B).toBlocks₂₂ = A.toBlocks₂₂ - B.toBlocks₂₂ := rfl
+
+/-- The upper-left block of a scalar multiple is the scalar multiple of the upper-left block. -/
+@[simp]
+public theorem toBlocks₁₁_smul [SMul R α] (r : R) (A : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (r • A).toBlocks₁₁ = r • A.toBlocks₁₁ := rfl
+
+/-- The upper-right block of a scalar multiple is the scalar multiple of the upper-right block. -/
+@[simp]
+public theorem toBlocks₁₂_smul [SMul R α] (r : R) (A : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (r • A).toBlocks₁₂ = r • A.toBlocks₁₂ := rfl
+
+/-- The lower-left block of a scalar multiple is the scalar multiple of the lower-left block. -/
+@[simp]
+public theorem toBlocks₂₁_smul [SMul R α] (r : R) (A : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (r • A).toBlocks₂₁ = r • A.toBlocks₂₁ := rfl
+
+/-- The lower-right block of a scalar multiple is the scalar multiple of the lower-right block. -/
+@[simp]
+public theorem toBlocks₂₂_smul [SMul R α] (r : R) (A : Matrix (n ⊕ o) (l ⊕ m) α) :
+    (r • A).toBlocks₂₂ = r • A.toBlocks₂₂ := rfl
+
+end ToBlocksLinear
 
 section ToBlocksOne
 

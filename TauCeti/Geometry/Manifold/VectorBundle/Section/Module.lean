@@ -57,6 +57,10 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω} {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
 
+/-- On an empty base manifold, `C^n` sections form a subsingleton. -/
+instance subsingleton_of_isEmpty [IsEmpty M] : Subsingleton Cₛ^n⟮I; F, V⟯ :=
+  coe_injective.subsingleton
+
 section Module
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]

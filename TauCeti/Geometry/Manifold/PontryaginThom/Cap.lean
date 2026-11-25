@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Cap.CrossRel
 public import TauCeti.Geometry.Manifold.PontryaginThom.Basic
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.AlgebraicTopology.Cohomology.Point
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 
 /-!
@@ -61,6 +62,7 @@ and `pr₂_*((o × x) ⌢ pr₁^* u) = ⟨u, o⟩ • x` because `V` is contract
 ## Main definitions
 
 * `TauCeti.onePointThomPair V`: the pair `(V⁺, V⁺ ∖ 0)`.
+* `TauCeti.IsFramedTube.tubeMap`: the tube with its factors exchanged, `(v, x) ↦ τ (x, v)`.
 * `TauCeti.IsFramedTube.tubePairMap`: the tube as a map of pairs
   `(V × S, (V ∖ 0) × S) → (M, M ∖ f(S))`.
 * `TauCeti.IsFramedTube.pontryaginThomCollapsePairMap`: the collapse as a map of pairs
@@ -68,6 +70,8 @@ and `pr₂_*((o × x) ⌢ pr₁^* u) = ⟨u, o⟩ • x` because `V` is contract
 
 ## Main results
 
+* `TauCeti.IsFramedTube.isIso_singularHomologyMap_tubePairMap`: excision along the tube, when the
+  core is closed.
 * `TauCeti.IsFramedTube.tubePairMap_comp_pontryaginThomCollapsePairMap`: the collapse reads in the
   tube as the projection to the fibre.
 * `TauCeti.IsFramedTube.singularHomologyFunctor_map_tubePairMap`: on singular homology the tube
@@ -88,6 +92,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicTopology Set
+  Topology
 
 universe w
 
@@ -114,22 +119,56 @@ namespace IsFramedTube
 variable {V} {S M : Type w} [TopologicalSpace S] [TopologicalSpace M] {f : S → M}
   {τ : S × V → M}
 
+/-- The tube with its factors exchanged, `(v, x) ↦ τ (x, v)`, as a continuous map: the map of
+ambient spaces of `TauCeti.IsFramedTube.tubePairMap`. -/
+def tubeMap (h : IsFramedTube f τ) : C((TopCat.of V ⊗ TopCat.of S : TopCat), M) :=
+  ⟨fun p ↦ τ (snd (TopCat.of V) (TopCat.of S) p, fst (TopCat.of V) (TopCat.of S) p),
+    h.isOpenEmbedding.continuous.comp
+      ((snd (TopCat.of V) (TopCat.of S)).hom.continuous.prodMk
+        (fst (TopCat.of V) (TopCat.of S)).hom.continuous)⟩
+
+/-- The tube with its factors exchanged sends `(v, x)` to `τ (x, v)`. -/
+@[simp]
+theorem tubeMap_apply (h : IsFramedTube f τ) (p : (TopCat.of V ⊗ TopCat.of S : TopCat)) :
+    h.tubeMap p = τ (snd (TopCat.of V) (TopCat.of S) p, fst (TopCat.of V) (TopCat.of S) p) :=
+  (rfl)
+
+/-- The tube with its factors exchanged is an open embedding. -/
+theorem isOpenEmbedding_tubeMap (h : IsFramedTube f τ) : IsOpenEmbedding h.tubeMap :=
+  h.isOpenEmbedding.comp (Homeomorph.prodComm V S).isOpenEmbedding
+
+/-- The core is the image of the zero section, and only of it. -/
+theorem preimage_tubeMap_range (h : IsFramedTube f τ) :
+    h.tubeMap ⁻¹' range f = fst (TopCat.of V) (TopCat.of S) ⁻¹' {0} := by
+  ext p
+  refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun hp ↦ ⟨snd (TopCat.of V) (TopCat.of S) p, ?_⟩⟩
+  · rw [← h.apply_zero] at hy
+    exact (congrArg Prod.snd (h.isOpenEmbedding.injective hy)).symm
+  · rw [← h.apply_zero]
+    exact congrArg (fun v ↦ τ (snd (TopCat.of V) (TopCat.of S) p, v)) hp.symm
+
 /-- **The framed tube as a map of pairs**: the tube with its factors exchanged,
 `(v, x) ↦ τ (x, v)`, carries the Thom pair `(V × S, (V ∖ 0) × S)` of the product bundle into the
 complement of the core, `(M, M ∖ f(S))`. -/
 def tubePairMap (h : IsFramedTube f τ) :
     TopPair.ofSubset (fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ) ⟶
       TopPair.ofSubset (X := TopCat.of M) (range f)ᶜ :=
-  TopPair.ofSubsetMap
-    (ConcreteCategory.ofHom (C := TopCat) (X := TopCat.of V ⊗ TopCat.of S) (Y := TopCat.of M)
-      ⟨fun p ↦ τ (snd (TopCat.of V) (TopCat.of S) p, fst (TopCat.of V) (TopCat.of S) p),
-      h.isOpenEmbedding.continuous.comp
-        ((snd (TopCat.of V) (TopCat.of S)).hom.continuous.prodMk
-          (fst (TopCat.of V) (TopCat.of S)).hom.continuous)⟩)
-    (by
-      rintro ⟨v, x⟩ hv ⟨y, hy⟩
-      rw [← h.apply_zero] at hy
-      exact hv (congrArg Prod.snd (h.isOpenEmbedding.injective hy)).symm)
+  TopPair.ofSubsetMap (TopCat.ofHom h.tubeMap) fun _ hp hpf ↦
+    hp ((h.preimage_tubeMap_range).subset hpf)
+
+/-- The tube as a map of pairs is the map of pairs induced by the tube with its factors
+exchanged. -/
+theorem tubePairMap_def (h : IsFramedTube f τ) :
+    h.tubePairMap = TopPair.ofSubsetMap (B := fst (TopCat.of V) (TopCat.of S) ⁻¹' {(0 : V)}ᶜ)
+      (B' := (range f)ᶜ) (TopCat.ofHom h.tubeMap) fun _ hp hpf ↦
+        hp ((h.preimage_tubeMap_range).subset hpf) :=
+  (rfl)
+
+/-- The tube as a map of pairs is the tube with its factors exchanged on the ambient spaces. -/
+@[simp]
+theorem tubePairMap_fst (h : IsFramedTube f τ) :
+    TopPair.Hom.fst h.tubePairMap = TopCat.ofHom h.tubeMap :=
+  TopPair.ofSubsetMap_fst _ _
 
 /-- The tube as a map of pairs sends `(v, x)` to `τ (x, v)`. -/
 theorem tubePairMap_fst_apply (h : IsFramedTube f τ)
@@ -137,6 +176,15 @@ theorem tubePairMap_fst_apply (h : IsFramedTube f τ)
     TopPair.Hom.fst h.tubePairMap p =
       τ (snd (TopCat.of V) (TopCat.of S) p, fst (TopCat.of V) (TopCat.of S) p) :=
   TopPair.ofSubsetMap_fst_apply _ _ p
+
+/-- **Excision along the tube**: when the core is closed, `(V × S, (V ∖ 0) × S) → (M, M ∖ f(S))`
+induces isomorphisms on relative homology. -/
+theorem isIso_singularHomologyMap_tubePairMap (h : IsFramedTube f τ) (hf : IsClosed (range f))
+    {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A] (N : A) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap h.tubePairMap N n) := by
+  have := isIso_localHomologyMap N h.tubeMap h.isOpenEmbedding_tubeMap h.preimage_tubeMap_range hf
+    (by rintro _ ⟨x, rfl⟩; exact ⟨((0 : V), x), h.apply_zero x⟩) n
+  rwa [localHomologyMap_def] at this
 
 variable [CompactSpace S] [T2Space M]
 

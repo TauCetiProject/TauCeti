@@ -47,7 +47,9 @@ sheaf. The proof is by dimension shifting along the embedding
   `Hⁿ(U, F) ⟶ Hⁿ(X, F)` to cover-colimit Čech cohomology is an isomorphism.
 * `TauCeti.Topology.homologyCechComplexIsoRightDerivedΓ`: for a finite Leray cover `U`,
   `Hⁿ(U, F) ≅ RⁿΓ(F)`, with its naturality in `F`
-  (`TauCeti.Topology.homologyMap_comp_homologyCechComplexIsoRightDerivedΓ_hom`).
+  (`TauCeti.Topology.homologyMap_comp_homologyCechComplexIsoRightDerivedΓ_hom`) and its
+  description in degree `0` through the augmentation of the Čech complex
+  (`TauCeti.Topology.homologyMap_cechAugmentation_comp_homologyCechComplexIsoRightDerivedΓ_hom`).
 
 ## References
 
@@ -236,6 +238,26 @@ lemma homologyCechComplexIsoRightDerivedΓ_hom [Finite ι] (hU : IsOpenCover U)
       (toCechCohomology (ModuleCat.{u} R) n U hU).app F.obj ≫
         (cechCohomologyIsoRightDerivedΓ n).hom.app F := by
   rw [homologyCechComplexIsoRightDerivedΓ, Iso.trans_hom, asIso_hom, Iso.app_hom]
+
+/-- **Degree-zero normalization of the Leray comparison.** In degree `0` the comparison
+`H⁰(U, F) ≅ R⁰Γ(F)` matches the descriptions of both sides by global sections: preceded by the map
+`Γ(F) ⟶ H⁰(U, F)` induced by the augmentation of the Čech complex of `U`, it is Mathlib's
+canonical map `Γ(F) ⟶ R⁰Γ(F)`. -/
+@[reassoc]
+theorem homologyMap_cechAugmentation_comp_homologyCechComplexIsoRightDerivedΓ_hom [Finite ι]
+    (hU : IsOpenCover U) (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+    (hF : ∀ s : Finset ι, s.Nonempty → ∀ k,
+      Subsingleton (((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).H'
+        (k + 1) (s.inf U))) :
+    (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).hom.app F ≫
+        (HomologicalComplex.singleObjHomologySelfIso _ 0 (F.obj.obj (Opposite.op ⊤))).inv ≫
+          HomologicalComplex.homologyMap (cechAugmentation U isTerminalTop F.obj) 0 ≫
+            (homologyCechComplexIsoRightDerivedΓ hU F hF 0).hom =
+      (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).toRightDerivedZero.app F := by
+  rw [homologyCechComplexIsoRightDerivedΓ_hom,
+    ← sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app, sectionsIsoCechZero_hom,
+    cechCohomologyZeroIso_hom_eq_toCechCohomology _ U hU]
+  simp only [Category.assoc]
 
 /-- **Naturality of the Leray comparison.** The isomorphism `Hⁿ(U, F) ≅ RⁿΓ(F)` commutes with the
 maps induced by a morphism `F ⟶ G` of sheaves of modules for which `U` is a Leray cover. -/
