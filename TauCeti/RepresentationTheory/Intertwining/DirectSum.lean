@@ -16,10 +16,10 @@ import TauCeti.RepresentationTheory.Intertwining
 For families of representations `ρ i` and `σ i` of a monoid `G`, Mathlib forms the direct-sum
 representations `Representation.directSum ρ` and `Representation.directSum σ`. This file makes
 the direct sum functorial in intertwining maps, and reindexes a direct sum of representations
-along an equivalence of index types. It also includes each summand into the direct sum, and
-transports a direct-sum decomposition along an equivalence to an internal decomposition into
-subrepresentations. None of these constructions involves the group algebra, so the scalars only
-need to form a semiring.
+along an equivalence of index types. It also includes each summand into the direct sum, maps out
+of the direct sum by intertwining maps out of the summands, and transports a direct-sum
+decomposition along an equivalence to an internal decomposition into subrepresentations. None of
+these constructions involves the group algebra, so the scalars only need to form a semiring.
 
 ## Main definitions
 
@@ -29,6 +29,9 @@ need to form a semiring.
   equivalence of index types; its underlying linear equivalence is `DirectSum.lequivCongrLeft`.
 * `Representation.IntertwiningMap.lof`: the inclusion of a summand into a direct sum of
   representations; its underlying linear map is `DirectSum.lof`.
+* `Representation.IntertwiningMap.directSumToModule`: the intertwining map out of a direct sum of
+  representations given by intertwining maps out of the summands; its underlying linear map is
+  `DirectSum.toModule`.
 
 ## Main results
 
@@ -183,6 +186,40 @@ theorem IntertwiningMap.directSum_ext {U : Type*} [AddCommMonoid U] [Module k U]
     {f g : IntertwiningMap (directSum ρ) τ}
     (h : ∀ i, f.comp (IntertwiningMap.lof ρ i) = g.comp (IntertwiningMap.lof ρ i)) : f = g :=
   ext <| DirectSum.linearMap_ext k fun i ↦ congrArg IntertwiningMap.toLinearMap (h i)
+
+/-- **The intertwining map out of a direct sum** of representations given by intertwining maps out
+of the summands. The underlying linear map is `DirectSum.toModule`; it is unique by
+`IntertwiningMap.directSum_ext`. -/
+noncomputable def IntertwiningMap.directSumToModule {U : Type*} [AddCommMonoid U] [Module k U]
+    {ρ : ∀ i, Representation k G (V i)} {τ : Representation k G U}
+    (f : ∀ i, IntertwiningMap (ρ i) τ) : IntertwiningMap (directSum ρ) τ where
+  toLinearMap := DirectSum.toModule k ι U fun i ↦ (f i).toLinearMap
+  isIntertwining' g := DirectSum.linearMap_ext k fun i ↦ by
+    ext v
+    simp [directSum_apply, (f i).isIntertwining]
+
+@[simp]
+theorem IntertwiningMap.directSumToModule_toLinearMap {U : Type*} [AddCommMonoid U] [Module k U]
+    {ρ : ∀ i, Representation k G (V i)} {τ : Representation k G U}
+    (f : ∀ i, IntertwiningMap (ρ i) τ) :
+    (directSumToModule f).toLinearMap = DirectSum.toModule k ι U fun i ↦ (f i).toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem IntertwiningMap.directSumToModule_lof {U : Type*} [AddCommMonoid U] [Module k U]
+    {ρ : ∀ i, Representation k G (V i)} {τ : Representation k G U}
+    (f : ∀ i, IntertwiningMap (ρ i) τ) (i : ι) (v : V i) :
+    directSumToModule f (DirectSum.lof k ι V i v) = f i v :=
+  DirectSum.toModule_lof k i v
+
+/-- The map out of a direct sum restricts on summand `i` to the map of index `i`. -/
+@[simp]
+theorem IntertwiningMap.directSumToModule_comp_lof {U : Type*} [AddCommMonoid U] [Module k U]
+    {ρ : ∀ i, Representation k G (V i)} {τ : Representation k G U}
+    (f : ∀ i, IntertwiningMap (ρ i) τ) (i : ι) :
+    (directSumToModule f).comp (IntertwiningMap.lof ρ i) = f i := by
+  ext v
+  simp
 
 /-- **An internal direct-sum decomposition from an equivalence.** If `ρ` is equivalent to the
 direct sum of a family of representations `σ i`, then the carrier of `ρ` is the internal direct

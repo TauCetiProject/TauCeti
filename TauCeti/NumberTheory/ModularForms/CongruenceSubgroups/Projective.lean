@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card
+
 /-!
 # The projective images of `Γ₀(N)` and `Γ(N)`
 
@@ -20,7 +22,10 @@ quotient map.
 
 The principal congruence subgroup `Γ(N)` behaves differently: for `N ≥ 3` it does not contain
 `-I`, so its projective image has half its index: the image of `Γ(N)` in `PSL₂(ℤ)` has index
-`|SL₂(ℤ/Nℤ)| / 2`. At `N = 3` the two indices are `24` and `12`.
+`|SL₂(ℤ/Nℤ)| / 2`. At `N = 3` the two indices are `24` and `12`. With the order of `SL₂(ℤ/Nℤ)`
+this index is `(N³/2) ∏_{p ∣ N} (1 - 1/p²)` for `N ≥ 3`, while it is `1` at `N = 1` and `6` at
+`N = 2`, where `-I ∈ Γ(N)`. A subgroup of `PSL₂(ℤ)` containing the image of `Γ(N)` has index
+dividing this one; at `N = 6, 8, 10, 12` it is `72, 192, 360, 576`.
 
 ## References
 
@@ -105,6 +110,78 @@ theorem index_map_Gamma_three :
         (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = 12 := by
   have h := two_mul_index_map_Gamma le_rfl
   rw [← CongruenceSubgroup.index_Gamma, CongruenceSubgroup.index_Gamma_three] at h
+  omega
+
+/-- **The order of `SL₂(ℤ/Nℤ)/{±1}`** for `N ≥ 3`: the image of `Γ(N)` in `PSL₂(ℤ)` has index
+`(N³/2) ∏_{p ∣ N} (1 - 1/p²)`, here with the denominators cleared. -/
+theorem two_mul_index_map_Gamma_mul_prod_primeFactors {N : ℕ} (hN : 3 ≤ N) :
+    2 * ((CongruenceSubgroup.Gamma N).map
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index * ∏ p ∈ N.primeFactors, p ^ 2 =
+      N ^ 3 * ∏ p ∈ N.primeFactors, (p ^ 2 - 1) := by
+  rw [two_mul_index_map_Gamma hN]
+  exact natCard_SL_fin_two_zmod_mul_prod_primeFactors N
+
+/-- The image of `Γ(1) = SL₂(ℤ)` in `PSL₂(ℤ)` is everything, of index `1`. -/
+theorem index_map_Gamma_one :
+    ((CongruenceSubgroup.Gamma 1).map
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = 1 := by
+  rw [CongruenceSubgroup.Gamma_one_top,
+    Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _), Subgroup.index_top]
+
+/-- The image of `Γ(2)` in `PSL₂(ℤ)` has index `6 = |SL₂(𝔽₂)|`: since `-I ∈ Γ(2)`, projecting
+does not halve the index. -/
+theorem index_map_Gamma_two :
+    ((CongruenceSubgroup.Gamma 2).map
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = 6 := by
+  rw [Matrix.SpecialLinearGroup.index_map_mk'_of_neg_one_mem
+      (CongruenceSubgroup.neg_one_mem_Gamma_iff.mpr dvd_rfl),
+    CongruenceSubgroup.index_Gamma, natCard_SL_fin_two_zmod]
+  norm_num
+
+/-- The image of `Γ(6)` in `PSL₂(ℤ)` has index `72 = |SL₂(𝔽₂)| · |SL₂(𝔽₃)| / 2`. -/
+theorem index_map_Gamma_six :
+    ((CongruenceSubgroup.Gamma 6).map
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = 72 := by
+  have h := two_mul_index_map_Gamma (N := 6) (by norm_num)
+  have hc : Nat.card SL(2, ZMod 6) = 144 := by
+    rw [show (6 : ℕ) = 2 * 3 by norm_num, Matrix.natCard_SL_zmod_mul (by norm_num),
+      natCard_SL_fin_two_zmod, natCard_SL_fin_two_zmod]
+    norm_num
+  omega
+
+/-- The image of `Γ(8)` in `PSL₂(ℤ)` has index `192 = |SL₂(ℤ/8ℤ)| / 2`. -/
+theorem index_map_Gamma_eight :
+    ((CongruenceSubgroup.Gamma 8).map
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = 192 := by
+  have h := two_mul_index_map_Gamma (N := 8) (by norm_num)
+  have hc : Nat.card SL(2, ZMod 8) = 384 := by
+    rw [show (8 : ℕ) = 2 ^ 3 by norm_num, Matrix.natCard_SL_zmod_pow three_ne_zero,
+      natCard_SL_fin_two_zmod, Fintype.card_fin]
+    norm_num
+  omega
+
+/-- The image of `Γ(10)` in `PSL₂(ℤ)` has index `360 = |SL₂(𝔽₂)| · |SL₂(𝔽₅)| / 2`. -/
+theorem index_map_Gamma_ten :
+    ((CongruenceSubgroup.Gamma 10).map
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = 360 := by
+  have h := two_mul_index_map_Gamma (N := 10) (by norm_num)
+  have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
+  have hc : Nat.card SL(2, ZMod 10) = 720 := by
+    rw [show (10 : ℕ) = 2 * 5 by norm_num, Matrix.natCard_SL_zmod_mul (by norm_num),
+      natCard_SL_fin_two_zmod, natCard_SL_fin_two_zmod]
+    norm_num
+  omega
+
+/-- The image of `Γ(12)` in `PSL₂(ℤ)` has index `576 = |SL₂(ℤ/4ℤ)| · |SL₂(𝔽₃)| / 2`. -/
+theorem index_map_Gamma_twelve :
+    ((CongruenceSubgroup.Gamma 12).map
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = 576 := by
+  have h := two_mul_index_map_Gamma (N := 12) (by norm_num)
+  have hc : Nat.card SL(2, ZMod 12) = 1152 := by
+    rw [show (12 : ℕ) = 2 ^ 2 * 3 by norm_num, Matrix.natCard_SL_zmod_mul (by norm_num),
+      Matrix.natCard_SL_zmod_pow two_ne_zero, natCard_SL_fin_two_zmod, natCard_SL_fin_two_zmod,
+      Fintype.card_fin]
+    norm_num
   omega
 
 end TauCeti.CongruenceSubgroup
