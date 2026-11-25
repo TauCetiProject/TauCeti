@@ -127,9 +127,8 @@ open Cardinal
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] {x : L}
 
 /-- **The Engel subalgebra of a regular element is a Cartan subalgebra**, over a field with at
-least `finrank K L` elements. This is the argument of Mathlib's
-`LieAlgebra.exists_isCartanSubalgebra_engel_of_finrank_le_card`, stated for an arbitrary regular
-element. -/
+least `finrank K L` elements: if `x` is regular in Mathlib's sense, then `engel K x` is a Cartan
+subalgebra of `L`. -/
 theorem IsRegular.isCartanSubalgebra_engel_of_finrank_le_card (hx : IsRegular K x)
     (hLK : finrank K L ≤ #K) : (engel K x).IsCartanSubalgebra := by
   refine ⟨isNilpotent_of_forall_le_engel _ fun y hy ↦ ?_, normalizer_engel _ _⟩

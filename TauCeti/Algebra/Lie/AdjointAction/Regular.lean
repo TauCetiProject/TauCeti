@@ -49,7 +49,11 @@ finite dimension regularity is the lower bound `rank (ad x₀) ≤ rank (ad x)` 
 element `x₀`. In the coordinates of a basis of a finite-dimensional `L` this bound is a
 Zariski-open condition, since it asks for a nonzero minor of the matrix of `ad x`, whose entries
 are linear in the coordinates of `x`. Over an infinite field the regular elements therefore form
-a nonempty Zariski-open and Zariski-dense subset of `L`. Regularity is preserved by Lie algebra
+a nonempty Zariski-open and Zariski-dense subset of `L`. The elements regular in Mathlib's sense
+are those at which a nonzero polynomial function, the coefficient of index `LieAlgebra.rank K L` of
+the characteristic polynomial of `ad x`, does not vanish. By density this polynomial cannot vanish
+at all regular elements, so some element is regular in both senses
+(`LieAlgebra.exists_isRegular_and_isCentralizerRegular`). Regularity is preserved by Lie algebra
 isomorphisms, hence by the adjoint action, and by nonzero scalars. In finite dimension the element
 `0` is regular only when `L` is abelian.
 
@@ -249,11 +253,8 @@ namespace LieAlgebra
 variable (K : Type*) (L : Type*) [Field K] [Infinite K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L]
 
-/-- **Some element is regular in both senses.** Over an infinite field, the elements that are
-regular in Mathlib's sense are those where a nonzero polynomial function, the coefficient of index
-`LieAlgebra.rank K L` of the characteristic polynomial of `ad x`, does not vanish. The elements with
-minimal centralizer dimension are Zariski dense, so that polynomial does not vanish at all of them.
--/
+/-- **Some element is regular in both senses.** Over an infinite field, some element of `L` is
+both `LieAlgebra.IsRegular` and `LieAlgebra.IsCentralizerRegular`. -/
 theorem exists_isRegular_and_isCentralizerRegular :
     ∃ x : L, IsRegular K x ∧ IsCentralizerRegular K x := by
   classical

@@ -68,9 +68,8 @@ namespace LieAlgebra
 variable {K L : Type*} [Field K] [Infinite K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
   [IsKilling K L]
 
-/-- **The centralizer of a regular element is its Engel subalgebra.** The Engel subalgebra is a
-Cartan subalgebra, hence abelian because the Killing form is nondegenerate, and it contains the
-element. -/
+/-- **The centralizer of a regular element is its Engel subalgebra.** If `x` is regular in
+Mathlib's sense, then `ker (ad K L x) = engel K x` as submodules of `L`. -/
 theorem IsRegular.ker_ad_eq_toSubmodule_engel {x : L} (hx : IsRegular K x) :
     ker (ad K L x) = (engel K x).toSubmodule := by
   have := hx.isCartanSubalgebra_engel
@@ -87,9 +86,8 @@ theorem IsRegular.finrank_ker_ad_eq_rank {x : L} (hx : IsRegular K x) :
     (isRegular_iff_finrank_engel_eq_rank K x).mp hx]
 
 variable (K) in
-/-- **Every centralizer has dimension at least the rank.** An element that is regular both in
-Mathlib's sense and in the sense of `LieAlgebra.IsCentralizerRegular` has centralizer of dimension
-`rank K L`, and that dimension is minimal. -/
+/-- **Every centralizer has dimension at least the rank.** For every `x : L`,
+`rank K L ≤ finrank K (ker (ad K L x))`. -/
 theorem rank_le_finrank_ker_ad (x : L) : rank K L ≤ finrank K (ker (ad K L x)) := by
   obtain ⟨y, hy, hy'⟩ := exists_isRegular_and_isCentralizerRegular K L
   rw [← hy.finrank_ker_ad_eq_rank]

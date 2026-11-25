@@ -270,10 +270,8 @@ theorem finite_setOf_lt_of_isNilpotentAd {O : VectorOrbit k H 𝔤} (hO : O.IsNi
     hlt.le
 
 /-- **The regular nilpotent orbit is unique.** Over an algebraically closed field of characteristic
-zero, two `ad`-nilpotent elements of `𝔤` with minimal centralizer dimension are `G(k)`-conjugate.
-Each is conjugate to the nilpositive element of a triple with dominant neutral element, which is
-`2ρ^∨` by regularity (`IsSl2Triple.isCentralizerRegular_e_iff`), and two triples sharing their
-neutral element are conjugate. No connectedness hypothesis on `G` is needed. -/
+zero, two `ad`-nilpotent elements of `𝔤` with minimal centralizer dimension lie in the same
+`G(k)`-orbit. No connectedness hypothesis on `G` is needed. -/
 theorem mk_eq_mk_of_isCentralizerRegular {e₁ e₂ : 𝔤} (he₁ : IsNilpotent (LieAlgebra.ad k 𝔤 e₁))
     (he₂ : IsNilpotent (LieAlgebra.ad k 𝔤 e₂)) (hr₁ : LieAlgebra.IsCentralizerRegular k e₁)
     (hr₂ : LieAlgebra.IsCentralizerRegular k e₂) :
