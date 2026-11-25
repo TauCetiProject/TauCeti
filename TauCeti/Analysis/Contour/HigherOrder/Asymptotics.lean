@@ -6,15 +6,13 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Chord.TangentBound
-public import Mathlib.Analysis.Asymptotics.Defs
-public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Convex.Segment
+public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Contour.ArcFTC
 
 /-!
-# Higher-order antiderivative asymptotics at an on-curve pole
+# The higher-order antiderivative: contour integrals, and asymptotics at an on-curve pole
 
 For the higher-order pole integrand `1/(z-s)^k` (`k ≥ 2`) with single-valued antiderivative
 `F(z) = -1/[(k-1)(z-s)^(k-1)]`, this file proves the asymptotics the sector-cancellation
@@ -22,12 +20,23 @@ argument of the generalized residue theorem consumes: along a branch of a curve 
 with one-sided tangent `L` and perpendicular deviation `o(‖γ t - s‖ ^ n)` (`n ≥ k`), the
 difference `F(γ t) - F(tangent target)` tends to `0`, where the tangent target is the point of
 the tangent ray at the same distance from `s`. Combined with the fundamental theorem of calculus
-on each smooth piece, this replaces the curve by its tangent rays in the excised principal
+on each side of the crossing, this replaces the curve by its tangent rays in the excised principal
 value, up to a vanishing error.
+
+The antiderivative also evaluates the contour integral of the polar term along an absolutely
+continuous curve that avoids the pole: for `k ≥ 2`,
+`∫ t in l..u, c / (γ t - s) ^ k * deriv γ t = c · (F (γ u) - F (γ l))`, so the integral vanishes
+around a closed curve. That is why only the simple-pole coefficient of a Laurent tail survives in
+a residue theorem.
 
 ## Main results
 
 * `Contour.hasDerivAt_antiderivative_pow_inv` — the antiderivative of `1/(z-s)^k`.
+* `Contour.integral_pow_inv_mul_deriv_eq_sub` — for `k ≥ 2`, the fundamental theorem of calculus
+  for the order-`k` polar term along an absolutely continuous curve, on an interval where the
+  curve avoids the pole.
+* `Contour.integral_pow_inv_mul_deriv_eq_zero_of_closed` — for `k ≥ 2`, that term integrates to
+  zero around a closed absolutely continuous curve avoiding the pole.
 * `Contour.norm_antiderivative_diff_le_segment_bound` — the mean-value bound for the
   antiderivative along a segment avoiding
   the pole.
@@ -50,7 +59,12 @@ existential) is the tangent-forcing bridge, a separate step.
 
 Migrated from `HungerbuhlerWasem/HigherOrderAsymptotics.lean` of the AINTLIB `LeanModularForms`
 development, restated for the raw curve: the flatness hypotheses carried there by the
-`IsFlatOfOrder` structure become explicit deviation bounds against the one-sided tangent. See
+`IsFlatOfOrder` structure become explicit deviation bounds against the one-sided tangent. The
+integral of the polar term is migrated from `antiderivPow_FTC_on_avoiding` of
+`MultiCrossingCPV.lean` there, which asks for a curve that is continuous and differentiable off a
+countable set with integrable derivative; here it is proved for an absolutely continuous curve,
+which covers that case (`ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable`),
+through `AbsolutelyContinuousOnInterval.integral_deriv_smul_deriv_comp_eq_sub`. See
 N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a generalized Residue
 Theorem*, arXiv:1808.00997, §3 (eq. 3.4).
 -/
@@ -83,6 +97,37 @@ theorem hasDerivAt_antiderivative_pow_inv {s : ℂ} {k : ℕ} (hk : 2 ≤ k) {z 
     rw [h_pow2]
     field_simp
   exact hval ▸ h_const
+
+/-- **The integral of a higher-order polar term along a curve.** For `k ≥ 2` and an absolutely
+continuous curve `γ` that avoids `s` on `[[l, u]]`, the order-`k` polar term integrates to the
+boundary difference of its antiderivative:
+`∫ t in l..u, c / (γ t - s) ^ k * deriv γ t = c · F (γ u) - c · F (γ l)` with
+`F z = -(k-1)⁻¹ (z - s)^{-(k-1)}`. -/
+theorem integral_pow_inv_mul_deriv_eq_sub {γ : ℝ → ℂ} {s : ℂ} {k : ℕ} (hk : 2 ≤ k) (c : ℂ)
+    {l u : ℝ} (hγ : AbsolutelyContinuousOnInterval γ l u) (h_ne : ∀ t ∈ uIcc l u, γ t ≠ s) :
+    ∫ t in l..u, c / (γ t - s) ^ k * deriv γ t =
+      c * (-(↑(k - 1) : ℂ)⁻¹ * ((γ u - s) ^ (k - 1))⁻¹) -
+        c * (-(↑(k - 1) : ℂ)⁻¹ * ((γ l - s) ^ (k - 1))⁻¹) := by
+  -- The antiderivative is holomorphic off the pole, with the polar term as its derivative.
+  have hG : ∀ z ∈ ({s}ᶜ : Set ℂ),
+      HasDerivAt (fun z => c * (-(↑(k - 1) : ℂ)⁻¹ * ((z - s) ^ (k - 1))⁻¹))
+        (c * (1 / (z - s) ^ k)) z := fun z hz ↦
+    (hasDerivAt_antiderivative_pow_inv hk hz).const_mul c
+  rw [← hγ.integral_deriv_smul_deriv_comp_eq_sub isOpen_compl_singleton
+    (fun z hz ↦ (hG z hz).differentiableAt.differentiableWithinAt) h_ne]
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  rw [(hG (γ t) (h_ne t ht)).deriv, smul_eq_mul]
+  ring
+
+/-- **A Laurent term of order at least two integrates to zero around a closed curve.** On an
+absolutely continuous curve `γ` with `γ a = γ b` that never meets `s`, the integral of
+`c/(z − s)^k · γ'` with `k ≥ 2` vanishes. This is why only the simple-pole coefficient of a
+Laurent tail survives in the residue theorem. -/
+theorem integral_pow_inv_mul_deriv_eq_zero_of_closed {γ : ℝ → ℂ} {s : ℂ} {k : ℕ}
+    (hk : 2 ≤ k) (c : ℂ) {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) (h_ne : ∀ t ∈ uIcc a b, γ t ≠ s) :
+    ∫ t in a..b, c / (γ t - s) ^ k * deriv γ t = 0 := by
+  rw [integral_pow_inv_mul_deriv_eq_sub hk c hγ h_ne, hclosed, sub_self]
 
 /-- For `k < 2` the higher-order antiderivative formula `-(k - 1)⁻¹ z^(-(k - 1))` evaluates to
 `0`, since `k - 1 = 0` by truncated subtraction in `ℕ` and `(0 : ℂ)⁻¹ = 0`. It is an

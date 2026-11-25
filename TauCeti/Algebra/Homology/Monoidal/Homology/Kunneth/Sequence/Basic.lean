@@ -9,7 +9,8 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
-public import TauCeti.CategoryTheory.Monoidal.Tor
+public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
 import TauCeti.Algebra.Homology.ShortComplex.Exact
 
 /-!
@@ -65,6 +66,8 @@ built from chosen splittings of the cycles and need not be natural in `K` and `L
 * `HomologicalComplex.homologyKunnethShortComplex`: the Künneth short complex.
 * `HomologicalComplex.mono_homologyKunneth`: the Künneth map is a monomorphism in every degree.
 * `HomologicalComplex.homologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
+* `HomologicalComplex.isIso_homologyKunneth_of_flat_homology`: the Künneth map is an isomorphism in
+  degrees `m + 1` when the homology of `K` is flat.
 * `HomologicalComplex.homologyTorToHomologyQuotient_naturality` and
   `HomologicalComplex.homologyToTor_naturality`: naturality in both complexes.
 * `HomologicalComplex.homologyKunnethShortComplexMap`: the morphism of Künneth short complexes
@@ -739,6 +742,17 @@ theorem homologyKunnethShortComplex_shortExact (m : I) :
     (by simp [homologyToTor_comp_torToTensor]))).2 (homologyKunneth_exact_toTensorQuotient K L m)
   mono_f := mono_homologyKunneth K L (m + 1)
   epi_g := epi_homologyToTor K L m
+
+/-- **The Künneth theorem when the first factor has flat homology.**  If the cycles `Z_q(L)` and
+the quotients `L_q / Z_q(L)` are projective and every homology module `Hₚ(K)` is flat, then the
+Künneth map `⨁_{p + q = m + 1} Hₚ(K) ⊗ H_q(L) ⟶ Hₘ₊₁(K ⊗ L)` is an isomorphism: every `Tor₁`
+summand of the Künneth sequence vanishes.  No hypothesis is placed on the homology of `L`. -/
+theorem isIso_homologyKunneth_of_flat_homology [∀ p, Module.Flat R (K.homology p)] (m : I) :
+    IsIso (homologyKunneth K L (m + 1)) := by
+  refine (homologyKunnethShortComplex_shortExact K L m).isIso_f_iff.2 ?_
+  rw [IsZero.iff_id_eq_zero]
+  exact GradedObject.mapBifunctorMapObj_ext (h := fun p q _ ↦
+    (ModuleCat.isZero_Tor_succ_of_flat _ _ 0).eq_of_src _ _)
 
 section ShortComplexMap
 

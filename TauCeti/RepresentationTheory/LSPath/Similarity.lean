@@ -7,11 +7,13 @@ module
 
 public import TauCeti.RepresentationTheory.Crystal.Similarity
 public import TauCeti.RepresentationTheory.LSPath.CappedReflection
-public import TauCeti.RepresentationTheory.LSPath.Crystal.Connected
+public import TauCeti.RepresentationTheory.LSPath.Crystal.Normal
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Operations
 public import TauCeti.RepresentationTheory.LSPath.RationalChain
-public import TauCeti.RepresentationTheory.LSPath.Word
 import TauCeti.Data.Option.Basic
+import TauCeti.LinearAlgebra.Dual.BaseChange
+import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.RepresentationTheory.LSPath.Realization.Faithful
 
 /-!
 # Littelmann's path similarity under positive-scalar dilation and stretching
@@ -103,7 +105,7 @@ public section
 
 namespace TauCeti.PLPath
 
-open Module Relation
+open _root_.Module Relation
 
 /-! ### Littelmann's path similarity theorem -/
 
@@ -697,53 +699,82 @@ theorem raiseWord_flatMap_replicate_toPLPath_ofBruhatChain_eq_some_iff {α : Typ
 
 end RationalChain
 
+end TauCeti.LSPath
+
 section CrystalComparison
 
-variable {f : M →+ V}
+open scoped TensorProduct
+
+namespace TauCeti.LSPath
+
+open RootPairing
+
+variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
+  {P : RootDatum ι X Y} {b : P.Base} [Finite ι] [P.IsReduced] {lam : X}
 
 /-- **Kashiwara–Littelmann similarity morphism `B(λ) → B(n • λ)`** on the normal crystal of
-realized LS paths, induced by `LSPath.stretch`. -/
-noncomputable def stretchSimilarityHom (hlam : lam ∈ dominantChamber P b)
-    (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m) {n : ℕ} (hn : 0 < n) :
-    NormalCrystal.SimilarityHom n (normalCrystal hlam hf hF)
-      (normalCrystal (nsmul_mem_dominantChamber P b n hlam) hf hF) :=
-  PLPath.dilationSimilarityHom hf hF _ _ hn <| by
-    rintro _ ⟨π, rfl⟩
-    exact ⟨π.stretch n hn, π.toPLPath_stretch 𝕜 f n hn⟩
+Lakshmibai–Seshadri paths, induced by `LSPath.stretch`. -/
+noncomputable def stretchSimilarityHom (hlam : lam ∈ dominantChamber P b) {n : ℕ} (hn : 0 < n) :
+    NormalCrystal.SimilarityHom n (crystal hlam)
+      (crystal (nsmul_mem_dominantChamber P b n hlam)) where
+  toFun π := π.stretch n hn
+  wt_toFun π := by
+    simp only [crystal_wt]
+    exact (weight_eq_iff_endpoint_toRatPLPath (π.stretch n hn)).mpr <| by
+      rw [toRatPLPath_def, endpoint_toPLPath_stretch, ← toRatPLPath_def, endpoint_toRatPLPath,
+        Nat.cast_smul_eq_nsmul, map_nsmul]
+  ε_toFun i π := by
+    have hF : ∀ x, Module.Dual.baseChange ℚ (P.coroot' i)
+        ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom x) = (P.coroot' i x : ℚ) :=
+      Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)
+    rw [← Nat.cast_inj (R := ℚ), Nat.cast_mul, ← neg_inj,
+      ← minHeight_toPLPath_eq_neg_crystal_ε (nsmul_mem_dominantChamber P b n hlam)
+        (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom i (Module.Dual.baseChange ℚ (P.coroot' i)) hF,
+      minHeight_toPLPath_stretch,
+      minHeight_toPLPath_eq_neg_crystal_ε hlam (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom i
+        (Module.Dual.baseChange ℚ (P.coroot' i)) hF]
+    ring
+  eIter_toFun i π := by
+    have hF : ∀ x, Module.Dual.baseChange ℚ (P.coroot' i)
+        ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom x) = (P.coroot' i x : ℚ) :=
+      Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)
+    have hroot : Module.Dual.baseChange ℚ (P.coroot' i)
+        ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) = (2 : ℚ) := by
+      rw [hF, P.root_coroot'_eq_pairing, P.pairing_same, Int.cast_ofNat]
+    apply Option.map_injective (toRatPLPath_injective (nsmul_mem_dominantChamber P b n hlam))
+    rw [toRatPLPath_eq,
+      ← raiseIter_toPLPath (nsmul_mem_dominantChamber P b n hlam)
+        (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom i (Module.Dual.baseChange ℚ (P.coroot' i)) hF,
+      toPLPath_stretch, PLPath.raiseIter_map_natCast_smul hroot hn,
+      raise_toPLPath hlam (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom i
+        (Module.Dual.baseChange ℚ (P.coroot' i)) hF,
+      Option.map_map, Option.map_map]
+    refine congrArg (Option.map · _) (funext fun ρ ↦ ?_)
+    simp [toPLPath_stretch]
 
 @[simp]
-theorem stretchSimilarityHom_apply (hlam : lam ∈ dominantChamber P b)
-    (hf : Function.Injective f) {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m) {n : ℕ} (hn : 0 < n)
-    (x : Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) :
-    (stretchSimilarityHom hlam hf hF hn x).val = x.val.map ((n : 𝕜) • LinearMap.id) :=
-  (rfl)
+theorem stretchSimilarityHom_apply (hlam : lam ∈ dominantChamber P b) {n : ℕ} (hn : 0 < n)
+    (π : LSPath P b lam) :
+    stretchSimilarityHom hlam hn π = π.stretch n hn := (rfl)
 
 /-- Rigidity of similarity morphisms out of `B(λ)`: any two scale-factor-`n` similarity morphisms
-out of `normalCrystal hlam hf hF` agreeing on the straight path are equal. -/
+out of `crystal hlam` agreeing on the straight path are equal. -/
 theorem eq_of_similarityHom_apply_straight_eq {B' : Type*} {d : NormalCrystal P b B'} {n : ℕ}
-    (hlam : lam ∈ dominantChamber P b) (hf : Function.Injective f)
-    {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m)
-    {ψ₁ ψ₂ : NormalCrystal.SimilarityHom n (normalCrystal hlam hf hF) d}
-    (hstraight : ψ₁ ⟨_, straight lam, toPLPath_straight 𝕜 f⟩ =
-      ψ₂ ⟨_, straight lam, toPLPath_straight 𝕜 f⟩) :
+    (hlam : lam ∈ dominantChamber P b)
+    {ψ₁ ψ₂ : NormalCrystal.SimilarityHom n (crystal hlam) d}
+    (hstraight : ψ₁ (straight lam) = ψ₂ (straight lam)) :
     ψ₁ = ψ₂ :=
   NormalCrystal.SimilarityHom.eq_of_apply_eq_of_forall_exists_fWord_eq_some hstraight
-    (exists_normalCrystal_fWord_straight_eq_some hlam hf hF)
+    (exists_fWord_straight_eq_some hlam)
 
 /-- Automatic injectivity of similarity morphisms out of `B(λ)` (in particular of
 `LSPath.stretchSimilarityHom`). -/
 theorem similarityHom_injective {B' : Type*} {d : NormalCrystal P b B'} {n : ℕ}
-    (hlam : lam ∈ dominantChamber P b) (hf : Function.Injective f)
-    {F : b.support → Module.Dual 𝕜 V}
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m)
-    (ψ : NormalCrystal.SimilarityHom n (normalCrystal hlam hf hF) d) :
+    (hlam : lam ∈ dominantChamber P b)
+    (ψ : NormalCrystal.SimilarityHom n (crystal hlam) d) :
     Function.Injective ψ :=
-  ψ.injective_of_forall_exists_fWord_eq_some
-    (exists_normalCrystal_fWord_straight_eq_some hlam hf hF)
-
-end CrystalComparison
+  ψ.injective_of_forall_exists_fWord_eq_some (exists_fWord_straight_eq_some hlam)
 
 end TauCeti.LSPath
+
+end CrystalComparison
