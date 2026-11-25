@@ -199,11 +199,14 @@ theorem lambdaInvariant_eq_finrank (hM : Module.IsTorsion O⟦X⟧ M) [Module.Fi
   rw [lambdaInvariant_def, ← monic_charPoly.natDegree_map (algebraMap O K),
     map_charPoly_eq_charpoly K hM, LinearMap.charpoly_natDegree]
 
--- Over `ℚ_p`, the generic fiber of `ℤ_p⟦T⟧ ⧸ (T² + pT + p)`, cut out by an Eisenstein polynomial,
--- has dimension `2 = λ`.
+-- Over `Λ = ℤ_p⟦T⟧`, the module `Λ ⧸ (T² + pT + p)`, cut out by an Eisenstein polynomial, has
+-- characteristic polynomial `T² + pT + p` and `λ = 2`, and its generic fiber over `ℚ_p` has
+-- dimension `2`.
 example (p : ℕ) [Fact p.Prime] :
     let F : ℤ_[p][X] := .X ^ 2 + .C (p : ℤ_[p]) * .X + .C (p : ℤ_[p])
-    Module.finrank ℚ_[p] (ℚ_[p] ⊗[ℤ_[p]] (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(F : ℤ_[p]⟦X⟧)})) = 2 := by
+    charPoly ℤ_[p] (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(F : ℤ_[p]⟦X⟧)}) = F ∧
+      lambdaInvariant ℤ_[p] (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(F : ℤ_[p]⟦X⟧)}) = 2 ∧
+        Module.finrank ℚ_[p] (ℚ_[p] ⊗[ℤ_[p]] (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(F : ℤ_[p]⟦X⟧)})) = 2 := by
   intro F
   have hp : (p : ℤ_[p]) ∈ maximalIdeal ℤ_[p] := by
     rw [PadicInt.maximalIdeal_eq_span_p]
@@ -219,8 +222,10 @@ example (p : ℕ) [Fact p.Prime] :
     (by rw [hdeg]; norm_num)
   have hM := Ideal.isTorsion_quotient_of_mem (Ideal.mem_span_singleton_self (F : ℤ_[p]⟦X⟧))
     (mem_nonZeroDivisors_of_ne_zero (Polynomial.coe_eq_zero_iff.not.mpr hmon.ne_zero))
-  have h := lambdaInvariant_quotient_span_pow hF hirr 1
-  rw [pow_one, one_mul, hdeg] at h
-  rw [← lambdaInvariant_eq_finrank ℚ_[p] hM, h]
+  have h := charPoly_quotient_span_pow hF hirr 1
+  have h' := lambdaInvariant_quotient_span_pow hF hirr 1
+  rw [pow_one] at h h'
+  rw [one_mul, hdeg] at h'
+  exact ⟨h, h', by rw [← lambdaInvariant_eq_finrank ℚ_[p] hM, h']⟩
 
 end TauCeti.Iwasawa
