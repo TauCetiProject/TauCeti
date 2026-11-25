@@ -15,8 +15,9 @@ import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Depressed
 import TauCeti.Algebra.Polynomial.Derivative
+import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.RingTheory.PowerSeries.Basic
-import TauCeti.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.RingTheory.PowerSeries.Ideal
 
 /-!
 # Hensel lifting of coprime factorizations over power series
@@ -47,11 +48,11 @@ those of `P`, and the factorization is unique.
 
 For a linear factor `g = X - a` this specializes to the simple-root form of Hensel's lemma. If
 `a` is a root of the reduction `p` at which `p'` is a unit, then `X - a` is coprime to
-`p /ₘ (X - a)`, so the factor lift splits off `X - α` with `α ≡ a (mod t)`. Uniqueness of the
-factor lift makes `α` the only root of `P` lifting `a`. In particular it is the root produced by
-Mathlib's `HenselianRing.is_henselian` for the pair `(R⟦t⟧, (t))`, which is Henselian by
-`IsAdicComplete.henselianRing`. Its coefficients obey Newton's recursion
-`αₖ * p'(a) = -[tᵏ] P(α mod tᵏ)`, which holds for every root of `P`.
+`p /ₘ (X - a)`, so the factor lift splits off `X - α` with `α ≡ a (mod t)`. A simple root of the
+reduction lifts to exactly one root of `P` even when `P` is not monic: the pair `(R⟦t⟧, (t))` is
+Henselian by `IsAdicComplete.henselianRing`, so Hensel's lemma with uniqueness
+(`Polynomial.existsUnique_isRoot_sub_mem`) applies directly. Its coefficients obey Newton's
+recursion `αₖ * p'(a) = -[tᵏ] P(α mod tᵏ)`, which holds for every root of `P`.
 
 ## Main results
 
@@ -64,11 +65,8 @@ Mathlib's `HenselianRing.is_henselian` for the pair `(R⟦t⟧, (t))`, which is 
   factorization.
 * `Polynomial.Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative`: the degree-one case, which
   splits off `X - α` with `α` lifting a simple root `a` of the reduction.
-* `Polynomial.Monic.existsUnique_isRoot_constantCoeff_eq`: a simple root of the reduction lifts to
-  exactly one root of `P`.
-* `Polynomial.Monic.existsUnique_isRoot_sub_mem_span_X`: the same statement in the form of
-  Mathlib's simple-root Hensel lemma `HenselianRing.is_henselian` for the ideal `(t)`, with
-  uniqueness added.
+* `Polynomial.existsUnique_isRoot_constantCoeff_eq`: a simple root of the reduction lifts to
+  exactly one root of `P`, for any polynomial `P` over `R⟦t⟧`, monic or not.
 * `Polynomial.IsRoot.coeff_mul_eval_derivative_eq_neg_coeff_eval_trunc`: Newton's recursion for
   the coefficients of a root.
 * `Polynomial.Monic.exists_monic_mul_eq_of_nextCoeff_map_eq_zero`: over a field `K`, a monic
@@ -340,7 +338,7 @@ theorem Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative {P : R⟦X⟧[X]} 
   rcases subsingleton_or_nontrivial R with hR | hR
   · exact ⟨0, 1, Subsingleton.elim _ _, monic_one, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
   obtain ⟨G, H, hG, hH, hGa, hHq, hGH⟩ := hP.exists_monic_mul_eq_of_isCoprime (monic_X_sub_C a)
-    (isCoprime_X_sub_C_of_isUnit_eval (by rwa [eval_divByMonic_X_sub_C_self]))
+    (by simpa using hunit)
     (mul_divByMonic_eq_iff_isRoot.mpr hroot).symm
   -- The monic lift `G` of `X - a` has degree one, so it is `X - α` with `α = -G.coeff 0`.
   have hGα : G = X - C (-G.coeff 0) := by
@@ -353,48 +351,18 @@ theorem Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative {P : R⟦X⟧[X]} 
   rw [map_neg, h₀, neg_neg]
 
 /-- **Simple roots lift uniquely over `R⟦t⟧`.** If `a` is a simple root of the reduction modulo
-`t` of a monic polynomial `P` over `R⟦t⟧`, then `P` has exactly one root with constant coefficient
-`a`. Existence and uniqueness are the degree-one cases of the existence and uniqueness of
-coprime-factor lifts, `Polynomial.Monic.exists_monic_mul_eq_of_isCoprime` and
-`Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`. -/
-theorem Monic.existsUnique_isRoot_constantCoeff_eq {P : R⟦X⟧[X]} (hP : P.Monic) {a : R}
+`t` of a polynomial `P` over `R⟦t⟧`, then `P` has exactly one root with constant coefficient `a`.
+`P` need not be monic. This is `Polynomial.existsUnique_isRoot_sub_mem` for the Henselian pair
+`(R⟦t⟧, (t))`, read through `PowerSeries.constantCoeff`. -/
+theorem existsUnique_isRoot_constantCoeff_eq (P : R⟦X⟧[X]) {a : R}
     (hroot : (P.map PowerSeries.constantCoeff).IsRoot a)
     (hunit : IsUnit ((P.map PowerSeries.constantCoeff).derivative.eval a)) :
     ∃! α : R⟦X⟧, P.IsRoot α ∧ PowerSeries.constantCoeff α = a := by
-  obtain ⟨α, H, hα, -, hH, hαH⟩ := hP.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative hroot hunit
-  have hmap {β : R⟦X⟧} (hβ : PowerSeries.constantCoeff β = a) :
-      (X - C β).map PowerSeries.constantCoeff = X - C a := by
-    simp [hβ]
-  refine ⟨α, ⟨by simp [IsRoot, ← hαH], hα⟩, fun β ⟨hβ, hβa⟩ ↦ ?_⟩
-  -- Splitting off `X - β` gives a second lift of `p = (X - a) * (p /ₘ (X - a))`.
-  have h := (monic_X_sub_C α).eq_and_eq_of_mul_eq_mul_of_isCoprime (monic_X_sub_C β)
-    (by rw [hmap hα, hmap hβa])
-    (by
-      rw [hmap hα, hH]
-      exact isCoprime_X_sub_C_of_isUnit_eval (by rwa [eval_divByMonic_X_sub_C_self]))
-    (hαH.trans (mul_divByMonic_eq_iff_isRoot.mpr hβ).symm)
-  exact (C_injective (sub_right_injective h.1)).symm
-
-/-- **Comparison with the simple-root form of Hensel's lemma.** For the Henselian pair
-`(R⟦t⟧, (t))`, Mathlib's `HenselianRing.is_henselian` (through the instance
-`IsAdicComplete.henselianRing`) lifts an approximate simple root `α₀` of a monic `P` to a root
-`α ≡ α₀ (mod t)`. That root is unique, so it coincides with the root split off by the
-degree-one coprime-factor lift
-`Polynomial.Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative`. -/
-theorem Monic.existsUnique_isRoot_sub_mem_span_X {P : R⟦X⟧[X]} (hP : P.Monic) {α₀ : R⟦X⟧}
-    (hroot : P.eval α₀ ∈ Ideal.span {PowerSeries.X})
-    (hunit : IsUnit (Ideal.Quotient.mk (Ideal.span {PowerSeries.X}) (P.derivative.eval α₀))) :
-    ∃! α : R⟦X⟧, P.IsRoot α ∧ α - α₀ ∈ Ideal.span {PowerSeries.X} := by
-  have hmem {φ : R⟦X⟧} : φ ∈ Ideal.span {PowerSeries.X} ↔ PowerSeries.constantCoeff φ = 0 :=
-    Ideal.mem_span_singleton.trans PowerSeries.X_dvd_iff
-  -- The constant coefficient factors through the quotient by `(t)`, so it preserves units.
-  have hunit' : IsUnit ((P.map PowerSeries.constantCoeff).derivative.eval
-      (PowerSeries.constantCoeff α₀)) := by
-    rw [derivative_map, eval_map_apply]
-    simpa only [Ideal.Quotient.lift_mk] using
-      hunit.map (Ideal.Quotient.lift _ PowerSeries.constantCoeff fun _ ↦ hmem.mp)
-  simpa only [hmem, map_sub, sub_eq_zero] using
-    hP.existsUnique_isRoot_constantCoeff_eq (by rwa [IsRoot, eval_map_apply, ← hmem]) hunit'
+  have hmem {φ : R⟦X⟧} : φ ∈ Ideal.span {PowerSeries.X} ↔ PowerSeries.constantCoeff φ = 0 := by
+    rw [← PowerSeries.ker_constantCoeff, RingHom.mem_ker]
+  simpa [hmem, sub_eq_zero] using P.existsUnique_isRoot_sub_mem (J := Ideal.span {PowerSeries.X})
+    (a₀ := PowerSeries.C a) (by simpa [hmem, ← eval_map_apply] using hroot)
+    ((PowerSeries.isUnit_iff_constantCoeff.mpr (by simpa [← eval_map_apply] using hunit)).map _)
 
 /-- **Newton's recursion for the coefficients of a root over `R⟦t⟧`.** Let `α` be a root of a
 polynomial `P` over `R⟦t⟧`, and let `p` be the reduction of `P` modulo `t` and `a` the constant
@@ -402,9 +370,8 @@ coefficient of `α`. For `k ≠ 0` the `tᵏ`-coefficient `αₖ` of `α` satisf
 `αₖ * p'(a) = -[tᵏ] P(α mod tᵏ)`, where `α mod tᵏ` is the truncation `PowerSeries.trunc k α`.
 
 When `p'(a)` is a unit this determines `α` from `a` one coefficient at a time, as in Newton's
-method for the simple-root form of Hensel's lemma. So the root lifting a simple root `a` given by
-the degree-one coprime-factor lift (`Polynomial.Monic.existsUnique_isRoot_constantCoeff_eq`) has
-the coefficients of Newton's recursion. -/
+method for the simple-root form of Hensel's lemma. So the unique root lifting a simple root `a`
+(`Polynomial.existsUnique_isRoot_constantCoeff_eq`) has the coefficients of Newton's recursion. -/
 theorem IsRoot.coeff_mul_eval_derivative_eq_neg_coeff_eval_trunc {P : R⟦X⟧[X]} {α : R⟦X⟧}
     (hα : P.IsRoot α) {k : ℕ} (hk : k ≠ 0) :
     PowerSeries.coeff k α *

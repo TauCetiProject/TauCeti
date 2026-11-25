@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 public import Mathlib.CategoryTheory.Triangulated.Generators
 public import TauCeti.CategoryTheory.Preadditive.EilenbergSwindle
 public import TauCeti.CategoryTheory.Triangulated.Opposite.Subcategory
+import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
 /-!
 # Localizing and colocalizing closures in a pretriangulated category
@@ -83,8 +84,7 @@ theorem isStableUnderRetracts_of_isClosedUnderCoproducts_nat [P.IsTriangulatedCl
     P.IsStableUnderRetracts where
   of_retract {X Y} h hY := by
     have hW : P (∐ fun _ : ℕ ↦ Y) := P.prop_colimit _ fun _ ↦ hY
-    exact P.ext_of_isTriangulatedClosed₁ _ (binaryBiproductTriangle_distinguished X _)
-      (P.prop_of_iso h.biprodSigmaIso.symm hW) hW
+    exact P.prop_left_of_biprod (P.prop_of_iso h.biprodSigmaIso.symm hW) hW
 
 /-- An isomorphism-closed property closed under countable products, and such that the third
 object of a distinguished triangle satisfies it whenever the other two do, is closed under

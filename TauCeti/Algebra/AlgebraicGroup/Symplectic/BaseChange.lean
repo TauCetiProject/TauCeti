@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 
 /-!
@@ -15,10 +14,9 @@ public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 For a morphism of commutative rings `R → K`, scalar extension of the coordinate Hopf algebra
 of `Sp₂ₘ` is canonically the coordinate Hopf algebra constructed directly over `K`.
 
-The proof transports the entries of the matrix relation `X Jₘ Xᵀ - Jₘ` across the existing
-base-change isomorphism for `GL (m + m)`. It therefore identifies the base change of the
-symplectic defining Hopf ideal with the symplectic defining ideal over `K`, after which the
-general base-change theorem for Hopf-ideal quotients gives the result.
+Since `Sp₂ₘ` is the subgroup scheme of `GL (m + m)` preserving the constant form `Jₘ`, and `Jₘ`
+over `R` maps to `Jₘ` over `K`, everything here specializes the base change of constant-form
+subgroup schemes (`TauCeti.ConstantForm.coordinateHopfAlgebraBaseChangeIso`).
 
 ## Main declarations
 
@@ -34,10 +32,6 @@ general base-change theorem for Hopf-ideal quotients gives the result.
 * J. S. Milne, *Basic Theory of Affine Group Schemes*, Chapter IV, §1.8.
 * The Stacks Project, Tags [01JO](https://stacks.math.columbia.edu/tag/01JO) and
   [022W](https://stacks.math.columbia.edu/tag/022W).
-
-The quotient-transport construction follows
-`TauCeti.SpecialLinear.coordinateHopfAlgebraBaseChangeIso`, replacing its determinant relation
-by the symplectic matrix relations.
 -/
 
 public section
@@ -52,86 +46,29 @@ universe u v
 variable (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
 variable (m : ℕ)
 
-/-- The `R`-algebra structure obtained by restricting the coordinate algebra over `K`. -/
-noncomputable local instance : Algebra R (GeneralLinear.coordinateHopfAlgebra K (m + m)) :=
-  Algebra.compHom _ (algebraMap R K)
-
-/-- The coordinate algebra over `K` is a scalar tower over `R → K`. -/
-local instance : IsScalarTower R K (GeneralLinear.coordinateHopfAlgebra K (m + m)) :=
-  IsScalarTower.of_algebraMap_eq' rfl
-
-/-- The restriction of the general-linear base-change isomorphism to the original coordinate
-Hopf algebra. -/
-private noncomputable def baseChangeAlgHom :
-    GeneralLinear.coordinateHopfAlgebra R (m + m) →ₐ[R]
-      GeneralLinear.coordinateHopfAlgebra K (m + m) :=
-  ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K
-    (m + m)).hom.hom.toAlgHom.restrictScalars R).comp
-    (Algebra.TensorProduct.includeRight :
-      GeneralLinear.coordinateHopfAlgebra R (m + m) →ₐ[R]
-        K ⊗[R] GeneralLinear.coordinateHopfAlgebra R (m + m))
-
-/-- Applying the restricted base-change map is applying the ambient isomorphism to a scalar pure
-tensor. -/
-private theorem baseChangeAlgHom_apply (x : GeneralLinear.coordinateHopfAlgebra R (m + m)) :
-    baseChangeAlgHom R K m x =
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom
-        (1 ⊗ₜ[R] x) := by
-  simp only [baseChangeAlgHom, AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
-    AlgHom.coe_restrictScalars', BialgHom.coe_toAlgHom]
-
 /-- The general-linear base-change isomorphism carries each scalar-extended symplectic relation
 to the corresponding relation over the new base. -/
 theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix (i j : Fin (m + m)) :
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom
         (1 ⊗ₜ[R] relationMatrix R m i j) =
-      relationMatrix K m i j := by
-  rw [← baseChangeAlgHom_apply R K m]
-  have hgeneric : (GeneralLinear.genericMatrix R (m + m)).map (baseChangeAlgHom R K m) =
-      GeneralLinear.genericMatrix K (m + m) := by
-    simpa only [baseChangeAlgHom] using
-      GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix R K (m + m)
-  have hmatrix := ConstantForm.relationMatrix_map R (m + m) (JFin m R) (baseChangeAlgHom R K m)
-  rw [hgeneric, JFin_map] at hmatrix
-  rw [relationMatrix_def K m]
-  exact congrFun (congrFun hmatrix i) j
+      relationMatrix K m i j :=
+  ConstantForm.coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix
+    (JFin_map m (algebraMap R K)) i j
 
 /-- The general-linear base-change isomorphism carries the base-changed symplectic defining Hopf
 ideal onto the symplectic defining Hopf ideal over the new base. -/
 theorem map_baseChangeHopfIdeal_definingHopfIdeal :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal R m)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom =
-      definingHopfIdeal K m := by
-  refine CommHopfAlgCat.map_baseChangeHopfIdeal_of_toIdeal_eq_span
-    (definingHopfIdeal R m) (definingHopfIdeal K m)
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m))
-    (ConstantForm.definingHopfIdeal_toIdeal R (m + m) (JFin m R))
-    (ConstantForm.definingHopfIdeal_toIdeal K (m + m) (JFin m K)) ?_
-  have hrel (i j : Fin (m + m)) :
-      (fun x : GeneralLinear.coordinateHopfAlgebra R (m + m) =>
-        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom.hom
-          (1 ⊗ₜ[R] x)) (relationMatrix R m i j) = relationMatrix K m i j :=
-    coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix R K m i j
-  ext x
-  constructor
-  · rintro ⟨_, hy, rfl⟩
-    obtain ⟨i, j, rfl⟩ := (ConstantForm.mem_relationSet_iff R (m + m) (JFin m R)).mp hy
-    exact (hrel i j).symm ▸ ConstantForm.relationMatrix_mem_relationSet K (m + m) (JFin m K) i j
-  · intro hx
-    obtain ⟨i, j, rfl⟩ := (ConstantForm.mem_relationSet_iff K (m + m) (JFin m K)).mp hx
-    exact ⟨relationMatrix R m i j,
-      ConstantForm.relationMatrix_mem_relationSet R (m + m) (JFin m R) i j,
-      hrel i j⟩
+      definingHopfIdeal K m :=
+  ConstantForm.map_baseChangeHopfIdeal_definingHopfIdeal (JFin_map m (algebraMap R K))
 
 /-- Base change of the symplectic coordinate Hopf algebra is canonically the symplectic
 coordinate Hopf algebra over the new base. -/
 noncomputable def coordinateHopfAlgebraBaseChangeIso :
     CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra R m) ≅
       coordinateHopfAlgebra K m :=
-  CommHopfAlgCat.quotientBaseChangeIsoOfMapEq
-    (definingHopfIdeal R m) (definingHopfIdeal K m)
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m))
-    (map_baseChangeHopfIdeal_definingHopfIdeal R K m)
+  ConstantForm.coordinateHopfAlgebraBaseChangeIso (JFin_map m (algebraMap R K))
 
 /-- The symplectic base-change isomorphism is compatible with the quotient coordinate morphisms
 from the corresponding general-linear coordinate Hopf algebras. -/
@@ -140,12 +77,8 @@ theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom 
     CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R m) ≫
         (coordinateHopfAlgebraBaseChangeIso R K m).hom =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m)).hom ≫
-        coordinateMap K m := by
-  rw [coordinateMap_def, coordinateMap_def]
-  exact CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
-    (definingHopfIdeal R m) (definingHopfIdeal K m)
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K (m + m))
-    (map_baseChangeHopfIdeal_definingHopfIdeal R K m)
+        coordinateMap K m :=
+  ConstantForm.baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom _
 
 /-- On a pure tensor of a restricted general-linear function, the symplectic base-change
 isomorphism is the general-linear isomorphism followed by restriction. -/

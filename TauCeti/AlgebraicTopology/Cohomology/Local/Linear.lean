@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Linear
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
 /-!
 # Linear coordinate changes on local cohomology
@@ -24,6 +25,11 @@ sign of the determinant of `f⁻¹ ≫ f'`
 the transition formula needed to compare the local fibre generators of an oriented Thom class. In
 odd dimension the antipodal map `x ↦ -x` therefore acts by `-1`
 (`TauCeti.singularCohomologyMap_neg_complZeroPairIso_hom`).
+
+Read through a continuous linear equivalence `f : V ≃L[ℝ] E`, a class of `Hᵈ(V, V ∖ {0}; K)`
+generates it exactly when its Kronecker pairing with the image under `f⁻¹` of a generator of
+`H_d(E, E ∖ {0}; K)` is a unit
+(`ContinuousLinearEquiv.span_singularCohomology_compl_zero_eq_top_iff`).
 
 The proof uses the determinant action on local homology in
 `TauCeti.singularHomologyMap_continuousLinearMap_compl_zero` and the relative
@@ -119,5 +125,33 @@ theorem singularCohomologyMap_neg_complZeroPairIso_hom (d : ℕ) (hodd : Odd (fi
     refine (singularCohomologyMap_continuousLinearMap_compl_zero R N _ hf d).trans ?_
     simp [hdet]
   rw [hneg, hact]
+
+/-- **Generators of local cohomology read through a linear isomorphism.** For a continuous linear
+equivalence `f : V ≃L[ℝ] E` onto a real normed space of dimension `d` and a generator `y` of
+`H_d(E, E ∖ {0}; K)`, a class of `Hᵈ(V, V ∖ {0}; K)` generates it exactly when its Kronecker
+pairing with the class `f⁻¹_* y` is a unit. -/
+theorem _root_.ContinuousLinearEquiv.span_singularCohomology_compl_zero_eq_top_iff
+    {K : Type w} [CommRing K] {V : Type w} [TopologicalSpace V] [AddCommMonoid V] [Module ℝ V]
+    (f : V ≃L[ℝ] E)
+    {y : ((TopPair.ofSubset (X := TopCat.of E) ({0}ᶜ : Set E)).singularHomology (ModuleCat.of K K)
+      (finrank ℝ E) : ModuleCat.{w} K)} (hy : Submodule.span K {y} = ⊤)
+    (c : (TopPair.ofSubset (X := TopCat.of V) ({0}ᶜ : Set V)).singularCohomology
+      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ E)) :
+    Submodule.span K {c} = ⊤ ↔
+      IsUnit (((TopPair.ofSubset (X := TopCat.of V) ({0}ᶜ : Set V)).singularKronecker K
+        (finrank ℝ E) c).hom (TopPair.singularHomologyMap f.complZeroPairIso.inv (ModuleCat.of K K)
+          (finrank ℝ E) y)) := by
+  -- Read `c` on `(E, E ∖ {0})` through `f`.
+  let Φ : (TopPair.ofSubset (X := TopCat.of E) ({0}ᶜ : Set E)).singularCohomology
+      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ E) ≃ₗ[K]
+      (TopPair.ofSubset (X := TopCat.of V) ({0}ᶜ : Set V)).singularCohomology
+        (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ E) :=
+    (TopPair.singularCohomologyMapIso (ModuleCat.of K K) K (ModuleCat.of K K)
+      f.complZeroPairIso (finrank ℝ E)).toLinearEquiv
+  rw [← Φ.apply_symm_apply c, Φ.span_singleton_apply_eq_top_iff,
+    span_singularCohomology_complSingleton_eq_top_iff (OpenPartialHomeomorph.refl E)
+      (Set.mem_univ 0) hy, Φ.apply_symm_apply, Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply,
+    Iso.symm_hom, TopPair.singularCohomologyMapIso_inv, TopPair.singularKronecker_naturality,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
 
 end TauCeti

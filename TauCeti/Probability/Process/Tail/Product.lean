@@ -21,8 +21,9 @@ of a configuration space in Sheffield, *Random surfaces* (Astérisque 304, 2005)
 
 Tail events are unchanged by a modification of finitely many coordinates. For a finite index set
 the tail σ-algebra is trivial. Reindexing a product `ι → S` along a finite-to-one map of index
-sets is measurable for the tail σ-algebras, so a group acting on the index set maps tail events to
-tail events. For a countably infinite index set read along an enumeration `e : ℕ ≃ ι`, the tail
+sets is measurable for the tail σ-algebras, and reindexing along a bijection pulls the tail
+σ-algebra back to itself, so a group acting on the index set maps the tail σ-algebra onto
+itself. For a countably infinite index set read along an enumeration `e : ℕ ≃ ι`, the tail
 σ-algebra is the tail σ-algebra `TauCeti.Probability.tailProcess` of the coordinate process
 `k ↦ ω (e k)`; in particular it does not depend on the enumeration, and it is the `limsup` form
 consumed by Kolmogorov's zero-one law.
@@ -36,6 +37,9 @@ consumed by Kolmogorov's zero-one law.
   functions and tail events do not see finitely many coordinates.
 * `TauCeti.Probability.measurable_comp_tailEvents`: reindexing along a finite-to-one map is
   measurable for the tail σ-algebras.
+* `TauCeti.Probability.comap_comp_tailEvents`, `TauCeti.Probability.comap_comp_smul_tailEvents`:
+  reindexing along a bijection, in particular along the action of a group element, pulls the tail
+  σ-algebra back to itself.
 * `TauCeti.Probability.tailEvents_eq_tailProcess`: along an enumeration of the index set, the tail
   σ-algebra is the tail σ-algebra of the coordinate process.
 -/
@@ -147,6 +151,28 @@ theorem measurable_comp_smul_tailEvents {Γ S : Type*} [Group Γ] [MulAction Γ 
     Measurable[tailEvents (X := fun _ : ι => S), tailEvents (X := fun _ : ι => S)]
       (fun (ω : ι → S) i => ω (g • i)) :=
   measurable_comp_tailEvents (MulAction.injective g).tendsto_cofinite
+
+/-- Reindexing a product `ι → S` along a bijection `e : ι' ≃ ι` pulls the tail σ-algebra of
+`ι' → S` back to the tail σ-algebra of `ι → S`. -/
+@[simp]
+theorem comap_comp_tailEvents {ι' S : Type*} [MeasurableSpace S] (e : ι' ≃ ι) :
+    (tailEvents (X := fun _ : ι' => S)).comap (fun ω : ι → S => ω ∘ e) =
+      tailEvents (X := fun _ : ι => S) := by
+  refine le_antisymm (measurable_comp_tailEvents e.injective.tendsto_cofinite).comap_le ?_
+  -- Reindexing back along `e.symm` is measurable, and undoes the reindexing along `e`.
+  have h := MeasurableSpace.comap_mono (g := fun ω : ι → S => ω ∘ e)
+    (measurable_comp_tailEvents (S := S) e.symm.injective.tendsto_cofinite).comap_le
+  rwa [MeasurableSpace.comap_comp, show ((fun ω : ι' → S => ω ∘ e.symm) ∘ fun ω : ι → S => ω ∘ e)
+    = id from funext fun ω => by simp [Function.comp_assoc], MeasurableSpace.comap_id] at h
+
+/-- A group acting on the index set maps the tail σ-algebra onto itself: pulling it back along
+the reindexing `ω ↦ (i ↦ ω (g • i))` gives the tail σ-algebra again. -/
+@[simp]
+theorem comap_comp_smul_tailEvents {Γ S : Type*} [Group Γ] [MulAction Γ ι] [MeasurableSpace S]
+    (g : Γ) :
+    (tailEvents (X := fun _ : ι => S)).comap (fun (ω : ι → S) i => ω (g • i)) =
+      tailEvents (X := fun _ : ι => S) :=
+  comap_comp_tailEvents (MulAction.toPerm g)
 
 /-- Along an enumeration `e : ℕ ≃ ι` of the index set, the tail σ-algebra of the product is the
 tail σ-algebra of the coordinate process `k ↦ ω (e k)`. -/

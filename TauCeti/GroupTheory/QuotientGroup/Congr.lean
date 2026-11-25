@@ -9,10 +9,11 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
-# Left-translation equivariance of coset-space transport
+# Equivariance of coset-space maps along homomorphisms
 
-The coset-space bijections `TauCeti.QuotientGroup.congrComapOfSurjectiveMk` and
-`TauCeti.QuotientGroup.congrOfMapEq` (defined in `TauCeti.Algebra.Group.Subgroup.Map`) act on
+The coset-space map `TauCeti.QuotientGroup.mapComap` along a homomorphism `ψ : G →* G'`, and the
+coset-space bijections `TauCeti.QuotientGroup.congrComapOfSurjectiveMk` and
+`TauCeti.QuotientGroup.congrOfMapEq` (all defined in `TauCeti.Algebra.Group.Subgroup.Map`), act on
 representatives by the underlying group homomorphism or isomorphism, so they are equivariant for
 left translation on cosets.
 
@@ -27,6 +28,8 @@ These lemmas live in their own lightweight module so that:
 
 ## Main statements
 
+* `TauCeti.QuotientGroup.mapComap_smul`: `mapComap` intertwines left translation by `g` with left
+  translation by `ψ g`.
 * `TauCeti.QuotientGroup.congrComapOfSurjectiveMk_smul`: `congrComapOfSurjectiveMk` intertwines
   left translation by `g` with left translation by `ψ g`.
 * `TauCeti.QuotientGroup.congrOfMapEq_smul`: `congrOfMapEq` intertwines left translation by `g`
@@ -39,14 +42,18 @@ namespace TauCeti.QuotientGroup
 
 variable {G G' : Type*} [Group G] [Group G']
 
+/-- `TauCeti.QuotientGroup.mapComap` intertwines left translation by `g` with left translation by
+`ψ g`. -/
+@[simp] theorem mapComap_smul (ψ : G →* G') (B : Subgroup G') (g : G) (q : G ⧸ B.comap ψ) :
+    mapComap ψ B (g • q) = ψ g • mapComap ψ B q :=
+  _root_.QuotientGroup.induction_on q fun _ ↦ by simp [smul_eq_mul]
+
 /-- `TauCeti.QuotientGroup.congrComapOfSurjectiveMk` intertwines left translation by `g` with left
 translation by `ψ g`. -/
 @[simp] theorem congrComapOfSurjectiveMk_smul (ψ : G →* G') (B : Subgroup G')
     (hψ : Function.Surjective fun g : G ↦ (ψ g : G' ⧸ B)) (g : G) (q : G ⧸ B.comap ψ) :
-    congrComapOfSurjectiveMk ψ B hψ (g • q) = ψ g • congrComapOfSurjectiveMk ψ B hψ q :=
-  _root_.QuotientGroup.induction_on q fun _ ↦ by
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, congrComapOfSurjectiveMk_mk,
-      congrComapOfSurjectiveMk_mk, map_mul, MulAction.Quotient.smul_mk, smul_eq_mul]
+    congrComapOfSurjectiveMk ψ B hψ (g • q) = ψ g • congrComapOfSurjectiveMk ψ B hψ q := by
+  rw [coe_congrComapOfSurjectiveMk, mapComap_smul]
 
 /-- `TauCeti.QuotientGroup.congrOfMapEq` intertwines left translation by `g` with left translation
 by `φ g`. -/
