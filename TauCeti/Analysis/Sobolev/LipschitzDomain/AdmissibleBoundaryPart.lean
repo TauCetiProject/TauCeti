@@ -52,6 +52,8 @@ an admissible `Γ` keeps its closure but destroys the chart description at the r
   `Set.IsAdmissibleBoundaryPart.exists_mem_nhds_forall_mem_of_mapsTo`: for a one-dimensional base,
   the base regions are order-connected, so along a frontier path near a point an admissible
   boundary part is met in an interval of parameters.
+* `Set.isAdmissibleBaseRegion_Ioi`, `Set.isAdmissibleBaseRegion_Iio`: conversely, open half-lines
+  are admissible base regions, with interfaces modelled on a zero space.
 * `Set.IsAdmissibleBoundaryPart.isLipschitzDomain`: `Ω` is then a Lipschitz domain.
 * `Set.IsAdmissibleBoundaryPart.exists_isOpen_frontier_inter_eq`: `Γ` is relatively open in the
   frontier.
@@ -551,16 +553,35 @@ theorem IsAdmissibleBaseRegion.ordConnected {B : Set ℝ} (hB : B.IsAdmissibleBa
   have hsnd (s : ℝ) : (f s).snd = 0 := by
     obtain ⟨u, hu⟩ := f.surjective (WithLp.toLp 2 (0, (f 1).snd))
     have h1 : u * (f 1).fst = 0 := by
-      rw [← hfst, hu]
-      rfl
+      rw [← hfst, hu, WithLp.toLp_fst]
     have h2 : u • (f 1).snd = (f 1).snd := by
-      rw [← WithLp.smul_snd, ← hf, hu]
-      rfl
+      rw [← WithLp.smul_snd, ← hf, hu, WithLp.toLp_snd]
     rw [(mul_eq_zero.1 h1).resolve_right ha, zero_smul] at h2
     rw [hf, WithLp.smul_snd, ← h2, smul_zero]
   refine ⟨fun x hx y hy t ht => ?_⟩
   rw [mem_preimage, mem_ofPred_eq, hfst, hsnd] at hx hy ⊢
   rcases ha.lt_or_gt with ha | ha <;> nlinarith [ht.1, ht.2]
+
+/-- Conversely, the open half-line `(c, ∞)` is an admissible base region, with interfaces modelled
+on a zero space: it is the region above the constant `c` after `s ↦ (s, 0)`. -/
+theorem isAdmissibleBaseRegion_Ioi [Subsingleton E'] (c : ℝ) :
+    (Ioi c).IsAdmissibleBaseRegion E' := by
+  have : Unique E' := uniqueOfSubsingleton 0
+  convert isAdmissibleBaseRegion_preimage_setOf_lt_fst
+    (LinearIsometryEquiv.withLpProdUnique 2 ℝ ℝ E').symm (LipschitzWith.const (α := E') c) using 1
+  ext s
+  simp
+
+/-- The open half-line `(-∞, c)` is an admissible base region, with interfaces modelled on a zero
+space: it is the region above the constant `-c` after `s ↦ (-s, 0)`. -/
+theorem isAdmissibleBaseRegion_Iio [Subsingleton E'] (c : ℝ) :
+    (Iio c).IsAdmissibleBaseRegion E' := by
+  have : Unique E' := uniqueOfSubsingleton 0
+  convert isAdmissibleBaseRegion_preimage_setOf_lt_fst
+    ((LinearIsometryEquiv.neg ℝ).trans (LinearIsometryEquiv.withLpProdUnique 2 ℝ ℝ E').symm)
+    (LipschitzWith.const (α := E') (-c)) using 1
+  ext s
+  simp
 
 /-- **Along a frontier path, an admissible boundary part of a planar chart is order-connected.**
 If the boundary charts have a one-dimensional base, then every frontier point `x` has a
@@ -583,9 +604,8 @@ theorem IsAdmissibleBoundaryPart.exists_mem_nhds_forall_mem_of_mapsTo {Ω Γ : S
     (WithLp.sndL 2 ℝ ℝ ℝ).continuous.comp_continuousOn (e.continuous.comp_continuousOn hcc)
   -- Two frontier points of the cylinder with the same base coordinate are equal.
   have hφi : InjOn φ (Icc a b) := fun s hs u hu hsu => by
-    refine hci hs hu (e.injective ((WithLp.ext_iff 2).2 (Prod.ext ?_ hsu)))
-    change (e (c s)).fst = (e (c u)).fst
-    rw [hC.fst_apply_eq_of_mem_frontier (hcm hs).1 (hcm hs).2,
+    refine hci hs hu (e.injective (WithLp.ofLp_injective 2 (Prod.ext ?_ hsu)))
+    rw [WithLp.ofLp_fst, WithLp.ofLp_fst, hC.fst_apply_eq_of_mem_frontier (hcm hs).1 (hcm hs).2,
       hC.fst_apply_eq_of_mem_frontier (hcm hu).1 (hcm hu).2]
     exact congrArg γ hsu
   have hmem (u : ℝ) (hu : u ∈ Icc a b) : c u ∈ Γ ↔ φ u ∈ B :=

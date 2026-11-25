@@ -18,8 +18,8 @@ of the frontier (`TauCeti.squareLeftPart S`). For open `S` it is relatively open
 * `{0} × (0, 1)` is an admissible boundary part
   (`TauCeti.isAdmissibleBoundaryPart_squareLeftPart_Ioo`): along the open left side every chart
   sees the whole base, away from the closed left side none of it, and at the corners `(0, 0)`
-  and `(0, 1)` the chart is the rotation by `π / 4` with graph `|s|`, in which the side is the
-  graph over one side of the base point.
+  and `(0, 1)` the charts are the rotations by `π / 4` and `-π / 4` with graph `|s|`, in which
+  the side is the graph over one side of the base point.
 * `{0} × ⋃ₖ (1/(2k+3), 1/(2k+2))` is not admissible
   (`TauCeti.not_isAdmissibleBoundaryPart_squareLeftPart_gaps`): near the corner `(0, 0)` it
   alternates infinitely often.
@@ -60,43 +60,14 @@ theorem mem_squareLeftPart {S : Set ℝ} {x : WithLp 2 (ℝ × ℝ)} :
 theorem squareLeftPart_eq_image (S : Set ℝ) :
     squareLeftPart S = (fun s : ℝ => WithLp.toLp 2 ((0 : ℝ), s)) '' S := by
   ext x
-  refine ⟨fun hx => ⟨x.snd, hx.2, ?_⟩, ?_⟩
-  · rw [← hx.1]
-    rfl
-  · rintro ⟨s, hs, rfl⟩
-    exact ⟨rfl, hs⟩
+  refine ⟨fun hx => ⟨x.snd, hx.2, WithLp.ofLp_injective 2 (Prod.ext (by simp [hx.1]) (by simp))⟩,
+    ?_⟩
+  rintro ⟨s, hs, rfl⟩
+  exact ⟨rfl, hs⟩
 
 /-- The path `s ↦ (0, s)` along the left side is continuous. -/
-theorem continuous_toLp_zero_prod : Continuous fun s : ℝ => WithLp.toLp 2 ((0 : ℝ), s) :=
+private theorem continuous_toLp_zero_prod : Continuous fun s : ℝ => WithLp.toLp 2 ((0 : ℝ), s) :=
   (WithLp.prod_continuous_toLp 2 ℝ ℝ).comp (continuous_const.prodMk continuous_id)
-
-/-- A point of the closed left side lies in the frontier of the open unit square. -/
-theorem mem_frontier_openUnitSquare_of_fst_eq_zero {x : WithLp 2 (ℝ × ℝ)} (h1 : x.fst = 0)
-    (h2 : x.snd ∈ Icc 0 1) : x ∈ frontier openUnitSquare := by
-  refine ⟨?_, fun hx => ?_⟩
-  · -- `x` is the limit at `0⁺` of `t ↦ (t, x.snd + t (1/2 - x.snd))`, which lies in the square.
-    set f : ℝ → WithLp 2 (ℝ × ℝ) := fun t => WithLp.toLp 2 (t, x.snd + t * (1 / 2 - x.snd))
-    have hf : Continuous f := (WithLp.prod_continuous_toLp 2 ℝ ℝ).comp (by fun_prop)
-    have hf0 : f 0 = x := by
-      change WithLp.toLp 2 (0, x.snd + 0 * (1 / 2 - x.snd)) = x
-      rw [zero_mul, add_zero, ← h1]
-      rfl
-    refine mem_closure_of_tendsto (hf0 ▸ (hf.tendsto 0).mono_left nhdsWithin_le_nhds)
-      (eventually_of_mem (Ioo_mem_nhdsGT (zero_lt_one' ℝ)) fun t ht => ?_)
-    simp only [f, mem_openUnitSquare, mem_Ioo, WithLp.toLp_fst, WithLp.toLp_snd] at ht ⊢
-    exact ⟨ht, by nlinarith [h2.1, h2.2], by nlinarith [h2.1, h2.2]⟩
-  · rw [isOpen_openUnitSquare.interior_eq, mem_openUnitSquare, h1] at hx
-    exact lt_irrefl _ hx.1.1
-
-/-- A frontier point of the open unit square with first coordinate below `1` and second
-coordinate in `(0, 1)` lies on the left side. -/
-theorem fst_eq_zero_of_mem_frontier_openUnitSquare {x : WithLp 2 (ℝ × ℝ)}
-    (hx : x ∈ frontier openUnitSquare) (h1 : x.fst < 1) (h2 : x.snd ∈ Ioo 0 1) : x.fst = 0 := by
-  refine ((mem_Icc_of_mem_frontier_openUnitSquare hx).1.1.eq_or_lt.resolve_right
-    fun h0 => ?_).symm
-  have := hx.2
-  rw [isOpen_openUnitSquare.interior_eq] at this
-  exact this (mem_openUnitSquare.2 ⟨⟨h0, h1⟩, h2⟩)
 
 /-- `{0} × S` lies in the frontier of the open unit square when `S ⊆ [0, 1]`. -/
 theorem squareLeftPart_subset_frontier {S : Set ℝ} (hS : S ⊆ Icc 0 1) :
@@ -158,7 +129,7 @@ def squareGaps : Set ℝ :=
   ⋃ k : ℕ, Ioo (1 / (2 * k + 3)) (1 / (2 * k + 2))
 
 /-- The intervals of `TauCeti.squareGaps` lie in `(0, 1)`. -/
-theorem squareGaps_subset : squareGaps ⊆ Ioo 0 1 := by
+theorem squareGaps_subset_Ioo : squareGaps ⊆ Ioo 0 1 := by
   refine iUnion_subset fun k x hx => ⟨(by positivity : (0 : ℝ) < 1 / (2 * k + 3)).trans hx.1,
     hx.2.trans ?_⟩
   rw [div_lt_one (by positivity)]
@@ -241,103 +212,55 @@ theorem w1pVanishingOnSubmodule_squareLeftPart_punctured
 
 /-! ### The positive Check -/
 
-/-- The base line `ℝ` as `ℝ × 0`, the model of a base region on one side of a point. -/
-private def lineProdZero : ℝ ≃ₗᵢ[ℝ] WithLp 2 (ℝ × (Fin 0 → ℝ)) :=
-  { (LinearEquiv.prodUnique.symm.trans (WithLp.linearEquiv 2 ℝ (ℝ × (Fin 0 → ℝ))).symm :
-      ℝ ≃ₗ[ℝ] WithLp 2 (ℝ × (Fin 0 → ℝ))) with
-    norm_map' := fun s => by
-      simp [WithLp.prod_norm_eq_of_L2, norm_of_subsingleton, Real.sqrt_sq_eq_abs] }
-
-private theorem lineProdZero_apply_fst (s : ℝ) : (lineProdZero s).fst = s :=
-  rfl
-
-/-- The open half-line `(0, ∞)` is an admissible base region. -/
-private theorem isAdmissibleBaseRegion_Ioi : (Ioi (0 : ℝ)).IsAdmissibleBaseRegion (Fin 0 → ℝ) := by
-  convert isAdmissibleBaseRegion_preimage_setOf_lt_fst lineProdZero
-    (LipschitzWith.const (α := Fin 0 → ℝ) (0 : ℝ)) using 1
-  ext s
-  simp [lineProdZero_apply_fst]
-
-/-- The open half-line `(-∞, 0)` is an admissible base region. -/
-private theorem isAdmissibleBaseRegion_Iio : (Iio (0 : ℝ)).IsAdmissibleBaseRegion (Fin 0 → ℝ) := by
-  convert isAdmissibleBaseRegion_preimage_setOf_lt_fst
-    ((LinearIsometryEquiv.neg ℝ).trans lineProdZero)
-    (LipschitzWith.const (α := Fin 0 → ℝ) (0 : ℝ)) using 1
-  ext s
-  simp [lineProdZero_apply_fst]
+/-- The side near the corner `(0, 0)` in the coordinates of the rotation by `π / 4`: with
+`k = (√2)⁻¹`, the point `(k u - k v, k u + k v)` lies on `{0} × (0, 1)` exactly when `u = |v|` and
+`0 < v`, for `|v| < 1 / 2`. -/
+private theorem corner_mem_squareLeftPart_iff {u v : ℝ} (hv : |v| < 1 / 2) :
+    ((√2)⁻¹ * u - (√2)⁻¹ * v = 0 ∧ (√2)⁻¹ * u + (√2)⁻¹ * v ∈ Ioo (0 : ℝ) 1) ↔
+      u = |v| ∧ 0 < v := by
+  have hk0 : (0 : ℝ) < (√2)⁻¹ := by positivity
+  have hk1 : (√2)⁻¹ < (1 : ℝ) := inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two
+  rw [abs_lt] at hv
+  constructor
+  · rintro ⟨h1, h2, -⟩
+    have huv : u = v := by
+      rw [← mul_sub, mul_eq_zero, sub_eq_zero] at h1
+      exact h1.resolve_left hk0.ne'
+    subst huv
+    have hu : 0 < u := by nlinarith
+    exact ⟨(abs_of_pos hu).symm, hu⟩
+  · rintro ⟨rfl, hv0⟩
+    rw [abs_of_pos hv0]
+    exact ⟨sub_self _, by positivity, by nlinarith⟩
 
 /-- The corner chart of `{0} × (0, 1)` at `(0, 0)`: the rotation by `π / 4` with graph `|s|`, in
 which the side is the graph over `(0, ∞)`. -/
-private theorem exists_isBoundaryPartChart_corner_zero {x : WithLp 2 (ℝ × ℝ)} (h1 : x.fst = 0)
-    (h2 : x.snd = 0) :
+private theorem exists_isBoundaryPartChart_corner_zero :
     ∃ (e : WithLp 2 (ℝ × ℝ) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × ℝ)) (h r : ℝ),
       openUnitSquare.IsBoundaryPartChart (squareLeftPart (Ioo 0 1)) e (fun s => |s|) 1 h r
-        (Ioi 0) ∧ e x = 0 := by
-  have hk1 : 1 / 2 < (√2)⁻¹ := by
-    rw [one_div]
-    exact inv_strictAnti₀ (by positivity) ((Real.sqrt_lt' two_pos).2 (by norm_num))
-  have hk2 : (√2)⁻¹ < 1 := inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two
-  have hc := isLipschitzChartWith_openUnitSquare_of_forall_mem_iff x (a := 1 / 2) (b := 1 / 2)
-    Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq (by norm_num) (by norm_num) abs_zero
-    (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => by
-      refine Iff.trans ?_ (openUnitSquare_corner_iff hu hv)
-      simp only [h1, h2, zero_add, mul_sub, mul_add]
-  refine ⟨_, _, _, hc.toIsLipschitzChart.isBoundaryPartChart_of_forall_mem_iff fun z hz => ?_,
-    prodRecentredRotation_apply_self _ _ _ x⟩
-  rw [mem_normalCylinder, Real.norm_eq_abs, abs_lt] at hz
-  set k : ℝ := (√2)⁻¹
+        (Ioi 0) ∧ e 0 = 0 := by
+  refine ⟨_, _, _, isLipschitzChartWith_openUnitSquare_zero.toIsLipschitzChart
+    |>.isBoundaryPartChart_of_forall_mem_iff fun z hz => ?_, prodRecentredRotation_apply_self ..⟩
+  rw [mem_normalCylinder, Real.norm_eq_abs] at hz
   simp only [mem_squareLeftPart, prodRecentredRotation_symm_apply_fst,
-    prodRecentredRotation_symm_apply_snd, h1, h2, zero_add, mem_Ioo, mem_Ioi]
-  constructor
-  · rintro ⟨h3, h4, -⟩
-    have huv : z.fst = z.snd := by
-      have : k * (z.fst - z.snd) = 0 := by linarith
-      linarith [(mul_eq_zero.1 this).resolve_left (by positivity)]
-    have hv : 0 < z.snd := by nlinarith
-    exact ⟨by rw [abs_of_pos hv, huv], hv⟩
-  · rintro ⟨h3, h4⟩
-    rw [abs_of_pos h4] at h3
-    rw [h3]
-    exact ⟨by ring, by nlinarith, by nlinarith⟩
+    prodRecentredRotation_symm_apply_snd, WithLp.zero_fst, WithLp.zero_snd, zero_add, mem_Ioi]
+  exact corner_mem_squareLeftPart_iff hz.2.2
 
 /-- The corner chart of `{0} × (0, 1)` at `(0, 1)`: the rotation by `-π / 4` with graph `|s|`, in
-which the side is the graph over `(-∞, 0)`. -/
-private theorem exists_isBoundaryPartChart_corner_one {x : WithLp 2 (ℝ × ℝ)} (h1 : x.fst = 0)
-    (h2 : x.snd = 1) :
+which the side is the graph over `(-∞, 0)`. Its arithmetic is that of `(0, 0)` under `v ↦ -v`. -/
+private theorem exists_isBoundaryPartChart_corner_one :
     ∃ (e : WithLp 2 (ℝ × ℝ) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × ℝ)) (h r : ℝ),
       openUnitSquare.IsBoundaryPartChart (squareLeftPart (Ioo 0 1)) e (fun s => |s|) 1 h r
-        (Iio 0) ∧ e x = 0 := by
-  have hk1 : 1 / 2 < (√2)⁻¹ := by
-    rw [one_div]
-    exact inv_strictAnti₀ (by positivity) ((Real.sqrt_lt' two_pos).2 (by norm_num))
-  have hk2 : (√2)⁻¹ < 1 := inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two
-  have hk : ((√2)⁻¹ : ℝ) ^ 2 + (-(√2)⁻¹ : ℝ) ^ 2 = 1 := by
-    rw [neg_sq]
-    exact Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
-  have hc := isLipschitzChartWith_openUnitSquare_of_forall_mem_iff x (a := 1 / 2) (b := 1 / 2) hk
-    (by norm_num)
-    (by norm_num) abs_zero (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => by
-      rw [← abs_neg] at hv ⊢
-      refine Iff.trans ?_ (openUnitSquare_corner_iff hu hv)
-      simp only [h1, h2, zero_add, mul_sub, mul_add, mem_Ioo]
-      constructor <;> rintro ⟨⟨h3, h4⟩, h5, h6⟩ <;> refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> linarith
-  refine ⟨_, _, _, hc.toIsLipschitzChart.isBoundaryPartChart_of_forall_mem_iff fun z hz => ?_,
-    prodRecentredRotation_apply_self _ _ _ x⟩
-  rw [mem_normalCylinder, Real.norm_eq_abs, abs_lt] at hz
-  set k : ℝ := (√2)⁻¹
+        (Iio 0) ∧ e (WithLp.toLp 2 (0, 1)) = 0 := by
+  refine ⟨_, _, _, isLipschitzChartWith_openUnitSquare_zero_one.toIsLipschitzChart
+    |>.isBoundaryPartChart_of_forall_mem_iff fun z hz => ?_, prodRecentredRotation_apply_self ..⟩
+  rw [mem_normalCylinder, Real.norm_eq_abs, ← abs_neg] at hz
   simp only [mem_squareLeftPart, prodRecentredRotation_symm_apply_fst,
-    prodRecentredRotation_symm_apply_snd, h1, h2, zero_add, mem_Ioo, mem_Iio]
-  constructor
-  · rintro ⟨h3, -, h5⟩
-    have huv : z.fst = -z.snd := by
-      have : k * (z.fst + z.snd) = 0 := by linarith
-      linarith [(mul_eq_zero.1 this).resolve_left (by positivity)]
-    have hv : z.snd < 0 := by nlinarith
-    exact ⟨by rw [abs_of_neg hv, huv], hv⟩
-  · rintro ⟨h3, h4⟩
-    rw [abs_of_neg h4] at h3
-    rw [h3]
-    exact ⟨by ring, by nlinarith, by nlinarith⟩
+    prodRecentredRotation_symm_apply_snd, WithLp.toLp_fst, WithLp.toLp_snd, mem_Iio]
+  rw [← abs_neg z.snd, ← neg_pos]
+  refine Iff.trans ?_ (corner_mem_squareLeftPart_iff hz.2.2)
+  simp only [mem_Ioo]
+  constructor <;> rintro ⟨h1, h2, h3⟩ <;> refine ⟨?_, ?_, ?_⟩ <;> linarith
 
 /-- **`{0} × (0, 1)` is an admissible boundary part of the open unit square**, with base `ℝ` and
 point interfaces. Away from the closed left side the charts see none of the base, along the open
@@ -371,9 +294,12 @@ theorem isAdmissibleBoundaryPart_squareLeftPart_Ioo :
           have hy2 : y.snd ∈ Ioo 0 1 := ⟨by linarith, by linarith⟩
           exact ⟨fst_eq_zero_of_mem_frontier_openUnitSquare hy (by linarith) hy2, hy2⟩
       exact ⟨e, φ, 1, ρ, ρ, univ, hρ, isAdmissibleBaseRegion_univ, hex⟩
-    · obtain ⟨e', h, r, hc', hex'⟩ := exists_isBoundaryPartChart_corner_one hs0.symm ht1
-      exact ⟨e', _, 1, h, r, _, hc', isAdmissibleBaseRegion_Iio, hex'⟩
-  · obtain ⟨e', h, r, hc', hex'⟩ := exists_isBoundaryPartChart_corner_zero hs0.symm ht0.symm
-    exact ⟨e', _, 1, h, r, _, hc', isAdmissibleBaseRegion_Ioi, hex'⟩
+    · obtain rfl : x = WithLp.toLp 2 (0, 1) :=
+        WithLp.ofLp_injective 2 (Prod.ext (by simp [← hs0]) (by simp [ht1]))
+      obtain ⟨e', h, r, hc', hex'⟩ := exists_isBoundaryPartChart_corner_one
+      exact ⟨e', _, 1, h, r, _, hc', isAdmissibleBaseRegion_Iio 0, hex'⟩
+  · obtain rfl : x = 0 := WithLp.ofLp_injective 2 (Prod.ext (by simp [← hs0]) (by simp [← ht0]))
+    obtain ⟨e', h, r, hc', hex'⟩ := exists_isBoundaryPartChart_corner_zero
+    exact ⟨e', _, 1, h, r, _, hc', isAdmissibleBaseRegion_Ioi 0, hex'⟩
 
 end TauCeti

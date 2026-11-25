@@ -35,8 +35,12 @@ constant, is centred there.
 * `TauCeti.slitUnitDisc_eq_ball_inter`: the slit disc is the open unit disc minus the closed ray
   `[0, ∞) × {0}`; hence `TauCeti.isOpen_slitUnitDisc` (it is open) and
   `TauCeti.slitUnitDisc_ae_eq_ball` (it is a.e. equal to the open unit disc).
-* `TauCeti.isLipschitzChartWith_openUnitSquare_zero`: the corner chart of the square at the
-  origin, with graph `|s|` after the rotation by `π / 4`.
+* `TauCeti.isLipschitzChartWith_openUnitSquare_zero`,
+  `TauCeti.isLipschitzChartWith_openUnitSquare_zero_one`: the corner charts of the square at the
+  origin and at `(0, 1)`, with graph `|s|` after the rotations by `π / 4` and `-π / 4`.
+* `TauCeti.mem_frontier_openUnitSquare_of_fst_eq_zero`,
+  `TauCeti.fst_eq_zero_of_mem_frontier_openUnitSquare`: the closed left side lies in the
+  frontier, and near the open left side the frontier is the left side.
 * `TauCeti.isLipschitzDomainWith_openUnitSquare`: the open unit square is a Lipschitz domain
   with constant `1`.
 * `TauCeti.not_exists_isLipschitzChart_slitUnitDisc`,
@@ -86,6 +90,31 @@ theorem mem_Icc_of_mem_frontier_openUnitSquare {x : WithLp 2 (ℝ × ℝ)}
   exact (isClosed_Icc.preimage (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst).inter
     (isClosed_Icc.preimage (WithLp.prod_continuous_ofLp 2 ℝ ℝ).snd)
 
+/-- A point of the closed left side lies in the frontier of the open unit square. -/
+theorem mem_frontier_openUnitSquare_of_fst_eq_zero {x : WithLp 2 (ℝ × ℝ)} (h1 : x.fst = 0)
+    (h2 : x.snd ∈ Icc 0 1) : x ∈ frontier openUnitSquare := by
+  refine ⟨?_, fun hx => ?_⟩
+  · -- `x` is the limit at `0⁺` of `t ↦ (t, x.snd + t (1/2 - x.snd))`, which lies in the square.
+    set f : ℝ → WithLp 2 (ℝ × ℝ) := fun t => WithLp.toLp 2 (t, x.snd + t * (1 / 2 - x.snd))
+    have hf : Continuous f := (WithLp.prod_continuous_toLp 2 ℝ ℝ).comp (by fun_prop)
+    have hf0 : f 0 = x := WithLp.ofLp_injective 2 (Prod.ext (by simp [f, h1]) (by simp [f]))
+    refine mem_closure_of_tendsto (hf0 ▸ (hf.tendsto 0).mono_left nhdsWithin_le_nhds)
+      (Filter.eventually_of_mem (Ioo_mem_nhdsGT (zero_lt_one' ℝ)) fun t ht => ?_)
+    simp only [f, mem_openUnitSquare, mem_Ioo, WithLp.toLp_fst, WithLp.toLp_snd] at ht ⊢
+    exact ⟨ht, by nlinarith [h2.1, h2.2], by nlinarith [h2.1, h2.2]⟩
+  · rw [isOpen_openUnitSquare.interior_eq, mem_openUnitSquare, h1] at hx
+    exact lt_irrefl _ hx.1.1
+
+/-- A frontier point of the open unit square with first coordinate below `1` and second
+coordinate in `(0, 1)` lies on the left side. -/
+theorem fst_eq_zero_of_mem_frontier_openUnitSquare {x : WithLp 2 (ℝ × ℝ)}
+    (hx : x ∈ frontier openUnitSquare) (h1 : x.fst < 1) (h2 : x.snd ∈ Ioo 0 1) : x.fst = 0 := by
+  refine ((mem_Icc_of_mem_frontier_openUnitSquare hx).1.1.eq_or_lt.resolve_right
+    fun h0 => ?_).symm
+  have := hx.2
+  rw [isOpen_openUnitSquare.interior_eq] at this
+  exact this (mem_openUnitSquare.2 ⟨⟨h0, h1⟩, h2⟩)
+
 /-- A rotation chart of the open unit square, from the description of the square in chart
 coordinates. -/
 theorem isLipschitzChartWith_openUnitSquare_of_forall_mem_iff (c : WithLp 2 (ℝ × ℝ)) {α β : ℝ}
@@ -100,7 +129,7 @@ theorem isLipschitzChartWith_openUnitSquare_of_forall_mem_iff (c : WithLp 2 (ℝ
 
 /-- The arithmetic of a corner chart: with `k = (√2)⁻¹`, the rotated quarter-plane
 `k (u - v) > 0, k (u + v) > 0` near the origin is the region `|v| < u`. -/
-theorem openUnitSquare_corner_iff {u v : ℝ} (hu : |u| < 1 / 2) (hv : |v| < 1 / 2) :
+private theorem corner_iff {u v : ℝ} (hu : |u| < 1 / 2) (hv : |v| < 1 / 2) :
     ((√2)⁻¹ * (u - v) ∈ Ioo (0 : ℝ) 1 ∧ (√2)⁻¹ * (u + v) ∈ Ioo (0 : ℝ) 1) ↔ |v| < u := by
   have hk1 : 1 / 2 < (√2)⁻¹ := by
     rw [one_div]
@@ -123,8 +152,22 @@ theorem isLipschitzChartWith_openUnitSquare_zero :
       (fun s => |s|) (1 / 2) (1 / 2) := by
   refine isLipschitzChartWith_openUnitSquare_of_forall_mem_iff 0 _ (by norm_num) (by norm_num)
     abs_zero (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_
-  refine Iff.trans ?_ (openUnitSquare_corner_iff hu hv)
+  refine Iff.trans ?_ (corner_iff hu hv)
   simp only [WithLp.zero_fst, WithLp.zero_snd, zero_add, mul_sub, mul_add]
+
+/-- The rotation by `-π / 4` centred at the corner `(0, 1)` is a chart of the open unit square with
+graph `|s|` and constant `1`. -/
+theorem isLipschitzChartWith_openUnitSquare_zero_one :
+    openUnitSquare.IsLipschitzChartWith 1
+      (prodRecentredRotation (√2)⁻¹ (-(√2)⁻¹)
+        (by rw [neg_sq]; exact Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq) (WithLp.toLp 2 (0, 1)))
+      (fun s => |s|) (1 / 2) (1 / 2) := by
+  refine isLipschitzChartWith_openUnitSquare_of_forall_mem_iff _ _ (by norm_num) (by norm_num)
+    abs_zero (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_
+  rw [← abs_neg] at hv ⊢
+  refine Iff.trans ?_ (corner_iff hu hv)
+  simp only [WithLp.toLp_fst, WithLp.toLp_snd, mem_Ioo]
+  constructor <;> rintro ⟨⟨h1, h2⟩, h3, h4⟩ <;> refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> linarith
 
 /-- The edge charts of the open unit square: at a point `c` of an open edge, the translated
 rotation by a multiple of `π / 2` taking the first coordinate to the inward normal is a chart with
@@ -165,7 +208,7 @@ private theorem exists_isLipschitzChartWith_openUnitSquare_corner {c : WithLp 2 
       refine ⟨_, _, hk'', ?_⟩] <;>
   · refine isLipschitzChartWith_openUnitSquare_of_forall_mem_iff c _ (by norm_num) (by norm_num)
       abs_zero (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_
-    refine Iff.trans ?_ (openUnitSquare_corner_iff hu hv)
+    refine Iff.trans ?_ (corner_iff hu hv)
     simp only [hs, ht, mem_Ioo]
     constructor <;> rintro ⟨⟨h1, h2⟩, h3, h4⟩ <;> refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> linarith
 
