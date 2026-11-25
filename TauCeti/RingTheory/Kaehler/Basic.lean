@@ -21,6 +21,8 @@ along derivations of `S`):
 
 * `KaehlerDifferential.inductionOn`: `S`-linear span induction on `Ω[S⁄R]` with cases
   `D R S s`, `s • ω`, and `ω₁ + ω₂`.
+* `KaehlerDifferential.span_image_D_eq_top_of_adjoin_eq_top`: the differentials of a set of
+  `R`-algebra generators of `S` span `Ω[S⁄R]`.
 * `TauCeti.KaehlerDifferential.map_eq_zero_of_mem_kerTotal`: proves an additive map on `S →₀ S`
   vanishes on `KaehlerDifferential.kerTotal R S` from vanishing on its three defining relation
   families and closure under `S`-scalar multiplication on
@@ -50,6 +52,21 @@ theorem inductionOn {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
       ω ∈ Submodule.span S (Set.range (KaehlerDifferential.D R S)))
   rintro _ ⟨s, rfl⟩
   exact D s
+
+/-- If `s` generates `S` as an `R`-algebra, then the differentials of the elements of `s` span
+`Ω[S⁄R]` as an `S`-module. -/
+theorem span_image_D_eq_top_of_adjoin_eq_top {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] {s : Set S} (hs : Algebra.adjoin R s = ⊤) :
+    Submodule.span S (KaehlerDifferential.D R S '' s) = ⊤ := by
+  rw [eq_top_iff, ← span_range_derivation, Submodule.span_le]
+  rintro _ ⟨x, rfl⟩
+  induction (hs ▸ Algebra.mem_top : x ∈ Algebra.adjoin R s) using Algebra.adjoin_induction with
+  | mem x hx => exact Submodule.subset_span ⟨x, hx, rfl⟩
+  | algebraMap r => simp
+  | add x y _ _ hx hy => rw [SetLike.mem_coe, map_add]; exact add_mem hx hy
+  | mul x y _ _ hx hy =>
+    rw [SetLike.mem_coe, Derivation.leibniz]
+    exact add_mem (Submodule.smul_mem _ _ hy) (Submodule.smul_mem _ _ hx)
 
 end KaehlerDifferential
 
