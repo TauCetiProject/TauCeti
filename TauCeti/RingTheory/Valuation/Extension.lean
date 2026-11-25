@@ -55,15 +55,11 @@ section MonoidWithZero
 
 variable {R S K L M Γ : Type*} [LinearOrderedCommMonoidWithZero Γ]
 
-private theorem mem_valueMonoid_iff_exists [Ring R] (w : Valuation R Γ) {γ : Γˣ} :
-    γ ∈ w.valueMonoid ↔ ∃ r : R, w r = γ := by
-  simp only [mem_valueMonoid_iff, Set.mem_preimage, Set.mem_range, coe_toMonoidWithZeroHom]
-
 /-- Restricting a valuation along a ring homomorphism shrinks its value monoid. -/
 theorem valueMonoid_comap_le [Ring R] [Ring S] (w : Valuation S Γ) (f : R →+* S) :
     (w.comap f).valueMonoid ≤ w.valueMonoid := by
   intro γ hγ
-  rw [mem_valueMonoid_iff_exists] at hγ ⊢
+  simp only [mem_valueMonoid_iff_exists, _root_.Valuation.coe_toMonoidWithZeroHom] at hγ ⊢
   obtain ⟨r, hr⟩ := hγ
   exact ⟨f r, by simpa only [comap_apply] using hr⟩
 
@@ -76,7 +72,8 @@ theorem valueGroup_comap_le [Ring R] [Ring S] (w : Valuation S Γ) (f : R →+* 
 theorem valueGroup_comap_eq_of_surjective [Ring R] [Ring S] (w : Valuation S Γ) {f : R →+* S}
     (hf : Function.Surjective f) : (w.comap f).valueGroup = w.valueGroup := by
   refine le_antisymm (w.valueGroup_comap_le f) (Subgroup.closure_mono fun γ hγ ↦ ?_)
-  rw [SetLike.mem_coe, mem_valueMonoid_iff_exists] at hγ ⊢
+  simp only [SetLike.mem_coe, mem_valueMonoid_iff_exists,
+    _root_.Valuation.coe_toMonoidWithZeroHom] at hγ ⊢
   obtain ⟨s, hs⟩ := hγ
   obtain ⟨r, rfl⟩ := hf s
   exact ⟨r, by simpa only [comap_apply] using hs⟩

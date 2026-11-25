@@ -37,9 +37,9 @@ This file develops two complementary parts of the extension theory of discrete v
    `w.extRealAddVal K` together with its rational-value denominator bounds.
 2. **Normalized extensions of henselian discrete valuations**: for a surjective `ℤᵐ⁰`-valued
    valuation `v` of a field `F` whose valuation ring `R` is henselian, and a finite extension
-   `E / F`, we construct the unique surjective `ℤᵐ⁰`-valued valuation `Valuation.normalizedExtension`
-   of `E` that is at most `1` on `R`, whose valuation ring is the integral closure of `R` in `E`,
-   and prove uniqueness and tower compatibility.
+   `E / F`, we construct the unique surjective `ℤᵐ⁰`-valued valuation
+   `Valuation.normalizedExtension` of `E` that is at most `1` on `R`, whose valuation ring is the
+   integral closure of `R` in `E`, and prove uniqueness and tower compatibility.
 
 ## Main definitions
 
