@@ -44,15 +44,12 @@ that underpins the Arf invariant:
    submodule of `M × M` is `(Q.prod Q)`-totally-isotropic and equals its own polar orthogonal
    complement whenever `Q.polarBilin` is left-separating, `Q.polarBilin` is alternating, every
    binary form `TauCeti.binaryQuadraticForm R a b` has nondegenerate polar pairing
-   `x 0 * y 1 + x 1 * y 0` with polar-self-orthogonal coordinate axes, and the orthogonal sum of two
-   copies of `binaryQuadraticForm R 1 1` is explicitly isometric to the orthogonal sum of two
+   `x 0 * y 1 + x 1 * y 0` with polar-self-orthogonal first coordinate axis, and the orthogonal sum
+   of two copies of `binaryQuadraticForm R 1 1` is explicitly isometric to the orthogonal sum of two
    hyperbolic planes `binaryQuadraticForm R 0 0`.
-2. **Symplectic-basis decomposition and symplectic-pair splitting.** Whenever
-   `b : Module.Basis (ι ⊕ ι) R M` puts `Q.polarBilin` in standard symplectic form `Matrix.J ι R`,
-   `Q` decomposes isometrically as the orthogonal sum of the binary forms
-   `binaryQuadraticForm R (Q (b (Sum.inl i))) (Q (b (Sum.inr i)))`. Over a characteristic-two
-   commutative ring, a single pair `e, f` with `polar Q e f = 1` spans an isometric copy of
-   `binaryQuadraticForm R (Q e) (Q f)` and splits `Q` orthogonally against `span R {e, f} ^ ⊥`.
+2. **Symplectic-basis decomposition.** Whenever `b : Module.Basis (ι ⊕ ι) R M` puts `Q.polarBilin`
+   in standard symplectic form `Matrix.J ι R`, `Q` decomposes isometrically as the orthogonal sum of
+   the binary forms `binaryQuadraticForm R (Q (b (Sum.inl i))) (Q (b (Sum.inr i)))`.
 3. **Characteristic-two quadratic Lagrangians.** Over any field of characteristic two, a
    finite-dimensional quadratic space with nondegenerate polar form has even dimension, admits a
    symplectic basis, and splits into hyperbolic planes `binaryQuadraticForm K 0 0` if and only if it
@@ -73,10 +70,6 @@ that underpins the Arf invariant:
   `(binaryQuadraticForm R 0 0).prod (binaryQuadraticForm R 0 0)`.
 * `QuadraticMap.isometryEquivPiBinaryQuadraticForm`: decomposition of `Q` along any symplectic basis
   of `Q.polarBilin` into an orthogonal sum of binary quadratic forms `[a, b]`.
-* `QuadraticMap.isometryEquivBinaryQuadraticFormRestrictSpanPair` and
-  `QuadraticMap.isometryEquivBinaryQuadraticFormProdRestrictOrthogonal`: over a characteristic-two
-  commutative ring, a pair `e, f` with `polar Q e f = 1` spans a copy of
-  `binaryQuadraticForm R (Q e) (Q f)` and splits `Q` orthogonally.
 
 ## Main results
 
@@ -88,15 +81,10 @@ that underpins the Arf invariant:
   `polar Q x x = 0` and `Q.polarBilin` is alternating.
 * `QuadraticMap.toMatrix_polarBilin_eq_J_iff`: in characteristic two, `toMatrix b Q.polarBilin = J`
   if and only if each half is polar-isotropic and opposite halves pair by the Kronecker delta.
-* `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm` and
-  `TauCeti.nondegenerate_binaryQuadraticForm`: in characteristic two, every binary form
-  `binaryQuadraticForm R a b` has nondegenerate polar bilinear form and is nondegenerate.
-* `TauCeti.orthogonal_polarBilin_binaryQuadraticForm_span_one_zero` and
-  `TauCeti.orthogonal_polarBilin_binaryQuadraticForm_span_zero_one`: in characteristic two, each
-  coordinate axis of `Fin 2 → R` equals its own polar orthogonal complement.
-* `QuadraticMap.nondegenerate_polarBilin_restrict_orthogonal_span_pair_iff`: in characteristic two,
-  restricting `Q` to `span R {e, f} ^ ⊥` for `polar Q e f = 1` preserves and reflects polar
-  nondegeneracy.
+* `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm`: in characteristic two, every binary form
+  `binaryQuadraticForm R a b` has nondegenerate polar bilinear form.
+* `TauCeti.orthogonal_polarBilin_binaryQuadraticForm_span_one_zero`: in characteristic two, the
+  first coordinate axis `R ∙ ![1, 0]` equals its own polar orthogonal complement.
 * `QuadraticMap.even_finrank_of_nondegenerate_polarBilin`,
   `QuadraticMap.exists_basis_toMatrix_polarBilin_eq_J`,
   `QuadraticMap.exists_basis_toMatrix_polarBilin_eq_J_of_finrank_eq`: over a field of characteristic
@@ -214,14 +202,6 @@ theorem nondegenerate_polarBilin_binaryQuadraticForm [CharP R 2] (a b : R) :
   nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero
     (by rw [CharTwo.two_eq_zero, zero_mul]) (by rw [CharTwo.two_eq_zero, zero_mul])
 
-/-- In characteristic two, `binaryQuadraticForm R a b` is nondegenerate as a quadratic form for all
-`a, b : R`. -/
-@[simp]
-theorem nondegenerate_binaryQuadraticForm [CharP R 2] (a b : R) :
-    (binaryQuadraticForm R a b).Nondegenerate :=
-  QuadraticMap.nondegenerate_of_nondegenerate_polarBilin
-    (nondegenerate_polarBilin_binaryQuadraticForm a b)
-
 /-- In characteristic two, the first coordinate axis `R ∙ ![1, 0]` equals its own
 `(binaryQuadraticForm R a b).polarBilin`-orthogonal complement. -/
 theorem orthogonal_polarBilin_binaryQuadraticForm_span_one_zero [CharP R 2] (a b : R) :
@@ -235,22 +215,6 @@ theorem orthogonal_polarBilin_binaryQuadraticForm_span_one_zero [CharP R 2] (a b
   · have h1 : x 1 = 0 := by simpa using hx 1
     ext i
     fin_cases i <;> simp [h1]
-  · rintro ⟨c, rfl⟩ d
-    simp
-
-/-- In characteristic two, the second coordinate axis `R ∙ ![0, 1]` equals its own
-`(binaryQuadraticForm R a b).polarBilin`-orthogonal complement. -/
-theorem orthogonal_polarBilin_binaryQuadraticForm_span_zero_one [CharP R 2] (a b : R) :
-    LinearMap.BilinForm.orthogonal (binaryQuadraticForm R a b).polarBilin (R ∙ ![(0 : R), 1]) =
-      R ∙ ![(0 : R), 1] := by
-  ext x
-  simp only [LinearMap.BilinForm.mem_orthogonal_iff, Submodule.mem_span_singleton,
-    forall_exists_index, forall_apply_eq_imp_iff, QuadraticMap.polarBilin_apply_apply,
-    polar_binaryQuadraticForm_of_charTwo]
-  refine ⟨fun hx ↦ ⟨x 1, ?_⟩, ?_⟩
-  · have h0 : x 0 = 0 := by simpa using hx 1
-    ext i
-    fin_cases i <;> simp [h0]
   · rintro ⟨c, rfl⟩ d
     simp
 
@@ -441,125 +405,6 @@ theorem isometryEquivPiBinaryQuadraticForm_symm_apply (Q : QuadraticForm R M)
   (rfl)
 
 end SymplecticDecomposition
-
-section SymplecticPairSplitting
-
-variable {R M : Type*} [CommRing R] [CharP R 2] [AddCommGroup M] [Module R M]
-
-/-- Subtracting the symplectic-pair projection from `v` lands in the polar-orthogonal complement of
-`span R {e, f}`. -/
-theorem sub_polar_smul_mem_orthogonal_span_pair (Q : QuadraticForm R M) {e f : M}
-    (hef : polar Q e f = 1) (v : M) :
-    v - polar Q v f • e - polar Q e v • f ∈
-      LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span R {e, f}) := by
-  have hfe : Q.polarBilin f e = 1 := by rw [polarBilin_apply_apply, polar_comm, hef]
-  have h := LinearMap.BilinForm.IsAlt.sub_smul_add_smul_mem_orthogonal_span_pair
-    Q.isAlt_polarBilin hfe v
-  rwa [polarBilin_apply_apply, polar_comm Q f v, polarBilin_apply_apply,
-    ← CharTwo.neg_eq (polar Q e v), neg_smul, ← sub_eq_add_neg] at h
-
-/-- Over a commutative ring of characteristic two, two vectors `e, f` with `polar Q e f = 1` span a
-plane on which `Q` restricts isometrically to `binaryQuadraticForm R (Q e) (Q f)`. -/
-noncomputable def isometryEquivBinaryQuadraticFormRestrictSpanPair (Q : QuadraticForm R M) {e f : M}
-    (hef : polar Q e f = 1) :
-    (binaryQuadraticForm R (Q e) (Q f)).IsometryEquiv (Q.restrict (Submodule.span R {e, f})) := by
-  have hfe : Q.polarBilin f e = 1 := by rw [polarBilin_apply_apply, polar_comm, hef]
-  have hli : LinearIndependent R ![e, f] :=
-    LinearMap.BilinForm.IsAlt.linearIndependent_pair_of_apply_eq_one Q.isAlt_polarBilin hfe
-  have hrange : Set.range ![e, f] = {e, f} := by
-    ext v
-    simp [eq_comm, or_comm]
-  let b : Module.Basis (Fin 2) R (Submodule.span R {e, f}) :=
-    (Module.Basis.span hli).map (LinearEquiv.ofEq _ _ (congrArg (Submodule.span R) hrange))
-  refine
-    { toLinearEquiv := b.equivFun.symm
-      map_app' := fun x ↦ ?_ }
-  have hb0 : (b 0 : M) = e := by simp [b]
-  have hb1 : (b 1 : M) = f := by simp [b]
-  have hpol : polar (Q.restrict (Submodule.span R {e, f})) (b 0) (b 1) = 1 := by
-    simpa [polar, hb0, hb1] using hef
-  have hrepr := (Q.restrict (Submodule.span R {e, f})).basisRepr_eq_binaryQuadraticForm b hpol
-  simpa [hb0, hb1, Module.Basis.equivFun_symm_apply] using congr($hrepr x)
-
-/-- Evaluation of `QuadraticMap.isometryEquivBinaryQuadraticFormRestrictSpanPair` in the ambient
-module. -/
-@[simp]
-theorem coe_isometryEquivBinaryQuadraticFormRestrictSpanPair_apply (Q : QuadraticForm R M) {e f : M}
-    (hef : polar Q e f = 1) (x : Fin 2 → R) :
-    (Q.isometryEquivBinaryQuadraticFormRestrictSpanPair hef x : M) = x 0 • e + x 1 • f := by
-  rw [← IsometryEquiv.coe_toLinearEquiv]
-  simp [isometryEquivBinaryQuadraticFormRestrictSpanPair, Module.Basis.equivFun_symm_apply,
-    Fin.sum_univ_two]
-
-/-- Evaluation of the inverse of
-`QuadraticMap.isometryEquivBinaryQuadraticFormRestrictSpanPair`. -/
-@[simp]
-theorem isometryEquivBinaryQuadraticFormRestrictSpanPair_symm_apply (Q : QuadraticForm R M)
-    {e f : M} (hef : polar Q e f = 1) (w : Submodule.span R {e, f}) :
-    (Q.isometryEquivBinaryQuadraticFormRestrictSpanPair hef).symm w =
-      ![polar Q w f, polar Q e w] := by
-  rw [IsometryEquiv.symm_apply_eq]
-  apply Subtype.ext
-  rw [coe_isometryEquivBinaryQuadraticFormRestrictSpanPair_apply]
-  have hfe : Q.polarBilin f e = 1 := by rw [polarBilin_apply_apply, polar_comm, hef]
-  have hcompl := LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal Q.isAlt_polarBilin hfe
-  have hmem_span : (w : M) - polar Q w f • e - polar Q e w • f ∈ Submodule.span R {e, f} :=
-    sub_mem (sub_mem w.property (Submodule.smul_mem _ _ (Submodule.subset_span (by simp))))
-      (Submodule.smul_mem _ _ (Submodule.subset_span (by simp)))
-  have hzero : (w : M) - polar Q w f • e - polar Q e w • f = 0 := by
-    rw [← Submodule.mem_bot R, ← hcompl.inf_eq_bot]
-    exact ⟨hmem_span, Q.sub_polar_smul_mem_orthogonal_span_pair hef w⟩
-  rw [sub_sub] at hzero
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  exact sub_eq_zero.mp hzero
-
-/-- Over a commutative ring of characteristic two, two vectors `e, f` with `polar Q e f = 1` split
-`Q` as the orthogonal sum of `binaryQuadraticForm R (Q e) (Q f)` and the restriction of `Q` to the
-polar orthogonal complement of `span R {e, f}`. -/
-noncomputable def isometryEquivBinaryQuadraticFormProdRestrictOrthogonal (Q : QuadraticForm R M)
-    {e f : M} (hef : polar Q e f = 1) :
-    ((binaryQuadraticForm R (Q e) (Q f)).prod
-      (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin
-        (Submodule.span R {e, f})))).IsometryEquiv Q := by
-  have hfe : Q.polarBilin f e = 1 := by rw [polarBilin_apply_apply, polar_comm, hef]
-  exact ((Q.isometryEquivBinaryQuadraticFormRestrictSpanPair hef).prod
-    (IsometryEquiv.refl _)).trans
-    (IsometryEquiv.prodRestrictOrthogonal Q (Submodule.span R {e, f})
-      (LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal Q.isAlt_polarBilin hfe))
-
-/-- Evaluation of `QuadraticMap.isometryEquivBinaryQuadraticFormProdRestrictOrthogonal`. -/
-@[simp]
-theorem isometryEquivBinaryQuadraticFormProdRestrictOrthogonal_apply (Q : QuadraticForm R M)
-    {e f : M} (hef : polar Q e f = 1)
-    (p : (Fin 2 → R) × LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span R {e, f})) :
-    Q.isometryEquivBinaryQuadraticFormProdRestrictOrthogonal hef p =
-      p.1 0 • e + p.1 1 • f + p.2 := by
-  simp [isometryEquivBinaryQuadraticFormProdRestrictOrthogonal]
-
-/-- Evaluation of the inverse of
-`QuadraticMap.isometryEquivBinaryQuadraticFormProdRestrictOrthogonal`. -/
-@[simp]
-theorem isometryEquivBinaryQuadraticFormProdRestrictOrthogonal_symm_apply (Q : QuadraticForm R M)
-    {e f : M} (hef : polar Q e f = 1) (v : M) :
-    (Q.isometryEquivBinaryQuadraticFormProdRestrictOrthogonal hef).symm v =
-      (![polar Q v f, polar Q e v],
-       ⟨v - polar Q v f • e - polar Q e v • f,
-        Q.sub_polar_smul_mem_orthogonal_span_pair hef v⟩) := by
-  rw [IsometryEquiv.symm_apply_eq, isometryEquivBinaryQuadraticFormProdRestrictOrthogonal_apply]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  abel
-
-/-- Over a commutative ring of characteristic two, restricting `Q` to the polar orthogonal
-complement of a pair `e, f` with `polar Q e f = 1` preserves and reflects polar nondegeneracy. -/
-theorem nondegenerate_polarBilin_restrict_orthogonal_span_pair_iff (Q : QuadraticForm R M)
-    {e f : M} (hef : polar Q e f = 1) :
-    (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin
-      (Submodule.span R {e, f}))).polarBilin.Nondegenerate ↔ Q.polarBilin.Nondegenerate := by
-  rw [← (Q.isometryEquivBinaryQuadraticFormProdRestrictOrthogonal hef).nondegenerate_polarBilin_iff,
-    nondegenerate_polarBilin_prod_iff]
-  simp [nondegenerate_polarBilin_binaryQuadraticForm]
-
-end SymplecticPairSplitting
 
 section CharTwoField
 

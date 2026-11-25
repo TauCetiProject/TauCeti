@@ -75,8 +75,6 @@ isometric to the hyperbolic plane `[0, 0]`, in every characteristic.
   `⟨a, b⟩`, built from a solution of `a x² + b y² = c`.
 * `TauCeti.binaryQuadraticForm`: the binary quadratic form `a * x 0 ^ 2 + x 0 * x 1 + b * x 1 ^ 2`
   on `Fin 2 → R` (Elman--Karpenko--Merkurjev's `[a, b]`).
-* `TauCeti.isometryEquivBinaryQuadraticFormZeroDualProd`: explicit isometry from the hyperbolic
-  plane `binaryQuadraticForm R 0 0` to `QuadraticForm.dualProd R R`.
 * `TauCeti.isometryEquivBinaryQuadraticFormLeft`, `TauCeti.isometryEquivBinaryQuadraticFormRight`:
   explicit shear isometries from `binaryQuadraticForm R a 0` and `binaryQuadraticForm R 0 b` to the
   hyperbolic plane `binaryQuadraticForm R 0 0`.
@@ -421,35 +419,13 @@ theorem not_anisotropic_binaryQuadraticForm_zero [Nontrivial R] :
   exact one_ne_zero (α := R) (by simpa using congrFun h10 0)
 
 /-- Over every commutative semiring, the hyperbolic plane `binaryQuadraticForm R 0 0`, with value
-`x 0 * x 1`, is explicitly isometric to Mathlib's `QuadraticForm.dualProd R R`, with value `f z` at
-`(f, z)`: the coordinate `x 0` becomes the dual vector `(· * x 0)`. -/
-def isometryEquivBinaryQuadraticFormZeroDualProd :
-    (binaryQuadraticForm R 0 0).IsometryEquiv (QuadraticForm.dualProd R R) where
-  toLinearEquiv := (LinearEquiv.piFinTwo R fun _ ↦ R).trans
-    ((LinearMap.ringLmapEquivSelf R R R).symm.prodCongr (LinearEquiv.refl R R))
-  map_app' x := by simp [mul_comm]
-
-/-- Forward evaluation of `TauCeti.isometryEquivBinaryQuadraticFormZeroDualProd`. -/
-@[simp]
-theorem isometryEquivBinaryQuadraticFormZeroDualProd_apply (x : Fin 2 → R) :
-    isometryEquivBinaryQuadraticFormZeroDualProd x = (x 0 • LinearMap.id, x 1) := by
-  rw [← IsometryEquiv.coe_toLinearEquiv]
-  refine Prod.ext (LinearMap.ext fun r ↦ ?_) rfl
-  simp [isometryEquivBinaryQuadraticFormZeroDualProd, mul_comm]
-
-/-- Inverse evaluation of `TauCeti.isometryEquivBinaryQuadraticFormZeroDualProd`. -/
-@[simp]
-theorem isometryEquivBinaryQuadraticFormZeroDualProd_symm_apply (p : Module.Dual R R × R) :
-    isometryEquivBinaryQuadraticFormZeroDualProd.symm p = ![p.1 1, p.2] := by
-  rw [IsometryEquiv.symm_apply_eq]
-  refine Prod.ext (LinearMap.ext fun r ↦ ?_) (by simp)
-  simpa [mul_comm] using p.1.map_smul r 1
-
-/-- Over every commutative semiring, the hyperbolic plane `binaryQuadraticForm R 0 0` is isometric
-to Mathlib's `QuadraticForm.dualProd R R`. -/
+`x 0 * x 1`, is isometric to Mathlib's `QuadraticForm.dualProd R R`, with value `f z` at `(f, z)`:
+the coordinate `x 0` becomes the dual vector `(· * x 0)`. -/
 theorem equivalent_binaryQuadraticForm_zero_dualProd :
     (binaryQuadraticForm R 0 0).Equivalent (QuadraticForm.dualProd R R) :=
-  ⟨isometryEquivBinaryQuadraticFormZeroDualProd⟩
+  ⟨{ toLinearEquiv := (LinearEquiv.piFinTwo R fun _ ↦ R).trans
+        ((LinearMap.ringLmapEquivSelf R R R).symm.prodCongr (LinearEquiv.refl R R))
+     map_app' x := by simp [mul_comm] }⟩
 
 /-- For a unit `a`, the form `binaryQuadraticForm R a b` is isometric to the scalar multiple
 `a • binaryQuadraticForm R 1 (a * b)`, through the substitution `x 1 ↦ a⁻¹ * x 1`. -/

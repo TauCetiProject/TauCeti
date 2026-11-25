@@ -71,9 +71,8 @@ criteria across submodules of `Q.radical` and `Q.polarBilin.ker`.
   `Q.gaussSum = (-1) ^ Q.arf.val * 2 ^ m` when `Module.finrank (ZMod 2) V = 2 * m` (equivalently
   `2 ^ (Module.finrank (ZMod 2) V / 2)`), determining `Q.arf` and showing `Q.gaussSum ≠ 0`.
 * `QuadraticMap.IsometryEquiv.arf_eq`, `QuadraticMap.Equivalent.arf_eq`, `QuadraticMap.arf_prod`,
-  `QuadraticMap.arf_pi`, `QuadraticMap.arf_of_isCompl_orthogonal`,
-  `QuadraticMap.arf_eq_mul_add_arf_restrict_orthogonal_span_pair`: isometry invariance,
-  orthogonal-sum additivity, and symplectic-pair splitting of `Q.arf`.
+  `QuadraticMap.arf_pi`, `QuadraticMap.arf_of_isCompl_orthogonal`: isometry invariance and
+  orthogonal-sum additivity of `Q.arf`.
 * `TauCeti.anisotropic_binaryQuadraticForm_iff`, `QuadraticMap.arf_eq_mul_of_polar_eq_one`,
   `QuadraticMap.arf_linMulLin_fst_snd`,
   `QuadraticMap.arf_sq_comp_fst_add_linMulLin_fst_snd_add_sq_comp_snd`: anisotropy of `[a, b]` over
@@ -489,25 +488,9 @@ theorem arf_binaryQuadraticForm (a b : ZMod 2) :
 
 end TauCeti
 
-/-! ### Symplectic-pair splitting and binary forms on `ZMod 2 × ZMod 2` -/
+/-! ### Binary forms on `ZMod 2 × ZMod 2` -/
 
 namespace QuadraticMap
-
-/-- **Symplectic-pair splitting of the Arf invariant.** On a finite-dimensional `ZMod 2`-space with
-nondegenerate polar form, any pair `e, f` with `polar Q e f = 1` contributes `Q e * Q f` plus the
-Arf invariant of the restriction of `Q` to `span {e, f} ^ ⊥`. -/
-theorem arf_eq_mul_add_arf_restrict_orthogonal_span_pair {V : Type*} [AddCommGroup V]
-    [Module (ZMod 2) V] [FiniteDimensional (ZMod 2) V] {Q : QuadraticForm (ZMod 2) V}
-    (hQ : Q.polarBilin.Nondegenerate) {e f : V} (hef : polar Q e f = 1) :
-    Q.arf = Q e * Q f +
-      (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin
-        (Submodule.span (ZMod 2) {e, f}))).arf := by
-  have hnd : (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin
-      (Submodule.span (ZMod 2) {e, f}))).polarBilin.Nondegenerate :=
-    (Q.nondegenerate_polarBilin_restrict_orthogonal_span_pair_iff hef).mpr hQ
-  rw [← (Q.isometryEquivBinaryQuadraticFormProdRestrictOrthogonal hef).arf_eq,
-    arf_prod (nondegenerate_polarBilin_binaryQuadraticForm (Q e) (Q f)) hnd,
-    arf_binaryQuadraticForm]
 
 /-- **The Arf invariant of a binary form.** A quadratic form on `ZMod 2 × ZMod 2` whose polar form
 pairs the standard basis vectors to `1` has Arf invariant `Q (1, 0) * Q (0, 1)`. -/

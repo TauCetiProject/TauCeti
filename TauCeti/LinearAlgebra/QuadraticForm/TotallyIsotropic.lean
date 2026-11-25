@@ -23,9 +23,9 @@ vector of `W`, that is, when the restriction of `Q` to `W` is zero.
 
 * `QuadraticMap.isTotallyIsotropic_iff_restrict_eq_zero`: total isotropy is the vanishing of the
   restricted form.
-* `QuadraticMap.isTotallyIsotropic_comp_iff`, `QuadraticMap.IsTotallyIsotropic.map`, and
+* `QuadraticMap.isTotallyIsotropic_comp_iff` and
   `QuadraticMap.IsometryEquiv.isTotallyIsotropic_map_iff`: total isotropy under linear maps and
-  quadratic isometries.
+  isometric equivalences.
 * `QuadraticMap.maximal_isTotallyIsotropic_bot_iff`: the zero submodule is maximal totally
   isotropic exactly when the form is anisotropic.
 * `QuadraticMap.IsTotallyIsotropic.eq_zero_of_polar_eq_zero`: for a form with trivial radical and
@@ -83,23 +83,14 @@ theorem isTotallyIsotropic_comp_iff {f : M' →ₗ[R] M} {T : Submodule R M'} :
   simp only [isTotallyIsotropic_iff, Submodule.mem_map, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂, comp_apply]
 
-/-- An isometry maps a totally isotropic submodule to a totally isotropic submodule. -/
-theorem IsTotallyIsotropic.map {Q₁ : QuadraticMap R M' N} {T : Submodule R M'}
-    (hT : Q₁.IsTotallyIsotropic T) (f : Q₁ →qᵢ Q) :
-    Q.IsTotallyIsotropic (T.map f.toLinearMap) := by
-  rw [← isTotallyIsotropic_comp_iff]
-  have hcomp : Q.comp f.toLinearMap = Q₁ := QuadraticMap.ext fun x ↦ f.map_app x
-  rwa [hcomp]
-
 /-- Under an isometric equivalence, the image of a submodule is totally isotropic if and only if
 the submodule is totally isotropic. -/
 @[simp]
 theorem IsometryEquiv.isTotallyIsotropic_map_iff {Q₁ : QuadraticMap R M' N}
     (e : Q₁.IsometryEquiv Q) {T : Submodule R M'} :
     Q.IsTotallyIsotropic (T.map e.toLinearMap) ↔ Q₁.IsTotallyIsotropic T := by
-  rw [← isTotallyIsotropic_comp_iff]
-  have hcomp : Q.comp e.toLinearMap = Q₁ := QuadraticMap.ext fun x ↦ e.map_app x
-  rw [hcomp]
+  have hcomp : Q.comp e.toLinearMap = Q₁ := QuadraticMap.ext e.map_app
+  rw [← isTotallyIsotropic_comp_iff, hcomp]
 
 /-- The preimage of a totally isotropic submodule under a linear map `f` is totally isotropic
 for `Q.comp f`. -/
