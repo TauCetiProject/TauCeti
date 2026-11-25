@@ -157,25 +157,35 @@ theorem tsupport_chartQuantization_subset (φ ψ : 𝓓(⟨e.target, e.open_targ
     tsupport (e.chartQuantization he φ ψ a u) ⊆ e.symm '' tsupport φ :=
   tsupport_complexCutoffPullback_subset he φ _
 
-/-- **Chart quantizations are properly supported.** For every compact set, one may take
-`K' = e⁻¹(supp φ) ∪ e⁻¹(supp ψ)`: the output is always supported in `e⁻¹(supp φ)`, and it vanishes
-when the input vanishes near `e⁻¹(supp ψ)`. -/
-theorem isProperlySupported_chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (a : ClassicalSymbol n ℂ ℂ m) : IsProperlySupported (e.chartQuantization he φ ψ a) := by
-  refine isProperlySupported_iff.2 fun _ _ ↦ ⟨e.symm '' tsupport φ ∪ e.symm '' tsupport ψ,
-    (e.isCompact_symm_image_tsupport φ).union (e.isCompact_symm_image_tsupport ψ),
-    fun u _ ↦ (tsupport_chartQuantization_subset he φ ψ a u).trans subset_union_left,
-    fun u hu p _ ↦ ?_⟩
-  -- If `u` vanishes near `e⁻¹(supp ψ)`, then `ψ · (u ∘ e⁻¹)` is the zero function.
+/-- The chart quantization only sees its input on the image of the support of `ψ` under the
+inverse of the chart: it vanishes on every input vanishing there. -/
+theorem chartQuantization_eq_zero (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (a : ClassicalSymbol n ℂ ℂ m) {u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hu : ∀ p ∈ e.symm '' tsupport ψ, u p = 0) : e.chartQuantization he φ ψ a u = 0 := by
+  -- Since `u` vanishes on `e⁻¹(supp ψ)`, the function `ψ · (u ∘ e⁻¹)` is zero.
   have hv (y : CoordinateSpace n) : (0 : 𝓢(CoordinateSpace n, ℂ)) y = ψ y • u (e.symm y) := by
     by_cases hy : y ∈ tsupport ψ
-    · rw [(hu.filter_mono (nhdsSet_mono subset_union_right)).self_of_nhdsSet _
-        (mem_image_of_mem _ hy), smul_zero, zero_apply]
+    · rw [hu _ (mem_image_of_mem _ hy), smul_zero, zero_apply]
     · rw [image_eq_zero_of_notMem_tsupport hy, zero_smul, zero_apply]
+  ext p
+  rw [ContMDiffMap.coe_zero, Pi.zero_apply]
   by_cases hp : p ∈ e.source
   · rw [chartQuantization_apply_of_mem he φ ψ a u hv hp, quantizeSchwartzValue_zero_right,
       smul_zero]
   · exact chartQuantization_apply_of_notMem he φ ψ a u hp
+
+/-- **Chart quantizations are properly supported.** For every compact set, one may take
+`K' = e⁻¹(supp φ) ∪ e⁻¹(supp ψ)`: the output is always supported in `e⁻¹(supp φ)`, and it vanishes
+when the input vanishes near `e⁻¹(supp ψ)`. -/
+theorem isProperlySupported_chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (a : ClassicalSymbol n ℂ ℂ m) : IsProperlySupported (e.chartQuantization he φ ψ a) :=
+  isProperlySupported_iff.2 fun _ _ ↦ ⟨e.symm '' tsupport φ ∪ e.symm '' tsupport ψ,
+    (e.isCompact_symm_image_tsupport φ).union (e.isCompact_symm_image_tsupport ψ),
+    fun u _ ↦ (tsupport_chartQuantization_subset he φ ψ a u).trans subset_union_left,
+    fun u hu p _ ↦ by
+      rw [chartQuantization_eq_zero he φ ψ a fun q hq ↦
+        (hu.filter_mono (nhdsSet_mono subset_union_right)).self_of_nhdsSet q hq,
+        ContMDiffMap.coe_zero, Pi.zero_apply]⟩
 
 /-! ### Compressions of a chart quantization -/
 
