@@ -167,8 +167,8 @@ theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : �
     LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := by
   -- Swapping the coordinates of the `L²` product turns `x ↦ (x, φ x)` into `y ↦ (φ y, y)`.
   have h := (IsometryEquiv.withLpProdComm 2 E ℝ).isometry.lipschitzWith.comp hφ.graph
-  simp only [Function.comp_def, IsometryEquiv.withLpProdComm_apply, one_mul] at h
-  exact h
+  simpa only [Function.comp_def, IsometryEquiv.withLpProdComm_apply, WithLp.toLp_fst,
+    WithLp.toLp_snd, one_mul, ← normalGraphEmbedding_apply] using h
 
 section
 
