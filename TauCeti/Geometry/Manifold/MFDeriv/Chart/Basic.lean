@@ -135,6 +135,26 @@ public section
 open Set
 open scoped Manifold Topology
 
+/-- Precomposing with a continuous linear equivalence cancels on the right. -/
+private theorem comp_right_eq_iff {𝕜 V W Z : Type*} [Semiring 𝕜]
+    [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V]
+    [AddCommMonoid W] [Module 𝕜 W] [TopologicalSpace W]
+    [AddCommMonoid Z] [Module 𝕜 Z] [TopologicalSpace Z]
+    (L : V ≃L[𝕜] W) (A B : W →L[𝕜] Z) :
+    A.comp L.toContinuousLinearMap = B.comp L.toContinuousLinearMap ↔ A = B := by
+  rw [← DFunLike.coe_injective.eq_iff, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe, L.surjective.right_cancellable, DFunLike.coe_injective.eq_iff]
+
+/-- Postcomposing with a continuous linear equivalence cancels on the left. -/
+private theorem comp_left_eq_iff {𝕜 V W Z : Type*} [Semiring 𝕜]
+    [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V]
+    [AddCommMonoid W] [Module 𝕜 W] [TopologicalSpace W]
+    [AddCommMonoid Z] [Module 𝕜 Z] [TopologicalSpace Z]
+    (L : W ≃L[𝕜] Z) (A B : V →L[𝕜] W) :
+    L.toContinuousLinearMap.comp A = L.toContinuousLinearMap.comp B ↔ A = B := by
+  rw [← DFunLike.coe_injective.eq_iff, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe, L.injective.comp_left.eq_iff, DFunLike.coe_injective.eq_iff]
+
 section NontriviallyNormedField
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -144,6 +164,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- Under the definitional identification `TangentSpace I x = E`, the inverse canonical tangent
+cast acts as the identity on vectors. -/
+private theorem tangentSpaceCastModel_symm_apply (x : M) (v : E) :
+    ((tangentSpaceCastModel I x).symm v : E) = v := rfl
 
 /-! ### Preferred charts without atlas smoothness assumptions -/
 
@@ -475,17 +500,10 @@ theorem mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
     rfl
   obtain ⟨L, hL⟩ := isInvertible_mfderiv_extend he hx
   let L' : TangentSpace I x ≃L[𝕜] E := L.trans (NormedSpace.fromTangentSpace (e.extend I x))
-  have hcomp' :
-      ((fderiv 𝕜 (f ∘ (e.extend I).symm) (e.extend I x)).comp
-        (NormedSpace.fromTangentSpace (e.extend I x)).toContinuousLinearMap).comp
-        L.toContinuousLinearMap =
-      (fderiv 𝕜 (f ∘ (e.extend I).symm) (e.extend I x)).comp L'.toContinuousLinearMap :=
-    ContinuousLinearMap.comp_assoc _ _ _
   rw [hcomp, mvfderiv_comp_of_eq hg.mdifferentiableAt
     ((e.contMDiffAt_extend he hx).mdifferentiableAt one_ne_zero) rfl, mvfderiv_eq_fderiv, ← hL,
-    hcomp', ← ContinuousLinearMap.zero_comp L'.toContinuousLinearMap,
-    ← DFunLike.coe_injective.eq_iff, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
-    ContinuousLinearEquiv.coe_coe, L'.surjective.right_cancellable, DFunLike.coe_injective.eq_iff]
+    ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.zero_comp L'.toContinuousLinearMap]
+  exact comp_right_eq_iff L' _ 0
 
 end TauCeti
 
@@ -555,10 +573,8 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm :
     mfderiv I 𝓘(𝕜, F) f x = 0 ↔
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
   rw [← mvfderiv_eq_fderiv_comp_extChartAt_symm, mvfderiv]
-  refine ⟨fun h ↦ by rw [h]; exact ContinuousLinearMap.comp_zero _, fun h ↦ ?_⟩
-  ext u
-  exact (NormedSpace.fromTangentSpace (f x)).injective
-    ((DFunLike.congr_fun h u).trans (map_zero _).symm)
+  exact (comp_left_eq_iff (NormedSpace.fromTangentSpace (f x))
+    (mfderiv I 𝓘(𝕜, F) f x) 0).symm.trans (by rw [ContinuousLinearMap.comp_zero]; exact Iff.rfl)
 
 /-- On a boundaryless manifold, `mvfderiv I f x`, read on the model space `E`, agrees with the
 Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`, even without a
@@ -566,18 +582,11 @@ differentiability hypothesis (both vanish when `f` is not differentiable at `x`)
 theorem mvfderiv_comp_tangentSpaceCastModel_symm (f : M → F) (x : M) :
     (mvfderiv I f x).comp ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x) =
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  by_cases hf : MDifferentiableAt I 𝓘(𝕜, F) f x
-  · ext v
-    simpa only [mvfderiv, NormedSpace.fromTangentSpace, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
-      writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-      Function.id_comp] using hf.tangentSpaceCastModel_mfderiv_apply
-        ((tangentSpaceCastModel I x).symm v)
-  · have hd : ¬ DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
-      mt mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.mpr hf
-    rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
-      fderiv_zero_of_not_differentiableAt hd, ContinuousLinearMap.comp_zero,
-      ContinuousLinearMap.zero_comp]
+  ext v
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    mvfderiv_eq_fderiv_comp_extChartAt_symm, tangentSpaceCastModel_symm_apply]
+  -- `TangentSpace I x` is definitionally `E`, so both sides apply `fderiv` to `v`.
+  rfl
 
 /-- On a boundaryless manifold, `mvfderiv I f x` evaluated on `v` equals the Fréchet derivative of
 the preferred coordinate expression evaluated on `tangentSpaceCastModel I x v`, without any
@@ -698,21 +707,10 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
     mfderiv I 𝓘(𝕜, F) f y = 0 ↔
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y) = 0 := by
   obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
-  let L' : TangentSpace I y ≃L[𝕜] E := L.trans (NormedSpace.fromTangentSpace (extChartAt I x y))
-  have h0 : mfderiv I 𝓘(𝕜, F) f y = 0 ↔ mvfderiv I f y = 0 := by
-    refine ⟨fun h ↦ by rw [mvfderiv, h]; exact ContinuousLinearMap.comp_zero _, fun h ↦ ?_⟩
-    ext u
-    exact (NormedSpace.fromTangentSpace (f y)).injective
-      ((DFunLike.congr_fun h u).trans (map_zero _).symm)
-  have hcoe : mvfderiv I f y =
-      (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)).comp L'.toContinuousLinearMap := by
-    ext w
-    simp only [mvfderiv, mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL]
-    -- `NormedSpace.fromTangentSpace` is the identity on `E` and `F`.
-    rfl
-  rw [h0, hcoe, ← ContinuousLinearMap.zero_comp L'.toContinuousLinearMap,
-    ← DFunLike.coe_injective.eq_iff, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
-    ContinuousLinearEquiv.coe_coe, L'.surjective.right_cancellable, DFunLike.coe_injective.eq_iff]
+  rw [mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL,
+    ← ContinuousLinearMap.zero_comp L.toContinuousLinearMap]
+  -- `TangentSpace 𝓘(𝕜, E) _` and `TangentSpace 𝓘(𝕜, F) _` unfold to `E` and `F`.
+  exact comp_right_eq_iff L _ 0
 
 /-- Read in a chart whose source contains `y`, two maps into a normed space have the same
 differential at `y` exactly when, near the chart image of `y`, their coordinate expressions agree
@@ -732,7 +730,7 @@ theorem mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E 
   have hcoe : ∀ {h : M → F} {h' : E → F},
       h ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x y)] h' →
       DifferentiableAt 𝕜 h' (extChartAt I x y) →
-      (mvfderiv I h y : TangentSpace I y → F) = fderiv 𝕜 h' (extChartAt I x y) ∘ L' := by
+      mvfderiv I h y = (fderiv 𝕜 h' (extChartAt I x y)).comp L'.toContinuousLinearMap := by
     intro h h' heq hd
     ext w
     simp only [mvfderiv,
@@ -740,8 +738,8 @@ theorem mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E 
       heq.fderiv_eq, ← hL]
     -- `NormedSpace.fromTangentSpace` is the identity on `E` and `F`.
     rfl
-  rw [← DFunLike.coe_injective.eq_iff, hcoe hf hf', hcoe hg hg', L'.surjective.right_cancellable,
-    DFunLike.coe_injective.eq_iff]
+  rw [hcoe hf hf', hcoe hg hg']
+  exact comp_right_eq_iff L' _ _
 
 open Filter in
 /-- Transfer of local uniqueness of critical points to the manifold. Suppose that `η q.1` lies in
