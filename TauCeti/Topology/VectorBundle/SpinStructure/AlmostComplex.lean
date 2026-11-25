@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.UnitaryLift
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.ComplexStructure
 public import TauCeti.Topology.VectorBundle.SpinStructure.Basic
 
@@ -23,7 +23,8 @@ homomorphism `Spinᶜ(4) → SO(4)`. It is defined relative to the chosen model 
 and a chosen unitary frame `e` of `J₀`; independence of these choices is not established here.
 
 The homomorphism is `TauCeti.unitarySpinCLift`, built in
-`TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.UnitaryLift`. A unitary frame `e` of
+`TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift` and shown continuous in
+`TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitaryLift`. A unitary frame `e` of
 `(ℝ⁴, J₀)`, `J₀ e₀ = e₁` and `J₀ e₂ = e₃`, maps `U(ℝ⁴, J₀)` homomorphically to `U(2)`
 (`OrthonormalBasis.centralizerToUnitaryGroup`), and the lift `U(2) → Spinᶜ` of
 `OrthonormalBasis.spinCUnitary` gives a lift `U(ℝ⁴, J₀) → Spinᶜ(Q)` for the form
