@@ -166,7 +166,8 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
   {W : Type*} [AddCommGroup W] [Module ℂ W] {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
 
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+/-- The rank-four hypothesis supplies finite dimensionality for the Kähler action. -/
+local instance finiteDimensionalUnitaryLift : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
 /-! ### The subgroup of `Spinᶜ(4)` fixing the canonical eigenspace -/
 
