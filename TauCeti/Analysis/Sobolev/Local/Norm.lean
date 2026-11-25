@@ -29,7 +29,10 @@ zero norm, monotonicity in the set and in the derivative order, invariance under
 almost-everywhere change, the triangle inequality (also over finite sums) and the operator-norm
 bound under a continuous linear map of the codomain. An upper bound of the form
 `a + c ‖f‖_{W^{k+1,p}(U)}` (for finite `c`, with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be
-checked through each weak derivative of `f` separately.
+checked through each weak derivative of `f` separately. A chain bound
+`TauCeti.WeakDerivChainLe p S T C m f g` between the iterated weak derivatives of `f` and `g`
+gives the norm bound `‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`
+(`TauCeti.WeakDerivChainLe.eLpNormWkp_le`).
 
 ## References
 
@@ -260,5 +263,24 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
       have hle : ‖ContinuousLinearMap.compL ℝ ℂ F G A‖ ≤ ‖A‖ :=
         ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun B => A.opNorm_comp_le B
       exact eNorm_le_iff_norm_le.2 hle
+
+
+/-- **A chain bound bounds the `W^{m,p}` norm.** If the iterated weak derivatives of `f` on the
+interior of `S` are bounded in `Lᵖ(S)` by `C` times those of `g` on the interior of `T` in `Lᵖ(T)`,
+in the sense of `TauCeti.WeakDerivChainLe`, then `‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`. The
+derivatives of `f` must exist, which `MemWkpLoc q S m f` provides for any exponent `q`; those of
+`g` need not, the right side being `∞` otherwise. -/
+theorem WeakDerivChainLe.eLpNormWkp_le {S T : Set ℂ} {C : ℝ≥0∞} (hC : C ≠ ∞) (hC0 : C ≠ 0)
+    {m : ℕ} (h : WeakDerivChainLe p S T C m f g) {q : ℝ≥0∞} (hf : MemWkpLoc q S m f) :
+    eLpNormWkp p S m f ≤ C * eLpNormWkp p T m g := by
+  induction m generalizing F with
+  | zero => simpa using h.eLpNorm_le
+  | succ m ih =>
+    obtain ⟨-, Df, hDf, hDfm⟩ := memWkpLoc_succ_iff.1 hf
+    simpa using le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn (a := 0) hC
+      (fun h0 => absurd h0 hC0) fun Dg hDg _ => by
+        rw [zero_add, mul_add]
+        exact (eLpNormWkp_succ_le hDf).trans
+          (add_le_add h.eLpNorm_le (ih (h.weakFDeriv hDf hDg) hDfm))
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.Local.Norm
 public import TauCeti.Analysis.Sobolev.Local.Reflection
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Sobolev.Local.Wkp
@@ -51,6 +52,8 @@ has reflected representatives with one common bound on each relatively compact s
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball_bound` and
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound`: the packaged
   extension with its bound.
+* `TauCeti.MemWkpLoc.eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le`: the
+  same bound for the `W^{k,p}` norms `TauCeti.eLpNormWkp`.
 * `TauCeti.Wkp.exists_planarReflection_higherReflectionCoeff_norm_le`: a native Sobolev
   representative of the reflection with an explicit norm bound.
 * `TauCeti.exists_uniform_wkp_planarReflection_norm_le`: a uniform native Sobolev bound for
@@ -270,6 +273,19 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore_bound {p
     MemWkpLoc.planarReflection_higherReflectionCoeff_bound (Ω := Ω.reflectionCore) hp
       (fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le)
       (by rwa [Opens.coe_reflectionCore_inter_setOf_im_nonneg])
+
+/-- **The `W^{k,p}` norm of the reflection.** For `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) k`, the
+`W^{k,p}` norm of its order-`k` higher reflection on the reflection core of `Ω` is at most
+`higherReflectionBound k p` times the `W^{k,p}(Ω ∩ {0 ≤ im})` norm of `u`. -/
+theorem MemWkpLoc.eLpNormWkp_planarReflection_higherReflectionCoeff_reflectionCore_le
+    {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F}
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
+    eLpNormWkp p Ω.reflectionCore k (TauCeti.planarReflection (higherReflectionCoeff k) u) ≤
+      higherReflectionBound k p * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u := by
+  obtain ⟨hR, hchain⟩ := hu.planarReflection_higherReflectionCoeff_reflectionCore_bound hp
+  refine hchain.eLpNormWkp_le (higherReflectionBound_ne_top _ _) ?_ hR
+  rw [higherReflectionBound_eq]
+  exact (zero_lt_one.trans_le le_self_add).ne'
 
 /-! ### Native Sobolev representatives with quantitative bounds -/
 
