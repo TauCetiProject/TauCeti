@@ -125,6 +125,13 @@ theorem Hom.functionFieldMap_toRationalMap (g : X ⟶ Y) [IsDominant g] :
   simp only [SpecMap_functionFieldMap_fromSpecStalk, RationalMap.fromFunctionField_toRationalMap,
     PartialMap.fromFunctionField, PartialMap.fromSpecStalkOfMem_toPartialMap]
 
+/-- Equal dominant rational maps have equal pullbacks of rational functions, whatever the
+`IsDominant` instances: rewriting along `f = g` is blocked by the instance argument. -/
+theorem RationalMap.functionFieldMap_congr {f g : X ⤏ Y} [f.IsDominant] [g.IsDominant]
+    (h : f = g) : f.functionFieldMap = g.functionFieldMap := by
+  subst h
+  rfl
+
 /-- The pullback of rational functions along the identity rational map is the identity. -/
 theorem RationalMap.functionFieldMap_id : (RationalMap.id X).functionFieldMap = 𝟙 _ :=
   (Hom.functionFieldMap_toRationalMap (𝟙 X)).trans Hom.functionFieldMap_id
