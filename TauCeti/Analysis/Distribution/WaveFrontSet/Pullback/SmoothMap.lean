@@ -64,9 +64,9 @@ integration over the fibres of `k`. Pairing `(f ∘ k)^* T` with `ψ ⊗ ρₙ` 
 Taking for `k` the inclusion of an open set `U ≤ Ω`, along which the pullback is the restriction to
 `U` (`Distribution.compCLMOfSubmersion_id`), shows that `f^* T` restricts to the pullback along `f`
 on `U`. Locality in the target is the same comparison for `ψ ⊗ ρₙ` on the two domains
-`{(x, y) | f x + y ∈ Ω''}` and `{(x, y) | f x + y ∈ Ω'}`. These are the compatibilities with
-restriction and with changes of coordinates in the source from which a pullback along a smooth
-map between manifolds is glued.
+`{(x, y) | f x + y ∈ Ω''}` and `{(x, y) | f x + y ∈ Ω'}`. These results give locality and
+invariance under changes of coordinates in the source only; changes of coordinates in the target
+need composition with maps that are not submersions, which is not proved here.
 
 ## Main declarations
 
@@ -427,11 +427,17 @@ private theorem integrable_mul_add (hf : ContinuousOn f Ω) (ψ : 𝓓(Ω, ℝ))
       continuous_snd)).continuousOn.mul (hh.comp_continuousOn
         ((hf.comp continuous_fst.continuousOn (mapsTo_preimage _ _)).add
           continuous_snd.continuousOn))
-  · rcases not_and_or.1 hq with hq | hq
-    · simp [image_eq_zero_of_notMem_tsupport hq]
-    · have hρ : σ.normed volume q.2 = 0 := notMem_support.1 fun h ↦ hq (ball_subset_closedBall
-        ((σ.support_normed_eq (μ := volume)).subset h))
-      simp [hρ]
+  · rw [mul_normed_eq_zero_of_notMem ψ σ hq, zero_mul]
+
+/-- **Fubini for tensor products.** Integrating `(x, y) ↦ ψ(x) ρ(y) u(f x + y)` first in `y`. -/
+private theorem integral_mul_addSnd_eq (hf : ContinuousOn f Ω) (ψ : 𝓓(Ω, ℝ))
+    (σ : ContDiffBump (0 : E')) {u : E' → ℝ} (hu : Continuous u) :
+    ∫ p : WithLp 2 (E × E'), ψ p.fst * σ.normed volume p.snd * u (f p.fst + p.snd) =
+      ∫ x, ψ x * ∫ y, σ.normed volume y * u (f x + y) := by
+  rw [← (volume_preserving_symm_measurableEquiv_toLp_prod E E').symm.integral_comp']
+  simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
+  rw [Measure.volume_eq_prod, integral_prod _ (integrable_mul_add hf ψ σ hu)]
+  simp only [← integral_const_mul, mul_assoc]
 
 /-- **The fibre integral of `ψ ⊗ ρ` along `g`** is the mollification of `f_♯ ψ` by `ρ`: both are
 `z ↦ ∫ ψ(x) ρ(z - f x) dx`. -/
@@ -447,17 +453,13 @@ private theorem fiberIntegralCLM_eq_mollify (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ
   refine ((eq_fiberIntegralCLM_iff volume volume _ _ _).2 fun h hh hhc _ ↦ ?_).symm
   -- Both sides are `∫ x, ∫ z, ψ x * ρ (z - f x) * h z`.
   have hint₁ := integrable_uncurry_mul_sub hf.continuousOn ψ σ hh.continuous hhc
-  have hint₂ := integrable_mul_add hf.continuousOn ψ σ hh.continuous
   simp_rw [mollify_fiberIntegralCLM_apply hf hfΩ hsurj ψ σ hσ, smul_eq_mul, ← integral_mul_const,
     hF, addSnd_apply]
-  rw [integral_integral_swap hint₁,
-    ← (volume_preserving_symm_measurableEquiv_toLp_prod E E').symm.integral_comp']
-  simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
-  rw [Measure.volume_eq_prod, integral_prod _ hint₂]
+  rw [integral_integral_swap hint₁, integral_mul_addSnd_eq hf.continuousOn ψ σ hh.continuous]
   refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
   dsimp only
   conv_rhs => rw [← integral_sub_right_eq_self _ (f x)]
-  simp only [add_sub_cancel]
+  simp only [add_sub_cancel, ← integral_const_mul, mul_assoc]
 
 /-- **Agreement with the pullback along a submersion.** When `f` is a submersion, every
 distribution `T` satisfies the hypothesis of `Distribution.pullback`
@@ -493,72 +495,6 @@ end Submersion
 /-! ### Composition with submersions and locality -/
 
 section Comp
-
-/-- The function `z ↦ ∫ ρ(y) u(z + y) dy` for the normalized bump `ρ` of `σ`, through which the
-tensor products `ψ ⊗ ρ` pair with functions composed with `(x, y) ↦ f x + y`. -/
-private def bumpConv (σ : ContDiffBump (0 : E')) (u : E' → ℝ) (z : E') : ℝ :=
-  ∫ y, σ.normed volume y * u (z + y)
-
-private theorem continuous_bumpConv (σ : ContDiffBump (0 : E')) {u : E' → ℝ} (hu : Continuous u) :
-    Continuous (bumpConv σ u) := by
-  have hc : Continuous fun z : E' ↦
-      ∫ y in closedBall (0 : E') σ.rOut, σ.normed volume y * u (z + y) :=
-    continuous_parametric_integral_of_continuous
-      ((σ.continuous_normed.comp continuous_snd).mul (hu.comp (continuous_fst.add continuous_snd)))
-      (isCompact_closedBall _ _)
-  refine hc.congr fun z ↦ setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ ?_
-  rw [notMem_support.1 fun h ↦ hy (ball_subset_closedBall
-    ((σ.support_normed_eq (μ := volume)).subset h)), zero_mul]
-
-/-- **Fubini for tensor products.** Integrating `(x, y) ↦ ψ(x) ρ(y) u(f x + y)` first in `y`. -/
-private theorem integral_mul_addSnd_eq (hf : ContinuousOn f Ω) (ψ : 𝓓(Ω, ℝ))
-    (σ : ContDiffBump (0 : E')) {u : E' → ℝ} (hu : Continuous u) :
-    ∫ p : WithLp 2 (E × E'), ψ p.fst * σ.normed volume p.snd * u (f p.fst + p.snd) =
-      ∫ x, ψ x * bumpConv σ u (f x) := by
-  rw [← (volume_preserving_symm_measurableEquiv_toLp_prod E E').symm.integral_comp']
-  simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
-  rw [Measure.volume_eq_prod, integral_prod _ (integrable_mul_add hf ψ σ hu)]
-  simp only [bumpConv, ← integral_const_mul, mul_assoc]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The product `ψ(x) ρ(y)` vanishes off `supp ψ × closedBall 0 (rOut σ)`. -/
-private theorem mul_normed_eq_zero (ψ : 𝓓(Ω, ℝ)) (σ : ContDiffBump (0 : E'))
-    {p : WithLp 2 (E × E')} (hp : p ∉ toLp 2 '' (tsupport ψ ×ˢ closedBall (0 : E') σ.rOut)) :
-    ψ p.fst * σ.normed volume p.snd = 0 := by
-  by_cases h₁ : p.fst ∈ tsupport ψ
-  · have h₂ : p.snd ∉ closedBall (0 : E') σ.rOut := fun h₂ ↦ hp ⟨(p.fst, p.snd), ⟨h₁, h₂⟩, rfl⟩
-    rw [notMem_support.1 fun h ↦ h₂ (ball_subset_closedBall
-      ((σ.support_normed_eq (μ := volume)).subset h)), mul_zero]
-  · rw [image_eq_zero_of_notMem_tsupport h₁, zero_mul]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E']
-  [BorelSpace E'] in
-private theorem isCompact_image_toLp_prod (ψ : 𝓓(Ω, ℝ)) (r : ℝ) :
-    IsCompact (toLp 2 '' (tsupport ψ ×ˢ closedBall (0 : E') r)) :=
-  (ψ.hasCompactSupport.isCompact.prod (isCompact_closedBall _ _)).image
-    (prod_continuous_toLp 2 E E')
-
-/-- The test function `(x, y) ↦ ψ(x) ρ(y)` on an open set `W` of `E × E'` containing
-`supp ψ × closedBall 0 (rOut σ)`, for the normalized bump `ρ` of `σ`. -/
-private def tensorBump {W : Opens (WithLp 2 (E × E'))} (ψ : 𝓓(Ω, ℝ)) (σ : ContDiffBump (0 : E'))
-    (hW : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : E') σ.rOut, toLp 2 (x, y) ∈ W) : 𝓓(W, ℝ) where
-  toFun p := ψ p.fst * σ.normed volume p.snd
-  contDiff' := (ψ.contDiff.comp (fstL 2 ℝ E E').contDiff).mul
-    (σ.contDiff_normed.comp (sndL 2 ℝ E E').contDiff)
-  hasCompactSupport' := HasCompactSupport.intro (isCompact_image_toLp_prod ψ σ.rOut)
-    fun _ hp ↦ mul_normed_eq_zero ψ σ hp
-  tsupport_subset' := (closure_minimal (support_subset_iff'.2 fun _ hp ↦ mul_normed_eq_zero ψ σ hp)
-    (isCompact_image_toLp_prod ψ σ.rOut).isClosed).trans <| by
-      rintro _ ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩
-      exact hW x hx y hy
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem tensorBump_apply {W : Opens (WithLp 2 (E × E'))} (ψ : 𝓓(Ω, ℝ))
-    (σ : ContDiffBump (0 : E'))
-    (hW : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : E') σ.rOut, toLp 2 (x, y) ∈ W)
-    (p : WithLp 2 (E × E')) :
-    tensorBump ψ σ hW p = ψ p.fst * σ.normed volume p.snd :=
-  (rfl)
 
 variable {E₀ : Type*} [NormedAddCommGroup E₀] [InnerProductSpace ℝ E₀] [FiniteDimensional ℝ E₀]
   [MeasurableSpace E₀] [BorelSpace E₀] {Ω₀ : Opens E₀} {k : E₀ → E}
@@ -614,7 +550,13 @@ theorem pullback_eq_compCLMOfSubmersion_pullback (hf : ContDiffOn ℝ ∞ f Ω)
   congr 1
   -- Both fibre integrals pair a test function `u` with `∫ ψ(w) ∫ ρₙ(y) u(f (k w) + y) dy dw`.
   refine (eq_fiberIntegralCLM_iff volume volume _ _ _).2 fun u hu _ _ ↦ ?_
-  have hc := continuous_bumpConv (σ n) hu.continuous
+  -- `z ↦ ∫ ρₙ(y) u(z + y) dy` is the convolution `ρₙ ⋆ u`, as `ρₙ` is even.
+  have hc : Continuous fun z ↦ ∫ y, (σ n).normed volume y * u (z + y) :=
+    (((σ n).hasCompactSupport_normed (μ := volume)).continuous_convolution_left
+      (ContinuousLinearMap.lsmul ℝ ℝ) (σ n).continuous_normed
+      (hu.continuous.locallyIntegrable (μ := volume))).congr fun z ↦ by
+        rw [convolution_def, ← integral_neg_eq_self]
+        simp [(σ n).normed_neg, sub_eq_add_neg]
   rw [integral_fiberIntegralCLM_smul volume volume _ _ _ _ hu.continuous.continuousOn]
   simp only [smul_eq_mul, addSnd_apply, tensorBump_apply, hG]
   rw [integral_mul_addSnd_eq hf.continuousOn _ (σ n) hu.continuous,

@@ -144,8 +144,8 @@ theorem restrictCLM_compCLMOfSubmersion {U : Opens E} (hU : U ≤ Ω) (T : 𝓓'
   rw [restrictCLM_apply, compCLMOfSubmersion_apply, compCLMOfSubmersion_apply,
     fiberIntegralCLM_monoCLM μ ν hf hfΩ hsurj hU]
 
-/-- **Pullback along an open inclusion.** For an open set `U` mapped into `Ω` by the identity, the
-pullback along the identity, with one Haar measure, is the restriction to `U`. -/
+/-- **Pullback along an open inclusion.** For an open set `U` mapped into `Ω₁` by the identity,
+the pullback along the identity, with one Haar measure, is the restriction to `U`. -/
 @[simp]
 theorem compCLMOfSubmersion_id {U Ω₁ : Opens E} {hid : ContDiffOn ℝ ∞ (id : E → E) U}
     {hidΩ : MapsTo (id : E → E) U Ω₁}
