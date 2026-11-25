@@ -21,6 +21,8 @@ all entries nonpositive (`(∀ i, 0 ≤ v i) ∨ ∀ i, v i ≤ 0`) if and only 
 
 * `TauCeti.exists_eq_one_or_neg_one_and_forall_smul_nonneg_iff`: characterization for a dependent
   family of elements in ordered `R`-modules.
+* `TauCeti.exists_eq_one_or_neg_one_and_forall_mul_nonneg_iff`: ring-multiplication specialization
+  for a family of elements in an ordered ring.
 -/
 
 public section
@@ -35,5 +37,12 @@ theorem exists_eq_one_or_neg_one_and_forall_smul_nonneg_iff (R : Type*) {ι : Ty
     [∀ i, Module R (M i)] (v : ∀ i, M i) :
     (∃ ε : R, (ε = 1 ∨ ε = -1) ∧ ∀ i, 0 ≤ ε • v i) ↔ (∀ i, 0 ≤ v i) ∨ ∀ i, v i ≤ 0 := by
   simp only [or_and_right, exists_or, exists_eq_left, one_smul, neg_one_smul, neg_nonneg]
+
+/-- A family `v : ι → R` of elements in an ordered ring is pointwise nonnegative or pointwise
+nonpositive if and only if some sign `ε ∈ {1, -1}` in `R` makes every `ε * v i` nonnegative. -/
+theorem exists_eq_one_or_neg_one_and_forall_mul_nonneg_iff {R ι : Type*}
+    [Ring R] [LE R] [AddLeftMono R] (v : ι → R) :
+    (∃ ε : R, (ε = 1 ∨ ε = -1) ∧ ∀ i, 0 ≤ ε * v i) ↔ (∀ i, 0 ≤ v i) ∨ ∀ i, v i ≤ 0 := by
+  simpa only [smul_eq_mul] using exists_eq_one_or_neg_one_and_forall_smul_nonneg_iff R v
 
 end TauCeti

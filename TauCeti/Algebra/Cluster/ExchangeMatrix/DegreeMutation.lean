@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Divisibility
+public import TauCeti.Data.List.Infix
 
 /-!
 # Degree mutation and column-annihilating gradings
@@ -503,48 +504,42 @@ theorem degreeMutationWord_append_cons_cons_self (u v : List K) (k : K)
     matrixMutation_matrixMutation, degreeMutation_degreeMutation _ _ _ _ hkk hcol,
     ← degreeMutationWord_append]
 
-omit [Fintype I] in
-private theorem hdiag_cons {B : Matrix I K ℤ} {k : K} {w : List K}
-    (hdiag : ∀ u l v, k :: w = u ++ l :: v → matrixMutationWord row B u (row l) l = 0) :
-    ∀ u l v, w = u ++ l :: v → matrixMutationWord row (matrixMutation row B k) u (row l) l = 0 :=
-  fun u l v hw ↦ by simpa only [matrixMutationWord_cons] using hdiag (k :: u) l v (by simp [hw])
-
 /-- Divided-column annihilation persists along any word whose prefix matrices have zero diagonal
 at each step's mutation direction. -/
 theorem sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero {r : K → ℤ}
     (hr : ∀ j, 0 < r j) (hdvd : ∀ i j, r j ∣ B i j) (w : List K)
-    (hdiag : ∀ u k v, w = u ++ k :: v → matrixMutationWord row B u (row k) k = 0)
+    (hdiag : w.ForallPrefixStep fun u k ↦ matrixMutationWord row B u (row k) k = 0)
     (hg : ∀ j, ∑ i, (B i j / r j) • g i = 0) (j : K) :
     ∑ i, (matrixMutationWord row B w i j / r j) • degreeMutationWord row B g w i = 0 := by
   induction w generalizing B g with
   | nil => simpa using hg j
   | cons k w ih =>
-    have hkk : B (row k) k = 0 := by simpa using hdiag [] k w rfl
-    simp only [matrixMutationWord_cons, degreeMutationWord_cons]
+    simp only [List.forallPrefixStep_cons, matrixMutationWord_nil, matrixMutationWord_cons,
+      degreeMutationWord_cons] at hdiag ⊢
     exact ih (matrixMutation row B k) (degreeMutation row B k g)
-      (fun i l ↦ dvd_matrixMutation (hdvd · l) k i) (hdiag_cons row hdiag)
-      (sum_matrixMutation_ediv_smul_degreeMutation_eq_zero row B k g hr hdvd hkk hg)
+      (fun i l ↦ dvd_matrixMutation (hdvd · l) k i) hdiag.2
+      (sum_matrixMutation_ediv_smul_degreeMutation_eq_zero row B k g hr hdvd hdiag.1 hg)
 
 /-- Divided-column annihilation is preserved and reflected along any word whose prefix matrices
 have zero diagonal at each step's mutation direction. -/
 theorem forall_sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero_iff {r : K → ℤ}
     (hr : ∀ j, 0 < r j) (hdvd : ∀ i j, r j ∣ B i j) (w : List K)
-    (hdiag : ∀ u k v, w = u ++ k :: v → matrixMutationWord row B u (row k) k = 0) :
+    (hdiag : w.ForallPrefixStep fun u k ↦ matrixMutationWord row B u (row k) k = 0) :
     (∀ j, ∑ i, (matrixMutationWord row B w i j / r j) • degreeMutationWord row B g w i = 0) ↔
       ∀ j, ∑ i, (B i j / r j) • g i = 0 := by
   induction w generalizing B g with
   | nil => simp
   | cons k w ih =>
-    have hkk : B (row k) k = 0 := by simpa using hdiag [] k w rfl
-    simp only [matrixMutationWord_cons, degreeMutationWord_cons]
+    simp only [List.forallPrefixStep_cons, matrixMutationWord_nil, matrixMutationWord_cons,
+      degreeMutationWord_cons] at hdiag ⊢
     exact (ih (matrixMutation row B k) (degreeMutation row B k g)
-      (fun i l ↦ dvd_matrixMutation (hdvd · l) k i) (hdiag_cons row hdiag)).trans
-      (forall_sum_matrixMutation_ediv_smul_degreeMutation_eq_zero_iff row B k g hr hdvd hkk)
+      (fun i l ↦ dvd_matrixMutation (hdvd · l) k i) hdiag.2).trans
+      (forall_sum_matrixMutation_ediv_smul_degreeMutation_eq_zero_iff row B k g hr hdvd hdiag.1)
 
 /-- Ordinary column annihilation persists along any word whose prefix matrices have zero diagonal
 at each step's mutation direction. -/
 theorem sum_matrixMutationWord_smul_degreeMutationWord_eq_zero (w : List K)
-    (hdiag : ∀ u k v, w = u ++ k :: v → matrixMutationWord row B u (row k) k = 0)
+    (hdiag : w.ForallPrefixStep fun u k ↦ matrixMutationWord row B u (row k) k = 0)
     (hg : ∀ j, ∑ i, B i j • g i = 0) (j : K) :
     ∑ i, matrixMutationWord row B w i j • degreeMutationWord row B g w i = 0 := by
   simpa using sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero row B g
@@ -553,7 +548,7 @@ theorem sum_matrixMutationWord_smul_degreeMutationWord_eq_zero (w : List K)
 /-- Ordinary column annihilation is preserved and reflected along any word whose prefix matrices
 have zero diagonal at each step's mutation direction. -/
 theorem forall_sum_matrixMutationWord_smul_degreeMutationWord_eq_zero_iff (w : List K)
-    (hdiag : ∀ u k v, w = u ++ k :: v → matrixMutationWord row B u (row k) k = 0) :
+    (hdiag : w.ForallPrefixStep fun u k ↦ matrixMutationWord row B u (row k) k = 0) :
     (∀ j, ∑ i, matrixMutationWord row B w i j • degreeMutationWord row B g w i = 0) ↔
       ∀ j, ∑ i, B i j • g i = 0 := by
   simpa using forall_sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero_iff row B g
@@ -562,20 +557,21 @@ theorem forall_sum_matrixMutationWord_smul_degreeMutationWord_eq_zero_iff (w : L
 /-- Reversing a mutation word undoes its action on any column-annihilating grading when each
 step's mutable diagonal entry vanishes. -/
 theorem degreeMutationWord_degreeMutationWord_reverse (w : List K)
-    (hdiag : ∀ u k v, w = u ++ k :: v → matrixMutationWord row B u (row k) k = 0)
+    (hdiag : w.ForallPrefixStep fun u k ↦ matrixMutationWord row B u (row k) k = 0)
     (hg : ∀ j, ∑ i, B i j • g i = 0) :
     degreeMutationWord row (matrixMutationWord row B w) (degreeMutationWord row B g w)
       w.reverse = g := by
   induction w generalizing B g with
   | nil => simp
   | cons k w ih =>
-    have hkk : B (row k) k = 0 := by simpa using hdiag [] k w rfl
+    simp only [List.forallPrefixStep_cons, matrixMutationWord_nil, matrixMutationWord_cons]
+      at hdiag
     rw [List.reverse_cons, degreeMutationWord_append]
     simp only [matrixMutationWord_cons, degreeMutationWord_cons]
-    rw [ih _ _ (hdiag_cons row hdiag)
-        (sum_matrixMutation_smul_degreeMutation_eq_zero row B k g hkk hg),
+    rw [ih _ _ hdiag.2
+        (sum_matrixMutation_smul_degreeMutation_eq_zero row B k g hdiag.1 hg),
       matrixMutationWord_matrixMutationWord_reverse, degreeMutationWord_nil,
-      degreeMutation_degreeMutation row B k g hkk (hg k)]
+      degreeMutation_degreeMutation row B k g hdiag.1 (hg k)]
 
 end Word
 
@@ -583,13 +579,6 @@ namespace ExchangeMatrix
 
 variable {I K G : Type*} [DecidableEq I] [DecidableEq K] [Fintype I]
   [AddCommGroup G] {row : K ↪ I} (B : ExchangeMatrix row)
-
-omit [Fintype I] in
-private theorem matrixMutationWord_row_self (w : List K) :
-    ∀ u k v, w = u ++ k :: v → matrixMutationWord row B.matrix u (row k) k = 0 := by
-  intro u k _ _
-  rw [← B.mutationWord_matrix]
-  exact (B.mutationWord u).matrix_row_self k
 
 /-- Every mutation word on a bundled exchange matrix preserves divided-column annihilation of
 positive exchange degrees. -/
@@ -599,7 +588,7 @@ theorem sum_mutationWord_ediv_smul_degreeMutationWord_eq_zero {r : K → ℤ}
     ∑ i, ((B.mutationWord w).matrix i j / r j) • degreeMutationWord row B.matrix g w i = 0 := by
   rw [B.mutationWord_matrix]
   exact sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero row B.matrix g hr hdvd w
-    (B.matrixMutationWord_row_self w) hg j
+    (by simp) hg j
 
 /-- Every mutation word on a bundled exchange matrix preserves and reflects divided-column
 annihilation of positive exchange degrees. -/
@@ -609,15 +598,14 @@ theorem forall_sum_mutationWord_ediv_smul_degreeMutationWord_eq_zero_iff {r : K 
       ∀ j, ∑ i, (B.matrix i j / r j) • g i = 0 := by
   simp_rw [B.mutationWord_matrix]
   exact forall_sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero_iff row B.matrix g
-    hr hdvd w (B.matrixMutationWord_row_self w)
+    hr hdvd w (by simp)
 
 /-- Every mutation word on a bundled exchange matrix preserves ordinary column annihilation. -/
 theorem sum_mutationWord_smul_degreeMutationWord_eq_zero {g : I → G}
     (hg : ∀ j, ∑ i, B.matrix i j • g i = 0) (w : List K) (j : K) :
     ∑ i, (B.mutationWord w).matrix i j • degreeMutationWord row B.matrix g w i = 0 := by
   rw [B.mutationWord_matrix]
-  exact sum_matrixMutationWord_smul_degreeMutationWord_eq_zero row B.matrix g w
-    (B.matrixMutationWord_row_self w) hg j
+  exact sum_matrixMutationWord_smul_degreeMutationWord_eq_zero row B.matrix g w (by simp) hg j
 
 /-- Every mutation word on a bundled exchange matrix preserves and reflects ordinary column
 annihilation. -/
@@ -626,7 +614,7 @@ theorem forall_sum_mutationWord_smul_degreeMutationWord_eq_zero_iff (g : I → G
       ∀ j, ∑ i, B.matrix i j • g i = 0 := by
   simp_rw [B.mutationWord_matrix]
   exact forall_sum_matrixMutationWord_smul_degreeMutationWord_eq_zero_iff row B.matrix g w
-    (B.matrixMutationWord_row_self w)
+    (by simp)
 
 /-- Equal adjacent directions cancel in `degreeMutationWord` on a bundled exchange matrix for any
 initial column-annihilating grading. -/
@@ -635,7 +623,7 @@ theorem degreeMutationWord_append_cons_cons_self {g : I → G}
     degreeMutationWord row B.matrix g (u ++ k :: k :: v) =
       degreeMutationWord row B.matrix g (u ++ v) := by
   refine TauCeti.degreeMutationWord_append_cons_cons_self row B.matrix g u v k
-    (B.matrixMutationWord_row_self (u ++ [k]) u k [] rfl) ?_
+    (B.matrixMutationWord_row_self u k) ?_
   rw [← B.mutationWord_matrix]
   exact B.sum_mutationWord_smul_degreeMutationWord_eq_zero hg u k
 
@@ -646,8 +634,7 @@ theorem degreeMutationWord_degreeMutationWord_reverse {g : I → G}
     degreeMutationWord row (B.mutationWord w).matrix
         (degreeMutationWord row B.matrix g w) w.reverse = g := by
   rw [B.mutationWord_matrix]
-  exact TauCeti.degreeMutationWord_degreeMutationWord_reverse row B.matrix g w
-    (B.matrixMutationWord_row_self w) hg
+  exact TauCeti.degreeMutationWord_degreeMutationWord_reverse row B.matrix g w (by simp) hg
 
 end ExchangeMatrix
 

@@ -14,9 +14,10 @@ public import Mathlib.Data.List.Rotate
 Concatenating fewer copies of a list gives a prefix of concatenating more copies, and the factor of
 length `|l|` of `m` concatenated copies of `l` starting at position `d` is the rotation of `l` by
 `d`. A list which, followed by an entry `y`, begins with `k` copies of an entry `x ≠ y` itself
-begins with these `k` copies. A predicate holding on every prefix-element split `w = a ++ l :: b`
-restricts to any prefix `u <+: w`. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is
-an infix of `l₂`. An injective map preserves and reflects infixes.
+begins with these `k` copies. `List.ForallPrefixStep P l` asserts that `P u a` holds at every
+prefix-step `l = u ++ a :: v`, with recursive, concatenation, map, and prefix-restriction
+characterizations. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of
+`l₂`. An injective map preserves and reflects infixes.
 -/
 
 public section
@@ -83,13 +84,78 @@ theorem eq_of_forall_prefix_succ_of_getElem?_eq_some {σs : ℕ → List α}
   · obtain ⟨hlt₂, rfl⟩ := getElem?_eq_some_iff.1 h₂
     exact Option.some.inj (h₁.symm.trans (prefix_iff_getElem?.1 (hle h) x hlt₂))
 
-/-- A predicate on every prefix-element pair `(a, l)` occurring in a decomposition
-`w = a ++ l :: b` restricts to any prefix `u <+: w`. -/
-theorem IsPrefix.forall_append_cons {P : List α → α → Prop} {u w : List α}
-    (hpref : u <+: w) (h : ∀ a l b, w = a ++ l :: b → P a l) :
-    ∀ a l b, u = a ++ l :: b → P a l := by
+/-- `l.ForallPrefixStep P` holds when `P u a` holds at every prefix-step `(u, a)` of `l`, that is,
+whenever `l = u ++ a :: v`. -/
+def ForallPrefixStep (P : List α → α → Prop) : List α → Prop
+  | [] => True
+  | a :: l => P [] a ∧ ForallPrefixStep (fun u ↦ P (a :: u)) l
+
+@[simp, grind .]
+theorem forallPrefixStep_nil {P : List α → α → Prop} : [].ForallPrefixStep P := trivial
+
+@[simp, grind =]
+theorem forallPrefixStep_cons {P : List α → α → Prop} {a : α} {l : List α} :
+    (a :: l).ForallPrefixStep P ↔ P [] a ∧ l.ForallPrefixStep fun u ↦ P (a :: u) :=
+  (Iff.rfl)
+
+/-- `ForallPrefixStep P` holds on `u ++ v` iff it holds on `u` and its shift by `u` holds on
+`v`. -/
+@[simp, grind =]
+theorem forallPrefixStep_append {P : List α → α → Prop} {u v : List α} :
+    (u ++ v).ForallPrefixStep P ↔ u.ForallPrefixStep P ∧ v.ForallPrefixStep fun a ↦ P (u ++ a) := by
+  induction u generalizing P with
+  | nil => simp
+  | cons a u ih => simp [ih, and_assoc]
+
+/-- Appending a single element `[a]` requires `ForallPrefixStep P` on `u` together with `P u a` at
+the final step. -/
+theorem forallPrefixStep_append_singleton {P : List α → α → Prop} {u : List α} {a : α} :
+    (u ++ [a]).ForallPrefixStep P ↔ u.ForallPrefixStep P ∧ P u a := by
+  simp
+
+/-- Characterization of `ForallPrefixStep` by decompositions `w = u ++ a :: v`. -/
+theorem forallPrefixStep_iff_append_cons {P : List α → α → Prop} {w : List α} :
+    w.ForallPrefixStep P ↔ ∀ u a v, w = u ++ a :: v → P u a := by
+  refine ⟨?_, ?_⟩
+  · rintro hw u a v rfl
+    simpa using ((forallPrefixStep_append.mp hw).2 |> forallPrefixStep_cons.mp).1
+  · induction w generalizing P with
+    | nil => exact fun _ ↦ trivial
+    | cons x w ih =>
+      exact fun h ↦ ⟨h [] x w rfl, ih fun u a v hw ↦ h (x :: u) a v (by simp [hw])⟩
+
+/-- Eliminate `w.ForallPrefixStep P` at a decomposition `w = u ++ a :: v`. -/
+theorem ForallPrefixStep.of_append_cons {P : List α → α → Prop} {w u v : List α} {a : α}
+    (hw : w.ForallPrefixStep P) (h : w = u ++ a :: v) : P u a :=
+  forallPrefixStep_iff_append_cons.mp hw u a v h
+
+/-- A predicate holding for every prefix and element holds at every prefix-step of any list. -/
+theorem forallPrefixStep_of_forall {P : List α → α → Prop} (h : ∀ u a, P u a) (w : List α) :
+    w.ForallPrefixStep P :=
+  forallPrefixStep_iff_append_cons.mpr fun u a _ _ ↦ h u a
+
+@[simp, grind .]
+theorem forallPrefixStep_true {w : List α} : w.ForallPrefixStep fun _ _ ↦ True :=
+  forallPrefixStep_of_forall (fun _ _ ↦ trivial) w
+
+/-- Pointwise implication transports `ForallPrefixStep`. -/
+theorem ForallPrefixStep.imp {P Q : List α → α → Prop} (h : ∀ u a, P u a → Q u a) {w : List α}
+    (hw : w.ForallPrefixStep P) : w.ForallPrefixStep Q :=
+  forallPrefixStep_iff_append_cons.mpr fun u a _ heq ↦ h u a (hw.of_append_cons heq)
+
+/-- `ForallPrefixStep` pulls back along `List.map`. -/
+@[simp, grind =]
+theorem forallPrefixStep_map {β : Type*} {P : List β → β → Prop} (f : α → β) {l : List α} :
+    (l.map f).ForallPrefixStep P ↔ l.ForallPrefixStep fun u a ↦ P (u.map f) (f a) := by
+  induction l generalizing P with
+  | nil => simp
+  | cons a l ih => simp [ih]
+
+/-- `ForallPrefixStep P` restricts from a list `w` to any prefix `u <+: w`. -/
+theorem IsPrefix.forallPrefixStep {P : List α → α → Prop} {u w : List α}
+    (hpref : u <+: w) (hw : w.ForallPrefixStep P) : u.ForallPrefixStep P := by
   obtain ⟨v, rfl⟩ := hpref
-  exact fun a l b hu ↦ h a l (b ++ v) (by simp [hu])
+  exact (forallPrefixStep_append.mp hw).1
 
 /-- A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`. This is the
 infix analogue of `List.Sublist.of_sublist_append_right`. -/
