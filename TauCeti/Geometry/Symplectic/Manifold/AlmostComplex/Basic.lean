@@ -134,6 +134,15 @@ lemma almostComplexStructureAt_apply (J : SmoothAlmostComplexStructure I M) (x :
     J.almostComplexStructureAt x v = J x v :=
   (rfl)
 
+/-- On a finite-dimensional model, the pointwise almost complex structure at `x`, as a continuous
+linear map, is the endomorphism of the smooth structure at `x`. -/
+lemma toContinuousLinearMap_almostComplexStructureAt [FiniteDimensional ℝ E]
+    (J : SmoothAlmostComplexStructure I M) (x : M) :
+    (J.almostComplexStructureAt x).toLinearMap.toContinuousLinearMap = J.toEndomorphism x :=
+  ContinuousLinearMap.ext fun v ↦ by
+    rw [LinearMap.coe_toContinuousLinearMap']
+    exact J.almostComplexStructureAt_apply x v
+
 /-- On self-modelled normed spaces, `IsComplexLinearMap` between `almostComplexStructureAt` values
 is pointwise intertwining of `toEndomorphism` on the model spaces (bridging `TangentSpace 𝓘(ℝ, V) x`
 and `V`, where `rw` cannot match `.toLinearMap` at `implicit` transparency). -/
