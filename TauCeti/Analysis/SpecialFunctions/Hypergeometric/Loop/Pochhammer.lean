@@ -655,33 +655,8 @@ theorem hypergeometricPochhammerLoop_zero (a b c : ℂ) {A ρ₀ ρ₁ : ℝ}
     (hρ₀ : 0 < ρ₀) (hρ₀A : ρ₀ < A) (hρ₁ : 0 < ρ₁) (hρ₁A : ρ₁ < 1 - A) :
     hypergeometricPochhammerLoop a b c 0 A ρ₀ ρ₁ =
       4 * π ^ 2 * exp (c * π * I) / (Gamma (1 - b) * Gamma (1 + b - c) * Gamma c) := by
-  have h0 : ‖(0 : ℂ)‖ * ρ₀ < 1 ∧ closedBall (1 - (0 : ℂ)) (‖(0 : ℂ)‖ * ρ₁) ⊆ slitPlane := by
-    simp [one_mem_slitPlane]
-  have han₁ : AnalyticOnNhd ℂ
-      (fun p : ℂ × ℂ => hypergeometricPochhammerLoop a p.1 p.2 0 A ρ₀ ρ₁) univ := fun p _ =>
-    (analyticOnNhd_hypergeometricPochhammerLoop hρ₀ hρ₀A hρ₁ hρ₁A (a, p.1, p.2, 0) h0).comp₂
-      analyticAt_const (analyticAt_fst.prod (analyticAt_snd.prod analyticAt_const))
-  have hG (s : ℂ) : AnalyticAt ℂ (fun s : ℂ => (Gamma s)⁻¹) s :=
-    Complex.differentiable_one_div_Gamma.analyticAt s
-  have han₂ : AnalyticOnNhd ℂ
-      (fun p : ℂ × ℂ => 4 * π ^ 2 * exp (p.2 * π * I) /
-        (Gamma (1 - p.1) * Gamma (1 + p.1 - p.2) * Gamma p.2)) univ := fun p _ => by
-    simp_rw [div_eq_mul_inv, mul_inv]
-    exact (analyticAt_const.mul ((analyticAt_snd.mul analyticAt_const).mul
-      analyticAt_const).cexp).mul
-      ((((hG _).comp (analyticAt_const.sub analyticAt_fst)).mul
-        ((hG _).comp ((analyticAt_const.add analyticAt_fst).sub analyticAt_snd))).mul
-        ((hG _).comp analyticAt_snd))
-  have hU : IsOpen {p : ℂ × ℂ | 0 < p.1.re ∧ p.1.re < p.2.re} :=
-    (isOpen_lt continuous_const (Complex.continuous_re.comp continuous_fst)).inter
-      (isOpen_lt (Complex.continuous_re.comp continuous_fst)
-        (Complex.continuous_re.comp continuous_snd))
-  have heq := han₁.eq_of_eventuallyEq han₂ (z₀ := (1, 2)) ?_
-  · exact congrFun heq (b, c)
-  · filter_upwards [hU.mem_nhds (by simp : (0 : ℝ) < (1 : ℂ).re ∧ (1 : ℂ).re < (2 : ℂ).re)]
-      with p hp
-    rw [hypergeometricPochhammerLoop_eq_eulerIntegral a hp.1 hp.2 hρ₀ hρ₀A hρ₁ hρ₁A h0.1 h0.2,
-      eulerIntegral_zero a hp.1 hp.2, ← div_eq_mul_inv, div_div]
+  rw [hypergeometricPochhammerLoop_eq_mul_regularizedGaussHGFun a (by simp) hρ₀ hρ₀A hρ₁ hρ₁A
+    (by simp [one_mem_slitPlane]), regularizedGaussHGFun_zero, ← div_eq_mul_inv, div_div]
 
 /-- With first parameter zero, Pochhammer's contour integral is independent of `z` and evaluates in
 closed form for all complex `b`, `c`, and `z` whenever `0 < ρ₀ < A` and `0 < ρ₁ < 1 - A`. -/
