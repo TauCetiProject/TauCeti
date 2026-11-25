@@ -45,6 +45,10 @@ integration-by-parts arguments:
 * `TauCeti.eNorm_integral_smul_sub_integral_smul_le`: against an integrable weight, the integrals
   of two products `a • b` and `f • g` of `L^∞` functions differ by at most
   `‖b‖_∞ ∫ |ψ| ‖a - f‖ + ‖f‖_∞ ∫ |ψ| ‖b - g‖`.
+* `TauCeti.lintegral_enorm_mul_enorm_mul_enorm_le` and
+  `MeasureTheory.MemLp.integrable_norm_mul_norm_mul_norm`: Hölder's inequality in three factors,
+  `∫ |w| |g| |f| ≤ ‖w‖_p ‖g‖_r ‖f‖_q` for `1/p + 1/q = 1/s` and `1/r + 1/s = 1`, and the resulting
+  integrability.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
 * `MeasureTheory.MemLp.toLp_smul_toLp`: the product of the classes of `f` and `g` is the class of
@@ -111,6 +115,16 @@ theorem MemLp.integrable_inner_of_holderConjugate {q q' : ℝ≥0∞} [q.HolderC
     Integrable (fun x => ⟪h x, g x⟫_𝕜) μ :=
   memLp_one_iff_integrable.1 <| hh.of_bilin (fun a b => ⟪a, b⟫_𝕜) 1 hg continuous_inner
     (ae_of_all _ fun x => by simpa [← NNReal.coe_le_coe] using norm_inner_le_norm (h x) (g x))
+
+/-- Hölder's inequality in three factors makes `‖w‖ ‖g‖ ‖f‖` integrable for `w ∈ Lᵖ`, `g ∈ Lʳ`
+and `f ∈ L^q` with `1/p + 1/q = 1/s` and `1/r + 1/s = 1`. -/
+theorem MemLp.integrable_norm_mul_norm_mul_norm {E F G : Type*} [NormedAddCommGroup E]
+    [NormedAddCommGroup F] [NormedAddCommGroup G] {p q r s : ℝ≥0∞} [p.HolderTriple q s]
+    [r.HolderTriple s 1] {w : α → E} {g : α → F} {f : α → G} (hw : MemLp w p μ)
+    (hg : MemLp g r μ) (hf : MemLp f q μ) :
+    Integrable (fun x ↦ ‖w x‖ * (‖g x‖ * ‖f x‖)) μ :=
+  (memLp_one_iff_integrable.1 (hg.norm.mul (hw.norm.mul hf.norm (r := s)))).congr
+    (ae_of_all _ fun x ↦ by simp only [Pi.mul_apply]; ring)
 
 end MeasureTheory
 
@@ -291,5 +305,30 @@ theorem eNorm_integral_smul_sub_integral_smul_le {α 𝕜 F : Type*} [Measurable
         · exact eNorm_smul_le.trans (by gcongr)
         · exact eNorm_smul_le.trans (by gcongr)
     _ = ‖b‖ₑ * (‖ψ x‖ₑ * ‖a x - f x‖ₑ) + ‖f‖ₑ * (‖ψ x‖ₑ * ‖b x - g x‖ₑ) := by ring
+
+/-- **Hölder's inequality in three factors**: `∫ |w| |g| |f| ≤ ‖w‖_p ‖g‖_r ‖f‖_q` for
+`1/p + 1/q = 1/s` and `1/r + 1/s = 1`, by Hölder's inequality applied twice. -/
+theorem lintegral_enorm_mul_enorm_mul_enorm_le {α E F G : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
+    {p q r s : ℝ≥0∞} [p.HolderTriple q s] [r.HolderTriple s 1] {w : α → E} {g : α → F}
+    {f : α → G} (hw : AEStronglyMeasurable w μ) (hg : AEStronglyMeasurable g μ)
+    (hf : AEStronglyMeasurable f μ) :
+    ∫⁻ x, ‖w x‖ₑ * (‖g x‖ₑ * ‖f x‖ₑ) ∂μ ≤
+      eLpNorm w p μ * (eLpNorm g r μ * eLpNorm f q μ) := by
+  have h₁ := eLpNorm_smul_le_mul_eLpNorm (p := r) (q := s) (r := 1) hg.norm
+    (hw.norm.smul hf.norm) (μ := μ)
+  have h₂ := eLpNorm_smul_le_mul_eLpNorm (p := p) (q := q) (r := s) hw.norm hf.norm (μ := μ)
+  rw [eLpNorm_norm _ hg] at h₁
+  rw [eLpNorm_norm _ hw, eLpNorm_norm _ hf] at h₂
+  calc ∫⁻ x, ‖w x‖ₑ * (‖g x‖ₑ * ‖f x‖ₑ) ∂μ
+      = eLpNorm ((fun x ↦ ‖g x‖) • ((fun x ↦ ‖w x‖) • fun x ↦ ‖f x‖)) 1 μ := by
+        rw [eLpNorm_one_eq_lintegral_eNorm (hg.norm.smul (hw.norm.smul hf.norm))]
+        refine lintegral_congr fun x ↦ ?_
+        simp only [Pi.smul_apply', Pi.mul_apply, smul_eq_mul, eNorm_mul, eNorm_norm]
+        ring
+    _ ≤ eLpNorm g r μ * eLpNorm ((fun x ↦ ‖w x‖) • fun x ↦ ‖f x‖) s μ := h₁
+    _ ≤ eLpNorm w p μ * (eLpNorm g r μ * eLpNorm f q μ) := by
+        rw [mul_left_comm]
+        gcongr
 
 end TauCeti

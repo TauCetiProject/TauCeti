@@ -13,7 +13,7 @@ import Mathlib.LinearAlgebra.Matrix.Polynomial
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
-import TauCeti.LinearAlgebra.Matrix.Alternating
+import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.SymplecticGroup
