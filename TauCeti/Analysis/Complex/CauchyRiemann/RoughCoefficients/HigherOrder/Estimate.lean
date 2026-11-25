@@ -7,13 +7,14 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 public import TauCeti.Analysis.Sobolev.Local.Norm
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Estimate
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
 import TauCeti.Data.ENNReal.Mul
 import TauCeti.Topology.Sets.Opens
 
 /-!
-# The induction step of the interior estimates for real Cauchy–Riemann equations
+# Interior estimates of every order for real Cauchy–Riemann equations
 
 Let `Ω ⊆ ℂ` be open, write `z = s + i t`, and let `V` be a finite-dimensional real inner product
 space. For coefficients `J, S : ℂ → End V` with `J² = -1` and a weak solution `ξ` of
@@ -28,10 +29,10 @@ compact closure in `Ω` is
 with one constant `C` for all coefficients bounded by `M` in `W^{max k 1, p}(Ω) × W^{k,p}(Ω)`
 (`TauCeti.CRInteriorEstimate`). This file proves the induction step of McDuff–Salamon,
 Proposition B.4.9, for the estimate: if the estimate of order `k` holds on every open set, so does
-the estimate of order `k + 1` (`TauCeti.CRInteriorEstimate.succ`). The interior estimates of every
-order, uniformly in bounded sets of coefficients, follow from this step once the estimate of order
-`0`, the quantitative form of `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`, is available; that
-order-`0` estimate is not proved in this file.
+the estimate of order `k + 1` (`TauCeti.CRInteriorEstimate.succ`). The estimate of order `0` is
+the estimate ladder `TauCeti.exists_eLpNormWkp_one_le_of_isWeakCRSolution_of_le` at `r = q`
+(`TauCeti.crInteriorEstimate_zero`), and induction on `k` gives the interior estimates of every
+order, uniformly in bounded sets of coefficients (`TauCeti.crInteriorEstimate`).
 
 ## The argument
 
@@ -52,11 +53,13 @@ derivatives bound `ξ` in `W^{k+2,q}(U)`
   `TauCeti.crInteriorEstimate_iff` and its monotonicity in the bound and the set
   (`TauCeti.CRInteriorEstimate.mono_bound`, `TauCeti.CRInteriorEstimate.mono_set`).
 * `TauCeti.CRInteriorEstimate.succ`: the step from order `k` to order `k + 1`.
+* `TauCeti.crInteriorEstimate_zero`, `TauCeti.crInteriorEstimate`: the estimate of order `0`, and
+  of every order.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Appendix B.4, Proposition B.4.9.
+  Appendix B.4, Lemma B.4.6 and Proposition B.4.9.
 -/
 
 public section
@@ -256,5 +259,38 @@ theorem CRInteriorEstimate.succ [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 
     ((eLpNorm_le_eLpNormWkp.trans (eLpNormWkp_mono_set (subset_closure.trans hUW))).trans hX)
     (ENNReal.add_le_coe_mul (ENNReal.coe_mul_le_coe_mul hDξ1) (ENNReal.coe_mul_le_coe_mul
       ((eLpNormWkp_mono_set (subset_closure.trans hUW₂)).trans hT₂))))
+
+/-- **The interior estimate of order `0`.** Let `V` be finite-dimensional, `p > 2`,
+`1/p + 1/q < 1` and `q ≤ p`. For `U` with compact closure in `Ω` and every `M`, there is one
+constant `C` with `‖ξ‖_{W^{1,q}(U)} ≤ C (‖η‖_{L^q(Ω)} + ‖ξ‖_{L^q(Ω)})` for all weak solutions with
+`‖J‖_{W^{1,p}(Ω)} ≤ M` and `‖S‖_{Lᵖ(Ω)} ≤ M`. This is the estimate ladder
+`TauCeti.exists_eLpNormWkp_one_le_of_isWeakCRSolution_of_le` at `r = q`. -/
+theorem crInteriorEstimate_zero [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 2 < p)
+    (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1) (hqp : q ≤ p) {Ω : Opens ℂ} {U : Set ℂ}
+    (hUc : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) (M : ℝ≥0) :
+    CRInteriorEstimate V p q 0 M Ω U := by
+  have hq1 : (1 : ℝ≥0∞) < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
+  obtain ⟨C, hC⟩ := exists_eLpNormWkp_one_le_of_isWeakCRSolution_of_le (V := V)
+    (by exact_mod_cast hp) hpq hq1
+    ENNReal.coe_ne_top (by exact_mod_cast hqp) hUc hUΩ M
+  refine ⟨C, fun J S DJ ξ η h hco hJ2 hJ hS hη => ?_⟩
+  rw [eLpNormWkp_zero] at hS ⊢
+  exact hC J S DJ ξ η h hco hJ2 hJ hS (memWkpLoc_zero_iff.1 hη)
+
+/-- **The interior estimates of every order** (McDuff–Salamon, Lemma B.4.6 and Proposition B.4.9).
+Let `V` be finite-dimensional, `p > 2`, `1/p + 1/q < 1` and `q ≤ p`. For every `k`, every `U` with
+compact closure in `Ω` and every `M`, there is one constant `C` such that every weak solution
+`ξ ∈ L^q_loc(Ω)` of `∂_s ξ + J ∂_t ξ + S ξ = η` with `J² = -1`, `‖J‖_{W^{max k 1, p}(Ω)} ≤ M`,
+`‖S‖_{W^{k,p}(Ω)} ≤ M` and `η ∈ W^{k,q}_loc(Ω)` satisfies
+`‖ξ‖_{W^{k+1,q}(U)} ≤ C (‖η‖_{W^{k,q}(Ω)} + ‖ξ‖_{L^q(Ω)})`. The order-`0` case is
+`TauCeti.crInteriorEstimate_zero` and each further order is `TauCeti.CRInteriorEstimate.succ`. -/
+theorem crInteriorEstimate [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 2 < p)
+    (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1) (hqp : q ≤ p) (k : ℕ) {Ω : Opens ℂ} {U : Set ℂ}
+    (hUc : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) (M : ℝ≥0) :
+    CRInteriorEstimate V p q k M Ω U := by
+  induction k generalizing Ω U M with
+  | zero => exact crInteriorEstimate_zero hp hpq hqp hUc hUΩ M
+  | succ k ih =>
+    exact CRInteriorEstimate.succ hp hpq hqp (fun _ _ M hUc hUΩ => ih hUc hUΩ M) hUc hUΩ M
 
 end TauCeti
