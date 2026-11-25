@@ -25,8 +25,9 @@ these chart pushforwards, and two estimates for measures on the model seen throu
   agree on the chart source.
 * `TauCeti.map_withDensity_restrict_extChartAt_source`: reweighting by a continuous function read
   in the chart multiplies a chart density by that function.
-* `TauCeti.measure_image_extChartAt_inter_source_pos`: the chart image of a neighbourhood of `x`
-  in an open set has positive measure, even at boundary or corner points.
+* `TauCeti.measure_image_extChartAt_inter_source_pos`: the chart image of the part of an open set
+  in the chart source has positive measure when that part is nonempty, even at boundary or corner
+  points.
 * `TauCeti.exists_isOpen_setLIntegral_image_extChartAt_lt_top`: a function continuous on the chart
   target has finite integral over the chart image of a small open neighbourhood of `x`.
 -/
@@ -43,18 +44,20 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableS
 
 /-! ### Measures on the model seen through a chart -/
 
-/-- The chart image of the part of an open set `U ∋ x` in the source of the preferred chart at `x`
-has positive measure for every measure on the model that is positive on nonempty open sets. This
-holds also at boundary or corner points, where the chart image need not be open. -/
+/-- The chart image of the part of an open set `U` in the source of the preferred chart at `x`
+has positive measure, when that part is nonempty, for every measure on the model that is positive
+on nonempty open sets. This holds also at boundary or corner points, where the chart image need not
+be open. -/
 theorem measure_image_extChartAt_inter_source_pos {U : Set M} (hU : IsOpen U) {x : M}
-    (hx : x ∈ U) (ν : Measure E) [ν.IsOpenPosMeasure] :
+    (hne : (U ∩ (extChartAt I x).source).Nonempty) (ν : Measure E) [ν.IsOpenPosMeasure] :
     0 < ν (extChartAt I x '' (U ∩ (extChartAt I x).source)) := by
   let e := extChartAt I x
+  obtain ⟨z, hzU, hz⟩ := hne
   rw [inter_comm U, e.image_source_inter_eq', inter_comm]
-  -- The chart image of `U ∩ e.source` contains `e x` in the closure of its interior.
-  refine Measure.measure_pos_of_nonempty_interior _ (Nonempty.of_closure ⟨e x, ?_⟩)
+  -- The chart image of `U ∩ e.source` contains `e z` in the closure of its interior.
+  refine Measure.measure_pos_of_nonempty_interior _ (Nonempty.of_closure ⟨e z, ?_⟩)
   exact extChartAt_mem_closure_interior (I := I) (x₀ := x)
-    (subset_closure (mem_interior_iff_mem_nhds.2 (hU.mem_nhds hx))) (mem_extChartAt_source x)
+    (subset_closure (mem_interior_iff_mem_nhds.2 (hU.mem_nhds hzU))) hz
 
 /-- A function continuous on the target of the preferred chart at `x` has finite integral, for a
 measure on a finite-dimensional model that is finite on compact sets, over the chart image of a

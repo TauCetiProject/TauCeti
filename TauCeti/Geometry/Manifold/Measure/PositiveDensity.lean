@@ -22,9 +22,10 @@ and so is any such measure reweighted by a strictly positive continuous function
 and no orientation enters the definition.
 
 These measures are the integration measures of first-order analysis on manifolds without a
-preferred metric. Each is locally finite and positive on nonempty open sets. They agree on every
-measure-zero question: on a Lindelöf manifold their null sets are exactly the chartwise null sets
-`TauCeti.IsNullSet`, so their almost-everywhere filters all agree with `TauCeti.Manifold.ae I M`.
+preferred metric. Each is locally finite and positive on nonempty open sets. On a Lindelöf
+manifold they agree on every measure-zero question: their null sets are exactly the chartwise null
+sets `TauCeti.IsNullSet`, so their almost-everywhere filters all agree with
+`TauCeti.Manifold.ae I M`.
 Integrals do depend on the choice, but on a second countable manifold any two of them differ by a
 strictly positive continuous weight.
 
@@ -199,7 +200,7 @@ theorem IsPositiveDensityMeasure.isOpenPosMeasure [FiniteDimensional ℝ E]
     obtain ⟨x, hx⟩ := hne
     refine (measure_mono_null (inter_subset_left : U ∩ (extChartAt I x).source ⊆ U)).mt ?_
     rw [hμ.measure_eq_zero_iff_image_of_subset inter_subset_right Measure.addHaar]
-    exact (measure_image_extChartAt_inter_source_pos hU hx _).ne'
+    exact (measure_image_extChartAt_inter_source_pos hU ⟨x, hx, mem_extChartAt_source x⟩ _).ne'
 
 /-- A positive continuous density measure is locally finite: near a point, its chart density is
 bounded, so a small neighbourhood has finite measure. -/

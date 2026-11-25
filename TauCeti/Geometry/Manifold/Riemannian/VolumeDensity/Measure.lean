@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.OpenPos
+import TauCeti.Geometry.Manifold.Measure.Chart
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
@@ -219,15 +220,10 @@ theorem chartRiemannianVolume_pos_of_isOpen_subset_source
   let d := chartVolumeDensityData (I := I) α
   have hsub' : s ⊆ e.source := by
     simpa only [e, extChartAt_source] using hsub
-  have hmeasure : 0 < (Module.finBasis ℝ E).addHaar (e '' s) :=
-    by
-      rw [e.image_eq_target_inter_inv_preimage hsub']
-      apply Measure.measure_pos_of_nonempty_interior
-      obtain ⟨z, hz⟩ := hne
-      refine Set.Nonempty.of_closure ⟨e z, ?_⟩
-      simpa only [inter_comm] using
-        (extChartAt_mem_closure_interior (I := I) (x₀ := α)
-          (subset_closure (mem_interior_iff_mem_nhds.mpr (hs.mem_nhds hz))) (hsub' hz))
+  have hmeasure : 0 < (Module.finBasis ℝ E).addHaar (e '' s) := by
+    have h := measure_image_extChartAt_inter_source_pos (I := I) hs (x := α)
+      (hne.mono fun z hz ↦ ⟨hz, hsub' hz⟩) (Module.finBasis ℝ E).addHaar
+    rwa [inter_eq_left.2 hsub'] at h
   rw [chartRiemannianVolume_apply α hs.measurableSet]
   have himage : e '' (s ∩ e.source) = e '' s := by
     rw [inter_eq_left.mpr hsub']

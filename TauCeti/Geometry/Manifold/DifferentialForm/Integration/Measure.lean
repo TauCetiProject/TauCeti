@@ -273,7 +273,8 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
   refine ((?_ : 0 < φ.measure V).trans_le (measure_mono inter_subset_left)).ne'
   rw [φ.measure_apply_of_subset hV.measurableSet hVsub]
   -- The coordinate image of `V` has positive Lebesgue measure.
-  have hApos : 0 < b.addHaar (e '' V) := measure_image_extChartAt_inter_source_pos hU hx _
+  have hApos : 0 < b.addHaar (e '' V) := measure_image_extChartAt_inter_source_pos hU
+    ⟨x, hx, mem_extChartAt_source x⟩ _
   -- The coordinate density is measurable and vanishes nowhere on that image.
   have hd := aemeasurable_ofReal_abs_inChartAt hφ b hV.measurableSet hVsub (μ := b.addHaar)
   have hpos : ∀ y ∈ e '' V, ENNReal.ofReal |φ.inChartAt x y b| ≠ 0 := by
