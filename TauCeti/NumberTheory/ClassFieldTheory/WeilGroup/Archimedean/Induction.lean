@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Algebra.Star.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
 
@@ -57,10 +58,6 @@ open Matrix
 
 variable (χ : WeilGroupComplex →* ℂˣ)
 
-/-- Conjugation fixes `-1 ∈ ℂˣ`. -/
-private theorem star_neg_one_weilGroupComplex : star (-1 : WeilGroupComplex) = -1 := by
-  ext; simp
-
 /-- The diagonal part `z ↦ diag(χ z, χ (conj z))` of the induction of `χ`. -/
 def induceCharacterDiag : WeilGroupComplex →* GL (Fin 2) ℂ :=
   diagGL.comp (MonoidHom.pi ![χ, χ.comp (starMulAut : MulAut WeilGroupComplex).toMonoidHom])
@@ -73,7 +70,7 @@ theorem coe_induceCharacterDiag (z : WeilGroupComplex) :
   rw [induceCharacterDiag, MonoidHom.comp_apply, diagGL_coe]
   congr 1
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp [starMulAut_apply]
 
 /-- The diagonal part of the induction of a continuous character is continuous. -/
 theorem continuous_induceCharacterDiag (hχ : Continuous χ) :
@@ -101,7 +98,7 @@ theorem coe_induceCharacterJ :
 theorem induceCharacterJ_sq : induceCharacterJ χ ^ 2 = induceCharacterDiag χ (-1) := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [sq, star_neg_one_weilGroupComplex]
+    simp [sq]
 
 /-- The relation `j z = conj z j` for the induction of `χ`. -/
 theorem induceCharacterJ_mul_induceCharacterDiag (z : WeilGroupComplex) :
@@ -148,13 +145,11 @@ theorem induceCharacter_comp_star (w : WeilGroupReal) :
       (MulAut.conj (induceCharacter χ j)).toMonoidHom.comp (induceCharacter χ) := by
     refine hom_ext (MonoidHom.ext fun z ↦ eq_mul_inv_of_mul_eq ?_) (eq_mul_inv_of_mul_eq ?_)
     · ext i k
-      simp only [Units.val_mul, MonoidHom.comp_apply, induceCharacter_includeComplex,
-        coe_induceCharacterDiag, induceCharacter_j, coe_induceCharacterJ]
       fin_cases i <;> fin_cases k <;> simp [mul_comm]
     · ext i k
-      simp only [Units.val_mul, induceCharacter_j, coe_induceCharacterJ]
-      fin_cases i <;> fin_cases k <;> simp [star_neg_one_weilGroupComplex]
-  rw [h, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply]
+      fin_cases i <;> fin_cases k <;> simp
+  rw [h]
+  simp
 
 end WeilGroupReal
 
