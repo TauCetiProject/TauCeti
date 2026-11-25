@@ -36,6 +36,10 @@ product bound `TauCeti.exists_eLpNormWkp_succ_compL_le` for `(A, T) ↦ A ∘L T
 ## Main declarations
 
 * `TauCeti.exists_eLpNormWkp_succ_comp_le`: the local bound for `g ∘ u` in `W^{k+1,p}`.
+* `TauCeti.exists_eLpNormWkp_one_comp_le_one_add`: the base case, for every set `S` containing
+  the compact closure of `U`.
+* `TauCeti.eLpNormWkp_succ_succ_comp_le_of_le`: the inductive step, for sets that agree almost
+  everywhere with their interior. Both are shared with the bounds on half-discs.
 
 ## References
 
@@ -56,25 +60,29 @@ variable {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensi
   {Ω : Opens ℂ} {p : ℝ≥0}
 
 omit [FiniteDimensional ℝ F] in
-/-- The order-one case of `TauCeti.exists_eLpNormWkp_succ_comp_le`, in the form used by the
-induction: `‖g ∘ u‖_{W^{1,p}(U)} ≤ C (1 + ‖u‖_{W^{1,p}(Ω)})`. It holds for every exponent. -/
-private theorem exists_eLpNormWkp_one_comp_le_one_add {G : Type*} [NormedAddCommGroup G]
+/-- **The order-one composition bound in the form used by inductions.** Let `g : F → G` be `C¹`
+on an open set `W`, let `L ⊆ W` be compact and let `U` and `S` be planar sets with `closure U`
+compact and contained in `S`. There is a constant `C` such that
+`‖g ∘ u‖_{W^{1,p}(U)} ≤ C (1 + ‖u‖_{W^{1,p}(S)})` for every `u` continuous on `S` with
+`u(S) ⊆ L`. It holds for every exponent; `S` is an open set or a half-disc `Ω ∩ {0 ≤ im}` in the
+applications. -/
+theorem exists_eLpNormWkp_one_comp_le_one_add {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] [CompleteSpace G] {g : F → G} {W L : Set F} (hW : IsOpen W)
-    (hg : ContDiffOn ℝ 1 g W) (hL : IsCompact L) (hLW : L ⊆ W) {U : Set ℂ}
-    (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
-    ∃ C : ℝ≥0, ∀ u : ℂ → F, ContinuousOn u Ω → MapsTo u Ω L →
-      eLpNormWkp p U 1 (fun z => g (u z)) ≤ C * (1 + eLpNormWkp p Ω 1 u) := by
+    (hg : ContDiffOn ℝ 1 g W) (hL : IsCompact L) (hLW : L ⊆ W) {U S : Set ℂ}
+    (hU : IsCompact (closure U)) (hUS : closure U ⊆ S) :
+    ∃ C : ℝ≥0, ∀ u : ℂ → F, ContinuousOn u S → MapsTo u S L →
+      eLpNormWkp p U 1 (fun z => g (u z)) ≤ C * (1 + eLpNormWkp p S 1 u) := by
   obtain ⟨C₀, C₁, hC⟩ := exists_eLpNormWkp_one_comp_le hW hg hL hLW
   set A : ℝ≥0∞ := volume (closure U) ^ (p : ℝ≥0∞).toReal⁻¹
   have hA : A ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg (by positivity) hU.measure_lt_top.ne
   refine ⟨C₀ * A.toNNReal + C₁, fun u huc huL => ?_⟩
-  set X := eLpNormWkp p Ω 1 u
-  have hY : eLpNormWkp p (closure U) 1 u ≤ X := eLpNormWkp_mono_set hUΩ
+  set X := eLpNormWkp p S 1 u
+  have hY : eLpNormWkp p (closure U) 1 u ≤ X := eLpNormWkp_mono_set hUS
   calc
     _ ≤ eLpNormWkp p (closure U) 1 (fun z => g (u z)) := eLpNormWkp_mono_set subset_closure
     _ ≤ C₀ * A + C₁ * eLpNormWkp p (closure U) 1 u :=
-      hC p (closure U) u isClosed_closure.measurableSet (huc.mono hUΩ) (huL.mono_left hUΩ)
+      hC p (closure U) u isClosed_closure.measurableSet (huc.mono hUS) (huL.mono_left hUS)
     _ ≤ C₀ * A * (1 + X) + C₁ * (1 + X) :=
       add_le_add (le_mul_of_one_le_right' le_self_add)
         (mul_le_mul' le_rfl (hY.trans le_add_self))
@@ -82,6 +90,60 @@ private theorem exists_eLpNormWkp_one_comp_le_one_add {G : Type*} [NormedAddComm
       push_cast
       rw [ENNReal.coe_toNNReal hA]
       ring
+
+omit [FiniteDimensional ℝ F] in
+/-- **The inductive step of the composition bounds.** Let `g : F → G` be `C^{k+2}` on an open set
+`W ⊇ L`, let `S` be a planar set that agrees almost everywhere with its interior, let `A, B ⊆ S`,
+and let `u` be continuous on `S` with `u(S) ⊆ L`. Write `‖·‖ₘ(T)` for `‖·‖_{W^{m,p}(T)}`. If
+`‖g ∘ u‖ₖ₊₁(A)` and `‖Dg ∘ u‖ₖ₊₁(B)` are at most `C₀ (1 + ‖u‖ₖ₊₁(S))^{k+1}` and
+`C₁ (1 + ‖u‖ₖ₊₁(S))^{k+1}`, and `‖z ↦ T z ∘L D z‖ₖ₊₁(A) ≤ Cc ‖T‖ₖ₊₁(B) ‖D‖ₖ₊₁(B)` for all fields
+`T` and `D`, then `‖g ∘ u‖ₖ₊₂(A) ≤ (C₀ + Cc C₁ + 1) (1 + ‖u‖ₖ₊₂(S))^{k+2}`. The weak derivative of
+`g ∘ u` is `Dg(u) ∘ Du`. This is shared by the bounds in the interior and on half-discs. -/
+theorem eLpNormWkp_succ_succ_comp_le_of_le {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G]
+    {k : ℕ} {g : F → G} {W L : Set F} (hW : IsOpen W) (hg : ContDiffOn ℝ (k + 1 + 1) g W)
+    (hLW : L ⊆ W) {A B S : Set ℂ} (hS : S =ᵐ[volume] (Opens.interior S : Set ℂ)) (hAS : A ⊆ S)
+    (hBS : B ⊆ S) {u : ℂ → F} (huc : ContinuousOn u S) (huL : MapsTo u S L) {C₀ C₁ Cc : ℝ≥0}
+    (hC₀ : eLpNormWkp p A (k + 1) (fun z => g (u z)) ≤
+      C₀ * (1 + eLpNormWkp p S (k + 1) u) ^ (k + 1))
+    (hC₁ : eLpNormWkp p B (k + 1) (fun z => fderiv ℝ g (u z)) ≤
+      C₁ * (1 + eLpNormWkp p S (k + 1) u) ^ (k + 1))
+    (hCc : ∀ (T : ℂ → F →L[ℝ] G) (D : ℂ → ℂ →L[ℝ] F),
+      eLpNormWkp p A (k + 1) (fun z => (T z).comp (D z)) ≤
+        Cc * eLpNormWkp p B (k + 1) T * eLpNormWkp p B (k + 1) D) :
+    eLpNormWkp p A (k + 1 + 1) (fun z => g (u z)) ≤
+      ↑(C₀ + Cc * C₁ + 1) * (1 + eLpNormWkp p S (k + 1 + 1) u) ^ (k + 1 + 1) := by
+  set X := eLpNormWkp p S (k + 1 + 1) u
+  by_cases hX : X = ∞
+  · rw [hX, add_top, ENNReal.top_pow (by omega), ENNReal.mul_top (by simp)]
+    exact le_top
+  obtain ⟨Du, hDu, -, hXeq⟩ := exists_hasWeakFDerivOn_interior_eLpNormWkp_succ_eq_of_ne_top hS hX
+  have hD := hDu.contDiffOn_comp (huc.mono interior_subset) hW (hg.of_le (by norm_cast; omega))
+    ((huL.mono_left interior_subset).mono_right hLW)
+  have hu1 : eLpNormWkp p S (k + 1) u ≤ X := eLpNormWkp_mono_order (by omega)
+  have hDuX : eLpNormWkp p B (k + 1) Du ≤ X := by
+    refine (eLpNormWkp_mono_set hBS).trans ?_
+    simp only [X, hXeq]
+    exact le_add_self
+  have h1 : (1 + X) ^ (k + 1) ≤ (1 + X) ^ (k + 1 + 1) :=
+    pow_le_pow_right₀ le_self_add (by omega)
+  have h2 : (1 + X) ^ (k + 1) * X ≤ (1 + X) ^ (k + 1 + 1) := by
+    rw [pow_succ _ (k + 1)]
+    exact mul_le_mul' le_rfl (le_add_self : X ≤ 1 + X)
+  calc
+    _ ≤ eLpNorm (fun z => g (u z)) p (volume.restrict A) +
+        eLpNormWkp p A (k + 1) (fun z => (fderiv ℝ g (u z)).comp (Du z)) :=
+      eLpNormWkp_succ_le (hD.mono fun z hz => interior_mono hAS hz)
+    _ ≤ C₀ * (1 + X) ^ (k + 1) + Cc * (C₁ * (1 + X) ^ (k + 1)) * X := by
+      gcongr
+      · exact eLpNorm_le_eLpNormWkp.trans (hC₀.trans (by gcongr))
+      · exact (hCc _ _).trans (by
+          gcongr
+          exact hC₁.trans (by gcongr))
+    _ = C₀ * (1 + X) ^ (k + 1) + Cc * C₁ * ((1 + X) ^ (k + 1) * X) := by ring
+    _ ≤ C₀ * (1 + X) ^ (k + 1 + 1) + Cc * C₁ * (1 + X) ^ (k + 1 + 1) := by gcongr
+    _ = ↑(C₀ + Cc * C₁) * (1 + X) ^ (k + 1 + 1) := by push_cast; ring
+    _ ≤ _ := by gcongr ?_ * _; exact_mod_cast le_self_add
 
 /-- `TauCeti.exists_eLpNormWkp_succ_comp_le` for values in a universe at least that of `F`, which
 makes the statement closed under the passage from `g` to `fderiv ℝ g`. -/
@@ -106,38 +168,9 @@ private theorem exists_eLpNormWkp_succ_comp_le_aux (hp : 2 < p) (k : ℕ) {G : T
       (hg.fderiv_of_isOpen hW (by push_cast; rfl)) hVc hVΩ
     obtain ⟨Cc, hCc⟩ := exists_eLpNormWkp_succ_compL_le (F := ℂ) (G := F) (H := G) (Ω := V) hp
       (one_lt_two.trans hp) le_rfl k hU hUV
-    refine ⟨C₀ + Cc * C₁ + 1, fun u huc huL => ?_⟩
-    set X := eLpNormWkp p Ω (k + 1 + 1) u
-    by_cases hX : X = ∞
-    · rw [hX, add_top, ENNReal.top_pow (by omega), ENNReal.mul_top (by simp)]
-      exact le_top
-    obtain ⟨Du, hDu, -, hXeq⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hX
-    have hD := hDu.contDiffOn_comp huc hW (hg.of_le (by norm_cast; omega)) (huL.mono_right hLW)
-    have hUΩ' : U ⊆ Ω := subset_closure.trans hUΩ
-    have hu1 : eLpNormWkp p Ω (k + 1) u ≤ X := eLpNormWkp_mono_order (by omega)
-    have hDuX : eLpNormWkp p V (k + 1) Du ≤ X := by
-      refine (eLpNormWkp_mono_set (subset_closure.trans hVΩ)).trans ?_
-      simp only [X, hXeq]
-      exact le_add_self
-    have h1 : (1 + X) ^ (k + 1) ≤ (1 + X) ^ (k + 1 + 1) :=
-      pow_le_pow_right₀ le_self_add (by omega)
-    have h2 : (1 + X) ^ (k + 1) * X ≤ (1 + X) ^ (k + 1 + 1) := by
-      rw [pow_succ _ (k + 1)]
-      exact mul_le_mul' le_rfl (le_add_self : X ≤ 1 + X)
-    calc
-      _ ≤ eLpNorm (fun z => g (u z)) p (volume.restrict U) +
-          eLpNormWkp p U (k + 1) (fun z => (fderiv ℝ g (u z)).comp (Du z)) :=
-        eLpNormWkp_succ_le (hD.mono fun z hz => hUΩ' (interior_subset hz))
-      _ ≤ C₀ * (1 + X) ^ (k + 1) + Cc * (C₁ * (1 + X) ^ (k + 1)) * X := by
-        gcongr
-        · exact eLpNorm_le_eLpNormWkp.trans ((hC₀ u huc huL).trans (by gcongr))
-        · exact (hCc _ _).trans (by
-            gcongr
-            exact (hC₁ u huc huL).trans (by gcongr))
-      _ = C₀ * (1 + X) ^ (k + 1) + Cc * C₁ * ((1 + X) ^ (k + 1) * X) := by ring
-      _ ≤ C₀ * (1 + X) ^ (k + 1 + 1) + Cc * C₁ * (1 + X) ^ (k + 1 + 1) := by gcongr
-      _ = ↑(C₀ + Cc * C₁) * (1 + X) ^ (k + 1 + 1) := by push_cast; ring
-      _ ≤ _ := by gcongr ?_ * _; exact_mod_cast le_self_add
+    exact ⟨_, fun u huc huL => eLpNormWkp_succ_succ_comp_le_of_le hW hg hLW
+      (by rw [Opens.interior_coe]) (subset_closure.trans hUΩ) (subset_closure.trans hVΩ) huc huL
+      (hC₀ u huc huL) (hC₁ u huc huL) hCc⟩
 
 variable {G : Type uG} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
 
