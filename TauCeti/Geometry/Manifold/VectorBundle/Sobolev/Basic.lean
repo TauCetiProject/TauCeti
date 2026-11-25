@@ -78,6 +78,7 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
 ## Main results
 
 * `TauCeti.SectionChartData.lowerOrdersL_lowerOrdersL`: order inclusions compose.
+* `TauCeti.SectionChartData.lowerToZeroL`: the inclusion of order `k` into order `0`.
 * `TauCeti.SectionChartData.chartValueL_eqRec`, `TauCeti.SectionChartData.value_eqRec`:
   chart and scalar readings respect order transport.
 * `TauCeti.SectionChartData.chartValueL_lowerOrdersL`,
@@ -733,6 +734,46 @@ theorem lowerOrdersL_lowerOrdersL (d e : ℕ) (w : C.sobolevSections μ p ((k + 
   apply C.chartValuesL_injective μ p k
   rw [chartValuesL_lowerOrdersL, chartValuesL_lowerOrdersL,
     chartValuesL_lowerOrdersL, chartValuesL_eqRec]
+
+/-- Forgetting the highest derivative does not increase the norm. -/
+theorem norm_lowerOrderL_le (w : C.sobolevSections μ p (k + 1)) :
+    ‖C.lowerOrderL μ p k w‖ ≤ ‖w‖ := by
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe]
+  refine (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦
+    (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun j ↦ ?_
+  rw [lowerOrderL_apply]
+  exact (Wkp.norm_lowerOrder_le k _).trans ((norm_le_pi_norm _ j).trans (norm_le_pi_norm _ i))
+
+/-- The continuous inclusion of the Sobolev sections of order `m` into those of order `0`,
+forgetting all derivatives of every component. Unlike `TauCeti.SectionChartData.lowerOrdersL`
+with `k = 0`, its source order is `m` itself rather than `0 + m`. -/
+def lowerToZeroL : (m : ℕ) → C.sobolevSections μ p m →L[ℝ] C.sobolevSections μ p 0
+  | 0 => ContinuousLinearMap.id ℝ _
+  | m + 1 => (lowerToZeroL m).comp (C.lowerOrderL μ p m)
+
+@[simp]
+theorem lowerToZeroL_zero (w : C.sobolevSections μ p 0) : C.lowerToZeroL μ p 0 w = w :=
+  (rfl)
+
+/-- Forgetting all derivatives after forgetting the highest one is forgetting all derivatives. -/
+@[simp]
+theorem lowerToZeroL_lowerOrderL (w : C.sobolevSections μ p (k + 1)) :
+    C.lowerToZeroL μ p k (C.lowerOrderL μ p k w) = C.lowerToZeroL μ p (k + 1) w :=
+  (rfl)
+
+/-- Forgetting all derivatives does not change the chart data. -/
+@[simp]
+theorem chartValuesL_lowerToZeroL (w : C.sobolevSections μ p k) :
+    C.chartValuesL μ p 0 (C.lowerToZeroL μ p k w) = C.chartValuesL μ p k w := by
+  induction k with
+  | zero => rfl
+  | succ k ih => rw [← lowerToZeroL_lowerOrderL, ih, chartValuesL_lowerOrderL]
+
+/-- Forgetting all derivatives is `TauCeti.SectionChartData.lowerOrdersL` from order `0 + k`. -/
+theorem lowerOrdersL_eqRec_eq_lowerToZeroL (w : C.sobolevSections μ p k) :
+    C.lowerOrdersL μ p 0 k ((zero_add k).symm ▸ w) = C.lowerToZeroL μ p k w := by
+  apply C.chartValuesL_injective μ p 0
+  rw [chartValuesL_lowerOrdersL, chartValuesL_eqRec, chartValuesL_lowerToZeroL]
 
 section ConstMap
 
