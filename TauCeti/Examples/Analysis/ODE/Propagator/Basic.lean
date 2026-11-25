@@ -25,6 +25,17 @@ and to `B` on `[1, ∞)`. The propagator from `0` to `2` is the time-ordered pro
 The reversed product `exp A ∘ exp B = [[2, 1], [1, 1]]` differs, and so does the exponential of
 the integral `∫₀² P = A + B`: `exp (A + B)` commutes with `A + B`, while `[[1, 1], [1, 2]]` does
 not.
+
+## Continuous dependence on the coefficient
+
+For the scalar constant coefficients `p = 0` and `p′ = 1` on `[0, 1]`, the propagators from `0` to
+`1` are `1` and `e`, and the bound
+`‖N_{p′}(1, 0) − N_p(1, 0)‖ ≤ ‖p′ − p‖_{L¹} exp(‖p′‖_{L¹} + ‖p‖_{L¹})` of
+`TauCeti.norm_propagator_sub_propagator_le` reads `e − 1 ≤ e`
+(`TauCeti.Examples.Propagator.norm_propagator_one_sub_propagator_zero`). For `P′ = P` the
+right-hand side of that bound is `0`
+(`TauCeti.Examples.Propagator.integral_norm_sub_self_mul_exp_eq_zero`), and the propagator only
+depends on the coefficient almost everywhere (`TauCeti.propagator_congr_ae`).
 -/
 
 public section
@@ -109,5 +120,26 @@ theorem exp_opA_add_opB_ne_propagator : exp (opA + opB) ≠ propagator coeff 2 0
   rw [h, propagator_coeff_two_zero, opA, opB, ← map_add] at hc
   simp only [← map_mul, EmbeddingLike.apply_eq_iff_eq] at hc
   simpa [Matrix.mul_fin_two] using congrFun (congrFun hc 0) 1
+
+/-- For the scalar coefficients `0` and `1` on `ℝ`, the propagators from `0` to `1` differ by
+`e − 1`, and the right-hand side of `TauCeti.norm_propagator_sub_propagator_le` is `e`. -/
+theorem norm_propagator_one_sub_propagator_zero :
+    ‖propagator (fun _ ↦ (1 : ℝ →L[ℝ] ℝ)) 1 0 - propagator (fun _ ↦ (0 : ℝ →L[ℝ] ℝ)) 1 0‖ =
+        Real.exp 1 - 1 ∧
+      |∫ _ in (0 : ℝ)..1, ‖(1 : ℝ →L[ℝ] ℝ) - 0‖| *
+        Real.exp (|∫ _ in (0 : ℝ)..1, ‖(1 : ℝ →L[ℝ] ℝ)‖| +
+          |∫ _ in (0 : ℝ)..1, ‖(0 : ℝ →L[ℝ] ℝ)‖|) = Real.exp 1 := by
+  have h1 : propagator (fun _ ↦ (1 : ℝ →L[ℝ] ℝ)) 1 0 = Real.exp 1 • (1 : ℝ →L[ℝ] ℝ) := by
+    simp [Real.exp_eq_exp_ℝ, ← Algebra.algebraMap_eq_smul_one, NormedSpace.algebraMap_exp_comm]
+  have he : 0 ≤ Real.exp 1 - 1 := by linarith [Real.add_one_le_exp (1 : ℝ)]
+  refine ⟨?_, by simp⟩
+  simpa [h1, norm_smul, abs_of_nonneg he] using
+    congrArg norm (sub_smul (Real.exp 1) 1 (1 : ℝ →L[ℝ] ℝ)).symm
+
+/-- For `P′ = P` the right-hand side of `TauCeti.norm_propagator_sub_propagator_le` is `0`. -/
+theorem integral_norm_sub_self_mul_exp_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (P : ℝ → E →L[ℝ] E) (t s : ℝ) :
+    |∫ u in s..t, ‖P u - P u‖| * Real.exp (|∫ u in s..t, ‖P u‖| + |∫ u in s..t, ‖P u‖|) = 0 := by
+  simp
 
 end TauCeti.Examples.Propagator
