@@ -26,7 +26,8 @@ import Mathlib.Tactic.FinCases
   formula gives `e^{tr A + tr B} = e^0`
   (`TauCeti.Examples.Propagator.det_propagator_coeff_two_zero_eq_exp`).
 * **Constant coefficients.** For a constant coefficient `A`, `N_A(t, s) = exp ((t - s) A)`, and
-  Liouville's formula `det N_A(t, s) = e^{∫_s^t tr A}` is `Matrix.det_exp` at `(t - s) A`
+  both Liouville's formula `det N_A(t, s) = e^{∫_s^t tr A}` and `Matrix.det_exp` at `(t - s) A`
+  give `det N_A(t, s) = e^{(t - s) tr A}`
   (`TauCeti.Examples.Propagator.det_propagator_const_eq_det_exp`). For `A = [[1, 1], [0, 1]]`,
   `exp (t A) = e^t [[1, t], [0, 1]]` (`TauCeti.Examples.Propagator.exp_smul_jordan`) has
   determinant `e^{2t} = e^{t tr A}` (`TauCeti.Examples.Propagator.det_propagator_jordan`), while
@@ -111,22 +112,23 @@ private theorem toEuclideanCLM_exp {n : Type*} [Fintype n] [DecidableEq n] (M : 
       (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := n)).toAlgEquiv.toLinearMap) M
 
 /-- **Constant coefficients agree with `Matrix.det_exp`.** For a constant coefficient `A`,
-`N_A(t, s) = exp ((t - s) A)` (`TauCeti.propagator_const`), and Liouville's formula
-`det N_A(t, s) = e^{∫_s^t tr A}` is `Matrix.det_exp` at `(t - s) A`: both sides are
-`det (exp ((t - s) A)) = e^{(t - s) tr A}`. -/
+Liouville's formula gives `det N_A(t, s) = e^{∫_s^t tr A}`, while
+`N_A(t, s) = exp ((t - s) A)` (`TauCeti.propagator_const`) gives
+`det N_A(t, s) = det (exp ((t - s) A))`, which is `e^{(t - s) tr A}` by `Matrix.det_exp`. -/
 theorem det_propagator_const_eq_det_exp {n : Type*} [Fintype n] [DecidableEq n]
     (A : Matrix n n ℝ) (t s : ℝ) :
-    exp (∫ _ in s..t, LinearMap.trace ℝ _
-        (Matrix.toEuclideanCLM (𝕜 := ℝ) A : EuclideanSpace ℝ n →ₗ[ℝ] EuclideanSpace ℝ n)) =
-      (exp ((t - s) • A)).det ∧
+    LinearMap.det (propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) A) t s :
+        EuclideanSpace ℝ n →ₗ[ℝ] EuclideanSpace ℝ n) =
+      exp (∫ _ in s..t, LinearMap.trace ℝ _
+        (Matrix.toEuclideanCLM (𝕜 := ℝ) A : EuclideanSpace ℝ n →ₗ[ℝ] EuclideanSpace ℝ n)) ∧
+    LinearMap.det (propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) A) t s :
+        EuclideanSpace ℝ n →ₗ[ℝ] EuclideanSpace ℝ n) = (exp ((t - s) • A)).det ∧
     (exp ((t - s) • A)).det = Real.exp ((t - s) * A.trace) := by
-  have hdet : (exp ((t - s) • A)).det = Real.exp ((t - s) * A.trace) := by
-    rw [Matrix.det_exp, Matrix.trace_smul, smul_eq_mul, Real.exp_eq_exp_ℝ]
-  refine ⟨?_, hdet⟩
-  rw [← det_propagator (a := min s t) (b := max s t) continuousOn_const.integrableOn_Icc
-    ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩, propagator_const,
-    RCLike.ofReal_real_eq_id, id, ← map_smul, ← toEuclideanCLM_exp, ← ContinuousLinearMap.det,
-    Matrix.det_toEuclideanCLM]
+  refine ⟨det_propagator (a := min s t) (b := max s t) continuousOn_const.integrableOn_Icc
+    ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩, ?_, ?_⟩
+  · rw [propagator_const, RCLike.ofReal_real_eq_id, id, ← map_smul, ← toEuclideanCLM_exp,
+      ← ContinuousLinearMap.det, Matrix.det_toEuclideanCLM]
+  · rw [Matrix.det_exp, Matrix.trace_smul, smul_eq_mul, Real.exp_eq_exp_ℝ]
 
 /-- The matrix `[[1, 1], [0, 1]]`. -/
 abbrev jordan : Matrix (Fin 2) (Fin 2) ℝ := !![1, 1; 0, 1]
