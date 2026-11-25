@@ -186,8 +186,10 @@ private theorem conj_omega_eq (hirr : ∀ r : F, r ^ 2 ≠ a + b * r) (ha : a �
   have hω : omega b ha ∈ periodMatrixGroup a b := by
     simp
   set y := g * omega b ha * g⁻¹ with hy
-  obtain ⟨h₁, h₂⟩ := mem_periodMatrixGroup_iff.mp
-    (show y ∈ periodMatrixGroup a b from (Subgroup.mem_normalizer_iff.mp hg _).mp hω)
+  have hyC : y ∈ periodMatrixGroup a b := by
+    rw [hy]
+    exact (Subgroup.mem_normalizer_iff.mp hg _).mp hω
+  obtain ⟨h₁, h₂⟩ := mem_periodMatrixGroup_iff.mp hyC
   have htr : (y : Matrix (Fin 2) (Fin 2) F).trace = b := by
     rw [hy, Units.val_mul, Units.val_mul, Matrix.trace_units_conj]
     simp [trace_fin_two]
