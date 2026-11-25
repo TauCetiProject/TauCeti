@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Bordered
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 
 /-!
@@ -66,38 +67,6 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ClosedUpperHalfPlane X]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ℓ : ℕ∞}
   {p : ENNReal} {u : X → M} {s : Set X}
-
-omit [I.Boundaryless] [IsManifold I ∞ M] in
-/-- The derivative of `u` at `x` is the derivative, within the closed upper half-plane, of `u`
-read through the inverse of the extended chart at `x`. -/
-private theorem mfderiv_eq_mfderivWithin_comp_extChartAt_symm {x : X}
-    (hu : MDifferentiableAt closedUpperHalfPlaneModel I u x) :
-    mfderiv closedUpperHalfPlaneModel I u x =
-      mfderivWithin 𝓘(ℝ, ℂ) I
-        (u ∘ ((chartAt ClosedUpperHalfPlane x).extend closedUpperHalfPlaneModel).symm)
-        (range closedUpperHalfPlaneModel)
-        ((chartAt ClosedUpperHalfPlane x).extend closedUpperHalfPlaneModel x) := by
-  have hg : MDifferentiableWithinAt 𝓘(ℝ, ℂ) I
-      (u ∘ ((chartAt ClosedUpperHalfPlane x).extend closedUpperHalfPlaneModel).symm)
-      (range closedUpperHalfPlaneModel)
-      ((chartAt ClosedUpperHalfPlane x).extend closedUpperHalfPlaneModel x) := by
-    refine MDifferentiableAt.comp_mdifferentiableWithinAt _ ?_
-      (mdifferentiableWithinAt_extChartAt_symm (mem_extChartAt_target x))
-    rwa [(chartAt ClosedUpperHalfPlane x).extend_left_inv (mem_chart_source _ x)]
-  rw [hu.mfderiv, hg.mfderivWithin]
-  simp only [writtenInExtChartAt, extChartAt, OpenPartialHomeomorph.extend, PartialEquiv.coe_trans,
-    ModelWithCorners.toPartialEquiv_coe, PartialHomeomorph.toFun_eq_coe,
-    OpenPartialHomeomorph.coe_toPartialHomeomorph, PartialEquiv.coe_trans_symm,
-    PartialHomeomorph.coe_toPartialEquiv_symm, OpenPartialHomeomorph.coe_toPartialHomeomorph_symm,
-    ModelWithCorners.toPartialEquiv_coe_symm, range_closedUpperHalfPlaneModel, Function.comp_apply,
-    closedUpperHalfPlaneModel_apply, closedUpperHalfPlaneModel_symm_coe, (chartAt
-    ClosedUpperHalfPlane x).left_inv (mem_chart_source _ x), chartAt_self_eq,
-    OpenPartialHomeomorph.refl_partialEquiv, modelWithCornersSelf_partialEquiv,
-    PartialEquiv.trans_refl, PartialEquiv.refl_symm, PartialEquiv.refl_coe, CompTriple.comp_eq,
-    preimage_ofPred_eq, id_eq, modelWithCornersSelf_coe, range_id, subset_univ, inf_of_le_left]
-  -- Both sides are the same derivative; they differ only in `tangentSpaceCastModel` at two
-  -- equal points, and these identifications are identities by definition.
-  rfl
 
 omit [HasGroupoid X borderedHolomorphicGroupoid] [IsManifold I ∞ M] in
 /-- A map of class `C¹` on `s`, read in a bordered holomorphic chart `φ` of `X` and a chart `ψ` of
@@ -233,7 +202,7 @@ private theorem isPseudoholomorphicAt_of_fderivWithin_chart
   rw [hgz] at hcr
   refine isPseudoholomorphicAt_iff_mfderiv.2 ⟨hud, fun (w : ℂ) ↦ ?_⟩
   rw [SmoothAlmostComplexStructure.ofBorderedHolomorphic_apply, smul_eq_mul,
-    mfderiv_eq_mfderivWithin_comp_extChartAt_symm hud]
+    hud.mfderiv_eq_mfderivWithin_comp_extChartAt_symm]
   have hcrw := hcr w
   simp only [SmoothAlmostComplexStructure.toContMDiff_apply] at hcrw
   exact hcrw

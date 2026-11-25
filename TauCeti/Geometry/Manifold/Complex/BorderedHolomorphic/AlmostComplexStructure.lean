@@ -141,19 +141,10 @@ theorem mfderiv_extend_symm_I_mul_of_mem_maximalAtlas
           closedUpperHalfPlaneModel.symm) z w := by
     rw [hτ.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars', ← smul_eq_mul,
       map_smul]
-  -- Both tangent spaces are `ℂ`, so `j` is multiplication by `i` and the derivative of the inverse
-  -- chart, read in the chart at `x`, is the derivative of the chart change; the remaining
-  -- `tangentSpaceCastModel` identifications are identities by definition.
+  -- `j` is multiplication by `i`, and in the chart at `x` the derivative of the inverse chart is
+  -- the derivative of the chart change; the tangent spaces at `z` and `x` are `ℂ` by definition.
   refine Eq.trans ?_ (ofBorderedHolomorphic_apply x _).symm
-  rw [hφs.mfderiv]
-  simp only [OpenPartialHomeomorph.extend, PartialEquiv.coe_trans_symm,
-    PartialHomeomorph.coe_toPartialEquiv_symm, OpenPartialHomeomorph.coe_toPartialHomeomorph_symm,
-    ModelWithCorners.toPartialEquiv_coe_symm, Function.comp_apply, writtenInExtChartAt, extChartAt,
-    PartialEquiv.coe_trans, ModelWithCorners.toPartialEquiv_coe, PartialHomeomorph.toFun_eq_coe,
-    OpenPartialHomeomorph.coe_toPartialHomeomorph, chartAt_self_eq,
-    OpenPartialHomeomorph.refl_partialEquiv, modelWithCornersSelf_partialEquiv,
-    PartialEquiv.trans_refl, PartialEquiv.refl_symm, PartialEquiv.refl_coe, CompTriple.comp_eq,
-    modelWithCornersSelf_coe, range_id, id_eq, fderivWithin_univ]
+  rw [hφs.mfderiv_eq_fderiv_extChartAt_conj rfl, extChartAt_model_space_eq_id]
   exact key
 
 /-! ### Check: the closed upper half-plane -/
