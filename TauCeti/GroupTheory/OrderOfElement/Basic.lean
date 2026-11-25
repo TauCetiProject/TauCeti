@@ -52,7 +52,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
   of finite order for monoid homomorphisms.
 * `MonoidHom.pow_natCard_eq_one`, and its additive counterpart: raising a homomorphism from a
   group into a commutative monoid to `Nat.card G` yields the trivial homomorphism.
-
+* `SemiconjBy.orderOf_eq_of_isRegular`, and its additive counterpart: semiconjugacy by a regular
+  (left- and right-cancellative) element preserves multiplicative order in any monoid.
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
 * `IsConj.orderOf_eq`, and its additive counterpart: conjugate elements of a monoid have the same
@@ -105,6 +106,24 @@ theorem MonoidHom.pow_natCard_eq_one {G M : Type*} [Group G] [CommMonoid M] (f :
     f ^ Nat.card G = 1 := by
   ext g
   rw [MonoidHom.pow_apply, MonoidHom.one_apply, ← map_pow, pow_card_eq_one', map_one]
+
+namespace SemiconjBy
+
+/-- **Order invariance under semiconjugacy by a regular element.** If a left- and
+right-cancellative element `a` of a monoid satisfies `a * x = y * a`, then `x` and `y` have the
+same multiplicative order. This generalizes `SemiconjBy.orderOf_eq` from groups to monoids. -/
+@[to_additive
+/-- **Additive order invariance under semiconjugacy by a regular element.** If a left- and
+right-cancellative element `a` of an additive monoid satisfies `a + x = y + a`, then `x` and `y`
+have the same additive order. This generalizes `AddSemiconjBy.addOrderOf_eq` from additive groups
+to additive monoids. -/]
+theorem orderOf_eq_of_isRegular {M : Type*} [Monoid M] {a x y : M}
+    (ha : IsRegular a) (h : SemiconjBy a x y) : orderOf x = orderOf y := by
+  refine orderOf_eq_orderOf_iff.mpr fun k => ⟨fun hx => ?_, fun hy => ?_⟩
+  · exact ha.right (by simpa [hx] using (h.pow_right k).eq.symm)
+  · exact ha.left (by simpa [hy] using (h.pow_right k).eq)
+
+end SemiconjBy
 
 namespace IsOfFinOrder
 
