@@ -6,35 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
+public import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Dimension
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
-public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 
 /-!
 # Checks: compact maps and the direct method on `ℓ²`
 
-Checks of `TauCetiRoadmap/VariationalMethods/README.md` §1.3 (compact maps on bounded sets) and
-§1.4 (direct-method theorems), on `ℓ² = ℓ²(ℕ, ℝ)` with the unit vectors `eₙ = lp.single 2 n 1`.
+Checks of compact diagonal maps and of minimization problems with and without minimizers, on
+`ℓ² = ℓ²(ℕ, ℝ)` with the unit vectors `eₙ = lp.single 2 n 1`.
 
-§1.3, for the compact injective diagonal map `j = diag(1/(n + 1))` (`j`, `isCompactOperator_j`,
-`injective_j`):
+Compact maps, for the compact injective diagonal map `j = diag(1/(n + 1))` (`j`,
+`isCompactOperator_j`, `injective_j`):
 
 * `‖j eₙ‖ = 1/(n + 1) → 0` (`norm_j_single`, `tendsto_norm_j_single`);
 * the unbounded sequence `uₙ = (n + 1) eₙ` has `‖j uₙ‖ = 1` (`norm_smul_single`,
   `norm_j_smul_single`);
 * the identity of `ℓ²` is not compact (`not_isCompactOperator_id`).
 
-§1.4:
+Minimization:
 
 * `‖u‖²` attains its infimum `0` on `ℓ²` at `0` (`isMinOn_norm_sq`);
 * the energy `E(u) = ‖k u‖² = Σ |uₙ|²/(n + 1)`, `k = diag(1/√(n + 1))`, is positive on the unit
   sphere `S` (`energy_pos`) with `E(eₙ) = 1/(n + 1)` (`energy_single`), so it has no minimizer on
-  `S` (`not_exists_isMinOn_energy_sphere`): `S` is bounded and `E` is weakly lower semicontinuous,
-  but `S` is not weakly closed;
+  `S` (`not_exists_isMinOn_energy_sphere`), although `S` is bounded;
 * `E(u) = −⟪e₀, u⟫` is unbounded below on `ℓ²` (`not_bddBelow_neg_inner`), `sInf (E '' ℓ²)` is
-  the junk value `0` (`sInf_neg_inner`), and `E` has no minimizer (`not_exists_isMinOn_neg_inner`),
-  although the constant sequence `0` is bounded with `E 0 = 0`: the hypothesis
-  `BddBelow (E '' S)` of the sequential direct method cannot be dropped.
+  the junk value `0` (`sInf_neg_inner`), and `E` has no minimizer (`not_exists_isMinOn_neg_inner`).
 -/
 
 public section
@@ -53,12 +50,18 @@ noncomputable abbrev e (n : ℕ) : L2 := lp.single 2 n 1
 /-- The unit vectors have norm `1`. -/
 theorem norm_e (n : ℕ) : ‖e n‖ = 1 := by simp [e, lp.norm_single]
 
-/-! ### Compact maps: §1.3 -/
+/-! ### Compact maps -/
 
 /-- The coefficients `1/(n + 1)` decrease. -/
 theorem antitone_inv_succ : Antitone fun n : ℕ ↦ (1 / (n + 1) : ℝ≥0) := fun m n h ↦ by
   dsimp only
   gcongr
+
+/-- A diagonal map with antitone nonvanishing coefficients is injective. -/
+private theorem injective_diagonalCLM_ofAntitone {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {c : ℕ → ℝ≥0} (hc : Antitone c) (h : ∀ n, c n ≠ 0) :
+    Function.Injective (lp.diagonalCLM (p := p) (lp.ofAntitone 𝕜 hc)) :=
+  (lp.injective_diagonalCLM_iff _).2 fun n ↦ by simpa using h n
 
 /-- The compact diagonal map `j = diag(1/(n + 1))` of `ℓ²`. -/
 noncomputable def j : L2 →L[ℝ] L2 := lp.diagonalCLM (lp.ofAntitone ℝ antitone_inv_succ)
@@ -75,14 +78,11 @@ theorem isCompactOperator_j : IsCompactOperator j := by
 
 /-- `j` is injective, since no coefficient vanishes. -/
 theorem injective_j : Function.Injective j :=
-  (lp.injective_diagonalCLM_iff _).2 fun n ↦ by
-    rw [lp.ofAntitone_apply, RCLike.ofReal_real_eq_id, id, NNReal.coe_ne_zero]
-    positivity
+  injective_diagonalCLM_ofAntitone _ fun n ↦ by positivity
 
 /-- `‖j eₙ‖ = 1/(n + 1)`. -/
 theorem norm_j_single (n : ℕ) : ‖j (e n)‖ = 1 / (n + 1) := by
-  rw [e, j_single, lp.norm_single (by norm_num), Real.norm_eq_abs, abs_of_pos (by positivity),
-    one_div]
+  simp [e, j_single, lp.norm_single, abs_of_pos (by positivity : (0 : ℝ) < n + 1)]
 
 /-- `‖j eₙ‖ → 0`. -/
 theorem tendsto_norm_j_single : Tendsto (fun n ↦ ‖j (e n)‖) atTop (𝓝 0) := by
@@ -102,11 +102,11 @@ theorem not_isCompactOperator_id : ¬ IsCompactOperator (ContinuousLinearMap.id 
   fun h ↦ (HilbertBasis.ofRepr (LinearIsometryEquiv.refl ℝ L2)).infinite_iff_not_finiteDimensional.1
     inferInstance (.of_isCompactOperator_id h)
 
-/-! ### The direct method: §1.4 -/
+/-! ### Minimization -/
 
 /-- `‖u‖²` attains its infimum `0` on `ℓ²` at `0`. -/
 theorem isMinOn_norm_sq : IsMinOn (fun u : L2 ↦ ‖u‖ ^ 2) univ 0 :=
-  fun u _ ↦ by simp
+  isMinOn_iff.2 fun u _ ↦ by simp
 
 /-- The coefficients `1/√(n + 1)` decrease. -/
 theorem antitone_sqrt_inv_succ : Antitone fun n : ℕ ↦ NNReal.sqrt (1 / (n + 1)) :=
@@ -115,23 +115,20 @@ theorem antitone_sqrt_inv_succ : Antitone fun n : ℕ ↦ NNReal.sqrt (1 / (n + 
 /-- The diagonal map `k = diag(1/√(n + 1))`, with `‖k u‖² = Σ |uₙ|²/(n + 1)`. -/
 noncomputable def k : L2 →L[ℝ] L2 := lp.diagonalCLM (lp.ofAntitone ℝ antitone_sqrt_inv_succ)
 
+/-- `k` is injective, since no coefficient vanishes. -/
+theorem injective_k : Function.Injective k :=
+  injective_diagonalCLM_ofAntitone _ fun n ↦ by positivity
+
 /-- The energy `E(u) = Σ |uₙ|²/(n + 1)`. -/
 noncomputable def energy (u : L2) : ℝ := ‖k u‖ ^ 2
 
 /-- `E(eₙ) = 1/(n + 1)`. -/
 theorem energy_single (n : ℕ) : energy (e n) = 1 / (n + 1) := by
-  simp only [energy, k, e, lp.diagonalCLM_single, lp.ofAntitone_apply, mul_one]
-  rw [lp.norm_single (by norm_num), Real.norm_eq_abs, sq_abs, RCLike.ofReal_real_eq_id,
-    id, ← NNReal.coe_pow, NNReal.sq_sqrt]
-  simp
+  simp [energy, k, lp.norm_single, Real.sq_sqrt (by positivity : (0 : ℝ) ≤ n + 1)]
 
 /-- `E > 0` away from `0`. -/
 theorem energy_pos {u : L2} (hu : u ≠ 0) : 0 < energy u := by
-  have hk : Function.Injective k :=
-    (lp.injective_diagonalCLM_iff _).2 fun n ↦ by
-    rw [lp.ofAntitone_apply, RCLike.ofReal_real_eq_id, id, NNReal.coe_ne_zero]
-    positivity
-  have : k u ≠ 0 := fun h ↦ hu (hk (h.trans (map_zero k).symm))
+  have : k u ≠ 0 := (map_ne_zero_iff k injective_k).2 hu
   unfold energy
   positivity
 
@@ -144,8 +141,8 @@ theorem not_exists_isMinOn_energy_sphere :
     rintro rfl
     simp at hu
   obtain ⟨n, hn⟩ := exists_nat_one_div_lt (energy_pos hu0)
-  have := hmin (show e n ∈ Metric.sphere (0 : L2) 1 by simp)
-  rw [mem_ofPred_eq, energy_single] at this
+  have := isMinOn_iff.1 hmin (e n) (by simp)
+  rw [energy_single] at this
   exact_mod_cast (this.trans_lt hn).false
 
 /-- `E(u) = −⟪e₀, u⟫` is unbounded below on `ℓ²`. -/
@@ -162,6 +159,6 @@ theorem sInf_neg_inner : sInf (range fun u : L2 ↦ -⟪e 0, u⟫) = 0 :=
 /-- `E(u) = −⟪e₀, u⟫` has no minimizer on `ℓ²`. -/
 theorem not_exists_isMinOn_neg_inner : ¬ ∃ u : L2, IsMinOn (fun u : L2 ↦ -⟪e 0, u⟫) univ u := by
   rintro ⟨u, hu⟩
-  exact not_bddBelow_neg_inner ⟨_, by rintro _ ⟨v, rfl⟩; exact hu (mem_univ v)⟩
+  exact not_bddBelow_neg_inner ⟨_, by rintro _ ⟨v, rfl⟩; exact isMinOn_iff.1 hu v (mem_univ v)⟩
 
 end TauCeti.DirectMethodChecks
