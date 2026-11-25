@@ -60,6 +60,17 @@ theorem realScale_mul (φ ψ : ContinuousAut (Multiplicative ℝ)) :
   conv_lhs => rw [realScale, mul_apply, ← ofAdd_toAdd (ψ (Multiplicative.ofAdd 1))]
   rw [apply_eq_realScale_mul, apply_eq_realScale_mul, mul_one]
 
+/-- The scaling factor of the identity is `1`. -/
+@[simp]
+theorem realScale_one : realScale 1 = 1 := by
+  rw [realScale, one_apply, toAdd_ofAdd]
+
+/-- The scaling factor of the inverse is the inverse of the scaling factor. -/
+@[simp]
+theorem realScale_inv (φ : ContinuousAut (Multiplicative ℝ)) :
+    realScale φ⁻¹ = (realScale φ)⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← realScale_mul, inv_mul_cancel, realScale_one])
+
 end TauCeti.ContinuousAut
 
 namespace TauCeti.Real
