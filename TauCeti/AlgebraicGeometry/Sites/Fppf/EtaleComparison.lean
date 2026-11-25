@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Sites.Etale
 public import Mathlib.CategoryTheory.Sites.Pullback
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Big
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.AlgebraicGeometry.Sites.Fpqc
@@ -59,7 +60,8 @@ restriction along `Over.map f`, left adjoint to the big direct image since
 regarding the big direct image of an fppf sheaf as an étale sheaf is the big étale direct image of
 the underlying étale sheaf (`AlgebraicGeometry.Scheme.epsilonFppfEtalePushforwardBaseChangeIso`),
 and dually for the inverse images
-(`AlgebraicGeometry.Scheme.epsilonFppfEtalePullbackBaseChangeIso`).
+(`AlgebraicGeometry.Scheme.epsilonFppfEtalePullbackBaseChangeIso`). The big étale direct and
+inverse images are in `TauCeti/AlgebraicGeometry/Sites/Etale/Big.lean`.
 
 The site `Over X` is large (its objects form a type in the universe above that of the morphisms),
 so the existence of fppf sheafification on it (`HasWeakSheafify`) and of the inverse image of
@@ -78,9 +80,6 @@ so the existence of fppf sheafification on it (`HasWeakSheafify`) and of the inv
   the direct and inverse images of big fppf sheaves along a morphism of schemes.
 * `AlgebraicGeometry.Scheme.aXPushforwardBaseChangeIso`,
   `AlgebraicGeometry.Scheme.aXPullbackBaseChangeIso`: compatibility of `a_X` with base change.
-* `AlgebraicGeometry.Scheme.Hom.bigEtalePushforward`,
-  `AlgebraicGeometry.Scheme.Hom.bigEtalePullback`: the direct and inverse images of big étale
-  sheaves along a morphism of schemes.
 * `AlgebraicGeometry.Scheme.epsilonFppfEtalePushforwardBaseChangeIso`,
   `AlgebraicGeometry.Scheme.epsilonFppfEtalePullbackBaseChangeIso`: compatibility of `ε` with base
   change.
@@ -321,24 +320,6 @@ theorem unit_aXPullbackBaseChangeIso_hom :
 end Pullback
 
 /-! ### Compatibility of `ε` with base change -/
-
-/-- The direct image of big étale sheaves along `f : Y ⟶ X`: an étale sheaf `F` on `Y`-schemes
-gives the étale sheaf `T ↦ F(T ×_X Y)` on `X`-schemes, the restriction along base change
-`Over.pullback f`, which is continuous for the étale topologies. -/
-noncomputable abbrev Hom.bigEtalePushforward :
-    Sheaf (etaleTopology.over Y) A ⥤ Sheaf (etaleTopology.over X) A :=
-  (Over.pullback f).sheafPushforwardContinuous A (etaleTopology.over X) (etaleTopology.over Y)
-
-/-- The inverse image of big étale sheaves along `f : Y ⟶ X`: the restriction along `Over.map f`
-(Mathlib's `GrothendieckTopology.overMapPullback`). -/
-noncomputable abbrev Hom.bigEtalePullback :
-    Sheaf (etaleTopology.over X) A ⥤ Sheaf (etaleTopology.over Y) A :=
-  etaleTopology.overMapPullback A f
-
-/-- The inverse image of big étale sheaves along `f` is left adjoint to the direct image, as
-`Over.map f` is left adjoint to `Over.pullback f`. -/
-noncomputable abbrev Hom.bigEtaleAdjunction : f.bigEtalePullback A ⊣ f.bigEtalePushforward A :=
-  (Over.mapPullbackAdj f).sheafPushforwardContinuous (etaleTopology.over Y) (etaleTopology.over X)
 
 /-- **`ε` commutes with base change, direct images.** For `f : Y ⟶ X`, regarding the big direct
 image of an fppf sheaf on `Y`-schemes as an étale sheaf is the big étale direct image of the
