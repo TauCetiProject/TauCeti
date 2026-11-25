@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
-import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Contact.Flat
 import TauCeti.Geometry.Manifold.Flow.Complete
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
