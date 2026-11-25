@@ -25,7 +25,7 @@ abelian group written multiplicatively, such as `Multiplicative (Fin n → ℤ)`
 ## Main definitions
 
 * `TauCeti.addAutEquivIntLinearEquiv`: `AddAut M ≃+ Additive (M ≃ₗ[ℤ] M)`.
-* `TauCeti.mulAutMultiplicativeEquiv`: `MulAut (Multiplicative M) ≃* (M ≃ₗ[ℤ] M)`.
+* `TauCeti.mulAutMultiplicativeEquivIntLinearEquiv`: `MulAut (Multiplicative M) ≃* (M ≃ₗ[ℤ] M)`.
 -/
 
 public section
@@ -56,23 +56,23 @@ theorem addAutEquivIntLinearEquiv_symm_apply_apply {M : Type*} [AddCommGroup M]
   (rfl)
 
 /-- The automorphisms of `M` written multiplicatively are its `ℤ`-linear automorphisms. -/
-def mulAutMultiplicativeEquiv (M : Type*) [AddCommGroup M] :
+def mulAutMultiplicativeEquivIntLinearEquiv (M : Type*) [AddCommGroup M] :
     MulAut (Multiplicative M) ≃* (M ≃ₗ[ℤ] M) :=
   (MulAutMultiplicative M).trans (AddEquiv.toMultiplicativeLeft (addAutEquivIntLinearEquiv M))
 
 /-- The linear automorphism attached to `φ` acts as `φ` does, read additively. -/
 @[simp]
-theorem mulAutMultiplicativeEquiv_apply_apply {M : Type*} [AddCommGroup M]
+theorem mulAutMultiplicativeEquivIntLinearEquiv_apply_apply {M : Type*} [AddCommGroup M]
     (φ : MulAut (Multiplicative M)) (x : M) :
-    mulAutMultiplicativeEquiv M φ x = (φ (ofAdd x)).toAdd :=
+    mulAutMultiplicativeEquivIntLinearEquiv M φ x = (φ (ofAdd x)).toAdd :=
   (rfl)
 
 /-- The automorphism of `Multiplicative M` attached to `f` acts as `f` does, read
 multiplicatively. -/
 @[simp]
-theorem mulAutMultiplicativeEquiv_symm_apply_apply {M : Type*} [AddCommGroup M]
+theorem mulAutMultiplicativeEquivIntLinearEquiv_symm_apply_apply {M : Type*} [AddCommGroup M]
     (f : M ≃ₗ[ℤ] M) (x : Multiplicative M) :
-    (mulAutMultiplicativeEquiv M).symm f x = ofAdd (f x.toAdd) :=
+    (mulAutMultiplicativeEquivIntLinearEquiv M).symm f x = ofAdd (f x.toAdd) :=
   (rfl)
 
 end TauCeti

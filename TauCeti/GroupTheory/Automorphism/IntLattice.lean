@@ -16,8 +16,9 @@ public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 For a finite index type `ι`, the free abelian group `ℤ^ι`, written multiplicatively as
 `Multiplicative (ι → ℤ)`, is commutative, so it has no nontrivial inner automorphisms and its outer
 automorphism group is its automorphism group (`TauCeti.OuterAut.mulEquivOfIsMulCommutative`). Its
-automorphisms are its `ℤ`-linear automorphisms (`TauCeti.mulAutMultiplicativeEquiv`), that is, the
-invertible `ι × ι` integer matrices. For `ι = Fin 2` this is `OuterAut ℤ² ≅ GL₂(ℤ)`, the target of
+automorphisms are its `ℤ`-linear automorphisms
+(`TauCeti.mulAutMultiplicativeEquivIntLinearEquiv`), that is, the invertible `ι × ι` integer
+matrices. For `ι = Fin 2` this is `OuterAut ℤ² ≅ GL₂(ℤ)`, the target of
 the Dehn–Nielsen–Baer theorem for the torus.
 
 ## Main definitions
@@ -45,7 +46,7 @@ automorphisms, the invertible `ι × ι` integer matrices. -/
 noncomputable def outerAutIntPiEquiv :
     OuterAut (Multiplicative (ι → ℤ)) ≃* Matrix.GeneralLinearGroup ι ℤ :=
   OuterAut.mulEquivOfIsMulCommutative.trans <|
-    (mulAutMultiplicativeEquiv _).trans <|
+    (mulAutMultiplicativeEquivIntLinearEquiv _).trans <|
       (LinearMap.GeneralLinearGroup.generalLinearEquiv ℤ (ι → ℤ)).symm.trans
         Matrix.GeneralLinearGroup.toLin.symm
 
@@ -64,8 +65,8 @@ theorem outerAutIntPiEquiv_mk_apply (φ : MulAut (Multiplicative (ι → ℤ))) 
 `v ↦ A *ᵥ v` of `ℤ^ι`. -/
 theorem outerAutIntPiEquiv_symm_apply (A : Matrix.GeneralLinearGroup ι ℤ) :
     (outerAutIntPiEquiv ι).symm A =
-      ((mulAutMultiplicativeEquiv _).symm (Matrix.GeneralLinearGroup.toLin A).toLinearEquiv :
-        OuterAut _) := by
+      ((mulAutMultiplicativeEquivIntLinearEquiv _).symm
+        (Matrix.GeneralLinearGroup.toLin A).toLinearEquiv : OuterAut _) := by
   rw [MulEquiv.symm_apply_eq]
   ext i j
   simp
