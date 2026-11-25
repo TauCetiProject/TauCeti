@@ -52,8 +52,8 @@ the cokernel `M ⧸ ∑ᵢ range (D i)` of the family (`TauCeti.koszulTopCohomol
 * `TauCeti.koszulCochainDifferential_koszulCochainDifferential`: `d ∘ d = 0` for a commuting
   family.
 * `TauCeti.koszulCoboundaries_le_koszulCocycles`: coboundaries are cocycles.
-* `TauCeti.map_koszulCoboundaries_card`: the top-degree coboundaries are the families whose
-  coefficient on the full index set lies in `∑ᵢ range (D i)`.
+* `TauCeti.map_koszulCoboundaries_card`: the coefficients of the top-degree coboundaries on the
+  full index set are exactly the elements of `∑ᵢ range (D i)`.
 
 ## References
 
