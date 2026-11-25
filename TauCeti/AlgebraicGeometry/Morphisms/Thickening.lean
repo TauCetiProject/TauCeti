@@ -60,6 +60,8 @@ module of homomorphisms into `I`.
 * `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.isThickening`: a first-order thickening is a
   thickening, and `TauCeti.AlgebraicGeometry.IsThickening.isUniversalHomeomorphism`: a thickening
   is a universal homeomorphism.
+* `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.isNilpotent_ker`: the ideal sheaf of a
+  first-order thickening is nilpotent.
 
 ## References
 
@@ -184,6 +186,10 @@ instance (priority := 100) isThickening (i : Z ⟶ X) [IsFirstOrderThickening i]
     calc i.ker ≤ i.ker.radical := Scheme.IdealSheafData.le_radical _
       _ = (i.ker * i.ker).radical := by rw [Scheme.IdealSheafData.radical_mul, inf_idem]
       _ = X.nilradical := by rw [ker_mul_self, Scheme.IdealSheafData.radical_bot]
+
+/-- The ideal sheaf of a first-order thickening is nilpotent. -/
+theorem isNilpotent_ker (i : Z ⟶ X) [IsFirstOrderThickening i] : IsNilpotent i.ker :=
+  ⟨2, by simp [pow_two, ker_mul_self]⟩
 
 /-- An isomorphism is a first-order thickening. -/
 instance (priority := 100) of_isIso (i : Z ⟶ X) [IsIso i] : IsFirstOrderThickening i where

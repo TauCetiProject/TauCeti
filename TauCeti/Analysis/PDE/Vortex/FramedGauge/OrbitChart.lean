@@ -55,8 +55,9 @@ the Coulomb slice chart
 orders of the same field space, `↑(k + 1)` for the gauge action and `↑k + 1` for the real chart,
 are identified by `TauCeti.Vortex.SobolevFieldSpace.congrOrder`.
 
-Whether the transition maps of these charts are smooth, and how they compare with the divisor
-map to `Sym^m ℂ`, is not treated here.
+With these charts, invariance of domain makes the zero divisor a homeomorphism from the vortex
+moduli onto `Sym^m ℂ` (`TauCeti.Analysis.PDE.Vortex.FramedGauge.SymmetricPower`). Whether the
+transition maps of the charts are smooth is not treated here.
 
 ## Main results
 

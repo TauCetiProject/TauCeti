@@ -45,6 +45,8 @@ The file develops:
   `HomogeneousSymbol.id` of degree `0` as its unit;
 * the symbol `HomogeneousSymbol.ofLinear` of degree `1` given by a continuous real-linear function
   of the frequency, as for first-order operators with constant coefficients;
+* the degree-zero symbol `HomogeneousSymbol.ofPositiveBranch` on the real frequency line, with a
+  smooth operator-valued coefficient on the positive ray and zero elsewhere;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions, and the linear change
   of variables `HomogeneousSymbol.compProdMap`, `(x, ξ) ↦ a(P x, Q ξ)` for a linear map `P` and a
@@ -104,6 +106,9 @@ directions `u` and `l` frequency directions `w` is the iterated derivative evalu
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, (1.17).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
 * R. B. Melrose, *Introduction to Microlocal Analysis*, Chapter 2.
+* The positive-branch construction adapts the half-line argument in `PeriodicFourierSymbol.lean`
+  and `CircleFourierPseudodifferential.lean` of Alpha Squared Labs and Codex's
+  [Lean-Atiyah-Singer](https://github.com/alpha-squared-labs/Lean-Atiyah-Singer) formalization.
 -/
 
 public section
@@ -475,22 +480,19 @@ theorem smul_comp (c : ℂ) (b : HomogeneousSymbol X E W U m') (a : HomogeneousS
 @[simp]
 theorem comp_castDegree {m'' : ℝ} (h : m = m'') (b : HomogeneousSymbol X E W U m')
     (a : HomogeneousSymbol X E V W m) :
-    b.comp (a.castDegree h) = (b.comp a).castDegree (by rw [h]) :=
-  (rfl)
+    b.comp (a.castDegree h) = (b.comp a).castDegree (by rw [h]) := (rfl)
 
 /-- Composing a transported symbol transports the composition. -/
 @[simp]
 theorem castDegree_comp {m'' : ℝ} (h : m' = m'') (b : HomogeneousSymbol X E W U m')
     (a : HomogeneousSymbol X E V W m) :
-    (b.castDegree h).comp a = (b.comp a).castDegree (by rw [h]) :=
-  (rfl)
+    (b.castDegree h).comp a = (b.comp a).castDegree (by rw [h]) := (rfl)
 
 /-- Composition of homogeneous symbols is associative, up to transport of the degree. -/
 theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] {m'' : ℝ}
     (c : HomogeneousSymbol X E U U' m'') (b : HomogeneousSymbol X E W U m')
     (a : HomogeneousSymbol X E V W m) :
-    (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm :=
-  (rfl)
+    (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm := (rfl)
 
 variable (X E V) in
 /-- The identity homogeneous symbol of degree `0`: the identity of `V` at every nonzero
@@ -530,8 +532,27 @@ def ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) : HomogeneousSymbol X E V W 1 whe
 
 @[simp]
 theorem coefficient_ofLinear (L : E →L[ℝ] (V →L[ℂ] W)) (p : X × E) :
-    (ofLinear X L).coefficient p = L p.2 :=
-  (rfl)
+    (ofLinear X L).coefficient p = L p.2 := (rfl)
+
+/-- The degree-zero homogeneous symbol on the real frequency line that equals `g x` at positive
+frequencies and vanishes at nonpositive frequencies. -/
+noncomputable def ofPositiveBranch (g : X → V →L[ℂ] W) (hg : ContDiff ℝ ∞ g) :
+    HomogeneousSymbol X ℝ V W 0 where
+  coefficient p := if 0 < p.2 then g p.1 else 0
+  zero_covector _ := by simp
+  contDiffOn_coefficient p hp := by
+    refine ContDiffAt.contDiffWithinAt ?_
+    rcases (show p.2 ≠ 0 from hp).lt_or_gt with hneg | hpos
+    · exact contDiffAt_const.congr_of_eventuallyEq <| (show ∀ᶠ q in 𝓝 p, q.2 < 0 from
+        continuous_snd.continuousAt (Iio_mem_nhds hneg)).mono fun q hq ↦ ite_eq_right hq.not_gt
+    · exact (hg.comp contDiff_fst).contDiffAt.congr_of_eventuallyEq <| (show ∀ᶠ q in 𝓝 p,
+        0 < q.2 from continuous_snd.continuousAt (Ioi_mem_nhds hpos)).mono fun q hq ↦ ite_eq_left hq
+  homogeneous _ _ _ ht := by simp [smul_eq_mul, mul_pos_iff_of_pos_left ht]
+
+/-- The coefficient of a positive-branch symbol at an arbitrary position and frequency. -/
+@[simp]
+theorem coefficient_ofPositiveBranch (g : X → V →L[ℂ] W) (hg : ContDiff ℝ ∞ g) (p : X × ℝ) :
+    (ofPositiveBranch g hg).coefficient p = if 0 < p.2 then g p.1 else 0 := (rfl)
 
 /-! ### Pullback in the position -/
 
