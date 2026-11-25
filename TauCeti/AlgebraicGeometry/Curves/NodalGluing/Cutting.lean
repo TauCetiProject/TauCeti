@@ -36,36 +36,36 @@ variable {ι Flag : Type*} {X : ι → Type*} (d : FlagPairData ι Flag X) (S : 
 
 /-- The partial normalization at `S`: retain just the flag pairs outside `S`. -/
 def FlagPairData.cut : FlagPairData ι {f // f ∉ S} X where
-  fst f := d.fst f.1
-  snd f := d.snd f.1
-  fstPt f := d.fstPt f.1
-  sndPt f := d.sndPt f.1
+  fst f := d.fst f.val
+  snd f := d.snd f.val
+  fstPt f := d.fstPt f.val
+  sndPt f := d.sndPt f.val
   flagPointOf_injective' := by
     have heq (p : {f // f ∉ S} × Bool) :
-        flagPointOf (fun f ↦ d.fst f.1) (fun f ↦ d.snd f.1)
-          (fun f ↦ d.fstPt f.1) (fun f ↦ d.sndPt f.1) p =
-        flagPointOf d.fst d.snd d.fstPt d.sndPt (p.1.1, p.2) := by
+        flagPointOf (fun f ↦ d.fst f.val) (fun f ↦ d.snd f.val)
+          (fun f ↦ d.fstPt f.val) (fun f ↦ d.sndPt f.val) p =
+        flagPointOf d.fst d.snd d.fstPt d.sndPt (p.fst.val, p.snd) := by
       rcases p with ⟨f, b⟩
       cases b <;> simp only [flagPointOf_false, flagPointOf_true]
     intro p q hpq
     have h := d.flagPointOf_injective' ((heq p).symm.trans (hpq.trans (heq q)))
     exact Prod.ext (Subtype.ext (congrArg Prod.fst h))
-      (congrArg (fun p : Flag × Bool ↦ p.2) h)
+      (congrArg (fun r : Flag × Bool ↦ r.snd) h)
 
 /-- Cutting does not change the first point of an uncut pair. -/
 @[simp]
-theorem fstPoint_cut (f : {f // f ∉ S}) : fstPoint (d.cut S) f = fstPoint d f.1 := by
+theorem fstPoint_cut (f : {f // f ∉ S}) : fstPoint (d.cut S) f = fstPoint d f.val := by
   simp only [fstPoint_def, FlagPairData.cut]
 
 /-- Cutting does not change the second point of an uncut pair. -/
 @[simp]
-theorem sndPoint_cut (f : {f // f ∉ S}) : sndPoint (d.cut S) f = sndPoint d f.1 := by
+theorem sndPoint_cut (f : {f // f ∉ S}) : sndPoint (d.cut S) f = sndPoint d f.val := by
   simp only [sndPoint_def, FlagPairData.cut]
 
 /-- An uncut branch retains its point in the normalization. -/
 @[simp]
 theorem flagPoint_cut (p : {f // f ∉ S} × Bool) :
-    flagPoint (d.cut S) p = flagPoint d (p.1.1, p.2) := by
+    flagPoint (d.cut S) p = flagPoint d (p.fst.val, p.snd) := by
   rcases p with ⟨f, b⟩
   cases b <;> simp only [flagPoint_false, flagPoint_true, fstPoint_cut, sndPoint_cut]
 
@@ -101,14 +101,14 @@ theorem gluedRel_cut_le : gluedRel (d.cut S) ≤ gluedRel d := by
 -- Simplify before the general membership lemma expands flag points into an existential.
 @[simp↓]
 theorem flagPoint_mem_flagPointSet_cut_iff (p : Flag × Bool) :
-    flagPoint d p ∈ flagPointSet (d.cut S) ↔ p.1 ∉ S := by
+    flagPoint d p ∈ flagPointSet (d.cut S) ↔ p.fst ∉ S := by
   rw [flagPointSet_eq_range]
   constructor
   · rintro ⟨q, hq⟩
     rw [flagPoint_cut] at hq
-    exact (congrArg Prod.fst (flagPoint_injective d hq)) ▸ q.1.2
+    exact (congrArg Prod.fst (flagPoint_injective d hq)) ▸ q.fst.property
   · intro hp
-    exact ⟨(⟨p.1, hp⟩, p.2), flagPoint_cut d S _⟩
+    exact ⟨(⟨p.fst, hp⟩, p.snd), flagPoint_cut d S _⟩
 
 /-- The map regluing the two branches of each cut node. -/
 def reglueMap : GluedCurve (d.cut S) → GluedCurve d :=
@@ -238,17 +238,18 @@ variable {d S} {L : Type*}
 /-- Marks on a partial normalization: retain the old labels and add a separate label for
 each of the two branches of every cut node. -/
 def Marking.cut (m : Marking d L) (S : Set Flag) : Marking (d.cut S) (L ⊕ (S × Bool)) where
-  point := Sum.elim m.point (fun p ↦ flagPoint d (p.1.1, p.2))
+  point := Sum.elim m.point (fun p ↦ flagPoint d (p.fst.val, p.snd))
   point_injective := by
     refine m.point_injective.sumElim
       ((flagPoint_injective d).comp (Subtype.val_injective.prodMap Function.injective_id)) ?_
     intro l p h
-    exact m.point_notMem_flagPointSet l ((flagPointSet_eq_range d).symm ▸ ⟨(p.1.1, p.2), h.symm⟩)
+    exact m.point_notMem_flagPointSet l
+      ((flagPointSet_eq_range d).symm ▸ ⟨(p.fst.val, p.snd), h.symm⟩)
   point_notMem_flagPointSet := by
     intro a
     cases a with
     | inl a => exact fun h ↦ m.point_notMem_flagPointSet a (flagPointSet_cut_subset d S h)
-    | inr a => exact fun h ↦ ((flagPoint_mem_flagPointSet_cut_iff d S _).mp h) a.1.2
+    | inr a => exact fun h ↦ ((flagPoint_mem_flagPointSet_cut_iff d S _).mp h) a.fst.property
 
 variable (m : Marking d L) (S)
 
@@ -259,7 +260,7 @@ theorem Marking.point_cut_inl (l : L) : (m.cut S).point (.inl l) = m.point l := 
 /-- A new mark is the corresponding branch point of the cut node. -/
 @[simp]
 theorem Marking.point_cut_inr (p : S × Bool) :
-    (m.cut S).point (.inr p) = flagPoint d (p.1.1, p.2) := (rfl)
+    (m.cut S).point (.inr p) = flagPoint d (p.fst.val, p.snd) := (rfl)
 
 /-- Cutting preserves every special point on every normalization component: cut branches
 become marks, and all other node flags and marks remain. -/
