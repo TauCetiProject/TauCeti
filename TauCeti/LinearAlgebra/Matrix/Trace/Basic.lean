@@ -32,6 +32,8 @@ intertwiner of nonzero determinant, such as the inclusion matrix of a full-rank 
   `trace A = trace B`.
 * `Matrix.trace_list_prod_map_mapMatrix`: mapping a list of square matrices along a ring
   homomorphism commutes with taking the trace of its product.
+* `Matrix.sum_map_mul_comm`: the trace property for rectangular matrices over a possibly
+  noncommutative ring, through an additive map `f` with `f (a * b) = f (b * a)`.
 -/
 
 public section
@@ -82,5 +84,17 @@ theorem trace_list_prod_map_mapMatrix {R S : Type*} [DecidableEq n] [Semiring R]
     (f : R →+* S) (l : List (Matrix n n R)) :
     trace (l.map f.mapMatrix).prod = f (trace l.prod) := by
   rw [← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace]
+
+/-- **Trace property for rectangular matrices.** If an additive map `f` satisfies
+`f (a * b) = f (b * a)`, then for `u : Matrix m n R` and `v : Matrix n m R` the sums of `f` over the
+diagonals of `u * v` and `v * u` agree. For commutative `R` and `f = id` this is
+`Matrix.trace_mul_comm`. -/
+theorem sum_map_mul_comm {R M F : Type*} [AddCommMonoid R] [Mul R] [AddCommMonoid M]
+    [FunLike F R M] [AddMonoidHomClass F R M] (f : F) (hf : ∀ a b, f (a * b) = f (b * a))
+    (u : Matrix m n R) (v : Matrix n m R) :
+    ∑ i, f ((u * v) i i) = ∑ k, f ((v * u) k k) := by
+  simp only [Matrix.mul_apply, map_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun i _ ↦ hf _ _
 
 end Matrix

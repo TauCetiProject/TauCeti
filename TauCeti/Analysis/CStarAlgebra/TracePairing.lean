@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
 Let `τ` be a positive tracial functional on a C⋆-algebra `A`. Its unnormalized matrix trace
 `τ_m(p) = ∑ i, τ (p i i)` takes the same value on Murray–von Neumann equivalent matrix projections
 of any sizes: if `vᴴ v = p` and `v vᴴ = q`, both traces are `∑ i k, τ (star (v k i) * v k i)`, by
-the trace property of `τ` for rectangular matrices (`PositiveTracialFunctional.sum_map_mul_comm`).
+the trace property of `τ` for rectangular matrices (`Matrix.sum_map_mul_comm`).
 It is additive under block sum and nonnegative, so it induces an additive pairing
 `τ_* : K₀(A) →+ ℝ` on the projection `K₀`-group (`TauCeti.PositiveTracialFunctional.kZeroPairing`).
 The pairing is positive on classes of projections and natural: for a star homomorphism
@@ -54,20 +54,6 @@ variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   (τ : PositiveTracialFunctional A) {m n : Type*} [Fintype m] [Fintype n]
 
-/-- **Trace property for rectangular matrices.** For `u : Matrix m n A` and `v : Matrix n m A`, the
-unnormalized matrix traces of `u v` and `v u` agree. -/
-theorem sum_map_mul_comm (u : Matrix m n A) (v : Matrix n m A) :
-    ∑ i, τ ((u * v) i i) = ∑ k, τ ((v * u) k k) := by
-  simp only [Matrix.mul_apply, map_sum]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun i _ ↦ τ.map_mul_comm _ _
-
-/-- Murray–von Neumann equivalent projections have the same unnormalized matrix trace. -/
-theorem sum_map_eq_of_isMurrayVonNeumannEquivalent {p : Matrix m m A} {q : Matrix n n A}
-    (h : IsMurrayVonNeumannEquivalent p q) : ∑ i, τ (p i i) = ∑ k, τ (q k k) := by
-  obtain ⟨-, -, v, rfl, rfl⟩ := h
-  exact τ.sum_map_mul_comm vᴴ v
-
 /-- The unnormalized matrix trace of a matrix projection is a nonnegative real number. -/
 theorem sum_map_nonneg {p : Matrix m m A} (hp : IsStarProjection p) : 0 ≤ ∑ i, τ (p i i) :=
   Finset.sum_nonneg fun i _ ↦ τ.toPositiveLinearMap.map_nonneg (hp.diag_nonneg i)
@@ -80,13 +66,13 @@ private theorem sum_map_fromBlocks (p : Matrix m m A) (q : Matrix n n A) :
 /-- The real part of the unnormalized matrix trace, as a function on `V(A)`. -/
 private noncomputable def pairingFun : ProjectionMonoid A → ℝ :=
   ProjectionMonoid.lift (fun p _ ↦ (∑ i, τ (p i i)).re)
-    fun _ _ h ↦ congrArg Complex.re (τ.sum_map_eq_of_isMurrayVonNeumannEquivalent h)
+    fun _ _ h ↦ congrArg Complex.re (h.sum_map_eq τ τ.map_mul_comm)
 
 private theorem pairingFun_mk {p : Matrix m m A} (hp : IsStarProjection p) :
     τ.pairingFun (ProjectionMonoid.mk p hp) = (∑ i, τ (p i i)).re := by
   rw [pairingFun, ProjectionMonoid.lift_mk_of_equiv _ _ hp (Fintype.equivFin m)]
   exact congrArg Complex.re
-    (τ.sum_map_eq_of_isMurrayVonNeumannEquivalent (hp.isMurrayVonNeumannEquivalent_reindex _)).symm
+    ((hp.isMurrayVonNeumannEquivalent_reindex _).sum_map_eq τ τ.map_mul_comm).symm
 
 /-- The pairing on `V(A)`, as an additive monoid homomorphism. -/
 private noncomputable def pairingMonoidHom : ProjectionMonoid A →+ ℝ where
