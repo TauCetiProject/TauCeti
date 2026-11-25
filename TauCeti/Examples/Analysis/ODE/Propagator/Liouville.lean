@@ -138,8 +138,6 @@ theorem exp_smul_jordan (t : ℝ) : exp (t • jordan) = Real.exp t • !![1, t;
     fin_cases i <;> fin_cases j <;> simp [sq]
   rw [hsplit, Matrix.exp_add_of_commute _ _ ((Commute.one_left _).smul_left t),
     Matrix.smul_one_eq_diagonal, Matrix.exp_diagonal]
-  let _ : NormedRing (Matrix (Fin 2) (Fin 2) ℝ) := Matrix.linftyOpNormedRing
-  let _ : NormedAlgebra ℝ (Matrix (Fin 2) (Fin 2) ℝ) := Matrix.linftyOpNormedAlgebra
   rw [exp_eq_one_add_of_sq_eq_zero ℝ hsq]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Real.exp_eq_exp_ℝ]
@@ -169,9 +167,10 @@ theorem det_propagator_jordan_ne {t : ℝ} (ht : t ≠ 0) :
       LinearMap.det (propagator (fun _ ↦ Matrix.toEuclideanCLM (𝕜 := ℝ) jordan) t 0 :
         EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) ≠
         Real.exp (t * jordan.det) := by
-  rw [(det_propagator_jordan t).2.1]
-  simp only [Fin.sum_univ_two, Matrix.det_fin_two_of, Ne, Real.exp_eq_exp, Matrix.of_apply,
-    Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  have hsum : ∑ i, ∑ j, jordan i j = 3 := by norm_num [Fin.sum_univ_two]
+  have hdet : jordan.det = 1 := by simp [Matrix.det_fin_two_of]
+  rw [(det_propagator_jordan t).2.1, hsum, hdet]
+  simp only [Ne, Real.exp_eq_exp]
   constructor <;> intro h <;> apply ht <;> linarith
 
 end TauCeti.Examples.Propagator
