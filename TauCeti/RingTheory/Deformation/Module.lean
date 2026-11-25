@@ -413,6 +413,16 @@ theorem baseChangeBasis_apply (D : ModuleDeformation ρbar A) {ι : Type*}
   let _ : Algebra A.obj.left B.obj.left := f.hom.left.hom.toAlgebra
   exact Algebra.TensorProduct.basis_apply b i
 
+/-- The coordinates of `1 ⊗ v` in the basis `1 ⊗ bᵢ` of the base change are the images under `f`
+of the coordinates of `v` in the basis `b`. -/
+@[simp]
+theorem baseChangeBasis_repr_toBaseChange (D : ModuleDeformation ρbar A) {ι : Type*}
+    (b : Module.Basis ι A.obj.left D) (v : D) (i : ι) :
+    (D.baseChangeBasis f b).repr (D.toBaseChange f v) i = f.hom.left.hom (b.repr v i) := by
+  let _ : Algebra A.obj.left B.obj.left := f.hom.left.hom.toAlgebra
+  exact (Finsupp.ext_iff.mp (Algebra.TensorProduct.basis_repr_tmul b 1 v) i).trans
+    (by simp [RingHom.algebraMap_toAlgebra])
+
 /-- Two semilinear maps out of the base change `B ⊗_A V` of a module deformation are equal as soon
 as they agree on the vectors `1 ⊗ v`. -/
 @[ext]
