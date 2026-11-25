@@ -27,6 +27,8 @@ cancellativity hypothesis is used.
 ## Main definitions
 
 * `Algebra.GrothendieckAddGroup.liftAddEquiv`: Mathlib's `lift` as an additive isomorphism.
+* `Algebra.GrothendieckAddGroup.congr`: an additive isomorphism of monoids induces one of their
+  Grothendieck groups.
 * `Algebra.GrothendieckAddGroup.prodEquiv`: the Grothendieck group of a product is the product of
   the Grothendieck groups.
 * `Algebra.GrothendieckAddGroup.natIntLocalizationMap` and
@@ -104,11 +106,21 @@ noncomputable def liftAddEquiv : (M →+ G) ≃+ (GrothendieckAddGroup M →+ G)
 @[simp]
 theorem coe_liftAddEquiv : ⇑(liftAddEquiv : (M →+ G) ≃+ _) = lift := (rfl)
 
+variable {N : Type*} [AddCommMonoid N]
+
+/-- An additive isomorphism `M ≃+ N` induces an isomorphism of the Grothendieck groups,
+`of a ↦ of (e a)` (`Algebra.GrothendieckAddGroup.congr_of`). -/
+noncomputable def congr (e : M ≃+ N) : GrothendieckAddGroup M ≃+ GrothendieckAddGroup N :=
+  (AddLocalization.addMonoidOf ⊤).addEquivOfAddEquiv (AddLocalization.addMonoidOf ⊤)
+    (AddSubmonoid.map_equiv_top e)
+
+/-- `Algebra.GrothendieckAddGroup.congr e` sends `of a` to `of (e a)`. -/
+theorem congr_of (e : M ≃+ N) (a : M) : congr e (of a) = of (e a) :=
+  AddSubmonoid.LocalizationMap.addEquivOfAddEquiv_eq _ _ _
+
 /-! ### Products -/
 
 section Prod
-
-variable {N : Type*} [AddCommMonoid N]
 
 /-- **The Grothendieck group of a product.** The group completion of `M × N` is the product of
 the group completions of `M` and `N`, `of (a, b) ↦ (of a, of b)`
@@ -131,6 +143,9 @@ noncomputable def prodEquiv :
         AddMonoidHom.coe_prodMap, Prod.map_apply, map_zero, Prod.mk_sub_mk, Prod.mk_add_mk,
         sub_self, add_zero, zero_add])
 
+-- Not `@[simp]`, like `Algebra.GrothendieckAddGroup.lift_apply_of`: the simp normal form of
+-- `of a` is `AddLocalization.addMonoidOf ⊤ a`, so these left-hand sides are not in simp normal
+-- form.
 /-- `Algebra.GrothendieckAddGroup.prodEquiv` sends `of (a, b)` to `(of a, of b)`. -/
 theorem prodEquiv_of (a : M) (b : N) : prodEquiv (of (a, b)) = (of a, of b) := by
   simp only [prodEquiv, AddMonoidHom.toAddEquiv_apply, lift_apply_of, AddMonoidHom.coe_prodMap,

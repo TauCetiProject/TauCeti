@@ -15,6 +15,8 @@ public import TauCeti.Data.Matrix.Mul
 public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 
+import TauCeti.Data.Matrix.Basic
+
 /-!
 # Finitely generated projective modules from idempotent matrices
 
@@ -265,16 +267,6 @@ theorem IdempotentEquivalent.map {B : Type*} [NonUnitalNonAssocSemiring B] {F : 
   obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
   refine ⟨x.map φ, y.map φ, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp [← Matrix.map_mul, *]
 
-/-- A product of matrices over `A × B` is determined by its two components: both component maps
-are multiplicative. -/
-private theorem mul_eq_of_map_fst_of_map_snd {B μ ν ρ : Type*} [NonUnitalNonAssocSemiring B]
-    [Fintype ν] {P : Matrix μ ν (A × B)} {Q : Matrix ν ρ (A × B)} {R : Matrix μ ρ (A × B)}
-    (hfst : P.map Prod.fst * Q.map Prod.fst = R.map Prod.fst)
-    (hsnd : P.map Prod.snd * Q.map Prod.snd = R.map Prod.snd) : P * Q = R := by
-  refine (Matrix.prodEquiv μ ρ A B).injective (Prod.ext ?_ ?_)
-  · simpa [← NonUnitalRingHom.coe_fst, ← Matrix.map_mul] using hfst
-  · simpa [← NonUnitalRingHom.coe_snd, ← Matrix.map_mul] using hsnd
-
 /-- **Products of semirings.** Idempotent matrices over `A × B` are equivalent exactly when both
 their components are: the rectangular matrices witnessing the two component equivalences pair
 up to a witness over `A × B`. -/
@@ -286,13 +278,10 @@ theorem idempotentEquivalent_prod_iff {B : Type*} [NonUnitalNonAssocSemiring B]
     fun ⟨h₁, h₂⟩ ↦ ?_⟩
   obtain ⟨x₁, y₁, h₁⟩ := h₁
   obtain ⟨x₂, y₂, h₂⟩ := h₂
-  have hx₁ : ((Matrix.prodEquiv ι κ A B).symm (x₁, x₂)).map Prod.fst = x₁ := (rfl)
-  have hx₂ : ((Matrix.prodEquiv ι κ A B).symm (x₁, x₂)).map Prod.snd = x₂ := (rfl)
-  have hy₁ : ((Matrix.prodEquiv κ ι A B).symm (y₁, y₂)).map Prod.fst = y₁ := (rfl)
-  have hy₂ : ((Matrix.prodEquiv κ ι A B).symm (y₁, y₂)).map Prod.snd = y₂ := (rfl)
   refine ⟨(Matrix.prodEquiv ι κ A B).symm (x₁, x₂), (Matrix.prodEquiv κ ι A B).symm (y₁, y₂),
     ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-  apply mul_eq_of_map_fst_of_map_snd <;> simp only [hx₁, hx₂, hy₁, hy₂, h₁, h₂]
+  apply Matrix.mul_eq_of_map_fst_of_map_snd <;>
+  simp only [Matrix.map_fst_prodEquiv_symm, Matrix.map_snd_prodEquiv_symm, h₁, h₂]
 
 /-- Zero matrices of any two finite sizes are equivalent idempotents. -/
 theorem idempotentEquivalent_zero_zero (m n : Type*) [Fintype m] [Fintype n] :

@@ -21,30 +21,27 @@ The isomorphism is computed on the idempotent model of `K₀` (`TauCeti.Idempote
 matrix over `R × S` is a pair of matrices of the same size over `R` and over `S`
 (`Matrix.prodEquiv`), it is idempotent exactly when both components are, and two idempotents over
 `R × S` are equivalent exactly when their components are
-(`Matrix.idempotentEquivalent_prod_iff`). Since an idempotent can be padded by zero blocks without
-changing its class, every pair of classes over `R` and over `S` comes from one idempotent over
-`R × S`. So the idempotent monoid of `R × S` is the product of those of `R` and `S`, and passing
-to group completions gives the isomorphism of `K₀`. It sends the class `[eRⁿ]` of an idempotent
-`e` over `R × S` to the classes of its two components `e.map Prod.fst` and `e.map Prod.snd`; the
-module `e.map Prod.fst` presents is the extension of scalars of `eRⁿ` along the first projection,
-and similarly for the second. In particular the free module of rank one goes to the pair of free
-modules of rank one.
+(`Matrix.idempotentEquivalent_prod_iff`). So the idempotent monoid of `R × S` is the product of
+those of `R` and `S` (`TauCeti.IdempotentMonoid.prodEquiv`), and passing to group completions
+gives the isomorphism of `K₀`. It sends the class `[eRⁿ]` of an idempotent `e` over `R × S` to the
+classes of its two components `e.map Prod.fst` and `e.map Prod.snd`. When `R` and `S` live in the
+same universe, its two components are the maps of `K₀` induced by the two projections, that is,
+extension of scalars along `R × S → R` and `R × S → S`. In particular the free module of rank one
+goes to the pair of free modules of rank one.
 
 The zero-ring value `K₀(0) = 0`, the empty case of the product formula, is the instance
 `TauCeti.FiniteProjectiveModules.subsingleton_splitK0` applied to `Rᵐᵒᵖ`.
 
 ## Main definitions
 
-* `TauCeti.IdempotentMonoid.prodEquiv A B`: the isomorphism `V(A × B) ≃+ V(A) × V(B)` of
-  idempotent monoids.
 * `TauCeti.KZero.prodEquiv R S`: the isomorphism `K₀(R × S) ≃+ K₀(R) × K₀(S)`.
 
 ## Main results
 
-* `TauCeti.IdempotentMonoid.prodEquiv_mk`, `TauCeti.IdempotentMonoid.prodEquiv_symm_mk_mk`: the
-  idempotent isomorphism takes components, and pairs two idempotents of the same size.
-* `TauCeti.KZero.prodEquiv_kZeroEquiv_of_mk`, `TauCeti.KZero.prodEquiv_symm_kZeroEquiv_of_mk`:
-  the same formulas on the classes `[eRⁿ]` in `K₀`.
+* `TauCeti.KZero.prodEquiv_toKZero`, `TauCeti.KZero.prodEquiv_symm_toKZero_toKZero`: on the
+  classes `[eRⁿ]` of idempotents, the isomorphism takes components, and its inverse pairs them.
+* `TauCeti.KZero.prodEquiv_apply_fst`, `TauCeti.KZero.prodEquiv_apply_snd`: the components of the
+  isomorphism are the maps induced by the two projections.
 * `TauCeti.KZero.prodEquiv_of_finiteProjectiveModulesRegular`: `[R × S] ↦ ([R], [S])`.
 
 ## References
@@ -60,87 +57,9 @@ noncomputable section
 
 namespace TauCeti
 
-open Matrix _root_.Algebra
+open _root_.Algebra
 
 universe u v
-
-namespace IdempotentMonoid
-
-/-! ### The idempotent monoid of a product -/
-
-section Prod
-
-variable (A B : Type*) [NonUnitalSemiring A] [NonUnitalSemiring B]
-
-/-- Taking the two components of an idempotent matrix over `A × B`, on idempotent monoids. -/
-private abbrev prodHom : IdempotentMonoid (A × B) →+ IdempotentMonoid A × IdempotentMonoid B :=
-  (map (NonUnitalRingHom.fst A B)).prod (map (NonUnitalRingHom.snd A B))
-
-variable {A B} {ι : Type*} [Fintype ι]
-
-private theorem prodHom_mk_prodEquiv_symm {e₁ : Matrix ι ι A} {e₂ : Matrix ι ι B}
-    (he₁ : IsIdempotentElem e₁) (he₂ : IsIdempotentElem e₂) :
-    prodHom A B (mk _ (he₁.matrix_prodEquiv_symm he₂)) = (mk e₁ he₁, mk e₂ he₂) := by
-  rw [AddMonoidHom.prod_apply, map_mk, map_mk]
-  -- The components of the pair `(e₁, e₂)`, read through `NonUnitalRingHom.fst` and
-  -- `NonUnitalRingHom.snd`.
-  rfl
-
-private theorem prodHom_injective : Function.Injective (prodHom A B) := by
-  intro x y h
-  induction x using ind with | mk n e he
-  induction y using ind with | mk m f hf
-  simp only [AddMonoidHom.prod_apply, map_mk, Prod.mk.injEq, mk_eq_mk_iff,
-    NonUnitalRingHom.coe_fst, NonUnitalRingHom.coe_snd] at h
-  exact (mk_eq_mk_iff he hf).2 (idempotentEquivalent_prod_iff.2 h)
-
-private theorem prodHom_surjective : Function.Surjective (prodHom A B) := by
-  rintro ⟨x, y⟩
-  induction x using ind with | mk n e₁ he₁
-  induction y using ind with | mk m e₂ he₂
-  -- `([e₁], [e₂]) = ([e₁], 0) + (0, [e₂])`, and each summand is the image of a pair with a zero
-  -- component of the same size.
-  have h₀A : IsIdempotentElem (0 : Matrix (Fin m) (Fin m) A) := .zero
-  have h₀B : IsIdempotentElem (0 : Matrix (Fin n) (Fin n) B) := .zero
-  refine ⟨mk _ (he₁.matrix_prodEquiv_symm h₀B) + mk _ (h₀A.matrix_prodEquiv_symm he₂), ?_⟩
-  rw [map_add, prodHom_mk_prodEquiv_symm he₁ h₀B, prodHom_mk_prodEquiv_symm h₀A he₂, mk_zero,
-    mk_zero, Prod.mk_add_mk, add_zero, zero_add]
-
-private theorem prodHom_bijective : Function.Bijective (prodHom A B) :=
-  ⟨prodHom_injective, prodHom_surjective⟩
-
-variable (A B) in
-/-- **The idempotent monoid of a product.** `V(A × B) ≃+ V(A) × V(B)`, sending the class of an
-idempotent matrix over `A × B` to the classes of its two components
-(`TauCeti.IdempotentMonoid.prodEquiv_mk`). -/
-def prodEquiv : IdempotentMonoid (A × B) ≃+ IdempotentMonoid A × IdempotentMonoid B :=
-  AddEquiv.ofBijective (prodHom A B) prodHom_bijective
-
-/-- `TauCeti.IdempotentMonoid.prodEquiv` sends the class of an idempotent matrix `e` over `A × B`
-to the classes of its components `e.map Prod.fst` and `e.map Prod.snd`. -/
-@[simp]
-theorem prodEquiv_mk {e : Matrix ι ι (A × B)} (he : IsIdempotentElem e) :
-    prodEquiv A B (mk e he) =
-      (mk (e.map Prod.fst) (he.matrix_map (NonUnitalRingHom.fst A B)),
-        mk (e.map Prod.snd) (he.matrix_map (NonUnitalRingHom.snd A B))) := by
-  rw [prodEquiv, AddEquiv.ofBijective_apply, AddMonoidHom.prod_apply, map_mk, map_mk]
-  -- `NonUnitalRingHom.fst A B` and `NonUnitalRingHom.snd A B` are `Prod.fst` and `Prod.snd` as
-  -- functions.
-  rfl
-
-/-- The inverse of `TauCeti.IdempotentMonoid.prodEquiv` sends the classes of two idempotent
-matrices `e₁` over `A` and `e₂` over `B` of the same size to the class of the matrix over `A × B`
-with components `e₁` and `e₂`. -/
-@[simp]
-theorem prodEquiv_symm_mk_mk {e₁ : Matrix ι ι A} {e₂ : Matrix ι ι B} (he₁ : IsIdempotentElem e₁)
-    (he₂ : IsIdempotentElem e₂) :
-    (prodEquiv A B).symm (mk e₁ he₁, mk e₂ he₂) =
-      mk ((Matrix.prodEquiv ι ι A B).symm (e₁, e₂)) (he₁.matrix_prodEquiv_symm he₂) :=
-  (prodEquiv A B).symm_apply_eq.2 (prodHom_mk_prodEquiv_symm he₁ he₂).symm
-
-end Prod
-
-end IdempotentMonoid
 
 namespace KZero
 
@@ -152,50 +71,39 @@ variable (R : Type u) (S : Type v) [Ring R] [Ring S]
 
 /-- **`K₀` of a product of rings.** `K₀(R × S) ≃+ K₀(R) × K₀(S)`, sending the class `[eRⁿ]` of an
 idempotent matrix `e` over `R × S` to the classes of its two components
-(`TauCeti.KZero.prodEquiv_kZeroEquiv_of_mk`), and the free module of rank one to the pair of free
-modules of rank one (`TauCeti.KZero.prodEquiv_of_finiteProjectiveModulesRegular`). -/
+(`TauCeti.KZero.prodEquiv_toKZero`), and the free module of rank one to the pair of free modules of
+rank one (`TauCeti.KZero.prodEquiv_of_finiteProjectiveModulesRegular`). -/
 def prodEquiv : KZero (R × S) ≃+ KZero R × KZero S :=
   (IdempotentMonoid.kZeroEquiv (R × S)).symm.trans <|
-    ((AddLocalization.addMonoidOf ⊤).addEquivOfAddEquiv (AddLocalization.addMonoidOf ⊤)
-      (j := IdempotentMonoid.prodEquiv R S) (AddSubmonoid.map_equiv_top _)).trans <|
+    (GrothendieckAddGroup.congr (IdempotentMonoid.prodEquiv R S)).trans <|
       GrothendieckAddGroup.prodEquiv.trans
         ((IdempotentMonoid.kZeroEquiv R).prodCongr (IdempotentMonoid.kZeroEquiv S))
 
-variable {R S} {ι : Type*} [Fintype ι]
+variable {R S}
 
-/-- `TauCeti.KZero.prodEquiv` sends the class `[eRⁿ]` of an idempotent matrix `e` over `R × S`
-to the classes of its components `e.map Prod.fst` and `e.map Prod.snd`. -/
-theorem prodEquiv_kZeroEquiv_of_mk {e : Matrix ι ι (R × S)} (he : IsIdempotentElem e) :
-    prodEquiv R S (IdempotentMonoid.kZeroEquiv (R × S)
-        (GrothendieckAddGroup.of (IdempotentMonoid.mk e he))) =
-      (IdempotentMonoid.kZeroEquiv R (GrothendieckAddGroup.of
-          (IdempotentMonoid.mk (e.map Prod.fst) (he.matrix_map (NonUnitalRingHom.fst R S)))),
-        IdempotentMonoid.kZeroEquiv S (GrothendieckAddGroup.of
-          (IdempotentMonoid.mk (e.map Prod.snd) (he.matrix_map (NonUnitalRingHom.snd R S))))) := by
-  have h : (AddLocalization.addMonoidOf ⊤).addEquivOfAddEquiv (AddLocalization.addMonoidOf ⊤)
-      (AddSubmonoid.map_equiv_top (IdempotentMonoid.prodEquiv R S))
-        (GrothendieckAddGroup.of (IdempotentMonoid.mk e he)) =
-          GrothendieckAddGroup.of (IdempotentMonoid.prodEquiv R S (IdempotentMonoid.mk e he)) :=
-    AddSubmonoid.LocalizationMap.addEquivOfAddEquiv_eq _ _ _
-  rw [prodEquiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply, AddEquiv.trans_apply, h,
-    IdempotentMonoid.prodEquiv_mk, AddEquiv.trans_apply, GrothendieckAddGroup.prodEquiv_of]
-  -- `AddEquiv.prodCongr` acts componentwise.
-  rfl
+/-- `TauCeti.KZero.prodEquiv` sends the class of an element `x` of the idempotent monoid of
+`R × S` to the classes of its images under the two projections. -/
+@[simp]
+theorem prodEquiv_toKZero (x : IdempotentMonoid (R × S)) :
+    prodEquiv R S (IdempotentMonoid.toKZero (R × S) x) =
+      (IdempotentMonoid.toKZero R (IdempotentMonoid.map (NonUnitalRingHom.fst R S) x),
+        IdempotentMonoid.toKZero S (IdempotentMonoid.map (NonUnitalRingHom.snd R S) x)) := by
+  rw [← IdempotentMonoid.kZeroEquiv_of, prodEquiv, AddEquiv.trans_apply,
+    AddEquiv.symm_apply_apply, AddEquiv.trans_apply, GrothendieckAddGroup.congr_of,
+    IdempotentMonoid.prodEquiv_apply, AddEquiv.trans_apply, GrothendieckAddGroup.prodEquiv_of]
+  -- `AddEquiv.prodCongr` acts componentwise; Mathlib states no apply lemma for it.
+  exact Prod.ext (IdempotentMonoid.kZeroEquiv_of _ _) (IdempotentMonoid.kZeroEquiv_of _ _)
 
-/-- The inverse of `TauCeti.KZero.prodEquiv` sends the classes `[e₁Rⁿ]` and `[e₂Sⁿ]` of two
-idempotent matrices of the same size to the class of the idempotent matrix over `R × S` with
-components `e₁` and `e₂`. -/
-theorem prodEquiv_symm_kZeroEquiv_of_mk {e₁ : Matrix ι ι R} {e₂ : Matrix ι ι S}
-    (he₁ : IsIdempotentElem e₁) (he₂ : IsIdempotentElem e₂) :
-    (prodEquiv R S).symm
-        (IdempotentMonoid.kZeroEquiv R (GrothendieckAddGroup.of (IdempotentMonoid.mk e₁ he₁)),
-          IdempotentMonoid.kZeroEquiv S (GrothendieckAddGroup.of (IdempotentMonoid.mk e₂ he₂))) =
-      IdempotentMonoid.kZeroEquiv (R × S) (GrothendieckAddGroup.of
-        (IdempotentMonoid.mk _ (he₁.matrix_prodEquiv_symm he₂))) :=
-  (prodEquiv R S).symm_apply_eq.2 <| by
-    rw [prodEquiv_kZeroEquiv_of_mk]
-    -- The components of the pair `(e₁, e₂)` are `e₁` and `e₂`.
-    rfl
+/-- The inverse of `TauCeti.KZero.prodEquiv` sends the pair of classes of `x` in the idempotent
+monoid of `R` and `y` in that of `S` to the class of the element of the idempotent monoid of
+`R × S` with components `x` and `y`. -/
+@[simp]
+theorem prodEquiv_symm_toKZero_toKZero (x : IdempotentMonoid R) (y : IdempotentMonoid S) :
+    (prodEquiv R S).symm (IdempotentMonoid.toKZero R x, IdempotentMonoid.toKZero S y) =
+      IdempotentMonoid.toKZero (R × S) ((IdempotentMonoid.prodEquiv R S).symm (x, y)) := by
+  have h := (IdempotentMonoid.prodEquiv R S).apply_symm_apply (x, y)
+  rw [IdempotentMonoid.prodEquiv_apply, Prod.mk.injEq] at h
+  rw [AddEquiv.symm_apply_eq, prodEquiv_toKZero, h.1, h.2]
 
 /-- `TauCeti.KZero.prodEquiv` sends the class of the free right `R × S`-module of rank one to the
 classes of the free modules of rank one over `R` and over `S`. -/
@@ -204,15 +112,51 @@ theorem prodEquiv_of_finiteProjectiveModulesRegular :
       (SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ),
         SplitK0.of.{v} (finiteProjectiveModulesRegular Sᵐᵒᵖ)) := by
   have h₁ := IdempotentMonoid.kZeroEquiv_of_mk_one (R := R × S) 1
-  rw [one_smul] at h₁
-  rw [← h₁, prodEquiv_kZeroEquiv_of_mk]
   have hR := IdempotentMonoid.kZeroEquiv_of_mk_one (R := R) 1
   have hS := IdempotentMonoid.kZeroEquiv_of_mk_one (R := S) 1
-  rw [one_smul] at hR hS
-  rw [← hR, ← hS]
+  rw [one_smul, IdempotentMonoid.kZeroEquiv_of] at h₁ hR hS
+  rw [← h₁, ← hR, ← hS, prodEquiv_toKZero, IdempotentMonoid.map_mk, IdempotentMonoid.map_mk]
   congr <;> exact Matrix.map_one _ rfl rfl
 
 end Prod
+
+section Components
+
+variable (R S : Type u) [Ring R] [Ring S]
+
+/-- The first component of `TauCeti.KZero.prodEquiv` is the map of `K₀` induced by the first
+projection `R × S → R`, extension of scalars along it. -/
+theorem prodEquiv_apply_fst (x : KZero (R × S)) :
+    (prodEquiv R S x).1 =
+      SplitK0.map.{u, u} (RingHom.op (RingHom.fst R S)).finiteProjectiveModulesExtendScalars x := by
+  obtain ⟨a, b, h⟩ :=
+    GrothendieckAddGroup.exists_eq_sub_of ((IdempotentMonoid.kZeroEquiv (R × S)).symm x)
+  rw [AddEquiv.symm_apply_eq, map_sub, IdempotentMonoid.kZeroEquiv_of,
+    IdempotentMonoid.kZeroEquiv_of] at h
+  subst h
+  -- Mathlib has no lemma evaluating `RingHom.toNonUnitalRingHom f` (only the `RingEquiv`
+  -- version), so the pointwise agreement is the definition of `RingHom.toNonUnitalRingHom`.
+  have hfst : (RingHom.fst R S).toNonUnitalRingHom = NonUnitalRingHom.fst R S :=
+    NonUnitalRingHom.ext fun _ ↦ rfl
+  simp only [map_sub, Prod.fst_sub, prodEquiv_toKZero, IdempotentMonoid.map_toKZero, hfst]
+
+/-- The second component of `TauCeti.KZero.prodEquiv` is the map of `K₀` induced by the second
+projection `R × S → S`, extension of scalars along it. -/
+theorem prodEquiv_apply_snd (x : KZero (R × S)) :
+    (prodEquiv R S x).2 =
+      SplitK0.map.{u, u} (RingHom.op (RingHom.snd R S)).finiteProjectiveModulesExtendScalars x := by
+  obtain ⟨a, b, h⟩ :=
+    GrothendieckAddGroup.exists_eq_sub_of ((IdempotentMonoid.kZeroEquiv (R × S)).symm x)
+  rw [AddEquiv.symm_apply_eq, map_sub, IdempotentMonoid.kZeroEquiv_of,
+    IdempotentMonoid.kZeroEquiv_of] at h
+  subst h
+  -- Mathlib has no lemma evaluating `RingHom.toNonUnitalRingHom f` (only the `RingEquiv`
+  -- version), so the pointwise agreement is the definition of `RingHom.toNonUnitalRingHom`.
+  have hsnd : (RingHom.snd R S).toNonUnitalRingHom = NonUnitalRingHom.snd R S :=
+    NonUnitalRingHom.ext fun _ ↦ rfl
+  simp only [map_sub, Prod.snd_sub, prodEquiv_toKZero, IdempotentMonoid.map_toKZero, hsnd]
+
+end Components
 
 end KZero
 
