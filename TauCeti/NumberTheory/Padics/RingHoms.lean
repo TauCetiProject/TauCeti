@@ -61,6 +61,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
   recovers `toZMod`.
 * `PadicInt.dvd_sub_appr`: `x - appr x n` is divisible by `p ^ n` in `ℤ_[p]`.
+* `PadicInt.exists_intCast_dvd_sub_and_toZMod_eq`: every `p`-adic integer is congruent modulo
+  `p ^ n` to an integer with the same reduction modulo `p`.
 * `PadicInt.div_pow_le_card_filter_dvd`: among `n` consecutive elements of `ℤ_[p]`, at least
   `⌊n / pʲ⌋` are divisible by `p ^ j`; `PadicInt.card_filter_pow_dvd_natCast_sub`: for a natural
   number `a`, exactly `⌊n / pʲ⌋ + [a mod pʲ < n mod pʲ]` of them are.
@@ -89,7 +91,10 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.valuation_natCast`, `PadicInt.valuation_eq_zero_of_isUnit`,
   `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural number is its `p`-adic
   valuation, units have valuation `0`, and a nonzero multiple of `p` has valuation at least `1`.
+* `PadicInt.index_range_nsmul`: `n ℤ_p` has index `p ^ v_p(n)` in `ℤ_p` for `n ≠ 0`.
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
+* `PadicInt.addVal_eq_valuation`: on nonzero elements, the additive valuation of the discrete
+  valuation ring `ℤ_[p]` is `PadicInt.valuation`.
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
   continuous ring homomorphism out of `ℤ_[p] ⧸ (q)` (`PadicInt.continuous_quotientSpanToZMod`,
@@ -311,6 +316,16 @@ theorem cast_toZModPow_eq_toZMod {n : ℕ} (hn : n ≠ 0) (x : ℤ_[p]) :
 theorem dvd_sub_appr (x : ℤ_[p]) (n : ℕ) : (p : ℤ_[p]) ^ n ∣ x - x.appr n :=
   Ideal.mem_span_singleton.mp (appr_spec n x)
 
+/-- A `p`-adic integer is congruent modulo `p ^ n` to an integer with the same reduction modulo
+`p`. -/
+theorem exists_intCast_dvd_sub_and_toZMod_eq (x : ℤ_[p]) (n : ℕ) :
+    ∃ θ : ℤ, (p : ℤ_[p]) ^ n ∣ x - θ ∧ toZMod x = θ := by
+  refine ⟨(x.appr (n + 1) : ℕ), ?_, ?_⟩
+  · rw [Int.cast_natCast]
+    exact (pow_dvd_pow _ n.le_succ).trans (dvd_sub_appr x (n + 1))
+  · rw [← cast_toZModPow_eq_toZMod n.succ_ne_zero, toZModPow_eq_natCast_appr,
+      ZMod.cast_natCast (dvd_pow_self p n.succ_ne_zero), Int.cast_natCast]
+
 open scoped Classical Finset in
 /-- At least `⌊n / pʲ⌋` of the `n` consecutive elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are
 divisible by `pʲ`: the indices `r + t pʲ` with `t < ⌊n / pʲ⌋`, where `r = appr a j`. -/
@@ -486,6 +501,19 @@ theorem valuation_natCast (n : ℕ) : (n : ℤ_[p]).valuation = padicValNat p n 
   rw [coe_natCast, Padic.valuation_natCast] at h
   exact_mod_cast h.symm
 
+/-- **The index of `n ℤ_p` in `ℤ_p` is `p ^ v_p(n)`** for a natural number `n ≠ 0`, the inverse of
+the `p`-adic absolute value of `n`. -/
+theorem index_range_nsmul {n : ℕ} (hn : n ≠ 0) :
+    (nsmulAddMonoidHom (α := ℤ_[p]) n).range.index = p ^ multiplicity p n := by
+  have hrange : (nsmulAddMonoidHom (α := ℤ_[p]) n).range =
+      (Ideal.span {(n : ℤ_[p])}).toAddSubgroup := by
+    ext x
+    simp [Ideal.mem_span_singleton', nsmul_eq_mul, mul_comm]
+  rw [hrange, ← Nat.padicValNat_def, ← valuation_natCast,
+    ← natCard_quotient_span (Nat.cast_ne_zero.mpr hn)]
+  -- the ideal quotient `ℤ_[p] ⧸ I` is by definition the additive quotient by `I.toAddSubgroup`
+  exact AddSubgroup.index_eq_card _
+
 /-- A unit of `ℤ_[p]` has valuation `0`. -/
 theorem valuation_eq_zero_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) : x.valuation = 0 := by
   have h := isUnit_iff.1 hx
@@ -503,6 +531,12 @@ theorem one_le_valuation_of_dvd {x : ℤ_[p]} (hx : x ≠ 0) (h : (p : ℤ_[p]) 
 theorem dvd_pow_valuation {x : ℤ_[p]} (hx : x ≠ 0) : x ∣ (p : ℤ_[p]) ^ x.valuation := by
   nth_rewrite 1 [unitCoeff_spec hx]
   exact Units.mul_left_dvd.mpr dvd_rfl
+
+/-- On nonzero elements, the additive valuation of the discrete valuation ring `ℤ_[p]` is the
+natural-number valuation `PadicInt.valuation`. (At `0` the former is `⊤` and the latter `0`.) -/
+theorem addVal_eq_valuation {x : ℤ_[p]} (hx : x ≠ 0) :
+    IsDiscreteValuationRing.addVal ℤ_[p] x = x.valuation :=
+  IsDiscreteValuationRing.addVal_def x (unitCoeff hx) irreducible_p _ (unitCoeff_spec hx)
 
 /-- **Reduction modulo `p` of `ℤ_[p] ⧸ (q)`**, for `p ∣ q`: the ring homomorphism induced by
 `toZMod`, whose kernel `(p)` contains `(q)`. -/

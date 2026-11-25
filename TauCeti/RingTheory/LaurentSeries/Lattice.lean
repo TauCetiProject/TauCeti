@@ -64,7 +64,13 @@ preserving every lattice; these maps respect identities, composition, and monomi
 * `TauCeti.LaurentSeries.iSup_lattice`, `TauCeti.LaurentSeries.iInf_lattice`: the lattices
   exhaust all series and meet in `0`.
 * `TauCeti.LaurentSeries.mem_lattice_iff_exists`: `U_a(R) = Xᵃ R⟦X⟧`.
-* `TauCeti.LaurentSeries.mul_mem_lattice`: `U_a U_b ⊆ U_{a + b}`.
+* `TauCeti.LaurentSeries.mul_mem_lattice`: `U_a U_b ⊆ U_{a + b}`, and
+  `TauCeti.LaurentSeries.coeff_mul_of_mem_lattice`: the coefficient of `Xᵃ⁺ᵇ` of such a product.
+* `TauCeti.LaurentSeries.mul_mem_lattice_add_one_iff`: such a product lies in `U_{a + b + 1}`
+  exactly when the product of the coefficients of `Xᵃ` and `Xᵇ` vanishes.
+* `TauCeti.LaurentSeries.exists_forall_apply_mem_lattice`: for `k`-algebra maps to `R⸨X⸩`,
+  lattice bounds on a family of algebra generators give lattice bounds on every element,
+  uniformly in the coefficient algebra `R`.
 * `TauCeti.LaurentSeries.mem_lattice_iff_valuation_le`: over a field, `U_a` is a closed
   valuation ball.
 * `TauCeti.LaurentSeries.hasBasis_nhds_zero_lattice`: the lattices form a neighbourhood basis
@@ -155,6 +161,22 @@ theorem iInf_lattice : ⨅ a, lattice R V a = ⊥ := by
   ext n
   exact hf (n + 1) n (Int.lt_succ n)
 
+/-- Two series of `U_a(V)` are equal once their coefficients agree at every exponent `n ≥ a`. -/
+theorem eq_of_mem_lattice_of_coeff_eq {a : ℤ} {f f' : HahnSeries ℤ V} (hf : f ∈ lattice R V a)
+    (hf' : f' ∈ lattice R V a) (h : ∀ n, a ≤ n → f.coeff n = f'.coeff n) : f = f' := by
+  ext n
+  obtain hn | hn := lt_or_ge n a
+  · rw [hf n hn, hf' n hn]
+  · exact h n hn
+
+/-- A series of `U_a(V)` lies in `U_{a + 1}(V)` exactly when its coefficient of `Xᵃ` vanishes. -/
+theorem mem_lattice_add_one_iff {a : ℤ} {f : HahnSeries ℤ V} (hf : f ∈ lattice R V a) :
+    f ∈ lattice R V (a + 1) ↔ f.coeff a = 0 := by
+  refine ⟨fun h ↦ h a (Int.lt_succ a), fun h n hn ↦ ?_⟩
+  obtain hn | rfl := (Int.lt_add_one_iff.1 hn).lt_or_eq
+  · exact hf n hn
+  · exact h
+
 end Module
 
 section Ring
@@ -190,12 +212,68 @@ theorem mem_lattice_iff_exists {a : ℤ} {f : R⸨X⸩} :
 theorem mem_lattice_zero_iff {f : R⸨X⸩} : f ∈ lattice R R 0 ↔ ∃ p : R⟦X⟧, (p : R⸨X⸩) = f := by
   simp only [mem_lattice_iff_exists, single_zero_one, one_mul]
 
+/-- The coefficient of `Xᵃ⁺ᵇ` in a product of series of `U_a` and `U_b` is the product of their
+coefficients of `Xᵃ` and `Xᵇ`. -/
+theorem coeff_mul_of_mem_lattice {a b : ℤ} {f g : R⸨X⸩} (hf : f ∈ lattice R R a)
+    (hg : g ∈ lattice R R b) : (f * g).coeff (a + b) = f.coeff a * g.coeff b :=
+  coeff_mul_add_of_forall_le (fun _ hi ↦ not_lt.1 fun h ↦ hi (hf _ h))
+    fun _ hj ↦ not_lt.1 fun h ↦ hj (hg _ h)
+
+/-- A product of series of `U_a` and `U_b` lies in `U_{a + b + 1}` exactly when the product of
+their coefficients of `Xᵃ` and `Xᵇ` vanishes. -/
+theorem mul_mem_lattice_add_one_iff {a b : ℤ} {f g : R⸨X⸩} (hf : f ∈ lattice R R a)
+    (hg : g ∈ lattice R R b) : f * g ∈ lattice R R (a + b + 1) ↔ f.coeff a * g.coeff b = 0 := by
+  rw [mem_lattice_add_one_iff (mul_mem_lattice hf hg), coeff_mul_of_mem_lattice hf hg]
+
 /-- Over a field, `U_a` is the closed valuation ball `{f | v f ≤ exp (-a)}`. -/
 theorem mem_lattice_iff_valuation_le {K : Type*} [Field K] {a : ℤ} {f : K⸨X⸩} :
     f ∈ lattice K K a ↔ Valued.v f ≤ WithZero.exp (-a) :=
   (_root_.LaurentSeries.valuation_le_iff_coeff_lt_eq_zero K).symm
 
 end Ring
+
+section Algebra
+
+attribute [local instance 1100] HahnSeries.instAlgebra
+
+universe u v w
+
+variable {k : Type u} {H : Type v} [CommSemiring k] [Semiring H] [Algebra k H] {ι : Type*}
+  (x : ι → H)
+
+/-- Lattice bounds on a generating family propagate to every element, uniformly in the
+coefficient algebra: for each `h : H` there is `d` such that every `k`-algebra map
+`g : H → R⸨X⸩` sending all `x i` into `X^(-N) R⟦X⟧` sends `h` into `X^(-N d) R⟦X⟧`. For `N = 0`
+this says that `g` then takes values in `R⟦X⟧`. -/
+theorem exists_forall_apply_mem_lattice (hx : Algebra.adjoin k (Set.range x) = ⊤) (N : ℕ)
+    (h : H) : ∃ d : ℕ, ∀ (R : Type w) [Semiring R] [Algebra k R] (g : H →ₐ[k] R⸨X⸩),
+      (∀ i, g (x i) ∈ lattice R R (-N)) → g h ∈ lattice R R (-(N * d : ℕ)) := by
+  have hh : h ∈ Algebra.adjoin k (Set.range x) := hx ▸ Algebra.mem_top
+  induction hh using Algebra.adjoin_induction with
+  | mem h hh =>
+    obtain ⟨i, rfl⟩ := hh
+    exact ⟨1, fun R _ _ g hg ↦ by simpa using hg i⟩
+  | algebraMap c =>
+    refine ⟨0, fun R _ _ g _ ↦ ?_⟩
+    rw [AlgHom.commutes, HahnSeries.algebraMap_apply, mul_zero, Nat.cast_zero, neg_zero]
+    exact single_mem_lattice le_rfl _
+  | add a b _ _ ha hb =>
+    obtain ⟨d, hd⟩ := ha
+    obtain ⟨e, he⟩ := hb
+    refine ⟨max d e, fun R _ _ g hg ↦ ?_⟩
+    have hd' : N * d ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_left _ _)
+    have he' : N * e ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_right _ _)
+    rw [map_add]
+    exact add_mem (lattice_antitone (by omega) (hd R g hg))
+      (lattice_antitone (by omega) (he R g hg))
+  | mul a b _ _ ha hb =>
+    obtain ⟨d, hd⟩ := ha
+    obtain ⟨e, he⟩ := hb
+    refine ⟨d + e, fun R _ _ g hg ↦ ?_⟩
+    rw [map_mul, Nat.mul_add, Nat.cast_add, neg_add]
+    exact mul_mem_lattice (hd R g hg) (he R g hg)
+
+end Algebra
 
 /-- The lattices `U_a` form a neighbourhood basis of zero for the Laurent valuation topology. -/
 theorem hasBasis_nhds_zero_lattice {K : Type*} [Field K] :
@@ -335,6 +413,10 @@ theorem mem_lattice_iff_le_orderTop {a : ℤ} {f : HahnModule ℤ R V} :
 theorem of_mem_lattice_iff {a : ℤ} {f : HahnSeries ℤ V} :
     of R f ∈ lattice R V a ↔ f ∈ TauCeti.LaurentSeries.lattice R V a := by
   simp [mem_lattice_iff, TauCeti.LaurentSeries.mem_lattice_iff]
+
+/-- The monomial `v Xⁿ` lies in the Hahn-module lattice `U_a(V)` once `a ≤ n`. -/
+theorem of_single_mem_lattice {a n : ℤ} (h : a ≤ n) (v : V) : of R (single n v) ∈ lattice R V a :=
+  (of_mem_lattice_iff R V).2 (LaurentSeries.single_mem_lattice h v)
 
 /-- The coefficient-preserving comparison restricted to a lattice. -/
 noncomputable def latticeEquiv (a : ℤ) :

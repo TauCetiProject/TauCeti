@@ -19,7 +19,12 @@ describes that product at the level of facet presentations.
 Let `i : N →+ V` and `i' : N' →+ V'` be lattices with facet presentations `(u, c)` and
 `(u', c')`. The product lattice is `i × i' : N × N' →+ V × V'` (`AddMonoidHom.prodMap`). Its facet
 normals are indexed by `ι ⊕ ι'`: they are `(u j, 0)` and `(0, u' j')`
-(`TauCeti.Toric.prodNormal u u'`), with support constants `Sum.elim c c'`. A point of the dual
+(`TauCeti.Toric.prodNormal u u'`), with support constants `Sum.elim c c'`. Their real linear
+combinations split into those of the factors (`TauCeti.Toric.linearCombination_prodNormal_apply`),
+so the kernel `𝔫` of `β_ℝ` is the product of the kernels
+(`TauCeti.Toric.mem_ker_linearCombination_prodNormal_iff`), and the real normals of the product span
+when those of both factors do (`TauCeti.Toric.surjective_linearCombination_prodNormal`). A point of
+the dual
 `(V × V')*` is a pair of points `y ∈ V*`, `y' ∈ V'*`, by `ContinuousLinearMap.coprod`, and
 
 * it lies in the product polyhedron exactly when `y ∈ Δ` and `y' ∈ Δ'`
@@ -35,8 +40,8 @@ normals are indexed by `ι ⊕ ι'`: they are `(u j, 0)` and `(0, u' j')`
 For nonempty factors, the product polyhedron is bounded exactly when both factors are
 (`TauCeti.Toric.isBounded_facetPolyhedron_prod_iff`). Consequently, for finite-dimensional
 spaces, the factors of a Delzant product presentation are Delzant
-(`TauCeti.Toric.IsDelzant.of_prod`). Conversely, for injective lattice maps and finitely many
-facets, the product of Delzant presentations is Delzant (`TauCeti.Toric.IsDelzant.prod`).
+(`TauCeti.Toric.IsDelzant.of_prod`). Conversely, for injective lattice maps, the product of
+Delzant presentations is Delzant (`TauCeti.Toric.IsDelzant.prod`).
 Irredundancy of a facet `(u j, 0)` of the product uses a point of `Δ'` on no facet of `Δ'`, which a
 Delzant polytope has (`TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`). Together these give
 `TauCeti.Toric.isDelzant_prod_iff`.
@@ -54,10 +59,10 @@ Delzant polytope has (`TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`). Toge
   exactly when both factors are.
 * `TauCeti.Toric.IsDelzant.of_prod`: for finite-dimensional spaces, the factors of a Delzant
   product are Delzant.
-* `TauCeti.Toric.IsDelzant.prod`: for injective lattice maps into finite-dimensional spaces and
-  finitely many facets, the product of Delzant polytopes is Delzant.
-* `TauCeti.Toric.isDelzant_prod_iff`: under the hypotheses of `TauCeti.Toric.IsDelzant.prod`, the
-  product is Delzant exactly when both factors are.
+* `TauCeti.Toric.IsDelzant.prod`: for injective lattice maps, the product of Delzant polytopes is
+  Delzant.
+* `TauCeti.Toric.isDelzant_prod_iff`: for injective lattice maps into finite-dimensional spaces,
+  the product is Delzant exactly when both factors are.
 
 ## References
 
@@ -75,9 +80,7 @@ open Set
 
 namespace TauCeti.Toric
 
-variable {ι ι' N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N']
-  [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup V'] [NormedSpace ℝ V']
-  {i : N →+ V} {i' : N' →+ V'} {u : ι → N} {u' : ι' → N'} {c : ι → ℝ} {c' : ι' → ℝ}
+variable {ι ι' N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N'] {u : ι → N} {u' : ι' → N'}
 
 variable (u u') in
 /-- The facet normals of the product of two polytopes: `(u j, 0)` for the facets of the first
@@ -92,6 +95,44 @@ theorem prodNormal_inl (j : ι) : prodNormal u u' (.inl j) = (u j, 0) :=
 @[simp]
 theorem prodNormal_inr (j : ι') : prodNormal u u' (.inr j) = (0, u' j) :=
   (rfl)
+
+section LinearCombination
+
+variable [Fintype ι] [Fintype ι'] [AddCommGroup V] [Module ℝ V] [AddCommGroup V'] [Module ℝ V']
+  {i : N →+ V} {i' : N' →+ V'}
+
+/-- The real linear combination of the product normals with coefficients `t` is the pair of the
+combinations of the normals of the factors with the restrictions `t ∘ inl` and `t ∘ inr`. -/
+theorem linearCombination_prodNormal_apply (t : ι ⊕ ι' → ℝ) :
+    Fintype.linearCombination ℝ (fun j ↦ i.prodMap i' (prodNormal u u' j)) t =
+      (Fintype.linearCombination ℝ (fun j ↦ i (u j)) (t ∘ .inl),
+        Fintype.linearCombination ℝ (fun j ↦ i' (u' j)) (t ∘ .inr)) := by
+  simp [Fintype.linearCombination_apply, Fintype.sum_sum_type, Prod.ext_iff, Prod.fst_sum,
+    Prod.snd_sum]
+
+/-- The kernel `𝔫` of `β_ℝ` for the product normals consists of the pairs of elements of the
+kernels of the factors. -/
+theorem mem_ker_linearCombination_prodNormal_iff {t : ι ⊕ ι' → ℝ} :
+    t ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i.prodMap i' (prodNormal u u' j)) ↔
+      t ∘ .inl ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j)) ∧
+        t ∘ .inr ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i' (u' j)) := by
+  simp only [LinearMap.mem_ker, linearCombination_prodNormal_apply, Prod.mk_eq_zero]
+
+/-- If the real normals of both factors span, so do the real normals of the product. -/
+theorem surjective_linearCombination_prodNormal
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
+    (hβ' : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i' (u' j))) :
+    Function.Surjective
+      (Fintype.linearCombination ℝ fun j ↦ i.prodMap i' (prodNormal u u' j)) := by
+  rintro ⟨v, v'⟩
+  obtain ⟨t, rfl⟩ := hβ v
+  obtain ⟨t', rfl⟩ := hβ' v'
+  exact ⟨Sum.elim t t', by rw [linearCombination_prodNormal_apply]; rfl⟩
+
+end LinearCombination
+
+variable [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup V'] [NormedSpace ℝ V']
+  {i : N →+ V} {i' : N' →+ V'} {c : ι → ℝ} {c' : ι' → ℝ}
 
 /-- The point `y.coprod y'` of the product lies in the product polyhedron exactly when `y` and
 `y'` lie in the factors. -/
@@ -213,11 +254,9 @@ theorem of_prod [FiniteDimensional ℝ V] [FiniteDimensional ℝ V']
   · obtain ⟨_, _, y₂, hy₂, hk⟩ := hirr (.inr j)
     exact ⟨y₂, hy₂, ext fun j' ↦ by simpa using Set.ext_iff.1 hk (.inr j')⟩
 
-/-- **Products of Delzant polytopes.** For injective lattice maps into finite-dimensional spaces
-and finitely many facets, the product presentation `(prodNormal u u', Sum.elim c c')` of two
-Delzant presentations is Delzant. -/
-theorem prod [Finite ι] [Finite ι'] [FiniteDimensional ℝ V] [FiniteDimensional ℝ V']
-    (hi : Function.Injective i) (hi' : Function.Injective i') (h : IsDelzant i u c)
+/-- **Products of Delzant polytopes.** For injective lattice maps, the product presentation
+`(prodNormal u u', Sum.elim c c')` of two Delzant presentations is Delzant. -/
+theorem prod (hi : Function.Injective i) (hi' : Function.Injective i') (h : IsDelzant i u c)
     (h' : IsDelzant i' u' c') : IsDelzant (i.prodMap i') (prodNormal u u') (Sum.elim c c') := by
   -- A point on no facet of the other factor serves as the irredundancy witness's partner.
   obtain ⟨z, hz, hz₀⟩ := h.exists_activeSet_eq_empty hi
@@ -237,11 +276,11 @@ theorem prod [Finite ι] [Finite ι'] [FiniteDimensional ℝ V] [FiniteDimension
 
 end IsDelzant
 
-/-- **Products of Delzant polytopes.** For injective lattice maps into finite-dimensional spaces
-and finitely many facets, the product presentation `(prodNormal u u', Sum.elim c c')` is Delzant
-exactly when both factors are. -/
-theorem isDelzant_prod_iff [Finite ι] [Finite ι'] [FiniteDimensional ℝ V]
-    [FiniteDimensional ℝ V'] (hi : Function.Injective i) (hi' : Function.Injective i') :
+/-- **Products of Delzant polytopes.** For injective lattice maps into finite-dimensional spaces,
+the product presentation `(prodNormal u u', Sum.elim c c')` is Delzant exactly when both factors
+are. -/
+theorem isDelzant_prod_iff [FiniteDimensional ℝ V] [FiniteDimensional ℝ V']
+    (hi : Function.Injective i) (hi' : Function.Injective i') :
     IsDelzant (i.prodMap i') (prodNormal u u') (Sum.elim c c') ↔
       IsDelzant i u c ∧ IsDelzant i' u' c' :=
   ⟨IsDelzant.of_prod, fun h ↦ h.1.prod hi hi' h.2⟩

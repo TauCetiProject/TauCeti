@@ -641,6 +641,6 @@ theorem etaleMass_three :
   classical
   rw [etaleMass_eq, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
     Finset.sum_range_one]
-  simp [Finset.univ_unique, Nat.Partition.card_parts_le_one_iff, Finset.filter_eq']
+  simp [Finset.univ_unique, Finset.filter_eq']
 
 end TauCeti

@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Addition
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Neg
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Pointed
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
+import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
 # The group law of an elliptic curve commutes with base change
@@ -32,10 +34,11 @@ map over `f` into bases of charts of `E` form an atlas of `E'`
 the restriction of `E` to the base of `c` (`PointedWeierstrassChart.carrierMap`). Through the
 isomorphisms with the projective models of the equations of `k` and `c`, it is a base change
 square of projective models carrying the zero section to the zero section
-(`PointedWeierstrassChart.modelMap`), and the Bosma–Lenstra addition morphism and the negation
-morphism commute with such squares
-(`WeierstrassCurve.additionMorphism_comp_of_isPullback` and
-`WeierstrassCurve.projModelNeg_comp_of_isPullback`).
+(`PointedWeierstrassChart.modelMap`), and the Bosma–Lenstra addition morphism
+commutes with such squares
+(`WeierstrassCurve.additionMorphism_comp_of_isPullback`). Compatibility with negation then
+follows from multiplication compatibility by
+`CategoryTheory.Over.inv_left_comp_of_mul_left_comp`.
 
 ## Main results
 
@@ -88,15 +91,6 @@ private theorem addition_carrierMap (h0 : zero' ≫ g = f ≫ zero) :
   congr 1
   apply pullback.hom_ext <;> simp [modelIso_hom_modelMap]
 
--- The morphism `carrierMap hg hh` carries the negation of `k` to the negation of `c`.
-@[reassoc]
-private theorem neg_carrierMap (h0 : zero' ≫ g = f ≫ zero) :
-    k.neg ≫ carrierMap hg hh = carrierMap hg hh ≫ c.neg := by
-  rw [← cancel_mono c.modelIso.hom, Category.assoc, Category.assoc, neg_modelIso_hom,
-    ← modelIso_hom_modelMap, ← modelIso_hom_modelMap_assoc, neg_modelIso_hom_assoc,
-    WeierstrassCurve.projModelNeg_comp_of_isPullback (isPullback_modelMap hg hh)
-      (projModelZero_modelMap hg hh h0)]
-
 end PointedWeierstrassChart
 
 /-! ### Pointed pullback squares of elliptic curves -/
@@ -131,16 +125,6 @@ private theorem pullbackMap_comp_addition {k : PointedWeierstrassChart E'.struct
   rw [reassoc_of% hm, pullbackMap_addition, ← addition_carrierMap_assoc hg hh h0,
     carrierMap_toTotal]
 
-include hg h0 in
--- On the restriction of `E'` to the base of a chart `k` of `E'` lying over a chart `c` of `E`, the
--- composite of `g` with the negation morphism of `E` is the negation of `k` followed by `g`.
-private theorem toTotal_comp_neg {k : PointedWeierstrassChart E'.structureMap E'.zero}
-    {c : PointedWeierstrassChart E.structureMap E.zero} {h : k.base ⟶ c.base}
-    (hh : h ≫ c.baseMap = k.baseMap ≫ f) :
-    k.toTotal ≫ g ≫ E.neg = k.neg ≫ k.toTotal ≫ g := by
-  rw [← carrierMap_toTotal_assoc hg hh, toTotal_neg, ← neg_carrierMap_assoc hg hh h0,
-    carrierMap_toTotal]
-
 include h0 in
 /-- **The addition morphism commutes with base change.** Let `g : E' ⟶ E` be a morphism of
 elliptic curves lying over `f : S' ⟶ S`, such that the square formed by `g`, `f` and the structure
@@ -166,14 +150,9 @@ morphisms is a pullback square, and carrying the zero section of `E'` to that of
 carries the negation morphism of `E'` to that of `E`. -/
 @[reassoc]
 theorem neg_comp_of_isPullback : E'.neg ≫ g = g ≫ E.neg := by
-  -- charts `k s` of `E'` around each point `s`, with bases mapping over `f` into charts of `E`
-  choose k c h hh hk using E.exists_chart_comp_baseMap E' f
-  -- the morphism `E' ⟶ E'` whose composite with `g` is the right-hand side
-  let ν := hg.lift (g ≫ E.neg) E'.structureMap (by simp [hg.w])
-  suffices hν : ν = E'.neg by rw [← hν, hg.lift_fst]
-  refine E'.eq_neg_of_atlas ⟨S', k, fun s ↦ ⟨s, hk s⟩⟩ fun x ↦ hg.hom_ext ?_ ?_
-  · simpa only [ν, Category.assoc, IsPullback.lift_fst] using toTotal_comp_neg hg h0 (hh x)
-  · simp [ν, (k x).isPullback.w]
+  apply Over.inv_left_comp_of_mul_left_comp (G := Over.mk E.structureMap)
+    (G' := Over.mk E'.structureMap) hg.w
+  simpa only [mul_left, Over.mk_hom] using addition_comp_of_isPullback hg h0
 
 /-! ### The base change of an elliptic curve -/
 

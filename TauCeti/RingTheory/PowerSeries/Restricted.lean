@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.RingTheory.Subring.Basic
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Restricted power series and their coefficient algebra
@@ -312,8 +313,8 @@ theorem IsRestricted.mul_of_abs_lt (hf : f.IsRestricted c') (hg : g.IsRestricted
   have hq : 0 < |c'| := (abs_nonneg c).trans_lt h
   set ρ := |c| / |c'|
   have hupper : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ) * ρ ^ n * (A * B)) atTop (𝓝 0) := by
-    simpa using (TauCeti.tendsto_add_pow_mul_pow_of_lt_one 1 (by positivity)
-      ((div_lt_one hq).mpr h)).mul_const (A * B)
+    simpa using (TauCeti.tendsto_add_pow_mul_pow_of_norm_lt_one 1 1
+      ((Real.norm_of_nonneg (by positivity)).trans_lt ((div_lt_one hq).mpr h))).mul_const (A * B)
   rw [← isRestricted_abs_iff, isRestricted_iff']
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
   rw [coeff_mul]

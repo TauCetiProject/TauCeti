@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Generators
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Space
 import TauCeti.Data.Matrix.Basis
 import TauCeti.Data.Matrix.Block
-import TauCeti.LinearAlgebra.Matrix.Alternating
+import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 
 /-!
 # Root generators of the split even orthogonal Lie algebra
