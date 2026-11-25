@@ -20,13 +20,10 @@ of common eigenvectors (`Representation.exists_basis_forall_apply_eq_smul`), bec
 irreducible subrepresentations are lines
 (`Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative`).
 
-## Main definitions
-
-* `Representation.lineSubrepresentation`: the line through a common eigenvector, as a
-  subrepresentation.
-
 ## Main results
 
+* `Representation.isAtom_spanSingleton`: the line `Subrepresentation.spanSingleton` through a
+  nonzero common eigenvector is a minimal nonzero subrepresentation.
 * `Representation.isSemisimpleRepresentation_of_span_eq_top`: a representation spanned by common
   eigenvectors is semisimple.
 * `Representation.span_setOf_forall_apply_eq_smul_eq_top`: a finite-dimensional semisimple
@@ -47,36 +44,15 @@ variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
 
 /-! ### Lines through common eigenvectors -/
 
-/-- The line through a common eigenvector `v` of the operators `ρ g`, as a subrepresentation. -/
-def lineSubrepresentation (v : V) (hv : ∀ g, ∃ c : k, ρ g v = c • v) : Subrepresentation ρ where
-  toSubmodule := k ∙ v
-  apply_mem_toSubmodule g w hw := by
-    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hw
-    obtain ⟨c, hc⟩ := hv g
-    rw [map_smul, hc, smul_smul]
-    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)
-
-/-- The subspace carried by the line through `v` is the span of `v`. -/
-@[simp]
-theorem toSubmodule_lineSubrepresentation (v : V) (hv : ∀ g, ∃ c : k, ρ g v = c • v) :
-    (lineSubrepresentation ρ v hv).toSubmodule = k ∙ v :=
-  (rfl)
-
-/-- A vector lies in the line through `v` exactly when it is a multiple of `v`. -/
-@[simp]
-theorem mem_lineSubrepresentation {v : V} {hv : ∀ g, ∃ c : k, ρ g v = c • v} {w : V} :
-    w ∈ lineSubrepresentation ρ v hv ↔ w ∈ k ∙ v := by
-  rw [← Subrepresentation.mem_toSubmodule, toSubmodule_lineSubrepresentation]
-
 /-- The line through a nonzero common eigenvector is a minimal nonzero subrepresentation. -/
-theorem isAtom_lineSubrepresentation {v : V} (hv : ∀ g, ∃ c : k, ρ g v = c • v) (hv0 : v ≠ 0) :
-    IsAtom (lineSubrepresentation ρ v hv) := by
+theorem isAtom_spanSingleton {v : V} (hv : ∀ g, ∃ c : k, ρ g v = c • v) (hv0 : v ≠ 0) :
+    IsAtom (Subrepresentation.spanSingleton v hv) := by
   have hline : IsAtom (k ∙ v) :=
     Submodule.isAtom_iff_finrank_eq_one.2 (finrank_span_singleton hv0)
   refine ⟨fun h ↦ hline.1 ?_, fun τ hτ ↦ ?_⟩
-  · rw [← toSubmodule_lineSubrepresentation ρ v hv, h, Subrepresentation.toSubmodule_bot]
+  · rw [← Subrepresentation.toSubmodule_spanSingleton v hv, h, Subrepresentation.toSubmodule_bot]
   · have hlt : τ.toSubmodule < k ∙ v := by
-      rw [← toSubmodule_lineSubrepresentation ρ v hv]
+      rw [← Subrepresentation.toSubmodule_spanSingleton v hv]
       exact Subrepresentation.toSubmodule_lt_toSubmodule.2 hτ
     exact Subrepresentation.toSubmodule_injective (hline.2 _ hlt)
 
@@ -91,9 +67,8 @@ theorem isSemisimpleRepresentation_of_span_eq_top {S : Set V}
   by_cases hv0 : v = 0
   · rw [hv0]
     exact zero_mem _
-  refine Submodule.mem_iSup_of_mem ⟨_, isAtom_lineSubrepresentation ρ (hS v hv) hv0⟩ ?_
-  rw [toSubmodule_lineSubrepresentation]
-  exact Submodule.mem_span_singleton_self v
+  exact Submodule.mem_iSup_of_mem ⟨_, isAtom_spanSingleton ρ (hS v hv) hv0⟩
+    (Subrepresentation.self_mem_spanSingleton v (hS v hv))
 
 /-! ### Eigenbases of semisimple representations of commutative monoids -/
 

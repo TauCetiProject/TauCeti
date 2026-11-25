@@ -309,12 +309,12 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
   obtain ⟨v, hv⟩ := exists_ne (0 : W)
   -- The line through `v` is stable, hence everything: `W` is one-dimensional.
   have hev : ∀ g, ∃ a : k, W.ρ g v = a • v := fun g => ⟨c g, hc g v⟩
-  have hline : Representation.lineSubrepresentation W.ρ v hev = ⊤ :=
+  have hline : Subrepresentation.spanSingleton v hev = ⊤ :=
     (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left
-      (Representation.isAtom_lineSubrepresentation W.ρ hev hv).1
+      (Representation.isAtom_spanSingleton W.ρ hev hv).1
   have hfin : Module.finrank k W = 1 := by
     refine (finrank_eq_one_iff_of_ne_zero v hv).mpr ?_
-    rw [← Representation.toSubmodule_lineSubrepresentation W.ρ v hev, hline,
+    rw [← Subrepresentation.toSubmodule_spanSingleton v hev, hline,
       Subrepresentation.toSubmodule_top]
   let χ : G →* k :=
     { toFun := c
