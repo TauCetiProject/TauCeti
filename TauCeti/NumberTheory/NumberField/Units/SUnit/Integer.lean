@@ -63,6 +63,13 @@ namespace TauCeti.NumberField.SUnit
 variable {K : Type*} [Field K] [NumberField K]
   (S : Set (HeightOneSpectrum (RingOfIntegers K)))
 
+/-- The rank of the units of `𝒪_K`, plus one, is the number of infinite places of `K`. -/
+private theorem rank_add_one_eq_natCard_infinitePlace :
+    Units.rank K + 1 = Nat.card (InfinitePlace K) := by
+  have := Fintype.card_pos (α := InfinitePlace K)
+  rw [Units.rank, Nat.card_eq_fintype_card]
+  omega
+
 /-! ### Torsion -/
 
 /-- **The torsion of the units of the `S`-integers has order `torsionOrder K`**, the number of
@@ -99,9 +106,8 @@ are the numbers of real and complex places of `K`. -/
 theorem finrank_units_integer_add_one :
     Module.finrank ℤ (Additive (S.integer K)ˣ) + 1 =
       InfinitePlace.nrRealPlaces K + InfinitePlace.nrComplexPlaces K + Nat.card S := by
-  have := Fintype.card_pos (α := InfinitePlace K)
-  rw [finrank_units_integer, Units.rank, ← InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
-  omega
+  rw [finrank_units_integer, add_right_comm, rank_add_one_eq_natCard_infinitePlace,
+    Nat.card_eq_fintype_card, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
 
 /-! ### The fundamental-system decomposition -/
 
@@ -126,17 +132,20 @@ theorem exist_unique_eq_mul_prod_units_integer (u : (S.integer K)ˣ) :
 
 /-! ### Units of infinite order -/
 
+/-- **The units of the `S`-integers have positive rank exactly when `r₁ + r₂ + |S| ≥ 2`.** -/
+theorem finrank_units_integer_pos_iff :
+    0 < Module.finrank ℤ (Additive (S.integer K)ˣ) ↔
+      2 ≤ Nat.card (InfinitePlace K) + Nat.card S := by
+  rw [finrank_units_integer, ← rank_add_one_eq_natCard_infinitePlace]
+  omega
+
 /-- **The units of the `S`-integers have an element of infinite order exactly when
 `r₁ + r₂ + |S| ≥ 2`**, where `r₁ + r₂` is the number of infinite places of `K`. Equivalently,
 by `finrank_units_integer_add_one`, exactly when they have positive rank. -/
 theorem exists_not_isOfFinOrder_units_integer_iff :
     (∃ u : (S.integer K)ˣ, ¬ IsOfFinOrder u) ↔
       2 ≤ Nat.card (InfinitePlace K) + Nat.card S := by
-  have hpos := Fintype.card_pos (α := InfinitePlace K)
-  have hrank : 0 < Units.rank K + Nat.card S ↔ 2 ≤ Nat.card (InfinitePlace K) + Nat.card S := by
-    rw [Units.rank, Nat.card_eq_fintype_card (α := InfinitePlace K)]
-    omega
-  rw [← hrank]
+  rw [← finrank_units_integer_pos_iff, finrank_units_integer]
   constructor
   · -- with no fundamental units, every unit is a torsion unit
     rintro ⟨u, hu⟩
@@ -154,13 +163,5 @@ theorem exists_not_isOfFinOrder_units_integer_iff :
     refine (basisModTorsion S).ne_zero ⟨0, h⟩ ?_
     rw [← fundSystem_mk, Submodule.Quotient.mk_eq_zero]
     exact ofMul_mem_torsion_int_iff.2 hmem
-
-/-- **The units of the `S`-integers have positive rank exactly when `r₁ + r₂ + |S| ≥ 2`.** -/
-theorem finrank_units_integer_pos_iff :
-    0 < Module.finrank ℤ (Additive (S.integer K)ˣ) ↔
-      2 ≤ Nat.card (InfinitePlace K) + Nat.card S := by
-  have := Fintype.card_pos (α := InfinitePlace K)
-  rw [finrank_units_integer, Units.rank, Nat.card_eq_fintype_card (α := InfinitePlace K)]
-  omega
 
 end TauCeti.NumberField.SUnit
