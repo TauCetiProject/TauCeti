@@ -8,8 +8,10 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
--- Private: `CliffordAlgebra.Equivs` supplies `CliffordAlgebraComplex.toComplex` for the 1D witness.
+-- Private: `CliffordAlgebra.Equivs` supplies `CliffordAlgebraComplex.toComplex` for the 1D witness,
+-- and `Module.Basic` supplies general `AlgHom` Clifford relations inside proofs.
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
+import TauCeti.LinearAlgebra.CliffordAlgebra.Module.Basic
 
 /-!
 # The geometric convention for real Clifford actions
@@ -122,9 +124,8 @@ theorem adjoint_map_ι [FiniteDimensional ℂ S] (v : V) :
 `c(v) c(w) + c(w) c(v) = -2 ⟪v, w⟫`. -/
 theorem map_ι_mul_map_ι_add_swap (v w : V) :
     ρ (ι Q v) * ρ (ι Q w) + ρ (ι Q w) * ρ (ι Q v) = ((-2 * ⟪v, w⟫_ℝ : ℝ) : ℂ) • 1 := by
-  rw [Complex.coe_smul]
-  exact ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inner
-    hρ.apply_eq_neg_norm_sq v w
+  rw [Complex.coe_smul, ρ.map_cliffordAlgebraι_mul_add_swap,
+    QuadraticMap.polar_eq_neg_two_inner hρ.apply_eq_neg_norm_sq, Algebra.algebraMap_eq_smul_one]
 
 /-- Pointwise polarized Clifford relation on spinors:
 `c(v) (c(w) s) + c(w) (c(v) s) = (-2 * ⟪v, w⟫_ℝ) • s`. -/
@@ -141,11 +142,14 @@ theorem map_ι_mul_self (v : V) : ρ (ι Q v) * ρ (ι Q v) = ((-‖v‖ ^ 2 : �
 /-- Clifford multiplications by orthogonal vectors anticommute. -/
 theorem map_ι_mul_map_ι_comm_of_inner_eq_zero {v w : V} (h : ⟪v, w⟫_ℝ = 0) :
     ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) :=
-  ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_of_inner_eq_zero hρ.apply_eq_neg_norm_sq h
+  eq_neg_of_add_eq_zero_left
+    (ρ.map_cliffordAlgebraι_anticommute_of_isOrtho
+      ((QuadraticMap.isOrtho_iff_inner_eq_zero hρ.apply_eq_neg_norm_sq).2 h))
 
 /-- Clifford multiplication by a unit vector squares to `-1`. -/
 theorem map_ι_mul_self_of_norm_eq_one {v : V} (h : ‖v‖ = 1) : ρ (ι Q v) * ρ (ι Q v) = -1 :=
-  ρ.map_cliffordAlgebraι_sq_of_norm_eq_one hρ.apply_eq_neg_norm_sq h
+  ρ.map_cliffordAlgebraι_mul_self_of_eq_neg_one
+    (by rw [hρ.apply_eq_neg_norm_sq, h]; norm_num)
 
 /-- **A unit orthogonal pair**: for orthonormal `e₁, e₂`, the product `c(e₁) c(e₂)` squares to
 `-1`, so that `i c(e₁) c(e₂)` is an involution. -/
