@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.Quiver.Symmetric
 public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Data.Fintype.Sum
+public import TauCeti.Combinatorics.Quiver.PathWeight
 
 /-!
 # Symmetrified quivers
@@ -18,21 +19,84 @@ equality to the doubled vertex type, supplies finite arrow types from those of t
 quiver, counts them, and records that the inclusion is bijective on vertices. These facts let
 path-algebra constructions on the doubled quiver reuse the original finite vertex and arrow data.
 
+The reverse-arrow weight counts formal reverse arrows in paths, without finiteness assumptions.
+Its weight-zero paths are exactly the images of paths in the original quiver, and any intermediate
+weight is attained by a prefix.
+
 ## Main results
 
 * `TauCeti.card_symmetrify_hom`: the doubled quiver has as many arrows from `i` to `j` as `Q`
   has from `i` to `j` and from `j` to `i` together.
 * `TauCeti.symmetrify_of_obj`: the doubling inclusion is the identity on vertices.
 * `TauCeti.symmetrify_of_obj_bijective`: the doubling inclusion is bijective on vertices.
+* `Quiver.Symmetrify.reverseArrowWeight`: original arrows have weight zero, formal reverses one.
+* `Quiver.Path.addWeight_reverseArrowWeight_eq_zero_iff`: weight zero characterizes original paths.
+* `Quiver.Path.exists_eq_comp_of_le_reverseArrowWeight`: split a path at any reverse-arrow count.
 -/
 
 public section
 
+universe u v
+
+namespace Quiver.Symmetrify
+
+variable {Q : Type u} [Quiver.{v} Q]
+
+/-- Give original arrows weight zero and formal reverse arrows weight one. -/
+def reverseArrowWeight {i j : Symmetrify Q} (a : i ⟶ j) : ℕ :=
+  Sum.elim (fun _ ↦ 0) (fun _ ↦ 1) a
+
+-- Simplify the weight before `of.map` is reduced to the sum constructor.
+@[simp↓]
+theorem reverseArrowWeight_of_map {i j : Q} (a : i ⟶ j) :
+    reverseArrowWeight (of.map a) = 0 :=
+  (rfl)
+
+@[simp↓]
+theorem reverseArrowWeight_reverse_of_map {i j : Q} (a : i ⟶ j) :
+    reverseArrowWeight (Quiver.reverse (of.map a)) = 1 :=
+  (rfl)
+
+end Quiver.Symmetrify
+
+namespace Quiver.Path
+
+open Symmetrify
+
+variable {Q : Type u} [Quiver.{v} Q]
+
+/-- A path in the double has weight zero exactly when it is the image of an original path. -/
+theorem addWeight_reverseArrowWeight_eq_zero_iff {i j : Symmetrify Q} (p : Path i j) :
+    p.addWeight reverseArrowWeight = 0 ↔
+      ∃ q : @Path Q ‹Quiver Q› i j, (@of Q _).mapPath q = p := by
+  constructor
+  · induction p with
+    | nil => exact fun _ ↦ ⟨Path.nil, rfl⟩
+    | cons p a ih =>
+      rcases a with a | a
+      · intro hp
+        have hw : p.addWeight reverseArrowWeight = 0 := by
+          simpa only [Path.addWeight_cons, reverseArrowWeight, Sum.elim_inl, add_zero] using hp
+        obtain ⟨q, rfl⟩ := ih hw
+        exact ⟨q.cons a, rfl⟩
+      · simp [reverseArrowWeight]
+  · rintro ⟨q, rfl⟩
+    refine ((@of Q _).addWeight_mapPath (@reverseArrowWeight Q _) q).trans ?_
+    exact (Path.addWeight_const (0 : ℕ) q).trans (nsmul_zero _)
+
+/-- A path with at least `n` formal reverse arrows has a prefix with exactly `n` of them. -/
+theorem exists_eq_comp_of_le_reverseArrowWeight {i j : Symmetrify Q} (p : Path i j) {n : ℕ}
+    (hn : n ≤ p.addWeight reverseArrowWeight) :
+    ∃ (l : Symmetrify Q) (p₁ : Path i l) (p₂ : Path l j),
+      p = p₁.comp p₂ ∧ p₁.addWeight reverseArrowWeight = n := by
+  exact p.exists_eq_comp_of_le_addWeight reverseArrowWeight (fun a ↦ by
+    cases a <;> simp [reverseArrowWeight]) hn
+
+end Quiver.Path
+
 namespace TauCeti
 
 open _root_.Quiver
-
-universe u v
 
 /-- Typeclass search does not unfold the `Symmetrify` type synonym to reuse `Finite Q`. -/
 instance instFiniteSymmetrify (Q : Type u) [Finite Q] : Finite (Symmetrify Q) :=
