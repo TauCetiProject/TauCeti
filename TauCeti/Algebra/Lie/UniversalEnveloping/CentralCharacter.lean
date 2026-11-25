@@ -151,11 +151,8 @@ theorem centerEigenspace_centralCharacterOfForallExistsSmul :
 theorem centralCharacterOfForallExistsSmul_eq_centralCharacterOfBijectiveAlgebraMap
     (hb : Function.Bijective (algebraMap R (Subalgebra.center R (Module.End (U R L) M)))) :
     centralCharacterOfForallExistsSmul R L M h =
-      centralCharacterOfBijectiveAlgebraMap R (U R L) M hb := by
-  ext z
-  exact (centralCharacterOfBijectiveAlgebraMap_eq_of_smul_eq fun m =>
-    (asModule_smul_def R L M (z : U R L) m).trans
-      (representation_eq_centralCharacterOfForallExistsSmul_smul R L M h z m)).symm
+      centralCharacterOfBijectiveAlgebraMap R (U R L) M hb :=
+  (rfl)
 
 /-- **Equivalent modules have the same central character.** This is
 `TauCeti.centralCharacterOfBijectiveAlgebraMap_congr`, read through the enveloping-algebra
@@ -225,11 +222,8 @@ theorem centerEigenspace_centralCharacter :
 `U(L)`-module. -/
 theorem centralCharacter_eq_centralCharacterOfBijectiveAlgebraMap
     (hb : Function.Bijective (algebraMap K (Subalgebra.center K (Module.End (U K L) M)))) :
-    centralCharacter K L M = centralCharacterOfBijectiveAlgebraMap K (U K L) M hb := by
-  ext z
-  exact (centralCharacterOfBijectiveAlgebraMap_eq_of_smul_eq fun m =>
-    (asModule_smul_def K L M (z : U K L) m).trans
-      (representation_eq_centralCharacter_smul K L M z m)).symm
+    centralCharacter K L M = centralCharacterOfBijectiveAlgebraMap K (U K L) M hb :=
+  _root_.TauCeti.centralCharacter_eq_centralCharacterOfBijectiveAlgebraMap K (U K L) M hb
 
 /-- **Equivalent modules have the same central character.** This is
 `TauCeti.centralCharacterOfBijectiveAlgebraMap_congr`, read through the enveloping-algebra
