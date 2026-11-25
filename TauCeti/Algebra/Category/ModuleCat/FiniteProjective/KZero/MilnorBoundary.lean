@@ -101,17 +101,17 @@ def patchedSubgroup (u : GL n Q) : AddSubgroup ((n → A₁) × (n → A₂)) wh
   carrier := {x | (u : Matrix n n Q) *ᵥ (π₁ ∘ x.1) = π₂ ∘ x.2}
   add_mem' {x y} hx hy := by
     simp only [Set.mem_ofPred_eq, Prod.fst_add, Prod.snd_add] at hx hy ⊢
-    rw [show π₁ ∘ (x.1 + y.1) = π₁ ∘ x.1 + π₁ ∘ y.1 from map_add (π₁.compLeft n) _ _,
-      show π₂ ∘ (x.2 + y.2) = π₂ ∘ x.2 + π₂ ∘ y.2 from map_add (π₂.compLeft n) _ _, mulVec_add, hx,
-      hy]
+    rw [show π₁ ∘ (x.1 + y.1) = π₁ ∘ x.1 + π₁ ∘ y.1 from funext fun _ ↦ map_add π₁ _ _,
+      show π₂ ∘ (x.2 + y.2) = π₂ ∘ x.2 + π₂ ∘ y.2 from funext fun _ ↦ map_add π₂ _ _, mulVec_add,
+      hx, hy]
   zero_mem' := by
     simp only [Set.mem_ofPred_eq, Prod.fst_zero, Prod.snd_zero]
-    rw [show π₁ ∘ (0 : n → A₁) = 0 from map_zero (π₁.compLeft n),
-      show π₂ ∘ (0 : n → A₂) = 0 from map_zero (π₂.compLeft n), mulVec_zero]
+    rw [show π₁ ∘ (0 : n → A₁) = 0 from funext fun _ ↦ map_zero π₁,
+      show π₂ ∘ (0 : n → A₂) = 0 from funext fun _ ↦ map_zero π₂, mulVec_zero]
   neg_mem' {x} hx := by
     simp only [Set.mem_ofPred_eq, Prod.fst_neg, Prod.snd_neg] at hx ⊢
-    rw [show π₁ ∘ (-x.1) = -(π₁ ∘ x.1) from map_neg (π₁.compLeft n) _,
-      show π₂ ∘ (-x.2) = -(π₂ ∘ x.2) from map_neg (π₂.compLeft n) _, mulVec_neg, hx]
+    rw [show π₁ ∘ (-x.1) = -(π₁ ∘ x.1) from funext fun _ ↦ map_neg π₁ _,
+      show π₂ ∘ (-x.2) = -(π₂ ∘ x.2) from funext fun _ ↦ map_neg π₂ _, mulVec_neg, hx]
 
 variable {π₁ π₂}
 
@@ -457,44 +457,51 @@ theorem patchedFiniteProjective_obj (h : Function.Surjective π₁ ∨ Function.
 
 variable (h : Function.Surjective π₁ ∨ Function.Surjective π₂)
 
-/-- Isomorphic patched modules have the same class in `K₀`. -/
-theorem of_patchedFiniteProjective_congr {u : GL ι Q} {u' : GL κ Q}
-    (e : π₁.patchedSubgroup π₂ u ≃ₗ[(π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ u') :
-    SplitK0.of.{max u₁ u₂} (patchedFiniteProjective π₁ π₂ h u) =
-      SplitK0.of.{max u₁ u₂} (patchedFiniteProjective π₁ π₂ h u') :=
-  SplitK0.of_congr (ObjectProperty.isoMk _ e.toModuleIso)
-
 /-- The class `[M(u)] - n[D]` in `K₀(D)` of the patched module of `u ∈ GLₙ(Q)`. -/
 private def patchedClass (u : GL ι Q) : KZero (π₁.pullback π₂) :=
-  SplitK0.of.{max u₁ u₂} (patchedFiniteProjective π₁ π₂ h u) -
-    Fintype.card ι • SplitK0.of.{max u₁ u₂} (finiteProjectiveModulesRegular (π₁.pullback π₂)ᵐᵒᵖ)
+  have := finite_patchedSubgroup h u
+  have := projective_patchedSubgroup h u
+  FiniteProjectiveModules.classOf _ (π₁.patchedSubgroup π₂ u) (Fintype.card ι)
 
 /-- Isomorphic patched modules of matrices of the same size have the same class. -/
 private theorem patchedClass_congr {u u' : GL ι Q}
     (e : π₁.patchedSubgroup π₂ u ≃ₗ[(π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ u') :
-    patchedClass h u = patchedClass h u' := by
-  rw [patchedClass, patchedClass, of_patchedFiniteProjective_congr h e]
+    patchedClass h u = patchedClass h u' :=
+  have := finite_patchedSubgroup h u
+  have := projective_patchedSubgroup h u
+  have := finite_patchedSubgroup h u'
+  have := projective_patchedSubgroup h u'
+  FiniteProjectiveModules.classOf_congr e _
 
 /-- The patched module of the identity is free, so its class vanishes. -/
 private theorem patchedClass_one : patchedClass h (1 : GL ι Q) = 0 := by
-  rw [patchedClass, sub_eq_zero]
-  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin
-    ((patchedSubgroupOneEquiv π₁ π₂ ι).trans
-      (LinearEquiv.funCongrLeft _ _ (Fintype.equivFin ι).symm)) (.refl _ _)
+  have := finite_patchedSubgroup h (1 : GL ι Q)
+  have := projective_patchedSubgroup h (1 : GL ι Q)
+  rw [patchedClass, FiniteProjectiveModules.classOf_congr ((patchedSubgroupOneEquiv π₁ π₂ ι).trans
+    (LinearEquiv.funCongrLeft _ _ (Fintype.equivFin ι).symm)), FiniteProjectiveModules.classOf_free]
 
 /-- The class of the patched module of a block sum is the sum of the classes. -/
 private theorem patchedClass_fromBlocksGL (u : GL ι Q) (v : GL κ Q) :
     patchedClass h (fromBlocksGL (u, v)) = patchedClass h u + patchedClass h v := by
-  rw [patchedClass, patchedClass, patchedClass, SplitK0.of_eq_add_of_linearEquiv_prod
-    (P := patchedFiniteProjective π₁ π₂ h u) (Q := patchedFiniteProjective π₁ π₂ h v)
-    (patchedSubgroupProdEquiv π₁ π₂ u v).symm, Fintype.card_sum, add_nsmul]
-  abel
+  have := finite_patchedSubgroup h u
+  have := projective_patchedSubgroup h u
+  have := finite_patchedSubgroup h v
+  have := projective_patchedSubgroup h v
+  have := finite_patchedSubgroup h (fromBlocksGL (u, v))
+  have := projective_patchedSubgroup h (fromBlocksGL (u, v))
+  rw [patchedClass, patchedClass, patchedClass,
+    FiniteProjectiveModules.classOf_congr (patchedSubgroupProdEquiv π₁ π₂ u v).symm,
+    Fintype.card_sum, FiniteProjectiveModules.classOf_prod]
 
 /-- Relabelling the indices does not change the class of the patched module. -/
 private theorem patchedClass_reindexGL (e : ι ≃ κ) (u : GL ι Q) :
     patchedClass h (e.reindexGL Q u) = patchedClass h u := by
+  have := finite_patchedSubgroup h u
+  have := projective_patchedSubgroup h u
+  have := finite_patchedSubgroup h (e.reindexGL Q u)
+  have := projective_patchedSubgroup h (e.reindexGL Q u)
   rw [patchedClass, patchedClass, Fintype.card_congr e,
-    of_patchedFiniteProjective_congr h (patchedSubgroupReindexEquiv π₁ π₂ e u).symm]
+    FiniteProjectiveModules.classOf_congr (patchedSubgroupReindexEquiv π₁ π₂ e u).symm]
 
 /-- **Additivity of the class of the patched module**: `[M(uv)] - n[D]` is the sum of the classes
 of `M(u)` and `M(v)`. The block matrix `uv ⊕ 1` is `(u ⊕ v)(v ⊕ v⁻¹)` and also
@@ -550,7 +557,9 @@ theorem milnorBoundary_mk (k : ℕ) (u : GL (Fin k) Q) :
     milnorBoundary π₁ π₂ h (Additive.ofMul (AlgebraicK1.mk Q k u)) =
       SplitK0.of.{max u₁ u₂} (patchedFiniteProjective π₁ π₂ h u) -
         k • SplitK0.of.{max u₁ u₂} (finiteProjectiveModulesRegular (π₁.pullback π₂)ᵐᵒᵖ) := by
-  rw [milnorBoundary_mk_eq_patchedClass, patchedClass, Fintype.card_fin]
+  rw [milnorBoundary_mk_eq_patchedClass, patchedClass, FiniteProjectiveModules.classOf_def,
+    Fintype.card_fin]
+  rfl
 
 /-- **The boundary vanishes on the image of `K₁(A₁)`**: for `g ∈ GLₙ(A₁)` the patched module of
 `π₁(g)` is free, `M(π₁(g)) ≅ M(1) ≅ Dⁿ`. -/
