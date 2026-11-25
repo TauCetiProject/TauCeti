@@ -144,17 +144,12 @@ variable {R F : Type*} [CommRing R] [Ring F] [Algebra R F] {v : AbsoluteValue F 
 is bounded by `1` on every element integral over `R`.
 
 This is the absolute-value analogue of the forward implication of Mathlib's
-`Valuation.Integers.isIntegral_iff_v_le_one`, and the proof follows it. -/
+`Valuation.Integers.isIntegral_iff_v_le_one`, and the case of absolute values of
+`IsNonarchimedean.apply_le_one_of_isIntegral_of_isPowMul`. -/
 theorem apply_le_one_of_isIntegral (hv : IsNonarchimedean v)
-    (h : ∀ r : R, v (algebraMap R F r) ≤ 1) {x : F} (hx : IsIntegral R x) : v x ≤ 1 := by
-  by_contra! hx1
-  have : Nontrivial F := ⟨x, 0, by rintro rfl; rw [map_zero] at hx1; linarith⟩
-  obtain ⟨p, hpm, hp⟩ := hx
-  -- Some coefficient `aᵢ` of the equation of integrality has `v x ^ (n - i) ≤ v aᵢ ≤ 1`.
-  obtain ⟨i, hi, hle⟩ := (hpm.map (algebraMap R F)).exists_apply_pow_le_apply_coeff_of_eval_eq_zero
-    v.nonneg (fun a b ↦ (v.map_mul a b).le) (MulHomClass.isPowMul v) hv (by rwa [eval_map])
-  rw [coeff_map] at hle
-  exact (one_lt_pow₀ hx1 (Nat.sub_pos_of_lt hi).ne').not_ge (hle.trans (h _))
+    (h : ∀ r : R, v (algebraMap R F r) ≤ 1) {x : F} (hx : IsIntegral R x) : v x ≤ 1 :=
+  hv.apply_le_one_of_isIntegral_of_isPowMul v.nonneg (fun a b ↦ (v.map_mul a b).le)
+    (MulHomClass.isPowMul v) h hx
 
 /-- A nonarchimedean absolute value is bounded by `1` on every element integral over `ℤ`. -/
 theorem apply_le_one_of_isIntegral_int (hv : IsNonarchimedean v) {x : F} (hx : IsIntegral ℤ x) :
