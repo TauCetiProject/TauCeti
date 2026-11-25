@@ -208,22 +208,6 @@ private theorem exists_twisted_boundary {A B : I × I → F ≃L[ℂ] F}
   · simp [hψR (by simp : (r, ![1, t]).2 0 = 1), hψL (by simp : (r, ![0, t]).2 0 = 0)]
   · simp [hψT (by simp : (r, ![s, 1]).2 1 = 1), hψB (by simp : (r, ![s, 0]).2 1 = 0)]
 
-omit [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
-/-- **Seam transitions.** Let `φ` and `ψ` be continuous frames along maps `f` and `g` that agree
-pointwise. Then `ψ y ∘ A y` is `φ y`, as maps to the total space, for automorphisms `A y` of `F`
-that depend continuously on `y`. -/
-private theorem exists_seam_transition {B : Type*} [TopologicalSpace B] {f g : B → X}
-    (hfg : ∀ y, f y = g y) {φ : ∀ y, F ≃L[ℂ] E (f y)} {ψ : ∀ y, F ≃L[ℂ] E (g y)}
-    (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
-    (hψ : Continuous fun q : B × F ↦ TotalSpace.mk' F (g q.1) (ψ q.1 q.2)) :
-    ∃ A : B → F ≃L[ℂ] F, Continuous (fun y ↦ (A y : F →L[ℂ] F)) ∧
-      ∀ y v, TotalSpace.mk' F (g y) (ψ y (A y v)) = TotalSpace.mk' F (f y) (φ y v) := by
-  refine ⟨fun y ↦ (frameCast (hfg y) (φ y)).trans (ψ y).symm,
-    continuous_trans_symm_of_continuous_frame
-      (hφ.congr fun q ↦ (mk'_frameCast (hfg q.1) (φ q.1) q.2).symm) hψ, fun y v ↦ ?_⟩
-  simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply]
-  exact mk'_frameCast _ _ v
-
 /-- **Torus frames along homotopies.** Let `H : I × I² → X` be a homotopy through maps of the
 torus: each `H (r, ·)` agrees on opposite edges of the square. Then there is a family `T` of frames
 along `H`, continuous over `I × ∂I²`, such that each `T (r, ·)` is a torus frame along
@@ -242,11 +226,13 @@ theorem exists_isTorusFrame_homotopy (H : C(I × (Fin 2 → I), X))
     hΦ.comp ((continuous_fst.fst.prodMk (hk.comp continuous_fst.snd)).prodMk continuous_snd)
   -- The seam transitions: `Φ (r, (1, t)) ∘ A (r, t)` is `Φ (r, (0, t))`, and
   -- `Φ (r, (s, 1)) ∘ B (r, s)` is `Φ (r, (s, 0))`.
-  obtain ⟨A, hAc, hA⟩ := exists_seam_transition (f := fun q : I × I ↦ H (q.1, ![0, q.2]))
+  obtain ⟨A, hAc, hA⟩ := exists_continuous_transition_of_continuous_frame
+    (f := fun q : I × I ↦ H (q.1, ![0, q.2]))
     (g := fun q ↦ H (q.1, ![1, q.2])) (fun q ↦ (hR q.1 q.2).symm)
     (φ := fun q ↦ Φ (q.1, ![0, q.2])) (ψ := fun q ↦ Φ (q.1, ![1, q.2]))
     (hedge (fun t ↦ ![0, t]) (by fun_prop)) (hedge (fun t ↦ ![1, t]) (by fun_prop))
-  obtain ⟨B, hBc, hB⟩ := exists_seam_transition (f := fun q : I × I ↦ H (q.1, ![q.2, 0]))
+  obtain ⟨B, hBc, hB⟩ := exists_continuous_transition_of_continuous_frame
+    (f := fun q : I × I ↦ H (q.1, ![q.2, 0]))
     (g := fun q ↦ H (q.1, ![q.2, 1])) (fun q ↦ (hT q.1 q.2).symm)
     (φ := fun q ↦ Φ (q.1, ![q.2, 0])) (ψ := fun q ↦ Φ (q.1, ![q.2, 1]))
     (hedge (fun s ↦ ![s, 0]) (by fun_prop)) (hedge (fun s ↦ ![s, 1]) (by fun_prop))
@@ -342,7 +328,7 @@ theorem torusClutchingNumber_eq_clutchingNumber {x : X} (p : Ω^ (Fin 2) X x) :
       top_eq_bottom := fun s v ↦ (hτ _ (hTop s) v).trans (hτ _ (hBot s) v).symm }
   rw [hframe.torusClutchingNumber_eq]
   refine (clutchingNumber_eq_relativeClutchingNumber p e hx fun y hy v ↦ ?_).symm
-  rw [show TotalSpace.mk' F (p y) (τ y v) = _ from hτ y hy v]
+  rw [hτ y hy v]
   exact congrArg Prod.snd (e.apply_symm_apply' hx)
 
 /-! ### Bundle maps -/
