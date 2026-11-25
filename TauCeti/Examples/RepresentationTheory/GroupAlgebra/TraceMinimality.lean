@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.Basic
-public import TauCeti.RepresentationTheory.GroupAlgebra.RelativeTrace
+public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
 
 /-!
 # Trace minimality on `𝔽₂[S₃]`
@@ -27,24 +26,10 @@ public section
 
 namespace TauCeti.GroupAlgebraTraceMinimalityExamples
 
-open _root_.MonoidAlgebra
-
-/-- The symmetric group `S₃`. -/
-abbrev S₃ : Type := Equiv.Perm (Fin 3)
-
-/-- The `3`-cycle `ρ = (0 1 2)` of `S₃`. -/
-abbrev ρ : S₃ := finRotate 3
+open _root_.MonoidAlgebra TauCeti.GroupAlgebraBlockExamples
 
 /-- The transposition `t = (0 1)` of `S₃`. -/
 abbrev t : S₃ := Equiv.swap 0 1
-
-/-- The coefficient function of `ρ + ρ²` is the indicator of the `3`-cycles. -/
-theorem coeff_of_ρ_add_of_ρ_sq (c : S₃) :
-    (of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2)).coeff c =
-      if c ≠ 1 ∧ c * c * c = 1 then 1 else 0 := by
-  revert c
-  simp only [coeff_add, Finsupp.add_apply, of_apply, coeff_single, Finsupp.single_apply]
-  decide +kernel
 
 /-- The number of `g` with `g⁻¹ c g = h`, read in `𝔽₂`: `|C_G(c)|` if `h` is conjugate to `c`,
 which is odd only for the `3`-cycles. -/
@@ -101,7 +86,7 @@ theorem relTrace_bot_top_eq (a : conjInvariants (ZMod 2) (⊥ : Subgroup S₃)) 
   refine ext (Finsupp.ext fun c => ?_)
   rw [coeff_sum, Finsupp.finsetSum_apply]
   simp only [coeff_conjRepresentation, coeff_smul, Finsupp.smul_apply, smul_eq_mul,
-    coeff_of_ρ_add_of_ρ_sq]
+    ← coe_blockTwoS₃, coeff_blockTwoS₃]
   rw [sum_conj_eq, mul_comm]
 
 /-- An element of `𝔽₂[S₃]`, as an element of `𝔽₂[S₃]^1`. -/
@@ -120,18 +105,10 @@ theorem relTrace_bot_top_of_ρ :
   rw [show (toBot (of (ZMod 2) S₃ ρ) : MonoidAlgebra (ZMod 2) S₃) = of (ZMod 2) S₃ ρ from rfl, h,
     one_smul]
 
-/-- `e₀ = 1 + ρ + ρ²` is central in `𝔽₂[S₃]`. -/
-theorem one_add_of_ρ_add_of_ρ_sq_mem_conjInvariants_top :
-    1 + of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) ∈ conjInvariants (ZMod 2) (⊤ : Subgroup S₃) := by
-  rw [mem_conjInvariants_iff_coeff]
-  simp only [Subgroup.mem_top, forall_const, coeff_add, Finsupp.add_apply, of_apply,
-    one_def, coeff_single, Finsupp.single_apply]
-  decide +kernel
-
 /-- The principal block `e₀ = 1 + ρ + ρ²` is not a trace from the trivial subgroup: every
 `Tr_1^{S₃}(a)` has coefficient `0` at `1`. -/
 theorem not_mem_relTraceIdeal_bot_one_add_of_ρ_add_of_ρ_sq :
-    (⟨_, one_add_of_ρ_add_of_ρ_sq_mem_conjInvariants_top⟩ :
+    (⟨_, conjInvariants_top (R := ZMod 2) (G := S₃) ▸ one_add_of_ρ_add_of_ρ_sq_mem_center⟩ :
       conjInvariants (ZMod 2) (⊤ : Subgroup S₃)) ∉
         relTraceIdeal (ZMod 2) (bot_le : (⊥ : Subgroup S₃) ≤ ⊤) := by
   intro hmem
@@ -139,7 +116,8 @@ theorem not_mem_relTraceIdeal_bot_one_add_of_ρ_add_of_ρ_sq :
   have h := congrArg (fun x : conjInvariants (ZMod 2) (⊤ : Subgroup S₃) =>
     (x : MonoidAlgebra (ZMod 2) S₃).coeff 1) ha
   simp only [relTrace_bot_top_eq, coeff_smul, Finsupp.smul_apply, smul_eq_mul,
-    coeff_of_ρ_add_of_ρ_sq, ne_eq, not_true_eq_false, false_and, ite_false, mul_zero] at h
+    ← coe_blockTwoS₃, coeff_blockTwoS₃, ne_eq, not_true_eq_false, false_and, ite_false,
+    mul_zero] at h
   revert h
   simp only [coeff_add, Finsupp.add_apply, of_apply, one_def, coeff_single, Finsupp.single_apply]
   decide +kernel
@@ -147,10 +125,14 @@ theorem not_mem_relTraceIdeal_bot_one_add_of_ρ_add_of_ρ_sq :
 /-- `Tr_{⟨t⟩}^{S₃}(e₀) = 3 e₀ = e₀`: the principal block is a trace from a subgroup of order `2`. -/
 theorem relTrace_zpowers_t_top_one_add_of_ρ_add_of_ρ_sq :
     (relTrace (ZMod 2) (Subgroup.zpowers t) ⊤
-        ⟨_, conjInvariants_anti le_top one_add_of_ρ_add_of_ρ_sq_mem_conjInvariants_top⟩ :
+        ⟨_, conjInvariants_anti le_top
+          (conjInvariants_top (R := ZMod 2) (G := S₃) ▸ one_add_of_ρ_add_of_ρ_sq_mem_center)⟩ :
         MonoidAlgebra (ZMod 2) S₃) =
       1 + of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) := by
-  rw [relTrace_apply_of_mem one_add_of_ρ_add_of_ρ_sq_mem_conjInvariants_top]
+  have he₀ : 1 + of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) ∈
+      conjInvariants (ZMod 2) (⊤ : Subgroup S₃) :=
+    conjInvariants_top (R := ZMod 2) (G := S₃) ▸ one_add_of_ρ_add_of_ρ_sq_mem_center
+  rw [relTrace_apply_of_mem he₀]
   have hindex : ((Subgroup.zpowers t).subgroupOf ⊤).index = 3 := by
     have hcard : Nat.card (Subgroup.zpowers t) = 2 := by
       rw [Nat.card_zpowers]
