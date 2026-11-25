@@ -23,8 +23,8 @@ near an orbit segment of one of them move its initial point to the same place. I
 time maps are the identity near every point outside the support of the Hamiltonian, and they
 translate a point by `t • c` when the vector field is the constant `c` along the segment of that
 translation. A bound `M` on the vector field bounds the displacement of the time-`t` map by
-`M |t|`, and a Lipschitz constant `K` of the vector field bounds the distance of the derivative
-of the time-`t` map from the identity by `exp (K |t|) - 1`. For a `C²`
+`M |t|`, and for a `C²` Hamiltonian a Lipschitz constant `K` of the vector field bounds the
+distance of the derivative of the time-`t` map from the identity by `exp (K |t|) - 1`. For a `C²`
 Hamiltonian, every time map preserves the symplectic form on tangent vectors: differentiating the
 pairing of two variations and using symmetry of the Hessian gives zero. A linear
 symplectomorphism `e` conjugates the flow of `G ∘ e` to the flow of `G`

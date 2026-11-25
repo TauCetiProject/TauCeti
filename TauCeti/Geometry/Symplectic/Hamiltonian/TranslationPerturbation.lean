@@ -118,6 +118,32 @@ private theorem hamiltonianFlow_eventuallyEq_add_of_forall {H : V → ℝ} {L : 
     abs_of_nonneg hτ.1]
   exact (mul_le_of_le_one_left (norm_nonneg c) hτ.2).trans_lt hc
 
+/-- The Hamiltonian `w ↦ ω(c, F(w))` has vector field `B⁻¹ (ω(c, ·) ∘ dF)`, where `B` is `ω` seen
+as a continuous map from `V` to its dual. -/
+private theorem hamiltonianVectorField_comp_apply {F : V → V} {z : V}
+    (hF : DifferentiableAt ℝ F z) (c : V) :
+    ω.hamiltonianVectorField (fun w ↦ ω.toBilinForm.toContinuousBilinearMap c (F w)) z =
+      ω.toBilinForm.toContinuousBilinearMap.inverse
+        ((ω.toBilinForm.toContinuousBilinearMap c).comp (fderiv ℝ F z)) := by
+  set B := ω.toBilinForm.toContinuousBilinearMap
+  have hd : HasFDerivAt (fun w ↦ B c (F w)) ((B c).comp (fderiv ℝ F z)) z :=
+    (B c).hasFDerivAt.comp z hF.hasFDerivAt
+  rw [hamiltonianVectorField_def, hd.fderiv]
+
+/-- The operator-norm estimate for the vector field of `hamiltonianVectorField_comp_apply`, with an
+arbitrary operator `T` in place of `dF`. -/
+private theorem norm_inverse_comp_le (c : V) (T : V →L[ℝ] V) :
+    ‖ω.toBilinForm.toContinuousBilinearMap.inverse
+        ((ω.toBilinForm.toContinuousBilinearMap c).comp T)‖ ≤
+      ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ * ‖ω.toBilinForm.toContinuousBilinearMap‖ *
+        (‖c‖ * ‖T‖) := by
+  set B := ω.toBilinForm.toContinuousBilinearMap
+  rw [mul_assoc]
+  refine (B.inverse.le_opNorm _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
+  calc ‖(B c).comp T‖ ≤ ‖B c‖ * ‖T‖ := (B c).opNorm_comp_le _
+    _ ≤ ‖B‖ * ‖c‖ * ‖T‖ := by gcongr; exact B.le_opNorm c
+    _ = ‖B‖ * (‖c‖ * ‖T‖) := mul_assoc _ _ _
+
 /-- The Hamiltonian `w ↦ ω(c, F(w))` has vector field bounded by a constant, depending only on
 `ω`, times `‖c‖ ‖dF‖`. -/
 private theorem norm_hamiltonianVectorField_comp_le {F : V → V} {z : V}
@@ -125,14 +151,8 @@ private theorem norm_hamiltonianVectorField_comp_le {F : V → V} {z : V}
     ‖ω.hamiltonianVectorField (fun w ↦ ω.toBilinForm.toContinuousBilinearMap c (F w)) z‖ ≤
       ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ * ‖ω.toBilinForm.toContinuousBilinearMap‖ *
         (‖c‖ * ‖fderiv ℝ F z‖) := by
-  set B := ω.toBilinForm.toContinuousBilinearMap
-  have hd : HasFDerivAt (fun w ↦ B c (F w)) ((B c).comp (fderiv ℝ F z)) z :=
-    (B c).hasFDerivAt.comp z hF.hasFDerivAt
-  rw [hamiltonianVectorField_def, hd.fderiv, mul_assoc]
-  refine (B.inverse.le_opNorm _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-  calc ‖(B c).comp (fderiv ℝ F z)‖ ≤ ‖B c‖ * ‖fderiv ℝ F z‖ := (B c).opNorm_comp_le _
-    _ ≤ ‖B‖ * ‖c‖ * ‖fderiv ℝ F z‖ := by gcongr; exact B.le_opNorm c
-    _ = ‖B‖ * (‖c‖ * ‖fderiv ℝ F z‖) := mul_assoc _ _ _
+  rw [hamiltonianVectorField_comp_apply ω hF]
+  exact norm_inverse_comp_le ω c _
 
 /-- The Hamiltonian `w ↦ ω(c, F(w))` has a Lipschitz vector field, with constant a constant
 depending only on `ω`, times `‖c‖` and a Lipschitz constant of `dF`. -/
@@ -141,26 +161,14 @@ private theorem lipschitzWith_hamiltonianVectorField_comp {F : V → V} (hF : Di
     LipschitzWith (‖ω.toBilinForm.toContinuousBilinearMap.inverse‖₊ *
         ‖ω.toBilinForm.toContinuousBilinearMap‖₊ * ‖c‖₊ * M)
       (ω.hamiltonianVectorField fun w ↦ ω.toBilinForm.toContinuousBilinearMap c (F w)) := by
-  set B := ω.toBilinForm.toContinuousBilinearMap
-  have hX (z : V) : ω.hamiltonianVectorField (fun w ↦ B c (F w)) z =
-      B.inverse ((B c).comp (fderiv ℝ F z)) := by
-    have hd : HasFDerivAt (fun w ↦ B c (F w)) ((B c).comp (fderiv ℝ F z)) z :=
-      (B c).hasFDerivAt.comp z (hF z).hasFDerivAt
-    rw [hamiltonianVectorField_def, hd.fderiv]
   refine LipschitzWith.of_dist_le_mul fun z z' ↦ ?_
-  rw [hX, hX, dist_eq_norm, ← map_sub, ← ContinuousLinearMap.comp_sub]
-  calc ‖B.inverse ((B c).comp (fderiv ℝ F z - fderiv ℝ F z'))‖
-      ≤ ‖B.inverse‖ * (‖B c‖ * ‖fderiv ℝ F z - fderiv ℝ F z'‖) :=
-        (B.inverse.le_opNorm _).trans
-          (mul_le_mul_of_nonneg_left ((B c).opNorm_comp_le _) (norm_nonneg _))
-    _ ≤ ‖B.inverse‖ * (‖B‖ * ‖c‖ * (M * dist z z')) := by
-        gcongr
-        · exact B.le_opNorm c
-        · rw [← dist_eq_norm]
-          exact hM.dist_le_mul z z'
-    _ = _ := by
-        push_cast
-        ring
+  rw [hamiltonianVectorField_comp_apply ω (hF z), hamiltonianVectorField_comp_apply ω (hF z'),
+    dist_eq_norm, ← map_sub, ← ContinuousLinearMap.comp_sub]
+  refine (norm_inverse_comp_le ω c _).trans ?_
+  rw [← dist_eq_norm]
+  grw [hM.dist_le_mul z z']
+  push_cast
+  exact le_of_eq (by ring)
 
 /-- **Localized Hamiltonian translations.** Let `K` be a compact subset of an open set `W` of a
 finite-dimensional symplectic vector space. There are `δ > 0` and `C` such that every vector `c`

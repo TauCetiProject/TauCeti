@@ -55,8 +55,8 @@ derivatives bounds the displacement of the time-`t` map by `|t| M √R`
 constants of the fields of the individual twists bounds the distance of its derivative from the
 identity by `exp (L |t|) - 1`
 (`TauCeti.norm_fderiv_hamiltonianFlow_sum_radialHamiltonian_sub_id_le`). Scaling the profile by
-`c` scales the field by `c` (`TauCeti.radialHamiltonian_const_mul`), so twists by small angles are
-`C¹`-small.
+`c` scales the Hamiltonian, hence its vector field, by `c` (`TauCeti.radialHamiltonian_const_mul`),
+so twists by small angles are `C¹`-small.
 
 For every `R > 0` and angle `θ`, `TauCeti.exists_diffeomorph_eventuallyEq_rotation` gives a smooth
 diffeomorphism of `ℂ` preserving the area form and the norm, equal to the rotation by `θ` near `0`

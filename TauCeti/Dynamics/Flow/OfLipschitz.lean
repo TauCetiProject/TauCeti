@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.Flow
 public import TauCeti.Analysis.ODE.InitialCondition
 import Mathlib.Analysis.ODE.ExistUnique
+import TauCeti.Analysis.ODE.Gronwall.TwoSided
 
 /-!
 # The flow of a globally Lipschitz vector field
@@ -231,33 +232,6 @@ theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ
   simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
     norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz hv t) (x₀ := x)
 
-/-- A function vanishing at `0` whose derivative at `s` is bounded by `K exp (K |s|) c` is
-bounded at `t` by `(exp (K |t|) - 1) c`, the integral of that bound from `0` to `t`. -/
-private theorem norm_le_exp_sub_one_mul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {f f' : ℝ → F} {L c : ℝ} (hf : ∀ s, HasDerivAt f (f' s) s) (hf0 : f 0 = 0)
-    (hf' : ∀ s, ‖f' s‖ ≤ L * Real.exp (L * |s|) * c) (t : ℝ) :
-    ‖f t‖ ≤ (Real.exp (L * |t|) - 1) * c := by
-  -- Forward in time this is the comparison with the boundary `s ↦ (exp (L s) - 1) c`.
-  have hfwd {g g' : ℝ → F} (hg : ∀ s, HasDerivAt g (g' s) s) (hg0 : g 0 = 0)
-      (hg' : ∀ s, 0 ≤ s → ‖g' s‖ ≤ L * Real.exp (L * s) * c) {t : ℝ} (ht : 0 ≤ t) :
-      ‖g t‖ ≤ (Real.exp (L * t) - 1) * c := by
-    have hB (s : ℝ) : HasDerivAt (fun s ↦ (Real.exp (L * s) - 1) * c)
-        (L * Real.exp (L * s) * c) s := by
-      convert ((((hasDerivAt_id' (x := s)).const_mul L).exp).sub_const 1).mul_const c using 1
-      ring
-    exact image_norm_le_of_norm_deriv_right_le_deriv_boundary
-      (fun s _ ↦ (hg s).continuousAt.continuousWithinAt) (fun s _ ↦ (hg s).hasDerivWithinAt)
-      (by simp [hg0]) hB (fun s hs ↦ hg' s hs.1) ⟨ht, le_rfl⟩
-  rcases le_total 0 t with ht | ht
-  · rw [abs_of_nonneg ht]
-    exact hfwd hf hf0 (fun s hs ↦ by simpa [abs_of_nonneg hs] using hf' s) ht
-  · -- Backward in time, apply the forward bound to `s ↦ f (-s)`.
-    have h := hfwd (g := fun s ↦ f (-s)) (g' := fun s ↦ -f' (-s))
-      (fun s ↦ by simpa [Function.comp_def] using (hf (-s)).scomp s (hasDerivAt_neg s))
-      (by simpa using hf0)
-      (fun s hs ↦ by simpa [norm_neg, abs_of_nonneg hs] using hf' (-s)) (neg_nonneg.2 ht)
-    rwa [neg_neg, ← abs_of_nonpos ht] at h
-
 /-- **The time-`t` map of the flow is close to the identity.** For a `K`-Lipschitz vector field,
 the displacement `x ↦ φₜ x - x` of the time-`t` map is `(exp (K |t|) - 1)`-Lipschitz. In
 particular it tends to a constant map in the Lipschitz sense as `K |t| → 0`. -/
@@ -266,20 +240,24 @@ theorem lipschitzWith_flowOfLipschitz_sub_id (hv : LipschitzWith K v) (t : ℝ) 
   refine LipschitzWith.of_dist_le_mul fun a b ↦ ?_
   rw [Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp (by positivity))), dist_eq_norm,
     dist_eq_norm, mul_comm]
-  -- The difference of the two displacements has derivative `v (φₛ a) - v (φₛ b)`, bounded through
-  -- the Lipschitz bound `exp (K |s|)` on the flow.
+  -- The difference `f s` of the two displacements has derivative `v (φₛ a) - v (φₛ b)`, bounded by
+  -- `K ‖f s‖ + K ‖a - b‖` since `φₛ a - φₛ b = f s + (a - b)`; then apply Grönwall from time `0`.
+  set f : ℝ → E := fun s ↦ (flowOfLipschitz v hv s a - a) - (flowOfLipschitz v hv s b - b)
   have hbound (s : ℝ) : ‖v (flowOfLipschitz v hv s a) - v (flowOfLipschitz v hv s b)‖ ≤
-      K * Real.exp (K * |s|) * ‖a - b‖ := by
-    rw [← dist_eq_norm, mul_assoc]
+      K * ‖f s‖ + K * ‖a - b‖ := by
+    rw [← dist_eq_norm, ← mul_add]
     refine (hv.dist_le_mul _ _).trans (mul_le_mul_of_nonneg_left ?_ K.coe_nonneg)
-    rw [flowOfLipschitz_apply, flowOfLipschitz_apply, mul_comm, ← dist_eq_norm]
-    exact ODE.dist_globalSolution_le v hv a b s
-  have h := norm_le_exp_sub_one_mul (f := fun s ↦
-      (flowOfLipschitz v hv s a - a) - (flowOfLipschitz v hv s b - b))
-    (fun s ↦ by
-      exact ((hasDerivAt_flowOfLipschitz hv a s).sub_const a).fun_sub
-        ((hasDerivAt_flowOfLipschitz hv b s).sub_const b)) (by simp) hbound t
-  simpa [mul_comm] using h
+    rw [dist_eq_norm]
+    exact (congrArg norm (by simp [f]; abel)).trans_le (norm_add_le (f s) (a - b))
+  have h := norm_le_gronwallBound_of_norm_derivWithin_le (f := f) (t₀ := 0) (δ := 0)
+    (a := min 0 t) (b := max 0 t) ⟨min_le_left _ _, le_max_left _ _⟩
+    (fun s _ ↦ (((hasDerivAt_flowOfLipschitz hv a s).sub_const a).fun_sub
+      ((hasDerivAt_flowOfLipschitz hv b s).sub_const b)).hasDerivWithinAt)
+    (by simp [f]) (fun s _ ↦ hbound s) t ⟨min_le_right _ _, le_max_right _ _⟩
+  refine (h.trans_eq (by rw [sub_zero])).trans_eq ?_
+  by_cases hK : (K : ℝ) = 0
+  · simp [hK, gronwallBound_K0]
+  · simp only [gronwallBound_of_K_ne_0 hK, zero_mul, zero_add, mul_div_cancel_left₀ _ hK]
 
 /-- **The derivative of the time-`t` map is close to the identity.** For a `K`-Lipschitz vector
 field, wherever the time-`t` map of the flow is differentiable (everywhere for a `C¹` field), its
