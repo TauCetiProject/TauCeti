@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Distribution.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import Mathlib.LinearAlgebra.Orientation
+public import TauCeti.Topology.VectorBundle.Orientation.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Nonvanishing
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Orientation.Basis
@@ -48,10 +49,11 @@ defines the coorientation `α.coorientation` in which `α` is positive
 (`TauCeti.SmoothForm.isCoorientation_coorientation`). If `β = c α` at `x`, then `β` gives the same
 coorientation at `x` exactly when `c > 0`, and the opposite one exactly when `c < 0`
 (`TauCeti.SmoothForm.coorientation_eq_iff_pos`, `TauCeti.SmoothForm.coorientation_eq_neg_iff_neg`).
-Coorientations are the orientations of the line bundle `D⁰`, so on a connected manifold two of them
-are equal or opposite; a coorientable hyperplane field on a nonempty connected manifold therefore
-has exactly two coorientations (`TauCeti.IsCoorientation.ncard_setOf_isCoorientation`). On a
-Hausdorff σ-compact manifold every coorientation is that of a global defining form
+Coorientations are the orientations of the line bundle `D⁰`
+(`TauCeti.IsCoorientation.iff_exists_vectorBundleOrientation`), so on a connected manifold two of
+them are equal or opposite; a coorientable hyperplane field on a nonempty connected manifold
+therefore has exactly two coorientations (`TauCeti.IsCoorientation.ncard_setOf_isCoorientation`).
+On a Hausdorff σ-compact manifold every coorientation is that of a global defining form
 (`TauCeti.IsCoorientation.exists_coorientation_eq`), so `D` is coorientable exactly when it is the
 kernel of a global nowhere-zero one-form
 (`TauCeti.IsContMDiffDistribution.exists_isCoorientation_iff`). For a contact structure this is
@@ -81,6 +83,8 @@ coorientable; see `TauCeti.Geometry.Contact.Coorientation`.
 * `TauCeti.SmoothForm.coorientation_eq_iff_pos`, `TauCeti.SmoothForm.coorientation_eq_neg_iff_neg`,
   `TauCeti.SmoothForm.coorientation_neg`: rescaling a defining form by `c` keeps the coorientation
   where `c > 0` and reverses it where `c < 0`.
+* `TauCeti.IsCoorientation.iff_exists_vectorBundleOrientation`: coorientations are the
+  orientations of the annihilator line bundle.
 * `TauCeti.IsCoorientation.eq_or_eq_neg`, `TauCeti.IsCoorientation.setOf_isCoorientation_eq`,
   `TauCeti.IsCoorientation.ncard_setOf_isCoorientation`: on a connected manifold a coorientable
   hyperplane field has exactly the two coorientations `o` and `-o`.
@@ -181,10 +185,10 @@ theorem exists_smoothForm_ker_eq_iff_exists_continuous (hD : IsContMDiffDistribu
   constructor
   · rintro ⟨α, hα⟩
     refine ⟨fun x ↦ SmoothForm.degreeOneEquiv α x,
-      (SmoothForm.degreeOneEquiv α).contMDiff.continuous, fun x ↦ ⟨fun h ↦ (hα x).1 ?_, ?_⟩⟩
-    · exact SmoothForm.degreeOneEquiv_coe_eq_zero_iff.1 (congrArg ContinuousLinearMap.toLinearMap h)
-    · refine CotangentBundle.mem_annihilatorSpace_iff.2 fun v hv ↦ ?_
-      simpa [← (hα x).2] using hv
+      (SmoothForm.degreeOneEquiv α).contMDiff.continuous,
+      fun x ↦ ⟨SmoothForm.degreeOneEquiv_ne_zero (hα x).1, ?_⟩⟩
+    refine CotangentBundle.mem_annihilatorSpace_iff.2 fun v hv ↦ ?_
+    simpa [← (hα x).2] using hv
   · rintro ⟨σ, hσ, hσD⟩
     obtain ⟨α, hα⟩ := hD.exists_smoothForm_pos_smul hk hσ (fun x ↦ (hσD x).1) fun x ↦ (hσD x).2
     exact ⟨α, fun x ↦ (hα x).1⟩
@@ -263,10 +267,6 @@ private theorem degreeOneEquiv_mem_annihilatorSpace (h : RoughForm.ker α.val x 
     rw [← h, RoughForm.ker_eq_ker_eval, SmoothForm.eval_val] at hv
     exact LinearMap.mem_ker.1 hv
 
-/-- The covector of a one-form at `x` is nonzero when the form does not vanish at `x`. -/
-private theorem degreeOneEquiv_ne_zero (h : α.val x ≠ 0) : degreeOneEquiv α x ≠ 0 := fun h' ↦
-  h (degreeOneEquiv_coe_eq_zero_iff.1 (congrArg ContinuousLinearMap.toLinearMap h'))
-
 /-- The annihilator of the kernel of a one-form not vanishing at `x` is a line. -/
 private theorem finrank_annihilatorSpace_eq_one (h : α.val x ≠ 0)
     (hker : RoughForm.ker α.val x = D x) : finrank ℝ (annihilatorSpace I D x) = 1 := by
@@ -274,14 +274,26 @@ private theorem finrank_annihilatorSpace_eq_one (h : α.val x ≠ 0)
     (by rw [← hker, RoughForm.ker_eq_ker_eval, SmoothForm.eval_val])]
   exact finrank_span_singleton (degreeOneEquiv_ne_zero h)
 
+/-- The one-vector basis `(α_x)` of the annihilator line `D⁰_x`, for a one-form `α` not vanishing
+at `x` with kernel `D x`. -/
+private def coorientationBasis (hα : α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) :
+    Basis (Fin 1) ℝ (annihilatorSpace I D x) :=
+  FiniteDimensional.basisSingleton (Fin 1) (finrank_annihilatorSpace_eq_one hα.1 hα.2)
+    ⟨degreeOneEquiv α x, degreeOneEquiv_mem_annihilatorSpace hα.2⟩
+    fun h ↦ degreeOneEquiv_ne_zero hα.1 (congrArg Subtype.val h)
+
+@[simp]
+private theorem coorientationBasis_apply (hα : α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x)
+    (i : Fin 1) :
+    coorientationBasis hα i = ⟨degreeOneEquiv α x, degreeOneEquiv_mem_annihilatorSpace hα.2⟩ :=
+  FiniteDimensional.basisSingleton_apply ..
+
 /-- The **coorientation of a defining form**. For a one-form `α` vanishing nowhere with kernel
 `D`, the orientation at `x` of the annihilator line `D⁰_x` in which `α_x` is positive: that of the
 one-vector basis `(α_x)`. -/
 def coorientation (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x) (x : M) :
     Orientation ℝ (annihilatorSpace I D x) (Fin 1) :=
-  (FiniteDimensional.basisSingleton (Fin 1) (finrank_annihilatorSpace_eq_one (hα x).1 (hα x).2)
-    ⟨degreeOneEquiv α x, degreeOneEquiv_mem_annihilatorSpace (hα x).2⟩
-    fun h ↦ degreeOneEquiv_ne_zero (hα x).1 (congrArg Subtype.val h)).orientation
+  (coorientationBasis (hα x)).orientation
 
 /-- A one-vector basis of the annihilator line has the coorientation of `α` exactly when its vector
 lies on the ray of `α_x`. -/
@@ -289,7 +301,7 @@ theorem orientation_eq_coorientation_iff (hα : ∀ x, α.val x ≠ 0 ∧ RoughF
     (b : Basis (Fin 1) ℝ (annihilatorSpace I D x)) :
     b.orientation = α.coorientation hα x ↔
       SameRay ℝ (b 0 : TangentSpace I x →L[ℝ] ℝ) (degreeOneEquiv α x) := by
-  rw [coorientation, Basis.orientation_eq_iff_sameRay, FiniteDimensional.basisSingleton_apply,
+  rw [coorientation, Basis.orientation_eq_iff_sameRay, coorientationBasis_apply,
     ← (annihilatorSpace I D x).injective_subtype.sameRay_map_iff]
   simp only [Submodule.subtype_apply, Fin.default_eq_zero]
 
@@ -300,12 +312,7 @@ theorem coorientation_eq_coorientation_iff (hα : ∀ x, α.val x ≠ 0 ∧ Roug
     α.coorientation hα x = β.coorientation hβ x ↔
       SameRay ℝ (degreeOneEquiv α x) (degreeOneEquiv β x) := by
   rw [coorientation, orientation_eq_coorientation_iff]
-  simp only [FiniteDimensional.basisSingleton_apply]
-
-/-- If `β = c α` at `x`, the covectors of `β` and `α` at `x` differ by the factor `c`. -/
-private theorem degreeOneEquiv_eq_smul {c : ℝ} (h : β.val x = c • α.val x) :
-    degreeOneEquiv β x = c • degreeOneEquiv α x :=
-  ContinuousLinearMap.ext fun v ↦ by simp [h]
+  simp only [coorientationBasis_apply]
 
 /-- **Rescaling by a positive function keeps the coorientation.** If `β = c α` at `x`, the two
 defining forms give the same coorientation at `x` exactly when `c > 0`. -/
@@ -316,41 +323,31 @@ theorem coorientation_eq_iff_pos (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm.ker 
   rw [coorientation_eq_coorientation_iff, degreeOneEquiv_eq_smul h,
     sameRay_smul_left_iff_of_ne (degreeOneEquiv_ne_zero (hα x).1) hc]
 
+/-- `-α` does not vanish at `x` and has kernel `D x` there exactly when `α` does. -/
+theorem neg_val_ne_zero_and_ker_eq_iff :
+    (-α).val x ≠ 0 ∧ RoughForm.ker (-α).val x = D x ↔
+      α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x := by
+  simp
+
 /-- The coorientation of `-α` is opposite to that of `α`. -/
 @[simp]
-theorem coorientation_neg (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x)
-    (hα' : ∀ x, (-α).val x ≠ 0 ∧ RoughForm.ker (-α).val x = D x) :
-    (-α).coorientation hα' = -α.coorientation hα := by
+theorem coorientation_neg (hα : ∀ x, (-α).val x ≠ 0 ∧ RoughForm.ker (-α).val x = D x) :
+    (-α).coorientation hα =
+      -α.coorientation fun x ↦ neg_val_ne_zero_and_ker_eq_iff.1 (hα x) := by
   funext x
-  -- Compare both sides with the basis `(α_x)` of the annihilator line and its negative.
-  let b := FiniteDimensional.basisSingleton (Fin 1)
-    (finrank_annihilatorSpace_eq_one (hα x).1 (hα x).2)
-    ⟨degreeOneEquiv α x, degreeOneEquiv_mem_annihilatorSpace (hα x).2⟩
-    fun h ↦ degreeOneEquiv_ne_zero (hα x).1 (congrArg Subtype.val h)
-  have hb : b.orientation = α.coorientation hα x :=
-    (orientation_eq_coorientation_iff hα b).2 (by
-      simp only [b, FiniteDimensional.basisSingleton_apply]
-      exact SameRay.rfl)
-  have hb' : (b.unitsSMul (Function.update 1 0 (-1))).orientation = (-α).coorientation hα' x :=
-    (orientation_eq_coorientation_iff hα' _).2 (by
-      rw [Basis.unitsSMul_apply, Function.update_self,
-        degreeOneEquiv_eq_smul (c := -1) (α := α) (β := -α) (by simp)]
-      simp only [b, FiniteDimensional.basisSingleton_apply, Units.neg_smul, one_smul,
-        Submodule.coe_neg, neg_one_smul]
-      exact SameRay.rfl)
-  rw [Pi.neg_apply, ← hb', Basis.orientation_neg_single, hb]
+  rw [Pi.neg_apply, coorientation, coorientation, coorientationBasis, coorientationBasis]
+  convert orientation_basisSingleton_neg _ _ using 3
+  · exact Subtype.ext (by simp)
+  · exact neg_ne_zero.2 fun h ↦ degreeOneEquiv_ne_zero
+      (neg_val_ne_zero_and_ker_eq_iff.1 (hα x)).1 (congrArg Subtype.val h)
 
 /-- **Rescaling by a negative function reverses the coorientation.** If `β = c α` at `x`, the
 defining form `β` gives at `x` the coorientation opposite to that of `α` exactly when `c < 0`. -/
 theorem coorientation_eq_neg_iff_neg (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x)
     (hβ : ∀ x, β.val x ≠ 0 ∧ RoughForm.ker β.val x = D x) {c : ℝ} (h : β.val x = c • α.val x) :
     β.coorientation hβ x = -α.coorientation hα x ↔ c < 0 := by
-  have hα' (y : M) : (-α).val y ≠ 0 ∧ RoughForm.ker (-α).val y = D y := by
-    refine ⟨fun h' ↦ (hα y).1 (neg_eq_zero.1 (by simpa using h')), ?_⟩
-    ext v
-    simp only [RoughForm.mem_ker, ← (hα y).2]
-    simp
-  have hneg := congrFun (coorientation_neg hα hα') x
+  have hα' (y : M) := neg_val_ne_zero_and_ker_eq_iff.2 (hα y)
+  have hneg := congrFun (coorientation_neg hα') x
   rw [Pi.neg_apply] at hneg
   rw [← hneg, coorientation_eq_iff_pos hα' hβ (c := -c) (by simp [h]), Left.neg_pos_iff]
 
@@ -360,11 +357,7 @@ theorem isCoorientation_coorientation (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm
   ⟨univ, Filter.univ_mem,
     fun y ↦ ⟨degreeOneEquiv α y, degreeOneEquiv_mem_annihilatorSpace (hα y).2⟩,
     (degreeOneEquiv α).contMDiff.continuous.continuousOn, fun y _ ↦
-      ⟨FiniteDimensional.basisSingleton (Fin 1) (finrank_annihilatorSpace_eq_one (hα y).1 (hα y).2)
-        _ fun h ↦ degreeOneEquiv_ne_zero (hα y).1 (congrArg Subtype.val h),
-        FiniteDimensional.basisSingleton_apply .., (orientation_eq_coorientation_iff hα _).2 (by
-          simp only [FiniteDimensional.basisSingleton_apply]
-          exact SameRay.rfl)⟩⟩
+      ⟨coorientationBasis (hα y), coorientationBasis_apply .., rfl⟩⟩
 
 end SmoothForm
 
@@ -382,20 +375,16 @@ theorem neg (ho : IsCoorientation I D o) : IsCoorientation I D (-o) := fun x ↦
   · rw [Basis.unitsSMul_apply, Function.update_self, hb, Units.neg_smul, one_smul, Pi.neg_apply]
   · rw [Basis.orientation_neg_single, hbo, Pi.neg_apply]
 
-/-- A family of fibre orientations of the annihilator line bundle is a coorientation exactly when it
-is an orientation of that bundle. -/
-private theorem iff_exists_vectorBundleOrientation [FiniteDimensional ℝ E]
-    (hD : IsContMDiffDistribution I ∞ k D)
-    (hk : k + 1 = finrank ℝ E) :
-    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
-    letI := hD.annihilatorFiberBundle hk
-    letI := hD.annihilatorVectorBundle hk
+/-- **Coorientations are the orientations of the annihilator line bundle.** For any structure of a
+real line bundle on the annihilators `D⁰` of `D` with the topology of a subspace of `T*M`, such as
+`TauCeti.IsContMDiffDistribution.annihilatorFiberBundle`, a family of fibre orientations is a
+coorientation of `D` exactly when it is an orientation of that bundle. -/
+theorem iff_exists_vectorBundleOrientation
+    [FiberBundle (Fin 1 → ℝ) fun x ↦ annihilatorSpace I D x]
+    [VectorBundle ℝ (Fin 1 → ℝ) fun x ↦ annihilatorSpace I D x] :
     IsCoorientation I D o ↔
       ∃ o' : VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I D x) (Fin 1),
         ⇑o' = o := by
-  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
-  let := hD.annihilatorFiberBundle hk
-  let := hD.annihilatorVectorBundle hk
   have hι : Fintype.card (Fin 1) = finrank ℝ (Fin 1 → ℝ) := by simp
   -- Continuity of sections of `D⁰` is continuity in `T*M`.
   have hcont {U : Set M} {σ : Π y : M, annihilatorSpace I D y} :
@@ -423,8 +412,8 @@ theorem eq_or_eq_neg [PreconnectedSpace M] (hD : IsContMDiffDistribution I ∞ k
   have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   let := hD.annihilatorFiberBundle hk
   let := hD.annihilatorVectorBundle hk
-  obtain ⟨O, rfl⟩ := (iff_exists_vectorBundleOrientation hD hk).1 ho
-  obtain ⟨O', rfl⟩ := (iff_exists_vectorBundleOrientation hD hk).1 ho'
+  obtain ⟨O, rfl⟩ := iff_exists_vectorBundleOrientation.1 ho
+  obtain ⟨O', rfl⟩ := iff_exists_vectorBundleOrientation.1 ho'
   rcases O'.eq_or_eq_neg (by simp) O with h | h
   · exact .inl (congrArg DFunLike.coe h)
   · exact .inr (funext fun x ↦ by rw [h, VectorBundleOrientation.neg_apply, Pi.neg_apply])
@@ -460,7 +449,7 @@ theorem exists_coorientation_eq [T2Space M] [SigmaCompactSpace M]
   have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   let := hD.annihilatorFiberBundle hk
   let := hD.annihilatorVectorBundle hk
-  obtain ⟨O, rfl⟩ := (iff_exists_vectorBundleOrientation hD hk).1 ho
+  obtain ⟨O, rfl⟩ := iff_exists_vectorBundleOrientation.1 ho
   have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
   -- A positive continuous section of `D⁰` is a positive multiple of a smooth defining form.
   obtain ⟨s, hs, hpos⟩ := O.exists_continuous_section_basis_orientation_eq (by simp)

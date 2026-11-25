@@ -16,13 +16,23 @@ equivalence (`Orientation.signBasis_map`). Empty index types are included, so bo
 zero-dimensional orientations retain their sign. Two orientations are equal exactly when they
 agree on whether they are the orientation of a fixed basis
 (`Module.Basis.eq_iff_eq_orientation_iff`). In a line, the basis `(-v)` gives the orientation
-opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`).
+opposite to that of `(v)` (`TauCeti.orientation_basisSingleton_neg`), and two one-vector bases
+define the same orientation exactly when their vectors lie on the same ray
+(`Module.Basis.orientation_eq_iff_sameRay`).
 -/
 
 public section
 noncomputable section
 
 namespace Module.Basis
+
+/-- In a line, the vector of a one-vector basis `b'` is the vector of `b` scaled by the
+change-of-basis determinant `b.det b'`. -/
+theorem apply_default_eq_det_smul {R E ι : Type*} [CommRing R] [AddCommGroup E] [Module R E]
+    [Fintype ι] [DecidableEq ι] [Unique ι] (b b' : Basis ι R E) :
+    b' default = b.det b' • b default := by
+  rw [det_apply, Matrix.det_unique, toMatrix_apply]
+  simpa using (b.sum_repr (b' default)).symm
 
 variable {R E ι : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
   [AddCommGroup E] [Module R E] [Fintype ι] [DecidableEq ι]
@@ -45,6 +55,20 @@ theorem eq_iff_eq_orientation_iff (e : Basis ι R E) (x y : Orientation R E ι) 
   · rcases e.orientation_eq_or_eq_neg y with hy | hy
     · exact absurd (h.2 hy) (hx ▸ (Module.Ray.ne_neg_self _).symm)
     · rw [hx, hy]
+
+section Unique
+
+variable [Unique ι]
+
+/-- **Orientations of a line.** For an index type with a single element, two bases define the same
+orientation exactly when their vectors lie on the same ray. -/
+theorem orientation_eq_iff_sameRay (b b' : Basis ι R E) :
+    b.orientation = b'.orientation ↔ SameRay R (b default) (b' default) := by
+  have := b.isTorsionFree
+  rw [b.orientation_eq_iff_det_pos, b.apply_default_eq_det_smul b',
+    sameRay_smul_right_iff_of_ne (b.ne_zero default) (b.isUnit_det b').ne_zero]
+
+end Unique
 
 end Module.Basis
 

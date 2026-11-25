@@ -40,8 +40,9 @@ which vanishes nowhere is a contact form
   bundle is smoothly trivial.
 * `TauCeti.IsContactDistribution.exists_isContactForm_coorientation_eq`: every coorientation of a
   contact structure is the coorientation of a contact form.
-* `IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_exists_isCoorientation`:
-  a contact structure is the kernel of a global contact form exactly when it has a coorientation.
+* `TauCeti.IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_exists_isCoorientation`
+  states that a contact structure is the kernel of a global contact form exactly when it has a
+  coorientation.
 
 ## References
 
