@@ -57,7 +57,8 @@ concatenation in the matching direction.
 * `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`: its degree-one form
   `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space. It sends the
   class of a double loop `β` to the class of its square `GenLoop.fromDoubleLoop β`
-  (`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk`).
+  (`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk`), and every element of `π₂(X, x)`
+  arises this way (`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk_surjective`).
 * `HomotopyGroup.mul_comm_pathLoopSpace`: the homotopy groups `π_(m + 1)(Ω X, refl x)` of the
   loop space are commutative, including the fundamental group.
 * `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`: the path components of the double loop space
@@ -112,10 +113,7 @@ theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (h
     (e : M ≃ N) (a : HomotopyGroup M X x) :
     map f hf (congrEquiv e a) = congrEquiv e (map f hf a) := by
   induction a using Quotient.inductionOn
-  rw [congrEquiv_mk, map_mk, map_mk, congrEquiv_mk]
-  -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`
-  refine congrArg _ (GenLoop.ext _ _ fun t => ?_)
-  simp only [GenLoop.congr_apply, GenLoop.map_apply]
+  rw [congrEquiv_mk, map_mk, map_mk, congrEquiv_mk, GenLoop.congr_map]
 
 /-- The map induced on the homotopy group indexed by `M` is the map induced on the group indexed
 by `N`, conjugated by the reindexing `e : M ≃ N` of the cube directions. -/
@@ -500,17 +498,25 @@ theorem HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk
     (β : Ω (Ω X x) (Path.refl x)) :
     fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk β)) =
       ⟦GenLoop.fromDoubleLoop β⟧ := by
-  -- `pi1MulEquivFundamentalGroup` is a quotient map, so its inverse is computed on
-  -- representatives
-  have h : pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk β)) =
-      ⟦(genLoopEquivOfUnique (Fin 1)).symm β⟧ := rfl
-  rw [fundamentalGroupLoopSpaceMulEquiv_apply, h,
+  rw [fundamentalGroupLoopSpaceMulEquiv_apply, pi1MulEquivFundamentalGroup_symm_fromPath_mk,
     pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
   refine congrArg _ (GenLoop.ext _ _ fun z => ?_)
   rw [GenLoop.fromDoubleLoop_apply, GenLoop.genLoopLoopHomeomorph_apply,
     GenLoop.genLoopEquivOfUnique_symm_apply]
   -- the cube coordinates `Fin.castSucc default` and `Fin.last 1` are `0` and `1`
   simp only [Nat.reduceAdd, Fin.default_eq_zero, Fin.isValue, Fin.castSucc_zero, Fin.reduceLast]
+
+/-- **Every element of `π₂(X, x)` comes from a double loop**: it is the image under
+`fundamentalGroupLoopSpaceMulEquiv` of the class of a loop at the constant loop in `Ω X x`. -/
+theorem HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk_surjective :
+    Function.Surjective fun β : Ω (Ω X x) (Path.refl x) =>
+      fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk β)) := by
+  -- An element of the fundamental group is `FundamentalGroup.fromPath` of its `toPath` by
+  -- structure eta for `CategoryTheory.End.of`.
+  have hfrom : Function.Surjective (FundamentalGroup.fromPath (x := (Path.refl x : Ω X x))) :=
+    fun g ↦ ⟨g.toPath, rfl⟩
+  exact fundamentalGroupLoopSpaceMulEquiv.surjective.comp
+    (hfrom.comp Path.Homotopic.Quotient.mk_surjective)
 
 section Natural
 

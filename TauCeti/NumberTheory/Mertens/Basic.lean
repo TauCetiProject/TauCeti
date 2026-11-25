@@ -16,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Rat
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+import TauCeti.NumberTheory.Chebyshev.Mertens
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.SumPrimePow
@@ -63,6 +64,8 @@ bounds when any finite set of primes is removed from the product.
   `x ≥ 2`, `|∑_{p ≤ x} p⁻¹ - log log x - B| ≤ C / log x`.
 * `TauCeti.exists_abs_sum_sdiff_primesLE_inv_sub_log_div_le`: uniform interval estimate
   `|∑_{y < p ≤ x} p⁻¹ - log (log x / log y)| ≤ C / log y` for `2 ≤ y ≤ x`.
+* `TauCeti.exists_sum_sdiff_primesLE_inv_le`: for every `B > 0` the primes in `(z^{1/B}, z]`
+  have reciprocal sum bounded uniformly in `z ≥ 1`.
 * `TauCeti.abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le`: uniform logarithmic Euler
   product `|∑_{p ≤ x} -log (1 - p⁻¹) - log log x - γ| ≤ (2 (log 4 + 4) + 2) / log x` for `x ≥ 2`,
   with existential form `TauCeti.exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le`.
@@ -324,6 +327,42 @@ theorem exists_abs_sum_sdiff_primesLE_inv_sub_log_div_le :
     div_le_div_of_nonneg_left hC0 hlogy (Real.log_le_log (by linarith) hyx)
   rw [hsplit, two_mul, add_div]
   exact (abs_sub _ _).trans (add_le_add (hC x hx |>.trans hcx) (hC y hy))
+
+/-- For every `B > 0` the primes in `(z^{1/B}, z]` have bounded reciprocal sum, uniformly in
+`z ≥ 1`. -/
+theorem exists_sum_sdiff_primesLE_inv_le {B : ℝ} (hB : 0 < B) :
+    ∃ K : ℝ, ∀ z : ℝ, 1 ≤ z →
+      ∑ p ∈ Nat.primesLE ⌊z⌋₊ \ Nat.primesLE ⌊Real.exp (Real.log z / B)⌋₊, (p : ℝ)⁻¹ ≤ K := by
+  obtain ⟨C, hC⟩ := exists_abs_sum_sdiff_primesLE_inv_sub_log_div_le
+  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
+  refine ⟨max (Real.log B + |C| / Real.log 2) ((B * Real.log 2 + (Real.log 4 + 4)) /
+    Real.log 2), fun z hz ↦ ?_⟩
+  set y := Real.exp (Real.log z / B)
+  have hlogy : Real.log y = Real.log z / B := Real.log_exp _
+  rcases le_or_gt z y with hzy | hyz
+  · rw [sdiff_eq_empty_iff_subset.2 (Nat.primesLE_mono (Nat.floor_mono hzy)), sum_empty]
+    exact le_max_of_le_right (by positivity)
+  rcases le_or_gt 2 y with hy | hy
+  · have hly : Real.log 2 ≤ Real.log y := Real.log_le_log two_pos hy
+    have hratio : Real.log z / Real.log y = B := by
+      have hlz : Real.log z ≠ 0 := fun h ↦ by
+        rw [h, zero_div] at hlogy; linarith
+      rw [hlogy]
+      field_simp
+    refine le_max_of_le_left ?_
+    have h := (abs_le.1 (hC y z hy hyz.le)).2
+    rw [hratio] at h
+    have hCy : C / Real.log y ≤ |C| / Real.log 2 :=
+      (div_le_div_of_nonneg_right (le_abs_self C) (hlog2.trans_le hly).le).trans
+        (div_le_div_of_nonneg_left (abs_nonneg C) hlog2 hly)
+    linarith
+  · refine le_max_of_le_right ((sum_le_sum_of_subset_of_nonneg sdiff_subset fun _ _ _ ↦
+      by positivity).trans ((Chebyshev.sum_primesLE_inv_le hz).trans ?_))
+    have hlz : Real.log z ≤ B * Real.log 2 := by
+      have := Real.log_lt_log (Real.exp_pos _) hy
+      rw [hlogy, div_lt_iff₀ hB] at this
+      linarith
+    exact div_le_div_of_nonneg_right (by linarith) hlog2.le
 
 /-! ### Logarithmic Euler product and von Mangoldt form -/
 

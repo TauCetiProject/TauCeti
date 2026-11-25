@@ -286,6 +286,15 @@ lemma map_ιTwistedHomology₀ {x y : FundamentalGroupoid X} (p : x ⟶ y) :
     rw [ModuleCat.hom_comp, LinearMap.comp_apply, ιTwistedHomology₀_apply, ιTwistedHomology₀_apply,
       h]
 
+/-- The class of a coefficient depends only on the point: identifying the fibres over two equal
+points does not change the class in zeroth homology. -/
+@[reassoc]
+lemma eqToHom_comp_ιTwistedHomology₀ {x y : X} (h : x = y) :
+    eqToHom (congrArg (fun z : X ↦ L.obj (FundamentalGroupoid.mk z)) h) ≫ ιTwistedHomology₀ L y =
+      ιTwistedHomology₀ L x := by
+  subst h
+  exact Category.id_comp _
+
 /-- On a path-connected space, every twisted zeroth-homology class comes from any chosen fibre. -/
 instance epi_ιTwistedHomology₀ [PathConnectedSpace X] (x : X) :
     Epi (ιTwistedHomology₀ L x) where
