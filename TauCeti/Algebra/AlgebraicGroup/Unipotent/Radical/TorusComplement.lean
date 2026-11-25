@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.ClosedImmersion
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Diagonalizable.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.SemidirectProduct
 import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.FiniteType
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
-import TauCeti.RingTheory.Spectrum.Prime.Topology
+import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 
 /-!
@@ -22,14 +21,13 @@ unipotent radical `R_u(G)`, and let `T ⊆ G` be a torus. The torus meets `R_u(G
 (`TauCeti.FiniteTypeCommHopfAlgCat.sup_unipotentRadicalDefiningIdeal_eq_augmentation_of_torus`),
 so the composite `T → G → G ⧸ R_u(G)` has trivial scheme-theoretic kernel. A torus is smooth, so
 this homomorphism is a closed immersion
-(`TauCeti.CommHopfAlgCat.surjective_of_kernelHopfIdeal_eq_augmentation`): in coordinates, the
-map from the right coinvariants `O(G ⧸ R_u(G))` to `O(T)` is surjective.
+(`TauCeti.FiniteTypeCommHopfAlgCat.coinvariantsι_comp_mkQuotient_surjective`): in coordinates,
+the map from the right coinvariants `O(G ⧸ R_u(G))` to `O(T)` is surjective.
 
-If moreover `G` is connected, then `G ⧸ R_u(G)` is smooth and connected, since its coordinate
-ring is a subring of `O(G)`. A closed immersion of smooth connected groups which does not drop
-the dimension of the Lie algebra is an isomorphism, so `T` maps isomorphically onto
-`G ⧸ R_u(G)` as soon as `dim Lie(G ⧸ R_u(G)) ≤ dim Lie(T)`. Multiplication `R_u(G) ⋊ T → G` is
-then an isomorphism
+If moreover `G` is connected, a torus is smooth and connected, so `T` maps isomorphically onto
+`G ⧸ R_u(G)` as soon as `dim Lie(G ⧸ R_u(G)) ≤ dim Lie(T)`
+(`TauCeti.FiniteTypeCommHopfAlgCat.isIso_coinvariantsι_comp_mkQuotient`). Multiplication
+`R_u(G) ⋊ T → G` is then an isomorphism
 (`TauCeti.FiniteTypeCommHopfAlgCat.isIso_productMapOfNormal_unipotentRadical_of_isIso`).
 
 For a connected group with solvable rational points, `G ⧸ R_u(G)` is a torus
@@ -85,35 +83,12 @@ theorem surjective_coinvariantsι_unipotentRadical_comp_mkQuotient_of_torus
       (CommHopfAlgCat.coinvariantsι (isNormal_unipotentRadicalDefiningIdeal G) ≫
         CommHopfAlgCat.mkQuotient G.obj I).hom := by
   have := isGeometricallyReduced_of_isReduced G
-  have : Algebra.FiniteType k
-      (CommHopfAlgCat.coinvariants (isNormal_unipotentRadicalDefiningIdeal G)) :=
-    (isNormal_unipotentRadicalDefiningIdeal G).finiteType_coinvariants
   have : Algebra.IsGeometricallyReduced k (quotient G I) :=
     (hI.geometricallyReduced k _).isGeometricallyReduced
-  exact CommHopfAlgCat.surjective_of_kernelHopfIdeal_eq_augmentation _
+  exact coinvariantsι_comp_mkQuotient_surjective G _
     (kernelHopfIdeal_coinvariantsι_unipotentRadical_comp_mkQuotient_eq_augmentation_of_torus G hI)
 
 variable [IsReduced G] [ConnectedSpace (PrimeSpectrum G)]
-
-/-- The quotient `G ⧸ R_u(G)` of a reduced connected group over an algebraically closed field is
-smooth and connected: its coordinate ring, the right coinvariants, is a subring of `O(G)`. -/
-private theorem smooth_connectedSpace_coinvariants_unipotentRadical :
-    smoothCommHopfAlgProperty k
-        (CommHopfAlgCat.coinvariants (isNormal_unipotentRadicalDefiningIdeal G)) ∧
-      ConnectedSpace (PrimeSpectrum
-        (CommHopfAlgCat.coinvariants (isNormal_unipotentRadicalDefiningIdeal G))) := by
-  have := isGeometricallyReduced_of_isReduced G
-  have : Algebra.FiniteType k
-      (CommHopfAlgCat.coinvariants (isNormal_unipotentRadicalDefiningIdeal G)) :=
-    (isNormal_unipotentRadicalDefiningIdeal G).finiteType_coinvariants
-  have hinj := CommHopfAlgCat.hopfSubalgebraι_injective
-    (isNormal_unipotentRadicalDefiningIdeal G).isHopfSubalgebra_coinvariants
-  have : IsReduced (CommHopfAlgCat.coinvariants (isNormal_unipotentRadicalDefiningIdeal G)) :=
-    isReduced_of_injective _ hinj
-  exact ⟨smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k _,
-    RingHom.connectedSpace_primeSpectrum_of_injective
-      ((CommHopfAlgCat.coinvariantsι (isNormal_unipotentRadicalDefiningIdeal G)).hom.toAlgHom :
-        _ →+* G.obj) hinj⟩
 
 /-- **A torus of a connected group with Lie algebra at least as large as that of `G ⧸ R_u(G)`
 maps isomorphically onto `G ⧸ R_u(G)`**, over an algebraically closed field. Here `G` is reduced
@@ -132,8 +107,11 @@ theorem isIso_coinvariantsι_unipotentRadical_comp_mkQuotient_of_torus
           (Derivation k (quotient G I) (Bialgebra.CounitAlgebra k (quotient G I) k))) :
     IsIso (CommHopfAlgCat.coinvariantsι (isNormal_unipotentRadicalDefiningIdeal G) ≫
       CommHopfAlgCat.mkQuotient G.obj I) := by
-  obtain ⟨hQ, hQc⟩ := smooth_connectedSpace_coinvariants_unipotentRadical G
-  exact CommHopfAlgCat.isIso_of_kernelHopfIdeal_eq_augmentation_of_finrank_le _ hQ hQc
+  have : Algebra.Smooth k G :=
+    (smoothCommHopfAlgProperty_iff _).mp
+      (smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k G.obj)
+  exact isIso_coinvariantsι_comp_mkQuotient G
+    ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k G.obj).mpr inferInstance) _
     (hI.smooth k _) ((hI.geometricallyConnected k _).connectedSpace)
     (kernelHopfIdeal_coinvariantsι_unipotentRadical_comp_mkQuotient_eq_augmentation_of_torus G hI)
     hfinrank
