@@ -435,8 +435,9 @@ private theorem tendsto_measureReal_overselect
       filter_upwards [hle, hdimU, hdimV, hf, hw.eventually (eventually_gt_atTop 0)]
         with n hUV hU hV hfn hw_pos
       set D : Submodule ℝ (E n) := V n ⊓ (U n)ᗮ
-      have hDdim : Module.finrank ℝ D = d := by
-        rw [Submodule.finrank_inf_orthogonal_of_le hUV, hV, hU]
+      have hDdim : Module.finrank ℝ D = d :=
+        (LinearEquiv.ofEq _ _ (inf_comm (V n) (U n)ᗮ)).finrank_eq.trans
+          (Submodule.finrank_add_inf_finrank_orthogonal' hUV (by rw [hU, hV]; omega))
       have hd_cast : (d : ℝ) = (kV : ℝ) - kU := by simp only [d, Nat.cast_sub hklt.le]
       have hsub : {ξ : E n | ((kV : ℝ) - kU) * w n <
             ‖D.starProjection (f n + σ • ξ)‖ ^ 2 / σ ^ 2} ⊆
@@ -501,8 +502,10 @@ theorem aic_overfit
     filter_upwards [hS, hdim, hf] with n hSn hdimn hfn
     set D : Submodule ℝ (E n) := S n j₁ ⊓ (S n j₀)ᗮ
     set A : Set (E n) := {ξ | 2 * (d : ℝ) < ‖D.starProjection ξ‖ ^ 2}
-    have hDdim : Module.finrank ℝ D = d := by
-      rw [Submodule.finrank_inf_orthogonal_of_le (hSn hj₀₁.le), hdimn j₁, hdimn j₀]
+    have hDdim : Module.finrank ℝ D = d :=
+      (LinearEquiv.ofEq _ _ (inf_comm (S n j₁) (S n j₀)ᗮ)).finrank_eq.trans
+        (Submodule.finrank_add_inf_finrank_orthogonal' (hSn hj₀₁.le)
+          (by rw [hdimn j₀, hdimn j₁]; omega))
     have hA_prob : (stdGaussian (E n)).real A = p := by
       have hmap := D.map_norm_sq_starProjection_stdGaussian
       rw [hDdim] at hmap
