@@ -9,7 +9,9 @@ public import TauCeti.Algebra.Homology.ModuleCat.KFlat.BaseChange
 public import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.LeftDerivedTensor
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+public import TauCeti.RingTheory.Flat.CompletelyFlat
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
+import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.Algebra.Homology.Bifunctor.Single
 import TauCeti.Algebra.Homology.ModuleCat.KFlat.Basic
@@ -49,6 +51,9 @@ degree zero.
 * `ModuleCat.isCompletelyFlat_single`: flat modules are `I`-completely flat.
 * `ModuleCat.isCompletelyFaithfullyFlat_single`: faithfully flat modules are `I`-completely
   faithfully flat.
+* `ModuleCat.isCompletelyFaithfullyFlat_single_iff`: a flat module in degree zero is `I`-completely
+  faithfully flat exactly when it is so as a module
+  (`TauCeti.DerivedDeRham.IsCompletelyFaithfullyFlatModule`).
 
 The derived reduction of a flat module in degree zero is computed by
 `TauCeti.derivedExtendScalarsSingleIso`, and its flatness over `A/I` by
@@ -200,5 +205,23 @@ placed in degree zero is `I`-completely faithfully flat for every ideal `I`. -/
 theorem isCompletelyFaithfullyFlat_single (M : ModuleCat.{u} A) [Module.FaithfullyFlat A M] :
     IsCompletelyFaithfullyFlat I ((singleFunctor _ 0).obj M) :=
   ⟨_, inferInstance, ⟨derivedExtendScalarsSingleIso _ M⟩⟩
+
+/-- **Comparison with the module form, for flat modules.** A flat `A`-module `M` placed in degree
+zero is `I`-completely faithfully flat in `D(A)` exactly when it is so as a module, that is, when
+`A/I ⊗_A M` is faithfully flat over `A/I`: its derived reduction is `A/I ⊗_A M` in degree zero. -/
+theorem isCompletelyFaithfullyFlat_single_iff (M : ModuleCat.{u} A) [Module.Flat A M] :
+    IsCompletelyFaithfullyFlat I ((singleFunctor _ 0).obj M) ↔
+      IsCompletelyFaithfullyFlatModule A I M := by
+  rw [isCompletelyFaithfullyFlatModule_iff]
+  -- `Ideal.Quotient.mk I` is `algebraMap A (A ⧸ I)` by definition, so `c` identifies the extension
+  -- of scalars of `M` along it with `(A ⧸ I) ⊗[A] M` and its algebra module structure.
+  let c := extendScalarsAlgebraMapIso (S := A ⧸ I) M
+  refine ⟨fun ⟨F, hF, ⟨e⟩⟩ ↦ ⟨isCompletelyFlatModule_of_flat M, ?_⟩, fun ⟨_, h⟩ ↦
+    ⟨(ModuleCat.extendScalars (Ideal.Quotient.mk I)).obj M,
+      Module.FaithfullyFlat.of_linearEquiv _ _ c.toLinearEquiv,
+      ⟨derivedExtendScalarsSingleIso _ M⟩⟩⟩
+  let e' := (singleFunctor (ModuleCat.{u} (A ⧸ I)) 0).preimageIso
+    (e.symm ≪≫ derivedExtendScalarsSingleIso _ M)
+  exact Module.FaithfullyFlat.of_linearEquiv _ _ (c.symm ≪≫ e'.symm).toLinearEquiv
 
 end ModuleCat

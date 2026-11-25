@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.OrderZero
-import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
+public import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 
 /-!
@@ -43,6 +43,8 @@ arbitrary, so the induction runs on the reciprocal exponents directly.
 
 ## Main results
 
+* `TauCeti.exists_inv_le_inv_sub_and_eLpNorm_le_mul_eLpNormWkp_one`: one rung of the exponent
+  ladder, the Sobolev or Morrey estimate of `W^{1,r'}` for `1/r' = 1/p + 1/s`.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`: interior `W^{1,r}` regularity for `r ≤ p`.
 
 ## References
@@ -54,13 +56,64 @@ arbitrary, so the induction runs on the reciprocal exponents directly.
 public section
 
 open MeasureTheory TopologicalSpace
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
   {Ω : Opens ℂ} {p q r : ℝ≥0∞}
   {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V}
+
+section Rung
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- **One rung of the exponent ladder.** Let `p > 2` and `1 ≤ r'` with `1/r' = 1/p + 1/s`. There
+is an exponent `s'` with `1/s' ≤ 1/s - (1/2 - 1/p) / 2` and the local estimate
+`‖u‖_{L^{s'}(U)} ≤ C ‖u‖_{W^{1,r'}(W)}` whenever `U` has compact closure in the open set `W`; so
+`W^{1,r'}_loc ⊂ L^{s'}_loc` (`TauCeti.MemWkpLoc.memLpLoc_of_forall_exists_eLpNorm_le`). For
+`r' > 2` this is Morrey's embedding with `s' = ∞`; otherwise it is the Sobolev embedding with
+`1/s' = 1/s - (1/2 - 1/p) / 2`, which stays away from the critical exponent `r' = 2`. -/
+theorem exists_inv_le_inv_sub_and_eLpNorm_le_mul_eLpNormWkp_one (hp : 2 < p)
+    {s : ℝ≥0∞} (hr' : 1 ≤ (p⁻¹ + s⁻¹)⁻¹) :
+    ∃ s' : ℝ≥0∞, s'⁻¹ ≤ s⁻¹ - (2⁻¹ - p⁻¹) / 2 ∧
+      ∀ {U : Set ℂ} {W : Opens ℂ}, IsCompact (closure U) → closure U ⊆ W →
+        ∃ C : ℝ≥0, ∀ u : ℂ → F,
+          eLpNorm u s' (volume.restrict U) ≤ C * eLpNormWkp (p⁻¹ + s⁻¹)⁻¹ W 1 u := by
+  have hp2 : p⁻¹ < 2⁻¹ := ENNReal.inv_lt_inv.2 hp
+  set d : ℝ≥0∞ := (2⁻¹ - p⁻¹) / 2 with hd_def
+  have hd : 0 < d := ENNReal.div_pos (tsub_pos_of_lt hp2).ne' ENNReal.ofNat_ne_top
+  have hd_top : d ≠ ⊤ := ENNReal.div_ne_top (by finiteness) two_ne_zero
+  have hpd : p⁻¹ + d + d = 2⁻¹ := by
+    rw [add_assoc, hd_def, ENNReal.add_halves, add_tsub_cancel_of_le hp2.le]
+  set r' : ℝ≥0∞ := (p⁻¹ + s⁻¹)⁻¹
+  have hr'_inv : r'⁻¹ = p⁻¹ + s⁻¹ := inv_inv _
+  by_cases h2r' : 2 < r'
+  · -- Morrey: `u` is locally bounded.
+    exact ⟨⊤, by simp, fun hUc hUW => exists_eLpNorm_top_le_mul_eLpNormWkp_one h2r' hUc hUW⟩
+  -- Sobolev: `1/s' = 1/s - d`.
+  rw [not_lt] at h2r'
+  have hds : d < s⁻¹ := by
+    refine (ENNReal.lt_add_right hd_top hd.ne').trans_le ?_
+    rw [← ENNReal.add_le_add_iff_left (ENNReal.inv_ne_top.2 (zero_lt_two.trans hp).ne'),
+      ← add_assoc, hpd, ← hr'_inv]
+    exact ENNReal.inv_le_inv.2 h2r'
+  have hs'_inv : (s⁻¹ - d)⁻¹⁻¹ = s⁻¹ - d := inv_inv _
+  have hs'_top : (s⁻¹ - d)⁻¹ ≠ ⊤ := ENNReal.inv_ne_top.2 (tsub_pos_of_lt hds).ne'
+  have hr's : r' ≤ (s⁻¹ - d)⁻¹ := by
+    refine ENNReal.inv_le_inv.1 ?_
+    rw [hs'_inv, hr'_inv]
+    exact tsub_le_self.trans le_add_self
+  have hgap : r'⁻¹ - (s⁻¹ - d)⁻¹⁻¹ ≤ 2⁻¹ := by
+    rw [tsub_le_iff_right, hs'_inv, hr'_inv]
+    calc p⁻¹ + s⁻¹ = p⁻¹ + d + (s⁻¹ - d) := by
+          rw [add_assoc, add_comm d, tsub_add_cancel_of_le hds.le]
+      _ ≤ p⁻¹ + d + d + (s⁻¹ - d) := by gcongr; exact le_self_add
+      _ = 2⁻¹ + (s⁻¹ - d) := by rw [hpd]
+  exact ⟨(s⁻¹ - d)⁻¹, hs'_inv.le, fun hUc hUW =>
+    exists_eLpNorm_le_mul_eLpNormWkp_one_of_ne_top hr' hs'_top hr's hgap hUc hUW⟩
+
+end Rung
 
 namespace IsWeakCRSolution
 
@@ -73,40 +126,15 @@ private theorem exists_memLpLoc_inv_le_inv_sub [FiniteDimensional ℝ V]
     (hη : MemLpLoc r Ω η) {s : ℝ≥0∞} (hsq : s⁻¹ ≤ q⁻¹) (hs : MemLpLoc s Ω ξ)
     (hsr : r⁻¹ < p⁻¹ + s⁻¹) :
     ∃ s' : ℝ≥0∞, s'⁻¹ ≤ s⁻¹ - (2⁻¹ - p⁻¹) / 2 ∧ MemLpLoc s' Ω ξ := by
-  have hp2 : p⁻¹ < 2⁻¹ := ENNReal.inv_lt_inv.2 hp
-  set d : ℝ≥0∞ := (2⁻¹ - p⁻¹) / 2 with hd_def
-  have hd : 0 < d := ENNReal.div_pos (tsub_pos_of_lt hp2).ne' ENNReal.ofNat_ne_top
-  have hd_top : d ≠ ⊤ := ENNReal.div_ne_top (by finiteness) two_ne_zero
-  have hpd : p⁻¹ + d + d = 2⁻¹ := by
-    rw [add_assoc, hd_def, ENNReal.add_halves, add_tsub_cancel_of_le hp2.le]
   -- The order-zero lemma, with `1/r' = 1/p + 1/s`.
-  set r' : ℝ≥0∞ := (p⁻¹ + s⁻¹)⁻¹
-  have hr'_inv : r'⁻¹ = p⁻¹ + s⁻¹ := inv_inv _
-  have hr'1 : 1 < r' := ENNReal.one_lt_inv.2 ((add_le_add le_rfl hsq).trans_lt hpq)
-  have hw : MemWkpLoc r' Ω 1 ξ := (h.of_memLpLoc hs).memWkpLoc_one hc hp hJ2 hr'1
+  have hr'_inv : (p⁻¹ + s⁻¹)⁻¹⁻¹ = p⁻¹ + s⁻¹ := inv_inv _
+  have hr'1 : 1 < (p⁻¹ + s⁻¹)⁻¹ := ENNReal.one_lt_inv.2 ((add_le_add le_rfl hsq).trans_lt hpq)
+  have hw : MemWkpLoc (p⁻¹ + s⁻¹)⁻¹ Ω 1 ξ := (h.of_memLpLoc hs).memWkpLoc_one hc hp hJ2 hr'1
     (ENNReal.inv_ne_top.2 (pos_of_gt hsr).ne') hr'_inv.ge
-      (hη.mono_exponent (ENNReal.inv_le_inv.1 (hr'_inv ▸ hsr.le)))
-  by_cases h2r' : 2 < r'
-  · -- Morrey: `ξ` is locally bounded.
-    exact ⟨⊤, by simp, hw.memLpLoc_top h2r'⟩
-  -- Sobolev: `ξ` is locally `L^{s'}` with `1/s' = 1/s - d`.
-  rw [not_lt] at h2r'
-  have hds : d < s⁻¹ := by
-    refine (ENNReal.lt_add_right hd_top hd.ne').trans_le ?_
-    rw [← ENNReal.add_le_add_iff_left (ENNReal.inv_ne_top.2 (zero_lt_two.trans hp).ne'),
-      ← add_assoc, hpd, ← hr'_inv]
-    exact ENNReal.inv_le_inv.2 h2r'
-  have hs'_inv : (s⁻¹ - d)⁻¹⁻¹ = s⁻¹ - d := inv_inv _
-  refine ⟨(s⁻¹ - d)⁻¹, hs'_inv.le, hw.memLpLoc_of_inv_sub_inv_le_of_ne_top hr'1.le
-    (ENNReal.inv_ne_top.2 (tsub_pos_of_lt hds).ne') ?_ ?_⟩
-  · refine ENNReal.inv_le_inv.1 ?_
-    rw [hs'_inv, hr'_inv]
-    exact tsub_le_self.trans le_add_self
-  · rw [tsub_le_iff_right, hs'_inv, hr'_inv]
-    calc p⁻¹ + s⁻¹ = p⁻¹ + d + (s⁻¹ - d) := by
-          rw [add_assoc, add_comm d, tsub_add_cancel_of_le hds.le]
-      _ ≤ p⁻¹ + d + d + (s⁻¹ - d) := by gcongr; exact le_self_add
-      _ = 2⁻¹ + (s⁻¹ - d) := by rw [hpd]
+      (hη.mono_exponent (ENNReal.inv_le_inv.1 (by rw [hr'_inv]; exact hsr.le)))
+  obtain ⟨s', hs', hest⟩ :=
+    exists_inv_le_inv_sub_and_eLpNorm_le_mul_eLpNormWkp_one (F := V) hp hr'1.le
+  exact ⟨s', hs', hw.memLpLoc_of_forall_exists_eLpNorm_le hest⟩
 
 /-- **Interior `W^{1,r}` regularity.** Let `J ∈ W^{1,p}_loc` with `J² = -1` and `S ∈ Lᵖ_loc`,
 `p > 2`, and let `ξ ∈ L^q_loc` be a weak solution of `∂_s ξ + J ∂_t ξ + S ξ = η` with
