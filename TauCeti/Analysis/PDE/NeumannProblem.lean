@@ -117,14 +117,9 @@ private theorem pairingL_const_one (f : Lp ℝ 2 (mu.restrict Omega)) :
     with x hx
   rw [W1p.value_const, hx, Function.const_apply, mul_one]
 
-/-- Shortcut seminormed group instance on `W^{1,2}(Ω)`, to aid instance search for continuous
-bilinear forms on it. -/
-local instance instSeminormedAddCommGroupW1pNeumann :
-    SeminormedAddCommGroup (W1p mu Omega 2) := inferInstance
-
-/-- Shortcut normed space instance on `W^{1,2}(Ω)`, to aid instance search for continuous
-bilinear forms on it. -/
-local instance instNormedSpaceW1pNeumann : NormedSpace ℝ (W1p mu Omega 2) := inferInstance
+-- The shortcut instances of the energy-form file, to aid instance search for continuous bilinear
+-- forms on `W^{1,2}(Ω)`.
+attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
 
 /-- **Coercivity of the mean-corrected energy form.** If the value map `H¹(Ω) → L²(Ω)` is compact
 and `Ω` is preconnected, the form `∫_Ω ⟨a ∇u, ∇v⟩ + (∫_Ω u)(∫_Ω v)` is coercive on `H¹(Ω)`. -/
@@ -307,7 +302,7 @@ theorem exists_forall_energyFormH1_eq_setIntegral_iff_of_isLipschitzDomainWith
         energyFormH1 a 0 0 u v = ∫ x in Ω, f x * W1p.value v x) ↔
       ∫ x in Ω, f x = 0 := by
   have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ ι))) :=
-    e.symm.eq_symm_preimage_of_eq_preimage hVΩ ▸ e.isFiniteMeasure_volume_restrict_preimage hVb
+    by simpa [hVΩ, Set.preimage_preimage] using e.isFiniteMeasure_volume_restrict_preimage hVb
   have hK := W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
     (p := 2) hV hVb e hVΩ
   exact exists_forall_energyFormH1_eq_setIntegral_iff hK hconn hcoeff hlam ha f
@@ -342,7 +337,7 @@ theorem exists_forall_energyFormH1_eq_setIntegral_add_frontierTrace_iff
       (∫ x in Ω, f x) +
         ∫ y in frontier (V : Set (WithLp 2 (ℝ × E))), h y ∂μHE[finrank ℝ E] = 0 := by
   have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ ι))) :=
-    e.symm.eq_symm_preimage_of_eq_preimage hVΩ ▸ e.isFiniteMeasure_volume_restrict_preimage hVb
+    by simpa [hVΩ, Set.preimage_preimage] using e.isFiniteMeasure_volume_restrict_preimage hVb
   have hK := W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
     (p := 2) hV hVb e hVΩ
   let ℓ : StrongDual ℝ (W1p volume Ω 2) := pairingL f +
@@ -358,10 +353,7 @@ theorem exists_forall_energyFormH1_eq_setIntegral_add_frontierTrace_iff
   -- The constant `1` has value `1` on `V` after the change of coordinates, hence trace `1`.
   have hv1 : W1p.value (W1p.compAffineIsometryEquivL e.symm hVΩ (W1p.const 1 : W1p volume Ω 2))
       =ᵐ[volume.restrict (V : Set (WithLp 2 (ℝ × E)))] fun _ => (1 : ℝ) := by
-    have hmp : MeasurePreserving e.symm (volume.restrict (V : Set (WithLp 2 (ℝ × E))))
-        (volume.restrict (Ω : Set (EuclideanSpace ℝ ι))) := by
-      rw [hVΩ]
-      exact e.symm.measurePreserving.restrict_preimage Ω.isOpen.measurableSet
+    have hmp := e.symm.measurePreserving_restrict_of_eq_preimage Ω.isOpen.measurableSet hVΩ
     filter_upwards [W1p.value_compAffineIsometryEquivL_ae e.symm hVΩ
       (W1p.const 1 : W1p volume Ω 2),
       hmp.quasiMeasurePreserving.ae
