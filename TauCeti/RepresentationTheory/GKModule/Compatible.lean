@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.GeneralLinear.EndLie
 public import TauCeti.Geometry.Lie.Tangent.Differential
 public import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import TauCeti.RepresentationTheory.GKModule.Basic
@@ -36,8 +37,6 @@ harmonic analysis is a `TauCeti.GKModule` `M` with `M.IsCompatible ι` and
 
 * `TauCeti.GKModule.IsCompatible M ι`: the `K`-action of `M` is smooth on finite-dimensional
   `K`-stable subspaces, with differential the action of `Lie K` through `ι`.
-* `TauCeti.GKModule.EndLie R M`: `End(M)` as the Lie algebra `𝔤𝔩(M)` acting on `M`, identified
-  with the algebra `Module.End R M` by `TauCeti.GKModule.EndLie.equiv`.
 * `TauCeti.GKModule.glStd V`: for a finite-dimensional real normed space `V`, the defining
   representation of `GL(V)` on `V` as a `(𝔤𝔩(V), GL(V))`-module, with `GL(V)` acting on `𝔤𝔩(V)` by
   conjugation (`TauCeti.GKModule.glConj`).
@@ -77,48 +76,6 @@ structure IsCompatible (M : GKModule Ad V) (ι : GroupLieAlgebra I K →ₗ[ℝ]
   /-- The differential of the `K`-action at `1` is the action of `Lie K` through `ι`. -/
   mfderiv_apply (f : Module.Dual k V) (v : V) (X : GroupLieAlgebra I K) :
     mfderiv I 𝓘(ℝ, k) (fun g ↦ f (M.ρ g v)) 1 X = f ⁅ι X, v⁆
-
-
-section EndLie
-
-variable (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- `End(M)` as the Lie algebra `𝔤𝔩(M)`, with the commutator bracket, acting on `M`. It is
-identified with the algebra `Module.End R M` by `TauCeti.GKModule.EndLie.equiv`. -/
--- The body is exposed because the module system unfolds only exposed definitions when checking
--- public declarations, and the instances below are those of `Module.End R M`.
-@[expose] def EndLie : Type _ := Module.End R M
-
-instance instRingEndLie : Ring (EndLie R M) := inferInstanceAs (Ring (Module.End R M))
-instance instAlgebraEndLie : Algebra R (EndLie R M) :=
-  inferInstanceAs (Algebra R (Module.End R M))
-instance instLieRingEndLie : LieRing (EndLie R M) := LieRing.ofAssociativeRing
-instance instLieAlgebraEndLie : LieAlgebra R (EndLie R M) :=
-  LieAlgebra.ofAssociativeAlgebra
-instance instLieRingModuleEndLie : LieRingModule (EndLie R M) M :=
-  Module.End.instLieRingModule
-instance instLieModuleEndLie : LieModule R (EndLie R M) M :=
-  Module.End.instLieModule
-
-/-- The identification of `𝔤𝔩(M)` with the algebra `Module.End R M`. -/
-def EndLie.equiv : EndLie R M ≃ₐ[R] Module.End R M :=
-  AlgEquiv.refl
-
-variable {R M}
-
-/-- An element of `𝔤𝔩(M)` acts on `M` as the corresponding endomorphism. -/
-@[simp]
-theorem EndLie.lie_apply (X : EndLie R M) (m : M) : ⁅X, m⁆ = EndLie.equiv R M X m :=
-  (rfl)
-
-/-- The bracket of `𝔤𝔩(M)` is the commutator of endomorphisms. -/
-@[simp]
-theorem EndLie.equiv_lie (X Y : EndLie R M) :
-    EndLie.equiv R M ⁅X, Y⁆ =
-      EndLie.equiv R M X * EndLie.equiv R M Y - EndLie.equiv R M Y * EndLie.equiv R M X := by
-  rw [LieRing.of_associative_ring_bracket, map_sub, map_mul, map_mul]
-
-end EndLie
 
 section GeneralLinear
 
@@ -161,7 +118,7 @@ variable (V)
 -- `Module.End ℝ V`, which Mathlib provides only as a local instance.
 attribute [local instance] LieRing.ofAssociativeRing LieAlgebra.ofAssociativeAlgebra in
 /-- Conjugation acts on `𝔤𝔩(V)` by Lie algebra endomorphisms: transported along
-`TauCeti.GKModule.EndLie.equiv`, it is Mathlib's conjugation `LinearEquiv.lieConj`. -/
+`TauCeti.EndLie.equiv`, it is Mathlib's conjugation `LinearEquiv.lieConj`. -/
 instance instIsLieActionGlConj : IsLieAction (glConj V) :=
   .of_lieEquiv (fun g ↦ (EndLie.equiv ℝ V).toLieEquiv.trans
       ((ContinuousLinearEquiv.unitsEquiv ℝ V g).toLinearEquiv.lieConj.trans

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.DirectSum
 public import Mathlib.Algebra.Lie.Quotient
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RingTheory.SimpleModule.Isotypic
+public import TauCeti.RepresentationTheory.Admissible
 public import TauCeti.RepresentationTheory.GFinite
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.LieHom
@@ -40,11 +41,12 @@ condition is the further predicate `TauCeti.GKModule.IsCompatible` on a `TauCeti
 * `TauCeti.GKModule.isotypic M σ`: the `σ`-isotypic component, the sum of the images of the
   `K`-equivariant maps from `σ` to `V`. It is `K`-stable (`TauCeti.GKModule.isotypicSubrep`) but
   not `𝔤`-stable in general, since `𝔤` moves `K`-types.
-* `TauCeti.GKModule.multiplicity M σ`: the dimension of `Hom_K(σ, V)` in `ℕ∞`, equal to `⊤` when
-  it is infinite.
-* `TauCeti.GKModule.IsAdmissible`: `Hom_K(σ, V)` is finite-dimensional for every irreducible `σ`.
 * `TauCeti.GKModule.IsHarishChandraModule`: admissible and finitely generated over `𝔤`, that is,
   over the enveloping algebra `U(𝔤)`.
+
+The multiplicity of `σ` and admissibility only involve the action of `K`: they are
+`Representation.multiplicity M.ρ σ`, the dimension of `Hom_K(σ, V)`, and
+`Representation.IsAdmissible M.ρ`, from `TauCeti/RepresentationTheory/Admissible.lean`.
 
 ## Main statements
 
@@ -52,22 +54,14 @@ condition is the further predicate `TauCeti.GKModule.IsCompatible` on a `TauCeti
   `isotypicComponent` of the simple `k[K]`-module `σ.asModule`.
 * `TauCeti.GKModule.evalIntertwiningMap_injective`: for irreducible `σ` and `w ≠ 0`, evaluation at
   `w` embeds `Hom_K(σ, V)` into the isotypic component `V(σ)`.
-* `TauCeti.GKModule.IsAdmissible.of_finiteDimensional_isotypic`: finite-dimensional isotypic
+* `TauCeti.GKModule.multiplicity_le_rank_isotypic`: for irreducible `σ`, the multiplicity is at
+  most the dimension of the isotypic component.
+* `TauCeti.GKModule.isAdmissible_of_finiteDimensional_isotypic`: finite-dimensional isotypic
   components give an admissible module.
-* `TauCeti.GKModule.IsAdmissible.finiteDimensional`: in an admissible module, `Hom_K(σ, V)` is
-  finite-dimensional for every irreducible `σ`.
-* `TauCeti.GKModule.IsAdmissible.submodule`, `TauCeti.GKModule.IsAdmissible.directSum`:
+* `TauCeti.GKModule.isAdmissible_submodule`, `TauCeti.GKModule.isAdmissible_directSum`:
   admissibility passes to `(𝔤, K)`-submodules and to finite direct sums.
 * `TauCeti.GKModule.isHarishChandraModule_of_finiteDimensional`: a finite-dimensional
   `(𝔤, K)`-module is a Harish-Chandra module.
-
-## Implementation notes
-
-The multiplicity is the dimension of `Hom_K(σ, V)`. For irreducible `σ` with `Hom_K(σ, V)`
-finite-dimensional, when `k` is not algebraically closed this is the number of copies of `σ` in
-`V(σ)` multiplied by the dimension of the division algebra `End_K(σ)`. Admissibility is
-quantified over the irreducible subrepresentations of `V`, which avoids fixing a universe for `σ`:
-an irreducible representation with a nonzero map to `V` is isomorphic to its image.
 
 ## References
 
@@ -82,7 +76,7 @@ namespace TauCeti
 
 open Representation
 
-universe v w
+universe v
 
 variable {k 𝔤 K : Type*} [Field k] [LieRing 𝔤] [LieAlgebra k 𝔤] [Monoid K]
 
@@ -323,24 +317,6 @@ def isotypicSubrep : Subrepresentation M.ρ where
 theorem mem_isotypicSubrep {v : V} : v ∈ M.isotypicSubrep σ ↔ v ∈ M.isotypic σ :=
   Iff.rfl
 
-/-- The **multiplicity** of `σ` in a `(𝔤, K)`-module: the dimension of `Hom_K(σ, V)`, as an
-element of `ℕ∞`, which is `⊤` when `Hom_K(σ, V)` is infinite-dimensional. -/
-noncomputable def multiplicity : ℕ∞ :=
-  (Module.rank k (IntertwiningMap σ M.ρ)).toENat
-
-theorem multiplicity_def : M.multiplicity σ = (Module.rank k (IntertwiningMap σ M.ρ)).toENat :=
-  (rfl)
-
-/-- When `Hom_K(σ, V)` is finite-dimensional, the multiplicity is its `finrank`. -/
-theorem multiplicity_eq_finrank [FiniteDimensional k (IntertwiningMap σ M.ρ)] :
-    M.multiplicity σ = Module.finrank k (IntertwiningMap σ M.ρ) := by
-  rw [multiplicity_def, ← Module.finrank_eq_rank, Cardinal.toENat_nat]
-
-/-- The multiplicity is finite exactly when `Hom_K(σ, V)` is finite-dimensional. -/
-theorem multiplicity_lt_top_iff :
-    M.multiplicity σ < ⊤ ↔ FiniteDimensional k (IntertwiningMap σ M.ρ) := by
-  rw [multiplicity_def, Cardinal.toENat_lt_top, Module.rank_lt_aleph0_iff]
-
 /-- Evaluation of `K`-equivariant maps `σ → V` at a vector `w`, which lands in the isotypic
 component `V(σ)`. -/
 def evalIntertwiningMap (w : W) : IntertwiningMap σ M.ρ →ₗ[k] M.isotypic σ where
@@ -376,42 +352,55 @@ theorem finiteDimensional_intertwiningMap_of_isotypic [σ.IsIrreducible]
 variable {σ} in
 /-- For irreducible `σ`, the multiplicity is at most the dimension of the isotypic component. -/
 theorem multiplicity_le_rank_isotypic [σ.IsIrreducible] :
-    M.multiplicity σ ≤ (Module.rank k (M.isotypic σ)).toENat := by
+    M.ρ.multiplicity σ ≤ (Module.rank k (M.isotypic σ)).toENat := by
   have := Representation.IsIrreducible.nontrivial (ρ := σ) inferInstance
   obtain ⟨w, hw⟩ := exists_ne (0 : W)
   have h := OrderHomClass.mono Cardinal.toENat
     (LinearMap.lift_rank_le_of_injective _ (M.evalIntertwiningMap_injective (σ := σ) hw))
-  rwa [Cardinal.toENat_lift, Cardinal.toENat_lift] at h
+  rwa [Cardinal.toENat_lift, Cardinal.toENat_lift, ← multiplicity_def] at h
 
 end Isotypic
 
 /-! ### Admissible and Harish-Chandra modules -/
 
-/-- A `(𝔤, K)`-module is **admissible** when `Hom_K(σ, V)` is finite-dimensional for every
-irreducible representation `σ` of `K`. Only an irreducible `σ` with a nonzero map to `V` can
-violate this, and such a `σ` is isomorphic to its image, so the definition quantifies over the
-irreducible subrepresentations of `V`; `TauCeti.GKModule.IsAdmissible.finiteDimensional` gives the
-statement for every irreducible `σ`, in any universe. -/
-def IsAdmissible : Prop :=
-  ∀ U : Subrepresentation M.ρ, U.toRepresentation.IsIrreducible →
-    FiniteDimensional k (IntertwiningMap U.toRepresentation M.ρ)
+/-- A `(𝔤, K)`-module whose isotypic components are finite-dimensional is admissible. -/
+theorem isAdmissible_of_finiteDimensional_isotypic
+    (h : ∀ U : Subrepresentation M.ρ, U.toRepresentation.IsIrreducible →
+      FiniteDimensional k (M.isotypic U.toRepresentation)) :
+    M.ρ.IsAdmissible :=
+  M.ρ.isAdmissible_iff.2 fun U hU ↦
+    have := h U hU
+    M.finiteDimensional_intertwiningMap_of_isotypic
+
+variable {M} in
+/-- A `(𝔤, K)`-submodule of an admissible module is admissible. -/
+theorem isAdmissible_submodule (hM : M.ρ.IsAdmissible) (N : GKSubmodule M) :
+    (M.submodule N).ρ.IsAdmissible :=
+  hM.subrepresentation N.toSubrepresentation
+
+/-- A finite direct sum of admissible `(𝔤, K)`-modules is admissible. -/
+theorem isAdmissible_directSum {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
+    [∀ i, Module k (V i)] [∀ i, LieRingModule 𝔤 (V i)] [∀ i, LieModule k 𝔤 (V i)]
+    {M : ∀ i, GKModule Ad (V i)} (hM : ∀ i, (M i).ρ.IsAdmissible) :
+    (directSum M).ρ.IsAdmissible :=
+  IsAdmissible.directSum hM
 
 /-- A **Harish-Chandra module** is an admissible `(𝔤, K)`-module that is finitely generated
 over `𝔤`, that is, generated by a finite set as a module over the enveloping algebra `U(𝔤)`. The
 Harish-Chandra modules of harmonic analysis on a real reductive group are those that are moreover
 compatible with the Lie group structure of `K`, `TauCeti.GKModule.IsCompatible`. -/
 def IsHarishChandraModule : Prop :=
-  M.IsAdmissible ∧ ∃ s : Finset V, LieSubmodule.lieSpan k 𝔤 (s : Set V) = ⊤
+  M.ρ.IsAdmissible ∧ ∃ s : Finset V, LieSubmodule.lieSpan k 𝔤 (s : Set V) = ⊤
 
 /-- A Harish-Chandra module is an admissible `(𝔤, K)`-module generated over `𝔤` by a finite set. -/
 theorem isHarishChandraModule_iff :
     M.IsHarishChandraModule ↔
-      M.IsAdmissible ∧ ∃ s : Finset V, LieSubmodule.lieSpan k 𝔤 (s : Set V) = ⊤ :=
+      M.ρ.IsAdmissible ∧ ∃ s : Finset V, LieSubmodule.lieSpan k 𝔤 (s : Set V) = ⊤ :=
   Iff.rfl
 
 variable {M} in
 /-- A Harish-Chandra module is admissible. -/
-theorem IsHarishChandraModule.isAdmissible (hM : M.IsHarishChandraModule) : M.IsAdmissible :=
+theorem IsHarishChandraModule.isAdmissible (hM : M.IsHarishChandraModule) : M.ρ.IsAdmissible :=
   hM.1
 
 variable {M} in
@@ -420,91 +409,11 @@ theorem IsHarishChandraModule.exists_lieSpan_eq_top (hM : M.IsHarishChandraModul
     ∃ s : Finset V, LieSubmodule.lieSpan k 𝔤 (s : Set V) = ⊤ :=
   hM.2
 
-namespace IsAdmissible
-
-variable {M}
-
-/-- In an admissible `(𝔤, K)`-module, `Hom_K(σ, V)` is finite-dimensional for every irreducible
-`σ`. -/
-theorem finiteDimensional (hM : M.IsAdmissible) {W : Type w} [AddCommGroup W] [Module k W]
-    (σ : Representation k K W) [hσ : σ.IsIrreducible] :
-    FiniteDimensional k (IntertwiningMap σ M.ρ) := by
-  by_cases h : ∃ f : IntertwiningMap σ M.ρ, f ≠ 0
-  swap
-  · push Not at h
-    have : Subsingleton (IntertwiningMap σ M.ρ) := ⟨fun f f' ↦ (h f).trans (h f').symm⟩
-    infer_instance
-  obtain ⟨f, hf⟩ := h
-  have hinj : Function.Injective f := (IsIrreducible.injective_or_eq_zero f).resolve_right hf
-  let e : Representation.Equiv σ f.range.toRepresentation :=
-    .mk (LinearEquiv.ofInjective f.toLinearMap hinj) fun g ↦ by
-      ext w
-      exact IntertwiningMap.isIntertwining _ _ f g w
-  have := hM f.range (e.isIrreducible hσ)
-  refine Module.Finite.of_injective
-    ((IntertwiningMap.llcomp _ _ _).flip e.symm.toIntertwiningMap) fun φ φ' h ↦ ?_
-  ext w
-  simpa [← IntertwiningMap.comp_def] using congr($h (e w))
-
-/-- A `(𝔤, K)`-module in which `Hom_K(σ, V)` is finite-dimensional for every irreducible `σ` on a
-carrier in the universe of `V` is admissible. -/
-theorem of_forall
-    (h : ∀ (W : Type v) [AddCommGroup W] [Module k W] (σ : Representation k K W),
-      σ.IsIrreducible → FiniteDimensional k (IntertwiningMap σ M.ρ)) :
-    M.IsAdmissible := fun U hU ↦ h U.toSubmodule U.toRepresentation hU
-
-variable (M) in
-/-- A `(𝔤, K)`-module whose isotypic components are finite-dimensional is admissible. -/
-theorem of_finiteDimensional_isotypic
-    (h : ∀ U : Subrepresentation M.ρ, U.toRepresentation.IsIrreducible →
-      FiniteDimensional k (M.isotypic U.toRepresentation)) :
-    M.IsAdmissible := fun U hU ↦
-  have := h U hU
-  M.finiteDimensional_intertwiningMap_of_isotypic
-
-/-- A `(𝔤, K)`-submodule of an admissible module is admissible. -/
-theorem submodule (hM : M.IsAdmissible) (N : GKSubmodule M) : (M.submodule N).IsAdmissible := by
-  intro U hU
-  have := hM.finiteDimensional U.toRepresentation
-  refine Module.Finite.of_injective
-    (IntertwiningMap.llcomp U.toRepresentation _ _ N.toSubrepresentation.subtype) fun f f' h ↦ ?_
-  ext w
-  have h' : N.toSubrepresentation.subtype (f w) = N.toSubrepresentation.subtype (f' w) :=
-    congr($h w)
-  simpa using h'
-
-/-- A finite direct sum of admissible `(𝔤, K)`-modules is admissible. -/
-theorem directSum {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
-    [∀ i, Module k (V i)] [∀ i, LieRingModule 𝔤 (V i)] [∀ i, LieModule k 𝔤 (V i)]
-    {M : ∀ i, GKModule Ad (V i)} (hM : ∀ i, (M i).IsAdmissible) :
-    (GKModule.directSum M).IsAdmissible := by
-  intro U hU
-  have := fun i ↦ (hM i).finiteDimensional U.toRepresentation
-  let c : IntertwiningMap U.toRepresentation (GKModule.directSum M).ρ →ₗ[k]
-      ∀ i, IntertwiningMap U.toRepresentation (M i).ρ :=
-    { toFun f i :=
-        ⟨(DirectSum.component k ι V i).comp f.toLinearMap, fun g ↦ by
-          ext w
-          simp only [LinearMap.comp_apply, IntertwiningMap.toLinearMap_apply,
-            IntertwiningMap.isIntertwining, ← DirectSum.apply_eq_component,
-            GKModule.directSum_ρ_apply_apply]⟩
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-  refine Module.Finite.of_injective c fun f f' h ↦ ?_
-  ext w i
-  exact congr($h i w)
-
-end IsAdmissible
-
-/-- A finite-dimensional `(𝔤, K)`-module is admissible. -/
-theorem isAdmissible_of_finiteDimensional [FiniteDimensional k V] : M.IsAdmissible :=
-  IsAdmissible.of_finiteDimensional_isotypic M fun _ _ ↦ inferInstance
-
 /-- A finite-dimensional `(𝔤, K)`-module is a Harish-Chandra module. -/
 theorem isHarishChandraModule_of_finiteDimensional [FiniteDimensional k V] :
     M.IsHarishChandraModule := by
   classical
-  refine ⟨M.isAdmissible_of_finiteDimensional, ?_⟩
+  refine ⟨M.ρ.isAdmissible_of_finiteDimensional, ?_⟩
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := k) (M := V)
   refine ⟨s, eq_top_iff.2 fun v _ ↦ ?_⟩
   exact LieSubmodule.submodule_span_le_lieSpan (hs ▸ Submodule.mem_top)
