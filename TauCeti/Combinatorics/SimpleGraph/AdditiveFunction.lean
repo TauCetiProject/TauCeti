@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Copy
 public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
+public import TauCeti.Combinatorics.SimpleGraph.Copy
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # The Cartan matrix of a graph carrying a positive additive function
@@ -39,10 +40,11 @@ That classification is proved downstream, as
 `SimpleGraph.Connected.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso`, and this
 file supplies its two graph-theoretic inputs.
 A nonnegative *subadditive* weight, with `∑_{j ∼ i} a j ≤ 2 * a i`, which vanishes at one vertex of
-a connected graph vanishes everywhere. And a graph carrying a positive additive function cannot
-sit properly inside a connected graph carrying a nonzero nonnegative subadditive weight: pairing
-the inequalities with `δ`, the contributions of the edges of the smaller graph cancel, leaving
-those of the vertices and edges it misses.
+a connected graph vanishes everywhere. And a finite graph carrying a positive additive function,
+or more generally a positive *superadditive* weight with `2 * δ i ≤ ∑_{j ∼ i} δ j`, cannot sit
+properly inside a connected graph carrying a nonzero nonnegative subadditive weight: pairing the
+inequalities with `δ`, the contributions of the edges of the smaller graph dominate those of its
+vertices, leaving no room for the vertices and edges it misses.
 
 ## Main definitions
 
@@ -70,8 +72,8 @@ those of the vertices and edges it misses.
   `SimpleGraph.Preconnected.pos_of_sum_le_smul`: zero propagation for nonnegative subadditive
   weights, which are therefore either zero or positive on a preconnected graph.
 * `SimpleGraph.Copy.exists_iso_of_sum_le_two_mul`: the proper-extension obstruction. A copy of a
-  graph with a positive additive function inside a preconnected graph carrying a nonzero
-  nonnegative subadditive weight is an isomorphism.
+  finite graph with a positive superadditive weight, such as a positive additive function, inside
+  a preconnected graph carrying a nonzero nonnegative subadditive weight is an isomorphism.
 
 ## References
 
@@ -181,12 +183,7 @@ theorem two_mul_dotProduct_graphCartanMatrix_mulVec [CommRing R] {δ : V → R}
     rw [← Finset.mul_sum, hδ i]
     ring
   have s₂ : ∑ i, ∑ j ∈ G.neighborFinset i, δ i * (δ j * y j ^ 2) = ∑ i, 2 * (δ i * y i) ^ 2 := by
-    have swap : (∑ i, ∑ j ∈ G.neighborFinset i, δ i * (δ j * y j ^ 2)) =
-        ∑ j, ∑ i ∈ G.neighborFinset j, δ i * (δ j * y j ^ 2) :=
-      Finset.sum_comm' fun i j ↦ by
-        simp only [Finset.mem_univ, true_and, and_true, mem_neighborFinset]
-        exact ⟨Adj.symm, Adj.symm⟩
-    rw [swap]
+    rw [sum_neighborFinset_comm]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [← Finset.sum_mul, hδ j]
     ring
@@ -458,67 +455,63 @@ theorem Preconnected.pos_of_sum_le_smul (hG : G.Preconnected) (ha0 : 0 ≤ a) (h
 
 end Subadditive
 
-/-! ### Copies of a graph carrying a positive additive function -/
+/-! ### Copies of a graph carrying a positive superadditive weight -/
 
 section Copy
 
-variable {G} {W : Type*} {H : SimpleGraph W} [H.LocallyFinite]
-  [CommSemiring R] [PartialOrder R] [IsStrictOrderedRing R]
+omit [Fintype V] [DecidableRel G.Adj]
+
+variable {G} [Finite V] [G.LocallyFinite] {W : Type*} {H : SimpleGraph W} [H.LocallyFinite]
+  [Semiring R] [PartialOrder R] [IsStrictOrderedRing R]
 
 omit [DecidableEq V] in
 /-- **The proper-extension obstruction.** Let `f` be a copy, not necessarily induced, of a nonempty
-finite graph `G` carrying a positive additive function `δ` inside a preconnected, locally finite
-graph `H`.
+finite graph `G` inside a preconnected, locally finite graph `H`, where `G` carries a positive
+weight `δ` with `2 * δ v ≤ ∑_{u ∼ v} δ u` at every vertex (for instance a positive additive
+function).
 If `H` carries a nonzero nonnegative weight `a` with `∑_{y ∼ x} a y ≤ 2 * a x` at every vertex,
 then `f` is an isomorphism: every vertex of `H` is a value of `f`, and every edge of `H` between
 two values of `f` is the image of an edge of `G`.
 
-So a graph containing a graph with a positive additive function as a proper subgraph, induced or
-not, carries no such weight. -/
+So if the image of `f` is a proper subgraph of `H`, induced or not, then `H` carries no such
+weight. -/
 theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Preconnected)
-    {δ : V → R} (hδpos : ∀ v, 0 < δ v) (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, δ u = 2 * δ v)
+    {δ : V → R} (hδpos : ∀ v, 0 < δ v) (hδ : ∀ v, 2 * δ v ≤ ∑ u ∈ G.neighborFinset v, δ u)
     {a : W → R} (ha0 : 0 ≤ a) (ha : a ≠ 0)
     (hle : ∀ x, ∑ y ∈ H.neighborFinset x, a y ≤ 2 * a x) :
     ∃ e : G ≃g H, ⇑e = f := by
+  have := Fintype.ofFinite V
   have hpos : ∀ x, 0 < a x :=
-    hH.pos_of_sum_le_smul (c := (2 : R)) ha0 ha fun x ↦ by rw [smul_eq_mul]; exact hle x
-  -- The neighbours of `v` map to neighbours of `f v`.
-  have hsub (v : V) : (G.neighborFinset v).map f.toEmbedding ⊆ H.neighborFinset (f v) := by
-    intro x hx
-    obtain ⟨u, hu, rfl⟩ := mem_map.1 hx
-    rw [mem_neighborFinset] at hu ⊢
-    exact f.toHom.map_adj hu
-  have hle₁ (v : V) : ∑ u ∈ G.neighborFinset v, a (f u) ≤ ∑ y ∈ H.neighborFinset (f v), a y := by
-    have h := sum_le_sum_of_subset_of_nonneg (hsub v) fun y _ _ ↦ ha0 y
-    rwa [sum_map] at h
-  -- Paired with `δ`, the sums over the edges of `G` reproduce `2 * a (f v)`, as `δ` is additive.
-  have hswap : ∑ v, δ v * ∑ u ∈ G.neighborFinset v, a (f u) = ∑ v, δ v * (2 * a (f v)) := by
-    have swap : ∑ v, ∑ u ∈ G.neighborFinset v, δ v * a (f u) =
-        ∑ u, ∑ v ∈ G.neighborFinset u, δ v * a (f u) :=
-      sum_comm' fun v u ↦ by
-        simp only [mem_univ, true_and, and_true, mem_neighborFinset]
-        exact ⟨Adj.symm, Adj.symm⟩
+    hH.pos_of_sum_le_smul ha0 ha fun x ↦ (hle x).trans_eq (smul_eq_mul 2 (a x)).symm
+  -- `f.toEmbedding` is `f` bundled with its injectivity.
+  have hcoe : ⇑f.toEmbedding = ⇑f := rfl
+  -- Paired with `δ`, the sums over the edges of `G` dominate `2 * a (f v)`.
+  have hswap : ∑ v, δ v * (2 * a (f v)) ≤ ∑ v, δ v * ∑ u ∈ G.neighborFinset v, a (f u) := by
     simp_rw [mul_sum]
-    rw [swap]
-    refine sum_congr rfl fun u _ ↦ ?_
-    rw [← sum_mul, hδ u]
-    ring
-  -- So no neighbour of `f v` is missed: it would make the paired inequalities strict.
-  have hnbr (v : V) : H.neighborFinset (f v) ⊆ (G.neighborFinset v).map f.toEmbedding := by
+    rw [sum_neighborFinset_comm]
+    refine sum_le_sum fun u _ ↦ ?_
+    -- The numeral `2` is central, so it moves past `δ u` without commutativity of `R`.
+    rw [← sum_mul, ← mul_assoc, ← (Commute.ofNat_left 2 (δ u)).eq]
+    exact mul_le_mul_of_nonneg_right (hδ u) (ha0 (f u))
+  -- So every neighbour of `f v` comes from one of `v`: a missed one makes the pairing strict.
+  have hnbr (v : V) : ∀ y ∈ H.neighborFinset (f v), ∃ u ∈ G.neighborFinset v, f u = y := by
     intro y hy
     by_contra hy'
-    have hlt := sum_lt_sum_of_subset (hsub v) hy hy' (hpos y) fun z _ _ ↦ ha0 z
-    rw [sum_map] at hlt
+    have hlt := sum_lt_sum_of_subset (f.map_neighborFinset_subset v) hy
+      (by rwa [mem_map, hcoe]) (hpos y) fun z _ _ ↦ ha0 z
+    rw [sum_map, hcoe] at hlt
     have h₁ : ∑ w, δ w * ∑ u ∈ G.neighborFinset w, a (f u) <
         ∑ w, δ w * ∑ y ∈ H.neighborFinset (f w), a y :=
-      sum_lt_sum (fun w _ ↦ mul_le_mul_of_nonneg_left (hle₁ w) (hδpos w).le)
+      sum_lt_sum
+        (fun w _ ↦ mul_le_mul_of_nonneg_left (f.sum_neighborFinset_comp_le fun z _ _ ↦ ha0 z)
+          (hδpos w).le)
         ⟨v, mem_univ v, mul_lt_mul_of_pos_left hlt (hδpos v)⟩
     have h₂ : ∑ w, δ w * ∑ y ∈ H.neighborFinset (f w), a y ≤ ∑ w, δ w * (2 * a (f w)) :=
       sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_left (hle (f w)) (hδpos w).le
-    exact (h₁.trans_le h₂).ne hswap
+    exact (hswap.trans_lt (h₁.trans_le h₂)).false
   have hadj (u v : V) (h : H.Adj (f u) (f v)) : G.Adj u v := by
-    obtain ⟨w, hw, hwv⟩ := mem_map.1 (hnbr u ((mem_neighborFinset _ _ _).2 h))
-    rwa [f.toEmbedding.injective.eq_iff.1 hwv, mem_neighborFinset] at hw
+    obtain ⟨w, hw, hwv⟩ := hnbr u (f v) ((mem_neighborFinset _ _ _).2 h)
+    rwa [f.injective hwv, mem_neighborFinset] at hw
   -- The values of `f` are closed under adjacency in `H`, hence exhaust it.
   have hsurj : Function.Surjective f := by
     obtain ⟨v₀⟩ := ‹Nonempty V›
@@ -529,7 +522,7 @@ theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Pr
     | nil => exact fun h ↦ h
     | cons h _ ih =>
       rintro ⟨v, rfl⟩
-      obtain ⟨u, -, hu⟩ := mem_map.1 (hnbr v ((mem_neighborFinset _ _ _).2 h))
+      obtain ⟨u, -, hu⟩ := hnbr v _ ((mem_neighborFinset _ _ _).2 h)
       exact ih ⟨u, hu⟩
   exact ⟨{ Equiv.ofBijective f ⟨f.injective, hsurj⟩ with
     map_rel_iff' := fun {u v} ↦ ⟨hadj u v, f.toHom.map_adj⟩ }, rfl⟩
