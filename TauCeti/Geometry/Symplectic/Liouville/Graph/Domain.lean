@@ -251,6 +251,13 @@ noncomputable def liouvilleGraphSublevelHomotopy (hf₀ : ∀ x ∈ W, 0 ≤ f x
       {x | (x : M) ∈ W} :=
   (h.liouvilleRetractionHomotopy hZ).restrictInvariant _
 
+@[simp]
+theorem coe_liouvilleGraphSublevelHomotopy_apply (hf₀ : ∀ x ∈ W, 0 ≤ f x) (c : ℝ)
+    (p : unitInterval × {x | liouvilleGraphFunction Z W f x ≤ c}) :
+    (h.liouvilleGraphSublevelHomotopy hZ hf₀ c p : M) =
+      h.liouvilleRetractionHomotopy hZ (p.1, p.2) :=
+  ContinuousMap.HomotopyRel.coe_restrictInvariant_apply _ _ p
+
 /-- **The deformation retraction of a strict sublevel set of a Liouville graph function.** When `f`
 is nonnegative on the Liouville domain `W`, the Liouville deformation retraction maps the strict
 sublevel set `{F < c}` into itself, and restricts there to a homotopy from the identity to the
@@ -261,6 +268,13 @@ noncomputable def liouvilleGraphStrictSublevelHomotopy (hf₀ : ∀ x ∈ W, 0 �
         (h.liouvilleGraphFunction_liouvilleRetractionHomotopy_le hZ hf₀ (s, x)).trans_lt hx)
       {x | (x : M) ∈ W} :=
   (h.liouvilleRetractionHomotopy hZ).restrictInvariant _
+
+@[simp]
+theorem coe_liouvilleGraphStrictSublevelHomotopy_apply (hf₀ : ∀ x ∈ W, 0 ≤ f x) (c : ℝ)
+    (p : unitInterval × {x | liouvilleGraphFunction Z W f x < c}) :
+    (h.liouvilleGraphStrictSublevelHomotopy hZ hf₀ c p : M) =
+      h.liouvilleRetractionHomotopy hZ (p.1, p.2) :=
+  ContinuousMap.HomotopyRel.coe_restrictInvariant_apply _ _ p
 
 end GraphFunction
 
