@@ -35,6 +35,8 @@ translation flow on `AddCircle 1` is ergodic and has the nonconstant eigenfuncti
   measurable set has measure `0` or `1`, read as a real number;
 * `MeasureTheory.Measure.IsWeaklyMixing.ergodicVAdd`: weak mixing of a finite invariant measure
   implies ergodicity;
+* `MeasureTheory.Measure.IsWeaklyMixing.map`: the pushforward along an equivariant measurable map
+  to a space with a measurable translation action is weakly mixing;
 * `MeasurableEmbedding.isWeaklyMixing_map_iff`: along an equivariant measurable embedding, the
   pushforward is weakly mixing exactly when the measure is; in particular weak mixing is
   invariant under measure-preserving isomorphism of actions
@@ -76,9 +78,8 @@ theorem isWeaklyMixing_def : IsWeaklyMixing μ ↔ ∀ A B : Set X, MeasurableSe
   Iff.rfl
 
 /-- **The zero-one law of weak mixing.** If the translates of a measurable set `s` are almost
-everywhere equal to `s`, then `μ.real s` is `0` or `1`: the integrand for `A = B = s` is the
-constant `|μ.real s − (μ.real s)²|`, whose time averages tend to `0` only if it vanishes. No
-finiteness is assumed, so a set of infinite measure also qualifies, its real measure being `0`. -/
+everywhere equal to `s`, then `μ.real s` is `0` or `1`. No finiteness is assumed, so a set of
+infinite measure also qualifies, its real measure being `0`. -/
 theorem IsWeaklyMixing.measureReal_eq_zero_or_one (h : IsWeaklyMixing μ) {s : Set X}
     (hs : MeasurableSet s) (hinv : ∀ t : ℝ, (fun x => t +ᵥ x) ⁻¹' s =ᵐ[μ] s) :
     μ.real s = 0 ∨ μ.real s = 1 := by
@@ -97,9 +98,7 @@ theorem IsWeaklyMixing.measureReal_univ_eq_zero_or_one (h : IsWeaklyMixing μ) :
   h.measureReal_eq_zero_or_one .univ fun t => by rw [preimage_univ]
 
 /-- **Weak mixing implies ergodicity.** A weakly mixing action of `ℝ` preserving a finite measure
-is ergodic. The measure is then zero or a probability measure
-(`IsWeaklyMixing.measureReal_univ_eq_zero_or_one`), and for a probability measure an almost
-invariant measurable set has measure `0` or `1` (`IsWeaklyMixing.measureReal_eq_zero_or_one`). -/
+is ergodic. -/
 theorem IsWeaklyMixing.ergodicVAdd [IsFiniteMeasure μ] [VAddInvariantMeasure ℝ X μ]
     (h : IsWeaklyMixing μ) : ErgodicVAdd ℝ X μ where
   aeconst_of_forall_preimage_vadd_ae_eq {s} hs hinv := by
@@ -113,14 +112,14 @@ theorem IsWeaklyMixing.ergodicVAdd [IsFiniteMeasure μ] [VAddInvariantMeasure �
       · exact Or.inl ((measureReal_eq_zero_iff).1 h2)
       · exact Or.inr ((ENNReal.toReal_eq_one_iff _).1 h2)
 
-/-- The zero measure is weakly mixing: every integrand vanishes. -/
+/-- The zero measure is weakly mixing. -/
 @[simp]
 theorem isWeaklyMixing_zero : IsWeaklyMixing (0 : Measure X) := by
   intro A B _ _
   simp
 
 /-- The action of `ℝ` on a space with at most one point is weakly mixing for a measure that is
-zero or a probability measure: every integrand vanishes. -/
+zero or a probability measure. -/
 theorem isWeaklyMixing_of_subsingleton [Subsingleton X] [IsZeroOrProbabilityMeasure μ] :
     IsWeaklyMixing μ := by
   rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
@@ -157,8 +156,9 @@ variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] [AddAction ℝ X]
   {μ : Measure X} {f : X → Y}
 
 /-- **Weak mixing along an equivariant embedding**: the pushforward of a measure along an
-equivariant measurable embedding is weakly mixing exactly when the measure is. This follows
-`MeasurableEmbedding.ergodicSMul_map_iff` in `TauCeti/Dynamics/Ergodic/Action/Map.lean`. -/
+equivariant measurable embedding is weakly mixing exactly when the measure is. This is the
+weak-mixing analogue of `MeasurableEmbedding.ergodicSMul_map_iff` in
+`TauCeti/Dynamics/Ergodic/Action/Map.lean`. -/
 theorem isWeaklyMixing_map_iff (hf : MeasurableEmbedding f)
     (hfg : ∀ (t : ℝ) x, f (t +ᵥ x) = t +ᵥ f x) :
     (μ.map f).IsWeaklyMixing ↔ μ.IsWeaklyMixing := by
