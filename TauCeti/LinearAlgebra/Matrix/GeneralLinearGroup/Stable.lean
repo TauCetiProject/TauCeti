@@ -638,30 +638,36 @@ def directLimitAbelianizationEquiv :
   (DirectLimit.abelianizationEquiv _ _).symm
 
 /-- The identification of the direct limit of the finite-rank abelianizations with `K₁(A)` sends
+the class of the abelianization of `u : GL (Fin n) A` to the class of `u` in `K₁(A)`. -/
+@[simp]
+theorem directLimitAbelianizationEquiv_mk (n : ℕ) (u : GL (Fin n) A) :
+    directLimitAbelianizationEquiv A ⟦⟨n, Group.Abelianization.of u⟩⟧ = mk A n u := by
+  rw [directLimitAbelianizationEquiv, MulEquiv.symm_apply_eq, mk_apply,
+    StableGeneralLinearGroup.of_apply, DirectLimit.abelianizationEquiv_mk]
+
+/-- The identification of the direct limit of the finite-rank abelianizations with `K₁(A)` sends
 the class of `x : Group.Abelianization (GL (Fin n) A)` to its image under the homomorphism
 induced by `AlgebraicK1.mk A n`. -/
 theorem directLimitAbelianizationEquiv_of (n : ℕ) (x : Group.Abelianization (GL (Fin n) A)) :
     directLimitAbelianizationEquiv A (DirectLimit.Monoid.of _ _ n x) =
       Group.Abelianization.lift (mk A n) x := by
-  rw [directLimitAbelianizationEquiv, DirectLimit.abelianizationEquiv_symm_of, mk,
-    Group.Abelianization.lift_of_comp]
-  -- `StableGeneralLinearGroup.of A n` is defined as the canonical map `DirectLimit.Monoid.of`.
-  rfl
+  obtain ⟨u, rfl⟩ := Group.Abelianization.surjective_of _ x
+  rw [DirectLimit.Monoid.of_apply, directLimitAbelianizationEquiv_mk,
+    Group.Abelianization.lift_apply_of]
 
 /-- The inverse of `directLimitAbelianizationEquiv` sends the class of `u : GL (Fin n) A` in
 `K₁(A)` to the class of the abelianization of `u` in the direct limit. -/
 @[simp]
 theorem directLimitAbelianizationEquiv_symm_mk (n : ℕ) (u : GL (Fin n) A) :
-    (directLimitAbelianizationEquiv A).symm (mk A n u) =
-      DirectLimit.Monoid.of _ _ n (Group.Abelianization.of u) := by
-  rw [MulEquiv.symm_apply_eq, directLimitAbelianizationEquiv_of,
-    Group.Abelianization.lift_apply_of]
+    (directLimitAbelianizationEquiv A).symm (mk A n u) = ⟦⟨n, Group.Abelianization.of u⟩⟧ := by
+  rw [MulEquiv.symm_apply_eq, directLimitAbelianizationEquiv_mk]
 
 /-- The class of an invertible matrix in algebraic `K₁` is trivial exactly when some
 stabilization of the matrix is a product of commutators of invertible matrices. -/
 theorem mk_eq_one_iff_exists_mem_commutator {n : ℕ} {u : GL (Fin n) A} :
     mk A n u = 1 ↔ ∃ k, ∃ h : n ≤ k, stabilizeGL A h u ∈ commutator (GL (Fin k) A) := by
-  rw [mk, MonoidHom.comp_apply, ← MonoidHom.mem_ker, Group.Abelianization.ker_of]
+  rw [mk_apply, ← MonoidHom.mem_ker, Group.Abelianization.ker_of,
+    StableGeneralLinearGroup.of_apply, ← DirectLimit.Monoid.of_apply]
   exact DirectLimit.Monoid.of_mem_commutator_iff
 
 end AlgebraicK1
