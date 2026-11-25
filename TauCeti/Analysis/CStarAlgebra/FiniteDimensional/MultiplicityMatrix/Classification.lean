@@ -12,7 +12,7 @@ import TauCeti.Algebra.GroupWithZero.Pi
 import TauCeti.Algebra.Star.Pi
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix.EuclideanLin
+import TauCeti.Analysis.CStarAlgebra.Matrix.EuclideanCLM
 import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
@@ -64,7 +64,7 @@ private def evalEuclideanHom [∀ i, Fintype (n i)] [∀ j, Fintype (m j)] [∀ 
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ)) (j : κ) :
     (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ]
       (EuclideanSpace ℂ (m j) →L[ℂ] EuclideanSpace ℂ (m j)) :=
-  (CStarMatrix.toEuclideanCLM (m j)).toNonUnitalStarAlgHom.comp
+  (CStarMatrix.toEuclideanCLM (n := m j)).toNonUnitalStarAlgHom.comp
     ((Pi.evalNonUnitalStarAlgHom ℂ _ j).comp φ)
 
 @[simp]
@@ -72,7 +72,7 @@ private theorem evalEuclideanHom_apply [∀ i, Fintype (n i)] [∀ j, Fintype (m
     [∀ j, DecidableEq (m j)]
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
     (j : κ) (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
-    evalEuclideanHom φ j x = CStarMatrix.toEuclideanCLM (m j) (φ x j) := by
+    evalEuclideanHom φ j x = CStarMatrix.toEuclideanCLM (φ x j) := by
   simp [evalEuclideanHom]
 
 private theorem finrank_range_evalEuclideanHom_single [DecidableEq ι]
@@ -211,7 +211,7 @@ private theorem toEuclideanCLM_blockHom_single_basisFun [Fintype ι] [DecidableE
     [∀ i, Fintype (n i)] {M : Type*} [Fintype M] [DecidableEq M]
     (r : ι → ℕ) (f : (Σ i, n i × Fin (r i)) ↪ M) (i : ι) [DecidableEq (n i)]
     (p q : n i) (z : M) :
-    CStarMatrix.toEuclideanCLM M
+    CStarMatrix.toEuclideanCLM
         (TauCeti.cstarMatrixBlockHom r f (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q 1))))
         (EuclideanSpace.basisFun M ℂ z) =
       ∑ t : Fin (r i),
@@ -229,7 +229,7 @@ private theorem intertwine_single_of_basis [Fintype ι] [DecidableEq ι]
     {b : OrthonormalBasis (m j) ℂ (EuclideanSpace ℂ (m j))}
     (hb : ∀ a, b (f a) = partialBasisVec φ j a) (i : ι) (p q : n i) :
     (b.repr.symm : EuclideanSpace ℂ (m j) →L[ℂ] EuclideanSpace ℂ (m j)) *
-        CStarMatrix.toEuclideanCLM (m j)
+        CStarMatrix.toEuclideanCLM
           (TauCeti.cstarMatrixBlockHom (φ.multiplicityMatrix j) f
             (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q 1)))) =
       evalEuclideanHom φ j (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q 1))) *
@@ -261,7 +261,7 @@ private theorem intertwine_of_basis [Fintype ι] [DecidableEq ι]
     {b : OrthonormalBasis (m j) ℂ (EuclideanSpace ℂ (m j))}
     (hb : ∀ a, b (f a) = partialBasisVec φ j a) (x : ∀ i, CStarMatrix (n i) (n i) ℂ) :
     (b.repr.symm : EuclideanSpace ℂ (m j) →L[ℂ] EuclideanSpace ℂ (m j)) *
-        CStarMatrix.toEuclideanCLM (m j)
+        CStarMatrix.toEuclideanCLM
           (TauCeti.cstarMatrixBlockHom (φ.multiplicityMatrix j) f x) =
       evalEuclideanHom φ j x *
         (b.repr.symm : EuclideanSpace ℂ (m j) →L[ℂ] EuclideanSpace ℂ (m j)) := by
@@ -307,21 +307,23 @@ private theorem exists_unitary_conj_cstarMatrixBlockHom [Fintype ι]
   let uH : unitary (EuclideanSpace ℂ (m j) →L[ℂ] EuclideanSpace ℂ (m j)) :=
     Unitary.linearIsometryEquiv.symm b.repr.symm
   let u : unitary (CStarMatrix (m j) (m j) ℂ) :=
-    Unitary.map (StarMonoidHom.ofClass (CStarMatrix.toEuclideanCLM (m j)).symm) uH
-  refine ⟨u, fun x ↦ (CStarMatrix.toEuclideanCLM (m j)).injective ?_⟩
-  have hu : CStarMatrix.toEuclideanCLM (m j) u = (b.repr.symm : _ →L[ℂ] _) := by
-    simp [u, uH, StarMonoidHom.ofClass]
-  calc CStarMatrix.toEuclideanCLM (m j)
+    ⟨CStarMatrix.toEuclideanCLM.symm uH, Unitary.map_mem CStarMatrix.toEuclideanCLM.symm uH.prop⟩
+  refine ⟨u, fun x ↦ CStarMatrix.toEuclideanCLM.injective ?_⟩
+  have hu : CStarMatrix.toEuclideanCLM (u : CStarMatrix (m j) (m j) ℂ) =
+      (b.repr.symm : _ →L[ℂ] _) := by
+    rw [StarAlgEquiv.apply_symm_apply, Unitary.coe_symm_linearIsometryEquiv_apply]
+  calc CStarMatrix.toEuclideanCLM
         ((u : CStarMatrix (m j) (m j) ℂ) *
           TauCeti.cstarMatrixBlockHom (φ.multiplicityMatrix j) f x *
           star (u : CStarMatrix (m j) (m j) ℂ))
       = ((b.repr.symm : _ →L[ℂ] _) *
-          CStarMatrix.toEuclideanCLM (m j)
+          CStarMatrix.toEuclideanCLM
             (TauCeti.cstarMatrixBlockHom (φ.multiplicityMatrix j) f x)) *
-          star (uH : _ →L[ℂ] _) := by simp [map_mul, map_star, hu, uH, mul_assoc]
+          star (uH : _ →L[ℂ] _) := by
+        rw [map_mul, map_mul, map_star, hu, Unitary.coe_symm_linearIsometryEquiv_apply, mul_assoc]
     _ = evalEuclideanHom φ j x * ((uH : _ →L[ℂ] _) * star (uH : _ →L[ℂ] _)) := by
         rw [intertwine_of_basis φ j hb x, mul_assoc, ← Unitary.coe_symm_linearIsometryEquiv_apply]
-    _ = CStarMatrix.toEuclideanCLM (m j) (φ x j) := by
+    _ = CStarMatrix.toEuclideanCLM (φ x j) := by
         rw [Unitary.mul_star_self_of_mem uH.prop, mul_one, evalEuclideanHom_apply]
 
 /-- **Standard block-diagonal form up to unitary conjugacy**: every `⋆`-homomorphism `φ` is
@@ -534,6 +536,16 @@ private theorem multiplicityMatrix_comp_of_finite [Finite ι] [Fintype κ]
     simp_rw [← ψ'.natCast_multiplicityMatrix_apply_eq_trace_single k j _]
     simp [ψ', mul_comm]
 
+private theorem multiplicityMatrix_comp_singleFunUnique_apply [DecidableEq ι]
+    [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)] [∀ j, Fintype (m j)]
+    (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
+    (j : κ) (i : ι) :
+    (φ.comp (NonUnitalStarAlgHom.singleFunUnique ℂ Unit
+        (fun i' ↦ CStarMatrix (n i') (n i') ℂ) i)).multiplicityMatrix j () =
+      φ.multiplicityMatrix j i := by
+  rw [multiplicityMatrix_apply, multiplicityMatrix_apply, comp_apply]
+  simp
+
 /-- **Functoriality of the multiplicity matrix**: composition of `⋆`-homomorphisms between products
 of complex matrix C⋆-algebras corresponds to matrix multiplication of their multiplicity matrices.
 -/
@@ -545,15 +557,13 @@ theorem multiplicityMatrix_comp [Fintype κ]
     (ψ.comp φ).multiplicityMatrix = ψ.multiplicityMatrix * φ.multiplicityMatrix := by
   classical
   ext k i
+  -- Column `i` depends only on the `i`-th source block, reducing to the `Unit`-indexed finite case.
   let ιHom := NonUnitalStarAlgHom.singleFunUnique ℂ Unit (fun i' ↦ CStarMatrix (n i') (n i') ℂ) i
-  have hι : ιHom (Pi.single () 1) = Pi.single i 1 := by simp [ιHom]
   have hunit := congrFun (congrFun (multiplicityMatrix_comp_of_finite ψ (φ.comp ιHom)) k) ()
-  rw [(ψ.comp φ).multiplicityMatrix_apply k i, ← hι, ← comp_apply,
-    ← ((ψ.comp φ).comp ιHom).multiplicityMatrix_apply k (), comp_assoc, hunit,
+  rw [← multiplicityMatrix_comp_singleFunUnique_apply (ψ.comp φ) k i, comp_assoc, hunit,
     Matrix.mul_apply, Matrix.mul_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [φ.multiplicityMatrix_apply j i, ← hι, ← comp_apply,
-    ← (φ.comp ιHom).multiplicityMatrix_apply j ()]
+  exact Finset.sum_congr rfl fun j _ ↦
+    congrArg (ψ.multiplicityMatrix k j * ·) (multiplicityMatrix_comp_singleFunUnique_apply φ j i)
 
 end Composition
 

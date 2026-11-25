@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension
 
 import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.LinearAlgebra.Finsupp.Pi
@@ -145,15 +146,15 @@ realization of `K`. It sends each vertex `u` of the subdivision to `edgewisePoin
 of its entries, and is linear in barycentric coordinates on every simplex. -/
 def edgewiseSubdivisionRealizationMap :
     Realization (K.edgewiseSubdivision k) → Realization K :=
-  fun x => ⟨Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.val) x.val,
-    linearCombination_edgewisePoint_mem_realization x⟩
+  fun x => ⟨(K.edgewiseSubdivision k).linearExtension (fun u => edgewisePoint u.val) x,
+    by simpa only [linearExtension_apply] using linearCombination_edgewisePoint_mem_realization x⟩
 
 /-- The edgewise realization map is the linear combination of the points `edgewisePoint u`. -/
 @[simp]
 theorem edgewiseSubdivisionRealizationMap_val (x : Realization (K.edgewiseSubdivision k)) :
     (edgewiseSubdivisionRealizationMap K k x : ι →₀ ℝ) =
       Finsupp.linearCombination ℝ (fun u : K.EdgewiseVertex k => edgewisePoint u.val) x.val :=
-  (rfl)
+  linearExtension_apply _ x
 
 /-- A vertex `u` of the edgewise subdivision is sent to `edgewisePoint u`, the average of its
 entries. -/
@@ -182,25 +183,12 @@ theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
     range (fun x : StandardSimplex ρ.val =>
       ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val : ι → ℝ)) =
       convexHull ℝ (range fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ)) := by
-  classical
-  let L : (K.EdgewiseVertex k →₀ ℝ) →ₗ[ℝ] (ι → ℝ) :=
-    (Finsupp.lcoeFun : (ι →₀ ℝ) →ₗ[ℝ] (ι → ℝ)).comp
-      (Finsupp.linearCombination ℝ fun a : K.EdgewiseVertex k => edgewisePoint a.val)
-  have hformula : (fun x : StandardSimplex ρ.val =>
-      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val : ι → ℝ)) =
-      L ∘ Subtype.val := by
-    funext x
-    simp [L]
-  simp only [hformula, range_comp, Subtype.range_coe]
-  rw [L.image_convexHull]
+  rw [← range_linearExtension_comp_faceInclusion
+    (fun u : K.EdgewiseVertex k => (edgewisePoint u.val : ι → ℝ)) ρ]
   congr 1
-  have hsingle (a : K.EdgewiseVertex k) :
-      L (Finsupp.single a 1) = (edgewisePoint a.val : ι → ℝ) := by simp [L]
-  simp only [Finset.coe_image, Set.image_image]
-  simp only [hsingle, image_eq_range]
-  -- The subtype of the coerced set `(ρ.1 : Set _)` and the finset subtype `ρ.1` are
-  -- definitionally equal (as in `Finset.coe_sort_coe`), with the same value projection.
-  rfl
+  funext x
+  simp only [Function.comp_apply, edgewiseSubdivisionRealizationMap_val, linearExtension_apply,
+    Finsupp.linearCombination_apply, Finsupp.coe_sum, Finsupp.coe_smul]
 
 /-- The edgewise realization map is continuous for the weak topologies on both realizations. -/
 theorem continuous_edgewiseSubdivisionRealizationMap :

@@ -73,12 +73,10 @@ theorem ringEquivLaurentSeries_equivLevel_transition (h : n ∣ m)
   simp [TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_subst,
     TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand, single_pow]
 
-/-- Pullback between levels commutes with the differential. -/
+/-- Pullback between levels commutes with the level differential `D`. -/
 @[simp]
-theorem transition_ofForm_D (h : n ∣ m) (f : K⸨X⸩) :
-    transition K h (ofForm (d := n) (TauCeti.ContinuousKaehlerDifferential.D K f)) =
-      ofForm (d := m) (TauCeti.ContinuousKaehlerDifferential.D K
-        (_root_.LaurentSeries.expand K (m.divExact n) f)) := by
+theorem transition_D (h : n ∣ m) (x : Level K n) :
+    transition K h (D K n x) = D K m (Level.transition K h x) := by
   apply (addEquivContinuousKaehlerDifferential K m).injective
   simp [TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand]
 

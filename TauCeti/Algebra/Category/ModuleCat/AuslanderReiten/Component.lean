@@ -17,7 +17,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Length
 import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.HopkinsLevitzki
-import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit
+import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.Basic
 import TauCeti.Algebra.Category.FGModuleCat.Injective
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 import TauCeti.Algebra.Category.FGModuleCat.Projective
@@ -299,7 +299,8 @@ theorem forall_prop_and_isRepresentationFinite_of_length_le (hA : centralIdempot
       have := ModuleCat.projective_of_module_projective (R := A) M.obj
       exact FGModuleCat.projective_of_moduleProjective A M
     obtain ⟨E, _, p, _, hE, hseq⟩ :=
-      ModuleCat.exists_isAlmostSplit_arTranslate k M.obj (hS M hM) hproj'
+      ModuleCat.exists_isAlmostSplit_arTranslate k k
+        (TauCeti.length_quotient_linearMap_self_eq_one k) M.obj (hS M hM) hproj'
     exact ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk p,
       (ObjectProperty.ι _).isRightAlmostSplit_of_map _ hseq.isRightAlmostSplit_g⟩
 

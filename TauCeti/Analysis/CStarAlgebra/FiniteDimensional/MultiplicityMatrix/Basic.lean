@@ -135,11 +135,17 @@ theorem multiplicityMatrix_zero :
   ext j i
   simp [multiplicityMatrix_apply]
 
+private theorem isIdempotentElem_map_apply
+    (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
+    {x : ∀ i, CStarMatrix (n i) (n i) ℂ} (hx : IsIdempotentElem x) (j : κ) :
+    IsIdempotentElem (φ x j) := by
+  rw [IsIdempotentElem, ← Pi.mul_apply, ← map_mul, hx.eq]
+
 private theorem isIdempotentElem_ofMatrix_symm_map
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
     {x : ∀ i, CStarMatrix (n i) (n i) ℂ} (hx : IsIdempotentElem x) (j : κ) :
     IsIdempotentElem (CStarMatrix.ofMatrix.symm (φ x j)) := by
-  rw [IsIdempotentElem, ← CStarMatrix.ofMatrix_symm_mul, ← Pi.mul_apply, ← map_mul, hx.eq]
+  rw [IsIdempotentElem, ← CStarMatrix.ofMatrix_symm_mul, (isIdempotentElem_map_apply φ hx j).eq]
 
 private theorem trace_map_single_eq_of_index [DecidableEq ι]
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
@@ -167,9 +173,10 @@ private theorem rank_map_piSingle_one_eq_rank_single_mul_card [DecidableEq ι]
         (φ (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p p 1))) j)) *
         Fintype.card (n i) := by
   apply Nat.cast_injective (R := ℂ)
-  rw [← Matrix.trace_eq_rank_of_isIdempotentElem
+  rw [← Matrix.IsIdempotentElem.trace_eq_rank
       (isIdempotentElem_ofMatrix_symm_map φ (IsIdempotentElem.one.piSingle i) j),
-    Nat.cast_mul, ← Matrix.trace_eq_rank_of_isIdempotentElem
+    Nat.cast_mul,
+    ← Matrix.IsIdempotentElem.trace_eq_rank
       (isIdempotentElem_ofMatrix_symm_map φ
         ((CStarMatrix.isIdempotentElem_ofMatrix_single_one p).piSingle i) j),
     CStarMatrix.piSingle_one_eq_sum_ofMatrix_single i, map_sum, Finset.sum_apply,
@@ -197,7 +204,7 @@ theorem natCast_multiplicityMatrix_apply_eq_trace_single [DecidableEq ι]
       Matrix.trace (CStarMatrix.ofMatrix.symm
         (φ (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p p 1))) j)) := by
   rw [multiplicityMatrix_apply_eq_rank_single φ j i p,
-    Matrix.trace_eq_rank_of_isIdempotentElem
+    Matrix.IsIdempotentElem.trace_eq_rank
       (isIdempotentElem_ofMatrix_symm_map φ
         ((CStarMatrix.isIdempotentElem_ofMatrix_single_one p).piSingle i) j)]
 
@@ -222,7 +229,7 @@ theorem natCast_multiplicityMatrix_mul_card_eq_trace [DecidableEq ι]
     ((φ.multiplicityMatrix j i * Fintype.card (n i) : ℕ) : ℂ) =
       Matrix.trace (CStarMatrix.ofMatrix.symm (φ (Pi.single i 1) j)) := by
   rw [multiplicityMatrix_mul_card_eq_rank,
-    Matrix.trace_eq_rank_of_isIdempotentElem
+    Matrix.IsIdempotentElem.trace_eq_rank
       (isIdempotentElem_ofMatrix_symm_map φ (IsIdempotentElem.one.piSingle i) j)]
 
 /-- Entrywise formula for the multiplicity matrix of the identity `⋆`-homomorphism: `1` on the
@@ -270,7 +277,7 @@ theorem sum_multiplicityMatrix_mul_card_eq_rank_map_one [Fintype ι] [∀ i, Dec
   classical
   apply Nat.cast_injective (R := ℂ)
   rw [Nat.cast_sum, ← trace_map_one_eq_sum φ j,
-    Matrix.trace_eq_rank_of_isIdempotentElem (isIdempotentElem_ofMatrix_symm_map φ .one j)]
+    Matrix.IsIdempotentElem.trace_eq_rank (isIdempotentElem_ofMatrix_symm_map φ .one j)]
 
 /-- **Block-size inequality**: for each target block `j`,
 `∑ i, φ.multiplicityMatrix j i * Fintype.card (n i) ≤ Fintype.card (m j)`. -/
@@ -293,8 +300,7 @@ private theorem map_eq_zero_of_trace_eq_zero
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
     {x : ∀ i, CStarMatrix (n i) (n i) ℂ} (j : κ) (hx : IsIdempotentElem x)
     (htr : Matrix.trace (CStarMatrix.ofMatrix.symm (φ x j)) = 0) : φ x j = 0 :=
-  eq_zero_of_isIdempotentElem_of_trace_eq_zero
-    (by rw [IsIdempotentElem, ← Pi.mul_apply, ← map_mul, hx.eq]) htr
+  eq_zero_of_isIdempotentElem_of_trace_eq_zero (isIdempotentElem_map_apply φ hx j) htr
 
 /-- **Unitality criterion**: `φ` preserves the unit (`φ 1 = 1`) if and only if equality holds in
 the block-size inequality at every target block `j`. -/
@@ -306,8 +312,7 @@ theorem map_one_eq_one_iff_sum_multiplicityMatrix_eq [Fintype ι]
   · rw [sum_multiplicityMatrix_mul_card_eq_rank_map_one φ j, h]
     rw [Pi.one_apply, CStarMatrix.ofMatrix_symm_one, Matrix.rank_one]
   · rw [Pi.one_apply]
-    have hP : IsIdempotentElem (φ 1 j) := by
-      rw [IsIdempotentElem, ← Pi.mul_apply, ← map_mul, mul_one]
+    have hP : IsIdempotentElem (φ 1 j) := isIdempotentElem_map_apply φ .one j
     have hzero := eq_zero_of_isIdempotentElem_of_trace_eq_zero hP.one_sub <| by
       rw [CStarMatrix.ofMatrix_symm_sub, CStarMatrix.ofMatrix_symm_one, Matrix.trace_sub,
         Matrix.trace_one, trace_map_one_eq_sum φ j, ← Nat.cast_sum, h j, sub_self]
@@ -558,6 +563,27 @@ theorem cstarMatrixBlockHom_one_eq_one_iff [Fintype ι] [∀ i, Fintype (n i)]
     · rw [cstarMatrixBlockHom_apply_of_block_ne _ _ _ hi, CStarMatrix.one_apply,
         ite_eq_right (f.injective.ne (by grind))]
 
+private theorem rawBlockDiag_piSingle_single [DecidableEq ι]
+    (r : ι → ℕ) [DecidableEq (Σ i, n i × Fin (r i))]
+    (i : ι) [DecidableEq (n i)] (p q : n i) (c : ℂ) :
+    rawBlockDiag r (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q c))) =
+      ∑ t : Fin (r i), Matrix.single (⟨i, p, t⟩ : Σ i', n i' × Fin (r i')) ⟨i, q, t⟩ c := by
+  ext ⟨i₁, p₁, t₁⟩ ⟨i₂, p₂, t₂⟩
+  simp only [Matrix.sum_apply, Matrix.single_apply]
+  by_cases hi : i₁ = i₂
+  · subst hi; rw [rawBlockDiag, Matrix.blockDiagonal'_apply_eq]
+    by_cases hii : i₁ = i
+    · subst hii; simp only [Pi.single_eq_same, Equiv.symm_apply_apply]
+      by_cases ht : t₁ = t₂
+      · subst ht; rw [Fintype.sum_eq_single t₁ fun _ _ ↦ by grind]; simp [Matrix.single_apply]
+      · rw [Finset.sum_eq_zero fun _ _ ↦ by grind, Matrix.blockDiagonal_apply_ne _ _ _ ht]
+    · simp only [Pi.single_eq_of_ne hii, CStarMatrix.ofMatrix_symm_zero, ← Pi.zero_def,
+        Matrix.blockDiagonal_zero, Matrix.zero_apply]
+      exact (Finset.sum_eq_zero fun _ _ ↦
+        ite_eq_right fun h ↦ hii (congrArg Sigma.fst h.1).symm).symm
+  · rw [rawBlockDiag, Matrix.blockDiagonal'_apply_ne _ _ _ hi]
+    exact (Finset.sum_eq_zero fun _ _ ↦ by grind).symm
+
 /-- Action of `TauCeti.cstarMatrixBlockHom` on a matrix unit `Matrix.single p q c` in source block
 `i`: it is the sum of the `r i` orthogonal matrix units
 `Matrix.single (f ⟨i, p, t⟩) (f ⟨i, q, t⟩) c` in `CStarMatrix M M ℂ`. -/
@@ -567,24 +593,7 @@ theorem cstarMatrixBlockHom_piSingle_single [Fintype ι] [DecidableEq ι]
     cstarMatrixBlockHom r f (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q c))) =
       CStarMatrix.ofMatrix (∑ t : Fin (r i), Matrix.single (f ⟨i, p, t⟩) (f ⟨i, q, t⟩) c) := by
   classical
-  have hraw : rawBlockDiag r (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p q c))) =
-      ∑ t : Fin (r i), Matrix.single (⟨i, p, t⟩ : Σ i', n i' × Fin (r i')) ⟨i, q, t⟩ c := by
-    ext ⟨i₁, p₁, t₁⟩ ⟨i₂, p₂, t₂⟩
-    simp only [Matrix.sum_apply, Matrix.single_apply]
-    by_cases hi : i₁ = i₂
-    · subst hi; rw [rawBlockDiag, Matrix.blockDiagonal'_apply_eq]
-      by_cases hii : i₁ = i
-      · subst hii; simp only [Pi.single_eq_same, Equiv.symm_apply_apply]
-        by_cases ht : t₁ = t₂
-        · subst ht; rw [Fintype.sum_eq_single t₁ fun _ _ ↦ by grind]; simp [Matrix.single_apply]
-        · rw [Finset.sum_eq_zero fun _ _ ↦ by grind, Matrix.blockDiagonal_apply_ne _ _ _ ht]
-      · simp only [Pi.single_eq_of_ne hii, CStarMatrix.ofMatrix_symm_zero, ← Pi.zero_def,
-          Matrix.blockDiagonal_zero, Matrix.zero_apply]
-        exact (Finset.sum_eq_zero fun _ _ ↦
-          ite_eq_right fun h ↦ hii (congrArg Sigma.fst h.1).symm).symm
-    · rw [rawBlockDiag, Matrix.blockDiagonal'_apply_ne _ _ _ hi]
-      exact (Finset.sum_eq_zero fun _ _ ↦ by grind).symm
-  rw [cstarMatrixBlockHom_eq_ofMatrix_glEmbedding, hraw, map_sum]
+  rw [cstarMatrixBlockHom_eq_ofMatrix_glEmbedding, rawBlockDiag_piSingle_single, map_sum]
   simp
 
 /-- The **product block-diagonal `⋆`-homomorphism** realizing a multiplicity matrix

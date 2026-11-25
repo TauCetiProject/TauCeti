@@ -230,7 +230,8 @@ theorem radialConnection_sub_phaseForm (x₀ : E) (b : E → E [⋀^Fin 1]→L[�
   · -- Neither `b` nor `b - Im (u⁻¹ du)` is differentiable at `y`, so both derivatives vanish.
     have hb' : ¬ DifferentiableAt ℝ (b - phaseForm u) y := fun h ↦
       hb (by simpa using h.add hφ)
-    rw [extDeriv_of_not_differentiableAt hb, extDeriv_of_not_differentiableAt hb']
+    rw [extDeriv_zero_of_not_differentiableAt hb,
+      extDeriv_zero_of_not_differentiableAt hb']
 
 /-- In radial gauge the derivative of the section is controlled by gauge invariant quantities and
 the radial connection: `|d(u α)| ≤ |∇_b α| + |K (db)| |α|`, since

@@ -239,25 +239,21 @@ noncomputable def extendScalars (g : DGRightModuleHom hM hN) :
       map_smul' := BalancedTensorProduct.map_smul_right Bᵐᵒᵖ _ _ _ _ (fun _ _ ↦ rfl) }
   map_mem' {q x} hx := by
     have hg₀ : LinearMap.IsHomogeneous (g.toLinearMap.restrictScalars R)
-        (InternalGrading.ofDecomposition ℳ).piece (InternalGrading.ofDecomposition 𝒩).piece 0 :=
-      LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
-        rw [InternalGrading.ofDecomposition_piece] at hx ⊢
-        simpa only [add_zero, LinearMap.coe_restrictScalars, coe_toLinearMap] using
-          Graded.map_mem g hx
+        (InternalGrading.ofDecomposition ℳ).piece
+        (InternalGrading.ofDecomposition 𝒩).piece 0 := by
+      rw [InternalGrading.ofDecomposition_piece, InternalGrading.ofDecomposition_piece]
+      exact g.isHomogeneous
     simpa only [add_zero, IsDGRightModule.extendScalarsGrading, LinearMap.coe_mk,
       AddHom.coe_mk] using
       (BalancedTensorProduct.isHomogeneous_map (𝒜 := 𝒜) _ _ _ _ _ _ _ _ hg₀
         (LinearMap.isHomogeneous_id _)).map_mem hx
   map_d' x := by
-    have hg₀ : LinearMap.IsHomogeneous (g.toLinearMap.restrictScalars R) ℳ 𝒩 0 :=
-      LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
-        simpa only [add_zero, LinearMap.coe_restrictScalars, coe_toLinearMap] using
-          Graded.map_mem g hx
     simp only [IsDGRightModule.extendScalarsDifferential, LinearMap.coe_mk, AddHom.coe_mk]
     have h := BalancedTensorProduct.differential_naturality hM
       (DGAlgHom.isDGBimodule f).toIsDGLeftModule hN
       (DGAlgHom.isDGBimodule f).toIsDGLeftModule _ LinearMap.id
-      (fun a m ↦ map_smul g (op a) m) (fun _ _ ↦ rfl) hg₀ (LinearMap.ext g.map_d) rfl
+      (fun a m ↦ map_smul g (op a) m) (fun _ _ ↦ rfl) g.isHomogeneous (LinearMap.ext g.map_d)
+      rfl
     exact LinearMap.congr_fun h x
 
 /-- Extension of scalars of a morphism acts on the first factor of a pure tensor. -/

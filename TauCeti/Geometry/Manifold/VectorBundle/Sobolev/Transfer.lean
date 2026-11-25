@@ -10,7 +10,7 @@ import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Deriv
 
 /-!
 # Transfer of chart data of Sobolev sections between charts
