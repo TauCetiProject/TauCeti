@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.State.IdealExtension
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace
 public import TauCeti.Analysis.CStarAlgebra.Matrix.VectorState
 
 /-!
@@ -77,9 +77,8 @@ theorem traceFst_apply_coe (c : I) : traceFst c = trace c := by
 
 /-- `γ(x, λ) = tr₂(x)` is a tracial state of `A`. -/
 theorem isTracialState_traceFst : traceFst.IsTracialState :=
-  IsTracialState.comp_of_surjective
-    (isTracialState_iff.mpr ⟨norm_normalizedTraceMap (Fin 2), normalizedTraceMap_mul_comm⟩)
-    (NonUnitalStarAlgHom.fst ℂ M₂ ℂ) Prod.fst_surjective
+  isTracialState_normalizedTraceMap.comp_of_surjective (NonUnitalStarAlgHom.fst ℂ M₂ ℂ)
+    Prod.fst_surjective
 
 /-- **`γ` vanishes at `(0, 1)`.** -/
 theorem traceFst_zero_one : traceFst ((0, 1) : A) = 0 := by
@@ -134,12 +133,12 @@ theorem eq_traceFst_of_apply_coe_eq {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →
     (isTracialState_traceFst.norm_eq_one.trans isTracialState_trace.norm_eq_one.symm).le
     h traceFst_apply_coe
 
-/-- The tracial extension of `τ` given by
-`PositiveContinuousLinearMap.IsTracialState.existsUnique_isTracialState_apply_coe_eq` is `γ`. -/
+/-- `τ` has a unique tracial extension to `A`, by
+`PositiveContinuousLinearMap.IsTracialState.existsUnique_isTracialState_apply_coe_eq`; it is `γ`
+by `eq_traceFst_of_apply_coe_eq`. -/
 theorem existsUnique_isTracialState_apply_coe_eq :
     ∃! γ : A →P[ℂ] ℂ, γ.IsTracialState ∧ ∀ c : I, γ c = trace c :=
-  ⟨traceFst, ⟨isTracialState_traceFst, traceFst_apply_coe⟩, fun _ hγ ↦
-    eq_traceFst_of_apply_coe_eq hγ.1.norm_eq_one.le hγ.2⟩
+  isTracialState_trace.existsUnique_isTracialState_apply_coe_eq
 
 /-- **The unit of `I` is an increasing approximate unit** of `I`, as the constant filter. -/
 theorem isIncreasingApproximateUnit_pure_unit : (pure unit : Filter I).IsIncreasingApproximateUnit
