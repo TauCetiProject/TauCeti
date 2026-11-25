@@ -57,6 +57,10 @@ universe u
 
 namespace SimplexCategory
 
+/-- Every topological simplex is small in any universe `v`. -/
+instance small.{v} (n : SimplexCategory) : Small.{v} (toTop.{u}.obj n) :=
+  inferInstanceAs (Small.{v} (ULift.{u} (StdSimplex ℝ (Fin (n.len + 1)))))
+
 /-- Every topological simplex is compact. -/
 instance compactSpace (n : SimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
   (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).symm.compactSpace
@@ -424,6 +428,15 @@ lemma toSSetObj_smul_def {n : SimplexCategoryᵒᵖ} (g : G) (σ : (_root_.TopCa
     g • σ = (_root_.TopCat.toSSet.map
       (_root_.TopCat.ofHom ⟨(g • · : E → E), continuous_const_smul g⟩)).app n σ :=
   (rfl)
+
+/-- Pushing singular simplices forward along an equivariant map intertwines the actions on
+simplices, including when the acting monoids differ. -/
+lemma toSSet_map_app_smul {F : _root_.TopCat.{u}} {H : Type*} [Monoid H] [MulAction H F]
+    [ContinuousConstSMul H F] {φ : G →* H} (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+    {n : SimplexCategoryᵒᵖ} (g : G) (σ : (_root_.TopCat.toSSet.obj E).obj n) :
+    (_root_.TopCat.toSSet.map f).app n (g • σ) = φ g • (_root_.TopCat.toSSet.map f).app n σ :=
+  simplexMap_injective <| ContinuousMap.ext fun p ↦ by
+    simp [toSSetObj_smul_def, simplexMap_app, hf]
 
 end Action
 

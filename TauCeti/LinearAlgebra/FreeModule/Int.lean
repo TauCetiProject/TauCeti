@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.Dimension.Localization
 -- Proof-only: torsion modules have rank zero.
 import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
 import TauCeti.Algebra.CharP.Two
+import TauCeti.Algebra.Module.Submodule.Quotient
 
 /-!
 # Homomorphisms of finitely generated abelian groups
@@ -39,6 +40,12 @@ abelian group of rank two has exactly four homomorphisms to `ℤ/2`: given a non
 * `LinearMap.index_range_eq_natAbs_det_toMatrix`: for any `ℤ`-linear map between free abelian
   groups with bases indexed by the same finite type, the index of the image is the absolute value
   of the determinant of its matrix.
+* `Module.Basis.card_quotient_span_range_nsmul`: rescaling the vectors of a finite integral basis
+  by natural numbers `m k`, the quotient by the span of the `m k • b k` has `Nat.card` equal to
+  `∏ k, m k`.
+* `LinearIndependent.card_quotient_span_range_nsmul`: rescaling a finite linearly independent
+  family `v` by natural numbers `m k` multiplies the `Nat.card` of the quotient by its span by
+  `∏ k, m k`; both sides are `0` when one of the quotients is infinite.
 * `TauCeti.natCard_addMonoidHom_eq_pow_finrank`: a free abelian group of finite rank `r` has
   `Nat.card A ^ r` homomorphisms to `A`; they are finite in number when `A` is finite
   (`TauCeti.finite_addMonoidHom`).
@@ -115,6 +122,54 @@ theorem index_range_eq_natAbs_det_toMatrix {ι : Type*} [Fintype ι] [DecidableE
   exact congr(c.repr $(LinearEquiv.ofInjective_apply f (h := hf) (b j)) i)
 
 end LinearMap
+
+/-! ### Rescaled bases -/
+
+namespace Module.Basis
+
+variable {κ M : Type*} [AddCommGroup M] (b : Basis κ ℤ M) (m : κ → ℕ)
+
+/-- The quotient of `M` by the span of the rescaled basis vectors `m k • b k` has `Nat.card` equal
+to `∏ k, m k`. When some `m k` vanishes the quotient is infinite and both sides are `0`. -/
+theorem card_quotient_span_range_nsmul [Fintype κ] :
+    Nat.card (M ⧸ Submodule.span ℤ (Set.range fun k ↦ m k • b k)) = ∏ k, m k := by
+  simp_rw [← natCast_zsmul]
+  rw [Nat.card_congr (b.quotientSpanSMulEquiv fun k ↦ (m k : ℤ)).toEquiv, Nat.card_pi]
+  simp [Nat.card_congr (Int.quotientSpanNatEquivZMod _).toEquiv]
+
+end Module.Basis
+
+/-- **Rescaling a linearly independent family.** Rescaling a finite linearly independent family
+`v` in an abelian group by natural numbers `m k` multiplies the `Nat.card` of the quotient by its
+span by `∏ k, m k`. Both sides are `0` when one of the quotients is infinite. -/
+theorem LinearIndependent.card_quotient_span_range_nsmul {κ M : Type*} [AddCommGroup M]
+    [Fintype κ] {v : κ → M} (hv : LinearIndependent ℤ v) (m : κ → ℕ) :
+    Nat.card (M ⧸ Submodule.span ℤ (Set.range fun k ↦ m k • v k)) =
+      (∏ k, m k) * Nat.card (M ⧸ Submodule.span ℤ (Set.range v)) := by
+  set Q := Submodule.span ℤ (Set.range v)
+  set P := Submodule.span ℤ (Set.range fun k ↦ m k • v k)
+  have hPQ : P ≤ Q := Submodule.span_le.2 <| by
+    rintro _ ⟨k, rfl⟩
+    exact Submodule.smul_of_tower_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
+  -- In the basis `b` of `Q` given by `v`, `P` is the span of the rescaled basis vectors.
+  let b := Module.Basis.span hv
+  have hcomap : P.comap Q.subtype = Submodule.span ℤ (Set.range fun k ↦ m k • b k) := by
+    rw [← Submodule.comap_map_eq_of_injective Q.injective_subtype
+      (Submodule.span ℤ (Set.range fun k ↦ m k • b k)), Submodule.map_span, ← Set.range_comp]
+    have hb : (Q.subtype ∘ fun k ↦ m k • b k) = fun k ↦ m k • v k := by
+      ext k
+      simp [b, Module.Basis.span_apply]
+    rw [hb]
+  -- The quotient of `Q` by `P` is the image of `Q` in `M ⧸ P`, by the first isomorphism theorem.
+  have hker : LinearMap.ker (P.mkQ ∘ₗ Q.subtype) = P.comap Q.subtype := by
+    rw [LinearMap.ker_comp, Submodule.ker_mkQ]
+  have hrange : LinearMap.range (P.mkQ ∘ₗ Q.subtype) = Q.map P.mkQ := by
+    rw [LinearMap.range_comp, Submodule.range_subtype]
+  rw [← Submodule.card_quotient_mul_card_quotient Q P hPQ, ← b.card_quotient_span_range_nsmul m,
+    ← hcomap]
+  congr 1
+  exact Nat.card_congr ((Submodule.quotEquivOfEq _ _ hker.symm).trans
+    ((P.mkQ ∘ₗ Q.subtype).quotKerEquivRange.trans (LinearEquiv.ofEq _ _ hrange))).toEquiv.symm
 
 namespace TauCeti
 

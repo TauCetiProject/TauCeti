@@ -37,6 +37,8 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 
 * `TauCeti.unitToCircle_surjective`, `TauCeti.unitToCircle_eq_one_iff`,
   `TauCeti.eq_or_of_unitToCircle_eq`: quotient properties of `unitToCircle`.
+* `TauCeti.homeomorphCircle_symm_unitToCircle`: `unitToCircle t` corresponds to the class of `t`
+  in `UnitAddCircle`.
 * `ContinuousMap.ext_unitToCircle`: maps out of the circle agreeing on the image of
   `unitToCircle` are equal.
 * `Path.toCircle_unitToCircle`, `Path.toCircle_exp`: `unitToCircle t = exp (2πit)` goes to `γ t`.
@@ -59,6 +61,13 @@ def unitToCircle : C(I, Circle) where
 
 theorem unitToCircle_apply (t : I) : unitToCircle t = Circle.exp (2 * Real.pi * t) :=
   (rfl)
+
+/-- The point `unitToCircle t` of `Circle` is the class of `t` in `UnitAddCircle`, under
+`AddCircle.homeomorphCircle`. -/
+@[simp]
+theorem homeomorphCircle_symm_unitToCircle (t : I) :
+    (AddCircle.homeomorphCircle one_ne_zero).symm (unitToCircle t) = ((t : ℝ) : UnitAddCircle) := by
+  rw [unitToCircle_apply, AddCircle.homeomorphCircle_one_symm_exp]
 
 @[simp]
 theorem unitToCircle_zero : unitToCircle 0 = 1 := by
@@ -145,11 +154,8 @@ def toCircle (γ : Path x x) : C(Circle, X) :=
 @[simp]
 theorem toCircle_unitToCircle (γ : Path x x) (t : I) :
     γ.toCircle (TauCeti.unitToCircle t) = γ t := by
-  have h : (AddCircle.homeomorphCircle one_ne_zero).symm (TauCeti.unitToCircle t) =
-      ((t : ℝ) : AddCircle (1 : ℝ)) := by
-    rw [TauCeti.unitToCircle_apply, Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply,
-      AddCircle.toCircle_apply_mk, div_one]
-  rw [toCircle, ContinuousMap.coe_mk, Function.comp_apply, h]
+  rw [toCircle, ContinuousMap.coe_mk, Function.comp_apply,
+    TauCeti.homeomorphCircle_symm_unitToCircle]
   rcases eq_or_lt_of_le t.property.2 with ht | ht
   · have ht' : t = 1 := Subtype.ext ht
     rw [ht, AddCircle.coe_period, ← AddCircle.coe_zero (p := (1 : ℝ)),
@@ -165,6 +171,13 @@ theorem toCircle_exp (γ : Path x x) (t : I) :
 @[simp]
 theorem toCircle_one (γ : Path x x) : γ.toCircle 1 = x := by
   simpa using γ.toCircle_unitToCircle 0
+
+/-- The constant loop at `x` is the constant map from the circle. -/
+@[simp]
+theorem toCircle_refl (x : X) : (Path.refl x).toCircle = ContinuousMap.const Circle x := by
+  ext z
+  obtain ⟨t, rfl⟩ := TauCeti.unitToCircle_surjective z
+  simp
 
 end Path
 

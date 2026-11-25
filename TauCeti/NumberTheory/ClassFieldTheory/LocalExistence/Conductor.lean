@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.Correspondence
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 

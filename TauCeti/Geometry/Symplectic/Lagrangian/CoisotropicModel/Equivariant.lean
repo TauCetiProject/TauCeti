@@ -59,6 +59,8 @@ equivariant.
   equivariant uniqueness of linear coisotropic embeddings.
 * `TauCeti.SymplecticForm.exists_equivariant_isSymplectomorphism_extend_of_isCoisotropic`: the
   equivariant Witt extension from coisotropic subspaces.
+* `LinearMap.BilinForm.IsAlt.isInvariantForm_coisotropicModel`: for an equivariant projection, the
+  model form is invariant.
 
 ## References
 
@@ -87,12 +89,6 @@ section Construction
 variable (hρ : IsInvariantForm ρ ω.toBilinForm) (hισ : ∀ g w, ι (σ g w) = ρ g (ι w))
 include hρ hισ
 
-/-- The symplectic orthogonal of the image of an equivariant map is invariant. -/
-private theorem apply_mem_orthogonal_range (g : G) {v : V}
-    (hv : v ∈ ω.orthogonal (LinearMap.range ι)) : ρ g v ∈ ω.orthogonal (LinearMap.range ι) :=
-  SymplecticForm.apply_mem_orthogonal (fun g u v ↦ hρ.apply g u v)
-    (by rintro g _ ⟨w, rfl⟩; exact ⟨σ g w, hισ g w⟩) g hv
-
 /-- The symplectic orthogonal of `ι(ker P)`, for an equivariant `P`, is invariant. -/
 private theorem apply_mem_orthogonal_map_ker (hPσ : ∀ g w, (P (σ g w) : W) = σ g (P w)) (g : G)
     {v : V} (hv : v ∈ ω.orthogonal ((LinearMap.ker P).map ι)) :
@@ -108,7 +104,9 @@ complement. -/
 private theorem exists_isCompl_orthogonal_range [ρ.IsSemisimpleRepresentation] :
     ∃ Y : Subrepresentation ρ, IsCompl (ω.orthogonal (LinearMap.range ι)) Y.toSubmodule := by
   obtain ⟨Y, hY⟩ := exists_isCompl
-    (⟨_, fun g _ hv ↦ apply_mem_orthogonal_range hρ hισ g hv⟩ : Subrepresentation ρ)
+    (⟨_, fun g _ hv ↦
+      SymplecticForm.apply_mem_orthogonal_range (fun g u v ↦ hρ.apply g u v) hισ g hv⟩ :
+      Subrepresentation ρ)
   exact ⟨Y, Subrepresentation.isCompl_toSubmodule.2 hY⟩
 
 end Construction
@@ -290,6 +288,17 @@ theorem exists_equivariant_isSymplectomorphism_coisotropicModel [FiniteDimension
   · simp
   · obtain ⟨w, a⟩ := x
     simp [hισ, hqρ, -_root_.Representation.dual_apply]
+
+/-- For a projection `P` of `W` onto the kernel `K` of `B` which commutes with a representation `σ`
+preserving `B`, the coisotropic model form on `W × K*` is invariant under `σ` on `W` and the dual
+of its restriction to `K` on `K*`. -/
+theorem isInvariantForm_coisotropicModel (hB : B.IsAlt) (hP : ∀ k : LinearMap.ker B, P k = k)
+    (hσ : IsInvariantForm σ B) (hPσ : ∀ g w, (P (σ g w) : W) = σ g (P w)) :
+    IsInvariantForm (σ.prod hσ.kerRepresentation.dual) (hB.coisotropicModel P hP).toBilinForm := by
+  have hPσ' (g : G) (w : W) : P (σ g w) = hσ.kerRepresentation g (P w) :=
+    Subtype.ext ((hPσ g w).trans (hσ.coe_kerRepresentation_apply g (P w)).symm)
+  refine isInvariantForm_iff.2 fun g ⟨w, a⟩ ⟨w', a'⟩ ↦ ?_
+  simp [hPσ', hσ.apply, Dual.transpose_apply]
 
 end LinearMap.BilinForm.IsAlt
 

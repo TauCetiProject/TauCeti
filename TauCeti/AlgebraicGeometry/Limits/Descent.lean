@@ -6,10 +6,10 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import TauCeti.AlgebraicGeometry.Limits.Affine.FinitePresentation
-public import TauCeti.AlgebraicGeometry.Limits.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Limits.Finite.Presentation
 public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.AlgebraicGeometry.Gluing.Separated
-public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 
@@ -282,45 +282,15 @@ private lemma ModelWithOpenAt.exists_overlap_pullback_iso {T U V : Scheme.{u}}
     QuasiSeparatedSpace.of_isOpenEmbedding M.openSubset.ι.isOpenEmbedding
   let : QuasiSeparatedSpace N.openSubset.toScheme :=
     QuasiSeparatedSpace.of_isOpenEmbedding N.openSubset.ι.isOpenEmbedding
-  let p := M.openSubset.ι ≫ M.map
-  let q := N.openSubset.ι ≫ N.map
   let a := M.overlap_base_square.flip.isoPullback.symm ≪≫
     N.overlap_base_square.flip.isoPullback
   have ha : a.hom ≫ pullback.fst _ _ = pullback.fst _ _ := by
     dsimp only [a, Iso.trans_hom, Iso.symm_hom]
     rw [Category.assoc, IsPullback.isoPullback_hom_fst, ← h, IsPullback.isoPullback_inv_fst]
-  obtain ⟨j, hji, b, hb₁, hb₂⟩ := limit.exists_pullbackMap_comp_eq a.hom ha
-  have : IsIso (pullback.map (cone.π.app j) (pullback.fst (diagram.map hji) p) (cone.π.app j)
-      (pullback.fst (diagram.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by exact hb₁.symm)) :=
-    (MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq
-      (.isomorphisms Scheme) hji ha hb₁ hb₂).mpr (inferInstance : IsIso a.hom)
-  obtain ⟨k, hkj, hk⟩ := limit.exists_isIso_pullbackMap b hb₁
-  let ψ {Z : Scheme.{u}} (r : Z ⟶ diagram.obj i) :
-      pullback (diagram.map hkj) (pullback.fst (diagram.map hji) r) ≅
-        pullback (diagram.map (hkj ≫ hji)) r :=
-    pullbackRightPullbackFstIso (diagram.map hji) r (diagram.map hkj) ≪≫
-      pullback.congrHom (diagram.map_comp hkj hji).symm rfl
-  let bK := pullback.map (diagram.map hkj) (pullback.fst (diagram.map hji) p) (diagram.map hkj)
-    (pullback.fst (diagram.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by exact hb₁.symm)
-  have : IsIso bK := hk
-  let e := (ψ p).symm ≪≫ asIso bK ≪≫ ψ q
-  refine ⟨k, hkj ≫ hji, e, ?_, ?_⟩
-  · simp [e, ψ, bK, p, q]
-  · apply pullback.hom_ext
-    · simpa [e, ψ, bK, a, p, q, Category.assoc] using
-        congrArg (M.overlap_base_square.flip.isoPullback.hom ≫ ·)
-          (((reassoc_of% ha) (cone.π.app k)).symm)
-    · have h := congrArg (· ≫ pullback.snd (diagram.map hji) q) hb₂
-      simp only [Category.assoc] at h
-      have key : pullback.map (cone.π.app i) p (diagram.map (hkj ≫ hji)) p
-          (cone.π.app k) (𝟙 _) (𝟙 _) (by simp) (by simp) ≫ (ψ p).inv ≫
-            pullback.snd (diagram.map hkj) (pullback.fst (diagram.map hji) p) =
-          pullback.map (cone.π.app i) p (diagram.map hji) p
-            (cone.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) := by
-        apply pullback.hom_ext <;> simp [ψ]
-      have h' := congrArg (· ≫ b ≫ pullback.snd (diagram.map hji) q) key
-      simpa [e, ψ, bK, a, p, q, Category.assoc] using
-        congrArg (M.overlap_base_square.flip.isoPullback.hom ≫ ·) (h'.trans h)
+  obtain ⟨j, t, e, he₁, he₂⟩ := limit.exists_iso_pullback_of_iso a ha
+  refine ⟨j, t, e, he₁, ?_⟩
+  rw [he₂]
+  simp [a]
 
 include limit in
 private lemma ModelWithOpenAt.exists_iso_overlap {T U V : Scheme.{u}}

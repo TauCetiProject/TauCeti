@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.AddCommGrpCat.Basic
 public import TauCeti.Algebra.Homology.DieudonneComplex.Basic
 
 /-!
@@ -16,7 +17,8 @@ cochain map `α_F : M ⟶ E_p(M)` into the normalized décalage is an isomorphis
 Dieudonné complex the Verschiebung `V` is the unique map with `F (V x) = p • x`. It satisfies
 `F V = V F = p`, `F d V = d` and `V d = p d V`, and every morphism of saturated Dieudonné
 complexes commutes with it. Moreover `Fʳ` maps `Mⁿ` onto `{x | d x ∈ pʳ Mⁿ⁺¹}` for every `r`,
-so every cocycle lies in the image of every power of the Frobenius.
+so every cocycle lies in the image of every power of the Frobenius, and if `d (Vʳ x)` is
+divisible by `p` then `x` is in the image of `F`.
 
 Saturated Dieudonné complexes are the input of the strict completion that produces the
 de Rham–Witt complex.
@@ -38,11 +40,16 @@ de Rham–Witt complex.
 * `TauCeti.DieudonneComplex.Hom.comm_V_apply`: morphisms commute with the Verschiebung.
 * `TauCeti.DieudonneComplex.IsSaturated.mem_range_F_iterate_iff`: `x` is in the image of `Fʳ`
   iff `d x` is divisible by `pʳ`.
+* `TauCeti.DieudonneComplex.IsSaturated.mem_range_F_of_d_V_iterate`: if `d (Vʳ x)` is divisible
+  by `p`, then `x` is in the image of `F`.
+* `TauCeti.DieudonneComplex.IsSaturated.exists_pow_smul_eq_V_iterate_iff`: `Vʳ x` is divisible by
+  `pʳ` iff `d (Vʳ x)` is.
 
 ## References
 
 * B. Bhatt, J. Lurie, A. Mathew, *Revisiting the de Rham–Witt complex*, Astérisque 424 (2021),
-  arXiv:1805.05501, Definition 2.2.1, Remarks 2.2.2 and 2.2.3, Propositions 2.2.4 and 2.2.5.
+  arXiv:1805.05501, Definition 2.2.1, Remarks 2.2.2 and 2.2.3, Propositions 2.2.4 and 2.2.5,
+  and Lemma 2.6.3.
 -/
 
 public section
@@ -112,16 +119,18 @@ lemma V_F_apply {n : ℤ} (x : M.X n) : (hM.V n).hom ((M.F n).hom x) = p • x :
 lemma injective_V (n : ℤ) : Function.Injective (hM.V n).hom := fun x y hxy ↦
   hM.isSMulRegular n (by beta_reduce; rw [← F_V_apply hM x, hxy, F_V_apply])
 
-/-- `F d V = d`. -/
+/-- `F d V = d`. This holds for the differential between any two degrees. -/
 @[simp]
-lemma F_d_V_apply {n : ℤ} (x : M.X n) :
-    (M.F (n + 1)).hom ((M.d n (n + 1)).hom ((hM.V n).hom x)) = (M.d n (n + 1)).hom x :=
-  hM.isSMulRegular (n + 1) (by beta_reduce; rw [← M.d_F, F_V_apply, map_nsmul])
+lemma F_d_V_apply {i j : ℤ} (x : M.X i) :
+    (M.F j).hom ((M.d i j).hom ((hM.V i).hom x)) = (M.d i j).hom x := by
+  obtain rfl | h := eq_or_ne (i + 1) j
+  · exact hM.isSMulRegular (i + 1) (by beta_reduce; rw [← M.d_F, F_V_apply, map_nsmul])
+  · simp [M.shape i j h]
 
 /-- `V d = p d V`: the Verschiebung commutes with the differential only up to a factor of
-`p`. -/
-lemma V_d_apply {n : ℤ} (x : M.X n) :
-    (hM.V (n + 1)).hom ((M.d n (n + 1)).hom x) = p • (M.d n (n + 1)).hom ((hM.V n).hom x) := by
+`p`. This holds for the differential between any two degrees. -/
+lemma V_d_apply {i j : ℤ} (x : M.X i) :
+    (hM.V j).hom ((M.d i j).hom x) = p • (M.d i j).hom ((hM.V i).hom x) := by
   conv_lhs => rw [← hM.F_d_V_apply x]
   exact hM.V_F_apply _
 
@@ -193,6 +202,92 @@ Frobenius. -/
 lemma mem_range_F_iterate_of_d_eq_zero {n : ℤ} (r : ℕ) {x : M.X n}
     (hx : (M.d n (n + 1)).hom x = 0) : x ∈ Set.range (⇑(M.F n).hom)^[r] :=
   (hM.mem_range_F_iterate_iff r).2 ⟨0, by rw [smul_zero, hx]⟩
+
+section Iterate
+
+/-- `Vʳ⁺¹ (F x) = p • Vʳ x`. -/
+@[simp]
+lemma V_iterate_succ_F_apply {n : ℤ} (r : ℕ) (x : M.X n) :
+    (⇑(hM.V n).hom)^[r + 1] ((M.F n).hom x) = p • (⇑(hM.V n).hom)^[r] x := by
+  rw [Function.iterate_succ_apply, V_F_apply, iterate_map_nsmul]
+
+/-- `Fʳ Vʳ = pʳ`. -/
+@[simp]
+lemma F_iterate_V_iterate_apply {n : ℤ} (r : ℕ) (x : M.X n) :
+    (⇑(M.F n).hom)^[r] ((⇑(hM.V n).hom)^[r] x) = p ^ r • x := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [Function.iterate_succ_apply, Function.iterate_succ_apply', F_V_apply, iterate_map_nsmul,
+      ih, pow_succ', mul_smul]
+
+/-- `Vʳ Fʳ = pʳ`. -/
+@[simp]
+lemma V_iterate_F_iterate_apply {n : ℤ} (r : ℕ) (x : M.X n) :
+    (⇑(hM.V n).hom)^[r] ((⇑(M.F n).hom)^[r] x) = p ^ r • x := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [Function.iterate_succ_apply, Function.iterate_succ_apply', V_F_apply, iterate_map_nsmul,
+      ih, pow_succ', mul_smul]
+
+/-- `Vʳ d = pʳ d Vʳ`, for the differential between any two degrees. -/
+lemma V_iterate_d_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
+    (⇑(hM.V j).hom)^[r] ((M.d i j).hom x) = p ^ r • (M.d i j).hom ((⇑(hM.V i).hom)^[r] x) := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [Function.iterate_succ_apply', ih, map_nsmul, V_d_apply, Function.iterate_succ_apply',
+      pow_succ, mul_smul]
+
+/-- `F (d (Vʳ⁺¹ x)) = d (Vʳ x)`, for the differential between any two degrees. -/
+lemma F_d_V_iterate_succ_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
+    (M.F j).hom ((M.d i j).hom ((⇑(hM.V i).hom)^[r + 1] x)) =
+      (M.d i j).hom ((⇑(hM.V i).hom)^[r] x) := by
+  rw [Function.iterate_succ_apply', F_d_V_apply]
+
+/-- `Fʳ (d (Vʳ x)) = d x`, for the differential between any two degrees. -/
+@[simp]
+lemma F_iterate_d_V_iterate_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
+    (⇑(M.F j).hom)^[r] ((M.d i j).hom ((⇑(hM.V i).hom)^[r] x)) = (M.d i j).hom x := by
+  induction r with
+  | zero => rfl
+  | succ r ih => rw [Function.iterate_succ_apply, hM.F_d_V_iterate_succ_apply, ih]
+
+/-- `V (d (Vʳ x)) = p • d (Vʳ⁺¹ x)`, for the differential between any two degrees. -/
+lemma V_d_V_iterate_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
+    (hM.V j).hom ((M.d i j).hom ((⇑(hM.V i).hom)^[r] x)) =
+      p • (M.d i j).hom ((⇑(hM.V i).hom)^[r + 1] x) := by
+  rw [V_d_apply, Function.iterate_succ_apply']
+
+end Iterate
+
+/-- `Vʳ x` is divisible by `pʳ` iff `d (Vʳ x)` is: if `d (Vʳ x) = pʳ t`, then
+`d x = Fʳ (d (Vʳ x)) = pʳ Fʳ t`, so `x = Fʳ y` and `Vʳ x = pʳ y`. -/
+lemma exists_pow_smul_eq_V_iterate_iff {r : ℕ} {n : ℤ} {x : M.X n} :
+    (∃ y, p ^ r • y = (⇑(hM.V n).hom)^[r] x) ↔
+      ∃ t, p ^ r • t = (M.d n (n + 1)).hom ((⇑(hM.V n).hom)^[r] x) := by
+  refine ⟨fun ⟨y, hy⟩ ↦ ⟨(M.d n (n + 1)).hom y, by rw [← map_nsmul, hy]⟩, fun ⟨t, ht⟩ ↦ ?_⟩
+  obtain ⟨y, rfl⟩ := (hM.mem_range_F_iterate_iff (x := x) r).2
+    ⟨(⇑(M.F (n + 1)).hom)^[r] t, by rw [← iterate_map_nsmul, ht, F_iterate_d_V_iterate_apply]⟩
+  exact ⟨y, (hM.V_iterate_F_iterate_apply r y).symm⟩
+
+/-- If `d (Vʳ x)` is divisible by `p`, then `x` is in the image of the Frobenius. -/
+lemma mem_range_F_of_d_V_iterate {r : ℕ} {i j : ℤ} (hij : i + 1 = j) {x : M.X i}
+    (h : ∃ y, p • y = (M.d i j).hom ((⇑(hM.V i).hom)^[r] x)) : x ∈ (M.F i).hom.range := by
+  subst hij
+  obtain ⟨y, hy⟩ := h
+  refine hM.mem_range_F_iff.2 ⟨(⇑(M.F (i + 1)).hom)^[r] y, ?_⟩
+  rw [← iterate_map_nsmul, hy, F_iterate_d_V_iterate_apply]
+
+/-- If `Vʳ a + d (Vʳ b) = p • w + d c`, then `a` is in the image of the Frobenius: applying `d`
+shows that `d (Vʳ a) = p • d w`. -/
+lemma mem_range_F_of_V_iterate_add_d_V_iterate_eq {r : ℕ} {i n : ℤ} {a w : M.X n} {b c : M.X i}
+    (h : (⇑(hM.V n).hom)^[r] a + (M.d i n).hom ((⇑(hM.V i).hom)^[r] b) =
+      p • w + (M.d i n).hom c) :
+    a ∈ (M.F n).hom.range :=
+  hM.mem_range_F_of_d_V_iterate rfl
+    ⟨(M.d n (n + 1)).hom w, by simpa using congrArg (M.d n (n + 1)).hom h.symm⟩
 
 end IsSaturated
 
