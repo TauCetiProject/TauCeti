@@ -310,15 +310,22 @@ theorem IsHermitian.card_eigenvalues₀_ge_eq_of_norm_sub_lt
 
 end
 
+/-- Mathlib's `Matrix.IsHermitian.eigenvectorBasis`, reindexed by `Fin (Fintype.card ι)`, is
+ordered as the sorted eigenvalues. -/
+theorem IsHermitian.mulVec_eigenvectorBasis_reindex_eq_eigenvalues₀_smul (hA : A.IsHermitian)
+    (j : Fin (Fintype.card ι)) :
+    A *ᵥ hA.eigenvectorBasis.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm j =
+      (hA.eigenvalues₀ j : 𝕜) •
+        ⇑(hA.eigenvectorBasis.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm j) := by
+  rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm, hA.mulVec_eigenvectorBasis,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜), hA.eigenvalues_apply_equivOfCardEq]
+
 /-- A Hermitian matrix has an orthonormal eigenbasis ordered as its sorted eigenvalues: Mathlib's
 `Matrix.IsHermitian.eigenvectorBasis`, reindexed by `Fin (Fintype.card ι)`. -/
 theorem IsHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul (hA : A.IsHermitian) :
     ∃ u : OrthonormalBasis (Fin (Fintype.card ι)) 𝕜 (EuclideanSpace 𝕜 ι),
-      ∀ j, A *ᵥ u j = (hA.eigenvalues₀ j : 𝕜) • ⇑(u j) := by
-  refine ⟨hA.eigenvectorBasis.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm,
-    fun j ↦ ?_⟩
-  rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm, hA.mulVec_eigenvectorBasis,
-    RCLike.real_smul_eq_coe_smul (K := 𝕜), hA.eigenvalues_apply_equivOfCardEq]
+      ∀ j, A *ᵥ u j = (hA.eigenvalues₀ j : 𝕜) • ⇑(u j) :=
+  ⟨_, hA.mulVec_eigenvectorBasis_reindex_eq_eigenvalues₀_smul⟩
 
 /-- The rank of a Hermitian matrix counts its nonzero sorted eigenvalues, with multiplicity. -/
 theorem IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.IsHermitian) :

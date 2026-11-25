@@ -35,13 +35,18 @@ homogeneous of degree one (Euler's identity).
 
 ## Main results
 
-* `Matrix.IsHermitian.fderiv_spectralFunction_eq_re_trace`: the derivative of the spectral
+* `Matrix.fderiv_spectralFunction_selfAdjoint_apply_eq_re_trace`: the derivative of the spectral
   function at `A` in the direction `H` is `Re tr(∇F_f(A) H)`.
 * `Matrix.IsHermitian.det_spectralGradient`: `det ∇F_f(A) = ∏ᵢ ∂ᵢ f(λ(A))`.
 * `Matrix.IsHermitian.posDef_spectralGradient`: if every `∂ᵢ f(λ(A))` is positive, then
   `∇F_f(A)` is positive definite.
 * `Matrix.IsHermitian.re_trace_spectralGradient_mul_self_of_homogeneous`: Euler's identity
   `Re tr(∇F_f(A) A) = f(λ(A))` for `f` positively homogeneous of degree one.
+
+## References
+
+* A. S. Lewis, *Derivatives of spectral functions*, Math. Oper. Res. **21** (1996), 576–588,
+  Theorem 1.1.
 -/
 
 public section
@@ -51,9 +56,11 @@ noncomputable section
 open Finset Topology
 open scoped ComplexOrder
 
-namespace Matrix.IsHermitian
+namespace Matrix
 
 variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜}
+
+namespace IsHermitian
 
 /-- The partial derivatives `∂ᵢ f(λ(A))` of `f` at the sorted eigenvalue vector of `A`, indexed by
 the matrix index `ι` through the canonical equivalence `Fin n ≃ ι`, as are Mathlib's
@@ -82,7 +89,7 @@ matrix `∇F_f(A) = U diag(∂ᵢ f(λ(A))) U*`, where `U` is the unitary `eigen
 columns are the eigenvectors of `A`, listed as Mathlib's `Matrix.IsHermitian.eigenvalues`. When `f`
 is symmetric and differentiable at `λ(A)`, it represents the derivative of the spectral function
 `B ↦ f(λ(B))` at `A` under the pairing `(G, H) ↦ Re tr(G H)`
-(`Matrix.IsHermitian.fderiv_spectralFunction_eq_re_trace`). -/
+(`Matrix.fderiv_spectralFunction_selfAdjoint_apply_eq_re_trace`). -/
 def spectralGradient (hA : A.IsHermitian) (f : (Fin (Fintype.card ι) → ℝ) → ℝ) :
     Matrix ι ι 𝕜 :=
   (hA.eigenvectorUnitary : Matrix ι ι 𝕜) *
@@ -95,6 +102,16 @@ theorem spectralGradient_def (hA : A.IsHermitian) (f : (Fin (Fintype.card ι) �
       diagonal (fun i ↦ (hA.spectralGradientWeights f i : 𝕜)) *
         star (hA.eigenvectorUnitary : Matrix ι ι 𝕜) :=
   (rfl)
+
+/-- The gradient of a spectral function acts on the eigenvector `uᵢ` of `A` as multiplication by
+the weight `∂ᵢ f(λ(A))`. -/
+@[simp]
+theorem spectralGradient_mulVec_eigenvectorBasis (hA : A.IsHermitian)
+    (f : (Fin (Fintype.card ι) → ℝ) → ℝ) (i : ι) :
+    hA.spectralGradient f *ᵥ ⇑(hA.eigenvectorBasis i) =
+      (hA.spectralGradientWeights f i : 𝕜) • ⇑(hA.eigenvectorBasis i) := by
+  rw [spectralGradient_def, ← mulVec_mulVec, ← mulVec_mulVec, star_eigenvectorUnitary_mulVec,
+    diagonal_mulVec_single, ← smul_eq_mul, Pi.single_smul', mulVec_smul, eigenvectorUnitary_mulVec]
 
 /-- The gradient of a spectral function is Hermitian. -/
 theorem isHermitian_spectralGradient (hA : A.IsHermitian) (f : (Fin (Fintype.card ι) → ℝ) → ℝ) :
@@ -119,35 +136,13 @@ theorem re_trace_spectralGradient_mul (hA : A.IsHermitian) (f : (Fin (Fintype.ca
   rw [sum_comm]
   exact sum_congr rfl fun a _ ↦ sum_congr rfl fun b _ ↦ by ring
 
-/-- **The gradient of a spectral function represents its derivative** (Lewis's theorem). If `f` is
-symmetric and differentiable at `λ(A)`, the derivative of the spectral function `B ↦ f(λ(B))` on
-Hermitian matrices at `A` in the direction `H` is `Re tr(∇F_f(A) H)`. -/
-theorem fderiv_spectralFunction_eq_re_trace {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
-    (hf : ∀ σ : Equiv.Perm (Fin (Fintype.card ι)), ∀ μ, f (μ ∘ σ) = f μ)
-    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜))
-    (hfA : DifferentiableAt ℝ f A.property.isHermitian.eigenvalues₀)
-    (H : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
-    fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦
-      f B.property.isHermitian.eigenvalues₀) A H =
-      RCLike.re (A.property.isHermitian.spectralGradient f * (H : Matrix ι ι 𝕜)).trace := by
-  set hA : (A : Matrix ι ι 𝕜).IsHermitian := A.property.isHermitian
-  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
-  have hu (j : Fin (Fintype.card ι)) : (A : Matrix ι ι 𝕜) *ᵥ (hA.eigenvectorBasis.reindex e.symm j)
-      = (hA.eigenvalues₀ j : 𝕜) • ⇑(hA.eigenvectorBasis.reindex e.symm j) := by
-    rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm, hA.mulVec_eigenvectorBasis,
-      RCLike.real_smul_eq_coe_smul (K := 𝕜), hA.eigenvalues_apply_equivOfCardEq]
-  rw [fderiv_spectralFunction_selfAdjoint_apply hf A hfA _ hu, re_trace_spectralGradient_mul,
-    ← Equiv.sum_comp e]
-  simp only [OrthonormalBasis.reindex_apply, Equiv.symm_symm, e,
-    spectralGradientWeights_equivOfCardEq]
-
 /-- **The determinant of the gradient** of a spectral function is `∏ᵢ ∂ᵢ f(λ(A))`. -/
 theorem det_spectralGradient (hA : A.IsHermitian) (f : (Fin (Fintype.card ι) → ℝ) → ℝ) :
     (hA.spectralGradient f).det = ((∏ k, fderiv ℝ f hA.eigenvalues₀ (Pi.single k 1) : ℝ) : 𝕜) := by
   set U : Matrix ι ι 𝕜 := ↑hA.eigenvectorUnitary
   have hU : U * star U = 1 := Unitary.coe_mul_star_self hA.eigenvectorUnitary
-  rw [spectralGradient_def, det_mul, det_mul, mul_comm (det U), mul_assoc, ← det_mul, hU, det_one,
-    mul_one, det_diagonal, RCLike.ofReal_prod,
+  rw [spectralGradient_def, det_mul_right_comm, hU, Matrix.one_mul, det_diagonal,
+    RCLike.ofReal_prod,
     ← Equiv.prod_comp (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)))]
   simp only [spectralGradientWeights_equivOfCardEq]
 
@@ -156,14 +151,9 @@ derivative `∂ᵢ f(λ(A))` is positive, then `∇F_f(A)` is positive definite.
 theorem posDef_spectralGradient (hA : A.IsHermitian) {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
     (hpos : ∀ k, 0 < fderiv ℝ f hA.eigenvalues₀ (Pi.single k 1)) :
     (hA.spectralGradient f).PosDef := by
-  have hU : (hA.eigenvectorUnitary : Matrix ι ι 𝕜) * star (hA.eigenvectorUnitary : Matrix ι ι 𝕜)
-      = 1 := Unitary.coe_mul_star_self hA.eigenvectorUnitary
-  rw [spectralGradient_def, star_eq_conjTranspose]
-  refine PosDef.mul_mul_conjTranspose_same (posDef_diagonal_iff.2 fun i ↦ ?_) fun x y hxy ↦ ?_
-  · rw [RCLike.ofReal_pos, spectralGradientWeights_def]
-    exact hpos _
-  · simpa [vecMul_vecMul, hU] using
-      congr_arg (· ᵥ* star (hA.eigenvectorUnitary : Matrix ι ι 𝕜)) hxy
+  rw [spectralGradient_def, IsUnit.posDef_star_right_conjugate_iff Unitary.isUnit_coe,
+    posDef_diagonal_iff]
+  exact fun i ↦ RCLike.ofReal_pos.2 (hpos _)
 
 /-- The trace pairing of the gradient with `A` itself is `Df(λ(A)) λ(A)`. -/
 theorem re_trace_spectralGradient_mul_self (hA : A.IsHermitian)
@@ -193,4 +183,26 @@ theorem re_trace_spectralGradient_mul_self_of_homogeneous (hA : A.IsHermitian)
     (Filter.mem_of_superset (Ioi_mem_nhds one_pos) fun t ht ↦ by
       simpa [smul_eq_mul] using hhom t ht)
 
-end Matrix.IsHermitian
+end IsHermitian
+
+/-- **The gradient of a spectral function represents its derivative** (Lewis's theorem,
+[Lewis 1996, Theorem 1.1]). If `f` is symmetric and differentiable at `λ(A)`, the derivative of
+the spectral function `B ↦ f(λ(B))` on Hermitian matrices at `A` in the direction `H` is
+`Re tr(∇F_f(A) H)`. -/
+theorem fderiv_spectralFunction_selfAdjoint_apply_eq_re_trace {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
+    (hf : ∀ σ : Equiv.Perm (Fin (Fintype.card ι)), ∀ μ, f (μ ∘ σ) = f μ)
+    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜))
+    (hfA : DifferentiableAt ℝ f A.property.isHermitian.eigenvalues₀)
+    (H : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
+    fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦
+      f B.property.isHermitian.eigenvalues₀) A H =
+      RCLike.re (A.property.isHermitian.spectralGradient f * (H : Matrix ι ι 𝕜)).trace := by
+  set hA : (A : Matrix ι ι 𝕜).IsHermitian := A.property.isHermitian
+  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
+  rw [fderiv_spectralFunction_selfAdjoint_apply hf A hfA _
+      hA.mulVec_eigenvectorBasis_reindex_eq_eigenvalues₀_smul, hA.re_trace_spectralGradient_mul,
+    ← Equiv.sum_comp e]
+  simp only [OrthonormalBasis.reindex_apply, Equiv.symm_symm, e,
+    IsHermitian.spectralGradientWeights_equivOfCardEq]
+
+end Matrix
