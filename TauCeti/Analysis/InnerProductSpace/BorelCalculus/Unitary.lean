@@ -127,7 +127,7 @@ theorem exp_I_smul_borelArg (u : unitary (H →L[ℂ] H)) :
         ((ContinuousMap.id ℂ).restrict (spectrum ℂ (u : H →L[ℂ] H))) := by
     ext z
     have hz : ‖(z : ℂ)‖ = 1 := spectrum.norm_eq_one_of_unitary u.property z.property
-    simp only [BoundedBorelFunction.exp_apply, BoundedBorelFunction.smul_apply,
+    simp only [BoundedBorelFunction.exp_apply, smul_apply, smul_eq_mul,
       borelArgSymbol_apply, mul_comm Complex.I,
       BoundedBorelFunction.ofContinuousMap_apply, ContinuousMap.restrict_apply,
       ContinuousMap.id_apply]
