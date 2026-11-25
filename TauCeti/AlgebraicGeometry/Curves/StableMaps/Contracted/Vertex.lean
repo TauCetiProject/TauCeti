@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Curves.Node.DualGraph.Iso
 public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.DualGraph
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Basic
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
 import TauCeti.AlgebraicGeometry.Scheme.Basic
 import TauCeti.Topology.Irreducible
 
@@ -34,6 +35,8 @@ component of `C`, neither of which the nodal blowup API provides yet.
 
 * `TauCeti.AlgebraicGeometry.PrestableMap.IsContractedVertex`: a vertex of the dual graph of the
   source curve whose component is contracted by the map.
+* `TauCeti.AlgebraicGeometry.PrestableMap.dualGraphIsoOfIso`: the isomorphism of dual graphs of
+  the source curves induced by an isomorphism of prestable maps.
 
 ## Main results
 
@@ -47,6 +50,8 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
   discrete fibres contracts the same vertices; `isContractedVertex_postcomp_iff_of_injective`,
   `isContractedVertex_postcomp_iff_of_locallyQuasiFinite` and `isContractedVertex_postcomp_iff`
   are the cases of a morphism injective on points, locally quasi-finite, or universally injective.
+* `isContractedVertex_dualGraphIsoOfIso_vertexEquiv_iff`: an isomorphism of prestable maps
+  matches the contracted vertices.
 -/
 
 public section
@@ -165,6 +170,31 @@ theorem isContractedVertex_postcomp_iff {r : W ⟶ Spec (.of K)} (h : V ⟶ W)
     [UniversallyInjective h] (hh : h ≫ r = q) {v : F.curve.dualGraph.Vertex} :
     (F.postcomp h hh).IsContractedVertex v ↔ F.IsContractedVertex v :=
   F.isContractedVertex_postcomp_iff_of_injective h h.injective hh
+
+section Iso
+
+variable {F} {G : PrestableMap q n}
+
+/-- An isomorphism of prestable maps over a separably closed field induces an isomorphism of the
+dual graphs of their source curves: the isomorphism `Scheme.dualGraphIsoOfIso` induced by the
+isomorphism of total spaces, which lies over `Spec K` and matches the markings. -/
+def dualGraphIsoOfIso (e : F ≅ G) : F.curve.dualGraph.Iso G.curve.dualGraph :=
+  Scheme.dualGraphIsoOfIso (K := K) (totalIso e) e.hom.curve.hom_comp_toBase _ _
+    (totalIso_hom_markingPoint e)
+
+/-- An isomorphism of prestable maps over a separably closed field matches the contracted
+vertices: the map `G` is constant on the image of the component corresponding to `v` exactly when
+`F` is constant on the image of `v`. -/
+@[simp]
+theorem isContractedVertex_dualGraphIsoOfIso_vertexEquiv_iff (e : F ≅ G)
+    (v : F.curve.dualGraph.Vertex) :
+    G.IsContractedVertex ((dualGraphIsoOfIso e).vertexEquiv v) ↔ F.IsContractedVertex v := by
+  have h := Scheme.image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv (K := K) (totalIso e)
+    e.hom.curve.hom_comp_toBase _ _ (totalIso_hom_markingPoint e) G.map v
+  rw [totalIso_hom, Hom.hom_comp_map] at h
+  rw [isContractedVertex_iff, isContractedVertex_iff, dualGraphIsoOfIso, h]
+
+end Iso
 
 end PrestableMap
 

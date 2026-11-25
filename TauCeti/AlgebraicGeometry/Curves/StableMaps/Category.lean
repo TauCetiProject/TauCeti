@@ -44,6 +44,8 @@ canonically isomorphic to the chosen base change.
 * `TauCeti.AlgebraicGeometry.PrestableMap.toCurve`: the functor forgetting the map.
 * `TauCeti.AlgebraicGeometry.PrestableMap.isoMk`: an isomorphism of prestable maps from an
   isomorphism of pointed source curves commuting with the maps.
+* `TauCeti.AlgebraicGeometry.PrestableMap.totalIso`: the isomorphism of total spaces of the
+  source curves induced by an isomorphism of prestable maps.
 * `TauCeti.AlgebraicGeometry.PrestableMap.autToCurve`: the injective homomorphism from the
   automorphism group of a prestable map to that of its pointed source curve.
 * `TauCeti.AlgebraicGeometry.PrestableMap.postcompFunctor`: postcomposition as a functor.
@@ -201,6 +203,24 @@ instance isIso_of_isIso_curve (f : F ⟶ G) [IsIso f.curve] : IsIso f :=
 
 instance : (toCurve (q := q) (n := n)).ReflectsIsomorphisms where
   reflects f _ := (isIso_iff_isIso_curve f).2 ‹IsIso (toCurve.map f)›
+
+/-- The isomorphism of total spaces of the source curves induced by an isomorphism of prestable
+maps. -/
+@[expose, simps]
+def totalIso (e : F ≅ G) : F.curve.total ≅ G.curve.total where
+  hom := e.hom.curve.hom
+  inv := e.inv.curve.hom
+  hom_inv_id := congr(($(e.hom_inv_id)).curve.hom)
+  inv_hom_id := congr(($(e.inv_hom_id)).curve.hom)
+
+/-- Over a field, the isomorphism of total spaces induced by an isomorphism of prestable maps
+carries each marked point to the corresponding marked point. -/
+theorem totalIso_hom_markingPoint {K : Type u} [Field K] {q : V ⟶ Spec (.of K)}
+    {F G : PrestableMap q n} (e : F ≅ G) (i : Fin n) :
+    (totalIso e).hom (F.curve.markingPoint i : F.curve.total) = G.curve.markingPoint i := by
+  rw [totalIso_hom, PointedPrestableFamily.coe_markingPoint,
+    PointedPrestableFamily.coe_markingPoint, ← Scheme.Hom.comp_apply,
+    PointedPrestableFamily.Hom.marking_comp_hom]
 
 /-- Forgetting the map, as a group homomorphism from the automorphisms of a prestable map to the
 automorphisms of its pointed source curve. -/
