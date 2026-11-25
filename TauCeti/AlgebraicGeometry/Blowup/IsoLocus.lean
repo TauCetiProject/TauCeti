@@ -46,9 +46,7 @@ has an open neighbourhood `U` such that the restriction of `I` to `U` is an effe
 divisor. -/
 theorem mem_isoLocus_blowupToBase_iff {x : X} :
     x ∈ I.blowupToBase.isoLocus ↔ ∃ U : X.Opens, x ∈ U ∧ (I.comap U.ι).IsEffectiveCartier :=
-  ⟨fun hx ↦ ⟨_, hx, (I.isIso_blowupToBase_restrict_iff _).mp
-      (I.blowupToBase.le_isoLocus_iff.mp le_rfl)⟩,
-    fun ⟨U, hxU, hI⟩ ↦
-      I.blowupToBase.le_isoLocus_iff.mpr ((I.isIso_blowupToBase_restrict_iff U).mpr hI) hxU⟩
+  I.blowupToBase.mem_isoLocus_iff.trans <|
+    exists_congr fun U ↦ and_congr_right fun _ ↦ I.isIso_blowupToBase_restrict_iff U
 
 end AlgebraicGeometry.Scheme.IdealSheafData
