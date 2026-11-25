@@ -552,11 +552,13 @@ the first coordinate line and `h : K² → K` the second coordinate, `r₁ = r�
 the two isomorphisms differ by `-1`, which is not `1` unless `K` has characteristic two.
 
 The composite maps `g ∘ f` and `h ∘ g` need finite-dimensional kernels and cokernels for their
-composition laws to be defined; these hold automatically (`Module.Finite.ker_comp`,
-`Module.Finite.quotient_range_comp`). The statement applies `f.detLineCompEquiv (h ∘ g)`, whose
-domain is `det ((h ∘ g) ∘ f)`, to `x : det (h ∘ g ∘ f)`: it type-checks because
-`(h ∘ g) ∘ f` and `h ∘ (g ∘ f)` are definitionally equal (`LinearMap.comp_assoc` holds by
-`rfl`). -/
+composition laws to be defined. These are instance arguments that the caller must supply; they
+follow from the assumptions on `f`, `g` and `h` by `Module.Finite.ker_comp` and
+`Module.Finite.quotient_range_comp`, for instance `haveI := Module.Finite.ker_comp g h`.
+
+The statement applies `f.detLineCompEquiv (h ∘ g)`, whose domain is `det ((h ∘ g) ∘ f)`, to
+`x : det (h ∘ g ∘ f)`: it type-checks because `(h ∘ g) ∘ f` and `h ∘ (g ∘ f)` are definitionally
+equal (`LinearMap.comp_assoc` holds by `rfl`). -/
 theorem detLineCompEquiv_assoc (x : (h ∘ₗ g ∘ₗ f).detLine) :
     TensorProduct.assoc K _ _ _
         ((f.detLineCompEquiv g).rTensor h.detLine ((g ∘ₗ f).detLineCompEquiv h x)) =

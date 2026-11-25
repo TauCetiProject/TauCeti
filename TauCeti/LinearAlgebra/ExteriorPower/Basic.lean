@@ -544,6 +544,16 @@ theorem ιMulti_mul_ιMulti_eq_neg_one_pow_smul {i j : ℕ} (u : Fin i → M) (v
     ← Int.cast_smul_eq_zsmul R]
   norm_num
 
+/-- Exterior products of `i` and `j` vectors commute up to the sign `(-1) ^ (j * i)` also in front
+of a further factor `x`: `u ∧ (v ∧ x) = (-1) ^ (j * i) • (v ∧ (u ∧ x))`. -/
+theorem _root_.ExteriorAlgebra.ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul {i j : ℕ}
+    (u : Fin i → M) (v : Fin j → M) (x : _root_.ExteriorAlgebra R M) :
+    _root_.ExteriorAlgebra.ιMulti R i u * (_root_.ExteriorAlgebra.ιMulti R j v * x) =
+      (-1 : R) ^ (j * i) •
+        (_root_.ExteriorAlgebra.ιMulti R j v * (_root_.ExteriorAlgebra.ιMulti R i u * x)) := by
+  rw [← mul_assoc, TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul, smul_mul_assoc,
+    mul_assoc]
+
 /-- Inside the exterior algebra, the image of the `n`th exterior power under the map induced by
 `f` is the `n`th power of the degree-one image of the range of `f`. -/
 theorem exteriorPower_map_map (n : ℕ) (f : M →ₗ[R] N) :
@@ -709,18 +719,3 @@ theorem mem_span_range_iff_ι_mul_ιMulti_eq_zero {n : ℕ} {v : Fin n → V}
 end exteriorPower
 
 end TauCeti
-
-namespace ExteriorAlgebra
-
-variable [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- Exterior products of `i` and `j` vectors commute up to the sign `(-1) ^ (j * i)` also in front
-of a further factor `x`: `u ∧ (v ∧ x) = (-1) ^ (j * i) • (v ∧ (u ∧ x))`. -/
-theorem ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul {i j : ℕ} (u : Fin i → M) (v : Fin j → M)
-    (x : ExteriorAlgebra R M) :
-    ιMulti R i u * (ιMulti R j v * x) =
-      (-1 : R) ^ (j * i) • (ιMulti R j v * (ιMulti R i u * x)) := by
-  rw [← mul_assoc, TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul, smul_mul_assoc,
-    mul_assoc]
-
-end ExteriorAlgebra
