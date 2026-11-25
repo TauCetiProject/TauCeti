@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Grassmannian.Chart.Basic
+public import TauCeti.RingTheory.Grassmannian.Chart.Transition
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.HomogeneousLocalization
 
 /-!
@@ -32,10 +32,18 @@ the rank-one Grassmannian with the projective spectrum of the symmetric algebra,
 `x` corresponding to `D₊(x)`.
 
 The inverse is `HomogeneousLocalization.Away.lift` of the evaluation `Sym M → C_x` at the universal
-linear form, which inverts `x`. That the two composites are identities is checked on the universal
-linear form (`Module.Grassmannian.ChartAlgebra.hom_ext`) and on fractions `a / xⁿ` with `a`
-homogeneous of degree `n`, where the evaluation at `m ↦ m / x` is `a / xⁿ`
+linear form, which inverts `x` (`Module.Grassmannian.ChartAlgebra.awayEquiv_symm_toRingHom`).
+That the two composites are identities is checked on the universal linear form
+(`Module.Grassmannian.ChartAlgebra.hom_ext`) and on fractions `a / xⁿ` with `a` homogeneous of
+degree `n`, where the evaluation at `m ↦ m / x` is `a / xⁿ`
 (`AlgHom.apply_awayMk_eq_lift`).
+
+On the overlap `O_xy = Module.Grassmannian.OverlapAlgebra` of the charts at `x` and `y`, the
+rank-one transition determinant is the value `u_x(y)` of the universal linear form of the chart at
+`x` (`Module.Grassmannian.ChartAlgebra.transitionDet_rankOne`), a unit of `O_xy`. The value of
+`a ∈ Sym M` of degree `n` at the universal linear form of the chart at `x` is `u_x(y)ⁿ` times its
+value at that of the chart at `y`, carried along the transition isomorphism
+(`Module.Grassmannian.ChartAlgebra.algebraMap_evalUniversal_eq_pow_mul_transitionAlgEquiv`).
 -/
 
 public section
@@ -163,5 +171,56 @@ theorem awayEquiv_symm_mk (n : ℕ) (a : SymmetricAlgebra R M)
         (Away.mk (homogeneousSubmodule R M) (ι_mem_homogeneousSubmodule R M x) n a ha) =
       evalUniversal R x a :=
   ofAway_mk R x n a ha
+
+/-- The inverse of `awayEquiv` is `HomogeneousLocalization.Away.lift` of the evaluation at the
+universal linear form. -/
+theorem awayEquiv_symm_toRingHom :
+    (awayEquiv R x).symm.toRingHom =
+      Away.lift (homogeneousSubmodule R M) (evalUniversal R x).toRingHom (by simp) :=
+  (rfl)
+
+/-- In rank one, the transition determinant from the chart at `x` to `y` is the value `u_x(y)` of
+the universal linear form of the chart at `x`. -/
+theorem transitionDet_rankOne (y : M) :
+    transitionDet R (fun _ : Fin 1 ↦ x) (fun _ : Fin 1 ↦ y) =
+      universalLinearMap R (fun _ : Fin 1 ↦ x) y 0 := by
+  rw [transitionDet_def, Matrix.det_fin_one, transitionMatrix_apply]
+
+/-- The value `u_x(y)` of the universal linear form of the chart at `x` is a unit on the overlap
+of the charts at `x` and `y`. -/
+theorem isUnit_algebraMap_universalLinearMap (y : M) :
+    IsUnit (algebraMap (ChartAlgebra R (fun _ : Fin 1 ↦ x))
+      (OverlapAlgebra R (fun _ : Fin 1 ↦ x) (fun _ : Fin 1 ↦ y))
+      (universalLinearMap R (fun _ : Fin 1 ↦ x) y 0)) := by
+  rw [← transitionDet_rankOne]
+  exact IsLocalization.Away.algebraMap_isUnit _
+
+/-- **The rank-one transition rescales homogeneous coordinates.** On the overlap of the charts at
+`x` and `y`, the value of `a ∈ Sym M` of degree `n` at the universal linear form of the chart at
+`x` is `u_x(y)ⁿ` times its value at the universal linear form of the chart at `y`, carried along
+the transition isomorphism. -/
+theorem algebraMap_evalUniversal_eq_pow_mul_transitionAlgEquiv (y : M) {n : ℕ}
+    {a : SymmetricAlgebra R M} (ha : a ∈ homogeneousSubmodule R M n) :
+    algebraMap (ChartAlgebra R (fun _ : Fin 1 ↦ x))
+        (OverlapAlgebra R (fun _ : Fin 1 ↦ x) (fun _ : Fin 1 ↦ y)) (evalUniversal R x a) =
+      algebraMap (ChartAlgebra R (fun _ : Fin 1 ↦ x))
+          (OverlapAlgebra R (fun _ : Fin 1 ↦ x) (fun _ : Fin 1 ↦ y))
+          (universalLinearMap R (fun _ : Fin 1 ↦ x) y 0) ^ n *
+        transitionAlgEquiv R (fun _ : Fin 1 ↦ x) (fun _ : Fin 1 ↦ y)
+          (algebraMap (ChartAlgebra R (fun _ : Fin 1 ↦ y))
+            (OverlapAlgebra R (fun _ : Fin 1 ↦ y) (fun _ : Fin 1 ↦ x)) (evalUniversal R y a)) := by
+  induction ha using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp [← IsScalarTower.algebraMap_apply]
+  | add a b i _ _ iha ihb => simp only [map_add, iha, ihb, mul_add]
+  | mem_mul c hc i a _ ih =>
+    obtain ⟨m, rfl⟩ := hc
+    -- in degree one, this is the transition formula for the universal linear forms
+    have h1 := congrFun (transitionMatrix_mulVec_transitionAlgEquiv (R := R) (fun _ : Fin 1 ↦ x)
+      (fun _ : Fin 1 ↦ y) m) 0
+    simp only [Matrix.mulVec, dotProduct, Finset.univ_unique, Finset.sum_singleton,
+      RingHom.mapMatrix_apply, Matrix.map_apply, transitionMatrix_apply] at h1
+    rw [map_mul, map_mul, ih, evalUniversal_ι, map_mul, map_mul, map_mul, evalUniversal_ι, ← h1,
+      Fin.default_eq_zero, pow_succ]
+    ring
 
 end Module.Grassmannian.ChartAlgebra
