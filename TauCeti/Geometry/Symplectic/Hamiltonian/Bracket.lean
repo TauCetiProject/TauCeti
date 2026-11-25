@@ -65,6 +65,8 @@ forms `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_poissonBrack
   Section 3.1 (Lie brackets of symplectic and Hamiltonian vector fields, and the Poisson bracket).
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
   Springer, 2001, Section 18.3 (the Poisson bracket and its Jacobi identity).
+* R. Abraham, J. E. Marsden, *Foundations of Mechanics*, 2nd ed., Benjamin/Cummings, 1978,
+  Section 3.3 (Poisson brackets and the Jacobi identity on strongly symplectic Banach manifolds).
 -/
 
 public section
