@@ -28,6 +28,7 @@ variable {K A : Type*} [Field K] [Ring A] [Algebra K A] [FiniteDimensional K A]
 
 /-- Left multiplication on the opposite algebra has the same trace as left multiplication on the
 original algebra when the regular trace form is nondegenerate. -/
+@[simp↓]
 theorem trace_lmul_op (hB : (regularTraceForm K A).Nondegenerate) (a : A) :
     LinearMap.trace K Aᵐᵒᵖ (lmul K Aᵐᵒᵖ (op a)) = LinearMap.trace K A (lmul K A a) := by
   let e := (regularTraceForm K A).toDual hB
@@ -48,6 +49,7 @@ theorem trace_lmul_op (hB : (regularTraceForm K A).Nondegenerate) (a : A) :
   rw [← trace_conj' _ eop, hc, trace_transpose']
 
 /-- Passing to the opposite algebra preserves the regular trace form. -/
+@[simp high]
 theorem regularTraceForm_op (hB : (regularTraceForm K A).Nondegenerate) (x y : A) :
     regularTraceForm K Aᵐᵒᵖ (op x) (op y) = regularTraceForm K A x y := by
   rw [regularTraceForm_apply, ← op_mul, trace_lmul_op hB,

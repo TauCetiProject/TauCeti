@@ -29,6 +29,7 @@ variable {K A ι : Type*} [Field K] [Ring A] [Algebra K A] [FiniteDimensional K 
   [Fintype ι] [DecidableEq ι]
 
 /-- Passing to the opposite algebra preserves the regular discriminant of every finite family. -/
+@[simp]
 theorem regularDiscr_op (hB : (regularTraceForm K A).Nondegenerate) (b : ι → A) :
     regularDiscr K (op ∘ b) = regularDiscr K b := by
   simp only [regularDiscr_def, Function.comp_apply, regularTraceForm_op hB]
