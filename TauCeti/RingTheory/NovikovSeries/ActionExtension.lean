@@ -26,14 +26,16 @@ the nonnegative homogeneous components of `TauCeti.RingTheory.NovikovSeries.Homo
 this file develops:
 
 * **Action monomials and shifted period lattices**: coordinate shifts, invertibility of `T^r` in the
-  localized ring versus non-invertibility in `nonnegSubring` for `r > 0`, degree-zero homogeneity,
-  exact filtration shifts `T^r * a ∈ U_(r + C) ↔ a ∈ U_C`, and preservation/reflection of
-  `periodFiltration`, `posIdeal`, and homogeneous pieces along the base inclusion `g ↦ (g, 0)`.
-* **Properness of the dense graded subalgebra**: when `μ` has infinite range and `R` is nontrivial,
-  `⨆ b, nonnegGradeBy S R (E.coprod (AddMonoidHom.id ℝ)) (μ ∘ Prod.fst) b` is a proper submodule of
-  `nonnegSubring R (E.coprod (AddMonoidHom.id ℝ))`, so `DirectSum.coeAlgHom` is dense but not
-  surjective (`TauCeti.NovikovSeries.iSup_nonnegGradeBy_coprodId_ne_top`,
-  `TauCeti.NovikovSeries.not_surjective_coeAlgHom_nonnegGradeBy_coprodId`).
+  localized ring versus non-invertibility in `nonnegSubring` for `r > 0`, homogeneity of degree
+  `μ 0` (degree zero for additive `μ`), exact filtration shifts `T^r * a ∈ U_(r + C) ↔ a ∈ U_C`,
+  and preservation/reflection of `periodFiltration`, `posIdeal`, and homogeneous pieces along the
+  base inclusion `g ↦ (g, 0)`.
+* **Properness of the dense graded subalgebra**: when `μ : G → B` has infinite range and `R` is
+  nontrivial, `⨆ b, nonnegGradeBy S R (E.coprod (AddMonoidHom.id ℝ)) (μ ∘ Prod.fst) b` is a proper
+  submodule of `nonnegSubring R (E.coprod (AddMonoidHom.id ℝ))`
+  (`TauCeti.NovikovSeries.iSup_nonnegGradeBy_coprodId_ne_top`); for an additive degree map
+  `μ : G →+ B` into an additive monoid, `DirectSum.coeAlgHom` is therefore dense but not
+  surjective (`TauCeti.NovikovSeries.not_surjective_coeAlgHom_nonnegGradeBy_coprodId`).
 * **Action specialization**: pushing forward along `E.coprod (AddMonoidHom.id ℝ)` and a ring
   homomorphism `ρ : R →+* k` defines the continuous action specialization
   `TauCeti.NovikovSeries.actionSpecialization ρ E` into `NovikovSeries k ℝ (AddMonoidHom.id ℝ)`,
@@ -265,9 +267,8 @@ theorem mk'_nonnegActionMonomial [CommRing R] [AddCommMonoid G] (E : G →+ ℝ)
     IsLocalization.mk' (NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))) a
       ⟨nonnegActionMonomial R E hr, nonnegActionMonomial_mem_monomialSubmonoid E hr⟩ =
       (a : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))) * actionMonomial R E (-r) := by
-  rw [IsLocalization.mk'_eq_iff_eq_mul, Algebra.algebraMap_ofSubsemiring_apply,
-    Algebra.algebraMap_ofSubsemiring_apply, coe_nonnegActionMonomial, mul_assoc,
-    actionMonomial_neg_mul_actionMonomial, mul_one]
+  rw [IsLocalization.mk'_eq_iff_eq_mul]
+  simp [Algebra.algebraMap_ofSubsemiring_apply, mul_assoc]
 
 end Monomials
 

@@ -86,18 +86,17 @@ theorem exists_mem_posIdeal_and_eq_single_mul_one_add_of_injective
     (hN : Function.Injective N) {a : NovikovSeries R H N} (ha : a ≠ 0) :
     ∃ h : H, N h = a.order ∧ ∃ b : nonnegSubring R N, b ∈ posIdeal R N ∧
       a = single h (a.coeff h) * (1 + (b : NovikovSeries R H N)) := by
+  classical
   obtain ⟨h, r, c, hc, ha_eq⟩ := exists_single_mul_one_sub_of_injective hN ha
   have hrc : a.coeff h = r := by
-    rw [ha_eq, coeff_single_mul, neg_add_cancel, coeff_sub, one_def, coeff_single_same,
-      mem_posIdeal.1 hc 0 (map_zero N).le, sub_zero, mul_one]
+    simp [ha_eq, coeff_single_mul, mem_posIdeal.1 hc 0 (map_zero N).le]
   have hord : N h = a.order := (order_eq_of_isLeast
     ⟨⟨h, mem_support.2 (hrc.symm ▸ r.ne_zero), rfl⟩,
       fun s ⟨u, hu, hus⟩ => not_lt.1 fun hlt => by
         have hlt' : N (-h + u) < 0 := by rw [map_add, map_neg, hus]; linarith
         have hne : -h + u ≠ 0 := fun h0 => by simp [h0] at hlt'
-        rw [mem_support, ha_eq, coeff_single_mul, coeff_sub, one_def, coeff_single_of_ne hne,
-          mem_posIdeal.1 hc (-h + u) hlt'.le, sub_self, mul_zero] at hu
-        exact hu rfl⟩).symm
+        exact mem_support.1 hu <| by
+          simp [ha_eq, coeff_single_mul, hne, mem_posIdeal.1 hc (-h + u) hlt'.le]⟩).symm
   exact ⟨h, hord, -c, neg_mem hc, by simpa [hrc, ← sub_eq_add_neg] using ha_eq⟩
 
 /-- **Leading-term factorization in the real Novikov division ring.** Over a division ring `R`,

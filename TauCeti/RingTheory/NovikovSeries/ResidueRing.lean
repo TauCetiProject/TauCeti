@@ -393,15 +393,14 @@ theorem residueAlgHom_apply (a : nonnegSubring R N) :
 variable (R₀ R N) in
 /-- The residue ring isomorphism as an `R₀`-algebra equivalence. -/
 def residueAlgEquiv : (nonnegSubring R N ⧸ posIdeal R N) ≃ₐ[R₀] AddMonoidAlgebra R (mker N) :=
-  (Ideal.quotientEquivAlgOfEq R₀ (ker_residue R N).symm).trans
-    (Ideal.quotientKerAlgEquivOfRightInverse
-      (f := residueAlgHom R₀ R N) (g := ofMkerAlgHom R₀ R N) residue_ofMker)
+  AlgEquiv.ofRingEquiv (f := residueEquiv R N) fun r => by
+    rw [← Ideal.Quotient.mk_algebraMap, residueEquiv_mk, ← residueAlgHom_apply (R₀ := R₀),
+      AlgHom.commutes]
 
 @[simp]
 theorem residueAlgEquiv_apply (q : nonnegSubring R N ⧸ posIdeal R N) :
-    residueAlgEquiv R₀ R N q = residueEquiv R N q := by
-  obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective q
-  rfl
+    residueAlgEquiv R₀ R N q = residueEquiv R N q :=
+  AlgEquiv.ofRingEquiv_apply _ q
 
 @[simp]
 theorem toRingEquiv_residueAlgEquiv :
@@ -539,8 +538,9 @@ theorem residueAlgEquivCoprodId_apply (E : G →+ ℝ)
     (q : nonnegSubring R (E.coprod (AddMonoidHom.id ℝ)) ⧸
       posIdeal R (E.coprod (AddMonoidHom.id ℝ))) :
     residueAlgEquivCoprodId R₀ R E q = residueEquivCoprodId R E q := by
-  obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp [residueAlgEquivCoprodId, residueEquivCoprodId, AddMonoidAlgebra.domCongr]
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+  ext g
+  simp [residueAlgEquivCoprodId]
 
 @[simp]
 theorem toRingEquiv_residueAlgEquivCoprodId (E : G →+ ℝ) :

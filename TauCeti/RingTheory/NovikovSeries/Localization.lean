@@ -251,9 +251,8 @@ theorem mk'_single_mem_monomialSubmonoid {M : AddSubmonoid H}
     IsLocalization.mk' (NovikovSeries R H N) a
       ⟨⟨single m 1, single_mem_nonnegSubring hm₀ 1⟩, single_mem_monomialSubmonoid hm hm₀⟩ =
       (a : NovikovSeries R H N) * single (-m) 1 := by
-  rw [IsLocalization.mk'_eq_iff_eq_mul, Algebra.algebraMap_ofSubsemiring_apply,
-    Algebra.algebraMap_ofSubsemiring_apply, mul_assoc, single_mul_single, neg_add_cancel,
-    mul_one, single_zero_one, mul_one]
+  rw [IsLocalization.mk'_eq_iff_eq_mul]
+  simp [Algebra.algebraMap_ofSubsemiring_apply, mul_assoc, single_mul_single]
 
 /-- **The Novikov field as a field of fractions.** Over a field, with an injective period map, the
 ring of Novikov series is the field of fractions of its nonnegative subring. The injectivity
