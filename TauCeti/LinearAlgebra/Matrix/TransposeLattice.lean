@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Algebra.Group.Subgroup.Finsupp
 
 /-!
 # The transpose lattice of a linear map
@@ -26,6 +27,9 @@ This file shows that the lattice determines `L` up to a change of basis by `GL(�
   maps, the first injective, with the same transpose lattice differ by an element of `GL(ι, ℤ)`.
 * `ContinuousLinearMap.transposeLattice_toLin'_comp`: conversely, composing with an element of
   `GL(κ, ℤ)` does not change the transpose lattice.
+* `ContinuousLinearMap.closure_range_proj_comp_le_iff`: for linear maps `L₁`, `L₂` to `ℝ^κ` and
+  `ℝ^κ'` on any space, the components of `L₁` lie in the subgroup spanned by those of `L₂` exactly
+  when `L₁ = N L₂` for an integer matrix `N`.
 -/
 
 public section
@@ -123,5 +127,26 @@ theorem transposeLattice_toLin'_comp [DecidableEq κ] (M : GL κ ℤ) (L : (ι �
   rw [comp_apply, LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, mulVec_mulVec,
     ← hmap, ← Units.val_mul, inv_mul_cancel, Units.val_one, Matrix.map_one _ Int.cast_zero
     Int.cast_one, one_mulVec]
+
+omit [Fintype κ] in
+/-- **Comparing the subgroups spanned by the components.** For linear maps `L₁ : F → ℝ^κ` and
+`L₂ : F → ℝ^κ'`, the components `(L₁)ᵢ` lie in the subgroup of covectors spanned by the components
+`(L₂)ₖ` exactly when `L₁ = N L₂` for an integer matrix `N`. -/
+theorem closure_range_proj_comp_le_iff {F : Type*} [TopologicalSpace F] [AddCommGroup F]
+    [Module ℝ F] {L₁ : F →L[ℝ] (κ → ℝ)} {L₂ : F →L[ℝ] (κ' → ℝ)} :
+    AddSubgroup.closure (Set.range fun i ↦ (proj i : (κ → ℝ) →L[ℝ] ℝ).comp L₁) ≤
+        AddSubgroup.closure (Set.range fun k ↦ (proj k : (κ' → ℝ) →L[ℝ] ℝ).comp L₂) ↔
+      ∃ N : Matrix κ κ' ℤ, ∀ w, L₁ w = N.map (↑) *ᵥ L₂ w := by
+  constructor
+  · intro h
+    choose n hn using fun i ↦ AddSubgroup.mem_closure_range_iff_of_fintype.1
+      (h (AddSubgroup.subset_closure ⟨i, rfl⟩))
+    refine ⟨Matrix.of n, fun w ↦ funext fun i ↦ ?_⟩
+    simpa [mulVec, dotProduct] using congrArg (fun α : F →L[ℝ] ℝ ↦ α w) (hn i)
+  · rintro ⟨N, hN⟩
+    refine (AddSubgroup.closure_le _).2 ?_
+    rintro _ ⟨i, rfl⟩
+    refine AddSubgroup.mem_closure_range_iff_of_fintype.2 ⟨N i, ext fun w ↦ ?_⟩
+    simp [hN, mulVec, dotProduct]
 
 end ContinuousLinearMap
