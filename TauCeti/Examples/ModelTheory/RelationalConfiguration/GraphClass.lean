@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Operations
+public import Mathlib.ModelTheory.Order
 public import TauCeti.ModelTheory.RelationalConfiguration.GraphClass
 
 /-!
@@ -18,8 +19,9 @@ The code of the empty graph on `ℕ` lies in `graphClass`; a code with `adj(0, 0
 
 Borel completeness passes to unions but not to intersections: `graphClass` meets the class of the
 single code of the empty graph, which is isomorphism invariant and Borel, in that one code, and a
-class with one isomorphism class is not Borel complete. Renaming the symbol `adj` to a fresh
-binary symbol is a language equivalence, and the image of `graphClass` under it is Borel complete.
+class with one isomorphism class is not Borel complete. Renaming the symbol `adj` to the distinct
+binary symbol `le` of `Language.order` is a language equivalence, and the image of `graphClass`
+under it is Borel complete.
 -/
 
 public section
@@ -62,6 +64,8 @@ example : ¬isoSetoid Language.graph ℕ (SimpleGraph.edge 0 1).toRelationalConf
 
 /-! ### Unions and intersections -/
 
+namespace TauCeti.Examples.ModelTheory.GraphClass
+
 /-- The class whose only member is the code of the empty graph on `ℕ`. -/
 noncomputable def emptyGraphClass : Set (RelationalConfiguration Language.graph ℕ) :=
   {(⊥ : SimpleGraph ℕ).toRelationalConfiguration}
@@ -103,26 +107,18 @@ example : ¬BorelComplete (graphClass ∩ emptyGraphClass) := by
 
 /-! ### Renaming the symbol -/
 
-/-- A single binary relation symbol, distinct from `Language.graphRel.adj`. -/
-inductive EdgeSymbol : ℕ → Type
-  | edge : EdgeSymbol 2
-
-/-- The language with the single binary relation symbol `EdgeSymbol.edge`. -/
-@[expose] def edgeLanguage : Language.{0, 0} :=
-  ⟨fun _ => Empty, EdgeSymbol⟩
-
-instance instIsRelationalEdgeLanguage : edgeLanguage.IsRelational :=
-  fun _ => (inferInstance : IsEmpty Empty)
-
-/-- Renaming `adj` to `edge` is an equivalence of languages. -/
-def graphEquivEdgeLanguage : Language.graph ≃ᴸ edgeLanguage where
-  toLHom := ⟨fun _ => isEmptyElim, fun _ r => by cases r; exact EdgeSymbol.edge⟩
-  invLHom := ⟨fun _ => isEmptyElim, fun _ r => by cases r; exact Language.graphRel.adj⟩
+/-- Renaming `adj` to the binary symbol `le` of `Language.order` is an equivalence of
+languages. -/
+def graphEquivOrder : Language.graph ≃ᴸ Language.order where
+  toLHom := ⟨fun _ => isEmptyElim, fun _ r => by cases r; exact .le⟩
+  invLHom := ⟨fun _ => isEmptyElim, fun _ r => by cases r; exact .adj⟩
   left_inv := LHom.funext (funext fun _ => funext fun f => isEmptyElim f)
     (funext fun _ => funext fun r => by cases r; rfl)
   right_inv := LHom.funext (funext fun _ => funext fun f => isEmptyElim f)
     (funext fun _ => funext fun r => by cases r; rfl)
 
 -- The image of `graphClass` under the renaming is Borel complete.
-example : BorelComplete (graphEquivEdgeLanguage.onConfiguration '' graphClass) :=
+example : BorelComplete (graphEquivOrder.onConfiguration '' graphClass) :=
   (borelComplete_image_onConfiguration_iff _).2 borelComplete_graphClass
+
+end TauCeti.Examples.ModelTheory.GraphClass
