@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
+import TauCeti.MeasureTheory.Integral.Bochner.Multiplier
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on the pair of pants
@@ -561,12 +562,9 @@ private theorem setIntegral_sobolevDensity_le_of_coreCutoff (ω : SymplecticForm
     (hξc'.of_le one_le_two) ((tsupport_smul_subset_right _ _).trans hξS)
   have hI {g : ℝ × ℝ → ℝ} (hg : Continuous g) : IntegrableOn g K :=
     hg.continuousOn.integrableOn_compact hK
-  have hξcY : ∫ z in K, ‖ξc z‖ ^ 2 ≤ ∫ z in K, ‖ξ z‖ ^ 2 := by
-    refine setIntegral_mono_on (hI (by fun_prop)) (hI (by have := hξ.continuous; fun_prop))
-      hK.measurableSet fun z _ ↦ ?_
-    simp only [ξc, norm_smul, Real.norm_eq_abs]
-    gcongr
-    exact mul_le_of_le_one_left (norm_nonneg _) (abs_coreCutoff_le_one hR₀ z)
+  have hξcY : ∫ z in K, ‖ξc z‖ ^ 2 ≤ ∫ z in K, ‖ξ z‖ ^ 2 :=
+    integral_norm_smul_sq_le (ae_of_all _ fun z ↦ abs_coreCutoff_le_one hR₀ z)
+      (hI (by have := hξ.continuous; fun_prop))
   have hDK : ∫ z in K, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 ≤
       ∫ z, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 :=
     setIntegral_le_integral (ω.integrable_norm_floerLinearization_sq hDcont hξc.smul_left)
