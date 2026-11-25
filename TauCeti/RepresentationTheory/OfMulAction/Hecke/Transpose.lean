@@ -62,12 +62,9 @@ theorem transpose_mem (h : permutationHeckeModule G S A) :
     (fun p : S × S ↦ (h : S × S → A) p.swap) ∈ permutationHeckeModule G S A := by
   have hh := mem_iff.1 h.property
   refine mem_iff.2 ⟨fun g p ↦ hh.1 g p.swap, ?_⟩
-  let f : Quotient (orbitRel G (S × S)) → Quotient (orbitRel G (S × S)) :=
-    Quotient.lift (fun p ↦ Quotient.mk (orbitRel G (S × S)) p.swap)
-      fun _ _ hpq ↦ Quotient.sound (MulAction.swap_mem_orbit_swap_iff.2 hpq)
-  refine (hh.2.image f).subset ?_
+  refine (hh.2.image (MulAction.orbitRelQuotientProdComm G S S)).subset ?_
   rintro _ ⟨p, hp, rfl⟩
-  exact ⟨Quotient.mk _ p.swap, ⟨p.swap, hp, rfl⟩, rfl⟩
+  exact ⟨Quotient.mk _ p.swap, ⟨p.swap, hp, rfl⟩, MulAction.orbitRelQuotientProdComm_mk _⟩
 
 variable (G S A) in
 /-- The **transpose** `hᵀ(x, y) = h(y, x)` on `Fun_G(S × S, A)`, an involutive `A`-linear
@@ -159,10 +156,10 @@ theorem transpose_indicator_orbit (g : G) :
     PermutationHecke.transpose G (G ⧸ U) A
         ⟨_, PermutationHecke.indicator_orbit_mem (((1 : G) : G ⧸ U), (g : G ⧸ U))⟩ =
       ⟨_, PermutationHecke.indicator_orbit_mem (((1 : G) : G ⧸ U), ((g⁻¹ : G) : G ⧸ U))⟩ := by
-  rw [PermutationHecke.transpose_indicator_orbit, Subtype.mk.injEq, Prod.swap_prod_mk,
-    ← orbit_smul g⁻¹ ((g : G ⧸ U), ((1 : G) : G ⧸ U))]
-  congr 3
-  simp [Prod.smul_mk, MulAction.Quotient.smul_mk]
+  have horb : orbit G ((g : G ⧸ U), ((1 : G) : G ⧸ U)) =
+      orbit G (((1 : G) : G ⧸ U), ((g⁻¹ : G) : G ⧸ U)) :=
+    orbit_eq_iff.2 ⟨g, by simp [Prod.smul_mk, MulAction.Quotient.smul_mk]⟩
+  rw [PermutationHecke.transpose_indicator_orbit, Subtype.mk.injEq, Prod.swap_prod_mk, horb]
 
 end HeckeAlgebraLevel
 
