@@ -131,9 +131,9 @@ theorem tendsto_vertical_of_tendsto_nontangentialFilter {E : Type*} [Topological
     Tendsto (fun t : ℝ => u ((x : ℂ) + t * I)) (𝓝[>] 0) (𝓝 L) :=
   hu.comp (tendsto_vertical_nontangentialFilter hα x)
 
-/-- A function bounded near `x` along cones of aperture `α` has finite nontangential maximal
-function over a short enough cone: if `u` tends to `L` nontangentially, then
-`M^α_h u(x) ≤ ‖L‖ₑ + 1` for some height `h > 0`. -/
+/-- If `u` has nontangential limit `L` at `x` along cones of aperture `α`, then
+`M^α_h u(x) ≤ ‖L‖ₑ + 1` for some height `h > 0`; in particular, the nontangential maximal
+function of `u` over a short enough cone is finite at `x`. -/
 theorem exists_nontangentialMaximalFunction_le_of_tendsto {E : Type*} [SeminormedAddCommGroup E]
     {α x : ℝ} {u : ℂ → E} {L : E} (hu : Tendsto u (nontangentialFilter α x) (𝓝 L)) :
     ∃ h : ℝ≥0∞, 0 < h ∧ nontangentialMaximalFunction α h u x ≤ ‖L‖ₑ + 1 := by

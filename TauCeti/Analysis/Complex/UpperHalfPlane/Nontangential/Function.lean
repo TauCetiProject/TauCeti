@@ -76,7 +76,8 @@ theorem enorm_upperHalfPlanePoissonIntegralFun_le (h : ℝ → ℂ) {z : ℂ} (h
 
 /-- The nontangential maximal function of `P[h]` is at most that of the Poisson integral of
 `|h| dx`. -/
-theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_withDensity
+theorem
+    nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_upperHalfPlanePoissonLIntegral
     (α : ℝ) (k : ℝ≥0∞) (h : ℝ → ℂ) (x : ℝ) :
     nontangentialMaximalFunction α k (upperHalfPlanePoissonIntegralFun h) x ≤
       nontangentialMaximalFunction α k
@@ -90,7 +91,7 @@ theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le (α : �
     (h : ℝ → ℂ) (x : ℝ) :
     nontangentialMaximalFunction α k (upperHalfPlanePoissonIntegralFun h) x ≤
       ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) * maximalFunction volume h x :=
-  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_withDensity
+  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_upperHalfPlanePoissonLIntegral
     α k h x).trans (nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α k h x)
 
 /-- **The nontangential maximal bound for `P[h]` with aperture one.** `M_k P[h] ≤ 3 M h`. -/
@@ -110,7 +111,7 @@ theorem lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonIntegra
       ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) ^ p * maximalFunctionConst 1 p *
         ∫⁻ x, ‖h x‖ₑ ^ p :=
   (lintegral_mono fun x => ENNReal.rpow_le_rpow
-    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_withDensity
+    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_upperHalfPlanePoissonLIntegral
       α k h x) (by linarith)).trans
     (lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α k hh hp)
 
@@ -121,7 +122,7 @@ theorem mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonIntegral
     t * volume {x | t < nontangentialMaximalFunction α k (upperHalfPlanePoissonIntegralFun h) x} ≤
       4 * ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) * ∫⁻ x, ‖h x‖ₑ :=
   (mul_le_mul' le_rfl (measure_mono <| ofPred_subset_ofPred.2 fun x hx => hx.trans_le
-    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_withDensity
+    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_upperHalfPlanePoissonLIntegral
       α k h x))).trans
     (mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α k h t)
 
@@ -134,7 +135,7 @@ theorem nontangentialMaximalFunction_one_one_upperHalfPlanePoissonIntegralFun_le
       3 * maximalFunction volume ((Icc (-(R + 2)) (R + 2)).indicator h) x +
         ENNReal.ofReal (2 * (R + 2) ^ 2 / π) *
           ∫⁻ s, ‖h s‖ₑ ∂upperHalfPlanePoissonMeasure :=
-  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_withDensity
+  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_upperHalfPlanePoissonLIntegral
     1 1 h x).trans (nontangentialMaximalFunction_one_one_upperHalfPlanePoissonLIntegral_le hh hx)
 
 /-- **The local weak type bound for `P[h]`.** For `R` there is a constant `C_R`, depending only
@@ -150,7 +151,7 @@ theorem exists_mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonI
       (F := ℂ) R
   refine ⟨C, hC, fun h hh t => (mul_le_mul' le_rfl (measure_mono <|
     ofPred_subset_ofPred.2 fun x hx => ⟨hx.1, hx.2.trans_le
-      (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_withDensity
-        1 1 h x)⟩)).trans (hbound h hh t)⟩
+    (nontangentialMaximalFunction_upperHalfPlanePoissonIntegralFun_le_upperHalfPlanePoissonLIntegral
+      1 1 h x)⟩)).trans (hbound h hh t)⟩
 
 end TauCeti
