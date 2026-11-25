@@ -96,8 +96,10 @@ private theorem smul_sub_apply_eq_zero_iff (h₀ : (c₀ • ι - A).IsInvertibl
     (x : D) :
     (c • ι - A) x = 0 ↔ ((c₀ • ι - A).inverse ∘L ι) x = (c₀ - c)⁻¹ • x := by
   have hc' : c₀ - c ≠ 0 := sub_ne_zero.2 hc.symm
-  rw [smul_sub_eq_smul_sub_sub c₀, sub_apply, sub_eq_zero, comp_apply, eq_inv_smul_iff₀ hc',
-    ← map_smul, smul_apply, h₀.inverse_apply_eq, eq_comm (a := (c₀ • ι - A) x)]
+  calc (c • ι - A) x = 0 ↔ (c₀ • ι - A) x = (c₀ - c) • ι x := by
+        rw [smul_sub_eq_smul_sub_sub c₀, sub_apply, sub_eq_zero, smul_apply]
+    _ ↔ (c₀ • ι - A).inverse ((c₀ - c) • ι x) = x := eq_comm.trans h₀.inverse_apply_eq.symm
+    _ ↔ _ := by simp [eq_inv_smul_iff₀ hc']
 
 /-- **Fredholm alternative for shifts.** If `ι` is compact and one shift `c₀ • ι - A` is
 invertible, a shift `c • ι - A` is invertible exactly when it is injective. -/
