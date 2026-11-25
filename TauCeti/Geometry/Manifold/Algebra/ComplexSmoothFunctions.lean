@@ -19,7 +19,10 @@ scalars. Real and imaginary parts identify this real vector space with a pair of
 function spaces, so complex-linear maps out of it are determined on real-valued functions
 (`ContMDiffMap.linearMap_ext_ofReal`), a real-linear map between real-valued functions
 complexifies to a complex-linear map between complex-valued ones
-(`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution.
+(`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution. Conjugation is
+also the star operation of a star ring and complex star module, and the complexified maps are
+exactly the complex-linear maps commuting with it
+(`ContMDiffMap.exists_complexifyLinearMap_eq_iff`).
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
 (`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data, and
@@ -299,6 +302,32 @@ theorem conj_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (conj f).im = -f.im :
   ext x
   simp
 
+/-- Pointwise complex conjugation is the star operation of the complex smooth functions, making them
+a star ring and a star module over `ℂ`. -/
+instance complexSmoothFunctionsStarRing : StarRing C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
+  star := conj
+  star_involutive := conj_conj
+  star_mul f g := by
+    ext x
+    simp [mul_comm]
+  star_add f g := by
+    ext x
+    simp
+
+/-- The star of a complex smooth function is its pointwise complex conjugate. -/
+@[simp]
+theorem coe_star (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : ⇑(star f) = star ⇑f := by
+  rfl
+
+theorem star_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) : (star f) x = star (f x) := by
+  rfl
+
+theorem conj_eq_star (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : conj f = star f := by
+  rfl
+
+instance complexSmoothFunctionsStarModule : StarModule ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
+  star_smul := conj_complex_smul
+
 /-- Real part of a product of complex-valued smooth functions. -/
 theorem mul_re (f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     (f * g).re = f.re * g.re - f.im * g.im := by
@@ -394,6 +423,24 @@ theorem complexifyLinearMap_apply_eq_zero {D : C^n⟮I, M; ℝ⟯ →ₗ[ℝ] C^
     {f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} (hf : ∀ᶠ y in nhds x, f y = 0) :
     complexifyLinearMap D f x = 0 := by
   simp [hD f.re (hf.mono fun y hy ↦ by simp [hy]), hD f.im (hf.mono fun y hy ↦ by simp [hy])]
+
+/-- **Real operators.** A complex-linear map `P` between complex-valued smooth functions is the
+complexification of a real-linear map between real-valued smooth functions exactly when it commutes
+with complex conjugation, `P (star f) = star (P f)`. The real map is then `u ↦ Re (P u)`. -/
+theorem exists_complexifyLinearMap_eq_iff
+    {P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯} :
+    (∃ D, complexifyLinearMap D = P) ↔ ∀ f, P (star f) = star (P f) := by
+  refine ⟨?_, fun h ↦ ⟨re ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap, ?_⟩⟩
+  · rintro ⟨D, rfl⟩ f
+    ext x
+    apply Complex.ext <;> simp [← conj_eq_star]
+  -- `P` sends real functions to real functions, since they are their own conjugates.
+  refine linearMap_ext_ofReal fun u ↦ ?_
+  have him : (P (ofReal u)).im = 0 := by
+    have h' := congrArg im (h (ofReal u))
+    rw [← conj_eq_star, ← conj_eq_star, conj_ofReal, conj_im] at h'
+    exact self_eq_neg.1 h'
+  refine ext_re_im ?_ ?_ <;> simp [him]
 
 variable {U V : TopologicalSpace.Opens M}
 
