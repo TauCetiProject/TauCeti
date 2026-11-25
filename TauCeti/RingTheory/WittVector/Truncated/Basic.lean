@@ -83,6 +83,7 @@ end WittVector
 namespace Matrix
 
 /-- Truncating each zero-padded entry of a truncated Witt matrix recovers the original matrix. -/
+@[simp high] -- Apply before `Matrix.map_map` combines the two maps.
 theorem map_wittVector_truncate_map_out {p n : ℕ} [Fact p.Prime] {R : Type*} [CommRing R]
     {ι κ : Type*} (M : Matrix ι κ (TruncatedWittVector p n R)) :
     (M.map TruncatedWittVector.out).map (WittVector.truncate n) = M :=
