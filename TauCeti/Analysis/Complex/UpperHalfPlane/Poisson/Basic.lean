@@ -46,7 +46,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   location `Re z` and scale `Im z`, the Cauchy density when `Im z > 0` (for `Im z = 0` both vanish);
   hence `TauCeti.integral_upperHalfPlanePoissonKernel`, `∫ P(z, x) dx = 1` on `ℂ₊`.
 * `TauCeti.upperHalfPlanePoissonKernel_add_mul_I_eq_cauchyPDFReal`: at height `y ≥ 0`,
-  `P(x + iy, ·)` is the Cauchy density of scale `y` centred at `x`; with
+  `P(x + iy, t)` is `cauchyPDFReal` with location `0` and scale `y` at `t - x`, the Cauchy density
+  when `y > 0` (for `y = 0` both vanish); with
   `TauCeti.upperHalfPlanePoissonKernel_add_mul_I_comm`, `P(x + iy, t) = P(t + iy, x)`.
 * `TauCeti.setOf_lt_upperHalfPlanePoissonKernel`: the superlevel sets of `P(z, ·)` are balls
   centred at `Re z`.
@@ -175,8 +176,9 @@ theorem integral_upperHalfPlanePoissonKernel {z : ℂ} (hz : 0 < z.im) :
   simp_rw [upperHalfPlanePoissonKernel_eq_cauchyPDFReal hz.le]
   exact ProbabilityTheory.integral_cauchyPDFReal_eq_one _ (Real.toNNReal_pos.2 hz).ne'
 
-/-- At height `y ≥ 0`, the Poisson kernel `P(x + iy, t)` is the Cauchy density of scale `y`
-evaluated at `t - x`. -/
+/-- At height `y ≥ 0`, the Poisson kernel `P(x + iy, t)` is `cauchyPDFReal` with location `0`
+and scale `y`, evaluated at `t - x`. This is the Cauchy density when `y > 0`; for `y = 0` both
+sides vanish. -/
 theorem upperHalfPlanePoissonKernel_add_mul_I_eq_cauchyPDFReal {y : ℝ} (hy : 0 ≤ y) (x t : ℝ) :
     upperHalfPlanePoissonKernel (x + y * I) t =
       ProbabilityTheory.cauchyPDFReal 0 y.toNNReal (t - x) := by
