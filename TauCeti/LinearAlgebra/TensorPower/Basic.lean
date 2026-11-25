@@ -16,14 +16,15 @@ Mathlib's `TensorPower.mulEquiv` identifies `⨂[R]^k M ⊗[R] ⨂[R]^m M` with 
 file records the inverse operation: `TensorPower.splitAt` cuts a tensor power of length `n` after
 its first `k` factors, landing in `⨂[R]^k M ⊗[R] ⨂[R]^(n - k) M`, together with its value on pure
 tensors, the fact that it is injective, and the unit and associativity laws of the inverse of
-`TensorPower.mulEquiv`. It also identifies the first tensor power with the underlying module,
-describes tensor-power maps in degrees `0` and `1`, and shows that `TensorPower.mulEquiv` is
-natural with respect to tensor-power maps.
+`TensorPower.mulEquiv`. It also identifies the first tensor power with the underlying module (and
+hence `⨂[R]^n M ⊗[R] M` with `⨂[R]^(n + 1) M`), describes tensor-power maps in degrees `0` and
+`1`, and shows that `TensorPower.mulEquiv` is natural with respect to tensor-power maps.
 
 ## Main definitions
 
 * `TensorPower.splitAt`: split a tensor power at a specified position.
 * `TauCeti.TensorPower.oneEquiv`: identify the first tensor power with the underlying module.
+* `TauCeti.TensorPower.succEquiv`: append one factor to a tensor power.
 
 ## Main results
 
@@ -65,6 +66,18 @@ tensor. -/
 theorem oneEquiv_symm_apply (a : M) :
     (oneEquiv R M).symm a = PiTensorProduct.tprod R (fun _ ↦ a) :=
   PiTensorProduct.subsingletonEquiv_symm_apply' 0 a
+
+/-- Appending one factor to a tensor power: `⨂[R]^n M ⊗[R] M ≃ ⨂[R]^(n + 1) M`. -/
+noncomputable def succEquiv (n : ℕ) : TensorPower R n M ⊗[R] M ≃ₗ[R] TensorPower R (n + 1) M :=
+  TensorProduct.congr (.refl R _) (oneEquiv R M).symm ≪≫ₗ _root_.TensorPower.mulEquiv
+
+/-- Appending a letter to a pure tensor word gives the pure tensor of the extended word. -/
+@[simp]
+theorem succEquiv_tprod_tmul (n : ℕ) (x : Fin n → M) (m : M) :
+    succEquiv R M n (PiTensorProduct.tprod R x ⊗ₜ m) = PiTensorProduct.tprod R (Fin.snoc x m) := by
+  rw [succEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, LinearEquiv.refl_apply,
+    oneEquiv_symm_apply, ← _root_.TensorPower.gMul_def, _root_.TensorPower.tprod_mul_tprod,
+    Fin.append_right_eq_snoc]
 
 section map
 

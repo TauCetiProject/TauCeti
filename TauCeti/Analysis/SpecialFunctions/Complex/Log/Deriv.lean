@@ -13,14 +13,17 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Complex.IteratedDeriv
 
 /-!
-# Real-parameter smoothness and higher derivatives of `Complex.log`
+# Derivatives of the complex logarithm
 
-This file records the smoothness and higher derivatives along the real parameter `t : ℝ` of the
-shifted principal complex logarithm `t ↦ Complex.log ((t : ℂ) + z)` whenever `(u : ℂ) + z` lies in
+This file records the derivative of a logarithm with a scaled argument on its slit domain, as well
+as the smoothness and higher derivatives along the real parameter `t : ℝ` of the shifted principal
+complex logarithm `t ↦ Complex.log ((t : ℂ) + z)` whenever `(u : ℂ) + z` lies in
 `Complex.slitPlane`.
 
 ## Main results
 
+* `Complex.hasDerivAt_log_div_const`: the derivative of `w ↦ log (w / c)` is `z⁻¹` on the
+  resulting slit domain.
 * `Complex.contDiffAt_log_ofReal_add`: arbitrary-order real smoothness of `t ↦ Complex.log (t + z)`
   at `u : ℝ` when `(u : ℂ) + z ∈ Complex.slitPlane`.
 * `Complex.iteratedDeriv_log_ofReal_add`: for `k ≥ 1` and `(u : ℂ) + z ∈ Complex.slitPlane`,
@@ -33,6 +36,15 @@ open Filter Topology
 open scoped ContDiff Nat
 
 namespace Complex
+
+/-- The derivative of the logarithm of `z / c` is `z⁻¹` on the resulting slit domain. -/
+theorem hasDerivAt_log_div_const (z : ℂ) {c : ℂ} (hz : z / c ∈ slitPlane) :
+    HasDerivAt (fun w : ℂ ↦ log (w / c)) z⁻¹ z := by
+  obtain ⟨hz0, hc⟩ := div_ne_zero_iff.mp (slitPlane_ne_zero hz)
+  have h : HasDerivAt (fun w : ℂ ↦ w / c) (1 / c) z :=
+    (hasDerivAt_id z).div_const c
+  convert h.clog hz using 1
+  field_simp [hc, hz0]
 
 /-- For `(u : ℂ) + z ∈ Complex.slitPlane`, the shifted principal logarithm `t ↦ log (t + z)` is
 smooth of arbitrary order at `u : ℝ`. -/

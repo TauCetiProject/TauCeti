@@ -46,8 +46,6 @@ provided, together with the specializations to prime and prime-power levels:
 * `TauCeti.LFunctions.dedekindZetaC_eventuallyEq_prod_LFunction_primitiveCharacter`,
   `TauCeti.LFunctions.dedekindZetaC_eq_prod_LFunction_primitiveCharacter`: primitive-character
   factorization of `dedekindZetaC K` as punctured germs on `ℂ` and pointwise for `s ≠ 1`.
-* `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta_of_isCyclotomicExtension`: `dedekindZetaC K s`
-  agrees with `NumberField.dedekindZeta K s` on `1 < s.re`.
 * `TauCeti.LFunctions.dedekindZetaC_eventuallyEq_riemannZeta_mul_prod_LFunction_primitiveCharacter`,
   `TauCeti.LFunctions.dedekindZetaC_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter`:
   factorization with `riemannZeta` separated from `χ ≠ 1`.
@@ -112,14 +110,6 @@ theorem dedekindZetaC_eq_prod_LFunction_primitiveCharacter {s : ℂ} (hs : s ≠
       fun h ↦ by simp [h] at ht)
     (fun _ ht ↦ (NumberField.dedekindZeta_eq_prod_LFunction_primitiveCharacter (n := n) ht).symm)
     (DirichletCharacter.analyticAt_prod_LFunction_primitiveCharacter n hs)
-
-/-- On `Re s > 1`, the continued Dedekind zeta function of a cyclotomic field agrees with
-`NumberField.dedekindZeta K`. -/
-theorem dedekindZetaC_eq_dedekindZeta_of_isCyclotomicExtension (n : ℕ) [NeZero n]
-    [IsCyclotomicExtension {n} ℚ K] {s : ℂ} (hs : 1 < s.re) :
-    dedekindZetaC K s = NumberField.dedekindZeta K s := by
-  rw [dedekindZetaC_eq_prod_LFunction_primitiveCharacter (n := n) (fun h ↦ by simp [h] at hs),
-    NumberField.dedekindZeta_eq_prod_LFunction_primitiveCharacter (n := n) hs]
 
 open scoped Classical in
 /-- **Cyclotomic factorization of `dedekindZetaC` with `riemannZeta` separated, as germs.** -/

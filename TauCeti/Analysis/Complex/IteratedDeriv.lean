@@ -8,17 +8,19 @@ module
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Complex.TaylorSeries
+import Mathlib.Analysis.Normed.Group.FunctionSeries
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
-# Iterated derivatives of holomorphic functions of one complex variable
+# Iterated derivatives of holomorphic functions and series of one complex variable
 
 This file records that every iterated derivative of a complex differentiable function
 `g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`), the iterated form of
@@ -37,10 +39,12 @@ holomorphic on `U` are the restrictions of scalars of its complex iterated deriv
 open subset `U ⊆ ℂ` that agrees with `(g · : ℂ)` on a real subset restricts to a `C^n` real
 function `g` whose real iterated derivatives coerce to its complex iterated derivatives
 (`DifferentiableOn.contDiffOn_ofReal`, `DifferentiableOn.iteratedDeriv_comp_ofReal`,
-`DifferentiableOn.iteratedDeriv_ofReal`). Weierstrass's
-theorem upgrades locally uniform convergence of holomorphic maps on `U` to locally uniform
-convergence of all iterated derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of
-all real iterated derivatives (`TendstoLocallyUniformlyOn.iteratedFDeriv`).
+`DifferentiableOn.iteratedDeriv_ofReal`). Weierstrass's theorem upgrades locally uniform
+convergence of holomorphic maps on `U` to locally uniform convergence of all iterated derivatives
+(`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real iterated derivatives
+(`TendstoLocallyUniformlyOn.iteratedFDeriv`). It also records the resulting Weierstrass M-test
+formulas for differentiating holomorphic series (`Complex.hasDerivAt_tsum_of_summable_norm`,
+`Complex.hasSum_iteratedDeriv_of_summable_norm`).
 
 For a family `f t` of maps holomorphic on `U`, depending on a real variable `t` with derivative
 `f' t` in `t`, Weierstrass's theorem applied to the difference quotients
@@ -211,6 +215,33 @@ theorem DifferentiableOn.iteratedDeriv_ofReal {f : ℂ → ℂ} {g : ℝ → ℝ
     hf.iteratedDeriv_comp_ofReal hU k (hmaps hx)] at h1
   simpa only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
     Complex.ofRealCLM_apply, ← iteratedDeriv_eq_iteratedFDeriv] using h1
+
+namespace Complex
+
+/-- If holomorphic functions `F i` on an open set `U ⊆ ℂ` satisfy a uniform summable norm bound
+`‖F i w‖ ≤ u i`, then their sum has derivative `∑' i, deriv (F i) z` at every `z ∈ U`. -/
+theorem hasDerivAt_tsum_of_summable_norm {ι : Type*} {F : ι → ℂ → E} {U : Set ℂ} {u : ι → ℝ}
+    (hu : Summable u) (hF : ∀ i, DifferentiableOn ℂ (F i) U) (hU : IsOpen U)
+    (hF_le : ∀ i, ∀ w ∈ U, ‖F i w‖ ≤ u i) {z : ℂ} (hz : z ∈ U) :
+    HasDerivAt (fun w => ∑' i, F i w) (∑' i, deriv (F i) z) z := by
+  have hd := ((Complex.differentiableOn_tsum_of_summable_norm hu hF hU hF_le).differentiableAt
+    (hU.mem_nhds hz)).hasDerivAt
+  rwa [← (Complex.hasSum_deriv_of_summable_norm hu hF hU hF_le hz).tsum_eq] at hd
+
+/-- If holomorphic functions `F i` on an open set `U ⊆ ℂ` satisfy a uniform summable norm bound
+`‖F i w‖ ≤ u i`, then for every `k : ℕ` and `z ∈ U`, the `k`-th iterated derivatives
+`iteratedDeriv k (F i) z` sum to `iteratedDeriv k (fun w => ∑' i, F i w) z`. -/
+theorem hasSum_iteratedDeriv_of_summable_norm {ι : Type*} {F : ι → ℂ → E} {U : Set ℂ}
+    {u : ι → ℝ} (hu : Summable u) (hF : ∀ i, DifferentiableOn ℂ (F i) U) (hU : IsOpen U)
+    (hF_le : ∀ i, ∀ w ∈ U, ‖F i w‖ ≤ u i) (k : ℕ) {z : ℂ} (hz : z ∈ U) :
+    HasSum (fun i => iteratedDeriv k (F i) z) (iteratedDeriv k (fun w => ∑' i, F i w) z) := by
+  rw [HasSum]
+  have hc := (tendstoUniformlyOn_tsum hu hF_le).tendstoLocallyUniformlyOn
+  refine ((hc.iteratedDeriv (Filter.Eventually.of_forall fun s =>
+    DifferentiableOn.fun_sum fun i _ => hF i) hU k).tendsto_at hz).congr fun s => ?_
+  exact iteratedDeriv_fun_sum fun i _ => ((hF i).analyticOnNhd hU z hz).contDiffAt
+
+end Complex
 
 namespace TauCeti
 
