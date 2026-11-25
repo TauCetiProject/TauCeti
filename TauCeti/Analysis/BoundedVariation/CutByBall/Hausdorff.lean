@@ -53,7 +53,7 @@ theorem ae_perimeter_inter_ball_le_add_euclideanHausdorffMeasure
       perimeter volume ⟨ball x₀ r, isOpen_ball⟩ s + μHE[finrank ℝ E - 1] (s ∩ sphere x₀ r) := by
   filter_upwards [ae_perimeter_inter_ball_le hs x₀, ae_hasDerivAt_measureReal_inter_ball x₀ hs]
     with r hP hm
-  rw [hm.deriv] at hP
+  rw [hm.deriv, measureReal_def] at hP
   exact hP.trans (add_le_add_right ENNReal.ofReal_toReal_le _)
 
 end TauCeti
