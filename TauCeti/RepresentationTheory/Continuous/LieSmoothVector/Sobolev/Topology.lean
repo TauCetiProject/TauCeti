@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Sobolev.Comparison
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector.Topology
-import TauCeti.Analysis.LocallyConvex.WithSeminorms
 
 /-!
 # The Sobolev seminorms define the topology of the smooth vectors
@@ -28,8 +27,6 @@ topology, since `Q_k ≤ P_k` (`ContRepresentation.sobolevSeminorm_le_wordSemino
 
 * `ContRepresentation.LieSmoothSpace.withSeminorms_sobolevSeminormFamily`: for a spanning family,
   the topology of `LieSmoothSpace I π X` is that of the Sobolev seminorms.
-* `ContRepresentation.LieSmoothSpace.tendsto_nhds_iff_sobolevSeminormFamily`: convergence is
-  convergence in every Sobolev seminorm.
 
 ## References
 
@@ -41,9 +38,7 @@ public section
 
 noncomputable section
 
-open scoped ContDiff Manifold Topology
-
-open Filter
+open scoped ContDiff Manifold
 
 namespace ContRepresentation
 
@@ -88,14 +83,6 @@ theorem withSeminorms_sobolevSeminormFamily (hX : Submodule.span ℝ (Set.range 
   · obtain ⟨C, hC⟩ := exists_wordSeminorm_le_mul_sobolevSeminorm (π := π) X hX k
     refine ⟨{k}, C, fun v ↦ ?_⟩
     simpa using hC v.toSmooth
-
-/-- **Convergence in `LieSmoothSpace I π X` is convergence in every Sobolev seminorm**, for a
-spanning family `X`. -/
-theorem tendsto_nhds_iff_sobolevSeminormFamily (hX : Submodule.span ℝ (Set.range X) = ⊤)
-    {α : Type*} {l : Filter α} {u : α → LieSmoothSpace I π X} {v : LieSmoothSpace I π X} :
-    Tendsto u l (𝓝 v) ↔
-      ∀ k, Tendsto (fun a ↦ sobolevSeminormFamily I π X k (u a - v)) l (𝓝 0) :=
-  (withSeminorms_sobolevSeminormFamily hX).tendsto_nhds_iff_tendsto_zero
 
 end LieSmoothSpace
 
