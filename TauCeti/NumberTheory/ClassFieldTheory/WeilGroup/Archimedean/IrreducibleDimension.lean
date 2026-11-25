@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
-public import TauCeti.RepresentationTheory.CommonEigenvector
+public import TauCeti.RepresentationTheory.Irreducible
+public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Dimensions of the irreducible representations of the archimedean Weil groups
@@ -17,17 +19,16 @@ This file proves the dimension half of the classification of the irreducible fin
 complex representations of the archimedean Weil groups `W_ℂ = ℂˣ` and `W_ℝ = ℂˣ ⊔ jℂˣ`: those of
 `W_ℂ` are one-dimensional, and those of `W_ℝ` have dimension at most two. No continuity is needed.
 
-For `W_ℂ` this is Schur's lemma for a commutative group
-(`Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative`). For `W_ℝ`, a nonzero
-finite-dimensional representation of the commutative group `ℂˣ` has a common eigenvector `v`
-(`Representation.exists_ne_zero_forall_exists_apply_eq_smul`), and the span of `v` and `j v` is
-stable under `W_ℝ`: `z (j v) = j (conj z) v` and `j (j v) = (-1) v`. In an irreducible
-representation it is everything.
+For `W_ℂ` this is Mathlib's Schur's lemma for a commutative group,
+`Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative`, applied to `ρ` with
+`[ρ.IsIrreducible]`. For `W_ℝ`, a nonzero finite-dimensional representation of the commutative
+group `ℂˣ` has a common eigenvector `v`
+(`TauCeti.exists_unitHom_jointEigenvector_of_pairwise_commute_of_isAlgClosed`), and the span of
+`v` and `j v` is stable under `W_ℝ`: `z (j v) = j (conj z) v` and `j (j v) = (-1) v`. In an
+irreducible representation it is everything.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.WeilGroupComplex.finrank_eq_one_of_isIrreducible`: an irreducible
-  finite-dimensional complex representation of `W_ℂ` is one-dimensional.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.finrank_le_two_of_isIrreducible`: an irreducible
   finite-dimensional complex representation of `W_ℝ` has dimension at most two.
 
@@ -44,13 +45,6 @@ namespace TauCeti.ClassFieldTheory
 open Module
 
 variable {V : Type*} [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
-
-/-- **The irreducible representations of `W_ℂ` are characters.** An irreducible finite-dimensional
-complex representation of the commutative group `W_ℂ = ℂˣ` is one-dimensional. -/
-theorem WeilGroupComplex.finrank_eq_one_of_isIrreducible
-    (ρ : Representation ℂ WeilGroupComplex V) (h : ρ.IsIrreducible) : finrank ℂ V = 1 :=
-  have := h
-  Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative ρ
 
 namespace WeilGroupReal
 
@@ -93,11 +87,12 @@ theorem apply_mem_span_pair (ρ : Representation ℂ WeilGroupReal V) {v : V}
 theorem finrank_le_two_of_isIrreducible (ρ : Representation ℂ WeilGroupReal V)
     (h : ρ.IsIrreducible) : finrank ℂ V ≤ 2 := by
   have := h.nontrivial
-  obtain ⟨v, hv0, hv⟩ :=
-    Representation.exists_ne_zero_forall_exists_apply_eq_smul (ρ.comp includeComplex)
+  obtain ⟨χ, v, hv0, hv⟩ :=
+    TauCeti.exists_unitHom_jointEigenvector_of_pairwise_commute_of_isAlgClosed
+      (ρ.comp includeComplex) fun g h _ ↦ (Commute.all g h).map _
   let σ : Subrepresentation ρ :=
     { toSubmodule := Submodule.span ℂ (Set.range ![v, ρ j v])
-      apply_mem_toSubmodule := fun w _ hx ↦ apply_mem_span_pair ρ hv w hx }
+      apply_mem_toSubmodule := fun w _ hx ↦ apply_mem_span_pair ρ (fun z ↦ ⟨χ z, hv z⟩) w hx }
   have hσ : σ = ⊤ := by
     refine (h.eq_bot_or_eq_top σ).resolve_left fun hbot ↦ hv0 ?_
     have hmem : v ∈ σ.toSubmodule := Submodule.subset_span ⟨0, rfl⟩
