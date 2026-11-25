@@ -687,9 +687,7 @@ theorem map_injective {f : A →+* B} (hf : Function.Injective f) : Function.Inj
   rw [hx, map_one]
 
 /-- An element of `GL_∞(Gᵢ)` that becomes trivial in `GL_∞` of the direct limit of a directed
-system of rings `Gᵢ` is already trivial in `GL_∞(Gⱼ)` for some `j ≥ i`: each of the finitely many
-entries of a representing matrix agrees with the corresponding entry of the identity matrix at
-some later stage, and the index set is directed. -/
+system of rings `Gᵢ` is already trivial in `GL_∞(Gⱼ)` for some `j ≥ i`. -/
 theorem exists_map_eq_one_of_map_ringOf_eq_one {ι : Type*} [Preorder ι] [IsDirectedOrder ι]
     [Nonempty ι] {G : ι → Type*} [∀ i, Ring (G i)] {f : ∀ i j, i ≤ j → G i →+* G j}
     [DirectedSystem G (f · · ·)] {i : ι} {x : StableGeneralLinearGroup (G i)}

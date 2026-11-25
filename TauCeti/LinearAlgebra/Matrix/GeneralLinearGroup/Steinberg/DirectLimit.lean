@@ -68,23 +68,6 @@ variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι]
   (G : ι → Type*) [∀ i, Ring (G i)] (f : ∀ i j, i ≤ j → G i →+* G j)
   [DirectedSystem G (f · · ·)]
 
-omit [IsDirectedOrder ι] [Nonempty ι] in
-/-- The transition map of a directed system of rings from a stage to itself is the identity. -/
-private theorem f_self (i : ι) : f i i le_rfl = RingHom.id (G i) :=
-  RingHom.ext fun x ↦ DirectedSystem.map_self' f x
-
-omit [IsDirectedOrder ι] [Nonempty ι] in
-/-- The transition maps of a directed system of rings compose. -/
-private theorem f_comp_f {i j k : ι} (hij : i ≤ j) (hjk : j ≤ k) :
-    (f j k hjk).comp (f i j hij) = f i k (hij.trans hjk) :=
-  RingHom.ext fun x ↦ DirectedSystem.map_map' f hij hjk x
-
-/-- The canonical maps into the direct limit of a directed system of rings are compatible with the
-transition maps. -/
-private theorem ringOf_comp_f {i j : ι} (hij : i ≤ j) :
-    (Ring.of G f j).comp (f i j hij) = Ring.of G f i :=
-  RingHom.ext fun _ ↦ Ring.of_f _ _
-
 /-- Every element of the direct limit of a directed system of rings is the image of an element of
 a stage. -/
 private theorem exists_ringOf (a : _root_.DirectLimit G f) : ∃ i a', Ring.of G f i a' = a := by
@@ -106,8 +89,8 @@ omit [IsDirectedOrder ι] [Nonempty ι] in
 /-- The Steinberg groups of a directed system of rings, along the induced homomorphisms, form a
 directed system of groups. -/
 instance : DirectedSystem (fun i ↦ IndexedSteinbergGroup κ (G i)) (fun i j h ↦ map (f i j h)) where
-  map_self i z := by rw [f_self G f, map_id, MonoidHom.id_apply]
-  map_map k j i hij hjk z := by rw [map_map, f_comp_f G f]
+  map_self i z := by rw [DirectedSystem.ringHom_self f, map_id, MonoidHom.id_apply]
+  map_map k j i hij hjk z := by rw [map_map, DirectedSystem.ringHom_comp]
 
 /-- The direct limit of the Steinberg groups `St_κ(Gᵢ)`. -/
 local notation "StLim" => _root_.DirectLimit (fun i ↦ IndexedSteinbergGroup κ (G i))
@@ -154,7 +137,7 @@ with `St_κ(DirectLimit G f)`. -/
 def directLimitEquiv : StLim ≃* IndexedSteinbergGroup κ (_root_.DirectLimit G f) :=
   MonoidHom.toMulEquiv
     (DirectLimit.Monoid.lift _ _ (fun i ↦ map (Ring.of G f i))
-      (fun i j h z ↦ by rw [map_map, ringOf_comp_f]))
+      (fun i j h z ↦ by rw [map_map, DirectLimit.Ring.of_comp_f]))
     (toLim G f)
     (DirectLimit.Monoid.hom_ext fun i ↦ hom_ext fun p q hpq a ↦ by
       simp only [MonoidHom.comp_apply, MonoidHom.id_apply, DirectLimit.Monoid.lift_of, map_x,
@@ -186,6 +169,14 @@ theorem directLimitEquiv_symm_map (i : ι) (z : IndexedSteinbergGroup κ (G i)) 
     (directLimitEquiv G f κ).symm (map (Ring.of G f i) z) = ⟦⟨i, z⟩⟧ := by
   rw [MulEquiv.symm_apply_eq, directLimitEquiv_mk]
 
+/-- The inverse of `directLimitEquiv` sends the generator `x_{pq}(⟦⟨i, a⟩⟧)`, for the class
+`⟦⟨i, a⟩⟧` of an element `a` of the stage `Gᵢ`, to the class of the generator `x_{pq}(a)` of
+`St_κ(Gᵢ)`. -/
+@[simp]
+theorem directLimitEquiv_symm_x {p q : κ} (hpq : p ≠ q) (i : ι) (a : G i) :
+    (directLimitEquiv G f κ).symm (x hpq ⟦⟨i, a⟩⟧) = ⟦⟨i, x hpq a⟩⟧ := by
+  rw [← Ring.of_apply G f i a, ← map_x, directLimitEquiv_symm_map]
+
 /-- Every element of the Steinberg group of a directed colimit of rings comes from the Steinberg
 group of some stage. -/
 theorem exists_map_ringOf_eq (z : IndexedSteinbergGroup κ (_root_.DirectLimit G f)) :
@@ -216,7 +207,7 @@ theorem exists_map_ringOf_eq (z : AlgebraicK2 (_root_.DirectLimit G f)) :
   obtain ⟨j, hij, hj⟩ := StableGeneralLinearGroup.exists_map_eq_one_of_map_ringOf_eq_one hw₁
   refine ⟨j, ⟨IndexedSteinbergGroup.map (f i j hij) w, ?_⟩, Subtype.ext ?_⟩
   · rw [MonoidHom.mem_ker, SteinbergGroup.toStableGL_map, hj]
-  · rw [coe_map_apply, IndexedSteinbergGroup.map_map, ringOf_comp_f, hw]
+  · rw [coe_map_apply, IndexedSteinbergGroup.map_map, DirectLimit.Ring.of_comp_f, hw]
 
 /-- An element of `K₂` of a stage whose image in `K₂` of the directed colimit is trivial is
 already trivial in `K₂` of some later stage. -/
@@ -232,8 +223,8 @@ omit [IsDirectedOrder ι] [Nonempty ι] in
 /-- The groups `K₂(Gᵢ)` of a directed system of rings, along the induced homomorphisms, form a
 directed system of groups. -/
 instance : DirectedSystem (fun i ↦ AlgebraicK2 (G i)) (fun i j h ↦ map (f i j h)) where
-  map_self i y := by rw [f_self G f, map_id, MonoidHom.id_apply]
-  map_map k j i hij hjk y := by rw [map_map, f_comp_f G f]
+  map_self i y := by rw [DirectedSystem.ringHom_self f, map_id, MonoidHom.id_apply]
+  map_map k j i hij hjk y := by rw [map_map, DirectedSystem.ringHom_comp]
 
 /-- The comparison homomorphism from the direct limit of the groups `K₂(Gᵢ)` to
 `K₂(DirectLimit G f)`, induced by the canonical maps `Gᵢ →+* DirectLimit G f`. -/
@@ -241,7 +232,7 @@ private def toDirectLimit :
     _root_.DirectLimit (fun i ↦ AlgebraicK2 (G i)) (fun i j h ↦ map (f i j h)) →*
       AlgebraicK2 (_root_.DirectLimit G f) :=
   DirectLimit.Monoid.lift _ _ (fun i ↦ map (Ring.of G f i))
-    (fun i j h y ↦ by rw [map_map, ringOf_comp_f])
+    (fun i j h y ↦ by rw [map_map, DirectLimit.Ring.of_comp_f])
 
 private theorem toDirectLimit_bijective : Function.Bijective (toDirectLimit G f) := by
   refine ⟨(injective_iff_map_eq_one _).2 fun z hz ↦ ?_, fun z ↦ ?_⟩
