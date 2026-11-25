@@ -116,9 +116,10 @@ private theorem compCLE_mem_w1p0Submodule (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
 
 /-! ### Precomposition with a linear automorphism in `W^{2,p}` -/
 
-/-- Almost-everywhere statements on `W` pull back along a linear automorphism `e` to
-`U = e⁻¹(W)`. -/
-private theorem quasiMeasurePreserving_restrict_of_coe_eq_preimage (e : E ≃L[ℝ] E)
+/-- A linear automorphism `e` is quasi-measure-preserving from `U = e⁻¹(W)` to `W`, for the
+restrictions of an additive Haar measure: almost-everywhere statements on `W` pull back along `e`
+to `U`. -/
+theorem quasiMeasurePreserving_restrict_of_coe_eq_preimage (e : E ≃L[ℝ] E)
     (hUW : (U : Set E) = e ⁻¹' W) :
     QuasiMeasurePreserving e (mu.restrict U) (mu.restrict W) :=
   (Measure.ContinuousLinearMap.quasiMeasurePreserving mu (e : E →L[ℝ] E)

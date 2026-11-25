@@ -102,6 +102,16 @@ theorem _root_.MeasureTheory.MemLp.comp_continuousLinearEquiv {p : ℝ≥0∞} {
   exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
     ENNReal.ofReal_ne_top) hu.eLpNorm_lt_top
 
+variable {μ} in
+/-- Precomposition with a linear automorphism `e` maps `Lᵖ` on a set `s` to `Lᵖ` on `e ⁻¹' s`, for
+an additive Haar measure. -/
+theorem _root_.MeasureTheory.MemLp.comp_continuousLinearEquiv_restrict_preimage {p : ℝ≥0∞}
+    {u : E → G} {s : Set E} (hu : MemLp u p (μ.restrict s)) (e : E ≃L[ℝ] E) :
+    MemLp (fun x ↦ u (e x)) p (μ.restrict (e ⁻¹' s)) := by
+  rw [memLp_iff, ← Function.comp_def, eLpNorm_comp_continuousLinearEquiv_restrict_preimage]
+  exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
+    ENNReal.ofReal_ne_top) hu.eLpNorm_lt_top
+
 variable {μ} {𝕜 F : Type*} [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r s : ℝ}
 

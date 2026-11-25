@@ -145,44 +145,71 @@ private theorem exists_wkp_value_ae_eq_indicator_mul (hp_top : p ≠ ⊤) {K : S
     simp only [Pi.sub_apply, Pi.smul_apply', cutoffRemainder]
     rw [hx, add_sub_cancel_left]
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- **Freezing a coefficient field off a set.** If `A` is measurable on a measurable set `s` and
+within `ε` of an operator `A₀` there, then `A₀ + 1_s (A - A₀)`, which is `A` on `s` and `A₀`
+elsewhere, is measurable and within `ε` of `A₀` everywhere. -/
+theorem aestronglyMeasurable_add_indicator_sub_and_norm_sub_le {μ : Measure E} {s : Set E}
+    (hs : MeasurableSet s) {A₀ : E →L[ℝ] E} {A : E → E →L[ℝ] E}
+    (hA : AEStronglyMeasurable A (μ.restrict s)) {ε : ℝ} (hε : 0 ≤ ε)
+    (hAε : ∀ x ∈ s, ‖A x - A₀‖ ≤ ε) :
+    AEStronglyMeasurable (fun x ↦ A₀ + s.indicator (fun y ↦ A y - A₀) x) μ ∧
+      ∀ x, ‖A₀ + s.indicator (fun y ↦ A y - A₀) x - A₀‖ ≤ ε :=
+  ⟨aestronglyMeasurable_const.add
+    ((aestronglyMeasurable_indicator_iff hs).2 (hA.sub aestronglyMeasurable_const)), fun x ↦ by
+    rw [add_sub_cancel_left]
+    by_cases hx : x ∈ s
+    · rw [indicator_of_mem hx]; exact hAε x hx
+    · rw [indicator_of_notMem hx, ContinuousLinearMap.opNorm_zero]; exact hε⟩
+
 omit [Fact (1 ≤ q)] in
-/-- **The forcing term of the localized equation lies in `L^q`.** If `a` is continuous and bounded
-by `Λ` on a compact `K ⊆ Ω`, `ζ` is essentially bounded, and `f`, `u` and `∇u` lie in `L^q(Ω)`,
-then `1_K (ζ f + tr (a T))` lies in `L^q(E)`, where `T` is the Leibniz remainder. -/
-private theorem memLp_indicator_mul_add_traceCLM {K : Set E} (hK : IsCompact K)
-    (hKΩ : K ⊆ Omega) {zeta : E → ℝ} (hzeta : ContDiff ℝ ∞ zeta) (hzetaTop : MemLp zeta ∞ volume)
-    {a : E → E →L[ℝ] E} (ha : ContinuousOn a K) {Λ : ℝ} (haΛ : ∀ x ∈ K, ‖a x‖ ≤ Λ)
-    (u : Wkp (volume : Measure E) Omega p 2) {f : E → ℝ}
-    (hf : MemLp f q (volume.restrict (Omega : Set E)))
+/-- **The forcing term of a localized equation lies in `L^q`.** Let `K` be compact, let `a` be a
+field of endomorphisms of `E`, measurable on `Ω` and bounded by `Λ` on `Ω ∩ K`, let `ζ` be smooth
+and essentially bounded, and let `f`, `u` and `∇u` lie in `L^q(Ω)`. Then
+`1_{Ω ∩ K} (ζ f + tr (a T))` lies in `L^q(E)`, where `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` is the Leibniz
+remainder of the cutoff `ζ u` (`TauCeti.leibnizRemainder`), assumed measurable on `Ω`. -/
+theorem memLp_indicator_mul_add_traceCLM_comp_leibnizRemainder {K : Set E} (hK : IsCompact K)
+    {zeta : E → ℝ} (hzeta : ContDiff ℝ ∞ zeta) (hzetaTop : MemLp zeta ∞ volume)
+    {a : E → E →L[ℝ] E} (ha : AEStronglyMeasurable a (volume.restrict (Omega : Set E))) {Λ : ℝ}
+    (haΛ : ∀ x ∈ (Omega : Set E) ∩ K, ‖a x‖ ≤ Λ) (u : Wkp (volume : Measure E) Omega p 2)
+    {f : E → ℝ} (hf : MemLp f q (volume.restrict (Omega : Set E)))
     (huq : MemLp (Wkp.value 2 u) q (volume.restrict (Omega : Set E)))
     (hgq : MemLp (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) q
       (volume.restrict (Omega : Set E)))
-    (hR : AEStronglyMeasurable (cutoffRemainder zeta u) (volume.restrict (Omega : Set E))) :
-    MemLp (K.indicator fun x ↦ zeta x * f x + traceCLM ℝ E ((a x).comp (cutoffRemainder zeta u x)))
+    (hR : AEStronglyMeasurable (fun x ↦ leibnizRemainder zeta
+      (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x) (Wkp.value 2 u x) x)
+      (volume.restrict (Omega : Set E))) :
+    MemLp (((Omega : Set E) ∩ K).indicator fun x ↦ zeta x * f x + traceCLM ℝ E ((a x).comp
+      (leibnizRemainder zeta (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x) (Wkp.value 2 u x) x)))
       q volume := by
-  have hKm := hK.measurableSet
-  have hres : volume.restrict K ≤ volume.restrict (Omega : Set E) :=
-    Measure.restrict_mono hKΩ le_rfl
+  have hΩK : MeasurableSet ((Omega : Set E) ∩ K) :=
+    Omega.isOpen.measurableSet.inter hK.measurableSet
+  have hres : volume.restrict ((Omega : Set E) ∩ K) ≤ volume.restrict (Omega : Set E) :=
+    Measure.restrict_mono inter_subset_left le_rfl
   obtain ⟨M₁, hM₁⟩ := hK.exists_bound_of_continuousOn
     (hzeta.continuous_gradient (by simp)).continuousOn
   obtain ⟨M₂, hM₂⟩ := hK.exists_bound_of_continuousOn
     ((hzeta.gradient_right (m := 1) (by simp)).continuous_fderiv (by simp)).continuousOn
-  rw [memLp_indicator_iff_restrict hKm.nullMeasurableSet]
-  refine ((hzetaTop.restrict K).fun_mul (hf.mono_measure hres)).add ?_
+  rw [memLp_indicator_iff_restrict hΩK.nullMeasurableSet]
+  refine ((hzetaTop.restrict _).fun_mul (hf.mono_measure hres)).add ?_
   have hmaj := (((hgq.mono_measure hres).norm.const_mul (2 * M₁)).add
     ((huq.mono_measure hres).norm.const_mul M₂)).const_mul (‖traceCLM ℝ E‖ * Λ)
-  refine hmaj.of_le ((traceCLM ℝ E).continuous.comp_aestronglyMeasurable
-    ((ContinuousLinearMap.compL ℝ E E E).aestronglyMeasurable_comp₂
-      (ha.aestronglyMeasurable hKm) (hR.mono_measure hres))) ?_
-  filter_upwards [ae_restrict_mem hKm] with x hx
-  have hT : ‖cutoffRemainder zeta u x‖ ≤ 2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x‖ +
-      M₂ * ‖Wkp.value 2 u x‖ := by
+  refine hmaj.of_le (Continuous.comp_aestronglyMeasurable₂
+    (g := fun B M : E →L[ℝ] E ↦ traceCLM ℝ E (B.comp M))
+    ((traceCLM ℝ E).continuous.comp (continuous_fst.clm_comp continuous_snd))
+    (ha.mono_measure hres) (hR.mono_measure hres)) ?_
+  filter_upwards [ae_restrict_mem hΩK] with x hx
+  have hT : ‖leibnizRemainder zeta (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x)
+      (Wkp.value 2 u x) x‖ ≤
+      2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x‖ + M₂ * ‖Wkp.value 2 u x‖ := by
     refine (norm_leibnizRemainder_le zeta _ _ x).trans ?_
     gcongr
-    exacts [hM₁ x hx, hM₂ x hx]
+    exacts [hM₁ x hx.2, hM₂ x hx.2]
   refine le_trans ?_ (Real.le_norm_self _)
-  calc ‖traceCLM ℝ E ((a x).comp (cutoffRemainder zeta u x))‖
-      ≤ ‖traceCLM ℝ E‖ * (‖a x‖ * ‖cutoffRemainder zeta u x‖) :=
+  calc ‖traceCLM ℝ E ((a x).comp (leibnizRemainder zeta
+        (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x) (Wkp.value 2 u x) x))‖
+      ≤ ‖traceCLM ℝ E‖ * (‖a x‖ * ‖leibnizRemainder zeta
+          (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x) (Wkp.value 2 u x) x‖) :=
         ((traceCLM ℝ E).le_opNorm _).trans
           (mul_le_mul_of_nonneg_left ((a x).opNorm_comp_le _) (norm_nonneg _))
     _ ≤ ‖traceCLM ℝ E‖ * (Λ * (2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x‖ +
@@ -216,22 +243,6 @@ private theorem ae_trace_comp_eq_indicator {K : Set E} (hKΩ : K ⊆ Omega) {zet
     simp only [map_add, map_smul, h₂', smul_eq_mul]
   · rw [indicator_of_notMem hxK, indicator_of_notMem hxK, indicator_of_notMem hxK,
       ContinuousLinearMap.comp_zero, ContinuousLinearMap.toLinearMap_zero, map_zero]
-
-/-- Restricting a whole-space `W^{2,q}` function whose value agrees with that of
-`u ∈ W^{2,p}(Ω)` on an open `B ⊆ Ω` gives an element of `W^{2,q}(B)` with the value and the weak
-Hessian of `u`. -/
-private theorem exists_restrict_value_ae_eq {B : Opens E} (hB : B ≤ Omega)
-    (u : Wkp (volume : Measure E) Omega p 2) (v₀ : Wkp (volume : Measure E) ⊤ q 2)
-    (h : (Wkp.value 2 v₀ : E → ℝ) =ᵐ[volume.restrict (B : Set E)] Wkp.value 2 u) :
-    ∃ v : Wkp (volume : Measure E) B q 2,
-      (Wkp.value 2 v : E → ℝ) =ᵐ[volume.restrict (B : Set E)] Wkp.value 2 u ∧
-      (Wkp.iteratedGradient 1 v : E → IteratedGradient E 1) =ᵐ[volume.restrict (B : Set E)]
-        Wkp.iteratedGradient 1 u := by
-  have hv := (Wkp.value_restrictL_ae le_top 2 v₀).trans h
-  refine ⟨Wkp.restrictL le_top 2 v₀, hv, ?_⟩
-  exact (Wkp.iteratedGradient_ae_eq_of_value_ae_eq 1
-    (hv.trans (Wkp.value_restrictL_ae hB 2 u).symm)).trans
-      (Wkp.iteratedGradient_restrictL_ae hB 1 u)
 
 /-- **Interior `W^{2,q}` regularity for continuous principal coefficients** (Gilbarg–Trudinger,
 Lemma 9.16). Let `1 < p, q < ∞`, let `Ω ⊆ E` be open, and let `a` be a field of endomorphisms of
@@ -277,28 +288,26 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_continuousOn
   obtain ⟨w, hwv, hwD, hR⟩ := exists_wkp_value_ae_eq_indicator_mul hp_top hKΩ hzeta hcpt
     (hts.trans ball_subset_closedBall) u
   -- The whole-space integrability gain for `w = ζ u` and the coefficient `A + 1_K (a - A)`.
-  obtain ⟨v₀, hv₀, -⟩ := hgain (a x₀) lam hlam hA
-    (fun x ↦ a x₀ + K.indicator (fun y ↦ a y - a x₀) x)
-    (aestronglyMeasurable_const.add ((aestronglyMeasurable_indicator_iff hKm).2
-      (((ha.mono hKΩ).aestronglyMeasurable hKm).sub aestronglyMeasurable_const)))
-    (ae_of_all _ fun x ↦ by
-      rw [add_sub_cancel_left]
-      by_cases hx : x ∈ K
-      · rw [indicator_of_mem hx]; exact hosc x hx
-      · rw [indicator_of_notMem hx, norm_zero]; positivity)
-    w _ (memLp_indicator_mul_add_traceCLM (isCompact_closedBall x₀ (2 * ρ)) hKΩ hzeta hzetaTop
-      (ha.mono hKΩ) (Λ := ‖a x₀‖ + δ * lam) (fun x hx ↦
-        (norm_le_norm_add_norm_sub' (a x) (a x₀)).trans (by linarith [hosc x hx])) u hf huq hgq hR)
+  obtain ⟨hb, hbδ⟩ := aestronglyMeasurable_add_indicator_sub_and_norm_sub_le (μ := volume) hKm
+    ((ha.mono hKΩ).aestronglyMeasurable hKm) (mul_pos hδ hlam).le hosc
+  obtain ⟨v₀, hv₀, -⟩ := hgain (a x₀) lam hlam hA _ hb (ae_of_all _ hbδ) w _
+    (inter_eq_right.2 hKΩ ▸ memLp_indicator_mul_add_traceCLM_comp_leibnizRemainder
+      (isCompact_closedBall x₀ (2 * ρ)) hzeta hzetaTop
+      (ha.aestronglyMeasurable Omega.isOpen.measurableSet) (Λ := ‖a x₀‖ + δ * lam) (fun x hx ↦
+        (norm_le_norm_add_norm_sub' (a x) (a x₀)).trans (by linarith [hosc x hx.2])) u hf huq hgq
+      hR)
     (((memLp_indicator_iff_restrict hKm.nullMeasurableSet).2
       ((hzetaTop.restrict K).fun_mul (huq.mono_measure (Measure.restrict_mono hKΩ le_rfl)))).ae_eq
         hwv.symm)
     (ae_trace_comp_eq_indicator hKΩ (a x₀) htr hwD)
   -- On `B(x₀, ρ)`, where `ζ = 1`, the value of `w` is that of `u`.
-  refine ⟨ρ, hρ, hBK.trans hKΩ, exists_restrict_value_ae_eq (B := ⟨ball x₀ ρ, isOpen_ball⟩)
-    (fun x hx ↦ hKΩ (hBK hx)) u v₀ ?_⟩
-  filter_upwards [ae_restrict_of_ae (hv₀.trans hwv), ae_restrict_mem measurableSet_ball]
-    with x h hx
-  have h1 : zeta x = 1 := interior_subset (hone (ball_subset_closedBall hx))
-  rw [h, indicator_of_mem (hBK hx), h1, one_mul]
+  have hBΩ : (⟨ball x₀ ρ, isOpen_ball⟩ : Opens E) ≤ Omega := fun x hx ↦ hKΩ (hBK hx)
+  have hval : (Wkp.value 2 v₀ : E → ℝ) =ᵐ[volume.restrict (ball x₀ ρ)] Wkp.value 2 u := by
+    filter_upwards [ae_restrict_of_ae (hv₀.trans hwv), ae_restrict_mem measurableSet_ball]
+      with x h hx
+    rw [h, indicator_of_mem (hBK hx), interior_subset (hone (ball_subset_closedBall hx)), one_mul]
+  exact ⟨ρ, hρ, hBK.trans hKΩ, Wkp.restrictL le_top 2 v₀,
+    (Wkp.value_restrictL_ae le_top 2 v₀).trans hval,
+    Wkp.iteratedGradient_restrictL_ae_eq_of_value_ae_eq le_top hBΩ 1 hval⟩
 
 end TauCeti

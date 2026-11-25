@@ -82,7 +82,7 @@ at `x` if `x` lies in the closure of `Ω`. Then for every `δ > 0` there are an 
 `λ ‖ξ‖² ≤ ⟪A₀ ξ, ξ⟫`, `0 < λ`, and a ball `B(x, ρ) ⊆ U` with `‖A y - A₀‖ ≤ δ λ` for every
 `y ∈ Ω ∩ B(x, ρ)`: `A₀ = A x` if `x` lies in the closure of `Ω`, and the identity otherwise, when
 a small ball about `x` misses `Ω`. -/
-private theorem exists_ball_subset_forall_norm_sub_le {Omega U : Set (WithLp 2 (ℝ × E))}
+theorem exists_ball_subset_forall_norm_sub_le {Omega U : Set (WithLp 2 (ℝ × E))}
     (hU : IsOpen U) {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
     {x : WithLp 2 (ℝ × E)} (hxU : x ∈ U) (hcont : ContinuousWithinAt A Omega x)
     (hell : x ∈ closure Omega → ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)

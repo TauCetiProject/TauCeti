@@ -299,7 +299,7 @@ omit [MeasurableSpace E] [BorelSpace E] in
 /-- After the change of variables `e` with `e e† = (A + A†) / 2` and `‖e⁻¹‖ ≤ λ^{-1/2}`, the
 symmetric part of `a` becomes `e⁻¹ ((a + a†) / 2) e⁻†`, which lies within `‖a - A‖ / λ` of the
 identity. -/
-private theorem norm_conj_symmPart_sub_id_le {lam : ℝ} (hlam : 0 < lam) {A : E →L[ℝ] E}
+theorem norm_conj_symmPart_sub_id_le {lam : ℝ} (hlam : 0 < lam) {A : E →L[ℝ] E}
     (e : E ≃L[ℝ] E)
     (hee : (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = (2⁻¹ : ℝ) • (A + A.adjoint))
     (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) (a : E →L[ℝ] E) :
@@ -336,18 +336,20 @@ private theorem norm_conj_symmPart_sub_id_le {lam : ℝ} (hlam : 0 < lam) {A : E
     _ = lam⁻¹ * ‖B‖ := by
         rw [mul_comm ‖B‖, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt hlam.le]
 
-/-- The coefficient field `b(y) = e⁻¹ ((a + a†) / 2)(e y) e⁻†` of the equation for `u ∘ e`. -/
-private theorem aestronglyMeasurable_conj_symmPart {a : E → E →L[ℝ] E}
-    (ha : AEStronglyMeasurable a volume) (e : E ≃L[ℝ] E) :
+omit [BorelSpace E] in
+/-- The coefficient field `b(y) = e⁻¹ ((a + a†) / 2)(e y) e⁻†` of the equation for `u ∘ e` is
+almost everywhere strongly measurable for `μ` when `a` is for `ν` and `e` is
+quasi-measure-preserving from `μ` to `ν`. -/
+theorem aestronglyMeasurable_conj_symmPart {μ ν : Measure E} {a : E → E →L[ℝ] E}
+    (ha : AEStronglyMeasurable a ν) (e : E ≃L[ℝ] E) (he : QuasiMeasurePreserving e μ ν) :
     AEStronglyMeasurable (fun y ↦ (e.symm : E →L[ℝ] E) ∘L ((2⁻¹ : ℝ) • (a (e y) +
-      (a (e y)).adjoint)) ∘L (e.symm : E →L[ℝ] E).adjoint) volume := by
+      (a (e y)).adjoint)) ∘L (e.symm : E →L[ℝ] E).adjoint) μ := by
   have hΦ : Continuous fun X : E →L[ℝ] E ↦ (e.symm : E →L[ℝ] E) ∘L ((2⁻¹ : ℝ) • (X + X.adjoint))
       ∘L (e.symm : E →L[ℝ] E).adjoint :=
     continuous_const.clm_comp
       (((continuous_id.add ContinuousLinearMap.adjoint.continuous).const_smul (2⁻¹ : ℝ)).clm_comp
         continuous_const)
-  exact hΦ.comp_aestronglyMeasurable
-    (ha.comp_quasiMeasurePreserving (e.toContinuousAddEquiv.quasiMeasurePreserving_addHaar _ _))
+  exact hΦ.comp_aestronglyMeasurable (ha.comp_quasiMeasurePreserving he)
 
 /-- Transporting back along `e`: if `v' ∈ W^{2,r}(E)` has value `u ∘ e`, then some `v ∈ W^{2,r}(E)`
 has value `u`. -/
@@ -406,7 +408,7 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
   have hadj := hqe.ae ((Measure.ae_restrict_coe_opens_top (volume : Measure E)) ▸
     Wkp.adjoint_iteratedGradient_one_ae_eq u)
   -- It solves `tr (b D²w) = f ∘ e` with `b(y) = e⁻¹ ((a + a†) / 2)(e y) e⁻†` close to `1`.
-  obtain ⟨v', hv', -⟩ := hid _ (aestronglyMeasurable_conj_symmPart ha e)
+  obtain ⟨v', hv', -⟩ := hid _ (aestronglyMeasurable_conj_symmPart ha e hqe)
     (by
       filter_upwards [hqe.ae haA] with y hy
       refine (norm_conj_symmPart_sub_id_le hlam e hee he (a (e y))).trans ?_

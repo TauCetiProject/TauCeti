@@ -283,7 +283,7 @@ omit [MeasurableSpace E] [BorelSpace E] in
 /-- For `A` on `ℝ × E` with `λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` and `0 < λ`, there is a linear automorphism `e`
 with `e e† = (A + A†) / 2` and `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` that maps each half-space `{a / c < x.fst}`
 onto `{a < x.fst}`, for a fixed `c`. -/
-private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
+theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
     {A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) :
     ∃ (e : WithLp 2 (ℝ × E) ≃L[ℝ] WithLp 2 (ℝ × E)) (c : ℝ),
