@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Sites.Point.IsMonoidalW
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Sheafify
+public import TauCeti.CategoryTheory.Sites.LocallyConstant.Tensor
 
 /-!
 # The tensor product of étale sheaves of modules and its stalks
@@ -41,6 +43,8 @@ the sheafification of the sectionwise extension of scalars, it is
   presheaves of `Λ`-modules on the small étale site is compatible with tensor products.
 * `TauCeti.AlgebraicGeometry.Scheme.monoidalEtaleStalk`: the stalk functor
   `TauCeti.AlgebraicGeometry.Scheme.etaleStalk Λ s` is monoidal.
+* `CategoryTheory.Sheaf.IsFiniteLisse.tensor`: the tensor product of two finite lisse sheaves is
+  finite lisse.
 
 ## References
 
@@ -87,3 +91,20 @@ noncomputable instance monoidalEtaleStalk : (etaleStalk Λ s).Monoidal :=
   inferInstanceAs (pointSmallEtale s).sheafFiber.Monoidal
 
 end TauCeti.AlgebraicGeometry.Scheme
+
+namespace CategoryTheory.Sheaf
+
+open MonoidalCategory
+
+variable {S : Scheme.{u}} {Λ : Type u} [CommRing Λ]
+
+/-- **Tensor products of finite lisse sheaves.** The tensor product of two finite lisse étale
+sheaves of `Λ`-modules is finite lisse: étale locally it is the tensor product of two constant
+sheaves on finitely generated modules, which is the constant sheaf on their tensor product. -/
+theorem IsFiniteLisse.tensor {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
+    (hF : F.IsFiniteLisse) (hG : G.IsFiniteLisse) : (F ⊗ G).IsFiniteLisse :=
+  IsLocallyConstantIn.tensor (R := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M)
+    (fun (M N : ModuleCat.{u} Λ) (_ : Module.Finite Λ M) (_ : Module.Finite Λ N) ↦
+      inferInstanceAs (Module.Finite Λ (TensorProduct Λ M N))) hF hG
+
+end CategoryTheory.Sheaf

@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.Algebra.Category.ModuleCat.Stalk
 public import Mathlib.Topology.Sheaves.CommRingCat
+import Mathlib.Topology.Sheaves.LocallySurjective
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
 
 /-!
 # Module structures on scheme-module stalks
@@ -18,6 +20,11 @@ The stalk of an `𝒪_X`-module carries the action of the original commutative l
 For a point `x` of an open `U`, the stalk `M_x` is also a `Γ(X, U)`-module through the germ map
 `Γ(X, U) ⟶ 𝒪_{X,x}` (`AlgebraicGeometry.Scheme.Modules.moduleSectionStalk`), and the germ map
 `Γ(M, U) → M_x` is `Γ(X, U)`-linear (`AlgebraicGeometry.Scheme.Modules.germₗ`).
+
+A morphism `φ : M ⟶ N` of `𝒪_X`-modules induces, at every point `x`, an `𝒪_{X,x}`-linear map of
+stalks `M_x → N_x` sending the germ of a section `m` to the germ of `φ m`
+(`AlgebraicGeometry.Scheme.Modules.Hom.stalkₗ`). An epimorphism of `𝒪_X`-modules is surjective on
+every stalk (`AlgebraicGeometry.Scheme.Modules.Hom.stalkₗ_surjective_of_epi`).
 -/
 
 public section
@@ -77,5 +84,62 @@ lemma germₗ_apply (m : Γ(M, U)) : M.germₗ x m = M.presheaf.germ U x x.prope
   (rfl)
 
 end Section
+
+section Hom
+
+variable {M} {N P : X.Modules}
+
+/-- The map on stalks at `x` of a morphism `φ : M ⟶ N` of `𝒪_X`-modules, as an
+`𝒪_{X,x}`-linear map `M_x → N_x`. -/
+def Hom.stalkₗ (φ : M ⟶ N) (x : X) :
+    M.presheaf.stalk x →ₗ[X.presheaf.stalk x] N.presheaf.stalk x where
+  toFun := (TopCat.Presheaf.stalkFunctor _ x).map φ.mapPresheaf
+  map_add' := map_add _
+  map_smul' r m := by
+    obtain ⟨U, hxU, a, rfl⟩ := X.presheaf.exists_germ_eq r
+    obtain ⟨V, hxV, b, rfl⟩ := M.presheaf.exists_germ_eq m
+    have hx : x ∈ U ⊓ V := ⟨hxU, hxV⟩
+    rw [← X.presheaf.germ_res_apply (homOfLE inf_le_left) x hx a,
+      ← M.presheaf.germ_res_apply (homOfLE inf_le_right) x hx b, ← M.germ_smul, RingHom.id_apply,
+      TopCat.Presheaf.stalkFunctor_map_germ_apply, TopCat.Presheaf.stalkFunctor_map_germ_apply,
+      mapPresheaf_app, Hom.app_smul, N.germ_smul]
+
+/-- The underlying function of the linear stalk map is the stalk functor applied to the morphism
+of underlying presheaves. -/
+theorem Hom.coe_stalkₗ (φ : M ⟶ N) (x : X) :
+    ⇑(φ.stalkₗ x) = (TopCat.Presheaf.stalkFunctor _ x).map φ.mapPresheaf :=
+  (rfl)
+
+/-- The stalk map sends the germ of a section `m` to the germ of `φ m`. -/
+@[simp]
+theorem Hom.stalkₗ_germ (φ : M ⟶ N) (U : X.Opens) (x : X) (hx : x ∈ U) (m : Γ(M, U)) :
+    φ.stalkₗ x (M.presheaf.germ U x hx m) = N.presheaf.germ U x hx (φ.app U m) :=
+  TopCat.Presheaf.stalkFunctor_map_germ_apply U x hx φ.mapPresheaf m
+
+/-- The stalk map of the identity is the identity. -/
+@[simp]
+theorem Hom.stalkₗ_id (x : X) : (𝟙 M : M ⟶ M).stalkₗ x = LinearMap.id := by
+  ext m
+  obtain ⟨U, hxU, m, rfl⟩ := M.presheaf.exists_germ_eq m
+  simp
+
+/-- The stalk map of a composite is the composite of the stalk maps. -/
+@[simp]
+theorem Hom.stalkₗ_comp (φ : M ⟶ N) (ψ : N ⟶ P) (x : X) :
+    (φ ≫ ψ).stalkₗ x = ψ.stalkₗ x ∘ₗ φ.stalkₗ x := by
+  ext m
+  obtain ⟨U, hxU, m, rfl⟩ := M.presheaf.exists_germ_eq m
+  simp
+
+/-- An epimorphism of `𝒪_X`-modules is surjective on every stalk. -/
+theorem Hom.stalkₗ_surjective_of_epi (φ : M ⟶ N) [Epi φ] (x : X) :
+    Function.Surjective (φ.stalkₗ x) := by
+  have h := (TopCat.Sheaf.isLocallySurjective_iff_epi
+    ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map φ)).mpr inferInstance
+  rw [TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf_map_hom] at h
+  rw [Hom.coe_stalkₗ]
+  exact (TopCat.Presheaf.locally_surjective_iff_surjective_on_stalks _).mp h x
+
+end Hom
 
 end AlgebraicGeometry.Scheme.Modules

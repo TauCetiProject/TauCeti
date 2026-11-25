@@ -31,6 +31,19 @@ preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
 
 The Lebesgue measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of
 their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
+
+Cutting a closed box `Set.Icc a b` in `ι → ℝ` along coordinate `k` at `t` produces two almost-
+everywhere disjoint sub-boxes (`TauCeti.aeDisjoint_Icc_update`), as their intersection lies in a
+coordinate hyperplane of measure zero.
+
+Lebesgue measure on `[0, 1]` is a probability measure
+(`TauCeti.isProbabilityMeasure_restrict_Icc_zero_one`).
+
+A rectangle in `ℝ × ℝ` whose sides have lengths at least `ℓ ≤ r` and `ℓ' ≤ r` meets the ball of
+radius `r` about each of its points, a square for the sup norm, in a set of area at least `ℓ ℓ'`
+(`TauCeti.ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball`), however long the rectangle is.
+This is the uniform lower bound on the local measure of a domain under which Sobolev estimates on
+rectangles of unbounded length have uniform constants.
 -/
 
 public section
@@ -58,6 +71,11 @@ theorem comap_volume_restrict_Ioc_univ (T : ℝ≥0) :
 end NNReal
 
 namespace TauCeti
+
+/-- Lebesgue measure on `[0, 1]` is a probability measure. -/
+instance isProbabilityMeasure_restrict_Icc_zero_one :
+    IsProbabilityMeasure (volume.restrict (Icc (0 : ℝ) 1)) :=
+  ⟨by simp⟩
 
 /-- Centering intervals can only decrease the length of a one-sided difference. -/
 theorem volume_eball_sdiff_le (s u : Set ℝ) :
@@ -116,6 +134,46 @@ theorem volume_biUnion_uIoc_eq_ofReal_sum {ι : Type*} (I : Finset ι) (a b : ι
     ENNReal.ofReal_sum_of_nonneg fun i _ ↦ sub_nonneg.2 min_le_max]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Real.volume_uIoc, ← max_sub_min_eq_abs', max_comm, min_comm]
+
+/-- The two sub-boxes obtained by splitting `Set.Icc a b` along coordinate `k` at `t` meet in the
+hyperplane slice `x k = t` of Lebesgue measure zero, hence are almost-everywhere disjoint. -/
+theorem aeDisjoint_Icc_update {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (a b : ι → ℝ) (k : ι) (t : ℝ) :
+    AEDisjoint volume (Icc a (Function.update b k t)) (Icc (Function.update a k t) b) := by
+  have hsub : Icc a (Function.update b k t) ∩ Icc (Function.update a k t) b ⊆
+      Icc (Function.update a k t) (Function.update b k t) := by
+    rintro x ⟨⟨_, hx₁⟩, ⟨hx₂, _⟩⟩
+    exact ⟨hx₂, hx₁⟩
+  have hzero : volume (Icc (Function.update a k t) (Function.update b k t)) = 0 := by
+    rw [Real.volume_Icc_pi]
+    exact Finset.prod_eq_zero (Finset.mem_univ k) (by simp)
+  exact measure_mono_null hsub hzero
+
+open Metric in
+/-- If `ℓ ≤ r` and `ℓ ≤ b - a`, then the open interval `(a, b)` meets the interval of radius `r`
+about each point of `[a, b]` in a set of length at least `ℓ`. -/
+theorem ofReal_le_volume_Ioo_inter_ball {a b x r ℓ : ℝ} (hℓr : ℓ ≤ r) (hℓ : ℓ ≤ b - a)
+    (hx : x ∈ Icc a b) : ENNReal.ofReal ℓ ≤ volume (Ioo a b ∩ ball x r) := by
+  rcases le_or_gt ℓ 0 with h | h
+  · simp [ENNReal.ofReal_of_nonpos h]
+  rw [Real.ball_eq_Ioo, Ioo_inter_Ioo, Real.volume_Ioo]
+  refine ENNReal.ofReal_le_ofReal (le_sub_iff_add_le'.2 (le_inf ?_ ?_))
+  · exact (le_sub_iff_add_le.1 (sup_le (by linarith) (by linarith [hx.2])))
+  · exact (le_sub_iff_add_le.1 (sup_le (by linarith [hx.1]) (by linarith)))
+
+open Metric in
+/-- If `ℓ, ℓ' ≤ r`, then a rectangle in `ℝ × ℝ` with sides of lengths at least `ℓ` and `ℓ'` meets
+the ball of radius `r` about each point of its closure in a set of area at least `ℓ ℓ'`, whatever
+the lengths of its sides. For the sup norm of `ℝ × ℝ` this ball is the square
+`(x - r, x + r) × (y - r, y + r)`. -/
+theorem ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball {a b c d r ℓ ℓ' : ℝ} (hℓr : ℓ ≤ r)
+    (hℓ : ℓ ≤ b - a) (hℓ'r : ℓ' ≤ r) (hℓ' : ℓ' ≤ d - c) {z : ℝ × ℝ}
+    (hz : z ∈ Icc a b ×ˢ Icc c d) :
+    ENNReal.ofReal ℓ * ENNReal.ofReal ℓ' ≤ volume (Ioo a b ×ˢ Ioo c d ∩ ball z r) := by
+  obtain ⟨x, y⟩ := z
+  rw [← ball_prod_same, prod_inter_prod, Measure.volume_eq_prod, Measure.prod_prod]
+  exact mul_le_mul' (ofReal_le_volume_Ioo_inter_ball hℓr hℓ hz.1)
+    (ofReal_le_volume_Ioo_inter_ball hℓ'r hℓ' hz.2)
 
 end TauCeti
 

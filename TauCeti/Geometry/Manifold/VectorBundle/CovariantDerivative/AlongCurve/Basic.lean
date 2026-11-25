@@ -54,7 +54,8 @@ ambient covariant derivative.
 * `CovariantDerivative.alongCurveWithin_const`: along a constant curve the candidate is the
   ordinary derivative of the field, with `CovariantDerivative.alongCurve_const` its unrestricted
   case; `CovariantDerivative.alongCurveWithin_const_of_hasDerivWithinAt` and
-  `CovariantDerivative.alongCurve_const_of_hasDerivAt` read off a known derivative.
+  `CovariantDerivative.alongCurve_const_of_hasDerivAt` read off a known derivative, and
+  `CovariantDerivative.alongCurve_const_const` is the case of a constant field.
 * `CovariantDerivative.alongCurveWithin_inter`, `CovariantDerivative.alongCurveWithin_of_mem_nhds`,
   `CovariantDerivative.alongCurveWithin_subset`, `CovariantDerivative.alongCurveWithin_congr`, and
   `CovariantDerivative.alongCurveWithin_comp`: parameter-set and field locality and
@@ -393,6 +394,13 @@ theorem alongCurve_const_of_hasDerivAt (x : M) {W : 𝕜 → TangentSpace I x} {
   -- `HasDerivAtFilter W W' t (𝓝 t)`, the definition of `HasDerivAt W W' t`.
   rwa [HasDerivWithinAt, nhdsWithin_univ]
 
+/-- Along a constant curve at `x`, a constant field has vanishing covariant derivative. -/
+@[simp]
+theorem alongCurve_const_const (x : M) (w : TangentSpace I x) (t : 𝕜) :
+    alongCurve cov (fun _ ↦ x) (fun _ ↦ w) t = 0 :=
+  -- Read the constant field in the model space `E = T_x M`, where its derivative vanishes.
+  (alongCurve_const cov x (fun _ ↦ w) t).trans (deriv_const (F := E) t w)
+
 /-! ### Locality and reparametrization -/
 
 /-- Intersecting the parameter set with a neighbourhood of `t` does not change the moving-chart
@@ -420,6 +428,16 @@ theorem alongCurveWithin_subset {s u : Set 𝕜} {t : 𝕜} (hsu : s ⊆ u)
   rw [alongCurveWithin_apply, alongCurveWithin_apply, alongCurveInChartWithin_apply,
     alongCurveInChartWithin_apply, derivWithin_subset hsu hs hV,
     derivWithin_subset hsu hs hγ]
+
+/-- On a set with unique derivatives, restricting differentiable curve and field data to the
+set preserves their unrestricted covariant derivative. -/
+theorem alongCurveWithin_eq_alongCurve {s : Set 𝕜} {t : 𝕜}
+    (hs : UniqueDiffWithinAt 𝕜 s t) (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t)
+    (hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) t) :
+    alongCurveWithin cov γ V s t = alongCurve cov γ V t := by
+  rw [alongCurveWithin_subset cov γ V (Set.subset_univ s) hs hV.differentiableWithinAt
+    ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ t))).comp t
+      hγ).differentiableAt.differentiableWithinAt, alongCurveWithin_univ]
 
 variable {γ} in
 /-- Covariant derivatives of sections along locally equal curves agree after identifying

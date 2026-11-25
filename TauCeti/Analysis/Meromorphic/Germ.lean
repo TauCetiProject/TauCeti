@@ -186,15 +186,12 @@ theorem mk_inv {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
 /-- The germs of functions meromorphic at `a`, on punctured neighbourhoods of `a`, form a
 field. -/
 instance instField : Field (meromorphicGerms 𝕜 a) where
-  exists_pair_ne := ⟨0, 1, fun h ↦ zero_ne_one (congrArg Subtype.val h)⟩
   mul_inv_cancel φ hφ := by
-    obtain ⟨f, hf, hφf⟩ := φ.property
-    have hne : ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := by
-      rw [← hf.germ_ne_zero_iff, hφf]
-      exact fun h ↦ hφ (Subtype.ext h)
-    apply Subtype.ext
-    rw [Subring.coe_mul, coe_inv, ← hφf, ← Germ.coe_inv, ← Germ.coe_mul, Subring.coe_one,
-      ← Germ.coe_one, Germ.coe_eq]
+    obtain ⟨f, hf, rfl⟩ := exists_mk φ
+    -- A nonzero germ has a representative vanishing nowhere on a punctured neighbourhood.
+    have hne : ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := hf.germ_ne_zero_iff.mp <| by
+      simpa only [coe_mk] using (Subring.coe_eq_zero_iff (meromorphicGerms 𝕜 a)).not.mpr hφ
+    rw [← mk_inv, ← mk_mul, ← mk_one, mk_eq_mk_iff]
     filter_upwards [hne] with z hz
     exact mul_inv_cancel₀ hz
   inv_zero := Subtype.ext <| by

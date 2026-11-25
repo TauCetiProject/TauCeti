@@ -60,6 +60,16 @@ theorem center_coeff_eq_of_isConj (z : Subalgebra.center k (MonoidAlgebra k G))
   ClassFunction.eq_of_isConj (centerToClassFunction z) hgh
 
 omit [Fintype G] [DecidableEq G] in
+/-- If `cls : G → ι` only identifies conjugate elements, the coefficients of a central element of
+`k[G]` factor through `cls`. -/
+theorem exists_center_coeff_eq_comp {ι : Type*} (cls : G → ι)
+    (hcls : ∀ g h, cls g = cls h → IsConj g h) (z : Subalgebra.center k (MonoidAlgebra k G)) :
+    ∃ ψ : ι → k, ⇑(z : MonoidAlgebra k G).coeff = ψ ∘ cls := by
+  classical
+  refine ⟨fun i ↦ (z : MonoidAlgebra k G).coeff (Function.invFun cls i), funext fun g ↦ ?_⟩
+  exact center_coeff_eq_of_isConj z (hcls _ _ (Function.invFun_eq ⟨g, rfl⟩)).symm
+
+omit [Fintype G] [DecidableEq G] in
 /-- Read the coefficients of a central group-algebra element as a function on conjugacy classes. -/
 noncomputable def centerToConjClasses
     (z : Subalgebra.center k (MonoidAlgebra k G)) : ConjClasses G → k :=

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.GradedModuleCat.Ext.EulerAdmissible
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.PowerSeries
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.ProjectiveCoordinates
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
@@ -34,7 +35,10 @@ covers, `dᵢ = dim_k End_A(Sᵢ)`. Hence:
 * over a nonnegatively graded algebra, a minimal resolution is linear exactly when the Betti
   series are supported on the diagonal `d = n`, provided every `dᵢ ≠ 0` and the `Sᵢ` represent
   every finite simple graded module concentrated in degree zero;
-* the Betti series of `M{1}` is `q` times the Betti series of `M`.
+* the Betti series of `M{1}` is `q` times the Betti series of `M`;
+* when `M` vanishes below degree `c`, the Betti series at each `Pᵢ` with `dᵢ ≠ 0` vanishes below
+  the shifted diagonal `j = c + n`; for `M` vanishing in negative degrees, its value at `t = -1`
+  is therefore defined coefficientwise in `q`.
 
 The resolution may be infinite: each coefficient of the series is a coordinate of the class of a
 single term, so no finite projective dimension is needed.
@@ -50,12 +54,23 @@ single term, so no finite projective dimension is needed.
 
 In the namespace `TauCeti.GradedProjectiveResolution`:
 
+* `coeff_bettiPoincarePowerSeries_eq_zero_of_subsingleton` and `trunc_bettiPoincarePowerSeries`:
+  a vanishing term contributes nothing, so the Betti series of a resolution whose terms vanish
+  above homological degree `N` is a polynomial of degree at most `N` in `t`.
+* `eval_trunc_bettiPoincarePowerSeries`: the Betti series truncated below `t^(N + 1)` and evaluated
+  at `t = -1` is the coordinate of the alternating class `∑_{n ≤ N} (-1)ⁿ [Pₙ]`.
 * `IsMinimal.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries`: the coefficient of
   `qʲ tⁿ` in `dᵢ` times the Betti series is `dim_k Extⁿ(M, Sᵢ{j})`.
 * `IsMinimal.C_smulGradedDimension_mul_bettiPoincarePowerSeries`: `dᵢ` times the Betti series is
   the bigraded Ext Poincaré series against `Sᵢ`.
 * `IsMinimal.bettiPoincarePowerSeries_eq`: the Betti series does not depend on the minimal
   resolution.
+* `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_nonneg`: at each `Pᵢ` with `dᵢ ≠ 0`, the Betti
+  series of a minimal resolution has nonnegative coefficients.
+* `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt` and
+  `IsMinimal.hasEulerPowerSeries_bettiPoincarePowerSeries`: at each `Pᵢ` with `dᵢ ≠ 0`, the Betti
+  series of a minimal resolution vanishes below a shifted diagonal; for `M` vanishing in negative
+  degrees it has a well-defined value at `t = -1` coefficientwise in `q`.
 * `IsMinimal.isLinear_iff_diagonal_bettiPoincarePowerSeries`: a minimal resolution is linear
   exactly when its Betti series have diagonal support.
 * `IsMinimal.bettiPoincarePowerSeries_shiftObj_one`: the Betti series of `M{1}` is `q` times that
@@ -116,6 +131,48 @@ theorem coeff_bettiPoincarePowerSeries (r : GradedProjectiveResolution.{uk, uA, 
     PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i) =
       bP.repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i := by
   simp [bettiPoincarePowerSeries]
+
+/-- A vanishing term of a resolution contributes nothing to its Betti Poincaré series. -/
+theorem coeff_bettiPoincarePowerSeries_eq_zero_of_subsingleton
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) [∀ n, Module.Finite A (r.X n)]
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) (i : I) {n : ℕ}
+    (hn : Subsingleton (r.X n)) :
+    PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i) = 0 := by
+  have hZ : Limits.IsZero (r.finiteProjectiveTerm n) :=
+    Limits.IsZero.of_full_of_faithful_of_isZero (ObjectProperty.ι _) _
+      (by simpa using GradedModuleCat.isZero_of_subsingleton (r.termObj n))
+  rw [coeff_bettiPoincarePowerSeries, ← LaurentK0.ofExactK0_exactK0_of.{uA},
+    ExactK0.of_eq_zero_of_isZero.{uA} hZ, map_zero, map_zero, Finsupp.zero_apply]
+
+/-- **The Betti Poincaré series of a finite resolution is a polynomial.** If the terms of the
+resolution vanish above homological degree `N`, its Betti Poincaré series agrees with its
+truncation below `t^(N + 1)`. -/
+theorem trunc_bettiPoincarePowerSeries
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) [∀ n, Module.Finite A (r.X n)]
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) (i : I) {N : ℕ}
+    (hN : ∀ n, N < n → Subsingleton (r.X n)) :
+    (PowerSeries.trunc (N + 1) (r.bettiPoincarePowerSeries bP i) : PowerSeries _) =
+      r.bettiPoincarePowerSeries bP i := by
+  ext n : 1
+  rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  split_ifs with h
+  · rfl
+  · exact (r.coeff_bettiPoincarePowerSeries_eq_zero_of_subsingleton bP i (hN n (by omega))).symm
+
+/-- The Betti Poincaré series truncated below `t^(N + 1)` and evaluated at `t = -1` is the
+coordinate of the alternating class `∑_{n ≤ N} (-1)ⁿ [P_n]` of the terms. -/
+theorem eval_trunc_bettiPoincarePowerSeries
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) [∀ n, Module.Finite A (r.X n)]
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) (i : I) (N : ℕ) :
+    (PowerSeries.trunc (N + 1) (r.bettiPoincarePowerSeries bP i)).eval (-1) =
+      bP.repr (∑ n ∈ Finset.range (N + 1),
+        (-1 : ℤ) ^ n • LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i := by
+  rw [← Polynomial.eval₂_id, PowerSeries.eval₂_trunc_eq_sum_range, map_sum,
+    Finset.sum_apply']
+  exact Finset.sum_congr rfl fun n _ ↦ by simp [coeff_bettiPoincarePowerSeries, mul_comm]
 
 end GradedProjectiveResolution
 
@@ -254,6 +311,48 @@ theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_iff (hr : r.IsMin
     or_iff_right hc]
 
 include he he₀ hne hbP hconc in
+/-- The coefficients of the Betti Poincaré series of a minimal resolution at `Pᵢ` with
+`dᵢ = gdim(eᵢ • Sᵢ) ≠ 0` are nonnegative. -/
+theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_nonneg (hr : r.IsMinimal) (i : I)
+    (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) (n : ℕ) (j : ℤ) :
+    0 ≤ (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j := by
+  -- `dᵢ` times the coefficient is an Ext dimension, and `dᵢ > 0`.
+  let _ : Module.Finite A (S i).obj := gradedFiniteModules_iff.mp (S i).property
+  let _ : Module.Finite k (S i).obj := Module.Finite.trans A _
+  have hcoeff := hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne
+    bP hbP hconc i n j
+  rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ (hconc i), coeff_C_mul]
+    at hcoeff
+  exact nonneg_of_mul_nonneg_right (hcoeff ▸ Int.natCast_nonneg _)
+    (Int.natCast_pos.mpr
+      ((S i).obj.finrank_smul_piece_zero_pos_of_concentrated (e i) (hconc i) hself))
+
+include he he₀ hne hbP hconc in
+/-- **The Betti Poincaré series of a minimal resolution vanishes below a shifted diagonal.** If `M`
+vanishes in internal degrees below `c`, then at every `Pᵢ` with `dᵢ = gdim(eᵢ • Sᵢ) ≠ 0` the
+coefficient of `qʲ tⁿ` vanishes whenever `j < c + n`. -/
+theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt (hr : r.IsMinimal) {c : ℤ}
+    (hM : ∀ p < c, M.grading.piece p = ⊥) (i : I)
+    (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) {n : ℕ} {j : ℤ} (hjn : j < c + n) :
+    (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j = 0 := by
+  have (m : ℕ) : Module.Finite k (r.X m) := Module.Finite.trans A (r.X m)
+  rw [hr.coeff_coeff_bettiPoincarePowerSeries_eq_zero_iff S he he₀ hI hne bP hbP hconc i hself]
+  exact GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj.1
+    (hr.subsingleton_gradedExt_of_lt hM (hconc i) hjn)
+
+include he he₀ hne hbP hconc in
+/-- The Betti Poincaré series of a minimal resolution of a module vanishing in negative internal
+degrees, at every `Pᵢ` with `dᵢ = gdim(eᵢ • Sᵢ) ≠ 0`, has an Alexander-graded Euler power series:
+its value at `t = -1` is defined coefficientwise in `q`. -/
+theorem IsMinimal.hasEulerPowerSeries_bettiPoincarePowerSeries (hr : r.IsMinimal)
+    (hM : ∀ p < 0, M.grading.piece p = ⊥) (i : I)
+    (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) :
+    Bigraded.HasEulerPowerSeries (r.bettiPoincarePowerSeries bP i) :=
+  Bigraded.HasEulerPowerSeries.of_lowerTriangular fun _ _ han ↦
+    hr.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt S he he₀ hI hne bP hbP hconc hM i hself
+      (by omega)
+
+include he he₀ hne hbP hconc in
 /-- **A minimal resolution is linear exactly when its Betti Poincaré series are supported on the
 diagonal.** Over a nonnegatively graded algebra, let the `Sᵢ` represent every finite simple graded
 module concentrated in degree zero, with every `dᵢ = gdim(eᵢ • Sᵢ)` nonzero. Then a minimal
@@ -281,7 +380,7 @@ theorem IsMinimal.bettiPoincarePowerSeries_shiftObj_one
   rw [PowerSeries.coeff_C_mul]
   refine mul_left_cancel₀ hself (LaurentPolynomial.ext fun j ↦ ?_)
   rw [hr₁.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc,
-    mul_left_comm, coeff_T_mul,
+    mul_left_comm, T_mul, coeff_mul_T,
     hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc]
   -- `Ext(M{1}, Sᵢ{j})` is the bigraded `Ext^{n,j}(M{1}, Sᵢ)`, which is `Ext^{n,j-1}(M, Sᵢ)`.
   rw [← GradedModuleCat.shift_functor_obj]

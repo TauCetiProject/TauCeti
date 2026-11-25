@@ -44,6 +44,8 @@ exponential map, normal domains, and the logarithm can be checked.
   exactly the affine segments, and the one with initial data `(p, v)` is `t ↦ p + t • v`.
 * `TauCeti.Manifold.isGeodesicCurve_iff_exists_eq_add_smul`: the all-time geodesics are exactly
   the affine lines.
+* `TauCeti.Manifold.IsGeodesicCurve.injective_of_nonconstant`: every nonconstant all-time
+  geodesic is injective.
 * `TauCeti.Manifold.geodesicInterval_model_space`: every affine initial condition exists for all
   time.
 * `TauCeti.Manifold.maximalGeodesic_model_space`: the chosen maximal geodesic is the affine line.
@@ -213,7 +215,7 @@ theorem isGeodesicCurveOnFrom_iff_eqOn_add_smul {γ : ℝ → F} {s : Set ℝ}
       refine HasDerivWithinAt.congr_of_mem ?_ h h0
       simpa using (((hasDerivAt_id (0 : ℝ)).smul_const w).const_add q).hasDerivWithinAt
     have hchart := derivWithin_extChartAt_comp_curve (I := 𝓘(ℝ, F))
-      hline.differentiableWithinAt.mdifferentiableWithinAt (hs 0 h0)
+      hline.continuousWithinAt
     rw [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_comp,
       hline.derivWithin (hs 0 h0)] at hchart
     exact hchart.symm
@@ -236,6 +238,18 @@ theorem isGeodesicCurve_iff_exists_eq_add_smul {γ : ℝ → F} :
     IsGeodesicCurve 𝓘(ℝ, F) γ ↔ ∃ p v : F, γ = fun t : ℝ ↦ p + t • v := by
   simp only [← isGeodesicCurveOn_univ, isGeodesicCurveOn_iff_exists_eqOn_add_smul
     uniqueDiffOn_univ isPreconnected_univ, eqOn_univ]
+
+/-- A nonconstant all-time Euclidean geodesic has no self-intersections. -/
+theorem IsGeodesicCurve.injective_of_nonconstant {γ : ℝ → F}
+    (hγ : IsGeodesicCurve 𝓘(ℝ, F) γ) (hnot : ∃ s t, γ s ≠ γ t) :
+    Function.Injective γ := by
+  obtain ⟨p, v, rfl⟩ := isGeodesicCurve_iff_exists_eq_add_smul.mp hγ
+  have hv : v ≠ 0 := by
+    rintro rfl
+    obtain ⟨s, t, hst⟩ := hnot
+    simp at hst
+  intro s t hst
+  exact smul_left_injective ℝ hv (add_left_cancel hst)
 
 /-! ### The exponential map and the logarithm -/
 

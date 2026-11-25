@@ -26,6 +26,9 @@ hypothesis at zero is needed, while genuine atoms `0 < F {0} < 1` are allowed.
 
 ## Main results
 
+* `MeasureTheory.Measure.measure_singleton_zero_lt_one_of_mean_eq_top` and
+  `MeasureTheory.Measure.isLocallyFiniteMeasure_renewalMeasure_of_mean_eq_top` — infinite mean
+  excludes concentration at zero, so the renewal measure is locally finite.
 * `MeasureTheory.Measure.tendsto_renewalFunction_add_sub_of_mean_eq_top` — vanishing
   fixed-window increments of the real-valued renewal function for any infinite-mean law.
 * `MeasureTheory.Measure.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top` — vanishing real
@@ -50,6 +53,19 @@ namespace MeasureTheory.Measure
 
 variable (F : Measure ℝ≥0) [IsProbabilityMeasure F]
 
+/-- A probability measure on `ℝ≥0` of infinite extended mean has mass strictly less than one
+at zero. -/
+theorem measure_singleton_zero_lt_one_of_mean_eq_top
+    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) : F {0} < 1 :=
+  F.measure_singleton_lt_one_of_lintegral_pos (f := fun u ↦ (u : ℝ≥0∞))
+    (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
+
+/-- Infinite extended mean rules out concentration at zero, so the renewal measure is locally
+finite. -/
+theorem isLocallyFiniteMeasure_renewalMeasure_of_mean_eq_top
+    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) : IsLocallyFiniteMeasure F.renewalMeasure :=
+  F.isLocallyFiniteMeasure_renewalMeasure (F.measure_singleton_zero_lt_one_of_mean_eq_top hmean)
+
 /-- For any probability law on `ℝ≥0` of infinite extended mean, lattice or nonlattice, every
 fixed-window increment of the renewal function tends to zero along all nonnegative real
 observation times. -/
@@ -58,8 +74,7 @@ theorem tendsto_renewalFunction_add_sub_of_mean_eq_top
     Tendsto (fun t : ℝ≥0 ↦ (F.renewalFunction (t + u)).toReal -
       (F.renewalFunction t).toReal) atTop (𝓝 0) := by
   by_cases hL : F.IsLattice
-  · have hzero := F.measure_singleton_lt_one_of_lintegral_pos (f := fun x ↦ (x : ℝ≥0∞))
-      (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
+  · have hzero := F.measure_singleton_zero_lt_one_of_mean_eq_top hmean
     obtain ⟨a, hmax⟩ := hL.exists_isGreatest_of_measure_zero_lt_one hzero
     have hgrid : Tendsto (fun n : ℕ ↦ (F.renewalFunction (a * (n + 1))).toReal -
         (F.renewalFunction (a * n)).toReal) atTop (𝓝 0) := by
@@ -75,9 +90,7 @@ real renewal mass of `(t, t + u]` tends to zero as `t → ∞`. -/
 theorem tendsto_renewalMeasure_real_Ioc_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) (u : ℝ≥0) :
     Tendsto (fun t : ℝ≥0 ↦ F.renewalMeasure.real (Ioc t (t + u))) atTop (𝓝 0) := by
-  have hzero := F.measure_singleton_lt_one_of_lintegral_pos (f := fun x ↦ (x : ℝ≥0∞))
-    (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
-  let : IsLocallyFiniteMeasure F.renewalMeasure := F.isLocallyFiniteMeasure_renewalMeasure hzero
+  have := F.isLocallyFiniteMeasure_renewalMeasure_of_mean_eq_top hmean
   simpa only [F.toReal_renewalFunction_add_sub] using
     F.tendsto_renewalFunction_add_sub_of_mean_eq_top hmean u
 
@@ -86,9 +99,7 @@ renewal mass `F.renewalMeasure (Ioc t (t + u))` tends to zero in `ℝ≥0∞` as
 theorem tendsto_renewalMeasure_Ioc_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) (u : ℝ≥0) :
     Tendsto (fun t : ℝ≥0 ↦ F.renewalMeasure (Ioc t (t + u))) atTop (𝓝 0) := by
-  have hzero := F.measure_singleton_lt_one_of_lintegral_pos (f := fun x ↦ (x : ℝ≥0∞))
-    (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
-  let : IsLocallyFiniteMeasure F.renewalMeasure := F.isLocallyFiniteMeasure_renewalMeasure hzero
+  have := F.isLocallyFiniteMeasure_renewalMeasure_of_mean_eq_top hmean
   have heq (t : ℝ≥0) : F.renewalMeasure (Ioc t (t + u)) =
       ENNReal.ofReal (F.renewalMeasure.real (Ioc t (t + u))) :=
     (ofReal_measureReal measure_Ioc_lt_top.ne).symm

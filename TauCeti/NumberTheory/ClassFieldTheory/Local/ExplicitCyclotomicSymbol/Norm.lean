@@ -19,7 +19,7 @@ import TauCeti.NumberTheory.NumberField.Cyclotomic.NormValuation
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 import TauCeti.NumberTheory.NumberField.SignApproximation
 import TauCeti.NumberTheory.NumberField.TotallyPositive
-import TauCeti.NumberTheory.Padics.AlgebraicClosure
+import TauCeti.NumberTheory.Padics.AlgebraicClosure.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!

@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 
 /-!
 # Covariant differentiation commutes with the metric trace
@@ -30,10 +32,24 @@ The proof works in the chart-local frame `Fᵢ` and its metric-dual frame
 `tr_g b = ∑ᵢ b(Fᵢ, Dᵢ)`. Differentiating `⟪Dᵢ, Fⱼ⟫ = δᵢⱼ` with the metric shows that the terms of
 `d (∑ᵢ b(Fᵢ, Dᵢ))` involving `∇Fᵢ` and `∇Dᵢ` cancel, which leaves `∑ᵢ (∇_v b)(Fᵢ, Dᵢ)`.
 
+The same argument applies to a field `B` of bilinear maps on the tangent spaces with values in a
+vector bundle `V` with a connection `∇`: if `B` is differentiable as a section of
+`Hom(TM, Hom(TM, V))`, then `∇_v (tr_g B) = tr_g (∇_v B)` for the connection on
+`Hom(TM, Hom(TM, V))` induced by the metric connection and `∇`.
+
 ## Main results
 
-* `CovariantDerivative.IsMetricCompatible.mvfderiv_bilinFormTrace`: the derivative of the metric
-  trace of a field of bilinear forms is the trace of its covariant derivative.
+* `CovariantDerivative.IsMetricCompatible.mvfderiv_metricTrace`: the derivative of the metric
+  trace of a field of bilinear forms is the metric trace of its covariant derivative.
+* `CovariantDerivative.IsMetricCompatible.covariantDerivative_metricTrace`: the covariant
+  derivative of the metric trace of a differentiable field of bundle-valued bilinear maps is the
+  metric trace of its covariant derivative, and `MDifferentiableAt.metricTrace`
+  records that this metric trace is differentiable.
+* `CovariantDerivative.IsMetricCompatible.mvfderiv_metricTrace_apply_eq_sum`: the same identity
+  along a tangent vector, in an orthonormal basis.
+* `CovariantDerivative.IsMetricCompatible.sum_apply_chartDualFrame_cancel`: for a metric
+  connection, the derivatives of the chart-local frame and of its metric-dual frame cancel in a
+  trace `∑ᵢ b(Fᵢ, Dᵢ)` of a vector-valued bilinear map `b`.
 
 ## References
 
@@ -54,39 +70,27 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-section DualFrame
-
-variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
-/-- On the chart domain, the metric trace of a bilinear form is `∑ᵢ B(Fᵢ, Dᵢ)`. -/
-private theorem bilinFormTrace_eq_sum_chartDualFrame (α : M) {y : M}
-    (hy : y ∈ (chartAt H α).source) (B : LinearMap.BilinForm ℝ (TangentSpace I y)) :
-    TauCeti.bilinFormTrace B =
-      ∑ i, B (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) := by
-  rw [bilinFormTrace_eq_sum_chartInvGramMatrix α hy]
-  simp only [chartDualFrame_apply, map_sum, map_smul, smul_eq_mul]
-
-end DualFrame
-
 variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 variable {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
 
 /-- For a metric connection, the terms of `∑ᵢ b(Fᵢ, Dᵢ)` involving `∇Fᵢ` and `∇Dᵢ` cancel at `x`,
-where `Fᵢ` is the chart-local frame at `x` and `Dᵢ` its metric-dual frame. -/
-private theorem sum_apply_chartDualFrame_cancel
+where `Fᵢ` is the chart-local frame at `x` and `Dᵢ` its metric-dual frame:
+`∑ᵢ b(Fᵢ, ∇_v Dᵢ) = -∑ᵢ b(∇_v Fᵢ, Dᵢ)`. The bilinear map `b` takes values in any real vector
+space, such as `ℝ` or a fibre of a vector bundle. -/
+theorem IsMetricCompatible.sum_apply_chartDualFrame_cancel {W : Type*} [AddCommGroup W] [Module ℝ W]
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-    (x : M) (b : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v : TangentSpace I x)
-    (hU : (trivializationAt E (TangentSpace I) x).baseSet ∈ 𝓝 x)
-    (hF : ∀ i, MDiffAt (T% (chartLocalFrame (I := I) x i)) x)
-    (hD : ∀ i, MDiffAt (T% (chartDualFrame (I := I) x i)) x) :
+    (x : M) (b : LinearMap.BilinMap ℝ (TangentSpace I x) W) (v : TangentSpace I x) :
     ∑ i, b (chartLocalFrame (I := I) x i x) (cov (chartDualFrame (I := I) x i) x v) =
       -∑ i, b (cov (chartLocalFrame (I := I) x i) x v) (chartDualFrame (I := I) x i x) := by
   -- Differentiating `⟪Dᵢ, Fⱼ⟫ = δᵢⱼ` near `x` relates `∇Dᵢ` to `∇Fⱼ`.
   set F := chartLocalFrame (I := I) x with hFdef
   set D := chartDualFrame (I := I) x with hDdef
   have hxc : x ∈ (chartAt H x).source := mem_chart_source H x
+  have hxb : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+    mem_baseSet_trivializationAt E _ x
+  have hU := (trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hxb
   have hdual (i j : Fin (Module.finrank ℝ E)) :
       inner ℝ (F j x) (cov (D i) x v) = -inner ℝ (D i x) (cov (F j) x v) := by
     have hconst : (fun y ↦ inner ℝ (D i y) (F j y)) =ᶠ[𝓝 x]
@@ -95,75 +99,175 @@ private theorem sum_apply_chartDualFrame_cancel
       exact inner_chartDualFrame x
         (by simpa only [TangentBundle.trivializationAt_baseSet] using hy) i j
     have h := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
-      (hD i) (hF j) hconst v
+      (mdifferentiableAt_chartDualFrame x hxb i) (mdifferentiableAt_chartLocalFrame x hxb j)
+      hconst v
     rw [real_inner_comm]
     linarith
   have hexp (i : Fin (Module.finrank ℝ E)) : b (F i x) (cov (D i) x v) =
-      -∑ j, inner ℝ (D i x) (cov (F j) x v) * b (F i x) (D j x) := by
+      -∑ j, inner ℝ (D i x) (cov (F j) x v) • b (F i x) (D j x) := by
     conv_lhs => rw [← (sum_inner_chartDualFrame_smul x hxc (cov (D i) x v)).2]
-    simp only [← hFdef, ← hDdef, map_sum, map_smul, smul_eq_mul, hdual, neg_mul,
-      Finset.sum_neg_distrib]
+    simp only [← hFdef, ← hDdef, hdual, neg_smul, Finset.sum_neg_distrib, map_neg, map_sum,
+      map_smul]
   simp only [hexp, Finset.sum_neg_distrib, neg_inj]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   conv_rhs => rw [← (sum_inner_chartDualFrame_smul x hxc (cov (F j) x v)).1]
-  simp only [← hFdef, ← hDdef, map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul,
-    Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+  simp only [← hFdef, ← hDdef, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply]
+
+omit [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+/-- Near `x`, the metric trace of a field of continuous bilinear maps equals the finite sum of
+sections obtained by pairing it with the chart-local frame and its metric-dual frame. -/
+private theorem eventually_metricTrace_toLinearMap₁₂_eq_sum_chartDualFrame
+    {N : M → Type*} [∀ y, AddCommGroup (N y)] [∀ y, Module ℝ (N y)]
+    [∀ y, TopologicalSpace (N y)] [∀ y, IsTopologicalAddGroup (N y)]
+    [∀ y, ContinuousSMul ℝ (N y)]
+    (B : Π y : M, TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] N y) (x : M) :
+    ∀ᶠ y in 𝓝 x,
+      LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (B y)) =
+        (∑ i, fun y ↦ B y (chartLocalFrame (I := I) x i y) (chartDualFrame (I := I) x i y)) y :=
+  (eventually_metricTrace_eq_sum_chartDualFrame x (mem_chart_source H x)
+    (fun y ↦ ContinuousLinearMap.toLinearMap₁₂ (B y))).mono fun y hy ↦ by
+      simp only [hy, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, Finset.sum_apply]
 
 /-- **Covariant differentiation commutes with the metric trace.** For a connection compatible
 with the metric and a field of bilinear forms `b` pairing sections differentiable at `x` to
-functions differentiable at `x`, the derivative of the metric trace of `b` along `v` is the
-metric trace of `∇_v b`, computed in any orthonormal basis of the tangent space at `x`. -/
-theorem IsMetricCompatible.mvfderiv_bilinFormTrace
+functions differentiable at `x`, the derivative at `x` of the metric trace of `b` is the metric
+trace of `∇b`, a covector-valued bilinear form on the tangent space at `x`. For fields of bilinear
+maps with values in a vector bundle, see
+`CovariantDerivative.IsMetricCompatible.covariantDerivative_metricTrace`. -/
+theorem IsMetricCompatible.mvfderiv_metricTrace
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} {x : M}
+    (hb : ∀ ⦃σ τ : Π x : M, TangentSpace I x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      MDiffAt (fun y ↦ b y (σ y) (τ y)) x) :
+    mvfderiv I
+        (fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (b y))) x =
+      LinearMap.BilinMap.metricTrace
+        (ContinuousLinearMap.toLinearMap₁₂ (cov.derivBilinearTensor b x)) := by
+  have hxb : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+    mem_baseSet_trivializationAt E _ x
+  have hF := mdifferentiableAt_chartLocalFrame (I := I) x hxb
+  have hD := mdifferentiableAt_chartDualFrame (I := I) x hxb
+  ext v
+  -- Near `x`, the metric trace of `b` is `∑ᵢ b(Fᵢ, Dᵢ)`; differentiate it by the Leibniz rule.
+  -- The terms involving `∇Fᵢ` and `∇Dᵢ` cancel.
+  have hcancel :=
+    hcov.sum_apply_chartDualFrame_cancel x (ContinuousLinearMap.toLinearMap₁₂ (b x)) v
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply] at hcancel
+  have hterm (i : Fin (Module.finrank ℝ E)) := cov.derivBilinearTensor_apply hb (hF i) (hD i) v
+  -- At `x`, the metric trace of `∇b` is `∑ᵢ (∇b)(Fᵢ, Dᵢ)`.
+  have htr : (fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (b y)))
+      =ᶠ[𝓝 x] fun y ↦ ∑ i, b y (chartLocalFrame (I := I) x i y) (chartDualFrame (I := I) x i y) :=
+    (eventually_metricTrace_toLinearMap₁₂_eq_sum_chartDualFrame b x).mono fun y hy ↦ by
+      simpa only [Finset.sum_apply] using hy
+  rw [htr.mvfderiv_eq,
+    TauCeti.mvfderiv_fun_sum fun i _ ↦ hb (hF i) (hD i), sum_apply,
+    metricTrace_eq_sum_chartDualFrame x (mem_chart_source H x), sum_apply]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hterm, Finset.sum_sub_distrib,
+    hcancel]
+  ring
+
+/-- **Covariant differentiation commutes with the metric trace**, in an orthonormal basis: the
+derivative of the metric trace of `b` along `v` is `∑ᵢ (∇_v b)(eᵢ, eᵢ)` for every orthonormal basis
+`eᵢ` of the tangent space at `x`. -/
+theorem IsMetricCompatible.mvfderiv_metricTrace_apply_eq_sum
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} {x : M}
     (hb : ∀ ⦃σ τ : Π x : M, TangentSpace I x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
       MDiffAt (fun y ↦ b y (σ y) (τ y)) x)
     {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ (TangentSpace I x))
     (v : TangentSpace I x) :
-    mvfderiv I (fun y ↦ TauCeti.bilinFormTrace (ContinuousLinearMap.toLinearMap₁₂ (b y))) x v =
+    mvfderiv I
+        (fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (b y))) x v =
       ∑ i, cov.derivBilinearTensor b x (e i) (e i) v := by
-  set F := chartLocalFrame (I := I) x with hFdef
-  set D := chartDualFrame (I := I) x with hDdef
-  have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+  rw [hcov.mvfderiv_metricTrace hb, LinearMap.BilinMap.metricTrace_eq_sum _ e, sum_apply]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+
+/-! ### Fields of bilinear maps with values in a vector bundle -/
+
+section BundleValued
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  {B : Π y : M, TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] V y} {x : M}
+
+/-- Pairing a differentiable field `B` of `V`-valued bilinear maps with the chart-local frame and
+its metric-dual frame gives a differentiable section of `V`. -/
+private theorem mdifferentiableAt_apply_chartDualFrame
+    (hB : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] F)
+      (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] V z) y (B y)) x)
+    (i : Fin (Module.finrank ℝ E)) :
+    MDiffAt (T% fun y ↦ B y (chartLocalFrame (I := I) x i y) (chartDualFrame (I := I) x i y)) x :=
+  (hB.clm_bundle_apply
+    (mdifferentiableAt_chartLocalFrame x (mem_baseSet_trivializationAt E _ x) i)).clm_bundle_apply
+    (mdifferentiableAt_chartDualFrame x (mem_baseSet_trivializationAt E _ x) i)
+
+/-- The finite sum `∑ᵢ B(Fᵢ, Dᵢ)` of a differentiable field `B` paired with the chart frame and
+its metric-dual frame is a differentiable section of `V`. -/
+private theorem mdifferentiableAt_sum_apply_chartDualFrame
+    (hB : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] F)
+      (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] V z) y (B y)) x) :
+    MDiffAt (T% (∑ i, fun y ↦
+      B y (chartLocalFrame (I := I) x i y) (chartDualFrame (I := I) x i y))) x := by
+  simpa [Finset.sum_apply] using MDifferentiableAt.sum_section (s := Finset.univ)
+    (t := fun i (y : M) ↦ B y (chartLocalFrame (I := I) x i y) (chartDualFrame (I := I) x i y))
+    fun i _ ↦ mdifferentiableAt_apply_chartDualFrame hB i
+
+/-- The metric trace of a field `B` of `V`-valued bilinear maps on the tangent spaces is a section
+of `V` which is differentiable wherever `B` is differentiable as a section of the bundle
+`Hom(TM, Hom(TM, V))` of bilinear maps. -/
+theorem _root_.MDifferentiableAt.metricTrace
+    (hB : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] F)
+      (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] V z) y (B y)) x) :
+    MDiffAt (T% fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (B y)))
+      x :=
+  (mdifferentiableAt_sum_apply_chartDualFrame hB).congr_of_eventuallyEq
+    ((eventually_metricTrace_toLinearMap₁₂_eq_sum_chartDualFrame B x).mono
+      fun y hy ↦ congrArg (TotalSpace.mk' F y) hy)
+
+/-- **Covariant differentiation commutes with the metric trace**, for a field `B` of bilinear maps
+on the tangent spaces with values in a vector bundle `V`. If the connection `∇ᵀ` on the tangent
+bundle is compatible with the metric and `B` is differentiable at `x` as a section of
+`Hom(TM, Hom(TM, V))`, then for every connection `∇` on `V`, the covariant derivative at `x` of the
+section `tr_g B` along `v` is the metric trace of `∇_v B`, the covariant derivative of `B` for the
+connection induced by `∇ᵀ` and `∇`. -/
+theorem IsMetricCompatible.covariantDerivative_metricTrace
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    (covV : CovariantDerivative I F V)
+    (hB : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] F)
+      (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] V z) y (B y)) x)
+    (v : TangentSpace I x) :
+    covV (fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (B y))) x v =
+      LinearMap.BilinMap.metricTrace
+        (ContinuousLinearMap.toLinearMap₁₂ (cov.hom (cov.hom covV) B x v)) := by
+  have hxb : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
     mem_baseSet_trivializationAt E _ x
-  have hxc : x ∈ (chartAt H x).source := mem_chart_source H x
-  have hU := (trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx
-  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
-  have hF (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (F i)) x :=
-    (contMDiffAt_chartLocalFrame (n := 1) x i).mdifferentiableAt one_ne_zero
-  have hD (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (D i)) x :=
-    (contMDiffAt_chartDualFrame (n := 1) x hx i).mdifferentiableAt one_ne_zero
-  -- Near `x`, the metric trace of `b` is `∑ᵢ b(Fᵢ, Dᵢ)`.
-  have htr : (fun y ↦ TauCeti.bilinFormTrace (ContinuousLinearMap.toLinearMap₁₂ (b y))) =ᶠ[𝓝 x]
-      fun y ↦ ∑ i, b y (F i y) (D i y) := by
-    filter_upwards [hU] with y hy
-    rw [bilinFormTrace_eq_sum_chartDualFrame x
-      (by simpa only [TangentBundle.trivializationAt_baseSet] using hy)]
-    simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ← hFdef, ← hDdef]
-  have hsum : mvfderiv I (fun y ↦ ∑ i, b y (F i y) (D i y)) x v =
-      ∑ i, mvfderiv I (fun y ↦ b y (F i y) (D i y)) x v := by
-    have hfun : (fun y ↦ ∑ i, b y (F i y) (D i y)) = ∑ i, fun y ↦ b y (F i y) (D i y) := by
-      ext y; simp
-    have hH : HasMFDerivAt I 𝓘(ℝ) (∑ i, fun y ↦ b y (F i y) (D i y)) x
-        (∑ i, mvfderiv I (fun y ↦ b y (F i y) (D i y)) x) :=
-      HasMFDerivAt.sum fun i _ ↦ (hb (hF i) (hD i)).hasMFDerivAt
-    rw [hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
-    -- The tangent spaces of `ℝ` in which `mfderiv` takes values are `ℝ` itself.
-    exact _root_.sum_apply ..
-  -- The terms involving `∇Fᵢ` and `∇Dᵢ` cancel.
-  have hcancel := sum_apply_chartDualFrame_cancel hcov x (b x) v hU hF hD
-  simp only [← hFdef, ← hDdef] at hcancel
-  -- At `x`, both sides are metric traces of `∇_v b`.
-  let β : LinearMap.BilinForm ℝ (TangentSpace I x) :=
-    LinearMap.mk₂ ℝ (fun u w ↦ cov.derivBilinearTensor b x u w v) (by simp) (by simp)
-      (by simp) (by simp)
-  have hβ := bilinFormTrace_eq_sum_chartDualFrame x hxc β
-  rw [TauCeti.bilinFormTrace_eq_sum β e] at hβ
-  simp only [β, LinearMap.mk₂_apply, ← hFdef, ← hDdef] at hβ
-  have hterm (i : Fin (Module.finrank ℝ E)) := cov.derivBilinearTensor_apply hb (hF i) (hD i) v
-  rw [htr.mvfderiv_eq, hsum, hβ]
-  simp only [hterm, Finset.sum_sub_distrib, hcancel]
-  ring
+  have hF := mdifferentiableAt_chartLocalFrame (I := I) x hxb
+  have hD := mdifferentiableAt_chartDualFrame (I := I) x hxb
+  -- Near `x`, `tr_g B` is `∑ᵢ B(Fᵢ, Dᵢ)` in the chart frame `Fᵢ` and its metric-dual frame `Dᵢ`.
+  rw [covV.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hB.metricTrace
+      (mdifferentiableAt_sum_apply_chartDualFrame hB) Filter.univ_mem
+      (eventually_metricTrace_toLinearMap₁₂_eq_sum_chartDualFrame B x),
+    covV.isCovariantDerivativeOnUniv.sum fun i _ ↦ mdifferentiableAt_apply_chartDualFrame hB i,
+    sum_apply, metricTrace_eq_sum_chartDualFrame x (mem_chart_source H x)]
+  -- Differentiate each term by the Leibniz rule; the terms with `∇Fᵢ` and `∇Dᵢ` cancel.
+  have hexp (i : Fin (Module.finrank ℝ E)) :
+      covV (fun y ↦ B y (chartLocalFrame (I := I) x i y) (chartDualFrame (I := I) x i y)) x v =
+        cov.hom (cov.hom covV) B x v (chartLocalFrame (I := I) x i x)
+            (chartDualFrame (I := I) x i x) +
+          B x (cov (chartLocalFrame (I := I) x i) x v) (chartDualFrame (I := I) x i x) +
+          B x (chartLocalFrame (I := I) x i x) (cov (chartDualFrame (I := I) x i) x v) := by
+    rw [hom_hom_apply cov cov covV hB (hF i) (hD i)]
+    abel
+  have hcancel :=
+    hcov.sum_apply_chartDualFrame_cancel x (ContinuousLinearMap.toLinearMap₁₂ (B x)) v
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply] at hcancel
+  simp only [hexp, Finset.sum_add_distrib, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+  rw [hcancel, add_neg_cancel_right]
+
+end BundleValued
 
 end CovariantDerivative

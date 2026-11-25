@@ -21,11 +21,30 @@ conditionally independent process is split into observed and unobserved coordina
 
 When one of two factors has no atoms, the two corresponding coordinates of a product sample are
 moreover almost surely different, so a sample can be used to order the indices it is attached to.
+A product law pushed forward coordinatewise by measurable maps gives the product of the
+pushed-forward marginal laws.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory
+
+namespace ProbabilityTheory
+
+/-- Pushing a product law forward coordinatewise by measurable maps gives the product of the
+pushed-forward marginal laws. -/
+theorem HasLaw.infinitePi_map_pi
+    {Ω ι : Type*} {α β : ι → Type*} [MeasurableSpace Ω]
+    [∀ i, MeasurableSpace (α i)] [∀ i, MeasurableSpace (β i)]
+    {P : Measure Ω} {μ : ∀ i, Measure (α i)} [∀ i, IsProbabilityMeasure (μ i)]
+    {X : Ω → ∀ i, α i} (hX : HasLaw X (Measure.infinitePi μ) P)
+    {f : ∀ i, α i → β i} (hf : ∀ i, Measurable (f i)) :
+    HasLaw (fun ω i => f i (X ω i)) (Measure.infinitePi fun i => (μ i).map (f i)) P :=
+  HasLaw.fun_comp
+    ⟨(measurable_pi_iff.mpr fun i => (hf i).comp (measurable_pi_apply i)).aemeasurable,
+      Measure.infinitePi_map_pi μ hf⟩ hX
+
+end ProbabilityTheory
 
 namespace MeasureTheory.Measure
 
@@ -120,5 +139,15 @@ theorem ae_eval_ne_eval_infinitePi {ι β : Type*} [MeasurableSpace β] [Measura
   rw [ae_iff, hset, ← Measure.map_apply hmeas hdiag, Measure.infinitePi_map_eval_prod hij,
     Measure.prod_apply hdiag]
   simp
+
+/-- An atomless countable product sample has pairwise distinct coordinates almost surely. -/
+theorem ae_injective_infinitePi {ι β : Type*} [Countable ι] [MeasurableSpace β] [MeasurableEq β]
+    (P : ι → Measure β) [∀ i, IsProbabilityMeasure (P i)] [∀ i, NullSingletonClass (P i)] :
+    ∀ᵐ x ∂Measure.infinitePi P, Function.Injective x := by
+  simp only [Function.injective_iff_pairwise_ne, Pairwise]
+  refine ae_all_iff.2 fun i ↦ ae_all_iff.2 fun j ↦ ?_
+  by_cases hij : i = j
+  · exact Filter.Eventually.of_forall fun _ h ↦ (h hij).elim
+  · exact (ae_eval_ne_eval_infinitePi P hij).mono fun _ h _ ↦ h
 
 end TauCeti.Probability
