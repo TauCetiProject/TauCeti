@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Smooth
 public import TauCeti.Geometry.Manifold.Boundary.SmoothMap
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
-public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Boundary
+public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Collar
+public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # The polar collar of the closed unit ball
@@ -105,104 +107,76 @@ theorem contMDiff_closedBallCollarFun {k : ℕ∞ω} :
 /-! ### The inverse on the punctured ball -/
 
 /-- The boundary sphere of the closed unit ball is nonempty. -/
-private theorem nonempty_boundary : Nonempty B := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by
-    rw [Fact.out (p := finrank ℝ E = n + 1)]
-    exact Nat.succ_pos n)
-  obtain ⟨x, hx⟩ := exists_norm_eq E zero_le_one
-  exact ⟨⟨⟨x, mem_closedBall_zero_iff.2 hx.le⟩, isBoundaryPoint_closedBall_iff.2 hx⟩⟩
-
-/-- The unit vector `z / ‖z‖` of a nonzero point of the closed ball, a boundary point. -/
-private theorem normalize_mem_boundary {z : closedBall (0 : E) 1} (hz : (z : E) ≠ 0) :
-    (⟨‖(z : E)‖⁻¹ • (z : E), by
-      rw [mem_closedBall_zero_iff, norm_smul, norm_inv, norm_norm,
-        inv_mul_cancel₀ (norm_ne_zero_iff.2 hz)]⟩ : closedBall (0 : E) 1) ∈ B :=
-  isBoundaryPoint_closedBall_iff.2 (by
-    simp only [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hz)])
-
-open Classical in
-/-- The angular part `z / ‖z‖` of a point of the punctured closed ball, a boundary point. -/
-private def unitPoint (z : closedBall (0 : E) 1) : B :=
-  if hz : (z : E) = 0 then (nonempty_boundary (n := n) (E := E)).some
-  else ⟨_, normalize_mem_boundary hz⟩
-
-private theorem coe_unitPoint {z : closedBall (0 : E) 1} (hz : (z : E) ≠ 0) :
-    ((unitPoint (n := n) z : closedBall (0 : E) 1) : E) = ‖(z : E)‖⁻¹ • (z : E) := by
-  simp [unitPoint, hz]
-
-/-- The radial coordinate `1 - ‖z‖` of a point `z` of the closed ball, as a vector of the ambient
-space of the half-line model. -/
-private def radialVec (z : closedBall (0 : E) 1) : EuclideanSpace ℝ (Fin 1) :=
-  (1 - ‖(z : E)‖) • EuclideanSpace.single 0 1
+private theorem nonempty_boundary : Nonempty B :=
+  haveI : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
+  (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype.map sphereDiffeomorphBoundaryClosedBall
 
 omit [InnerProductSpace ℝ E] [Fact (finrank ℝ E = n + 1)] in
-private theorem radialVec_apply_zero (z : closedBall (0 : E) 1) :
-    radialVec z 0 = 1 - ‖(z : E)‖ := by
-  simp [radialVec]
-
-omit [InnerProductSpace ℝ E] [Fact (finrank ℝ E = n + 1)] in
-private theorem radialVec_mem_range (z : closedBall (0 : E) 1) : radialVec z ∈ range (𝓡∂ 1) := by
-  rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq, radialVec_apply_zero, sub_nonneg]
-  exact mem_closedBall_zero_iff.1 z.property
-
-/-- The point of the half-line model with normal coordinate `1 - ‖z‖`. -/
-private def radialPoint (z : closedBall (0 : E) 1) : EuclideanHalfSpace 1 :=
-  (𝓡∂ 1).symm (radialVec z)
-
-omit [InnerProductSpace ℝ E] [Fact (finrank ℝ E = n + 1)] in
-private theorem radialPoint_apply_zero (z : closedBall (0 : E) 1) :
-    (radialPoint z).val 0 = 1 - ‖(z : E)‖ := by
-  have h := radialVec_mem_range z
-  rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq] at h
-  rw [radialPoint, modelWithCornersEuclideanHalfSpace_symm_apply_of_le h, radialVec_apply_zero]
-
-omit [InnerProductSpace ℝ E] [Fact (finrank ℝ E = n + 1)] in
-private theorem radialPoint_mem {z : closedBall (0 : E) 1} (hz : (z : E) ≠ 0) :
-    radialPoint z ∈ D := by
-  rw [mem_normalIioOpens, radialPoint_apply_zero]
-  linarith [norm_pos_iff.2 hz]
+/-- The radial coordinate `1 - ‖z‖` of a nonzero point of the closed ball lies in `[0, 1)`. -/
+private theorem normalRay_mem {z : closedBall (0 : E) 1} (hz : (z : E) ≠ 0) :
+    normalRay (1 - ‖(z : E)‖) ∈ D := by
+  rw [mem_normalIioOpens, normalRay_coe_apply]
+  exact max_lt (by linarith [norm_pos_iff.2 hz]) one_pos
 
 open Classical in
 /-- The inverse of the polar collar on the punctured closed ball: `z ↦ (z / ‖z‖, 1 - ‖z‖)`. -/
 private def closedBallCollarInv (z : closedBall (0 : E) 1) : B × D :=
-  (unitPoint z, if hz : (z : E) = 0 then normalIioOpensZero one_pos
-    else ⟨radialPoint z, radialPoint_mem hz⟩)
+  if hz : (z : E) = 0 then ((nonempty_boundary (n := n) (E := E)).some, normalIioOpensZero one_pos)
+  else (sphereDiffeomorphBoundaryClosedBall (ballCollarInv z hz).1, ⟨_, normalRay_mem hz⟩)
 
-/-- A map into `normalIioOpens 1` is `C^k` at a point when its composition with the inclusion
-is. -/
-private theorem contMDiffAt_of_subtypeVal_comp {k : ℕ∞ω} {f : closedBall (0 : E) 1 → D}
-    {z : closedBall (0 : E) 1} (h : ContMDiffAt (𝓡∂ (n + 1)) (𝓡∂ 1) k (Subtype.val ∘ f) z) :
-    ContMDiffAt (𝓡∂ (n + 1)) (𝓡∂ 1) k f z :=
-  (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff ..).1 h
+/-- Off the centre, the inverse is the sphere point of `TauCeti.ballCollarInv` and the normal
+ray at `1 - ‖z‖`. -/
+private theorem closedBallCollarInv_of_ne_zero {z : closedBall (0 : E) 1} (hz : (z : E) ≠ 0) :
+    closedBallCollarInv (n := n) z =
+      (sphereDiffeomorphBoundaryClosedBall (ballCollarInv z hz).1, ⟨_, normalRay_mem hz⟩) :=
+  dite_eq_right hz
 
-private theorem contMDiffAt_closedBallCollarInv {k : ℕ∞ω} {z : closedBall (0 : E) 1}
-    (hz : (z : E) ≠ 0) :
-    ContMDiffAt (𝓡∂ (n + 1)) (𝓘(ℝ, EuclideanSpace ℝ (Fin n)).prod (𝓡∂ 1)) k
-      (closedBallCollarInv (n := n) (E := E)) z := by
-  have hU : {w : closedBall (0 : E) 1 | (w : E) ≠ 0} ∈ 𝓝 z :=
-    (isOpen_ne_fun continuous_subtypeVal continuous_const).mem_nhds hz
-  have hval : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ, E) k (Subtype.val : closedBall (0 : E) 1 → E) z :=
-    contMDiff_subtypeVal_closedBall z
-  refine ContMDiffAt.prodMk ?_ (contMDiffAt_of_subtypeVal_comp ?_)
-  · rw [← contMDiffWithinAt_univ, contMDiffWithinAt_iff_comp_subtypeVal_boundary,
-      contMDiffWithinAt_univ, contMDiffAt_iff_comp_subtypeVal_closedBall]
-    have hn : ContDiffAt ℝ k (fun w : E ↦ ‖w‖⁻¹ • w) (z : E) :=
-      ((contDiffAt_norm ℝ hz).inv (norm_ne_zero_iff.2 hz)).smul contDiffAt_id
-    refine (hn.contMDiffAt.comp z hval).congr_of_eventuallyEq ?_
-    filter_upwards [hU] with w hw
-    exact coe_unitPoint hw
-  · have hr : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k radialVec z := by
-      have hc : ContDiffAt ℝ k (fun w : E ↦ (1 - ‖w‖) • EuclideanSpace.single (0 : Fin 1) (1 : ℝ))
-          (z : E) :=
-        (contDiffAt_const.sub (contDiffAt_norm ℝ hz)).smul contDiffAt_const
-      exact hc.contMDiffAt.comp z hval
-    have hp : ContMDiffAt (𝓡∂ (n + 1)) (𝓡∂ 1) k radialPoint z := by
-      rw [← contMDiffWithinAt_univ] at hr ⊢
-      exact ((𝓡∂ 1).contMDiffOn_symm _ (radialVec_mem_range z)).comp z hr
-        fun w _ ↦ radialVec_mem_range w
-    refine hp.congr_of_eventuallyEq ?_
-    filter_upwards [hU] with w hw
-    simp [hw]
+/-- The angular part of the inverse is `z / ‖z‖`. -/
+private theorem coe_closedBallCollarInv_fst {z : closedBall (0 : E) 1} (hz : (z : E) ≠ 0) :
+    (((closedBallCollarInv (n := n) z).1 : closedBall (0 : E) 1) : E) = ‖(z : E)‖⁻¹ • (z : E) := by
+  rw [closedBallCollarInv_of_ne_zero hz, sphereDiffeomorphBoundaryClosedBall_apply_coe,
+    coe_ballCollarInv_fst]
+
+/-- The normal coordinate of the inverse is `1 - ‖z‖`. -/
+private theorem closedBallCollarInv_snd_apply_zero {z : closedBall (0 : E) 1} (hz : (z : E) ≠ 0) :
+    ((closedBallCollarInv (n := n) z).2 : EuclideanHalfSpace 1).val 0 = 1 - ‖(z : E)‖ := by
+  rw [closedBallCollarInv_of_ne_zero hz, normalRay_coe_apply]
+  exact max_eq_left (sub_nonneg.2 (mem_closedBall_zero_iff.1 z.property))
+
+/-- The inverse of the polar collar is analytic on the punctured closed ball. -/
+private theorem contMDiff_closedBallCollarInv {k : ℕ∞ω} :
+    ContMDiff (𝓡∂ (n + 1)) (𝓘(ℝ, EuclideanSpace ℝ (Fin n)).prod (𝓡∂ 1)) k
+      (fun y : puncturedClosedBall E ↦
+        closedBallCollarInv (n := n) (E := E) (y : closedBall (0 : E) 1)) := by
+  have hy : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, E) k
+      (fun y : puncturedClosedBall E ↦ ((y : closedBall (0 : E) 1) : E)) :=
+    contMDiff_subtypeVal_closedBall.comp contMDiff_subtypeVal
+  have hcoord : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k
+      (fun y : puncturedClosedBall E ↦
+        (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
+          (1 - ‖((y : closedBall (0 : E) 1) : E)‖)) := fun y ↦
+    (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.contMDiffAt.comp y
+      (contMDiffAt_const.sub
+        ((contDiffAt_norm ℝ (mem_puncturedClosedBall.1 y.property)).comp_contMDiffAt
+          (f := fun y : puncturedClosedBall E ↦ ((y : closedBall (0 : E) 1) : E)) hy.contMDiffAt))
+  have hrange (y : puncturedClosedBall E) :
+      (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
+        (1 - ‖((y : closedBall (0 : E) 1) : E)‖) ∈ range (𝓡∂ 1) := by
+    rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
+    simpa using mem_closedBall_zero_iff.1 y.val.property
+  have heq : (fun y : puncturedClosedBall E ↦
+      closedBallCollarInv (n := n) (E := E) (y : closedBall (0 : E) 1)) =
+      fun y : puncturedClosedBall E ↦
+        (sphereDiffeomorphBoundaryClosedBall (ballCollarInv (y : closedBall (0 : E) 1)
+          (mem_puncturedClosedBall.1 y.property)).1,
+          ⟨_, normalRay_mem (mem_puncturedClosedBall.1 y.property)⟩) :=
+    funext fun y ↦ closedBallCollarInv_of_ne_zero _
+  rw [heq]
+  refine ContMDiff.prodMk
+    (((sphereDiffeomorphBoundaryClosedBall (n := n) (E := E)).contMDiff.of_le le_top).comp
+      (contMDiff_ballCollarInv (n := n)).fst) ((TauCeti.ContMDiff.subtypeVal_comp_iff D _).1 ?_)
+  exact ((𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hcoord hrange).congr fun y ↦
+    normalRay_eq_symm _
 
 /-- The polar collar as a partial diffeomorphism onto the punctured closed ball. -/
 private def closedBallCollarPartialDiffeomorph (k : ℕ∞ω) :
@@ -211,29 +185,30 @@ private def closedBallCollarPartialDiffeomorph (k : ℕ∞ω) :
   toFun := closedBallCollarFun
   invFun := closedBallCollarInv
   source := univ
-  target := {z | (z : E) ≠ 0}
-  map_source' p _ := closedBallCollarFun_ne_zero p
+  target := puncturedClosedBall E
+  map_source' p _ := mem_puncturedClosedBall.2 (closedBallCollarFun_ne_zero p)
   map_target' _ _ := mem_univ _
   left_inv' p _ := by
     have hz := closedBallCollarFun_ne_zero p
     have hnorm := norm_closedBallCollarFun p
     obtain ⟨-, h1⟩ := normal_mem_Ico p.2
     refine Prod.ext (Subtype.ext (Subtype.ext ?_)) (Subtype.ext (Subtype.ext ?_))
-    · rw [closedBallCollarInv, coe_unitPoint hz, hnorm, coe_closedBallCollarFun, smul_smul,
+    · rw [coe_closedBallCollarInv_fst hz, hnorm, coe_closedBallCollarFun, smul_smul,
         inv_mul_cancel₀ (by linarith), one_smul]
-    · simp only [closedBallCollarInv, hz, ↓reduceDIte]
-      ext i
-      rw [Subsingleton.elim i 0, radialPoint_apply_zero, hnorm, sub_sub_cancel]
+    · ext i
+      rw [Subsingleton.elim i 0, closedBallCollarInv_snd_apply_zero hz, hnorm, sub_sub_cancel]
   right_inv' z hz := by
-    have hz' : (z : E) ≠ 0 := hz
+    have hz' : (z : E) ≠ 0 := mem_puncturedClosedBall.1 hz
     apply Subtype.ext
-    simp only [closedBallCollarInv, hz', ↓reduceDIte, coe_closedBallCollarFun,
-      radialPoint_apply_zero, coe_unitPoint hz', sub_sub_cancel, smul_smul]
-    rw [mul_inv_cancel₀ (norm_ne_zero_iff.2 hz'), one_smul]
+    rw [coe_closedBallCollarFun, closedBallCollarInv_snd_apply_zero hz',
+      coe_closedBallCollarInv_fst hz', sub_sub_cancel, smul_smul,
+      mul_inv_cancel₀ (norm_ne_zero_iff.2 hz'), one_smul]
   open_source := isOpen_univ
-  open_target := isOpen_ne_fun continuous_subtypeVal continuous_const
+  open_target := (puncturedClosedBall E).isOpen
   contMDiffOn_toFun := contMDiff_closedBallCollarFun.contMDiffOn
-  contMDiffOn_invFun z hz := (contMDiffAt_closedBallCollarInv hz).contMDiffWithinAt
+  contMDiffOn_invFun z hz :=
+    (contMDiffAt_subtype_iff (U := puncturedClosedBall E) (x := ⟨z, hz⟩).1
+      (contMDiff_closedBallCollarInv _)).contMDiffWithinAt
 
 /-! ### The polar collar -/
 
@@ -276,21 +251,18 @@ theorem SmoothCollar.coe_closedBall_apply {k : ℕ∞ω} (p : B × D) :
 /-- The image of the polar collar of the closed unit ball is the punctured closed ball
 `0 < ‖z‖ ≤ 1`, an open subset of the ball. -/
 theorem SmoothCollar.range_closedBall {k : ℕ∞ω} :
-    range (SmoothCollar.closedBall n E k) = {z : Metric.closedBall (0 : E) 1 | (z : E) ≠ 0} := by
+    range (SmoothCollar.closedBall n E k) = puncturedClosedBall E := by
   ext z
   refine ⟨?_, fun hz ↦ ⟨closedBallCollarInv z,
     (closedBallCollarPartialDiffeomorph (n := n) (E := E) k).right_inv hz⟩⟩
   rintro ⟨p, rfl⟩
-  exact closedBallCollarFun_ne_zero p
+  exact mem_puncturedClosedBall.2 (closedBallCollarFun_ne_zero p)
 
 /-! ### The closed unit disc -/
 
 section Disc
 
-/-- The real dimension of `ℂ`, written as the successor `1 + 1` used by the boundary
-constructions. -/
-local instance instFactFinrankComplexOneAddOne : Fact (finrank ℝ ℂ = 1 + 1) :=
-  ⟨Complex.finrank_real_complex⟩
+attribute [local instance] finrank_real_complex_fact'
 
 /-- **The polar collar of the closed unit disc** is `(θ, t) ↦ (1 - t) e^{iθ}`: for every angle
 `θ` and depth `t ∈ [0, 1)`, the boundary point `e^{iθ}` at depth `t` is sent to
@@ -300,10 +272,11 @@ theorem SmoothCollar.closedBall_complex_polar {k : ℕ∞ω} (θ : ℝ) (t : D) 
       ((x : Metric.closedBall (0 : ℂ) 1) : ℂ) = Complex.exp (θ * Complex.I) ∧
       (SmoothCollar.closedBall 1 ℂ k (x, t) : ℂ) =
         (1 - (t : EuclideanHalfSpace 1).val 0) * Complex.exp (θ * Complex.I) := by
-  have hn : ‖Complex.exp (θ * Complex.I)‖ = 1 := Complex.norm_exp_ofReal_mul_I θ
-  refine ⟨⟨⟨Complex.exp (θ * Complex.I), mem_closedBall_zero_iff.2 hn.le⟩,
-    isBoundaryPoint_closedBall_iff.2 hn⟩, rfl, ?_⟩
-  rw [SmoothCollar.coe_closedBall_apply, Complex.real_smul]
+  have hx : ((circleHomeomorphBoundaryClosedBall (Circle.exp θ)).val : ℂ) =
+      Complex.exp (θ * Complex.I) := by
+    rw [circleHomeomorphBoundaryClosedBall_apply_coe, Circle.coe_exp]
+  refine ⟨circleHomeomorphBoundaryClosedBall (Circle.exp θ), hx, ?_⟩
+  rw [SmoothCollar.coe_closedBall_apply, Complex.real_smul, hx]
   push_cast
   rfl
 
