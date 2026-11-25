@@ -61,9 +61,7 @@ theorem finite_setOf_sum_map_le {α : Type*} {s : Set α} (w : α → ℤ) (k : 
       _ (List.mem_map_of_mem ha)).trans hsum⟩
   have hlen := l.length_le_sum_map_of_pos w (fun a ha => hpos a (hs a ha))
   refine ⟨l.attachWith _ hentry, ?_, List.attachWith_map_subtype_val hentry⟩
-  -- Unfold the length-cutoff membership before rewriting the attached list's length.
-  change (l.attachWith (· ∈ {a ∈ s | w a ≤ k}) hentry).length ≤ k
-  rw [List.length_attachWith]
+  rw [Set.mem_ofPred_eq, List.length_attachWith]
   exact_mod_cast hlen.trans hsum
 
 /-- Positive natural weights with a finite letter cutoff give finitely many words
@@ -115,7 +113,6 @@ theorem Set.Finite.nodup_blocks {α ι : Type*} [Finite ι] {S : Set (List α)}
   rintro ⟨l, blocks⟩ ⟨hl, hlen, hb⟩
   refine Set.mem_iUnion.mpr ⟨l, Set.mem_iUnion.mpr ⟨hl, ?_⟩⟩
   refine ⟨blocks.attachWith List.Nodup hb, ?_, ?_⟩
-  · -- In the image membership goal, the defining condition of the length cutoff is this equality.
-    change (blocks.attachWith List.Nodup hb).length = l.length + 1
-    simpa only [List.length_attachWith] using hlen
+  · rw [Set.mem_ofPred_eq, List.length_attachWith]
+    exact hlen
   · exact Prod.ext rfl (List.attachWith_map_subtype_val hb)
