@@ -19,7 +19,9 @@ is computed along the generic point `Spec K(Spec R) ⟶ Spec R`.
 
 The two fraction fields are related by the canonical isomorphism
 `TauCeti.specFractionRingIsoFunctionField R K : Spec K ≅ Spec K(Spec R)` over `Spec R`, and the
-marking of `C` over `Spec K(Spec R)` is `toK` followed by it. The equivalence
+marking of `C` over `Spec K(Spec R)` is `toK` followed by it. The generic fibre
+`TauCeti.genericFiber R K` of a marked model is then identified with `C` over `Spec K`
+(`TauCeti.MarkedModel.fractionRingGenericFiberIso`), compatibly with the marking. The equivalence
 `TauCeti.Model.markedModelEquivalence` preserves total spaces, structure morphisms and the
 inclusions of the marked generic fibres, and acts as the identity on morphisms of total spaces;
 in particular it preserves properness.
@@ -89,6 +91,41 @@ lemma isPullback_specMap
       rw [Iso.refl_hom, Category.comp_id, Iso.symm_hom,
         ← specFractionRingIsoFunctionField_hom_fromSpecStalk R K, Iso.inv_hom_id_assoc])
 
+omit [IsDiscreteValuationRing R] in
+/-- For a marked model over `Spec R` with marking `toK` followed by `Spec K ≅ Spec K(Spec R)`, the
+identification of the generic fibre `TauCeti.genericFiber R K M.toBase`, computed as the scalar
+extension along `R → K`, with `C` over `Spec K`. It agrees with the marking
+`TauCeti.MarkedModel.genericFiberIso` through `Spec K ≅ Spec K(Spec R)`
+(`TauCeti.MarkedModel.fractionRingGenericFiberIso_hom_left`). -/
+def fractionRingGenericFiberIso
+    (M : MarkedModel (Spec (.of R)) C (toK ≫ (specFractionRingIsoFunctionField R K).hom)) :
+    genericFiber R K M.toBase ≅ Over.mk toK :=
+  Over.isoMk M.isPullback_specMap.isoPullback.symm (IsPullback.isoPullback_inv_snd _)
+
+omit [IsDiscreteValuationRing R] in
+/-- The identification of the scalar-extension generic fibre with `C`, followed by the inclusion of
+`C`, is the projection of the generic fibre. -/
+@[reassoc (attr := simp)]
+lemma fractionRingGenericFiberIso_hom_left_genericι
+    (M : MarkedModel (Spec (.of R)) C (toK ≫ (specFractionRingIsoFunctionField R K).hom)) :
+    M.fractionRingGenericFiberIso.hom.left ≫ M.genericι = genericFiberι R K M.toBase :=
+  M.isPullback_specMap.isoPullback_inv_fst
+
+omit [IsDiscreteValuationRing R] in
+/-- The identification of the scalar-extension generic fibre with `C` is the marking, precomposed
+with the comparison of the generic fibres along `R → K` and along the generic point of `Spec R`. -/
+lemma fractionRingGenericFiberIso_hom_left
+    (M : MarkedModel (Spec (.of R)) C (toK ≫ (specFractionRingIsoFunctionField R K).hom)) :
+    M.fractionRingGenericFiberIso.hom.left =
+      pullback.map M.toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))) M.toBase
+          ((Spec (.of R)).fromSpecStalk (genericPoint (Spec (.of R)))) (𝟙 _)
+          (specFractionRingIsoFunctionField R K).hom (𝟙 _) (by simp) (by simp) ≫
+        M.genericFiberIso.hom :=
+  M.isPullback.hom_ext (by simp) (by
+    rw [← Category.assoc]
+    simpa using congrArg (· ≫ (specFractionRingIsoFunctionField R K).hom)
+      (Over.w M.fractionRingGenericFiberIso.hom))
+
 /-- A marked model over the spectrum of a discrete valuation ring, regarded as a model over the
 ring with generic fibre computed along a chosen fraction field `K`. The total space, structure
 morphism and generic-fibre inclusion are unchanged. -/
@@ -112,6 +149,12 @@ lemma toModel_toBase : M.toModel.toBase = M.toBase :=
 @[simp]
 lemma toModel_genericι : M.toModel.genericι = M.genericι :=
   (Model.genericι_ofIsPullback _ _).trans (Category.comp_id _)
+
+/-- The generic-fibre identification of the model attached to a marked model is the identification
+of the scalar-extension generic fibre with `C`. -/
+@[simp]
+lemma toModel_genericFiberIso : M.toModel.genericFiberIso = M.fractionRingGenericFiberIso :=
+  (rfl)
 
 /-- A proper marked model over the spectrum of a discrete valuation ring is a proper model. -/
 instance isProper_toModel [M.IsProper] : M.toModel.IsProper :=

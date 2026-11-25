@@ -20,7 +20,10 @@ Let `S` be an irreducible scheme with function field `K = K(S)`, and let `C` be 
 finite presentation `f : X ⟶ S` together with a morphism `ι : C ⟶ X` exhibiting `C` as the generic
 fibre `X ×_S Spec K` of `f`: the square formed by `ι`, `C ⟶ Spec K`, `f` and the generic point
 `Spec K ⟶ S` is a pullback. Equivalently, it is the datum of an isomorphism `X_η ≅ C` over `K`
-(`TauCeti.MarkedModel.genericFiberIso`, and conversely `TauCeti.MarkedModel.ofGenericFiberIso`).
+(`TauCeti.MarkedModel.genericFiberIso`, and conversely `TauCeti.MarkedModel.ofGenericFiberIso`;
+the two constructions are mutually inverse by
+`TauCeti.MarkedModel.genericFiberIso_ofGenericFiberIso` and
+`TauCeti.MarkedModel.ofGenericFiberIso_genericFiberIso`).
 The typical base is a Dedekind scheme. Over the spectrum of a Dedekind domain which is not a
 field, a marked model is an integral model of `C`; over a field, the total space is `C` itself
 (`TauCeti.MarkedModel.isIso_genericι`).
@@ -40,7 +43,9 @@ marked models into a model which is separated over `S`
 identification, not their existence.
 
 Over the spectrum of a field, or any base whose generic point `Spec K(S) ⟶ S` is an isomorphism,
-the marking identifies the total space with `C` (`TauCeti.MarkedModel.isIso_genericι`).
+the marking identifies the total space with `C` (`TauCeti.MarkedModel.isIso_genericι`), through
+the unique isomorphism inducing the marking (`TauCeti.MarkedModel.totalIso`,
+`TauCeti.MarkedModel.eq_totalIso`).
 
 Properness is deliberately not part of the definition (`TauCeti.MarkedModel.IsProper`): many
 constructions produce a model first and establish properness separately.
@@ -185,6 +190,15 @@ lemma genericFiberIso_ofGenericFiberIso : (ofGenericFiberIso toBase e he).generi
       exact (e.hom_inv_id_assoc _).symm)
     (by rw [genericFiberIso_hom_toK]; exact he.symm)
 
+/-- Rebuilding a marked model from its own marking gives it back. -/
+@[simp]
+theorem ofGenericFiberIso_genericFiberIso (M : MarkedModel S C toK) :
+    ofGenericFiberIso M.toBase M.genericFiberIso M.genericFiberIso_hom_toK = M := by
+  have h := M.genericFiberIso_inv_fst
+  cases M
+  simp only [ofGenericFiberIso, mk.injEq, heq_eq_eq, true_and]
+  exact h
+
 end OfGenericFiberIso
 
 /-- A morphism of total spaces over the base carries the marked generic fibre of `M` identically
@@ -313,6 +327,38 @@ model is the marked scheme itself. -/
 instance isIso_genericι [IsIso (S.fromSpecStalk (genericPoint S))] (M : MarkedModel S C toK) :
     IsIso M.genericι :=
   M.isPullback.isIso_fst_of_isIso
+
+section FieldBase
+
+variable [IsIso (S.fromSpecStalk (genericPoint S))] (M : MarkedModel S C toK)
+
+/-- Over a base whose generic point `Spec K(S) ⟶ S` is an isomorphism, such as the spectrum of a
+field, the identification of the total space of a marked model with the marked scheme `C`: the
+inverse of the inclusion of the marked generic fibre. It is the unique isomorphism inducing the
+marking (`TauCeti.MarkedModel.eq_totalIso`). -/
+def totalIso : M.total ≅ C :=
+  (asIso M.genericι).symm
+
+@[simp]
+lemma totalIso_inv : M.totalIso.inv = M.genericι :=
+  (rfl)
+
+@[simp]
+lemma totalIso_hom : M.totalIso.hom = inv M.genericι :=
+  (rfl)
+
+/-- The identification of the total space with `C` lies over `Spec K(S) ≅ S`. -/
+@[reassoc]
+lemma totalIso_hom_toK :
+    M.totalIso.hom ≫ toK = M.toBase ≫ inv (S.fromSpecStalk (genericPoint S)) := by
+  rw [totalIso_hom, IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv, genericι_toBase]
+
+/-- The identification of the total space with `C` is the only isomorphism which restricts to the
+identity of `C` along the inclusion of the marked generic fibre. -/
+theorem eq_totalIso {e : M.total ≅ C} (h : M.genericι ≫ e.hom = 𝟙 C) : e = M.totalIso :=
+  Iso.ext ((IsIso.inv_eq_of_hom_inv_id h).symm.trans (M.totalIso_hom).symm)
+
+end FieldBase
 
 section Integral
 
