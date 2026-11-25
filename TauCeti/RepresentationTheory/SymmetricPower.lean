@@ -79,6 +79,12 @@ theorem symmetricPower_apply_tprod_of_apply_eq_smul (ρ : Representation R G M) 
 
 end CommSemiring
 
+/-- An element acting trivially on a representation acts trivially on each of its symmetric
+powers. -/
+theorem ker_le_ker_symmetricPower {G : Type*} [CommSemiring R] [Group G] [AddCommMonoid M]
+    [Module R M] (ρ : Representation R G M) (d : ℕ) : ρ.ker ≤ (ρ.symmetricPower d).ker :=
+  fun g hg ↦ by simp [MonoidHom.mem_ker.mp hg, Module.End.one_eq_id, SymmetricPower.map_id]
+
 end Representation
 
 namespace Representation.IntertwiningMap

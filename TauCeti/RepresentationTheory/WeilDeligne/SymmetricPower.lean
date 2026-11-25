@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SymmetricPower.Derivation
-public import TauCeti.LinearAlgebra.SymmetricPower.Lift
+public import TauCeti.LinearAlgebra.SymmetricPower.Algebra
 public import TauCeti.RepresentationTheory.SymmetricPower
 public import TauCeti.RepresentationTheory.WeilDeligne.Operations
 
@@ -23,7 +23,8 @@ conjugation relation follows from the naturality of the differential
 `d Sym^m (r(w) N r(w)⁻¹) = q ^ deg w • d Sym^m (N)`.
 
 The construction is functorial on morphisms and isomorphisms of parameters; in particular it
-carries the isomorphism `D ≅ D.transport e` to an isomorphism of symmetric powers. The zeroth
+carries the isomorphism `D ≅ D.transport e` to an isomorphism of symmetric powers, so the symmetric
+power of a transport is the transport of the symmetric power. The zeroth
 symmetric power has trivial Weil action and zero monodromy, the first is isomorphic to the
 parameter itself, a twist by `χ` becomes a twist by `χ ^ m`, and zero monodromy stays zero.
 
@@ -38,6 +39,7 @@ parameter itself, a twist by `χ` becomes a twist by `χ ^ m`, and zero monodrom
 
 * `TauCeti.WeilDeligneParameter.Hom.sym_id`, `TauCeti.WeilDeligneParameter.Hom.sym_comp`, and
   their counterparts for isomorphisms: the symmetric power is functorial.
+* `TauCeti.WeilDeligneParameter.sym_transport`: the symmetric power commutes with transport.
 * `TauCeti.WeilDeligneParameter.sym_zero_r`, `TauCeti.WeilDeligneParameter.sym_zero_N`: the
   zeroth symmetric power is the trivial parameter.
 * `TauCeti.WeilDeligneParameter.sym_twist`: `Sym^m (D ⊗ χ) = Sym^m D ⊗ χ ^ m`.
@@ -71,18 +73,15 @@ parameter. -/
 def sym (D : WeilDeligneParameter E W V deg q) (m : ℕ) :
     WeilDeligneParameter E W (Sym[E]^m V) deg q where
   r := D.r.symmetricPower m
-  isOpen_ker := Subgroup.isOpen_mono (fun w hw ↦ by
-    rw [MonoidHom.mem_ker] at hw ⊢
-    rw [Representation.symmetricPower_apply, hw, Module.End.one_eq_id, SymmetricPower.map_id,
-      Module.End.one_eq_id]) D.isOpen_ker
+  isOpen_ker := Subgroup.isOpen_mono (D.r.ker_le_ker_symmetricPower m) D.isOpen_ker
   N := SymmetricPower.differential E V m D.N
   isNilpotent_N := SymmetricPower.isNilpotent_differential m D.isNilpotent_N
   conj_N w := by
     have h := SymmetricPower.map_comp_differential m
       ((D.r_mul_N w).trans (smul_mul_assoc _ _ _).symm)
     rw [map_smul, ← Representation.symmetricPower_apply D.r m w] at h
-    rw [Module.End.mul_eq_comp _ (SymmetricPower.differential E V m D.N), h,
-      ← Module.End.mul_eq_comp, mul_assoc, ← map_mul, mul_inv_cancel, map_one, mul_one]
+    rw [Module.End.mul_eq_comp _ (SymmetricPower.differential E V m D.N), h]
+    simp [-Representation.symmetricPower_apply, ← Module.End.mul_eq_comp, mul_assoc, ← map_mul]
 
 variable (D : WeilDeligneParameter E W V deg q) (m : ℕ)
 
@@ -116,14 +115,13 @@ theorem Hom.sym_tprod (f : Hom D₁ D₂) (v : Fin m → V₁) :
 @[simp]
 theorem Hom.sym_id : (Hom.id D₁).sym m = Hom.id (D₁.sym m) := by
   ext1
-  rw [Hom.sym_toLinearMap, Hom.id_toLinearMap, Hom.id_toLinearMap, SymmetricPower.map_id]
+  simp [Hom.sym_toLinearMap, SymmetricPower.map_id]
 
 @[simp]
 theorem Hom.sym_comp (f : Hom D₂ D₃) (g : Hom D₁ D₂) :
     (f.comp g).sym m = (f.sym m).comp (g.sym m) := by
   ext1
-  rw [Hom.sym_toLinearMap, Hom.comp_toLinearMap, Hom.comp_toLinearMap, Hom.sym_toLinearMap,
-    Hom.sym_toLinearMap, SymmetricPower.map_comp]
+  simp [Hom.sym_toLinearMap, SymmetricPower.map_comp]
 
 /-- The `m`-th symmetric power of an isomorphism of parameters. -/
 def Iso.sym (f : Iso D₁ D₂) : Iso (D₁.sym m) (D₂.sym m) where
@@ -159,6 +157,13 @@ theorem Iso.sym_symm (f : Iso D₁ D₂) : f.symm.sym m = (f.sym m).symm :=
   Iso.ext <| LinearEquiv.toLinearMap_injective <| SymmetricPower.ext fun v ↦ by
     simp [← (f.sym m).injective.eq_iff]
 
+/-- **The symmetric power commutes with transport**: `Sym^m (e_* D) = (Sym^m e)_* (Sym^m D)`, where
+`Sym^m e` is the linear equivalence underlying `(D.transportIso e).sym m`, sending `⨂ₛ v` to
+`⨂ₛ (e ∘ v)`. -/
+theorem sym_transport (e : V ≃ₗ[E] V₁) :
+    (D.transport e).sym m = (D.sym m).transport ((D.transportIso e).sym m).toLinearEquiv :=
+  ((D.transportIso e).sym m).eq_transport
+
 /-! ### Low symmetric powers, twists and zero monodromy -/
 
 /-- The zeroth symmetric power has trivial Weil action. -/
@@ -175,15 +180,22 @@ theorem sym_N_eq_zero (h : D.N = 0) : (D.sym m).N = 0 := by
   rw [sym_N, h, map_zero]
 
 /-- **The first symmetric power is the parameter itself**: `Sym^1 ∘ D ≅ D`, through
-`Sym[E]^1 V ≃ V`, `v ↦ v`. -/
+`Sym[E]^1 V ≃ V`, `v ↦ v`, the identification of `Sym[E]^1 V` with the degree-one part of the
+symmetric algebra (`SymmetricPower.equivHomogeneous`), which is `V`
+(`TauCeti.SymmetricAlgebra.homogeneousSubmoduleOneEquiv`). -/
 def symOneIso : Iso (D.sym 1) D where
-  toRepresentationEquiv := .mk (SymmetricPower.subsingletonEquiv E V 0) fun w ↦
+  toRepresentationEquiv := .mk ((SymmetricPower.equivHomogeneous 1).trans
+      (TauCeti.SymmetricAlgebra.homogeneousSubmoduleOneEquiv E V)) fun w ↦
     SymmetricPower.ext fun v ↦ by simp [Representation.symmetricPower_apply]
   comp_N := SymmetricPower.ext fun v ↦ by simp
 
 @[simp]
 theorem symOneIso_tprod (v : Fin 1 → V) : D.symOneIso (⨂ₛ[E] i, v i) = v 0 :=
-  SymmetricPower.subsingletonEquiv_tprod 0 v
+  by simp [symOneIso]
+
+@[simp]
+theorem symOneIso_symm_apply (v : V) : D.symOneIso.symm v = ⨂ₛ[E] _ : Fin 1, v :=
+  D.symOneIso.injective <| by simp
 
 /-- **Symmetric powers of twists**: `Sym^m (D ⊗ χ) = Sym^m D ⊗ χ ^ m`. -/
 theorem sym_twist (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) :
