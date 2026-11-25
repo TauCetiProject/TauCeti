@@ -53,11 +53,6 @@ namespace Aut
 
 variable {x y z : C}
 
-/-- The underlying morphism of a conjugate. -/
-theorem autMulEquivOfIso_apply_hom (e : x ≅ y) (a : Aut x) :
-    (autMulEquivOfIso e a).asIso.hom = e.inv ≫ a.asIso.hom ≫ e.hom :=
-  (rfl)
-
 /-- Mathlib's two conjugations along an isomorphism, `Aut.autMulEquivOfIso` and `Iso.conjAut`,
 agree. -/
 theorem autMulEquivOfIso_eq_conjAut (e : x ≅ y) : autMulEquivOfIso e = e.conjAut :=
@@ -83,7 +78,7 @@ theorem autMulEquivOfIso_eq_of_commute (h : ∀ a b : Aut x, a * b = b * a) (e e
   refine MulEquiv.ext fun a ↦ Aut.ext (Iso.ext ?_)
   have hab := congrArg (fun b : Aut x ↦ b.asIso.hom) (h a (.of (e' ≪≫ e.symm)))
   simp only [mul_asIso, Iso.trans_hom, Iso.symm_hom, Category.assoc] at hab
-  simp only [autMulEquivOfIso_apply_hom]
+  simp only [autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.symm_hom]
   rw [← cancel_epi e'.hom, ← cancel_mono e.inv]
   simpa using hab
 
@@ -97,9 +92,9 @@ theorem autMulEquivOfIso_hom_comp_of_commute {x₁ x₂ y₁ y₂ : C}
     (autMulEquivOfIso e₁ a₁).asIso.hom ≫ d.hom = d.hom ≫ (autMulEquivOfIso e₂ a₂).asIso.hom := by
   have key := congrArg (fun b : Aut y₂ ↦ b.asIso.hom)
     (DFunLike.congr_fun (autMulEquivOfIso_eq_of_commute h (e₁ ≪≫ d) (c ≪≫ e₂)) a₁)
-  simp only [autMulEquivOfIso_apply_hom, Iso.trans_inv, Iso.trans_hom, Category.assoc,
-    reassoc_of% ha, Iso.inv_hom_id_assoc] at key
-  simp only [autMulEquivOfIso_apply_hom, Category.assoc]
+  simp only [autMulEquivOfIso_apply_asIso, Iso.symm_hom, Iso.trans_inv, Iso.trans_hom,
+    Category.assoc, reassoc_of% ha, Iso.inv_hom_id_assoc] at key
+  simp only [autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.symm_hom, Category.assoc]
   rw [← cancel_epi d.inv, ← key]
   simp
 
@@ -112,11 +107,5 @@ theorem Functor.mapAut_autMulEquivOfIso (G : C ⥤ D) {x y : C} (e : x ≅ y) (a
       Aut.autMulEquivOfIso (G.mapIso e) (G.mapAut x a) := by
   simp only [Aut.autMulEquivOfIso_eq_conjAut]
   exact Aut.ext (G.map_conjAut e a)
-
-/-- `Functor.mapAut_autMulEquivOfIso` on the underlying morphisms. -/
-theorem Functor.map_autMulEquivOfIso_hom (G : C ⥤ D) {x y : C} (e : x ≅ y) (a : Aut x) :
-    G.map (Aut.autMulEquivOfIso e a).asIso.hom =
-      (Aut.autMulEquivOfIso (G.mapIso e) (G.mapAut x a)).asIso.hom :=
-  congrArg (fun b : Aut (G.obj y) ↦ b.asIso.hom) (G.mapAut_autMulEquivOfIso e a)
 
 end CategoryTheory

@@ -24,7 +24,7 @@ the canonical descent datum of `y` on `R` (`GerbeAutTransport.conjugateDescentIs
 covers `U` and `F` is a prestack, the canonical descent functor is fully faithful, and lifting
 through it gives an automorphism of `y` (`GerbeAutTransport.conjugateCoverAut`). It is the unique
 automorphism of `y` restricting to `conj(e_i)(i^* a)` along every `i` of `R`
-(`conjugateCoverAut_mapAut`, `conjugateCoverAut_unique`), it does not depend on the `e_i`
+(`conjugateCoverAut_mapIso`, `conjugateCoverAut_unique`), it does not depend on the `e_i`
 (`conjugateCoverAut_independent`) nor on the covering sieve (`conjugateCoverAut_cover_independent`),
 and when `x ≅ y` globally it is conjugation along any global isomorphism
 (`conjugateCoverAut_of_iso`). It is a group isomorphism `Aut x ≃* Aut y`
@@ -38,7 +38,7 @@ inertia with each other.
 In the namespace `CategoryTheory.Pseudofunctor.GerbeAutTransport`:
 
 * `conjugateDescentIso`: the automorphism of the canonical descent datum of `y`.
-* `conjugateCoverAut`: the descended automorphism of `y`, with `conjugateCoverAut_mapAut` and
+* `conjugateCoverAut`: the descended automorphism of `y`, with `conjugateCoverAut_mapIso` and
   `conjugateCoverAut_unique`.
 * `conjugateCoverAut_independent`, `conjugateCoverAut_refinement`,
   `conjugateCoverAut_cover_independent`: independence of the local isomorphisms and of the cover.
@@ -103,8 +103,8 @@ theorem localConjugate_comm (e : LocalIsos R x y) (a : Aut x) ⦃Y : C⦄ (q : Y
     ((F.map f₂.op.toLoc).toFunctor.mapAut _ ((F.map i₂.obj.hom.op.toLoc).toFunctor.mapAut x a))
     (((F.toDescentData fun i : R.arrows.category ↦ i.obj.hom).map a.asIso.hom).comm q f₁ f₂
       hf₁ hf₂)
-  exact (eq_whisker (Functor.map_autMulEquivOfIso_hom _ _ _) _).trans
-    (h.trans (whisker_eq _ (Functor.map_autMulEquivOfIso_hom _ _ _).symm))
+  exact (eq_whisker congr($(Functor.mapAut_autMulEquivOfIso _ (e i₁) _).asIso.hom) _).trans
+    (h.trans (whisker_eq _ congr($(Functor.mapAut_autMulEquivOfIso _ (e i₂) _).asIso.hom).symm))
 
 /-- The automorphism of the canonical descent datum of `y` on `R` with components the local
 conjugates `conj(e_i)(i^* a)`. -/
@@ -119,23 +119,32 @@ theorem conjugateDescentIso_hom_hom (e : LocalIsos R x y) (a : Aut x) (i : R.arr
     (conjugateDescentIso hF e a).hom.hom i = (localConjugate i.obj.hom (e i) a).asIso.hom :=
   (rfl)
 
+@[simp]
+theorem conjugateDescentIso_inv_hom (e : LocalIsos R x y) (a : Aut x) (i : R.arrows.category) :
+    (conjugateDescentIso hF e a).inv.hom i = (localConjugate i.obj.hom (e i) a).asIso.inv :=
+  (rfl)
+
 /-- The descent automorphism of `a = 1` is the identity. -/
 @[simp]
 theorem conjugateDescentIso_one (e : LocalIsos R x y) :
     conjugateDescentIso hF e 1 = Iso.refl _ := by
   ext1
   refine DescentData.hom_ext fun i ↦ ?_
-  change (localConjugate i.obj.hom (e i) 1).asIso.hom = 𝟙 _
-  simp
+  rw [conjugateDescentIso_hom_hom, Iso.refl_hom, DescentData.id_hom]
+  -- The component `((F.toDescentData _).obj y).obj i` of the descent datum is `i^* y` by
+  -- definition (`DescentData.ofObj_obj`), so the identity on either object is the same morphism.
+  exact (by simp : (localConjugate i.obj.hom (e i) 1).asIso.hom = 𝟙 _)
 
 /-- The descent automorphism of `a⁻¹` is the inverse of the descent automorphism of `a`. -/
 theorem conjugateDescentIso_inv (e : LocalIsos R x y) (a : Aut x) :
     conjugateDescentIso hF e a⁻¹ = (conjugateDescentIso hF e a).symm := by
   ext1
   refine DescentData.hom_ext fun i ↦ ?_
-  change (localConjugate i.obj.hom (e i) a⁻¹).asIso.hom =
-    (localConjugate i.obj.hom (e i) a).asIso.inv
-  simp
+  rw [conjugateDescentIso_hom_hom, Iso.symm_hom, conjugateDescentIso_inv_hom]
+  -- As in `conjugateDescentIso_one`, both sides are endomorphisms of `i^* y`, which is the
+  -- component `((F.toDescentData _).obj y).obj i` by definition (`DescentData.ofObj_obj`).
+  exact (by simp : (localConjugate i.obj.hom (e i) a⁻¹).asIso.hom =
+    (localConjugate i.obj.hom (e i) a).asIso.inv)
 
 variable {J : GrothendieckTopology C} [F.IsPrestack J]
 
@@ -145,17 +154,25 @@ faithful canonical descent functor. -/
 noncomputable def conjugateCoverAut (hR : R ∈ J U) (e : LocalIsos R x y) (a : Aut x) : Aut y :=
   .of ((F.isPrestackFor' R hR).fullyFaithful.preimageIso (conjugateDescentIso hF e a))
 
-/-- Restricting the transported automorphism along any arrow `i` of `R` gives the local conjugate
-`conj(e_i)(i^* a)`. -/
-theorem conjugateCoverAut_mapAut (hR : R ∈ J U) (e : LocalIsos R x y) (a : Aut x)
+/-- Restricting the underlying morphism of the transported automorphism along any arrow `i` of
+`R` gives that of the local conjugate `conj(e_i)(i^* a)`. -/
+@[simp]
+theorem map_conjugateCoverAut_hom (hR : R ∈ J U) (e : LocalIsos R x y) (a : Aut x)
     (i : R.arrows.category) :
-    (F.map i.obj.hom.op.toLoc).toFunctor.mapAut y (conjugateCoverAut hF hR e a) =
-      localConjugate i.obj.hom (e i) a := by
-  refine Aut.ext (Iso.ext ?_)
+    (F.map i.obj.hom.op.toLoc).toFunctor.map (conjugateCoverAut hF hR e a).asIso.hom =
+      (localConjugate i.obj.hom (e i) a).asIso.hom := by
   have h := congrArg (fun φ ↦ DescentData.Hom.hom φ i)
     ((F.isPrestackFor' R hR).fullyFaithful.map_preimage (conjugateDescentIso hF e a).hom)
-  simp only [Functor.mapAut_apply_asIso, Functor.mapIso_hom]
+  rw [toDescentData_map_hom, conjugateDescentIso_hom_hom] at h
   exact h
+
+/-- Restricting the transported automorphism along any arrow `i` of `R` gives the local conjugate
+`conj(e_i)(i^* a)`, as an automorphism. -/
+theorem conjugateCoverAut_mapIso (hR : R ∈ J U) (e : LocalIsos R x y) (a : Aut x)
+    (i : R.arrows.category) :
+    (F.map i.obj.hom.op.toLoc).toFunctor.mapAut y (conjugateCoverAut hF hR e a) =
+      localConjugate i.obj.hom (e i) a :=
+  Aut.ext (Iso.ext (map_conjugateCoverAut_hom hF hR e a i))
 
 /-- **Uniqueness.** An automorphism of `y` restricting to the local conjugates along every arrow of
 `R` is the transported automorphism. -/
@@ -165,17 +182,16 @@ theorem conjugateCoverAut_unique (hR : R ∈ J U) (e : LocalIsos R x y) (a : Aut
     b = conjugateCoverAut hF hR e a := by
   refine Aut.ext (Iso.ext ((F.isPrestackFor' R hR).fullyFaithful.map_injective ?_))
   refine DescentData.hom_ext fun i ↦ ?_
-  have h₁ := congrArg (fun c : Aut _ ↦ c.asIso.hom) (hb i)
-  have h₂ := congrArg (fun c : Aut _ ↦ c.asIso.hom) (conjugateCoverAut_mapAut hF hR e a i)
-  simp only [Functor.mapAut_apply_asIso, Functor.mapIso_hom] at h₁ h₂
-  exact h₁.trans h₂.symm
+  have h := congrArg (fun c : Aut _ ↦ c.asIso.hom) (hb i)
+  rw [Functor.mapAut_apply_asIso, Functor.mapIso_hom] at h
+  rw [toDescentData_map_hom, toDescentData_map_hom, h, map_conjugateCoverAut_hom]
 
 /-- **Independence of the local isomorphisms.** Two families of local isomorphisms on the same
 covering sieve transport `a` to the same automorphism. -/
 theorem conjugateCoverAut_independent (hR : R ∈ J U) (e e' : LocalIsos R x y) (a : Aut x) :
     conjugateCoverAut hF hR e a = conjugateCoverAut hF hR e' a :=
   conjugateCoverAut_unique hF hR e' a _ fun i ↦ by
-    rw [conjugateCoverAut_mapAut, localConjugate_eq hF]
+    rw [conjugateCoverAut_mapIso, localConjugate_eq hF]
 
 /-- **Refinement.** For covering sieves `R ≤ S` and arbitrary local isomorphisms on each, the
 transported automorphisms agree. -/
@@ -183,7 +199,7 @@ theorem conjugateCoverAut_refinement {S : Sieve U} (hRS : R ≤ S) (hR : R ∈ J
     (e : LocalIsos R x y) (d : LocalIsos S x y) (a : Aut x) :
     conjugateCoverAut hF hR e a = conjugateCoverAut hF hS d a := by
   refine (conjugateCoverAut_unique hF hR e a _ fun i ↦ ?_).symm
-  rw [conjugateCoverAut_mapAut hF hS d a ⟨i.obj, hRS _ i.property⟩, localConjugate_eq hF]
+  rw [conjugateCoverAut_mapIso hF hS d a ⟨i.obj, hRS _ i.property⟩, localConjugate_eq hF]
 
 /-- **Independence of the cover.** Arbitrary covering sieves with arbitrary local isomorphisms
 transport `a` to the same automorphism. -/
@@ -212,7 +228,7 @@ noncomputable def conjugateCoverHom (hR : R ∈ J U) (e : LocalIsos R x y) : Aut
   toFun := conjugateCoverAut hF hR e
   map_one' := (conjugateCoverAut_unique hF hR e 1 1 fun i ↦ by simp [localConjugate]).symm
   map_mul' a b := (conjugateCoverAut_unique hF hR e (a * b) _ fun i ↦ by
-    simp only [map_mul, conjugateCoverAut_mapAut, localConjugate]).symm
+    simp only [map_mul, conjugateCoverAut_mapIso, localConjugate]).symm
 
 @[simp]
 theorem conjugateCoverHom_apply (hR : R ∈ J U) (e : LocalIsos R x y) (a : Aut x) :
@@ -225,7 +241,7 @@ theorem conjugateCoverAut_comp (hR : R ∈ J U) (e : LocalIsos R x y) (d : Local
     (c : LocalIsos R x z) (a : Aut x) :
     conjugateCoverAut hF hR d (conjugateCoverAut hF hR e a) = conjugateCoverAut hF hR c a := by
   refine conjugateCoverAut_unique hF hR c a _ fun i ↦ ?_
-  rw [conjugateCoverAut_mapAut, localConjugate, conjugateCoverAut_mapAut, localConjugate,
+  rw [conjugateCoverAut_mapIso, localConjugate, conjugateCoverAut_mapIso, localConjugate,
     ← MulEquiv.trans_apply, ← Aut.autMulEquivOfIso_trans]
   exact localConjugate_eq hF _ _ (c i) a
 
@@ -246,6 +262,11 @@ noncomputable def conjugateCoverEquiv (hR : R ∈ J U) (e : LocalIsos R x y) : A
 @[simp]
 theorem conjugateCoverEquiv_apply (hR : R ∈ J U) (e : LocalIsos R x y) (a : Aut x) :
     conjugateCoverEquiv hF hR e a = conjugateCoverAut hF hR e a :=
+  (rfl)
+
+@[simp]
+theorem conjugateCoverEquiv_symm_apply (hR : R ∈ J U) (e : LocalIsos R x y) (b : Aut y) :
+    (conjugateCoverEquiv hF hR e).symm b = conjugateCoverAut hF hR (fun i ↦ (e i).symm) b :=
   (rfl)
 
 /-- The equivalences from two covering sieves with arbitrary local isomorphisms are equal. -/
