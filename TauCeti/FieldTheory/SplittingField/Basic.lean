@@ -23,6 +23,8 @@ soon as `p.Gal` is.
 
 * `Polynomial.IsSplittingField.subfield_eq_top`: a subfield of a splitting field containing the
   base field and the roots is everything.
+* `Polynomial.IsSplittingField.ringHom_ext`: ring homomorphisms out of a splitting field are
+  determined by their values on the base field and on the roots.
 * `Polynomial.isSolvable_of_isSplittingField`: the automorphism group of a splitting field of `p` is
   solvable when `p.Gal` is.
 -/
@@ -45,6 +47,17 @@ theorem subfield_eq_top {K L : Type*} [Field K] [Field L] [Algebra K L] (f : K[X
     Algebra.adjoin_le fun x hx ↦ (hmem x).2 (hroots hx)
   rw [IsSplittingField.adjoin_rootSet] at hT
   exact eq_top_iff.2 fun x _ ↦ (hmem x).1 (hT (Algebra.mem_top (x := x)))
+
+/-- Two ring homomorphisms out of a splitting field that agree on the base field and on the roots
+are equal. -/
+theorem ringHom_ext {K L M : Type*} [Field K] [Field L] [Semiring M] [Algebra K L] (f : K[X])
+    [IsSplittingField K L f] {g₁ g₂ : L →+* M}
+    (hK : ∀ k, g₁ (algebraMap K L k) = g₂ (algebraMap K L k))
+    (hroots : ∀ x ∈ f.rootSet L, g₁ x = g₂ x) : g₁ = g₂ :=
+  RingHom.eq_of_eqOn_subfield_top fun x _ ↦ RingHom.mem_eqLocusField.1 <|
+    eq_top_iff.1 (subfield_eq_top f (S := g₁.eqLocusField g₂)
+      (fun k ↦ RingHom.mem_eqLocusField.2 (hK k))
+      (fun x hx ↦ RingHom.mem_eqLocusField.2 (hroots x hx))) (Subfield.mem_top x)
 
 end Polynomial.IsSplittingField
 

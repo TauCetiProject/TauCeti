@@ -150,11 +150,9 @@ theorem of_isSplittingField_X_pow_sub_C [CharZero L] (hu : u * complexConj K u =
     obtain ⟨x, rfl⟩ := RingHom.mem_fieldRange.1 hy
     refine Subfield.mem_comap.1 (eq_top_iff.1 (IsSplittingField.subfield_eq_top (X ^ n - C u)
       (S := φ₀.fieldRange.comap ψ) (fun k ↦ ?_) (fun β hβ ↦ ?_)) (Subfield.mem_top x))
-    · rw [Subfield.mem_comap, RingHom.mem_fieldRange, RingHom.comp_apply, starRingEnd_apply]
-      exact ⟨_, (star_algebraMap φ₀ k).symm⟩
-    · rw [SetLike.mem_coe, Subfield.mem_comap, RingHom.mem_fieldRange, RingHom.comp_apply,
-        starRingEnd_apply]
-      exact ⟨_, (star_eq_inv_of_mem_rootSet hu φ₀ hβ).symm⟩
+    all_goals simp only [SetLike.mem_coe, Subfield.mem_comap, RingHom.mem_fieldRange, ψ,
+      RingHom.comp_apply, starRingEnd_apply]
+    exacts [⟨_, (star_algebraMap φ₀ k).symm⟩, ⟨_, (star_eq_inv_of_mem_rootSet hu φ₀ hβ).symm⟩]
   -- Hence `ψ = φ₀ ∘ σ` for a field endomorphism `σ` of `L`, which is an automorphism.
   let σ₀ : L →+* L := (φ₀.rangeRestrictFieldEquiv.symm : φ₀.fieldRange →+* L).comp
     ((Subfield.inclusion hrange).comp ψ.rangeRestrictField)
@@ -172,14 +170,10 @@ theorem of_isSplittingField_X_pow_sub_C [CharZero L] (hu : u * complexConj K u =
   -- `σ` is the conjugation of every complex embedding.
   refine TauCeti.NumberField.IsCMField.of_forall_isConj L (σ := σ) fun φ ↦ ?_
   unfold ComplexEmbedding.IsConj
-  ext x
-  refine RingHom.mem_eqLocusField.1 (eq_top_iff.1 (IsSplittingField.subfield_eq_top (X ^ n - C u)
-    (S := (conjugate φ).eqLocusField (φ.comp σ)) (fun k ↦ ?_) (fun β hβ ↦ ?_)) (Subfield.mem_top x))
-  · rw [RingHom.mem_eqLocusField, conjugate_coe_eq, starRingEnd_apply, RingHom.comp_apply]
-    exact (star_algebraMap φ k).trans (congrArg φ (hσK k).symm)
-  · rw [SetLike.mem_coe, RingHom.mem_eqLocusField, conjugate_coe_eq, starRingEnd_apply,
-      RingHom.comp_apply]
-    exact (star_eq_inv_of_mem_rootSet hu φ hβ).trans (congrArg φ (hσβ hβ).symm)
+  refine IsSplittingField.ringHom_ext (X ^ n - C u) (fun k ↦ ?_) (fun β hβ ↦ ?_)
+  all_goals simp only [conjugate_coe_eq, starRingEnd_apply, RingHom.comp_apply]
+  exacts [(star_algebraMap φ k).trans (congrArg φ (hσK k).symm),
+    (star_eq_inv_of_mem_rootSet hu φ hβ).trans (congrArg φ (hσβ hβ).symm)]
 
 /-- **Discriminant descent for CM fields.** Let `K` be CM, `a ∈ Kˣ` and `n ≠ 0`, and let `L` be
 the splitting field of `Xⁿ - a / conj a` over `K`. Then `a = z bⁿ` in `L` for a totally real
