@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Homotopy
 public import TauCeti.Geometry.Manifold.Flow.Ordered
 import Mathlib.Geometry.Manifold.Algebra.Structures
 
@@ -29,8 +30,9 @@ the ordered flows used to correct a symplectic isotopy by finitely many symplect
 When every total time vanishes, `A i 1 = 0`, the diffeotopy is a loop, `ψ₁ = id`
 (`TauCeti.Diffeotopy.final_orderedGlobalFlowDiffeotopy_eq_refl`). Scaling all the time functions
 by `1 - s` then contracts it to the constant diffeotopy through the ordered flows of the scaled time
-functions, which are loops too, with both time ends fixed throughout
-(`TauCeti.Diffeotopy.exists_homotopy_orderedGlobalFlowDiffeotopy`).
+functions, which are loops too, with both time ends fixed throughout; the reversed ordered flows for
+the negated scaled times invert this homotopy in the space variable
+(`TauCeti.Diffeotopy.isHomotopy_orderedGlobalFlowDiffeotopy_refl`).
 
 ## Main definitions
 
@@ -42,7 +44,7 @@ functions, which are loops too, with both time ends fixed throughout
 * `TauCeti.Diffeotopy.timeSlice_orderedGlobalFlowDiffeotopy`: the time slices are ordered flows.
 * `TauCeti.Diffeotopy.final_orderedGlobalFlowDiffeotopy_eq_refl`: vanishing total times give a
   loop.
-* `TauCeti.Diffeotopy.exists_homotopy_orderedGlobalFlowDiffeotopy`: such a loop is homotopic to
+* `TauCeti.Diffeotopy.isHomotopy_orderedGlobalFlowDiffeotopy_refl`: such a loop is homotopic to
   the constant diffeotopy relative to both time ends, through ordered flows.
 
 ## References
@@ -149,33 +151,39 @@ theorem final_orderedGlobalFlowDiffeotopy_eq_refl (h₁ : ∀ i, A i 1 = 0) :
   simp [h₁]
 
 /-- **Loops of ordered flows contract.** If every time function vanishes at time one, the ordered
-diffeotopy is homotopic to the constant diffeotopy relative to both time ends: the motions
-`G ((x, t), s) = ψ^(v 0)_((1 - s) A 0 t) ∘ ⋯ ∘ ψ^(v (k-1))_((1 - s) A (k-1) t) x` form a jointly
-`C^n` homotopy, fixing `x` at the times `0` and `1`, from the motion of the ordered diffeotopy at
-`s = 0` to the constant motion at `s = 1`. Every map `x ↦ G ((x, t), s)` is an ordered flow. -/
-theorem exists_homotopy_orderedGlobalFlowDiffeotopy (h₁ : ∀ i, A i 1 = 0) :
-    ∃ G : (M × unitInterval) × unitInterval → M,
-      ContMDiff ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) I n G ∧
-      (∀ p, G (p, 0) = (orderedGlobalFlowDiffeotopy hn v hv hc A hA hA₀).cylinderMap p) ∧
-      (∀ p, G (p, 1) = p.1) ∧ (∀ x s, G ((x, 0), s) = x) ∧ (∀ x s, G ((x, 1), s) = x) ∧
-      ∀ t s : unitInterval,
-        (fun x ↦ G ((x, t), s)) = orderedFlowOf v fun i ↦ (1 - (s : ℝ)) * A i t := by
-  refine ⟨fun q ↦ orderedFlowOf v (fun i ↦ (1 - (q.2 : ℝ)) * A i q.1.2) q.1.1, ?_, fun p ↦ ?_,
-    fun p ↦ ?_, fun x s ↦ ?_, fun x s ↦ ?_, fun t s ↦ ?_⟩
-  · -- The times `(1 - s) A i t` depend smoothly on `((x, t), s)`.
-    have htimes : ContMDiff ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) 𝓘(ℝ, Fin k → ℝ) n
-        fun q : (M × unitInterval) × unitInterval ↦ fun i ↦ (1 - (q.2 : ℝ)) * A i q.1.2 :=
-      contMDiff_pi_module_iff.2 fun i ↦
-        ((contDiff_const.sub contDiff_id).contMDiff.comp
-          (contMDiff_subtypeVal_Icc.comp contMDiff_snd)).mul
-          ((hA i).contMDiff.comp (contMDiff_subtypeVal_Icc.comp (contMDiff_snd.comp contMDiff_fst)))
-    exact (contMDiff_orderedFlowOf_uncurry hn hv hc).comp
-      (htimes.prodMk (contMDiff_fst.comp contMDiff_fst))
+diffeotopy is homotopic to the constant diffeotopy relative to both time ends, through the motions
+
+`G ((x, t), s) = ψ^(v 0)_((1 - s) A 0 t) ∘ ⋯ ∘ ψ^(v (k-1))_((1 - s) A (k-1) t) x`,
+
+which are the ordered flows for the scaled time functions `(1 - s) A i`. Their inverses in the
+space variable are the reversed ordered flows for the negated times,
+
+`G' ((x, t), s) = ψ^(v (k-1))_(-(1 - s) A (k-1) t) ∘ ⋯ ∘ ψ^(v 0)_(-(1 - s) A 0 t) x`. -/
+theorem isHomotopy_orderedGlobalFlowDiffeotopy_refl (h₁ : ∀ i, A i 1 = 0) :
+    IsHomotopy (orderedGlobalFlowDiffeotopy hn v hv hc A hA hA₀) (Diffeotopy.refl I n M)
+      (fun q ↦ orderedFlowOf v (fun i ↦ (1 - (q.2 : ℝ)) * A i q.1.2) q.1.1)
+      (fun q ↦ orderedFlowOf (fun i ↦ v i.rev) (fun i ↦ -((1 - (q.2 : ℝ)) * A i.rev q.1.2))
+        q.1.1) := by
+  -- The times `(1 - s) A i t` depend smoothly on `((x, t), s)`.
+  have htimes (i : Fin k) : ContMDiff ((I.prod (𝓡∂ 1)).prod (𝓡∂ 1)) 𝓘(ℝ) n
+      fun q : (M × unitInterval) × unitInterval ↦ (1 - (q.2 : ℝ)) * A i q.1.2 :=
+    ((contDiff_const.sub contDiff_id).contMDiff.comp
+      (contMDiff_subtypeVal_Icc.comp contMDiff_snd)).mul
+      ((hA i).contMDiff.comp (contMDiff_subtypeVal_Icc.comp (contMDiff_snd.comp contMDiff_fst)))
+  have hv₁ (i : Fin k) : CMDiff 1 (fun y ↦ (⟨y, v i y⟩ : TangentBundle I M)) :=
+    (hv i).of_le (by exact_mod_cast hn)
+  refine isHomotopy_iff.2 ⟨(contMDiff_orderedFlowOf_uncurry hn hv hc).comp
+      ((contMDiff_pi_module_iff.2 htimes).prodMk (contMDiff_fst.comp contMDiff_fst)),
+    fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ ?_, fun x s ↦ ?_,
+    (contMDiff_orderedFlowOf_uncurry hn (fun i ↦ hv i.rev) (fun i ↦ hc i.rev)).comp
+      ((contMDiff_pi_module_iff.2 fun i : Fin k ↦ (htimes i.rev).neg).prodMk
+        (contMDiff_fst.comp contMDiff_fst)),
+    fun x t s ↦ orderedFlowOf_rev_neg_orderedFlowOf hv₁ hc (fun i ↦ (1 - (s : ℝ)) * A i t) x,
+    fun x t s ↦ orderedFlowOf_orderedFlowOf_rev_neg hv₁ hc (fun i ↦ (1 - (s : ℝ)) * A i t) x⟩
   · simp
   · simp
   · simp [hA₀]
-  · simp [h₁]
-  · rfl
+  · simp [final_orderedGlobalFlowDiffeotopy_eq_refl hn v hv hc A hA hA₀ h₁, h₁]
 
 end Diffeotopy
 

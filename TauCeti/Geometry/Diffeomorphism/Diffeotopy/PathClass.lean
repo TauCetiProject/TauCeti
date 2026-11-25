@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Group
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Homotopy
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Reparam
 
 /-!
 # Path classes of diffeotopies through a subgroup
@@ -25,7 +26,9 @@ isotopies.
 Homotopy through `S` is an equivalence relation on the diffeotopies through `S`
 (`TauCeti.Diffeotopy.HomotopicWith.refl`, `TauCeti.Diffeotopy.HomotopicWith.symm`,
 `TauCeti.Diffeotopy.HomotopicWith.trans`), compatible with the pointwise product
-`(φ ψ)_t = φ_t ∘ ψ_t` (`TauCeti.Diffeotopy.HomotopicWith.mul_congr`). So it is a congruence on the
+`(φ ψ)_t = φ_t ∘ ψ_t` (`TauCeti.Diffeotopy.HomotopicWith.mul_congr`), and it identifies a
+diffeotopy through `S` with its reparametrizations fixing both time ends
+(`TauCeti.Diffeotopy.reparam_homotopicWith`). So it is a congruence on the
 group `sliceSubgroup S` (`TauCeti.Diffeotopy.homotopicWithCon`), and its quotient is the group of
 **path classes through `S`** (`TauCeti.Diffeotopy.PathClass S`): the paths from the identity in
 `S`, modulo homotopy in `S` fixing both ends, with the pointwise product. Homotopic diffeotopies end
@@ -141,6 +144,15 @@ theorem HomotopicWith.mul_congr (h : HomotopicWith S Φ Φ') (h' : HomotopicWith
   refine ⟨f' * f, S.mul_mem hf' hf, ?_⟩
   rw [Diffeomorph.coe_mul, hfG, hf'G]
   rfl
+
+/-- **A reparametrization through `S` is homotopic through `S` to the original diffeotopy.** If
+every time slice of `Φ` lies in `S` and `ρ` fixes both ends of the unit interval, then
+`Φ.reparam ρ` is homotopic to `Φ` relative to both time ends through time slices of `Φ`. -/
+theorem reparam_homotopicWith (hΦ : Φ ∈ sliceSubgroup S) {ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯}
+    (h₀ : ρ 0 = 0) (h₁ : ρ 1 = 1) : HomotopicWith S (Φ.reparam ρ) Φ :=
+  ⟨_, _, Φ.isHomotopy_reparam h₀ h₁, fun t s ↦
+    ⟨Φ.timeSlice (Set.Icc.convexComb (ρ t) t s), mem_sliceSubgroup.1 hΦ _,
+      funext fun _ ↦ timeSlice_apply _ _ _⟩⟩
 
 variable (S) in
 /-- **Homotopy through `S` as a congruence** on the group of diffeotopies through `S`, for
