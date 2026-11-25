@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Composition
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Scalar formal multilinear series
@@ -31,8 +32,7 @@ converges at every nonzero point of a disk about the origin has radius at least 
 in particular a scalar series whose sum has no zero in such a disk converges on it, because the
 sum is `0` wherever the series diverges. Correspondingly, a series in powers of `z - z₀` that
 converges on the punctured disc `0 < ‖z - z₀‖ < r` has radius at least `r`
-(`TauCeti.le_radius_ofScalars_of_summable_sub`; the comparison of `‖x‖ₑ` with `ENNReal.ofReal r`
-is `TauCeti.enorm_lt_ofReal_iff`).
+(`TauCeti.le_radius_ofScalars_of_summable_sub`).
 
 In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily commutative), the
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
@@ -330,11 +330,6 @@ end FormalMultilinearSeries
 namespace TauCeti
 
 open scoped NNReal Ring
-
-/-- The extended norm of `x` is below `ENNReal.ofReal r` exactly when its norm is below `r`. -/
-theorem enorm_lt_ofReal_iff {E : Type*} [SeminormedAddGroup E] {x : E} {r : ℝ} :
-    ‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r := by
-  simpa using edist_lt_ofReal (x := x) (y := 0)
 
 /-- Over a densely normed field, a series in powers of `z - z₀` that converges on the punctured
 disc `0 < ‖z - z₀‖ < r` has radius of convergence at least `r`. -/

@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Algebra.BigOperators.Ring.Finset
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Deriv
 import TauCeti.Data.Nat.Choose.Sum
 
