@@ -161,22 +161,21 @@ private theorem exists_contDiff_cutoff_axis
       R ⊆ (fun t ↦ flowOf (I := 𝓘(ℝ, E)) v t 0) '' Icc σ T₀ ∧
       ∀ t ∈ Icc σ T₀, flowOf (I := 𝓘(ℝ, E)) v t 0 ∈ ball 0 r →
         flowOf (I := 𝓘(ℝ, E)) v t 0 ∈ R := by
+    -- Case 1: `T₀` is in the flow domain, so the entire tail image over `[σ, T₀]` is compact.
     by_cases hP : (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v
     · exact ⟨_, hcomp hP, Subset.rfl, fun t ht _ ↦ ⟨t, ht, rfl⟩⟩
+    -- Case 2: `T₀ < σ`, so the tail interval `[σ, T₀]` is empty.
     rcases lt_or_ge T₀ σ with hT | hT
     · exact ⟨∅, isCompact_empty, empty_subset _, fun _ ht _ ↦ absurd (ht.1.trans ht.2) hT.not_ge⟩
+    -- Case 3: `T₀ = σ`, so the tail image is a singleton.
     rcases eq_or_lt_of_le hT with rfl | hσT
     · exact ⟨{flowOf (I := 𝓘(ℝ, E)) v σ 0}, isCompact_singleton, by simp,
         fun t ht _ ↦ le_antisymm ht.2 ht.1 ▸ mem_singleton _⟩
+    -- Case 4: `σ < T₀` and `(T₀, 0) ∉ flowDomain v`. By `hmin`, `(0, T₀)` lies in the domain, so
+    -- `T₀` is its finite right endpoint and the trajectory leaves `closedBall 0 r` near `T₀⁻`.
     have hdomIoo : ∀ t ∈ Ioo 0 T₀, (t, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v := fun t ht ↦
       by_contra fun h ↦ hmin t ht (flowOf_of_notMem h)
-    have hlub : IsLUB {t | (t, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v} T₀ :=
-      ⟨fun t ht ↦ le_of_not_gt fun hlt ↦ hP
-        (uIcc_subset_setOf_mem_flowDomain ht (Icc_subset_uIcc ⟨(hσ.trans hσT).le, hlt.le⟩)),
-       fun b hb ↦ le_of_not_gt fun hlt ↦ by
-         obtain ⟨t, ht₁, ht₂⟩ := exists_between (max_lt (hσ.trans hσT) hlt)
-         exact (hb (hdomIoo t ⟨(le_max_left 0 b).trans_lt ht₁, ht₂⟩)).not_gt
-           ((le_max_right 0 b).trans_lt ht₁)⟩
+    have hlub := isLUB_setOf_mem_flowDomain_of_notMem (hσ.trans hσT) hdomIoo hP
     obtain ⟨a, haT, ha⟩ := mem_nhdsLT_iff_exists_Ioo_subset.mp
       (eventually_flowOf_notMem hv hlub (isCompact_closedBall (0 : E) r))
     obtain ⟨c, hc₁, hc₂⟩ := exists_between (max_lt haT hσT)

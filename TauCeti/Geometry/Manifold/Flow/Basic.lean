@@ -33,7 +33,7 @@ compact set.
 * `TauCeti.flowOf`: the maximal flow, total with junk values outside `flowDomain`, recorded by
   `TauCeti.flowOf_of_notMem`.
 * `TauCeti.ordConnected_setOf_mem_flowDomain`: the times of the flow through a point form an
-  interval.
+  interval, and `TauCeti.isLUB_setOf_mem_flowDomain_of_notMem` identifies a finite right endpoint.
 * `TauCeti.isMIntegralCurveAt_flowOf`: a trajectory is an integral curve near every time in its
   domain.
 * `TauCeti.mfderiv_flowOf_trajectory_apply`, `TauCeti.mfderiv_flowOf_trajectory_zero_apply`: the
@@ -42,6 +42,8 @@ compact set.
 * `TauCeti.flowOf_add`: the domain-aware group law, and `TauCeti.mem_flowDomain_flowOf_iff`, the
   times of the flow through a point of a trajectory.
 * `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
+* `TauCeti.mem_flowDomain_of_flowOf_eq_of_ne_zero`: a trajectory with a nonzero return time is
+  defined for all real time.
 * `TauCeti.flowOf_ne_flowOf_of_lt`: a trajectory that does not return to its base point on
   `(0, T₀)` has no self-intersections on `(0, T₀]`.
 * `TauCeti.isOpen_flowDomain`: openness of the domain for complete model spaces.
@@ -148,6 +150,18 @@ it is defined. -/
 theorem uIcc_subset_setOf_mem_flowDomain {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M}
     (ht : (t, x) ∈ flowDomain v) : uIcc 0 t ⊆ {s | (s, x) ∈ flowDomain v} :=
   (ordConnected_setOf_mem_flowDomain v x).uIcc_subset (mem_flowDomain_zero_of_mem ht) ht
+
+/-- If a trajectory is defined on `(0, b)` with `0 < b` but not at `b`, then `b` is the least
+upper bound of its flow-domain times. -/
+theorem isLUB_setOf_mem_flowDomain_of_notMem {v : (x : M) → TangentSpace I x} {b : ℝ} {x : M}
+    (hb₀ : 0 < b) (hIoo : ∀ t ∈ Ioo 0 b, (t, x) ∈ flowDomain v)
+    (hb : (b, x) ∉ flowDomain v) :
+    IsLUB {t | (t, x) ∈ flowDomain v} b := by
+  refine ⟨fun t ht ↦ le_of_not_gt fun hlt ↦ hb ?_, fun c hc ↦ le_of_not_gt fun hlt ↦ ?_⟩
+  · exact uIcc_subset_setOf_mem_flowDomain ht (Icc_subset_uIcc ⟨hb₀.le, hlt.le⟩)
+  · obtain ⟨t, ht₁, ht₂⟩ := exists_between (max_lt hb₀ hlt)
+    exact (hc (hIoo t ⟨(le_max_left 0 c).trans_lt ht₁, ht₂⟩)).not_gt
+      ((le_max_right 0 c).trans_lt ht₁)
 
 /-! ### Trajectories, group law, and periodicity without completeness -/
 
@@ -274,6 +288,28 @@ theorem flowOf_natCast_mul_of_flowOf_eq
     rw [hkx, hx] at heq
     simpa only [Nat.cast_succ, add_one_mul] using ⟨hmem, heq.symm⟩
 
+/-- If `x` returns to itself at a nonzero time `s` in its flow domain, then its trajectory is
+defined for all real time. -/
+theorem mem_flowDomain_of_flowOf_eq_of_ne_zero
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {s : ℝ} {x : M}
+    (hs : (s, x) ∈ flowDomain v) (hx : flowOf v s x = x) (hs0 : s ≠ 0) (t : ℝ) :
+    (t, x) ∈ flowDomain v := by
+  have hneg_dom : (-s, x) ∈ flowDomain v := hx ▸ neg_mem_flowDomain_flowOf hv hs
+  have hneg_eq : flowOf v (-s) x = x := by
+    have h := flowOf_neg_flowOf hv hs
+    rwa [hx] at h
+  obtain ⟨k, hk⟩ := exists_nat_gt (|t| / |s|)
+  have hkt : |t| < (k : ℝ) * |s| := (div_lt_iff₀ (abs_pos.mpr hs0)).mp hk
+  have hpos := (flowOf_natCast_mul_of_flowOf_eq hv hs hx k).1
+  have hneg := (flowOf_natCast_mul_of_flowOf_eq hv hneg_dom hneg_eq k).1
+  refine (ordConnected_setOf_mem_flowDomain v x).uIcc_subset hneg hpos ?_
+  rw [mem_uIcc]
+  rcases le_or_gt 0 s with hle | hlt
+  · rw [abs_of_nonneg hle, abs_lt] at hkt
+    exact Or.inl ⟨by linarith, hkt.2.le⟩
+  · rw [abs_of_neg hlt, abs_lt] at hkt
+    exact Or.inr ⟨by linarith, by linarith⟩
+
 /-- If `x` returns to itself at a time `s` in its flow domain, then so does `flowOf v t x` for
 every time `t`. When `s ≠ 0`, the trajectory through `x` is defined for all real time; when
 `s = 0` and `(t, x) ∉ flowDomain v`, the junk value is `x`. -/
@@ -290,25 +326,7 @@ theorem flowOf_flowOf_of_flowOf_eq
   · rcases eq_or_ne s 0 with rfl | hs0
     · rw [flowOf_of_notMem ht]
       exact ⟨hs, flowOf_zero v x⟩
-    · -- A nonzero return time makes the maximal interval contain all integer multiples of `s`,
-      -- hence all of `ℝ`, contradicting `(t, x) ∉ flowDomain v`.
-      exfalso
-      apply ht
-      have hneg_dom : (-s, x) ∈ flowDomain v := hx ▸ neg_mem_flowDomain_flowOf hv hs
-      have hneg_eq : flowOf v (-s) x = x := by
-        have h := flowOf_neg_flowOf hv hs
-        rwa [hx] at h
-      obtain ⟨k, hk⟩ := exists_nat_gt (|t| / |s|)
-      have hkt : |t| < (k : ℝ) * |s| := (div_lt_iff₀ (abs_pos.mpr hs0)).mp hk
-      have hpos := (flowOf_natCast_mul_of_flowOf_eq hv hs hx k).1
-      have hneg := (flowOf_natCast_mul_of_flowOf_eq hv hneg_dom hneg_eq k).1
-      refine (ordConnected_setOf_mem_flowDomain v x).uIcc_subset hneg hpos ?_
-      rw [mem_uIcc]
-      rcases le_or_gt 0 s with hle | hlt
-      · rw [abs_of_nonneg hle, abs_lt] at hkt
-        exact Or.inl ⟨by linarith, hkt.2.le⟩
-      · rw [abs_of_neg hlt, abs_lt] at hkt
-        exact Or.inr ⟨by linarith, by linarith⟩
+    · exact absurd (mem_flowDomain_of_flowOf_eq_of_ne_zero hv hs hx hs0 t) ht
 
 /-- **A trajectory without early returns has no self-intersections.** If `flowOf v r x ≠ x` for
 every `r ∈ (0, T₀)`, then for `0 < s < t ≤ T₀` the points `flowOf v s x` and `flowOf v t x` are
