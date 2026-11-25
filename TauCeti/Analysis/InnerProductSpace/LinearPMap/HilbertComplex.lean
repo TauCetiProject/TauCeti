@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedRange
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SubmoduleAdjoint
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 
 /-!
 # The Hodge decomposition of a Hilbert complex
@@ -27,14 +27,13 @@ an orthogonal decomposition. The characterization of closed ranges by a **Poinca
 For bounded operators with closed range, the decomposition of the kernel is
 `ContinuousLinearMap.range_sup_ker_inf_ker_adjoint`. Here the operators are unbounded, as the
 exterior derivative is on `L²` forms, so the decomposition uses the closures of the ranges, and
-needs no closed range assumption.
+needs no closed range assumption. It rests on the descriptions of closures of ranges as
+orthogonal complements of kernels, `LinearPMap.topologicalClosure_range_eq_orthogonal_ker_adjoint`
+and `LinearPMap.topologicalClosure_range_adjoint_eq_orthogonal_ker`, in
+`TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint`.
 
 ## Main results
 
-* `LinearPMap.topologicalClosure_range_eq_orthogonal_ker_adjoint`: for a densely defined `T`,
-  `closure (range T) = (ker T†)ᗮ`; and
-  `LinearPMap.topologicalClosure_range_adjoint_eq_orthogonal_ker`: for a closed densely defined
-  `T`, `closure (range T†) = (ker T)ᗮ`.
 * `LinearPMap.harmonicSpace_eq_orthogonal_sup`: the harmonic space is the orthogonal complement of
   `closure (range d₀) ⊔ closure (range d₁†)`.
 * `LinearPMap.topologicalClosure_range_sup_harmonicSpace`: for a complex, the kernel of `d₁` is
@@ -64,33 +63,6 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-
-/-! ### Closures of ranges as orthogonal complements of kernels -/
-
-section Range
-
-variable [CompleteSpace E] [CompleteSpace F] {T : E →ₗ.[𝕜] F}
-
-/-- The closure of the range of a densely defined partial linear map `T` is the orthogonal
-complement of the kernel of its adjoint. -/
-theorem topologicalClosure_range_eq_orthogonal_ker_adjoint (hd : Dense (T.domain : Set E)) :
-    (LinearMap.range T.toFun).topologicalClosure = T†.kerᗮ := by
-  rw [← orthogonal_range_eq_ker_adjoint hd, Submodule.orthogonal_orthogonal_eq_closure]
-
-/-- The orthogonal complement of the range of the adjoint of a closed densely defined partial
-linear map `T` is the kernel of `T`. -/
-theorem orthogonal_range_adjoint_eq_ker (hT : T.IsClosed) (hd : Dense (T.domain : Set E)) :
-    (LinearMap.range T†.toFun)ᗮ = T.ker := by
-  rw [orthogonal_range_eq_ker_adjoint (dense_adjoint_domain hT.isClosable), adjoint_adjoint hT hd]
-
-/-- The closure of the range of the adjoint of a closed densely defined partial linear map `T` is
-the orthogonal complement of the kernel of `T`. -/
-theorem topologicalClosure_range_adjoint_eq_orthogonal_ker (hT : T.IsClosed)
-    (hd : Dense (T.domain : Set E)) :
-    (LinearMap.range T†.toFun).topologicalClosure = T.kerᗮ := by
-  rw [← orthogonal_range_adjoint_eq_ker hT hd, Submodule.orthogonal_orthogonal_eq_closure]
-
-end Range
 
 /-! ### The harmonic space and the Hodge decomposition -/
 
