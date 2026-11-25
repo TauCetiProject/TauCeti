@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Coset
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.Algebra.Module.NatInt
+import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.GroupTheory.Coset.Basic
 
 /-!
@@ -222,6 +223,17 @@ theorem relNorm_apply_eq_relIndex_nsmul_relNorm_apply {H' : Subgroup G} [Fintype
   have e : ‹Fintype (G ⧸ H)› = Subgroup.fintypeQuotientOfFiniteIndex := Subsingleton.elim _ _
   rw [relNorm_apply, relNorm_apply, e', e, key]
 
+/-- **The normalized relative norm does not depend on the subgroup.** For subgroups `H' ≤ H` with
+`[G : H']` invertible and an `H`-fixed vector `x`, dividing the relative norm by the index gives
+the same vector for `H'` and for `H`. -/
+theorem inverse_index_smul_relNorm_apply_of_le {H' : Subgroup G} [Fintype (G ⧸ H')]
+    (hle : H' ≤ H) (hu : IsUnit (H'.index : R)) {x : V} (hx : ∀ h : H, ρ h x = x) :
+    Ring.inverse (H'.index : R) • relNorm ρ H' x = Ring.inverse (H.index : R) • relNorm ρ H x := by
+  rw [← Subgroup.relIndex_mul_index hle, Nat.cast_mul] at hu
+  have hr := ((Nat.cast_commute _ _).isUnit_mul_iff.1 hu).1
+  rw [relNorm_apply_eq_relIndex_nsmul_relNorm_apply ρ hle hx, ← Subgroup.relIndex_mul_index hle,
+    Nat.cast_mul, Ring.inverse_mul (Or.inl hr), mul_smul, Ring.inverse_natCast_smul_nsmul hr]
+
 end FixedVectors
 
 end Semiring
@@ -275,24 +287,6 @@ theorem relNorm_linHom_apply_of_mem (ρ : Representation R G V) {S : Submodule R
 
 end LinHom
 
-section Tower
-
-variable [CommSemiring R] [AddCommMonoid V] [Module R V] (ρ : Representation R G V)
-  {H H' : Subgroup G} [Fintype (G ⧸ H)] [Fintype (G ⧸ H')]
-
-/-- **The normalized relative norm does not depend on the subgroup.** For subgroups `H' ≤ H` with
-`[G : H']` invertible and an `H`-fixed vector `x`, dividing the relative norm by the index gives
-the same vector for `H'` and for `H`. -/
-theorem inverse_index_smul_relNorm_apply_of_le (hle : H' ≤ H) (hu : IsUnit (H'.index : R))
-    {x : V} (hx : ∀ h : H, ρ h x = x) :
-    Ring.inverse (H'.index : R) • relNorm ρ H' x = Ring.inverse (H.index : R) • relNorm ρ H x := by
-  rw [← Subgroup.relIndex_mul_index hle, Nat.cast_mul] at hu
-  have hr := (IsUnit.mul_iff.1 hu).1
-  rw [relNorm_apply_eq_relIndex_nsmul_relNorm_apply ρ hle hx, ← Subgroup.relIndex_mul_index hle,
-    Nat.cast_mul, Ring.inverse_mul (Or.inl hr), mul_smul, Ring.inverse_natCast_smul_nsmul hr]
-
-end Tower
-
 section Semifield
 
 variable [Semifield R] [AddCommMonoid V] [Module R V] {H : Subgroup G} [Fintype (G ⧸ H)]
@@ -342,28 +336,18 @@ variable {ρ H}
 
 variable [Fintype (G ⧸ H)]
 
-/-- Modulo the augmentation submodule of `G`, a sum of translates of `x` indexed by the cosets of
-`H` is `[G : H] • x`. -/
-private theorem sum_apply_sub_index_nsmul_mem (f : G ⧸ H → G) (x : V) :
-    ∑ q : G ⧸ H, ρ (f q) x - H.index • x ∈ Coinvariants.ker ρ := by
-  have hrw : ∑ q : G ⧸ H, ρ (f q) x - H.index • x = ∑ q : G ⧸ H, (ρ (f q) x - x) := by
-    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ]
-    simp [Subgroup.index, Nat.card_eq_fintype_card]
-  rw [hrw]
-  exact Submodule.sum_mem _ fun q _ => Coinvariants.sub_mem_ker _ _
-
 /-- Modulo the augmentation submodule of `G`, the relative transfer is multiplication by the
 index. -/
 theorem relTransfer_sub_index_nsmul_mem (x : V) :
     relTransfer ρ H x - H.index • x ∈ Coinvariants.ker ρ := by
-  rw [relTransfer_apply]
-  exact sum_apply_sub_index_nsmul_mem (fun q ↦ (q.out : G)⁻¹) x
+  rw [relTransfer_apply, H.index_eq_card, Nat.card_eq_fintype_card, ← Finset.card_univ]
+  exact sum_apply_sub_card_nsmul_mem_coinvariantsKer ρ _ (fun q : G ⧸ H ↦ (q.out : G)⁻¹) x
 
 /-- Modulo the augmentation submodule of `G`, the relative norm is multiplication by the index. -/
 theorem relNorm_sub_index_nsmul_mem (x : V) :
     relNorm ρ H x - H.index • x ∈ Coinvariants.ker ρ := by
-  rw [relNorm_apply]
-  exact sum_apply_sub_index_nsmul_mem (fun q ↦ q.out) x
+  rw [relNorm_apply, H.index_eq_card, Nat.card_eq_fintype_card, ← Finset.card_univ]
+  exact sum_apply_sub_card_nsmul_mem_coinvariantsKer ρ _ (fun q : G ⧸ H ↦ q.out) x
 
 /-- The relative transfer carries the augmentation submodule of `G` into the augmentation
 submodule of `H`; it is therefore the transfer of `H` on coinvariants. -/

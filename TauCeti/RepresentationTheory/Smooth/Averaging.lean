@@ -162,6 +162,7 @@ theorem isProj_smoothAverage : LinearMap.IsProj (invariants σ) (σ.smoothAverag
   ⟨σ.smoothAverage_apply_mem_invariants hK, fun _ ↦ σ.smoothAverage_apply_of_mem_invariants hK⟩
 
 /-- The range of the averaging projector is the submodule of invariants. -/
+@[simp]
 theorem range_smoothAverage : LinearMap.range (σ.smoothAverage hK) = invariants σ :=
   (σ.isProj_smoothAverage hK).range
 
@@ -199,6 +200,7 @@ theorem smoothAverage_apply_sub_mem_ker (v : V) :
     ← σ.smoothAverage_apply_eq_relNorm hK hH le_rfl] at h
 
 /-- The kernel of the averaging projector is the span of the vectors `σ k x - x`. -/
+@[simp]
 theorem ker_smoothAverage : LinearMap.ker (σ.smoothAverage hK) = Coinvariants.ker σ := by
   refine le_antisymm (fun v hv ↦ ?_) (Submodule.span_le.2 ?_)
   · simpa [LinearMap.mem_ker.1 hv] using
