@@ -174,7 +174,7 @@ theorem pointsMulEquiv_map_determinantCoordinateMap_one
         (Multiplicative.ofAdd 1) : (AdeleRing R K)ˣ) : AdeleRing R K) =
       (pointsMulEquiv 1 x : Matrix (Fin 1) (Fin 1) (AdeleRing R K)) 0 0 := by
   rw [pointsMulEquiv_map_determinantCoordinateMap, Matrix.GeneralLinearGroup.val_det_apply,
-    Matrix.det_unique, Fin.default_eq_zero]
+    Matrix.det_fin_one]
 
 end GeneralLinear
 
