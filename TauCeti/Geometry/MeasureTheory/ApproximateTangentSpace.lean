@@ -132,8 +132,8 @@ mass `(ENNReal.ofReal r)⁻¹ ^ k * μ (x + r • s)`, that is `r ^ (-k) μ (x +
 theorem blowUp_apply_vadd_smul (hr : r ≠ 0) {s : Set E} (hs : MeasurableSet s) :
     μ.blowUp k x r s = (ENNReal.ofReal r)⁻¹ ^ k * μ (x +ᵥ r • s) := by
   rw [blowUp_apply hs]
-  change _ * μ ((· - x) ⁻¹' ((fun y ↦ r⁻¹ • y) ⁻¹' s)) = _
-  rw [preimage_smul_inv₀ hr]
+  rw [show (fun y ↦ r⁻¹ • (y - x)) = (r⁻¹ • ·) ∘ (· - x) from rfl, preimage_comp,
+    preimage_smul_inv₀ hr]
   congr 2
   ext y
   simp [mem_vadd_set_iff_neg_vadd_mem, sub_eq_neg_add]
