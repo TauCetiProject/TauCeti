@@ -34,6 +34,8 @@ homomorphism `K₀(A) → K₀(B)` through the unitization `Unitization.starMap 
 
 * `TauCeti.UnitizationKZero.map_id` and `TauCeti.UnitizationKZero.map_comp`: functoriality.
 * `TauCeti.UnitizationKZero.augmentation_comp_inl`: the scalar inclusion splits `K₀(ε)`.
+* `TauCeti.UnitizationKZero.augmentation_comp_map_starMap`: `K₀(ε)` is natural for unitized star
+  homomorphisms.
 
 ## References
 
@@ -61,6 +63,18 @@ noncomputable def augmentation : ProjectionKZero (Unitization R A) →+ Projecti
 noncomputable def inl : ProjectionKZero R →+ ProjectionKZero (Unitization R A) :=
   ProjectionKZero.map (NonUnitalStarRingHom.ofClass (StarAlgHom.ofId R (Unitization R A)))
 
+/-- `K₀(ε)` is the homomorphism `ProjectionKZero.map` induces from the augmentation. -/
+theorem augmentation_def :
+    augmentation R A =
+      ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.fstStarAlgHom R A)) :=
+  (rfl)
+
+/-- `K₀(ι)` is the homomorphism `ProjectionKZero.map` induces from the scalar inclusion. -/
+theorem inl_def :
+    inl R A =
+      ProjectionKZero.map (NonUnitalStarRingHom.ofClass (StarAlgHom.ofId R (Unitization R A))) :=
+  (rfl)
+
 /-- The scalar inclusion splits the augmentation: `K₀(ε) ∘ K₀(ι) = id`. -/
 theorem augmentation_comp_inl :
     (augmentation R A).comp (inl R A) = AddMonoidHom.id (ProjectionKZero R) := by
@@ -87,6 +101,7 @@ namespace UnitizationKZero
 variable {R A}
 
 /-- An element of `K₀(A⁺)` lies in `K₀(A)` exactly when the augmentation kills it. -/
+@[simp]
 theorem mem_iff (x : ProjectionKZero (Unitization R A)) :
     x ∈ UnitizationKZero R A ↔ augmentation R A x = 0 :=
   Iff.rfl
@@ -131,25 +146,31 @@ variable {B C : Type*} [NonUnitalSemiring B] [StarRing B] [Module R B] [IsScalar
   [SMulCommClass R B B] [StarModule R B] [NonUnitalSemiring C] [StarRing C] [Module R C]
   [IsScalarTower R C C] [SMulCommClass R C C] [StarModule R C]
 
-/-- The homomorphism `K₀(A⁺) →+ K₀(B⁺)` induced by the unitization of a star homomorphism. -/
-private noncomputable def unitizationMap (φ : A →⋆ₙₐ[R] B) :
-    ProjectionKZero (Unitization R A) →+ ProjectionKZero (Unitization R B) :=
-  ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ))
-
-/-- The unitization of a star homomorphism commutes with the augmentations. -/
-private theorem augmentation_comp_unitizationMap (φ : A →⋆ₙₐ[R] B) :
-    (augmentation R B).comp (unitizationMap φ) = augmentation R A := by
-  rw [augmentation, augmentation, unitizationMap, ← ProjectionKZero.map_comp]
+/-- **Naturality of the augmentation.** The homomorphism induced by the unitization of a star
+homomorphism commutes with the augmentations. -/
+theorem augmentation_comp_map_starMap (φ : A →⋆ₙₐ[R] B) :
+    (augmentation R B).comp
+        (ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ))) =
+      augmentation R A := by
+  rw [augmentation, augmentation, ← ProjectionKZero.map_comp]
   congr 1
   ext x
   simp
 
+/-- **Naturality of the augmentation**, pointwise. -/
+@[simp]
+theorem augmentation_map_starMap (φ : A →⋆ₙₐ[R] B) (x : ProjectionKZero (Unitization R A)) :
+    augmentation R B
+        (ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ)) x) =
+      augmentation R A x :=
+  DFunLike.congr_fun (augmentation_comp_map_starMap φ) x
+
 /-- **Functoriality.** A star homomorphism `φ : A →⋆ₙₐ[R] B`, unital or not, induces a
 homomorphism `K₀(A) →+ K₀(B)` through its unitization `Unitization.starMap φ`. -/
 noncomputable def map (φ : A →⋆ₙₐ[R] B) : UnitizationKZero R A →+ UnitizationKZero R B :=
-  ((unitizationMap φ).comp (UnitizationKZero R A).subtype).codRestrict _ fun x ↦ by
-    rw [AddMonoidHom.comp_apply, mem_iff, ← AddMonoidHom.comp_apply,
-      augmentation_comp_unitizationMap]
+  ((ProjectionKZero.map (NonUnitalStarRingHom.ofClass (Unitization.starMap φ))).comp
+      (UnitizationKZero R A).subtype).codRestrict _ fun x ↦ by
+    rw [AddMonoidHom.comp_apply, mem_iff, augmentation_map_starMap]
     exact x.property
 
 /-- On the underlying elements of `K₀(A⁺)`, `TauCeti.UnitizationKZero.map φ` is the homomorphism
