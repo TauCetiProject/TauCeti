@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.Binomial
-import Mathlib.Analysis.Analytic.Binomial
-import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.Analysis.Asymptotics.TruncatedPowerSeries
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -56,6 +56,8 @@ term is the residual estimated here (Wong and Li).
 * `TauCeti.isBigO_formalDifferenceSolution_residual_sub`: for arbitrary coefficients `a`, the
   residual of the truncation after `N + 1` terms is
   `ρⁿ n^α ∑_{t ≤ N} (differenceResidualCoeff fs gs ρ α a t) n⁻ᵗ + O(|ρ|ⁿ n^{Re α - N - 1})`.
+* `TauCeti.differenceResidualCoeff_congr`: for a root `ρ` of the characteristic equation, the
+  coefficient of `ρⁿ n^{α-t}` in the residual depends only on `aₛ` for `s < t`.
 * `TauCeti.differenceResidualCoeff_eq_zero`: under DLMF 2.9.5–2.9.7 the residual coefficients
   vanish.
 * `TauCeti.isBigO_formalDifferenceSolution_residual`: under DLMF 2.9.5–2.9.7 the truncation after
@@ -69,12 +71,10 @@ term is the residual estimated here (Wong and Li).
 ## Implementation notes
 
 The residual is `ρⁿ n^α` times a function of `u = n⁻¹`, built from the binomial
-expansions of `(1 + j u)^{α - s}` for `j = 0, 1, 2` (`Complex.one_add_cpow_hasFPowerSeriesAt_zero`)
-and the expansions of `f` and `g`. These are combined as truncated power series: a function `F`
-approximates `P : PowerSeries ℂ` to order `M` when `F - (trunc (M + 1) P).eval u = O(u^{M+1})`,
-and this relation is compatible with sums and products. It is a private device of this file for
-expansions known only to finitely many orders; the notion of an asymptotic power series is
-`Asymptotics.HasAsymptoticExpansion` with the scale `uⁿ`.
+expansions of `(1 + j u)^{α - s}` for `j = 0, 1, 2` (`TauCeti.isBigO_one_add_cpow_sub_sum`)
+and the expansions of `f` and `g`. These are combined as finite-order power-series expansions
+`F - (trunc (N + 1) P).eval u = O(u^{N+1})`, which are compatible with sums and products
+(`PowerSeries.isBigO_mul_sub_eval_trunc_mul` and its companions).
 
 ## References
 
@@ -90,96 +90,6 @@ open Filter Finset Asymptotics
 open scoped Topology
 
 namespace TauCeti
-
-/-! ### Truncated power-series approximations -/
-
-section Approx
-
-variable {ι : Type*} {l : Filter ι} {w : ι → ℂ}
-
-/-- `F` agrees with the truncation of `P` below degree `M + 1`, evaluated at `w`, up to
-`O(w ^ (M + 1))`. -/
-private def ApproxTo (l : Filter ι) (w : ι → ℂ) (M : ℕ) (F : ι → ℂ) (P : PowerSeries ℂ) :
-    Prop :=
-  (fun i ↦ F i - (PowerSeries.trunc (M + 1) P).eval (w i)) =O[l] fun i ↦ w i ^ (M + 1)
-
-private lemma isBigO_one_eval (hw : Tendsto w l (𝓝 0)) (p : Polynomial ℂ) :
-    (fun i ↦ p.eval (w i)) =O[l] fun _ ↦ (1 : ℂ) :=
-  ((p.continuous.tendsto 0).comp hw).isBigO_one ℂ
-
-private lemma isBigO_eval_of_X_pow_dvd (hw : Tendsto w l (𝓝 0)) {M : ℕ} {p : Polynomial ℂ}
-    (hp : Polynomial.X ^ M ∣ p) : (fun i ↦ p.eval (w i)) =O[l] fun i ↦ w i ^ M := by
-  obtain ⟨q, rfl⟩ := hp
-  simpa using (isBigO_refl (fun i ↦ w i ^ M) l).mul (isBigO_one_eval hw q)
-
-/-- A polynomial approximates itself to every order. -/
-private lemma approxTo_coe (hw : Tendsto w l (𝓝 0)) (M : ℕ) (p : Polynomial ℂ) :
-    ApproxTo l w M (fun i ↦ p.eval (w i)) p := by
-  refine IsBigO.congr_left (isBigO_eval_of_X_pow_dvd hw
-    (p := p - PowerSeries.trunc (M + 1) (p : PowerSeries ℂ))
-    (Polynomial.X_pow_dvd_iff.2 fun d hd ↦ ?_)) fun i ↦ by simp
-  simp [PowerSeries.coeff_trunc, hd]
-
-private lemma approxTo_add {M : ℕ} {F G : ι → ℂ} {P Q : PowerSeries ℂ}
-    (hF : ApproxTo l w M F P) (hG : ApproxTo l w M G Q) :
-    ApproxTo l w M (fun i ↦ F i + G i) (P + Q) :=
-  (IsBigO.add hF hG).congr_left fun i ↦ by simp only [map_add, Polynomial.eval_add]; ring
-
-/-- A function approximated by a power series is bounded. -/
-private lemma isBigO_one_of_approxTo (hw : Tendsto w l (𝓝 0)) {M : ℕ} {F : ι → ℂ}
-    {P : PowerSeries ℂ} (hF : ApproxTo l w M F P) : F =O[l] fun _ ↦ (1 : ℂ) := by
-  have hpow : (fun i ↦ w i ^ (M + 1)) =O[l] fun _ ↦ (1 : ℂ) := by
-    simpa using (((continuous_pow (M + 1)).tendsto 0).comp hw).isBigO_one ℂ
-  exact ((IsBigO.trans hF hpow).add (isBigO_one_eval hw _)).congr_left fun i ↦ by ring
-
-private lemma approxTo_mul (hw : Tendsto w l (𝓝 0)) {M : ℕ} {F G : ι → ℂ}
-    {P Q : PowerSeries ℂ} (hF : ApproxTo l w M F P) (hG : ApproxTo l w M G Q) :
-    ApproxTo l w M (fun i ↦ F i * G i) (P * Q) := by
-  set tP := PowerSeries.trunc (M + 1) P
-  set tQ := PowerSeries.trunc (M + 1) Q
-  -- the product of the truncations agrees with the truncated product below degree `M + 1`
-  have hdvd : Polynomial.X ^ (M + 1) ∣ tP * tQ - PowerSeries.trunc (M + 1) (P * Q) := by
-    refine Polynomial.X_pow_dvd_iff.2 fun d hd ↦ ?_
-    rw [Polynomial.coeff_sub, ← PowerSeries.trunc_trunc_mul_trunc, PowerSeries.coeff_trunc]
-    simp only [hd, ite_true]
-    rw [← Polynomial.coe_mul, Polynomial.coeff_coe, sub_self]
-  have h1 := (IsBigO.mul hF (isBigO_one_of_approxTo hw hG)).congr_right fun i ↦ mul_one _
-  have h2 := (IsBigO.mul (isBigO_one_eval hw tP) hG).congr_right fun i ↦ one_mul _
-  have h3 := isBigO_eval_of_X_pow_dvd hw hdvd
-  refine IsBigO.congr_left ((h1.add h2).add h3) fun i ↦ ?_
-  simp only [Polynomial.eval_sub, Polynomial.eval_mul, tP, tQ]
-  ring
-
-private lemma approxTo_sum (hw : Tendsto w l (𝓝 0)) {M : ℕ} {κ : Type*} (s : Finset κ)
-    {F : κ → ι → ℂ} {P : κ → PowerSeries ℂ} (h : ∀ k ∈ s, ApproxTo l w M (F k) (P k)) :
-    ApproxTo l w M (fun i ↦ ∑ k ∈ s, F k i) (∑ k ∈ s, P k) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using approxTo_coe hw M 0
-  | insert k s hk ih =>
-    simp only [sum_insert hk]
-    exact approxTo_add (h k (mem_insert_self k s)) (ih fun k' hk' ↦ h k' (mem_insert_of_mem hk'))
-
-/-- The binomial expansion `(1 + j w)^c ≈ ∑ C(c, m) jᵐ wᵐ`. -/
-private lemma approxTo_one_add_mul_cpow (hw : Tendsto w l (𝓝 0)) (M : ℕ) (j c : ℂ) :
-    ApproxTo l w M (fun i ↦ (1 + j * w i) ^ c)
-      (PowerSeries.mk fun m ↦ Ring.choose c m * j ^ m) := by
-  have hjw : Tendsto (fun i ↦ j * w i) l (𝓝 0) := by simpa using hw.const_mul j
-  have h := ((Complex.one_add_cpow_hasFPowerSeriesAt_zero (a := c)).isBigO_sub_partialSum_pow
-    (M + 1)).comp_tendsto hjw
-  have hcmp : (fun i ↦ ‖j * w i‖ ^ (M + 1)) =O[l] fun i ↦ w i ^ (M + 1) := by
-    simpa [mul_pow] using
-      (isBigO_const_mul_self (‖j‖ ^ (M + 1)) (fun i ↦ ‖w i‖ ^ (M + 1)) l).trans
-        (isBigO_norm_left.2 (isBigO_refl (fun i ↦ w i ^ (M + 1)) l) |>.congr_left
-          fun i ↦ by simp [norm_pow])
-  refine IsBigO.congr_left (h.trans hcmp) fun i ↦ ?_
-  simp only [zero_add, FormalMultilinearSeries.partialSum, binomialSeries,
-    FormalMultilinearSeries.apply_eq_prod_smul_coeff, prod_const, card_univ, Fintype.card_fin,
-    FormalMultilinearSeries.coeff_ofScalars, smul_eq_mul, Function.comp_apply,
-    PowerSeries.eval_trunc, PowerSeries.coeff_mk, sub_right_inj]
-  exact sum_congr rfl fun _ _ ↦ by ring
-
-end Approx
 
 /-! ### The coefficients of the residual -/
 
@@ -245,14 +155,23 @@ theorem differenceResidualCoeff_eq_zero {fs gs : ℕ → ℂ} {ρ α : ℂ} {a :
       simp only [differenceKernel, sum_range_succ, sum_range_zero, Ring.choose_one_right,
         Ring.choose_zero_right, Nat.sub_self, Nat.sub_zero]
       linear_combination (2 * α) * hρ - hα
-    have hk := ha t (lt_add_one t)
-    rw [sum_Icc_differenceKernel] at hk
-    rw [differenceResidualCoeff, sum_range_succ, sum_range_succ, Nat.sub_self,
-      differenceKernel_zero, hρ, mul_zero, add_zero, Nat.add_sub_cancel_left, h1]
-    rw [show ∑ s ∈ range t, a s * differenceKernel fs gs ρ (α - s) (t + 1 - s) =
-      ∑ k ∈ range t, differenceKernel fs gs ρ (α - k) (t + 1 - k) * a k from
-        sum_congr rfl fun _ _ ↦ mul_comm _ _, ← hk]
+    -- the remaining terms are the right-hand side of DLMF 2.9.7 at `s = t`
+    have hk : ∑ s ∈ range t, a s * differenceKernel fs gs ρ (α - s) (t + 1 - s) =
+        ρ * (fs 0 + 2 * ρ) * t * a t := by
+      rw [ha t (lt_add_one t), sum_Icc_differenceKernel]
+      exact sum_congr rfl fun _ _ ↦ mul_comm _ _
+    simp only [differenceResidualCoeff, sum_range_succ, hk, Nat.add_sub_cancel_left, h1,
+      Nat.sub_self, differenceKernel_zero, hρ]
     ring
+
+/-- If `ρ` is a root of the characteristic equation `ρ² + f₀ ρ + g₀ = 0`, the coefficient of
+`ρⁿ n^{α-t}` in the residual depends only on the coefficients `aₛ` with `s < t`. -/
+theorem differenceResidualCoeff_congr {fs gs : ℕ → ℂ} {ρ : ℂ} (α : ℂ) {a b : ℕ → ℂ} {t : ℕ}
+    (hρ : ρ ^ 2 + fs 0 * ρ + gs 0 = 0) (h : ∀ s < t, a s = b s) :
+    differenceResidualCoeff fs gs ρ α a t = differenceResidualCoeff fs gs ρ α b t := by
+  simp only [differenceResidualCoeff, sum_range_succ, Nat.sub_self, differenceKernel_zero, hρ,
+    mul_zero, add_zero]
+  exact sum_congr rfl fun s hs ↦ by rw [h s (mem_range.1 hs)]
 
 /-! ### The truncated formal solutions -/
 
@@ -277,11 +196,9 @@ private lemma formalDifferenceSolution_add (a : ℕ → ℂ) (ρ α : ℂ) (N : 
     field_simp
     push_cast
     ring
-  rw [formalDifferenceSolution, hsplit, Complex.natCast_mul_cpow, pow_add, mul_sum, mul_sum,
-    mul_sum]
+  simp only [formalDifferenceSolution, hsplit, Complex.natCast_mul_cpow, mul_sum]
   refine sum_congr rfl fun s _ ↦ ?_
-  rw [Complex.cpow_sub _ _ hpos, Complex.cpow_natCast, mul_inv, mul_pow, div_eq_mul_inv,
-    ← inv_pow]
+  simp only [Complex.cpow_sub _ _ hpos, Complex.cpow_natCast, mul_inv, mul_pow, div_eq_mul_inv]
   ring
 
 /-- The left-hand side of the difference equation at the truncated formal solution is `ρⁿ n^α`
@@ -313,12 +230,8 @@ private lemma coeff_kernelSeries (fs gs : ℕ → ℂ) (ρ c : ℂ) (r : ℕ) :
             PowerSeries.mk (fun m ↦ Ring.choose c m * ((1 : ℕ) : ℂ) ^ m) +
           PowerSeries.mk gs * PowerSeries.mk (fun m ↦ Ring.choose c m * ((0 : ℕ) : ℂ) ^ m)) =
       differenceKernel fs gs ρ c r := by
-  rw [mk_choose_mul_zero_pow, mul_one, mul_assoc, map_add, map_add, PowerSeries.coeff_C_mul,
-    PowerSeries.coeff_C_mul, PowerSeries.coeff_mul,
-    Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ PowerSeries.coeff i (PowerSeries.mk fs) *
-      PowerSeries.coeff j (PowerSeries.mk fun m ↦ Ring.choose c m * ((1 : ℕ) : ℂ) ^ m))]
-  simp only [PowerSeries.coeff_mk, Nat.cast_one, one_pow, mul_one, differenceKernel]
-  push_cast
+  simp only [mk_choose_mul_zero_pow, mul_one, mul_assoc, map_add, PowerSeries.coeff_C_mul]
+  simp [PowerSeries.coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk, differenceKernel]
   ring
 
 /-- The coefficients of `∑_{s<N} aₛ Xˢ Lₛ`, where `Lₛ` is the kernel series at `c = α - s`. -/
@@ -343,10 +256,9 @@ private lemma coeff_sum_kernelSeries (fs gs : ℕ → ℂ) (ρ α : ℂ) (a : �
 
 private lemma norm_pow_mul_cpow_mul_inv_pow (ρ α : ℂ) (M : ℕ) {n : ℕ} (hn : n ≠ 0) :
     ‖ρ ^ n * (n : ℂ) ^ α * (n : ℂ)⁻¹ ^ M‖ = ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - M) := by
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)
-  rw [norm_mul, norm_mul, norm_pow, Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn),
-    norm_pow, norm_inv, Complex.norm_natCast, Real.rpow_sub hn', Real.rpow_natCast, inv_pow,
-    div_eq_mul_inv, mul_assoc]
+  have hn' : (0 : ℝ) < n := by positivity
+  simp [Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn), Real.rpow_sub hn',
+    Real.rpow_natCast, div_eq_mul_inv, mul_assoc]
 
 /-- **Residual of a truncated formal solution.** Let `f` and `g` have the expansions
 `f n = ∑_{q ≤ N} f_q n^{-q} + O(n^{-N-1})` and `g n = ∑_{q ≤ N} g_q n^{-q} + O(n^{-N-1})`. For
@@ -370,19 +282,35 @@ theorem isBigO_formalDifferenceSolution_residual_sub {f g fs gs : ℕ → ℂ} (
       fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - (N + 1)) := by
   set u : ℕ → ℂ := fun n ↦ (n : ℂ)⁻¹
   have hu : Tendsto u atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
-  have hF : ApproxTo atTop u N f (PowerSeries.mk fs) :=
+  have hF : (fun n ↦ f n - (PowerSeries.trunc (N + 1) (PowerSeries.mk fs)).eval (u n)) =O[atTop]
+      fun n ↦ u n ^ (N + 1) :=
     hf.congr_left fun n ↦ by simp [PowerSeries.eval_trunc, u, mul_comm]
-  have hG : ApproxTo atTop u N g (PowerSeries.mk gs) :=
+  have hG : (fun n ↦ g n - (PowerSeries.trunc (N + 1) (PowerSeries.mk gs)).eval (u n)) =O[atTop]
+      fun n ↦ u n ^ (N + 1) :=
     hg.congr_left fun n ↦ by simp [PowerSeries.eval_trunc, u, mul_comm]
-  have hbin := approxTo_one_add_mul_cpow hu N
+  -- the binomial expansions `(1 + j u)^c = ∑ C(c, m) jᵐ uᵐ + O(u^{N+1})`
+  have hbin (j c : ℂ) : (fun n ↦ (1 + j * u n) ^ c -
+      (PowerSeries.trunc (N + 1) (PowerSeries.mk fun m ↦ Ring.choose c m * j ^ m)).eval (u n))
+      =O[atTop] fun n ↦ u n ^ (N + 1) := by
+    have hju : Tendsto (fun n ↦ j * u n) atTop (𝓝 0) := by simpa using hu.const_mul j
+    have hscale : (fun n ↦ (j * u n) ^ (N + 1)) =O[atTop] fun n ↦ u n ^ (N + 1) :=
+      ((isBigO_refl _ _).const_mul_left (j ^ (N + 1))).congr_left fun n ↦ (mul_pow _ _ _).symm
+    refine (((isBigO_one_add_cpow_sub_sum c (N + 1)).comp_tendsto hju).trans hscale).congr_left
+      fun n ↦ ?_
+    simp only [Function.comp_apply, PowerSeries.eval_trunc, PowerSeries.coeff_mk, sub_right_inj]
+    exact sum_congr rfl fun _ _ ↦ by ring
   -- each term `aₛ n⁻ˢ (ρ² (1 + 2n⁻¹)^{α-s} + ρ f (1 + n⁻¹)^{α-s} + g)` and its series
-  have hterm := approxTo_sum hu (range (N + 1)) fun s _ ↦ approxTo_mul hu
-    (by simpa using approxTo_coe hu N (Polynomial.C (a s) * Polynomial.X ^ s))
-    (approxTo_add (approxTo_add
-      (approxTo_mul hu (approxTo_coe hu N (Polynomial.C (ρ ^ 2))) (hbin ((2 : ℕ) : ℂ) (α - s)))
-      (approxTo_mul hu (approxTo_mul hu (approxTo_coe hu N (Polynomial.C ρ)) hF)
-        (hbin ((1 : ℕ) : ℂ) (α - s))))
-      (approxTo_mul hu hG (hbin ((0 : ℕ) : ℂ) (α - s))))
+  have hterm := PowerSeries.isBigO_sum_sub_eval_trunc_sum (range (N + 1)) fun s _ ↦
+    PowerSeries.isBigO_mul_sub_eval_trunc_mul hu
+      (Polynomial.isBigO_eval_sub_eval_trunc_coe hu (N + 1) (Polynomial.C (a s) * Polynomial.X ^ s))
+      (PowerSeries.isBigO_add_sub_eval_trunc_add (PowerSeries.isBigO_add_sub_eval_trunc_add
+        (PowerSeries.isBigO_mul_sub_eval_trunc_mul hu
+          (Polynomial.isBigO_eval_sub_eval_trunc_coe hu (N + 1) (Polynomial.C (ρ ^ 2)))
+          (hbin ((2 : ℕ) : ℂ) (α - s)))
+        (PowerSeries.isBigO_mul_sub_eval_trunc_mul hu (PowerSeries.isBigO_mul_sub_eval_trunc_mul hu
+          (Polynomial.isBigO_eval_sub_eval_trunc_coe hu (N + 1) (Polynomial.C ρ)) hF)
+          (hbin ((1 : ℕ) : ℂ) (α - s))))
+        (PowerSeries.isBigO_mul_sub_eval_trunc_mul hu hG (hbin ((0 : ℕ) : ℂ) (α - s))))
   have hmain := (isBigO_refl (fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) atTop).mul hterm
   refine (hmain.congr' ?_ (Eventually.of_forall fun _ ↦ rfl)).trans ?_
   · filter_upwards [eventually_ne_atTop 0] with n hn
@@ -392,13 +320,10 @@ theorem isBigO_formalDifferenceSolution_residual_sub {f g fs gs : ℕ → ℂ} (
     rw [formalDifferenceSolution_residual_eq f g a ρ α (N + 1) hn, ← mul_sub]
     congr 2
     exact sum_congr rfl fun t ht ↦ by rw [coeff_sum_kernelSeries fs gs ρ α a (mem_range.1 ht)]
-  · refine IsBigO.of_bound 1 ?_
+  · refine IsBigO.of_bound' ?_
     filter_upwards [eventually_ne_atTop 0] with n hn
-    simp only [u]
-    rw [one_mul, norm_pow_mul_cpow_mul_inv_pow ρ α (N + 1) hn, Real.norm_of_nonneg
-      (by positivity)]
-    push_cast
-    rfl
+    rw [norm_pow_mul_cpow_mul_inv_pow ρ α (N + 1) hn, Real.norm_of_nonneg (by positivity),
+      Nat.cast_add_one]
 
 /-- **The formal solutions satisfy the difference equation to every order** (DLMF 2.9.4–2.9.7).
 Let `f n = ∑_{q ≤ N} f_q n^{-q} + O(n^{-N-1})` and `g n = ∑_{q ≤ N} g_q n^{-q} + O(n^{-N-1})`,
@@ -426,19 +351,12 @@ theorem isBigO_formalDifferenceSolution_residual {f g fs gs : ℕ → ℂ} {ρ �
     simp only [formalDifferenceSolution, sum_range_succ, a', lt_irrefl, ↓reduceIte, zero_mul,
       add_zero]
     exact congrArg _ (sum_congr rfl fun s hs ↦ by simp [mem_range.1 hs])
-  -- the residual coefficients of `a'` vanish: the coefficient of `a N` is `ρ² + f₀ ρ + g₀ = 0`
+  -- the residual coefficients of `a'` vanish, since they do not see `a' N`
   have hres (t : ℕ) (ht : t ∈ range (N + 1)) : differenceResidualCoeff fs gs ρ α a' t = 0 := by
     have htN := Nat.lt_succ_iff.1 (mem_range.1 ht)
-    have h := differenceResidualCoeff_eq_zero hρ hα fun s hs ↦ ha s (hs.trans_le htN)
-    rw [differenceResidualCoeff, sum_range_succ] at h ⊢
-    rcases htN.lt_or_eq with htN | rfl
-    · rw [← h]
-      refine congrArg₂ (· + ·) (sum_congr rfl fun s hs ↦ ?_) ?_
-      · simp [a', (mem_range.1 hs).trans htN]
-      · simp [a', htN]
-    · rw [Nat.sub_self, differenceKernel_zero, hρ, mul_zero, add_zero] at h
-      rw [← h, Nat.sub_self, differenceKernel_zero, hρ, mul_zero, add_zero]
-      exact sum_congr rfl fun s hs ↦ by simp [a', mem_range.1 hs]
+    rw [differenceResidualCoeff_congr (a := a') (b := a) α hρ fun s hs ↦ by
+      simp [a', hs.trans_le htN]]
+    exact differenceResidualCoeff_eq_zero hρ hα fun s hs ↦ ha s (hs.trans_le htN)
   have hzero (n : ℕ) : ∑ t ∈ range (N + 1),
       differenceResidualCoeff fs gs ρ α a' t * (n : ℂ)⁻¹ ^ t = 0 :=
     sum_eq_zero fun t ht ↦ by rw [hres t ht, zero_mul]
@@ -492,13 +410,19 @@ theorem differenceCoeff_succ_eq_zero_of_const {fs gs : ℕ → ℂ} (hf : ∀ q 
     (hg : ∀ q ≠ 0, gs q = 0) (ρ : ℂ) (s : ℕ) : differenceCoeff fs gs ρ 0 (s + 1) = 0 := by
   induction s using Nat.strong_induction_on with
   | _ s ih =>
-    rw [differenceCoeff_succ, sum_range_succ', sum_eq_zero fun k hk ↦ by
-      rw [ih k (mem_range.1 hk), mul_zero], zero_add, Nat.cast_zero, sub_zero, Nat.sub_zero,
-      differenceKernel, sum_eq_zero fun q _ ↦ ?_, Ring.choose_zero_pos ℂ (by omega),
-      hg _ (by omega)]
-    · simp
-    · rcases eq_or_ne q 0 with rfl | hq
-      · rw [Ring.choose_zero_pos ℂ (by omega), mul_zero]
-      · rw [hf q hq, zero_mul]
+    -- the terms with `k ≥ 1` vanish by induction, and the kernel multiplying `a₀` vanishes
+    have hsum : ∑ k ∈ range s,
+        differenceKernel fs gs ρ (0 - ((k + 1 : ℕ) : ℂ)) (s + 2 - (k + 1)) *
+          differenceCoeff fs gs ρ 0 (k + 1) = 0 :=
+      sum_eq_zero fun k hk ↦ by rw [ih k (mem_range.1 hk), mul_zero]
+    have hfq : ∑ q ∈ range (s + 3), fs q * Ring.choose (0 : ℂ) (s + 2 - q) = 0 :=
+      sum_eq_zero fun q _ ↦ by
+        rcases eq_or_ne q 0 with rfl | hq
+        · rw [Ring.choose_zero_pos ℂ (by omega), mul_zero]
+        · rw [hf q hq, zero_mul]
+    have hker : differenceKernel fs gs ρ 0 (s + 2) = 0 := by
+      simp [differenceKernel, hfq, Ring.choose_zero_pos ℂ (show 0 < s + 2 by omega), hg]
+    rw [differenceCoeff_succ, sum_range_succ', hsum]
+    simp [hker]
 
 end TauCeti
