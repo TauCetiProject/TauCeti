@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.Cartan.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+import TauCeti.Algebra.Group.Submonoid.Units
 import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 import TauCeti.Analysis.Matrix.Frobenius
@@ -62,9 +63,8 @@ subgroup of `GL(2, ℝ)` stable under transpose, which contains no other point o
   `Subgroup.inv_toUnits_polarUnitary_mul_mem_of_isClosed` and
   `Subgroup.mul_inv_toUnits_polarUnitary_mem_of_isClosed`: the unitary and positive polar factors
   of an element of `H` lie in `H`.
-* `Subgroup.forall_exists_mem_coe_eq_exp_smul_iff_mem_unitsLieSubalgebraOfSubgroup`: the
-  Hermitian part `𝔭_H` is the Hermitian part of the Lie algebra
-  `TauCeti.Lie.unitsLieSubalgebraOfSubgroup H`.
+* `Subgroup.forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra`: the Hermitian part
+  `𝔭_H` is the Hermitian part of the Lie algebra `Subgroup.linearLieSubalgebra H`.
 * `Subgroup.cartanHomeomorphOfIsClosed`: the homeomorphism `K_H × 𝔭_H ≃ₜ H`,
   `(k, X) ↦ k * exp X`, with `val_cartanHomeomorphOfIsClosed_apply`.
 * `Subgroup.existsUnique_unitary_mul_exp_of_isClosed`: every `g ∈ H` is uniquely `k * exp X` with
@@ -86,9 +86,6 @@ noncomputable section
 open scoped MatrixOrder
 
 open NormedSpace
-open TauCeti.Lie (unitsLieSubalgebraOfSubgroup mem_unitsLieSubalgebraOfSubgroup_iff
-  conj_mem_unitsLieSubalgebraOfSubgroup star_mem_unitsLieSubalgebraOfSubgroup
-  le_of_unitsLieSubalgebraOfSubgroup_le)
 
 namespace Matrix.GeneralLinearGroup
 
@@ -161,22 +158,14 @@ private theorem charFun_one : charFun hZ 1 = 0 := by
   simp only [charFun, Matrix.mul_one, add_sub_cancel_left, det_one, norm_one, Real.log_one,
     mul_zero, Finset.sum_const_zero]
 
-omit hZ in
-/-- A unit lies in the units of the centralizer of `Z` exactly when it commutes with `Z`. -/
-private theorem mem_units_centralizer_iff {g : GL n 𝕜} :
-    g ∈ (Submonoid.centralizer {Z}).units ↔ Commute (g : Matrix n n 𝕜) Z := by
-  simp only [Submonoid.mem_units_iff, Submonoid.mem_centralizer_iff, Set.mem_singleton_iff,
-    forall_eq]
-  exact ⟨fun h ↦ h.1.symm, fun h ↦ ⟨h.symm, h.units_inv_left.symm⟩⟩
-
 /-- The character `charFun` on the units of the centralizer of `Z`, as a homomorphism to
 `Multiplicative ℝ`. -/
 private def charHom : (Submonoid.centralizer {Z}).units →* Multiplicative ℝ where
   toFun g := Multiplicative.ofAdd (charFun hZ (g : GL n 𝕜))
   map_one' := by rw [OneMemClass.coe_one, Units.val_one, charFun_one, ofAdd_zero]
   map_mul' g h := by
-    rw [← ofAdd_add, ← charFun_mul hZ (mem_units_centralizer_iff.1 g.property)
-      (mem_units_centralizer_iff.1 h.property), Subgroup.coe_mul, Units.val_mul]
+    rw [← ofAdd_add, ← charFun_mul hZ (Submonoid.mem_units_centralizer_singleton_iff.1 g.property)
+      (Submonoid.mem_units_centralizer_singleton_iff.1 h.property), Subgroup.coe_mul, Units.val_mul]
 
 /-- The kernel of the character `charFun` on the centralizer of `Z`, as a subgroup of
 `GL n 𝕜`. -/
@@ -187,9 +176,9 @@ private theorem mem_charSubgroup {g : GL n 𝕜} :
     g ∈ charSubgroup hZ ↔ Commute (g : Matrix n n 𝕜) Z ∧ charFun hZ g = 0 := by
   simp only [charSubgroup, Subgroup.mem_map, MonoidHom.mem_ker, charHom, MonoidHom.coe_mk,
     OneHom.coe_mk, ofAdd_eq_one, Subgroup.coe_subtype]
-  refine ⟨?_, fun h ↦ ⟨⟨g, mem_units_centralizer_iff.2 h.1⟩, h.2, rfl⟩⟩
+  refine ⟨?_, fun h ↦ ⟨⟨g, Submonoid.mem_units_centralizer_singleton_iff.2 h.1⟩, h.2, rfl⟩⟩
   rintro ⟨x, hx, rfl⟩
-  exact ⟨mem_units_centralizer_iff.1 x.property, hx⟩
+  exact ⟨Submonoid.mem_units_centralizer_singleton_iff.1 x.property, hx⟩
 
 private theorem isClosed_charSubgroup : IsClosed (charSubgroup hZ : Set (GL n 𝕜)) := by
   -- Commuting with `Z` is the preimage of the centralizer of `{Z}`, which is closed.
@@ -223,9 +212,16 @@ variable {H : Subgroup (GL n 𝕜)}
 
 /-- The Lie algebra of a subgroup is closed under the commutator. -/
 private theorem commutator_mem_lieAlg {Y W : Matrix n n 𝕜}
-    (hY : Y ∈ unitsLieSubalgebraOfSubgroup H) (hW : W ∈ unitsLieSubalgebraOfSubgroup H) :
-    Y * W - W * Y ∈ unitsLieSubalgebraOfSubgroup H := by
-  simpa only [Ring.lie_def] using (unitsLieSubalgebraOfSubgroup H).lie_mem hY hW
+    (hY : Y ∈ H.linearLieSubalgebra) (hW : W ∈ H.linearLieSubalgebra) :
+    Y * W - W * Y ∈ H.linearLieSubalgebra := by
+  simpa only [Ring.lie_def] using H.linearLieSubalgebra.lie_mem hY hW
+
+/-- The Lie algebra of a closed subgroup stable under the conjugate transpose is stable under the
+conjugate transpose. -/
+private theorem star_mem_lieAlg (hH : IsClosed (H : Set (GL n 𝕜))) (hstar : ∀ g ∈ H, star g ∈ H)
+    {Y : Matrix n n 𝕜} (hY : Y ∈ H.linearLieSubalgebra) : star Y ∈ H.linearLieSubalgebra :=
+  (H.mem_linearLieSubalgebra_iff hH).2 <|
+    Subgroup.star_mem_linearLieAlgebra hstar ((H.mem_linearLieSubalgebra_iff hH).1 hY)
 
 end LieAlgebra
 
@@ -239,12 +235,13 @@ variable {H : Subgroup (GL n 𝕜)}
 commuting with the Lie algebra of `H` and orthogonal to it. If `exp Z ∈ H` then `Z = 0`. -/
 private theorem eq_zero_of_expUnit_mem (hH : IsClosed (H : Set (GL n 𝕜)))
     (hconn : IsPreconnected (H : Set (GL n 𝕜))) {Z : Matrix n n 𝕜} (hZ : Z.IsHermitian)
-    (hcomm : ∀ Y ∈ unitsLieSubalgebraOfSubgroup H, Commute Y Z)
-    (horth : ∀ Y ∈ unitsLieSubalgebraOfSubgroup H, RCLike.re (Z * Y).trace = 0)
+    (hcomm : ∀ Y ∈ H.linearLieSubalgebra, Commute Y Z)
+    (horth : ∀ Y ∈ H.linearLieSubalgebra, RCLike.re (Z * Y).trace = 0)
     (hZH : TauCeti.expUnit Z ∈ H) : Z = 0 := by
   have hle : H ≤ charSubgroup hZ :=
-    le_of_unitsLieSubalgebraOfSubgroup_le hH hconn (isClosed_charSubgroup hZ) fun Y hY ↦
-      (mem_unitsLieSubalgebraOfSubgroup_iff (isClosed_charSubgroup hZ) _).2 fun t ↦
+    Subgroup.le_of_linearLieSubalgebra_le hH hconn (isClosed_charSubgroup hZ) fun Y hY ↦
+      (Subgroup.mem_linearLieSubalgebra_iff (isClosed_charSubgroup hZ)).2 <|
+        Subgroup.mem_linearLieAlgebra_iff.2 fun t ↦
         (mem_charSubgroup hZ).2
           ⟨by rw [TauCeti.expUnit_coe]; exact ((hcomm Y hY).smul_left t).exp_left, by
             rw [TauCeti.expUnit_coe, charFun_exp hZ ((hcomm Y hY).smul_left t), mul_smul_comm,
@@ -260,22 +257,22 @@ Hermitian `X`, then `X` lies in the Lie algebra of `H`. -/
 private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hconn : IsPreconnected (H : Set (GL n 𝕜)))
     {X : Matrix n n 𝕜} (hX : X.IsHermitian) (hXH : TauCeti.expUnit X ∈ H) :
-    X ∈ unitsLieSubalgebraOfSubgroup H := by
+    X ∈ H.linearLieSubalgebra := by
   -- Mostow's lemma: the commutator with `X` preserves the Lie algebra.
-  have hXcomm (Y : Matrix n n 𝕜) (hY : Y ∈ (unitsLieSubalgebraOfSubgroup H).toSubmodule) :
-      X * Y - Y * X ∈ (unitsLieSubalgebraOfSubgroup H).toSubmodule := by
+  have hXcomm (Y : Matrix n n 𝕜) (hY : Y ∈ H.linearLieSubalgebra.toSubmodule) :
+      X * Y - Y * X ∈ H.linearLieSubalgebra.toSubmodule := by
     refine hX.commutator_mem_of_exp_mul_mul_exp_neg_mem (fun Y hY ↦ ?_) hY
-    have := conj_mem_unitsLieSubalgebraOfSubgroup hXH hY
+    have := H.conj_mem_linearLieSubalgebra hXH hY
     rwa [← TauCeti.expUnit_neg, TauCeti.expUnit_coe, TauCeti.expUnit_coe] at this
   obtain ⟨X₁, hX₁, -, Z, hZ, rfl, horth⟩ :=
-    hX.exists_add_orthogonal (V := (unitsLieSubalgebraOfSubgroup H).toSubmodule) fun _ ↦
-      star_mem_unitsLieSubalgebraOfSubgroup hH hstar
+    hX.exists_add_orthogonal (V := H.linearLieSubalgebra.toSubmodule) fun _ ↦
+      star_mem_lieAlg hH hstar
   -- `Z` commutes with the Lie algebra: the commutator lies in it and is orthogonal to it.
-  have hcomm (Y : Matrix n n 𝕜) (hY : Y ∈ unitsLieSubalgebraOfSubgroup H) : Commute Y Z := by
+  have hcomm (Y : Matrix n n 𝕜) (hY : Y ∈ H.linearLieSubalgebra) : Commute Y Z := by
     set A := Z * Y - Y * Z
-    have hA : A ∈ unitsLieSubalgebraOfSubgroup H := by
+    have hA : A ∈ H.linearLieSubalgebra := by
       have :=
-        (unitsLieSubalgebraOfSubgroup H).sub_mem (hXcomm Y hY) (commutator_mem_lieAlg hX₁ hY)
+        H.linearLieSubalgebra.sub_mem (hXcomm Y hY) (commutator_mem_lieAlg hX₁ hY)
       convert this using 1
       simp only [A]
       noncomm_ring
@@ -283,12 +280,12 @@ private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)
     have htr (W : Matrix n n 𝕜) : (A * W).trace = (Z * (Y * W - W * Y)).trace := by
       simp only [A, Matrix.sub_mul, Matrix.mul_sub, trace_sub, Matrix.mul_assoc]
       rw [trace_mul_comm Y, Matrix.mul_assoc]
-    have hAorth (W : Matrix n n 𝕜) (hW : W ∈ unitsLieSubalgebraOfSubgroup H) :
+    have hAorth (W : Matrix n n 𝕜) (hW : W ∈ H.linearLieSubalgebra) :
         RCLike.re (A * W).trace = 0 := by
       rw [htr]
       exact horth _ (commutator_mem_lieAlg hY hW)
     have h0 := re_trace_mul_conjTranspose_self_eq_zero_iff.1
-      (hAorth _ (star_mem_unitsLieSubalgebraOfSubgroup hH hstar hA))
+      (hAorth _ (star_mem_lieAlg hH hstar hA))
     exact (sub_eq_zero.1 h0).symm
   -- Hence `exp Z = exp (-X₁) * exp X` lies in `H`, and the character argument gives `Z = 0`.
   have hZH : TauCeti.expUnit Z ∈ H := by
@@ -296,8 +293,9 @@ private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)
       rw [← TauCeti.expUnit_neg, ← TauCeti.expUnit_add_of_commute
         ((Commute.refl X₁).neg_left.add_right (hcomm X₁ hX₁).neg_left), neg_add_cancel_left]
     rw [this]
-    exact H.mul_mem
-      (H.inv_mem (by simpa using (mem_unitsLieSubalgebraOfSubgroup_iff hH _).1 hX₁ 1)) hXH
+    have hX₁H := Subgroup.mem_linearLieAlgebra_iff.1 ((H.mem_linearLieSubalgebra_iff hH).1 hX₁) 1
+    rw [one_smul] at hX₁H
+    exact H.mul_mem (H.inv_mem hX₁H) hXH
   rw [eq_zero_of_expUnit_mem hH hconn hZ hcomm horth hZH, add_zero]
   exact hX₁
 
@@ -309,7 +307,7 @@ private theorem mem_lieAlg_of_pow_mem (hH : IsClosed (H : Set (GL n 𝕜)))
     (hXH : TauCeti.expUnit X ∈ H)
     (hm : ∃ m : ℕ, 0 < m ∧
       (⟨TauCeti.expUnit X, hXH⟩ : H) ^ m ∈ Subgroup.connectedComponentOfOne H) :
-    X ∈ unitsLieSubalgebraOfSubgroup H := by
+    X ∈ H.linearLieSubalgebra := by
   -- Pass to the identity component, which is closed, connected and stable under `star`.
   set H₀ := H.ambientConnectedComponentOfOne
   have hstar₀ (g : GL n 𝕜) (hg : g ∈ H₀) : star g ∈ H₀ :=
@@ -323,12 +321,12 @@ private theorem mem_lieAlg_of_pow_mem (hH : IsClosed (H : Set (GL n 𝕜)))
   have hmX : ((m : ℝ) • X).IsHermitian := by
     rw [IsHermitian, conjTranspose_smul, star_trivial, hX.eq]
   have h :=
-    (mem_unitsLieSubalgebraOfSubgroup_iff (H.isClosed_ambientConnectedComponentOfOne hH) _).1
+    (Subgroup.mem_linearLieSubalgebra_iff (H.isClosed_ambientConnectedComponentOfOne hH)).1
     (mem_lieAlg_of_isPreconnected (H.isClosed_ambientConnectedComponentOfOne hH) hstar₀
       H.isPreconnected_ambientConnectedComponentOfOne hmX hpow)
-  refine (mem_unitsLieSubalgebraOfSubgroup_iff hH _).2 fun t ↦ ?_
+  refine (H.mem_linearLieSubalgebra_iff hH).2 <| Subgroup.mem_linearLieAlgebra_iff.2 fun t ↦ ?_
   have hm' : (m : ℝ) ≠ 0 := by exact_mod_cast hm.ne'
-  have := H.ambientConnectedComponentOfOne_le (h (t / m))
+  have := H.ambientConnectedComponentOfOne_le (Subgroup.mem_linearLieAlgebra_iff.1 h (t / m))
   rwa [smul_smul, div_mul_cancel₀ t hm'] at this
 
 end Line
@@ -352,15 +350,6 @@ private theorem eq_expUnit_of_coe_eq {x : Matrix n n 𝕜} {g : GL n 𝕜}
     (hgx : (g : Matrix n n 𝕜) = NormedSpace.exp x) : g = TauCeti.expUnit x :=
   Units.ext (by rw [TauCeti.expUnit_coe, hgx])
 
-/-- The exponential-line condition `exp (t x) ∈ H` for all real `t`, stated with the unit
-exponential, is the same condition stated through the matrix exponential. -/
-private theorem forall_expUnit_smul_mem_iff (x : Matrix n n 𝕜) :
-    (∀ t : ℝ, TauCeti.expUnit (t • x) ∈ H) ↔
-      ∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • x) := by
-  refine ⟨fun h t ↦ ⟨_, h t, TauCeti.expUnit_coe _⟩, fun h t ↦ ?_⟩
-  obtain ⟨g, hg, hgx⟩ := h t
-  rwa [← eq_expUnit_of_coe_eq hgx]
-
 /-- **The line through a positive element.** Let `H` be a closed subgroup of `GL n 𝕜`, for
 `𝕜 = ℝ` or `ℂ`, stable under the conjugate transpose. If `H` contains `g = exp X` for a Hermitian
 matrix `X`, and some positive power of `g` lies in the identity component of `H`, then `H`
@@ -371,8 +360,8 @@ theorem exists_mem_coe_eq_exp_smul_of_pow_mem_connectedComponentOfOne
     (hm : ∃ m : ℕ, 0 < m ∧ (⟨g, hg⟩ : H) ^ m ∈ Subgroup.connectedComponentOfOne H) (t : ℝ) :
     ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X) := by
   obtain rfl := eq_expUnit_of_coe_eq hgX
-  exact ⟨_, (mem_unitsLieSubalgebraOfSubgroup_iff hH _).1
-    (mem_lieAlg_of_pow_mem hH hstar hX hg hm) t, TauCeti.expUnit_coe _⟩
+  exact H.mem_linearLieAlgebra_iff_forall_exp.1
+    ((H.mem_linearLieSubalgebra_iff hH).1 (mem_lieAlg_of_pow_mem hH hstar hX hg hm)) t
 
 /-- **The line through a positive element.** Let `H` be a closed subgroup of `GL n 𝕜`, for
 `𝕜 = ℝ` or `ℂ`, stable under the conjugate transpose and with finitely many connected components.
@@ -388,13 +377,13 @@ theorem exists_mem_coe_eq_exp_smul_of_isClosed (hH : IsClosed (H : Set (GL n �
 
 /-- The exponential-line condition of the domain of `Subgroup.cartanHomeomorphOfIsClosed`, written
 through the matrix exponential, is membership in the Lie algebra
-`TauCeti.Lie.unitsLieSubalgebraOfSubgroup H` of a closed subgroup `H` of `GL n 𝕜`, for the
+`Subgroup.linearLieSubalgebra H` of a closed subgroup `H` of `GL n 𝕜`, for the
 `ℓ²` operator norm on matrices. -/
-theorem forall_exists_mem_coe_eq_exp_smul_iff_mem_unitsLieSubalgebraOfSubgroup
+theorem forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra
     (hH : IsClosed (H : Set (GL n 𝕜))) (X : Matrix n n 𝕜) :
     (∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X)) ↔
-      X ∈ unitsLieSubalgebraOfSubgroup H := by
-  rw [mem_unitsLieSubalgebraOfSubgroup_iff hH, forall_expUnit_smul_mem_iff]
+      X ∈ H.linearLieSubalgebra := by
+  rw [H.mem_linearLieSubalgebra_iff hH, mem_linearLieAlgebra_iff_forall_exp]
 
 /-- For a closed subgroup `H` of `GL n 𝕜` stable under the conjugate transpose and with finitely
 many connected components, the line through a Hermitian `x` with `exp x ∈ H` lies in `H`: the line
@@ -403,8 +392,9 @@ private theorem expUnit_smul_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) (x : Matrix n n 𝕜)
     (hx : IsSelfAdjoint x) (hxH : TauCeti.expUnit x ∈ H) (t : ℝ) :
     TauCeti.expUnit (t • x) ∈ H :=
-  (forall_expUnit_smul_mem_iff x).2 (exists_mem_coe_eq_exp_smul_of_isClosed hH hstar hfin
-    hx.isHermitian hxH (TauCeti.expUnit_coe x)) t
+  mem_linearLieAlgebra_iff.1 (mem_linearLieAlgebra_iff_forall_exp.2
+    (exists_mem_coe_eq_exp_smul_of_isClosed hH hstar hfin hx.isHermitian hxH
+      (TauCeti.expUnit_coe x))) t
 
 /-- The Hermitian factor domain of `Subgroup.cartanHomeomorphOfIsClosed`, written through the
 matrix exponential, is the domain of `Subgroup.cartanHomeomorph`, written through the unit
@@ -413,7 +403,8 @@ private def lineDomainHomeomorph (H : Subgroup (GL n 𝕜)) :
     {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
         ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))} ≃ₜ
       {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H} :=
-  (Homeomorph.refl _).subtype fun X ↦ (forall_expUnit_smul_mem_iff (X : Matrix n n 𝕜)).symm
+  (Homeomorph.refl _).subtype fun _ ↦
+    mem_linearLieAlgebra_iff_forall_exp.symm.trans mem_linearLieAlgebra_iff
 
 variable (H) in
 /-- **The Cartan decomposition of a closed matrix group stable under the conjugate transpose.**
