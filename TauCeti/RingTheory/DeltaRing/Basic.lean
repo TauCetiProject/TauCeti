@@ -239,6 +239,11 @@ section Basic
 
 variable [DeltaRing p A]
 
+/-- For `p = 0` every `δ` vanishes: the product rule applied to `x * 0` gives `δ x = 0`. -/
+theorem delta_eq_zero_of_p_eq_zero (hp : p = 0) (x : A) : delta p x = 0 := by
+  subst hp
+  simpa using (delta_mul (p := 0) x 0).symm
+
 /-- `δ (-x) = -δ x - addCorrection p x (-x)`. -/
 theorem delta_neg (x : A) : delta p (-x) = -delta p x - addCorrection p x (-x) := by
   have h := delta_add (p := p) x (-x)
@@ -310,6 +315,14 @@ theorem isDeltaMap_id : IsDeltaMap p (RingHom.id A) :=
 theorem IsDeltaMap.comp {g : B →+* C} {f : A →+* B} (hg : IsDeltaMap p g)
     (hf : IsDeltaMap p f) : IsDeltaMap p (g.comp f) :=
   ⟨fun x => by rw [RingHom.comp_apply, hf.map_delta, hg.map_delta, RingHom.comp_apply]⟩
+
+/-- Along a surjective `δ`-map `f`, a ring homomorphism `g` is a `δ`-map if and only if
+`g.comp f` is. -/
+theorem IsDeltaMap.comp_iff_of_surjective {f : A →+* B} (hf : IsDeltaMap p f)
+    (hs : Function.Surjective f) {g : B →+* C} : IsDeltaMap p (g.comp f) ↔ IsDeltaMap p g := by
+  refine ⟨fun h => ⟨fun y => ?_⟩, fun hg => hg.comp hf⟩
+  obtain ⟨x, rfl⟩ := hs y
+  rw [← hf.map_delta, ← RingHom.comp_apply, h.map_delta, RingHom.comp_apply]
 
 omit [DeltaRing p B] in
 /-- At most one `δ`-structure on the target of a surjective ring homomorphism out of a `δ`-ring
