@@ -27,8 +27,9 @@ characterization of Mathlib's binomial measure.  The native law remains
   carrier;
 * `TauCeti.Probability.variance_id_map_cast_binomial` computes the variance of the cast law;
 * `TauCeti.Probability.integral_sq_id_map_cast_binomial` computes its second raw moment;
-* `TauCeti.Probability.integrableExpSet_id_map_cast_binomial` identifies its exact
-  exponential-integrability domain;
+* `TauCeti.Probability.integrableExpSet_binomial` and
+  `TauCeti.Probability.integrableExpSet_map_cast_binomial` identify the exact
+  exponential-integrability domains of the native and cast laws;
 * `TauCeti.Probability.mgf_id_map_cast_binomial` and
   `TauCeti.Probability.cgf_id_map_cast_binomial` compute its moment and cumulant generating
   functions;
@@ -69,13 +70,22 @@ theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
   intro k _
   ring
 
+/-- Every real observable of a native binomial law has full exponential-integrability domain. -/
+theorem integrableExpSet_binomial (X : ℕ → ℝ) (n : ℕ) (p : unitInterval) :
+    integrableExpSet X Bin(n, p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ integrable_binomial _
+
+/-- Every real observable of a real-cast binomial law has full exponential-integrability
+domain. -/
+theorem integrableExpSet_map_cast_binomial (X : ℝ → ℝ) (n : ℕ) (p : unitInterval) :
+    integrableExpSet X Bin(ℝ, n, p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ integrable_map_cast_binomial _
+
 /-- Every exponential moment of a real-cast binomial law exists. -/
-@[simp]
+@[simp↓]
 theorem integrableExpSet_id_map_cast_binomial (n : ℕ) (p : unitInterval) :
-    integrableExpSet id Bin(ℝ, n, p) = Set.univ := by
-  ext t
-  simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq, Set.mem_univ, iff_true]
-  exact integrable_map_cast_binomial _
+    integrableExpSet id Bin(ℝ, n, p) = Set.univ :=
+  integrableExpSet_map_cast_binomial id n p
 
 /-- The moment generating function of the real-valued binomial law. -/
 theorem mgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :

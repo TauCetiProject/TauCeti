@@ -28,7 +28,8 @@ This file computes the elementary moments and transforms of the real-valued Bern
 * `hasLaw_natCast_bernoulliMeasure` and `hasLaw_cast_eval_bernoulliMeasure` relate native
   Bernoulli variables to their real casts;
 * `pgf_bernoulliMeasure` computes the probability-generating function on the native carrier;
-* `integrableExpSet_id_bernoulliMeasure` identifies the exact exponential-integrability domain;
+* `integrableExpSet_bernoulliMeasure` and `integrableExpSet_id_bernoulliMeasure` identify the
+  exact exponential-integrability domain;
 * `mgf_id_bernoulliMeasure` and `cgf_id_bernoulliMeasure` compute the moment- and
   cumulant-generating functions;
 * `charFun_bernoulliMeasure` computes the characteristic function.
@@ -106,14 +107,18 @@ theorem variance_of_hasLaw_bernoulliMeasure {Ω : Type*} [MeasurableSpace Ω] {P
     Var[X; P] = (p : ℝ) * (1 - p) := by
   rw [hX.variance_eq, variance_id_bernoulliMeasure]
 
+/-- Every real observable of a Bernoulli law has full exponential-integrability domain. -/
+theorem integrableExpSet_bernoulliMeasure {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] (X : α → ℝ) (a b : α) (p : I) :
+    integrableExpSet X Ber(a, b, p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ integrable_bernoulliMeasure a b p _
+
 /-- Every exponential moment of a real Bernoulli law exists, for arbitrary choices of its two
 atoms. -/
-@[simp]
+@[simp↓]
 theorem integrableExpSet_id_bernoulliMeasure (a b : ℝ) (p : I) :
-    integrableExpSet id Ber(a, b, p) = Set.univ := by
-  ext t
-  simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq, Set.mem_univ, iff_true]
-  exact integrable_bernoulliMeasure a b p _
+    integrableExpSet id Ber(a, b, p) = Set.univ :=
+  integrableExpSet_bernoulliMeasure id a b p
 
 /-- The moment-generating function of the real-valued Bernoulli law. -/
 @[simp]
