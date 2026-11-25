@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.CharP.Two
 import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -71,7 +72,10 @@ that underpins the Arf invariant:
 
 * `QuadraticMap.isTotallyIsotropic_range_inl_add_inr_prod_self`: in characteristic two, the diagonal
   submodule of `M × M` is `(Q.prod Q)`-totally-isotropic.
-* `QuadraticMap.isAlt_polarBilin`: in characteristic two, `Q.polarBilin` is alternating.
+* `QuadraticMap.polar_self_eq_zero_of_charTwo`, `QuadraticMap.isAlt_polarBilin`: in
+  characteristic two, `polar Q x x = 0`, so `Q.polarBilin` is alternating.
+* `QuadraticMap.map_add_eq_polar_of_map_eq`: in characteristic two, `Q (x + y) = polar Q x y`
+  when `Q x = Q y`.
 * `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm`: in characteristic two, every binary form
   `binaryQuadraticForm R a b` has nondegenerate polar bilinear form.
 * `QuadraticMap.even_finrank_of_nondegenerate_polarBilin`,
@@ -118,10 +122,19 @@ theorem isTotallyIsotropic_range_inl_add_inr_prod_self [CharP R 2] (Q : Quadrati
     add_zero, zero_add, QuadraticMap.prod_apply, ← two_nsmul, ← Nat.cast_smul_eq_nsmul R,
     CharP.cast_eq_zero, zero_smul]
 
+/-- In characteristic two, the polar form of any quadratic map vanishes on the diagonal. -/
+theorem polar_self_eq_zero_of_charTwo [CharP R 2] (Q : QuadraticMap R M P) (x : M) :
+    polar Q x x = 0 := by
+  rw [polar_self, ← Nat.cast_smul_eq_nsmul R, CharP.cast_eq_zero, zero_smul]
+
 /-- In characteristic two, the polar bilinear map of any quadratic map is alternating. -/
 theorem isAlt_polarBilin [CharP R 2] (Q : QuadraticMap R M P) : Q.polarBilin.IsAlt := fun x ↦ by
-  rw [polarBilin_apply_apply, polar_self, ← Nat.cast_smul_eq_nsmul R, CharP.cast_eq_zero,
-    zero_smul]
+  rw [polarBilin_apply_apply, polar_self_eq_zero_of_charTwo]
+
+/-- In characteristic two, `Q (x + y)` is the polar pairing of `x` and `y` when `Q x = Q y`. -/
+theorem map_add_eq_polar_of_map_eq [CharP R 2] (Q : QuadraticMap R M P) {x y : M}
+    (hxy : Q x = Q y) : Q (x + y) = polar Q x y := by
+  rw [QuadraticMap.map_add (⇑Q), hxy, TauCeti.add_self_eq_zero_of_charTwo R, zero_add]
 
 end QuadraticMap
 
@@ -205,6 +218,25 @@ theorem isometryEquivBinaryQuadraticFormOneProd_symm_apply [CharP R 2]
       (![q.1 0 + q.2 0 + q.2 1, q.1 1 + q.2 0 + q.2 1],
         ![q.1 0 + q.1 1 + q.2 0, q.2 0 + q.2 1]) :=
   (rfl)
+
+/-- An orthogonal sum of binary forms `[0, b i]` vanishes on a subspace of dimension
+`Fintype.card ι`, spanned by the first coordinate vectors `![1, 0]` of the summands. -/
+theorem exists_isTotallyIsotropic_finrank_eq_pi_binaryQuadraticForm_zero_left
+    [StrongRankCondition R] {ι : Type*} [Fintype ι] (b : ι → R) :
+    ∃ U : Submodule R (ι → Fin 2 → R),
+      (QuadraticMap.pi fun i ↦ binaryQuadraticForm R 0 (b i)).IsTotallyIsotropic U ∧
+        Module.finrank R U = Fintype.card ι := by
+  let f : (ι → R) →ₗ[R] (ι → Fin 2 → R) :=
+    { toFun := fun c i ↦ ![c i, 0]
+      map_add' := fun x y ↦ by ext i j; fin_cases j <;> simp
+      map_smul' := fun r x ↦ by ext i j; fin_cases j <;> simp }
+  have hf : Function.Injective f := fun x y hxy ↦ funext fun i ↦ by
+    simpa [f] using congrFun (congrFun hxy i) 0
+  refine ⟨LinearMap.range f, ?_, ?_⟩
+  · rw [QuadraticMap.isTotallyIsotropic_iff]
+    rintro _ ⟨c, rfl⟩
+    simp [f, QuadraticMap.pi_apply]
+  · rw [LinearMap.finrank_range_of_inj hf, Module.finrank_fintype_fun_eq_card]
 
 end CommRing
 
@@ -355,18 +387,11 @@ theorem equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_fin
     Q.Equivalent (QuadraticMap.pi fun _ : Fin m ↦ binaryQuadraticForm K 0 0) ↔
       ∃ U : Submodule K V, Q.IsTotallyIsotropic U ∧ Module.finrank K U = m := by
   refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨U, hU, hUm⟩ ↦ ?_⟩
-  · let f : (Fin m → K) →ₗ[K] (Fin m → Fin 2 → K) :=
-      { toFun := fun c i ↦ ![c i, 0]
-        map_add' := fun x y ↦ by ext i k; fin_cases k <;> simp
-        map_smul' := fun r x ↦ by ext i k; fin_cases k <;> simp }
-    have hf : Function.Injective f := fun x y hxy ↦ funext fun i ↦ by
-      simpa [f] using congrFun (congrFun hxy i) 0
-    refine ⟨(LinearMap.range f).map e.symm.toLinearMap, ?_, ?_⟩
-    · rw [isTotallyIsotropic_iff]
-      rintro _ ⟨_, ⟨c, rfl⟩, rfl⟩
-      simp [f]
-    · rw [e.symm.toLinearEquiv.finrank_map_eq, ← (LinearEquiv.ofInjective f hf).finrank_eq,
-        Module.finrank_fin_fun]
+  · obtain ⟨U, hU, hUm⟩ :=
+      exists_isTotallyIsotropic_finrank_eq_pi_binaryQuadraticForm_zero_left
+        (fun _ : Fin m ↦ (0 : K))
+    exact ⟨_, hU.map_isometryEquiv e.symm, by
+      rw [e.symm.toLinearEquiv.finrank_map_eq, hUm, Fintype.card_fin]⟩
   · have hrad : Q.radical = ⊥ :=
       eq_bot_mono Q.radical_le_ker_polarBilin (LinearMap.BilinForm.Nondegenerate.ker_eq_bot hQ)
     have hU_orth : U = LinearMap.BilinForm.orthogonal Q.polarBilin U :=
