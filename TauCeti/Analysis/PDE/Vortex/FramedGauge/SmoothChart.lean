@@ -354,8 +354,8 @@ theorem exists_isSmoothVortexModuliChart (hk : 2 ≤ k) (x₀ : SobolevFieldSpac
     (Nat.cast_succ k) (Nat.cast_nonneg (k + 1)) (k.cast_add_one_pos (α := ℝ)).le
   have hφ := sliceCoords_apply (f := f) (m := m) hk
   have hφκ (y) : φ y = κ (ρ y) := (hφ y).trans (funext fun j ↦ realSubRef_congrOrder _ _ _ y j)
-  have hρφ (u) : (φ.symm u).realSubRef (Nat.cast_nonneg (k + 1)) = κ.symm u :=
-    κ.injective ((hφκ (φ.symm u)).symm.trans (by rw [φ.apply_symm_apply, κ.apply_symm_apply]))
+  have hρφ (u) : (φ.symm u).realSubRef (Nat.cast_nonneg (k + 1)) = κ.symm u := funext fun j ↦ by
+    simp [φ, κ, realSubRef_congrOrder _ (k.cast_add_one_pos (α := ℝ)).le]
   obtain ⟨W, hWB, hW, e, hx₀e, he0, hsrc, heq⟩ :=
     exists_vortexModuliChart_forall_mem (hs := hs) hk x₀ hmem hsol (B := φ ⁻¹' A ∩ ρ ⁻¹' U)
       ((hA.preimage φ.continuous).inter (hU.preimage (continuous_realSubRef _)))

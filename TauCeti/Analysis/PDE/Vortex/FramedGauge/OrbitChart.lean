@@ -140,8 +140,18 @@ noncomputable def sliceCoords (hk : 2 ≤ k) :
     (realSubRefHomeomorph (by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]))
 
 /-- The slice coordinates of `y` are the real coordinates of `y` at the order `↑k + 1`. -/
+@[simp]
 theorem sliceCoords_apply (hk : 2 ≤ k) (y : SobolevFieldSpace f m (k + 1 : ℕ)) :
     sliceCoords hk y = (congrOrder (Nat.cast_succ k) y).realSubRef _ := by
+  simp [sliceCoords]
+
+/-- The field with slice coordinates `u` is the field with real coordinates `u` at the order
+`↑k + 1`, read at the order `↑(k + 1)`. -/
+@[simp]
+theorem sliceCoords_symm_apply (hk : 2 ≤ k)
+    (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
+    (sliceCoords (f := f) (m := m) hk).symm u = congrOrder (Nat.cast_succ k).symm
+      (ofRealSubRef (by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]) u) := by
   simp [sliceCoords]
 
 variable [Fact (1 < k + 1)] {hs : 1 < ((k + 1 : ℕ) : ℝ) + 1}
