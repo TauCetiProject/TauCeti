@@ -22,6 +22,15 @@ public import Mathlib.Analysis.RCLike.Basic
   jointly continuous `K`-scalar multiplication.
 * `RCLike.re_mem_Ioo_of_mem_ball`: for `z ∈ Metric.ball z₀ δ`,
   `re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ)`.
+* `RCLike.inv_re_le_two_mul_abs_im_inv`: off the real axis, `re z⁻¹ ≤ (2 * |im z|)⁻¹`.
+* `RCLike.abs_re_sub_le_of_mem_closedBall`, `RCLike.abs_im_sub_le_of_mem_closedBall`,
+  `RCLike.norm_le_abs_re_add_abs_im_add_of_mem_closedBall`, and
+  `RCLike.mem_closedBall_of_abs_re_sub_add_abs_im_sub_le`: coordinate bounds on and membership
+  in closed balls.
+* `RCLike.sub_eq_ofReal_re_sub_of_im_eq`: horizontal differences are real casts.
+* `RCLike.sum_mul_inv_le_sum_mul_re_sub_inv`: lower bound for weighted sums of
+  `re (((σ : K) - ρ)⁻¹)` over real points `ρ ∈ S` with `0 < σ - re ρ ≤ D`.
+* `RCLike.one_sub_re_le_norm_sub_one`: `1 - re z ≤ ‖z - 1‖`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
 -/
 
@@ -71,6 +80,60 @@ theorem re_mem_Ioo_of_mem_ball {z z₀ : K} {δ : ℝ} (hz : z ∈ Metric.ball z
     re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ) := by
   simpa only [Real.ball_eq_Ioo, NNReal.coe_one, one_mul] using
     lipschitzWith_re.mapsTo_ball one_ne_zero z₀ δ hz
+
+/-- Off the real axis, the real part of `z⁻¹` is at most `(2 * |im z|)⁻¹`. -/
+theorem inv_re_le_two_mul_abs_im_inv {z : K} (hz : im z ≠ 0) :
+    re z⁻¹ ≤ (2 * |im z|)⁻¹ := by
+  have : 0 < |im z| := abs_pos.2 hz
+  have : 0 < re z * re z + im z * im z :=
+    add_pos_of_nonneg_of_pos (mul_self_nonneg (re z)) (mul_self_pos.2 hz)
+  rw [inv_re, normSq_apply, div_le_iff₀ this, le_inv_mul_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (re z - |im z|), sq_abs (im z)]
+
+/-- On `closedBall z₀ r`, the real part differs from `re z₀` by at most `r`. -/
+theorem abs_re_sub_le_of_mem_closedBall {z z₀ : K} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : |re z - re z₀| ≤ r := by
+  simpa only [← map_sub] using (abs_re_le_norm (z - z₀)).trans (by simpa [dist_eq_norm] using hz)
+
+/-- On `closedBall z₀ r`, the imaginary part differs from `im z₀` by at most `r`. -/
+theorem abs_im_sub_le_of_mem_closedBall {z z₀ : K} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : |im z - im z₀| ≤ r := by
+  simpa only [← map_sub] using (abs_im_le_norm (z - z₀)).trans (by simpa [dist_eq_norm] using hz)
+
+/-- On `closedBall z₀ r`, the norm of `z` is at most `|re z₀| + |im z₀| + r`. -/
+theorem norm_le_abs_re_add_abs_im_add_of_mem_closedBall {z z₀ : K} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : ‖z‖ ≤ |re z₀| + |im z₀| + r :=
+  (norm_le_of_mem_closedBall hz).trans (add_le_add_left (norm_le_abs_re_add_abs_im z₀) r)
+
+/-- If `|re z - re w| + |im z - im w| ≤ r`, then `z ∈ Metric.closedBall w r`. -/
+theorem mem_closedBall_of_abs_re_sub_add_abs_im_sub_le {z w : K} {r : ℝ}
+    (h : |re z - re w| + |im z - im w| ≤ r) : z ∈ Metric.closedBall w r := by
+  rw [Metric.mem_closedBall, dist_eq_norm]
+  exact (norm_le_abs_re_add_abs_im (z - w)).trans (by simpa [map_sub] using h)
+
+/-- Two scalars with the same imaginary part differ by the real cast of the difference of their
+real parts. -/
+theorem sub_eq_ofReal_re_sub_of_im_eq {z w : K} (h : im z = im w) :
+    z - w = ((re z - re w : ℝ) : K) :=
+  RCLike.ext (by simp) (by simp [h])
+
+/-- For nonnegative weights `w` on real points `ρ ∈ S` (`im ρ = 0`) satisfying
+`0 < σ - re ρ ≤ D`, the weighted reciprocal sum `∑ ρ ∈ S, w ρ * re (((σ : K) - ρ)⁻¹)` is at
+least `(∑ ρ ∈ S, w ρ) * D⁻¹`. -/
+theorem sum_mul_inv_le_sum_mul_re_sub_inv {S : Finset K} {w : K → ℝ} {σ D : ℝ}
+    (hw : ∀ ρ ∈ S, 0 ≤ w ρ) (hρ : ∀ ρ ∈ S, im ρ = 0 ∧ 0 < σ - re ρ ∧ σ - re ρ ≤ D) :
+    (∑ ρ ∈ S, w ρ) * D⁻¹ ≤ ∑ ρ ∈ S, w ρ * re (((σ : K) - ρ)⁻¹) := by
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun ρ hρS ↦ ?_
+  obtain ⟨him, hpos, hle⟩ := hρ ρ hρS
+  have hdiff : (σ : K) - ρ = ((σ - re ρ : ℝ) : K) := by
+    simpa using sub_eq_ofReal_re_sub_of_im_eq (z := (σ : K)) (w := ρ) (by simp [him])
+  rw [hdiff, ← ofReal_inv, ofReal_re]
+  exact mul_le_mul_of_nonneg_left (inv_anti₀ hpos hle) (hw ρ hρS)
+
+/-- The real part of a scalar falls short of `1` by at most its distance to `1`. -/
+theorem one_sub_re_le_norm_sub_one (z : K) : 1 - re z ≤ ‖z - 1‖ := by
+  simpa [norm_sub_rev] using re_le_norm (1 - z)
 
 end RCLike
 

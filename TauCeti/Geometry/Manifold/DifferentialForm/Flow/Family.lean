@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 import TauCeti.Analysis.ODE.ScalarLinear
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
@@ -32,8 +33,8 @@ identity
 
 at every time `t` at which the flow from `(s, x)` is defined
 (`TauCeti.hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk`). It extends
-`TauCeti.hasDerivAt_mpullback_timeDependentFlowOf`, where the form does not depend on time. The
-proof reads the family through the flow `Ψ` of the suspension: near `(s, x)`,
+`TauCeti.hasDerivAt_mpullback_timeDependentFlowOf_of_mem`, where the form does not depend on
+time. The proof reads the family through the flow `Ψ` of the suspension: near `(s, x)`,
 `Ψ_r (s, y) = (s + r, φ_{s,s+r} y)`, so `φ_{s,t}^* α_t = ι_s^* (Ψ_{t-s}^* α)` at `x`, whose
 velocity is `ι_s^* Ψ_{t-s}^* L_Z α` by the autonomous identity
 `TauCeti.hasDerivAt_mpullback_flowOf`. The slices of `L_Z α` split as
@@ -74,6 +75,8 @@ how Moser's argument runs with a field cut off away from a region of interest.
 ## Main results
 
 * `TauCeti.hasDerivAt_mpullback_prodMk`: the slices of `α` have velocity `ι_t^* L_{∂_t} α`.
+* `TauCeti.SmoothForm.mpullback_prodMk_timeDeriv_lineMapFamily`: the velocities of the
+  interpolation `α₀ + c(t) (α₁ - α₀)` are `c'(t) (α₁ - α₀)`.
 * `TauCeti.SmoothForm.timeDeriv`, `TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`: the
   same velocity for a smooth form, as a smooth form on `ℝ × M`.
 * `TauCeti.SmoothForm.mpullback_prodMk_timeDeriv_mpullback_prodMap`: the time derivative of the
@@ -332,6 +335,26 @@ theorem SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv
   simpa only [SmoothForm.coe_mpullback, SmoothForm.coe_timeDeriv] using
     hasDerivAt_mpullback_prodMk t x (α.mdifferentiableAt (t, x))
 
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- The slices of the time derivative of the interpolation `α₀ + c(t) (α₁ - α₀)`
+(`TauCeti.SmoothForm.lineMapFamily`) are `c'(t) (α₁ - α₀)`. -/
+@[simp]
+theorem SmoothForm.mpullback_prodMk_timeDeriv_lineMapFamily (α₀ α₁ : SmoothForm I M F k)
+    {c : ℝ → ℝ} (hc : ContDiff ℝ ∞ c) (t : ℝ) :
+    SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
+        (SmoothForm.lineMapFamily α₀ α₁ hc).timeDeriv =
+      deriv c t • (α₁ - α₀) := by
+  refine Subtype.ext (funext fun x ↦ ?_)
+  -- The slices at `x` are `α₀ x + c(u) (α₁ - α₀) x`, with velocity `c'(t) (α₁ - α₀) x`.
+  have h : HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
+      (fun u ↦ (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id)
+        (SmoothForm.lineMapFamily α₀ α₁ hc)).val x) ((deriv c t • (α₁ - α₀)).val x) t := by
+    simp only [SmoothForm.mpullback_prodMk_lineMapFamily, Submodule.coe_add, Submodule.coe_smul,
+      Pi.add_apply, Pi.smul_apply]
+    exact ((hc.differentiable (by simp) t).hasDerivAt.smul_const _).const_add _
+  exact (SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv
+    (SmoothForm.lineMapFamily α₀ α₁ hc) t x).unique h
+
 section Pullback
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -444,7 +467,7 @@ theorem mpullback_prodMk_mlieDerivForm_vertical (t : ℝ) (x : M)
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y
         (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α y)) x :=
     hα.mpullback_form hι.contMDiffAt (by norm_num)
-  have hR₀ := hasDerivAt_mpullback_timeDependentFlowOf_self hX t x
+  have hR₀ := hasDerivAt_mpullback_timeDependentFlowOf_self (hX.of_le one_le_two) t x
     (hslice.mdifferentiableAt one_ne_zero)
   have hR := HasDerivAt.comp_const_add t (0 : ℝ) (by rwa [add_zero])
   have hdom : ∀ᶠ r in 𝓝 (0 : ℝ), ((t, t + r), x) ∈ timeDependentFlowDomain X :=

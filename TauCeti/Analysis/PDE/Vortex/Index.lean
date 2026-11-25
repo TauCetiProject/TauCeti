@@ -394,7 +394,7 @@ theorem finrank_ker_sobolevGaugeFixedOperator_eq_two_mul (hx : Continuous x)
     finrank ℝ (sobolevGaugeFixedOperator a).ker = 2 * m :=
   finrank_ker_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow
     (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
     hhol (tendsto_sectionValue_mul_inv_pow one_lt_two (by exact_mod_cast hmem 2) hx) hax
 
 /-- **The realization at a plane vortex is onto.** Let `x` be a continuous plane vortex lying in
@@ -428,7 +428,7 @@ theorem index_sobolevGaugeFixedOperator_eq_two_mul (hx : Continuous x)
     (sobolevGaugeFixedOperator a).index = 2 * m :=
   index_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow
     (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
     hsol (tendsto_sectionValue_mul_inv_pow one_lt_two (by exact_mod_cast hmem 2) hx) hax
 
 end TauCeti.Vortex

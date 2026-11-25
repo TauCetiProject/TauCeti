@@ -50,6 +50,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `p` of the source and its image `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.isInvertible_fderiv_of_contDiffOn`: for an open partial homeomorphism
+  that is `C^n`, `n ≠ 0`, in both directions, the derivative is invertible on the source.
 * `OpenPartialHomeomorph.det_fderiv_ne_zero`: for an open partial homeomorphism of a space to
   itself, the derivative at such a point has nonzero determinant.
 * `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
@@ -70,9 +72,15 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   derivative of an open partial homeomorphism at a point of its source and of the derivative of
   its inverse at the image point are mutually inverse, when both are differentiable there, in
   particular when both are `C^n`.
+* `OpenPartialHomeomorph.adjoint_apply_eq_adjoint_fderiv_symm_apply_iff`: in the coordinates of
+  such an open partial homeomorphism `e`, the covector identity `(A ∘ De(x))ᵀ η = ξ` reads
+  `Aᵀ η = De⁻¹(e x)ᵀ ξ`.
 * `OpenPartialHomeomorph.hasFDerivAt_transHomeomorph_iff`: postcomposing charts with continuous
   linear equivalences conjugates the Fréchet derivative of a map read in those charts.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
+* `TauCeti.fderiv_comp_fderiv_eq_id_of_eqOn_comp_id`, `TauCeti.det_fderiv_ne_zero_of_eqOn_comp_id`:
+  `Dg(f y) ∘ Df(y) = id` for a left inverse `g` of `f` on a set within which derivatives are
+  unique, so `Df(y)` has nonzero determinant.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
   `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`, so `det Dφ⁻¹(y) ≠ 0` (`Equiv.det_fderiv_symm_ne_zero`).
@@ -220,6 +228,14 @@ theorem differentiableAt_and_differentiableAt_symm_of_contDiffOn (e : OpenPartia
   ⟨(he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx),
     (hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx))⟩
 
+/-- An open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on its
+target, has an invertible derivative at every point of its source. -/
+theorem isInvertible_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e x).IsInvertible :=
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.isInvertible_fderiv hx hd.1 hd.2
+
 /-- An open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
 with inverse `C^n` on its target, has a derivative with nonzero determinant at every point of its
 source. -/
@@ -328,6 +344,18 @@ theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn
   have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
   e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hx hd.1 hd.2 η
 
+/-- For an open partial homeomorphism differentiable at a point `x` of its source, with inverse
+differentiable at `e x`, and a continuous linear map `A`, the covector identity
+`(A ∘ De(x))ᵀ η = ξ` reads `Aᵀ η = De⁻¹(e x)ᵀ ξ` in the coordinates of `e`. -/
+theorem adjoint_apply_eq_adjoint_fderiv_symm_apply_iff (e : OpenPartialHomeomorph E F) {x : E}
+    (hx : x ∈ e.source) (hd : DifferentiableAt 𝕜 e x) (hds : DifferentiableAt 𝕜 e.symm (e x))
+    {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
+    (A : F →L[𝕜] G) (η : G) (ξ : E) :
+    (A†) η = ((fderiv 𝕜 e.symm (e x))†) ξ ↔ ((A.comp (fderiv 𝕜 e x))†) η = ξ := by
+  rw [ContinuousLinearMap.adjoint_comp, ContinuousLinearMap.comp_apply]
+  refine ⟨fun h ↦ by rw [h, e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply hx hd hds], fun h ↦ ?_⟩
+  rw [← h, e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hx hd hds]
+
 end OpenPartialHomeomorph
 
 namespace TauCeti
@@ -352,6 +380,28 @@ theorem fderiv_comp_fderiv_eq_id_of_invOn (hΦ : DifferentiableOn 𝕜 Φ U) (hm
   have hid : Φ ∘ Ψ =ᶠ[𝓝 (Φ y)] id :=
     Filter.eventually_of_mem (V.isOpen.mem_nhds hx) fun x hxV => hΦΨ hxV
   exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
+
+/-- **Left inverses on sets with unique derivatives.** If `g ∘ f` is the identity on a set `S`
+containing `y`, within which derivatives at `y` are unique, and `f` and `g` are differentiable at
+`y` and `f y`, then `Dg(f y) ∘ Df(y) = id`. The set `S` need not be open: a neighbourhood of `y` in
+a closed half-space is allowed, as for the charts of a manifold with boundary. This is the
+within-set form of `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`. -/
+theorem fderiv_comp_fderiv_eq_id_of_eqOn_comp_id {f : E → F} {g : F → E} {S : Set E} {y : E}
+    (hS : UniqueDiffWithinAt 𝕜 S y) (hf : DifferentiableAt 𝕜 f y)
+    (hg : DifferentiableAt 𝕜 g (f y)) (hid : EqOn (g ∘ f) id S) (hy : y ∈ S) :
+    fderiv 𝕜 g (f y) ∘L fderiv 𝕜 f y = ContinuousLinearMap.id 𝕜 E :=
+  hS.eq (hg.hasFDerivAt.comp y hf.hasFDerivAt).hasFDerivWithinAt
+    ((hasFDerivWithinAt_id y S).congr (fun _ hz ↦ hid hz) (hid hy))
+
+/-- Under the hypotheses of `TauCeti.fderiv_comp_fderiv_eq_id_of_eqOn_comp_id` for a map of a
+space to itself, the derivative of `f` at `y` has nonzero determinant. -/
+theorem det_fderiv_ne_zero_of_eqOn_comp_id {f g : E → E} {S : Set E} {y : E}
+    (hS : UniqueDiffWithinAt 𝕜 S y) (hf : DifferentiableAt 𝕜 f y)
+    (hg : DifferentiableAt 𝕜 g (f y)) (hid : EqOn (g ∘ f) id S) (hy : y ∈ S) :
+    (fderiv 𝕜 f y).det ≠ 0 := by
+  refine right_ne_zero_of_mul_eq_one (a := (fderiv 𝕜 g (f y)).det) ?_
+  rw [← ContinuousLinearMap.det_comp,
+    fderiv_comp_fderiv_eq_id_of_eqOn_comp_id hS hf hg hid hy, ContinuousLinearMap.det_id]
 
 end TauCeti
 

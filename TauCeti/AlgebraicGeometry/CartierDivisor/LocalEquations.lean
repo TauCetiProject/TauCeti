@@ -30,6 +30,7 @@ differ by a unique regular unit.
 * `Scheme.rationalUnitClass_eq_rationalUnitClass_iff` restates it for nonzero rational functions:
   two of them have the same class over a nonempty open subset `U` exactly when they differ by a
   unit of `Γ(X, U)`;
+* `Scheme.rationalUnitClass_eq_zero_iff` identifies zero classes with regular units on `U`;
 * `Scheme.CartierDivisor.IsLocalEquationAt D x f`: `f` is a local equation of `D` at the point
   `x`; every point has one (`Scheme.CartierDivisor.exists_isLocalEquationAt`), two of them differ
   by a unit of the local ring `𝒪_{X,x}`
@@ -339,3 +340,19 @@ end
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme
+
+open TauCeti.AlgebraicGeometry.Scheme
+
+universe u
+
+/-- A nonzero rational function has zero Cartier-divisor class over a nonempty open subset
+`U` exactly when it comes from a regular unit on `U`. -/
+theorem rationalUnitClass_eq_zero_iff (X : Scheme.{u}) [IsIntegral X]
+    (U : X.Opens) [Nonempty U] (f : X.functionFieldˣ) :
+    rationalUnitClass X U (Additive.ofMul f) = 0 ↔
+      ∃ r : Γ(X, U)ˣ, regularUnitToFunctionField X U r = f := by
+  simpa using rationalUnitClass_eq_rationalUnitClass_iff X U f 1
+
+end AlgebraicGeometry.Scheme

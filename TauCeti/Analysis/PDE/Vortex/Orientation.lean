@@ -96,7 +96,7 @@ def sobolevKernelPrincipalPartEquiv (hx : Continuous x)
     (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2) :
     (sobolevGaugeFixedOperator a).ker ≃ₗ[ℝ] (Multiset.ToType D → ℂ) :=
   (kerSobolevGaugeFixedOperatorEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
     hax).trans
     (principalPartEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem) hhol
       (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hD hν hνeq)
@@ -117,10 +117,10 @@ private theorem sobolevKernelPrincipalPartEquiv_eq_of_ae_eq (hx : Continuous x)
         (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hD hν hνeq u := by
   have hu :
       kerSobolevGaugeFixedOperatorEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-        (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
+        (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
         hax y = u :=
     (kerSobolevGaugeFixedOperatorEquiv_eq_iff (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-      (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
+      (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
       hax y u).2 fun j ↦
       ae_restrict_of_ae (h.symm.mono fun z hz ↦ by simpa using congrArg (· j) hz)
   rw [sobolevKernelPrincipalPartEquiv, LinearEquiv.trans_apply, hu]
@@ -137,11 +137,11 @@ theorem exists_gaugeFixedKernel_ae_eq_values (hx : Continuous x)
       fun z ↦ (WithLp.toLp 2 fun j ↦ W1p.value ((y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) j) z :
         EuclideanSpace ℝ (Fin 4)) := by
   refine ⟨kerSobolevGaugeFixedOperatorEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
     hax y, ?_⟩
   have hae (j : Fin 4) :=
     kerSobolevGaugeFixedOperatorEquiv_apply_ae (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-      (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
+      (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
       hax y j
   simp only [Opens.coe_top, Measure.restrict_univ] at hae
   filter_upwards [ae_all_iff.2 hae] with z hz

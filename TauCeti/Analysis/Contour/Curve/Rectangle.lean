@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.Polygonal
 public import TauCeti.Analysis.Complex.Rectangle
 public import TauCeti.Analysis.Contour.Cycle.Polygon
 
@@ -40,6 +41,8 @@ the form used by Mathlib's Cauchy theorem for rectangles,
 * `Complex.image_rectBoundary`: the trace of the curve is `frontier (Rectangle z w)`.
 * `Complex.integral_rectBoundary`: its contour integral is the signed sum of the four edge
   integrals.
+* `Complex.integral_contourCycle_rectPolygon`: the same signed sum for
+  `TauCeti.Contour.Cycle.integral` over `(Complex.rectPolygon z w).contourCycle`.
 * `Complex.integral_rectBoundary_congr_codiscreteWithin`: codiscrete changes on the frontier
   do not affect the derivative-weighted integral, including for collapsed edges.
 -/
@@ -245,8 +248,8 @@ theorem integral_rectBoundary {f : ℂ → E} (hf : ContinuousOn f (frontier (Re
         I • (∫ y : ℝ in z.im..w.im, f (w.re + y * I)) -
         I • (∫ y : ℝ in z.im..w.im, f (z.re + y * I)) := by
   have hpoly := (rectPolygon z w).integral_contourCycle (boundary_rectPolygon z w ▸ hf)
-  rw [Polygon.contourCycle_def, Polygon.contourCurve_def, TauCeti.Contour.Cycle.integral_of_raw,
-    Nat.cast_ofNat, ← rectBoundary_def] at hpoly
+  rw [(rectPolygon z w).integral_contourCycle_eq_integral_boundaryParam, Nat.cast_ofNat,
+    ← rectBoundary_def] at hpoly
   -- The four edges are alternately horizontal and vertical segments.
   rw [hpoly, Fin.sum_univ_four]
   simp only [Polygon.edgePath]
@@ -256,6 +259,18 @@ theorem integral_rectBoundary {f : ℂ → E} (hf : ContinuousOn f (frontier (Re
     simp [intervalIntegral.integral_symm z.re w.re, intervalIntegral.integral_symm z.im w.im]
     abel
   all_goals simp [finRotate_apply]
+
+/-- **The cycle integral along the rectangle polygon** of a function continuous on the frontier of
+the rectangle is the signed sum of its four edge integrals, matching
+`Complex.integral_rectBoundary`. -/
+theorem integral_contourCycle_rectPolygon {f : ℂ → E}
+    (hf : ContinuousOn f (frontier (Rectangle z w))) :
+    TauCeti.Contour.Cycle.integral f (rectPolygon z w).contourCycle =
+      (∫ x : ℝ in z.re..w.re, f (x + z.im * I)) - (∫ x : ℝ in z.re..w.re, f (x + w.im * I)) +
+        I • (∫ y : ℝ in z.im..w.im, f (w.re + y * I)) -
+        I • (∫ y : ℝ in z.im..w.im, f (z.re + y * I)) := by
+  rw [(rectPolygon z w).integral_contourCycle_eq_integral_boundaryParam, Nat.cast_ofNat,
+    ← rectBoundary_def, integral_rectBoundary hf]
 
 end Integral
 
