@@ -15,6 +15,7 @@ import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 import TauCeti.LinearAlgebra.Matrix.Determinant.FromBlocks
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
 
 /-!
 # Elementary divisors of alternating forms over a principal ideal domain
@@ -58,8 +59,14 @@ finishes the proof.
   ordered principal ideal domain, such as `ℤ`, the elementary divisors can be taken positive.
 * `LinearMap.BilinForm.det_toMatrix_eq_prod_sq_of_toMatrix_eq_fromBlocks`: over `ℤ` the
   determinant of the form in every basis is the square of the product of its elementary divisors.
+* `LinearMap.BilinForm.eq_of_toMatrix_eq_fromBlocks`: over `ℤ` **the elementary divisors are
+  unique**: two nonnegative divisibility chains `d`, `d'` for which `B` has matrices
+  `[[0, D], [-D, 0]]` and `[[0, D'], [-D', 0]]` in two bases are equal.
 
-The uniqueness of the elementary divisors up to units is not proved here.
+The uniqueness over `ℤ` reduces to that of the Smith normal form
+(`Matrix.smith_normal_form_unique`): `[[0, D], [-D, 0]]` is `[[0, 1], [-1, 0]]` times
+`diag(D, D)`, a change of basis makes `diag(D, D)` and `diag(D', D')` equivalent under `GL(ℤ)`,
+and interleaving the two copies, `diag(d₁, d₁, …, d_g, d_g)`, gives divisibility chains.
 
 ## References
 
@@ -342,6 +349,82 @@ theorem det_toMatrix_eq_prod_sq_of_toMatrix_eq_fromBlocks {g : ℕ} {b : Basis (
     rw [← mul_pow]
     simp
   linear_combination (∏ i, d i) ^ 2 * h
+
+/-- `[[0, D], [-D, 0]]` is `[[0, 1], [-1, 0]]` times `diag(D, D)`. -/
+private theorem fromBlocks_eq_mul_diagonal {g : ℕ} (d : Fin g → ℤ) :
+    fromBlocks 0 (diagonal d) (-diagonal d) 0 =
+      fromBlocks 0 1 (-1) 0 * diagonal (Sum.elim d d) := by
+  rw [← fromBlocks_diagonal, fromBlocks_multiply]
+  simp
+
+/-- The interleaving `Fin (g * 2) ≃ Fin g ⊕ Fin g`, `2i ↦ inl i`, `2i + 1 ↦ inr i`. -/
+private def interleave (g : ℕ) : Fin (g * 2) ≃ Fin g ⊕ Fin g :=
+  finProdFinEquiv.symm.trans <| (Equiv.prodComm _ _).trans <|
+    (finTwoEquiv.prodCongr (Equiv.refl _)).trans (Equiv.boolProdEquivSum _)
+
+private theorem sumElim_interleave {g : ℕ} (d : Fin g → ℤ) (k : Fin (g * 2)) :
+    Sum.elim d d (interleave g k) = d k.divNat := by
+  simp only [interleave, Equiv.trans_apply, finProdFinEquiv_symm_apply, Equiv.prodComm_apply,
+    Prod.swap_prod_mk, Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply,
+    Equiv.boolProdEquivSum]
+  generalize finTwoEquiv k.modNat = x
+  cases x <;> rfl
+
+/-- **Uniqueness of the elementary divisors of an integral alternating form.** If `B` has matrix
+`[[0, D], [-D, 0]]` in one basis and `[[0, D'], [-D', 0]]` in another, where `D = diag(d₁, …, d_g)`
+and `D' = diag(d'₁, …, d'_g)` are nonnegative divisibility chains, then `d = d'`. The number `g`
+is half the rank of the module in either case. -/
+theorem eq_of_toMatrix_eq_fromBlocks {g : ℕ} {b b' : Basis (Fin g ⊕ Fin g) ℤ M} {d d' : Fin g → ℤ}
+    (hd : ∀ i, 0 ≤ d i) (hd' : ∀ i, 0 ≤ d' i) (hdd : ∀ i j, i ≤ j → d i ∣ d j)
+    (hdd' : ∀ i j, i ≤ j → d' i ∣ d' j)
+    (hb : BilinForm.toMatrix b B = fromBlocks 0 (diagonal d) (-diagonal d) 0)
+    (hb' : BilinForm.toMatrix b' B = fromBlocks 0 (diagonal d') (-diagonal d') 0) : d = d' := by
+  classical
+  -- The units `S = [[0, 1], [-1, 0]]`, `P = b.toMatrix b'` and `Pᵀ`.
+  let S : (Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ)ˣ :=
+    ⟨fromBlocks 0 1 (-1) 0, -fromBlocks 0 1 (-1) 0,
+      by simp [fromBlocks_multiply, fromBlocks_neg, ← fromBlocks_one],
+      by simp [fromBlocks_multiply, fromBlocks_neg, ← fromBlocks_one]⟩
+  let P : (Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ)ˣ :=
+    ⟨b.toMatrix b', b'.toMatrix b, b.toMatrix_mul_toMatrix_flip b', b'.toMatrix_mul_toMatrix_flip b⟩
+  let Pt : (Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ)ˣ :=
+    ⟨(b.toMatrix b')ᵀ, (b'.toMatrix b)ᵀ, by rw [← transpose_mul, P.inv_val, transpose_one],
+      by rw [← transpose_mul, P.val_inv, transpose_one]⟩
+  -- `diag(D', D') = (S⁻¹ Pᵀ S) diag(D, D) P`.
+  have hmain : ((S⁻¹ * Pt * S : (Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ)ˣ) :
+      Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ) * diagonal (Sum.elim d d) * (P : Matrix _ _ ℤ) =
+      diagonal (Sum.elim d' d') := by
+    have h := LinearMap.BilinForm.toMatrix_mul_basis_toMatrix b b' B
+    rw [hb, hb', fromBlocks_eq_mul_diagonal, fromBlocks_eq_mul_diagonal] at h
+    calc _ = -fromBlocks 0 1 (-1) 0 * ((b.toMatrix b')ᵀ *
+          (fromBlocks 0 1 (-1) 0 * diagonal (Sum.elim d d)) * b.toMatrix b') := by
+          simp only [Units.val_mul, Matrix.mul_assoc]
+          rfl
+      _ = diagonal (Sum.elim d' d') := by
+          rw [h, ← Matrix.mul_assoc, S.inv_val, Matrix.one_mul]
+  -- Interleave the two copies to get divisibility chains, then use Smith normal form uniqueness.
+  let φ := Matrix.reindexAlgEquiv ℤ ℤ (interleave g).symm
+  have hφ : ∀ f : Fin g → ℤ, φ (diagonal (Sum.elim f f)) = diagonal fun k ↦ f k.divNat := by
+    intro f
+    rw [Matrix.coe_reindexAlgEquiv, Matrix.reindex_apply, Equiv.symm_symm,
+      submatrix_diagonal_equiv]
+    exact congrArg diagonal (funext (sumElim_interleave f))
+  have hchain : ∀ f : Fin g → ℤ, (∀ i j, i ≤ j → f i ∣ f j) →
+      ∀ ⦃k l : Fin (g * 2)⦄, k ≤ l → f k.divNat ∣ f l.divNat := by
+    intro f hf k l hkl
+    refine hf _ _ ?_
+    rw [Fin.le_def] at hkl ⊢
+    exact Nat.div_le_div_right hkl
+  have hsmith := Matrix.smith_normal_form_unique (fun k ↦ hd k.divNat) (fun k ↦ hd' k.divNat)
+    (hchain d hdd) (hchain d' hdd') (Units.map φ.toMonoidHom (S⁻¹ * Pt * S))
+    (Units.map φ.toMonoidHom P) <| by
+      simp only [Units.coe_map]
+      rw [← hφ, ← hφ, ← hmain, map_mul, map_mul]
+      rfl
+  funext i
+  have hi : (finProdFinEquiv (i, (0 : Fin 2))).divNat = i :=
+    congrArg Prod.fst (finProdFinEquiv.symm_apply_apply (i, (0 : Fin 2)))
+  simpa [hi] using congrFun hsmith (finProdFinEquiv (i, 0))
 
 end Int
 
