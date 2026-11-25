@@ -29,7 +29,7 @@ so `ν(H'_λ) ∈ ℤ` whenever `𝔤_ν ≠ 0`
 (`LieEquiv.IsCartanInvolution.exists_int_apply_restrictedCoroot`): the restricted roots are
 crystallographic for the pairing with the coroots. Applying this to `λ` and `cλ` in both
 directions, the multiples of a restricted root that are restricted roots are among `±λ/2`, `±λ`,
-`±2λ` (`LieEquiv.IsCartanInvolution.eq_of_smul_mem_restrictedRoots`).
+`±2λ` (`LieEquiv.IsCartanInvolution.mem_of_smul_mem_restrictedRoots`).
 
 ## Main definitions
 
@@ -44,7 +44,7 @@ directions, the multiples of a restricted root that are restricted roots are amo
   of `E` gives the `𝔰𝔩₂` triple `(H'_λ, E', -θE')`.
 * `LieEquiv.IsCartanInvolution.exists_int_apply_restrictedCoroot`: `ν(H'_λ) ∈ ℤ` for every `ν`
   with `𝔤_ν ≠ 0`.
-* `LieEquiv.IsCartanInvolution.eq_of_smul_mem_restrictedRoots`: if `λ` and `cλ` are restricted
+* `LieEquiv.IsCartanInvolution.mem_of_smul_mem_restrictedRoots`: if `λ` and `cλ` are restricted
   roots, then `c ∈ {±1/2, ±1, ±2}`.
 
 ## References
@@ -70,14 +70,13 @@ variable (hθ : θ.IsCartanInvolution) (h𝔞 : 𝔞 ≤ θ.cartanP)
 /-- The **restricted coroot** `H'_λ = 2 H_λ / λ(H_λ)` of a functional `λ` on `𝔞`, where `H_λ ∈ 𝔞`
 represents `λ` under the Killing form (`LieEquiv.IsCartanInvolution.killingEquivDual`). Since
 `λ(H_λ) = B(H_λ, H_λ)`, this is `2 H_λ / B(H_λ, H_λ)`. -/
-@[expose]
 noncomputable def restrictedCoroot (μ : Dual K 𝔞) : 𝔞 :=
   (2 / μ ((hθ.killingEquivDual h𝔞).symm μ)) • (hθ.killingEquivDual h𝔞).symm μ
 
 theorem restrictedCoroot_def (μ : Dual K 𝔞) :
     hθ.restrictedCoroot h𝔞 μ =
       (2 / μ ((hθ.killingEquivDual h𝔞).symm μ)) • (hθ.killingEquivDual h𝔞).symm μ :=
-  rfl
+  (rfl)
 
 /-- **`λ(H'_λ) = 2`** for `λ ≠ 0`. -/
 theorem apply_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
@@ -94,6 +93,7 @@ theorem restrictedCoroot_ne_zero {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
   exact two_ne_zero this.symm
 
 /-- The restricted coroot of `cλ` is `c⁻¹ H'_λ`. -/
+@[simp]
 theorem restrictedCoroot_smul (μ : Dual K 𝔞) (c : K) :
     hθ.restrictedCoroot h𝔞 (c • μ) = c⁻¹ • hθ.restrictedCoroot h𝔞 μ := by
   rcases eq_or_ne c 0 with rfl | hc
@@ -106,8 +106,8 @@ theorem restrictedCoroot_smul (μ : Dual K 𝔞) (c : K) :
   field_simp
 
 /-- On the restricted root space `𝔤_ν`, the coroot `H'_λ` acts by `ν(H'_λ)`. -/
-theorem lie_restrictedCoroot_of_mem {ν : Dual K 𝔞} (μ : Dual K 𝔞) {x : L}
-    (hx : x ∈ 𝔞.restrictedRootSpace ν) :
+theorem restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace {ν : Dual K 𝔞} (μ : Dual K 𝔞)
+    {x : L} (hx : x ∈ 𝔞.restrictedRootSpace ν) :
     ⁅(hθ.restrictedCoroot h𝔞 μ : L), x⁆ =
       ν (hθ.restrictedCoroot h𝔞 μ) • x :=
   Submodule.mem_restrictedRootSpace.mp hx _
@@ -138,11 +138,12 @@ theorem isSl2Triple_restrictedCoroot {μ : Dual K 𝔞} (hμ : μ ≠ 0) {E : L}
       restrictedCoroot_def, Submodule.coe_smul]
     congr 1
     field_simp
-  · rw [hθ.lie_restrictedCoroot_of_mem h𝔞.le_cartanP μ hE, h2, two_smul, two_nsmul]
-  · rw [lie_smul, hθ.lie_restrictedCoroot_of_mem h𝔞.le_cartanP μ hθE, LinearMap.neg_apply, h2,
-      smul_smul, two_nsmul, ← two_smul K, smul_smul, ← neg_smul]
-    congr 1
-    ring
+  · rw [hθ.restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace h𝔞.le_cartanP μ hE, h2,
+      two_smul, two_nsmul]
+  · rw [lie_smul,
+      hθ.restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace h𝔞.le_cartanP μ hθE]
+    simp only [LinearMap.neg_apply, h2, two_nsmul]
+    module
 
 /-- **The symmetric `𝔰𝔩₂` triple of a restricted root**, over `ℝ`: for a nonzero `E ∈ 𝔤_λ`,
 `λ ≠ 0`, some positive multiple `E'` of `E` gives the `𝔰𝔩₂` triple `(H'_λ, E', -θE')`
@@ -187,14 +188,14 @@ theorem exists_int_apply_restrictedCoroot {μ ν : Dual K 𝔞} (hμ : μ ∈ �
   obtain ⟨X, hX, hX0⟩ := (Submodule.ne_bot_iff _).mp hν
   exact TauCeti.exists_int_of_lie_h_eq_smul (M := L)
     (hθ.isSl2Triple_restrictedCoroot h𝔞 hμ0 hE hE0)
-    (hθ.lie_restrictedCoroot_of_mem h𝔞.le_cartanP μ hX) hX0
+    (hθ.restrictedCoroot_lie_eq_smul_of_mem_restrictedRootSpace h𝔞.le_cartanP μ hX) hX0
 
 include hθ h𝔞 in
 /-- **The multiples of a restricted root.** If `λ` and `cλ` are restricted roots, then
 `c ∈ {±1/2, ±1, ±2}`: both `(cλ)(H'_λ) = 2c` and `λ(H'_{cλ}) = 2/c` are integers. -/
-theorem eq_of_smul_mem_restrictedRoots {μ : Dual K 𝔞} (hμ : μ ∈ 𝔞.restrictedRoots) {c : K}
+theorem mem_of_smul_mem_restrictedRoots {μ : Dual K 𝔞} (hμ : μ ∈ 𝔞.restrictedRoots) {c : K}
     (hc : c • μ ∈ 𝔞.restrictedRoots) :
-    c = 1 / 2 ∨ c = -(1 / 2) ∨ c = 1 ∨ c = -1 ∨ c = 2 ∨ c = -2 := by
+    c ∈ ({1 / 2, -(1 / 2), 1, -1, 2, -2} : Set K) := by
   have hμ0 := (Submodule.mem_restrictedRoots.mp hμ).1
   have hc0 : c ≠ 0 := by
     rintro rfl
@@ -217,9 +218,7 @@ theorem eq_of_smul_mem_restrictedRoots {μ : Dual K 𝔞} (hμ : μ ∈ 𝔞.res
   have hle : a.natAbs ≤ 4 := Nat.le_of_dvd (by norm_num) hdvd
   have hcA : c = (a : K) / 2 := by rw [ha.symm]; ring
   have hcases : a = 1 ∨ a = -1 ∨ a = 2 ∨ a = -2 ∨ a = 4 ∨ a = -4 := by
-    interval_cases h : a.natAbs <;> first
-      | (exfalso; revert hdvd; decide)
-      | omega
+    interval_cases h : a.natAbs <;> omega
   rcases hcases with rfl | rfl | rfl | rfl | rfl | rfl <;> norm_num [hcA]
 
 end Sl2
