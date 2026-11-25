@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
 
 import TauCeti.Geometry.Lie.AutomaticSmoothness
 import TauCeti.Geometry.Lie.Functor
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 
 /-!
@@ -109,7 +110,6 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ F] [J.Bou
 /-- If the model space `E` of `G` is trivial, then `ν = 0`, so `ν ∘ dφ = 0`. -/
 private theorem comp_groupLieAlgebraMap_eq_zero (hE : Subsingleton E) :
     ν.comp (φ.groupLieAlgebraMap J I).toLinearMap = 0 := by
-  have := subsingleton_groupLieAlgebra (I := I) (G := G)
   rw [Subsingleton.elim ν 0, LinearMap.zero_comp]
 
 /-- The Kirillov–Kostant–Souriau form of a functional equal to zero vanishes. -/
@@ -133,7 +133,6 @@ theorem contMDiff_coadjointOrbitQuotientMap :
       rw [coadjointOrbitQuotientMap_comp_mk]
       rcases subsingleton_or_nontrivial E with hE | hE
       · -- If `𝔤 = 0`, then `G_ν = G`, so the projection of `G` is constant.
-        have := subsingleton_groupLieAlgebra (I := I) (G := G)
         refine (contMDiff_const (c := ((1 : G) : G ⧸
           (coadjointRepresentation ℝ I G).stabilizer ν))).congr fun k ↦ ?_
         exact QuotientGroup.eq.2 (Representation.mem_stabilizer.2 (Subsingleton.elim _ _))
@@ -149,7 +148,6 @@ theorem mpullback_coadjointOrbitQuotientMap_coadjointOrbitForm :
       Dual.coadjointOrbitForm (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap) := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- If `𝔤 = 0`, then `ν = 0` and `ν ∘ dφ = 0`, whose KKS forms vanish.
-    have := subsingleton_groupLieAlgebra (I := I) (G := G)
     rw [coadjointOrbitForm_eq_zero (Subsingleton.elim ν 0), map_zero,
       coadjointOrbitForm_eq_zero (comp_groupLieAlgebraMap_eq_zero φ ν hE)]
   -- If `𝔤 ≠ 0`, then `φ` is smooth, and pulled back to `K` both sides are `φ^* σ_ν = σ_{ν ∘ dφ}`.
@@ -176,7 +174,6 @@ private theorem finrank_quotientModelSpace_eq :
     Dual.finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator]
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- If `𝔤 = 0`, then `ν ∘ dφ = 0`, whose infinitesimal stabilizer is all of `𝔨`.
-    have := subsingleton_groupLieAlgebra (I := I) (G := G)
     rw [comp_groupLieAlgebraMap_eq_zero φ ν hE, lieAnnihilator_zero, LieSubalgebra.top_toSubmodule,
       finrank_zero_of_subsingleton, finrank_zero_of_subsingleton]
   · -- If `𝔤 ≠ 0`, then `φ` is smooth, and `dφ` is a homomorphism of Lie algebras.

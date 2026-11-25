@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.LeftInvariantDerivation
 public import TauCeti.Geometry.Manifold.DerivationBundle
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Geometry.Manifold.VectorField.Derivation
 
 /-!
@@ -317,17 +318,11 @@ theorem finiteDimensional_leftInvariantDerivation
   exact (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
     h₁).symm.finiteDimensional
 
-/-- If the model vector space is trivial, so is the tangent Lie algebra: `GroupLieAlgebra I G` is
-the tangent space at the identity, which is the model vector space by definition. -/
-theorem subsingleton_groupLieAlgebra [Subsingleton E] : Subsingleton (GroupLieAlgebra I G) :=
-  inferInstanceAs (Subsingleton E)
-
 /-- If the model vector space is trivial, so is the Lie algebra of left-invariant derivations of a
 finite-dimensional smooth real Lie group. -/
 theorem subsingleton_leftInvariantDerivation [Subsingleton E]
     [FiniteDimensional ℝ E] [ContMDiffMul I ∞ G] [T2Space G]
     (h₁ : I.IsInteriorPoint (1 : G)) : Subsingleton (LeftInvariantDerivation I G) :=
-  have := subsingleton_groupLieAlgebra (I := I) (G := G)
   (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G) h₁).injective.subsingleton
 
 /-- The Lie algebra of a finite-dimensional smooth real Lie group without boundary is
