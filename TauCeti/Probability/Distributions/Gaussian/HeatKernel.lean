@@ -106,19 +106,10 @@ theorem hasGradientAt_multivariateGaussianPDFReal_smul_one {v : ℝ} (hv : 0 < v
     (m y : EuclideanSpace ℝ ι) :
     HasGradientAt (multivariateGaussianPDFReal m (v • 1))
       (-v⁻¹ • multivariateGaussianPDFReal m (v • 1) y • (y - m)) y := by
-  set A : ℝ := (4 * π * (v / 2)) ^ (-(Fintype.card ι : ℝ) / 2)
-  have hfun : multivariateGaussianPDFReal m (v • 1) =
-      fun z ↦ A * exp (‖id z - m‖ ^ 2 * -(2 * v)⁻¹) := by
-    funext z
-    rw [multivariateGaussianPDFReal_smul_one hv, heatKernel_apply, finrank_euclideanSpace, id]
-    congr 2
-    ring
-  have hsq := ((hasFDerivAt_id (𝕜 := ℝ) y).sub_const m).norm_sq
-  rw [hasGradientAt_iff_hasFDerivAt, hfun]
-  refine (((hsq.mul_const (-(2 * v)⁻¹)).exp).const_mul A).congr_fderiv ?_
-  ext w
-  simp only [id_eq, ContinuousLinearMap.comp_id, smul_apply, coe_innerSL_apply, nsmul_eq_mul,
-    Nat.cast_ofNat, smul_eq_mul, map_smul, InnerProductSpace.toDual_apply_apply]
-  field_simp
+  have h := (hasGradientAt_heatKernel (v / 2) (y - m)).hasFDerivAt.comp y
+    ((hasFDerivAt_id y).sub_const m)
+  rw [ContinuousLinearMap.comp_id, show 2 * (v / 2) = v by ring] at h
+  rw [funext (multivariateGaussianPDFReal_smul_one hv m), hasGradientAt_iff_hasFDerivAt]
+  exact h
 
 end TauCeti.Probability
