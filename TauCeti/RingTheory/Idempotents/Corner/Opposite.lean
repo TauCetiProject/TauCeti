@@ -32,7 +32,7 @@ variable (R : Type v) [CommSemiring R] {A : Type u} [Semiring A] [Algebra R A] {
 
 /-- **The corner of the opposite ring.** For an idempotent `e` of an `R`-algebra `A`, the corner of
 `Aᵐᵒᵖ` at `op e` is the opposite of the corner of `A` at `e`, by `c ↦ op (unop c)`. -/
-@[expose] def cornerOpAlgEquiv (he : IsIdempotentElem e) (he' : IsIdempotentElem (op e)) :
+def cornerOpAlgEquiv (he : IsIdempotentElem e) (he' : IsIdempotentElem (op e)) :
     he'.Corner ≃ₐ[R] he.Cornerᵐᵒᵖ where
   toFun c := op ⟨unop c.val, (Subsemigroup.mem_corner_iff he).2
     ⟨congrArg unop (he'.corner_val_mul c), congrArg unop (he'.mul_corner_val c)⟩⟩

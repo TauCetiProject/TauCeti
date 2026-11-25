@@ -84,6 +84,7 @@ theorem nonempty_ofAlgEquiv_functor_obj_iso (R : Type*) [CommSemiring R] {A : Ty
     {W : ModuleCat.{max u v} B} (g : Z ≃+ W)
     (hg : ∀ (b : B) (z : Z), g (f.symm b • z) = b • g z) :
     Nonempty ((MoritaEquivalence.ofAlgEquiv f).eqv.functor.obj Z ≅ W) :=
+  -- The restricted module has carrier `Z` and action `b • z = f.symm b • z`, by definition.
   let g' : (MoritaEquivalence.ofAlgEquiv f).eqv.functor.obj Z ≃ₗ[B] W :=
     { g with map_smul' := hg }
   ⟨g'.toModuleIso⟩

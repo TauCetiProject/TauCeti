@@ -104,12 +104,14 @@ endomorphism algebra. -/
 noncomputable def moduleEndRestrictScalarsAlgEquiv :
     Module.End Γ ((restrictScalarsEquivalenceOfRingEquiv σ.toRingEquiv).functor.obj
       (ModuleCat.of Γ' W)) ≃ₐ[R] Module.End Γ' W where
+  -- The restricted module has carrier `W` and action `γ • w = σ γ • w`, by definition.
   toFun φ :=
     { toFun w := φ w
       map_add' := φ.map_add
       map_smul' γ w := by
         obtain ⟨γ, rfl⟩ := σ.surjective γ
         exact φ.map_smul γ w }
+  -- The same definitional carrier and action, read in the other direction.
   invFun ψ :=
     { toFun w := ψ w
       map_add' := ψ.map_add

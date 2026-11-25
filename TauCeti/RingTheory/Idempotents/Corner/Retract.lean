@@ -234,10 +234,15 @@ theorem span_op_comp_eq_top {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘
     {ι : Type*} (s : Finset ι) (u : ι → X →ₗ[A] Y) (v : ι → Y →ₗ[A] X)
     (huv : ∑ j ∈ s, u j ∘ₗ v j = .id) :
     TwoSidedIdeal.span {op (i ∘ₗ p : Module.End A M)} = ⊤ := by
-  refine eq_top_iff.2 ?_
-  rw [← TwoSidedIdeal.opOrderIso.map_top, ← span_comp_eq_top hip hsum s u v huv,
-    ← OrderIso.le_symm_apply, TwoSidedIdeal.span_le, Set.singleton_subset_iff]
-  exact TwoSidedIdeal.mem_unop_iff.2 (TwoSidedIdeal.subset_span rfl)
+  refine (TwoSidedIdeal.one_mem_iff _).mp ?_
+  -- The ideal of `End_A M` sent into `span {op (i ∘ p)}` by `op` contains `i ∘ p`, so it is `⊤`.
+  have h : TwoSidedIdeal.span {(i ∘ₗ p : Module.End A M)} ≤
+      (TwoSidedIdeal.span {op (i ∘ₗ p : Module.End A M)}).unop :=
+    TwoSidedIdeal.span_le.2 <| Set.singleton_subset_iff.2 <|
+      TwoSidedIdeal.mem_unop_iff.2 (TwoSidedIdeal.subset_span rfl)
+  rw [span_comp_eq_top hip hsum s u v huv, top_le_iff] at h
+  rw [← MulOpposite.op_one, ← TwoSidedIdeal.mem_unop_iff, h]
+  exact TwoSidedIdeal.mem_top _
 
 /-- **The endomorphism ring of a retract is a corner.** If `X` is a retract of `M`, with inclusion
 `i` and retraction `p`, the corner of `(End_A M)ᵐᵒᵖ` at the idempotent `i ∘ p` is `(End_A X)ᵐᵒᵖ`,
@@ -251,14 +256,14 @@ noncomputable def cornerOpEndRetractAlgEquiv {i : X →ₗ[A] M} {p : M →ₗ[A
 @[simp]
 theorem unop_cornerOpEndRetractAlgEquiv_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X} (hip : p ∘ₗ i = .id)
     (c : (isIdempotentElem_op_comp hip).Corner) :
-    unop (cornerOpEndRetractAlgEquiv R hip c) = p ∘ₗ (unop c.val : Module.End A M) ∘ₗ i :=
-  (rfl)
+    unop (cornerOpEndRetractAlgEquiv R hip c) = p ∘ₗ (unop c.val : Module.End A M) ∘ₗ i := by
+  simp [cornerOpEndRetractAlgEquiv]
 
 /-- An endomorphism `g` of `X` is the corner element `i ∘ g ∘ p`. -/
 @[simp]
 theorem val_cornerOpEndRetractAlgEquiv_symm_apply {i : X →ₗ[A] M} {p : M →ₗ[A] X}
     (hip : p ∘ₗ i = .id) (g : (Module.End A X)ᵐᵒᵖ) :
-    ((cornerOpEndRetractAlgEquiv R hip).symm g).val = op (i ∘ₗ unop g ∘ₗ p) :=
-  congrArg op (val_cornerEndRetractAlgEquiv_symm_apply R hip (unop g))
+    ((cornerOpEndRetractAlgEquiv R hip).symm g).val = op (i ∘ₗ unop g ∘ₗ p) := by
+  simp [cornerOpEndRetractAlgEquiv]
 
 end TauCeti
