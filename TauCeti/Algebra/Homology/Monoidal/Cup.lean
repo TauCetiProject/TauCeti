@@ -36,7 +36,7 @@ connecting morphism `δ`, which for singular cochains is the Bockstein homomorph
 sequences and pairings `μ₁₃ : M₁ ⊗ N₃ ⟶ P'` and `μ₃₁ : M₃ ⊗ N₁ ⟶ P'` which both come from one
 pairing `μ : M₂ ⊗ N₂ ⟶ P` followed by `g : P ⟶ P'`, the Leibniz rule applied to lifts of two
 cocycles to `M₂` and `N₂` gives `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`
-(`TauCeti.ChainComplex.δ_cup_eq_zsmul_cup_δ`).
+(`TauCeti.ChainComplex.cup_δ_eq_zsmul`).
 
 ## Main definitions and results
 
@@ -50,7 +50,7 @@ cocycles to `M₂` and `N₂` gives `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`
 * `TauCeti.ChainComplex.cup`: the cup product on cohomology, with
   `TauCeti.ChainComplex.cup_homologyπ` computing it on classes of cocycles and
   `TauCeti.ChainComplex.cup_naturality` its naturality.
-* `TauCeti.ChainComplex.δ_cup_eq_zsmul_cup_δ`: the cup product of a connecting morphism with a
+* `TauCeti.ChainComplex.cup_δ_eq_zsmul`: the cup product of a connecting morphism with a
   class, `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`.
 
 ## References
@@ -270,7 +270,7 @@ factors through `μ₃₁ : M₃ ⊗ N₁ ⟶ P'`. Then for `x ∈ Hᵖ(Hom(A, M
 `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`   in `H^(p + q + 1)(Hom(E, P'))`,
 
 the cup products being taken along `D` with the pairings `μ₁₃` and `μ₃₁`. -/
-theorem δ_cup_eq_zsmul_cup_δ (hμ₁₃ : (S.f ▷ S'.X₂) ≫ μ ≫ g = (S.X₁ ◁ S'.g) ≫ μ₁₃)
+theorem cup_δ_eq_zsmul (hμ₁₃ : (S.f ▷ S'.X₂) ≫ μ ≫ g = (S.X₁ ◁ S'.g) ≫ μ₁₃)
     (hμ₃₁ : (S.X₂ ◁ S'.f) ≫ μ ≫ g = (S.g ▷ S'.X₁) ≫ μ₃₁) (p q p' q' n : ℕ) (hp : p + 1 = p')
     (hq : q + 1 = q') (h₁ : p' + q = n) (h₂ : p + q' = n)
     (x : (A.linearYonedaObj k S.X₃).homology p) (y : (B.linearYonedaObj k S'.X₃).homology q) :

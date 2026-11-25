@@ -26,7 +26,7 @@ the left one with `μ₁₃` and the right one with `μ₃₁`
 `a` and `b` to cochains `φ` and `ψ` with values in `M₂` and `N₂`, the cochain `g ∘ (φ ⌣ ψ)` has
 coboundary a cocycle representing `β a ⌣ b + (-1)ᵖ a ⌣ β b`, by the Leibniz rule. The algebraic
 statement, for the cup product of the cochains of chain complexes along any diagonal, is
-`TauCeti.ChainComplex.δ_cup_eq_zsmul_cup_δ`.
+`TauCeti.ChainComplex.cup_δ_eq_zsmul`.
 
 For the sequence `0 ⟶ ℤ ⟶ ℚ ⟶ ℚ/ℤ ⟶ 0` taken twice, with `R = S = T = 𝟙_` the unit object,
 `u = (λ_ (𝟙_)).inv` the inverse unitor, `μ` the multiplication of `ℚ`, `g` the projection to `ℚ/ℤ`
@@ -83,7 +83,7 @@ theorem singularCup_singularCohomologyBockstein_eq_zsmul (X : TopCat.{w}) (k : T
   rw [TauCeti.singularCup_def, TauCeti.singularCup_def,
     singularCohomologyBockstein_eq_δ R k X hM p p' hp,
     singularCohomologyBockstein_eq_δ S k X hN q q' hq]
-  exact TauCeti.ChainComplex.δ_cup_eq_zsmul_cup_δ (X.alexanderWhitneyDiagonal u) hM hN g μ μ₁₃ μ₃₁
+  exact TauCeti.ChainComplex.cup_δ_eq_zsmul (X.alexanderWhitneyDiagonal u) hM hN g μ μ₁₃ μ₃₁
     hμ₁₃ hμ₃₁ p q p' q' n hp hq h₁ h₂ a b
 
 end TopCat
