@@ -15,7 +15,7 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
-import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree
+import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
@@ -378,7 +378,7 @@ namespace Cochain
 theorem gaugeDistErr_ofLt_seed : (ofLt (complete (Fin 4)) Sym3.seed).gaugeDistErr = 2 := by
   simp only [gaugeDistErr_def, costErr_ofLt_complete]
   exact ciInf₂_sum_distErr_fin_four_of_eq_setOf_isSwap _ Sym3.seed_zero_of_pos
-    Sym3.setOf_seed_eq_setOf_isSwap
+    Sym3.insert_seed_eq_setOf_isSwap
 
 /-- Replicating the `k = 4` seed along `Fin 4 ×ₗ ι`, with `1` inside clusters, multiplies its
 cross-degree distance by `(card ι) ^ 2`: no gauge of any degree is cheaper than the replicated
@@ -389,7 +389,7 @@ theorem gaugeDistErr_ofLt_lex_seed (ι : Type*) [Fintype ι] [LinearOrder ι] :
       2 * (Fintype.card ι : ℝ) ^ 2 := by
   simp only [gaugeDistErr_def, costErr_ofLt_complete]
   exact ciInf₂_sum_distErr_lex_fin_four_of_eq_setOf_isSwap _ Sym3.seed_zero_of_pos
-    Sym3.setOf_seed_eq_setOf_isSwap
+    Sym3.insert_seed_eq_setOf_isSwap
 
 end Cochain
 
@@ -443,7 +443,6 @@ private theorem h1Err_complete_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 
   set G := SimpleGraph.staircase q t
   set α := Cochain.ofLt (complete W) fun u v => if G.Adj u v then (swap 0 1 : Perm (Fin 3)) else 1
   have hE2 := SimpleGraph.two_mul_card_edgeFinset_staircase q t
-  have hO := SimpleGraph.three_mul_card_oddTriangleFinset_staircase q t
   have hD : (2 * #G.edgeFinset : ℝ) / 3 ≤ α.gaugeDistErr := by
     refine α.le_gaugeDistErr_iff.mpr fun m β => ?_
     rcases eq_or_ne m 1 with rfl | hm
@@ -464,16 +463,11 @@ private theorem h1Err_complete_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 
   refine (h1Err_le_div (n := 1) (hpos.trans_le hD)).trans ?_
   refine (div_le_div_of_nonneg_left (div_nonneg (α.defect_nonneg _) (Nat.cast_nonneg _)) hpos
     hD).trans_eq ?_
-  rw [SimpleGraph.defect_ofLt_ite_adj, hV]
+  rw [SimpleGraph.defect_ofLt_ite_adj, SimpleGraph.card_oddTriangleFinset_staircase, hV]
   have hE' : (#G.edgeFinset : ℝ) ≠ 0 := by linarith
-  have h := congrArg (Nat.cast (R := ℝ)) hO
-  push_cast at h ⊢
+  push_cast
   field_simp
-  -- the two odd-triangle counts differ only in their `DecidableEq W` instances
-  convert h using 1
-  · rw [mul_comm]
-    congr!
-  · ring
+  rfl
 
 /-- The cross-degree coboundary constant of the complete complex is `card V / 3` whenever
 `3 ≤ card V` (Beasley, Proposition 10). The lower bound is the cross-degree star bound. For the

@@ -10,7 +10,7 @@ import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
-import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree
+import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
 import TauCeti.GroupTheory.Perm.FinThree.Basic
 import Mathlib.Data.Fintype.Card
 import Mathlib.Order.Prod.Lex.Basic
@@ -76,7 +76,7 @@ theorem seed_zero_of_pos : ∀ v : Fin 4, 0 < v → seed 0 v = 1 := by decide
 
 /-- The seed carries the three transpositions of `Perm (Fin 3)` on the edges `(1, 2)`, `(1, 3)`,
 `(2, 3)`, one each. -/
-theorem setOf_seed_eq_setOf_isSwap :
+theorem insert_seed_eq_setOf_isSwap :
     ({seed 1 2, seed 1 3, seed 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap} := by
   rw [setOf_isSwap_perm_fin_three]
   ext σ
@@ -110,7 +110,7 @@ private theorem six_mul_sq_le_gaugeDist_lex (q : ℕ) :
         (movedNorm (Fin 3)) := by
   have hinf := card_sq_mul_ciInf_le_ciInf_sum_distErr_lex (ι := Fin q) seed 3
   rw [ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap seed seed_zero_of_pos
-    setOf_seed_eq_setOf_isSwap, Fintype.card_fin] at hinf
+    insert_seed_eq_setOf_isSwap, Fintype.card_fin] at hinf
   refine (Cochain.le_gaugeDist_iff _ _).mpr fun β => ?_
   rw [Cochain.cost_complete]
   have hterm : ∀ e ∈ (univ.filter fun p : (Fin 4 ×ₗ Fin q) × (Fin 4 ×ₗ Fin q) => p.1 < p.2),

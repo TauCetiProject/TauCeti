@@ -172,18 +172,14 @@ theorem h1_complete_movedNorm_fin_three_le_of_card_eq_mul {q t : ℕ} (hq : 0 < 
     ring
   rw [h1_complete_eq_of_card_eq Perm.isConjInvariant_movedNorm (hV.trans hW.symm)]
   have hE2 := SimpleGraph.two_mul_card_edgeFinset_staircase q t
-  have hO := SimpleGraph.three_mul_card_oddTriangleFinset_staircase q t
   have hE : 0 < #(SimpleGraph.staircase q t).edgeFinset := by
     have : 0 < q ^ 2 * t * (t + 1) := by positivity
     omega
   refine (SimpleGraph.h1_complete_movedNorm_fin_three_le_of_isCutMinimal _
     (SimpleGraph.isCutMinimal_staircase q t) hE).trans_eq ?_
-  have hE' : (0 : ℝ) < #(SimpleGraph.staircase q t).edgeFinset := by exact_mod_cast hE
-  rw [hV, div_eq_div_iff hE'.ne' (by norm_num)]
-  have h := congrArg (Nat.cast (R := ℝ)) hO
-  push_cast at h ⊢
-  -- the two odd-triangle counts differ only in their `DecidableEq W` instances
-  refine (mul_comm _ _).trans ?_
-  convert h
+  have hE' : (#(SimpleGraph.staircase q t).edgeFinset : ℝ) ≠ 0 := by positivity
+  rw [SimpleGraph.card_oddTriangleFinset_staircase, mul_div_cancel_right₀ _ hE', hV]
+  push_cast
+  ring
 
 end TauCeti
