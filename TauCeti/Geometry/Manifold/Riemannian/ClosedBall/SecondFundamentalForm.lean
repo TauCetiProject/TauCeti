@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.OutwardUnitNormal
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Inward
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 
