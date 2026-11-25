@@ -303,8 +303,7 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
   let line := Subrepresentation.spanSingleton v fun g => ⟨c g, hc g v⟩
   have hline : line = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top line).resolve_left fun h => hv <| by
     have hmem : v ∈ line := Subrepresentation.self_mem_spanSingleton v _
-    rw [h] at hmem
-    exact hmem
+    rwa [h, Subrepresentation.mem_bot] at hmem
   have hfin : Module.finrank k W = 1 :=
     (finrank_eq_one_iff_of_ne_zero v hv).mpr
       ((Subrepresentation.toSubmodule_spanSingleton v _).symm.trans
