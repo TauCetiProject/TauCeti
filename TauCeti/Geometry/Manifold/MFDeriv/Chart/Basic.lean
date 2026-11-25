@@ -474,11 +474,14 @@ theorem mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
     -- The two sides differ only in the point indexing the tangent space of `F`, which is `F`.
     rfl
   obtain ⟨L, hL⟩ := isInvertible_mfderiv_extend he hx
-  let L' : TangentSpace I x ≃L[𝕜] E := L.trans (NormedSpace.fromTangentSpace (e.extend I x))
   rw [hcomp, mvfderiv_comp_of_eq hg.mdifferentiableAt
-    ((e.contMDiffAt_extend he hx).mdifferentiableAt one_ne_zero) rfl, mvfderiv_eq_fderiv, ← hL,
-    ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.comp_coe]
-  simpa only [ContinuousLinearMap.zero_comp] using (L'.eq_comp_toContinuousLinearMap_symm _ 0).symm
+    ((e.contMDiffAt_extend he hx).mdifferentiableAt one_ne_zero) rfl, mvfderiv_eq_fderiv, ← hL]
+  have h := (L.eq_comp_toContinuousLinearMap_symm
+    (fderiv 𝕜 (f ∘ (e.extend I).symm) (e.extend I x)) 0).symm
+  rw [ContinuousLinearMap.zero_comp] at h
+  -- `NormedSpace.fromTangentSpace` is definitionally the identity on `E`, and
+  -- `TangentSpace 𝓘(𝕜, E) _` unfolds to `E`.
+  exact h
 
 end TauCeti
 
@@ -561,11 +564,9 @@ theorem mvfderiv_comp_tangentSpaceCastModel_symm (f : M → F) (x : M) :
     (mvfderiv I f x).comp ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x) =
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
   ext v
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    mvfderiv_eq_fderiv_comp_extChartAt_symm]
   -- `TangentSpace I x` is definitionally `E`, and `(tangentSpaceCastModel I x).symm` acts as
   -- the identity on `E`.
-  rfl
+  exact DFunLike.congr_fun (mvfderiv_eq_fderiv_comp_extChartAt_symm (I := I)) v
 
 /-- On a boundaryless manifold, `mvfderiv I f x` evaluated on `v` equals the Fréchet derivative of
 the preferred coordinate expression evaluated on `tangentSpaceCastModel I x v`, without any
@@ -707,22 +708,18 @@ theorem mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E 
     mvfderiv I f y = mvfderiv I g y ↔
       fderiv 𝕜 f' (extChartAt I x y) = fderiv 𝕜 g' (extChartAt I x y) := by
   obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
-  let L' : TangentSpace I y ≃L[𝕜] E := L.trans (NormedSpace.fromTangentSpace (extChartAt I x y))
-  have hcoe : ∀ {h : M → F} {h' : E → F},
-      h ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x y)] h' →
-      DifferentiableAt 𝕜 h' (extChartAt I x y) →
-      mvfderiv I h y = (fderiv 𝕜 h' (extChartAt I x y)).comp L'.toContinuousLinearMap := by
-    intro h h' heq hd
-    ext w
-    simp only [mvfderiv,
-      mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hd.congr_of_eventuallyEq heq),
-      heq.fderiv_eq, ← hL, L', ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.trans_apply]
-    -- `NormedSpace.fromTangentSpace` is definitionally the identity on `E` and `F`.
-    rfl
-  rw [hcoe hf hf', hcoe hg hg']
-  simp only [← L'.eq_comp_toContinuousLinearMap_symm, ContinuousLinearMap.comp_assoc,
-    ContinuousLinearEquiv.coe_comp_coe_symm, ContinuousLinearMap.comp_id]
+  rw [mvfderiv, mvfderiv,
+    mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hf'.congr_of_eventuallyEq hf),
+    mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hg'.congr_of_eventuallyEq hg),
+    hf.fderiv_eq, hg.fderiv_eq, ← hL]
+  have h := (L.eq_comp_toContinuousLinearMap_symm (fderiv 𝕜 f' (extChartAt I x y))
+    ((fderiv 𝕜 g' (extChartAt I x y) : TangentSpace 𝓘(𝕜, E) (extChartAt I x y) →L[𝕜] F).comp
+      L.toContinuousLinearMap)).symm
+  rw [ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
+    ContinuousLinearMap.comp_id] at h
+  -- `NormedSpace.fromTangentSpace` is definitionally the identity on `F`, and
+  -- `TangentSpace 𝓘(𝕜, E) _` unfolds to `E`.
+  exact h
 
 open Filter in
 /-- Transfer of local uniqueness of critical points to the manifold. Suppose that `η q.1` lies in
