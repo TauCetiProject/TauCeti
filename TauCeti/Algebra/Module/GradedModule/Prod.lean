@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.Algebra.GradedMulAction
 
 /-!
 # Products of internally graded modules
@@ -94,6 +95,14 @@ noncomputable def prod : InternalGrading R (M × N) ι := by
 @[simp]
 theorem prod_piece (p : ι) : (G.prod H).piece p = (G.piece p).prod (H.piece p) := by
   simp only [prod, ofDecomposition_piece]
+
+/-- A scalar action graded on both factors is graded on their product. -/
+instance instGradedSMulProd {A S κ : Type*} [SetLike S A] [SMul A M] [SMul A N] [VAdd κ ι]
+    (𝒜 : κ → S) [hG : SetLike.GradedSMul 𝒜 G.piece] [hH : SetLike.GradedSMul 𝒜 H.piece] :
+    SetLike.GradedSMul 𝒜 (G.prod H).piece where
+  smul_mem {p q} {a z} ha hz := by
+    rw [prod_piece, Submodule.mem_prod] at hz ⊢
+    exact ⟨SetLike.GradedSMul.smul_mem ha hz.1, SetLike.GradedSMul.smul_mem ha hz.2⟩
 
 /-- The first inclusion into the product has degree zero. -/
 theorem isHomogeneous_inl [AddMonoid ι] :
