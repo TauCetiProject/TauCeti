@@ -33,6 +33,9 @@ The predicate is sensitive to the characteristic: for the cusp `y² = x³` and `
   `HasLocallyFreeQuotientOfDifferentials.restrict`: the predicate passes to open subschemes;
 * `hasLocallyFreeQuotientOfDifferentials_of_smoothOfRelativeDimension`: on a scheme smooth of
   relative dimension `d`, the identity of `Ω_{X/k}` witnesses the predicate;
+* `free_kaehlerDifferential_stalk`, `finite_kaehlerDifferential_stalk` and
+  `finrank_kaehlerDifferential_stalk`: on a scheme smooth of relative dimension `d`, the Kähler
+  differentials `Ω[𝒪_{X,x}⁄k]` of each local ring are free of rank `d`;
 * `le_of_hasLocallyFreeQuotientOfDifferentials`: on a nonempty scheme smooth of relative
   dimension `d`, there is no locally free quotient of rank greater than `d`;
 * `HasLocallyFreeQuotientOfDifferentials.exists_surjective_stalk`: the forward direction of the
@@ -117,8 +120,33 @@ theorem exists_surjective_stalk {X : Scheme.{u}} [X.Over (Spec (.of k))] {d : �
 
 end HasLocallyFreeQuotientOfDifferentials
 
-variable (k) (X : Scheme.{u}) [X.Over (Spec (.of k))] (d : ℕ)
-  [SmoothOfRelativeDimension d (X ↘ Spec (.of k))]
+variable (k) (X : Scheme.{u}) [X.Over (Spec (.of k))]
+
+/-- On a scheme smooth over `Spec k`, the Kähler differentials `Ω[𝒪_{X,x}⁄k]` of each local ring
+form a free `𝒪_{X,x}`-module. -/
+theorem free_kaehlerDifferential_stalk [Smooth (X ↘ Spec (.of k))] (x : X) :
+    Module.Free (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄k] := by
+  have := FiniteLocallyFreeSheaf.free_stalk (FiniteLocallyFreeSheaf.relativeDifferentials k X) x
+  rw [FiniteLocallyFreeSheaf.relativeDifferentials_obj] at this
+  exact Module.Free.of_equiv (X.relativeDifferentialsStalkEquiv k x)
+
+/-- On a scheme smooth over `Spec k`, the Kähler differentials `Ω[𝒪_{X,x}⁄k]` of each local ring
+form a finitely generated `𝒪_{X,x}`-module. -/
+theorem finite_kaehlerDifferential_stalk [Smooth (X ↘ Spec (.of k))] (x : X) :
+    Module.Finite (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄k] := by
+  have := FiniteLocallyFreeSheaf.finite_stalk (FiniteLocallyFreeSheaf.relativeDifferentials k X) x
+  rw [FiniteLocallyFreeSheaf.relativeDifferentials_obj] at this
+  exact Module.Finite.equiv (X.relativeDifferentialsStalkEquiv k x)
+
+variable (d : ℕ) [SmoothOfRelativeDimension d (X ↘ Spec (.of k))]
+
+/-- On a scheme smooth of relative dimension `d` over `Spec k`, the Kähler differentials
+`Ω[𝒪_{X,x}⁄k]` of each local ring have rank `d` over `𝒪_{X,x}`. -/
+theorem finrank_kaehlerDifferential_stalk (x : X) :
+    Module.finrank (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄k] = d := by
+  rw [← (X.relativeDifferentialsStalkEquiv k x).finrank_eq,
+    ← FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj k X d,
+    FiniteLocallyFreeSheaf.finrank_stalk, FiniteLocallyFreeSheaf.FixedRank.rank_apply]
 
 /-- On a scheme smooth of relative dimension `d` over `Spec k`, the identity of `Ω_{X/k}`, which
 is finite locally free of constant rank `d`, is a locally free quotient of rank `d`. -/
@@ -128,24 +156,17 @@ theorem hasLocallyFreeQuotientOfDifferentials_of_smoothOfRelativeDimension :
     inferInstance⟩
 
 /-- **No locally free quotient of excess rank on a smooth scheme.** If `X` is nonempty and smooth
-of relative dimension `d` over `Spec k`, then `Ω_{X/k}` admits no locally free quotient of rank
-`e > d`: at any point `x`, the stalk `Ω[𝒪_{X,x}⁄k]` is free of rank `d`, and it surjects onto
-`𝒪_{X,x}^e` by the stalk criterion. For `𝔸¹_k` the predicate holds for `d = 1` and fails for
-`d = 2`. -/
+of relative dimension `d` over `Spec k` and `Ω_{X/k}` admits a locally free quotient of rank `e`,
+then `e ≤ d`. -/
 theorem le_of_hasLocallyFreeQuotientOfDifferentials [Nonempty X] {e : ℕ}
     (h : HasLocallyFreeQuotientOfDifferentials k X e) : e ≤ d := by
   obtain ⟨x⟩ := ‹Nonempty X›
+  -- The stalk `Ω[𝒪_{X,x}⁄k]`, of rank `d`, surjects onto `𝒪_{X,x}^e`.
   obtain ⟨g, hg⟩ := h.exists_surjective_stalk x
-  let F := FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials k X d
-  let eq : F.obj.obj.presheaf.stalk x ≃ₗ[X.presheaf.stalk x] Ω[X.presheaf.stalk x⁄k] := by
-    rw [show F.obj.obj = X.relativeDifferentials k from
-      FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj k X d]
-    exact X.relativeDifferentialsStalkEquiv k x
-  have : Module.Finite (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄k] := Module.Finite.equiv eq
-  have hrank : Module.finrank (X.presheaf.stalk x) Ω[X.presheaf.stalk x⁄k] = d :=
-    (eq.finrank_eq.symm.trans (FiniteLocallyFreeSheaf.finrank_stalk F.obj x)).trans
-      (F.rank_apply x)
-  simpa [hrank] using LinearMap.finrank_le_finrank_of_surjective hg
+  have := SmoothOfRelativeDimension.smooth d (X ↘ Spec (.of k))
+  have := finite_kaehlerDifferential_stalk k X x
+  simpa [finrank_kaehlerDifferential_stalk k X d x] using
+    LinearMap.finrank_le_finrank_of_surjective hg
 
 end
 
