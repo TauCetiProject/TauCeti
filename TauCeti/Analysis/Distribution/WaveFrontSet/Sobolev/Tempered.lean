@@ -16,7 +16,6 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
@@ -373,16 +372,9 @@ theorem exists_toDistr_postcomp_coord_eq_cutoffTempered {V ι : Type*} [NormedAd
 /-- **From local to global regularity.** If `T` is `H^s` near every point of the support of a test
 function `φ`, then `φ T ∈ H^s`. -/
 theorem memSobolev_cutoffTempered_of_forall_isLocallySobolevAt
-    (h : ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) : MemSobolev s 2 (T.cutoffTempered φ) := by
-  -- Each point of `tsupport φ` has a neighbourhood on which every cutoff gives an `H^s` product.
-  choose U hU hUs using fun x : tsupport φ ↦
-    (h x x.property).exists_nhds_forall_memSobolev_cutoffTempered
-  -- Split `φ` into finitely many test functions supported in these neighbourhoods.
-  obtain ⟨t, ψ, hψU, hψφ, -⟩ := φ.exists_sum_subordinate (fun x ↦ interior (U x))
-    (fun _ ↦ isOpen_interior) fun x hx ↦
-      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
-  rw [← hψφ, cutoffTempered_sum_cutoff]
-  exact MemSobolev.sum fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
+    (h : ∀ x ∈ tsupport φ, T.IsLocallySobolevAt s x) : MemSobolev s 2 (T.cutoffTempered φ) :=
+  cutoffTempered_induction _ (memSobolev_fun_zero E ℂ s 2) (fun _ _ ↦ MemSobolev.add)
+    fun x hx ↦ (h x hx).exists_nhds_forall_memSobolev_cutoffTempered
 
 /-- **Local `H^s` regularity on all of `Ω`.** A distribution has empty `H^s` singular support,
 that is, it is `H^s` near every point of `Ω`, exactly when `φ T ∈ H^s` for every test function

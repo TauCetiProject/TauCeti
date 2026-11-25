@@ -518,6 +518,12 @@ instance : Module ℂ (BesovSpace F φ s p q) :=
     (⟨⟨toDistr, toDistr_zero⟩, toDistr_add⟩ : BesovSpace F φ s p q →+ 𝓢'(E, F))
     (fun _ _ ↦ ext) toDistr_smul
 
+/-- The real action on `B^s_{p,q}`, obtained from its complex structure, acts on the underlying
+tempered distribution. -/
+@[simp]
+theorem toDistr_real_smul (a : ℝ) (u : BesovSpace F φ s p q) : (a • u).toDistr = a • u.toDistr :=
+  (rfl)
+
 variable (F φ s p q) in
 /-- The weighted Littlewood–Paley blocks `u ↦ (2^{js} Δⱼ u)ⱼ`, as an injective linear map into
 `ℓ^q(ℕ, Lᵖ)`. -/
