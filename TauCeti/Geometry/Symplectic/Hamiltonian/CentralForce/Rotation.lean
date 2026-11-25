@@ -140,16 +140,16 @@ theorem hasDerivAt_circleExp_mul_smul_comp_mul {H : ℂ × ℂ → ℝ}
         (a + b * β) • (stdSymplecticForm (V := ℂ)).hamiltonianVectorField (angularMomentum 1 I)
           (Circle.exp (a * t) • γ (b * t))) t := by
   have he : HasDerivAt (fun s : ℝ ↦ ((Circle.exp (a * s) : Circle) : ℂ))
-      ((a : ℂ) * (I * Circle.exp (a * t))) t := by
-    exact ((hasDerivAt_coe_circleExp (a * t)).scomp t
+      ((a : ℂ) * (I * Circle.exp (a * t))) t :=
+    ((hasDerivAt_coe_circleExp (a * t)).scomp t
       (((hasDerivAt_id' t).const_mul a).congr_deriv (mul_one a))).congr_deriv
         (Complex.real_smul ..)
   have hb : HasDerivAt (fun s ↦ γ (b * s))
       (b • (α • (stdSymplecticForm (V := ℂ)).hamiltonianVectorField H (γ (b * t)) +
         β • (stdSymplecticForm (V := ℂ)).hamiltonianVectorField (angularMomentum 1 I)
           (γ (b * t)))) t := by
-    have h := hγ.scomp t (((hasDerivAt_id' t).const_mul b).congr_deriv (mul_one b))
-    exact h
+    simpa only [Function.comp_def] using
+      hγ.scomp t (((hasDerivAt_id' t).const_mul b).congr_deriv (mul_one b))
   -- The rotations commute with `X_H` by invariance, and with `X_L = (i q, i p)` by linearity.
   have hX : (stdSymplecticForm (V := ℂ)).hamiltonianVectorField H
       (Circle.exp (a * t) • γ (b * t)) =

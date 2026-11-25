@@ -63,8 +63,9 @@ there.
   equations for a central force.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum`: angular momentum generates
   rotations.
-* `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`:
-  conservation of angular momentum, `{H, L} = 0`.
+* `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`,
+  `TauCeti.stdSymplecticForm_poissonBracket_angularMomentum_centralForceHamiltonian`:
+  conservation of angular momentum, `{H, L} = 0 = {L, H}`.
 * `TauCeti.stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian`:
   conservation of the squared angular momentum in every dimension, `{ℓ², H} = 0`.
 * `TauCeti.sq_sub_inner_sq_eq_of_hasDerivAt`: `ℓ²` is constant along integral curves of `H`.
@@ -495,6 +496,15 @@ theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
       norm_sub_eq_norm_add (𝕜 := ℝ) (by rw [real_inner_smul_left, real_inner_comm, hz, mul_zero])]
   simp only [centralForceHamiltonian, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd]
   rw [hrot x.1, hrot x.2]
+
+/-- **Conservation of angular momentum**, with the bracket in the other order: every component
+of the angular momentum Poisson-commutes with a central-force Hamiltonian, `{L, H} = 0`. -/
+theorem stdSymplecticForm_poissonBracket_angularMomentum_centralForceHamiltonian {m : ℝ}
+    {U : ℝ → ℝ} {x : V × V} (u w : V) :
+    (stdSymplecticForm (V := V)).poissonBracket (angularMomentum u w)
+      (centralForceHamiltonian m U) x = 0 := by
+  rw [← SymplecticForm.neg_poissonBracket,
+    stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum, neg_zero]
 
 /-- **Conservation of the squared angular momentum.** The squared
 length `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of the angular momentum bivector Poisson-commutes with every

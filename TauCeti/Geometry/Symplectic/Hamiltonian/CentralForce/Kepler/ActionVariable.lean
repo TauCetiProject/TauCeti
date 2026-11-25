@@ -205,11 +205,10 @@ theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_keplerRadialAct
     (stdSymplecticForm (V := ℂ)).poissonBracket (centralForceHamiltonian m (fun r ↦ -κ / r))
       (keplerRadialAction m κ) x = 0 := by
   rw [SymplecticForm.poissonBracket_eq_fderiv,
-    stdSymplecticForm_hamiltonianVectorField_keplerRadialAction hq hE hL, map_sub, map_smul,
-    map_smul, SymplecticForm.fderiv_apply_hamiltonianVectorField,
+    stdSymplecticForm_hamiltonianVectorField_keplerRadialAction hq hE hL]
+  simp [SymplecticForm.fderiv_apply_hamiltonianVectorField,
     ← SymplecticForm.poissonBracket_eq_fderiv,
     stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum]
-  simp
 
 /-- **The radial and angular actions Poisson-commute.** Off the collision set, at a state of
 nonzero energy and nonzero angular momentum, the angular momentum Poisson-commutes with the radial
@@ -220,11 +219,10 @@ theorem stdSymplecticForm_poissonBracket_angularMomentum_keplerRadialAction {x :
     (stdSymplecticForm (V := ℂ)).poissonBracket (angularMomentum 1 I) (keplerRadialAction m κ)
       x = 0 := by
   rw [SymplecticForm.poissonBracket_eq_fderiv,
-    stdSymplecticForm_hamiltonianVectorField_keplerRadialAction hq hE hL, map_sub, map_smul,
-    map_smul, SymplecticForm.fderiv_apply_hamiltonianVectorField,
-    ← SymplecticForm.poissonBracket_eq_fderiv, ← SymplecticForm.neg_poissonBracket,
-    stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum]
-  simp
+    stdSymplecticForm_hamiltonianVectorField_keplerRadialAction hq hE hL]
+  simp [SymplecticForm.fderiv_apply_hamiltonianVectorField,
+    ← SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_poissonBracket_angularMomentum_centralForceHamiltonian]
 
 /-- Along a solution `γ` of Hamilton's equations for the radial action in the bound phase space,
 the energy `E` and the angular momentum `ℓ` are constant, so `γ` moves with velocity
@@ -315,20 +313,10 @@ theorem exists_hasDerivAt_keplerRadialAction (hm : 0 < m) {x : ℂ × ℂ}
   obtain ⟨hq, hE, hL⟩ := mem_keplerBoundPhaseSpace_orthonormalBasisOneI.1 hx
   have hκ := pos_of_centralForceHamiltonian_kepler_neg hm hE
   -- The Kepler motion through `x` is defined for all time.
-  obtain ⟨η, hη0, hη, hηq⟩ : ∃ η : ℝ → ℂ × ℂ, η 0 = x ∧ (∀ t, HasDerivAt η
-      ((stdSymplecticForm (V := ℂ)).hamiltonianVectorField
-        (centralForceHamiltonian m (fun r ↦ -κ / r)) (η t)) t) ∧ ∀ t, (η t).1 ≠ 0 := by
-    set x' : puncturedPhaseSpace ℂ := ⟨x, mem_puncturedPhaseSpace.2 hq⟩
-    have huniv :=
-      (maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ_iff_angularMomentum
-        orthonormalBasisOneI hm hκ x').2 (by simpa [coe_orthonormalBasisOneI] using hL)
-    exact ⟨fun t ↦ ((maximalIntegralCurve (SmoothTwoForm.hamiltonianVectorField
-      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace ℂ → ℂ × ℂ) contMDiff_subtypeVal
-        (stdSymplecticForm (V := ℂ)).constSmooth)
-      (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x' t :
-        puncturedPhaseSpace ℂ) : ℂ × ℂ), by simp [x', maximalIntegralCurve_zero],
-      fun t ↦ hasDerivAt_coe_maximalIntegralCurve_kepler x' (huniv ▸ Set.mem_univ t),
-      fun t ↦ mem_puncturedPhaseSpace.1 (maximalIntegralCurve _ x' t).property⟩
+  have hx := pow_ne_zero 2 (show angularMomentum (orthonormalBasisOneI 0) (orthonormalBasisOneI 1)
+    x ≠ 0 by simpa [coe_orthonormalBasisOneI] using hL)
+  rw [sq_angularMomentum] at hx
+  obtain ⟨η, hη0, hη, hηq⟩ := exists_hasDerivAt_kepler_of_sq_sub_inner_sq_ne_zero hm hκ hq hx
   -- Along it the energy and the angular momentum are constant.
   have hHc (t : ℝ) : centralForceHamiltonian m (fun r ↦ -κ / r) (η t) =
       centralForceHamiltonian m (fun r ↦ -κ / r) x :=
@@ -339,8 +327,7 @@ theorem exists_hasDerivAt_keplerRadialAction (hm : 0 < m) {x : ℂ × ℂ}
     hη0 ▸ stdSymplecticForm.apply_eq_of_hasDerivWithinAt_of_poissonBracket_eq_zero
       isPreconnected_univ (fun t _ ↦ (hη t).hasDerivWithinAt)
       (fun t _ ↦ (hasFDerivAt_angularMomentum (1 : ℂ) I (η t)).differentiableAt)
-      (fun t _ ↦ by rw [← SymplecticForm.neg_poissonBracket,
-        stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum, neg_zero])
+      (fun t _ ↦ stdSymplecticForm_poissonBracket_angularMomentum_centralForceHamiltonian 1 I)
       (Set.mem_univ 0) (Set.mem_univ t)
   -- Rotate it by the angle `-σ t` and rescale time by `c`.
   set c := κ * √(m / (-2 * centralForceHamiltonian m (fun r ↦ -κ / r) x)) /
