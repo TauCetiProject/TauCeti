@@ -127,7 +127,7 @@ theorem coe_reductionTotalSpaceEquiv_eq (p : TotalSpace H (ReductionFiber S)) :
 theorem reductionTotalSpaceEquiv_smul [SMulMemIff H S] (g : Hᵐᵒᵖ)
     (p : TotalSpace H (ReductionFiber S)) :
     reductionTotalSpaceEquiv H S (g • p) = g • reductionTotalSpaceEquiv H S p :=
-  (rfl)
+  Subtype.ext (SMulMemIff.coe_smul g (reductionTotalSpaceEquiv H S p)).symm
 
 variable [TopologicalSpace (TotalSpace F E)]
 
@@ -208,7 +208,8 @@ theorem trivializationAt_reductionFiberBundle (x : B) :
 theorem principalBundle_reductionFiber [SMulMemIff H S] :
     letI := reductionFiberBundle hS
     PrincipalBundle H (ReductionFiber S) :=
-  hS.atlas.principalBundle_of_homeomorph _ _ _ (fun _ _ _ ↦ rfl) fun x p hp g ↦ by
+  hS.atlas.principalBundle_of_homeomorph _ _ _
+    (fun x φ g ↦ reductionTotalSpaceEquiv_smul g ⟨x, φ⟩) fun x p hp g ↦ by
     rw [SMulMemIff.smul_eq_mk g p ((SMulMemIff.smul_mem_iff p.property).2 g.property)]
     exact congrArg Prod.snd (hS.atlas_trivAt_mk_smul x g p _ hp)
 

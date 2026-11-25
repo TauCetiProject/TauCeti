@@ -87,24 +87,21 @@ theorem SMulMemIff.exists_mem_smul_eq {p q : OrthonormalFrameBundle ℝ F E V} (
   obtain ⟨g, rfl⟩ := OrthonormalFrameBundle.exists_smul_eq_iff.2 h
   exact ⟨g, (smul_mem_iff (H := H) hp).1 hq, rfl⟩
 
-/-- The right action of `H` on `S`, by precomposition. A direct `SMul` instance, so that instance
-search finds it before the generic paths (such as `Algebra.toSMul`) through `MulAction`. -/
-instance instSMulSubtype : SMul Hᵐᵒᵖ S where
-  smul g p := ⟨op (g.unop : unitary (V →L[ℝ] V)) • p.val,
-    (SMulMemIff.smul_mem_iff p.property).2 g.unop.property⟩
+/-- The right action of `H` on `S`, by precomposition: the action of the orthogonal group on
+all orthonormal frames, restricted (`TauCeti.reductionMulAction`). -/
+instance instMulActionSubtype : MulAction Hᵐᵒᵖ S :=
+  reductionMulAction fun _ hp _ hg ↦ (SMulMemIff.smul_mem_iff hp).2 hg
 
-/-- The right action of `H` on `S` is an action. -/
-instance : MulAction Hᵐᵒᵖ S where
-  one_smul p := Subtype.ext (one_smul _ p.val)
-  mul_smul g h p := Subtype.ext (mul_smul (op (g.unop : unitary (V →L[ℝ] V)))
-    (op (h.unop : unitary (V →L[ℝ] V))) p.val)
+/-- The right action of `H` on `S`, as a direct `SMul` instance, so that instance search finds it
+before the generic paths (such as `Algebra.toSMul`) through `MulAction`. -/
+instance instSMulSubtype : SMul Hᵐᵒᵖ S :=
+  instMulActionSubtype.toSMul
 
 /-- The action on `S` is the action on all orthonormal frames. -/
-@[simp]
 theorem SMulMemIff.coe_smul (g : Hᵐᵒᵖ) (p : S) :
     ((g • p : S) : OrthonormalFrameBundle ℝ F E V) =
       op (g.unop : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) :=
-  rfl
+  coe_reductionMulAction_smul _ g p
 
 /-- The action of `g ∈ H` on a point `p` of `S` is the point `op g • p` of `S`, with any proof
 that it lies in `S`. -/
@@ -125,15 +122,16 @@ theorem SMulMemIff.exists_smul_eq_iff {p q : S} :
     (∃ g : H, op g • p = q) ↔ p.val.proj = q.val.proj := by
   refine ⟨fun ⟨g, h⟩ ↦ by rw [← h, coe_smul, proj_smul], fun h ↦ ?_⟩
   obtain ⟨g, hg, hgq⟩ := exists_mem_smul_eq (H := H) p.property q.property h
-  exact ⟨⟨g, hg⟩, Subtype.ext hgq⟩
+  exact ⟨⟨g, hg⟩, Subtype.ext ((coe_smul _ p).trans hgq)⟩
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace B]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E] [FiniteDimensional ℝ V]
 
 /-- The right action of `H` on `S` is continuous. -/
 instance : ContinuousSMul Hᵐᵒᵖ S where
-  continuous_smul := ((continuous_op.comp ((continuous_subtypeVal.comp continuous_unop).comp
-    continuous_fst)).smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
+  continuous_smul := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
+    ((continuous_op.comp ((continuous_subtypeVal.comp continuous_unop).comp continuous_fst)).smul
+      (continuous_subtypeVal.comp continuous_snd)).congr fun p ↦ (SMulMemIff.coe_smul p.1 p.2).symm
 
 end Action
 
@@ -165,7 +163,10 @@ theorem exists_trivialization_of_continuousOn_smul_mem (hUT : U ⊆ T.baseSet)
   obtain ⟨t, ht, hteq⟩ := T.exists_trivialization_of_continuousOn_symm_mem (fun _ _ ↦ rfl) he
     (fun _ hp _ ↦ SMulMemIff.smul_mem_iff (H := H) hp) hUT
     (fun y hy ↦ T.op_smul_symm_one (fun _ _ ↦ rfl) he (hUT hy) (c y) ▸ hcS y hy) hU hc hx
-  exact ⟨t, ht, fun g p hp ↦ hteq g p (op g • p).property hp⟩
+  refine ⟨t, ht, fun g p hp ↦ ?_⟩
+  have hgp := (SMulMemIff.smul_mem_iff (H := H) p.property).2 g.property
+  rw [SMulMemIff.smul_eq_mk g p hgp]
+  exact hteq g p hgp hp
 
 end Reduction
 
