@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.MeasureTheory.Integral.OddSymmetric
+import TauCeti.Topology.Instances.AddCircle.Annulus
 
 /-!
 # Pushforwards of Haar measure along circle diffeomorphisms
@@ -233,25 +234,6 @@ private abbrev translateAction (T : ℝ) (Y : Type*) : AddAction ℤ (ℝ × Y) 
     rw [add_zsmul]
     ring
 
-omit hT [MeasurableSpace Y] in
-/-- A map commuting with the translation by `T` of the first coordinate commutes with the
-translations by all integer multiples of `T`. -/
-private theorem apply_add_zsmul {f : ℝ × Y → ℝ × Y}
-    (hf : ∀ x : ℝ × Y, f (x.1 + T, x.2) = ((f x).1 + T, (f x).2)) (n : ℤ) (x : ℝ × Y) :
-    f (x.1 + n • T, x.2) = ((f x).1 + n • T, (f x).2) := by
-  induction n using Int.induction_on with
-  | zero => simp
-  | succ n ih =>
-    have h := hf (x.1 + (n : ℤ) • T, x.2)
-    rw [ih] at h
-    rw [add_one_zsmul, ← add_assoc, h, add_assoc]
-  | pred n ih =>
-    have h := hf (x.1 + (-(n : ℤ) - 1) • T, x.2)
-    rw [add_assoc, ← add_one_zsmul, sub_add_cancel, ih, Prod.ext_iff] at h
-    refine Prod.ext ?_ h.2.symm
-    have hs : (-(n : ℤ) - 1) • T = -(n : ℤ) • T - T := by rw [sub_zsmul, one_zsmul]; abel
-    linarith [h.1]
-
 /-- A map of `AddCircle T × Y` lifted from a measurable map of `ℝ × Y` is measurable. -/
 theorem measurable_of_lift {f : ℝ × Y → ℝ × Y} (hf : Measurable f)
     {g : AddCircle T × Y → AddCircle T × Y}
@@ -300,7 +282,7 @@ theorem measurePreserving_of_lift [SFinite ν] {f : ℝ × Y → ℝ × Y}
     simpa [hvadd, F, zero_add] using existsUnique_add_zsmul_mem_Ioc hT.out x.1 0
   have hfF : IsAddFundamentalDomain ℤ (f ⁻¹' F) (volume.prod ν) := by
     refine .mk' (hf.measurable hFm).nullMeasurableSet fun x ↦ ?_
-    simp only [mem_preimage, hvadd, apply_add_zsmul hfT]
+    simp only [mem_preimage, hvadd, zsmul_eq_mul, TauCeti.apply_add_int_mul_of_apply_add hfT]
     simpa [F] using existsUnique_add_zsmul_mem_Ioc hT.out (f x).1 0
   have hπv (n : ℤ) (x : ℝ × Y) : π (n +ᵥ x) = π x := by
     obtain ⟨s, y⟩ := x
