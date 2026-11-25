@@ -61,6 +61,7 @@ theorem _root_.AlgEquiv.exists_neighbourhood_tensorProduct {S T : Type u} [CommR
   refine ⟨(equivSmallModel.{u} (Neighbourhood R Ω)).inverse.obj j, e', fun s ↦ ?_⟩
   -- The leg of `c` at `j` is the colimit leg followed by the comparison with `algebra R Ω`.
   rw [← he' s, ← algebraIsoColimitDiagram_inv_comp_ι]
-  rfl
+  simp only [c, Cocone.extend_ι, NatTrans.comp_app, Functor.const_map_app, colimit.cocone_ι,
+    CommAlgCat.hom_comp]
 
 end TauCeti.StrictHenselization

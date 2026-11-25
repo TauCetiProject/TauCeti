@@ -77,10 +77,7 @@ omit [IsFiltered J] [UnivLE.{v, u}] [UnivLE.{w, u}] in
 private theorem tensorDiagram_map {j k : J} (f : j ⟶ k) :
     (tensorDiagram (D := D) T).map f =
       CommRingCat.ofHom (map (AlgHom.id R T) (D.map f).hom).toRingHom := by
-  rw [Functor.comp_map, Functor.comp_map, CommAlgCat.forget₂_commRingCat_map,
-    CommAlgCat.extendScalars_map_hom]
-  -- The base change over `T` is the base change over `R`, with its scalars restricted.
-  rfl
+  rw [Functor.comp_map, Functor.comp_map, CommAlgCat.forget₂_commRingCat_map_extendScalars_map]
 
 variable (T) in
 /-- The structure maps `R → T ⊗[R] D j`, as a natural transformation from the constant diagram. -/
@@ -108,10 +105,8 @@ private theorem isColimitTensor_ι_app (j : J) :
     ((forget₂ (CommAlgCat.{u} T) CommRingCat.{u}).mapCocone
       ((CommAlgCat.extendScalars.{u, u, u} R T).mapCocone c)).ι.app j =
       CommRingCat.ofHom (map (AlgHom.id R T) (c.ι.app j).hom).toRingHom := by
-  rw [Functor.mapCocone_ι_app, Functor.mapCocone_ι_app, CommAlgCat.forget₂_commRingCat_map,
-    CommAlgCat.extendScalars_map_hom]
-  -- The base change over `T` is the base change over `R`, with its scalars restricted.
-  rfl
+  rw [Functor.mapCocone_ι_app, Functor.mapCocone_ι_app,
+    CommAlgCat.forget₂_commRingCat_map_extendScalars_map]
 
 /-- An `R`-algebra map from a finitely presented `R`-algebra into `T ⊗[R] H` factors through
 `T ⊗[R] D j` for some stage `j`. This is the form with `T` on the left used in the proofs. -/
