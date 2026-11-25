@@ -35,11 +35,12 @@ example (x : V) {μ : Fin (finrank ℂ V) → ℝ} :
   have hform : ddbarHermitianForm V (0 : RoughForm 𝓘(ℝ, V) V ℝ 2) (fun z ↦ ‖z‖ ^ 2) x =
       fun u v ↦ ((2 : ℝ) : ℂ) * innerₛₗ ℂ u v := by
     ext u v
-    simp
+    rw [ddbarHermitianForm_zero_form_norm_sq, innerₛₗ_apply_apply, ofReal_ofNat]
   have hh : (innerₛₗ ℂ : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ).IsSymm := ⟨fun u v ↦ inner_conj_symm v u⟩
   have hpos (v : V) (hv : v ≠ 0) : 0 < RCLike.re (innerₛₗ ℂ v v) := by
     simpa using (re_inner_self_pos (𝕜 := ℂ)).2 hv
-  rw [hform]
+  rw [hform, show (fun u v : V ↦ inner ℂ u v) = fun u v ↦ innerₛₗ ℂ u v by
+    ext u v; rw [innerₛₗ_apply_apply]]
   exact isRelEigenvalueVector_smul_self_iff hh hpos 2
 
 /-- **Doubling the metric halves the eigenvalues.** Relative to `2·h`, the Hermitian form
@@ -50,7 +51,8 @@ example (x : V) {μ : Fin (finrank ℂ V) → ℝ} :
   have hform : ddbarHermitianForm V (0 : RoughForm 𝓘(ℝ, V) V ℝ 2) (fun z ↦ ‖z‖ ^ 2) x =
       fun u v ↦ ((2 : ℂ) • innerₛₗ ℂ) u v := by
     ext u v
-    simp
+    rw [ddbarHermitianForm_zero_form_norm_sq, LinearMap.smul_apply, LinearMap.smul_apply,
+      innerₛₗ_apply_apply, smul_eq_mul]
   have hh : ((2 : ℂ) • innerₛₗ ℂ : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ).IsSymm :=
     ⟨fun u v ↦ by simp [inner_conj_symm, map_ofNat]⟩
   have hpos (v : V) (hv : v ≠ 0) : 0 < RCLike.re (((2 : ℂ) • innerₛₗ ℂ) v v) := by
