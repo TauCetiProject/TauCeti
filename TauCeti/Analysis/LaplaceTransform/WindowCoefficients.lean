@@ -108,7 +108,7 @@ theorem norm_add_re_laplace_coeff_le_window {g : ℝ → ℝ} {F : ℂ → ℂ} 
     ring
   have hsub : Ioc U V ⊆ Ioi (0 : ℝ) := fun _ hu ↦ hU.trans_lt (mem_Ioc.mp hu).1
   have hi : IntegrableOn (fun u ↦ max (g u) 0 * w z.re u) (Ioi 0) :=
-    (integrableOn_and_re_laplace_coeff_eq hr n).1.max_zero_mul <|
+    (integrableOn_and_re_laplace_coeff_eq hr n).1.pos_part_mul <|
       (ae_restrict_mem measurableSet_Ioi).mono fun u (hu : 0 < u) ↦ by dsimp [w]; positivity
   -- On the bounded window the input itself is integrable, so any continuous weight is allowed.
   have hgwin : IntegrableOn g (Ioc U V) := by

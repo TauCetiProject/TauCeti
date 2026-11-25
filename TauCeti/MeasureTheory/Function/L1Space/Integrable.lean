@@ -59,7 +59,7 @@ Scalar multiplication by a finite product of multiplicative indicators, each con
 null-measurable set and equal to `1` off it, preserves integrability
 (`MeasureTheory.Integrable.prod_mulIndicator_const_smul`). Against an almost everywhere
 nonnegative weight, the positive part of a function inherits integrability from the signed
-weighted function (`MeasureTheory.Integrable.max_zero_mul`). A function integrable for the
+weighted function (`MeasureTheory.Integrable.pos_part_mul`). A function integrable for the
 measure `μ` weighted by `‖h‖ₑ` has an integrable scalar product with `h`
 (`MeasureTheory.integrable_smul_of_integrable_withDensity_enorm`).
 
@@ -93,7 +93,7 @@ theorem Integrable.prod_mulIndicator_const_smul {X κ 𝕜 E : Type*} [Measurabl
 
 /-- The positive part of `g` against an almost everywhere nonnegative weight `w` is integrable
 when the signed product `g * w` is. -/
-theorem Integrable.max_zero_mul {X : Type*} [MeasurableSpace X] {μ : Measure X} {g w : X → ℝ}
+theorem Integrable.pos_part_mul {X : Type*} [MeasurableSpace X] {μ : Measure X} {g w : X → ℝ}
     (h : Integrable (fun x ↦ g x * w x) μ) (hw : 0 ≤ᵐ[μ] w) :
     Integrable (fun x ↦ max (g x) 0 * w x) μ := by
   refine (h.sup (integrable_zero _ _ _)).congr ?_
