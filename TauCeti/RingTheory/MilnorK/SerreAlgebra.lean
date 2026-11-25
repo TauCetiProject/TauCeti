@@ -160,8 +160,7 @@ theorem toMatrix_mul (x y : SerreAlgebra k) :
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [toMatrix, Matrix.mul_apply, Fin.sum_univ_two, mul_add, add_mul, mul_assoc, add_assoc,
-      ofUnit_mul_involute, ofUnit_neg_one_mul_involute_mul]
-  abel
+      ofUnit_mul_involute, ofUnit_neg_one_mul_involute_mul, add_left_comm]
 
 theorem toMatrix_pow (x : SerreAlgebra k) (n : ℕ) : toMatrix (x ^ n) = toMatrix x ^ n := by
   induction n with
@@ -179,10 +178,12 @@ instance instRing : Ring (SerreAlgebra k) :=
   toMatrix_injective.ring _
     (by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix])
     (by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix])
-    (fun x y ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, add_mul]; abel)
+    (fun x y ↦ by
+      ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, add_mul, add_add_add_comm])
     toMatrix_mul
-    (fun x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix]; abel)
-    (fun x y ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, sub_mul]; abel)
+    (fun x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, add_comm])
+    (fun x y ↦ by
+      ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, sub_mul, add_sub_add_comm])
     (fun n x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, mul_assoc])
     (fun n x ↦ by ext i j; fin_cases i <;> fin_cases j <;> simp [toMatrix, mul_assoc])
     toMatrix_pow
@@ -230,7 +231,7 @@ theorem X_mul_C (a : MilnorK k) : X * C a = C (involute a) * X := by
 /-- For `a ∈ K_nᴹ(k)`, `Π a = (-1) ^ n a Π`. -/
 theorem X_mul_C_of_mem_degree {n : ℕ} {a : MilnorK k} (ha : a ∈ degree k n) :
     X * C a = (-1) ^ n * (C a * X) := by
-  rw [X_mul_C, involute_of_mem_degree ha, map_mul, mul_assoc, map_pow, map_neg, map_one]
+  simp [X_mul_C, involute_of_mem_degree ha, mul_assoc]
 
 /-! ### The universal property -/
 
@@ -278,8 +279,9 @@ end Lift
 theorem ringHom_ext {A : Type*} [Semiring A] {f g : SerreAlgebra k →+* A}
     (hC : f.comp C = g.comp C) (hX : f X = g X) : f = g := by
   ext x
-  rw [← C_fst_add_C_snd_mul_X x, map_add, map_add, map_mul, map_mul, hX,
-    ← RingHom.comp_apply f, ← RingHom.comp_apply f, hC, RingHom.comp_apply, RingHom.comp_apply]
+  have hC' (a : MilnorK k) : f (C a) = g (C a) := RingHom.congr_fun hC a
+  rw [← C_fst_add_C_snd_mul_X x]
+  simp [hX, hC']
 
 /-- `lift φ p hp hpp` is the unique ring homomorphism restricting to `φ` and sending `Π` to `p`. -/
 theorem eq_lift_iff {A : Type*} [Ring A] (φ : MilnorK k →+* A) (p : A)
@@ -358,7 +360,7 @@ theorem shift_X (c : kˣ) : shift c X = X - C (ofUnit c) := by
 /-- Shifts compose multiplicatively: `shift c (shift c' x) = shift (c c') x`. -/
 @[simp]
 theorem shift_shift (c c' : kˣ) (x : SerreAlgebra k) : shift c (shift c' x) = shift (c * c') x := by
-  ext <;> simp [mul_add]; abel
+  ext <;> simp [mul_add, sub_sub, add_comm]
 
 @[simp]
 theorem shift_one : shift (1 : kˣ) = RingEquiv.refl (SerreAlgebra k) := by

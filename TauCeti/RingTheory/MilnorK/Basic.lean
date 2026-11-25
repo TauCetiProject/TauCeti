@@ -675,8 +675,12 @@ theorem ofUnit_mul_involute (a : Fˣ) (x : MilnorK F) : ofUnit a * involute x = 
     induction l with
     | nil => simp
     | cons b l ih =>
-      rw [symbol_cons, map_mul, involute_ofUnit, ← mul_assoc, mul_neg, ofUnit_mul_ofUnit_comm,
-        neg_neg, mul_assoc, ih, mul_assoc]
+      -- Swap `{a}` past `{b}`, which cancels the sign from `σ {b} = -{b}`, then apply `ih`.
+      calc ofUnit a * involute (symbol (b :: l))
+          = -(ofUnit a * ofUnit b) * involute (symbol l) := by simp [symbol_cons, mul_assoc]
+        _ = ofUnit b * (ofUnit a * involute (symbol l)) := by
+          rw [ofUnit_mul_ofUnit_comm, neg_neg, mul_assoc]
+        _ = symbol (b :: l) * ofUnit a := by rw [ih, symbol_cons, mul_assoc]
   | zero => simp
   | add x y _ _ hx hy => rw [map_add, mul_add, hx, hy, add_mul]
   | smul r x _ hx => rw [map_zsmul, mul_smul_comm, hx, smul_mul_assoc]
@@ -703,10 +707,12 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F} (hx : x ∈ degree 
     induction l with
     | nil => simp
     | cons a l ih =>
-      rw [symbol_cons, mul_assoc, ih, mul_neg_one_pow_mul,
-        ← mul_assoc (ofUnit a), ofUnit_mul_of_mem_degree a hy, List.length_cons, add_one_mul,
-        pow_add]
-      simp only [mul_assoc]
+      -- Move `y` past `symbol l` using `ih`, then past `{a}` using `ofUnit_mul_of_mem_degree`.
+      calc symbol (a :: l) * y = (-1) ^ (l.length * n) * (ofUnit a * y * symbol l) := by
+            rw [symbol_cons, mul_assoc, ih, mul_neg_one_pow_mul, mul_assoc]
+        _ = (-1) ^ ((a :: l).length * n) * (y * symbol (a :: l)) := by
+            rw [ofUnit_mul_of_mem_degree a hy]
+            simp only [symbol_cons, List.length_cons, add_one_mul, pow_add, mul_assoc]
   induction hx using Submodule.span_induction with
   | mem x hx =>
     obtain ⟨l, rfl, rfl⟩ := hx
