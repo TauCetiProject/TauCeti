@@ -33,6 +33,8 @@ the coefficient is read directly, so zero divisors cause no problem.
 ## Main declarations
 
 * `TauCeti.GeneralLinear.weightCocharacter`: the cocharacter attached to integer weights.
+* `TauCeti.GeneralLinear.Dynamic.powCocharacter_weightCocharacter`: the `m`-th power of the
+  weight cocharacter with weights `w` is the weight cocharacter with weights `w i * m`.
 * `TauCeti.GeneralLinear.Dynamic.mem_parabolic_weightCocharacter_iff`: its dynamic parabolic is
   the block-triangular subgroup for the weight filtration.
 * `TauCeti.GeneralLinear.Dynamic.pointsMulEquiv_limit_weightCocharacter_apply`: its limit keeps
@@ -78,6 +80,30 @@ theorem pointsMulEquiv_pointsHom_weightCocharacter (w : Fin N → ℤ) (t : Aˣ)
       diagGL (weightDiagonalUnits w t) := by
   rw [pointsHom_weightCocharacter, pointsMulEquiv_weightCocharacterPoints,
     MulEquiv.apply_symm_apply]
+
+/-- The `m`-th power `t ↦ λ(t ^ m)` of the weight cocharacter with weights `w` is the weight
+cocharacter with weights `w i * m`. -/
+theorem powCocharacter_weightCocharacter (w : Fin N → ℤ) (m : ℤ) :
+    (weightCocharacter (R := R) w).powCocharacter m = weightCocharacter (fun i ↦ w i * m) := by
+  -- Both cocharacters send a unit `u` to the diagonal point with entries `u ^ (w i * m)`.
+  have hpts : ∀ u : (LaurentPolynomial R)ˣ,
+      Cocharacter.pointsHom (LaurentPolynomial R)
+          ((weightCocharacter (R := R) w).powCocharacter m) u =
+        Cocharacter.pointsHom (LaurentPolynomial R)
+          (weightCocharacter (R := R) (fun i ↦ w i * m)) u := by
+    intro u
+    apply (pointsMulEquiv (R := R) (A := LaurentPolynomial R) N).injective
+    rw [BialgHom.pointsHom_powCocharacter, pointsMulEquiv_pointsHom_weightCocharacter,
+      pointsMulEquiv_pointsHom_weightCocharacter]
+    congr 1
+    funext i
+    rw [weightDiagonalUnits_apply, weightDiagonalUnits_apply, ← zpow_mul, mul_comm]
+  -- Read off coordinates at the generic point `T` of `𝔾ₘ`.
+  have hgen := congrArg WithConv.ofConv (hpts (LaurentPolynomial.genericUnit R))
+  rw [← Cocharacter.genericPoint_eq_pointsHom, ← Cocharacter.genericPoint_eq_pointsHom,
+    Cocharacter.genericPoint_ofConv, Cocharacter.genericPoint_ofConv] at hgen
+  refine BialgHom.ext fun x ↦ ?_
+  simpa using congrArg (fun f ↦ f x) hgen
 
 /-- Conjugation by the weight cocharacter is conjugation by the diagonal matrix
 `diag(T ^ w i)`. -/

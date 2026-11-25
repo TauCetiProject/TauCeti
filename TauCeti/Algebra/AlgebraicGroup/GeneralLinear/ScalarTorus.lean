@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Center
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 /-!
@@ -113,7 +113,7 @@ ideal of `GLₙ`. Scheme-theoretically its image is the whole scalar subgroup. -
 theorem ker_weightCocharacter_const {m : ℤ} (hm : m ≠ 0) :
     HopfIdeal.ker (weightCocharacter (R := k) (N := n) (fun _ ↦ m)) =
       CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
-  have hpow := powCocharacter_weightCocharacter (R := k) (N := n) (fun _ ↦ 1) m
+  have hpow := Dynamic.powCocharacter_weightCocharacter (R := k) (N := n) (fun _ ↦ 1) m
   simp only [one_mul] at hpow
   ext x
   rw [HopfIdeal.mem_ker, mem_centerDefiningIdeal_iff, ← hpow, BialgHom.powCocharacter_apply,
