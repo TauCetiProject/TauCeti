@@ -356,14 +356,9 @@ theorem spectralGradient_prod (hA : A.IsHermitian) :
       (by simp [Equiv.eq_symm_apply]) fun j hj ↦ ?_
     rw [Function.update_of_ne (ne_of_mem_erase hj), Function.comp_apply,
       hA.eigenvalues_apply_equivOfCardEq, id]
-  set U : Matrix ι ι 𝕜 := ↑hA.eigenvectorUnitary
-  have hU : U * star U = 1 := Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property
-  have hU' : star U * U = 1 := Unitary.star_mul_self_of_mem hA.eigenvectorUnitary.property
   rw [spectralGradient_def, hw, ← adjugate_diagonal]
-  conv_rhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply]
-  rw [adjugate_mul_distrib, adjugate_mul_distrib, adjugate_eq_det_smul_of_mul_eq_one hU,
-    adjugate_eq_det_smul_of_mul_eq_one hU', Matrix.smul_mul, Matrix.mul_smul, Matrix.mul_smul,
-    smul_smul, ← det_mul, hU', det_one, one_smul, Matrix.mul_assoc]
+  conv_rhs => rw [hA.spectral_theorem, Unitary.conjStarAlgAut_apply,
+    adjugate_mul_mul_of_mul_eq_one (Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.property)]
 
 /-- The gradient of the determinant times the matrix is `det A • 1`: for `f = σₙ`,
 `∇F_f(A) A = det A • 1`. -/

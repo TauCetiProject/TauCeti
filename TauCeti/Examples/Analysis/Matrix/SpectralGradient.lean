@@ -54,10 +54,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 theorem eigenvalues₀_two_one (hT : (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) 𝕜).IsHermitian) :
     hT.eigenvalues₀ = ![3, 1] := by
   refine hT.eigenvalues₀_eq_of_charpoly_eq_two (by norm_num) ?_
-  rw [charpoly_fin_two, trace_fin_two_of, det_fin_two_of]
-  simp only [RCLike.ofReal_ofNat, map_one]
-  rw [show (2 : 𝕜) + 2 = 3 + 1 by norm_num, show (2 : 𝕜) * 2 - 1 * 1 = 3 by norm_num]
-  simp only [map_add, map_one]
+  norm_num [charpoly_fin_two, trace_fin_two_of, det_fin_two_of, map_ofNat]
   ring
 
 /-- **The gradient of the determinant** at `[[2, 1], [1, 2]]` is `det(T) T⁻¹ = [[2, -1], [-1, 2]]`.
@@ -172,10 +169,7 @@ theorem spectralGradient_sum_sq_swap
       hT.spectralGradient (fun μ ↦ ∑ k, μ k ^ 2) = !![0, 2; 2, 0] := by
   have he : hT.eigenvalues₀ = ![1, -1] := by
     refine hT.eigenvalues₀_eq_of_charpoly_eq_two (by norm_num) ?_
-    rw [charpoly_fin_two, trace_fin_two_of, det_fin_two_of]
-    simp only [map_neg, map_one]
-    simp only [add_zero, mul_zero, zero_sub, map_zero, zero_mul, sub_zero, mul_one, map_neg,
-      map_one]
+    simp [charpoly_fin_two, trace_fin_two_of, det_fin_two_of]
     ring
   refine ⟨he, ?_, ?_⟩
   · -- The spectral function of `μ ↦ ∑ μₖ²` is `tr(T²)`.
