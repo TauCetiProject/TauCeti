@@ -104,7 +104,7 @@ private theorem isHomogeneous_homogenizeFun (d : ℕ) (f : MvPolynomial σ R) :
   exact (isWeightedHomogeneous_unit_iff.1
     (isWeightedHomogeneous_blockHomogenize (fun _ : σ ↦ ()) (fun _ ↦ d) f ())).rename_isHomogeneous
 
-private theorem aeval_homogenizeFun {d : ℕ} {f : MvPolynomial σ R}
+private theorem aeval_homogenizeFun_one_X {d : ℕ} {f : MvPolynomial σ R}
     (hf : f ∈ restrictTotalDegree σ R d) :
     aeval (R := R) (Option.elim' 1 X) (homogenizeFun d f) = f := by
   rw [homogenizeFun, aeval_rename, option_elim_comp_sumElim]
@@ -112,7 +112,7 @@ private theorem aeval_homogenizeFun {d : ℕ} {f : MvPolynomial σ R}
   rw [mapDomain_apply_eq_degree]
   exact (le_totalDegree he).trans ((mem_restrictTotalDegree σ d f).1 hf)
 
-private theorem homogenizeFun_aeval {d : ℕ} {F : MvPolynomial (Option σ) R}
+private theorem homogenizeFun_aeval_one_X {d : ℕ} {F : MvPolynomial (Option σ) R}
     (hF : F.IsHomogeneous d) :
     homogenizeFun d (aeval (R := R) (Option.elim' 1 X) F) = F := by
   classical
@@ -137,8 +137,8 @@ noncomputable def homogenizeEquiv (d : ℕ) :
     simp only [Submodule.coe_add, homogenizeFun, blockHomogenize_add, map_add]
   map_smul' c f := Subtype.ext <| by
     simp only [SetLike.val_smul, homogenizeFun, blockHomogenize_smul, map_smul, RingHom.id_apply]
-  left_inv f := Subtype.ext (aeval_homogenizeFun (d := d) (f := f.val) f.property)
-  right_inv F := Subtype.ext (homogenizeFun_aeval (d := d) (F := F.val) F.property)
+  left_inv f := Subtype.ext (aeval_homogenizeFun_one_X (d := d) (f := f.val) f.property)
+  right_inv F := Subtype.ext (homogenizeFun_aeval_one_X (d := d) (F := F.val) F.property)
 
 /-- Homogenization in degree `d` is the one-block block homogenization with block degree `d`,
 with the homogenizing variable renamed to `none` and the affine variable `j` to `some j`. -/
@@ -157,14 +157,15 @@ theorem coe_homogenizeEquiv_symm_apply {d : ℕ} (F : homogeneousSubmodule (Opti
 
 /-- Setting `X₀ = 1` in the homogenization of `f` recovers `f`. -/
 @[simp]
-theorem aeval_homogenizeEquiv {d : ℕ} (f : restrictTotalDegree σ R d) :
+theorem aeval_homogenizeEquiv_one_X {d : ℕ} (f : restrictTotalDegree σ R d) :
     aeval (Option.elim' 1 X) (homogenizeEquiv σ R d f : MvPolynomial (Option σ) R) =
       (f : MvPolynomial σ R) := by
   rw [← coe_homogenizeEquiv_symm_apply, LinearEquiv.symm_apply_apply]
 
 /-- A homogeneous polynomial of degree `d` is the homogenization of the polynomial obtained by
 setting `X₀ = 1`. -/
-theorem homogenizeEquiv_aeval {d : ℕ} {F : MvPolynomial (Option σ) R} (hF : F.IsHomogeneous d) :
+theorem homogenizeEquiv_aeval_one_X {d : ℕ} {F : MvPolynomial (Option σ) R}
+    (hF : F.IsHomogeneous d) :
     (homogenizeEquiv σ R d ⟨aeval (Option.elim' 1 X) F,
         aeval_option_elim_one_X_mem_restrictTotalDegree
           (homogeneousSubmodule_le_restrictTotalDegree _ _ le_rfl hF)⟩ :
@@ -223,7 +224,7 @@ theorem homogenizeEquiv_mul {d e : ℕ} (f : restrictTotalDegree σ R d)
   have hFG : ((homogenizeEquiv σ R d f : MvPolynomial (Option σ) R) *
       homogenizeEquiv σ R e g).IsHomogeneous (d + e) :=
     (homogenizeEquiv σ R d f).property.mul (homogenizeEquiv σ R e g).property
-  rw [← homogenizeEquiv_aeval hFG]
+  rw [← homogenizeEquiv_aeval_one_X hFG]
   congr 2
   simp
 
