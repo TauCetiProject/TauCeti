@@ -14,7 +14,9 @@ public import Mathlib.MeasureTheory.Function.Holder
 For a Hölder triple `p⁻¹ + q⁻¹ = r⁻¹`, multiplication adds Bartnik weights:
 `Lᵖ_δ × Lᵠ_ε → Lʳ_(δ+ε)`. More generally, every bounded real bilinear map acts
 between these classes with the same operator-norm bound as in the unweighted inequality.
-The exponents include `∞`; no finite-dimensionality or completeness assumption is needed.
+The exponents include `∞`. The product and integrability results require neither
+finite-dimensionality nor completeness. The Bochner integral norm estimate assumes
+that its target space is complete.
 
 The reference measure must give no mass to the origin, where the radius weight can vanish.
 This includes the intended exterior-domain measures. The result also gives the weighted
@@ -136,15 +138,17 @@ theorem MemWeightedLp.integrable_bilin [ENNReal.HolderConjugate p q]
   exact weight_bilin_eq_of_add_eq_neg_finrank B hδε hx _ _
 
 omit [OpensMeasurableSpace E] in
-/-- The weighted Hölder dual pairing has norm at most the product of the weighted norms
-times the norm of the bilinear map. -/
-theorem eNorm_integral_bilin_le_weightedELpNorm [ENNReal.HolderConjugate p q]
+/-- In a complete target, the weighted Hölder volume pairing has norm at most the product
+of the weighted norms times the norm of the bilinear map. -/
+theorem eNorm_integral_bilin_le_weightedELpNorm [CompleteSpace H]
+    [ENNReal.HolderConjugate p q]
     {δ ε : ℝ} {f : E → F} {g : E → G}
     (hf : MemWeightedLp f p δ μ) (hg : MemWeightedLp g q ε μ)
     (B : F →L[ℝ] G →L[ℝ] H) (h0 : ∀ᵐ x ∂μ, x ≠ 0)
     (hδε : δ + ε = -(Module.finrank ℝ E : ℝ)) :
     ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤
       ‖B‖ₑ * weightedELpNorm f p δ μ * weightedELpNorm g q ε μ := by
+  have hi := hf.integrable_bilin hg B h0 hδε
   have heq : (fun x ↦ B (‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • f x)
       (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • g x)) =ᵐ[μ]
       fun x ↦ B (f x) (g x) := by
@@ -152,8 +156,10 @@ theorem eNorm_integral_bilin_le_weightedELpNorm [ENNReal.HolderConjugate p q]
     exact weight_bilin_eq_of_add_eq_neg_finrank B hδε hx _ _
   calc
     ‖∫ x, B (f x) (g x) ∂μ‖ₑ ≤ eLpNorm (fun x ↦ B (f x) (g x)) 1 μ := by
-      rw [eLpNorm_one_eq_lintegral_eNorm (hf.integrable_bilin hg B h0 hδε).aestronglyMeasurable]
-      exact eNorm_integral_le_lintegral_eNorm _
+      rw [integral_eq _ hi, eLpNorm_one_eq_lintegral_eNorm hi.aestronglyMeasurable,
+        ← hi.eNorm_toL1]
+      simpa only [eNorm_eq_nnNorm, ENNReal.coe_le_coe] using
+        L1.nnNorm_integral_le (hi.toL1 _)
     _ = eLpNorm (fun x ↦ B (‖x‖ ^ (-δ - Module.finrank ℝ E * p⁻¹.toReal) • f x)
         (‖x‖ ^ (-ε - Module.finrank ℝ E * q⁻¹.toReal) • g x)) 1 μ :=
       (eLpNorm_congr_ae heq).symm
