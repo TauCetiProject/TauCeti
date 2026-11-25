@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors, Codex
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
+import Mathlib.Algebra.Module.LinearMap.Polynomial
 import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.Tactic.Abel
@@ -15,7 +17,8 @@ import Mathlib.Tactic.Ring
 /-!
 # Affine maps and line maps
 
-Affine-map uniqueness, computations and affine-subspace avoidance for `AffineMap.lineMap`.
+Affine-map uniqueness, computations, polynomial representation, left inverses, and affine-subspace
+avoidance for `AffineMap.lineMap`.
 
 ## Main results
 
@@ -25,6 +28,8 @@ Affine-map uniqueness, computations and affine-subspace avoidance for `AffineMap
   `0`.
 * `AffineMap.apply_eq_add_mul_sub`: an affine function on the line is
   `s ↦ f 0 + s * (f 1 - f 0)`.
+* `AffineMap.exists_mvPolynomial_eval_eq`: every affine map out of a finite-dimensional
+  coordinate space `σ → R` is given coordinatewise by evaluation of polynomials.
 * `AffineMap.lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul`: the difference of points on two
   segments, at independent parameters, in terms of the endpoints.
 * `AffineMap.exists_leftInvOn_of_injOn`: over a division ring, an affine map injective on an
@@ -62,6 +67,18 @@ theorem apply_eq_add_mul_sub {k : Type*} [CommRing k] (f : k →ᵃ[k] k) (s : k
   simp only [sub_zero, mul_one, add_zero] at h
   rw [h]
   ring
+
+/-- Every affine map out of a finite-dimensional coordinate space `σ → R` is given coordinatewise
+by evaluation of polynomials. -/
+theorem exists_mvPolynomial_eval_eq {σ τ R : Type*} [CommRing R] [Finite σ]
+    (A : (σ → R) →ᵃ[R] (τ → R)) :
+    ∃ p : τ → MvPolynomial σ R, ∀ x, A x = fun i => MvPolynomial.eval x (p i) := by
+  classical
+  cases nonempty_fintype σ
+  refine ⟨fun i => (LinearMap.toMatrix' A.linear).toMvPolynomial i + MvPolynomial.C (A 0 i),
+    fun x => funext fun i => ?_⟩
+  simp [A.apply_eq_linear_add_apply_zero x, Matrix.toMvPolynomial_eval_eq_apply,
+    LinearMap.toMatrix'_mulVec]
 
 /-- The difference of a point at parameter `s` on the segment `p₀ p₁` and a point at parameter
 `t` on the segment `q₀ q₁`. Unlike `AffineMap.lineMap_vsub_lineMap`, the two parameters may
