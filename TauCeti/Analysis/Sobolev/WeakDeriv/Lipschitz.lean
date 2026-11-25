@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Rademacher
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import Mathlib.Topology.LocallyConstant.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.LineDeriv.Measurable
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
@@ -46,6 +47,8 @@ reduced to the real case by testing the identity against continuous linear funct
 * `LocallyLipschitzOn.hasWeakFDerivOn`: the same for an almost-everywhere Fréchet derivative.
 * `LocallyLipschitzOn.hasWeakFDerivOn_fderiv`: for a finite-dimensional codomain, `fderiv ℝ u` is
   the weak derivative.
+* `IsLocallyConstant.hasWeakFDerivOn_zero`: a function locally constant on `Ω` has weak derivative
+  zero there.
 
 ## References
 
@@ -137,5 +140,20 @@ theorem _root_.LocallyLipschitzOn.hasWeakFDerivOn_fderiv [FiniteDimensional ℝ 
     (hu : LocallyLipschitzOn Ω u) : HasWeakFDerivOn μ Ω u (fderiv ℝ u) :=
   hu.hasWeakFDerivOn ((hu.ae_differentiableAt_of_mem Ω.isOpen).mono fun _ hx hxΩ =>
     (hx hxΩ).hasFDerivAt)
+
+/-- **A locally constant function has vanishing weak derivative.** If `u` is locally constant on
+the open set `Ω`, that is constant near each point of `Ω`, then `0` is its weak derivative on
+`Ω`. -/
+theorem _root_.IsLocallyConstant.hasWeakFDerivOn_zero [CompleteSpace F]
+    (hu : IsLocallyConstant ((Ω : Set E).domRestrict u)) : HasWeakFDerivOn μ Ω u 0 := by
+  have hloc : ∀ x ∈ Ω, ∀ᶠ y in 𝓝 x, u y = u x := fun x hx => by
+    rw [← map_nhds_subtypeVal_eq_nhds hx (Ω.isOpen.mem_nhds hx)]
+    exact hu.eventually_eq ⟨x, hx⟩
+  have hLip : LocallyLipschitzOn Ω u := fun x hx =>
+    ⟨0, _, mem_nhdsWithin_of_mem_nhds (hloc x hx),
+      LipschitzOnWith.of_dist_le_mul fun y (hy : u y = u x) z (hz : u z = u x) => by
+        simp [hy, hz]⟩
+  exact hLip.hasWeakFDerivOn (ae_of_all _ fun x hx =>
+    (hasFDerivAt_const (u x) x).congr_of_eventuallyEq (hloc x hx))
 
 end TauCeti

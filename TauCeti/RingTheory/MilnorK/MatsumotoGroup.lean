@@ -27,7 +27,7 @@ This file develops the commutative-semiring presentation:
 * functoriality under ring homomorphisms (`TauCeti.MatsumotoGroup.map`).
 
 Field-specific identities and finite-field vanishing live in
-`TauCeti.FieldTheory.MilnorK.MatsumotoGroup`.
+`TauCeti.FieldTheory.MatsumotoGroup.Basic`.
 
 ## Main definitions
 

@@ -14,17 +14,18 @@ import TauCeti.FieldTheory.MilnorK.SteinbergPairing
 /-!
 # Field identities and finite-field vanishing for Milnor K-theory
 
-This file complements `TauCeti.RingTheory.MilnorK.Basic` by proving field-specific sign,
-graded-commutativity, and permutation-sign rules for `TauCeti.MilnorK` over fields, repeated-entry
-torsion and characteristic-`2` vanishing, and vanishing in degrees at least two over finite fields.
+This file complements `TauCeti.RingTheory.MilnorK.Basic` by proving additional field-specific
+identities for `TauCeti.MilnorK` over fields: characteristic-`2` and 2-torsion identities,
+permutation-sign rules, repeated-entry torsion and characteristic-`2` vanishing, and vanishing in
+degrees at least two over finite fields.
 
 ## Main results
 
-* `TauCeti.MilnorK.ofUnit_mul_ofUnit_neg_self`, `TauCeti.MilnorK.ofUnit_mul_ofUnit_comm`,
-  `TauCeti.MilnorK.ofUnit_mul_ofUnit_self`, `TauCeti.MilnorK.symbol_append_cons_cons_swap`:
-  `{a, -a} = 0`, `{a, b} = -{b, a}`, `{a, a} = {a, -1}`, and swapping adjacent entries negates a
-  symbol.
-* `TauCeti.MilnorK.mul_comm_of_mem_degree`: graded commutativity over a field.
+* `TauCeti.MilnorK.two_nsmul_ofUnit_mul_self`, `TauCeti.MilnorK.ofUnit_mul_self_eq_zero_of_charTwo`,
+  `TauCeti.MilnorK.symbol_append_cons_cons_self`: 2-torsion and characteristic-`2` vanishing for
+  `{a, a}` and consecutive repeated entries.
+* `TauCeti.MilnorK.ofUnit_mul_symbol`, `TauCeti.MilnorK.symbol_mul_symbol`: integer-scalar sign
+  rules for commuting a degree-one class or a symbol past a symbol.
 * `TauCeti.MilnorK.symbol_ofFn_comp_swap`: transposing two symbol entries negates the symbol.
 * `TauCeti.MilnorK.symbol_ofFn_comp_perm`: permuting symbol entries multiplies by the sign.
 * `TauCeti.MilnorK.two_nsmul_symbol_ofFn_eq_zero_of_eq` and
@@ -48,26 +49,6 @@ namespace MilnorK
 section FieldIdentities
 
 variable {F : Type*} [Field F]
-
-/-- Over a field, `{a, -a} = 0` for every unit `a`. -/
-@[simp]
-theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 :=
-  isSteinbergPairing_ofUnit_mul.map_neg_self a
-
-/-- Over a field, the degree-one classes anticommute: `{a, b} = -{b, a}`. -/
-theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
-  isSteinbergPairing_ofUnit_mul.map_anticomm a b
-
-/-- Over a field, `{a, a} = {a, -1}`. Unlike in an exterior algebra, this class need not vanish:
-`{-1, -1} ≠ 0` over `ℝ` (Weibel, Example III.7.2(c)). -/
-theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) :=
-  isSteinbergPairing_ofUnit_mul.map_self a
-
-/-- Over a field, interchanging two neighbouring entries negates a Milnor symbol. -/
-theorem symbol_append_cons_cons_swap (l₁ l₂ : List Fˣ) (a b : Fˣ) :
-    symbol (l₁ ++ b :: a :: l₂) = -symbol (l₁ ++ a :: b :: l₂) := by
-  simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_comm b a, neg_mul,
-    mul_neg]
 
 /-- Over a field, `2 • (ofUnit a * ofUnit a) = 0`. -/
 theorem two_nsmul_ofUnit_mul_self (a : Fˣ) : 2 • (ofUnit a * ofUnit a) = 0 :=
@@ -115,22 +96,6 @@ theorem symbol_mul_symbol (l₁ l₂ : List Fˣ) :
     rw [symbol_cons, mul_assoc, ih, mul_smul_comm, ← mul_assoc, ofUnit_mul_symbol]
     simp only [smul_mul_assoc, smul_smul, mul_assoc, List.length_cons, Nat.add_mul, Nat.one_mul,
       pow_add]
-
-/-- Graded commutativity of `MilnorK F`: homogeneous elements `x ∈ degree F m` and `y ∈ degree F n`
-satisfy `x * y = (-1) ^ (m * n) • (y * x)`. -/
-theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F}
-    (hx : x ∈ degree F m) (hy : y ∈ degree F n) :
-    x * y = ((-1 : ℤ) ^ (m * n)) • (y * x) := by
-  rw [degree_eq_span] at hx hy
-  refine Submodule.span_induction ?_ (by simp)
-    (fun _ _ _ _ hu hv ↦ by rw [add_mul, mul_add, smul_add, hu, hv])
-    (fun k u _ hu ↦ by rw [smul_mul_assoc k u, mul_smul_comm k y, hu, smul_comm]) hx
-  rintro _ ⟨l₁, rfl, rfl⟩
-  refine Submodule.span_induction ?_ (by simp)
-    (fun _ _ _ _ hu hv ↦ by rw [mul_add, add_mul, smul_add, hu, hv])
-    (fun k u _ hu ↦ by rw [mul_smul_comm k (symbol l₁), smul_mul_assoc k u, hu, smul_comm]) hy
-  rintro _ ⟨l₂, rfl, rfl⟩
-  exact symbol_mul_symbol l₁ l₂
 
 private theorem symbol_append_cons_append_cons (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ)
     (l₃ : List Fˣ) :

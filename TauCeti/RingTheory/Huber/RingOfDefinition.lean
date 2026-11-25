@@ -71,6 +71,9 @@ one — which Lemma 6.2, being an existence statement, does not.
   and `enlargeIdeal_idealOfDefinition` naming its two components — the ring is unchanged and the
   ideal becomes `I ⊔ span {y}` — and `mem_enlargeIdeal_idealOfDefinition` recording that the
   adjoined element is in it, which is the form consumers use.
+* `TauCeti.Huber.PairOfDefinition.mem_radical_idealOfDefinition_iff`: the radical of the ideal of
+  definition consists of the elements of the ring of definition that are topologically nilpotent
+  in `A`, `√J = A₀ ∩ A°°`.
 * `TauCeti.Huber.isTopologicallyNilpotent_iff_exists_mem_idealOfDefinition`: the topologically
   nilpotent elements are exactly the union of the ideals of definition — the ideal-side companion
   of Corollary 6.4 below.
@@ -197,6 +200,15 @@ theorem mem_enlargeIdeal_idealOfDefinition (Q : PairOfDefinition A) {y : Q.ringO
       (Q.enlargeIdeal hy).idealOfDefinition := by
   rw [Q.enlargeIdeal_idealOfDefinition hy]
   exact Ideal.mem_sup_right (Ideal.mem_span_singleton_self y)
+
+/-- The radical of the ideal of definition consists of exactly those elements of the ring of
+definition that are topologically nilpotent in `A`: `√J = A₀ ∩ A°°`. -/
+theorem mem_radical_idealOfDefinition_iff (P : PairOfDefinition A)
+    {a : P.ringOfDefinition} :
+    a ∈ P.idealOfDefinition.radical ↔ IsTopologicallyNilpotent (a : A) := by
+  rw [← P.isAdic_idealOfDefinition.isTopologicallyNilpotent_iff_mem_radical]
+  exact ⟨fun h ↦ h.map (φ := P.ringOfDefinition.subtype) continuous_subtypeVal,
+    fun h ↦ isTopologicallyNilpotent_mk a.property h⟩
 
 variable [IsTopologicalRing A]
 

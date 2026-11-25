@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # Unramified Kummer classes over a local field
