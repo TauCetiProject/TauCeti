@@ -30,6 +30,8 @@ cancellativity hypothesis is used.
 * `Algebra.GrothendieckAddGroup.natIntLocalizationMap` and
   `Algebra.GrothendieckAddGroup.natIntLocalizationMap_apply`: the localization map witnessing `ℤ`
   as the Grothendieck group of `ℕ`.
+* `Algebra.GrothendieckAddGroup.congr`: an isomorphism `M ≃+ N` induces an isomorphism of
+  group completions.
 * `Algebra.GrothendieckAddGroup.addEquivInt`: an isomorphism `M ≃+ ℕ` induces
   `GrothendieckAddGroup M ≃+ ℤ`.
 * `Algebra.GrothendieckAddGroup.instRing` and `Algebra.GrothendieckAddGroup.instCommRing`: the
@@ -47,7 +49,7 @@ public section
 
 namespace Algebra.GrothendieckAddGroup
 
-variable {M : Type*} [AddCommMonoid M] {G : Type*} [AddCommGroup G]
+variable {M : Type*} [AddCommMonoid M] {N : Type*} [AddCommMonoid N] {G : Type*} [AddCommGroup G]
 
 /-! ### The universal property, in additive form -/
 
@@ -61,16 +63,29 @@ def natIntLocalizationMap : (⊤ : AddSubmonoid ℕ).LocalizationMap ℤ where
 theorem natIntLocalizationMap_apply (n : ℕ) : natIntLocalizationMap n = (n : ℤ) :=
   (rfl)
 
+/-- An additive isomorphism `M ≃+ N` induces an isomorphism `GrothendieckAddGroup M ≃+
+GrothendieckAddGroup N` of group completions. -/
+noncomputable def congr (e : M ≃+ N) : GrothendieckAddGroup M ≃+ GrothendieckAddGroup N :=
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).addEquivOfAddEquiv
+    (AddLocalization.addMonoidOf (⊤ : AddSubmonoid N)) (AddSubmonoid.map_equiv_top e)
+
+/-- The isomorphism `congr e` sends `of a` to `of (e a)`. -/
+theorem congr_of (e : M ≃+ N) (a : M) : congr e (of a) = of (e a) :=
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).addEquivOfAddEquiv_eq
+    (AddSubmonoid.map_equiv_top e) a
+
 /-- An additive isomorphism `M ≃+ ℕ` induces an isomorphism `GrothendieckAddGroup M ≃+ ℤ` of
-group completions. -/
+group completions: `congr e` followed by the identification of the completion of `ℕ` with `ℤ`
+given by `natIntLocalizationMap`. -/
 noncomputable def addEquivInt (e : M ≃+ ℕ) : GrothendieckAddGroup M ≃+ ℤ :=
-  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).addEquivOfAddEquiv natIntLocalizationMap
-    (AddSubmonoid.map_equiv_top e)
+  (congr e).trans
+    ((AddLocalization.addMonoidOf (⊤ : AddSubmonoid ℕ)).addEquivOfLocalizations
+      natIntLocalizationMap)
 
 /-- The isomorphism `addEquivInt e` sends `of a` to `e a`. -/
-theorem addEquivInt_of (e : M ≃+ ℕ) (a : M) : addEquivInt e (of a) = e a :=
-  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).addEquivOfAddEquiv_eq
-    (k := natIntLocalizationMap) (AddSubmonoid.map_equiv_top e) a
+theorem addEquivInt_of (e : M ≃+ ℕ) (a : M) : addEquivInt e (of a) = e a := by
+  rw [addEquivInt, AddEquiv.trans_apply, congr_of]
+  exact (AddLocalization.addMonoidOf (⊤ : AddSubmonoid ℕ)).lift_eq _ (e a)
 
 /-- The inverse of `addEquivInt e` sends a natural number `n` to `of (e.symm n)`. -/
 theorem addEquivInt_symm_natCast (e : M ≃+ ℕ) (n : ℕ) :

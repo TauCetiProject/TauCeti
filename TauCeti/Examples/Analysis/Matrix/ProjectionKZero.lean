@@ -74,9 +74,7 @@ theorem of_mk_one_eq_nsmul (n : ℕ) :
     (GrothendieckAddGroup.of (ProjectionMonoid.mk (1 : Matrix (Fin n) (Fin n) ℂ) (.one _)) :
         ProjectionKZero ℂ) =
       n • GrothendieckAddGroup.of (ProjectionMonoid.mk (1 : Matrix (Fin 1) (Fin 1) ℂ) (.one _)) :=
-  (ProjectionKZero.rankAddEquiv ℂ).injective <| by
-    rw [map_nsmul, ProjectionKZero.rankAddEquiv_of_mk_one, ProjectionKZero.rankAddEquiv_of_mk_one,
-      Nat.cast_one, nsmul_eq_mul, mul_one]
+  by rw [ProjectionMonoid.mk_one, Fintype.card_fin, map_nsmul]
 
 /-- Over the zero algebra `Fin 0 → ℂ` the projection monoid is trivial. -/
 example : Subsingleton (ProjectionMonoid (Fin 0 → ℂ)) := inferInstance
