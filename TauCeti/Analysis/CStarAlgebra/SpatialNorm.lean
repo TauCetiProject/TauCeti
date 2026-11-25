@@ -45,7 +45,8 @@ So `‖x‖_min = ‖(spatialTensorHom A B) x‖` is a norm on `A ⊗[𝕜] B` (
 
 ## References
 
-* M. Takesaki, *Theory of Operator Algebras I*, Springer, 1979, Chapter IV, §4.
+* M. Takesaki, *Theory of Operator Algebras I*, Chapter IV, §4 (Theorem IV.4.9 is the
+  representation independence of the spatial norm).
 -/
 
 public section
