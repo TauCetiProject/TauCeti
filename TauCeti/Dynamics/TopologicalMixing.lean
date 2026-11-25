@@ -69,9 +69,11 @@ theorem isTopologicallyTransitive_not :
     IsTopologicallyTransitive (IterateMulAct Bool.not) Bool := by
   refine ⟨fun {U V} _ ⟨u, hu⟩ _ ⟨v, hv⟩ ↦ ?_⟩
   by_cases h : u = v
-  · exact ⟨IterateMulAct.mk 0, v, ⟨u, hu, h⟩, hv⟩
-  · refine ⟨IterateMulAct.mk 1, v, ⟨u, hu, ?_⟩, hv⟩
-    cases u <;> cases v <;> simp_all [IterateMulAct.mk_smul]
+  · refine ⟨IterateMulAct.mk 0, v, mem_smul_set.2 ⟨u, hu, ?_⟩, hv⟩
+    rw [IterateMulAct.mk_smul, Function.iterate_zero_apply, h]
+  · refine ⟨IterateMulAct.mk 1, v, mem_smul_set.2 ⟨u, hu, ?_⟩, hv⟩
+    rw [IterateMulAct.mk_smul, Function.iterate_one]
+    cases u <;> cases v <;> simp_all
 
 /-- The swap of two points is not topologically mixing: `T^[n] '' {false} ∩ {false}` is empty for
 every odd `n`. -/
