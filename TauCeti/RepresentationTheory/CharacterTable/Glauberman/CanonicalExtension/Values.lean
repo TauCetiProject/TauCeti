@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Character.Charpoly
 public import TauCeti.RepresentationTheory.CharacterTable.Cyclotomic.FieldOfValues
 public import TauCeti.RepresentationTheory.CharacterTable.Cyclotomic.PowerTwist
-public import TauCeti.RepresentationTheory.CharacterTable.Glauberman.CanonicalExtension
+public import TauCeti.RepresentationTheory.CharacterTable.Glauberman.CanonicalExtension.Basic
 
 /-!
 # Galois conjugates and values of the canonical extension
@@ -69,8 +70,8 @@ theorem IsCanonicalExtension.pow {χ : Γ → k} {ψ : Γ ⋊[φ] S → k}
   refine isCanonicalExtension_iff.2 ⟨hirr', ?_, m, ρ', hρ', fun s => ?_⟩
   · funext g
     simpa only [Function.comp_apply, map_pow] using congrFun hinl (g ^ j)
-  · rw [Representation.det_eq_det_pow_of_character_eq ρ ρ' (isOfFinOrder_of_finite _)
-      fun y _ => by rw [hρ', hρ], hdet, one_pow]
+  · rw [Representation.det_eq_det_pow_of_character_eq ρ ρ' fun y _ => by rw [hρ', hρ], hdet,
+      one_pow]
 
 /-- **Power maps fixing `χ` fix its canonical extension.** For `|Γ|` and `|S|` coprime and `j`
 coprime to `|Γ ⋊ S|`, if `χ (g ^ j) = χ g` for every `g`, then the canonical extension `ψ` of `χ`
@@ -83,19 +84,6 @@ theorem IsCanonicalExtension.apply_pow_eq_self (hcop : (Nat.card Γ).Coprime (Na
   have h := hψ.pow hj
   rw [show (fun g => χ (g ^ j)) = χ from funext hχj] at h
   exact congrFun ((existsUnique_canonicalExtension hcop hχ hinv).unique h hψ) x
-
-variable (k φ) in
-/-- A subfield of `k`, Galois and finite-dimensional over `ℚ`, containing a primitive
-`|Γ ⋊ S|`-th root of unity: the cyclotomic field in which the power maps of `Γ ⋊[φ] S` act. -/
-private theorem exists_isPrimitiveRoot_natCard : ∃ (K : IntermediateField ℚ k) (ζ : K),
-    IsGalois ℚ K ∧ FiniteDimensional ℚ K ∧ IsPrimitiveRoot ζ (Nat.card (Γ ⋊[φ] S)) := by
-  have : NeZero (Nat.card (Γ ⋊[φ] S)) := ⟨Nat.card_pos.ne'⟩
-  have : NeZero (Nat.card (Γ ⋊[φ] S) : k) := ⟨Nat.cast_ne_zero.2 Nat.card_pos.ne'⟩
-  obtain ⟨ζ, hζ₀⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot k (Nat.card (Γ ⋊[φ] S))
-  have := hζ₀.intermediateField_adjoin_isCyclotomicExtension ℚ
-  exact ⟨ℚ⟮ζ⟯, _, IsCyclotomicExtension.isGalois {Nat.card (Γ ⋊[φ] S)} ℚ _,
-    IsCyclotomicExtension.finiteDimensional {Nat.card (Γ ⋊[φ] S)} ℚ _,
-    IsCyclotomicExtension.zeta_spec (Nat.card (Γ ⋊[φ] S)) ℚ ℚ⟮ζ⟯⟩
 
 omit [Finite Γ] [Finite S] in
 /-- A power `j'` that is `1` modulo `|Γ|` and `j` modulo `|S|`, for `j` coprime to `|Γ ⋊ S|`:
@@ -121,7 +109,9 @@ theorem IsCanonicalExtension.adjoin_range_eq (hcop : (Nat.card Γ).Coprime (Nat.
     {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) :
     adjoin ℚ (Set.range ψ) = adjoin ℚ (Set.range χ) := by
   have : NeZero (Nat.card (Γ ⋊[φ] S)) := ⟨Nat.card_pos.ne'⟩
-  obtain ⟨K, ζ, _, _, hζ⟩ := exists_isPrimitiveRoot_natCard k φ
+  obtain ⟨K, ζ, _, hζ⟩ := HasEnoughRootsOfUnity.exists_intermediateField_isCyclotomicExtension ℚ
+    (M := k) (Nat.card (Γ ⋊[φ] S))
+  have := IsCyclotomicExtension.isGalois {Nat.card (Γ ⋊[φ] S)} ℚ K
   have hΓ : Monoid.exponent Γ ∣ Nat.card (Γ ⋊[φ] S) :=
     (Group.exponent_dvd_nat_card (G := Γ)).trans
       (SemidirectProduct.card (φ := φ) ▸ dvd_mul_right _ _)
@@ -146,7 +136,10 @@ theorem IsCanonicalExtension.exists_int_eq_apply_inr (hcop : (Nat.card Γ).Copri
     {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) (s : S) :
     ∃ z : ℤ, ψ (inr s) = z := by
   have : NeZero (Nat.card (Γ ⋊[φ] S)) := ⟨Nat.card_pos.ne'⟩
-  obtain ⟨K, ζ, _, _, hζ⟩ := exists_isPrimitiveRoot_natCard k φ
+  obtain ⟨K, ζ, _, hζ⟩ := HasEnoughRootsOfUnity.exists_intermediateField_isCyclotomicExtension ℚ
+    (M := k) (Nat.card (Γ ⋊[φ] S))
+  have := IsCyclotomicExtension.isGalois {Nat.card (Γ ⋊[φ] S)} ℚ K
+  have := IsCyclotomicExtension.finiteDimensional {Nat.card (Γ ⋊[φ] S)} ℚ K
   have hS : Monoid.exponent S ∣ Nat.card (Γ ⋊[φ] S) :=
     (Group.exponent_dvd_nat_card (G := S)).trans
       (SemidirectProduct.card (φ := φ) ▸ dvd_mul_left _ _)

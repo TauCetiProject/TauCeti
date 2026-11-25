@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+public import TauCeti.NumberTheory.Cyclotomic.Adjoin
 public import TauCeti.RepresentationTheory.CharacterTable.Cyclotomic.Action
 
 /-!
@@ -25,8 +26,6 @@ embedded in the coefficient field.
 
 public section
 
-open IntermediateField
-
 namespace TauCeti
 
 variable {k G : Type*} [Field k] [IsAlgClosed k] [CharZero k] [Group G] [Finite G]
@@ -36,13 +35,12 @@ variable {k G : Type*} [Field k] [IsAlgClosed k] [CharZero k] [Group G] [Finite 
 theorem pow_mem_irreducibleCharacters {χ : G → k} (hχ : χ ∈ irreducibleCharacters k G) {j : ℕ}
     (hj : j.Coprime (Nat.card G)) : (fun g => χ (g ^ j)) ∈ irreducibleCharacters k G := by
   have : NeZero (Nat.card G) := ⟨Nat.card_pos.ne'⟩
-  have : NeZero (Nat.card G : k) := ⟨Nat.cast_ne_zero.2 Nat.card_pos.ne'⟩
-  obtain ⟨ζ, hζ₀⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot k (Nat.card G)
-  have := hζ₀.intermediateField_adjoin_isCyclotomicExtension ℚ
-  have hζ := IsCyclotomicExtension.zeta_spec (Nat.card G) ℚ ℚ⟮ζ⟯
+  obtain ⟨K, -, _, -⟩ :=
+    HasEnoughRootsOfUnity.exists_intermediateField_isCyclotomicExtension ℚ (M := k) (Nat.card G)
+  have hζ := IsCyclotomicExtension.zeta_spec (Nat.card G) ℚ K
   have hG : Monoid.exponent G ∣ Nat.card G := Group.exponent_dvd_nat_card
   have hirr := Polynomial.cyclotomic.irreducible_rat (NeZero.pos (Nat.card G))
-  let σ := (IsCyclotomicExtension.autEquivPow ℚ⟮ζ⟯ hirr).symm (ZMod.unitOfCoprime j hj)
+  let σ := (IsCyclotomicExtension.autEquivPow K hirr).symm (ZMod.unitOfCoprime j hj)
   have hσ : (hζ.autToPow ℚ σ : ZMod (Nat.card G)).val = j % Nat.card G := by
     rw [← IsCyclotomicExtension.autEquivPow_apply _ hirr, MulEquiv.apply_symm_apply,
       ZMod.coe_unitOfCoprime, ZMod.val_natCast]
