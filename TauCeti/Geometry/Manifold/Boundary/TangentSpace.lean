@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Derivative
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
 public import TauCeti.Geometry.Manifold.Boundary.SmoothMap
 public import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Tangent, inward and outward directions at the boundary
@@ -43,6 +44,9 @@ the image point.
 * `TauCeti.mem_boundaryTangentSpace_iff_proj`: `v ∈ T_q∂M` exactly when its normal coordinate in
   the preferred chart vanishes; `TauCeti.mem_boundaryTangentSpace_iff_tangentCoordChange`: the
   same in any preferred chart.
+* `TauCeti.exists_mdifferentiableAt_extension_mem_boundaryTangentSpace`: a tangent vector of the
+  boundary extends to a vector field differentiable at the point and tangent to the boundary
+  along it.
 * `TauCeti.isOutwardPointing_or_mem_boundaryTangentSpace_or_isOutwardPointing_neg`, with
   `TauCeti.IsOutwardPointing.notMem_boundaryTangentSpace` and
   `TauCeti.IsOutwardPointing.not_isOutwardPointing_neg` (in `Boundary/Orientation.lean`): the
@@ -50,6 +54,8 @@ the image point.
   `TauCeti.mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg`.
 * `TauCeti.frontier_setOf_isOutwardPointing`, `TauCeti.frontier_setOf_isOutwardPointing_neg`:
   the outward and inward half-spaces have frontier `T_q∂M`.
+* `TauCeti.mvfderiv_eq_zero_iff_mem_boundaryTangentSpace_of_isLocalMin`: a function with a local
+  minimum and nonzero differential at `q` has differential vanishing exactly on `T_q∂M`.
 * `TauCeti.curveVelocity_mem_boundaryTangentSpace`: velocities of curves through the boundary.
 * `TauCeti.map_mfderiv_boundaryTangentSpace`: naturality under diffeomorphisms.
 
@@ -206,6 +212,33 @@ theorem mem_boundaryTangentSpace_iff_tangentCoordChange [IsManifold (𝓡∂ (n 
   rw [mem_boundaryTangentSpace_iff_proj, hnormal v, mul_eq_zero, or_iff_right ha.ne']
   rfl
 
+/-- A tangent vector of the boundary at `q` extends to a vector field differentiable at `q` and
+tangent to the boundary at the boundary points near `q`: the field with constant coordinates in
+the preferred chart at `q`. -/
+theorem exists_mdifferentiableAt_extension_mem_boundaryTangentSpace
+    [IsManifold (𝓡∂ (n + 1)) 2 M] (q : (𝓡∂ (n + 1)).boundary M)
+    (w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    ∃ W : (y : M) → TangentSpace (𝓡∂ (n + 1)) y, MDiffAt (T% W) (q : M) ∧
+      W q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w ∧
+      ∀ᶠ p in 𝓝 q, W p ∈ boundaryTangentSpace p := by
+  set v := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+    (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w
+  refine ⟨FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1))) v,
+    FiberBundle.mdifferentiableAt_extend _ _ v, FiberBundle.extend_apply_self _ _, ?_⟩
+  have hv : EuclideanSpace.proj (0 : Fin (n + 1)) v = 0 :=
+    mem_boundaryTangentSpace_iff_proj.mp (mfderiv_subtypeVal_mem_boundaryTangentSpace q w)
+  filter_upwards [((chartAt (EuclideanHalfSpace (n + 1)) (q : M)).open_source.preimage
+    continuous_subtypeVal).mem_nhds (mem_chart_source _ (q : M))] with p hp
+  rw [mem_boundaryTangentSpace_iff_tangentCoordChange (α := (q : M)) (by rwa [extChartAt_source]),
+    ← mfderiv_chartAt_eq_tangentCoordChange hp, ← (hasMFDerivAt_extChartAt hp).mfderiv]
+  -- In the preferred chart at `q`, the extension has the constant coordinates `v`, whose normal
+  -- coordinate `EuclideanSpace.proj 0 v` vanishes; `EuclideanSpace.proj 0` is evaluation at `0`.
+  have hext := congrArg (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin (n + 1)))
+    (Manifold.mfderiv_extChartAt_extend v hp)
+  rw [hv] at hext
+  exact hext
+
 /-- **Trichotomy.** A tangent vector at a boundary point is outward, tangent to the boundary, or
 inward (its negative is outward). The three cases are mutually exclusive
 (`TauCeti.IsOutwardPointing.notMem_boundaryTangentSpace`,
@@ -268,6 +301,17 @@ theorem frontier_setOf_isOutwardPointing_neg (q : (𝓡∂ (n + 1)).boundary M) 
   rw [frontier_Ioi]
   ext v
   exact mem_boundaryTangentSpace_iff_proj.symm
+
+/-- A function with a local minimum and nonzero differential at a boundary point `q` has
+differential vanishing exactly on the tangent space of the boundary. -/
+theorem mvfderiv_eq_zero_iff_mem_boundaryTangentSpace_of_isLocalMin {f : M → ℝ}
+    {q : (𝓡∂ (n + 1)).boundary M} (hmin : IsLocalMin f q)
+    (hne : mvfderiv (𝓡∂ (n + 1)) f q ≠ 0) (v : TangentSpace (𝓡∂ (n + 1)) (q : M)) :
+    mvfderiv (𝓡∂ (n + 1)) f q v = 0 ↔ v ∈ boundaryTangentSpace q := by
+  rw [mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg,
+    isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin q.property hmin hne,
+    isOutwardPointing_neg_iff_mvfderiv_pos_of_isLocalMin q.property hmin hne, not_lt, not_lt]
+  exact ⟨fun h ↦ ⟨h.ge, h.le⟩, fun h ↦ le_antisymm h.2 h.1⟩
 
 /-- The velocity at `t` of a curve `c` with `c t ∈ ∂M` is tangent to the boundary. (Without
 differentiability the velocity is `0` by convention.) -/

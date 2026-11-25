@@ -54,12 +54,15 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
   integrability, and the mean of the logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
+* `integrable_exp_mul_sub_expMeasure_iff`, `mgf_sub_const_expMeasure` — the exponential
+  integrability threshold and moment-generating function for a shifted law;
 * `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
 * `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
-* `expMeasure_map_const_mul` — positive scaling divides the rate;
+* `expMeasure_map_const_mul`, `ProbabilityTheory.HasLaw.const_mul_expMeasure` — positive scaling
+  divides the rate at the measure and random-variable levels;
 * `memoryless_expMeasure` — the conditional tail is unchanged by elapsed time;
 * `map_sub_cond_expMeasure` — conditional on exceeding a nonnegative threshold, the excess
   has the original exponential law;
@@ -160,6 +163,24 @@ theorem pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Me
 theorem expMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
     (expMeasure r).map (c * ·) = expMeasure (r / c) := by
   simpa only [expMeasure] using gammaMeasure_map_const_mul hc
+
+end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+/-- Multiplying an exponential random variable by a positive constant divides its rate by that
+constant. -/
+theorem const_mul_expMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {r c : ℝ} (hX : HasLaw X (expMeasure r) P) (hc : 0 < c) :
+    HasLaw (fun ω ↦ c * X ω) (expMeasure (r / c)) P := by
+  rw [← expMeasure_map_const_mul hc]
+  exact (hasLaw_map (measurable_const_mul c).aemeasurable).fun_comp hX
+
+end ProbabilityTheory.HasLaw
+
+namespace TauCeti.Probability
 
 /-- `expMeasure r` presented by its real-valued density, the form in which the real-density
 `withDensity` lemmas of `TauCeti/MeasureTheory/Integral/Bochner/WithDensity.lean` apply. -/
@@ -331,6 +352,34 @@ theorem mgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
     mgf id (expMeasure r) t = r / (r - t) := by
   rw [expMeasure, mgf_id_gammaMeasure one_pos hr ht, Real.rpow_neg_one,
     one_sub_div hr.ne', inv_div]
+
+/-- A shifted exponential law has an exponential moment exactly below its rate. -/
+@[simp]
+theorem integrable_exp_mul_sub_expMeasure_iff (hr : 0 < r) (t c : ℝ) :
+    Integrable (fun x : ℝ => exp (t * (x - c))) (expMeasure r) ↔ t < r := by
+  have hfun : (fun x : ℝ => exp (t * (x - c))) =
+      fun x => exp (-(t * c)) * exp (t * x) := by
+    funext x
+    rw [← exp_add]
+    congr 1
+    ring
+  rw [hfun, integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (exp_ne_zero _)),
+    integrable_exp_mul_expMeasure_iff hr]
+
+/-- The MGF of a shifted positive-rate exponential law, on its integrability domain. -/
+@[simp]
+theorem mgf_sub_const_expMeasure (hr : 0 < r) (ht : t < r) (c : ℝ) :
+    mgf (fun x : ℝ => x - c) (expMeasure r) t =
+      exp (-(t * c)) * (r / (r - t)) := by
+  calc
+    mgf (fun x : ℝ => x - c) (expMeasure r) t =
+        mgf id (expMeasure r) t * exp (t * (-c)) := by
+      simpa only [sub_eq_add_neg, id_eq] using
+        (mgf_add_const (X := id) (μ := expMeasure r) (t := t) (-c))
+    _ = exp (-(t * c)) * (r / (r - t)) := by
+      rw [mgf_id_expMeasure hr ht]
+      simp only [mul_neg]
+      ring
 
 /-- The cumulant-generating function of an exponential law with positive rate. -/
 @[simp]

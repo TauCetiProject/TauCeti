@@ -10,7 +10,7 @@ public import TauCeti.Geometry.RicciFlow.StandardCap.PuncturedMetric
 import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.CosSqrt
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Coercive
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
@@ -54,6 +54,9 @@ For `V = ℝ³` these are `3 / 2` and `1`.
 
 * `TauCeti.IsStandardCapProfile.metric_inner`, `TauCeti.IsStandardCapProfile.metric_inner_zero`:
   the standard cap metric in Cartesian coordinates, and its Euclidean value at the tip.
+* `TauCeti.IsStandardCapProfile.metric_inner_smul_self`,
+  `TauCeti.IsStandardCapProfile.sq_inner_le_sq_norm_mul_metric_inner`: the radial direction has
+  unit length, and the radial component of a tangent vector is at most its length.
 * `TauCeti.IsStandardCapProfile.pullback_metric_standardCapPolar`: in polar coordinates the
   standard cap metric is the punctured standard cap metric `dr² + f(r)² g_(Sⁿ)`.
 * `TauCeti.IsStandardCapProfile.scalarCurvature_metric_nonneg`: the standard cap has nonnegative
@@ -184,9 +187,8 @@ theorem isInvertible_mfderiv_standardCapPolar (p : standardCapRadialDomain × sp
     (mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
       (standardCapPolar V) p).IsInvertible := by
   have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
-  -- The tangent spaces are the model spaces `ℝ × ℝⁿ` and `V`, of the same dimension `n + 1`.
-  refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq
-    (U := ℝ × EuclideanSpace ℝ (Fin n)) (G := V) _ ?_ (injective_mfderiv_standardCapPolar p)
+  -- The model spaces `ℝ × ℝⁿ` and `V` have the same dimension `n + 1`.
+  refine (isInvertible_mfderiv_iff_injective ?_).2 (injective_mfderiv_standardCapPolar p)
   rw [Module.finrank_prod, finrank_euclideanSpace_fin, Module.finrank_self,
     Fact.out (p := Module.finrank ℝ V = n + 1), add_comm]
 
@@ -364,6 +366,45 @@ theorem metric_inner_zero (v w : TangentSpace 𝓘(ℝ, V) (0 : V)) :
       ⟪NormedSpace.fromTangentSpace (0 : V) v, NormedSpace.fromTangentSpace (0 : V) w⟫_ℝ := by
   rw [metric_inner, norm_zero, dslope_same, hf.deriv_zero]
   simp
+
+/-- **The radial component of a tangent vector is at most its cap length**: at `x`, the standard
+cap metric satisfies `⟪x, v⟫² ≤ ‖x‖² g_x(v, v)`. -/
+theorem sq_inner_le_sq_norm_mul_metric_inner (x : V) (v : TangentSpace 𝓘(ℝ, V) x) :
+    ⟪x, NormedSpace.fromTangentSpace x v⟫_ℝ ^ 2 ≤ ‖x‖ ^ 2 * (hf.metric V).inner x v v := by
+  rw [metric_inner]
+  set w := NormedSpace.fromTangentSpace x v
+  set a := dslope f 0 ‖x‖ ^ 2
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have hcs : ⟪x, w⟫_ℝ ^ 2 ≤ ‖x‖ ^ 2 * ‖w‖ ^ 2 := by
+    rw [← mul_pow, ← sq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg _) (abs_real_inner_le_norm x w) 2
+  -- With `a = (f(‖x‖) / ‖x‖)² ≥ 0`, the difference is `a` times the Cauchy–Schwarz defect.
+  have heq : ‖x‖ ^ 2 * (a * ⟪w, w⟫_ℝ + (1 - a) / ‖x‖ ^ 2 * (⟪x, w⟫_ℝ * ⟪x, w⟫_ℝ)) =
+      ⟪x, w⟫_ℝ ^ 2 + a * (‖x‖ ^ 2 * ‖w‖ ^ 2 - ⟪x, w⟫_ℝ ^ 2) := by
+    rw [real_inner_self_eq_norm_sq]
+    field_simp
+    ring
+  rw [heq]
+  nlinarith [mul_nonneg (sq_nonneg (dslope f 0 ‖x‖)) (sub_nonneg.2 hcs)]
+
+/-- **The radial direction has unit length**: at every point `t • x` of the line through `x`, the
+vector `x` has cap length `‖x‖`. -/
+theorem metric_inner_smul_self (t : ℝ) (x : V) :
+    (hf.metric V).inner (t • x) ((NormedSpace.fromTangentSpace (t • x)).symm x)
+      ((NormedSpace.fromTangentSpace (t • x)).symm x) = ‖x‖ ^ 2 := by
+  rw [metric_inner, ContinuousLinearEquiv.apply_symm_apply, real_inner_smul_left,
+    real_inner_self_eq_norm_sq]
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp [hf.deriv_zero]
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have hN : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
+  rw [norm_smul, Real.norm_eq_abs]
+  have ht' : |t| ≠ 0 := abs_ne_zero.2 ht
+  field_simp
+  rw [sq_abs]
+  ring
 
 section Polar
 

@@ -102,8 +102,6 @@ variable [FiniteDimensional ℝ E] [T2Space G]
 theorem contMDiff_homOfLe (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (h : d.lieMapToHom.range ≤ e.lieMapToHom.range) :
     ContMDiff d.I' e.I' ∞ (d.homOfLe e (d.le_of_range_lieMapToHom_le e h)) := by
-  let _ : T2Space d.X := d.I'.t2Space_of_lieGroup ∞
-  let _ : T2Space e.X := e.I'.t2Space_of_lieGroup ∞
   apply contMDiff_of_map_lieExp (d.homOfLe e (d.le_of_range_lieMapToHom_le e h))
     (d.lieHomOfRangeLe e h).toLinearMap
   dsimp only

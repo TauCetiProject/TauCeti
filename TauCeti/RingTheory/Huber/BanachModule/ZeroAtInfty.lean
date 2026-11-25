@@ -288,7 +288,7 @@ theorem norm_zeroAtInftyEquiv_sum_le {C : ℝ≥0}
     (hxm : ∀ j ∈ F, C * ‖x j‖ * ‖m j‖ ≤ b) :
     ‖zeroAtInftyEquiv I ⟨C, hC⟩ (∑ j ∈ F, tmul R C₀(I, R) E (x j) (m j))‖ ≤ b := by
   refine (norm_le hb).2 fun i ↦ ?_
-  simp only [map_sum, coe_sum, Finset.sum_apply, zeroAtInftyEquiv_tmul_apply]
+  simp only [map_sum, FunLike.coe_sum, Finset.sum_apply, zeroAtInftyEquiv_tmul_apply]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hb fun j hj ↦ ?_
   calc ‖x j i • m j‖ ≤ C * ‖x j i‖ * ‖m j‖ := hC _ _
     _ ≤ C * ‖x j‖ * ‖m j‖ := by gcongr; exact norm_coe_le_norm _ _
@@ -660,7 +660,7 @@ private theorem norm_c0AlgForward_le (z : T₀(S, R, I)) :
       z = ∑ i, s i ⊗ₜ[R] x i ∧ ∀ i, ‖s i‖ * ‖x i‖ ≤ c}, ‖c0AlgForward hL hφ z‖ ≤ L * c := by
     rintro c ⟨hc, n, s, x, rfl, h⟩
     refine (norm_le (mul_nonneg hL hc)).2 fun i ↦ ?_
-    simp only [map_sum, coe_sum, Finset.sum_apply, c0AlgForward_tmul_apply]
+    simp only [map_sum, FunLike.coe_sum, Finset.sum_apply, c0AlgForward_tmul_apply]
     refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (mul_nonneg hL hc) fun j _ ↦ ?_
     refine ((norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left (hφ _) (norm_nonneg _))).trans ?_
     rw [mul_left_comm]

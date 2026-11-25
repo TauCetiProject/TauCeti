@@ -214,7 +214,7 @@ private theorem norm_timeDeriv_eq (u : EvolutionSpace ι a b) :
     ‖timeDeriv u‖ = ‖WeakDerivStep.weakFDeriv (mu := volume)
       (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (evolutionBaseL ι a b) u‖ := by
   rw [timeDeriv, timeDerivL, ContinuousLinearMap.comp_apply, WeakDerivStep.weakFDerivL_apply]
-  exact ContinuousLinearMap.norm_apply_one_compLpL_apply _
+  rw [ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.norm_apply_one_compLp]
 
 /-- Convergence in the energy space is equivalent to convergence of the value and the
 dual-valued weak time derivative in their respective `L²` spaces. -/
@@ -245,6 +245,12 @@ theorem norm_value_le (u : EvolutionSpace ι a b) : ‖value u‖ ≤ ‖u‖ :=
 theorem norm_timeDeriv_le (u : EvolutionSpace ι a b) : ‖timeDeriv u‖ ≤ ‖u‖ := by
   rw [norm_timeDeriv_eq]
   exact WeakDerivStep.norm_weakFDeriv_le _ u
+
+/-- The graph norm is at most the sum of the `L²(a,b;V)` and `L²(a,b;V*)` norms. -/
+theorem norm_le_norm_value_add_norm_timeDeriv (u : EvolutionSpace ι a b) :
+    ‖u‖ ≤ ‖value u‖ + ‖timeDeriv u‖ := by
+  rw [value_eq_prev, norm_timeDeriv_eq]
+  exact WeakDerivStep.norm_le_norm_prev_add_norm_weakFDeriv _ u
 
 /-- The energy space is complete in its graph norm. -/
 instance [CompleteSpace V] : CompleteSpace (EvolutionSpace ι a b) := inferInstance

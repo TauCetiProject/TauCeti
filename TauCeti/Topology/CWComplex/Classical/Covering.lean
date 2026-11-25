@@ -520,7 +520,7 @@ theorem _root_.IsCoveringMap.finiteCWType [TopologicalSpace E] [FiniteCWType B]
   have hq := hp.pullback_fst e.symm.toFun.continuous
   let := cwComplexPreimage univ hq
   have := finite_cwComplexPreimage univ hq fun z ↦
-    .of_equiv _ (Function.Pullback.fstPreimageEquiv z).symm
+    (Function.Pullback.finite_preimage_fst_singleton_iff z).mpr (hfin _)
   have := hq.t2Space
   have : FiniteCWType (Function.Pullback e.symm p) :=
     ((Homeomorph.setCongr (preimage_univ (f := Function.Pullback.fst))).trans

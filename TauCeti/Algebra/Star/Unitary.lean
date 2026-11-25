@@ -17,8 +17,9 @@ import Mathlib.Tactic.NormNum
 The unitary elements of a product of star monoids are the pairs of unitary elements. This file
 packages that identification as a multiplicative equivalence. It also records that a unit is
 unitary exactly when its adjoint is its inverse, that a self-adjoint unitary `u` determines a
-star projection `(2⁻¹ : ℝ) • (1 - u)`, and that a star-preserving multiplicative map that sends
-`1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism, maps unitaries to unitaries.
+star projection `(2⁻¹ : ℝ) • (1 - u)`, that a star-preserving multiplicative map that sends
+`1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism, maps unitaries to unitaries,
+and that the ring inverse of a unitary element is its adjoint.
 
 ## Main definitions and results
 
@@ -31,6 +32,7 @@ star projection `(2⁻¹ : ℝ) • (1 - u)`, and that a star-preserving multipl
   unitaries to unitaries.
 * `Unitary.isStarProjection_half_one_sub`: for a self-adjoint unitary `u` in a real
   `⋆`-algebra, `(2⁻¹ : ℝ) • (1 - u)` is a star projection.
+* `Unitary.ringInverse_coe`: the ring inverse of a unitary element is its adjoint.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
 -/
@@ -79,6 +81,12 @@ theorem isStarProjection_half_one_sub {A : Type*} [Ring A] [StarRing A] [Module 
   have hsub : (1 - (u : A)) * (1 - (u : A)) = (2 : ℝ) • (1 - (u : A)) := by
     simp only [mul_sub, sub_mul, mul_one, one_mul, hu2, two_smul]; abel
   rw [IsIdempotentElem, smul_mul_smul_comm, hsub, smul_smul]; norm_num
+
+/-- The ring inverse of a unitary element is its adjoint. -/
+@[simp]
+theorem ringInverse_coe {R : Type*} [MonoidWithZero R] [StarMul R] (u : unitary R) :
+    Ring.inverse (u : R) = star (u : R) :=
+  Ring.inverse_unit (Unitary.toUnits u)
 
 end Unitary
 

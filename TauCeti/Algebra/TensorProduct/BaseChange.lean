@@ -50,6 +50,11 @@ with passing to the opposite algebra, and composes in stages:
   `MulSemiringAction.toAlgAut` of the right-factor action
   (`rightMulSemiringAction_smul_eq_baseChangeAutHom`).
 * `TauCeti.ScalarAut.semilinearMap`: the scalar action as a semilinear map over `L`.
+* `TauCeti.ScalarAut.tensorProductMap_eq_smul`, `TauCeti.ScalarAut.algebraTensorProductMap_eq_smul`:
+  the scalar-factor action of `σ` is both `TensorProduct.map σ id` and
+  `Algebra.TensorProduct.map σ id`.
+* `TauCeti.ScalarAut.map_smul_eq_of_forall_one_tmul`: an `L`-linear map out of `L ⊗[K] A`
+  intertwines the action of `σ` with a `σ`-semilinear map fixing the images of the tensors `1 ⊗ a`.
 * `TauCeti.ScalarAut.toAlgAut` and `TauCeti.ScalarAut.instMulSemiringAction`: scalar
   automorphisms act on a scalar extension through its scalar factor, by algebra automorphisms.
 * `TauCeti.ScalarAut.baseChangeMap_smul`: scalar extension of an algebra map is equivariant for
@@ -325,6 +330,18 @@ theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
   (baseChangeTowerAlgEquiv K L A M).symm_apply_eq.mpr <| by
     rw [baseChangeTowerAlgEquiv_tmul, one_smul]
 
+/-- `M ⊗[K] A` is the base change of `L ⊗[K] A` along `L → M`: the inverse tower comparison sends
+the image of `x ∈ L ⊗[K] A` under the scalar map `L → M` to `1 ⊗ x`. -/
+theorem _root_.Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor (x : L ⊗[K] A) :
+    (baseChangeTowerAlgEquiv K L A M).symm
+        (Algebra.TensorProduct.rTensor A (IsScalarTower.toAlgHom K L M) x) =
+      (1 : M) ⊗ₜ[L] x := by
+  induction x with
+  | tmul l a =>
+    simp [Algebra.algebraMap_eq_smul_one, _root_.TensorProduct.smul_tmul,
+      _root_.TensorProduct.smul_tmul']
+  | add x y hx hy => simp only [map_add, _root_.TensorProduct.tmul_add, hx, hy]
+
 /-- Collapsing a scalar-extension tower in both tensor factors commutes with distributing
 scalar extension over their tensor product, as an equality of algebra maps. -/
 theorem map_baseChangeTowerAlgEquiv_comp_baseChangeTensorAlgEquiv :
@@ -413,6 +430,28 @@ theorem semilinearMap_apply (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
     semilinearMap (A := A) σ x = σ • x :=
   (rfl)
 
+/-- The scalar-factor action of `σ` is `TensorProduct.map σ id`, the form in which Galois
+equivariance of maps between scalar extensions is stated. -/
+theorem tensorProductMap_eq_smul (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
+    TensorProduct.map σ.toLinearMap LinearMap.id x = σ • x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, hx, hy, smul_add]
+  | tmul a x => rw [TensorProduct.map_tmul, smul_tmul, AlgEquiv.toLinearMap_apply,
+      LinearMap.id_apply]
+
+/-- An `L`-linear map `F` out of `L ⊗[K] A` carries the scalar-factor action of `σ` to a
+`σ`-semilinear map `g`, as soon as `g` fixes the images `F (1 ⊗ a)`. -/
+theorem map_smul_eq_of_forall_one_tmul {M : Type*} [AddCommMonoid M] [Module L M]
+    (σ : L ≃ₐ[K] L) (F : L ⊗[K] A →ₗ[L] M) (g : M →ₛₗ[σ.toRingHom] M)
+    (hF : ∀ a : A, g (F (1 ⊗ₜ a)) = F (1 ⊗ₜ a)) (x : L ⊗[K] A) :
+    F (σ • x) = g (F x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => rw [smul_add, map_add, map_add, map_add, hx, hy]
+  | tmul c a =>
+    rw [smul_tmul, TensorProduct.tmul_eq_smul_one_tmul, TensorProduct.tmul_eq_smul_one_tmul c,
+      map_smul, map_smul, map_smulₛₗ, hF, RingEquiv.toRingHom_eq_coe,
+      RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
+
 end Module
 
 variable {K L A : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
@@ -442,6 +481,11 @@ noncomputable instance instMulSemiringAction :
 theorem smul_def (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
     σ • x = Algebra.TensorProduct.congr σ (.refl : A ≃ₐ[K] A) x :=
   rfl
+
+/-- The algebra map `σ ⊗ id` of a scalar extension is the scalar-factor action of `σ`. -/
+theorem algebraTensorProductMap_eq_smul (σ : L ≃ₐ[K] L) (x : L ⊗[K] A) :
+    Algebra.TensorProduct.map σ.toAlgHom (AlgHom.id K A) x = σ • x := by
+  rw [smul_def, Algebra.TensorProduct.congr_apply, AlgEquiv.refl_toAlgHom]
 
 /-- Scalar extension of an algebra morphism commutes with the scalar-factor action. -/
 @[simp]

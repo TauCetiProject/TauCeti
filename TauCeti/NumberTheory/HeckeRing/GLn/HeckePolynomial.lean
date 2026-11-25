@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Polynomial.Vieta
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Coeff.Basic
+import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.Algebra.Ring.Parity
 import TauCeti.Data.Nat.Choose.Basic
 
@@ -61,6 +62,10 @@ The exponent `i(i-1)/2` is written `Nat.choose i 2`, so no division appears in t
   `TauCeti.C_coeff_zero_mul_glnHeckePolynomial_rev_mul_comp` and
   `TauCeti.coeff_zero_mul_coeff_glnHeckePolynomial_rev_mul`: the inversion formula, integrally
   (coefficientwise and as polynomials) and normalized (as polynomials and coefficientwise).
+* `TauCeti.coeff_glnHeckePolynomial_sub_mul_coeff_zero` and
+  `TauCeti.C_coeff_zero_mul_glnHeckePolynomial_comp_C_mul_X`: the inversion formula for any
+  `T'` with `T'ᵢ Tₙ = T_{n-i}`, with no unit hypothesis on `Tₙ` (coefficientwise and as
+  polynomials).
 
 ## References
 
@@ -125,12 +130,6 @@ theorem natDegree_glnHeckePolynomial_le (q : A) (T : Fin (n + 1) → A) :
 theorem degree_glnHeckePolynomial_le (q : A) (T : Fin (n + 1) → A) :
     (glnHeckePolynomial n q T).degree ≤ n :=
   degree_le_of_natDegree_le (natDegree_glnHeckePolynomial_le q T)
-
-/-- Substituting `c X` for `X` keeps the Hecke polynomial in degree at most `n`. -/
-theorem natDegree_glnHeckePolynomial_comp_C_mul_X_le (q c : A) (T : Fin (n + 1) → A) :
-    ((glnHeckePolynomial n q T).comp (C c * X)).natDegree ≤ n :=
-  natDegree_le_iff_coeff_eq_zero.mpr fun _ hk => by
-    rw [comp_C_mul_X_coeff, coeff_glnHeckePolynomial_of_lt q T hk, zero_mul]
 
 /-- The coefficient of `X^n` in the Hecke polynomial is `T₀`. -/
 @[simp]
@@ -239,7 +238,8 @@ polynomial; for the norm twist `‖det‖^t` one has `c = q^{-t}`. -/
 theorem glnHeckePolynomial_pow_mul_comp (q c : A) (T : Fin (n + 1) → A) :
     (glnHeckePolynomial n q fun i => c ^ (i : ℕ) * T i).comp (C c * X) =
       C (c ^ n) * glnHeckePolynomial n q T := by
-  refine eq_of_natDegree_le_of_coeff_fin_eq (natDegree_glnHeckePolynomial_comp_C_mul_X_le q c _)
+  refine eq_of_natDegree_le_of_coeff_fin_eq
+    ((natDegree_comp_C_mul_X_le c _).trans (natDegree_glnHeckePolynomial_le q _))
     ((natDegree_C_mul_le _ _).trans (natDegree_glnHeckePolynomial_le q T)) fun i => ?_
   rw [comp_C_mul_X_coeff, coeff_C_mul, coeff_glnHeckePolynomial_val,
     coeff_glnHeckePolynomial_val, Fin.val_rev, Nat.add_sub_add_right, ← pow_mul_pow_sub c i.is_le]
@@ -285,7 +285,8 @@ theorem C_mul_glnHeckePolynomial_rev_comp (q : A) (T : Fin (n + 1) → A) :
         (glnHeckePolynomial n q fun i => T i.rev).comp (C (q ^ (n - 1)) * X) =
       C (q ^ (n * (n - 1))) * reflect n (glnHeckePolynomial n q T) := by
   refine eq_of_natDegree_le_of_coeff_fin_eq
-    ((natDegree_C_mul_le _ _).trans (natDegree_glnHeckePolynomial_comp_C_mul_X_le q _ _))
+    ((natDegree_C_mul_le _ _).trans
+      ((natDegree_comp_C_mul_X_le _ _).trans (natDegree_glnHeckePolynomial_le q _)))
     ((natDegree_C_mul_le _ _).trans
       (natDegree_reflect_le.trans (max_le le_rfl (natDegree_glnHeckePolynomial_le q T))))
     fun i => ?_
@@ -327,6 +328,55 @@ theorem coeff_zero_mul_coeff_glnHeckePolynomial_rev_mul (q : A) {T : Fin (n + 1)
   rw [glnHeckePolynomial_mul_const, coeff_mul_C, coeff_zero_glnHeckePolynomial]
   linear_combination
     (-1) ^ n * q ^ n.choose 2 * (glnHeckePolynomial n q fun i => T i.rev).coeff (n - i) * hu + h
+
+/-- **Inverting the Hecke operators**, coefficientwise, for any `T'` with `T'ᵢ Tₙ = T_{n-i}`
+(as for the images `T_{n-i} / Tₙ` of the `Tᵢ` under the involution `g ↦ g⁻¹` of the spherical
+Hecke algebra), with no unit hypothesis on `Tₙ`: the coefficient of `X^{n-i}` in the Hecke
+polynomial of `T'`, multiplied by the constant coefficient `P(0)` of the Hecke polynomial `P` of
+`T`, is `q^{i(n-1)}` times the coefficient of `X^i` in `P`. -/
+theorem coeff_glnHeckePolynomial_sub_mul_coeff_zero (q : A) (T : Fin (n + 1) → A)
+    {T' : Fin (n + 1) → A} (hT' : ∀ i, T' i * T (Fin.last n) = T i.rev) (i : Fin (n + 1)) :
+    (glnHeckePolynomial n q T').coeff (n - i) * (glnHeckePolynomial n q T).coeff 0 =
+      q ^ ((i : ℕ) * (n - 1)) * (glnHeckePolynomial n q T).coeff i := by
+  rw [coeff_glnHeckePolynomial_val, coeff_glnHeckePolynomial, coeff_zero_glnHeckePolynomial,
+    ← hT' i]
+  obtain ⟨j, hj⟩ : ∃ j, n = i + j := Nat.exists_eq_add_of_le i.is_le
+  have hsign : (-1 : A) ^ (i : ℕ) * (-1) ^ (i + j : ℕ) = (-1) ^ j := by
+    simp [pow_add, ← mul_assoc, ← sq, ← pow_mul]
+  have hexp : (i : ℕ).choose 2 + (i + j).choose 2 = i * (i + j - 1) + j.choose 2 := by
+    rw [Nat.add_choose_two, ← Nat.two_mul_choose_two_add_mul]
+    ring
+  rw [← hj] at hsign hexp
+  rw [show n - i = j by omega]
+  calc (-1) ^ (i : ℕ) * q ^ (i : ℕ).choose 2 * T' i * ((-1) ^ n * q ^ n.choose 2 * T (Fin.last n))
+      = ((-1) ^ (i : ℕ) * (-1) ^ n) * q ^ ((i : ℕ).choose 2 + n.choose 2) *
+          (T' i * T (Fin.last n)) := by rw [pow_add]; ring
+    _ = _ := by rw [hsign, hexp, pow_add]; ring
+
+/-- **Inverting the Hecke operators**, as an identity of polynomials, for any `T'` with
+`T'ᵢ Tₙ = T_{n-i}` and no unit hypothesis on `Tₙ`: `P(0) P'(q^{n-1} X) = q^{n(n-1)} X^n P(1/X)`,
+where `P` and `P'` are the Hecke polynomials of `T` and `T'` and `X^n P(1/X)` is the reflection
+`reflect n P`. When `q` and `P(0)` are units, this says that `P'(X) = q^{n(n-1)} P^rec(q^{1-n} X)`
+for the normalized reciprocal `P^rec(X) = X^n P(1/X) / P(0)`, whose roots are the inverses of
+those of `P`. -/
+theorem C_coeff_zero_mul_glnHeckePolynomial_comp_C_mul_X (q : A) (T : Fin (n + 1) → A)
+    {T' : Fin (n + 1) → A} (hT' : ∀ i, T' i * T (Fin.last n) = T i.rev) :
+    C ((glnHeckePolynomial n q T).coeff 0) *
+        (glnHeckePolynomial n q T').comp (C (q ^ (n - 1)) * X) =
+      C (q ^ (n * (n - 1))) * reflect n (glnHeckePolynomial n q T) := by
+  ext k
+  rw [coeff_C_mul, coeff_C_mul, comp_C_mul_X_coeff, coeff_reflect]
+  rcases le_or_gt k n with hk | hk
+  · obtain ⟨i, rfl⟩ : ∃ i : Fin (n + 1), k = n - i :=
+      ⟨⟨n - k, by omega⟩, by rw [Fin.val_mk]; omega⟩
+    have hi := i.is_le
+    have h := coeff_glnHeckePolynomial_sub_mul_coeff_zero q T hT' i
+    have hexp : (i : ℕ) * (n - 1) + (n - 1) * (n - i) = n * (n - 1) := by
+      rw [mul_comm (n - 1), ← add_mul, Nat.add_sub_cancel' hi]
+    rw [revAt_le (Nat.sub_le _ _), Nat.sub_sub_self hi, ← pow_mul, ← hexp, pow_add]
+    linear_combination q ^ ((n - 1) * (n - i)) * h
+  · rw [revAt_eq_self_of_lt hk, coeff_glnHeckePolynomial_of_lt q T' hk,
+      coeff_glnHeckePolynomial_of_lt q T hk, zero_mul, mul_zero, mul_zero]
 
 end CommRing
 

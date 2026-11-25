@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
+import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import Mathlib.LinearAlgebra.Matrix.Trace
 
 /-!
@@ -21,8 +22,9 @@ that normalization sum is one. Isometric changes of Kraus family preserve the ma
 The normalization criterion connects the Heisenberg and Schrödinger pictures of
 a finite-dimensional quantum channel.
 
-The construction uses Mathlib's `CompletelyPositiveMap` and `Matrix.PosSemidef`,
-with the spectral order transported by `CStarMatrix.nonneg_iff_posSemidef`.
+The construction uses Mathlib's `CompletelyPositiveMap` and derives complete positivity of
+matrix conjugation from `CompletelyPositiveMap.conj` via `CStarMatrix.map_fromBlocks_inl_nonneg`
+and `CStarMatrix.map_toBlocks₂₂_nonneg`.
 
 ## References
 
@@ -54,42 +56,19 @@ noncomputable def conjugateCP (V : Matrix n m ℂ) :
     simp only [map_smul, Matrix.mul_smul, Matrix.smul_mul, RingHom.id_apply]
     rfl
   map_cstarMatrix_nonneg' k M hM := by
-    classical
-    let : NonUnitalContinuousFunctionalCalculus ℝ
-        (CStarMatrix (Fin k) (Fin k) (CStarMatrix n n ℂ)) IsSelfAdjoint :=
-      IsSelfAdjoint.instNonUnitalContinuousFunctionalCalculus
-    let : NonnegSpectrumClass ℝ
-        (CStarMatrix (Fin k) (Fin k) (CStarMatrix n n ℂ)) :=
-      CStarAlgebra.instNonnegSpectrumClass'
-    obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
-    apply nonneg_iff_forall_sum_nonneg.mpr
-    intro x
-    apply CStarMatrix.nonneg_iff_posSemidef.mpr
-    let B (l : Fin k) : Matrix n m ℂ :=
-      ∑ i, ofMatrix.symm (R l i) * V * ofMatrix.symm (x i)
-    have hB : (∑ l, (B l)ᴴ * B l).PosSemidef :=
-      Matrix.posSemidef_sum _ fun l _ => Matrix.posSemidef_conjTranspose_mul_self (B l)
-    convert hB using 1
-    simp only [B, Matrix.conjTranspose_sum, Matrix.conjTranspose_mul,
-      Matrix.sum_mul, Matrix.mul_sum]
-    -- Representation boundary: `ofMatrix` is `Equiv.refl _`, and the multiplication, `star`
-    -- and `CStarMatrix.map` of `CStarMatrix` are the entrywise `Matrix` operations, so this sum
-    -- of block entries is definitionally the matrix expression stated below (the matching
-    -- rewriting lemmas are `CStarMatrix.mul_apply`, `ofMatrix_symm_mul` and
-    -- `ofMatrix_symm_star`). `change` states that target directly; it depends only on those
-    -- definitions.
-    change (∑ i, ∑ j, (ofMatrix.symm (x i))ᴴ *
-      (Vᴴ * (∑ l, (ofMatrix.symm (R l i))ᴴ * ofMatrix.symm (R l j)) * V) *
-      ofMatrix.symm (x j)) = _
-    simp only [Matrix.sum_mul, Matrix.mul_sum, Matrix.mul_assoc]
-    conv_lhs =>
-      arg 2
-      ext i
-      rw [Finset.sum_comm]
-    rw [Finset.sum_comm]
-    congr 1
-    funext l
-    rw [Finset.sum_comm]
+    let M' : CStarMatrix (Fin k) (Fin k) (CStarMatrix (n ⊕ m) (n ⊕ m) ℂ) :=
+      M.map fun A => ofMatrix (Matrix.fromBlocks (ofMatrix.symm A) 0 0 0)
+    have hM' : 0 ≤ M' := CStarMatrix.map_fromBlocks_inl_nonneg hM
+    let B : CStarMatrix (n ⊕ m) (n ⊕ m) ℂ := ofMatrix (Matrix.fromBlocks 0 V 0 0)
+    have hconj : 0 ≤ M.map fun A =>
+        ofMatrix (Matrix.fromBlocks 0 0 0 (Vᴴ * ofMatrix.symm A * V) :
+          Matrix (n ⊕ m) (n ⊕ m) ℂ) := by
+      convert (CompletelyPositiveMap.conj B).map_cstarMatrix_nonneg M' hM' using 1
+      refine CStarMatrix.ext fun i j => ofMatrix.symm.injective ?_
+      simp [B, M', Matrix.fromBlocks_conjTranspose, Matrix.fromBlocks_multiply]
+    convert CStarMatrix.map_toBlocks₂₂_nonneg hconj using 1
+    ext i j p q
+    simp [Matrix.toBlocks₂₂]
 
 /-- The conjugation map evaluates to the usual matrix formula. -/
 @[simp] theorem conjugateCP_apply (V : Matrix n m ℂ) (a : CStarMatrix n n ℂ) :

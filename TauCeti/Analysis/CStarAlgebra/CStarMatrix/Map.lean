@@ -161,7 +161,7 @@ variable [Fintype m] [Fintype n] [Mul A] [Star A]
     ofMatrix.symm (reindexₐ R A e M) = Matrix.reindex e e (ofMatrix.symm M) := (rfl)
 /-- Reindexing rows and columns of a square `CStarMatrix` by `e` via `reindexₗ` is `reindexₐ`. -/
 theorem reindexₗ_self_eq_reindexₐ (e : m ≃ n) (M : CStarMatrix m m A) :
-    reindexₗ R A e e M = reindexₐ R A e M := by ext; simp
+    reindexₗ R A e e M = reindexₐ R A e M := by ext; rfl
 @[simp] theorem reindexₐ_refl :
     reindexₐ R A (Equiv.refl n) = StarAlgEquiv.refl R (CStarMatrix n n A) := by ext; rfl
 theorem reindexₐ_trans [Fintype l] (e₁ : l ≃ m) (e₂ : m ≃ n) :

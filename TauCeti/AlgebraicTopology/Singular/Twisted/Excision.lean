@@ -35,6 +35,12 @@ homology modulo the complement of a set `K` in an open neighbourhood `U` of its 
 compares relative groups `H_*(U, U ∖ K; L)` of an open subset with those of the ambient space, as
 needed for restriction of locally finite homology to open subsets and for compact pairs.
 
+So relative homology modulo the complement of a set `K` only sees the coefficients near `K`: if
+the restrictions of `L` and `L'` to an open neighbourhood `U` of the closure of `K` are identified,
+then `Hₘ(X, X ∖ K; L) ≅ Hₘ(X, X ∖ K; L')` (`TopPair.twistedHomologyComplIsoOfRestrictIso`). When
+the identification is the restriction of one on all of `X`, this is the change of coefficients
+(`TopPair.twistedHomologyComplIsoOfRestrictIso_hom_of_iso`).
+
 The proof uses two facts about the relative twisted chains of an arbitrary pair, from
 `TauCeti.AlgebraicTopology.Singular.Twisted.Small.Relative`. An ambient chain vanishes in relative
 chains exactly when it is supported in the subspace
@@ -278,5 +284,101 @@ theorem isIso_twistedHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (h
   isIso_twistedHomologyMap_excisionMap_of_closure_subset L hU (hK.closure_eq.symm ▸ hKU) n
 
 end Subsets
+
+section RestrictIso
+
+variable {X : TopCat.{v}} {U K : Set X} {L L' : LocalCoefficientSystem.{u, v, max v w} R X}
+
+/-- Restricting a local coefficient system along the excision inclusion `(A, A ∩ B) ⟶ (X, B)` is
+restricting it to `A`. -/
+lemma pullback_obj_fst_excisionMap (A B : Set X) (L : LocalCoefficientSystem.{u, v, max v w} R X) :
+    (pullback (R := R) (Hom.fst (excisionMap A B)).hom).obj L =
+      (pullback (R := R) (⟨Subtype.val, continuous_subtypeVal⟩ : C(TopCat.of A, X))).obj L :=
+  congrArg (fun f ↦ (pullback (R := R) f).obj L) (ContinuousMap.ext (excisionMap_fst_apply A B))
+
+/-- **Relative homology modulo the complement of `K` only sees the coefficients near `K`.** Let
+`K` be a subset of `X` whose closure lies in an open set `U`, and let `e` identify the restrictions
+of `L` and `L'` to `U`. Then `Hₘ(X, X ∖ K; L) ≅ Hₘ(X, X ∖ K; L')`: excise onto `U`, change the
+coefficients along `e`, and undo the excision. -/
+def twistedHomologyComplIsoOfRestrictIso (hU : IsOpen U) (hKU : closure K ⊆ U)
+    (e : (pullback (R := R) (⟨Subtype.val, continuous_subtypeVal⟩ : C(TopCat.of U, X))).obj L ≅
+      (pullback (R := R) (⟨Subtype.val, continuous_subtypeVal⟩ : C(TopCat.of U, X))).obj L')
+    (m : ℕ) :
+    (ofSubset Kᶜ).twistedHomology L m ≅ (ofSubset Kᶜ).twistedHomology L' m :=
+  haveI := isIso_twistedHomologyMap_excisionMap_of_closure_subset L hU hKU m
+  haveI := isIso_twistedHomologyMap_excisionMap_of_closure_subset L' hU hKU m
+  (asIso (twistedHomologyMap (excisionMap U Kᶜ) L m)).symm ≪≫
+    (HomologicalComplex.homologyFunctor _ _ m).mapIso
+      ((interPair U Kᶜ).twistedChainComplexCoefficientIso
+        (eqToIso (pullback_obj_fst_excisionMap U Kᶜ L) ≪≫ e ≪≫
+          (eqToIso (pullback_obj_fst_excisionMap U Kᶜ L')).symm)) ≪≫
+    asIso (twistedHomologyMap (excisionMap U Kᶜ) L' m)
+
+/-- The defining square of `TopPair.twistedHomologyComplIsoOfRestrictIso`: after the excision
+inclusion of `(U, U ∖ K)` it is the change of coefficients along `e` followed by the excision
+inclusion. -/
+@[reassoc]
+lemma twistedHomologyMap_excisionMap_comp_twistedHomologyComplIsoOfRestrictIso_hom
+    (hU : IsOpen U) (hKU : closure K ⊆ U)
+    (e : (pullback (R := R) (⟨Subtype.val, continuous_subtypeVal⟩ : C(TopCat.of U, X))).obj L ≅
+      (pullback (R := R) (⟨Subtype.val, continuous_subtypeVal⟩ : C(TopCat.of U, X))).obj L')
+    (m : ℕ) :
+    twistedHomologyMap (excisionMap U Kᶜ) L m ≫
+        (twistedHomologyComplIsoOfRestrictIso hU hKU e m).hom =
+      (interPair U Kᶜ).twistedHomologyCoefficientMap
+          (eqToHom (pullback_obj_fst_excisionMap U Kᶜ L) ≫ e.hom ≫
+            eqToHom (pullback_obj_fst_excisionMap U Kᶜ L').symm) m ≫
+        twistedHomologyMap (excisionMap U Kᶜ) L' m := by
+  simp only [twistedHomologyComplIsoOfRestrictIso, HomologicalComplex.homologyFunctor_obj,
+    Iso.trans_hom, Iso.symm_hom, asIso_inv, Functor.mapIso_hom,
+    twistedChainComplexCoefficientIso_hom, HomologicalComplex.homologyFunctor_map, asIso_hom,
+    IsIso.hom_inv_id_assoc]
+  -- The `hom` of the composite coefficient isomorphism stays folded: the ambient spaces of the
+  -- excision inclusion are `U` and `X` only up to unfolding `TopPair.interPair` and
+  -- `TopPair.ofSubset`, so the goal is not type-correct at the transparency used by `rw` and
+  -- `simp`, and `Iso.trans_hom` cannot rewrite it. It is the stated composite of `eqToHom`s and
+  -- `e.hom` by definition of `Iso.trans`.
+  rfl
+
+/-- The inverse of `TopPair.twistedHomologyComplIsoOfRestrictIso` after the excision inclusion of
+`(U, U ∖ K)`: it is the change of coefficients along the inverse of `e` followed by the excision
+inclusion. -/
+@[reassoc]
+lemma twistedHomologyMap_excisionMap_comp_twistedHomologyComplIsoOfRestrictIso_inv
+    (hU : IsOpen U) (hKU : closure K ⊆ U)
+    (e : (pullback (R := R) (⟨Subtype.val, continuous_subtypeVal⟩ : C(TopCat.of U, X))).obj L ≅
+      (pullback (R := R) (⟨Subtype.val, continuous_subtypeVal⟩ : C(TopCat.of U, X))).obj L')
+    (m : ℕ) :
+    twistedHomologyMap (excisionMap U Kᶜ) L' m ≫
+        (twistedHomologyComplIsoOfRestrictIso hU hKU e m).inv =
+      (interPair U Kᶜ).twistedHomologyCoefficientMap
+          (eqToHom (pullback_obj_fst_excisionMap U Kᶜ L') ≫ e.inv ≫
+            eqToHom (pullback_obj_fst_excisionMap U Kᶜ L).symm) m ≫
+        twistedHomologyMap (excisionMap U Kᶜ) L m := by
+  simp only [twistedHomologyComplIsoOfRestrictIso, HomologicalComplex.homologyFunctor_obj,
+    Iso.trans_inv, asIso_inv, Functor.mapIso_inv, twistedChainComplexCoefficientIso_inv,
+    HomologicalComplex.homologyFunctor_map, Iso.symm_inv, asIso_hom, Category.assoc,
+    IsIso.hom_inv_id_assoc]
+  -- As in the `hom` lemma, the `inv` of the composite coefficient isomorphism is unfolded by
+  -- definition of `Iso.trans`.
+  rfl
+
+/-- **Compatibility with a global identification.** If `φ` identifies `L` with `L'` on all of
+`X`, then `TopPair.twistedHomologyComplIsoOfRestrictIso`, for the restriction of `φ` to `U`, is the
+change of coefficients along `φ`. -/
+lemma twistedHomologyComplIsoOfRestrictIso_hom_of_iso (hU : IsOpen U) (hKU : closure K ⊆ U)
+    (φ : L ≅ L') (m : ℕ) :
+    (twistedHomologyComplIsoOfRestrictIso hU hKU ((pullback _).mapIso φ) m).hom =
+      (ofSubset Kᶜ).twistedHomologyCoefficientMap φ.hom m := by
+  have := isIso_twistedHomologyMap_excisionMap_of_closure_subset L hU hKU m
+  rw [← cancel_epi (twistedHomologyMap (excisionMap U Kᶜ) L m),
+    twistedHomologyMap_excisionMap_comp_twistedHomologyComplIsoOfRestrictIso_hom]
+  refine Eq.trans ?_ (twistedHomologyMap_naturality (excisionMap U Kᶜ) L φ.hom m).symm
+  -- The restriction of `φ` to `U`, transported along the equation of the ambient map of the
+  -- excision inclusion with the inclusion of `U`, is the pullback of `φ` along the excision map;
+  -- `congr` sees this.
+  congr 2
+
+end RestrictIso
 
 end TopPair

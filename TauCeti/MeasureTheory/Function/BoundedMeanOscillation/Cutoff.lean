@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
+import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.Ramp
 
@@ -43,12 +44,20 @@ balls `B(c, 2ʲ s)` drift by at most `2ⁿ η_b` per doubling, so
 Taking for `ψ` the ramp from `1` on `B(x₀, r)` to `0` off `B(x₀, 2 r)` shows that `b` agrees on
 `B(x₀, r)`, up to a constant, with an integrable function of BMO seminorm at most
 `(2 + 20 · 8ⁿ) η_b(16 r)` (`MeasureTheory.LocallyIntegrable.exists_bmoSeminorm_le_and_eqOn`).
+Adding the constant back gives `ψ b + (1 - ψ) b_{B(x₀, 2 r)}`, which agrees with `b` on `B(x₀, r)`
+and takes its values in every closed convex set containing the values of `b` on `B(x₀, 2 r)`
+(`MeasureTheory.LocallyIntegrable.exists_forall_mem_and_bmoSeminorm_le_and_eqOn`). For a field of
+coefficient matrices and the closed convex set of uniformly elliptic matrices, this extends a
+field of small mean oscillation on small balls from a ball to the whole space, keeping it
+uniformly elliptic.
 
 ## Main declarations
 
 * `TauCeti.bmoSeminorm_smul_sub_setAverage_le`: the BMO bound for the localized function.
 * `MeasureTheory.LocallyIntegrable.exists_bmoSeminorm_le_and_eqOn`: extension from a ball, up to a
   constant, with control by the VMO modulus.
+* `MeasureTheory.LocallyIntegrable.exists_forall_mem_and_bmoSeminorm_le_and_eqOn`: extension from
+  a ball with values in a closed convex set, with control by the VMO modulus.
 
 ## References
 
@@ -259,6 +268,54 @@ theorem bmoSeminorm_smul_sub_setAverage_le (hb : LocallyIntegrable b μ) (hψ : 
     exact mul_le_mul' le_self_add (monotone_vmoModulus b μ (by linarith))
   · exact setLAverage_enorm_smul_sub_le_of_lt hint hb.aestronglyMeasurable hψ hψL' hψ0 hs hsR
 
+/-- The ramp from `1` on `B(x₀, r)` to `0` off `B(x₀, 2 r)`. -/
+private noncomputable def ballRamp (x₀ : E) (r : ℝ) (y : E) : ℝ :=
+  ramp (-(2 * r)) r (-dist y x₀)
+
+omit [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
+private theorem lipschitzWith_ballRamp (x₀ : E) (r : ℝ) : LipschitzWith ‖r‖₊⁻¹ (ballRamp x₀ r) := by
+  have h := (lipschitzWith_ramp (-(2 * r)) r).comp
+    (lipschitzWith_neg_iff.2 (LipschitzWith.dist_left x₀))
+  rw [mul_one] at h
+  exact h
+
+omit [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
+private theorem ballRamp_mem_Icc (x₀ : E) (r : ℝ) (y : E) : ballRamp x₀ r y ∈ Icc 0 1 :=
+  ⟨ramp_nonneg _ _ _, ramp_le_one _ _ _⟩
+
+omit [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
+private theorem ballRamp_eq_zero (hr : 0 < r) {y : E} (hy : 2 * r ≤ dist y x₀) :
+    ballRamp x₀ r y = 0 :=
+  ramp_eq_zero hr.le (by linarith)
+
+omit [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
+private theorem ballRamp_eq_one (hr : 0 < r) {y : E} (hy : y ∈ ball x₀ r) :
+    ballRamp x₀ r y = 1 :=
+  ramp_eq_one hr (by rw [mem_ball] at hy; linarith)
+
+/-- The cutoff of `b` minus its average over `B(x₀, 2 r)` by the ramp from `1` on `B(x₀, r)` to
+`0` off `B(x₀, 2 r)` is integrable, with BMO seminorm at most `(2 + 20 · 8ⁿ) η_b(16 r)`. -/
+private theorem integrable_ballRamp_smul_sub_and_bmoSeminorm_le (hb : LocallyIntegrable b μ)
+    (hr : 0 < r) :
+    Integrable (fun y => ballRamp x₀ r y • (b y - ⨍ z in ball x₀ (2 * r), b z ∂μ)) μ ∧
+      bmoSeminorm (fun y => ballRamp x₀ r y • (b y - ⨍ z in ball x₀ (2 * r), b z ∂μ)) μ ≤
+        (2 + 20 * 8 ^ Module.finrank ℝ E) * vmoModulus b μ (16 * r) := by
+  have hψ1 (y : E) : ‖ballRamp x₀ r y‖ ≤ (1 : ℝ≥0) := by
+    rw [Real.norm_of_nonneg (ballRamp_mem_Icc x₀ r y).1]
+    exact (ballRamp_mem_Icc x₀ r y).2
+  have hψ0 (y : E) (hy : 2 * r ≤ dist y x₀) : ballRamp x₀ r y = 0 := ballRamp_eq_zero hr hy
+  refine ⟨integrable_smul_sub_of_lipschitzWith hb (lipschitzWith_ballRamp x₀ r) hψ0 _,
+    (bmoSeminorm_smul_sub_setAverage_le hb (lipschitzWith_ballRamp x₀ r) hψ1 hψ0).trans_eq ?_⟩
+  have hKR : ((‖r‖₊⁻¹ : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal (2 * r) = 2 := by
+    have hinv : ((‖r‖₊⁻¹ : ℝ≥0) : ℝ≥0∞) = ENNReal.ofReal r⁻¹ := by
+      rw [← ENNReal.ofReal_coe_nnreal]
+      simp [abs_of_pos hr]
+    rw [hinv, ← ENNReal.ofReal_mul (inv_nonneg.2 hr.le),
+      show r⁻¹ * (2 * r) = 2 by field_simp, ENNReal.ofReal_ofNat]
+  rw [show 8 * (2 * r) = 16 * r by ring, mul_assoc _ ((‖r‖₊⁻¹ : ℝ≥0) : ℝ≥0∞), hKR]
+  push_cast
+  ring
+
 /-- **Extension from a ball in BMO.** A locally integrable `b` agrees on the ball `B(x₀, r)`, up
 to an additive constant, with an integrable function whose BMO seminorm is at most
 `(2 + 20 · 8ⁿ) η_b(16 r)`, where `n` is the dimension of `E` and `η_b` the VMO modulus of `b`. -/
@@ -269,31 +326,43 @@ theorem _root_.MeasureTheory.LocallyIntegrable.exists_bmoSeminorm_le_and_eqOn
       EqOn b' (fun y => b y - c) (ball x₀ r) := by
   rcases le_or_gt r 0 with hr | hr
   · exact ⟨0, 0, integrable_zero _ _ _, by simp, by simp [ball_eq_empty.2 hr]⟩
-  -- Cut `b` minus its average over `B(x₀, 2 r)` off by the ramp from `1` on `B(x₀, r)` to `0`
-  -- off `B(x₀, 2 r)`, which is `r⁻¹`-Lipschitz.
-  set ψ : E → ℝ := fun y => ramp (-(2 * r)) r (-dist y x₀)
-  have hψ : LipschitzWith ‖r‖₊⁻¹ ψ := by
-    have h := (lipschitzWith_ramp (-(2 * r)) r).comp
-      (lipschitzWith_neg_iff.2 (LipschitzWith.dist_left x₀))
-    rw [mul_one] at h
-    exact h
-  have hψ1 (y : E) : ‖ψ y‖ ≤ (1 : ℝ≥0) := by
-    rw [Real.norm_of_nonneg (ramp_nonneg _ _ _)]
-    exact ramp_le_one _ _ _
-  have hψ0 (y : E) (hy : 2 * r ≤ dist y x₀) : ψ y = 0 := ramp_eq_zero hr.le (by linarith)
-  refine ⟨fun y => ψ y • (b y - ⨍ z in ball x₀ (2 * r), b z ∂μ), ⨍ z in ball x₀ (2 * r), b z ∂μ,
-    integrable_smul_sub_of_lipschitzWith hb hψ hψ0 _, ?_, fun y hy => ?_⟩
-  · refine (bmoSeminorm_smul_sub_setAverage_le hb hψ hψ1 hψ0).trans_eq ?_
-    have hKR : ((‖r‖₊⁻¹ : ℝ≥0) : ℝ≥0∞) * ENNReal.ofReal (2 * r) = 2 := by
-      have hinv : ((‖r‖₊⁻¹ : ℝ≥0) : ℝ≥0∞) = ENNReal.ofReal r⁻¹ := by
-        rw [← ENNReal.ofReal_coe_nnreal]
-        simp [abs_of_pos hr]
-      rw [hinv, ← ENNReal.ofReal_mul (inv_nonneg.2 hr.le),
-        show r⁻¹ * (2 * r) = 2 by field_simp, ENNReal.ofReal_ofNat]
-    rw [show 8 * (2 * r) = 16 * r by ring, mul_assoc _ ((‖r‖₊⁻¹ : ℝ≥0) : ℝ≥0∞), hKR]
-    push_cast
-    ring
-  · have hψB : ψ y = 1 := ramp_eq_one hr (by rw [mem_ball] at hy; linarith)
-    simp only [hψB, one_smul]
+  obtain ⟨hint, hbmo⟩ := integrable_ballRamp_smul_sub_and_bmoSeminorm_le (x₀ := x₀) hb hr
+  refine ⟨_, ⨍ z in ball x₀ (2 * r), b z ∂μ, hint, hbmo, fun y hy => ?_⟩
+  simp only [ballRamp_eq_one hr hy, one_smul]
+
+/-- **Extension from a ball inside a closed convex set.** Let `b` be locally integrable, with
+values in a closed convex set `S` on the ball `B(x₀, 2 r)`, `r > 0`. Then `b` agrees on `B(x₀, r)`
+with a locally integrable function with values in `S` everywhere, whose BMO seminorm is at most
+`(2 + 20 · 8ⁿ) η_b(16 r)`, where `n` is the dimension of `E` and `η_b` the VMO modulus of `b`. The
+function is `ψ b + (1 - ψ) b_{B(x₀, 2 r)}` for the ramp `ψ` from `1` on `B(x₀, r)` to `0` off
+`B(x₀, 2 r)`. -/
+theorem _root_.MeasureTheory.LocallyIntegrable.exists_forall_mem_and_bmoSeminorm_le_and_eqOn
+    {S : Set F} (hS : Convex ℝ S) (hSc : IsClosed S) (hb : LocallyIntegrable b μ) (hr : 0 < r)
+    (hbS : ∀ y ∈ ball x₀ (2 * r), b y ∈ S) :
+    ∃ b' : E → F, LocallyIntegrable b' μ ∧ (∀ y, b' y ∈ S) ∧
+      bmoSeminorm b' μ ≤ (2 + 20 * 8 ^ Module.finrank ℝ E) * vmoModulus b μ (16 * r) ∧
+      EqOn b' b (ball x₀ r) := by
+  set b₀ := ⨍ z in ball x₀ (2 * r), b z ∂μ
+  have hb₀ : b₀ ∈ S :=
+    Convex.set_average_mem hS hSc (measure_ball_pos μ x₀ (by positivity)).ne'
+      measure_ball_lt_top.ne ((ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ hbS))
+      ((hb.integrableOn_isCompact (isCompact_closedBall x₀ (2 * r))).mono_set
+        ball_subset_closedBall)
+  obtain ⟨hint, hbmo⟩ := integrable_ballRamp_smul_sub_and_bmoSeminorm_le (x₀ := x₀) hb hr
+  refine ⟨fun y => ballRamp x₀ r y • (b y - b₀) + b₀, hint.locallyIntegrable.add
+    (locallyIntegrable_const b₀), fun y => ?_, ?_, fun y hy => ?_⟩
+  · -- `ψ (b - b₀) + b₀ = ψ b + (1 - ψ) b₀` is a convex combination of points of `S`.
+    dsimp only
+    by_cases hy : y ∈ ball x₀ (2 * r)
+    · have e : ballRamp x₀ r y • (b y - b₀) + b₀ =
+          ballRamp x₀ r y • b y + (1 - ballRamp x₀ r y) • b₀ := by module
+      have h01 := ballRamp_mem_Icc x₀ r y
+      rw [e]
+      exact hS (hbS y hy) hb₀ h01.1 (by linarith [h01.2]) (by ring)
+    · rw [ballRamp_eq_zero hr (not_lt.1 (by simpa [mem_ball] using hy)), zero_smul, zero_add]
+      exact hb₀
+  · rw [bmoSeminorm_add_const hint.aestronglyMeasurable b₀]
+    exact hbmo
+  · simp only [ballRamp_eq_one hr hy, one_smul, sub_add_cancel]
 
 end TauCeti

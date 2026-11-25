@@ -49,7 +49,7 @@ def fromBlocks (M₁₁ : CStarMatrix m l A) (M₁₂ : CStarMatrix m n A) (M₂
     (M₂₂ : CStarMatrix o n A) : CStarMatrix (m ⊕ o) (l ⊕ n) A :=
   ofMatrix (Matrix.fromBlocks (ofMatrix.symm M₁₁) (ofMatrix.symm M₁₂)
     (ofMatrix.symm M₂₁) (ofMatrix.symm M₂₂))
-@[simp] theorem of_fromBlocks (M₁₁ : Matrix m l A) (M₁₂ : Matrix m n A)
+theorem of_fromBlocks (M₁₁ : Matrix m l A) (M₁₂ : Matrix m n A)
     (M₂₁ : Matrix o l A) (M₂₂ : Matrix o n A) : ofMatrix (Matrix.fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
       fromBlocks (ofMatrix M₁₁) (ofMatrix M₁₂) (ofMatrix M₂₁) (ofMatrix M₂₂) := (rfl)
 section
