@@ -12,7 +12,7 @@ import TauCeti.FieldTheory.IsAlgClosed.AlgebraicEmbedding
 /-!
 # The reflex field is a CM field
 
-Let `Φ` be a CM type on a finite product `E` of CM fields, or more generally on a
+Let `Φ` be a CM type on a nonempty finite product `E` of CM number fields, or more generally on a
 finite-dimensional `ℚ`-algebra `E` with a complex embedding on which every automorphism `σ` of
 `ℂ` commutes with complex conjugation (`TauCeti.CMType.StarCompCommute`). Its reflex field
 `E* ⊆ ℂ` is a CM field.
@@ -158,8 +158,9 @@ instance isCMField_reflexField (Φ : CMType E) : IsCMField Φ.reflexField :=
 @[simp]
 theorem complexConj_reflexField_apply (Φ : CMType E) (x : Φ.reflexField) :
     NumberField.IsCMField.complexConj Φ.reflexField x = Φ.reflexFieldConj x :=
-  Subtype.ext (NumberField.IsCMField.complexEmbedding_complexConj _
-    (Φ.reflexField.val : Φ.reflexField →+* ℂ) x)
+  Subtype.ext <| by
+    simpa only [AlgHom.coe_toRingHom, IntermediateField.coe_val, coe_reflexFieldConj_apply] using
+      NumberField.IsCMField.complexEmbedding_complexConj _ (Φ.reflexField.val : _ →+* ℂ) x
 
 end FiniteDimensional
 
