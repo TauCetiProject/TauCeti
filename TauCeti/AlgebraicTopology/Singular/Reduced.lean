@@ -18,6 +18,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.DirectSum.Basis
 public import Mathlib.RingTheory.Finiteness.Prod
+public import Mathlib.RingTheory.Flat.Basic
 
 /-!
 # Reduced singular homology
@@ -72,7 +73,9 @@ generated when the reduced homology in degree `q` is and `M` is, and that for no
 rank is that of the reduced homology, plus the rank of `M` in degree zero
 (`ModuleCat.finrank_singularHomology_eq_finrank_reducedSingularHomology_add`). The zeroth
 homology `H₀(X; M)` itself is a direct sum of copies of `M`, so it is free whenever `M` is
-(`ModuleCat.free_singularHomology_zero`), with no assumption on `X`.
+(`ModuleCat.free_singularHomology_zero`), with no assumption on `X`; conversely, for a nonempty
+space `X` over a commutative ring, flatness of `H₀(X; M)` implies flatness of `M`
+(`TopCat.flat_of_flat_singularHomology_zero`).
 
 This follows Hatcher, *Algebraic Topology*, Section 2.1, using Mathlib's singular homology and
 augmentation and `ShortComplex.Splitting.isoBinaryBiproduct`.
@@ -687,3 +690,20 @@ theorem finrank_singularHomology_eq_finrank_reducedSingularHomology_add [StrongR
 end Free
 
 end ModuleCat
+
+namespace TopCat
+
+/-- If `X` is nonempty and `H₀(X; M)` is flat, then `M` is a retract of `H₀(X; M)` via a connected
+component of `X`, hence flat. -/
+theorem flat_of_flat_singularHomology_zero {k : Type u} [CommRing k]
+    (X : TopCat.{w}) [Nonempty X] (M : ModuleCat.{max w v} k)
+    [Module.Flat k (((singularHomologyFunctor (ModuleCat.{max w v} k) 0).obj M).obj X)] :
+    Module.Flat k M := by
+  have : Module.Flat k (∐ fun _ : ZerothHomotopy X ↦ M : ModuleCat.{max w v} k) :=
+    Module.Flat.of_linearEquiv (X.singularHomology₀Iso M).symm.toLinearEquiv
+  let i : M ⟶ ∐ fun _ : ZerothHomotopy X ↦ M :=
+    Sigma.ι (fun _ : ZerothHomotopy X ↦ M) (Quot.mk _ (Classical.arbitrary X))
+  let r : (∐ fun _ : ZerothHomotopy X ↦ M) ⟶ M := Sigma.desc fun _ ↦ 𝟙 M
+  exact Module.Flat.of_retract i.hom r.hom (congrArg ModuleCat.Hom.hom (by simp [i, r]))
+
+end TopCat
