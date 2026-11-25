@@ -295,7 +295,7 @@ def map (e : E ≃ₗᵢ[ℝ] E') {W' : E' → ℝ} (hW' : W' ∘ e = W) (Ω : C
         (NullMeasurableSet.iUnion Ω.nullMeasurableSet_cell).compl]
     exact Ω.volume_compl_iUnion
   weightedPerimeter_lt_top i :=
-    (e.weightedPerimeter_image_of_comp_eq_top hW' _).trans_lt (Ω.weightedPerimeter_lt_top i)
+    (e.weightedPerimeter_top_image_of_comp_eq hW' _).trans_lt (Ω.weightedPerimeter_lt_top i)
 
 /-- The cells of the image of a cluster. -/
 @[simp]
@@ -307,7 +307,7 @@ theorem map_cell (e : E ≃ₗᵢ[ℝ] E') {W' : E' → ℝ} (hW' : W' ∘ e = W
 @[simp]
 theorem perimeter_map (e : E ≃ₗᵢ[ℝ] E') {W' : E' → ℝ} (hW' : W' ∘ e = W) (Ω : Cluster W q) :
     (Ω.map e hW').perimeter = Ω.perimeter := by
-  simp only [perimeter_def, map_cell, e.weightedPerimeter_image_of_comp_eq_top hW']
+  simp only [perimeter_def, map_cell, e.weightedPerimeter_top_image_of_comp_eq hW']
 
 end Cluster
 

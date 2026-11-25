@@ -31,7 +31,7 @@ companion identity `γ_{E'}(e(U)) = γ_E(U)` for the standard Gaussian measure i
   `LinearIsometryEquiv.weightedPerimeter_preimage`, `LinearIsometryEquiv.weightedPerimeter_comap`,
   `LinearIsometryEquiv.weightedPerimeter_image`,
   `LinearIsometryEquiv.weightedPerimeter_image_of_comp_eq` and its whole-space case
-  `LinearIsometryEquiv.weightedPerimeter_image_of_comp_eq_top`: the same for the weighted
+  `LinearIsometryEquiv.weightedPerimeter_top_image_of_comp_eq`: the same for the weighted
   perimeter.
 * `LinearIsometryEquiv.gaussianPerimeter_image` and
   `LinearIsometryEquiv.gaussianPerimeter_preimage`: invariance of the Gaussian perimeter.
@@ -160,7 +160,7 @@ theorem weightedPerimeter_image_of_comp_eq {W : E → ℝ} {W' : E' → ℝ} (e 
 
 /-- The image of a set under a linear isometry equivalence `e` has, on the whole space and for a
 weight `W'` with `W' ∘ e = W`, the weighted perimeter of the original set for `W`. -/
-theorem weightedPerimeter_image_of_comp_eq_top {W : E → ℝ} {W' : E' → ℝ} (e : E ≃ₗᵢ[ℝ] E')
+theorem weightedPerimeter_top_image_of_comp_eq {W : E → ℝ} {W' : E' → ℝ} (e : E ≃ₗᵢ[ℝ] E')
     (hW : W' ∘ e = W) (s : Set E) : weightedPerimeter W' ⊤ (e '' s) = weightedPerimeter W ⊤ s :=
   e.weightedPerimeter_image_of_comp_eq hW (mapsTo_univ _ _) (mapsTo_univ _ _) s
 
