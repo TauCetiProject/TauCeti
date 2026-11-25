@@ -164,41 +164,31 @@ private theorem sum_inner_eq_inv_mul_integral_realKernel_mul {p : ℕ}
     h.le_abs_sub (by simpa using hA.hasEigenvalue_eigenvalues rfl i)
       (by simpa using hB.hasEigenvalue_eigenvalues rfl j)
   have hij (i j) : α i - β j ≠ 0 := abs_pos.mp (hδ.trans_le (hgap i j))
-  -- Integrate the expanded sums term by term.
   set c : Fin p → Fin (finrank 𝕜 E) → Fin (finrank 𝕜 F) → 𝕜 :=
     fun l i j ↦ ⟪u l, e i⟫_𝕜 * ⟪e i, C (f j)⟫_𝕜 * ⟪f j, v l⟫_𝕜
-  -- The scaled sine against the kernel, with a `𝕜`-valued coefficient.
-  have hint (l i j) : Integrable fun t ↦
-      (realKernel t : 𝕜) * (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) :=
-    ((integrable_realKernel_mul_sin ((α i - β j) / δ)).ofReal (𝕜 := 𝕜)).const_mul (c l i j)
-      |>.congr (.of_forall fun t ↦ by
-        beta_reduce
-        rw [show (α i - β j) / δ * t = (α i - β j) * (t / δ) by ring]
-        push_cast
-        ring)
-  have hterm (l i j) : ∫ t, (realKernel t : 𝕜) *
-      (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) =
-        c l i j * ((δ * (α i - β j)⁻¹ : ℝ) : 𝕜) := by
-    rw [← integral_realKernel_mul_sin_mul_div hδ (hgap i j), ← integral_ofReal,
-      ← integral_const_mul]
-    exact integral_congr_ae (.of_forall fun t ↦ by push_cast; ring)
-  simp only [mul_sum]
-  rw [integral_finsetSum _ fun l _ ↦ integrable_finsetSum _ fun i _ ↦
-    integrable_finsetSum _ fun j _ ↦ hint l i j, mul_sum]
-  refine sum_congr rfl fun l _ ↦ ?_
-  rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint l i j,
-    ← e.sum_sum_inner_mul_inner_mul_inner f, mul_sum]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [integral_finsetSum _ fun j _ ↦ hint l i j, mul_sum]
-  refine sum_congr rfl fun j _ ↦ ?_
-  have hδ' : (δ : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr hδ.ne'
-  rw [hterm, coe_coe, inner_eigenvectorBasis_apply_eq_inv_mul_inner_sylvester_apply hA hB rfl rfl
-    X i j (hij i j)]
-  simp only [c]
-  push_cast
-  field_simp
-  rw [hC, coe_coe]
-  ring
+  -- In the eigenbases, `X` has the coefficients `(αᵢ - βⱼ)⁻¹ ⟪eᵢ, C fⱼ⟫`.
+  have hX (l) : ⟪u l, (X : F →ₗ[𝕜] E) (v l)⟫_𝕜 =
+      ∑ i, ∑ j, ((α i - β j)⁻¹ : ℝ) * c l i j := by
+    rw [← e.sum_sum_inner_mul_inner_mul_inner f]
+    refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ ?_
+    rw [coe_coe, inner_eigenvectorBasis_apply_eq_inv_mul_inner_sylvester_apply hA hB rfl rfl
+      X i j (hij i j)]
+    simp only [c, hC, coe_coe]
+    ring
+  calc _ = ∑ i, ∑ j, ((α i - β j)⁻¹ : ℝ) * ∑ l, c l i j := by
+        simp only [hX, mul_sum]
+        rw [sum_comm]
+        exact sum_congr rfl fun i _ ↦ sum_comm
+    _ = _ := sum_sum_inv_sub_mul_eq_inv_mul_integral_realKernel_mul hδ
+        (fun i _ j _ ↦ hgap i j) _
+    _ = _ := by
+        congr 2 with t
+        congr 1
+        simp only [mul_sum]
+        rw [Finset.sum_comm (s := univ (α := Fin p))]
+        refine sum_congr rfl fun i _ ↦ ?_
+        rw [Finset.sum_comm (s := univ (α := Fin p))]
+        exact sum_congr rfl fun j _ ↦ sum_congr rfl fun l _ ↦ mul_comm _ _
 
 /-- **The simultaneous Ky Fan estimate for the Sylvester equation.** Let `A` and `B` be symmetric
 operators on finite-dimensional inner product spaces. If every eigenvalue of `A` is at distance at

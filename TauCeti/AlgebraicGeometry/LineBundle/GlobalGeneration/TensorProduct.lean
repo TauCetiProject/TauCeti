@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Presentation
 public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
-public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 
 /-!
@@ -15,7 +14,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 
 The tensor product of two globally generated line bundles is globally generated, and so is every
 tensor power `L^{⊗n}` of a globally generated line bundle `L`. These closure properties apply to
-`InvertibleSheaf.tensorProduct` and `InvertibleSheaf.tensorPow` and support the study of global
+`InvertibleSheaf.tensorProduct` and `TauCeti.tensorPow` and support the study of global
 generation of ample twists `L^{⊗n} ⊗ K`.
 
 ## Main results
@@ -54,9 +53,13 @@ theorem IsGloballyGenerated.tensorProduct {L K : InvertibleSheaf X} (hL : L.IsGl
 
 /-- Every tensor power of a globally generated line bundle is globally generated. -/
 theorem IsGloballyGenerated.tensorPow {L : InvertibleSheaf X} (hL : L.IsGloballyGenerated)
-    (n : ℕ) : (L.tensorPow n).IsGloballyGenerated := by
+    (n : ℕ) : (TauCeti.tensorPow L n).IsGloballyGenerated := by
   induction n with
-  | zero => simp only [L.tensorPow_zero, isGloballyGenerated_trivial]
-  | succ n ih => exact L.tensorPow_succ n ▸ ih.tensorProduct hL
+  | zero =>
+    exact (isGloballyGenerated_iff_of_iso (trivialObjIsoUnit X)).mp
+      (isGloballyGenerated_trivial X)
+  | succ n ih =>
+    exact (isGloballyGenerated_iff_of_iso (tensorProductObjIso L (TauCeti.tensorPow L n))).mp
+      (hL.tensorProduct ih)
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf

@@ -526,10 +526,6 @@ theorem analyticLocus.range_ι (X : AdicSpace.{u}) :
   rw [analyticLocus.ι_hom, PreAdicSpace.comp_base, TopCat.coe_comp, he.range_comp]
   exact PreAdicSpace.analyticLocus.range_ι X.obj
 
-instance (X : AdicSpace.{u}) : Mono (analyticLocus.ι X) :=
-  (ObjectProperty.ι _).mono_of_mono_map
-    (inferInstanceAs (Mono (analyticLocus.ι X).hom))
-
 /-- A map whose image consists of analytic points factors through the analytic locus. -/
 noncomputable def analyticLocus.lift (g : T ⟶ X)
     (hg : Set.range g.hom.base ⊆ X.obj.analyticPoints) : T ⟶ X.analyticLocus :=
