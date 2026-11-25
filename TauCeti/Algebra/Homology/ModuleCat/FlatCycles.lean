@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Algebra.Homology.CyclesComplex
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.RingTheory.Flat.Extensions
-import TauCeti.Algebra.Homology.CyclesComplex
 import TauCeti.CategoryTheory.Exact.HomologicalComplex
 
 /-!
@@ -29,13 +29,18 @@ of complexes of modules over a commutative ring `R`.
   need to be flat; nothing is assumed about the remaining terms.
 
 * **Degreewise cycle and homology extensions**
-  (`HomologicalComplex.flat_cycles_of_flat_X_of_flat_cokernel`,
-  `HomologicalComplex.flat_cycles_of_flat_cokernel_of_flat_homology`,
-  `HomologicalComplex.flat_cokernel_iCycles_of_flat_cycles_of_flat_homology`): for an arbitrary
-  complex `K`, the short exact sequence `0 ⟶ Z_q(K) ⟶ K_q ⟶ K_q / Z_q(K) ⟶ 0` makes `Z_q(K)` flat
-  whenever `K_q` and `K_q / Z_q(K)` are flat, and for `c.Rel i j` the presentation
-  `0 ⟶ K_i / Z_i(K) ⟶ Z_j(K) ⟶ H_j(K) ⟶ 0` relates flatness of `K_i / Z_i(K)` and `Z_j(K)` when
-  `H_j(K)` is flat.
+  (`HomologicalComplex.flat_cyclesComplexShortComplex_X₁_X`,
+  `HomologicalComplex.flat_cyclesComplexShortComplex_X₂_X`,
+  `HomologicalComplex.flat_cyclesComplexShortComplex_X₃_X`,
+  `HomologicalComplex.flat_map_eval_X₂`,
+  `HomologicalComplex.flat_map_eval_X₃`,
+  `HomologicalComplex.flat_cycles_of_flat_X_of_flat_cokernel`,
+  `HomologicalComplex.flat_cycles_iff_flat_cokernel_iCycles_of_flat_homology`): for an arbitrary
+  complex `K`, flatness of `Z_q(K)`, `K_q`, and `K_q / Z_q(K)` transfers to the terms of
+  `K.cyclesComplexShortComplex` and its degreewise evaluations; the short exact sequence
+  `0 ⟶ Z_q(K) ⟶ K_q ⟶ K_q / Z_q(K) ⟶ 0` makes `Z_q(K)` flat whenever `K_q` and `K_q / Z_q(K)` are
+  flat; and for `c.Rel i j` the presentation `0 ⟶ K_i / Z_i(K) ⟶ Z_j(K) ⟶ H_j(K) ⟶ 0` shows that
+  when `H_j(K)` is flat, `Z_j(K)` is flat if and only if `K_i / Z_i(K)` is flat.
 
 * **Nonnegative chain complexes with flat homology**
   (`ChainComplex.flat_cokernel_iCycles_of_flat_homology`,
@@ -120,23 +125,56 @@ namespace HomologicalComplex
 
 variable {R : Type u} [CommRing R]
 
+/-- The degree-`q` term of `K.cyclesComplexShortComplex.X₁` is flat when `K.cycles q` is flat. -/
+instance flat_cyclesComplexShortComplex_X₁_X {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat.{v} R) c) (q : ι) [Module.Flat R (K.cycles q)] :
+    Module.Flat R (K.cyclesComplexShortComplex.X₁.X q) := by
+  rw [cyclesComplexShortComplex_X₁, graded_X]
+  infer_instance
+
+/-- The degree-`q` term of `K.cyclesComplexShortComplex.X₂` is flat when `K.X q` is flat. -/
+instance flat_cyclesComplexShortComplex_X₂_X {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat.{v} R) c) (q : ι) [Module.Flat R (K.X q)] :
+    Module.Flat R (K.cyclesComplexShortComplex.X₂.X q) := by
+  rw [cyclesComplexShortComplex_X₂]
+  infer_instance
+
+/-- The degree-`q` term of `K.cyclesComplexShortComplex.X₃` is flat when
+`cokernel (K.iCycles q)` is flat. -/
+instance flat_cyclesComplexShortComplex_X₃_X {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat.{v} R) c) (q : ι)
+    [Module.Flat R (cokernel (K.iCycles q) : ModuleCat.{v} R)] :
+    Module.Flat R (K.cyclesComplexShortComplex.X₃.X q) := by
+  rw [cyclesComplexShortComplex_X₃, graded_X]
+  infer_instance
+
+/-- The middle term of `S.map (eval _ _ q)` is flat when `S.X₂.X q` is flat. -/
+instance flat_map_eval_X₂ {ι : Type*} {c : ComplexShape ι}
+    (S : ShortComplex (HomologicalComplex (ModuleCat.{v} R) c)) (q : ι)
+    [Module.Flat R (S.X₂.X q)] :
+    Module.Flat R (S.map (eval _ _ q)).X₂ := by
+  rw [ShortComplex.map_X₂, eval_obj]
+  infer_instance
+
+/-- The third term of `S.map (eval _ _ q)` is flat when `S.X₃.X q` is flat. -/
+instance flat_map_eval_X₃ {ι : Type*} {c : ComplexShape ι}
+    (S : ShortComplex (HomologicalComplex (ModuleCat.{v} R) c)) (q : ι)
+    [Module.Flat R (S.X₃.X q)] :
+    Module.Flat R (S.map (eval _ _ q)).X₃ := by
+  rw [ShortComplex.map_X₃, eval_obj]
+  infer_instance
+
 /-- If `K_q` and `K_q / Z_q(K)` are flat, then the cycles `Z_q(K)` are flat. -/
 theorem flat_cycles_of_flat_X_of_flat_cokernel {ι : Type*} {c : ComplexShape ι}
     (K : HomologicalComplex (ModuleCat.{v} R) c) (q : ι)
     [Module.Flat R (K.X q)] [Module.Flat R (cokernel (K.iCycles q) : ModuleCat.{v} R)] :
     Module.Flat R (K.cycles q) := by
   have hS := (shortExact_iff_degreewise_shortExact _).1 K.cyclesComplexShortComplex_shortExact q
-  have : Module.Flat R (K.cyclesComplexShortComplex.map (eval _ _ q)).X₂ := by
-    rw [ShortComplex.map_X₂, eval_obj, cyclesComplexShortComplex_X₂]
-    infer_instance
-  have : Module.Flat R (K.cyclesComplexShortComplex.map (eval _ _ q)).X₃ := by
-    rw [ShortComplex.map_X₃, eval_obj, cyclesComplexShortComplex_X₃]
-    exact inferInstanceAs (Module.Flat R (cokernel (K.iCycles q) : ModuleCat.{v} R))
   have hX₁ : Module.Flat R (K.cyclesComplexShortComplex.map (eval _ _ q)).X₁ :=
     Function.Exact.flat_left_of_injective_of_surjective
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
       hS.moduleCat_injective_f hS.moduleCat_surjective_g
-  rw [ShortComplex.map_X₁, eval_obj, cyclesComplexShortComplex_X₁] at hX₁
+  rw [ShortComplex.map_X₁, eval_obj, cyclesComplexShortComplex_X₁, graded_X] at hX₁
   exact hX₁
 
 /-- For `c.Rel i j`, if the homology `H_j(K)` is flat, then the cycles `Z_j(K)` are flat if and

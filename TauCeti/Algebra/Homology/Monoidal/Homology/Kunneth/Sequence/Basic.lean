@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
 public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
+import TauCeti.Algebra.Homology.ModuleCat.FlatCycles
 import TauCeti.Algebra.Homology.ShortComplex.Exact
 import TauCeti.Algebra.Homology.ShortComplex.Flat
 
@@ -464,9 +465,6 @@ section FlatCycles
 variable [∀ q, Module.Flat R (L.cycles q)]
 
 private instance (n : I) : IsIso (homologyKunneth K L.cyclesComplexShortComplex.X₁ n) :=
-  have (q : I) : Module.Flat R (L.cyclesComplexShortComplex.X₁.X q) := by
-    rw [cyclesComplexShortComplex_X₁]
-    exact inferInstanceAs (Module.Flat R (L.cycles q))
   isIso_homologyKunneth_of_d_eq_zero_of_flat_right _ _ (by simp) n
 
 /-- The inclusion of the cycles, read through the Künneth isomorphism for `Z(L)`. -/
@@ -490,9 +488,6 @@ exactness. -/
 private lemma shortExact_tensorLeft_cycles :
     (tensorLeftShortComplex K L.cyclesComplexShortComplex).ShortExact :=
   shortExact_tensorLeftShortComplex_of_degreewise K fun p q ↦
-    have : Module.Flat R (L.cyclesComplexShortComplex.map (eval _ _ q)).X₃ := by
-      rw [ShortComplex.map_X₃, eval_obj, cyclesComplexShortComplex_X₃]
-      exact inferInstanceAs (Module.Flat R (cokernel (L.iCycles q) : ModuleCat.{u} R))
     ((shortExact_iff_degreewise_shortExact _).1
       L.cyclesComplexShortComplex_shortExact q).map_tensorLeft_of_flat (K.X p)
 
@@ -509,9 +504,6 @@ private lemma homologyKunneth_comp_δ_cycles (m : I) :
   simp [zsmul_tensorHom]
 
 private instance (n : I) : IsIso (homologyKunneth K L.cyclesComplexShortComplex.X₃ n) :=
-  have (q : I) : Module.Flat R (L.cyclesComplexShortComplex.X₃.X q) := by
-    rw [cyclesComplexShortComplex_X₃]
-    exact inferInstanceAs (Module.Flat R (cokernel (L.iCycles q) : ModuleCat.{u} R))
   isIso_homologyKunneth_of_d_eq_zero_of_flat_right _ _ (by simp) n
 
 /-- The identification `Hₙ₊₁(K ⊗ (L / Z(L))) ≅ ⨁ Hₚ(K) ⊗ H_{q+1}(L / Z(L))` of degree `n`: the

@@ -314,9 +314,6 @@ section FlatCycles
 variable [∀ p, Module.Flat R (K.cycles p)]
 
 private instance (n : I) : IsIso (homologyKunneth K.cyclesComplexShortComplex.X₁ L n) :=
-  have (p : I) : Module.Flat R (K.cyclesComplexShortComplex.X₁.X p) := by
-    rw [cyclesComplexShortComplex_X₁]
-    exact inferInstanceAs (Module.Flat R (K.cycles p))
   isIso_homologyKunneth_of_d_eq_zero_of_flat _ _ (by simp) n
 
 /-- The inclusion of the cycles, read through the Künneth isomorphism for `Z(K)`. -/
@@ -340,9 +337,6 @@ its exactness. -/
 private lemma shortExact_tensorRight_cycles :
     (tensorRightShortComplex L K.cyclesComplexShortComplex).ShortExact :=
   shortExact_tensorRightShortComplex_of_degreewise L fun p q ↦
-    have : Module.Flat R (K.cyclesComplexShortComplex.map (eval _ _ p)).X₃ := by
-      rw [ShortComplex.map_X₃, eval_obj, cyclesComplexShortComplex_X₃]
-      exact inferInstanceAs (Module.Flat R (cokernel (K.iCycles p) : ModuleCat.{u} R))
     ((shortExact_iff_degreewise_shortExact _).1
       K.cyclesComplexShortComplex_shortExact p).map_tensorRight_of_flat (L.X q)
 
@@ -356,9 +350,6 @@ private lemma homologyKunneth_comp_δ_cycles_left (m : I) :
   homologyKunneth_comp_δ_right (shortExact_tensorRight_cycles K L) m
 
 private instance (n : I) : IsIso (homologyKunneth K.cyclesComplexShortComplex.X₃ L n) :=
-  have (p : I) : Module.Flat R (K.cyclesComplexShortComplex.X₃.X p) := by
-    rw [cyclesComplexShortComplex_X₃]
-    exact inferInstanceAs (Module.Flat R (cokernel (K.iCycles p) : ModuleCat.{u} R))
   isIso_homologyKunneth_of_d_eq_zero_of_flat _ _ (by simp) n
 
 /-- The identification `Hₙ₊₁((K / Z(K)) ⊗ L) ≅ ⨁ H_{p+1}(K / Z(K)) ⊗ H_q(L)` of degree `n`: the
