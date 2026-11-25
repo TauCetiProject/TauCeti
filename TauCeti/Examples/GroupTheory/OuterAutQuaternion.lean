@@ -12,10 +12,10 @@ public import TauCeti.Topology.Algebra.Group.ContinuousAut.Discrete
 /-!
 # The outer automorphism group of the quaternion group
 
-Checks for `TauCeti.OuterAut` and `TauCeti.ContinuousOut` on the quaternion group
-`Q₈ = QuaternionGroup 2`: `MulAut Q₈` has order `24`, the inner automorphisms form `Q₈/{±1}`, of
-order `4`, so `OuterAut Q₈` has order `6`; with the discrete topology `ContinuousOut Q₈` has
-order `6` too.
+The orders of `TauCeti.OuterAut` and `TauCeti.ContinuousOut` for the quaternion group
+`Q₈ = QuaternionGroup 2`: `MulAut Q₈` has order `24`, the centre has order `2`, so the inner
+automorphisms, a quotient of `Q₈` by its centre, form a group of order `4`, and `OuterAut Q₈` has
+order `6`; with the discrete topology `ContinuousOut Q₈` has order `6` too.
 
 An automorphism `φ` of `Q₈` is determined by the pair `(φ(a 1), φ(xa 0))`, since
 `a i = (a 1) ^ i` and `xa i = xa 0 * (a 1) ^ i`. Conversely a pair `(u, v)` comes from an
@@ -78,19 +78,19 @@ private noncomputable def mulAutEquiv : MulAut Q₈ ≃ {p : Q₈ × Q₈ // IsG
     rw [mulAutOfIsGenPair_apply, ofGens_apply_eq]
   right_inv p := by
     obtain ⟨⟨u, v⟩, hp⟩ := p
-    have h1 : (1 : ZMod (2 * 2)).val = 1 := rfl
+    have h1 : (1 : ZMod (2 * 2)).val = 1 := by decide
     ext <;> simp [mulAutOfIsGenPair_apply, ofGens, h1]
 
 /-- `MulAut Q₈` has order `24`. -/
 theorem card_mulAut : Nat.card (MulAut Q₈) = 24 := by
   rw [Nat.card_congr mulAutEquiv, Nat.card_eq_fintype_card, card_isGenPair]
 
-/-- The centre of `Q₈` is `{±1}`, of order `2`. -/
+/-- The centre of `Q₈` has order `2`. -/
 theorem card_center : Nat.card (Subgroup.center Q₈) = 2 := by
   rw [Nat.card_eq_fintype_card]
   decide +kernel
 
-/-- The inner automorphisms of `Q₈` form `Q₈/{±1}`, of order `4`. -/
+/-- The inner automorphisms of `Q₈` form a group of order `4 = |Q₈ / Z(Q₈)|`. -/
 theorem card_range_conj : Nat.card (MulAut.conj : Q₈ →* MulAut Q₈).range = 4 := by
   have h := Subgroup.card_eq_card_quotient_mul_card_subgroup (Subgroup.center Q₈)
   rw [card_center, Nat.card_eq_fintype_card, QuaternionGroup.card] at h
