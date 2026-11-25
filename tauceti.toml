@@ -60,20 +60,21 @@ repository_id = 1 # hosted supplies Neon only; YOU operate the runtime
 deployment = "cloudflare"
 
 # Registered runners in the approved group define live fleet membership and CI classes.
-# Adding, replacing or draining hosts needs no project machine-ID list. The Namespace ceiling
-# counts queued/running builds; simultaneous picker decisions can exceed it briefly.
+# Adding, replacing or draining hosts needs no project machine-ID list.
 [services.fleet]
 mode = "hosted"
 url = "https://fleet.taucetiproject.org"
-# Defaults only: NAMESPACE_ENABLED and NAMESPACE_BUILD_CAP repository variables
-# control live routing without a source PR; zero cap disables new Namespace work.
-# Priority maintenance builds read only the variables; see scripts/namespace-controls.md.
-namespace_enabled = true
+# PR builds run only on the Fleet PR pool. Namespace is off, and saturated PR builds
+# wait for the next Fleet PR runner instead of spilling onto GitHub-hosted runners.
+# The NAMESPACE_ENABLED and NAMESPACE_BUILD_CAP repository variables still override
+# the Namespace default; see scripts/namespace-controls.md.
+namespace_enabled = false
 namespace_build_cap = 8
-pr_order = ["fleet", "namespace", "github"]
-# Prefer filling the Fleet PR pool (with a small bounded waiting queue) before spilling
-# onto Namespace or GitHub-hosted capacity. This observational limit can briefly
-# overshoot under simultaneous pickers.
+pr_order = ["fleet"]
+pr_overflow_pool = "fleet"
+# Prefer an idle Fleet PR runner, then a small bounded waiting queue, then the
+# unbounded Fleet overflow queue. This observational limit can briefly overshoot
+# under simultaneous pickers.
 pr_queue_limit = 10
 staging_order = ["tauchonki2"]
 
