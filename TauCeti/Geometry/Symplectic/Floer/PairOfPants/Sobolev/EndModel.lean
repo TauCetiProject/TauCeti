@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Operator
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Transfer
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Asymptotic
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.UnitaryFrame
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -24,8 +25,9 @@ operator on the strip whose coefficient field at `ζ` is `M(φ'_q(ζ))` composed
 coefficient of the transfer `TauCeti.Floer.endTransferCoeff q β ζ`
 (`TauCeti.Floer.jetOperator_endTransfer`). This file identifies that coefficient field on the end
 and shows that it converges to that of a model operator: the stationary cylinder operator at the
-asymptotic orbit followed by a pointwise rotation. This is what the ends contribute to a parametrix
-of `D_u` spliced from inverses of its end models.
+asymptotic orbit followed by a pointwise rotation. It then shows that this end model is translation
+invariant and, at a nondegenerate orbit, invertible on `W^{1,2}`. This is what the ends contribute
+to a parametrix of `D_u` spliced from inverses of its end models.
 
 * **The operator along the end chart.** Where `β = 1` and `dβ = 0`, at a point `ζ = (s, t)` with
   `s ≥ 2`, the coefficient field on the strip is
@@ -37,15 +39,34 @@ of `D_u` spliced from inverses of its end models.
   `D_end (ξ ∘ φ'_q) = (a - b J) (D_u ξ) ∘ φ'_q`, and `(a - b J)⁻¹ = (a + b J) / r²`; the factor `r`
   of the `L²` isometry `TauCeti.Floer.positiveEndChartLp` leaves `(a + b J) / r`, a rotation by the
   structure `J`.
-* **The end model.** If the loops of `u ∘ φ'_q` converge uniformly to a one-periodic orbit `x_q` of
-  `H'_q` and the slice defect `∂t (u ∘ φ'_q) - X_{H'_q}(u ∘ φ'_q)` tends uniformly to zero, then
-  far out on the end this coefficient field is uniformly close to
-  `r⁻¹ (a + b J_q(t, x_q(t))) ∘ M_q(t)`, where `M_q` is the coefficient field of the stationary
-  cylinder operator `∂s + J_q(t, x_q(t)) (∂t - dX_{H'_q(t)}(x_q(t)))` at the orbit
+* **The end model.** For loops `J_t` and `S_t`, the end model `TauCeti.Floer.endModelCoeff` is the
+  coefficient field `r⁻¹ (a + b J_t) ∘ M(t)` of the stationary cylinder operator
+  `∂s + J_t (∂t - S_t)` followed by the rotation `TauCeti.Floer.endModelRotation`. If the loops of
+  `u ∘ φ'_q` converge uniformly to a one-periodic orbit `x_q` of `H'_q` and the slice defect
+  `∂t (u ∘ φ'_q) - X_{H'_q}(u ∘ φ'_q)` tends uniformly to zero, then far out on the end the
+  coefficient field of `D_u` is uniformly close to the end model of `J_t = J_q(t, x_q(t))` and
+  `S_t = dX_{H'_q(t)}(x_q(t))`
   (`eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_lt`, in the namespace
   `TauCeti.SymplecticForm`).
   The end Floer data enter only through the end model of the cylinder,
   `TauCeti.SymplecticForm.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt`.
+* **Translation invariance.** Translating `ζ` along the end multiplies both `dφ'_q(ζ)` and `r` by
+  the same positive factor (`TauCeti.Floer.fderiv_positiveEndChart_add_fst`,
+  `TauCeti.Floer.positiveEndChartScale_add_fst`), so the rotation depends only on `t`
+  (`TauCeti.Floer.endModelRotation_eq_of_snd_eq`), and so does the end model
+  (`TauCeti.Floer.endModelCoeff_eq_of_snd_eq`).
+* **Invertibility.** Since `a² + b² = r²` and `J_t² = -1`, the rotation is invertible with inverse
+  `r⁻¹ (a - b J_t)` (`TauCeti.Floer.isInvertible_endModelRotation`, from
+  `TauCeti.AlmostComplexStructure.isInvertible_smul_id_add_smul`), and for continuous loops it
+  depends continuously on `t` alone. Multiplication by it is therefore an isomorphism of
+  `L²(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.isInvertible_operatorMultiplication_comp_snd`). The
+  realization `TauCeti.Floer.endModelSobolevOperator` of the end model on `W^{1,2}(ℝ × S¹, V)` is
+  this multiplication after the stationary cylinder operator
+  (`TauCeti.Floer.endModelSobolevOperator_eq_comp`), so it is an isomorphism exactly when the
+  stationary cylinder operator is (`TauCeti.Floer.isInvertible_endModelSobolevOperator_iff`). In
+  particular it is an isomorphism at a nondegenerate orbit whose structures have a unitary frame
+  (`isInvertible_endModelSobolevOperator_of_isNondegenerateFixedPt_of_frame`, in the namespace
+  `TauCeti.SymplecticForm`).
 
 ## References
 
@@ -60,6 +81,179 @@ public section
 noncomputable section
 
 open Set Function Filter Real TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
+
+namespace TauCeti.Floer
+
+open MeasureTheory CylinderSobolev
+open StripSobolev (stripMeasure)
+open scoped ENNReal
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-! ### The end model and its rotation -/
+
+/-- The **rotation of the end model** of the end `q` at `ζ = (s, t)`, for a loop `J_t` of almost
+complex structures: `r⁻¹ (a + b J_t)`, where `(a, b) = dφ'_q (1, 0)` is the image of the unit
+longitudinal vector under the positive end chart `φ'_q` and `r` is the conformal scale of the chart
+at `ζ`. Since `a² + b² = r²`, it is invertible, with inverse `r⁻¹ (a - b J_t)`
+(`TauCeti.Floer.isInvertible_endModelRotation`), and it depends only on `t`
+(`TauCeti.Floer.endModelRotation_eq_of_snd_eq`). -/
+def endModelRotation (q : Puncture) (J : ℝ → AlmostComplexStructure V) (ζ : ℝ × ℝ) :
+    V →L[ℝ] V :=
+  (positiveEndChartScale q ζ)⁻¹ •
+    ((fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 • ContinuousLinearMap.id ℝ V +
+      (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 • (J ζ.2).toLinearMap.toContinuousLinearMap)
+
+theorem endModelRotation_def (q : Puncture) (J : ℝ → AlmostComplexStructure V) (ζ : ℝ × ℝ) :
+    endModelRotation q J ζ = (positiveEndChartScale q ζ)⁻¹ •
+      ((fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 • ContinuousLinearMap.id ℝ V +
+        (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 • (J ζ.2).toLinearMap.toContinuousLinearMap) :=
+  (rfl)
+
+theorem endModelRotation_apply (q : Puncture) (J : ℝ → AlmostComplexStructure V) (ζ : ℝ × ℝ)
+    (v : V) :
+    endModelRotation q J ζ v = (positiveEndChartScale q ζ)⁻¹ •
+      ((fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 • v +
+        (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 • J ζ.2 v) := by
+  simp [endModelRotation_def]
+
+/-- The rotation of the end model is `a' + b' J_t`, where `(a', b') = r⁻¹ dφ'_q (1, 0)` is the image
+of the unit longitudinal vector under the rotation part of the chart. -/
+theorem endModelRotation_eq (q : Puncture) (J : ℝ → AlmostComplexStructure V) (ζ : ℝ × ℝ) :
+    endModelRotation q J ζ =
+      (((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0)).1 •
+          ContinuousLinearMap.id ℝ V +
+        (((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0)).2 •
+          (J ζ.2).toLinearMap.toContinuousLinearMap := by
+  simp [endModelRotation_def, smul_add, smul_smul]
+
+/-- **The rotation of the end model is translation invariant**: it depends only on the angular
+coordinate, since the rotation part `r⁻¹ dφ'_q` of the chart does. -/
+theorem endModelRotation_eq_of_snd_eq (q : Puncture) (J : ℝ → AlmostComplexStructure V)
+    {ζ ζ' : ℝ × ℝ} (h : ζ.2 = ζ'.2) : endModelRotation q J ζ = endModelRotation q J ζ' := by
+  rw [endModelRotation_eq, endModelRotation_eq,
+    positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq q h, h]
+
+/-- The rotation of the end model is invertible: it is `a' + b' J_t` with `a'² + b'² = 1`, since
+`a² + b² = r²` for `(a, b) = dφ'_q (1, 0)`. -/
+theorem isInvertible_endModelRotation (q : Puncture) (J : ℝ → AlmostComplexStructure V)
+    (ζ : ℝ × ℝ) : (endModelRotation q J ζ).IsInvertible := by
+  have hr : positiveEndChartScale q ζ ≠ 0 := (positiveEndChartScale_pos q ζ).ne'
+  rw [endModelRotation_eq]
+  refine (J ζ.2).isInvertible_smul_id_add_smul ?_
+  simp only [smul_apply, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_pow, ← mul_add,
+    ← sq_positiveEndChartScale_eq_sq_add_sq]
+  exact mul_ne_zero (pow_ne_zero 2 (inv_ne_zero hr)) (pow_ne_zero 2 hr)
+
+/-- For a continuous loop `J_t`, the rotation of the end model is continuous. -/
+theorem continuous_endModelRotation (q : Puncture) {J : ℝ → AlmostComplexStructure V}
+    (hJ : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) :
+    Continuous (endModelRotation q J) := by
+  have hd : Continuous fun ζ ↦ fderiv ℝ (positiveEndChart q) ζ (1, 0) :=
+    ((contDiff_positiveEndChart q 1).continuous_fderiv one_ne_zero).clm_apply continuous_const
+  exact ((continuous_positiveEndChartScale q).inv₀ fun ζ ↦ (positiveEndChartScale_pos q ζ).ne').smul
+    ((hd.fst.smul continuous_const).add (hd.snd.smul (hJ.comp continuous_snd)))
+
+/-- For a continuous loop `J_t`, the rotation of the end model is essentially bounded on the
+strip. -/
+theorem memLp_endModelRotation (q : Puncture) {J : ℝ → AlmostComplexStructure V}
+    (hJ : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) :
+    MemLp (endModelRotation q J) ∞ stripMeasure :=
+  memLp_top_of_eq_comp_snd ((continuous_endModelRotation q hJ).comp
+    (continuous_const.prodMk continuous_id)) fun _ ↦ endModelRotation_eq_of_snd_eq q J rfl
+
+/-- The **coefficient field of the end model** of the end `q`, for loops `J_t` of almost complex
+structures and `S_t` of endomorphisms: at `ζ = (s, t)`, the coefficient field of the stationary
+cylinder operator `∂s + J_t (∂t - S_t)` followed by the rotation `r⁻¹ (a + b J_t)` of
+`TauCeti.Floer.endModelRotation`. Far out on an end of a Floer pair of pants, the linearized
+operator read in the positive end chart converges to it
+(`SymplecticForm.eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_lt`). -/
+def endModelCoeff (q : Puncture) (J : ℝ → AlmostComplexStructure V) (S : ℝ → V →L[ℝ] V)
+    (ζ : ℝ × ℝ) : V × V × V →L[ℝ] V :=
+  (endModelRotation q J ζ).comp (stationaryJetCoeff J S ζ)
+
+theorem endModelCoeff_def (q : Puncture) (J : ℝ → AlmostComplexStructure V)
+    (S : ℝ → V →L[ℝ] V) (ζ : ℝ × ℝ) :
+    endModelCoeff q J S ζ = (endModelRotation q J ζ).comp (stationaryJetCoeff J S ζ) :=
+  (rfl)
+
+/-- **The end model is translation invariant**: its coefficient field depends only on the
+angular coordinate. -/
+theorem endModelCoeff_eq_of_snd_eq (q : Puncture) (J : ℝ → AlmostComplexStructure V)
+    (S : ℝ → V →L[ℝ] V) {ζ ζ' : ℝ × ℝ} (h : ζ.2 = ζ'.2) :
+    endModelCoeff q J S ζ = endModelCoeff q J S ζ' := by
+  rw [endModelCoeff_def, endModelCoeff_def, endModelRotation_eq_of_snd_eq q J h,
+    stationaryJetCoeff_eq_of_snd_eq h]
+
+/-- For continuous loops `J_t` and `S_t`, the coefficient field of the end model is essentially
+bounded on the strip. -/
+theorem memLp_endModelCoeff (q : Puncture) {J : ℝ → AlmostComplexStructure V}
+    {S : ℝ → V →L[ℝ] V} (hJ : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap)
+    (hS : Continuous S) : MemLp (endModelCoeff q J S) ∞ stripMeasure :=
+  memLp_top_of_eq_comp_snd (((continuous_endModelRotation q hJ).clm_comp
+    (continuous_stationaryJetCoeff hJ hS)).comp (continuous_const.prodMk continuous_id))
+    fun _ ↦ endModelCoeff_eq_of_snd_eq q J S rfl
+
+variable (q : Puncture) (J : ℝ → AlmostComplexStructure V) (S : ℝ → V →L[ℝ] V) in
+/-- The **end model operator** of the end `q`: the first-order operator of
+`TauCeti.Floer.endModelCoeff` on the cylinder, realized from `W^{1,2}(ℝ × S¹, V)` to
+`L²(ℝ × S¹, V)`. -/
+def endModelSobolevOperator : H1 V →L[ℝ] Lp V 2 stripMeasure :=
+  (jetOperator stripMeasure (endModelCoeff q J S)).comp (H1 V).subtypeL
+
+variable (q : Puncture) (J : ℝ → AlmostComplexStructure V) (S : ℝ → V →L[ℝ] V) in
+theorem endModelSobolevOperator_def :
+    endModelSobolevOperator q J S =
+      (jetOperator stripMeasure (endModelCoeff q J S)).comp (H1 V).subtypeL :=
+  (rfl)
+
+/-- For continuous loops `J_t` and `S_t`, the end model operator acts pointwise on an `L²` jet
+`x ∈ H1` by the coefficient field of the end model. -/
+theorem coeFn_endModelSobolevOperator (q : Puncture) {J : ℝ → AlmostComplexStructure V}
+    {S : ℝ → V →L[ℝ] V} (hJ : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap)
+    (hS : Continuous S) (x : H1 V) :
+    endModelSobolevOperator q J S x =ᵐ[stripMeasure]
+      fun z ↦ endModelCoeff q J S z ((x : Lp (V × V × V) 2 stripMeasure) z) :=
+  coeFn_jetOperator (memLp_endModelCoeff q hJ hS) x
+
+/-- **The end model is the stationary cylinder operator followed by a rotation.** For continuous
+loops `J_t` and `S_t`, the end model operator is the realization of `∂s + J_t (∂t - S_t)` on
+`W^{1,2}` followed by multiplication by the rotation `r⁻¹ (a + b J_t)` on `L²`. -/
+theorem endModelSobolevOperator_eq_comp (q : Puncture) {J : ℝ → AlmostComplexStructure V}
+    {S : ℝ → V →L[ℝ] V} (hJ : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap)
+    (hS : Continuous S) :
+    endModelSobolevOperator q J S =
+      Lp.operatorMultiplication 2 ((memLp_endModelRotation q hJ).toLp _) ∘L
+        stationarySobolevOperator J S := by
+  refine ContinuousLinearMap.ext fun x ↦ Lp.ext ?_
+  filter_upwards [coeFn_endModelSobolevOperator q hJ hS x,
+    Lp.operatorMultiplication_ae ((memLp_endModelRotation q hJ).toLp _)
+      (stationarySobolevOperator J S x),
+    (memLp_endModelRotation q hJ).coeFn_toLp, coeFn_stationarySobolevOperator hJ hS x]
+    with z h₁ h₂ h₃ h₄
+  rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, endModelCoeff_def,
+    ContinuousLinearMap.comp_apply]
+
+/-- **The end model is invertible exactly when the stationary cylinder operator is.** For
+continuous loops `J_t` and `S_t`, the end model operator
+`W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` is an isomorphism if and only if the realization of the
+stationary cylinder operator `∂s + J_t (∂t - S_t)` is, since multiplication by the rotation
+`r⁻¹ (a + b J_t)`, which depends continuously on `t` alone, is an isomorphism of `L²`. -/
+theorem isInvertible_endModelSobolevOperator_iff (q : Puncture)
+    {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
+    (hJ : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hS : Continuous S) :
+    (endModelSobolevOperator q J S).IsInvertible ↔
+      (stationarySobolevOperator J S).IsInvertible := by
+  have hR : Continuous fun t ↦ endModelRotation q J (0, t) :=
+    (continuous_endModelRotation q hJ).comp (continuous_const.prodMk continuous_id)
+  obtain ⟨e, he⟩ := isInvertible_operatorMultiplication_comp_snd (p := 2) hR
+    fun t ↦ isInvertible_endModelRotation q J (0, t)
+  rw [endModelSobolevOperator_eq_comp q hJ hS,
+    toLp_eq_toLp_comp_snd hR fun _ ↦ endModelRotation_eq_of_snd_eq q J rfl, ← he,
+    ContinuousLinearMap.isInvertible_equiv_comp]
+
+end TauCeti.Floer
+
 namespace TauCeti.SymplecticForm
 
 open Floer
@@ -132,8 +326,9 @@ end `q`, with `ζ = (s, t)` and `s ≥ 2`, be the structures `J_q(t)` and the pa
 perturbation of period-one `C²` Hamiltonians `H_q`, let `u` be differentiable and solve the Floer
 equation at `w`, and let the cutoff `β` be `1` with vanishing derivative at `w`. For a loop `x` and
 a loop `S_t` of endomorphisms, the coefficient field on conformal jets at `w`, composed with the jet
-coefficient of the transfer along `φ'_q`, differs from `r⁻¹ (a + b J_q(t, x(t)))` composed with the
-coefficient field `M` of the stationary cylinder operator `∂s + J_q(t, x(t)) (∂t - S_t)` by at most
+coefficient of the transfer along `φ'_q`, differs from the end model
+`TauCeti.Floer.endModelCoeff`, `r⁻¹ (a + b J_q(t, x(t)))` composed with the coefficient field `M` of
+the stationary cylinder operator `∂s + J_q(t, x(t)) (∂t - S_t)`, by at most
 `(1 + ‖J_q(t, u w)‖) ‖F - M‖ + ‖J_q(t, u w) - J_q(t, x(t))‖ ‖M‖`, where `F` is the coefficient field
 on jets at `ζ` of the linearized operator along `u ∘ φ'_q` of the end datum `H'_q(t) dt`,
 `(a, b) = dφ'_q (1, 0)` and `r` is the conformal scale of the chart. -/
@@ -155,11 +350,7 @@ theorem norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_le (ω : Symplecti
     ‖(ω.floerConformalJetCoeff cylindricalWeight
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
           (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ) -
-        ((positiveEndChartScale q ζ)⁻¹ •
-          ((fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 • ContinuousLinearMap.id ℝ V +
-            (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 •
-              (Jq ζ.2 (x ζ.2)).toLinearMap.toContinuousLinearMap)).comp
-          (Floer.stationaryJetCoeff (fun t ↦ Jq t (x t)) S ζ)‖ ≤
+        endModelCoeff q (fun t ↦ Jq t (x t)) S ζ‖ ≤
       (1 + ‖(Jq ζ.2 (u (positiveEndChart q ζ))).toLinearMap.toContinuousLinearMap‖) *
           ‖ω.floerJetCoeff (fun w y ↦ (Jq w.2 y).toLinearMap.toContinuousLinearMap)
               (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ -
@@ -178,7 +369,8 @@ theorem norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_le (ω : Symplecti
     ω.floerConformalJetCoeff_positiveEndChart_comp_endTransferCoeff hH hHs hζ hu hfl hβ hdβ,
     ω.floerJetCoeff_congr_data (u ∘ positiveEndChart q)
       (J' := fun w y ↦ (Jq w.2 y).toLinearMap.toContinuousLinearMap) (Ks' := fun _ _ ↦ 0)
-      (Kt' := fun w ↦ positiveEndHamiltonian H q w.2) (by simp only [hJz]) rfl rfl, hJz]
+      (Kt' := fun w ↦ positiveEndHamiltonian H q w.2) (by simp only [hJz]) rfl rfl, hJz,
+    endModelCoeff_def, endModelRotation_def]
   -- Split the difference into the change of operator and the change of rotation.
   set F := ω.floerJetCoeff (fun w y ↦ (Jq w.2 y).toLinearMap.toContinuousLinearMap)
     (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ
@@ -222,8 +414,9 @@ with slice defect `∂t (u ∘ φ'_q) - X_{H'_q}(u ∘ φ'_q)` tending
 uniformly to zero, and let the cutoff `β` be `1` with vanishing derivative beyond the height `T`.
 Then for every `ε > 0` and every sufficiently large `s`, at every `t ∈ [0, 1]`, the coefficient
 field on conformal jets at `φ'_q(s, t)`, composed with the jet coefficient of the transfer along
-`φ'_q`, is within `ε` of `r⁻¹ (a + b J_q(t, x(t)))` composed with the coefficient field of the
-stationary cylinder operator `∂s + J_q(t, x(t)) (∂t - dX_{H'_q(t)}(x(t)))`, where
+`φ'_q`, is within `ε` of the end model `TauCeti.Floer.endModelCoeff`: `r⁻¹ (a + b J_q(t, x(t)))`
+composed with the coefficient field of the stationary cylinder operator
+`∂s + J_q(t, x(t)) (∂t - dX_{H'_q(t)}(x(t)))`, where
 `(a, b) = dφ'_q (1, 0)` and `r` is the conformal scale of the chart at `(s, t)`. -/
 theorem eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_lt
     (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) {q : Puncture}
@@ -253,13 +446,9 @@ theorem eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_
       ‖(ω.floerConformalJetCoeff cylindricalWeight
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
           (positiveEndChart q (s, t))).comp (endTransferCoeff q β (s, t)) -
-        ((positiveEndChartScale q (s, t))⁻¹ •
-          ((fderiv ℝ (positiveEndChart q) (s, t) (1, 0)).1 • ContinuousLinearMap.id ℝ V +
-            (fderiv ℝ (positiveEndChart q) (s, t) (1, 0)).2 •
-              (Jq t (x t)).toLinearMap.toContinuousLinearMap)).comp
-          (Floer.stationaryJetCoeff (fun t ↦ Jq t (x t))
-            (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (x t))
-            (s, t))‖ < ε := by
+        endModelCoeff q (fun t ↦ Jq t (x t))
+          (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (x t))
+          (s, t)‖ < ε := by
   set Jc : ℝ × V → V →L[ℝ] V := fun p ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap
   set S : ℝ → V →L[ℝ] V :=
     fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (x t)
@@ -307,5 +496,41 @@ theorem eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_
         gcongr
         exact hsF t ht
     _ = ε := by field_simp; ring
+
+section Nondegenerate
+
+open scoped NNReal Manifold
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- **The end model at a nondegenerate orbit is invertible.** Let `x` be a one-periodic orbit of a
+one-periodic, jointly `C³` time-dependent Hamiltonian `H` whose suspended vector field is globally
+Lipschitz, with `x(0)` a nondegenerate fixed point of the time-one map, and let the structures
+`J_t(x(t))` have a unitary frame: a `C²` one-periodic family of invertible maps `Φ_t : F → V` from
+a finite-dimensional complex inner product space, carrying `Im ⟪·, ·⟫` to `ω` and `i` to
+`J_t(x(t))`. Then for every end `q`, the end model operator of the loops `J_t(x(t))` and
+`S_t = dX_{H_t}(x(t))` is an isomorphism `W^{1,2}(ℝ × S¹, V) ≃ L²(ℝ × S¹, V)`. -/
+theorem isInvertible_endModelSobolevOperator_of_isNondegenerateFixedPt_of_frame
+    (ω : SymplecticForm V) (q : Puncture) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 3 (Function.uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    {J : ℝ → V → AlmostComplexStructure V} {Φ : ℝ → F →L[ℝ] V} (hΦ : ContDiff ℝ 2 Φ)
+    (hΦp : Periodic Φ 1) (hΦi : ∀ t, (Φ t).IsInvertible)
+    (hΦω : ∀ t v w, ω (Φ t v) (Φ t w) = (inner ℂ v w).im)
+    (hΦJ : ∀ t v, J t (x t) (Φ t v) = Φ t (Complex.I • v))
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    (Floer.endModelSobolevOperator q (fun t ↦ J t (x t))
+      fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)).IsInvertible := by
+  have hst := ω.isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame hX hH hHp hx
+    hxp hΦ hΦp hΦi hΦω hΦJ hnd
+  rw [floerSobolevOperator_def, floerJetCoeff_eq_stationaryJetCoeff ω J H hx,
+    ← Floer.stationarySobolevOperator_def] at hst
+  exact (Floer.isInvertible_endModelSobolevOperator_iff q
+    (continuous_toContinuousLinearMap_of_frame hΦ hΦi hΦJ)
+    (ω.continuous_fderiv_hamiltonianVectorField_comp (hH.of_le (by norm_num))
+      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))).2 hst
+
+end Nondegenerate
 
 end TauCeti.SymplecticForm

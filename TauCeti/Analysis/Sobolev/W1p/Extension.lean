@@ -54,6 +54,8 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
 * `TauCeti.W1p0.norm_value_extendByZeroL`, `TauCeti.W1p0.norm_gradient_extendByZeroL`: the
   extension preserves the norms of both components.
 * `TauCeti.W1p0.restrictL_extendByZeroL`: restricting the extension back to `Ω` recovers `u`.
+* `TauCeti.W1p0.restrictL_extendByZeroL_of_le`: restricting it to an open subset of `Ω` gives the
+  restriction of `u`.
 * `TauCeti.W1p0.value_restrictL_extendByZeroL_ae`,
   `TauCeti.W1p0.gradient_restrictL_extendByZeroL_ae`: restricting the extension to `Ω'` to another
   open set `V ⊆ Ω'` gives `1_Ω u` and `1_Ω ∇u` on `V`.
@@ -322,6 +324,16 @@ theorem W1p0.restrictL_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omeg
   W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hsub _).trans (by
     rw [W1p0.value_extendByZeroL]
     exact coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _)))
+
+/-- **Restricting a zero extension to a smaller open set.** For `u ∈ W^{1,p}_0(Ω)`, `Ω ⊆ Ω'` and
+an open `V ⊆ Ω`, the restriction to `V` of the zero extension of `u` to `Ω'` is the restriction of
+`u` to `V`. -/
+theorem W1p0.restrictL_extendByZeroL_of_le {V : Opens E} (hsub : Omega ≤ Omega')
+    (hV : V ≤ Omega') (hVΩ : V ≤ Omega) (u : W1p0 mu Omega p) :
+    W1p.restrictL hV (W1p0.extendByZeroL hsub u : W1p mu Omega' p) =
+      W1p.restrictL hVΩ (u : W1p mu Omega p) := by
+  conv_rhs => rw [← W1p0.restrictL_extendByZeroL hsub u]
+  rw [W1p.restrictL_restrictL]
 
 /-- **Restricting a zero extension to another open set.** For `u ∈ W^{1,p}_0(Ω)`, `Ω ⊆ Ω'` and an
 open `V ⊆ Ω'`, the restriction to `V` of the zero extension of `u` to `Ω'` has, almost everywhere

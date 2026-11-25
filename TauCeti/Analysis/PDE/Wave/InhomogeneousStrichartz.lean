@@ -39,13 +39,20 @@ along the second pair. For the energy pair `(q₁, r₁) = (∞, 2)` it is
 instance when `F` vanishes outside a bounded interval of times, since `‖D⁻¹ sin(τD)‖ ≤ |τ|`;
 where it does not exist it is `0`, and the estimate is stated for this value.
 
+The same estimate holds at the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, with `γ = n / 2 - n / r` and a second
+pair as above with `r₁ ≥ 2`
+(`ContDiffBump.exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum`); at
+`(∞, ∞)` it bounds `u` uniformly in space and time.
+
 ## The argument
 
 The frequency-localized estimate
 (`ContDiffBump.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le`)
 controls the retarded integral of `Pⱼ Pⱼ G` by `2^{j(γ + γ₁ - 1)} ‖G‖_{L^{p₁}_t L^{r₁'}_x}` for
-every integrable `G`, with the square `Pⱼ Pⱼ` of a block rather than the block itself. It is summed
-over the blocks as follows.
+every integrable `G`, with the square `Pⱼ Pⱼ` of a block rather than the block itself; at the pairs
+`(∞, r)` this is
+`ContDiffBump.exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le`.
+It is summed over the blocks as follows, along any time exponent `q ≥ 1`.
 
 * **Reassembling a block from squared blocks.** The function `Ψ = ∑ⱼ ψⱼ²` is positive and smooth
   on `E \ {0}`, and invariant under `ξ ↦ 2 ξ`. Let `Qₗ` be the multiplier whose symbol is a
@@ -65,6 +72,8 @@ over the blocks as follows.
 
 * `ContDiffBump.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum`: the
   retarded Strichartz estimate for the wave equation with forcing in the dyadic `ℓ¹` class.
+* `ContDiffBump.exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum`: the
+  same estimate at the pairs `(∞, r)`.
 
 ## References
 
@@ -126,6 +135,71 @@ private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum {L : �
   · rw [integral_undef hint, eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
     exact zero_le
 
+/-- **Littlewood–Paley summation of the retarded estimates.** Let `1 ≤ q` and `1 ≤ r`. If the
+retarded Duhamel integrals of the squared blocks `Pⱼ Pⱼ G` satisfy
+`‖∫_{s < t} D⁻¹ sin((t - s)D) Pⱼ Pⱼ G(s) ds‖_{L^q_t L^r_x} ≤ C 2^{jσ} ‖G‖_{L^{p₁}_t L^{r₁'}_x}`
+uniformly in `j`, then the retarded Duhamel integral `u` of every integrable `F` satisfies
+`‖u‖_{L^q_t L^r_x} ≤ C' ∑ⱼ 2^{jσ} ‖Pⱼ F‖_{L^{p₁}_t L^{r₁'}_x}`. -/
+private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_of_le
+    {q r p₁ r₁' : ℝ≥0∞} (hq : 1 ≤ q) (hr : 1 ≤ r) (hr₁' : 1 ≤ r₁') {σ : ℝ} {C : ℝ≥0}
+    (hC : ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ G : ℝ → Lp ℂ 2 (volume : Measure E), Integrable G →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
+            (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (G s))) :
+              Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
+            eLpNorm (fun s ↦ eLpNorm (G s) r₁' volume) p₁ volume) :
+    ∃ C' : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
+            Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
+          C' * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
+            eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m j) (F s)) r₁' volume) p₁
+              volume := by
+  obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
+  have hK := ENNReal.coe_toNNReal (φ.memLp_fourierInv_dyadicDilate φ.invSumSq 0 1).eLpNorm_ne_top
+  set K := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invSumSq 0)) 1 volume
+  set S := Finset.Ioo (-(L : ℤ)) L
+  refine ⟨C * K.toNNReal * ∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal, fun m hm F hF ↦ ?_⟩
+  -- `Hₗ = Qₗ Pₗ F` and `a j l t = ‖Φⱼₗ(t)‖_r`, with `Φⱼₗ` the retarded integral of `Pⱼ Pⱼ Hₗ`.
+  have hPF (l : ℤ) := (Lp.fourierMultiplierCLM ℂ (m l)).integrable_comp hF
+  have hH (l : ℤ) := (φ.dyadicMultiplier ℂ φ.invSumSq l).integrable_comp (hPF l)
+  set a : ℤ → ℤ → ℝ → ℝ≥0∞ := fun j l t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
+    (Lp.fourierMultiplierCLM ℂ (m j) (Lp.fourierMultiplierCLM ℂ (m j)
+      (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+        Lp ℂ 2 (volume : Measure E))) r volume
+  have hpt := φ.eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum hL hm hF hr
+  calc eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
+          Lp ℂ 2 (volume : Measure E))) r volume) q volume
+      ≤ eLpNorm (fun t ↦ ∑' l, ∑ d ∈ S, a (d + l) l t) q volume :=
+        eLpNorm_mono_eNorm ((aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+          hF.aestronglyMeasurable).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
+          fun t ↦ by simpa only [eNorm_eq_self] using hpt t
+    _ ≤ ∑' l, ∑ d ∈ S, eLpNorm (a (d + l) l) q volume :=
+        (eLpNorm_tsum_le (fun l ↦ Finset.aemeasurable_fun_sum _ fun d _ ↦
+          (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub ((Lp.fourierMultiplierCLM ℂ
+            _ ∘L Lp.fourierMultiplierCLM ℂ _).integrable_comp (hH l)).aestronglyMeasurable
+              ).aemeasurable_eLpNorm_Lp .rfl r) hq).trans
+          (tsum_le_tsum fun l ↦ by
+            rw [← Finset.sum_fn]
+            exact eLpNorm_sum_le hq)
+    -- The frequency-localized estimate and the bound for `Qₗ`.
+    _ ≤ ∑' l, ∑ d ∈ S, C * K * (ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * eLpNorm (fun s ↦
+          eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (F s)) r₁' volume) p₁ volume) :=
+        tsum_le_tsum fun l ↦ Finset.sum_le_sum fun d _ ↦
+          (hC (d + l) (m (d + l)) (hm (d + l)) _ (hH l)).trans <| by
+            rw [mul_assoc, mul_assoc, mul_left_comm K]
+            gcongr
+            exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invSumSq l (hPF l).aestronglyMeasurable
+              hr₁'
+    _ = _ := by
+        simp_rw [← Finset.mul_sum]
+        rw [ENNReal.tsum_mul_left, tsum_sum_ofReal_two_zpow_add_rpow_mul, ENNReal.coe_mul,
+          ENNReal.coe_mul, hK]
+        ring
+
 /-- **The retarded Strichartz estimate for the wave equation with Besov forcing.** Let `E` be
 nontrivial of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier with the Littlewood–Paley
 cutoff `ψⱼ` built from `φ` as symbol, let `(q, r)` be wave-admissible,
@@ -166,52 +240,46 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
   · exact ⟨0, fun _ _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   obtain ⟨-, hr2⟩ :=
     two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr hq2 Module.finrank_pos
-  obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
   obtain ⟨C, hC⟩ :=
     φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
       (p₁ := p₁) (r₁' := r₁') hq hq_top hqr hq2 hq₁ hqr₁ hq₁2
-  have hK := ENNReal.coe_toNNReal (φ.memLp_fourierInv_dyadicDilate φ.invSumSq 0 1).eLpNorm_ne_top
-  set K := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invSumSq 0)) 1 volume
-  set S := Finset.Ioo (-(L : ℤ)) L
-  set σ := ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal) +
-    ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r₁⁻¹).toReal - (q₁⁻¹).toReal) - 1
-  refine ⟨C * K.toNNReal * ∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal, fun m hm F hF ↦ ?_⟩
-  -- `Hₗ = Qₗ Pₗ F` and `a j l t = ‖Φⱼₗ(t)‖_r`, with `Φⱼₗ` the retarded integral of `Pⱼ Pⱼ Hₗ`.
-  have hPF (l : ℤ) := (Lp.fourierMultiplierCLM ℂ (m l)).integrable_comp hF
-  have hH (l : ℤ) := (φ.dyadicMultiplier ℂ φ.invSumSq l).integrable_comp (hPF l)
-  set a : ℤ → ℤ → ℝ → ℝ≥0∞ := fun j l t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
-    (Lp.fourierMultiplierCLM ℂ (m j) (Lp.fourierMultiplierCLM ℂ (m j)
-      (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
-        Lp ℂ 2 (volume : Measure E))) r volume
-  have hpt := φ.eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum hL hm hF
-    (one_le_two.trans hr2)
-  calc eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
-          Lp ℂ 2 (volume : Measure E))) r volume) q volume
-      ≤ eLpNorm (fun t ↦ ∑' l, ∑ d ∈ S, a (d + l) l t) q volume :=
-        eLpNorm_mono_eNorm ((aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
-          hF.aestronglyMeasurable).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
-          fun t ↦ by simpa only [eNorm_eq_self] using hpt t
-    _ ≤ ∑' l, ∑ d ∈ S, eLpNorm (a (d + l) l) q volume :=
-        (eLpNorm_tsum_le (fun l ↦ Finset.aemeasurable_fun_sum _ fun d _ ↦
-          (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub ((Lp.fourierMultiplierCLM ℂ
-            _ ∘L Lp.fourierMultiplierCLM ℂ _).integrable_comp (hH l)).aestronglyMeasurable
-              ).aemeasurable_eLpNorm_Lp .rfl r) (one_le_two.trans hq)).trans
-          (tsum_le_tsum fun l ↦ by
-            rw [← Finset.sum_fn]
-            exact eLpNorm_sum_le (one_le_two.trans hq))
-    -- The frequency-localized estimate and the bound for `Qₗ`.
-    _ ≤ ∑' l, ∑ d ∈ S, C * K * (ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * eLpNorm (fun s ↦
-          eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (F s)) r₁' volume) p₁ volume) :=
-        tsum_le_tsum fun l ↦ Finset.sum_le_sum fun d _ ↦
-          (hC (d + l) (m (d + l)) (hm (d + l)) _ (hH l)).trans <| by
-            rw [mul_assoc, mul_assoc, mul_left_comm K]
-            gcongr
-            exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invSumSq l (hPF l).aestronglyMeasurable
-              (ENNReal.HolderConjugate.one_le r₁' r₁)
-    _ = _ := by
-        simp_rw [← Finset.mul_sum]
-        rw [ENNReal.tsum_mul_left, tsum_sum_ofReal_two_zpow_add_rpow_mul, ENNReal.coe_mul,
-          ENNReal.coe_mul, hK]
-        ring
+  exact φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_of_le
+    (one_le_two.trans hq) (one_le_two.trans hr2) (ENNReal.HolderConjugate.one_le r₁' r₁) hC
+
+/-- **The retarded Strichartz estimate for the wave equation at the pairs `(∞, r)` with Besov
+forcing.** Let `E` be nontrivial of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier with
+the Littlewood–Paley cutoff `ψⱼ` built from `φ` as symbol, let `2 ≤ r ≤ ∞` and let
+`γ = n / 2 - n / r`. Let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞` and `2 ≤ r₁`, with Hölder
+conjugates `p₁` and `r₁'`, where `q₁ = 2` only if `1 + (n - 1) / r₁ = (n - 1) / 2` in dimension
+`n ≥ 4`, and put `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for every integrable
+forcing term `F : ℝ → L²(E)`, the retarded Duhamel integral
+`u(t) = ∫_{s < t} D⁻¹ sin((t - s)D) F(s) ds` satisfies
+
+`‖u‖_{L^∞_t L^r_x} ≤ C ∑ⱼ 2^{j(γ + γ₁ - 1)} ‖Pⱼ F‖_{L^{p₁}_t L^{r₁'}_x}`.
+
+At `r = ∞` this bounds `u` uniformly in space and time. In dimension `n ≥ 2` the bound `2 ≤ r₁`
+follows from wave-admissibility (`TauCeti.two_le_of_waveAdmissible`). -/
+theorem exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
+    {r : ℝ≥0∞} (hr : 2 ≤ r) {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁]
+    [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁) (hr₁ : 2 ≤ r₁)
+    (hqr₁ : 2 * (q₁⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E ∧
+      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
+            Lp ℂ 2 (volume : Measure E))) r volume) ∞ volume ≤
+          C * ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ (((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal) + ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r₁⁻¹).toReal - (q₁⁻¹).toReal) - 1)) *
+            eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m j) (F s)) r₁' volume) p₁
+              volume := by
+  obtain ⟨C, hC⟩ :=
+    φ.exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
+      (p₁ := p₁) (r₁' := r₁') hr hq₁ hr₁ hqr₁ hq₁2
+  exact φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_of_le le_top
+    (one_le_two.trans hr) (ENNReal.HolderConjugate.one_le r₁' r₁) hC
 
 end ContDiffBump

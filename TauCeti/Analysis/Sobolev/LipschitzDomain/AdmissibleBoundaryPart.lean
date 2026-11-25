@@ -41,8 +41,17 @@ an admissible `Γ` keeps its closure but destroys the chart description at the r
   a given base region, with restriction to smaller cylinders (`Set.IsBoundaryPartChart.mono`),
   recentring (`Set.IsBoundaryPartChart.trans_constVAdd`), transport by affine isometries
   (`Set.IsBoundaryPartChart.image`) and positive dilation (`Set.IsBoundaryPartChart.smul`).
+* `Set.IsLipschitzChart.isBoundaryPartChart_univ_of_subset`,
+  `Set.IsLipschitzChart.isBoundaryPartChart_empty_of_disjoint`: a Lipschitz chart whose cylinder
+  sees only points of `Γ` on the frontier, or no point of `Γ`, is a boundary-part chart over the
+  whole base, or over the empty base region.
+* `Set.IsBoundaryPartChart.ordConnected_inter_preimage`: with a one-dimensional base and an
+  interval as base region, a frontier arc inside the cylinder meets `Γ` along an interval of
+  parameters.
 * `Set.IsAdmissibleBoundaryPart`: `Γ ⊆ frontier Ω` and every frontier point is the centre of a
   boundary-part chart with an admissible base region.
+* `Set.IsLipschitzDomain.isAdmissibleBoundaryPart_of_frontier_inter_eq`: a relatively open `Γ` is
+  admissible once the points of `closure Γ \ Γ` have boundary-part charts with admissible base.
 * `Set.isAdmissibleBoundaryPart_iff_exists_mem_normalCylinder`: the charts need not be centred.
 * `Set.IsLipschitzChart.exists_isBoundaryPartChart_empty`,
   `Set.IsLipschitzChart.exists_isBoundaryPartChart_univ`: a centred Lipschitz chart, shrunk, is a
@@ -220,6 +229,33 @@ theorem IsLipschitzChart.isBoundaryPartChart_empty {Ω : Set F}
   isLipschitzChart := hc
   image_inter_normalCylinder := by simp
 
+/-- A Lipschitz chart of `Ω` whose cylinder corresponds to no point of `Γ` is a boundary-part
+chart of `(Ω, Γ)` over the empty base region. -/
+theorem IsLipschitzChart.isBoundaryPartChart_empty_of_disjoint {Ω Γ : Set F}
+    {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {K : ℝ≥0} {h r : ℝ}
+    (hc : IsLipschitzChart Ω e γ K h r) (hΓ : Disjoint Γ (e ⁻¹' normalCylinder h r)) :
+    IsBoundaryPartChart Ω Γ e γ K h r ∅ where
+  isLipschitzChart := hc
+  image_inter_normalCylinder := by
+    have hΓC : e '' Γ ∩ normalCylinder h r = ∅ :=
+      eq_empty_of_forall_notMem fun _ ⟨⟨_, hy, hyz⟩, hz⟩ =>
+        disjoint_left.1 hΓ hy (by rwa [mem_preimage, hyz])
+    rw [hΓC, ← hc.isBoundaryPartChart_empty.image_inter_normalCylinder, image_empty, empty_inter]
+
+/-- A Lipschitz chart of `Ω` whose cylinder corresponds only to points of `Γ ⊆ frontier Ω` on the
+frontier is a boundary-part chart of `(Ω, Γ)` over the whole base. -/
+theorem IsLipschitzChart.isBoundaryPartChart_univ_of_subset {Ω Γ : Set F}
+    {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {K : ℝ≥0} {h r : ℝ}
+    (hc : IsLipschitzChart Ω e γ K h r) (hΓ : Γ ⊆ frontier Ω)
+    (hsub : frontier Ω ∩ e ⁻¹' normalCylinder h r ⊆ Γ) :
+    IsBoundaryPartChart Ω Γ e γ K h r univ where
+  isLipschitzChart := hc
+  image_inter_normalCylinder := by
+    have hΓC : e '' Γ ∩ normalCylinder h r = e '' frontier Ω ∩ normalCylinder h r :=
+      Subset.antisymm (inter_subset_inter_left _ (image_mono hΓ))
+        fun _ ⟨⟨y, hy, hyz⟩, hz⟩ => ⟨⟨y, hsub ⟨hy, by rwa [mem_preimage, hyz]⟩, hyz⟩, hz⟩
+    rw [hΓC, hc.isBoundaryPartChart_frontier.image_inter_normalCylinder]
+
 namespace IsBoundaryPartChart
 
 variable {Ω Γ : Set F} {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {K : ℝ≥0} {h r : ℝ}
@@ -313,6 +349,45 @@ theorem of_inter_preimage_eq {Γ' : Set F} (hc : IsBoundaryPartChart Ω Γ' e γ
   isLipschitzChart := hc.isLipschitzChart
   image_inter_normalCylinder := by
     rw [← image_inter_preimage, hΓ, image_inter_preimage, hc.image_inter_normalCylinder]
+
+/-- **Boundary parts along a frontier arc of a planar domain.** In a boundary-part chart with a
+one-dimensional base and an interval as base region, let `c` be a continuous injective arc,
+parametrized by an interval `I`, running in the frontier of `Ω` inside the cylinder. Then the
+parameters at which `c` lies in `Γ` form an interval. Indeed the base coordinate of `c` is
+continuous and injective on `I`, as two frontier points of the cylinder with the same base
+coordinate coincide, hence strictly monotone, and `c t ∈ Γ` exactly when that coordinate lies in
+the base region. -/
+theorem ordConnected_inter_preimage {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × ℝ)} {γ : ℝ → ℝ} {K : ℝ≥0}
+    {h r : ℝ} {B : Set ℝ} (hc : IsBoundaryPartChart Ω Γ e γ K h r B) (hB : B.OrdConnected)
+    {I : Set ℝ} (hI : I.OrdConnected) {c : ℝ → F} (hcont : ContinuousOn c I) (hinj : InjOn c I)
+    (hfr : MapsTo c I (frontier Ω)) (hC : MapsTo c I (e ⁻¹' normalCylinder h r)) :
+    (I ∩ c ⁻¹' Γ).OrdConnected := by
+  set g : ℝ → ℝ := fun t => (e (c t)).snd
+  have hmem (t : ℝ) (ht : t ∈ I) : c t ∈ Γ ↔ g t ∈ B :=
+    hc.mem_iff_of_mem_frontier (hfr ht) (hC ht)
+  have hginj : InjOn g I := by
+    intro s hs t ht hst
+    have hs' := hc.isLipschitzChart.fst_apply_eq_of_mem_frontier (hfr hs) (hC hs)
+    have ht' := hc.isLipschitzChart.fst_apply_eq_of_mem_frontier (hfr ht) (hC ht)
+    refine hinj hs ht (e.injective ((WithLp.ext_iff 2).2 (Prod.ext ?_ ?_)))
+    · simp only [WithLp.ofLp_fst]
+      rw [hs', ht']
+      exact congrArg γ hst
+    · simpa only [WithLp.ofLp_snd] using hst
+  have hgcont : ContinuousOn g I :=
+    (WithLp.continuous_snd 2 ℝ ℝ).comp_continuousOn (e.continuous.comp_continuousOn hcont)
+  refine ⟨fun s hs t ht u hu => ⟨hI.out hs.1 ht.1 hu, ?_⟩⟩
+  have hIcc : Icc s t ⊆ I := hI.out hs.1 ht.1
+  have hst : s ≤ t := hu.1.trans hu.2
+  -- On `[s, t]` the base coordinate is strictly monotone or strictly antitone.
+  have hgu : g u ∈ uIcc (g s) (g t) := by
+    rcases (hgcont.mono hIcc).strictMonoOn_of_injOn_Icc' hst (hginj.mono hIcc) with hm | hm
+    · exact Icc_subset_uIcc ⟨hm.monotoneOn (left_mem_Icc.2 hst) hu hu.1,
+        hm.monotoneOn hu (right_mem_Icc.2 hst) hu.2⟩
+    · exact Icc_subset_uIcc' ⟨hm.antitoneOn hu (right_mem_Icc.2 hst) hu.2,
+        hm.antitoneOn (left_mem_Icc.2 hst) hu hu.1⟩
+  exact (hmem u (hIcc hu)).2
+    (hB.uIcc_subset ((hmem s hs.1).1 hs.2) ((hmem t ht.1).1 ht.2) hgu)
 
 end IsBoundaryPartChart
 
@@ -452,6 +527,35 @@ theorem isAdmissibleBoundaryPart_empty (hΩ : Ω.IsLipschitzDomain E) :
   refine isAdmissibleBoundaryPart_iff_exists_mem_normalCylinder.2 ⟨empty_subset _, fun x hx => ?_⟩
   obtain ⟨e, γ, K, h, r, hc, hxC⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.1 hΩ x hx
   exact ⟨e, γ, K, h, r, ∅, hc.isBoundaryPartChart_empty, isAdmissibleBaseRegion_empty, hxC⟩
+
+/-- **Admissibility needs checking only on the relative boundary of `Γ`.** Let `Γ` be relatively
+open in the frontier of a Lipschitz domain `Ω`. A chart centred at a point of `Γ` can be shrunk to
+meet the frontier only in `Γ`, and one centred at a point outside `closure Γ` to miss `Γ`, so `Γ`
+is an admissible boundary part as soon as every point of `closure Γ \ Γ` is the centre of a
+boundary-part chart with admissible base. -/
+theorem isAdmissibleBoundaryPart_of_frontier_inter_eq (hΩ : Ω.IsLipschitzDomain E) {Γ U : Set F}
+    (hU : IsOpen U) (hΓ : frontier Ω ∩ U = Γ)
+    (hcl : ∀ x ∈ closure Γ \ Γ, ∃ (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (K : ℝ≥0)
+      (h r : ℝ) (B : Set E), IsBoundaryPartChart Ω Γ e γ K h r B ∧
+        B.IsAdmissibleBaseRegion E' ∧ e x = 0) :
+    Ω.IsAdmissibleBoundaryPart Γ E E' := by
+  have hsub : Γ ⊆ frontier Ω := hΓ ▸ inter_subset_left
+  refine ⟨hsub, fun x hx => ?_⟩
+  obtain ⟨e₀, γ, K, h₀, r₀, hc₀, hxC⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.1 hΩ x hx
+  obtain ⟨e, γ, h, r, hc, hex⟩ := hc₀.exists_isLipschitzChart_eq_zero hxC
+  by_cases hxΓ : x ∈ Γ
+  · rw [← hΓ] at hxΓ
+    obtain ⟨ρ, hc', hU'⟩ := hc.exists_preimage_normalCylinder_subset hex (hU.mem_nhds hxΓ.2)
+    refine ⟨e, γ, K, ρ, ρ, univ, hc'.isBoundaryPartChart_univ_of_subset hsub fun y hy => ?_,
+      isAdmissibleBaseRegion_univ, hex⟩
+    exact hΓ ▸ ⟨hy.1, hU' hy.2⟩
+  by_cases hxc : x ∈ closure Γ
+  · exact hcl x ⟨hxc, hxΓ⟩
+  obtain ⟨ρ, hc', hU'⟩ := hc.exists_preimage_normalCylinder_subset hex
+    (isClosed_closure.isOpen_compl.mem_nhds hxc)
+  exact ⟨e, γ, K, ρ, ρ, ∅, hc'.isBoundaryPartChart_empty_of_disjoint
+    (disjoint_left.2 fun _ hy hyC => hU' hyC (subset_closure hy)), isAdmissibleBaseRegion_empty,
+    hex⟩
 
 /-- The whole frontier is an admissible boundary part of every Lipschitz domain. -/
 theorem isAdmissibleBoundaryPart_frontier (hΩ : Ω.IsLipschitzDomain E) :
