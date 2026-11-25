@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Adjacent
-public import TauCeti.KnotTheory.PDCode.Trefoil
 
 /-!
 # Adequate diagrams
@@ -21,8 +20,7 @@ the all-A vertex is a merge, and every edge arriving at the all-B vertex is a sp
 
 These are the conditions under which the extreme states of the Khovanov complex survive in
 homology: they control the extreme quantum degrees, and hence the cochain support used in the
-crossing-number bound for adequate diagrams. The standard right-handed trefoil diagram is both
-A-adequate and B-adequate.
+crossing-number bound for adequate diagrams.
 
 ## Main definitions
 
@@ -31,13 +29,13 @@ A-adequate and B-adequate.
 
 ## Main results
 
+* `TauCeti.PDCode.isAAdequate_def`, `TauCeti.PDCode.isBAdequate_def`: the defining
+  circle-incidence conditions.
 * `TauCeti.PDCode.isAAdequate_iff`, `TauCeti.PDCode.isBAdequate_iff`: adequacy says that changing
   any single crossing of the extreme smoothing lowers the number of circles by one.
 * `TauCeti.PDCode.IsAAdequate.stateLoopCount_add_one`,
   `TauCeti.PDCode.IsBAdequate.stateLoopCount_add_one`: the circle count of every state adjacent to
   the extreme state.
-* `TauCeti.rightHandedTrefoilPDCode_isAAdequate`, `TauCeti.rightHandedTrefoilPDCode_isBAdequate`:
-  the standard trefoil diagram is adequate.
 
 ## References
 
@@ -66,6 +64,16 @@ crossing: changing any single crossing of the all-B smoothing to its A-smoothing
 circles. -/
 def IsBAdequate : Prop :=
   ∀ c, #(D.circlesAt (fun _ ↦ false) c) = 2
+
+/-- A PD code is A-adequate exactly when two circles of its all-A smoothing pass through every
+crossing. -/
+theorem isAAdequate_def : D.IsAAdequate ↔ ∀ c, #(D.circlesAt (fun _ ↦ true) c) = 2 :=
+  Iff.rfl
+
+/-- A PD code is B-adequate exactly when two circles of its all-B smoothing pass through every
+crossing. -/
+theorem isBAdequate_def : D.IsBAdequate ↔ ∀ c, #(D.circlesAt (fun _ ↦ false) c) = 2 :=
+  Iff.rfl
 
 /-- A-adequacy says that changing any single crossing of the all-A smoothing lowers the number of
 circles by one. -/
@@ -104,27 +112,5 @@ theorem IsBAdequate.stateLoopCount_add_one (hB : D.IsBAdequate) {t : Fin n → B
     (by simp [hc])).1 (hB c)
 
 end PDCode
-
-/-- **The standard right-handed trefoil diagram is A-adequate**: its all-A smoothing has two
-circles, and changing any crossing merges them. -/
-theorem rightHandedTrefoilPDCode_isAAdequate :
-    rightHandedTrefoilPDCode.toPDCode.IsAAdequate := by
-  rw [PDCode.isAAdequate_iff]
-  intro c
-  have h (v : Fin 3 → Bool) : v = ![v 0, v 1, v 2] := (FinVec.etaExpand_eq v).symm
-  rw [h (Function.update _ c _), h fun _ ↦ _, rightHandedTrefoilPDCode_stateLoopCount,
-    rightHandedTrefoilPDCode_stateLoopCount]
-  fin_cases c <;> rfl
-
-/-- **The standard right-handed trefoil diagram is B-adequate**: its all-B smoothing has three
-circles, and changing any crossing merges two of them. -/
-theorem rightHandedTrefoilPDCode_isBAdequate :
-    rightHandedTrefoilPDCode.toPDCode.IsBAdequate := by
-  rw [PDCode.isBAdequate_iff]
-  intro c
-  have h (v : Fin 3 → Bool) : v = ![v 0, v 1, v 2] := (FinVec.etaExpand_eq v).symm
-  rw [h (Function.update _ c _), h fun _ ↦ _, rightHandedTrefoilPDCode_stateLoopCount,
-    rightHandedTrefoilPDCode_stateLoopCount]
-  fin_cases c <;> rfl
 
 end TauCeti

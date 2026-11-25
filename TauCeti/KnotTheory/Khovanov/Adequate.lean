@@ -155,7 +155,7 @@ def khovanovBracketHomologyAllBIso (hB : D.IsBAdequate) :
       (by rw [CochainComplex.prev]
           exact (hB.isZero_khovanovBracket_X_sub_one hD R).eq_of_src _ _)
       (by rw [CochainComplex.next]; exact h₀.eq_of_tgt _ _)).symm ≪≫
-    (D.khovanovBracket hD R _).XIsoOfEq (show (n : ℤ) = Fintype.card (Fin n) by simp) ≪≫
+    (D.khovanovBracket hD R _).XIsoOfEq (Int.natCast_inj.2 (Fintype.card_fin n).symm) ≪≫
     eqToIso (by rw [khovanovBracket_apply]) ≪≫
     (D.resolutionCube hD R _).cubeComplexXTopIso ≪≫
     eqToIso (D.resolutionCube_obj hD R _ univ) ≪≫
@@ -170,7 +170,7 @@ theorem homologyπ_khovanovBracketHomologyAllBIso_hom (hB : D.IsBAdequate) :
     (D.khovanovBracket hD R (n + D.stateLoopCount (cubeState univ))).homologyπ n ≫
         (khovanovBracketHomologyAllBIso hD R hB).hom =
       (D.khovanovBracket hD R _).iCycles n ≫
-        ((D.khovanovBracket hD R _).XIsoOfEq (show (n : ℤ) = Fintype.card (Fin n) by simp)).hom ≫
+        ((D.khovanovBracket hD R _).XIsoOfEq (Int.natCast_inj.2 (Fintype.card_fin n).symm)).hom ≫
           eqToHom (by rw [khovanovBracket_apply]) ≫
             (D.resolutionCube hD R (n + D.stateLoopCount (cubeState univ))).cubeComplexXTopIso.hom ≫
               eqToHom (D.resolutionCube_obj hD R _ univ) ≫
