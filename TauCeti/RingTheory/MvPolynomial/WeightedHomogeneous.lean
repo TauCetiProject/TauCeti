@@ -645,6 +645,21 @@ theorem mem_extensionGrading_iff_aeval [AddCommMonoid M] {w : τ → M} {v : α 
   simp only [extensionGrading, Submodule.mem_map, AlgEquiv.toLinearMap_apply,
     mem_weightedHomogeneousSubmodule, extensionEquiv_apply]
 
+/-- Membership in an iterated `extensionGrading` via `aeval` on weighted homogeneous polynomials in
+the outer variables, inner variables, and base generators. -/
+theorem mem_extensionGrading_extensionEquiv_iff_aeval {τ' : Type*} [AddCommMonoid M]
+    {w : τ → M} {w' : τ' → M} {v : α → M} {e : MvPolynomial α R ≃ₐ[R] B} {n : M}
+    {x : MvPolynomial τ (MvPolynomial τ' B)} :
+    x ∈ extensionGrading w (Sum.elim w' v) (extensionEquiv R τ' α e) n ↔
+      ∃ p : MvPolynomial (τ ⊕ (τ' ⊕ α)) R,
+        p.IsWeightedHomogeneous (Sum.elim w (Sum.elim w' v)) n ∧
+        aeval (Sum.elim X (Sum.elim (fun j ↦ C (X j)) (fun j ↦ C (C (e (X j)))))) p = x := by
+  have hev : (fun k : τ' ⊕ α ↦
+      (C (extensionEquiv R τ' α e (X k)) : MvPolynomial τ (MvPolynomial τ' B))) =
+      Sum.elim (fun j ↦ C (X j)) (fun j ↦ C (C (e (X j)))) := by
+    ext k; cases k <;> simp
+  rw [mem_extensionGrading_iff_aeval, hev]
+
 @[simp] theorem extensionEquiv_mem_extensionGrading_iff [AddCommMonoid M] {w : τ → M} {v : α → M}
     {e : MvPolynomial α R ≃ₐ[R] B} {n : M} {p : MvPolynomial (τ ⊕ α) R} :
     extensionEquiv R τ α e p ∈ extensionGrading w v e n ↔

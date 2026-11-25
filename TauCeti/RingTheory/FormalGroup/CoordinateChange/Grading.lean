@@ -203,13 +203,9 @@ theorem mem_coordinateTensorGrading_iff_aeval {n : ℕ}
       p.IsWeightedHomogeneous (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ))
         (Sum.elim (fun i : ℕ+ ↦ 2 * (i : ℕ)) (fun i : ℕ+ ↦ 2 * (i : ℕ)))) n ∧
       aeval (Sum.elim X (Sum.elim (fun j ↦ C (X j)) (fun j ↦ C (C (generator j))))) p = x := by
-  have hev : (fun k : ℕ+ ⊕ ℕ+ ↦
-      (C (WeightedHomogeneousSubmodule.extensionEquiv ℤ ℕ+ ℕ+ mvPolynomialEquiv (X k)) :
-        MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing))) =
-      Sum.elim (fun j ↦ C (X j)) (fun j ↦ C (C (generator j))) := by
-    ext k; cases k <;> simp
-  rw [coordinateTensorGrading, WeightedHomogeneousSubmodule.mem_extensionGrading_iff_aeval]
-  simp only [hev]
+  rw [coordinateTensorGrading,
+    WeightedHomogeneousSubmodule.mem_extensionGrading_extensionEquiv_iff_aeval]
+  simp only [mvPolynomialEquiv_X]
 
 /-- A ring map on composable pairs preserves degrees exactly when its restriction to the
 first factor does and its second coordinate coefficients have degrees `2i`. -/

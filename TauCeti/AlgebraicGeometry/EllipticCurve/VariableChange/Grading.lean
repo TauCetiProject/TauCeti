@@ -14,14 +14,14 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 /-!
 # The even homological grading of the strict Weierstrass Hopf algebroid
 
-Both `A = ℤ[a₁, a₂, a₃, a₄, a₆]` and `A[r, s, t]` carry nonnegative `GradedAlgebra` structures in
-even homological degrees `|aᵢ| = 2i` (`Strict.baseGrading`) and `(|r|, |s|, |t|) = (4, 2, 6)`
-(`Strict.arrowGrading`, `Strict.tensorGrading`). All odd-degree pieces vanish, all Hopf-algebroid
-maps preserve degrees, and `rightUnit`, `coproduct` and `conjugation` reflect homogeneity.
-
-The combined polynomial-extension gradings `arrowGrading` and `tensorGrading`, their mapping
-criteria, and the homogeneity-reflection lemmas adapt `CoordinateChange.Grading`,
-`CoordinateChange.Coproduct`, and `CoordinateChange.Homogeneous` under `TauCeti.RingTheory`.
+Both `A = ℤ[a₁, a₂, a₃, a₄, a₆]` and Bauer's strict arrow ring `A[r, s, t]` (`StrictArrowRing`),
+together with the composable-pair ring `A[r, s, t] ⊗_A A[r, s, t]` (`StrictPairRing`), carry
+nonnegative `GradedAlgebra` structures in even homological degrees `|aᵢ| = 2i` (`baseGrading`) and
+`(|r|, |s|, |t|) = (4, 2, 6)` (`strictArrowGrading`, `strictPairGrading`), doubling the modular
+weights `coefficientWeight`, `strictWeight`, and `strictPairWeight`. All odd-degree pieces vanish,
+all structure maps of `(A, A[r, s, t])` preserve homological degrees, and `strictLeftUnit`,
+`strictRightUnit`, `strictLeft`, `strictRight`, `strictCoproduct`, and `strictConjugation` reflect
+homogeneity.
 
 ## Main definitions and results
 
@@ -29,10 +29,11 @@ criteria, and the homogeneity-reflection lemmas adapt `CoordinateChange.Grading`
   `WeierstrassCurve.VariableChange.map_toLaurent_toPolynomial_eq_scaling_mul_mul_inv`: applying
   `toLaurent ∘ toPolynomial 𝒜` scales a graded Weierstrass curve by `T (-w)` and conjugates a
   graded change of variables by `scaling _ (T (-w))`.
-* `Strict.baseDegree`, `strictCoordDegree`, `baseGrading`, `arrowGrading`, `tensorGrading` and
-  odd-degree vanishing (`*_eq_bot_of_odd`).
-* `Strict.rightUnit_mem_arrowGrading_iff`, `Strict.counit_mem_baseGrading`,
-  `Strict.coproduct_mem_tensorGrading_iff`, `Strict.conjugation_mem_arrowGrading_iff`,
+* `TauCeti.WeierstrassHopfAlgebroid.baseDegree`, `strictDegree`, `strictPairDegree`, `baseGrading`,
+  `strictArrowGrading`, `strictPairGrading`, and odd-degree vanishing (`*_eq_bot_of_odd`).
+* `TauCeti.WeierstrassHopfAlgebroid.strictLeftUnit_mem_strictArrowGrading_iff`,
+  `strictRightUnit_mem_strictArrowGrading_iff`, `strictCounit_mem_baseGrading`,
+  `strictCoproduct_mem_strictPairGrading_iff`, `strictConjugation_mem_strictArrowGrading_iff`, and
   `WeierstrassCurve.isIntegralModularForm_iff_mem_baseGrading_and_strictRightUnit`.
 
 ## References
@@ -95,25 +96,40 @@ theorem VariableChange.map_toLaurent_toPolynomial_eq_scaling_mul_mul_inv {B σ :
 
 end WeierstrassCurve
 
-open WeierstrassCurve MvPolynomial TauCeti.WeierstrassChange
-open TauCeti.WeierstrassChange.StrictChangeRing
+namespace TauCeti.WeierstrassHopfAlgebroid
 
-namespace TauCeti.WeierstrassHopfAlgebroid.Strict
+open MvPolynomial _root_.WeierstrassCurve
+
+private theorem weight_two_mul {σ : Type*} (w : σ → ℕ) (d : σ →₀ ℕ) :
+    Finsupp.weight (fun i ↦ 2 * w i) d = 2 * Finsupp.weight w d := by
+  simp only [Finsupp.weight_apply, Finsupp.sum, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun _ _ ↦ by ring
+
+private theorem isWeightedHomogeneous_two_mul_iff {σ : Type*} {w : σ → ℕ} {k : ℕ}
+    {p : MvPolynomial σ ℤ} :
+    p.IsWeightedHomogeneous (fun i ↦ 2 * w i) (2 * k) ↔ p.IsWeightedHomogeneous w k := by
+  refine ⟨fun h d hd ↦ ?_, fun h d hd ↦ by rw [weight_two_mul, h hd]⟩
+  have hd' := h hd; rw [weight_two_mul] at hd'; omega
+
+private theorem map_mem_two_mul_of_isWeightedHomogeneous {σ τ : Type*} {w : σ → ℕ} {v : τ → ℕ}
+    {f : MvPolynomial σ ℤ →+* MvPolynomial τ ℤ}
+    (hf : ∀ {k : ℕ} {p : MvPolynomial σ ℤ},
+      p.IsWeightedHomogeneous w k → (f p).IsWeightedHomogeneous v k)
+    {n : ℕ} {p : MvPolynomial σ ℤ}
+    (hp : p ∈ weightedHomogeneousSubmodule ℤ (fun i ↦ 2 * w i) n) :
+    f p ∈ weightedHomogeneousSubmodule ℤ (fun i ↦ 2 * v i) n := by
+  rcases Nat.even_or_odd' n with ⟨k, rfl | rfl⟩
+  · exact isWeightedHomogeneous_two_mul_iff.mpr (hf (isWeightedHomogeneous_two_mul_iff.mp hp))
+  · rw [WeightedHomogeneousSubmodule.eq_bot_of_odd (fun _ ↦ even_two_mul _) ⟨k, rfl⟩,
+      Submodule.mem_bot] at hp
+    simp [hp]
 
 /-! ### Grading on `A = ℤ[a₁, a₂, a₃, a₄, a₆]` -/
 
 /-- The homological degree `2 * i` of the Weierstrass coefficient `aᵢ` (`2, 4, 6, 8, 12`). -/
 def baseDegree (i : Coeff) : ℕ := 2 * coefficientWeight i
+
 @[simp] theorem baseDegree_apply (i : Coeff) : baseDegree i = 2 * coefficientWeight i := (rfl)
-
-/-- The homological degrees `4, 2, 6` of the strict change-of-variables coordinates `r, s, t`. -/
-def strictCoordDegree : Fin 3 → ℕ := ![4, 2, 6]
-@[simp] theorem strictCoordDegree_zero : strictCoordDegree 0 = 4 := (rfl)
-@[simp] theorem strictCoordDegree_one : strictCoordDegree 1 = 2 := (rfl)
-@[simp] theorem strictCoordDegree_two : strictCoordDegree 2 = 6 := (rfl)
-
-private theorem even_strictCoordDegree (i : Fin 3) : Even (strictCoordDegree i) := by
-  fin_cases i <;> decide
 
 /-- The even homological grading on `A = ℤ[a₁, a₂, a₃, a₄, a₆]`, placing `aᵢ` in degree `2i`. -/
 def baseGrading (n : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) :=
@@ -124,26 +140,23 @@ def baseGrading (n : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) :=
 theorem baseGrading_def (n : ℕ) :
     baseGrading n = weightedHomogeneousSubmodule ℤ baseDegree n := (rfl)
 
+/-- Membership in `baseGrading n` is weighted homogeneity of degree `n` for `baseDegree`. -/
 theorem mem_baseGrading_iff {n : ℕ} {p : MvPolynomial Coeff ℤ} :
     p ∈ baseGrading n ↔ p.IsWeightedHomogeneous baseDegree n :=
   mem_weightedHomogeneousSubmodule ℤ baseDegree n p
+
+/-- The Weierstrass coefficient generator `X i` has homological degree `2 * coefficientWeight i`. -/
 @[simp] theorem X_mem_baseGrading (i : Coeff) : X i ∈ baseGrading (2 * coefficientWeight i) :=
   isWeightedHomogeneous_X ℤ baseDegree i
+
 -- Marked `@[no_expose]` so `baseGrading` stays unexposed while reusing `weightedGradedAlgebra`.
 /-- The ring `A = ℤ[a₁, ⋯, a₆]` is graded by even homological degrees `|aᵢ| = 2i`. -/
 @[no_expose] instance : GradedAlgebra baseGrading := MvPolynomial.weightedGradedAlgebra ℤ baseDegree
 
-private theorem weight_baseDegree (d : Coeff →₀ ℕ) :
-    Finsupp.weight baseDegree d = 2 * Finsupp.weight coefficientWeight d := by
-  simp only [Finsupp.weight_apply, Finsupp.sum, baseDegree_apply, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun _ _ ↦ by ring
-
 /-- Membership in `baseGrading (2 * k)` is weighted homogeneity of modular weight `k`. -/
 theorem mem_baseGrading_two_mul_iff {k : ℕ} {p : MvPolynomial Coeff ℤ} :
-    p ∈ baseGrading (2 * k) ↔ p.IsWeightedHomogeneous coefficientWeight k := by
-  rw [mem_baseGrading_iff]
-  refine ⟨fun h d hd ↦ ?_, fun h d hd ↦ by rw [weight_baseDegree, h hd]⟩
-  have hd' := h hd; rw [weight_baseDegree] at hd'; omega
+    p ∈ baseGrading (2 * k) ↔ p.IsWeightedHomogeneous coefficientWeight k :=
+  isWeightedHomogeneous_two_mul_iff
 
 /-- Every odd-degree graded piece of `A = ℤ[a₁, ⋯, a₆]` vanishes. -/
 theorem baseGrading_eq_bot_of_odd {n : ℕ} (hn : Odd n) : baseGrading n = ⊥ :=
@@ -158,224 +171,242 @@ theorem baseGrading_map_mem_iff {C₀ σ ι : Type*} [CommRing C₀] [SetLike σ
       ∀ i : Coeff, f (X i) ∈ 𝒜 (e (2 * coefficientWeight i)) :=
   WeightedHomogeneousSubmodule.map_mem_iff baseDegree 𝒜 e f
 
-/-! ### Combined grading on `A[r, s, t]` -/
+/-! ### Grading on `A[r, s, t]` (`StrictArrowRing`) -/
 
-/-- The combined even homological grading on `A[r, s, t]`, with `|aᵢ| = 2i` and
-`(|r|, |s|, |t|) = (4, 2, 6)`. -/
-def arrowGrading (n : ℕ) : Submodule ℤ ArrowRing :=
-  WeightedHomogeneousSubmodule.extensionGrading strictCoordDegree baseDegree AlgEquiv.refl n
+/-- The homological degrees `2 * strictWeight i` of the generators of `A[r, s, t]`: `2i` on `aᵢ`
+and `4, 2, 6` on `r, s, t`. -/
+def strictDegree (i : Coeff ⊕ Fin 3) : ℕ := 2 * strictWeight i
 
-/-- Membership in `arrowGrading n` via `aeval` on weighted homogeneous polynomials in `(r, s, t)`
-and the included Weierstrass coefficients `C (X j)`. -/
-theorem mem_arrowGrading_iff_aeval {n : ℕ} {x : ArrowRing} :
-    x ∈ arrowGrading n ↔ ∃ p : MvPolynomial (Fin 3 ⊕ Coeff) ℤ,
-      p.IsWeightedHomogeneous (Sum.elim strictCoordDegree baseDegree) n ∧
-      aeval (Sum.elim X (fun j ↦ C (X j))) p = x := by
-  rw [arrowGrading, WeightedHomogeneousSubmodule.mem_extensionGrading_iff_aeval]
-  simp only [AlgEquiv.coe_refl, id_eq]
+@[simp] theorem strictDegree_inl (i : Coeff) : strictDegree (.inl i) = 2 * coefficientWeight i := by
+  simp [strictDegree]
+@[simp] theorem strictDegree_inr_zero : strictDegree (.inr 0) = 4 := by simp [strictDegree]
+@[simp] theorem strictDegree_inr_one : strictDegree (.inr 1) = 2 := by simp [strictDegree]
+@[simp] theorem strictDegree_inr_two : strictDegree (.inr 2) = 6 := by simp [strictDegree]
 
-instance : SetLike.GradedMonoid arrowGrading := by unfold arrowGrading; infer_instance
-theorem isInternal_arrowGrading : DirectSum.IsInternal arrowGrading :=
-  WeightedHomogeneousSubmodule.isInternal_extensionGrading _ _ _
-instance : GradedAlgebra arrowGrading := isInternal_arrowGrading.gradedAlgebra
-@[simp] theorem X_mem_arrowGrading (i : Fin 3) : X i ∈ arrowGrading (strictCoordDegree i) :=
-  WeightedHomogeneousSubmodule.X_mem_extensionGrading _ _ _ i
+/-- The even homological grading on `A[r, s, t]`, placing `aᵢ` in degree `2i` and `r, s, t` in
+degrees `4, 2, 6`. -/
+def strictArrowGrading (n : ℕ) : Submodule ℤ StrictArrowRing :=
+  weightedHomogeneousSubmodule ℤ strictDegree n
 
-/-- A ring homomorphism out of `A[r, s, t]` is graded (with degree shift `e`) iff it is graded on
-constants `C p` from `A` and sends each strict coordinate `X i` into `𝒜 (e (strictCoordDegree i))`.
--/
-theorem arrowGrading_map_mem_iff {C₀ σ ι : Type*} [CommRing C₀] [SetLike σ C₀]
-    [AddSubgroupClass σ C₀] [AddCommMonoid ι] (𝒜 : ι → σ) [SetLike.GradedMonoid 𝒜] (e : ℕ →+ ι)
-    (f : ArrowRing →+* C₀) :
-    (∀ ⦃n⦄ ⦃x⦄, x ∈ arrowGrading n → f x ∈ 𝒜 (e n)) ↔
-      (∀ ⦃n⦄ ⦃p⦄, p ∈ baseGrading n → f (C p) ∈ 𝒜 (e n)) ∧
-        ∀ i : Fin 3, f (X i) ∈ 𝒜 (e (strictCoordDegree i)) :=
-  WeightedHomogeneousSubmodule.extensionGrading_map_mem_iff _ _ _ baseGrading
-    (fun {_ _} ↦ mem_baseGrading_iff) 𝒜 e f
+/-- Definitional characterization of `strictArrowGrading` as the weighted homogeneous submodule for
+`strictDegree`. -/
+theorem strictArrowGrading_def (n : ℕ) :
+    strictArrowGrading n = weightedHomogeneousSubmodule ℤ strictDegree n := (rfl)
 
-theorem C_mem_arrowGrading {n : ℕ} {p : MvPolynomial Coeff ℤ} (hp : p ∈ baseGrading n) :
-    C p ∈ arrowGrading n :=
-  WeightedHomogeneousSubmodule.C_mem_extensionGrading (fun {_ _} ↦ mem_baseGrading_iff) hp
-@[simp] theorem C_mem_arrowGrading_iff {n : ℕ} {p : MvPolynomial Coeff ℤ} :
-    C p ∈ arrowGrading n ↔ p ∈ baseGrading n :=
-  WeightedHomogeneousSubmodule.C_mem_extensionGrading_iff _ _ _ baseGrading
-    (fun {_ _} ↦ mem_baseGrading_iff)
+/-- Membership in `strictArrowGrading n` is weighted homogeneity of degree `n` for
+`strictDegree`. -/
+theorem mem_strictArrowGrading_iff {n : ℕ} {x : StrictArrowRing} :
+    x ∈ strictArrowGrading n ↔ x.IsWeightedHomogeneous strictDegree n :=
+  mem_weightedHomogeneousSubmodule ℤ strictDegree n x
 
-/-- The counit preserves homological degrees. -/
-theorem counit_mem_baseGrading {n : ℕ} {x : ArrowRing} (hx : x ∈ arrowGrading n) :
-    counit x ∈ baseGrading n :=
-  (arrowGrading_map_mem_iff baseGrading (.id ℕ) counit).mpr
-    ⟨fun _ _ hp ↦ by simpa using hp, fun _ ↦ by simp [zero_mem]⟩ hx
+-- Marked `@[no_expose]` so `strictArrowGrading` stays unexposed.
+/-- The strict arrow ring `A[r, s, t]` is graded by even homological degrees. -/
+@[no_expose] instance : GradedAlgebra strictArrowGrading :=
+  MvPolynomial.weightedGradedAlgebra ℤ strictDegree
+
+/-- Membership in `strictArrowGrading (2 * k)` is weighted homogeneity of weight `k` for
+`strictWeight`. -/
+theorem mem_strictArrowGrading_two_mul_iff {k : ℕ} {x : StrictArrowRing} :
+    x ∈ strictArrowGrading (2 * k) ↔ x.IsWeightedHomogeneous strictWeight k :=
+  isWeightedHomogeneous_two_mul_iff
+
+/-- Every generator `X i` of `A[r, s, t]` has homological degree `strictDegree i`. -/
+theorem X_mem_strictArrowGrading (i : Coeff ⊕ Fin 3) :
+    X i ∈ strictArrowGrading (strictDegree i) :=
+  isWeightedHomogeneous_X ℤ strictDegree i
+
+@[simp] theorem X_inl_mem_strictArrowGrading (i : Coeff) :
+    X (.inl i) ∈ strictArrowGrading (2 * coefficientWeight i) := by
+  simpa using X_mem_strictArrowGrading (.inl i)
+@[simp] theorem X_inr_zero_mem_strictArrowGrading : X (.inr 0) ∈ strictArrowGrading 4 := by
+  simpa using X_mem_strictArrowGrading (.inr 0)
+@[simp] theorem X_inr_one_mem_strictArrowGrading : X (.inr 1) ∈ strictArrowGrading 2 := by
+  simpa using X_mem_strictArrowGrading (.inr 1)
+@[simp] theorem X_inr_two_mem_strictArrowGrading : X (.inr 2) ∈ strictArrowGrading 6 := by
+  simpa using X_mem_strictArrowGrading (.inr 2)
 
 /-- Every odd-degree graded piece of `A[r, s, t]` vanishes. -/
-theorem arrowGrading_eq_bot_of_odd {n : ℕ} (hn : Odd n) : arrowGrading n = ⊥ :=
-  WeightedHomogeneousSubmodule.extensionGrading_eq_bot_of_odd even_strictCoordDegree
-    (fun _ ↦ even_two_mul _) _ hn
+theorem strictArrowGrading_eq_bot_of_odd {n : ℕ} (hn : Odd n) : strictArrowGrading n = ⊥ :=
+  WeightedHomogeneousSubmodule.eq_bot_of_odd (fun _ ↦ even_two_mul _) hn
+
+/-- A ring homomorphism out of `A[r, s, t]` is graded (with degree shift `e`) iff it sends each
+generator `X i` into `𝒜 (e (strictDegree i))`. -/
+theorem strictArrowGrading_map_mem_iff {C₀ σ ι : Type*} [CommRing C₀] [SetLike σ C₀]
+    [AddSubgroupClass σ C₀] [AddCommMonoid ι] (𝒜 : ι → σ) [SetLike.GradedMonoid 𝒜] (e : ℕ →+ ι)
+    (f : StrictArrowRing →+* C₀) :
+    (∀ ⦃n⦄ ⦃x⦄, x ∈ strictArrowGrading n → f x ∈ 𝒜 (e n)) ↔
+      ∀ i : Coeff ⊕ Fin 3, f (X i) ∈ 𝒜 (e (strictDegree i)) :=
+  WeightedHomogeneousSubmodule.map_mem_iff strictDegree 𝒜 e f
+
+/-- The strict counit preserves homological degrees. -/
+theorem strictCounit_mem_baseGrading {n : ℕ} {x : StrictArrowRing} (hx : x ∈ strictArrowGrading n) :
+    strictCounit x ∈ baseGrading n :=
+  map_mem_two_mul_of_isWeightedHomogeneous isWeightedHomogeneous_strictCounit hx
+
+/-- The strict left unit preserves homological degrees. -/
+theorem strictLeftUnit_mem_strictArrowGrading {n : ℕ} {p : MvPolynomial Coeff ℤ}
+    (hp : p ∈ baseGrading n) : strictLeftUnit p ∈ strictArrowGrading n :=
+  map_mem_two_mul_of_isWeightedHomogeneous isWeightedHomogeneous_strictLeftUnit hp
+
+/-- The strict left unit preserves and reflects homological degrees. -/
+@[simp] theorem strictLeftUnit_mem_strictArrowGrading_iff {n : ℕ} {p : MvPolynomial Coeff ℤ} :
+    strictLeftUnit p ∈ strictArrowGrading n ↔ p ∈ baseGrading n :=
+  ⟨fun hx ↦ by simpa using strictCounit_mem_baseGrading hx, strictLeftUnit_mem_strictArrowGrading⟩
 
 /-- The strict right unit preserves homological degrees. -/
-theorem rightUnit_mem_arrowGrading {n : ℕ} {p : MvPolynomial Coeff ℤ} (hp : p ∈ baseGrading n) :
-    rightUnit p ∈ arrowGrading n := by
-  refine (baseGrading_map_mem_iff arrowGrading (.id ℕ) rightUnit).mpr (fun i ↦ ?_) hp
-  refine TauCeti.GradedAlgebra.toPolynomial_eq_monomial_iff.mp <| Polynomial.toLaurent_injective ?_
-  let ω : ArrowRing →+* LaurentPolynomial ArrowRing :=
-    Polynomial.toLaurent.comp (TauCeti.GradedAlgebra.toPolynomial arrowGrading)
-  let u : (LaurentPolynomial ArrowRing)ˣ :=
-    (unitOfInvertible (LaurentPolynomial.T (2 : ℤ)))⁻¹
-  have hω : Polynomial.toLaurent
-      (TauCeti.GradedAlgebra.toPolynomial arrowGrading (rightUnit (X i))) =
-      (ω.comp rightUnit) (X i) := rfl
-  have hC : (universalChange (MvPolynomial Coeff ℤ)).map ω =
-      VariableChange.scaling _ u *
-        (universalChange (MvPolynomial Coeff ℤ)).map LaurentPolynomial.C *
-        (VariableChange.scaling _ u)⁻¹ :=
-    VariableChange.map_toLaurent_toPolynomial_eq_scaling_mul_mul_inv arrowGrading 2
-      (by simpa using SetLike.one_mem_graded arrowGrading) (by simpa using X_mem_arrowGrading 0)
-      (by simpa using X_mem_arrowGrading 1) (by simpa using X_mem_arrowGrading 2)
-  have hW : WeierstrassCurve.map Universal.curve (ω.comp C) =
-      VariableChange.scaling _ u •
-        WeierstrassCurve.map Universal.curve (LaurentPolynomial.C.comp C) := by
-    rw [← WeierstrassCurve.map_map, ← WeierstrassCurve.map_map]
-    exact WeierstrassCurve.map_toLaurent_toPolynomial_eq_scaling arrowGrading 2 fun j ↦ by
-      rw [WeierstrassCurve.specialize_map, Universal.specialize_curve]
-      exact C_mem_arrowGrading (X_mem_baseGrading j)
-  rw [hω, comp_rightUnit, hC, hW, ← mul_smul, inv_mul_cancel_right, mul_smul,
-    ← map_comp_rightUnit, VariableChange.scaling_apply,
-    isWeightedHomogeneous_iff_forall_specialize_mk_smul.mp
-      (isWeightedHomogeneous_X ℤ coefficientWeight i),
-    WeierstrassCurve.specialize_map, Universal.specialize_curve, RingHom.comp_apply,
-    RingHom.comp_apply, RingHom.id_apply, Polynomial.toLaurent_C_mul_T]
-  simp only [u, inv_inv, val_unitOfInvertible, LaurentPolynomial.T_pow, AddMonoidHom.id_apply,
-    mul_comm (LaurentPolynomial.C _)]
-  congr 2; push_cast; ring
+theorem strictRightUnit_mem_strictArrowGrading {n : ℕ} {p : MvPolynomial Coeff ℤ}
+    (hp : p ∈ baseGrading n) : strictRightUnit p ∈ strictArrowGrading n :=
+  map_mem_two_mul_of_isWeightedHomogeneous isWeightedHomogeneous_strictRightUnit hp
 
 /-- The strict right unit preserves and reflects homological degrees. -/
-@[simp] theorem rightUnit_mem_arrowGrading_iff {n : ℕ} {p : MvPolynomial Coeff ℤ} :
-    rightUnit p ∈ arrowGrading n ↔ p ∈ baseGrading n :=
-  ⟨fun hx ↦ by simpa only [← RingHom.comp_apply, counit_comp_rightUnit, RingHom.id_apply] using
-    counit_mem_baseGrading hx, rightUnit_mem_arrowGrading⟩
+@[simp] theorem strictRightUnit_mem_strictArrowGrading_iff {n : ℕ} {p : MvPolynomial Coeff ℤ} :
+    strictRightUnit p ∈ strictArrowGrading n ↔ p ∈ baseGrading n :=
+  ⟨fun hx ↦ by simpa using strictCounit_mem_baseGrading hx, strictRightUnit_mem_strictArrowGrading⟩
 
 /-- The strict conjugation preserves homological degrees. -/
-theorem conjugation_mem_arrowGrading {n : ℕ} {x : ArrowRing} (hx : x ∈ arrowGrading n) :
-    conjugation x ∈ arrowGrading n := by
-  refine (arrowGrading_map_mem_iff arrowGrading (.id ℕ) conjugation).mpr
-    ⟨fun _ _ hp ↦ by simpa using rightUnit_mem_arrowGrading hp, fun i ↦ ?_⟩ hx
-  fin_cases i
-  · simpa using neg_mem (X_mem_arrowGrading 0)
-  · simpa using neg_mem (X_mem_arrowGrading 1)
-  · simpa using sub_mem (SetLike.mul_mem_graded (X_mem_arrowGrading 0) (X_mem_arrowGrading 1))
-      (X_mem_arrowGrading 2)
+theorem strictConjugation_mem_strictArrowGrading {n : ℕ} {x : StrictArrowRing}
+    (hx : x ∈ strictArrowGrading n) : strictConjugation x ∈ strictArrowGrading n :=
+  map_mem_two_mul_of_isWeightedHomogeneous isWeightedHomogeneous_strictConjugation hx
 
 /-- The strict conjugation preserves and reflects homological degrees. -/
-@[simp] theorem conjugation_mem_arrowGrading_iff {n : ℕ} {x : ArrowRing} :
-    conjugation x ∈ arrowGrading n ↔ x ∈ arrowGrading n :=
-  ⟨fun hx ↦ by simpa using conjugation_mem_arrowGrading hx, conjugation_mem_arrowGrading⟩
+@[simp] theorem strictConjugation_mem_strictArrowGrading_iff {n : ℕ} {x : StrictArrowRing} :
+    strictConjugation x ∈ strictArrowGrading n ↔ x ∈ strictArrowGrading n :=
+  ⟨fun hx ↦ by simpa using strictConjugation_mem_strictArrowGrading hx,
+    strictConjugation_mem_strictArrowGrading⟩
 
-/-! ### Grading on `A[r, s, t] ⊗_A A[r, s, t]` and the coproduct -/
+/-! ### Grading on `A[r, s, t] ⊗_A A[r, s, t]` (`StrictPairRing`) and the coproduct -/
 
-/-- The combined even homological grading on `A[r, s, t] ⊗_A A[r, s, t]`, placing both `r, s, t`
-and `r', s', t'` in degrees `4, 2, 6` and `aᵢ` in degree `2i`. -/
-def tensorGrading (n : ℕ) : Submodule ℤ (StrictChangeRing ArrowRing) :=
-  WeightedHomogeneousSubmodule.extensionGrading strictCoordDegree
-    (Sum.elim strictCoordDegree baseDegree)
-    (WeightedHomogeneousSubmodule.extensionEquiv ℤ (Fin 3) Coeff AlgEquiv.refl) n
+/-- The homological degrees `2 * strictPairWeight i` on `A[r, s, t] ⊗_A A[r, s, t]`: `2i` on `aᵢ`
+and `4, 2, 6` on both `r₁, s₁, t₁` and `r₂, s₂, t₂`. -/
+def strictPairDegree (i : Coeff ⊕ (Fin 3 ⊕ Fin 3)) : ℕ := 2 * strictPairWeight i
 
-/-- Membership in `tensorGrading n` via `aeval` on weighted homogeneous polynomials in
-`(r', s', t')`, `(r, s, t)`, and the included Weierstrass coefficients `C (C (X j))`. -/
-theorem mem_tensorGrading_iff_aeval {n : ℕ} {x : StrictChangeRing ArrowRing} :
-    x ∈ tensorGrading n ↔ ∃ p : MvPolynomial (Fin 3 ⊕ (Fin 3 ⊕ Coeff)) ℤ,
-      p.IsWeightedHomogeneous
-        (Sum.elim strictCoordDegree (Sum.elim strictCoordDegree baseDegree)) n ∧
-      aeval (Sum.elim X (Sum.elim (fun j ↦ C (X j)) (fun j ↦ C (C (X j))))) p = x := by
-  rw [tensorGrading, WeightedHomogeneousSubmodule.mem_extensionGrading_iff_aeval]
-  have h : (fun j : Fin 3 ⊕ Coeff ↦ (C : ArrowRing →+* StrictChangeRing ArrowRing)
-      (WeightedHomogeneousSubmodule.extensionEquiv ℤ (Fin 3) Coeff AlgEquiv.refl (X j))) =
-      Sum.elim (fun j ↦ C (X j)) (fun j ↦ C (C (X j))) := by ext j; cases j <;> simp
-  rw [h]
+@[simp] theorem strictPairDegree_inl (i : Coeff) :
+    strictPairDegree (.inl i) = 2 * coefficientWeight i := by simp [strictPairDegree]
+@[simp] theorem strictPairDegree_inr_inl (j : Fin 3) :
+    strictPairDegree (.inr (.inl j)) = strictDegree (.inr j) := by
+  simp [strictPairDegree, strictDegree]
+@[simp] theorem strictPairDegree_inr_inr (j : Fin 3) :
+    strictPairDegree (.inr (.inr j)) = strictDegree (.inr j) := by
+  simp [strictPairDegree, strictDegree]
 
-instance : SetLike.GradedMonoid tensorGrading := by unfold tensorGrading; infer_instance
-theorem isInternal_tensorGrading : DirectSum.IsInternal tensorGrading :=
-  WeightedHomogeneousSubmodule.isInternal_extensionGrading _ _ _
-instance : GradedAlgebra tensorGrading := isInternal_tensorGrading.gradedAlgebra
-@[simp] theorem X_mem_tensorGrading (i : Fin 3) : X i ∈ tensorGrading (strictCoordDegree i) :=
-  WeightedHomogeneousSubmodule.X_mem_extensionGrading _ _ _ i
-theorem C_mem_tensorGrading {n : ℕ} {x : ArrowRing} (hx : x ∈ arrowGrading n) :
-    C x ∈ tensorGrading n :=
-  WeightedHomogeneousSubmodule.C_mem_extensionGrading
-    WeightedHomogeneousSubmodule.extensionEquiv_mem_extensionGrading_iff hx
-@[simp] theorem C_mem_tensorGrading_iff {n : ℕ} {x : ArrowRing} :
-    C x ∈ tensorGrading n ↔ x ∈ arrowGrading n :=
-  WeightedHomogeneousSubmodule.C_mem_extensionGrading_iff _ _ _ arrowGrading
-    WeightedHomogeneousSubmodule.extensionEquiv_mem_extensionGrading_iff
+/-- The even homological grading on `A[r, s, t] ⊗_A A[r, s, t]`. -/
+def strictPairGrading (n : ℕ) : Submodule ℤ StrictPairRing :=
+  weightedHomogeneousSubmodule ℤ strictPairDegree n
 
-/-- A ring homomorphism out of `A[r, s, t] ⊗_A A[r, s, t]` is graded (with degree shift `e`) iff it
-is graded on the left factor `C x` and sends each right-factor generator `X i` into
-`𝒜 (e (strictCoordDegree i))`. -/
-theorem tensorGrading_map_mem_iff {C₀ σ ι : Type*} [CommRing C₀] [SetLike σ C₀]
-    [AddSubgroupClass σ C₀] [AddCommMonoid ι] (𝒜 : ι → σ) [SetLike.GradedMonoid 𝒜] (e : ℕ →+ ι)
-    (f : StrictChangeRing ArrowRing →+* C₀) :
-    (∀ ⦃n⦄ ⦃x⦄, x ∈ tensorGrading n → f x ∈ 𝒜 (e n)) ↔
-      (∀ ⦃n⦄ ⦃x⦄, x ∈ arrowGrading n → f (C x) ∈ 𝒜 (e n)) ∧
-        ∀ i : Fin 3, f (X i) ∈ 𝒜 (e (strictCoordDegree i)) :=
-  WeightedHomogeneousSubmodule.extensionGrading_map_mem_iff _ _ _ arrowGrading
-    WeightedHomogeneousSubmodule.extensionEquiv_mem_extensionGrading_iff 𝒜 e f
+/-- Definitional characterization of `strictPairGrading` as the weighted homogeneous submodule for
+`strictPairDegree`. -/
+theorem strictPairGrading_def (n : ℕ) :
+    strictPairGrading n = weightedHomogeneousSubmodule ℤ strictPairDegree n := (rfl)
 
-private theorem pushoutLift_counit_id_mem_arrowGrading {n : ℕ} {x : StrictChangeRing ArrowRing}
-    (hx : x ∈ tensorGrading n) :
-    pushoutLift rightUnit ⟨(C.comp counit, RingHom.id ArrowRing), by
-        rw [RingHom.comp_assoc, counit_comp_rightUnit, RingHom.comp_id, RingHom.id_comp]⟩ x ∈
-      arrowGrading n :=
-  (tensorGrading_map_mem_iff arrowGrading (.id ℕ) _).mpr
-    ⟨fun _ _ hy ↦ by simpa using C_mem_arrowGrading (counit_mem_baseGrading hy),
-      fun _ ↦ by simp⟩ hx
+/-- Membership in `strictPairGrading n` is weighted homogeneity of degree `n` for
+`strictPairDegree`. -/
+theorem mem_strictPairGrading_iff {n : ℕ} {x : StrictPairRing} :
+    x ∈ strictPairGrading n ↔ x.IsWeightedHomogeneous strictPairDegree n :=
+  mem_weightedHomogeneousSubmodule ℤ strictPairDegree n x
 
-/-- The right pushout inclusion `MvPolynomial.map rightUnit` preserves homological degrees. -/
-theorem map_rightUnit_mem_tensorGrading {n : ℕ} {x : ArrowRing} (hx : x ∈ arrowGrading n) :
-    MvPolynomial.map rightUnit x ∈ tensorGrading n :=
-  (arrowGrading_map_mem_iff tensorGrading (.id ℕ) (MvPolynomial.map rightUnit)).mpr
-    ⟨fun _ _ hp ↦ by simpa using C_mem_tensorGrading (rightUnit_mem_arrowGrading hp),
-      fun _ ↦ by simp⟩ hx
+-- Marked `@[no_expose]` so `strictPairGrading` stays unexposed.
+/-- The composable-pair ring `A[r, s, t] ⊗_A A[r, s, t]` is graded by even homological degrees. -/
+@[no_expose] instance : GradedAlgebra strictPairGrading :=
+  MvPolynomial.weightedGradedAlgebra ℤ strictPairDegree
 
-/-- `MvPolynomial.map rightUnit` preserves and reflects homological degrees. -/
-@[simp] theorem map_rightUnit_mem_tensorGrading_iff {n : ℕ} {x : ArrowRing} :
-    MvPolynomial.map rightUnit x ∈ tensorGrading n ↔ x ∈ arrowGrading n :=
-  ⟨fun hx ↦ by simpa using pushoutLift_counit_id_mem_arrowGrading hx,
-    map_rightUnit_mem_tensorGrading⟩
+/-- Membership in `strictPairGrading (2 * k)` is weighted homogeneity of weight `k` for
+`strictPairWeight`. -/
+theorem mem_strictPairGrading_two_mul_iff {k : ℕ} {x : StrictPairRing} :
+    x ∈ strictPairGrading (2 * k) ↔ x.IsWeightedHomogeneous strictPairWeight k :=
+  isWeightedHomogeneous_two_mul_iff
+
+/-- Every generator `X i` of `A[r, s, t] ⊗_A A[r, s, t]` has degree `strictPairDegree i`. -/
+theorem X_mem_strictPairGrading (i : Coeff ⊕ (Fin 3 ⊕ Fin 3)) :
+    X i ∈ strictPairGrading (strictPairDegree i) :=
+  isWeightedHomogeneous_X ℤ strictPairDegree i
 
 /-- Every odd-degree graded piece of `A[r, s, t] ⊗_A A[r, s, t]` vanishes. -/
-theorem tensorGrading_eq_bot_of_odd {n : ℕ} (hn : Odd n) : tensorGrading n = ⊥ :=
-  WeightedHomogeneousSubmodule.extensionGrading_eq_bot_of_odd even_strictCoordDegree
-    (fun i ↦ i.casesOn even_strictCoordDegree fun _ ↦ even_two_mul _) _ hn
+theorem strictPairGrading_eq_bot_of_odd {n : ℕ} (hn : Odd n) : strictPairGrading n = ⊥ :=
+  WeightedHomogeneousSubmodule.eq_bot_of_odd (fun _ ↦ even_two_mul _) hn
+
+/-- A ring homomorphism out of `A[r, s, t] ⊗_A A[r, s, t]` is graded (with degree shift `e`) iff
+it sends each generator `X i` into `𝒜 (e (strictPairDegree i))`. -/
+theorem strictPairGrading_map_mem_iff {C₀ σ ι : Type*} [CommRing C₀] [SetLike σ C₀]
+    [AddSubgroupClass σ C₀] [AddCommMonoid ι] (𝒜 : ι → σ) [SetLike.GradedMonoid 𝒜] (e : ℕ →+ ι)
+    (f : StrictPairRing →+* C₀) :
+    (∀ ⦃n⦄ ⦃x⦄, x ∈ strictPairGrading n → f x ∈ 𝒜 (e n)) ↔
+      ∀ i : Coeff ⊕ (Fin 3 ⊕ Fin 3), f (X i) ∈ 𝒜 (e (strictPairDegree i)) :=
+  WeightedHomogeneousSubmodule.map_mem_iff strictPairDegree 𝒜 e f
+
+private theorem strictCounitLeft_mem_strictArrowGrading {n : ℕ} {x : StrictPairRing}
+    (hx : x ∈ strictPairGrading n) : strictCounitLeft x ∈ strictArrowGrading n := by
+  refine (strictPairGrading_map_mem_iff strictArrowGrading (.id ℕ) strictCounitLeft).mpr
+    (fun i ↦ ?_) hx
+  rcases i with i | (j | j)
+  · simp
+  · simp [zero_mem]
+  · simpa using X_mem_strictArrowGrading (.inr j)
+
+private theorem strictCounitRight_mem_strictArrowGrading {n : ℕ} {x : StrictPairRing}
+    (hx : x ∈ strictPairGrading n) : strictCounitRight x ∈ strictArrowGrading n := by
+  refine (strictPairGrading_map_mem_iff strictArrowGrading (.id ℕ) strictCounitRight).mpr
+    (fun i ↦ ?_) hx
+  rcases i with i | (j | j)
+  · simp
+  · simpa using X_mem_strictArrowGrading (.inr j)
+  · simp [zero_mem]
+
+/-- The left factor `strictLeft` preserves homological degrees. -/
+theorem strictLeft_mem_strictPairGrading {n : ℕ} {x : StrictArrowRing}
+    (hx : x ∈ strictArrowGrading n) : strictLeft x ∈ strictPairGrading n := by
+  refine (strictArrowGrading_map_mem_iff strictPairGrading (.id ℕ) strictLeft).mpr
+    (fun i ↦ ?_) hx
+  rcases i with i | j
+  · simpa using X_mem_strictPairGrading (.inl i)
+  · simpa using X_mem_strictPairGrading (.inr (.inl j))
+
+/-- `strictLeft` preserves and reflects homological degrees. -/
+@[simp] theorem strictLeft_mem_strictPairGrading_iff {n : ℕ} {x : StrictArrowRing} :
+    strictLeft x ∈ strictPairGrading n ↔ x ∈ strictArrowGrading n :=
+  ⟨fun hx ↦ by simpa only [← RingHom.comp_apply, strictCounitRight_comp_strictLeft,
+      RingHom.id_apply] using strictCounitRight_mem_strictArrowGrading hx,
+    strictLeft_mem_strictPairGrading⟩
+
+/-- The right factor `strictRight` preserves homological degrees. -/
+theorem strictRight_mem_strictPairGrading {n : ℕ} {x : StrictArrowRing}
+    (hx : x ∈ strictArrowGrading n) : strictRight x ∈ strictPairGrading n := by
+  refine (strictArrowGrading_map_mem_iff strictPairGrading (.id ℕ) strictRight).mpr
+    (fun i ↦ ?_) hx
+  rcases i with i | j
+  · simp
+  · simpa using X_mem_strictPairGrading (.inr (.inr j))
+
+/-- `strictRight` preserves and reflects homological degrees. -/
+@[simp] theorem strictRight_mem_strictPairGrading_iff {n : ℕ} {x : StrictArrowRing} :
+    strictRight x ∈ strictPairGrading n ↔ x ∈ strictArrowGrading n :=
+  ⟨fun hx ↦ by simpa only [← RingHom.comp_apply, strictCounitLeft_comp_strictRight,
+      RingHom.id_apply] using strictCounitLeft_mem_strictArrowGrading hx,
+    strictRight_mem_strictPairGrading⟩
 
 /-- The strict coproduct preserves homological degrees. -/
-theorem coproduct_mem_tensorGrading {n : ℕ} {x : ArrowRing} (hx : x ∈ arrowGrading n) :
-    coproduct x ∈ tensorGrading n := by
-  refine (arrowGrading_map_mem_iff tensorGrading (.id ℕ) coproduct).mpr
-    ⟨fun _ _ hp ↦ by simpa using C_mem_tensorGrading (C_mem_arrowGrading hp), fun i ↦ ?_⟩ hx
-  fin_cases i
-  · simpa using add_mem (C_mem_tensorGrading (X_mem_arrowGrading 0)) (X_mem_tensorGrading 0)
-  · simpa using add_mem (C_mem_tensorGrading (X_mem_arrowGrading 1)) (X_mem_tensorGrading 1)
-  · simpa using add_mem (add_mem (C_mem_tensorGrading (X_mem_arrowGrading 2))
-      (X_mem_tensorGrading 2))
-      (SetLike.mul_mem_graded (C_mem_tensorGrading (X_mem_arrowGrading 1)) (X_mem_tensorGrading 0))
+theorem strictCoproduct_mem_strictPairGrading {n : ℕ} {x : StrictArrowRing}
+    (hx : x ∈ strictArrowGrading n) : strictCoproduct x ∈ strictPairGrading n :=
+  map_mem_two_mul_of_isWeightedHomogeneous isWeightedHomogeneous_strictCoproduct hx
 
 /-- The strict coproduct preserves and reflects homological degrees. -/
-@[simp] theorem coproduct_mem_tensorGrading_iff {n : ℕ} {x : ArrowRing} :
-    coproduct x ∈ tensorGrading n ↔ x ∈ arrowGrading n :=
-  ⟨fun hx ↦ by simpa only [← RingHom.comp_apply, pushoutLift_counit_id_comp_coproduct,
-      RingHom.id_apply] using pushoutLift_counit_id_mem_arrowGrading hx,
-    coproduct_mem_tensorGrading⟩
+@[simp] theorem strictCoproduct_mem_strictPairGrading_iff {n : ℕ} {x : StrictArrowRing} :
+    strictCoproduct x ∈ strictPairGrading n ↔ x ∈ strictArrowGrading n :=
+  ⟨fun hx ↦ by simpa only [← RingHom.comp_apply, strictCounitLeft_comp_strictCoproduct,
+      RingHom.id_apply] using strictCounitLeft_mem_strictArrowGrading hx,
+    strictCoproduct_mem_strictPairGrading⟩
 
-end TauCeti.WeierstrassHopfAlgebroid.Strict
+end TauCeti.WeierstrassHopfAlgebroid
 
 namespace WeierstrassCurve
 
 open MvPolynomial TauCeti.WeierstrassHopfAlgebroid
 
-/-- Integral modular forms of weight `k` are the elements of `Strict.baseGrading (2 * k)` fixed by
-`Strict.rightUnit`. -/
+/-- Integral modular forms of weight `k` are the elements of `baseGrading (2 * k)` fixed by
+`strictRightUnit`. -/
 theorem isIntegralModularForm_iff_mem_baseGrading_and_strictRightUnit
     {k : ℕ} {f : MvPolynomial Coeff ℤ} :
-    IsIntegralModularForm k f ↔ f ∈ Strict.baseGrading (2 * k) ∧ Strict.rightUnit f = C f := by
-  rw [Strict.mem_baseGrading_two_mul_iff, isIntegralModularForm_iff_strictRightUnit]
+    IsIntegralModularForm k f ↔
+      f ∈ baseGrading (2 * k) ∧ strictRightUnit f = strictLeftUnit f := by
+  rw [mem_baseGrading_two_mul_iff, isIntegralModularForm_iff_strictRightUnit]
 
 end WeierstrassCurve

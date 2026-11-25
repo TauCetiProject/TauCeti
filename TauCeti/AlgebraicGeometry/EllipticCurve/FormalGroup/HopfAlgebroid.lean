@@ -11,17 +11,24 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Coproduct
 /-!
 # The graded Hopf-algebroid homomorphism `(L, L[b₁, b₂, …]) → (A, A[r, s, t])`
 
-`Universal.curve` over `A = ℤ[a₁, a₂, a₃, a₄, a₆]` and `Strict.formalCoordinate` over `A[r, s, t]`
-induce a graded Hopf-algebroid morphism `(L, L[b₁, b₂, …]) → (A, A[r, s, t])`. Since
-`lazardArrowHom` sends `(b₁, b₂, b₃) ↦ (-s, s² - r, -t - s³ + 2 r s - a₁ r)`, the induced
-`A`-algebra map `A[b₁, b₂, …] →ₐ[A] A[r, s, t]` admits an explicit section and is surjective.
+`Universal.curve` over `A = ℤ[a₁, a₂, a₃, a₄, a₆]` and `strictFormalCoordinate` over `A[r, s, t]`
+(`StrictArrowRing`) induce a graded Hopf-algebroid morphism `(L, L[b₁, b₂, …]) → (A, A[r, s, t])`.
+Since `lazardArrowHom` sends `(b₁, b₂, b₃) ↦ (-s, s² - r, -t - s³ + 2 r s - a₁ r)`, the induced
+base-changed homomorphism `A[b₁, b₂, …] →+* A[r, s, t]` over `A` admits an explicit section over `A`
+and is surjective.
 
 ## Main definitions and results
 
-* `Strict.gradedLazardBaseHom`, `lazardBaseHom`, `gradedLazardArrowHom`, `lazardArrowHom`,
-  `gradedLazardTensorHom`, `lazardTensorHom` and their Hopf-algebroid compatibility identities.
-* `Strict.lazardArrowAlgHom`, `lazardArrowAlgSection`, `lazardArrowAlgHom_surjective`.
-* `Strict.map_lazardBaseHom_heightIdeal`, `map_rightUnit_heightIdeal`.
+* `TauCeti.WeierstrassHopfAlgebroid.gradedLazardBaseHom`, `lazardBaseHom`, `gradedLazardArrowHom`,
+  `lazardArrowHom`, `gradedLazardPairHom`, `lazardPairHom` and their Hopf-algebroid compatibility
+  identities (`lazardArrowHom_comp_C`, `lazardArrowHom_comp_rightUnit`,
+  `strictCounit_comp_lazardArrowHom`, `lazardArrowHom_comp_conjugation`,
+  `lazardPairHom_comp_coproduct`).
+* `TauCeti.WeierstrassHopfAlgebroid.lazardArrowBaseChangeHom`, `lazardArrowBaseChangeSection`, and
+  `lazardArrowBaseChangeHom_surjective`.
+* `TauCeti.WeierstrassHopfAlgebroid.map_lazardBaseHom_heightIdeal`,
+  `map_strictRightUnit_heightIdeal`, and
+  `strictRightUnit_coeff_nsmulSeries_sub_strictLeftUnit_mem_map_heightIdeal`.
 
 ## References
 
@@ -34,10 +41,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti.WeierstrassHopfAlgebroid.Strict
+namespace TauCeti.WeierstrassHopfAlgebroid
 
 open MvPolynomial _root_.WeierstrassCurve _root_.WeierstrassCurve.VariableChange
-open TauCeti.WeierstrassChange.StrictChangeRing
 
 /-! ### The graded base homomorphism `L → A` -/
 
@@ -45,18 +51,26 @@ open TauCeti.WeierstrassChange.StrictChangeRing
 def gradedLazardBaseHom : LazardRing.grading →+*ᵍ baseGrading :=
   LazardRing.gradedLift
     ⟨formalGroup Universal.curve, inferInstance, Universal.coeff_formalGroup_mem_baseGrading⟩
+
 /-- The ring homomorphism `L →+* A` classifying `formalGroup Universal.curve`. -/
 def lazardBaseHom : LazardRing →+* MvPolynomial Coeff ℤ := gradedLazardBaseHom.toRingHom
+
 @[simp] theorem toRingHom_gradedLazardBaseHom : gradedLazardBaseHom.toRingHom = lazardBaseHom :=
   (rfl)
 @[simp] theorem coe_gradedLazardBaseHom : ⇑gradedLazardBaseHom = lazardBaseHom := (rfl)
 
+/-- `lazardBaseHom` preserves homological degrees. -/
 theorem lazardBaseHom_mem_baseGrading {n : ℕ} {x : LazardRing} (hx : x ∈ LazardRing.grading n) :
     lazardBaseHom x ∈ baseGrading n := gradedLazardBaseHom.map_mem hx
+
+/-- Elements of `LazardRing.grading (2 * k)` map to weighted homogeneous polynomials of modular
+weight `k`. -/
 theorem isWeightedHomogeneous_lazardBaseHom {k : ℕ} {x : LazardRing}
     (hx : x ∈ LazardRing.grading (2 * k)) :
     (lazardBaseHom x).IsWeightedHomogeneous coefficientWeight k :=
   mem_baseGrading_two_mul_iff.mp (lazardBaseHom_mem_baseGrading hx)
+
+/-- `lazardBaseHom` pushes `LazardRing.formalGroup` forward to `formalGroup Universal.curve`. -/
 @[simp] theorem map_lazardBaseHom_formalGroup :
     LazardRing.formalGroup.map lazardBaseHom = formalGroup Universal.curve := by
   rw [lazardBaseHom, gradedLazardBaseHom, LazardRing.toRingHom_gradedLift, LazardRing.map_lift]
@@ -77,201 +91,261 @@ theorem map_lazardBaseHom_heightIdeal (p n : ℕ) :
 /-! ### The graded arrow homomorphism `L[b₁, b₂, …] → A[r, s, t]` -/
 
 /-- The graded ring homomorphism `L[b₁, b₂, …] →+*ᵍ A[r, s, t]` classifying
-`(formalGroup (WeierstrassCurve.map Universal.curve C), Strict.formalCoordinate)`. -/
-def gradedLazardArrowHom : LazardRing.coordinateGrading →+*ᵍ arrowGrading :=
+`(formalGroup (WeierstrassCurve.map Universal.curve strictLeftUnit), strictFormalCoordinate)`. -/
+def gradedLazardArrowHom : LazardRing.coordinateGrading →+*ᵍ strictArrowGrading :=
   LazardRing.gradedCoordinateChangeLift
-    ⟨(⟨formalGroup (WeierstrassCurve.map Universal.curve C), inferInstance⟩,
-        ⟨formalCoordinate, formalCoordinate_mem_ker_linearCoeff⟩),
+    ⟨(⟨formalGroup (WeierstrassCurve.map Universal.curve strictLeftUnit), inferInstance⟩,
+        ⟨strictFormalCoordinate, strictFormalCoordinate_mem_ker_linearCoeff⟩),
       fun d ↦ by
         dsimp only
         rw [map_formalGroup, FormalGroup.map_toPowerSeries, MvPowerSeries.coeff_map]
-        exact C_mem_arrowGrading (Universal.coeff_formalGroup_mem_baseGrading d),
-      coeff_succ_formalCoordinate_mem_arrowGrading⟩
-/-- The ring homomorphism `L[b₁, b₂, …] →+* A[r, s, t]` classifying `Strict.formalCoordinate`. -/
-def lazardArrowHom : MvPolynomial ℕ+ LazardRing →+* ArrowRing := gradedLazardArrowHom.toRingHom
+        exact strictLeftUnit_mem_strictArrowGrading (Universal.coeff_formalGroup_mem_baseGrading d),
+      coeff_succ_strictFormalCoordinate_mem_strictArrowGrading⟩
+
+/-- The ring homomorphism `L[b₁, b₂, …] →+* A[r, s, t]` classifying `strictFormalCoordinate`. -/
+def lazardArrowHom : MvPolynomial ℕ+ LazardRing →+* StrictArrowRing :=
+  gradedLazardArrowHom.toRingHom
+
 @[simp] theorem toRingHom_gradedLazardArrowHom : gradedLazardArrowHom.toRingHom = lazardArrowHom :=
   (rfl)
 @[simp] theorem coe_gradedLazardArrowHom : ⇑gradedLazardArrowHom = lazardArrowHom := (rfl)
-theorem lazardArrowHom_mem_arrowGrading {n : ℕ} {x : MvPolynomial ℕ+ LazardRing}
-    (hx : x ∈ LazardRing.coordinateGrading n) : lazardArrowHom x ∈ arrowGrading n :=
+
+/-- `lazardArrowHom` preserves homological degrees. -/
+theorem lazardArrowHom_mem_strictArrowGrading {n : ℕ} {x : MvPolynomial ℕ+ LazardRing}
+    (hx : x ∈ LazardRing.coordinateGrading n) : lazardArrowHom x ∈ strictArrowGrading n :=
   gradedLazardArrowHom.map_mem hx
+
+/-- `lazardArrowHom` maps `bᵢ = X i` to the `z^(i + 1)` coefficient of `strictFormalCoordinate`. -/
 @[simp] theorem lazardArrowHom_X (i : ℕ+) :
-    lazardArrowHom (X i) = PowerSeries.coeff (i + 1) formalCoordinate.toPowerSeries := by
+    lazardArrowHom (X i) = PowerSeries.coeff (i + 1) strictFormalCoordinate.toPowerSeries := by
   rw [lazardArrowHom, gradedLazardArrowHom, LazardRing.toRingHom_gradedCoordinateChangeLift,
     LazardRing.coordinateChangeLift_X]
+
+/-- `lazardArrowHom` maps `universalStrictCoordinate` to `strictFormalCoordinate`. -/
 @[simp] theorem map_lazardArrowHom_universalStrictCoordinate :
     FormalCoordinate.map lazardArrowHom FormalCoordinate.universalStrictCoordinate =
-      formalCoordinate := by
+      strictFormalCoordinate := by
   rw [lazardArrowHom, gradedLazardArrowHom, LazardRing.toRingHom_gradedCoordinateChangeLift,
     LazardRing.map_coordinateChangeLift_universalStrictCoordinate]
 
 /-- **Left-unit compatibility** of `(lazardBaseHom, lazardArrowHom)`. -/
-@[simp] theorem lazardArrowHom_comp_C : lazardArrowHom.comp C = C.comp lazardBaseHom := by
+@[simp] theorem lazardArrowHom_comp_C :
+    lazardArrowHom.comp C = strictLeftUnit.comp lazardBaseHom := by
   rw [lazardArrowHom, gradedLazardArrowHom, LazardRing.toRingHom_gradedCoordinateChangeLift,
     LazardRing.coordinateChangeLift_comp_C]
   apply LazardRing.hom_ext
   rw [LazardRing.map_lift, ← FormalGroup.map_comp, map_lazardBaseHom_formalGroup]
   dsimp only; rw [map_formalGroup]
-@[simp] theorem lazardArrowHom_C (x : LazardRing) : lazardArrowHom (C x) = C (lazardBaseHom x) :=
+
+@[simp] theorem lazardArrowHom_C (x : LazardRing) :
+    lazardArrowHom (C x) = strictLeftUnit (lazardBaseHom x) :=
   RingHom.congr_fun lazardArrowHom_comp_C x
 
-/-- Specializing `lazardArrowHom` along `(W, a)` recovers `LazardRing.coordinateChangeLift` for
-`formalGroup W` and `((heisenbergHom R a).formalCoordinate W)⁻¹`. -/
-@[simp] theorem lift_comp_lazardArrowHom {R : Type*} [CommRing R] (W : WeierstrassCurve R)
-    (a : HeisenbergGroup R) :
-    (lift (W.specialize, a)).comp lazardArrowHom =
+/-- Specializing `lazardArrowHom` along `(strictArrowEquiv R).symm (W, a)` recovers
+`LazardRing.coordinateChangeLift` for `formalGroup W` and
+`((heisenbergHom R a).formalCoordinate W)⁻¹`. -/
+theorem strictArrowEquiv_symm_comp_lazardArrowHom {R : Type*} [CommRing R]
+    (W : WeierstrassCurve R) (a : HeisenbergGroup R) :
+    ((strictArrowEquiv R).symm (W, a)).comp lazardArrowHom =
       LazardRing.coordinateChangeLift (⟨formalGroup W, inferInstance⟩,
-        ⟨((heisenbergHom R a).formalCoordinate W)⁻¹, MonoidHom.mem_ker.mpr (by simp)⟩) :=
-  FormalCoordinate.ringHom_ext_universalStrictCoordinate
-    (by rw [RingHom.comp_assoc, lazardArrowHom_comp_C, ← RingHom.comp_assoc]; simp)
-    (by simp [FormalCoordinate.map_comp])
+        ⟨((heisenbergHom R a).formalCoordinate W)⁻¹, MonoidHom.mem_ker.mpr (by simp)⟩) := by
+  have hW : ((strictArrowEquiv R).symm (W, a)).comp strictLeftUnit = W.specialize := by
+    have h := congrArg Prod.fst ((strictArrowEquiv R).apply_symm_apply (W, a))
+    rw [strictArrowEquiv_apply] at h; dsimp only at h
+    exact Universal.map_curve_injective (h.trans (map_specialize W).symm)
+  refine FormalCoordinate.ringHom_ext_universalStrictCoordinate
+    (by rw [RingHom.comp_assoc, lazardArrowHom_comp_C, ← RingHom.comp_assoc, hW]; simp) ?_
+  rw [FormalCoordinate.map_comp, map_lazardArrowHom_universalStrictCoordinate,
+    map_strictArrowEquiv_symm_strictFormalCoordinate,
+    LazardRing.map_coordinateChangeLift_universalStrictCoordinate]
 
 /-! ### Explicit values on `b₁, b₂, b₃` and surjectivity onto `A[r, s, t]` -/
 
-/-- `lazardArrowHom` sends `b₁ = X 1` to `-s` (`-X 1`). -/
-theorem lazardArrowHom_X_one : lazardArrowHom (X 1) = -(X 1 : ArrowRing) := by simp
-/-- `lazardArrowHom` sends `b₂ = X 2` to `s² - r` (`X 1 ^ 2 - X 0`). -/
-theorem lazardArrowHom_X_two : lazardArrowHom (X 2) = X 1 ^ 2 - (X 0 : ArrowRing) := by simp
+/-- `lazardArrowHom` sends `b₁ = X 1` to `-s` (`-X (.inr 1)`). -/
+theorem lazardArrowHom_X_one : lazardArrowHom (X 1) = -X (.inr 1) := by simp
+
+/-- `lazardArrowHom` sends `b₂ = X 2` to `s² - r` (`X (.inr 1) ^ 2 - X (.inr 0)`). -/
+theorem lazardArrowHom_X_two : lazardArrowHom (X 2) = X (.inr 1) ^ 2 - X (.inr 0) := by simp
+
 /-- `lazardArrowHom` sends `b₃ = X 3` to `-t - s³ + 2 r s - a₁ r`. -/
 theorem lazardArrowHom_X_three :
-    lazardArrowHom (X 3) = -X 2 - X 1 ^ 3 + 2 * X 0 * X 1 - C (X .A₁) * (X 0 : ArrowRing) := by simp
+    lazardArrowHom (X 3) =
+      -X (.inr 2) - X (.inr 1) ^ 3 + 2 * X (.inr 0) * X (.inr 1) -
+        X (.inl .A₁) * X (.inr 0) := by simp
 
-/-- The base-changed `A`-algebra homomorphism `A[b₁, b₂, …] →ₐ[A] A[r, s, t]`. -/
-def lazardArrowAlgHom : MvPolynomial ℕ+ (MvPolynomial Coeff ℤ) →ₐ[MvPolynomial Coeff ℤ] ArrowRing :=
-  MvPolynomial.aeval fun i : ℕ+ ↦ lazardArrowHom (X i)
-@[simp] theorem lazardArrowAlgHom_X (i : ℕ+) : lazardArrowAlgHom (X i) = lazardArrowHom (X i) :=
-  MvPolynomial.aeval_X _ i
-theorem lazardArrowAlgHom_C (f : MvPolynomial Coeff ℤ) : lazardArrowAlgHom (C f) = C f :=
-  MvPolynomial.aeval_C _ f
-@[simp] theorem lazardArrowAlgHom_map_lazardBaseHom (x : MvPolynomial ℕ+ LazardRing) :
-    lazardArrowAlgHom (MvPolynomial.map lazardBaseHom x) = lazardArrowHom x := by
-  have h : lazardArrowAlgHom.toRingHom.comp (MvPolynomial.map lazardBaseHom) = lazardArrowHom :=
-    MvPolynomial.ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun _ ↦ by simp
-  exact RingHom.congr_fun h x
+/-- The base-changed homomorphism `A[b₁, b₂, …] = A ⊗_L L[b₁, b₂, …] →+* A[r, s, t]` induced by
+`strictLeftUnit` and `lazardArrowHom`. -/
+def lazardArrowBaseChangeHom : MvPolynomial ℕ+ (MvPolynomial Coeff ℤ) →+* StrictArrowRing :=
+  pushoutLift lazardBaseHom ⟨(strictLeftUnit, lazardArrowHom), lazardArrowHom_comp_C.symm⟩
 
-/-- An explicit `A`-algebra section `A[r, s, t] →ₐ[A] A[b₁, b₂, …]` of `lazardArrowAlgHom`. -/
-def lazardArrowAlgSection :
-    ArrowRing →ₐ[MvPolynomial Coeff ℤ] MvPolynomial ℕ+ (MvPolynomial Coeff ℤ) :=
+@[simp] theorem lazardArrowBaseChangeHom_comp_C :
+    lazardArrowBaseChangeHom.comp C = strictLeftUnit :=
+  pushoutLift_comp_C _ _
+@[simp] theorem lazardArrowBaseChangeHom_C (f : MvPolynomial Coeff ℤ) :
+    lazardArrowBaseChangeHom (C f) = strictLeftUnit f :=
+  pushoutLift_C _ _ f
+@[simp] theorem lazardArrowBaseChangeHom_comp_map_lazardBaseHom :
+    lazardArrowBaseChangeHom.comp (MvPolynomial.map lazardBaseHom) = lazardArrowHom :=
+  pushoutLift_comp_map _ _
+@[simp] theorem lazardArrowBaseChangeHom_map_lazardBaseHom (x : MvPolynomial ℕ+ LazardRing) :
+    lazardArrowBaseChangeHom (MvPolynomial.map lazardBaseHom x) = lazardArrowHom x :=
+  pushoutLift_map _ _ x
+@[simp] theorem lazardArrowBaseChangeHom_X (i : ℕ+) :
+    lazardArrowBaseChangeHom (X i) = lazardArrowHom (X i) :=
+  pushoutLift_X _ _ i
+
+/-- An explicit section `A[r, s, t] →+* A[b₁, b₂, …]` over `A` of `lazardArrowBaseChangeHom`. -/
+def lazardArrowBaseChangeSection :
+    StrictArrowRing →+* MvPolynomial ℕ+ (MvPolynomial Coeff ℤ) :=
   let r₀ : MvPolynomial ℕ+ (MvPolynomial Coeff ℤ) := X 1 ^ 2 - X 2
-  MvPolynomial.aeval ![r₀, -X 1, -X 3 + X 1 ^ 3 - 2 * r₀ * X 1 - C (X .A₁) * r₀]
-theorem lazardArrowAlgSection_C (f : MvPolynomial Coeff ℤ) : lazardArrowAlgSection (C f) = C f :=
-  algHom_C _ f
-@[simp] theorem lazardArrowAlgSection_X_zero : lazardArrowAlgSection (X 0) = X 1 ^ 2 - X 2 := by
-  simp [lazardArrowAlgSection]
-@[simp] theorem lazardArrowAlgSection_X_one : lazardArrowAlgSection (X 1) = -X 1 := by
-  simp [lazardArrowAlgSection]
-@[simp] theorem lazardArrowAlgSection_X_two :
-    lazardArrowAlgSection (X 2) =
-      -X 3 + X 1 ^ 3 - 2 * (X 1 ^ 2 - X 2) * X 1 - C (X .A₁) * (X 1 ^ 2 - X 2) := by
-  simp [lazardArrowAlgSection]
-@[simp] theorem lazardArrowAlgHom_comp_lazardArrowAlgSection :
-    lazardArrowAlgHom.comp lazardArrowAlgSection = AlgHom.id (MvPolynomial Coeff ℤ) ArrowRing :=
-  MvPolynomial.algHom_ext fun i ↦ by
-    fin_cases i
-    · simp
-    · simp
-    · simp [map_ofNat]; ring
-@[simp] theorem lazardArrowAlgHom_lazardArrowAlgSection (p : ArrowRing) :
-    lazardArrowAlgHom (lazardArrowAlgSection p) = p :=
-  AlgHom.congr_fun lazardArrowAlgHom_comp_lazardArrowAlgSection p
+  (aeval (Sum.elim (fun i ↦ C (X i))
+    ![r₀, -X 1, -X 3 + X 1 ^ 3 - 2 * r₀ * X 1 - C (X .A₁) * r₀])).toRingHom
 
-/-- The `A`-algebra homomorphism `A[b₁, b₂, …] →ₐ[A] A[r, s, t]` is surjective. -/
-theorem lazardArrowAlgHom_surjective : Function.Surjective lazardArrowAlgHom :=
-  Function.RightInverse.surjective lazardArrowAlgHom_lazardArrowAlgSection
+@[simp] theorem lazardArrowBaseChangeSection_X_inl (i : Coeff) :
+    lazardArrowBaseChangeSection (X (.inl i)) = C (X i) := by
+  simp [lazardArrowBaseChangeSection]
+@[simp] theorem lazardArrowBaseChangeSection_X_inr_zero :
+    lazardArrowBaseChangeSection (X (.inr 0)) = X 1 ^ 2 - X 2 := by
+  simp [lazardArrowBaseChangeSection]
+@[simp] theorem lazardArrowBaseChangeSection_X_inr_one :
+    lazardArrowBaseChangeSection (X (.inr 1)) = -X 1 := by
+  simp [lazardArrowBaseChangeSection]
+@[simp] theorem lazardArrowBaseChangeSection_X_inr_two :
+    lazardArrowBaseChangeSection (X (.inr 2)) =
+      -X 3 + X 1 ^ 3 - 2 * (X 1 ^ 2 - X 2) * X 1 - C (X .A₁) * (X 1 ^ 2 - X 2) := by
+  simp [lazardArrowBaseChangeSection]
+
+/-- `lazardArrowBaseChangeSection` restricts to `C` along `strictLeftUnit`. -/
+@[simp] theorem lazardArrowBaseChangeSection_comp_strictLeftUnit :
+    lazardArrowBaseChangeSection.comp strictLeftUnit = C :=
+  MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun _ ↦ by simp
+
+@[simp] theorem lazardArrowBaseChangeSection_strictLeftUnit (f : MvPolynomial Coeff ℤ) :
+    lazardArrowBaseChangeSection (strictLeftUnit f) = C f :=
+  RingHom.congr_fun lazardArrowBaseChangeSection_comp_strictLeftUnit f
+
+/-- `lazardArrowBaseChangeSection` is a right inverse to `lazardArrowBaseChangeHom`. -/
+@[simp] theorem lazardArrowBaseChangeHom_comp_lazardArrowBaseChangeSection :
+    lazardArrowBaseChangeHom.comp lazardArrowBaseChangeSection = RingHom.id StrictArrowRing :=
+  MvPolynomial.ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by
+    rcases i with i | j
+    · simp
+    · fin_cases j
+      · simp
+      · simp
+      · simp [map_ofNat]; ring
+
+@[simp] theorem lazardArrowBaseChangeHom_lazardArrowBaseChangeSection (p : StrictArrowRing) :
+    lazardArrowBaseChangeHom (lazardArrowBaseChangeSection p) = p :=
+  RingHom.congr_fun lazardArrowBaseChangeHom_comp_lazardArrowBaseChangeSection p
+
+/-- The base-changed homomorphism `A[b₁, b₂, …] →+* A[r, s, t]` is surjective. -/
+theorem lazardArrowBaseChangeHom_surjective : Function.Surjective lazardArrowBaseChangeHom :=
+  Function.RightInverse.surjective lazardArrowBaseChangeHom_lazardArrowBaseChangeSection
 
 /-! ### Remaining Hopf-algebroid homomorphism identities and height ideals -/
 
 /-- **Right-unit compatibility** of `(lazardBaseHom, lazardArrowHom)`. -/
 @[simp] theorem lazardArrowHom_comp_rightUnit :
-    lazardArrowHom.comp LazardRing.rightUnit = rightUnit.comp lazardBaseHom := by
+    lazardArrowHom.comp LazardRing.rightUnit = strictRightUnit.comp lazardBaseHom := by
   rw [lazardArrowHom, gradedLazardArrowHom, LazardRing.toRingHom_gradedCoordinateChangeLift,
     LazardRing.coordinateChangeLift_comp_rightUnit]
   apply LazardRing.hom_ext
   rw [LazardRing.map_lift, ← FormalGroup.map_comp, map_lazardBaseHom_formalGroup]
-  dsimp only; rw [formalCoordinate_smul_formalGroup, map_formalGroup]
+  dsimp only; rw [strictFormalCoordinate_smul_formalGroup, map_formalGroup]
+
 @[simp] theorem lazardArrowHom_rightUnit (x : LazardRing) :
-    lazardArrowHom (LazardRing.rightUnit x) = rightUnit (lazardBaseHom x) :=
+    lazardArrowHom (LazardRing.rightUnit x) = strictRightUnit (lazardBaseHom x) :=
   RingHom.congr_fun lazardArrowHom_comp_rightUnit x
 
 /-- **Counit compatibility** of `(lazardBaseHom, lazardArrowHom)`. -/
-@[simp] theorem counit_comp_lazardArrowHom :
-    counit.comp lazardArrowHom = lazardBaseHom.comp LazardRing.counit :=
+@[simp] theorem strictCounit_comp_lazardArrowHom :
+    strictCounit.comp lazardArrowHom = lazardBaseHom.comp LazardRing.counit :=
   FormalCoordinate.ringHom_ext_universalStrictCoordinate (RingHom.ext fun _ ↦ by simp)
     (by simp [FormalCoordinate.map_comp])
-@[simp] theorem counit_lazardArrowHom (x : MvPolynomial ℕ+ LazardRing) :
-    counit (lazardArrowHom x) = lazardBaseHom (LazardRing.counit x) :=
-  RingHom.congr_fun counit_comp_lazardArrowHom x
+
+@[simp] theorem strictCounit_lazardArrowHom (x : MvPolynomial ℕ+ LazardRing) :
+    strictCounit (lazardArrowHom x) = lazardBaseHom (LazardRing.counit x) :=
+  RingHom.congr_fun strictCounit_comp_lazardArrowHom x
 
 /-- **Conjugation compatibility** of `lazardArrowHom`. -/
 @[simp] theorem lazardArrowHom_comp_conjugation :
-    lazardArrowHom.comp LazardRing.conjugation = conjugation.comp lazardArrowHom :=
+    lazardArrowHom.comp LazardRing.conjugation = strictConjugation.comp lazardArrowHom :=
   FormalCoordinate.ringHom_ext_universalStrictCoordinate (RingHom.ext fun _ ↦ by simp)
     (by simp [FormalCoordinate.map_comp])
+
 @[simp] theorem lazardArrowHom_conjugation (x : MvPolynomial ℕ+ LazardRing) :
-    lazardArrowHom (LazardRing.conjugation x) = conjugation (lazardArrowHom x) :=
+    lazardArrowHom (LazardRing.conjugation x) = strictConjugation (lazardArrowHom x) :=
   RingHom.congr_fun lazardArrowHom_comp_conjugation x
 
-/-- The ring homomorphism `Γ_L ⊗_L Γ_L →+* Γ_W ⊗_A Γ_W` induced on composable pairs. -/
-def lazardTensorHom :
-    MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* WeierstrassChange.StrictChangeRing ArrowRing :=
+/-- The ring homomorphism `L[b₁, b₂, …] ⊗_L L[b₁, b₂, …] →+* A[r, s, t] ⊗_A A[r, s, t]` induced on
+composable pairs. -/
+def lazardPairHom : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* StrictPairRing :=
   pushoutLift LazardRing.rightUnit
-    ⟨(C.comp lazardArrowHom, (MvPolynomial.map rightUnit).comp lazardArrowHom),
-      RingHom.ext fun _ ↦ by simp⟩
+    ⟨(strictLeft.comp lazardArrowHom, strictRight.comp lazardArrowHom),
+      RingHom.ext fun x ↦ by
+        simp only [RingHom.comp_apply, lazardArrowHom_rightUnit, lazardArrowHom_C]
+        exact (RingHom.congr_fun strictRight_comp_strictLeftUnit (lazardBaseHom x)).symm⟩
 
-@[simp] theorem lazardTensorHom_comp_C : lazardTensorHom.comp C = C.comp lazardArrowHom :=
+@[simp] theorem lazardPairHom_comp_C : lazardPairHom.comp C = strictLeft.comp lazardArrowHom :=
   pushoutLift_comp_C _ _
-@[simp] theorem lazardTensorHom_comp_map_rightUnit :
-    lazardTensorHom.comp (MvPolynomial.map LazardRing.rightUnit) =
-      (MvPolynomial.map rightUnit).comp lazardArrowHom := pushoutLift_comp_map _ _
-@[simp] theorem lazardTensorHom_C (x : MvPolynomial ℕ+ LazardRing) :
-    lazardTensorHom (C x) = C (lazardArrowHom x) := pushoutLift_C _ _ x
-@[simp] theorem lazardTensorHom_map_rightUnit (x : MvPolynomial ℕ+ LazardRing) :
-    lazardTensorHom (MvPolynomial.map LazardRing.rightUnit x) =
-      MvPolynomial.map rightUnit (lazardArrowHom x) := pushoutLift_map _ _ x
-@[simp] theorem lazardTensorHom_X (i : ℕ+) :
-    lazardTensorHom (X i) = MvPolynomial.map rightUnit (lazardArrowHom (X i)) := by
-  simp [lazardTensorHom]
+@[simp] theorem lazardPairHom_comp_map_rightUnit :
+    lazardPairHom.comp (MvPolynomial.map LazardRing.rightUnit) =
+      strictRight.comp lazardArrowHom := pushoutLift_comp_map _ _
+@[simp] theorem lazardPairHom_C (x : MvPolynomial ℕ+ LazardRing) :
+    lazardPairHom (C x) = strictLeft (lazardArrowHom x) := pushoutLift_C _ _ x
+@[simp] theorem lazardPairHom_map_rightUnit (x : MvPolynomial ℕ+ LazardRing) :
+    lazardPairHom (MvPolynomial.map LazardRing.rightUnit x) =
+      strictRight (lazardArrowHom x) := pushoutLift_map _ _ x
+@[simp] theorem lazardPairHom_X (i : ℕ+) :
+    lazardPairHom (X i) = strictRight (lazardArrowHom (X i)) :=
+  pushoutLift_X _ _ i
 
-theorem lazardTensorHom_mem_tensorGrading {n : ℕ}
+/-- `lazardPairHom` preserves homological degrees. -/
+theorem lazardPairHom_mem_strictPairGrading {n : ℕ}
     {x : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)}
-    (hx : x ∈ LazardRing.coordinateTensorGrading n) : lazardTensorHom x ∈ tensorGrading n :=
-  (LazardRing.coordinateTensorGrading_map_mem_iff tensorGrading (.id ℕ) lazardTensorHom).mpr
-    ⟨fun _ _ hy ↦ by simpa using C_mem_tensorGrading (lazardArrowHom_mem_arrowGrading hy),
-      fun i ↦ by simpa using coeff_succ_formalCoordinate_mem_arrowGrading i⟩ hx
+    (hx : x ∈ LazardRing.coordinateTensorGrading n) : lazardPairHom x ∈ strictPairGrading n :=
+  (LazardRing.coordinateTensorGrading_map_mem_iff strictPairGrading (.id ℕ) lazardPairHom).mpr
+    ⟨fun _ _ hy ↦ by simpa using lazardArrowHom_mem_strictArrowGrading hy,
+      fun i ↦ by simpa using coeff_succ_strictFormalCoordinate_mem_strictArrowGrading i⟩ hx
 
-/-- The graded ring homomorphism on tensor squares `Γ_L ⊗_L Γ_L →+*ᵍ Γ_W ⊗_A Γ_W`. -/
-def gradedLazardTensorHom : LazardRing.coordinateTensorGrading →+*ᵍ tensorGrading where
-  toRingHom := lazardTensorHom
-  map_mem hx := lazardTensorHom_mem_tensorGrading hx
+/-- The graded ring homomorphism `L[b₁, b₂, …] ⊗_L L[b₁, b₂, …] →+*ᵍ A[r, s, t] ⊗_A A[r, s, t]`
+on composable pairs. -/
+def gradedLazardPairHom : LazardRing.coordinateTensorGrading →+*ᵍ strictPairGrading where
+  toRingHom := lazardPairHom
+  map_mem hx := lazardPairHom_mem_strictPairGrading hx
 
-@[simp] theorem toRingHom_gradedLazardTensorHom :
-    gradedLazardTensorHom.toRingHom = lazardTensorHom := (rfl)
-@[simp] theorem coe_gradedLazardTensorHom : ⇑gradedLazardTensorHom = lazardTensorHom := (rfl)
+@[simp] theorem toRingHom_gradedLazardPairHom :
+    gradedLazardPairHom.toRingHom = lazardPairHom := (rfl)
+@[simp] theorem coe_gradedLazardPairHom : ⇑gradedLazardPairHom = lazardPairHom := (rfl)
 
 /-- **Coproduct compatibility** of `(lazardBaseHom, lazardArrowHom)`. -/
-@[simp] theorem lazardTensorHom_comp_coproduct :
-    lazardTensorHom.comp LazardRing.coproduct = coproduct.comp lazardArrowHom := by
+@[simp] theorem lazardPairHom_comp_coproduct :
+    lazardPairHom.comp LazardRing.coproduct = strictCoproduct.comp lazardArrowHom := by
   refine FormalCoordinate.ringHom_ext_universalStrictCoordinate
-    (RingHom.ext fun _ ↦ by simp [lazardTensorHom]) ?_
+    (RingHom.ext fun x ↦ by
+      simp only [RingHom.comp_apply, LazardRing.coproduct_C, lazardPairHom_C, lazardArrowHom_C]
+      exact (RingHom.congr_fun strictCoproduct_comp_strictLeftUnit (lazardBaseHom x)).symm) ?_
   rw [LazardRing.map_comp_coproduct_universalStrictCoordinate]; simp [FormalCoordinate.map_comp]
-@[simp] theorem lazardTensorHom_coproduct (x : MvPolynomial ℕ+ LazardRing) :
-    lazardTensorHom (LazardRing.coproduct x) = coproduct (lazardArrowHom x) :=
-  RingHom.congr_fun lazardTensorHom_comp_coproduct x
+
+@[simp] theorem lazardPairHom_coproduct (x : MvPolynomial ℕ+ LazardRing) :
+    lazardPairHom (LazardRing.coproduct x) = strictCoproduct (lazardArrowHom x) :=
+  RingHom.congr_fun lazardPairHom_comp_coproduct x
 
 /-- **Height-ideal invariance**: the extensions of `(formalGroup Universal.curve).heightIdeal p n`
-along `Strict.rightUnit` and `C` agree. -/
-theorem map_rightUnit_heightIdeal (p n : ℕ) :
-    ((formalGroup Universal.curve).heightIdeal p n).map rightUnit =
-      ((formalGroup Universal.curve).heightIdeal p n).map C := by
+along `strictRightUnit` and `strictLeftUnit` agree. -/
+theorem map_strictRightUnit_heightIdeal (p n : ℕ) :
+    ((formalGroup Universal.curve).heightIdeal p n).map strictRightUnit =
+      ((formalGroup Universal.curve).heightIdeal p n).map strictLeftUnit := by
   rw [FormalGroup.map_heightIdeal, FormalGroup.map_heightIdeal, ← map_formalGroup,
-    ← map_formalGroup, ← formalCoordinate_smul_formalGroup, FormalGroup.heightIdeal_smul]
+    ← map_formalGroup, ← strictFormalCoordinate_smul_formalGroup, FormalGroup.heightIdeal_smul]
 
-/-- `Strict.rightUnit` fixes the `p ^ n` coefficient `v_n` of `[p](z)` on `Universal.curve` modulo
+/-- `strictRightUnit` fixes the `p ^ n` coefficient `v_n` of `[p](z)` on `Universal.curve` modulo
 the extended height ideal `I_n A[r, s, t]`. -/
-theorem rightUnit_coeff_nsmulSeries_sub_C_mem_map_heightIdeal (p n : ℕ) :
-    rightUnit (PowerSeries.coeff (p ^ n) ((formalGroup Universal.curve).nsmulSeries p)) -
-        C (PowerSeries.coeff (p ^ n) ((formalGroup Universal.curve).nsmulSeries p)) ∈
-      ((formalGroup Universal.curve).heightIdeal p n).map C := by
+theorem strictRightUnit_coeff_nsmulSeries_sub_strictLeftUnit_mem_map_heightIdeal (p n : ℕ) :
+    strictRightUnit (PowerSeries.coeff (p ^ n) ((formalGroup Universal.curve).nsmulSeries p)) -
+        strictLeftUnit (PowerSeries.coeff (p ^ n) ((formalGroup Universal.curve).nsmulSeries p)) ∈
+      ((formalGroup Universal.curve).heightIdeal p n).map strictLeftUnit := by
   have h := Ideal.mem_map_of_mem lazardArrowHom
     (LazardRing.rightUnit_sub_C_mem_map_heightIdeal p n)
   rw [Ideal.map_map, lazardArrowHom_comp_C, ← Ideal.map_map, map_lazardBaseHom_heightIdeal,
@@ -281,4 +355,4 @@ theorem rightUnit_coeff_nsmulSeries_sub_C_mem_map_heightIdeal (p n : ℕ) :
     rw [← FormalGroup.coeff_nsmulSeries_map, map_lazardBaseHom_formalGroup]
   rwa [hc] at h
 
-end TauCeti.WeierstrassHopfAlgebroid.Strict
+end TauCeti.WeierstrassHopfAlgebroid

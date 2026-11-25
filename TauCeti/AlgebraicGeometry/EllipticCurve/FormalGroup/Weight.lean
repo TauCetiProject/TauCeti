@@ -57,8 +57,10 @@ weight `p - 1`. The proof compares the `p`-series of the isomorphic formal group
   `WeierstrassCurve.Universal.isWeightedHomogeneous_coeff_invariantDifferential` and
   `WeierstrassCurve.Universal.isWeightedHomogeneous_coeff_nsmulSeries`: the weights of the
   coefficients of the universal formal group law, invariant differential and `k`-series.
-* `WeierstrassCurve.coeff_formalGroup_mem`, `WeierstrassCurve.coeff_invariantDifferential_mem` and
-  `WeierstrassCurve.coeff_nsmulSeries_mem`: the same over a graded coefficient ring.
+* `WeierstrassCurve.specialize_mem`, `WeierstrassCurve.coeff_formalGroup_mem`,
+  `WeierstrassCurve.coeff_invariantDifferential_mem` and `WeierstrassCurve.coeff_nsmulSeries_mem`:
+  specialization of weighted homogeneous coefficient polynomials and formal-group expansions over a
+  graded coefficient ring.
 * `WeierstrassCurve.lift_formalGroup_mem`: the classifying homomorphism from the Lazard ring is
   graded when `aᵢ` has degree `2i`, along any `e : ℕ →+ ι`.
 * `WeierstrassCurve.VariableChange.natCast_dvd_coeff_invariantDifferential_formalGroup_smul_sub`
@@ -138,28 +140,16 @@ section Graded
 
 variable {A ι σ : Type*} [CommRing A] [AddCommMonoid ι] [SetLike σ A] [AddSubgroupClass σ A]
   {𝒜 : ι → σ} [SetLike.GradedMonoid 𝒜] {W : WeierstrassCurve A} {w : ι}
-
-/-- Specializing a polynomial of weight `k` at a Weierstrass curve whose coefficient `aᵢ` has
-degree `i • w` gives an element of degree `k • w`. -/
-private theorem specialize_mem {f : MvPolynomial Coeff ℤ} {k : ℕ}
-    (hf : f.IsWeightedHomogeneous coefficientWeight k)
-    (hW : ∀ i, W.specialize (MvPolynomial.X i) ∈ 𝒜 (coefficientWeight i • w)) :
-    W.specialize f ∈ 𝒜 (k • w) := by
-  have hf' : f.IsWeightedHomogeneous (fun i ↦ coefficientWeight i • w) (k • w) :=
-    hf.comp_weight (multiplesHom ι w)
-  have hspec : W.specialize f = MvPolynomial.aeval (fun i ↦ W.specialize (MvPolynomial.X i)) f :=
-    DFunLike.congr_fun (MvPolynomial.aeval_unique W.specialize.toIntAlgHom) f
-  rw [hspec, MvPolynomial.aeval_def]
-  exact hf'.eval₂_mem (fun r ↦ by simpa using SetLike.intCast_mem_graded 𝒜 r) hW
-
-variable (h₁ : W.a₁ ∈ 𝒜 w) (h₂ : W.a₂ ∈ 𝒜 (2 • w)) (h₃ : W.a₃ ∈ 𝒜 (3 • w))
+  (h₁ : W.a₁ ∈ 𝒜 w) (h₂ : W.a₂ ∈ 𝒜 (2 • w)) (h₃ : W.a₃ ∈ 𝒜 (3 • w))
   (h₄ : W.a₄ ∈ 𝒜 (4 • w)) (h₆ : W.a₆ ∈ 𝒜 (6 • w))
 include h₁ h₂ h₃ h₄ h₆
 
-omit [AddSubgroupClass σ A] [SetLike.GradedMonoid 𝒜] in
-private theorem specialize_X_mem (i : Coeff) :
-    W.specialize (MvPolynomial.X i) ∈ 𝒜 (coefficientWeight i • w) := by
-  cases i <;> simpa [specialize_X]
+/-- Specializing a polynomial of weight `k` at a Weierstrass curve whose coefficient `aᵢ` has
+degree `i • w` gives an element of degree `k • w`. -/
+theorem specialize_mem {f : MvPolynomial Coeff ℤ} {k : ℕ}
+    (hf : f.IsWeightedHomogeneous coefficientWeight k) : W.specialize f ∈ 𝒜 (k • w) :=
+  (MvPolynomial.WeightedHomogeneousSubmodule.map_mem_iff coefficientWeight 𝒜 (multiplesHom ι w)
+    W.specialize).mpr (fun i ↦ by cases i <;> simpa [specialize_X]) hf
 
 /-- **A Weierstrass curve over a graded ring has a graded formal group law.** If the coefficient
 `aᵢ` of `W` has degree `i • w`, then the coefficient of `X^(d 0) Y^(d 1)` in the formal group law
@@ -167,8 +157,7 @@ of `W` has degree `(d 0 + d 1 - 1) • w`. -/
 theorem coeff_formalGroup_mem (d : Fin 2 →₀ ℕ) :
     MvPowerSeries.coeff d (formalGroup W).toPowerSeries ∈ 𝒜 ((d.degree - 1) • w) := by
   rw [← map_specialize_formalGroup, FormalGroup.map_toPowerSeries, MvPowerSeries.coeff_map]
-  exact specialize_mem (Universal.isWeightedHomogeneous_coeff_formalGroup d)
-    (specialize_X_mem h₁ h₂ h₃ h₄ h₆)
+  exact W.specialize_mem h₁ h₂ h₃ h₄ h₆ (Universal.isWeightedHomogeneous_coeff_formalGroup d)
 
 /-- If the coefficient `aᵢ` of `W` has degree `i • w`, then the coefficient of `Tⁿ` in the
 invariant differential of the formal group law of `W` has degree `n • w`. -/
@@ -176,16 +165,15 @@ theorem coeff_invariantDifferential_mem (n : ℕ) :
     PowerSeries.coeff n (formalGroup W).invariantDifferential ∈ 𝒜 (n • w) := by
   rw [← map_specialize_formalGroup, ← FormalGroup.map_invariantDifferential,
     PowerSeries.coeff_map]
-  exact specialize_mem (Universal.isWeightedHomogeneous_coeff_invariantDifferential n)
-    (specialize_X_mem h₁ h₂ h₃ h₄ h₆)
+  exact W.specialize_mem h₁ h₂ h₃ h₄ h₆
+    (Universal.isWeightedHomogeneous_coeff_invariantDifferential n)
 
 /-- If the coefficient `aᵢ` of `W` has degree `i • w`, then the coefficient of `Tᵐ` in the
 `k`-series of the formal group law of `W` has degree `(m - 1) • w`. -/
 theorem coeff_nsmulSeries_mem (k m : ℕ) :
     PowerSeries.coeff m ((formalGroup W).nsmulSeries k) ∈ 𝒜 ((m - 1) • w) := by
   rw [← map_specialize_formalGroup, ← FormalGroup.map_nsmulSeries, PowerSeries.coeff_map]
-  exact specialize_mem (Universal.isWeightedHomogeneous_coeff_nsmulSeries k m)
-    (specialize_X_mem h₁ h₂ h₃ h₄ h₆)
+  exact W.specialize_mem h₁ h₂ h₃ h₄ h₆ (Universal.isWeightedHomogeneous_coeff_nsmulSeries k m)
 
 end Graded
 
