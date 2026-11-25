@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import TauCeti.Analysis.Complex.OperatorNorm
 
 /-!
 # The `W^{k,p}` size of a function on a planar set
@@ -312,6 +313,48 @@ theorem eLpNormWkp_linearIsometryEquiv_comp [CompleteSpace F] [CompleteSpace G]
     _ ≤ _ := eLpNormWkp_linearIsometryEquiv_comp_le e.symm _
 
 
+/-- A continuous linear map of norm at most one does not increase the `W^{k,p}` norm. -/
+theorem eLpNormWkp_clm_comp_le_of_norm_le_one [CompleteSpace G] (A : F →L[ℝ] G) (hA : ‖A‖ ≤ 1) :
+    eLpNormWkp p U k (fun z => A (f z)) ≤ eLpNormWkp p U k f :=
+  (eLpNormWkp_clm_comp_le A).trans (mul_le_of_le_one_left zero_le (by
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_one.2 hA))
+
+/-- Evaluating a field of linear maps at a vector `v` with `‖v‖ ≤ 1` does not increase the
+`W^{k,p}` norm. -/
+theorem eLpNormWkp_apply_le_of_norm_le_one {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace F] (f : ℂ → E →L[ℝ] F) {v : E} (hv : ‖v‖ ≤ 1) :
+    eLpNormWkp p U k (fun z => f z v) ≤ eLpNormWkp p U k f :=
+  eLpNormWkp_clm_comp_le_of_norm_le_one (ContinuousLinearMap.apply ℝ F v)
+    (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun A => by
+      simpa using (A.le_opNorm v).trans (mul_le_of_le_one_right (norm_nonneg A) hv))
+
+/-- On an open set, a partial derivative `z ↦ D z v`, `‖v‖ ≤ 1`, of a weak derivative `D` of `f`
+has `W^{k,p}` norm at most the `W^{k+1,p}` norm of `f`. -/
+theorem eLpNormWkp_apply_le_eLpNormWkp_succ_of_hasWeakFDerivOn [CompleteSpace F] {Ω : Opens ℂ}
+    {D : ℂ → ℂ →L[ℝ] F} (hD : HasWeakFDerivOn volume Ω f D) {v : ℂ} (hv : ‖v‖ ≤ 1) :
+    eLpNormWkp p Ω k (fun z => D z v) ≤ eLpNormWkp p Ω (k + 1) f :=
+  (eLpNormWkp_apply_le_of_norm_le_one D hv).trans
+    (eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn hD)
+
+/-- Negation preserves the `W^{k,p}` norm. -/
+@[simp]
+theorem eLpNormWkp_neg : eLpNormWkp p U k (-f) = eLpNormWkp p U k f := by
+  induction k generalizing F with
+  | zero => exact eLpNorm_neg f p _
+  | succ k ih =>
+    rw [eLpNormWkp_succ, eLpNormWkp_succ, eLpNorm_neg]
+    congr 1
+    refine le_antisymm (le_iInf₂ fun D hD => iInf₂_le_of_le (-D) hD.neg ?_)
+      (le_iInf₂ fun D hD => iInf₂_le_of_le (-D) (by simpa using hD.neg) ?_)
+    all_goals exact (ih (f := D)).le
+
+/-- The triangle inequality for the `W^{k,p}` norm of a difference. -/
+theorem eLpNormWkp_sub_le (hp : 1 ≤ p) :
+    eLpNormWkp p U k (f - g) ≤ eLpNormWkp p U k f + eLpNormWkp p U k g := by
+  rw [sub_eq_add_neg]
+  exact (eLpNormWkp_add_le hp).trans_eq (by rw [eLpNormWkp_neg])
+
 /-- **A chain bound bounds the `W^{m,p}` norm.** Let `C` be finite and nonzero. If the iterated
 weak derivatives of `f` on the interior of `S` are bounded in `Lᵖ(S)` by `C` times those of `g` on
 the interior of `T` in `Lᵖ(T)`, in the sense of `TauCeti.WeakDerivChainLe`, then
@@ -330,5 +373,24 @@ theorem WeakDerivChainLe.eLpNormWkp_le {S T : Set ℂ} {C : ℝ≥0∞} (hC : C 
         rw [zero_add, mul_add]
         exact (eLpNormWkp_succ_le hDf).trans
           (add_le_add h.eLpNorm_le (ih (h.weakFDeriv hDf hDg) hDfm))
+
+/-- **The `W^{k+1,p}` norm through partial derivatives.** If `D` is a weak derivative of `f` on the
+interior of `U`, the `W^{k+1,p}(U)` norm of `f` is at most its `Lᵖ(U)` norm plus the
+`W^{k,p}(U)` norms of the partial derivatives `z ↦ D z 1` and `z ↦ D z I`, weighted by the norms
+of the maps `L₁`, `L₂` that reassemble `D` from them
+(`ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`). This is the norm form of
+`TauCeti.memWkpLoc_succ_iff_apply_one_apply_I`. -/
+theorem eLpNormWkp_succ_le_eLpNorm_add_apply_one_add_apply_I [CompleteSpace F] (hp : 1 ≤ p)
+    {D : ℂ → ℂ →L[ℝ] F} (hD : HasWeakFDerivOn volume (Opens.interior U) f D) :
+    eLpNormWkp p U (k + 1) f ≤ eLpNorm f p (volume.restrict U) +
+      (‖ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F Complex.reCLM‖ₑ *
+          eLpNormWkp p U k (fun z => D z 1) +
+        ‖ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F Complex.imCLM‖ₑ *
+          eLpNormWkp p U k (fun z => D z Complex.I)) := by
+  refine (eLpNormWkp_succ_le hD).trans ?_
+  gcongr
+  conv_lhs => rw [ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D]
+  exact (eLpNormWkp_add_le hp).trans (add_le_add (eLpNormWkp_clm_comp_le _)
+    (eLpNormWkp_clm_comp_le _))
 
 end TauCeti
