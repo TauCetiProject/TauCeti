@@ -148,7 +148,8 @@ private theorem fst_symm_apply_lt (hℓ : ℓ ≠ 0) (x : ℝ) {y₀ y : Icc a b
       linarith
   by_contra hle
   rw [not_lt] at hle
-  obtain ⟨k, hk⟩ := exists_int_mul_gt hℓ ((F.symm (x, y)).1 - u)
+  obtain ⟨k, hk⟩ := exists_lt_zsmul hℓ ((F.symm (x, y)).1 - u)
+  rw [zsmul_eq_mul] at hk
   have hshift :=
     apply_add_int_mul_of_apply_add (symm_apply_add_of_apply_add hF.apply_add_period) (-k) x y
   push_cast at hshift

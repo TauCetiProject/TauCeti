@@ -34,8 +34,8 @@ a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with 
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
 * `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
   `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
-* `TauCeti.exists_int_mul_gt`: in an Archimedean ordered field, the integer multiples of a nonzero
-  element are unbounded above.
+* `TauCeti.exists_lt_zsmul`: in an Archimedean linearly ordered additive group, the integer
+  multiples of a nonzero element are unbounded above.
 -/
 
 public section
@@ -93,14 +93,14 @@ theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : L} (hρ : 0 < ρ) (hn : 0
 
 end Field
 
-/-- In an Archimedean ordered field, some integer multiple of a nonzero element `ℓ` exceeds any
-given `r`, whatever the sign of `ℓ`. -/
-theorem exists_int_mul_gt {F : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
-    [Archimedean F] {ℓ : F} (hℓ : ℓ ≠ 0) (r : F) : ∃ k : ℤ, r < k * ℓ := by
+/-- In an Archimedean linearly ordered additive group, some integer multiple of a nonzero element
+`ℓ` exceeds any given `r`, whatever the sign of `ℓ`. -/
+theorem exists_lt_zsmul {M : Type*} [AddCommGroup M] [LinearOrder M] [IsOrderedAddMonoid M]
+    [Archimedean M] {ℓ : M} (hℓ : ℓ ≠ 0) (r : M) : ∃ k : ℤ, r < k • ℓ := by
   rcases hℓ.lt_or_gt with h | h
-  · obtain ⟨k, hk⟩ := exists_int_lt (r / ℓ)
-    exact ⟨k, (lt_div_iff_of_neg h).1 hk⟩
-  · obtain ⟨k, hk⟩ := exists_int_gt (r / ℓ)
-    exact ⟨k, (div_lt_iff₀ h).1 hk⟩
+  · obtain ⟨n, hn⟩ := exists_lt_nsmul (neg_pos.2 h) r
+    exact ⟨-n, by rwa [neg_zsmul, natCast_zsmul, ← neg_nsmul]⟩
+  · obtain ⟨n, hn⟩ := exists_lt_nsmul h r
+    exact ⟨n, by rwa [natCast_zsmul]⟩
 
 end TauCeti

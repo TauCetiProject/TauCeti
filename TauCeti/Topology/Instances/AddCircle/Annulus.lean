@@ -37,8 +37,8 @@ a homeomorphism mapping a horizontal line into itself maps it onto itself, incre
 * `TauCeti.trans_apply_add_of_apply_add`, `Homeomorph.annulusHomeomorphOfLift_trans`,
   `Homeomorph.annulusHomeomorphOfLift_symm`, `Homeomorph.annulusHomeomorphOfLift_refl`: the
   induced homeomorphism respects composition, inverses and the identity.
-* `Homeomorph.eq_annulusHomeomorphOfLift`: the induced homeomorphism is the only map of the strip
-  quotient sending the class of `(x, y)` to the class of `F (x, y)`.
+* `Homeomorph.eq_annulusHomeomorphOfLift`: the induced homeomorphism is the only homeomorphism of
+  the strip quotient sending the class of `(x, y)` to the class of `F (x, y)`.
 * `TauCeti.trans_stripDeck_apply_add_of_apply_add`,
   `Homeomorph.annulusHomeomorphOfLift_trans_stripDeck`: composing with a deck translation preserves
   commuting with the deck translation and does not change the induced homeomorphism.
@@ -78,7 +78,8 @@ theorem surjective_fst_apply_of_apply_add {F : ℝ × Y → ℝ × Y} (hℓ : �
   intro z
   have hg (n : ℤ) : (F (n * ℓ, y)).1 = (F (0, y)).1 + n * ℓ := by
     simpa using congrArg Prod.fst (apply_add_int_mul_of_apply_add hF n 0 y)
-  obtain ⟨k, hk⟩ := exists_int_mul_gt hℓ |z - (F (0, y)).1|
+  obtain ⟨k, hk⟩ := exists_lt_zsmul hℓ |z - (F (0, y)).1|
+  rw [zsmul_eq_mul] at hk
   have hk' := hg (-k)
   have hkk := hg k
   push_cast at hk'
@@ -245,8 +246,8 @@ theorem annulusHomeomorphOfLift_symm_coe
       (((F.symm (x, y)).1 : AddCircle ℓ), (F.symm (x, y)).2) :=
   (rfl)
 
-/-- The induced homeomorphism of the strip quotient is the unique map `H` sending the class of
-`(x, y)` to the class of `F (x, y)`. -/
+/-- The induced homeomorphism of the strip quotient is the only homeomorphism `H` of the strip
+quotient sending the class of `(x, y)` to the class of `F (x, y)`. -/
 theorem eq_annulusHomeomorphOfLift
     (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2))
     {H : AddCircle ℓ × Y ≃ₜ AddCircle ℓ × Y}
