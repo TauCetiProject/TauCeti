@@ -126,6 +126,16 @@ theorem trace_diagGL (t : ι → kˣ) :
     (diagGL t : Matrix ι ι k).trace = ∑ i, (t i : k) := by
   rw [diagGL_coe, Matrix.trace_diagonal]
 
+/-- Applying a ring homomorphism entrywise to `diagGL t` gives the diagonal matrix of the mapped
+units. Unlike `TauCeti.map_diagGL`, this assumes no commutativity. -/
+@[simp]
+theorem _root_.RingHom.unitsMap_mapMatrix_diagGL {S : Type*} [Semiring S] (f : k →+* S)
+    (t : ι → kˣ) :
+    Units.map (f.mapMatrix (m := ι) : Matrix ι ι k →* Matrix ι ι S) (diagGL t) =
+      diagGL fun i ↦ Units.map (f : k →* S) (t i) := by
+  ext i j
+  simp [Matrix.diagonal_apply, apply_ite f]
+
 /-- The diagonal embedding is injective. -/
 theorem diagGL_injective : Function.Injective (diagGL (k := k) (ι := ι)) := fun t s h =>
   funext fun i => Units.ext <| by
@@ -377,11 +387,8 @@ theorem det_diagGL (t : ι → kˣ) :
 mapped units. -/
 @[simp]
 theorem map_diagGL {S : Type*} [CommRing S] (f : k →+* S) (t : ι → kˣ) :
-    Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) := by
-  ext i j
-  simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, Units.coe_map,
-    MonoidHom.coe_ofClass]
-  split_ifs <;> simp
+    Matrix.GeneralLinearGroup.map f (diagGL t) = diagGL fun i ↦ Units.map (f : k →* S) (t i) :=
+  f.unitsMap_mapMatrix_diagGL t
 
 /-- Rescaling one column makes an invertible matrix have determinant one. For an empty index
 type, every invertible matrix already has determinant one. -/
