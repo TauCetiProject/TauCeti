@@ -50,8 +50,6 @@ stage `j`, where `b` is nonzero, so `a = c * b` already in `G j`. These two step
 
 public section
 
-open Polynomial
-
 namespace TauCeti
 
 variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] {G : ι → Type*} [∀ i, CommRing (G i)]
