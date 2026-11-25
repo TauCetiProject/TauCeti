@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Basic lemmas on iterated derivatives
@@ -17,6 +18,8 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 This file collects general results about `iteratedDeriv`:
 
 * `TauCeti.iteratedDeriv_iteratedDeriv`: iterated derivatives compose additively.
+* `TauCeti.iteratedDeriv_sum_smul`: the iterated derivative of a finite linear combination of
+  functions that are `Cⁿ` at a point is the same combination of their iterated derivatives.
 * `TauCeti.iteratedDeriv_eq_of_derivative_tower`, `TauCeti.contDiff_of_derivative_tower`: in a
   sequence of functions linked by ordinary derivatives, the iterated derivatives of the initial
   function are the later functions, and the initial function is smooth.
@@ -42,6 +45,15 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
 theorem iteratedDeriv_iteratedDeriv (n k : ℕ) (f : 𝕜 → E) :
     iteratedDeriv n (iteratedDeriv k f) = iteratedDeriv (n + k) f := by
   simp only [iteratedDeriv_eq_iterate, Function.iterate_add_apply]
+
+/-- The `n`-th derivative at `x` of a finite linear combination `∑ i ∈ s, c i • u i` of
+functions that are `Cⁿ` at `x` is the same combination of their `n`-th derivatives. -/
+theorem iteratedDeriv_sum_smul {ι : Type*} {s : Finset ι} {u : ι → 𝕜 → E} {n : ℕ} {x : 𝕜}
+    (hu : ∀ i ∈ s, ContDiffAt 𝕜 n (u i) x) (c : ι → 𝕜) :
+    iteratedDeriv n (∑ i ∈ s, c i • u i) x = ∑ i ∈ s, c i • iteratedDeriv n (u i) x := by
+  rw [iteratedDeriv_sum fun i hi => ?_]
+  · simp_rw [iteratedDeriv_const_smul_field]
+  · exact (hu i hi).const_smul (c i)
 
 /-- In a tower of functions with the stated successive ordinary derivatives, the `k`-th iterated
 derivative of the zeroth function is the `k`-th function. -/
