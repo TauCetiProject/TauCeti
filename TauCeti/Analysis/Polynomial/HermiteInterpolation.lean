@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Field.Basic
 public import TauCeti.Analysis.Polynomial.Ultra
 public import TauCeti.LinearAlgebra.HermiteInterpolation
-import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Ultrametric coefficient bounds for Hermite interpolation
@@ -28,14 +28,14 @@ truncation `PowerSeries.trunc (m r - s)` of
 `∏ i ≠ r, (C (v i) * ∑ k, (-v i) ^ k * X ^ k) ^ m i` with `(a r - a i) * v i = 1`. Bounding each
 truncated geometric series naively at radius `1` would give a bound of `ϱ ^ (-(m r - s))` per
 linear factor and lose a quadratic exponent `ϱ ^ (-(m r - s) * ∑ i ≠ r, m i)`. At the Gauss radius
-`ϱ`, however, `‖v i‖ * ϱ ≤ 1` makes `‖v i * (-v i) ^ k‖ * ϱ ^ k ≤ ‖v i‖` uniformly in `k`.
-Ultrametric submultiplicativity of `ϱ`-weighted coefficient bounds
-(`Polynomial.norm_coeff_prod_mul_pow_le`) then bounds the `d`-th coefficient of the truncated
-product by `(∏ i ≠ r, ‖v i‖ ^ m i) * ϱ ^ (-d)` for every `d`. Rescaling from `ϱ` to the node radius
-`B ≥ ϱ` across natural degree at most `m r - 1 - s`
-(`Polynomial.norm_coeff_mul_pow_le_of_natDegree_le`), shifting back by `-a r` via Taylor invariance
-(`Polynomial.norm_coeff_taylor_mul_pow_le`), and multiplying by the global linear factors gives the
-sharp exponent `M - 1 - s ≤ M`.
+`ϱ`, however, `‖v i‖ * ϱ ≤ 1` bounds the `ϱ`-weighted coefficients of each truncated geometric
+factor by `‖v i‖` (`PowerSeries.norm_coeff_trunc_C_mul_mk_pow_mul_pow_le`). Ultrametric
+submultiplicativity of `ϱ`-weighted coefficient bounds (`Polynomial.norm_coeff_prod_mul_pow_le`)
+then bounds the `d`-th coefficient of the truncated product by `(∏ i ≠ r, ‖v i‖ ^ m i) * ϱ ^ (-d)`
+for every `d`. Rescaling from `ϱ` to the node radius `B ≥ ϱ` across natural degree at most
+`m r - 1 - s` (`Polynomial.norm_coeff_mul_pow_le_of_natDegree_le`), shifting back by `-a r` via
+Taylor invariance (`Polynomial.norm_coeff_taylor_mul_pow_le`), and multiplying by the global linear
+factors gives the sharp exponent `M - 1 - s ≤ M`.
 
 In characteristic zero, passing from Hasse derivatives `hasseDeriv j` to ordinary derivatives
 `derivative^[j] = j ! • hasseDeriv j` divides the `(r, s)` basis polynomial by `s!`, multiplying the
@@ -99,69 +99,43 @@ theorem norm_coeff_hermiteBasis_mul_pow_le [DecidableEq ι] {a : ι → R}
   have hN : m x.1 - x.2 = d + 1 := by have := x.2.isLt; omega
   let g : ι → PowerSeries R := fun i ↦ PowerSeries.C (v i) * PowerSeries.mk fun k ↦ (-v i) ^ k
   let G : PowerSeries R := ∏ i ∈ univ.erase x.1, g i ^ m i
-  let q : ι → R[X] := fun i ↦ PowerSeries.trunc (d + 1) (g i)
-  let P : R[X] := ∏ i ∈ univ.erase x.1, q i ^ m i
-  have hq (i : ι) (hi : i ∈ univ.erase x.1) (k : ℕ) : ‖(q i).coeff k‖ * ϱ ^ k ≤ ‖v i‖ := by
-    rw [PowerSeries.coeff_trunc]
-    split_ifs
-    · rw [PowerSeries.coeff_C_mul, PowerSeries.coeff_mk]
-      have hvϱ' : ‖v i‖ * ϱ ≤ 1 :=
-        (mul_le_mul_of_nonneg_right (hvϱ i (mem_erase.1 hi).1) hϱ0.le).trans_eq
-          (inv_mul_cancel₀ hϱ0.ne')
-      calc ‖v i * (-v i) ^ k‖ * ϱ ^ k
-          ≤ ‖v i‖ * ‖-v i‖ ^ k * ϱ ^ k :=
-            mul_le_mul_of_nonneg_right (TauCeti.norm_mul_pow_le _ _ _) (by positivity)
-        _ = ‖v i‖ * (‖v i‖ * ϱ) ^ k := by rw [norm_neg, mul_assoc, ← mul_pow]
-        _ ≤ ‖v i‖ * 1 :=
-            mul_le_mul_of_nonneg_left (pow_le_one₀ (by positivity) hvϱ') (norm_nonneg _)
-        _ = ‖v i‖ := mul_one _
-    · simp [norm_nonneg (v i)]
+  let P : R[X] := ∏ i ∈ univ.erase x.1, PowerSeries.trunc (d + 1) (g i) ^ m i
+  -- Bound each truncated geometric factor at radius `ϱ`, then multiply across `i ≠ x.1`.
+  have hq (i : ι) (hi : i ∈ univ.erase x.1) (k : ℕ) :
+      ‖(PowerSeries.trunc (d + 1) (g i)).coeff k‖ * ϱ ^ k ≤ ‖v i‖ := by
+    have hvϱ' : ‖-v i‖ * ϱ ≤ 1 := by
+      rw [norm_neg]
+      exact (mul_le_mul_of_nonneg_right (hvϱ i (mem_erase.1 hi).1) hϱ0.le).trans_eq
+        (inv_mul_cancel₀ hϱ0.ne')
+    exact PowerSeries.norm_coeff_trunc_C_mul_mk_pow_mul_pow_le (v i) hϱ0.le hvϱ' (d + 1) k
   have hP (k : ℕ) : ‖P.coeff k‖ * ϱ ^ k ≤ ∏ i ∈ univ.erase x.1, ‖v i‖ ^ m i :=
     norm_coeff_prod_mul_pow_le _ _ hϱ0.le
       (fun i hi l ↦ norm_coeff_pow_mul_pow_le hϱ0.le (hq i hi) (m i) l) k
+  -- Replace `trunc (d + 1) G` by `trunc (d + 1) P` and rescale from radius `ϱ` to `B`.
   have htrunc : PowerSeries.trunc (d + 1) G = PowerSeries.trunc (d + 1) (P : PowerSeries R) := by
-    dsimp only [G, P, q]
-    induction univ.erase x.1 using Finset.induction_on with
-    | empty => simp
-    | insert i s hi ih =>
-      have h1 := PowerSeries.trunc_trunc_pow (g i) (d + 1) (m i)
-      rw [prod_insert hi, prod_insert hi, Polynomial.coe_mul, Polynomial.coe_pow,
-        ← PowerSeries.trunc_trunc_mul_trunc, ← h1, ih, PowerSeries.trunc_trunc_mul_trunc]
-  -- Bound the truncated product at radius `ϱ`, then rescale to `B` across degree at most `d`.
-  have hGϱ (k : ℕ) :
-      ‖(PowerSeries.trunc (d + 1) G).coeff k‖ * ϱ ^ k ≤ ∏ i ∈ univ.erase x.1, ‖v i‖ ^ m i := by
-    rw [htrunc, PowerSeries.coeff_trunc]
-    split_ifs
-    · simpa [Polynomial.coeff_coe] using hP k
-    · simp only [norm_zero, zero_mul]
-      positivity
+    simp only [G, P, ← coeToPowerSeries.ringHom_apply, map_prod, map_pow]
+    exact PowerSeries.trunc_prod_eq_of_trunc_eq _ fun i _ ↦
+      (PowerSeries.trunc_trunc_pow (g i) (d + 1) (m i)).symm
   have hh (k : ℕ) :
       ‖(PowerSeries.trunc (m x.1 - x.2) G).coeff k‖ * B ^ k ≤
         (∏ i ∈ univ.erase x.1, ‖v i‖ ^ m i) * (B / ϱ) ^ d := by
     rw [hN]
-    exact norm_coeff_mul_pow_le_of_natDegree_le hϱ0 hϱB
-      (Nat.lt_succ_iff.1 (PowerSeries.natDegree_trunc_lt G d)) (hGϱ k)
+    refine norm_coeff_mul_pow_le_of_natDegree_le hϱ0 hϱB
+      (Nat.lt_succ_iff.1 (PowerSeries.natDegree_trunc_lt G d)) ?_
+    rw [htrunc]
+    exact PowerSeries.norm_coeff_trunc_mul_pow_le (by positivity) fun _ ↦ by simpa using hP k
+  -- Shift by `-a x.1` and multiply by the global linear factors at radius `B`.
   rw [hermiteBasis_eq_prod_mul_pow_mul_taylor ha m x hv]
   have hQ (k : ℕ) :
       ‖(∏ i ∈ univ.erase x.1, (X - C (a i)) ^ m i).coeff k‖ * B ^ k ≤
         ∏ i ∈ univ.erase x.1, B ^ m i :=
     norm_coeff_prod_mul_pow_le _ _ hB0
       (fun i _ l ↦ norm_coeff_X_sub_C_pow_mul_pow_le (haB i) (m i) l) k
-  have hmain := norm_coeff_mul_mul_pow_le hB0
+  refine (norm_coeff_mul_mul_pow_le hB0
     (norm_coeff_mul_mul_pow_le hB0 hQ (norm_coeff_X_sub_C_pow_mul_pow_le (haB x.1) x.2))
-    (norm_coeff_taylor_mul_pow_le (r := -a x.1) (by simpa using haB x.1) hh) n
-  refine hmain.trans_eq ?_
-  have hcombine :
-      (∏ i ∈ univ.erase x.1, B ^ m i) * (∏ i ∈ univ.erase x.1, ‖v i‖ ^ m i) =
-        ∏ i ∈ univ.erase x.1, (B * ‖v i‖) ^ m i := by
-    rw [← prod_mul_distrib]
-    exact prod_congr rfl fun i _ ↦ (mul_pow B ‖v i‖ (m i)).symm
-  calc (∏ i ∈ univ.erase x.1, B ^ m i) * B ^ (x.2 : ℕ) *
-        ((∏ i ∈ univ.erase x.1, ‖v i‖ ^ m i) * (B / ϱ) ^ d)
-      = ((∏ i ∈ univ.erase x.1, B ^ m i) * (∏ i ∈ univ.erase x.1, ‖v i‖ ^ m i)) *
-          B ^ (x.2 : ℕ) * (B / ϱ) ^ d := by ring
-    _ = (∏ i ∈ univ.erase x.1, (B * ‖v i‖) ^ m i) * B ^ (x.2 : ℕ) *
-          (B / ϱ) ^ d := by rw [hcombine]
+    (norm_coeff_taylor_mul_pow_le (r := -a x.1) (by simpa using haB x.1) hh) n).trans_eq ?_
+  simp_rw [mul_pow, prod_mul_distrib]
+  ring
 
 variable [NormMulClass R]
 

@@ -70,7 +70,7 @@ example :
   intro ha W
   have h2 : ‖(2 : ℚ_[3])‖ = 1 := mod_cast Padic.norm_natCast_p_sub_one (p := 3)
   have hW : W = C (2 : ℚ_[3])⁻¹ * X ^ 2 := by
-    simp [W, hermiteBasis_of_subsingleton, Algebra.smul_def]
+    simp [W, Algebra.smul_def]
   refine ⟨hW, ?_⟩
   simp [hW, h2]
 
@@ -234,7 +234,6 @@ example :
       ‖(hermiteBasis ha ![3] ⟨0, ⟨2, by decide⟩⟩ : ℝ[X]).coeff 1‖ = 2 := by
   intro ha
   refine ⟨by simp, ?_⟩
-  rw [hermiteBasis_of_subsingleton]
   simp [sq, sub_mul, mul_sub, coeff_X, coeff_one]
   norm_num
 

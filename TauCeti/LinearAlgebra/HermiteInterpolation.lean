@@ -561,9 +561,8 @@ theorem hermiteBasis_eq_of_dvd_taylor_mul_sub_one [DecidableEq ι] (x : Σ i, Fi
       _ = ↑(∑ i, m i) := by rw [← Nat.cast_add, hsum]
   · by_cases hi : i = x.1
     · subst hi
-      have hX : taylor (a x.1) (X - C (a x.1)) = X := by simp [taylor_apply]
       have htf : taylor (a x.1) f = X ^ (x.2 : ℕ) * (taylor (a x.1) Q * h) := by
-        simp [f, hX, taylor_taylor]
+        rw [taylor_mul, taylor_mul_X_sub_C_pow, taylor_taylor, add_neg_cancel, taylor_zero]
         ring
       have hdvd' : X ^ m x.1 ∣ taylor (a x.1) f - X ^ (x.2 : ℕ) := by
         conv_lhs => rw [← Nat.add_sub_of_le x.2.isLt.le, pow_add]
@@ -581,6 +580,7 @@ theorem hermiteBasis_eq_of_dvd_taylor_mul_sub_one [DecidableEq ι] (x : Σ i, Fi
 
 /-- When there is only one node, the Hermite basis polynomials are the Taylor monomials
 `(X - C (a x.1)) ^ x.2`. -/
+@[simp]
 theorem hermiteBasis_of_subsingleton [Subsingleton ι] (x : Σ i, Fin (m i)) :
     (hermiteBasis ha m x : R[X]) = (X - C (a x.1)) ^ (x.2 : ℕ) := by
   let : DecidableEq ι := fun _ _ ↦ isTrue (Subsingleton.elim _ _)
