@@ -35,7 +35,7 @@ example (n : ℕ) :
 
 /-- A function that scales exactly by `2` along doubling is its own Tate limit. -/
 example : tateLimit (fun x : ℝ ↦ 2 * x) 2 id = id :=
-  tateLimit_eq_self (by norm_num) fun _ ↦ rfl
+  tateLimit_eq_self fun _ ↦ rfl
 
 /-- With `d = 1` the normalized iterates of `n ↦ n` along the successor map at `0` are
 `0, 1, 2, …`, which diverge: Tate's construction needs `1 < d`. -/
