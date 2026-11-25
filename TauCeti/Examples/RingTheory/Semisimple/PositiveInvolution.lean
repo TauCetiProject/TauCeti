@@ -37,8 +37,8 @@ def rat : PositiveInvolution ℚ :=
   PositiveInvolution.ofStarRing fun x hx ↦ by
     simpa [Algebra.trace_self_apply] using mul_self_pos.2 hx
 
-example (x : ℚ) : rat.star x = x := by
-  simp [rat]
+example (x : ℚ) : rat.toStarRing.star x = x :=
+  star_trivial x
 
 /-! ### The transpose on `M_n(ℚ)` -/
 
@@ -52,8 +52,8 @@ def transpose (n : Type*) [Fintype n] [DecidableEq n] :
       (trace_mul_conjTranspose_self_eq_zero_iff.not.2 hx)
 
 example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n ℚ) :
-    (transpose n).star x = xᵀ := by
-  simp [transpose, star_eq_conjTranspose]
+    (transpose n).toStarRing.star x = xᵀ :=
+  conjTranspose_eq_transpose_of_trivial x
 
 /-! ### The canonical involution of `M_2(ℚ)` is not positive -/
 
@@ -66,7 +66,8 @@ theorem semisimpleReducedTrace_diag_one_neg_one_mul_adjugate :
 
 /-- The canonical involution `x ↦ adj x` of `M_2(ℚ)` is not positive. -/
 theorem not_positiveInvolution_adjugate :
-    ¬ ∃ P : PositiveInvolution (Matrix (Fin 2) (Fin 2) ℚ), ∀ x, P.star x = adjugate x := by
+    ¬ ∃ P : PositiveInvolution (Matrix (Fin 2) (Fin 2) ℚ),
+      ∀ x, P.toStarRing.star x = adjugate x := by
   rintro ⟨P, hP⟩
   have h := P.trd_mul_star_pos !![1, 0; 0, -1] fun h ↦ by
     simpa using congrFun (congrFun h 0) 0
@@ -90,7 +91,7 @@ theorem semisimpleReducedTrace_algebraMap (q : ℚ) :
 
 /-- The identity of `ℚ(i)` is not positive: `Trd(i · i) = -2`. -/
 theorem not_positiveInvolution_id :
-    ¬ ∃ P : PositiveInvolution GaussianRat, ∀ x, P.star x = x := by
+    ¬ ∃ P : PositiveInvolution GaussianRat, ∀ x, P.toStarRing.star x = x := by
   rintro ⟨P, hP⟩
   have h := P.trd_mul_star_pos (QuadraticAlgebra.omega : GaussianRat) fun h ↦ by
     simpa using congrArg QuadraticAlgebra.im h
