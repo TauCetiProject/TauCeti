@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Convex.SecantEstimate
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Fatness
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 
 /-!
 # First-order secant approximation on edgewise subdivisions

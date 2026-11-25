@@ -746,8 +746,8 @@ private theorem iterate_coordinate_smul (k : ℕ)
   apply TestFunction.toSchwartzMapCLM_injective (𝕜 := ℂ)
   rw [hT, he]
   have h := SchwartzMap.iterate_lineDerivOp_smulLeftCLM_clm
-    (innerSL ℝ (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)))
     (TestFunction.toSchwartzMapCLM ℂ v)
+    (innerSL ℝ (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)))
     (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) k
   have hs (r : ℝ) (u : 𝓓((⊤ : Opens (CoordinateSpace 1)), ℂ)) :
       TestFunction.toSchwartzMapCLM ℂ (r • u) = r • TestFunction.toSchwartzMapCLM ℂ u :=

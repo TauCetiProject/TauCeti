@@ -53,6 +53,8 @@ Except for the `IsPrimitiveRoot` lemmas, all results are in the namespace
   `algebraMap_norm_maximalRealSubfield_of_le_two`: the relative norm from `K` to `K⁺`.
 * `toSubfield_intermediateFieldEquivSubgroupChar_symm_evenSubgroup`: the even characters cut out
   the maximal real subfield.
+* `finrank_rat_maximalRealSubfield`: for `n > 2` the maximal real subfield has degree `φ(n) / 2`
+  over `ℚ`.
 
 ## References
 
@@ -185,6 +187,17 @@ theorem algebraMap_norm_maximalRealSubfield_of_le_two (hn : n ≤ 2) (x : K) :
       x := by
     simp [Subfield.algebraMap_ofSubfield]
   rw [← hx', Algebra.norm_algebraMap, finrank_maximalRealSubfield_of_le_two n K hn, pow_one]
+
+/-- **The degree of the maximal real subfield.** For `n > 2`, the maximal real subfield of the
+`n`-th cyclotomic field has degree `φ(n) / 2` over `ℚ`, since the cyclotomic field is quadratic
+over it. -/
+theorem finrank_rat_maximalRealSubfield (hn : 2 < n) :
+    Module.finrank ℚ (maximalRealSubfield K) = n.totient / 2 := by
+  have h := Module.finrank_mul_finrank ℚ (maximalRealSubfield K) K
+  rw [finrank_maximalRealSubfield n K, ite_eq_left hn,
+    _root_.IsCyclotomicExtension.finrank K (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))]
+    at h
+  omega
 
 variable (R : Type*) [CommRing R] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)]
   [IsAbelianGalois ℚ K]
