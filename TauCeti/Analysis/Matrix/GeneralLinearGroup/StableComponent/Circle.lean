@@ -123,10 +123,16 @@ theorem toStableComponentGroup_ofUnits_eq_one_iff (u : C(AddCircle T, ℂ)ˣ) :
   rw [← ContinuousMap.windingNumberHom_eq_one_iff_exists_exp]
   refine ⟨fun h ↦ by simpa using congrArg (StableComponentGroup.windingNumber T) h, fun h ↦ ?_⟩
   rw [← MonoidHom.mem_ker, ContinuousMap.ker_windingNumberHom] at h
+  -- The `1 × 1` scalar matrix `(u)` depends continuously on `u`.
+  have hc : Continuous (GeneralLinearGroup.scalar (Fin 1) : C(AddCircle T, ℂ)ˣ → _) := by
+    refine Units.continuous_iff.2 ⟨?_, ?_⟩
+    · simp only [Function.comp_def, GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
+      fun_prop
+    · simp only [← map_inv, GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
+      fun_prop
   rw [ofUnits_apply, toStableComponentGroup_mk]
-  refine StableComponentGroup.mk_eq_one_of_mem_connectedComponentOfOne
-    (Subgroup.map_connectedComponentOfOne_le (Units.continuous_map ?_) ⟨u, h, rfl⟩)
-  exact (continuous_pi fun _ ↦ continuous_id).matrix_diagonal
+  exact StableComponentGroup.mk_eq_one_of_mem_connectedComponentOfOne
+    (Subgroup.map_connectedComponentOfOne_le hc (Subgroup.mem_map_of_mem _ h))
 
 /-- The class in the stable component group of `C(AddCircle T, ℂ)` of the Fourier monomial
 `fourier k`, `k ≠ 0`, is nontrivial: its winding number is `k`. For `k = 1` this is the unitary

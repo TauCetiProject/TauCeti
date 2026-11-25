@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.ContinuousMap.Units
 public import TauCeti.Analysis.Fourier.Winding
 import TauCeti.Topology.Algebra.Group.Connected
+import TauCeti.Topology.ContinuousMap.Units
 
 /-!
 # The winding number on the units of `C(AddCircle T, ℂ)`
@@ -16,17 +17,17 @@ import TauCeti.Topology.Algebra.Group.Connected
 A unit of the ring `C(AddCircle T, ℂ)` of continuous complex functions on the circle is a
 nowhere-zero function, so it has a winding number about the origin. The winding number of a
 product is the sum of the winding numbers, so this is a group homomorphism
-`ContinuousMap.windingNumberHom T : C(AddCircle T, ℂ)ˣ →* Multiplicative ℤ`. It is onto, since the
-Fourier monomial `fourier k` winds `k` times around the origin.
+`ContinuousMap.windingNumberHom T : C(AddCircle T, ℂ)ˣ →* Multiplicative ℤ`. For `0 < T` it is
+onto, since the Fourier monomial `fourier k` winds `k` times around the origin.
 
-For `0 < T` the winding number classifies the connected components of the unit group, whose
+For `0 < T` the winding number also classifies the connected components of the unit group, whose
 topology is that of uniform convergence: the identity component is exactly the kernel of
 `windingNumberHom T`. A unit uniformly close to `1` keeps the winding number `0` of `1`, by the
 dog-on-a-leash principle `ContinuousMap.windingNumber_eq_of_norm_sub_lt`, so the kernel is a
 subgroup that is a neighbourhood of `1` and hence contains the identity component. Conversely a
 unit of winding number zero has a continuous logarithm `g`
 (`ContinuousMap.windingNumber_eq_zero_iff_exists_exp`), and `s ↦ exp (s g)` joins it to `1`
-through units.
+through units (`ContinuousMap.mem_connectedComponentOfOne_of_exp`).
 
 Composed with the determinant, this invariant detects nontrivial components of the stable general
 linear group over `C(AddCircle T, ℂ)`.
@@ -94,27 +95,6 @@ theorem windingNumberHom_surjective [Fact (0 < T)] :
   have hk : IsUnit (fourier (T := T) k.toAdd) :=
     (isUnit_iff_forall_ne_zero _).2 (TauCeti.fourier_apply_ne_zero _)
   ⟨hk.unit, windingNumberHom_of_coe_eq_fourier hk.unit_spec⟩
-
-/-- A unit of `C(AddCircle T, ℂ)` that is the exponential of a continuous function lies in the
-identity component of the unit group: `s ↦ exp (s g)` joins it to `1`. -/
-private theorem mem_connectedComponentOfOne_of_exp {u : C(AddCircle T, ℂ)ˣ}
-    {g : C(AddCircle T, ℂ)} (hg : ∀ x, (u : C(AddCircle T, ℂ)) x = Complex.exp (g x)) :
-    u ∈ Subgroup.connectedComponentOfOne C(AddCircle T, ℂ)ˣ := by
-  let E : C(ℝ, C(AddCircle T, ℂ)) :=
-    curry ⟨fun p : ℝ × AddCircle T ↦ Complex.exp (p.1 * g p.2), by fun_prop⟩
-  have hE (s t : ℝ) : E s * E t = E (s + t) := by
-    ext x
-    simp [E, ← Complex.exp_add, add_mul]
-  have hE₀ : E 0 = 1 := by
-    ext x
-    simp [E]
-  let v : ℝ → C(AddCircle T, ℂ)ˣ := fun s ↦
-    ⟨E s, E (-s), by simp [hE, hE₀], by simp [hE, hE₀]⟩
-  have hv : Continuous v :=
-    Units.continuous_iff.2 ⟨E.continuous, E.continuous.comp continuous_neg⟩
-  have hv₀ : v 0 = 1 := Units.ext (by simpa [v] using hE₀)
-  have hv₁ : v 1 = u := Units.ext (by ext x; simp [v, E, hg])
-  exact (isPreconnected_range hv).subset_connectedComponent ⟨0, hv₀⟩ ⟨1, hv₁⟩
 
 variable [Fact (0 < T)]
 
