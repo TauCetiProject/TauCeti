@@ -30,15 +30,17 @@ many elements at a time pass to direct limits.
 
 ## Main declarations
 
+* `TauCeti.DirectLimit.exists_eq_of_mk_eq`: two elements of a stage with the same image in the
+  direct limit of any directed system agree at a later stage.
 * `TauCeti.DirectLimit.Monoid.of`: the canonical map from a component, as a monoid homomorphism.
 * `TauCeti.DirectLimit.Monoid.lift`: the universal property of the direct limit of monoids.
 * `TauCeti.DirectLimit.Monoid.hom_ext`: monoid homomorphisms out of the direct limit agree when
   they agree on every component.
 * `TauCeti.DirectLimit.Monoid.exists_subset_range_of`: every finite subset of the direct limit lies
   in the image of a single component.
-* `DirectLimit.Ring.of_comp_f`: the canonical ring homomorphisms into a direct limit of rings are
-  compatible with the transition maps.
-* `DirectLimit.Ring.exists_of`, `DirectLimit.Ring.exists_eq_of_of_eq`: every
+* `TauCeti.DirectLimit.Ring.of_comp_f`: the canonical ring homomorphisms into a direct limit of
+  rings are compatible with the transition maps.
+* `TauCeti.DirectLimit.Ring.exists_of`, `TauCeti.DirectLimit.Ring.exists_eq_of_of_eq`: every
   element of a direct limit of rings comes from some stage, and two elements of a stage with the
   same image agree at a later stage. These are the forms of Mathlib's `Module.DirectLimit.exists_of`
   and `Module.DirectLimit.exists_eq_of_of_eq` for the generic `DirectLimit`.
@@ -50,6 +52,22 @@ many elements at a time pass to direct limits.
 public section
 
 namespace TauCeti
+
+namespace DirectLimit
+
+variable {ι : Type*} [Preorder ι] {F : ι → Type*} {T : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
+  {f : ∀ _ _ h, T h} [∀ i j (h : i ≤ j), FunLike (T h) (F i) (F j)] [DirectedSystem F (f · · ·)]
+  [IsDirectedOrder ι]
+
+/-- Two elements of a stage with the same image in the direct limit of a directed system agree at
+a later stage. -/
+theorem exists_eq_of_mk_eq {i : ι} {x y : F i}
+    (h : (⟦⟨i, x⟩⟧ : _root_.DirectLimit F f) = ⟦⟨i, y⟩⟧) :
+    ∃ j, ∃ hij : i ≤ j, f i j hij x = f i j hij y := by
+  obtain ⟨j, hij, _, hj⟩ := Quotient.eq.mp h
+  exact ⟨j, hij, hj⟩
+
+end DirectLimit
 
 namespace DirectLimit.Monoid
 
@@ -135,9 +153,9 @@ theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of B f j).comp (f i j hij) = of 
 
 end DirectLimit.Algebra
 
-end TauCeti
-
 namespace DirectLimit.Ring
+
+open _root_.DirectLimit _root_.DirectLimit.Ring
 
 variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, NonAssocSemiring (G i)]
   {f : ∀ i j, i ≤ j → G i →+* G j} [DirectedSystem G (f · · ·)] [IsDirectedOrder ι] [Nonempty ι]
@@ -151,13 +169,15 @@ theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of G f j).comp (f i j hij) = of 
 /-- Every element of a direct limit of rings is the image of an element of some stage. -/
 theorem exists_of (z : DirectLimit G f) : ∃ i x, of G f i x = z := by
   obtain ⟨i, x, rfl⟩ := exists_eq_mk _ z
-  exact ⟨i, x, (rfl)⟩
+  exact ⟨i, x, of_apply ..⟩
 
 /-- Two elements of a stage with the same image in a direct limit of rings agree at a later
 stage. -/
 theorem exists_eq_of_of_eq {i : ι} {x y : G i} (h : of G f i x = of G f i y) :
     ∃ j, ∃ hij : i ≤ j, f i j hij x = f i j hij y := by
-  obtain ⟨j, hij, _, hj⟩ := Quotient.eq.mp h
-  exact ⟨j, hij, hj⟩
+  rw [of_apply, of_apply] at h
+  exact exists_eq_of_mk_eq h
 
 end DirectLimit.Ring
+
+end TauCeti
