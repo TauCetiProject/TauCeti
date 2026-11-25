@@ -150,7 +150,7 @@ private theorem exists_basis_dual_of_isIdempotentElem [IsDomain R] [IsPrincipalI
   by_cases htt : t = t'
   · subst htt
     have : (shiftMask s t * P).mulVecLin.rangeRestrict ((hb t).some l) = (hb t).some l :=
-      Subtype.ext ((isIdempotentElem_shiftMask_mul hblock hP t).mem_range_mulVecLin_iff.mp
+      Subtype.ext (((isIdempotentElem_shiftMask_mul hblock hP t).mulVecBilin R R).mem_range_iff.mp
         ((hb t).some l).property)
     simp only [LinearMap.comp_apply, this, Module.Basis.coord_apply, Module.Basis.repr_self,
       Finsupp.single_apply, Sigma.mk.inj_iff, heq_eq_eq, true_and, eq_comm]

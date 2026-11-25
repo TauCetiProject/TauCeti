@@ -56,8 +56,6 @@ modules exactly when the matrices are equivalent.
 * `Matrix.idempotentEquivalent_fromBlocks_one_sub`: `f ⊕ (1 - f)` is equivalent to `1`.
 * `IsIdempotentElem.mem_range_vecMulLinear_iff`: the range of an idempotent matrix consists of its
   fixed row vectors.
-* `IsIdempotentElem.mem_range_mulVecLin_iff`: over a commutative semiring, likewise for column
-  vectors.
 * `Matrix.BlockTriangular.bijOn_range_blockDiagonalPart`: a block triangular idempotent matrix
   maps the range of its block-diagonal part bijectively onto its own range.
 * `IsIdempotentElem.projective_range_vecMulLinear`: this range is a projective module.
@@ -468,24 +466,6 @@ theorem nonempty_linearEquiv_range_mulVecBilin_iff {e : Matrix ι ι A} {f : Mat
 end Matrix
 
 end Idempotent
-
-section CommIdempotent
-
-variable {A : Type*} [CommSemiring A] {ι : Type*} [Fintype ι]
-
-/-- Over a commutative semiring, multiplication of column vectors by an idempotent matrix is an
-idempotent endomorphism. -/
-theorem IsIdempotentElem.mulVecLin {e : Matrix ι ι A} (he : IsIdempotentElem e) :
-    IsIdempotentElem e.mulVecLin := by
-  rw [IsIdempotentElem, Module.End.mul_eq_comp, ← mulVecLin_mul, he.eq]
-
-/-- The range of multiplication of column vectors by an idempotent matrix `e` consists of the
-column vectors fixed by `e`. -/
-theorem IsIdempotentElem.mem_range_mulVecLin_iff {e : Matrix ι ι A} (he : IsIdempotentElem e)
-    {v : ι → A} : v ∈ range e.mulVecLin ↔ e *ᵥ v = v :=
-  he.mulVecLin.mem_range_iff
-
-end CommIdempotent
 
 namespace Matrix
 
