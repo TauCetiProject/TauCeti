@@ -41,6 +41,13 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   function `LFunctionTrivChar₁ N`, which is `(s - 1) L(s)` away from `s = 1` and, for `N = 1`,
   `(s - 1) ζ(s)` away from `1` and `1` at `1`; it is nonzero wherever `ζ` is, and away from `1`
   its analytic orders agree with `ζ`.
+* `DirichletCharacter.meromorphicOrderAt_LFunction_ne_top`,
+  `DirichletCharacter.analyticOrderAt_LFunction_ne_top`,
+  `DirichletCharacter.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt`,
+  `DirichletCharacter.one_le_analyticOrderNatAt_LFunction_iff`, and
+  `DirichletCharacter.meromorphicOrderAt_LFunction_eq_one_iff`: the orders of `χ.LFunction` are
+  finite everywhere, and away from the pole `(s = 1, χ = 1)` its meromorphic order is the cast of
+  `analyticOrderNatAt`, the multiplicity in which zero sums over `χ.LFunction` are stated.
 * `DirichletCharacter.re_lt_one_of_LFunction_eq_zero`: every zero of `χ.LFunction` away from the
   simple pole `(s = 1, χ = 1)` satisfies `s.re < 1`.
 
@@ -49,6 +56,11 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
 * D. Loeffler, M. Stoll, `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
 * M. Stoll, D. Loeffler, T. Tao, `Mathlib.NumberTheory.LSeries.Nonvanishing`.
 * H. Davenport, *Multiplicative Number Theory*, Ch. 4.
+
+The order lemmas are adapted, with the hypothesis `χ ≠ 1` weakened, from chrisflav's
+file `LFunction/Order.lean` in
+https://github.com/TauCetiProject/TauCeti/pull/45143
+(feat: prove Layer 6 zero-free regions over Q).
 -/
 
 public section
@@ -180,6 +192,56 @@ theorem meromorphicOrderAt_LFunction_pos_iff {s : ℂ} :
     simp
   · have hs' := not_and_or.mp hs
     simp [(χ.analyticAt_LFunction hs').meromorphicOrderAt_pos_iff_eq_zero, hs']
+
+/-- The continued Dirichlet `L`-function `χ.LFunction` has finite meromorphic order at every
+point: it is meromorphic on the connected set `ℂ` and nonzero at `s = 2`. -/
+theorem meromorphicOrderAt_LFunction_ne_top (s : ℂ) : meromorphicOrderAt χ.LFunction s ≠ ⊤ := by
+  have h2 : χ.LFunction 2 ≠ 0 := χ.LFunction_ne_zero_of_one_le_re (.inr (by norm_num)) (by norm_num)
+  have ha2 : AnalyticAt ℂ χ.LFunction 2 := χ.analyticAt_LFunction (.inl (by norm_num))
+  refine (meromorphicOn_univ.mpr χ.meromorphic_LFunction)
+    |>.meromorphicOrderAt_ne_top_of_isPreconnected isPreconnected_univ (Set.mem_univ 2)
+      (Set.mem_univ s) ?_
+  rw [ha2.meromorphicOrderAt_eq, ha2.analyticOrderAt_eq_zero.mpr h2]
+  simp
+
+/-- The continued Dirichlet `L`-function `χ.LFunction` has finite analytic order at every point. At
+the pole `(s = 1, χ = 1)` the analytic order is the junk value `0`. -/
+theorem analyticOrderAt_LFunction_ne_top (s : ℂ) : analyticOrderAt χ.LFunction s ≠ ⊤ := by
+  by_cases ha : AnalyticAt ℂ χ.LFunction s
+  · simpa [ha.meromorphicOrderAt_eq] using χ.meromorphicOrderAt_LFunction_ne_top s
+  · simp [ha]
+
+/-- Away from the pole `(s = 1, χ = 1)`, the meromorphic order of `χ.LFunction` is the cast of its
+natural analytic order. -/
+theorem meromorphicOrderAt_LFunction_eq_analyticOrderNatAt {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) :
+    meromorphicOrderAt χ.LFunction s = (analyticOrderNatAt χ.LFunction s : ℤ) := by
+  rw [(χ.analyticAt_LFunction h1).meromorphicOrderAt_eq,
+    ← Nat.cast_analyticOrderNatAt (χ.analyticOrderAt_LFunction_ne_top s), ENat.map_natCast]
+
+/-- The natural analytic order of `χ.LFunction` at `s` is at least `1` if and only if
+`χ.LFunction s = 0` and `(s ≠ 1 ∨ χ ≠ 1)`. -/
+theorem one_le_analyticOrderNatAt_LFunction_iff {s : ℂ} :
+    1 ≤ analyticOrderNatAt χ.LFunction s ↔ χ.LFunction s = 0 ∧ (s ≠ 1 ∨ χ ≠ 1) := by
+  rw [← meromorphicOrderAt_LFunction_pos_iff]
+  by_cases h1 : s ≠ 1 ∨ χ ≠ 1
+  · rw [χ.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt h1]
+    norm_cast
+  · obtain ⟨rfl, rfl⟩ := not_or.mp h1 |>.imp not_ne_iff.mp not_ne_iff.mp
+    rw [analyticOrderNatAt_of_not_analyticAt (by simp), ← LFunctionTrivChar,
+      TauCeti.meromorphicOrderAt_LFunctionTrivChar_one]
+    decide
+
+/-- The meromorphic order of `χ.LFunction` at `s` is `1` if and only if its natural analytic order
+at `s` is `1`. -/
+theorem meromorphicOrderAt_LFunction_eq_one_iff (s : ℂ) :
+    meromorphicOrderAt χ.LFunction s = 1 ↔ analyticOrderNatAt χ.LFunction s = 1 := by
+  by_cases h1 : s ≠ 1 ∨ χ ≠ 1
+  · rw [χ.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt h1]
+    norm_cast
+  · obtain ⟨rfl, rfl⟩ := not_or.mp h1 |>.imp not_ne_iff.mp not_ne_iff.mp
+    rw [analyticOrderNatAt_of_not_analyticAt (by simp), ← LFunctionTrivChar,
+      TauCeti.meromorphicOrderAt_LFunctionTrivChar_one]
+    decide
 
 /-- Every zero of `χ.LFunction` away from the simple pole `(s = 1, χ = 1)` lies in `s.re < 1`. -/
 theorem re_lt_one_of_LFunction_eq_zero {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) (h : χ.LFunction s = 0) :
