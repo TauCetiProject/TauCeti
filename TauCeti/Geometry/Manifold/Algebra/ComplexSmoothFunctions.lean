@@ -249,7 +249,6 @@ def conj : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ ≃ₐ[ℝ] C^n⟮I, M; 𝓘(ℝ, 
     dsimp [compLeftRingHom, algebraMap, C]
     exact Complex.conj_ofReal r
 
-@[simp]
 theorem conj_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) : conj f x = star (f x) := by
   rfl
 
@@ -258,10 +257,9 @@ theorem conj_symm : (conj (I := I) (M := M) (n := n)).symm = conj := by
   ext f x
   rfl
 
-@[simp]
 theorem conj_ofReal (f : C^n⟮I, M; ℝ⟯) : conj (ofReal f) = ofReal f := by
   ext x
-  simp
+  simp [conj_apply]
 
 @[simp]
 theorem complexSmoothConstants_re (z : ℂ) :
@@ -275,33 +273,28 @@ theorem complexSmoothConstants_im (z : ℂ) :
   ext x
   rfl
 
-@[simp]
 theorem conj_complexSmoothConstants (z : ℂ) :
     conj (TauCeti.complexSmoothConstants (I := I) (M := M) (n := n) z) =
       TauCeti.complexSmoothConstants (star z) := by
   ext x
   rfl
 
-@[simp]
 theorem conj_complex_smul (z : ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     conj (z • f) = star z • conj f := by
   ext x
-  simp
+  simp [conj_apply]
 
-@[simp]
 theorem conj_conj (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : conj (conj f) = f := by
   ext x
-  simp
+  simp [conj_apply]
 
-@[simp]
 theorem conj_re (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (conj f).re = f.re := by
   ext x
-  simp
+  simp [conj_apply]
 
-@[simp]
 theorem conj_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (conj f).im = -f.im := by
   ext x
-  simp
+  simp [conj_apply]
 
 /-- Pointwise complex conjugation is the star operation of the complex smooth functions, making them
 a star ring and a star module over `ℂ`. -/
@@ -310,10 +303,10 @@ instance complexSmoothFunctionsStarRing : StarRing C^n⟮I, M; 𝓘(ℝ, ℂ), �
   star_involutive := conj_conj
   star_mul f g := by
     ext x
-    simp [mul_comm]
+    simp [conj_apply, mul_comm]
   star_add f g := by
     ext x
-    simp
+    simp [conj_apply]
 
 /-- The star of a complex smooth function is its pointwise complex conjugate. -/
 @[simp]
@@ -323,6 +316,8 @@ theorem coe_star (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : ⇑(star f) = star �
 theorem star_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) : (star f) x = star (f x) := by
   rfl
 
+/-- `star` is the simp-normal form of conjugation of complex smooth functions. -/
+@[simp]
 theorem conj_eq_star (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : conj f = star f := by
   rfl
 
@@ -340,6 +335,12 @@ theorem star_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : (star f).im = -f.im :
 @[simp]
 theorem star_ofReal (f : C^n⟮I, M; ℝ⟯) : star (ofReal f) = ofReal f :=
   conj_ofReal f
+
+@[simp]
+theorem star_complexSmoothConstants (z : ℂ) :
+    star (TauCeti.complexSmoothConstants (I := I) (M := M) (n := n) z) =
+      TauCeti.complexSmoothConstants (star z) :=
+  conj_complexSmoothConstants z
 
 /-- Real part of a product of complex-valued smooth functions. -/
 theorem mul_re (f g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
@@ -383,11 +384,15 @@ theorem comp_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (g : C^n⟮J, N; I, M�
   ext x
   rfl
 
-@[simp]
 theorem conj_comp (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (g : C^n⟮J, N; I, M⟯) :
     conj (f.comp g) = (conj f).comp g := by
   ext x
   rfl
+
+@[simp]
+theorem star_comp (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (g : C^n⟮J, N; I, M⟯) :
+    star (f.comp g) = (star f).comp g :=
+  conj_comp f g
 
 @[simp]
 theorem ofReal_comp (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮J, N; I, M⟯) :
@@ -480,11 +485,16 @@ theorem restrictRingHom_im (h : U ≤ V) (f : C^n⟮I, V; 𝓘(ℝ, ℂ), ℂ⟯
   rfl
 
 /-- Conjugation commutes with restriction to an open subset. -/
-@[simp]
 theorem conj_restrictRingHom (h : U ≤ V) (f : C^n⟮I, V; 𝓘(ℝ, ℂ), ℂ⟯) :
     conj (restrictRingHom I 𝓘(ℝ, ℂ) ℂ h f) = restrictRingHom I 𝓘(ℝ, ℂ) ℂ h (conj f) := by
   ext x
   rfl
+
+/-- Star commutes with restriction to an open subset. -/
+@[simp]
+theorem star_restrictRingHom (h : U ≤ V) (f : C^n⟮I, V; 𝓘(ℝ, ℂ), ℂ⟯) :
+    star (restrictRingHom I 𝓘(ℝ, ℂ) ℂ h f) = restrictRingHom I 𝓘(ℝ, ℂ) ℂ h (star f) :=
+  conj_restrictRingHom h f
 
 /-- Inclusion of real functions commutes with restriction to an open subset. -/
 @[simp]
