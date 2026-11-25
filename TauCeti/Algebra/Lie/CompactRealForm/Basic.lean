@@ -15,6 +15,7 @@ public import TauCeti.Algebra.Lie.BaseChange.Hom
 public import TauCeti.LinearAlgebra.Basis.Semilinear
 public import TauCeti.LinearAlgebra.Complex.RealForm
 import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.LinearAlgebra.Trace.Semilinear
 
@@ -125,7 +126,7 @@ theorem apply_apply (hτ : IsLieConjugation τ) (x : L) : τ (τ x) = x :=
   hτ.involutive x
 
 /-- `ad (τ x) = τ ∘ ad x ∘ τ`. -/
-theorem ad_apply_eq (hτ : IsLieConjugation τ) (x : L) :
+theorem ad_map (hτ : IsLieConjugation τ) (x : L) :
     LieAlgebra.ad ℂ L (τ x) = (τ.comp (LieAlgebra.ad ℂ L x)).comp τ := by
   ext y
   simp [hτ.map_lie, hτ.apply_apply]
@@ -133,7 +134,7 @@ theorem ad_apply_eq (hτ : IsLieConjugation τ) (x : L) :
 /-- **A conjugation conjugates the Killing form**: `B(τ x, τ y) = conj B(x, y)`. -/
 theorem killingForm_map (hτ : IsLieConjugation τ) (x y : L) :
     killingForm ℂ L (τ x) (τ y) = star (killingForm ℂ L x y) := by
-  rw [killingForm_apply_apply, killingForm_apply_apply, hτ.ad_apply_eq, hτ.ad_apply_eq,
+  rw [killingForm_apply_apply, killingForm_apply_apply, hτ.ad_map, hτ.ad_map,
     ← starRingEnd_apply, ← LinearMap.trace_comp_comp_of_involutive hτ.involutive]
   congr 1
   ext z
@@ -293,27 +294,14 @@ variable (hτ : IsCompactConjugation τ)
 include hτ
 
 /-- The Hermitian Killing form of a compact conjugation is nonnegative on the diagonal. -/
-theorem nonneg (x : L) : 0 ≤ τ.killingHermitianForm x x := by
+theorem killingHermitianForm_self_nonneg (x : L) : 0 ≤ τ.killingHermitianForm x x := by
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   · exact (hτ.pos x hx).le
 
 /-- The Hermitian Killing form of a compact conjugation vanishes at `(x, x)` only for `x = 0`. -/
-theorem eq_zero_iff {x : L} : τ.killingHermitianForm x x = 0 ↔ x = 0 :=
+theorem killingHermitianForm_self_eq_zero {x : L} : τ.killingHermitianForm x x = 0 ↔ x = 0 :=
   ⟨fun h ↦ by_contra fun hx ↦ (hτ.pos x hx).ne' h, fun h ↦ by simp [h]⟩
-
-/-- **A complex Lie algebra with a compact conjugation is finite-dimensional**: in infinite
-dimension the Killing form vanishes, so `H_τ` cannot be positive definite on a nonzero vector. -/
-theorem finiteDimensional : FiniteDimensional ℂ L := by
-  by_contra hfin
-  have : Nontrivial L := by
-    by_contra h
-    rw [not_nontrivial_iff_subsingleton] at h
-    exact hfin inferInstance
-  obtain ⟨x, hx⟩ := exists_ne (0 : L)
-  refine (hτ.pos x hx).ne' ?_
-  rw [LinearMap.killingHermitianForm_def, killingForm_apply_apply,
-    TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin, LinearMap.zero_apply, neg_zero]
 
 /-- **The Killing form of a complex Lie algebra with a compact conjugation is nondegenerate**: if
 `B(y, x) = 0` for all `y`, then `H_τ(x, x) = -B(τ x, x) = 0`, so `x = 0`. -/
@@ -321,8 +309,16 @@ theorem isKilling : LieAlgebra.IsKilling ℂ L where
   killingCompl_top_eq_bot := by
     refine eq_bot_iff.mpr fun x hx ↦ ?_
     rw [LieIdeal.mem_killingCompl] at hx
-    rw [LieSubmodule.mem_bot, ← hτ.eq_zero_iff, LinearMap.killingHermitianForm_def,
-      LieModule.traceForm_comm, hx (τ x) (LieSubmodule.mem_top _), neg_zero]
+    rw [LieSubmodule.mem_bot, ← hτ.killingHermitianForm_self_eq_zero,
+      LinearMap.killingHermitianForm_def, LieModule.traceForm_comm,
+      hx (τ x) (LieSubmodule.mem_top _), neg_zero]
+
+/-- **A complex Lie algebra with a compact conjugation is finite-dimensional**, since its Killing
+form is nondegenerate (`isKilling`) and a Lie algebra with nondegenerate Killing form is finite
+(`TauCeti.finite_of_isKilling`). -/
+theorem finiteDimensional : FiniteDimensional ℂ L :=
+  have := hτ.isKilling
+  finite_of_isKilling (R := ℂ) (L := L)
 
 end Complex
 
