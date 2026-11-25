@@ -22,7 +22,8 @@ positive real axis and the unit-period circle through this explicit equivalence.
 The fixed-period circles embed smoothly with their existing smooth structures, and each has a
 smooth retraction from the total family. These maps identify each original circle with the
 subspace fiber of the period projection. The real representative map sends `(p, t)` to
-`(p, [t]_p)`; in normalized coordinates its angle is `[t/p]_1`.
+`(p, [t]_p)`; in normalized coordinates its angle is `[t/p]_1`. Two real representatives have the
+same image exactly when they differ by a deck translation `(p, t) ↦ (p, t + k p)`.
 
 The representative map is a covering and a local diffeomorphism, jointly in period and time.
 The total space is Hausdorff and second countable. No behavior at period zero is asserted.
@@ -216,6 +217,25 @@ theorem representative_surjective : Function.Surjective representative := by
 theorem representative_add_intCast_mul (p : PositivePeriod) (t : ℝ) (k : ℤ) :
     representative (p, t + k * (p : ℝ)) = representative (p, t) := by
   simp [representative, ← zsmul_eq_mul]
+
+/-- Two real representatives have the same image in the circle family exactly when they differ
+by a deck translation `(p, t) ↦ (p, t + k p)`. -/
+theorem representative_eq_representative_iff {z w : PositivePeriod × ℝ} :
+    representative z = representative w ↔ ∃ k : ℤ, w = (z.1, z.2 + k * (z.1 : ℝ)) := by
+  constructor
+  · intro h
+    have hn := congrArg (normalization 0) h
+    simp only [normalization_representative, Prod.mk.injEq] at hn
+    obtain ⟨hp, ht⟩ := hn
+    rw [← hp, QuotientAddGroup.eq, AddSubgroup.mem_zmultiples_iff] at ht
+    obtain ⟨k, hk⟩ := ht
+    refine ⟨k, Prod.ext hp.symm ?_⟩
+    have hz : (z.1 : ℝ) ≠ 0 := z.1.property.ne'
+    field_simp at hk
+    simp only [zsmul_eq_mul, mul_one] at hk
+    linear_combination -hk
+  · rintro ⟨k, rfl⟩
+    exact (representative_add_intCast_mul z.1 z.2 k).symm
 
 /-- Normalize real representatives by dividing their time coordinate by their positive period. -/
 def realNormalization (n : ℕ∞ω) :
