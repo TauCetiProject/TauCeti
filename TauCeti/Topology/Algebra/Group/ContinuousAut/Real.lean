@@ -35,16 +35,16 @@ def realScale (φ : ContinuousAut (Multiplicative ℝ)) : ℝ :=
 
 /-- A continuous automorphism of `Multiplicative ℝ` is multiplication by its scaling factor. -/
 @[simp]
-theorem apply_eq_realScale_mul (φ : ContinuousAut (Multiplicative ℝ)) (x : ℝ) :
-    (φ (Multiplicative.ofAdd x)).toAdd = realScale φ * x := by
+theorem apply_eq_realScale_mul (φ : ContinuousAut (Multiplicative ℝ)) (x : Multiplicative ℝ) :
+    (φ x).toAdd = realScale φ * x.toAdd := by
   let f : ℝ →+ ℝ := (φ.toMulEquiv.toMonoidHom).toAdditive
   -- `f` is `φ` read in the additive presentation.
   have hf_apply : ∀ y, f y = (φ (Multiplicative.ofAdd y)).toAdd := fun _ => rfl
   have hf : Continuous f := by
     rw [show (f : ℝ → ℝ) = fun y => (φ (Multiplicative.ofAdd y)).toAdd from funext hf_apply]
     exact continuous_toAdd.comp (φ.continuous.comp continuous_ofAdd)
-  have := map_real_smul f hf x 1
-  rw [hf_apply, hf_apply, smul_eq_mul, smul_eq_mul, mul_one] at this
+  have := map_real_smul f hf x.toAdd 1
+  rw [hf_apply, hf_apply, smul_eq_mul, smul_eq_mul, mul_one, ofAdd_toAdd] at this
   rw [this, realScale, mul_comm]
 
 /-- The scaling factor of a continuous automorphism is nonzero. -/
@@ -57,8 +57,8 @@ theorem realScale_ne_zero (φ : ContinuousAut (Multiplicative ℝ)) : realScale 
 @[simp]
 theorem realScale_mul (φ ψ : ContinuousAut (Multiplicative ℝ)) :
     realScale (φ * ψ) = realScale φ * realScale ψ := by
-  conv_lhs => rw [realScale, mul_apply, ← ofAdd_toAdd (ψ (Multiplicative.ofAdd 1))]
-  rw [apply_eq_realScale_mul, apply_eq_realScale_mul, mul_one]
+  conv_lhs => rw [realScale, mul_apply]
+  rw [apply_eq_realScale_mul, apply_eq_realScale_mul, toAdd_ofAdd, mul_one]
 
 /-- The scaling factor of the identity is `1`. -/
 @[simp]
@@ -111,8 +111,7 @@ def continuousAutEquivUnits : ContinuousAut (Multiplicative ℝ) ≃* ℝˣ wher
   invFun := continuousAutOfUnit
   left_inv φ := by
     ext x
-    rw [continuousAutOfUnit_apply, Units.val_mk0, ← apply_eq_realScale_mul, ofAdd_toAdd,
-      ofAdd_toAdd]
+    rw [continuousAutOfUnit_apply, Units.val_mk0, ← apply_eq_realScale_mul, ofAdd_toAdd]
   right_inv c := Units.ext (by rw [Units.val_mk0, realScale_continuousAutOfUnit])
   map_mul' φ ψ := Units.ext (by rw [Units.val_mk0, Units.val_mul, Units.val_mk0,
     Units.val_mk0, realScale_mul])
