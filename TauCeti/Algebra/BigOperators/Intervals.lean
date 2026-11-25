@@ -31,7 +31,8 @@ and the nonpositive part `∑ j ∈ range (a + 1), F (-(j : ℤ))`. In a ring, t
 The sum of squares `∑_{r < n} r ^ 2 = n (n - 1) (2 n - 1) / 6` holds in `ℕ`, and with the
 denominator cleared it holds in any ring, as does Gauss's sum `2 ∑_{r < n} r = n (n - 1)`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
-form of Gauss's sum.
+form of Gauss's sum. Grouping `i < n` into blocks of length `H`, the quotients `i / H` sum to
+`H (q choose 2) + ρ q` for `n = H q + ρ` with `ρ < H`.
 A sum over `Icc 0 N` of a sequence vanishing at `0` is its sum over `Icc 1 N`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
@@ -50,6 +51,7 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   `F (-(k : ℤ))` over `k < a`.
 * `Finset.sum_range_natCast_mul_two`, `Finset.sum_range_id_sq_mul_six`, `Finset.sum_range_id_sq`,
   `Finset.sum_range_natCast_sq_mul_six`: Gauss's sum in a ring and the sum of squares below `n`.
+* `Finset.sum_range_div`: `∑ i < n, i / H = H (q choose 2) + ρ q` with `q = n / H`, `ρ = n % H`.
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
 * `Finset.sum_Icc_neg_one_pow_add_one`: `∑ k ∈ Icc 1 n, (-1) ^ (k + 1)` is `0` for even `n` and
   `1` for odd `n`.
@@ -196,6 +198,37 @@ theorem sum_range_id_sq_mul_six (n : ℕ) :
 /-- The sum of the squares of the natural numbers below `n` is `n (n - 1) (2 n - 1) / 6`. -/
 theorem sum_range_id_sq (n : ℕ) : ∑ i ∈ range n, i ^ 2 = n * (n - 1) * (2 * n - 1) / 6 := by
   rw [← sum_range_id_sq_mul_six, Nat.mul_div_cancel _ (by decide)]
+
+/-- The quotients `i / H` for `i < H q + ρ` with `ρ ≤ H` sum to `H (q choose 2) + ρ q`. -/
+private theorem sum_range_mul_add_div {H ρ : ℕ} (hρ : ρ ≤ H) (q : ℕ) :
+    ∑ i ∈ range (H * q + ρ), i / H = H * q.choose 2 + ρ * q := by
+  rcases H.eq_zero_or_pos with rfl | hH
+  · simp [Nat.le_zero.mp hρ]
+  -- A block `H q ≤ i < H q + ρ'` with `ρ' ≤ H` has constant quotient `q`.
+  have hblock {ρ' : ℕ} (hρ' : ρ' ≤ H) (q : ℕ) : ∑ i ∈ range ρ', (H * q + i) / H = ρ' * q := by
+    rw [sum_congr rfl fun i hi ↦ by
+      rw [Nat.mul_add_div hH, Nat.div_eq_of_lt ((mem_range.mp hi).trans_le hρ'), add_zero],
+      sum_const, card_range, smul_eq_mul]
+  -- The complete blocks below `H q` contribute `H (q choose 2)`.
+  have hfull (q : ℕ) : ∑ i ∈ range (H * q), i / H = H * q.choose 2 := by
+    induction q with
+    | zero => simp
+    | succ q ih =>
+      rw [Nat.mul_succ, sum_range_add, ih, hblock le_rfl, Nat.choose_succ_succ,
+        Nat.choose_one_right]
+      ring
+  rw [sum_range_add, hfull, hblock hρ]
+
+/-- **Block sums of quotients.** Write `n = H q + ρ` with `q = n / H` and `ρ = n % H`. The
+quotients `i / H` for `i < n` sum to `H (q choose 2) + ρ q`: the complete block
+`H k ≤ i < H (k + 1)` contributes `H k` for each `k < q`, and the last block `H q ≤ i < n`
+contributes `ρ q`. -/
+theorem sum_range_div (n H : ℕ) :
+    ∑ i ∈ range n, i / H = H * (n / H).choose 2 + n % H * (n / H) := by
+  rcases H.eq_zero_or_pos with rfl | hH
+  · simp
+  conv_lhs => rw [← Nat.div_add_mod n H]
+  exact sum_range_mul_add_div (Nat.mod_lt n hH).le _
 
 /-- The sum of the squares of the natural numbers below `n`, cast into a ring, is
 `n (n - 1) (2 n - 1)` after multiplying by `6`. -/
