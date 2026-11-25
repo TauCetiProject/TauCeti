@@ -13,23 +13,24 @@ public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Basic
 # Locally free quotients of the differentials of an affine scheme
 
 Let `A` be an algebra over a commutative ring `R`. Under `Ω_{Spec A/R} ≅ Ω[A⁄R]~`, an `A`-linear
-map `g : Ω[A⁄R] → A^d` induces a morphism of sheaves `Ω_{Spec A/R} ⟶ (A^d)~`. If `g` is
-surjective this morphism is an epimorphism onto a finite locally free sheaf of constant rank `d`,
-so `Ω_{Spec A/R}` admits a locally free quotient of rank `d`. This is the affine global case of
+map `g : Ω[A⁄R] → M` to an `A`-module `M` induces a morphism of sheaves `Ω_{Spec A/R} ⟶ M~`,
+which is an epimorphism if `g` is surjective. For `M = A^d` this is an epimorphism onto a finite
+locally free sheaf of constant rank `d`, so `Ω_{Spec A/R}` admits a locally free quotient of rank
+`d`. This is the affine global case of
 the stalk criterion for `HasLocallyFreeQuotientOfDifferentials`.
 
-Since `M ↦ M~` is fully faithful, a morphism `(A^d)~ ⟶ (A^e)~` carrying the quotient induced by
-`g` to the one induced by `h` comes from an `A`-linear map, so the kernel of `g` lies in the
-kernel of `h`.
+Since `M ↦ M~` is fully faithful, a morphism `M~ ⟶ N~` carrying the morphism induced by `g` to
+the one induced by `h` comes from an `A`-linear map, so the kernel of `g` lies in the kernel of
+`h`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.differentialsSpecToTilde`: the morphism `Ω_{Spec A/R} ⟶ (A^d)~`
-  induced by an `A`-linear map `Ω[A⁄R] → A^d`;
+* `TauCeti.AlgebraicGeometry.differentialsSpecToTilde`: the morphism `Ω_{Spec A/R} ⟶ M~`
+  induced by an `A`-linear map `Ω[A⁄R] → M`;
 * `TauCeti.AlgebraicGeometry.hasLocallyFreeQuotientOfDifferentials_Spec_of_surjective`: a
   surjective `A`-linear map `Ω[A⁄R] → A^d` gives a locally free quotient of rank `d` of
   `Ω_{Spec A/R}`;
-* `TauCeti.AlgebraicGeometry.ker_le_ker_of_differentialsSpecToTilde_comp_eq`: if the quotient
+* `TauCeti.AlgebraicGeometry.ker_le_ker_of_differentialsSpecToTilde_comp_eq`: if the morphism
   induced by `g` factors the one induced by `h`, then `ker g ≤ ker h`.
 -/
 
@@ -44,27 +45,28 @@ universe u
 noncomputable section
 
 variable (R : Type u) [CommRing R] (A : CommRingCat.{u}) [Algebra R A]
+  {M N : Type u} [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
 
-/-- The morphism `Ω_{Spec A/R} ⟶ (A^d)~` induced by an `A`-linear map `g : Ω[A⁄R] → A^d`
-through `Ω_{Spec A/R} ≅ Ω[A⁄R]~`. -/
-def differentialsSpecToTilde {d : ℕ} (g : Ω[A⁄R] →ₗ[A] (Fin d → A)) :
-    (Spec A).relativeDifferentials R ⟶ tilde (.of A (Fin d → A)) :=
+/-- The morphism `Ω_{Spec A/R} ⟶ M~` induced by an `A`-linear map `g : Ω[A⁄R] → M` through
+`Ω_{Spec A/R} ≅ Ω[A⁄R]~`. -/
+def differentialsSpecToTilde (g : Ω[A⁄R] →ₗ[A] M) :
+    (Spec A).relativeDifferentials R ⟶ tilde (.of A M) :=
   (relativeDifferentialsSpecIso R A).hom ≫ (tilde.functor A).map (ModuleCat.ofHom g)
 
 /-- `differentialsSpecToTilde R A g` is `Ω_{Spec A/R} ≅ Ω[A⁄R]~` followed by `g~`. -/
-lemma differentialsSpecToTilde_def {d : ℕ} (g : Ω[A⁄R] →ₗ[A] (Fin d → A)) :
+lemma differentialsSpecToTilde_def (g : Ω[A⁄R] →ₗ[A] M) :
     differentialsSpecToTilde R A g =
       (relativeDifferentialsSpecIso R A).hom ≫ (tilde.functor A).map (ModuleCat.ofHom g) :=
   (rfl)
 
 /-- The morphism induced by `g` sends the differential `d a` of `a ∈ A` to the section `g (D a)`
-of `(A^d)~`. -/
-lemma differentialsSpecToTilde_app_d {d : ℕ} (g : Ω[A⁄R] →ₗ[A] (Fin d → A))
+of `M~`. -/
+lemma differentialsSpecToTilde_app_d (g : Ω[A⁄R] →ₗ[A] M)
     (U : (Spec A).Opens) (a : A) :
     (differentialsSpecToTilde R A g).val.app (.op U)
         (((Spec A).universalDerivation R).d
           (((Spec A).presheaf.map (homOfLE le_top).op).hom ((Scheme.ΓSpecIso A).inv.hom a))) =
-      tilde.toOpen (ModuleCat.of A (Fin d → A)) U (g (KaehlerDifferential.D R A a)) := by
+      tilde.toOpen (ModuleCat.of A M) U (g (KaehlerDifferential.D R A a)) := by
   rw [differentialsSpecToTilde_def]
   -- `(Spec A).Modules` is a type synonym for sheaves of modules on `Spec A`, so `rw` cannot use
   -- `SheafOfModules.comp_val`; the sections of a composite are the composite by definition.
@@ -74,16 +76,15 @@ lemma differentialsSpecToTilde_app_d {d : ℕ} (g : Ω[A⁄R] →ₗ[A] (Fin d �
 
 /-- The morphism induced by `ψ ∘ g` is the morphism induced by `g` followed by `ψ~`. -/
 @[reassoc]
-lemma differentialsSpecToTilde_comp {d e : ℕ} (g : Ω[A⁄R] →ₗ[A] (Fin d → A))
-    (ψ : (Fin d → A) →ₗ[A] (Fin e → A)) :
+lemma differentialsSpecToTilde_comp (g : Ω[A⁄R] →ₗ[A] M) (ψ : M →ₗ[A] N) :
     differentialsSpecToTilde R A (ψ ∘ₗ g) =
       differentialsSpecToTilde R A g ≫ (tilde.functor A).map (ModuleCat.ofHom ψ) := by
   rw [differentialsSpecToTilde_def, ModuleCat.ofHom_comp, Functor.map_comp]
   exact (Category.assoc _ _ _).symm
 
-/-- If `g` is surjective, the morphism `Ω_{Spec A/R} ⟶ (A^d)~` it induces is an epimorphism, since
+/-- If `g` is surjective, the morphism `Ω_{Spec A/R} ⟶ M~` it induces is an epimorphism, since
 `M ↦ M~` is a left adjoint. -/
-theorem epi_differentialsSpecToTilde {d : ℕ} {g : Ω[A⁄R] →ₗ[A] (Fin d → A)}
+theorem epi_differentialsSpecToTilde {g : Ω[A⁄R] →ₗ[A] M}
     (hg : Function.Surjective g) : Epi (differentialsSpecToTilde R A g) :=
   have : Epi (ModuleCat.ofHom g) := (ModuleCat.epi_iff_surjective _).mpr hg
   epi_comp' inferInstance (Functor.map_epi _ _)
@@ -100,12 +101,11 @@ theorem hasLocallyFreeQuotientOfDifferentials_Spec_of_surjective {d : ℕ}
   exact ⟨differentialsSpecToTilde R A g ≫ (FiniteLocallyFreeSheaf.tildePiIsoFree A d).hom,
     epi_comp' (epi_differentialsSpecToTilde R A hg) inferInstance⟩
 
-/-- If the morphism induced by `g` followed by a morphism `φ : (A^d)~ ⟶ (A^e)~` is the morphism
-induced by `h`, then the kernel of `g` lies in the kernel of `h`: as `M ↦ M~` is fully faithful,
-`φ` comes from an `A`-linear map `ψ` with `ψ ∘ g = h`. -/
-theorem ker_le_ker_of_differentialsSpecToTilde_comp_eq {d e : ℕ}
-    (g : Ω[A⁄R] →ₗ[A] (Fin d → A)) (h : Ω[A⁄R] →ₗ[A] (Fin e → A))
-    (φ : tilde (.of A (Fin d → A)) ⟶ tilde (.of A (Fin e → A)))
+/-- If the morphism induced by `g` followed by a morphism `φ : M~ ⟶ N~` is the morphism induced
+by `h`, then the kernel of `g` lies in the kernel of `h`: as `M ↦ M~` is fully faithful, `φ` comes
+from an `A`-linear map `ψ` with `ψ ∘ g = h`. -/
+theorem ker_le_ker_of_differentialsSpecToTilde_comp_eq
+    (g : Ω[A⁄R] →ₗ[A] M) (h : Ω[A⁄R] →ₗ[A] N) (φ : tilde (.of A M) ⟶ tilde (.of A N))
     (hφ : differentialsSpecToTilde R A g ≫ φ = differentialsSpecToTilde R A h) :
     LinearMap.ker g ≤ LinearMap.ker h := by
   obtain ⟨ψ, rfl⟩ := (tilde.functor A).map_surjective φ
