@@ -11,7 +11,7 @@ import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
-import TauCeti.Topology.OpenPartialHomeomorph.Compact
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Smoothing operators and pseudolocality on a manifold
@@ -218,10 +218,10 @@ theorem mulLeft_comp_comp_mulLeft_mem_smoothingPseudodifferentialOperators {m : 
   -- In the chart, the output of the compression is supported in the compact set `F` and only
   -- depends on the input on the compact set `G`; these are disjoint since `f` and `g` are. Choose
   -- cutoffs `φ₁ = 1` on `F` and `ψ₁ = 1` on `G` with disjoint supports.
-  have hF := e.isCompact_inter_preimage_symm φ.hasCompactSupport.isCompact φ.tsupport_subset
-    (isClosed_tsupport f)
-  have hG := e.isCompact_inter_preimage_symm ψ.hasCompactSupport.isCompact ψ.tsupport_subset
-    (isClosed_tsupport g)
+  have hF := φ.hasCompactSupport.isCompact.inter_preimage
+    (e.continuousOn_symm.mono φ.tsupport_subset) (isClosed_tsupport f)
+  have hG := ψ.hasCompactSupport.isCompact.inter_preimage
+    (e.continuousOn_symm.mono ψ.tsupport_subset) (isClosed_tsupport g)
   obtain ⟨U, V, hU, hV, hFU, hGV, hUV⟩ := SeparatedNhds.of_isCompact_isCompact hF hG
     (disjoint_left.2 fun x hxF hxG ↦ hfg.ne_of_mem hxF.2 hxG.2 rfl)
   obtain ⟨φ₁, hφ₁, -, hφ₁1, hφ₁c, hφ₁U⟩ := hF.exists_contDiff_cutoff hU hFU
