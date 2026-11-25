@@ -57,6 +57,7 @@ one. -/
 def nnGraph : SimpleGraph R :=
   SimpleGraph.fromRel fun a b => b = a + 1
 
+@[simp]
 theorem nnGraph_adj {a b : R} : (nnGraph R).Adj a b ↔ a ≠ b ∧ (b = a + 1 ∨ a = b + 1) :=
   fromRel_adj _ a b
 
@@ -82,9 +83,6 @@ theorem exists_edge_eq (e : (nnGraph R).edgeSet) : ∃ a, edge a = e := by
     rcases (nnGraph_adj.1 he).2 with h | h <;> dsimp only at h <;> subst h
     · exact ⟨u, rfl⟩
     · exact ⟨v, Subtype.ext Sym2.eq_swap⟩
-
-theorem edge_surjective : Surjective (edge (R := R)) :=
-  exists_edge_eq
 
 /-- The edges at `v` are `{v − 1, v}` and `{v, v + 1}`. -/
 theorem mem_iff_eq_edge_sub_one_or_eq_edge {v : R} {e : (nnGraph R).edgeSet} :
@@ -277,8 +275,8 @@ def combGraph : SimpleGraph CombVertex :=
 def combMatchingSet (k : ℕ) : Set (Sym2 CombVertex) :=
   {s(c, x k), s(d, y k)} ∪ {e | ∃ n ≠ k, e = s(x n, y n)}
 
-/-- The rungs `{x_n y_n}`. -/
-def combRungs : Set (Sym2 CombVertex) :=
+/-- The edge set of the rungs `{x_n y_n}`. -/
+def combRungsSet : Set (Sym2 CombVertex) :=
   {e | ∃ n, e = s(x n, y n)}
 
 open scoped Classical in
@@ -288,11 +286,11 @@ def combMatching (k : ℕ) (e : combGraph.edgeSet) : Bool :=
 
 open scoped Classical in
 /-- The configuration of the rungs. -/
-def combRungsConfig (e : combGraph.edgeSet) : Bool :=
-  decide ((e : Sym2 CombVertex) ∈ combRungs)
+def combRungs (e : combGraph.edgeSet) : Bool :=
+  decide ((e : Sym2 CombVertex) ∈ combRungsSet)
 
 /-- The partner of a vertex in `M_k`. -/
-def combPartner (k : ℕ) : CombVertex → CombVertex
+private def combPartner (k : ℕ) : CombVertex → CombVertex
   | c => x k
   | d => y k
   | x n => if n = k then c else y n
@@ -316,10 +314,10 @@ theorem isDimerConfiguration_combMatching (k : ℕ) :
     exact (combGraph_adj_and_mem_iff k v w).1 ⟨h, by simpa [combMatching] using hw⟩
 
 /-- The rungs leave `c` uncovered. -/
-theorem not_isDimerConfiguration_combRungs : ¬ combGraph.IsDimerConfiguration combRungsConfig := by
+theorem not_isDimerConfiguration_combRungs : ¬ combGraph.IsDimerConfiguration combRungs := by
   intro h
   obtain ⟨⟨e, he⟩, ⟨hω, hc⟩, -⟩ := isDimerConfiguration_iff.1 h c
-  have hω' : e ∈ combRungs := by simpa [combRungsConfig] using hω
+  have hω' : e ∈ combRungsSet := by simpa [combRungs] using hω
   obtain ⟨n, rfl⟩ := hω'
   simp at hc
 
@@ -331,15 +329,15 @@ private def combIndex : CombVertex → ℕ
   | y n => n
 
 /-- `M_k` converges coordinatewise to the rungs. -/
-theorem tendsto_combMatching : Tendsto combMatching atTop (𝓝 combRungsConfig) := by
+theorem tendsto_combMatching : Tendsto combMatching atTop (𝓝 combRungs) := by
   refine tendsto_pi_nhds.2 fun ⟨e, he⟩ => ?_
   rw [nhds_discrete, tendsto_pure]
   induction e using Sym2.ind with
   | _ u v =>
     filter_upwards [eventually_gt_atTop (combIndex u + combIndex v)] with k hk
-    simp only [combMatching, combRungsConfig, decide_eq_decide]
+    simp only [combMatching, combRungs, decide_eq_decide]
     cases u <;> cases v <;>
-      simp [combMatchingSet, combRungs, combIndex] at hk ⊢ <;> grind
+      simp [combMatchingSet, combRungsSet, combIndex] at hk ⊢ <;> grind
 
 /-- **Local finiteness is needed for closedness**: the dimer configurations of the comb graph do
 not form a closed set. -/
@@ -350,8 +348,8 @@ theorem not_isClosed_setOf_isDimerConfiguration_combGraph :
 
 /-! ### The hexagon -/
 
-/-- `ZMod 6` is nontrivial. -/
-instance fact_one_lt_six : Fact (1 < 6) :=
+/-- `1 < 6`, so that `ZMod 6` is nontrivial. -/
+local instance fact_one_lt_six : Fact (1 < 6) :=
   ⟨by decide⟩
 
 /-- The configuration of the hexagon `ZMod 6` taking the value `b` on the edges `{a, a + 1}`
