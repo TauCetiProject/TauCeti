@@ -24,9 +24,9 @@ element `1 - p`, because `ω` does, and hence both equal `ω`. So `ω` is a pure
 point of the state space.
 
 Pure states also pull back along surjective star homomorphisms `f : A → B` of C⋆-algebras, not
-necessarily unital: a state `φ` of `B` is pure if and only if `φ ∘ f` is a pure state of `A`. This
-produces pure states of `A` from those of its quotients, for instance pure extensions of states
-through evaluation maps.
+necessarily unital: a functional `φ` of `B` is a pure state if and only if `φ ∘ f` is a pure state
+of `A`. This produces pure states of `A` from those of its quotients, for instance pure extensions
+of states through evaluation maps.
 
 ## Main results
 
@@ -35,8 +35,8 @@ through evaluation maps.
   space.
 * `TauCeti.pullbackFunctional_mem_extremePoints_stateSpace`: the pullback of a pure state along a
   surjective star homomorphism is pure.
-* `TauCeti.pullbackFunctional_mem_extremePoints_stateSpace_iff`: a state is pure if and only if
-  its pullback along a surjective star homomorphism is pure.
+* `TauCeti.pullbackFunctional_mem_extremePoints_stateSpace_iff`: a functional is a pure state if
+  and only if its pullback along a surjective star homomorphism is a pure state.
 
 ## References
 
@@ -131,14 +131,18 @@ theorem pullbackFunctional_mem_extremePoints_stateSpace (f : F) (hf : Function.S
   exact ⟨congrArg _ e₁, congrArg _ e₂⟩
 
 /-- **Purity is detected by pullback along a surjective star homomorphism.** If `f : A → B` is a
-surjective star homomorphism of C⋆-algebras, not necessarily unital, a state `φ` of `B` is pure if
-and only if its pullback `φ ∘ f` is a pure state of `A`. -/
+surjective star homomorphism of C⋆-algebras, not necessarily unital, a functional `φ` of `B` is a
+pure state if and only if its pullback `φ ∘ f` is a pure state of `A`. -/
 theorem pullbackFunctional_mem_extremePoints_stateSpace_iff (f : F) (hf : Function.Surjective f)
-    {φ : WeakDual ℂ B} (hφ : φ ∈ stateSpace B) :
+    {φ : WeakDual ℂ B} :
     pullbackFunctional A f φ ∈ Set.extremePoints ℝ (stateSpace A) ↔
       φ ∈ Set.extremePoints ℝ (stateSpace B) := by
-  refine ⟨fun h ↦ mem_extremePoints.2 ⟨hφ, fun χ₁ hχ₁ χ₂ hχ₂ hseg ↦ ?_⟩,
-    pullbackFunctional_mem_extremePoints_stateSpace f hf⟩
+  refine ⟨fun h ↦ ?_, pullbackFunctional_mem_extremePoints_stateSpace f hf⟩
+  -- the pullback is a state vanishing on the kernel, hence the pullback of a state
+  obtain ⟨χ, hχ, hχφ⟩ := (mem_image_pullbackFunctional_stateSpace_iff f hf).2
+    ⟨h.1, fun k hk ↦ by simp [hk]⟩
+  obtain rfl := pullbackFunctional_injective_of_surjective f hf hχφ
+  refine mem_extremePoints.2 ⟨hχ, fun χ₁ hχ₁ χ₂ hχ₂ hseg ↦ ?_⟩
   obtain ⟨s, t, hs, ht, hst, hφseg⟩ := hseg
   obtain ⟨e₁, e₂⟩ := (mem_extremePoints.1 h).2 _
     (mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hχ₁) _

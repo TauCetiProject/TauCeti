@@ -80,8 +80,7 @@ theorem pullbackFunctional_normalizedTraceFunctional_mem_stateSpace :
 theorem pullbackFunctional_normalizedTraceFunctional_notMem_extremePoints_stateSpace :
     pullbackFunctional _ ev₀ (normalizedTraceFunctional (Fin 2)) ∉
       Set.extremePoints ℝ (stateSpace (CStarMatrix (Fin 2) (Fin 2) C(unitInterval, ℂ))) := by
-  rw [pullbackFunctional_mem_extremePoints_stateSpace_iff ev₀ ev₀_surjective
-    (normalizedTraceFunctional_mem_stateSpace (Fin 2))]
+  rw [pullbackFunctional_mem_extremePoints_stateSpace_iff ev₀ ev₀_surjective]
   exact StateExtensionExamples.normalizedTraceFunctional_notMem_extremePoints_stateSpace
 
 end TauCeti.PureExtensionExamples
