@@ -311,6 +311,22 @@ theorem coe_lieSmoothVectorsDerivative_apply (X : LeftInvariantDerivation I G)
   rw [lieSmoothVectorsDerivative]
   rfl
 
+/-- The derived endomorphism is additive in the derivation. -/
+@[simp]
+theorem lieSmoothVectorsDerivative_add (X Y : LeftInvariantDerivation I G) :
+    lieSmoothVectorsDerivative I π (X + Y) =
+      lieSmoothVectorsDerivative I π X + lieSmoothVectorsDerivative I π Y :=
+  LinearMap.ext fun w ↦ Subtype.ext (w.property.lieDerivative_add_left X Y)
+
+/-- The derived endomorphism of a finite sum of derivations is the sum of the derived
+endomorphisms. -/
+@[simp]
+theorem lieSmoothVectorsDerivative_sum {ι : Type*} (s : Finset ι)
+    (X : ι → LeftInvariantDerivation I G) :
+    lieSmoothVectorsDerivative I π (∑ i ∈ s, X i) =
+      ∑ i ∈ s, lieSmoothVectorsDerivative I π (X i) :=
+  map_sum (AddMonoidHom.mk' (lieSmoothVectorsDerivative I π) lieSmoothVectorsDerivative_add) X s
+
 end Endomorphism
 
 section LieHom
@@ -325,7 +341,7 @@ smooth vectors is a homomorphism of real Lie algebras into the `R`-linear endomo
 def lieSmoothVectorsDerivedAction :
     LeftInvariantDerivation I G →ₗ⁅ℝ⁆ Module.End R (lieSmoothVectors I π) where
   toFun := lieSmoothVectorsDerivative I π
-  map_add' X Y := LinearMap.ext fun w ↦ Subtype.ext (w.property.lieDerivative_add_left X Y)
+  map_add' := lieSmoothVectorsDerivative_add
   map_smul' c X := LinearMap.ext fun w ↦ Subtype.ext (w.property.lieDerivative_smul_left c X)
   map_lie' {X Y} := LinearMap.ext fun w ↦ Subtype.ext (w.property.lieDerivative_lie X Y)
 
@@ -335,6 +351,12 @@ theorem lieSmoothVectorsDerivedAction_apply (X : LeftInvariantDerivation I G) :
     lieSmoothVectorsDerivedAction I π X = lieSmoothVectorsDerivative I π X := by
   rw [lieSmoothVectorsDerivedAction]
   rfl
+
+/-- The derived endomorphism is real-homogeneous in the derivation. -/
+@[simp]
+theorem lieSmoothVectorsDerivative_smul (c : ℝ) (X : LeftInvariantDerivation I G) :
+    lieSmoothVectorsDerivative I π (c • X) = c • lieSmoothVectorsDerivative I π X := by
+  simp only [← lieSmoothVectorsDerivedAction_apply, map_smul]
 
 end LieHom
 
