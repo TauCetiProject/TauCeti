@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Algebra.Module.Defs
+public import Mathlib.Data.ZMod.Defs
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -32,6 +35,10 @@ Since `1 + 1 = 0`, the exclusive-or of bits is their sum: the indicator of a bit
 of natural numbers accumulated over a list is the sum of the indicators of that bit of the terms
 (`TauCeti.ite_testBit_foldl_xor_of_charTwo`). This compares a computation on binary
 representations with a sum in the semiring.
+
+A nontrivial semiring that is an algebra over `ZMod 2` has characteristic two
+(`TauCeti.charP_two_of_algebra_zmod_two`). This is the instance-shaped `p = 2` case of Mathlib's
+`charP_of_injective_algebraMap'`, usable as a local instance for `ZMod 2`-algebras.
 
 -/
 
@@ -92,6 +99,12 @@ theorem ite_testBit_foldl_xor_of_charTwo {R α : Type*} [NonAssocSemiring R] [Ch
   | cons x l ih =>
     rw [List.foldl_cons, ih, Nat.testBit_xor, List.map_cons, List.sum_cons, ← add_assoc]
     cases a.testBit p <;> cases (f x).testBit p <;> simp [CharTwo.add_self_eq_zero]
+
+/-- A nontrivial semiring that is an algebra over `ZMod 2` has characteristic two, the algebra map
+from the field `ZMod 2` being injective. -/
+theorem charP_two_of_algebra_zmod_two (k : Type*) [Semiring k] [Nontrivial k]
+    [Algebra (ZMod 2) k] : CharP k 2 :=
+  charP_of_injective_algebraMap (algebraMap (ZMod 2) k).injective 2
 
 end TauCeti
 

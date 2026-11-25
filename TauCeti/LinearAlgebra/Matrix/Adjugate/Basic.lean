@@ -24,12 +24,16 @@ It also identifies the adjugate of a matrix `A` with a right inverse `B` as `det
 transpose. Consequently the adjugate commutes with conjugation by an invertible matrix:
 `adj (P * A * Q) = P * adj A * Q` when `P * Q = 1` (`Matrix.adjugate_mul_mul_of_mul_eq_one`).
 
-The same identity cancels a square matrix `A` with `A * B = c • 1` for a non-zero-divisor `c`, so
-that `B * A = c • 1` as well (`Matrix.mul_eq_smul_one_comm`). For `c = 1` this is
-`mul_eq_one_comm`; for general `c` it compares a form with its `c`-scaled dual, whose Gram matrix
-is `c` times the inverse Gram matrix. Such inverses up to `c` are transported by congruence: if
-`B₁ = Pᵀ * B₂ * P` where `P` has a right inverse `P'`, and `B₁ * D₁ = B₂ * D₂ = c • 1`, then
-`D₁ = P' * D₂ * P'ᵀ` (`Matrix.mul_mul_transpose_eq_of_mul_eq_smul_one`).
+The same identity shows that if `A * B = c • 1` for a left-regular scalar `c`, then `det A` and
+`det B` are left-regular (`Matrix.isLeftRegular_det_left_of_mul_eq_smul_one`,
+`Matrix.isLeftRegular_det_right_of_mul_eq_smul_one`) and hence `A` and `B` are regular
+(`Matrix.isRegular_left_of_mul_eq_smul_one`, `Matrix.isRegular_right_of_mul_eq_smul_one`).
+In particular, such scalar quasi-inverses commute: `A * B = c • 1 ↔ B * A = c • 1`
+(`Matrix.mul_eq_smul_one_comm`). For `c = 1` this is `mul_eq_one_comm`; for general `c` it compares
+a form with its `c`-scaled dual, whose Gram matrix is `c` times the inverse Gram matrix. Such
+inverses up to `c` are transported by congruence: if `B₁ = Pᵀ * B₂ * P` where `P` has a right
+inverse `P'`, and `B₁ * D₁ = B₂ * D₂ = c • 1`, then `D₁ = P' * D₂ * P'ᵀ`
+(`Matrix.mul_mul_transpose_eq_of_mul_eq_smul_one`).
 
 Cramer's rule expresses the determinant of `A` with one row or one column replaced through the
 adjugate. Summing over the replaced row, or over the replaced column, gives in both cases
@@ -83,18 +87,43 @@ theorem det_smul_eq_zero_of_sum_smul_eq_zero {ι M : Type*} [Fintype ι] [Decida
     _ = ∑ i, A.adjugate k i • ∑ j, A i j • v j := Matrix.sum_mul_apply_smul A.adjugate A v k
     _ = 0 := by simp [hv]
 
+/-- If `A * B = c • 1` over a commutative ring with `c` left-regular, then `det A` is
+left-regular. -/
+theorem isLeftRegular_det_left_of_mul_eq_smul_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A B : Matrix n n R} {c : R} (hc : IsLeftRegular c) (h : A * B = c • 1) :
+    IsLeftRegular A.det := by
+  have hBA : B.det * A.det = c ^ Fintype.card n := by
+    rw [mul_comm, ← det_mul, h, det_smul, det_one, mul_one]
+  exact .of_mul (hBA ▸ hc.pow _)
+
+/-- If `A * B = c • 1` over a commutative ring with `c` left-regular, then `det B` is
+left-regular. -/
+theorem isLeftRegular_det_right_of_mul_eq_smul_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A B : Matrix n n R} {c : R} (hc : IsLeftRegular c) (h : A * B = c • 1) :
+    IsLeftRegular B.det := by
+  have hAB : A.det * B.det = c ^ Fintype.card n := by
+    rw [← det_mul, h, det_smul, det_one, mul_one]
+  exact .of_mul (hAB ▸ hc.pow _)
+
+/-- If `A * B = c • 1` over a commutative ring with `c` left-regular, then `A` is regular. -/
+theorem isRegular_left_of_mul_eq_smul_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A B : Matrix n n R} {c : R} (hc : IsLeftRegular c) (h : A * B = c • 1) :
+    IsRegular A :=
+  isRegular_of_isLeftRegular_det (isLeftRegular_det_left_of_mul_eq_smul_one hc h)
+
+/-- If `A * B = c • 1` over a commutative ring with `c` left-regular, then `B` is regular. -/
+theorem isRegular_right_of_mul_eq_smul_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A B : Matrix n n R} {c : R} (hc : IsLeftRegular c) (h : A * B = c • 1) :
+    IsRegular B :=
+  isRegular_of_isLeftRegular_det (isLeftRegular_det_right_of_mul_eq_smul_one hc h)
+
 /-- **Inverses up to a scalar commute.** If `A * B = c • 1` for square matrices over a commutative
 ring and a non-zero-divisor `c`, then `B * A = c • 1`. -/
 theorem mul_eq_smul_one_comm {n : Type*} [Fintype n] [DecidableEq n] {A B : Matrix n n R} {c : R}
     (hc : c ∈ nonZeroDivisors R) : A * B = c • 1 ↔ B * A = c • 1 := by
   suffices key : ∀ A B : Matrix n n R, A * B = c • 1 → B * A = c • 1 from ⟨key A B, key B A⟩
   intro A B h
-  -- `det A` divides a power of `c`, so it is a non-zero-divisor and cancels `A` on the left.
-  have hdet : IsLeftRegular A.det := by
-    have hBA : B.det * A.det = c ^ Fintype.card n := by
-      rw [mul_comm, ← det_mul, h, det_smul, det_one, mul_one]
-    exact .of_mul (hBA ▸ (isRegular_iff_mem_nonZeroDivisors.mpr hc).left.pow _)
-  apply (isRegular_of_isLeftRegular_det hdet).left
+  apply (isRegular_left_of_mul_eq_smul_one (isRegular_iff_mem_nonZeroDivisors.mpr hc).left h).left
   simp only [← Matrix.mul_assoc, h, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul,
     Matrix.mul_one]
 

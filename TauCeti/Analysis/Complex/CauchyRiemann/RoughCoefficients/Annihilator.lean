@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Adjoint
-public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Data.ENNReal.Holder
