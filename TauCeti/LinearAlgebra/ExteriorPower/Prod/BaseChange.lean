@@ -104,11 +104,12 @@ theorem prodEquivTensor_map_prodRight_equivBaseChange_symm (n : ℕ)
       | tmul a b =>
         have h := wedgeTensor_equivBaseChange_symm_tmul_tmul A i (n - i) n (by omega) c 1 a b
         rw [mul_one] at h
-        rw [← DirectSum.lof_eq_of R, LinearMap.baseChange_tmul, LinearEquiv.coe_coe,
+        simp only [← DirectSum.lof_eq_of R, LinearMap.baseChange_tmul, LinearEquiv.coe_coe,
           LinearEquiv.apply_symm_apply, TensorProduct.directSumRight_tmul_lof, DirectSum.lmap_lof,
-          LinearMap.comp_apply, LinearEquiv.coe_coe, distribBaseChange_tmul,
-          TensorProduct.map_tmul, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-          prodEquivTensor_symm_lof, ← h, ← prodEquivTensor_symm_lof, LinearEquiv.apply_symm_apply]
+          LinearMap.comp_apply, distribBaseChange_tmul, TensorProduct.map_tmul]
+        -- The one real step: by `h`, the wedge product over `A` of the scalar extensions of `a`
+        -- and `b` is the scalar extension of `a ∧ b`.
+        rw [prodEquivTensor_symm_lof, ← h, ← prodEquivTensor_symm_lof, LinearEquiv.apply_symm_apply]
 
 end exteriorPower
 

@@ -74,6 +74,7 @@ theorem baseChangeEquiv_symm_map {N : Type*} [AddCommGroup N] [Module R N]
 
 /-- The base-change comparison is natural in the module: it intertwines the scalar extension of
 `map f` with the exterior-algebra map of the scalar-extended linear map. -/
+@[simp]
 theorem map_baseChange_baseChangeEquiv {N : Type*} [AddCommGroup N] [Module R N]
     (f : M →ₗ[R] N) (x : A ⊗[R] ExteriorAlgebra R M) :
     map (f.baseChange A) (baseChangeEquiv R M A x) =
