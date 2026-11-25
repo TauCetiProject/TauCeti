@@ -23,7 +23,7 @@ boundary:
   (`Bundle.ContMDiffRiemannianMetric.mgradient_rescale`, in `Riemannian/Conformal.lean`);
 * the unit normals are divided by `√f`: `ν_out^ĝ = f(q)^(-1/2) ν_out` and
   `ν_in^ĝ = f(q)^(-1/2) ν_in` (`outwardUnitNormal_rescale`, `inwardUnitNormal_rescale`), while the
-  induced metric is multiplied by `f(q)`;
+  induced metric is multiplied by `f(q)` (`boundaryInducedForm_rescale`);
 * the second fundamental form of the boundary changes by
   `II^ĝ_q(u, w) = √(f q) (II_q(u, w) - (2 f q)⁻¹ df_q(ν_in) h_q(u, w))`
   (`boundarySecondFundamentalForm_rescale`). For `f = e^{2φ}` this is
@@ -58,6 +58,28 @@ namespace Bundle.ContMDiffRiemannianMetric
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] {k : ℕ∞ω}
+
+/-! ### The induced metric -/
+
+section InducedForm
+
+variable [IsManifold (𝓡∂ (n + 1)) 1 M]
+  (g : ContMDiffRiemannianMetric (𝓡∂ (n + 1)) k (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x))
+  {f : M → ℝ} (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x)
+
+/-- **The induced metric of the boundary under a rescaling**: for `ĝ = f g`,
+`h^ĝ_q = f(q) h_q`. -/
+theorem boundaryInducedForm_rescale (q : (𝓡∂ (n + 1)).boundary M)
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      boundaryInducedForm q u w) =
+    f q * (letI : RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+        ⟨g.toRiemannianMetric⟩; boundaryInducedForm q u w) := by
+  simp only [boundaryInducedForm_apply, inner_riemannianBundle, rescale_inner]
+
+end InducedForm
 
 /-! ### The unit normals -/
 
