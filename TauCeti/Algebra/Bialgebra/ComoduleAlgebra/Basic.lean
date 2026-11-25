@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Bialgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import TauCeti.Algebra.Algebra.Subalgebra.Equalizer
 
 /-!
 # Comodule algebras and coinvariants
@@ -38,6 +39,8 @@ on the ambient group by right translation, the analogous constructions are the c
 
 ## Main results
 
+* `TauCeti.ComoduleAlgebra.isUnit_coinvariants_iff`: a coinvariant is a unit of the coinvariants
+  exactly when it is a unit of `A`.
 * `TauCeti.ComoduleAlgebra.range_le_coinvariants_iff`: an algebra map into `A` lands in the
   coinvariants if and only if it equalizes the coaction and `a ↦ a ⊗ 1`.
 * `TauCeti.ComoduleAlgebra.eqLocus_coactAlgHom`: the coinvariants are the equalizer of the
@@ -111,6 +114,13 @@ variable {R H A}
 theorem mem_coinvariants {a : A} :
     a ∈ coinvariants R H A ↔ Comodule.coact (R := R) (C := H) a = a ⊗ₜ[R] 1 := by
   simp [coinvariants, AlgHom.mem_equalizer]
+
+/-- A coinvariant is a unit of the coinvariants exactly when it is a unit of `A`: the
+coinvariants are the equalizer of two algebra maps, so the inverse of a coinvariant unit is
+coinvariant. -/
+theorem isUnit_coinvariants_iff {a : coinvariants R H A} : IsUnit a ↔ IsUnit (a : A) :=
+  -- `coinvariants R H A` is by definition `AlgHom.equalizer (coactAlgHom R H A) includeLeft`.
+  AlgHom.isUnit_equalizer_mk_iff _ _ ((AlgHom.mem_equalizer _ _ _).1 a.property)
 
 theorem coe_coinvariants :
     (coinvariants R H A : Set A) = Comodule.fixedSubcomodule R H A := by

@@ -29,7 +29,10 @@ for a set `T` of series stable under the Cartier operators of modulus `q = |K|`,
 `j ≤ m`; this is the linear-algebra step of the proof of Christol's theorem.
 A series whose coefficients vanish away from the multiples of the modulus is the expansion of
 its residue-zero Cartier component; in prime characteristic this applies to a series with zero
-derivative.
+derivative. Over a commutative ring, the powers `(1 + X) ^ i` with `i < q` play the role of the
+`X ^ i`: every series is uniquely `∑ i < q, (1 + X) ^ i * b i (X ^ q)`
+(`exists_sum_one_add_X_pow_mul_expand`, `eq_zero_of_sum_one_add_X_pow_mul_expand_eq_zero`), by
+the binomial change of basis between `X ^ r` and `(1 + X) ^ i`.
 
 The definition and finite-field multiplication identity follow Section 3, definition and
 Proposition 4, of Rowland–Stipulanti–Yassawi, *An elementary proof of Bridy's theorem*
@@ -299,6 +302,87 @@ theorem expand_cartier_zero_of_coeff_eq_zero (q : ℕ) (hq : q ≠ 0) {F : Power
   · obtain ⟨m, rfl⟩ := hn
     simp
   · rw [coeff_expand_of_not_dvd _ _ _ hn, hF n hn]
+
+/-- Every Cartier component of modulus `q` of a power `(1 + X) ^ i` with `i < q` is a constant
+binomial coefficient. -/
+theorem cartier_one_add_X_pow {q i : ℕ} (j : ℕ) (hi : i < q) :
+    cartier R q j ((1 + X) ^ i) = C (i.choose j : R) := by
+  have h : (1 + X : R⟦X⟧) ^ i = ((1 + Polynomial.X) ^ i : Polynomial R) := by
+    simp [Polynomial.coe_pow, Polynomial.coe_add, Polynomial.coe_one, Polynomial.coe_X]
+  ext n
+  rw [coeff_cartier, coeff_C, h, Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · rw [Nat.choose_eq_zero_of_lt (by nlinarith)]
+    simp [hn.ne']
+
+/-- The Cartier component of index `j` of `(1 + X) ^ i * g (X ^ q)`, for `i < q`, is the binomial
+coefficient times `g`. -/
+theorem cartier_one_add_X_pow_mul_expand {q i j : ℕ} (hq : q ≠ 0) (hi : i < q) (hj : j < q)
+    (g : R⟦X⟧) :
+    cartier R q j ((1 + X) ^ i * expand q hq g) = C (i.choose j : R) * g := by
+  rw [mul_comm, cartier_expand_mul q j hq hj, cartier_one_add_X_pow j hi, mul_comm]
+
+/-- A power of `X` below `q` is a combination of the powers `(1 + X) ^ i`, `i < q`, with
+binomial coefficients. -/
+theorem X_pow_eq_sum_one_add_X_pow {q r : ℕ} (hr : r < q) :
+    (X : R⟦X⟧) ^ r =
+      ∑ i : Fin q, C ((-1) ^ (r - i) * (r.choose i : R)) * (1 + X) ^ (i : ℕ) := by
+  have h : (X : R⟦X⟧) ^ r = ((1 + X) + (-1)) ^ r := by ring
+  rw [h, add_pow, Fin.sum_univ_eq_sum_range
+    (fun i ↦ C ((-1) ^ (r - i) * (r.choose i : R)) * (1 + X) ^ i)]
+  rw [← Finset.sum_range_add_sum_Ico _ (show r + 1 ≤ q by omega)]
+  rw [Finset.sum_eq_zero (s := Finset.Ico _ _) fun i hi ↦ by
+    rw [Nat.choose_eq_zero_of_lt (by simp at hi; omega)]; simp, add_zero]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp only [map_mul, map_pow, map_neg, map_one, map_natCast]
+  ring
+
+/-- **Existence of expanded coordinates.** Over any commutative ring, every power series is
+`∑ i < q, (1 + X) ^ i * b i (X ^ q)` for some series `b i`. -/
+theorem exists_sum_one_add_X_pow_mul_expand (q : ℕ) (hq : q ≠ 0) (g : R⟦X⟧) :
+    ∃ b : Fin q → R⟦X⟧, ∑ i : Fin q, (1 + X) ^ (i : ℕ) * expand q hq (b i) = g := by
+  refine ⟨fun i ↦ ∑ r ∈ Finset.range q,
+    C ((-1) ^ (r - i) * (r.choose i : R)) * cartier R q r g, ?_⟩
+  conv_rhs => rw [sum_X_pow_mul_expand_cartier q hq g]
+  simp_rw [map_sum, Finset.mul_sum, map_mul, expand_C]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun r hr ↦ ?_
+  rw [X_pow_eq_sum_one_add_X_pow (Finset.mem_range.mp hr), Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp only [map_mul]
+  ring
+
+/-- The Cartier components of an expanded combination: the component of index `j < q` of
+`∑ i < q, (1 + X) ^ i * b i (X ^ q)` is `∑ i, choose i j * b i`. -/
+theorem cartier_sum_one_add_X_pow_mul_expand {q j : ℕ} (hq : q ≠ 0) (hj : j < q)
+    (b : Fin q → R⟦X⟧) :
+    cartier R q j (∑ i : Fin q, (1 + X) ^ (i : ℕ) * expand q hq (b i)) =
+      ∑ i : Fin q, C ((i : ℕ).choose j : R) * b i := by
+  rw [map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ cartier_one_add_X_pow_mul_expand hq i.isLt hj (b i)
+
+/-- **Uniqueness of expanded coordinates.** Over any commutative ring, if
+`∑ i < q, (1 + X) ^ i * b i (X ^ q) = 0`, then every `b i` vanishes. -/
+theorem eq_zero_of_sum_one_add_X_pow_mul_expand_eq_zero {q : ℕ} (hq : q ≠ 0)
+    {b : Fin q → R⟦X⟧} (hb : ∑ i : Fin q, (1 + X) ^ (i : ℕ) * expand q hq (b i) = 0) : b = 0 := by
+  have hc (j : Fin q) : ∑ i : Fin q, C ((i : ℕ).choose j : R) * b i = 0 := by
+    rw [← cartier_sum_one_add_X_pow_mul_expand hq j.isLt, hb, map_zero]
+  -- Downward induction: the component of index `j` sees `b j` and the `b i` with `i > j`.
+  suffices h : ∀ k, ∀ j : Fin q, q ≤ j + k → b j = 0 from
+    funext fun j ↦ h q j (by omega)
+  intro k
+  induction k with
+  | zero => exact fun j hj ↦ absurd j.isLt (by omega)
+  | succ k ih =>
+    intro j hj
+    rw [← hc j, Finset.sum_eq_single j]
+    · simp
+    · intro i _ hij
+      rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
+      · rw [Nat.choose_eq_zero_of_lt h]; simp
+      · rw [ih i (by omega), mul_zero]
+    · simp
 
 end CommRing
 

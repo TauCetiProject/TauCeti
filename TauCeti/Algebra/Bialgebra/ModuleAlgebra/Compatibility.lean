@@ -5,39 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Basic
-public import TauCeti.RingTheory.TensorProduct.Basic
+public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct
 
 /-!
 # Covariance and compatible actions for left module algebras
 
-Let `H` be an `R`-bialgebra and `A` a left `H`-module algebra (`TauCeti.LeftModuleAlgebra R H A`).
-An `R`-algebra map `fA : A →ₐ[R] C` and an `R`-algebra map `fH : H →ₐ[R] C` form a covariant
-pair (`TauCeti.LeftModuleAlgebra.SmashCompatible`) when they satisfy the smash-product commutation
-relation
-
-`fH h * fA a = ∑ fA (h₁ · a) * fH h₂`.
-
-Specializing `C` to `Module.End R M` gives the notion of compatible `A`- and `H`-module
-structures on an `R`-module `M` (`TauCeti.LeftModuleAlgebra.IsCompatibleAction`), expressing the
-smash-product Leibniz law `h • (a • m) = ∑ (h₁ · a) • (h₂ • m)` independently of the smash-product
-construction.
+This file extends `TauCeti.LeftModuleAlgebra.SmashCompatible` with closure under right tensoring
+via comultiplication and defines compatible `A`- and `H`-module structures on an `R`-module `M`
+(`TauCeti.LeftModuleAlgebra.IsCompatibleAction`), expressing the smash-product Leibniz law
+`h • (a • m) = ∑ (h₁ · a) • (h₂ • m)` independently of the smash-product construction.
 
 ## Main definitions
 
-* `TauCeti.LeftModuleAlgebra.SmashCompatible`: covariance relation between `R`-algebra maps out of
-  `A` and `H` into a common `R`-algebra `C`.
 * `TauCeti.LeftModuleAlgebra.IsCompatibleAction`: predicate on `R`-compatible `Module A M` and
   `Module H M` instances expressing the smash-product Leibniz law via `SmashCompatible`.
 
 ## Main results
 
-* `TauCeti.LeftModuleAlgebra.SmashCompatible.mul_eq_sum` and
-  `TauCeti.LeftModuleAlgebra.smashCompatible_iff_sum`: Sweedler-form characterizations of
-  `SmashCompatible` in any `Coalgebra.Repr`.
-* `TauCeti.LeftModuleAlgebra.SmashCompatible.comp` and
-  `TauCeti.LeftModuleAlgebra.SmashCompatible.includeLeft_map_comul`: closure of `SmashCompatible`
-  under post-composition and right tensoring with `H` via comultiplication.
+* `TauCeti.LeftModuleAlgebra.SmashCompatible.includeLeft_map_comul`: closure of `SmashCompatible`
+  under right tensoring with `H` via comultiplication.
 * `TauCeti.LeftModuleAlgebra.smashCompatible_lsmul_action`: left multiplication by `A` and
   `μ.action` form a `SmashCompatible` pair in `Module.End R A`.
 * `TauCeti.LeftModuleAlgebra.IsCompatibleAction.smul_smul_eq_sum` and
@@ -66,44 +52,7 @@ section Semiring
 variable {R : Type u} {H : Type v} {A : Type w}
   [CommSemiring R] [Semiring H] [Bialgebra R H] [Semiring A] [Algebra R A]
 
-/-! ### Covariant pairs of algebra homomorphisms -/
-
-/-- Compatibility of algebra maps `fA : A →ₐ[R] C` and `fH : H →ₐ[R] C` for descending to
-the smash product `A # H`: for every `h : H` and `a : A`,
-`fH h * fA a = ∑ fA (h₁ · a) * fH h₂`. -/
-def SmashCompatible (μ : LeftModuleAlgebra R H A) {C : Type*} [Semiring C] [Algebra R C]
-    (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) : Prop :=
-  ∀ h a, fH h * fA a =
-    LinearMap.mulMap (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap
-      (Coalgebra.comul (R := R) h)
-
-/-- The covariance relation in any finite representation of `comul h`. -/
-theorem SmashCompatible.mul_eq_sum {μ : LeftModuleAlgebra R H A} {C : Type*}
-    [Semiring C] [Algebra R C] {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
-    (hf : μ.SmashCompatible fA fH) {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι) (a : A) :
-    fH h * fA a = ∑ i ∈ r.index, fA (μ.action (r.left i) a) * fH (r.right i) := by
-  rw [hf h a, ← r.eq, map_sum]
-  simp
-
-/-- Characterization of `SmashCompatible` using a family of finite coproduct representations. -/
-theorem smashCompatible_iff_sum (μ : LeftModuleAlgebra R H A) {C : Type*}
-    [Semiring C] [Algebra R C] (fA : A →ₐ[R] C) (fH : H →ₐ[R] C)
-    {ι : H → Type*} (r : ∀ h, Coalgebra.Repr R h (ι h)) :
-    μ.SmashCompatible fA fH ↔ ∀ h a,
-      fH h * fA a = ∑ i ∈ (r h).index, fA (μ.action ((r h).left i) a) * fH ((r h).right i) := by
-  refine ⟨fun hf h a => hf.mul_eq_sum (r h) a, fun hf h a => ?_⟩
-  rw [hf h a, ← (r h).eq, map_sum]
-  simp
-
-/-- Post-composing a `SmashCompatible` pair with an `R`-algebra homomorphism yields a
-`SmashCompatible` pair. -/
-theorem SmashCompatible.comp {μ : LeftModuleAlgebra R H A} {C D : Type*}
-    [Semiring C] [Algebra R C] [Semiring D] [Algebra R D] {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
-    (hf : μ.SmashCompatible fA fH) (φ : C →ₐ[R] D) :
-    μ.SmashCompatible (φ.comp fA) (φ.comp fH) := by
-  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
-  intro h a
-  simpa only [AlgHom.comp_apply, map_mul, map_sum] using congrArg φ (hf.mul_eq_sum (ℛ R h) a)
+/-! ### Additional covariance lemmas -/
 
 /-- Tensoring a `SmashCompatible` pair `(fA, fH)` on the right with an `R`-algebra homomorphism
 `gH : H →ₐ[R] D` via the comultiplication of `H` yields a `SmashCompatible` pair in `C ⊗[R] D`. -/
@@ -112,24 +61,22 @@ theorem SmashCompatible.includeLeft_map_comul {μ : LeftModuleAlgebra R H A} {C 
     (hf : μ.SmashCompatible fA fH) (gH : H →ₐ[R] D) :
     μ.SmashCompatible (Algebra.TensorProduct.includeLeft.comp fA)
       ((Algebra.TensorProduct.map fH gH).comp (Bialgebra.comulAlgHom R H)) := by
-  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
+  rw [smashCompatible_iff]
   intro h a
   set r := ℛ R h
   let r₁ := fun i => ℛ R (r.left i)
   let r₂ := fun i => ℛ R (r.right i)
   let Φ : H ⊗[R] (H ⊗[R] H) →ₗ[R] C ⊗[R] D :=
     TensorProduct.map
-      (LinearMap.mulMap (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap)
+      (LinearMap.mul' R C ∘ₗ TensorProduct.map
+        (fA.toLinearMap ∘ₗ LinearMap.applyₗ a ∘ₗ μ.action.toLinearMap) fH.toLinearMap)
       gH.toLinearMap ∘ₗ (TensorProduct.assoc R H H H).symm.toLinearMap
   have hco :
       ∑ i ∈ r.index, ∑ j ∈ (r₁ i).index,
         (fA (μ.action ((r₁ i).left j) a) * fH ((r₁ i).right j)) ⊗ₜ[R] gH (r.right i) =
       ∑ i ∈ r.index, ∑ j ∈ (r₂ i).index,
         (fA (μ.action (r.left i) a) * fH ((r₂ i).left j)) ⊗ₜ[R] gH ((r₂ i).right j) := by
-    simpa [Φ, map_sum, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      TensorProduct.assoc_symm_tmul, TensorProduct.map_tmul, LinearMap.mulMap_tmul,
-      LinearMap.flip_apply, AlgHom.toLinearMap_apply] using
-      congrArg Φ (Coalgebra.sum_tmul_tmul_eq r r₁ r₂)
+    simpa [Φ, map_sum] using congrArg Φ (Coalgebra.sum_tmul_tmul_eq r r₁ r₂)
   -- Three-step calculation: expand `comul h`, apply covariance `hf`, then reassociate via
   -- coassociativity.
   calc ((Algebra.TensorProduct.map fH gH).comp (Bialgebra.comulAlgHom R H)) h *
@@ -155,7 +102,7 @@ theorem SmashCompatible.includeLeft_map_comul {μ : LeftModuleAlgebra R H A} {C 
 /-- Left multiplication by `A` and `μ.action` form a `SmashCompatible` pair in `Module.End R A`. -/
 theorem smashCompatible_lsmul_action (μ : LeftModuleAlgebra R H A) :
     μ.SmashCompatible (Algebra.lsmul R R A) μ.action := by
-  rw [μ.smashCompatible_iff_sum _ _ (ℛ R)]
+  rw [smashCompatible_iff]
   intro h a
   ext b
   simpa [LinearMap.sum_apply] using μ.action_mul_eq_sum (ℛ R h) a b
@@ -186,11 +133,29 @@ theorem isCompatibleAction_iff_sum (μ : LeftModuleAlgebra R H A) (M : Type*)
     [Module H M] [IsScalarTower R H M] {ι : H → Type*} (r : ∀ h, Coalgebra.Repr R h (ι h)) :
     μ.IsCompatibleAction M ↔ ∀ h a (m : M),
       h • (a • m) = ∑ i ∈ (r h).index, μ.action ((r h).left i) a • ((r h).right i • m) := by
-  rw [isCompatibleAction_iff, μ.smashCompatible_iff_sum _ _ r]
-  refine ⟨fun hf h a m => by simpa [LinearMap.sum_apply] using DFunLike.congr_fun (hf h a) m,
-    fun hf h a => ?_⟩
+  rw [isCompatibleAction_iff]
+  refine ⟨fun hc h a m => by
+      simpa [LinearMap.sum_apply] using DFunLike.congr_fun (hc.mul_eq_sum (r h) a) m,
+    fun hf => smashCompatible_iff.mpr fun h a => ?_⟩
   ext m
-  simpa [LinearMap.sum_apply] using hf h a m
+  let Ψ : H ⊗[R] H →ₗ[R] Module.End R M :=
+    LinearMap.mul' R (Module.End R M) ∘ₗ TensorProduct.map
+      (Algebra.lsmul R (A := A) R M ∘ₗ LinearMap.applyₗ a ∘ₗ μ.action.toLinearMap)
+      (Algebra.lsmul R (A := H) R M)
+  have hsum : ∑ i ∈ (ℛ R h).index,
+      (Algebra.lsmul R (A := A) R M (μ.action ((ℛ R h).left i) a) *
+        Algebra.lsmul R (A := H) R M ((ℛ R h).right i)) m =
+      ∑ i ∈ (r h).index, μ.action ((r h).left i) a • ((r h).right i • m) := by
+    have h₁ : Ψ (Coalgebra.comul (R := R) h) = ∑ i ∈ (ℛ R h).index,
+        Algebra.lsmul R (A := A) R M (μ.action ((ℛ R h).left i) a) *
+          Algebra.lsmul R (A := H) R M ((ℛ R h).right i) := by
+      simp [Ψ, ← (ℛ R h).eq, map_sum]
+    have h₂ : Ψ (Coalgebra.comul (R := R) h) = ∑ i ∈ (r h).index,
+        Algebra.lsmul R (A := A) R M (μ.action ((r h).left i) a) *
+          Algebra.lsmul R (A := H) R M ((r h).right i) := by
+      simp [Ψ, ← (r h).eq, map_sum]
+    simpa [LinearMap.sum_apply] using DFunLike.congr_fun (h₁.symm.trans h₂) m
+  simpa [LinearMap.sum_apply] using (hf h a m).trans hsum.symm
 
 end Semiring
 

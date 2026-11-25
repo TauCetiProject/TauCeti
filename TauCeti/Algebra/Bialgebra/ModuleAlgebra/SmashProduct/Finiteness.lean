@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct.Basic
+public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct
 import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
@@ -13,11 +13,11 @@ import Mathlib.RingTheory.TensorProduct.Finite
 
 This file provides module-finiteness of the smash product `A # H`
 (`TauCeti.LeftModuleAlgebra.SmashProduct`), separated from the core construction so that users
-of `SmashProduct.Basic` do not transitively import tensor-product finiteness.
+of `SmashProduct` do not transitively import tensor-product finiteness.
 
 ## Main definitions
 
-* `TauCeti.LeftModuleAlgebra.SmashProduct.instModuleFinite`: `μ.SmashProduct` is a finite
+* `TauCeti.LeftModuleAlgebra.SmashProduct.instModuleFinite`: `SmashProduct μ` is a finite
   `R`-module whenever `A` and `H` are finite `R`-modules.
 
 ## References
@@ -32,19 +32,18 @@ namespace TauCeti
 
 namespace LeftModuleAlgebra
 
-universe u v w
-
 section Finite
 
-variable {R : Type u} {H : Type v} {A : Type w}
+variable {R H A : Type*}
   [CommSemiring R] [Semiring H] [Bialgebra R H] [Semiring A] [Algebra R A]
 
 /-- The smash product `A # H` is a finite `R`-module whenever `A` and `H` are finite
 `R`-modules. -/
 instance SmashProduct.instModuleFinite (μ : LeftModuleAlgebra R H A)
     [Module.Finite R A] [Module.Finite R H] :
-    Module.Finite R μ.SmashProduct :=
-  Module.Finite.of_surjective μ.tensorEquiv.symm.toLinearMap μ.tensorEquiv.symm.surjective
+    Module.Finite R (SmashProduct μ) :=
+  Module.Finite.of_surjective (SmashProduct.linearEquivTensor μ).symm.toLinearMap
+    (SmashProduct.linearEquivTensor μ).symm.surjective
 
 end Finite
 
