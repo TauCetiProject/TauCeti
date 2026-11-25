@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Normed.Module.InfiniteSum
 public import TauCeti.NumberTheory.Padics.Disc
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
+import TauCeti.Data.ZMod.Cast
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 
@@ -55,6 +56,10 @@ gives `transitionLE S hhk : LA_h(E) →L[S] LA_k(E)` for every `h ≤ k`. These 
 system, do not increase norms, and preserve evaluation. No injectivity assumption is needed.
 When multiplication by `p` on `E` is injective, every transition is injective: reading the
 coefficients on the subdisc with the same centre recovers `p^j` times the original coefficient.
+
+The coordinate projection `ZeroAtInftyContinuousMap.indicatorCLM` onto the discs of a set of
+classes evaluates to the product with the indicator of their union, and re-expansion only reads
+the coefficients on the disc containing a smaller disc, so it commutes with these projections.
 
 The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 `TauCeti.NumberTheory.Padics.Disc`, which sends `(a, w)` to `a.val + pʰ w`.
@@ -109,6 +114,10 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
   every multi-level transition preserves evaluation.
 * `TauCeti.AnalyticStage.transitionLE_injective`: multi-level transitions are injective under
   the same scalar-regularity hypothesis.
+* `TauCeti.AnalyticStage.eval_indicatorCLM`: projecting onto the discs of a set of classes
+  evaluates to the product with the indicator of their union.
+* `TauCeti.AnalyticStage.transitionLE_indicatorCLM`: re-expansion commutes with the projections
+  onto the discs of a set of classes.
 
 ## References
 
@@ -858,6 +867,53 @@ theorem transitionLE_injective (hpE : IsSMulRegular E (p : ℤ_[p])) (hhk : h �
   | succ k hhk ih =>
     rw [transitionLE_succ S hhk]
     exact (transition_injective S hpE).comp ih
+
+/-! ### Projecting onto the discs of a set of classes -/
+
+section IndicatorCLM
+
+open ZeroAtInftyContinuousMap
+
+/-- Projecting onto the discs of a set `U` of classes of level `h` evaluates to the product of the
+function with the indicator of the union of these discs. -/
+@[simp]
+theorem eval_indicatorCLM (U : Set (ZMod (p ^ h))) (c : AnalyticStage p h E) (x : ℤ_[p]) :
+    eval S (indicatorCLM S (Prod.fst ⁻¹' U) c) x =
+      (PadicInt.toZModPow h ⁻¹' U).indicator (eval S c) x := by
+  obtain ⟨⟨a, w⟩, rfl⟩ := (PadicInt.discHomeomorph p h).surjective x
+  classical
+  rw [PadicInt.discHomeomorph_apply, Set.indicator_apply, Set.mem_preimage,
+    PadicInt.toZModPow_natCast_val_add_mul, eval_natCast_val_add_mul, eval_natCast_val_add_mul]
+  by_cases ha : a ∈ U <;> simp [ha]
+
+/-- Re-expanding a vector projected onto the discs of a set `U` of classes of level `h` projects
+the re-expansion onto the discs of level `h + 1` lying in them. -/
+theorem transition_indicatorCLM (U : Set (ZMod (p ^ h))) (c : AnalyticStage p h E) :
+    transition S (indicatorCLM S (Prod.fst ⁻¹' U) c) =
+      indicatorCLM S
+        (Prod.fst ⁻¹' ((fun b : ZMod (p ^ (h + 1)) ↦ (ZMod.cast b : ZMod (p ^ h))) ⁻¹' U))
+        (transition S c) := by
+  ext ⟨a', j⟩
+  by_cases ha : (ZMod.cast a' : ZMod (p ^ h)) ∈ U <;> simp [transition_apply, ha, reexpand_def]
+
+/-- Re-expanding a vector projected onto the discs of a set `U` of classes of level `h` to a level
+`k ≥ h` projects the re-expansion onto the discs of level `k` lying in them. -/
+theorem transitionLE_indicatorCLM (hhk : h ≤ k) (U : Set (ZMod (p ^ h)))
+    (c : AnalyticStage p h E) :
+    transitionLE S hhk (indicatorCLM S (Prod.fst ⁻¹' U) c) =
+      indicatorCLM S (Prod.fst ⁻¹' ((fun b : ZMod (p ^ k) ↦ (ZMod.cast b : ZMod (p ^ h))) ⁻¹' U))
+        (transitionLE S hhk c) := by
+  induction k, hhk using Nat.le_induction with
+  | base => simp
+  | succ k hhk ih =>
+    rw [transitionLE_succ S hhk, ContinuousLinearMap.comp_apply, ih, transition_indicatorCLM,
+      ContinuousLinearMap.comp_apply]
+    congr 3
+    ext b
+    simp only [Set.mem_preimage,
+      ZMod.cast_cast_of_dvd (pow_dvd_pow p hhk) (pow_dvd_pow p k.le_succ)]
+
+end IndicatorCLM
 
 end AnalyticStage
 
