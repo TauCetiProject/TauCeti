@@ -192,14 +192,14 @@ def fillingWitnessTwo (r : ℕ) : SL(2, ℤ) :=
     (S * T ^ (-1 : ℤ) * S⁻¹) * T
 
 /-- The witness at the level `3 r + 1` as the word `-L(2r) U(3) L(-r-1) U(3)` in `S` and `T`. -/
-theorem fillingWitnessOne_eq (r : ℕ) :
+theorem fillingWitnessOne_def (r : ℕ) :
     fillingWitnessOne r =
       -(S * T ^ (-(2 * r : ℤ)) * S⁻¹ * T ^ (3 : ℤ) * (S * T ^ ((r : ℤ) + 1) * S⁻¹) * T ^ (3 : ℤ)) :=
   (rfl)
 
 /-- The witness at the level `3 r + 2` as the word `L(2r+1) U(-3) L(-r-1) U(1) L(1) U(1)` in `S`
 and `T`. -/
-theorem fillingWitnessTwo_eq (r : ℕ) :
+theorem fillingWitnessTwo_def (r : ℕ) :
     fillingWitnessTwo r =
       S * T ^ (-(2 * r + 1 : ℤ)) * S⁻¹ * T ^ (-3 : ℤ) * (S * T ^ ((r : ℤ) + 1) * S⁻¹) * T *
         (S * T ^ (-1 : ℤ) * S⁻¹) * T :=
@@ -211,7 +211,7 @@ theorem coe_fillingWitnessOne (r : ℕ) :
     (fillingWitnessOne r : Matrix (Fin 2) (Fin 2) ℤ) =
       (!![1 + (3 * r + 1), 3 * (3 * r + 1); (3 * r + 1) * (2 * r + 1),
         1 + 2 * (3 * r + 1) ^ 2 - (3 * r + 1)] : Matrix (Fin 2) (Fin 2) ℤ) := by
-  simp only [fillingWitnessOne_eq, Matrix.SpecialLinearGroup.coe_neg,
+  simp only [fillingWitnessOne_def, Matrix.SpecialLinearGroup.coe_neg,
     Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, coe_S, Matrix.SpecialLinearGroup.coe_inv,
     Matrix.adjugate_fin_two]
   ext i j
@@ -223,7 +223,7 @@ theorem coe_fillingWitnessTwo (r : ℕ) :
     (fillingWitnessTwo r : Matrix (Fin 2) (Fin 2) ℤ) =
       (!![1 + 2 * (3 * r + 2), 3 * (3 * r + 2); 2 * (3 * r + 2) * (2 * r + 1),
         1 + 2 * (3 * r + 2) ^ 2 - 2 * (3 * r + 2)] : Matrix (Fin 2) (Fin 2) ℤ) := by
-  simp only [fillingWitnessTwo_eq, Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, coe_T, coe_S,
+  simp only [fillingWitnessTwo_def, Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, coe_T, coe_S,
     Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two]
   ext i j
   fin_cases i <;> fin_cases j <;> simp <;> ring
