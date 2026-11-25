@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.SelfAdjoint
-public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.Algebra.TemperleyLieb.Basic
+public import TauCeti.Basic.Complex.Basic
 
 /-!
 # The adjoint on the Temperley–Lieb algebra

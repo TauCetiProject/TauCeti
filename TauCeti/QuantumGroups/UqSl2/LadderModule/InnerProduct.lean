@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Star.SelfAdjoint
+public import TauCeti.Basic.Complex.Basic
 public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 public import TauCeti.QuantumGroups.UqSl2.Star
 public import TauCeti.QuantumGroups.QuantumInteger.Order

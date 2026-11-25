@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.SelfAdjoint
-public import Mathlib.Basic.Complex.Basic
 
 /-!
 # Nilpotent self-adjoint elements, anticommutation and star transposition
@@ -24,8 +23,7 @@ one-sided relations with a self-adjoint element: `x * q = x` becomes `q * x = x`
 `x`, and `q * u = 0` becomes `star u * q = 0`. For a self-adjoint `p`, the
 element `2 p - 1` is again self-adjoint, and its commutator `ξ p - p ξ` with a skew-adjoint `ξ`
 is self-adjoint. For a self-adjoint `x` in an additive group with a star-additive involution,
-`Fact (IsSelfAdjoint (-x))` is packaged from `Fact (IsSelfAdjoint x)`, and every real number cast
-to `ℂ` is registered as self-adjoint through an instance `Fact (IsSelfAdjoint (r : ℂ))`.
+`Fact (IsSelfAdjoint (-x))` is packaged from `Fact (IsSelfAdjoint x)`.
 
 Preservation of self-adjoint squares by an additive homomorphism also implies preservation
 of anticommutators on the self-adjoint part when the codomain has cancellative addition.
@@ -46,8 +44,6 @@ of anticommutators on the self-adjoint part when the codomain has cancellative a
 * `IsSelfAdjoint.eq_of_mul_eq_right`: uniqueness from mutual multiplication identities.
 * `TauCeti.isSelfAdjoint_neg_fact`: packages `Fact (IsSelfAdjoint (-x))` from
   `Fact (IsSelfAdjoint x)`.
-* `TauCeti.instFactIsSelfAdjointComplexOfReal`: the instance `Fact (IsSelfAdjoint (r : ℂ))` for
-  `r : ℝ`, supplying the self-adjointness hypotheses of star structures with a real parameter.
 * `AddMonoidHom.map_mul_add_mul_of_isSelfAdjoint`: polarization of the self-adjoint square law.
 -/
 
@@ -130,12 +126,6 @@ rather than a global instance (for use via `have` or `attribute [local instance]
 theorem isSelfAdjoint_neg_fact {R : Type*} [AddGroup R] [StarAddMonoid R] (x : R)
     [h : Fact (IsSelfAdjoint x)] : Fact (IsSelfAdjoint (-x)) :=
   ⟨h.out.neg⟩
-
-/-- A real number cast to `ℂ` is self-adjoint. This supplies the `Fact (IsSelfAdjoint _)`
-hypothesis of star structures with a parameter, such as the analytic adjoint on Temperley–Lieb
-algebras with a real loop value. -/
-instance instFactIsSelfAdjointComplexOfReal (r : ℝ) : Fact (IsSelfAdjoint (r : ℂ)) :=
-  ⟨Complex.conj_ofReal r⟩
 
 end TauCeti
 

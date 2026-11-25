@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Star.BigOperators
 public import Mathlib.Algebra.Star.Module
 public import Mathlib.Algebra.Star.Unitary
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
-public import TauCeti.Analysis.StarAlgebra.GNS.Basic
 
 /-!
 # The star structure on a twisted group algebra with unitary factor set
@@ -25,15 +24,14 @@ usual adjoint `f ↦ (g ↦ conj (f g⁻¹))` of the complex group algebra.
 
 The coefficient at the identity is a positive trace for this star structure:
 `(star x * x)_1 = Σ_g star x_g * x_g`. So over an ordered star ring without zero divisors, such as
-`ℂ` with its `ComplexOrder`, it is faithful.
+`ℂ` with its `ComplexOrder`, it is faithful; over `ℂ` it is packaged as a positive functional in
+`TauCeti.Algebra.MonoidAlgebra.Twisted.Positive`.
 
 ## Main definitions
 
 * `TauCeti.IsUnitaryFactorSet`: a factor set with unitary values.
 * `TauCeti.TwistedMonoidAlgebra.instStarRing` and `TauCeti.TwistedMonoidAlgebra.instStarModule`:
   the conjugate-linear star structure on `k_α[G]` for a unitary factor set.
-* `TauCeti.TwistedMonoidAlgebra.identityCoefficient`: over `ℂ`, the coefficient at the identity
-  as a positive functional.
 
 ## Main results
 
@@ -46,8 +44,6 @@ The coefficient at the identity is a positive trace for this star structure:
   `TauCeti.TwistedMonoidAlgebra.repr_star_mul_self_apply_one_nonneg` and
   `TauCeti.TwistedMonoidAlgebra.repr_star_mul_self_apply_one_eq_zero_iff`: the coefficient at
   the identity is a faithful positive trace.
-* `TauCeti.TwistedMonoidAlgebra.nullSubmodule_identityCoefficient`: over `ℂ`, the coefficient at
-  the identity has trivial GNS null space.
 
 ## References
 
@@ -161,13 +157,9 @@ theorem of_mem_unitary (g : G) : (of g : twistedMonoidAlgebra k G α) ∈ unitar
 theorem repr_star_apply (x : twistedMonoidAlgebra k G α) (g : G) :
     (basis k G α).repr (star x) g = star ((α g⁻¹ g : k) * (basis k G α).repr x g⁻¹) := by
   classical
-  rw [star_def, map_finsuppSum, Finsupp.sum_apply]
-  simp only [map_smul, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply,
-    inv_eq_iff_eq_inv]
-  rw [Finsupp.sum_ite_eq']
-  split_ifs with h
-  · rw [inv_inv, star_mul', mul_comm]
-  · rw [Finsupp.notMem_support_iff.1 h, mul_zero, star_zero]
+  -- Off the support both sides vanish; `+contextual` uses the vanishing coefficient there.
+  simp +contextual [star_def, map_finsuppSum, Finsupp.sum_apply, Finsupp.single_apply,
+    inv_eq_iff_eq_inv, mul_comm]
 
 /-- An algebra map from a twisted group algebra with unitary factor set into a star algebra
 preserves the star structure exactly when it sends every basis element to a unitary. -/
@@ -238,32 +230,6 @@ theorem repr_star_mul_self_apply_one_eq_zero_iff [NoZeroDivisors k]
   · exact Finsupp.mem_support_iff.1 hg h'
 
 end Order
-
-section Complex
-
-open scoped ComplexOrder
-
-variable {α : G → G → ℂˣ} [IsFactorSet α] [IsUnitaryFactorSet α]
-
-/-- Over `ℂ`, **the coefficient at the identity** as a positive functional on `ℂ_α[G]`. -/
-noncomputable def identityCoefficient : StarPositiveFunctional (twistedMonoidAlgebra ℂ G α) where
-  toLinearMap := (basis ℂ G α).coord 1
-  square_nonneg := repr_star_mul_self_apply_one_nonneg
-
-/-- `identityCoefficient` evaluates as the coefficient at the identity. -/
-@[simp]
-theorem identityCoefficient_apply (x : twistedMonoidAlgebra ℂ G α) :
-    identityCoefficient x = (basis ℂ G α).repr x 1 :=
-  (rfl)
-
-/-- The coefficient at the identity is faithful: its GNS null space is trivial. -/
-theorem nullSubmodule_identityCoefficient :
-    (identityCoefficient : StarPositiveFunctional (twistedMonoidAlgebra ℂ G α)).nullSubmodule =
-      ⊥ := by
-  ext x
-  simp
-
-end Complex
 
 end TwistedMonoidAlgebra
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.Twisted.Star
+public import TauCeti.Algebra.MonoidAlgebra.Twisted.Positive
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace
 public import TauCeti.Algebra.TemperleyLieb.Star
 public import TauCeti.Analysis.Complex.Circle.Basic
@@ -193,7 +193,7 @@ noncomputable def cubicStarHom (m : ℕ) :
     TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m →⋆ₐ[ℂ] cubicFixedStar (m - 1) :=
   StarAlgHom.codRestrict
     { toAlgHom := (cubicFixed (m - 1)).val.comp (cubicHom m), map_star' := coe_cubicHom_star } _
-    fun x ↦ (cubicHom m x).property
+    fun x ↦ mem_cubicFixedStar.2 (cubicHom m x).property
 
 /-- `cubicStarHom m` evaluates as `F_m`. -/
 @[simp]
@@ -205,8 +205,8 @@ theorem coe_cubicStarHom_apply {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : �
 @[simp]
 theorem ker_cubicStarHom (m : ℕ) : RingHom.ker (cubicStarHom m) = RingHom.ker (cubicHom m) := by
   ext x
-  rw [RingHom.mem_ker, RingHom.mem_ker, ← Subtype.coe_inj, coe_cubicStarHom_apply]
-  exact Subtype.coe_inj
+  rw [RingHom.mem_ker, RingHom.mem_ker, ← ZeroMemClass.coe_eq_zero, coe_cubicStarHom_apply,
+    ZeroMemClass.coe_eq_zero]
 
 namespace IsMarkovTrace
 
