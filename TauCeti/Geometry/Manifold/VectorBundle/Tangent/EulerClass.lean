@@ -9,9 +9,9 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Manifold
 public import TauCeti.Geometry.Manifold.Morse.CWModel
 public import TauCeti.Geometry.Manifold.Morse.PoincareHopf
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.EulerNumber
+public import TauCeti.Geometry.Manifold.VectorField.Chart.Linearization
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
-import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # The Euler number of the tangent bundle is the Euler characteristic
@@ -29,8 +29,7 @@ The proof evaluates the Euler class on the gradient of a Morse function.
 * A vector field `V` read as a section of `TM` has linearization `T_p M → T_p M`
   (`TauCeti.sectionLinearization`) equal to its chart derivative
   (`TauCeti.vectorFieldChartDerivative`), the derivative of its coordinate field in the chart at
-  `p` (`TauCeti.sectionLinearization_apply_eq_vectorFieldChartDerivative_apply`): both are read
-  in the tangent-bundle trivialization at `p`, which is the identity on the fibre over `p`.
+  `p` (`TauCeti.sectionLinearization_eq_vectorFieldChartDerivative`).
 * So at a zero `p` with invertible linearization the local index of `V`, the orientation sign of
   its linearization
   (`TauCeti.VectorBundleOrientation.sectionIndex_toHomologicalOrientation_eq_ite`), is the sign of
@@ -49,8 +48,6 @@ Poincaré–Hopf theorem for the gradient of a Morse function, stated for the Eu
 
 ## Main results
 
-* `TauCeti.sectionLinearization_apply_eq_vectorFieldChartDerivative_apply`: the linearization of
-  a vector field is its chart derivative.
 * `TauCeti.Manifold.Orientation.sectionIndex_eq_sign_det_vectorFieldChartDerivative`: at a
   nondegenerate zero of a vector field the local index is the sign of the determinant of its chart
   derivative.
@@ -80,33 +77,6 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-section Linearization
-
-variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless] [TopologicalSpace M]
-  [ChartedSpace H M] [IsManifold I 1 M]
-
-/-- **The linearization of a vector field is its chart derivative.** On a boundaryless manifold,
-the linearization `T_p M → T_p M` of a vector field `V`, read as a section of the tangent bundle,
-is the derivative of the coordinate field of `V` in the chart at `p`. Both are computed in the
-tangent-bundle trivialization at `p`, which reads the fibre over `p` by the identity. -/
-theorem sectionLinearization_apply_eq_vectorFieldChartDerivative_apply
-    (V : (x : M) → TangentSpace I x) (p : M) (v : TangentSpace I p) :
-    sectionLinearization (F := E) I id V p v = vectorFieldChartDerivative I V p v := by
-  have hp : p ∈ (chartAt H p).source := mem_chart_source H p
-  -- The fibre coordinate of `V` in the trivialization at `p` is, near the chart image of `p`, the
-  -- coordinate field of `V` in the chart at `p`.
-  have h := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V p
-  rw [I.range_eq_univ, nhdsWithin_univ, VectorField.mpullbackWithin_univ] at h
-  -- The trivialization at `p` reads the fibre over `p` by the identity.
-  rw [sectionLinearization_def, id, ContinuousLinearMap.comp_apply,
-    TangentBundle.symmL_trivializationAt_eq_core hp]
-  refine ((tangentBundleCore I M).coordChange_self (achart H p) p hp _).trans ?_
-  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, vectorFieldChartDerivative_def, ← h.fderiv_eq]
-  rfl
-
-end Linearization
-
 namespace Manifold.Orientation
 
 variable {X M : Type} [NormedAddCommGroup X] [InnerProductSpace ℝ X] [FiniteDimensional ℝ X]
@@ -116,21 +86,6 @@ variable {X M : Type} [NormedAddCommGroup X] [InnerProductSpace ℝ X] [FiniteDi
 section Index
 
 variable [IsManifold 𝓘(ℝ, X) 1 M]
-
-include hX in
-omit [FiniteDimensional ℝ X] [T2Space M] in
-/-- A vector field whose chart derivative at `z` has nonzero determinant is differentiable at `z`:
-otherwise the chart derivative is `0`, whose determinant vanishes in positive dimension. -/
-private theorem mdifferentiableAt_of_det_vectorFieldChartDerivative_ne_zero
-    {V : (x : M) → TangentSpace 𝓘(ℝ, X) x} {z : M}
-    (hdet : LinearMap.det (vectorFieldChartDerivative 𝓘(ℝ, X) V z) ≠ 0) :
-    MDifferentiableAt 𝓘(ℝ, X) (𝓘(ℝ, X).prod 𝓘(ℝ, X)) (fun x ↦ TotalSpace.mk' X x (V x)) z := by
-  refine mdifferentiableAt_section_iff_differentiableAt_mpullbackWithin_extChartAt_symm.2 ?_
-  rw [ModelWithCorners.Boundaryless.range_eq_univ, VectorField.mpullbackWithin_univ]
-  by_contra hd
-  rw [vectorFieldChartDerivative_def, fderiv_zero_of_not_differentiableAt hd,
-    ContinuousLinearMap.toLinearMap_zero, LinearMap.det_zero, hX, zero_pow n.succ_ne_zero] at hdet
-  exact hdet rfl
 
 /-- **The local index of a vector field at a nondegenerate zero.** Let `V` be a vector field on a
 boundaryless manifold of dimension `n + 1` oriented by `oM`, and `z` a zero of `V` at which the
@@ -143,8 +98,9 @@ theorem sectionIndex_eq_sign_det_vectorFieldChartDerivative {V : (x : M) → Tan
     oM.toVectorBundleOrientation.sectionIndex hX (oM.toHomologicalOrientation hX) hV z =
       SignType.sign (LinearMap.det (vectorFieldChartDerivative 𝓘(ℝ, X) V z)) := by
   classical
-  have hVd := mdifferentiableAt_of_det_vectorFieldChartDerivative_ne_zero hX hdet
-  have hL := sectionLinearization_apply_eq_vectorFieldChartDerivative_apply (I := 𝓘(ℝ, X)) V z
+  have := Module.nontrivial_of_finrank_eq_succ hX
+  have hVd := mdifferentiableAt_of_det_vectorFieldChartDerivative_ne_zero hdet
+  have hL := sectionLinearization_apply_eq_vectorFieldChartDerivative (I := 𝓘(ℝ, X)) V z
   -- The chart derivative has nonzero determinant, so it is surjective, and so is the
   -- linearization.
   have hsurj : Function.Surjective (vectorFieldChartDerivative 𝓘(ℝ, X) V z) :=
@@ -168,9 +124,13 @@ theorem sectionIndex_eq_sign_det_vectorFieldChartDerivative {V : (x : M) → Tan
     have hDL : (D.toLinearEquiv : TangentSpace 𝓘(ℝ, X) z →ₗ[ℝ] TangentSpace 𝓘(ℝ, X) z) =
         vectorFieldChartDerivative 𝓘(ℝ, X) V z := by
       ext v
-      exact (congrArg (fun L ↦ L v) hD).trans (hL v)
+      rw [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+        ← ContinuousLinearEquiv.coe_coe, hD]
+      exact hL v
     rw [toVectorBundleOrientation_apply, Orientation.map_eq_iff_det_pos _ _ hcard, hDL]
-    rfl
+    -- Both sides are the same determinant, of `vectorFieldChartDerivative` on the model space,
+    -- read once on `TangentSpace 𝓘(ℝ, X) z` and once on `X`, which is its definition.
+    exact Iff.rfl
   have hiff : (∃ D : TangentSpace 𝓘(ℝ, X) z ≃L[ℝ] TangentSpace 𝓘(ℝ, X) z,
       (D : TangentSpace 𝓘(ℝ, X) z →L[ℝ] TangentSpace 𝓘(ℝ, X) z) =
           sectionLinearization (F := X) 𝓘(ℝ, X) id V z ∧
@@ -185,10 +145,8 @@ theorem sectionIndex_eq_sign_det_vectorFieldChartDerivative {V : (x : M) → Tan
       exact ⟨D, hD, (hdetD D hD).2 hpos⟩
   rw [if_congr hiff rfl rfl]
   rcases hdet.lt_or_gt with h | h
-  · rw [ite_eq_right_iff.2 fun h' ↦ absurd h' h.not_gt, sign_neg h]
-    rfl
-  · rw [ite_eq_left_iff.2 fun h' ↦ absurd h h', sign_pos h]
-    rfl
+  · rw [ite_eq_right_iff.2 fun h' ↦ absurd h' h.not_gt, sign_neg h, SignType.coe_neg_one]
+  · rw [ite_eq_left_iff.2 fun h' ↦ absurd h h', sign_pos h, SignType.coe_one]
 
 end Index
 
