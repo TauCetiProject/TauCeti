@@ -26,6 +26,12 @@ Mathlib's `ModuleCat.extendScalars f`, by `s ⊗ p ↦ s ⊗ₜ p`.
 * `TauCeti.BalancedExtension.extendScalarsIso f`: for commutative rings, the identification with
   `ModuleCat.extendScalars f`.
 
+## Main results
+
+* `TauCeti.BalancedExtension.functor_map_surjective`: along a surjective ring homomorphism,
+  every `S`-linear map `S ⊗_R P → S ⊗_R N` with `P` projective is the extension of an `R`-linear
+  map `P → N`.
+
 ## References
 
 * C. A. Weibel, *The K-book*, Chapter I, §2, pp. 7–8.
@@ -129,6 +135,24 @@ theorem adjunction_homEquiv_symm_apply_tmul {M : ModuleCat.{max v u₂} R}
   rw [Adjunction.homEquiv_counit]
   exact (congrArg ((adjunction f).counit.app N) (map_tmul (f := f) ψ.hom s m)).trans
     (adjunction_counit_app_tmul f N s (ψ m))
+
+/-- **Extension of scalars along a surjection is full on projective sources.** If `f` is
+surjective and `P` is projective, every `S`-linear map `S ⊗_R P → S ⊗_R N` is `S ⊗_R g` for an
+`R`-linear map `g : P → N`. Without surjectivity this fails: along `ℤ → ℚ`, multiplication by `1/2`
+on `ℚ ⊗_ℤ ℤ ≅ ℚ` is not `ℚ ⊗_ℤ g` for any `g : ℤ → ℤ`. -/
+theorem functor_map_surjective (hf : Function.Surjective f) {P N : ModuleCat.{max v u₂} R}
+    [Module.Projective R P] :
+    Function.Surjective ((functor.{u₁, u₂, max v u₂} f).map :
+      (P ⟶ N) → ((functor f).obj P ⟶ (functor f).obj N)) := by
+  intro φ
+  -- The adjoint `P → S ⊗_R N` of `φ` lifts along the unit `n ↦ 1 ⊗ n`, which is onto.
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property ((adjunction f).unit.app N).hom
+    ((adjunction f).homEquiv P _ φ).hom fun x ↦
+      (includeRight_surjective hf x).imp fun n hn ↦
+        (adjunction_unit_app_apply f N n).trans ((includeRight_apply n).symm.trans hn)
+  refine ⟨ModuleCat.ofHom g, ((adjunction f).homEquiv _ _).injective ?_⟩
+  rw [Adjunction.homEquiv_unit, Adjunction.unit_naturality]
+  exact ModuleCat.hom_ext hg
 
 end Ring
 

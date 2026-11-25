@@ -21,11 +21,13 @@ Combining the lower bound at `(a ^ p, b ^ p)` with the upper bound at `(a, b)` t
 identity `Φ_{p m}(a, b) Φ_m(a, b) = Φ_m(a ^ p, b ^ p)` yields
 `((a ^ p - b ^ p) / (a + b)) ^ φ(m) < Φ_{p m}(a, b)` for a prime `p ∤ m`. For a prime `p` and
 bases `a, b ≥ 1`, the geometric sum `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` is at least `p`,
-and exceeds `p` once `a > 1`.
+and exceeds `p` once `a > 1`; the same holds for
+`Φ_{p ^ k}(a, b) = Φ_p(a ^ p ^ (k - 1), b ^ p ^ (k - 1))` when `k ≠ 0`.
 
 The lower bounds show that `Φ_n(a, b)` exceeds `1` for `n ≥ 2` and `0 < b < a`, and exceeds every
-prime factor of `n` once `2 ≤ a - b`, which is how the Bang–Zsigmondy theorem rules out cyclotomic
-values made only of nonprimitive prime divisors.
+prime factor `p` of `n ≠ 0` once `0 < b` and `2 ≤ a - b`, because `p ≤ 2 ^ φ(n) ≤ (a - b) ^ φ(n)`.
+This is how the Bang–Zsigmondy theorem rules out cyclotomic values made only of nonprimitive prime
+divisors.
 
 ## Main results
 
@@ -44,16 +46,22 @@ values made only of nonprimitive prime divisors.
   `Nat.Prime.natCast_lt_homogeneousCyclotomic_prime_pow_mul`: for integer bases `0 < b < a`,
   `1 < Φ_n(a, b)` when `n ≥ 2`, and `p < Φ_n(a, b)` for every prime `p ∣ n ≠ 0` when `2 ≤ a - b`
   or when `p ^ 2 ∣ n`.
-* `TauCeti.natCast_le_homogeneousCyclotomic_prime`,
-  `TauCeti.natCast_lt_homogeneousCyclotomic_prime`: `p ≤ Φ_p(a, b)` for `a, b ≥ 1`, strictly if
+* `Nat.Prime.natCast_le_homogeneousCyclotomic_prime`,
+  `Nat.Prime.natCast_lt_homogeneousCyclotomic_prime`: `p ≤ Φ_p(a, b)` for `a, b ≥ 1`, strictly if
   `a > 1`, in an ordered commutative ring.
+* `Nat.Prime.natCast_le_homogeneousCyclotomic_prime_pow`,
+  `Nat.Prime.natCast_lt_homogeneousCyclotomic_prime_pow`: the same bounds for `Φ_{p ^ k}(a, b)`,
+  `k ≠ 0`.
+* `Nat.Prime.natCast_lt_homogeneousCyclotomic_of_two_le_sub_real`: `p < Φ_n(a, b)` for every prime
+  `p ∣ n ≠ 0` and real bases `0 < b` with `2 ≤ a - b`.
 
 ## References
 
 * [Ö. Avcı, *Large Zsigmondy primes*, arXiv:2011.06136v2 (2023)], Corollary 2.8.
 * [G. D. Birkhoff and H. S. Vandiver, *On the integral divisors of `a ^ n - b ^ n`*,
-  Ann. of Math. (2) 5 (1904), 173–180], pp. 178–179.
-* [M. Roitman, *On Zsigmondy primes*, Proc. Amer. Math. Soc. 125 (1997), 1913–1919], Lemma 1.
+  Ann. of Math. (2) 5 (1904), 173–180], proof of Theorem V, pp. 178–179.
+* [M. Roitman, *On Zsigmondy primes*, Proc. Amer. Math. Soc. 125 (1997), 1913–1919], Lemma 1
+  and the proof of Theorem 3.
 -/
 
 public section
@@ -132,14 +140,33 @@ theorem pow_sub_pow_div_add_pow_totient_lt_homogeneousCyclotomic {p m : ℕ} (hp
           mul_le_mul_of_nonneg_left (homogeneousCyclotomic_le_add_pow_totient m hb.le hba)
             (homogeneousCyclotomic_pos hbp.le hbap m).le
 
-/-! ### Prime indices -/
+/-- For a prime `p` dividing `n ≠ 0` and real `0 < b` with `2 ≤ a - b`, `p < Φ_n(a, b)`
+(Birkhoff–Vandiver 1904, p. 178). The hypothesis `2 ≤ a - b` is needed: `Φ_6(2, 1) = 3`. -/
+theorem _root_.Nat.Prime.natCast_lt_homogeneousCyclotomic_of_two_le_sub_real {p n : ℕ}
+    (hp : p.Prime) (hpn : p ∣ n) (hn : n ≠ 0) {a b : ℝ} (hb : 0 < b) (hab : 2 ≤ a - b) :
+    (p : ℝ) < homogeneousCyclotomic n a b := by
+  have htot : p - 1 ≤ n.totient := by
+    rw [← Nat.totient_prime hp]
+    exact Nat.le_of_dvd (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn)) (Nat.totient_dvd_of_dvd hpn)
+  have hp2 : p ≤ 2 ^ n.totient := by
+    have := (p - 1).lt_two_pow_self
+    have := Nat.pow_le_pow_right two_pos htot
+    have := hp.pos
+    omega
+  calc (p : ℝ) ≤ 2 ^ n.totient := by exact_mod_cast hp2
+    _ ≤ (a - b) ^ n.totient := pow_le_pow_left₀ zero_le_two hab _
+    _ < homogeneousCyclotomic n a b :=
+        sub_pow_totient_lt_homogeneousCyclotomic
+          (hp.two_le.trans (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) hpn)) hb (by linarith)
 
-variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+/-! ### Prime and prime-power indices -/
+
+variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R]
 
 /-- For a prime `p` and `a, b ≥ 1` in an ordered commutative ring, `p ≤ Φ_p(a, b)`: each of the
 `p` terms of `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` is at least `1`. -/
-theorem natCast_le_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R} (ha : 1 ≤ a)
-    (hb : 1 ≤ b) : (p : R) ≤ homogeneousCyclotomic p a b := by
+theorem _root_.Nat.Prime.natCast_le_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R}
+    (ha : 1 ≤ a) (hb : 1 ≤ b) : (p : R) ≤ homogeneousCyclotomic p a b := by
   rw [homogeneousCyclotomic_prime hp]
   calc (p : R) = ∑ _i ∈ Finset.range p, (1 : R) := by simp
     _ ≤ _ := Finset.sum_le_sum fun i _ => one_le_mul_of_one_le_of_one_le (one_le_pow₀ ha)
@@ -148,14 +175,33 @@ theorem natCast_le_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R
 /-- For a prime `p`, `1 < a` and `1 ≤ b` in an ordered commutative ring, `p < Φ_p(a, b)`: the term
 `a ^ (p - 1)` of `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` exceeds `1`. Since `Φ_p` is
 symmetric, the same holds for `1 ≤ a` and `1 < b`; at `a = b = 1`, `Φ_p(1, 1) = p`. -/
-theorem natCast_lt_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R} (ha : 1 < a)
-    (hb : 1 ≤ b) : (p : R) < homogeneousCyclotomic p a b := by
+theorem _root_.Nat.Prime.natCast_lt_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R}
+    (ha : 1 < a) (hb : 1 ≤ b) : (p : R) < homogeneousCyclotomic p a b := by
   rw [homogeneousCyclotomic_prime hp]
   calc (p : R) = ∑ _i ∈ Finset.range p, (1 : R) := by simp
     _ < _ := Finset.sum_lt_sum
         (fun i _ => one_le_mul_of_one_le_of_one_le (one_le_pow₀ ha.le) (one_le_pow₀ hb))
         ⟨p - 1, Finset.mem_range.2 (Nat.sub_lt hp.pos one_pos), by
           simpa using one_lt_pow₀ ha (Nat.sub_ne_zero_of_lt hp.one_lt)⟩
+
+/-- For a prime `p`, `k ≠ 0` and `a, b ≥ 1` in an ordered commutative ring,
+`p ≤ Φ_{p ^ k}(a, b)`. -/
+theorem _root_.Nat.Prime.natCast_le_homogeneousCyclotomic_prime_pow {p k : ℕ} (hp : p.Prime)
+    (hk : k ≠ 0) {a b : R} (ha : 1 ≤ a) (hb : 1 ≤ b) :
+    (p : R) ≤ homogeneousCyclotomic (p ^ k) a b := by
+  obtain ⟨e, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
+  rw [homogeneousCyclotomic_prime_pow hp]
+  exact hp.natCast_le_homogeneousCyclotomic_prime (one_le_pow₀ ha) (one_le_pow₀ hb)
+
+/-- For a prime `p`, `k ≠ 0`, `1 < a` and `1 ≤ b` in an ordered commutative ring,
+`p < Φ_{p ^ k}(a, b)`. -/
+theorem _root_.Nat.Prime.natCast_lt_homogeneousCyclotomic_prime_pow {p k : ℕ} (hp : p.Prime)
+    (hk : k ≠ 0) {a b : R} (ha : 1 < a) (hb : 1 ≤ b) :
+    (p : R) < homogeneousCyclotomic (p ^ k) a b := by
+  obtain ⟨e, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
+  rw [homogeneousCyclotomic_prime_pow hp]
+  exact hp.natCast_lt_homogeneousCyclotomic_prime
+    (one_lt_pow₀ ha (pow_ne_zero _ hp.ne_zero)) (one_le_pow₀ hb)
 
 end TauCeti
 
@@ -213,22 +259,8 @@ where `Φ_6(2, 1) = 3`; at `b = 0` it fails for `(a, b, n, p) = (2, 0, 2, 2)`, w
 theorem natCast_lt_homogeneousCyclotomic_of_two_le_sub {p n : ℕ} (hp : p.Prime)
     (hpn : p ∣ n) (hn : n ≠ 0) {a b : ℤ} (hb : 0 < b) (hab : 2 ≤ a - b) :
     (p : ℤ) < homogeneousCyclotomic n a b := by
-  -- Use `p ≤ 2 ^ (p - 1) ≤ 2 ^ φ(n) ≤ (a - b) ^ φ(n) < Φ_n(a, b)`.
-  have hn_pos : 0 < n := Nat.pos_of_ne_zero hn
-  have hn2 : 2 ≤ n := hp.two_le.trans (Nat.le_of_dvd hn_pos hpn)
-  have hφ : p - 1 ≤ n.totient := by
-    rw [← Nat.totient_prime hp]
-    exact Nat.le_of_dvd (Nat.totient_pos.2 hn_pos) (Nat.totient_dvd_of_dvd hpn)
-  have hp_pow : p ≤ 2 ^ (p - 1) := by
-    have := (p - 1).lt_two_pow_self
-    have := hp.one_le
-    omega
-  calc (p : ℤ) ≤ ((2 ^ (p - 1) : ℕ) : ℤ) := by exact_mod_cast hp_pow
-    _ = (2 : ℤ) ^ (p - 1) := by push_cast; rfl
-    _ ≤ (2 : ℤ) ^ n.totient := pow_le_pow_right₀ (by decide) hφ
-    _ ≤ (a - b) ^ n.totient := pow_le_pow_left₀ (by decide) hab _
-    _ < homogeneousCyclotomic n a b :=
-      Int.sub_pow_totient_lt_homogeneousCyclotomic hn2 hb (by omega)
+  exact_mod_cast hp.natCast_lt_homogeneousCyclotomic_of_two_le_sub_real hpn hn (a := a) (b := b)
+    (by exact_mod_cast hb) (by exact_mod_cast hab)
 
 /-- For a prime `p`, `e ≠ 0`, `m ≠ 0` and integers `0 < b < a`, `p < Φ_{p ^ (e + 1) m}(a, b)`
 (Birkhoff–Vandiver 1904, pp. 178–179). Every hypothesis is sharp: `e = 0` fails at

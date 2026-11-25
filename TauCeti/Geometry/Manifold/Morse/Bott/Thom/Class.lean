@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.DiscSpherePair
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.Homology
+import TauCeti.Geometry.Manifold.Topology
+import TauCeti.Topology.VectorBundle.Orientation.Cover.FundamentalGroup
 
 /-!
 # The homology across a Morse–Bott level from a Thom class of the negative normal bundle
@@ -96,6 +98,10 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 * `hasNegativeNormalThomClass_of_orientation` and `hasNegativeNormalThomClass_of_two_eq_zero`:
   such a Thom class exists over every commutative ring when the negative normal bundle is oriented,
   and in characteristic two in any case.
+* `nonempty_negativeNormalBundleOrientation` and
+  `hasNegativeNormalThomClass_of_simplyConnectedSpace`: the negative normal bundle of a simply
+  connected critical submanifold, such as a point, is orientable, so it has a Thom class over every
+  commutative ring.
 * `nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomClass`: a Thom class of
   `ν⁻` identifies the relative homology `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K)` of a critical band with
   `Hₚ(S; K)`.
@@ -137,7 +143,7 @@ variable {E : Type} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fi
   [IsManifold J 1 S] {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
   [I.Boundaryless] [IsManifold I 2 M] (h : i.IsCriticalSubmanifold f)
   {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
-  (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) {ε : ℝ}
+  (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn) {ε : ℝ}
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E') {r : ℕ}
 
 include hdim in
@@ -243,7 +249,7 @@ variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [Nor
   (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
   (g : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
   (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
 
 /-- **The orientations of the negative normal bundle.** Let `i` be a nondegenerate critical
@@ -312,6 +318,29 @@ theorem hasNegativeNormalThomClass_of_two_eq_zero (K : Type) [CommRing K] (h2 : 
   have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
   exact exists_isThomClass_of_two_eq_zero K h2
 
+/-- **The negative normal bundle of a simply connected critical submanifold is orientable.** A
+real vector bundle over a simply connected manifold is orientable
+(`TauCeti.VectorBundleOrientation.nonempty_of_simplyConnectedSpace`), so when `S` is simply
+connected, for instance a point, the negative normal bundle `ν⁻` relative to any smooth fibre
+metric has an orientation. -/
+theorem nonempty_negativeNormalBundleOrientation [SimplyConnectedSpace S] :
+    Nonempty (h.NegativeNormalBundleOrientation hn hfs hdim g hr) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
+  have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
+  have := J.locallyPathConnectedSpace_of_chartedSpace S
+  exact VectorBundleOrientation.nonempty_of_simplyConnectedSpace (by simp)
+
+/-- **The negative normal bundle of a simply connected critical submanifold has a Thom class**
+with coefficients in every commutative ring `K`, since it is orientable
+(`nonempty_negativeNormalBundleOrientation`). -/
+theorem hasNegativeNormalThomClass_of_simplyConnectedSpace [SimplyConnectedSpace S] (K : Type)
+    [CommRing K] : h.HasNegativeNormalThomClass hn hfs hdim g hr K :=
+  h.hasNegativeNormalThomClass_of_orientation hn hfs hdim g hr
+    (h.nonempty_negativeNormalBundleOrientation hn hfs hdim g hr).some K
+
 end IsNondegenerateCriticalSubmanifold
 
 /-! ### The homology of a critical band -/
@@ -332,7 +361,7 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
   (g : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
   (hV : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric))
@@ -445,22 +474,22 @@ theorem
     (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ ⋃ j, range (i j))
     (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
     {r : ι → ℕ}
-    (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h j).negativeNormalSpace hn (g j).toRiemannianMetric))
     {K : Type} [CommRing K]
-    (u : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (u : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
           fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s) :=
@@ -471,9 +500,9 @@ theorem
       ∀ j, (thomPair (Fin (r j) → ℝ)
         fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s).singularCohomology
           (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ (Fin (r j) → ℝ)))
-    (hu : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (hu : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
           fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s) :=
@@ -487,9 +516,9 @@ theorem
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) n ≅
       ∐ fun j : {j // r j ≤ n} ↦ ((singularHomologyFunctor (ModuleCat.{0} K) (n - r j)).obj
         (ModuleCat.of K K)).obj (TopCat.of (S j))) := by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  have _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  have _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
       fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s) :=
@@ -501,9 +530,7 @@ theorem
       fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s :=
     fun j ↦ (hV j).vectorBundle
   -- The Morse index along `i j` is the rank `r j` of the negative normal bundle.
-  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
-    rw [← (h j).finrank_negativeNormalSpace hn (g j).toRiemannianMetric s, (hV j).finrank_eq s,
-      Fintype.card_fin]
+  have hr (j : ι) := (h j).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j)
   obtain ⟨e⟩ := SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn h hfs
     hc hd hac hcb hcompact hcrit hdim g hr (ModuleCat.of K K) n
   -- The Thom pairs of the bundles of rank above `n` have no homology in degree `n`.
@@ -536,7 +563,7 @@ theorem
     {K : Type} [CommRing K]
     (hK : ∀ j, letI := (i j).normalSpaceFiberBundle hn (hdim j)
       letI := (i j).normalSpaceVectorBundle hn (hdim j)
-      ∃ (g : ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+      ∃ (g : ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
         (hV : HasLocalSubbundleFrames (P j) (Fin (r j))
           ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn g.toRiemannianMetric)),
         letI := subbundleTopology (P j) (F' := Fin (r j) → ℝ)

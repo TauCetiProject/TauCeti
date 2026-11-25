@@ -151,4 +151,12 @@ theorem IsPoissonRandomMeasure.hasLaw_toReal_occurrenceTime_zero
   simpa only [Nat.cast_zero, zero_add, expMeasure] using
     h.hasLaw_toReal_occurrenceTime hr 0
 
+/-- For zero intensity, every occurrence time of a temporal Poisson random measure is
+simultaneously infinite almost surely. -/
+theorem IsPoissonRandomMeasure.ae_forall_occurrenceTime_eq_top_of_zero
+    (h : IsPoissonRandomMeasure P N 0) :
+    ∀ᵐ ω ∂P, ∀ n, (N ω).occurrenceTime n = ∞ := by
+  filter_upwards [h.ae_eq_zero_measure] with ω hω n
+  simp [hω]
+
 end TauCeti.Probability

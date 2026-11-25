@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 public import TauCeti.Topology.Homotopy.HomotopyGroup.FundamentalGroupAction
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 import TauCeti.Geometry.Manifold.Instances.Icc.CollaredSmoothTransition
-import TauCeti.Geometry.Manifold.SmoothApprox
+import TauCeti.Geometry.Manifold.SmoothApprox.Basic
 import TauCeti.Topology.Homotopy.Homotopic.Rel
 import Mathlib.Topology.Order.ProjIcc
 

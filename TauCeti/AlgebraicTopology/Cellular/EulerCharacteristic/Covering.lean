@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
+import TauCeti.Data.Set.Card
 public import TauCeti.Topology.CWComplex.Classical.Covering
 import TauCeti.Topology.CWComplex.Comparison
-import TauCeti.Topology.Covering.Pullback
+public import TauCeti.Topology.Covering.Pullback
 
 /-!
 # Multiplicativity of the Euler characteristic for finite covers
@@ -35,6 +37,11 @@ that complex, and the total space of the pullback is homotopy equivalent to `E`
 (`IsCoveringMap.pullbackHomotopyEquiv`). Hence `χ(E) = d · χ(B)` for every `d`-sheeted cover of a
 space of finite CW type.
 
+If `X` has finite CW type, `f : X → B` is continuous, and `p` is a covering over the image of
+`f` with finite fibres all of cardinality `d`, then the pullback has Euler characteristic
+`d * eulerChar X` (`IsCoveringMapOn.eulerChar_pullback`). The image of `f` may meet several
+connected components.
+
 ## Main results
 
 * `TauCeti.cwEulerChar_preimage`: the alternating count of the cells of the lifted complex, summed
@@ -45,6 +52,9 @@ space of finite CW type.
 * `TauCeti.eulerChar_preimage_of_card_fiber`: the same for the Euler characteristics of the spaces.
 * `TauCeti.eulerChar_eq_mul_of_isCoveringMap`: **finite-cover multiplicativity**, `χ(E) = d · χ(B)`
   for a `d`-sheeted cover of a space `B` of finite CW type.
+* `IsCoveringMap.genus_sub_one_eq_mul_add_emod`: when `χ(E) ≤ 2`, the exact formula
+  `g(E) - 1 = d · (g(B) - 1) + d · (χ(B) % 2) / 2`, with integer division. The correction
+  vanishes for even `χ(B)` and records the effect of rounding for odd `χ(B)`.
 
 ## References
 
@@ -147,12 +157,64 @@ theorem eulerChar_eq_mul_of_isCoveringMap [FiniteCWType B] {d : ℕ}
   have hq := hp.pullback_fst e.symm.toFun.continuous
   have hqfin (z : Z) :
       Finite ↥((Function.Pullback.fst : Function.Pullback e.symm p → Z) ⁻¹' {z}) :=
-    .of_equiv _ (Function.Pullback.fstPreimageEquiv z).symm
-  have h := eulerChar_eq_mul_of_isCoveringMap_of_cwComplex hq hqfin fun z ↦
-    (Nat.card_congr (Function.Pullback.fstPreimageEquiv z)).trans (hd _)
+    (Function.Pullback.finite_preimage_fst_singleton_iff z).mpr (hfin _)
+  have h := eulerChar_eq_mul_of_isCoveringMap_of_cwComplex hq hqfin fun z ↦ by
+    simpa only [Nat.card_coe_set_eq, Function.Pullback.ncard_preimage_fst_singleton]
+      using hd (e.symm z)
   have := hq.finiteCWType hqfin
   rw [← (hp.pullbackHomotopyEquiv e.symm).eulerChar_eq, h, e.eulerChar_eq]
 
 end FiniteCWType
 
+/-- If `X` has finite CW type, `f` is continuous, and `p` is a covering over the image of `f`
+with finite fibres of cardinality `d`, the Euler characteristic of the pullback is `d` times
+`eulerChar X`. -/
+theorem _root_.IsCoveringMapOn.eulerChar_pullback {X Z : Type u} {Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] [FiniteCWType X]
+    {f : X → Y} {p : Z → Y} (hp : IsCoveringMapOn p (Set.range f)) (hf : Continuous f)
+    (hfin : ∀ x, Finite (p ⁻¹' {f x})) {d : ℕ}
+    (hd : ∀ x, Nat.card (p ⁻¹' {f x}) = d) :
+    haveI := (hp.isCoveringMap_pullback_fst hf fun x ↦ ⟨x, rfl⟩).finiteCWType
+      fun x ↦ (Function.Pullback.finite_preimage_fst_singleton_iff x).mpr (hfin x)
+    eulerChar (f.Pullback p) = d * eulerChar X := by
+  have hq := hp.isCoveringMap_pullback_fst hf (fun x ↦ ⟨x, rfl⟩)
+  have hqfin := fun x ↦ (Function.Pullback.finite_preimage_fst_singleton_iff x).mpr (hfin x)
+  exact eulerChar_eq_mul_of_isCoveringMap hq hqfin fun x ↦ by
+    simpa only [Nat.card_coe_set_eq, Function.Pullback.ncard_preimage_fst_singleton] using hd x
+
 end TauCeti
+
+namespace IsCoveringMap
+
+open TauCeti
+
+variable {E B : Type u} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
+
+/-- **The genus formula with its parity correction.** For a `d`-sheeted finite cover with
+total-space Euler characteristic at most two, the discrepancy from `g(E) - 1 = d * (g(B) - 1)`
+is `d * (χ(B) % 2) / 2`. In particular the discrepancy vanishes when `χ(B)` is even.
+No orientability or cap-duality hypothesis is needed for this corrected formula. -/
+theorem genus_sub_one_eq_mul_add_emod [FiniteCWType B] (hp : IsCoveringMap p)
+    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) {d : ℕ}
+    (hd : ∀ b, Nat.card ↥(p ⁻¹' {b}) = d)
+    (hE : letI := hp.finiteCWType hfin; eulerChar E ≤ 2) :
+    letI := hp.finiteCWType hfin
+    (RiemannSurface.genus E : ℤ) - 1 =
+      d * ((RiemannSurface.genus B : ℤ) - 1) + d * (eulerChar B % 2) / 2 := by
+  let := hp.finiteCWType hfin
+  have hχ := eulerChar_eq_mul_of_isCoveringMap hp hfin hd
+  by_cases hd0 : d = 0
+  · subst d
+    simp only [Nat.cast_zero, zero_mul] at hχ ⊢
+    simp [RiemannSurface.genus_def, hχ]
+  have hdpos : (1 : ℤ) ≤ d := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hd0
+  have hB : eulerChar B ≤ 2 := by nlinarith
+  have hgenB := RiemannSurface.two_mul_genus_eq_sub_emod hB
+  have hgenB' := congrArg ((d : ℤ) * ·) hgenB
+  have hgenE := RiemannSurface.two_mul_genus_eq_sub_emod hE
+  have hmod : eulerChar E % 2 = ((d : ℤ) * (eulerChar B % 2)) % 2 := by
+    simp [hχ, Int.mul_emod]
+  have hdiv := Int.emod_add_ediv_mul ((d : ℤ) * (eulerChar B % 2)) 2
+  linarith
+
+end IsCoveringMap

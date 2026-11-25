@@ -40,8 +40,8 @@ the dual
 For nonempty factors, the product polyhedron is bounded exactly when both factors are
 (`TauCeti.Toric.isBounded_facetPolyhedron_prod_iff`). Consequently, for finite-dimensional
 spaces, the factors of a Delzant product presentation are Delzant
-(`TauCeti.Toric.IsDelzant.of_prod`). Conversely, for injective lattice maps and finitely many
-facets, the product of Delzant presentations is Delzant (`TauCeti.Toric.IsDelzant.prod`).
+(`TauCeti.Toric.IsDelzant.of_prod`). Conversely, for injective lattice maps, the product of
+Delzant presentations is Delzant (`TauCeti.Toric.IsDelzant.prod`).
 Irredundancy of a facet `(u j, 0)` of the product uses a point of `Δ'` on no facet of `Δ'`, which a
 Delzant polytope has (`TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`). Together these give
 `TauCeti.Toric.isDelzant_prod_iff`.
@@ -59,10 +59,10 @@ Delzant polytope has (`TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`). Toge
   exactly when both factors are.
 * `TauCeti.Toric.IsDelzant.of_prod`: for finite-dimensional spaces, the factors of a Delzant
   product are Delzant.
-* `TauCeti.Toric.IsDelzant.prod`: for injective lattice maps into finite-dimensional spaces and
-  finitely many facets, the product of Delzant polytopes is Delzant.
-* `TauCeti.Toric.isDelzant_prod_iff`: under the hypotheses of `TauCeti.Toric.IsDelzant.prod`, the
-  product is Delzant exactly when both factors are.
+* `TauCeti.Toric.IsDelzant.prod`: for injective lattice maps, the product of Delzant polytopes is
+  Delzant.
+* `TauCeti.Toric.isDelzant_prod_iff`: for injective lattice maps into finite-dimensional spaces,
+  the product is Delzant exactly when both factors are.
 
 ## References
 
@@ -254,11 +254,9 @@ theorem of_prod [FiniteDimensional ℝ V] [FiniteDimensional ℝ V']
   · obtain ⟨_, _, y₂, hy₂, hk⟩ := hirr (.inr j)
     exact ⟨y₂, hy₂, ext fun j' ↦ by simpa using Set.ext_iff.1 hk (.inr j')⟩
 
-/-- **Products of Delzant polytopes.** For injective lattice maps into finite-dimensional spaces
-and finitely many facets, the product presentation `(prodNormal u u', Sum.elim c c')` of two
-Delzant presentations is Delzant. -/
-theorem prod [Finite ι] [Finite ι'] [FiniteDimensional ℝ V] [FiniteDimensional ℝ V']
-    (hi : Function.Injective i) (hi' : Function.Injective i') (h : IsDelzant i u c)
+/-- **Products of Delzant polytopes.** For injective lattice maps, the product presentation
+`(prodNormal u u', Sum.elim c c')` of two Delzant presentations is Delzant. -/
+theorem prod (hi : Function.Injective i) (hi' : Function.Injective i') (h : IsDelzant i u c)
     (h' : IsDelzant i' u' c') : IsDelzant (i.prodMap i') (prodNormal u u') (Sum.elim c c') := by
   -- A point on no facet of the other factor serves as the irredundancy witness's partner.
   obtain ⟨z, hz, hz₀⟩ := h.exists_activeSet_eq_empty hi
@@ -278,11 +276,11 @@ theorem prod [Finite ι] [Finite ι'] [FiniteDimensional ℝ V] [FiniteDimension
 
 end IsDelzant
 
-/-- **Products of Delzant polytopes.** For injective lattice maps into finite-dimensional spaces
-and finitely many facets, the product presentation `(prodNormal u u', Sum.elim c c')` is Delzant
-exactly when both factors are. -/
-theorem isDelzant_prod_iff [Finite ι] [Finite ι'] [FiniteDimensional ℝ V]
-    [FiniteDimensional ℝ V'] (hi : Function.Injective i) (hi' : Function.Injective i') :
+/-- **Products of Delzant polytopes.** For injective lattice maps into finite-dimensional spaces,
+the product presentation `(prodNormal u u', Sum.elim c c')` is Delzant exactly when both factors
+are. -/
+theorem isDelzant_prod_iff [FiniteDimensional ℝ V] [FiniteDimensional ℝ V']
+    (hi : Function.Injective i) (hi' : Function.Injective i') :
     IsDelzant (i.prodMap i') (prodNormal u u') (Sum.elim c c') ↔
       IsDelzant i u c ∧ IsDelzant i' u' c' :=
   ⟨IsDelzant.of_prod, fun h ↦ h.1.prod hi hi' h.2⟩

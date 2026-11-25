@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
+public import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate.Basic
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Basic
 import TauCeti.Analysis.PDE.Parabolic.Existence

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Projection.Acute
+public import TauCeti.Analysis.InnerProductSpace.Projection.Acute.PrincipalAngle
 
 /-!
 # Directed tangent representatives for subspaces

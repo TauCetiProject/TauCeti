@@ -79,7 +79,10 @@ private theorem affineFluxBoundary_cauchyFueterCutoffField {ε : ℝ} (hε : 0 <
       (fun hp ↦ hFd u hu.1 hp i)).hasFDerivAt.comp _ dq.hasFDerivAt)
     (hip.congr hae.symm)
   rw [integral_congr_ae hae] at h
-  rw [L.integral_image_affine p _ (Icc 0 1) volume, abs_of_pos hL, integral_smul]
+  have himg := LinearMap.integral_image_affine (L : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ) p
+    (fun x ↦ cauchyFueterCutoffDensity ε (dq x) q₀ • f (dq x)) (Icc 0 1) volume
+  simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] at himg
+  rw [himg, abs_of_pos hL, integral_smul]
   exact h.symm
 
 /-- The signed cofactor flux of the cut-off left field is its density integral over the

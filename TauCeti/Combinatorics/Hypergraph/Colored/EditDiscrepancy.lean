@@ -211,6 +211,10 @@ variable {H₁ H₂ H₃ : Colored3Graph κ V} {ε δ : ℝ}
 theorem symm (h : H₁.Approximates3 H₂ ε) : H₂.Approximates3 H₁ ε := by
   rwa [approximates3_iff, editDiscrepancy3_comm]
 
+/-- Approximation within `ε` forces a nonnegative error. -/
+theorem nonneg (h : H₁.Approximates3 H₂ ε) : 0 ≤ ε :=
+  (Rat.cast_nonneg.2 (editDiscrepancy3_nonneg H₁ H₂)).trans h
+
 /-- Approximation within `ε` implies approximation within any larger error. -/
 theorem mono (h : H₁.Approximates3 H₂ ε) (hεδ : ε ≤ δ) : H₁.Approximates3 H₂ δ :=
   h.trans hεδ

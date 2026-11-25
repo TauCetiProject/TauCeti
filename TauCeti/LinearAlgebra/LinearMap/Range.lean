@@ -16,7 +16,8 @@ right side `e₂` carries the range of `f` onto the range of `g`. Transporting c
 commuting square of linear isomorphisms uses this. When `e₂` is an isomorphism, the two ranges
 have the same dimension (`LinearMap.finrank_range_eq_of_comp_eq`). In any commuting square
 `g ∘ i = i' ∘ f`, the map `g` sends the range of `i` into the range of `i'`, so it induces a map of
-cokernels.
+cokernels. A linear map whose range contains a spanning family of the target is surjective
+(`LinearMap.surjective_of_span_range_eq_top`).
 -/
 
 public section
@@ -65,5 +66,16 @@ theorem range_le_comap_range_of_comp_eq
     range i ≤ (range i').comap g := by
   rintro _ ⟨x, rfl⟩
   exact ⟨f x, (LinearMap.congr_fun h x).symm⟩
+
+/-- A semilinear map is surjective once every member of a spanning family of the target lies in
+its range. -/
+theorem surjective_of_span_range_eq_top
+    {R R₂ M M₂ ι : Type*} [Semiring R] [Semiring R₂] {τ₁₂ : R →+* R₂} [RingHomSurjective τ₁₂]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂]
+    (f : M →ₛₗ[τ₁₂] M₂) {s : ι → M₂} (hs : Submodule.span R₂ (Set.range s) = ⊤)
+    (h : ∀ j, s j ∈ range f) : Function.Surjective f := by
+  rw [← range_eq_top, eq_top_iff, ← hs, Submodule.span_le]
+  rintro _ ⟨j, rfl⟩
+  exact h j
 
 end LinearMap
