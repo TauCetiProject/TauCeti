@@ -40,6 +40,8 @@ taking invariants under it.
   intertwining maps into the factors.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
+* `Representation.intertwiningDefectAt`: the intertwining defect `σ g ∘ₗ f - f ∘ₗ ρ g` at `g`,
+  a linear map on `V →ₗ[K] W` that vanishes exactly on the maps intertwining the action of `g`.
 * `Representation.IntertwiningMap.res` and `Representation.Equiv.res`: restriction of an
   intertwining map or an equivalence along a monoid homomorphism `H →* G`.
 * `DistribMulActionHom.toIntertwiningMap`: an equivariant additive map of `G`-modules, as an
@@ -289,6 +291,33 @@ theorem ker_le_ker_of_surjective (f : IntertwiningMap ρ σ) (hf : Function.Surj
 end Kernel
 
 end Representation.IntertwiningMap
+
+namespace Representation
+
+section IntertwiningDefect
+
+variable {K G V W : Type*} [CommRing K] [Monoid G]
+  [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+
+/-- The **intertwining defect at `g`** of a linear map `f : V →ₗ[K] W`: `σ g ∘ₗ f - f ∘ₗ ρ g`,
+which vanishes exactly when `f` intertwines the actions of `g`. -/
+def intertwiningDefectAt (ρ : Representation K G V) (σ : Representation K G W) (g : G) :
+    (V →ₗ[K] W) →ₗ[K] V →ₗ[K] W :=
+  LinearMap.llcomp K V W W (σ g) - LinearMap.lcomp K W (ρ g)
+
+@[simp]
+theorem intertwiningDefectAt_apply (ρ : Representation K G V) (σ : Representation K G W) (g : G)
+    (f : V →ₗ[K] W) : intertwiningDefectAt ρ σ g f = σ g ∘ₗ f - f ∘ₗ ρ g :=
+  (rfl)
+
+/-- The intertwining defect at `g` vanishes exactly when `f` intertwines the actions of `g`. -/
+theorem intertwiningDefectAt_eq_zero_iff {ρ : Representation K G V} {σ : Representation K G W}
+    {g : G} {f : V →ₗ[K] W} : intertwiningDefectAt ρ σ g f = 0 ↔ f ∘ₗ ρ g = σ g ∘ₗ f := by
+  rw [intertwiningDefectAt_apply, sub_eq_zero, eq_comm]
+
+end IntertwiningDefect
+
+end Representation
 
 namespace Representation.Equiv
 
