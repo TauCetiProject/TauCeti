@@ -300,7 +300,8 @@ def derivative (Y : LeftInvariantDerivation I G) (hY : Y ∈ Submodule.span ℝ 
     obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).mp hY
     refine WithSeminorms.continuous_of_isBounded (withSeminorms I π X) (withSeminorms I π X) _
       (Seminorm.IsBounded.of_real fun k ↦ ⟨{k + 1}, ∑ i, |c i|, fun v ↦ ?_⟩)
-    rw [Finset.sup_singleton]
+    simp only [Finset.sup_singleton, seminormFamily_apply, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, linearEquiv_apply, linearEquiv_symm_apply]
     exact wordSeminorm_lieSmoothVectorsDerivative_le_of_eq_sum X k c hc.symm v.toSmooth
 
 /-- The continuous derived action `dπ(Y)` is the derived action on the smooth vectors. -/
@@ -309,13 +310,6 @@ theorem toSmooth_derivative (Y : LeftInvariantDerivation I G)
     (hY : Y ∈ Submodule.span ℝ (Set.range X)) (v : LieSmoothSpace I π X) :
     (derivative I π X Y hY v).toSmooth = lieSmoothVectorsDerivative I π Y v.toSmooth :=
   (rfl)
-
-variable (X) in
-/-- The derived action `dπ(X i)` of a family element is continuous on `LieSmoothSpace I π X`. -/
-theorem continuous_lieSmoothVectorsDerivative (i : ι) :
-    Continuous fun v : LieSmoothSpace I π X ↦
-      (ofSmooth (lieSmoothVectorsDerivative I π (X i) v.toSmooth) : LieSmoothSpace I π X) :=
-  (derivative I π X (X i) (Submodule.subset_span ⟨i, rfl⟩)).continuous
 
 end Derivative
 
