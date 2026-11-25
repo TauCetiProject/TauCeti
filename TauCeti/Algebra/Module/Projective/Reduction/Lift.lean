@@ -19,6 +19,7 @@ import TauCeti.Algebra.Module.Projective.Quotient
 import TauCeti.Algebra.Module.Projective.Reduction.Basic
 import TauCeti.Algebra.Module.Projective.Top
 import TauCeti.RingTheory.AdicCompletion.Finite
+import TauCeti.RingTheory.Idempotents.Nakayama
 import TauCeti.RingTheory.Ideal.Extended
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Jacobson.Basic
@@ -154,24 +155,6 @@ theorem nonempty_linearEquiv_of_reduction (hJ : RingHom.ker π ≤ Ring.jacobson
     ⟨(quotientEquiv hf hfker fun _ _ ↦ rfl).trans
       (quotientEquiv hg hgker fun _ _ ↦ rfl).symm⟩
 
-include hfker in
-/-- An idempotent endomorphism of `P` whose image lies in `ker π • P` is zero, when `ker π` lies in
-the Jacobson radical and `P` is finitely generated. -/
-private theorem eq_zero_of_isIdempotentElem_of_map_eq_zero [Module.Finite A P]
-    (hJ : RingHom.ker π ≤ Ring.jacobson A) {e : Module.End A P} (he : IsIdempotentElem e)
-    (h : ∀ x, f (e x) = 0) : e = 0 := by
-  -- The range `N` of `e` satisfies `N ≤ ker π • N`, so it vanishes by Nakayama's lemma.
-  have hN : LinearMap.range e ≤ Ring.jacobson A • LinearMap.range e := by
-    rintro _ ⟨x, rfl⟩
-    have hmem : e (e x) ∈ (RingHom.ker π • (⊤ : Submodule A P)).map e :=
-      ⟨e x, (hfker _).mp (h x), rfl⟩
-    rw [← mul_apply_eq_comp, he.eq, Submodule.map_smul'', ← LinearMap.range_eq_map] at hmem
-    exact Submodule.smul_mono_left hJ hmem
-  have hfg : (LinearMap.range e).FG := by
-    rw [LinearMap.range_eq_map]
-    exact Module.Finite.fg_top.map e
-  exact LinearMap.range_eq_bot.mp (Submodule.FG.eq_bot_of_le_jacobson_smul hfg hN)
-
 variable {O : Type*} [CommRing O] [IsNoetherianRing O] (ϖ : O) [IsAdicComplete (Ideal.span {ϖ}) O]
   [Algebra O A] [Module.Finite O A]
 
@@ -213,7 +196,7 @@ theorem isIndecomposableModule_iff_of_reduction [Module.Finite A P] [Module.Proj
     IsIndecomposableModule A P ↔ IsIndecomposableModule B Y := by
   have hJ : RingHom.ker π ≤ Ring.jacobson A := hker ▸ span_algebraMap_le_jacobson ϖ
   have hzero {e : Module.End A P} (he : IsIdempotentElem e) (h : ∀ x, f (e x) = 0) : e = 0 :=
-    eq_zero_of_isIdempotentElem_of_map_eq_zero hfker hJ he h
+    he.eq_zero_of_range_le_smul_top hJ fun _ ⟨x, hx⟩ ↦ hx ▸ (hfker _).mp (h x)
   simp only [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem]
   refine and_congr ⟨fun hP ↦ ?_, fun _ ↦ hf.nontrivial⟩ ⟨fun hP q hq ↦ ?_, fun hY e he ↦ ?_⟩
   · -- If `Y = 0` then `P = ϖ P`, so `P = 0` by Nakayama's lemma.
