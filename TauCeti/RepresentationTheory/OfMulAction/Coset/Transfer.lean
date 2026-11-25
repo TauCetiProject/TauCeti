@@ -114,12 +114,6 @@ theorem cosetTransfer_single (g : G) (c : A) :
   simp [cosetTransfer, cosetSum, relNorm_apply, ofMulAction_single, Finset.smul_sum,
     Subgroup.smul_def]
 
-/-- The transfer sends the coset `U` to the sum of the cosets `u U'`, `u ∈ U ⧸ U'`. -/
-theorem cosetTransfer_single_one :
-    cosetTransfer A U' (U := U) (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) =
-      ∑ q : U ⧸ U'.subgroupOf U, MonoidAlgebra.single (((q.out : U) : G) : G ⧸ U') 1 := by
-  simp
-
 /-- **Projection after transfer is the index**: `A[G ⧸ U] → A[G ⧸ U'] → A[G ⧸ U]` is
 multiplication by `[U : U']`. -/
 theorem cosetProjection_comp_cosetTransfer (hU : U' ≤ U) :
