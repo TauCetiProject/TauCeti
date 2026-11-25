@@ -143,7 +143,8 @@ For weighted `Lᵖ` inputs and a complete target, this bounds the weighted volum
 `MemWeightedLp.integrable_bilin` supplies integrability. The inequality itself needs no
 measurability or finiteness hypotheses on the functions. For an incomplete target,
 Mathlib defines the integral to be zero and the bound is trivial. -/
-theorem eNorm_integral_bilin_le_weightedELpNorm [ENNReal.HolderConjugate p q]
+theorem _root_.ContinuousLinearMap.eNorm_integral_bilin_le_weightedELpNorm
+    [ENNReal.HolderConjugate p q]
     {δ ε : ℝ} {f : E → F} {g : E → G}
     (B : F →L[ℝ] G →L[ℝ] H) (h0 : ∀ᵐ x ∂μ, x ≠ 0)
     (hδε : δ + ε = -(Module.finrank ℝ E : ℝ)) :
