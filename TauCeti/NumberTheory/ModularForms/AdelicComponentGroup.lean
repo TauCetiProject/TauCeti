@@ -89,6 +89,11 @@ theorem mem_componentGroup_iff {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ �
   rw [componentGroup, Subgroup.mem_inf, mem_glpos, Subgroup.mem_comap, Subgroup.mem_map_equiv,
     MulAut.conj_symm_apply]
 
+/-- `Γ_{g,U}` consists of matrices of positive determinant. -/
+theorem componentGroup_le_glpos (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))
+    (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) : componentGroup U g ≤ GLPos (Fin 2) ℚ :=
+  inf_le_left
+
 /-- **For compact `U`, every element of `Γ_{g,U}` has determinant `1`.** -/
 theorem det_eq_one_of_mem_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
     (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
