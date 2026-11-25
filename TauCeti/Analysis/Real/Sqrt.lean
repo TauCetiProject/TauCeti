@@ -65,6 +65,7 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 * `Real.sqrt_div_mul_mul_sqrt_div`: `√(u / t) * t * √(u / t) = u` for `0 ≤ u / t` and `t ≠ 0`.
 * `Real.sqrt_le_sqrt_two_mul`: `√x ≤ √(2 * x)`.
 * `Real.inv_sqrt_pow_mul_pow`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `0 < a` and `2p ≤ n`.
+* `Real.sqrt_natCast_pow_self_pos`: `0 < √n ^ n` for every natural number `n`.
 * `Real.one_sub_sq_two_mul_sqrt_div_one_add`: the complementary square of `2√k / (1 + k)`.
 * `Real.sq_two_mul_sqrt_div_one_add_lt_one`: this square is less than `1` for `k ≠ 1`.
 * `Real.two_mul_sqrt_div_one_add_eq_abs`: the two rational square-root transformations
@@ -226,6 +227,12 @@ theorem inv_sqrt_pow_mul_pow {a : ℝ} (ha : 0 < a) {n p : ℕ} (h : 2 * p ≤ n
   have ha' : a ^ p = √a ^ (2 * p) := by rw [pow_mul, sq_sqrt ha.le]
   rw [Nat.add_sub_cancel_left, ha', pow_add, mul_right_comm, ← mul_pow,
     inv_mul_cancel₀ (sqrt_pos.2 ha).ne', one_pow, one_mul]
+
+/-- The power `√n ^ n` (the constant `n^{n/2}`) is positive; it is `1` for `n = 0`. -/
+theorem sqrt_natCast_pow_self_pos (n : ℕ) : 0 < √(n : ℝ) ^ n := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  · exact pow_pos (sqrt_pos.mpr (Nat.cast_pos.mpr hn)) n
 
 /-- The complementary square of `2√k / (1 + k)` is `((1 - k) / (1 + k))²`. -/
 theorem one_sub_sq_two_mul_sqrt_div_one_add {k : ℝ} (hk : 0 ≤ k) :
