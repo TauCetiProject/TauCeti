@@ -102,7 +102,7 @@ theorem ratSubgroup_le_ratSubgroup_iff : ratSubgroup ν ≤ ratSubgroup μ ↔ �
   rw [not_le] at hlt
   -- `μ p = k` is finite and `p ^ (k + 1) ∣ ν`, but `p ^ (k + 1) ∤ μ`.
   obtain ⟨k, hk⟩ := ENat.ne_top_iff_exists.1 (hlt.trans_le le_top).ne
-  have hν : ofNat ⟨(p : ℕ) ^ (k + 1), pow_pos p.prop.pos _⟩ ≤ ν := by
+  have hν : ofNat ((p : ℕ+) ^ (k + 1)) ≤ ν := by
     rw [ofNat_prime_pow, primePower_le_iff, Nat.cast_add, Nat.cast_one, hk]
     exact Order.add_one_le_of_lt (hk ▸ hlt)
   have hμ := (inv_mem_ratSubgroup_iff _).1 (h ((inv_mem_ratSubgroup_iff _).2 hν))
@@ -140,8 +140,9 @@ theorem mem_ratSubgroup_primePower_top_iff (p : Nat.Primes) {x : ℚ} :
     obtain ⟨k, hk⟩ := ofNat_le_primePower_top_iff.1 hb
     exact ⟨a, k, by rw [hk, Nat.cast_pow]⟩
   · rintro ⟨a, k, rfl⟩
-    exact ⟨a, ⟨(p : ℕ) ^ k, pow_pos p.prop.pos k⟩, ofNat_le_primePower_top_iff.2 ⟨k, rfl⟩,
-      by simp⟩
+    exact ⟨a, (p : ℕ+) ^ k, ofNat_le_primePower_top_iff.2
+      ⟨k, by rw [PNat.pow_coe, Nat.Primes.coe_pnat_nat]⟩,
+      by simp [Nat.Primes.coe_pnat_nat]⟩
 
 end Supernatural
 

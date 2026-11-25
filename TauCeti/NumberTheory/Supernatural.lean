@@ -353,10 +353,10 @@ theorem ofNat_lcm (m n : ℕ+) : ofNat (PNat.lcm m n) = ofNat m ⊔ ofNat n := b
 /-- The supernatural number of a prime power `p ^ k` is the supernatural prime power. -/
 @[simp]
 theorem ofNat_prime_pow (p : Nat.Primes) (k : ℕ) :
-    ofNat ⟨(p : ℕ) ^ k, pow_pos p.prop.pos k⟩ = primePower p k := by
+    ofNat ((p : ℕ+) ^ k) = primePower p k := by
   ext q
   refine (ofNat_apply_eq_factorization _ q).trans ?_
-  rw [PNat.mk_coe, p.prop.factorization_pow]
+  rw [PNat.pow_coe, Nat.Primes.coe_pnat_nat, p.prop.factorization_pow]
   by_cases hq : q = p
   · subst hq
     simp
@@ -374,7 +374,8 @@ theorem ofNat_le_primePower_top_iff {p : Nat.Primes} {b : ℕ+} :
       ((le_iff.1 hb ⟨q, hq⟩).trans_eq (primePower_apply_of_ne hqp ⊤))
     exact (hq.factorization_pos_of_dvd b.ne_zero hqb).ne' (by exact_mod_cast nonpos_iff_eq_zero.1 h)
   · rintro ⟨k, hk⟩
-    rw [show b = ⟨(p : ℕ) ^ k, pow_pos p.prop.pos k⟩ from PNat.eq hk, ofNat_prime_pow]
+    rw [show b = (p : ℕ+) ^ k from PNat.eq (by rw [hk, PNat.pow_coe, Nat.Primes.coe_pnat_nat]),
+      ofNat_prime_pow]
     exact (primePower_le_primePower_iff p).2 le_top
 
 /-- A supernatural number is natural when it lies in the image of `ofNat`. -/

@@ -42,13 +42,12 @@ namespace Supernatural
 
 /-- The supernatural invariant of a sequence of matrix sizes: the supremum, in the divisibility
 order, of the sizes. -/
-@[expose]
 noncomputable def supernaturalOfSizes (d : ℕ → ℕ+) : Supernatural :=
   ⨆ n, ofNat (d n)
 
 /-- The supernatural invariant is the supremum of the sizes. -/
 theorem supernaturalOfSizes_def (d : ℕ → ℕ+) : supernaturalOfSizes d = ⨆ n, ofNat (d n) :=
-  rfl
+  (rfl)
 
 /-- The exponent of `p` in the supernatural invariant is the supremum of its exponents in the
 sizes. -/
@@ -75,7 +74,7 @@ theorem supernaturalOfSizes_const (d : ℕ+) : supernaturalOfSizes (fun _ ↦ d)
 
 /-- **Check.** Sizes `pⁿ` have invariant `p^∞`. -/
 theorem supernaturalOfSizes_prime_pow (p : Nat.Primes) :
-    supernaturalOfSizes (fun n ↦ ⟨(p : ℕ) ^ n, pow_pos p.prop.pos n⟩) = primePower p ⊤ := by
+    supernaturalOfSizes (fun n ↦ (p : ℕ+) ^ n) = primePower p ⊤ := by
   refine (supernaturalOfSizes_def _).trans ?_
   simp only [ofNat_prime_pow]
   ext q
@@ -95,10 +94,9 @@ theorem supernaturalOfSizes_factorial :
   refine eq_top_iff.2 (le_iff.2 fun p ↦ ?_)
   rw [top_apply, iSup_apply]
   -- `p ^ k ∣ (p ^ k)!`, so the exponent of `p` in `(p ^ k)!` is at least `k`.
-  refine ENat.forall_natCast_le_iff_le.1 fun k _ ↦ le_iSup_of_le ((p : ℕ) ^ k) ?_
-  have h : ofNat ⟨(p : ℕ) ^ k, pow_pos p.prop.pos k⟩ ≤
-      ofNat ⟨((p : ℕ) ^ k).factorial, Nat.factorial_pos _⟩ :=
-    ofNat_le_ofNat_iff.2 (PNat.dvd_iff.2 (Nat.dvd_factorial (pow_pos p.prop.pos k) le_rfl))
+  refine ENat.forall_natCast_le_iff_le.1 fun k _ ↦ le_iSup_of_le ((p : ℕ+) ^ k : ℕ+) ?_
+  have h : ofNat ((p : ℕ+) ^ k) ≤ ofNat ⟨((p : ℕ+) ^ k : ℕ).factorial, Nat.factorial_pos _⟩ :=
+    ofNat_le_ofNat_iff.2 (PNat.dvd_iff.2 (Nat.dvd_factorial ((p : ℕ+) ^ k).pos le_rfl))
   rw [ofNat_prime_pow, primePower_le_iff] at h
   exact h
 
