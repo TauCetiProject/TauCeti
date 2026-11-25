@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Topology.MetricSpace.Annulus
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Radial differentiation of disc integrals
@@ -26,9 +27,10 @@ calculation at a boundary puncture, where the domain of a holomorphic curve is a
 point of the real axis.
 
 The annular polar formulas are `TauCeti.integral_annulus_eq_integral_circleMap` and
-`TauCeti.integral_upperHalfAnnulus_eq_integral_circleMap`; the derivative uses Mathlib's
-fundamental theorem of calculus on a compact annulus or half-annulus around the radius.
-The target may be any real Banach space.
+`TauCeti.integral_upperHalfAnnulus_eq_integral_circleMap`; the derivative uses the fundamental
+theorem of calculus (`ContinuousOn.hasDerivAt_of_eq_add_integral`) on a compact annulus or
+half-annulus around the radius, where the arc density integrals depend continuously on the radius
+(`ContinuousOn.smul_integral_comp_circleMap_of_isCompact`). The target may be any real Banach space.
 
 ## References
 
@@ -45,9 +47,9 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- Arc density integrals of a density continuous on a compact set `A` depend continuously on the
 radius, as long as the arcs `θ ↦ circleMap z₀ r θ`, `θ ∈ [α, β]`, of radii `r ∈ [a, b]` lie in
-`A`. -/
-private theorem continuousOn_smul_integral_comp_circleMap [CompleteSpace F]
-    {f : ℂ → F} {z₀ : ℂ} {a b α β : ℝ} {A : Set ℂ} (hA : IsCompact A) (hf : ContinuousOn f A)
+`A`. Continuity at the centre is not required when `A` avoids it. -/
+theorem ContinuousOn.smul_integral_comp_circleMap_of_isCompact [CompleteSpace F]
+    {f : ℂ → F} {z₀ : ℂ} {a b α β : ℝ} {A : Set ℂ} (hf : ContinuousOn f A) (hA : IsCompact A)
     (ha : 0 ≤ a) (hαβ : α ≤ β) (hmem : ∀ r ∈ Icc a b, ∀ θ ∈ Icc α β, circleMap z₀ r θ ∈ A) :
     ContinuousOn (fun r ↦ r • ∫ θ in α..β, f (circleMap z₀ r θ)) (Icc a b) := by
   obtain ⟨C, hC⟩ := hA.exists_bound_of_continuousOn hf
@@ -82,7 +84,7 @@ theorem ContinuousOn.smul_integral_comp_circleMap [CompleteSpace F]
     {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
     (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) (ha : 0 ≤ a) :
     ContinuousOn (fun r ↦ r • ∫ θ in -π..π, f (circleMap z₀ r θ)) (Icc a b) :=
-  continuousOn_smul_integral_comp_circleMap (TauCeti.isCompact_setOf_le_norm_sub_le z₀ a b) hf ha
+  hf.smul_integral_comp_circleMap_of_isCompact (TauCeti.isCompact_setOf_le_norm_sub_le z₀ a b) ha
     (by linarith [Real.pi_pos]) fun r hr θ _ ↦ TauCeti.circleMap_mem_setOf_le_norm_sub_le ha hr θ
 
 /-- Boundary density integrals over half-circles of a continuous density on the closed upper half
@@ -91,26 +93,12 @@ theorem ContinuousOn.smul_integral_comp_circleMap_zero_pi [CompleteSpace F]
     {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
     (hf : ContinuousOn f {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) (ha : 0 ≤ a) :
     ContinuousOn (fun r ↦ r • ∫ θ in 0..π, f (circleMap z₀ r θ)) (Icc a b) :=
-  continuousOn_smul_integral_comp_circleMap
+  hf.smul_integral_comp_circleMap_of_isCompact
     ((TauCeti.isCompact_setOf_le_norm_sub_le z₀ a b).of_isClosed_subset
       (TauCeti.isClosed_upperHalfAnnulus z₀ a b) fun _ hz ↦ hz.2)
-    hf ha Real.pi_pos.le fun _ hr _ hθ ↦ TauCeti.circleMap_mem_upperHalfAnnulus ha hr hθ
+    ha Real.pi_pos.le fun _ hr _ hθ ↦ TauCeti.circleMap_mem_upperHalfAnnulus ha hr hθ
 
 variable [CompleteSpace F]
-
-/-- A function which near `r` is a constant plus the integral from `a < r` of a function `G`
-continuous on `[a, b] ∋ r`, `r < b`, has derivative `G r` at `r`. -/
-private theorem hasDerivAt_of_eq_add_intervalIntegral {E G : ℝ → F} {a b r : ℝ} (har : a < r)
-    (hrb : r < b) (hG : ContinuousOn G (Icc a b))
-    (heq : ∀ t ∈ Ioo a b, E t = E a + ∫ s in a..t, G s) : HasDerivAt E (G r) r := by
-  have hGr : IntervalIntegrable G volume a r :=
-    (hG.mono (by rw [uIcc_of_le har.le]; exact Icc_subset_Icc le_rfl hrb.le)).intervalIntegrable
-  have hd := intervalIntegral.integral_hasDerivAt_right hGr
-    (_root_.AEStronglyMeasurable.stronglyMeasurableAtFilter_of_mem
-      (hG.aestronglyMeasurable measurableSet_Icc) (Icc_mem_nhds har hrb))
-    (hG.continuousAt (Icc_mem_nhds har hrb))
-  exact (hd.const_add (E a)).congr_of_eventuallyEq
-    (eventually_of_mem (Ioo_mem_nhds har hrb) heq)
 
 namespace MeasureTheory.IntegrableOn
 
@@ -123,21 +111,12 @@ theorem hasDerivAt_integral_ball {f : ℂ → F} {z₀ : ℂ} {R r : ℝ}
     HasDerivAt (fun t ↦ ∫ z in ball z₀ t, f z)
       (r • ∫ θ in -π..π, f (circleMap z₀ r θ)) r := by
   -- Work on an annulus containing the radius, where the boundary density is continuous.
-  let a := r / 2
-  let b := (r + R) / 2
-  have ha : 0 < a := by dsimp [a]; linarith [hr.1]
-  have har : a < r := by dsimp [a]; linarith [hr.1]
-  have hrb : r < b := by dsimp [b]; linarith [hr.2]
-  have hbR : b < R := by dsimp [b]; linarith [hr.2]
-  have hsub : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} ⊆ ball z₀ R \ {z₀} := by
-    intro z hz
-    refine ⟨?_, ?_⟩
-    · simpa only [mem_ball, dist_eq_norm] using hz.2.trans_lt hbR
-    · rintro rfl
-      have : a ≤ 0 := by simpa using hz.1
-      linarith
-  refine hasDerivAt_of_eq_add_intervalIntegral har hrb
-    ((hf.mono hsub).smul_integral_comp_circleMap ha.le) fun t ht ↦ ?_
+  obtain ⟨a, ha, har⟩ := exists_between hr.1
+  obtain ⟨b, hrb, hbR⟩ := exists_between hr.2
+  have hsub : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} ⊆ ball z₀ R \ {z₀} :=
+    TauCeti.setOf_le_norm_sub_le_subset_ball_sdiff_singleton ha hbR
+  refine ((hf.mono hsub).smul_integral_comp_circleMap ha.le).hasDerivAt_of_eq_add_integral
+    ⟨har, hrb⟩ fun t ht ↦ ?_
   -- The disc integral differs from the radial primitive by the fixed inner disc.
   have hclosed := volume.addHaar_closedBall_ae_eq_ball z₀ t
   have hA : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ t} = closedBall z₀ t \ ball z₀ a := by
@@ -164,21 +143,12 @@ theorem hasDerivAt_integral_inter_ball {f : ℂ → F} {z₀ : ℂ} {R r : ℝ}
   set H : Set ℂ := {z | z₀.im ≤ z.im}
   have hH : MeasurableSet H := (isClosed_le continuous_const Complex.continuous_im).measurableSet
   -- Work on a half-annulus containing the radius, where the boundary density is continuous.
-  let a := r / 2
-  let b := (r + R) / 2
-  have ha : 0 < a := by dsimp [a]; linarith [hr.1]
-  have har : a < r := by dsimp [a]; linarith [hr.1]
-  have hrb : r < b := by dsimp [b]; linarith [hr.2]
-  have hbR : b < R := by dsimp [b]; linarith [hr.2]
-  have hsub : {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} ⊆ H ∩ (ball z₀ R \ {z₀}) := by
-    intro z hz
-    refine ⟨hz.1, ?_, ?_⟩
-    · simpa only [mem_ball, dist_eq_norm] using hz.2.2.trans_lt hbR
-    · rintro rfl
-      have : a ≤ 0 := by simpa using hz.2.1
-      linarith
-  refine hasDerivAt_of_eq_add_intervalIntegral har hrb
-    ((hf.mono hsub).smul_integral_comp_circleMap_zero_pi ha.le) fun t ht ↦ ?_
+  obtain ⟨a, ha, har⟩ := exists_between hr.1
+  obtain ⟨b, hrb, hbR⟩ := exists_between hr.2
+  have hsub : {z : ℂ | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} ⊆ H ∩ (ball z₀ R \ {z₀}) :=
+    fun _ hz ↦ ⟨hz.1, TauCeti.setOf_le_norm_sub_le_subset_ball_sdiff_singleton ha hbR hz.2⟩
+  refine ((hf.mono hsub).smul_integral_comp_circleMap_zero_pi ha.le).hasDerivAt_of_eq_add_integral
+    ⟨har, hrb⟩ fun t ht ↦ ?_
   -- The half-disc integral differs from the radial primitive by the fixed inner half-disc.
   have hclosed : H ∩ closedBall z₀ t =ᵐ[volume] H ∩ ball z₀ t :=
     Filter.EventuallyEqSet.rfl.inter (volume.addHaar_closedBall_ae_eq_ball z₀ t)

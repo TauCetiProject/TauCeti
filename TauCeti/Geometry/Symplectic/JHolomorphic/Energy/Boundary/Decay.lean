@@ -114,9 +114,11 @@ private theorem exists_mem_Ioo_integral_lt_and_mul_lt (hx₀ : x₀.im = 0)
   refine ⟨a, ⟨ha.1, ha.2.trans_le (min_le_right _ _)⟩, ?_, hah⟩
   have h := hsmall (x := a) (by
     rw [Real.dist_eq, sub_zero, abs_of_pos ha.1]; exact ha.2.trans_le (min_le_left _ _))
-  rw [Real.dist_eq, sub_zero, Measure.restrict_restrict measurableSet_ball,
-    inter_comm, inter_assoc, inter_eq_right.2 (ball_subset_ball
-      (ha.2.trans (min_lt_of_right_lt hr.2)).le)] at h
+  -- The half-disc of radius `a < R` is the ball of radius `a` within the half-disc of radius `R`.
+  have hset : ball x₀ a ∩ (H ∩ ball x₀ R) = H ∩ ball x₀ a := by
+    rw [inter_left_comm,
+      inter_eq_left.2 (ball_subset_ball (ha.2.trans (min_lt_of_right_lt hr.2)).le)]
+  rw [Real.dist_eq, sub_zero, Measure.restrict_restrict measurableSet_ball, hset] at h
   exact (le_abs_self _).trans_lt h
 
 omit [FiniteDimensional ℝ V] in

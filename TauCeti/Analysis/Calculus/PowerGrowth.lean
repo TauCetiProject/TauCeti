@@ -21,10 +21,11 @@ import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 The inequality `α f(t) ≤ t f'(t)` makes `f(t) / t^α` nondecreasing on positive
 intervals. It gives power bounds at smaller radii from data at a larger radius,
 including when `f` vanishes. No division by `f` or positivity assumption on `f` is needed.
-The other input of that argument is that a nonnegative `f` differentiable on `(0, a)` has
-`t f'(t)` below any `ε > 0` somewhere in `(0, a)` (`TauCeti.exists_mem_Ioo_mul_lt_of_hasDerivAt`),
-since otherwise `f(t) - ε log t` would be nondecreasing; for the energy of a disc this gives
-radii with small boundary density.
+
+A nonnegative `f` differentiable on `(0, a)` has `t f'(t)` below any `ε > 0` somewhere in `(0, a)`
+(`TauCeti.exists_mem_Ioo_mul_lt_of_hasDerivAt`), since otherwise `f(t) - ε log t` would be
+nondecreasing. Applied to the energy of a punctured (half-)disc, this gives arbitrarily small radii
+with small boundary density.
 
 Conversely, the inequality `m(ρ) ^ (1 - a) ≤ K m'(ρ)`, holding only at almost every `ρ`, forces a
 monotone function `m` which is positive on `(0, r)` to grow at least like a power:
@@ -114,11 +115,10 @@ theorem exists_mem_Ioo_mul_lt_of_hasDerivAt {f f' : ℝ → ℝ} {a ε : ℝ} (h
   set b := a / 2
   have hb : b ∈ Ioo 0 a := ⟨half_pos ha, half_lt_self ha⟩
   set t := b * Real.exp (-(f b + 1) / ε)
-  have ht : t ∈ Ioo 0 a := ⟨mul_pos hb.1 (Real.exp_pos _), lt_of_le_of_lt
-    (mul_le_of_le_one_right hb.1.le (Real.exp_le_one_iff.2 (div_nonpos_of_nonpos_of_nonneg
-      (by linarith [hnonneg b hb]) hε.le))) hb.2⟩
-  have hle := hmono ht hb (mul_le_of_le_one_right hb.1.le (Real.exp_le_one_iff.2
-    (div_nonpos_of_nonpos_of_nonneg (by linarith [hnonneg b hb]) hε.le)))
+  have htb : t ≤ b := mul_le_of_le_one_right hb.1.le (Real.exp_le_one_iff.2
+    (div_nonpos_of_nonpos_of_nonneg (by linarith [hnonneg b hb]) hε.le))
+  have ht : t ∈ Ioo 0 a := ⟨mul_pos hb.1 (Real.exp_pos _), htb.trans_lt hb.2⟩
+  have hle := hmono ht hb htb
   simp only at hle
   rw [Real.log_mul hb.1.ne' (Real.exp_pos _).ne', Real.log_exp, mul_add,
     mul_div_cancel₀ _ hε.ne'] at hle
