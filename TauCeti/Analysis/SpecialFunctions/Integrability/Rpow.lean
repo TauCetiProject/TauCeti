@@ -18,7 +18,7 @@ import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
-# Negative powers in `Lᵖ` near the origin and shifted interval powers
+# Integrability of real powers: `Lᵖ` near the origin, shifted powers, `|x| ^ p` and `|sin x| ^ p`
 
 On an interval `(0, c)`, the power `t ↦ t ^ (-a)` is in `Lᵖ` for every finite exponent `p` with
 `a p < 1` (`TauCeti.memLp_rpow_neg_restrict_Ioo`). This is the `Lᵖ` form of Mathlib's
@@ -37,8 +37,9 @@ On bounded intervals, the even power `x ↦ |x| ^ p` is interval integrable for 
 (`TauCeti.intervalIntegrable_abs_rpow`), the two-sided form of Mathlib's
 `intervalIntegral.intervalIntegrable_rpow'`. So is `x ↦ |sin x| ^ p`
 (`TauCeti.intervalIntegrable_abs_sin_rpow`), whose singularities at the zeros `kπ` of the sine
-are of this type by Jordan's inequality. The latter dominates powers `|z - w| ^ p` of the distance
-from a point `z` running along a circle to a fixed point `w` of that circle.
+are of this type by Jordan's inequality. For `p ≤ 0`, the latter dominates, up to a constant
+factor, the powers `|z - w| ^ p` of the distance from a point `z` running along a circle about `c`
+to a fixed point `w` (`TauCeti.norm_circleMap_sub_rpow_le`).
 -/
 
 public section

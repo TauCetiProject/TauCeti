@@ -163,22 +163,6 @@ private lemma exists_norm_le_mul_norm_sub_rpow {f : ℂ → E} {c w : ℂ} {r σ
   exact h1.trans (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge hzw0
     (hzw.le.trans (min_le_right _ _)) (min_le_left _ _)) hC.le)
 
-/-- On a circle of radius `s ≥ ρ > 0` about `c`, a nonpositive power of the distance to `w` is
-dominated by the same power of `|sin ((θ - arg (w - c)) / 2)|`, uniformly in `s`. -/
-private lemma norm_circleMap_sub_rpow_le {c w : ℂ} {ρ s q θ : ℝ} (hρ : 0 < ρ) (hρs : ρ ≤ s)
-    (hq : q ≤ 0) (hθ : Real.sin ((θ - arg (w - c)) / 2) ≠ 0) :
-    ‖circleMap c s θ - w‖ ^ q ≤ ρ ^ q * |Real.sin ((θ - arg (w - c)) / 2)| ^ q := by
-  have hs : 0 < s := hρ.trans_le hρs
-  have hlow : s * |Real.sin ((θ - arg (w - c)) / 2)| ≤ ‖circleMap c s θ - w‖ := by
-    convert mul_abs_sin_le_norm_circleMap_zero_sub s θ (w - c) using 2
-    simp only [circleMap]
-    ring
-  calc ‖circleMap c s θ - w‖ ^ q ≤ (s * |Real.sin ((θ - arg (w - c)) / 2)|) ^ q :=
-        Real.rpow_le_rpow_of_nonpos (mul_pos hs (abs_pos.2 hθ)) hlow hq
-    _ = s ^ q * |Real.sin ((θ - arg (w - c)) / 2)| ^ q := Real.mul_rpow hs.le (abs_nonneg _)
-    _ ≤ ρ ^ q * |Real.sin ((θ - arg (w - c)) / 2)| ^ q :=
-        mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos hρ hρs hq) (by positivity)
-
 omit [NormedSpace ℂ E] in
 /-- The restrictions of `f` to the circles of radius `s ∈ [ρ, r)` about `c` admit a common
 integrable bound, when `f` is continuous on the closed annulus `ρ ≤ |z - c| ≤ r` except at finitely
@@ -229,8 +213,8 @@ private lemma exists_intervalIntegrable_bound_norm_circleMap {f : ℂ → E} {c 
     simp only [φ, mul_assoc]
     exact mul_le_mul_of_nonneg_left (norm_circleMap_sub_rpow_le hρ hs.1 (hq0 w hw) (hθ w hw))
       (hC w hw)
-  · refine le_add_of_le_of_nonneg ((hM _ ⟨⟨mem_closedBall_iff_norm.2 (hd.trans_le hs.2.le),
-      fun h ↦ (mem_ball_iff_norm.1 h).not_ge (hd.symm ▸ hs.1)⟩, fun h ↦ hz ?_⟩).trans
+  · refine le_add_of_le_of_nonneg ((hM _ ⟨circleMap_mem_closedBall_diff_ball hρ.le
+      (Ico_subset_Icc_self hs) θ, fun h ↦ hz ?_⟩).trans
       (le_max_left _ _)) (Finset.sum_nonneg fun w hw ↦ hφ w hw θ)
     obtain ⟨w, hw, hzw⟩ := mem_iUnion₂.1 h
     exact ⟨w, hw, hzw⟩
@@ -248,10 +232,9 @@ private lemma tendsto_fourierCoeffOn_circleMap {f : ℂ → E} {c : ℂ} {ρ r :
     exists_intervalIntegrable_bound_norm_circleMap hρ hSfin hS hc hO
   have hmem (s θ : ℝ) (hs : s ∈ Icc ρ r) (hsr : s < r ∨ circleMap c s θ ∉ S) :
       circleMap c s θ ∈ (closedBall c r \ ball c ρ) \ S := by
-    have hd := norm_circleMap_sub_center c (hρ.le.trans hs.1) θ
-    refine ⟨⟨mem_closedBall_iff_norm.2 (hd.trans_le hs.2),
-      fun h ↦ (mem_ball_iff_norm.1 h).not_ge (hd.symm ▸ hs.1)⟩, hsr.elim (fun hsr h ↦ ?_) id⟩
-    exact (hd.symm.trans (mem_sphere_iff_norm.1 (hS h))).not_lt hsr
+    refine ⟨circleMap_mem_closedBall_diff_ball hρ.le hs θ, hsr.elim (fun hsr h ↦ ?_) id⟩
+    exact ((norm_circleMap_sub_center c (hρ.le.trans hs.1) θ).symm.trans
+      (mem_sphere_iff_norm.1 (hS h))).not_lt hsr
   simp only [fourierCoeffOn_eq_integral _ _ Real.two_pi_pos]
   -- Dominated convergence, with the common bound and the continuity of `f` off `S`.
   refine Tendsto.const_smul (intervalIntegral.tendsto_integral_filter_of_dominated_convergence
