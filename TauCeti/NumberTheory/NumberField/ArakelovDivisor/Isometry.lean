@@ -60,6 +60,9 @@ theorem exists_coe_apply_eq_mul_and_add_principal_eq_of_isometryEquiv
   set J : FractionalIdeal (𝓞 K)⁰ K := ((D'.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     FractionalIdeal (𝓞 K)⁰ K) with hJdef
   obtain ⟨f, hf⟩ := e.toLinearEquiv.toLinearMap.exists_coe_apply_eq_mul
+  -- The modules: `J = f I`.
+  have hJ : J = spanSingleton _ f * I :=
+    e.toLinearEquiv.toLinearMap.eq_spanSingleton_mul_of_surjective e.toLinearEquiv.surjective hf
   simp only [LinearEquiv.coe_coe, HermitianMetric.IsometryEquiv.coe_toLinearEquiv] at hf
   obtain ⟨x₀, hx₀I, hx₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     ((FractionalIdeal.coeToSubmodule_ne_bot).mpr (Units.ne_zero (D.finitePart⁻¹)))
@@ -70,23 +73,10 @@ theorem exists_coe_apply_eq_mul_and_add_principal_eq_of_isometryEquiv
     rintro rfl
     exact hex₀ (by simpa using hf x₀')
   refine ⟨Units.mk0 f hf0, hf, ?_⟩
-  -- The modules: `J = f I`.
-  have hJ : J = spanSingleton _ f * I := by
-    ext y
-    rw [mem_singleton_mul]
-    constructor
-    · intro hy
-      refine ⟨_, (e.symm ⟨y, hy⟩).property, ?_⟩
-      rw [← hf]
-      exact (congrArg Subtype.val (e.apply_symm_apply ⟨y, hy⟩)).symm
-    · rintro ⟨x, hx, rfl⟩
-      rw [← hf ⟨x, hx⟩]
-      exact (e ⟨x, hx⟩).property
   ext1
   · rw [← inv_inj]
     apply Units.ext
-    rw [coe_finitePart_add_principal_inv, ← hJdef, hJ, ← mul_assoc, ← map_mul, Units.val_mk0,
-      inv_mul_cancel₀ hf0, map_one, one_mul]
+    simp [← hJdef, hJ, hf0, I]
   · ext v
     have hm : (0 : ℝ) < v.mult := Nat.cast_pos.mpr mult_pos
     have hv₀ : 0 < v (x₀' : K) := pos_iff.mpr hx₀

@@ -46,15 +46,13 @@ theorem infinitePlace_two (v : InfinitePlace ℚ) : v (2 : ℚ) = 2 := by
 theorem placeNorm_D₂ (v : InfinitePlace ℚ)
     (x : ((D₂.finitePart⁻¹ : (FractionalIdeal (𝓞 ℚ)⁰ ℚ)ˣ) : FractionalIdeal (𝓞 ℚ)⁰ ℚ)) :
     D₂.hermitianMetric.placeNorm v x = 2 * v x := by
-  rw [placeNorm_hermitianMetric, infinitePart_principal_div_mult, toMul_ofMul, neg_neg,
-    Units.val_mk0, infinitePlace_two, Real.exp_log two_pos]
+  simp [placeNorm_hermitianMetric, Real.exp_log two_pos]
 
 /-- The module of `O((2))` is `½ ℤ`. -/
 theorem coe_finitePart_D₂_inv :
     ((D₂.finitePart⁻¹ : (FractionalIdeal (𝓞 ℚ)⁰ ℚ)ˣ) : FractionalIdeal (𝓞 ℚ)⁰ ℚ) =
       spanSingleton _ (2⁻¹ : ℚ) := by
-  rw [finitePart_principal, toMul_ofMul, Units.val_inv_eq_inv_val, coe_toPrincipalIdeal,
-    spanSingleton_inv, Units.val_mk0]
+  simp [finitePart_principal]
 
 /-- `2 ∈ ½ ℤ`. -/
 theorem two_mem : (2 : ℚ) ∈ ((D₂.finitePart⁻¹ : (FractionalIdeal (𝓞 ℚ)⁰ ℚ)ˣ) :

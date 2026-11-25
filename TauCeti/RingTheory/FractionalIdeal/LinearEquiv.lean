@@ -46,6 +46,8 @@ to an integral ideal `I'` coprime to `J'`
 
 * `LinearMap.exists_coe_apply_eq_mul`: every `R`-linear map between `R`-submodules of the fraction
   field `K` of `R` is multiplication by an element of `K`.
+* `LinearMap.eq_spanSingleton_mul_of_surjective`: a surjective `R`-linear map `I → J` between
+  fractional ideals that is multiplication by `f` shows `J = (f) I`.
 * `FractionalIdeal.nonempty_prod_linearEquiv_prod_mul`: **the product identity**. For an invertible
   fractional ideal `I` and a nonzero fractional ideal `J` of a Noetherian domain of dimension at
   most one, for instance a Dedekind domain, `I × J ≃ R × IJ`.
@@ -141,6 +143,18 @@ theorem exists_coe_apply_eq_mul {R K : Type*} [CommRing R] [Field K] [Algebra R 
   field_simp
   apply mul_left_cancel₀ hs
   linear_combination (x₀ : K) * hφ - (φ x₀ : K) * hrs'
+
+/-- **A surjective scaling between fractional ideals identifies the target.** If a surjective
+`R`-linear map `φ : I → J` between fractional ideals is `x ↦ f x`, then `J = (f) I`. -/
+theorem eq_spanSingleton_mul_of_surjective {R : Type*} [CommRing R] {S : Submonoid R}
+    {P : Type*} [CommRing P] [Algebra R P] [IsLocalization S P] {I J : FractionalIdeal S P}
+    (φ : I →ₗ[R] J) (hφ : Function.Surjective φ) {f : P} (hf : ∀ x : I, (φ x : P) = f * x) :
+    J = FractionalIdeal.spanSingleton S f * I := by
+  refine FractionalIdeal.eq_spanSingleton_mul.mpr ⟨fun y hy ↦ ?_, fun x hx ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := hφ ⟨y, hy⟩
+    exact ⟨x, x.property, by rw [← hf, hx]⟩
+  · rw [← hf ⟨x, hx⟩]
+    exact (φ ⟨x, hx⟩).property
 
 end LinearMap
 
