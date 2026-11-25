@@ -55,6 +55,16 @@ structure IsSubduction (m : MonomialOrder σ) (b : ι → MvPolynomial σ k)
   /-- The remainder has no larger leading exponent than the input. -/
   degree_le : m.degree r ≼[m] m.degree f
 
+/-- A generator `b i` subducts to zero in one step, with the expression `X i`. -/
+theorem isSubduction_X (m : MonomialOrder σ) (b : ι → MvPolynomial σ k) (i : ι) :
+    m.IsSubduction b (b i) (X i) 0 where
+  eq_aeval_add := by simp
+  support_le u hu := by
+    rw [← pow_one (X i), X_pow_eq_monomial] at hu
+    simp [Finset.mem_singleton.1 (support_monomial_subset hu)]
+  irreducible := by simp
+  degree_le := by simp
+
 end CommSemiring
 
 section CommRing
@@ -73,17 +83,20 @@ theorem IsSubduction.remainder_mem_iff (h : m.IsSubduction b f Q r)
   rw [h.eq_aeval_add]
   exact ⟨A.add_mem hQ, fun hf ↦ by simpa using A.sub_mem hf hQ⟩
 
-variable (m b) in
-/-- The negative `-(b i)` of a generator subducts to zero in one step, with the expression
-`-X i`. -/
-theorem isSubduction_neg_X (i : ι) : m.IsSubduction b (-b i) (-X i) 0 where
-  eq_aeval_add := by simp
+/-- Negating the input, the expression and the remainder of a subduction certificate gives a
+subduction certificate. -/
+theorem IsSubduction.neg (h : m.IsSubduction b f Q r) : m.IsSubduction b (-f) (-Q) (-r) where
+  eq_aeval_add := by rw [h.eq_aeval_add, map_neg, neg_add]
   support_le u hu := by
-    rw [MvPolynomial.support_neg, X] at hu
-    rw [Finset.mem_singleton.1 (support_monomial_subset hu)]
-    simp [degree_neg]
-  irreducible := by simp
-  degree_le := by simp
+    rw [MvPolynomial.support_neg] at hu
+    rw [degree_neg]
+    exact h.support_le u hu
+  irreducible a ha := by
+    rw [MvPolynomial.support_neg] at ha
+    exact h.irreducible a ha
+  degree_le := by
+    rw [degree_neg, degree_neg]
+    exact h.degree_le
 
 end CommRing
 

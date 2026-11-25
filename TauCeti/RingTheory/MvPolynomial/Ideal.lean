@@ -309,20 +309,16 @@ theorem ker_aeval_eq_span_of_rename_sumElim {τ υ : Type*} (e : σ ⊕ τ ≃ �
   have h : aeval g = (rename φ).comp ((aeval (Sum.elim X f)).comp (rename e.symm)) :=
     algHom_ext fun i ↦ by obtain ⟨x, rfl⟩ := e.surjective i; simp [hg]
   have hspan : Ideal.span (Set.range fun t ↦ X (e (Sum.inr t)) - rename (e ∘ Sum.inl) (f t)) =
-      (RingHom.ker (aeval (Sum.elim X f))).map (rename (R := R) e) := by
+      (RingHom.ker (aeval (Sum.elim X f))).map (renameEquiv R e).toRingEquiv := by
     rw [ker_aeval_sumElim, Ideal.map_span, ← Set.range_comp]
     congr 1
     ext t
     simp [rename_rename]
-  have hl : Function.LeftInverse (rename (R := R) e.symm) (rename e) := fun p ↦ by
-    simp [rename_rename]
-  have hr : Function.LeftInverse (rename (R := R) e) (rename e.symm) := fun p ↦ by
-    simp [rename_rename]
-  rw [hspan, le_antisymm (Ideal.map_le_comap_of_inverse _ _ _ hl)
-    (Ideal.comap_le_map_of_inverse _ _ _ hr), h]
+  rw [hspan, ← Ideal.comap_symm, h]
   ext p
   rw [Ideal.mem_comap, RingHom.mem_ker, RingHom.mem_ker, AlgHom.comp_apply, AlgHom.comp_apply,
-    map_eq_zero_iff _ (rename_injective φ hφ)]
+    map_eq_zero_iff _ (rename_injective φ hφ), AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv,
+    renameEquiv_symm, renameEquiv_apply]
 
 end Graph
 
