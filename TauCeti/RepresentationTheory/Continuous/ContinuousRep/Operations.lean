@@ -266,6 +266,12 @@ theorem twist_apply (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) (g : Γ) (
     ρ.twist χ g x = (χ g : A) • ρ g x :=
   Representation.charTwist_apply_apply _ _ g x
 
+/-- **The twist acts by `χ g • ρ g`**, as an equation of endomorphisms: the whole-map form of
+`TauCeti.ContinuousRep.twist_apply`. -/
+theorem twist_apply_eq_smul (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) (g : Γ) :
+    ρ.twist χ g = (χ g : A) • ρ g :=
+  LinearMap.ext (twist_apply ρ χ g)
+
 /-- **Twisting by the trivial character changes nothing**: `M(1) = M`. -/
 @[simp]
 theorem twist_one (ρ : ContinuousRep Γ A M) : ρ.twist 1 = ρ :=
