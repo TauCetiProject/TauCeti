@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Local.ChainRule.Continuity
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
-import TauCeti.Analysis.Sobolev.Local.Norm.LinearIsometryEquiv
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import Mathlib.Topology.UniformSpace.LocallyUniformConvergence

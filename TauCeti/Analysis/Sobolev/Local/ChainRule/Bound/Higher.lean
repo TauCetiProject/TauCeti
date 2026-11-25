@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Continuity
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Higher
-import TauCeti.Analysis.Sobolev.Local.Norm.LinearIsometryEquiv
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 
 /-!

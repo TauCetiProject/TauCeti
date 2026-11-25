@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
@@ -271,6 +272,30 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
       have hle : ‖ContinuousLinearMap.compL ℝ ℂ F G A‖ ≤ ‖A‖ :=
         ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun B => A.opNorm_comp_le B
       exact eNorm_le_iff_norm_le.2 hle
+
+/-- A linear isometric equivalence does not increase the `W^{k,p}` size. -/
+private theorem eLpNormWkp_linearIsometryEquiv_comp_le [CompleteSpace G] (e : F ≃ₗᵢ[ℝ] G)
+    (f : ℂ → F) : eLpNormWkp p U k (fun z => e (f z)) ≤ eLpNormWkp p U k f := by
+  have hn : ‖(e.toContinuousLinearEquiv : F →L[ℝ] G)‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by simp
+  have he : ‖(e.toContinuousLinearEquiv : F →L[ℝ] G)‖ₑ ≤ 1 :=
+    (ofReal_norm _).symm.trans_le (ENNReal.ofReal_le_one.2 hn)
+  calc
+    _ ≤ ‖(e.toContinuousLinearEquiv : F →L[ℝ] G)‖ₑ * eLpNormWkp p U k f :=
+      eLpNormWkp_clm_comp_le (e.toContinuousLinearEquiv : F →L[ℝ] G)
+    _ ≤ 1 * eLpNormWkp p U k f := by gcongr
+    _ = _ := one_mul _
+
+/-- **Linear isometric equivalences preserve the `W^{k,p}` size.** For a linear isometric
+equivalence `e : F ≃ₗᵢ[ℝ] G` between complete spaces, `‖e ∘ f‖_{W^{k,p}(U)} = ‖f‖_{W^{k,p}(U)}`. -/
+@[simp]
+theorem eLpNormWkp_linearIsometryEquiv_comp [CompleteSpace F] [CompleteSpace G]
+    (e : F ≃ₗᵢ[ℝ] G) (f : ℂ → F) :
+    eLpNormWkp p U k (fun z => e (f z)) = eLpNormWkp p U k f := by
+  refine le_antisymm (eLpNormWkp_linearIsometryEquiv_comp_le e f) ?_
+  calc
+    _ = eLpNormWkp p U k (fun z => e.symm (e (f z))) := by simp
+    _ ≤ _ := eLpNormWkp_linearIsometryEquiv_comp_le e.symm _
 
 
 /-- **A chain bound bounds the `W^{m,p}` norm.** Let `C` be finite and nonzero. If the iterated
