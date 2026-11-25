@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
-public import TauCeti.Data.ZMod.QuotientRing
+public import TauCeti.Data.ZMod.Quotient.Ring
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 
 /-!
@@ -107,16 +107,16 @@ theorem toZModPow_adicCompletionRingEquiv_symm (n : ℕ)
 /-- **The `p`-adic completion of a finitely generated abelian group `M` is `ℤ_[p] ⊗ M`.** -/
 noncomputable def tensorAdicCompletionEquiv (M : Type) [AddCommGroup M] [Module.Finite ℤ M] :
     ℤ_[p] ⊗[ℤ] M ≃ₗ[ℤ] AdicCompletion (Ideal.span {(p : ℤ)}) M :=
-  ((adicCompletionRingEquiv p).toAddEquiv.toIntLinearEquiv.rTensor M).trans
-    (ofTensorProductEquivOfFiniteNoetherian (Ideal.span {(p : ℤ)}) M).toAddEquiv.toIntLinearEquiv
+  -- Composing as additive equivalences and converting once with `toIntLinearEquiv` gives both
+  -- sides the `ℤ`-module structure `AddCommGroup.toIntModule` that the stated type elaborates to.
+  ((adicCompletionRingEquiv p).toIntAlgEquiv.toLinearEquiv.rTensor M).toAddEquiv.trans
+    (ofTensorProductEquivOfFiniteNoetherian (Ideal.span {(p : ℤ)}) M).toAddEquiv
+    |>.toIntLinearEquiv
 
 @[simp]
 theorem tensorAdicCompletionEquiv_tmul (M : Type) [AddCommGroup M] [Module.Finite ℤ M]
     (x : ℤ_[p]) (m : M) :
     tensorAdicCompletionEquiv p M (x ⊗ₜ m) = adicCompletionRingEquiv p x • of _ M m := by
-  -- The two `ℤ`-module structures on `ℤ_[p] ⊗[ℤ] M` in `tensorAdicCompletionEquiv` agree only
-  -- up to unfolding, so `LinearEquiv.trans_apply` does not rewrite; on a pure tensor the
-  -- equivalence unfolds to Mathlib's `ofTensorProduct` at `adicCompletionRingEquiv p x ⊗ₜ m`.
-  exact ofTensorProduct_tmul _ M (adicCompletionRingEquiv p x) m
+  simp [tensorAdicCompletionEquiv, ofTensorProduct_tmul]
 
 end PadicInt
