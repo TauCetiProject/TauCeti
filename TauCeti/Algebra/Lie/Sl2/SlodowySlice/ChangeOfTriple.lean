@@ -77,11 +77,8 @@ theorem IsSl2Triple.exists_lieEquiv_map_slodowySlice_eq (t : IsSl2Triple h e f)
   refine ⟨φ, hφ, hφe, hφh, hφf, ?_, φ.toLieHom.map_contractingAction t t' hφh, fun p hp x ↦ ?_⟩
   · rw [φ.map_slodowySlice, hφe, hφf]
   · -- Kostant's subgroup lies in the group `Int L` of inner automorphisms.
-    have hint : (generalLinearEquiv K L).symm φ.toLinearEquiv ∈ intLieAlgebra K L :=
+    have hint : ofLinearEquiv φ.toLinearEquiv ∈ intLieAlgebra K L :=
       map_expAdSubgroup_le_intLieAlgebra e ⟨φ.toLinearEquiv, hφ, rfl⟩
-    have hg : (((generalLinearEquiv K L).symm φ.toLinearEquiv : LinearMap.GeneralLinearGroup K L) :
-        L → L) = φ := by
-      rw [← coeFn_generalLinearEquiv, MulEquiv.apply_symm_apply, LieEquiv.coe_toLinearEquiv]
-    simpa [Units.smul_def, hg] using lift_eval_smul_of_mem_intLieAlgebra hint hp x
+    simpa using lift_eval_smul_of_mem_intLieAlgebra hint hp x
 
 end ChangeOfTriple
