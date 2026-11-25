@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.OneDimensional
+import TauCeti.Topology.Instances.Real.IcoScale
 import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
@@ -33,10 +34,8 @@ boundary squares to zero, as the first makes them cancel modulo two.
 A half-open local model also transports between two ways of recording the points of a
 compactified space: along maps `ι` and `π` identifying a set `R` near a point `a` with the closure
 of a set `P` near `ι a`, a half-open model of `R` at `a` gives one of the closure of `P` at `ι a`
-(`TauCeti.exists_homeomorph_Ico_closure_of_homeomorph_Ico`). Its two steps are that a continuous
-map on `[0, δ)` stays near its value at `0` on a shorter interval
-(`TauCeti.exists_pos_forall_lt_mem`) and that a continuous map on `[0, δ)` sending the positive
-points into `P` sends `0` into the closure of `P` (`TauCeti.mem_closure_of_forall_ne_zero`).
+(`TauCeti.exists_homeomorph_Ico_closure_of_homeomorph_Ico`), through the lemmas on continuous maps
+on `[0, δ)` of `TauCeti.Topology.Instances.Real.IcoScale`.
 
 When a set `P` is open in its closure and is a copy of a one-dimensional manifold, its closure is
 locally homeomorphic to open subsets of `ℝ` at the points of `P`
@@ -296,33 +295,6 @@ theorem ncard_eq_ncard_of_forall_exists_homeomorph_Ico [T2Space X]
     refine ⟨γ, ε / 2, half_pos hε, hγ0, hγc, hγi, fun s hs c hc hsc ↦ ?_⟩
     obtain ⟨t, ht0, hγt, hcomp⟩ := hγe s hs
     exact hcomp c (he t ht0 c hc (hγt ▸ hsc))
-
-/-- A continuous map on `[0, δ)` stays in any neighbourhood of its value at `0` on a shorter
-interval `[0, ε)`. -/
-theorem exists_pos_forall_lt_mem {Y : Type*} [TopologicalSpace Y] {U : Set Y} {δ : ℝ}
-    (hδ : 0 < δ) {g : Ico (0 : ℝ) δ → Y} (hg : Continuous g)
-    (hU : U ∈ 𝓝 (g ⟨0, left_mem_Ico.2 hδ⟩)) :
-    ∃ ε > 0, ∀ s : Ico (0 : ℝ) δ, (s : ℝ) < ε → g s ∈ U := by
-  obtain ⟨V, hV, hVU⟩ := (mem_nhds_subtype _ _ _).1 (hg.continuousAt.preimage_mem_nhds hU)
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 hV
-  refine ⟨ε, hε, fun s hs ↦ @hVU s (hball ?_)⟩
-  rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_nonneg s.property.1]
-  exact hs
-
-/-- If a continuous map on `[0, δ)` sends every positive point into `P`, it sends `0` into the
-closure of `P`. -/
-theorem mem_closure_of_forall_ne_zero {Z : Type*} [TopologicalSpace Z] {P : Set Z}
-    {δ : ℝ} (hδ : 0 < δ) {g : Ico (0 : ℝ) δ → Z} (hg : Continuous g)
-    (hP : ∀ s : Ico (0 : ℝ) δ, (s : ℝ) ≠ 0 → g s ∈ P) : g ⟨0, left_mem_Ico.2 hδ⟩ ∈ closure P := by
-  -- `g 0` is the limit of the points `g (δ / (n + 2))`.
-  let u : ℕ → Ico (0 : ℝ) δ := fun n ↦ ⟨δ / ((n + 2 : ℕ) : ℝ), by positivity, by
-    rw [div_lt_iff₀ (by positivity)]
-    push_cast
-    nlinarith⟩
-  have hu : Filter.Tendsto u Filter.atTop (𝓝 ⟨0, left_mem_Ico.2 hδ⟩) :=
-    tendsto_subtype_rng.2 ((tendsto_const_div_atTop_nhds_zero_nat δ).comp
-      (Filter.tendsto_add_atTop_nat 2))
-  exact mem_closure_of_tendsto ((hg.tendsto _).comp hu) (.of_forall fun n ↦ hP _ (by positivity))
 
 /-- **Transporting a half-open local model into a closure.** Let `P` be a set in a space `Z`, and
 `a` a point of a set `R` in a space `Y` with a neighbourhood `N` in `R` homeomorphic to `[0, δ)`,

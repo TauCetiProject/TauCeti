@@ -360,8 +360,8 @@ theorem isOpen_preimage_val_morseTrajectoryPairs {p r : M}
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
     IsOpen ((↑) ⁻¹' hX.morseTrajectoryPairs p r c₁ c₂ :
       Set (closure (hX.morseTrajectoryPairs p r c₁ c₂))) :=
-  isOpen_preimage_val_of_finite_closure_diff
-    (h.finite_closure_diff_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap)
+  (isLocallyClosed_iff_isOpen_coborder.2 (h.finite_closure_diff_morseTrajectoryPairs hf hind hr₂
+    h₂₁ h₁p hgap).isClosed.isOpen_compl).isOpen_preimage_val_closure
 
 include h hf in
 /-- **The compactified space is one-dimensional at unbroken trajectories.** Every unbroken

@@ -374,8 +374,8 @@ private theorem exists_nhds_homeomorph_of_mem_pairRecords {q : M × M × M}
   obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_isManifold hf₀ ⟨x₀, hx₀⟩
   let _ := C
   exact exists_nhds_homeomorph_of_isOpen_preimage_val (F := L)
-    (isOpen_preimage_val_of_finite_closure_diff
-      (h.finite_closure_diff_pairRecords h₀ h₁ hf₀ hf₁ hind hc₀ hgap₀ hc₁ hgap₁))
+    (isLocallyClosed_iff_isOpen_coborder.2 (h.finite_closure_diff_pairRecords h₀ h₁ hf₀ hf₁ hind
+      hc₀ hgap₀ hc₁ hgap₁).isClosed.isOpen_compl).isOpen_preimage_val_closure
     (by omega) Φ hq (mem_image_of_mem _ hx₀)
 
 /-- **A configuration broken at the source is an endpoint.** The record of a configuration broken
