@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.DivisionRing
 public import Mathlib.LinearAlgebra.BilinearMap
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
@@ -24,9 +23,6 @@ when the submodule range of its underlying semilinear map is trivial.
 
 A continuous linear map out of `κ → R`, with `κ` finite, is determined by its values on the
 coordinate vectors `Pi.single k 1`.
-
-For a continuous endomorphism `T` of a topological module, `T - μ • id` has trivial kernel exactly
-when `μ` is not an eigenvalue of `T`.
 
 A semilinear family `μ : M₁ →ₛₗ[σ₁₃] M₂ →SL[σ₂₃] M₃` of continuous semilinear maps becomes a
 family of semilinear maps after composing with the coercion `ContinuousLinearMap.coeLMₛₗ`, and
@@ -45,8 +41,6 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
   exactly when it is nonzero.
 * `ContinuousLinearMap.pi_ext_single_one`: a continuous linear map out of `κ → R`, `κ` finite, is
   determined by its values on the coordinate vectors.
-* `ContinuousLinearMap.ker_sub_smul_id_eq_bot_iff`: `T - μ • id` has trivial kernel exactly when
-  `μ` is not an eigenvalue of `T`.
 * `LinearMap.flip_coeLMₛₗ_comp_apply`: evaluation of the algebraic flip of such a family `μ`,
   `((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y`.
 -/
@@ -101,22 +95,6 @@ theorem pi_ext_single_one {R M κ : Type*} [Semiring R] [TopologicalSpace R] [To
     [AddCommMonoid M] [Module R M] [Finite κ] [DecidableEq κ] {f g : (κ → R) →L[R] M}
     (h : ∀ k, f (Pi.single k 1) = g (Pi.single k 1)) : f = g :=
   coe_injective <| LinearMap.pi_ext' fun k ↦ LinearMap.ext_ring <| h k
-
-section Eigenvalue
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [TopologicalSpace M]
-  [IsTopologicalAddGroup M] [ContinuousConstSMul R M]
-
-/-- `T - μ • id` has trivial kernel exactly when `μ` is not an eigenvalue of `T`. -/
-theorem ker_sub_smul_id_eq_bot_iff {T : M →L[R] M} {μ : R} :
-    LinearMap.ker ((T - μ • ContinuousLinearMap.id R M : M →L[R] M) : M →ₗ[R] M) = ⊥ ↔
-      ¬Module.End.HasEigenvalue (T : M →ₗ[R] M) μ := by
-  rw [Module.End.hasEigenvalue_iff, not_not]
-  congr!
-  ext x
-  simp [sub_eq_zero]
-
-end Eigenvalue
 
 end ContinuousLinearMap
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Eigenspace
 
 /-!
 # The index of the trajectory operator as a weight crosses an eigenvalue
