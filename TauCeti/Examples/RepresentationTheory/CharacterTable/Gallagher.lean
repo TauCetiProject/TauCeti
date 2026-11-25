@@ -76,8 +76,7 @@ example : (fun g => (signLinearCharacter k (Fin 2) g : k) * 1) =
 example : (fun g => (signLinearCharacter k (Fin 2) g : k) * signLinearCharacter k (Fin 2) g) =
     fun _ => 1 := by
   funext g
-  rw [← Units.val_mul, ← MonoidHom.mul_apply, signLinearCharacter_mul_self, MonoidHom.one_apply,
-    Units.val_one]
+  simp [← Int.cast_mul]
 
 /-- So the bijection is not the identity: `sgn` is not the trivial character. -/
 example : (fun g => (signLinearCharacter k (Fin 2) g : k)) ≠ fun _ => 1 := fun h => by
