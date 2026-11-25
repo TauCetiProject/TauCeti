@@ -398,6 +398,15 @@ noncomputable def Gamma0.quotientGamma1EquivGLZModPow (m : ℕ) [NeZero m] :
       GL l (ZMod (p ^ m)) :=
   Gamma0.quotientGamma1EquivGL l (ZMod.ringHom_surjective _)
 
+/-- The isomorphism `Γ₀(pᵐ) / Γ₁(pᵐ) ≃* GL_g(ℤ/pᵐ)` sends the class of `γ` to the upper-left
+block of `γ` modulo `pᵐ`. -/
+@[simp]
+theorem Gamma0.quotientGamma1EquivGLZModPow_mk (m : ℕ) [NeZero m]
+    (M : Gamma0 l (PadicInt.toZModPow (p := p) m)) :
+    Gamma0.quotientGamma1EquivGLZModPow l p m (QuotientGroup.mk M) =
+      Gamma0.upperLeftHom l (PadicInt.toZModPow m) M :=
+  Gamma0.quotientGamma1EquivGL_mk _ M
+
 end Padic
 
 end GSp
