@@ -38,15 +38,13 @@ retraction does not change
 preserves every region of the completion described by an upper bound on `r` that depends only on
 the retraction, such as the domain bounded by a Liouville graph over `∂W`. On such an invariant
 region it restricts to a deformation retraction onto its intersection with `W`
-(`TauCeti.IsLiouvilleCompletion.liouvilleRetractionHomotopyRestrict`).
+(`ContinuousMap.HomotopyRel.restrictInvariant`).
 
 ## Main definitions
 
 * `TauCeti.liouvilleRetraction Z W`: the map `x ↦ ψ_{-log r(x)}(x)`.
 * `TauCeti.IsLiouvilleCompletion.liouvilleRetractionHomotopy`: the homotopy
   `(s, x) ↦ ψ_{-s log r(x)}(x)` from the identity to the Liouville retraction, relative to `W`.
-* `TauCeti.IsLiouvilleCompletion.liouvilleRetractionHomotopyRestrict`: its restriction to a set
-  that it maps into itself.
 
 ## References
 
@@ -198,46 +196,6 @@ noncomputable def liouvilleRetractionHomotopy :
 theorem liouvilleRetractionHomotopy_apply (p : unitInterval × M) :
     h.liouvilleRetractionHomotopy hZ p =
       flowOf Z (-((p.1 : ℝ) * Real.log (liouvilleRadialCoordinate Z W p.2))) p.2 :=
-  (rfl)
-
-variable {S : Set M}
-
-/-- The Liouville retraction as a self-map of a set `S` that the Liouville deformation retraction
-maps into itself. -/
-noncomputable def liouvilleRetractionRestrict
-    (hS : ∀ s, ∀ x ∈ S, h.liouvilleRetractionHomotopy hZ (s, x) ∈ S) : C(S, S) where
-  toFun x := ⟨liouvilleRetraction Z W x,
-    Eq.mp (congrArg (· ∈ S) ((h.liouvilleRetractionHomotopy hZ).apply_one x)) (hS 1 x x.property)⟩
-  continuous_toFun :=
-    ((h.continuous_liouvilleRetraction hZ).comp continuous_subtypeVal).subtype_mk _
-
-@[simp]
-theorem coe_liouvilleRetractionRestrict_apply
-    (hS : ∀ s, ∀ x ∈ S, h.liouvilleRetractionHomotopy hZ (s, x) ∈ S) (x : S) :
-    (h.liouvilleRetractionRestrict hZ hS x : M) = liouvilleRetraction Z W x :=
-  (rfl)
-
-/-- **The Liouville deformation retraction of an invariant set.** The restriction of the Liouville
-deformation retraction to a set `S` that it maps into itself: a homotopy from the identity of `S` to
-the Liouville retraction, relative to the points of `W`. So `S ∩ W` is a strong deformation retract
-of `S`. -/
-noncomputable def liouvilleRetractionHomotopyRestrict
-    (hS : ∀ s, ∀ x ∈ S, h.liouvilleRetractionHomotopy hZ (s, x) ∈ S) :
-    ContinuousMap.HomotopyRel (ContinuousMap.id S) (h.liouvilleRetractionRestrict hZ hS)
-      {x | (x : M) ∈ W} where
-  toFun p := ⟨h.liouvilleRetractionHomotopy hZ (p.1, p.2), hS p.1 p.2 p.2.property⟩
-  continuous_toFun := ((h.liouvilleRetractionHomotopy hZ).continuous.comp
-    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
-  map_zero_left x := Subtype.ext ((h.liouvilleRetractionHomotopy hZ).apply_zero x)
-  map_one_left x := Subtype.ext ((h.liouvilleRetractionHomotopy hZ).apply_one x)
-  prop' s _ hx := Subtype.ext ((h.liouvilleRetractionHomotopy hZ).eq_fst s hx)
-
-@[simp]
-theorem coe_liouvilleRetractionHomotopyRestrict_apply
-    (hS : ∀ s, ∀ x ∈ S, h.liouvilleRetractionHomotopy hZ (s, x) ∈ S)
-    (p : unitInterval × S) :
-    (h.liouvilleRetractionHomotopyRestrict hZ hS p : M) =
-      h.liouvilleRetractionHomotopy hZ (p.1, p.2) :=
   (rfl)
 
 include h hZ

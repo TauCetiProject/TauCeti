@@ -25,6 +25,11 @@ homotopy relative to that subspace (`ContinuousMap.HomotopicRel.of_leftInverse`)
 Strong deformation retractions of subsets also transport along homeomorphisms
 (`Homeomorph.exists_deformation_of_image_eq`).
 
+A homotopy from the identity, relative to `K`, that maps a set `S` into itself at all times
+restricts to a homotopy from the identity of `S` relative to the points of `S` in `K`
+(`ContinuousMap.HomotopyRel.restrictInvariant`), ending at the restricted end map
+(`ContinuousMap.HomotopyRel.restrictInvariantEnd`).
+
 A homotopy from the identity that fixes a subset `S` at all times and ends in `S` gives a strong
 deformation retraction onto `S` (`TauCeti.exists_strong_deformation_retraction_of_homotopy`).
 
@@ -140,6 +145,44 @@ theorem exists_inter_deformation_trans (hBA : B ⊆ A) (hSB : A ∩ S ⊆ B)
     ⟨H.symm⟩⟩
 
 end ContinuousMap.HomotopicRel
+
+namespace ContinuousMap.HomotopyRel
+
+variable {X : Type*} [TopologicalSpace X] {g : C(X, X)} {K S : Set X}
+
+/-- The end map of a homotopy from the identity that maps a set `S` into itself at all times, as a
+self-map of `S`. -/
+def restrictInvariantEnd (H : (ContinuousMap.id X).HomotopyRel g K)
+    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) : C(S, S) where
+  toFun := MapsTo.restrict g S S fun x hx ↦ H.apply_one x ▸ hS 1 x hx
+  continuous_toFun := g.continuous.restrict _
+
+@[simp]
+theorem coe_restrictInvariantEnd_apply (H : (ContinuousMap.id X).HomotopyRel g K)
+    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) (x : S) : (H.restrictInvariantEnd hS x : X) = g x :=
+  (rfl)
+
+/-- **The restriction of a deformation to an invariant set.** A homotopy from the identity to `g`,
+relative to `K`, that maps a set `S` into itself at all times restricts to a homotopy from the
+identity of `S` to `g` read on `S`, relative to the points of `S` in `K`. If `g` takes its values in
+`K`, then `S ∩ K` is a strong deformation retract of `S`. -/
+def restrictInvariant (H : (ContinuousMap.id X).HomotopyRel g K)
+    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) :
+    (ContinuousMap.id S).HomotopyRel (H.restrictInvariantEnd hS) {x | (x : X) ∈ K} where
+  toFun p := ⟨H (p.1, p.2), hS p.1 p.2 p.2.property⟩
+  continuous_toFun := (H.continuous.comp
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
+  map_zero_left x := Subtype.ext (H.apply_zero x)
+  map_one_left x := Subtype.ext (H.apply_one x)
+  prop' t _ hx := Subtype.ext (H.eq_fst t hx)
+
+@[simp]
+theorem coe_restrictInvariant_apply (H : (ContinuousMap.id X).HomotopyRel g K)
+    (hS : ∀ t, ∀ x ∈ S, H (t, x) ∈ S) (p : unitInterval × S) :
+    (H.restrictInvariant hS p : X) = H (p.1, p.2) :=
+  (rfl)
+
+end ContinuousMap.HomotopyRel
 
 namespace Homeomorph
 

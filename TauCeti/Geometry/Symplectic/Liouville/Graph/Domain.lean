@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Liouville.ClosedCharacteristic
 public import TauCeti.Geometry.Symplectic.Liouville.Graph.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.Retraction
+public import TauCeti.Topology.Homotopy.DeformationRetract
 import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
@@ -245,10 +246,10 @@ nonnegative on the Liouville domain `W`, the Liouville deformation retraction ma
 retraction, relative to the points of `W`. -/
 noncomputable def liouvilleGraphSublevelHomotopy (hf₀ : ∀ x ∈ W, 0 ≤ f x) (c : ℝ) :
     ContinuousMap.HomotopyRel (ContinuousMap.id {x | liouvilleGraphFunction Z W f x ≤ c})
-      (h.liouvilleRetractionRestrict hZ fun s x hx ↦
+      ((h.liouvilleRetractionHomotopy hZ).restrictInvariantEnd fun s x hx ↦
         (h.liouvilleGraphFunction_liouvilleRetractionHomotopy_le hZ hf₀ (s, x)).trans hx)
       {x | (x : M) ∈ W} :=
-  h.liouvilleRetractionHomotopyRestrict hZ _
+  (h.liouvilleRetractionHomotopy hZ).restrictInvariant _
 
 /-- **The deformation retraction of a strict sublevel set of a Liouville graph function.** When `f`
 is nonnegative on the Liouville domain `W`, the Liouville deformation retraction maps the strict
@@ -256,10 +257,10 @@ sublevel set `{F < c}` into itself, and restricts there to a homotopy from the i
 Liouville retraction, relative to the points of `W`. -/
 noncomputable def liouvilleGraphStrictSublevelHomotopy (hf₀ : ∀ x ∈ W, 0 ≤ f x) (c : ℝ) :
     ContinuousMap.HomotopyRel (ContinuousMap.id {x | liouvilleGraphFunction Z W f x < c})
-      (h.liouvilleRetractionRestrict hZ fun s x hx ↦
+      ((h.liouvilleRetractionHomotopy hZ).restrictInvariantEnd fun s x hx ↦
         (h.liouvilleGraphFunction_liouvilleRetractionHomotopy_le hZ hf₀ (s, x)).trans_lt hx)
       {x | (x : M) ∈ W} :=
-  h.liouvilleRetractionHomotopyRestrict hZ _
+  (h.liouvilleRetractionHomotopy hZ).restrictInvariant _
 
 end GraphFunction
 
