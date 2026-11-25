@@ -26,7 +26,9 @@ estimates of `TauCeti.Analysis.PDE.Wave.Endpoint`. This file proves them at the 
 * `‖W₊(t) Pⱼ f‖_{L²_t L^r_x} ≤ C 2^{jγ} ‖f‖₂`, in mixed norm
   (`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_lt_endpoint`), in
   weak form, and in the dual form `‖∫ W₊(-s) Pⱼ F(s) ds‖₂ ≤ C 2^{jγ} ‖F‖_{L²_t L^{r'}_x}`
-  (`ContDiffBump.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_lt_endpoint`);
+  (`ContDiffBump.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_lt_endpoint`).
+  Joined with the endpoint case, the mixed-norm form holds at every pair `(2, r)`
+  (`ContDiffBump.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_le_endpoint`);
 * on the whole time line, with data in the homogeneous Besov space `\dot B^γ_{2,1}`,
   `‖W₊(t) f‖_{L²_t L^r_x} ≤ C ∑ⱼ 2^{jγ} ‖Pⱼ f‖₂` and the same for `W₋(t) = W₊(-t)`, now at every
   pair `(2, r)`, the endpoint included
@@ -228,6 +230,28 @@ theorem exists_enorm_integral_inner_halfWavePropagator_littlewoodPaley_le_of_lt_
         exact hC j m hm G hG.aestronglyMeasurable
     _ = _ := by ring
 
+/-- **The Strichartz estimate for the frequency-localized wave equation at the pairs `(2, r)`** in
+mixed norm, for the Littlewood–Paley blocks. Let `E` have dimension `n ≥ 4`, let `Pⱼ` be the `L²`
+Fourier multiplier with the Littlewood–Paley symbol `ψⱼ` built from `φ`, and let
+`1 + (n - 1) / r ≤ (n - 1) / 2`, the endpoint exponent and `r = ∞` included. Put
+`γ = n / 2 - n / r - 1 / 2`. There is `C` such that for every `j ∈ ℤ` and every `f ∈ L²(E)`,
+
+`‖W₊(t) Pⱼ f‖_{L²_t L^r_x} ≤ C 2^{jγ} ‖f‖₂`.
+
+This is the Keel–Tao endpoint estimate at `r = r₀` and Bernstein's inequality beyond it. -/
+theorem exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_le_endpoint
+    (hn : 3 < Module.finrank ℝ E)
+    (hr : 1 + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤ ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (halfWavePropagator ℂ t (Lp.fourierMultiplierCLM ℂ m f)) r
+            volume) 2 volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)) * ‖f‖ₑ :=
+  hr.lt_or_eq.elim
+    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_lt_endpoint hn)
+    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint hn)
+
 /-! ### Data in homogeneous Besov and Sobolev spaces -/
 
 /-- **The Strichartz estimate for the half-wave propagator at the pairs `(2, r)` with data in
@@ -249,10 +273,8 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_of_le_endpoint
   rcases eq_or_ne r 0 with rfl | hr0
   · exact ⟨0, fun _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   have hr2 := two_le_of_waveAdmissible (E := E) (q := 2) hr0 (by simpa using hr) (by omega)
-  -- The frequency-localized estimate: Keel–Tao at the endpoint, Bernstein beyond it.
-  obtain ⟨C, hC⟩ := hr.lt_or_eq.elim
-    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_lt_endpoint hn)
-    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint hn)
+  obtain ⟨C, hC⟩ :=
+    φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_le_endpoint hn hr
   have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E) (by omega)
   obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum (F := ℂ) (β := ℝ) (ρ := volume)
     ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹) (q := 2) one_le_two
@@ -303,10 +325,8 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_le_tsum_sq_rpow_of_le_endpoint
   rcases eq_or_ne r 0 with rfl | hr0
   · exact ⟨0, fun _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   have hr2 := two_le_of_waveAdmissible (E := E) (q := 2) hr0 (by simpa using hr) (by omega)
-  -- The frequency-localized estimate: Keel–Tao at the endpoint, Bernstein beyond it.
-  obtain ⟨C, hC⟩ := hr.lt_or_eq.elim
-    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_lt_endpoint hn)
-    (φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint hn)
+  obtain ⟨C, hC⟩ :=
+    φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_le_endpoint hn hr
   have := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E) (by omega)
   obtain ⟨K, hK⟩ := φ.exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (F := ℂ) (β := ℝ)
     (ρ := volume) ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - 2⁻¹)
