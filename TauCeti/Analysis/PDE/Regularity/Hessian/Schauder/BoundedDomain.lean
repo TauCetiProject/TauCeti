@@ -5,25 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Holder.C2HolderBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
-import TauCeti.Analysis.Holder.InterpolationBoundary
+import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Holder.BoundaryInterpolation
 import TauCeti.Analysis.InnerProductSpace.GraphPatch
-import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The global Schauder estimate on a bounded domain with `C^{2,α}` boundary
 
-Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary: near each
-point `x` of its frontier, `Ω` is the region `{z | γ z < ⟪z, ν⟫}` above the graph of a `C^{2,α}`
-function over a hyperplane `ν^⊥`, that is
+Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary
+(`Set.HasC2HolderBoundary Ω α`): near each point `x` of its frontier, `Ω` is the region
+`{z | γ z < ⟪z, ν⟫}` above the graph of a `C^{2,α}` function over a hyperplane `ν^⊥`, that is
 
-`ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}`
+`Ω ∩ ball x r = {z | γ z < ⟪z, ν⟫} ∩ ball x r`
 
 for a unit vector `ν`, a radius `r > 0` and a `C²` function `γ` invariant under translation along
-`ν`, with `Dγ` and `D²γ` bounded and `D²γ` `α`-Hölder. This file proves the global `C^{2,α}`
+`ν`, with `Dγ` and `D²γ` bounded and `D²γ` `α`-Hölder. Such a set is open
+(`Set.HasC2HolderBoundary.isOpen`). This file proves the global `C^{2,α}`
 estimate up to the boundary for the non-divergence-form operator `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`
 (`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`): there is
 a constant `C` such that every `u` that is `C²` near `closure Ω`, vanishes on `∂Ω` and has `|u|`,
@@ -38,14 +40,13 @@ continuity for the Dirichlet problem uses. As in the local estimates it is assem
 Hölder continuity of `D²u` is assumed qualitatively (with any constant), and the estimate bounds
 its Hölder constant.
 
-Interpolation up to the boundary removes `‖Du‖` and `‖D²u‖` from the right side
+The interpolation inequalities on `closure Ω`
+(`TauCeti.exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded`) then remove `‖Du‖`
+and `‖D²u‖` from the right side
 (`exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_fderiv_fderiv`):
-if only `|u| ≤ N` on `closure Ω`, then `[D²u]_{α; closure Ω}`, `‖Du‖` and `‖D²u‖` are at most
-`C ([L u]_{α; Ω} + N)`. The maximum principle then bounds `|u|` by `sup_Ω |L u|`, which gives the a
-priori estimate
-(`exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`)
+if only `|u| ≤ N` on `closure Ω`, then
 
-`|u|_{0; Ω} + |Du|_{0; Ω} + |D²u|_{0; Ω} + [D²u]_{α; Ω} ≤ C (sup_Ω |L u| + [L u]_{α; Ω})`.
+`[D²u]_{α; closure Ω} + sup_{closure Ω} ‖Du‖ + sup_{closure Ω} ‖D²u‖ ≤ C ([L u]_{α; Ω} + N)`.
 
 This is Gilbarg–Trudinger's global estimate, Theorem 6.6, for zero boundary values and without
 lower-order terms.
@@ -68,32 +69,26 @@ lower-order terms.
   points closer than a Lebesgue number `δ` of the cover the local estimates apply; between points
   farther apart `‖D²u z - D²u w‖ ≤ 2 N ≤ 2 N δ^(-α) ‖z - w‖^α`
   (`lebesgue_number_lemma_of_metric`, `HolderOnWith.of_dist_lt_of_dist_le`).
-* **Interpolation.** The closure of `Ω` satisfies a uniform interior cone condition, so at a small
-  scale `ε` the interpolation inequalities up to the boundary,
-  `TauCeti.exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded` (in
-  `TauCeti.Analysis.Holder.InterpolationBoundary`), bound `‖Du‖` and `‖D²u‖` by
-  `C_ε N + 5 ε^α [D²u]_α`. Inserted into the estimate above, the multiple of `[D²u]_α` is
-  absorbed into the left side for `ε` small.
-* **The maximum principle.** `L u` is continuous on `closure Ω`, so `|L u| ≤ F` on `Ω` holds on
-  `closure Ω`, and the maximum principle for non-divergence operators
-  (`TauCeti.PDE.abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier`)
-  bounds `|u|` by a multiple of `F` depending only on `λ` and the diameter of `Ω`.
+* **Interpolation.** At a scale `ε ≤ 1`, the interpolation inequalities bound `|u|`, `‖Du‖` and
+  `‖D²u‖` on `closure Ω` by `N₁ = (1 + C₂ ε⁻²) N + C₂ H ε^α`, where `H` is the Hölder norm of
+  `D²u` on `closure Ω` (`nnHolderNorm`), finite by hypothesis. The first estimate with `N₁` in
+  place of `N` gives `H ≤ C₁ (K + N₁)`, and for `ε` so small that `C₁ C₂ ε^α ≤ 1 / 2` the
+  multiple of `H` on the right is absorbed into the left side.
 
 ## Main declarations
 
 * `TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`: the
-  global Schauder estimate on a bounded domain with `C^{2,α}` boundary.
+  global Schauder estimate on a bounded domain with `C^{2,α}` boundary, with the norms of `Du` and
+  `D²u` on the right.
 * `exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_fderiv_fderiv`:
-  the same with only `sup |u|` on the right, bounding also `‖Du‖` and `‖D²u‖`.
-* `exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`:
-  the a priori estimate of `u` in `C^{2,α}(closure Ω)` by `L u` in `C^{0,α}(Ω)`.
+  the same estimate in terms of `[L u]_α` and `sup |u|` alone, with bounds on `‖Du‖` and `‖D²u‖`.
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Section 3.3, Theorem 3.7 (the bound on `sup |u|`); Section 6.2: Lemma 6.5 (the boundary
-  estimate) and Theorem 6.6 (the global estimate, obtained
-  from the interior and boundary estimates by a finite covering).
+  Section 6.2: Lemma 6.5 (the boundary estimate) and Theorem 6.6 (the global estimate, obtained
+  from the interior and boundary estimates by a finite covering and interpolation), and
+  Section 6.8 (interpolation inequalities on domains).
 -/
 
 public section
@@ -319,13 +314,15 @@ private theorem exists_dist_iteratedFDeriv_two_le_of_dist_lt {α : ℝ≥0}
     ⟨hi (mem_ball.2 (by rw [dist_comm]; exact hzw)), hw⟩
 
 /-- **The global Schauder estimate on a bounded domain with `C^{2,α}` boundary.** Let
-`0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary: near each point
-`x` of its frontier, `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}` for a unit vector `ν`, a radius
-`r > 0` and a `C²` function `γ` invariant under translation along `ν`, with `‖Dγ‖ ≤ G`,
-`‖D²γ‖ ≤ G` and `D²γ` `α`-Hölder with constant `G`. Let `0 < λ`, `Λ`, `L` and `M` be given. Then
-there is a constant `C` with the following property. Let `a` have ellipticity bounds `λ, Λ` at
-every point of `closure Ω`, and entries `α`-Hölder with constant `L` and bounded by `M` on
-`closure Ω`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on an open set containing `closure Ω`,
+`0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary
+(`Set.HasC2HolderBoundary`): near each point `z` of its frontier,
+`Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫} ∩ ball z r` for a unit vector `ν`, a radius `r > 0` and a `C²`
+function `γ` invariant under translation along `ν`, with `‖Dγ‖ ≤ G`, `‖D²γ‖ ≤ G` and `D²γ`
+`α`-Hölder with constant `G`. Such a set is open (`Set.HasC2HolderBoundary.isOpen`). Let
+`0 < λ`, `Λ`, `L` and `M` be given. Then there is a constant `C` with the following property.
+Let `a` have ellipticity bounds `λ, Λ` at every point of `closure Ω`, and entries `α`-Hölder
+with constant `L` and bounded by `M` on `closure Ω`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on
+an open set containing `closure Ω`,
 vanishing on the frontier of `Ω`, with `|u|`, `‖Du‖` and `‖D²u‖` bounded by `N` on `closure Ω` and
 with `D²u` `α`-Hölder there (with any constant). If `L u` is `α`-Hölder on `Ω` with constant `K`,
 then `D²u` is `α`-Hölder on `closure Ω` with constant `C (K + N)`.
@@ -333,12 +330,8 @@ then `D²u` is `α`-Hölder on `closure Ω` with constant `C (K + N)`.
 The constant depends only on `Ω`, `α`, `λ`, `Λ`, `L` and `M`: not on `a` beyond the stated bounds,
 nor on `u` (Gilbarg–Trudinger, Theorem 6.6, with the norms of `Du` and `D²u` on the right). -/
 theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv {α : ℝ≥0}
-    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩo : IsOpen Ω) (hΩ : Bornology.IsBounded Ω)
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
-      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
-    {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
+    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : Bornology.IsBounded Ω)
+    (hbdry : Ω.HasC2HolderBoundary α) {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       (∀ z ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) →
       (∀ z ∈ closure Ω, ∀ ξ : E, (a z).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
@@ -352,8 +345,16 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
         HolderOnWith K α (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
           (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω →
         HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closure Ω) := by
+  have hbdry' : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
+      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
+      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
+      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ} := by
+    intro x hx
+    obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, hG2, hG3, hr, hΩr⟩ :=
+      Set.hasC2HolderBoundary_iff.1 hbdry x hx
+    exact ⟨ν, γ, G, r, hν, hγ, hγν, hG1, hG2, hG3, hr, by rw [inter_comm, hΩr, inter_comm]⟩
   obtain ⟨δ, hδ, A, hA⟩ :=
-    exists_dist_iteratedFDeriv_two_le_of_dist_lt hα hα1 hΩo hΩ hbdry Lam L M hlam
+    exists_dist_iteratedFDeriv_two_le_of_dist_lt hα hα1 hbdry.isOpen hΩ hbdry' Lam L M hlam
   refine ⟨A + 2 * δ ^ (-(α : ℝ)),
     fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN0 hN1 hN2 hV hK => ?_⟩
   -- Values of `D²u` on `closure Ω` lie within `2 N` of each other.
@@ -371,179 +372,149 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
         exact le_add_self
     _ = (A + 2 * δ ^ (-(α : ℝ))) * (K + N) := by ring
 
-/-- **The global Schauder estimate on a bounded domain with `C^{2,α}` boundary, with `sup |u|` on
-the right.** Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary,
-described at each frontier point `x` by a patch `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}` as
-in `exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`. Let `0 < λ`, `Λ`,
-`L` and `M` be given. Then there is a constant `C` with the following property. Let `a` have
-ellipticity bounds `λ, Λ` at every point of `closure Ω`, and entries `α`-Hölder with constant `L`
-and bounded by `M` on `closure Ω`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on an open set
-containing `closure Ω`, vanishing on the frontier of `Ω`, with `|u| ≤ N` on `closure Ω` and with
-`D²u` `α`-Hölder there (with any constant). If `L u` is `α`-Hölder on `Ω` with constant `K`, then
-`D²u` is `α`-Hölder on `closure Ω` with constant `C (K + N)`, and `‖Du‖` and `‖D²u‖` are bounded
-by `C (K + N)` on `closure Ω`.
+/-- **The lower-order bound from interpolation.** Under the hypotheses of the global estimate, let
+`C₂` and `ε₀` be the constants of the interpolation inequalities on `closure Ω`, let
+`0 < ε ≤ min ε₀ 1`, and let `H` be a Hölder constant of `D²u` on `closure Ω`. If `|u| ≤ N` on
+`closure Ω`, then `|u|`, `‖Du‖` and `‖D²u‖` are bounded on `closure Ω` by
+`N + C₂ ε⁻² N + C₂ H ε^α`. -/
+private theorem forall_norm_le_of_interpolation {α C₂ : ℝ≥0} {Ω U : Set E} {u : E → ℝ}
+    {ε ε₀ : ℝ} {N H : ℝ≥0}
+    (hint : ∀ ε, 0 < ε → ε ≤ ε₀ →
+      ∀ {U : Set E} {u : E → ℝ} {M : ℝ} {H : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
+        ContDiffOn ℝ 2 u U → (∀ z ∈ closure Ω, ‖u z‖ ≤ M) →
+        HolderOnWith H α (iteratedFDeriv ℝ 2 u) (closure Ω) → ∀ z ∈ closure Ω,
+          ‖fderiv ℝ u z‖ ≤ C₂ * (M / ε + H * ε ^ (1 + (α : ℝ))) ∧
+            ‖iteratedFDeriv ℝ 2 u z‖ ≤ C₂ * (M / ε ^ 2 + H * ε ^ (α : ℝ)))
+    (hε : 0 < ε) (hεε₀ : ε ≤ ε₀) (hε1 : ε ≤ 1) (hU : IsOpen U) (hΩU : closure Ω ⊆ U)
+    (hu : ContDiffOn ℝ 2 u U) (hN : ∀ z ∈ closure Ω, |u z| ≤ N)
+    (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) (closure Ω)) :
+    ∀ z ∈ closure Ω, |u z| ≤ N + C₂ / ε ^ 2 * N + C₂ * H * ε ^ (α : ℝ) ∧
+      ‖fderiv ℝ u z‖ ≤ N + C₂ / ε ^ 2 * N + C₂ * H * ε ^ (α : ℝ) ∧
+      ‖iteratedFDeriv ℝ 2 u z‖ ≤ N + C₂ / ε ^ 2 * N + C₂ * H * ε ^ (α : ℝ) := by
+  intro z hz
+  obtain ⟨h1, h2⟩ := hint ε hε hεε₀ hU hΩU hu (fun z hz => by rw [Real.norm_eq_abs]; exact hN z hz)
+    hH z hz
+  have hc : 0 ≤ C₂ / ε ^ 2 * N := by positivity
+  have hHε : 0 ≤ C₂ * H * ε ^ (α : ℝ) := by positivity
+  -- At scale `ε ≤ 1`, `N / ε ≤ N / ε²` and `ε^(1 + α) ≤ ε^α`.
+  have hNε : (N : ℝ) / ε ≤ N / ε ^ 2 := div_le_div_of_nonneg_left N.coe_nonneg (by positivity)
+    (by nlinarith)
+  have hεα : ε ^ (1 + (α : ℝ)) ≤ ε ^ (α : ℝ) :=
+    Real.rpow_le_rpow_of_exponent_ge hε hε1 (by linarith)
+  have hC : (C₂ : ℝ) * (N / ε ^ 2 + H * ε ^ (α : ℝ)) = C₂ / ε ^ 2 * N + C₂ * H * ε ^ (α : ℝ) := by
+    ring
+  refine ⟨by linarith [hN z hz], h1.trans ?_, h2.trans (by rw [hC]; linarith [N.coe_nonneg])⟩
+  calc (C₂ : ℝ) * (N / ε + H * ε ^ (1 + (α : ℝ)))
+      ≤ C₂ * (N / ε ^ 2 + H * ε ^ (α : ℝ)) := by gcongr
+    _ ≤ _ := by rw [hC]; linarith [N.coe_nonneg]
+
+/-- **Absorption.** If `H ≤ C₁ (K + N₁)` for `N₁ = N + c N + C₂ H e` with `C₁ C₂ e ≤ 1 / 2`,
+`0 ≤ c` and `e ≤ 1`, then `H ≤ A (K + N)` and `N₁ ≤ (1 + A + c + C₂ A) (K + N)`, where
+`A = 2 C₁ (2 + c)`. -/
+private theorem le_mul_add_and_le_mul_add_of_le_mul_add {C₁ C₂ H K N : ℝ≥0} {c e : ℝ} (hc : 0 ≤ c)
+    (he : e ≤ 1) (hC : C₁ * C₂ * e ≤ 1 / 2) (hH : (H : ℝ) ≤ C₁ * (K + (N + c * N + C₂ * H * e))) :
+    (H : ℝ) ≤ 2 * C₁ * (2 + c) * (K + N) ∧
+      N + c * N + C₂ * H * e ≤ (1 + 2 * C₁ * (2 + c) + c + C₂ * (2 * C₁ * (2 + c))) * (K + N) := by
+  set A : ℝ := 2 * C₁ * (2 + c)
+  -- The shared absorption step, with `K₀ = K + c N + C₂ H e`, `γ = 1 + c` and `β = C₂ / 2`.
+  have hHA : (H : ℝ) ≤ A * (K + N) := by
+    have hHle : (H : ℝ) ≤ C₁ * ((K + c * N + C₂ * H * e) + N) := hH.trans_eq (by ring)
+    have habs : 2 * C₁ * (C₂ / 2) * e * H ≤ 1 / 2 * (H : ℝ) :=
+      calc 2 * C₁ * (C₂ / 2) * e * H = C₁ * C₂ * e * H := by ring
+        _ ≤ 1 / 2 * H := mul_le_mul_of_nonneg_right hC H.coe_nonneg
+    exact (hHle.trans (mul_add_le_two_mul_one_add_mul_add C₁.coe_nonneg K.coe_nonneg
+      N.coe_nonneg (by linarith : (0 : ℝ) ≤ 1 + c) (by ring) hHle habs)).trans_eq
+        (by simp only [A]; ring)
+  refine ⟨hHA, ?_⟩
+  have h1 : (C₂ : ℝ) * H * e ≤ C₂ * (A * (K + N)) := by
+    calc (C₂ : ℝ) * H * e ≤ C₂ * H := mul_le_of_le_one_right (by positivity) he
+      _ ≤ C₂ * (A * (K + N)) := by gcongr
+  have hA : 0 ≤ A * (K + N) := by positivity
+  have hcK : 0 ≤ c * K := by positivity
+  have hexp : (1 + A + c + C₂ * A) * (K + N) =
+      (K + N) + A * (K + N) + c * K + c * N + C₂ * (A * (K + N)) := by ring
+  rw [hexp]
+  linarith [K.coe_nonneg]
+
+/-- **The global Schauder estimate on a bounded domain with `C^{2,α}` boundary, in terms of
+`sup |u|`.** Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary
+(`Set.HasC2HolderBoundary`), as in
+`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`. Let
+`0 < λ`, `Λ`, `L` and `M` be given. Then there is a constant `C` with the following property. Let
+`a` have ellipticity bounds `λ, Λ` at every point of `closure Ω`, and entries `α`-Hölder with
+constant `L` and bounded by `M` on `closure Ω`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on an
+open set containing `closure Ω`, vanishing on the frontier of `Ω`, with `|u| ≤ N` on `closure Ω`
+and with `D²u` `α`-Hölder there (with any constant). If `L u` is `α`-Hölder on `Ω` with constant
+`K`, then `D²u` is `α`-Hölder on `closure Ω` with constant `C (K + N)`, and `‖Du‖` and `‖D²u‖` are
+bounded by `C (K + N)` on `closure Ω`.
 
 The constant depends only on `Ω`, `α`, `λ`, `Λ`, `L` and `M` (Gilbarg–Trudinger, Theorem 6.6, for
 zero boundary values and without lower-order terms). -/
 theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_fderiv_fderiv
-    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩo : IsOpen Ω)
-    (hΩ : Bornology.IsBounded Ω)
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
-      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
-    {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : Bornology.IsBounded Ω)
+    (hbdry : Ω.HasC2HolderBoundary α) {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       (∀ z ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) →
       (∀ z ∈ closure Ω, ∀ ξ : E, (a z).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
       (∀ i j, HolderOnWith L α (fun z => a z i j) (closure Ω)) →
       (∀ z ∈ closure Ω, ∀ i j, |a z i j| ≤ M) →
       ∀ {U : Set E} {u : E → ℝ} {N K V : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
-        ContDiffOn ℝ 2 u U → (∀ z ∈ frontier Ω, u z = 0) → (∀ z ∈ closure Ω, |u z| ≤ N) →
+        ContDiffOn ℝ 2 u U → (∀ z ∈ frontier Ω, u z = 0) →
+        (∀ z ∈ closure Ω, |u z| ≤ N) →
         HolderOnWith V α (iteratedFDeriv ℝ 2 u) (closure Ω) →
         HolderOnWith K α (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
           (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω →
         HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closure Ω) ∧
           (∀ z ∈ closure Ω, ‖fderiv ℝ u z‖ ≤ C * (K + N)) ∧
           ∀ z ∈ closure Ω, ‖iteratedFDeriv ℝ 2 u z‖ ≤ C * (K + N) := by
-  obtain ⟨C₀, hC₀⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
-    hα hα1 hΩo hΩ hbdry Lam L M hlam
-  obtain ⟨ε₀, hε₀, c, hc, hc1, hint⟩ :=
-    exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded (F := ℝ) hΩ
-      fun x hx => by
-        obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, -, -, hr, hΩr⟩ := hbdry x hx
-        exact ⟨ν, γ, G, r, hν, (lipschitzWith_of_nnNorm_fderiv_le (hγ.differentiable two_ne_zero)
-          fun z => by exact_mod_cast hG1 z).lipschitzOnWith, hγν, hr, hΩr⟩
-  -- The interpolation scale `ε`, small enough to absorb the Hölder constant of `D²u`.
-  obtain ⟨ρ, hρ, hρ1, hρC⟩ := Real.exists_pos_le_one_mul_rpow_le (5 * C₀)
+  obtain ⟨C₁, hC₁⟩ :=
+    exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv hα hα1 hΩ hbdry
+      Lam L M hlam
+  -- The boundary patches are Lipschitz graphs, so the interpolation inequalities hold.
+  obtain ⟨C₂, ε₀, hε₀, hint⟩ := exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded
+    (F := ℝ) (fun x hx => by
+      obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG, -, -, hr, hpatch⟩ :=
+        Set.hasC2HolderBoundary_iff.1 hbdry x hx
+      exact ⟨ν, γ, G, r, hν, lipschitzWith_of_nnNorm_fderiv_le (hγ.differentiable two_ne_zero)
+        fun z => by exact_mod_cast hG z, hγν, hr, by rw [inter_comm, hpatch, inter_comm]⟩) hΩ α
+  -- The interpolation scale `ε ≤ min ε₀ 1`, with `C₁ C₂ ε^α ≤ 1 / 2`.
+  obtain ⟨ε₁, hε₁, hε₁1, hε₁C⟩ := Real.exists_pos_le_one_mul_rpow_le (C₁ * C₂)
     (NNReal.coe_pos.2 hα) (by norm_num : (0 : ℝ) < 1 / 2)
-  set ε := min ρ ε₀
-  have hε : 0 < ε := lt_min hρ hε₀
-  have hεC : 5 * C₀ * ε ^ (α : ℝ) ≤ 1 / 2 := (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow
-    hε.le (min_le_left _ _) α.coe_nonneg) (by positivity)).trans hρC
-  have hεα : ε ^ (α : ℝ) ≤ 1 := Real.rpow_le_one hε.le ((min_le_left _ _).trans hρ1) α.coe_nonneg
-  set κ : ℝ := 9 / (c * ε) ^ 2
-  have hκ : 1 ≤ κ := (one_le_div (by positivity)).2 <| (pow_le_one₀ (by positivity) <|
-    (mul_le_of_le_one_left hε.le hc1).trans ((min_le_left _ _).trans hρ1)).trans (by norm_num)
-  set A : ℝ := 2 * C₀ * (1 + κ)
-  refine ⟨(5 * A + κ).toNNReal, fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN hV hK => ?_⟩
-  -- With `H` the best Hölder constant of `D²u` on `closure Ω`, `‖Du‖, ‖D²u‖ ≤ N₁ = κ N + 5 H ε^α`.
+  set ε := min ε₁ ε₀
+  have hε : 0 < ε := lt_min hε₁ hε₀
+  have hεα : ε ^ (α : ℝ) ≤ 1 :=
+    Real.rpow_le_one hε.le ((min_le_left _ _).trans hε₁1) α.coe_nonneg
+  have hεC : C₁ * C₂ * ε ^ (α : ℝ) ≤ 1 / 2 := (mul_le_mul_of_nonneg_left
+    (Real.rpow_le_rpow hε.le (min_le_left _ _) α.coe_nonneg) (by positivity)).trans hε₁C
+  set c : ℝ := C₂ / ε ^ 2
+  have hc : 0 ≤ c := by positivity
+  set A : ℝ := 2 * C₁ * (2 + c)
+  refine ⟨(1 + A + c + C₂ * A).toNNReal,
+    fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN hV hK => ?_⟩
+  -- The Hölder constant `H` of `D²u` on `closure Ω`, the smallest one.
   set H := nnHolderNorm α ((closure Ω).domRestrict (iteratedFDeriv ℝ 2 u))
   have hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) (closure Ω) :=
     HolderWith.restrict_iff.1 hV.holderWith.memHolder.holderWith
-  have hb := hint ε hε (min_le_right _ _) hU hΩU hu (by simpa only [Real.norm_eq_abs] using hN) hH
-  set N₁ : ℝ := κ * N + 5 * H * ε ^ (α : ℝ)
+  -- The common bound `N₁ = (1 + c) N + C₂ H ε^α` of `|u|`, `‖Du‖` and `‖D²u‖`.
+  have hb := forall_norm_le_of_interpolation hint hε (min_le_right _ _)
+    ((min_le_left _ _).trans hε₁1) hU hΩU hu hN hH
+  set N₁ : ℝ := N + c * N + C₂ * H * ε ^ (α : ℝ)
   have hN₁ : 0 ≤ N₁ := by positivity
-  have hNN₁ : (N : ℝ) ≤ N₁ :=
-    le_add_of_le_of_nonneg (le_mul_of_one_le_left N.coe_nonneg hκ) (by positivity)
-  -- The estimate with `N₁` in place of `N`, and absorption of `5 C₀ ε^α H ≤ H / 2`.
-  have hHA : (H : ℝ) ≤ A * (K + N) := by
-    have h := (hC₀ hEll hEll' hL hM hU hΩU hu hu0
-      (fun z hz => (hN z hz).trans (hNN₁.trans (Real.le_coe_toNNReal _)))
+  have hHN : H ≤ C₁ * (K + N₁.toNNReal) :=
+    (hC₁ hEll hEll' hL hM hU hΩU hu hu0
       (fun z hz => (hb z hz).1.trans (Real.le_coe_toNNReal _))
-      (fun z hz => (hb z hz).2.trans (Real.le_coe_toNNReal _)) hV hK).holderWith.nnholderNorm_le
-    rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_add, Real.coe_toNNReal _ hN₁] at h
-    simp only [A, N₁] at h ⊢
-    nlinarith [(by positivity : (0 : ℝ) ≤ C₀ * N), (by positivity : (0 : ℝ) ≤ C₀ * κ * K),
-      mul_le_mul_of_nonneg_right hεC H.coe_nonneg]
-  -- Collect the bounds: `H` and `N₁` are at most `(5 A + κ) (K + N)`.
-  have hC : (5 * A + κ) * (K + N) ≤ ((5 * A + κ).toNNReal : ℝ) * (K + N) :=
+      (fun z hz => (hb z hz).2.1.trans (Real.le_coe_toNNReal _))
+      (fun z hz => (hb z hz).2.2.trans (Real.le_coe_toNNReal _)) hH hK).holderWith.nnholderNorm_le
+  have h : (H : ℝ) ≤ C₁ * (K + N₁) := by
+    have : (H : ℝ) ≤ ((C₁ * (K + N₁.toNNReal) : ℝ≥0) : ℝ) := by exact_mod_cast hHN
+    rwa [NNReal.coe_mul, NNReal.coe_add, Real.coe_toNNReal _ hN₁] at this
+  obtain ⟨hHA, hN₁le⟩ := le_mul_add_and_le_mul_add_of_le_mul_add hc hεα hεC h
+  have hC : (1 + A + c + C₂ * A) * (K + N) ≤ ((1 + A + c + C₂ * A).toNNReal : ℝ) * (K + N) :=
     mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity)
-  have hκK : 0 ≤ κ * K := by positivity
-  have hN₁A : N₁ ≤ (5 * A + κ) * (K + N) := by
-    nlinarith [mul_le_of_le_one_right H.coe_nonneg hεα]
-  refine ⟨hH.mono_const ?_, fun z hz => (hb z hz).1.trans (hN₁A.trans hC),
-    fun z hz => (hb z hz).2.trans (hN₁A.trans hC)⟩
-  rw [← NNReal.coe_le_coe, NNReal.coe_mul]
-  exact le_trans (by nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ κ) N.coe_nonneg]) hC
-
-/-- **The global Schauder a priori estimate on a bounded domain with `C^{2,α}` boundary.** Let
-`0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary, described at each
-frontier point by a patch as in
-`exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`. Let `0 < λ`, `Λ`, `L`
-and `M` be given. Then there is a constant `C` with the following property. Let `a` have
-ellipticity bounds `λ, Λ` at every point of `closure Ω`, and entries `α`-Hölder with constant `L`
-and bounded by `M` on `closure Ω`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on an open set
-containing `closure Ω`, vanishing on the frontier of `Ω`, with `D²u` `α`-Hölder on `closure Ω`
-(with any constant). If `|L u| ≤ F` on `Ω` and `L u` is `α`-Hölder on `Ω` with constant `K`, then
-`|u|`, `‖Du‖` and `‖D²u‖` are bounded by `C (K + F)` on `closure Ω`, and `D²u` is `α`-Hölder there
-with constant `C (K + F)`.
-
-The constant depends only on `Ω`, `α`, `λ`, `Λ`, `L` and `M`. This is Gilbarg–Trudinger's
-Theorem 6.6 for zero boundary values and without lower-order terms, with `|u|` bounded by the
-maximum principle (Theorem 3.7). -/
-theorem exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
-    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩo : IsOpen Ω)
-    (hΩ : Bornology.IsBounded Ω)
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
-      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
-    {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
-    ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
-      (∀ z ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) →
-      (∀ z ∈ closure Ω, ∀ ξ : E, (a z).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
-      (∀ i j, HolderOnWith L α (fun z => a z i j) (closure Ω)) →
-      (∀ z ∈ closure Ω, ∀ i j, |a z i j| ≤ M) →
-      ∀ {U : Set E} {u : E → ℝ} {F K V : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
-        ContDiffOn ℝ 2 u U → (∀ z ∈ frontier Ω, u z = 0) →
-        HolderOnWith V α (iteratedFDeriv ℝ 2 u) (closure Ω) →
-        (∀ z ∈ Ω, |∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
-          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ F) →
-        HolderOnWith K α (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
-          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω →
-        (∀ z ∈ closure Ω, |u z| ≤ C * (K + F)) ∧
-          HolderOnWith (C * (K + F)) α (iteratedFDeriv ℝ 2 u) (closure Ω) ∧
-          (∀ z ∈ closure Ω, ‖fderiv ℝ u z‖ ≤ C * (K + F)) ∧
-          ∀ z ∈ closure Ω, ‖iteratedFDeriv ℝ 2 u z‖ ≤ C * (K + F) := by
-  obtain ⟨C₁, hC₁⟩ :=
-    exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_fderiv_fderiv hα hα1
-      hΩo hΩ hbdry Lam L M hlam
-  -- The constant of the maximum principle on `closure Ω`.
-  set D : ℝ := (Real.exp ((0 / lam + 1) * Metric.diam (closure Ω)) - 1) / lam
-  have hD : 0 ≤ D :=
-    div_nonneg (sub_nonneg.2 (Real.one_le_exp (by positivity))) hlam.le
-  refine ⟨(C₁ * (1 + D) + D).toNNReal,
-    fun {a} hEll hEll' hL hM {U u F K V} hU hΩU hu hu0 hV hF hK => ?_⟩
-  -- `L u` is continuous on `closure Ω`, so the bound `|L u| ≤ F` extends to `closure Ω`.
-  have hd2 : ContinuousOn (fderiv ℝ (fderiv ℝ u)) (closure Ω) :=
-    ((hu.fderiv_of_isOpen (m := 1) hU le_rfl).continuousOn_fderiv_of_isOpen hU le_rfl).mono hΩU
-  have hLc : ContinuousOn (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) (closure Ω) :=
-    continuousOn_finsetSum _ fun i _ => continuousOn_finsetSum _ fun j _ =>
-      ((hL i j).continuousOn hα).smul ((hd2.clm_apply continuousOn_const).clm_apply
-        continuousOn_const)
-  have hFcl : ∀ z ∈ closure Ω, |∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ F := fun z hz => by
-    refine (closure_minimal ?_ (hLc.abs.preimage_isClosed_of_isClosed isClosed_closure
-      (isClosed_Iic (a := (F : ℝ)))) hz).2
-    exact fun y hy => ⟨subset_closure hy, hF y hy⟩
-  -- The maximum principle bounds `|u|` by `D F`.
-  have hu0' : ∀ z ∈ closure Ω, |u z| ≤ D * F := fun z hz => by
-    have h := abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier
-      (b := 0) (c := 0) (β := 0) (M := 0) hΩ.isCompact_closure hlam
-      (fun x hx ξ => hEll x (interior_subset hx) ξ) (by simp) (by simp) le_rfl F.coe_nonneg
-      (hu.continuousOn.mono hΩU)
-      (fun x hx => hu.contDiffAt (hU.mem_nhds (hΩU (interior_subset hx))))
-      (fun x hx => by simpa [smul_eq_mul] using hFcl x (interior_subset hx))
-      (fun x hx => by rw [hu0 x (frontier_closure_subset hx), abs_zero]) hz
-    rwa [zero_add, mul_div_right_comm] at h
-  have hDF : 0 ≤ D * F := by positivity
-  obtain ⟨hH, h1, h2⟩ := hC₁ hEll hEll' hL hM hU hΩU hu hu0
-    (fun z hz => (hu0' z hz).trans (Real.le_coe_toNNReal _)) hV hK
-  -- Collect the bounds: `D F` and `C₁ (K + D F)` are at most `(C₁ (1 + D) + D) (K + F)`.
-  have hC : (C₁ * (1 + D) + D) * (K + F) ≤ ((C₁ * (1 + D) + D).toNNReal : ℝ) * (K + F) :=
-    mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity)
-  have hDK : 0 ≤ D * K := by positivity
-  have hC₁ : (C₁ : ℝ) * (K + (D * F).toNNReal) ≤ (C₁ * (1 + D) + D) * (K + F) := by
-    rw [Real.coe_toNNReal _ hDF]
-    nlinarith [mul_nonneg C₁.coe_nonneg hDK, mul_nonneg C₁.coe_nonneg F.coe_nonneg,
-      mul_nonneg hD (add_nonneg K.coe_nonneg F.coe_nonneg), mul_nonneg C₁.coe_nonneg K.coe_nonneg]
-  refine ⟨fun z hz => (hu0' z hz).trans (le_trans ?_ hC), hH.mono_const ?_,
-    fun z hz => (h1 z hz).trans (hC₁.trans hC), fun z hz => (h2 z hz).trans (hC₁.trans hC)⟩
-  · nlinarith [mul_nonneg C₁.coe_nonneg (mul_nonneg (by positivity : (0 : ℝ) ≤ 1 + D)
-      (add_nonneg K.coe_nonneg F.coe_nonneg))]
-  · rw [← NNReal.coe_le_coe, NNReal.coe_mul]
-    exact hC₁.trans hC
+  refine ⟨hH.mono_const ?_, fun z hz => (hb z hz).2.1.trans (hN₁le.trans hC),
+    fun z hz => (hb z hz).2.2.trans (hN₁le.trans hC)⟩
+  rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_add]
+  have hCA : 0 ≤ C₂ * A := by positivity
+  exact hHA.trans ((mul_le_mul_of_nonneg_right (by linarith) (by positivity)).trans hC)
 
 end TauCeti.PDE

@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.Topology.EMetricSpace.Lipschitz
+public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Topology.Order.OrderClosed
-import Mathlib.Analysis.Normed.Module.RCLike.Real
-import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # The closure and frontier of a domain inside a graph patch
@@ -30,21 +30,16 @@ which is how a domain with `C^k` boundary is described near a boundary point. In
   `{z | ⟪z, ν⟫ = γ z}` (`TauCeti.inter_frontier_eq_inter_setOf_inner_eq`); `Ω` need not be open,
   since the patch makes `U ∩ Ω` open.
 
-If `ν` is a unit vector and `γ` is `G`-Lipschitz on `U`, a point `z` of the closure of `Ω` is the
-vertex of a cone in `Ω` with axis `ν`: the closed ball of radius `t / (2 (G + 1))` about `z + t ν`
-lies in `Ω` as long as `closedBall z (2 t) ⊆ U`
-(`TauCeti.closedBall_add_smul_subset_of_inter_eq`), because moving up by `t` along `ν` gains
-height `t`, while within that ball the graph rises by at most `G t / (2 (G + 1))` and the height
-drops by at most `t / (2 (G + 1))`. When `Ω` has compact closure and a patch of this kind at every
-frontier point, finitely many patches and a Lebesgue number of the cover give one height and one
-aperture for all points of the closure: `Ω` satisfies a uniform interior cone condition
-(`TauCeti.exists_forall_closedBall_add_smul_subset`). This is the geometric input for
-interpolation inequalities up to the boundary.
-
-## References
-
-* D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Section 6.2 (domains with `C^{k,α}` boundary) and Section 6.8 (interpolation up to the boundary).
+If moreover `‖ν‖ = 1` and `γ` is `G`-Lipschitz, a point `z` on or above the graph sees a closed
+ball of radius `ε` inside `Ω` at height `2 (G + 1) ε` above it
+(`TauCeti.closedBall_add_smul_subset_of_le_inner`), and the segment from a point of the closure
+up to that centre stays in the closure
+(`TauCeti.exists_closedBall_subset_segment_subset_closure_of_inter_eq`). For a bounded set with
+such a patch at every frontier point this gives, by compactness, a uniform interior ball
+condition: there are `κ` and `ε₀ > 0` such that every `x ∈ closure Ω` and every `0 < ε ≤ ε₀`
+admit a closed ball `B(y, ε) ⊆ Ω` with `‖x - y‖ ≤ κ ε` and the segment `[x, y]` in `closure Ω`
+(`TauCeti.exists_closedBall_subset_segment_subset_closure`). Interpolation inequalities on balls
+then extend up to the boundary of such a domain.
 -/
 
 public section
@@ -120,101 +115,132 @@ theorem inter_frontier_eq_inter_setOf_inner_eq (hU : IsOpen U) (hν : ν ≠ 0)
     -- A point of `U ∩ Ω` lies strictly above the graph.
     exact (((Set.ext_iff.1 hΩ y).1 ⟨hy, interior_subset hyΩ⟩).2 : γ y < ⟪y, ν⟫_ℝ).ne heq.symm
 
-/-- **An interior cone at a point of a graph patch.** Let `U ∩ Ω = U ∩ {z | γ z < ⟪z, ν⟫}`, with
-`ν` a unit vector and `γ` invariant along `ν` and `G`-Lipschitz on `U`. If `z` lies in the closure
-of `Ω`, `t > 0` and `closedBall z (2 t) ⊆ U`, then the closed ball of radius `t / (2 (G + 1))`
-about `z + t ν` lies in `Ω`. -/
-theorem closedBall_add_smul_subset_of_inter_eq (hν : ‖ν‖ = 1) {G : ℝ≥0}
-    (hγ : LipschitzOnWith G γ U) (hγν : ∀ z (t : ℝ), γ (z + t • ν) = γ z)
-    (hΩ : U ∩ Ω = U ∩ {z | γ z < ⟪z, ν⟫_ℝ}) {z : E} (hz : z ∈ closure Ω) {t : ℝ} (ht : 0 < t)
-    (hzU : closedBall z (2 * t) ⊆ U) :
-    closedBall (z + t • ν) (t / (2 * (G + 1))) ⊆ Ω := by
-  have hG : (0 : ℝ) < 2 * (G + 1) := by positivity
-  -- `z` lies on or above the graph: the patch restricts to the open ball `ball z (2 t) ⊆ U`.
-  have hBU : ball z (2 * t) ⊆ U := ball_subset_closedBall.trans hzU
-  have hΩB : ball z (2 * t) ∩ Ω = ball z (2 * t) ∩ {z | γ z < ⟪z, ν⟫_ℝ} := by
-    ext w
-    have hw := Set.ext_iff.1 hΩ w
-    simp only [mem_inter_iff] at hw ⊢
-    exact ⟨fun h => ⟨h.1, (hw.1 ⟨hBU h.1, h.2⟩).2⟩, fun h => ⟨h.1, (hw.2 ⟨hBU h.1, h.2⟩).2⟩⟩
-  have hzγ : γ z ≤ ⟪z, ν⟫_ℝ := inter_closure_subset_setOf_le isOpen_ball
-    (hγ.continuousOn.mono hBU) (continuous_id.inner continuous_const).continuousOn hΩB
-    ⟨mem_ball_self (by positivity), hz⟩
+/-- **A ball above a point of a Lipschitz graph patch.** Let `U ∩ Ω = U ∩ {z | γ z < ⟪z, ν⟫}`
+with `‖ν‖ = 1` and `γ` `G`-Lipschitz and invariant along `ν`. If `z` lies on or above the graph and
+the closed ball of radius `(2 G + 3) ε` about `z` lies in `U`, then the closed ball of radius `ε`
+about the point `z + 2 (G + 1) ε ν` lies in `Ω`: over that ball the graph rises by at most `G ε`
+above `γ z`, while `⟪·, ν⟫` stays above `⟪z, ν⟫ + (2 G + 1) ε`. -/
+theorem closedBall_add_smul_subset_of_le_inner (hν : ‖ν‖ = 1) {G : ℝ≥0}
+    (hγ : LipschitzWith G γ) (hγν : ∀ z (t : ℝ), γ (z + t • ν) = γ z)
+    (hΩ : U ∩ Ω = U ∩ {z | γ z < ⟪z, ν⟫_ℝ}) {z : E} (hz : γ z ≤ ⟪z, ν⟫_ℝ) {ε : ℝ}
+    (hε : 0 < ε) (hU : closedBall z ((2 * G + 3) * ε) ⊆ U) :
+    closedBall (z + (2 * (G + 1) * ε) • ν) ε ⊆ Ω := by
+  set y := z + (2 * (G + 1) * ε) • ν
+  have hG : (0 : ℝ) ≤ G := G.coe_nonneg
+  have hyz : dist y z = 2 * (G + 1) * ε := by
+    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, hν, mul_one, Real.norm_of_nonneg (by
+      positivity)]
   intro w hw
-  set y := z + t • ν
-  have hwy : dist w y * (2 * (G + 1)) ≤ t := (le_div_iff₀ hG).1 (mem_closedBall.1 hw)
-  have hyz : dist y z = t := by simp [y, dist_eq_norm, norm_smul, hν, abs_of_pos ht]
-  have hwU : w ∈ U := hzU (mem_closedBall.2 (by nlinarith [dist_triangle w y z, G.coe_nonneg]))
-  have hyU : y ∈ U := hzU (mem_closedBall.2 (by linarith))
-  -- Within the ball the graph rises by at most `G ‖w - y‖`, and the height drops by at most
-  -- `‖w - y‖`.
-  have hγw : γ w ≤ γ z + G * dist w y := by
-    have h := hγ.dist_le_mul w hwU y hyU
+  rw [mem_closedBall] at hw
+  have hwU : w ∈ U := hU (by
+    rw [mem_closedBall]
+    linarith [dist_triangle w y z])
+  -- Over the ball the graph rises by at most `G ε`, and `⟪·, ν⟫` drops by at most `ε`.
+  have hγw : γ w ≤ γ z + G * ε := by
+    have h := hγ.dist_le_mul w y
     rw [Real.dist_eq, hγν] at h
-    linarith [le_abs_self (γ w - γ z)]
-  have hinner : ⟪z, ν⟫_ℝ + t - dist w y ≤ ⟪w, ν⟫_ℝ := by
-    have h1 : ⟪w, ν⟫_ℝ = ⟪z, ν⟫_ℝ + t + ⟪w - y, ν⟫_ℝ := by
-      simp only [y, inner_sub_left, inner_add_left, real_inner_smul_left,
-        real_inner_self_eq_norm_sq, hν]
-      ring
-    have h2 := abs_real_inner_le_norm (w - y) ν
-    rw [hν, mul_one, ← dist_eq_norm] at h2
-    linarith [neg_abs_le ⟪w - y, ν⟫_ℝ]
-  have hlt : γ w < ⟪w, ν⟫_ℝ := by nlinarith [dist_nonneg (x := w) (y := y)]
-  exact ((Set.ext_iff.1 hΩ w).2 ⟨hwU, hlt⟩).2
+    nlinarith [le_abs_self (γ w - γ z)]
+  have hinner : ⟪y, ν⟫_ℝ - ε ≤ ⟪w, ν⟫_ℝ := by
+    have h := abs_real_inner_le_norm (y - w) ν
+    rw [hν, mul_one, ← dist_eq_norm, dist_comm, inner_sub_left] at h
+    linarith [le_abs_self (⟪y, ν⟫_ℝ - ⟪w, ν⟫_ℝ)]
+  have hy : ⟪y, ν⟫_ℝ = ⟪z, ν⟫_ℝ + 2 * (G + 1) * ε := by
+    rw [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
+    ring
+  have hmem : w ∈ U ∩ Ω := by
+    rw [hΩ]
+    refine ⟨hwU, ?_⟩
+    rw [mem_ofPred_eq]
+    nlinarith
+  exact hmem.2
 
-/-- **A uniform interior cone condition.** Let `Ω` have compact closure in a nontrivial real inner
-product space, and near each point `x` of its frontier let `Ω` be the region above a Lipschitz
-graph: `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}` for a unit vector `ν`, a radius `r > 0` and a
-function `γ` invariant along `ν` and Lipschitz on `ball x r`. Then there are a height `h₀ > 0` and
-an aperture `0 < c ≤ 1` such that every point `z` of the closure of `Ω` is the vertex of a cone in
-`Ω`: for some unit vector `v`, the closed ball of radius `c t` about `z + t v` lies in `Ω` for every
-`0 < t ≤ h₀`. -/
-theorem exists_forall_closedBall_add_smul_subset [Nontrivial E] (hΩ : IsCompact (closure Ω))
+/-- **A ball above a point of the closure, in a Lipschitz graph patch.** Let
+`U ∩ Ω = U ∩ {z | γ z < ⟪z, ν⟫}` on an open set `U`, with `‖ν‖ = 1` and `γ` `G`-Lipschitz and
+invariant along `ν`. If `x ∈ closure Ω` and the closed ball of radius `(2 G + 3) ε` about `x` lies
+in `U`, then there is a closed ball `B(y, ε) ⊆ Ω` with `‖x - y‖ = 2 (G + 1) ε` and the segment
+`[x, y]` contained in `closure Ω`: take `y = x + 2 (G + 1) ε ν`. -/
+theorem exists_closedBall_subset_segment_subset_closure_of_inter_eq (hU : IsOpen U)
+    (hν : ‖ν‖ = 1) {G : ℝ≥0} (hγ : LipschitzWith G γ) (hγν : ∀ z (t : ℝ), γ (z + t • ν) = γ z)
+    (hΩ : U ∩ Ω = U ∩ {z | γ z < ⟪z, ν⟫_ℝ}) {x : E} (hx : x ∈ closure Ω) {ε : ℝ} (hε : 0 < ε)
+    (hxU : closedBall x ((2 * G + 3) * ε) ⊆ U) :
+    ∃ y, closedBall y ε ⊆ Ω ∧ segment ℝ x y ⊆ closure Ω ∧ dist x y = 2 * (G + 1) * ε := by
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero)
+  have hcl := Set.ext_iff.1 (inter_closure_eq_inter_setOf_le_inner hU hν0
+    hγ.continuous.continuousOn hγν hΩ)
+  have hxle : γ x ≤ ⟪x, ν⟫_ℝ :=
+    ((hcl x).1 ⟨hxU (mem_closedBall_self (by positivity)), hx⟩).2
+  set y := x + (2 * (G + 1) * ε) • ν
+  have hxy : dist x y = 2 * (G + 1) * ε := by
+    rw [dist_comm, dist_eq_norm, add_sub_cancel_left, norm_smul, hν, mul_one,
+      Real.norm_of_nonneg (by positivity)]
+  refine ⟨y, closedBall_add_smul_subset_of_le_inner hν hγ hγν hΩ hxle hε hxU, fun w hw => ?_,
+    hxy⟩
+  -- The segment stays in the ball about `x`, on or above the graph.
+  have hwx : dist w x ≤ dist x y := (convex_closedBall x (dist x y)).segment_subset
+    (mem_closedBall_self dist_nonneg) (by rw [mem_closedBall, dist_comm]) hw
+  obtain ⟨θ, ⟨hθ0, -⟩, rfl⟩ := (segment_eq_image' ℝ x y ▸ hw :)
+  refine ((hcl _).2 ⟨hxU (by rw [mem_closedBall]; linarith), ?_⟩).2
+  beta_reduce
+  rw [mem_ofPred_eq, add_sub_cancel_left, smul_smul, hγν, inner_add_left, real_inner_smul_left,
+    real_inner_self_eq_norm_sq, hν]
+  nlinarith [mul_nonneg hθ0 (by positivity : (0 : ℝ) ≤ 2 * (G + 1) * ε)]
+
+/-- **A uniform interior ball condition.** Let `Ω` be a bounded subset of a finite-dimensional
+(more generally, proper) real inner product space such that near each frontier point `x`,
+`ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}` for a unit vector `ν`, a radius `r > 0` and a
+Lipschitz function `γ` invariant along `ν`. Then there are `κ` and `ε₀ > 0` such that for every
+`x ∈ closure Ω` and every `0 < ε ≤ ε₀` there is a closed ball `B(y, ε) ⊆ Ω` with `‖x - y‖ ≤ κ ε`
+and the segment `[x, y]` contained in `closure Ω`. -/
+theorem exists_closedBall_subset_segment_subset_closure [ProperSpace E]
     (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      LipschitzOnWith G γ (ball x r) ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}) :
-    ∃ h₀ > 0, ∃ c > 0, c ≤ 1 ∧ ∀ z ∈ closure Ω, ∃ v : E, ‖v‖ = 1 ∧
-      ∀ t, 0 < t → t ≤ h₀ → closedBall (z + t • v) (c * t) ⊆ Ω := by
-  choose! ν γ G r hν hγ hγν hr hΩr using hbdry
-  -- Finitely many patch balls cover the compact frontier.
-  obtain ⟨T, hTfr, hcov⟩ :=
-    (hΩ.of_isClosed_subset isClosed_frontier frontier_subset_closure).elim_nhds_subcover
-      (fun x => ball x (r x)) fun x hx => ball_mem_nhds x (hr x hx)
-  -- With the interior of `Ω` they cover `closure Ω`; take a Lebesgue number `δ` of this cover.
-  set B : Option T → Set E := fun i => i.elim (interior Ω) fun x => ball (x : E) (r x)
-  have hBopen : ∀ i, IsOpen (B i) := by
-    rintro (_ | x)
-    exacts [isOpen_interior, isOpen_ball]
-  have hBcov : closure Ω ⊆ ⋃ i, B i := fun z hz => by
-    by_cases hzΩ : z ∈ interior Ω
-    · exact mem_iUnion.2 ⟨none, hzΩ⟩
-    · obtain ⟨x, hxT, hzx⟩ := mem_iUnion₂.1 (hcov ⟨hz, hzΩ⟩)
-      exact mem_iUnion.2 ⟨some ⟨x, hxT⟩, hzx⟩
-  obtain ⟨δ, hδ, hleb⟩ := lebesgue_number_lemma_of_metric hΩ hBopen hBcov
-  -- The aperture is fixed by a bound `G'` on the Lipschitz constants of the finitely many patches.
-  set G' : ℝ≥0 := ∑ x ∈ T, G x
-  obtain ⟨e, he⟩ := exists_norm_eq E zero_le_one
-  have hG' : (0 : ℝ) < 2 * (G' + 1) := by positivity
-  refine ⟨δ / 4, by positivity, 1 / (2 * (G' + 1)), by positivity,
-    (div_le_one hG').2 (by linarith [G'.coe_nonneg]), fun z hz => ?_⟩
-  obtain ⟨i, hi⟩ := hleb z hz
-  have hsub : ∀ t, t ≤ δ / 4 → closedBall z (2 * t) ⊆ B i := fun t htδ =>
-    (closedBall_subset_ball (by linarith)).trans hi
-  rcases i with _ | ⟨x, hxT⟩
-  · -- Near an interior point every direction works.
-    refine ⟨e, he, fun t ht htδ => ((closedBall_subset_closedBall' ?_).trans
-      (hsub t htδ)).trans interior_subset⟩
-    have hez : dist (z + t • e) z = t := by simp [dist_eq_norm, norm_smul, he, abs_of_pos ht]
-    rw [hez, one_div_mul_eq_div]
-    linarith [div_le_self ht.le (by linarith [G'.coe_nonneg] : (1 : ℝ) ≤ 2 * (G' + 1))]
-  · -- Near the frontier the axis of the patch works.
-    have hx := hTfr x hxT
-    refine ⟨ν x, hν x hx, fun t ht htδ => (closedBall_subset_closedBall ?_).trans
-      (closedBall_add_smul_subset_of_inter_eq (hν x hx) (hγ x hx) (hγν x hx) (hΩr x hx) hz ht
-        (hsub t htδ))⟩
-    have hGx : (G x : ℝ) ≤ G' := by exact_mod_cast Finset.single_le_sum (fun _ _ => zero_le) hxT
-    rw [one_div_mul_eq_div]
-    exact div_le_div_of_nonneg_left ht.le (by positivity) (by linarith)
+      LipschitzWith G γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧
+      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
+    (hΩ : Bornology.IsBounded Ω) :
+    ∃ κ ε₀ : ℝ, 0 < ε₀ ∧ ∀ x ∈ closure Ω, ∀ ε, 0 < ε → ε ≤ ε₀ →
+      ∃ y, closedBall y ε ⊆ Ω ∧ segment ℝ x y ⊆ closure Ω ∧ dist x y ≤ κ * ε := by
+  choose! ν γ G r hν hγ hγν hr hpatch using hbdry
+  -- Finitely many half-size patch balls cover the compact frontier.
+  obtain ⟨t, htfr, hcov⟩ := (hΩ.isCompact_closure.of_isClosed_subset isClosed_frontier
+    frontier_subset_closure).elim_nhds_subcover (fun x => ball x (r x / 2))
+      fun x hx => ball_mem_nhds x (half_pos (hr x hx))
+  -- The rest of `closure Ω` is a compact subset of the interior of `Ω`.
+  set K₀ : Set E := closure Ω \ ⋃ x ∈ t, ball x (r x / 2)
+  have hK₀Ω : K₀ ⊆ interior Ω := fun z hz => by
+    by_contra hzΩ
+    exact hz.2 (hcov ⟨hz.1, hzΩ⟩)
+  obtain ⟨δ, hδ, hδΩ⟩ := (hΩ.isCompact_closure.diff
+    (isOpen_biUnion fun x _ => isOpen_ball)).exists_cthickening_subset_open isOpen_interior hK₀Ω
+  -- The scale `ε₀`: at most `δ`, and small enough for every patch.
+  have hev : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ε ≤ δ ∧ ∀ x ∈ t, ε ≤ r x / (2 * (2 * G x + 3)) :=
+    eventually_nhdsWithin_of_eventually_nhds ((eventually_le_nhds hδ).and
+      ((eventually_all_finset t).2 fun x hx => eventually_le_nhds (by
+        have := hr x (htfr x hx)
+        positivity)))
+  obtain ⟨ε₀, ⟨hε₀δ, hε₀r⟩, hε₀⟩ := (hev.and self_mem_nhdsWithin).exists
+  refine ⟨∑ x ∈ t, 2 * (G x + 1), ε₀, hε₀, fun x hx ε hε hεε₀ => ?_⟩
+  by_cases hxt : x ∈ ⋃ i ∈ t, ball i (r i / 2)
+  · -- Near the frontier, go up along `ν` inside a patch.
+    obtain ⟨i, hit, hxi⟩ := mem_iUnion₂.1 hxt
+    have hfr := htfr i hit
+    have hεr : (2 * G i + 3) * ε ≤ r i / 2 := by
+      have h := (hεε₀.trans (hε₀r i hit))
+      rw [le_div_iff₀ (by have := hr i hfr; positivity)] at h
+      linarith
+    obtain ⟨y, hy, hseg, hxy⟩ := exists_closedBall_subset_segment_subset_closure_of_inter_eq
+      isOpen_ball (hν i hfr) (hγ i hfr) (hγν i hfr) (hpatch i hfr) hx hε fun w hw => by
+        rw [mem_closedBall] at hw
+        rw [mem_ball] at hxi ⊢
+        linarith [dist_triangle w x i]
+    refine ⟨y, hy, hseg, ?_⟩
+    rw [hxy]
+    gcongr
+    exact Finset.single_le_sum (f := fun x => 2 * ((G x : ℝ) + 1)) (fun j _ => by positivity) hit
+  · -- Away from the frontier, `x` is the centre of a ball in the interior of `Ω`.
+    refine ⟨x, ((closedBall_subset_cthickening (E := K₀) ⟨hx, hxt⟩ ε).trans
+      ((cthickening_mono (hεε₀.trans hε₀δ) K₀).trans hδΩ)).trans interior_subset, ?_, ?_⟩
+    · rw [segment_same]
+      exact singleton_subset_iff.2 hx
+    · rw [dist_self]
+      exact mul_nonneg (Finset.sum_nonneg fun j _ => by positivity) hε.le
 
 end TauCeti
