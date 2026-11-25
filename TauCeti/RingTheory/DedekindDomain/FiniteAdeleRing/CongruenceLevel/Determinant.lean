@@ -22,7 +22,7 @@ adeles, the determinants of the levels of `GL₂` over a commutative ring
 (`TauCeti.GL2K1.map_det`, `TauCeti.GL2K0.map_det`) and of the reduction kernel
 (`Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`) give for every ideal `N` of `R`:
 
-* `det K₀(N) = det K₁(N) = Ô^×`, viewed in `𝔸_f^×`;
+* `det K₀(N) = det K₁(N) = Ô^×`, the everywhere-integral units `integralUnits R K` of `𝔸_f`;
 * `det K(N) = {x ∈ Ô^× : x ≡ 1 mod NÔ}`.
 
 For `R = ℤ` these are the determinants of `K₀(N)`, `K₁(N)` and `K(N)` in `GL₂(ℤ̂)`.
@@ -65,19 +65,30 @@ theorem map_det_map_integralGL {n : ℕ} (H : Subgroup (GL (Fin n) (integralAdel
   congr 1
   exact MonoidHom.ext fun g ↦ det_integralGL g
 
-/-- **`det K₁(N) = Ô^×`**: the determinants of `K₁(N)` are the units of `𝔸_f` coming from units
-of the integral adeles. -/
-theorem map_det_level1 (N : Ideal R) :
-    (level1 K N).map GeneralLinearGroup.det =
-      (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])).range := by
-  rw [level1_def, map_det_map_integralGL, GL2K1.map_det, ← MonoidHom.range_eq_map]
+/-- The units of `𝔸_f` coming from units of the integral adeles are the everywhere-integral
+units. -/
+private theorem range_units_map_val_eq_integralUnits :
+    (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])).range =
+      integralUnits R K := by
+  ext x
+  rw [MonoidHom.mem_range, integralUnits_eq_units_integralAdeles, Submonoid.mem_units_iff]
+  constructor
+  · rintro ⟨u, rfl⟩
+    exact ⟨(u : integralAdeles R K).property, (↑u⁻¹ : integralAdeles R K).property⟩
+  · rintro ⟨h₁, h₂⟩
+    exact ⟨⟨⟨_, h₁⟩, ⟨_, h₂⟩, Subtype.ext x.mul_inv, Subtype.ext x.inv_mul⟩, Units.ext rfl⟩
 
-/-- **`det K₀(N) = Ô^×`**: the determinants of `K₀(N)` are the units of `𝔸_f` coming from units
-of the integral adeles. -/
+/-- **`det K₁(N) = Ô^×`**: the determinants of `K₁(N)` are the everywhere-integral units. -/
+theorem map_det_level1 (N : Ideal R) :
+    (level1 K N).map GeneralLinearGroup.det = integralUnits R K := by
+  rw [level1_def, map_det_map_integralGL, GL2K1.map_det, ← MonoidHom.range_eq_map,
+    range_units_map_val_eq_integralUnits]
+
+/-- **`det K₀(N) = Ô^×`**: the determinants of `K₀(N)` are the everywhere-integral units. -/
 theorem map_det_level0 (N : Ideal R) :
-    (level0 K N).map GeneralLinearGroup.det =
-      (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])).range := by
-  rw [level0_def, map_det_map_integralGL, GL2K0.map_det, ← MonoidHom.range_eq_map]
+    (level0 K N).map GeneralLinearGroup.det = integralUnits R K := by
+  rw [level0_def, map_det_map_integralGL, GL2K0.map_det, ← MonoidHom.range_eq_map,
+    range_units_map_val_eq_integralUnits]
 
 /-- **`det K(N) = {x ∈ Ô^× : x ≡ 1 mod NÔ}`**: the determinants of the principal level `K(N)` are
 the images in `𝔸_f^×` of the units of the integral adeles congruent to `1` modulo `NÔ`. -/
