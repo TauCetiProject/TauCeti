@@ -122,6 +122,11 @@ orientations of the same sign it is `1` instead. -/
 theorem outerDistortion_zero (hn : 0 < n) : oV.outerDistortion oW 0 = 0 := by
   simp [outerDistortion_def, oV.orientedJacobian_zero_of_pos oW hn]
 
+/-- The zero map has outer distortion `0` when `J(0) ≤ 0`. -/
+theorem outerDistortion_zero_of_nonpos (h : oV.orientedJacobian oW (0 : V →ₗ[ℝ] W) ≤ 0) :
+    oV.outerDistortion oW 0 = 0 := by
+  simp [outerDistortion_def, h.not_gt]
+
 theorem outerDistortion_ne_top_of_pos {A : V →ₗ[ℝ] W} (h : 0 < oV.orientedJacobian oW A) :
     oV.outerDistortion oW A ≠ ⊤ := by
   simp [oV.outerDistortion_of_pos oW h]
@@ -150,6 +155,24 @@ theorem outerDistortion_eq_zero_iff (hn : 0 < n) {A : V →ₗ[ℝ] W} :
     · exact hJ.not_ge h₂
     · exact (pow_pos hnorm n).not_ge h₁
   · exact ENNReal.top_ne_zero h
+
+/-- A nonzero linear map has nonzero outer distortion. -/
+theorem outerDistortion_ne_zero {A : V →ₗ[ℝ] W} (hA : A ≠ 0) :
+    oV.outerDistortion oW A ≠ 0 := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · have : Subsingleton V := Module.finrank_zero_iff.mp (Fact.out : finrank ℝ V = 0)
+    exact absurd (LinearMap.ext fun x ↦ by simp [Subsingleton.elim x 0]) hA
+  exact fun h ↦ hA ((oV.outerDistortion_eq_zero_iff oW hn).mp h)
+
+/-- A map of finite nonzero outer distortion has positive oriented Jacobian. -/
+theorem orientedJacobian_pos_of_outerDistortion_ne_zero_of_ne_top {A : V →ₗ[ℝ] W}
+    (h0 : oV.outerDistortion oW A ≠ 0) (htop : oV.outerDistortion oW A ≠ ⊤) :
+    0 < oV.orientedJacobian oW A := by
+  by_contra hJ
+  by_cases hA : A = 0
+  · subst hA
+    exact h0 (oV.outerDistortion_zero_of_nonpos oW (not_lt.mp hJ))
+  · exact htop ((oV.outerDistortion_eq_top_iff oW).mpr ⟨hA, not_lt.mp hJ⟩)
 
 /-- When `J(A) > 0`, the outer distortion is at least `1`: Hadamard's inequality
 `J(A) ≤ ‖A‖ⁿ`. -/
@@ -421,6 +444,18 @@ theorem outerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
       ContinuousLinearMap.id ℝ V :=
     ContinuousLinearMap.ext fun _ ↦ by simp
   simp [hid]
+
+omit [FiniteDimensional ℝ W] in
+/-- A positive multiple of a linear isometry of oriented Jacobian `1` has outer distortion `1`. -/
+theorem outerDistortion_smul_linearIsometry {c : ℝ} (hc : 0 < c) (U : V →ₗᵢ[ℝ] W)
+    (hU : oV.orientedJacobian oW U.toLinearMap = 1) :
+    oV.outerDistortion oW (c • U.toLinearMap) = 1 := by
+  rw [oV.outerDistortion_smul oW (pow_pos hc n)]
+  have h := oV.outerDistortion_linearIsometry_comp oV oW U hU LinearMap.id
+  rw [LinearMap.comp_id] at h
+  rw [h]
+  exact oV.outerDistortion_linearIsometryEquiv oV (LinearIsometryEquiv.refl ℝ V)
+    oV.orientedJacobian_id
 
 /-- An orientation-preserving isometric isomorphism has inner distortion `1`. -/
 theorem innerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)

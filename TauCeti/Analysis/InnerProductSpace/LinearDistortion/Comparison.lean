@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearDistortion
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Submultiplicativity and comparison of the linear distortions
@@ -24,8 +25,8 @@ Let `V`, `W`, `X` be oriented real inner product spaces of the same finite dimen
 * **The distortion inequalities.** For a real `K ≥ 0`, `q_O(A) ≤ K` iff `‖A‖ⁿ ≤ K J(A)` (in
   positive dimension), and `q_I(A) ≤ K` iff `J(A) ≤ K ℓ(A)ⁿ`. The hypothesis `K ≥ 0` is needed:
   a reflection `R` of the plane has `‖R‖² = 1 ≤ (-1) J(R)` while `q_O(R) = ∞`.
-* **Comparison of the exponents.** If `J(A) > 0` then `q_I(A) ≤ q_O(A)ⁿ⁻¹` and
-  `q_O(A) ≤ q_I(A)ⁿ⁻¹`: both distortions lie between `‖A‖ / ℓ(A)` and its `(n - 1)`-st power.
+* **Comparison of the exponents.** `q_I(A) ≤ q_O(A)ⁿ⁻¹`, and `q_O(A) ≤ q_I(A)ⁿ⁻¹` if `J(A) > 0`:
+  for such `A` both distortions lie between `‖A‖ / ℓ(A)` and its `(n - 1)`-st power.
   In dimension `2` the two distortions of a map with `J(A) > 0` agree, and in every dimension
   `q_I(A) = 1` iff `q_O(A) = 1`.
 
@@ -39,8 +40,8 @@ Let `V`, `W`, `X` be oriented real inner product spaces of the same finite dimen
   distortion inequalities `‖A‖ⁿ ≤ K J(A)` and `J(A) ≤ K ℓ(A)ⁿ`.
 * `Orientation.ofReal_innerDistortion_le_outerDistortion_pow`,
   `Orientation.outerDistortion_le_ofReal_innerDistortion_pow`: `q_I ≤ q_Oⁿ⁻¹` and `q_O ≤ q_Iⁿ⁻¹`.
-* `Orientation.outerDistortion_eq_ofReal_innerDistortion_of_two`: `q_O = q_I` in dimension `2`.
-* `Orientation.innerDistortion_eq_one_iff`: `q_I(A) = 1` iff `q_O(A) = 1`.
+* `Orientation.outerDistortion_eq_ofReal_innerDistortion_of_fin_two`: `q_O = q_I` in dimension `2`.
+* `Orientation.innerDistortion_eq_one_iff_outerDistortion_eq_one`: `q_I(A) = 1` iff `q_O(A) = 1`.
 
 ## References
 
@@ -65,28 +66,6 @@ variable {V W X : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Finit
 
 /-! ### Submultiplicativity -/
 
-omit [FiniteDimensional ℝ X] [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = n)]
-  [Fact (finrank ℝ X = n)] in
-/-- The operator norm of a composition of linear maps on finite-dimensional spaces is at most the
-product of the operator norms. -/
-theorem _root_.LinearMap.norm_toContinuousLinearMap_comp_le (B : W →ₗ[ℝ] X) (A : V →ₗ[ℝ] W) :
-    ‖LinearMap.toContinuousLinearMap (B ∘ₗ A)‖ ≤
-      ‖LinearMap.toContinuousLinearMap B‖ * ‖LinearMap.toContinuousLinearMap A‖ := by
-  have h : LinearMap.toContinuousLinearMap (B ∘ₗ A) =
-      (LinearMap.toContinuousLinearMap B).comp (LinearMap.toContinuousLinearMap A) :=
-    ContinuousLinearMap.ext fun _ ↦ rfl
-  rw [h]
-  exact ContinuousLinearMap.opNorm_comp_le _ _
-
-omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
-/-- A nonzero linear map has nonzero outer distortion. -/
-theorem outerDistortion_ne_zero {A : V →ₗ[ℝ] W} (hA : A ≠ 0) :
-    oV.outerDistortion oW A ≠ 0 := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · have : Subsingleton V := Module.finrank_zero_iff.mp (Fact.out : finrank ℝ V = 0)
-    exact absurd (LinearMap.ext fun x ↦ by simp [Subsingleton.elim x 0]) hA
-  exact fun h ↦ hA ((oV.outerDistortion_eq_zero_iff oW hn).mp h)
-
 omit [FiniteDimensional ℝ X] in
 /-- **Submultiplicativity of the outer distortion**: in positive dimension,
 `q_O(B ∘ A) ≤ q_O(B) q_O(A)`, with the convention `0 · ∞ = 0` of `ℝ≥0∞`. In dimension `0` it
@@ -109,7 +88,9 @@ theorem outerDistortion_comp_le (hn : 0 < n) (A : V →ₗ[ℝ] W) (B : W →ₗ
         ← ENNReal.ofReal_mul (div_nonneg (pow_nonneg (norm_nonneg _) n) hJB.le), hJ,
         div_mul_div_comm, ← mul_pow]
       exact ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right
-        (pow_le_pow_left₀ (norm_nonneg _) (LinearMap.norm_toContinuousLinearMap_comp_le B A) n)
+        (pow_le_pow_left₀ (norm_nonneg _) (by
+          rw [LinearMap.toContinuousLinearMap_comp]
+          exact ContinuousLinearMap.opNorm_comp_le _ _) n)
         (mul_pos hJB hJA).le)
     · rw [oW.outerDistortion_of_nonpos oX hJB hB,
         ENNReal.top_mul (oV.outerDistortion_ne_zero oW hA)]
@@ -153,36 +134,6 @@ theorem innerDistortion_comp_le {A : V →ₗ[ℝ] W} {B : W →ₗ[ℝ] X}
 
 /-! ### Maps of outer distortion at most one -/
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] in
-/-- In dimension `0` a positive oriented Jacobian is `1`. -/
-theorem orientedJacobian_eq_one_of_fin_zero [Fact (finrank ℝ V = 0)] [Fact (finrank ℝ W = 0)]
-    (oV : Orientation ℝ V (Fin 0)) (oW : Orientation ℝ W (Fin 0)) {A : V →ₗ[ℝ] W}
-    (h : 0 < oV.orientedJacobian oW A) : oV.orientedJacobian oW A = 1 := by
-  simpa [abs_of_pos h] using oV.abs_orientedJacobian_fin_zero oW A
-
-omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
-/-- A map of finite nonzero outer distortion has positive oriented Jacobian. -/
-theorem orientedJacobian_pos_of_outerDistortion {A : V →ₗ[ℝ] W}
-    (h0 : oV.outerDistortion oW A ≠ 0) (htop : oV.outerDistortion oW A ≠ ⊤) :
-    0 < oV.orientedJacobian oW A := by
-  by_contra hJ
-  rw [outerDistortion_def, ite_eq_right_of_eq_false _ _ (eq_false hJ)] at h0 htop
-  split_ifs at h0 htop
-  · exact h0 rfl
-  · exact htop rfl
-
-omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
-/-- A positive multiple of a linear isometry of oriented Jacobian `1` has outer distortion `1`. -/
-theorem outerDistortion_smul_linearIsometry {c : ℝ} (hc : 0 < c) (U : V →ₗᵢ[ℝ] W)
-    (hU : oV.orientedJacobian oW U.toLinearMap = 1) :
-    oV.outerDistortion oW (c • U.toLinearMap) = 1 := by
-  rw [oV.outerDistortion_smul oW (pow_pos hc n)]
-  have h := oV.outerDistortion_linearIsometry_comp oV oW U hU LinearMap.id
-  rw [LinearMap.comp_id] at h
-  rw [h]
-  exact oV.outerDistortion_linearIsometryEquiv oV (LinearIsometryEquiv.refl ℝ V)
-    oV.orientedJacobian_id
-
 omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 /-- `q_O(A) ≤ 1` exactly when `A = 0` or `A` is a positive multiple of a
 linear isometry of oriented Jacobian `1`. -/
@@ -200,12 +151,12 @@ theorem outerDistortion_le_one_iff {A : V →ₗ[ℝ] W} :
       exact absurd h (by simp)
     rw [oV.outerDistortion_of_pos oW hJ, ENNReal.ofReal_le_one, div_le_one hJ] at h
     set f := LinearMap.toContinuousLinearMap A
-    have hfA : f.toLinearMap = A := rfl
+    have hfA : f.toLinearMap = A := LinearMap.coe_toContinuousLinearMap A
     have heq : |oV.orientedJacobian oW f.toLinearMap| = ‖f‖ ^ n := by
       rw [hfA, abs_of_pos hJ]
       exact le_antisymm ((le_abs_self _).trans (oV.abs_orientedJacobian_le oW A)) h
     rcases (oV.abs_orientedJacobian_toLinearMap_eq_norm_pow_iff oW f).mp heq with hf0 | hconf
-    · exact absurd (by rw [← hfA, hf0]; rfl) hA
+    · exact absurd (by rw [← hfA, hf0, ContinuousLinearMap.toLinearMap_zero]) hA
     obtain ⟨c, hc, li, hli⟩ := hconf
     -- Replace `(c, li)` by `(|c|, ± li)`.
     obtain ⟨d, hd, U, hU⟩ : ∃ d : ℝ, 0 < d ∧ ∃ U : V →ₗᵢ[ℝ] W, A = d • U.toLinearMap := by
@@ -222,11 +173,9 @@ theorem outerDistortion_le_one_iff {A : V →ₗ[ℝ] W} :
     rwa [abs_of_pos hJU] at habs
   · rintro (rfl | ⟨c, hc, U, hU, rfl⟩)
     · rcases n.eq_zero_or_pos with rfl | hn
-      · rw [outerDistortion_def]
-        split_ifs with h
-        · simp [oV.orientedJacobian_eq_one_of_fin_zero oW h]
-        · simp
-        · exact absurd rfl ‹¬(0 : V →ₗ[ℝ] W) = 0›
+      · rcases lt_or_ge 0 (oV.orientedJacobian oW 0) with h | h
+        · simp [oV.outerDistortion_of_pos oW h, oV.orientedJacobian_eq_one_of_fin_zero oW h]
+        · simp [oV.outerDistortion_zero_of_nonpos oW h]
       · simp [oV.outerDistortion_zero oW hn]
     · exact (oV.outerDistortion_smul_linearIsometry oW hc U hU).le
 
@@ -244,7 +193,8 @@ theorem outerDistortion_eq_one_iff {A : V →ₗ[ℝ] W} :
     · -- In dimension `0`, `q_O(0) = 1` forces `J(0) = 1`, and `0 = 1 • 0` with `0` an isometry.
       have : Subsingleton V := Module.finrank_zero_iff.mp (Fact.out : finrank ℝ V = 0)
       have hJ : 0 < oV.orientedJacobian oW 0 :=
-        oV.orientedJacobian_pos_of_outerDistortion oW (by simp [h]) (by simp [h])
+        oV.orientedJacobian_pos_of_outerDistortion_ne_zero_of_ne_top oW (by simp [h])
+          (by simp [h])
       let U : V →ₗᵢ[ℝ] W := ⟨0, fun x ↦ by simp [Subsingleton.elim x 0]⟩
       have hU : U.toLinearMap = 0 := rfl
       exact ⟨1, one_pos, U, by rw [hU]; exact oV.orientedJacobian_eq_one_of_fin_zero oW hJ,
@@ -287,11 +237,13 @@ theorem innerDistortion_le_iff {K : ℝ} (hK : 0 ≤ K) {A : V →ₗ[ℝ] W} :
 /-! ### Comparison of the exponents -/
 
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
-/-- When `J(A) > 0`, the inner distortion is at most `(‖A‖ / ℓ(A))ⁿ⁻¹ = (σ₁ / σₙ)ⁿ⁻¹`. -/
-theorem innerDistortion_le_norm_div_minimalStretch_pow {A : V →ₗ[ℝ] W}
-    (h : 0 < oV.orientedJacobian oW A) :
+/-- The inner distortion is at most `(‖A‖ / ℓ(A))ⁿ⁻¹`, which is `(σ₁ / σₙ)ⁿ⁻¹` when `J(A) > 0`. -/
+theorem innerDistortion_le_norm_div_minimalStretch_pow (A : V →ₗ[ℝ] W) :
     oV.innerDistortion oW A ≤
       (‖LinearMap.toContinuousLinearMap A‖ / A.minimalStretch) ^ (n - 1) := by
+  rcases le_or_gt (oV.orientedJacobian oW A) 0 with h | h
+  · rw [oV.innerDistortion_of_nonpos oW h]
+    exact pow_nonneg (div_nonneg (norm_nonneg _) A.minimalStretch_nonneg) _
   rcases n.eq_zero_or_pos with rfl | hn
   · rw [oV.innerDistortion_of_pos oW h, oV.orientedJacobian_eq_one_of_fin_zero oW h]
     simp
@@ -329,13 +281,12 @@ theorem outerDistortion_le_ofReal_norm_div_minimalStretch_pow {A : V →ₗ[ℝ]
     _ = _ := mul_comm _ _
 
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
-/-- **The inner distortion is at most the `(n - 1)`-st power of the outer distortion** when
-`J(A) > 0`: each of the `n - 1` factors `σᵢ / σₙ` of `q_I(A)` is at most
-`σ₁ / σₙ ≤ q_O(A)`. -/
-theorem ofReal_innerDistortion_le_outerDistortion_pow {A : V →ₗ[ℝ] W}
-    (h : 0 < oV.orientedJacobian oW A) :
+/-- **The inner distortion is at most the `(n - 1)`-st power of the outer distortion**: when
+`J(A) > 0`, each of the `n - 1` factors `σᵢ / σₙ` of `q_I(A)` is at most `σ₁ / σₙ ≤ q_O(A)`, and
+when `J(A) ≤ 0`, `q_I(A) = 0`. -/
+theorem ofReal_innerDistortion_le_outerDistortion_pow (A : V →ₗ[ℝ] W) :
     ENNReal.ofReal (oV.innerDistortion oW A) ≤ oV.outerDistortion oW A ^ (n - 1) := by
-  refine (ENNReal.ofReal_le_ofReal (oV.innerDistortion_le_norm_div_minimalStretch_pow oW h)).trans
+  refine (ENNReal.ofReal_le_ofReal (oV.innerDistortion_le_norm_div_minimalStretch_pow oW A)).trans
     ?_
   rw [ENNReal.ofReal_pow (div_nonneg (norm_nonneg _) A.minimalStretch_nonneg)]
   exact pow_le_pow_left₀ (by simp) (oV.ofReal_norm_div_minimalStretch_le_outerDistortion oW A) _
@@ -355,24 +306,25 @@ theorem outerDistortion_le_ofReal_innerDistortion_pow {A : V →ₗ[ℝ] W}
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 /-- In dimension `2` the outer and inner distortions of a map with `J(A) > 0` agree: both are
 `σ₁ / σ₂`. -/
-theorem outerDistortion_eq_ofReal_innerDistortion_of_two [Fact (finrank ℝ V = 2)]
+theorem outerDistortion_eq_ofReal_innerDistortion_of_fin_two [Fact (finrank ℝ V = 2)]
     [Fact (finrank ℝ W = 2)] (oV : Orientation ℝ V (Fin 2)) (oW : Orientation ℝ W (Fin 2))
     {A : V →ₗ[ℝ] W} (h : 0 < oV.orientedJacobian oW A) :
     oV.outerDistortion oW A = ENNReal.ofReal (oV.innerDistortion oW A) :=
   le_antisymm ((oV.outerDistortion_le_ofReal_innerDistortion_pow oW h).trans_eq (by simp))
-    ((oV.ofReal_innerDistortion_le_outerDistortion_pow oW h).trans_eq (by simp))
+    ((oV.ofReal_innerDistortion_le_outerDistortion_pow oW A).trans_eq (by simp))
 
 omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
 /-- The inner distortion is `1` exactly when the outer distortion is `1`. -/
-theorem innerDistortion_eq_one_iff {A : V →ₗ[ℝ] W} :
+theorem innerDistortion_eq_one_iff_outerDistortion_eq_one {A : V →ₗ[ℝ] W} :
     oV.innerDistortion oW A = 1 ↔ oV.outerDistortion oW A = 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hJ : 0 < oV.orientedJacobian oW A := (oV.innerDistortion_pos_iff oW).mp (by simp [h])
     refine le_antisymm ?_ (oV.one_le_outerDistortion oW hJ)
     simpa [h] using oV.outerDistortion_le_ofReal_innerDistortion_pow oW hJ
-  · have hJ := oV.orientedJacobian_pos_of_outerDistortion oW (A := A) (by simp [h]) (by simp [h])
+  · have hJ := oV.orientedJacobian_pos_of_outerDistortion_ne_zero_of_ne_top oW (A := A)
+      (by simp [h]) (by simp [h])
     refine le_antisymm ?_ (oV.one_le_innerDistortion oW hJ)
-    have := oV.ofReal_innerDistortion_le_outerDistortion_pow oW hJ
+    have := oV.ofReal_innerDistortion_le_outerDistortion_pow oW A
     rwa [h, one_pow, ENNReal.ofReal_le_one] at this
 
 end Orientation
