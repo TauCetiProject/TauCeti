@@ -94,9 +94,7 @@ theorem _root_.MeasureTheory.eLpNorm_clm_apply_const_le (v : V) :
   by_cases hf : AEStronglyMeasurable f μ
   · have h := eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (f := fun x ↦ f x v) (g := f)
       (c := ‖v‖₊) ((ContinuousLinearMap.apply 𝕜 W v).continuous.comp_aestronglyMeasurable hf)
-      (.of_forall fun x ↦ by
-        rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm, coe_nnNorm, mul_comm]
-        exact (f x).le_opNorm v) p
+      (.of_forall fun x ↦ by simpa [mul_comm] using (f x).le_opNNNorm v) p
     simpa [ENNReal.smul_def] using h
   rcases eq_or_ne v 0 with rfl | hv
   · simp

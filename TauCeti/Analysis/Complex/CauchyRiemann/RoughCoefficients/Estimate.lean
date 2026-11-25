@@ -95,7 +95,7 @@ private theorem eLpNorm_apply_apply_le {c : ℂ} (hc : ‖c‖ = 1) {w : ℂ →
   (eLpNorm_clm_apply_le (a := p) (b := q)
     ((ContinuousLinearMap.apply ℝ (V →L[ℝ] V) c).continuous.comp_aestronglyMeasurable hDJ)
     hw).trans (mul_le_mul_left ((eLpNorm_clm_apply_const_le (p := p) (f := DJ) c).trans_eq
-      (by rw [show ‖c‖₊ = 1 from Subtype.ext hc, ENNReal.coe_one, one_mul])) _)
+      (by rw [show ‖c‖₊ = 1 from NNReal.eq (by simpa using hc), ENNReal.coe_one, one_mul])) _)
 
 omit [CompleteSpace V] in
 /-- The `Lʳ` bound for the divergence-form data `f = η + (∂_t J) ξ - S ξ` and
