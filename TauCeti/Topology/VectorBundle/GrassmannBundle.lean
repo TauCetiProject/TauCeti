@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import TauCeti.Topology.Grassmannian.StarProjection
+public import TauCeti.Topology.Grassmannian.StarProjection.Basic
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Hom
 import TauCeti.Topology.FiberBundle.Proper
 
