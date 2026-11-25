@@ -566,17 +566,18 @@ end Orthonormal
 
 section Restriction
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k] [CharZero k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
 
 /-- An irreducible character of `G` whose restriction to a finite subgroup `N` is an irreducible
-character `θ` of `N` lies over `θ`. -/
-theorem mem_irreducibleCharactersOver_of_restrict_eq {N : Subgroup G} [Finite N] {θ : N → k}
+character `θ` of `N` lies over `θ`. Only `|N| ≠ 0` in `k` is needed. -/
+theorem mem_irreducibleCharactersOver_of_restrict_eq {N : Subgroup G} [Finite N]
+    [NeZero (Nat.card N : k)] {θ : N → k}
     {ψ : G → k} (hψ : ψ ∈ irreducibleCharacters k G) (hθ : θ ∈ irreducibleCharacters k N)
     (h : ∀ n : N, ψ n = θ n) : ψ ∈ irreducibleCharactersOver k N θ := by
   have := Fintype.ofFinite N
   refine mem_irreducibleCharactersOver_iff_sum.mpr ⟨hψ, ?_⟩
-  simp only [h, sum_mul_inv_self_of_mem_irreducibleCharacters hθ, Nat.cast_ne_zero]
-  exact Nat.card_pos.ne'
+  simp only [h, sum_mul_inv_self_of_mem_irreducibleCharacters hθ]
+  exact NeZero.ne _
 
 end Restriction
 
