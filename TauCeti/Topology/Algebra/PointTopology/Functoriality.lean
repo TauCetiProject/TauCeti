@@ -8,6 +8,8 @@ module
 public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.Algebra.Algebra.Hom
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Nilpotent.Lemmas
 
 /-!
 # Functoriality of the affine point topology
@@ -15,7 +17,11 @@ public import TauCeti.Algebra.Algebra.Hom
 Precomposition and continuous change of coefficients are continuous for the evaluation topology.
 A surjection of coordinate rings gives a closed embedding of points over a T1 ring. Change of
 coefficients preserves embeddings and closed embeddings, and preserves open embeddings when the
-coordinate algebra is of finite type. Tensor products give products of point spaces, and base
+coordinate algebra is of finite type. Along an injective map of coefficients `R → S`, with no
+topology on `R`, the points with values in `R` form a closed subset of those with values in `S`
+when the image of `R` is closed, and a discrete subset when it is discrete and the coordinate
+algebra is commutative of finite type. Over a reduced ring, passing to the quotient by the
+nilradical does not change the point space. Tensor products give products of point spaces, and base
 change does not alter the point topology.
 
 These results allow affine presentations and changes of coefficient rings to be used in the
@@ -66,16 +72,22 @@ theorem isEmbedding_map_codomain (ψ : R →ₐ[k] S) (hψ : IsEmbedding ψ) :
     isEmbedding_coeFn.continuous ?_
   exact (IsEmbedding.piMap (fun _ : A ↦ hψ)).comp isEmbedding_coeFn
 
+omit [TopologicalSpace R] in
+/-- If an injective coefficient map `ψ : R → S` has closed image, then the points with values in
+`R` form a closed subset of the points with values in `S`. No topology on `R` and no finiteness
+or separation assumption on the coordinate algebra or on `S` is needed. -/
+theorem isClosed_range_map_codomain (ψ : R →ₐ[k] S) (hψ : Function.Injective ψ)
+    (hc : IsClosed (Set.range ψ)) :
+    IsClosed (Set.range fun x : A →ₐ[k] R ↦ ψ.comp x) := by
+  rw [AlgHom.range_comp_left_of_injective ψ hψ, Set.ofPred_forall]
+  exact isClosed_iInter fun a ↦ hc.preimage (continuous_eval a)
+
 /-- A closed embedding of coefficient rings induces a closed embedding on points, with no
 finiteness or separation assumption on the coordinate algebra or the coefficient rings. -/
 theorem isClosedEmbedding_map_codomain (ψ : R →ₐ[k] S) (hψ : IsClosedEmbedding ψ) :
-    IsClosedEmbedding fun x : A →ₐ[k] R ↦ ψ.comp x := by
-  refine ⟨isEmbedding_map_codomain ψ hψ.isEmbedding, ?_⟩
-  rw [AlgHom.range_comp_left_of_injective ψ hψ.injective]
-  convert isClosed_iInter (fun a : A ↦
-    hψ.isClosed_range.preimage (continuous_eval (k := k) (A := A) a)) using 1
-  ext x
-  simp
+    IsClosedEmbedding fun x : A →ₐ[k] R ↦ ψ.comp x :=
+  ⟨isEmbedding_map_codomain ψ hψ.isEmbedding,
+    isClosed_range_map_codomain ψ hψ.injective hψ.isClosed_range⟩
 
 end Semiring
 
@@ -101,6 +113,29 @@ theorem isOpenEmbedding_map_codomain [Algebra.FiniteType k A]
 
 end FiniteType
 
+section Discrete
+
+variable {k A R S : Type*} [CommSemiring k] [CommSemiring A] [Algebra k A]
+  [CommSemiring R] [Algebra k R] [Semiring S] [Algebra k S] [TopologicalSpace S]
+
+/-- If an injective coefficient map `ψ : R → S` has discrete image, then the points with values in
+`R` of a finite type algebra form a discrete subset of the points with values in `S`. Finite type
+is needed: for a polynomial ring in infinitely many variables the points over a discrete ring are
+not discrete (`TauCeti.PointTopology.not_discreteTopology_mvPolynomial`). -/
+theorem isDiscrete_range_map_codomain [Algebra.FiniteType k A] (ψ : R →ₐ[k] S)
+    (hψ : Function.Injective ψ) (hd : IsDiscrete (Set.range ψ)) :
+    IsDiscrete (Set.range fun x : A →ₐ[k] R ↦ ψ.comp x) := by
+  -- With the topology induced from `S`, the ring `R` is discrete and `ψ` is an embedding, so the
+  -- points with values in `R` are discrete and embed in the points with values in `S`.
+  let : TopologicalSpace R := .induced ψ ‹_›
+  have hψe : IsEmbedding ψ := ⟨⟨rfl⟩, hψ⟩
+  have := isDiscrete_iff_discreteTopology.1 hd
+  have : DiscreteTopology R := hψe.toHomeomorph.isEmbedding.discreteTopology
+  have := discreteTopology_of_finiteType (k := k) (A := A) (R := R)
+  exact (isEmbedding_map_codomain ψ hψe).isInducing.isDiscrete_range
+
+end Discrete
+
 section Ring
 
 variable {k A B R : Type*} [CommSemiring k] [Ring A] [Algebra k A]
@@ -119,6 +154,53 @@ theorem isClosedEmbedding_comap_of_surjective [T1Space R]
   simp
 
 end Ring
+
+section Nilradical
+
+variable {k A R : Type*} [CommSemiring k] [CommRing A] [Algebra k A]
+  [Semiring R] [Algebra k R] [IsReduced R] [TopologicalSpace R]
+
+variable (k A R) in
+/-- Over a reduced ring, every point of `A` factors uniquely through `A ⧸ nilradical A`:
+precomposition with the quotient map is a homeomorphism of point spaces. No separation or
+finiteness hypothesis is needed. -/
+noncomputable def quotientNilradicalHomeomorph :
+    (A ⧸ nilradical A →ₐ[k] R) ≃ₜ (A →ₐ[k] R) where
+  toFun x := x.comp (Ideal.Quotient.mkₐ k (nilradical A))
+  invFun x := Ideal.Quotient.liftₐ (nilradical A) x fun a ha ↦
+    IsReduced.eq_zero _ ((mem_nilradical.mp ha).map x)
+  left_inv x := Ideal.Quotient.algHom_ext k (Ideal.Quotient.liftₐ_comp _ _ _)
+  right_inv x := Ideal.Quotient.liftₐ_comp _ _ _
+  continuous_toFun := continuous_comap _
+  continuous_invFun := by
+    refine (isEmbedding_comap_of_surjective (R := R) _
+      (Ideal.Quotient.mkₐ_surjective k (nilradical A))).continuous_iff.2 ?_
+    convert continuous_id
+    funext x
+    exact Ideal.Quotient.liftₐ_comp _ _ _
+
+/-- The homeomorphism `quotientNilradicalHomeomorph` is precomposition with the quotient map. -/
+@[simp]
+theorem quotientNilradicalHomeomorph_apply (x : A ⧸ nilradical A →ₐ[k] R) :
+    quotientNilradicalHomeomorph k A R x = x.comp (Ideal.Quotient.mkₐ k (nilradical A)) :=
+  (rfl)
+
+/-- The inverse of `quotientNilradicalHomeomorph` is the lift of a point to the quotient by the
+nilradical. -/
+theorem quotientNilradicalHomeomorph_symm_apply (x : A →ₐ[k] R) :
+    (quotientNilradicalHomeomorph k A R).symm x = Ideal.Quotient.liftₐ (nilradical A) x
+      fun _ ha ↦ IsReduced.eq_zero _ ((mem_nilradical.mp ha).map x) :=
+  (rfl)
+
+/-- The inverse of `quotientNilradicalHomeomorph` sends a point to the map it induces on
+the quotient by the nilradical. -/
+@[simp]
+theorem quotientNilradicalHomeomorph_symm_apply_mk (x : A →ₐ[k] R) (a : A) :
+    (quotientNilradicalHomeomorph k A R).symm x (Ideal.Quotient.mk (nilradical A) a) = x a := by
+  rw [quotientNilradicalHomeomorph_symm_apply, Ideal.Quotient.liftₐ_apply]
+  exact Ideal.Quotient.lift_mk _ _ _
+
+end Nilradical
 
 /-- For a family of algebra maps out of a tensor product, continuity of evaluation on pure
 tensors implies continuity in the point topology. The algebra-map scalar ring can differ from
@@ -156,16 +238,18 @@ noncomputable def tensorProductHomeomorph :
       ((continuous_eval a).comp continuous_fst).fun_mul
         ((continuous_eval b).comp continuous_snd)
 
-/-- The tensor-product comparison restricts a point to the left factor. -/
+/-- The tensor-product comparison restricts a point to the left factor, by precomposing with the
+left inclusion `a ↦ a ⊗ₜ 1`. -/
 @[simp]
-theorem tensorProductHomeomorph_apply_fst (x : A ⊗[k] B →ₐ[k] R) (a : A) :
-    (tensorProductHomeomorph k A B R x).1 a = x (a ⊗ₜ[k] 1) :=
+theorem tensorProductHomeomorph_apply_fst (x : A ⊗[k] B →ₐ[k] R) :
+    (tensorProductHomeomorph k A B R x).1 = x.comp Algebra.TensorProduct.includeLeft :=
   (rfl)
 
-/-- The tensor-product comparison restricts a point to the right factor. -/
+/-- The tensor-product comparison restricts a point to the right factor, by precomposing with the
+right inclusion `b ↦ 1 ⊗ₜ b`. -/
 @[simp]
-theorem tensorProductHomeomorph_apply_snd (x : A ⊗[k] B →ₐ[k] R) (b : B) :
-    (tensorProductHomeomorph k A B R x).2 b = x (1 ⊗ₜ[k] b) :=
+theorem tensorProductHomeomorph_apply_snd (x : A ⊗[k] B →ₐ[k] R) :
+    (tensorProductHomeomorph k A B R x).2 = x.comp Algebra.TensorProduct.includeRight :=
   (rfl)
 
 /-- The inverse tensor-product comparison multiplies the two coordinate values. -/

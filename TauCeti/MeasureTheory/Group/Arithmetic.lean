@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.MeasureTheory.Group.Arithmetic
 
 /-!
@@ -16,7 +17,8 @@ On an additive group, measurability of subtraction gives measurability of transl
 
 A `SetLike` subobject closed under multiplication (`MulMemClass`) or inversion (`InvMemClass`)
 inherits `MeasurableMul`, `MeasurableMul₂`, and `MeasurableInv` (and their additive counterparts)
-from the ambient measurable space with respect to the subtype σ-algebra.
+from the ambient measurable space with respect to the subtype σ-algebra. Likewise the restriction of
+a jointly measurable action to an invariant subset (a `SubMulAction`) is jointly measurable.
 
 ## Main declarations
 
@@ -26,6 +28,8 @@ from the ambient measurable space with respect to the subtype σ-algebra.
   addition on `MulMemClass` / `AddMemClass` subobjects.
 * `InvMemClass.measurableInv`, `NegMemClass.measurableNeg`: measurable inversion and negation on
   `InvMemClass` / `NegMemClass` subobjects.
+* `SubMulAction.instMeasurableSMul₂`, `SubAddAction.instMeasurableVAdd₂`: the jointly measurable
+  action on a `SubMulAction` / `SubAddAction`.
 * `TauCeti.measurableAdd_of_measurableSub`: on an additive group, separately measurable
   subtraction gives separately measurable addition.
 * `TauCeti.measurableAdd₂_of_measurableSub₂`: on an additive group, jointly measurable subtraction
@@ -37,18 +41,28 @@ public section
 @[to_additive]
 instance MulMemClass.measurableMul {M S : Type*} [Mul M] [MeasurableSpace M] [MeasurableMul M]
     [SetLike S M] [MulMemClass S M] (s : S) : MeasurableMul s where
-  measurable_const_mul c := (measurable_subtype_coe.const_mul (c : M)).subtype_mk
-  measurable_mul_const c := (measurable_subtype_coe.mul_const (c : M)).subtype_mk
+  measurable_const_mul c := (measurable_subtypeVal.const_mul (c : M)).subtype_mk
+  measurable_mul_const c := (measurable_subtypeVal.mul_const (c : M)).subtype_mk
 
 @[to_additive AddMemClass.measurableAdd₂]
 instance MulMemClass.measurableMul₂ {M S : Type*} [Mul M] [MeasurableSpace M] [MeasurableMul₂ M]
     [SetLike S M] [MulMemClass S M] (s : S) : MeasurableMul₂ s where
-  measurable_mul := (measurable_fst.subtype_val.mul measurable_snd.subtype_val).subtype_mk
+  measurable_mul := (measurable_fst.subtypeVal.mul measurable_snd.subtypeVal).subtype_mk
 
 @[to_additive]
 instance InvMemClass.measurableInv {G S : Type*} [Inv G] [MeasurableSpace G] [MeasurableInv G]
     [SetLike S G] [InvMemClass S G] (s : S) : MeasurableInv s where
-  measurable_inv := measurable_subtype_coe.inv.subtype_mk
+  measurable_inv := measurable_subtypeVal.inv.subtype_mk
+
+/-- The restriction of a jointly measurable action to an invariant subset is jointly
+measurable. -/
+@[to_additive SubAddAction.instMeasurableVAdd₂
+/-- The restriction of a jointly measurable additive action to an invariant subset is
+jointly measurable. -/]
+instance SubMulAction.instMeasurableSMul₂ {G X : Type*} [SMul G X] [MeasurableSpace G]
+    [MeasurableSpace X] [MeasurableSMul₂ G X] (p : SubMulAction G X) : MeasurableSMul₂ G p :=
+  ⟨(measurable_smul.comp (measurable_fst.prodMk (measurable_subtypeVal.comp
+    measurable_snd))).subtype_mk⟩
 
 namespace TauCeti
 

@@ -87,56 +87,13 @@ end Saddle
 
 variable (hD : D.IsPlanar) (R : Type u) [CommRing R] {j j' j'' : ℤ}
 
-/-- The `X` action at `p` maps the image of the vertex `S` of the degree-`j` cube into the image
-of the vertex `S` of the degree-`j'` cube, when `j' = j - 2`. -/
-private theorem circleX_resolutionCubeι_mem_range (hj : j' = j - 2) (S : Finset (Fin n))
-    (x : (D.resolutionCube hD R j).obj S) :
-    Khovanov.circleX R (p.resolvedCircle (cubeState S)) ((D.resolutionCubeι hD R j S).hom x) ∈
-      LinearMap.range (D.resolutionCubeι hD R j' S).hom := by
-  have hx : (D.resolutionCubeι hD R j S).hom x ∈
-      (Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState S))).piece (j - #S) := by
-    rw [← range_resolutionCubeι]
-    exact LinearMap.mem_range_self _ x
-  rw [range_resolutionCubeι]
-  convert (Khovanov.isHomogeneous_circleX (R := R) (p.resolvedCircle (cubeState S))).map_mem hx
-    using 2
-  omega
-
-/-- The component of the `X` action at `p` on the vertex `S`: multiplication by `X` on the circle
-through `p`, restricted to the quantum pieces, which are the images of the vertex inclusions. -/
-private def resolutionCubeMarkXApp (hj : j' = j - 2) (S : Finset (Fin n)) :
-    (D.resolutionCube hD R j).obj S ⟶ (D.resolutionCube hD R j').obj S :=
-  ModuleCat.ofHom <|
-    (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j' S)).symm.toLinearMap ∘ₗ
-      ((Khovanov.circleX R (p.resolvedCircle (cubeState S))) ∘ₗ
-        (D.resolutionCubeι hD R j S).hom).codRestrict _
-        (D.circleX_resolutionCubeι_mem_range p hD R hj S)
-
-@[reassoc]
-private theorem resolutionCubeMarkXApp_comp_resolutionCubeι (hj : j' = j - 2)
-    (S : Finset (Fin n)) :
-    D.resolutionCubeMarkXApp p hD R hj S ≫ D.resolutionCubeι hD R j' S =
-      D.resolutionCubeι hD R j S ≫
-        ModuleCat.ofHom (Khovanov.circleX R (p.resolvedCircle (cubeState S))) := by
-  ext x
-  simp [resolutionCubeMarkXApp]
-
 /-- **The `X` action at a mark on the cube of resolutions.** On the vertex `S` it multiplies the
 factor of the circle through `p` by `X`, mapping the degree-`j` cube to the degree-`j'` cube
 for `j' = j - 2`. It is a map of cubes because it commutes with every saddle. -/
 def resolutionCubeMarkX (hj : j' = j - 2) : D.resolutionCube hD R j ⟶ D.resolutionCube hD R j' :=
-  NatTrans.ofCubeEdges (D.resolutionCubeMarkXApp p hD R hj) fun S T h ↦ by
-    obtain ⟨a, ha, rfl⟩ := h.exists_finset_insert
-    have hst := cubeState_eq_of_covBy h ha (mem_insert_self a S)
-    have hc := cubeState_ne_of_notMem_of_mem ha (mem_insert_self a S)
-    have hsad := hD.card_circlesAt_eq_two_or_card_circlesAt_eq_two hst hc
-    rw [← cancel_mono (D.resolutionCubeι hD R j' (insert a S)), Category.assoc,
-      Category.assoc, resolutionCubeMarkXApp_comp_resolutionCubeι,
-      D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι_assoc hD R j ha,
-      D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j' ha,
-      resolutionCubeMarkXApp_comp_resolutionCubeι_assoc]
-    ext x
-    exact (D.resolutionEdgeMap_circleX p hst hc R hsad _).symm
+  resolutionCubeHom hD R j hD (fun s ↦ Khovanov.circleX R (p.resolvedCircle s))
+    (fun s ↦ Khovanov.isHomogeneous_circleX (p.resolvedCircle s))
+    (fun _ _ _ hst hc h _ x ↦ D.resolutionEdgeMap_circleX p hst hc R h x) (by omega)
 
 /-- On the vertex `S`, the `X` action at `p` multiplies the factor of the circle through `p` in the
 resolution of `S` by `X`. -/
@@ -144,9 +101,8 @@ resolution of `S` by `X`. -/
 theorem resolutionCubeMarkX_app_comp_resolutionCubeι (hj : j' = j - 2) (S : Finset (Fin n)) :
     (D.resolutionCubeMarkX p hD R hj).app S ≫ D.resolutionCubeι hD R j' S =
       D.resolutionCubeι hD R j S ≫
-        ModuleCat.ofHom (Khovanov.circleX R (p.resolvedCircle (cubeState S))) := by
-  rw [resolutionCubeMarkX, NatTrans.ofCubeEdges_app]
-  exact D.resolutionCubeMarkXApp_comp_resolutionCubeι p hD R hj S
+        ModuleCat.ofHom (Khovanov.circleX R (p.resolvedCircle (cubeState S))) :=
+  resolutionCubeHom_app_comp_resolutionCubeι ..
 
 /-- The `X` action at a mark on the cube of resolutions squares to zero. -/
 @[reassoc (attr := simp)]
@@ -188,7 +144,7 @@ vertex of the cube of resolutions. -/
 theorem khovanovComplexι_khovanovComplexMarkX_f (hj : j' = j - 2) {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
     D.khovanovComplexι hD R j S ≫ (D.khovanovComplexMarkX p hD R hj).f i =
-      (D.toPDCode.resolutionCubeMarkX p hD R (by omega)).app S.1 ≫
+      (D.toPDCode.resolutionCubeMarkX p hD R (by omega)).app S.val ≫
         D.khovanovComplexι hD R j' S := by
   rw [khovanovComplexMarkX, khovanovComplexι_def, khovanovComplexι_def]
   -- The restriction functor produces complexes of shape `up' 1`, which `erw` identifies with the
@@ -199,7 +155,6 @@ theorem khovanovComplexι_khovanovComplexMarkX_f (hj : j' = j - 2) {i : ℤ}
     HomologicalComplex.restrictionMap_f]
   simp only [eqToHom_trans_assoc, Category.assoc]
   erw [eqToHom_refl, Category.id_comp, NatTrans.ι_cubeComplexMap_f_assoc]
-  rfl
 
 /-- Projecting the marked `X` chain action onto a state gives the marked `X` action of that
 state. -/
@@ -208,7 +163,7 @@ theorem khovanovComplexMarkX_f_khovanovComplexπ (hj : j' = j - 2) {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
     (D.khovanovComplexMarkX p hD R hj).f i ≫ D.khovanovComplexπ hD R j' S =
       D.khovanovComplexπ hD R j S ≫
-        (D.toPDCode.resolutionCubeMarkX p hD R (by omega)).app S.1 := by
+        (D.toPDCode.resolutionCubeMarkX p hD R (by omega)).app S.val := by
   refine D.khovanovComplex_hom_ext hD R j fun T ↦ ?_
   by_cases h : T = S
   · subst h

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.ChartLinear
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel
+public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Basic
 
 /-!
 # The boundary of a regular sublevel is the regular level
@@ -91,32 +91,33 @@ noncomputable def scalarRegularSublevelBoundaryHomeomorph :
     ↥((𝓡∂ (n + 1)).boundary {x | f x ≤ a}) ≃ₜ {x : M // f x = a} := by
   letI := scalarRegularSublevelChartedSpace hf hreg hn
   have hB := boundary_scalarRegularSublevel hreg hn le_rfl hf
-  have h₁ (q : ↥((𝓡∂ (n + 1)).boundary {x | f x ≤ a})) : f q.1.1 = a := by simpa [hB] using q.2
+  have h₁ (q : ↥((𝓡∂ (n + 1)).boundary {x | f x ≤ a})) : f q.val.val = a := by simpa
+      [hB] using q.property
   have h₂ (y : {x : M // f x = a}) :
-      (⟨y.1, le_of_eq y.2⟩ : {x | f x ≤ a}) ∈ (𝓡∂ (n + 1)).boundary {x | f x ≤ a} := by
+      (⟨y.val, le_of_eq y.property⟩ : {x | f x ≤ a}) ∈ (𝓡∂ (n + 1)).boundary {x | f x ≤ a} := by
     rw [hB]
-    exact y.2
+    exact y.property
   exact
-  { toFun q := ⟨q.1.1, h₁ q⟩
-    invFun y := ⟨⟨y.1, le_of_eq y.2⟩, h₂ y⟩
+  { toFun q := ⟨q.val.val, h₁ q⟩
+    invFun y := ⟨⟨y.val, le_of_eq y.property⟩, h₂ y⟩
     left_inv _ := rfl
     right_inv _ := rfl
-    continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk h₁
-    continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk h₂ }
+    continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk h₁
+    continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk h₂ }
 
 /-- `TauCeti.scalarRegularSublevelBoundaryHomeomorph` is the identity on underlying points. -/
 @[simp]
 theorem coe_scalarRegularSublevelBoundaryHomeomorph_apply
     (q : letI := scalarRegularSublevelChartedSpace hf hreg hn
       ↥((𝓡∂ (n + 1)).boundary {x | f x ≤ a})) :
-    (scalarRegularSublevelBoundaryHomeomorph hf hreg hn q : M) = q.1.1 :=
+    (scalarRegularSublevelBoundaryHomeomorph hf hreg hn q : M) = q.val.val :=
   (rfl)
 
 /-- The inverse of `TauCeti.scalarRegularSublevelBoundaryHomeomorph` is the identity on underlying
 points. -/
 @[simp]
 theorem coe_scalarRegularSublevelBoundaryHomeomorph_symm_apply (y : {x : M // f x = a}) :
-    ((scalarRegularSublevelBoundaryHomeomorph hf hreg hn).symm y).1.1 = y.1 :=
+    ((scalarRegularSublevelBoundaryHomeomorph hf hreg hn).symm y).val.val = y.val :=
   (rfl)
 
 /-- **The boundary charts of a regular sublevel are the level charts.** On the source of the
@@ -137,8 +138,8 @@ theorem euclideanSpaceEquiv_chartAt_scalarRegularSublevelBoundary_eq_regularLeve
         (scalarRegularSublevelBoundaryHomeomorph hf hreg hn q) := by
   let := scalarRegularSublevelChartedSpace hf hreg hn
   have := isManifold_scalarRegularSublevel hreg hn le_rfl hf
-  have hp : f p.1.1 = a := (scalarRegularSublevelBoundaryHomeomorph hf hreg hn p).2
-  have hqa : f q.1.1 = a := (scalarRegularSublevelBoundaryHomeomorph hf hreg hn q).2
+  have hp : f p.val.val = a := (scalarRegularSublevelBoundaryHomeomorph hf hreg hn p).property
+  have hqa : f q.val.val = a := (scalarRegularSublevelBoundaryHomeomorph hf hreg hn q).property
   rw [boundaryChartedSpace_chartAt_source, mem_preimage,
     scalarRegularSublevelChartedSpace_chartAt] at hq
   -- The face chart lemma reads the level chart in dimension `dim E - 1`; identify `n` with it.
@@ -217,53 +218,53 @@ noncomputable def scalarRegularBandBoundaryHomeomorph :
   let := scalarRegularBandChartedSpace hf hn ha hb hab
   have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
   have hB := boundary_scalarRegularBand hn ha hb le_rfl hf hab
-  have hmem (q : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) : f q.1.1 = a ∨ f q.1.1 = b := by
-    simpa [hB] using q.2
-  have hIa (y : {x : M // f x = a}) : y.1 ∈ f ⁻¹' Icc a b := by
-    simp [y.2, hab.le]
-  have hIb (y : {x : M // f x = b}) : y.1 ∈ f ⁻¹' Icc a b := by
-    simp [y.2, hab.le]
+  have hmem (q : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) : f q.val.val = a ∨ f q.val.val = b := by
+    simpa [hB] using q.property
+  have hIa (y : {x : M // f x = a}) : y.val ∈ f ⁻¹' Icc a b := by
+    simp [y.property, hab.le]
+  have hIb (y : {x : M // f x = b}) : y.val ∈ f ⁻¹' Icc a b := by
+    simp [y.property, hab.le]
   have hBa (y : {x : M // f x = a}) :
-      (⟨y.1, hIa y⟩ : f ⁻¹' Icc a b) ∈ (𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b) := by
+      (⟨y.val, hIa y⟩ : f ⁻¹' Icc a b) ∈ (𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b) := by
     rw [hB]
-    exact Or.inl y.2
+    exact Or.inl y.property
   have hBb (y : {x : M // f x = b}) :
-      (⟨y.1, hIb y⟩ : f ⁻¹' Icc a b) ∈ (𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b) := by
+      (⟨y.val, hIb y⟩ : f ⁻¹' Icc a b) ∈ (𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b) := by
     rw [hB]
-    exact Or.inr y.2
+    exact Or.inr y.property
   -- The inclusion of the boundary into `M` is a closed embedding, and so are the inclusions of the
   -- two levels into the boundary.
-  have hg : IsClosedEmbedding fun q : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b)) ↦ q.1.1 :=
+  have hg : IsClosedEmbedding fun q : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b)) ↦ q.val.val :=
     (isClosed_Icc.preimage hf.continuous).isClosedEmbedding_subtypeVal.comp
       ((𝓡∂ (n + 1)).isClosed_boundary one_ne_zero).isClosedEmbedding_subtypeVal
   have hia : IsClosedEmbedding fun y : {x : M // f x = a} ↦
-      (⟨⟨y.1, hIa y⟩, hBa y⟩ : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) :=
+      (⟨⟨y.val, hIa y⟩, hBa y⟩ : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) :=
     (IsClosedEmbedding.of_comp_iff hg).1
       (isClosed_eq hf.continuous continuous_const).isClosedEmbedding_subtypeVal
   have hib : IsClosedEmbedding fun y : {x : M // f x = b} ↦
-      (⟨⟨y.1, hIb y⟩, hBb y⟩ : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) :=
+      (⟨⟨y.val, hIb y⟩, hBb y⟩ : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) :=
     (IsClosedEmbedding.of_comp_iff hg).1
       (isClosed_eq hf.continuous continuous_const).isClosedEmbedding_subtypeVal
   refine (Equiv.toHomeomorphOfContinuousClosed
-    { toFun := Sum.elim (fun y ↦ ⟨⟨y.1, hIa y⟩, hBa y⟩) (fun y ↦ ⟨⟨y.1, hIb y⟩, hBb y⟩)
-      invFun q := if h : f q.1.1 = a then .inl ⟨q.1.1, h⟩
-        else .inr ⟨q.1.1, (hmem q).resolve_left h⟩
+    { toFun := Sum.elim (fun y ↦ ⟨⟨y.val, hIa y⟩, hBa y⟩) (fun y ↦ ⟨⟨y.val, hIb y⟩, hBb y⟩)
+      invFun q := if h : f q.val.val = a then .inl ⟨q.val.val, h⟩
+        else .inr ⟨q.val.val, (hmem q).resolve_left h⟩
       left_inv := ?_
       right_inv := ?_ }
     (hia.continuous.sumElim hib.continuous) (hia.isClosedMap.sumElim hib.isClosedMap)).symm
   · rintro (y | y)
-    · simp [y.2]
-    · simp [y.2, hab.ne']
+    · simp [y.property]
+    · simp [y.property, hab.ne']
   · intro q
-    by_cases h : f q.1.1 = a <;> simp [h]
+    by_cases h : f q.val.val = a <;> simp [h]
 
 /-- A point of the boundary of the band on the lower level `f⁻¹(a)` is sent to itself in the
 copy of `f⁻¹(a)`. -/
 @[simp]
 theorem scalarRegularBandBoundaryHomeomorph_apply_of_eq_left
     (q : letI := scalarRegularBandChartedSpace hf hn ha hb hab
-      ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) (hq : f q.1.1 = a) :
-    scalarRegularBandBoundaryHomeomorph hf hn ha hb hab q = .inl ⟨q.1.1, hq⟩ := by
+      ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) (hq : f q.val.val = a) :
+    scalarRegularBandBoundaryHomeomorph hf hn ha hb hab q = .inl ⟨q.val.val, hq⟩ := by
   simp [scalarRegularBandBoundaryHomeomorph, hq]
 
 /-- A point of the boundary of the band on the upper level `f⁻¹(b)` is sent to itself in the
@@ -271,22 +272,22 @@ copy of `f⁻¹(b)`. -/
 @[simp]
 theorem scalarRegularBandBoundaryHomeomorph_apply_of_eq_right
     (q : letI := scalarRegularBandChartedSpace hf hn ha hb hab
-      ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) (hq : f q.1.1 = b) :
-    scalarRegularBandBoundaryHomeomorph hf hn ha hb hab q = .inr ⟨q.1.1, hq⟩ := by
+      ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) (hq : f q.val.val = b) :
+    scalarRegularBandBoundaryHomeomorph hf hn ha hb hab q = .inr ⟨q.val.val, hq⟩ := by
   simp [scalarRegularBandBoundaryHomeomorph, hq, hab.ne']
 
 /-- The inverse of `TauCeti.scalarRegularBandBoundaryHomeomorph` is the identity on the underlying
 points of `f⁻¹(a)`. -/
 @[simp]
 theorem coe_scalarRegularBandBoundaryHomeomorph_symm_apply_inl (y : {x : M // f x = a}) :
-    ((scalarRegularBandBoundaryHomeomorph hf hn ha hb hab).symm (.inl y)).1.1 = y.1 := by
+    ((scalarRegularBandBoundaryHomeomorph hf hn ha hb hab).symm (.inl y)).val.val = y.val := by
   simp [scalarRegularBandBoundaryHomeomorph]
 
 /-- The inverse of `TauCeti.scalarRegularBandBoundaryHomeomorph` is the identity on the underlying
 points of `f⁻¹(b)`. -/
 @[simp]
 theorem coe_scalarRegularBandBoundaryHomeomorph_symm_apply_inr (y : {x : M // f x = b}) :
-    ((scalarRegularBandBoundaryHomeomorph hf hn ha hb hab).symm (.inr y)).1.1 = y.1 := by
+    ((scalarRegularBandBoundaryHomeomorph hf hn ha hb hab).symm (.inr y)).val.val = y.val := by
   simp [scalarRegularBandBoundaryHomeomorph]
 
 /-- **The boundary charts of a band are the level charts.** On the source of the preferred boundary
@@ -311,14 +312,14 @@ theorem euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary_eq_chartAt
   have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
   let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) ha (finrank_sub_finrank_real_eq hn)
   let := regularLevelChartedSpace (fun _ _ ↦ hf.contMDiffAt) hb (finrank_sub_finrank_real_eq hn)
-  have hmem (q : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) : f q.1.1 = a ∨ f q.1.1 = b := by
-    simpa [boundary_scalarRegularBand hn ha hb le_rfl hf hab] using q.2
+  have hmem (q : ↥((𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b))) : f q.val.val = a ∨ f q.val.val = b := by
+    simpa [boundary_scalarRegularBand hn ha hb le_rfl hf hab] using q.property
   rw [boundaryChartedSpace_chartAt_source, mem_preimage,
     scalarRegularBandChartedSpace_chartAt] at hq
   rw [boundaryChartedSpace_chartAt_apply, scalarRegularBandChartedSpace_chartAt]
   rcases hmem p with hp | hp
   · -- On the lower level, the face chart only sees points of the lower level.
-    have hqa : f q.1.1 = a := (hmem q).resolve_right fun hqb ↦ by
+    have hqa : f q.val.val = a := (hmem q).resolve_right fun hqb ↦ by
       have := hq
       rw [scalarRegularBandChartAt_source_of_eq_left hf hn ha hb hp] at this
       exact (mem_Iio.1 this.2).ne hqb
@@ -332,7 +333,7 @@ theorem euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary_eq_chartAt
     rw [scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_left hf hn ha hb hp hq hqa,
       Fin.cast_eq_self]
   · -- On the upper level, the face chart only sees points of the upper level.
-    have hqb : f q.1.1 = b := (hmem q).resolve_left fun hqa ↦ by
+    have hqb : f q.val.val = b := (hmem q).resolve_left fun hqa ↦ by
       have := hq
       rw [scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hp] at this
       exact (mem_Ioi.1 this.2).ne' hqa

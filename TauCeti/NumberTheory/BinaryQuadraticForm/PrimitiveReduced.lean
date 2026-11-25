@@ -110,23 +110,23 @@ positive definite forms**: sending a primitive reduced form to its proper equiva
 bijection from `primitiveReducedForms D` onto `PosDefProperClass D` (Cohen, §5.3). -/
 theorem posDefProperClass_mk_primitiveReducedForms_bijective :
     Function.Bijective fun f : primitiveReducedForms D ↦
-      (Quotient.mk'' ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2⟩ :
+      (Quotient.mk'' ⟨f, mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property⟩ :
         PosDefProperClass D) := by
-  have hr (f : primitiveReducedForms D) : IsReducedForm f.1 :=
-    ((mem_primitiveReducedForms (NeZero.ne D)).1 f.2).2.1
-  have hpos (f : primitiveReducedForms D) : f.1 ∈ posDef D :=
-    mem_posDef_of_mem_reducedForms (primitiveReducedForms_subset_reducedForms D f.2)
+  have hr (f : primitiveReducedForms D) : IsReducedForm f.val :=
+    ((mem_primitiveReducedForms (NeZero.ne D)).1 f.property).2.1
+  have hpos (f : primitiveReducedForms D) : f.val ∈ posDef D :=
+    mem_posDef_of_mem_reducedForms (primitiveReducedForms_subset_reducedForms D f.property)
   refine ⟨fun f g h ↦ Subtype.ext ?_, Quotient.ind' fun f ↦ ?_⟩
   · -- proper equivalence of the primitive forms is proper equivalence of the positive definite
     -- forms, and the reduced representative of a positive definite class is unique
     obtain ⟨γ, hγ⟩ := Quotient.exact' h
-    have hfg : (Quotient.mk'' ⟨f.1, hpos f⟩ : orbitRel.Quotient SL(2, ℤ) (posDef D)) =
-        Quotient.mk'' ⟨g.1, hpos g⟩ :=
+    have hfg : (Quotient.mk'' ⟨f.val, hpos f⟩ : orbitRel.Quotient SL(2, ℤ) (posDef D)) =
+        Quotient.mk'' ⟨g.val, hpos g⟩ :=
       Quotient.sound' ⟨γ, Subtype.ext <| by
         simpa only [SubMulAction.val_smul] using congrArg Subtype.val hγ⟩
     exact Subtype.mk.inj (orbit_mk_injOn_isReducedForm (by exact hr f) (by exact hr g) hfg)
   · -- reduce the form as a positive definite form; primitivity survives the change of variables
-    have hf := (mem_posDef_inf_primitiveForms D).1 f.2
+    have hf := (mem_posDef_inf_primitiveForms D).1 f.property
     obtain ⟨γ, hγ⟩ := exists_smul_isReducedForm (⟨f, mem_posDef.2 ⟨hf.1, hf.2.1⟩⟩ : posDef D)
     have hmem : γ • (f : BinaryQuadraticForm ℤ) ∈ primitiveReducedForms D :=
       (mem_primitiveReducedForms (NeZero.ne D)).2

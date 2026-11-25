@@ -57,6 +57,11 @@ open BinaryGolay IntegralLattice
 /-- **The odd Leech shift** `(-3/2, 1/2, …, 1/2)`, whose distinguished coordinate is `0`. -/
 def leechShift : Fin 24 → ℚ := fun i ↦ if i = 0 then -(3 / 2) else 1 / 2
 
+/-- The coordinates of the Leech shift: `-3/2` at the distinguished coordinate `0` and `1/2`
+elsewhere. -/
+theorem leechShift_apply (i : Fin 24) : leechShift i = if i = 0 then -(3 / 2) else 1 / 2 :=
+  (rfl)
+
 /-- The distinguished coordinate of the Leech shift is `-3/2`. -/
 @[simp]
 theorem leechShift_zero : leechShift 0 = -(3 / 2) := by
@@ -222,11 +227,10 @@ theorem isLagrangian_leechShiftSubgroup :
     (constructionBLattice.isNondegenerate_discriminantQuadraticModule
       isEven_constructionBLattice)
     (by
-      have hcard : Nat.card leechShiftSubgroup ^ 2 =
-          Nat.card constructionBLattice.DiscriminantGroup := by
-        rw [natCard_leechShiftSubgroup, natCard_discriminantGroup_constructionBLattice]
-        norm_num
-      exact hcard)
+      -- The carrier of the discriminant quadratic module is the discriminant group by definition.
+      change Nat.card leechShiftSubgroup ^ 2 = Nat.card constructionBLattice.DiscriminantGroup
+      rw [natCard_leechShiftSubgroup, natCard_discriminantGroup_constructionBLattice]
+      norm_num)
 
 /-! ### The Leech lattice -/
 

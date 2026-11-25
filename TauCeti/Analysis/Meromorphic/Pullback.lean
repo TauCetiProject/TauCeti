@@ -41,21 +41,21 @@ def pullback (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga : g a = b)
     (ht : Tendsto g (𝓝[≠] a) (𝓝[≠] b)) :
     meromorphicGerms 𝕜 b →+* meromorphicGerms 𝕜 a where
   toFun φ := ⟨(φ : Germ (𝓝[≠] b) 𝕜).compTendsto g ht, by
-    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
     rw [← hφ, Germ.coe_compTendsto, coe_mem_meromorphicGerms]
     rw [← hga] at hf
     exact hf.comp_analyticAt hg⟩
   map_zero' := Subtype.ext <| Germ.const_compTendsto 0 ht
   map_one' := Subtype.ext <| Germ.const_compTendsto 1 ht
   map_add' φ ψ := by
-    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
-    obtain ⟨h, hh, hψ⟩ := mem_meromorphicGerms_iff.mp ψ.2
+    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
+    obtain ⟨h, hh, hψ⟩ := mem_meromorphicGerms_iff.mp ψ.property
     apply Subtype.ext
     simp only [Subring.coe_add, ← hφ, ← hψ, ← Germ.coe_add, Germ.coe_compTendsto]
     rfl
   map_mul' φ ψ := by
-    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
-    obtain ⟨h, hh, hψ⟩ := mem_meromorphicGerms_iff.mp ψ.2
+    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
+    obtain ⟨h, hh, hψ⟩ := mem_meromorphicGerms_iff.mp ψ.property
     apply Subtype.ext
     simp only [Subring.coe_mul, ← hφ, ← hψ, ← Germ.coe_mul, Germ.coe_compTendsto]
     rfl
@@ -88,7 +88,7 @@ theorem pullback_mk (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga : g a = 
 @[simp]
 theorem pullback_id (φ : meromorphicGerms 𝕜 a) :
     pullback (b := a) id analyticAt_id rfl tendsto_id φ = φ := by
-  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
   apply Subtype.ext
   rw [coe_pullback, ← hφ, Germ.coe_compTendsto]
   rfl
@@ -100,7 +100,7 @@ theorem pullback_congr {g g' : 𝕜 → 𝕜} (hg : AnalyticAt 𝕜 g a)
     (h : g =ᶠ[𝓝[≠] a] g') : pullback g hg hga ht = pullback g' hg' hg'a ht' := by
   apply RingHom.ext
   intro φ
-  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
   apply Subtype.ext
   simp only [coe_pullback, ← hφ, Germ.coe_compTendsto]
   exact Germ.coe_eq.mpr (h.fun_comp f)
@@ -112,7 +112,7 @@ theorem pullback_pullback (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga : 
     (hhb : h b = c) (hu : Tendsto h (𝓝[≠] b) (𝓝[≠] c)) (φ : meromorphicGerms 𝕜 c) :
     pullback g hg hga ht (pullback h hh hhb hu φ) =
       pullback (h ∘ g) (hh.comp_of_eq hg hga) (by simp [hga, hhb]) (hu.comp ht) φ := by
-  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
   apply Subtype.ext
   simp only [coe_pullback, ← hφ, Germ.coe_compTendsto]
   rfl
@@ -133,17 +133,16 @@ def meromorphicGermsEquiv (e : OpenPartialHomeomorph 𝕜 𝕜) (ha : a ∈ e.so
   toFun := fun φ ↦ pullback e he rfl (e.tendsto_nhdsNE ha) φ
   map_mul' := map_mul (pullback e he rfl (e.tendsto_nhdsNE ha))
   map_add' := map_add (pullback e he rfl (e.tendsto_nhdsNE ha))
-  invFun := pullback e.symm he' (e.left_inv ha)
-    (by simpa only [e.left_inv ha] using e.symm.tendsto_nhdsNE (e.map_source ha))
+  invFun := pullback e.symm he' (e.left_inv ha) (e.tendsto_symm_nhdsNE ha)
   left_inv φ := by
-    obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+    obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
     apply Subtype.ext
     simp only [coe_pullback, ← hφ, Germ.coe_compTendsto]
     apply Germ.coe_eq.mpr
     filter_upwards [nhdsWithin_le_nhds (e.open_target.mem_nhds (e.map_source ha))] with z hz
     exact congrArg f (e.right_inv hz)
   right_inv φ := by
-    obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+    obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.property
     apply Subtype.ext
     simp only [coe_pullback, ← hφ, Germ.coe_compTendsto]
     apply Germ.coe_eq.mpr
@@ -163,6 +162,6 @@ theorem meromorphicGermsEquiv_symm_apply (e : OpenPartialHomeomorph 𝕜 𝕜) (
     (he : AnalyticAt 𝕜 e a) (he' : AnalyticAt 𝕜 e.symm (e a))
     (φ : meromorphicGerms 𝕜 a) :
     (e.meromorphicGermsEquiv ha he he').symm φ = pullback e.symm he' (e.left_inv ha)
-      (by simpa only [e.left_inv ha] using e.symm.tendsto_nhdsNE (e.map_source ha)) φ := (rfl)
+      (e.tendsto_symm_nhdsNE ha) φ := (rfl)
 
 end OpenPartialHomeomorph

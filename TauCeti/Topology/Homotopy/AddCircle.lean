@@ -33,7 +33,10 @@ simple connectivity at infinity.
 
 After rotating the circle, a continuous `p`-periodic curve `γ : ℝ → X` is contractible, as a map
 `ℝ ⧸ pℤ → X`, exactly when the loop it traces over a period `[s, s + p]` (`Function.Periodic.loop`)
-is null-homotopic (`Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`).
+is null-homotopic (`Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`). Since that
+loop only changes by a reparametrization, contractibility of a periodic curve survives a monotone
+change of time that carries one period onto another
+(`Function.Periodic.exists_nullhomotopic_comp_iff`).
 
 Null-homotopy of a loop does not depend on its constant speed: a null-homotopic loop
 `g : AddCircle T → X`, run at speed `a ≠ 0` (backwards when `a < 0`), is the null-homotopic loop
@@ -56,6 +59,8 @@ coordinate avoids a point of its circle has nullhomotopic inclusion.
 * `Function.Periodic.loop`: the loop traced by a continuous periodic curve over one period.
 * `Function.Periodic.exists_nullhomotopic_iff_loop_homotopic_refl`: a continuous periodic curve is
   contractible exactly when its loop over a period is null-homotopic.
+* `Function.Periodic.exists_nullhomotopic_comp_iff`: contractibility of a periodic curve is
+  unchanged by a monotone change of time.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
   nonzero speed is null-homotopic.
 * `AddCircle.nullhomotopic_subtypeVal_compl_singleton`: the circle with a point removed contracts
@@ -203,6 +208,44 @@ theorem exists_nullhomotopic_iff_loop_homotopic_refl [Fact (0 < p)] (hp : Period
     have hgγ (t : ℝ) : g t = γ t := hp.lift_coe t
     exact ⟨g, hrot g ((key g hgγ).2 h), hgγ⟩
 
+/-- **Contractibility does not depend on a monotone change of time.** Let `γ` be a continuous
+`p`-periodic curve, `0 < p`, and let `ψ` be continuous, monotone on `[0, T]`, with `ψ 0 = 0` and
+`ψ T = p`, such that `γ ∘ ψ` is `T`-periodic, `0 < T`. Then `γ ∘ ψ` is contractible as a map
+`ℝ ⧸ Tℤ → X` exactly when `γ` is contractible as a map `ℝ ⧸ pℤ → X`: over one period, the loop
+of `γ ∘ ψ` is a reparametrization of the loop of `γ`. -/
+theorem exists_nullhomotopic_comp_iff [Fact (0 < p)] (hp : Periodic γ p) (hγ : Continuous γ)
+    {ψ : ℝ → ℝ} (hψ : Continuous ψ) {T : ℝ} [Fact (0 < T)] (hψm : MonotoneOn ψ (Icc 0 T))
+    (hψ0 : ψ 0 = 0) (hψT : ψ T = p) (hT : Periodic (γ ∘ ψ) T) :
+    (∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ (ψ t)) ↔
+      ∃ g : C(AddCircle p, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t := by
+  have hp₀ : 0 < p := Fact.out
+  have hT₀ : 0 < T := Fact.out
+  -- The reparametrization `t ↦ ψ (t T) / p` of the unit interval.
+  have hmem (t : I) : ψ (t * T) / p ∈ I := by
+    have ht : (t : ℝ) * T ∈ Icc 0 T :=
+      ⟨mul_nonneg t.property.1 hT₀.le, mul_le_of_le_one_left hT₀.le t.property.2⟩
+    refine ⟨div_nonneg ?_ hp₀.le, (div_le_one hp₀).2 ?_⟩
+    · exact hψ0 ▸ hψm ⟨le_rfl, hT₀.le⟩ ht ht.1
+    · exact hψT ▸ hψm ht ⟨hT₀.le, le_rfl⟩ ht.2
+  let f : I → I := fun t ↦ ⟨ψ (t * T) / p, hmem t⟩
+  have hf : Continuous f := by fun_prop
+  have hf₀ : f 0 = 0 := Subtype.ext (by simp [f, hψ0])
+  have hf₁ : f 1 = 1 := Subtype.ext (by simp [f, hψT, hp₀.ne'])
+  set ℓ := hp.loop hγ 0
+  have hℓ : ℓ.Homotopic (ℓ.reparam f hf hf₀ hf₁) := ⟨Path.Homotopy.reparam ℓ f hf hf₀ hf₁⟩
+  -- The reparametrized loop traces `γ ∘ ψ` over `[0, T]`.
+  have hrep (g : C(AddCircle T, X)) (hg : ∀ t : ℝ, g t = γ (ψ t)) (t : I) :
+      ℓ.reparam f hf hf₀ hf₁ t = g (AddCircle.ofUnitInterval T t) := by
+    simp [ℓ, f, AddCircle.ofUnitInterval_apply, hg, div_mul_cancel₀ _ hp₀.ne']
+  rw [hp.exists_nullhomotopic_iff_loop_homotopic_refl hγ 0]
+  constructor
+  · rintro ⟨g, hg, hgγ⟩
+    exact hℓ.trans ((g.nullhomotopic_iff_homotopic_refl _ (hrep g hgγ)).1 hg)
+  · intro h
+    let g : C(AddCircle T, X) := ⟨hT.lift, (hγ.comp hψ).quotient_liftOn' _⟩
+    have hgγ (t : ℝ) : g t = γ (ψ t) := hT.lift_coe t
+    exact ⟨g, (g.nullhomotopic_iff_homotopic_refl _ (hrep g hgγ)).2 (hℓ.symm.trans h), hgγ⟩
+
 end Function.Periodic
 
 namespace AddCircle
@@ -217,14 +260,14 @@ theorem nullhomotopic_subtypeVal_compl_singleton (c : AddCircle p) :
   obtain ⟨a, rfl⟩ := QuotientAddGroup.mk_surjective c
   have hL : Continuous fun x : ({(a : AddCircle p)}ᶜ : Set (AddCircle p)) ↦
       (equivIco p a x : ℝ) :=
-    continuous_iff_continuousAt.2 fun x ↦ continuous_subtype_val.continuousAt.comp
-      ((continuousAt_equivIco p a x.2).comp continuous_subtype_val.continuousAt)
+    continuous_iff_continuousAt.2 fun x ↦ continuous_subtypeVal.continuousAt.comp
+      ((continuousAt_equivIco p a x.property).comp continuous_subtypeVal.continuousAt)
   refine ⟨((a + p / 2 : ℝ) : AddCircle p), ⟨{
     toFun := fun q ↦ ((((1 : ℝ) - q.1) * equivIco p a q.2 + q.1 * (a + p / 2) : ℝ) : AddCircle p)
     continuous_toFun := continuous_quotient_mk'.comp
-      (((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).mul
+      (((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).mul
         (hL.comp continuous_snd)).add
-        ((continuous_subtype_val.comp continuous_fst).mul continuous_const))
+        ((continuous_subtypeVal.comp continuous_fst).mul continuous_const))
     map_zero_left := fun x ↦ by simp
     map_one_left := fun x ↦ by simp }⟩⟩
 
