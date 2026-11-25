@@ -24,6 +24,8 @@ Both results require no differentiability hypothesis, which matters for Lipschit
 
 A differentiable map that is affine near `0` along a line `s ↦ w + s • d` has the slope of that
 line as its derivative at `w` in the direction `d` (`DifferentiableAt.fderiv_apply_eq_of_add_smul`).
+The derivative of the restriction of any function to a line is its directional derivative along
+the line (`TauCeti.deriv_comp_add_smul_eq_lineDeriv`).
 
 For a continuous function `g` with values in a real Banach space, the integral
 `y ↦ ∫ₐᵇ g (y - t h) dt` of its translates has directional derivative `g (y - a h) - g (y - b h)` in
@@ -97,5 +99,17 @@ theorem _root_.Continuous.hasLineDerivAt_intervalIntegral_comp_sub {E G : Type*}
   have h2 := (hf.integral_hasStrictDerivAt 0 (a - 0)).hasDerivAt.scomp 0
     ((hasDerivAt_id (0 : ℝ)).const_sub a)
   exact (h1.sub h2).congr_deriv (by simp [f, neg_add_eq_sub])
+
+/-- The derivative at `t` of the restriction `s ↦ f (x + s • v)` of a function to a line is the
+directional derivative of `f` at `x + t • v` along `v`. No differentiability hypothesis is needed:
+both sides are `0` where `f` is not differentiable along the line. -/
+theorem deriv_comp_add_smul_eq_lineDeriv {E : Type*} [AddCommGroup E] [Module 𝕜 E] (f : E → F)
+    (x v : E) (t : 𝕜) :
+    deriv (fun s : 𝕜 ↦ f (x + s • v)) t = lineDeriv 𝕜 f (x + t • v) v := by
+  have h : (fun s : 𝕜 ↦ f (x + s • v)) =
+      fun s ↦ (fun u : 𝕜 ↦ f ((x + t • v) + u • v)) (s - t) := by
+    funext s
+    simp [sub_smul]
+  rw [h, deriv_comp_sub_const (f := fun u : 𝕜 ↦ f ((x + t • v) + u • v)), sub_self, lineDeriv]
 
 end TauCeti
