@@ -27,6 +27,10 @@ commutative.
 
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
 homomorphism `f` for which `f r` is a unit.
+
+If the images of any two elements of `I` are comparable for divisibility, as when the source or
+target is a valuation ring, the extension of `I` consists of the multiples of images of elements
+of `I`. The greatest ideal whose contraction is contained in a prime `p` is prime.
 -/
 
 public section
@@ -122,6 +126,38 @@ theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semir
     ((span_singleton_le_iff_mem _).mpr (mem_map_of_mem f ht))
   have := mem_map_of_mem f (h (Submodule.smul_mem_pointwise_smul i r I hi))
   rwa [map_span, Set.image_singleton, smul_eq_mul, map_mul, unit_mul_mem_iff_mem _ hr] at this
+
+/-- If the images under `f` of any two elements of an ideal `I` are comparable for divisibility,
+then an element lies in the extension `I.map f` if and only if it is divisible by `f a` for some
+`a ∈ I`. This holds when the source or the target of `f` is a valuation ring. -/
+theorem mem_map_iff_exists_dvd_of_dvd_total {R S : Type*} [CommSemiring R] [CommSemiring S]
+    (f : R →+* S) {I : Ideal R} (h : ∀ a ∈ I, ∀ b ∈ I, f a ∣ f b ∨ f b ∣ f a) {x : S} :
+    x ∈ I.map f ↔ ∃ a ∈ I, f a ∣ x := by
+  refine ⟨fun hx ↦ ?_, fun ⟨a, ha, hax⟩ ↦ mem_of_dvd _ hax (mem_map_of_mem f ha)⟩
+  induction hx using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨a, ha, rfl⟩ := hy
+    exact ⟨a, ha, dvd_rfl⟩
+  | zero => exact ⟨0, I.zero_mem, dvd_zero _⟩
+  | add y z _ _ hy hz =>
+    obtain ⟨a, ha, hay⟩ := hy
+    obtain ⟨b, hb, hbz⟩ := hz
+    rcases h a ha b hb with h | h
+    · exact ⟨a, ha, dvd_add hay (h.trans hbz)⟩
+    · exact ⟨b, hb, dvd_add (h.trans hay) hbz⟩
+  | smul r y _ hy =>
+    obtain ⟨a, ha, hay⟩ := hy
+    exact ⟨a, ha, hay.mul_left r⟩
+
+/-- The greatest ideal of `W` whose contraction along `f : V →+* W` is contained in a prime `p`
+of `V` is prime. -/
+theorem isPrime_of_isGreatest_comap_le {V W : Type*} [CommSemiring V] [CommSemiring W]
+    (f : V →+* W) {p : Ideal V} [p.IsPrime] {q : Ideal W}
+    (hq : IsGreatest {J : Ideal W | J.comap f ≤ p} q) :
+    q.IsPrime :=
+  isPrime_of_maximally_disjoint q (p.primeCompl.map f)
+    (disjoint_map_primeCompl_iff_comap_le.mpr hq.1)
+    fun _ hJ hdisj ↦ hJ.not_ge (hq.2 (disjoint_map_primeCompl_iff_comap_le.mp hdisj))
 
 end Ideal
 

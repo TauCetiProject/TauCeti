@@ -15,7 +15,8 @@ public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 /-!
 # The closed upper half-plane as a model with corners
 
-`ClosedUpperHalfPlane` is the subtype of complex numbers with nonnegative imaginary part.
+`ClosedUpperHalfPlane` is the subtype of complex numbers with nonnegative imaginary part. Being a
+closed subset of `ℂ`, it is locally compact (`ClosedUpperHalfPlane.instLocallyCompactSpace`).
 `closedUpperHalfPlaneModel` is its real model with corners in `ℂ`. Its manifold interior is the
 open upper half-plane, and its manifold boundary is the real axis. The inverse of the model
 retracts the lower half-plane onto the real axis; it is only a model inverse on the model range.
@@ -66,6 +67,10 @@ theorem coe_ofReal (s : ℝ) : (ofReal s : ℂ) = s := by rw [ofReal]
 
 /-- The imaginary coordinate of every point of the closed upper half-plane is nonnegative. -/
 theorem im_nonneg (z : ClosedUpperHalfPlane) : 0 ≤ (z : ℂ).im := z.property
+
+/-- The closed upper half-plane is locally compact, being a closed subset of `ℂ`. -/
+instance instLocallyCompactSpace : LocallyCompactSpace ClosedUpperHalfPlane :=
+  (isClosed_le continuous_const Complex.continuous_im).locallyCompactSpace
 
 end ClosedUpperHalfPlane
 
