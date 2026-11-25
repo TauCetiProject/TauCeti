@@ -63,30 +63,36 @@ abbrev freeSectionsπ (i : I) : Γ((free X I).obj, U) →ₗ[Γ(X, U)] Γ(X, U) 
 abbrev freeSectionsι (i : I) : Γ(X, U) →ₗ[Γ(X, U)] Γ((free X I).obj, U) :=
   ((Scheme.Modules.sectionsFunctor U).map ((freeBicone X I).ι i)).hom
 
+/-- The composite of the `i`-th basis inclusion and the `j`-th coordinate is the image of the
+biproduct composite `ι_i ≫ π_j` under the sections functor. -/
+private lemma freeSectionsπ_comp_freeSectionsι (i j : I) :
+    (freeSectionsπ I U j).comp (freeSectionsι I U i) =
+      ((Scheme.Modules.sectionsFunctor U).map
+        ((freeBicone X I).ι i ≫ (freeBicone X I).π j)).hom := by
+  rw [Functor.map_comp, ModuleCat.hom_comp]
+  -- The two sides now agree up to the domains `Γ(𝒪_X^I, U)` and `Γ(X, U)` of the abbreviations
+  -- `freeSectionsπ`, `freeSectionsι` versus `sectionsFunctor` objects (`sectionsFunctor_obj` is
+  -- `rfl`), which `rw`'s reducible closing `rfl` does not see through.
+  exact rfl
+
 /-- The `i`-th coordinate of the `i`-th basis inclusion is the identity. -/
 @[simp]
 lemma freeSectionsπ_freeSectionsι_self (i : I) (r : Γ(X, U)) :
     freeSectionsπ I U i (freeSectionsι I U i r) = r := by
-  -- Stated over the sections functor's own objects, so that the rewrites are well typed; `r`
-  -- fits since `sectionsFunctor_obj` holds by `rfl`.
-  have h (r' : (Scheme.Modules.sectionsFunctor U).obj (𝟙_ X.Modules)) :
-      ((Scheme.Modules.sectionsFunctor U).map ((freeBicone X I).π i)).hom
-        (((Scheme.Modules.sectionsFunctor U).map ((freeBicone X I).ι i)).hom r') = r' := by
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← Functor.map_comp, bicone_ι_π_self,
-      CategoryTheory.Functor.map_id, ModuleCat.hom_id, LinearMap.id_apply]
-  exact h r
+  rw [← LinearMap.comp_apply, freeSectionsπ_comp_freeSectionsι, bicone_ι_π_self,
+    CategoryTheory.Functor.map_id]
+  -- `r` is an element of the sections functor's object, as `sectionsFunctor_obj` is `rfl`.
+  exact ModuleCat.id_apply ((Scheme.Modules.sectionsFunctor U).obj (𝟙_ X.Modules)) r
 
 /-- The `j`-th coordinate of the `i`-th basis inclusion vanishes for `i ≠ j`. -/
 @[simp]
 lemma freeSectionsπ_freeSectionsι_of_ne {i j : I} (h : i ≠ j) (r : Γ(X, U)) :
     freeSectionsπ I U j (freeSectionsι I U i r) = 0 := by
+  rw [← LinearMap.comp_apply, freeSectionsπ_comp_freeSectionsι, bicone_ι_π_ne _ h,
+    Functor.map_zero, ModuleCat.hom_zero]
   -- As in `freeSectionsπ_freeSectionsι_self`.
-  have h (r' : (Scheme.Modules.sectionsFunctor U).obj (𝟙_ X.Modules)) :
-      ((Scheme.Modules.sectionsFunctor U).map ((freeBicone X I).π j)).hom
-        (((Scheme.Modules.sectionsFunctor U).map ((freeBicone X I).ι i)).hom r') = 0 := by
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← Functor.map_comp, bicone_ι_π_ne _ h,
-      Functor.map_zero, ModuleCat.hom_zero, LinearMap.zero_apply]
-  exact h r
+  exact LinearMap.zero_apply (M := (Scheme.Modules.sectionsFunctor U).obj (𝟙_ X.Modules))
+    (M₂ := (Scheme.Modules.sectionsFunctor U).obj (𝟙_ X.Modules)) r
 
 /-- **Sections of a finite free sheaf over an open.** For a finite type `I` and an open `U` of
 `X`, the sections of `𝒪_X^I` over `U` are the `I`-indexed families of sections of `𝒪_X` over `U`:
@@ -101,7 +107,12 @@ def freeSectionsLinearEquiv : Γ((free X I).obj, U) ≃ₗ[Γ(X, U)] (I → Γ(X
 @[simp]
 lemma freeSectionsLinearEquiv_apply (s : Γ((free X I).obj, U)) (i : I) :
     freeSectionsLinearEquiv I U s i = freeSectionsπ I U i s :=
-  (rfl)
+  -- The comparison triangle at `i`, evaluated at `s`: the `i`-th leg of `productLimitCone` is
+  -- `LinearMap.proj i`, and that of the image of `freeBicone` is `freeSectionsπ I U i`.
+  congr(ModuleCat.Hom.hom $(IsLimit.conePointUniqueUpToIso_hom_comp
+    (isBilimitOfPreserves (Scheme.Modules.sectionsFunctor U) (isBilimitFreeBicone X I)).isLimit
+    (ModuleCat.HasLimit.productLimitCone fun _ : I ↦ ModuleCat.of Γ(X, U) Γ(X, U)).isLimit
+    ⟨i⟩) s)
 
 /-- The equivalence sends the `i`-th basis inclusion of `r` to the family `Pi.single i r`. -/
 @[simp]
@@ -135,6 +146,7 @@ instance finite_freeSections : Module.Finite Γ(X, U) Γ((free X I).obj, U) :=
   Module.Finite.equiv (freeSectionsLinearEquiv I U).symm
 
 /-- Over an open with nonzero functions, the sections of `𝒪_X^I` have rank `#I`. -/
+@[simp]
 theorem finrank_freeSections [Nontrivial Γ(X, U)] :
     Module.finrank Γ(X, U) Γ((free X I).obj, U) = Nat.card I := by
   have := Fintype.ofFinite I

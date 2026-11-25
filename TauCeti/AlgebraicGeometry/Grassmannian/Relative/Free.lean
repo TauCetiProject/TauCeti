@@ -40,7 +40,7 @@ variable {X : Scheme.{u}} (I : Type u) [Finite I]
 
 /-- **`G(#I, 𝒪_X^I) = X`.** The relative Grassmannian of rank-`#I` quotients of the free sheaf
 `𝒪_X^I` is the base. -/
-theorem isIso_grassmannianToBase_free : IsIso (grassmannianToBase (free X I).obj (Nat.card I)) :=
+instance isIso_grassmannianToBase_free : IsIso (grassmannianToBase (free X I).obj (Nat.card I)) :=
   isIso_grassmannianToBase_of_rankAtStalk_eq (fun _ ↦ inferInstance)
     fun U p ↦ rankAtStalk_freeSections I U.val p
 
