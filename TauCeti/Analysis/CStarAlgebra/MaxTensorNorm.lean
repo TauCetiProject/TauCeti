@@ -30,14 +30,15 @@ submultiplicative star norm with the C*-identity `‖x⋆ x‖_max = ‖x‖_max
 (`TauCeti.maxTensorNorm_tmul`). It vanishes only at `0`
 (`TauCeti.maxTensorNorm_eq_zero_iff`): faithful representations `A ⊆ B(E)` and `B ⊆ B(F)`
 (Gelfand–Naimark) give the commuting pair `a ⊗ 1`, `1 ⊗ b` on `E ⊗₂ F`, whose integrated form is
-injective (`TauCeti.CommutingRepresentationPair.tensorHom_spatial_injective`).
+the injective spatial tensor homomorphism `NonUnitalStarAlgHom.spatialTensorHom` of the two
+representations (`TauCeti.CommutingRepresentationPair.tensorHom_spatial_injective`).
 
 The maximal norm dominates every norm obtained from a commuting pair in the universe `max u v`
 (`TauCeti.norm_tensorHom_le_maxTensorNorm`), every norm obtained from commuting star homomorphisms
-into a C*-algebra in that universe (`TauCeti.norm_lift_le_maxTensorNorm`), and in particular the
-spatial norm of concrete closed operator algebras
-(`TauCeti.spatialNorm_le_maxTensorNorm`, `‖·‖_min ≤ ‖·‖_max` relative to the given
-representations).
+into a C*-algebra in that universe (`TauCeti.norm_liftNonUnitalStarAlgHom_le_maxTensorNorm`), and
+in particular the spatial norm of concrete closed operator algebras
+(`NonUnitalStarSubalgebra.spatialNorm_le_maxTensorNorm`, `‖·‖_min ≤ ‖·‖_max` relative to the
+given representations).
 
 ## Main declarations
 
@@ -141,43 +142,42 @@ amplifications `a ↦ π a ⊗ 1` and `b ↦ 1 ⊗ ρ b` on the Hilbert tensor p
   commute a b := by
     simpa using commute_rTensorCompletion_lTensorCompletion (π a) (ρ b)
 
+/-- The left representation of the spatial pair is `a ↦ π a ⊗ 1`. -/
+@[simp]
+theorem spatial_left_apply (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) (a : A) :
+    (spatial π ρ).left a = (π a).rTensorCompletion F :=
+  rTensorCompletionStarAlgHom_apply (π a)
+
+/-- The right representation of the spatial pair is `b ↦ 1 ⊗ ρ b`. -/
+@[simp]
+theorem spatial_right_apply (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) (b : B) :
+    (spatial π ρ).right b = (ρ b).lTensorCompletion E :=
+  lTensorCompletionStarAlgHom_apply (ρ b)
+
+/-- The integrated form of the spatial pair is the spatial tensor homomorphism of `π` and `ρ`:
+both are `Algebra.TensorProduct.liftNonUnitalStarAlgHom` of the same two amplifications. -/
+theorem tensorHom_spatial (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) :
+    (spatial π ρ).tensorHom = π.spatialTensorHom ρ :=
+  (rfl)
+
 /-- The integrated form of the spatial pair sends `a ⊗ b` to `π a ⊗ ρ b`. -/
 theorem tensorHom_spatial_tmul (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F))
     (a : A) (b : B) :
-    (spatial π ρ).tensorHom (a ⊗ₜ b) = mapLCompletion (π a) (ρ b) := by
-  rw [tensorHom_tmul]
-  change rTensorCompletionStarAlgHom ℂ E F (π a) * lTensorCompletionStarAlgHom ℂ E F (ρ b) = _
-  simp [ContinuousLinearMap.mul_def, rTensorCompletion_comp_lTensorCompletion]
+    (spatial π ρ).tensorHom (a ⊗ₜ b) = mapLCompletion (π a) (ρ b) :=
+  NonUnitalStarAlgHom.spatialTensorHom_tmul π ρ a b
 
 /-- The integrated form of the spatial pair has norm `‖π a‖ ‖ρ b‖` at `a ⊗ b`. -/
 theorem norm_tensorHom_spatial_tmul (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F))
-    (a : A) (b : B) : ‖(spatial π ρ).tensorHom (a ⊗ₜ b)‖ = ‖π a‖ * ‖ρ b‖ :=
-  (congrArg (fun T : Completion (E ⊗[ℂ] F) →L[ℂ] Completion (E ⊗[ℂ] F) ↦ ‖T‖)
-    (tensorHom_spatial_tmul π ρ a b)).trans (norm_mapLCompletion _ _)
-
-/-- The integrated form of the spatial pair factors through `B(E) ⊗[ℂ] B(F)`. -/
-theorem tensorHom_spatial_apply (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F))
-    (x : A ⊗[ℂ] B) :
-    (spatial π ρ).tensorHom x =
-      spatialTensorLinearMap ℂ E F E F
-        (TensorProduct.map (π : A →ₗ[ℂ] E →L[ℂ] E) (ρ : B →ₗ[ℂ] F →L[ℂ] F) x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy =>
-    rw [map_add, map_add, map_add, hx, hy]
-    rfl
-  | tmul a b =>
-    rw [tensorHom_spatial_tmul, TensorProduct.map_tmul, spatialTensorLinearMap_tmul]
-    rfl
+    (a : A) (b : B) : ‖(spatial π ρ).tensorHom (a ⊗ₜ b)‖ = ‖π a‖ * ‖ρ b‖ := by
+  rw [tensorHom_spatial_tmul]
+  exact norm_mapLCompletion _ _
 
 /-- For faithful representations, the integrated form of the spatial pair is injective. -/
 theorem tensorHom_spatial_injective {π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)} {ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)}
     (hπ : Function.Injective π) (hρ : Function.Injective ρ) :
     Function.Injective (spatial π ρ).tensorHom := by
-  have h := spatialTensorLinearMap_injective.comp (TensorProduct.map_injective_of_flat_flat
-    (π : A →ₗ[ℂ] E →L[ℂ] E) (ρ : B →ₗ[ℂ] F →L[ℂ] F) hπ hρ)
-  intro x y hxy
-  rw [tensorHom_spatial_apply, tensorHom_spatial_apply] at hxy
-  exact h hxy
+  rw [tensorHom_spatial]
+  exact NonUnitalStarAlgHom.spatialTensorHom_injective hπ hρ
 
 end Spatial
 
@@ -247,6 +247,7 @@ theorem maxTensorNorm_smul (c : ℂ) (x : A ⊗[ℂ] B) :
   simp_rw [maxTensorNorm, map_smul, norm_smul]
   exact (Real.mul_iSup_of_nonneg (norm_nonneg c) _).symm
 
+@[simp]
 theorem maxTensorNorm_neg (x : A ⊗[ℂ] B) : maxTensorNorm A B (-x) = maxTensorNorm A B x := by
   simpa using maxTensorNorm_smul (-1) x
 
@@ -279,6 +280,7 @@ theorem maxTensorNorm_star_mul_self (x : A ⊗[ℂ] B) :
       _ = maxTensorNorm A B (star x * x) := Real.sq_sqrt (maxTensorNorm_nonneg _)
 
 /-- The maximal norm is definite: it vanishes only at `0`. -/
+@[simp]
 theorem maxTensorNorm_eq_zero_iff {x : A ⊗[ℂ] B} : maxTensorNorm A B x = 0 ↔ x = 0 := by
   refine ⟨fun hx ↦ ?_, fun hx ↦ hx ▸ maxTensorNorm_zero⟩
   obtain ⟨p, hp⟩ := exists_tensorHom_injective A B
@@ -299,7 +301,7 @@ theorem maxTensorNorm_tmul (a : A) (b : B) : maxTensorNorm A B (a ⊗ₜ b) = �
 /-- **Universal bound.** Commuting star homomorphisms `φ : A → C` and `ψ : B → C` into a
 C*-algebra `C` in the universe `max u v` integrate to a star homomorphism `A ⊗[ℂ] B → C` bounded
 by the maximal norm. -/
-theorem norm_lift_le_maxTensorNorm {C : Type (max u v)} [NonUnitalCStarAlgebra C]
+theorem norm_liftNonUnitalStarAlgHom_le_maxTensorNorm {C : Type (max u v)} [NonUnitalCStarAlgebra C]
     (φ : A →⋆ₙₐ[ℂ] C) (ψ : B →⋆ₙₐ[ℂ] C) (h : ∀ a b, Commute (φ a) (ψ b)) (x : A ⊗[ℂ] B) :
     ‖Algebra.TensorProduct.liftNonUnitalStarAlgHom φ ψ h x‖ ≤ maxTensorNorm A B x := by
   obtain ⟨K, _, _, _, σ, hσ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation C
@@ -313,9 +315,15 @@ theorem norm_lift_le_maxTensorNorm {C : Type (max u v)} [NonUnitalCStarAlgebra C
     | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
     | tmul a b =>
       rw [tensorHom_tmul, Algebra.TensorProduct.liftNonUnitalStarAlgHom_tmul, map_mul]
-      rfl
+      simp [p]
   rw [← NonUnitalStarAlgHom.norm_map σ hσ, ← hpx]
   exact norm_tensorHom_le_maxTensorNorm p x
+
+end TauCeti
+
+namespace NonUnitalStarSubalgebra
+
+open TauCeti TauCeti.CommutingRepresentationPair
 
 /-- **The spatial norm is at most the maximal norm**: for closed concrete operator algebras
 `A ⊆ B(E)` and `B ⊆ B(F)`, `‖x‖_min ≤ ‖x‖_max`. -/
@@ -325,10 +333,7 @@ theorem spatialNorm_le_maxTensorNorm {E : Type u} {F : Type v} [NormedAddCommGro
     (B : NonUnitalStarSubalgebra ℂ (F →L[ℂ] F)) [IsClosed (A : Set (E →L[ℂ] E))]
     [IsClosed (B : Set (F →L[ℂ] F))] (x : A ⊗[ℂ] B) :
     A.spatialNorm B x ≤ maxTensorNorm A B x := by
-  have hx : (spatial (E := E) (F := F) (NonUnitalStarSubalgebraClass.subtype A)
-      (NonUnitalStarSubalgebraClass.subtype B)).tensorHom x = A.spatialTensorHom B x := by
-    rw [tensorHom_spatial_apply, NonUnitalStarSubalgebra.spatialTensorHom_apply]
-  rw [NonUnitalStarSubalgebra.spatialNorm_def, ← hx]
+  rw [spatialNorm_def, spatialTensorHom_def, ← tensorHom_spatial]
   exact norm_tensorHom_le_maxTensorNorm _ x
 
-end TauCeti
+end NonUnitalStarSubalgebra
