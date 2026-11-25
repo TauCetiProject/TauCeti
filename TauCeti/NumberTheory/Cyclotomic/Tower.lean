@@ -41,6 +41,7 @@ Galois cohomology of `ℂ_p`, whose Galois group `Γ_K` is identified with an op
 
 * `TauCeti.mem_cyclotomicTower_of_pow_eq_one`, `TauCeti.cyclotomicTower_le_iff`: `K(μ_{p^∞})` is
   the least intermediate field containing the roots of unity of `p`-power order.
+* `TauCeti.apply_mem_cyclotomicTower`: the automorphisms of `L/K` map `K(μ_{p^∞})` into itself.
 * `TauCeti.cyclotomicTower_eq_iSup`, `TauCeti.mem_cyclotomicTower_iff`: `K(μ_{p^∞})` is the
   increasing union of the levels `K(μ_{p^n})`.
 * `TauCeti.isGalois_cyclotomicTower`, `TauCeti.isAbelianGalois_cyclotomicTower`: `K(μ_{p^∞})` is
@@ -48,7 +49,8 @@ Galois cohomology of `ℂ_p`, whose Galois group `Γ_K` is identified with an op
 * `TauCeti.cyclotomicTowerCharacter_injective`: the cyclotomic character embeds `Gal(K(μ_{p^∞})/K)`
   into `ℤ_pˣ`.
 * `TauCeti.fixingSubgroup_cyclotomicTower`: the automorphisms of `L/K` fixing `K(μ_{p^∞})` form the
-  kernel of the cyclotomic character.
+  kernel of the cyclotomic character; `TauCeti.apply_eq_of_cyclotomicCharacter_eq_one` is its
+  pointwise form.
 * `TauCeti.range_cyclotomicTowerCharacter`: the image of `cyclotomicTowerCharacter` is that of the
   cyclotomic character of the absolute Galois group of `K`.
 * `TauCeti.isOpen_range_cyclotomicTowerCharacter`: for `K` finite over `ℚ_p` the image is open.
@@ -90,6 +92,15 @@ theorem cyclotomicTower_le_iff {E : IntermediateField K L} :
     cyclotomicTower p K L ≤ E ↔ ∀ (n : ℕ) (x : L), x ^ p ^ n = 1 → x ∈ E := by
   rw [cyclotomicTower_def, adjoin_le_iff]
   exact ⟨fun h n x hx ↦ h ⟨n, hx⟩, fun h x ⟨n, hx⟩ ↦ h n x hx⟩
+
+/-- Every automorphism of `L/K` maps `K(μ_{p^∞})` into itself. -/
+theorem apply_mem_cyclotomicTower (σ : L ≃ₐ[K] L) {x : L} (hx : x ∈ cyclotomicTower p K L) :
+    σ x ∈ cyclotomicTower p K L :=
+  have h : cyclotomicTower p K L ≤ (cyclotomicTower p K L).comap (σ : L →ₐ[K] L) :=
+    cyclotomicTower_le_iff.2 fun n y hy ↦ mem_comap.2 <|
+      mem_cyclotomicTower_of_pow_eq_one (n := n) <| by
+        rw [AlgEquiv.coe_toAlgHom, ← map_pow, hy, map_one]
+  h hx
 
 variable (p K L)
 
@@ -228,6 +239,13 @@ theorem fixingSubgroup_cyclotomicTower [∀ i, HasEnoughRootsOfUnity L (p ^ i)] 
   ext σ
   rw [cyclotomicTower_def]
   exact mem_fixingSubgroup_adjoin_iff_cyclotomicCharacter_eq_one p
+
+/-- An automorphism of `L/K` with trivial cyclotomic character fixes `K(μ_{p^∞})` pointwise. -/
+theorem apply_eq_of_cyclotomicCharacter_eq_one [∀ i, HasEnoughRootsOfUnity L (p ^ i)]
+    {σ : Gal(L/K)} (hσ : cyclotomicCharacter L p σ.toRingEquiv = 1) {x : L}
+    (hx : x ∈ cyclotomicTower p K L) : σ x = x :=
+  (mem_fixingSubgroup_iff _ σ).1
+    (by rw [fixingSubgroup_cyclotomicTower]; exact MonoidHom.mem_ker.2 hσ) x hx
 
 variable (p K L)
 
