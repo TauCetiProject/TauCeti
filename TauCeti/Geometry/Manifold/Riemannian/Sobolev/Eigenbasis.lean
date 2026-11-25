@@ -119,8 +119,8 @@ private theorem injective_toLp_domRestrict (μ : ℝ) :
   refine (injective_iff_map_eq_zero _).2 fun w hw ↦ Subtype.ext ?_
   have h := norm_sq_eq_of_mem_weakEigenspace w.property
   rw [LinearMap.domRestrict_apply, ContinuousLinearMap.coe_coe] at hw
-  rw [hw, norm_zero, zero_pow two_ne_zero, mul_zero, sq_eq_zero_iff, norm_eq_zero] at h
-  exact h
+  rw [hw] at h
+  simpa using h
 
 /-! ### Orthonormal families of weak eigenfunctions -/
 
@@ -157,6 +157,12 @@ section HilbertBasis
 variable [I.Boundaryless] {ι : Type*} (b : HilbertBasis ι ℝ (Lp ℝ 2 (riemannianVolume I M)))
   {u : ι → SobolevH1 I M} {μ : ι → ℝ}
 
+omit [I.Boundaryless] in
+/-- Functions in `H¹(M)` whose values form a Hilbert basis of `L²(M)` have orthonormal values. -/
+private theorem orthonormal_toLp_of_hilbertBasis (hu : ∀ i, toLp (u i) = b i) :
+    Orthonormal ℝ (toLp ∘ u) := by
+  simpa only [Function.comp_def, hu] using b.orthonormal
+
 /-- **The weak eigenspaces in an eigenbasis.** If a Hilbert basis `b` of `L²(M)` consists of the
 values of weak eigenfunctions `uᵢ` with eigenvalues `μᵢ`, then the values of the weak
 `ν`-eigenspace are spanned by the `bᵢ` with `μᵢ = ν`. -/
@@ -164,11 +170,9 @@ theorem map_toLp_weakEigenspace_eq_span (hu : ∀ i, toLp (u i) = b i)
     (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) (ν : ℝ) :
     (weakEigenspace I M ν).map (toLp : SobolevH1 I M →L[ℝ] _).toLinearMap =
       Submodule.span ℝ (b '' {i | μ i = ν}) := by
-  have hon : Orthonormal ℝ (toLp ∘ u) := by
-    simpa only [Function.comp_def, hu] using b.orthonormal
   refine le_antisymm ?_ (Submodule.span_le.2 ?_)
   · rintro _ ⟨w, hw, rfl⟩
-    have hS := finite_setOf_eq_of_orthonormal hon hμ ν
+    have hS := finite_setOf_eq_of_orthonormal (orthonormal_toLp_of_hilbertBasis b hu) hμ ν
     -- The basis coefficients of `toLp w` vanish off the eigenvalue `ν`.
     have hzero : ∀ i ∉ hS.toFinset, b.repr (toLp w) i • b i = 0 := fun i hi ↦ by
       rw [Finite.mem_toFinset, mem_ofPred_eq] at hi
@@ -187,14 +191,11 @@ is the number of indices `i` with `μᵢ = ν`. -/
 theorem finrank_weakEigenspace_eq_ncard (hu : ∀ i, toLp (u i) = b i)
     (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) (ν : ℝ) :
     finrank ℝ (weakEigenspace I M ν) = {i | μ i = ν}.ncard := by
-  have hon : Orthonormal ℝ (toLp ∘ u) := by
-    simpa only [Function.comp_def, hu] using b.orthonormal
-  have := (finite_setOf_eq_of_orthonormal hon hμ ν).fintype
+  have hb := b.orthonormal.linearIndependent
   rw [(LinearEquiv.ofInjective _ (injective_toLp_domRestrict ν)).finrank_eq,
-    LinearMap.range_domRestrict, map_toLp_weakEigenspace_eq_span b hu hμ, image_eq_range,
-    finrank_span_eq_card (b := fun i : {i | μ i = ν} ↦ b i)
-      (b.orthonormal.linearIndependent.comp _ Subtype.val_injective),
-    ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+    LinearMap.range_domRestrict, map_toLp_weakEigenspace_eq_span b hu hμ,
+    finrank_span_set_eq_ncard (hb.linearIndepOn _).id_image]
+  exact ncard_image_of_injective _ hb.injective
 
 end HilbertBasis
 
@@ -227,14 +228,12 @@ theorem exists_hilbertBasis_mem_weakEigenspace :
   linear_combination h
 
 /-- The weak eigenspaces of `Δ⁺` are finite dimensional. -/
-theorem finiteDimensional_weakEigenspace (ν : ℝ) :
+instance finiteDimensional_weakEigenspace (ν : ℝ) :
     FiniteDimensional ℝ (weakEigenspace I M ν) := by
   obtain ⟨s, b, μ, u, hb, hu, hμ⟩ := exists_hilbertBasis_mem_weakEigenspace (I := I) (M := M)
   have hu' (x : s) : toLp (u x) = b x := by rw [hu, hb]
-  have hon : Orthonormal ℝ (toLp ∘ u) := by
-    simpa only [Function.comp_def, hu'] using b.orthonormal
   have hspan := FiniteDimensional.span_of_finite ℝ
-    ((finite_setOf_eq_of_orthonormal hon hμ ν).image b)
+    ((finite_setOf_eq_of_orthonormal (orthonormal_toLp_of_hilbertBasis b hu') hμ ν).image b)
   rw [← map_toLp_weakEigenspace_eq_span b hu' hμ, ← LinearMap.range_domRestrict] at hspan
   exact (LinearEquiv.ofInjective _ (injective_toLp_domRestrict ν)).symm.finiteDimensional
 
@@ -268,10 +267,7 @@ theorem exists_hilbertBasis_smoothLaplaceBeltrami_eq_neg_smul :
         (∀ x, smoothLaplaceBeltrami I M (u x) = -μ x • u x) ∧ (∀ x, 0 ≤ μ x) ∧
         ∀ C, {x | μ x ≤ C}.Finite := by
   obtain ⟨s, b, μ, w, hb, hw, hμ⟩ := exists_hilbertBasis_mem_weakEigenspace (I := I) (M := M)
-  have hon : Orthonormal ℝ (toLp ∘ w) := by
-    convert b.orthonormal
-    ext1 x
-    rw [Function.comp_apply, hw, hb]
+  have hon := orthonormal_toLp_of_hilbertBasis b fun x ↦ by rw [hw, hb]
   let v (x : s) := (weakEigenspaceEquiv I M (μ x)).symm ⟨w x, hμ x⟩
   refine ⟨s, b, μ, fun x ↦ v x, hb, fun x ↦ ?_,
     fun x ↦ Module.End.mem_eigenspace_iff.1 (v x).property,
@@ -295,9 +291,8 @@ theorem finrank_eigenspace_smoothLaplaceBeltrami_eq_ncard {ι : Type*}
 
 /-- The eigenspaces of the Laplace–Beltrami operator on the smooth functions of a closed manifold
 are finite dimensional. -/
-theorem finiteDimensional_eigenspace_smoothLaplaceBeltrami (ν : ℝ) :
+instance finiteDimensional_eigenspace_smoothLaplaceBeltrami (ν : ℝ) :
     FiniteDimensional ℝ (Module.End.eigenspace (smoothLaplaceBeltrami I M) ν) := by
-  have := finiteDimensional_weakEigenspace (I := I) (M := M) (-ν)
   rw [← neg_neg ν]
   exact (weakEigenspaceEquiv I M (-ν)).symm.finiteDimensional
 
