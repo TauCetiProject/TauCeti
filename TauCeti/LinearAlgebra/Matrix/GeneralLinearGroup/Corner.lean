@@ -145,8 +145,7 @@ theorem leftCornerGL_inv (a : GL (Fin n) A) (y : Fin n → A) :
     (leftCornerGL a y)⁻¹ =
       leftCornerGL a⁻¹ (-((↑a⁻¹ : Matrix (Fin n) (Fin n) A) *ᵥ y)) := by
   refine inv_eq_of_mul_eq_one_right ?_
-  rw [leftCornerGL_mul_leftCornerGL, mulVec_neg, mulVec_mulVec, ← Units.val_mul, mul_inv_cancel,
-    Units.val_one, one_mulVec, neg_add_cancel, leftCornerGL_one_zero]
+  simp [mulVec_neg, mulVec_mulVec]
 
 /-- The blocks of a left corner matrix are determined by the matrix. -/
 @[simp]
@@ -308,17 +307,16 @@ theorem range_uncurry_rightCornerGL :
 /-- Multiplying on the left by a left corner matrix does not change the last row. -/
 @[simp]
 theorem coe_leftCornerGL_mul_apply_last (a : GL (Fin n) A) (y : Fin n → A)
-    (g : GL (Fin (n + 1)) A) (j : Fin (n + 1)) :
-    ((leftCornerGL a y * g : GL (Fin (n + 1)) A) : Matrix (Fin (n + 1)) (Fin (n + 1)) A)
-        (Fin.last n) j = (g : Matrix (Fin (n + 1)) (Fin (n + 1)) A) (Fin.last n) j := by
+    (M : Matrix (Fin (n + 1)) (Fin (n + 1)) A) (j : Fin (n + 1)) :
+    ((leftCornerGL a y : Matrix (Fin (n + 1)) (Fin (n + 1)) A) * M) (Fin.last n) j =
+      M (Fin.last n) j := by
   simp [Matrix.mul_apply, Fin.sum_univ_castSucc]
 
 /-- Multiplying on the right by a right corner matrix does not change the first column. -/
 @[simp]
-theorem coe_mul_rightCornerGL_apply_zero (g : GL (Fin (n + 1)) A) (b : GL (Fin n) A)
-    (p : Fin n → A) (i : Fin (n + 1)) :
-    ((g * rightCornerGL b p : GL (Fin (n + 1)) A) : Matrix (Fin (n + 1)) (Fin (n + 1)) A) i 0 =
-      (g : Matrix (Fin (n + 1)) (Fin (n + 1)) A) i 0 := by
+theorem coe_mul_rightCornerGL_apply_zero (M : Matrix (Fin (n + 1)) (Fin (n + 1)) A)
+    (b : GL (Fin n) A) (p : Fin n → A) (i : Fin (n + 1)) :
+    (M * (rightCornerGL b p : Matrix (Fin (n + 1)) (Fin (n + 1)) A)) i 0 = M i 0 := by
   simp [Matrix.mul_apply, Fin.sum_univ_succ]
 
 /-- The lower left entry of the standard form `L(a, y) e_{n,0}(t) R(b, p)` is `t`. -/
@@ -326,7 +324,8 @@ theorem coe_leftCornerGL_mul_transvectionUnit_mul_rightCornerGL_last_zero (a : G
     (y : Fin n → A) (hn : Fin.last n ≠ 0) (t : A) (b : GL (Fin n) A) (p : Fin n → A) :
     ((leftCornerGL a y * transvectionUnit hn t * rightCornerGL b p : GL (Fin (n + 1)) A) :
         Matrix (Fin (n + 1)) (Fin (n + 1)) A) (Fin.last n) 0 = t := by
-  rw [coe_mul_rightCornerGL_apply_zero, coe_leftCornerGL_mul_apply_last]
+  rw [Units.val_mul, Units.val_mul, coe_mul_rightCornerGL_apply_zero,
+    coe_leftCornerGL_mul_apply_last]
   simp [coe_transvectionUnit_eq_one_add_single, hn]
 
 /-! ## Change of rings -/
@@ -357,7 +356,7 @@ theorem unitsMap_mapMatrix_leftCornerGL_eq_one_iff (f : A →+* B) (a : GL (Fin 
     Units.map (f.mapMatrix (m := Fin (n + 1))).toMonoidHom (leftCornerGL a y) = 1 ↔
       Units.map (f.mapMatrix (m := Fin n)).toMonoidHom a = 1 ∧ ∀ i, f (y i) = 0 := by
   rw [← leftCornerGL_map, ← leftCornerGL_one_zero, leftCornerGL_inj, funext_iff]
-  rfl
+  simp only [Function.comp_apply, Pi.zero_apply]
 
 /-- `R(b, p)` is sent to the identity by a ring homomorphism `f` exactly when `b` is and `f`
 kills the entries of `p`. For the quotient map by an ideal `I`, this says that `R(b, p)` is
@@ -367,7 +366,7 @@ theorem unitsMap_mapMatrix_rightCornerGL_eq_one_iff (f : A →+* B) (b : GL (Fin
     Units.map (f.mapMatrix (m := Fin (n + 1))).toMonoidHom (rightCornerGL b p) = 1 ↔
       Units.map (f.mapMatrix (m := Fin n)).toMonoidHom b = 1 ∧ ∀ j, f (p j) = 0 := by
   rw [← rightCornerGL_map, ← rightCornerGL_one_zero, rightCornerGL_inj, funext_iff]
-  rfl
+  simp only [Function.comp_apply, Pi.zero_apply]
 
 end Map
 
