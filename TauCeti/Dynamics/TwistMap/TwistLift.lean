@@ -287,10 +287,10 @@ theorem stripFiberConj_apply (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) (p 
     stripFiberConj r F p = ((F (p.1, r.symm p.2)).1, r (F (p.1, r.symm p.2)).2) :=
   (rfl)
 
-/-- Conjugating the inverse is inverting the conjugate. -/
+/-- Inverting the conjugate is conjugating the inverse. -/
 @[simp]
 theorem stripFiberConj_symm (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) :
-    stripFiberConj r F.symm = (stripFiberConj r F).symm :=
+    (stripFiberConj r F).symm = stripFiberConj r F.symm :=
   (rfl)
 
 /-- Conjugating back by the inverse fibre map recovers `F`. -/
