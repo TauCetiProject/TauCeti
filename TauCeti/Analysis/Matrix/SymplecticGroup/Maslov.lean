@@ -140,6 +140,12 @@ theorem maslovIndex_def {A : GLSymplectic n ℝ} (γ : Path A A) :
     maslovIndex γ = Circle.degree (γ.map continuous_maslovPhase) :=
   (rfl)
 
+/-- The Maslov index of a loop only depends on the loop as a function of time, not on the way its
+base point is written. -/
+theorem maslovIndex_congr {A B : GLSymplectic n ℝ} (γ : Path A A) (γ' : Path B B)
+    (h : ∀ t, γ t = γ' t) : maslovIndex γ = maslovIndex γ' :=
+  Circle.degree_congr _ _ fun t ↦ by simp [h t]
+
 /-- **Homotopy invariance.** If `F` is a homotopy from the loop `γ₀` to the loop `γ₁` through
 loops of symplectic matrices (`F (s, 0) = F (s, 1)` for every `s`; the base point may move), the
 two loops have the same Maslov index. -/

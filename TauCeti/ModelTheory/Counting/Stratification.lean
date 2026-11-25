@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.BackAndForth.ExtensionSpectrum
-public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
-public import TauCeti.ModelTheory.Scott.Height
+public import TauCeti.ModelTheory.RelationalConfiguration.ScottHeight
 public import TauCeti.SetTheory.Cardinal.AlephOne
 
 /-!
@@ -205,9 +204,7 @@ theorem isIsolatingRank_scottHeight :
     obtain ⟨e⟩ := isoSetoid_apply.1 hcd
     exact @Language.Equiv.scottHeight_eq L _ ℕ c.toStructure ℕ d.toStructure e
   lt_omega_one c := @scottHeight_lt_omega_one L _ ℕ c.toStructure _
-  isolates c d hcd := isoSetoid_apply.2
-    (@nonempty_equiv_of_bfEquiv_of_scottHeight_le L _ ℕ c.toStructure _ ℕ d.toStructure _ _ le_rfl
-      (bfEquivSetoid_apply.1 hcd))
+  isolates c d hcd := (isoSetoid_iff_bfEquivSetoid_of_scottHeight_le le_rfl).2 hcd
 
 variable (L) in
 /-- Every relational language has an isolating rank on its configurations on `ℕ`. -/
@@ -262,16 +259,7 @@ theorem BFSmall.mk_isoClasses_le_aleph_one {K : Set (RelationalConfiguration L �
     #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ := by
   refine mk_isoClasses_le_aleph_one_of_countable_levels K fun α hα => ?_
   have := @BFSmall.countable_quotient L _ K (fun _ => ℕ) (fun c => c.val.toStructure) h α hα 0
-  -- At arity `0` both relations compare the empty tuples of the decoded structures, so the
-  -- level-`α` relation on `K` is the pullback of the depth-`α` relation of the family.
-  have hcomap : (bfEquivSetoid L ℕ α).comap (Subtype.val : K → _) =
-      (@bfTupleSetoid L _ K (fun _ => ℕ) (fun c => c.val.toStructure) α 0).comap
-        fun c => ⟨c, Fin.elim0⟩ :=
-    Setoid.ext fun c d => by
-      simp only [Setoid.comap_rel]
-      exact bfEquivSetoid_apply.trans (@bfTupleSetoid_apply L _ K (fun _ => ℕ)
-        (fun c => c.val.toStructure) α 0 ⟨c, Fin.elim0⟩ ⟨d, Fin.elim0⟩).symm
-  rw [hcomap]
+  rw [comap_bfEquivSetoid_eq_comap_bfTupleSetoid]
   exact Countable.of_equiv _ (Setoid.comapQuotientEquiv _ _).symm
 
 end TauCeti

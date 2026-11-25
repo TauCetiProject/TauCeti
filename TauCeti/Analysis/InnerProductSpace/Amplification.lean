@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 import TauCeti.Analysis.InnerProductSpace.PiL2
 
@@ -16,9 +17,10 @@ import TauCeti.Analysis.InnerProductSpace.PiL2
 For a Hilbert space `H` over `ℝ` or `ℂ` and a finite index type `ι`, an operator `s` on `H`
 acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, as
 `s ⊕ ⋯ ⊕ s`. This diagonal amplification is a star algebra homomorphism,
-`PiLp.diagStarAlgHom`. Conversely, every operator `T` on the Hilbert sum has matrix entries
-`ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
-(`ContinuousLinearMap.apply_eq_sum_piLpEntry`), so it is determined by them
+`PiLp.diagStarAlgHom`, defined as the block-diagonal operator `PiLp.piMap 2` with every block
+`s` (`PiLp.diagStarAlgHom_eq_piMap`). Conversely, every operator `T` on the Hilbert
+sum has matrix entries `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through
+them (`ContinuousLinearMap.apply_eq_sum_piLpEntry`), so it is determined by them
 (`ContinuousLinearMap.ext_piLpEntry`); every family of entries arises from the operator
 `ContinuousLinearMap.ofPiLpEntries`. Entries compute products as matrix products
 (`ContinuousLinearMap.piLpEntry_mul`) and adjoints as conjugate transposes
@@ -28,8 +30,9 @@ acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, 
 and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
 
 Amplification turns statements about finitely many vectors of `H` into statements about a single
-vector of the Hilbert sum; this is how the von Neumann density theorem passes from one vector to
-finitely many.
+vector of the Hilbert sum; in particular, `PiLp.diagStarAlgHom_mem_centralizer_centralizer` sends
+the double commutant `s''` of any set of operators `s` into the double commutant of its diagonal
+copy, which is how the von Neumann density theorem passes from one vector to finitely many.
 -/
 
 public section
@@ -158,9 +161,7 @@ variable (𝕜 H ι) in
 of `H` indexed by `ι`, as a star algebra homomorphism. -/
 noncomputable def diagStarAlgHom :
     (H →L[𝕜] H) →⋆ₐ[𝕜] (PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) where
-  toFun s := (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).symm.toContinuousLinearMap ∘L
-    ContinuousLinearMap.piMap (fun _ => s) ∘L
-      (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι => H)).toContinuousLinearMap
+  toFun s := piMap 2 fun _ : ι => s
   map_one' := by ext; simp
   map_mul' s t := by ext; simp
   map_zero' := by ext; simp
@@ -175,6 +176,11 @@ noncomputable def diagStarAlgHom :
 @[simp]
 theorem diagStarAlgHom_apply (s : H →L[𝕜] H) (w : PiLp 2 (fun _ : ι => H)) (i : ι) :
     diagStarAlgHom 𝕜 H ι s w i = s (w i) :=
+  piMap_apply 2 (fun _ => s) w i
+
+/-- The diagonal amplification of `s` is the block-diagonal operator with every block `s`. -/
+theorem diagStarAlgHom_eq_piMap (s : H →L[𝕜] H) :
+    diagStarAlgHom 𝕜 H ι s = piMap 2 fun _ : ι => s :=
   (rfl)
 
 @[simp]
@@ -184,6 +190,29 @@ theorem diagStarAlgHom_apply_single [DecidableEq ι] (s : H →L[𝕜] H) (j : �
   by_cases hk : k = j
   · subst hk; simp
   · simp [hk]
+
+/-- The diagonal amplification of an operator in `s''` lies in the double commutant of the
+diagonal amplification of `s`. -/
+theorem diagStarAlgHom_mem_centralizer_centralizer {s : Set (H →L[𝕜] H)} {x : H →L[𝕜] H}
+    (hx : x ∈ s.centralizer.centralizer) :
+    diagStarAlgHom 𝕜 H ι x ∈ (diagStarAlgHom 𝕜 H ι '' s).centralizer.centralizer := by
+  classical
+  intro T hT
+  -- the matrix entries of an operator commuting with the diagonal copy of `s` lie in `s'`
+  have hentry (i j : ι) : T.piLpEntry i j ∈ s.centralizer := by
+    intro a ha
+    have haT := hT _ ⟨a, ha, rfl⟩
+    ext h
+    have h' := congr_arg (fun w => w i) (DFunLike.congr_fun haT (PiLp.single 2 j h))
+    simp only [mul_apply_eq_comp, diagStarAlgHom_apply, diagStarAlgHom_apply_single] at h'
+    simpa [mul_apply_eq_comp] using h'
+  ext w i
+  simp only [mul_apply_eq_comp]
+  rw [ContinuousLinearMap.apply_eq_sum_piLpEntry, diagStarAlgHom_apply,
+    ContinuousLinearMap.apply_eq_sum_piLpEntry, map_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [diagStarAlgHom_apply]
+  simpa using DFunLike.congr_fun (hx _ (hentry i j)) (w j)
 
 end PiLp
 

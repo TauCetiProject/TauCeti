@@ -14,6 +14,15 @@ public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Instances.Int
 public import TauCeti.Topology.Algebra.Module.Matrix
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
+public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.Topology.Algebra.Module.Star
+public import TauCeti.LinearAlgebra.Matrix.Hermitian.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.Pi
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Derivatives of matrix-vector products
@@ -28,7 +37,22 @@ normed field. Neither completeness nor independence of the directions is require
 differentiability of a rectangular matrix field `M : E → Matrix κ ι 𝕜` also implies
 differentiability of the induced continuous-linear-map family `x ↦ (M x).mulVecCLM`
 (`Matrix.differentiableWithinAt_mulVecCLM`, `Matrix.differentiableAt_mulVecCLM`,
-`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`).
+`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`). Over `RCLike 𝕜`, the
+real entrywise derivative of a family of Hermitian matrices is Hermitian in every direction
+(`Matrix.isHermitian_fderiv_apply`). For the elementwise norm, the entries of the self-adjoint
+part `(X + Xᴴ) / 2` of a matrix are smooth real-linear functions of `X`
+(`Matrix.contDiff_selfAdjointPart_apply`, `Matrix.fderiv_selfAdjointPart_apply`). The
+entries of a matrix in the real vector space of Hermitian matrices are real-linear functions of
+it, hence their own derivatives (`Matrix.hasFDerivAt_selfAdjoint_apply`), so the matrix of these
+derivatives in a direction `H` is `H` (`Matrix.of_fderiv_selfAdjoint_apply_eq`).
+
+Over a complete nontrivially normed field, a family of finite matrices `y ↦ M y` induces a
+differentiable family of continuous linear maps `y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap`
+within a set, at a point, or on a domain if and only if every matrix entry `y ↦ M y i j` is
+differentiable (`TauCeti.differentiableWithinAt_toContinuousLinearMap_toLin'`,
+`TauCeti.differentiableAt_toContinuousLinearMap_toLin'`,
+`TauCeti.differentiableOn_toContinuousLinearMap_toLin'`,
+`TauCeti.differentiable_toContinuousLinearMap_toLin'`).
 
 For a constant matrix `M`, a map that agrees near `x` with `M *ᵥ f + b` has derivative `M f'(x)`
 at `x` (`HasFDerivAt.of_eventuallyEq_mulVec_add`). Conversely, if the derivatives of two `C¹`
@@ -124,6 +148,74 @@ theorem differentiable_mulVecCLM {κ : Type*} [Finite κ]
 
 end Matrix
 
+namespace Matrix
+
+variable {n E 𝕜 : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The entrywise derivative of a family of Hermitian matrices is Hermitian in every direction. -/
+theorem isHermitian_fderiv_apply {M : E → Matrix n n 𝕜} (hM : ∀ x, (M x).IsHermitian)
+    (x₀ v : E) :
+    (of fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v).IsHermitian := by
+  refine IsHermitian.ext fun a b ↦ ?_
+  have h : (fun x ↦ M x a b) = (RCLike.conjCLE (K := 𝕜)) ∘ fun x ↦ M x b a :=
+    funext fun x ↦ by
+      rw [Function.comp_apply, RCLike.conjCLE_apply, ← RCLike.star_def, (hM x).apply]
+  rw [of_apply, of_apply, h, ContinuousLinearEquiv.comp_fderiv]
+  simp [RCLike.star_def]
+
+section SelfAdjointPart
+
+open scoped Matrix.Norms.Elementwise ContDiff
+
+/-- The `(a, b)` entry of the self-adjoint part `(X + Xᴴ) / 2` of a matrix `X`, as a continuous
+real-linear functional. -/
+private noncomputable def selfAdjointPartEntry (a b : n) : Matrix n n 𝕜 →L[ℝ] 𝕜 :=
+  ContinuousLinearMap.proj b ∘L ContinuousLinearMap.proj a ∘L
+    (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtypeL ∘L selfAdjointPartL ℝ (Matrix n n 𝕜)
+
+private theorem coe_selfAdjointPartEntry (a b : n) :
+    ⇑(selfAdjointPartEntry (𝕜 := 𝕜) a b) =
+      fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b :=
+  rfl
+
+/-- Each entry of the self-adjoint part `(X + Xᴴ) / 2` is a smooth function of `X`, for the
+elementwise norm on matrices. -/
+theorem contDiff_selfAdjointPart_apply [Fintype n] {k : ℕ∞ω} (a b : n) :
+    ContDiff ℝ k (fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b) := by
+  rw [← coe_selfAdjointPartEntry]
+  exact (selfAdjointPartEntry (𝕜 := 𝕜) a b).contDiff
+
+/-- Each entry of the self-adjoint part `(X + Xᴴ) / 2` is real-linear in `X`, so it is its own
+derivative, for the elementwise norm on matrices. -/
+theorem fderiv_selfAdjointPart_apply (a b : n) (X V : Matrix n n 𝕜) :
+    fderiv ℝ (fun Y : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ Y : Matrix n n 𝕜) a b) X V =
+      (selfAdjointPart ℝ V : Matrix n n 𝕜) a b := by
+  rw [← coe_selfAdjointPartEntry, ContinuousLinearMap.fderiv, coe_selfAdjointPartEntry]
+
+end SelfAdjointPart
+
+/-- The `(a, b)` entry of a Hermitian matrix is real-linear in the matrix, so it is its own
+derivative on the real vector space of Hermitian matrices, with the entrywise topology. -/
+theorem hasFDerivAt_selfAdjoint_apply [Finite n] (a b : n)
+    (A : selfAdjoint.submodule ℝ (Matrix n n 𝕜)) :
+    HasFDerivAt (fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦ (B : Matrix n n 𝕜) a b)
+      (LinearMap.toContinuousLinearMap
+        (entryLinearMap ℝ 𝕜 a b ∘ₗ (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtype)) A :=
+  (LinearMap.toContinuousLinearMap
+    (entryLinearMap ℝ 𝕜 a b ∘ₗ (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtype)).hasFDerivAt
+
+/-- The matrix of entrywise derivatives at `A` in the direction `H` of a Hermitian matrix is `H`,
+on the real vector space of Hermitian matrices with the entrywise topology. -/
+theorem of_fderiv_selfAdjoint_apply_eq [Finite n] (A H : selfAdjoint.submodule ℝ (Matrix n n 𝕜)) :
+    (of fun a b ↦ fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+      (B : Matrix n n 𝕜) a b) A H) = H :=
+  ext fun a b ↦ by
+    simp only [of_apply, (hasFDerivAt_selfAdjoint_apply a b A).fderiv,
+      LinearMap.coe_toContinuousLinearMap', LinearMap.coe_comp, Submodule.coe_subtype,
+      Function.comp_apply, entryLinearMap_apply]
+
+end Matrix
+
 open Matrix Topology in
 /-- If `g = M *ᵥ f + b` near `x` for a constant matrix `M` and a constant vector `b`, and `f` has
 derivative `f'` at `x`, then `g` has derivative `M f'` at `x`. -/
@@ -142,6 +234,56 @@ theorem HasFDerivAt.of_eventuallyEq_mulVec_add {ι κ E 𝕜 : Type*} [Fintype �
 namespace TauCeti
 
 open Set Function Matrix
+
+section DifferentiableToLin
+
+variable {ι κ E 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [Finite κ]
+  [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A family of finite matrices induces a continuous-linear-map family differentiable within `s` at
+`x` if and only if each matrix entry is differentiable within `s` at `x`. -/
+theorem differentiableWithinAt_toContinuousLinearMap_toLin'
+    {M : E → Matrix κ ι 𝕜} {s : Set E} {x : E} :
+    DifferentiableWithinAt 𝕜 (fun y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap) s x ↔
+      ∀ i j, DifferentiableWithinAt 𝕜 (fun y ↦ M y i j) s x := by
+  have := Fintype.ofFinite κ
+  refine ⟨fun h i j ↦ ?_, fun h ↦ ?_⟩
+  · have hv := (differentiableWithinAt_clm_apply.mp h) (Pi.single j 1)
+    simpa [Matrix.mulVec_single] using differentiableWithinAt_pi.mp hv i
+  · refine differentiableWithinAt_clm_apply.mpr fun v ↦
+      differentiableWithinAt_pi.mpr fun i ↦ ?_
+    simp only [LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, Matrix.mulVec, dotProduct]
+    exact DifferentiableWithinAt.fun_sum fun j _ ↦ (h i j).mul_const (v j)
+
+/-- A family of finite matrices induces a continuous-linear-map family differentiable at `x` if and
+only if each matrix entry is differentiable at `x`. -/
+theorem differentiableAt_toContinuousLinearMap_toLin'
+    {M : E → Matrix κ ι 𝕜} {x : E} :
+    DifferentiableAt 𝕜 (fun y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap) x ↔
+      ∀ i j, DifferentiableAt 𝕜 (fun y ↦ M y i j) x := by
+  simp_rw [← differentiableWithinAt_univ]
+  exact differentiableWithinAt_toContinuousLinearMap_toLin'
+
+/-- A family of finite matrices induces a continuous-linear-map family differentiable on `s` if and
+only if each matrix entry is differentiable on `s`. -/
+theorem differentiableOn_toContinuousLinearMap_toLin'
+    {M : E → Matrix κ ι 𝕜} {s : Set E} :
+    DifferentiableOn 𝕜 (fun y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap) s ↔
+      ∀ i j, DifferentiableOn 𝕜 (fun y ↦ M y i j) s := by
+  refine ⟨fun h i j x hx ↦ ?_, fun h x hx ↦ ?_⟩
+  · exact (differentiableWithinAt_toContinuousLinearMap_toLin'.mp (h x hx)) i j
+  · exact differentiableWithinAt_toContinuousLinearMap_toLin'.mpr fun i j ↦ h i j x hx
+
+/-- A family of finite matrices induces a differentiable continuous-linear-map family if and only
+if each matrix entry is differentiable. -/
+theorem differentiable_toContinuousLinearMap_toLin'
+    {M : E → Matrix κ ι 𝕜} :
+    Differentiable 𝕜 (fun y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap) ↔
+      ∀ i j, Differentiable 𝕜 (fun y ↦ M y i j) := by
+  simp_rw [← differentiableOn_univ]
+  exact differentiableOn_toContinuousLinearMap_toLin'
+
+end DifferentiableToLin
 
 variable {ι : Type*} [Fintype ι] {D : Set (ι → ℝ)} {A A' : (ι → ℝ) → ι → ℝ}
 

@@ -6,14 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
+import Mathlib.Analysis.Calculus.Deriv.ZPow
+import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Convex.Segment
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Immersion.Differential
@@ -23,10 +28,11 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -75,6 +81,8 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `LinearIndependent.finCons_mvfderiv_coe_sphere`: a point `u` of the sphere followed by the image
   in the ambient space of a linearly independent family of tangent vectors at `u` is linearly
   independent.
+* `TauCeti.exists_mvfderiv_coe_sphere_eq`: a vector orthogonal to a point of the sphere is the
+  image in the ambient space of a tangent vector at that point.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
@@ -96,6 +104,10 @@ allowing the entire path or loop to be read in one stereographic chart.
   on the unit sphere.
 * `Circle.instContMDiffSMul`, `Circle.instContMDiffConstSMul`: the circle acts smoothly on every
   complex normed space by scalar multiplication.
+* `Circle.instContMDiffSMulSphere`: the circle acts smoothly on the unit sphere of a complex inner
+  product space.
+* `TauCeti.contMDiff_circleExp_two_pi_mul`: the standard loop `t ↦ exp (2π i t)` of the circle is
+  smooth.
 * `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
   `Circle.exp : ℝ → S¹` is bijective.
 * `TauCeti.mvfderiv_coe_mfderiv_circleExp`: read in `ℂ`, the generator of `t ↦ exp (t i)`, the
@@ -139,9 +151,18 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `TauCeti.contMDiff_coe_sphere_compl_zero`, `TauCeti.contMDiff_normalize_sphere`: the inclusion
   of the unit sphere into the punctured space `E \ {0}` and the radial projection
   `x ↦ x / ‖x‖` back onto the sphere are smooth; `TauCeti.contMDiff_normalize_compl_zero` is the
-  radial projection read in `E`.
+  radial projection read in `E`, and `TauCeti.contDiffAt_sphereExtend` pulls back `C^m` regularity
+  along the radial projection to the `0`-homogeneous radial extension, and
+  `TauCeti.contDiffAt_sphereCone` to the cone over a map on the sphere.
+* `TauCeti.norm_sub_le_of_norm_fderiv_sphereExtend_le`: a bound on the derivative of the radial
+  extension on the annulus `1 / 2 ≤ ‖y‖ ≤ 1` bounds the differences of a map on short chords.
+* `TauCeti.coeSphereMap`, `TauCeti.normalizeSphereMap`: the inclusion of the sphere into `E` and
+  the radial projection of the punctured space onto the sphere, as bundled `C^m` maps.
 * `TauCeti.conjSphere`, `TauCeti.contMDiff_conjSphere`: complex conjugation on the unit circle
   of `ℂ`, a smooth involution.
+* `TauCeti.contMDiff_zpow_sphere`, `TauCeti.mvfderiv_coe_zpow_sphere_apply`: the power maps
+  `z ↦ z ^ k` of the unit circle of `ℂ` are smooth, and read in `ℂ` the derivative of `z ↦ z ^ k`
+  at `z` is multiplication by `k z ^ (k - 1)`.
 -/
 
 public section
@@ -225,6 +246,14 @@ theorem _root_.LinearIndependent.finCons_mvfderiv_coe_sphere (u : sphere (0 : E)
   LinearIndependent.finCons_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere u)
     (hv.map' _ (LinearMap.ker_eq_bot_of_injective (injective_mvfderiv_subtypeVal_sphere u)))
     fun _ ↦ range_mvfderiv_subtypeVal (n := n) u ▸ LinearMap.mem_range_self _ _
+
+/-- A vector orthogonal to a point `x` of the unit sphere is the image in `E` of a tangent vector
+at `x`. -/
+theorem exists_mvfderiv_coe_sphere_eq (x : sphere (0 : E) 1) {u : E} (hu : ⟪(x : E), u⟫_ℝ = 0) :
+    ∃ v : TangentSpace (𝓡 n) x, mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v = u := by
+  have h : u ∈ (ℝ ∙ (x : E))ᗮ := Submodule.mem_orthogonal_singleton_iff_inner_right.2 hu
+  rw [← range_mvfderiv_subtypeVal (n := n) x] at h
+  exact LinearMap.mem_range.1 h
 
 /-- The preferred chart of the sphere at `v` is the stereographic projection from `-v`. -/
 theorem chartAt_sphere (v : sphere (0 : E) 1) :
@@ -502,13 +531,35 @@ instance instContMDiffSMul {n : ℕ∞ω} : ContMDiffSMul (𝓡 1) 𝓘(ℝ, V) 
 
 /-- Each element of the circle acts smoothly on every complex normed space. -/
 instance instContMDiffConstSMul {n : ℕ∞ω} : ContMDiffConstSMul 𝓘(ℝ, V) n Circle V :=
-  ⟨fun z ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) z⟩
+  ContMDiffSMul.contMDiffConstSMul (𝓡 1)
+
+/-- The circle acts smoothly, by scalar multiplication, on the unit sphere of a complex normed
+space whose norm comes from a real inner product. For `ℂⁿ⁺¹` this is the circle action on
+`S²ⁿ⁺¹` whose orbit space is complex projective space. -/
+instance instContMDiffSMulSphere {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [NormedSpace ℂ W] [IsScalarTower ℝ ℂ W] {d : ℕ} [Fact (finrank ℝ W = d + 1)] {n : ℕ∞ω} :
+    ContMDiffSMul (𝓡 1) (𝓡 d) n Circle (sphere (0 : W) 1) where
+  contMDiff_smul := by
+    -- The action on the sphere is the restriction of the action on `W`.
+    have hcoe (p : Circle × sphere (0 : W) 1) :
+        ((p.1 • p.2 : sphere (0 : W) 1) : W) = p.1 • (p.2 : W) :=
+      (coe_smul_sphere p.1 p.2).trans (smul_def p.1 (p.2 : W)).symm
+    refine (((contMDiff_smul (I := 𝓡 1) (I' := 𝓘(ℝ, W))).comp
+      (contMDiff_fst.prodMk (contMDiff_coe_sphere.comp contMDiff_snd))).codRestrict_sphere
+      fun p ↦ ?_).congr fun p ↦ Subtype.ext (hcoe p)
+    simp only [comp_apply, ← hcoe p]
+    exact (p.1 • p.2).property
 
 end Circle
 
 /-! ### The derivative of the circle exponential -/
 
 namespace TauCeti
+
+/-- The standard loop `t ↦ exp (2π i t)` of the circle is smooth. -/
+theorem contMDiff_circleExp_two_pi_mul :
+    ContMDiff 𝓘(ℝ, ℝ) (𝓡 1) ∞ fun t : ℝ ↦ Circle.exp (2 * Real.pi * t) :=
+  contMDiff_circleExp.comp (contDiff_const.mul contDiff_id).contMDiff
 
 attribute [local instance] finrank_real_complex_fact'
 
@@ -999,11 +1050,72 @@ theorem contMDiff_normalize_sphere :
         (NormedSpace.norm_normalize_eq_one_iff.2 x.property)⟩ : sphere (0 : E) 1)) :=
   contMDiff_normalize_compl_zero.codRestrict_sphere _
 
+/-- Away from the origin, `sphereExtend f` inherits `C^m` regularity from `f` at `x / ‖x‖`. -/
+theorem contDiffAt_sphereExtend {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : sphere (0 : E) 1 → G} {x : E} (hx : x ≠ 0)
+    (hf : ContMDiffAt (𝓡 n) 𝓘(ℝ, G) m f
+      ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) :
+    ContDiffAt ℝ m (sphereExtend f) x := by
+  let U : TopologicalSpace.Opens E := ⟨{0}ᶜ, isOpen_compl_singleton⟩
+  let xU : U := ⟨x, hx⟩
+  have hcomp : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, G) m (sphereExtend f ∘ (Subtype.val : U → E)) xU := by
+    refine (hf.comp xU (contMDiff_normalize_sphere xU)).congr_of_eventuallyEq ?_
+    exact .of_forall fun y ↦ sphereExtend_of_ne_zero f y.property
+  exact contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 hcomp)
+
+/-- Away from the origin, the cone `sphereCone f` over a map `f` on the sphere inherits `C^m`
+regularity from `f` at `x / ‖x‖`. -/
+theorem contDiffAt_sphereCone {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : sphere (0 : E) 1 → G} {x : E} (hx : x ≠ 0)
+    (hf : ContMDiffAt (𝓡 n) 𝓘(ℝ, G) m f
+      ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) :
+    ContDiffAt ℝ m (sphereCone f) x :=
+  ((contDiffAt_norm ℝ hx).smul (contDiffAt_sphereExtend hx hf)).congr_of_eventuallyEq
+    (.of_forall fun z ↦ sphereCone_eq_norm_smul_sphereExtend f z)
+
+/-- **The mean value theorem on short chords of the sphere.** If the derivative of the
+`0`-homogeneous extension of a `C^m` map `g` on the sphere, `1 ≤ m`, is bounded by `c` on the
+closed annulus `1 / 2 ≤ ‖y‖ ≤ 1`, then `‖g p - g q‖ ≤ c ‖p - q‖` whenever `‖p - q‖ ≤ 1`: the
+chord from `q` to `p` stays in the annulus (`TauCeti.norm_mem_Icc_of_mem_segment`). -/
+theorem norm_sub_le_of_norm_fderiv_sphereExtend_le (hm : 1 ≤ m) {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {g : sphere (0 : E) 1 → G} (hg : ContMDiff (𝓡 n) 𝓘(ℝ, G) m g) {c : ℝ}
+    (hc : ∀ y : E, 1 / 2 ≤ ‖y‖ → ‖y‖ ≤ 1 → ‖fderiv ℝ (sphereExtend g) y‖ ≤ c)
+    {p q : sphere (0 : E) 1} (hpq : ‖(p : E) - q‖ ≤ 1) : ‖g p - g q‖ ≤ c * ‖(p : E) - q‖ := by
+  have hmem {z : E} (hz : z ∈ segment ℝ (q : E) p) : 1 / 2 ≤ ‖z‖ ∧ ‖z‖ ≤ 1 :=
+    norm_mem_Icc_of_mem_segment (norm_eq_of_mem_sphere q) (norm_eq_of_mem_sphere p)
+      (by rwa [norm_sub_rev]) hz
+  have hne {z : E} (hz : z ∈ segment ℝ (q : E) p) : z ≠ 0 :=
+    norm_pos_iff.1 (lt_of_lt_of_le (by norm_num) (hmem hz).1)
+  rw [← sphereExtend_coe g p, ← sphereExtend_coe g q]
+  exact (convex_segment (q : E) p).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
+    (fun z hz ↦ (contDiffAt_sphereExtend (hne hz) (hg _)).differentiableAt
+      (zero_lt_one.trans_le hm).ne')
+    (fun z hz ↦ hc z (hmem hz).1 (hmem hz).2) (left_mem_segment ℝ _ _) (right_mem_segment ℝ _ _)
+
+/-- The inclusion of the unit sphere into `E`, as a `C^m` map. -/
+def coeSphereMap : C^m⟮𝓡 n, sphere (0 : E) 1; 𝓘(ℝ, E), E⟯ :=
+  ⟨_, contMDiff_coe_sphere⟩
+
+@[simp]
+theorem coeSphereMap_apply (x : sphere (0 : E) 1) : coeSphereMap (m := m) (n := n) x = (x : E) :=
+  (rfl)
+
+/-- The radial projection `x ↦ x / ‖x‖` of the punctured space `E \ {0}` onto the unit sphere, as
+a `C^m` map. -/
+def normalizeSphereMap :
+    C^m⟮𝓘(ℝ, E), (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E); 𝓡 n, sphere (0 : E) 1⟯ :=
+  ⟨_, contMDiff_normalize_sphere⟩
+
+@[simp]
+theorem coe_normalizeSphereMap_apply (x : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E)) :
+    (normalizeSphereMap (m := m) (n := n) x : E) = NormedSpace.normalize (x : E) :=
+  (rfl)
+
 end Punctured
 
-/-! ### Complex conjugation on the unit circle -/
+/-! ### Complex conjugation and powers on the unit circle -/
 
-section Conj
+section ComplexCircle
 
 /-- Complex conjugation, restricted to the unit circle of `ℂ`. -/
 def conjSphere (z : sphere (0 : ℂ) 1) : sphere (0 : ℂ) 1 :=
@@ -1024,6 +1136,35 @@ theorem contMDiff_conjSphere {m : ℕ∞ω} : ContMDiff (𝓡 1) (𝓡 1) m conj
   ContMDiff.codRestrict_sphere ((Complex.conjCLE : ℂ →L[ℝ] ℂ).contMDiff.comp contMDiff_coe_sphere)
     fun z ↦ (conjSphere z).property
 
-end Conj
+/-- The power maps `z ↦ z ^ k` of the unit circle of `ℂ`, for `k : ℤ`, are smooth. -/
+theorem contMDiff_zpow_sphere (k : ℤ) {m : ℕ∞ω} :
+    ContMDiff (𝓡 1) (𝓡 1) m fun z : sphere (0 : ℂ) 1 ↦ z ^ k := by
+  refine ContMDiff.codRestrict_sphere (f := fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ) ^ k)
+    (fun z ↦ ?_) fun z ↦ by simp
+  exact ((analyticAt_id.zpow (ne_zero_of_mem_unit_sphere z)).contDiffAt.contMDiffAt.comp z
+    (contMDiff_coe_sphere z))
+
+/-- **The derivative of a power map of the circle.** Read in `ℂ` through the derivative of the
+inclusion, the derivative of `z ↦ z ^ k` at `z` is multiplication by `k z ^ (k - 1)`. -/
+theorem mvfderiv_coe_zpow_sphere_apply (k : ℤ) (z : sphere (0 : ℂ) 1)
+    (v : TangentSpace (𝓡 1) z) :
+    mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) (z ^ k)
+        (mfderiv (𝓡 1) (𝓡 1) (fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z v) =
+      (k * (z : ℂ) ^ (k - 1)) * mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z v := by
+  have hι (w : sphere (0 : ℂ) 1) := (contMDiff_coe_sphere (E := ℂ) (n := 1) (m := 1)
+    w).mdifferentiableAt one_ne_zero
+  have hpow : HasDerivAt (fun w : ℂ ↦ w ^ k) (k * (z : ℂ) ^ (k - 1)) (z : ℂ) :=
+    hasDerivAt_zpow k (z : ℂ) (Or.inl (ne_zero_of_mem_unit_sphere z))
+  rw [← mvfderiv_comp_apply (f := fun w : sphere (0 : ℂ) 1 ↦ w ^ k) z (hι _)
+    (((contMDiff_zpow_sphere k (m := 1)) z).mdifferentiableAt one_ne_zero)]
+  -- Read in `ℂ`, the power map of the circle is the power map of `ℂ` after the inclusion.
+  rw [show ((↑) ∘ fun w : sphere (0 : ℂ) 1 ↦ w ^ k) =
+      (fun w : ℂ ↦ w ^ k) ∘ ((↑) : sphere (0 : ℂ) 1 → ℂ) from
+        funext fun w ↦ by simp,
+    mvfderiv_comp_apply z (hpow.differentiableAt.restrictScalars ℝ).mdifferentiableAt (hι z),
+    mvfderiv_eq_fderiv, (hpow.hasFDerivAt.restrictScalars ℝ).fderiv]
+  simp [mvfderiv, mul_comm]
+
+end ComplexCircle
 
 end TauCeti

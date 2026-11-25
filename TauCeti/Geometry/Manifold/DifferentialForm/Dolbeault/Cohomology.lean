@@ -20,9 +20,10 @@ cohomology of the Dolbeault complex `TauCeti.dolbeaultComplex E M F p`, with the
 A holomorphic map of complex manifolds is a smooth map of the underlying real manifolds which is
 pseudoholomorphic for their almost complex structures. Pullback along it preserves `∂bar`-closed
 and `∂bar`-exact forms of type `(p,q)`, so it induces complex-linear maps on Dolbeault cohomology,
-contravariantly functorial in the map. Continuous complex-linear coefficient maps also induce
-maps on closed forms and cohomology, covariantly functorial in the coefficients and commuting
-with holomorphic pullback.
+contravariantly functorial in the map. They are the maps induced on cohomology by the cochain
+maps `TauCeti.dolbeaultComplex.map` of Dolbeault complexes. Continuous complex-linear coefficient
+maps also induce maps on closed forms and cohomology, covariantly functorial in the coefficients
+and commuting with holomorphic pullback.
 
 In degree `q = 0` there are no `∂bar`-exact forms, so `H^(p,0)_∂bar(M; F)` is the space of
 `∂bar`-closed forms of type `(p,0)`, the holomorphic `p`-forms. For `p = 0` these are the
@@ -34,6 +35,8 @@ holomorphic functions `M → F` when the model `E` is finite-dimensional and `F`
   a holomorphic map, with `mpullback_id`, `mpullback_comp` and `mpullback_mem_exactForms`.
 * `TauCeti.dolbeaultCohomology.map`: the map induced by a holomorphic map, with `map_mk`, `map_id`
   and `map_comp`.
+* `TauCeti.dolbeaultComplex.homologyMap_map`: the map induced on cohomology by the cochain map
+  `TauCeti.dolbeaultComplex.map` of a holomorphic map is `TauCeti.dolbeaultCohomology.map`.
 * `TauCeti.Dolbeault.closedForms.mapCoeff`: coefficient change on closed forms, with identity,
   composition, exactness preservation and compatibility with pullback.
 * `TauCeti.dolbeaultCohomology.mapCoeff`: induced coefficient change on cohomology, with
@@ -49,7 +52,8 @@ holomorphic functions `M → F` when the model `E` is finite-dimensional and `F`
 
 The map induced by a holomorphic map descends pullback of closed forms along the surjective class
 map with `LinearMap.liftOfSurjective`, as `TauCeti.deRhamCohomology.map` in
-`TauCeti.Geometry.Manifold.DeRham.Map`.
+`TauCeti.Geometry.Manifold.DeRham.Map`. The comparison `TauCeti.dolbeaultComplex.homologyMap_map`
+likewise follows `TauCeti.deRhamComplex.homologyMap_map` in the same file.
 
 ## References
 
@@ -165,13 +169,10 @@ namespace Dolbeault.closedForms
 map of the underlying real manifolds whose differential is complex-linear. -/
 def mpullback {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
     (hJ : IsPseudoholomorphic (ofComplexManifold E M) (ofComplexManifold E' M') f) (p q : ℕ) :
-    closedForms E' M' F p q →ₗ[ℂ] closedForms E M F p q where
-  toFun φ := ⟨⟨SmoothForm.mpullback f hf φ.val.val, ((ofComplexManifold E M).mem_typeForms p q _).2
-      ((((ofComplexManifold E' M').mem_typeForms p q _).1 φ.val.property).mpullback hf hJ)⟩, by
-    rw [mem_closedForms, ← mpullback_delBar _ hf hJ, (mem_closedForms p q φ.val).1 φ.property,
-        map_zero]⟩
-  map_add' φ ψ := Subtype.ext <| Subtype.ext <| map_add _ φ.val.val ψ.val.val
-  map_smul' c φ := Subtype.ext <| Subtype.ext <| SmoothForm.mpullback_smul f hf c φ.val.val
+    closedForms E' M' F p q →ₗ[ℂ] closedForms E M F p q :=
+  (mpullbackType hf hJ p q).restrict fun φ hφ ↦ by
+    rw [mem_closedForms, coe_mpullbackType, ← mpullback_delBar _ hf hJ,
+      (mem_closedForms p q φ).1 hφ, map_zero]
 
 /-- The underlying smooth form of the pullback of a `∂bar`-closed form is its pullback. -/
 @[simp]
@@ -179,15 +180,14 @@ theorem coe_mpullback {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') 
     (hJ : IsPseudoholomorphic (ofComplexManifold E M) (ofComplexManifold E' M') f) (p q : ℕ)
     (φ : closedForms E' M' F p q) :
     (mpullback hf hJ p q φ).val.val = SmoothForm.mpullback f hf φ.val.val :=
-  (rfl)
+  coe_mpullbackType hf hJ p q φ.val
 
 /-- Pullback of `∂bar`-closed forms along the identity is the identity. -/
 @[simp]
 theorem mpullback_id (p q : ℕ) :
     mpullback (F := F) (f := id) contMDiff_id (isPseudoholomorphic_id (ofComplexManifold E M))
       p q = LinearMap.id :=
-  LinearMap.ext fun φ ↦ Subtype.ext <| Subtype.ext <|
-    LinearMap.congr_fun SmoothForm.mpullback_id φ.val.val
+  LinearMap.ext fun φ ↦ Subtype.ext <| LinearMap.congr_fun (mpullbackType_id _ p q) φ.val
 
 /-- Pullback of `∂bar`-closed forms reverses composition. -/
 theorem mpullback_comp {f : M → M'} {g : M' → M''} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
@@ -197,8 +197,8 @@ theorem mpullback_comp {f : M → M'} {g : M' → M''} (hf : ContMDiff 𝓘(ℝ,
     (p q : ℕ) :
     mpullback (F := F) (hg.comp hf) (hJ'.comp hJ) p q =
       mpullback hf hJ p q ∘ₗ mpullback hg hJ' p q :=
-  LinearMap.ext fun φ ↦ Subtype.ext <| Subtype.ext <|
-    LinearMap.congr_fun (SmoothForm.mpullback_comp f g hf hg) φ.val.val
+  LinearMap.ext fun φ ↦ Subtype.ext <|
+    LinearMap.congr_fun (mpullbackType_comp hf hJ hg hJ' p q) φ.val
 
 /-- Pullback along a holomorphic map preserves `∂bar`-exact forms. -/
 theorem mpullback_mem_exactForms {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
@@ -213,9 +213,8 @@ theorem mpullback_mem_exactForms {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) �
   | succ q =>
     obtain ⟨ψ, hψ⟩ := (mem_exactForms_succ p q φ.val).1 hφ
     exact (mem_exactForms_succ p q _).2
-      ⟨⟨SmoothForm.mpullback f hf ψ.val, ((ofComplexManifold E M).mem_typeForms p q _).2
-        ((((ofComplexManifold E' M').mem_typeForms p q _).1 ψ.property).mpullback hf hJ)⟩, by
-        rw [← mpullback_delBar _ hf hJ, hψ, coe_mpullback]⟩
+      ⟨mpullbackType hf hJ p q ψ, by
+        rw [coe_mpullbackType, ← mpullback_delBar _ hf hJ, hψ, coe_mpullback]⟩
 
 end Dolbeault.closedForms
 
@@ -407,5 +406,43 @@ theorem dolbeaultCohomology.map_mapCoeff (L : F →L[ℂ] G) (p q : ℕ)
     closedForms.mpullback_mapCoeff]
 
 end Coefficients
+
+/-! ### The cochain map of a holomorphic map on cohomology -/
+
+section Complex
+
+/-! The induced cochain maps compare complexes in one universe, so the model spaces share a
+universe, as do the manifolds. -/
+
+open CategoryTheory
+
+universe u v
+
+variable {E₁ E₂ E₃ : Type u} [NormedAddCommGroup E₁] [NormedSpace ℂ E₁]
+  [NormedAddCommGroup E₂] [NormedSpace ℂ E₂] [NormedAddCommGroup E₃] [NormedSpace ℂ E₃]
+  {M₁ M₂ M₃ : Type v} [TopologicalSpace M₁] [ChartedSpace E₁ M₁] [IsManifold 𝓘(ℂ, E₁) ∞ M₁]
+  [TopologicalSpace M₂] [ChartedSpace E₂ M₂] [IsManifold 𝓘(ℂ, E₂) ∞ M₂]
+  [TopologicalSpace M₃] [ChartedSpace E₃ M₃] [IsManifold 𝓘(ℂ, E₃) ∞ M₃]
+
+namespace dolbeaultComplex
+
+/-- The map induced on cohomology by the cochain map of a holomorphic map is pullback on
+Dolbeault cohomology. -/
+theorem homologyMap_map {f : M₁ → M₂} (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f)
+    (hJ : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f)
+    (p q : ℕ) :
+    HomologicalComplex.homologyMap (map (F := F) hf hJ p) q =
+      ModuleCat.ofHom (dolbeaultCohomology.map hf hJ p q) := by
+  refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
+  obtain ⟨φ, rfl⟩ := dolbeaultCohomology.mk_surjective p q c
+  rw [ModuleCat.hom_ofHom, dolbeaultCohomology.map_mk,
+    dolbeaultCohomology.mk_eq_moduleCatHomologyClass,
+    dolbeaultCohomology.mk_eq_moduleCatHomologyClass]
+  exact HomologicalComplex.homologyMap_moduleCatHomologyClass _ _ _ (map hf hJ p) _ _
+    (closedForms.mpullback hf hJ p q) (fun φ ↦ map_f_inv_apply hf hJ p q φ.val) φ
+
+end dolbeaultComplex
+
+end Complex
 
 end TauCeti

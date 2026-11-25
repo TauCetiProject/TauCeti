@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WithSeminorms
 import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.LocallyCompact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Complete
 import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 
 /-!
 # Finite-atlas `C^k` norms on bundle sections
@@ -36,16 +38,18 @@ on the zero section (`ContMDiffSection.finiteAtlasSeminorm_eq_zero_iff`). On `C^
 finite chart-frame atlas with covering relative interiors generates
 `ContMDiffSection.frameTopology` (`ContMDiffSection.withSeminorms_finiteAtlasSeminorm`) and equips
 `Cₛ^k⟮I; F, V⟯` with a normed space structure (`ContMDiffSection.finiteAtlasNormedAddCommGroup`,
-`ContMDiffSection.finiteAtlasNormedSpace`) that is complete on locally compact models over
-`RCLike` normed fields when the model fibre is complete
-(`ContMDiffSection.completeSpace_finiteAtlas`). Every open cover on a compact manifold modelled on
-a locally compact space admits a subordinate finite compact chart cover
-(`TauCeti.exists_finite_compact_chart_cover_of_opens_cover`), so `ContMDiffSection.frameTopology`
-on `C^k` sections is normable (`ContMDiffSection.isNormableSpace_frameTopology_of_compactSpace`).
+`ContMDiffSection.finiteAtlasNormedSpace`) that is complete over `RCLike` normed fields when the
+model fibre is complete (`ContMDiffSection.completeSpace_finiteAtlas`). Every open cover on a
+compact manifold modelled on a locally compact space admits a subordinate finite compact chart cover
+(`TauCeti.exists_finite_compact_chart_cover_of_opens_cover`), so `ContMDiffSection.frameTopology` on
+`C^k` sections is normable (`ContMDiffSection.isNormableSpace_frameTopology_of_compactSpace`).
 
 Derivatives are taken within extended chart targets and interiors are relative to them, so
-boundary and corner charts are included throughout (except for completeness, which assumes a
-boundaryless model). Neither finite rank of the fibres nor Hausdorffness of the base is required.
+boundary and corner charts are included throughout. Whenever a compact coordinate piece has nonempty
+relative interior in an extended chart target, the model vector space is automatically locally
+compact (`ModelWithCorners.locallyCompactSpace_of_nonempty_interior_extChartAt_target`), so covering
+finite-atlas comparisons and Banach completeness need no separate local compactness assumption on
+the model space. Neither finite rank of the fibres nor Hausdorffness of the base is required.
 
 ## Main definitions
 
@@ -72,8 +76,8 @@ boundaryless model). Neither finite rank of the fibres nor Hausdorffness of the 
   `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_infty_of_cover`: generation of
   `ContMDiffSection.frameTopology` on `C^n`, `C^k`, and `C^∞` sections.
 * `ContMDiffSection.completeSpace_finiteAtlas` and
-  `ContMDiffSection.isNormableSpace_frameTopology_of_compactSpace`: Banach completeness on
-  locally compact models and normability on compact manifolds.
+  `ContMDiffSection.isNormableSpace_frameTopology_of_compactSpace`: Banach completeness and
+  normability on compact manifolds.
 
 ## References
 
@@ -260,7 +264,8 @@ variable (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
     (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
       (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
 
-include hK in
+include hK
+
 /-- If the relative interiors of the compact pieces cover `M`, every compact chart-frame `C^k`
 seminorm in any smooth trivialization is bounded by a positive multiple of the finite-atlas `C^k`
 seminorm. -/
@@ -299,7 +304,6 @@ theorem exists_chartCkSeminorm_le_finiteAtlasSeminorm
     (chartCkSeminorm_le_finiteAtlasSeminorm e U hU c K k hk i s) (hC i).le).trans
       (mul_le_mul_of_nonneg_right hCi hq))
 
-include hK in
 /-- **Equivalence of finite chart-frame `C^k` norms.** The `C^k` seminorm of any finite chart-frame
 atlas is bounded by a positive multiple of that of a finite chart-frame atlas whose compact pieces
 have relative interiors covering `M`. -/
@@ -439,7 +443,8 @@ variable {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
       (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
         (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
 
-include hK in
+include hK
+
 /-- **The finite-atlas `C^k` seminorms (`k ≤ n`) generate `ContMDiffSection.frameTopology`** on
 `C^n` sections when the relative interiors of the compact pieces cover `M`, for any regularity
 `n : ℕ∞ω` (neither local compactness of the model nor absence of boundary is required). -/
@@ -463,11 +468,25 @@ theorem withSeminorms_finiteAtlasSeminorm_subtype :
     simpa only [LinearMap.id_apply, frameSeminormFamily_apply, Finset.sup_singleton] using
       ((e i).chartDerivativeSeminorm_le_chartCkSeminorm (hU i) x L le_rfl hm s).trans (hbound s)
 
-include hK in
-/-- On a locally compact model space, the finite-atlas `C^k` seminorms (`k ≤ n`) of any finite
-chart-frame atlas whose compact pieces have relative interiors covering `M` generate
-`ContMDiffSection.frameTopology` on `C^n` sections for *any* covering smooth frame system. -/
-theorem withSeminorms_finiteAtlasSeminorm_subtype_of_cover [LocallyCompactSpace E]
+omit [Fintype ι] in
+/-- When a family of compact coordinate pieces in smooth frames `(e, U)` has relative interiors
+covering `M`, `ContMDiffSection.frameTopology` agrees with that of any other covering smooth frame
+system, with no separate local compactness assumption on the model space. -/
+theorem frameTopology_eq_of_extChartAt_interior_cover
+    {κ : Type*} (e' : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)]
+    (U' : κ → Opens M) (hU' : ∀ j, (U' j : Set M) ⊆ (e' j).baseSet)
+    (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
+    frameTopology (I := I) (n := n) e U hU = frameTopology (I := I) (n := n) e' U' hU' := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact Subsingleton.elim _ _
+  · have : LocallyCompactSpace E := I.locallyCompactSpace_of_extChartAt_interior_cover hK
+    exact frameTopology_eq_of_covers e U hU (TauCeti.cover_of_extChartAt_cover hK) e' U' hU'
+      hcover'
+
+/-- The finite-atlas `C^k` seminorms (`k ≤ n`) of any finite chart-frame atlas whose compact pieces
+have relative interiors covering `M` generate `ContMDiffSection.frameTopology` on `C^n` sections
+for *any* covering smooth frame system. -/
+theorem withSeminorms_finiteAtlasSeminorm_subtype_of_cover
     {κ : Type*} (e' : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)]
     (U' : κ → Opens M) (hU' : ∀ j, (U' j : Set M) ⊆ (e' j).baseSet)
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
@@ -475,10 +494,7 @@ theorem withSeminorms_finiteAtlasSeminorm_subtype_of_cover [LocallyCompactSpace 
     WithSeminorms
       (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.val k.property)
           := by
-  have heq : frameTopology (I := I) (n := n) e' U' hU' =
-      frameTopology (I := I) (n := n) e U hU :=
-    frameTopology_eq_of_covers e' U' hU' hcover' e U hU (TauCeti.cover_of_extChartAt_cover hK)
-  rw [heq]
+  rw [← frameTopology_eq_of_extChartAt_interior_cover e U hU hK e' U' hU' hcover']
   exact withSeminorms_finiteAtlasSeminorm_subtype e U hU hK
 
 end GeneralWithSeminorms
@@ -508,7 +524,8 @@ variable (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
     (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
       (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
 
-include hK in
+include hK
+
 /-- **The finite-atlas `C^k` norm generates `ContMDiffSection.frameTopology`** on `C^k` sections
 when the relative interiors of its compact pieces cover `M`. Neither local compactness of the model
 nor absence of boundary is required. -/
@@ -519,11 +536,9 @@ theorem withSeminorms_finiteAtlasSeminorm :
   exact withSeminorms_unit_of_subtype k e U hU
     (withSeminorms_finiteAtlasSeminorm_subtype (n := k) e U hU hK)
 
-include hK in
-/-- On a locally compact model space, a finite chart-frame `C^k` norm whose compact pieces have
-relative interiors covering `M` generates `ContMDiffSection.frameTopology` for *any* covering
-smooth frame system. -/
-theorem withSeminorms_finiteAtlasSeminorm_of_cover [LocallyCompactSpace E]
+/-- A finite chart-frame `C^k` norm whose compact pieces have relative interiors covering `M`
+generates `ContMDiffSection.frameTopology` for *any* covering smooth frame system. -/
+theorem withSeminorms_finiteAtlasSeminorm_of_cover
     {κ : Type*} (e' : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)]
     (U' : κ → Opens M) (hU' : ∀ j, (U' j : Set M) ⊆ (e' j).baseSet)
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
@@ -533,7 +548,6 @@ theorem withSeminorms_finiteAtlasSeminorm_of_cover [LocallyCompactSpace E]
   exact withSeminorms_unit_of_subtype k e U hU
     (withSeminorms_finiteAtlasSeminorm_subtype_of_cover (n := k) e U hU hK e' U' hU' hcover')
 
-include hK in
 /-- The normed group of `C^k` bundle sections equipped with the `C^k` norm of a finite chart-frame
 atlas whose compact pieces have relative interiors covering `M`. Its topology is definitionally
 `ContMDiffSection.frameTopology e U hU`. -/
@@ -581,24 +595,27 @@ theorem topologicalSpace_finiteAtlasNormedAddCommGroup :
       frameTopology (I := I) (n := k) e U hU :=
   (rfl)
 
-/-- **Completeness of `C^k` sections in the finite-atlas norm.** On a manifold modelled on a
-locally compact space over `ℝ` or `ℂ`, `C^k` sections of a bundle with complete model
-fibre form a Banach space for any covering finite chart-frame norm. -/
-theorem completeSpace_finiteAtlas [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E]
-    [CompleteSpace F] :
+/-- **Completeness of `C^k` sections in the finite-atlas norm.** On a manifold over `ℝ` or `ℂ`
+(including manifolds with boundary or corners), `C^k` sections of a bundle with complete model fibre
+form a Banach space for any covering finite chart-frame norm. -/
+theorem completeSpace_finiteAtlas [IsRCLikeNormedField 𝕜] [CompleteSpace F] :
     letI := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
     CompleteSpace Cₛ^k⟮I; F, V⟯ := by
   let _ := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
-  have htop : (PseudoMetricSpace.toUniformSpace : UniformSpace Cₛ^k⟮I; F, V⟯).toTopologicalSpace =
-      (frameUniformSpace (I := I) (n := k) e U hU).toTopologicalSpace :=
-    (topologicalSpace_finiteAtlasNormedAddCommGroup k e U hU hK).trans
-      (frameUniformSpace_toTopologicalSpace (I := I) (n := k) e U hU).symm
-  have e_unif : (PseudoMetricSpace.toUniformSpace : UniformSpace Cₛ^k⟮I; F, V⟯) =
-      frameUniformSpace (I := I) (n := k) e U hU :=
-    IsUniformAddGroup.ext inferInstance
-      (isUniformAddGroup_frameUniformSpace (I := I) (n := k) e U hU) (by rw [htop])
-  rw [e_unif]
-  exact completeSpace_frameTopology (I := I) (n := k) e U hU (TauCeti.cover_of_extChartAt_cover hK)
+  rcases isEmpty_or_nonempty M with _ | _
+  · infer_instance
+  · have : LocallyCompactSpace E := I.locallyCompactSpace_of_extChartAt_interior_cover hK
+    have htop : (PseudoMetricSpace.toUniformSpace : UniformSpace Cₛ^k⟮I; F, V⟯).toTopologicalSpace =
+        (frameUniformSpace (I := I) (n := k) e U hU).toTopologicalSpace :=
+      (topologicalSpace_finiteAtlasNormedAddCommGroup k e U hU hK).trans
+        (frameUniformSpace_toTopologicalSpace (I := I) (n := k) e U hU).symm
+    have e_unif : (PseudoMetricSpace.toUniformSpace : UniformSpace Cₛ^k⟮I; F, V⟯) =
+        frameUniformSpace (I := I) (n := k) e U hU :=
+      IsUniformAddGroup.ext inferInstance
+        (isUniformAddGroup_frameUniformSpace (I := I) (n := k) e U hU) (by rw [htop])
+    rw [e_unif]
+    exact completeSpace_frameTopology (I := I) (n := k) e U hU
+      (TauCeti.cover_of_extChartAt_cover hK)
 
 end Topology
 
@@ -614,7 +631,8 @@ variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
       (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
         (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
 
-include hK in
+include hK
+
 /-- **The finite-atlas `C^k` norms generate the `C^∞` section topology.** When the relative
 interiors of the compact pieces cover `M`, the countable sequence of finite-atlas `C^k` seminorms
 (`k : ℕ`) generates `ContMDiffSection.frameTopology` on smooth sections, including on manifolds with
@@ -626,11 +644,10 @@ theorem withSeminorms_finiteAtlasSeminorm_infty :
   exact (withSeminorms_finiteAtlasSeminorm_subtype (n := ∞) e U hU hK).congr_equiv
     (Equiv.subtypeUnivEquiv fun k : ℕ ↦ (by simp : (k : ℕ∞ω) ≤ ∞)).symm
 
-include hK in
-/-- On a locally compact model space, the countable sequence of `C^k` norms of any finite
-chart-frame atlas with covering relative interiors generates `ContMDiffSection.frameTopology` on
-smooth sections for *any* covering smooth frame system. -/
-theorem withSeminorms_finiteAtlasSeminorm_infty_of_cover [LocallyCompactSpace E]
+/-- The countable sequence of `C^k` norms of any finite chart-frame atlas with covering relative
+interiors generates `ContMDiffSection.frameTopology` on smooth sections for *any* covering smooth
+frame system. -/
+theorem withSeminorms_finiteAtlasSeminorm_infty_of_cover
     {κ : Type*} (e' : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)]
     (U' : κ → Opens M) (hU' : ∀ j, (U' j : Set M) ⊆ (e' j).baseSet)
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
@@ -644,19 +661,18 @@ end SmoothTopology
 
 section CompactBase
 
+variable (k : ℕ) [ContMDiffVectorBundle k F V I] [IsManifold I k M]
+  {κ : Type*} (e : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e j)]
+  (U : κ → Opens M) (hU : ∀ j, (U j : Set M) ⊆ (e j).baseSet)
+
 /-- **Normability of `C^k` bundle sections on a compact manifold.** On a compact manifold modelled
 on a locally compact space, `ContMDiffSection.frameTopology` on `C^k` sections is generated by a
 single seminorm for every covering smooth frame system, including on manifolds with boundary and
 corners. -/
-theorem isNormableSpace_frameTopology_of_compactSpace (k : ℕ)
-    [ContMDiffVectorBundle k F V I] [IsManifold I k M]
-    [CompactSpace M] [LocallyCompactSpace E]
-    {κ : Type*} (e : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e j)]
-    (U : κ → Opens M) (hU : ∀ j, (U j : Set M) ⊆ (e j).baseSet)
+theorem isNormableSpace_frameTopology_of_compactSpace [CompactSpace M] [LocallyCompactSpace H]
     (hcover : ∀ y : M, ∃ j, y ∈ U j) :
     letI := frameTopology (I := I) (n := k) e U hU
     IsNormableSpace 𝕜 Cₛ^k⟮I; F, V⟯ := by
-  let _ := I.locallyCompactSpace
   let _ := frameTopology (I := I) (n := k) e U hU
   obtain ⟨N, r, c, K, hK⟩ :=
     TauCeti.exists_finite_compact_chart_cover_of_opens_cover (I := I) U hcover

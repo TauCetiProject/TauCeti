@@ -132,7 +132,7 @@ theorem index_formalPointFiltration_eq_mul_tamagawaNumber [IsMinimal O_u (C.base
 
 -- `𝒪[F_u]` is by definition `(ValuativeRel.valuation F_u).valuationSubring`. Register the
 -- discrete-valuation-ring structure also at the valuation-ring spelling used by `tamagawaNumber`.
-private local instance [Finite (A ⧸ u.asIdeal)] :
+private local instance :
     IsDiscreteValuationRing (ValuativeRel.valuation F_u).valuationSubring :=
   inferInstanceAs (IsDiscreteValuationRing 𝒪[F_u])
 

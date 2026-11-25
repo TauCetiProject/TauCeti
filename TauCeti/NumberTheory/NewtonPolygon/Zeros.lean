@@ -84,7 +84,7 @@ theorem IsEntire.exists_norm_eq_and_evalAt_eq_zero [IsAlgClosed K] (hf : f.IsEnt
     rw [newtonSlopeMultiplicity_eq_of_isFiniteFace hface] at hσ
     omega
   -- Prepare `f = e * ω` at the radius `b ^ σ`, at the right end `j` of the face of slope `σ`.
-  have hfd := isDistinguished_of_isFiniteFace v hb hv (hf.isRestricted _) hface
+  have hfd := isDistinguished_of_isFiniteFace v hb hv hface
   obtain ⟨e, ω, he, hω, heω⟩ :=
     hfd.exists_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit hc (hf.isRestricted _)
   -- The unit edge of `f` at `l` has slope `σ`, and `ω` has the same edge.

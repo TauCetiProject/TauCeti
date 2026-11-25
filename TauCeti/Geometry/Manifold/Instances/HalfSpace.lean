@@ -72,6 +72,31 @@ theorem coe_modelWithCornersHalfSpace_symm_apply {q : E × ℝ} (hq : 0 ≤ q.2)
     range (modelWithCornersHalfSpace E) = {q : E × ℝ | 0 ≤ q.2} :=
   Subtype.range_val
 
+/-- The interior of the range of the model is the open half-space of positive heights. -/
+theorem interior_range_modelWithCornersHalfSpace :
+    interior (range (modelWithCornersHalfSpace E)) = {q : E × ℝ | 0 < q.2} := by
+  have h : {q : E × ℝ | 0 ≤ q.2} = Prod.snd ⁻¹' Ici 0 := by ext; simp
+  rw [range_modelWithCornersHalfSpace, h,
+    ← isOpenMap_snd.preimage_interior_eq_interior_preimage continuous_snd, interior_Ici]
+  ext q
+  simp
+
+/-- The frontier of the range of the model is the hyperplane of zero height. -/
+theorem frontier_range_modelWithCornersHalfSpace :
+    frontier (range (modelWithCornersHalfSpace E)) = {q : E × ℝ | q.2 = 0} := by
+  have h : {q : E × ℝ | 0 ≤ q.2} = Prod.snd ⁻¹' Ici 0 := by ext; simp
+  rw [range_modelWithCornersHalfSpace, h,
+    ← isOpenMap_snd.preimage_frontier_eq_frontier_preimage continuous_snd, frontier_Ici]
+  ext q
+  simp
+
+variable {E} in
+/-- The model sends a point to the frontier of its range exactly when its height vanishes. -/
+theorem modelWithCornersHalfSpace_mem_frontier_range_iff (q : {q : E × ℝ | 0 ≤ q.2}) :
+    modelWithCornersHalfSpace E q ∈ frontier (range (modelWithCornersHalfSpace E)) ↔
+      q.val.2 = 0 := by
+  rw [frontier_range_modelWithCornersHalfSpace, modelWithCornersHalfSpace_apply, mem_ofPred_eq]
+
 /-- The range of the model, the closed half-space, is a convex polyhedron: it is cut out by the
 single inequality `-q.2 ≤ 0`. -/
 theorem isConvexPolyhedron_range_modelWithCornersHalfSpace :

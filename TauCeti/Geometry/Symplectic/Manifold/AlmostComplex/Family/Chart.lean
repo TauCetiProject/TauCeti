@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt.ChartSource
 
 /-!
 # Domain-dependent almost complex structures in product charts
@@ -27,8 +28,13 @@ is the prescribed field.
 
 * `ContMDiffAlmostComplexStructureFamily.inChart`: the coordinate expression of a family.
 * `ContMDiffAlmostComplexStructureFamily.contDiffOn_inChart`: its joint regularity on the target.
-* `ContMDiffAlmostComplexStructureFamily.inChart_mk`: slices are chart fields of frozen structures.
+* `ContMDiffAlmostComplexStructureFamily.inChart_mk`: slices are chart fields of frozen structures;
+  over a normed space, of the frozen smooth structures
+  (`ContMDiffAlmostComplexStructureFamily.inChart_mk_eq_inChart_freezeSmooth`), which are therefore
+  jointly smooth (`ContMDiffAlmostComplexStructureFamily.contDiffOn_inChart_freezeSmooth`).
 * `ContMDiffAlmostComplexStructureFamily.inChart_extChartAt_eq_conj`: conjugation on overlaps.
+* `ContMDiffAlmostComplexStructureFamily.inChart_chartSourceCentre`: on a product of chart sources,
+  the coordinate expression at the centre is conjugation by the target tangent frame.
 * `ContMDiffAlmostComplexStructureFamily.ofChart`, `inChart_ofChart`: reconstruction on the
   product of the intrinsic chart sources from a field on the product chart target.
 * `ContMDiffAlmostComplexStructureFamily.inChart_ofModel`: on a model target, the coordinate
@@ -36,6 +42,15 @@ is the prescribed field.
 * `ContMDiffAlmostComplexStructureFamily.chartField`: the family read in a chart `φ` of the
   domain and a chart `ψ` of the target with values in a normed space, as the pushforward
   `dψ ∘ J(φ⁻¹ z, ψ⁻¹ v) ∘ dψ⁻¹`; this is the coefficient of coordinate Cauchy–Riemann equations.
+  Reparametrizing along `g` with `g ∘ φ'⁻¹ = φ⁻¹` does not change it
+  (`ContMDiffAlmostComplexStructureFamily.chartField_comp`).
+* `ContMDiffAlmostComplexStructureFamily.chartField_symm_trans_comp_fderiv`: the derivative of a
+  transition between two charts of the target intertwines the structures read in them.
+* `ContMDiffAlmostComplexStructureFamily.chartField_chartAt`: over a domain modelled on `ℂ`, in
+  the preferred charts and on a boundaryless target, the structure read in charts is the
+  coordinate expression `inChart`; hence it is jointly `Cⁿ` on the product of the chart targets
+  (`ContMDiffAlmostComplexStructureFamily.contDiffOn_chartField_chartAt`) and squares to minus
+  the identity there (`ContMDiffAlmostComplexStructureFamily.chartField_chartAt_apply_apply`).
 
 ## References
 
@@ -78,6 +93,23 @@ theorem inChart_mk (J : ContMDiffAlmostComplexStructureFamily I M IP P n) (q : P
   congr 1
   ext v
   exact (J.freeze_apply _ _ v).symm
+
+/-- On a product of chart sources, a domain-dependent structure read in the product chart at the
+centre is the structure conjugated by the tangent frame of the target chart source. -/
+theorem inChart_chartSourceCentre (q : P × M)
+    (J : ContMDiffAlmostComplexStructureFamily I (chartSource (H := H) q.2) IP
+      (chartSource (H := HP) q.1) n)
+    (r : chartSource (H := HP) q.1 × chartSource (H := H) q.2) :
+    J.inChart (chartSourceCentre (H := HP) (H' := H) q)
+        (extChartAt (IP.prod I) (chartSourceCentre (H := HP) (H' := H) q) r) =
+      ((chartFrame (I := I) q.2).continuousLinearMapAt ℝ r.2).comp
+        ((J.tangentEndomorphism r).comp ((chartFrame (I := I) q.2).symmL ℝ r.2)) := by
+  rw [extChartAt_prod_apply, inChart_mk, (extChartAt IP _).left_inv,
+    ContMDiffAlmostComplexStructure.inChart_chartSource, freeze_toEndomorphism_apply]
+  · congr 2
+    ext v
+    exact (tangentEndomorphism_apply J r v).symm
+  · exact mem_extChartAt_chartSource_source q.1 r.1
 
 /-- The coordinate expression of a family is jointly `Cⁿ` on the whole extended product chart
 target. For models with corners this is regularity within that target. -/
@@ -182,12 +214,12 @@ def ofChart (q : P × M) (A : EP × E → E →L[ℝ] E)
         ((chartFrame (I := I) q.2).continuousLinearMapAt ℝ r.2)))
     (by
       have hmem := mem_extChartAt_prod_source (I := IP) (I' := I) q
-      have hbase := TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2
       let eh := trivializationAt (E →L[ℝ] E)
         (fun y : chartSource (H := H) q.2 ↦ TangentSpace I y →L[ℝ] TangentSpace I y)
         (⟨q.2, mem_chart_source H q.2⟩ : chartSource (H := H) q.2)
       refine (eh.contMDiff_iff fun r ↦ eh.mem_source.2 ?_).2 ⟨contMDiff_snd, ?_⟩
-      · exact ⟨hbase.symm ▸ Set.mem_univ _, hbase.symm ▸ Set.mem_univ _⟩
+      · exact ⟨TangentBundle.mem_chartFrame_baseSet q.2 _,
+          TangentBundle.mem_chartFrame_baseSet q.2 _⟩
       have hg : ContMDiff (IP.prod I) 𝓘(ℝ, EP × E) n
           (fun r : chartSource (H := HP) q.1 × chartSource (H := H) q.2 ↦
             extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M))) :=
@@ -196,8 +228,7 @@ def ofChart (q : P × M) (A : EP × E → E →L[ℝ] E)
           (fun r ↦ by simpa only [extChartAt_source] using hmem r)
       refine (hA.contMDiffOn.comp_contMDiff hg fun r ↦
         (extChartAt (IP.prod I) q).map_source (hmem r)).congr fun r ↦ ?_
-      have hr : r.2 ∈ (chartFrame (I := I) q.2).baseSet :=
-        hbase.symm ▸ Set.mem_univ _
+      have hr := TangentBundle.mem_chartFrame_baseSet (I := I) q.2 r.2
       ext v
       simp only [eh, hom_trivializationAt, Trivialization.continuousLinearMap_apply,
         Function.comp_apply, ContinuousLinearMap.comp_apply]
@@ -205,7 +236,7 @@ def ofChart (q : P × M) (A : EP × E → E →L[ℝ] E)
         (chartFrame (I := I) q.2).continuousLinearMapAt_symmL hr])
     (fun r v ↦ by
       have hr : r.2 ∈ (chartFrame (I := I) q.2).baseSet :=
-        (TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2).symm ▸ Set.mem_univ _
+        TangentBundle.mem_chartFrame_baseSet (I := I) q.2 _
       simp only [ContinuousLinearMap.comp_apply]
       rw [(chartFrame (I := I) q.2).continuousLinearMapAt_symmL hr,
         hAA _ ((extChartAt (IP.prod I) q).map_source
@@ -249,7 +280,7 @@ theorem inChart_ofChart (q : P × M) (A : EP × E → E →L[ℝ] E)
         (extChartAt (IP.prod I) (chartSourceCentre q) r) =
       A (extChartAt (IP.prod I) q ((r.1 : P), (r.2 : M))) := by
   have hr : r.2 ∈ (chartFrame (I := I) q.2).baseSet :=
-    (TangentBundle.trivializationAt_chartSource_baseSet (I := I) q.2).symm ▸ Set.mem_univ _
+    TangentBundle.mem_chartFrame_baseSet (I := I) q.2 _
   rw [inChart, (extChartAt (IP.prod I) (chartSourceCentre q)).left_inv
     (mem_extChartAt_chartSourceCentre_source q r), ofChart_tangentEndomorphism]
   ext v
@@ -282,6 +313,31 @@ theorem inChart_ofModel (A : P × V → V →L[ℝ] V)
 
 end Model
 
+section NormedSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- For a smooth family over a normed space, whose chart is the identity, the slice of the
+coordinate expression at the parameter `w` is the chart field of the smooth structure frozen at
+`w`. -/
+theorem inChart_mk_eq_inChart_freezeSmooth
+    (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, F) F ⊤) (q : F × M) (w : F) (y : E) :
+    J.inChart q (w, y) = (J.freezeSmooth w).inChart q.2 y := by
+  simp [inChart_mk, ContMDiffAlmostComplexStructure.inChart_def,
+    SmoothAlmostComplexStructure.inChart_def]
+
+/-- For a smooth family over a normed space, the chart fields of the frozen smooth structures are
+jointly smooth in the parameter and the chart coordinate on the chart target. -/
+theorem contDiffOn_inChart_freezeSmooth
+    (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, F) F ⊤) (x : M) :
+    ContDiffOn ℝ ∞ (fun q : F × E ↦ (J.freezeSmooth q.1).inChart x q.2)
+      (Set.univ ×ˢ (extChartAt I x).target) := by
+  have h := J.contDiffOn_inChart ((0 : F), x)
+  rw [extChartAt_prod_target, extChartAt_model_space_eq_id, PartialEquiv.refl_target] at h
+  exact h.congr fun q _ ↦ (J.inChart_mk_eq_inChart_freezeSmooth (0, x) q.1 q.2).symm
+
+end NormedSpace
+
 section ChartField
 
 variable {D G : Type*} [TopologicalSpace D] [NormedAddCommGroup G] [NormedSpace ℝ G]
@@ -299,6 +355,21 @@ theorem chartField_apply (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
     (φ : OpenPartialHomeomorph P D) (ψ : OpenPartialHomeomorph M G) (z : D) (v : G) :
     J.chartField φ ψ z v = (J.freeze (φ.symm z)).chartPushforward ψ v :=
   (rfl)
+
+/-- **Changing the chart of the target.** For two charts `ψ₁` and `ψ₂` of `M` with values in a
+normed space and a point `w` of the source of the transition `Θ = ψ₂ ∘ ψ₁⁻¹`, the derivative of
+`Θ` at `w` intertwines the structure read in `φ` and `ψ₁` at `(z, w)` with the structure read in
+`φ` and `ψ₂` at `(z, Θ w)`, provided `ψ₁` is differentiable at `ψ₁⁻¹ w`, `ψ₂⁻¹` at `Θ w` and `Θ`
+at `w`. -/
+theorem chartField_symm_trans_comp_fderiv (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (φ : OpenPartialHomeomorph P D) (z : D) {ψ₁ ψ₂ : OpenPartialHomeomorph M G} {w : G}
+    (hw : w ∈ (ψ₁.symm.trans ψ₂).source) (hψ₁ : MDifferentiableAt I 𝓘(ℝ, G) ψ₁ (ψ₁.symm w))
+    (hψ₂s : MDifferentiableAt 𝓘(ℝ, G) I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
+    (hΘ : DifferentiableAt ℝ (ψ₁.symm.trans ψ₂) w) :
+    (J.chartField φ ψ₂ z (ψ₁.symm.trans ψ₂ w)).comp (fderiv ℝ (ψ₁.symm.trans ψ₂) w) =
+      (fderiv ℝ (ψ₁.symm.trans ψ₂) w).comp (J.chartField φ ψ₁ z w) := by
+  rw [chartField_apply, chartField_apply]
+  exact (J.freeze (φ.symm z)).chartPushforward_symm_trans_comp_fderiv hw hψ₁ hψ₂s hΘ
 
 /-- A structure independent of the domain point reads in charts as its pushforward along the
 chart of `M`. -/
@@ -326,6 +397,17 @@ theorem chartField_neg (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
   funext z v
   simp [chartField_apply]
 
+/-- **Transport in charts.** If `φ'` is a chart of `Q` and `φ` a chart of `P` with
+`g ∘ φ'⁻¹ = φ⁻¹`, the reparametrized family `J ∘ g` read in `φ'` is `J` read in `φ`. -/
+theorem chartField_comp {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
+    [TopologicalSpace HQ] {IQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q]
+    [ChartedSpace HQ Q] (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (g : C^n⟮IQ, Q; IP, P⟯) {φ' : OpenPartialHomeomorph Q D} {φ : OpenPartialHomeomorph P D}
+    (hφ : g ∘ φ'.symm = φ.symm) (ψ : OpenPartialHomeomorph M G) :
+    (J.comp g).chartField φ' ψ = J.chartField φ ψ := by
+  funext z v
+  rw [chartField_apply, chartField_apply, freeze_comp, ← hφ, Function.comp_apply]
+
 /-- On a normed space, read in the identity chart, a structure is its value at the domain point
 `φ⁻¹ z`. -/
 @[simp]
@@ -338,6 +420,56 @@ theorem chartField_refl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   rw [chartField_apply, ContMDiffAlmostComplexStructure.chartPushforward_refl]
 
 end ChartField
+
+section PreferredCharts
+
+variable [I.Boundaryless] {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y]
+
+/-- In the preferred charts, a domain-dependent structure read through `chartField` is its
+coordinate expression `inChart` on the extended product chart target. -/
+theorem chartField_chartAt (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) Y n)
+    (x : Y) (y : M) (z : ℂ) {v : E} (hv : v ∈ (extChartAt I y).target) :
+    J.chartField (chartAt ℂ x) ((chartAt H y).extendTrans I (Homeomorph.refl E)) z v =
+      J.inChart (x, y) (z, v) := by
+  have hsymm : (extChartAt 𝓘(ℝ, ℂ) x).symm z = (chartAt ℂ x).symm z := by simp
+  rw [chartField_apply, inChart_mk, hsymm,
+    ContMDiffAlmostComplexStructure.chartPushforward_eq_pullbackEnd_inChart _ y _
+      (OpenPartialHomeomorph.refl E) hv ?_ ?_ differentiableAt_id differentiableAt_id]
+  · ext w
+    simp
+  · refine Filter.EventuallyEq.of_eq ?_
+    rw [OpenPartialHomeomorph.coe_extendTrans_refl]
+    funext w
+    simp [extChartAt]
+  · refine Filter.EventuallyEq.of_eq ?_
+    rw [OpenPartialHomeomorph.coe_symm_extendTrans_refl]
+    funext w
+    simp [extChartAt]
+
+/-- In the preferred charts, a domain-dependent structure read through `chartField` is jointly
+`Cⁿ` on the product of the chart targets. -/
+theorem contDiffOn_chartField_chartAt [IsManifold 𝓘(ℝ, ℂ) n Y]
+    (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) Y n) (x : Y) (y : M) :
+    ContDiffOn ℝ n (fun q : ℂ × E ↦
+        J.chartField (chartAt ℂ x) ((chartAt H y).extendTrans I (Homeomorph.refl E)) q.1 q.2)
+      ((chartAt ℂ x).target ×ˢ (extChartAt I y).target) := by
+  have h := J.contDiffOn_inChart (x, y)
+  rw [extChartAt_prod_target] at h
+  refine (h.congr fun q hq ↦ J.chartField_chartAt x y q.1 hq.2).mono fun q hq ↦ ⟨?_, hq.2⟩
+  simpa using hq.1
+
+/-- In the preferred charts, a domain-dependent structure read through `chartField` squares to
+minus the identity on the target of the chart of `M`. -/
+theorem chartField_chartAt_apply_apply
+    (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) Y n) (x : Y) (y : M) (z : ℂ)
+    {v : E} (hv : v ∈ (extChartAt I y).target) (w : E) :
+    J.chartField (chartAt ℂ x) ((chartAt H y).extendTrans I (Homeomorph.refl E)) z v
+        (J.chartField (chartAt ℂ x) ((chartAt H y).extendTrans I (Homeomorph.refl E)) z v w) =
+      -w := by
+  rw [J.chartField_chartAt x y z hv, inChart_mk]
+  exact (J.freeze _).inChart_inChart y hv w
+
+end PreferredCharts
 
 end ContMDiffAlmostComplexStructureFamily
 

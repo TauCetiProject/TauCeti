@@ -24,10 +24,26 @@ limit zero. An atom of `F` at zero is allowed: removing `dirac 0` removes only t
 artificial arrival, not genuine zero-increment arrivals. No continuity of `h` is
 required, and both endpoints are retained in the convolution integral.
 
+For a forcing function that is merely decreasing up to a finite age cutoff `A`, without
+any sign or global integrability assumption, convolution of its truncation
+`(Iio A).indicator h` with the renewal measure converges to the reciprocal extended mean
+times `∫ x in 0..A, h x.toNNReal`.
+
 The nonlattice Blackwell theorem supplies interval limits; the monotone-forcing
 transfer theorem supplies the step-function approximation and uniform tail control.
 These results apply directly to renewal equations with decreasing forcing, including
 excess-life tail probabilities.
+
+## Main statements
+
+* `MeasureTheory.Measure.tendsto_renewalConv_indicator_Iio`: bounded-age decreasing
+  forcing limit for nonlattice interarrival laws.
+* `MeasureTheory.Measure.tendsto_renewalConv_sub_dirac`: **key renewal theorem**
+  excluding the artificial arrival `dirac 0`.
+* `MeasureTheory.Measure.tendsto_renewalConv`: **key renewal theorem** for the full
+  renewal measure.
+* `TauCeti.Probability.tendsto_of_eq_add_renewalConv`: convergence at infinity of
+  measurable, locally bounded solutions of `g = h + g ∗ F`.
 
 ## References
 

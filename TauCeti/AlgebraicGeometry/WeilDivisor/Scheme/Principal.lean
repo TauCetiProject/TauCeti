@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 
@@ -36,7 +37,7 @@ This file completes the global step left open by
 
 public section
 
-open AlgebraicGeometry Order TopologicalSpace
+open CategoryTheory _root_.AlgebraicGeometry Order TopologicalSpace
 
 namespace TauCeti
 
@@ -108,6 +109,35 @@ lemma add_principalDivisor_nonneg_iff
   rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
     WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
   omega
+
+/-- The coefficient of `D - div g` at a codimension-one point `x` is the coefficient of `D` minus
+the order of vanishing of `g` at `x`. -/
+lemma coeff_sub_principalDivisor (D : SchemeWeilDivisor X) (g : Additive X.functionFieldˣ)
+    (x : CodimensionOnePoint X) :
+    WeilDivisor.coeff (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) x =
+      WeilDivisor.coeff D x -
+        X.ord ((Additive.toMul g : X.functionFieldˣ) : X.functionField) x := by
+  rw [WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
+
+/-- Restricting a principal Weil divisor on `X` along a nonempty open immersion `j : U ⟶ X` gives
+the principal Weil divisor of the pulled-back rational function. -/
+theorem pullback_principalDivisor_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X)
+    [IsOpenImmersion j] [Nonempty U] (f : Additive X.functionFieldˣ) :
+    letI : IsIntegral U := isIntegral_of_isOpenImmersion j
+    letI : IsNoetherian U := isNoetherian_of_isOpenImmersion j
+    WeilDivisor.pullback (CodimensionOnePoint.mapOfIsOpenImmersion_injective j)
+        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor f) =
+      (WeilDivisor.OrderSystem.ofScheme U).principalDivisor
+        (Additive.ofMul (Units.map j.functionFieldMap.hom.toMonoidHom f.toMul)) := by
+  have : IsIntegral U := isIntegral_of_isOpenImmersion j
+  have : IsNoetherian U := isNoetherian_of_isOpenImmersion j
+  ext u
+  rw [WeilDivisor.coeff_pullback, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
+    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply, orderAt_apply,
+    CodimensionOnePoint.coe_mapOfIsOpenImmersion]
+  exact (Scheme.ord_functionFieldMap j _ u.val).symm
 
 end SchemeWeilDivisor
 

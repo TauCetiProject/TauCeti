@@ -43,6 +43,8 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   `gaugeFixedOperatorSymbol` and `gaugeFixedAdjointSymbol`; both symbols scale norms by the norm
   of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`), and the
   adjoint symbol is minus the transpose of the operator symbol (`inner_gaugeFixedOperatorSymbol`).
+* `norm_sq_gaugeFixedOperator_fun_smul_le`: the resulting Leibniz bound
+  `|L_x (w y)|² ≤ 2 w² |L_x y|² + 2 |dw|² |y|²`.
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
@@ -67,6 +69,10 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
+* `gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq`: a `C¹` weak solution of
+  `L_x y = g`, tested against smooth compactly supported fields, solves it almost everywhere, by
+  integration by parts and the fundamental lemma of the calculus of variations
+  (`TauCeti.ae_eq_of_forall_integral_inner_eq`).
 * `forall_integral_inner_gaugeFixedAdjoint_eq_iff`: a `C¹` field is a weak solution of
   `L_x y = f`, for continuous `f`, exactly when it is a classical solution.
 * `gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`: `L_x` is `L_x'` plus multiplication by
@@ -151,6 +157,12 @@ theorem gaugeFixedOperator_apply_two (x y : ℂ → EuclideanSpace ℝ (Fin 4)) 
 theorem gaugeFixedOperator_apply_three (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     gaugeFixedOperator x y z 3 = linearizedEquation x y z 2 := by
   rfl
+
+/-- The rows of `L_x` after the gauge-fixing row are those of the linearized equation. -/
+@[simp]
+theorem gaugeFixedOperator_apply_succ (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) (i : Fin 3) :
+    gaugeFixedOperator x y z i.succ = linearizedEquation x y z i := by
+  fin_cases i <;> rfl
 
 /-- The first connection component of `L_x*`. -/
 @[simp]
@@ -520,6 +532,22 @@ theorem gaugeFixedOperator_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
       gaugeFixedOperator_apply_one, gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three,
       hd] <;> ring
 
+/-- The Leibniz rule bounds the gauge-fixed operator on a weighted variation:
+`|L_x (w y)|² ≤ 2 w² |L_x y|² + 2 |dw|² |y|²`. No equation for `x` is needed. -/
+theorem norm_sq_gaugeFixedOperator_fun_smul_le (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ} {z : ℂ} (hw : DifferentiableAt ℝ w z)
+    (hy : DifferentiableAt ℝ y z) :
+    ‖gaugeFixedOperator x (fun t ↦ w t • y t) z‖ ^ 2 ≤
+      2 * (w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2) + 2 * (‖fderiv ℝ w z‖ ^ 2 * ‖y z‖ ^ 2) := by
+  rw [gaugeFixedOperator_fun_smul x hw hy]
+  have ha : ‖w z • gaugeFixedOperator x y z‖ ^ 2 = w z ^ 2 * ‖gaugeFixedOperator x y z‖ ^ 2 := by
+    rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
+  rw [← ha, ← norm_sq_gaugeFixedOperatorSymbol]
+  nlinarith [norm_add_le (w z • gaugeFixedOperator x y z)
+      (gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z)),
+    sq_nonneg (‖w z • gaugeFixedOperator x y z‖ - ‖gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z)‖),
+    norm_nonneg (w z • gaugeFixedOperator x y z + gaugeFixedOperatorSymbol (fderiv ℝ w z) (y z))]
+
 /-- The infinitesimal gauge action `d₀ f` is differentiable at a point where the phase `f` is
 `C²` and the section coordinates of the field are differentiable. -/
 theorem differentiableAt_gaugeDirection {x : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ} {z : ℂ}
@@ -809,18 +837,27 @@ theorem continuous_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y)
     Continuous (gaugeFixedAdjoint x y) :=
   (contDiff_gaugeFixedAdjoint (n := 0) (contDiff_zero.mpr hx) (by simpa using hy)).continuous
 
-/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
-theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
-    HasCompactSupport (gaugeFixedAdjoint x y) := by
-  apply hy.mono'
-  intro z hz
-  by_contra hn
+/-- Outside `tsupport y`, `L_x* y` vanishes, with no regularity assumption on the field. -/
+theorem gaugeFixedAdjoint_eq_zero_of_notMem_tsupport {z : ℂ} (hz : z ∉ tsupport y) :
+    gaugeFixedAdjoint x y z = 0 := by
   have hd (i : Fin 4) : fderiv ℝ (fun w ↦ y w i) z = 0 :=
     fderiv_of_notMem_tsupport ℝ fun h ↦
-      hn (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
-  apply hz
+      hz (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
   ext i
-  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hn]
+  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hz]
+
+/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
+theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
+    HasCompactSupport (gaugeFixedAdjoint x y) :=
+  hy.mono' fun _ hz ↦ not_not.1 fun hn ↦ hz (gaugeFixedAdjoint_eq_zero_of_notMem_tsupport hn)
+
+/-- `L_x* y` lies in every `Lᵖ` space, for a continuous field and a compactly supported `C¹`
+argument. -/
+theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y)
+    (hyc : HasCompactSupport y) {p : ENNReal} {μ : Measure ℂ} [IsFiniteMeasureOnCompacts μ] :
+    MemLp (gaugeFixedAdjoint x y) p μ :=
+  (continuous_gaugeFixedAdjoint hx hy).memLp_of_hasCompactSupport
+    (hasCompactSupport_gaugeFixedAdjoint hyc)
 
 /-- The gauge-fixed operator is `Cⁿ` when the background is `Cⁿ` and the argument is `Cⁿ⁺¹`. -/
 theorem contDiff_gaugeFixedOperator {n : WithTop ℕ∞}
@@ -899,9 +936,10 @@ private theorem inner_gaugeFixedOperator_eq {x y η : ℂ → EuclideanSpace ℝ
   ring
 
 /-- **`d₀*` is the formal adjoint of the infinitesimal gauge action**: `∫ f d₀* y = ∫ ⟪d₀ f, y⟫`
-for a continuous field `x`, a `C¹` variation `y` and a compactly supported `C¹` phase `f`. -/
+for a field `x`, a `C¹` variation `y` and a compactly supported `C¹` phase `f`. When `x` is
+not continuous, both integrals may be zero because `f d₀* y` is not integrable. -/
 theorem integral_mul_gaugeAdjoint {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ}
-    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) :
+    (hy : ContDiff ℝ 1 y) (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) :
     ∫ z, f z * gaugeAdjoint x y z ∂μ = ∫ z, ⟪gaugeDirection x f z, y z⟫ ∂μ := by
   have hyi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ y w i :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :)
@@ -915,18 +953,21 @@ theorem integral_mul_gaugeAdjoint {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {f 
     rw [mul_gaugeAdjoint_eq (hy.differentiable one_ne_zero z) (hf.differentiable one_ne_zero z)]
     ring
   simp_rw [h]
-  rw [integral_sub _ (hint 1 I), integral_sub _ (hint 0 1),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 0) (hgc 0),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 1) (hgc 1), sub_zero, sub_zero]
-  · exact (hf.continuous.mul (continuous_gaugeAdjoint hx hy)).integrable_of_hasCompactSupport
-      hfc.mul_right
-  · exact ((hf.continuous.mul (continuous_gaugeAdjoint hx hy)).integrable_of_hasCompactSupport
-      hfc.mul_right).sub (hint 0 1)
+  by_cases hmain : Integrable (fun z ↦ f z * gaugeAdjoint x y z) μ
+  · rw [integral_sub _ (hint 1 I), integral_sub hmain (hint 0 1),
+      integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 0) (hgc 0),
+      integral_fderiv_apply_eq_zero_of_hasCompactSupport (hg 1) (hgc 1), sub_zero, sub_zero]
+    exact hmain.sub (hint 0 1)
+  · rw [integral_undef hmain, integral_undef]
+    intro hn
+    exact hmain (((hn.add (hint 1 I)).add (hint 0 1)).congr
+      (ae_of_all _ fun z ↦ by simp only [Pi.add_apply]; ring))
 
 /-- **`L_x*` is the formal adjoint of the gauge-fixed operator**: `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`
-for a continuous field `x` and `C¹` fields `y`, `η`, one of which is compactly supported. -/
+for a field `x` and `C¹` fields `y`, `η`, one of which is compactly supported. When `x` is not
+continuous, both integrals may be zero because `⟪y, L_x* η⟫` is not integrable. -/
 theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hη : ContDiff ℝ 1 η)
+    (hy : ContDiff ℝ 1 y) (hη : ContDiff ℝ 1 η)
     (hc : HasCompactSupport y ∨ HasCompactSupport η) :
     ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ = ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ := by
   have hyi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ y w i :=
@@ -942,39 +983,57 @@ theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (
     have := hyi; have := hηi
     fun_prop
   -- The currents `V₁`, `V₂` and the integrand are supported in the support of `y` or of `η`.
-  obtain ⟨hV₁c, hV₂c, hmainc⟩ : HasCompactSupport V₁ ∧ HasCompactSupport V₂ ∧
-      HasCompactSupport fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫ := by
+  obtain ⟨hV₁c, hV₂c⟩ : HasCompactSupport V₁ ∧ HasCompactSupport V₂ := by
     rcases hc with hyc | hηc
     · have hyic (i : Fin 4) : HasCompactSupport fun w ↦ y w i :=
         hyc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) i) (map_zero _)
       exact ⟨(((hyic 0).mul_right.sub (hyic 1).mul_right).add (hyic 2).mul_right).add
           (hyic 3).mul_right,
         (((hyic 1).mul_right.add (hyic 0).mul_right).sub (hyic 3).mul_right).add
-          (hyic 2).mul_right,
-        hyc.mono fun z hz ↦ fun hyz ↦ hz (by simp [hyz])⟩
+          (hyic 2).mul_right⟩
     · have hηic (i : Fin 4) : HasCompactSupport fun w ↦ η w i :=
         hηc.comp_left (g := EuclideanSpace.proj (𝕜 := ℝ) i) (map_zero _)
       exact ⟨(((hηic 0).mul_left.sub (hηic 1).mul_left).add (hηic 2).mul_left).add
           (hηic 3).mul_left,
         (((hηic 0).mul_left.add (hηic 1).mul_left).sub (hηic 2).mul_left).add
-          (hηic 3).mul_left,
-        (hasCompactSupport_gaugeFixedAdjoint (x := x) hηc).mono fun z hz ↦ fun hηz ↦
-          hz (by simp [hηz])⟩
+          (hηic 3).mul_left⟩
   have hint (V : ℂ → ℝ) (hV : ContDiff ℝ 1 V) (hVc : HasCompactSupport V) (v : ℂ) :
       Integrable (fun z ↦ fderiv ℝ V z v) μ :=
     ((hV.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
       (hVc.fderiv_apply (𝕜 := ℝ) v)
-  have hmain : Integrable (fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫) μ :=
-    (hy.continuous.inner (continuous_gaugeFixedAdjoint hx hη)).integrable_of_hasCompactSupport
-      hmainc
   have h (z : ℂ) : ⟪gaugeFixedOperator x y z, η z⟫ = ⟪y z, gaugeFixedAdjoint x η z⟫ +
       fderiv ℝ V₁ z 1 + fderiv ℝ V₂ z I :=
     inner_gaugeFixedOperator_eq (hy.differentiable one_ne_zero z) (hη.differentiable one_ne_zero z)
   simp_rw [h]
-  rw [integral_add _ (hint V₂ hV₂ hV₂c I), integral_add hmain (hint V₁ hV₁ hV₁c 1),
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₁ hV₁c,
-    integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₂ hV₂c, add_zero, add_zero]
-  exact hmain.add (hint V₁ hV₁ hV₁c 1)
+  by_cases hmain : Integrable (fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫) μ
+  · rw [integral_add _ (hint V₂ hV₂ hV₂c I), integral_add hmain (hint V₁ hV₁ hV₁c 1),
+      integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₁ hV₁c,
+      integral_fderiv_apply_eq_zero_of_hasCompactSupport hV₂ hV₂c, add_zero, add_zero]
+    exact hmain.add (hint V₁ hV₁ hV₁c 1)
+  · rw [integral_undef hmain, integral_undef]
+    intro hn
+    exact hmain (((hn.sub (hint V₂ hV₂ hV₂c I)).sub (hint V₁ hV₁ hV₁c 1)).congr
+      (ae_of_all _ fun z ↦ by simp only [Pi.sub_apply]; ring))
+
+open scoped ContDiff in
+/-- **`C¹` weak solutions are classical.** Let `x` be continuous, `y` a `C¹` field and `g` locally
+integrable for an additive Haar measure `μ`. If `∫ ⟪y, L_x* η⟫ = ∫ ⟪g, η⟫` for every smooth
+compactly supported test field `η`, then `L_x y = g` almost everywhere. -/
+theorem gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq
+    {x y g : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) (hy : ContDiff ℝ 1 y)
+    (hg : LocallyIntegrable g μ)
+    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪g z, η z⟫ ∂μ) :
+    gaugeFixedOperator x y =ᵐ[μ] g := by
+  have hLy : Continuous (gaugeFixedOperator x y) := continuous_gaugeFixedOperator hx hy
+  have h := ae_eq_of_forall_integral_inner_eq (Ω := ⊤)
+    (hLy.locallyIntegrable.locallyIntegrableOn _) (hg.locallyIntegrableOn _) fun φ ↦ ?_
+  · simpa using h
+  -- Test the weak equation against `φ`, moving `L_x` onto it by integration by parts.
+  simp only [real_inner_comm _ (φ _)]
+  rw [integral_inner_gaugeFixedOperator hy (φ.contDiff.of_le (by simp))
+    (.inr φ.hasCompactSupport)]
+  exact hweak φ φ.contDiff φ.hasCompactSupport
 
 open scoped ContDiff in
 /-- **Weak solutions in `C¹` are classical.** Let `x` be a continuous field, `y` a `C¹` field
@@ -986,23 +1045,12 @@ theorem forall_integral_inner_gaugeFixedAdjoint_eq_iff {x y f : ℂ → Euclidea
     (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ↔
       ∀ z, gaugeFixedOperator x y z = f z := by
+  refine ⟨fun hweak ↦ congrFun (((continuous_gaugeFixedOperator hx hy).ae_eq_iff_eq μ hf).1
+    (gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq hx hy hf.locallyIntegrable
+      hweak)), fun heq η hη hηc ↦ ?_⟩
   -- Integration by parts moves `L_x*` from the compactly supported test field onto `y`.
-  have hparts (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ ∞ η)
-      (hηc : HasCompactSupport η) :
-      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ :=
-    (integral_inner_gaugeFixedOperator hx hy (hη.of_le (by exact_mod_cast le_top))
-      (.inr hηc)).symm
-  refine ⟨fun hweak ↦ ?_, fun heq η hη hηc ↦ by simp_rw [hparts η hη hηc, heq]⟩
-  -- Both sides are continuous and pair equally with every test field, so they agree.
-  have hL := continuous_gaugeFixedOperator hx hy
-  have hae : gaugeFixedOperator x y =ᵐ[μ] f := by
-    simpa using ae_eq_of_forall_integral_inner_eq (Ω := ⊤)
-      (hL.locallyIntegrable.locallyIntegrableOn _) (hf.locallyIntegrable.locallyIntegrableOn _)
-      fun φ ↦ by
-        have h := hweak φ φ.contDiff φ.hasCompactSupport
-        rw [hparts φ φ.contDiff φ.hasCompactSupport] at h
-        simpa only [real_inner_comm] using h
-  exact congrFun ((hL.ae_eq_iff_eq μ hf).1 hae)
+  rw [← integral_inner_gaugeFixedOperator hy (hη.of_le (by exact_mod_cast le_top)) (.inr hηc)]
+  simp_rw [heq]
 
 end Adjoint
 

@@ -76,6 +76,12 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
 
 * `TauCeti.waldschmidtPointMap_snoc`: the coefficient vector `(β₁, …, β_{m-1}, -1)` is
   sent to `-β₀ e₀`.
+* `TauCeti.comap_waldschmidtPointMap_map_sup`: a subspace `V` of indices containing the
+  coefficient vector is the preimage of `V · y + R e₀` under the grid point map.
+* `TauCeti.exists_eq_map_waldschmidtPointMap_sup`: every subspace of `V · y + R e₀` containing
+  `e₀` is `V' · y + R e₀` for a subspace `V' ≤ V` containing the coefficient vector.
+* `TauCeti.finrank_map_waldschmidtPointMap_sup`: if `V` contains the coefficient vector, then
+  `V · y + R e₀` has the same rank as `V`.
 * `TauCeti.add_sum_mul_eq_neg_mul_waldschmidtLinearForm`: a linear form with nonzero last
   coefficient `cₘ` is `-cₘ` times the normalized linear form.
 * `TauCeti.add_sum_mul_eq_neg_mul_waldschmidtLinearForm_comp_swap`: normalization at an
@@ -86,6 +92,9 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
   `TauCeti.intCast_mul_waldschmidtNormalize_intCast_mem_range_intCast`: the products `cₘ βᵢ`
   lie in every subring containing `c₀, …, c_{m-1}`; for integer coefficients they are integers.
 * `TauCeti.snoc_waldschmidtNormalize_neg_one`: `(β₀, …, β_{m-1}, -1) = (-cₘ)⁻¹ (c₀, …, cₘ)`.
+* `TauCeti.mul_waldschmidtPoint_waldschmidtNormalize_zero`,
+  `TauCeti.mul_waldschmidtPoint_waldschmidtNormalize_succ`: the coordinates of the grid points
+  of the normalized coefficients, times the denominator `cₘ`.
 * `TauCeti.iteratedDeriv_waldschmidtFunction`: the entry identity
   `∂^σ/∂z₀^σ (F(z) exp(t ⟨λ, z⟩))|_{z = s · y} = γ exp(t sₘ Λ)`.
 * `TauCeti.waldschmidtOperatorEntry_eq_sum_hasseDeriv`: the Leibniz formula
@@ -288,6 +297,33 @@ theorem waldschmidtPoint_map {S : Type*} [CommRing S] (f : R →+* S) (s : Fin (
 
 end Point
 
+section NormalizePoint
+
+variable {K : Type*} [Field K] {c : Fin (n + 1) → K}
+
+/-- The grid points of the normalized coefficients, cleared of the denominator `cₘ`: the
+`z₀`-coordinate of `cₘ (s · y)` is `-sₘ c₀`. In the homogeneous rational case `c₀ = 0` and
+the `cᵢ` integral, it is `0`. -/
+theorem mul_waldschmidtPoint_waldschmidtNormalize_zero (hc : c (Fin.last n) ≠ 0) (c₀ : K)
+    (s : Fin (n + 1) → ℤ) :
+    c (Fin.last n) * waldschmidtPoint (waldschmidtNormalize c₀ c) s 0 = -(s (Fin.last n) * c₀) := by
+  rw [waldschmidtPoint_apply_zero, waldschmidtNormalize_zero]
+  field_simp
+
+/-- The grid points of the normalized coefficients, cleared of the denominator `cₘ`: the
+`z_{k+1}`-coordinate of `cₘ (s · y)` is `cₘ s_{k+1} - sₘ c_{k+1}`. In the homogeneous rational
+case with integral `cᵢ`, it is an integer of absolute value at most
+`|cₘ| |s_{k+1}| + |c_{k+1}| |sₘ|`. -/
+theorem mul_waldschmidtPoint_waldschmidtNormalize_succ (hc : c (Fin.last n) ≠ 0) (c₀ : K)
+    (s : Fin (n + 1) → ℤ) (k : Fin n) :
+    c (Fin.last n) * waldschmidtPoint (waldschmidtNormalize c₀ c) s k.succ =
+      c (Fin.last n) * s k.castSucc - s (Fin.last n) * c k.castSucc := by
+  rw [waldschmidtPoint_apply_succ, waldschmidtNormalize_succ]
+  field_simp
+  ring
+
+end NormalizePoint
+
 section PointMap
 
 variable {R : Type*} [CommRing R]
@@ -328,6 +364,106 @@ theorem waldschmidtPointMap_snoc (b : Fin (n + 1) → R) :
     waldschmidtPointMap b (Fin.snoc (fun k : Fin n ↦ b k.succ) (-1)) = Pi.single 0 (-b 0) := by
   ext i
   cases i using Fin.cases <;> simp
+
+/-- A vector whose grid point lies on the line `R e₀` is a multiple of the coefficient vector
+`c = (β₁, …, β_{m-1}, -1)`: the coordinates `1, …, m-1` of `v · y` are `v_k + v_m β_k`. -/
+theorem eq_neg_smul_snoc_of_waldschmidtPointMap_mem (b : Fin (n + 1) → R)
+    {v : Fin (n + 1) → R} (hv : waldschmidtPointMap b v ∈ R ∙ Pi.single 0 1) :
+    v = -v (Fin.last n) • Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) := by
+  obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.1 hv
+  ext i
+  induction i using Fin.lastCases with
+  | last => simp
+  | cast k =>
+    have := congrFun ha k.succ
+    simp only [Pi.smul_apply, waldschmidtPointMap_apply_succ, ne_eq, Fin.succ_ne_zero,
+      not_false_eq_true, Pi.single_eq_of_ne, smul_zero] at this
+    simp only [Pi.smul_apply, Fin.snoc_castSucc, smul_eq_mul]
+    linear_combination -this
+
+/-- The vectors whose grid points lie on the line `R e₀` are the multiples of the coefficient
+vector `c = (β₁, …, β_{m-1}, -1)`, which is sent to `-β₀ e₀`. -/
+theorem comap_waldschmidtPointMap_span_single (b : Fin (n + 1) → R) :
+    (R ∙ Pi.single 0 1).comap (waldschmidtPointMap b) =
+      R ∙ Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) := by
+  refine le_antisymm (fun v hv ↦ ?_) ((Submodule.span_singleton_le_iff_mem _ _).2 ?_)
+  · rw [eq_neg_smul_snoc_of_waldschmidtPointMap_mem b hv]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+  · rw [Submodule.mem_comap, waldschmidtPointMap_snoc, Submodule.mem_span_singleton]
+    exact ⟨-b 0, by rw [← Pi.single_smul, smul_eq_mul, mul_one]⟩
+
+/-- A subspace `V` of indices containing the coefficient vector `c = (β₁, …, β_{m-1}, -1)` is
+recovered from the subspace `V · y + R e₀` spanned by its grid points and the direction `e₀` of
+the derivatives: an index `v` has its grid point in `V · y + R e₀` if and only if `v ∈ V`. -/
+theorem comap_waldschmidtPointMap_map_sup (b : Fin (n + 1) → R) {V : Submodule R (Fin (n + 1) → R)}
+    (hV : Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V) :
+    (V.map (waldschmidtPointMap b) ⊔ R ∙ Pi.single 0 1).comap (waldschmidtPointMap b) = V := by
+  refine Submodule.comap_map_sup_of_comap_le ?_
+  rw [comap_waldschmidtPointMap_span_single]
+  exact (Submodule.span_singleton_le_iff_mem _ _).2 hV
+
+/-- Every subspace `W'` of `V · y + R e₀` containing the direction `e₀` of the derivatives is
+spanned by `e₀` and the grid points of a subspace `V' ≤ V` containing the coefficient vector
+`c = (β₁, …, β_{m-1}, -1)`, namely `V' = Y⁻¹(W') ∩ V` for the grid point map `Y`. -/
+theorem exists_eq_map_waldschmidtPointMap_sup (b : Fin (n + 1) → R)
+    {V W' : Submodule R (Fin (n + 1) → R)} (hV : Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V)
+    (he₀ : Pi.single 0 1 ∈ W') (hW' : W' ≤ V.map (waldschmidtPointMap b) ⊔ R ∙ Pi.single 0 1) :
+    ∃ V' ≤ V, Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V' ∧
+      W' = V'.map (waldschmidtPointMap b) ⊔ R ∙ Pi.single 0 1 := by
+  have hspan : R ∙ Pi.single 0 1 ≤ W' := (Submodule.span_singleton_le_iff_mem _ _).2 he₀
+  refine ⟨W'.comap (waldschmidtPointMap b) ⊓ V, inf_le_right, Submodule.mem_inf.2 ⟨?_, hV⟩,
+    le_antisymm (fun w hw ↦ ?_) (sup_le ((Submodule.map_mono inf_le_left).trans
+      (Submodule.map_comap_le _ _)) hspan)⟩
+  · exact Submodule.comap_mono hspan
+      ((comap_waldschmidtPointMap_span_single b).ge (Submodule.mem_span_singleton_self _))
+  obtain ⟨_, ⟨v, hv, rfl⟩, x, hx, hvx⟩ := Submodule.mem_sup.1 (hW' hw)
+  refine Submodule.mem_sup.2 ⟨_, ⟨v, Submodule.mem_inf.2 ⟨?_, hv⟩, rfl⟩, x, hx, hvx⟩
+  rw [Submodule.mem_comap, ← add_sub_cancel_right (waldschmidtPointMap b v) x, hvx]
+  exact W'.sub_mem hw (hspan hx)
+
+/-- The grid points `s · y` of the indices `s` in a subspace `V ⊆ Rᵐ` containing the coefficient
+vector `c = (β₁, …, β_{m-1}, -1)`, together with the direction `e₀` of the derivatives, span a
+submodule `W = Y(V) + R e₀` of the same rank as `V`, where `Y` is the grid point map. Replacing
+`β₀` by `1` changes `Y` only by multiples of `e₀` and makes it injective with `-c ↦ e₀`, so it
+maps `V` isomorphically onto `W`. -/
+theorem finrank_map_waldschmidtPointMap_sup (b : Fin (n + 1) → R)
+    {V : Submodule R (Fin (n + 1) → R)} (hV : Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) ∈ V) :
+    Module.finrank R ↥(V.map (waldschmidtPointMap b) ⊔ R ∙ Pi.single 0 1) =
+      Module.finrank R V := by
+  set e₀ : Fin (n + 1) → R := Pi.single 0 1
+  -- The grid point map `Y'` with `β₀` replaced by `1`.
+  set Y' := waldschmidtPointMap (Fin.cons 1 (Fin.tail b) : Fin (n + 1) → R)
+  have hdiff (v : Fin (n + 1) → R) :
+      waldschmidtPointMap b v = Y' v + (v (Fin.last n) * (b 0 - 1)) • e₀ := by
+    ext i
+    cases i using Fin.cases
+    · simp only [Y', e₀, waldschmidtPointMap_apply_zero, Pi.add_apply, Pi.smul_apply,
+        Pi.single_eq_same, smul_eq_mul, Fin.cons_zero]
+      ring
+    · simp [Y', e₀, waldschmidtPointMap_apply_succ, Fin.tail]
+  have he₀ : e₀ ∈ V.map Y' := by
+    refine ⟨_, V.neg_mem hV, ?_⟩
+    have hc := waldschmidtPointMap_snoc (Fin.cons 1 (Fin.tail b) : Fin (n + 1) → R)
+    simp only [Fin.cons_succ, Fin.tail, Fin.cons_zero] at hc
+    rw [map_neg, hc, Pi.single_neg, neg_neg]
+  have hW : V.map (waldschmidtPointMap b) ⊔ R ∙ e₀ = V.map Y' := by
+    refine le_antisymm (sup_le ?_ ((Submodule.span_singleton_le_iff_mem _ _).2 he₀)) ?_
+    · rintro _ ⟨v, hv, rfl⟩
+      rw [hdiff]
+      exact add_mem (Submodule.mem_map_of_mem hv) (Submodule.smul_mem _ _ he₀)
+    · rintro _ ⟨v, hv, rfl⟩
+      rw [← add_sub_cancel_right (Y' v) ((v (Fin.last n) * (b 0 - 1)) • e₀), ← hdiff]
+      exact sub_mem (Submodule.mem_sup_left (Submodule.mem_map_of_mem hv))
+        (Submodule.mem_sup_right (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)))
+  have hinj : Injective Y' := by
+    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+    intro v hv
+    have h0 := congrFun (LinearMap.mem_ker.1 hv) 0
+    simp only [Y', waldschmidtPointMap_apply_zero, Fin.cons_zero, mul_one, Pi.zero_apply] at h0
+    rw [eq_neg_smul_snoc_of_waldschmidtPointMap_mem _ (v := v) (hv ▸ Submodule.zero_mem _), h0,
+      neg_zero, zero_smul]
+  rw [hW]
+  exact (Submodule.equivMapOfInjective Y' hinj V).finrank_eq.symm
 
 end PointMap
 
@@ -403,11 +539,6 @@ theorem iteratedDeriv_waldschmidtFunction {K : Type*} [Field K] (ι : K →+* �
       fun w ↦ eval (update x 0 w) (F.map ι) * cexp (t * w + t * c) := by
     funext w
     simp [waldschmidtFunction_def, c, mul_add]
-  -- Partial derivatives commute with the coefficient map `ι`.
-  have hpderiv (k : ℕ) : (pderiv 0)^[k] (F.map ι) = ((pderiv 0)^[k] F).map ι := by
-    induction k with
-    | zero => rfl
-    | succ k ih => rw [iterate_succ_apply', ih, pderiv_map, iterate_succ_apply']
   -- The exponential factor on the grid.
   have hexp : cexp (t * x 0 + t * c) =
       ι (∏ j, α j ^ (t * s j)) * cexp (t * s (Fin.last n) * waldschmidtLinearForm l
@@ -424,8 +555,8 @@ theorem iteratedDeriv_waldschmidtFunction {K : Type*} [Field K] (ι : K →+* �
   beta_reduce
   rw [update_eq_self, hexp, waldschmidtEntry_def, map_mul, ← mul_assoc]
   congr 1
-  simp only [hpderiv, eval_map, x, waldschmidtPoint_map, eval₂_comp, comp_def, map_sum, map_mul,
-    map_natCast, map_pow, map_intCast]
+  simp only [iterate_pderiv_map, eval_map, x, waldschmidtPoint_map, eval₂_comp, comp_def, map_sum,
+    map_mul, map_natCast, map_pow, map_intCast]
 
 /-- The coefficient-field factor `γ_P` of the differential operator `P(∂/∂z₀)` applied to
 Waldschmidt's auxiliary function `F(z) exp(t (z₀ + λ₁ z₁ + ⋯))` at the grid point `s · y`

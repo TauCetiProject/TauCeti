@@ -25,7 +25,10 @@ When `p = 0` in `R` it is an equality.
 Over a field of characteristic `p`, `Ê` has height one exactly when the coefficient of `Tᵖ` in
 `[p]_Ê` is nonzero, hence exactly when the coefficient of `Tᵖ⁻¹` in `P` is nonzero. The first
 coefficients of `P` are `1`, `a₁` and `a₁² + a₂`. In characteristic `2` the criterion is therefore
-`a₁ ≠ 0`, and in characteristic `3` it is `a₁² + a₂ ≠ 0`, that is `b₂ ≠ 0`.
+`a₁ ≠ 0`, and in characteristic `3` it is `a₁² + a₂ ≠ 0`, that is `b₂ ≠ 0`. The general-prime
+classification relating formal-group height to ordinarity and supersingularity lives in
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular` and
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Classification`.
 
 ## Main results
 
@@ -66,10 +69,9 @@ theorem natCast_dvd_coeff_nsmulSeries_formalGroup_sub_coeff_invariantDifferentia
     (formalGroup Universal.curve) hp
     (IsLeftCancelMulZero.mul_left_cancel_of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero))
   -- and specializes to `W`
-  have := map_dvd W.specialize h
-  rw [map_natCast, map_sub, ← PowerSeries.coeff_map, ← PowerSeries.coeff_map,
-    FormalGroup.map_nsmulSeries, FormalGroup.map_invariantDifferential, ← map_formalGroup] at this
-  simpa only [map_specialize] using this
+  rw [← map_specialize_formalGroup]
+  simpa only [map_natCast, map_sub, FormalGroup.coeff_nsmulSeries_map,
+    FormalGroup.coeff_invariantDifferential_map] using map_dvd W.specialize h
 
 /-- In characteristic `p`, the coefficient of `Tᵖ` in `[p]_Ê(T)` is the coefficient of `Tᵖ⁻¹` in
 the invariant differential of `Ê`. -/

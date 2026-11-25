@@ -14,7 +14,8 @@ import TauCeti.RingTheory.Ideal.LinearEquiv
 # Linear isomorphisms between fractional ideals and the product identity
 
 Scaling by a nonzero element of the fraction field is an `R`-linear isomorphism, so fractional
-ideals in the same ideal class are isomorphic `R`-modules. Over a Dedekind domain the direct sum
+ideals in the same ideal class are isomorphic `R`-modules. Conversely, every `R`-linear map between
+`R`-submodules of the fraction field is a scaling. Over a Dedekind domain the direct sum
 of two fractional ideals depends only on their product: this is Steinitz's product identity
 
 ```text
@@ -39,9 +40,14 @@ to an integral ideal `I'` coprime to `J'`
 * `FractionalIdeal.spanSingletonMulEquiv`: multiplication by a left-regular element `a` is an
   isomorphism from `I` onto `(a) I`.
 * `FractionalIdeal.coeIdealEquiv`: an integral ideal is isomorphic to its fractional ideal.
+* `FractionalIdeal.linearEquivOne`: `R` is isomorphic to the unit fractional ideal `(1)`.
 
 ## Main results
 
+* `LinearMap.exists_coe_apply_eq_mul`: every `R`-linear map between `R`-submodules of the fraction
+  field `K` of `R` is multiplication by an element of `K`.
+* `LinearMap.eq_spanSingleton_mul_of_surjective`: a surjective `R`-linear map `I → J` between
+  fractional ideals that is multiplication by `f` shows `J = (f) I`.
 * `FractionalIdeal.nonempty_prod_linearEquiv_prod_mul`: **the product identity**. For an invertible
   fractional ideal `I` and a nonzero fractional ideal `J` of a Noetherian domain of dimension at
   most one, for instance a Dedekind domain, `I × J ≃ R × IJ`.
@@ -93,7 +99,66 @@ theorem algebraMap_coeIdealEquiv_apply (I : Ideal R) (x : (I : FractionalIdeal S
     algebraMap R P (coeIdealEquiv I x) = x := by
   rw [← coe_coeIdealEquiv_symm_apply, LinearEquiv.symm_apply_apply]
 
+variable (S P) in
+/-- The identification `x ↦ x` of `R` with the unit fractional ideal `(1)`, the image of `R` in
+`P`, as `R`-modules. -/
+noncomputable def linearEquivOne : R ≃ₗ[R] (1 : FractionalIdeal S P) :=
+  (LinearEquiv.ofInjective (Algebra.linearMap R P) (FaithfulSMul.algebraMap_injective R P)).trans
+    (LinearEquiv.ofEq _ _ (by rw [coeToSubmodule_one, Submodule.one_eq_range]))
+
+@[simp]
+theorem coe_linearEquivOne_apply (x : R) : (linearEquivOne S P x : P) = algebraMap R P x := by
+  rw [linearEquivOne, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  exact LinearEquiv.ofInjective_apply _ x
+
 end Equiv
+
+end FractionalIdeal
+
+namespace LinearMap
+
+/-- **A linear map between submodules of a fraction field is a multiplication.** If `K` is the
+fraction field of a domain `R` and `I, J` are `R`-submodules of `K`, every `R`-linear map
+`I → J` is `x ↦ f x` for some `f ∈ K`. -/
+theorem exists_coe_apply_eq_mul {R K : Type*} [CommRing R] [Field K] [Algebra R K]
+    [IsFractionRing R K] {I J : Submodule R K} (φ : I →ₗ[R] J) :
+    ∃ f : K, ∀ x : I, (φ x : K) = f * x := by
+  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
+  by_cases hI : ∀ x : I, (x : K) = 0
+  · refine ⟨0, fun x ↦ ?_⟩
+    rw [show x = 0 from Subtype.ext (hI x), map_zero, Submodule.coe_zero, zero_mul]
+  push Not at hI
+  obtain ⟨x₀, hx₀⟩ := hI
+  refine ⟨φ x₀ / x₀, fun x ↦ ?_⟩
+  obtain ⟨⟨r, s⟩, hrs⟩ := IsLocalization.surj R⁰ ((x : K) / x₀)
+  have hs : algebraMap R K s ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.property
+  have hrs' : (x : K) * algebraMap R K s = algebraMap R K r * x₀ := by
+    rw [← hrs]
+    field_simp
+  have key : (s : R) • x = r • x₀ :=
+    Subtype.ext (by simpa [Algebra.smul_def, mul_comm] using hrs')
+  have hφ := congrArg (fun y : J ↦ (y : K)) (congrArg φ key)
+  simp only [map_smul, Submodule.coe_smul, Algebra.smul_def] at hφ
+  field_simp
+  apply mul_left_cancel₀ hs
+  linear_combination (x₀ : K) * hφ - (φ x₀ : K) * hrs'
+
+/-- **A surjective scaling between fractional ideals identifies the target.** If a surjective
+`R`-linear map `φ : I → J` between fractional ideals is `x ↦ f x`, then `J = (f) I`. -/
+theorem eq_spanSingleton_mul_of_surjective {R : Type*} [CommRing R] {S : Submonoid R}
+    {P : Type*} [CommRing P] [Algebra R P] [IsLocalization S P] {I J : FractionalIdeal S P}
+    (φ : I →ₗ[R] J) (hφ : Function.Surjective φ) {f : P} (hf : ∀ x : I, (φ x : P) = f * x) :
+    J = FractionalIdeal.spanSingleton S f * I := by
+  refine FractionalIdeal.eq_spanSingleton_mul.mpr ⟨fun y hy ↦ ?_, fun x hx ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := hφ ⟨y, hy⟩
+    exact ⟨x, x.property, by rw [← hf, hx]⟩
+  · rw [← hf ⟨x, hx⟩]
+    exact (φ ⟨x, hx⟩).property
+
+end LinearMap
+
+namespace FractionalIdeal
 
 variable {R K : Type*} [CommRing R] [IsDomain R] [IsNoetherianRing R] [Ring.DimensionLEOne R]
   [Field K] [Algebra R K] [IsFractionRing R K]

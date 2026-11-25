@@ -40,7 +40,7 @@ of the shorter sequence vanishes, and the last element is a nonzerodivisor on it
 
 ## References
 
-* [The Stacks Project, Tags 0626 and 062F](https://stacks.math.columbia.edu/tag/062F)
+* [The Stacks Project, Tags 0628 and 062F](https://stacks.math.columbia.edu/tag/062F)
 -/
 
 public section

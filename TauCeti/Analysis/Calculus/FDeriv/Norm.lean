@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 import Mathlib.Analysis.Calculus.FDeriv.Norm
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
@@ -18,21 +22,29 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 At a local extremum of the norm of a map, its derivative is orthogonal to its value. In
 particular, the derivative of a map into a sphere is tangent to the sphere. Away from the origin,
 a vanishing derivative of a norm-composition forces the one-dimensional profile derivative to
-vanish. In any real normed space, a curve whose derivative is a multiple `c • f a` of its value
-has norm with derivative `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
+vanish, and the `0`-homogeneous radial extension `TauCeti.sphereExtend f` has vanishing radial
+derivative everywhere (`TauCeti.fderiv_sphereExtend_self`). A function that is nonincreasing in
+the norm has derivatives of equal norm at any two points of one level where they do not vanish
+(`TauCeti.norm_fderiv_eq_of_antitone_norm`). The norm itself, being `1`-Lipschitz, has
+derivative of norm at most `1` everywhere (`TauCeti.norm_fderiv_norm_le`). In any real normed
+space, a curve whose derivative is a multiple `c • f a` of its value has norm with derivative
+`c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
-(`TauCeti.norm_fderiv_sq_le_two_mul_sum_sq`).
+(`TauCeti.norm_fderiv_sq_le_two_mul_sum_sq`). The squared gradient of a real function on `ℂ` is
+the sum of its squared partial derivatives along `1` and `I`
+(`TauCeti.norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq`).
 
 The function `y ↦ √(a - ‖y‖²)`, whose graph over the ball of radius `√a` is a hemisphere, has
 derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` wherever `a - ‖x‖² ≠ 0`; in particular it is flat at the
-origin.
+origin. Over the open unit ball the height `√(1 - ‖x‖²)` of the unit hemisphere is positive
+(`TauCeti.sqrt_one_sub_norm_sq_pos`).
 -/
 
 public section
 
-open scoped RealInnerProductSpace Topology
+open scoped Gradient RealInnerProductSpace Topology
 
 namespace TauCeti
 
@@ -49,6 +61,39 @@ theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero {v : ℝ → E} {x : F} (hx : 
   have h := congr($(((differentiableAt_of_deriv_ne_zero hv).hasDerivAt.hasFDerivAt.comp x
     hn.hasFDerivAt).fderiv.symm.trans hcrit) x)
   exact hv (by simpa [hn.fderiv_norm_self, hx] using h)
+
+/-- **Gradients of radially nonincreasing functions.** If `v` is nonincreasing in the norm, then
+its totalized derivatives have the same norm at any two points of the same level of `v` at which
+they do not vanish. -/
+theorem norm_fderiv_eq_of_antitone_norm {v : F → ℝ} (hv : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x)
+    {x y : F} (hx : fderiv ℝ v x ≠ 0) (hy : fderiv ℝ v y ≠ 0) (hxy : v x = v y) :
+    ‖fderiv ℝ v x‖ = ‖fderiv ℝ v y‖ := by
+  -- A point strictly inside the sphere through a point of the same level is a local minimum.
+  have hmin {a b : F} (hab : ‖a‖ < ‖b‖) (heq : v a = v b) : fderiv ℝ v a = 0 := by
+    refine IsLocalMin.fderiv_eq_zero ?_
+    filter_upwards [Metric.isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hab)] with z hz
+    rw [heq]
+    exact hv z b (mem_ball_zero_iff.1 hz).le
+  have hnorm : ‖x‖ = ‖y‖ := by
+    rcases lt_trichotomy ‖x‖ ‖y‖ with h | h | h
+    · exact absurd (hmin h hxy) hx
+    · exact h
+    · exact absurd (hmin h hxy.symm) hy
+  -- The reflection exchanging `x` and `y` is a linear isometry preserving `v`.
+  let T := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).toContinuousLinearEquiv
+  have hT : v ∘ T = v := funext fun z ↦ by
+    have hz : ‖T z‖ = ‖z‖ := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).norm_map z
+    exact le_antisymm (hv _ _ hz.ge) (hv _ _ hz.le)
+  have hTx : T x = y := Submodule.reflection_sub hnorm
+  have hcomp := T.comp_right_fderiv (f := v) (x := x)
+  rw [hT, hTx] at hcomp
+  rw [hcomp]
+  exact (fderiv ℝ v y).opNorm_comp_linearIsometryEquiv (Submodule.reflection (ℝ ∙ (x - y))ᗮ)
+
+/-- The derivative of the norm has norm at most `1` at every point, including the points where the
+norm is not differentiable and its derivative is `0` by definition. -/
+theorem norm_fderiv_norm_le (x : E) : ‖fderiv ℝ (‖·‖ : E → ℝ) x‖ ≤ 1 := by
+  simpa using norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_one_norm (E := E))
 
 /-- At a local extremum `w` of `‖ψ‖`, the Fréchet derivative of `ψ` is orthogonal to `ψ w`. This
 covers a map whose norm is constant near `w`: the derivative of a map into a sphere is tangent to
@@ -105,6 +150,13 @@ theorem norm_fderiv_sq_le_two_mul_sum_sq {ι : Type*} [Fintype ι] (u : ℂ → 
     rfl
   rwa [hcomp, hcomp, ← Finset.sum_add_distrib] at hD
 
+/-- The squared gradient of a function on `ℂ` is the sum of its squared partial derivatives along
+`1` and `I`. -/
+theorem norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq (f : ℂ → ℝ) (z : ℂ) :
+    ‖∇ f z‖ ^ 2 = fderiv ℝ f z 1 ^ 2 + fderiv ℝ f z Complex.I ^ 2 := by
+  rw [← Complex.orthonormalBasisOneI.sum_sq_inner_left]
+  simp [Fin.sum_univ_two, inner_gradient_left]
+
 /-- The hemisphere function `y ↦ √(a - ‖y‖²)` has derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` at every
 point `x` with `a - ‖x‖² ≠ 0`. -/
 theorem hasFDerivAt_sqrt_sub_norm_sq {a : ℝ} {x : F} (hx : a - ‖x‖ ^ 2 ≠ 0) :
@@ -115,9 +167,27 @@ theorem hasFDerivAt_sqrt_sub_norm_sq {a : ℝ} {x : F} (hx : a - ‖x‖ ^ 2 ≠
     smul_apply, coe_innerSL_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul, neg_smul, neg_inj]
   ring
 
+/-- Over the open unit ball the height `√(1 - ‖x‖²)` of the unit hemisphere is positive. -/
+theorem sqrt_one_sub_norm_sq_pos {G : Type*} [SeminormedAddCommGroup G] {x : G} (hx : ‖x‖ < 1) :
+    0 < √(1 - ‖x‖ ^ 2) :=
+  Real.sqrt_pos.2 (by nlinarith [norm_nonneg x])
+
 /-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
 theorem hasFDerivAt_norm_sq_sub (x₀ x : F) :
     HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
   simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
+
+/-- The radial directional derivative of `sphereExtend f` at `x` along `x` vanishes unconditionally,
+as `sphereExtend f` is constant on positive rays. -/
+@[simp]
+theorem fderiv_sphereExtend_self {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (f : Metric.sphere (0 : E) 1 → G) (x : E) :
+    fderiv ℝ (sphereExtend f) x x = 0 := by
+  by_cases hd : DifferentiableAt ℝ (sphereExtend f) x
+  · simpa using hd.hasFDerivAt.apply_self_eq_smul_of_eventuallyEq
+      (w := fun _ ↦ (1 : ℝ)) (hasDerivAt_const (1 : ℝ) (1 : ℝ))
+      (Filter.eventually_of_mem (Ioi_mem_nhds zero_lt_one) fun t ht ↦ by
+        simp [sphereExtend_smul_of_pos f ht])
+  · rw [fderiv_zero_of_not_differentiableAt hd, zero_apply]
 
 end TauCeti

@@ -6,21 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Comap
+public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 
 import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
 
 /-!
-# Composing pullbacks of measures along a measurable embedding
+# Pullbacks of measures: composition, s-finiteness and compact subspaces
 
 Pulling a measure back along a measurable embedding `g` and then along an arbitrary map `f` is the
 same as pulling it back along `g ∘ f`. Mathlib's `MeasureTheory.Measure.comap_comap` needs a
 measurable-image hypothesis on `f`; strengthening `g` to a measurable embedding removes every
 hypothesis on `f`, which allows iterated pullbacks along maps such as arbitrary subtype inclusions.
 
+The pullback of an s-finite measure along any map is s-finite: either the pullback is defined, and
+it is the sum of the pullbacks of the finite measures in `sfiniteSeq μ`, or it is zero.
+
+A measure that is finite on compact sets restricts to a finite measure on every compact subspace,
+such as a closed ball of a proper space.
+
 ## Main declarations
 
 * `MeasurableEmbedding.comap_comap`: `(μ.comap g).comap f = μ.comap (g ∘ f)` for a measurable
   embedding `g` and any `f`.
+* `MeasureTheory.Measure.instSFiniteComap`: `μ.comap f` is s-finite when `μ` is, for any `f`.
+* `MeasureTheory.Measure.isFiniteMeasure_comap_subtypeVal`: the pullback of a measure finite on
+  compact sets to a compact subspace is finite.
 -/
 
 public section
@@ -60,3 +70,32 @@ theorem comap_comap (hg : MeasurableEmbedding g) (f : α → β) (μ : Measure �
     rwa [image_comp]
 
 end MeasurableEmbedding
+
+namespace MeasureTheory.Measure
+
+/-- The pullback of an s-finite measure along any map is s-finite. -/
+instance instSFiniteComap {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] (μ : Measure β)
+    [SFinite μ] (f : α → β) : SFinite (μ.comap f) := by
+  by_cases h : Function.Injective f ∧ ∀ A : Set α, MeasurableSet A → NullMeasurableSet (f '' A) μ
+  · have e : μ.comap f = sum fun n ↦ (sfiniteSeq μ n).comap f := by
+      ext A hA
+      rw [sum_apply_of_countable, comap_apply₀ _ _ h.1 h.2 hA.nullMeasurableSet]
+      simp_rw [comap_apply₀ _ _ h.1 (fun B hB ↦ (h.2 B hB).mono_ac
+        (sfiniteSeq_le μ _).absolutelyContinuous) hA.nullMeasurableSet]
+      rw [← sum_apply_of_countable, sum_sfiniteSeq]
+    rw [e]
+    infer_instance
+  · rw [comap_undef h]
+    infer_instance
+
+variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α] {μ : Measure α}
+  [IsFiniteMeasureOnCompacts μ]
+
+/-- The pullback of a measure that is finite on compact sets to a compact subspace is finite. -/
+instance isFiniteMeasure_comap_subtypeVal {s : Set α} [CompactSpace s] :
+    IsFiniteMeasure (μ.comap ((↑) : s → α)) :=
+  ⟨(comap_apply_le _ _ nullMeasurableSet_univ).trans_lt (by
+    rw [image_univ, Subtype.range_coe]
+    exact (isCompact_iff_compactSpace.2 ‹_›).measure_lt_top)⟩
+
+end MeasureTheory.Measure

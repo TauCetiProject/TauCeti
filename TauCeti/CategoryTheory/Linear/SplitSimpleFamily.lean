@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Preadditive.HomOrthogonal
+public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.LinearAlgebra.PerfectPairing.Basis
 
@@ -32,7 +35,17 @@ such scalars, and the composition pairing is their dot product. Hence:
   `X ⟶ S i`;
 * the **completeness relation** holds: if `b i` is a basis of `S i ⟶ X` with dual family `c i`,
   then `∑ i ∈ s, ∑ j, c i j ≫ b i j = 𝟙 X` for every finite set `s` of indices outside of which
-  `X` receives no nonzero morphism from the family.
+  `X` receives no nonzero morphism from the family;
+* for an additive `R`-linear functor `F : C ⥤ D` and objects `T : D` and `B : C`, composition
+  `g ⊗ h ↦ h ≫ F.map g` is an isomorphism
+  `⨁ i, (S i ⟶ B) ⊗[R] (T ⟶ F.obj (S i)) ≃ₗ[R] (T ⟶ F.obj B)`, whose inverse sends `t` to
+  `∑ i ∈ s, ∑ j, b i j ⊗ (t ≫ F.map (c i j))`. This is how morphisms into the image of an object
+  under a functor, such as a tensor product with a fixed object, are expanded in bases.
+
+More generally, whenever the composition pairing of `S` and `X` is perfect, a family `c` dual to
+a basis `b` of `S ⟶ X` computes coordinates of morphisms `X ⟶ S`, and the canonical element
+`∑ k, c k ⊗ b k` of `(X ⟶ S) ⊗ (S ⟶ X)` is natural in `X` and independent of `b`. Both are stated
+through an arbitrary bilinear map rather than through the tensor product itself.
 
 Over an algebraically closed field the representatives of the simple classes of a finite
 semisimple category whose simple objects have finite-dimensional endomorphism spaces form a split
@@ -47,13 +60,19 @@ finitely many split simple objects are read off as coordinates in bases of Hom m
 * `TauCeti.homPairingOfBijective`: the composition pairing of an object with scalar
   endomorphisms, characterized by `TauCeti.homPairingOfBijective_smul_id`;
 * `Module.Basis.comp_eq_repr_smul_id`: composing with a dual family extracts coordinates;
+* `Module.Basis.sum_homPairingOfBijective_smul_eq`: for a perfect pairing, a dual family spans;
+* `Module.Basis.sum_dual_comp` and `Module.Basis.sum_dual_eq`: naturality and basis independence
+  of the canonical element;
 * `TauCeti.IsSplitSimpleFamily`: the hypothesis on `S : ι → C`;
 * `TauCeti.IsSplitSimpleFamily.exists_dual_bases`, `TauCeti.IsSplitSimpleFamily.free_finite_hom`
   and `TauCeti.IsSplitSimpleFamily.free_finite_homTo`: the Hom modules are free of finite rank, with
   mutually dual bases;
 * `TauCeti.IsSplitSimpleFamily.isPerfPair_homPairingOfBijective`: the pairing is perfect, and
   `TauCeti.IsSplitSimpleFamily.exists_homDual` gives the dual basis of any basis;
-* `TauCeti.IsSplitSimpleFamily.sum_sum_comp_eq_id`: the completeness relation.
+* `TauCeti.IsSplitSimpleFamily.exists_finset_hom_eq_zero` and
+  `TauCeti.IsSplitSimpleFamily.sum_sum_comp_eq_id`: the completeness relation;
+* `TauCeti.IsSplitSimpleFamily.directSumTensorEquiv`: morphisms into the image of an object under
+  a linear functor, with inverse `TauCeti.IsSplitSimpleFamily.directSumTensorEquiv_symm_apply`.
 
 ## References
 
@@ -135,6 +154,56 @@ theorem homPairingOfBijective_eq_repr
     (hc : ∀ j k, b j ≫ c k = if j = k then 𝟙 S else 0) (f : S ⟶ X) (k : κ) :
     homPairingOfBijective hS X f (c k) = b.repr f k := by
   rw [homPairingOfBijective_eq_iff, b.comp_eq_repr_smul_id hc]
+
+section Naturality
+
+variable {hS : Function.Bijective (algebraMap R (CategoryTheory.End S))}
+  (hp : (homPairingOfBijective hS X).IsPerfPair)
+include hp
+
+/-- **Coordinates in a dual family.** When the composition pairing of `S` and `X` is perfect and
+`c` is dual to a basis `b` of `S ⟶ X`, every morphism `g : X ⟶ S` is the combination of the
+`c k` with coefficients its pairings with the `b k`. -/
+theorem sum_homPairingOfBijective_smul_eq [Fintype κ]
+    (hc : ∀ j k, b j ≫ c k = if j = k then 𝟙 S else 0) (g : X ⟶ S) :
+    ∑ k, homPairingOfBijective hS X (b k) g • c k = g := by
+  refine (LinearMap.IsPerfPair.bijective_right (homPairingOfBijective hS X)).injective
+    (LinearMap.ext fun f ↦ ?_)
+  rw [LinearMap.flip_apply, LinearMap.flip_apply]
+  conv_rhs => rw [← b.sum_repr f]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul,
+    b.homPairingOfBijective_eq_repr hc, mul_comm]
+
+variable {M : Type*} [AddCommMonoid M] [Module R M]
+
+/-- **Naturality of the canonical element.** Let the composition pairing of `S` and `X` be
+perfect, `c` be dual to a basis `b` of `S ⟶ X`, and `c'` be dual to a basis `b'` of `S ⟶ X'`.
+Then the element `∑ k, c k ⊗ b k` of `(X ⟶ S) ⊗ (S ⟶ X)` is natural in `X`: for `h : X ⟶ X'`
+and any bilinear map `β`, moving `h` from `b` onto `c'` does not change the sum. -/
+theorem sum_dual_comp [Fintype κ] (hc : ∀ j k, b j ≫ c k = if j = k then 𝟙 S else 0)
+    {X' : C} {κ' : Type*} [Fintype κ'] [DecidableEq κ'] (b' : Basis κ' R (S ⟶ X'))
+    {c' : κ' → (X' ⟶ S)} (hc' : ∀ j k, b' j ≫ c' k = if j = k then 𝟙 S else 0) (h : X ⟶ X')
+    (β : (X ⟶ S) →ₗ[R] (S ⟶ X') →ₗ[R] M) :
+    ∑ k, β (c k) (b k ≫ h) = ∑ l, β (h ≫ c' l) (b' l) := by
+  -- Expand `b k ≫ h` in the basis `b'` and `h ≫ c' l` in the family `c`; both sides become
+  -- `∑ k, ∑ l, r k l • β (c k) (b' l)`, with `r k l` the pairing of `b k ≫ h` with `c' l`.
+  conv_lhs => enter [2, k]; rw [← b'.sum_repr (b k ≫ h)]
+  conv_rhs => enter [2, l]; rw [← b.sum_homPairingOfBijective_smul_eq hp hc (h ≫ c' l)]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
+    ← homPairingOfBijective_comp, b'.homPairingOfBijective_eq_repr hc']
+  exact Finset.sum_comm
+
+/-- **The canonical element does not depend on the basis.** When the composition pairing of `S`
+and `X` is perfect, `∑ k, c k ⊗ b k` is the same for any basis `b` of `S ⟶ X` and family `c` dual
+to it, read through any bilinear map `β`. -/
+theorem sum_dual_eq [Fintype κ] (hc : ∀ j k, b j ≫ c k = if j = k then 𝟙 S else 0)
+    {κ' : Type*} [Fintype κ'] [DecidableEq κ'] (b' : Basis κ' R (S ⟶ X)) {c' : κ' → (X ⟶ S)}
+    (hc' : ∀ j k, b' j ≫ c' k = if j = k then 𝟙 S else 0)
+    (β : (X ⟶ S) →ₗ[R] (S ⟶ X) →ₗ[R] M) :
+    ∑ k, β (c k) (b k) = ∑ l, β (c' l) (b' l) := by
+  simpa using b.sum_dual_comp hp hc b' hc' (𝟙 X) β
+
+end Naturality
 
 end Module.Basis
 
@@ -291,18 +360,16 @@ theorem homTo_ext (i : ι) {X : C} {g g' : X ⟶ S i} (h : ∀ f : S i ⟶ X, f 
     exact h f
   · rw [hS.homOrthogonal.eq_zero hij (f ≫ g), hS.homOrthogonal.eq_zero hij (f ≫ g')]
 
-/-- **Coordinates in a dual family.** If `c` is dual to a basis `b` of `S i ⟶ X`, every morphism
-`g : X ⟶ S i` is the combination of the `c k` with coefficients its pairings with the `b k`. -/
-theorem sum_homPairingOfBijective_smul_eq (i : ι) {X : C} {κ : Type*} [Fintype κ]
-    [DecidableEq κ] (b : Basis κ R (S i ⟶ X)) {c : κ → (X ⟶ S i)}
-    (hc : ∀ j k, b j ≫ c k = if j = k then 𝟙 (S i) else 0) (g : X ⟶ S i) :
-    ∑ k, homPairingOfBijective (hS.bijective_algebraMap i) X (b k) g • c k = g := by
-  refine hS.homTo_ext i fun f ↦ ?_
-  rw [← homPairingOfBijective_smul_id (hS := hS.bijective_algebraMap i) f g]
-  conv_rhs => rw [← b.sum_repr f]
-  simp only [Preadditive.comp_sum, Linear.comp_smul, b.comp_eq_repr_smul_id hc, smul_smul,
-    map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, Finset.sum_smul,
-    mul_comm]
+/-- An object receives nonzero morphisms from only finitely many members of the family: those
+occurring in a decomposition of it as a finite biproduct. -/
+theorem exists_finset_hom_eq_zero (X : C) : ∃ s : Finset ι, ∀ j ∉ s, ∀ g : S j ⟶ X, g = 0 := by
+  classical
+  obtain ⟨κ, _, f, ⟨e⟩⟩ := hS.exists_iso_biproduct X
+  refine ⟨Finset.univ.image f, fun j hj g ↦ ?_⟩
+  rw [← cancel_mono e.hom]
+  refine biproduct.hom_ext _ _ fun k ↦ ?_
+  rw [zero_comp, zero_comp, Category.assoc]
+  exact hS.homOrthogonal.eq_zero (fun h ↦ hj (Finset.mem_image.2 ⟨k, Finset.mem_univ _, h.symm⟩)) _
 
 /-- **The completeness relation.** Let `s` be a finite set of indices outside of which `X`
 receives no nonzero morphism from the family. Choose for every `i` a basis `b i` of `S i ⟶ X` and
@@ -324,6 +391,117 @@ theorem sum_sum_comp_eq_id (X : C) (s : Finset ι) (hs : ∀ j ∉ s, ∀ g : S 
       refine Finset.sum_eq_zero fun k _ ↦ ?_
       rw [← Category.assoc, hS.homOrthogonal.eq_zero (Ne.symm hji) (f ≫ c j k), zero_comp]
   · rw [hs i hi f, zero_comp, zero_comp]
+
+section DirectSum
+
+open DirectSum TensorProduct
+
+variable [DecidableEq ι] {D : Type*} [Category* D] [Preadditive D] [Linear R D]
+variable (F : C ⥤ D) [F.Additive] [F.Linear R] (T : D) (B : C)
+
+omit hS [HasFiniteBiproducts C] in
+variable (R) in
+/-- The map `⨁ i, (S i ⟶ B) ⊗ (T ⟶ F.obj (S i)) → (T ⟶ F.obj B)`, `g ⊗ h ↦ h ≫ F.map g`. -/
+private def directSumTensorToHom :
+    (⨁ i, (S i ⟶ B) ⊗[R] (T ⟶ F.obj (S i))) →ₗ[R] (T ⟶ F.obj B) :=
+  toModule R ι (T ⟶ F.obj B) fun i ↦ TensorProduct.lift <|
+    (Linear.comp T (F.obj (S i)) (F.obj B) :
+      (T ⟶ F.obj (S i)) →ₗ[R] (F.obj (S i) ⟶ F.obj B) →ₗ[R] (T ⟶ F.obj B)).flip ∘ₗ
+      F.mapLinearMap R
+
+omit hS [HasFiniteBiproducts C] in
+private theorem directSumTensorToHom_of (i : ι) (g : S i ⟶ B) (h : T ⟶ F.obj (S i)) :
+    directSumTensorToHom R F T B (of _ i (g ⊗ₜ h)) = h ≫ F.map g := by
+  rw [directSumTensorToHom, ← lof_eq_of R, toModule_lof]
+  simp
+
+omit hS [HasFiniteBiproducts C] [F.Additive] [F.Linear R] in
+variable (R) in
+/-- The candidate inverse `t ↦ ∑ i ∈ s, ∑ j, b i j ⊗ (t ≫ F.map (c i j))`. -/
+private def homToDirectSumTensor (s : Finset ι) {κ : ι → Type*} [∀ i, Fintype (κ i)]
+    (b : ∀ i, κ i → (S i ⟶ B)) (c : ∀ i, κ i → (B ⟶ S i)) :
+    (T ⟶ F.obj B) →ₗ[R] ⨁ i, (S i ⟶ B) ⊗[R] (T ⟶ F.obj (S i)) :=
+  ∑ i ∈ s, ∑ j, lof R ι (fun i ↦ (S i ⟶ B) ⊗[R] (T ⟶ F.obj (S i))) i ∘ₗ
+    TensorProduct.mk R _ _ (b i j) ∘ₗ Linear.rightComp R T (F.map (c i j))
+
+omit hS [HasFiniteBiproducts C] [F.Additive] [F.Linear R] in
+private theorem homToDirectSumTensor_apply (s : Finset ι) {κ : ι → Type*} [∀ i, Fintype (κ i)]
+    (b : ∀ i, κ i → (S i ⟶ B)) (c : ∀ i, κ i → (B ⟶ S i)) (t : T ⟶ F.obj B) :
+    homToDirectSumTensor R F T B s b c t =
+      ∑ i ∈ s, ∑ j, of _ i (b i j ⊗ₜ (t ≫ F.map (c i j))) := by
+  simp [homToDirectSumTensor, LinearMap.sum_apply, lof_eq_of]
+
+/-- The completeness relation, read through `F`: every `t : T ⟶ F.obj B` is recovered from its
+components `t ≫ F.map (c i j)`. -/
+private theorem directSumTensorToHom_homToDirectSumTensor (s : Finset ι)
+    (hs : ∀ j ∉ s, ∀ g : S j ⟶ B, g = 0) {κ : ι → Type*} [∀ i, Fintype (κ i)]
+    [∀ i, DecidableEq (κ i)] (b : ∀ i, Basis (κ i) R (S i ⟶ B)) (c : ∀ i, κ i → (B ⟶ S i))
+    (hc : ∀ i j k, b i j ≫ c i k = if j = k then 𝟙 (S i) else 0) (t : T ⟶ F.obj B) :
+    directSumTensorToHom R F T B (homToDirectSumTensor R F T B s (fun i ↦ b i) c t) = t := by
+  simp only [homToDirectSumTensor_apply, map_sum, directSumTensorToHom_of, Category.assoc,
+    ← F.map_comp, ← Preadditive.comp_sum, ← F.map_sum, hS.sum_sum_comp_eq_id B s hs b c hc,
+    F.map_id, Category.comp_id]
+
+/-- Decomposing `h ≫ F.map g` through the dual bases returns `g ⊗ h`. -/
+private theorem homToDirectSumTensor_comp_directSumTensorToHom (s : Finset ι)
+    (hs : ∀ j ∉ s, ∀ g : S j ⟶ B, g = 0) {κ : ι → Type*} [∀ i, Fintype (κ i)]
+    [∀ i, DecidableEq (κ i)] (b : ∀ i, Basis (κ i) R (S i ⟶ B)) (c : ∀ i, κ i → (B ⟶ S i))
+    (hc : ∀ i j k, b i j ≫ c i k = if j = k then 𝟙 (S i) else 0) :
+    homToDirectSumTensor R F T B s (fun i ↦ b i) c ∘ₗ directSumTensorToHom R F T B =
+      LinearMap.id := by
+  refine linearMap_ext _ fun i ↦ TensorProduct.ext' fun g h ↦ ?_
+  simp only [LinearMap.comp_apply, lof_eq_of, directSumTensorToHom_of, homToDirectSumTensor_apply,
+    LinearMap.id_apply, Category.assoc, ← F.map_comp]
+  by_cases hi : i ∈ s
+  · rw [Finset.sum_eq_single_of_mem i hi]
+    · -- `g ≫ c i j` is the scalar of the `j`-th coordinate of `g` in the basis `b i`.
+      simp only [(b i).comp_eq_repr_smul_id (hc i), F.map_smul, F.map_id, Linear.comp_smul,
+        Category.comp_id, tmul_smul, ← map_sum]
+      simp_rw [smul_tmul', ← sum_tmul, (b i).sum_repr]
+    · -- The other members receive no nonzero morphism from `S i`.
+      intro i' _ hi'
+      refine Finset.sum_eq_zero fun j _ ↦ ?_
+      rw [hS.homOrthogonal.eq_zero (Ne.symm hi') (g ≫ c i' j), F.map_zero, Limits.comp_zero,
+        tmul_zero, map_zero]
+  · rw [hs i hi g]
+    simp
+
+/-- **Morphisms into the image of an object under a linear functor.** For a split simple family
+`S`, an additive `R`-linear functor `F : C ⥤ D` and objects `T : D` and `B : C`, the map
+
+`⨁ i, (S i ⟶ B) ⊗[R] (T ⟶ F.obj (S i)) → (T ⟶ F.obj B)`,  `g ⊗ h ↦ h ≫ F.map g`,
+
+is an `R`-linear isomorphism. Its inverse is computed from dual bases by
+`TauCeti.IsSplitSimpleFamily.directSumTensorEquiv_symm_apply`. -/
+def directSumTensorEquiv : (⨁ i, (S i ⟶ B) ⊗[R] (T ⟶ F.obj (S i))) ≃ₗ[R] (T ⟶ F.obj B) :=
+  LinearEquiv.ofBijective (directSumTensorToHom R F T B) (by
+    obtain ⟨s, hs⟩ := hS.exists_finset_hom_eq_zero B
+    choose κ _ _ b c hc using fun i ↦ hS.exists_dual_bases i B
+    exact ⟨Function.LeftInverse.injective (g := homToDirectSumTensor R F T B s (fun i ↦ b i)
+        (fun i ↦ c i)) fun x ↦ congrArg (· x)
+        (homToDirectSumTensor_comp_directSumTensorToHom hS F T B s hs b (fun i ↦ c i) hc),
+      Function.RightInverse.surjective
+        (directSumTensorToHom_homToDirectSumTensor hS F T B s hs b (fun i ↦ c i) hc)⟩)
+
+@[simp]
+theorem directSumTensorEquiv_apply_of (i : ι) (g : S i ⟶ B) (h : T ⟶ F.obj (S i)) :
+    hS.directSumTensorEquiv F T B (of _ i (g ⊗ₜ h)) = h ≫ F.map g :=
+  directSumTensorToHom_of F T B i g h
+
+/-- **The inverse through dual bases.** Let `s` be a finite set of indices outside of which `B`
+receives no nonzero morphism from the family, `b i` a basis of `S i ⟶ B` and `c i` a family dual
+to it. Then the inverse of `directSumTensorEquiv` sends `t : T ⟶ F.obj B` to
+`∑ i ∈ s, ∑ j, b i j ⊗ (t ≫ F.map (c i j))`. -/
+theorem directSumTensorEquiv_symm_apply (s : Finset ι) (hs : ∀ j ∉ s, ∀ g : S j ⟶ B, g = 0)
+    {κ : ι → Type*} [∀ i, Fintype (κ i)] [∀ i, DecidableEq (κ i)]
+    (b : ∀ i, Basis (κ i) R (S i ⟶ B)) (c : ∀ i, κ i → (B ⟶ S i))
+    (hc : ∀ i j k, b i j ≫ c i k = if j = k then 𝟙 (S i) else 0) (t : T ⟶ F.obj B) :
+    (hS.directSumTensorEquiv F T B).symm t =
+      ∑ i ∈ s, ∑ j, of _ i (b i j ⊗ₜ (t ≫ F.map (c i j))) := by
+  rw [LinearEquiv.symm_apply_eq, ← homToDirectSumTensor_apply F T B s (fun i ↦ b i)]
+  exact (directSumTensorToHom_homToDirectSumTensor hS F T B s hs b c hc t).symm
+
+end DirectSum
 
 end IsSplitSimpleFamily
 

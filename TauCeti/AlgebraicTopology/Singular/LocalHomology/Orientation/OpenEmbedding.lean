@@ -7,6 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Homological
+public import TauCeti.Geometry.Manifold.Boundary.Interior
+public import TauCeti.Geometry.Manifold.Opens
+public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
 # Pulling back homological orientations along open embeddings
@@ -49,6 +52,9 @@ reverses orientation.
   `TauCeti.HomologicalOrientation.comap_comap`: pullback commutes with reversal and is functorial.
 * `TauCeti.HomologicalOrientation.comap_symm_comap`: pulling back along a homeomorphism and then
   along its inverse is the identity.
+* `TauCeti.HomologicalOrientation.restrictOpens`: an orientation of the interior of a manifold with
+  corners restricts to the interior of each open subset, compatibly with reversal
+  (`TauCeti.HomologicalOrientation.restrictOpens_neg`).
 
 ## References
 
@@ -76,10 +82,9 @@ in degree `d` with those of `N` at `j x`, through the isomorphism of integral lo
 induced by `j`. -/
 def localOrientationEquiv (hj : IsOpenEmbedding j) (x : M) (d : ℕ) :
     LocalOrientation M x d ≃ LocalOrientation N (j x) d :=
-  let e := localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d
-  e.toLinearEquiv.toEquiv.subtypeEquiv fun z ↦
-    ⟨fun hz ↦ hz.map e, fun hz ↦ (e.hom_inv_id_apply z) ▸ hz.map e.symm⟩
+  LocalOrientation.equivOfIso
+    (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+      hj x d)
 
 /-- On local homology classes, the correspondence of local orientations is the map induced by
 `j`. -/
@@ -89,7 +94,7 @@ lemma coe_localOrientationEquiv (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
     (hj.localOrientationEquiv x d z).val =
       (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
         (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).hom z.val :=
-  (rfl)
+  LocalOrientation.coe_equivOfIso _ z
 
 /-- The inverse correspondence acts on local homology classes by the inverse isomorphism. -/
 @[simp]
@@ -98,7 +103,7 @@ lemma coe_localOrientationEquiv_symm (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
     ((hj.localOrientationEquiv x d).symm z).val =
       (localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
         (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).inv z.val :=
-  (rfl)
+  LocalOrientation.coe_equivOfIso_symm _ z
 
 /-- The map of local homology induced by `j` carries the local orientation at `x` corresponding
 to a local orientation `z` at `j x` back to `z`. -/
@@ -116,16 +121,14 @@ lemma localOrientationEquiv_neg (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
     (z : LocalOrientation M x d) :
     hj.localOrientationEquiv x d (-z) =
       -hj.localOrientationEquiv x d z :=
-  Subtype.ext ((localHomologyIsoOfIsOpenEmbedding (A := ModuleCat.{w} ℤ)
-    (ModuleCat.of ℤ (ULift.{w} ℤ)) hj x d).hom.hom.map_neg z.val)
+  LocalOrientation.equivOfIso_neg _ z
 
 /-- The identity identifies the local orientations at `x` with themselves. -/
 @[simp]
 lemma localOrientationEquiv_id [T1Space M] (x : M) (d : ℕ) :
-    IsOpenEmbedding.id.localOrientationEquiv x d = Equiv.refl _ :=
-  Equiv.ext fun z ↦ Subtype.ext <| by
-    rw [coe_localOrientationEquiv, localHomologyIsoOfIsOpenEmbedding_id]
-    rfl
+    IsOpenEmbedding.id.localOrientationEquiv x d = Equiv.refl _ := by
+  rw [localOrientationEquiv, localHomologyIsoOfIsOpenEmbedding_id,
+    LocalOrientation.equivOfIso_refl]
 
 /-- The correspondences of local orientations along open embeddings are functorial. -/
 @[simp]
@@ -251,11 +254,48 @@ lemma comap_comap_of_comp_eq (o : HomologicalOrientation P E d) {j' : N → P} {
     (hjk : j' ∘ j = k) : (o.comap hj').comap hj = o.comap hk := by
   rw [comap_comap, o.comap_congr _ hk hjk]
 
+/-- Restricting an orientation of `M` to an open `W` and then to an open `V ⊆ W`, along the
+inclusion `V ⟶ W` in `Opens (TopCat.of M)`, is restricting it to `V`. -/
+@[simp]
+lemma comap_comap_toTopCat_map (o : HomologicalOrientation N E d)
+    {V W : TopologicalSpace.Opens (TopCat.of N)} (f : V ⟶ W) :
+    (o.comap W.isOpenEmbedding).comap (TopologicalSpace.Opens.isOpenEmbedding_toTopCat_map f) =
+      o.comap V.isOpenEmbedding :=
+  o.comap_comap_of_comp_eq _ _ _ (funext fun _ ↦ rfl)
+
 /-- Pulling an orientation back along a homeomorphism and then along its inverse gives it back. -/
 @[simp]
 lemma comap_symm_comap (o : HomologicalOrientation N E d) (e : M ≃ₜ N) :
     (o.comap e.isOpenEmbedding).comap e.symm.isOpenEmbedding = o := by
   rw [comap_comap, o.comap_congr _ IsOpenEmbedding.id (funext e.apply_symm_apply), comap_id]
+
+section Interior
+
+variable {E H M : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [T2Space M]
+  [ChartedSpace H M] {d : ℕ}
+
+/-- **The restriction of an orientation to an open subset.** An orientation of the interior of a
+manifold with corners `M` restricts to an orientation of the interior of every open subset `u` of
+`M`, by pulling it back along the inclusion of interiors
+(`ModelWithCorners.isOpenEmbedding_interiorOpensInclusion`). -/
+def restrictOpens (o : HomologicalOrientation (I.interior M) E d) (u : TopologicalSpace.Opens M) :
+    HomologicalOrientation (I.interior u) E d :=
+  o.comap (I.isOpenEmbedding_interiorOpensInclusion u)
+
+/-- `restrictOpens` is the pullback along the inclusion of interiors. -/
+theorem restrictOpens_def (o : HomologicalOrientation (I.interior M) E d)
+    (u : TopologicalSpace.Opens M) :
+    o.restrictOpens u = o.comap (I.isOpenEmbedding_interiorOpensInclusion u) :=
+  (rfl)
+
+/-- Restricting the reversed orientation gives the reversed restriction. -/
+@[simp]
+theorem restrictOpens_neg (o : HomologicalOrientation (I.interior M) E d)
+    (u : TopologicalSpace.Opens M) : (-o).restrictOpens u = -o.restrictOpens u :=
+  o.comap_neg _
+
+end Interior
 
 end HomologicalOrientation
 

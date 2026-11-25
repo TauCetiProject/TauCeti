@@ -170,7 +170,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- The uniform law on the sphere has embedded mean zero. -/
 theorem integral_coe_uniformSphereMeasure :
     ∫ x, (x : E) ∂uniformSphereMeasure E = 0 := by
-  rw [uniformSphereMeasure_def, integral_smul_measure, integral_toSphere_coe_eq_zero, smul_zero]
+  rw [uniformSphereMeasure_def, integral_smul_measure, Measure.integral_coe_toSphere, smul_zero]
 
 end Mean
 

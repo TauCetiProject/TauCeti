@@ -12,8 +12,9 @@ public import Mathlib.MeasureTheory.Group.Measure
 # Counting measure on discrete spaces
 
 Counting measure is finite on compact sets and inner regular on finite-measure sets in a
-discrete space. On a discrete group it is therefore a Haar measure. These instances allow
-regular representations on counting-measure L² spaces without a countability assumption.
+discrete space. On a discrete group it is therefore a Haar measure, and on a discrete additive
+group an additive Haar measure. These instances allow regular representations on
+counting-measure L² spaces without a countability assumption.
 -/
 
 public section
@@ -39,6 +40,7 @@ instance count_innerRegularCompactLTTop : (count : Measure X).InnerRegularCompac
     exact ⟨s, Set.Subset.rfl, (count_apply_lt_top.mp (lt_top_iff_ne_top.mpr hs.2)).isCompact, hr⟩
 
 /-- Counting measure is a Haar measure on a discrete group. -/
+@[to_additive /-- Counting measure is an additive Haar measure on a discrete additive group. -/]
 instance count_isHaarMeasure [Group X] [MeasurableMul X] :
     (count : Measure X).IsHaarMeasure where
 

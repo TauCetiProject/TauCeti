@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Integral.Average
 public import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube
 import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # The Calderón–Zygmund decomposition
@@ -56,6 +57,10 @@ run the same stopping time on functions in `Lᵖ`.
   `TauCeti.biUnion_calderonZygmundCubes_subset`,
   `TauCeti.ae_le_of_forall_notMem_calderonZygmundCubes` and
   `TauCeti.mul_volume_biUnion_calderonZygmundCubes_le`.
+* `TauCeti.volume_biUnion_closedBall_calderonZygmundCubes_le`,
+  `TauCeti.mul_volume_biUnion_closedBall_calderonZygmundCubes_le`: the concentric cubes of `c`
+  times the side have at most `cⁿ` times the total volume, so `t` times their measure is at most
+  `cⁿ` times the integral of `g`.
 * `TauCeti.calderonZygmundBad`, `TauCeti.calderonZygmundGood`: the bad parts and the good part,
   with `TauCeti.calderonZygmundGood_add_tsum_calderonZygmundBad` (the decomposition),
   `TauCeti.integral_calderonZygmundBad`, `TauCeti.lintegral_enorm_calderonZygmundBad_le`,
@@ -300,6 +305,39 @@ theorem mul_volume_biUnion_calderonZygmundCubes_le :
   exact tsum_le_tsum fun q =>
     (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.property).le
 
+/-- The concentric cubes of `c` times the side of the Calderón–Zygmund cubes, closed sup-norm
+balls about their centres, have total volume at most `cⁿ` times that of the Calderón–Zygmund
+cubes. -/
+theorem volume_biUnion_closedBall_calderonZygmundCubes_le (c : ℝ) :
+    volume (⋃ q ∈ calderonZygmundCubes g t,
+        Metric.closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
+      ENNReal.ofReal c ^ Fintype.card ι *
+        volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2) := by
+  calc _ ≤ ∑' q : calderonZygmundCubes g t, volume (Metric.closedBall
+        (fun i => ((q.val.2 i : ℝ) + 2⁻¹) * 2 ^ q.val.1) (c * (2 ^ q.val.1 / 2))) :=
+        measure_biUnion_le _ (to_countable _) _
+    _ ≤ ∑' q : calderonZygmundCubes g t,
+          ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube q.val.1 q.val.2) :=
+        tsum_le_tsum fun q => volume_closedBall_dyadicCube_le c _ _
+    _ = _ := by
+        rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable _)
+          pairwiseDisjoint_calderonZygmundCubes fun q _ => measurableSet_dyadicCube q.1 q.2]
+
+/-- `t` times the measure of the union of the concentric cubes of `c` times the side of the
+Calderón–Zygmund cubes of `g` at height `t` is at most `cⁿ` times the integral of `g`. -/
+theorem mul_volume_biUnion_closedBall_calderonZygmundCubes_le (c : ℝ) :
+    t * volume (⋃ q ∈ calderonZygmundCubes g t,
+        Metric.closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
+      ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x := by
+  calc _ ≤ t * (ENNReal.ofReal c ^ Fintype.card ι *
+        volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) :=
+        mul_le_mul_right (volume_biUnion_closedBall_calderonZygmundCubes_le c) _
+    _ = ENNReal.ofReal c ^ Fintype.card ι *
+          (t * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) := by ring
+    _ ≤ ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x :=
+        mul_le_mul_right (mul_volume_biUnion_calderonZygmundCubes_le.trans
+          (setLIntegral_le_lintegral _ _)) _
+
 end Cubes
 
 section Decomposition
@@ -460,9 +498,7 @@ theorem sq_eLpNorm_calderonZygmundGood_le [Nonempty ι] (hf : Integrable f) (ht 
     eLpNorm (calderonZygmundGood f t) 2 volume ^ 2 ≤
       2 ^ Fintype.card ι * t * ∫⁻ x, ‖f x‖ₑ := by
   have hg := aestronglyMeasurable_calderonZygmundGood hf.1 t
-  have h := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hg
-  simp only [ENNReal.coe_ofNat, NNReal.coe_ofNat, ENNReal.rpow_two] at h
-  rw [h]
+  rw [eLpNorm_two_sq_eq_lintegral hg]
   calc ∫⁻ x, ‖calderonZygmundGood f t x‖ₑ ^ 2
       ≤ ∫⁻ x, 2 ^ Fintype.card ι * t * ‖calderonZygmundGood f t x‖ₑ := by
         refine lintegral_mono_ae ?_

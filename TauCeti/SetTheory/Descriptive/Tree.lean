@@ -48,6 +48,7 @@ at `z*`.
 * `Descriptive.Tree.ChildRel`: immediate one-element extension on the nodes of a descriptive tree.
 * `Descriptive.Tree.IsWellFounded`: well-foundedness of `ChildRel` on a descriptive tree.
 * `Descriptive.Tree.rank`: ordinal rank of a descriptive tree (`0` on `⊥` and on ill-founded trees).
+* `Descriptive.Tree.StrictExt`: proper extension on the nodes of a descriptive tree.
 
 ## Main results
 
@@ -58,6 +59,11 @@ at `z*`.
   `Descriptive.Tree.IsWellFounded.rank_subAt_eq_succ_iSup`: the subtree recursion for `rank`.
 * `Descriptive.Tree.IsWellFounded.rank_lt_omega_one`: on a countable alphabet, every well-founded
   tree has rank strictly below `ω₁`.
+* `Descriptive.Tree.IsWellFounded.wellFounded_strictExt` and
+  `Descriptive.Tree.IsWellFounded.rank_eq_iSup_strictExt`: on a well-founded tree strict extension
+  is well-founded, and the rank is the strict supremum of the strict-extension ranks of the nodes.
+* `Descriptive.Tree.IsWellFounded.rank_le_of_relHom`: rank is monotone along homomorphisms of
+  strict extension, between trees on possibly different alphabets.
 * `Descriptive.Tree.exists_rank_lt_omega_one_of_nat_nat`: boundedness below `ω₁` for families of
   well-founded trees indexed by Baire space `ℕ → ℕ` with closed node-membership sets.
 * `MeasureTheory.AnalyticSet.exists_treeRank_lt_omega_one` and
@@ -359,6 +365,88 @@ theorem IsWellFounded.rank_lt_omega_one [Countable A] (hT : IsWellFounded T) : r
   rw [hT.rank_eq_iSup]
   exact Ordinal.iSup_lt_omega_one fun u =>
     (Cardinal.isSuccLimit_omega 1).succ_lt (hnode u)
+
+/-! ### Strict extension -/
+
+/-- Strict extension on the nodes of a tree: `StrictExt T y x` holds when `y` properly extends
+`x`. -/
+def StrictExt (T : tree A) (y x : T) : Prop :=
+  (x : List A) <+: y ∧ (x : List A) ≠ y
+
+/-- Unfolding lemma for `Descriptive.Tree.StrictExt`. -/
+theorem strictExt_iff {y x : T} : StrictExt T y x ↔ (x : List A) <+: y ∧ (x : List A) ≠ y :=
+  Iff.rfl
+
+/-- An immediate extension is a strict extension. -/
+theorem ChildRel.strictExt {y x : T} (h : ChildRel T y x) : StrictExt T y x := by
+  obtain ⟨a, ha⟩ := childRel_iff.1 h
+  exact strictExt_iff.2 ⟨ha ▸ List.prefix_append _ _, fun h' => by simp [← h'] at ha⟩
+
+/-- In a well-founded tree, node ranks strictly decrease along strict extension. -/
+theorem IsWellFounded.rank_lt_of_strictExt (hT : IsWellFounded T) {y x : T}
+    (h : StrictExt T y x) : (hT.apply y).rank < (hT.apply x).rank := by
+  obtain ⟨⟨l, hl⟩, hne⟩ := strictExt_iff.1 h
+  obtain _ | ⟨a, l⟩ := l
+  · exact absurd (by simp [← hl]) hne
+  have hy : (x.val ++ [a]) ++ l ∈ T := by simp [hl]
+  have heq : y = ⟨(x.val ++ [a]) ++ l, hy⟩ := Subtype.ext (by simp [← hl])
+  rw [heq]
+  exact (nodeRank_le_of_append hT hy).trans_lt
+    ((hT.apply x).rank_lt_of_rel (a := ⟨x.val ++ [a], mem_of_append hy⟩)
+      (childRel_iff.2 ⟨a, rfl⟩))
+
+/-- Strict extension is well-founded on the nodes of a well-founded tree. -/
+theorem IsWellFounded.wellFounded_strictExt (hT : IsWellFounded T) :
+    WellFounded (StrictExt T) :=
+  Subrelation.wf (fun h => hT.rank_lt_of_strictExt h)
+    (InvImage.wf (fun u : T => (hT.apply u).rank) wellFounded_lt)
+
+/-- In a well-founded tree, the strict-extension rank of a node is its immediate-extension rank.
+-/
+theorem IsWellFounded.rank_strictExt_eq (hT : IsWellFounded T) (u : T) :
+    (hT.wellFounded_strictExt.apply u).rank = (hT.apply u).rank := by
+  induction u using hT.wellFounded_strictExt.induction with
+  | h u ih =>
+    refine le_antisymm ?_ ?_
+    · rw [(hT.wellFounded_strictExt.apply u).rank_eq]
+      refine Ordinal.iSup_le fun v => ?_
+      rw [ih v.val v.property]
+      exact Order.succ_le_of_lt (hT.rank_lt_of_strictExt v.property)
+    · rw [(hT.apply u).rank_eq]
+      refine Ordinal.iSup_le fun v => ?_
+      have hv : StrictExt T v.val u := v.property.strictExt
+      have h := (hT.wellFounded_strictExt.apply u).rank_lt_of_rel hv
+      rw [ih v.val hv] at h
+      exact Order.succ_le_of_lt h
+
+/-- The rank of a well-founded tree is the strict supremum of the strict-extension ranks of its
+nodes. -/
+theorem IsWellFounded.rank_eq_iSup_strictExt (hT : IsWellFounded T) :
+    rank T = ⨆ u : T, Order.succ (hT.wellFounded_strictExt.apply u).rank := by
+  simp only [hT.rank_strictExt_eq, hT.rank_eq_iSup]
+
+/-- A tree with a homomorphism of strict extension into a well-founded tree, possibly on another
+alphabet, is well-founded. -/
+theorem IsWellFounded.of_relHom {B : Type*} {S : tree B} (hT : IsWellFounded T)
+    (f : StrictExt S →r StrictExt T) : IsWellFounded S :=
+  isWellFounded_iff.2 <| Subrelation.wf (fun h => ChildRel.strictExt h)
+    (RelHomClass.wellFounded f hT.wellFounded_strictExt)
+
+/-- **Monotonicity of rank.** A homomorphism of strict extension into a well-founded tree, possibly
+on another alphabet, injective or not, does not increase the rank. -/
+theorem IsWellFounded.rank_le_of_relHom {B : Type u} {S : tree B} (hT : IsWellFounded T)
+    (f : StrictExt S →r StrictExt T) : rank S ≤ rank T := by
+  have hS := hT.of_relHom f
+  have hnode (u : S) : (hS.wellFounded_strictExt.apply u).rank ≤
+      (hT.wellFounded_strictExt.apply (f u)).rank := by
+    induction u using hS.wellFounded_strictExt.induction with
+    | h u ih =>
+      rw [(hS.wellFounded_strictExt.apply u).rank_eq]
+      exact Ordinal.iSup_le fun v => Order.succ_le_of_lt <| (ih v.val v.property).trans_lt
+        ((hT.wellFounded_strictExt.apply (f u)).rank_lt_of_rel (f.map_rel v.property))
+  rw [hS.rank_eq_iSup_strictExt, hT.rank_eq_iSup_strictExt]
+  exact Ordinal.iSup_le fun u => (Order.succ_le_succ (hnode u)).trans (Ordinal.le_iSup
+    (fun w : T => Order.succ (hT.wellFounded_strictExt.apply w).rank) (f u))
 
 /-! ### Boundedness for Baire-indexed and analytic families of well-founded trees -/
 

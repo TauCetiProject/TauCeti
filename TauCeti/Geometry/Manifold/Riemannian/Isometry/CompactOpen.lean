@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Topology
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 
 /-!

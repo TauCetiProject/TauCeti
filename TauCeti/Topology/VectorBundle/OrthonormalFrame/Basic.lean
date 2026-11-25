@@ -80,6 +80,8 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 
 * `TauCeti.OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply`: applying frames to vectors
   is jointly continuous.
+* `TauCeti.OrthonormalFrameBundle.continuous_frame_symm_apply`: a continuous section read in the
+  frames, `p ↦ p.frame.symm (σ p.proj)`, is continuous.
 * `Bundle.Trivialization.continuous_orthonormalFrame`,
   `Bundle.Trivialization.continuous_orthonormalFrame_symm_apply`: the local orthonormal frame is a
   continuous local section, and reading vectors in it is continuous.
@@ -152,6 +154,17 @@ theorem eq_mk_of_proj_eq {b : B} (p : OrthonormalFrameBundle 𝕜 F E V) (h : p.
   cases p
   cases h
   rfl
+
+/-- Two orthonormal frames of a bundle modelled on `EuclideanSpace 𝕜 (Fin n)` are equal when they
+send every coordinate vector to the same point of the total space. -/
+theorem ext_totalSpaceMk {n : ℕ} {q q' : OrthonormalFrameBundle 𝕜 F E (EuclideanSpace 𝕜 (Fin n))}
+    (h : ∀ v : Fin n → 𝕜, TotalSpace.mk' F q.proj (q.frame (WithLp.toLp 2 v)) =
+      TotalSpace.mk' F q'.proj (q'.frame (WithLp.toLp 2 v))) : q = q' := by
+  obtain ⟨b, φ⟩ := q
+  obtain ⟨b', ψ⟩ := q'
+  obtain rfl : b = b' := congrArg TotalSpace.proj (h 0)
+  refine mk_eq_mk_iff.2 (LinearIsometryEquiv.ext fun w ↦ ?_)
+  simpa using TotalSpace.mk_inj.1 (h (WithLp.ofLp w))
 
 section Action
 
@@ -320,6 +333,23 @@ theorem continuous_totalSpaceMk_frame_apply [FiniteDimensional 𝕜 V] :
   refine hc.congr ?_
   filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds hU] with q hq
   exact coord_apply hq q.2
+
+/-- **A continuous section read in orthonormal frames is continuous.** For a bundle with continuous
+fibre norms and a continuous section `σ`, the vector `p.frame.symm (σ p.proj)` of `V` representing
+`σ` in the frame `p` depends continuously on `p`: its coefficient on each vector `b i` of an
+orthonormal basis of `V` is the inner product of the frame applied to `b i` with `σ`. -/
+theorem continuous_frame_symm_apply [ContinuousFiberNorm F E] [FiniteDimensional 𝕜 V]
+    {σ : ∀ b, E b} (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E)) :
+    Continuous fun p : OrthonormalFrameBundle 𝕜 F E V ↦ p.frame.symm (σ p.proj) := by
+  let b := stdOrthonormalBasis 𝕜 V
+  have h (i) : Continuous fun p : OrthonormalFrameBundle 𝕜 F E V ↦
+      inner 𝕜 (p.frame (b i)) (σ p.proj) • b i :=
+    ((continuous_totalSpaceMk_frame (b i)).inner_bundle_of_continuousFiberNorm
+      (hσ.comp continuous_proj)).smul continuous_const
+  refine (continuous_finsetSum Finset.univ fun i _ ↦ h i).congr fun p ↦ ?_
+  rw [← b.sum_repr' (p.frame.symm (σ p.proj))]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← LinearIsometryEquiv.inner_map_map p.frame, LinearIsometryEquiv.apply_symm_apply]
 
 -- Here and below, `CompleteSpace V` follows from `FiniteDimensional 𝕜 V`, but instance search does
 -- not find it for a variable field `𝕜`; it is needed for the star structure on `V →L[𝕜] V`.
@@ -500,10 +530,12 @@ theorem baseSet_orthonormalFrameBundle :
       Trivialization _ (proj : OrthonormalFrameBundle 𝕜 F E V → B)).baseSet = e.baseSet :=
   (rfl)
 
-private theorem orthonormalFrameBundle_symm_apply' (q : B × unitary (V →L[𝕜] V)) :
+/-- The inverse of the trivialization carries `(y, g)` to the frame `orthonormalFrameAt` at `y`
+acted on by `g`, for every `y`. -/
+theorem orthonormalFrameBundle_symm_apply' (q : B × unitary (V →L[𝕜] V)) :
     (e.orthonormalFrameBundle c b).toOpenPartialHomeomorph.symm q =
       op q.2 • (⟨q.1, orthonormalFrameAt e c b q.1⟩ : OrthonormalFrameBundle 𝕜 F E V) :=
-  rfl
+  (rfl)
 
 private theorem orthonormalFrameBundle_apply (p : OrthonormalFrameBundle 𝕜 F E V) :
     e.orthonormalFrameBundle c b p =
@@ -550,43 +582,49 @@ variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpa
   [TopologicalSpace B] [FiberBundle F E] [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E]
   [∀ b, FiniteDimensional 𝕜 (E b)]
 
-/-- A family of operators on the fibres acts continuously on the total space as soon as, read in
-the local Gram–Schmidt orthonormal frames of the linear trivializations, it is a continuous family
-of operators of the model. -/
-theorem continuous_totalSpaceMk_apply_of_orthonormalFrame {A : ∀ b, E b →L[𝕜] E b}
+/-- A parameterized family of operators on the fibres acts jointly continuously on the total
+space as soon as, read in the local Gram–Schmidt orthonormal frames of the linear
+trivializations, it is a continuous family of operators of the model. -/
+theorem continuous_totalSpaceMk_apply_of_orthonormalFrame
+    {X : Type*} [TopologicalSpace X] {A : X → ∀ b, E b →L[𝕜] E b}
     (hA : ∀ (e : Trivialization F (π F E)) [e.IsLinear 𝕜] (n : ℕ) (c : Module.Basis (Fin n) 𝕜 F),
-      Continuous fun y : e.baseSet ↦
-        ((e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) 𝕜) y).symm :
-          E y →L[𝕜] EuclideanSpace 𝕜 (Fin n)) ∘L A y ∘L
-          (e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) 𝕜) y :
-            EuclideanSpace 𝕜 (Fin n) →L[𝕜] E y)) :
-    Continuous fun p : TotalSpace F E ↦ (⟨p.proj, A p.proj p.snd⟩ : TotalSpace F E) := by
+      Continuous fun p : X × e.baseSet ↦
+        ((e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) 𝕜) p.2).symm :
+          E p.2 →L[𝕜] EuclideanSpace 𝕜 (Fin n)) ∘L A p.1 p.2 ∘L
+          (e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) 𝕜) p.2 :
+            EuclideanSpace 𝕜 (Fin n) →L[𝕜] E p.2)) :
+    Continuous fun p : X × TotalSpace F E ↦
+      (⟨p.2.proj, A p.1 p.2.proj p.2.snd⟩ : TotalSpace F E) := by
   refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
-  let e := trivializationAt F E p₀.proj
-  have hp₀ : p₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E p₀.proj
+  let e := trivializationAt F E p₀.2.proj
+  have hp₀ : p₀.2.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E p₀.2.proj
   have : FiniteDimensional 𝕜 F :=
-    (e.continuousLinearEquivAt 𝕜 p₀.proj hp₀).toLinearEquiv.finiteDimensional
+    (e.continuousLinearEquivAt 𝕜 p₀.2.proj hp₀).toLinearEquiv.finiteDimensional
   let n := Module.finrank 𝕜 F
   let c := Module.finBasis 𝕜 F
-  let σ := e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) 𝕜)
-  let U : Set (TotalSpace F E) := TotalSpace.proj ⁻¹' e.baseSet
-  have hU : U ∈ 𝓝 p₀ := (e.open_baseSet.preimage (FiberBundle.continuous_proj F E)).mem_nhds hp₀
+  let U : Set (X × TotalSpace F E) := {p | p.2.proj ∈ e.baseSet}
+  have hU : U ∈ 𝓝 p₀ :=
+    (e.open_baseSet.preimage ((FiberBundle.continuous_proj F E).comp continuous_snd)).mem_nhds hp₀
   refine ContinuousOn.continuousAt ?_ hU
   rw [continuousOn_iff_continuous_domRestrict]
-  let y : U → e.baseSet := fun x ↦ ⟨x.val.proj, x.property⟩
+  let y : U → e.baseSet := fun x ↦ ⟨x.val.2.proj, x.property⟩
   have hy : Continuous y :=
-    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).subtype_mk _
-  -- Over `e.baseSet`, `A` applied to `v` is the frame `σ` applied to the operator read in `σ`,
-  -- applied to the coordinates of `v` in `σ`; all three pieces are continuous.
-  have hframe : Continuous fun x : U ↦
-      ((⟨y x, σ (y x)⟩ : OrthonormalFrameBundle 𝕜 F E (EuclideanSpace 𝕜 (Fin n))),
-        (((σ (y x)).symm : E (y x) →L[𝕜] EuclideanSpace 𝕜 (Fin n)) ∘L A (y x) ∘L
-          (σ (y x) : EuclideanSpace 𝕜 (Fin n) →L[𝕜] E (y x))) ((σ (y x)).symm x.val.snd)) :=
-    ((e.continuous_orthonormalFrame c _).comp hy).prodMk
-      (((hA e n c).comp hy).clm_apply (e.continuous_orthonormalFrame_symm_apply c _))
+    ((FiberBundle.continuous_proj F E).comp
+      (continuous_snd.comp continuous_subtypeVal)).subtype_mk _
+  let q : U → (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) :=
+    fun x ↦ ⟨x.val.2, x.property⟩
+  have hq : Continuous q := (continuous_snd.comp continuous_subtypeVal).subtype_mk _
+  have hv :=
+    (e.continuous_orthonormalFrame_symm_apply c (EuclideanSpace.basisFun (Fin n) 𝕜)).comp hq
+  -- Read the operator and vector in the frame, apply the operator, then apply the frame.
+  have hoperator := (hA e n c).comp
+    ((continuous_fst.comp continuous_subtypeVal).prodMk hy)
+  have hframe :=
+    ((e.continuous_orthonormalFrame c (EuclideanSpace.basisFun (Fin n) 𝕜)).comp hy).prodMk
+      (hoperator.clm_apply hv)
   refine (OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp hframe).congr
     fun x ↦ ?_
-  simp [y]
+  simp [q, y]
 
 end TauCeti
 

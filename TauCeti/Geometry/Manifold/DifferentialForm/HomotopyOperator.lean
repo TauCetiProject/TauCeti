@@ -54,6 +54,8 @@ the unit tangent vector at every time.
 ## Main declarations
 
 * `TauCeti.homotopyOperator`: the homotopy operator `h`.
+* `TauCeti.homotopyOperator_apply_apply`: for a continuous form with values in a Banach space,
+  `h φ` evaluated on tangent vectors is the displayed integral.
 * `TauCeti.inChartAt_homotopyOperator`: in the chart at `x₀`, `h φ` is the flat cylinder homotopy
   operator of the pullback of `φ` along `TauCeti.cylinderChart`.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
@@ -69,6 +71,9 @@ the unit tangent vector at every time.
 * `TauCeti.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv`: the cochain-homotopy
   identity `d (h φ) + h (d φ) = ι₁^* φ - ι₀^* φ`.
 * `TauCeti.mextDeriv_homotopyOperator`: for a closed form, `d (h φ) = ι₁^* φ - ι₀^* φ`.
+* `TauCeti.mextDeriv_homotopyOperator_mpullback_add_homotopyOperator_mpullback_mextDeriv`: the
+  homotopy formula `d (h (Φ^* θ)) + h (Φ^* (d θ)) = Φ (·, 1)^* θ - Φ (·, 0)^* θ` for a `C²` map
+  `Φ : M × [0, 1] → N`.
 * `TauCeti.homotopyOperator_mextDeriv_of_mpullback_eq_zero`: for a form whose end slices vanish,
   `h (d φ) = -d (h φ)`.
 * `TauCeti.mextDeriv_homotopyOperator_homotopyOperator`: for a closed form `φ` on the double
@@ -501,6 +506,21 @@ private theorem intervalIntegrable_homotopyIntegrand [IsManifold I 1 M]
     (Ioc_subset_Icc_self ht) (D := D') hD, extChartAt_to_inv]
   exact L.symm_apply_apply _
 
+/-- **The homotopy operator on tangent vectors.** For a continuous form `φ` on the cylinder with
+values in a Banach space, `h φ` at `x` evaluated on tangent vectors `v` of `M` is the integral over
+`t ∈ [0, 1]` of `φ (x, t)` evaluated on the unit time vector `∂ₜ` followed by the vectors
+`(v i, 0)`. -/
+theorem homotopyOperator_apply_apply [IsManifold I 1 M] [CompleteSpace F]
+    {φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)}
+    (hφ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ) (x : M) (v : Fin k → E) :
+    homotopyOperator φ x v = ∫ t in (0 : ℝ)..1, φ (x, projIcc 0 1 zero_le_one t)
+      (Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
+        fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) :=
+  -- Evaluation at `v` commutes with the integral. The evaluated integrand is the curried form on
+  -- `∂ₜ` followed by the included vectors, which unfolds definitionally to the displayed one.
+  ((ContinuousAlternatingMap.apply ℝ E F v).intervalIntegral_comp_comm
+    (intervalIntegrable_homotopyIntegrand hφ x)).symm
+
 /-- **Naturality of the homotopy operator** for continuous forms. Pulling a continuous form on
 the cylinder, with values in a Banach space, back along `g × id` commutes with the homotopy
 operator, for every differentiable map `g`. Unlike `TauCeti.homotopyOperator_mpullback_prodMap_id`,
@@ -586,6 +606,34 @@ theorem mextDeriv_homotopyOperator [IsManifold I 2 M] [CompleteSpace F]
         mpullback I (I.prod (𝓡∂ 1)) (fun y ↦ (y, 0)) φ x := by
   rw [← mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv hφ x, hclosed,
     homotopyOperator_zero, Pi.zero_apply, add_zero]
+
+/-- **The homotopy formula.** Let `Φ : M × [0, 1] → N` be a `C²` map, a homotopy from
+`Φ (·, 0)` to `Φ (·, 1)`, between `C²` manifolds possibly with boundary or corners. For a `C¹`
+form `θ` on `N` with values in a Banach space, the operator `θ ↦ h (Φ^* θ)` is a cochain homotopy
+between the pullbacks along the ends of `Φ`:
+`d (h (Φ^* θ)) + h (Φ^* (d θ)) = Φ (·, 1)^* θ - Φ (·, 0)^* θ`. -/
+theorem mextDeriv_homotopyOperator_mpullback_add_homotopyOperator_mpullback_mextDeriv
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    [IsManifold I 2 M] [IsManifold I' 2 N] [CompleteSpace F] {Φ : M × Icc (0 : ℝ) 1 → N}
+    (hΦ : ContMDiff (I.prod (𝓡∂ 1)) I' 2 Φ) {θ : RoughForm I' N F (k + 1)}
+    (hθ : IsSmoothForm I' 1 θ) :
+    mextDeriv (homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I' Φ θ)) +
+        homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I' Φ (mextDeriv θ)) =
+      mpullback I I' (fun x ↦ Φ (x, 1)) θ - mpullback I I' (fun x ↦ Φ (x, 0)) θ := by
+  have hslice (c : Icc (0 : ℝ) 1) :
+      MDifferentiable I (I.prod (𝓡∂ 1)) fun x : M ↦ (x, c) :=
+    mdifferentiable_id.prodMk mdifferentiable_const
+  have hΦd : MDifferentiable (I.prod (𝓡∂ 1)) I' Φ := hΦ.mdifferentiable two_ne_zero
+  -- Pullback along `Φ` commutes with `d`, and the slices of `Φ^* θ` are the pullbacks along the
+  -- ends of `Φ`; the cochain-homotopy identity for `Φ^* θ` concludes.
+  rw [mpullback_mextDeriv hΦ ((isSmoothBundleForm_def 1 θ).mpr hθ.contMDiff)]
+  funext x
+  rw [Pi.add_apply, mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv
+    (hθ.mpullback (hΦ.of_le (by norm_num))) x, Pi.sub_apply,
+    ← mpullback_comp (hslice 1) hΦd, ← mpullback_comp (hslice 0) hΦd]
+  -- `Φ ∘ fun x ↦ (x, c)` is `fun x ↦ Φ (x, c)` by definition of composition.
+  rfl
 
 /-! ### Forms vanishing at the ends of the cylinder, and the double cylinder -/
 

@@ -124,16 +124,39 @@ theorem lyapunovPerronIntegral_def (A P : X →L[ℝ] X) (g : ℝ → X) (t : �
     lyapunovPerronIntegral A P g t = (∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))) -
       ∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s)) := (rfl)
 
-variable [CompleteSpace X]
+section NoCompleteSpace
 
-variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g g₁ g₂ : ℝ → X} {t : ℝ}
+variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g : ℝ → X} {t : ℝ}
 
-section Estimates
+/-- The Lyapunov--Perron integral is homogeneous in its forcing term. -/
+@[simp]
+theorem lyapunovPerronIntegral_smul (c : ℝ) (g : ℝ → X) (t : ℝ) :
+    lyapunovPerronIntegral A P (c • g) t =
+      c • lyapunovPerronIntegral A P g t := by
+  simp only [lyapunovPerronIntegral, Pi.smul_apply, map_smul, ← smul_sub,
+    intervalIntegral.integral_smul, integral_smul]
+
+/-- When `P` is idempotent and commutes with `A`, the integral terms of the Lyapunov--Perron
+equation have vanishing `P`-component at time `0`: there only the backward integral of the parts
+`g s - P (g s)` survives. -/
+theorem apply_lyapunovPerronIntegral_zero (hP : IsIdempotentElem P) (hAP : Commute A P) :
+    P (lyapunovPerronIntegral A P g 0) = 0 := by
+  rw [lyapunovPerronIntegral, intervalIntegral.integral_same, zero_sub, map_neg, neg_eq_zero]
+  by_cases hX : CompleteSpace X
+  · by_cases hint : IntegrableOn (fun s ↦ exp ((0 - s) • A) (g s - P (g s))) (Ioi 0)
+    · rw [← P.integral_comp_comm hint]
+      refine integral_eq_zero_of_ae (ae_of_all _ fun s ↦ ?_)
+      dsimp only [Pi.zero_apply]
+      rw [← mul_apply_eq_comp, ((hAP.symm.smul_right _).exp_right).eq, mul_apply_eq_comp, map_sub,
+        ← mul_apply_eq_comp P P, hP.eq, sub_self, map_zero]
+    · rw [integral_undef hint, map_zero]
+  · rw [integral_of_not_completeSpace hX, map_zero]
+
+section UnstableEstimates
 
 variable (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
 include hu
 
-omit [CompleteSpace X] in
 /-- The pointwise exponential bound on the unstable integrand. -/
 private theorem norm_unstable_integrand_le {s : ℝ} (hs : t < s) (hgs : ‖g s‖ ≤ M) :
     ‖exp ((t - s) • A) (g s - P (g s))‖ ≤
@@ -144,21 +167,6 @@ private theorem norm_unstable_integrand_le {s : ℝ} (hs : t < s) (hgs : ‖g s�
     _ = K * M * Real.exp (α * t) * Real.exp (-α * s) := by
       rw [mul_sub, sub_eq_add_neg, Real.exp_add, neg_mul]; ring
 
-/-- Under the backward exponential estimate, a forcing term that is continuous and bounded by `M`
-on `(t, ∞)` makes the unstable integrand of the Lyapunov--Perron equation integrable there. -/
-theorem integrableOn_lyapunovPerron_unstable (hα : 0 < α) (t : ℝ) (hg : ContinuousOn g (Ioi t))
-    (hgM : ∀ s ∈ Ioi t, ‖g s‖ ≤ M) :
-    IntegrableOn (fun s ↦ exp ((t - s) • A) (g s - P (g s))) (Ioi t) := by
-  have hbound : IntegrableOn (fun s ↦ K * M * Real.exp (α * t) * Real.exp (-α * s)) (Ioi t) :=
-    (integrableOn_exp_mul_Ioi (neg_neg_of_pos (NNReal.coe_pos.2 hα)) t).const_mul _
-  refine hbound.mono' ?_ ?_
-  · exact ((((differentiable_exp_smul_const ℝ A).continuous.comp
-      (continuous_const.sub continuous_id)).continuousOn.clm_apply
-        (hg.sub (P.continuous.comp_continuousOn' hg))).aestronglyMeasurable measurableSet_Ioi)
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with s hs
-    exact norm_unstable_integrand_le hu hs (hgM s hs)
-
-omit [CompleteSpace X] in
 /-- Under the backward exponential estimate, the unstable integral of a forcing term bounded by
 `M exp (-β s)` on `(t, ∞)` is bounded by `K M exp (-β t) / (α + β)`, provided `α + β > 0`. -/
 theorem norm_setIntegral_lyapunovPerron_unstable_le_mul_exp {β : ℝ} (hαβ : 0 < α + β) (t : ℝ)
@@ -189,7 +197,6 @@ theorem norm_setIntegral_lyapunovPerron_unstable_le_mul_exp {β : ℝ} (hαβ : 
         ← hsplit]
       ring
 
-omit [CompleteSpace X] in
 /-- Under the backward exponential estimate, the unstable integral of a forcing term bounded by
 `M` on `(t, ∞)` is bounded by `K M / α`. -/
 theorem norm_setIntegral_lyapunovPerron_unstable_le (hα : 0 < α) (t : ℝ)
@@ -198,9 +205,8 @@ theorem norm_setIntegral_lyapunovPerron_unstable_le (hα : 0 < α) (t : ℝ)
   simpa using norm_setIntegral_lyapunovPerron_unstable_le_mul_exp hu (β := 0)
     (by simpa using hα) t (by simpa using hgM)
 
-end Estimates
+end UnstableEstimates
 
-omit [CompleteSpace X] in
 /-- Under the forward exponential estimate, the stable integral of a forcing term bounded by
 `M exp (-β s)` on `[0, t]` is bounded by `K M exp (-β t) / (α - β)` in forward time, provided
 `β < α`. -/
@@ -243,7 +249,6 @@ theorem norm_intervalIntegral_lyapunovPerron_stable_le_mul_exp
       field_simp
     _ ≤ K * M / (α - β) * Real.exp (-β * t) := by gcongr
 
-omit [CompleteSpace X] in
 /-- Under the forward exponential estimate, the stable integral of a forcing term bounded by `M`
 on `[0, t]` is bounded by `K M / α` in forward time. -/
 theorem norm_intervalIntegral_lyapunovPerron_stable_le
@@ -253,7 +258,6 @@ theorem norm_intervalIntegral_lyapunovPerron_stable_le
   simpa using norm_intervalIntegral_lyapunovPerron_stable_le_mul_exp hs (β := 0)
     (by simpa using hα) ht (by simpa using hgM)
 
-omit [CompleteSpace X] in
 /-- Under the forward and backward exponential estimates, the integral terms of the
 Lyapunov--Perron equation with a forcing term bounded by `M exp (-β s)` in forward time are
 bounded by `2 K M exp (-β t) / (α - β)` in forward time, for a rate `0 ≤ β < α`. -/
@@ -278,7 +282,6 @@ theorem norm_lyapunovPerronIntegral_le_mul_exp
         add_le_add h₁ (h₂.trans h₃)
     _ = 2 * K * M / (α - β) * Real.exp (-β * t) := by ring
 
-omit [CompleteSpace X] in
 /-- Under the forward and backward exponential estimates, the integral terms of the
 Lyapunov--Perron equation with a forcing term bounded by `M` are bounded by `2 K M / α` in
 forward time. -/
@@ -290,10 +293,27 @@ theorem norm_lyapunovPerronIntegral_le
   simpa using norm_lyapunovPerronIntegral_le_mul_exp hs hu le_rfl (β := 0)
     (by simpa using hα) (by simpa using fun s _ ↦ hgM s) ht
 
+end NoCompleteSpace
+
 section Derivative
 
-variable (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
+variable [CompleteSpace X] {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g g₁ g₂ : ℝ → X}
+  (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
 include hu
+
+/-- Under the backward exponential estimate, a forcing term that is continuous and bounded by `M`
+on `(t, ∞)` makes the unstable integrand of the Lyapunov--Perron equation integrable there. -/
+theorem integrableOn_lyapunovPerron_unstable (hα : 0 < α) (t : ℝ) (hg : ContinuousOn g (Ioi t))
+    (hgM : ∀ s ∈ Ioi t, ‖g s‖ ≤ M) :
+    IntegrableOn (fun s ↦ exp ((t - s) • A) (g s - P (g s))) (Ioi t) := by
+  have hbound : IntegrableOn (fun s ↦ K * M * Real.exp (α * t) * Real.exp (-α * s)) (Ioi t) :=
+    (integrableOn_exp_mul_Ioi (neg_neg_of_pos (NNReal.coe_pos.2 hα)) t).const_mul _
+  refine hbound.mono' ?_ ?_
+  · exact ((((differentiable_exp_smul_const ℝ A).continuous.comp
+      (continuous_const.sub continuous_id)).continuousOn.clm_apply
+        (hg.sub (P.continuous.comp_continuousOn' hg))).aestronglyMeasurable measurableSet_Ioi)
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with s hs
+    exact norm_unstable_integrand_le hu hs (hgM s hs)
 
 /-- The integral terms of the Lyapunov--Perron equation are linear in the forcing term. -/
 theorem lyapunovPerronIntegral_sub (hα : 0 < α) (hg₁ : Continuous g₁) (hg₁M : ∀ s, ‖g₁ s‖ ≤ M)
@@ -317,15 +337,6 @@ theorem lyapunovPerronIntegral_sub (hα : 0 < α) (hg₁ : Continuous g₁) (hg�
     integral_sub (integrableOn_lyapunovPerron_unstable hu hα t hg₁.continuousOn fun s _ ↦ hg₁M s)
       (integrableOn_lyapunovPerron_unstable hu hα t hg₂.continuousOn fun s _ ↦ hg₂M s)]
   abel
-
-omit [CompleteSpace X] hu in
-/-- The Lyapunov--Perron integral is homogeneous in its forcing term. -/
-@[simp]
-theorem lyapunovPerronIntegral_smul (c : ℝ) (g : ℝ → X) (t : ℝ) :
-    lyapunovPerronIntegral A P (c • g) t =
-      c • lyapunovPerronIntegral A P g t := by
-  simp only [lyapunovPerronIntegral, Pi.smul_apply, map_smul, ← smul_sub,
-    intervalIntegral.integral_smul, integral_smul]
 
 /-- Under the backward exponential estimate, the integral terms of the Lyapunov--Perron equation
 solve the forced linear equation `y' = A y + g`. -/
@@ -381,7 +392,10 @@ theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
 
 end Derivative
 
-omit [CompleteSpace X] in
+section Continuity
+
+variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g : ℝ → X}
+
 /-- Under the backward exponential estimate, the integral terms of the Lyapunov--Perron equation
 are continuous in time. -/
 theorem continuous_lyapunovPerronIntegral
@@ -397,22 +411,9 @@ theorem continuous_lyapunovPerronIntegral
     rw [this]
     exact continuous_const
 
-omit [CompleteSpace X] in
-/-- When `P` is idempotent and commutes with `A`, the integral terms of the Lyapunov--Perron
-equation have vanishing `P`-component at time `0`: there only the backward integral of the parts
-`g s - P (g s)` survives. -/
-theorem apply_lyapunovPerronIntegral_zero (hP : IsIdempotentElem P) (hAP : Commute A P) :
-    P (lyapunovPerronIntegral A P g 0) = 0 := by
-  rw [lyapunovPerronIntegral, intervalIntegral.integral_same, zero_sub, map_neg, neg_eq_zero]
-  by_cases hX : CompleteSpace X
-  · by_cases hint : IntegrableOn (fun s ↦ exp ((0 - s) • A) (g s - P (g s))) (Ioi 0)
-    · rw [← P.integral_comp_comm hint]
-      refine integral_eq_zero_of_ae (ae_of_all _ fun s ↦ ?_)
-      dsimp only [Pi.zero_apply]
-      rw [← mul_apply_eq_comp, ((hAP.symm.smul_right _).exp_right).eq, mul_apply_eq_comp, map_sub,
-        ← mul_apply_eq_comp P P, hP.eq, sub_self, map_zero]
-    · rw [integral_undef hint, map_zero]
-  · rw [integral_of_not_completeSpace hX, map_zero]
+end Continuity
+
+variable [CompleteSpace X] {A P : X →L[ℝ] X} {K α : ℝ≥0}
 
 /-- Under the backward exponential estimate, a vector `v` with `P v = 0` whose forward orbit
 `t ↦ exp (t A) v` stays bounded is zero, provided `P` commutes with `A`.
