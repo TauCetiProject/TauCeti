@@ -71,9 +71,10 @@ lemma coefficientTwo_ne_id : coefficientTwo ≠ 𝟙 integerSheaf := by
   have hf : coefficientTwo.hom.app (op ⊤) = e.hom ≫ (2 • 𝟙 integerModule) ≫ e.inv := by
     dsimp only [coefficientTwo, skyscraperF, skyscraperSheafFunctor, skyscraperPresheafFunctor,
       ObjectProperty.homMk]
-    rw [SkyscraperPresheafFunctor.map'_app]
-    erw [dite_eq_left hmem]
-    rfl
+    simp only [SkyscraperPresheafFunctor.map'_app, e, eqToIso.hom, eqToIso.inv]
+    -- The top open contains the skyscraper point, so the `dite` takes its first branch. Its
+    -- condition is stated for `unop (op ⊤)`, which `exact` unifies with `⊤`.
+    exact dite_eq_left hmem
   have hc := congrArg (fun f ↦ e.inv ≫ f ≫ e.hom) ht
   -- The evaluated identity sheaf map is the identity on the skyscraper's top carrier.
   have hid : (𝟙 integerSheaf : integerSheaf ⟶ integerSheaf).hom.app (op ⊤) =

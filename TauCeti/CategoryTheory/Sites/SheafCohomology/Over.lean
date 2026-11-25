@@ -163,8 +163,7 @@ lemma cohomologyPresheafObjIsoOver_resolutionClass {n : ℕ} (s : (K.X n).obj.ob
   dsimp only [sheafPullbackFreeYonedaIso, c] at hv
   erw [IsIso.hom_inv_id_assoc, AddEquiv.apply_symm_apply] at hv
   -- `overPullback` is continuous pushforward; its representable has the same op/unop object.
-  convert hv using 1
-  rfl
+  exact hv
 
 end
 

@@ -52,7 +52,7 @@ lemma ΓNatIsoSheafSections_hom_app_eq_ΓRes {T : C} (hT : IsTerminal T) (F : Sh
       (((constantSheafΓAdj J A).homEquiv _ _).symm (𝟙 _))).app (op T)
   rw [Adjunction.homEquiv_counit, CategoryTheory.Functor.map_id, Category.id_comp]
   -- The identity functor on sheaves has object `F`.
-  rfl
+  dsimp only [Functor.id_obj]
 /-- Restriction to a terminal object is the canonical identification of global sections. -/
 lemma natTransΓRes_eq_ΓNatIsoSheafSections_hom {T : C} (hT : IsTerminal T) :
     Sheaf.natTransΓRes J A (op T) = (Sheaf.ΓNatIsoSheafSections J A hT).hom := by

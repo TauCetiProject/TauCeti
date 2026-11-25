@@ -327,8 +327,8 @@ lemma moduleCohomologyForgetComparison_hom_app_injectiveResolution (n : ℕ) :
   rw [Functor.map_comp] at he
   dsimp only [Functor.mapIso_hom]
   erw [reassoc_of% he]
-  -- The comparison hom is the composite of the evaluated homology-isomorphism factors above.
-  rfl
+  -- The two sides differ only in `(α.app F).hom` versus `α.hom.app F`.
+  rw [Iso.app_hom]
 
 private lemma moduleComplexForget_chain_component (F : X.Sheaf (ModuleCat.{u} R)) :
     (Sheaf.ΓCompIsoSheafComposeCompΓ (Opens.grothendieckTopology X)

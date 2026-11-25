@@ -633,8 +633,8 @@ theorem resolutionExtClass_mapExactFunctor (n : ℕ) :
       ← Ext.comp_assoc_of_second_deg_zero, mappedSuccExtClass_naturality G K hK n]
     rw [Ext.comp_assoc (a₂₃ := n + 2) _ _ _ _ (by omega) (by omega),
       CochainComplex.resolutionExtClass_succ]
-    -- `mappedResolution` is the mapped complex; its successor cycle class has this same composite.
-    rfl
+    -- `mappedCyclesIso` is the cycles comparison of the degree-`n + 2` short complex.
+    rw [mappedCyclesIso]
 
 /-- Exact functors transport the extension class of a cocycle. -/
 theorem extMk_mapExactFunctor {P : C} {n : ℕ} (f : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0) :
