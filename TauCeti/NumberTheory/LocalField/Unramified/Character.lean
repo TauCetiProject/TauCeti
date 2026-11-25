@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.Units.Decomposition
+public import TauCeti.Topology.Algebra.Group.SmoothCharacter
 
 /-!
 # Unramified characters of a local field
@@ -41,6 +42,8 @@ geometric Frobenius to `λ`.
 * `TauCeti.exists_eq_unramifiedCharacter_iff`: a continuous character is unramified exactly when
   it is trivial on `U(K,0)`.
 * `TauCeti.unramifiedCharacter_injective`: `a ↦ μ_a` is injective.
+* `TauCeti.isSmoothCharacter_unramifiedCharacter`: `μ_t` with values in a unit group `Aˣ` is a
+  smooth character, whatever the topology on `Aˣ`.
 
 ## References
 
@@ -142,5 +145,14 @@ theorem unramifiedCharacter_injective :
   obtain ⟨π, hπ⟩ := exists_isUniformizer K
   rw [← unramifiedCharacter_apply_of_isUniformizer a hπ,
     ← unramifiedCharacter_apply_of_isUniformizer b hπ, h]
+
+variable (K) in
+/-- The unramified character `μ_t` with values in a unit group `Aˣ` is smooth, whatever the topology
+on `Aˣ`: it is locally constant because the normalized valuation is. -/
+theorem isSmoothCharacter_unramifiedCharacter {A : Type*} [Monoid A] [TopologicalSpace Aˣ]
+    (t : Aˣ) : IsSmoothCharacter (unramifiedCharacter K t : Kˣ →* Aˣ) :=
+  isSmoothCharacter_iff_isLocallyConstant.2 <|
+    ((IsLocallyConstant.iff_continuous _).2 (continuous_normalizedValuation K)).comp
+      (zpowersHom Aˣ t)
 
 end TauCeti
