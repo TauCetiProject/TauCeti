@@ -129,9 +129,9 @@ theorem toPullback_surjective [IsAdicComplete (span {(p : A)}) A]
     Subtype.ext (Prod.ext (untilt_iterate_frobeniusEquiv_symm_succ_pow u n)
       (untilt_iterate_frobeniusEquiv_symm_succ_pow v n))
   let x : PreTilt (f.pullback g) p :=
-    ⟨fun n ↦ Ideal.Quotient.mk _ (c n), fun n ↦ by rw [← map_pow, hc]⟩
-  -- `PreTilt` is by definition `Perfection (ModP _ p) p`, whose coordinates are its components
-  have hx (n : ℕ) : coeff n x = Ideal.Quotient.mk _ (c n) := (rfl)
+    equivPerfection.symm ⟨fun n ↦ Ideal.Quotient.mk _ (c n), fun n ↦ by rw [← map_pow, hc]⟩
+  have hx (n : ℕ) : coeff n x = Ideal.Quotient.mk _ (c n) :=
+    (coeff_equivPerfection_symm _ n).trans (Perfection.coeff_mk _ _ n)
   refine ⟨x, Subtype.ext (Prod.ext (ext fun n ↦ ?_) (ext fun n ↦ ?_))⟩
   all_goals
     rw [coe_toPullback, coeff_map, hx, ModP.map_mk, coeff_eq_mk_untilt_iterate]
