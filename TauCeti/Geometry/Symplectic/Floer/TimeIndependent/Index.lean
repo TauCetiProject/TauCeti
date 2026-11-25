@@ -189,24 +189,20 @@ private theorem floerSobolevOperator_homotopy_apply (hω : ∀ v w, ω v w = (in
     (by simpa using contDiff_homotopy (F := F) hH 1) hγ fun s ↦
       (fderiv_hamiltonianVectorField_pi_div_two_mul_norm_sq hω (γ s)).symm ▸
         norm_neg_pi_smul_ofComplexModule_le
+  set D₀ := ω.floerSobolevOperator
+    (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+    (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)
+  set D₁ := ω.floerSobolevOperator
+    (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+    (fun _ _ ↦ 0) (fun _ v ↦ π / 2 * ‖v‖ ^ 2) (fun z ↦ γ z.1)
   refine Lp.ext ?_
   filter_upwards [coeFn_floerSobolevOperator ω hMτ x, coeFn_floerSobolevOperator ω hM₀ x,
-    coeFn_floerSobolevOperator ω hM₁ x, Lp.coeFn_add ((1 - τ) • ω.floerSobolevOperator _ _ _ _ x)
-      (τ • ω.floerSobolevOperator _ _ _ _ x),
-    Lp.coeFn_smul (1 - τ) (ω.floerSobolevOperator
-      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) x),
-    Lp.coeFn_smul τ (ω.floerSobolevOperator
-      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ v ↦ π / 2 * ‖v‖ ^ 2) (fun z ↦ γ z.1) x)]
-    with z h hD₀ hD₁ hadd hs₀ hs₁
-  rw [h, hadd, Pi.add_apply, hs₀, hs₁, Pi.smul_apply, Pi.smul_apply, hD₀, hD₁,
-    floerJetCoeff_const_eq, floerJetCoeff_const_eq, floerJetCoeff_const_eq,
-    fderiv_hamiltonianVectorField_homotopy hω hH,
-    fderiv_hamiltonianVectorField_pi_div_two_mul_norm_sq hω]
-  simp only [firstOrderJetCoeff_apply, neg_apply,
-    ContinuousLinearMap.comp_apply, add_apply, smul_apply,
-    map_add, map_smul, map_neg]
+    coeFn_floerSobolevOperator ω hM₁ x, Lp.coeFn_add ((1 - τ) • D₀ x) (τ • D₁ x),
+    Lp.coeFn_smul (1 - τ) (D₀ x), Lp.coeFn_smul τ (D₁ x)] with z h hD₀ hD₁ hadd hs₀ hs₁
+  simp only [D₀, D₁, h, hadd, hs₀, hs₁, hD₀, hD₁, Pi.add_apply, Pi.smul_apply,
+    floerJetCoeff_const_eq, fderiv_hamiltonianVectorField_homotopy hω hH,
+    fderiv_hamiltonianVectorField_pi_div_two_mul_norm_sq hω, firstOrderJetCoeff_apply, neg_apply,
+    ContinuousLinearMap.comp_apply, add_apply, smul_apply, map_add, map_smul, map_neg]
   module
 
 end Homotopy
@@ -416,76 +412,41 @@ variable (F) in
 /-- `W^{1,2}(ℝ, F)`, the zero mode of `W^{1,2}(ℝ × S¹, F)`. -/
 private abbrev pathSobolev := WeakDerivStep volume ⊤ 2 (ContinuousLinearMap.id ℝ (pathLp F))
 
-variable (F) in
-/-- The sum of the zero mode of a path and a nonzero mode of `W^{1,2}(ℝ × S¹, F)`. -/
-private def zeroModeCoprod :
-    ((WeakDerivStep volume ⊤ 2 (ContinuousLinearMap.id ℝ
-        (Lp F 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))))) ×
-      nonzeroModeSobolev F) →L[ℝ] H1 F :=
-  (zeroModeL F).coprod (nonzeroModeSobolev F).subtypeL
-
-variable (F) in
-/-- The sum of the zero mode of a square-integrable map and a nonzero mode of `L²(ℝ × S¹, F)`. -/
-private def zeroModeLpCoprod :
-    (Lp F 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) × nonzeroModeLp F) →L[ℝ]
-      Lp F 2 stripMeasure :=
-  (zeroModeLp F).toContinuousLinearMap.coprod (nonzeroModeLp F).subtypeL
-
-/-- Every element of `W^{1,2}(ℝ × S¹, F)` is uniquely the zero mode of a path plus a nonzero
-mode. -/
-private theorem bijective_zeroModeCoprod : Bijective (zeroModeCoprod F) := by
+/-- Let `P` fix the range of an injective `U` and map into it. Every vector is uniquely `U u` plus
+an element of the kernel of `P`. -/
+private theorem bijective_coprod_subtypeL_ker {E G : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {P : E →L[ℝ] E} {U : G →L[ℝ] E}
+    (hU : Injective U) (hPU : ∀ u, P (U u) = U u) (hP : ∀ x, P x ∈ Set.range U) :
+    Bijective (U.coprod (LinearMap.ker (P : E →ₗ[ℝ] E)).subtypeL) := by
   refine ⟨(injective_iff_map_eq_zero _).2 fun p hp ↦ ?_, fun x ↦ ?_⟩
-  · have hp' : zeroModeL F p.1 + (p.2 : H1 F) = 0 := by simpa [zeroModeCoprod] using hp
-    have hu : zeroModeL F p.1 = 0 := by
-      have h := congrArg sliceAverageL hp'
-      rwa [map_add, sliceAverageL_zeroModeL, sliceAverageL_coe_nonzeroModeSobolev, add_zero,
-        map_zero] at h
-    have hu' : p.1 = 0 := zeroModeL_injective (by rw [hu, map_zero])
+  · have hp' : U p.1 + (p.2 : E) = 0 := by simpa using hp
+    have hu : U p.1 = 0 := by
+      simpa [hPU, LinearMap.mem_ker.1 p.2.property] using congrArg P hp'
     rw [hu, zero_add] at hp'
-    exact Prod.ext hu' (Subtype.ext hp')
-  · obtain ⟨u, hu⟩ := sliceAverageL_mem_range_zeroModeL x
-    refine ⟨(u, ⟨x - sliceAverageL x, mem_nonzeroModeSobolev.2 ?_⟩), ?_⟩
-    · rw [map_sub, sliceAverageL_sliceAverageL, sub_self]
-    · simp [zeroModeCoprod, hu]
-
-/-- Every element of `L²(ℝ × S¹, F)` is uniquely the zero mode of a square-integrable map plus a
-nonzero mode. -/
-private theorem bijective_zeroModeLpCoprod : Bijective (zeroModeLpCoprod F) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun p hp ↦ ?_, fun y ↦ ?_⟩
-  · have hp' : zeroModeLp F p.1 + (p.2 : Lp F 2 stripMeasure) = 0 := by
-      simpa [zeroModeLpCoprod] using hp
-    have hu : zeroModeLp F p.1 = 0 := by
-      have h := congrArg sliceAverageLp hp'
-      rwa [map_add, sliceAverageLp_zeroModeLp, sliceAverageLp_coe_nonzeroModeLp, add_zero,
-        map_zero] at h
-    have hu' : p.1 = 0 := (zeroModeLp F).injective (by rw [hu, map_zero])
-    rw [hu, zero_add] at hp'
-    exact Prod.ext hu' (Subtype.ext hp')
-  · obtain ⟨v, hv⟩ := sliceAverageLp_mem_range_zeroModeLp y
-    refine ⟨(v, ⟨y - sliceAverageLp y, mem_nonzeroModeLp.2 ?_⟩), ?_⟩
-    · rw [map_sub, sliceAverageLp_sliceAverageLp, sub_self]
-    · simp [zeroModeLpCoprod, hv]
+    exact Prod.ext (hU (by simpa using hu)) (Subtype.ext hp')
+  · obtain ⟨u, hu⟩ := hP x
+    refine ⟨(u, ⟨x - P x, LinearMap.mem_ker.2 ?_⟩), ?_⟩
+    · rw [ContinuousLinearMap.coe_coe, map_sub, ← hu, hPU, sub_self]
+    · simp [hu]
 
 variable (F) in
 /-- `W^{1,2}(ℝ × S¹, F)` is the zero mode of `W^{1,2}(ℝ, F)` plus the nonzero modes. -/
-private def zeroModeProdEquiv :
-    ((WeakDerivStep volume ⊤ 2 (ContinuousLinearMap.id ℝ
-        (Lp F 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))))) ×
-      nonzeroModeSobolev F) ≃L[ℝ] H1 F :=
+private def zeroModeProdEquiv : (pathSobolev F × nonzeroModeSobolev F) ≃L[ℝ] H1 F :=
+  have h := bijective_coprod_subtypeL_ker (U := zeroModeL F) zeroModeL_injective
+    sliceAverageL_zeroModeL sliceAverageL_mem_range_zeroModeL
   ContinuousLinearEquiv.ofBijective (𝕜 := ℝ) (E := pathSobolev F × nonzeroModeSobolev F)
-    (F := H1 F) (zeroModeCoprod F)
-    (LinearMap.ker_eq_bot.2 (bijective_zeroModeCoprod (F := F)).1)
-    (LinearMap.range_eq_top.2 (bijective_zeroModeCoprod (F := F)).2)
+    (F := H1 F) ((zeroModeL F).coprod (nonzeroModeSobolev F).subtypeL)
+    (LinearMap.ker_eq_bot.2 h.1) (LinearMap.range_eq_top.2 h.2)
 
 variable (F) in
 /-- `L²(ℝ × S¹, F)` is the zero mode of `L²(ℝ, F)` plus the nonzero modes. -/
-private def zeroModeLpProdEquiv :
-    (Lp F 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) × nonzeroModeLp F) ≃L[ℝ]
-      Lp F 2 stripMeasure :=
+private def zeroModeLpProdEquiv : (pathLp F × nonzeroModeLp F) ≃L[ℝ] Lp F 2 stripMeasure :=
+  have h := bijective_coprod_subtypeL_ker (U := (zeroModeLp F).toContinuousLinearMap)
+    (zeroModeLp F).injective sliceAverageLp_zeroModeLp sliceAverageLp_mem_range_zeroModeLp
   ContinuousLinearEquiv.ofBijective (𝕜 := ℝ) (E := pathLp F × nonzeroModeLp F)
-    (F := Lp F 2 stripMeasure) (zeroModeLpCoprod F)
-    (LinearMap.ker_eq_bot.2 (bijective_zeroModeLpCoprod (F := F)).1)
-    (LinearMap.range_eq_top.2 (bijective_zeroModeLpCoprod (F := F)).2)
+    (F := Lp F 2 stripMeasure)
+    ((zeroModeLp F).toContinuousLinearMap.coprod (nonzeroModeLp F).subtypeL)
+    (LinearMap.ker_eq_bot.2 h.1) (LinearMap.range_eq_top.2 h.2)
 
 /-- In the splittings into the zero mode and the nonzero modes, the linearized operator along a
 time-independent cylinder is the product of the Morse operator and its restriction to the nonzero
@@ -503,9 +464,8 @@ private theorem floerSobolevOperator_comp_zeroModeProdEquiv (hH : ContDiff ℝ 2
         ((WeakDerivStep.trajectoryOperator (p := 2) A).prodMap
           (nonzeroModes ω H γ)) := by
   refine ContinuousLinearMap.ext fun p ↦ ?_
-  simp [zeroModeProdEquiv, zeroModeLpProdEquiv, zeroModeCoprod, zeroModeLpCoprod,
-    coe_nonzeroModes_apply, ContinuousLinearEquiv.coe_ofBijective,
-    floerSobolevOperator_zeroModeL hH hγ haγ hA]
+  simp [zeroModeProdEquiv, zeroModeLpProdEquiv, coe_nonzeroModes_apply,
+    ContinuousLinearEquiv.coe_ofBijective, floerSobolevOperator_zeroModeL hH hγ haγ hA]
 
 end Splitting
 
