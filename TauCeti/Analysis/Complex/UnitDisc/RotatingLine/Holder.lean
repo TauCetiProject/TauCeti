@@ -15,8 +15,6 @@ import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Circle.Rotation
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Gain
 import TauCeti.Analysis.Complex.UnitDisc.RiemannHilbert
-import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Boundary
-import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.Normed.Module.Ball.HolderExtension
@@ -179,7 +177,8 @@ theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_of_holderOnWith {k : �
   · -- The real derivative of the holomorphic `h` is multiplication by `h' z = deriv h z`.
     rw [hfd z hz, ((hhd.differentiableAt isOpen_ball hz).hasDerivAt.complexToReal_fderiv).fderiv,
       Pi.add_apply, Function.comp_apply, hh'd z hz]
-    congr 1
+    ext
+    simp [Λ, mul_comm]
   · rw [hbar z hz, hTbar z (hsub (ball_subset_closedBall hz)), hgf (ball_subset_closedBall hz)]
   · have := hhb w hw
     simp only [Pi.add_apply, map_add, mul_add]
@@ -193,14 +192,15 @@ values `u w = w ^ k * conj (u w)` on the unit circle, centre value `u 0 = a` and
 `∂ₛu(0) = b`. For `k = 3` the solution is unique
 (`TauCeti.eqOn_of_conjWirtingerDeriv_eq_of_eq_zpow_mul_conj_of_eq_of_fderiv_eq`). -/
 theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_and_eq_and_fderiv_eq_of_holderOnWith
-    {k : ℕ} (hk : 3 ≤ k) {α C : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) {f : ℂ → ℂ}
+    {k : ℤ} (hk : 3 ≤ k) {α C : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) {f : ℂ → ℂ}
     (hf : HolderOnWith C α f (closedBall 0 1)) (a b : ℂ) :
     ∃ u : ℂ → ℂ, (∃ K, HolderOnWith K α u (closedBall 0 1)) ∧ DifferentiableOn ℝ u (ball 0 1) ∧
       (∃ (u' : ℂ → ℂ →L[ℝ] ℂ) (K : ℝ≥0), HolderOnWith K α u' (closedBall 0 1) ∧
         ∀ z ∈ ball (0 : ℂ) 1, fderiv ℝ u z = u' z) ∧
       (∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv u z 1 = f z) ∧
-      (∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ (k : ℤ) * conj (u w)) ∧ u 0 = a ∧
+      (∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)) ∧ u 0 = a ∧
       fderiv ℝ u 0 1 = b := by
+  lift k to ℕ using by omega
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 3 := ⟨k - 3, by omega⟩
   obtain ⟨u, ⟨K, huH⟩, hud, ⟨u', K', hu'H, hu'⟩, hubar, hub⟩ :=
     exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_of_holderOnWith (k := ((j + 3 : ℕ) : ℤ))

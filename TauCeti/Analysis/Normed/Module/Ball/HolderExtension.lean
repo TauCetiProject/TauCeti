@@ -68,10 +68,21 @@ theorem ballCutoff_eq_zero_of_two_mul_le_dist (hr : 0 < r) (hx : 2 * r ≤ dist 
   rw [ballCutoff, projIcc_of_le_left _ hneg]
 
 /-- The ball cutoff takes values in `[0, 1]`. -/
+theorem ballCutoff_mem_Icc (x₀ : X) (r : ℝ) (x : X) : ballCutoff x₀ r x ∈ Icc 0 1 :=
+  ballCutoff_apply x₀ r x ▸ Subtype.prop _
+
+/-- The ball cutoff is nonnegative. -/
+theorem ballCutoff_nonneg (x₀ : X) (r : ℝ) (x : X) : 0 ≤ ballCutoff x₀ r x :=
+  (ballCutoff_mem_Icc x₀ r x).1
+
+/-- The ball cutoff is at most `1`. -/
+theorem ballCutoff_le_one (x₀ : X) (r : ℝ) (x : X) : ballCutoff x₀ r x ≤ 1 :=
+  (ballCutoff_mem_Icc x₀ r x).2
+
+/-- The norm of the ball cutoff is at most `1`. -/
 theorem norm_ballCutoff_le (x₀ : X) (r : ℝ) (x : X) : ‖ballCutoff x₀ r x‖ ≤ 1 := by
-  have h := (projIcc (0 : ℝ) 1 zero_le_one (2 - dist x x₀ / r)).property
-  rw [ballCutoff, Real.norm_of_nonneg h.1]
-  exact h.2
+  rw [Real.norm_of_nonneg (ballCutoff_nonneg x₀ r x)]
+  exact ballCutoff_le_one x₀ r x
 
 /-- The ball cutoff of radius `r` is `|r|⁻¹`-Lipschitz. -/
 theorem lipschitzWith_ballCutoff (x₀ : X) (r : ℝ) : LipschitzWith ‖r‖₊⁻¹ (ballCutoff x₀ r) := by
