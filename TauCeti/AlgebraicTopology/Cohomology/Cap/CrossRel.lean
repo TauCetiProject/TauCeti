@@ -18,7 +18,7 @@ import TauCeti.AlgebraicTopology.Cohomology.Point
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.Cross
 
 /-!
-# Capping a relative cross product with a class of the first factor
+# Capping a relative cross product with a class of either factor
 
 Let `(X, B)` be a pair and `Y` a space, and consider the product pair
 `(X, B) × Y = (X × Y, B × Y)`. For a relative class `o ∈ Hₘ(X, B; R)` and a class
