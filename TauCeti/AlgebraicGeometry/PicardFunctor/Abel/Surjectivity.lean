@@ -54,7 +54,7 @@ theorem exists_abelMap_app_eq_of_genus_le (d : ℕ)
     (c : (relativePicardPresheaf f).obj (op (Over.mk g)))
     (hc : relativePicardFiberDegree f ξ c = d) :
     ∃ D : (relativeEffectiveCartierDegreeSubfunctor f d).toFunctor.obj (op (Over.mk g)),
-      (abelMap f).app (op (Over.mk g)) (ULift.up D.1) = c := by
+      (abelMap f).app (op (Over.mk g)) (ULift.up D.val) = c := by
   let _ : (pullback g f).Over (Spec (.of k)) := ⟨pullback.fst g f⟩
   have := SmoothOfRelativeDimension.smooth 1 f
   have : IsProper (pullback g f ↘ Spec (.of k)) :=
