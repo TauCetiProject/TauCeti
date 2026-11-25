@@ -84,26 +84,20 @@ theorem primePsiErrorTransform_apply {s : ℂ} (h₀ : s ≠ 0) (hζ : dedekindZ
   toMeromorphicNFOn_apply_of_analyticAt (meromorphic_primePsiErrorExpression K)
     (analyticAt_primePsiErrorExpression K h₀ hζ)
 
-private theorem sum_Icc_primeVonMangoldtCoeff (x : ℝ) :
-    ∑ n ∈ Icc 1 ⌊x⌋₊, (primeVonMangoldtCoeff K univ n : ℂ) = (primePsi K univ x : ℂ) := by
-  have h₀ : primeVonMangoldtCoeff K univ 0 = 0 :=
-    primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow _ not_isPrimePow_zero
-  rw [primePsi_eq_sum_range, Nat.range_succ_eq_Icc_zero, ofReal_sum,
-    ← insert_Icc_add_one_left_eq_Icc (Nat.zero_le ⌊x⌋₊), sum_insert (by simp)]
-  simp [h₀]
-
 /-- On `Re s > 1`, the Laplace transform of `u ↦ ψ_K(exp u)` converges absolutely and is
 `-(ζ_K′/ζ_K)(s) / s`. -/
 theorem hasLaplace_primePsi_exp {s : ℂ} (hs : 1 < s.re) :
     HasLaplace (fun u ↦ (primePsi K univ (Real.exp u) : ℂ)) s
       (-logDeriv (dedekindZetaC K) s / s) := by
   let a : ℕ → ℂ := fun n ↦ (primeVonMangoldtCoeff K univ n : ℂ)
+  have hpsi (x : ℝ) : ∑ n ∈ Icc 1 ⌊x⌋₊, a n = (primePsi K univ x : ℂ) := by
+    simp only [a, primePsi_eq_sum_Icc, ofReal_sum]
   have hO : (fun n : ℕ ↦ ∑ j ∈ Icc 1 n, a j) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (1 : ℝ) := by
     apply isBigO_norm_left.mp
     have h := (primeIdealTheorem K).1.isBigO.comp_tendsto tendsto_natCast_atTop_atTop
     refine (h.norm_left.congr_left fun n ↦ ?_).congr_right fun n ↦ by simp
-    rw [Function.comp_apply, ← Complex.norm_real, ← sum_Icc_primeVonMangoldtCoeff K (n : ℝ)]
-    simp [a]
+    rw [Function.comp_apply, ← Complex.norm_real, ← hpsi]
+    simp
   have hsum := LSeriesHasSum_primeVonMangoldtCoeff_univ (K := K) hs
   have hM := LSeries_eq_mul_integral a zero_le_one hs hsum.LSeriesSummable hO
   have hM_int := LSeries.integrableOn_sum_mul_cpow_of_isBigO a hO hs
@@ -117,7 +111,7 @@ theorem hasLaplace_primePsi_exp {s : ℂ} (hs : 1 < s.re) :
       Real.exp u • ((∑ j ∈ Icc 1 ⌊Real.exp u⌋₊, a j) * (Real.exp u : ℂ) ^ (-(s + 1))) =
         cexp (-s * u) • (primePsi K univ (Real.exp u) : ℂ) := by
     rw [Complex.real_smul, ofReal_exp_cpow, ofReal_exp, smul_eq_mul]
-    simp only [a, sum_Icc_primeVonMangoldtCoeff]
+    rw [hpsi]
     rw [mul_comm (primePsi K univ (Real.exp u) : ℂ), ← mul_assoc, ← Complex.exp_add]
     congr 2
     ring
