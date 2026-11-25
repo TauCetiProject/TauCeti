@@ -31,8 +31,8 @@ whose integral over `t` is `m |Du|(U) = ∞` by the Euclidean coarea formula
 For `u` of locally finite Euclidean variation the identity also holds on every Borel subset `B`
 of `Ω`, with the measure `e^{−W} |Du|` of `B` in place of the weighted variation:
 `∫_B e^{−W} d|Du| = ∫_ℝ ∫_B e^{−W} d|D1_{u > t}| dt`
-(`TauCeti.setLIntegral_exp_neg_variationMeasure_eq_lintegral`). Only measurability of the weight
-enters here.
+(`TauCeti.setLIntegral_exp_neg_variationMeasure_eq_lintegral_setLIntegral`). Only measurability
+of the weight enters here.
 
 ## References
 
@@ -111,7 +111,7 @@ integrable on the open set `Ω` with locally finite Euclidean variation there, a
 subset `B` of `Ω`, `∫_B e^{−W} d|Du| = ∫_ℝ ∫_B e^{−W} d|D1_{u > t}| dt`. For `B = Ω` and a `C¹`
 weight both sides are `V_μ(u; Ω)` and `∫_ℝ P_μ({u > t}; Ω) dt`
 (`TauCeti.weightedVariation_eq_lintegral_weightedPerimeter`). -/
-theorem setLIntegral_exp_neg_variationMeasure_eq_lintegral (hW : Measurable W)
+theorem setLIntegral_exp_neg_variationMeasure_eq_lintegral_setLIntegral (hW : Measurable W)
     (hu : LocallyIntegrableOn u Ω)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U u ≠ ∞)

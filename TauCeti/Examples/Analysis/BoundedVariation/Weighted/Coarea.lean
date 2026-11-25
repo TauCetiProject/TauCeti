@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
   for `0 ≤ t < 1` and empty for `t ≥ 1`, so for a `C¹` weight
   `∫_ℝ P_μ({1_U > t}; Ω) dt = ∫_0^1 P_μ(U; Ω) dt = P_μ(U; Ω)`
   (`lintegral_weightedPerimeter_setOf_lt_indicator`), as the weighted coarea formula requires of
-  `V_μ(1_U; Ω) = P_μ(U; Ω)` (`weightedPerimeter_eq_lintegral_weightedPerimeter_setOf_lt`).
+  `V_μ(1_U; Ω) = P_μ(U; Ω)` (`weightedPerimeter_eq_lintegral_weightedPerimeter_setOf_lt_indicator`).
 * **The identity on the Gaussian line.** For `u(t) = t` on `ℝ` with the Gaussian weight, the
   superlevel sets are the half-lines `(s, ∞)`, of Gaussian perimeter `φ(s)`
   (`gaussianPerimeter_Ioi`), so `∫_ℝ P_γ((s, ∞)) ds = ∫ φ = 1`
@@ -58,7 +58,7 @@ theorem lintegral_weightedPerimeter_setOf_lt_indicator (hW : ContDiff ℝ 1 W) (
     ENNReal.ofReal_one, mul_one]
 
 /-- The weighted coarea formula for an indicator is the identity `P_μ(U; Ω) = P_μ(U; Ω)`. -/
-theorem weightedPerimeter_eq_lintegral_weightedPerimeter_setOf_lt (hW : ContDiff ℝ 1 W)
+theorem weightedPerimeter_eq_lintegral_weightedPerimeter_setOf_lt_indicator (hW : ContDiff ℝ 1 W)
     {U : Set E} (hU : MeasurableSet U) :
     weightedPerimeter W Ω U = ∫⁻ t, weightedPerimeter W Ω {x | t < U.indicator (1 : E → ℝ) x} := by
   rw [weightedPerimeter_def]
@@ -87,7 +87,7 @@ theorem weightedVariation_gaussianWeight_id :
     weightedVariation (gaussianWeight ℝ) ⊤ id = 1 := by
   rw [weightedVariation_eq_lintegral_weightedPerimeter contDiff_gaussianWeight
     (continuous_id.locallyIntegrable.locallyIntegrableOn _), ← lintegral_gaussianPerimeter_Ioi]
-  simp_rw [gaussianPerimeter_def]
-  rfl
+  -- The superlevel set `{x | t < id x}` is the half-line `Ioi t`.
+  simp_rw [gaussianPerimeter_def, id_eq, ← Set.Ioi_def]
 
 end TauCeti.Examples.WeightedCoarea
