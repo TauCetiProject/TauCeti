@@ -19,9 +19,10 @@ Both quaternion-pair models of compact `Spin(4)` from
 with `unitary ℍ[ℝ] × unitary ℍ[ℝ]`, and via `ContinuousMulEquiv.toQuaternionSpecialUnitaryProd` and
 `ContinuousMulEquiv.toQuaternionSphereProdHomeomorph` to `SU(2) × SU(2)` and `S³ × S³ ⊆ ℍ × ℍ`.
 
-## Main definitions
+## Main definitions and results
 
-* `TauCeti.realSpinFourContinuousMulEquivQuaternionUnitaryProd`,
+* `TauCeti.realSpinFourContinuousMulEquivQuaternionUnitaryProd` (with `@[fun_prop]` continuity of
+  `realSpinFourEquivQuaternionUnitaryProd` and its inverse),
   `TauCeti.realSpinFourContinuousMulEquivSpecialUnitaryProd`, and
   `TauCeti.realSpinFourHomeomorphQuaternionSphereProd`: native topological models of `Spin(4)`.
 * `TauCeti.realSpinFourCalibratedContinuousMulEquivQuaternionUnitaryProd`,
@@ -75,6 +76,13 @@ noncomputable def realSpinFourContinuousMulEquivQuaternionUnitaryProd :
     Continuous ⇑realSpinFourEquivQuaternionUnitaryProd :=
   (map_continuous realSpinFourContinuousMulEquivQuaternionUnitaryProd).congr
     realSpinFourContinuousMulEquivQuaternionUnitaryProd_apply
+
+/-- The inverse of the compact `Spin(4)` equivalence with pairs of unit quaternions is
+continuous. -/
+@[fun_prop] theorem continuous_realSpinFourEquivQuaternionUnitaryProd_symm :
+    Continuous realSpinFourEquivQuaternionUnitaryProd.symm :=
+  (map_continuous realSpinFourContinuousMulEquivQuaternionUnitaryProd.symm).congr
+    realSpinFourContinuousMulEquivQuaternionUnitaryProd_symm_apply
 
 /-- **Native topological group isomorphism `Spin(4) ≃ₜ* SU(2) × SU(2)`.** -/
 noncomputable def realSpinFourContinuousMulEquivSpecialUnitaryProd :

@@ -23,6 +23,8 @@ determinant `-1`.
 ## Main results
 
 * `TauCeti.realCliffordCoordReflection_apply`: the reflection negates the `i`-th coordinate.
+* `TauCeti.realCliffordCoordReflection_involutive` and
+  `TauCeti.realCliffordCoordReflection_symm`: the reflection is an involution.
 * `TauCeti.det_realCliffordCoordReflection`: the reflection has determinant `-1`.
 -/
 
@@ -66,6 +68,12 @@ theorem realCliffordCoordReflection_apply (i : Fin n) (v : Fin n → ℝ) :
     ring
   · simp [hj]
 
+/-- The reflection in a coordinate hyperplane is an involution. -/
+theorem realCliffordCoordReflection_involutive (i : Fin n) :
+    Function.Involutive (realCliffordCoordReflection i) := fun v ↦ by
+  ext j
+  rcases eq_or_ne j i with rfl | hj <;> simp [*]
+
 /-- The reflection in a coordinate hyperplane has determinant `-1`. -/
 @[simp]
 theorem det_realCliffordCoordReflection (i : Fin n) :
@@ -76,13 +84,11 @@ theorem det_realCliffordCoordReflection (i : Fin n) :
     QuadraticMap.orthogonalDet_reflectionOrthogonal]
   simp
 
-/-- The reflection in a coordinate hyperplane is an involution. -/
+/-- The inverse of a coordinate-hyperplane reflection is the reflection itself. -/
 @[simp]
 theorem realCliffordCoordReflection_symm (i : Fin n) :
     (realCliffordCoordReflection i).symm = realCliffordCoordReflection i :=
-  DFunLike.ext _ _ fun v ↦ (realCliffordCoordReflection i).symm_apply_eq.mpr <| funext fun j ↦ by
-    rcases eq_or_ne j i with rfl | hj
-    · simp
-    · simp [hj]
+  DFunLike.ext _ _ fun v ↦ (realCliffordCoordReflection i).symm_apply_eq.mpr
+    (realCliffordCoordReflection_involutive i v).symm
 
 end TauCeti

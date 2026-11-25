@@ -249,9 +249,10 @@ theorem realSpecialOrthogonalFourCalibratedHomotopyGroupMulEquivSphereProd_symm_
     (b : HomotopyGroup N (QuadraticMap.specialOrthogonalGroup (realCliffordForm 4 0)) 1) :
     realSpecialOrthogonalFourCalibratedHomotopyGroupMulEquivSphereProd
         (HomotopyGroup.map
-          (realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv (0 : Fin 4) : C(_, _))
-          (map_one (realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv (0 : Fin 4)))
-          b) =
+          ((realCliffordCoordReflection
+              (0 : Fin 4)).specialOrthogonalGroupCongrContinuousMulEquivPi : C(_, _))
+          (map_one (realCliffordCoordReflection
+            (0 : Fin 4)).specialOrthogonalGroupCongrContinuousMulEquivPi) b) =
       Prod.swap (realSpecialOrthogonalFourCalibratedHomotopyGroupMulEquivSphereProd b) := by
   obtain ⟨a, rfl⟩ := (realCliffordSpinProjectionZeroHomotopyGroupMulEquiv 4).surjective b
   rw [realCliffordSpinProjectionZeroHomotopyGroupMulEquiv_apply,

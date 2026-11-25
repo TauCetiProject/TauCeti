@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.Algebra.Central.Quaternion
 public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.Algebra.Subalgebra.Center
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.RingTheory.Nilpotent.Reduced
 
 /-!
@@ -347,8 +348,7 @@ noncomputable def realCliffordFourZeroCalibrationUnitary : unitary ℍ[ℝ] :=
   ⟨⟨(Real.sqrt 2)⁻¹, 0, (Real.sqrt 2)⁻¹, 0⟩, by
     rw [QuaternionAlgebra.mem_unitary_iff_normForm_eq_one,
       QuaternionAlgebra.normForm_apply_coordinates]
-    simp only [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
-    norm_num⟩
+    linear_combination Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq⟩
 
 /-- The underlying quaternion of `realCliffordFourZeroCalibrationUnitary` is `(1 + j) / √2`. -/
 @[simp]
@@ -362,26 +362,22 @@ theorem coe_realCliffordFourZeroCalibrationUnitary :
 theorem realCliffordFourZeroCalibrationUnitary_mul_self :
     (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) *
         (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) = ⟨0, 0, 1, 0⟩ := by
-  have hs : (Real.sqrt 2)⁻¹ ^ 2 = 1 / 2 := by
-    rw [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
   ext <;> simp only [coe_realCliffordFourZeroCalibrationUnitary, QuaternionAlgebra.mk_mul_mk]
   · ring
   · ring
-  · linear_combination 2 * hs
+  · linear_combination Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
   · ring
 
 /-- Conjugating `⟨a, b, c, d⟩` by `(1 + j) / √2` sends `(1, i, j, k)` to `(1, -k, j, i)`. -/
 theorem conjStarAlgAut_realCliffordFourZeroCalibrationUnitary_mk (a b c d : ℝ) :
     Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary ⟨a, b, c, d⟩ =
       ⟨a, d, c, -b⟩ := by
-  have hs : (Real.sqrt 2)⁻¹ ^ 2 = 1 / 2 := by
-    rw [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
   ext <;> simp only [Unitary.conjStarAlgAut_apply, coe_realCliffordFourZeroCalibrationUnitary,
     QuaternionAlgebra.star_mk, QuaternionAlgebra.mk_mul_mk]
-  · linear_combination 2 * a * hs
-  · linear_combination 2 * d * hs
-  · linear_combination 2 * c * hs
-  · linear_combination -2 * b * hs
+  · linear_combination a * Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
+  · linear_combination d * Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
+  · linear_combination c * Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
+  · linear_combination -b * Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
 
 /-- Inverse conjugation by `(1 + j) / √2` sends `(1, i, j, k)` to `(1, k, j, -i)`. -/
 theorem conjStarAlgAut_symm_realCliffordFourZeroCalibrationUnitary_mk (a b c d : ℝ) :
@@ -396,14 +392,13 @@ theorem realCliffordFourZeroCalibratedQuaternionEquiv_eq_neg_mul_star_mul (v : F
       -((realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) *
         star (realCliffordFourZeroQuaternionEquiv v) *
           (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ])) := by
-  let u : ℍ[ℝ] := (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ])
+  set u : ℍ[ℝ] := (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ])
   have hu : star u * u = 1 :=
     Unitary.star_mul_self_of_mem realCliffordFourZeroCalibrationUnitary.property
   have hmul (q : ℍ[ℝ]) : u * q * u =
       Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary q * (u * u) := by
-    rw [Unitary.conjStarAlgAut_apply]
-    change u * q * u = u * q * star u * (u * u)
-    rw [mul_assoc (u * q) (star u) (u * u), ← mul_assoc (star u) u u, hu, one_mul]
+    rw [Unitary.conjStarAlgAut_apply, mul_assoc (u * q) (star u) (u * u),
+      ← mul_assoc (star u) u u, hu, one_mul]
   rw [hmul, realCliffordFourZeroQuaternionEquiv_apply, QuaternionAlgebra.star_mk,
     conjStarAlgAut_realCliffordFourZeroCalibrationUnitary_mk,
     realCliffordFourZeroCalibrationUnitary_mul_self]
@@ -423,6 +418,14 @@ noncomputable def realCliffordFourZeroQuaternionProdCalibrationEquiv :
     map_smul' r p := Prod.ext (map_smul _ r p.2) (map_smul _ r p.1)
     map_star' p := Prod.ext (map_star _ p.2) (map_star _ p.1) }
 
+-- Not `@[simp]`: `realCliffordFourZeroQuaternionProdCalibrationEquiv_apply` is `@[simp]`.
+/-- Unfolding of `realCliffordFourZeroQuaternionProdCalibrationEquiv` in terms of
+`Unitary.conjStarAlgAut`. -/
+theorem realCliffordFourZeroQuaternionProdCalibrationEquiv_eq_conjStarAlgAut (p : ℍ[ℝ] × ℍ[ℝ]) :
+    realCliffordFourZeroQuaternionProdCalibrationEquiv p =
+      (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary p.2,
+        (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).symm p.1) := (rfl)
+
 /-- Coordinates of `realCliffordFourZeroQuaternionProdCalibrationEquiv`. -/
 @[simp]
 theorem realCliffordFourZeroQuaternionProdCalibrationEquiv_apply (p : ℍ[ℝ] × ℍ[ℝ]) :
@@ -431,8 +434,8 @@ theorem realCliffordFourZeroQuaternionProdCalibrationEquiv_apply (p : ℍ[ℝ] �
           star (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]),
         star (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) * p.1 *
           (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ])) := by
-  simp [realCliffordFourZeroQuaternionProdCalibrationEquiv, Unitary.conjStarAlgAut_apply,
-    Unitary.coe_star]
+  simp [realCliffordFourZeroQuaternionProdCalibrationEquiv_eq_conjStarAlgAut,
+    Unitary.conjStarAlgAut_apply, Unitary.coe_star]
 
 /-- `realCliffordFourZeroQuaternionProdCalibrationEquiv` is an involution. -/
 @[simp]
@@ -474,11 +477,8 @@ theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι (m n : Fin 4 �
         star (realCliffordFourZeroCalibratedQuaternionEquiv m) *
           realCliffordFourZeroCalibratedQuaternionEquiv n) := by
   rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_eq_calibrationEquiv,
-    realCliffordFourZeroEvenEquivQuaternionProd_ι]
-  -- Unfold `realCliffordFourZeroQuaternionProdCalibrationEquiv` to `conjStarAlgAut` and `.symm`,
-  -- which preserve negation and multiplication and act on coordinates by `conjStarAlgAut_*_mk`.
-  change (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary _,
-    (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).symm _) = _
+    realCliffordFourZeroEvenEquivQuaternionProd_ι,
+    realCliffordFourZeroQuaternionProdCalibrationEquiv_eq_conjStarAlgAut]
   simp only [map_neg, map_mul, conjStarAlgAut_realCliffordFourZeroCalibrationUnitary_mk,
     conjStarAlgAut_symm_realCliffordFourZeroCalibrationUnitary_mk,
     realCliffordFourZeroCalibratedQuaternionEquiv_apply, QuaternionAlgebra.star_mk]

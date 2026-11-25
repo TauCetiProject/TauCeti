@@ -66,8 +66,6 @@ homomorphisms on the closed unit-range carriers in `(CliffordAlgebra (realCliffo
   `TauCeti.realCliffordSpinToSpecialOrthogonalRange_comp_blockSum`: compatibility
   of the unit-range stabilization and block-sum homomorphisms with the native Spin-to-`SO` carrier
   projection.
-* `TauCeti.realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv`: conjugation by a
-  coordinate reflection bundled as a topological group automorphism of `SO(n)`.
 
 ## References
 
@@ -451,36 +449,6 @@ theorem realCliffordSpinToSpecialOrthogonalRange_comp_blockSum (p q : ℕ) :
         ((realCliffordSpinToSpecialOrthogonalRange p).prodMap
           (realCliffordSpinToSpecialOrthogonalRange q)) :=
   ContinuousMonoidHom.ext fun _ ↦ by simp
-
-/-! ### Coordinate reflection on `SO(n)` -/
-
-/-- **Conjugation by a coordinate reflection on `SO(n)` is continuous.** -/
-@[fun_prop]
-theorem continuous_specialOrthogonalGroupCongr_realCliffordCoordReflection {n : ℕ} (i : Fin n) :
-    Continuous (realCliffordCoordReflection i).specialOrthogonalGroupCongr :=
-  (realCliffordCoordReflection i).continuous_specialOrthogonalGroupCongr_pi
-
-/-- **Coordinate-reflection conjugation on `SO(n)`, as a topological group automorphism.** -/
-def realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv {n : ℕ} (i : Fin n) :
-    QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
-      QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) :=
-  (realCliffordCoordReflection i).specialOrthogonalGroupCongrContinuousMulEquivPi
-
-/-- Evaluating `realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv` applies
-`(realCliffordCoordReflection i).specialOrthogonalGroupCongr`. -/
-@[simp]
-theorem realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv_apply {n : ℕ} (i : Fin n)
-    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
-    realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv i g =
-      (realCliffordCoordReflection i).specialOrthogonalGroupCongr g :=
-  (realCliffordCoordReflection i).specialOrthogonalGroupCongrContinuousMulEquivPi_apply g
-
-/-- `realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv` is an involution. -/
-@[simp]
-theorem realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv_symm {n : ℕ} (i : Fin n) :
-    (realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv i).symm =
-      realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv i := by
-  simp [realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv]
 
 end
 
