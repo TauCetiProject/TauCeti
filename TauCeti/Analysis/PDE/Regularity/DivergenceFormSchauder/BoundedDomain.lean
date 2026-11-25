@@ -10,7 +10,6 @@ public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Scaled
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.MeasureTheory.Function.Gluing
-import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The global Schauder estimate for divergence-form equations on a bounded domain
@@ -198,7 +197,8 @@ private theorem exists_boundary_piece {E : Type*} [NormedAddCommGroup E] [InnerP
   -- The data are integrable on `Ω`, as the equation for the zero extension needs.
   obtain ⟨CG, hCG⟩ := hΩ.isCompact_closure.exists_bound_of_continuousOn (hKG.continuousOn hα)
   obtain ⟨ha, hG⟩ :=
-    memLp_energyIntegrand_and_memLp_of_holderOnWith hα subset_closure hell hKa hKG hCG
+    memLp_energyIntegrand_and_memLp_of_holderOnWith (mu := volume) hα subset_closure hell hKa hKG
+      hCG
   set U₀ : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2 :=
     (W1p0.extendByZeroL (Omega' := ⊤) le_top u).val
   obtain ⟨g, hg, hghol, hgb⟩ := H (W := ⊤) (u := U₀)

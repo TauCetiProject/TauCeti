@@ -15,7 +15,6 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
-import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Schauder estimates for divergence-form equations with Hölder coefficients
@@ -91,8 +90,6 @@ All in the `TauCeti.PDE` namespace.
   the interior Schauder estimate for `∇u` with a scalar datum `f ∈ L^q`.
 * `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm`: its
   case `f = 0`, with exponent `α`.
-* `memLp_energyIntegrand_and_memLp_of_holderOnWith`: Hölder coefficients and fields on a set of
-  finite measure give an essentially bounded energy integrand and a square-integrable field.
 
 ## References
 
@@ -634,29 +631,6 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matri
     (fun φ => by rw [hu φ, Pi.zero_def]; simp only [zero_mul, integral_zero, add_zero]) hR hRS
   simpa only [sub_self, Real.rpow_zero, mul_one, eLpNorm_zero, ENNReal.toReal_zero, mul_zero,
     add_zero] using h'
-
-/-- **Integrability of Hölder data on a piece of finite measure.** On an open set `D` of finite
-measure inside `t`, a uniformly elliptic coefficient `a` that is Hölder on `t` defines an
-essentially bounded energy integrand, and a field `G` that is Hölder and bounded on `t` is
-square integrable. -/
-theorem memLp_energyIntegrand_and_memLp_of_holderOnWith {α : ℝ≥0} (hα : 0 < α)
-    {D : Opens (EuclideanSpace ℝ (Fin (n + 1)))} [IsFiniteMeasure (volume.restrict
-      (D : Set (EuclideanSpace ℝ (Fin (n + 1)))))] {t : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    (hDt : (D : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ t)
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
-    {Ka : ℝ≥0} (hell : UniformlyEllipticOn t a lam Lam)
-    (hKa : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) t)
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {KG : ℝ≥0} {M : ℝ}
-    (hG : HolderOnWith KG α G t) (hGM : ∀ x ∈ t, ‖G x‖ ≤ M) :
-    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict D) ∧
-      MemLp G 2 (volume.restrict D) :=
-  ⟨memLp_energyIntegrand_of_memLp_top (hell.pos.le.trans hell.le)
-      (((continuousOn_of_continuousOn_matrixBilinearForm (hKa.continuousOn hα)).mono
-        hDt).aestronglyMeasurable D.isOpen.measurableSet)
-      (fun _ hx => hell.upper_bound (hDt hx)) (memLp_top_const 0) (memLp_top_const 0),
-    MemLp.of_bound (((hG.continuousOn hα).mono hDt).aestronglyMeasurable
-      D.isOpen.measurableSet) _
-      ((ae_restrict_mem D.isOpen.measurableSet).mono fun x hx => hGM x (hDt hx))⟩
 
 end PDE
 

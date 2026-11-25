@@ -772,8 +772,8 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
   have hv0 := ae_value_w1pCompL_eq_zero hΦ hΨΦ himage hrU' hVW hΦB hu0 hH
   have hD'cl : (D' : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ t :=
     fun x hx => ⟨subset_closure (hD't hx).1, (hD't hx).2⟩
-  obtain ⟨ha, hGcD⟩ := memLp_energyIntegrand_and_memLp_of_holderOnWith (hβ.trans_le hβα) hD'cl
-    hell hKa hGc hGD
+  obtain ⟨ha, hGcD⟩ := memLp_energyIntegrand_and_memLp_of_holderOnWith (mu := volume)
+    (hβ.trans_le hβα) hD'cl hell hKa hGc hGD
   have hDWΩ : D' ≤ W ⊓ Ω := fun x hx => ⟨hVW (hDV hx), hDΩ hx⟩
   have hveq := energyFormH1_restrictL_w1pCompL_eq hVW hDWΩ hΦB hΦD hΨD
     hΨΦB hΦΨD hu ha hGcD (hfD.mono_exponent hq)
