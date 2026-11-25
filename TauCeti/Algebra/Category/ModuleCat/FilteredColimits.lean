@@ -27,10 +27,8 @@ that of the ring. Over a directed order, injectivity only needs checking on elem
 in the apex (`TauCeti.ModuleCat.isColimitOfJointlySurjectiveOfMapEqZero`).
 
 Conversely, every element of a filtered colimit of modules comes from some member of the diagram
-(`TauCeti.ModuleCat.colimit_exists_rep`), again with no universe constraints, and linear maps out of
-any colimit of modules are determined by their values on the images of the members of the diagram
-(`TauCeti.ModuleCat.colimit_linearMap_ext`). Finally, a family of
-bilinear maps `M j × N j → P j` natural in `j` induces a bilinear map of the filtered colimits,
+(`TauCeti.ModuleCat.colimit_exists_rep`), again with no universe constraints. Finally, a family
+of bilinear maps `M j × N j → P j` natural in `j` induces a bilinear map of the filtered colimits,
 `TauCeti.ModuleCat.colimitMap₂`, computed on the images of two elements by multiplying them at any
 common later member of the diagram (`TauCeti.ModuleCat.colimitMap₂_ι_ι`). This is how products on
 the members of a directed system, such as cup products on the Čech cohomologies of the covers of a
@@ -95,20 +93,6 @@ def isColimitOfJointlySurjectiveOfMapEqZero {ι : Type u} [Preorder ι] [IsDirec
     refine ⟨m, homOfLE (hil.trans hlm), homOfLE (hjl.trans hlm), ?_⟩
     rwa [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
       ← F.map_comp, ← F.map_comp] at hm
-
-/-- **Linear maps out of a colimit of modules are determined on the legs.** Two linear maps out of
-the colimit of a diagram of modules are equal as soon as they agree on the image of every member of
-the diagram. -/
-theorem colimit_linearMap_ext [HasColimit F] {Q : Type v} [AddCommGroup Q] [Module R Q]
-    {φ ψ : ↑(colimit F) →ₗ[R] Q}
-    (h : ∀ (j : J) (y : F.obj j), φ ((colimit.ι F j).hom y) = ψ ((colimit.ι F j).hom y)) :
-    φ = ψ := by
-  have hφψ : (_root_.ModuleCat.ofHom φ : colimit F ⟶ _root_.ModuleCat.of R Q) =
-      _root_.ModuleCat.ofHom ψ :=
-    colimit.hom_ext fun j ↦ _root_.ModuleCat.hom_ext (LinearMap.ext fun y ↦ by
-      simpa only [_root_.ModuleCat.hom_comp, _root_.ModuleCat.hom_ofHom, LinearMap.comp_apply]
-        using h j y)
-  simpa only [_root_.ModuleCat.hom_ofHom] using congrArg _root_.ModuleCat.Hom.hom hφψ
 
 /-! ### Elements and bilinear maps of filtered colimits -/
 
