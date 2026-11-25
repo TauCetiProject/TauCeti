@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Hull
+public import Mathlib.LinearAlgebra.AffineSpace.Independent
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
+import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Convexity and faces of the standard simplex
@@ -14,10 +16,12 @@ public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 The weight vectors of `Convexity.StdSimplex R ι` form a convex set, and a convex combination of
 two points of the standard simplex has its weight vector on the segment between theirs.
 
-The faces of the standard simplex, the convex hulls of sets of vertices `Pi.single i 1`, consist
-of weight vectors. Over a linearly ordered semifield, the face spanned by a set of vertices is
+The standard basis vectors `Pi.single i 1` are affinely independent on any subset of `ι`, and the
+faces of the standard simplex, the convex hulls of sets of vertices `Pi.single i 1`, consist of
+weight vectors. Over a linearly ordered semifield, the face spanned by a set of vertices is
 exactly the set of points of the simplex whose coordinates vanish off that set; this holds for
-any index type.
+any index type, identifying in particular the whole simplex and each facet opposite a vertex `i`
+as convex hulls of standard basis vectors.
 
 ## Main results
 
@@ -25,10 +29,14 @@ any index type.
   simplex form a convex set.
 * `Convexity.StdSimplex.weights_convexCombPair_mem_segment`: the weight vector of a convex
   combination lies on the segment between the weight vectors.
+* `TauCeti.affineIndependent_pi_single`: the coordinate vertices `Pi.single i 1` are affinely
+  independent on any subset of `ι`.
 * `TauCeti.convexHull_pi_single_subset_range_toFun_comp_weights`: a face of the standard simplex
   consists of weight vectors.
-* `TauCeti.mem_convexHull_pi_single_iff`: the face of the standard simplex spanned by a set of
-  vertices consists of the points of the simplex whose coordinates vanish off that set.
+* `TauCeti.mem_convexHull_pi_single_iff`, `TauCeti.convexHull_range_pi_single`,
+  `TauCeti.convexHull_pi_single_compl_singleton`: the face of the standard simplex spanned by a set
+  of vertices consists of the points of the simplex whose coordinates vanish off that set, giving
+  the whole simplex and each facet as convex hulls of coordinate vertices.
 -/
 
 public section
@@ -61,6 +69,13 @@ end Convexity.StdSimplex
 namespace TauCeti
 
 variable {R ι : Type*}
+
+variable (R) in
+/-- The standard basis vectors `Pi.single i 1` over a ring `R` are affinely independent on any
+subset of `ι`. -/
+theorem affineIndependent_pi_single [Ring R] [DecidableEq ι] (t : Set ι) :
+    AffineIndependent R (fun j : t => (Pi.single (j : ι) 1 : ι → R)) :=
+  ((Pi.linearIndependent_single_one ι R).comp Subtype.val Subtype.val_injective).affineIndependent
 
 /-- A face of the standard simplex, the convex hull of a set of vertices `Pi.single i 1`,
 consists of weight vectors of `Convexity.StdSimplex`. -/
@@ -110,5 +125,26 @@ theorem mem_convexHull_pi_single_iff [Semifield R] [LinearOrder R] [IsStrictOrde
       push Not at hs'
       simpa [StdSimplex.eq_single_of_forall_ne_weights_eq_zero hs', Finsupp.single_eq_pi_single]
         using hva
+
+/-- The convex hull of all standard basis vectors `Pi.single i 1` over a linearly ordered
+semifield is the standard simplex. -/
+theorem convexHull_range_pi_single [Semifield R] [LinearOrder R] [IsStrictOrderedRing R]
+    [DecidableEq ι] :
+    convexHull R (range fun i : ι => (Pi.single i 1 : ι → R)) =
+      range fun s : StdSimplex R ι => ⇑s.weights := by
+  rw [← image_univ]
+  ext x
+  rw [mem_convexHull_pi_single_iff]
+  simp
+
+/-- The convex hull of the standard basis vectors other than `i` over a linearly ordered semifield
+is the facet opposite `i`. -/
+theorem convexHull_pi_single_compl_singleton [Semifield R] [LinearOrder R] [IsStrictOrderedRing R]
+    [DecidableEq ι] (i : ι) :
+    convexHull R ((fun j : ι => (Pi.single j 1 : ι → R)) '' {i}ᶜ) =
+      {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} := by
+  ext y
+  rw [mem_convexHull_pi_single_iff, mem_sep_iff]
+  simp
 
 end TauCeti
