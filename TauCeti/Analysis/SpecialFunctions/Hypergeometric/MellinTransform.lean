@@ -21,12 +21,12 @@ For `0 < Re s < min (Re a) (Re b)` and `Re b < Re c`, the Mellin transform of
 
 This is DLMF 15.14.1 in the region `0 < Re b < Re c` where Euler's integral represents the
 regularized Gauss function `𝐅(a, b; c; -x)`. The proof writes `E(a, b, c, -x)` as
-`(Γ(b) Γ(c - b))⁻¹` times the Mellin convolution `∫₀^∞ f(t) h(x t) dt` of the Beta weight
-`f(t) = t^{b - 1} (1 - t)^{c - b - 1}` on `(0, 1]`, extended by zero to `(1, ∞)`, with
-`h(u) = (1 + u)^{-a}`, and applies `TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform
-of `h` at `s` is the Beta integral of the second kind `Complex.hasMellin_one_add_cpow_neg`
-(DLMF 5.12.3), and that of `f` at `1 - s` is the Beta integral `B(b - s, c - b)` by
-`TauCeti.hasMellin_cpow_mul_one_sub_cpow_Ioc`.
+`(Γ(b) Γ(c - b))⁻¹` times the integral `∫₀^∞ f(t) h(x t) dt` of the Beta weight
+`f(t) = t^{b - 1} (1 - t)^{c - b - 1}` on `(0, 1]`, extended by zero to `(1, ∞)`, against
+`h(u) = (1 + u)^{-a}` (the Mellin convolution of `y ↦ f(1/y)/y` with `h`), and applies
+`TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform of `h` at `s` is the Beta integral
+of the second kind `Complex.hasMellin_one_add_cpow_neg` (DLMF 5.12.3), and that of `f` at `1 - s`
+is the Beta integral `B(b - s, c - b)` by `TauCeti.hasMellin_cpow_mul_one_sub_cpow_Ioc`.
 
 ## Main results
 
@@ -57,11 +57,18 @@ theorem hasMellin_eulerIntegral_neg {a b c s : ℂ} (hs : 0 < s.re) (hsa : s.re 
       (Gamma s * Gamma (a - s) * Gamma (b - s) / (Gamma a * Gamma b * Gamma (c - s))) := by
   have hbs : 0 < (b - s).re := by simpa using hsb
   have hcb : 0 < (c - b).re := by simpa using hbc
+  -- the Beta parameters of the weight `t^{b - 1} (1 - t)^{c - b - 1}` at `1 - s`
+  have hu : 1 - s + (b - 1) = b - s := by ring
+  have hv : c - b - 1 + 1 = c - b := by ring
   have hf := TauCeti.hasMellin_cpow_mul_one_sub_cpow_Ioc (s := 1 - s) (a := b - 1) (b := c - b - 1)
-    (by simpa using hsb) (by simp only [sub_re, one_re]; linarith)
-  rw [show 1 - s + (b - 1) = b - s by ring, show c - b - 1 + 1 = c - b by ring] at hf
+    (hu ▸ hbs) (by simp only [sub_re, one_re]; linarith)
+  rw [hu, hv] at hf
+  have hB : betaIntegral (b - s) (c - b) = Gamma (b - s) * Gamma (c - b) / Gamma (c - s) := by
+    have hw : b - s + (c - b) = c - s := by ring
+    rw [betaIntegral_eq_Gamma_mul_div _ _ hbs hcb, hw]
   have hh := hasMellin_one_add_cpow_neg hs hsa
-  -- Euler's integral at `-x` is a Mellin convolution of its Beta weight with `(1 + u)^{-a}`
+  -- Euler's integral at `-x` is the integral of its Beta weight `f` against `h(xt)`, where
+  -- `h(u) = (1 + u)^{-a}`: the Mellin convolution of `y ↦ f(1/y)/y` with `h`
   have heuler : (fun x : ℝ ↦ eulerIntegral a b c (-x)) = fun x : ℝ ↦
       (Gamma b * Gamma (c - b))⁻¹ • ∫ t in Ioi 0,
         (Ioc 0 1).indicator (fun t : ℝ ↦ (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)) t *
@@ -78,8 +85,7 @@ theorem hasMellin_eulerIntegral_neg {a b c s : ℂ} (hs : 0 < s.re) (hsa : s.re 
     simp only [ofReal_mul, neg_mul, sub_neg_eq_add]
   have hconv := TauCeti.hasMellin_integral_mul_comp_mul hf.1 hh.1
   have hmel := hasMellin_const_smul hconv.1 (Gamma b * Gamma (c - b))⁻¹
-  rw [← heuler, hconv.2, hf.2, hh.2, betaIntegral_eq_Gamma_mul_div _ _ hbs hcb,
-    show b - s + (c - b) = c - s by ring, smul_eq_mul] at hmel
+  rw [← heuler, hconv.2, hf.2, hh.2, hB, smul_eq_mul] at hmel
   convert hmel using 1
   field_simp [Gamma_ne_zero_of_re_pos (hs.trans hsb), Gamma_ne_zero_of_re_pos hcb]
 

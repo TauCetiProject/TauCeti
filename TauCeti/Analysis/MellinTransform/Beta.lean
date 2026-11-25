@@ -43,23 +43,18 @@ theorem hasMellin_cpow_mul_one_sub_cpow_Ioc {a b s : ℂ} (hsa : 0 < (s + a).re)
       (betaIntegral (s + a) (b + 1)) := by
   have hbeta := betaIntegral_convergent (u := s + a) (v := b + 1) hsa
     (by simp only [add_re, one_re]; linarith)
-  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at hbeta
-  -- multiplying by `t^{s - 1}` shifts the first parameter of the Beta weight
-  have heq : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) •
-        (Ioc 0 1).indicator (fun t : ℝ ↦ (t : ℂ) ^ a * (1 - (t : ℂ)) ^ b) t)
-      ((Ioc 0 1).indicator fun t : ℝ ↦ (t : ℂ) ^ (s + a - 1) * (1 - (t : ℂ)) ^ (b + 1 - 1))
-      (Ioi 0) := by
-    intro t ht
-    dsimp only
-    by_cases h : t ∈ Ioc 0 1
-    · rw [indicator_of_mem h, indicator_of_mem h, smul_eq_mul, add_sub_cancel_right,
-        show s + a - 1 = s - 1 + a by ring,
-        cpow_add _ _ (ofReal_ne_zero.mpr (ne_of_gt ht)), mul_assoc]
-    · rw [indicator_of_notMem h, indicator_of_notMem h, smul_zero]
-  refine ⟨(integrableOn_congr_fun heq measurableSet_Ioi).mpr
-    ((integrable_indicator_iff measurableSet_Ioc).mpr hbeta).integrableOn, ?_⟩
-  rw [mellin, setIntegral_congr_fun measurableSet_Ioi heq,
-    setIntegral_indicator measurableSet_Ioc, inter_eq_right.mpr Ioc_subset_Ioi_self,
-    ← intervalIntegral.integral_of_le zero_le_one, betaIntegral]
+  rw [add_sub_cancel_right, intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one] at hbeta
+  -- the Mellin transform of the indicator of `(1 - t)^b` at `s + a` is the Beta integral
+  have h : HasMellin ((Ioc 0 1).indicator fun t : ℝ ↦ (1 - (t : ℂ)) ^ b) (s + a)
+      (betaIntegral (s + a) (b + 1)) := by
+    simp_rw [HasMellin, mellin, MellinConvergent, ← indicator_smul, smul_eq_mul, IntegrableOn,
+      integrable_indicator_iff measurableSet_Ioc, IntegrableOn,
+      integral_indicator measurableSet_Ioc, Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self,
+      betaIntegral, add_sub_cancel_right, intervalIntegral.integral_of_le zero_le_one]
+    exact ⟨hbeta, trivial⟩
+  -- multiplying by `t^a` shifts the Mellin variable from `s + a` to `s`, as in `hasMellin_cpow_Ioc`
+  simp_rw [HasMellin, ← MellinConvergent.cpow_smul, ← mellin_cpow_smul, ← indicator_smul,
+    smul_eq_mul] at h
+  exact h
 
 end TauCeti
