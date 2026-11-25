@@ -99,6 +99,13 @@ private theorem mvfderiv_sub_comp_swap_I {g₀ : D → ℝ}
 
 variable [HasGroupoid M borderedHolomorphicGroupoid]
 
+/-- The imaginary part of a doubled chart is differentiable on the chart domain. -/
+private theorem mdifferentiableAt_im_chartAt {p q : D} (hqp : q ∈ (chartAt ℂ p).source) :
+    MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ) (fun z ↦ (chartAt ℂ p z).im) q :=
+  have : IsManifold 𝓘(ℝ, ℂ) 1 D := IsManifold.of_le (n := ω) le_top
+  ((imCLM.contMDiff (n := 1)).mdifferentiableAt one_ne_zero).comp q
+    (mdifferentiableAt_atlas (chart_mem_atlas ℂ p) hqp)
+
 /-- **The imaginary part of a doubled chart at the seam.** If `q` lies on the seam and in the
 domain of the doubled chart at `p`, the imaginary part of that chart has positive differential at
 `q` on the vector `i` of the preferred chart at `q`. -/
@@ -125,9 +132,7 @@ private theorem mvfderiv_im_chartAt_I_pos {p q : D} (hqp : q ∈ (chartAt ℂ p)
       exact (mem_range_interiorInl_iff_im_chartAt_pos hwp).1 h
   have hx₀ : x₀.im = 0 := (mem_image_inl_compl_iff_im_chartAt_eq_zero (mem_chart_source ℂ q)).1 hq
   -- The differential of `im ∘ chart` at `q` is the derivative of `F` at `x₀`.
-  have hh : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ) (fun z ↦ (chartAt ℂ p z).im) q :=
-    (imCLM.contMDiff.contMDiffAt.comp q ((contMDiffOn_chart (n := 1)).contMDiffAt
-      ((chartAt ℂ p).open_source.mem_nhds hqp))).mdifferentiableAt one_ne_zero
+  have hh := mdifferentiableAt_im_chartAt hqp
   have hLv : ∀ v : ℂ, mvfderiv 𝓘(ℝ, ℂ) (fun z ↦ (chartAt ℂ p z).im) q v = fderiv ℝ F x₀ v := by
     intro v
     have h := congrArg (fun L ↦ L v) (mvfderiv_eq_fderivWithin_extChartAt_target hh)
@@ -140,9 +145,7 @@ private theorem mvfderiv_im_chartAt_I_pos {p q : D} (hqp : q ∈ (chartAt ℂ p)
   obtain ⟨v, hv⟩ :=
     (isInvertible_mfderiv_chart (𝕜 := ℝ) (IsManifold.chart_mem_maximalAtlas p) hqp).surjective I
   have hLne : fderiv ℝ F x₀ v ≠ 0 := by
-    have hc : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (chartAt ℂ p) q :=
-      ((contMDiffOn_chart (n := 1)).contMDiffAt
-        ((chartAt ℂ p).open_source.mem_nhds hqp)).mdifferentiableAt one_ne_zero
+    have hc := mdifferentiableAt_atlas (I := 𝓘(ℝ, ℂ)) (chart_mem_atlas ℂ p) hqp
     have h := mvfderiv_comp_apply_of_differentiableAt imCLM.differentiableAt hc v
     rw [ContinuousLinearMap.fderiv, mvfderiv_apply_eq_mfderiv_apply (chartAt ℂ p) q v, hv,
       imCLM_apply, I_im] at h
@@ -179,11 +182,10 @@ private theorem exists_sheet_sign_function [T2Space M] [SecondCountableTopology 
     φ.finsum_smul_mem_convex (g := fun i z ↦ (chartAt ℂ i z).im) (t := Iio 0) (mem_univ z)
       (fun i hi ↦ (mem_range_interiorInr_iff_im_chartAt_neg (hmem hi)).1 hz) (convex_Iio 0)
   -- At the seam every local function vanishes and has positive differential on `i`.
-  refine ⟨g₀, hg₀, hpos, hneg, fun q hq ↦ φ.mvfderiv_finsum_smul_pos hφ (fun i hi ↦ ?_)
+  exact ⟨g₀, hg₀, hpos, hneg, fun q hq ↦ φ.mvfderiv_finsum_smul_pos hφ
+    (fun i hi ↦ mdifferentiableAt_im_chartAt hi)
     (fun i hi ↦ (mem_image_inl_compl_iff_im_chartAt_eq_zero hi).1 hq)
     fun i hi ↦ mvfderiv_im_chartAt_I_pos hi hq⟩
-  exact (imCLM.contMDiff.contMDiffAt.comp q ((contMDiffOn_chart (n := 1)).contMDiffAt
-    ((chartAt ℂ i).open_source.mem_nhds hi))).mdifferentiableAt one_ne_zero
 
 /-- **An odd defining function of the seam.** On the Schottky double of a Hausdorff,
 second-countable Riemann surface with boundary there is a smooth real function `g` which is odd
@@ -203,9 +205,9 @@ theorem exists_odd_definingFunction [T2Space M] [SecondCountableTopology M] :
   have hswapr (u : borderedInterior M) :
       DoubleAlong.swap A (interiorInr M u) = interiorInl M u := by
     rw [interiorInl_apply, interiorInr_apply, DoubleAlong.swap_inr]
-  have hswap0 : ∀ z ∈ DoubleAlong.inl A '' A, DoubleAlong.swap A z = z := by
-    rintro _ ⟨y, hy, rfl⟩
-    rw [DoubleAlong.swap_inl, ← (DoubleAlong.inl_eq_inr_iff A).2 ⟨rfl, hy⟩]
+  have hswap0 : ∀ z ∈ DoubleAlong.inl A '' A, DoubleAlong.swap A z = z := fun z hz ↦ by
+    rw [← DoubleAlong.fixed_locus] at hz
+    exact hz
   set g : D → ℝ := fun z ↦ g₀ z - g₀ (DoubleAlong.swap A z) with hg_def
   have hgl : ∀ u, 0 < g (interiorInl M u) := fun u ↦ by
     simp only [hg_def, hswapl]

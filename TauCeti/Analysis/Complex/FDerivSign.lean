@@ -54,8 +54,7 @@ theorem fderiv_apply_one_eq_zero (hreal : ∀ᶠ w in 𝓝 x₀, w.im = x₀.im 
       filter_upwards [ht.eventually hreal] with t ht
       exact ht (by simp)
     exact h.unique ((hasDerivAt_const (0 : ℝ) (0 : ℝ)).congr_of_eventuallyEq hev)
-  · rw [fderiv_zero_of_not_differentiableAt hd]
-    rfl
+  · rw [fderiv_zero_of_not_differentiableAt hd, zero_apply]
 
 /-- **The sign test across a horizontal line.** Let `F : ℂ → ℝ` have nonzero derivative at `x₀`,
 vanish near `x₀` on the horizontal line through `x₀`, and be positive near `x₀` above it. Then its
@@ -66,7 +65,7 @@ theorem fderiv_apply_I_pos {v : ℂ} (hne : fderiv ℝ F x₀ v ≠ 0)
     0 < fderiv ℝ F x₀ I := by
   have hd : DifferentiableAt ℝ F x₀ := by
     by_contra hnd
-    exact hne (by rw [fderiv_zero_of_not_differentiableAt hnd]; rfl)
+    exact hne (by rw [fderiv_zero_of_not_differentiableAt hnd, zero_apply])
   have hF0 : F x₀ = 0 := hreal.self_of_nhds rfl
   -- Along `I` the function is positive for positive times, so its derivative on `I` is `≥ 0`.
   have hI : 0 ≤ fderiv ℝ F x₀ I := by
