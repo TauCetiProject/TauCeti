@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.Topology.LocallyFinsupp.LocallyFiniteSum
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact.Basic
 import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!

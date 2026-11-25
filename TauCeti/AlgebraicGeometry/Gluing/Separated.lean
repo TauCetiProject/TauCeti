@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
+public import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType

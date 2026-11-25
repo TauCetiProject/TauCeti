@@ -39,7 +39,7 @@ member, and two morphisms over a member which agree over the limit agree over so
   presented quasi-compact quasi-separated stage models.
 * `CategoryTheory.Limits.IsLimit.exists_mono_pullbackMap`: monomorphism inheritance for a
   quasi-compact locally finite type morphism from a quasi-compact quasi-separated stage source.
-* `CategoryTheory.Limits.IsLimit.exists_overPullback_map_comp_eq`: morphism descent for the base
+* `CategoryTheory.Limits.IsLimit.exists_liftsAlong`: morphism descent for the base
   change functors of over categories, stated through `CategoryTheory.Limits.Cone.LiftsAlong`.
 * `CategoryTheory.Limits.IsLimit.exists_overPullback_map_eq_map`: descent of equalities of
   morphisms for the base change functors of over categories.
@@ -387,7 +387,7 @@ quasi-separated over `Dᵢ` and `B` locally of finite presentation over `Dᵢ`. 
 `v : A ×_{Dᵢ} Dⱼ ⟶ B ×_{Dᵢ} Dⱼ` over some `Dⱼ`, up to the identifications of
 `(A ×_{Dᵢ} Dⱼ) ×_{Dⱼ} S` with `A ×_{Dᵢ} S` given by `Over.pullbackCompIsoOfEq`. Stacks,
 Lemma 32.10.1 (01ZM), descent of morphisms. -/
-theorem exists_overPullback_map_comp_eq [∀ i, CompactSpace (D.obj i)]
+theorem exists_liftsAlong [∀ i, CompactSpace (D.obj i)]
     [∀ i, QuasiSeparatedSpace (D.obj i)] {i : I} {A B : Over (D.obj i)} [QuasiCompact A.hom]
     [QuasiSeparated A.hom] [LocallyOfFinitePresentation B.hom]
     (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) :

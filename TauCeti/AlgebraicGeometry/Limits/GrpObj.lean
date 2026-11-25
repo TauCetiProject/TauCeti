@@ -24,7 +24,7 @@ an isomorphism of group schemes.
 Group schemes over a base are group objects in the cartesian monoidal category of schemes over it,
 and base change is the monoidal functor `Over.pullback`. The unit, the multiplication and the
 inverse of a group law over `S` descend to morphisms over some member `Dⱼ`
-(`CategoryTheory.Limits.IsLimit.exists_overPullback_map_comp_eq`), and each group axiom, an
+(`CategoryTheory.Limits.IsLimit.exists_liftsAlong`), and each group axiom, an
 equality of morphisms over `Dⱼ` which holds over `S`, holds over some later member `Dₖ`
 (`CategoryTheory.Limits.IsLimit.exists_overPullback_map_eq_map`). Over `Dₖ` the base changes of the
 descended morphisms are then a group law (`CategoryTheory.Functor.grpObjObjOfMap`) whose base
@@ -92,7 +92,7 @@ private theorem exists_lifts {i : I} (X : Over (D.obj i)) [LocallyOfFinitePresen
     c.LiftsAlong ι[(Over.pullback (c.π.app i)).obj X]]
   obtain ⟨j, g, hg⟩ := IsCofiltered.exists_forall_of_stable (R := R)
     (by intro n; fin_cases n <;> exact fun h hg ↦ hg.precomp h)
-    (by intro n; fin_cases n <;> exact hc.exists_overPullback_map_comp_eq _)
+    (by intro n; fin_cases n <;> exact hc.exists_liftsAlong _)
   obtain ⟨vo, hvo⟩ := (Cone.liftsAlong_iff _ _).mp (hg 0)
   obtain ⟨vm, hvm⟩ := (Cone.liftsAlong_iff _ _).mp (hg 1)
   obtain ⟨vi, hvi⟩ := (Cone.liftsAlong_iff _ _).mp (hg 2)

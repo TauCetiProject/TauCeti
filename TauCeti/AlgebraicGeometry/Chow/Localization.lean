@@ -10,7 +10,7 @@ import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 import TauCeti.AlgebraicGeometry.Chow.DivisorClass
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
-import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact.Basic
 import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
 import TauCeti.AlgebraicGeometry.Scheme.LocalDimension
 import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order

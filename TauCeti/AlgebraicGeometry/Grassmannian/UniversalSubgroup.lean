@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
-import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact.Basic
 
 /-!
 # The universal subgroup over the Hopf-ideal locus
