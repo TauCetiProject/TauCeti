@@ -189,20 +189,16 @@ theorem surjective_graphSnd [f.IsOver sX sY] [IsProper sX] [f.IsDominant] :
   set g := f.representative.restrict U hU hUV
   set h := opensGraph sX sY g.domain g.hom (g.over sX sY)
   have hgV : g.domain ≤ f.representative.domain := hUV
+  have hg : g.hom = X.homOfLE hgV ≫ f.representative.hom := PartialMap.restrict_hom ..
   -- the graph closure of `g` over `S` maps to `Γ_f` over `Y`
   have e : h ≫ pullbackToProd sX sY = X.homOfLE hgV ≫ graphLift f := by
-    apply pullback.hom_ext
-    · simp [h, Scheme.homOfLE_ι]
-    · rw [Category.assoc, pullback.lift_snd, Category.comp_id, opensGraph_snd, Category.assoc,
-        opensGraph_snd]
-      exact PartialMap.restrict_hom ..
+    apply pullback.hom_ext <;> simp [h, hg, Scheme.homOfLE_ι]
   have H : (graphι f).ker ≤ (h.imageι ≫ pullbackToProd sX sY).ker := by
     rw [Scheme.Hom.ker_imageι_comp, e, IdealSheafData.ker_subschemeι]
     exact Scheme.Hom.le_ker_comp _ _
   have e' : IsClosedImmersion.lift _ _ H ≫ graphSnd f =
       graphClosureSnd sX sY g.domain g.hom (g.over sX sY) := by
-    rw [graphSnd, graphClosureSnd_def, graphClosureSnd_def, ← Category.assoc,
-      IsClosedImmersion.lift_fac, Category.assoc, pullback.lift_snd, Category.comp_id]
+    simp [h, graphSnd, graphClosureSnd_def]
   suffices Surjective (graphClosureSnd sX sY g.domain g.hom (g.over sX sY)) by
     rw [← e'] at this
     exact Surjective.of_comp (IsClosedImmersion.lift _ _ H) _
@@ -268,8 +264,8 @@ section Projections
 
 variable [IsReduced X]
 
-/-- **The first projection of the graph is proper** when `Y` is proper over a separated base `S`
-over which `f` is defined. -/
+/-- **The first projection of the graph is proper**, for `X` reduced, when `Y` is proper over a
+separated base `S` over which `f` is defined. -/
 theorem isProper_graphFst (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated] [f.IsOver sX sY]
     [IsProper sY] : IsProper (graphFst f) := by
   have := Scheme.IsSeparated.of_isSeparated sY
@@ -292,9 +288,9 @@ instance isIso_graphFst_restrict [Y.IsSeparated] [QuasiCompact f.domain.ι] :
     infer_instance
   exact IsIso.comp_isIso' (isPullback_morphismRestrict _ _).isIso_fst_of_isIso h
 
-/-- **The first projection of the graph is a modification** when `Y` is proper over a separated
-base `S` over which `f` is defined and the inclusion of the domain of definition of `f` is
-quasi-compact: it is proper, and an isomorphism over that dense open. -/
+/-- **The first projection of the graph is a modification**, for `X` reduced, when `Y` is proper
+over a separated base `S` over which `f` is defined and the inclusion of the domain of definition
+of `f` is quasi-compact: it is proper, and an isomorphism over that dense open. -/
 theorem isModification_graphFst (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated] [f.IsOver sX sY]
     [IsProper sY] [QuasiCompact f.domain.ι] : IsModification (graphFst f) := by
   have := Scheme.IsSeparated.of_isSeparated sY
