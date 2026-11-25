@@ -79,11 +79,7 @@ theorem exists_isometryEquiv_hermitianMetric {E : Type*} [AddCommGroup E] [Modul
     ∃ D : ArakelovDivisor K, Nonempty (HermitianMetric.IsometryEquiv h D.hermitianMetric) := by
   obtain ⟨I, ⟨e⟩⟩ := Module.Invertible.exists_linearEquiv_ideal (𝓞 K) E
   set J : FractionalIdeal (𝓞 K)⁰ K := (I : FractionalIdeal (𝓞 K)⁰ K)
-  have hJ : (J : Submodule (𝓞 K) K) = Submodule.map (Algebra.linearMap (𝓞 K) K) I :=
-    coeToSubmodule_coeIdeal I
-  let ee : E ≃ₗ[𝓞 K] J := e.trans ((Submodule.equivMapOfInjective
-    (Algebra.linearMap (𝓞 K) K) (IsFractionRing.injective (𝓞 K) K) I).trans
-      (LinearEquiv.ofEq _ _ hJ.symm))
+  let ee : E ≃ₗ[𝓞 K] J := e.trans (coeIdealEquiv I).symm
   have := Module.Invertible.nontrivial (𝓞 K) E
   have : Nontrivial I := e.symm.toEquiv.nontrivial
   have hJ0 : J ≠ 0 := mt coeIdeal_eq_zero.mp (Submodule.nontrivial_iff_ne_bot.mp this)
