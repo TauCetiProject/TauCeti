@@ -49,6 +49,14 @@ inside the ball carry no data. The size of the derivatives is measured by the op
 
 ## Main results
 
+* `TauCeti.norm_mfderiv_sq_eq_sum_pullbackMetricCoeff`: the squared length `‖dφ_x v‖²` is the
+  quadratic form `Σᵢⱼ g_ij(x) vᵢ vⱼ` of the pulled-back metric coefficients.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image_of_subset`: an end maps open subsets of the
+  exterior of its ball to open subsets of `M`.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.toPartialDiffeomorph_symm_apply_apply`: the inverse of an
+  end, as a partial diffeomorphism, undoes the end on the exterior of its ball.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.eventually_notMem_image_compl_closedBall`: every point of
+  `M` lies outside the image of the exterior of all large balls.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image` and
   `TauCeti.IsAsymptoticallyEuclideanEnd.isPathConnected_image`: in dimension at least two, the
   image of an end is open and path-connected.
@@ -116,6 +124,21 @@ theorem pullbackMetricCoeff_apply (φ : EuclideanSpace ℝ (Fin n) → M)
       inner ℝ (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x (EuclideanSpace.basisFun (Fin n) ℝ i))
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x (EuclideanSpace.basisFun (Fin n) ℝ j)) :=
   (rfl)
+
+/-- The squared length of the image of a vector `v` under the differential of `φ` is the quadratic
+form of the pulled-back metric coefficients: `‖dφ_x v‖² = Σᵢⱼ g_ij(x) vᵢ vⱼ`. -/
+theorem norm_mfderiv_sq_eq_sum_pullbackMetricCoeff (φ : EuclideanSpace ℝ (Fin n) → M)
+    (x v : EuclideanSpace ℝ (Fin n)) :
+    ‖mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x v‖ ^ 2 =
+      ∑ i, ∑ j, pullbackMetricCoeff I φ x i j * v i * v j := by
+  set L := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x
+  have hv : L v = ∑ i, v i • L (EuclideanSpace.basisFun (Fin n) ℝ i) := by
+    conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr v]
+    exact (map_sum L _ _).trans (Finset.sum_congr rfl fun i _ ↦ map_smul _ _ _)
+  rw [← real_inner_self_eq_norm_sq, hv, pullbackMetricCoeff_def,
+    ← Matrix.star_dotProduct_gram_mulVec, star_trivial]
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-- Composing with a local Riemannian isometry does not change the pulled-back metric
 coefficients at a point where the parametrization is differentiable. -/
@@ -224,12 +247,37 @@ theorem mono_order (h : IsAsymptoticallyEuclideanEnd I t R φ) {t' : ℝ} (ht : 
       exact Real.rpow_le_rpow_of_nonpos h.radius_pos hxR.le (sub_nonpos.2 ht)
     _ = |C| * R ^ (t' - t) * ‖x‖ ^ (-t' - k) := (mul_assoc _ _ _).symm
 
+/-- The metric coefficients of an end are differentiable at infinity. -/
+theorem eventually_differentiableAt_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I t R φ) :
+    ∀ᶠ x in Bornology.cobounded _, ∀ i j,
+      DifferentiableAt ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x := by
+  filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop R)] with x hx i j
+  exact ((h.contDiffOn_pullbackMetricCoeff i j).contDiffAt
+    (isClosed_closedBall.isOpen_compl.mem_nhds (by simpa using hx))).differentiableAt
+      (by norm_num)
+
 /-- The image of an end is nonempty, since the exterior of a ball in positive dimension is. -/
 theorem nonempty_image (h : IsAsymptoticallyEuclideanEnd I t R φ) :
     (φ '' (closedBall 0 R)ᶜ).Nonempty := by
   have : Nonempty (Fin n) := ⟨⟨0, h.dim_pos⟩⟩
   obtain ⟨x, hx⟩ := NormedSpace.exists_lt_norm ℝ (EuclideanSpace ℝ (Fin n)) R
   exact ⟨φ x, x, by simpa using hx, rfl⟩
+
+/-- Every point of `M` lies outside the image of the exterior of all large balls: by injectivity
+of the end, a point `φ z` of its image is not the image of a point outside the ball of radius
+`‖z‖`. -/
+theorem eventually_notMem_image_compl_closedBall (h : IsAsymptoticallyEuclideanEnd I t R φ)
+    (p : M) : ∀ᶠ a in atTop, p ∉ φ '' (closedBall 0 a)ᶜ := by
+  by_cases hp : p ∈ φ '' (closedBall 0 R)ᶜ
+  · obtain ⟨z, hz, rfl⟩ := hp
+    filter_upwards [eventually_ge_atTop ‖z‖] with a ha ⟨y, hy, hyz⟩
+    simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le] at hy hz
+    have hyR : y ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := by
+      simpa using hz.trans (ha.trans_lt hy)
+    rw [h.injOn hyR (by simpa using hz) hyz] at hy
+    linarith
+  · filter_upwards [eventually_ge_atTop R] with a ha
+    exact fun hpa ↦ hp (image_mono (compl_subset_compl.2 (closedBall_subset_closedBall ha)) hpa)
 
 /-- An end is a local diffeomorphism on the exterior of its ball, by the inverse function
 theorem. -/
@@ -240,10 +288,16 @@ theorem isLocalDiffeomorphOn [IsManifold I ∞ M] (h : IsAsymptoticallyEuclidean
   exact isLocalDiffeomorphAt_of_mfderiv_eq h.contMDiffOn isClosed_closedBall.isOpen_compl hx
     BoundarylessManifold.isInteriorPoint (by simp) he
 
+/-- The image of an open subset of the exterior of the ball of an end is open. -/
+theorem isOpen_image_of_subset [IsManifold I ∞ M] (h : IsAsymptoticallyEuclideanEnd I t R φ)
+    {U : Set (EuclideanSpace ℝ (Fin n))} (hU : IsOpen U) (hUR : U ⊆ (closedBall 0 R)ᶜ) :
+    IsOpen (φ '' U) :=
+  (h.isLocalDiffeomorphOn.isLocalHomeomorphOn.mono hUR).isOpen_image hU
+
 /-- The image of an end is open. -/
 theorem isOpen_image [IsManifold I ∞ M] (h : IsAsymptoticallyEuclideanEnd I t R φ) :
     IsOpen (φ '' (closedBall 0 R)ᶜ) :=
-  h.isLocalDiffeomorphOn.isLocalHomeomorphOn.isOpen_image isClosed_closedBall.isOpen_compl
+  h.isOpen_image_of_subset isClosed_closedBall.isOpen_compl subset_rfl
 
 /-- An end as a diffeomorphism from the exterior of its ball onto its open image. -/
 def toPartialDiffeomorph [IsManifold I ∞ M] (h : IsAsymptoticallyEuclideanEnd I t R φ) :
@@ -269,6 +323,13 @@ theorem toPartialDiffeomorph_target [IsManifold I ∞ M]
 theorem coe_toPartialDiffeomorph [IsManifold I ∞ M]
     (h : IsAsymptoticallyEuclideanEnd I t R φ) : ⇑h.toPartialDiffeomorph = φ :=
   h.isLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn _ _
+
+/-- The inverse of an end, as a partial diffeomorphism, undoes the end on the exterior of its
+ball. -/
+theorem toPartialDiffeomorph_symm_apply_apply [IsManifold I ∞ M]
+    (h : IsAsymptoticallyEuclideanEnd I t R φ) {y : EuclideanSpace ℝ (Fin n)}
+    (hy : y ∈ (closedBall 0 R)ᶜ) : h.toPartialDiffeomorph.symm (φ y) = y := by
+  simpa using h.toPartialDiffeomorph.left_inv (x := y) (by simpa using hy)
 
 /-- In dimension at least two the image of an end is path-connected, as the image of the
 path-connected exterior of a ball. -/

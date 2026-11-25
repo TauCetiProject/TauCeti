@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monad.Adjunction
-public import Mathlib.CategoryTheory.Sites.Descent.DescentData
+public import TauCeti.CategoryTheory.Sites.Descent.DescentData
 public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
@@ -25,21 +25,29 @@ quasi-coherent module `E` on `X` and gluing isomorphisms `u^* E ⟶ v^* E` for a
 (`qcohDescentDataCoaction`). It is a coalgebra structure for the comonad `f^* f_*`: the counit law
 comes from the normalisation of `D` on the diagonal of `X ×_S X`, and coassociativity from the
 cocycle condition on `X ×_S X ×_S X`. This is the object part of the Bénabou–Roubaud theorem: when
-base change holds, descent data along `f` are coalgebras for `f^* f_*`.
+base change holds, descent data along `f` are coalgebras for `f^* f_*`. The functor is fully
+faithful: a morphism of modules intertwines the coactions exactly when it commutes with the gluing
+isomorphisms on `X ×_S X` (`qcohDescentDataCoaction_comp_map_iff`), and a morphism commuting with
+the gluing isomorphisms on `X ×_S X` commutes with all gluing morphisms, which are pulled back from
+them (`CategoryTheory.Pseudofunctor.DescentData.homMkOfIsPullback`).
 
 For the descent datum of the pullback `f^* M` of a quasi-coherent module `M` on `S`, the coaction is
 `f^*` of the unit `M ⟶ f_* f^* M` (`qcohDescentDataCoaction_ofObj`): the coalgebra that Beck's
 comparison functor attaches to `M`. For faithfully flat `f` between affine schemes, pullback of
 quasi-coherent modules is comonadic (`QuasicoherentSheaf.comonadicPullbackSpecMap`), so every such
-coalgebra comes from a quasi-coherent module on `S`.
+coalgebra comes from a quasi-coherent module on `S`; with full faithfulness, this makes descent data
+along such `f` effective (`TauCeti.AlgebraicGeometry.Descent.isEquivalence_toDescentData_specMap`).
 
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.Descent.qcohDescentDataCoaction`: the coaction `E ⟶ f^* f_* E`, with
   the counit law `qcohDescentDataCoaction_counit`, coassociativity
   `qcohDescentDataCoaction_coassoc` and naturality `qcohDescentDataCoaction_comp_map`;
+* `TauCeti.AlgebraicGeometry.Descent.qcohDescentDataCoaction_comp_map_iff`: a morphism of modules
+  intertwines the coactions iff it commutes with the gluing isomorphisms on `X ×_S X`;
 * `TauCeti.AlgebraicGeometry.Descent.qcohDescentDataToCoalgebra`: the functor from descent data
-  along `f` to coalgebras for the comonad `f^* f_*` on `X.Modules`;
+  along `f` to coalgebras for the comonad `f^* f_*` on `X.Modules`, fully faithful by
+  `fullyFaithfulQcohDescentDataToCoalgebra`;
 * `TauCeti.AlgebraicGeometry.Descent.qcohDescentDataCoaction_ofObj`: on the descent datum of `f^* M`
   the coaction is `f^*` of the unit of `f^* ⊣ f_*`.
 
@@ -386,15 +394,11 @@ private lemma coassoc_aux [E.IsQuasicoherent] [QuasiCompact f] [QuasiSeparated f
   -- Base change turns `f^*` of the unit of `f^* ⊣ f_*` into the unit of `p₂^* ⊣ p₂_*`.
   rw [hu]
 
-private lemma comp_map_aux [QuasiCompact f] [QuasiSeparated f] [Flat f] {E' : X.Modules}
+private lemma comp_map_iff_aux [QuasiCompact f] [QuasiSeparated f] [Flat f] {E' : X.Modules}
     [E'.IsQuasicoherent]
     (δ' : ∀ ⦃Y : Scheme.{u}⦄ (u v : Y ⟶ X), u ≫ f = v ≫ f →
       ((Scheme.Modules.pullback u).obj E' ⟶ (Scheme.Modules.pullback v).obj E'))
     (φ : E ⟶ E')
-    (hφ : (Scheme.Modules.pullback (pullback.snd f f)).map φ ≫
-        δ' (pullback.snd f f) (pullback.fst f f) pullback.condition.symm =
-      δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm ≫
-        (Scheme.Modules.pullback (pullback.fst f f)).map φ)
     (a : E ⟶ (Scheme.Modules.pushforward f ⋙ Scheme.Modules.pullback f).obj E)
     (ha : a ≫
         (Scheme.Modules.pushforwardBaseChange (IsPullback.of_hasPullback f f).toCommSq).app E =
@@ -407,22 +411,26 @@ private lemma comp_map_aux [QuasiCompact f] [QuasiSeparated f] [Flat f] {E' : X.
       (Scheme.Modules.pullbackPushforwardAdjunction (pullback.snd f f)).unit.app _ ≫
         (Scheme.Modules.pushforward (pullback.snd f f)).map
           (δ' (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)) :
-    a ≫ (Scheme.Modules.pushforward f ⋙ Scheme.Modules.pullback f).map φ = φ ≫ a' := by
+    a ≫ (Scheme.Modules.pushforward f ⋙ Scheme.Modules.pullback f).map φ = φ ≫ a' ↔
+      (Scheme.Modules.pullback (pullback.snd f f)).map φ ≫
+          δ' (pullback.snd f f) (pullback.fst f f) pullback.condition.symm =
+        δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm ≫
+          (Scheme.Modules.pullback (pullback.fst f f)).map φ := by
   have := Scheme.Modules.isIso_pushforwardBaseChange_app (IsPullback.of_hasPullback f f) E'
+  -- After the base change isomorphism `f^* f_* E' ≅ p₂_* p₁^* E'`, the two sides of the coalgebra
+  -- condition are the adjuncts under `p₂^* ⊣ p₂_*` of the two sides of the gluing condition.
   rw [← cancel_mono ((Scheme.Modules.pushforwardBaseChange
-    (IsPullback.of_hasPullback f f).toCommSq).app E')]
+    (IsPullback.of_hasPullback f f).toCommSq).app E'), eq_comm,
+    ← ((Scheme.Modules.pullbackPushforwardAdjunction (pullback.snd f f)).homEquiv _
+      _).apply_eq_iff_eq]
   have hn :=
     (Scheme.Modules.pushforwardBaseChange (IsPullback.of_hasPullback f f).toCommSq).naturality φ
   have hu := (Scheme.Modules.pullbackPushforwardAdjunction (pullback.snd f f)).unit.naturality φ
-  have hφ' := congrArg (Scheme.Modules.pushforward (pullback.snd f f)).map hφ
   dsimp only [Functor.comp_map, Functor.comp_obj, Functor.id_obj, Functor.id_map] at hn hu ⊢
-  simp only [Functor.map_comp, Category.assoc] at hφ' ⊢
-  -- Naturality of base change in `φ`, then the defining equations of `a` and `a'`.
-  rw [hn, reassoc_of% ha, ha']
-  -- `φ` commutes with the gluing morphisms, pushed forward along `p₂`.
-  rw [← hφ']
-  -- Naturality of the unit of `p₂^* ⊣ p₂_*` in `φ`.
-  rw [reassoc_of% hu]
+  simp only [Adjunction.homEquiv_unit, Functor.map_comp, Category.assoc]
+  -- Naturality of base change in `φ`, then the defining equations of `a` and `a'`, and
+  -- naturality of the unit of `p₂^* ⊣ p₂_*` in `φ`.
+  rw [hn, reassoc_of% ha, ha', reassoc_of% hu]
 
 omit δ in
 private lemma eq_pullback_map_unit_aux [QuasiCompact f] [QuasiSeparated f] [Flat f]
@@ -510,23 +518,37 @@ theorem qcohDescentDataCoaction_coassoc :
     (fun _ _ g u v h ↦ pullbackComp_inv_app_comp_pullback_map_qcohDescentDataHom g u v h) _
     qcohDescentDataCoaction_comp_pushforwardBaseChange_app
 
+/-- A morphism `φ` between the modules of two descent data intertwines their coactions,
+`a₁ ≫ f^* f_* φ = φ ≫ a₂`, exactly when it commutes with their gluing isomorphisms on `X ×_S X`:
+`p₂^* φ ≫ σ₂ = σ₁ ≫ p₁^* φ`. -/
+theorem qcohDescentDataCoaction_comp_map_iff
+    {D₁ D₂ : qcohPseudofunctor.DescentData (fun _ : PUnit ↦ f)}
+    (φ : (D₁.obj PUnit.unit).obj ⟶ (D₂.obj PUnit.unit).obj) :
+    qcohDescentDataCoaction f D₁ ≫
+        (Scheme.Modules.pushforward f ⋙ Scheme.Modules.pullback f).map φ =
+      φ ≫ qcohDescentDataCoaction f D₂ ↔
+    (Scheme.Modules.pullback (pullback.snd f f)).map φ ≫
+        qcohDescentDataHom f D₂ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm =
+      qcohDescentDataHom f D₁ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm ≫
+        (Scheme.Modules.pullback (pullback.fst f f)).map φ :=
+  have : (D₂.obj PUnit.unit).obj.IsQuasicoherent := (D₂.obj PUnit.unit).property
+  comp_map_iff_aux (E := (D₁.obj PUnit.unit).obj) (fun _ u v h ↦ qcohDescentDataHom f D₁ u v h)
+    (fun _ u v h ↦ qcohDescentDataHom f D₂ u v h) φ
+    _ qcohDescentDataCoaction_comp_pushforwardBaseChange_app
+    _ qcohDescentDataCoaction_comp_pushforwardBaseChange_app
+
 /-- A morphism of descent data intertwines the coactions: `a₁ ≫ f^* f_* ψ = ψ ≫ a₂`. -/
 @[reassoc]
 theorem qcohDescentDataCoaction_comp_map
     {D₁ D₂ : qcohPseudofunctor.DescentData (fun _ : PUnit ↦ f)} (ψ : D₁ ⟶ D₂) :
     qcohDescentDataCoaction f D₁ ≫
         (Scheme.Modules.pushforward f ⋙ Scheme.Modules.pullback f).map (ψ.hom PUnit.unit).hom =
-      (ψ.hom PUnit.unit).hom ≫ qcohDescentDataCoaction f D₂ :=
-  have : (D₂.obj PUnit.unit).obj.IsQuasicoherent := (D₂.obj PUnit.unit).property
-  comp_map_aux (E := (D₁.obj PUnit.unit).obj) (fun _ u v h ↦ qcohDescentDataHom f D₁ u v h)
-    (fun _ u v h ↦ qcohDescentDataHom f D₂ u v h) (ψ.hom PUnit.unit).hom
-    (by
-      rw [qcohDescentDataHom_eq (pullback.snd f f ≫ f) _ _ rfl pullback.condition,
-        qcohDescentDataHom_eq (pullback.snd f f ≫ f) _ _ rfl pullback.condition]
-      exact congrArg InducedCategory.Hom.hom (ψ.comm (pullback.snd f f ≫ f) (i₁ := PUnit.unit)
-        (i₂ := PUnit.unit) (pullback.snd f f) (pullback.fst f f) rfl pullback.condition))
-    _ qcohDescentDataCoaction_comp_pushforwardBaseChange_app
-    _ qcohDescentDataCoaction_comp_pushforwardBaseChange_app
+      (ψ.hom PUnit.unit).hom ≫ qcohDescentDataCoaction f D₂ := by
+  rw [qcohDescentDataCoaction_comp_map_iff,
+    qcohDescentDataHom_eq (pullback.snd f f ≫ f) _ _ rfl pullback.condition,
+    qcohDescentDataHom_eq (pullback.snd f f ≫ f) _ _ rfl pullback.condition]
+  exact congrArg InducedCategory.Hom.hom (ψ.comm (pullback.snd f f ≫ f) (i₁ := PUnit.unit)
+    (i₂ := PUnit.unit) (pullback.snd f f) (pullback.fst f f) rfl pullback.condition)
 
 variable (f) in
 /-- **Descent data as coalgebras.** For a flat, quasi-compact and quasi-separated morphism
@@ -545,6 +567,28 @@ def qcohDescentDataToCoalgebra :
   map {D₁ D₂} ψ :=
     { f := (ψ.hom PUnit.unit).hom
       h := qcohDescentDataCoaction_comp_map ψ }
+
+variable (f) in
+/-- **Descent data embed fully faithfully into coalgebras.** For a flat, quasi-compact and
+quasi-separated morphism `f : X ⟶ S`, the functor `qcohDescentDataToCoalgebra f` from descent data
+for quasi-coherent modules along `f` to coalgebras for the comonad `f^* f_*` is fully faithful: a
+morphism of modules intertwining the coactions commutes with the gluing isomorphisms on `X ×_S X`
+(`qcohDescentDataCoaction_comp_map_iff`), hence with all gluing morphisms
+(`Pseudofunctor.DescentData.homMkOfIsPullback`). -/
+def fullyFaithfulQcohDescentDataToCoalgebra : (qcohDescentDataToCoalgebra f).FullyFaithful where
+  preimage g := Pseudofunctor.DescentData.homMkOfIsPullback
+    (fun _ ↦ ObjectProperty.homMk g.f) (fun _ _ ↦ (IsPullback.of_hasPullback f f).flip)
+    fun _ _ ↦ ObjectProperty.hom_ext _ (by
+      have h := (qcohDescentDataCoaction_comp_map_iff g.f).1 g.h
+      rw [qcohDescentDataHom_eq (pullback.snd f f ≫ f) _ _ rfl pullback.condition,
+        qcohDescentDataHom_eq (pullback.snd f f ≫ f) _ _ rfl pullback.condition] at h
+      -- Composites and pullbacks of morphisms of quasi-coherent modules are, by definition, those
+      -- of the underlying morphisms of modules.
+      exact h)
+  map_preimage g := Comonad.Coalgebra.Hom.ext <| congrArg InducedCategory.Hom.hom
+    (Pseudofunctor.DescentData.homMkOfIsPullback_hom (fun _ ↦ ObjectProperty.homMk g.f) _ _ _)
+  preimage_map _ := Pseudofunctor.DescentData.hom_ext fun _ ↦
+    (Pseudofunctor.DescentData.homMkOfIsPullback_hom ..).trans rfl
 
 /-- On the descent datum of the pullback `f^* M` of a quasi-coherent module `M` on `S`, the
 coaction is `f^*` of the unit `M ⟶ f_* f^* M`: the coalgebra of Beck's comparison functor. -/

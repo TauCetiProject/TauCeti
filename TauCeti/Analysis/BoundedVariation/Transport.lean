@@ -13,8 +13,8 @@ public import TauCeti.Analysis.BoundedVariation.Space
 
 Global BV membership and the Banach space `BV(Ω)` of `TauCeti.Analysis.BoundedVariation.Space`
 are transported along a measure-preserving affine isometry equivalence `f` identifying `V` with
-`Ω`, into a space with a translation-invariant measure: `u ↦ u ∘ f` preserves BV membership
-(`AffineIsometryEquiv.memBV_comp_iff`) and induces a linear isometry equivalence
+`Ω`: `u ↦ u ∘ f` preserves BV membership (`AffineIsometryEquiv.memBV_comp_iff`) and induces a
+linear isometry equivalence
 `AffineIsometryEquiv.compBV f hf hVO hOV : BV ν Ω ≃ₗᵢ[ℝ] BV μ V`. Rigid motions of a Euclidean
 space with its Lebesgue measure are the main instance. This extends
 `TauCeti.BV.compLinearIsometryEquiv` from linear to affine isometries. Dilations of BV classes are
@@ -109,22 +109,22 @@ private theorem measurePreserving_symm (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePr
     MeasurePreserving f.symm ν μ := by
   simpa using MeasurePreserving.symm f.toHomeomorph.toMeasurableEquiv (by simpa using hf)
 
-variable [ν.IsAddRightInvariant]
-
 /-- **BV membership is invariant under affine isometries.** If a measure-preserving affine
 isometry equivalence `f` identifies `V` with `Ω`, then `u ∘ f` is BV on `V` exactly when `u` is
 BV on `Ω`. -/
 theorem memBV_comp_iff (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
     (hVO : MapsTo f V Ω) (hOV : MapsTo f.symm Ω V) :
     MemBV μ V (u ∘ f) ↔ MemBV ν Ω u := by
-  rw [memBV_iff, memBV_iff, totalVariationOn_comp f hf hVO hOV, coe_eq_preimage f hVO hOV,
+  rw [memBV_iff, memBV_iff, totalVariationOn_comp f hf f.symm.continuous.measurable hVO hOV,
+    coe_eq_preimage f hVO hOV,
     hf.integrableOn_comp_preimage f.toHomeomorph.measurableEmbedding]
 
 private theorem norm_ofFunction_comp (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
     (hVO : MapsTo f V Ω) (hOV : MapsTo f.symm Ω V) (u : BV ν Ω) (hu : MemBV μ V (u ∘ f)) :
     ‖BV.ofFunction _ hu‖ = ‖u‖ := by
   rw [BV.norm_def, BV.norm_def, BV.norm_toL1_ofFunction, BV.totalVariationOn_ofFunction,
-    totalVariationOn_comp f hf hVO hOV, L1.norm_eq_integral_norm, coe_eq_preimage f hVO hOV]
+    totalVariationOn_comp f hf f.symm.continuous.measurable hVO hOV, L1.norm_eq_integral_norm,
+    coe_eq_preimage f hVO hOV]
   congr 1
   exact hf.setIntegral_preimage_emb f.toHomeomorph.measurableEmbedding (fun y => ‖u y‖) Ω
 
@@ -185,6 +185,7 @@ theorem compBV_ofFunction (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ
 theorem totalVariationOn_compBV (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
     (hVO : MapsTo f V Ω) (hOV : MapsTo f.symm Ω V) (u : BV ν Ω) :
     totalVariationOn μ V (compBV f hf hVO hOV u) = totalVariationOn ν Ω u := by
-  rw [totalVariationOn_congr_ae (coeFn_compBV f hf hVO hOV u), totalVariationOn_comp f hf hVO hOV]
+  rw [totalVariationOn_congr_ae (coeFn_compBV f hf hVO hOV u),
+    totalVariationOn_comp f hf f.symm.continuous.measurable hVO hOV]
 
 end AffineIsometryEquiv

@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.DominantDimension
 public import TauCeti.Algebra.Module.Injective.Int
+
+import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The dominant dimension of a ring
@@ -38,6 +42,9 @@ version is not defined here.
   coresolution with `n` terms by finitely generated projective-injective modules.
 * `TauCeti.two_le_dominantDimension_iff`: `dom.dim Γ ≥ 2` exactly when `Γ` has an injective
   copresentation by finitely generated projective-injective modules.
+* `TauCeti.two_le_dominantDimension_end_of_projective_of_injective`: **Müller's criterion,
+  forward direction**: the endomorphism ring `Γ` of a finitely presented module that is projective
+  and injective over `Γ` has dominant dimension at least two.
 * `TauCeti.dominantDimension_eq_top_of_injective`: a left self-injective ring has dominant
   dimension `⊤`.
 * `TauCeti.dominantDimension_int`: `dominantDimension ℤ = 0`.
@@ -47,12 +54,14 @@ version is not defined here.
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
   Studies in Advanced Mathematics 36, CUP (1995), §VI.5, p. 211.
 * M. Hoshino, *On dominant dimension of Noetherian rings*, Osaka J. Math. 26 (1989), 275–280.
+* B. J. Müller, *The classification of algebras by dominant dimension*, Canad. J. Math. 20 (1968),
+  398–409, Theorem 2.
 * C. Xi, *Frobenius bimodules and flat-dominant dimensions*, arXiv:1903.07921v1, §1.
 -/
 
 public section
 
-universe u
+universe u v
 
 open CategoryTheory Limits TauCeti
 
@@ -94,6 +103,31 @@ theorem two_le_dominantDimension_iff (Γ : Type u) [Ring Γ] :
           (Module.Finite Γ I₀ ∧ Projective I₀ ∧ Injective I₀) ∧
             (Module.Finite Γ I₁ ∧ Projective I₁ ∧ Injective I₁) := by
   rw [← Nat.cast_ofNat, TauCeti.natCast_le_dominantDimension_iff, ObjectProperty.isSyzygy_two_iff]
+
+/-- **Müller's criterion, forward direction.** Let `M` be a finitely presented `A`-module that is
+projective and injective over its endomorphism ring `Γ`. Then `Γ` has dominant dimension at least
+two. -/
+theorem two_le_dominantDimension_end_of_projective_of_injective {A : Type u} [Ring A]
+    (M : Type v) [AddCommGroup M] [Module A M] [Module.FinitePresentation A M]
+    [Module.Projective (Module.End A M) M] [Module.Injective (Module.End A M) M] :
+    2 ≤ dominantDimension (Module.End A M) := by
+  obtain ⟨n, m, q, r, hq, hqr⟩ := Module.FinitePresentation.exists_fin' A M
+  -- `Hom_A(-, M)` gives the exact sequence `0 → Γ → Hom_A(Aⁿ, M) → Hom_A(Aᵐ, M)`; conjugated by
+  -- `Hom_A(Aᵏ, M) ≅ Mᵏ` it becomes `0 → Γ → Mⁿ → Mᵐ` in `ModuleCat Γ`.
+  let e (k : ℕ) := LinearEquiv.piRing A M (Fin k) (Module.End A M)
+  have hex := hqr.lcomp_of_surjective (T := Module.End A M) M hq
+  let S := ModuleCat.shortComplexOfConj (LinearEquiv.refl _ _) (e n).symm (e m).symm _ _
+    hex.linearMap_comp_eq_zero
+  -- Each `Mᵏ` is projective and injective over `Γ`, as `M` is.
+  have hM (k : ℕ) : Projective (ModuleCat.of (Module.End A M) (Fin k → M)) ∧
+      Injective (ModuleCat.of (Module.End A M) (Fin k → M)) :=
+    ⟨(IsProjective.iff_projective _).1 inferInstance,
+      Module.injective_object_of_injective_module _ _⟩
+  rw [dominantDimension_eq_dominantDimension_of]
+  -- The first map of `S` is injective since `q` is surjective.
+  exact CategoryTheory.two_le_dominantDimension_iff.2 ⟨_, _, S.f, S.g, S.zero,
+    ModuleCat.mono_shortComplexOfConj_f _ _ _ _ (LinearMap.lcomp_injective_of_surjective q hq),
+    ModuleCat.shortComplexOfConj_exact _ _ _ _ _ hex, hM n, hM m⟩
 
 /-- **A left self-injective ring has dominant dimension `⊤`**, through the coresolution
 `0 → Γ → Γ → 0 → 0 → ⋯`. -/

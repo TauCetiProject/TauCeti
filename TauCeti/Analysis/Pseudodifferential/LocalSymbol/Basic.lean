@@ -45,7 +45,12 @@ global one. It does extend after multiplication by a cutoff:
   (`TauCeti.LocalSymbol.hasCompactSpatialSupport_extend`), so it satisfies its estimates uniformly
   in the position (`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). Restricting the extension
   to an open set on which `ψ = 1` recovers the restriction of the original symbol
-  (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`).
+  (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`). The extension only depends on the cutoff
+  on `U` (`TauCeti.LocalSymbol.extend_congr`). The mixed derivatives of the extension obey
+  the Leibniz bound `TauCeti.LocalSymbol.norm_mixedDeriv_cutoff_smul_le` in terms of those of the
+  original symbol, vanish outside `tsupport ψ`
+  (`TauCeti.mixedDeriv_comp_fst_smul_eq_zero_of_notMem_tsupport`), and are those of the original
+  symbol near positions where `ψ = 1` (`TauCeti.LocalSymbol.mixedDeriv_extend_of_eventuallyEq_one`).
 
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 The smoothing symbols on `U` (`TauCeti.LocalSymbol.IsSmoothing`), of every real order on `U`, are
@@ -55,8 +60,15 @@ on `ℝⁿ` is smoothing on `U`. Over `U = ℝⁿ` they are the smoothing symbol
 
 Conversely, `TauCeti.LocalSymbol.ofEventuallyEq` builds a local symbol from a function that agrees,
 near every position in `U`, with a symbol on `ℝⁿ`: the estimates of a local symbol only involve
-the coefficient near positions of `U`. Over all of `ℝⁿ`, `TauCeti.Symbol.ofEventuallyEq` glues a
-symbol on `ℝⁿ × ℝⁿ` in the same way.
+the coefficient near positions of `U`. Every local symbol is of this form: near each position of
+`U` it agrees with its extension by a cutoff equal to `1` near that position
+(`TauCeti.LocalSymbol.exists_symbol_eventually_eq`). Two local symbols agreeing near every
+position of `U` with a common symbol on `ℝⁿ` are equal
+(`TauCeti.LocalSymbol.ext_of_symbol_eventually_eq`), and such representatives are compatible with
+sums and scalar multiples (`TauCeti.LocalSymbol.eventually_coefficient_add_eq`,
+`TauCeti.LocalSymbol.eventually_coefficient_smul_eq`); this transfers identities between symbols
+on `ℝⁿ` to local symbols. Over all of `ℝⁿ`, `TauCeti.Symbol.ofEventuallyEq` glues a symbol on
+`ℝⁿ × ℝⁿ` in the same way.
 
 ## References
 
@@ -462,6 +474,33 @@ private theorem contDiff_cutoff_smul (a : LocalSymbol U V W m) (hψ : ContDiff �
   rw [← prod_univ]
   exact prod_mono hψU subset_rfl
 
+/-- **Leibniz bound for the cut-off coefficient.** At a position `x ∈ U`, the mixed derivative
+`∂_x^α ∂_ξ^β` of `ψ(x) a(x, ξ)` is at most
+`∑ᵢ (|α| choose i) ‖D^i ψ(x)‖ ∑_{|w| = |α| - i} ‖∂_x^w ∂_ξ^β a(x, ξ)‖`. -/
+theorem norm_mixedDeriv_cutoff_smul_le (a : LocalSymbol U V W m) (hψ : ContDiff ℝ ∞ ψ)
+    {x : CoordinateSpace n} (hx : x ∈ U) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    ‖mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ‖ ≤
+      ∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ x‖ *
+        ∑ w : Fin (α.length - i) → Fin n, ‖mixedDeriv (List.ofFn w) β a.coefficient x ξ‖ := by
+  -- Near `x`, replace `a` by a smooth function `b` on all of `ℝⁿ × ℝⁿ`.
+  obtain ⟨b, hb, hab, -⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
+    isCompact_singleton U.isOpen (singleton_subset_iff.2 hx)
+  have hab := hab x rfl
+  have hψb : mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ =
+      coordinateDeriv α (fun y => ψ y • coordinateDeriv β (fun η => b (y, η)) ξ) x := by
+    rw [mixedDeriv_congr_of_eventually (b := fun p => ψ p.1 • b p)
+      (by filter_upwards [hab] with y hy η using by rw [hy]), mixedDeriv_def]
+    congr 1
+    funext y
+    exact congrFun (coordinateDeriv_const_smul β (fun η => b (y, η)) (ψ y)) ξ
+  rw [hψb]
+  refine (norm_coordinateDeriv_smul_le α (contDiff_infty.1 hψ _)
+    (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _) x).trans_eq ?_
+  refine Finset.sum_congr rfl fun i _ => ?_
+  congr 1
+  refine Finset.sum_congr rfl fun w _ => ?_
+  rw [← mixedDeriv_def, mixedDeriv_congr_of_eventually hab]
+
 /-- The cut-off coefficient `ψ(x) a(x, ξ)` satisfies the symbol estimates on every compact set of
 positions. -/
 private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff ℝ ∞ ψ)
@@ -469,49 +508,33 @@ private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff �
     (α β : List (Fin n)) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  -- Near the compact set `L = K ∩ tsupport ψ ⊆ U`, replace `a` by a smooth function `b`.
+  -- Bounds for the derivatives of `ψ` and the mixed derivatives of `a` on the compact set
+  -- `L = K ∩ tsupport ψ ⊆ U`, outside of which the cut-off coefficient vanishes near `K`.
   set L := K ∩ tsupport ψ
   have hL : IsCompact L := hK.inter_right (isClosed_tsupport ψ)
   have hLU : L ⊆ U := inter_subset_right.trans hψU
-  obtain ⟨b, hb, hab, -⟩ :=
-    a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ hL U.isOpen hLU
-  -- Bounds for the derivatives of `ψ` and the mixed derivatives of `a` on `L`.
   choose B hB using fun i : ℕ => hL.exists_bound_of_continuousOn
     (hψ.continuous_iteratedFDeriv (WithTop.coe_le_coe.2 le_top) (m := i)).continuousOn
   choose C hC0 hC using fun γ : List (Fin n) => a.exists_bound L hLU hL γ β
-  refine ⟨∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * max (B i) 0 *
-      ∑ w : Fin (α.length - i) → Fin n, C (List.ofFn w), Finset.sum_nonneg fun i _ =>
-        mul_nonneg (by positivity) (Finset.sum_nonneg fun w _ => hC0 _), fun x hx ξ => ?_⟩
+  have hC' : 0 ≤ ∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * max (B i) 0 *
+      ∑ w : Fin (α.length - i) → Fin n, C (List.ofFn w) :=
+    Finset.sum_nonneg fun i _ => mul_nonneg (by positivity) (Finset.sum_nonneg fun w _ => hC0 _)
+  refine ⟨_, hC', fun x hx ξ => ?_⟩
   by_cases hxψ : x ∈ tsupport ψ
   · have hxL : x ∈ L := ⟨hx, hxψ⟩
-    have hψb : mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ =
-        coordinateDeriv α (fun y => ψ y • coordinateDeriv β (fun η => b (y, η)) ξ) x := by
-      rw [mixedDeriv_congr_of_eventually (b := fun p => ψ p.1 • b p)
-        (by filter_upwards [hab x hxL] with y hy η using by rw [hy]), mixedDeriv_def]
-      congr 1
-      funext y
-      exact congrFun (coordinateDeriv_const_smul β (fun η => b (y, η)) (ψ y)) ξ
-    rw [hψb]
-    refine (norm_coordinateDeriv_smul_le α (contDiff_infty.1 hψ _)
-      (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _) x).trans ?_
+    refine (a.norm_mixedDeriv_cutoff_smul_le hψ (hLU hxL) α β ξ).trans ?_
     rw [Finset.sum_mul]
     refine Finset.sum_le_sum fun i _ => ?_
     have hψi : ‖iteratedFDeriv ℝ i ψ x‖ ≤ max (B i) 0 := (hB i x hxL).trans (le_max_left _ _)
-    have hbi : ∑ w : Fin (α.length - i) → Fin n,
-        ‖coordinateDeriv (List.ofFn w) (fun y => coordinateDeriv β (fun η => b (y, η)) ξ) x‖ ≤
-          ∑ w : Fin (α.length - i) → Fin n,
-            C (List.ofFn w) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
-      Finset.sum_le_sum fun w _ => by
-        rw [← mixedDeriv_def, mixedDeriv_congr_of_eventually (hab x hxL)]
-        exact hC _ x hxL ξ
+    have hai : ∑ w : Fin (α.length - i) → Fin n, ‖mixedDeriv (List.ofFn w) β a.coefficient x ξ‖ ≤
+        ∑ w : Fin (α.length - i) → Fin n,
+          C (List.ofFn w) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+      Finset.sum_le_sum fun w _ => hC _ x hxL ξ
     calc _ ≤ (α.length.choose i : ℝ) * max (B i) 0 * ∑ w : Fin (α.length - i) → Fin n,
           C (List.ofFn w) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by gcongr
       _ = _ := by simp only [Finset.sum_mul, mul_assoc]
-  · rw [mixedDeriv_eq_zero_of_eventually ?_ α β ξ, norm_zero]
-    · exact mul_nonneg (Finset.sum_nonneg fun i _ => mul_nonneg (by positivity)
-        (Finset.sum_nonneg fun w _ => hC0 _)) (Real.rpow_pos_of_pos (by positivity) _).le
-    filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hxψ] with y hy η
-    simp [hy]
+  · rw [mixedDeriv_comp_fst_smul_eq_zero_of_notMem_tsupport (a := a.coefficient) hxψ, norm_zero]
+    exact mul_nonneg hC' (Real.rpow_pos_of_pos (by positivity) _).le
 
 /-- The extension by zero of the cut-off symbol `ψ(x) a(x, ξ)`, for a smooth cutoff `ψ` whose
 support is a closed subset of `ℝⁿ` contained in `U`: a symbol on `ℝⁿ`. -/
@@ -564,6 +587,13 @@ theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
     (a : LocalSymbol U V W m) : (extend ψ hψ hψU a).restrict U' = restrict h a :=
   ext_of_mem fun x hx ξ => by simp [hx, (hψ1 hx).trans (Pi.one_apply x)]
 
+/-- At a position near which the cutoff `ψ` equals `1`, the cut-off extension of a local symbol has
+the mixed derivatives of the local symbol. -/
+theorem mixedDeriv_extend_of_eventuallyEq_one {x : CoordinateSpace n} (hx : ψ =ᶠ[𝓝 x] 1)
+    (α β : List (Fin n)) (a : LocalSymbol U V W m) (ξ : CoordinateSpace n) :
+    mixedDeriv α β (extend ψ hψ hψU a).coefficient x ξ = mixedDeriv α β a.coefficient x ξ :=
+  mixedDeriv_congr_of_eventually (by filter_upwards [hx] with y hy η using by simp [hy]) α β ξ
+
 /-- For a cutoff supported in a smaller open set `U' ⊆ U`, extending the restriction to `U'` is
 extending the original symbol. -/
 @[simp]
@@ -574,7 +604,62 @@ theorem extend_restrict (h : U' ≤ U) (hψU' : tsupport ψ ⊆ U') (a : LocalSy
     · simp [hx]
     · simp [hx, image_eq_zero_of_notMem_tsupport fun hy => hx (hψU' hy)])
 
+/-- The extension only depends on the values of the cutoff on `U`. -/
+theorem extend_congr {ψ' : CoordinateSpace n → ℝ} (hψ' : ContDiff ℝ ∞ ψ')
+    (hψ'U : tsupport ψ' ⊆ U) (hψψ' : EqOn ψ ψ' U) (a : LocalSymbol U V W m) :
+    extend ψ hψ hψU a = extend ψ' hψ' hψ'U a :=
+  Symbol.ext (funext fun ⟨x, ξ⟩ => by
+    by_cases hx : x ∈ U
+    · simp [hψψ' hx]
+    · simp [a.coefficient_of_notMem x hx ξ])
+
+/-- Near every position of `U`, a local symbol agrees with a symbol on `ℝⁿ`: its extension by a
+cutoff equal to `1` near the position. This is the converse of
+`TauCeti.LocalSymbol.ofEventuallyEq`. -/
+theorem exists_symbol_eventually_eq (a : LocalSymbol U V W m) {x : CoordinateSpace n}
+    (hx : x ∈ U) :
+    ∃ s : Symbol n V W m, ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η) := by
+  obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one
+    U.isOpen (singleton_subset_iff.2 hx)
+  refine ⟨extend ψ hψ hψU a, ?_⟩
+  filter_upwards [hψ1 x rfl] with y hy η
+  simp [hy]
+
 end Extend
+
+section Representatives
+
+/-- Two local symbols are equal if near every position of `U` both agree with one symbol on `ℝⁿ`.
+This transfers identities between symbols on `ℝⁿ` to local symbols through representatives. -/
+theorem ext_of_symbol_eventually_eq {a b : LocalSymbol U V W m}
+    (h : ∀ x ∈ U, ∃ s : Symbol n V W m,
+      (∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η)) ∧
+        ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = b.coefficient (y, η)) :
+    a = b :=
+  ext_of_mem fun x hx ξ => by
+    obtain ⟨s, hsa, hsb⟩ := h x hx
+    exact (hsa.self_of_nhds ξ).symm.trans (hsb.self_of_nhds ξ)
+
+/-- If symbols `s` and `t` on `ℝⁿ` agree near `x` with local symbols `a` and `b`, then `s + t`
+agrees near `x` with `a + b`. -/
+theorem eventually_coefficient_add_eq {x : CoordinateSpace n} {a b : LocalSymbol U V W m}
+    {s t : Symbol n V W m}
+    (hs : ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η))
+    (ht : ∀ᶠ y in 𝓝 x, ∀ η, t.coefficient (y, η) = b.coefficient (y, η)) :
+    ∀ᶠ y in 𝓝 x, ∀ η, (s + t).coefficient (y, η) = (a + b).coefficient (y, η) := by
+  filter_upwards [hs, ht] with y hys hyt η
+  simp [hys η, hyt η]
+
+/-- If a symbol `s` on `ℝⁿ` agrees near `x` with a local symbol `a`, then `c • s` agrees near `x`
+with `c • a`. -/
+theorem eventually_coefficient_smul_eq (c : ℂ) {x : CoordinateSpace n} {a : LocalSymbol U V W m}
+    {s : Symbol n V W m}
+    (hs : ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η)) :
+    ∀ᶠ y in 𝓝 x, ∀ η, (c • s).coefficient (y, η) = (c • a).coefficient (y, η) := by
+  filter_upwards [hs] with y hys η
+  simp [hys η]
+
+end Representatives
 
 section Smoothing
 
