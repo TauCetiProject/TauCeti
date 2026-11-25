@@ -14,7 +14,8 @@ Mathlib's `PiTensorProduct.map_update_add` says that `PiTensorProduct.map` is ad
 factor. This file records the form of that statement used when two tensor maps are compared
 directly: if two families of linear maps agree away from one index `k`, then the sum of their
 tensor maps is the tensor map of the family whose `k`-th factor is the sum of the two `k`-th
-factors. It also records that a tensor map over an empty index type is the identity.
+factors. It also records that a tensor map over an empty index type is the identity, and that
+the tensor map of factorwise left inverses is a left inverse.
 
 ## Main results
 
@@ -22,9 +23,13 @@ factors. It also records that a tensor map over an empty index type is the ident
   agree away from one index.
 * `TauCeti.PiTensorProduct.map_of_isEmpty`: a tensor map over an empty index type is the
   identity.
+* `TauCeti.PiTensorProduct.map_map_of_leftInverse`: factorwise left inverses tensor to a left
+  inverse.
 -/
 
 public section
+
+open scoped TensorProduct
 
 universe uι uR us ut
 
@@ -48,5 +53,14 @@ theorem map_add_map_eq_map_update [DecidableEq ι] (f g : ∀ i, s i →ₗ[R] t
 theorem map_of_isEmpty [IsEmpty ι] (f : ∀ i, s i →ₗ[R] s i) :
     PiTensorProduct.map f = LinearMap.id := by
   rw [Subsingleton.elim f fun _ ↦ LinearMap.id, PiTensorProduct.map_id]
+
+/-- If each `f i` is a left inverse of `g i`, then the tensor map of `f` undoes the tensor map
+of `g`. -/
+theorem map_map_of_leftInverse {f : ∀ i, t i →ₗ[R] s i} {g : ∀ i, s i →ₗ[R] t i}
+    (h : ∀ i, Function.LeftInverse (f i) (g i)) (z : ⨂[R] i, s i) :
+    PiTensorProduct.map f (PiTensorProduct.map g z) = z := by
+  rw [← LinearMap.comp_apply, ← PiTensorProduct.map_comp,
+    show (fun i ↦ f i ∘ₗ g i) = fun _ ↦ LinearMap.id from funext fun i ↦ LinearMap.ext (h i),
+    PiTensorProduct.map_id, LinearMap.id_apply]
 
 end TauCeti.PiTensorProduct

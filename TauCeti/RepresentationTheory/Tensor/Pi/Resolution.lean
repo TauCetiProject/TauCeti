@@ -180,24 +180,6 @@ theorem isHomogeneous_piTensorProductSlotHomotopy :
     · rw [LinearMap.comp_apply, hπ i p hp v hv, map_zero]
       exact zero_mem _
 
-omit [DiscreteTopology R] [IsTopologicalGroup G] [Fintype I] [LinearOrder I] in
-include hh hneg in
-/-- A factor homotopy kills degree zero, since it lowers degree into `ℳ i (-1) = ⊥`. -/
-theorem factorHomotopy_eq_zero_of_mem_zero (i : I) {v : (M i).V} (hv : v ∈ ℳ i 0) :
-    h i v = 0 := by
-  have hv' := (hh i).map_mem hv
-  rw [zero_add, hneg i (-1) (by decide)] at hv'
-  exact (Submodule.mem_bot R).mp hv'
-
-omit [DiscreteTopology R] [IsTopologicalGroup G] [Fintype I] [LinearOrder I] in
-include hπa in
-/-- The factorwise retraction undoes the factorwise augmentation. -/
-theorem piTensorProductMap_retraction_augmentation (z : ⨂[R] i, (X i).V) :
-    PiTensorProduct.map π (PiTensorProduct.map (fun i ↦ (a i).toLinearMap) z) = z := by
-  rw [← LinearMap.comp_apply, ← PiTensorProduct.map_comp,
-    show (fun i ↦ π i ∘ₗ (a i).toLinearMap) = fun _ ↦ LinearMap.id from
-      funext fun i ↦ LinearMap.ext (hπa i), PiTensorProduct.map_id, LinearMap.id_apply]
-
 /-- The finite dependent tensor product of contracted graded smooth discrete representations is
 contracted onto the tensor product of their coefficients. The tensor augmentation and retraction
 are factorwise, and the homotopy is the ordered slot homotopy. No equivariance is required of the
@@ -226,11 +208,11 @@ noncomputable def smoothPiTensorProductContraction :
     (PiTensorProduct.slotHomotopy I (fun i ↦ (a i).toLinearMap ∘ₗ π i) h)
     (isHomogeneous_piTensorProductSlotHomotopy M X ℳ a ha π h hh hπ hneg)
     (fun z ↦ (congrArg (PiTensorProduct.map π) (hA z)).trans
-      (piTensorProductMap_retraction_augmentation M X a π hπa z))
+      (PiTensorProduct.map_map_of_leftInverse hπa z))
     (fun n _ hz ↦ PiTensorProduct.map_eq_zero_of_mem_totalDegreePiece_of_pos hπ
       (Int.natCast_pos.2 n.succ_pos) hz)
     (fun _ hz ↦ PiTensorProduct.slotHomotopy_eq_zero_of_mem_totalDegreePiece_zero hneg
-      (fun i _ ↦ factorHomotopy_eq_zero_of_mem_zero M ℳ h hh hneg i) hz)
+      (fun i _ ↦ (hh i).apply_eq_zero_of_eq_bot (hneg i (-1) (by decide))) hz)
     (fun z ↦ by
       -- A differential commutes with its contraction projector because its square vanishes.
       have hde (i : I) : (d i).toLinearMap ∘ₗ ((a i).toLinearMap ∘ₗ π i) =
