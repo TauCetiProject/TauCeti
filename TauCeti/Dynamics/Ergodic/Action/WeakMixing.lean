@@ -15,8 +15,10 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 Let `ℝ` act on a measurable space `X` carrying a measure `μ`. The action is *weakly mixing*
 (`MeasureTheory.Measure.IsWeaklyMixing`) when for all measurable sets `A` and `B` the time
 averages `T⁻¹ ∫₀ᵀ |μ((t +ᵥ ·)⁻¹' A ∩ B) − μ(A)μ(B)| dt` tend to `0` as `T → ∞`, with the measures
-read as real numbers. The definition is used for probability measures invariant under a jointly
-measurable action, where the integrand is measurable in `t` and bounded by `1`.
+read as real numbers. An integrand that is not interval integrable has integral `0` by Lean's
+convention, so the condition holds trivially for such a pair `A`, `B`. The definition therefore
+expresses weak mixing only for probability measures invariant under a jointly measurable action,
+where the integrand is measurable in `t` and bounded by `1`.
 
 A weakly mixing action preserving a finite measure is ergodic
 (`MeasureTheory.Measure.IsWeaklyMixing.ergodicVAdd`): a measurable set `A` whose translates are
@@ -37,6 +39,7 @@ translation flow on `AddCircle 1` is ergodic and has the nonconstant eigenfuncti
   pushforward is weakly mixing exactly when the measure is; in particular weak mixing is
   invariant under measure-preserving isomorphism of actions
   (`MeasureTheory.MeasurePreserving.isWeaklyMixing_iff`);
+* `MeasureTheory.Measure.isWeaklyMixing_zero`: the zero measure is weakly mixing;
 * `MeasureTheory.Measure.isWeaklyMixing_of_subsingleton`: the action on a one-point space is
   weakly mixing for the zero measure and for the probability measure.
 
@@ -55,8 +58,12 @@ variable {X : Type*} [MeasurableSpace X] [AddAction ℝ X] {μ : Measure X}
 
 /-- An action of `ℝ` on `X` is *weakly mixing* for the measure `μ` if for all measurable sets
 `A` and `B` the time averages `T⁻¹ ∫₀ᵀ |μ((t +ᵥ ·)⁻¹' A ∩ B) − μ(A)μ(B)| dt` tend to `0` as
-`T → ∞`, the measures being read as real numbers. It is used for probability measures invariant
-under a jointly measurable action. -/
+`T → ∞`, the measures being read as real numbers.
+
+When the integrand is not interval integrable, the integral is `0` by Lean's convention and the
+condition holds trivially for that pair. The definition expresses weak mixing only when the action
+is jointly measurable and `μ` is an invariant probability measure: the integrand is then
+measurable in `t` and bounded by `1`. -/
 def IsWeaklyMixing (μ : Measure X) : Prop :=
   ∀ A B : Set X, MeasurableSet A → MeasurableSet B →
     Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T,
@@ -104,15 +111,21 @@ theorem IsWeaklyMixing.ergodicVAdd [IsFiniteMeasure μ] [VAddInvariantMeasure �
       · exact Or.inl ((measureReal_eq_zero_iff).1 h2)
       · exact Or.inr ((ENNReal.toReal_eq_one_iff _).1 h2)
 
+/-- The zero measure is weakly mixing: every integrand vanishes. -/
+@[simp]
+theorem isWeaklyMixing_zero : IsWeaklyMixing (0 : Measure X) := by
+  intro A B _ _
+  simp
+
 /-- The action of `ℝ` on a space with at most one point is weakly mixing for a measure that is
 zero or a probability measure: every integrand vanishes. -/
 theorem isWeaklyMixing_of_subsingleton [Subsingleton X] [IsZeroOrProbabilityMeasure μ] :
     IsWeaklyMixing μ := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
+  · exact isWeaklyMixing_zero
   intro A B _ _
-  have hzero : ∀ t : ℝ, |μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ B) - μ.real A * μ.real B| = 0 := by
-    rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
-    · simp
-    · intro t
+  have hzero : ∀ t : ℝ, |μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ B) - μ.real A * μ.real B| = 0 :=
+    fun t => by
       rcases Subsingleton.set_cases (p := fun s => s = ∅ ∨ s = univ) (.inl rfl) (.inr rfl) A
         with rfl | rfl <;> simp
   simp_rw [hzero, intervalIntegral.integral_zero, mul_zero]
