@@ -28,23 +28,23 @@ open scoped Interval
 namespace TauCeti
 
 /-- Subpower bounds on arbitrarily far-out Mellin windows are equivalent to subexponential
-bounds on their logarithmic windows. Both integrate only the positive part of the function. -/
-theorem frequently_integral_mul_rpow_le_rpow_iff (G : ℝ → ℝ) (L θ η : ℝ) :
-    (∃ᶠ Y in atTop, (∫ y in Y..(Y ^ L), max (G y) 0 * y ^ (-(θ + 1))) ≤ Y ^ η) ↔
-      ∃ᶠ U in atTop, (∫ u in U..(L * U), max (G (Real.exp u)) 0 * Real.exp (-θ * u)) ≤
+bounds on their logarithmic windows. -/
+theorem frequently_integral_mul_rpow_le_rpow_iff (g : ℝ → ℝ) (L θ η : ℝ) :
+    (∃ᶠ Y in atTop, (∫ y in Y..(Y ^ L), g y * y ^ (-(θ + 1))) ≤ Y ^ η) ↔
+      ∃ᶠ U in atTop, (∫ u in U..(L * U), g (Real.exp u) * Real.exp (-θ * u)) ≤
         Real.exp (η * U) := by
   nth_rw 1 [← Real.map_exp_atTop]
   rw [frequently_map]
   refine frequently_congr (Eventually.of_forall fun U ↦ ?_)
-  rw [intervalIntegral_mul_exp_comp_exp (fun y ↦ max (G y) 0), mul_comm L U, mul_comm η U,
-    Real.exp_mul, Real.exp_mul]
+  rw [intervalIntegral_mul_exp_comp_exp g, mul_comm L U, mul_comm η U, Real.exp_mul,
+    Real.exp_mul]
 
 /-- An upper power bound on arbitrarily far-out scale windows gives arbitrarily far-out windows
 on which the weighted positive-part integral is at most `Y ^ η`, for any `η > 0`. -/
 theorem HasWindows.frequently_integral_mul_rpow_le_rpow {G : ℝ → ℝ} {L C θ η : ℝ}
     (h : HasWindows {y | G y ≤ C * y ^ θ} L) (hη : 0 < η) :
     ∃ᶠ Y in atTop, (∫ y in Y..(Y ^ L), max (G y) 0 * y ^ (-(θ + 1))) ≤ Y ^ η := by
-  rw [frequently_integral_mul_rpow_le_rpow_iff]
+  rw [frequently_integral_mul_rpow_le_rpow_iff (fun y ↦ max (G y) 0)]
   have hsmall : ∀ᶠ U : ℝ in atTop, max C 0 * (L - 1) * U ≤ Real.exp (η * U) := by
     simpa only [Real.rpow_one, one_mul, Real.norm_eq_abs, abs_of_nonneg (Real.exp_pos _).le]
       using (((isLittleO_rpow_exp_pos_mul_atTop 1 hη).const_mul_left (max C 0 * (L - 1))).bound
