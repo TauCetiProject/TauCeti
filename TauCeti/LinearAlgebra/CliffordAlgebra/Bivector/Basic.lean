@@ -55,6 +55,7 @@ rotation.
   `CliffordAlgebra.equivExterior_bivectorExterior`, and
   `CliffordAlgebra.bivectorExterior_injective`: the exterior model sends
   bivectors to exterior products, so the exterior-square map is injective.
+* `CliffordAlgebra.equivExterior_symm_ι_mul_ι`: its inverse sends `x ∧ y` to `x y - B(x, y)`.
 * `CliffordAlgebra.bivectorExterior_exteriorPower_basis`: the exterior-square map sends the basis
   of `⋀² M` attached to a basis `b` of `M` to the matching vectors of the Clifford basis
   `CliffordAlgebra.basis Q b`.
@@ -210,6 +211,15 @@ private theorem equivExterior_ι_mul_ι_sub_swap (a b : M) :
   simp only [equivExterior, map_sub, changeFormEquiv_apply, changeForm_ι_mul_ι]
   rw [QuadraticMap.associated_isSymm R (-Q) a b]
   module
+
+/-- **The quantization map in degree two**: the inverse of `CliffordAlgebra.equivExterior` sends
+`x ∧ y` to `x y - B(x, y)`, where `B = QuadraticMap.associated Q` is the bilinear form with
+`B(x, x) = Q x`. Compare `CliffordAlgebra.equivExterior_bivector`, the form `½ (x y - y x)`. -/
+theorem equivExterior_symm_ι_mul_ι (x y : M) :
+    (equivExterior Q).symm (ExteriorAlgebra.ι R x * ExteriorAlgebra.ι R y) =
+      ι Q x * ι Q y - algebraMap R (CliffordAlgebra Q) (QuadraticMap.associated Q x y) := by
+  rw [equivExterior, changeFormEquiv_symm, changeFormEquiv_apply, changeForm_ι_mul_ι]
+  simp only [map_neg, LinearMap.neg_apply, neg_neg]
 
 /-- The exterior model sends a half-normalized Clifford bivector to its exterior product. -/
 theorem equivExterior_bivector (a b : M) :

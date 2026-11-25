@@ -17,7 +17,9 @@ import Mathlib.LinearAlgebra.QuadraticForm.Basis
 # Basic Clifford algebra API
 
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
-linear equivalence with the exterior algebra, and the commutation rule
+linear equivalence with the exterior algebra, starting with the fact that it and its inverse
+preserve scalars (`CliffordAlgebra.equivExterior_algebraMap`,
+`CliffordAlgebra.equivExterior_symm_algebraMap`), and the commutation rule
 `CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another, together with the
 square of a scalar plus a vector (`CliffordAlgebra.algebraMap_add_ι_mul_self`) and the
 extensionality of algebra equivalences on generators (`CliffordAlgebra.algEquiv_ext_ι`).
@@ -41,6 +43,15 @@ algebra. -/
 theorem equivExterior_algebraMap (Q : QuadraticForm R M) [Invertible (2 : R)] (r : R) :
     equivExterior Q (algebraMap R (CliffordAlgebra Q) r) = algebraMap R (ExteriorAlgebra R M) r :=
   changeForm_algebraMap changeForm.associated_neg_proof r
+
+/-- The inverse of `CliffordAlgebra.equivExterior`, the quantization map, fixes scalars.
+
+Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underlying
+`CliffordAlgebra.changeFormEquiv`, so the left-hand side is not in normal form. -/
+theorem equivExterior_symm_algebraMap (Q : QuadraticForm R M) [Invertible (2 : R)] (r : R) :
+    (equivExterior Q).symm (algebraMap R (ExteriorAlgebra R M) r) =
+      algebraMap R (CliffordAlgebra Q) r := by
+  rw [LinearEquiv.symm_apply_eq, equivExterior_algebraMap]
 
 /-- **The scalars of a Clifford algebra are a faithful copy of `R`.** -/
 theorem algebraMap_injective (Q : QuadraticForm R M) [Invertible (2 : R)] :

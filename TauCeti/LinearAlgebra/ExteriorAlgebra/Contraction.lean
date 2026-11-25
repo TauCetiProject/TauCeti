@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Reverse
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
@@ -54,7 +55,9 @@ with every multivector: `ι m * x = involute x * ι m`.  Together with the grade
 `CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
 `-1` of the graded-commutative exterior algebra. On a wedge product of vectors it is the alternating
 sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`); this is the differential of the
-Koszul complex.
+Koszul complex. Against a symmetric bilinear form, the contraction of `v₁ ∧ ⋯ ∧ vₙ` by `B(v₀, ·)`
+has vanishing alternating sum over the permutations of `v₀, …, vₙ`
+(`TauCeti.ExteriorAlgebra.sum_sign_smul_contractLeft_ιMulti_tail_eq_zero`).
 
 In degree at least the rank, contraction loses no information: if `d m = 1` and
 `finrank R M ≤ n`, every `x ∈ ⋀ⁿ M` is `m ∧ (d ⌋ x)`. Hence two forms killed by `d` multiply to
@@ -410,6 +413,36 @@ theorem contractLeft_ιMulti (d : Module.Dual R M) {n : ℕ} (v : Fin (n + 1) �
       Finset.mul_sum]
     simp [hrem, pow_succ, sub_eq_add_neg, Matrix.vecTail, Fin.tail,
       Function.comp_def]
+
+/-- **Contracting with a symmetric form kills alternating sums**: for a symmetric bilinear form
+`B`, the contraction of `v₁ ∧ ⋯ ∧ vₙ` against `B(v₀, ·)` has vanishing signed sum over the
+permutations of `v₀, …, vₙ`. By `TauCeti.ExteriorAlgebra.contractLeft_ιMulti` each such
+contraction is a sum of terms `± B(v₀, vᵢ) • ⋯`, and each term is invariant under the transposition
+of `v₀` and `vᵢ`. -/
+theorem sum_sign_smul_contractLeft_ιMulti_tail_eq_zero (B : M →ₗ[R] Module.Dual R M)
+    (hB : ∀ a b, B a b = B b a) (n : ℕ) (v : Fin (n + 1) → M) :
+    ∑ σ : Equiv.Perm (Fin (n + 1)), Equiv.Perm.sign σ • contractLeft (Q := (0 : QuadraticForm R M))
+      (B ((v ∘ σ) 0)) (ExteriorAlgebra.ιMulti R n (Fin.tail (v ∘ σ))) = 0 := by
+  cases n with
+  | zero => simp
+  | succ n =>
+    simp_rw [contractLeft_ιMulti, Finset.smul_sum]
+    rw [Finset.sum_comm]
+    refine Finset.sum_eq_zero fun i _ ↦ TauCeti.sum_sign_smul_eq_zero_of_mul_swap _ 0 i.succ
+      (Fin.succ_ne_zero i).symm fun σ ↦ ?_
+    rw [Equiv.Perm.coe_mul, ← Function.comp_assoc]
+    generalize v ∘ σ = w
+    -- the transposition of `0` and `i.succ` only moves entries that are deleted
+    have hrem : i.removeNth (Fin.tail (w ∘ Equiv.swap 0 i.succ)) = i.removeNth (Fin.tail w) := by
+      ext l
+      simp only [Fin.removeNth_apply, Fin.tail_def, Function.comp_apply]
+      rw [Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _)
+        ((Fin.succ_injective _).ne (Fin.succAbove_ne i l))]
+    have hhead : (w ∘ Equiv.swap 0 i.succ) 0 = w i.succ := by
+      rw [Function.comp_apply, Equiv.swap_apply_left]
+    have htail : Fin.tail (w ∘ Equiv.swap 0 i.succ) i = w 0 := by
+      simp only [Fin.tail_def, Function.comp_apply, Equiv.swap_apply_right]
+    rw [hrem, hhead, htail, Fin.tail_def, hB (w i.succ)]
 
 end TauCeti.ExteriorAlgebra
 

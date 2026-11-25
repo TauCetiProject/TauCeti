@@ -57,6 +57,8 @@ forces `r = 0`.
 
 ## Main results
 
+* `CliffordAlgebra.equivExterior_ι` and `CliffordAlgebra.equivExterior_symm_ι`: the equivalence
+  with the exterior algebra and its inverse send generators to generators.
 * `CliffordAlgebra.ι_injective`, `CliffordAlgebra.ι_inj` and
   `CliffordAlgebra.ι_eq_zero_iff`: the generators are a faithful copy of `M`.
 * `CliffordAlgebra.commute_ι_iff_exists_eq_smul`: two vectors commute exactly when they are
@@ -101,12 +103,21 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 Mathlib's `CliffordAlgebra.equivExterior` is only a linear equivalence. Its scalar equation is
 recorded in the general Clifford-algebra API; here we record the generator equation needed for
-the vector API. Both are immediate from its definition as a `changeForm`. -/
+the vector API, for the equivalence and for its inverse. Both scalar and generator equations are
+immediate from its definition as a `changeForm`. -/
 
 /-- `CliffordAlgebra.equivExterior` sends a generator to the corresponding generator of the
 exterior algebra. -/
 theorem equivExterior_ι (m : M) : equivExterior Q (ι Q m) = ExteriorAlgebra.ι R m :=
   changeForm_ι changeForm.associated_neg_proof m
+
+/-- The inverse of `CliffordAlgebra.equivExterior`, the quantization map, sends a generator of the
+exterior algebra to the corresponding generator.
+
+Not a `simp` lemma: `simp` unfolds `CliffordAlgebra.equivExterior` to the underlying
+`CliffordAlgebra.changeFormEquiv`, so the left-hand side is not in normal form. -/
+theorem equivExterior_symm_ι (m : M) : (equivExterior Q).symm (ExteriorAlgebra.ι R m) = ι Q m := by
+  rw [LinearEquiv.symm_apply_eq, equivExterior_ι]
 
 /-! ### The vector part -/
 
