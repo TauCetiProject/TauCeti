@@ -75,45 +75,18 @@ theorem exists_finiteDimensional_approx_of_discrete {X : Type*} [TopologicalSpac
     [DiscreteTopology X] (F : Finset (X →ᵇ ℂ)) {ε : ℝ} (hε : 0 < ε) :
     ∃ S : NonUnitalStarSubalgebra ℂ (X →ᵇ ℂ), FiniteDimensional ℂ S ∧
       ∀ a ∈ F, ∃ b ∈ S, ‖a - b‖ < ε := by
-  -- Approximate the real and imaginary parts of each `a` within `ε / 4` by finite-valued
-  -- functions, so that `a` is within `ε / 2` of a finite-valued function.
-  have hpart (a : X →ᵇ ℂ) (p : ℂ → ℝ) (hp : ∀ z, |p z| ≤ ‖z‖) (hp' : ∀ z w, p (z - w) = p z - p w) :
-      ∃ g : X → ℝ, (Set.range g).Finite ∧ ∀ x, |p (a x) - g x| < ε / 4 := by
-    obtain ⟨g, hg, hd⟩ := exists_finite_range_dist_lt (mkOfDiscrete (fun x ↦ p (a x)) (2 * ‖a‖)
-      fun x y ↦ by
-        rw [Real.dist_eq, ← hp']
-        refine (hp _).trans ((norm_sub_le _ _).trans ?_)
-        linarith [a.norm_coe_le_norm x, a.norm_coe_le_norm y]) (by positivity : 0 < ε / 4)
-    refine ⟨g, hg, fun x ↦ ?_⟩
-    simpa [Real.dist_eq] using (dist_coe_le_dist x).trans_lt hd
-  have happrox (a : X →ᵇ ℂ) : ∃ g h : X → ℝ, (Set.range g).Finite ∧ (Set.range h).Finite ∧
-      ∀ x, ‖a x - (g x + h x * Complex.I)‖ ≤ ε / 2 := by
-    obtain ⟨g, hg, hga⟩ := hpart a Complex.re Complex.abs_re_le_norm Complex.sub_re
-    obtain ⟨h, hh, hha⟩ := hpart a Complex.im Complex.abs_im_le_norm Complex.sub_im
-    refine ⟨g, h, hg, hh, fun x ↦ (Complex.norm_le_abs_re_add_abs_im _).trans ?_⟩
-    have hre : (a x - (g x + h x * Complex.I)).re = (a x).re - g x := by simp
-    have him : (a x - (g x + h x * Complex.I)).im = (a x).im - h x := by simp
-    rw [hre, him]
-    linarith [hga x, hha x]
-  choose G H hG hH hGH using happrox
+  -- Approximate each `a ∈ F` within `ε` by a finite-valued function.
+  have happrox (a : F) : ∃ g : X →ᵇ ℂ, (Set.range g).Finite ∧ dist (a : X →ᵇ ℂ) g < ε :=
+    exists_finite_range_dist_lt _ hε
+  choose G hG hGa using happrox
   -- The joint finite-valued map; the approximants are constant on its fibres.
-  let π : X → (F → ℝ × ℝ) := fun x a ↦ (G a x, H a x)
+  let π : X → (F → ℂ) := fun x a ↦ G a x
   have hπ : (Set.range π).Finite :=
-    (Set.Finite.pi (t := fun a : F ↦ Set.range (G a) ×ˢ Set.range (H a))
-      fun a ↦ (hG a).prod (hH a)).subset (by rintro _ ⟨x, rfl⟩ a -; exact ⟨⟨x, rfl⟩, ⟨x, rfl⟩⟩)
-  refine ⟨fibreConstant π, finiteDimensional_fibreConstant π hπ, fun a ha ↦ ?_⟩
-  have hb (x : X) : ‖(G a x + H a x * Complex.I : ℂ)‖ ≤ ‖a‖ + ε / 2 := by
-    have := norm_sub_le (a x) (a x - (G a x + H a x * Complex.I))
-    rw [sub_sub_cancel] at this
-    linarith [hGH a x, a.norm_coe_le_norm x]
-  refine ⟨mkOfDiscrete (fun x ↦ G a x + H a x * Complex.I) (2 * (‖a‖ + ε / 2)) fun x y ↦
-    (dist_le_norm_add_norm _ _).trans (by linarith [hb x, hb y]),
-    mem_fibreConstant.2 fun x y hxy ↦ ?_, ?_⟩
-  · have := congrFun hxy ⟨a, ha⟩
-    simp only [π, Prod.mk.injEq] at this
-    simp [this.1, this.2]
-  · refine lt_of_le_of_lt ((norm_le (C := ε / 2) (by positivity)).2 fun x ↦ ?_) (by linarith)
-    simpa using hGH a x
+    (Set.Finite.pi (t := fun a : F ↦ Set.range (G a)) hG).subset
+      (by rintro _ ⟨x, rfl⟩ a -; exact ⟨x, rfl⟩)
+  refine ⟨fibreConstant π, finiteDimensional_fibreConstant π hπ, fun a ha ↦
+    ⟨G ⟨a, ha⟩, mem_fibreConstant.2 fun x y hxy ↦ congrFun hxy ⟨a, ha⟩,
+      dist_eq_norm a (G ⟨a, ha⟩) ▸ hGa ⟨a, ha⟩⟩⟩
 
 end BoundedContinuousFunction
 
