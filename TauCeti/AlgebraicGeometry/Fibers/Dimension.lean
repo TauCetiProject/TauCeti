@@ -15,12 +15,19 @@ import TauCeti.AlgebraicGeometry.Scheme.LocalDimension
 import TauCeti.Topology.Sober
 
 /-!
-# Codimension inside closed subsets and fibres of an affine scheme
+# Dimensions of points and fibres
 
 For a point `x` of `Spec A`, its codimension inside the closed subset `V(I)` is the height of its
 image in `A ⧸ I`. For a ring map `φ : R ⟶ S`, the generizations of a point of `Spec S` in its
 fibre over `Spec R` are exactly its generizations in `V(q S)`, where `q` is the prime of `R`
 below it, so the codimension in the fibre is the height of its image in `S ⧸ q S`.
+
+Globally, for a morphism `f : X ⟶ Y` over a field `k` between schemes locally of finite type over
+`k`, the closure of a point `x` satisfies `dim {x}⁻ = dim {f x}⁻ + dim {x}⁻_F`, the last closure
+taken in the scheme-theoretic fibre `F` of `f` over `f x`; this comes from additivity of
+transcendence degrees of residue fields. When `f` has pure relative dimension `n` and `x` is a
+generic point of its fibre, the last term is `n`. This gives the dimension shift of the pullback of
+algebraic cycles, `TauCeti.AlgebraicGeometry.Chow.cyclesFlatPullback`.
 
 ## Main declarations
 
@@ -28,6 +35,9 @@ below it, so the codimension in the fibre is the height of its image in `S ⧸ q
   `Spec A` inside `V(I)` is the height of its image in `A ⧸ I`.
 * `TauCeti.AlgebraicGeometry.coheight_fiber_eq_height_map`: the codimension of a point in its
   fibre over `Spec R` is the height of its image in `S ⧸ q S`.
+* `Scheme.Hom.topologicalKrullDim_closure_singleton_asFiber_of_isFiberGenericPoint`:
+  if the fibre of `f` over `f x` is pure-dimensional of dimension `n`, the closure in that fibre
+  of a generic point `x` of the fibre has dimension `n`.
 * `TauCeti.AlgebraicGeometry.height_eq_height_add_height_asFiber`: for a morphism `f` over a
   field `k` between schemes locally of finite type over `k`, every point `x` satisfies
   `dim {x}⁻ = dim {f x}⁻ + dim {x}⁻_F`, the last closure taken in the fibre `F` of `f` over `f x`.

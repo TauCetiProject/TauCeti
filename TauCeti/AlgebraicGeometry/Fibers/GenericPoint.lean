@@ -18,9 +18,11 @@ A point `x` of a scheme `X` is a *generic point of its fibre* under `f : X ⟶ Y
 (`AlgebraicGeometry.Scheme.Hom.IsFiberGenericPoint f x`) when it is the generic point of an
 irreducible component of the fibre `f⁻¹(f x)`, as a subspace of `X`. The pullback of algebraic
 cycles along `f` is supported on these points, and its local finiteness comes from there being
-finitely many of them in each fibre over a Noetherian open; the dimension of such a point is
-the dimension of its image plus the dimension of the fibre component it is generic in. These are
-the uses in `TauCeti.AlgebraicGeometry.Fibers.Dimension` and
+finitely many of them in each fibre over a Noetherian open. For a morphism over a field `k`, of
+pure relative dimension `n`, between schemes locally of finite type over `k`, the closure of such
+a point has dimension that of the closure of its image plus `n`
+(`TauCeti.AlgebraicGeometry.height_eq_height_add_of_isFiberGenericPoint`). These are the uses in
+`TauCeti.AlgebraicGeometry.Fibers.Dimension` and
 `TauCeti.AlgebraicGeometry.AlgebraicCycle.Pullback`.
 
 ## Main declarations
