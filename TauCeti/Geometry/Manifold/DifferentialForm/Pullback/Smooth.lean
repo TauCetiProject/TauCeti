@@ -328,11 +328,7 @@ evaluated on the image of `v` under the differential. -/
 theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
     (mpullback f hf φ).val x ![v] = φ.val (f x) ![mfderiv I I' f x v] := by
-  rw [mpullback_apply]
-  congr 1
-  ext i
-  fin_cases i
-  rfl
+  rw [coe_mpullback, TauCeti.mpullback_apply_one]
 
 /-- Pullback of smooth forms along a surjective smooth map whose derivatives are all surjective is
 injective. -/
