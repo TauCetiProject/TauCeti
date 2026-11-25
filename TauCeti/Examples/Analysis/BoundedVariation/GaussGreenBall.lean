@@ -8,11 +8,11 @@ module
 public import TauCeti.Analysis.BoundedVariation.GaussGreen
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Ball
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Analysis.BoundedVariation.Convex
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Geometry.Euclidean.Volume.Sphere
 
@@ -234,25 +234,19 @@ theorem not_integrable_norm_fluxField_mul_indicator_compl_closedBall [Nontrivial
     (hθ : θ.rOut ≤ 1) :
     ¬Integrable fun x => ‖fluxField θ x‖ * (closedBall (0 : E) 1)ᶜ.indicator 1 x := by
   intro hint
-  -- The integrand is the radial function `‖x‖ ^ (1 - n)` restricted to `‖x‖ > 1`.
+  -- The integrand is the norm power `‖x‖ ^ (1 - n)` restricted to `(closedBall 0 1)ᶜ`, which is
+  -- not integrable there since `1 - n ≥ -n`.
+  have hd : 1 ≤ finrank ℝ E := finrank_pos
   have hf : (fun x => ‖fluxField θ x‖ * (closedBall (0 : E) 1)ᶜ.indicator 1 x) =
-      fun x => (Ioi (1 : ℝ)).indicator (fun y => (y ^ (finrank ℝ E - 1))⁻¹) ‖x‖ := by
+      (closedBall (0 : E) 1)ᶜ.indicator fun x => ‖x‖ ^ ((1 : ℝ) - finrank ℝ E) := by
     funext x
     by_cases hx : x ∈ (closedBall (0 : E) 1)ᶜ
-    · have hx1 : 1 < ‖x‖ := by simpa using hx
-      rw [Set.indicator_of_mem hx, Set.indicator_of_mem (mem_Ioi.2 hx1),
-        norm_fluxField_of_rOut_le (hθ.trans hx1.le), Pi.one_apply, mul_one]
-    · have hx1 : ¬1 < ‖x‖ := by simpa using hx
-      rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem (by simpa using hx1), mul_zero]
-  -- In polar coordinates the integrand becomes `r ^ (n - 1) r ^ (1 - n) = 1` on `(1, ∞)`.
-  rw [hf, integrable_fun_norm_addHaar] at hint
-  have h1 : IntegrableOn (fun _ : ℝ => (1 : ℝ)) (Ioi 1) := by
-    refine (hint.mono_set (Ioi_subset_Ioi zero_le_one)).congr_fun (fun y hy => ?_)
-      measurableSet_Ioi
-    have hy0 : 0 < y := zero_lt_one.trans hy
-    simp only [smul_eq_mul, Set.indicator_of_mem hy]
-    exact mul_inv_cancel₀ (by positivity)
-  simp at h1
+    · rw [Set.indicator_of_mem hx, Set.indicator_of_mem hx, Pi.one_apply, mul_one,
+        norm_fluxField_of_rOut_le (hθ.trans (by simpa using hx : 1 < ‖x‖).le), ← neg_sub,
+        Real.rpow_neg (norm_nonneg _), ← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one]
+    · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem hx, mul_zero]
+  rw [hf, integrable_indicator_iff isClosed_closedBall.measurableSet.compl] at hint
+  linarith [(integrableOn_norm_rpow_compl_closedBall_iff one_pos).1 hint]
 
 /-- **Flux escaping to infinity.** In dimension `n ≥ 2`, let `s` be the exterior
 `(closedBall 0 1)ᶜ` of the unit ball and `θ` a bump function centred at `0` with `θ.rOut ≤ 1`.
