@@ -260,6 +260,22 @@ theorem mgradient_rescale [IsManifold I 1 M] {k : ℕ∞ω}
   rw [inner_riemannianBundle, rescale_inner, map_smul, smul_apply, hg, smul_eq_mul,
     ← mul_assoc, mul_inv_cancel₀ (hf_pos x).ne', one_mul]
 
+/-- Multiplying a metric by a positive function `f` divides the length of the gradient of every
+function at `x` by `√(f x)`. -/
+theorem norm_mgradient_rescale [IsManifold I 1 M] {k : ℕ∞ω}
+    (g : ContMDiffRiemannianMetric I k E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x) (u : M → ℝ) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      ‖TauCeti.Manifold.mgradient I u x‖) =
+    (√(f x))⁻¹ * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨g.toRiemannianMetric⟩;
+      ‖TauCeti.Manifold.mgradient I u x‖) := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  rw [g.mgradient_rescale hf hf_pos, norm_smul, g.norm_rescale f hf hf_pos, Real.norm_eq_abs,
+    abs_of_pos (inv_pos.2 (hf_pos x)), ← mul_assoc, inv_mul_eq_div, Real.sqrt_div_self]
+
 /-- Multiplying a metric by a positive constant `c` multiplies the gradient of every function by
 `c⁻¹`. -/
 theorem mgradient_rescale_const [IsManifold I 1 M]
