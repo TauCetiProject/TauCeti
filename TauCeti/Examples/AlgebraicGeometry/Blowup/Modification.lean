@@ -59,13 +59,9 @@ example : IsModification (originIdealSheaf k).blowupToBase :=
 example : (originIdealSheaf k).blowupToBase.centre ⊆ (originIdealSheaf k).support :=
   Scheme.IdealSheafData.centre_blowupToBase_subset
 
-private theorem X_image_univ : (X '' Set.univ : Set (MvPolynomial (Fin 2) k)) = {X 0, X 1} := by
-  ext p
-  simp [Fin.exists_fin_two, eq_comm]
-
 /-- The origin of the affine plane, the point of the prime `(x, y)`. -/
 noncomputable def origin : Spec (.of (MvPolynomial (Fin 2) k)) :=
-  ⟨Ideal.span {X 0, X 1}, X_image_univ k ▸ span_X_image_isPrime Set.univ⟩
+  ⟨Ideal.span {X 0, X 1}, idealOfVars_fin_two k ▸ isPrime_idealOfVars (Fin 2) k⟩
 
 /-- The prime of the origin is `(x, y)`. -/
 @[simp]
@@ -73,7 +69,7 @@ theorem origin_asIdeal : (origin k).asIdeal = Ideal.span {X 0, X 1} := (rfl)
 
 /-- The prime `(x, y)` of the origin is maximal: it is the ideal of all variables. -/
 theorem isMaximal_origin_asIdeal : (origin k).asIdeal.IsMaximal := by
-  rw [origin_asIdeal, ← X_image_univ k, Set.image_univ]
+  rw [origin_asIdeal, ← idealOfVars_fin_two]
   exact isMaximal_idealOfVars (Fin 2) k
 
 /-- The support of the ideal sheaf of `(x, y)` is the origin. -/
