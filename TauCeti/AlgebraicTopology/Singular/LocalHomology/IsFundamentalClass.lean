@@ -50,6 +50,7 @@ map this multiple is the degree of the map with coefficients in `K`, the mod `2`
 
 * `TauCeti.isFundamentalClass_smul_iff_of_isUnit`: multiplying by a unit preserves fundamental
   classes.
+* `TauCeti.IsFundamentalClass.of_smul`: a class with a fundamental multiple is fundamental.
 * `TauCeti.isFundamentalClass_iff_isUnit_of_linearEquiv`: for local homology identified with the
   coefficient ring `R` at every point, `μ` is a fundamental class exactly when each of its local
   coordinates is a unit of `R`.

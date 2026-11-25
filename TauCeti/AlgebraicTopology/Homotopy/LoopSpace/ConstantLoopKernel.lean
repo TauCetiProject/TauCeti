@@ -40,7 +40,9 @@ it.
 * The space `P_{⋆→Q} 𝓛₀Q` is homotopy equivalent to the based maps `Map_*(S², Q)`, hence to the
   double loop space `Ω²Q = Ω (Ω Q x) (Path.refl x)`
   (`TauCeti.basedConstContractibleMoorePathsHomotopyEquiv`). So the kernel is isomorphic to
-  `H~ₙ(Ω²Q)` (`TauCeti.kernelBasedConstContractibleMoorePathsInclusionIso`).
+  `H~ₙ(Ω²Q)` (`TauCeti.kernelBasedConstContractibleMoorePathsInclusionIso`), and `H~ₙ(Ω²Q)` embeds
+  in `Hₙ(P_{⋆→Q} 𝓛₀Q)` inside the kernel
+  (`TauCeti.exists_injective_singularHomology_basedConstContractibleMoorePaths`).
 * If `π₂(Q, x)` is nontrivial, the kernel in degree zero contains a copy of the coefficient ring,
   an infinite cyclic subgroup over `ℤ`
   (`TauCeti.exists_injective_singularHomology_basedConstContractibleMoorePaths_zero`).
@@ -135,6 +137,26 @@ section Ring
 
 variable {R : Type u} [Ring R] {Q : Type u} [TopologicalSpace Q] (x : Q)
 
+/-- **The reduced homology of `Ω²Q` embeds in the kernel of `i_{Q*}` on path spaces.** In every
+degree `n` there is an injective `R`-linear map `H~ₙ(Ω²Q; R) → Hₙ(P_{⋆→Q} 𝓛₀Q; R)` whose image lies
+in the kernel of the map induced by the inclusion `P_{⋆→Q} 𝓛₀Q → P_{⋆→𝓛₀Q} 𝓛₀Q`: the inclusion of
+the kernel, through `TauCeti.kernelBasedConstContractibleMoorePathsInclusionIso`. -/
+theorem exists_injective_singularHomology_basedConstContractibleMoorePaths (n : ℕ) :
+    ∃ f : (reducedSingularHomologyFunctor (ModuleCat.of R R) n).obj
+          (TopCat.of (Ω (Ω Q x) (Path.refl x))) →ₗ[R]
+        ((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj
+          (TopCat.of (BasedConstContractibleMoorePaths Q x)),
+      Function.Injective f ∧ ∀ w, (((singularHomologyFunctor (ModuleCat.{u} R) n).obj
+        (ModuleCat.of R R)).map (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x))).hom
+          (f w) = 0 := by
+  let e := (kernelBasedConstContractibleMoorePathsInclusionIso (ModuleCat.of R R) Q x n).inv ≫
+    kernel.ι _
+  have he : e ≫ ((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
+      (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x)) = 0 := by
+    simp only [e, Category.assoc, kernel.condition, comp_zero]
+  exact ⟨e.hom, (ModuleCat.mono_iff_injective e).1 inferInstance,
+    fun w ↦ by simpa using ConcreteCategory.congr_hom he w⟩
+
 /-- **Proposition 5.11 of Barraud–Damian–Humilière–Oancea, case `k = 2`, on path spaces.** If
 `π₂(Q, x)` is nontrivial, the kernel of the map induced on `H₀(-; R)` by the inclusion
 `P_{⋆→Q} 𝓛₀Q → P_{⋆→𝓛₀Q} 𝓛₀Q` contains a copy of `R`; for `R = ℤ` this is an infinite cyclic
@@ -147,13 +169,9 @@ theorem exists_injective_singularHomology_basedConstContractibleMoorePaths_zero
         (ModuleCat.of R R)).map (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x))).hom
           (f r) = 0 := by
   obtain ⟨g, hg⟩ := exists_injective_doubleLoopSpaceReducedHomology₀ (R := R) x
-  let e := (kernelBasedConstContractibleMoorePathsInclusionIso (ModuleCat.of R R) Q x 0).inv ≫
-    kernel.ι _
-  have he : e ≫ ((singularHomologyFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R)).map
-      (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x)) = 0 := by
-    simp only [e, Category.assoc, kernel.condition, comp_zero]
-  refine ⟨e.hom ∘ₗ g, ((ModuleCat.mono_iff_injective e).1 inferInstance).comp hg, fun r ↦ ?_⟩
-  simpa using ConcreteCategory.congr_hom he (g r)
+  obtain ⟨f, hf, hf0⟩ :=
+    exists_injective_singularHomology_basedConstContractibleMoorePaths (R := R) x 0
+  exact ⟨f ∘ₗ g, hf.comp hg, fun r ↦ hf0 (g r)⟩
 
 end Ring
 

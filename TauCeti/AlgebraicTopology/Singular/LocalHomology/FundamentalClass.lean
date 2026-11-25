@@ -81,8 +81,8 @@ homology isomorphism directly, without requiring Poincaré duality.
 * `TauCeti.HomologicalOrientation.localHomologyMap_fundamentalClassOn_comap`: open embeddings
   carry fundamental classes along compact sets to fundamental classes.
 * `TauCeti.HomologicalOrientation.fundamentalClassOn_eq_sum_localHomologyMap`: the fundamental
-  class along a compact set covered by finitely many pairwise disjoint open sets is the sum of the
-  fundamental classes of those open sets along the parts of the set they contain.
+  class along a compact set covered by finitely many open sets meeting it in pairwise disjoint sets
+  is the sum of the fundamental classes of those open sets along the parts of the set they contain.
 * `TauCeti.HomologicalOrientation.eq_fundamentalClass`: the fundamental class is the only class
   restricting to the orientation at every point.
 * `TauCeti.HomologicalOrientation.fundamentalClass_neg`: the fundamental class of the reversed
@@ -266,12 +266,12 @@ section DisjointOpens
 
 variable {ι : Type*} {U : ι → TopologicalSpace.Opens M}
 
-/-- **The fundamental class along a compact set split by disjoint open sets.** Let the compact set
-`A` be covered by finitely many pairwise disjoint open sets `U i`. Then the fundamental class along
-`A` is the sum over `i` of the fundamental classes of `U i`, oriented by restricting `o`, along the
-parts of `A` in `U i`, pushed into `Hₙ(M, M ∖ A; ℤ)` by the inclusions. -/
+/-- **The fundamental class along a compact set split by open sets.** Let the compact set `A` be
+covered by finitely many open sets `U i` meeting `A` in pairwise disjoint sets. Then the fundamental
+class along `A` is the sum over `i` of the fundamental classes of `U i`, oriented by restricting
+`o`, along the parts of `A` in `U i`, pushed into `Hₙ(M, M ∖ A; ℤ)` by the inclusions. -/
 theorem fundamentalClassOn_eq_sum_localHomologyMap [Fintype ι] {A : Set M} (hA : IsCompact A)
-    (hU : Pairwise fun i k ↦ Disjoint (U i : Set M) (U k)) (hAU : A ⊆ ⋃ i, (U i : Set M)) :
+    (hU : Pairwise fun i k ↦ Disjoint (A ∩ U i) (A ∩ U k)) (hAU : A ⊆ ⋃ i, (U i : Set M)) :
     o.fundamentalClassOn hn hA = ∑ i, localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
       ⟨Subtype.val, continuous_subtypeVal⟩ (subset_refl _) n
       ((o.comap (U i).isOpenEmbedding').fundamentalClassOn hn
@@ -286,7 +286,7 @@ theorem fundamentalClassOn_eq_sum_localHomologyMap [Fintype ι] {A : Set M} (hA 
       localHomologyMap_comp_localHomologyRestriction_eq_zero_of_notMem_range _ _ _ hx ?_]
     · simp
     rintro ⟨z, rfl⟩
-    exact disjoint_left.1 (hU hik) z.property hxk
+    exact disjoint_left.1 (hU hik) ⟨hx, z.property⟩ ⟨hx, hxk⟩
   · simp
 
 end DisjointOpens

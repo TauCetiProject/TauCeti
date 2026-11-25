@@ -60,6 +60,17 @@ theorem isFundamentalClass_smul_iff_of_isUnit {r : R} (hr : IsUnit r)
     IsFundamentalClass (r • μ) ↔ IsFundamentalClass μ := by
   simp only [isFundamentalClass_iff, map_smul, Submodule.span_singleton_smul_eq hr]
 
+/-- A class with a fundamental multiple is fundamental: the image of `r • μ` in each local
+homology module is a multiple of that of `μ`. -/
+theorem IsFundamentalClass.of_smul {r : R}
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)}
+    (h : IsFundamentalClass (r • μ)) : IsFundamentalClass μ :=
+  (isFundamentalClass_iff _).2 fun x ↦ by
+    have hx := (isFundamentalClass_iff _).1 h x
+    rw [map_smul] at hx
+    exact eq_top_iff.2 (hx.symm.le.trans (Submodule.span_le.2 (Set.singleton_subset_iff.2
+      (Submodule.smul_mem _ r (Submodule.mem_span_singleton_self _)))))
+
 /-- A class is fundamental exactly when its negative is. -/
 @[simp]
 theorem isFundamentalClass_neg_iff
