@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
 public import TauCeti.RingTheory.Localization.AsSubring
+public import TauCeti.RingTheory.Localization.SubalgebraMembership
 
 /-!
 # The localization of a holomorphy ring away from a function
