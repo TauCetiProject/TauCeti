@@ -142,7 +142,7 @@ theorem finrank_adicCompletion_eq_orderOf (p : ℕ) [Fact p.Prime]
       (((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩).adicCompletion ℚ)
       (v.adicCompletion F) = orderOf (p : ZMod e) := by
   have : v.asIdeal.LiesOver (Ideal.span {(p : ℤ)}) :=
-    Rat.HeightOneSpectrum.asIdeal_primesEquiv_symm ⟨p, Fact.out⟩ ▸ inferInstance
+    Rat.HeightOneSpectrum.asIdeal_primesEquiv_symm (R := ℤ) ⟨p, Fact.out⟩ ▸ inferInstance
   have : Finite (𝓞 F ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
   rw [finrank_adicCompletion, IsCyclotomicExtension.Rat.ramificationIdx_eq_of_not_dvd p F _ hpe,
     IsCyclotomicExtension.Rat.inertiaDeg_eq_of_not_dvd p F _ hpe, one_mul]
@@ -155,11 +155,7 @@ theorem adicCompletionExtension_bijective (p : ℕ) [Fact p.Prime]
     (hp : (p : ZMod e) = 1) :
     Function.Bijective (adicCompletionExtension ℚ F
       ((Rat.HeightOneSpectrum.primesEquiv (R := ℤ)).symm ⟨p, Fact.out⟩) v) := by
-  -- `p ∣ e` would give `0 = 1` in `ZMod p`
-  have hpe : ¬ p ∣ e := fun h ↦ by
-    have h01 := congrArg (ZMod.castHom h (ZMod p)) hp
-    rw [map_natCast, map_one, ZMod.natCast_self] at h01
-    exact zero_ne_one h01
+  have hpe : ¬ p ∣ e := (ZMod.isUnit_prime_iff_not_dvd Fact.out).1 (hp ▸ isUnit_one)
   rw [← algebraMap_adicCompletionExtensionAlgebra]
   refine Algebra.finrank_eq_one_iff_bijective_algebraMap.1 ?_
   rw [finrank_adicCompletion_eq_orderOf v p hpe, hp, orderOf_one]
@@ -169,7 +165,8 @@ place `v` of `F` over `p` the completion `F_v` is isomorphic to `ℚ_[p]`. -/
 theorem nonempty_ringEquiv_padic (p : ℕ) [Fact p.Prime] (hp : (p : ZMod e) = 1)
     (hv : (p : 𝓞 F) ∈ v.asIdeal) :
     Nonempty (v.adicCompletion F ≃+* ℚ_[p]) := by
-  have := (Rat.HeightOneSpectrum.liesOver_asIdeal_primesEquiv_symm_iff v.asIdeal ⟨p, Fact.out⟩).2 hv
+  have := (Rat.HeightOneSpectrum.liesOver_asIdeal_primesEquiv_symm_iff (R := ℤ) v.asIdeal
+    ⟨p, Fact.out⟩).2 hv
   exact ⟨(RingEquiv.ofBijective _ (adicCompletionExtension_bijective v p hp)).symm.trans
     (RingEquivClass.toRingEquiv (Padic.adicCompletionEquiv ℤ ⟨p, Fact.out⟩)).symm⟩
 
