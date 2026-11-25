@@ -338,13 +338,7 @@ theorem dense_setOf_exists_norm_apply_eq_norm [CompleteSpace E] :
   refine (Convex.dense_setOf_ne_zero_isMaxOn_re (𝕜 := 𝕜) (convex_closedBall (0 : E) 1)
     isClosed_closedBall.isComplete isBounded_closedBall
     ⟨0, mem_closedBall_self zero_le_one⟩).mono ?_
-  rintro g ⟨-, x, hx, hmax⟩
-  rw [mem_closedBall_zero_iff] at hx
-  refine ⟨x, hx, le_antisymm ((g.le_opNorm x).trans (mul_le_of_le_one_right (norm_nonneg _) hx))
-    ?_⟩
-  have := (StrongDual.re_apply_add_mul_norm_le_iff (f := g) (x := 0) zero_le_one).2
-    fun y hy ↦ hmax hy
-  rw [map_zero, zero_re, zero_add, one_mul] at this
-  exact this.trans (re_le_norm _)
+  rintro g ⟨-, h⟩
+  exact StrongDual.exists_isMaxOn_re_apply_closedBall_iff.1 h
 
 end TauCeti

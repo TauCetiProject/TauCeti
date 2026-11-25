@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 import TauCeti.Topology.VectorBundle.Core.Congr
 import TauCeti.Topology.VectorBundle.Core.LocallyConstant
 import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
@@ -38,7 +38,8 @@ From this criterion we obtain:
 * the canonical projections and inclusions `whitneyFst`, `whitneySnd`, `whitneyInl`, `whitneyInr`,
   the bicone `whitneyBicone`, its bilimit witness `whitneyBiconeIsBilimit`, and the instances
   `HasBinaryBiproducts (FiniteRankAtlas 𝕜 X)` and `HasFiniteBiproducts (FiniteRankAtlas 𝕜 X)`,
-  together with rank additivity `rank_biprod` and `rank_biproduct`;
+  the comparison `biprodIsoWhitneySum` of the chosen biproduct with the Whitney sum, and rank
+  additivity `rank_biprod` and `rank_biproduct`;
 * concrete pairing, copairing, functoriality, symmetry, associativity, unit, and trivial-atlas sum
   isomorphisms (`whitneyLift`, `whitneyDesc`, `whitneyMap`, `whitneyMapIso`, `whitneyCommIso`,
   `whitneyAssocIso`, `whitneyZeroLeftIso`, `whitneyZeroRightIso`, `trivialAddIso`);
@@ -418,10 +419,55 @@ instance : HasBinaryBiproducts (FiniteRankAtlas 𝕜 X) where
 instance : HasFiniteBiproducts (FiniteRankAtlas 𝕜 X) :=
   hasFiniteBiproducts_of_hasBinaryBiproducts
 
+/-- The chosen categorical binary biproduct `A ⊞ D` is the Whitney sum. -/
+noncomputable def biprodIsoWhitneySum (A D : FiniteRankAtlas 𝕜 X) :
+    A ⊞ D ≅ whitneySum A D :=
+  (biprod.uniqueUpToIso A D (whitneyBiconeIsBilimit A D)).symm
+
+/-- The comparison `biprodIsoWhitneySum` carries the inclusion `biprod.inl` to `whitneyInl`. -/
+@[reassoc (attr := simp)] theorem biprod_inl_biprodIsoWhitneySum_hom (A D : FiniteRankAtlas 𝕜 X) :
+    biprod.inl ≫ (biprodIsoWhitneySum A D).hom = whitneyInl A D :=
+  biprod.inl_desc _ _
+
+/-- The comparison `biprodIsoWhitneySum` carries the inclusion `biprod.inr` to `whitneyInr`. -/
+@[reassoc (attr := simp)] theorem biprod_inr_biprodIsoWhitneySum_hom (A D : FiniteRankAtlas 𝕜 X) :
+    biprod.inr ≫ (biprodIsoWhitneySum A D).hom = whitneyInr A D :=
+  biprod.inr_desc _ _
+
+/-- The comparison `biprodIsoWhitneySum` carries the projection `whitneyFst` to `biprod.fst`. -/
+@[reassoc (attr := simp)] theorem biprodIsoWhitneySum_hom_whitneyFst (A D : FiniteRankAtlas 𝕜 X) :
+    (biprodIsoWhitneySum A D).hom ≫ whitneyFst A D = biprod.fst := by
+  apply biprod.hom_ext' <;> simp
+
+/-- The comparison `biprodIsoWhitneySum` carries the projection `whitneySnd` to `biprod.snd`. -/
+@[reassoc (attr := simp)] theorem biprodIsoWhitneySum_hom_whitneySnd (A D : FiniteRankAtlas 𝕜 X) :
+    (biprodIsoWhitneySum A D).hom ≫ whitneySnd A D = biprod.snd := by
+  apply biprod.hom_ext' <;> simp
+
+/-- The inverse of `biprodIsoWhitneySum` carries `whitneyInl` to the inclusion `biprod.inl`. -/
+@[reassoc (attr := simp)] theorem whitneyInl_biprodIsoWhitneySum_inv (A D : FiniteRankAtlas 𝕜 X) :
+    whitneyInl A D ≫ (biprodIsoWhitneySum A D).inv = biprod.inl := by
+  rw [Iso.comp_inv_eq, biprod_inl_biprodIsoWhitneySum_hom]
+
+/-- The inverse of `biprodIsoWhitneySum` carries `whitneyInr` to the inclusion `biprod.inr`. -/
+@[reassoc (attr := simp)] theorem whitneyInr_biprodIsoWhitneySum_inv (A D : FiniteRankAtlas 𝕜 X) :
+    whitneyInr A D ≫ (biprodIsoWhitneySum A D).inv = biprod.inr := by
+  rw [Iso.comp_inv_eq, biprod_inr_biprodIsoWhitneySum_hom]
+
+/-- The inverse of `biprodIsoWhitneySum` carries the projection `biprod.fst` to `whitneyFst`. -/
+@[reassoc (attr := simp)] theorem biprodIsoWhitneySum_inv_fst (A D : FiniteRankAtlas 𝕜 X) :
+    (biprodIsoWhitneySum A D).inv ≫ biprod.fst = whitneyFst A D := by
+  rw [Iso.inv_comp_eq, biprodIsoWhitneySum_hom_whitneyFst]
+
+/-- The inverse of `biprodIsoWhitneySum` carries the projection `biprod.snd` to `whitneySnd`. -/
+@[reassoc (attr := simp)] theorem biprodIsoWhitneySum_inv_snd (A D : FiniteRankAtlas 𝕜 X) :
+    (biprodIsoWhitneySum A D).inv ≫ biprod.snd = whitneySnd A D := by
+  rw [Iso.inv_comp_eq, biprodIsoWhitneySum_hom_whitneySnd]
+
 /-- Rank additivity for the categorical binary biproduct `A ⊞ D`. -/
 @[simp] theorem rank_biprod (A D : FiniteRankAtlas 𝕜 X) :
     (A ⊞ D).rank = A.rank + D.rank :=
-  (biprod.uniqueUpToIso A D (whitneyBiconeIsBilimit A D)).symm.finiteRankAtlas_rank_eq
+  (biprodIsoWhitneySum A D).finiteRankAtlas_rank_eq
 
 /-- Rank additivity for finite categorical biproducts `⨁ f`. -/
 @[simp] theorem rank_biproduct.{w} {J : Type w} [Fintype J] (f : J → FiniteRankAtlas 𝕜 X) :

@@ -15,6 +15,7 @@ public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Principal
 public import TauCeti.Topology.Bases
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
@@ -37,9 +38,9 @@ measures on `Πʳ i, [G i, B i]` in two regimes:
    `Πʳ i, [G i, B i]` is locally compact
    (`TauCeti.locallyCompactSpace_restrictedProduct_of_measure_ne_top_of_isMulLeftInvariant`). The
    measure is determined among *all* measures by its values on open boxes
-   (`TauCeti.eq_restrictedHaar_of_box`), and on each principal piece it is the product
-   `TauCeti.restrictedPrincipalPieceMeasure` of a finite product Haar measure with Kolmogorov's
-   infinite product of probability Haar measures.
+   (`TauCeti.eq_restrictedHaar_of_box`), and on each principal piece (for any finite set `T` with
+   `μ i (B i) = 1` for every `i ∉ T`) it is the product `TauCeti.restrictedPrincipalPieceMeasure`
+   of a finite product Haar measure with Kolmogorov's infinite product of probability Haar measures.
 2. **Convergent restricted Haar product** (`TauCeti.convergentHaarProduct`,
    `TauCeti.exists_unique_convergentHaarProduct`): assuming only
    `Summable fun i : {i // i ∉ S} ↦ |(μ i.1 (B i.1)).toReal - 1|` outside a finite set `S`, there
@@ -63,11 +64,15 @@ groups is unimodular (`RestrictedProduct.modularCharacter_eq_one`).
 * `TauCeti.restrictedPrincipalPieceMeasure`,
   `TauCeti.isHaarMeasure_restrictedPrincipalPieceMeasure`: the product measure on the
   principal-piece model `(Π i : T, G i) × (Π i : {i // i ∉ T}, B i)`.
+* `TauCeti.measurePreserving_comap_levelOpenSubgroupEquiv`: general measure-preserving level chart
+  for any ambient Borel measure on `Πʳ i, [G i, B i]`.
 * `TauCeti.locallyCompactSpace_restrictedProduct_of_measure_ne_top_of_isMulLeftInvariant`.
 * `TauCeti.exists_unique_restrictedHaar`, `TauCeti.restrictedHaar`, `TauCeti.restrictedHaar_unique`,
   `TauCeti.eq_restrictedHaar_of_box`, `TauCeti.comap_levelMonoidHom_restrictedHaar`,
+  `TauCeti.measurePreserving_restrictedHaar_levelOpenSubgroupEquiv`,
   `TauCeti.measurePreserving_restrictedHaar_levelMonoidHom`, `TauCeti.restrictedHaar_box`,
   `TauCeti.restrictedHaar_box_eq_finprod`, `TauCeti.restrictedHaar_box_self`,
+  `TauCeti.restrictedHaar_eq_finprod_smul`,
   `TauCeti.regular_restrictedHaar`, `TauCeti.isLocallyFiniteMeasure_restrictedHaar`,
   `TauCeti.sigmaFinite_restrictedHaar`, `TauCeti.isMulRightInvariant_restrictedHaar`,
   `TauCeti.isInvInvariant_restrictedHaar`,
@@ -75,8 +80,10 @@ groups is unimodular (`RestrictedProduct.modularCharacter_eq_one`).
 * `TauCeti.exists_unique_convergentHaarProduct`, `TauCeti.convergentHaarProduct`,
   `TauCeti.convergentHaarProduct_unique`, `TauCeti.convergentHaarProduct_eq_smul_restrictedHaar`,
   `TauCeti.convergentHaarProduct_box`, `TauCeti.convergentHaarProduct_eq_of_subset`,
-  `TauCeti.convergentHaarProduct_congr_finset`, `TauCeti.convergentHaarProduct_eq_restrictedHaar`,
+  `TauCeti.convergentHaarProduct_congr_finset`, `TauCeti.convergentHaarProduct_eq_smul_of_eq_smul`,
+  `TauCeti.convergentHaarProduct_eq_restrictedHaar`,
   `TauCeti.comap_levelMonoidHom_convergentHaarProduct`,
+  `TauCeti.measurePreserving_convergentHaarProduct_levelOpenSubgroupEquiv`,
   `TauCeti.isMulRightInvariant_convergentHaarProduct`,
   `TauCeti.map_restrictedProductCongr_convergentHaarProduct`.
 * `RestrictedProduct.modularCharacter_eq_finprod`, `RestrictedProduct.modularCharacter_eq_one`:
@@ -150,6 +157,46 @@ theorem isHaarMeasure_restrictedPrincipalPieceMeasure {B : ∀ i, K i} {T : Fins
   infer_instance
 
 end PrincipalPieceMeasure
+
+section LevelChart
+
+variable {ι : Type*} {G : ι → Type*} {K : ι → Type*}
+  [∀ i, Group (G i)] [∀ i, TopologicalSpace (G i)]
+  [∀ i, MeasurableSpace (G i)]
+  [∀ i, SetLike (K i) (G i)] [∀ i, SubgroupClass (K i) (G i)]
+
+/-- For any ambient measure `ν` on `Πʳ i, [G i, B i]` and any finite set `T` outside which each
+`B i` is open, `levelOpenSubgroupEquiv B T hB` is measure-preserving from
+`ν.comap (levelMonoidHom B T)` onto the pullback `ν.comap Subtype.val` on
+`levelOpenSubgroup B T hB`. -/
+@[to_additive /-- For any ambient measure `ν` on `Πʳ i, [G i, B i]` and any finite set `T`
+outside which each `B i` is open, `levelOpenAddSubgroupEquiv B T hB` is measure-preserving from
+`ν.comap (levelAddMonoidHom B T)` onto the pullback `ν.comap Subtype.val` on
+`levelOpenAddSubgroup B T hB`. -/]
+theorem measurePreserving_comap_levelOpenSubgroupEquiv (B : ∀ i, K i) (T : Finset ι)
+    (hB : ∀ i ∉ T, IsOpen (B i : Set (G i)))
+    [BorelSpace ((Π i : T, G i) × (Π j : {i // i ∉ T}, B j.val))]
+    (ν : Measure (Πʳ i, [G i, B i])) :
+    MeasurePreserving (levelOpenSubgroupEquiv B T hB)
+      (ν.comap (levelMonoidHom B T))
+      (ν.comap (Subtype.val : levelOpenSubgroup B T hB → Πʳ i, [G i, B i])) := by
+  let U := levelOpenSubgroup B T hB
+  let e := levelOpenSubgroupEquiv B T hB
+  have hmu : MeasurableEmbedding (Subtype.val : U → Πʳ i, [G i, B i]) :=
+    MeasurableEmbedding.subtypeVal U.isOpen.measurableSet
+  have hemb : MeasurableEmbedding (levelMonoidHom B T) :=
+    (isOpenEmbedding_levelMonoidHom_of_isOpen B T hB).measurableEmbedding
+  have he : Measurable e := e.continuous.measurable
+  refine ⟨he, ?_⟩
+  have hmap : ((ν.comap (levelMonoidHom B T)).map e).map Subtype.val =
+      ν.restrict (Subtype.val '' (univ : Set U)) := by
+    rw [Measure.map_map hmu.measurable he, val_comp_levelOpenSubgroupEquiv, hemb.map_comap,
+      ← MonoidHom.coe_range, ← toSubgroup_levelOpenSubgroup B T hB, OpenSubgroup.coe_toSubgroup,
+      Subtype.coe_image_univ]
+  rw [← hmu.comap_map ((ν.comap (levelMonoidHom B T)).map e), hmap, hmu.comap_restrict,
+    preimage_image_eq _ Subtype.val_injective, Measure.restrict_univ]
+
+end LevelChart
 
 /-- If `B i ≤ G i` are open subgroups of weakly locally compact topological groups whose masses
 under left-invariant open-positive Borel measures are cofinitely finite, then `Πʳ i, [G i, B i]` is
@@ -230,7 +277,7 @@ private theorem comap_levelMonoidHom_eq (B : ∀ i, K i)
   have _ (i : {i // i ∉ T}) :
       IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
     isProbabilityMeasure_comap_subtype (hBopen.out i.val).measurableSet (μ i.val)
-        (hT i.val i.property)
+      (hT i.val i.property)
   have _ (i : {i // i ∉ T}) : CompactSpace (B i.val) := by
     have _ : LocallyCompactSpace (B i.val) :=
       (hBopen.out i.val).isOpenEmbedding_subtypeVal.locallyCompactSpace
@@ -349,7 +396,7 @@ theorem exists_unique_restrictedHaar :
     have _ (i : {i // i ∉ T}) :
         IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
       isProbabilityMeasure_comap_subtype (hBopen.out i.val).measurableSet (μ i.val)
-          (hT_one i.val i.property)
+        (hT_one i.val i.property)
     rw [← image_levelMonoidHom_pi_prod_univ B T hCBT,
       ← (isOpenEmbedding_levelMonoidHom B T).measurableEmbedding.comap_apply,
       comap_levelMonoidHom_eq B hBcompact μ ν hT_one
@@ -415,6 +462,23 @@ theorem comap_levelMonoidHom_restrictedHaar {T : Finset ι} (hT : ∀ i ∉ T, �
   exact finprod_eq_prod_of_mulSupport_subset _ (s := T) fun i hi ↦
     Classical.byContradiction fun hiT ↦ hi (by dsimp only; rw [hCB i hiT, hT i hiT])
 
+/-- For any finite set `T` outside which `μ i (B i) = 1`, `levelOpenSubgroupEquiv B T _` is
+measure-preserving from `restrictedPrincipalPieceMeasure B T μ` onto the pullback of
+`restrictedHaar` along the subtype inclusion of `levelOpenSubgroup B T _`. -/
+@[to_additive /-- For any finite set `T` outside which `μ i (B i) = 1`,
+`levelOpenAddSubgroupEquiv B T _` is measure-preserving from `restrictedPrincipalPieceMeasure B T μ`
+onto the pullback of `restrictedAddHaar` along the subtype inclusion of
+`levelOpenAddSubgroup B T _`. -/]
+theorem measurePreserving_restrictedHaar_levelOpenSubgroupEquiv {T : Finset ι}
+    (hT : ∀ i ∉ T, μ i (B i) = 1) :
+    MeasurePreserving (levelOpenSubgroupEquiv B T fun i _ ↦ hBopen.out i)
+      (restrictedPrincipalPieceMeasure B T μ)
+      ((restrictedHaar B μ hμB).comap
+        (Subtype.val : levelOpenSubgroup B T (fun i _ ↦ hBopen.out i) → Πʳ i, [G i, B i])) := by
+  simpa only [comap_levelMonoidHom_restrictedHaar B μ hμB hT] using
+    measurePreserving_comap_levelOpenSubgroupEquiv B T (fun i _ ↦ hBopen.out i)
+      (restrictedHaar B μ hμB)
+
 /-- Value of `restrictedHaar` on a coordinate box `box C` agreeing with `B i` outside a finite set
 `T` on whose complement `μ i (B i) = 1`. No measurability assumption on `C i` is needed. -/
 @[to_additive /-- Value of `restrictedAddHaar` on a coordinate box `box C` agreeing with `B i`
@@ -426,7 +490,7 @@ theorem restrictedHaar_box {T : Finset ι} (hT : ∀ i ∉ T, μ i (B i) = 1)
   have _ (i : {i // i ∉ T}) :
       IsProbabilityMeasure ((μ i.val).comap (Subtype.val : B i.val → G i.val)) :=
     isProbabilityMeasure_comap_subtype (hBopen.out i.val).measurableSet (μ i.val)
-        (hT i.val i.property)
+      (hT i.val i.property)
   rw [← image_levelMonoidHom_pi_prod_univ B T hCB,
     ← (isOpenEmbedding_levelMonoidHom B T).measurableEmbedding.comap_apply,
     comap_levelMonoidHom_restrictedHaar B μ hμB hT, restrictedPrincipalPieceMeasure_def,
@@ -454,6 +518,34 @@ measure `∏ᶠ i, μ i (B i)`. -/]
 theorem restrictedHaar_box_self :
     restrictedHaar B μ hμB (box fun i ↦ (B i : Set (G i))) = ∏ᶠ i, μ i (B i) :=
   restrictedHaar_box_eq_finprod B μ hμB (.of_forall fun _ ↦ rfl)
+
+/-- **Change of local normalizations.** If `μ' i = c i • μ i` for scalars `c i : ℝ≥0`, where both
+families are normalized cofinitely, then `restrictedHaar` for `μ'` is `∏ᶠ i, c i` times
+`restrictedHaar` for `μ`. The scalars are nonzero because `μ' i` is a Haar measure, and equal to
+`1` cofinitely because both families are normalized on `B i` cofinitely. -/
+@[to_additive restrictedAddHaar_eq_finprod_smul
+/-- **Change of local normalizations.** If `μ' i = c i • μ i` for scalars `c i : ℝ≥0`, where both
+families are normalized cofinitely, then `restrictedAddHaar` for `μ'` is `∏ᶠ i, c i` times
+`restrictedAddHaar` for `μ`. -/]
+theorem restrictedHaar_eq_finprod_smul (μ' : ∀ i, Measure (G i)) [∀ i, (μ' i).IsHaarMeasure]
+    (hμ'B : ∀ᶠ i in cofinite, μ' i (B i) = 1) (c : ι → ℝ≥0) (hμ' : ∀ i, μ' i = c i • μ i) :
+    restrictedHaar B μ' hμ'B = (∏ᶠ i, c i) • restrictedHaar B μ hμB := by
+  have hc1 : ∀ᶠ i in cofinite, c i = 1 := by
+    filter_upwards [hμB, hμ'B] with i h h'
+    rw [hμ' i, coe_nnreal_smul_apply, h, mul_one] at h'
+    exact_mod_cast h'
+  have hc0 : ∏ᶠ i, c i ≠ 0 := finprod_ne_zero fun i hi ↦ by
+    simpa [hμ' i, hi] using isOpen_univ.measure_pos (μ' i) univ_nonempty
+  have := IsHaarMeasure.nnreal_smul (restrictedHaar B μ hμB) hc0
+  refine (restrictedHaar_unique B μ' hμ'B fun C _ hCB ↦ ?_).symm
+  have hc : Function.HasFiniteMulSupport c := hasFiniteMulSupport_iff_eventually_eq_one.mpr hc1
+  have hcoe : ((∏ᶠ i, c i : ℝ≥0) : ℝ≥0∞) = ∏ᶠ i, (c i : ℝ≥0∞) := map_finprod ENNReal.ofNNRealHom hc
+  have hfin : Function.HasFiniteMulSupport fun i ↦ μ i (C i) :=
+    hasFiniteMulSupport_iff_eventually_eq_one.mpr <| (hCB.and hμB).mono fun i h ↦ by rw [h.1, h.2]
+  rw [coe_nnreal_smul_apply, restrictedHaar_box_eq_finprod B μ hμB hCB, hcoe,
+    ← finprod_mul_distrib (f := fun i ↦ (c i : ℝ≥0∞))
+      (hc.subset (Function.mulSupport_comp_subset ENNReal.coe_one c)) hfin]
+  exact finprod_congr fun i ↦ by rw [hμ' i, coe_nnreal_smul_apply]
 
 /-- `restrictedHaar` is a regular measure on `Πʳ i, [G i, B i]`. -/
 @[to_additive /-- `restrictedAddHaar` is a regular measure on `Πʳ i, [G i, B i]`. -/]
@@ -889,6 +981,50 @@ theorem convergentHaarProduct_congr_finset (B : ∀ i, K i) [Fact (∀ i, IsOpen
     (convergentHaarProduct_eq_of_subset B Finset.subset_union_right hBcompact' hBcompactU μ
       hconv' hconvU).symm
 
+/-- Rescaling the local Haar measure at one index `j` by `c` rescales `convergentHaarProduct` by
+`c`, whether or not `j` lies in the exceptional set `S`. -/
+@[to_additive convergentAddHaarProduct_eq_smul_of_eq_smul
+/-- Rescaling the local additive Haar measure at one index `j` by `c` rescales
+`convergentAddHaarProduct` by `c`, whether or not `j` lies in the exceptional set `S`. -/]
+theorem convergentHaarProduct_eq_smul_of_eq_smul (B : ∀ i, K i)
+    [Fact (∀ i, IsOpen (B i : Set (G i)))]
+    (S : Finset ι) (hBcompact : ∀ i ∉ S, IsCompact (B i : Set (G i)))
+    (μ μ' : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure] [∀ i, (μ' i).IsHaarMeasure]
+    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.val (B i.val)).toReal - 1|)
+    (hconv' : Summable fun i : {i // i ∉ S} ↦ |(μ' i.val (B i.val)).toReal - 1|)
+    {j : ι} {c : ℝ≥0} (hμ'j : μ' j = c • μ j) (hμ' : ∀ i ≠ j, μ' i = μ i) :
+    convergentHaarProduct B S hBcompact μ' hconv' =
+      c • convergentHaarProduct B S hBcompact μ hconv := by
+  classical
+  have hc : c ≠ 0 := by
+    rintro rfl
+    exact NeZero.ne (μ' j) (by rw [hμ'j, zero_smul])
+  -- Enlarge the exceptional set to contain `j`; the tails outside it then agree.
+  have hBcompact₀ (i : ι) (hi : i ∉ insert j S) : IsCompact (B i : Set (G i)) :=
+    hBcompact i fun h ↦ hi (Finset.mem_insert_of_mem h)
+  have hconv₀ := summable_notMem_of_subset (Finset.subset_insert j S)
+    (fun i ↦ |(μ i (B i)).toReal - 1|) hconv
+  have hconv₀' := summable_notMem_of_subset (Finset.subset_insert j S)
+    (fun i ↦ |(μ' i (B i)).toReal - 1|) hconv'
+  rw [convergentHaarProduct_eq_of_subset B (Finset.subset_insert j S) hBcompact hBcompact₀ μ
+      hconv hconv₀,
+    convergentHaarProduct_eq_of_subset B (Finset.subset_insert j S) hBcompact hBcompact₀ μ'
+      hconv' hconv₀']
+  have : (c • convergentHaarProduct B _ hBcompact₀ μ hconv₀).IsHaarMeasure :=
+    IsHaarMeasure.nnreal_smul _ hc
+  refine (convergentHaarProduct_unique B _ hBcompact₀ μ' hconv₀' fun T hT C _ hCB ↦ ?_).symm
+  have hjT : j ∈ T := hT (Finset.mem_insert_self j S)
+  have htail : (∏' i : {i // i ∉ T}, (μ' i.val (B i.val)).toReal) =
+      ∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal :=
+    tprod_congr fun i ↦ by rw [hμ' i.val fun h ↦ i.property (h ▸ hjT)]
+  have hprod : ∏ i ∈ T, μ' i (C i) = c * ∏ i ∈ T, μ i (C i) := by
+    rw [← Finset.mul_prod_erase T _ hjT, ← Finset.mul_prod_erase T _ hjT, hμ'j,
+      coe_nnreal_smul_apply, mul_assoc]
+    congr 2
+    exact Finset.prod_congr rfl fun i hi ↦ by rw [hμ' i (Finset.ne_of_mem_erase hi)]
+  rw [coe_nnreal_smul_apply, convergentHaarProduct_box B _ hBcompact₀ μ hconv₀ hT hCB, htail,
+    hprod, mul_assoc]
+
 /-- When `μ i (B i) = 1` cofinitely, `convergentHaarProduct` agrees with `restrictedHaar`. -/
 @[to_additive /-- When `μ i (B i) = 1` cofinitely, `convergentAddHaarProduct` agrees with
 `restrictedAddHaar`. -/]
@@ -952,6 +1088,29 @@ theorem comap_levelMonoidHom_convergentHaarProduct (B : ∀ i, K i)
     rw [hμ'_notMem i.val i.property, ← Measure.coe_nnreal_smul,
       ENNReal.coe_inv (ENNReal.toNNReal_pos hpos.ne' hlt.ne).ne',
       ENNReal.coe_toNNReal hlt.ne, Measure.comap_smul]
+
+/-- For any finite set `T ⊇ S`, `levelOpenSubgroupEquiv B T _` is measure-preserving from the
+scaled principal-piece product measure onto the pullback of `convergentHaarProduct` along the
+subtype inclusion of `levelOpenSubgroup B T _`. -/
+@[to_additive /-- For any finite set `T ⊇ S`, `levelOpenAddSubgroupEquiv B T _` is
+measure-preserving from the scaled principal-piece product measure onto the pullback of
+`convergentAddHaarProduct` along the subtype inclusion of `levelOpenAddSubgroup B T _`. -/]
+theorem measurePreserving_convergentHaarProduct_levelOpenSubgroupEquiv (B : ∀ i, K i)
+    [hBopen : Fact (∀ i, IsOpen (B i : Set (G i)))]
+    (S : Finset ι) (hBcompact : ∀ i ∉ S, IsCompact (B i : Set (G i)))
+    (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
+    (hconv : Summable fun i : {i // i ∉ S} ↦ |(μ i.val (B i.val)).toReal - 1|)
+    {T : Finset ι} (hST : S ⊆ T) :
+    MeasurePreserving (levelOpenSubgroupEquiv B T fun i _ ↦ hBopen.out i)
+      (ENNReal.ofReal (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) •
+        (Measure.pi fun i : T ↦ μ i.val).prod
+          (Measure.infinitePi fun i : {i // i ∉ T} ↦
+            (μ i.val (B i.val))⁻¹ • (μ i.val).comap Subtype.val))
+      ((convergentHaarProduct B S hBcompact μ hconv).comap
+        (Subtype.val : levelOpenSubgroup B T (fun i _ ↦ hBopen.out i) → Πʳ i, [G i, B i])) := by
+  simpa only [comap_levelMonoidHom_convergentHaarProduct B S hBcompact μ hconv hST] using
+    measurePreserving_comap_levelOpenSubgroupEquiv B T (fun i _ ↦ hBopen.out i)
+      (convergentHaarProduct B S hBcompact μ hconv)
 
 /-- **Independence of the integral model.** If two families of open subgroups `U` and `U'` agree
 cofinitely, then `restrictedProductCongr U U' h` pushes `convergentHaarProduct` for `U` directly to

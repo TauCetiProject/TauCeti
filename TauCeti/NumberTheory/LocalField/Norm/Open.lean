@@ -14,7 +14,7 @@ import Mathlib.RingTheory.Trace.Basic
 import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.NormedField
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.Norm.CharpolyRev
 
 /-!

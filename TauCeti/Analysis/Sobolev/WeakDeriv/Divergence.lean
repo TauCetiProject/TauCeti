@@ -11,7 +11,9 @@ public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.Calculus.FDeriv.Smul
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
@@ -68,6 +70,10 @@ identities of weak derivatives. For a general measure these are adjoint identiti
 * `TauCeti.dist_integral_trace_fderiv_mul_le`: the pairing `∫ div φ * u` of `C¹` vector fields
   supported in a fixed set `K` with a function integrable on `K` depends continuously on
   `Dφ` in the uniform norm.
+* `TauCeti.exists_testFunction_norm_le_and_integral_trace_fderiv_fun_smul_mul_le`,
+  `TauCeti.ofReal_integral_trace_fderiv_fun_smul_mul_le_iSup`: in the pairing `∫ tr D(g X) * u` with
+  a `C¹` multiplier `g`, a `C¹` vector field `X` with compact support in `Ω` and `‖X‖ ≤ ρ` is
+  approximated from below by test vector fields obeying the same bound.
 * `TauCeti.continuousOn_trace_fderiv`, `TauCeti.integrable_mul_trace_fderiv`: the divergence
   `tr (DV)` of a `C¹` vector field is continuous, and integrable against a compactly supported
   continuous weight.
@@ -248,6 +254,92 @@ theorem dist_integral_trace_fderiv_mul_le [OpensMeasurableSpace E] {u : E → �
     rw [integral_undef hF, integral_undef hG, sub_zero, norm_zero]
     have hε0 : 0 ≤ ε := (dist_nonneg).trans (hε 0)
     positivity
+
+/-- **Bounded approximation in the divergence pairing.** Let `X` be a `C¹` vector field with
+compact support in `Ω` and `‖X x‖ ≤ ρ x` everywhere, for a function `ρ` continuous and positive on
+`Ω`, and let `u` be locally integrable on `Ω`. For a `C¹` multiplier `g` and every `ε > 0` there is
+a test vector field `φ` on `Ω` with `‖φ x‖ ≤ ρ x` everywhere whose pairing
+`∫ tr D(g φ) * u dμ` is at least `∫ tr D(g X) * u dμ - ε`. -/
+theorem exists_testFunction_norm_le_and_integral_trace_fderiv_fun_smul_mul_le
+    [OpensMeasurableSpace E] {u : E → ℝ} (hu : LocallyIntegrableOn u Ω μ) {g : E → ℝ}
+    (hg : ContDiff ℝ 1 g) {ρ : E → ℝ} (hρ : ContinuousOn ρ Ω) (hρ0 : ∀ x ∈ Ω, 0 < ρ x)
+    {X : E → E} (hX : ContDiff ℝ 1 X) (hXc : HasCompactSupport X) (hXΩ : tsupport X ⊆ Ω)
+    (hXρ : ∀ x, ‖X x‖ ≤ ρ x) {ε : ℝ} (hε : 0 < ε) : ∃ φ : 𝓓(Ω, E), (∀ x, ‖φ x‖ ≤ ρ x) ∧
+      ∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • X y) x : E →ₗ[ℝ] E) * u x ∂μ ≤
+        (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • φ y) x : E →ₗ[ℝ] E) * u x ∂μ) + ε := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hXc.isCompact.exists_cthickening_subset_open Ω.isOpen hXΩ
+  set L := Metric.cthickening δ (tsupport X)
+  have hL : IsCompact L := hXc.isCompact.cthickening
+  -- A bound `B` for `g` and its derivative on `L`.
+  obtain ⟨B₀, hB₀⟩ := hL.exists_bound_of_continuousOn hg.continuous.continuousOn
+  obtain ⟨B₁, hB₁⟩ :=
+    hL.exists_bound_of_continuousOn (hg.continuous_fderiv one_ne_zero).continuousOn
+  set B := max (max B₀ B₁) 0
+  set I := ∫ x in L, ‖u x‖ ∂μ
+  set A := ‖traceCLM ℝ E‖ * (2 * B) * I + 1
+  have hA : 0 < A := by positivity
+  -- A test vector field `φ` bounded by `ρ` and `C¹`-close to `X`, to within `η = ε / A`.
+  obtain ⟨φ, hφL, hφρ, hφ⟩ := hX.exists_testFunction_norm_le_and_dist_le_and_dist_fderiv_le
+    hXc.isCompact subset_rfl hδ hδΩ (hρ.mono hδΩ) (fun x hx => hρ0 x (hδΩ hx)) hXρ
+    (div_pos hε hA)
+  have hφ1 : ContDiff ℝ 1 (φ : E → E) := φ.contDiff.of_le (by simp)
+  -- By the Leibniz estimate, the derivatives of `g X` and `g φ` are within `2 B η`.
+  have hD (x : E) : dist (fderiv ℝ (fun y => g y • X y) x) (fderiv ℝ (fun y => g y • φ y) x) ≤
+      2 * B * (ε / A) := by
+    by_cases hx : x ∈ L
+    · have hgx := hg.differentiable one_ne_zero x
+      have hφx := hφ1.differentiable one_ne_zero x
+      have hXx := hX.differentiable one_ne_zero x
+      rw [dist_comm, dist_eq_norm, ← fderiv_fun_sub (hgx.fun_smul hφx) (hgx.fun_smul hXx)]
+      simp_rw [← smul_sub]
+      refine (norm_fderiv_fun_smul_le hgx (hφx.fun_sub hXx)).trans ?_
+      rw [fderiv_fun_sub hφx hXx, ← dist_eq_norm, ← dist_eq_norm, two_mul, add_mul]
+      gcongr
+      exacts [(hB₀ x hx).trans ((le_max_left _ _).trans (le_max_left _ _)), (hφ x).2,
+        (hB₁ x hx).trans ((le_max_right _ _).trans (le_max_left _ _)), (hφ x).1]
+    · have hXx : x ∉ tsupport fun y => g y • X y := fun h => hx
+        (Metric.self_subset_cthickening _ (tsupport_smul_subset_right _ _ h))
+      have hφx : x ∉ tsupport fun y => g y • φ y := fun h => hx (hφL
+        (tsupport_smul_subset_right _ _ h))
+      rw [fderiv_of_notMem_tsupport ℝ hXx, fderiv_of_notMem_tsupport ℝ hφx, dist_self]
+      positivity
+  have hdist := dist_integral_trace_fderiv_mul_le (f := fun y => g y • X y)
+    (g := fun y => g y • φ y) (hu.integrableOn_compact_subset hδΩ hL) (hg.fun_smul hX)
+    (hg.fun_smul hφ1) ((tsupport_smul_subset_right _ _).trans (Metric.self_subset_cthickening _))
+    ((tsupport_smul_subset_right _ _).trans hφL) hD
+  refine ⟨φ, hφρ, ?_⟩
+  have hε' : ‖traceCLM ℝ E‖ * (2 * B * (ε / A)) * I ≤ ε := by
+    calc ‖traceCLM ℝ E‖ * (2 * B * (ε / A)) * I = (‖traceCLM ℝ E‖ * (2 * B) * I) * (ε / A) := by
+          ring
+      _ ≤ A * (ε / A) := by gcongr; linarith
+      _ = ε := mul_div_cancel₀ _ hA.ne'
+  rw [Real.dist_eq] at hdist
+  linarith [(abs_sub_le_iff.1 hdist).1]
+
+/-- **Bounded approximation in the divergence pairing, supremum form.** For `u` locally integrable
+on `Ω`, a `C¹` multiplier `g` and a function `ρ` continuous and positive on `Ω`, the pairing
+`∫ tr D(g X) * u dμ` of a `C¹` vector field `X` with compact support in `Ω` and `‖X x‖ ≤ ρ x`
+everywhere is at most the supremum of the same pairings over test vector fields `φ` on `Ω` with
+`‖φ x‖ ≤ ρ x` everywhere. -/
+theorem ofReal_integral_trace_fderiv_fun_smul_mul_le_iSup [OpensMeasurableSpace E] {u : E → ℝ}
+    (hu : LocallyIntegrableOn u Ω μ) {g : E → ℝ} (hg : ContDiff ℝ 1 g) {ρ : E → ℝ}
+    (hρ : ContinuousOn ρ Ω) (hρ0 : ∀ x ∈ Ω, 0 < ρ x) {X : E → E} (hX : ContDiff ℝ 1 X)
+    (hXc : HasCompactSupport X) (hXΩ : tsupport X ⊆ Ω) (hXρ : ∀ x, ‖X x‖ ≤ ρ x) :
+    ENNReal.ofReal
+        (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • X y) x : E →ₗ[ℝ] E) * u x ∂μ) ≤
+      ⨆ (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ ρ x), ENNReal.ofReal
+        (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • φ y) x : E →ₗ[ℝ] E) * u x ∂μ) := by
+  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
+  obtain ⟨φ, hφρ, hle⟩ := exists_testFunction_norm_le_and_integral_trace_fderiv_fun_smul_mul_le
+    hu hg hρ hρ0 hX hXc hXΩ hXρ (NNReal.coe_pos.2 hε)
+  calc _ ≤ ENNReal.ofReal
+          (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • φ y) x : E →ₗ[ℝ] E) * u x ∂μ) + ε :=
+        (ENNReal.ofReal_le_ofReal hle).trans
+          (ENNReal.ofReal_add_le.trans_eq (by rw [ENNReal.ofReal_coe_nnreal]))
+    _ ≤ _ := by
+        gcongr
+        exact le_iSup₂ (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ ρ x) => ENNReal.ofReal
+          (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • φ y) x : E →ₗ[ℝ] E) * u x ∂μ)) φ hφρ
 
 end NormedSpace
 

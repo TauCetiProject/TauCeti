@@ -35,6 +35,11 @@ particular is a subsingleton. For the same reason a type whose `Nat.card` is a p
 nonzero `q` is finite, with no finiteness assumed; this is how a field given by `Nat.card K = q ^ 2`
 is shown finite.
 
+Mathlib counts the strictly increasing pairs of a finite linear order with
+`Fintype.card_product_filter_lt`; `Fintype.natCard_subtype_lt` records the same count as a
+`Nat.card`, as needed to count by `Nat.card` the entries above the diagonal of a matrix over a
+ring.
+
 ## Main results
 
 * `Finite.eq_or_eq_of_card_le_two`: two distinct elements exhaust a finite type of
@@ -58,6 +63,8 @@ is shown finite.
   assumes `[Finite α]`.
 * `Nat.Coprime.subsingleton_of_infinite`: if `Nat.card α` and `Nat.card β` are coprime and `α` is
   infinite, then `β` is a subsingleton.
+* `Fintype.natCard_subtype_lt`: the strictly increasing pairs of a finite linear order `α` are
+  `(Fintype.card α).choose 2` many, as a `Nat.card`.
 -/
 
 public section
@@ -205,5 +212,12 @@ theorem prod_eq_mul_of_natCard_le_two {K M : Type*} [Fintype K] [CommMonoid M]
     ∏ k, f k = f i * f j :=
   prod_eq_mul i j hij fun k hk ↦
     ((Finite.eq_or_eq_of_card_le_two hK hij k).elim hk.1 hk.2).elim
+
+/-- The number of strictly increasing pairs of a finite linear order `α` is
+`(Fintype.card α).choose 2`, as a `Nat.card`; this is `Fintype.card_product_filter_lt` read off
+the subtype. -/
+theorem natCard_subtype_lt {α : Type*} [Fintype α] [LinearOrder α] :
+    Nat.card {p : α × α // p.1 < p.2} = (Fintype.card α).choose 2 := by
+  rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Fintype.card_product_filter_lt]
 
 end Fintype
