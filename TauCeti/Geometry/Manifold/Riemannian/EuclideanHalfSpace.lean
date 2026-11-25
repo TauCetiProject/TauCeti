@@ -15,25 +15,26 @@ public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalFor
 The closed half-space `EuclideanHalfSpace n = {x : ℝⁿ | 0 ≤ x 0}` is a manifold with boundary
 modelled on itself through `𝓡∂ n`, and the differential of its inclusion into
 `EuclideanSpace ℝ (Fin n)` is the identity at every point, including the points of the boundary
-hyperplane (`TauCeti.mfderiv_subtypeVal_euclideanHalfSpace`). Its *Euclidean metric*
+hyperplane (`ModelWithCorners.hasMFDerivAt`). Its *Euclidean metric*
 `TauCeti.euclideanHalfSpaceMetric` is the metric induced by the inclusion, installed as the
 `RiemannianBundle` instance on its tangent bundle.
 
 The inclusion is then a local Riemannian isometry into `EuclideanSpace ℝ (Fin n)` with its flat
-metric (`TauCeti.isLocalRiemannianIsometry_subtypeVal_euclideanHalfSpace`), so the Hessian of the
-restriction of a `C²` function is its second Fréchet derivative at every point, boundary included
-(`TauCeti.hessian_comp_subtypeVal_euclideanHalfSpace`). In particular the normal coordinate `x⁰` is
-affine with vanishing Hessian, and the second fundamental form of the boundary hyperplane is zero
-(`TauCeti.boundarySecondFundamentalForm_euclideanHalfSpace`).
+metric (`TauCeti.isLocalRiemannianIsometry_modelWithCornersEuclideanHalfSpace`), so the Hessian of
+the restriction of a `C²` function is its second Fréchet derivative at every point, boundary
+included (`TauCeti.hessian_comp_modelWithCornersEuclideanHalfSpace`). In particular the normal
+coordinate `x⁰` is affine with vanishing Hessian, and the second fundamental form of the boundary
+hyperplane is zero (`TauCeti.boundarySecondFundamentalForm_euclideanHalfSpace`).
 
 ## Main declarations
 
 * `TauCeti.euclideanHalfSpaceMetric`: the analytic Euclidean metric on the closed half-space, with
-  the instances `TauCeti.instRiemannianBundleEuclideanHalfSpace` and
-  `TauCeti.instIsContMDiffRiemannianBundleEuclideanHalfSpace`.
+  the instances `TauCeti.instRiemannianBundleEuclideanHalfSpace`,
+  `TauCeti.instIsContMDiffRiemannianBundleEuclideanHalfSpace` and
+  `TauCeti.instIsContinuousRiemannianBundleEuclideanHalfSpace`.
 * `TauCeti.inner_tangentSpace_euclideanHalfSpace`: the inner product of two tangent vectors is
   their inner product in `EuclideanSpace ℝ (Fin n)`.
-* `TauCeti.hessian_comp_subtypeVal_euclideanHalfSpace`: the Hessian of the restriction of a
+* `TauCeti.hessian_comp_modelWithCornersEuclideanHalfSpace`: the Hessian of the restriction of a
   function is its second Fréchet derivative.
 * `TauCeti.outwardUnitNormal_euclideanHalfSpace`: the outward unit normal is `-e₀`.
 * `TauCeti.boundarySecondFundamentalForm_euclideanHalfSpace`: the boundary hyperplane of the
@@ -51,33 +52,6 @@ namespace TauCeti
 
 variable {n : ℕ} [NeZero n]
 
-/-- The differential of the inclusion of the closed half-space into `EuclideanSpace ℝ (Fin n)` is
-the identity at every point, including the points of the boundary hyperplane. -/
-theorem mfderiv_subtypeVal_euclideanHalfSpace (x : EuclideanHalfSpace n) :
-    mfderiv (𝓡∂ n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
-        (𝓡∂ n) x =
-      ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n)) := by
-  have hdiff : MDifferentiableAt (𝓡∂ n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
-      (𝓡∂ n) x :=
-    ((𝓡∂ n).contMDiff (n := 1)).mdifferentiableAt one_ne_zero
-  have heq : EqOn (writtenInExtChartAt (𝓡∂ n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x
-      (𝓡∂ n)) id (range (𝓡∂ n)) :=
-    fun y hy ↦ (𝓡∂ n).right_inv hy
-  have hx : extChartAt (𝓡∂ n) x x ∈ range (𝓡∂ n) := mem_range_self _
-  rw [hdiff.mfderiv, ((hasFDerivWithinAt_id _ _).congr heq (heq hx)).fderivWithin
-    ((𝓡∂ n).uniqueDiffOn _ hx)]
-  rfl
-
-/-- The differential of the inclusion of the closed half-space, read in
-`EuclideanSpace ℝ (Fin n)`, is the identity. -/
-theorem mvfderiv_subtypeVal_euclideanHalfSpace (x : EuclideanHalfSpace n)
-    (v : TangentSpace (𝓡∂ n) x) :
-    mvfderiv (𝓡∂ n) (𝓡∂ n) x v = v := by
-  change NormedSpace.fromTangentSpace _
-    (mfderiv (𝓡∂ n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ n) x v) = v
-  rw [mfderiv_subtypeVal_euclideanHalfSpace]
-  rfl
-
 /-- The **Euclidean metric** on the closed half-space: the analytic Riemannian metric induced by
 the inclusion into `EuclideanSpace ℝ (Fin n)`. -/
 def euclideanHalfSpaceMetric :
@@ -86,7 +60,11 @@ def euclideanHalfSpaceMetric :
   inducedRiemannianMetric (n := ω)
     (𝓡∂ n) (𝓡∂ n).contMDiff
     fun x v w h ↦ by
-      rwa [mvfderiv_subtypeVal_euclideanHalfSpace, mvfderiv_subtypeVal_euclideanHalfSpace] at h
+      -- On the model space, the preferred extended chart is the model embedding itself.
+      have hx : ⇑(𝓡∂ n) =ᶠ[nhds x] extChartAt (𝓡∂ n) x :=
+        .of_eq (extChartAt_self_eq (I := 𝓡∂ n)).symm
+      rwa [mvfderiv_apply_of_eventuallyEq_extChartAt hx,
+        mvfderiv_apply_of_eventuallyEq_extChartAt hx] at h
 
 /-- The closed half-space is a Riemannian manifold with boundary for its Euclidean metric. -/
 instance instRiemannianBundleEuclideanHalfSpace :
@@ -99,9 +77,17 @@ instance instIsContMDiffRiemannianBundleEuclideanHalfSpace :
       (fun x : EuclideanHalfSpace n ↦ TangentSpace (𝓡∂ n) x) :=
   Bundle.instIsContMDiffRiemannianBundle (euclideanHalfSpaceMetric (n := n))
 
+/-- The Euclidean metric on the closed half-space is continuous. -/
+instance instIsContinuousRiemannianBundleEuclideanHalfSpace :
+    IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin n))
+      (fun x : EuclideanHalfSpace n ↦ TangentSpace (𝓡∂ n) x) :=
+  Bundle.instIsContinuousRiemannianBundle
+    (euclideanHalfSpaceMetric (n := n)).toContinuousRiemannianMetric
+
 /-- The Euclidean metric on the closed half-space evaluates the inner product of
 `EuclideanSpace ℝ (Fin n)` on the images of tangent vectors under the differential of the
 inclusion. -/
+@[simp]
 theorem euclideanHalfSpaceMetric_inner (x : EuclideanHalfSpace n) (v w : TangentSpace (𝓡∂ n) x) :
     (euclideanHalfSpaceMetric (n := n)).inner x v w =
       ⟪mvfderiv (𝓡∂ n) (𝓡∂ n) x v, mvfderiv (𝓡∂ n) (𝓡∂ n) x w⟫ :=
@@ -109,15 +95,20 @@ theorem euclideanHalfSpaceMetric_inner (x : EuclideanHalfSpace n) (v w : Tangent
 
 /-- The inner product of two tangent vectors of the closed half-space is their inner product in
 `EuclideanSpace ℝ (Fin n)`. -/
+@[simp]
 theorem inner_tangentSpace_euclideanHalfSpace (x : EuclideanHalfSpace n)
     (v w : TangentSpace (𝓡∂ n) x) :
     ⟪v, w⟫ = @inner ℝ (EuclideanSpace ℝ (Fin n)) _ v w := by
+  -- On the model space, the preferred extended chart is the model embedding itself.
+  have hx : ⇑(𝓡∂ n) =ᶠ[nhds x] extChartAt (𝓡∂ n) x :=
+    .of_eq (extChartAt_self_eq (I := 𝓡∂ n)).symm
   rw [show ⟪v, w⟫ = (euclideanHalfSpaceMetric (n := n)).inner x v w from rfl,
-    euclideanHalfSpaceMetric_inner, mvfderiv_subtypeVal_euclideanHalfSpace,
-    mvfderiv_subtypeVal_euclideanHalfSpace]
+    euclideanHalfSpaceMetric_inner, mvfderiv_apply_of_eventuallyEq_extChartAt hx,
+    mvfderiv_apply_of_eventuallyEq_extChartAt hx]
 
 /-- The norm of a tangent vector of the closed half-space is its norm in
 `EuclideanSpace ℝ (Fin n)`. -/
+@[simp]
 theorem norm_tangentSpace_euclideanHalfSpace (x : EuclideanHalfSpace n)
     (v : TangentSpace (𝓡∂ n) x) :
     ‖v‖ = @norm (EuclideanSpace ℝ (Fin n)) _ v := by
@@ -126,30 +117,30 @@ theorem norm_tangentSpace_euclideanHalfSpace (x : EuclideanHalfSpace n)
 
 /-- The inclusion of the closed half-space, with its Euclidean metric, into
 `EuclideanSpace ℝ (Fin n)`, with its flat metric, is a local Riemannian isometry. -/
-theorem isLocalRiemannianIsometry_subtypeVal_euclideanHalfSpace :
+theorem isLocalRiemannianIsometry_modelWithCornersEuclideanHalfSpace :
     IsLocalRiemannianIsometry (𝓡∂ n) 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
       (𝓡∂ n) where
   contMDiff := (𝓡∂ n).contMDiff
   isInvertible_mfderiv x := by
-    rw [mfderiv_subtypeVal_euclideanHalfSpace]
+    rw [(𝓡∂ n).hasMFDerivAt.mfderiv]
     exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
   inner_mfderiv x v w := by
-    rw [inner_tangentSpace_vectorSpace, mfderiv_subtypeVal_euclideanHalfSpace]
+    rw [inner_tangentSpace_vectorSpace, (𝓡∂ n).hasMFDerivAt.mfderiv]
     exact (inner_tangentSpace_euclideanHalfSpace x v w).symm
 
 /-- **The Hessian on the closed half-space.** For a function `f`, `C²` at a point `x` of the closed
 half-space, the Hessian of its restriction for the Euclidean metric is the second Fréchet
 derivative of `f` at `x`. This holds at the points of the boundary hyperplane as well. -/
-theorem hessian_comp_subtypeVal_euclideanHalfSpace {f : EuclideanSpace ℝ (Fin n) → ℝ}
+theorem hessian_comp_modelWithCornersEuclideanHalfSpace {f : EuclideanSpace ℝ (Fin n) → ℝ}
     {x : EuclideanHalfSpace n} (hf : ContDiffAt ℝ 2 f ((𝓡∂ n) x)) (u w : TangentSpace (𝓡∂ n) x) :
     hessian (𝓡∂ n) (f ∘ (𝓡∂ n)) x u w = fderiv ℝ (fderiv ℝ f) ((𝓡∂ n) x) u w := by
   have hD : DifferentiableAt ℝ (fderiv ℝ f) ((𝓡∂ n) x) :=
     (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by simp)
   have hgrad : DifferentiableAt ℝ (∇ f) ((𝓡∂ n) x) :=
     (InnerProductSpace.toDual ℝ _).symm.differentiableAt.comp _ hD
-  rw [isLocalRiemannianIsometry_subtypeVal_euclideanHalfSpace.hessian_comp
+  rw [isLocalRiemannianIsometry_modelWithCornersEuclideanHalfSpace.hessian_comp
     (contMDiffAt_iff_contDiffAt.2 hf), hessian_eq_iteratedFDeriv_model_space hgrad,
-    iteratedFDeriv_two_apply, mfderiv_subtypeVal_euclideanHalfSpace]
+    iteratedFDeriv_two_apply, (𝓡∂ n).hasMFDerivAt.mfderiv]
   rfl
 
 /-- The outward unit normal of the Euclidean half-space `{x⁰ ≥ 0}` at every point of its boundary
@@ -160,12 +151,17 @@ theorem outwardUnitNormal_euclideanHalfSpace {n : ℕ}
   refine (eq_outwardUnitNormal_iff.2
     ⟨?_, isOutwardPointing_iff.2 ⟨q.property, ?_⟩, fun w ↦ ?_⟩).symm
   · exact (norm_tangentSpace_euclideanHalfSpace _ _).trans (by simp)
-  · rw [show ⇑(extChartAt (𝓡∂ (n + 1)) (q : EuclideanHalfSpace (n + 1))) = 𝓡∂ (n + 1) from rfl,
-      mfderiv_subtypeVal_euclideanHalfSpace]
+  · rw [extChartAt_self_eq, (𝓡∂ (n + 1)).hasMFDerivAt.mfderiv]
+    -- `ContinuousLinearMap.id_apply` does not fire: the identity acts on the tangent space at `q`,
+    -- while the goal reads its value in the tangent space of the model at `𝓡∂ (n + 1) q`, a
+    -- different type synonym of `EuclideanSpace ℝ (Fin (n + 1))`. Both are the vector `-e₀`.
     change (-EuclideanSpace.single (0 : Fin (n + 1)) (1 : ℝ)) 0 < 0
     simp
   · refine (inner_tangentSpace_euclideanHalfSpace _ _ _).trans ?_
     have h := DFunLike.congr_fun (mfderiv_subtypeVal_boundary q) w
+    -- `h` types the image of `w` in the tangent space at `q`, a type synonym on which the inner
+    -- product lemmas of `EuclideanSpace ℝ (Fin (n + 1))` do not fire; generalizing over the vector
+    -- retypes it in `EuclideanSpace ℝ (Fin (n + 1))`.
     have h0 (v : EuclideanSpace ℝ (Fin (n + 1))) (hv : v = euclideanHalfSpaceBoundaryParam n w) :
         @inner ℝ (EuclideanSpace ℝ (Fin (n + 1))) _ (-EuclideanSpace.single 0 1) v = 0 := by
       simp only [hv, inner_neg_left, EuclideanSpace.inner_single_left, map_one, one_mul,
@@ -187,7 +183,7 @@ theorem boundarySecondFundamentalForm_euclideanHalfSpace {n : ℕ}
   have h2 : fderiv ℝ (fderiv ℝ ℓ) = 0 := by
     rw [show fderiv ℝ ℓ = fun _ ↦ ℓ from funext fun _ ↦ ℓ.fderiv]
     exact funext fun _ ↦ fderiv_const_apply ℓ
-  rw [boundarySecondFundamentalForm_apply, hφ, hessian_comp_subtypeVal_euclideanHalfSpace
+  rw [boundarySecondFundamentalForm_apply, hφ, hessian_comp_modelWithCornersEuclideanHalfSpace
     ℓ.contDiff.contDiffAt, h2]
   exact mul_eq_zero_of_right _ rfl
 
