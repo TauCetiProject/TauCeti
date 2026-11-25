@@ -18,7 +18,7 @@ exactly one point `γ(s₁)` with `s < s₁ < s + ℓ`. This file defines the ex
 `s₁ = TauCeti.ConvexTable.exitParam T s δ` and proves:
 
 * `TauCeti.ConvexTable.exitParam_mem_Ioo`: `s < s₁ < s + ℓ`;
-* `TauCeti.ConvexTable.apply_exitParam_sub`: `γ(s₁) − γ(s) = r exp(iδ) τ(s)` with
+* `TauCeti.ConvexTable.apply_exitParam_sub_eq_norm_smul`: `γ(s₁) − γ(s) = r exp(iδ) τ(s)` with
   `r = ‖γ(s₁) − γ(s)‖ > 0`;
 * `TauCeti.ConvexTable.eq_exitParam`: uniqueness, every `t ∈ (s, s + ℓ)` with `γ(t)` on the ray
   is `s₁`;
@@ -92,7 +92,7 @@ theorem toStrictConvexBilliardTable_outgoingDir_cos {s δ : ℝ} (hδ : δ ∈ I
 
 /-- **The chord lies on the ray.** For `0 < δ < π`, `γ(s₁) − γ(s) = r exp(iδ) τ(s)` with
 `r = ‖γ(s₁) − γ(s)‖ > 0`. -/
-theorem apply_exitParam_sub {s δ : ℝ} (hδ : δ ∈ Ioo 0 Real.pi) :
+theorem apply_exitParam_sub_eq_norm_smul {s δ : ℝ} (hδ : δ ∈ Ioo 0 Real.pi) :
     T (T.exitParam s δ) - T s = ‖T (T.exitParam s δ) - T s‖ • (exp (δ * I) * deriv T s) := by
   rw [← toStrictConvexBilliardTable_outgoingDir_cos T ⟨hδ.1.le, hδ.2.le⟩,
     exitParam_eq_nextParam T hδ]
