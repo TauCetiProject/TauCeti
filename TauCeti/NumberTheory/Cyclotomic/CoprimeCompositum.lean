@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import TauCeti.FieldTheory.Galois.FiberProduct
+public import TauCeti.NumberTheory.Cyclotomic.Basic
 public import TauCeti.RingTheory.Cyclotomic.ComplexField
 
 /-!
@@ -50,21 +51,16 @@ namespace IsCyclotomicExtension
 variable {K : Type*} [Field K] [CharZero K] {F₁ F₂ : IntermediateField ℚ K} {m n : ℕ}
   [IsCyclotomicExtension {m} ℚ F₁] [IsCyclotomicExtension {n} ℚ F₂]
 
-/-- A `1`-st cyclotomic extension of `ℚ` is `ℚ`. -/
-private theorem eq_bot_of_one (F : IntermediateField ℚ K) [IsCyclotomicExtension {1} ℚ F] :
-    F = ⊥ :=
-  finrank_eq_one_iff.mp (by rw [Rat.finrank 1, Nat.totient_one])
-
 /-- The compositum of an `m`-th and an `n`-th cyclotomic extension of `ℚ`, for coprime `m` and
 `n`, is an `mn`-th cyclotomic extension. -/
 theorem _root_.IntermediateField.isCyclotomicExtension_sup_of_coprime (h : m.Coprime n) :
     IsCyclotomicExtension {m * n} ℚ (F₁ ⊔ F₂ : IntermediateField ℚ K) := by
   rcases eq_or_ne m 0 with rfl | hm
   · obtain rfl := (Nat.coprime_zero_left n).mp h
-    rwa [eq_bot_of_one F₂, sup_bot_eq, zero_mul]
+    rwa [eq_bot_of_isCyclotomicExtension_one F₂, sup_bot_eq, zero_mul]
   rcases eq_or_ne n 0 with rfl | hn
   · obtain rfl := (Nat.coprime_zero_right m).mp h
-    rwa [eq_bot_of_one F₁, bot_sup_eq, mul_zero]
+    rwa [eq_bot_of_isCyclotomicExtension_one F₁, bot_sup_eq, mul_zero]
   have : NeZero m := ⟨hm⟩
   have : NeZero n := ⟨hn⟩
   rw [← h.lcm_eq_mul]
@@ -75,11 +71,11 @@ theorem _root_.IntermediateField.isCyclotomicExtension_sup_of_coprime (h : m.Cop
 theorem linearDisjoint_of_coprime (h : m.Coprime n) : F₁.LinearDisjoint F₂ := by
   rcases eq_or_ne m 0 with rfl | hm
   · obtain rfl := (Nat.coprime_zero_left n).mp h
-    rw [eq_bot_of_one F₂]
+    rw [eq_bot_of_isCyclotomicExtension_one F₂]
     exact .bot_right _
   rcases eq_or_ne n 0 with rfl | hn
   · obtain rfl := (Nat.coprime_zero_right m).mp h
-    rw [eq_bot_of_one F₁]
+    rw [eq_bot_of_isCyclotomicExtension_one F₁]
     exact .bot_left _ _ _
   have : NeZero m := ⟨hm⟩
   have : NeZero n := ⟨hn⟩

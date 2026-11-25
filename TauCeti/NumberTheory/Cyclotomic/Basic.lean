@@ -16,6 +16,9 @@ field `ℚ(μ_n)` becomes a cyclotomic extension of each of its cyclotomic subfi
 `m ∣ n`, so that Mathlib's power basis `IsPrimitiveRoot.powerBasis` applies to the relative
 extension `ℚ(μ_n) / ℚ(μ_m)`. Mathlib's degree formula `IsCyclotomicExtension.finrank` does not
 apply there, since `Φ_n` need not be irreducible over `ℚ(μ_m)`.
+
+An intermediate field that is a `{1}`-cyclotomic extension of the base is `⊥`:
+`IntermediateField.eq_bot_of_isCyclotomicExtension_one`.
 -/
 
 public section
@@ -35,3 +38,11 @@ theorem tower_top {S : Set ℕ} (A B C : Type*) [CommRing A] [CommRing B] [CommR
   exact hle (h.2 x)
 
 end IsCyclotomicExtension
+
+/-- An intermediate field that is a `{1}`-cyclotomic extension of the base field is `⊥`. -/
+theorem IntermediateField.eq_bot_of_isCyclotomicExtension_one {F E : Type*} [Field F] [Field E]
+    [Algebra F E] (K : IntermediateField F E) [IsCyclotomicExtension {1} F K] : K = ⊥ :=
+  eq_bot_iff.mpr fun x hx ↦ by
+    obtain ⟨a, ha⟩ : (⟨x, hx⟩ : K) ∈ (⊥ : Subalgebra F K) :=
+      IsCyclotomicExtension.singleton_one F K ▸ Algebra.mem_top
+    exact ⟨a, congrArg Subtype.val ha⟩
