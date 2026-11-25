@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Cohomology.Bergman.Cochain
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Leray
 public import TauCeti.Topology.Sheaves.Cech.Cocycle
 import TauCeti.Analysis.Complex.RiemannSurface.Cohomology.Bergman.Finiteness
+import TauCeti.Geometry.Manifold.CoordinateBall
 
 /-!
 # Finite dimensionality of `H¹(X, 𝒪)` on a compact Riemann surface
@@ -29,14 +30,12 @@ The proof combines two inputs.
   `H¹(X, 𝒪)` is finite-dimensional exactly when the Čech `H¹` of such a cover is
   (`TauCeti.Geometry.Manifold.Complex.StructureSheaf.Leray`).
 
-Concentric coordinate discs of radii `r / 8 < r / 4 < r / 2 < r` around every point give such
-nested families, and compactness extracts a finite cover.
+A finite cover by coordinate balls `(e i).preimageBall (c i) (r i)` whose concentric balls of
+radius `8 r i` are still coordinate balls (`TauCeti.exists_finite_preimageBall_cover`) gives such
+nested families, with radii `r i < 2 r i < 4 r i < 8 r i`.
 
 ## Main results
 
-* `OpenPartialHomeomorph.isCompact_closure_inter_preimage_eball_and_subset`: a coordinate disc
-  whose closed disc lies in the chart's target has compact closure inside every larger concentric
-  coordinate disc.
 * `TauCeti.RiemannSurface.ChartBergman.toSections₁_mem_cocycles₁`: the native sections of a
   square-integrable cocycle of the structure sheaf form a native Čech cocycle.
 * `TauCeti.RiemannSurface.ChartBergman.finite_homology_one_cechComplex`: the Čech `H¹` of the
@@ -56,24 +55,6 @@ open CategoryTheory Metric Opposite Set TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti.RiemannSurface
-
-/-- A coordinate disc of radius `s` whose closed disc lies in the chart's target has compact
-closure, contained in the concentric coordinate disc of any larger radius `t`. -/
-theorem _root_.OpenPartialHomeomorph.isCompact_closure_inter_preimage_eball_and_subset
-    {X : Type*} [TopologicalSpace X] [T2Space X] {e : OpenPartialHomeomorph X ℂ} {c : ℂ}
-    {s t : ℝ} (hst : s < t) (hs : closedBall c s ⊆ e.target) :
-    IsCompact (closure (e.source ∩ e ⁻¹' eball c (.ofReal s))) ∧
-      closure (e.source ∩ e ⁻¹' eball c (.ofReal s)) ⊆ e.source ∩ e ⁻¹' eball c (.ofReal t) := by
-  rw [eball_ofReal, eball_ofReal]
-  have hK : IsCompact (e.symm '' closedBall c s) :=
-    (isCompact_closedBall c s).image_of_continuousOn (e.continuousOn_symm.mono hs)
-  have hcl : closure (e.source ∩ e ⁻¹' ball c s) ⊆ e.symm '' closedBall c s :=
-    closure_minimal (fun y hy ↦ ⟨e y, ball_subset_closedBall hy.2, e.left_inv hy.1⟩)
-      hK.isClosed
-  refine ⟨hK.of_isClosed_subset isClosed_closure hcl, hcl.trans ?_⟩
-  rintro _ ⟨z, hz, rfl⟩
-  exact ⟨e.map_target (hs hz), by
-    rw [mem_preimage, e.right_inv (hs hz)]; exact closedBall_subset_ball hst hz⟩
 
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
 
@@ -144,7 +125,6 @@ private theorem toHomology_eq_of_forall_eq_add_sub (V : ι → Opens X)
     holomorphicStructureSheafModules.map_apply, Pi.sub_apply]
   rw [holomorphicStructureSheafModules.ofContMDiff_apply,
     holomorphicStructureSheafModules.ofContMDiff_apply, h]
-  change η j x - η i x = _
   ring
 
 /-- **The Čech `H¹` of a cover by nested chart discs is finitely generated** (Forster 14.9). Let
@@ -174,8 +154,13 @@ theorem finite_homology_one_cechComplex [T2Space X] [Finite ι] {c : ι → ℂ}
   let Φ : cocycles₁ 1 hW' →ₗ[ℂ]
       Topology.CechOne.cocycles₁ (holomorphicStructureSheafModules 𝓘(ℂ) X).obj W'' :=
     LinearMap.codRestrict _ (toSections₁ he (subset_source_of_le hW' h'') ∘ₗ
-      (restrictCochains₁ h'').toLinearMap ∘ₗ (cocycles₁ 1 hW').subtype)
-      fun ξ ↦ toSections₁_mem_cocycles₁ he _ (restrictCochains₁_mem_cocycles₁ 1 hW' h'' ξ.property)
+      (cocycles₁ 1 (subset_source_of_le hW' h'')).subtype ∘ₗ
+        (restrictCocycles₁ 1 hW' h'').toLinearMap)
+      fun ξ ↦ toSections₁_mem_cocycles₁ he _ (restrictCocycles₁ 1 hW' h'' ξ).property
+  have hΦ (ξ : cocycles₁ 1 hW') :
+      (Φ ξ).val = toSections₁ he (subset_source_of_le hW' h'') (restrictCochains₁ h'' ξ.val) := by
+    simp only [Φ, LinearMap.codRestrict_apply, LinearMap.comp_apply, Submodule.subtype_apply,
+      ContinuousLinearMap.coe_coe, coe_restrictCocycles₁]
   let F := Topology.CechOne.toHomology (holomorphicStructureSheafModules 𝓘(ℂ) X).obj W'' ∘ₗ Φ
   refine ⟨⟨s.image F, eq_top_iff.2 fun y _ ↦ ?_⟩⟩
   obtain ⟨z, rfl⟩ :=
@@ -189,9 +174,9 @@ theorem finite_homology_one_cechComplex [T2Space X] [Finite ι] {c : ι → ℂ}
     refine toHomology_eq_of_forall_eq_add_sub W'' z (Φ b) η hη fun i j x ↦ ?_
     rw [← hζ_eq, hζη i j x x.property, Pi.one_apply, Pi.one_apply, Pi.one_apply, one_smul]
     refine congrArg (· + η j x - η i x) ?_
-    change _ = toSections₁ he _ (restrictCochains₁ h'' b.val) i j x
-    rw [toSections₁_apply, restrictCochains₁_apply, BergmanSpace.representative_restrict _ _
-      ((e i).map_mem_imageOpens (hW i (h' i (h'' i x.property.1))) x.property)]
+    rw [hΦ, toSections₁_restrictCochains₁ he hW' h'' b.val i j,
+      holomorphicStructureSheafModules.map_apply,
+      toSections₁_apply]
   rw [hzb, Finset.coe_image, Submodule.span_image]
   exact Submodule.mem_map_of_mem hb
 
@@ -203,41 +188,43 @@ instance finiteDimensional_cechCohomology_one_holomorphicStructureSheafModules [
     [T2Space X] :
     FiniteDimensional ℂ ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
       (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) := by
-  -- Around every point `x`, a coordinate disc of radius `r x` inside the chart's target.
-  have hr (x : X) : ∃ r : ℝ, 0 < r ∧ ball (chartAt ℂ x x) r ⊆ (chartAt ℂ x).target :=
-    isOpen_iff.1 (chartAt ℂ x).open_target _ (mem_chart_target ℂ x)
-  choose r hr0 hrT using hr
-  -- The concentric coordinate discs of radius `r x / 2 ^ n`.
-  let D (n : ℕ) (x : X) : Opens X :=
-    ⟨(chartAt ℂ x).source ∩ chartAt ℂ x ⁻¹' eball (chartAt ℂ x x) (.ofReal (r x / 2 ^ n)),
-      (chartAt ℂ x).isOpen_inter_preimage isOpen_eball⟩
-  have hD (n : ℕ) (x : X) : closure (D (n + 1) x : Set X) ⊆ D n x ∧
-      IsCompact (closure (D (n + 1) x : Set X)) := by
-    have hlt : r x / 2 ^ (n + 1) < r x / 2 ^ n := by
-      exact div_lt_div_of_pos_left (hr0 x) (by positivity)
-        (pow_lt_pow_right₀ one_lt_two n.lt_succ_self)
-    have hlt' : r x / 2 ^ (n + 1) < r x :=
-      hlt.trans_le (div_le_self (hr0 x).le (one_le_pow₀ one_le_two))
-    obtain ⟨h₁, h₂⟩ := OpenPartialHomeomorph.isCompact_closure_inter_preimage_eball_and_subset
-      hlt ((closedBall_subset_ball hlt').trans (hrT x))
-    exact ⟨h₂, h₁⟩
-  have hcov : IsOpenCover (D 3) := .mk <| eq_top_iff.2 fun x _ ↦ Opens.mem_iSup.2 ⟨x,
-    mem_chart_source ℂ x, mem_eball_self (ENNReal.ofReal_pos.2 (div_pos (hr0 x) (by positivity)))⟩
-  obtain ⟨s, hs⟩ := hcov.exists_finite_of_compactSpace
-  have hD₀ (x : X) : eball (chartAt ℂ x x) (.ofReal (r x / 2 ^ 0)) ⊆ (chartAt ℂ x).target := by
-    rw [eball_ofReal, pow_zero, div_one]; exact hrT x
-  have hfin := ChartBergman.finite_homology_one_cechComplex (ι := s)
-    (e := fun x ↦ chartAt ℂ x.val) (W := fun x ↦ D 1 x.val) (W' := fun x ↦ D 2 x.val)
-    (W'' := fun x ↦ D 3 x.val)
-    (fun x ↦ IsManifold.chart_mem_maximalAtlas x.val)
-    (fun x ↦ hD₀ x.val) (fun x ↦ (hD 0 x.val).2)
-    (fun x ↦ (hD 0 x.val).1) (fun x ↦ (hD 1 x.val).1) (fun x ↦ (hD 2 x.val).1) hs
-  exact (finite_cechCohomology_one_holomorphicStructureSheafModules_iff_finite_homology_cechComplex
-    (fun x : s ↦ D 3 x.val) hs.iSup_eq_top fun x ↦
-      subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
-        (IsManifold.chart_mem_maximalAtlas x.val) (by
-          rw [eball_ofReal]
-          exact (ball_subset_ball (div_le_self (hr0 x.val).le (one_le_pow₀ one_le_two))).trans
-            (hrT x.val))).2 hfin
+  -- Coordinate balls `B i = (e i).preimageBall (c i) (r i)` covering `X`, with `8 r i` in range.
+  obtain ⟨ι, _, e, c, r, hatlas, hr, hK, -, hcov⟩ :=
+    exists_finite_preimageBall_cover (H := ℂ) 8 (V := fun _ : Unit ↦ (⊤ : Opens X))
+      (.mk (top_unique (le_iSup (fun _ : Unit ↦ (⊤ : Opens X)) ())))
+  have he (i : ι) : e i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X :=
+    IsManifold.subset_maximalAtlas (hatlas i)
+  have hsmall (i : ι) (a : ℝ) (ha : a ≤ 8) : closedBall (c i) (a * r i) ⊆ (e i).target :=
+    (closedBall_subset_closedBall (mul_le_mul_of_nonneg_right ha (hr i).le)).trans (hK i)
+  have hlt (i : ι) {a b : ℝ} (hab : a < b) : a * r i < b * r i :=
+    mul_lt_mul_of_pos_right hab (hr i)
+  -- The innermost family `B`, written with `one_mul` so that it matches the cover.
+  have hB (i : ι) : (e i).preimageBall (c i) (r i) =
+      ⟨(e i).source ∩ e i ⁻¹' eball (c i) (.ofReal (r i)),
+        (e i).isOpen_inter_preimage isOpen_eball⟩ := by
+    ext x
+    rw [SetLike.mem_coe, OpenPartialHomeomorph.mem_preimageBall, Opens.coe_mk, eball_ofReal]
+    rfl
+  have hfin := ChartBergman.finite_homology_one_cechComplex
+    (W := fun i ↦ (e i).preimageBall (c i) (4 * r i))
+    (W' := fun i ↦ (e i).preimageBall (c i) (2 * r i))
+    (W'' := fun i ↦ (e i).preimageBall (c i) (r i)) (R := fun i ↦ .ofReal (8 * r i)) he
+    (fun i ↦ by rw [eball_ofReal]; exact ball_subset_closedBall.trans (hK i))
+    (fun i ↦ (e i).isCompact_closure_preimageBall (hsmall i 4 (by norm_num)))
+    (fun i ↦ by
+      rw [eball_ofReal, ← OpenPartialHomeomorph.coe_preimageBall]
+      exact (e i).closure_preimageBall_subset (hsmall i 4 (by norm_num)) (hlt i (by norm_num)))
+    (fun i ↦ (e i).closure_preimageBall_subset (hsmall i 2 (by norm_num)) (hlt i (by norm_num)))
+    (fun i ↦ by
+      simpa only [one_mul] using (e i).closure_preimageBall_subset (hsmall i 1 (by norm_num))
+        (hlt i (by norm_num : (1 : ℝ) < 2)))
+    (.mk hcov)
+  refine (finite_cechCohomology_one_holomorphicStructureSheafModules_iff_finite_homology_cechComplex
+    (fun i ↦ (e i).preimageBall (c i) (r i)) hcov fun i ↦ ?_).2 hfin
+  have hT : eball (c i) (.ofReal (r i)) ⊆ (e i).target := by
+    rw [eball_ofReal]
+    simpa only [one_mul] using ball_subset_closedBall.trans (hsmall i 1 (by norm_num))
+  rw [hB]
+  exact subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball (he i) hT
 
 end TauCeti.RiemannSurface
