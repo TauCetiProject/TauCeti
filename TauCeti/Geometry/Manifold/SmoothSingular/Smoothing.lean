@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.CategoryTheory.Limits.HasExactLimitsOfShape
 public import Mathlib.CategoryTheory.Limits.Shapes.Countable
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 
 import TauCeti.Algebra.Homology.DerivedCategory.KProjective
@@ -69,7 +70,8 @@ to a chosen chain homotopy (`TauCeti.smoothSingularChainHomotopyEquivInvNaturali
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι`: the smoothing quasi-isomorphism on
   open subsets of `M` and on `M`.
 * `TauCeti.smoothSingularHomologyIso`: the induced natural isomorphism between smooth singular
-  homology and singular homology.
+  homology and singular homology. It sends the class of the smooth `0`-simplex at a point to the
+  class of that point (`TauCeti.ιHomology₀_smoothSingularHomologyIso_hom`).
 * `TauCeti.smoothSingularChainHomotopyEquiv`,
   `TauCeti.homologyMap_smoothSingularChainHomotopyEquiv_inv`, and
   `TauCeti.smoothSingularChainHomotopyEquivInvNaturality`: the smoothing chain homotopy equivalence
@@ -302,6 +304,16 @@ theorem smoothSingularHomologyIso_inv_naturality {f : M → N}
         (smoothSingularHomologyIso J N R n).inv := by
   rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
     smoothSingularHomologyIso_hom_naturality R hf]
+
+/-- The smoothing isomorphism sends the class in `H₀^∞(M; R)` of the smooth `0`-simplex at `x` to
+the class in `H₀(M; R)` of the point `x`. -/
+@[reassoc]
+theorem ιHomology₀_smoothSingularHomologyIso_hom (x : M) :
+    SSet.ιHomology₀ R ((SmoothSimplex.equiv₀ I M).symm x) ≫
+        (smoothSingularHomologyIso I M R 0).hom =
+      singularHomology₀Section R (X := TopCat.of M) x := by
+  rw [smoothSingularHomologyIso_hom, SSet.ιHomology₀_homologyMap, singularHomology₀Section_def]
+  exact congrArg (SSet.ιHomology₀ R) (SmoothSimplex.coe_equiv₀_symm x)
 
 section Projective
 

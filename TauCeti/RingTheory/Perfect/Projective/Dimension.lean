@@ -160,13 +160,8 @@ theorem hasProjectiveDimensionLE_succ (hF : (frobenius K p).Flat) {d : ℕ}
   have := RingHomInvPair.symm (e : K →+* (stage i p n).range) e.symm
   let N := ModuleCat.of (stage i p n).range M
   have := h ((ModuleCat.restrictScalars (e : K →+* (stage i p n).range)).obj N)
-  let e' : (ModuleCat.restrictScalars (e : K →+* (stage i p n).range)).obj N
-      ≃ₛₗ[(e : K →+* (stage i p n).range)] N :=
-    { (e : K →+* (stage i p n).range).restrictScalarsSemilinearMap N with
-      invFun := fun m ↦ m
-      left_inv := RingHom.restrictScalarsSemilinearMap_apply _ N
-      right_inv := RingHom.restrictScalarsSemilinearMap_apply _ N }
-  exact ModuleCat.hasProjectiveDimensionLE_of_semiLinearEquiv e e' d
+  exact ModuleCat.hasProjectiveDimensionLE_of_semiLinearEquiv e
+    (e.restrictScalarsSemilinearEquiv N) d
 
 include i p in
 /-- Over a perfect closure of a regular ring of Krull dimension at most `d`, every module has
@@ -230,24 +225,15 @@ theorem projectiveDimension_le_restrictScalars_of_perfectRing (M : ModuleCat.{w}
   let M' : ModuleCat.{w} (Shrink.{w} B) :=
     (ModuleCat.restrictScalars.{w} (eB : Shrink.{w} B →+* B)).obj M
   let N : ModuleCat.{w} A := (ModuleCat.restrictScalars.{w} f).obj M
-  let φB : M' ≃ₛₗ[(eB : Shrink.{w} B →+* B)] M :=
-    { (eB : Shrink.{w} B →+* B).restrictScalarsSemilinearMap M with
-      invFun := fun m ↦ m
-      left_inv := fun m ↦ (eB : Shrink.{w} B →+* B).restrictScalarsSemilinearMap_apply M m
-      right_inv := fun m ↦ (eB : Shrink.{w} B →+* B).restrictScalarsSemilinearMap_apply M m }
-  let φA : (ModuleCat.restrictScalars.{w} (eA : Shrink.{w} A →+* A)).obj N
-      ≃ₛₗ[(eA : Shrink.{w} A →+* A)] N :=
-    { (eA : Shrink.{w} A →+* A).restrictScalarsSemilinearMap N with
-      invFun := fun m ↦ m
-      left_inv := fun m ↦ (eA : Shrink.{w} A →+* A).restrictScalarsSemilinearMap_apply N m
-      right_inv := fun m ↦ (eA : Shrink.{w} A →+* A).restrictScalarsSemilinearMap_apply N m }
   let c : (ModuleCat.restrictScalars.{w} f').obj M' ≅
       (ModuleCat.restrictScalars.{w} (eA : Shrink.{w} A →+* A)).obj N :=
     ((ModuleCat.restrictScalarsComp' f' (eB : Shrink.{w} B →+* B)
       (f.comp (eA : Shrink.{w} A →+* A)) hf').symm ≪≫
       ModuleCat.restrictScalarsComp (eA : Shrink.{w} A →+* A) f).app M
-  rw [← ModuleCat.projectiveDimension_eq_of_semiLinearEquiv eB φB,
-    ← ModuleCat.projectiveDimension_eq_of_semiLinearEquiv eA φA,
+  rw [← ModuleCat.projectiveDimension_eq_of_semiLinearEquiv eB
+        (eB.restrictScalarsSemilinearEquiv M),
+    ← ModuleCat.projectiveDimension_eq_of_semiLinearEquiv eA
+        (eA.restrictScalarsSemilinearEquiv N),
     ← projectiveDimension_eq_of_iso c]
   exact ModuleCat.projectiveDimension_le_restrictScalars f' M' fun i ↦
     isZero_Tor_succ_restrictScalars_of_perfectRing (p := p) f' (ModuleCat.of _ _) i
