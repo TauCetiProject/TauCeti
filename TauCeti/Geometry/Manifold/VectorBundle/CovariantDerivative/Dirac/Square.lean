@@ -145,6 +145,12 @@ theorem transverseDiracOperator_zero [VectorBundle ℝ F V] (x : M) :
     cov.transverseDiracOperator c T (0 : Π y : M, V y) x = 0 := by
   simp [transverseDiracOperator_def]
 
+/-- The transverse Dirac operator of a section whose covariant derivative vanishes at `x`
+vanishes at `x`. -/
+theorem transverseDiracOperator_eq_zero_of_eq_zero (x : M) (hσ : cov σ x = 0) :
+    cov.transverseDiracOperator c T σ x = 0 := by
+  simp [transverseDiracOperator_def, cov.diracOperator_eq_zero_of_eq_zero c x hσ, hσ]
+
 /-- The transverse Dirac operator is additive on sections differentiable at the point. -/
 theorem transverseDiracOperator_add {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
     cov.transverseDiracOperator c T (σ + τ) x =

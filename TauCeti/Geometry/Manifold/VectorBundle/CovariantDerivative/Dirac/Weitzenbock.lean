@@ -118,16 +118,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (c : Π x : M, TangentSpace I x →L[ℝ] V x →L[ℝ] V x)
   {σ : Π y : M, V y}
 
-/-- The polarized Clifford relation `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫` for the Clifford
-multiplication at `x`, from `c(v)² = -⟪v, v⟫` there. -/
-private theorem apply_apply_add_swap_eq_neg_two_inner
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {x : M}
-    (hcl : ∀ (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s)
-    (u v : TangentSpace I x) (s : V x) :
-    c x u (c x v s) + c x v (c x u s) = -(2 * ⟪u, v⟫) • s := by
-  simpa using LinearMap.apply_apply_add_swap_eq_neg_two_inner
-    ((ContinuousLinearMap.coeLM ℝ).comp (c x).toLinearMap) (by simpa using hcl) u v s
-
 section ParallelFrame
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [FiniteDimensional ℝ F]

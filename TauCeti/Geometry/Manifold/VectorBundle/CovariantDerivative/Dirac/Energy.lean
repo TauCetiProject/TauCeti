@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.D
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Split
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Square
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The energy identity of a Dirac operator split along a parallel unit field
@@ -53,7 +52,8 @@ curvature of the spin connection is not made here.
 * `CovariantDerivative.contMDiff_transverseDiracOperator`: `B_T` preserves smooth sections.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_transverseDiracOperator_left_eq_right`:
   `B_T` is formally self-adjoint along a Killing field of constant length.
-* `CovariantDerivative.IsMetricCompatible.two_mul_integral_inner_clifford_transverseDiracOperator`:
+* `CovariantDerivative.IsMetricCompatible.`
+  `two_mul_integral_inner_clifford_covariantDerivative_transverseDiracOperator_eq`:
   along a parallel unit field, the integrated cross term `2 ∫ ⟪c(T) ∇_T σ, B_T σ⟫` is the
   integral of `⟪σ, c(T) (∇_T B_T - B_T ∇_T) σ⟫`.
 * `CovariantDerivative.IsMetricCompatible.integral_norm_diracOperator_sq_eq`: the integrated
@@ -114,6 +114,19 @@ local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
+omit [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] [I.Boundaryless] in
+/-- If a smooth section `f` vanishes off the compact closure of the nonzero locus of `σ`, then its
+pairing with any smooth section is integrable for the Riemannian volume. -/
+private theorem integrable_inner_of_forall_notMem_closure_eq_zero {σ f g : Π y : M, V y}
+    (hσc : IsCompact (closure {x | σ x ≠ 0})) (hf : CMDiff ∞ (T% f)) (hg : CMDiff ∞ (T% g))
+    (h : ∀ y ∉ closure {x | σ x ≠ 0}, f y = 0) :
+    Integrable (fun x ↦ ⟪f x, g x⟫) (riemannianVolume I M) :=
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
+  ContMDiffSection.integrable_inner (s := ⟨f, hf⟩) (t := ⟨g, hg⟩) <| .inl <|
+    hσc.of_isClosed_subset (ContMDiffSection.isClosed_tsupport _)
+      ((ContMDiffSection.tsupport_subset_iff isClosed_closure).2 h)
+
 variable
   (hc : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F →L[ℝ] F)) ∞
     (fun x ↦ TotalSpace.mk' (E →L[ℝ] F →L[ℝ] F)
@@ -139,39 +152,35 @@ theorem integral_inner_transverseDiracOperator_left_eq_right (hcov : cov.IsMetri
     (hστ : IsCompact (closure {x | σ x ≠ 0}) ∨ IsCompact (closure {x | τ x ≠ 0})) :
     ∫ x, ⟪cov.transverseDiracOperator c T σ x, τ x⟫ ∂riemannianVolume I M =
       ∫ x, ⟪σ x, cov.transverseDiracOperator c T τ x⟫ ∂riemannianVolume I M := by
-  have : IsContinuousRiemannianBundle F V :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
-      (V := V)
-  have hcT {ρ : Π y : M, V y} (hρ : CMDiff ∞ (T% ρ)) :
-      CMDiff ∞ (T% (fun y ↦ c y (T y) (cov ρ y (T y)))) :=
-    (hc.clm_bundle_apply hT.contMDiff).clm_bundle_apply
-      (cov.contMDiff_apply hT.contMDiff (by simpa using hρ))
-  -- Off the closure of the nonzero locus of a section, the section, its Dirac operator and
-  -- `c(T) ∇_T` of it all vanish.
-  have hvan {ρ : Π y : M, V y} {y : M} (hy : y ∉ closure {x | ρ x ≠ 0}) :
-      ρ y = 0 ∧ cov.diracOperator c ρ y = 0 ∧ c y (T y) (cov ρ y (T y)) = 0 := by
-    have h0 := cov.apply_eq_zero_of_notMem_closure hy
-    exact ⟨Bundle.apply_eq_zero_of_notMem_closure hy,
-      cov.diracOperator_eq_zero_of_eq_zero c y h0, by simp [h0]⟩
-  have hint {f g : Π y : M, V y} (hf : CMDiff ∞ (T% f)) (hg : CMDiff ∞ (T% g))
-      (hfσ : ∀ y ∉ closure {x | σ x ≠ 0}, f y = 0) (hgτ : ∀ y ∉ closure {x | τ x ≠ 0}, g y = 0) :
-      Integrable (fun x ↦ ⟪f x, g x⟫) (riemannianVolume I M) := by
-    refine (hf.continuous.inner_bundle hg.continuous).integrable_of_hasCompactSupport ?_
-    rcases hστ with h | h
-    · exact .intro' h isClosed_closure fun y hy ↦ by simp [hfσ y hy]
-    · exact .intro' h isClosed_closure fun y hy ↦ by simp [hgτ y hy]
-  simp only [transverseDiracOperator_def, inner_sub_left, inner_sub_right]
-  rw [integral_sub (hint (cov.contMDiff_diracOperator hc hσ) hτ (fun _ hy ↦ (hvan hy).2.1)
-      fun _ hy ↦ (hvan hy).1)
-      (hint (hcT hσ) hτ (fun _ hy ↦ (hvan hy).2.2) fun _ hy ↦ (hvan hy).1),
-    integral_sub (hint hσ (cov.contMDiff_diracOperator hc hτ) (fun _ hy ↦ (hvan hy).1)
-      fun _ hy ↦ (hvan hy).2.1)
-      (hint hσ (hcT hτ) (fun _ hy ↦ (hvan hy).1) fun _ hy ↦ (hvan hy).2.2),
-    hcov.integral_inner_clifford_covariantDerivative_left_eq_right hskew hcomp
-      (fun _ _ hY hρ ↦ (hc.clm_bundle_apply hY).clm_bundle_apply hρ) hT hTr hσ hτ hστ]
-  rcases hστ with h | h
-  · rw [hcov.integral_inner_diracOperator_left_eq_right_of_isCompact_left hc hskew hcomp hσ hτ h]
-  · rw [hcov.integral_inner_diracOperator_left_eq_right hc hskew hcomp hσ hτ h]
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
+  -- `c(T) ∇_T` as an operator on smooth sections; it is formally self-adjoint.
+  let A : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯ :=
+    { toFun s := ⟨fun y ↦ c y (T y) (s y),
+        (hc.clm_bundle_apply hT.contMDiff).clm_bundle_apply s.contMDiff⟩
+      map_add' s t := ContMDiffSection.ext fun y ↦ by simp
+      map_smul' a s := ContMDiffSection.ext fun y ↦ by simp }
+  let P := A ∘ₗ cov.alongVectorField ⟨T, hT.contMDiff⟩
+  have hP (s : Cₛ^∞⟮I; F, V⟯) (y : M) : P s y = c y (T y) (cov s y (T y)) := by
+    simp [P, A, alongVectorField_apply]
+  have hPP : P.IsFormalAdjoint P (riemannianVolume I M) :=
+    LinearMap.isFormalAdjoint_iff.2 fun s t hst ↦ by
+      simpa only [hP] using hcov.integral_inner_clifford_covariantDerivative_left_eq_right hskew
+        hcomp (fun _ _ hY hρ ↦ (hc.clm_bundle_apply hY).clm_bundle_apply hρ) hT hTr s.contMDiff
+        t.contMDiff (by simpa only [ContMDiffSection.tsupport_def] using hst)
+  -- Neither `D` nor `c(T) ∇_T` enlarges supports, since both vanish where `∇ s` does.
+  have hsupp {Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯}
+      (hQ : ∀ (s : Cₛ^∞⟮I; F, V⟯) y, cov s y = 0 → Q s y = 0)
+      (s : Cₛ^∞⟮I; F, V⟯) : (Q s).tsupport ⊆ s.tsupport :=
+    (ContMDiffSection.tsupport_subset_iff s.isClosed_tsupport).2 fun y hy ↦ hQ s y
+      (cov.apply_eq_zero_of_notMem_closure (by rwa [ContMDiffSection.tsupport_def] at hy))
+  have hD := hsupp (Q := cov.smoothDiracOperator hc) fun s y h ↦ by
+    rw [smoothDiracOperator_apply]; exact cov.diracOperator_eq_zero_of_eq_zero c y h
+  have hPs := hsupp (Q := P) fun s y h ↦ by simp [hP, h]
+  have h := ((hcov.isFormalAdjoint_smoothDiracOperator hc hskew hcomp).sub hPP hD hPs hD
+    hPs).integral_inner_eq (s := ⟨σ, hσ⟩) (t := ⟨τ, hτ⟩)
+    (by simpa only [ContMDiffSection.tsupport_def, ContMDiffSection.coeFn_mk] using hστ)
+  simpa [transverseDiracOperator_def, smoothDiracOperator_apply, hP] using h
 
 /-- **The cross term of the split Dirac operator is a commutator.** Let `∇` be a metric
 connection compatible with a smooth Clifford multiplication `c` by skew-adjoint endomorphisms
@@ -182,7 +191,7 @@ let `T` be a parallel vector field of unit length. For every compactly supported
 `2 ∫ ⟪c(T) ∇_T σ, B_T σ⟫ dV = ∫ ⟪σ, c(T) (∇_T (B_T σ) - B_T (∇_T σ))⟫ dV`
 
 for the Riemannian volume. -/
-theorem two_mul_integral_inner_clifford_transverseDiracOperator
+theorem two_mul_integral_inner_clifford_covariantDerivative_transverseDiracOperator_eq
     (hcov : cov.IsMetricCompatible)
     (hcl : ∀ x (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s)
     (hTs : CMDiff ∞ (T% T)) (hTpar : ∀ x, leviCivitaConnection I M T x = 0)
@@ -192,9 +201,6 @@ theorem two_mul_integral_inner_clifford_transverseDiracOperator
         ∂riemannianVolume I M =
       ∫ x, ⟪σ x, c x (T x) (cov (cov.transverseDiracOperator c T σ) x (T x) -
         cov.transverseDiracOperator c T (fun y ↦ cov σ y (T y)) x)⟫ ∂riemannianVolume I M := by
-  have : IsContinuousRiemannianBundle F V :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
-      (V := V)
   set μ := riemannianVolume I M
   have hTK : IsKillingField I T :=
     (isMetricCompatible_leviCivitaConnection I).isKillingField_of_forall_eq_zero
@@ -202,11 +208,7 @@ theorem two_mul_integral_inner_clifford_transverseDiracOperator
   have hcT {ρ : Π y : M, V y} (hρ : CMDiff ∞ (T% ρ)) :
       CMDiff ∞ (T% (fun y ↦ c y (T y) (ρ y))) :=
     (hc.clm_bundle_apply hTs).clm_bundle_apply hρ
-  -- The polarized Clifford relation with `T`, and `c(T)` is parallel since `T` is.
-  have hpol (x : M) (u : TangentSpace I x) (w : V x) :
-      c x u (c x (T x) w) + c x (T x) (c x u w) = -(2 * ⟪u, T x⟫) • w := by
-    simpa using LinearMap.apply_apply_add_swap_eq_neg_two_inner
-      ((ContinuousLinearMap.coeLM ℝ).comp (c x).toLinearMap) (by simpa using hcl x) u (T x) w
+  -- `c(T)` is parallel since `T` is.
   have hpar {τ : Π y : M, V y} (hτ : CMDiff ∞ (T% τ)) (x : M) :
       cov (fun y ↦ c y (T y) (τ y)) x = c x (T x) ∘L cov τ x := by
     ext u
@@ -215,8 +217,8 @@ theorem two_mul_integral_inner_clifford_transverseDiracOperator
   have hBσ := cov.contMDiff_transverseDiracOperator hc hTs hσ
   -- Pairings with `σ` are integrable.
   have hint {g : Π y : M, V y} (hg : CMDiff ∞ (T% g)) : Integrable (fun x ↦ ⟪σ x, g x⟫) μ :=
-    (hσ.continuous.inner_bundle hg.continuous).integrable_of_hasCompactSupport
-      (.intro' hσc isClosed_closure fun y hy ↦ by simp [Bundle.apply_eq_zero_of_notMem_closure hy])
+    integrable_inner_of_forall_notMem_closure_eq_zero hσc hσ hg
+      fun _ hy ↦ Bundle.apply_eq_zero_of_notMem_closure hy
   -- The cross term, integrated by parts in two ways: through the formal self-adjointness of
   -- `c(T) ∇_T`, and through that of `B_T` and the anticommutation of `c(T)` with `B_T`.
   have hcross₁ : ∫ x, ⟪c x (T x) (cov σ x (T x)), cov.transverseDiracOperator c T σ x⟫ ∂μ =
@@ -232,7 +234,8 @@ theorem two_mul_integral_inner_clifford_transverseDiracOperator
           integral_inner_transverseDiracOperator_left_eq_right hc hskew hcomp hcov hTK hT1 hσ
             (hcT hTσ) (.inl hσc)
       _ = _ := integral_congr_ae (.of_forall fun x ↦ congrArg (⟪σ x, ·⟫)
-          (cov.transverseDiracOperator_clifford_eq c T (hT1 x) (hpol x) (hpar hTσ x)))
+          (cov.transverseDiracOperator_clifford_eq c T (hT1 x)
+            (fun u w ↦ apply_apply_add_swap_eq_neg_two_inner c (hcl x) u (T x) w) (hpar hTσ x)))
   have h₂ : Integrable (fun x ↦ ⟪σ x,
       -c x (T x) (cov.transverseDiracOperator c T (fun y ↦ cov σ y (T y)) x)⟫) μ :=
     hint (hcT (cov.contMDiff_transverseDiracOperator hc hTs hTσ)).neg_section
@@ -262,9 +265,6 @@ theorem integral_norm_diracOperator_sq_eq (hcov : cov.IsMetricCompatible)
           ∫ x, ⟪σ x, c x (T x) (cov (cov.transverseDiracOperator c T σ) x (T x) -
             cov.transverseDiracOperator c T (fun y ↦ cov σ y (T y)) x)⟫
               ∂riemannianVolume I M := by
-  have : IsContinuousRiemannianBundle F V :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
-      (V := V)
   set μ := riemannianVolume I M
   -- Clifford multiplication by the unit vector `T` is isometric.
   have hnorm (x : M) (w : V x) : ‖c x (T x) w‖ = ‖w‖ := by
@@ -280,11 +280,9 @@ theorem integral_norm_diracOperator_sq_eq (hcov : cov.IsMetricCompatible)
     cov.apply_eq_zero_of_notMem_closure hy
   have hint {f g : Π y : M, V y} (hf : CMDiff ∞ (T% f)) (hg : CMDiff ∞ (T% g))
       (h : ∀ y ∉ closure {x | σ x ≠ 0}, f y = 0) : Integrable (fun x ↦ ⟪f x, g x⟫) μ :=
-    (hf.continuous.inner_bundle hg.continuous).integrable_of_hasCompactSupport
-      (.intro' hσc isClosed_closure fun y hy ↦ by simp [h y hy])
-  have hBσ0 (y : M) (hy : y ∉ closure {x | σ x ≠ 0}) : cov.transverseDiracOperator c T σ y = 0 := by
-    simp [transverseDiracOperator_def, cov.diracOperator_eq_zero_of_eq_zero c y (hcov0 hy),
-      hcov0 hy]
+    integrable_inner_of_forall_notMem_closure_eq_zero hσc hf hg h
+  have hBσ0 (y : M) (hy : y ∉ closure {x | σ x ≠ 0}) : cov.transverseDiracOperator c T σ y = 0 :=
+    cov.transverseDiracOperator_eq_zero_of_eq_zero c T y (hcov0 hy)
   have hDint : Integrable (fun x ↦ ‖cov σ x (T x)‖ ^ 2) μ := by
     simpa [real_inner_self_eq_norm_sq] using hint hTσ hTσ fun y hy ↦ by simp [hcov0 hy]
   have hBint : Integrable (fun x ↦ ‖cov.transverseDiracOperator c T σ x‖ ^ 2) μ := by
@@ -304,7 +302,7 @@ theorem integral_norm_diracOperator_sq_eq (hcov : cov.IsMetricCompatible)
     ring
   simp_rw [hpt]
   rw [integral_add hDBint hXint, integral_add hDint hBint, integral_const_mul,
-    two_mul_integral_inner_clifford_transverseDiracOperator hc hskew hcomp
+    two_mul_integral_inner_clifford_covariantDerivative_transverseDiracOperator_eq hc hskew hcomp
       hcov hcl hTs hTpar hT1 hσ hσc]
 
 end IsMetricCompatible
