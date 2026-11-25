@@ -20,7 +20,7 @@ This file proves two comparison theorems for Mathlib's bounded-below right deriv
 * **Exact-functor comparison:** if `F₁ ⋙ V ≅ U ⋙ F₂` with `U` and `V` exact and the derived unit
   `F₂.rightDerivedFunctorPlusUnit` is an isomorphism on `U`-images of bounded-below complexes of
   injectives (for example, whenever `U` sends injective objects into an `F₂`-adapted class, via
-  `CategoryTheory.Functor.isIso_rightDerivedFunctorPlusUnit_app_of_adapted`), then
+  `CategoryTheory.Functor.isIso_rightDerivedFunctorPlusUnit_app`), then
   `F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus ≅
     U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus`
   canonically and compatibly with shifts

@@ -112,6 +112,8 @@ families of operators.
   extensions of quantizations are compatible with isomorphisms of the fibres.
 * `TauCeti.Symbol.quantizeSobolev_map`: the symbol `L ∘ a ∘ K`, for constant maps `L` and `K` of
   the fibres, quantizes to `L ∘ Op(a) ∘ K`.
+* `TauCeti.Symbol.postcomp_comp_quantizeSobolev`: the component `ℓ ∘ Op(a)` of a matrix-valued
+  quantization is `∑ⱼ Op(ℓ ∘ a ∘ e_j) ∘ c_j`.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
   `V` and `W`.
 * `TauCeti.Symbol.exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm`,
@@ -1099,14 +1101,27 @@ theorem quantizeSobolev_map {V' W' : Type*} [NormedAddCommGroup V'] [InnerProduc
   ext φ
   have hi : Integrable fun x ↦ φ x • quantizeSchwartzValue a.coefficient (u.postcompCLM K) x :=
     (ha.integrable_quantizeSchwartzValue _).smul_of_top_right (φ.memLp ⊤)
-  have hq : (a.map Φ).coefficient = fun p ↦ L ∘L a.coefficient p ∘L K :=
-    funext fun p ↦ by rw [coefficient_map, hΦ]
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
     BesselPotentialSpace.toDistr_postcomp_apply,
     toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
-    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, ← L.integral_comp_comm hi, hq]
+    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, ← L.integral_comp_comm hi,
+    coefficient_map_eq_comp_comp L K hΦ]
   simp only [quantizeSchwartzValue_comp_comp, map_smul]
+
+/-- **Components of a matrix-valued quantization.** For a functional `ℓ` on `W` and a basis
+`(e_j)` of `V` with dual basis `(c_j)`, the component `ℓ ∘ Op(a)` of the quantization of a symbol
+`a` with values in `V →L[ℂ] W` is the sum over `j` of the scalar quantizations of the entries
+`ℓ ∘ a ∘ e_j`, applied to the coordinates `c_j v`. -/
+theorem postcomp_comp_quantizeSobolev [FiniteDimensional ℂ V] (ha : a.HasCompactSpatialSupport)
+    {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ V) (ℓ : W →L[ℂ] ℂ) (t : ℝ) :
+    BesselPotentialSpace.postcomp _ _ 2 ℓ ∘L a.quantizeSobolev ha t =
+      ∑ j, (a.map (entryMap ℓ (b j))).quantizeSobolev (ha.map _) t ∘L
+        BesselPotentialSpace.postcomp _ t 2 (b.coord j).toContinuousLinearMap := by
+  ext1 v
+  simp only [_root_.sum_apply, ContinuousLinearMap.comp_apply,
+    quantizeSobolev_map ha ℓ _ (entryMap_apply ℓ _), ← map_sum,
+    BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord]
 
 end Sobolev
 

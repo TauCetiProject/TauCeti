@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.RightDerivedFunctorPlus
-public import TauCeti.Algebra.Homology.CochainComplex.Plus.Acyclic
+public import TauCeti.Algebra.Homology.CochainComplex.Plus.InjectiveResolution
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.Basic
 
 /-!
@@ -14,15 +14,14 @@ public import TauCeti.Algebra.Homology.DerivedCategory.Plus.Basic
 
 Let `F : C ⥤ D` be an additive functor between abelian categories, where `C` has enough
 injectives, and let `F.rightDerivedFunctorPlus : DerivedCategory.Plus C ⥤ DerivedCategory.Plus D`
-be Mathlib's bounded-below right derived functor. This file develops the adapted-resolution,
-resolution-computation, and left t-exactness API for `F.rightDerivedFunctorPlus`:
+be Mathlib's bounded-below right derived functor. This file develops the resolution-computation
+and left t-exactness API for `F.rightDerivedFunctorPlus` (complementing the adapted-complex
+derived-unit invertibility theorem `CategoryTheory.Functor.isIso_rightDerivedFunctorPlusUnit_app` in
+`TauCeti/Algebra/Homology/DerivedCategory/RightDerivedFunctor/Plus.lean`):
 
-* **Derived-unit invertibility:** `F.rightDerivedFunctorPlusUnit.app K` is an isomorphism for
-  every bounded-below complex `K` of injective objects
-  (`CategoryTheory.Functor.isIso_rightDerivedFunctorPlusUnit_app_of_injective`) and every
-  bounded-below `P`-complex
-  (`CategoryTheory.Functor.isIso_rightDerivedFunctorPlusUnit_app_of_adapted`), using
-  `CategoryTheory.Functor.quasiIso_map_of_adapted_to_injective`.
+* **Derived-unit invertibility on injective complexes:** `F.rightDerivedFunctorPlusUnit.app K` is an
+  isomorphism for every bounded-below complex `K` of injective objects
+  (`CategoryTheory.Functor.isIso_rightDerivedFunctorPlusUnit_app_of_injective`).
 * **Computation from resolutions:** for any quasi-isomorphism `ι : K ⟶ L` in
   `CochainComplex.Plus C` with `[IsIso (F.rightDerivedFunctorPlusUnit.app L)]`,
   `F.rightDerivedFunctorPlus.obj (Q.obj K) ≅ Q.obj (F(L))`
@@ -43,6 +42,8 @@ proved in `TauCeti/Algebra/Homology/DerivedCategory/Plus/Comparison.lean`.
 
 * `TauCeti/CategoryTheory/Abelian/AcyclicResolution.lean`, the formal source whose
   resolution-isomorphism API is adapted here to `CochainComplex.Plus` and `DerivedCategory.Plus`.
+* `TauCeti/Algebra/Homology/DerivedCategory/RightDerivedFunctor/Plus.lean`, which proves
+  `CategoryTheory.Functor.isIso_rightDerivedFunctorPlusUnit_app` for adapted complexes.
 * The Stacks Project, Derived Categories, §13.15–§13.16 (tags 05T8, 015E).
 * M. Kashiwara, P. Schapira, *Categories and Sheaves*, Grundlehren 332, Springer, 2006, §13.3.
 -/
@@ -76,38 +77,6 @@ lemma rightDerivedFunctorPlusUnit_naturality
     F.rightDerivedFunctorPlusUnit.naturality f
 
 end UnitNaturality
-
-/-! ### Derived-unit invertibility on adapted complexes -/
-
-section Adapted
-
-variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [EnoughInjectives C]
-  {D : Type u₂} [Category.{v₂} D] [Abelian D]
-  (F : C ⥤ D) [F.Additive]
-  (P : ObjectProperty C) [P.IsClosedUnderIsomorphisms]
-  (hinj : ∀ (Y : C), Injective Y → P Y)
-  (hP : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃)
-  (hF : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → (S.map F).ShortExact)
-
-variable [HasDerivedCategory.{w₁} C] [HasDerivedCategory.{w₂} D]
-
-include hinj hP hF in
-/-- **The derived unit is an isomorphism on bounded-below complexes in an adapted class.** -/
-theorem isIso_rightDerivedFunctorPlusUnit_app_of_adapted
-    (K : CochainComplex.Plus C) (hK : ∀ n, P (K.obj.X n)) :
-    IsIso (F.rightDerivedFunctorPlusUnit.app K) := by
-  obtain ⟨b, _⟩ := K.property
-  obtain ⟨I, _, i, hi⟩ := CochainComplex.Plus.exists_quasiIso_injective K b
-  have : QuasiIso i.hom := (CochainComplex.Plus.quasiIso_iff C i).1 hi
-  have : QuasiIso (F.mapCochainComplexPlus.map i).hom :=
-    F.quasiIso_map_of_adapted_to_injective P hinj hP hF hK i
-  have : IsIso (F.rightDerivedFunctorPlusUnit.app K ≫
-      F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map i)) := by
-    rw [← F.rightDerivedFunctorPlusUnit_naturality i]
-    infer_instance
-  exact IsIso.of_isIso_comp_right _ (F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map i))
-
-end Adapted
 
 /-! ### Computation from acyclic resolutions and left t-exactness -/
 
