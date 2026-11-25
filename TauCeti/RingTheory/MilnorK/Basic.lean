@@ -343,6 +343,10 @@ theorem symbol_mem_degree (l : List Rˣ) : symbol l ∈ degree R l.length :=
 theorem ofUnit_mem_degree_one (a : Rˣ) : ofUnit a ∈ degree R 1 := by
   simpa using symbol_mem_degree [a]
 
+/-- The product `{a} {b}` of two degree-one classes lies in degree two. -/
+theorem ofUnit_mul_ofUnit_mem_degree_two (a b : Rˣ) : ofUnit a * ofUnit b ∈ degree R 2 := by
+  simpa using symbol_mem_degree [a, b]
+
 private theorem mul_mem_degree {i j : ℕ} {x y : MilnorK R} (hx : x ∈ degree R i)
     (hy : y ∈ degree R j) : x * y ∈ degree R (i + j) := by
   have key (l : List Rˣ) (hl : l.length = i) : symbol l * y ∈ degree R (i + j) := by

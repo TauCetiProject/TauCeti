@@ -64,10 +64,6 @@ namespace MilnorK
 
 variable {F : Type*} [Field F]
 
-/-- The product `{a} {b}` of two degree-one classes lies in degree two. -/
-theorem ofUnit_mul_ofUnit_mem_degree_two (a b : Fˣ) : ofUnit a * ofUnit b ∈ degree F 2 := by
-  simpa using symbol_mem_degree [a, b]
-
 /-! ### The truncated action -/
 
 section Action
