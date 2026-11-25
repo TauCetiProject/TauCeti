@@ -107,8 +107,9 @@ theorem sum_mul_dist_sq_le_mul_sq_of_mem_closedBall {δ : ℝ} (hw : ∀ i, 0 �
   exact pow_le_pow_left₀ dist_nonneg ((dist_le_pi_dist x p i).trans (mem_closedBall.1 hx)) 2
 
 omit [Fintype ι] in
-/-- The concentric product balls of radii `r i - 1 / (k + 1)` around `c` increase strictly and
-exhaust the product of the balls of radii `r i`. -/
+/-- There are polyradii `s k` with `s k i < r i` (namely `s k i = r i - 1 / (k + 1)`) that
+increase strictly in `k`, so the concentric product balls of radii `s k i` around `c` form an
+increasing family exhausting the product of the balls of radii `r i`. -/
 theorem exists_polyradius_exhaustion [Finite ι] (c : ∀ i, X i) (r : ι → ℝ) :
     ∃ s : ℕ → ι → ℝ, (∀ k i, s k i < s (k + 1) i) ∧ Monotone s ∧ (∀ k i, s k i < r i) ∧
       ∀ z ∈ Set.univ.pi fun i ↦ ball (c i) (r i),
