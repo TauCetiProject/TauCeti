@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Calculus.ContDiff.Indicator
+import TauCeti.Analysis.Normed.Affine.Isometry.Basic
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Sobolev functions vanishing on a part of the boundary
@@ -29,11 +33,13 @@ finite `p`; that case lives with the Lipschitz-domain theory.
 The space shrinks as `Γ` grows and depends on `Γ` only through its closure. When `Γ` misses `Ω`,
 as a boundary part does, it contains `W^{1,p}_0(Ω)`; this can fail when `Γ` meets `Ω`, for
 instance when `Γ` contains a nonempty open subset of `Ω`. Multiplication by a smooth function
-bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`.
+bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`. Rigid motions carry it
+to the space of the moved pair `(Ω, Γ)`.
 
 ## Main declarations
 
-* `TauCeti.w1pVanishingOnSubmodule`: the closed subspace `W^{1,p}_Γ(Ω)` of `W^{1,p}(Ω)`.
+* `TauCeti.w1pVanishingOnSubmodule`: the closed subspace `W^{1,p}_Γ(Ω)` of `W^{1,p}(Ω)`, and
+  `TauCeti.W1pVanishingOn`, the same space as a complete normed space.
 * `TauCeti.W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule` and
   `TauCeti.w1pVanishingOnSubmodule_subset_of_isClosed`: the generators lie in it, and a closed set
   containing them contains all of it.
@@ -46,6 +52,11 @@ bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
   smooth functions bounded with their gradients.
+* `TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`: it is invariant under
+  affine isometries of the pair `(Ω, Γ)`.
+* `TauCeti.W1pVanishingOn.instNormedAddCommGroup` and
+  `TauCeti.W1pVanishingOn.instInnerProductSpace`: shortcut instances, registered locally by files
+  applying abstract Hilbert space results to `W^{1,2}_Γ(Ω)`.
 
 ## References
 
@@ -125,6 +136,26 @@ theorem w1pVanishingOnSubmodule_subset_of_isClosed {s : Set (W1p mu Omega p)} (h
     (w1pVanishingOnSubmodule mu Omega p Γ : Set (W1p mu Omega p)) ⊆ s := by
   rw [coe_w1pVanishingOnSubmodule]
   exact closure_minimal (by rintro _ ⟨φ, hφ, rfl⟩; exact h φ hφ) hs
+
+/-- **The Sobolev space `W^{1,p}_Γ(Ω)`** as a type: the subspace `w1pVanishingOnSubmodule`, with
+the normed structure inherited from `W^{1,p}(Ω)`. For `p = 2` it is a Hilbert space, the test
+space of the mixed boundary value problem. -/
+abbrev W1pVanishingOn (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E) (p : ℝ≥0∞)
+    [Fact (1 ≤ p)] (Γ : Set E) := (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule
+
+/-- Shortcut instance for the norm `W^{1,p}_Γ(Ω)` inherits through the nested Sobolev subspaces;
+instance search does not find the dual-space norm on its own without it. -/
+noncomputable instance instSeminormedAddCommGroupW1pVanishingOn :
+    SeminormedAddCommGroup (W1pVanishingOn mu Omega p Γ) := inferInstance
+
+/-- Shortcut instance for the scalar action `W^{1,p}_Γ(Ω)` inherits through the nested Sobolev
+subspaces. -/
+noncomputable instance instNormedSpaceW1pVanishingOn :
+    NormedSpace ℝ (W1pVanishingOn mu Omega p Γ) := inferInstance
+
+/-- `W^{1,p}_Γ(Ω)` is complete: it is a closed subspace of the complete space `W^{1,p}(Ω)`. -/
+instance : CompleteSpace (W1pVanishingOn mu Omega p Γ) :=
+  (w1pVanishingOnSubmodule mu Omega p Γ).isClosed.completeSpace_coe
 
 /-- **Sequential characterization of `W^{1,p}_Γ(Ω)`**: an element of `W^{1,p}(Ω)` lies in
 `W^{1,p}_Γ(Ω)` exactly when it is the limit of the restrictions to `Ω` of a sequence of test
@@ -241,5 +272,83 @@ theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule {psi : E → ℝ} {M : ℝ}
   simp only [mem_preimage, SetLike.mem_coe, W1p.contDiffSMulL_apply, hΦ]
   exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
     (hΦφ ▸ hφ.mono_left (tsupport_mul_subset_right (f := psi) (g := φ)))
+
+/-! ### Rigid motions -/
+
+section AffineIsometry
+
+variable {F F' : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] [NormedAddCommGroup F'] [InnerProductSpace ℝ F']
+  [FiniteDimensional ℝ F'] [MeasurableSpace F'] [BorelSpace F'] {U : Opens F} {V : Opens F'}
+  {Γ' : Set F'}
+
+/-- **Rigid motions preserve vanishing on a set.** For an affine isometry `g` and `U = g⁻¹(V)`, if
+`u` vanishes on `Γ'` in the sense of `W^{1,p}_{Γ'}(V)`, then `u ∘ g` vanishes on `g⁻¹(Γ')` in the
+sense of `W^{1,p}_{g⁻¹(Γ')}(U)`: the generator `φ` is carried to the generator `φ ∘ g`. -/
+theorem W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p}
+    (hu : u ∈ w1pVanishingOnSubmodule volume V p Γ') :
+    W1p.compAffineIsometryEquivL g hUV u ∈ w1pVanishingOnSubmodule volume U p (g ⁻¹' Γ') := by
+  have hclosed : IsClosed (W1p.compAffineIsometryEquivL g hUV ⁻¹'
+      (w1pVanishingOnSubmodule volume U p (g ⁻¹' Γ') : Set (W1p volume U p))) :=
+    (w1pVanishingOnSubmodule volume U p (g ⁻¹' Γ')).isClosed.preimage
+      (W1p.compAffineIsometryEquivL g hUV).continuous
+  refine w1pVanishingOnSubmodule_subset_of_isClosed hclosed (fun φ hφ => ?_) hu
+  -- The composition `φ ∘ g` is a test function on the whole space, supported in `g⁻¹(supp φ)`.
+  have hsub : tsupport (fun x => φ (g x)) ⊆ g ⁻¹' tsupport φ :=
+    tsupport_comp_subset_preimage φ g.continuous
+  obtain ⟨ψ, hψ⟩ : ∃ ψ : 𝓓((⊤ : Opens F), ℝ), ⇑ψ = fun x => φ (g x) :=
+    ⟨⟨fun x => φ (g x), φ.contDiff.comp g.toAffineIsometry.toContinuousAffineMap.contDiff,
+      φ.hasCompactSupport.comp_homeomorph g.toHomeomorph, subset_univ _⟩, rfl⟩
+  have heq : W1p.compAffineIsometryEquivL g hUV
+      (W1p.restrictL (le_top : V ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ)) =
+      W1p.restrictL (le_top : U ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p ψ) := by
+    have hmp : MeasurePreserving g (volume.restrict (U : Set F)) (volume.restrict (V : Set F')) :=
+      hUV ▸ g.measurePreserving.restrict_preimage V.isOpen.measurableSet
+    refine W1p.ext_value (Lp.ext ?_)
+    filter_upwards [W1p.value_compAffineIsometryEquivL_ae (p := p) g hUV _,
+      hmp.quasiMeasurePreserving.ae
+        (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := p) le_top φ),
+      W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := p) le_top ψ] with x h1 h2 h3
+    rw [h1, h2, h3, hψ]
+  rw [mem_preimage, SetLike.mem_coe, heq]
+  exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
+    (hψ ▸ (hφ.preimage g).mono hsub (g.continuous.closure_preimage_subset Γ'))
+
+/-- **`W^{1,p}_Γ` is invariant under rigid motions.** For an affine isometry `g` and
+`U = g⁻¹(V)`, the function `u ∘ g` lies in `W^{1,p}_{g⁻¹(Γ')}(U)` exactly when `u` lies in
+`W^{1,p}_{Γ'}(V)`. -/
+@[simp]
+theorem W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p} :
+    W1p.compAffineIsometryEquivL g hUV u ∈ w1pVanishingOnSubmodule volume U p (g ⁻¹' Γ') ↔
+      u ∈ w1pVanishingOnSubmodule volume V p Γ' := by
+  have hVU : (V : Set F') = g.symm ⁻¹' U := by
+    rw [hUV, ← preimage_comp]
+    ext x
+    simp
+  refine ⟨fun hu => ?_, W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule g hUV⟩
+  have h := W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule g.symm hVU hu
+  rwa [W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL, ← preimage_comp,
+    (funext g.apply_symm_apply : ⇑g ∘ ⇑g.symm = id), preimage_id] at h
+
+end AffineIsometry
+
+/-! ### Shortcut instances for the Hilbert space `W^{1,2}_Γ(Ω)`
+
+The instances below are `local`, so they take part in instance search only in a file that
+registers them with `attribute [local instance]`, as for `W^{1,2}_0(Ω)`. -/
+
+/-- Shortcut instance for the normed group structure of `W^{1,p}_Γ(Ω)`, the separated form of
+`instSeminormedAddCommGroupW1pVanishingOn`. Instance search can time out on it while elaborating
+the arguments of an abstract Hilbert space lemma. -/
+noncomputable local instance W1pVanishingOn.instNormedAddCommGroup :
+    NormedAddCommGroup (W1pVanishingOn mu Omega p Γ) := inferInstance
+
+/-- Shortcut instance for the Hilbert space structure of `W^{1,2}_Γ(Ω)`, inherited from
+`W^{1,2}(Ω)`. A file that applies abstract Hilbert space results to `W^{1,2}_Γ(Ω)` registers it
+together with `W1pVanishingOn.instNormedAddCommGroup`. -/
+noncomputable local instance W1pVanishingOn.instInnerProductSpace :
+    InnerProductSpace ℝ (W1pVanishingOn mu Omega 2 Γ) := inferInstance
 
 end TauCeti
