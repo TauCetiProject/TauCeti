@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Kernel.Projection
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
@@ -80,17 +81,6 @@ open scoped ENNReal NNReal Topology RealInnerProductSpace ContDiff
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
 
 /-! ### Auxiliary facts about the weighted norms -/
-
-/-- The weighted norm does not see the restriction of the volume to the whole plane. This and
-`integral_restrict_top` restate `Measure.restrict_coe_opens_top` for plain functions: rewriting with
-it directly would also rewrite the measure in the types of the `L²` classes involved. -/
-private theorem eLpNorm_restrict_top {F : Type*} [NormedAddCommGroup F] (g : ℂ → F) :
-    eLpNorm g 2 μ⊤ = eLpNorm g 2 volume := by
-  rw [Measure.restrict_coe_opens_top]
-
-/-- The integral does not see the restriction of the volume to the whole plane. -/
-private theorem integral_restrict_top (g : ℂ → ℝ) : ∫ z, g z ∂μ⊤ = ∫ z, g z := by
-  rw [Measure.restrict_coe_opens_top]
 
 /-- **The weighted norm of the zeroth-order part.** Multiplication by `Z(b, ·)`, for an essentially
 bounded coefficient `b`, costs at most `‖Z‖ ‖b‖∞` in every weighted norm. -/
@@ -183,14 +173,15 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalRightInverse_le_of_forall_m
   obtain ⟨hT, hsurj⟩ := isFredholm_and_surjective_sobolevGaugeFixedOperator hx hsol hframe hax
   have hQ := hT.isOrthogonalRightInverse_orthogonalRightInverse sobolevFieldValues_injective hsurj
   set Q := orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator a)
-  rw [← eLpNorm_restrict_top, ← eLpNorm_restrict_top]
+  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
+    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
   refine hK x D hx hsol hframe hD hD₀ f (sobolevFieldValues (Q f)) (fun η hη hηc ↦ ?_)
     fun u hu ↦ ?_
   · -- The values of `Q f` solve `L_x y = f` weakly, by integration by parts.
     have h := integral_inner_sobolevGaugeFixedOperator hx.continuous hax (Q f)
       (hη.of_le (by simp)) hηc
     rw [hQ.rightInverse f] at h
-    rw [integral_restrict_top, integral_restrict_top, h]
+    rw [integral_restrict_coe_opens_top, integral_restrict_coe_opens_top, h]
     refine integral_congr_ae ?_
     filter_upwards [(sobolevFieldValues_ae_eq (Q f)).filter_mono
       (ae_mono (Measure.restrict_coe_opens_top _).ge)] with z hz
@@ -200,7 +191,8 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalRightInverse_le_of_forall_m
       exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq hx.continuous hax
         ((Lp.memLp u).mono_measure (Measure.restrict_coe_opens_top _).ge) (f := 0)
         fun η hη hηc ↦ by
-          rw [← integral_restrict_top, hu η (hη.of_le (by simp)) hηc, ← integral_restrict_top,
+          rw [← integral_restrict_coe_opens_top (volume : Measure ℂ), hu η (hη.of_le (by simp)) hηc,
+            ← integral_restrict_coe_opens_top (volume : Measure ℂ),
             Lp.integral_inner_coeFn_zero_left]
     have hwu' : (sobolevFieldValues w : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[μ⊤] u := by
       filter_upwards [sobolevFieldValues_ae_eq w,
@@ -212,20 +204,25 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalRightInverse_le_of_forall_m
     rw [integral_congr_ae (hwu'.mono fun z hz ↦ by rw [← hz]), ← L2.inner_def]
     exact hQ.inner_eq_zero f w (LinearMap.mem_ker.2 hw0)
 
-/-- `Q (Z(b, y))` costs at most `q ‖Z‖ ‖b‖∞` in a weighted norm in which `Q` costs at most `q`. -/
-private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le {c : ℝ} {q : ℝ≥0}
+/-- `Q (Z(b, y))` costs at most `q ‖Z‖ ‖b‖∞ r N` in a weighted norm in which `Q` costs at most `q`
+and `y` at most `r N`. -/
+private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le {c : ℝ} {q r : ℝ≥0}
+    {N : ℝ≥0∞}
     {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
     (hQ : ∀ g, eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (Q g) z) 2 μ⊤ ≤
       q * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤)
-    (b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    (b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) {y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+    (hy : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y z) 2 μ⊤ ≤ r * N) :
     eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
       (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues y))) z) 2 μ⊤ ≤
-        (q * ‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ : ℝ≥0) *
-          eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y z) 2 μ⊤ := by
+        (q * ‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ * r : ℝ≥0) * N := by
   refine (hQ _).trans ?_
-  rw [ENNReal.coe_mul, ENNReal.coe_mul, mul_assoc, mul_assoc, ← mul_assoc (‖_‖₊ : ℝ≥0∞)]
-  gcongr
-  exact eLpNorm_exp_mul_smul_holderL_le c b _
+  calc _ ≤ (q : ℝ≥0∞) * (‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ * (r * N)) := by
+        gcongr
+        exact (eLpNorm_exp_mul_smul_holderL_le c b _).trans (by gcongr)
+    _ = _ := by
+      push_cast
+      ring
 
 /-- **The kernel component.** Let `π` be the projection onto the kernel of `T` along its
 `L²`-orthogonal complement and `Q` a right inverse of `T`, and let `y`, `A` be such that the
@@ -248,7 +245,6 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le {c : 
       μ⊤ ≤ qn * eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤)
     (b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)
     {A : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
-    (hA : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • A z) 2 μ⊤)
     (hpair : ∀ k ∈ T.ker, |⟪sobolevFieldValues y, sobolevFieldValues k⟫| ≤
       |⟪sobolevFieldValues (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues k))),
         A⟫|) :
@@ -268,14 +264,10 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le {c : 
   have hqe : eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
       (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues (π y)))) z) 2 μ⊤ ≤
         (qn * ‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ * kn : ℝ≥0) *
-          eLpNorm (sobolevFieldValues (π y)) 2 μ⊤ := by
-    refine (eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hQn b (π y)).trans
-      ((mul_le_mul_right (hkn _ hp) _).trans_eq ?_)
-    rw [ENNReal.coe_mul _ kn, mul_assoc _ (kn : ℝ≥0∞)]
-  refine (le_of_eq_of_le ?_ (eLpNorm_exp_mul_smul_add_le c one_le_two _ _)).trans (add_le_add_left
-    (TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc _ hp)
-      (hqe.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (Lp.eLpNorm_lt_top _))) hqe hA
-        hinner) _)
+          eLpNorm (sobolevFieldValues (π y)) 2 μ⊤ :=
+    eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hQn b (hkn _ hp)
+  refine (le_of_eq_of_le ?_ (Lp.eLpNorm_smul_add_le one_le_two _ _ _)).trans (add_le_add_left
+    (TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc _ hp) hqe hinner) _)
   rw [← map_add, add_sub_cancel]
 
 /-- The weighted estimates for the kernel of the realization and for its orthogonal right inverse,
@@ -312,7 +304,7 @@ private theorem exists_forall_ker_and_orthogonalRightInverse_le (m : ℕ) (R₀ 
       (c := -c) (by rwa [abs_neg])
   refine ⟨kc, kn, qc, qn, fun x D hx hbound hsol hframe hD hD₀ a hax ↦
     ⟨fun k hk ↦ ?_, fun k hk ↦ ?_, fun g ↦ ?_, fun g ↦ ?_⟩⟩ <;>
-    simp only [eLpNorm_restrict_top]
+    simp only [eLpNorm_restrict_coe_opens_top]
   exacts [hkc x D hx hbound hsol hframe hD hD₀ a hax k hk,
     hkn x D hx hbound hsol hframe hD hD₀ a hax k hk, hqc x D hx hsol hframe hD hD₀ a hax g,
     hqn x D hx hsol hframe hD hD₀ a hax g]
@@ -338,7 +330,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_
             K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2
               volume := by
   obtain ⟨kc, kn, _, _, hest⟩ := exists_forall_ker_and_orthogonalRightInverse_le m R₀ hc
-  refine ⟨kc * kn + 1, fun x D hx hbound hsol hframe hD hD₀ a hax e ↦ ?_⟩
+  refine ⟨kc * kn, fun x D hx hbound hsol hframe hD hD₀ a hax e ↦ ?_⟩
   obtain ⟨hkc, hkn, -, -⟩ := hest x D hx hbound hsol hframe hD hD₀ a hax
   obtain ⟨hT, -⟩ := isFredholm_and_surjective_sobolevGaugeFixedOperator hx hsol hframe hax
   have := hT.finite_ker
@@ -346,13 +338,8 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_
     (sobolevGaugeFixedOperator a)
   set π := orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator a)
   have hk := hπ.mem_ker e
-  have hqe := hkn (π e) hk
-  rw [← eLpNorm_restrict_top, ← eLpNorm_restrict_top]
-  -- The bound is trivial when `exp(c ρ) e` is not square integrable.
-  rcases eq_or_ne (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 μ⊤)
-    ⊤ with hN | hN
-  · rw [hN, ENNReal.mul_top (by simp)]
-    exact le_top
+  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
+    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
   -- `‖π e‖₂² = ⟪π e, e⟫`, since `e - π e` is orthogonal to the kernel.
   have hinner : ‖sobolevFieldValues (π e)‖ ^ 2 ≤
       |⟪sobolevFieldValues (π e), sobolevFieldValues e⟫| := by
@@ -360,9 +347,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_
     rw [RCLike.ofReal_real_eq_id, id] at h
     rw [real_inner_comm, h]
     exact le_abs_self _
-  refine (TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc (π e) hk)
-    (hqe.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (Lp.eLpNorm_lt_top _))) hqe hN.lt_top
-    hinner).trans (mul_le_mul_left (ENNReal.coe_le_coe.2 le_self_add) _)
+  exact TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc (π e) hk) (hkn (π e) hk) hinner
 
 /-- Along a family of coefficients differentiable at `p₀`, whose value at `p₀` is the class of a
 smooth plane vortex with the degree-`m` end framing, the realizations are differentiable at `p₀`,
@@ -396,7 +381,7 @@ derivative `Q'` of `Q` at `p₀` in the direction `v` satisfies
 
 `‖exp(c ρ) Q' f‖₂ ≤ K ‖Da(p₀) v‖∞ ‖exp(c ρ) f‖₂`
 
-for every `f ∈ L²` with `exp(c ρ) f` square integrable. -/
+for every `f ∈ L²`, where either side may be infinite. -/
 theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_forall_mem_norm_le
     (m : ℕ) (R₀ : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
@@ -407,7 +392,6 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_f
       ∀ {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
         {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X}, a p₀ =ᵐ[μ⊤] x →
         DifferentiableAt ℝ a p₀ → ∀ (v : X) (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤),
-        MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume →
         eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
           (fderiv ℝ (fun p ↦ orthogonalRightInverse sobolevFieldValues
             (sobolevGaugeFixedOperator (a p))) p₀ v f) z) 2 volume ≤
@@ -416,7 +400,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_f
   obtain ⟨kc, kn, qc, qn, hest⟩ := exists_forall_ker_and_orthogonalRightInverse_le m R₀ hc
   set Z := ‖gaugeFixedZerothOrder‖₊
   refine ⟨kc * (qn * Z * kn) * qc + qc * Z * qc, ?_⟩
-  intro x D hx hbound hsol hframe hD hD₀ X _ _ a p₀ hax ha v f hf
+  intro x D hx hbound hsol hframe hD hD₀ X _ _ a p₀ hax ha v f
   obtain ⟨hkc', hkn', hqc', hqn'⟩ := hest x D hx hbound hsol hframe hD hD₀ (a p₀) hax
   obtain ⟨hT, hsurj, hd, hπ⟩ :=
     isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
@@ -433,20 +417,16 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_f
   set π := orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
   set y := fderiv ℝ (fun p ↦ orthogonalRightInverse sobolevFieldValues
     (sobolevGaugeFixedOperator (a p))) p₀ v f
-  rw [memLp_iff, ← eLpNorm_restrict_top] at hf
-  rw [← eLpNorm_restrict_top, ← eLpNorm_restrict_top]
+  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
+    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
   have hperp : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
       sobolevFieldValues (y - π y) z) 2 μ⊤ ≤
         (qc * Z * ‖b‖₊ * qc : ℝ≥0) *
           eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ⊤ := by
-    rw [hsplit, map_neg, eLpNorm_exp_mul_smul_neg]
-    refine (eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hqc' b (Q f)).trans
-      ((mul_le_mul_right (hqc' f) _).trans_eq ?_)
-    rw [ENNReal.coe_mul _ qc, mul_assoc _ (qc : ℝ≥0∞)]
-  have hQf : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (Q f) z) 2 μ⊤ <
-      ⊤ := (hqc' f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hf)
-  refine (eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le hπ hkc' hkn' hqn' b y hQf
-    fun k hk ↦ by rw [hpair k hk, real_inner_comm]).trans ?_
+    rw [hsplit, map_neg, Lp.eLpNorm_smul_neg]
+    exact eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hqc' b (hqc' f)
+  refine (eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le hπ hkc' hkn' hqn' b y
+    (A := sobolevFieldValues (Q f)) fun k hk ↦ by rw [hpair k hk, real_inner_comm]).trans ?_
   calc _ ≤ (kc * (qn * Z * ‖b‖₊ * kn) : ℝ≥0) * ((qc : ℝ≥0∞) *
           eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ⊤) +
         (qc * Z * ‖b‖₊ * qc : ℝ≥0) *
@@ -467,7 +447,7 @@ the derivative `π'` of `π` at `p₀` in the direction `v` satisfies
 
 `‖exp(c ρ) π' e‖₂ ≤ K ‖Da(p₀) v‖∞ ‖exp(c ρ) e‖₂`
 
-for every `e ∈ H¹(ℂ)⁴` with `exp(c ρ) e` square integrable. -/
+for every `e ∈ H¹(ℂ)⁴`, where either side may be infinite. -/
 theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le
     (m : ℕ) (R₀ : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
@@ -478,7 +458,6 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_
       ∀ {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
         {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X}, a p₀ =ᵐ[μ⊤] x →
         DifferentiableAt ℝ a p₀ → ∀ (v : X) (e : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
-        MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 volume →
         eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
           (fderiv ℝ (fun p ↦ orthogonalKerProjection sobolevFieldValues
             (sobolevGaugeFixedOperator (a p))) p₀ v e) z) 2 volume ≤
@@ -490,7 +469,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_
       m R₀ hc
   set Z := ‖gaugeFixedZerothOrder‖₊
   refine ⟨kc * (qn * Z * kn) * (1 + kπ) + qc * Z * kπ, ?_⟩
-  intro x D hx hbound hsol hframe hD hD₀ X _ _ a p₀ hax ha v e he
+  intro x D hx hbound hsol hframe hD hD₀ X _ _ a p₀ hax ha v e
   obtain ⟨hkc', hkn', hqc', hqn'⟩ := hest x D hx hbound hsol hframe hD hD₀ (a p₀) hax
   obtain ⟨hT, hsurj, hd, hπ⟩ :=
     isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
@@ -508,24 +487,23 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_
   set π := orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
   set y := fderiv ℝ (fun p ↦ orthogonalKerProjection sobolevFieldValues
     (sobolevGaugeFixedOperator (a p))) p₀ v e
-  rw [memLp_iff, ← eLpNorm_restrict_top] at he
-  rw [← eLpNorm_restrict_top, ← eLpNorm_restrict_top] at hkπ'
-  rw [← eLpNorm_restrict_top, ← eLpNorm_restrict_top]
+  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
+    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at hkπ'
+  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
+    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
   set N := eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 μ⊤
   have hperp : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
       sobolevFieldValues (y - π y) z) 2 μ⊤ ≤ (qc * Z * ‖b‖₊ * kπ : ℝ≥0) * N := by
-    rw [hsplit, map_neg, eLpNorm_exp_mul_smul_neg]
-    refine (eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hqc' b (π e)).trans
-      ((mul_le_mul_right hkπ' _).trans_eq ?_)
-    rw [ENNReal.coe_mul _ kπ, mul_assoc _ (kπ : ℝ≥0∞)]
+    rw [hsplit, map_neg, Lp.eLpNorm_smul_neg]
+    exact eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hqc' b hkπ'
   -- The field `A = e - π e` paired with the kernel component has `‖A‖_c ≤ (1 + kπ) ‖e‖_c`.
   have hA : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
       sobolevFieldValues (e - π e) z) 2 μ⊤ ≤ ((1 + kπ : ℝ≥0) : ℝ≥0∞) * N := by
     rw [map_sub, sub_eq_add_neg, ENNReal.coe_add, ENNReal.coe_one, add_mul, one_mul]
-    refine (eLpNorm_exp_mul_smul_add_le c one_le_two _ _).trans (add_le_add le_rfl ?_)
-    rwa [eLpNorm_exp_mul_smul_neg]
+    refine (Lp.eLpNorm_smul_add_le one_le_two _ _ _).trans (add_le_add le_rfl ?_)
+    rwa [Lp.eLpNorm_smul_neg]
   refine (eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le hπ hkc' hkn' hqn' b y
-    (hA.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top he))
+    (A := sobolevFieldValues (e - π e))
     fun k hk ↦ by rw [hpair k hk, abs_neg, real_inner_comm]).trans ?_
   calc _ ≤ (kc * (qn * Z * ‖b‖₊ * kn) : ℝ≥0) * (((1 + kπ : ℝ≥0) : ℝ≥0∞) * N) +
         (qc * Z * ‖b‖₊ * kπ : ℝ≥0) * N :=

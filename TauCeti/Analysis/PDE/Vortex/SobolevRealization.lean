@@ -277,8 +277,8 @@ theorem fderiv_sobolevGaugeFixedOperator_comp_apply {X : Type*} [NormedAddCommGr
   -- Evaluated at `y`, the family is the constant `L₀ y` plus the linear map `b ↦ Z(b, y)` of `a`.
   have hS (p : X) : sobolevGaugeFixedOperator (a p) y =
       sobolevGaugeFixedOperator 0 y + H.flip (sobolevFieldValues y) (a p) := by
-    rw [sobolevGaugeFixedOperator_eq_add (a p)]
-    rfl
+    rw [sobolevGaugeFixedOperator_eq_add (a p), add_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply]
   have h : HasFDerivAt (fun p ↦ sobolevGaugeFixedOperator (a p) y)
       ((H.flip (sobolevFieldValues y)).comp (fderiv ℝ a p₀)) p₀ := by
     simp only [hS]

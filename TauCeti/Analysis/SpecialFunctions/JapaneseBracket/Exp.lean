@@ -21,9 +21,6 @@ large. The usual choice is `b = 1`, and changing `b` changes the weight by at mo
 factor. The truncated weights `W / (1 + ε W)`, `ε > 0`, are smooth, lie between `0` and
 `min W (1 / ε)`, and have logarithmic gradient at most that of `W`.
 
-The weighted norms `‖exp(c √(b + ‖z‖²)) g‖_p` of classes `g ∈ Lp` are subadditive for `1 ≤ p`
-(`eLpNorm_exp_mul_smul_add_le`) and invariant under negation (`eLpNorm_exp_mul_smul_neg`).
-
 The weights `exp(c √(b + ‖z‖²))` and `exp(-c √(b + ‖z‖²))` are reciprocal, so either can be moved
 across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`
 (`abs_inner_le_of_memLp_exp_mul_smul`). So if `‖u‖₂² ≤ |⟪e, A⟫|`, where the weight `exp(-c ρ)`
@@ -178,33 +175,6 @@ theorem sq_exp_mul_sqrt_add_norm_sq_le (c s t : ℝ) (z : E) :
   rw [← mul_pow]
   exact pow_le_pow_left₀ (Real.exp_pos _).le (exp_mul_sqrt_add_norm_sq_le c s t z) 2
 
-section Lp
-
-open MeasureTheory
-open scoped ENNReal
-
-variable {X F : Type*} [Norm X] [MeasurableSpace X] {μ : Measure X}
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞}
-
-/-- The weighted norm `‖exp(c ρ) g‖_p`, `ρ(z) = √(b + ‖z‖²)`, is subadditive on `Lp`, `1 ≤ p`. -/
-theorem eLpNorm_exp_mul_smul_add_le (c : ℝ) (hp : 1 ≤ p) (g h : Lp F p μ) :
-    eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • (g + h) z) p μ ≤
-      eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) p μ +
-        eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • h z) p μ := by
-  rw [eLpNorm_congr_ae ((Lp.coeFn_add g h).mono fun z hz ↦ by
-    rw [hz, Pi.add_apply, smul_add])]
-  exact eLpNorm_add_le hp
-
-/-- The weighted norm `‖exp(c ρ) g‖_p`, `ρ(z) = √(b + ‖z‖²)`, of the negative of `g ∈ Lp` is that
-of `g`. -/
-theorem eLpNorm_exp_mul_smul_neg (c : ℝ) (g : Lp F p μ) :
-    eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • (-g) z) p μ =
-      eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) p μ := by
-  rw [eLpNorm_congr_ae ((Lp.coeFn_neg g).mono fun z hz ↦ by rw [hz, Pi.neg_apply, smul_neg])]
-  exact eLpNorm_neg (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) p μ
-
-end Lp
-
 section L2
 
 open MeasureTheory
@@ -233,20 +203,39 @@ theorem abs_inner_le_of_memLp_exp_mul_smul {c : ℝ} {e f : Lp F 2 μ}
 
 /-- **A weighted bound from a pairing inequality.** Let `ρ(z) = √(b + ‖z‖²)` and let `u`, `e`, `A`
 be `L²` functions with `‖u‖₂² ≤ |⟪e, A⟫|`. Suppose that the weight `exp(c ρ)` costs at most `a` on
-`u`, that `exp(-c ρ) e` is square integrable with norm at most `q ‖u‖₂`, and that `exp(c ρ) A` is
-square integrable. Then `‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂`.
+`u` and that `‖exp(-c ρ) e‖₂ ≤ q ‖u‖₂`. Then `‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂`, where either
+side may be infinite.
 
 Typically `u` lies in a finite-dimensional space of decaying functions, on which every weight
 costs a bounded factor, and the pairing inequality comes from an orthogonality relation. -/
 theorem eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner {c : ℝ} {u e A : Lp F 2 μ} {a q : ℝ≥0}
     (hu : eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • u z) 2 μ ≤ a * eLpNorm u 2 μ)
-    (he : MemLp (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ)
     (hqe : eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ ≤ q * eLpNorm u 2 μ)
-    (hA : MemLp (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ)
     (hinner : ‖u‖ ^ 2 ≤ |⟪e, A⟫|) :
     eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • u z) 2 μ ≤
       (a * q : ℝ≥0) * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ := by
   set N := eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ
+  have he : MemLp (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ :=
+    memLp_iff.2 (hqe.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (Lp.eLpNorm_lt_top u)))
+  -- If `N = ∞` the bound is trivial unless `a = 0`, when `hu` gives it, or `q = 0`, when `e = 0`
+  -- and hence `u = 0`.
+  rcases eq_or_ne N ⊤ with hN | hN
+  · rcases eq_or_ne (a * q) 0 with h0 | h0
+    · refine hu.trans (le_of_eq_of_le ?_ zero_le)
+      obtain ha | hq := mul_eq_zero.1 h0
+      · rw [ha, ENNReal.coe_zero, zero_mul]
+      have he0 : e = 0 := by
+        refine Lp.eq_zero_iff_ae_eq_zero.2 (((eLpNorm_eq_zero_iff two_ne_zero).1
+          (nonpos_iff_eq_zero.1 (hqe.trans_eq (by rw [hq, ENNReal.coe_zero, zero_mul])))).mono
+            fun z hz ↦ ?_)
+        exact (smul_eq_zero.1 hz).resolve_left (Real.exp_pos _).ne'
+      rw [he0, inner_zero_left, abs_zero] at hinner
+      have hu0 : u = 0 :=
+        norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 (le_antisymm hinner (by positivity)))
+      rw [(eLpNorm_eq_zero_iff two_ne_zero).2 (Lp.eq_zero_iff_ae_eq_zero.1 hu0), mul_zero]
+    · rw [hN, ENNReal.mul_top (ENNReal.coe_ne_zero.2 h0)]
+      exact le_top
+  have hA : MemLp (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ := memLp_iff.2 hN.lt_top
   have hq : (eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ).toReal ≤ q * ‖u‖ := by
     simpa [Lp.norm_def, ENNReal.toReal_mul] using ENNReal.toReal_mono
       (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top u)) hqe
@@ -264,7 +253,7 @@ theorem eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner {c : ℝ} {u e A : Lp F 2 μ}
     _ ≤ a * ENNReal.ofReal (q * N.toReal) := by gcongr
     _ = (a * q : ℝ≥0) * N := by
       rw [ENNReal.ofReal_mul q.coe_nonneg, ENNReal.ofReal_coe_nnreal,
-        ENNReal.ofReal_toReal hA.eLpNorm_ne_top, ENNReal.coe_mul, mul_assoc]
+        ENNReal.ofReal_toReal hN, ENNReal.coe_mul, mul_assoc]
 
 end L2
 
