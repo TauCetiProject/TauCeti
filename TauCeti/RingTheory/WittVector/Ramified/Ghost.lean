@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
-public import Mathlib.RingTheory.WittVector.Basic
+public import Mathlib.Algebra.MvPolynomial.Eval
+public import Mathlib.Algebra.Ring.NonZeroDivisors
 
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
@@ -45,8 +46,6 @@ then `w_n(x) = x_0 ^ (q ^ n)` forgets every coordinate but the first.
 * `TauCeti.ramifiedGhost_succ`: `w_{n+1}(x) = w_n(x ^ q) + π ^ (n + 1) x_{n+1}`.
 * `TauCeti.map_ramifiedGhost`: ghost components commute with `O`-algebra maps.
 * `TauCeti.aeval_ramifiedWittPolynomial`: `w_n` is the evaluation of the ramified Witt polynomial.
-* `TauCeti.ramifiedGhost_natCast_self_coeff`: for `π = q = p` the ramified ghost components of
-  the coordinates of a `p`-typical Witt vector are its `WittVector.ghostComponent`s.
 * `TauCeti.ramifiedGhost_injective`: the ghost map is injective when `π` is a nonzerodivisor.
 * `TauCeti.not_injective_ramifiedGhost_of_algebraMap_eq_zero`: it is not injective when `π` maps
   to `0` in a nontrivial algebra.
@@ -54,8 +53,6 @@ then `w_n(x) = x_0 ^ (q ^ n)` forgets every coordinate but the first.
 * `TauCeti.exists_ramifiedGhost_natCard_residueField_eq_iff`: the criterion over a local ring
   whose maximal ideal lies in `(π)` and whose residue field is finite, with `q` the cardinality of
   the residue field.
-* `TauCeti.WittVector.mem_range_ghostMap_iff` and `TauCeti.WittVector.ghostMap_injective`:
-  Dwork's criterion for `p`-typical Witt vectors.
 
 ## References
 
@@ -139,19 +136,6 @@ theorem ramifiedWittPolynomial_def (π : O) (q n : ℕ) :
 theorem aeval_ramifiedWittPolynomial {A : Type*} [CommRing A] [Algebra O A] (π : O) (q n : ℕ)
     (x : ℕ → A) : aeval x (ramifiedWittPolynomial π q n) = ramifiedGhost π q n x := by
   simp [ramifiedWittPolynomial, ramifiedGhost_def]
-
-/-- For `π = q = p` the ramified Witt polynomials are Mathlib's `p`-typical Witt polynomials. -/
-theorem ramifiedWittPolynomial_natCast_self (p n : ℕ) :
-    ramifiedWittPolynomial (p : O) p n = wittPolynomial p O n := by
-  simp [ramifiedWittPolynomial, wittPolynomial_eq_sum_C_mul_X_pow]
-
-/-- For `π = q = p`, the ramified ghost components of the coordinates of a `p`-typical Witt vector
-are its ghost components. -/
-@[simp]
-theorem ramifiedGhost_natCast_self_coeff {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R]
-    [Algebra O R] (x : _root_.WittVector p R) (n : ℕ) :
-    ramifiedGhost (p : O) p n x.coeff = _root_.WittVector.ghostComponent n x := by
-  simp [_root_.WittVector.ghostComponent_apply, aeval_wittPolynomial, ramifiedGhost_def]
 
 end Polynomial
 
@@ -274,6 +258,17 @@ theorem exists_ramifiedGhost_eq_iff (hq : algebraMap O A π ∣ (q : A)) (σ : A
     rw [ramifiedGhost_congr fun i hi ↦ (ghostPreimageAux_of_le y hi).symm]
     exact ramifiedGhost_ghostPreimageAux hq σ hσ hy n
 
+/-- The cardinality of a finite residue field is divisible by every element whose principal
+ideal contains the maximal ideal. -/
+theorem dvd_natCard_residueField [IsLocalRing O] [Finite (IsLocalRing.ResidueField O)]
+    (hπ : IsLocalRing.maximalIdeal O ≤ Ideal.span {π}) :
+    π ∣ (Nat.card (IsLocalRing.ResidueField O) : O) := by
+  have : Fintype (IsLocalRing.ResidueField O) := Fintype.ofFinite _
+  apply Ideal.mem_span_singleton.1
+  apply hπ
+  rw [← IsLocalRing.residue_eq_zero_iff, map_natCast, Nat.card_eq_fintype_card,
+    FiniteField.cast_card_eq_zero]
+
 /-- The ramified Dwork criterion over a local ring `O` whose maximal ideal is contained in `(π)`
 (for instance a discrete valuation ring with uniformizer `π`) and whose residue field is finite,
 with `q` the cardinality of the residue field. -/
@@ -284,47 +279,9 @@ theorem exists_ramifiedGhost_natCard_residueField_eq_iff [IsLocalRing O]
     (y : ℕ → A) :
     (∃ x : ℕ → A, ∀ n, ramifiedGhost π (Nat.card (IsLocalRing.ResidueField O)) n x = y n) ↔
       ∀ n, algebraMap O A π ^ (n + 1) ∣ y (n + 1) - σ (y n) := by
-  refine exists_ramifiedGhost_eq_iff ?_ σ hσ y
-  -- The cardinality `q` of the residue field vanishes in it, so `q ∈ 𝔪 ≤ (π)`.
-  have : Fintype (IsLocalRing.ResidueField O) := Fintype.ofFinite _
-  have hmem : (Nat.card (IsLocalRing.ResidueField O) : O) ∈ IsLocalRing.maximalIdeal O := by
-    rw [← IsLocalRing.residue_eq_zero_iff, map_natCast, Nat.card_eq_fintype_card,
-      FiniteField.cast_card_eq_zero]
-  simpa using map_dvd (algebraMap O A) (Ideal.mem_span_singleton.1 (hπ hmem))
+  exact exists_ramifiedGhost_eq_iff
+    (by simpa using map_dvd (algebraMap O A) (dvd_natCard_residueField hπ)) σ hσ y
 
 end Dwork
-
-namespace WittVector
-
-open _root_.WittVector
-
-variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A]
-
-/-- **Dwork's criterion** for `p`-typical Witt vectors: if `σ` is a ring endomorphism of `A`
-lifting the Frobenius modulo `p`, a sequence `y` is the ghost sequence of a Witt vector if and only
-if `y (n + 1) ≡ σ (y n)` modulo `p ^ (n + 1)` for every `n`. -/
-theorem mem_range_ghostMap_iff (σ : A →+* A) (hσ : ∀ a, (p : A) ∣ σ a - a ^ p) (y : ℕ → A) :
-    y ∈ Set.range (ghostMap : _root_.WittVector p A → ℕ → A) ↔
-      ∀ n, (p : A) ^ (n + 1) ∣ y (n + 1) - σ (y n) := by
-  have h := exists_ramifiedGhost_eq_iff (π := (p : ℤ)) (q := p) (by simp) σ.toIntAlgHom
-    (by simpa using hσ) y
-  simp only [map_natCast, RingHom.toIntAlgHom_apply] at h
-  rw [← h]
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨x.coeff, fun n ↦ by rw [ramifiedGhost_natCast_self_coeff, ghostMap_apply]⟩
-  · rintro ⟨x, hx⟩
-    exact ⟨mk p x, funext fun n ↦ by
-      rw [ghostMap_apply, ← ramifiedGhost_natCast_self_coeff (O := ℤ), coeff_mk, hx]⟩
-
-/-- If `p` is a nonzerodivisor of `A`, the ghost map of `p`-typical Witt vectors over `A` is
-injective. -/
-theorem ghostMap_injective (hp : (p : A) ∈ nonZeroDivisors A) :
-    Function.Injective (ghostMap : _root_.WittVector p A → ℕ → A) := fun x y h ↦ by
-  refine ext fun n ↦ congrFun (ramifiedGhost_injective (O := ℤ) (π := p) (q := p)
-    (by simpa using hp) (funext fun k ↦ ?_)) n
-  simpa [ramifiedGhost_natCast_self_coeff, ghostMap_apply] using congrFun h k
-
-end WittVector
 
 end TauCeti

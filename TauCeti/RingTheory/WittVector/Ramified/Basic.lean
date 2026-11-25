@@ -7,7 +7,11 @@ module
 
 public import TauCeti.RingTheory.WittVector.Ramified.StructurePolynomial
 
+public import Mathlib.Algebra.Algebra.Pi
+public import Mathlib.Data.Fin.VecNotation
+
 import Mathlib.Algebra.Ring.MinimalAxioms
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Ramified Witt vectors
@@ -20,6 +24,10 @@ the ring laws over every `A`, including algebras with `π`-torsion.
 The ramified ghost components are `O`-algebra homomorphisms, and an `O`-algebra map on
 coefficients acts coordinatewise on Witt vectors. This is the arbitrary-algebra construction of
 Fargues and Fontaine, *Courbes et fibrés vectoriels en théorie de Hodge p-adique*, §1.2.1.
+
+The evaluation construction, local operation instances, ghost compatibility, and coordinatewise
+maps follow the formal precedent of `TauCeti.RingTheory.WittVector.Big.Basic`. Here the ring
+laws follow directly from substitution of the ramified structure polynomials.
 -/
 
 public section
@@ -68,7 +76,8 @@ private theorem peval_X (i : ι) (x : ι → W A) : peval (X i) x = x i := by
   ext n
   simp [peval]
 
-/-- The constant with all ghost components equal to the image of `a`. -/
+/-- The vector obtained by evaluating the ramified structure polynomials of `C a`.
+Each ghost component equals `algebraMap O A a`. -/
 private noncomputable def constant (a : O) : W A :=
   peval (C a : MvPolynomial Empty O) Empty.elim
 
@@ -91,15 +100,15 @@ private theorem peval_add (Φ Ψ : MvPolynomial ι O) (x : ι → W A) :
     peval (Φ + Ψ) x = peval Φ x + peval Ψ x := by
   have h := peval_aeval ![Φ, Ψ] (X 0 + X 1) x
   rw [map_add, aeval_X, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] at h
-  refine h.trans (congrArg (peval (X (0 : Fin 2) + X 1)) (funext fun i ↦ ?_))
-  fin_cases i <;> rfl
+  exact h.trans (congrArg (peval (X (0 : Fin 2) + X 1))
+    (Matrix.comp_vec2 (fun Φ ↦ peval Φ x) Φ Ψ))
 
 private theorem peval_mul (Φ Ψ : MvPolynomial ι O) (x : ι → W A) :
     peval (Φ * Ψ) x = peval Φ x * peval Ψ x := by
   have h := peval_aeval ![Φ, Ψ] (X 0 * X 1) x
   rw [map_mul, aeval_X, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] at h
-  refine h.trans (congrArg (peval (X (0 : Fin 2) * X 1)) (funext fun i ↦ ?_))
-  fin_cases i <;> rfl
+  exact h.trans (congrArg (peval (X (0 : Fin 2) * X 1))
+    (Matrix.comp_vec2 (fun Φ ↦ peval Φ x) Φ Ψ))
 
 private theorem peval_neg (Φ : MvPolynomial ι O) (x : ι → W A) :
     peval (-Φ) x = -peval Φ x := by
@@ -148,29 +157,26 @@ end RingConstruction
 
 attribute [instance] instCommRing
 
-/-- The coefficient map sends `a` to the Witt vector with constant ghosts `a`. -/
+/-- Polynomial evaluation as a ring homomorphism. -/
+private noncomputable def pevalRingHom (x : ι → W A) : MvPolynomial ι O →+* W A where
+  toFun Φ := peval Φ x
+  map_zero' := peval_zero x
+  map_one' := peval_one x
+  map_add' Φ Ψ := peval_add Φ Ψ x
+  map_mul' Φ Ψ := peval_mul Φ Ψ x
+
+/-- The coefficient map evaluates the ramified structure polynomials of `C a`.
+Each ghost component equals `algebraMap O A a`. -/
 @[instance_reducible]
-noncomputable def instAlgebra : Algebra O (W A) := by
-  exact RingHom.toAlgebra
-    { toFun := constant
-      map_one' := rfl
-      map_zero' := rfl
-      map_add' := fun a b ↦ by
-        rw [← peval_C (x := (Empty.elim : Empty → W A)), map_add, peval_add, peval_C, peval_C]
-      map_mul' := fun a b ↦ by
-        rw [← peval_C (x := (Empty.elim : Empty → W A)), map_mul, peval_mul, peval_C, peval_C] }
+noncomputable def instAlgebra : Algebra O (W A) :=
+  ((pevalRingHom (Empty.elim : Empty → W A)).comp C).toAlgebra
 
 attribute [instance] instAlgebra
 
 private theorem aeval_eq_peval (x : ι → W A) (Φ : MvPolynomial ι O) :
     aeval x Φ = peval Φ x := by
   let e : MvPolynomial ι O →ₐ[O] W A :=
-    { toFun := fun f ↦ peval f x
-      map_zero' := peval_zero x
-      map_one' := peval_one x
-      map_add' := fun f g ↦ peval_add f g x
-      map_mul' := fun f g ↦ peval_mul f g x
-      commutes' := fun a ↦ peval_C a x }
+    { pevalRingHom x with commutes' := fun a ↦ peval_C a x }
   have he : aeval x = e := by
     ext i : 1
     rw [aeval_X]
@@ -186,34 +192,76 @@ theorem coeff_aeval (x : ι → W A) (Φ : MvPolynomial ι O) (n : ℕ) :
   rw [aeval_eq_peval]
   rfl
 
-private theorem ramifiedGhost_peval (n : ℕ) (Φ : MvPolynomial ι O) (x : ι → W A) :
-    ramifiedGhost π q n (peval Φ x).coeff =
-      aeval (fun i ↦ ramifiedGhost π q n (x i).coeff) Φ :=
-  ramifiedGhost_aeval_ramifiedWittStructure _ _ _ _ _
+/-- Addition is evaluation of the ramified addition structure polynomials. -/
+theorem add_coeff (x y : W A) (n : ℕ) :
+    (x + y).coeff n = aeval (Function.uncurry ![x.coeff, y.coeff])
+      (ramifiedWittStructure (Fact.out : maximalIdeal O = Ideal.span {π})
+        (Fact.out : π ∈ nonZeroDivisors O) (X (0 : Fin 2) + X 1) n) := by
+  rw [← Matrix.comp_vec2 coeff x y]
+  have h := coeff_aeval ![x, y] (X 0 + X 1 : MvPolynomial (Fin 2) O) n
+  rw [map_add, aeval_X, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  exact h
+
+/-- Multiplication is evaluation of the ramified multiplication structure polynomials. -/
+theorem mul_coeff (x y : W A) (n : ℕ) :
+    (x * y).coeff n = aeval (Function.uncurry ![x.coeff, y.coeff])
+      (ramifiedWittStructure (Fact.out : maximalIdeal O = Ideal.span {π})
+        (Fact.out : π ∈ nonZeroDivisors O) (X (0 : Fin 2) * X 1) n) := by
+  rw [← Matrix.comp_vec2 coeff x y]
+  have h := coeff_aeval ![x, y] (X 0 * X 1 : MvPolynomial (Fin 2) O) n
+  rw [map_mul, aeval_X, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  exact h
+
+/-- Negation is evaluation of the ramified negation structure polynomials. -/
+theorem neg_coeff (x : W A) (n : ℕ) :
+    (-x).coeff n = aeval (fun ik : Unit × ℕ ↦ x.coeff ik.2)
+      (ramifiedWittStructure (Fact.out : maximalIdeal O = Ideal.span {π})
+        (Fact.out : π ∈ nonZeroDivisors O) (-X ()) n) := by
+  simpa using coeff_aeval (fun _ : Unit ↦ x) (-X ()) n
+
+/-- Subtraction is evaluation of the ramified subtraction structure polynomials. -/
+theorem sub_coeff (x y : W A) (n : ℕ) :
+    (x - y).coeff n = aeval (Function.uncurry ![x.coeff, y.coeff])
+      (ramifiedWittStructure (Fact.out : maximalIdeal O = Ideal.span {π})
+        (Fact.out : π ∈ nonZeroDivisors O) (X (0 : Fin 2) - X 1) n) := by
+  rw [← Matrix.comp_vec2 coeff x y]
+  have h := coeff_aeval ![x, y] (X 0 - X 1 : MvPolynomial (Fin 2) O) n
+  rw [map_sub, aeval_X, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  exact h
+
+/-- The scalar map is evaluation of the structure polynomials of the variable-free `C a`. -/
+theorem algebraMap_coeff (a : O) (n : ℕ) :
+    (algebraMap O (W A) a).coeff n = aeval (fun ik : Empty × ℕ ↦ ik.1.elim)
+      (ramifiedWittStructure (Fact.out : maximalIdeal O = Ideal.span {π})
+        (Fact.out : π ∈ nonZeroDivisors O) (C a : MvPolynomial Empty O) n) := by
+  have h := coeff_aeval (Empty.elim : Empty → W A) (C a) n
+  simpa only [aeval_C, Subsingleton.elim (fun ik : Empty × ℕ ↦ (ik.1.elim : W A).coeff ik.2)
+    (fun ik : Empty × ℕ ↦ ik.1.elim)] using h
+
+private theorem ramifiedGhost_aeval (n : ℕ) (Φ : MvPolynomial ι O) (x : ι → W A) :
+    ramifiedGhost π q n (aeval x Φ).coeff =
+      aeval (fun i ↦ ramifiedGhost π q n (x i).coeff) Φ := by
+  rw [aeval_eq_peval]
+  exact ramifiedGhost_aeval_ramifiedWittStructure _ _ _ _ _
 
 /-- The `n`-th ramified ghost component as an algebra homomorphism. -/
 noncomputable def ghostComponent (n : ℕ) : W A →ₐ[O] A where
   toFun x := ramifiedGhost π q n x.coeff
   map_zero' := by
-    have h := ramifiedGhost_peval n (C (0 : O)) (Empty.elim : Empty → W A)
-    rw [aeval_C, map_zero (algebraMap O A)] at h
-    exact h
+    simpa only [map_zero] using
+      ramifiedGhost_aeval n (0 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
   map_one' := by
-    have h := ramifiedGhost_peval n (C (1 : O)) (Empty.elim : Empty → W A)
-    rw [aeval_C, map_one (algebraMap O A)] at h
-    exact h
+    simpa only [map_one] using
+      ramifiedGhost_aeval n (1 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
   map_add' x y := by
-    have h := ramifiedGhost_peval n (X 0 + X 1) ![x, y]
-    rw [map_add, aeval_X, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] at h
-    exact h
+    have h := ramifiedGhost_aeval n (X 0 + X 1 : MvPolynomial (Fin 2) O) ![x, y]
+    simpa only [map_add, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] using h
   map_mul' x y := by
-    have h := ramifiedGhost_peval n (X 0 * X 1) ![x, y]
-    rw [map_mul, aeval_X, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] at h
-    exact h
+    have h := ramifiedGhost_aeval n (X 0 * X 1 : MvPolynomial (Fin 2) O) ![x, y]
+    simpa only [map_mul, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] using h
   commutes' a := by
-    have h := ramifiedGhost_peval n (C a) (Empty.elim : Empty → W A)
-    rw [aeval_C] at h
-    exact h
+    simpa only [aeval_C] using
+      ramifiedGhost_aeval n (C a : MvPolynomial Empty O) (Empty.elim : Empty → W A)
 
 theorem ghostComponent_apply (n : ℕ) (x : W A) :
     ghostComponent n x = ramifiedGhost π q n x.coeff :=
@@ -222,6 +270,32 @@ theorem ghostComponent_apply (n : ℕ) (x : W A) :
 @[simp]
 theorem ghostComponent_zero (x : W A) : ghostComponent 0 x = x.coeff 0 := by
   rw [ghostComponent_apply, ramifiedGhost_zero]
+
+/-- The zeroth coordinate of a sum is the sum of the zeroth coordinates. -/
+@[simp]
+theorem add_coeff_zero (x y : W A) : (x + y).coeff 0 = x.coeff 0 + y.coeff 0 := by
+  simpa using (ghostComponent (π := π) (A := A) 0).map_add x y
+
+/-- The zeroth coordinate of a product is the product of the zeroth coordinates. -/
+@[simp]
+theorem mul_coeff_zero (x y : W A) : (x * y).coeff 0 = x.coeff 0 * y.coeff 0 := by
+  simpa using (ghostComponent (π := π) (A := A) 0).map_mul x y
+
+/-- Negation negates the zeroth coordinate. -/
+@[simp]
+theorem neg_coeff_zero (x : W A) : (-x).coeff 0 = -x.coeff 0 := by
+  simpa using (ghostComponent (π := π) (A := A) 0).map_neg x
+
+/-- Subtraction subtracts the zeroth coordinates. -/
+@[simp]
+theorem sub_coeff_zero (x y : W A) : (x - y).coeff 0 = x.coeff 0 - y.coeff 0 := by
+  simpa using (ghostComponent (π := π) (A := A) 0).map_sub x y
+
+/-- The zeroth coordinate of a scalar is its image in the coefficient algebra. -/
+@[simp]
+theorem algebraMap_coeff_zero (a : O) :
+    (algebraMap O (W A) a).coeff 0 = algebraMap O A a := by
+  simpa only [ghostComponent_zero] using (ghostComponent (π := π) (A := A) 0).commutes a
 
 /-- The algebra homomorphism sending a ramified Witt vector to its full ghost sequence. -/
 noncomputable def ghostMap : W A →ₐ[O] (ℕ → A) :=
@@ -246,49 +320,50 @@ variable {B D : Type*} [CommRing B] [Algebra O B] [CommRing D] [Algebra O D]
 private def mapFun (f : A →ₐ[O] B) (x : W A) : W B :=
   ⟨fun n ↦ f (x.coeff n)⟩
 
-private theorem mapFun_peval (f : A →ₐ[O] B) (Φ : MvPolynomial ι O) (x : ι → W A) :
-    mapFun f (peval Φ x) = peval Φ (fun i ↦ mapFun f (x i)) := by
+private theorem mapFun_aeval (f : A →ₐ[O] B) (Φ : MvPolynomial ι O) (x : ι → W A) :
+    mapFun f (aeval x Φ) = aeval (fun i ↦ mapFun f (x i)) Φ := by
   ext n
-  simp only [mapFun, peval, coeff_mk, comp_aeval_apply]
-
-private theorem mapFun_constant (f : A →ₐ[O] B) (a : O) :
-    mapFun f (constant (π := π) a) = constant a := by
-  rw [constant, mapFun_peval, constant]
-  congr 1
-  funext i
-  exact i.elim
+  simp only [mapFun, coeff_mk, coeff_aeval, comp_aeval_apply]
 
 /-- The algebra map on ramified Witt vectors induced by an algebra map on coefficients. -/
 def map (f : A →ₐ[O] B) : W A →ₐ[O] W B where
   toFun := mapFun f
-  map_zero' := mapFun_constant f 0
-  map_one' := mapFun_constant f 1
+  map_zero' := by
+    simpa only [map_zero] using
+      mapFun_aeval f (0 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
+  map_one' := by
+    simpa only [map_one] using
+      mapFun_aeval f (1 : MvPolynomial Empty O) (Empty.elim : Empty → W A)
   map_add' x y := by
-    refine (mapFun_peval f (X 0 + X 1) ![x, y]).trans ?_
-    refine congrArg (peval (X (0 : Fin 2) + X 1)) (funext fun i ↦ ?_)
-    fin_cases i <;> rfl
+    have h := mapFun_aeval f (X 0 + X 1 : MvPolynomial (Fin 2) O) ![x, y]
+    simpa only [map_add, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] using h
   map_mul' x y := by
-    refine (mapFun_peval f (X 0 * X 1) ![x, y]).trans ?_
-    refine congrArg (peval (X (0 : Fin 2) * X 1)) (funext fun i ↦ ?_)
-    fin_cases i <;> rfl
-  commutes' := mapFun_constant f
+    have h := mapFun_aeval f (X 0 * X 1 : MvPolynomial (Fin 2) O) ![x, y]
+    simpa only [map_mul, aeval_X, Matrix.cons_val_zero, Matrix.cons_val_one] using h
+  commutes' a := by
+    simpa only [aeval_C] using
+      mapFun_aeval f (C a : MvPolynomial Empty O) (Empty.elim : Empty → W A)
 
+/-- A coefficient map acts on each Witt coordinate separately. -/
 @[simp]
 theorem coeff_map (f : A →ₐ[O] B) (x : W A) (n : ℕ) :
     (map f x).coeff n = f (x.coeff n) :=
   (rfl)
 
+/-- The identity coefficient map induces the identity on ramified Witt vectors. -/
 @[simp]
 theorem map_id : map (π := π) (AlgHom.id O A) = AlgHom.id O (W A) := by
   ext x n
   simp
 
+/-- The induced maps on ramified Witt vectors preserve composition. -/
 @[simp]
 theorem map_comp (f : A →ₐ[O] B) (g : B →ₐ[O] D) :
     map (π := π) (g.comp f) = (map g).comp (map f) := by
   ext x n
   simp
 
+/-- Taking a ghost component commutes with an algebra map on coefficients. -/
 @[simp]
 theorem ghostComponent_map (f : A →ₐ[O] B) (x : W A) (n : ℕ) :
     ghostComponent n (map f x) = f (ghostComponent n x) := by
@@ -320,68 +395,6 @@ theorem one_coeff (n : ℕ) : (1 : W A).coeff n = (Pi.single 0 (1 : A) : ℕ →
     simp [ghostComponent_apply, ramifiedGhost_def, Finset.sum_range_succ', hpow]
   rw [← map_one (map (π := π) (Algebra.ofId O A)), h, coeff_map, coeff_mk]
   by_cases hn : n = 0 <;> simp [hn]
-
-section PTypical
-
-variable {p : ℕ} [Fact p.Prime]
-  [Fact (maximalIdeal O = Ideal.span {(p : O)})] [Fact ((p : O) ∈ nonZeroDivisors O)]
-
-private theorem coeff_aeval_map_intCast (hq : Nat.card (ResidueField O) = p)
-    (x : ι → RamifiedWittVector (p : O) A)
-    (Φ : MvPolynomial ι ℤ) (n : ℕ) :
-    (aeval x (MvPolynomial.map (Int.castRingHom O) Φ)).coeff n =
-      aeval (fun ik : ι × ℕ ↦ (x ik.1).coeff ik.2) (wittStructureInt p Φ n) := by
-  rw [coeff_aeval, ramifiedWittStructure_natCast_eq_map_wittStructureInt hq]
-  exact (map_aeval_eq_aeval_map (Int.castRingHom O) (RingHom.id A) (Subsingleton.elim _ _) _ _).symm
-
-/-- For uniformizer `p` and residue cardinality `p`, identifying Witt coordinates gives a ring
-isomorphism with Mathlib's `p`-typical Witt vectors. -/
-def ringEquivWittVector (hq : Nat.card (ResidueField O) = p) :
-    RamifiedWittVector (p : O) A ≃+* _root_.WittVector p A where
-  toFun x := _root_.WittVector.mk p x.coeff
-  invFun x := mk x.coeff
-  left_inv x := by ext n; rfl
-  right_inv x := by ext n; rfl
-  map_add' x y := by
-    ext n
-    rw [_root_.WittVector.coeff_mk, _root_.WittVector.add_coeff]
-    have h := coeff_aeval_map_intCast hq ![x, y] (X 0 + X 1) n
-    simp only [map_add, map_X, aeval_X, Matrix.cons_val_one, Matrix.cons_val_zero] at h
-    rw [h, _root_.WittVector.wittAdd, _root_.WittVector.peval]
-    congr 2
-    funext ⟨i, k⟩
-    fin_cases i <;> rfl
-  map_mul' x y := by
-    ext n
-    rw [_root_.WittVector.coeff_mk, _root_.WittVector.mul_coeff]
-    have h := coeff_aeval_map_intCast hq ![x, y] (X 0 * X 1) n
-    simp only [map_mul, map_X, aeval_X, Matrix.cons_val_one, Matrix.cons_val_zero] at h
-    rw [h, _root_.WittVector.wittMul, _root_.WittVector.peval]
-    congr 2
-    funext ⟨i, k⟩
-    fin_cases i <;> rfl
-
-@[simp]
-theorem coeff_ringEquivWittVector (hq : Nat.card (ResidueField O) = p)
-    (x : RamifiedWittVector (p : O) A) (n : ℕ) :
-    (ringEquivWittVector hq x).coeff n = x.coeff n :=
-  (rfl)
-
-@[simp]
-theorem coeff_ringEquivWittVector_symm (hq : Nat.card (ResidueField O) = p)
-    (x : _root_.WittVector p A) (n : ℕ) :
-    ((ringEquivWittVector hq).symm x : RamifiedWittVector (p : O) A).coeff n = x.coeff n :=
-  (rfl)
-
-/-- The coordinate comparison intertwines the ramified and `p`-typical ghost homomorphisms. -/
-@[simp]
-theorem ghostComponent_ringEquivWittVector (hq : Nat.card (ResidueField O) = p)
-    (x : RamifiedWittVector (p : O) A) (n : ℕ) :
-    _root_.WittVector.ghostComponent n (ringEquivWittVector hq x) = ghostComponent n x := by
-  rw [ghostComponent_apply, hq, ← ramifiedGhost_natCast_self_coeff (O := O)]
-  exact ramifiedGhost_congr (fun i _ ↦ coeff_ringEquivWittVector hq x i)
-
-end PTypical
 
 end RamifiedWittVector
 
