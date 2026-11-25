@@ -134,22 +134,22 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
     (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ ⋃ j, range (i j))
     (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
     {r : ι → ℕ}
-    (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h j).negativeNormalSpace hn (g j).toRiemannianMetric))
     (K : Type) [CommRing K] (n : ℕ) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
         fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s) :=
@@ -164,9 +164,9 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
       ∐ fun j : {j // r j ≤ n} ↦ twistedHomology (signLocalSystem (Fin (r j) → ℝ)
         (fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s) K
         ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)) := by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   set V : ∀ j, S j → Type := fun j s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s
   let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j)) :=
@@ -199,22 +199,22 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
     (h : IsMorseBottFamily i f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
     (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
     {r : ι → ℕ}
-    (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
     (K : Type) [CommRing K] (n : ℕ) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
         fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
@@ -237,9 +237,9 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
           (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
             (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
           (n - r j)) := by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   set V : ∀ j, S j → Type := fun j s ↦
     (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s

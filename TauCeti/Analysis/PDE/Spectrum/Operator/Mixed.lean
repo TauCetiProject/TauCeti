@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormOperator
+public import TauCeti.Analysis.PDE.MixedProblem
 public import TauCeti.Analysis.PDE.Spectrum.Operator.Basic
-public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 
 /-!
 # The mixed realization of a divergence-form operator
 
 Let `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` be a divergence-form operator with essentially bounded
 coefficients on an open set `Ω ⊆ ℝⁿ`, and let `Γ` be a set disjoint from `Ω`, typically a part of
-its boundary. Write `H¹_Γ(Ω)` for the space `TauCeti.w1pVanishingOnSubmodule mu Ω 2 Γ` of Sobolev
+its boundary. Write `H¹_Γ(Ω)` for the space `TauCeti.W1pVanishingOn mu Ω 2 Γ` of Sobolev
 functions vanishing on `Γ` and `a(u, v)` for the energy form of `L`. This file realizes `L` with
 the Dirichlet condition on `Γ` and the natural (conormal) condition on the rest of the boundary as
 an unbounded operator on `L²(Ω)`, the partial linear map `TauCeti.PDE.mixedOperator`. Its graph
@@ -36,7 +36,8 @@ inequality**
 
 `θ ‖v‖²_{H¹} ≤ a(v, v) + ω ‖v‖²_{L²}` for every `v ∈ H¹_Γ(Ω)`, with `θ > 0`,
 
-the mixed form `a + ω ⟪·, ·⟫_{L²}` (`TauCeti.PDE.mixedForm`) is coercive on `H¹_Γ(Ω)`
+the mixed form `a + ω ⟪·, ·⟫_{L²}` (`TauCeti.PDE.mixedForm`), the energy form on `H¹_Γ(Ω)`
+(`TauCeti.PDE.energyFormH1LVanishingOn`) of the shifted operator `L + ω`, is coercive on `H¹_Γ(Ω)`
 (`TauCeti.PDE.isCoercive_mixedForm`), and the realization is the operator of the form `a` along the
 value map shifted by `ω` (`TauCeti.PDE.mixedOperator_eq_formOperator`); the shift does not change
 it. Its operator theory follows from that construction:
@@ -112,6 +113,9 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ}
 
+attribute [local instance] W1pVanishingOn.instNormedAddCommGroup
+  W1pVanishingOn.instInnerProductSpace
+
 /-! ### The energy form on `H¹_Γ(Ω)` -/
 
 /-- **The mixed form**: the energy form `a` of `L` on `H¹_Γ(Ω)` shifted by `ω` times the `L²`
@@ -121,35 +125,32 @@ form operator along the value map (`TauCeti.PDE.mixedOperator_eq_formOperator`).
 def mixedForm
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (Γ : Set (EuclideanSpace ℝ ι)) (omega : ℝ) :
-    (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ]
-      (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule →L[ℝ] ℝ :=
-  (energyFormH1L (memLp_energyIntegrand_mass_sub_const hcoeff (-omega))).bilinearComp
-    (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL
-    (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule.subtypeL
+    W1pVanishingOn mu Omega 2 Γ →L[ℝ] W1pVanishingOn mu Omega 2 Γ →L[ℝ] ℝ :=
+  energyFormH1LVanishingOn (memLp_energyIntegrand_mass_sub_const hcoeff (-omega)) Γ
 
 /-- The mixed form is `a(u, v) + ω ⟪u, v⟫_{L²(Ω)}`. -/
 @[simp]
 theorem mixedForm_apply
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (omega : ℝ) (u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
+    (omega : ℝ) (u v : W1pVanishingOn mu Omega 2 Γ) :
     mixedForm hcoeff Γ omega u v =
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
         omega * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
-  refine (energyFormH1L_apply (memLp_energyIntegrand_mass_sub_const hcoeff (-omega))
-    (u : W1p mu Omega 2) v).trans ?_
+  refine (energyFormH1LVanishingOn_apply
+    (memLp_energyIntegrand_mass_sub_const hcoeff (-omega)) u v).trans ?_
   rw [energyFormH1_mass_sub_const hcoeff]
   ring
 
 private theorem mixedForm_zero_apply
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
+    (u v : W1pVanishingOn mu Omega 2 Γ) :
     mixedForm hcoeff Γ 0 u v = energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
   rw [mixedForm_apply, zero_mul, add_zero]
 
 /-- The mixed form at `ω` is the unshifted one plus `ω ⟪J u, J v⟫` along the value map `J`. -/
 private theorem mixedForm_apply_eq_zero_add
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (omega : ℝ) (u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
+    (omega : ℝ) (u v : W1pVanishingOn mu Omega 2 Γ) :
     mixedForm hcoeff Γ omega u v =
       mixedForm hcoeff Γ 0 u v +
         omega * ⟪W1pVanishingOn.valueL u, W1pVanishingOn.valueL v⟫_ℝ := by
@@ -162,7 +163,7 @@ shifted by `ω` is coercive on `H¹_Γ(Ω)`. -/
 theorem isCoercive_mixedForm
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     {theta omega : ℝ} (htheta : 0 < theta)
-    (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    (hgarding : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
         energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2) :
@@ -179,7 +180,7 @@ private def mixedGraph
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (Γ : Set (EuclideanSpace ℝ ι)) :
     Submodule ℝ (Lp ℝ 2 (mu.restrict Omega) × Lp ℝ 2 (mu.restrict Omega)) where
-  carrier := {x | ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+  carrier := {x | ∃ u : W1pVanishingOn mu Omega 2 Γ,
     W1pVanishingOn.valueL u = x.1 ∧
       ∀ v, mixedForm hcoeff Γ 0 u v = ⟪x.2, W1pVanishingOn.valueL v⟫_ℝ}
   add_mem' := by
@@ -197,7 +198,7 @@ private def mixedGraph
 private theorem mem_mixedGraph_iff
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     {x : Lp ℝ 2 (mu.restrict Omega) × Lp ℝ 2 (mu.restrict Omega)} :
-    x ∈ mixedGraph hcoeff Γ ↔ ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    x ∈ mixedGraph hcoeff Γ ↔ ∃ u : W1pVanishingOn mu Omega 2 Γ,
       W1pVanishingOn.valueL u = x.1 ∧
         ∀ v, mixedForm hcoeff Γ 0 u v = ⟪x.2, W1pVanishingOn.valueL v⟫_ℝ :=
   Iff.rfl
@@ -232,7 +233,7 @@ def mixedOperator
 private theorem mem_graph_mixedOperator_iff_mixedForm
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) (x : Lp ℝ 2 (mu.restrict Omega) × Lp ℝ 2 (mu.restrict Omega)) :
-    x ∈ (mixedOperator hcoeff Γ).graph ↔ ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    x ∈ (mixedOperator hcoeff Γ).graph ↔ ∃ u : W1pVanishingOn mu Omega 2 Γ,
       W1pVanishingOn.valueL u = x.1 ∧
         ∀ v, mixedForm hcoeff Γ 0 u v = ⟪x.2, W1pVanishingOn.valueL v⟫_ℝ := by
   rw [mixedOperator, Submodule.toLinearPMap_graph_eq _ (mixedGraph_snd_eq_zero hcoeff hΓ),
@@ -245,9 +246,9 @@ theorem mem_graph_mixedOperator_iff
     (hΓ : Disjoint Γ Omega)
     {x : Lp ℝ 2 (mu.restrict Omega) × Lp ℝ 2 (mu.restrict Omega)} :
     x ∈ (mixedOperator hcoeff Γ).graph ↔
-      ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      ∃ u : W1pVanishingOn mu Omega 2 Γ,
         W1p.value (u : W1p mu Omega 2) = x.1 ∧
-          ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+          ∀ v : W1pVanishingOn mu Omega 2 Γ,
             energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
               ⟪x.2, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
   rw [mem_graph_mixedOperator_iff_mixedForm hcoeff hΓ]
@@ -259,9 +260,9 @@ theorem mem_domain_mixedOperator_iff
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) {f : Lp ℝ 2 (mu.restrict Omega)} :
     f ∈ (mixedOperator hcoeff Γ).domain ↔
-      ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      ∃ u : W1pVanishingOn mu Omega 2 Γ,
         W1p.value (u : W1p mu Omega 2) = f ∧ ∃ g : Lp ℝ 2 (mu.restrict Omega),
-          ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+          ∀ v : W1pVanishingOn mu Omega 2 Γ,
             energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
               ⟪g, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
   simp only [LinearPMap.mem_domain_iff, mem_graph_mixedOperator_iff hcoeff hΓ]
@@ -272,8 +273,8 @@ theorem mem_domain_mixedOperator_iff
 theorem value_mem_domain_mixedOperator
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) {g : Lp ℝ 2 (mu.restrict Omega)}
-    {u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule}
-    (hu : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    {u : W1pVanishingOn mu Omega 2 Γ}
+    (hu : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
         ⟪g, W1p.value (v : W1p mu Omega 2)⟫_ℝ) :
     W1p.value (u : W1p mu Omega 2) ∈ (mixedOperator hcoeff Γ).domain :=
@@ -284,9 +285,9 @@ weak solution of `L u = A f`: `a(u, v) = ⟪A f, v⟫_{L²(Ω)}` for every `v �
 theorem energyFormH1_eq_inner_mixedOperator
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) (f : (mixedOperator hcoeff Γ).domain)
-    {u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule}
+    {u : W1pVanishingOn mu Omega 2 Γ}
     (hu : W1p.value (u : W1p mu Omega 2) = f)
-    (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
+    (v : W1pVanishingOn mu Omega 2 Γ) :
     energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
       ⟪mixedOperator hcoeff Γ f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
   obtain ⟨w, hw, hwf⟩ := (mem_graph_mixedOperator_iff hcoeff hΓ).1
@@ -300,9 +301,9 @@ weakly solves `L u = g`. -/
 theorem mixedOperator_apply_eq
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) {f : (mixedOperator hcoeff Γ).domain}
-    {g : Lp ℝ 2 (mu.restrict Omega)} {u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule}
+    {g : Lp ℝ 2 (mu.restrict Omega)} {u : W1pVanishingOn mu Omega 2 Γ}
     (hu : W1p.value (u : W1p mu Omega 2) = f)
-    (hg : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    (hg : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
         ⟪g, W1p.value (v : W1p mu Omega 2)⟫_ℝ) :
     mixedOperator hcoeff Γ f = g :=
@@ -316,9 +317,9 @@ theorem exists_mixedOperator_apply_eq_smul_iff
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) {kappa : ℝ} {f : Lp ℝ 2 (mu.restrict Omega)} :
     (∃ hf : f ∈ (mixedOperator hcoeff Γ).domain, mixedOperator hcoeff Γ ⟨f, hf⟩ = kappa • f) ↔
-      ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      ∃ u : W1pVanishingOn mu Omega 2 Γ,
         W1p.value (u : W1p mu Omega 2) = f ∧
-          ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+          ∀ v : W1pVanishingOn mu Omega 2 Γ,
             energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
               kappa * ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
   have hgraph : (∃ hf : f ∈ (mixedOperator hcoeff Γ).domain,
@@ -332,7 +333,7 @@ the `u ∈ H¹_Γ(Ω)` whose value is `f`. -/
 theorem inner_mixedOperator_eq_energyFormH1
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) (f : (mixedOperator hcoeff Γ).domain)
-    {u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule}
+    {u : W1pVanishingOn mu Omega 2 Γ}
     (hu : W1p.value (u : W1p mu Omega 2) = f) :
     ⟪mixedOperator hcoeff Γ f, (f : Lp ℝ 2 (mu.restrict Omega))⟫_ℝ =
       energyFormH1 a b c (u : W1p mu Omega 2) (u : W1p mu Omega 2) := by
@@ -345,18 +346,18 @@ theorem resolvent_mixedOperator_apply
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) {kappa : ℝ}
     (hkappa : kappa ∈ (mixedOperator hcoeff Γ).resolventSet)
-    {f : Lp ℝ 2 (mu.restrict Omega)} {u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule}
-    (hu : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1pVanishingOn mu Omega 2 Γ}
+    (hu : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) -
           kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ =
         ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ) :
     (mixedOperator hcoeff Γ).resolvent kappa f = -W1p.value (u : W1p mu Omega 2) := by
   -- `L (-u) = -(f + κ u)`, so `(κ - L) (-u) = f`.
-  have hval : W1p.value ((-u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
+  have hval : W1p.value ((-u : W1pVanishingOn mu Omega 2 Γ) :
       W1p mu Omega 2) = -W1p.value (u : W1p mu Omega 2) := by
     rw [← W1pVanishingOn.valueL_apply, ← W1pVanishingOn.valueL_apply, map_neg]
-  have hsol (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
-      energyFormH1 a b c ((-u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
+  have hsol (v : W1pVanishingOn mu Omega 2 Γ) :
+      energyFormH1 a b c ((-u : W1pVanishingOn mu Omega 2 Γ) :
         W1p mu Omega 2) (v : W1p mu Omega 2) =
         ⟪-(f + kappa • W1p.value (u : W1p mu Omega 2)), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
     rw [NegMemClass.coe_neg, energyFormH1_neg_left, inner_neg_left, inner_add_left,
@@ -418,7 +419,7 @@ Gårding inequality `θ ‖v‖²_{H¹} ≤ a(v, v) + ω ‖v‖²_{L²}` on `H�
 theorem neg_mem_resolventSet_mixedOperator
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) (htheta : 0 < theta)
-    (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    (hgarding : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
         energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2) :
@@ -433,7 +434,7 @@ domain. -/
 theorem neg_mul_norm_sq_le_inner_mixedOperator
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) (htheta : 0 ≤ theta)
-    (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    (hgarding : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
         energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
@@ -451,11 +452,11 @@ symmetric principal coefficient the symmetry hypothesis is supplied by
 theorem isSelfAdjoint_mixedOperator
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) (htheta : 0 < theta)
-    (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    (hgarding : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
         energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
-    (hsymm : ∀ u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    (hsymm : ∀ u v : W1pVanishingOn mu Omega 2 Γ,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2)) :
     IsSelfAdjoint (mixedOperator hcoeff Γ) := by
@@ -471,7 +472,7 @@ value map `H¹(Ω) → L²(Ω)` is compact. -/
 theorem hasCompactResolvent_mixedOperator
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) (htheta : 0 < theta)
-    (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    (hgarding : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
         energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
@@ -489,14 +490,14 @@ property, `κ` lies in the spectrum exactly when `a(u, v) = κ ⟪u, v⟫_{L²(�
 theorem mem_spectrum_mixedOperator_iff
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) (htheta : 0 < theta)
-    (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    (hgarding : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
         energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
     (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) {kappa : ℝ} :
     kappa ∈ (mixedOperator hcoeff Γ).spectrum ↔
-      ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule, u ≠ 0 ∧
-        ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      ∃ u : W1pVanishingOn mu Omega 2 Γ, u ≠ 0 ∧
+        ∀ v : W1pVanishingOn mu Omega 2 Γ,
           energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
             kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
   have hB := isCoercive_mixedForm hcoeff htheta hgarding
@@ -511,14 +512,14 @@ consists of the mixed eigenvalues. -/
 theorem spectrum_mixedOperator
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hΓ : Disjoint Γ Omega) (htheta : 0 < theta)
-    (hgarding : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    (hgarding : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       theta * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
         energyFormH1 a b c (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
           omega * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2)
     (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) :
     (mixedOperator hcoeff Γ).spectrum =
-      {kappa | ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule, u ≠ 0 ∧
-        ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      {kappa | ∃ u : W1pVanishingOn mu Omega 2 Γ, u ≠ 0 ∧
+        ∀ v : W1pVanishingOn mu Omega 2 Γ,
           energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
             kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ} :=
   Set.ext fun _ ↦ mem_spectrum_mixedOperator_iff hcoeff hΓ htheta hgarding hK
@@ -534,7 +535,7 @@ theorem mixedOperator_frontier
       dirichletOperator hcoeff hcoercive :=
   LinearPMap.eq_of_eq_graph <| Submodule.ext fun x ↦ by
     rw [mem_graph_mixedOperator_iff _ (disjoint_frontier_iff_isOpen.2 Omega.isOpen),
-      mem_graph_dirichletOperator_iff, w1pVanishingOnSubmodule_frontier]
+      mem_graph_dirichletOperator_iff, W1pVanishingOn, w1pVanishingOnSubmodule_frontier]
     simp only [isWeakSolutionDirichlet_iff_inner]
 
 /-! ### The mixed Laplacian -/
@@ -560,8 +561,8 @@ private theorem energyFormH1_laplacian_comm (u v : W1p mu Omega 2) :
 /-- The value of a weak solution `u ∈ H¹_Γ(Ω)` of `-Δ u = g`, `∫_Ω ∇u · ∇v = ∫_Ω g v` for every
 `v ∈ H¹_Γ(Ω)`, lies in the domain of the mixed Laplacian `-Δ_Γ`. -/
 theorem value_mem_domain_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
-    {g : Lp ℝ 2 (mu.restrict Omega)} {u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule}
-    (hu : ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+    {g : Lp ℝ 2 (mu.restrict Omega)} {u : W1pVanishingOn mu Omega 2 Γ}
+    (hu : ∀ v : W1pVanishingOn mu Omega 2 Γ,
       ⟪W1p.gradient (u : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
         ⟪g, W1p.value (v : W1p mu Omega 2)⟫_ℝ) :
     W1p.value (u : W1p mu Omega 2) ∈
@@ -616,8 +617,8 @@ theorem mem_spectrum_mixedOperator_laplacian_iff (hΓ : Disjoint Γ Omega)
     (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) {kappa : ℝ} :
     kappa ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
       (1 : Matrix ι ι ℝ)) Γ).spectrum ↔
-      ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule, u ≠ 0 ∧
-        ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      ∃ u : W1pVanishingOn mu Omega 2 Γ, u ≠ 0 ∧
+        ∀ v : W1pVanishingOn mu Omega 2 Γ,
           ⟪W1p.gradient (u : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
             kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
   rw [mem_spectrum_mixedOperator_iff
@@ -632,8 +633,8 @@ theorem spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
     (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) :
     (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
       (1 : Matrix ι ι ℝ)) Γ).spectrum =
-      {kappa | ∃ u : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule, u ≠ 0 ∧
-        ∀ v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule,
+      {kappa | ∃ u : W1pVanishingOn mu Omega 2 Γ, u ≠ 0 ∧
+        ∀ v : W1pVanishingOn mu Omega 2 Γ,
           ⟪W1p.gradient (u : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
             kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ} :=
   Set.ext fun _ ↦ mem_spectrum_mixedOperator_laplacian_iff hΓ hK
