@@ -803,8 +803,8 @@ private theorem code_not_forced_after_discovery {w : Fin L → α} {i j : Fin L}
     intro hc
     rw [← hij] at hc
     have he := eq_of_isNew_of_closes_succ hnew hc
-    rw [cyclicPath_val, cyclicPath, show i.val + 2 = j.val + 1 by omega,
-      ← Fin.finRotate_ofNat] at he
+    have hnext : i.val + 2 = j.val + 1 := by omega
+    rw [cyclicPath_val, cyclicPath, hnext, ← Fin.finRotate_ofNat] at he
     exact h (by simpa using he)
   simp only [code, symbol]
   split_ifs with _ hf
@@ -867,6 +867,32 @@ private theorem sum_piFinset_pow_div_pow_card_image_le_of_finite [DecidableEq α
       simp only [sum_allowedSymbols_symbolWeight]
       ring
 
+/-- Restricting the vertex type preserves the weighted sum of words with repeated edges
+and an additional condition on the projected word. -/
+private theorem sum_piFinset_traceWord_weight_eq_subtype [DecidableEq α] {L : ℕ} {γ m : ℝ}
+    {A : Fin L → Finset α} {S : Finset α} (hS : ∀ t, A t ⊆ S)
+    (P : (Fin L → α) → Prop) [DecidablePred P] :
+    (∑ w ∈ Fintype.piFinset A with
+        (∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t))) ∧ P w,
+      γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w)) =
+    ∑ w ∈ Fintype.piFinset (fun t ↦ (A t).subtype (· ∈ S)) with
+        (∀ t, ∃ s ≠ t, s(w s, w (finRotate L s)) = s(w t, w (finRotate L t))) ∧
+          P (Subtype.val ∘ w),
+      γ ^ (2 * (L + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w) := by
+  let A' (t : Fin L) : Finset S := (A t).subtype (· ∈ S)
+  have hA : (fun t ↦ (A' t).image Subtype.val) = A := funext fun t ↦ by
+    rw [← Function.Embedding.coe_subtype, ← map_eq_image, subtype_map_of_mem (hS t)]
+  have hpi : Fintype.piFinset A = (Fintype.piFinset A').image (Subtype.val ∘ ·) := by
+    rw [← hA]
+    exact Fintype.piFinset_image (fun _ ↦ Subtype.val) A'
+  rw [hpi, filter_image, sum_image Subtype.val_injective.comp_left.injOn]
+  refine sum_congr (filter_congr fun w _ ↦ ?_) fun w _ ↦ ?_
+  · -- The projection is injective on edges, so it preserves the repeated edges.
+    simp only [Function.comp_apply, ← Sym2.map_mk,
+      (Sym2.map.injective Subtype.val_injective).eq_iff]
+  · -- The projected walk visits as many vertices as the walk itself.
+    rw [← image_image, card_image_of_injective _ Subtype.val_injective]
+
 /-- **Weighted Füredi–Komlós enumeration with prescribed vertex sets.** Let `L ≠ 0`, `m ≥ 0`
 and `0 ≤ γ ≤ 1`, and prescribe a finite set `A t` of vertices for each time `t` of a closed walk
 of length `L`. Over the closed walks `w` with `w t ∈ A t` for every `t` that traverse each of their
@@ -887,25 +913,15 @@ theorem sum_piFinset_pow_div_pow_card_image_le_of_no_singleton_edge [DecidableEq
   classical
   -- Restrict the vertices to the finite set `S` of all prescribed vertices.
   set S := univ.biUnion A
-  have hS {t : Fin L} {x : α} (hx : x ∈ A t) : x ∈ S := mem_biUnion.mpr ⟨t, mem_univ _, hx⟩
+  have hS (t : Fin L) : A t ⊆ S := fun x hx ↦ mem_biUnion.mpr ⟨t, mem_univ _, hx⟩
   let A' (t : Fin L) : Finset S := (A t).subtype (· ∈ S)
   have hcard (t : Fin L) : #(A' t) = #(A t) := by
-    rw [card_subtype, filter_true_of_mem fun _ ↦ hS]
+    rw [card_subtype, filter_true_of_mem (hS t)]
+  have hsum := sum_piFinset_traceWord_weight_eq_subtype (γ := γ) (m := m) hS (fun _ ↦ True)
+  simp only [and_true] at hsum
+  rw [hsum]
   have key := sum_piFinset_pow_div_pow_card_image_le_of_finite hγ₀ hγ₁ hm A'
-  simp only [hcard] at key
-  -- The walks through the prescribed sets are the pointwise projections of the walks in `S`.
-  have hpi : Fintype.piFinset A = (Fintype.piFinset A').image (Subtype.val ∘ ·) := by
-    have hA : (fun t ↦ (A' t).image Subtype.val) = A := funext fun t ↦ by
-      rw [← Function.Embedding.coe_subtype, ← map_eq_image, subtype_map_of_mem fun _ ↦ hS]
-    rw [← hA]
-    exact Fintype.piFinset_image (fun _ ↦ Subtype.val) A'
-  rw [hpi, filter_image, sum_image Subtype.val_injective.comp_left.injOn]
-  refine le_of_eq_of_le (sum_congr (filter_congr fun w _ ↦ ?_) fun w _ ↦ ?_) key
-  · -- The projection is injective on edges, so it preserves the repeated edges.
-    simp only [Function.comp_apply, ← Sym2.map_mk,
-      (Sym2.map.injective Subtype.val_injective).eq_iff]
-  · -- The projected walk visits as many vertices as the walk itself.
-    rw [← image_image, card_image_of_injective _ Subtype.val_injective]
+  simpa only [hcard] using key
 
 /-- **Weighted Füredi–Komlós enumeration.** Let `α` be a finite type of cardinality `n` and let
 `0 ≤ γ ≤ 1`. Over the closed walks `w : Fin L → α` traversing each of their edges
@@ -936,18 +952,9 @@ theorem sum_pow_div_pow_card_image_le_of_no_singleton_edge [DecidableEq α] [Fin
   calc _ ≤ (1 + 1 + L * γ) ^ L := key
     _ = (2 + L * γ) ^ L := by norm_num
 
-/-- **Weighted enumeration of closed words that are non-backtracking within each block.**
-Split the `B * M` steps into `B` successive blocks of length `M`. Consecutive steps within a
-block use different edges. A reversal is allowed at any join. Restrict the vertex at time `t`
-to `A t` and require each edge to occur at least twice.
-
-For `0 ≤ γ ≤ 1` and `m ≥ 0`, the weight of a word visiting `v` vertices is
-`γ ^ (2 * (B * M + 2 - 2 * v)) / m ^ v`.
-If each discovery weight `#(A (t + 1)) / m` is bounded by the ratio of successive values of
-`q` in the block, with `1 ≤ q ≤ R`, the total weight is bounded by `#(A 0) / m` times
-`((M + 1) * R * (1 + (M + 1) * R * (B * M * γ)) ^ M) ^ B`.
-The ratios allow the two alternating discovery weights of bipartite words to cancel. -/
-theorem sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking [DecidableEq α] [Finite α]
+/-- The blockwise non-backtracking enumeration on a finite vertex type. -/
+private theorem sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking_of_finite
+    [DecidableEq α] [Finite α]
     {B M : ℕ} [NeZero (B * M)] {γ m R : ℝ} (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) (hm : 0 ≤ m)
     (A : Fin (B * M) → Finset α) (q : Fin B → Fin (M + 1) → ℝ)
     (hq : ∀ b i, 1 ≤ q b i ∧ q b i ≤ R)
@@ -1007,5 +1014,41 @@ theorem sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking [DecidableEq �
         (prod_le_prod₀ (s := (univ : Finset (Fin B)))
           (fun b _ ↦ blockWeight_nonneg (L := B * M) (S b) false hm.le hγ₀)
           (fun b _ ↦ (blockWeight_le le_rfl (S b) hm hγ₀ (q b) (hq b) (hA b)).1))
+
+/-- **Weighted enumeration of closed words that are non-backtracking within each block.**
+Split the `B * M` steps into `B` successive blocks of length `M`. Consecutive steps within a
+block use different edges. A reversal is allowed at any join. Restrict the vertex at time `t`
+to the finite set `A t` and require each edge to occur at least twice.
+
+For `0 ≤ γ ≤ 1` and `m ≥ 0`, the weight of a word visiting `v` vertices is
+`γ ^ (2 * (B * M + 2 - 2 * v)) / m ^ v`.
+If each discovery weight `#(A (t + 1)) / m` is bounded by the ratio of successive values of
+`q` in the block, with `1 ≤ q ≤ R`, the total weight is bounded by `#(A 0) / m` times
+`((M + 1) * R * (1 + (M + 1) * R * (B * M * γ)) ^ M) ^ B`.
+The ratios allow the two alternating discovery weights of bipartite words to cancel. -/
+theorem sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking [DecidableEq α]
+    {B M : ℕ} [NeZero (B * M)] {γ m R : ℝ} (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) (hm : 0 ≤ m)
+    (A : Fin (B * M) → Finset α) (q : Fin B → Fin (M + 1) → ℝ)
+    (hq : ∀ b i, 1 ≤ q b i ∧ q b i ≤ R)
+    (hA : ∀ (b : Fin B) (i : Fin M),
+      #(A (finRotate (B * M) (finProdFinEquiv (b, i)))) / m ≤ q b i.succ / q b i.castSucc) :
+    ∑ w ∈ Fintype.piFinset A with
+        (∀ t, ∃ s ≠ t, s(w s, w (finRotate (B * M) s)) = s(w t, w (finRotate (B * M) t))) ∧
+        (∀ (b : Fin B) (i j : Fin M), i.val + 1 = j.val →
+          w (finProdFinEquiv (b, i)) ≠ w (finRotate (B * M) (finProdFinEquiv (b, j)))),
+      γ ^ (2 * (B * M + 2 - 2 * #(univ.image w))) / m ^ #(univ.image w) ≤
+        #(A 0) / m * (((M : ℝ) + 1) * R * (1 + ((M : ℝ) + 1) * R * ((B * M : ℕ) * γ)) ^ M) ^ B := by
+  classical
+  let S := univ.biUnion A
+  have hS (t : Fin (B * M)) : A t ⊆ S := fun x hx ↦ mem_biUnion.mpr ⟨t, mem_univ _, hx⟩
+  let A' (t : Fin (B * M)) : Finset S := (A t).subtype (· ∈ S)
+  have hcard (t : Fin (B * M)) : #(A' t) = #(A t) := by
+    rw [card_subtype, filter_true_of_mem (hS t)]
+  rw [sum_piFinset_traceWord_weight_eq_subtype hS (fun w ↦
+    ∀ (b : Fin B) (i j : Fin M), i.val + 1 = j.val →
+      w (finProdFinEquiv (b, i)) ≠ w (finRotate (B * M) (finProdFinEquiv (b, j))))]
+  have key := sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking_of_finite
+    hγ₀ hγ₁ hm A' q hq (by simpa only [hcard] using hA)
+  simpa only [hcard, Function.comp_apply, ne_eq, Subtype.val_inj] using key
 
 end TauCeti
