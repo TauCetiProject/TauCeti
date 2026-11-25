@@ -67,6 +67,9 @@ relations, for instance the rationalisation of a module over an integral group r
   `x ↦ 1 ⊗ x` from `M` to `S ⊗[R] M` has kernel `I M`.
 * `TensorProduct.mk_one_bijective_of_ker_le_annihilator`: if `R → S` is surjective and its
   kernel annihilates `M`, then `x ↦ 1 ⊗ x` is a bijection `M → S ⊗[R] M`.
+* `LinearMap.cokernel_baseChange_square` and
+  `LinearMap.liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm`: `cokernelBaseChangeEquiv` is
+  compatible with the quotient maps and with maps induced out of the cokernel.
 * `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
   both orders to multiplication by `r`, and `r` is regular on `M`, then the reductions of `b` and
   `a` modulo `r` form an exact pair.
@@ -429,6 +432,17 @@ theorem cokernel_baseChange_square (f : M →ₗ[R] N) :
       S ⊗[R] (N ⧸ range f) →ₗ[S] (S ⊗[R] N) ⧸ range (f.baseChange S)) ∘ₗ
         (range f).mkQ.baseChange S = (range (f.baseChange S)).mkQ := by
   ext n
+  simp
+
+/-- For maps `f : M → N` and `g : N → P` with `g ∘ f = 0`, the base change of the map
+`N ⧸ range f → P` induced by `g`, precomposed with the quotient map of `S ⊗[R] N` and the inverse
+of `cokernelBaseChangeEquiv`, is `g.baseChange S`. -/
+theorem liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm {P : Type*} [AddCommGroup P]
+    [Module R P] {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : g ∘ₗ f = 0) :
+    ((range f).liftQ g (range_le_ker_iff.2 hfg)).baseChange S ∘ₗ
+        (f.cokernelBaseChangeEquiv (S := S)).symm.toLinearMap ∘ₗ (range (f.baseChange S)).mkQ =
+      g.baseChange S := by
+  ext m
   simp
 
 end LinearMap

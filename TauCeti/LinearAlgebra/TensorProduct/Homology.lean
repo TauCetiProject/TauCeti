@@ -92,15 +92,6 @@ theorem subtype_comp_homologyBaseChange :
 
 variable {f g}
 
-/-- The base change of the map `M₂ ⧸ range f → M₃` induced by `g`, precomposed with the quotient
-map of `S ⊗[R] M₂` and the inverse of `cokernelBaseChangeEquiv`, is `g.baseChange S`. -/
-private theorem liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm (hfg : g ∘ₗ f = 0) :
-    ((range f).liftQ g (range_le_ker_iff.2 hfg)).baseChange S ∘ₗ
-        f.cokernelBaseChangeEquiv.symm.toLinearMap ∘ₗ (range (f.baseChange S)).mkQ =
-      g.baseChange S := by
-  ext m
-  simp
-
 /-- The surjection `M₂ ⧸ range f → range g` induced by `g`. Its kernel is the homology
 (`LinearMap.ker_quotientRangeToRange`), so homology sits in a short exact sequence
 `0 → H → M₂ ⧸ range f → range g → 0` (`LinearMap.exact_subtype_quotientRangeToRange`). -/
@@ -169,8 +160,9 @@ theorem homologyBaseChange_surjective [Module.Flat R (M₃ ⧸ range g)] (hfg : 
   have hw : f.cokernelBaseChangeEquiv.symm ((range (f.baseChange S)).mkQ z) ∈
       (ker ψ).baseChange S := by
     rw [← ker_baseChange_of_flat_quotient_range, mem_ker]
-    simpa using LinearMap.congr_fun (liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm S hfg) z
-      |>.trans (mem_ker.1 hz)
+    simpa using
+      LinearMap.congr_fun (liftQ_baseChange_comp_cokernelBaseChangeEquiv_symm (S := S) hfg) z
+        |>.trans (mem_ker.1 hz)
   rw [Submodule.ker_liftQ, Submodule.baseChange, mem_range] at hw
   obtain ⟨t, ht⟩ := hw
   refine ⟨t, Subtype.ext ?_⟩
