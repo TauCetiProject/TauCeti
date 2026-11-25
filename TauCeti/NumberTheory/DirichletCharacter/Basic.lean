@@ -227,6 +227,7 @@ theorem ext_of_level_eight {R : Type*} [CommMonoidWithZero R]
 
 /-- Every Dirichlet character of level eight has order dividing two, because every unit
 modulo eight squares to one. -/
+@[simp]
 theorem sq_eq_one_of_level_eight {R : Type*} [CommMonoidWithZero R]
     (χ : DirichletCharacter R 8) : χ ^ 2 = 1 := by
   refine MulChar.ext fun u ↦ ?_
@@ -234,12 +235,14 @@ theorem sq_eq_one_of_level_eight {R : Type*} [CommMonoidWithZero R]
     (by decide : ∀ u : (ZMod 8)ˣ, u ^ 2 = 1) u, Units.val_one, map_one]
 
 /-- Every Dirichlet character of level eight is its own inverse. -/
+@[simp]
 theorem inv_eq_self_of_level_eight {R : Type*} [CommMonoidWithZero R]
     (χ : DirichletCharacter R 8) : χ⁻¹ = χ :=
   inv_eq_of_mul_eq_one_right (by rw [← sq, sq_eq_one_of_level_eight])
 
 /-- Two characters of level eight multiply to the principal character exactly when they are
 equal. -/
+@[simp]
 theorem mul_eq_one_iff_eq_of_level_eight {R : Type*} [CommMonoidWithZero R]
     {ψ ρ : DirichletCharacter R 8} : ψ * ρ = 1 ↔ ψ = ρ := by
   rw [mul_eq_one_iff_eq_inv, inv_eq_self_of_level_eight]
