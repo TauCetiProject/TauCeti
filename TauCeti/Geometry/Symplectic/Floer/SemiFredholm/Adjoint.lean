@@ -1099,27 +1099,6 @@ private theorem norm_floerLinearizationAdjoint_fun_smul_sq_add_sq_le {ω : Sympl
   nlinarith [sq_nonneg ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖,
     mul_nonneg (sq_nonneg (M * (1 + B))) (sq_nonneg ‖η z‖)]
 
-omit [FiniteDimensional ℝ V] in
-/-- **Comparing with a cut-off covector field on a disc.** If `β = 1` near every point of the disc
-`‖w‖ ≤ a` and `a ≤ b`, then the `W^{1,2}` energy of a covector field `η` on that disc is at most
-the energy of `β η` on the disc `‖w‖ ≤ b`, provided `β η` is `C¹`. -/
-private theorem setIntegral_sobolevDensity_le_of_eventuallyEq_one {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    {β : ℝ × ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hβ1 : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ a → β =ᶠ[𝓝 z] 1)
-    (hβη : ContDiff ℝ 1 fun w ↦ β w • η w) :
-    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, Floer.sobolevDensity η z ≤
-      ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b},
-        Floer.sobolevDensity (fun w ↦ β w • η w) z := by
-  refine le_of_eq_of_le (setIntegral_congr_fun (measurableSet_le
-    Complex.equivRealProdCLM.symm.continuous.norm.measurable measurable_const) fun z hz ↦ ?_)
-    (setIntegral_mono_set ((Floer.continuous_sobolevDensity hβη).continuousOn.integrableOn_compact
-      (isCompact_setOf_norm_equivRealProdCLM_symm_le b))
-      (ae_of_all _ fun _ ↦ Floer.sobolevDensity_nonneg _ _)
-      (ae_of_all _ fun z (hz : _ ≤ a) ↦ (show _ ≤ b from hz.trans hab)))
-  -- Near the disc `‖w‖ ≤ a` the cut-off field agrees with `η`.
-  refine Floer.sobolevDensity_congr_of_eventuallyEq ((hβ1 z hz).mono fun z' h ↦ ?_)
-  simp [show β z' = 1 from h]
-
 /-- **The `L²` estimate of the formal adjoint on a disc.** Let `a < b`, and suppose that at every
 `z` in the disc `‖w‖ ≤ b` the structure `J(z, u z)` is `ω`-compatible, `J` is `C¹` and the
 Hamiltonians `K_s`, `K_t` are `C²` at `(z, u z)`, and `u` is `C¹` at `z`. Then there is a constant
@@ -1183,7 +1162,8 @@ theorem
   have hF : ContinuousOn
       (fun z ↦ ‖ω.floerLinearizationAdjoint J' Ks Kt u η z‖ ^ 2 + ‖η z‖ ^ 2) K :=
     ((hDc hη).norm.pow 2).add (hη.continuous.norm.pow 2).continuousOn
-  calc _ ≤ _ := setIntegral_sobolevDensity_le_of_eventuallyEq_one hab.le hβ1 (hη₀.of_le one_le_two)
+  calc _ ≤ _ :=
+        Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one hab.le hβ1 (hη₀.of_le one_le_two)
     _ ≤ C₀ * ∫ z in K, (‖ω.floerLinearizationAdjoint J' Ks Kt u η₀ z‖ ^ 2 + ‖η₀ z‖ ^ 2) :=
         hint hη₀ hη₀K
     _ ≤ C₀ * ∫ z in K, (2 * (max M 0 * (1 + max B 0)) ^ 2 + 2) *

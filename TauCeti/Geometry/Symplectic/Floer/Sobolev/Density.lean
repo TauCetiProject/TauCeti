@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -40,6 +41,9 @@ records the derivatives of a section cut off by a function of `s`.
   densities of `ξ₁` and `ξ₂`.
 * `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
   its integral over a rectangle bounds the `L²` norm.
+* `TauCeti.Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one`: if `β = 1` near the disc
+  `‖w‖ ≤ a` and `a ≤ b`, the energy of `ξ` on that disc is at most the energy of `β ξ` on the disc
+  `‖w‖ ≤ b`.
 -/
 
 public section
@@ -148,5 +152,23 @@ theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {ξ : ℝ × ℝ → V
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
       linarith
+
+/-- **Comparing with a cut-off map on a disc.** If `β = 1` near every point of the disc
+`‖w‖ ≤ a` and `a ≤ b`, then the `W^{1,2}` energy of `ξ` on that disc is at most the energy of
+`β ξ` on the disc `‖w‖ ≤ b`, provided `β ξ` is `C¹`; the discs are read in real coordinates. -/
+theorem setIntegral_sobolevDensity_le_of_eventuallyEq_one {ξ : ℝ × ℝ → V} {β : ℝ × ℝ → ℝ}
+    {a b : ℝ} (hab : a ≤ b) (hβ1 : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ a → β =ᶠ[𝓝 z] 1)
+    (hβξ : ContDiff ℝ 1 fun w ↦ β w • ξ w) :
+    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, sobolevDensity ξ z ≤
+      ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}, sobolevDensity (fun w ↦ β w • ξ w) z := by
+  refine le_of_eq_of_le (setIntegral_congr_fun (measurableSet_le
+    Complex.equivRealProdCLM.symm.continuous.norm.measurable measurable_const) fun z hz ↦ ?_)
+    (setIntegral_mono_set ((continuous_sobolevDensity hβξ).continuousOn.integrableOn_compact
+      (isCompact_setOf_norm_equivRealProdCLM_symm_le b))
+      (ae_of_all _ fun _ ↦ sobolevDensity_nonneg _ _)
+      (ae_of_all _ fun z (hz : _ ≤ a) ↦ (show _ ≤ b from hz.trans hab)))
+  -- Near the disc `‖w‖ ≤ a` the cut-off map agrees with `ξ`.
+  refine sobolevDensity_congr_of_eventuallyEq ((hβ1 z hz).mono fun z' h ↦ ?_)
+  simp [show β z' = 1 from h]
 
 end TauCeti.Floer
