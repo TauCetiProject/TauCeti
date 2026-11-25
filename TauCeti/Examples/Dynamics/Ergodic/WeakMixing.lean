@@ -14,8 +14,9 @@ public import Mathlib.Probability.UniformOn
 Checks for `MeasureTheory.Measure.IsWeaklyMixing` and its zero-one law.
 
 * For a set `A` almost invariant under the translate by `t`, the integrand of the definition at
-  time `t` for the pair `(A, A)` is `|μ(A) - μ(A)²|`, which is `1/4` when `μ(A) = 1/2`; for the
-  pair `(A, Aᶜ)` it is `μ(A) μ(Aᶜ)`.
+  time `t` for a pair `(A, B)` is `|μ(A ∩ B) - μ(A) μ(B)|`; for the pair `(A, A)` it is
+  `|μ(A) - μ(A)²|`, which is `1/4` when `μ(A) = 1/2`; for the pair `(A, Aᶜ)` it is
+  `μ(A) μ(Aᶜ)`.
 * The trivial action of `ℝ` on a two-point space with the uniform probability measure is not
   weakly mixing: a point is an invariant set of measure `1/2`, and for `A = B` a point the
   integrand is `|1/2 - 1/4| = 1/4`.
@@ -34,12 +35,19 @@ section Invariant
 
 variable {X : Type*} [MeasurableSpace X] [AddAction ℝ X] {μ : Measure X} {A : Set X}
 
+/-- For a set almost invariant under the translate by `t`, the integrand of weak mixing for a
+pair `(A, B)` at time `t` is `|μ(A ∩ B) - μ(A) μ(B)|`. -/
+theorem integrand_of_invariant {t : ℝ} (hA : (fun x => t +ᵥ x) ⁻¹' A =ᵐ[μ] A) (B : Set X) :
+    |μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ B) - μ.real A * μ.real B| =
+      |μ.real (A ∩ B) - μ.real A * μ.real B| := by
+  rw [measureReal_congr (hA.inter (by rfl : B =ᵐ[μ] B))]
+
 /-- For a set almost invariant under the translate by `t`, the integrand of weak mixing for the
 pair `(A, A)` at time `t` is `|μ(A) - μ(A)²|`. -/
 theorem integrand_self_of_invariant {t : ℝ} (hA : (fun x => t +ᵥ x) ⁻¹' A =ᵐ[μ] A) :
     |μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ A) - μ.real A * μ.real A| =
       |μ.real A - μ.real A * μ.real A| := by
-  rw [measureReal_congr (hA.inter (by rfl : A =ᵐ[μ] A)), inter_self]
+  rw [integrand_of_invariant hA, inter_self]
 
 /-- An invariant set of measure `1/2` gives the constant integrand `1/4`. -/
 example {t : ℝ} (hA : (fun x => t +ᵥ x) ⁻¹' A =ᵐ[μ] A) (hμA : μ.real A = 1 / 2) :
@@ -51,8 +59,8 @@ example {t : ℝ} (hA : (fun x => t +ᵥ x) ⁻¹' A =ᵐ[μ] A) (hμA : μ.real
 pair `(A, Aᶜ)` at time `t` is `μ(A) μ(Aᶜ)`. -/
 theorem integrand_compl_of_invariant {t : ℝ} (hA : (fun x => t +ᵥ x) ⁻¹' A =ᵐ[μ] A) :
     |μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ Aᶜ) - μ.real A * μ.real Aᶜ| = μ.real A * μ.real Aᶜ := by
-  rw [measureReal_congr (hA.inter (by rfl : Aᶜ =ᵐ[μ] Aᶜ)), inter_compl_self, measureReal_empty,
-    zero_sub, abs_neg, abs_of_nonneg (mul_nonneg measureReal_nonneg measureReal_nonneg)]
+  rw [integrand_of_invariant hA, inter_compl_self]
+  simp [abs_of_nonneg, mul_nonneg, measureReal_nonneg]
 
 end Invariant
 
