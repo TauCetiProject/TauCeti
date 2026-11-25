@@ -128,8 +128,8 @@ private theorem mFourierCoeff_torusOp (hω : (conj ω₁ * ω₂).im ≠ 0)
 /-- The norm of the torus multiplier is `π ‖ω₂ (n₀ + θ₁) - ω₁ (n₁ + θ₂)‖ / |Im (conj ω₁ ω₂)|`. -/
 private theorem norm_torusMultiplier (n : Fin 2 → ℤ) : ‖torusMultiplier ω₁ ω₂ θ₁ θ₂ n‖ =
     π * ‖ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ)‖ / |(conj ω₁ * ω₂).im| := by
-  rw [torusMultiplier, norm_div, norm_mul, norm_real, Real.norm_of_nonneg Real.pi_pos.le,
-    norm_real, Real.norm_eq_abs, ofReal_add, ofReal_add, ofReal_intCast, ofReal_intCast]
+  simp only [torusMultiplier, norm_div, norm_mul, norm_real, Real.norm_eq_abs,
+    abs_of_pos Real.pi_pos, ofReal_add, ofReal_intCast]
 
 /-- If pairing `ω₂ (n₀ + θ₁) - ω₁ (n₁ + θ₂)` with `conj w` isolates a coordinate `x` with
 `‖θ‖ℤ ≤ |x|`, then the torus multiplier has norm at least `π ‖θ‖ℤ / |w|`. -/
@@ -230,15 +230,18 @@ private theorem phaseCLM_apply (p : Fin 2 → ℝ) :
     ContinuousLinearMap.proj_apply, ofRealCLM_apply, real_smul, smul_eq_mul]
   ring
 
-/-- Translating by a lattice vector multiplies the phase by the corresponding holonomy. -/
-private theorem exp_phaseCLM_add_single (p : Fin 2 → ℝ) :
-    exp (phaseCLM θ₁ θ₂ (p + Pi.single 0 1)) = exp (2 * π * θ₁ * I) * exp (phaseCLM θ₁ θ₂ p) ∧
-      exp (phaseCLM θ₁ θ₂ (p + Pi.single 1 1)) =
-        exp (2 * π * θ₂ * I) * exp (phaseCLM θ₁ θ₂ p) := by
-  constructor <;> rw [map_add, Complex.exp_add, mul_comm] <;> congr 2 <;>
-    simp only [phaseCLM_apply, Pi.single_eq_same, Pi.single_eq_of_ne, ne_eq, one_ne_zero,
-      zero_ne_one, not_false_eq_true, ofReal_one, ofReal_zero, mul_one, mul_zero, add_zero,
-      zero_add] <;> ring
+/-- Translating by the `i`-th lattice vector multiplies the phase by the `i`-th holonomy. -/
+private theorem exp_phaseCLM_add_single (i : Fin 2) (p : Fin 2 → ℝ) :
+    exp (phaseCLM θ₁ θ₂ (p + Pi.single i 1)) =
+      exp (2 * π * ![θ₁, θ₂] i * I) * exp (phaseCLM θ₁ θ₂ p) := by
+  rw [map_add, Complex.exp_add, mul_comm]
+  congr 2
+  fin_cases i <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.isValue, phaseCLM_apply, Pi.single_eq_same,
+      Pi.single_eq_of_ne, ne_eq, one_ne_zero, zero_ne_one, not_false_eq_true, ofReal_one,
+      ofReal_zero, mul_one, mul_zero, add_zero, zero_add, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one] <;>
+    ring
 
 /-- The section of the flat line corresponding to a function on the torus: in lattice coordinates
 `p`, it is `exp (2πi (θ₁ p₀ + θ₂ p₁)) g p`. -/
@@ -253,22 +256,23 @@ private theorem ofTorus_periodCoordEquiv (hω : (conj ω₁ * ω₂).im ≠ 0)
       exp (phaseCLM θ₁ θ₂ p) * g fun i ↦ (p i : UnitAddCircle) := by
   rw [ofTorus, Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply]
 
+/-- Translating the section of a function on the torus by the `i`-th period multiplies it by the
+`i`-th holonomy. -/
+private theorem ofTorus_add_periodCoordEquiv_single (hω : (conj ω₁ * ω₂).im ≠ 0)
+    (g : UnitAddTorus (Fin 2) → ℂ) (i : Fin 2) (z : ℂ) :
+    ofTorus hω θ₁ θ₂ g (z + periodCoordEquiv hω (Pi.single i 1)) =
+      exp (2 * π * ![θ₁, θ₂] i * I) * ofTorus hω θ₁ θ₂ g z := by
+  obtain ⟨p, rfl⟩ := (periodCoordEquiv hω).surjective z
+  rw [← map_add, ofTorus_periodCoordEquiv, ofTorus_periodCoordEquiv, exp_phaseCLM_add_single,
+    coe_add_single]
+  ring
+
 private theorem ofTorus_mem (hω : (conj ω₁ * ω₂).im ≠ 0) {g : UnitAddTorus (Fin 2) → ℂ}
-    (hg : g ∈ smoothFunctions (Fin 2)) : ofTorus hω θ₁ θ₂ g ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ := by
-  refine mem_flatLineSections.2 ⟨((contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff).mul
-    (mem_smoothFunctions.1 hg)).comp (periodCoordEquiv hω).symm.contDiff, fun z ↦ ?_,
-    fun z ↦ ?_⟩ <;>
-    obtain ⟨p, rfl⟩ := (periodCoordEquiv hω).surjective z
-  · have hz : periodCoordEquiv hω p + ω₁ = periodCoordEquiv hω (p + Pi.single 0 1) := by
-      rw [map_add, ← periodCoordEquiv_symm_apply_ω₁ hω, ContinuousLinearEquiv.apply_symm_apply]
-    rw [hz, ofTorus_periodCoordEquiv, ofTorus_periodCoordEquiv, (exp_phaseCLM_add_single _).1,
-      coe_add_single]
-    ring
-  · have hz : periodCoordEquiv hω p + ω₂ = periodCoordEquiv hω (p + Pi.single 1 1) := by
-      rw [map_add, ← periodCoordEquiv_symm_apply_ω₂ hω, ContinuousLinearEquiv.apply_symm_apply]
-    rw [hz, ofTorus_periodCoordEquiv, ofTorus_periodCoordEquiv, (exp_phaseCLM_add_single _).2,
-      coe_add_single]
-    ring
+    (hg : g ∈ smoothFunctions (Fin 2)) : ofTorus hω θ₁ θ₂ g ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂ :=
+  mem_flatLineSections.2 ⟨((contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff).mul
+    (mem_smoothFunctions.1 hg)).comp (periodCoordEquiv hω).symm.contDiff,
+    fun z ↦ by simpa using ofTorus_add_periodCoordEquiv_single hω g 0 z,
+    fun z ↦ by simpa using ofTorus_add_periodCoordEquiv_single hω g 1 z⟩
 
 /-- `∂bar` of the section corresponding to a smooth function on the torus corresponds to the torus
 operator applied to that function. -/
@@ -389,7 +393,7 @@ theorem flatLineConjWirtingerDerivEquiv_apply (hω : (conj ω₁ * ω₂).im ≠
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     (u : flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) :
     flatLineConjWirtingerDerivEquiv hω hθ u = flatLineConjWirtingerDerivₗ ω₁ ω₂ θ₁ θ₂ u :=
-  (rfl)
+  LinearEquiv.ofBijective_apply _ _
 
 /-- The inverse of `∂bar` solves the Cauchy–Riemann equation: `∂bar u = f` for
 `u = (flatLineConjWirtingerDerivEquiv hω hθ).symm f`. -/
@@ -415,9 +419,9 @@ theorem mul_setIntegral_norm_sq_flatLineConjWirtingerDerivEquiv_symm_apply_le
           ‖((flatLineConjWirtingerDerivEquiv hω hθ).symm f : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖(f : ℂ → ℂ) (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 := by
   set u := (flatLineConjWirtingerDerivEquiv hω hθ).symm f
-  obtain ⟨hu, hu₁, hu₂⟩ := mem_flatLineSections.1 u.property
-  have h := mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq
-    (hu.of_le (by simp)) hω hu₁ hu₂
+  obtain ⟨hu, hu₁, hu₂⟩ := mem_flatLineSections.1
+    (flatLineSections_antitone (by simp : (2 : WithTop ℕ∞) ≤ ∞) u.property)
+  have h := mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq hu hω hu₁ hu₂
   simpa only [u, conjWirtingerDeriv_flatLineConjWirtingerDerivEquiv_symm_apply] using h
 
 /-- **`∂bar` is invertible on the powers and finite covers of a flat line with infinite

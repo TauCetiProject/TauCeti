@@ -15,7 +15,6 @@ import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Fourier.TwistedWirtinger
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -129,7 +128,7 @@ open scoped ContDiff
 /-- The `Cⁿ` sections of the flat line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`,
 `exp (2πiθ₂)` along `ω₁`, `ω₂`: the `Cⁿ` functions `u : ℂ → ℂ` with
 `u (z + ω₁) = exp (2πiθ₁) u z` and `u (z + ω₂) = exp (2πiθ₂) u z`. -/
-@[expose] def flatLineSections (n : WithTop ℕ∞) (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
+def flatLineSections (n : WithTop ℕ∞) (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
   carrier := {u | ContDiff ℝ n u ∧ (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
     ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z}
   add_mem' {u v} hu hv :=
@@ -141,11 +140,22 @@ open scoped ContDiff
       fun z ↦ by simp [hu.2.2, mul_left_comm]⟩
 
 /-- Membership in `flatLineSections`, unfolded. -/
+@[simp]
 theorem mem_flatLineSections {n : WithTop ℕ∞} :
     u ∈ flatLineSections n ω₁ ω₂ θ₁ θ₂ ↔ ContDiff ℝ n u ∧
       (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
       ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z :=
   Iff.rfl
+
+/-- A `Cⁿ` section of a flat line is `Cⁿ`. -/
+theorem contDiff_of_mem_flatLineSections {n : WithTop ℕ∞}
+    (hu : u ∈ flatLineSections n ω₁ ω₂ θ₁ θ₂) : ContDiff ℝ n u :=
+  hu.1
+
+/-- A `Cⁿ` section of a flat line is a `Cᵐ` section for every `m ≤ n`. -/
+theorem flatLineSections_antitone :
+    Antitone fun n : WithTop ℕ∞ ↦ flatLineSections n ω₁ ω₂ θ₁ θ₂ :=
+  fun _ _ hmn _ hu ↦ ⟨hu.1.of_le hmn, hu.2⟩
 
 /-- `∂bar` maps smooth sections of a flat line to smooth sections of the same line. -/
 theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ∞ ω₁ ω₂ θ₁ θ₂) :
