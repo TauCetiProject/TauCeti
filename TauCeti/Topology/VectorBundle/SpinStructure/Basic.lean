@@ -206,6 +206,19 @@ noncomputable def OrthonormalFrameLift.extendSpinCEquivOfEquivariant (t : SpinCS
   s.extendEquivOfEquivariant σ hσ hσρ _ _ t φ hφ hφc hφf
 
 @[simp]
+theorem OrthonormalFrameLift.extendSpinCEquivOfEquivariant_toEquiv_mk
+    (t : SpinCStructure F V n) (φ : ∀ x, s.P x → t.P x)
+    (hφ : ∀ x (p : s.P x) (g : G), φ x (op g • p) = op (σ g) • φ x p)
+    (hφc : Continuous fun p : TotalSpace G s.P ↦ (⟨p.proj, φ p.proj p.snd⟩ :
+      TotalSpace (spinCGroup (realCliffordForm n 0) _) t.P))
+    (hφf : ∀ x (p : s.P x), t.toFrame ⟨x, φ x p⟩ = s.toFrame ⟨x, p⟩) (x : X) (p : s.P x)
+    (h : spinCGroup (realCliffordForm n 0)
+      (QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0))) :
+    (s.extendSpinCEquivOfEquivariant σ hσ hσρ t φ hφ hφc hφf).toEquiv x
+        (PrincipalBundle.Extend.mk σ hσ p h) = op h • φ x p :=
+  s.extendEquivOfEquivariant_toEquiv_mk σ hσ hσρ _ _ t φ hφ hφc hφf x p h
+
+@[simp]
 theorem OrthonormalFrameLift.extendSpinCEquivOfEquivariant_toEquiv_inl
     (t : SpinCStructure F V n) (φ : ∀ x, s.P x → t.P x)
     (hφ : ∀ x (p : s.P x) (g : G), φ x (op g • p) = op (σ g) • φ x p)

@@ -38,9 +38,9 @@ pullback for the norm topologies (`Bundle.Pullback.normedFiberBundle`,
 
 * `TauCeti.SpinCStructure.toFrame_pullback_precompIsometry_inl`: the frame of `[p, 1]` in
   `g^* (s.precompIsometry f)` is the frame of `p` in `g^* s` precomposed with `f`.
-* `TauCeti.SpinCStructure.precompIsometryPullbackEquiv_toEquiv_inl`,
-  `TauCeti.SpinCStructure.reversePullbackEquiv_toEquiv_inl`: the equivalences send `[p, 1]` to
-  `[p, 1]`.
+* `TauCeti.SpinCStructure.precompIsometryPullbackEquiv_toEquiv_mk`,
+  `TauCeti.SpinCStructure.reversePullbackEquiv_toEquiv_mk`: the equivalences send `[p, h]` to
+  `[p, h]`, and in particular (`_toEquiv_inl`) `[p, 1]` to `[p, 1]`.
 
 ## References
 
@@ -104,6 +104,20 @@ def precompIsometryPullbackEquiv (g : K)
       (g : Y → X))
     (toFrame_pullback_precompIsometry_inl g f s)
 
+/-- The equivalence `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)` sends `[p, h]` to
+`[p, h]`. -/
+theorem precompIsometryPullbackEquiv_toEquiv_mk (g : K)
+    (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
+    (s : SpinCStructure F V n) (y : Y) (p : s.P (g y))
+    (h : spinCGroup (realCliffordForm n 0)
+      (QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0))) :
+    (precompIsometryPullbackEquiv g f s).toEquiv y
+        (Extend.mk (P := (g : Y → X) *ᵖ s.P) (precompIsometryHom f)
+          (continuous_precompIsometryHom f) p h) =
+      Extend.mk (P := s.P) (precompIsometryHom f) (continuous_precompIsometryHom f) p h := by
+  unfold precompIsometryPullbackEquiv
+  exact (extendSpinCEquivOfEquivariant_toEquiv_mk ..).trans (Extend.smul_inl _ _ p h)
+
 /-- The equivalence `(g^* s).precompIsometry f ≃ g^* (s.precompIsometry f)` sends `[p, 1]` to
 `[p, 1]`. -/
 theorem precompIsometryPullbackEquiv_toEquiv_inl (g : K)
@@ -121,6 +135,17 @@ theorem precompIsometryPullbackEquiv_toEquiv_inl (g : K)
 def reversePullbackEquiv (g : K) (s : SpinCStructure F V n) :
     (SpinCStructure.reverse (s.pullback g)).Equiv (s.reverse.pullback g) :=
   precompIsometryPullbackEquiv g _ s
+
+/-- The equivalence `(g^* s).reverse ≃ g^* s.reverse` sends `[p, h]` to `[p, h]`. -/
+theorem reversePullbackEquiv_toEquiv_mk (g : K) (s : SpinCStructure F V n) (y : Y)
+    (p : s.P (g y)) (h : spinCGroup (realCliffordForm n 0)
+      (QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0))) :
+    (reversePullbackEquiv g s).toEquiv y
+        (Extend.mk (P := (g : Y → X) *ᵖ s.P) (precompIsometryHom (realCliffordCoordReflection 0))
+          (continuous_precompIsometryHom _) p h) =
+      Extend.mk (P := s.P) (precompIsometryHom (realCliffordCoordReflection 0))
+        (continuous_precompIsometryHom _) p h :=
+  precompIsometryPullbackEquiv_toEquiv_mk g _ s y p h
 
 /-- The equivalence `(g^* s).reverse ≃ g^* s.reverse` sends `[p, 1]` to `[p, 1]`. -/
 theorem reversePullbackEquiv_toEquiv_inl (g : K) (s : SpinCStructure F V n) (y : Y)
