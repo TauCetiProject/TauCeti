@@ -79,17 +79,21 @@ theorem inner_diagOneTwo (u v : EuclideanSpace ℝ (Fin 2)) :
   simp [diagOneTwo_apply, inner_add_right, PiLp.inner_apply, Fin.sum_univ_two]
   ring
 
-/-- The weight `diag(1, 2)` is coercive with constant `1`: `‖u‖² ≤ ⟪u, diag(1, 2) u⟫`. -/
-theorem norm_sq_le_inner_diagOneTwo (u : EuclideanSpace ℝ (Fin 2)) :
-    ‖u‖ ^ 2 ≤ inner ℝ u (diagOneTwo u) := by
-  rw [inner_diagOneTwo, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
+/-- The weight `diag(1, 2)` is coercive with constant `1`: `1 * ‖u‖² ≤ re ⟪u, diag(1, 2) u⟫`,
+in the shape of the coercivity field of `CoerciveHermitianForm`. -/
+theorem one_mul_norm_sq_le_re_inner_diagOneTwo (u : EuclideanSpace ℝ (Fin 2)) :
+    1 * ‖u‖ ^ 2 ≤ RCLike.re (inner ℝ u (diagOneTwo u)) := by
+  rw [one_mul, RCLike.re_to_real, inner_diagOneTwo, EuclideanSpace.real_norm_sq_eq,
+    Fin.sum_univ_two]
   nlinarith [sq_nonneg (u 1)]
 
-/-- The form `a(u, v) = u₁ v₁ + 2 u₂ v₂` on `ℝ²`. -/
+/-- The form `a(u, v) = u₁ v₁ + 2 u₂ v₂` on `ℝ²`, that is `⟪u, diag(1, 2) v⟫`. Its diagonal
+values `a(u, u)` are `⟪u, diag(1, 2) u⟫` by `ContinuousLinearMap.toSesqForm_apply_coe`, so the
+coercivity bound is `one_mul_norm_sq_le_re_inner_diagOneTwo`. -/
 def diagOneTwoForm : CoerciveHermitianForm ℝ (EuclideanSpace ℝ (Fin 2)) where
-  form := ((ContinuousLinearMap.compL ℝ _ _ ℝ).flip diagOneTwo).comp (innerSL ℝ)
+  form := ContinuousLinearMap.toSesqForm diagOneTwo
   form_apply_eq_star u v := by simp [inner_diagOneTwo, mul_comm]
-  exists_coercive := ⟨1, one_pos, fun u ↦ by simpa using norm_sq_le_inner_diagOneTwo u⟩
+  exists_coercive := ⟨1, one_pos, one_mul_norm_sq_le_re_inner_diagOneTwo⟩
 
 /-- The values of the form `diag(1, 2)`. -/
 @[simp]
@@ -106,15 +110,14 @@ theorem diagOneTwoForm_dualForcing_apply (ℓ : StrongDual ℝ (EuclideanSpace �
     ext i
     fin_cases i <;> simp
   conv_rhs => rw [hv]
-  simp only [diagOneTwoForm_form_apply, map_add, map_smul, smul_eq_mul]
-  simp
+  simp only [diagOneTwoForm_form_apply, map_add, map_smul, smul_eq_mul, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one]
   ring
 
 /-- The bound `‖F ℓ‖ ≤ c⁻¹ ‖ℓ‖` with `c = 1`, which is a coercivity constant of `diag(1, 2)`. -/
 example (ℓ : StrongDual ℝ (EuclideanSpace ℝ (Fin 2))) :
     ‖diagOneTwoForm.dualForcing ℓ‖ ≤ 1⁻¹ * ‖ℓ‖ :=
-  diagOneTwoForm.norm_dualForcing_le one_pos
-    (fun u ↦ by simpa [inner_diagOneTwo] using norm_sq_le_inner_diagOneTwo u) ℓ
+  diagOneTwoForm.norm_dualForcing_le one_pos one_mul_norm_sq_le_re_inner_diagOneTwo ℓ
 
 /-- With `c = 2` the bound fails for `ℓ = e₁*`: `F e₁* = e₁` has norm `1 > 2⁻¹ ‖e₁*‖`. -/
 example :
@@ -141,7 +144,7 @@ example : ¬ ∃ c > 0, ∀ u : ℝ, c * ‖u‖ ^ 2 ≤ RCLike.re ((0 : ℝ →
 /-- The energy `q(u) = a(u, u)` of the zero form on `ℝ` vanishes at `u = 1 ≠ 0`, so `√q` is not
 a norm and the energy space of the zero form is not a normed space. -/
 example : ∃ u : ℝ, u ≠ 0 ∧ (0 : ℝ →L[ℝ] ℝ →L[ℝ] ℝ) u u = 0 :=
-  ⟨1, one_ne_zero, rfl⟩
+  ⟨1, one_ne_zero, by simp⟩
 
 /-- For the zero form on `ℝ` the weak equation `0 = ℓ v` has no solution when `ℓ ≠ 0`. -/
 example {ℓ : StrongDual ℝ ℝ} (hℓ : ℓ ≠ 0) :
