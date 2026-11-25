@@ -191,7 +191,7 @@ theorem cutoffSMulOnL_apply (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
     cutoffSMulL_apply_coe]
 
 /-- The derivative fields of the product with a cutoff on `C^{k,α}(Ω)` are the iterated
-derivatives of `χ` times the extension by zero. -/
+derivatives of the product `χ • f.extend` of the cutoff with the extension by zero. -/
 @[simp]
 theorem iteratedFDeriv_cutoffSMulOnL (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) (x : Ω) :
     (cutoffSMulOnL hχ hδ hχΩ hα hχb f).iteratedFDeriv i x =
