@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 Let `i : S → M` be a smooth embedding into a boundaryless finite-dimensional manifold which is a
 nondegenerate critical submanifold of `f : M → ℝ`
 (`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`), and let `ν` be its intrinsic
-normal bundle, with fibres `TₛM ⧸ TₛS` (`TauCeti.SmoothEmbedding.NormalSpace`). On each fibre the
+normal bundle, with fibres `TₛM ⧸ TₛS` (`Manifold.IsImmersion.NormalSpace`). On each fibre the
 normal Hessian `Hessₛ` (`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.normalHessian`) is a
 nondegenerate symmetric bilinear form. This file proves the **Morse–Bott lemma on the normal
 bundle**: there is a partial diffeomorphism `Θ` from the total space of `ν` to `M`, whose source
@@ -88,9 +88,10 @@ theorem exists_morseBott_partialDiffeomorph_normalBundle [SecondCountableTopolog
     {k : ℕ∞} (hk : k ≠ 0) (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     {O : Set M} (hO : IsOpen O) (hiO : range i ⊆ O) (hf : ContMDiffOn I 𝓘(ℝ) (k + 2) f O) :
     letI := i.normalSpaceFiberBundle hn hdim
-    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P (fun s ↦ i.NormalSpace s hn)) M k,
-      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
-      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧ Θ.target ⊆ O ∧
+    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I
+        (TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn)) M k,
+      (∀ s, zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s ∈ Θ.source) ∧
+      (∀ s, Θ (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) = i s) ∧ Θ.target ⊆ O ∧
       ∀ x ∈ Θ.source, f (Θ x) = f (i x.proj) + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd := by
   let := i.normalSpaceFiberBundle hn hdim
   have hk2 : (k : ℕ∞ω) + 2 ≤ ∞ := by
@@ -111,7 +112,7 @@ theorem exists_morseBott_partialDiffeomorph_normalBundle [SecondCountableTopolog
   have : IsManifold J (k + 2) S := .of_le hk2
   let := i.normalSpaceVectorBundle hn hdim
   have := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
-  have : ContMDiffVectorBundle (k + 2) P (fun s ↦ i.NormalSpace s hn) J := .of_le hk2
+  have : ContMDiffVectorBundle (k + 2) P (fun s ↦ i.isImmersion.NormalSpace s hn) J := .of_le hk2
   -- Step 1: the normal exponential `Φ₀` is a partial diffeomorphism near the zero section, and
   -- `f ∘ Φ₀` is `C^{k+2}` on its source.
   obtain ⟨Φ₀, hΦ₀zero, -, hΦ₀O, -, hΦ₀⟩ := i.exists_partialDiffeomorph_normalExp_subset (P := P)
@@ -125,15 +126,16 @@ theorem exists_morseBott_partialDiffeomorph_normalBundle [SecondCountableTopolog
   let := fun s ↦ i.normalSpaceNormedAddCommGroup s hn
   let := fun s ↦ i.normalSpaceNormedSpace s hn
   obtain ⟨ψ, Φ, hΦzero, -, hΦ, -, hψ, hnf⟩ := exists_parametric_morse_partialDiffeomorph
-    (IB := J) (F := P) (E := fun s ↦ i.NormalSpace s hn) (n := k) Φ₀.open_source hΦ₀zero hg
+    (IB := J) (F := P) (E := fun s ↦ i.isImmersion.NormalSpace s hn)
+        (n := k) Φ₀.open_source hΦ₀zero hg
     (fun s ↦ h.toIsCriticalSubmanifold.fderiv_comp_normalExp_mk_zero (P := P) hn s)
     (fun s ↦ h.isInvertible_fderiv_fderiv_comp_normalExp_mk_zero (P := P) hn s) hk
-  have hΦz (s : S) : Φ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) =
-      zeroSection P (fun s ↦ i.NormalSpace s hn) s := by
+  have hΦz (s : S) : Φ (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) =
+      zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s := by
     rw [hΦ, hψ]
     rfl
-  have hΦsz (s : S) : Φ.symm (zeroSection P (fun s ↦ i.NormalSpace s hn) s) =
-      zeroSection P (fun s ↦ i.NormalSpace s hn) s := by
+  have hΦsz (s : S) : Φ.symm (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) =
+      zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s := by
     conv_lhs => rw [← hΦz s]
     exact Φ.left_inv (hΦzero s)
   -- Step 3: `Θ = Φ₀ ∘ Φ⁻¹`.
