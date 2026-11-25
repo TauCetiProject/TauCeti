@@ -306,8 +306,9 @@ theorem isNondegenerateQuadraticFamily_of_mem_span_of_mul_self_eq_one_of_mul_sel
 open Polynomial
 
 /-- The real polynomial `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)`, whose complex roots are
-`±a ± bi`. Its generalized kernel at a Hamiltonian endomorphism with eigenvalue `a + bi` carries a
-focus-focus block. -/
+`±a ± bi`. Its generalized kernel at a Hamiltonian endomorphism with eigenvalue `a + bi`,
+`a, b ≠ 0`, is a symplectic subspace of dimension at least four
+(`four_le_finrank_maxGenEigenspace_aeval_focusFocusPoly`). -/
 noncomputable def focusFocusPoly (a b : ℝ) : ℝ[X] :=
   (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) * (X ^ 2 + C (2 * a) * X + C (a ^ 2 + b ^ 2))
 
