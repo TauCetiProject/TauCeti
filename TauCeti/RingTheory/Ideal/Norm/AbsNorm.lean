@@ -24,8 +24,8 @@ cardinality raised to the prime multiplicity. Over `ℤ` itself, the absolute no
 
 The cardinality of the quotient of a submodule `p` by a submodule `N` of `p` is the index of the
 image of `N` in `p`, as additive subgroups of the ambient module.
-The index of the image of a submodule under an injective linear map is its index times the
-index of the range.
+A submodule with finite quotient has nonzero index, and the index of the image of a submodule
+under an injective linear map is its index times the index of the range.
 
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
@@ -37,6 +37,7 @@ nonzero `s`, so the index `Submodule.cardQuot` is multiplicative along this chai
 
 * `Submodule.cardQuot_eq_relIndex_map_subtype`: for a submodule `N` of a submodule `p`,
   `#(p ⧸ N)` is the index of the image of `N` in `p`.
+* `Submodule.cardQuot_ne_zero`: a submodule with finite quotient has nonzero index.
 * `Submodule.cardQuot_map_of_injective`: for an injective linear map `f`,
   `#(N ⧸ f P) = #(M ⧸ P) * #(N ⧸ range f)`.
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
@@ -74,6 +75,12 @@ theorem cardQuot_eq_relIndex_map_subtype {R M : Type*} [Ring R] [AddCommGroup M]
     simp
   rw [cardQuot, ← AddSubgroup.relIndex_top_right, map_toAddSubgroup, ← hp,
     AddSubgroup.relIndex_map_map_of_injective _ _ p.injective_subtype]
+
+/-- A submodule with finite quotient has nonzero index. -/
+theorem cardQuot_ne_zero {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (S : Submodule R M) [Finite (M ⧸ S)] : S.cardQuot ≠ 0 := by
+  rw [cardQuot_apply]
+  exact Nat.card_pos.ne'
 
 /-- **The index of an injective image**: for an injective linear map `f : M → N`, the index of
 `f P` in `N` is the index of `P` in `M` times the index of the range of `f`. Both sides are `0`

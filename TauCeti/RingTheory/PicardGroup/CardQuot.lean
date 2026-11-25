@@ -62,12 +62,6 @@ end Module.Invertible
 
 namespace Submodule
 
-/-- A submodule with finite quotient has nonzero index. -/
-theorem cardQuot_ne_zero {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    (S : Submodule R M) [Finite (M ⧸ S)] : S.cardQuot ≠ 0 := by
-  rw [cardQuot_apply]
-  exact Nat.card_pos.ne'
-
 variable {R : Type*} [CommRing R] {L M : Type*} [AddCommGroup L] [Module R L]
   [AddCommGroup M] [Module R M] [Module.Invertible R M]
 

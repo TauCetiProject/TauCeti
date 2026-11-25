@@ -71,7 +71,7 @@ public section
 
 namespace Matrix.ShellLieAlgebra
 
-open LieAlgebra Module TensorProduct
+open LieAlgebra _root_.Module TensorProduct
 
 variable {I : Type*} [Fintype I] [LinearOrder I] {B : Matrix I I ℤ}
 

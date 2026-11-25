@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Arakelov.HermitianVectorBundle
-import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # The lattice index term of the Arakelov degree
@@ -53,18 +52,8 @@ theorem sectionDegree_map_eq_add_log_cardQuot_range (f : E →ₗ[𝓞 K] F)
     refine (injective_iff_map_eq_zero f).2 fun x hx => ?_
     by_contra h
     exact (E.norm_pos σ h).ne' (by rw [← hnorm σ, hx, HermitianVectorBundle.norm_zero])
-  have hmap : Submodule.span (𝓞 K) {f s} = (Submodule.span (𝓞 K) {s}).map f := by
-    rw [Submodule.map_span, Set.image_singleton]
-  have hidx : (Submodule.span (𝓞 K) {f s}).cardQuot =
-      (Submodule.span (𝓞 K) {s}).cardQuot * (LinearMap.range f).cardQuot := by
-    rw [hmap, Submodule.cardQuot_map_of_injective hf]
-  simp only [sectionDegree_def, hnorm, hidx, Nat.cast_mul]
-  rw [Real.log_mul]
-  · ring
-  -- Both quotients are finite and nonempty, so both indices are nonzero.
-  all_goals
-    exact Nat.cast_ne_zero.2
-      ((Submodule.cardQuot_apply _).trans_ne (Nat.card_ne_zero.2 ⟨inferInstance, inferInstance⟩))
+  rw [sectionDegree_eq_sectionDegreeOfNorms, sectionDegree_eq_sectionDegreeOfNorms]
+  exact sectionDegreeOfNorms_map_eq_add_log_cardQuot_range f hf hnorm s
 
 /-- The lattices `ℤ ⊂ ½ ℤ` with the absolute value metric, modelled as multiplication by `2` from
 `Ō_ℚ` to `Ō_ℚ(log 2)`, whose norm is `|x| / 2`: the degree of `½ ℤ` computed with the section `1`
