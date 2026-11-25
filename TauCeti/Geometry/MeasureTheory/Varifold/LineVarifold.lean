@@ -22,12 +22,13 @@ same plane `P`. Its first variation is `δV(X) = ∫ tr (P ∘ DX(a + t u)) dt`
 (`Euclidean.firstVariation_lineVarifold_apply`).
 
 The *vertical lift* `Euclidean.verticalLift a u w` of the line is the case where `P` is the line
-spanned by a unit vector `w` orthogonal to `u`. It does not have locally bounded first variation:
-for a smooth `ψ` of compact support, the fields `X_n(y) = n⁻¹ ψ(y) sin(n ⟪w, y - a⟫) w` satisfy
-`‖X_n‖ ≤ n⁻¹ sup |ψ|` while `δV(X_n) = ∫ ψ(a + t u) dt` for every `n`
+`span {w}`, for any `w ≠ 0`. When `w` is a unit vector orthogonal to `u`, it does not have locally
+bounded first variation: for a `C¹` function `ψ` of compact support, the fields
+`X_n(y) = n⁻¹ ψ(y) sin(n ⟪w, y - a⟫) w` satisfy `‖X_n‖ ≤ |n|⁻¹ sup |ψ|` while
+`δV(X_n) = ∫ ψ(a + t u) dt` for every `n ≠ 0`
 (`Euclidean.firstVariation_verticalLift_verticalField`).
-Hence no bound `|δV(X)| ≤ C sup |X|` holds for the fields supported in any closed ball centred on
-the line (`Euclidean.not_exists_abs_firstVariation_verticalLift_le`).
+Hence no bound `|δV(X)| ≤ C sup |X|` holds for the fields supported in any closed ball
+`closedBall a r` centred at `a` (`Euclidean.not_exists_abs_firstVariation_verticalLift_le`).
 
 ## Main definitions
 
@@ -60,35 +61,36 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {k : ℕ}
 
 /-! ### The vertical fields -/
 
-/-- The vertical field `X_n(y) = n⁻¹ ψ(y) sin(n ⟪w, y - a⟫) w` of a smooth `ψ` is smooth. -/
-private theorem contDiff_verticalField {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) (a w : E) (n : ℝ) :
-    ContDiff ℝ ∞ fun y => (n⁻¹ * ψ y * Real.sin (n * ⟪w, y - a⟫)) • w :=
+/-- The vertical field `X_n(y) = n⁻¹ ψ(y) sin(n ⟪w, y - a⟫) w` of a `C¹` function `ψ` is `C¹`. -/
+private theorem contDiff_verticalField {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (a w : E) (n : ℝ) :
+    ContDiff ℝ 1 fun y => (n⁻¹ * ψ y * Real.sin (n * ⟪w, y - a⟫)) • w :=
   ((contDiff_const.mul hψ).mul (Real.contDiff_sin.comp
     (contDiff_const.mul ((innerSL ℝ w).contDiff.comp (contDiff_id.sub contDiff_const))))).smul
     contDiff_const
 
-/-- The vertical field `X_n` as a test vector field, for `ψ` smooth with compact support. -/
-def verticalField {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (a w : E)
+/-- The vertical field `X_n` as a test vector field, for `ψ` of class `C¹` with compact
+support. -/
+def verticalField {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) (a w : E)
     (n : ℝ) : 𝓓^{1}((⊤ : Opens E), E) :=
   ⟨fun y => (n⁻¹ * ψ y * Real.sin (n * ⟪w, y - a⟫)) • w,
-    (contDiff_verticalField hψ a w n).of_le (by exact_mod_cast le_top),
+    contDiff_verticalField hψ a w n,
     (hψc.mul_left.mul_right).smul_right, by simp⟩
 
 /-- The vertical field evaluates to `n⁻¹ ψ(y) sin(n ⟪w, y - a⟫) w`. -/
 @[simp]
-theorem verticalField_apply {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
+theorem verticalField_apply {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ)
     (a w : E) (n : ℝ) (y : E) :
     verticalField hψ hψc a w n y = (n⁻¹ * ψ y * Real.sin (n * ⟪w, y - a⟫)) • w :=
   (rfl)
 
 /-- As a function, the vertical field is `y ↦ n⁻¹ ψ(y) sin(n ⟪w, y - a⟫) w`. -/
-theorem coe_verticalField {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
+theorem coe_verticalField {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ)
     (a w : E) (n : ℝ) :
     ⇑(verticalField hψ hψc a w n) = fun y => (n⁻¹ * ψ y * Real.sin (n * ⟪w, y - a⟫)) • w :=
   funext (verticalField_apply hψ hψc a w n)
 
 /-- The vertical field is small: `‖X_n(y)‖ ≤ |n|⁻¹ |ψ(y)| ‖w‖`. -/
-theorem norm_verticalField_le {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
+theorem norm_verticalField_le {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ)
     (a w : E) (n : ℝ) (y : E) :
     ‖verticalField hψ hψc a w n y‖ ≤ |n|⁻¹ * |ψ y| * ‖w‖ := by
   rw [verticalField_apply, norm_smul, Real.norm_eq_abs, abs_mul, abs_mul, abs_inv]
@@ -98,7 +100,7 @@ theorem norm_verticalField_le {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc
 /-- Along the line `a + ℝu` with `u ⊥ w`, the tangential divergence of the vertical field along
 the line spanned by `w` is `ψ`. -/
 private theorem tangentialDivergence_verticalField [FiniteDimensional ℝ E] {ψ : E → ℝ}
-    (hψ : ContDiff ℝ ∞ ψ)
+    (hψ : ContDiff ℝ 1 ψ)
     (hψc : HasCompactSupport ψ) {a u w : E} (huw : ⟪w, u⟫ = 0) (hw : ‖w‖ = 1) {n : ℝ}
     (hn : n ≠ 0) (t : ℝ) :
     tangentialDivergence (verticalField hψ hψc a w n) (a + t • u) (ℝ ∙ w).starProjection =
@@ -108,11 +110,12 @@ private theorem tangentialDivergence_verticalField [FiniteDimensional ℝ E] {ψ
     (hψ.differentiable (by simp)).differentiableAt.hasFDerivAt
   have hin : HasFDerivAt (fun y => n * ⟪w, y - a⟫) (n • innerSL ℝ w) y :=
     (((innerSL ℝ w).hasFDerivAt.comp y ((hasFDerivAt_id y).sub_const a))).const_mul n
-  have hc := ((hψd.const_mul n⁻¹).mul (Real.hasDerivAt_sin _ |>.comp_hasFDerivAt y hin))
   set c' : E →L[ℝ] ℝ := (n⁻¹ * ψ y) • (Real.cos (n * ⟪w, y - a⟫) • n • innerSL ℝ w) +
     Real.sin (n * ⟪w, y - a⟫) • n⁻¹ • fderiv ℝ ψ y
   have hX : HasFDerivAt (fun y => (n⁻¹ * ψ y * Real.sin (n * ⟪w, y - a⟫)) • w)
-      (c'.smulRight w) y := hc.smul_const w
+      (c'.smulRight w) y :=
+    (((hψd.const_mul n⁻¹).mul ((Real.hasDerivAt_sin _).comp_hasFDerivAt y hin)).smul_const
+      w).congr_fderiv (by ext v; simp [c'])
   have hya : ⟪w, y - a⟫ = 0 := by simp [y, inner_smul_right, huw]
   have hPw : (ℝ ∙ w).starProjection w = w :=
     Submodule.starProjection_eq_self_iff.2 (Submodule.mem_span_singleton_self w)
@@ -122,9 +125,7 @@ private theorem tangentialDivergence_verticalField [FiniteDimensional ℝ E] {ψ
     ext v
     simp [hPw]
   rw [hlin, LinearMap.trace_smulRight]
-  simp only [c', hya, mul_zero, Real.cos_zero, Real.sin_zero, ContinuousLinearMap.coe_coe,
-    add_apply, smul_apply, innerSL_apply_apply,
-    real_inner_self_eq_norm_sq, hw, smul_eq_mul, zero_mul, add_zero, one_pow, one_mul, mul_one]
+  simp [c', hya, hw]
   field_simp
 
 /-! ### The line varifold -/
@@ -177,15 +178,28 @@ def verticalLift (a u w : E) (hw : w ≠ 0) : Measure ((⊤ : Opens E) × grassm
   lineVarifold a u
     ⟨(ℝ ∙ w).starProjection, grassmannian.starProjection_mem (finrank_span_singleton hw)⟩
 
+omit [BorelSpace E] in
+/-- The defining formula of `Euclidean.verticalLift`. -/
+theorem verticalLift_def (a u w : E) (hw : w ≠ 0) :
+    verticalLift a u w hw = lineVarifold a u
+      ⟨(ℝ ∙ w).starProjection, grassmannian.starProjection_mem (finrank_span_singleton hw)⟩ := by
+  rw [verticalLift]
+
+/-- The vertical lift is finite on compact sets. -/
+theorem isFiniteMeasureOnCompacts_verticalLift {a u w : E} (hu : u ≠ 0) (hw : w ≠ 0) :
+    IsFiniteMeasureOnCompacts (verticalLift a u w hw) := by
+  rw [verticalLift_def]
+  exact isFiniteMeasureOnCompacts_lineVarifold hu _
+
 /-- **The first variation of the vertical lift on the vertical fields.** For the line `a + ℝu`
 with the constant plane `span {w}`, `w` a unit vector orthogonal to `u ≠ 0`, the vertical field
 `X_n` has `δV(X_n) = ∫ ψ(a + t u) dt` for every `n ≠ 0`, although `‖X_n‖ ≤ |n|⁻¹ sup |ψ|`. -/
-theorem firstVariation_verticalLift_verticalField {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+theorem firstVariation_verticalLift_verticalField {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ)
     (hψc : HasCompactSupport ψ) {a u w : E} (hu : u ≠ 0) (huw : ⟪w, u⟫ = 0) (hw : ‖w‖ = 1)
     {n : ℝ} (hn : n ≠ 0) :
     firstVariation (verticalLift a u w (norm_ne_zero_iff.1 (hw ▸ one_ne_zero)))
       (verticalField hψ hψc a w n) = ∫ t : ℝ, ψ (a + t • u) := by
-  rw [verticalLift, firstVariation_lineVarifold_apply hu]
+  rw [verticalLift_def, firstVariation_lineVarifold_apply hu]
   exact integral_congr_ae (ae_of_all _ fun t =>
     tangentialDivergence_verticalField hψ hψc huw hw hn t)
 
