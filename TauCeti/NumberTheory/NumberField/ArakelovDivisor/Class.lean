@@ -10,6 +10,8 @@ public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.OfHermitianLine
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.TensorProduct
 
 import Mathlib.RingTheory.PicardGroup
+import TauCeti.RingTheory.FractionalIdeal.Operations
+import TauCeti.RingTheory.PicardGroup.Submodule
 
 /-!
 # The class of a hermitian line in the compactified Picard group
@@ -27,7 +29,8 @@ have the same class exactly when they are isometric
 (`TauCeti.HermitianMetric.arakelovClass_eq_arakelovClass_iff`), every class is the class of a line
 (`TauCeti.ArakelovDivisor.arakelovClass_hermitianMetric`), and the degree of the class is the
 Arakelov degree of the line (`TauCeti.HermitianMetric.degree_arakelovClass`). The group law of
-`Pic^(𝓞 K)` is the tensor product of lines (`TauCeti.HermitianMetric.arakelovClass_tmul`).
+`Pic^(𝓞 K)` is the tensor product of lines (`TauCeti.HermitianMetric.arakelovClass_tmul`), with
+the trivial line `Ō_K` as identity (`TauCeti.HermitianMetric.arakelovClass_trivial`).
 
 ## Main definitions
 
@@ -49,6 +52,7 @@ Arakelov degree of the line (`TauCeti.HermitianMetric.degree_arakelovClass`). Th
 * `TauCeti.ArakelovDivisor.nonempty_isometryEquiv_tmul_hermitianMetric`:
   `O(D) ⊗ O(D') ≅ O(D + D')`, by multiplication.
 * `TauCeti.HermitianMetric.arakelovClass_tmul`: the class of `L ⊗ M` is the sum of the classes.
+* `TauCeti.HermitianMetric.arakelovClass_trivial`: the class of the trivial line `Ō_K` is `0`.
 
 ## References
 
@@ -148,8 +152,7 @@ theorem nonempty_isometryEquiv_tmul_hermitianMetric (D D' : ArakelovDivisor K) :
   set L : FractionalIdeal (𝓞 K)⁰ K :=
     (((D + D').finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K)
   have hL : ((I * J : (Submodule (𝓞 K) K)ˣ) : Submodule (𝓞 K) K) = L := by
-    simp only [I, J, L, ← map_mul, finitePart_add, mul_inv]
-    rfl
+    rw [← map_mul, FractionalIdeal.coe_unitsMulEquivSubmodule, ← mul_inv, ← finitePart_add]
   have hL0 : L ≠ 0 := Units.ne_zero _
   let ψ : (((D.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
         Submodule (𝓞 K) K) ⊗[𝓞 K]
@@ -160,7 +163,9 @@ theorem nonempty_isometryEquiv_tmul_hermitianMetric (D D' : ArakelovDivisor K) :
         Submodule (𝓞 K) K))
       (y : (((D'.finitePart⁻¹ : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :
         Submodule (𝓞 K) K)) :
-      (ψ (x ⊗ₜ y) : K) = x * y := rfl
+      (ψ (x ⊗ₜ y) : K) = x * y :=
+    -- `LinearEquiv.ofEq` leaves the underlying element of `K` unchanged.
+    Submodule.coe_tensorEquivMul_tmul I J x y
   let g := D.hermitianMetric.tmul D'.hermitianMetric
   obtain ⟨x, hxI, hx⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     ((FractionalIdeal.coeToSubmodule_ne_bot).mpr (Units.ne_zero (D.finitePart⁻¹)))
@@ -182,9 +187,7 @@ theorem nonempty_isometryEquiv_tmul_hermitianMetric (D D' : ArakelovDivisor K) :
     simp only [HermitianMetric.placeNorm_comap, x₀, LinearEquiv.coe_coe,
       LinearEquiv.symm_apply_apply, g, HermitianMetric.placeNorm_tmul, placeNorm_hermitianMetric,
       hψ, map_mul, infinitePart_add, Pi.add_apply]
-    rw [Real.log_mul hvx.ne' hvy.ne', Real.log_mul (by positivity) (by positivity),
-      Real.log_mul (by positivity) hvx.ne', Real.log_mul (by positivity) hvy.ne', Real.log_exp,
-      Real.log_exp]
+    simp [Real.log_mul, hvx.ne', hvy.ne']
     field_simp
     ring
   exact ⟨hg ▸ g.isometryEquivComap ψ.symm⟩
@@ -211,12 +214,20 @@ variable {K : Type*} [Field K] [NumberField K] {E F : Type*} [AddCommGroup E] [M
   [AddCommGroup F] [Module (𝓞 K) F] (h : HermitianMetric K E) (h' : HermitianMetric K F)
 
 /-- **The class of a tensor product of hermitian lines is the sum of the classes.** -/
+@[simp]
 theorem arakelovClass_tmul [Module.Invertible (𝓞 K) E] [Module.Invertible (𝓞 K) F] :
     (h.tmul h').arakelovClass = h.arakelovClass + h'.arakelovClass := by
   obtain ⟨D, hD, ⟨e⟩⟩ := h.exists_isometryEquiv_arakelovClass
   obtain ⟨D', hD', ⟨e'⟩⟩ := h'.exists_isometryEquiv_arakelovClass
   obtain ⟨t⟩ := ArakelovDivisor.nonempty_isometryEquiv_tmul_hermitianMetric D D'
   rw [arakelovClass_eq_mk_of_isometryEquiv ((e.tmul e').trans t), hD, hD', map_add]
+
+variable (K) in
+/-- **The class of the trivial hermitian line `Ō_K` is `0`.** -/
+@[simp]
+theorem arakelovClass_trivial : (trivial K).arakelovClass = 0 := by
+  have h := (tensorLId (trivial K)).arakelovClass_eq
+  rwa [arakelovClass_tmul, add_eq_right] at h
 
 end HermitianMetric
 

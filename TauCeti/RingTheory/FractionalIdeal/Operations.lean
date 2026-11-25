@@ -40,6 +40,8 @@ at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
 * `FractionalIdeal.spanSingleton_smul_eq` and `FractionalIdeal.spanSingleton_units_smul`: scaling
   the generator of a principal fractional ideal by a unit of the base ring leaves the ideal
   unchanged.
+* `FractionalIdeal.coe_unitsMulEquivSubmodule`: the invertible submodule of an invertible
+  fractional ideal is its underlying submodule.
 * `Ideal.moduleInvertible_of_isUnit_fractionalIdeal`: an ideal invertible in a faithful
   localization is an invertible module over the base ring.
 -/
@@ -121,6 +123,13 @@ section Localization
 
 variable {R : Type*} [CommRing R] {S : Submonoid R} {P : Type*} [CommRing P] [Algebra R P]
   [IsLocalization S P]
+
+/-- The invertible submodule `unitsMulEquivSubmodule I` is the underlying submodule of `I`. -/
+@[simp]
+theorem coe_unitsMulEquivSubmodule (I : (FractionalIdeal S P)ˣ) :
+    ((unitsMulEquivSubmodule I : (Submodule R P)ˣ) : Submodule R P) =
+      ((I : FractionalIdeal S P) : Submodule R P) :=
+  rfl
 
 /-- A fractional ideal is invertible exactly when its integral numerator is invertible.
 This extends Mathlib's `FractionalIdeal.isUnit_num` to any localization. -/
