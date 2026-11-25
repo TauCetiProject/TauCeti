@@ -16,9 +16,10 @@ MathematicalBilliards roadmap.
 
 * **The identity action.** If every `t` acts as the identity, then `U_t = 1` for every `t`
   (`koopmanGroup_eq_one_of_forall_vadd_eq`).
-* **Translation on `AddCircle 1`.** Let `ℝ` act on `AddCircle 1` by `t +ᵥ x = t + x`, preserving
-  the normalised Haar measure. For the mode `e_n(x) = exp(2πinx)` (`fourierLp 2 n`),
-  `U_t e_n = exp(2πint) e_n` (`koopmanGroup_fourierLp`), continuous in `t`.
+* **Translation on `AddCircle 1`.** Mathlib's action of `ℝ` on `AddCircle 1` is
+  `t +ᵥ x = t + x`, and it preserves the normalised Haar measure. For the mode
+  `e_n(x) = exp(2πinx)` (`fourierLp 2 n`), `U_t e_n = exp(2πint) e_n`
+  (`koopmanGroup_fourierLp`), continuous in `t`.
 -/
 
 public section
@@ -51,19 +52,14 @@ end Identity
 
 section Circle
 
-/-- The translation action of `ℝ` on `AddCircle 1`, `t +ᵥ x = t + x`. -/
-instance instAddActionRealAddCircleOne : AddAction ℝ (AddCircle (1 : ℝ)) :=
-  AddAction.compHom _ (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℝ)))
-
+/-- Mathlib's translation action of `ℝ` on `AddCircle 1` (`AddAction.quotient`) is
+`t +ᵥ x = t + x`. -/
 theorem vadd_def (t : ℝ) (x : AddCircle (1 : ℝ)) : t +ᵥ x = (t : AddCircle (1 : ℝ)) + x :=
   (rfl)
 
 /-- The translation action of `ℝ` on `AddCircle 1` is jointly measurable. -/
 instance instMeasurableVAdd₂RealAddCircleOne : MeasurableVAdd₂ ℝ (AddCircle (1 : ℝ)) :=
-  ⟨by
-    change Measurable fun p : ℝ × AddCircle (1 : ℝ) => (p.1 : AddCircle (1 : ℝ)) + p.2
-    exact (((AddCircle.continuous_mk' (1 : ℝ)).comp continuous_fst).add
-      continuous_snd).measurable⟩
+  ⟨continuous_vadd.measurable⟩
 
 /-- The translation action of `ℝ` on `AddCircle 1` preserves the normalised Haar measure. -/
 instance instVAddInvariantMeasureRealHaarAddCircle :
