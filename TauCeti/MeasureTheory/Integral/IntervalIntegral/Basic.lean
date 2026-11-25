@@ -39,6 +39,8 @@ not belong to any particular application.
   uniform `(N + 1)`-subinterval left-endpoint Riemann sums in terms of subinterval oscillation.
 * `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
   everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
+* `TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const`: a constant whose time averages
+  `T⁻¹ ∫₀ᵀ c dt` tend to `0` vanishes.
 * `TauCeti.intervalIntegral.integral_eq_zero_of_forall_lt`: for `b ≤ a` and a measure vanishing
   on singletons, the integral over `a..b` of a function vanishing on `(-∞, a)` is zero.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
@@ -378,6 +380,15 @@ theorem tendsto_integral_nhds_zero_of_ae_norm_le {ι E : Type*} [NormedAddCommGr
       (hF.mono fun i hi ↦ ?_) (by simpa using hB.mul_const (μ.real (Ι a b))))
   rw [_root_.intervalIntegral.norm_integral_eq_norm_integral_uIoc]
   exact norm_setIntegral_le_of_norm_le_const_ae' measure_Ioc_lt_top hi
+
+open Filter Topology in
+/-- If the time averages `T⁻¹ ∫₀ᵀ c dt` of a constant `c` tend to `0` as `T → ∞`, then `c = 0`:
+the averages are eventually equal to `c`. -/
+theorem eq_zero_of_tendsto_average_const {c : ℝ}
+    (h : Tendsto (fun T : ℝ ↦ T⁻¹ * ∫ _ in (0 : ℝ)..T, c) atTop (𝓝 0)) : c = 0 := by
+  refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) h
+  filter_upwards [eventually_gt_atTop 0] with T hT
+  rw [_root_.intervalIntegral.integral_const, sub_zero, smul_eq_mul, inv_mul_cancel_left₀ hT.ne']
 
 /-- For `b ≤ a` and a measure vanishing on singletons, the integral over `a..b` of a function
 vanishing on `(-∞, a)` is zero. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Calculus.ContDiff.Indicator
@@ -29,11 +30,13 @@ finite `p`; that case lives with the Lipschitz-domain theory.
 The space shrinks as `Γ` grows and depends on `Γ` only through its closure. When `Γ` misses `Ω`,
 as a boundary part does, it contains `W^{1,p}_0(Ω)`; this can fail when `Γ` meets `Ω`, for
 instance when `Γ` contains a nonempty open subset of `Ω`. Multiplication by a smooth function
-bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`.
+bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`. Its invariance under rigid
+motions is in `TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables`.
 
 ## Main declarations
 
-* `TauCeti.w1pVanishingOnSubmodule`: the closed subspace `W^{1,p}_Γ(Ω)` of `W^{1,p}(Ω)`.
+* `TauCeti.w1pVanishingOnSubmodule`: the closed subspace `W^{1,p}_Γ(Ω)` of `W^{1,p}(Ω)`, and
+  `TauCeti.W1pVanishingOn`, the same space as a complete normed space.
 * `TauCeti.W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule` and
   `TauCeti.w1pVanishingOnSubmodule_subset_of_isClosed`: the generators lie in it, and a closed set
   containing them contains all of it.
@@ -46,6 +49,9 @@ bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
   smooth functions bounded with their gradients.
+* `TauCeti.W1pVanishingOn.instNormedAddCommGroup` and
+  `TauCeti.W1pVanishingOn.instInnerProductSpace`: shortcut instances, registered locally by files
+  applying abstract Hilbert space results to `W^{1,2}_Γ(Ω)`.
 
 ## References
 
@@ -125,6 +131,26 @@ theorem w1pVanishingOnSubmodule_subset_of_isClosed {s : Set (W1p mu Omega p)} (h
     (w1pVanishingOnSubmodule mu Omega p Γ : Set (W1p mu Omega p)) ⊆ s := by
   rw [coe_w1pVanishingOnSubmodule]
   exact closure_minimal (by rintro _ ⟨φ, hφ, rfl⟩; exact h φ hφ) hs
+
+/-- **The Sobolev space `W^{1,p}_Γ(Ω)`** as a type: the subspace `w1pVanishingOnSubmodule`, with
+the normed structure inherited from `W^{1,p}(Ω)`. For `p = 2` it is a Hilbert space, the test
+space of the mixed boundary value problem. -/
+abbrev W1pVanishingOn (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E) (p : ℝ≥0∞)
+    [Fact (1 ≤ p)] (Γ : Set E) := (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule
+
+/-- Shortcut instance for the norm `W^{1,p}_Γ(Ω)` inherits through the nested Sobolev subspaces;
+instance search does not find the dual-space norm on its own without it. -/
+noncomputable instance instSeminormedAddCommGroupW1pVanishingOn :
+    SeminormedAddCommGroup (W1pVanishingOn mu Omega p Γ) := inferInstance
+
+/-- Shortcut instance for the scalar action `W^{1,p}_Γ(Ω)` inherits through the nested Sobolev
+subspaces. -/
+noncomputable instance instNormedSpaceW1pVanishingOn :
+    NormedSpace ℝ (W1pVanishingOn mu Omega p Γ) := inferInstance
+
+/-- `W^{1,p}_Γ(Ω)` is complete: it is a closed subspace of the complete space `W^{1,p}(Ω)`. -/
+instance : CompleteSpace (W1pVanishingOn mu Omega p Γ) :=
+  (w1pVanishingOnSubmodule mu Omega p Γ).isClosed.completeSpace_coe
 
 /-- **Sequential characterization of `W^{1,p}_Γ(Ω)`**: an element of `W^{1,p}(Ω)` lies in
 `W^{1,p}_Γ(Ω)` exactly when it is the limit of the restrictions to `Ω` of a sequence of test
@@ -241,5 +267,22 @@ theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule {psi : E → ℝ} {M : ℝ}
   simp only [mem_preimage, SetLike.mem_coe, W1p.contDiffSMulL_apply, hΦ]
   exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
     (hΦφ ▸ hφ.mono_left (tsupport_mul_subset_right (f := psi) (g := φ)))
+
+/-! ### Shortcut instances for the Hilbert space `W^{1,2}_Γ(Ω)`
+
+The instances below are `local`, so they take part in instance search only in a file that
+registers them with `attribute [local instance]`, as for `W^{1,2}_0(Ω)`. -/
+
+/-- Shortcut instance for the normed group structure of `W^{1,p}_Γ(Ω)`, the separated form of
+`instSeminormedAddCommGroupW1pVanishingOn`. Instance search can time out on it while elaborating
+the arguments of an abstract Hilbert space lemma. -/
+noncomputable local instance W1pVanishingOn.instNormedAddCommGroup :
+    NormedAddCommGroup (W1pVanishingOn mu Omega p Γ) := inferInstance
+
+/-- Shortcut instance for the Hilbert space structure of `W^{1,2}_Γ(Ω)`, inherited from
+`W^{1,2}(Ω)`. A file that applies abstract Hilbert space results to `W^{1,2}_Γ(Ω)` registers it
+together with `W1pVanishingOn.instNormedAddCommGroup`. -/
+noncomputable local instance W1pVanishingOn.instInnerProductSpace :
+    InnerProductSpace ℝ (W1pVanishingOn mu Omega 2 Γ) := inferInstance
 
 end TauCeti
