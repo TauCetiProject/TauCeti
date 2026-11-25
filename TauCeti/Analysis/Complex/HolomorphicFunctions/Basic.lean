@@ -22,8 +22,10 @@ uniformity are inherited from continuous maps, so convergence means locally unif
 convergence. This subalgebra is closed and complete; restriction to a subset `K ⊆ U`
 (`HolomorphicFunctions.restrictContinuousMap`), restriction to a smaller open set
 (`HolomorphicFunctions.restrict`), precomposition along a holomorphic map into another open set
-(`HolomorphicFunctions.comp`), and pointwise evaluation (`HolomorphicFunctions.eval`,
-`HolomorphicFunctions.evalCLM`) are continuous algebra homomorphisms.
+(`HolomorphicFunctions.comp`), and pointwise evaluation (`HolomorphicFunctions.eval`, bundled as a
+continuous linear map in `HolomorphicFunctions.evalCLM`) are continuous algebra homomorphisms, and
+`HolomorphicFunctions.vanishingAt` cuts out the nonunital subalgebra of holomorphic functions
+vanishing at a marked point.
 
 These algebras provide domains for continuous holomorphic functional calculi without
 choosing a supremum norm on a possibly noncompact open set.
@@ -253,59 +255,6 @@ theorem restrict_comp_restrict (hVU : V ≤ U) (hWV : W ≤ V) :
 theorem continuous_restrict (h : V ≤ U) : Continuous (restrict h) :=
   (continuous_restrictContinuousMap h).subtype_mk _
 
-section PointEvaluation
-
-/-- Pointwise evaluation at `z : U` as a `ℂ`-algebra homomorphism
-`holomorphicFunctions U →ₐ[ℂ] ℂ`. -/
-noncomputable def eval (z : U) : holomorphicFunctions U →ₐ[ℂ] ℂ :=
-  (ContinuousMap.evalAlgHom ℂ ℂ z).comp (holomorphicFunctions U).val
-
-/-- Evaluating `eval z` at `f` returns `f.val z`. -/
-@[simp]
-theorem eval_apply (z : U) (f : holomorphicFunctions U) : eval z f = f.val z := (rfl)
-
-/-- Pointwise evaluation at `z : U` agrees with `extend f z`. -/
-theorem eval_apply_eq_extend (z : U) (f : holomorphicFunctions U) : eval z f = extend f z :=
-  (extend_apply f z).symm
-
-/-- Evaluating `of U g hg` at `z : U` recovers `g z`. -/
-theorem eval_of (z : U) (g : ℂ → ℂ) (hg : DifferentiableOn ℂ g U) :
-    eval z (of U g hg) = g z := (rfl)
-
-/-- Compatibility of pointwise evaluation with `restrict`. -/
-theorem eval_restrict (h : V ≤ U) (z : V) (f : holomorphicFunctions U) :
-    eval z (restrict h f) = eval (Set.inclusion h z) f := (rfl)
-
-/-- Pointwise evaluation at `z : U` is continuous for compact convergence. -/
-@[continuity, fun_prop]
-theorem continuous_eval (z : U) : Continuous (eval z) :=
-  (ContinuousMap.evalCLM ℂ z).continuous.comp continuous_subtypeVal
-
-/-- Pointwise evaluation at `z : U` as a continuous linear map
-`holomorphicFunctions U →L[ℂ] ℂ`. -/
-noncomputable def evalCLM (z : U) : holomorphicFunctions U →L[ℂ] ℂ where
-  toLinearMap := (eval z).toLinearMap
-  cont := continuous_eval z
-
-/-- Coercing `evalCLM z` to a function recovers `eval z`. -/
-@[simp]
-theorem coe_evalCLM (z : U) : ⇑(evalCLM z) = eval z := (rfl)
-
-/-- Underlying linear map of `evalCLM z`. -/
-@[simp]
-theorem toLinearMap_evalCLM (z : U) : (evalCLM z).toLinearMap = (eval z).toLinearMap := (rfl)
-
-/-- Evaluating `evalCLM z` at `f` returns `f.val z`. -/
-theorem evalCLM_apply (z : U) (f : holomorphicFunctions U) : evalCLM z f = f.val z := (rfl)
-
-/-- Pointwise evaluation at `z : U` is uniformly continuous. -/
-theorem uniformContinuous_eval (z : U) : UniformContinuous (eval z) := by
-  rw [← coe_evalCLM]
-  exact ContinuousLinearMap.uniformContinuous (E₁ := holomorphicFunctions U) (E₂ := ℂ)
-    (evalCLM z)
-
-end PointEvaluation
-
 /-- Convergence in the inherited topology is locally uniform convergence on the open domain. -/
 theorem tendsto_iff_tendstoLocallyUniformlyOn {ι : Type*} {p : Filter ι}
     {F : ι → holomorphicFunctions U} {f : holomorphicFunctions U} :
@@ -417,6 +366,113 @@ theorem continuous_comp (f : holomorphicFunctions U) (hf : MapsTo (extend f) U V
     (ContinuousMap.mk
       (fun z : U => (⟨f.val z, apply_mem_of_mapsTo_extend f hf z⟩ : V))
       (f.val.continuous.subtype_mk _))).comp continuous_subtypeVal |>.subtype_mk _
+
+/-- Point evaluation of a holomorphic function on `U` at `x ∈ U`. -/
+noncomputable def eval (x : ℂ) (hx : x ∈ U) : holomorphicFunctions U →ₐ[ℂ] ℂ :=
+  (ContinuousMap.evalAlgHom ℂ ℂ (⟨x, hx⟩ : U)).comp (holomorphicFunctions U).val
+
+@[simp]
+theorem eval_apply (x : ℂ) (hx : x ∈ U) (f : holomorphicFunctions U) :
+    eval x hx f = f.val ⟨x, hx⟩ := (rfl)
+
+/-- Pointwise evaluation at `x ∈ U` agrees with `extend f x`. -/
+theorem eval_apply_eq_extend (x : ℂ) (hx : x ∈ U) (f : holomorphicFunctions U) :
+    eval x hx f = extend f x :=
+  (extend_apply f ⟨x, hx⟩).symm
+
+/-- Evaluating `of U g hg` at `x ∈ U` recovers `g x`. -/
+theorem eval_of (x : ℂ) (hx : x ∈ U) (g : ℂ → ℂ) (hg : DifferentiableOn ℂ g U) :
+    eval x hx (of U g hg) = g x := (rfl)
+
+/-- Compatibility of pointwise evaluation with `restrict`. -/
+theorem eval_restrict (h : V ≤ U) (x : ℂ) (hx : x ∈ V) (f : holomorphicFunctions U) :
+    eval x hx (restrict h f) = eval x (h hx) f := (rfl)
+
+/-- Pointwise evaluation at `x ∈ U` is continuous for compact convergence. -/
+@[continuity, fun_prop]
+theorem continuous_eval (x : ℂ) (hx : x ∈ U) : Continuous (eval x hx) :=
+  (ContinuousMap.evalCLM ℂ (⟨x, hx⟩ : U)).continuous.comp continuous_subtypeVal
+
+/-- Pointwise evaluation at `x ∈ U` as a continuous linear map
+`holomorphicFunctions U →L[ℂ] ℂ`. -/
+noncomputable def evalCLM (x : ℂ) (hx : x ∈ U) : holomorphicFunctions U →L[ℂ] ℂ where
+  toLinearMap := (eval x hx).toLinearMap
+  cont := continuous_eval x hx
+
+/-- Coercing `evalCLM x hx` to a function recovers `eval x hx`. -/
+@[simp]
+theorem coe_evalCLM (x : ℂ) (hx : x ∈ U) : ⇑(evalCLM x hx) = eval x hx := (rfl)
+
+/-- Underlying linear map of `evalCLM x hx`. -/
+@[simp]
+theorem toLinearMap_evalCLM (x : ℂ) (hx : x ∈ U) :
+    (evalCLM x hx).toLinearMap = (eval x hx).toLinearMap := (rfl)
+
+/-- Evaluating `evalCLM x hx` at `f` returns `f.val ⟨x, hx⟩`. -/
+theorem evalCLM_apply (x : ℂ) (hx : x ∈ U) (f : holomorphicFunctions U) :
+    evalCLM x hx f = f.val ⟨x, hx⟩ := (rfl)
+
+/-- Pointwise evaluation at `x ∈ U` is uniformly continuous. -/
+theorem uniformContinuous_eval (x : ℂ) (hx : x ∈ U) : UniformContinuous (eval x hx) := by
+  rw [← coe_evalCLM]
+  exact ContinuousLinearMap.uniformContinuous (E₁ := holomorphicFunctions U) (E₂ := ℂ)
+    (evalCLM x hx)
+
+/-- The nonunital complex subalgebra of `holomorphicFunctions U` consisting of functions
+vanishing at a marked point `x ∈ U`. -/
+noncomputable def vanishingAt (U : Opens ℂ) (x : ℂ) (hx : x ∈ U) :
+    NonUnitalSubalgebra ℂ (holomorphicFunctions U) :=
+  NonUnitalAlgHom.equalizer (eval x hx).toNonUnitalAlgHom 0
+
+/-- Membership in `HolomorphicFunctions.vanishingAt U x hx` means vanishing at `⟨x, hx⟩`. -/
+@[simp]
+theorem mem_vanishingAt_iff {U : Opens ℂ} {x : ℂ} {hx : x ∈ U} {f : holomorphicFunctions U} :
+    f ∈ vanishingAt U x hx ↔ f.val ⟨x, hx⟩ = 0 := by
+  simp [vanishingAt, NonUnitalAlgHom.mem_equalizer]
+
+/-- Pointwise evaluation of a function in `HolomorphicFunctions.vanishingAt U x hx` at `⟨x, hx⟩`
+vanishes. -/
+@[simp]
+theorem apply_coe_vanishingAt {U : Opens ℂ} {x : ℂ} {hx : x ∈ U} (f : vanishingAt U x hx) :
+    (f : holomorphicFunctions U).val ⟨x, hx⟩ = 0 :=
+  mem_vanishingAt_iff.mp f.property
+
+/-- Restriction of holomorphic functions vanishing at `x` along an inclusion of open domains. -/
+noncomputable def restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V) :
+    vanishingAt U x (h hx) →ₙₐ[ℂ] vanishingAt V x hx :=
+  ((restrict h).toNonUnitalAlgHom.comp
+    (NonUnitalSubalgebraClass.subtype (vanishingAt U x (h hx)))).codRestrict
+      (vanishingAt V x hx) fun f => mem_vanishingAt_iff.mpr (by simp)
+
+/-- Coercing `restrictVanishingAt` back to `holomorphicFunctions V` recovers `restrict`. -/
+@[simp]
+theorem coe_restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V)
+    (f : vanishingAt U x (h hx)) :
+    (restrictVanishingAt h hx f : holomorphicFunctions V) = restrict h f.val := (rfl)
+
+/-- Restricting `vanishingAt` along `le_refl` is the identity homomorphism. -/
+@[simp]
+theorem restrictVanishingAt_refl {x : ℂ} (hx : x ∈ U) :
+    restrictVanishingAt (le_refl U) hx = NonUnitalAlgHom.id ℂ (vanishingAt U x hx) := by
+  ext f
+  simp
+
+/-- Successive restrictions of `vanishingAt` compose to restriction along the composite
+inclusion. -/
+@[simp]
+theorem restrictVanishingAt_comp_restrictVanishingAt {x : ℂ} (hVU : V ≤ U) (hWV : W ≤ V)
+    (hx : x ∈ W) :
+    (restrictVanishingAt hWV hx).comp (restrictVanishingAt hVU (hWV hx)) =
+      restrictVanishingAt (hWV.trans hVU) hx := by
+  ext f
+  simp [← AlgHom.comp_apply]
+
+/-- Restriction on `HolomorphicFunctions.vanishingAt` is continuous for the compact-open
+topology. -/
+@[continuity]
+theorem continuous_restrictVanishingAt {x : ℂ} (h : V ≤ U) (hx : x ∈ V) :
+    Continuous (restrictVanishingAt h hx) :=
+  ((continuous_restrict h).comp continuous_subtypeVal).subtype_mk _
 
 end HolomorphicFunctions
 

@@ -11,13 +11,13 @@ public import TauCeti.Topology.MetricSpace.ProperSpace
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Explicit comparison metric on `C(U, ℂ)` and `holomorphicFunctions U`
+# Explicit comparison metric on `holomorphicFunctions U`
 
 For an open subset `U : Opens ℂ` of the complex plane, `U.compactExhaustion 0` exhausts `U` by the
-compact sets cutting out `closedBall 0 (n + 1) \ thickening (n + 1)⁻¹ Uᶜ`. Specializing
-`CompactExhaustion.continuousMapDist` to this canonical exhaustion gives an explicit bounded metric
-`HolomorphicFunctions.continuousMapDist U` on `C(U, ℂ)` and its restriction
-`HolomorphicFunctions.comparisonDist U` on the closed subalgebra `holomorphicFunctions U`:
+compact sets cutting out `closedBall 0 (n + 1) \ thickening (n + 1)⁻¹ Uᶜ`. Restricting
+`(U.compactExhaustion 0).continuousMapDist` along the subalgebra inclusion into `C(U, ℂ)` gives an
+explicit bounded metric `HolomorphicFunctions.comparisonDist U` on the closed subalgebra
+`holomorphicFunctions U`:
 $$
 d(f, g) = \sum_{n = 0}^{\infty} 2^{-(n + 1)} \frac{s_n(f, g)}{1 + s_n(f, g)},
 \qquad s_n(f, g) = \sup_{z \in K_n} |f(z) - g(z)|.
@@ -26,10 +26,10 @@ Neither `C(U, ℂ)` nor `holomorphicFunctions U` is given a `MetricSpace` typecl
 their canonical compact-convergence uniformities remain the unique active uniform structures.
 Instead, `uniformity_eq_iInf_comparisonDist` proves that `comparisonDist U` generates the exact
 inherited uniformity on `holomorphicFunctions U` (independently of the exhaustion),
-`comparisonMetricSpace U` packages the compatible `MetricSpace` structure when metric theorems are
-needed, `comparisonDist U` is complete on `holomorphicFunctions U`, and both compact restriction
-`restrictContinuousMap hKU` and differentiation `deriv` satisfy `ε`-`δ` uniform continuity with
-respect to `comparisonDist U`.
+`comparisonMetricSpace U` pulls back `(U.compactExhaustion 0).continuousMapMetricSpace` along
+`Subtype.val` when metric theorems are needed, `comparisonDist U` is complete on
+`holomorphicFunctions U`, and both compact restriction `restrictContinuousMap hKU` and
+differentiation `deriv` satisfy `ε`-`δ` uniform continuity with respect to `comparisonDist U`.
 
 Closed-form evaluations on empty open sets (including `U = ⊥`), on domains whose initial exhaustion
 stage `U.compactExhaustion 0 0` is nonempty, and on `U = ⊤` illustrate the normalization of the
@@ -48,100 +48,20 @@ open scoped Uniformity
 
 namespace TauCeti.HolomorphicFunctions
 
-section ContinuousMapDist
-
-/-- Explicit comparison distance on `C(U, ℂ)` built from the canonical exhaustion
-`U.compactExhaustion 0` whose stage `n` cuts out
-`closedBall 0 (n + 1) \ thickening (n + 1)⁻¹ Uᶜ`. Not registered as a metric instance. -/
-def continuousMapDist (U : Opens ℂ) (f g : C(U, ℂ)) : ℝ :=
-  (U.compactExhaustion 0).continuousMapDist f g
-
-/-- `continuousMapDist U` is `CompactExhaustion.continuousMapDist` at `U.compactExhaustion 0`. -/
-theorem continuousMapDist_def (U : Opens ℂ) (f g : C(U, ℂ)) :
-    continuousMapDist U f g = (U.compactExhaustion 0).continuousMapDist f g := (rfl)
-
-/-- Series expansion of `continuousMapDist U f g` over the stages of `U.compactExhaustion 0`. -/
-theorem continuousMapDist_eq_tsum (U : Opens ℂ) (f g : C(U, ℂ)) :
-    continuousMapDist U f g =
-      ∑' n : ℕ, (1 / 2 : ℝ) ^ (n + 1) *
-        (dist (f.restrict (U.compactExhaustion 0 n)) (g.restrict (U.compactExhaustion 0 n)) /
-          (1 + dist (f.restrict (U.compactExhaustion 0 n))
-            (g.restrict (U.compactExhaustion 0 n)))) :=
-  (U.compactExhaustion 0).continuousMapDist_def f g
-
-/-- `continuousMapDist U` vanishes on the diagonal. -/
-@[simp]
-theorem continuousMapDist_self (U : Opens ℂ) (f : C(U, ℂ)) : continuousMapDist U f f = 0 :=
-  (U.compactExhaustion 0).continuousMapDist_self f
-
-/-- On an empty open set `U` (in particular `U = ⊥`), `continuousMapDist U` vanishes identically. -/
-@[simp]
-theorem continuousMapDist_of_isEmpty {U : Opens ℂ} [IsEmpty U] (f g : C(U, ℂ)) :
-    continuousMapDist U f g = 0 :=
-  (U.compactExhaustion 0).continuousMapDist_of_isEmpty f g
-
-/-- `continuousMapDist U` is symmetric. -/
-theorem continuousMapDist_comm (U : Opens ℂ) (f g : C(U, ℂ)) :
-    continuousMapDist U f g = continuousMapDist U g f :=
-  (U.compactExhaustion 0).continuousMapDist_comm f g
-
-/-- `continuousMapDist U` is nonnegative. -/
-theorem continuousMapDist_nonneg (U : Opens ℂ) (f g : C(U, ℂ)) : 0 ≤ continuousMapDist U f g :=
-  (U.compactExhaustion 0).continuousMapDist_nonneg f g
-
-/-- `continuousMapDist U` is strictly bounded above by `1`. -/
-theorem continuousMapDist_lt_one (U : Opens ℂ) (f g : C(U, ℂ)) : continuousMapDist U f g < 1 :=
-  (U.compactExhaustion 0).continuousMapDist_lt_one f g
-
-/-- `continuousMapDist U` is bounded above by `1`. -/
-theorem continuousMapDist_le_one (U : Opens ℂ) (f g : C(U, ℂ)) : continuousMapDist U f g ≤ 1 :=
-  (U.compactExhaustion 0).continuousMapDist_le_one f g
-
-/-- Triangle inequality for `continuousMapDist U`. -/
-theorem continuousMapDist_triangle (U : Opens ℂ) (f g h : C(U, ℂ)) :
-    continuousMapDist U f h ≤ continuousMapDist U f g + continuousMapDist U g h :=
-  (U.compactExhaustion 0).continuousMapDist_triangle f g h
-
-/-- `continuousMapDist U` separates distinct continuous maps on `U`. -/
-@[simp]
-theorem continuousMapDist_eq_zero_iff {U : Opens ℂ} {f g : C(U, ℂ)} :
-    continuousMapDist U f g = 0 ↔ f = g :=
-  (U.compactExhaustion 0).continuousMapDist_eq_zero_iff
-
-/-- **Equality of uniformities on `C(U, ℂ)`.** The comparison distance `continuousMapDist U`
-induces the exact compact-convergence uniformity on `C(U, ℂ)`. -/
-theorem uniformity_continuousMap_eq_iInf_continuousMapDist (U : Opens ℂ) :
-    𝓤 C(U, ℂ) = ⨅ ε > 0, 𝓟 {fg : C(U, ℂ) × C(U, ℂ) | continuousMapDist U fg.1 fg.2 < ε} :=
-  (U.compactExhaustion 0).uniformity_eq_iInf_continuousMapDist
-
-/-- Compatible `MetricSpace` packaging on `C(U, ℂ)` with `dist` definitionally equal to
-`continuousMapDist U` and `toUniformSpace` definitionally equal to
-`ContinuousMap.compactConvergenceUniformSpace`. Not registered as an instance. -/
-@[expose, instance_reducible]
-def continuousMapMetricSpace (U : Opens ℂ) : MetricSpace C(U, ℂ) where
-  dist := continuousMapDist U
-  dist_self := continuousMapDist_self U
-  dist_comm := continuousMapDist_comm U
-  dist_triangle := continuousMapDist_triangle U
-  eq_of_dist_eq_zero := continuousMapDist_eq_zero_iff.mp
-  toUniformSpace := ContinuousMap.compactConvergenceUniformSpace
-  uniformity_dist := uniformity_continuousMap_eq_iInf_continuousMapDist U
-
-end ContinuousMapDist
-
 section ComparisonDist
 
 variable {U : Opens ℂ}
 
 /-- Explicit comparison distance on `holomorphicFunctions U`, obtained by restricting
-`continuousMapDist U` along the subalgebra inclusion into `C(U, ℂ)`. Not registered as a metric
-instance. -/
+`(U.compactExhaustion 0).continuousMapDist` along the subalgebra inclusion into `C(U, ℂ)`. Not
+registered as a metric instance. -/
 def comparisonDist (U : Opens ℂ) (f g : holomorphicFunctions U) : ℝ :=
-  continuousMapDist U f.val g.val
+  (U.compactExhaustion 0).continuousMapDist f.val g.val
 
-/-- `comparisonDist U` is the restriction of `continuousMapDist U` to `holomorphicFunctions U`. -/
+/-- `comparisonDist U` is the restriction of `(U.compactExhaustion 0).continuousMapDist` to
+`holomorphicFunctions U`. -/
 theorem comparisonDist_def (U : Opens ℂ) (f g : holomorphicFunctions U) :
-    comparisonDist U f g = continuousMapDist U f.val g.val := (rfl)
+    comparisonDist U f g = (U.compactExhaustion 0).continuousMapDist f.val g.val := (rfl)
 
 /-- Series expansion of `comparisonDist U f g` over the stages of `U.compactExhaustion 0`. -/
 theorem comparisonDist_eq_tsum (U : Opens ℂ) (f g : holomorphicFunctions U) :
@@ -151,44 +71,44 @@ theorem comparisonDist_eq_tsum (U : Opens ℂ) (f g : holomorphicFunctions U) :
           (g.val.restrict (U.compactExhaustion 0 n)) /
           (1 + dist (f.val.restrict (U.compactExhaustion 0 n))
             (g.val.restrict (U.compactExhaustion 0 n)))) :=
-  continuousMapDist_eq_tsum U f.val g.val
+  (U.compactExhaustion 0).continuousMapDist_def f.val g.val
 
 /-- `comparisonDist U` vanishes on the diagonal. -/
 @[simp]
 theorem comparisonDist_self (U : Opens ℂ) (f : holomorphicFunctions U) :
     comparisonDist U f f = 0 :=
-  continuousMapDist_self U f.val
+  (U.compactExhaustion 0).continuousMapDist_self f.val
 
 /-- `comparisonDist U` is symmetric. -/
 theorem comparisonDist_comm (U : Opens ℂ) (f g : holomorphicFunctions U) :
     comparisonDist U f g = comparisonDist U g f :=
-  continuousMapDist_comm U f.val g.val
+  (U.compactExhaustion 0).continuousMapDist_comm f.val g.val
 
 /-- `comparisonDist U` is nonnegative. -/
 theorem comparisonDist_nonneg (U : Opens ℂ) (f g : holomorphicFunctions U) :
     0 ≤ comparisonDist U f g :=
-  continuousMapDist_nonneg U f.val g.val
+  (U.compactExhaustion 0).continuousMapDist_nonneg f.val g.val
 
 /-- `comparisonDist U` is strictly bounded above by `1`. -/
 theorem comparisonDist_lt_one (U : Opens ℂ) (f g : holomorphicFunctions U) :
     comparisonDist U f g < 1 :=
-  continuousMapDist_lt_one U f.val g.val
+  (U.compactExhaustion 0).continuousMapDist_lt_one f.val g.val
 
 /-- `comparisonDist U` is bounded above by `1`. -/
 theorem comparisonDist_le_one (U : Opens ℂ) (f g : holomorphicFunctions U) :
     comparisonDist U f g ≤ 1 :=
-  continuousMapDist_le_one U f.val g.val
+  (U.compactExhaustion 0).continuousMapDist_le_one f.val g.val
 
 /-- Triangle inequality for `comparisonDist U`. -/
 theorem comparisonDist_triangle (U : Opens ℂ) (f g h : holomorphicFunctions U) :
     comparisonDist U f h ≤ comparisonDist U f g + comparisonDist U g h :=
-  continuousMapDist_triangle U f.val g.val h.val
+  (U.compactExhaustion 0).continuousMapDist_triangle f.val g.val h.val
 
 /-- `comparisonDist U` separates distinct holomorphic functions on `U`. -/
 @[simp]
 theorem comparisonDist_eq_zero_iff {f g : holomorphicFunctions U} :
     comparisonDist U f g = 0 ↔ f = g :=
-  continuousMapDist_eq_zero_iff.trans Subtype.ext_iff.symm
+  (U.compactExhaustion 0).continuousMapDist_eq_zero_iff.trans Subtype.ext_iff.symm
 
 /-- Lower comparison of `comparisonDist U` against the `min 1 s_n` series. -/
 theorem half_tsum_min_one_le_comparisonDist (f g : holomorphicFunctions U) :
@@ -269,18 +189,13 @@ theorem uniformSpace_ofDist_compactExhaustionContinuousMapDist (K : CompactExhau
       instUniformSpaceSubtype :=
   UniformSpace.ext (uniformity_eq_iInf_compactExhaustionContinuousMapDist K).symm
 
-/-- Explicit `MetricSpace` packaging of `comparisonDist U` on `holomorphicFunctions U`, with
-`toUniformSpace` definitionally equal to the inherited `instUniformSpaceSubtype`. Not registered as
-an instance. -/
+/-- Explicit `MetricSpace` packaging of `comparisonDist U` on `holomorphicFunctions U`, pulled back
+from `(U.compactExhaustion 0).continuousMapMetricSpace` along `Subtype.val`, with `toUniformSpace`
+definitionally equal to the inherited `instUniformSpaceSubtype`. Not registered as an instance. -/
 @[expose, instance_reducible]
-def comparisonMetricSpace (U : Opens ℂ) : MetricSpace (holomorphicFunctions U) where
-  dist := comparisonDist U
-  dist_self := comparisonDist_self U
-  dist_comm := comparisonDist_comm U
-  dist_triangle := comparisonDist_triangle U
-  eq_of_dist_eq_zero := comparisonDist_eq_zero_iff.mp
-  toUniformSpace := instUniformSpaceSubtype
-  uniformity_dist := uniformity_eq_iInf_comparisonDist U
+def comparisonMetricSpace (U : Opens ℂ) : MetricSpace (holomorphicFunctions U) :=
+  let := (U.compactExhaustion 0).continuousMapMetricSpace (Y := ℂ)
+  isUniformEmbedding_subtypeVal.comapMetricSpace Subtype.val
 
 /-- Convergence in `holomorphicFunctions U` is equivalent to `comparisonDist U` tending to `0`. -/
 theorem tendsto_iff_tendsto_comparisonDist {ι : Type*} {p : Filter ι}
@@ -313,7 +228,7 @@ theorem cauchy_map_iff_tendsto_comparisonDist {ι : Type*} {p : Filter ι}
         Tendsto (fun ij : ι × ι ↦ comparisonDist U (F ij.1) (F ij.2)) (p ×ˢ p) (𝓝 0) := by
   rw [← isUniformEmbedding_subtypeVal.isUniformInducing.cauchy_map_iff, Filter.map_map,
     (U.compactExhaustion 0).cauchy_map_iff_tendsto_continuousMapDist]
-  simp only [Function.comp_apply, ← continuousMapDist_def, ← comparisonDist_def]
+  simp only [Function.comp_apply, ← comparisonDist_def]
 
 /-- Filter-level Cauchy equivalence on `holomorphicFunctions U` with `UniformCauchySeqOn` of the
 zero extensions on every compact subset `K ⊆ U`. -/
@@ -401,7 +316,7 @@ holomorphic functions is `0`. -/
 @[simp]
 theorem comparisonDist_of_isEmpty {U : Opens ℂ} [IsEmpty U] (f g : holomorphicFunctions U) :
     comparisonDist U f g = 0 :=
-  continuousMapDist_of_isEmpty f.val g.val
+  (U.compactExhaustion 0).continuousMapDist_of_isEmpty f.val g.val
 
 private theorem algebraMap_val_eq_const {U : Opens ℂ} (c : ℂ) :
     (algebraMap ℂ (holomorphicFunctions U) c).val = ContinuousMap.const U c := by
@@ -414,7 +329,7 @@ private theorem algebraMap_val_eq_const {U : Opens ℂ} (c : ℂ) :
 theorem comparisonDist_add_algebraMap_of_nonempty {U : Opens ℂ}
     (hU : (U.compactExhaustion 0 0).Nonempty) (f : holomorphicFunctions U) (c : ℂ) :
     comparisonDist U (f + algebraMap ℂ (holomorphicFunctions U) c) f = ‖c‖ / (1 + ‖c‖) := by
-  rw [comparisonDist_def, continuousMapDist_def, Subalgebra.coe_add, algebraMap_val_eq_const]
+  rw [comparisonDist_def, Subalgebra.coe_add, algebraMap_val_eq_const]
   exact (U.compactExhaustion 0).continuousMapDist_add_const_of_nonempty hU f.val c
 
 /-- When stage `0` of `U.compactExhaustion 0` is nonempty, the comparison distance between
@@ -423,7 +338,7 @@ theorem comparisonDist_algebraMap_of_nonempty {U : Opens ℂ}
     (hU : (U.compactExhaustion 0 0).Nonempty) (a b : ℂ) :
     comparisonDist U (algebraMap ℂ (holomorphicFunctions U) a)
       (algebraMap ℂ (holomorphicFunctions U) b) = dist a b / (1 + dist a b) := by
-  rw [comparisonDist_def, continuousMapDist_def, algebraMap_val_eq_const, algebraMap_val_eq_const]
+  rw [comparisonDist_def, algebraMap_val_eq_const, algebraMap_val_eq_const]
   exact (U.compactExhaustion 0).continuousMapDist_const_of_nonempty hU a b
 
 /-- When stage `0` of `U.compactExhaustion 0` is nonempty, holomorphic functions differing by `1`
@@ -454,7 +369,7 @@ theorem half_tsum_min_one_eq_comparisonDist_one_zero {U : Opens ℂ}
     simpa only [map_one] using algebraMap_val_eq_const (U := U) 1
   have h0 : (0 : holomorphicFunctions U).val = ContinuousMap.const U 0 := by
     simpa only [map_zero] using algebraMap_val_eq_const (U := U) 0
-  rw [comparisonDist_def, continuousMapDist_def, h1, h0]
+  rw [comparisonDist_def, h1, h0]
   exact (U.compactExhaustion 0).half_tsum_min_one_eq_continuousMapDist_const hU (by simp)
 
 /-- On the whole complex plane `⊤`, constant entire functions `a` and `b` have comparison distance

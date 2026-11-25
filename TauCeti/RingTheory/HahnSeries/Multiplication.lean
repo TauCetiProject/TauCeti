@@ -25,7 +25,9 @@ The formulas are `HahnSeries.leadingCoeff_pow` and `HahnSeries.orderTop_pow`, bo
 simplification lemmas, companions of Mathlib's `HahnSeries.order_pow`. Mathlib's
 `HahnSeries.order_pow`, `HahnSeries.leadingCoeff_mul` and `HahnSeries.orderTop_mul` assume no zero
 divisors; for powers it suffices that the coefficients are reduced, and, for `orderTop`, that
-they form a nontrivial semiring.
+they form a nontrivial semiring. Over a commutative semiring without zero divisors, the leading
+coefficient of a finite product is the product of the leading coefficients
+(`HahnSeries.leadingCoeff_prod`).
 
 This file also records that coefficientwise scalar multiplication associates and commutes with
 multiplication of Hahn series (`TauCeti.hahnSeries_isScalarTower` and
@@ -55,6 +57,8 @@ The sum of the lower bounds bounds the support of the product
 and `HahnSeries.coeff_pow_nsmul_of_forall_le` give the corresponding bound and coefficient.
 `HahnSeries.zero_le_orderTop_single` and `HahnSeries.zero_le_orderTop_one` record that monomials
 of nonnegative exponent, and in particular the constant `1`, have nonnegative order.
+`HahnSeries.commute_C_iff` characterizes when a Hahn series commutes with a constant series `C c`:
+each coefficient commutes with `c`.
 -/
 
 public section
@@ -119,6 +123,17 @@ theorem orderTop_pow [Nontrivial R] (x : HahnSeries Γ R) (n : ℕ) :
     have h : x.leadingCoeff ^ (n + 1) ≠ 0 := pow_ne_zero _ (leadingCoeff_ne_zero.mpr hx)
     rw [pow_succ, orderTop_mul_of_ne_zero (by rwa [leadingCoeff_pow, ← pow_succ]), ih,
       succ_nsmul]
+
+/-- Over a commutative semiring without zero divisors, the leading coefficient of a finite
+product is the product of the leading coefficients. -/
+@[simp]
+theorem leadingCoeff_prod {R ι : Type*} [CommSemiring R] [NoZeroDivisors R] (s : Finset ι)
+    (f : ι → HahnSeries Γ R) :
+    (∏ i ∈ s, f i).leadingCoeff = ∏ i ∈ s, (f i).leadingCoeff := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.prod_insert hi, Finset.prod_insert hi, leadingCoeff_mul, ih]
 
 end HahnSeries
 
@@ -252,5 +267,12 @@ theorem coeff_pow_nsmul_of_forall_le [Semiring R] {x : HahnSeries Γ R} {a : Γ}
   | succ n ih =>
     rw [pow_succ, succ_nsmul, coeff_mul_add_of_forall_le (nsmul_le_of_mem_support_pow hx n) hx,
       ih, pow_succ]
+
+/-- A Hahn series commutes with the constant series `C c` exactly when each of its coefficients
+commutes with `c`. -/
+theorem commute_C_iff [NonAssocSemiring R] {x : HahnSeries Γ R} {c : R} :
+    Commute x (C c) ↔ ∀ g, Commute (x.coeff g) c := by
+  simp only [commute_iff_eq, HahnSeries.ext_iff, funext_iff, C_apply, coeff_mul_single_zero,
+    coeff_single_zero_mul]
 
 end HahnSeries

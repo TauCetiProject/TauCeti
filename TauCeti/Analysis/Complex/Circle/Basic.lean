@@ -46,15 +46,20 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
   `Circle.coordinate_mem_unitary`.
-* `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
-  `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
-  identity for a point of `sphere (0 : ℂ) 1`.
+* `Circle.re_sq_add_im_sq`, `Circle.coe_mul_conj` and `Circle.coe_add_inv_coe`:
+  `Re z ^ 2 + Im z ^ 2 = 1`, `z * conj z = 1` and `z + z⁻¹ = 2 Re z` on the circle,
+  and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first identity for a point of
+  `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
   of `sphere (0 : ℂ) 1`, and `Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere`: there
   `z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a))`.
+* `Circle.coe_mul_conj_self` and `Circle.conj_coe_mul_self`: `z * conj z = 1` and `conj z * z = 1`
+  on the circle, `Circle.add_mul_coe_eq_coe_mul_conj_mul_add`: `p + t u = u (conj u · p + t)`, and
+  `Circle.im_conj_mul_ne_zero_iff`: the line `t ↦ p + t u` avoids `0` iff `conj u · p` is not real.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.isSquare`: every point of the circle is a square.
 * `Circle.exp_pow_eq_one_iff`: `exp (i θ)` is an `n`-th root of unity exactly when `θ` is an
   integer multiple of `2π / n`.
 * `Circle.isOfFinOrder_exp_two_pi_mul_iff`: `exp (2π i x)` has finite order exactly when `x` is
@@ -76,6 +81,7 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
+* `Circle.continuous_toUnits`: the inclusion `Circle →* ℂˣ` is continuous.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 * `TauCeti.hasFDerivAt_circleExp_mul_ofReal` and `TauCeti.fderiv_circleExp_mul_ofReal_apply`: the
   differential of a map `e^{iθ} r` in polar form, with real-valued angle `θ` and radius `r`, is
@@ -118,6 +124,11 @@ theorem coe_homeomorphSphere_exp_im (x : ℝ) : (homeomorphSphere (exp x) : ℂ)
 /-- The real and imaginary parts of a point of the circle satisfy `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
   simpa [Complex.normSq_apply, sq] using normSq_coe z
+
+/-- A point of the circle times its conjugate is `1`. -/
+@[simp]
+theorem coe_mul_conj (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
+  rw [Complex.mul_conj, normSq_coe, Complex.ofReal_one]
 
 /-- The real and imaginary parts of a point of the unit sphere of `ℂ` satisfy
 `Re z ^ 2 + Im z ^ 2 = 1`. -/
@@ -253,10 +264,40 @@ theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x
   push_cast
   rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
 
+/-- Every point of the circle is a square on the circle. -/
+theorem isSquare (z : Circle) : IsSquare z :=
+  (z.exists_pow_nat_eq two_ne_zero).imp fun y hy ↦ by rw [← hy, sq]
+
 /-- For unit complex numbers, `a⁻¹ b - 1 = a⁻¹ (b - a)`. -/
 theorem coe_inv_mul_sub_one (a b : Circle) :
     ((a⁻¹ * b : Circle) : ℂ) - 1 = ((a⁻¹ : Circle) : ℂ) * ((b : ℂ) - a) := by
   rw [mul_sub, ← coe_mul, ← coe_mul, inv_mul_cancel, coe_one]
+
+/-- A point of the unit circle times its conjugate is `1`. -/
+theorem coe_mul_conj_self (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
+  rw [← coe_inv_eq_conj, ← coe_mul, mul_inv_cancel, coe_one]
+
+/-- The conjugate of a point of the unit circle times the point is `1`. -/
+theorem conj_coe_mul_self (z : Circle) : conj (z : ℂ) * z = 1 := by
+  rw [mul_comm, coe_mul_conj_self]
+
+/-- For a point `u` of the unit circle, `p + t u = u (conj u · p + t)`: the point `p + t u` of the
+line through `p` with direction `u`, in coordinates rotated by `u`. -/
+theorem add_mul_coe_eq_coe_mul_conj_mul_add (u : Circle) (p t : ℂ) :
+    p + t * u = u * (conj (u : ℂ) * p + t) := by
+  linear_combination (-p) * conj_coe_mul_self u
+
+/-- The line `t ↦ p + t · u` avoids `0` exactly when `conj u · p` is not real. -/
+theorem im_conj_mul_ne_zero_iff (u : Circle) (p : ℂ) :
+    (conj (u : ℂ) * p).im ≠ 0 ↔ ∀ t : ℝ, p + t * u ≠ 0 := by
+  simp only [add_mul_coe_eq_coe_mul_conj_mul_add, ne_eq, mul_eq_zero, coe_ne_zero, false_or]
+  constructor
+  · intro h t ht
+    apply h
+    simpa using congrArg Complex.im ht
+  · intro h him
+    apply h (-(conj (u : ℂ) * p).re)
+    apply Complex.ext <;> simp [him]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/
@@ -397,6 +438,14 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
 /-- Every point of `Circle` belongs to `unitary ℂ`. -/
 theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
   simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
+
+/-- The inclusion `Circle →* ℂˣ` is continuous for the topology of the unit group. -/
+@[fun_prop]
+theorem continuous_toUnits : Continuous toUnits := by
+  refine Units.continuous_iff.2 ⟨?_, ?_⟩ <;>
+    simp only [Function.comp_def, toUnits_apply, Units.val_mk0]
+  · exact continuous_subtypeVal
+  · exact continuous_subtypeVal.comp (continuous_inv (G := Circle))
 
 /-! ### Elements of order two in powers of the circle -/
 

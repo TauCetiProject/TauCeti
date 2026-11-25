@@ -129,55 +129,6 @@ theorem deriv_of (g : ℂ → ℂ) (hg : DifferentiableOn ℂ g U) :
   filter_upwards [U.isOpen.mem_nhds z.property] with w hw
   exact (extend_apply (of U g hg) ⟨w, hw⟩).trans (of_apply g hg ⟨w, hw⟩)
 
-/-- Constant holomorphic functions have derivative `0`. -/
-@[simp]
-theorem deriv_algebraMap (c : ℂ) : deriv (algebraMap ℂ (holomorphicFunctions U) c) = 0 := by
-  apply Subtype.ext
-  ext z
-  have heq : extend (algebraMap ℂ (holomorphicFunctions U) c) =ᶠ[𝓝 (z : ℂ)] fun _ ↦ c := by
-    filter_upwards [U.isOpen.mem_nhds z.property] with w hw
-    simp [extend_apply _ ⟨w, hw⟩]
-  simp only [deriv_apply, Subalgebra.coe_zero, ContinuousMap.zero_apply]
-  rw [heq.deriv_eq, deriv_const]
-
-/-- The multiplicative identity `1 : holomorphicFunctions U` has derivative `0`. -/
-@[simp]
-theorem deriv_one : deriv (1 : holomorphicFunctions U) = 0 := by
-  rw [← map_one (algebraMap ℂ (holomorphicFunctions U)), deriv_algebraMap]
-
-/-- Every natural-number cast `(n : holomorphicFunctions U)` has derivative `0`. -/
-@[simp]
-theorem deriv_natCast (n : ℕ) : deriv (n : holomorphicFunctions U) = 0 := by
-  rw [← map_natCast (algebraMap ℂ (holomorphicFunctions U)), deriv_algebraMap]
-
-/-- Complex differentiation commutes with negation. -/
-@[simp]
-theorem deriv_neg (f : holomorphicFunctions U) : deriv (-f) = -deriv f :=
-  -- `AddMonoidHom.mk'` bridges the `Subalgebra` semiring `AddCommMonoid` and ring `AddCommGroup`
-  -- instances without unfolding the unexposed `holomorphicFunctions`.
-  map_neg (AddMonoidHom.mk' (deriv (U := U)) (deriv (U := U)).map_add) f
-
-/-- Complex differentiation commutes with subtraction. -/
-@[simp]
-theorem deriv_sub (f g : holomorphicFunctions U) :
-    deriv (f - g) = deriv f - deriv g :=
-  map_sub (AddMonoidHom.mk' (deriv (U := U)) (deriv (U := U)).map_add) f g
-
-/-- Every integer cast `(n : holomorphicFunctions U)` has derivative `0`. -/
-@[simp]
-theorem deriv_intCast (n : ℤ) : deriv (n : holomorphicFunctions U) = 0 := by
-  rcases n with k | k
-  · rw [Int.ofNat_eq_natCast, Int.cast_natCast, deriv_natCast]
-  · rw [Int.cast_negSucc, deriv_neg, deriv_natCast]
-    apply Subtype.ext
-    simp
-
-/-- Every numeric literal `ofNat(n)` (`n ≥ 2`) in `holomorphicFunctions U` has derivative `0`. -/
-@[simp]
-theorem deriv_ofNat (n : ℕ) [n.AtLeastTwo] :
-    deriv (ofNat(n) : holomorphicFunctions U) = 0 :=
-  deriv_natCast n
-
 /-- Leibniz product rule for `HolomorphicFunctions.deriv`. -/
 theorem deriv_mul (f g : holomorphicFunctions U) :
     deriv (f * g) = f * deriv g + g * deriv f := by
@@ -197,7 +148,9 @@ theorem deriv_mul (f g : holomorphicFunctions U) :
 /-- Complex differentiation on `holomorphicFunctions U` bundled as a `ℂ`-derivation. -/
 def derivation : Derivation ℂ (holomorphicFunctions U) (holomorphicFunctions U) where
   toLinearMap := deriv.toLinearMap
-  map_one_eq_zero' := deriv_one
+  map_one_eq_zero' := (add_eq_left (a := deriv (1 : holomorphicFunctions U))).mp <| by
+    simpa only [ContinuousLinearMap.coe_coe, one_mul] using
+      (deriv_mul (1 : holomorphicFunctions U) 1).symm
   leibniz' f g := by simp only [smul_eq_mul, ContinuousLinearMap.coe_coe, deriv_mul]
 
 /-- Coercing `derivation` to a function recovers `deriv`. -/
@@ -211,6 +164,50 @@ theorem toLinearMap_derivation :
 
 /-- Applying `derivation` agrees with `deriv`. -/
 theorem derivation_apply (f : holomorphicFunctions U) : derivation f = deriv f := (rfl)
+
+/-- Constant holomorphic functions have derivative `0`. -/
+@[simp]
+theorem deriv_algebraMap (c : ℂ) : deriv (algebraMap ℂ (holomorphicFunctions U) c) = 0 := by
+  rw [← coe_derivation]
+  exact derivation.map_algebraMap c
+
+/-- The multiplicative identity `1 : holomorphicFunctions U` has derivative `0`. -/
+@[simp]
+theorem deriv_one : deriv (1 : holomorphicFunctions U) = 0 := by
+  rw [← coe_derivation]
+  exact derivation.map_one_eq_zero
+
+/-- Every natural-number cast `(n : holomorphicFunctions U)` has derivative `0`. -/
+@[simp]
+theorem deriv_natCast (n : ℕ) : deriv (n : holomorphicFunctions U) = 0 := by
+  rw [← coe_derivation]
+  exact derivation.map_natCast n
+
+/-- Complex differentiation commutes with negation. -/
+@[simp]
+theorem deriv_neg (f : holomorphicFunctions U) : deriv (-f) = -deriv f := by
+  rw [← coe_derivation]
+  exact map_neg derivation f
+
+/-- Complex differentiation commutes with subtraction. -/
+@[simp]
+theorem deriv_sub (f g : holomorphicFunctions U) :
+    deriv (f - g) = deriv f - deriv g := by
+  rw [← coe_derivation]
+  exact map_sub derivation f g
+
+/-- Every integer cast `(n : holomorphicFunctions U)` has derivative `0`. -/
+@[simp]
+theorem deriv_intCast (n : ℤ) : deriv (n : holomorphicFunctions U) = 0 := by
+  rw [← coe_derivation, ← zsmul_one, derivation.map_smul_of_tower n,
+    derivation.map_one_eq_zero, smul_zero]
+
+/-- Every numeric literal `ofNat(n)` (`n ≥ 2`) in `holomorphicFunctions U` has derivative `0`. -/
+@[simp]
+theorem deriv_ofNat (n : ℕ) [n.AtLeastTwo] :
+    deriv (ofNat(n) : holomorphicFunctions U) = 0 := by
+  rw [← coe_derivation]
+  exact derivation.map_natCast n
 
 /-- Power rule for `HolomorphicFunctions.deriv`. -/
 theorem deriv_pow (f : holomorphicFunctions U) (n : ℕ) :

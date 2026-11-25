@@ -70,7 +70,7 @@ theorem jet_apply (ha : a ∈ U) (n : ℕ) (f : holomorphicFunctions U) (i : Fin
 /-- Each coordinate of the finite jet `jet ha n` is point evaluation of an iterated derivative. -/
 theorem jet_apply_eq_eval_iterate_deriv (ha : a ∈ U) (n : ℕ)
     (f : holomorphicFunctions U) (i : Fin n) :
-    jet ha n f i = eval ⟨a, ha⟩ (deriv^[i] f) := by
+    jet ha n f i = eval a ha (deriv^[i] f) := by
   rw [jet_apply, eval_apply, iterate_deriv_apply]
 
 /-- Differentiating shifts the finite jet coordinates by one order. -/
@@ -85,10 +85,10 @@ compact-open topology. -/
 @[continuity, fun_prop]
 theorem continuous_jet (ha : a ∈ U) (n : ℕ) : Continuous (jet ha n) := by
   refine continuous_pi fun i ↦ ?_
-  have heq : (fun f ↦ jet ha n f i) = fun f ↦ eval ⟨a, ha⟩ (deriv^[i] f) :=
+  have heq : (fun f ↦ jet ha n f i) = fun f ↦ eval a ha (deriv^[i] f) :=
     funext fun f ↦ jet_apply_eq_eval_iterate_deriv ha n f i
   rw [heq]
-  exact (continuous_eval ⟨a, ha⟩).comp ((deriv (U := U)).continuous.iterate i)
+  exact (continuous_eval a ha).comp ((deriv (U := U)).continuous.iterate i)
 
 /-- The kernel of a finite jet `jet ha n` is closed in `holomorphicFunctions U`. -/
 theorem isClosed_ker_jet (ha : a ∈ U) (n : ℕ) :

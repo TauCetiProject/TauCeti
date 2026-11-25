@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Dimension
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.InnerProductSpace.Parseval
 
@@ -41,8 +42,10 @@ derivative `2 • reactionBilinear V r`, explicit dimensional operator-norm boun
 `‖reactionTensor r‖ ≤ 5 * (finrank ℝ V) ^ 2 * ‖r‖ ^ 2`, and explicit radius-linear Lipschitz bounds
 on bounded sets.
 
-For algebraic curvature tensors, first Bianchi cancellation implies that `reactionTensor` and
-`reactionBilinear V` preserve all four algebraic curvature symmetries
+`reactionBilinear V` preserves pair antisymmetry and pair interchange
+(`TauCeti.FourTensor.IsBivectorSymmetric.reactionBilinear`). For algebraic curvature tensors,
+first Bianchi cancellation implies that `reactionTensor` and `reactionBilinear V` also preserve the
+first Bianchi identity, hence all four algebraic curvature symmetries
 (`TauCeti.FourTensor.IsAlgebraicCurvature.reactionTensor`, `TauCeti.FourTensor.reactionTensor_mem`),
 and simplifies the Ricci and scalar contractions of `Q(r)` to
 `Ric(Q(r))(u, v) = 2 ∑_pq Ric(r)(b p, b q) r(b p, u, b q, v)` and
@@ -70,6 +73,8 @@ curvature tensor of `S^k × ℝ^(n - k)` obtained by pulling back the constant-c
 
 * `TauCeti.FourTensor.reactionTensor_apply_orthonormalBasis`: basis independence of `reactionTensor`
   across all orthonormal bases of `V`.
+* `TauCeti.FourTensor.IsBivectorSymmetric.reactionBilinear`: `reactionBilinear V` preserves
+  bivector-symmetric four-tensors.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.reactionTensor` and
   `TauCeti.FourTensor.reactionTensor_mem`: `reactionTensor` maps `algebraicCurvatureSubmodule V` to
   itself.
@@ -138,16 +143,6 @@ private theorem abs_apply_basis_le_24 {ι : Type*} {b : ι → V} (hb : Orthonor
     Matrix.cons_val, Fin.isValue, hb.1 p, hb.1 q, one_mul, mul_one, mul_assoc] using
     r.le_opNorm ![u, b p, z, b q]
 
-private def slice34 (r : FourTensor V) (u v : V) : V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![u, v, x, y])
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
-    (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
-
-private def slice24 (r : FourTensor V) (u z : V) : V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![u, x, z, y])
-    (fun _ _ _ ↦ apply_add_second ..) (fun _ _ _ ↦ apply_smul_second ..)
-    (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
-
 end Helpers
 
 section Reaction
@@ -191,15 +186,10 @@ theorem reactionTensor_def (r : FourTensor V) :
           coordFourTensor (stdOrthonormalBasis ℝ V) i j k l :=
   (rfl)
 
+/-- The bilinear form `(u, v) ↦ r ![u, v, x, y]`: `toLinearMap₄ r` evaluated at `x` and `y` in its
+last two slots. -/
 private def slice12 (r : FourTensor V) (x y : V) : V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun u v ↦ r ![u, v, x, y])
-    (fun _ _ _ ↦ apply_add_first ..) (fun _ _ _ ↦ apply_smul_first ..)
-    (fun _ _ _ ↦ apply_add_second ..) (fun _ _ _ ↦ apply_smul_second ..)
-
-private def slice13 (r : FourTensor V) (x y : V) : V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun u z ↦ r ![u, x, z, y])
-    (fun _ _ _ ↦ apply_add_first ..) (fun _ _ _ ↦ apply_smul_first ..)
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
+  (toLinearMap₄ r).compr₂ (LinearMap.applyₗ y ∘ₗ LinearMap.applyₗ x)
 
 private def tensorBilin (A B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
     V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
@@ -212,10 +202,10 @@ private def reactionBilinearContraction {ι : Type*} [Fintype ι] (b : Orthonorm
   (∑ p, ∑ q, ofLinearMap₄ (tensorBilin (slice12 r (b p) (b q)) (slice12 s (b p) (b q)))) +
   (2 : ℝ) • (∑ p, ∑ q, ofLinearMap₄
     ((LinearMap.lflip (R₀ := ℝ)).toLinearMap.comp
-      (tensorBilin (slice13 r (b p) (b q)) (slice13 s (b p) (b q))))) -
+      (tensorBilin (ricciSlice r (b p) (b q)) (ricciSlice s (b p) (b q))))) -
   (2 : ℝ) • (∑ p, ∑ q, ofLinearMap₄
     (((LinearMap.lflip (R₀ := ℝ)).toLinearMap.comp
-      (tensorBilin (slice13 r (b p) (b q)) (slice13 s (b p) (b q)))).compr₂
+      (tensorBilin (ricciSlice r (b p) (b q)) (ricciSlice s (b p) (b q)))).compr₂
       (LinearMap.lflip (R₀ := ℝ)).toLinearMap))
 
 private theorem reactionBilinearContraction_apply {ι : Type*} [Fintype ι]
@@ -224,7 +214,7 @@ private theorem reactionBilinearContraction_apply {ι : Type*} [Fintype ι]
       (∑ p, ∑ q, r ![u, v, b p, b q] * s ![z, w, b p, b q]) +
       2 * (∑ p, ∑ q, r ![u, b p, z, b q] * s ![v, b p, w, b q]) -
       2 * (∑ p, ∑ q, r ![u, b p, w, b q] * s ![v, b p, z, b q]) := by
-  simp [reactionBilinearContraction, tensorBilin, slice12, slice13]
+  simp [reactionBilinearContraction, tensorBilin, slice12, ricciSlice_apply]
 
 private theorem reactionTensor_eq_contraction (r : FourTensor V) :
     reactionTensor r = reactionBilinearContraction (stdOrthonormalBasis ℝ V) r r := by
@@ -240,10 +230,13 @@ private theorem reactionBilinearContraction_apply_orthonormalBasis {ι : Type*} 
       2 * (∑ p, ∑ q, r ![u, b p, w, b q] * s ![v, b p, z, b q]) := by
   let b₀ := stdOrthonormalBasis ℝ V
   have hid : ∀ x y : V, ⟪(id : V → V) x, y⟫_ℝ = ⟪x, (id : V → V) y⟫_ℝ := fun _ _ ↦ rfl
-  have h1 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid (slice34 r u v) (slice34 s z w)
-  have h2 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid (slice24 r u z) (slice24 s v w)
-  have h3 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid (slice24 r u w) (slice24 s v z)
-  simp only [Real.inner_apply, slice34, slice24, LinearMap.mk₂_apply, id_eq] at h1 h2 h3
+  have h1 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid (toLinearMap₄ r u v)
+    (toLinearMap₄ s z w)
+  have h2 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid ((toLinearMap₄ r u).flip z)
+    ((toLinearMap₄ s v).flip w)
+  have h3 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid ((toLinearMap₄ r u).flip w)
+    ((toLinearMap₄ s v).flip z)
+  simp only [Real.inner_apply, toLinearMap₄_apply, LinearMap.flip_apply, id_eq] at h1 h2 h3
   rw [reactionBilinearContraction_apply, h1, h2, h3]
 
 /-- **Basis independence of the reaction tensor**: in every orthonormal basis `b` of `V`, `Q(r)` is
@@ -594,12 +587,12 @@ private theorem reactionBilinearContraction_compContinuousLinearMap_of_inner_eq
     reactionBilinearContraction_apply_orthonormalBasis bV]
   simp only [compContinuousLinearMap_apply_vec]
   have h1 := bW.sum_sum_inner_comp_eq_of_inner_eq bV hfg hg
-    (slice34 r (f u) (f v)) (slice34 s (f z) (f w))
+    (toLinearMap₄ r (f u) (f v)) (toLinearMap₄ s (f z) (f w))
   have h2 := bW.sum_sum_inner_comp_eq_of_inner_eq bV hfg hg
-    (slice24 r (f u) (f z)) (slice24 s (f v) (f w))
+    ((toLinearMap₄ r (f u)).flip (f z)) ((toLinearMap₄ s (f v)).flip (f w))
   have h3 := bW.sum_sum_inner_comp_eq_of_inner_eq bV hfg hg
-    (slice24 r (f u) (f w)) (slice24 s (f v) (f z))
-  simp only [Real.inner_apply, slice34, slice24, LinearMap.mk₂_apply] at h1 h2 h3
+    ((toLinearMap₄ r (f u)).flip (f w)) ((toLinearMap₄ s (f v)).flip (f z))
+  simp only [Real.inner_apply, toLinearMap₄_apply, LinearMap.flip_apply] at h1 h2 h3
   rw [h1, h2, h3]
 
 /-- Coisometric equivariance of `reactionBilinear`: if `f : W →L[ℝ] V` has an
@@ -697,6 +690,31 @@ section AlgebraicCurvature
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
+/-- The reaction bilinear map preserves bivector-symmetric four-tensors: if `r` and `s` are
+antisymmetric in each pair and symmetric under interchanging the pairs, so is `Q(r, s)`. -/
+theorem IsBivectorSymmetric.reactionBilinear {r s : FourTensor V} (hr : IsBivectorSymmetric r)
+    (hs : IsBivectorSymmetric s) : IsBivectorSymmetric (FourTensor.reactionBilinear V r s) := by
+  let b := stdOrthonormalBasis ℝ V
+  refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
+    simp only [reactionBilinear_apply_orthonormalBasis b]
+  · simp only [hr.antisymm_first v u, hs.antisymm_first v u, neg_mul, Finset.sum_neg_distrib,
+      mul_comm (s _) (r _)]
+    ring
+  · simp only [hr.antisymm_first w z, hs.antisymm_first w z, mul_neg, Finset.sum_neg_distrib,
+      mul_comm (s _) (r _)]
+    ring
+  · simp only [hr.swap_pairs z _ u _, hs.swap_pairs w _ v _, hr.swap_pairs w _ v _,
+      hs.swap_pairs z _ u _, hr.swap_pairs z _ v _, hs.swap_pairs w _ u _, hr.swap_pairs w _ u _,
+      hs.swap_pairs z _ v _]
+    have hc (f : Fin (Module.finrank ℝ V) → Fin (Module.finrank ℝ V) → ℝ) :
+        ∑ p, ∑ q, f q p = ∑ p, ∑ q, f p q := Finset.sum_comm
+    rw [hc fun p q ↦ r ![u, b p, z, b q] * s ![v, b p, w, b q],
+      hc fun p q ↦ s ![u, b p, z, b q] * r ![v, b p, w, b q],
+      hc fun p q ↦ r ![v, b p, z, b q] * s ![u, b p, w, b q],
+      hc fun p q ↦ s ![v, b p, z, b q] * r ![u, b p, w, b q]]
+    simp only [mul_comm (s _) (r _)]
+    ring
+
 private def reactionS₁ (r : FourTensor V) (u v z w : V) : ℝ :=
   let b := stdOrthonormalBasis ℝ V
   ∑ p, ∑ q, r ![u, v, b p, b q] * r ![z, w, b p, b q]
@@ -745,31 +763,13 @@ private theorem two_mul_reactionS₂_sub_eq_neg_reactionS₁ {r : FourTensor V}
 `reactionTensor` preserves pair antisymmetry, pair interchange, and the first Bianchi identity. -/
 theorem IsAlgebraicCurvature.reactionTensor {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     IsAlgebraicCurvature (FourTensor.reactionTensor r) := by
-  have hS₁_first (u v z w : V) : reactionS₁ r v u z w = -reactionS₁ r u v z w := by
-    simp only [reactionS₁, ← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-      rw [hr.antisymm_first v u]; ring
-  have hS₁_last (u v z w : V) : reactionS₁ r u v w z = -reactionS₁ r u v z w := by
-    simp only [reactionS₁, ← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-      rw [hr.antisymm_first w z]; ring
-  have hS₂_first (u v z w : V) : reactionS₂ r v u z w = reactionS₂ r u v w z :=
-    Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ mul_comm _ _
-  have hS₁_swap (u v z w : V) : reactionS₁ r z w u v = reactionS₁ r u v z w :=
-    Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ mul_comm _ _
-  have hS₂_swap (u v z w : V) : reactionS₂ r z w u v = reactionS₂ r u v z w := by
-    simp only [reactionS₂]
-    conv_lhs => rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun q _ ↦ Finset.sum_congr rfl fun p _ ↦ by
-      rw [hr.swap_pairs z _ u _, hr.swap_pairs w _ v _]
-  refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
-    simp only [reactionTensor_eq_S₁_S₂]
-  · rw [hS₁_first v u, hS₂_first v u z w, hS₂_first v u w z]; ring
-  · rw [hS₁_last]; ring
-  · rw [hS₁_swap u v z w, hS₂_swap u v z w, hS₂_swap v u z w, hS₂_first u v z w]
-  · linear_combination two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr u v z w +
-      two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr v z u w +
-      two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr z u v w
+  have h := reactionBilinear_self r ▸
+    hr.isBivectorSymmetric.reactionBilinear hr.isBivectorSymmetric
+  refine ⟨h.antisymm_first, h.antisymm_last, h.swap_pairs, fun u v z w ↦ ?_⟩
+  simp only [reactionTensor_eq_S₁_S₂]
+  linear_combination two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr u v z w +
+    two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr v z u w +
+    two_mul_reactionS₂_sub_eq_neg_reactionS₁ hr z u v w
 
 /-- `reactionTensor` maps `algebraicCurvatureSubmodule V` into itself. -/
 theorem reactionTensor_mem (r : FourTensor V) (hr : r ∈ algebraicCurvatureSubmodule V) :
@@ -905,7 +905,7 @@ the squared Hilbert-Schmidt norm of `ricci r` in any orthonormal basis `b`:
 theorem IsAlgebraicCurvature.scalar_reactionTensor_apply_orthonormalBasis {ι : Type*} [Fintype ι]
     {r : FourTensor V} (hr : IsAlgebraicCurvature r) (b : OrthonormalBasis ι ℝ V) :
     scalar (FourTensor.reactionTensor r) = 2 * ∑ p, ∑ q, ricci r (b p) (b q) ^ 2 := by
-  rw [scalar_apply, bilinFormTrace_eq_sum _ b]
+  rw [scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ b]
   simp_rw [hr.ricci_reactionTensor_apply_orthonormalBasis b, ← Finset.mul_sum]
   congr 1
   rw [Finset.sum_comm]

@@ -130,20 +130,11 @@ theorem continuousMapDist_nonneg (f g : C(X, Y)) : 0 ≤ K.continuousMapDist f g
 /-- Every comparison distance is strictly less than `1`, since each stage ratio `s_n / (1 + s_n)`
 is strictly less than `1`. -/
 theorem continuousMapDist_lt_one (f g : C(X, Y)) : K.continuousMapDist f g < 1 := by
-  have hs := K.summable_continuousMapDist_term f g
-  calc K.continuousMapDist f g
-      = K.continuousMapDistTerm f g 0 + ∑' k : ℕ, K.continuousMapDistTerm f g (k + 1) := by
-          simpa only [continuousMapDist_def, continuousMapDistTerm, Finset.sum_range_one,
-            zero_add] using (hs.sum_add_tsum_nat_add 1).symm
-    _ < (1 / 2 : ℝ) ^ (0 + 1) + ∑' k : ℕ, (1 / 2 : ℝ) ^ (k + 1 + 1) :=
-          add_lt_add_of_lt_of_le (K.continuousMapDistTerm_lt_half_pow_succ f g 0)
-            ((hs.comp_injective (add_left_injective 1)).tsum_le_tsum
-              (fun k ↦ K.continuousMapDistTerm_le_half_pow_succ f g (k + 1))
-              (TauCeti.summable_half_pow_succ.comp_injective (add_left_injective 1)))
-    _ = ∑' n : ℕ, (1 / 2 : ℝ) ^ (n + 1) := by
-          simpa only [Finset.sum_range_one] using
-            TauCeti.summable_half_pow_succ.sum_add_tsum_nat_add 1
-    _ = 1 := TauCeti.tsum_half_pow_succ
+  rw [← TauCeti.tsum_half_pow_succ, continuousMapDist_def]
+  exact TauCeti.summable_half_pow_succ.tsum_lt_tsum_of_nonneg
+    (K.continuousMapDistTerm_nonneg f g)
+    (K.continuousMapDistTerm_le_half_pow_succ f g)
+    (K.continuousMapDistTerm_lt_half_pow_succ f g 0)
 
 /-- Every comparison distance is at most `1`. -/
 theorem continuousMapDist_le_one (f g : C(X, Y)) : K.continuousMapDist f g ≤ 1 :=
@@ -310,14 +301,10 @@ theorem continuousMapDist_le_div_one_add_add_half_pow_succ (f g : C(X, Y)) (n : 
       _ ≤ 1 * t := mul_le_mul_of_nonneg_right (TauCeti.sum_half_pow_succ_le_one (n + 1)) ht0
       _ = t := one_mul t
   have htail : (∑' k : ℕ, K.continuousMapDistTerm f g (k + (n + 1))) ≤ (1 / 2 : ℝ) ^ (n + 1) := by
-    calc (∑' k : ℕ, K.continuousMapDistTerm f g (k + (n + 1)))
-        ≤ ∑' k : ℕ, (1 / 2 : ℝ) ^ (k + (n + 1) + 1) :=
-          (hs.comp_injective (add_left_injective (n + 1))).tsum_le_tsum
-            (fun k ↦ K.continuousMapDistTerm_le_half_pow_succ f g (k + (n + 1)))
-            (TauCeti.summable_half_pow_succ.comp_injective (add_left_injective (n + 1)))
-      _ = ∑' k : ℕ, (1 / 2 : ℝ) ^ (n + 1) * (1 / 2 : ℝ) ^ (k + 1) := by
-          congr 1; ext k; ring
-      _ = (1 / 2 : ℝ) ^ (n + 1) := by rw [tsum_mul_left, TauCeti.tsum_half_pow_succ, mul_one]
+    rw [← TauCeti.tsum_half_pow_add_succ (n + 1)]
+    exact (hs.comp_injective (add_left_injective (n + 1))).tsum_le_tsum
+      (fun k ↦ K.continuousMapDistTerm_le_half_pow_succ f g (k + (n + 1)))
+      (TauCeti.summable_half_pow_succ.comp_injective (add_left_injective (n + 1)))
   exact add_le_add hhead htail
 
 /-- Simplified head-plus-tail upper bound
