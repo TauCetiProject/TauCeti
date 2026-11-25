@@ -398,7 +398,8 @@ theorem cutoffCurrent_eq_zero (hα : ContDiffAt ℝ 2 α x) (h : α x ≠ 0)
   by_cases hb : DifferentiableAt ℝ b x
   · rw [extDeriv_add hτ hb, extDeriv_phaseForm hα h, zero_add, sub_self]
   · have hs : ¬ DifferentiableAt ℝ (phaseForm α + b) x := fun h' ↦ hb (by simpa using h'.sub hτ)
-    rw [extDeriv_of_not_differentiableAt hb, extDeriv_of_not_differentiableAt hs, sub_zero]
+    rw [extDeriv_zero_of_not_differentiableAt hb, extDeriv_zero_of_not_differentiableAt hs,
+      sub_zero]
 
 /-- **Support of the cutoff current.** If `χ = 1` on `(c, ∞)` with `c ≥ 0`, the cutoff current is
 supported in `{|α|² ≤ c}`. -/

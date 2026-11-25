@@ -14,6 +14,7 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
@@ -25,8 +26,10 @@ In characteristic two, the polarization `QuadraticMap.polar Q` of a quadratic ma
 `polar Q x x = 2 • Q x = 0`, so `Q.polarBilin` is alternating rather than recovering `Q`. In
 particular, nondegeneracy of the polar bilinear form (`Q.polarBilin.Nondegenerate`, called
 *nonsingularity* or *ordinary nondegeneracy* by Elman--Karpenko--Merkurjev) is strictly stronger
-than `QuadraticMap.Nondegenerate`, which permits a rank-one polar kernel: `Q.polarBilin` is a
-symplectic form on the ambient space, forcing even dimension and symplectic coordinates.
+than `QuadraticMap.Nondegenerate` in odd dimension, where the latter permits a rank-one polar
+kernel: `Q.polarBilin` is a symplectic form on the ambient space, forcing even dimension and
+symplectic coordinates. In even dimension the two notions agree over every field
+(`QuadraticMap.nondegenerate_polar_iff_of_even_finrank`).
 
 The characteristic-free polar-kernel descent, product, totally isotropic dimension, and binary
 quadratic form `[a, b]` APIs live in `TauCeti.LinearAlgebra.QuadraticForm.Radical`,
@@ -48,6 +51,13 @@ that underpins the Arf invariant:
    symplectic basis, and splits into hyperbolic planes `binaryQuadraticForm K 0 0` if and only if it
    contains a `Q`-totally-isotropic subspace equal to its own polar orthogonal complement
    (equivalently, of half the ambient dimension).
+4. **Binary planes and the even-dimensional comparison.** In characteristic two, `[1, a]` is
+   isotropic exactly when `a` lies in the Artin--Schreier image `℘(K) = {x ^ 2 + x}`. Over any
+   field, nonsingularity agrees with `QuadraticMap.Nondegenerate` in even dimension, because a
+   nondegenerate alternating form on a complement of the polar kernel forces that kernel to have
+   even dimension. The characteristic-free normal form `[a, b]` of a nonsingular plane representing
+   `a ≠ 0` is `QuadraticMap.exists_equivalent_binaryQuadraticForm_of_represents` in
+   `TauCeti.LinearAlgebra.QuadraticForm.Binary`.
 
 ## Main definitions
 
@@ -72,6 +82,10 @@ that underpins the Arf invariant:
 * `QuadraticMap.equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_orthogonal_eq`:
   over a field of characteristic two, splitting into hyperbolic planes is equivalent to the
   existence of a `Q`-totally-isotropic subspace equal to its polar orthogonal complement.
+* `TauCeti.not_anisotropic_binaryQuadraticForm_one_iff`: in characteristic two, `[1, a]` is
+  isotropic if and only if `a = x ^ 2 + x` for some `x`.
+* `QuadraticMap.nondegenerate_polar_iff_of_even_finrank`: on an even-dimensional space over any
+  field, nonsingularity (nondegenerate polar form) agrees with `QuadraticMap.Nondegenerate`.
 
 ## References
 
@@ -193,6 +207,12 @@ theorem isometryEquivBinaryQuadraticFormOneProd_symm_apply [CharP R 2]
   (rfl)
 
 end CommRing
+
+/-- Over a field of characteristic two, `binaryQuadraticForm K 1 a` is isotropic if and only if
+`a` lies in the image `℘ K = {x ^ 2 + x}` of the Artin--Schreier map. -/
+theorem not_anisotropic_binaryQuadraticForm_one_iff {K : Type u} [Field K] [CharP K 2] (a : K) :
+    ¬(binaryQuadraticForm K 1 a).Anisotropic ↔ ∃ x, x ^ 2 + x = a := by
+  simp [anisotropic_binaryQuadraticForm_one_iff, ← CharTwo.sub_eq_add, sub_eq_zero]
 
 end TauCeti
 
@@ -392,5 +412,37 @@ theorem equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_two
   exact ⟨fun ⟨U, hU, hUm⟩ ↦ ⟨U, hU, by omega⟩, fun ⟨U, hU, hU2⟩ ↦ ⟨U, hU, by omega⟩⟩
 
 end CharTwoField
+
+section EvenFinrank
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- On an even-dimensional space over a field, a quadratic form is nonsingular, that is its polar
+bilinear form is nondegenerate, if and only if it is nondegenerate in the sense of
+`QuadraticMap.Nondegenerate`. In characteristic two the even dimension is needed: the polar form is
+alternating, so its kernel has the parity of the dimension and cannot be a line. -/
+theorem nondegenerate_polar_iff_of_even_finrank {Q : QuadraticForm K V}
+    (hV : Even (Module.finrank K V)) : Q.polarBilin.Nondegenerate ↔ Q.Nondegenerate := by
+  refine ⟨nondegenerate_of_nondegenerate_polarBilin, fun hQ ↦ ?_⟩
+  by_cases h2 : (2 : K) = 0
+  · have : CharP K 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h2
+    -- A complement `W` of the polar kernel carries a nondegenerate alternating form, so it is
+    -- even-dimensional, and the kernel of dimension at most one is then zero.
+    obtain ⟨W, hW⟩ := (LinearMap.ker Q.polarBilin).exists_isCompl
+    have hWnd : (Q.restrict W).polarBilin.Nondegenerate := by
+      rw [polarBilin_restrict]
+      exact Q.isSymm_polarBilin.isRefl.nondegenerate_restrict_of_isCompl_ker hW.symm
+    obtain ⟨k, hk⟩ := even_finrank_of_nondegenerate_polarBilin hWnd
+    obtain ⟨n, hn⟩ := hV
+    have hsum := Submodule.finrank_add_eq_of_isCompl hW
+    have hker : Module.finrank K (LinearMap.ker Q.polarBilin) ≤ 1 :=
+      Module.finrank_le_of_rank_le (by simpa using hQ.rank_rad_polar_le)
+    rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft Q.isRefl_polarBilin,
+      LinearMap.separatingLeft_iff_ker_eq_bot, ← Submodule.finrank_eq_zero]
+    omega
+  · have := invertibleOfNonzero h2
+    exact nondegenerate_polar_iff.mpr hQ
+
+end EvenFinrank
 
 end QuadraticMap

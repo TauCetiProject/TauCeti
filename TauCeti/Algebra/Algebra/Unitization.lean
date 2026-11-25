@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Algebra.Unitization
 public import Mathlib.Algebra.Star.MonoidHom
+public import Mathlib.Algebra.Star.StarProjection
+public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -22,6 +24,9 @@ For a unital algebra `B`, the map `x ↦ 1 + (x - 1_B)` is a unital multiplicati
 `B ⊆ Unitization R B` by multiplication as `x` does, so it carries unitaries of `B` to unitaries
 of the unitization implementing the same conjugation on `B`.
 
+Star projections of a non-unital star algebra `A` that are conjugate by a unitary `u` of its
+unitization are Murray–von Neumann equivalent in `A`, through the partial isometry `u * p ∈ A`.
+
 ## Main declarations
 
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
@@ -30,12 +35,19 @@ of the unitization implementing the same conjugation on `B`.
 * `Unitization.map_surjective`: the induced map of a surjective homomorphism is surjective.
 * `Unitization.linearMap`: the extension `(r, a) ↦ (t r, φ a)` of a linear map to the
   unitizations.
+* `Unitization.mapScalars`: for an algebra `R → S` and an `S`-algebra `A`, the map
+  `Unitization R A → Unitization S A`, `(r, a) ↦ (algebraMap R S r, a)`.
+* `Unitization.fstHom_comp_mapScalars`, `Unitization.mapScalars_map`: change of scalars lies over
+  `algebraMap R S` on the augmentations and commutes with `Unitization.map`.
 * `Unitization.fstAlgEquivOfSubsingleton`, `Unitization.fstStarAlgEquivOfSubsingleton`: when `A`
   is a subsingleton, the augmentation `Unitization.fstHom` upgrades to an algebra (or `⋆`-algebra)
   equivalence onto `R`.
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
   `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
+* `IsStarProjection.exists_star_mul_self_eq_of_mem_unitary_unitization`: projections of a
+  non-unital star algebra that are conjugate by a unitary of its unitization are Murray–von
+  Neumann equivalent.
 -/
 
 public section
@@ -147,6 +159,54 @@ theorem linearMap_one (t : R) (φ : A →ₗ[R] B) :
 
 end LinearMap
 
+section MapScalars
+
+variable (R S A : Type*) {B : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [NonUnitalSemiring A] [Module S A] [IsScalarTower S A A] [SMulCommClass S A A] [Module R A]
+  [IsScalarTower R S A] [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- Change of the scalar ring of a forced unitization: for an algebra `R → S` and an `S`-algebra
+`A`, the unital `R`-algebra homomorphism `Unitization R A → Unitization S A` sending `(r, a)` to
+`(algebraMap R S r, a)`. -/
+def mapScalars : Unitization R A →ₐ[R] Unitization S A :=
+  lift ((inrNonUnitalAlgHom S A).restrictScalars R)
+
+variable {R S A}
+
+/-- Change of scalars of forced unitizations is the identity on `A`. -/
+@[simp]
+theorem mapScalars_inr (a : A) : mapScalars R S A (inr a : Unitization R A) = inr a := by
+  simp [mapScalars]
+
+/-- Change of scalars of forced unitizations applies `algebraMap R S` to the scalar component. -/
+@[simp]
+theorem fst_mapScalars (x : Unitization R A) :
+    (mapScalars R S A x).fst = algebraMap R S x.fst := by
+  simp [mapScalars, Algebra.algebraMap_eq_smul_one]
+
+/-- Change of scalars of forced unitizations leaves the component in `A` unchanged. -/
+@[simp]
+theorem snd_mapScalars (x : Unitization R A) : (mapScalars R S A x).snd = x.snd := by
+  simp [mapScalars, Algebra.algebraMap_eq_smul_one]
+
+/-- Change of scalars of forced unitizations lies over `algebraMap R S` on the augmentations. -/
+@[simp]
+theorem fstHom_comp_mapScalars :
+    (fstHom S A : Unitization S A →+* S).comp
+        (mapScalars R S A : Unitization R A →+* Unitization S A) =
+      (algebraMap R S).comp (fstHom R A : Unitization R A →+* R) :=
+  RingHom.ext fun x ↦ by simp
+
+/-- Change of scalars of forced unitizations commutes with the maps induced by homomorphisms of
+nonunital `S`-algebras. -/
+theorem mapScalars_map [NonUnitalSemiring B] [Module S B] [IsScalarTower S B B]
+    [SMulCommClass S B B] [Module R B] [IsScalarTower R S B] [IsScalarTower R B B]
+    [SMulCommClass R B B] (f : A →ₙₐ[S] B) (x : Unitization R A) :
+    mapScalars R S B (map (f.restrictScalars R) x) = map f (mapScalars R S A x) :=
+  Unitization.ext (by simp) (by simp)
+
+end MapScalars
+
 section Subsingleton
 
 variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
@@ -239,3 +299,29 @@ theorem inr_mul_oneAddInrSubOne (c x : B) :
   simp [mul_add, mul_sub, ← inr_mul]
 
 end Unitization
+
+namespace IsStarProjection
+
+/-- Star projections `p` and `q` of a non-unital star algebra `A` that are conjugate by a unitary
+of its unitization are Murray–von Neumann equivalent in `A`: `v = u * p` lies in `A`, with
+`star v * v = p` and `v * star v = q`. -/
+theorem exists_star_mul_self_eq_of_mem_unitary_unitization {R A : Type*} [CommSemiring R]
+    [StarRing R] [NonUnitalSemiring A] [StarRing A] [Module R A] [IsScalarTower R A A]
+    [SMulCommClass R A A] [StarModule R A] {p q : A} (hp : IsStarProjection p)
+    {u : Unitization R A} (hu : u ∈ unitary (Unitization R A))
+    (hupq : u * (p : Unitization R A) * star u = q) :
+    ∃ v : A, star v * v = p ∧ v * star v = q := by
+  have hv : ((u * (p : Unitization R A)).snd : Unitization R A) = u * p := by
+    ext
+    · rw [Unitization.fst_inr, Unitization.fst_mul, Unitization.fst_inr, mul_zero]
+    · rw [Unitization.snd_inr]
+  refine ⟨(u * (p : Unitization R A)).snd, Unitization.inr_injective (R := R) ?_,
+    Unitization.inr_injective (R := R) ?_⟩
+  · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, mul_assoc, ← mul_assoc (star u),
+      Unitary.star_mul_self_of_mem hu, one_mul, ← Unitization.inr_star, ← Unitization.inr_mul,
+      hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
+  · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, mul_assoc, ← mul_assoc _ (star _),
+      ← Unitization.inr_star, ← Unitization.inr_mul, hp.isSelfAdjoint.star_eq,
+      hp.isIdempotentElem.eq, ← mul_assoc, hupq]
+
+end IsStarProjection

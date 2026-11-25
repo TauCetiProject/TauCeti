@@ -62,7 +62,7 @@ arguments both equal to a vector of the standard orthonormal basis. -/
 theorem traceLastTwoL_apply {n : ℕ} (A : E [×(n + 2)]→L[ℝ] F) (v : Fin n → E) :
     traceLastTwoL E F n A v = ∑ i, A (Fin.snoc (Fin.snoc v (stdOrthonormalBasis ℝ E i))
       (stdOrthonormalBasis ℝ E i)) := by
-  simp [traceLastTwoL, traceL_apply]
+  simp [traceLastTwoL, ContinuousLinearMap.traceL_apply]
 
 variable (E F) in
 /-- The `r`-fold contraction `traceLastTwoL`, from `(m + 2r)`-multilinear maps to `m`-multilinear
@@ -93,7 +93,7 @@ theorem _root_.ContDiff.iteratedFDeriv_laplacian {f : E → F} {m : ℕ} (hf : C
   rw [hΔ, traceL.iteratedFDeriv_comp_left hD.contDiffAt le_rfl]
   ext v
   simp only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
-    traceL_apply, traceLastTwoL_apply]
+    ContinuousLinearMap.traceL_apply, traceLastTwoL_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [iteratedFDeriv_succ_apply_right, iteratedFDeriv_succ_apply_right]
   simp only [Fin.init_snoc, Fin.snoc_last]

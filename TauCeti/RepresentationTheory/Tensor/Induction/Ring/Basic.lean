@@ -513,6 +513,19 @@ theorem tensorInducedMulAlgHom_comp_tensorInducedAlgAut (s : U.LeftTransversal) 
       (MulSemiringAction.toAlgHom R A g).comp (U.tensorInducedMulAlgHom R A s) :=
   AlgHom.ext (U.tensorInducedMulAlgHom_tensorInducedAlgAut R A s g)
 
+variable {A} in
+/-- **The multiplicative norm of a `U`-fixed element is `G`-fixed**: for `a ∈ A` fixed by `U`,
+the twisted product `∏ x : G ⧸ U, r_s(x) • a` of its translates along the transversal `s` is fixed
+by `G`. It is Evens's twisted multiplication of the diagonal tensor `a ⊗ ⋯ ⊗ a`. -/
+theorem smul_prod_leftTransversalRep_smul (s : U.LeftTransversal) [Fintype (G ⧸ U)] {a : A}
+    (ha : ∀ u : U, (u : G) • a = a) (g : G) :
+    g • ∏ x, U.leftTransversalRep s x • a = ∏ x, U.leftTransversalRep s x • a := by
+  have h :=
+    U.tensorInducedMulAlgHom_tensorInducedAlgAut ℕ A s g (PiTensorProduct.tprod ℕ fun _ ↦ a)
+  rw [tensorInducedAlgAut_tprod, tensorInducedMulAlgHom_tprod, tensorInducedMulAlgHom_tprod] at h
+  simp only [Subgroup.smul_def, ha] at h
+  exact h.symm
+
 /-- **Independence of the transversal**: composing `Subgroup.tensorInducedMulAlgHom` for `s` with
 `Subgroup.tensorInducedChangeTransversalAlgEquiv` from `t` to `s` recovers
 `Subgroup.tensorInducedMulAlgHom` for `t`. -/
