@@ -136,10 +136,7 @@ theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
 theorem ker_ofLinearCharacter [CommSemiring k] [Group G] (χ : G →* kˣ) :
     (ofLinearCharacter χ).ker = χ.ker := by
   ext g
-  simp only [MonoidHom.mem_ker]
-  refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun a ↦ ?_⟩
-  · simpa using LinearMap.congr_fun h 1
-  · simp [h]
+  simpa only [MonoidHom.mem_ker] using ofLinearCharacter_apply_eq_one_iff χ
 
 /-- **The trace character of a one-dimensional representation is its multiplicative character.** -/
 @[simp]
