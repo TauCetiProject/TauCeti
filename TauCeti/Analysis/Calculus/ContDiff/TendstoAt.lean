@@ -27,7 +27,8 @@ holds componentwise for pairs (`TauCeti.TendstoContDiffAt.prodMk`).
 ## Main declarations
 
 * `TauCeti.TendstoContDiffAt`: continuous convergence of all derivatives of order at most `n`,
-  characterized by `TauCeti.tendstoContDiffAt_iff`.
+  characterized by `TauCeti.tendstoContDiffAt_iff`; at `n = ∞`, by
+  `TauCeti.tendstoContDiffAt_top_iff`.
 * `TauCeti.TendstoContDiffAt.tendsto`, `TauCeti.TendstoContDiffAt.tendsto_fderiv`: convergence
   of the values and of the first derivatives.
 * `ContDiffAt.tendstoContDiffAt_const`: a constant family converges to its value.
@@ -135,6 +136,11 @@ theorem _root_.TauCeti.tendstoContDiffAt_zero_iff :
   obtain rfl : k = 0 := by exact_mod_cast nonpos_iff_eq_zero.1 hk
   simpa only [iteratedFDeriv_zero_eq_comp, Function.comp_def] using
     ((continuousMultilinearCurryFin0 𝕜 E F).symm.continuous.tendsto _).comp h
+
+/-- `C^∞` convergence is `C^n` convergence for every finite `n`. -/
+theorem _root_.TauCeti.tendstoContDiffAt_top_iff :
+    TendstoContDiffAt 𝕜 ⊤ f f₀ l x₀ ↔ ∀ n : ℕ, TendstoContDiffAt 𝕜 n f f₀ l x₀ :=
+  ⟨fun h _ ↦ h.of_le le_top, fun h k _ ↦ h k k le_rfl⟩
 
 /-- For `1 ≤ n`, the first derivatives converge continuously. -/
 theorem tendsto_fderiv (h : TendstoContDiffAt 𝕜 n f f₀ l x₀) (hn : 1 ≤ n) :
