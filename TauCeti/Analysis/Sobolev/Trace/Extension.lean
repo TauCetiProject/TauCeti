@@ -89,7 +89,8 @@ private theorem jetFlip_snd (J : Sobolev1Jet (WithLp 2 (ℝ × E))) :
     (jetFlip J).snd = normalLinearReflection E J.snd := by
   simp [jetFlip]
 
-private theorem measurePreserving_normalReflection_top (a : ℝ) :
+/-- The reflection `ρ` in `{a} × E` preserves volume, restricted to the whole space. -/
+theorem measurePreserving_normalReflection_top (a : ℝ) :
     MeasurePreserving (normalReflection E a)
       ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
         Set (WithLp 2 (ℝ × E))))
