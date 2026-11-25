@@ -20,7 +20,8 @@ interval/exterior spectral separation.
 
 For a single trial vector `x` and a real number `m`, the residual bound in the operator norm
 reads `δ ‖P_{Uᗮ} x‖ ≤ ‖A x - m x‖`: it is the residual bound with the one-dimensional trial
-space `𝕜`, the map `X = (t ↦ t x)` and `M = m`.
+space `𝕜`, the map `X = (t ↦ t x)` and `M = m`. For `U` the line through a unit eigenvector `u`
+it reads `δ ‖x - ⟪u, x⟫ u‖ ≤ ‖A x - m x‖`.
 
 The Frobenius and Ky Fan bounds include both the residual form, for a trial map `X`, and the
 perturbation form, for invariant subspaces of two self-adjoint operators. The reverse
@@ -35,6 +36,8 @@ These specialize the general bounds in `UnitarilyInvariantSeminorm.SinTheta.Basi
   the operator-norm perturbation bound for the directed sine map.
 * `LinearMap.IsSymmetric.mul_norm_starProjection_orthogonal_le_norm_apply_sub_smul`:
   the residual bound for a single trial vector, `δ ‖P_{Uᗮ} x‖ ≤ ‖A x - m x‖`.
+* `LinearMap.IsSymmetric.mul_norm_sub_inner_smul_le_norm_apply_sub_smul`: the same bound at a
+  unit eigenvector `u`, `δ ‖x - ⟪u, x⟫ u‖ ≤ ‖A x - m x‖`.
 
 The following declarations are in the `TauCeti.UnitarilyInvariantSeminorm` namespace.
 
@@ -57,6 +60,7 @@ The following declarations are in the `TauCeti.UnitarilyInvariantSeminorm` names
 public section
 
 open Module
+open scoped InnerProductSpace
 
 namespace TauCeti.UnitarilyInvariantSeminorm
 
@@ -191,5 +195,27 @@ theorem mul_norm_starProjection_orthogonal_le_norm_apply_sub_smul {A : E →L[�
   simp only [h₁, h₂, TauCeti.UnitarilyInvariantSeminorm.opNorm_apply,
     LinearMap.toContinuousLinearMap_coe, ContinuousLinearMap.norm_toSpanSingleton] at h
   exact h
+
+/-- **Residual `sin Θ` bound at a unit eigenvector.** Let `u` be a unit eigenvector of a
+symmetric `A`. If every real eigenvalue of `A` carried by a nonzero eigenvector orthogonal to `u`
+is at most `m - δ`, then `δ ‖x - ⟪u, x⟫ u‖ ≤ ‖A x - m x‖` for every `x`. This is the residual
+Davis–Kahan theorem for the invariant line `𝕜 ∙ u`. -/
+theorem mul_norm_sub_inner_smul_le_norm_apply_sub_smul {A : E →L[𝕜] E}
+    (hA : (A : E →ₗ[𝕜] E).IsSymmetric) {u : E} (hu : ‖u‖ = 1) {c : 𝕜} (hAu : A u = c • u)
+    {m δ : ℝ}
+    (h : ∀ {y : E}, y ≠ 0 → ⟪y, u⟫_𝕜 = 0 → ∀ μ : ℝ, A y = (μ : 𝕜) • y → μ ≤ m - δ) (x : E) :
+    δ * ‖x - ⟪u, x⟫_𝕜 • u‖ ≤ ‖A x - (m : 𝕜) • x‖ := by
+  have hU : ∀ y ∈ 𝕜 ∙ u, A y ∈ 𝕜 ∙ u := by
+    intro y hy
+    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hy
+    rw [map_smul, hAu, smul_smul]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self u)
+  have hspec : Module.End.PointSpectrumIn (A : E →ₗ[𝕜] E) (𝕜 ∙ u)ᗮ (Set.Ioo (m - δ) (m + δ))ᶜ := by
+    refine Module.End.pointSpectrumIn_iff.mpr fun y hy hy0 μ hAy ↦ ?_
+    have := h hy0 (Submodule.mem_orthogonal_singleton_iff_inner_left.mp hy) μ hAy
+    simp only [Set.mem_compl_iff, Set.mem_Ioo, not_and_or, not_lt]
+    exact .inl this
+  simpa [Submodule.starProjection_orthogonal_val, Submodule.starProjection_unit_singleton 𝕜 hu]
+    using hA.mul_norm_starProjection_orthogonal_le_norm_apply_sub_smul hU hspec x
 
 end LinearMap.IsSymmetric

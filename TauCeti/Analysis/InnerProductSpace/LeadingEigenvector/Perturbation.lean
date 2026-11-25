@@ -31,8 +31,6 @@ chord is at most `√2` times the sine.
 
 ## Main results
 
-* `LinearMap.IsLeadingUnitEigenvector.mul_norm_sub_inner_smul_le_norm_apply_sub_smul`: the
-  residual `sin Θ` bound `δ ‖x - ⟪u, x⟫ u‖ ≤ ‖A x - m x‖` at a leading unit eigenvector `u`.
 * `IsSelfAdjoint.leading_eigenvector_perturbation`: Davis–Kahan for the leading eigenvector.
 
 ## References
@@ -49,37 +47,6 @@ chord is at most `√2` times the sine.
 public section
 
 open scoped RealInnerProductSpace
-
-namespace LinearMap.IsLeadingUnitEigenvector
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- **Residual `sin Θ` bound at a leading unit eigenvector.** Let `u` be a leading unit
-eigenvector of a symmetric `A`. If every eigenvalue of `A` carried by a nonzero eigenvector
-orthogonal to `u` is at most `m - δ`, then `δ ‖x - ⟪u, x⟫ u‖ ≤ ‖A x - m x‖` for every `x`. This
-is the residual Davis–Kahan theorem for the invariant line `ℝ u`. -/
-theorem mul_norm_sub_inner_smul_le_norm_apply_sub_smul {A : E →L[ℝ] E} {u : E}
-    (hu : (A : E →ₗ[ℝ] E).IsLeadingUnitEigenvector u) (hA : (A : E →ₗ[ℝ] E).IsSymmetric)
-    {m δ : ℝ}
-    (h : ∀ {y : E}, y ≠ 0 → ⟪y, u⟫ = 0 → ∀ μ : ℝ, (A : E →ₗ[ℝ] E) y = μ • y → μ ≤ m - δ)
-    (x : E) :
-    δ * ‖x - ⟪u, x⟫ • u‖ ≤ ‖A x - m • x‖ := by
-  have hU : ∀ y ∈ ℝ ∙ u, A y ∈ ℝ ∙ u := by
-    intro y hy
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
-    rw [map_smul, ← ContinuousLinearMap.coe_coe A, hu.apply_eq_smul hA, smul_smul]
-    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self u)
-  have hspec : Module.End.PointSpectrumIn (A : E →ₗ[ℝ] E) (ℝ ∙ u)ᗮ
-      (Set.Ioo (m - δ) (m + δ))ᶜ := by
-    refine Module.End.pointSpectrumIn_iff.mpr fun y hy hy0 μ hAy ↦ ?_
-    have := h hy0 (Submodule.mem_orthogonal_singleton_iff_inner_left.mp hy) μ hAy
-    simp only [Set.mem_compl_iff, Set.mem_Ioo, not_and_or, not_lt]
-    exact .inl this
-  simpa [Submodule.starProjection_orthogonal_val,
-    Submodule.starProjection_unit_singleton ℝ hu.norm_eq_one] using
-    hA.mul_norm_starProjection_orthogonal_le_norm_apply_sub_smul hU hspec x
-
-end LinearMap.IsLeadingUnitEigenvector
 
 namespace IsSelfAdjoint
 
@@ -134,8 +101,12 @@ theorem leading_eigenvector_perturbation {Sig P : E →L[ℝ] E} (hSig : IsSelfA
     simp only [ContinuousLinearMap.coe_coe] at this
     linarith
   -- the residual `sin Θ` bound for the trial vector `θ`
-  have hsin := hθh.mul_norm_sub_inner_smul_le_norm_apply_sub_smul hA
-    (m := ⟪θ, A θ⟫) (δ := ν - 2 * ‖P‖) (fun hy0 hy μ hAy ↦ by linarith [hev hy0 hy hAy]) θ
+  have hsin := hA.mul_norm_sub_inner_smul_le_norm_apply_sub_smul hθh.norm_eq_one
+    (hθh.apply_eq_smul hA) (m := ⟪θ, A θ⟫) (δ := ν - 2 * ‖P‖)
+    (fun hy0 hy μ hAy ↦ by
+      rw [RCLike.ofReal_real_eq_id, id] at hAy
+      linarith [hev hy0 hy hAy]) θ
+  simp only [RCLike.ofReal_real_eq_id, id] at hsin
   have hres : A θ - ⟪θ, A θ⟫ • θ = P θ - ⟪θ, P θ⟫ • θ := by
     rw [hm, add_apply, hγ, add_smul]
     abel
