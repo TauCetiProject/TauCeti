@@ -61,6 +61,8 @@ embeddings into block-diagonal matrices.
   algebraic operations.
 * `Matrix.GeneralLinearGroup.toCStarMatrixUnits`: invertible matrices over a unital C⋆-algebra
   `A` as the invertible elements of `CStarMatrix n n A`, an isomorphism of topological groups.
+* `Matrix.toCStarMatrixUnitary`: unitary matrices over a unital C⋆-algebra `A` as the unitaries
+  of `CStarMatrix n n A`, a homeomorphism.
 * `CStarMatrix.isStarProjection_ofMatrix_symm_iff`, `CStarMatrix.isStarProjection_ofMatrix_iff`:
   a C⋆-matrix is a star projection exactly when the underlying matrix is; companions
   `CStarMatrix.isSelfAdjoint_ofMatrix_iff` and `CStarMatrix.ofMatrix_mem_unitary_iff` do the same
@@ -1047,3 +1049,33 @@ theorem coe_toCStarMatrixUnits_symm (u : (CStarMatrix n n A)ˣ) :
   (rfl)
 
 end Matrix.GeneralLinearGroup
+
+namespace Matrix
+
+variable {n A : Type*} [Fintype n] [DecidableEq n] [CStarAlgebra A]
+
+/-- Unitary matrices over a unital C⋆-algebra `A` are the unitaries of the C⋆-algebra
+`CStarMatrix n n A`, as a homeomorphism. -/
+noncomputable def toCStarMatrixUnitary : unitary (Matrix n n A) ≃ₜ unitary (CStarMatrix n n A) where
+  toFun w := ⟨CStarMatrix.ofMatrix w, CStarMatrix.ofMatrix_mem_unitary_iff.2 w.prop⟩
+  invFun w := ⟨CStarMatrix.ofMatrix.symm w, CStarMatrix.ofMatrix_symm_mem_unitary_iff.2 w.prop⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (CStarMatrix.ofMatrixL.continuous.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun :=
+    (CStarMatrix.ofMatrixL.symm.continuous.comp continuous_subtypeVal).subtype_mk _
+
+/-- The C⋆-matrix underlying the image of a unitary matrix is the matrix itself. -/
+@[simp]
+theorem coe_toCStarMatrixUnitary (w : unitary (Matrix n n A)) :
+    (toCStarMatrixUnitary w : CStarMatrix n n A) = CStarMatrix.ofMatrix (w : Matrix n n A) :=
+  (rfl)
+
+/-- The matrix underlying the preimage of a unitary C⋆-matrix is the C⋆-matrix itself. -/
+@[simp]
+theorem coe_toCStarMatrixUnitary_symm (w : unitary (CStarMatrix n n A)) :
+    (toCStarMatrixUnitary.symm w : Matrix n n A) =
+      CStarMatrix.ofMatrix.symm (w : CStarMatrix n n A) :=
+  (rfl)
+
+end Matrix
