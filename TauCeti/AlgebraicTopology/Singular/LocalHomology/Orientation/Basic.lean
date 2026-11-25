@@ -205,15 +205,7 @@ def LocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N
     (e : TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)) ≅
       TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N))) :
     LocalOrientation N y d :=
-  ⟨(TopPair.singularHomologyMap e.hom (ModuleCat.of ℤ (ULift.{w} ℤ)) d).hom z.val,
-    z.property.map
-      { hom := TopPair.singularHomologyMap e.hom (ModuleCat.of ℤ (ULift.{w} ℤ)) d
-        inv := TopPair.singularHomologyMap e.inv (ModuleCat.of ℤ (ULift.{w} ℤ)) d
-        hom_inv_id := by
-          rw [← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id]
-        inv_hom_id := by
-          rw [← TopPair.singularHomologyMap_comp, Iso.inv_hom_id,
-            TopPair.singularHomologyMap_id] }⟩
+  equivOfIso (TopPair.singularHomologyMapIso (ModuleCat.of ℤ (ULift.{w} ℤ)) e d) z
 
 @[simp]
 lemma LocalOrientation.coe_map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
@@ -232,13 +224,16 @@ lemma LocalOrientation.map_neg {M N : Type w} [TopologicalSpace M] [TopologicalS
     (e : TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)) ≅
       TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N))) :
     (-z).map e = -z.map e :=
-  Subtype.ext (_root_.map_neg _ z.val)
+  equivOfIso_neg _ z
 
 /-- Transport along the identity isomorphism of pairs is the identity. -/
 @[simp]
 lemma LocalOrientation.map_refl {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
-    (z : LocalOrientation M x d) : z.map (Iso.refl _) = z :=
-  Subtype.ext (by rw [coe_map, Iso.refl_hom, TopPair.singularHomologyMap_id, ModuleCat.id_apply])
+    (z : LocalOrientation M x d) : z.map (Iso.refl _) = z := by
+  have he : TopPair.singularHomologyMapIso (ModuleCat.of ℤ (ULift.{w} ℤ))
+      (Iso.refl (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)))) d = Iso.refl _ :=
+    Iso.ext (TopPair.singularHomologyMap_id _ _ d)
+  rw [LocalOrientation.map, he, equivOfIso_refl, Equiv.refl_apply]
 
 /-- Transport along a composite isomorphism of pairs is the composite of the transports. -/
 lemma LocalOrientation.map_trans {M N P : Type w} [TopologicalSpace M] [TopologicalSpace N]
@@ -247,10 +242,12 @@ lemma LocalOrientation.map_trans {M N P : Type w} [TopologicalSpace M] [Topologi
       TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N)))
     (e' : TopPair.ofSubset ({y}ᶜ : Set (TopCat.of N)) ≅
       TopPair.ofSubset ({p}ᶜ : Set (TopCat.of P))) :
-    z.map (e ≪≫ e') = (z.map e).map e' :=
-  Subtype.ext (by
-    rw [coe_map, coe_map, coe_map, Iso.trans_hom, TopPair.singularHomologyMap_comp,
-      ModuleCat.comp_apply])
+    z.map (e ≪≫ e') = (z.map e).map e' := by
+  have he : TopPair.singularHomologyMapIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (e ≪≫ e') d =
+      TopPair.singularHomologyMapIso _ e d ≪≫ TopPair.singularHomologyMapIso _ e' d :=
+    Iso.ext (TopPair.singularHomologyMap_comp _ _ _ d)
+  rw [LocalOrientation.map, LocalOrientation.map, LocalOrientation.map, he, ← equivOfIso_trans,
+    Equiv.trans_apply]
 
 /-- If integral local homology is isomorphic to `ℤ`, its generators are precisely the inverse
 images of `1` and `-1`. In particular a top-degree local homology fibre has two orientations. -/
