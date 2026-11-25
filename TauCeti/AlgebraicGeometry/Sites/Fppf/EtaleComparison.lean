@@ -121,6 +121,9 @@ end Pullback
 
 /-! ### The morphism `a_X` from big fppf sheaves to small étale sheaves -/
 
+/-- The inclusion of étale `X`-schemes among all `X`-schemes is continuous from the small étale
+topology to the big fppf topology, so restricting an fppf sheaf gives a sheaf on the small étale
+site. -/
 instance : (Etale.forget X).IsContinuous (smallEtaleTopology X) (fppfTopology.over X) :=
   Functor.isContinuous_comp' (F₁ := Etale.forget X) (F₂ := 𝟭 (Over X)) (Functor.rightUnitor _)
     (smallEtaleTopology X) (etaleTopology.over X) (fppfTopology.over X)
@@ -172,13 +175,13 @@ noncomputable abbrev aXAdjunction : aXPullback X A ⊣ aXPushforward X A :=
 
 /-- The inverse image of `a_X` is exact when it is computed by left Kan extension along the
 inclusion of étale `X`-schemes among all `X`-schemes followed by fppf sheafification, and the left
-Kan extension and both sheafifications preserve finite limits. The inclusion is representably
-flat, as it preserves finite limits. -/
+Kan extension and both sheafifications preserve finite limits. -/
 instance preservesFiniteLimits_aXPullback
     [∀ F : X.Etaleᵒᵖ ⥤ A, (Etale.forget X).op.HasLeftKanExtension F]
     [HasSheafify (smallEtaleTopology X) A] [HasSheafify (fppfTopology.over X) A]
     [PreservesFiniteLimits ((Etale.forget X).op.lan : (X.Etaleᵒᵖ ⥤ A) ⥤ (Over X)ᵒᵖ ⥤ A)] :
     PreservesFiniteLimits (aXPullback X A) := by
+  -- The inclusion is representably flat, as it preserves finite limits.
   have : RepresentablyFlat (Etale.forget X) := flat_of_preservesFiniteLimits _
   exact Functor.sheafPullbackConstruction.preservesFiniteLimits _ _ _ _
 
