@@ -213,9 +213,10 @@ theorem exists_symmetry_moves_point :
 
 /-- **The unit on charts.** `Spa` of the left coprojection `ℚ₂⟨T⟩ → ℚ₂⟨T⟩ ⊗̂_{ℚ₂} ℚ₂` is an
 isomorphism of adic spaces, with inverse `Spa` of the multiplication `b ⊗ a ↦ b·a`. -/
-example (hplus : ∀ a ∈ S.plus, algebraMap ℚ_[2] D a ∈ T.plus) :
-    IsIso (comapOfPair hT (hT.completedTensor_rightUnitor S hplus)
+example :
+    IsIso (comapOfPair hT (hT.completedTensor_rightUnitor S f.map_mem_plus)
       (Pair.completedTensor.inl ℚ_[2] T S)) :=
-  rightUnitorAffinoid_hom S hT hplus ▸ (rightUnitorAffinoid S hT hplus).isIso_hom
+  rightUnitorAffinoid_hom S hT f.map_mem_plus ▸
+    (rightUnitorAffinoid S hT f.map_mem_plus).isIso_hom
 
 end SymmetryOnChartsSpaChecks
