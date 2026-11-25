@@ -9,6 +9,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Injective
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
 
+-- Non-public: `M₁(R) ≃+* R` is used only inside the proof of `AlgebraicK1.ofUnits_surjective`.
+import Mathlib.LinearAlgebra.Matrix.Unique
+
 /-!
 # General linear stability theorems and finite-rank descriptions of `K₁`
 
@@ -101,13 +104,13 @@ theorem ofUnits_surjective {R : Type*} [Ring R] (hR : HasStableRangeLE R 1) :
     Function.Surjective (ofUnits R) := by
   intro x
   obtain ⟨g, rfl⟩ := mk_surjective hR le_rfl x
-  refine ⟨⟨(g : Matrix (Fin 1) (Fin 1) R) 0 0, (g⁻¹ : GL (Fin 1) R) 0 0, ?_, ?_⟩, ?_⟩
-  · simpa [Matrix.mul_apply] using congrFun₂ g.mul_inv 0 0
-  · simpa [Matrix.mul_apply] using congrFun₂ g.inv_mul 0 0
-  · rw [ofUnits_apply]
-    congr 1
-    ext i j
-    simp [Subsingleton.elim i 0, Subsingleton.elim j 0]
+  refine ⟨Units.map (Matrix.uniqueRingEquiv : Matrix (Fin 1) (Fin 1) R ≃+* R).toMonoidHom g, ?_⟩
+  rw [ofUnits_apply]
+  congr 1
+  ext i j
+  simp only [RingHom.toMonoidHom_eq_coe, GeneralLinearGroup.coe_scalar, Units.coe_map,
+    MonoidHom.coe_ofClass, scalar_apply, Subsingleton.elim i 0, Subsingleton.elim j 0]
+  exact Matrix.uniqueRingEquiv_apply (A := R) (m := Fin 1) _
 
 /-- When `R` has Bass stable range at most `s` and `s ≤ n` (including at the boundary `n = s` where
 injective stability need not yet hold), `K₁(R)` is the quotient of `GL (Fin n) R` by the actual

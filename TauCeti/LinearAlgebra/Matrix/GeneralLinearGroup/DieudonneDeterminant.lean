@@ -404,23 +404,11 @@ theorem dieudonneDet_diagGL_mulSingle (i : n) (d : Dˣ) :
 diagonal entries. -/
 theorem dieudonneDet_diagGL (t : n → Dˣ) :
     dieudonneDet n D (diagGL t) = ∏ i, Group.Abelianization.of (t i) := by
-  -- the diagonal matrix with entries `t i` for `i ∈ s` and `1` elsewhere
-  have key : ∀ s : Finset n, dieudonneDet n D (diagGL fun i ↦ if i ∈ s then t i else 1) =
-      ∏ i ∈ s, Group.Abelianization.of (t i) := by
-    intro s
-    induction s using Finset.induction_on with
-    | empty => simp [← Pi.one_def]
-    | insert a s ha ih =>
-      have hsplit : (fun i ↦ if i ∈ insert a s then t i else 1) =
-          (fun i ↦ if i ∈ s then t i else 1) * Pi.mulSingle a (t a) := by
-        funext i
-        by_cases hi : i = a
-        · subst hi
-          simp [ha]
-        · simp [hi, Finset.mem_insert]
-      rw [hsplit, map_mul, map_mul, ih, dieudonneDet_diagGL_mulSingle, Finset.prod_insert ha,
-        mul_comm]
-  simpa using key Finset.univ
+  -- `Dˣ` need not be commutative, so decompose `t` with a noncommutative product
+  have h := Finset.univ.map_noncommProd (fun i ↦ Pi.mulSingle i (t i))
+    (fun i _ j _ _ ↦ Pi.mulSingle_apply_commute t i j) ((dieudonneDet n D).comp diagGL)
+  rw [Finset.noncommProd_mulSingle, Finset.noncommProd_eq_prod] at h
+  simpa using h
 
 /-- The Dieudonné determinant is surjective as soon as there is an index. -/
 theorem dieudonneDet_surjective [Nonempty n] : Function.Surjective (dieudonneDet n D) := by
