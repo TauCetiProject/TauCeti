@@ -164,7 +164,7 @@ def lieAlgebraLieEquiv : 𝔫 ≃ₗ⁅ℝ⁆ heisenberg ℝ where
   map_lie' {u v} := by
     rw [tangentSpaceCastModel_lie_eq_bracketLinear, lie_eq_smul_heisenbergZ]
     simp [bracketLinear]
-    ring_nf
+    module
   invFun A := (𝔠).symm
     ((A : Matrix (Fin 3) (Fin 3) ℝ) 0 1, (A : Matrix (Fin 3) (Fin 3) ℝ) 1 2,
       (A : Matrix (Fin 3) (Fin 3) ℝ) 0 2)
@@ -258,8 +258,9 @@ theorem coadjointRepresentation_dualMap_lieAlgebraLieEquiv (p : Nil)
 returns it. -/
 private theorem dualMap_lieAlgebraLieEquiv_dualMap_symm (μ : Dual ℝ 𝔫) :
     lieAlgebraLieEquiv.toLinearEquiv.dualMap (lieAlgebraLieEquiv.symm.toLinearEquiv.dualMap μ) =
-      μ :=
-  lieAlgebraLieEquiv.toLinearEquiv.dualMap.apply_symm_apply μ
+      μ := by
+  ext u
+  simp
 
 /-- The coadjoint action of `Nil` on a functional `μ`, through the Heisenberg group. -/
 private theorem coadjointRepresentation_eq (p : Nil) (μ : Dual ℝ 𝔫) :
@@ -286,7 +287,8 @@ theorem lie_eq_smul_lieAlgebraLieEquiv_symm_heisenbergZ :
   rw [← lieAlgebraLieEquiv.symm_apply_apply ⁅u, v⁆, LieEquiv.map_lie, lie_eq_smul_heisenbergZ,
     map_smul]
   simp only [lieAlgebraLieEquiv_apply_zero_one, lieAlgebraLieEquiv_apply_one_two]
-  ring_nf
+  congr 1
+  ring
 
 /-- The first coordinate of the coadjoint action of `Nil`: `p ↦ p + r y`. -/
 theorem coadjointRepresentation_apply_lieAlgebraLieEquiv_symm_heisenbergX (p : Nil)

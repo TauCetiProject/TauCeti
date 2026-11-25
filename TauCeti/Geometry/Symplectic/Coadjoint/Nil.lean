@@ -21,7 +21,8 @@ generators `ξ_O` of the action of `Nil`, in the coordinates of
 Write `(p, q, r) = (μ'(∂_x), μ'(∂_y), μ'(∂_z))` for the coordinates of a point `μ'` of the orbit,
 and `(s, t, u)` for the coordinates of `ξ ∈ 𝔫`. The orbit map `[g] ↦ Ad*_g μ` moves along `ξ_O`
 with velocity `(t r, -s r, 0)`
-(`TauCeti.Nil.mvfderiv_orbitMap_apply_lieAlgebraLieEquiv_symm_heisenbergX` and its companions), and
+(`TauCeti.Nil.mvfderiv_orbitMap_apply_fundamentalVectorField`,
+`TauCeti.Nil.mvfderiv_orbitMap_apply_lieAlgebraLieEquiv_symm_heisenbergX` and its companions), and
 the form is
 
 `ω_μ(ξ_O, η_O) = r (s t' - t s')`
@@ -66,6 +67,14 @@ theorem orbitMap_coadjointRepresentation_apply_lieAlgebraLieEquiv_symm_heisenber
     rw [Representation.orbitMap_mk,
       coadjointRepresentation_apply_lieAlgebraLieEquiv_symm_heisenbergZ]
 
+/-- The orbit map sends a bracket `⁅η, ξ⁆` to `(s' t - t' s) r`, where `r = μ(∂_z)` and
+`(s', t', u')`, `(s, t, u)` are the coordinates of `η` and `ξ`. -/
+private theorem orbitMap_coadjointRepresentation_apply_lie (η : 𝔫) :
+    (Lie.coadjointRepresentation ℝ J Nil).orbitMap μ x ⁅η, ξ⁆ =
+      ((𝔠 η).1 * (𝔠 ξ).2.1 - (𝔠 η).2.1 * (𝔠 ξ).1) * μ ζ := by
+  rw [lie_eq_smul_lieAlgebraLieEquiv_symm_heisenbergZ, map_smul, smul_eq_mul,
+    orbitMap_coadjointRepresentation_apply_lieAlgebraLieEquiv_symm_heisenbergZ]
+
 /-- **The KKS form of a coadjoint orbit of `Nil` on its generators.** At every point of the orbit
 `Nil ⧸ Nil_μ`, `ω_μ(ξ_O, η_O) = r (s t' - t s')`, where `r = μ(∂_z)` and `(s, t, u)`,
 `(s', t', u')` are the coordinates of `ξ` and `η`. -/
@@ -74,8 +83,19 @@ theorem eval₂_coadjointOrbitForm_fundamentalVectorField (η : 𝔫) :
         (fundamentalVectorField _ η x) =
       μ ζ * ((𝔠 ξ).1 * (𝔠 η).2.1 - (𝔠 ξ).2.1 * (𝔠 η).1) := by
   rw [Dual.eval₂_coadjointOrbitForm_fundamentalVectorField,
-    lie_eq_smul_lieAlgebraLieEquiv_symm_heisenbergZ, map_smul, smul_eq_mul, mul_comm,
-    orbitMap_coadjointRepresentation_apply_lieAlgebraLieEquiv_symm_heisenbergZ]
+    orbitMap_coadjointRepresentation_apply_lie, mul_comm]
+
+/-- **The generators of a coadjoint orbit of `Nil`**: along `ξ_O`, the coordinate `μ'(η)` of the
+orbit map changes at the rate `(s' t - t' s) r`, where `r = μ(∂_z)` and `(s', t', u')`, `(s, t, u)`
+are the coordinates of `η` and `ξ`. -/
+theorem mvfderiv_orbitMap_apply_fundamentalVectorField (η : 𝔫) :
+    mvfderiv
+        𝓘(ℝ, Subgroup.QuotientModelSpace J ((Lie.coadjointRepresentation ℝ J Nil).stabilizer μ))
+        (fun y ↦ (Lie.coadjointRepresentation ℝ J Nil).orbitMap μ y η) x
+        (fundamentalVectorField _ ξ x) =
+      ((𝔠 η).1 * (𝔠 ξ).2.1 - (𝔠 η).2.1 * (𝔠 ξ).1) * μ ζ := by
+  rw [Dual.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
+    orbitMap_coadjointRepresentation_apply_lie]
 
 /-- **The generators of a coadjoint orbit of `Nil`, first coordinate**: along `ξ_O`, the coordinate
 `p = μ'(∂_x)` of the orbit map changes at the rate `t r`. -/
@@ -85,9 +105,7 @@ theorem mvfderiv_orbitMap_apply_lieAlgebraLieEquiv_symm_heisenbergX :
         (fun y ↦ (Lie.coadjointRepresentation ℝ J Nil).orbitMap μ y
         (lieAlgebraLieEquiv.symm (heisenbergX ℝ))) x (fundamentalVectorField _ ξ x) =
       (𝔠 ξ).2.1 * μ ζ := by
-  rw [Dual.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
-    lie_eq_smul_lieAlgebraLieEquiv_symm_heisenbergZ, map_smul, smul_eq_mul,
-    orbitMap_coadjointRepresentation_apply_lieAlgebraLieEquiv_symm_heisenbergZ]
+  rw [mvfderiv_orbitMap_apply_fundamentalVectorField]
   simp
 
 /-- **The generators of a coadjoint orbit of `Nil`, second coordinate**: along `ξ_O`, the
@@ -98,9 +116,7 @@ theorem mvfderiv_orbitMap_apply_lieAlgebraLieEquiv_symm_heisenbergY :
         (fun y ↦ (Lie.coadjointRepresentation ℝ J Nil).orbitMap μ y
         (lieAlgebraLieEquiv.symm (heisenbergY ℝ))) x (fundamentalVectorField _ ξ x) =
       -((𝔠 ξ).1 * μ ζ) := by
-  rw [Dual.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
-    lie_eq_smul_lieAlgebraLieEquiv_symm_heisenbergZ, map_smul, smul_eq_mul,
-    orbitMap_coadjointRepresentation_apply_lieAlgebraLieEquiv_symm_heisenbergZ]
+  rw [mvfderiv_orbitMap_apply_fundamentalVectorField]
   simp
 
 /-- **The generators of a coadjoint orbit of `Nil`, third coordinate**: the coordinate
@@ -110,8 +126,7 @@ theorem mvfderiv_orbitMap_apply_lieAlgebraLieEquiv_symm_heisenbergZ :
         𝓘(ℝ, Subgroup.QuotientModelSpace J ((Lie.coadjointRepresentation ℝ J Nil).stabilizer μ))
         (fun y ↦ (Lie.coadjointRepresentation ℝ J Nil).orbitMap μ y ζ) x
         (fundamentalVectorField _ ξ x) = 0 := by
-  rw [Dual.mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
-    lie_eq_smul_lieAlgebraLieEquiv_symm_heisenbergZ, map_smul, smul_eq_mul]
+  rw [mvfderiv_orbitMap_apply_fundamentalVectorField]
   simp
 
 end TauCeti.Nil
