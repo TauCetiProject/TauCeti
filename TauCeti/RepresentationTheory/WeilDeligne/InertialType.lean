@@ -91,6 +91,12 @@ theorem Hom.inertialType_apply {D : WeilDeligneParameter E W V deg q}
   congrFun (f.toIntertwiningMap.coe_res _) v
 
 @[simp]
+theorem Hom.inertialType_toLinearMap {D : WeilDeligneParameter E W V deg q}
+    {D' : WeilDeligneParameter E W V' deg q} (f : Hom D D') :
+    f.inertialType.toLinearMap = f.toLinearMap :=
+  f.toIntertwiningMap.toLinearMap_res _
+
+@[simp]
 theorem Hom.inertialType_id (D : WeilDeligneParameter E W V deg q) :
     (Hom.id D).inertialType = .id D.inertialType := by
   rw [Hom.inertialType, Hom.id_toIntertwiningMap]
