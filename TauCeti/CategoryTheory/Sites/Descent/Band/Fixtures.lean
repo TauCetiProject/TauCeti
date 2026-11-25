@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
-public import TauCeti.CategoryTheory.Sites.Descent.BandCenter
+public import TauCeti.CategoryTheory.Sites.Descent.Band.Center
 
 /-!
 # Central sections of a constant pseudofunctor
@@ -25,22 +25,25 @@ In the namespace `CategoryTheory.Pseudofunctor.BandFixtures`:
 
 * `constant C D`: the constant pseudofunctor on `C` with fibre `D`.
 * `constantSection U z`: the central section over `U` with value `z` at every arrow.
-* `constantSectionsEquiv U : (CatCenter D)ˣ ≃* IntrinsicBandSections (constant C D) U`.
+* `constantSectionsEquiv C D U : (CatCenter D)ˣ ≃* IntrinsicBandSections (constant C D) U`.
 
 ## Main results
 
+* `constant_obj`, `constant_map`, `constant_mapId`, `constant_mapComp`: every fibre of
+  `constant C D` is `D`, every pullback functor is the identity, and the unit and composition
+  isomorphisms are identities.
 * `val_constantSection`, `restrict_constantSection`: the value at every arrow is `z`, and
   restriction gives the constant section of the same `z`.
+* `val_eq_val_id`: a central section has the same value at every arrow as at the identity.
 * `constantSectionsEquiv_apply`, `constantSectionsEquiv_symm_apply`: the forward map is
   `constantSection`, the inverse is the value at the identity arrow.
 
 ## References
 
-* [The Stacks Project, Definition 8.11.1 (06NZ)](https://stacks.math.columbia.edu/tag/06NZ)
-* [The Stacks Project, Lemma 8.11.8 (0CJY)](https://stacks.math.columbia.edu/tag/0CJY)
+* [The Stacks Project, Lemma 8.11.8 (06NY)](https://stacks.math.columbia.edu/tag/06NY)
 -/
 
-@[expose] public section
+public section
 
 universe v u v' u'
 
@@ -52,13 +55,33 @@ variable (C : Type u) [Category.{v} C] (D : Type u') [Category.{v'} D]
 
 /-- The **constant pseudofunctor** on `C` with fibre `D`: every fibre is `D` and every pullback
 functor is the identity. -/
+@[expose]
 def constant : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'} :=
   ((Functor.const Cᵒᵖ).obj (Cat.of D)).toPseudofunctor'
 
 variable {C D}
 
+-- Not `@[simp]`: `simp` would rewrite the fibre inside the types of central sections, so the
+-- left-hand sides of `constantSectionsEquiv_apply` and similar lemmas would not be in normal form.
 /-- The fibres of the constant pseudofunctor are `D`. -/
-theorem constant_obj (V : C) : (constant C D).obj (.mk (op V)) = Cat.of D :=
+theorem constant_obj (X : LocallyDiscrete Cᵒᵖ) : (constant C D).obj X = Cat.of D :=
+  rfl
+
+/-- The pullback functors of the constant pseudofunctor are the identity. -/
+@[simp]
+theorem constant_map {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) :
+    (constant C D).map f = 𝟙 (Cat.of D) :=
+  rfl
+
+/-- The unit isomorphisms of the constant pseudofunctor are identities. -/
+@[simp]
+theorem constant_mapId (X : LocallyDiscrete Cᵒᵖ) : (constant C D).mapId X = Iso.refl _ :=
+  rfl
+
+/-- The composition isomorphisms of the constant pseudofunctor are identities. -/
+@[simp]
+theorem constant_mapComp {X Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (constant C D).mapComp f g = Iso.refl _ :=
   rfl
 
 /-- The **constant section** over `U` of a unit `z` of the centre of `D`: the central section of
@@ -81,14 +104,16 @@ theorem restrict_constantSection {U V : C} (f : V ⟶ U) (z : (CatCenter D)ˣ) :
   IntrinsicBandSections.ext fun W a x ↦ by
     simp only [IntrinsicBandSections.val_restrict, val_constantSection]
 
-/-- The value at the identity arrow determines a central section of the constant pseudofunctor: by
-compatibility with pullback along `f`, which is the identity functor, the value at `f` is the value
-at the identity. -/
+/-- A central section of the constant pseudofunctor has the same value at every arrow `V ⟶ U` as
+at the identity of `U`. -/
 theorem val_eq_val_id {U : C} (s : IntrinsicBandSections (constant C D) U) {V : C} (f : V ⟶ U) :
     s.val V f = s.val U (𝟙 U) :=
   Units.ext <| CatCenter.ext _ _ fun x ↦ by
     have h := IntrinsicBandSections.map_app s (𝟙 U) f x
-    rw [Category.comp_id] at h
+    rw [constant_map, Category.comp_id] at h
+    -- `h` still applies `(𝟙 (Cat.of D)).toFunctor`, which is `𝟭 D` (`Cat.Hom.id_toFunctor`), but
+    -- `rw` cannot remove it: `x` lies in the fibre `(constant C D).obj _`, which is `D` only by
+    -- `constant_obj`, so `exact` closes the goal by unfolding
     exact h.symm
 
 variable (C D) in
@@ -98,20 +123,22 @@ def constantSectionsEquiv (U : C) : (CatCenter D)ˣ ≃* IntrinsicBandSections (
   toFun := constantSection U
   invFun s := s.val U (𝟙 U)
   left_inv z := val_constantSection U z U (𝟙 U)
-  right_inv s := IntrinsicBandSections.ext fun _ f _ ↦ by
-    erw [val_constantSection, val_eq_val_id s f]
-  map_mul' _ _ := IntrinsicBandSections.ext fun _ _ _ ↦ by
-    simp only [val_constantSection, IntrinsicBandSections.val_mul]
+  right_inv s := Subtype.ext <| funext₂ fun V f ↦
+    (val_constantSection U _ V f).trans (val_eq_val_id s f).symm
+  map_mul' z w := IntrinsicBandSections.ext fun V f x ↦ by
+    simp only [IntrinsicBandSections.val_mul, val_constantSection]
+    -- the two sides multiply `z` and `w` in `(CatCenter D)ˣ` and in the centre units of the fibre
+    -- `(constant C D).obj _`, which is `D` by `constant_obj`
     rfl
 
 @[simp]
 theorem constantSectionsEquiv_apply (U : C) (z : (CatCenter D)ˣ) :
     constantSectionsEquiv C D U z = constantSection U z :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem constantSectionsEquiv_symm_apply (U : C) (s : IntrinsicBandSections (constant C D) U) :
     (constantSectionsEquiv C D U).symm s = s.val U (𝟙 U) :=
-  rfl
+  (rfl)
 
 end CategoryTheory.Pseudofunctor.BandFixtures

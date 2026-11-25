@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.GroupTheory.Perm.Fin
-public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures
+public import TauCeti.CategoryTheory.Sites.Descent.Band.Fixtures
 
 /-!
 # Checks for the central sections of a constant pseudofunctor
@@ -30,8 +30,9 @@ abbrev centerPerm (z : (CatCenter (SingleObj (Equiv.Perm (Fin 3))))ˣ) : Equiv.P
 
 /-- The action of a centre unit of `B(S₃)` commutes with every permutation, by naturality. -/
 theorem centerPerm_mul_comm (z : (CatCenter (SingleObj (Equiv.Perm (Fin 3))))ˣ)
-    (h : Equiv.Perm (Fin 3)) : centerPerm z * h = h * centerPerm z :=
-  CatCenter.naturality z.val (X := SingleObj.star _) (Y := SingleObj.star _) h
+    (h : Equiv.Perm (Fin 3)) : centerPerm z * h = h * centerPerm z := by
+  simpa only [SingleObj.comp_as_mul] using
+    CatCenter.naturality z.val (X := SingleObj.star _) (Y := SingleObj.star _) h
 
 /-- **The `B(S₃)` Check, centre units.** Every centre unit of `B(S₃)` acts by the identity. -/
 theorem centerPerm_eq_one (z : (CatCenter (SingleObj (Equiv.Perm (Fin 3))))ˣ) :
