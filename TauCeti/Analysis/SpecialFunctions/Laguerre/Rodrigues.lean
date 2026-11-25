@@ -31,17 +31,17 @@ The formula is the case `β = n + α`, `j = n` of a formula for every derivative
 `dʲ/dtʲ (exp (-t) * t ^ β) = j! * (exp (-t) * t ^ (β - j)) * L_j^{(β - j)}(t)`.
 
 It is proved by induction on `j`; the inductive step is the raising relation
-`Polynomial.X_mul_derivative_laguerre_add_one`. The derivatives of order `j < n` of
+`TauCeti.X_mul_derivative_laguerre_add_one`. The derivatives of order `j < n` of
 `exp (-t) * t ^ (n + α)` are the boundary terms of the integration by parts that proves the
 Laguerre orthogonality relation, so the general formula is stated for every `j`.
 
 ## Main statements
 
-* `Polynomial.hasDerivAt_exp_neg_mul_rpow_mul_laguerre`: for `t ≠ 0`, the derivative at `t` of
+* `TauCeti.hasDerivAt_exp_neg_mul_rpow_mul_laguerre`: for `t ≠ 0`, the derivative at `t` of
   `exp (-s) * s ^ (γ + 1) * L_j^{(γ + 1)}(s)` is `(j + 1) * (exp (-t) * t ^ γ) * L_{j+1}^{(γ)}(t)`.
-* `Polynomial.iteratedDeriv_exp_neg_mul_rpow_eq_laguerre`: for `t ≠ 0`, every real `β` and every
+* `TauCeti.iteratedDeriv_exp_neg_mul_rpow_eq_laguerre`: for `t ≠ 0`, every real `β` and every
   `j`, the `j`-th derivative of `exp (-t) * t ^ β` at `t`.
-* `Polynomial.laguerre_rodrigues`: the Rodrigues formula, for `0 < x` and every real `α`.
+* `TauCeti.laguerre_rodrigues`: the Rodrigues formula, for `0 < x` and every real `α`.
 
 ## References
 
@@ -52,9 +52,9 @@ Laguerre orthogonality relation, so the general formula is stated for every `j`.
 
 public section
 
-namespace Polynomial
+namespace TauCeti
 
-open Real
+open Polynomial Real
 
 /-- One step of the Rodrigues formula: at every `t ≠ 0`, differentiating
 `exp (-t) * t ^ (γ + 1) * L_j^{(γ + 1)}(t)` lowers the parameter and raises the index. -/
@@ -74,7 +74,7 @@ theorem hasDerivAt_exp_neg_mul_rpow_mul_laguerre (γ : ℝ) (j : ℕ) {t : ℝ} 
 
 /-- The derivatives of `exp (-t) * t ^ β` away from the origin: for real `β` and `t ≠ 0`,
 `dʲ/dtʲ (exp (-t) * t ^ β) = j! * (exp (-t) * t ^ (β - j)) * L_j^{(β - j)}(t)`.
-At `β = n + α`, `j = n` this is the Rodrigues formula `Polynomial.laguerre_rodrigues`. -/
+At `β = n + α`, `j = n` this is the Rodrigues formula `TauCeti.laguerre_rodrigues`. -/
 theorem iteratedDeriv_exp_neg_mul_rpow_eq_laguerre (β : ℝ) (j : ℕ) {t : ℝ} (ht : t ≠ 0) :
     iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β) t =
       j.factorial * (exp (-t) * t ^ (β - j)) * (laguerre (β - j) j).eval t := by
@@ -105,4 +105,4 @@ theorem laguerre_rodrigues (α : ℝ) (n : ℕ) {x : ℝ} (hx : 0 < x) :
   have h₂ : (n.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
   field_simp
 
-end Polynomial
+end TauCeti
