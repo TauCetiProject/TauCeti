@@ -115,10 +115,6 @@ private noncomputable abbrev reductionLinearMap {ρ : Representation ℤ G W}
     reductionModule k ρ →ₗ[k[G]] reductionModule k σ :=
   IntertwiningMap.equivLinearMapAsModule _ _ (f.baseChange k)
 
-private theorem coe_reductionLinearMap {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
-    (f : IntertwiningMap ρ σ) : ⇑(reductionLinearMap k f) = f.toLinearMap.lTensor k :=
-  IntertwiningMap.coe_equivLinearMapAsModule_baseChange f k
-
 variable (ℓ : ℕ) [Fact ℓ.Prime] {V₁ V₂ V₃ : Type u} [AddCommGroup V₁] [Module ℤ V₁]
   [AddCommGroup V₂] [Module ℤ V₂] [AddCommGroup V₃] [Module ℤ V₃] {ρ₁ : Representation ℤ G V₁}
   {ρ₂ : Representation ℤ G V₂} {ρ₃ : Representation ℤ G V₃} {f : IntertwiningMap ρ₁ ρ₂}
@@ -142,30 +138,36 @@ private theorem reductionK0_six_term (hfg : Exact f g) (hf : Injective f) (hg : 
     Submodule.torsionBy_isTorsionBy _
   -- Exactness of each of the five reduced maps, from the tensored snake sequence.
   have h₁ : Injective (reductionLinearMap k (f.torsionBy ℓ)) := by
-    rw [coe_reductionLinearMap, IntertwiningMap.toLinearMap_torsionBy]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_torsionBy]
     exact LinearMap.lTensor_injective_of_isTorsionBy k _ ℓ (injective_torsionByMap hf) htors
   have h₁₂ : Exact (reductionLinearMap k (f.torsionBy ℓ))
       (reductionLinearMap k (g.torsionBy ℓ)) := by
-    rw [coe_reductionLinearMap, coe_reductionLinearMap, IntertwiningMap.toLinearMap_torsionBy,
-      IntertwiningMap.toLinearMap_torsionBy]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_torsionBy, IntertwiningMap.toLinearMap_torsionBy]
     exact lTensor_exact_of_isTorsionBy k ℓ (exact_torsionByMap hfg hf) htors
   have h₂₃ : Exact (reductionLinearMap k (g.torsionBy ℓ))
       (reductionLinearMap k (IntertwiningMap.torsionByδ (ℓ : ℤ) hfg hf hg)) := by
-    rw [coe_reductionLinearMap, coe_reductionLinearMap, IntertwiningMap.toLinearMap_torsionBy,
-      IntertwiningMap.toLinearMap_torsionByδ]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_torsionBy, IntertwiningMap.toLinearMap_torsionByδ]
     exact lTensor_exact_torsionByMap_torsionByδ k ℓ hfg hf hg
   have h₃₄ : Exact (reductionLinearMap k (IntertwiningMap.torsionByδ (ℓ : ℤ) hfg hf hg))
       (reductionLinearMap k (f.quotSMulTop ℓ)) := by
-    rw [coe_reductionLinearMap, coe_reductionLinearMap, IntertwiningMap.toLinearMap_torsionByδ,
-      IntertwiningMap.toLinearMap_quotSMulTop]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_torsionByδ, IntertwiningMap.toLinearMap_quotSMulTop]
     exact lTensor_exact_torsionByδ_quotSMulTop_map k ℓ hfg hf hg
   have h₄₅ : Exact (reductionLinearMap k (f.quotSMulTop ℓ))
       (reductionLinearMap k (g.quotSMulTop ℓ)) := by
-    rw [coe_reductionLinearMap, coe_reductionLinearMap, IntertwiningMap.toLinearMap_quotSMulTop,
-      IntertwiningMap.toLinearMap_quotSMulTop]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_quotSMulTop, IntertwiningMap.toLinearMap_quotSMulTop]
     exact lTensor_exact k (QuotSMulTop.map_exact _ hfg hg) (QuotSMulTop.map_surjective _ hg)
   have h₅ : Surjective (reductionLinearMap k (g.quotSMulTop ℓ)) := by
-    rw [coe_reductionLinearMap, IntertwiningMap.toLinearMap_quotSMulTop]
+    rw [IntertwiningMap.coe_equivLinearMapAsModule_baseChange,
+      IntertwiningMap.toLinearMap_quotSMulTop]
     exact LinearMap.lTensor_surjective k (QuotSMulTop.map_surjective _ hg)
   -- The module types are given explicitly: the instances of `Representation.asModule` used by
   -- `reductionLinearMap` differ syntactically from those `FGModuleCat.of` asks for.
