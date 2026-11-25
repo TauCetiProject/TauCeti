@@ -480,7 +480,7 @@ private theorem eventually_norm_mul_toBlocks₁₁_sub_le [∀ i, Fintype (n i)]
     ⟨δ / ((R + 6) ^ (2 * j + 2) + (R + 6) ^ (2 * j) + R * (R + 6) ^ (2 * j + 1) + R + 2),
       by positivity, (div_mul_cancel₀ _ (by positivity)).le⟩
   have hE (k : ℕ) : ∀ᶠ i in F, ‖nonbacktrackingCorrection (fromBlocks 0 (Y i) (Y i)ᴴ 0) k‖ ≤ η :=
-    (tendsto_l2_opNorm_nonbacktrackingCorrection hHerm hH hdeg hent k).eventually
+    (tendsto_l2_opNorm_nonbacktrackingCorrection hHerm hH hent k).eventually
       (ge_mem_nhds hη₀)
   filter_upwards [hDdev η hη₀, hE (2 * j + 2), hE (2 * j), hE (2 * j + 1), hB (2 * j + 2),
     hB (2 * j), hB (2 * j + 1), hH] with i hD hE2 hE0 hE1 hB2 hB0 hB1 hHi
@@ -547,7 +547,7 @@ theorem eventually_l2_opNorm_mul_conjTranspose_sub_smul_one_le {c : ℝ≥0} (hc
     (fun δ hδ ↦ (hDdev δ hδ).mono fun i hi ↦
       (norm_mul_toBlocks₁₁_nonbacktrackingPow_zero_sub_le (Y i) c).trans hi)
     fun j δ hδ ↦ eventually_norm_mul_toBlocks₁₁_sub_le hc₀ hc₁ hR hDdev hdeg hent hH j hδ
-  refine eventually_l2_opNorm_le_of_forall_pow (C := C) (d := d) (fun i ↦ ?_) hC
+  refine eventually_l2_opNorm_le_of_forall_pow (C := C) (d := d) (fun i ↦ ?_)
     (by positivity) (max_add_div_max_lt hc₀ hε) fun k δ hδ ↦ ?_
   · exact (isHermitian_mul_conjTranspose_self _).sub (isHermitian_one.smul (.all _))
   · filter_upwards [hcheb k 0 hδ] with i hi

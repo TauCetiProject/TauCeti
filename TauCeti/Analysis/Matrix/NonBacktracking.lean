@@ -39,8 +39,8 @@ negligible in Bai and Yin's analysis of the smallest eigenvalue.
   `Matrix.nonbacktrackingCorrection H k` of the recursion `Matrix.nonbacktrackingPow_add_two` has
   operator norm at most `b * d * (1 + ∑ j < k, ‖nonbacktrackingPow H j‖)`.
 * `Matrix.tendsto_l2_opNorm_nonbacktrackingCorrection`: along a filter, for Hermitian matrices with
-  bounded norms and squared row norms whose entries tend to zero uniformly, the corrections of
-  each length tend to zero.
+  bounded norms whose entries tend to zero uniformly, the corrections of each length tend to
+  zero.
 
 ## References
 
@@ -245,17 +245,18 @@ theorem IsHermitian.l2_opNorm_nonbacktrackingCorrection_le (hH : H.IsHermitian) 
       hH.l2_opNorm_nonbacktrackingMul_le hb₀ hb hd hentry hrow one_ne_zero k
 
 /-- **The corrections of the non-backtracking recursion vanish asymptotically.** Along a filter, let
-`H i` be Hermitian matrices with eventually bounded operator norms and squared row norms, whose
-entries tend to zero uniformly. Then for each `k` the corrections
-`Matrix.nonbacktrackingCorrection (H i) k` tend to zero in operator norm. -/
+`H i` be Hermitian matrices with eventually bounded operator norms, whose entries tend to zero
+uniformly. Then for each `k` the corrections `Matrix.nonbacktrackingCorrection (H i) k` tend to
+zero in operator norm. -/
 theorem tendsto_l2_opNorm_nonbacktrackingCorrection {κ : Type*} {F : Filter κ} {m : κ → Type*}
     [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)] {H : (i : κ) → Matrix (m i) (m i) 𝕜}
-    (hH : ∀ i, (H i).IsHermitian) {R d : ℝ} (hnorm : ∀ᶠ i in F, ‖H i‖ ≤ R)
-    (hrow : ∀ᶠ i in F, ∀ x, ∑ y, ‖H i x y‖ ^ 2 ≤ d)
+    (hH : ∀ i, (H i).IsHermitian) {R : ℝ} (hnorm : ∀ᶠ i in F, ‖H i‖ ≤ R)
     (hentry : ∀ η > 0, ∀ᶠ i in F, ∀ x y, ‖H i x y‖ ≤ η) (k : ℕ) :
     Tendsto (fun i ↦ ‖nonbacktrackingCorrection (H i) k‖) F (𝓝 0) := by
+  -- The rows have squared norms at most `‖H i‖ ^ 2 ≤ max R 0 ^ 2`.
   obtain ⟨d', hd', hrow'⟩ : ∃ d', 0 ≤ d' ∧ ∀ᶠ i in F, ∀ x, ∑ y, ‖H i x y‖ ^ 2 ≤ d' :=
-    ⟨max d 0, le_max_right _ _, hrow.mono fun i h x ↦ (h x).trans (le_max_left _ _)⟩
+    ⟨max R 0 ^ 2, by positivity, hnorm.mono fun i hi x ↦ (sum_norm_sq_le_l2_opNorm_sq _ x).trans
+      (pow_le_pow_left₀ (norm_nonneg _) (hi.trans (le_max_left _ _)) 2)⟩
   -- The walk matrices of length below `k` are eventually bounded, through `S`.
   obtain ⟨S, hS, hB⟩ : ∃ S, 0 ≤ S ∧
       ∀ᶠ i in F, 1 + ∑ j ∈ range k, ‖nonbacktrackingPow (H i) j‖ ≤ S := by

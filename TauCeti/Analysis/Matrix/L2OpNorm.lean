@@ -39,7 +39,8 @@ rather than restricting scalars, so that no algebra diamond arises.
   operator norm at most the sum of the norms of its off-diagonal blocks.
 * `Matrix.eventually_l2_opNorm_le_of_forall_pow`: along a filter, growth bounds on the norms of
   the powers of Hermitian matrices bound their norms.
-* `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm.
+* `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm, and
+  `Matrix.sum_norm_sq_le_l2_opNorm_sq`: a bound on the squared norm of each row.
 * `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
   its `ℓ²` operator norm.
 * `Matrix.l2_opNorm_map_ofReal`: a real, possibly rectangular, matrix has the same `ℓ²` operator
@@ -161,9 +162,14 @@ since `‖M ^ (2 ^ m)‖ = ‖M‖ ^ (2 ^ m)` and polynomial factors are negligi
 `(t / s) ^ k`. -/
 theorem eventually_l2_opNorm_le_of_forall_pow {ι : Type*} {F : Filter ι} {m : ι → Type*}
     [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)] {M : (i : ι) → Matrix (m i) (m i) 𝕜}
-    (hM : ∀ i, (M i).IsHermitian) {C s t : ℝ} {d : ℕ} (hC : 0 ≤ C) (hs : 0 < s) (hst : s < t)
+    (hM : ∀ i, (M i).IsHermitian) {C s t : ℝ} {d : ℕ} (hs : 0 < s) (hst : s < t)
     (h : ∀ k : ℕ, ∀ δ > 0, ∀ᶠ i in F, ‖M i ^ k‖ ≤ C * ((k : ℝ) + 1) ^ d * s ^ k + δ) :
     ∀ᶠ i in F, ‖M i‖ ≤ t := by
+  -- Enlarging `C` to `max C 0` keeps the hypothesis.
+  obtain ⟨C, hC, h⟩ : ∃ C' ≥ 0, ∀ k : ℕ, ∀ δ > 0,
+      ∀ᶠ i in F, ‖M i ^ k‖ ≤ C' * ((k : ℝ) + 1) ^ d * s ^ k + δ :=
+    ⟨max C 0, le_max_right _ _, fun k δ hδ ↦ (h k δ hδ).mono fun i hi ↦
+      hi.trans (by gcongr; exact le_max_left _ _)⟩
   have hq : 1 < t / s := (one_lt_div hs).2 hst
   -- Polynomial factors are negligible against `(t / s) ^ k`.
   have hlim := (tendsto_pow_const_div_const_pow_of_one_lt d hq).const_mul (C * 2 ^ d + 1)
@@ -213,6 +219,16 @@ theorem sum_norm_sq_le_card_mul_l2_opNorm_sq {m : Type*} [Fintype m]
       Finset.sum_le_sum_of_subset_of_nonneg (fun _ _ ↦ by simp) (fun _ _ _ ↦ sq_nonneg _)
     _ = ∑ i, ∑ j, ‖A i j‖ ^ 2 := Finset.sum_product _ _ _
     _ ≤ _ := A.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq
+
+/-- The squared norm of a row is at most the squared Euclidean operator norm. -/
+theorem sum_norm_sq_le_l2_opNorm_sq {m : Type*} [Fintype m] (A : Matrix m n 𝕜) (i : m) :
+    ∑ j, ‖A i j‖ ^ 2 ≤ ‖A‖ ^ 2 := by
+  have h := (A.submatrix (fun _ : Unit ↦ i) id).sum_sum_norm_sq_le_card_mul_l2_opNorm_sq
+  have hA := l2_opNorm_submatrix_le A (e := fun _ : Unit ↦ i) (fun _ _ _ ↦ Subsingleton.elim _ _)
+    Function.injective_id
+  simp only [submatrix_apply, id_eq, Fintype.univ_unit, Finset.sum_singleton, Fintype.card_unit,
+    Nat.cast_one, one_mul] at h
+  exact h.trans (pow_le_pow_left₀ (norm_nonneg _) hA 2)
 
 /-- The absolute normalized trace is at most the Euclidean operator norm, including in dimension
 zero. -/
