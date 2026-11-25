@@ -94,7 +94,9 @@ theorem isCompatible_glueData :
       -- The attaching map of `Y` is `Φ` from its source onto its target.
       have h : ⇑(Φ.toOpenPartialHomeomorph.glueMap ⟨false⟩) =
           ⇑Φ.toDiffeomorphSourceTarget :=
-        funext fun y ↦ Subtype.ext (Φ.toDiffeomorphSourceTarget_apply_coe y).symm
+        funext fun y ↦ Subtype.ext <| by
+          rw [coe_glueMap_false_apply]
+          exact (Φ.toDiffeomorphSourceTarget_apply_coe y).symm
       rw [h]
       exact Φ.toDiffeomorphSourceTarget.isLocalDiffeomorph
 

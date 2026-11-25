@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
-public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import TauCeti.Topology.Category.TopCat.GlueData
 public import TauCeti.Topology.Category.TopCat.GlueData.Star
 
@@ -17,26 +16,32 @@ Let `e : Y ⇀ X` be an open partial homeomorphism, from the open subset `e.sour
 open subset `e.target` of `X`. Gluing `X` and `Y` along `e` identifies each point `y` of
 `e.source` with its image `e y`, and nothing else. This is the star gluing
 (`TauCeti.starGlueData`) of the two pieces `X` and `Y` about the centre `X`, the piece `X` attached
-to it by the identity and the piece `Y` by `e`: `OpenPartialHomeomorph.e.glueData`, whose pieces
+to it by the identity and the piece `Y` by `e`: `OpenPartialHomeomorph.glueData`, whose pieces
 are indexed by `ULift Bool`, `X` at `true` and `Y` at `false`.
 
 Both canonical maps are open embeddings, they jointly cover the glued space, and a point `x` of
 `X` and a point `y` of `Y` have the same image exactly when `y ∈ e.source` and `e y = x`
-(`OpenPartialHomeomorph.glueInl_eq_glueInr_iff`). The glued space is Hausdorff exactly when `X`
+(`OpenPartialHomeomorph.glueInl_eq_glueInr_iff`). Continuous maps out of the glued space are
+glued from continuous maps on `X` and `Y` which agree along `e`
+(`OpenPartialHomeomorph.glueDesc`). The glued space is Hausdorff exactly when `X`
 and `Y` are and the graph of `e` on its source is closed in `Y × X`
 (`OpenPartialHomeomorph.t2Space_glueData_iff`): `e` must not converge at any point of the frontier
 of its source. For the double of `X` along an open subset `U`, the gluing along the identity of
 `U`, this holds exactly when `U` is closed.
 
+Outside `X`, the glued space is the image of the complement of the source of `e`
+(`OpenPartialHomeomorph.bijOn_glueInr_compl_source`).
+
 **Cylindrical ends.** Let `X` be the interior of a manifold with boundary `S`, and `e` a collar
 `S × ℝ ⇀ X` with source `S × (-∞, 0)`, the boundary sitting at `t = 0`. Gluing along `e` continues
 the collar coordinate `t` to all of `ℝ`: outside `X`, the glued space is the end `S × [0, ∞)`
-(`OpenPartialHomeomorph.bijOn_glueInr_Ici`). It is Hausdorff as soon as the collar extends
-continuously to `S × (-∞, 0]` in a Hausdorff space containing `X`, with the slice `S × {0}`
-outside `X` (`OpenPartialHomeomorph.t2Space_glueData_of_continuousOn`, with
-`F = S × (-∞, 0]`). For the collar of the boundary of a Liouville domain `W` by the backward
-Liouville flow, this is the underlying space `W ∪ (∂W × [0, ∞))` of the completion of `W`, in the
-logarithm `t = log r` of its radial coordinate `r`.
+(`OpenPartialHomeomorph.bijOn_glueInr_Ici`, stated for any linearly ordered `R` in place of `ℝ`).
+For Hausdorff `S`, it is Hausdorff as soon as the collar extends continuously to `S × (-∞, 0]` in
+a Hausdorff space containing `X`, with the slice `S × {0}` outside `X`
+(`OpenPartialHomeomorph.t2Space_glueData_of_continuousOn`, with `F = S × (-∞, 0]`). For the collar
+of the boundary of a Liouville domain `W` by the backward Liouville flow, this is the underlying
+space `W ∪ (∂W × [0, ∞))` of the completion of `W`, in the logarithm `t = log r` of its radial
+coordinate `r`.
 
 ## Main declarations
 
@@ -44,12 +49,16 @@ logarithm `t = log r` of its radial coordinate `r`.
 * `OpenPartialHomeomorph.glueInl`, `OpenPartialHomeomorph.glueInr`: the canonical open
   embeddings of `X` and `Y`.
 * `OpenPartialHomeomorph.glueInl_eq_glueInr_iff`: the gluing relation.
+* `OpenPartialHomeomorph.glueDesc`: the continuous map out of the glued space glued from
+  continuous maps on `X` and `Y` which agree along `e`.
 * `OpenPartialHomeomorph.range_glueInl_union_range_glueInr`: the two pieces cover the glued space.
 * `OpenPartialHomeomorph.compl_range_glueInl`, `OpenPartialHomeomorph.compl_range_glueInr`:
   outside one piece, the glued space is the image of the rest of the other piece.
+* `OpenPartialHomeomorph.bijOn_glueInr_compl_source`: outside `X`, the glued space is the
+  complement of the source of `e` in `Y`.
 * `OpenPartialHomeomorph.t2Space_glueData_iff`: the Hausdorff criterion.
-* `OpenPartialHomeomorph.bijOn_glueInr_Ici`: outside `X`, a space with a cylindrical end `S × ℝ`
-  attached along `S × (-∞, 0)` is the end `S × [0, ∞)`.
+* `OpenPartialHomeomorph.bijOn_glueInr_Ici`: outside `X`, a space with a cylindrical end `S × R`
+  attached along `S × (-∞, a)` is the end `S × [a, ∞)`.
 * `OpenPartialHomeomorph.t2Space_glueData_of_continuousOn`: the glued space is Hausdorff when `e`
   extends continuously beyond its source, for instance a collar to the boundary.
 
@@ -61,7 +70,7 @@ logarithm `t = log r` of its radial coordinate `r`.
 
 public section
 
-open CategoryTheory TopologicalSpace Set Topology
+open CategoryTheory Limits TopologicalSpace Set Topology
 
 universe u
 
@@ -108,6 +117,28 @@ its target. -/
   | ⟨true⟩ => Homeomorph.refl _
   | ⟨false⟩ => e.toHomeomorphSourceTarget
 
+/-- The attaching set of the piece `X` is all of `X`. -/
+@[simp] theorem glueSource_true : e.glueSource ⟨true⟩ = ⊤ := (rfl)
+
+/-- The attaching set of the piece `Y` is the source of `e`. -/
+@[simp] theorem glueSource_false : e.glueSource ⟨false⟩ = ⟨e.source, e.open_source⟩ := (rfl)
+
+/-- The piece `X` is attached onto all of `X`. -/
+@[simp] theorem glueTarget_true : e.glueTarget ⟨true⟩ = ⊤ := (rfl)
+
+/-- The piece `Y` is attached onto the target of `e`. -/
+@[simp] theorem glueTarget_false : e.glueTarget ⟨false⟩ = ⟨e.target, e.open_target⟩ := (rfl)
+
+/-- The piece `X` is attached to `X` by the identity. -/
+@[simp] theorem coe_glueMap_true_apply (x : e.glueSource ⟨true⟩) :
+    (e.glueMap ⟨true⟩ x : X) = (x : partialHomeomorphGluePiece X Y ⟨true⟩) :=
+  (rfl)
+
+/-- The piece `Y` is attached to `X` by `e`. -/
+@[simp] theorem coe_glueMap_false_apply (y : e.glueSource ⟨false⟩) :
+    (e.glueMap ⟨false⟩ y : X) = e (y : partialHomeomorphGluePiece X Y ⟨false⟩) :=
+  (rfl)
+
 /-- **The gluing of `X` and `Y` along an open partial homeomorphism `e : Y ⇀ X`**: every point `y`
 of the source of `e` is identified with `e y`. The pieces are `X` at `true` and `Y` at `false`. -/
 noncomputable abbrev glueData : TopCat.GlueData.{u} :=
@@ -147,12 +178,29 @@ gluing along `e` exactly when `y` lies in the source of `e` and `e y = x`. -/
 theorem glueInl_eq_glueInr_iff {x : X} {y : Y} :
     e.glueInl x = e.glueInr y ↔ y ∈ e.source ∧ e y = x :=
   (starGlueData_ι_eq_iff_of_ne (ψ := e.glueMap) (i := ⟨true⟩) (j := ⟨false⟩)
-    (by simp) (x := x) (y := y)).trans ⟨fun ⟨_, hy, h⟩ ↦ ⟨hy, h.symm⟩, fun ⟨hy, h⟩ ↦
-      ⟨trivial, hy, h.symm⟩⟩
+    (by simp) (x := x) (y := y)).trans <| by
+    simp only [coe_glueMap_true_apply, coe_glueMap_false_apply]
+    exact ⟨fun ⟨_, hy, h⟩ ↦ ⟨hy, h.symm⟩, fun ⟨hy, h⟩ ↦ ⟨trivial, hy, h.symm⟩⟩
+
+/-- The gluing relation, read from the piece `Y`. -/
+@[simp]
+theorem glueInr_eq_glueInl_iff {x : X} {y : Y} :
+    e.glueInr y = e.glueInl x ↔ y ∈ e.source ∧ e y = x :=
+  eq_comm.trans glueInl_eq_glueInr_iff
+
+/-- Distinct points of `X` stay distinct in the gluing along `e`. -/
+@[simp]
+theorem glueInl_inj {x x' : X} : e.glueInl x = e.glueInl x' ↔ x = x' :=
+  (isOpenEmbedding_glueInl e).injective.eq_iff
+
+/-- Distinct points of `Y` stay distinct in the gluing along `e`. -/
+@[simp]
+theorem glueInr_inj {y y' : Y} : e.glueInr y = e.glueInr y' ↔ y = y' :=
+  (isOpenEmbedding_glueInr e).injective.eq_iff
 
 /-- A point of the source of `e` and its image under `e` have the same image in the gluing along
 `e`. -/
-theorem glueInl_apply {y : Y} (hy : y ∈ e.source) :
+theorem glueInl_apply_eq_glueInr {y : Y} (hy : y ∈ e.source) :
     e.glueInl (e y) = e.glueInr y :=
   glueInl_eq_glueInr_iff.2 ⟨hy, rfl⟩
 
@@ -176,7 +224,7 @@ theorem compl_range_glueInl :
       (range_glueInl_union_range_glueInr e).symm ▸
         mem_univ z
     · exact (hz ⟨x, rfl⟩).elim
-    · exact ⟨y, fun hy ↦ hz ⟨e y, glueInl_apply hy⟩, rfl⟩
+    · exact ⟨y, fun hy ↦ hz ⟨e y, glueInl_apply_eq_glueInr hy⟩, rfl⟩
   · rintro ⟨y, hy, rfl⟩ ⟨x, hx⟩
     exact hy (glueInl_eq_glueInr_iff.1 hx).1
 
@@ -190,11 +238,97 @@ theorem compl_range_glueInr :
       (range_glueInl_union_range_glueInr e).symm ▸
         mem_univ z
     · refine ⟨x, fun hx ↦ hz ⟨e.symm x, ?_⟩, rfl⟩
-      rw [← glueInl_apply (e.map_target hx), e.right_inv hx]
+      rw [← glueInl_apply_eq_glueInr (e.map_target hx), e.right_inv hx]
     · exact (hz ⟨y, rfl⟩).elim
   · rintro ⟨x, hx, rfl⟩ ⟨y, hy⟩
     obtain ⟨hys, rfl⟩ := glueInl_eq_glueInr_iff.1 hy.symm
     exact hx (e.map_source hys)
+
+variable (e) in
+/-- The canonical map of `Y` is a bijection from the complement of the source of `e` onto the
+complement of the image of `X` in the gluing along `e`. -/
+theorem bijOn_glueInr_compl_source : BijOn e.glueInr e.sourceᶜ (range e.glueInl)ᶜ := by
+  rw [compl_range_glueInl]
+  exact (isOpenEmbedding_glueInr e).injective.injOn.bijOn_image
+
+variable (e) in
+/-- The canonical map of `X` is a bijection from the complement of the target of `e` onto the
+complement of the image of `Y` in the gluing along `e`. -/
+theorem bijOn_glueInl_compl_target : BijOn e.glueInl e.targetᶜ (range e.glueInr)ᶜ := by
+  rw [compl_range_glueInr]
+  exact (isOpenEmbedding_glueInl e).injective.injOn.bijOn_image
+
+/-! ### Maps out of the gluing -/
+
+section glueDesc
+
+variable {Z : Type u} [TopologicalSpace Z] {f : C(X, Z)} {g : C(Y, Z)}
+
+variable (e) in
+/-- The maps `f` and `g` on the two pieces. -/
+private def glueDescPiece (f : C(X, Z)) (g : C(Y, Z)) :
+    ∀ i : ULift.{u} Bool, e.glueData.U i ⟶ TopCat.of Z
+  | ⟨true⟩ => TopCat.ofHom f
+  | ⟨false⟩ => TopCat.ofHom g
+
+/-- Maps on `X` and `Y` which agree along `e` agree on points identified in the gluing. -/
+private theorem glueDescPiece_eq_of_ι_eq (h : ∀ y ∈ e.source, f (e y) = g y)
+    {i j : ULift.{u} Bool} {a : e.glueData.U i} {b : e.glueData.U j}
+    (hab : e.glueData.toGlueData.ι i a = e.glueData.toGlueData.ι j b) :
+    glueDescPiece e f g i a = glueDescPiece e f g j b := by
+  obtain ⟨⟨⟩ | ⟨⟩⟩ := i <;> obtain ⟨⟨⟩ | ⟨⟩⟩ := j
+  · exact congrArg g (glueInr_inj.1 hab)
+  · obtain ⟨hb, rfl⟩ := glueInr_eq_glueInl_iff.1 hab
+    exact (h a hb).symm
+  · obtain ⟨hb, rfl⟩ := glueInl_eq_glueInr_iff.1 hab
+    exact h b hb
+  · exact congrArg f (glueInl_inj.1 hab)
+
+variable (e f g) in
+/-- **Maps out of the gluing along `e`.** Continuous maps `f` on `X` and `g` on `Y` which agree
+along `e`, `f (e y) = g y` on the source of `e`, glue to a continuous map on the gluing. -/
+noncomputable def glueDesc (h : ∀ y ∈ e.source, f (e y) = g y) :
+    C(e.glueData.toGlueData.glued, Z) :=
+  (Multicoequalizer.desc e.glueData.toGlueData.diagram (TopCat.of Z)
+    (glueDescPiece e f g) (by
+      rintro ⟨i, j⟩
+      ext x
+      exact glueDescPiece_eq_of_ι_eq h
+        ((e.glueData.ι_eq_iff_rel i j (e.glueData.f i j x)
+          (e.glueData.f j i (e.glueData.t i j x))).2 ⟨x, rfl, rfl⟩))).hom
+
+/-- The map glued from `f` and `g` is `f` on `X`. -/
+@[simp]
+theorem glueDesc_glueInl (h : ∀ y ∈ e.source, f (e y) = g y) (x : X) :
+    e.glueDesc f g h (e.glueInl x) = f x :=
+  ConcreteCategory.congr_hom (Multicoequalizer.π_desc e.glueData.toGlueData.diagram _
+    (glueDescPiece e f g) _ ⟨true⟩) x
+
+/-- The map glued from `f` and `g` is `g` on `Y`. -/
+@[simp]
+theorem glueDesc_glueInr (h : ∀ y ∈ e.source, f (e y) = g y) (y : Y) :
+    e.glueDesc f g h (e.glueInr y) = g y :=
+  ConcreteCategory.congr_hom (Multicoequalizer.π_desc e.glueData.toGlueData.diagram _
+    (glueDescPiece e f g) _ ⟨false⟩) y
+
+/-- A continuous map out of the gluing along `e` is determined by its values on `X` and `Y`. -/
+theorem glued_continuousMap_ext {φ φ' : C(e.glueData.toGlueData.glued, Z)}
+    (hl : ∀ x, φ (e.glueInl x) = φ' (e.glueInl x))
+    (hr : ∀ y, φ (e.glueInr y) = φ' (e.glueInr y)) : φ = φ' := by
+  ext z
+  obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ := (range_glueInl_union_range_glueInr e).symm ▸ mem_univ z
+  · exact hl x
+  · exact hr y
+
+/-- The map glued from `f` and `g` is the only continuous map out of the gluing along `e` which is
+`f` on `X` and `g` on `Y`. -/
+theorem glueDesc_unique (h : ∀ y ∈ e.source, f (e y) = g y)
+    {φ : C(e.glueData.toGlueData.glued, Z)} (hl : ∀ x, φ (e.glueInl x) = f x)
+    (hr : ∀ y, φ (e.glueInr y) = g y) : φ = e.glueDesc f g h :=
+  glued_continuousMap_ext (fun x ↦ by rw [hl, glueDesc_glueInl])
+    fun y ↦ by rw [hr, glueDesc_glueInr]
+
+end glueDesc
 
 /-- The relation between the piece `X` and the piece `Y` of the gluing along `e` is the graph of
 `e`, read with its two factors exchanged. -/
@@ -217,9 +351,10 @@ theorem t2Space_glueData_iff :
   -- The relation of `Y` with `X` is the graph of `e`.
   have hswap : e.glueData.chartRel ⟨false⟩ ⟨true⟩ =
       e.source.graphOn e :=
-    Set.ext fun p ↦ e.glueData.swap_mem_chartRel_iff.symm.trans <| by
+    Set.ext fun (p : Y × X) ↦ e.glueData.swap_mem_chartRel_iff.symm.trans <| by
       rw [chartRel_true_false]
-      rfl
+      -- Membership in the preimage under `Prod.swap` is membership of `p.swap.swap = p`.
+      exact mem_preimage.trans (iff_of_eq (congrArg (· ∈ e.source.graphOn e) (Prod.swap_swap p)))
   rw [e.glueData.t2Space_iff_isClosed_chartRel]
   refine ⟨fun h ↦ ⟨?_, ?_, hswap ▸ h ⟨false⟩ ⟨true⟩⟩, fun ⟨hX, hY, hg⟩ ↦ ?_⟩
   · have h' := h ⟨true⟩ ⟨true⟩
@@ -267,10 +402,10 @@ theorem isClosed_graphOn_source_of_continuousOn {W : Type*} [TopologicalSpace W]
       (fun p : Y × X ↦ (c p.1, j p.2)) ⁻¹' diagonal W := by
     rintro ⟨y, x⟩ hyx
     obtain ⟨hy, hyx⟩ := Set.mem_graphOn.1 hyx
-    exact ⟨hsF hy, (hce y hy).trans (congrArg j hyx)⟩
+    exact ⟨hsF hy, mem_preimage.2 (mem_diagonal_iff.2 ((hce y hy).trans (congrArg j hyx)))⟩
   refine isClosed_of_closure_subset fun p hp ↦ ?_
   obtain ⟨hpF, hpc⟩ := hK.closure_subset_iff.2 hsub hp
-  have hpc' : c p.1 = j p.2 := hpc
+  have hpc' : c p.1 = j p.2 := mem_diagonal_iff.1 (mem_preimage.1 hpc)
   -- The point `p.1` lies in `F` and `c` sends it into the image of `j`, so it lies in the source.
   have hps : p.1 ∈ e.source := of_not_not fun h ↦ hcF p.1 ⟨hpF, h⟩ ⟨p.2, hpc'.symm⟩
   exact Set.mem_graphOn.2 ⟨hps, hj' ((hce p.1 hps).symm.trans hpc')⟩
@@ -291,18 +426,17 @@ theorem t2Space_glueData_of_continuousOn [T2Space Y] {W : Type*} [TopologicalSpa
 
 section CylindricalEnd
 
-variable {S : Type u} [TopologicalSpace S] {e : OpenPartialHomeomorph (S × ℝ) X}
+variable {S R : Type u} [TopologicalSpace S] [TopologicalSpace R] [LinearOrder R] {a : R}
+  {e : OpenPartialHomeomorph (S × R) X}
 
-/-- **The end of a space with a cylindrical end attached.** Let `X` be glued to `S × ℝ` along `e`
-with source `S × (-∞, 0)`, a collar of a missing boundary `S × {0}`. Then the canonical map of the
-cylinder is a bijection from the end `S × [0, ∞)` onto the complement of `X` in the glued space. -/
-theorem bijOn_glueInr_Ici (he : e.source = {p | p.2 < 0}) :
-    BijOn e.glueInr {p | 0 ≤ p.2} (range e.glueInl)ᶜ := by
-  have hc : e.sourceᶜ = {p : S × ℝ | 0 ≤ p.2} := by
-    ext p
-    simp [he]
-  rw [compl_range_glueInl, hc]
-  exact (isOpenEmbedding_glueInr e).injective.injOn.bijOn_image
+/-- **The end of a space with a cylindrical end attached.** Let `X` be glued to `S × R` along `e`
+with source `S × (-∞, a)`, a collar of a missing boundary `S × {a}`. Then the canonical map of the
+cylinder is a bijection from the end `S × [a, ∞)` onto the complement of `X` in the glued space.
+The main case is `R = ℝ` and `a = 0`. -/
+theorem bijOn_glueInr_Ici (he : e.source = Prod.snd ⁻¹' Iio a) :
+    BijOn e.glueInr (Prod.snd ⁻¹' Ici a) (range e.glueInl)ᶜ := by
+  rw [← compl_Iio, preimage_compl, ← he]
+  exact bijOn_glueInr_compl_source e
 
 end CylindricalEnd
 
