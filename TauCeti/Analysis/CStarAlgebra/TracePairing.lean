@@ -65,13 +65,19 @@ theorem sum_map_nonneg {p : Matrix m m A} (hp : IsStarProjection p) : 0 ≤ ∑ 
 noncomputable def kZeroPairing : ProjectionKZero A →+ ℝ :=
   Complex.reAddGroupHom.comp (ProjectionKZero.tracePairing (τ : A →+ ℂ) τ.map_mul_comm)
 
+/-- Unfolding `TauCeti.PositiveTracialFunctional.kZeroPairing`: the real part of the trace pairing
+of `τ` as a tracial additive map. -/
+theorem kZeroPairing_apply (x : ProjectionKZero A) :
+    τ.kZeroPairing x = (ProjectionKZero.tracePairing (τ : A →+ ℂ) τ.map_mul_comm x).re :=
+  (rfl)
+
 -- Not `@[simp]`: the simp normal form of `Algebra.GrothendieckAddGroup.of x` is
 -- `AddLocalization.addMonoidOf ⊤ x`, as for `TauCeti.ProjectionKZero.map_of_mk`.
 /-- The trace pairing sends the class of `p` to the real part of `∑ i, τ (p i i)`. -/
 theorem kZeroPairing_of_mk {p : Matrix m m A} (hp : IsStarProjection p) :
     τ.kZeroPairing (GrothendieckAddGroup.of (ProjectionMonoid.mk p hp)) = (∑ i, τ (p i i)).re := by
-  rw [kZeroPairing, AddMonoidHom.comp_apply, ProjectionKZero.tracePairing_of_mk]
-  simp [Complex.reAddGroupHom]
+  rw [kZeroPairing_apply, ProjectionKZero.tracePairing_of_mk]
+  simp
 
 /-- The unnormalized matrix trace of a projection is real, and it is the trace pairing:
 `τ_* [p] = ∑ i, τ (p i i)`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.UnitizationTracePairing
+public import TauCeti.Examples.Analysis.CStarAlgebra.TracePairing
 
 /-!
 # Checks for the trace pairing with the nonunital `K₀`-group
@@ -24,9 +25,7 @@ open scoped ComplexOrder
 
 namespace TauCeti.UnitizationTracePairingExample
 
-/-- The identity of `ℂ` as a positive tracial functional. -/
-noncomputable def idTrace : PositiveTracialFunctional ℂ :=
-  .ofMapMulComm (PositiveContinuousLinearMap.id ℂ ℂ) fun a b ↦ by simp [mul_comm]
+open TracePairingExample
 
 /-- The `1 × 1` matrix `inr 1` over `ℂ⁺`. -/
 noncomputable abbrev e : Matrix (Fin 1) (Fin 1) (Unitization ℂ ℂ) :=
@@ -48,7 +47,7 @@ theorem unitizationKZeroPairing_e :
         ⟨_, UnitizationKZero.of_mk_sub_inl_of_mk_mem isStarProjection_e (.zero _) map_fst_e⟩ =
       1 := by
   rw [PositiveTracialFunctional.unitizationKZeroPairing_of_mk_sub_inl_of_mk _ _ _ map_fst_e]
-  simp [idTrace]
+  simp
 
 /-- The class `[1 − inr 1] − [1]` of `K₀(ℂ)` pairs to `−1`. -/
 theorem unitizationKZeroPairing_one_sub_e :
@@ -57,6 +56,6 @@ theorem unitizationKZeroPairing_one_sub_e :
           map_fst_one_sub_e⟩ =
       -1 := by
   rw [PositiveTracialFunctional.unitizationKZeroPairing_of_mk_sub_inl_of_mk _ _ _ map_fst_one_sub_e]
-  simp [idTrace]
+  simp
 
 end TauCeti.UnitizationTracePairingExample

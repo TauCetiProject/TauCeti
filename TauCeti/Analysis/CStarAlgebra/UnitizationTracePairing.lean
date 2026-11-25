@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.TracePairing
-public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.UnitizationTracePairing
+public import TauCeti.Analysis.CStarAlgebra.TracialFunctional
+public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.TracePairing
 
 /-!
 # The pairing of positive tracial functionals with the nonunital `K₀`-group
