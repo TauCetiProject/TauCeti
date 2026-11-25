@@ -362,10 +362,11 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
 /-- **The Levi form, read in the chart at `x₀`, is continuous at `x₀`** for a function that is
 real `C²` at `x₀`: `L_f(x)(B x u, B x v) → L_f(x₀)(u, v)`, where `B x` is the tangent coordinate
 change from the chart at `x₀` to the chart at `x`. -/
-theorem tendsto_manifoldLeviForm_tangentCoordChange [IsManifold 𝓘(ℂ, E) 2 M]
-    [IsManifold 𝓘(ℝ, E) 2 M] {x₀ : M} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x₀) (u v : E) :
+theorem tendsto_manifoldLeviForm_tangentCoordChange [IsManifold 𝓘(ℂ, E) 2 M] {x₀ : M}
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x₀) (u v : E) :
     Tendsto (fun x ↦ manifoldLeviForm E f x (tangentCoordChange 𝓘(ℂ, E) x₀ x x u)
       (tangentCoordChange 𝓘(ℂ, E) x₀ x x v)) (𝓝 x₀) (𝓝 (manifoldLeviForm E f x₀ u v)) := by
+  have : IsManifold 𝓘(ℝ, E) 2 M := IsManifold.restrictScalars ℝ ‹_›
   set c := chartAt E x₀
   -- In the chart at `x₀`, the Levi form is that of the coordinate expression `f ∘ c.symm`.
   have hL : ∀ᶠ x in 𝓝 x₀, manifoldLeviForm E f x (tangentCoordChange 𝓘(ℂ, E) x₀ x x u)
