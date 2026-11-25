@@ -17,7 +17,7 @@ Let `R` be a commutative semiring of exponential characteristic `p`. Pulling an 
 `R ⊗[R, φ] L ≃ L^{⊗p}`, by `a ⊗ x ↦ a • (x ⊗ ⋯ ⊗ x)`. Hence the endomorphism of the Picard group
 induced by Frobenius is `L ↦ L ^ p` (`CommRing.Pic.mapRingHom_frobenius`). If `R` is perfect, the
 Frobenius is a ring automorphism, so the `p`-th power map of `Pic R` is bijective: the Picard group
-of a perfect ring is uniquely `p`-divisible (`CommRing.Pic.bijective_pow`). Through deformation
+of a perfect ring is uniquely `p`-divisible (`CommRing.Pic.pow_left_bijective`). Through deformation
 along `A_inf(R) → R` and `A_inf(R) → R^♭`, this is the input for the unique `p`-divisibility of
 Picard groups of perfectoid rings.
 
@@ -35,7 +35,7 @@ The general facts used here about tensor powers of invertible modules are in
 ## Main declarations
 
 * `CommRing.Pic.mapRingHom_frobenius`: Frobenius acts on `Pic R` by `L ↦ L ^ p`.
-* `CommRing.Pic.bijective_pow`: over a perfect ring, `L ↦ L ^ p` is bijective on `Pic R`.
+* `CommRing.Pic.pow_left_bijective`: over a perfect ring, `L ↦ L ^ p` is bijective on `Pic R`.
 
 ## References
 
@@ -98,7 +98,7 @@ theorem mapRingHom_frobenius (L : Pic R) : mapRingHom (frobenius R p) L = L ^ p 
 
 /-- The Picard group of a perfect semiring of exponential characteristic `p` is uniquely
 `p`-divisible: `L ↦ L ^ p` is a bijection of `Pic R`. -/
-theorem bijective_pow [PerfectRing R p] : Function.Bijective fun L : Pic R ↦ L ^ p := by
+theorem pow_left_bijective [PerfectRing R p] : Function.Bijective fun L : Pic R ↦ L ^ p := by
   have h : (frobeniusEquiv R p : R →+* R) = frobenius R p :=
     RingHom.ext fun x ↦ congrFun (coe_frobeniusEquiv R p) x
   convert (mapRingEquiv (frobeniusEquiv R p)).bijective using 1
