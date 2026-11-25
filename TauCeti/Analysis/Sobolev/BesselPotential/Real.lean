@@ -361,7 +361,7 @@ theorem coordInclusion_apply {ι : Type*} (u : ι → realSubmodule E h) (i : ι
 variable (E h) in
 /-- **The real part, coordinatewise**: the bounded real-linear projection
 `(ι → H^s(E)) → (ι → realSubmodule E h)` applying `realPartCLM` in each coordinate. -/
-@[expose] def realPartPi {ι : Type*} : (ι → H^{s}(E)) →L[ℝ] (ι → realSubmodule E h) :=
+def realPartPi {ι : Type*} : (ι → H^{s}(E)) →L[ℝ] (ι → realSubmodule E h) :=
   ContinuousLinearMap.piMap fun _ ↦ realPartCLM E h
 
 @[simp]
