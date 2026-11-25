@@ -27,6 +27,9 @@ rescaling lets the density calculation reuse the existing beta-to-F change of va
 * `TauCeti.Probability.betaPrimeMeasure_eq_map` — the defining Beta pushforward;
 * `TauCeti.Probability.betaPrimeMeasure_eq_map_fisherSnedecorMeasure` — the rescaled F-law
   representation;
+* `TauCeti.Probability.hasLaw_betaPrimeMeasure_of_hasLaw_betaMeasure` and
+  `ProbabilityTheory.HasLaw.betaPrimeMeasure_of_fisherSnedecorMeasure` — random-variable
+  forms of these constructions;
 * `TauCeti.Probability.betaPrimeMeasure_eq_withDensity` — the Lebesgue-density representation;
 * `TauCeti.Probability.cdf_betaPrimeMeasure_eq` — the regularized-incomplete-Beta cdf.
 
@@ -56,6 +59,15 @@ def betaPrimeMeasure (a b : ℝ) : Measure ℝ :=
 theorem betaPrimeMeasure_eq_map (ha : 0 < a) (hb : 0 < b) :
     betaPrimeMeasure a b = (betaMeasure a b).map (fisherSnedecorMap 2 2) := by
   simp [betaPrimeMeasure, ha, hb]
+
+/-- The odds of a Beta random variable have the beta-prime law. -/
+theorem hasLaw_betaPrimeMeasure_of_hasLaw_betaMeasure {Omega : Type*} [MeasurableSpace Omega]
+    {P : Measure Omega} {X : Omega → ℝ} {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hX : HasLaw X (betaMeasure a b) P) :
+    HasLaw (fun ω ↦ X ω / (1 - X ω)) (betaPrimeMeasure a b) P := by
+  rw [betaPrimeMeasure_eq_map ha hb]
+  convert (hasLaw_map (measurable_fisherSnedecorMap 2 2).aemeasurable).fun_comp hX using 1;
+    simp [fisherSnedecorMap_def]
 
 /-- At invalid parameters, the beta-prime law is zero. -/
 @[simp]
@@ -107,6 +119,15 @@ theorem betaPrimeMeasure_eq_map_fisherSnedecorMeasure :
     a / b * ((2 * b / (2 * a)) * u / (1 - u)) =
         (a / b * (2 * b / (2 * a))) * (u / (1 - u)) := by ring
     _ = u / (1 - u) := by rw [hscale, one_mul]
+
+/-- Multiplying an F random variable with degrees `2 * a` and `2 * b` by `a / b` gives the
+beta-prime law. This includes the totalized invalid-parameter branches. -/
+theorem _root_.ProbabilityTheory.HasLaw.betaPrimeMeasure_of_fisherSnedecorMeasure
+    {Omega : Type*} [MeasurableSpace Omega] {P : Measure Omega} {X : Omega → ℝ} {a b : ℝ}
+    (hX : HasLaw X (fisherSnedecorMeasure (2 * a) (2 * b)) P) :
+    HasLaw (fun ω ↦ (a / b) * X ω) (betaPrimeMeasure a b) P := by
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure]
+  exact (hasLaw_map (by fun_prop)).fun_comp hX
 
 /-- A beta-prime law is almost surely positive, including vacuously at invalid parameters. -/
 theorem ae_mem_Ioi_betaPrimeMeasure (a b : ℝ) :

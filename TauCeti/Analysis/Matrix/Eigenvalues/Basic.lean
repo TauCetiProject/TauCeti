@@ -31,8 +31,22 @@ The decreasing eigenvalue list is determined by the characteristic polynomial
 (`Matrix.IsHermitian.eigenvalues₀_eq_eigenvalues₀_iff`), so it is unchanged by unitary
 conjugation (`Matrix.IsHermitian.eigenvalues₀_mul_mul_star`). Conversely, by the spectral theorem,
 Hermitian matrices with the same decreasing eigenvalue list are unitarily conjugate
-(`Matrix.IsHermitian.exists_unitary_conj_of_eigenvalues₀_eq`), and a decreasing list is the
-eigenvalue list of its real diagonal matrix (`Matrix.IsHermitian.eigenvalues₀_diagonal`).
+(`Matrix.IsHermitian.exists_unitary_conj_of_eigenvalues₀_eq`). An antitone `μ` with
+`A.charpoly = ∏ k, (X - μ k)` is the decreasing eigenvalue list of `A`
+(`Matrix.IsHermitian.eigenvalues₀_eq_of_charpoly_eq`); in particular a decreasing list is the
+eigenvalue list of its real diagonal matrix (`Matrix.IsHermitian.eigenvalues₀_diagonal`). For
+`2 × 2` matrices, `Matrix.IsHermitian.eigenvalues₀_eq_of_charpoly_eq_two` reads off the sorted
+eigenvalues `(a, b)` from the factorisation `(X - a)(X - b)`, and
+`Matrix.IsHermitian.eigenvalues₀_diagonal_two` and
+`Matrix.IsHermitian.eigenvalues₀_diagonal_two_swap` evaluate them on `diag(a, b)` and `diag(b, a)`.
+The sorted eigenvalues sum to the real part of the trace
+(`Matrix.IsHermitian.sum_eigenvalues₀_eq_re_trace`), their product is the determinant
+(`Matrix.IsHermitian.det_eq_prod_eigenvalues₀`), and shifting `A` by `t • 1` shifts each of them
+by `t` (`Matrix.IsHermitian.eigenvalues₀_add_smul_one`). In general the eigenvalue list of a real
+diagonal matrix is its diagonal sorted decreasingly
+(`Matrix.IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc`). An orthonormal eigenbasis can be
+ordered as the sorted eigenvalues
+(`Matrix.IsHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul`).
 
 All statements use Mathlib's decreasing enumeration `Matrix.IsHermitian.eigenvalues₀`,
 including multiplicities. For positive-semidefinite matrices its nonzero entries form an
@@ -92,6 +106,22 @@ theorem IsHermitian.eigenvalues₀_eq_eigenvalues₀_iff (hA : A.IsHermitian) (h
     simp only [IsHermitian.eigenvalues, h]
   · simp_rw [← List.ofFn_inj, ← sort_roots_charpoly_eq_eigenvalues₀, h]
 
+open Polynomial in
+/-- **The characteristic polynomial determines the sorted eigenvalues.** If the characteristic
+polynomial of a Hermitian matrix `A` is `∏ k, (X - μ k)` for an antitone real vector `μ`, then
+`μ` is the sorted eigenvalue vector of `A`. -/
+theorem IsHermitian.eigenvalues₀_eq_of_charpoly_eq (hA : A.IsHermitian)
+    {μ : Fin (Fintype.card ι) → ℝ} (hμ : Antitone μ) (h : A.charpoly = ∏ k, (X - C (μ k : 𝕜))) :
+    hA.eigenvalues₀ = μ := by
+  rw [← List.ofFn_inj, ← hA.sort_roots_charpoly_eq_eigenvalues₀, h,
+    roots_prod _ _ (by simp [Finset.prod_ne_zero_iff, X_sub_C_ne_zero])]
+  simp only [roots_X_sub_C, Multiset.bind_singleton, Fin.univ_val_map, Multiset.map_coe,
+    List.map_ofFn, Function.comp_def, RCLike.ofReal_re, Multiset.coe_sort]
+  -- Sorting the decreasing list `List.ofFn μ` returns it unchanged.
+  apply List.mergeSort_of_pairwise
+  simp_rw [decide_eq_true_eq, ← List.sortedGE_iff_pairwise]
+  exact hμ.sortedGE_ofFn
+
 /-- **Unitary conjugation preserves the sorted eigenvalues** of a Hermitian matrix. -/
 theorem IsHermitian.eigenvalues₀_mul_mul_star (hA : A.IsHermitian) {U : Matrix ι ι 𝕜}
     (hU : U ∈ unitaryGroup ι 𝕜) (hUA : (U * A * star U).IsHermitian) :
@@ -117,17 +147,91 @@ index type `ι` along the equivalence used by `Matrix.IsHermitian.eigenvalues`. 
 theorem IsHermitian.eigenvalues₀_diagonal {s : Fin (Fintype.card ι) → ℝ} (hs : Antitone s)
     (h : (diagonal fun k ↦
       (s ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)).IsHermitian) :
-    h.eigenvalues₀ = s := by
+    h.eigenvalues₀ = s :=
+  h.eigenvalues₀_eq_of_charpoly_eq hs <| by
+    rw [charpoly_diagonal]
+    exact Equiv.prod_comp (Fintype.equivOfCardEq (Fintype.card_fin _)).symm
+      fun k ↦ Polynomial.X - Polynomial.C (s k : 𝕜)
+
+open Polynomial in
+/-- A `2 × 2` Hermitian matrix with characteristic polynomial `(X - a)(X - b)`, `b ≤ a`, has
+sorted eigenvalues `(a, b)`. -/
+theorem IsHermitian.eigenvalues₀_eq_of_charpoly_eq_two {A : Matrix (Fin 2) (Fin 2) 𝕜}
+    (h : A.IsHermitian) {a b : ℝ} (hab : b ≤ a)
+    (hA : A.charpoly = (X - C (a : 𝕜)) * (X - C (b : 𝕜))) : h.eigenvalues₀ = ![a, b] := by
+  refine h.eigenvalues₀_eq_of_charpoly_eq (antitone_vecEmpty.vecCons hab) ?_
+  rw [hA]
+  -- `Fintype.card (Fin 2)` reduces to `2`, exposing the product to `Fin.prod_univ_two`.
+  change _ = ∏ k : Fin 2, _
+  simp [Fin.prod_univ_two]
+
+/-- The sorted eigenvalues of `diag(a, b)` with `b ≤ a` are `(a, b)`. -/
+theorem IsHermitian.eigenvalues₀_diagonal_two {a b : ℝ} (hab : b ≤ a)
+    (h : (diagonal ![(a : 𝕜), b]).IsHermitian) : h.eigenvalues₀ = ![a, b] :=
+  h.eigenvalues₀_eq_of_charpoly_eq_two hab (by simp [charpoly_diagonal, Fin.prod_univ_two])
+
+/-- The sorted eigenvalues of `diag(b, a)` with `b ≤ a` are `(a, b)`: sorting reorders the
+diagonal. -/
+theorem IsHermitian.eigenvalues₀_diagonal_two_swap {a b : ℝ} (hab : b ≤ a)
+    (h : (diagonal ![(b : 𝕜), a]).IsHermitian) : h.eigenvalues₀ = ![a, b] :=
+  h.eigenvalues₀_eq_of_charpoly_eq_two hab
+    (by simp [charpoly_diagonal, Fin.prod_univ_two, mul_comm])
+
+/-- **The trace is the spectral function of the sum**: the sorted eigenvalues of a Hermitian
+matrix sum to the real part of its trace. -/
+theorem IsHermitian.sum_eigenvalues₀_eq_re_trace (hA : A.IsHermitian) :
+    ∑ k, hA.eigenvalues₀ k = RCLike.re A.trace := by
+  rw [hA.trace_eq_sum_eigenvalues, map_sum]
+  simp only [RCLike.ofReal_re]
+  exact (hA.sum_comp_eigenvalues fun x ↦ x).symm
+
+/-- **The determinant is the spectral function of the product**: the determinant of a Hermitian
+matrix is the product of its sorted eigenvalues. -/
+theorem IsHermitian.det_eq_prod_eigenvalues₀ (hA : A.IsHermitian) :
+    A.det = ∏ k, (hA.eigenvalues₀ k : 𝕜) := by
+  rw [hA.det_eq_prod_eigenvalues]
+  exact hA.prod_comp_eigenvalues fun x ↦ (x : 𝕜)
+
+open Polynomial in
+/-- The characteristic polynomial of a Hermitian matrix is `∏ k, (X - λ k)` over its sorted
+eigenvalues `λ`. -/
+theorem IsHermitian.charpoly_eq_prod_eigenvalues₀ (hA : A.IsHermitian) :
+    A.charpoly = ∏ k, (X - C (hA.eigenvalues₀ k : 𝕜)) := by
+  rw [hA.charpoly_eq]
+  exact hA.prod_comp_eigenvalues fun x ↦ X - C (x : 𝕜)
+
+open Polynomial in
+/-- **Scalar shifts.** The sorted eigenvalues of `A + t • 1` are those of `A` shifted by `t`. -/
+theorem IsHermitian.eigenvalues₀_add_smul_one (hA : A.IsHermitian) (t : ℝ)
+    (hAt : (A + t • (1 : Matrix ι ι 𝕜)).IsHermitian) :
+    hAt.eigenvalues₀ = hA.eigenvalues₀ + fun _ ↦ t := by
+  refine hAt.eigenvalues₀_eq_of_charpoly_eq
+    (hA.eigenvalues₀_antitone.add_const t) ?_
+  have hshift : A + t • (1 : Matrix ι ι 𝕜) = A - scalar ι (-(t : 𝕜)) := by
+    ext i j
+    by_cases hij : i = j <;> simp [hij, scalar_apply, RCLike.real_smul_eq_coe_mul]
+  rw [hshift, charpoly_sub_scalar, hA.charpoly_eq_prod_eigenvalues₀, prod_comp]
+  refine Finset.prod_congr rfl fun k _ ↦ ?_
+  simp only [sub_comp, X_comp, C_comp, Pi.add_apply, RCLike.ofReal_add, C_add, map_neg]
+  ring
+
+/-- **The sorted eigenvalue list of a real diagonal matrix** is its list of diagonal entries,
+sorted decreasingly by `Tuple.sortDesc`. The entries are transported to the index type `ι` along
+the equivalence used by `Matrix.IsHermitian.eigenvalues`. -/
+theorem IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc (s : Fin (Fintype.card ι) → ℝ)
+    (h : (diagonal fun k ↦
+      (s ((Fintype.equivOfCardEq (Fintype.card_fin _)).symm k) : 𝕜)).IsHermitian) :
+    h.eigenvalues₀ = s ∘ Tuple.sortDesc s := by
   set e := Fintype.equivOfCardEq (α := Fin (Fintype.card ι)) (β := ι) (Fintype.card_fin _)
-  rw [← List.ofFn_inj, ← IsHermitian.sort_roots_charpoly_eq_eigenvalues₀, charpoly_diagonal,
-    Polynomial.roots_prod _ _ (by simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero])]
-  simp only [Polynomial.roots_X_sub_C, Multiset.bind_singleton, Multiset.map_map,
-    Function.comp_def, RCLike.ofReal_re]
-  rw [← Function.comp_def s e.symm, ← Multiset.map_map, Multiset.map_univ_val_equiv,
-    Fin.univ_val_map]
-  -- Sorting the decreasing list `List.ofFn s` returns it unchanged.
-  exact List.Perm.eq_of_sortedGE (List.sortedGE_iff_pairwise.2 (Multiset.pairwise_sort _ _))
-    hs.sortedGE_ofFn (Multiset.coe_eq_coe.1 (Multiset.sort_eq _ _))
+  have h' : (diagonal fun k ↦ ((s ∘ Tuple.sortDesc s) (e.symm k) : 𝕜)).IsHermitian :=
+    isHermitian_diagonal_of_self_adjoint _ (funext fun _ ↦ RCLike.conj_ofReal _)
+  rw [(h.eigenvalues₀_eq_eigenvalues₀_iff h').2 ?_,
+    eigenvalues₀_diagonal (Tuple.antitone_sortDesc s) h']
+  -- Both characteristic polynomials are `∏ⱼ (X - sⱼ)`, reindexed along a bijection.
+  rw [charpoly_diagonal, charpoly_diagonal]
+  exact (Equiv.prod_comp e.symm fun j ↦ Polynomial.X - Polynomial.C (s j : 𝕜)).trans
+    (Equiv.prod_comp (e.symm.trans (Tuple.sortDesc s)) fun j ↦
+      Polynomial.X - Polynomial.C (s j : 𝕜)).symm
 
 /-- Entrywise perturbations of size `ε` change every sorted eigenvalue of a Hermitian matrix
 by at most `card ι * ε`. -/
@@ -205,6 +309,16 @@ theorem IsHermitian.card_eigenvalues₀_ge_eq_of_norm_sub_lt
     hA.le_eigenvalues₀_iff_of_norm_sub_lt hB i (hpert.trans_le (hgap i)))
 
 end
+
+/-- A Hermitian matrix has an orthonormal eigenbasis ordered as its sorted eigenvalues: Mathlib's
+`Matrix.IsHermitian.eigenvectorBasis`, reindexed by `Fin (Fintype.card ι)`. -/
+theorem IsHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul (hA : A.IsHermitian) :
+    ∃ u : OrthonormalBasis (Fin (Fintype.card ι)) 𝕜 (EuclideanSpace 𝕜 ι),
+      ∀ j, A *ᵥ u j = (hA.eigenvalues₀ j : 𝕜) • ⇑(u j) := by
+  refine ⟨hA.eigenvectorBasis.reindex (Fintype.equivOfCardEq (Fintype.card_fin _)).symm,
+    fun j ↦ ?_⟩
+  rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm, hA.mulVec_eigenvectorBasis,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜), hA.eigenvalues_apply_equivOfCardEq]
 
 /-- The rank of a Hermitian matrix counts its nonzero sorted eigenvalues, with multiplicity. -/
 theorem IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.IsHermitian) :

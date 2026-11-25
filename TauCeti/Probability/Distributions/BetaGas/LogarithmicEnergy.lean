@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Data.EReal.Operations
+import TauCeti.Data.EReal.Quantale
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 import TauCeti.Topology.Instances.EReal
 
@@ -711,8 +712,8 @@ theorem logarithmicEnergy_eq_iSup_truncated {V : ℝ → ℝ} (hV : Measurable V
   have hsup : ((⨆ n, J n : ℝ≥0∞) : EReal) = ⨆ n, (J n : EReal) :=
     Monotone.map_ciSup_of_continuousAt continuous_coe_ennreal_ereal.continuousAt
       EReal.coe_ennreal_strictMono.monotone
-  rw [logarithmicEnergy_eq_lintegral_sub_add μ ha, hJ, hsup]
-  simp_rw [hfin, EReal.iSup_sub_coe, EReal.sub_add_cancel]
+  rw [logarithmicEnergy_eq_lintegral_sub_add μ ha, hJ, hsup, AddQuantale.iSup_add_distrib]
+  simp_rw [hfin, EReal.sub_add_cancel]
 
 /-- For a measurable potential with a lower-bounded kernel, the truncated energy at every real
 cutoff is at most the full logarithmic energy. -/

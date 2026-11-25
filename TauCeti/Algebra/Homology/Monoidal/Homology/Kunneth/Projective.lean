@@ -29,7 +29,7 @@ Künneth theorem for a flat factor with zero differentials
 invariant under homotopy equivalences
 (`HomologicalComplex.isIso_homologyKunneth_iff_of_homotopyEquiv`).
 
-By the symmetry of the Künneth map (`TauCeti.NatChainComplex.isIso_homologyKunneth_comm`), the same
+By the symmetry of the Künneth map (`ChainComplex.isIso_homologyKunneth_comm`), the same
 holds with the factors interchanged, the projective factor second
 (`HomologicalComplex.isIso_homologyKunneth_of_projective_right`).
 
@@ -77,7 +77,7 @@ is a complex of projective modules indexed by `ℕ` whose homology modules are p
 every complex `L` the Künneth map `⨁_{p + q = n} Hₚ(L) ⊗ H_q(K) ⟶ Hₙ(L ⊗ K)` is an isomorphism.
 This is `HomologicalComplex.isIso_homologyKunneth_of_projective` with the factors interchanged. -/
 theorem isIso_homologyKunneth_of_projective_right (n : ℕ) : IsIso (homologyKunneth L K n) :=
-  (TauCeti.NatChainComplex.isIso_homologyKunneth_comm L K n).2
+  (ChainComplex.isIso_homologyKunneth_comm L K n).2
     (isIso_homologyKunneth_of_projective K L n)
 
 end HomologicalComplex

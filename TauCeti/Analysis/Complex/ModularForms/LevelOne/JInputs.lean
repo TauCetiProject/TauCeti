@@ -71,9 +71,12 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 * `TauCeti.ModularForm.j_J_smul`: `j (-conj τ) = conj (j τ)`, from the integrality of these
   coefficients; hence `j τ` is real whenever `2 * τ.re` is an integer
   (`TauCeti.ModularForm.im_j_eq_zero_of_two_mul_re_eq_intCast`).
-* `TauCeti.ModularForm.laurentQExpansion_j` and
-  `TauCeti.ModularForm.orderTop_laurentQExpansion_j`: the Laurent `q`-expansion of `j`, of
-  order `-1`, with first coefficients `TauCeti.ModularForm.laurentQExpansion_j_coeff_neg_one`,
+* `TauCeti.ModularForm.laurentQExpansion_j`,
+  `TauCeti.ModularForm.orderTop_laurentQExpansion_j` and
+  `TauCeti.ModularForm.order_laurentQExpansion_j`: the Laurent `q`-expansion of `j`, of
+  order `-1` and leading coefficient `1`
+  (`TauCeti.ModularForm.leadingCoeff_laurentQExpansion_j`); its first coefficients are
+  `TauCeti.ModularForm.laurentQExpansion_j_coeff_neg_one`,
   `TauCeti.ModularForm.laurentQExpansion_j_coeff_zero` and
   `TauCeti.ModularForm.laurentQExpansion_j_coeff_one`.
 
@@ -466,6 +469,22 @@ theorem laurentQExpansion_j_coeff_natCast_sub_one (n : ℕ) :
 theorem laurentQExpansion_j_coeff_neg_one :
     (UpperHalfPlane.laurentQExpansion 1 j).coeff (-1) = 1 := by
   simpa [constantCoeff_qExpansion_qParam_mul_j] using laurentQExpansion_j_coeff_natCast_sub_one 0
+
+/-- The Laurent `q`-expansion of `j` has order `-1`. -/
+@[simp]
+theorem order_laurentQExpansion_j : (UpperHalfPlane.laurentQExpansion 1 j).order = -1 := by
+  have hne : UpperHalfPlane.laurentQExpansion 1 j ≠ 0 := by
+    rw [← HahnSeries.orderTop_ne_top, orderTop_laurentQExpansion_j]
+    exact WithTop.coe_ne_top
+  exact WithTop.coe_injective (by
+    rw [HahnSeries.order_eq_orderTop_of_ne_zero hne, orderTop_laurentQExpansion_j]
+    norm_num)
+
+/-- The Laurent `q`-expansion of `j` has leading coefficient `1`. -/
+@[simp]
+theorem leadingCoeff_laurentQExpansion_j :
+    (UpperHalfPlane.laurentQExpansion 1 j).leadingCoeff = 1 := by
+  rw [HahnSeries.leadingCoeff_eq, order_laurentQExpansion_j, laurentQExpansion_j_coeff_neg_one]
 
 /-- The constant Laurent `q`-coefficient of `j` is `744`. -/
 @[simp]

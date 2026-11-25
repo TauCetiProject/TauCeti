@@ -16,6 +16,7 @@ public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Independence.Basic
 
 /-!
@@ -52,9 +53,13 @@ and resolvent methods:
   `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`); in particular so are the off-diagonal entries of
   each row and of each column (`iIndepFun_wignerMatrix_offDiag_row`,
   `iIndepFun_wignerMatrix_offDiag_column`);
+* entries at the same unordered position have the same norm
+  (`norm_wignerMatrix_apply_eq_of_mk_eq`);
 * centred corner entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ`
-  corner entries give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix
-  entries is integrable when the corner entries lie in `Lᵏ`
+  corner entries give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), bounded corner entries of
+  second absolute moment at most `σ ^ 2` give matrix entries whose higher absolute moments are
+  controlled by the entry bound and `σ ^ 2 / n` (`integral_norm_wignerMatrix_apply_pow_add_two_le`),
+  and a product of `k` matrix entries is integrable when the corner entries lie in `Lᵏ`
   (`integrable_prod_wignerMatrix_apply`);
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
   moment `σ²` and the off-diagonal ones second absolute moment `s`
@@ -333,6 +338,13 @@ theorem wignerMatrix_isHermitian (n : ℕ) : (wignerMatrix ξ η n ω).IsHermiti
     simp [Complex.conj_ofReal]
 
 variable {ξ η}
+
+/-- Entries of a Wigner matrix at the same unordered position have the same norm. -/
+theorem norm_wignerMatrix_apply_eq_of_mk_eq {i j i' j' : Fin n} (h : s(i, j) = s(i', j')) :
+    ‖wignerMatrix ξ η n ω i j‖ = ‖wignerMatrix ξ η n ω i' j'‖ := by
+  rcases Sym2.eq_iff.mp h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · rfl
+  · rw [← (wignerMatrix_isHermitian ξ η ω n).apply, norm_star]
 
 /-- The Wigner matrix of size `n` depends only on the entries of the top-left `n × n` corner. -/
 theorem wignerMatrix_congr {Ω' : Type*} {ξ' : StrictUpper → Ω' → ℂ} {η' : ℕ → Ω' → ℝ}
@@ -798,6 +810,36 @@ theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} {n : ℕ}
     exact (hη _ i.isLt).ofReal.const_mul _
   · simp only [wignerMatrix_apply_of_gt _ _ _ h]
     exact (hξ _ i.isLt).star.const_mul _
+
+/-- If the corner entries of size `n` are bounded by `K` in norm almost surely and have second
+absolute moments at most `σ ^ 2`, every entry of the `n × n` Wigner matrix has absolute moment of
+order `m + 2` at most `b ^ m * min (σ ^ 2 / n) (b ^ 2)`, where `b = K / √n` bounds the normalized
+entries. -/
+theorem integral_norm_wignerMatrix_apply_pow_add_two_le [IsProbabilityMeasure P] {n : ℕ}
+    {K σ : ℝ} (hξK : ∀ ij : StrictUpper, ij.val.2 < n → ∀ᵐ ω ∂P, ‖ξ ij ω‖ ≤ K)
+    (hηK : ∀ i < n, ∀ᵐ ω ∂P, ‖η i ω‖ ≤ K)
+    (hξσ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P ≤ σ ^ 2)
+    (hησ : ∀ i < n, ∫ ω, ‖η i ω‖ ^ 2 ∂P ≤ σ ^ 2) (i j : Fin n) (m : ℕ) :
+    ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ (m + 2) ∂P ≤
+      (K / Real.sqrt n) ^ m * min (σ ^ 2 / n) ((K / Real.sqrt n) ^ 2) := by
+  have hn : 0 < n := i.pos
+  have hsqrt : 0 < Real.sqrt n := Real.sqrt_pos.mpr (Nat.cast_pos.mpr hn)
+  -- The normalized entries are bounded by `K / √n`.
+  have hent : ∀ᵐ ω ∂P, ‖wignerMatrix ξ η n ω i j‖ ≤ K / Real.sqrt n := by
+    by_cases hij : i = j
+    · subst hij
+      filter_upwards [hηK i.val i.isLt] with ω hω
+      rw [wignerMatrix_apply_self, norm_mul, norm_inv, Complex.norm_real, Complex.norm_real,
+        Real.norm_of_nonneg (Real.sqrt_nonneg _), inv_mul_eq_div]
+      exact div_le_div_of_nonneg_right hω hsqrt.le
+    · filter_upwards [hξK ⟨(min i.val j.val, max i.val j.val),
+        min_lt_max.mpr (Fin.val_ne_of_ne hij)⟩ (max_lt i.isLt j.isLt)] with ω hω
+      rw [norm_wignerMatrix_apply_of_ne _ _ _ hij, inv_mul_eq_div]
+      exact div_le_div_of_nonneg_right hω hsqrt.le
+  have hσn : ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P ≤ σ ^ 2 / n := by
+    have := integral_norm_wignerMatrix_apply_pow_le (k := 2) hξσ hησ i j
+    rwa [inv_pow, Real.sq_sqrt (Nat.cast_nonneg n), inv_mul_eq_div] at this
+  exact integral_norm_pow_add_two_le hent hσn m
 
 open scoped Matrix.Norms.Frobenius in
 /-- If the corner entries of size `n` are square-integrable, the squared Frobenius norm of the

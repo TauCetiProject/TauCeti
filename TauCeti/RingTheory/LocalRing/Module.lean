@@ -13,6 +13,9 @@ public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import TauCeti.LinearAlgebra.Dual.Lemmas
+public import TauCeti.LinearAlgebra.Unimodular
+public import TauCeti.RingTheory.LocalRing.Residue
 import Mathlib.Algebra.Module.Shrink
 
 /-!
@@ -32,6 +35,12 @@ dimension of `k ⊗ M`, by a submodule of `𝔪 • R ^ μ`: lifting a `k`-basis
 generators of `M` (Nakayama) whose relations all have coefficients in `𝔪`. Iterating such minimal
 covers is how minimal free resolutions are built.
 
+Over a possibly noncommutative local ring with Jacobson radical `J`, the ideal of nonunits, an
+element of a projective module `M` is unimodular, that is some linear functional takes the value
+`1` at it, exactly when it lies outside `J • M`. By Nakayama's lemma a finitely generated nonzero
+`M` has such an element among any set of generators, and it spans a free direct summand.
+Splitting off these summands one at a time shows that `M` is free.
+
 ## Main results
 
 * `TauCeti.IsLocalRing.exists_mem_span_singleton_eq_top_of_finrank_eq_one`: a free module of
@@ -43,12 +52,17 @@ covers is how minimal free resolutions are built.
   ring `(R, 𝔪, k)` is a quotient of `R ^ dim_k (k ⊗ M)` by a submodule of `𝔪 • R ^ dim_k (k ⊗ M)`.
 * `TauCeti.IsLocalRing.exists_linearMap_quotient_eq_one`: an element of a module `M` outside
   `𝔪 • M` is sent to `1` by a linear map `M → R ⧸ 𝔪`.
-* `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a local
-  ring is free, for any `AddCommMonoid` module.
+* `Module.isUnimodular_iff_notMem_jacobson_smul_top`: over a possibly noncommutative local ring,
+  an element of a projective module `M` is unimodular exactly when it lies outside `J • M`.
+* `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a
+  possibly noncommutative local ring is free, for any `AddCommMonoid` module.
 
 ## References
 
 * The Stacks Project, Lemma 10.20.1 (00DV), for Nakayama's lemma in the form used here.
+* C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, Graduate Studies in
+  Mathematics 145 (2013), Chapter I, Lemma 2.2: finitely generated projective modules over a
+  possibly noncommutative local ring are free.
 -/
 
 public section
@@ -76,6 +90,25 @@ theorem exists_mem_span_singleton_eq_top_of_finrank_eq_one [Module.Free R M]
   rw [SetLike.mem_coe, _root_.IsLocalRing.notMem_maximalIdeal] at hu
   exact ⟨m, hm, (Submodule.span_singleton_eq_top_iff R m).mpr fun v ↦
     ⟨e.symm v * hu.unit⁻¹, e.symm.injective (by simp [mul_assoc])⟩⟩
+
+-- Adapted from roed-math/TauCeti-w2-fresh, lookahead/StableReduction/relative-ampleness,
+-- commit efa6fc8f3735.
+/-- **An element generates a module with one-dimensional fibre exactly when it does not vanish
+in the fibre.** If `M` is a finite module over the local ring `R` with residue field `k` and
+`k ⊗ M` is one-dimensional over `k`, for instance if `M` is free of rank one, then `m` spans `M` if
+and only if `1 ⊗ m` is nonzero in `k ⊗ M`. -/
+theorem span_singleton_eq_top_iff_one_tmul_ne_zero [Module.Finite R M]
+    (h : Module.finrank (_root_.IsLocalRing.ResidueField R)
+      (_root_.IsLocalRing.ResidueField R ⊗[R] M) = 1) (m : M) :
+    Submodule.span R {m} = ⊤ ↔ (1 : _root_.IsLocalRing.ResidueField R) ⊗ₜ[R] m ≠ 0 := by
+  -- By Nakayama, `m` spans `M` exactly when `1 ⊗ m` spans the one-dimensional fibre.
+  rw [← _root_.IsLocalRing.map_tensorProduct_mk_eq_top, Submodule.map_span, Set.image_singleton,
+    ← Submodule.restrictScalars_span R _ _root_.IsLocalRing.residue_surjective,
+    Submodule.restrictScalars_eq_top_iff, TensorProduct.mk_apply]
+  refine ⟨fun hs h0 ↦ ?_, fun h0 ↦ (finrank_eq_one_iff_of_ne_zero _ h0).mp h⟩
+  have := Module.nontrivial_of_finrank_eq_succ h
+  rw [h0, Submodule.span_zero_singleton] at hs
+  exact bot_ne_top hs
 
 /-- **A family with linearly independent residues is a basis.** If `M` has a basis `b` indexed by
 `ι`, and `v` is a family of `|ι|` elements whose coordinates in `b`, read in the residue field,
@@ -168,13 +201,79 @@ end TauCeti.IsLocalRing
 
 namespace Module
 
-/-- A finitely generated projective module over a local ring is free. This is
-`Module.free_of_flat_of_isLocalRing`, once the module carries the additive group structure that
-it asks for. -/
-theorem free_of_projective_of_isLocalRing {R M : Type*} [CommRing R] [IsLocalRing R]
-    [AddCommMonoid M] [Module R M] [Module.Finite R M] [Module.Projective R M] :
-    Module.Free R M :=
+section Noncommutative
+
+variable {R : Type*} [Ring R] [IsLocalRing R]
+
+/-- In a projective module over a possibly noncommutative local ring, an element is unimodular,
+that is some linear functional takes the value `1` at it, exactly when it lies outside
+`J • M` for the Jacobson radical `J` of `R`, the ideal of nonunits. -/
+theorem isUnimodular_iff_notMem_jacobson_smul_top {M : Type*} [AddCommMonoid M] [Module R M]
+    [Module.Projective R M] {m : M} :
+    IsUnimodular R m ↔ m ∉ Ring.jacobson R • (⊤ : Submodule R M) := by
+  rw [isUnimodular_iff, ← forall_dual_apply_mem_iff, not_forall]
+  refine ⟨fun ⟨φ, hφ⟩ ↦ ⟨φ, by simp [hφ, TauCeti.IsLocalRing.mem_jacobson_iff_not_isUnit]⟩,
+    fun ⟨φ, hφ⟩ ↦ ?_⟩
+  -- `φ m` is a unit `u`; rescaling `φ` on the right by `u⁻¹` gives the value `1`.
+  obtain ⟨u, hu⟩ := not_not.mp (TauCeti.IsLocalRing.mem_jacobson_iff_not_isUnit.not.mp hφ)
+  exact ⟨LinearMap.toSpanSingleton R R (↑u⁻¹ : R) ∘ₗ φ, by simp [← hu]⟩
+
+/-- A projective module over a local ring spanned by at most `n` elements is free. -/
+private theorem free_of_span_finset_eq_top (n : ℕ) :
+    ∀ {M : Type*} [AddCommGroup M] [Module R M] [Module.Projective R M] (s : Finset M),
+      s.card ≤ n → Submodule.span R (s : Set M) = ⊤ → Module.Free R M := by
+  -- Induction on `n`: by Nakayama's lemma some generator `p` lies outside `J • M`, so it spans a
+  -- free summand `R`; its complement is projective and spanned by the projections of the other
+  -- generators.
+  classical
+  induction n with
+  | zero =>
+    intro M _ _ _ s hs hspan
+    rw [Finset.card_eq_zero.mp (Nat.le_zero.mp hs), Finset.coe_empty, Submodule.span_empty]
+      at hspan
+    have : Subsingleton M :=
+      (Submodule.subsingleton_iff R).mp (subsingleton_iff_bot_eq_top.mp hspan)
+    infer_instance
+  | succ n ih =>
+    intro M _ _ _ s hs hspan
+    rcases subsingleton_or_nontrivial M with _ | _
+    · infer_instance
+    obtain ⟨p, hps, hp⟩ : ∃ p ∈ s, p ∉ Ring.jacobson R • (⊤ : Submodule R M) := by
+      by_contra! h
+      have hle : Submodule.span R (s : Set M) ≤ Ring.jacobson R • ⊤ := Submodule.span_le.mpr h
+      rw [hspan] at hle
+      exact (Submodule.FG.jacobson_smul_lt top_ne_bot ⟨s, hspan⟩).not_ge hle
+    obtain ⟨φ, hφ⟩ := isUnimodular_iff.mp (isUnimodular_iff_notMem_jacobson_smul_top.mpr hp)
+    -- `M ≃ ker φ × R`, and `ker φ` is spanned by the images of `s.erase p` under the projection.
+    let e := LinearMap.kerProdEquivOfApplyEqOne hφ
+    let π : M →ₗ[R] LinearMap.ker φ := LinearMap.fst R _ R ∘ₗ e.symm.toLinearMap
+    have hπ : Function.Surjective π := Prod.fst_surjective.comp e.symm.surjective
+    have hπp : π p = 0 := Subtype.ext (by simp [π, e, hφ])
+    have : Module.Projective R (LinearMap.ker φ) :=
+      .of_split (LinearMap.ker φ).subtype π (LinearMap.ext fun x ↦ Subtype.ext (by simp [π, e]))
+    have : Module.Free R (LinearMap.ker φ) := by
+      refine ih ((s.erase p).image π) (Finset.card_image_le.trans ?_) ?_
+      · rw [Finset.card_erase_of_mem hps]
+        omega
+      · -- `π` maps `span s = M` onto `ker φ`, and dropping `p` loses nothing since `π p = 0`.
+        rw [eq_top_iff, ← LinearMap.range_eq_top.mpr hπ, LinearMap.range_eq_map, ← hspan,
+          Submodule.map_span_le]
+        intro x hx
+        by_cases hxp : x = p
+        · simp [hxp, hπp]
+        · exact Submodule.subset_span <| Finset.mem_coe.mpr <|
+            Finset.mem_image_of_mem π (Finset.mem_erase.mpr ⟨hxp, Finset.mem_coe.mp hx⟩)
+    exact .of_equiv e
+
+/-- **Finitely generated projective modules over a local ring are free**, for a possibly
+noncommutative local ring and any `AddCommMonoid` module. For a commutative local ring this is
+also `Module.free_of_flat_of_isLocalRing`. -/
+theorem free_of_projective_of_isLocalRing {M : Type*} [AddCommMonoid M] [Module R M]
+    [Module.Finite R M] [Module.Projective R M] : Module.Free R M :=
   let _ := Module.addCommMonoidToAddCommGroup R (M := M)
-  Module.free_of_flat_of_isLocalRing
+  let ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := M)
+  free_of_span_finset_eq_top s.card s le_rfl hs
+
+end Noncommutative
 
 end Module
