@@ -1283,6 +1283,16 @@ theorem fiberThomPairSignIso_hom (b : B) (o : Orientation ℝ (E b) ι) :
     (R := R) (F := F) (E := E) hι _ _ _ x.as _).symm
   exact VectorBundleOrientationCover.liftFiberEquiv_apply hι _ _ f
 
+/-- The trivialization `fiberThomPairSignIso` at `o` is the identification of `π^*o(E)` with its
+written-out form (`TauCeti.thomPairSignLocalSystem_def`), followed by the trivialization
+`fiberThomPairSignLocalSystemIso` of the written-out form at `o`. -/
+theorem fiberThomPairSignIso_hom_eq (b : B) (o : Orientation ℝ (E b) ι) :
+    (fiberThomPairSignIso F E R hι b o).hom =
+      (LocalCoefficientSystem.pullback (TopPair.Hom.fst (fiberThomPairMap F E b)).hom).map
+          (eqToHom (thomPairSignLocalSystem_def hι)) ≫
+        (fiberThomPairSignLocalSystemIso F E R hι b o).hom :=
+  fiberThomPairSignIso_hom hι b o
+
 end FiberInclusionLift
 
 end TauCeti

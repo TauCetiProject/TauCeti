@@ -30,7 +30,8 @@ is at most `2 b`.
 * `ENNReal.one_le_toReal_sub_one`: a finite exponent `2 ≤ r` has `1 ≤ r.toReal - 1`.
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`: for `0 < p ≤ q`, the exponent
   `1 / p.toReal - 1 / q.toReal` is nonnegative.
-* `ENNReal.two_le_of_toReal_inv_le`: an exponent `r ≠ 0` with `1 / r ≤ 1 / 2` satisfies `2 ≤ r`.
+* `ENNReal.two_le_of_toReal_inv_le`: an exponent `r ≠ 0` with `1 / r ≤ 1 / 2` satisfies `2 ≤ r`;
+  conversely `ENNReal.toReal_inv_le_of_two_le`: an exponent `2 ≤ r` has `1 / r ≤ 1 / 2`.
 * `ENNReal.one_sub_one_div_toReal_nonneg`, `ENNReal.toReal_inv_lt_one`: for `1 ≤ p` (resp.
   `1 < p`), the Hölder exponent `1 - 1 / p.toReal` is nonnegative (resp. `p.toReal⁻¹ < 1`).
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`, `ENNReal.toReal_inv_sub_toReal_inv_le_one`,
@@ -123,6 +124,12 @@ theorem two_le_of_toReal_inv_le {r : ℝ≥0∞} (hr : r ≠ 0) (h : (r⁻¹).to
   rw [← ENNReal.inv_le_inv, ← ofReal_toReal (inv_ne_top.2 hr),
     ← ofReal_toReal (a := 2⁻¹) (by simp)]
   exact ofReal_le_ofReal (h.trans_eq (by simp))
+
+/-- An exponent `2 ≤ r` satisfies `1 / r ≤ 1 / 2`, read in `ℝ` (with `1 / ∞` read as `0`). This
+is the converse of `ENNReal.two_le_of_toReal_inv_le`. -/
+theorem toReal_inv_le_of_two_le {r : ℝ≥0∞} (hr : 2 ≤ r) : (r⁻¹).toReal ≤ 2⁻¹ := by
+  rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_inv]
+  exact ENNReal.toReal_mono (by simp) (ENNReal.inv_le_inv.2 hr)
 
 /-- For `1 < p`, the reciprocal exponent `p.toReal⁻¹` is strictly less than `1` (with `p = ∞`
 giving `0`). -/

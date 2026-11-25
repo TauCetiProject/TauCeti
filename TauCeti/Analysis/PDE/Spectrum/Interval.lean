@@ -92,6 +92,11 @@ theorem coe_intervalDomain (a b : ℝ) :
   ext x
   exact mem_intervalDomain
 
+/-- The interval domain `(a, b)` is preconnected. -/
+theorem isPreconnected_intervalDomain (a b : ℝ) :
+    IsPreconnected (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) :=
+  ((convex_Ioo a b).linear_preimage (EuclideanSpace.projₗ (0 : Fin 1))).isPreconnected
+
 variable {a b : ℝ}
 
 attribute [local instance] W1p0.instNormedAddCommGroup

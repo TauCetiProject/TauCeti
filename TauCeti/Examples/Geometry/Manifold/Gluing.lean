@@ -8,21 +8,26 @@ module
 import Mathlib.Analysis.Complex.Basic
 import TauCeti.Geometry.Manifold.Gluing.Double
 import TauCeti.Geometry.Manifold.Gluing.OpenSubsets
+import TauCeti.Geometry.Manifold.Gluing.Star
 import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 
 /-!
-# Examples: complex manifolds from two-chart gluings
+# Examples: complex manifolds from two-chart and finite-star gluings
 
-The compatible-gluing theorem `TopCat.GlueData.IsCompatible.isManifold` makes two-chart gluings
-of open subsets of `ℂ` into complex analytic manifolds. These examples show that open gluing
-produces non-Hausdorff complex manifolds and recovers the Riemann sphere:
+The compatible-gluing theorem `TopCat.GlueData.IsCompatible.isManifold` makes two-chart and
+finite-star gluings of open subsets of `ℂ` into complex analytic manifolds. These examples show
+that open gluing produces non-Hausdorff complex manifolds and recovers the Riemann sphere:
 
 * the plane with a doubled origin, the double `TauCeti.doubleGlueData ℂ U` with `U = {0}ᶜ`, is a
   complex analytic manifold whose two copies of `ℂ` include by local biholomorphisms, although it
   is not Hausdorff;
 * gluing the two chart domains `OnePoint ℂ \ {∞}` and `OnePoint ℂ \ {0}` of the Riemann sphere
   along their intersection gives a complex analytic manifold biholomorphic to `OnePoint ℂ` by the
-  canonical map.
+  canonical map;
+* the finite star `TauCeti.starGlueData` with a hub `ℂ` and `n` arms `ℂ`, the arm `k` attached
+  by the identity along the disc of radius `1` about `4 k`, is a complex analytic manifold whose
+  hub and arms include by local biholomorphisms. Every arm meets the hub, and distinct arms do not
+  meet: the overlap graph is a star.
 -/
 
 open Set Topology TopologicalSpace TauCeti TopCat.GlueData
@@ -77,3 +82,53 @@ example :
     · exact ⟨true, by simp [hx]⟩
     · exact ⟨false, by simpa using hx⟩
   ⟨openCoverGlueDiffeomorph _ h, coe_openCoverGlueDiffeomorph _ h⟩
+
+-- The finite star with hub `ℂ` and `n` arms `ℂ`, the arm `k` attached by the identity along the
+-- disc of radius `1` about `4 k`, is a complex analytic manifold.
+example (n : ℕ) :
+    letI := (starGlueData (U := fun _ : Option (Fin n) ↦ ℂ)
+      (W := fun i ↦ Option.elim i ⊤ fun k ↦ ⟨Metric.ball (4 * ((k : ℕ) : ℂ)) 1, Metric.isOpen_ball⟩)
+      fun _ ↦ Homeomorph.refl _).chartedSpace ℂ
+    IsManifold 𝓘(ℂ) ω (starGlueData (U := fun _ : Option (Fin n) ↦ ℂ)
+      (W := fun i ↦ Option.elim i ⊤ fun k ↦ ⟨Metric.ball (4 * ((k : ℕ) : ℂ)) 1, Metric.isOpen_ball⟩)
+      fun _ ↦ Homeomorph.refl _).toGlueData.glued :=
+  (isCompatible_starGlueData fun _ ↦ (Diffeomorph.refl 𝓘(ℂ) _ ω).isLocalDiffeomorph).isManifold
+
+-- The hub and the arms include into the finite star by local biholomorphisms.
+example (n : ℕ) (i : (starGlueData (U := fun _ : Option (Fin n) ↦ ℂ)
+      (W := fun i ↦ Option.elim i ⊤ fun k ↦ ⟨Metric.ball (4 * ((k : ℕ) : ℂ)) 1, Metric.isOpen_ball⟩)
+      fun _ ↦ Homeomorph.refl _).J) :
+    letI := (starGlueData (U := fun _ : Option (Fin n) ↦ ℂ)
+      (W := fun i ↦ Option.elim i ⊤ fun k ↦ ⟨Metric.ball (4 * ((k : ℕ) : ℂ)) 1, Metric.isOpen_ball⟩)
+      fun _ ↦ Homeomorph.refl _).chartedSpace ℂ
+    IsLocalDiffeomorph 𝓘(ℂ) 𝓘(ℂ) ω ((starGlueData (U := fun _ : Option (Fin n) ↦ ℂ)
+      (W := fun i ↦ Option.elim i ⊤ fun k ↦ ⟨Metric.ball (4 * ((k : ℕ) : ℂ)) 1, Metric.isOpen_ball⟩)
+      fun _ ↦ Homeomorph.refl _).toGlueData.ι i) :=
+  (isCompatible_starGlueData fun _ ↦
+    (Diffeomorph.refl 𝓘(ℂ) _ ω).isLocalDiffeomorph).isLocalDiffeomorph_ι i
+
+-- Every arm of the finite star meets the hub.
+example (n : ℕ) (k : Fin n) :
+    Nonempty ((starGlueData (U := fun _ : Option (Fin n) ↦ ℂ)
+      (W := fun i ↦ Option.elim i ⊤ fun k ↦ ⟨Metric.ball (4 * ((k : ℕ) : ℂ)) 1, Metric.isOpen_ball⟩)
+      fun _ ↦ Homeomorph.refl _).V (none, some k)) := by
+  rw [nonempty_starGlueData_V_iff (by simp)]
+  exact ⟨4 * (k : ℕ), by simp⟩
+
+-- Distinct arms of the finite star do not meet: their discs are disjoint.
+example (n : ℕ) {k l : Fin n} (hkl : k ≠ l) :
+    IsEmpty ((starGlueData (U := fun _ : Option (Fin n) ↦ ℂ)
+      (W := fun i ↦ Option.elim i ⊤ fun k ↦ ⟨Metric.ball (4 * ((k : ℕ) : ℂ)) 1, Metric.isOpen_ball⟩)
+      fun _ ↦ Homeomorph.refl _).V (some k, some l)) := by
+  rw [← not_nonempty_iff, nonempty_starGlueData_V_iff (by simpa using hkl),
+    not_nonempty_iff_eq_empty, ← disjoint_iff_inter_eq_empty]
+  refine Metric.ball_disjoint_ball ?_
+  -- Distinct natural numbers are at distance at least `1`.
+  have h : (1 : ℝ) ≤ |((k : ℕ) : ℝ) - (l : ℕ)| := by
+    have := Fin.val_ne_of_ne hkl
+    exact_mod_cast Int.one_le_abs (by omega : ((k : ℕ) : ℤ) - (l : ℕ) ≠ 0)
+  calc (1 : ℝ) + 1 ≤ 4 * |((k : ℕ) : ℝ) - (l : ℕ)| := by linarith
+    _ = dist (4 * ((k : ℕ) : ℂ)) (4 * ((l : ℕ) : ℂ)) := by
+      -- Both centres are real, so their distance is that of their real parts.
+      rw [Complex.dist_of_im_eq (by simp), Real.dist_eq]
+      simp [← mul_sub, abs_mul]
