@@ -72,8 +72,9 @@ with large class multiplicities; the degree records the class multiplicities of 
 
 * `MonoidHom.Marking.existsUnique_comp_eq_and_forall_apply_of`: `U(G, c)` is initial among
   `c`-marked extensions.
-* `MonoidHom.Marking.bijective_lift_of_existsUnique`: a marking that is itself initial among
-  `c`-marked extensions is isomorphic to `U(G, c)` through its marking.
+* `MonoidHom.Marking.bijective_lift_of_existsUnique`: for conjugation-invariant `c`, a marking
+  that is itself initial among `c`-marked extensions (with test groups in the universe of `E` and
+  `G`) is isomorphic to `U(G, c)` through its marking.
 * `TauCeti.ReducedSchur.of_eq_mul_of_mul_inv`: conjugating a generator by any `w ∈ U(G, c)`
   gives the generator of the conjugate by the projection of `w`.
 * `TauCeti.ReducedSchur.isCentralExtension_projection`: the projection is a central extension when
@@ -444,9 +445,10 @@ theorem lift_inclusion : (inclusion c).lift = projection c := by
 /-- **Recognising `U(G, c)`.** If the marked lifts of `s` generate `E` and some homomorphism
 `g : E →* U(G, c)` sends each `s x` to `[x]`, then `s.lift` is an isomorphism `U(G, c) ≃* E`, with
 inverse `g`. It is the only homomorphism `U(G, c) →* E` sending each `[x]` to `s x`
-(`MonoidHom.Marking.eq_lift_iff`). When `s` is itself initial among `c`-marked extensions,
-`s.lift` is bijective (`MonoidHom.Marking.bijective_lift_of_existsUnique`), so any two universal
-marked extensions are uniquely isomorphic through their markings. -/
+(`MonoidHom.Marking.eq_lift_iff`). For conjugation-invariant `c`, when `s` is itself initial
+among `c`-marked extensions whose groups lie in the universe of `E` and `G`, `s.lift` is
+bijective (`MonoidHom.Marking.bijective_lift_of_existsUnique`), so any two such universal marked
+extensions are uniquely isomorphic through their markings. -/
 def liftEquiv (s : p.Marking c) (hs : closure (Set.range s) = ⊤) (g : E →* universalMarked c)
     (hg : ∀ x, g (s x) = PresentedGroup.of x) : universalMarked c ≃* E :=
   MonoidHom.toMulEquiv s.lift g (PresentedGroup.ext fun x ↦ by simp [hg])
@@ -533,6 +535,7 @@ theorem toClassSet_surjective : Function.Surjective (toClassSet (c := c)) := by
   rintro ⟨_, x, hx, rfl⟩
   exact ⟨⟨x, hx⟩, rfl⟩
 
+@[simp]
 theorem toClassSet_eq_toClassSet_iff {x y : c} : toClassSet x = toClassSet y ↔ IsConj (x : G) y :=
   Subtype.ext_iff.trans ConjClasses.mk_eq_mk_iff_isConj
 
@@ -549,7 +552,7 @@ theorem degree_of (x : c) :
     degree c (PresentedGroup.of x) = .ofAdd (Finsupp.single (toClassSet x) 1) :=
   lift_of _ _ x
 
-/-- The generators of `U(G, c)` have infinite order: no relation `[x] ^ (orderOf x) = 1` holds. -/
+/-- The generators `[x]` of `U(G, c)` have infinite order: `[x] ^ n ≠ 1` for every `n ≥ 1`. -/
 theorem not_isOfFinOrder_of (x : c) : ¬IsOfFinOrder (PresentedGroup.of x : universalMarked c) := by
   rw [← orderOf_eq_zero_iff, orderOf_eq_zero_iff']
   intro n hn h
@@ -575,6 +578,7 @@ theorem degreeToAbelianization_single (x : c) (n : ℤ) :
   exact congr_arg (n • Additive.ofMul ·) (ConjClasses.mkEquiv.symm_apply_apply _)
 
 /-- **The degree followed by `ℤ^D → G^{ab}` is the abelianised projection.** -/
+@[simp]
 theorem degreeToAbelianization_degree (u : universalMarked c) :
     degreeToAbelianization c (degree c u).toAdd =
       .ofMul (Group.Abelianization.of (projection c u)) := by
