@@ -49,7 +49,9 @@ subset of the target manifold.
 * `PartialDiffeomorph.toDiffeomorphSourceTarget`: a partial diffeomorphism as a diffeomorphism
   between its open source and its open target.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
-* `Diffeomorph.ofLe`: an open subset `W ≤ U` is diffeomorphic to its preimage in `U`.
+* `Diffeomorph.nestedOpen`: for nested open subsets `U ≤ D`, the preimage of `U` in `D` is
+  diffeomorphic to `U`. It compares structures on a restriction to `D` followed by a restriction
+  to `U` with the direct restriction to `U`.
 * `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
   it maps onto each other.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
@@ -281,29 +283,30 @@ theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : 
     ((ofTop (I := I) (n := n) U hU).symm x : M) = x :=
   (rfl)
 
-/-- An open subset `W ≤ U` of `M` is `C^n` diffeomorphic to its preimage in `U`. -/
-def ofLe {W U : TopologicalSpace.Opens M} (h : W ≤ U) :
-    W ≃ₘ^n⟮I, I⟯ W.comap ⟨(Subtype.val : U → M), continuous_subtypeVal⟩ where
-  toFun w := ⟨TopologicalSpace.Opens.inclusion h w, w.property⟩
-  invFun u := ⟨u.val.val, u.property⟩
+/-- For nested open subsets `U ≤ D`, the preimage of `U` in `D` is diffeomorphic to `U`. -/
+def nestedOpen {U D : TopologicalSpace.Opens M} (h : U ≤ D) :
+    (TopologicalSpace.Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U)
+      ≃ₘ^n⟮I, I⟯ U where
+  toFun x := ⟨x.val.val, x.property⟩
+  invFun u := ⟨⟨u.val, h u.property⟩, u.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  contMDiff_toFun :=
-    (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).mp (contMDiff_inclusion h)
-  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff W _).mp
-    ((contMDiff_subtypeVal (I := I) (n := n) (U := U)).comp contMDiff_subtypeVal)
+  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp
+    ((contMDiff_subtypeVal (I := I) (U := D)).comp contMDiff_subtypeVal)
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).mp
+    ((TauCeti.ContMDiff.subtypeVal_comp_iff D _).mp contMDiff_subtypeVal)
 
-/-- `Diffeomorph.ofLe` acts in `U` as `Opens.inclusion`. -/
+/-- The diffeomorphism `Diffeomorph.nestedOpen` keeps the underlying point. -/
 @[simp]
-theorem coe_ofLe_apply {W U : TopologicalSpace.Opens M} (h : W ≤ U) (w : W) :
-    (ofLe (I := I) (n := n) h w : U) = TopologicalSpace.Opens.inclusion h w :=
+theorem nestedOpen_apply {U D : TopologicalSpace.Opens M} (h : U ≤ D)
+    (x : TopologicalSpace.Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) :
+    nestedOpen (I := I) (n := n) h x = ⟨x.val.val, x.property⟩ :=
   (rfl)
 
-/-- The inverse of `Diffeomorph.ofLe` preserves the underlying point in `M`. -/
+/-- The inverse of `Diffeomorph.nestedOpen` views a point of `U` in `D`. -/
 @[simp]
-theorem coe_ofLe_symm_apply {W U : TopologicalSpace.Opens M} (h : W ≤ U)
-    (u : W.comap ⟨(Subtype.val : U → M), continuous_subtypeVal⟩) :
-    ((ofLe (I := I) (n := n) h).symm u : M) = ((u : U) : M) :=
+theorem nestedOpen_symm_apply {U D : TopologicalSpace.Opens M} (h : U ≤ D) (x : U) :
+    (nestedOpen (I := I) (n := n) h).symm x = ⟨⟨x.val, h x.property⟩, x.property⟩ :=
   (rfl)
 
 section Subtype

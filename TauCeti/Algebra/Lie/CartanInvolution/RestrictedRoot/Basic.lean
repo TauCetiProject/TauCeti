@@ -44,6 +44,8 @@ in a maximal abelian subspace of `𝔭`, by Zorn's lemma.
   `λ + μ = 0`.
 * `Submodule.iSupIndep_restrictedRootSpace`, `Submodule.finite_restrictedRoots`: the restricted
   root spaces are independent, and there are finitely many restricted roots.
+* `Submodule.exists_dual_eq_of_iInf_eigenspace_ne_bot`: a nonzero joint eigenspace of the
+  operators `ad H`, `H ∈ 𝔞`, has a linear eigenvalue function.
 * `LieEquiv.map_restrictedRootSpace`: `θ 𝔤_λ = 𝔤_{-λ}` for `𝔞 ⊆ 𝔭`, so that
   `-λ ∈ Σ ↔ λ ∈ Σ` (`LieEquiv.neg_mem_restrictedRoots_iff`) and `m_{-λ} = m_λ`
   (`LieEquiv.finrank_restrictedRootSpace_neg`).
@@ -55,6 +57,8 @@ in a maximal abelian subspace of `𝔭`, by Zorn's lemma.
   centralizer in `𝔭`.
 * `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_sup`: `𝔤_0 = 𝔪 + 𝔞` with
   `𝔪 = 𝔤_0 ∩ 𝔨`.
+* `LieEquiv.IsMaximalAbelianInP.map`: the image of a maximal abelian subspace of `𝔭` under an
+  isomorphism `e` is maximal abelian in the `𝔭` of `e ∘ θ ∘ e⁻¹`.
 
 ## References
 
@@ -139,6 +143,20 @@ theorem iSupIndep_restrictedRootSpace [IsDomain R] [IsTorsionFree R L] :
     funext fun _ ↦ restrictedRootSpace_eq_iInf
   rw [h𝔤]
   exact (TauCeti.iSupIndep_iInf_eigenspace fun H : 𝔞 ↦ ad R L H).comp DFunLike.coe_injective
+
+/-- **Eigenvalue functions of `ad 𝔞` are linear.** If the joint eigenspace of the operators
+`ad H`, `H ∈ 𝔞`, for eigenvalues `χ H` is nonzero, then `χ` is a linear functional on `𝔞`. -/
+theorem exists_dual_eq_of_iInf_eigenspace_ne_bot [IsDomain R] [IsTorsionFree R L] {χ : 𝔞 → R}
+    (hχ : ⨅ H : 𝔞, End.eigenspace (ad R L H) (χ H) ≠ ⊥) : ∃ μ : Dual R 𝔞, ⇑μ = χ := by
+  obtain ⟨x, hx, hx0⟩ := (Submodule.ne_bot_iff _).mp hχ
+  have hH (H : 𝔞) : ⁅(H : L), x⁆ = χ H • x := by
+    simpa using (Submodule.mem_iInf _).mp hx H
+  have hcancel {a b : R} (h : a • x = b • x) : a = b :=
+    smul_left_injective R hx0 h
+  refine ⟨{ toFun := χ, map_add' := fun H H' ↦ hcancel ?_, map_smul' := fun c H ↦ hcancel ?_ },
+    rfl⟩
+  · rw [add_smul, ← hH, ← hH, ← hH, coe_add, add_lie]
+  · rw [smul_eq_mul, RingHom.id_apply, mul_smul, ← hH, ← hH, coe_smul, smul_lie]
 
 /-- A Noetherian Lie algebra has finitely many restricted roots for each submodule `𝔞`. -/
 theorem finite_restrictedRoots [IsDomain R] [IsTorsionFree R L] [IsNoetherian R L] :
@@ -278,6 +296,28 @@ theorem restrictedRootSpace_zero_eq_sup (h2 : IsUnit (2 : R)) (hθ : Function.In
   · rw [← h𝔞.restrictedRootSpace_zero_inf_cartanP]
     refine ⟨smul_mem _ _ (sub_mem hx hθx), smul_mem _ _ (mem_cartanP.mpr ?_)⟩
     rw [map_sub, hθ x, neg_sub]
+
+variable {L' : Type*} [LieRing L'] [LieAlgebra R L'] in
+/-- The image under `e` of a maximal abelian subspace of the `-1`-eigenspace of `θ` is a maximal
+abelian subspace of the `-1`-eigenspace of `e ∘ θ ∘ e⁻¹`. -/
+theorem map (h𝔞 : θ.IsMaximalAbelianInP 𝔞) (e : L ≃ₗ⁅R⁆ L') :
+    (e.conj θ).IsMaximalAbelianInP (𝔞.map (e.toLinearEquiv : L →ₗ[R] L')) := by
+  set f := e.toLinearEquiv
+  have hmap (𝔟 : Submodule R L') : (𝔟.map (f.symm : L' →ₗ[R] L)).map (f : L →ₗ[R] L') = 𝔟 :=
+    (map_symm_eq_iff f).mp rfl
+  refine isMaximalAbelianInP_iff.mpr ⟨⟨?_, ?_⟩, fun 𝔟 h𝔟 hle ↦ ?_⟩
+  · rw [cartanP_conj]
+    exact map_mono h𝔞.le_cartanP
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    simp [f, ← LieEquiv.map_lie, h𝔞.lie_eq_zero hx hy]
+  · -- Pull `𝔟` back along `e`, where maximality of `𝔞` applies.
+    obtain ⟨h𝔟p, h𝔟ab⟩ := h𝔟
+    rw [← hmap 𝔟] at hle h𝔟p h𝔟ab ⊢
+    rw [map_le_map_iff_of_injective f.injective] at hle
+    rw [cartanP_conj, map_le_map_iff_of_injective f.injective] at h𝔟p
+    refine map_mono ((isMaximalAbelianInP_iff.mp h𝔞).2 ⟨h𝔟p, fun x hx y hy ↦ ?_⟩ hle)
+    have := h𝔟ab (f x) (mem_map_of_mem hx) (f y) (mem_map_of_mem hy)
+    simpa [f, ← LieEquiv.map_lie] using this
 
 end IsMaximalAbelianInP
 

@@ -103,6 +103,10 @@ All in the `ContDiffBump` namespace, with `φ` the bump function defining the cu
   `exists_eLpNorm_top_eLpNorm_waveCosPropagator_littlewoodPaley_le` and
   `exists_eLpNorm_top_eLpNorm_waveSinPropagator_littlewoodPaley_le`: the estimates for `W₊(t) Pⱼ`,
   `cos(tD) Pⱼ` and `D⁻¹ sin(tD) Pⱼ` at the pairs `(∞, r)`.
+* `exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le_of_halfWavePropagator` and
+  `exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le_of_halfWavePropagator`: a
+  mixed-norm estimate for `W₊(t) Pⱼ` along any time exponent `q ≥ 1` gives those for
+  `cos(tD) Pⱼ` and `D⁻¹ sin(tD) Pⱼ`.
 
 The file also proves `TauCeti.eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le` and
 `TauCeti.eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_of_one_le`, which combine
@@ -922,7 +926,7 @@ variable {q r : ℝ≥0∞}
 
 /-- A mixed-norm estimate `‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{jγ} ‖f‖₂` with `1 ≤ q` gives the same
 estimate for `cos(tD) Pⱼ`, with another constant. -/
-private theorem exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le_of_halfWavePropagator
+theorem exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le_of_halfWavePropagator
     (hq : 1 ≤ q) {γ : ℝ}
     (hW : ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
@@ -962,7 +966,7 @@ private theorem exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le_of_h
 /-- A mixed-norm estimate `‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{jγ} ‖f‖₂` with `1 ≤ q` gives the
 estimate `‖D⁻¹ sin(tD) Pⱼ g‖_{L^q_t L^r_x} ≤ C' 2^{j(γ - 1)} ‖g‖₂`; the extra factor `2^{-j}` is the
 size of `D⁻¹` at frequencies `‖ξ‖ ≈ 2^j`. -/
-private theorem exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le_of_halfWavePropagator
+theorem exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le_of_halfWavePropagator
     (hq : 1 ≤ q) {γ : ℝ}
     (hW : ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),

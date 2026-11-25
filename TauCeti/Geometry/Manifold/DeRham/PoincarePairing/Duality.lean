@@ -177,11 +177,10 @@ private theorem bijective_poincarePairing_of_le_diffeomorph_euclideanSpace
     Bijective (poincarePairing I W (oM.restrict W)) := by
   let J := 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))
   let V : Opens (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) :=
-    ⟨{z | (Φ.symm z : M) ∈ W}, W.isOpen.preimage (continuous_subtypeVal.comp Φ.symm.continuous)⟩
+    W.comap ⟨fun z ↦ (Φ.symm z : M), continuous_subtypeVal.comp Φ.symm.continuous⟩
   have : LocallyCompactSpace V := V.isOpen.locallyCompactSpace
-  let Ψ : W ≃ₘ⟮I, J⟯ V := (Diffeomorph.ofLe hWU).trans (Φ.subtype fun u ↦ by
-    change (u : M) ∈ W ↔ (Φ.symm (Φ u) : M) ∈ W
-    rw [Φ.symm_apply_apply])
+  let Ψ : W ≃ₘ⟮I, J⟯ V := (Diffeomorph.nestedOpen hWU).symm.trans (Φ.subtype fun u ↦ by
+    simp only [V, Opens.mem_comap, ContinuousMap.coe_mk, Φ.symm_apply_apply])
   let oE : Manifold.Orientation J (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) (Fin (a + b)) :=
     (oM.restrict U).pullback (Φ.symm.contMDiff.of_le (by simp))
       (fun _ ↦ Φ.symm.isInvertible_mfderiv (by simp))
