@@ -142,14 +142,14 @@ theorem exteriorPowerFiltration_mono {N N' : Submodule R M} (h : N ≤ N') (n i 
 
 /-- For `N = ⊤` every wedge of `n` vectors has `n` factors in `N`, so `Fⁱ ⋀ⁿ M = ⋀ⁿ M` for
 `i ≤ n`. -/
-theorem top_exteriorPowerFiltration {n i : ℕ} (h : i ≤ n) :
+theorem exteriorPowerFiltration_top {n i : ℕ} (h : i ≤ n) :
     (⊤ : Submodule R M).exteriorPowerFiltration n i = ⊤ := by
   rw [eq_top_iff, ← exteriorPower.ιMulti_span, span_le]
   rintro - ⟨v, rfl⟩
   exact ιMulti_mem_exteriorPowerFiltration (s := Finset.univ) (by simpa using h) (by simp)
 
 /-- For `N = 0` a wedge with a factor in `N` vanishes, so `Fⁱ ⋀ⁿ M = 0` for `i > 0`. -/
-theorem bot_exteriorPowerFiltration {n i : ℕ} (h : 0 < i) :
+theorem exteriorPowerFiltration_bot {n i : ℕ} (h : 0 < i) :
     (⊥ : Submodule R M).exteriorPowerFiltration n i = ⊥ := by
   refine eq_bot_iff.mpr (exteriorPowerFiltration_le_iff.mpr fun v s hs hv ↦ ?_)
   obtain ⟨k, hk⟩ := Finset.card_pos.mp (h.trans_le hs)
@@ -433,7 +433,7 @@ theorem prodFiltrationComponent_apply (n : ℕ) (i : Fin (n + 1))
   (rfl)
 
 /-- `prodFiltrationComponent` sends the wedge product of `t ∈ ⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N` back to `t`. -/
-theorem prodFiltrationComponent_symm_lof (n : ℕ) (i : Fin (n + 1))
+theorem prodFiltrationComponent_prodEquivTensor_symm_lof (n : ℕ) (i : Fin (n + 1))
     (t : ⋀[R]^(i : ℕ) M ⊗[R] ⋀[R]^(n - i) N) :
     prodFiltrationComponent n i
       ⟨_, prodEquivTensor_symm_lof_mem_exteriorPowerFiltration n i t⟩ = t := by
@@ -443,7 +443,7 @@ theorem prodFiltrationComponent_symm_lof (n : ℕ) (i : Fin (n + 1))
 /-- `prodFiltrationComponent` maps `Fⁱ` onto `⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N`. -/
 theorem prodFiltrationComponent_surjective (n : ℕ) (i : Fin (n + 1)) :
     Function.Surjective (prodFiltrationComponent (R := R) (M := M) (N := N) n i) := fun t ↦
-  ⟨_, prodFiltrationComponent_symm_lof n i t⟩
+  ⟨_, prodFiltrationComponent_prodEquivTensor_symm_lof n i t⟩
 
 /-- The kernel of `prodFiltrationComponent` on `Fⁱ` is `Fⁱ⁺¹`. -/
 theorem ker_prodFiltrationComponent (n : ℕ) (i : Fin (n + 1)) :
