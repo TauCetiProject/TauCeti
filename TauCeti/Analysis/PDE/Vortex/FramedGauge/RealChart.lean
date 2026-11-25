@@ -336,11 +336,11 @@ theorem coe_realSobolevEquation_apply (hk : 2 ≤ k)
   (rfl)
 
 /-- The inclusion of real coordinates into complexified coordinates. -/
-private def coordInclusion (h : 0 ≤ s) :
+def coordInclusion (h : 0 ≤ s) :
     (Fin 4 → realSubmodule ℂ h) →L[ℝ] (Fin 4 → H^{s}(ℂ)) :=
   ContinuousLinearMap.piMap fun _ ↦ (realSubmodule ℂ h).subtypeL
 
-private theorem coordInclusion_apply (h : 0 ≤ s) (u : Fin 4 → realSubmodule ℂ h) :
+theorem coordInclusion_apply (h : 0 ≤ s) (u : Fin 4 → realSubmodule ℂ h) :
     coordInclusion h u = fun a ↦ (u a : H^{s}(ℂ)) :=
   (rfl)
 
