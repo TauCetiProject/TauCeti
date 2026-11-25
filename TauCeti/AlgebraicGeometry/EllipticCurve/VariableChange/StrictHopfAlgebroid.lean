@@ -64,7 +64,7 @@ are invariants of the strict Hopf algebroid.
 * `TauCeti.WeierstrassHopfAlgebroid.strictLeftUnit`, `strictRightUnit`, `strictCounit`,
   `strictCoproduct`, `strictConjugation`: the structure maps of the strict Hopf algebroid.
 * `TauCeti.WeierstrassHopfAlgebroid.strictWeight`: the weights of the generators of `A[r, s, t]`.
-* `TauCeti.WeierstrassHopfAlgebroid.toStrict`, `toStrictPair`: the quotients of `Γ` and `Γ ⊗_A Γ`
+* `TauCeti.WeierstrassHopfAlgebroid.toStrict`, `toStrictPair`: the maps out of `Γ` and `Γ ⊗_A Γ`
   setting the scaling coordinates to `1`; `ofStrict`: the inclusion of `A[r, s, t]` in `Γ`.
 
 ## Main results
@@ -693,7 +693,7 @@ theorem isWeightedHomogeneous_strictConjugation {k : ℕ} {f : StrictArrowRing}
 
 /-! ### The dictionary with the Weierstrass Hopf algebroid `(A, Γ)` -/
 
-/-- The quotient `Γ = A[u, u⁻¹, r, s, t] →+* A[r, s, t]` setting `u = 1`: it classifies the
+/-- The map `Γ = A[u, u⁻¹, r, s, t] →+* A[r, s, t]` setting `u = 1`: it classifies the
 inclusion of the strict changes of variables `(1, r, s, t)` among all changes of variables. -/
 def toStrict : ArrowRing →+* StrictArrowRing :=
   lift (strictLeftUnit, heisenbergHom _ strictChange)
@@ -756,7 +756,7 @@ theorem toStrict_comp_conjugation :
       universalChange_map_toStrict, WeierstrassCurve.VariableChange.map_heisenbergHom,
       heisenbergGroupMap_strictConjugation_strictChange, map_inv]
 
-/-- The quotient `Γ ⊗_A Γ →+* A[r, s, t] ⊗_A A[r, s, t]` setting `u₁ = u₂ = 1`. -/
+/-- The map `Γ ⊗_A Γ →+* A[r, s, t] ⊗_A A[r, s, t]` setting `u₁ = u₂ = 1`. -/
 def toStrictPair : ChangeRing ArrowRing →+* StrictPairRing :=
   lift (strictLeft.comp toStrict, heisenbergHom _ (HeisenbergGroup.map strictRight strictChange))
 
@@ -875,7 +875,7 @@ theorem toStrict_comp_ofStrict : toStrict.comp ofStrict = RingHom.id _ := by
 theorem toStrict_ofStrict (x : StrictArrowRing) : toStrict (ofStrict x) = x :=
   RingHom.congr_fun toStrict_comp_ofStrict x
 
-/-- `toStrict` is surjective: `A[r, s, t]` is the quotient of `Γ` by `u - 1`. -/
+/-- `toStrict` is surjective, with section `ofStrict` (see `toStrict_ofStrict`). -/
 theorem toStrict_surjective : Function.Surjective toStrict :=
   fun x ↦ ⟨ofStrict x, toStrict_ofStrict x⟩
 
