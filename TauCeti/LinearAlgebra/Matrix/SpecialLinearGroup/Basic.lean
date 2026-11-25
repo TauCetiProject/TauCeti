@@ -36,7 +36,8 @@ specializing Mathlib's finite-index-type equivalence to `Fin n`.
 
 For any finite index type `ι`, the kernel of reduction `SL(ι, ℤ) → SL(ι, ℤ/Nℤ)`, the principal
 congruence subgroup of level `N`, is described entrywise: it consists of the matrices congruent
-to the identity modulo `N`.
+to the identity modulo `N`. The same description holds for reduction `SL(ι, A) → SL(ι, A ⧸ I)`
+modulo an ideal of a commutative ring.
 
 The surjectivity is ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck). It realizes every unit of
@@ -54,8 +55,14 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`: strong approximation for `SL₂`,
   with `Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective` its two-modulus form:
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
+* `Matrix.SpecialLinearGroup.mem_ker_map_iff`, `Matrix.SpecialLinearGroup.ker_map_mono`: an
+  element of `SL(ι, R)` lies in the kernel of base change along `f : R →+* S` iff it is congruent
+  to the identity modulo `RingHom.ker f` entrywise, and these kernels grow with `RingHom.ker f`.
 * `Matrix.SpecialLinearGroup.mem_ker_map_intCast_zmod_iff`: an element of `SL(ι, ℤ)` lies in
   the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
+* `Matrix.SpecialLinearGroup.mem_ker_map_quotientMk_iff`,
+  `Matrix.SpecialLinearGroup.ker_map_quotientMk_mono`: the same entrywise description modulo an
+  ideal `I`, and monotonicity of these kernels in `I`.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg` and `Matrix.SpecialLinearGroup.mapGL_neg_one`:
@@ -705,6 +712,22 @@ theorem map_intCast_zmod_prod_surjective {d d' : ℕ} (hcop : d.Coprime d') :
   rw [← h, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom]
   exact E.surjective.comp map_intCast_zmod_surjective
 
+/-- **Entrywise kernel test**: `γ ∈ SL(ι, R)` lies in the kernel of base change along a ring
+hom `f : R →+* S` iff it is congruent to the identity modulo `RingHom.ker f` entrywise. -/
+theorem mem_ker_map_iff {ι : Type*} [Fintype ι] [DecidableEq ι] {R S : Type*} [CommRing R]
+    [CommRing S] {f : R →+* S} {γ : SpecialLinearGroup ι R} :
+    γ ∈ (map f).ker ↔ ∀ i j, (γ : Matrix ι ι R) i j - (1 : Matrix ι ι R) i j ∈ RingHom.ker f := by
+  rw [MonoidHom.mem_ker, SpecialLinearGroup.ext_iff]
+  simp only [map_apply_coe, coe_one, ← Matrix.map_one f (map_zero _) (map_one _),
+    Matrix.map_apply, RingHom.mem_ker, map_sub, sub_eq_zero]
+
+/-- The kernels of base change on `SL(ι, -)` grow with the kernel of the ring hom:
+`ker f ≤ ker g` gives `ker (map f) ≤ ker (map g)`. -/
+theorem ker_map_mono {ι : Type*} [Fintype ι] [DecidableEq ι] {R S T : Type*} [CommRing R]
+    [CommRing S] [CommRing T] {f : R →+* S} {g : R →+* T} (h : RingHom.ker f ≤ RingHom.ker g) :
+    (map (n := ι) f).ker ≤ (map g).ker := fun _ hγ ↦
+  mem_ker_map_iff.2 fun i j ↦ h (mem_ker_map_iff.1 hγ i j)
+
 /-- **Entrywise kernel test**: `γ ∈ SL(ι, ℤ)` lies in the principal congruence subgroup of level
 `N`, the kernel of reduction modulo `N`, iff it is congruent to the identity modulo `N`
 entrywise. -/
@@ -712,8 +735,23 @@ theorem mem_ker_map_intCast_zmod_iff {ι : Type*} [Fintype ι] [DecidableEq ι] 
     {γ : SpecialLinearGroup ι ℤ} :
     γ ∈ (map (Int.castRingHom (ZMod N))).ker ↔
       ∀ i j, (N : ℤ) ∣ (γ : Matrix ι ι ℤ) i j - if i = j then 1 else 0 := by
-  simp [SpecialLinearGroup.ext_iff, Matrix.one_apply, apply_ite,
-    ← ZMod.intCast_zmod_eq_zero_iff_dvd, sub_eq_zero]
+  simp only [mem_ker_map_iff, RingHom.mem_ker, eq_intCast, ZMod.intCast_zmod_eq_zero_iff_dvd,
+    Matrix.one_apply]
+
+/-- **Entrywise kernel test modulo an ideal**: `γ ∈ SL(ι, A)` lies in the principal congruence
+subgroup of level `I`, the kernel of reduction modulo `I`, iff it is congruent to the identity
+modulo `I` entrywise. -/
+theorem mem_ker_map_quotientMk_iff {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Type*}
+    [CommRing A] {I : Ideal A} {γ : SpecialLinearGroup ι A} :
+    γ ∈ (map (Ideal.Quotient.mk I)).ker ↔
+      ∀ i j, (γ : Matrix ι ι A) i j - (1 : Matrix ι ι A) i j ∈ I := by
+  rw [mem_ker_map_iff, Ideal.mk_ker]
+
+/-- Principal congruence subgroups decrease with the level: `I ≤ J` gives `Γ(I) ≤ Γ(J)`. -/
+theorem ker_map_quotientMk_mono {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Type*}
+    [CommRing A] {I J : Ideal A} (h : I ≤ J) :
+    (map (n := ι) (Ideal.Quotient.mk I)).ker ≤ (map (Ideal.Quotient.mk J)).ker :=
+  ker_map_mono (by rwa [Ideal.mk_ker, Ideal.mk_ker])
 
 end Matrix.SpecialLinearGroup
 
