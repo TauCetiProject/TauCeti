@@ -45,6 +45,8 @@ closed, since a proper specialization of such a point would have codimension at 
   Krull dimension at least one.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober space, the Krull dimension is
   the supremum of the codimensions of the points for the specialization preorder.
+* `TauCeti.topologicalKrullDim_le_of_forall_coheight_le`: on a quasi-sober space all of whose
+  points have codimension at most `n`, the Krull dimension is at most `n`.
 * `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober space, the height
   of a point for the specialization preorder is the Krull dimension of its closure.
 * `TauCeti.topologicalKrullDim_closure_singleton_le_of_not_isMax`: on a quasi-sober space all
@@ -153,6 +155,14 @@ theorem topologicalKrullDim_eq_iSup_coheight (α : Type*) [TopologicalSpace α] 
         specializes_iff_closure_subset.mp h)
   rw [← krullDim_eq_iSup_coheight]
   exact krullDim_le_of_strictMono g hmono
+
+attribute [local instance] specializationPreorder in
+/-- On a quasi-sober topological space all of whose points have codimension at most `n` for the
+specialization preorder, the Krull dimension is at most `n`. -/
+theorem topologicalKrullDim_le_of_forall_coheight_le {α : Type*} [TopologicalSpace α]
+    [QuasiSober α] {n : ℕ∞} (h : ∀ x : α, coheight x ≤ n) : topologicalKrullDim α ≤ n := by
+  rw [topologicalKrullDim_eq_iSup_coheight]
+  exact iSup_le fun x ↦ by exact_mod_cast h x
 
 attribute [local instance] specializationPreorder in
 /-- On a quasi-sober topological space, the height of a point for the specialization preorder
