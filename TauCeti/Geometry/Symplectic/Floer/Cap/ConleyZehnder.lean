@@ -107,19 +107,6 @@ private theorem IsSmoothBasedCap.apply_zero_I_smul (hu : IsSmoothBasedCap I γ u
   rw [hχJ]
   exact hJ _
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℂ G] [Fact (finrank ℝ E = 2 * finrank ℂ G)]
-  [T2Space M] [SigmaCompactSpace M] in
-/-- Two frames along the same map that are complex linear for `J` differ by complex-linear maps
-of the model: `φ'(y)⁻¹ ∘ φ(y)` commutes with multiplication by `i`. -/
-private theorem trans_symm_I_smul {Y : Type*} {f : Y → M}
-    {φ φ' : ∀ y, G ≃L[ℝ] TangentSpace I (f y)}
-    (hφJ : ∀ y v, φ y (Complex.I • v) = J (f y) (φ y v))
-    (hφJ' : ∀ y v, φ' y (Complex.I • v) = J (f y) (φ' y v)) (y : Y) (v : G) :
-    (φ y).trans (φ' y).symm (Complex.I • v) = Complex.I • (φ y).trans (φ' y).symm v := by
-  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply, hφJ]
-  apply (φ' y).injective
-  rw [hφJ', ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
-
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [FiniteDimensional ℂ G]
   [Fact (finrank ℝ E = 2 * finrank ℂ G)] [T2Space M] [SigmaCompactSpace M] in
 /-- A frame along the loop which agrees along the edge `s = 0` with a frame over a cap that is
@@ -132,20 +119,6 @@ private theorem apply_zero_eq_apply_one_of_eq_on_edges {χ : ∀ z, G ≃L[ℝ] 
   have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
   rw [hφχ, hφχ, hχ₀ 0 _ h0 (0 : unitInterval).property (Or.inr (Or.inl rfl)),
     hχ₀ 0 _ h0 (1 : unitInterval).property (Or.inr (Or.inr rfl))]
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [FiniteDimensional ℂ G]
-  [Fact (finrank ℝ E = 2 * finrank ℂ G)] [T2Space M] [SigmaCompactSpace M] in
-/-- The change of frame between two frames along a loop is a loop when both frames take the same
-values at the two ends of the loop. -/
-private theorem trans_symm_zero_eq_trans_symm_one {φ φ' : ∀ t, G ≃L[ℝ] TangentSpace I (γ t)}
-    (h : ∀ v, φ 0 v = φ 1 v) (h' : ∀ v, φ' 0 v = φ' 1 v) :
-    (φ' 0).trans (φ 0).symm = (φ' 1).trans (φ 1).symm := by
-  ext v
-  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply, h']
-  apply (φ 0).injective
-  -- `φ 0` and `φ 1` take values in the tangent spaces at `γ 0` and `γ 1`, equal only
-  -- definitionally, so the inverses are cancelled by explicit terms rather than `rw`.
-  exact ((φ 0).apply_symm_apply _).trans ((h _).trans ((φ 1).apply_symm_apply _)).symm
 
 /-- **The recapping law, for frames along the loop.** The statement of
 `TauCeti.Floer.IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChernHom`, for
@@ -183,7 +156,8 @@ private theorem IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChe
     exact hu'.apply_zero_I_smul hχJ' t v
   -- So they differ by the complex-linear maps `k t = φ'(t)⁻¹ ∘ φ(t)`.
   let k : unitInterval → G ≃L[ℂ] G := fun t ↦
-    ((φ t).trans (φ' t).symm).complexOfMapISmul (trans_symm_I_smul hφJ hφJ' t)
+    ((φ t).trans (φ' t).symm).complexOfMapISmul
+      (SmoothAlmostComplexStructure.trans_symm_I_smul (hφJ t) (hφJ' t))
   have hk_apply (t : unitInterval) (v : G) : k t v = (φ' t).symm (φ t v) :=
     ContinuousLinearEquiv.complexOfMapISmul_apply _ _ v
   have hχk (t : unitInterval) (v : G) : χ (0, t) v = χ' (0, t) (k t v) := by

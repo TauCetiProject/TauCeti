@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
+public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.LinearAlgebra.Complex.Orientation
 public import TauCeti.LinearAlgebra.Matrix.Realify
 
@@ -43,47 +44,39 @@ namespace OrthonormalBasis
 
 variable {ι G : Type*} [Fintype ι] [NormedAddCommGroup G] [InnerProductSpace ℂ G]
 
-/-- The indexing of the real basis `(i e, e)` by `ι ⊕ ι`: in the real basis
-`Module.Basis.complexToReal`, the vector `i e_j` sits at `(j, 1)`, which goes to `Sum.inl j`, and
-`e_j` sits at `(j, 0)`, which goes to `Sum.inr j`. -/
-private def imInnerSymplecticBasisIndex (ι : Type*) : ι × Fin 2 ≃ ι ⊕ ι where
-  toFun p := if p.2 = 0 then Sum.inr p.1 else Sum.inl p.1
-  invFun := Sum.elim (fun j ↦ (j, 1)) fun j ↦ (j, 0)
-  left_inv := by rintro ⟨j, k⟩; fin_cases k <;> rfl
-  right_inv := by rintro (j | j) <;> rfl
-
 /-- The real basis `(i e, e)` of a complex inner product space attached to an orthonormal basis
 `e`: `i e_j` at `Sum.inl j` and `e_j` at `Sum.inr j`. It is the real basis underlying `e`
-reindexed by `ι ⊕ ι`, and a symplectic basis of `Im ⟪·, ·⟫_ℂ`
-(`OrthonormalBasis.toMatrix_imInnerSymplecticForm`). -/
+reindexed by `ι ⊕ ι` through the Darboux relabelling `TauCeti.SymplecticForm.darbouxIndexEquiv`
+(`i e_j` sits at `(j, 1)` in `Module.Basis.complexToReal`, and `e_j` at `(j, 0)`), and a symplectic
+basis of `Im ⟪·, ·⟫_ℂ` (`OrthonormalBasis.toMatrix_imInnerSymplecticForm`). -/
 def imInnerSymplecticBasis (e : OrthonormalBasis ι ℂ G) : Basis (ι ⊕ ι) ℝ G :=
-  e.toBasis.complexToReal.reindex (imInnerSymplecticBasisIndex ι)
+  e.toBasis.complexToReal.reindex (SymplecticForm.darbouxIndexEquiv ι)
 
 /-- The vector of the basis `(i e, e)` at `Sum.inl j` is `i e_j`. -/
 @[simp]
 theorem imInnerSymplecticBasis_inl (e : OrthonormalBasis ι ℂ G) (j : ι) :
     e.imInnerSymplecticBasis (Sum.inl j) = Complex.I • e j := by
-  simp [imInnerSymplecticBasis, imInnerSymplecticBasisIndex]
+  simp [imInnerSymplecticBasis]
 
 /-- The vector of the basis `(i e, e)` at `Sum.inr j` is `e_j`. -/
 @[simp]
 theorem imInnerSymplecticBasis_inr (e : OrthonormalBasis ι ℂ G) (j : ι) :
     e.imInnerSymplecticBasis (Sum.inr j) = e j := by
-  simp [imInnerSymplecticBasis, imInnerSymplecticBasisIndex]
+  simp [imInnerSymplecticBasis]
 
 /-- The coordinate of a vector `v` along `i e_j` in the basis `(i e, e)` is the imaginary part of
 its complex coordinate along `e_j`. -/
 @[simp]
 theorem imInnerSymplecticBasis_repr_inl (e : OrthonormalBasis ι ℂ G) (v : G) (j : ι) :
     e.imInnerSymplecticBasis.repr v (Sum.inl j) = (e.repr v j).im := by
-  simp [imInnerSymplecticBasis, imInnerSymplecticBasisIndex]
+  simp [imInnerSymplecticBasis]
 
 /-- The coordinate of a vector `v` along `e_j` in the basis `(i e, e)` is the real part of its
 complex coordinate along `e_j`. -/
 @[simp]
 theorem imInnerSymplecticBasis_repr_inr (e : OrthonormalBasis ι ℂ G) (v : G) (j : ι) :
     e.imInnerSymplecticBasis.repr v (Sum.inr j) = (e.repr v j).re := by
-  simp [imInnerSymplecticBasis, imInnerSymplecticBasisIndex]
+  simp [imInnerSymplecticBasis]
 
 variable [DecidableEq ι]
 

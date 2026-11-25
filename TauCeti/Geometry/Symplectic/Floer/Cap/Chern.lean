@@ -497,12 +497,9 @@ private theorem IsSmoothBasedCap.exists_frame_eq_on_edges_of_frame (hu : IsSmoot
   · -- `A z` is complex linear: both frames are complex linear for `J` at the same point `x`.
     have hJ (w : E) : J (u (1, 0)) w = J (u (ρ z)) w := by
       rw [hρx]
-    have hAI : A z (Complex.I • v) = Complex.I • A z v := by
-      rw [hA_apply, hA_apply, hφJ]
-      apply (φ (ρ z)).injective
-      rw [hφJ]
-      exact ((φ (ρ z)).apply_symm_apply _).trans ((hJ _).trans
-        (congrArg (J (u (ρ z))) ((φ (ρ z)).apply_symm_apply _).symm))
+    have hAI : A z (Complex.I • v) = Complex.I • A z v :=
+      SmoothAlmostComplexStructure.trans_symm_I_smul (x := u (ρ z))
+        (fun w ↦ (hφJ (1, 0) w).trans (hJ _)) (hφJ (ρ z)) v
     rw [ContinuousLinearEquiv.trans_apply, hAI, hφJ]
     -- Both sides are `J (u z)` applied to `φ z (A z v)`.
     rfl
