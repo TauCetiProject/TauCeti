@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
-public import Mathlib.Data.ZMod.QuotientRing
+public import TauCeti.Data.ZMod.QuotientRing
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 
 /-!
@@ -23,7 +23,6 @@ a finitely generated abelian group `M` with `ℤ_[p] ⊗ M` (`PadicInt.tensorAdi
 
 ## Main definitions
 
-* `Int.quotientSpanNatPowEquivZMod p n`: `ℤ ⧸ (p) ^ n ≃+* ZMod (p ^ n)`.
 * `PadicInt.adicCompletionRingEquiv p`: `ℤ_[p] ≃+* AdicCompletion (Ideal.span {(p : ℤ)}) ℤ`.
 * `PadicInt.tensorAdicCompletionEquiv p M`: `ℤ_[p] ⊗[ℤ] M ≃ₗ[ℤ] AdicCompletion (p) M` for a
   finitely generated abelian group `M`.
@@ -32,21 +31,12 @@ a finitely generated abelian group `M` with `ℤ_[p] ⊗ M` (`PadicInt.tensorAdi
 
 * `PadicInt.evalₐ_adicCompletionRingEquiv`: the residue of the image of `x` modulo `p ^ n` is
   `PadicInt.toZModPow n x`.
+* `PadicInt.tensorAdicCompletionEquiv_tmul`: `x ⊗ₜ m` is sent to `x • m`.
 -/
 
 public section
 
 open scoped TensorProduct
-
-namespace Int
-
-/-- The residue rings of the `(p)`-adic filtration of `ℤ`: `ℤ ⧸ (p) ^ n ≃+* ZMod (p ^ n)`. -/
-noncomputable def quotientSpanNatPowEquivZMod (p n : ℕ) :
-    ℤ ⧸ Ideal.span {(p : ℤ)} ^ n ≃+* ZMod (p ^ n) :=
-  (Ideal.quotEquivOfEq (by rw [Ideal.span_singleton_pow, Nat.cast_pow])).trans
-    (Int.quotientSpanNatEquivZMod (p ^ n))
-
-end Int
 
 namespace PadicInt
 
@@ -56,7 +46,7 @@ variable (p : ℕ) [Fact p.Prime]
 
 /-- The reductions `ℤ_[p] → ZMod (p ^ n) ≃ ℤ ⧸ (p) ^ n` are compatible with the transition maps
 `ℤ ⧸ (p) ^ n → ℤ ⧸ (p) ^ m`. -/
-theorem factorPow_comp_toZModPow {m n : ℕ} (hle : m ≤ n) :
+private theorem factorPow_comp_toZModPow {m n : ℕ} (hle : m ≤ n) :
     (Ideal.Quotient.factorPow (Ideal.span {(p : ℤ)}) hle).comp
         (((Int.quotientSpanNatPowEquivZMod p n).symm : ZMod (p ^ n) →+* _).comp (toZModPow n)) =
       ((Int.quotientSpanNatPowEquivZMod p m).symm : ZMod (p ^ m) →+* _).comp (toZModPow m) := by
@@ -65,13 +55,13 @@ theorem factorPow_comp_toZModPow {m n : ℕ} (hle : m ≤ n) :
 
 /-- The map `ℤ_[p] → AdicCompletion (p) ℤ`, from the compatible reductions
 `ℤ_[p] → ZMod (p ^ n) ≃ ℤ ⧸ (p) ^ n`. -/
-noncomputable def toAdicCompletion : ℤ_[p] →+* AdicCompletion (Ideal.span {(p : ℤ)}) ℤ :=
+private noncomputable def toAdicCompletion : ℤ_[p] →+* AdicCompletion (Ideal.span {(p : ℤ)}) ℤ :=
   liftRingHom _ (fun n ↦ ((Int.quotientSpanNatPowEquivZMod p n).symm : ZMod (p ^ n) →+* _).comp
       (toZModPow n)) (factorPow_comp_toZModPow p)
 
 /-- The map `AdicCompletion (p) ℤ → ℤ_[p]`, from the compatible projections
 `AdicCompletion (p) ℤ → ℤ ⧸ (p) ^ n ≃ ZMod (p ^ n)`. -/
-noncomputable def ofAdicCompletion : AdicCompletion (Ideal.span {(p : ℤ)}) ℤ →+* ℤ_[p] :=
+private noncomputable def ofAdicCompletion : AdicCompletion (Ideal.span {(p : ℤ)}) ℤ →+* ℤ_[p] :=
   lift (f := fun n ↦ (Int.quotientSpanNatPowEquivZMod p n : _ →+* ZMod (p ^ n)).comp
       (evalₐ (Ideal.span {(p : ℤ)}) n).toRingHom)
     fun m n hle ↦ by
@@ -81,23 +71,23 @@ noncomputable def ofAdicCompletion : AdicCompletion (Ideal.span {(p : ℤ)}) ℤ
       exact congrArg (fun g : ℤ ⧸ Ideal.span {(p : ℤ)} ^ n →+* ZMod (p ^ m) ↦ g.comp _)
         (Ideal.Quotient.ringHom_ext (RingHom.ext_int _ _))
 
-@[simp]
-theorem evalₐ_toAdicCompletion (n : ℕ) (x : ℤ_[p]) :
+private theorem evalₐ_toAdicCompletion (n : ℕ) (x : ℤ_[p]) :
     evalₐ _ n (toAdicCompletion p x) =
       (Int.quotientSpanNatPowEquivZMod p n).symm (toZModPow n x) :=
   evalₐ_liftRingHom _ _ (factorPow_comp_toZModPow p) n x
 
-@[simp]
-theorem toZModPow_ofAdicCompletion (n : ℕ) (x : AdicCompletion (Ideal.span {(p : ℤ)}) ℤ) :
+private theorem toZModPow_ofAdicCompletion (n : ℕ) (x : AdicCompletion (Ideal.span {(p : ℤ)}) ℤ) :
     toZModPow n (ofAdicCompletion p x) = Int.quotientSpanNatPowEquivZMod p n (evalₐ _ n x) := by
   rw [← RingHom.comp_apply, ofAdicCompletion, lift_spec]
-  rfl
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_comp, RingHom.coe_coe, Function.comp_apply]
 
 /-- **`ℤ_[p]` is the `p`-adic completion of `ℤ`.** -/
 noncomputable def adicCompletionRingEquiv : ℤ_[p] ≃+* AdicCompletion (Ideal.span {(p : ℤ)}) ℤ :=
   RingEquiv.ofRingHom (toAdicCompletion p) (ofAdicCompletion p)
-    (RingHom.ext fun x ↦ ext_evalₐ fun n ↦ by simp)
-    (RingHom.ext fun x ↦ ext_of_toZModPow.1 fun n ↦ by simp)
+    (RingHom.ext fun x ↦ ext_evalₐ fun n ↦ by
+      simp [evalₐ_toAdicCompletion, toZModPow_ofAdicCompletion])
+    (RingHom.ext fun x ↦ ext_of_toZModPow.1 fun n ↦ by
+      simp [evalₐ_toAdicCompletion, toZModPow_ofAdicCompletion])
 
 /-- The residue modulo `(p) ^ n` of the image of `x` in the `p`-adic completion of `ℤ` is the
 residue `toZModPow n x`. -/
@@ -119,5 +109,14 @@ noncomputable def tensorAdicCompletionEquiv (M : Type) [AddCommGroup M] [Module.
     ℤ_[p] ⊗[ℤ] M ≃ₗ[ℤ] AdicCompletion (Ideal.span {(p : ℤ)}) M :=
   ((adicCompletionRingEquiv p).toAddEquiv.toIntLinearEquiv.rTensor M).trans
     (ofTensorProductEquivOfFiniteNoetherian (Ideal.span {(p : ℤ)}) M).toAddEquiv.toIntLinearEquiv
+
+@[simp]
+theorem tensorAdicCompletionEquiv_tmul (M : Type) [AddCommGroup M] [Module.Finite ℤ M]
+    (x : ℤ_[p]) (m : M) :
+    tensorAdicCompletionEquiv p M (x ⊗ₜ m) = adicCompletionRingEquiv p x • of _ M m := by
+  -- The two `ℤ`-module structures on `ℤ_[p] ⊗[ℤ] M` in `tensorAdicCompletionEquiv` agree only
+  -- up to unfolding, so `LinearEquiv.trans_apply` does not rewrite; on a pure tensor the
+  -- equivalence unfolds to Mathlib's `ofTensorProduct` at `adicCompletionRingEquiv p x ⊗ₜ m`.
+  exact ofTensorProduct_tmul _ M (adicCompletionRingEquiv p x) m
 
 end PadicInt
