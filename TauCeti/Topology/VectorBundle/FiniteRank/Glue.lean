@@ -301,7 +301,9 @@ def glue : FiniteRankBundleCore 𝕜 B where
 
 @[simp] theorem rank_glue : D.glue.rank = Q.rank := (rfl)
 
-theorem baseSet_glue (i : B) : D.glue.core.baseSet i = D.baseSet i := (rfl)
+/-- Stated for the whole family of chart domains, so that the left-hand side is simp-normal: the
+applied form `D.glue.core.baseSet i` is rewritten by `VectorBundleCore.baseSet_at` first. -/
+@[simp] theorem baseSet_glue : D.glue.core.baseSet = D.baseSet := (rfl)
 
 @[simp] theorem localTriv_baseSet_glue (i : B) : (D.glue.core.localTriv i).baseSet = D.baseSet i :=
   (rfl)
@@ -325,8 +327,11 @@ def glueHom : D.glue ⟶ Q where
     simp only [ContinuousLinearMap.comp_apply] at h₁ h₂
     exact h₁.trans h₂.symm
 
-theorem operator_glueHom (i k : B) (y : ↥(D.glue.core.baseSet i ∩ Q.core.baseSet k)) :
-    D.glueHom.operator i k y = D.chartToQ i k y := (rfl)
+/-- Stated for the whole chart operator, so that the left-hand side is simp-normal: applied to a
+point, the type of the point is rewritten by `VectorBundleCore.baseSet_at` first. -/
+@[simp] theorem operator_glueHom (i k : B) :
+    D.glueHom.operator i k =
+      ⟨fun y ↦ D.chartToQ i k y, (D.continuousOn_chartToQ i k).domRestrict⟩ := (rfl)
 
 /-- In charts, the comparison with `Q` reads each chart of the glued core in the chart of `Q`. -/
 theorem inChartCoordinates_glueHom (hi : x ∈ D.glue.core.baseSet i)
@@ -337,13 +342,18 @@ theorem inChartCoordinates_glueHom (hi : x ∈ D.glue.core.baseSet i)
 /-- At a point of `V`, the comparison with `Q` is `Φ` after reindexing coordinates. -/
 theorem fiberMap_glueHom_of_mem (hx : x ∈ D.V) :
     D.glueHom.fiberMap x = (Φ.fiberMap x).comp D.rankEquiv.symm.toContinuousLinearMap := by
-  rw [← operator_self, operator_glueHom,
-    D.chartToQ_eq_operator hx (P.mem_baseSet_self x) (Q.mem_baseSet_self x), operator_self]
+  rw [← operator_self]
+  -- The chart operators of `glueHom` are `chartToQ` by definition (`operator_glueHom`).
+  change D.chartToQ x x x = _
+  rw [D.chartToQ_eq_operator hx (P.mem_baseSet_self x) (Q.mem_baseSet_self x), operator_self]
 
 /-- Away from `V`, the comparison with `Q` is the identity. -/
 theorem fiberMap_glueHom_of_notMem (hx : x ∉ D.V) :
     D.glueHom.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin Q.rank → 𝕜) := by
-  rw [← operator_self, operator_glueHom, D.chartToQ_of_notMem hx]
+  rw [← operator_self]
+  -- The chart operators of `glueHom` are `chartToQ` by definition (`operator_glueHom`).
+  change D.chartToQ x x x = _
+  rw [D.chartToQ_of_notMem hx]
   exact Q.coordChange_self x
 
 theorem isInvertible_fiberMap_glueHom (x : B) : (D.glueHom.fiberMap x).IsInvertible := by

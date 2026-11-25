@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Glue
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Geometry.Manifold.ContMDiff.ContinuousLinearMapInverse
+import TauCeti.Geometry.Manifold.ContMDiff.ContinuousLinearEquiv
 
 /-!
 # Real `C^n` regularity of glued finite-rank cores
