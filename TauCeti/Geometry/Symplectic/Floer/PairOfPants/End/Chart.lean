@@ -1333,9 +1333,7 @@ theorem contMDiff_uncurry_positiveEndHamiltonian {E G M : Type*} [NormedAddCommG
     [ChartedSpace G M] {H : Puncture → ℝ → M → ℝ} {q : Puncture} {n : WithTop ℕ∞}
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry (H q))) :
     ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry (positiveEndHamiltonian H q)) :=
-  (contDiff_const.mul contDiff_id).contMDiff.comp
-    (hH.comp (((contDiff_const.mul contDiff_id).contMDiff.comp contMDiff_fst).prodMk
-      contMDiff_snd))
+  contMDiff_uncurry_const_mul_comp_const_mul q.endSign hH
 
 /-- A `1`-periodic loop read with the time `±t` of an end is `1`-periodic. -/
 theorem periodic_comp_endSign_mul {α : Type*} {q : Puncture} {x : ℝ → α} (hx : Periodic x 1) :
