@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Analysis.Complex.BranchLogRoot
+import TauCeti.Analysis.LaplaceTransform.Elementary
 import TauCeti.Analysis.SpecialFunctions.Pow.AtTop
 import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Asymptotics
@@ -94,18 +95,8 @@ namespace TauCeti.LSeries
 /-- On `0 < re z`, the Laplace transform of `t ↦ exp (u * I * t)` on `[0, ∞)` is `(z - u * I)⁻¹`. -/
 theorem integral_Ici_cexp_mul_I_mul_cexp_neg_mul (u : ℝ) {z : ℂ} (hz : 0 < z.re) :
     ∫ t in Ici (0 : ℝ), cexp ((u : ℂ) * I * t) * cexp (-z * t) = (z - (u : ℂ) * I)⁻¹ := by
-  have hcongr : ∀ t : ℝ, cexp ((u : ℂ) * I * t) * cexp (-z * t) =
-      cexp (((u : ℂ) * I - z) * t) := fun t ↦ by
-    rw [← Complex.exp_add]
-    congr 1
-    ring
-  simp_rw [hcongr]
-  have hre : ((u : ℂ) * I - z).re < 0 := by
-    simp only [sub_re, mul_re, ofReal_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_zero,
-      zero_sub, neg_lt_zero]
-    exact hz
-  rw [integral_Ici_eq_integral_Ioi, integral_exp_mul_complex_Ioi hre 0]
-  simp only [ofReal_zero, mul_zero, Complex.exp_zero, neg_div, one_div, ← inv_neg, neg_sub]
+  simpa only [integral_Ici_eq_integral_Ioi, smul_eq_mul, mul_comm] using
+    (TauCeti.hasLaplace_cexp_mul (w := (u : ℂ) * I) (s := z) (by simpa using hz)).integral_eq
 
 /-- For `u ≠ 0`, the Laplace transform of `t ↦ exp (u * I * t)` is analytic at every boundary point
 of `re z = 0` other than `u * I` — in particular at `z = 0`, where its continuation `(z - u * I)⁻¹`
