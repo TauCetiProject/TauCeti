@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Linear
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Coefficients
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Colimit
+public import TauCeti.CategoryTheory.Linear.FunctorCategory
 
 /-!
 # Linearity of Čech cohomology in the coefficient presheaf
@@ -15,8 +16,9 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Colimit
 Let `A` be an `R`-linear category. The Čech complex of a family is linear in the coefficient
 presheaf (`TauCeti.CategoryTheory.cechComplexFunctor_linear`) and so is homology in each degree
 (`HomologicalComplex.homologyFunctor`), so the Čech cohomology `P ↦ Hⁿ(Č(U, P))` of a fixed
-family is an `R`-linear functor of `P`. Colimits of linear diagrams are linear, so the same holds
-for the Čech cohomology of a system of families, the colimit over refinements
+family is an `R`-linear functor of `P`. Since `colim` and the flip of an objectwise linear functor
+are linear (`CategoryTheory.Limits.colim_linear`, `CategoryTheory.Functor.flip_linear`), the same
+holds for the Čech cohomology of a system of families, the colimit over refinements
 (`TauCeti.CategoryTheory.cechCohomology_linear`). In particular, for a sheaf of complex vector
 spaces on a topological space, the map induced on cover-colimit Čech cohomology by `c • φ` is
 `c` times the map induced by `φ`.
@@ -32,8 +34,6 @@ Riemann surface (Forster, proof of Theorem 17.3).
   linear in the coefficient presheaf.
 * `TauCeti.CategoryTheory.cechCohomology_linear`: Čech cohomology for a system of families is
   linear in the coefficient presheaf.
-* `TauCeti.CategoryTheory.cechCohomology_map_smul`: the map induced by `r • α` is `r` times the
-  map induced by `α`.
 
 ## References
 
@@ -67,18 +67,7 @@ variable [HasColimitsOfShape J A]
 /-- **Čech cohomology is linear in the coefficient presheaf.** For an `R`-linear category `A`, the
 Čech cohomology for a system of families, the colimit over the system of the fixed-family Čech
 cohomologies, is an `R`-linear functor of the coefficient presheaf. -/
-instance cechCohomology_linear : (cechCohomology A E hE n).Linear R where
-  map_smul {P Q} α r := by
-    refine cechCohomology_obj_hom_ext fun j ↦ ?_
-    rw [Linear.comp_smul, ← NatTrans.naturality, ← NatTrans.naturality,
-      Functor.map_smul ((cechCohomologyDiagram A E hE n).obj j) r α, Linear.smul_comp]
-
-variable {R}
-
-/-- The map induced on Čech cohomology by a scalar multiple of a morphism of presheaves is the
-scalar multiple of the induced map. -/
-theorem cechCohomology_map_smul {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (r : R) :
-    (cechCohomology A E hE n).map (r • α) = r • (cechCohomology A E hE n).map α :=
-  Functor.map_smul _ r α
+instance cechCohomology_linear : (cechCohomology A E hE n).Linear R :=
+  inferInstanceAs (Functor.Linear R ((cechCohomologyDiagram A E hE n).flip ⋙ colim))
 
 end TauCeti.CategoryTheory
