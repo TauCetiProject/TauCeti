@@ -87,11 +87,8 @@ theorem mapTensorPowIso_inv_naturality {X Y : C} (f : X ⟶ Y) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [mapTensorPowIso_succ_inv, mapTensorPowIso_succ_inv, TauCeti.tensorPowMap_succ,
-      TauCeti.tensorPowMap_succ, Category.assoc, ← μ_natural, ← Category.assoc, ← Category.assoc]
-    congr 1
-    rw [← id_tensorHom, ← id_tensorHom, tensorHom_comp_tensorHom, tensorHom_comp_tensorHom, ih,
-      Category.id_comp, Category.comp_id]
+    simp [mapTensorPowIso_succ_inv, TauCeti.tensorPowMap_succ, ← μ_natural, ← id_tensorHom,
+      ih]
 
 /-- **Naturality** of the comparison `F (X^{⊗n}) ≅ (F X)^{⊗n}` in `X`. -/
 @[reassoc]
@@ -138,12 +135,8 @@ theorem mapTensorPowIso_inv_comp_app_tensorPow (X : C) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [Functor.mapTensorPowIso_succ_inv, Functor.mapTensorPowIso_succ_inv,
-      TauCeti.tensorPowMap_succ, Category.assoc, IsMonoidal.tensor, ← Category.assoc,
-      ← Category.assoc]
-    congr 1
-    rw [← id_tensorHom, ← id_tensorHom, tensorHom_comp_tensorHom, tensorHom_comp_tensorHom, ih,
-      Category.id_comp, Category.comp_id]
+    simp [Functor.mapTensorPowIso_succ_inv, TauCeti.tensorPowMap_succ, IsMonoidal.tensor,
+      ← id_tensorHom, ih]
 
 /-- A monoidal natural transformation `τ : F ⟶ G` commutes with the comparisons
 `F (X^{⊗n}) ≅ (F X)^{⊗n}` and `G (X^{⊗n}) ≅ (G X)^{⊗n}`: on tensor powers it acts as the tensor

@@ -59,6 +59,9 @@ tensor powers, by specified isomorphisms rather than merely up to isomorphism.
   symmetric monoidal, with comparisons computed by `InvertibleSheaf.pullback_η_hom`,
   `InvertibleSheaf.pullback_δ_hom`, `InvertibleSheaf.pullback_ε_hom` and
   `InvertibleSheaf.pullback_μ_hom`;
+* `InvertibleSheaf.pullbackTensorProductIso_hom_comp_tensorProductIsoTensor_hom`: the explicit
+  comparison `InvertibleSheaf.pullbackTensorProductIso` agrees with the inverse tensor comparison
+  of the monoidal structure on pullback;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.isMonoidal_pullbackId_hom` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.isMonoidal_pullbackComp_hom`: the identity and
   composition comparisons of pullback are monoidal.
@@ -238,6 +241,20 @@ theorem pullback_μ_hom (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
     (μ (pullback f) L K).hom = inv (δ (Scheme.Modules.pullback f) L.obj K.obj) :=
   IsIso.eq_inv_of_hom_inv_id (f := δ (Scheme.Modules.pullback f) L.obj K.obj)
     (congrArg (·.hom) (Functor.Monoidal.δ_μ (pullback f) L K))
+
+/-- The comparison `pullbackTensorProductIso f L K : f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`, read through
+`tensorProductIsoTensor` on its target, is the pullback of `tensorProductIsoTensor L K` followed by
+the inverse tensor comparison `δ` of the monoidal structure on line-bundle pullback. -/
+@[reassoc]
+theorem pullbackTensorProductIso_hom_comp_tensorProductIsoTensor_hom (f : X ⟶ Y)
+    (L K : InvertibleSheaf Y) :
+    (pullbackTensorProductIso f L K).hom ≫
+        (tensorProductIsoTensor ((pullback f).obj L) ((pullback f).obj K)).hom =
+      (pullback f).map (tensorProductIsoTensor L K).hom ≫ δ (pullback f) L K := by
+  apply ObjectProperty.hom_ext
+  simp
+  -- The remaining `eqToHom`s are identity transports along the `rfl` equation `pullback_obj_obj`.
+  rfl
 
 /-- The inverse tensor comparison of line-bundle pullback is compatible with the symmetry. -/
 @[reassoc]
