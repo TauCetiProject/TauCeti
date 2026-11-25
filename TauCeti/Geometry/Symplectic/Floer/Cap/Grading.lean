@@ -173,9 +173,8 @@ def conleyZehnderIndex (h : σ.IsNondegenerate)
     SphericalCapClass ω c γ → ℝ :=
   lift (-(Int.castAddHom ℝ).comp (PeriodGroup.degree _ _))
     (RawCap.conleyZehnderIndex h hcap hΦ hΦσ) fun a D ↦ by
-      rw [RawCap.conleyZehnderIndex_vadd, AddMonoidHom.neg_apply, AddMonoidHom.comp_apply,
-        PeriodGroup.degree_apply, SphericalPeriodGroup.chern_ofHomotopyGroup, hc]
-      simp
+      simp [RawCap.conleyZehnderIndex_vadd, PeriodGroup.degree_apply,
+        SphericalPeriodGroup.chern_ofHomotopyGroup, hc]
 
 variable (h : σ.IsNondegenerate) (hc : ∀ a, c (hurewiczIntHom M x 1 a) = h.firstChernHom x a)
   (hcap : ∃ u, IsSmoothBasedCap I γ u)
@@ -196,9 +195,12 @@ theorem conleyZehnderIndex_sub_conleyZehnderIndex (q' q : SphericalCapClass ω c
       -(PeriodGroup.degree _ _ (q' -ᵥ q) : ℝ) := by
   induction q' using induction_on with | h D' =>
   induction q using induction_on with
-  | h D => rw [conleyZehnderIndex_mk, conleyZehnderIndex_mk, mk_vsub_mk, PeriodGroup.degree_apply,
+  | h D =>
+    rw [conleyZehnderIndex_mk, conleyZehnderIndex_mk, mk_vsub_mk, PeriodGroup.degree_apply,
       SphericalPeriodGroup.chern_ofHomotopyGroup, hc,
-      RawCap.conleyZehnderIndex_sub_conleyZehnderIndex, Int.cast_mul, Int.cast_ofNat, neg_mul]
+      RawCap.conleyZehnderIndex_sub_conleyZehnderIndex]
+    push_cast
+    ring
 
 /-- Two cap classes of `γ` have the same Conley–Zehnder index exactly when the class of the period
 group by which they differ has first Chern number zero. -/

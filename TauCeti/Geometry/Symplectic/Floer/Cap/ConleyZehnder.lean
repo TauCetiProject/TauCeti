@@ -105,21 +105,41 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {σ : SmoothTwoForm I M}
   {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G]
+  {W W' : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedAddCommGroup W']
+  [NormedSpace ℝ W'] {ω₀ : SymplecticForm W} {ω' : SymplecticForm W'}
   {x : M} {γ : Ω M x} {u u' : ℝ × ℝ → M}
 
 omit [FiniteDimensional ℝ E] in
 /-- **The restriction of a frame over a cap to the loop.** Let `χ` be a frame of the tangent
 bundle along a smooth based cap `u` of a loop `γ`, continuous into the tangent bundle, which
-carries the symplectic form `Im ⟪·, ·⟫_ℂ` of the model `G` to `σ` along the edge `s = 0`, where
-`u` runs along `γ`. Then `t ↦ χ (0, t)` is a symplectic frame along `γ`. -/
+carries the symplectic form `ω₀` of the model `W` to `σ` along the edge `s = 0`, where `u` runs
+along `γ`. Then `t ↦ χ (0, t)` is a symplectic frame along `γ`. -/
 theorem IsSmoothBasedCap.isSymplecticFrame_apply_zero (hu : IsSmoothBasedCap I γ u)
-    {χ : ∀ z, G ≃L[ℝ] TangentSpace I (u z)}
-    (hχ : Continuous fun q : (ℝ × ℝ) × G ↦ (⟨u q.1, χ q.1 q.2⟩ : TangentBundle I M))
-    (hσ : ∀ (t : unitInterval) v w, σ.eval₂ (u (0, t)) (χ (0, t) v) (χ (0, t) w) = (⟪v, w⟫_ℂ).im) :
-    IsSymplecticFrame σ (imInnerSymplecticForm G) γ fun t ↦ χ (0, t) := by
+    {χ : ∀ z, W ≃L[ℝ] TangentSpace I (u z)}
+    (hχ : Continuous fun q : (ℝ × ℝ) × W ↦ (⟨u q.1, χ q.1 q.2⟩ : TangentBundle I M))
+    (hσ : ∀ (t : unitInterval) v w, σ.eval₂ (u (0, t)) (χ (0, t) v) (χ (0, t) w) = ω₀ v w) :
+    IsSymplecticFrame σ ω₀ γ fun t ↦ χ (0, t) := by
   refine ⟨(hχ.comp ((continuous_const.prodMk (continuous_subtypeVal.comp continuous_fst)).prodMk
     continuous_snd)).congr fun q ↦ TotalSpace.ext (hu.apply_zero q.1) HEq.rfl, fun t v w ↦ ?_⟩
-  rw [imInnerSymplecticForm_apply, ← hσ t v w, hu.apply_zero t]
+  rw [← hσ t v w, hu.apply_zero t]
+
+omit [FiniteDimensional ℝ E] in
+/-- A symplectic frame of the tangent bundle along a smooth based cap `u` of `γ` restricts, along
+the edge `s = 0` where `u` runs along `γ`, to a symplectic frame along `γ`. -/
+theorem IsSmoothBasedCap.isSymplecticFrame_apply_zero_of_isSymplecticFrame
+    (hu : IsSmoothBasedCap I γ u) {χ : ∀ z, W ≃L[ℝ] TangentSpace I (u z)}
+    (hχ : IsSymplecticFrame σ ω₀ u χ) : IsSymplecticFrame σ ω₀ γ fun t ↦ χ (0, t) :=
+  hu.isSymplecticFrame_apply_zero hχ.continuous fun t ↦ hχ.apply_apply (0, t)
+
+omit [FiniteDimensional ℝ E] in
+/-- A frame along `f`, continuous into the tangent bundle, which carries `Im ⟪·, ·⟫_ℂ` on `G` to
+`σ` is a symplectic frame with model `(G, Im ⟪·, ·⟫_ℂ)`. -/
+private theorem isSymplecticFrame_imInnerSymplecticForm {Y : Type*} [TopologicalSpace Y]
+    {f : Y → M} {χ : ∀ y, G ≃L[ℝ] TangentSpace I (f y)}
+    (hχ : Continuous fun q : Y × G ↦ (⟨f q.1, χ q.1 q.2⟩ : TangentBundle I M))
+    (hσ : ∀ y v w, σ.eval₂ (f y) (χ y v) (χ y w) = (⟪v, w⟫_ℂ).im) :
+    IsSymplecticFrame σ (imInnerSymplecticForm G) f χ :=
+  ⟨hχ, fun y v w ↦ by rw [hσ, imInnerSymplecticForm_apply]⟩
 
 variable [FiniteDimensional ℂ G] [Fact (finrank ℝ E = 2 * finrank ℂ G)] [T2Space M]
   [SigmaCompactSpace M] {J : SmoothAlmostComplexStructure I M}
@@ -246,9 +266,10 @@ theorem IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChernHom
       χ (s, t) v = χ (1, 0) v)
     (hχ₀' : ∀ s t : ℝ, s ∈ Icc 0 1 → t ∈ Icc 0 1 → (s = 1 ∨ t = 0 ∨ t = 1) → ∀ v,
       χ' (s, t) v = χ' (1, 0) v)
-    (hσ : ∀ (t : unitInterval) v w, σ.eval₂ (u (0, t)) (χ (0, t) v) (χ (0, t) w) = (⟪v, w⟫_ℂ).im)
+    (hσ : ∀ (t : unitInterval) v w,
+      σ.eval₂ (u (0, t)) (χ (0, t) v) (χ (0, t) w) = imInnerSymplecticForm G v w)
     (hσ' : ∀ (t : unitInterval) v w,
-      σ.eval₂ (u' (0, t)) (χ' (0, t) v) (χ' (0, t) w) = (⟪v, w⟫_ℂ).im)
+      σ.eval₂ (u' (0, t)) (χ' (0, t) v) (χ' (0, t) w) = imInnerSymplecticForm G v w)
     {Φ : ∀ t, TangentSpace I (γ 0) ≃L[ℝ] TangentSpace I (γ t)}
     (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
       (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
@@ -264,20 +285,7 @@ theorem IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChernHom
 
 section SmoothCap
 
-variable {W W' : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
-  [NormedAddCommGroup W'] [NormedSpace ℝ W'] [FiniteDimensional ℝ W']
-  {ω₀ : SymplecticForm W} {ω' : SymplecticForm W'}
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ W] [T2Space M] [SigmaCompactSpace M] in
-/-- A symplectic frame of the tangent bundle along a smooth based cap `u` of `γ` restricts, along
-the edge `s = 0` where `u` runs along `γ`, to a symplectic frame along `γ`. -/
-theorem IsSmoothBasedCap.isSymplecticFrame_loop (hu : IsSmoothBasedCap I γ u)
-    {χ : ∀ z, W ≃L[ℝ] TangentSpace I (u z)} (hχ : IsSymplecticFrame σ ω₀ u χ) :
-    IsSymplecticFrame σ ω₀ γ fun t ↦ χ (0, t) := by
-  refine ⟨(hχ.continuous.comp ((continuous_const.prodMk (continuous_subtypeVal.comp
-    continuous_fst)).prodMk continuous_snd)).congr fun q ↦ TotalSpace.ext (hu.apply_zero q.1)
-    HEq.rfl, fun t v w ↦ ?_⟩
-  rw [← hχ.apply_apply (0, t) v w, hu.apply_zero t]
+variable [FiniteDimensional ℝ W] [FiniteDimensional ℝ W']
 
 omit [T2Space M] [SigmaCompactSpace M] in
 /-- Two symplectic frames with the same model along a map `u` of the plane, both constant on the
@@ -357,28 +365,24 @@ theorem IsSmoothBasedCap.frameConleyZehnderIndex_loop_eq (hu : IsSmoothBasedCap 
     (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
       (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
     (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) :
-    frameConleyZehnderIndex ω' (hu.isSymplecticFrame_loop hχ') hΦ hΦσ =
-      frameConleyZehnderIndex ω₀ (hu.isSymplecticFrame_loop hχ) hΦ hΦσ := by
+    frameConleyZehnderIndex ω' (hu.isSymplecticFrame_apply_zero_of_isSymplecticFrame hχ') hΦ
+        hΦσ =
+      frameConleyZehnderIndex ω₀ (hu.isSymplecticFrame_apply_zero_of_isSymplecticFrame hχ) hΦ
+        hΦσ := by
   -- Move the model of `χ'` to `(W, ω₀)` by a linear symplectomorphism `e : W ≃ W'`.
   have hdim : finrank ℝ W = finrank ℝ W' :=
     ((χ (0, 0)).toLinearEquiv.finrank_eq).trans (χ' (0, 0)).toLinearEquiv.finrank_eq.symm
   obtain ⟨e, he⟩ := SymplecticForm.exists_isSymplectomorphism ω₀ ω' hdim
   have he' : ∀ v w, ω' (e.toContinuousLinearEquiv v) (e.toContinuousLinearEquiv w) = ω₀ v w :=
     he.apply
-  rw [← frameConleyZehnderIndex_trans (hu.isSymplecticFrame_loop hχ') e.toContinuousLinearEquiv
-    he']
+  rw [← frameConleyZehnderIndex_trans (hu.isSymplecticFrame_apply_zero_of_isSymplecticFrame hχ')
+    e.toContinuousLinearEquiv he']
   have hχ'' := hχ'.trans e.toContinuousLinearEquiv he'
   exact frameConleyZehnderIndex_eq_of_eq_on_edges_aux hχ hχ'' hχ₀
-    (fun s t hs ht hst v ↦ hχ₀' s t hs ht hst (e v)) (hu.isSymplecticFrame_loop hχ)
-    (hu.isSymplecticFrame_loop hχ'') (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hΦ hΦσ
-
-/-- The model space `E` of a manifold with a fiberwise nondegenerate two-form has even dimension, so
-`ℂⁿ` with `n = dim E / 2` is a complex model fibre for its tangent bundle. -/
-private theorem fact_finrank_euclideanSpace (h : σ.IsNondegenerate) (x : M) :
-    Fact (finrank ℝ E = 2 * finrank ℂ (EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))) := by
-  refine ⟨?_⟩
-  rw [finrank_euclideanSpace_fin, Nat.two_mul_div_two_of_even]
-  exact (h.exists_compatible.choose.almostComplexStructureAt x).even_finrank_real
+    (fun s t hs ht hst v ↦ hχ₀' s t hs ht hst (e v))
+    (hu.isSymplecticFrame_apply_zero_of_isSymplecticFrame hχ)
+    (hu.isSymplecticFrame_apply_zero_of_isSymplecticFrame hχ'') (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hΦ
+    hΦσ
 
 /-- Along every smooth based cap `u` of a loop at `x`, for a fiberwise nondegenerate two-form `σ`,
 there is a symplectic frame of the tangent bundle with model `(G, Im ⟪·, ·⟫_ℂ)`, for any complex
@@ -392,7 +396,7 @@ private theorem IsSmoothBasedCap.exists_isSymplecticFrame_eq_on_edges (h : σ.Is
         χ (s, t) v = χ (1, 0) v := by
   obtain ⟨χ, hχ, -, hσ, hedge⟩ := hu.exists_unitary_frame_eq_on_edges (K := G)
     h.exists_compatible.choose_spec
-  exact ⟨χ, ⟨hχ, fun z v w ↦ by rw [hσ, imInnerSymplecticForm_apply]⟩, hedge⟩
+  exact ⟨χ, isSymplecticFrame_imInnerSymplecticForm hχ hσ, hedge⟩
 
 /-- The **Conley–Zehnder index of a capped loop with a smooth cap.** For a smooth based cap `u` of
 a loop `γ` in a manifold with a fiberwise nondegenerate two-form `σ`, and a continuous family `Φ` of
@@ -406,9 +410,9 @@ def IsSmoothBasedCap.conleyZehnderIndex (h : σ.IsNondegenerate) (hu : IsSmoothB
       (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
     (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) : ℝ :=
   -- The frame is read with model `ℂⁿ`, `2 n = dim M`.
-  haveI := fact_finrank_euclideanSpace h x
+  haveI : Fact _ := ⟨h.two_mul_finrank_euclideanSpace x⟩
   frameConleyZehnderIndex _
-    (hu.isSymplecticFrame_loop (hu.exists_isSymplecticFrame_eq_on_edges
+    (hu.isSymplecticFrame_apply_zero_of_isSymplecticFrame (hu.exists_isSymplecticFrame_eq_on_edges
       (G := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h).choose_spec.1) hΦ hΦσ
 
 /-- **The index of a smooth cap in any frame.** The Conley–Zehnder index of a capped loop with a
@@ -425,8 +429,9 @@ theorem IsSmoothBasedCap.conleyZehnderIndex_eq (h : σ.IsNondegenerate)
       (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
     (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) :
     hu.conleyZehnderIndex h hΦ hΦσ =
-      frameConleyZehnderIndex ω₀ (hu.isSymplecticFrame_loop hχ) hΦ hΦσ :=
-  have := fact_finrank_euclideanSpace h x
+      frameConleyZehnderIndex ω₀ (hu.isSymplecticFrame_apply_zero_of_isSymplecticFrame hχ) hΦ
+        hΦσ :=
+  have : Fact _ := ⟨h.two_mul_finrank_euclideanSpace x⟩
   have hχ' := (hu.exists_isSymplecticFrame_eq_on_edges
     (G := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h).choose_spec
   hu.frameConleyZehnderIndex_loop_eq hχ hχ'.1 hχ₀ hχ'.2 hΦ hΦσ
@@ -444,18 +449,18 @@ theorem IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom (h : σ
       hu.conleyZehnderIndex h hΦ hΦσ -
         2 * (h.firstChernHom x (hu'.homotopyClass -ᵥ hu.homotopyClass) : ℝ) := by
   let G₀ := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))
-  have : Fact (finrank ℝ E = 2 * finrank ℂ G₀) := fact_finrank_euclideanSpace h x
+  have : Fact (finrank ℝ E = 2 * finrank ℂ G₀) := ⟨h.two_mul_finrank_euclideanSpace x⟩
   -- Read both indices in unitary frames over the caps for one compatible almost complex structure.
   have hJ := h.exists_compatible.choose_spec
   obtain ⟨χ, hχc, hχJ, hσ, hχ₀⟩ := hu.exists_unitary_frame_eq_on_edges (K := G₀) hJ
   obtain ⟨χ', hχc', hχJ', hσ', hχ₀'⟩ := hu'.exists_unitary_frame_eq_on_edges (K := G₀) hJ
   have hχ : IsSymplecticFrame σ (imInnerSymplecticForm G₀) u χ :=
-    ⟨hχc, fun z v w ↦ by rw [hσ, imInnerSymplecticForm_apply]⟩
+    isSymplecticFrame_imInnerSymplecticForm hχc hσ
   have hχ' : IsSymplecticFrame σ (imInnerSymplecticForm G₀) u' χ' :=
-    ⟨hχc', fun z v w ↦ by rw [hσ', imInnerSymplecticForm_apply]⟩
+    isSymplecticFrame_imInnerSymplecticForm hχc' hσ'
   rw [hu.conleyZehnderIndex_eq h hχ hχ₀, hu'.conleyZehnderIndex_eq h hχ' hχ₀']
   exact hu.frameConleyZehnderIndex_eq_sub_two_mul_firstChernHom h hJ.tames hu' hχc hχc' hχJ hχJ'
-    hχ₀ hχ₀' (fun t ↦ hσ (0, t)) (fun t ↦ hσ' (0, t)) hΦ hΦσ
+    hχ₀ hχ₀' (fun t ↦ hχ.apply_apply (0, t)) (fun t ↦ hχ'.apply_apply (0, t)) hΦ hΦσ
 
 end SmoothCap
 
