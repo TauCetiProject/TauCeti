@@ -23,20 +23,24 @@ The map `ψ` is a finite composition of the localized Hamiltonian translations o
 `TauCeti.SymplecticForm.exists_hamiltonianFlow_isNondegenerateFixedPt_iterate`. That theorem
 treats one small ball `B` at a time, and needs every orbit starting in `B` to leave `B` until time
 `k`. Near a point of least period `k` the points `x, φ x, …, φ^[k-1] x` are distinct, so small
-balls around it have this property. Finitely many such balls cover the compact set of points of
-period `k` in `K`, and the translations are applied one ball after the other. Each translation is
-chosen so small in `C¹` that it keeps the conditions that were already obtained or are still
-needed, all of which are `C¹`-open:
+balls around it have this property (`TauCeti.exists_pos_closedBall_subset_and_iterate_notMem`).
+Finitely many such balls cover the compact set of points of period `k` in `K`, and the
+translations are applied one ball after the other. Each translation is chosen so small in `C¹` that
+it keeps the conditions that were already obtained or are still needed, all of which are
+`C¹`-open:
 
 * the periodic points of period `k` in the balls already treated stay nondegenerate, by the
   persistence of nondegenerate periodic points
-  (`IsCompact.exists_pos_forall_isNondegenerateFixedPt_iterate`);
+  (`IsCompact.exists_pos_forall_isNondegenerateFixedPt_iterate`, in the form
+  `TauCeti.eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp`);
 * the orbits starting in each ball still leave it until time `k`;
 * the part of `K` outside the balls still contains no point of period `k`.
 
-The `C¹`-closeness of `g ∘ ψ` to `g` for `ψ` close to the identity is the continuity of
-composition (`IsCompact.exists_pos_forall_differentiableAt_comp_and_norm_sub_le`), and that of the
-iterates is `IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`.
+The last two are instances of `TauCeti.eventually_forall_isNearId_iterate_comp_notMem`. The maps
+close to the identity in `C¹` are `TauCeti.IsNearId`, and the budget of the composite is controlled
+by `TauCeti.IsNearId.comp`. The `C¹`-closeness of `g ∘ ψ` to `g` for `ψ` close to the identity is
+the continuity of composition (`IsCompact.exists_pos_forall_differentiableAt_comp_and_norm_sub_le`),
+and that of the iterates is `IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`.
 
 This is the step of a fixed period in the induction over the periods `1 ≤ k ≤ N` that makes the
 periodic points of an area-preserving surface map nondegenerate up to a cutoff `N`. Points of
@@ -71,147 +75,6 @@ open scoped Manifold NNReal
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- A map `ψ` is `η`-close to the identity in `C¹`: it is differentiable, moves no point by more
-than `η`, and its derivative is within `η` of the identity everywhere. -/
-private def IsNearId (η : ℝ) (ψ : V → V) : Prop :=
-  Differentiable ℝ ψ ∧ (∀ w, ‖ψ w - w‖ ≤ η) ∧
-    ∀ w, ‖fderiv ℝ ψ w - ContinuousLinearMap.id ℝ V‖ ≤ η
-
-omit [FiniteDimensional ℝ V] in
-/-- Closeness to the identity in `C¹` is monotone in the bound. -/
-private theorem IsNearId.mono {η η' : ℝ} {ψ : V → V} (h : IsNearId η ψ) (hη : η ≤ η') :
-    IsNearId η' ψ :=
-  ⟨h.1, fun w ↦ (h.2.1 w).trans hη, fun w ↦ (h.2.2 w).trans hη⟩
-
-omit [FiniteDimensional ℝ V] in
-/-- The composition of a map `a`-close to the identity in `C¹` with one `b`-close to it is
-`(a + b + a * b)`-close to it. -/
-private theorem IsNearId.comp {a b : ℝ} {Ψ ψ : V → V} (hΨ : IsNearId a Ψ) (hψ : IsNearId b ψ) :
-    IsNearId (a + b + a * b) (Ψ ∘ ψ) := by
-  obtain ⟨hΨd, hΨ₀, hΨ₁⟩ := hΨ
-  obtain ⟨hψd, hψ₀, hψ₁⟩ := hψ
-  have ha : 0 ≤ a := (norm_nonneg _).trans (hΨ₀ 0)
-  have hb : 0 ≤ b := (norm_nonneg _).trans (hψ₀ 0)
-  refine ⟨hΨd.comp hψd, fun w ↦ ?_, fun w ↦ ?_⟩
-  · calc ‖Ψ (ψ w) - w‖ ≤ ‖Ψ (ψ w) - ψ w‖ + ‖ψ w - w‖ := norm_sub_le_norm_sub_add_norm_sub ..
-      _ ≤ a + b := add_le_add (hΨ₀ _) (hψ₀ w)
-      _ ≤ a + b + a * b := le_add_of_nonneg_right (mul_nonneg ha hb)
-  · -- `DΨ ∘ Dψ - 1 = (DΨ - 1) ∘ Dψ + (Dψ - 1)`, and `‖Dψ‖ ≤ 1 + b`.
-    set A := fderiv ℝ Ψ (ψ w)
-    set B := fderiv ℝ ψ w
-    have hB : ‖B‖ ≤ 1 + b := by
-      calc ‖B‖ = ‖(B - ContinuousLinearMap.id ℝ V) + ContinuousLinearMap.id ℝ V‖ := by
-            rw [sub_add_cancel]
-        _ ≤ ‖B - ContinuousLinearMap.id ℝ V‖ + ‖ContinuousLinearMap.id ℝ V‖ := norm_add_le _ _
-        _ ≤ b + 1 := add_le_add (hψ₁ w) ContinuousLinearMap.norm_id_le
-        _ = 1 + b := add_comm _ _
-    rw [fderiv_comp w (hΨd _) (hψd w)]
-    calc ‖A.comp B - ContinuousLinearMap.id ℝ V‖
-        = ‖(A - ContinuousLinearMap.id ℝ V).comp B + (B - ContinuousLinearMap.id ℝ V)‖ := by
-          congr 1
-          ext v
-          simp
-      _ ≤ ‖A - ContinuousLinearMap.id ℝ V‖ * ‖B‖ + ‖B - ContinuousLinearMap.id ℝ V‖ :=
-          (norm_add_le _ _).trans (add_le_add_left (ContinuousLinearMap.opNorm_comp_le _ _) _)
-      _ ≤ a * (1 + b) + b := by gcongr; exacts [hΨ₁ _, hψ₁ w]
-      _ = a + b + a * b := by ring
-
-omit [FiniteDimensional ℝ V] in
-/-- A conclusion about the maps `C¹`-close to a `C¹` map `g` on a compact set `U` holds for the
-compositions `g ∘ ψ` with every `ψ` close enough to the identity in `C¹`. -/
-private theorem eventually_forall_isNearId_comp {g : V → V} (hg : ContDiff ℝ 1 g) {U : Set V}
-    (hU : IsCompact U) {Q : (V → V) → Prop}
-    (h : ∃ δ > 0, ∀ g' : V → V, (∀ y ∈ U, DifferentiableAt ℝ g' y) →
-      (∀ y ∈ U, ‖g' y - g y‖ ≤ δ) → (∀ y ∈ U, ‖fderiv ℝ g' y - fderiv ℝ g y‖ ≤ δ) → Q g') :
-    ∀ᶠ η in 𝓝[>] (0 : ℝ), ∀ ψ, IsNearId η ψ → Q (g ∘ ψ) := by
-  obtain ⟨δ, hδ, hQ⟩ := h
-  obtain ⟨η₀, hη₀, hcomp⟩ := hU.exists_pos_forall_differentiableAt_comp_and_norm_sub_le
-    (f₁ := id) (f₂ := g) (fun x _ ↦ differentiableAt_id)
-    ((continuousOn_const (c := ContinuousLinearMap.id ℝ V)).congr fun _ _ ↦ fderiv_id)
-    (fun y _ ↦ hg.differentiable one_ne_zero y)
-    (fun y _ ↦ (hg.continuous_fderiv one_ne_zero).continuousAt) hδ univ_mem
-  filter_upwards [Ioo_mem_nhdsGT hη₀] with η hη ψ ⟨hψd, hψ₀, hψ₁⟩
-  have H := hcomp ψ g (fun x _ ↦ hψd x) (fun x _ ↦ (hψ₀ x).trans hη.2.le)
-    (fun x _ ↦ by rw [fderiv_id]; exact (hψ₁ x).trans hη.2.le)
-    (fun y _ ↦ hg.differentiable one_ne_zero y) (fun y _ ↦ by simp [hη₀.le])
-    (fun y _ ↦ by simp [hη₀.le])
-  exact hQ _ (fun y hy ↦ (H y hy).1) (fun y hy ↦ (H y hy).2.1) fun y hy ↦ (H y hy).2.2
-
-/-- A compact neighbourhood of the first `l` points of the orbits of a compact set under a
-continuous map. -/
-private theorem exists_isCompact_mem_nhdsSet_iUnion_iterate_image {g : V → V} (hg : Continuous g)
-    {C : Set V} (hC : IsCompact C) (l : ℕ) :
-    ∃ U, IsCompact U ∧ U ∈ 𝓝ˢ (⋃ j < l, g^[j] '' C) := by
-  have hO : IsCompact (⋃ j < l, g^[j] '' C) :=
-    (finite_lt_nat l).isCompact_biUnion fun j _ ↦ hC.image (hg.iterate j)
-  obtain ⟨δ, hδ, hU⟩ := hO.exists_isCompact_cthickening
-  exact ⟨_, hU, cthickening_mem_nhdsSet _ hδ⟩
-
-/-- **Avoidance is `C¹`-open.** If the `l`-th iterate of a `C¹` map `g` sends every point `y` of a
-compact set `C` to a point `z` with `(y, z)` off a closed set `T`, then so does the `l`-th iterate
-of `g ∘ ψ` for every `ψ` close enough to the identity in `C¹`. -/
-private theorem eventually_forall_isNearId_iterate_comp_notMem {g : V → V} (hg : ContDiff ℝ 1 g)
-    {C : Set V} (hC : IsCompact C) (l : ℕ) {T : Set (V × V)} (hT : IsClosed T)
-    (h : ∀ y ∈ C, (y, g^[l] y) ∉ T) :
-    ∀ᶠ η in 𝓝[>] (0 : ℝ), ∀ ψ, IsNearId η ψ → ∀ y ∈ C, (y, (g ∘ ψ)^[l] y) ∉ T := by
-  -- The graph of `g^[l]` over `C` is compact and avoids `T`, hence so does a neighbourhood of it.
-  have hG : IsCompact ((fun y ↦ (y, g^[l] y)) '' C) :=
-    hC.image (continuous_id.prodMk (hg.continuous.iterate l))
-  obtain ⟨θ, hθ, hθT⟩ := hG.exists_cthickening_subset_open hT.isOpen_compl
-    (by rintro _ ⟨y, hy, rfl⟩; exact h y hy)
-  obtain ⟨U, hU, hUn⟩ := exists_isCompact_mem_nhdsSet_iUnion_iterate_image hg.continuous hC l
-  obtain ⟨δ, hδ, hit⟩ := hC.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le
-    (fun _ _ _ _ ↦ hg.contDiffAt) hθ hUn
-  refine eventually_forall_isNearId_comp (Q := fun g' ↦ ∀ y ∈ C, (y, g'^[l] y) ∉ T) hg hU
-    ⟨δ, hδ, fun g' hg' hg'₀ hg'₁ y hy ↦ hθT ?_⟩
-  refine mem_cthickening_of_dist_le _ (y, g^[l] y) θ _ (mem_image_of_mem _ hy) ?_
-  simpa [Prod.dist_eq, dist_eq_norm, hθ.le] using (hit g' hg' hg'₀ hg'₁ y hy).2.1
-
-/-- **Nondegeneracy is `C¹`-open.** If the points of period `k` of a `C¹` map `g` in a compact set
-`L` are nondegenerate, so are those of `g ∘ ψ` for every `ψ` close enough to the identity
-in `C¹`. -/
-private theorem eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp {g : V → V}
-    (hg : ContDiff ℝ 1 g) {L : Set V} (hL : IsCompact L) (k : ℕ)
-    (hnd : ∀ x ∈ L, IsFixedPt g^[k] x → IsNondegenerateFixedPt 𝓘(ℝ, V) g^[k] x) :
-    ∀ᶠ η in 𝓝[>] (0 : ℝ), ∀ ψ, IsNearId η ψ →
-      ∀ x ∈ L, IsFixedPt (g ∘ ψ)^[k] x → IsNondegenerateFixedPt 𝓘(ℝ, V) (g ∘ ψ)^[k] x := by
-  obtain ⟨U, hU, hUn⟩ := exists_isCompact_mem_nhdsSet_iUnion_iterate_image hg.continuous hL k
-  exact eventually_forall_isNearId_comp hg hU
-    (hL.exists_pos_forall_isNondegenerateFixedPt_iterate (fun _ _ _ _ ↦ hg.contDiffAt) hnd hUn)
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- Around a point `x ∈ W` whose first `k - 1` iterates differ from it, the closed balls of small
-enough radius `2 r` lie in `W` and are left by every orbit starting in them until time `k`. -/
-private theorem exists_pos_closedBall_subset_and_iterate_notMem {φ : V → V} (hφ : Continuous φ)
-    {W : Set V} (hW : IsOpen W) {x : V} (hx : x ∈ W) {k : ℕ}
-    (hmin : ∀ j, 0 < j → j < k → φ^[j] x ≠ x) :
-    ∃ r > 0, closedBall x (2 * r) ⊆ W ∧
-      ∀ y ∈ closedBall x (2 * r), ∀ j, 0 < j → j < k → φ^[j] y ∉ closedBall x (2 * r) := by
-  suffices h : ∀ᶠ r in 𝓝[>] (0 : ℝ), closedBall x (2 * r) ⊆ W ∧
-      ∀ j ∈ Finset.range k, 0 < j → ∀ y ∈ closedBall x (2 * r), φ^[j] y ∉ closedBall x (2 * r) by
-    obtain ⟨r, ⟨hrW, hr⟩, hr0⟩ := (h.and self_mem_nhdsWithin).exists
-    exact ⟨r, hr0, hrW, fun y hy j hj hjk ↦ hr j (Finset.mem_range.2 hjk) hj y hy⟩
-  obtain ⟨ρ, hρ, hρW⟩ := Metric.isOpen_iff.1 hW x hx
-  refine Filter.Eventually.and ?_ ((Finset.eventually_all _).2 fun j hj ↦ ?_)
-  · filter_upwards [Ioo_mem_nhdsGT (half_pos hρ)] with r hr
-    exact (closedBall_subset_ball (by linarith [hr.2])).trans hρW
-  · -- With `d = dist (φ^[j] x) x > 0`, take `2 r < d / 2` and `2 r` below a radius on which
-    -- `φ^[j]` moves points by less than `d / 2`.
-    by_cases hj0 : 0 < j
-    · have hd : 0 < dist (φ^[j] x) x :=
-        dist_pos.2 (hmin j hj0 (Finset.mem_range.1 hj))
-      obtain ⟨ρ', hρ', hcont⟩ := Metric.continuousAt_iff.1 (hφ.iterate j).continuousAt
-        (dist (φ^[j] x) x / 2) (half_pos hd)
-      filter_upwards [Ioo_mem_nhdsGT (lt_min (half_pos hρ') (div_pos hd four_pos))] with r hr _ y hy
-      rw [mem_closedBall] at hy ⊢
-      have hr₁ := hr.2.trans_le (min_le_left _ _)
-      have hr₂ := hr.2.trans_le (min_le_right _ _)
-      have h := hcont (hy.trans_lt (by linarith))
-      have := dist_triangle (φ^[j] x) (φ^[j] y) x
-      rw [dist_comm] at h
-      linarith
-    · exact Eventually.of_forall fun r h ↦ absurd h hj0
-
 /-- One ball of the induction: around a point `a` whose ball `closedBall a (2 * r)` is left by
 every orbit of `g` starting in it until time `k`, a localized Hamiltonian translation `η`-close to
 the identity in `C¹` makes the points of period `k` in `closedBall a r` nondegenerate. -/
@@ -221,7 +84,7 @@ private theorem exists_isNearId_isNondegenerateFixedPt_iterate_comp_closedBall
     (hret : ∀ y ∈ closedBall a (2 * r), ∀ j, 0 < j → j < k → g^[j] y ∉ closedBall a (2 * r))
     {η : ℝ} (hη : 0 < η) :
     ∃ ψ : V → V, ContDiff ℝ (⊤ : ℕ∞) ψ ∧
-      (∃ S, IsCompact S ∧ S ⊆ ball a (2 * r) ∧ ∀ w ∉ S, ψ w = w) ∧ IsNearId η ψ ∧
+      (∃ S, IsCompact S ∧ S ⊆ ball a (2 * r) ∧ ∀ w ∉ S, ψ w = w) ∧ IsNearId ℝ η ψ ∧
       (∀ w u v, ω (fderiv ℝ ψ w u) (fderiv ℝ ψ w v) = ω u v) ∧
       ∀ y ∈ closedBall a r, IsFixedPt (g ∘ ψ)^[k] y →
         IsNondegenerateFixedPt 𝓘(ℝ, V) (g ∘ ψ)^[k] y := by
@@ -248,7 +111,7 @@ in `K'`, and only nondegenerate points of period `k` in the balls of `s`. -/
 private def IsPartialPerturbation (ω : SymplecticForm V) (φ : V → V) (k : ℕ) (W : Set V)
     (t : Finset V) (r : V → ℝ) (K' : Set V) (c : ℝ) (s : Finset V) (Ψ : V → V) : Prop :=
   ContDiff ℝ (⊤ : ℕ∞) Ψ ∧ (∃ S, IsCompact S ∧ S ⊆ W ∧ ∀ w ∉ S, Ψ w = w) ∧
-    IsNearId (c * s.card) Ψ ∧ (∀ w u v, ω (fderiv ℝ Ψ w u) (fderiv ℝ Ψ w v) = ω u v) ∧
+    IsNearId ℝ (c * s.card) Ψ ∧ (∀ w u v, ω (fderiv ℝ Ψ w u) (fderiv ℝ Ψ w v) = ω u v) ∧
     (∀ x ∈ t, ∀ y ∈ closedBall x (2 * r x), ∀ j, 0 < j → j < k →
       (φ ∘ Ψ)^[j] y ∉ closedBall x (2 * r x)) ∧
     (∀ y ∈ K', ¬IsFixedPt (φ ∘ Ψ)^[k] y) ∧
@@ -298,7 +161,7 @@ private theorem IsPartialPerturbation.exists_insert {ω : SymplecticForm V} {φ 
     simp [hSψ w hw.1, hSΨ w hw.2]
   · rw [Finset.card_insert_of_notMem has, Nat.cast_add, Nat.cast_one]
     nlinarith [mul_le_mul_of_nonneg_right hcs hη.le]
-  · rw [fderiv_comp w (hΨs.differentiable (by simp) _) (hψn.1 w)]
+  · rw [fderiv_comp w (hΨs.differentiable (by simp) _) (hψn.differentiable w)]
     simp [hΨω, hψω]
   · rcases Finset.mem_insert.1 hx with rfl | hx
     · exact hψnd y hy hfix
@@ -346,12 +209,13 @@ theorem exists_isNondegenerateFixedPt_iterate_comp (ω : SymplecticForm V) {φ :
   obtain ⟨Ψ, hΨs, hS, hΨn, hΨω, -, hK'fix, hnd⟩ : ∃ Ψ, IsPartialPerturbation ω φ k W t r K' c t Ψ :=
     Finset.induction_on' (motive := fun s ↦ ∃ Ψ, IsPartialPerturbation ω φ k W t r K' c s Ψ) t
       ⟨id, contDiff_id, ⟨∅, isCompact_empty, empty_subset _, fun _ _ ↦ rfl⟩,
-        ⟨differentiable_id, by simp, by simp [fderiv_id]⟩, by simp [fderiv_id],
+        isNearId_id (by simp), by simp [fderiv_id],
         fun x hx y hy j hj hjk ↦ hret x (htP x hx) y hy j hj hjk,
         fun y hy hfix ↦ hy.2 (hPt ⟨hy.1, hfix⟩), fun x hx ↦ absurd hx (Finset.notMem_empty x)⟩
       fun _ _ ha hs has ⟨Ψ, hΨ⟩ ↦ hΨ.exists_insert hφ hk (fun x hx ↦ hr x (htP x hx))
         (fun x hx ↦ hrW x (htP x hx)) hK' hc hε hcε ha hs has
-  refine ⟨Ψ, hΨs, hS, fun w ↦ (hΨn.2.1 w).trans hcε, fun w ↦ (hΨn.2.2 w).trans hcε, hΨω,
+  refine ⟨Ψ, hΨs, hS, fun w ↦ (hΨn.norm_sub_le w).trans hcε,
+    fun w ↦ (hΨn.norm_fderiv_sub_id_le w).trans hcε, hΨω,
     fun x hx hfix ↦ ?_⟩
   by_cases hxb : x ∈ ⋃ y ∈ t, ball y (r y)
   · obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 hxb
