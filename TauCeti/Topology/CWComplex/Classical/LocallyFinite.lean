@@ -118,7 +118,7 @@ instance LocallyFinite.weaklyLocallyCompactSpace [LocallyFinite C] :
         RelCWComplex.isClosed.isProperMap_subtypeVal.isCompact_preimage
           RelCWComplex.isCompact_closedCell,
       Filter.mem_of_superset hVx fun y hyV ↦ ?_⟩
-    obtain ⟨n, i, hyi⟩ := mem_iUnion₂.1 ((CWComplex.union (C := C)).symm.subset y.2)
+    obtain ⟨n, i, hyi⟩ := mem_iUnion₂.1 ((CWComplex.union (C := C)).symm.subset y.property)
     exact mem_biUnion (x := (⟨n, i⟩ : Σ m, cell C m)) (hVfin.mem_toFinset.2 ⟨y, hyi, hyV⟩) hyi
 
 /-- Every subcomplex of a locally finite Hausdorff CW complex is locally finite. -/
@@ -127,7 +127,7 @@ instance LocallyFinite.subcomplex [LocallyFinite C] (E : Subcomplex C) :
   locallyFinite_closedCell := by
     refine ((LocallyFinite.locallyFinite_closedCell (C := C)).preimage_continuous
       (ContinuousMap.inclusion E.subset_complex).continuous).comp_injective
-      (g := fun p : Σ n, cell (E : Set X) n ↦ (⟨p.1, p.2.1⟩ : Σ n, cell C n)) ?_
+      (g := fun p : Σ n, cell (E : Set X) n ↦ (⟨p.1, p.2.val⟩ : Σ n, cell C n)) ?_
     rintro ⟨n₁, i₁, _⟩ ⟨n₂, i₂, _⟩ h
     obtain rfl : n₁ = n₂ := congrArg Sigma.fst h
     obtain rfl : i₁ = i₂ := eq_of_heq (Sigma.ext_iff.1 h).2
@@ -172,11 +172,11 @@ instance StronglyLocallyFinite.locallyFinite [StronglyLocallyFinite C] : Locally
     have hcell_fin (k : ι) : {p : Σ n, cell C n | p.2 ∈ (E k).I p.1}.Finite := by
       have := hE_fin k
       have := RelCWComplex.finite_cells_of_finite (C := (E k : Set X))
-      exact (finite_range fun q : Σ n, cell (E k : Set X) n ↦ (⟨q.1, q.2.1⟩ : Σ n, cell C n)).subset
-        fun ⟨n, j⟩ hj ↦ ⟨⟨n, ⟨j, hj⟩⟩, rfl⟩
+      exact (finite_range fun q : Σ n, cell (E k : Set X) n ↦
+        (⟨q.1, q.2.val⟩ : Σ n, cell C n)).subset fun ⟨n, j⟩ hj ↦ ⟨⟨n, ⟨j, hj⟩⟩, rfl⟩
     refine ⟨Subtype.val ⁻¹' U, hW_open.mem_nhds hxW,
       (hV_fin.biUnion fun k _ ↦ hcell_fin k).subset fun ⟨n, j⟩ ⟨z, hzc, hzU⟩ ↦ ?_⟩
-    have hne : (closedCell n j ∩ U).Nonempty := ⟨z.1, hzc, hzU⟩
+    have hne : (closedCell n j ∩ U).Nonempty := ⟨z.val, hzc, hzU⟩
     rw [← RelCWComplex.closure_openCell_eq_closedCell,
       closure_inter_open_nonempty_iff hU_open] at hne
     obtain ⟨y, hyo, hyU⟩ := hne
@@ -198,11 +198,11 @@ private theorem finite_nonempty_inter_cellSubcomplex [LocallyFinite C] (n : ℕ)
     have hclosed_fin : {i : cell C n | (closedCell n i ∩ K).Nonempty}.Finite :=
       (LocallyFinite.finite_nonempty_inter_closedCell (C := C) hK).preimage hinj.injOn
     have hH_fin : (⋃ m : Fin n,
-        ⋃ j ∈ {j : cell C m.1 | ((cellSubcomplex m.1 j : Set X) ∩ K).Nonempty},
-        {i : cell C n | (closedCell n i ∩ closedCell m.1 j).Nonempty}).Finite :=
-      finite_iUnion fun m ↦ (ih m.1 m.2 hK).biUnion fun j _ ↦
+        ⋃ j ∈ {j : cell C m.val | ((cellSubcomplex m.val j : Set X) ∩ K).Nonempty},
+        {i : cell C n | (closedCell n i ∩ closedCell m.val j).Nonempty}).Finite :=
+      finite_iUnion fun m ↦ (ih m.val m.isLt hK).biUnion fun j _ ↦
         (LocallyFinite.finite_nonempty_inter_closedCell (C := C)
-          (RelCWComplex.isCompact_closedCell (n := m.1) (i := j))).preimage hinj.injOn
+          (RelCWComplex.isCompact_closedCell (n := m.val) (i := j))).preimage hinj.injOn
     refine (hH_fin.union hclosed_fin).subset fun i ⟨x, hxi, hxK⟩ ↦ ?_
     rcases mem_cellSubcomplex_iff.1 hxi with htop | ⟨m, hmn, j, ⟨y, hyf, hyo⟩, hxj⟩
     · exact .inr ⟨x, htop, hxK⟩
@@ -223,12 +223,12 @@ theorem LocallyFinite.stronglyLocallyFinite_of_finiteDimensional [LocallyFinite 
           (closedCell_subset_cellSubcomplex n i).trans
             (subset_iUnion (fun p : Σ m, cell C m ↦ (cellSubcomplex p.1 p.2 : Set X)) ⟨n, i⟩)))
     · obtain ⟨K, hKc, hKx⟩ := exists_compact_mem_nhds x
-      have hKX : IsCompact ((Subtype.val : C → X) '' K) := hKc.image continuous_subtype_val
+      have hKX : IsCompact ((Subtype.val : C → X) '' K) := hKc.image continuous_subtypeVal
       refine ⟨K, hKx, (finite_iUnion fun m : Fin N ↦
-        (finite_nonempty_inter_cellSubcomplex m.1 hKX).image (Sigma.mk m.1)).subset
+        (finite_nonempty_inter_cellSubcomplex m.val hKX).image (Sigma.mk m.val)).subset
         fun ⟨n, i⟩ ⟨z, hzc, hzK⟩ ↦ ?_⟩
       have hn : n < N := by_contra fun h ↦ (hN n (Nat.le_of_not_lt h)).false i
-      exact mem_iUnion.2 ⟨⟨n, hn⟩, i, ⟨z.1, hzc, mem_image_of_mem Subtype.val hzK⟩, rfl⟩
+      exact mem_iUnion.2 ⟨⟨n, hn⟩, i, ⟨z.val, hzc, mem_image_of_mem Subtype.val hzK⟩, rfl⟩
 
 /-- **On finite-dimensional Hausdorff CW complexes, strong local finiteness and local finiteness
 coincide.** -/

@@ -307,7 +307,7 @@ theorem asDGCategoryHomEquiv_symm_mem_piece {X Y : 𝒞.AsDGCategory h₃ he₀ 
   rw [DGCategory.grading_piece] at hf
   obtain ⟨f, rfl⟩ := hf
   rw [asDGCategoryHomEquiv_symm_homLof]
-  exact (dgHomEquiv h₃ he₀ hel her X Y p f).2
+  exact (dgHomEquiv h₃ he₀ hel her X Y p f).property
 
 /-- `TauCeti.AInfinityCategory.asDGCategoryHomEquiv` commutes with the differentials `m₁`. -/
 @[simp]

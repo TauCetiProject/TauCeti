@@ -8,7 +8,10 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
-import TauCeti.NumberTheory.NumberField.LocalGlobal.Separable
+public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosure
+public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
+import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 
 /-!
 # Decomposition groups inside the image of a local absolute Galois group
@@ -46,6 +49,9 @@ Galois cohomology.
 * `AlgHom.exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap`: the case
   `F = K`, for some embedding `τ : Kˢ →ₐ[K] K_vˢ`, every element of the decomposition group of `w`
   is the restriction to `E` of the image of an element of `G_{K_v}`.
+* `IntermediateField.absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport`:
+  away from a finite subextension's ramified support, local inertia fixes that subextension
+  along every embedding of separable closures.
 
 ## References
 
@@ -80,8 +86,8 @@ theorem exists_absoluteGaloisGroupMap_apply_eq_of_mem_stabilizer
       ∀ σ ∈ MulAction.stabilizer Gal(E/F) w.asIdeal,
         ∃ g : AbsoluteGaloisGroup (v.adicCompletion K),
           ∀ x, absoluteGaloisGroupMap τ g (ι x) = ι (σ x) := by
-  have := HeightOneSpectrum.adicCompletion_isSeparable v u
-  have := HeightOneSpectrum.adicCompletion_isSeparable u w
+  have := HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable (K := K) (L := F) v u
+  have := HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable (K := F) (L := E) u w
   -- Embed `F_u` in `K_vˢ` over `K_v`, making `K_vˢ` a separable closure of `F_u`, and then embed
   -- `E_w` in it over `F_u`.
   let κ : u.adicCompletion F →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K) :=
@@ -157,3 +163,40 @@ theorem exists_stabilizer_le_range_restrictNormalHom_comp_absoluteGaloisGroupMap
   exact ⟨τ, fun σ hσ ↦ (hτ σ hσ).imp fun g hg ↦ ι.restrictNormalHom_eq_iff.2 hg⟩
 
 end AlgHom
+
+namespace IntermediateField
+
+open TauCeti
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- Away from the ramified support of a finite subextension of `Kˢ/K`, every local inertia
+element fixes that subextension, for any embedding of separable closures. -/
+theorem absoluteGaloisGroupMap_mem_fixingSubgroup_of_notMem_ramifiedSupport
+    (E : IntermediateField K (SeparableClosure K)) [NumberField E]
+    (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ NumberField.ramifiedSupport K E)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    {g : AbsoluteGaloisGroup (v.adicCompletion K)}
+    (hg : g ∈ separableClosureInertiaSubgroup (v.adicCompletion K)) :
+    absoluteGaloisGroupMap τ g ∈ E.fixingSubgroup := by
+  obtain ⟨w, hw, τ', hτ⟩ := exists_algHom_adicCompletion_eq E v
+    (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K)))
+  -- Register the instance that `w` lies over `v` for the unramifiedness results below.
+  have hLiesOver : w.asIdeal.LiesOver v.asIdeal := hw
+  have : Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal :=
+    NumberField.isUnramifiedAway_ramifiedSupport v hv w.asIdeal
+  have : IsUnramified (v.adicCompletion K) (w.adicCompletion E) :=
+    HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt v w
+  have hrange : τ'.fieldRange ≤
+      maximalUnramifiedExtension (v.adicCompletion K)
+        (SeparableClosure (v.adicCompletion K)) := by
+    rw [τ'.fieldRange_eq_unramifiedExtension]
+    exact unramifiedExtension_le_maximalUnramifiedExtension _ _ _
+  have hg' : g ∈ τ'.fieldRange.fixingSubgroup :=
+    IntermediateField.fixingSubgroup_antitone hrange
+      ((separableClosureInertiaSubgroup_eq_fixingSubgroup _).le hg)
+  have hle := E.fixingSubgroup_le_comap_absoluteGaloisGroupMap τ'.fieldRange τ
+    (fun x hx ↦ ⟨algebraMap E (w.adicCompletion E) ⟨x, hx⟩, (hτ ⟨x, hx⟩).symm⟩)
+  exact hle hg'
+
+end IntermediateField

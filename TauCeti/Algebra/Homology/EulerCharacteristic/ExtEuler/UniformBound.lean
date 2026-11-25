@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.RingTheory.HopkinsLevitzki
-public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Basic
 
 /-!

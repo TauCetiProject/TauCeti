@@ -42,8 +42,8 @@ theorem tensorLift_mem {A σ ι : Type*} [CommRing A] [SetLike σ A]
     (e : ℕ →+ ι)
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* A) ×
       (MvPolynomial ℕ+ LazardRing →+* A) // p.1.comp rightUnit = p.2.comp C})
-    (h₁ : ∀ ⦃n⦄ ⦃x⦄, x ∈ coordinateGrading n → p.1.1 x ∈ 𝒜 (e n))
-    (h₂ : ∀ ⦃n⦄ ⦃x⦄, x ∈ coordinateGrading n → p.1.2 x ∈ 𝒜 (e n))
+    (h₁ : ∀ ⦃n⦄ ⦃x⦄, x ∈ coordinateGrading n → p.val.1 x ∈ 𝒜 (e n))
+    (h₂ : ∀ ⦃n⦄ ⦃x⦄, x ∈ coordinateGrading n → p.val.2 x ∈ 𝒜 (e n))
     {n : ℕ} {x : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)}
     (hx : x ∈ coordinateTensorGrading n) : tensorLift p x ∈ 𝒜 (e n) :=
   (coordinateTensorGrading_map_mem_iff 𝒜 e (tensorLift p)).mpr

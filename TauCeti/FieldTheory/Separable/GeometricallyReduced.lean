@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.SeparablyGenerated
+public import Mathlib.FieldTheory.TranscendentalSeparable
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 import Mathlib.Algebra.CharP.Algebra
+import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 import Mathlib.RingTheory.Flat.Basic
+import Mathlib.RingTheory.TensorProduct.MvPolynomial
+import TauCeti.RingTheory.AlgebraicIndependent.BaseChange
+import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
-# Geometrically reduced field extensions are separably generated
+# Geometrically reduced field extensions and separable generation
 
 Let `k` be a field of exponential characteristic `p` and `A` a commutative `k`-algebra which is
 geometrically reduced, i.e. `AlgebraicClosure k ⊗[k] A` is reduced. Then the `p`-th powers of
@@ -22,10 +26,18 @@ linearly independent over the algebraic closure, every `dᵢ`, hence every `cᵢ
 
 For a finitely generated field extension `K / k`, Mathlib's
 `exists_isTranscendenceBasis_and_isSeparable_of_linearIndepOn_pow_of_essFiniteType` turns this
-linear independence into a finite separating transcendence basis. Hence a finitely generated
-geometrically reduced field extension is separably generated. Over a perfect field every finitely
-generated extension is separably generated, so the content lies in positive characteristic over
-an imperfect field.
+linear independence into a finite separating transcendence basis. Conversely, any separably
+generated field extension `K / k` (`Algebra.IsSeparablyGenerated k K`, not necessarily finitely
+generated) keeps every reduced `k`-algebra `A` reduced under `K ⊗[k] A`: the pure transcendental
+subextension `k(s)` is the fraction field of a polynomial ring `k[s]`, whose tensor product with
+`A` is `A[s]`, and `K / k(s)` is separable algebraic. Passing to finitely generated subextensions
+identifies geometric reducedness of an arbitrary field extension `K / k` with
+`Algebra.IsTranscendentalSeparable k K`. Consequently:
+
+* For any geometrically reduced field extension `K / k` and any reduced `k`-algebra `A`,
+  `K ⊗[k] A` is reduced.
+* Geometric reducedness is transitive in towers of field extensions `k → E → F`
+  (`Algebra.IsGeometricallyReduced.trans`).
 
 Reducedness after extending scalars to *any* algebraically closed field `L` suffices
 (`Algebra.IsGeometricallyReduced.of_isReduced_tensorProduct`, in
@@ -38,10 +50,22 @@ Reducedness after extending scalars to *any* algebraically closed field `L` suff
   `p`-th powers of `k`-linearly independent elements are `k`-linearly independent.
 * `TauCeti.exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced`: a finitely
   generated geometrically reduced field extension has a finite separating transcendence basis.
+* `TauCeti.isReduced_tensorProduct_of_isSeparablyGenerated`,
+  `TauCeti.isReduced_tensorProduct_of_isTranscendentalSeparable`,
+  `TauCeti.isReduced_tensorProduct_of_isGeometricallyReduced`: tensoring a reduced `k`-algebra with
+  a separably generated, transcendentally separable, or geometrically reduced field extension over
+  `k` yields a reduced ring.
+* `TauCeti.isGeometricallyReduced_iff_isSeparablyGenerated`: for a finitely generated field
+  extension `K / k`, `Algebra.IsGeometricallyReduced k K ↔ Algebra.IsSeparablyGenerated k K`.
+* `TauCeti.isGeometricallyReduced_iff_isTranscendentalSeparable`: for an arbitrary field extension
+  `K / k`, `Algebra.IsGeometricallyReduced k K ↔ Algebra.IsTranscendentalSeparable k K`.
+* `Algebra.IsGeometricallyReduced.trans`: transitivity of geometric reducedness for field towers
+  `k → E → F`.
 
 ## References
 
 * [The Stacks project, Tag 030W](https://stacks.math.columbia.edu/tag/030W)
+* [The Stacks project, Tag 037R](https://stacks.math.columbia.edu/tag/037R)
 * S. Lang, *Introduction to Algebraic Geometry*, Chapter III, Section 1.
 -/
 
@@ -98,6 +122,10 @@ theorem linearIndepOn_pow_of_isGeometricallyReduced {A : Type*} [CommRing A] [Al
   rw [ha, zero_pow (expChar_pos k p).ne', eq_comm, map_eq_zero] at this
   simpa using this
 
+section SeparablyGenerated
+
+open scoped IntermediateField.algebraAdjoinAdjoin
+
 variable (k) (K : Type*) [Field K] [Algebra k K]
 
 /-- **A finitely generated geometrically reduced field extension is separably generated**: it has
@@ -112,4 +140,116 @@ theorem exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced
     exact exists_isTranscendenceBasis_and_isSeparable_of_linearIndepOn_pow_of_essFiniteType p hp
       fun _ hs ↦ linearIndepOn_pow_of_isGeometricallyReduced p hs
 
+/-- A finitely generated geometrically reduced field extension satisfies
+`Algebra.IsSeparablyGenerated`. -/
+theorem isSeparablyGenerated_of_isGeometricallyReduced [Algebra.EssFiniteType k K]
+    [Algebra.IsGeometricallyReduced k K] : Algebra.IsSeparablyGenerated k K :=
+  let ⟨s, hs, hsep⟩ := exists_isTranscendenceBasis_and_isSeparable_of_isGeometricallyReduced k K
+  ⟨s, hs, hsep⟩
+
+variable {k K}
+
+/-- If `K / k` is separably generated (not necessarily finitely generated), then `K ⊗[k] A` is
+reduced for every reduced commutative `k`-algebra `A`. -/
+theorem isReduced_tensorProduct_of_isSeparablyGenerated [Algebra.IsSeparablyGenerated k K]
+    (A : Type*) [CommRing A] [IsReduced A] [Algebra k A] : IsReduced (K ⊗[k] A) := by
+  obtain ⟨s, hs, hsep⟩ := Algebra.IsSeparablyGenerated.isSeparable (k := k) (K := K)
+  set R := Algebra.adjoin k s
+  set E := IntermediateField.adjoin k s
+  let eRA : R ⊗[k] A ≃ₐ[k] MvPolynomial s A := hs.1.adjoinTensorAlgEquiv A
+  have : IsReduced (R ⊗[k] A) := isReduced_of_injective eRA eRA.injective
+  have : IsReduced (E ⊗[k] A) :=
+    isReduced_tensorProduct_of_isLocalization (nonZeroDivisors R) E A
+  exact isReduced_tensorProduct_of_isReduced_of_isSeparable k (E := E) A
+
+/-- Any separably generated field extension is geometrically reduced. -/
+theorem isGeometricallyReduced_of_isSeparablyGenerated [Algebra.IsSeparablyGenerated k K] :
+    Algebra.IsGeometricallyReduced k K := by
+  rw [Algebra.isGeometricallyReduced_field_iff]
+  have := isReduced_tensorProduct_of_isSeparablyGenerated (k := k) (K := K) (AlgebraicClosure k)
+  exact isReduced_of_injective (Algebra.TensorProduct.comm k (AlgebraicClosure k) K)
+    (Algebra.TensorProduct.comm k (AlgebraicClosure k) K).injective
+
+/-- For a finitely generated field extension `K / k`, geometric reducedness is equivalent to
+separable generation. -/
+theorem isGeometricallyReduced_iff_isSeparablyGenerated (k K : Type*) [Field k] [Field K]
+    [Algebra k K] [Algebra.EssFiniteType k K] :
+    Algebra.IsGeometricallyReduced k K ↔ Algebra.IsSeparablyGenerated k K :=
+  ⟨fun _ ↦ isSeparablyGenerated_of_isGeometricallyReduced k K,
+    fun _ ↦ isGeometricallyReduced_of_isSeparablyGenerated⟩
+
+/-- If every finitely generated subextension of `K / k` is separably generated
+(`Algebra.IsTranscendentalSeparable k K`), then `K ⊗[k] A` is reduced for every reduced
+commutative `k`-algebra `A`. -/
+theorem isReduced_tensorProduct_of_isTranscendentalSeparable
+    [Algebra.IsTranscendentalSeparable k K] (A : Type*) [CommRing A] [IsReduced A] [Algebra k A] :
+    IsReduced (K ⊗[k] A) := by
+  have : IsReduced (A ⊗[k] K) := by
+    apply IsReduced.tensorProduct_of_flat_of_forall_fg
+    intro B hB
+    obtain ⟨s, rfl⟩ := hB
+    let L : IntermediateField k K := IntermediateField.adjoin k (s : Set K)
+    have : Algebra.EssFiniteType k L :=
+      IntermediateField.essFiniteType_iff.mpr (IntermediateField.fg_adjoin_finset s)
+    have : Algebra.IsSeparablyGenerated k L :=
+      Algebra.IsTranscendentalSeparable.forall_isSeparablyGenerated L inferInstance
+    have : IsReduced (L ⊗[k] A) := isReduced_tensorProduct_of_isSeparablyGenerated A
+    have : IsReduced (A ⊗[k] L) :=
+      isReduced_of_injective (Algebra.TensorProduct.comm k A L)
+        (Algebra.TensorProduct.comm k A L).injective
+    have hle : Algebra.adjoin k (s : Set K) ≤ L.toSubalgebra :=
+      IntermediateField.algebra_adjoin_le_adjoin k (s : Set K)
+    let i : Algebra.adjoin k (s : Set K) →ₐ[k] L := Subalgebra.inclusion hle
+    exact isReduced_of_injective (Algebra.TensorProduct.map (AlgHom.id k A) i)
+      (Module.Flat.lTensor_preserves_injective_linearMap i.toLinearMap
+        (Subalgebra.inclusion_injective hle))
+  exact isReduced_of_injective (Algebra.TensorProduct.comm k K A)
+    (Algebra.TensorProduct.comm k K A).injective
+
+/-- For an arbitrary field extension `K / k`, geometric reducedness is equivalent to
+`Algebra.IsTranscendentalSeparable k K` (every finitely generated subextension is separably
+generated). -/
+theorem isGeometricallyReduced_iff_isTranscendentalSeparable (k K : Type*) [Field k] [Field K]
+    [Algebra k K] :
+    Algebra.IsGeometricallyReduced k K ↔ Algebra.IsTranscendentalSeparable k K := by
+  constructor
+  · intro _
+    refine ⟨fun L _ ↦ ?_⟩
+    have : Algebra.IsGeometricallyReduced k L := .of_injective L.val L.val.injective
+    exact isSeparablyGenerated_of_isGeometricallyReduced k L
+  · intro _
+    rw [Algebra.isGeometricallyReduced_field_iff]
+    have := isReduced_tensorProduct_of_isTranscendentalSeparable (k := k) (K := K)
+      (AlgebraicClosure k)
+    exact isReduced_of_injective (Algebra.TensorProduct.comm k (AlgebraicClosure k) K)
+      (Algebra.TensorProduct.comm k (AlgebraicClosure k) K).injective
+
+/-- If `K / k` is a geometrically reduced field extension, then `K ⊗[k] A` is reduced for every
+reduced commutative `k`-algebra `A`. -/
+theorem isReduced_tensorProduct_of_isGeometricallyReduced [Algebra.IsGeometricallyReduced k K]
+    (A : Type*) [CommRing A] [IsReduced A] [Algebra k A] : IsReduced (K ⊗[k] A) :=
+  have := (isGeometricallyReduced_iff_isTranscendentalSeparable k K).mp inferInstance
+  isReduced_tensorProduct_of_isTranscendentalSeparable A
+
+end SeparablyGenerated
+
 end TauCeti
+
+namespace Algebra.IsGeometricallyReduced
+
+/-- **Geometric reducedness is transitive in towers of field extensions**: if `E / k` and `F / E`
+are geometrically reduced field extensions, then `F / k` is geometrically reduced. -/
+theorem trans (k E F : Type*) [Field k] [Field E] [Field F] [Algebra k E] [Algebra E F]
+    [Algebra k F] [IsScalarTower k E F] [IsGeometricallyReduced k E]
+    [IsGeometricallyReduced E F] : IsGeometricallyReduced k F := by
+  rw [isGeometricallyReduced_field_iff]
+  have : IsReduced (E ⊗[k] AlgebraicClosure k) :=
+    TauCeti.isReduced_tensorProduct_of_isGeometricallyReduced (AlgebraicClosure k)
+  have : IsReduced (F ⊗[E] (E ⊗[k] AlgebraicClosure k)) :=
+    TauCeti.isReduced_tensorProduct_of_isGeometricallyReduced (E ⊗[k] AlgebraicClosure k)
+  let e : AlgebraicClosure k ⊗[k] F ≃+* F ⊗[E] (E ⊗[k] AlgebraicClosure k) :=
+    (Algebra.TensorProduct.comm k (AlgebraicClosure k) F).toRingEquiv.trans
+      (Algebra.TensorProduct.cancelBaseChange k E E F (AlgebraicClosure k)).symm.toRingEquiv
+  exact isReduced_of_injective e e.injective
+
+end Algebra.IsGeometricallyReduced

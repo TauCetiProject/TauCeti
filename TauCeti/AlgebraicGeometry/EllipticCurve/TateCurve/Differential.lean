@@ -154,8 +154,8 @@ theorem eulerDiffDerivation_tateFormalY :
       two_mul_tateFormalY_add_tateFormalX_ne_zero)
   have h := congrArg (map (map (Int.castRingHom R))) hℤ
   rwa [map_map_eulerDiffDerivation, map_map_tateFormalY, map_sub, map_add, map_mul, map_pow,
-    map_map_tateFormalX, map_map_tateFormalY, map_ofNat, ← RingHom.comp_apply,
-    map_map_comp_tateParamHom] at h
+    map_map_tateFormalX, map_map_tateFormalY, map_ofNat,
+    map_map_tateParamHom] at h
 
 /-- **The invariant differential pulls back to `du / u`, in terms of `W_X`**: at the formal Tate
 point `(X, Y)` of the Tate curve with `q = u v`, the partial derivative

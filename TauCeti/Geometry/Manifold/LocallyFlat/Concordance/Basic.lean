@@ -238,13 +238,13 @@ def trans (Ψ : TopologicalConcordance F F' g h) : TopologicalConcordance F F' f
     · refine ⟨_, hlow, hp, ?_⟩
       have heq : stack ⇑Φ ⇑Ψ ∘ (Subtype.val : {q : N × ℝ | q.2 < 2 / 3} → N × ℝ) =
           conjTime ⇑Φ 3 0 ∘ Subtype.val :=
-        funext fun q => hΦ.stack_eqOn_lower hΨ q.2
+        funext fun q => hΦ.stack_eqOn_lower hΨ q.property
       rw [heq]
       exact (Φ.isLocallyFlat.conjTime 0 (by norm_num)).restrict hlow
     · refine ⟨_, hup, lt_of_lt_of_le (by norm_num) hp, ?_⟩
       have heq : stack ⇑Φ ⇑Ψ ∘ (Subtype.val : {q : N × ℝ | 1 / 3 < q.2} → N × ℝ) =
           conjTime ⇑Ψ 3 (-2) ∘ Subtype.val :=
-        funext fun q => hΦ.stack_eqOn_upper hΨ q.2
+        funext fun q => hΦ.stack_eqOn_upper hΨ q.property
       rw [heq]
       exact (Ψ.isLocallyFlat.conjTime (-2) (by norm_num)).restrict hup
   isCollaredTrack_toFun := Φ.isCollaredTrack.stack Ψ.isCollaredTrack
@@ -343,20 +343,20 @@ theorem trans (hfg : TopologicallyConcordant F F' f g) (hgh : TopologicallyConco
 /-- **Topological concordance is an equivalence relation on locally flat embeddings.** -/
 theorem equivalence :
     Equivalence fun f g : {f : N → M // IsLocallyFlat F F' f} =>
-      TopologicallyConcordant F F' f.1 g.1 :=
-  ⟨fun f => refl f.2, symm, trans⟩
+      TopologicallyConcordant F F' f.val g.val :=
+  ⟨fun f => refl f.property, symm, trans⟩
 
 variable (F F') in
 /-- Topological concordance of locally flat embeddings, packaged as a setoid. -/
 def setoid (N M : Type*) [TopologicalSpace N] [TopologicalSpace M] :
     Setoid {f : N → M // IsLocallyFlat F F' f} where
-  r f g := TopologicallyConcordant F F' f.1 g.1
+  r f g := TopologicallyConcordant F F' f.val g.val
   iseqv := equivalence
 
 /-- The relation of the topological concordance setoid is topological concordance. -/
 @[simp]
 theorem setoid_r_iff {f g : {f : N → M // IsLocallyFlat F F' f}} :
-    (setoid F F' N M).r f g ↔ TopologicallyConcordant F F' f.1 g.1 :=
+    (setoid F F' N M).r f g ↔ TopologicallyConcordant F F' f.val g.val :=
   Iff.rfl
 
 end TopologicallyConcordant

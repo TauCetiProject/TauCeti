@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.FiniteStability
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Product
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Product
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
@@ -63,6 +64,71 @@ noncomputable abbrev tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, v} R) :
   letI : Algebra.FiniteType R (H ⊗[R] K) := tensorProduct_finiteType (R := R) H K
   of R (H ⊗[R] K)
 
+/-- Tensor products preserve isomorphisms of finite-type commutative Hopf algebras: the
+isomorphism and its inverse are the tensor products of the maps of the two factors. This is the
+lift of `CommHopfAlgCat.tensorProductCongr` to the full subcategory. -/
+noncomputable def tensorProductCongr
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    tensorProduct H K ≅ tensorProduct H' K' :=
+  ObjectProperty.isoMk _ <| _root_.CommHopfAlgCat.tensorProductCongr
+    ((finiteTypeCommHopfAlgProperty R).ι.mapIso e) ((finiteTypeCommHopfAlgProperty R).ι.mapIso f)
+
+/-- Forgetting the finite-type condition sends `tensorProductCongr e f` to the tensor product
+`CommHopfAlgCat.tensorProductCongr` of the underlying isomorphisms. -/
+@[simp]
+theorem ι_mapIso_tensorProductCongr
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    (finiteTypeCommHopfAlgProperty R).ι.mapIso (tensorProductCongr e f) =
+      _root_.CommHopfAlgCat.tensorProductCongr ((finiteTypeCommHopfAlgProperty R).ι.mapIso e)
+        ((finiteTypeCommHopfAlgProperty R).ι.mapIso f) :=
+  (rfl)
+
+/-- The bialgebra map underlying `tensorProductCongr e f` is the tensor product of the bialgebra
+maps underlying `e` and `f`. -/
+@[simp]
+theorem toBialgHom_tensorProductCongr_hom
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    toBialgHom (tensorProductCongr e f).hom =
+      Bialgebra.TensorProduct.map (toBialgHom e.hom) (toBialgHom f.hom) :=
+  _root_.CommHopfAlgCat.tensorProductCongr_hom_hom _ _
+
+/-- The bialgebra map underlying the inverse of `tensorProductCongr e f` is the tensor product of
+the bialgebra maps underlying the inverses of `e` and `f`. -/
+@[simp]
+theorem toBialgHom_tensorProductCongr_inv
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    toBialgHom (tensorProductCongr e f).inv =
+      Bialgebra.TensorProduct.map (toBialgHom e.inv) (toBialgHom f.inv) :=
+  _root_.CommHopfAlgCat.tensorProductCongr_inv_hom _ _
+
+/-- The inverse of a tensor-product isomorphism is the tensor product of the inverses. -/
+@[simp]
+theorem tensorProductCongr_symm
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    (tensorProductCongr e f).symm = tensorProductCongr e.symm f.symm :=
+  (finiteTypeCommHopfAlgProperty R).ι.mapIso_injective <| by
+    simp only [Functor.mapIso_symm, ι_mapIso_tensorProductCongr,
+      _root_.CommHopfAlgCat.tensorProductCongr_symm]
+
+/-- The tensor product of two identity isomorphisms is the identity isomorphism. -/
+@[simp]
+theorem tensorProductCongr_refl (H K : FiniteTypeCommHopfAlgCat.{u, v} R) :
+    tensorProductCongr (Iso.refl H) (Iso.refl K) = Iso.refl (tensorProduct H K) :=
+  (finiteTypeCommHopfAlgProperty R).ι.mapIso_injective <| by
+    simp only [Functor.mapIso_refl, ι_mapIso_tensorProductCongr,
+      _root_.CommHopfAlgCat.tensorProductCongr_refl]
+    rfl
+
+/-- Tensor-product isomorphisms compose factorwise. -/
+theorem tensorProductCongr_trans
+    {H H' H'' K K' K'' : FiniteTypeCommHopfAlgCat.{u, v} R}
+    (e : H ≅ H') (e' : H' ≅ H'') (f : K ≅ K') (f' : K' ≅ K'') :
+    tensorProductCongr e f ≪≫ tensorProductCongr e' f' =
+      tensorProductCongr (e ≪≫ e') (f ≪≫ f') :=
+  (finiteTypeCommHopfAlgProperty R).ι.mapIso_injective <| by
+    simp only [Functor.mapIso_trans, ι_mapIso_tensorProductCongr,
+      _root_.CommHopfAlgCat.tensorProductCongr_trans]
+
 /-- The left coordinate inclusion `H → H ⊗[R] K`, bundled in the finite-type commutative
 Hopf-algebra category. On points this is the first projection from product points. -/
 noncomputable abbrev includeLeft (H K : FiniteTypeCommHopfAlgCat.{u, v} R) :
@@ -88,6 +154,44 @@ theorem includeLeft_apply (H K : FiniteTypeCommHopfAlgCat.{u, v} R) (h : H) :
 theorem includeRight_apply (H K : FiniteTypeCommHopfAlgCat.{u, v} R) (k : K) :
     toBialgHom (includeRight H K) k = (1 : H) ⊗ₜ[R] k :=
   Bialgebra.TensorProduct.includeRight_apply k
+
+/-- A tensor-product isomorphism carries the left coordinate inclusion to the left coordinate
+inclusion. -/
+@[reassoc (attr := simp)]
+theorem includeLeft_comp_tensorProductCongr_hom
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    includeLeft H K ≫ (tensorProductCongr e f).hom = e.hom ≫ includeLeft H' K' :=
+  hom_ext <| by
+    rw [toBialgHom_comp, toBialgHom_tensorProductCongr_hom]
+    exact Bialgebra.TensorProduct.map_comp_includeLeft (toBialgHom e.hom) (toBialgHom f.hom)
+
+/-- A tensor-product isomorphism carries the right coordinate inclusion to the right coordinate
+inclusion. -/
+@[reassoc (attr := simp)]
+theorem includeRight_comp_tensorProductCongr_hom
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    includeRight H K ≫ (tensorProductCongr e f).hom = f.hom ≫ includeRight H' K' :=
+  hom_ext <| by
+    rw [toBialgHom_comp, toBialgHom_tensorProductCongr_hom]
+    exact Bialgebra.TensorProduct.map_comp_includeRight (toBialgHom e.hom) (toBialgHom f.hom)
+
+/-- The inverse of a tensor-product isomorphism carries the left coordinate inclusion to the
+left coordinate inclusion. -/
+@[reassoc (attr := simp)]
+theorem includeLeft_comp_tensorProductCongr_inv
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    includeLeft H' K' ≫ (tensorProductCongr e f).inv = e.inv ≫ includeLeft H K := by
+  simpa only [← tensorProductCongr_symm, Iso.symm_hom] using
+    includeLeft_comp_tensorProductCongr_hom e.symm f.symm
+
+/-- The inverse of a tensor-product isomorphism carries the right coordinate inclusion to the
+right coordinate inclusion. -/
+@[reassoc (attr := simp)]
+theorem includeRight_comp_tensorProductCongr_inv
+    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
+    includeRight H' K' ≫ (tensorProductCongr e f).inv = f.inv ≫ includeRight H K := by
+  simpa only [← tensorProductCongr_symm, Iso.symm_hom] using
+    includeRight_comp_tensorProductCongr_hom e.symm f.symm
 
 /-- The left coordinate inclusion is injective over any commutative base ring: applying
 the counit to the right tensor factor gives a retraction. -/

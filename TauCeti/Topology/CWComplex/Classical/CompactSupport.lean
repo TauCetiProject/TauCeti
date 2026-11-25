@@ -14,7 +14,9 @@ public import TauCeti.Topology.CWComplex.Classical.Subcomplex
 # Compact supports in relative CW complexes
 
 A compact subset of a relative CW complex meets only finitely many open cells outside the
-base. Consequently it lies in a skeleton of finite dimension, even when the complex is
+base; in particular, in a Hausdorff ambient space the closure of every open cell meets only
+finitely many open cells (`TauCeti.finite_setOf_nonempty_closure_openCell_inter_openCell`).
+Consequently every compact subset lies in a skeleton of finite dimension, even when the complex is
 infinite-dimensional. The base itself need not be compact or finite-dimensional. So the preimages
 of the skeleta under a continuous map into the complex absorb every compact set
 (`TauCeti.exists_subset_preimageSkeleton_of_isCompact`).
@@ -80,8 +82,8 @@ theorem finite_setOf_nonempty_inter_openCell_of_isCompact {K : Set X} (hK : IsCo
     {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}.Finite := by
   let A := {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}
   -- Pick a point `x a` of `K` in each open cell `a` that `K` meets.
-  choose x hxK hxO using fun a : A ↦ a.2
-  have hx {a : A} {m : ℕ} {j : cell C m} (h : x a ∈ openCell m j) : a.1 = ⟨m, j⟩ :=
+  choose x hxK hxO using fun a : A ↦ a.property
+  have hx {a : A} {m : ℕ} {j : cell C m} (h : x a ∈ openCell m j) : a.val = ⟨m, j⟩ :=
     eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨x a, hxO a, h⟩)
   have hxinj : Function.Injective x := fun a b hab ↦ Subtype.ext (hx (hab ▸ hxO b))
   have hSC : range x ⊆ C := range_subset_iff.2 fun a ↦ openCell_subset_complex _ _ (hxO a)
@@ -99,6 +101,13 @@ theorem finite_setOf_nonempty_inter_openCell_of_isCompact {K : Set X} (hK : IsCo
   have : Finite A := (finite_range_iff hxinj).1
     (hcompact.finite (isDiscrete_of_finite_inter_openCell hSC hSD.isDiscrete hS))
   exact Set.toFinite A
+
+/-- In a Hausdorff relative CW complex, the closure of every open cell meets only finitely many
+relative open cells. -/
+theorem finite_setOf_nonempty_closure_openCell_inter_openCell (n : ℕ) (i : cell C n) :
+    {a : Σ m, cell C m | (closure (openCell n i) ∩ openCell a.1 a.2).Nonempty}.Finite := by
+  rw [closure_openCell_eq_closedCell]
+  exact finite_setOf_nonempty_inter_openCell_of_isCompact isCompact_closedCell
 
 /-- Every compact subset of a relative CW complex is contained in a skeleton of finite
 relative dimension. The skeleton contains the entire base, so no restriction on the base is
@@ -157,12 +166,13 @@ private lemma mem_frontierCells_iff {n m : ℕ} {i : cell C n} {j : cell C m} :
   exact Finset.mem_filter.2 ⟨hj', ⟨x, hxf, hxo⟩⟩
 
 private lemma cellFrontier_subset_iUnion_frontierCells (n : ℕ) (i : cell C n) :
-    cellFrontier n i ⊆ ⋃ (m : Fin n) (j ∈ frontierCells n i m.1), openCell m.1 j := fun x hx ↦ by
-  classical
-  obtain ⟨m, hmn, j, hj, hxj⟩ := by
-    simpa only [mem_iUnion, exists_prop] using
-      (cellFrontier_subset_finite_openCell (C := C) n i).choose_spec hx
-  exact mem_iUnion.2 ⟨⟨m, hmn⟩, mem_iUnion₂.2 ⟨j, Finset.mem_filter.2 ⟨hj, ⟨x, hx, hxj⟩⟩, hxj⟩⟩
+    cellFrontier n i ⊆ ⋃ (m : Fin n) (j ∈ frontierCells n i m.val), openCell m.val j :=
+  fun x hx ↦ by
+    classical
+    obtain ⟨m, hmn, j, hj, hxj⟩ := by
+      simpa only [mem_iUnion, exists_prop] using
+        (cellFrontier_subset_finite_openCell (C := C) n i).choose_spec hx
+    exact mem_iUnion.2 ⟨⟨m, hmn⟩, mem_iUnion₂.2 ⟨j, Finset.mem_filter.2 ⟨hj, ⟨x, hx, hxj⟩⟩, hxj⟩⟩
 
 variable [T2Space X]
 
@@ -174,17 +184,18 @@ private def cellSubcomplexAux :
     open Classical in
     let B : Subcomplex C :=
       (Finset.univ : Finset (Fin n)).sup fun m ↦
-        (frontierCells n i m.1).sup fun j ↦ (cellSubcomplexAux m.1 j).1
+        (frontierCells n i m.val).sup fun j ↦ (cellSubcomplexAux m.val j).val
     have hB_fin : Finite (B : Set X) :=
       Subcomplex.finite_finsetSup _ _ fun m _ ↦
-        Subcomplex.finite_finsetSup _ _ fun j _ ↦ (cellSubcomplexAux m.1 j).2.1
+        Subcomplex.finite_finsetSup _ _ fun j _ ↦ (cellSubcomplexAux m.val j).property.1
     have hB_fr : cellFrontier n i ⊆ B :=
       (cellFrontier_subset_iUnion_frontierCells n i).trans <| iUnion_subset fun m ↦
-        iUnion₂_subset fun j hj ↦ (RelCWComplex.openCell_subset_closedCell m.1 j).trans <|
-          (cellSubcomplexAux m.1 j).2.2.trans <|
-            (Finset.le_sup (f := fun k ↦ (cellSubcomplexAux m.1 k).1) hj).trans <|
+        iUnion₂_subset fun j hj ↦ (RelCWComplex.openCell_subset_closedCell m.val j).trans <|
+          (cellSubcomplexAux m.val j).property.2.trans <|
+            (Finset.le_sup (f := fun k ↦ (cellSubcomplexAux m.val k).val) hj).trans <|
               Finset.le_sup (f := fun m : Fin n ↦
-                (frontierCells n i m.1).sup fun k ↦ (cellSubcomplexAux m.1 k).1) (Finset.mem_univ m)
+                (frontierCells n i m.val).sup fun k ↦ (cellSubcomplexAux m.val k).val)
+                (Finset.mem_univ m)
     ⟨B.adjoinCell n i hB_fr, RelCWComplex.Subcomplex.finite_adjoinCell hB_fin n i hB_fr,
       by rw [RelCWComplex.Subcomplex.coe_adjoinCell]; exact subset_union_right⟩
 termination_by n _ => n
@@ -192,19 +203,19 @@ decreasing_by all_goals exact Fin.is_lt _
 
 /-- A finite subcomplex of `C` containing `closedCell n i`, built recursively from the lower
 dimensional cells meeting `cellFrontier n i`. -/
-def cellSubcomplex (n : ℕ) (i : cell C n) : Subcomplex C := (cellSubcomplexAux n i).1
+def cellSubcomplex (n : ℕ) (i : cell C n) : Subcomplex C := (cellSubcomplexAux n i).val
 
 /-- For each cell `(n, i)`, the subcomplex `cellSubcomplex n i` is finite. -/
 instance finite_cellSubcomplex (n : ℕ) (i : cell C n) : Finite (cellSubcomplex n i : Set X) :=
-  (cellSubcomplexAux n i).2.1
+  (cellSubcomplexAux n i).property.1
 
 /-- The closed cell `closedCell n i` is contained in `cellSubcomplex n i`. -/
 theorem closedCell_subset_cellSubcomplex (n : ℕ) (i : cell C n) :
-    closedCell n i ⊆ cellSubcomplex n i := (cellSubcomplexAux n i).2.2
+    closedCell n i ⊆ cellSubcomplex n i := (cellSubcomplexAux n i).property.2
 
 private lemma coe_cellSubcomplex_eq (n : ℕ) (i : cell C n) :
     (cellSubcomplex n i : Set X) =
-      (⋃ (m : Fin n) (j ∈ frontierCells n i m.1), (cellSubcomplex m.1 j : Set X)) ∪
+      (⋃ (m : Fin n) (j ∈ frontierCells n i m.val), (cellSubcomplex m.val j : Set X)) ∪
         closedCell n i := by
   unfold cellSubcomplex
   rw [cellSubcomplexAux]

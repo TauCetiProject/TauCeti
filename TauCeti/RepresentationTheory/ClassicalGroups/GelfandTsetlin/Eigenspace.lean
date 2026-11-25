@@ -61,7 +61,7 @@ private theorem iInf_eigenspace_gelfandTsetlinGenerator_eq_iInf_subtype (l : Dom
     ⨅ x : {kr : ℕ × ℕ // kr.1 ≤ n},
       Module.End.eigenspace (M := (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule)
         (UniversalEnvelopingAlgebra.lift ℂ (isRationalRep_rationalWeylRep n l).differential
-          (gelfandTsetlinGenerator ℂ x.2 x.1.2)) (χ x.1.1 x.1.2) := by
+          (gelfandTsetlinGenerator ℂ x.property x.val.2)) (χ x.val.1 x.val.2) := by
   ext v
   simp only [Submodule.mem_iInf, Subtype.forall, Prod.forall]
   exact ⟨fun h k r hk ↦ h k hk r, fun h k hk r ↦ h k r hk⟩
@@ -73,17 +73,17 @@ private theorem gtLine_le_iInf_eigenspace_gelfandTsetlinGenerator (l : DominantW
     gtLine l P ≤ ⨅ x : {kr : ℕ × ℕ // kr.1 ≤ n},
       Module.End.eigenspace (M := (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule)
         (UniversalEnvelopingAlgebra.lift ℂ (isRationalRep_rationalWeylRep n l).differential
-          (gelfandTsetlinGenerator ℂ x.2 x.1.2))
-        (gelfandEigenvalue (fun i : Fin x.1.1 ↦ (P.1 i x.1.1 : ℂ)) x.1.2) :=
+          (gelfandTsetlinGenerator ℂ x.property x.val.2))
+        (gelfandEigenvalue (fun i : Fin x.val.1 ↦ (P.val i x.val.1 : ℂ)) x.val.2) :=
   le_iInf fun x _ hv ↦ Module.End.mem_eigenspace_iff.mpr
-    (lift_differential_gelfandTsetlinGenerator_apply_of_mem_gtLine l P x.2 x.1.2 hv)
+    (lift_differential_gelfandTsetlinGenerator_apply_of_mem_gtLine l P x.property x.val.2 hv)
 
 /-- Distinct patterns with top weight `λ` have distinct systems of Gelfand–Tsetlin eigenvalues,
 the family being indexed by the pairs `(k, r)`. -/
 private theorem injective_gelfandEigenvalue_gtPattern (l : DominantWeight n) :
     Function.Injective fun (P : {P : GTPattern n // P.topWeight = l})
       (x : {kr : ℕ × ℕ // kr.1 ≤ n}) ↦
-        gelfandEigenvalue (fun i : Fin x.1.1 ↦ (P.1 i x.1.1 : ℂ)) x.1.2 :=
+        gelfandEigenvalue (fun i : Fin x.val.1 ↦ (P.val i x.val.1 : ℂ)) x.val.2 :=
   fun _ _ h ↦ Subtype.ext (GTPattern.eq_of_forall_gelfandEigenvalue_eq (K := ℂ)
     fun j hj r _ ↦ congrFun h ⟨(j, r), hj⟩)
 
@@ -98,11 +98,11 @@ theorem iInf_eigenspace_gelfandTsetlinGenerator_eq_gtLine (l : DominantWeight n)
       Module.End.eigenspace (M := (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule)
         (UniversalEnvelopingAlgebra.lift ℂ (isRationalRep_rationalWeylRep n l).differential
           (gelfandTsetlinGenerator ℂ hk r))
-        (gelfandEigenvalue (fun i : Fin k ↦ (P.1 i k : ℂ)) r) =
+        (gelfandEigenvalue (fun i : Fin k ↦ (P.val i k : ℂ)) r) =
       gtLine l P := by
   classical
   rw [iInf_eigenspace_gelfandTsetlinGenerator_eq_iInf_subtype l
-    fun k r ↦ gelfandEigenvalue (fun i : Fin k ↦ (P.1 i k : ℂ)) r]
+    fun k r ↦ gelfandEigenvalue (fun i : Fin k ↦ (P.val i k : ℂ)) r]
   exact iInf_eigenspace_eq_of_iSup_eq_top _ (gtLine_le_iInf_eigenspace_gelfandTsetlinGenerator l)
     (isInternal_gtLine l).submodule_iSup_eq_top (injective_gelfandEigenvalue_gtPattern l) P
 
@@ -115,7 +115,7 @@ theorem mem_gtLine_iff (l : DominantWeight n) (P : {P : GTPattern n // P.topWeig
     v ∈ gtLine l P ↔ ∀ (k : ℕ) (hk : k ≤ n) (r : ℕ),
       UniversalEnvelopingAlgebra.lift ℂ (isRationalRep_rationalWeylRep n l).differential
           (gelfandTsetlinGenerator ℂ hk r) v =
-        gelfandEigenvalue (fun i : Fin k ↦ (P.1 i k : ℂ)) r • v := by
+        gelfandEigenvalue (fun i : Fin k ↦ (P.val i k : ℂ)) r • v := by
   rw [← iInf_eigenspace_gelfandTsetlinGenerator_eq_gtLine]
   simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff]
 
@@ -145,7 +145,7 @@ theorem exists_iInf_eigenspace_gelfandTsetlinGenerator_eq_gtLine (l : DominantWe
   refine h P ?_
   simp only [← hP]
   exact (iInf_eigenspace_gelfandTsetlinGenerator_eq_iInf_subtype l
-    fun k r ↦ gelfandEigenvalue (fun i : Fin k ↦ (P.1 i k : ℂ)) r).symm.trans
+    fun k r ↦ gelfandEigenvalue (fun i : Fin k ↦ (P.val i k : ℂ)) r).symm.trans
       (iInf_eigenspace_gelfandTsetlinGenerator_eq_gtLine l P)
 
 end TauCeti

@@ -35,11 +35,11 @@ open scoped Distributions RealInnerProductSpace
 
 variable {n : ℕ}
 
-/-- The unit-ball Green kernel has distributional negative Laplacian equal to a Dirac mass
-at its pole. The test function is supported strictly inside the ball, so no boundary term
-appears. -/
+/-- For `n = 1` or `n ≥ 3`, the unit-ball Green kernel has distributional negative Laplacian
+equal to a Dirac mass at its pole. The test function is supported strictly inside the ball, so no
+boundary term appears. -/
 @[simp]
-theorem integral_laplacian_mul_ballGreenKernel (hn : 3 ≤ n)
+theorem integral_laplacian_mul_ballGreenKernel (hn : n ≠ 2) (hn0 : n ≠ 0)
     {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≤ 1)
     (φ : 𝓓((⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin n))), ℝ)) :
     ∫ y, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) y * ballGreenKernel n x y =
@@ -81,7 +81,7 @@ theorem integral_laplacian_mul_ballGreenKernel (hn : 3 ≤ n)
       (harmonicOnNhd_ballGreenCorrector hx).integral_laplacian_smul_eq_zero (μ := volume) φ
   simp_rw [ballGreenKernel_def, mul_sub]
   rw [integral_sub hni hcint, hcorrector, sub_zero]
-  exact integral_laplacian_mul_newtonianKernel_sub hn (φ.contDiff.of_le (by norm_num))
+  exact integral_laplacian_mul_newtonianKernel_sub hn hn0 (φ.contDiff.of_le (by norm_num))
     φ.hasCompactSupport x
 
 end TauCeti

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-public import TauCeti.Analysis.Complex.LaplaceTransform
+public import TauCeti.Analysis.LaplaceTransform.Truncated
+import Mathlib.Analysis.Complex.LocallyUniformLimit
+import TauCeti.MeasureTheory.Integral.Exp.Complex
 
 /-!
 # The step correction of a bounded Dirichlet series
