@@ -96,41 +96,49 @@ theorem inl_x {i j : ι} (hij : i ≠ j) (a : R) : inl ι R S (x hij a) = x hij 
 theorem inr_x {i j : ι} (hij : i ≠ j) (b : S) : inr ι R S (x hij b) = x hij (0, b) :=
   lift_x ..
 
+/-- The first projection undoes `inl`, as homomorphisms. -/
+theorem map_fst_comp_inl : (map (RingHom.fst R S)).comp (inl ι R S) = MonoidHom.id _ := by
+  ext i j hij a
+  simp
+
+/-- The second projection kills `inl`, as homomorphisms. -/
+theorem map_snd_comp_inl : (map (RingHom.snd R S)).comp (inl ι R S) = 1 := by
+  ext i j hij a
+  simp
+
+/-- The first projection kills `inr`, as homomorphisms. -/
+theorem map_fst_comp_inr : (map (RingHom.fst R S)).comp (inr ι R S) = 1 := by
+  ext i j hij b
+  simp
+
+/-- The second projection undoes `inr`, as homomorphisms. -/
+theorem map_snd_comp_inr : (map (RingHom.snd R S)).comp (inr ι R S) = MonoidHom.id _ := by
+  ext i j hij b
+  simp
+
 /-- The first projection undoes `inl`. -/
 @[simp]
 theorem map_fst_inl (y : IndexedSteinbergGroup ι R) :
-    map (RingHom.fst R S) (inl ι R S y) = y := by
-  have h : (map (RingHom.fst R S)).comp (inl ι R S) = MonoidHom.id _ := by
-    ext i j hij a
-    simp
-  exact DFunLike.congr_fun h y
+    map (RingHom.fst R S) (inl ι R S y) = y :=
+  DFunLike.congr_fun map_fst_comp_inl y
 
 /-- The second projection kills the image of `inl`. -/
 @[simp]
 theorem map_snd_inl (y : IndexedSteinbergGroup ι R) :
-    map (RingHom.snd R S) (inl ι R S y) = 1 := by
-  have h : (map (RingHom.snd R S)).comp (inl ι R S) = 1 := by
-    ext i j hij a
-    simp
-  exact DFunLike.congr_fun h y
+    map (RingHom.snd R S) (inl ι R S y) = 1 :=
+  DFunLike.congr_fun map_snd_comp_inl y
 
 /-- The first projection kills the image of `inr`. -/
 @[simp]
 theorem map_fst_inr (z : IndexedSteinbergGroup ι S) :
-    map (RingHom.fst R S) (inr ι R S z) = 1 := by
-  have h : (map (RingHom.fst R S)).comp (inr ι R S) = 1 := by
-    ext i j hij a
-    simp
-  exact DFunLike.congr_fun h z
+    map (RingHom.fst R S) (inr ι R S z) = 1 :=
+  DFunLike.congr_fun map_fst_comp_inr z
 
 /-- The second projection undoes `inr`. -/
 @[simp]
 theorem map_snd_inr (z : IndexedSteinbergGroup ι S) :
-    map (RingHom.snd R S) (inr ι R S z) = z := by
-  have h : (map (RingHom.snd R S)).comp (inr ι R S) = MonoidHom.id _ := by
-    ext i j hij a
-    simp
-  exact DFunLike.congr_fun h z
+    map (RingHom.snd R S) (inr ι R S z) = z :=
+  DFunLike.congr_fun map_snd_comp_inr z
 
 /-! ### The images of the two factors commute -/
 
@@ -241,11 +249,11 @@ private theorem prod_map_fst_map_snd_surjective :
     ((y : SteinbergGroup R), (z : SteinbergGroup S))
   rw [IndexedSteinbergGroup.prodEquiv_apply, Prod.mk.injEq] at hw
   have hker : w ∈ (SteinbergGroup.toStableGL (R × S)).ker := by
-    rw [MonoidHom.mem_ker, ← Subgroup.mem_bot,
-      ← StableGeneralLinearGroup.ker_map_fst_inf_ker_map_snd, Subgroup.mem_inf, MonoidHom.mem_ker,
-      MonoidHom.mem_ker, ← SteinbergGroup.toStableGL_map, ← SteinbergGroup.toStableGL_map, hw.1,
-      hw.2]
-    exact ⟨toStableGL_coe y, toStableGL_coe z⟩
+    -- Both projections of `toStableGL w` are the images of the `K₂` elements `y` and `z`.
+    refine MonoidHom.mem_ker.2 (StableGeneralLinearGroup.eq_one_of_map_fst_eq_one_of_map_snd_eq_one
+      ?_ ?_)
+    · rw [← SteinbergGroup.toStableGL_map, hw.1, toStableGL_coe]
+    · rw [← SteinbergGroup.toStableGL_map, hw.2, toStableGL_coe]
   refine ⟨⟨w, hker⟩, ?_⟩
   simp only [MonoidHom.prod_apply, Prod.mk.injEq, Subtype.ext_iff, coe_map_apply]
   exact hw

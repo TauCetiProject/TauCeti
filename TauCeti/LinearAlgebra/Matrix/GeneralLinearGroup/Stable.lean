@@ -700,6 +700,12 @@ theorem ker_map_fst_inf_ker_map_snd :
         congrArg (fun v : GL (Fin n) B ↦ (v : Matrix (Fin n) (Fin n) B) i j) h₂
   rw [hu, map_one]
 
+/-- An element of `GL_∞(A × B)` whose images in `GL_∞(A)` and `GL_∞(B)` are both trivial is
+trivial. -/
+theorem eq_one_of_map_fst_eq_one_of_map_snd_eq_one {x : StableGeneralLinearGroup (A × B)}
+    (h₁ : map (RingHom.fst A B) x = 1) (h₂ : map (RingHom.snd A B) x = 1) : x = 1 :=
+  (Subgroup.eq_bot_iff_forall _).1 ker_map_fst_inf_ker_map_snd x ⟨h₁, h₂⟩
+
 /-- The induced homomorphism of stable general linear groups carries stably elementary matrices
 to stably elementary matrices. -/
 theorem map_elementarySubgroup_le (f : A →+* B) :
