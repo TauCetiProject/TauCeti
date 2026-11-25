@@ -6,46 +6,45 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.ScalarMap
+public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 import Mathlib.Analysis.Complex.Polynomial.Basic
-public import TauCeti.Algebra.Ring.Subgroup
+import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 
 /-!
-# The multiplier ring of a period lattice
+# The multiplier ring of a period lattice and its analytic endomorphisms
 
-The **multiplier ring** of a lattice `Λ ⊆ ℂ` is the subring `{α ∈ ℂ | α Λ ⊆ Λ}`. Through the scalar
-maps of `PeriodPair.scalarPointHom`, it acts on the points `E_Λ(ℂ)` of the Weierstrass curve of
-`Λ`: this is the ring homomorphism `PeriodPair.endRingHom`, which is injective. These are the
-analytic endomorphisms of the complex uniformization.
+The **multiplier ring** of a lattice `Λ ⊆ ℂ` is the subring `{α ∈ ℂ | α Λ ⊆ Λ}`, the left order
+`L.lattice.leftOrder` of the lattice (`Submodule.leftOrder`). Through the scalar maps of
+`PeriodPair.scalarPointHom`, it acts on the points `E_Λ(ℂ)` of the Weierstrass curve of `Λ`: this
+is the ring homomorphism `PeriodPair.endRingHom`, which is injective. These are the analytic
+endomorphisms of the complex uniformization.
 
-Writing `α ω₁ = a ω₁ + b ω₂` and `α ω₂ = e ω₁ + f ω₂` with integers `a, b, e, f`, the multiplier
-`α` is an eigenvalue of the integer matrix `[[a, b], [e, f]]`, so
-
-  `α² - (a + f) α + (a f - b e) = 0`.
-
-If `α` is not real, its conjugate is the other root, so `a + f = 2 Re α` and `a f - b e = |α|²`. If
-`α` is real, the linear independence of `ω₁, ω₂` over `ℝ` forces `b = e = 0` and `α = a = f`.
-Hence every multiplier is an algebraic integer of degree at most two, the real multipliers are
-exactly the integers, and the degree `[Λ : α Λ]` of the endomorphism of `α ≠ 0`, that is the
-cardinality of its kernel, is `|α|²`. In particular the multiplier ring is either `ℤ` or contains a
-non-real algebraic integer of degree two: the curve has complex multiplication.
+Writing `α ω₁ = a ω₁ + b ω₂` and `α ω₂ = e ω₁ + f ω₂` with integers `a, b, e, f`, the integer
+matrix `[[a, e], [b, f]]` is the matrix of multiplication by `α` in the `ℝ`-basis `ω₁, ω₂` of `ℂ`,
+so its trace `a + f` and determinant `a f - b e` are the trace `2 Re α` and norm `|α|²` of `α` over
+`ℝ`. Hence `α² - (a + f) α + (a f - b e) = 0`. If `α` is real, the linear independence of
+`ω₁, ω₂` over `ℝ` forces `b = e = 0` and `α = a = f`. So every multiplier is an algebraic integer
+of degree at most two, the real multipliers are exactly the integers, and the degree `[Λ : α Λ]`
+of the endomorphism of `α ≠ 0`, that is the cardinality of its kernel, is `|α|²`. In particular
+the multiplier ring is either `ℤ` or contains a non-real algebraic integer of degree two: the
+curve has complex multiplication.
 
 ## Main definitions
 
-* `PeriodPair.multiplierRing`: the subring `{α | α Λ ⊆ Λ}` of `ℂ`.
-* `PeriodPair.endRingHom`: its action on `E_Λ(ℂ)` by the scalar maps.
+* `PeriodPair.endRingHom`: the action of the multiplier ring `L.lattice.leftOrder` on `E_Λ(ℂ)` by
+  the scalar maps.
 
 ## Main results
 
 * `PeriodPair.endRingHom_injective`: the action is faithful.
-* `PeriodPair.multiplierRing_smul`: the multiplier ring depends only on the homothety class.
 * `PeriodPair.sq_sub_trace_mul_add_norm_eq_zero`: `α² - (2 Re α) α + |α|² = 0` with integer
   trace and norm.
-* `PeriodPair.isIntegral_of_mem_multiplierRing`: every multiplier is an algebraic integer.
-* `PeriodPair.exists_intCast_eq_of_im_eq_zero`, `PeriodPair.multiplierRing_eq_bot_iff`: the real
-  multipliers are the integers, and the multiplier ring is `ℤ` exactly when all multipliers are
-  real.
+* `PeriodPair.isIntegral_of_mem_leftOrder_lattice`: every multiplier is an algebraic integer.
+* `PeriodPair.exists_intCast_eq_of_im_eq_zero`, `PeriodPair.leftOrder_lattice_eq_bot_iff`: the
+  real multipliers are the integers, and the multiplier ring is `ℤ` exactly when all multipliers
+  are real.
 * `PeriodPair.natCard_ker_endRingHom`: the degree of the endomorphism of `α ≠ 0` is `|α|²`
   (stated with `Nat.card`, so that it also holds at `α = 0`).
 
@@ -65,50 +64,31 @@ namespace PeriodPair
 
 variable {L L' : PeriodPair}
 
-/-! ### The multiplier ring and its action -/
+/-! ### The action of the multiplier ring -/
 
 variable (L)
 
-/-- The **multiplier ring** `{α ∈ ℂ | α Λ ⊆ Λ}` of the lattice of `L`: the multiplier ring
-`AddSubgroup.multiplierRing` of the lattice as an additive subgroup of `ℂ`. -/
-def multiplierRing : Subring ℂ :=
-  L.lattice.toAddSubgroup.multiplierRing
-
-variable {L}
-
-/-- Membership in the multiplier ring: `α Λ ⊆ Λ`. -/
-@[simp]
-lemma mem_multiplierRing {α : ℂ} : α ∈ L.multiplierRing ↔ ∀ z ∈ L.lattice, α * z ∈ L.lattice :=
-  AddSubgroup.mem_multiplierRing
-
-variable (L)
-
-/-- The multiplier ring depends only on the homothety class of the lattice. -/
-@[simp]
-lemma multiplierRing_smul (c : ℂˣ) : (c • L).multiplierRing = L.multiplierRing := by
-  simp only [multiplierRing, ← Submodule.toSubring_leftOrder, leftOrder_lattice_smul]
-
-/-- The action of the multiplier ring on the points of the Weierstrass curve by the scalar maps:
-these are the analytic endomorphisms of `E_Λ(ℂ)`. -/
-def endRingHom : L.multiplierRing →+* AddMonoid.End L.weierstrassCurve.toAffine.Point where
-  toFun α := scalarPointHom (α : ℂ) (mem_multiplierRing.mp α.property)
+/-- The action of the multiplier ring `L.lattice.leftOrder = {α | α Λ ⊆ Λ}` on the points of the
+Weierstrass curve by the scalar maps: these are the analytic endomorphisms of `E_Λ(ℂ)`. -/
+def endRingHom : L.lattice.leftOrder →+* AddMonoid.End L.weierstrassCurve.toAffine.Point where
+  toFun α := scalarPointHom (α : ℂ) (Submodule.mem_leftOrder_iff.mp α.property)
   map_one' := scalarPointHom_one
-  map_mul' α β :=
-    (scalarPointHom_comp (mem_multiplierRing.mp β.property) (mem_multiplierRing.mp α.property)).symm
+  map_mul' α β := (scalarPointHom_comp (Submodule.mem_leftOrder_iff.mp β.property)
+    (Submodule.mem_leftOrder_iff.mp α.property)).symm
   map_zero' := scalarPointHom_zero
-  map_add' α β :=
-    scalarPointHom_add (mem_multiplierRing.mp α.property) (mem_multiplierRing.mp β.property)
+  map_add' α β := scalarPointHom_add (Submodule.mem_leftOrder_iff.mp α.property)
+    (Submodule.mem_leftOrder_iff.mp β.property)
 
 /-- The endomorphism of a multiplier `α` is the scalar map of `α`. -/
-lemma endRingHom_apply (α : L.multiplierRing) :
-    L.endRingHom α = scalarPointHom (α : ℂ) (mem_multiplierRing.mp α.property) :=
+lemma endRingHom_apply (α : L.lattice.leftOrder) :
+    L.endRingHom α = scalarPointHom (α : ℂ) (Submodule.mem_leftOrder_iff.mp α.property) :=
   (rfl)
 
 /-- The endomorphism of a multiplier `α` sends `P(z)` to `P(α z)`. -/
 @[simp]
-lemma endRingHom_weierstrassPoint (α : L.multiplierRing) (z : ℂ) :
+lemma endRingHom_weierstrassPoint (α : L.lattice.leftOrder) (z : ℂ) :
     L.endRingHom α (L.weierstrassPoint z) = L.weierstrassPoint (α * z) :=
-  scalarPointHom_weierstrassPoint _ (mem_multiplierRing.mp α.property) z
+  scalarPointHom_weierstrassPoint _ (Submodule.mem_leftOrder_iff.mp α.property) z
 
 /-- The action of the multiplier ring is faithful. -/
 theorem endRingHom_injective : Function.Injective L.endRingHom := by
@@ -120,14 +100,30 @@ theorem endRingHom_injective : Function.Injective L.endRingHom := by
 
 variable {L}
 
-/-- A multiplier is a root of the characteristic polynomial `X² - (a + f) X + (a f - b e)` of its
-integer matrix. -/
-private lemma sq_sub_mul_add_eq_zero {α : ℂ} {a b e f : ℤ}
+/-- The integer matrix `[[a, e], [b, f]]` of a multiplier `α` is the matrix of multiplication by
+`α` in the `ℝ`-basis `ω₁, ω₂` of `ℂ`. -/
+private lemma leftMulMatrix_basis {α : ℂ} {a b e f : ℤ}
     (hab : (a : ℂ) * L.ω₁ + b * L.ω₂ = α * L.ω₁) (hef : (e : ℂ) * L.ω₁ + f * L.ω₂ = α * L.ω₂) :
-    α ^ 2 - (a + f : ℤ) * α + (a * f - b * e : ℤ) = 0 := by
-  refine mul_right_cancel₀ L.ω₁_ne_zero ?_
+    Algebra.leftMulMatrix L.basis α = !![(a : ℝ), e; b, f] := by
+  have h₁ : α * L.basis 0 = (a : ℝ) • L.basis 0 + (b : ℝ) • L.basis 1 := by
+    simp [Complex.real_smul, hab]
+  have h₂ : α * L.basis 1 = (e : ℝ) • L.basis 0 + (f : ℝ) • L.basis 1 := by
+    simp [Complex.real_smul, hef]
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp only [Algebra.leftMulMatrix_eq_repr_mul, Fin.zero_eta, Fin.mk_one, h₁, h₂, map_add,
+      map_smul, Module.Basis.repr_self, Finsupp.add_apply, Finsupp.smul_apply] <;> simp
+
+/-- The determinant `a f - b e` of the integer matrix of a multiplier `α` is its norm `|α|²` over
+`ℝ`, and its trace `a + f` is the trace `2 Re α`. -/
+private lemma det_eq_normSq {α : ℂ} {a b e f : ℤ}
+    (hab : (a : ℂ) * L.ω₁ + b * L.ω₂ = α * L.ω₁) (hef : (e : ℂ) * L.ω₁ + f * L.ω₂ = α * L.ω₂) :
+    ((a * f - b * e : ℤ) : ℝ) = Complex.normSq α ∧ ((a + f : ℤ) : ℝ) = 2 * α.re := by
+  rw [← Algebra.norm_complex_apply, ← Algebra.trace_complex_apply,
+    Algebra.norm_eq_matrix_det L.basis, Algebra.trace_eq_matrix_trace L.basis,
+    leftMulMatrix_basis hab hef, Matrix.det_fin_two_of, Matrix.trace_fin_two_of]
   push_cast
-  linear_combination (f - α) * hab - (b : ℂ) * hef
+  exact ⟨by ring, rfl⟩
 
 /-- A real multiplier is the integer `a = f`, with `b = e = 0`. -/
 private lemma eq_intCast_of_im_eq_zero {α : ℂ} (him : α.im = 0) {a b e f : ℤ}
@@ -147,89 +143,62 @@ private lemma eq_intCast_of_im_eq_zero {α : ℂ} (him : α.im = 0) {a b e f : �
   · rw [hα, sub_eq_zero.mp h₁, Complex.ofReal_intCast]
   · rw [hα, sub_eq_zero.mp h₄, Complex.ofReal_intCast]
 
-/-- The determinant `a f - b e` of the integer matrix of a multiplier `α` is `|α|²`, and its trace
-`a + f` is `2 Re α`. -/
-private lemma det_eq_normSq {α : ℂ} {a b e f : ℤ}
-    (hab : (a : ℂ) * L.ω₁ + b * L.ω₂ = α * L.ω₁) (hef : (e : ℂ) * L.ω₁ + f * L.ω₂ = α * L.ω₂) :
-    ((a * f - b * e : ℤ) : ℝ) = Complex.normSq α ∧ ((a + f : ℤ) : ℝ) = 2 * α.re := by
-  by_cases him : α.im = 0
-  · obtain ⟨ha, hb, he, hf⟩ := eq_intCast_of_im_eq_zero him hab hef
-    have hre : α.re = a := by rw [ha]; simp
-    have hre' : α.re = f := by rw [hf]; simp
-    simp only [Complex.normSq_apply, him, hb, he]
-    push_cast
-    constructor <;> rw [← hre, ← hre'] <;> ring
-  · have h := sq_sub_mul_add_eq_zero hab hef
-    have hc : conj α ^ 2 - (a + f : ℤ) * conj α + (a * f - b * e : ℤ) = 0 := by
-      simpa using congrArg conj h
-    have hne : α - conj α ≠ 0 := by
-      rw [sub_ne_zero, ne_comm, Ne, Complex.conj_eq_iff_im]
-      exact him
-    have ht : ((a + f : ℤ) : ℂ) = α + conj α := by
-      refine (mul_left_cancel₀ hne ?_).symm
-      linear_combination h - hc
-    have hn : ((a * f - b * e : ℤ) : ℂ) = (Complex.normSq α : ℂ) := by
-      rw [← Complex.mul_conj]
-      linear_combination h + α * ht
-    refine ⟨by exact_mod_cast hn, ?_⟩
-    have := congrArg Complex.re ht
-    simp only [Complex.intCast_re, Complex.add_re, Complex.conj_re] at this
-    rw [Int.cast_add] at this ⊢
-    linarith
-
 /-- **The characteristic equation of a multiplier.** A multiplier `α` satisfies
 `α² - t α + n = 0` with integers `t = 2 Re α` and `n = |α|²`. -/
-theorem sq_sub_trace_mul_add_norm_eq_zero {α : ℂ} (hα : α ∈ L.multiplierRing) :
+theorem sq_sub_trace_mul_add_norm_eq_zero {α : ℂ} (hα : α ∈ L.lattice.leftOrder) :
     ∃ t n : ℤ, α ^ 2 - t * α + n = 0 ∧ (t : ℝ) = 2 * α.re ∧ (n : ℝ) = Complex.normSq α := by
-  obtain ⟨a, b, hab⟩ := mem_lattice.mp (mem_multiplierRing.mp hα _ L.ω₁_mem_lattice)
-  obtain ⟨e, f, hef⟩ := mem_lattice.mp (mem_multiplierRing.mp hα _ L.ω₂_mem_lattice)
+  obtain ⟨a, b, hab⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₁_mem_lattice)
+  obtain ⟨e, f, hef⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₂_mem_lattice)
   obtain ⟨hn, ht⟩ := det_eq_normSq hab hef
-  exact ⟨a + f, a * f - b * e, sq_sub_mul_add_eq_zero hab hef, ht, hn⟩
+  have ht' : ((a + f : ℤ) : ℂ) = α + conj α := by
+    rw [Complex.add_conj, ← ht]; norm_cast
+  have hn' : ((a * f - b * e : ℤ) : ℂ) = α * conj α := by
+    rw [Complex.mul_conj, ← hn]; norm_cast
+  exact ⟨a + f, a * f - b * e, by linear_combination hn' - α * ht', ht, hn⟩
 
 /-- Every multiplier is an algebraic integer. -/
-theorem isIntegral_of_mem_multiplierRing {α : ℂ} (hα : α ∈ L.multiplierRing) :
+theorem isIntegral_of_mem_leftOrder_lattice {α : ℂ} (hα : α ∈ L.lattice.leftOrder) :
     IsIntegral ℤ α :=
   isIntegral_of_smul_mem_submodule L.lattice
     (fun h ↦ L.ω₁_ne_zero ((Submodule.eq_bot_iff _).mp h _ L.ω₁_mem_lattice))
-    (Submodule.fg_span (Set.toFinite _)) α (mem_multiplierRing.mp hα)
+    (Submodule.fg_span (Set.toFinite _)) α (Submodule.mem_leftOrder_iff.mp hα)
 
 /-- The real multipliers are the integers. -/
-theorem exists_intCast_eq_of_im_eq_zero {α : ℂ} (hα : α ∈ L.multiplierRing) (him : α.im = 0) :
+theorem exists_intCast_eq_of_im_eq_zero {α : ℂ} (hα : α ∈ L.lattice.leftOrder) (him : α.im = 0) :
     ∃ m : ℤ, (m : ℂ) = α := by
-  obtain ⟨a, b, hab⟩ := mem_lattice.mp (mem_multiplierRing.mp hα _ L.ω₁_mem_lattice)
-  obtain ⟨e, f, hef⟩ := mem_lattice.mp (mem_multiplierRing.mp hα _ L.ω₂_mem_lattice)
+  obtain ⟨a, b, hab⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₁_mem_lattice)
+  obtain ⟨e, f, hef⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₂_mem_lattice)
   exact ⟨a, (eq_intCast_of_im_eq_zero him hab hef).1.symm⟩
 
 variable (L)
 
 /-- **No complex multiplication.** The multiplier ring is `ℤ` exactly when every multiplier is
 real. -/
-theorem multiplierRing_eq_bot_iff :
-    L.multiplierRing = ⊥ ↔ ∀ α ∈ L.multiplierRing, α.im = 0 := by
+theorem leftOrder_lattice_eq_bot_iff :
+    L.lattice.leftOrder = ⊥ ↔ ∀ α ∈ L.lattice.leftOrder, α.im = 0 := by
   refine ⟨fun h α hα ↦ ?_, fun h ↦ ?_⟩
-  · rw [h, Subring.mem_bot] at hα
+  · rw [h, Algebra.mem_bot] at hα
     obtain ⟨m, rfl⟩ := hα
     simp
   · refine le_antisymm (fun α hα ↦ ?_) bot_le
-    exact Subring.mem_bot.mpr (exists_intCast_eq_of_im_eq_zero hα (h α hα))
+    obtain ⟨m, hm⟩ := exists_intCast_eq_of_im_eq_zero hα (h α hα)
+    exact Algebra.mem_bot.mpr ⟨m, by simpa using hm⟩
 
 /-- **The degree of an endomorphism is the norm.** The `Nat.card` of the kernel of the
 endomorphism of a multiplier `α` is `|α|²`: for `α ≠ 0` the kernel is finite with `|α|²` elements,
 and for `α = 0` both sides vanish, since the kernel is the whole infinite group of points and
 `Nat.card` of an infinite type is `0`. -/
-theorem natCard_ker_endRingHom (α : L.multiplierRing) :
+theorem natCard_ker_endRingHom (α : L.lattice.leftOrder) :
     (Nat.card (L.endRingHom α).ker : ℝ) = Complex.normSq α := by
   obtain rfl | hα := eq_or_ne α 0
-  · have hker : (L.endRingHom 0).ker = ⊤ := by
-      ext P
-      rw [map_zero]
-      exact iff_of_true (AddMonoidHom.mem_ker.mpr (AddMonoid.End.zero_apply P)) trivial
+  · have hker : (L.endRingHom 0).ker = ⊤ := by rw [map_zero]; exact AddMonoidHom.ker_zero
     rw [hker, Nat.card_congr AddSubgroup.topEquiv.toEquiv, Nat.card_eq_zero_of_infinite]
     simp
   have hα' : (α : ℂ) ≠ 0 := fun h ↦ hα (Subtype.ext h)
-  obtain ⟨a, b, hab⟩ := mem_lattice.mp (mem_multiplierRing.mp α.property _ L.ω₁_mem_lattice)
-  obtain ⟨e, f, hef⟩ := mem_lattice.mp (mem_multiplierRing.mp α.property _ L.ω₂_mem_lattice)
-  have h := natCard_ker_scalarPointHom (Units.mk0 _ hα') (mem_multiplierRing.mp α.property)
+  have hαΛ := Submodule.mem_leftOrder_iff.mp α.property
+  obtain ⟨a, b, hab⟩ := mem_lattice.mp (hαΛ _ L.ω₁_mem_lattice)
+  obtain ⟨e, f, hef⟩ := mem_lattice.mp (hαΛ _ L.ω₂_mem_lattice)
+  have h := natCard_ker_scalarPointHom (Units.mk0 _ hα') hαΛ
   rw [relIndex_lattice_smul_eq_natAbs (Units.mk0 _ hα') hab hef] at h
   simp only [Units.val_mk0] at h
   rw [endRingHom_apply, h, Nat.cast_natAbs, Int.cast_abs, (det_eq_normSq hab hef).1,
