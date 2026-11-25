@@ -271,6 +271,13 @@ theorem cutoffPullback_mul (hχ : tsupport ψ ⊆ χ ⁻¹' {1}) (g f : C^∞⟮
       ring
   · simp [cutoffPullback_apply_of_notMem he _ _ hx]
 
+/-- A cutoff `χ` equal to `1` on the support of `ψ` absorbs `ψ`, both read on `M` through the
+chart: `ψ(e x) χ(e x) = ψ(e x)`. -/
+theorem cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset
+    (hχ : tsupport ψ ⊆ χ ⁻¹' {1}) (x : M) :
+    e.cutoffPullback he ψ 1 x * e.cutoffPullback he χ 1 x = e.cutoffPullback he ψ 1 x := by
+  rw [mul_comm, ← Pi.mul_apply, ← ContMDiffMap.coe_mul, ← cutoffPullback_mul he hχ, mul_one]
+
 /-- Pushing forward by `φ` intertwines multiplication by the pullback of `g` by a cutoff `χ` equal
 to `1` on the support of `φ` with multiplication by `g`. -/
 theorem cutoffPushforward_mul (hχ : tsupport φ ⊆ χ ⁻¹' {1}) (g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯)

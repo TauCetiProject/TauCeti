@@ -239,8 +239,8 @@ theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol
     (hsK : ∀ x ∉ K, s x = 0) :
     ∃ P ∈ classicalPseudodifferentialOperators m, classicalPrincipalSymbol m P = s := by
   -- The operator is the sum of the chart quantizations of the cut-off terms of the homogeneous
-  -- symbols `ρᵢ(y) s(eᵢ⁻¹ y, ⟪η, ·⟫ ∘ deᵢ)`, for chart cutoffs `ρᵢ` whose pullbacks sum to `1` on
-  -- the compact set.
+  -- symbols `θᵢ(y) s(eᵢ⁻¹ y, ⟪η, ·⟫ ∘ deᵢ)`, localized by `ρᵢ` and `θᵢ`, for chart cutoffs `ρᵢ`
+  -- whose pullbacks sum to `1` on the compact set.
   obtain ⟨N, c, ρ, hρ⟩ := hK.exists_sum_cutoffPullback_eq_one (E := CoordinateSpace n)
   -- For each chart, a cutoff `θᵢ` equal to `1` on the support of `ρᵢ`.
   choose θ hθ using fun i ↦ TestFunction.exists_eventually_eq_one
@@ -248,10 +248,10 @@ theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol
       (chartAt (CoordinateSpace n) (c i)).open_target⟩) (n := ⊤)
     (ρ i).hasCompactSupport.isCompact (ρ i).tsupport_subset
   set Q := fun i ↦ (chartAt (CoordinateSpace n) (c i)).chartQuantization
-    (IsManifold.chart_mem_maximalAtlas (c i)) (θ i) (θ i)
+    (IsManifold.chart_mem_maximalAtlas (c i)) (ρ i) (θ i)
     (ClassicalSymbol.ofHomogeneous default
       ((chartAt (CoordinateSpace n) (c i)).chartHomogeneousSymbol
-        (IsManifold.chart_mem_maximalAtlas (c i)) (ρ i) hs))
+        (IsManifold.chart_mem_maximalAtlas (c i)) (θ i) hs))
   have hQ (i : Fin N) : Q i ∈ classicalPseudodifferentialOperators m :=
     OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators _ _ _ _
   refine ⟨∑ i, Q i, Submodule.sum_mem _ fun i _ ↦ hQ i, ?_⟩
@@ -261,13 +261,10 @@ theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol
   have hterm (i : Fin N) : classicalPrincipalSymbol m (Q i) y ξ =
       (chartAt (CoordinateSpace n) (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
         (ρ i) 1 y * s y ξ := by
-    -- `θᵢ = 1` on the support of `ρᵢ` absorbs both outer cutoffs.
-    have h := DFunLike.congr_fun (OpenPartialHomeomorph.cutoffPullback_mul
-      (IsManifold.chart_mem_maximalAtlas (c i)) (ψ := ρ i) (χ := θ i)
-      (fun z hz ↦ (hθ i).1.self_of_nhdsSet z hz) 1 1) y
-    rw [mul_one, ContMDiffMap.coe_mul, Pi.mul_apply] at h
-    rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous, mul_assoc,
-      ← h, ← h]
+    -- `θᵢ = 1` on the support of `ρᵢ` absorbs both cutoffs `θᵢ`.
+    have h := OpenPartialHomeomorph.cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset
+      (IsManifold.chart_mem_maximalAtlas (c i)) (fun z hz ↦ (hθ i).1.self_of_nhdsSet z hz) y
+    rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous, h, h]
   simp_rw [hterm, ← Finset.sum_mul, ← Complex.ofReal_sum]
   by_cases hy : y ∈ K
   · rw [hρ y hy, Complex.ofReal_one, one_mul]
@@ -329,11 +326,9 @@ theorem classicalPrincipalSymbolLinearMap_surjective [SigmaCompactSpace M] :
   have hterm (i : ι) : classicalPrincipalSymbol m ((e i).chartQuantization (he i) (χ i) (χ i)
       (a i)) y ξ = ((r i ^ 2 : ℝ) : ℂ) * s y ξ := by
     -- `θᵢ = 1` on the support of `χᵢ` absorbs the cutoff of the symbol.
-    have h := DFunLike.congr_fun (OpenPartialHomeomorph.cutoffPullback_mul (he i) (ψ := χ i)
-      (χ := θ i) (fun z hz ↦ (hθ i).1.self_of_nhdsSet z hz) 1 1) y
-    rw [mul_one, ContMDiffMap.coe_mul, Pi.mul_apply] at h
-    rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous,
-      mul_comm (_ * _), ← mul_assoc, ← h, sq]
+    rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous, mul_assoc,
+      (e i).cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset (he i)
+        (fun z hz ↦ (hθ i).1.self_of_nhdsSet z hz), sq]
   rw [classicalPrincipalSymbol_patchedQuantization, finsum_congr hterm,
     finsum_cutoffPullback_sq_mul he hχ hsq]
 
