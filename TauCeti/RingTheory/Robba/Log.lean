@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.Robba.OpenDisc
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Choose
 
 /-!
@@ -140,10 +141,9 @@ theorem tendsto_laurentGaussNorm_one_add_pow_sub_log {ρ : ℝ} (hρ₀ : 0 ≤ 
       (by rwa [abs_of_nonneg hρ₀])).bddAbove_range
     exact ⟨C, fun n ↦ hC ⟨n, rfl⟩⟩
   have hC₀ : 0 ≤ C := by simpa using hC 0
-  have hp : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
-    rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap', Padic.norm_p]
   have hp₁ : ‖(p : K)‖ < 1 :=
-    hp ▸ inv_lt_one_of_one_lt₀ (by exact_mod_cast (Fact.out : p.Prime).one_lt)
+    norm_natCast_p (p := p) (K := K) ▸
+      inv_lt_one_of_one_lt₀ (by exact_mod_cast (Fact.out : p.Prime).one_lt)
   refine squeeze_zero (fun _ ↦ laurentGaussNorm_nonneg _ _) (fun m ↦ ?_)
     (by simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) hp₁).const_mul C)
   -- The coefficient bound `‖dₙ‖ ρⁿ ≤ C ‖p‖ᵐ`.
@@ -173,7 +173,9 @@ theorem tendsto_laurentGaussNorm_one_add_pow_sub_log {ρ : ℝ} (hρ₀ : 0 ≤ 
     rcases hn.lt_or_eq with hn | rfl
     · simpa [coe_one_add_monomial_pow_of_neg K _ hn, coe_log_of_nonpos K hn.le,
         Pi.single_eq_of_ne hn.ne] using hCp
-    · simpa [by simpa using coe_one_add_monomial_pow_natCast K (p ^ m) 0] using hCp
+    · have h0 : (((1 + monomial 1 1) ^ p ^ m : RobbaRing K) : ℤ → K) 0 = 1 := by
+        simpa using coe_one_add_monomial_pow_natCast K (p ^ m) 0
+      simp [h0, coe_log_zero, hCp]
 
 end RobbaRing
 
