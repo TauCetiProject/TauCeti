@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
-import TauCeti.Analysis.Complex.CauchyRiemann.Bootstrap
+import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 
 /-!
 # Regularity of `C¹` `J`-holomorphic maps on finite-dimensional real normed spaces
@@ -26,9 +26,9 @@ on `s` (McDuff–Salamon, Theorem B.4.1 and Remark B.4.3).
 The proof converts the pointwise complex-linearity condition `du_z ∘ i = J(u z) ∘ du_z` into the
 homogeneous nonlinear weak Cauchy–Riemann equation `∂_s u + J(u) ∂_t u = 0` at exponent `p = 3`
 (`TauCeti.isWeakCauchyRiemannOn_of_contDiffOn`) and invokes interior elliptic bootstrapping
-(`TauCeti.IsWeakCauchyRiemannOn.contDiffOn` in `TauCeti.Analysis.Complex.CauchyRiemann.Bootstrap`).
-The manifold-level smoothness corollaries for `TauCeti.IsPseudoholomorphicOn` and
-`TauCeti.IsPseudoholomorphic` live in
+(`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn` in
+`TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap`). The manifold-level smoothness corollaries
+for `TauCeti.IsPseudoholomorphicOn` and `TauCeti.IsPseudoholomorphic` live in
 `TauCeti.Geometry.Symplectic.Manifold.JHolomorphic.Regularity`.
 
 ## Main results
@@ -80,12 +80,11 @@ theorem IsJHolomorphicOn.contDiffOn [FiniteDimensional ℝ V] {n : ℕ∞} {s : 
         (J (u z)).toLinearMap ((J (u z)).toLinearMap (fderiv ℝ u z 1)) = -fderiv ℝ u z 1 :=
       (J (u z)).apply_apply (fderiv ℝ u z 1)
     simp only [J₀, LinearMap.coe_toContinuousLinearMap', hcomm, hsq, add_neg_cancel]
-  have hJ_cd : ContDiffOn ℝ n (Function.uncurry J₀) (univ ×ˢ W) :=
+  have hJ_cd : ContDiffOn ℝ n (fun x : ℂ × V => J₀ x.1 x.2) (univ ×ˢ W) :=
     hJ.comp contDiffOn_snd fun _ hp => hp.2
-  have hJsq : ∀ z ∈ (Ω : Set ℂ), (J₀ z (u z)).comp (J₀ z (u z)) = -ContinuousLinearMap.id ℝ V :=
-    fun z _ => ContinuousLinearMap.ext fun v => (J (u z)).apply_apply v
-  exact hw.contDiffOn (by exact_mod_cast (by norm_num : 2 < 3)) (isOpen_univ.prod hW) hJ_cd hJsq
-    contDiffOn_const fun z hz => ⟨trivial, huW hz⟩
+  exact contDiffOn_of_isWeakCauchyRiemannOn (by exact_mod_cast (by norm_num : 2 < 3))
+    (isOpen_univ.prod hW) hJ_cd contDiffOn_const (fun z hz => ⟨trivial, huW hz⟩)
+    (.of_forall fun z => ContinuousLinearMap.ext fun v => (J (u z)).apply_apply v) hw
 
 /-- **Global `C^n` regularity of `C¹` `J`-holomorphic maps from `ℂ`.** If `V` is a
 finite-dimensional real normed space, `x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap` is
