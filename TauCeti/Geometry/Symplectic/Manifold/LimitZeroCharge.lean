@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UnitDisc.Retraction
 public import TauCeti.Analysis.Complex.UnitDisc.Subdisc
 public import TauCeti.Geometry.Symplectic.Manifold.ZeroCharge
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Limits of zero charges along a family of functions

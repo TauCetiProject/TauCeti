@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.Continuous
 public import TauCeti.Geometry.Symplectic.Manifold.LimitZeroCharge
 import TauCeti.Topology.Circle.Normalize
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # The limit of the framed charges along a sequence of abelian Higgs pairs
@@ -61,21 +62,6 @@ namespace TauCeti.SeibergWitten
 variable {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {χ : ℝ → ℝ} {l : Filter ι}
   {α : ι → C(E, ℂ)} {Z : Set E}
 
-omit [NormedSpace ℝ E] in
-/-- If every point off `Z` has a neighbourhood that eventually lies in the vacuum region
-`{χ(|αₖ|²) = 1}`, then so does every compact set missing `Z`. -/
-private theorem exists_isOpen_eventually_forall_cutoff_eq_one
-    (hvac : ∀ y ∉ Z, ∃ U ∈ 𝓝 y, ∀ᶠ k in l, ∀ x ∈ U, χ (normSq (α k x)) = 1) {K : Set E}
-    (hK : IsCompact K) (hKZ : Disjoint K Z) :
-    ∃ U, IsOpen U ∧ K ⊆ U ∧ ∀ᶠ k in l, ∀ x ∈ U, χ (normSq (α k x)) = 1 := by
-  have hs : {p : ι × E | χ (normSq (α p.1 p.2)) = 1} ∈ l ×ˢ 𝓝ˢ K :=
-    hK.mem_prod_nhdsSet_of_forall fun y hy ↦ by
-      obtain ⟨U, hU, hk⟩ := hvac y (Set.disjoint_left.1 hKZ hy)
-      exact mem_of_superset (prod_mem_prod hk hU) fun p hp ↦ hp.1 p.2 hp.2
-  obtain ⟨t, ht, V, hV, htV⟩ := mem_prod_iff.1 hs
-  obtain ⟨U, hUo, hKU, hUV⟩ := mem_nhdsSet_iff_exists.1 hV
-  exact ⟨U, hUo, hKU, mem_of_superset ht fun k hk x hx ↦ @htV (k, x) ⟨hk, hUV hx⟩⟩
-
 /-- **The framed charges of a family of abelian Higgs pairs have a limit.** Let `(bₖ, αₖ)` be
 abelian Higgs pairs along a filter `l` whose cutoff currents `Θₖ` have coefficients converging as
 distributions, and let every point off `Z` have a neighbourhood that eventually lies in the vacuum
@@ -93,7 +79,8 @@ theorem isZeroChargeLimit_of_tendsto [FiniteDimensional ℝ E] [MeasurableSpace 
     IsZeroChargeLimit l α Z := by
   have hne : ∀ ⦃K : Set E⦄, IsCompact K → Disjoint K Z → ∀ᶠ k in l, ∀ y ∈ K, α k y ≠ 0 :=
     fun K hK hKZ ↦ by
-      obtain ⟨U, -, hKU, hU⟩ := exists_isOpen_eventually_forall_cutoff_eq_one hvac hK hKZ
+      obtain ⟨U, -, hKU, hU⟩ :=
+        hK.exists_isOpen_eventually_forall fun y hy ↦ hvac y (Set.disjoint_left.1 hKZ hy)
       filter_upwards [hU] with k hk y hy using ne_zero_of_cutoff_eq_one hχ₀ (hk y (hKU hy))
   refine ⟨hne, fun σ ρ₀ ρ hρ hρ₁ hρ₀ hσ ↦ ?_⟩
   -- Eventually the zeros of `αₖ ∘ σ ∘ D_ρ` have norm less than `ρ₀`.
@@ -119,8 +106,9 @@ theorem isZeroChargeLimit_of_tendsto [FiniteDimensional ℝ E] [MeasurableSpace 
     rw [norm_coe_radialRetractionToUnitDisc_apply, mem_sphere_zero_iff_norm.1 hw,
       min_eq_left hrρ.le] at h'
     exact hρ₀r.not_gt h'
-  obtain ⟨U, hUo, hKU, hU⟩ := exists_isOpen_eventually_forall_cutoff_eq_one hvac
-    ((isCompact_sphere 0 r).image σ'.continuous) hKZ
+  obtain ⟨U, hUo, hKU, hU⟩ :=
+    ((isCompact_sphere 0 r).image σ'.continuous).exists_isOpen_eventually_forall fun y hy ↦
+      hvac y (Set.disjoint_left.1 hKZ hy)
   obtain ⟨n, hn⟩ := exists_int_eventually_degree_toBasedLoop_eq (μ := μ) (α := fun k ↦ α k)
     (σ := σ') (z₀ := 0) hr.le hα hb hχ hχ₀ σ'.continuous.continuousOn hUo
     (fun w hw ↦ hKU ⟨w, hw, rfl⟩) hU hlim
