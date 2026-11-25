@@ -60,10 +60,11 @@ A band is cut at the critical values it contains into finitely many such pieces
 (`TauCeti.IsMorse.band_induction`), and the long exact sequence of the triple
 `M_a ⊆ M_m ⊆ M_b` shows that the alternating sums `Sₙ` are subadditive
 (`TauCeti.TopTriple.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le`), while the
-critical counts are additive. The weak inequalities, Euler's equality whenever `cₙ₊₁ = 0` (in
-particular for `n ≥ dim M`), the polynomial identity and the lacunary principle are then numerical
-consequences of the strong inequalities (via `TauCeti.exists_sum_range_monomial_eq_add_mul` and
-`TauCeti.eq_of_forall_sum_range_neg_one_pow_mul_le`).
+critical counts are additive. The weak inequalities follow from
+`TauCeti.le_of_forall_sum_range_neg_one_pow_mul_le`, and Euler’s equality follows from
+`TauCeti.sum_range_neg_one_pow_mul_eq_of_le_succ`. The polynomial identity follows from
+`TauCeti.exists_sum_range_monomial_eq_add_mul`, and the lacunary principle follows from
+`TauCeti.eq_of_forall_sum_range_neg_one_pow_mul_le`.
 
 The coefficients of `Q` are ranks of boundary maps. Cut the band at regular values
 `a = s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1) = b` so that each piece `f⁻¹[s j, s (j + 1)]` contains at most one
