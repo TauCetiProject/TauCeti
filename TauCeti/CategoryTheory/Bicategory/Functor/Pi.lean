@@ -405,9 +405,26 @@ def piMap (f : ∀ i, F i ⟶ G i) : pi F ⟶ pi G :=
   pi.lift fun i ↦ pi.π F i ≫ f i
 
 /-- The component of `piMap f` over `X` is the product of the components of the `f i`. -/
+@[simp]
 lemma piMap_app_toFunctor (f : ∀ i, F i ⟶ G i) (X : LocallyDiscrete Cᵒᵖ) :
     ((piMap f).app X).toFunctor = Functor.pi fun i ↦ ((f i).app X).toFunctor :=
   (rfl)
+
+/-- The `i`-th projection of `piMap f` is the `i`-th projection followed by `f i`. -/
+def piMapCompπ (f : ∀ i, F i ⟶ G i) (i : I) : piMap f ≫ pi.π G i ≅ pi.π F i ≫ f i :=
+  pi.liftCompπ _ i
+
+/-- The components of `piMapCompπ f i` are identities. -/
+@[simp]
+lemma piMapCompπ_hom_as_app (f : ∀ i, F i ⟶ G i) (i : I) (X : LocallyDiscrete Cᵒᵖ) :
+    (piMapCompπ f i).hom.as.app X = 𝟙 _ :=
+  rfl
+
+/-- The components of the inverse of `piMapCompπ f i` are identities. -/
+@[simp]
+lemma piMapCompπ_inv_as_app (f : ∀ i, F i ⟶ G i) (i : I) (X : LocallyDiscrete Cᵒᵖ) :
+    (piMapCompπ f i).inv.as.app X = 𝟙 _ :=
+  rfl
 
 /-- The product of a family of strong transformations whose components over `X` are equivalences
 has its component over `X` an equivalence. -/
