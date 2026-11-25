@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Finite.List
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.List
 import Mathlib.Algebra.Order.Ring.Int
 import Mathlib.Basic.Finite.Prod
@@ -21,6 +22,7 @@ letters of weight at most the cutoff are finite, the words are finite as well.
 
 * `TauCeti.finite_setOf_sum_map_le`: a finite cutoff alphabet gives finitely many words
   below the same positive integer-weight cutoff.
+* `TauCeti.finite_setOf_sum_map_le_nat`: the finite-cutoff theorem for positive natural weights.
 * `List.finite_setOf_sum_map_snd_add_one_le`: words in pairs of a finite label and a
   natural number have finite cutoffs when each weight is the second entry plus one.
 * `Set.Finite.nodup_blocks`: a finite set of lists admits finitely many records
@@ -59,9 +61,22 @@ theorem finite_setOf_sum_map_le {α : Type*} {s : Set α} (w : α → ℤ) (k : 
       _ (List.mem_map_of_mem ha)).trans hsum⟩
   have hlen := l.length_le_sum_map_of_pos w (fun a ha => hpos a (hs a ha))
   refine ⟨l.attachWith _ hentry, ?_, List.attachWith_map_subtype_val hentry⟩
+  -- Unfold the length-cutoff membership before rewriting the attached list's length.
   change (l.attachWith (· ∈ {a ∈ s | w a ≤ k}) hentry).length ≤ k
   rw [List.length_attachWith]
   exact_mod_cast hlen.trans hsum
+
+/-- Positive natural weights with a finite letter cutoff give finitely many words
+below the same weight cutoff. -/
+theorem finite_setOf_sum_map_le_nat {α : Type*} {s : Set α} (w : α → ℕ) (k : ℕ)
+    (hpos : ∀ a ∈ s, 0 < w a) (hcut : {a ∈ s | w a ≤ k}.Finite) :
+    {l : List α | (∀ a ∈ l, a ∈ s) ∧ (l.map w).sum ≤ k}.Finite := by
+  apply (finite_setOf_sum_map_le (fun a => (w a : ℤ)) k
+    (fun a ha => by exact_mod_cast hpos a ha) (by simpa only [Nat.cast_le] using hcut)).subset
+  rintro l ⟨hs, hl⟩
+  have hcast : ((l.map w).sum : ℤ) ≤ k := by exact_mod_cast hl
+  rw [Nat.cast_list_sum, List.map_map] at hcast
+  exact ⟨hs, hcast⟩
 
 end TauCeti
 
@@ -71,22 +86,14 @@ namespace List
 degree `(l.map fun p => p.2 + 1).sum` is at most `K`. -/
 theorem finite_setOf_sum_map_snd_add_one_le (α : Type*) [Finite α] (K : ℕ) :
     {l : List (α × ℕ) | (l.map fun p => p.2 + 1).sum ≤ K}.Finite := by
-  let w (p : α × ℕ) : ℤ := (p.2 + 1 : ℕ)
+  let w (p : α × ℕ) := p.2 + 1
   have hcut : {p ∈ (Set.univ : Set (α × ℕ)) | w p ≤ K}.Finite := by
     refine (Set.finite_range (fun p : α × Fin (K + 1) => (p.1, (p.2 : ℕ)))).subset ?_
     rintro ⟨a, n⟩ ⟨_, hn⟩
-    change ((n + 1 : ℕ) : ℤ) ≤ K at hn
+    dsimp only [w] at hn
     exact ⟨(a, ⟨n, by omega⟩), rfl⟩
-  have hpos (p : α × ℕ) : 0 < w p := by
-    dsimp [w]
-    omega
-  refine (TauCeti.finite_setOf_sum_map_le w K (fun p _ => hpos p) hcut).subset ?_
-  intro l hl
-  refine ⟨fun _ _ => Set.mem_univ _, ?_⟩
-  change (l.map fun p => p.2 + 1).sum ≤ K at hl
-  change (l.map (Nat.castAddMonoidHom ℤ ∘ fun p => p.2 + 1)).sum ≤ K
-  rw [← List.map_map, ← map_list_sum]
-  exact Int.ofNat_le.mpr hl
+  exact (TauCeti.finite_setOf_sum_map_le_nat w K
+    (fun p _ => Nat.succ_pos p.2) hcut).subset fun _ hl => ⟨fun _ _ => Set.mem_univ _, hl⟩
 
 end List
 
@@ -108,7 +115,7 @@ theorem Set.Finite.nodup_blocks {α ι : Type*} [Finite ι] {S : Set (List α)}
   rintro ⟨l, blocks⟩ ⟨hl, hlen, hb⟩
   refine Set.mem_iUnion.mpr ⟨l, Set.mem_iUnion.mpr ⟨hl, ?_⟩⟩
   refine ⟨blocks.attachWith List.Nodup hb, ?_, ?_⟩
-  · change (blocks.attachWith List.Nodup hb).length = l.length + 1
-    rw [List.length_attachWith]
-    exact hlen
+  · -- In the image membership goal, the defining condition of the length cutoff is this equality.
+    change (blocks.attachWith List.Nodup hb).length = l.length + 1
+    simpa only [List.length_attachWith] using hlen
   · exact Prod.ext rfl (List.attachWith_map_subtype_val hb)

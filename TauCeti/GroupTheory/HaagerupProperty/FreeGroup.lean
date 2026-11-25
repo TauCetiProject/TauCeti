@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GeodesicEdges
 public import TauCeti.GroupTheory.HaagerupProperty.Basic
-import TauCeti.Data.List.Finite
+import TauCeti.GroupTheory.FreeGroup.WeightedLength
 
 /-!
 # Free groups have the Haagerup property
@@ -43,31 +43,6 @@ open scoped ComplexOrder
 
 namespace TauCeti
 
-private theorem tendsto_cofinite_weighted_word_length {ι : Type*} [DecidableEq ι]
-    (n : ι → ℕ) (hn : Function.Injective n) :
-    Tendsto (fun g : FreeGroup ι => (g.toWord.map fun x => n x.1 + 1).sum) cofinite atTop := by
-  refine tendsto_atTop.2 fun N => eventually_cofinite.2 ?_
-  let T : Set (ι × Bool) := {x | n x.1 < N}
-  have hT : T.Finite :=
-    (((Set.finite_Iio N).preimage hn.injOn).prod Set.finite_univ).subset fun x hx => ⟨hx, trivial⟩
-  let w (x : ι × Bool) : ℤ := (n x.1 + 1 : ℕ)
-  have hcut : {x ∈ (Set.univ : Set (ι × Bool)) | w x ≤ N}.Finite := by
-    refine hT.subset ?_
-    rintro x ⟨_, hx⟩
-    change n x.1 < N
-    change ((n x.1 + 1 : ℕ) : ℤ) ≤ N at hx
-    omega
-  have hw (x : ι × Bool) (_ : x ∈ (Set.univ : Set (ι × Bool))) : 0 < w x := by
-    dsimp [w]
-    omega
-  have hlists := finite_setOf_sum_map_le w N hw hcut
-  refine (hlists.preimage FreeGroup.toWord_injective.injOn).subset fun g hg => ?_
-  have hgN : (g.toWord.map fun x => n x.1 + 1).sum < N := not_le.mp hg
-  refine ⟨fun _ _ => Set.mem_univ _, ?_⟩
-  change (g.toWord.map (Nat.castAddMonoidHom ℤ ∘ fun x => n x.1 + 1)).sum ≤ N
-  rw [← List.map_map, ← map_list_sum]
-  exact Int.ofNat_le.mpr hgN.le
-
 /-- **Haagerup's theorem.** The free group on a countable set of generators has the Haagerup
 property. -/
 theorem hasHaagerupProperty_freeGroup (ι : Type*) [Countable ι] :
@@ -76,7 +51,7 @@ theorem hasHaagerupProperty_freeGroup (ι : Type*) [Countable ι] :
   obtain ⟨n, hn⟩ := exists_injective_nat ι
   -- The weighted word length: the letter `of i` has weight `n i + 1`.
   let W : FreeGroup ι → ℕ := fun g => (g.toWord.map fun x => n x.1 + 1).sum
-  have hW : Tendsto W cofinite atTop := tendsto_cofinite_weighted_word_length n hn
+  have hW : Tendsto W cofinite atTop := FreeGroup.tendsto_cofinite_sum_map_toWord n hn
   have hpow (r : ℝ) (g : FreeGroup ι) :
       r ^ W g = (g.toWord.map fun x => r ^ (n x.1 + 1)).prod := by
     simp only [W]
