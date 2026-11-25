@@ -322,9 +322,7 @@ theorem isZero_gradedSymmetricAlgebra_obj_X {F : QuasicoherentSheaf X} (hF : IsZ
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   set A := ((gradedSymmetricAlgebra X).obj F).obj
   have h1 : IsZero (A.X 1) := hF.of_iso (gradedSymmetricAlgebraXOneIso F)
-  have h : IsZero (A.X m ⊗ A.X 1) := by
-    rw [IsZero.iff_id_eq_zero, ← MonoidalCategory.whiskerLeft_id, h1.eq_of_src (𝟙 _) 0,
-      MonoidalPreadditive.whiskerLeft_zero]
+  have h : IsZero (A.X m ⊗ A.X 1) := (MonoidalCategory.tensorLeft (A.X m)).map_isZero h1
   -- The epimorphism instance is passed explicitly: instance search does not find it for the
   -- multiplication as elaborated here.
   exact @IsZero.of_epi _ _ _ _ _ _ (epi_mul_gradedSymmetricAlgebra F m 1) h
