@@ -14,20 +14,22 @@ public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 /-!
 # A witness outside the quasi-compact regime of strict transforms
 
-Let `k` be a field, `A = k[x_0, x_1, …]`, `I = (x_0, x_1, …)`, `B = A/(x_j^{j+2} : j ≥ 0)`,
-`S = Spec A` and `U = S ∖ V(I)`, the union of the basic opens `D(x_j)`. Then:
+Let `k` be a commutative ring, `A = k[x_0, x_1, …]`, `I = (x_0, x_1, …)`,
+`B = A/(x_j^{j+2} : j ≥ 0)`, `S = Spec A` and `U = S ∖ V(I)`, the union of the basic opens
+`D(x_j)`. Then:
 
-* `U` is dense in the integral scheme `S`, a witness for the identity modification (`dense_U`), but
-  the inclusion `U ⟶ S` is not quasi-compact (`not_quasiCompact_ι`): finitely many `D(x_j)` with
-  `j ≤ N` miss the prime `(x_0, …, x_N)`, which lies in `D(x_{N+1})`.
+* `U` is dense in `S`, a witness for the identity modification (`dense_U`), since `x_0` is a
+  non-zero-divisor; but for `k ≠ 0` the inclusion `U ⟶ S` is not quasi-compact
+  (`not_quasiCompact_ι`): finitely many `D(x_j)` with `j ≤ N` miss a prime containing
+  `x_0, …, x_N`, which lies in `D(x_{N+1})`.
 * Every section of `B~` vanishes on `U`, since `x_j^{j+2}` kills `B` and some `x_j` is invertible
-  at each point of `U`: the supported kernel of `B~` along `U` is all of `B~`
-  (`mem_range_supportedKernelι_app`), so the quotient by it is zero.
+  at each point of `U`: every section of `B~` lies in the supported kernel of `B~` along `U`
+  (`mem_range_supportedKernelι_app`).
 * `B` has no `I`-power torsion (`primaryComponent_eq_bot`): for a class `b ≠ 0` and any `n`, a
   variable `x_j` not occurring in a representative of `b`, with `j + 2 > n`, has `x_j^n b ≠ 0`.
 
-So the support-defined quotient (`AlgebraicGeometry.Scheme.Modules.supportedQuotient`) and the
-`I`-power-torsion quotient of `B~` differ for this witness: their comparison
+So membership in the supported kernel along `U` is not membership in the `I`-power torsion for
+this witness: their comparison
 (`AlgebraicGeometry.Scheme.Modules.mem_range_supportedKernelι_app_iff_mem_primaryComponent`) needs a
 quasi-compact open.
 -/
@@ -41,7 +43,10 @@ open MvPolynomial AlgebraicGeometry
 namespace TauCeti.StrictTransformNonQuasiCompactExample
 
 universe u
-variable (k : Type u) [Field k]
+
+section CommSemiring
+
+variable (k : Type u) [CommSemiring k]
 
 /-- The ideal `(x_j^{j+2} : j ≥ 0)` of `k[x_0, x_1, …]`. -/
 noncomputable abbrev J : Ideal (MvPolynomial ℕ k) :=
@@ -50,12 +55,8 @@ noncomputable abbrev J : Ideal (MvPolynomial ℕ k) :=
 /-- The ideal `I = (x_0, x_1, …)`. -/
 noncomputable abbrev I : Ideal (MvPolynomial ℕ k) := Ideal.span (Set.range X)
 
-/-- `B = k[x_0, x_1, …]/(x_j^{j+2} : j ≥ 0)`. -/
-abbrev B : Type u := MvPolynomial ℕ k ⧸ J k
-
-/-- If `p ∉ (x_j^{j+2} : j ≥ 0)`, then for every `n` some `x_j^n p` is still outside: take `j`
-larger than `n` and than every variable of `p`. -/
-theorem X_pow_mul_notMem {p : MvPolynomial ℕ k} (hp : p ∉ J k) (n : ℕ) :
+/-- If `p ∉ (x_j^{j+2} : j ≥ 0)`, then for every `n` some `x_j^n p` is still outside. -/
+private theorem X_pow_mul_notMem {p : MvPolynomial ℕ k} (hp : p ∉ J k) (n : ℕ) :
     ∃ j, X j ^ n * p ∉ J k := by
   rw [mem_ideal_span_monomial_image] at hp
   push Not at hp
@@ -75,11 +76,18 @@ theorem X_pow_mul_notMem {p : MvPolynomial ℕ k} (hp : p ∉ J k) (n : ℕ) :
   rw [Finsupp.single_le_iff] at hle
   by_cases hjj : j' = j
   · subst hjj
-    simp [hj] at hle
+    simp only [Finsupp.add_apply, Finsupp.single_eq_same, hj, add_zero] at hle
     omega
   · refine hm' _ ⟨j', rfl⟩ ?_
     rw [Finsupp.single_le_iff]
     simpa [Finsupp.single_apply, Ne.symm hjj] using hle
+
+end CommSemiring
+
+variable (k : Type u) [CommRing k]
+
+/-- `B = k[x_0, x_1, …]/(x_j^{j+2} : j ≥ 0)`. -/
+abbrev B : Type u := MvPolynomial ℕ k ⧸ J k
 
 /-- **`B` has no `I`-power torsion.** -/
 theorem primaryComponent_eq_bot : (I k).primaryComponent (B k) = ⊥ := by
@@ -103,18 +111,24 @@ noncomputable abbrev Bmod : ModuleCat.{u} (CommRingCat.of (MvPolynomial ℕ k)) 
 noncomputable abbrev U : (Spec (CommRingCat.of (MvPolynomial ℕ k))).Opens :=
   ⨆ j : ℕ, PrimeSpectrum.basicOpen (X j : MvPolynomial ℕ k)
 
-/-- `U` is dense in the integral scheme `Spec A`, so it is a witness for the identity
-modification. -/
+/-- `U` is dense in `Spec A`, so it is a witness for the identity modification. -/
 theorem dense_U : Dense (U k : Set (Spec (CommRingCat.of (MvPolynomial ℕ k)))) := by
-  refine (U k).isOpen.dense ⟨⟨⊥, Ideal.isPrime_bot⟩, TopologicalSpace.Opens.mem_iSup.2 ⟨0,
-    (PrimeSpectrum.mem_basicOpen _ _).2 ?_⟩⟩
-  simp [X_ne_zero]
+  refine (PrimeSpectrum.isTopologicalBasis_basic_opens (R := MvPolynomial ℕ k)).dense_iff.2 ?_
+  rintro _ ⟨f, rfl⟩ hf
+  have hfX : PrimeSpectrum.basicOpen (f * X 0) ≠ ⊥ := by
+    rw [Ne, PrimeSpectrum.basicOpen_eq_bot_iff, (Commute.all _ _).isNilpotent_mul_right_iff
+      isRegular_X.right.mem_nonZeroDivisorsRight, ← PrimeSpectrum.basicOpen_eq_bot_iff]
+    exact (TopologicalSpace.Opens.ne_bot_iff_nonempty _).2 hf
+  obtain ⟨p, hp⟩ := (TopologicalSpace.Opens.ne_bot_iff_nonempty _).1 hfX
+  rw [PrimeSpectrum.basicOpen_mul] at hp
+  exact ⟨p, hp.1, TopologicalSpace.Opens.mem_iSup.2 ⟨0, hp.2⟩⟩
 
 /-- `x_j^{j+2}` kills `B`. -/
-theorem X_pow_smul (j : ℕ) (b : Bmod k) : (X j ^ (j + 2) : MvPolynomial ℕ k) • b = 0 := by
+private theorem X_pow_smul_eq_zero (j : ℕ) (b : Bmod k) :
+    (X j ^ (j + 2) : MvPolynomial ℕ k) • b = 0 := by
   obtain ⟨q, rfl⟩ := Ideal.Quotient.mk_surjective (b : B k)
-  change Ideal.Quotient.mk _ _ * Ideal.Quotient.mk _ q = 0
-  rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem, X_pow_eq_monomial]
+  rw [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul,
+    Ideal.Quotient.mk_eq_mk, Ideal.Quotient.eq_zero_iff_mem, X_pow_eq_monomial]
   exact Ideal.mul_mem_right _ _ (Ideal.subset_span ⟨_, ⟨j, rfl⟩, rfl⟩)
 
 /-- The sections of `B~` over any open inside `U` vanish. -/
@@ -126,7 +140,7 @@ theorem subsingleton_tilde_of_le {W : (Spec (CommRingCat.of (MvPolynomial ℕ k)
     (IsLocalizedModule.subsingleton_iff p.val.asIdeal.primeCompl
       (LocalizedModule.mkLinearMap _ _)).2 fun m ↦
         ⟨X j ^ (j + 2), fun h ↦ (PrimeSpectrum.mem_basicOpen _ _).1 hj
-          (p.val.isPrime.mem_of_pow_mem _ h), X_pow_smul k j m⟩
+          (p.val.isPrime.mem_of_pow_mem _ h), X_pow_smul_eq_zero k j m⟩
   exact Subsingleton.elim _ _
 
 /-- **The supported kernel of `B~` along `U` is everything**: every section of `B~` vanishes on
@@ -139,9 +153,8 @@ theorem mem_range_supportedKernelι_app {W : (Spec (CommRingCat.of (MvPolynomial
     ((Scheme.Hom.image_le_opensRange _ _).trans (by simp))
   exact Subsingleton.elim _ _
 
-/-- **The inclusion of `U` is not quasi-compact**: finitely many `D(x_j)`, `j ≤ N`, miss the prime
-`(x_0, …, x_N)` of `U`. -/
-theorem not_quasiCompact_ι : ¬ QuasiCompact (U k).ι := by
+/-- **The inclusion `U ⟶ Spec A` is not quasi-compact** when `k ≠ 0`. -/
+theorem not_quasiCompact_ι [Nontrivial k] : ¬ QuasiCompact (U k).ι := by
   intro h
   have hc : IsCompact (U k : Set (Spec (CommRingCat.of (MvPolynomial ℕ k)))) := by
     have := (h.isCompact_preimage _ isOpen_univ isCompact_univ).image (U k).ι.continuous
@@ -155,16 +168,17 @@ theorem not_quasiCompact_ι : ¬ QuasiCompact (U k).ι := by
       refine Set.mem_iUnion.2 ⟨j, ?_⟩
       exact hj)
   set N := t.sup id
-  let φ : MvPolynomial ℕ k →ₐ[k] MvPolynomial ℕ k := aeval fun i ↦ if i ≤ N then 0 else X i
+  obtain ⟨m, hm⟩ := Ideal.exists_maximal k
+  let φ : MvPolynomial ℕ k →+* MvPolynomial ℕ (k ⧸ m) :=
+    eval₂Hom (C.comp (Ideal.Quotient.mk m)) fun i ↦ if i ≤ N then 0 else X i
   let q : PrimeSpectrum (MvPolynomial ℕ k) := ⟨RingHom.ker φ, RingHom.ker_isPrime _⟩
   have hq : q ∈ U k := TopologicalSpace.Opens.mem_iSup.2 ⟨N + 1, by
-    rw [PrimeSpectrum.mem_basicOpen]
-    change φ (X (N + 1)) ≠ 0
+    rw [PrimeSpectrum.mem_basicOpen, RingHom.mem_ker]
     simp [φ, X_ne_zero]⟩
   obtain ⟨j, hjt, hj⟩ := Set.mem_iUnion₂.1 (ht hq)
   apply (PrimeSpectrum.mem_basicOpen _ _).1 hj
-  change φ (X j) = 0
   have hjN : j ≤ N := Finset.le_sup (f := id) hjt
+  rw [RingHom.mem_ker]
   simp [φ, hjN]
 
 end TauCeti.StrictTransformNonQuasiCompactExample
