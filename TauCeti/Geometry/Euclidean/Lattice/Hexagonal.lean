@@ -69,22 +69,19 @@ def basis : Basis (Fin 2) ℝ ℝ² := Basis.ofEquivFun coordinates
 /-- The integer span of the two basis vectors of the hexagonal lattice. -/
 def lattice : Submodule ℤ ℝ² := Submodule.span ℤ (Set.range basis)
 
-/-- The hexagonal lattice is generated over `ℤ` by `basis`. -/
-theorem lattice_eq_span : lattice = Submodule.span ℤ (Set.range basis) := (rfl)
-
 instance instDiscreteTopologyLattice : DiscreteTopology lattice := by
-  rw [lattice_eq_span]
+  rw [lattice]
   infer_instance
 
-instance instIsZLatticeLattice : IsZLattice ℝ lattice where
-  span_top := by rw [lattice_eq_span, ZSpan.span_top basis]
+instance instIsZLatticeLattice : IsZLattice ℝ lattice :=
+  inferInstanceAs (IsZLattice ℝ (Submodule.span ℤ (Set.range basis)))
 
 /-- The Euclidean covolume of the hexagonal lattice is `√3/2`. -/
 theorem covolume_lattice : ZLattice.covolume lattice = √3 / 2 := by
   have hsq : ZLattice.covolume lattice ^ 2 = 3 / 4 := by
-    rw [lattice_eq_span, ZLattice.covolume_span_sq_eq_det_gram, Matrix.det_fin_two]
+    rw [lattice, ZLattice.covolume_span_sq_eq_det_gram, Matrix.det_fin_two]
     simp only [Matrix.gram_apply, basis_zero, basis_one, EuclideanSpace.inner_eq_star_dotProduct,
-      dotProduct, Fin.sum_univ_two, star_trivial,
+      Matrix.vec2_dotProduct, star_trivial,
       Matrix.cons_val_zero, Matrix.cons_val_one]
     nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 3)]
   nlinarith [ZLattice.covolume_pos lattice, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 3),
@@ -94,17 +91,8 @@ theorem covolume_lattice : ZLattice.covolume lattice = √3 / 2 := by
 def dualBasis : Basis (Fin 2) ℝ ℝ² :=
   LinearMap.BilinForm.dualBasis (innerₗ ℝ²) nondegenerate_inner basis
 
-/-- The reciprocal lattice is the integer span of `dualBasis`. -/
-theorem dual_lattice_eq_span :
-    ZLattice.dual lattice = Submodule.span ℤ (Set.range dualBasis) := by
-  rw [lattice_eq_span, ZLattice.dual_span_basis, dualBasis]
-
 /-- The reciprocal vector whose pairings with the two lattice generators are `m` and `n`. -/
 def dualVector (m n : ℤ) : ℝ² := !₂[(m : ℝ), (2 * (n : ℝ) - m) / √3]
-
-/-- The coordinates of a reciprocal vector in the standard Euclidean coordinates. -/
-theorem dualVector_eq (m n : ℤ) :
-    dualVector m n = !₂[(m : ℝ), (2 * (n : ℝ) - m) / √3] := (rfl)
 
 /-- The two reciprocal basis vectors correspond to the standard integer unit vectors. -/
 theorem dualBasis_apply (i : Fin 2) :
@@ -114,21 +102,22 @@ theorem dualBasis_apply (i : Fin 2) :
   simp only [Basis.repr_self, dualBasis, LinearMap.BilinForm.dualBasis_repr_apply,
     innerₗ_apply_apply, Finsupp.single_apply]
   fin_cases i <;> fin_cases j <;>
-    norm_num [dualVector_eq, EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two]
+    norm_num [dualVector, EuclideanSpace.inner_eq_star_dotProduct, Matrix.vec2_dotProduct]
 
 private theorem dualVector_eq_zsmul (m n : ℤ) :
     dualVector m n = m • dualBasis 0 + n • dualBasis 1 := by
   apply PiLp.ext
   intro i
   fin_cases i <;>
-    simp [dualBasis_apply, dualVector_eq, ← Int.cast_smul_eq_zsmul ℝ, smul_eq_mul]
+    simp [dualBasis_apply, dualVector, ← Int.cast_smul_eq_zsmul ℝ, smul_eq_mul]
   ring
 
 /-- The reciprocal lattice consists exactly of the vectors `(m, (2n - m)/√3)` for integers
 `m` and `n`. -/
 theorem mem_dual_lattice_iff {x : ℝ²} :
     x ∈ ZLattice.dual lattice ↔ ∃ m n : ℤ, x = dualVector m n := by
-  rw [dual_lattice_eq_span, Submodule.mem_span_range_iff_exists_fun]
+  rw [lattice, ZLattice.dual_span_basis, ← dualBasis,
+    Submodule.mem_span_range_iff_exists_fun]
   constructor
   · rintro ⟨c, rfl⟩
     exact ⟨c 0, c 1, by rw [Fin.sum_univ_two, dualVector_eq_zsmul]⟩
@@ -139,7 +128,7 @@ theorem mem_dual_lattice_iff {x : ℝ²} :
 /-- The norm form of the reciprocal lattice in the integer coordinates `m, n`. -/
 theorem norm_sq_dualVector (m n : ℤ) :
     ‖dualVector m n‖ ^ 2 = (4 / 3 : ℝ) * ((m : ℝ) ^ 2 - (m : ℝ) * n + (n : ℝ) ^ 2) := by
-  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two, dualVector_eq]
+  rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two, dualVector]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [div_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 3)]
   ring
@@ -148,15 +137,10 @@ theorem norm_sq_dualVector (m n : ℤ) :
 theorem four_div_three_le_norm_sq {x : ℝ²} (hx : x ∈ ZLattice.dual lattice) (hx₀ : x ≠ 0) :
     4 / 3 ≤ ‖x‖ ^ 2 := by
   obtain ⟨m, n, rfl⟩ := mem_dual_lattice_iff.mp hx
-  have hpos : 0 < m ^ 2 + n ^ 2 := by
-    by_cases hm : m = 0
-    · have hn : n ≠ 0 := by
-        intro hn
-        apply hx₀
-        simp [hm, hn, dualVector_eq, ← WithLp.toLp_zero]
-      exact add_pos_of_nonneg_of_pos (sq_nonneg m) (sq_pos_of_ne_zero hn)
-    · exact add_pos_of_pos_of_nonneg (sq_pos_of_ne_zero hm) (sq_nonneg n)
-  have hq : 0 < m ^ 2 - m * n + n ^ 2 := by nlinarith [sq_nonneg (m - n)]
+  have hpos := sq_pos_of_pos (norm_pos_iff.mpr hx₀)
+  rw [norm_sq_dualVector] at hpos
+  have hq : 0 < m ^ 2 - m * n + n ^ 2 := by
+    exact_mod_cast (pos_of_mul_pos_right hpos (by norm_num : (0 : ℝ) ≤ 4 / 3))
   have hq' : (1 : ℝ) ≤ (m : ℝ) ^ 2 - (m : ℝ) * n + (n : ℝ) ^ 2 := by
     exact_mod_cast (show 1 ≤ m ^ 2 - m * n + n ^ 2 by omega)
   rw [norm_sq_dualVector]
@@ -177,16 +161,10 @@ theorem isLeast_norm_sq_dual :
 theorem isLeast_neg_laplacianSymbol_dual :
     IsLeast ((fun x : ℝ² ↦ -laplacianSymbol x) '' {x | x ∈ ZLattice.dual lattice ∧ x ≠ 0})
       (16 * π ^ 2 / 3) := by
-  obtain ⟨x, hx, hnorm⟩ := isLeast_norm_sq_dual.1
-  refine ⟨⟨x, hx, ?_⟩, ?_⟩
-  · dsimp only at hnorm ⊢
-    rw [laplacianSymbol_apply, neg_neg, hnorm]
-    ring
-  · rintro _ ⟨y, ⟨hy, hy₀⟩, rfl⟩
-    simp only [laplacianSymbol_apply, neg_neg]
-    calc
-      16 * π ^ 2 / 3 = (4 * π ^ 2) * (4 / 3) := by ring
-      _ ≤ (4 * π ^ 2) * ‖y‖ ^ 2 :=
-        mul_le_mul_of_nonneg_left (four_div_three_le_norm_sq hy hy₀) (by positivity)
+  have hmono : Monotone (fun t : ℝ ↦ (4 * π ^ 2) * t) :=
+    fun _ _ h ↦ mul_le_mul_of_nonneg_left h (by positivity)
+  simpa only [Set.image_image, laplacianSymbol_apply, neg_neg,
+    show (4 * π ^ 2) * (4 / 3) = 16 * π ^ 2 / 3 by ring] using
+    hmono.map_isLeast isLeast_norm_sq_dual
 
 end TauCeti.HexagonalLattice
