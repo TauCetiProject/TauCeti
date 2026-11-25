@@ -19,9 +19,10 @@ particular, it can be confined to a compact core, leaving the cylindrical end da
 
 The realization is an exact affine identity for the nonlinear operator, not only a formal
 linearization: adding `r δK_s` changes its value by `r v`. Consequently its parameter derivative
-is `v`. There is no immersion or nonconstancy hypothesis on the map. This distinguishes
-Hamiltonian variations from variations of the almost complex structure, which multiply the
-perturbed derivative of the map.
+is `v`. Over a point where `δK` vanishes identically, it does not change the operator at all
+(`SymplecticForm.floerOperator_add_sub_eq_zero`). There is no immersion or nonconstancy
+hypothesis on the map. This distinguishes Hamiltonian variations from variations of the almost
+complex structure, which multiply the perturbed derivative of the map.
 
 The same holds for whole fields along the map: a single localized variation `δK` changes the
 operator by any prescribed smooth compactly supported field `ξ`
@@ -67,6 +68,13 @@ theorem floerOperator_add_const_mul_left (ω : SymplecticForm V)
   simp only [one_mul, one_smul] at hX
   simp only [floerOperator_def, hX]
   abel
+
+/-- Over a point where the Hamiltonian variation `δK` vanishes identically, it does not change the
+Floer operator. -/
+theorem floerOperator_add_sub_eq_zero (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt δK : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) {z : ℝ × ℝ} (hz : ∀ y, δK z y = 0) :
+    ω.floerOperator J (fun w y ↦ Ks w y + δK w y) Kt u z - ω.floerOperator J Ks Kt u z = 0 := by
+  simp [floerOperator_def, hz]
 
 /-- A smooth Hamiltonian variation supported in any neighborhood of `(z, u z)` realizes any
 prescribed direction of the Floer operator. The formula holds for every real parameter, and
@@ -124,7 +132,9 @@ private theorem floerOperator_add_const_mul_left_of_tsupport_subset (ω : Symple
     have h0 : δK z = fun _ ↦ 0 := funext fun y ↦
       image_eq_zero_of_notMem_tsupport (f := Function.uncurry δK) (x := (z, y))
         fun h ↦ hz (hδKΩ h).1
-    simp [floerOperator_def, h0]
+    rw [sub_eq_zero.1 (ω.floerOperator_add_sub_eq_zero J Ks Kt (fun w y ↦ r * δK w y) u
+      fun y ↦ by simp [h0])]
+    simp [h0]
 
 /-- **Hamiltonian variations realize every field along a map.** Let `u` be continuous on an open
 set `Ω` on which `Ks` is differentiable along `u`, and let `W` be a neighborhood of each point

@@ -20,10 +20,11 @@ operator along a map `u` of the cylinder into a finite-dimensional symplectic ve
 Hamiltonian `K_s` by `δK` changes the Floer operator by `-X_{δK}(u)`. The **universal operator**
 adds these variations to `D_u`, `(ξ, δK) ↦ D_u ξ - X_{δK}(u)`. This file proves that it is onto
 `L²` as soon as `D_u` has closed range of finite codimension, as a Fredholm operator does, even
-when `δK` is restricted to smooth compactly supported variations over an arbitrary nonempty open
-subset `U` of the open strip `ℝ × (0, 1)`, a fundamental domain of the cylinder: every element of
-`L²` is `D_u ξ` plus a finite linear combination of such variation terms, the Hamiltonian
-variations `TauCeti.SymplecticForm.hamiltonianVariations`
+when `δK` is restricted to smooth compactly supported variations supported in a set `W` that is a
+neighbourhood of the graph of `u` over an arbitrary nonempty open subset `U` of the open strip
+`ℝ × (0, 1)`, a fundamental domain of the cylinder: every element of `L²` is `D_u ξ` plus a finite
+linear combination of such variation terms, the Hamiltonian variations
+`TauCeti.SymplecticForm.hamiltonianVariations`
 (`TauCeti.SymplecticForm.range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top`).
 Since the range of `D_u` has finite codimension, finitely many Hamiltonian variations already
 suffice
@@ -32,15 +33,19 @@ namespace `TauCeti.SymplecticForm`).
 This is the surjectivity of the universal operator on which the Sard–Smale construction of regular
 Floer data rests, for the free Hamiltonian directions of an inhomogeneous core.
 
-The proof is the standard one (McDuff–Salamon, Proposition 3.2.1).
+The proof is the standard one (McDuff–Salamon, Proposition 3.2.1). The statements and the closing
+argument follow the Morse analogue
+`TauCeti.range_trajectoryOperator_sup_span_metricVariations_eq_top` in
+`TauCeti.Analysis.Calculus.Morse.MorseSmale.MetricVariation`.
 
 * **Closed range.** The range of `D_u` is closed and of finite codimension, so every subspace
   containing it is closed (`Submodule.isClosed_mono_of_finiteDimensional_quotient`).
   The sum of the range of `D_u` and the span of the variation terms is therefore all of `L²` as
   soon as its orthogonal complement is trivial.
 * **The variation terms.** A variation `δK` that is `C¹`, of compact support and supported over
-  `U` changes the Floer operator by `-X_{δK}(u)` over `U` and not at all elsewhere, so its
-  variation term is continuous with compact support, and lies in every `Lᵖ` of the strip
+  `U` changes the Floer operator by `-X_{δK}(u)` over `U` and not at all elsewhere
+  (`TauCeti.SymplecticForm.floerOperator_add_sub_eq_zero`), so its variation term is continuous
+  with compact support, and lies in every `Lᵖ` of the strip
   (`TauCeti.SymplecticForm.memLp_floerOperator_add_sub`).
 * **Weak cokernel elements.** Let `h ∈ L²` be orthogonal to the range of `D_u` and to every
   variation term, and let `η = ⟪h, ·⟫` be the covector field it defines. A smooth map `ξ` with
@@ -48,8 +53,8 @@ The proof is the standard one (McDuff–Salamon, Proposition 3.2.1).
   (`TauCeti.CylinderSobolev.comp_fract_mem_testSection`) that agrees with `ξ` on the open strip,
   which carries the strip measure
   (`TauCeti.CylinderSobolev.stripMeasure_eq_restrict_univ_prod_Ioo`). So `η` annihilates
-  `D_u ξ` for every such `ξ`, and every variation term: it is a weak cokernel element of the
-  universal operator on the open strip. Such elements vanish
+  `D_u ξ` for every such `ξ`, and every variation term supported in `W` over `U`: it is a weak
+  cokernel element of the universal operator on the open strip. Such elements vanish
   (`ae_eq_zero_of_integral_floerLinearization_of_integral_floerOperator_add_sub` in the namespace
   `TauCeti.SymplecticForm`), so `h = 0`.
 
@@ -86,11 +91,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {δK : ℝ × ℝ → V → ℝ}
   {U : Set (ℝ × ℝ)}
 
-/-- Where the variation `δK` vanishes identically, it does not change the Floer operator. -/
-private theorem floerOperator_add_sub_eq_zero {z : ℝ × ℝ} (hz : ∀ y, δK z y = 0) :
-    ω.floerOperator J (fun w y ↦ Ks w y + δK w y) Kt u z - ω.floerOperator J Ks Kt u z = 0 := by
-  simp [floerOperator_def, hz]
-
 /-- **The variation terms are square integrable.** Let `δK` be a `C¹` variation of `K_s`, of
 compact support and supported over an open set `U` of the cylinder, over which `K_s` is
 differentiable along the graph of `u` and `u` is continuous. Then the change
@@ -111,7 +111,7 @@ theorem memLp_floerOperator_add_sub (hU : IsOpen U)
     rintro _ ⟨w, hw, rfl⟩
     exact (hδKU hw).1
   have hoff (z : ℝ × ℝ) (hz : z ∉ C) : f z = 0 :=
-    floerOperator_add_sub_eq_zero fun y ↦
+    ω.floerOperator_add_sub_eq_zero J Ks Kt δK u fun y ↦
       image_eq_zero_of_notMem_tsupport (f := uncurry δK) fun h ↦ hz ⟨(z, y), h, rfl⟩
   -- Over `U` the variation term is `-X_{δK}(u)`.
   have hon (z : ℝ × ℝ) (hz : z ∈ U) : f z = -ω.hamiltonianVectorField (δK z) (u z) := by
@@ -131,22 +131,23 @@ theorem memLp_floerOperator_add_sub (hU : IsOpen U)
         ((isOpen_compl_iff.2 hC.isClosed).mem_nhds fun h ↦ hz (hCU h)) fun w hw ↦ (hoff w hw).symm)
   exact hcont.memLp_of_hasCompactSupport (HasCompactSupport.intro hC hoff)
 
-variable (ω J Ks Kt u U) in
-/-- The **Hamiltonian variations** of the Floer operator over `U`: the classes in
+variable (ω J Ks Kt u) in
+/-- The **Hamiltonian variations** of the Floer operator in `W ⊆ (ℝ × ℝ) × V`: the classes in
 `L²(ℝ × S¹, V)` of the changes `F(J, K_s + δK, K_t)(u) - F(J, K_s, K_t)(u)` of the Floer operator,
-for smooth variations `δK` of `K_s` of compact support, supported over `U`. Over `U` the change is
-`-X_{δK}(u)`, the direction in which varying `K_s` moves the Floer equation at `u`. -/
-def hamiltonianVariations : Set (Lp V 2 stripMeasure) :=
+for smooth variations `δK` of `K_s` of compact support, supported in `W`. Where `K_s` is
+differentiable along `u`, the change is `-X_{δK}(u)`, the direction in which varying `K_s` moves
+the Floer equation at `u`. -/
+def hamiltonianVariations (W : Set ((ℝ × ℝ) × V)) : Set (Lp V 2 stripMeasure) :=
   {g | ∃ δK : ℝ × ℝ → V → ℝ, ContDiff ℝ (⊤ : ℕ∞) (uncurry δK) ∧ HasCompactSupport (uncurry δK) ∧
-    tsupport (uncurry δK) ⊆ U ×ˢ univ ∧
+    tsupport (uncurry δK) ⊆ W ∧
     g =ᵐ[stripMeasure] fun z ↦ ω.floerOperator J (fun w y ↦ Ks w y + δK w y) Kt u z -
       ω.floerOperator J Ks Kt u z}
 
 /-- Membership in the Hamiltonian variations. -/
-theorem mem_hamiltonianVariations {g : Lp V 2 stripMeasure} :
-    g ∈ ω.hamiltonianVariations J Ks Kt u U ↔ ∃ δK : ℝ × ℝ → V → ℝ,
+theorem mem_hamiltonianVariations {W : Set ((ℝ × ℝ) × V)} {g : Lp V 2 stripMeasure} :
+    g ∈ ω.hamiltonianVariations J Ks Kt u W ↔ ∃ δK : ℝ × ℝ → V → ℝ,
       ContDiff ℝ (⊤ : ℕ∞) (uncurry δK) ∧ HasCompactSupport (uncurry δK) ∧
-        tsupport (uncurry δK) ⊆ U ×ˢ univ ∧
+        tsupport (uncurry δK) ⊆ W ∧
         g =ᵐ[stripMeasure] fun z ↦ ω.floerOperator J (fun w y ↦ Ks w y + δK w y) Kt u z -
           ω.floerOperator J Ks Kt u z :=
   Iff.rfl
@@ -163,6 +164,7 @@ section Surjective
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V}
   {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {U : Set (ℝ × ℝ)}
+  {W : Set ((ℝ × ℝ) × V)}
 
 /-- **Cokernel elements are weak cokernel elements on the open strip.** An element `h` of
 `L²(ℝ × S¹, V)` orthogonal to the range of the Sobolev realization of `D_u` annihilates `D_u ξ`,
@@ -192,26 +194,28 @@ private theorem integral_inner_floerLinearization_eq_zero
     at h0
 
 /-- **Orthogonality to the Hamiltonian variations.** An element `h` of `L²(ℝ × S¹, V)` orthogonal to
-every Hamiltonian variation over an open subset `U` of the open strip `ℝ × (0, 1)` annihilates the
-change of the Floer operator under each such variation `δK`, integrated over the plane. -/
+every Hamiltonian variation in `W` annihilates the change of the Floer operator under each such
+variation `δK` supported over an open subset `U` of the open strip `ℝ × (0, 1)`, integrated over
+the plane. -/
 private theorem integral_inner_floerOperator_add_sub_eq_zero (hU : IsOpen U)
     (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1)
     (hKs : ∀ z ∈ U, DifferentiableAt ℝ (Ks z) (u z)) (hu : ContinuousOn u U)
-    {h : Lp V 2 stripMeasure} (hh : ∀ g ∈ ω.hamiltonianVariations J Ks Kt u U, ⟪h, g⟫_ℝ = 0)
+    {h : Lp V 2 stripMeasure} (hh : ∀ g ∈ ω.hamiltonianVariations J Ks Kt u W, ⟪h, g⟫_ℝ = 0)
     {δK : ℝ × ℝ → V → ℝ} (h₁ : ContDiff ℝ (⊤ : ℕ∞) (uncurry δK))
-    (h₂ : HasCompactSupport (uncurry δK)) (h₃ : tsupport (uncurry δK) ⊆ U ×ˢ univ) :
+    (h₂ : HasCompactSupport (uncurry δK)) (h₃ : tsupport (uncurry δK) ⊆ W ∩ U ×ˢ univ) :
     ∫ z, ⟪h z, ω.floerOperator J (fun w y ↦ Ks w y + δK w y) Kt u z -
       ω.floerOperator J Ks Kt u z⟫_ℝ = 0 := by
   have hmem := memLp_floerOperator_add_sub (ω := ω) (J := J) (Ks := Ks) (Kt := Kt) (δK := δK) hU
-    hKs hu (h₁.of_le (WithTop.coe_le_coe.2 le_top)) h₂ h₃ 2
-  have h0 := hh _ (mem_hamiltonianVariations.2 ⟨δK, h₁, h₂, h₃, hmem.coeFn_toLp⟩)
+    hKs hu (h₁.of_le (WithTop.coe_le_coe.2 le_top)) h₂ (h₃.trans inter_subset_right) 2
+  have h0 := hh _ (mem_hamiltonianVariations.2
+    ⟨δK, h₁, h₂, h₃.trans inter_subset_left, hmem.coeFn_toLp⟩)
   -- Off `U`, hence off the open strip, the variation does not change the Floer operator.
   rwa [MeasureTheory.L2.inner_def, integral_congr_ae (hmem.coeFn_toLp.mono fun z hz ↦ by
     rw [hz]), integral_stripMeasure, setIntegral_eq_integral_of_forall_compl_eq_zero
     fun z hz ↦ by
       beta_reduce
-      rw [floerOperator_add_sub_eq_zero fun y ↦ image_eq_zero_of_notMem_tsupport
-        (f := uncurry δK) (x := (z, y)) fun hy ↦ hz (hUΩ (h₃ hy).1), inner_zero_right]] at h0
+      rw [ω.floerOperator_add_sub_eq_zero J Ks Kt δK u fun y ↦ image_eq_zero_of_notMem_tsupport
+        (f := uncurry δK) (x := (z, y)) fun hy ↦ hz (hUΩ (h₃ hy).2.1), inner_zero_right]] at h0
 
 /-- **The universal linearized Floer operator on the cylinder is onto.** Let `V` be a
 finite-dimensional real inner product space with a symplectic form `ω`, and let the Floer data
@@ -220,10 +224,11 @@ Hamiltonians `K_s`, `K_t` are `C³` near the graph of `u`, `u` is `C²`, and `J(
 Suppose that the coefficients of the linearized operator are essentially bounded on the cylinder
 and that its Sobolev realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` has closed range of
 finite codimension, as a Fredholm operator does. Let `U` be a nonempty open subset of the open
-strip. Then every element of `L²` is `D_u ξ` plus a finite linear combination of Hamiltonian
-variations over `U` (`TauCeti.SymplecticForm.hamiltonianVariations`), the variation terms
+strip, and `W` a neighbourhood of the graph of `u` over `U`. Then every element of `L²` is `D_u ξ`
+plus a finite linear combination of Hamiltonian variations in `W`
+(`TauCeti.SymplecticForm.hamiltonianVariations`), the variation terms
 `F(J, K_s + δK, K_t)(u) - F(J, K_s, K_t)(u)` for smooth variations `δK` of `K_s` of compact
-support supported over `U`. -/
+support supported in `W`. -/
 theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
     (hJ : ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, ContDiffAt ℝ 2 (uncurry J) (z, u z))
     (hJJ : ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, J z (u z) ∘L J z (u z) = -ContinuousLinearMap.id ℝ V)
@@ -233,12 +238,12 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure)
     (hDc : IsClosed ((ω.floerSobolevOperator J Ks Kt u).range : Set (Lp V 2 stripMeasure)))
     (hDf : (ω.floerSobolevOperator J Ks Kt u).range.CoFG) (hU : IsOpen U) (hUne : U.Nonempty)
-    (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
+    (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1) (hW : ∀ z ∈ U, W ∈ 𝓝 (z, u z)) :
     (ω.floerSobolevOperator J Ks Kt u).range ⊔
-      Submodule.span ℝ (ω.hamiltonianVariations J Ks Kt u U) = ⊤ := by
+      Submodule.span ℝ (ω.hamiltonianVariations J Ks Kt u W) = ⊤ := by
   set Ω : Set (ℝ × ℝ) := univ ×ˢ Ioo (0 : ℝ) 1
   set D := ω.floerSobolevOperator J Ks Kt u
-  set T := ω.hamiltonianVariations J Ks Kt u U
+  set T := ω.hamiltonianVariations J Ks Kt u W
   -- The sum contains the closed range of `D_u`, of finite codimension, so it is closed, and it is
   -- everything once its orthogonal complement is trivial.
   have hSc : IsClosed ((D.range ⊔ Submodule.span ℝ T : Submodule ℝ _) :
@@ -263,7 +268,7 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
         (Submodule.mem_sup_left (LinearMap.mem_range.2 ⟨x, rfl⟩)) hh)
       (hξ.of_le (WithTop.coe_le_coe.2 le_top)) hξc hξΩ
   have hKη (δK : ℝ × ℝ → V → ℝ) (h₁ : ContDiff ℝ (⊤ : ℕ∞) (uncurry δK))
-      (h₂ : HasCompactSupport (uncurry δK)) (h₃ : tsupport (uncurry δK) ⊆ U ×ˢ univ) :
+      (h₂ : HasCompactSupport (uncurry δK)) (h₃ : tsupport (uncurry δK) ⊆ W ∩ U ×ˢ univ) :
       ∫ z, η z (ω.floerOperator J (fun w y ↦ Ks w y + δK w y) Kt u z -
         ω.floerOperator J Ks Kt u z) = 0 := by
     simpa only [η, innerSL_apply_apply] using integral_inner_floerOperator_add_sub_eq_zero
@@ -275,7 +280,8 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
         (Submodule.mem_sup_right (Submodule.subset_span hg)) hh) h₁ h₂ h₃
   have h0 := ae_eq_zero_of_integral_floerLinearization_of_integral_floerOperator_add_sub hΩo
     (isPreconnected_univ.prod isPreconnected_Ioo) hJ hJJ hKs hKt hu ENNReal.one_lt_two hη hDη hU
-    hUne hUΩ (fun z hz ↦ (hU.prod isOpen_univ).mem_nhds ⟨hz, mem_univ _⟩) hKη
+    hUne hUΩ (fun z hz ↦ inter_mem (hW z hz) ((hU.prod isOpen_univ).mem_nhds ⟨hz, mem_univ _⟩))
+    hKη
   -- So `h` vanishes almost everywhere on the open strip, which carries the strip measure.
   have hae : ∀ᵐ z ∂stripMeasure, η z = 0 := by
     rw [stripMeasure_eq_restrict_univ_prod_Ioo]
@@ -288,7 +294,7 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
 /-- **Finitely many Hamiltonian variations make the linearized Floer operator onto.** Under the
 hypotheses of
 `TauCeti.SymplecticForm.range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top`,
-finitely many Hamiltonian variations over `U` already span `L²(ℝ × S¹, V)` together with the range
+finitely many Hamiltonian variations in `W` already span `L²(ℝ × S¹, V)` together with the range
 of the Sobolev realization `D_u`, which has finite codimension. -/
 theorem exists_finset_subset_hamiltonianVariations_range_floerSobolevOperator_sup_span_eq_top
     (hJ : ∀ z ∈ univ ×ˢ Ioo (0 : ℝ) 1, ContDiffAt ℝ 2 (uncurry J) (z, u z))
@@ -299,13 +305,13 @@ theorem exists_finset_subset_hamiltonianVariations_range_floerSobolevOperator_su
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure)
     (hDc : IsClosed ((ω.floerSobolevOperator J Ks Kt u).range : Set (Lp V 2 stripMeasure)))
     (hDf : (ω.floerSobolevOperator J Ks Kt u).range.CoFG) (hU : IsOpen U) (hUne : U.Nonempty)
-    (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
-    ∃ t : Finset (Lp V 2 stripMeasure), (t : Set _) ⊆ ω.hamiltonianVariations J Ks Kt u U ∧
+    (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1) (hW : ∀ z ∈ U, W ∈ 𝓝 (z, u z)) :
+    ∃ t : Finset (Lp V 2 stripMeasure), (t : Set _) ⊆ ω.hamiltonianVariations J Ks Kt u W ∧
       (ω.floerSobolevOperator J Ks Kt u).range ⊔ Submodule.span ℝ t = ⊤ :=
   have := hDf
   Submodule.exists_finset_subset_sup_span_eq_top
     (range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top hJ hJJ hKs hKt hu hM hDc hDf
-      hU hUne hUΩ)
+      hU hUne hUΩ hW)
 
 end Surjective
 
@@ -321,10 +327,10 @@ one-periodic, jointly `C³` time-dependent Hamiltonian whose suspended vector fi
 Lipschitz, with one-periodic orbits `x₋` and `x₊` whose initial points are nondegenerate fixed
 points of the time-one map. Let `u` be a `C²` map whose loops converge uniformly to `x₋` at `-∞`
 and to `x₊` at `+∞`, with slice defect `∂t u - X_{H_t}(u)` tending uniformly to zero at both
-ends. For the Floer data `(J_t, 0, H_t)` and a nonempty open subset `U` of the open strip
-`ℝ × (0, 1)`, every element of `L²(ℝ × S¹, F)` is `D_u ξ` plus a finite linear combination of the
-variation terms `-X_{δK}(u)` of smooth variations `δK` of `K_s = 0`, of compact support and
-supported over `U`. -/
+ends. For the Floer data `(J_t, 0, H_t)`, a nonempty open subset `U` of the open strip
+`ℝ × (0, 1)` and a neighbourhood `W` of the graph of `u` over `U`, every element of
+`L²(ℝ × S¹, F)` is `D_u ξ` plus a finite linear combination of the variation terms of smooth
+variations `δK` of `K_s = 0`, of compact support and supported in `W`. -/
 theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_compatible
     (ω : SymplecticForm F) (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     {J : ℝ → F → AlmostComplexStructure F}
@@ -344,12 +350,13 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_comp
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
         (Icc 0 1))
-    (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
+    (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ univ ×ˢ Ioo (0 : ℝ) 1)
+    {W : Set ((ℝ × ℝ) × F)} (hW : ∀ z ∈ U, W ∈ 𝓝 (z, u z)) :
     (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) u).range ⊔
       Submodule.span ℝ (ω.hamiltonianVariations
         (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u
-        U) = ⊤ := by
+        W) = ⊤ := by
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   have hJ₁ : ContDiff ℝ 1 fun p : ℝ × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap :=
     hJ.of_le (by norm_num)
@@ -363,7 +370,7 @@ theorem range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_comp
     (fun _ _ ↦ hu.contDiffAt)
     (ω.memLp_floerJetCoeff (hH.of_le (by norm_num)) hJ₁ (hu.of_le (by norm_num)) huxm huxp hδm
       hδp)
-    hD.isClosed_range hD.finite_coker hU hUne hUΩ
+    hD.isClosed_range hD.finite_coker hU hUne hUΩ hW
 
 end Compatible
 

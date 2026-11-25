@@ -21,6 +21,7 @@ import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
+import TauCeti.Topology.Algebra.Order.Floor
 
 /-!
 # The Sobolev space `W^{1,2}` on the cylinder and Peetre's argument
@@ -237,42 +238,21 @@ On the open strip it agrees with `ξ` near every point
 theorem comp_fract_mem_testSection (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
     (hξS : tsupport ξ ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
     (fun z : ℝ × ℝ ↦ ξ (z.1, Int.fract z.2)) ∈ testSection V := by
-  -- `ξ` vanishes within `δ` of the two boundary lines of the strip, for some `0 < δ ≤ 1`.
+  -- `ξ` vanishes within `δ` of the two boundary lines of the strip, for some `δ > 0`, so it is
+  -- periodic in `t` near `0`.
   obtain ⟨δ, hδ, hδS⟩ := hξc.isCompact.exists_cthickening_subset_open
     (isOpen_univ.prod isOpen_Ioo) hξS
-  have hvan : ∀ s τ, (τ < min δ 1 ∨ 1 - min δ 1 < τ) → ξ (s, τ) = 0 := by
-    intro s τ hτ
-    by_contra hne
-    have hmem := subset_tsupport ξ hne
-    have hshift (c : ℝ) (hc : |c| ≤ δ) : τ + c ∈ Ioo (0 : ℝ) 1 :=
-      (hδS (mem_cthickening_of_dist_le (s, τ + c) (s, τ) δ _ hmem (by
-        simpa [Prod.dist_eq, Real.dist_eq] using hc))).2
-    have h₁ := hshift (-δ) (by rw [abs_neg, abs_of_pos hδ])
-    have h₂ := hshift δ (abs_of_pos hδ).le
-    rcases hτ with hτ | hτ
-    · linarith [h₁.1, min_le_left δ 1]
-    · linarith [h₂.2, min_le_left δ 1]
-  set δ' := min δ 1
-  have hδ' : 0 < δ' := lt_min hδ one_pos
-  -- Near a point with `⌊t⌋ = n`, the map is `ξ (s, t - n)`.
-  have hloc (z : ℝ × ℝ) : (fun w : ℝ × ℝ ↦ ξ (w.1, Int.fract w.2)) =ᶠ[𝓝 z]
-      fun w ↦ ξ (w.1, w.2 - ⌊z.2⌋) := by
-    set n : ℤ := ⌊z.2⌋
-    have hz : z.2 ∈ Ioo ((n : ℝ) - δ') (n + 1) :=
-      ⟨by linarith [Int.floor_le z.2], Int.lt_floor_add_one z.2⟩
-    filter_upwards [(continuous_snd.isOpen_preimage _ isOpen_Ioo).mem_nhds hz] with w hw
-    obtain ⟨hw₁, hw₂⟩ := hw
-    rcases le_or_gt (n : ℝ) w.2 with hn | hn
-    · rw [← Int.self_sub_floor, Int.floor_eq_iff.2 ⟨hn, hw₂⟩]
-    · have hfl : ⌊w.2⌋ = n - 1 := Int.floor_eq_iff.2 ⟨by push_cast; linarith [min_le_right δ 1],
-        by push_cast; linarith⟩
-      rw [hvan w.1 (w.2 - n) (Or.inl (by linarith)), ← Int.self_sub_floor, hfl,
-        hvan w.1 _ (Or.inr (by push_cast; linarith))]
+  have hper (s : ℝ) {t : ℝ} (ht₀ : -δ < t) (ht : t < 0) : ξ (s, t + 1) = ξ (s, t) := by
+    have h₁ : (s, t + 1) ∉ tsupport ξ := fun h ↦ lt_irrefl (1 : ℝ)
+      (hδS (mem_cthickening_of_dist_le (s, 1) (s, t + 1) δ _ h (by
+        simpa [Prod.dist_eq, Real.dist_eq, abs_of_neg ht] using ⟨hδ.le, by linarith⟩))).2.2
+    have h₂ : (s, t) ∉ tsupport ξ := fun h ↦ (hξS h).2.1.not_gt ht
+    rw [image_eq_zero_of_notMem_tsupport h₁, image_eq_zero_of_notMem_tsupport h₂]
   obtain ⟨R, -, hR⟩ := hξc.exists_pos_le_norm
   refine ⟨contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun s t ↦ by simp only [Int.fract_add_one], R,
     fun s t hs ↦ hR _ ?_⟩
   · exact (hξ.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const))).contDiffAt
-      |>.congr_of_eventuallyEq (hloc z)
+      |>.congr_of_eventuallyEq (apply_fract_snd_eventuallyEq hδ hper z)
   · rw [Prod.norm_def, Real.norm_eq_abs]
     exact hs.trans (le_max_left _ _)
 
