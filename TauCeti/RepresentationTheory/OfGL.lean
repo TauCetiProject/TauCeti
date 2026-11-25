@@ -29,7 +29,7 @@ open Matrix
 
 namespace Representation
 
-variable {Γ A : Type*} [Monoid Γ] [CommRing A] {n : Type*} [Fintype n] [DecidableEq n]
+variable {Γ A : Type*} [Monoid Γ] [CommSemiring A] {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The linear representation on `n → A` of a homomorphism `Γ →* GL_n(A)`, by matrix
 multiplication. -/
