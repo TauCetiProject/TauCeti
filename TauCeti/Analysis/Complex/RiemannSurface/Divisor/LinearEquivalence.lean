@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Map
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Trivialization
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
+import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Linear
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
@@ -29,8 +30,9 @@ More generally, a meromorphic function `g` whose order is at least `D - E` every
 morphism `𝒪(D) ⟶ 𝒪(E)`, for example `𝒪(D) ⟶ 𝒪(D + P)` when `P` is effective and `(g) ≥ -P`. It is
 additive in `g`, is `c` times the inclusion for a constant `c`, commutes with the inclusions
 `𝒪(D) ⟶ 𝒪(D')`, and for `g ≠ 0` is the isomorphism `𝒪(D) ≅ 𝒪(D - (g))` followed by an
-inclusion. These are the multiplication maps of the proof that every class in `H¹(X, 𝒪(D))`
-comes from a Mittag-Leffler distribution (Forster, Theorem 17.3).
+inclusion. The same holds for the maps they induce on Čech cohomology. These are the
+multiplication maps of the proof that every class in `H¹(X, 𝒪(D))` comes from a Mittag-Leffler
+distribution (Forster, Theorem 17.3).
 
 Consequently `h⁰` and `h¹` of a divisor sheaf depend only on the linear equivalence class of the
 divisor, and so does finite-dimensionality of each cohomology group. These are the
@@ -48,6 +50,8 @@ isomorphism-invariance statements consumed by Riemann–Roch for `𝒪(K - D)` a
 * `TauCeti.RiemannSurface.divisorCechCohomologyIsoOfPrincipalDivisorEq` and
   `TauCeti.RiemannSurface.divisorCechCohomologyIsoOfLinearlyEquivalent`: the induced
   isomorphisms `Hⁿ(X, 𝒪(D)) ≅ Hⁿ(X, 𝒪(E))`.
+* `TauCeti.RiemannSurface.divisorCechCohomologyMeromorphicMul`: the map
+  `Hⁿ(X, 𝒪(D)) → Hⁿ(X, 𝒪(E))` induced by multiplication by `g`.
 
 ## Main results
 
@@ -68,6 +72,12 @@ isomorphism-invariance statements consumed by Riemann–Roch for `𝒪(K - D)` a
   inclusion.
 * `cechCohomologyZeroIso_hom_comp_divisorCechCohomologyIsoOfPrincipalDivisorEq_hom`: in degree
   `0` the isomorphism is multiplication by `f` on global sections.
+* `TauCeti.RiemannSurface.divisorCechCohomologyMeromorphicMul_sub`,
+  `divisorCechCohomologyMeromorphicMul_algebraMap` and
+  `divisorCechCohomologyMapOfLE_comp_divisorCechCohomologyIsoOfPrincipalDivisorEq_hom`: on
+  cohomology, multiplication is additive in the multiplier, is `c` times the inclusion map for a
+  constant `c`, and for a nonzero multiplier is the isomorphism
+  `Hⁿ(X, 𝒪(D)) ≅ Hⁿ(X, 𝒪(D - (f)))` followed by an inclusion map.
 * `TauCeti.RiemannSurface.finrank_divisorCechCohomology_eq_of_linearlyEquivalent` and
   `TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_iff_of_linearlyEquivalent`.
 
@@ -548,5 +558,85 @@ theorem finiteDimensional_divisorCechCohomology_iff_of_linearlyEquivalent {D E :
     fun _ ↦ (divisorCechCohomologyIsoOfLinearlyEquivalent h n).toLinearEquiv.symm.finiteDimensional⟩
 
 end Cohomology
+
+/-! ### Multiplication by a meromorphic function on cohomology -/
+
+section CohomologyMultiplication
+
+variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+  [ConnectedSpace X] {D E : WeilDivisor X}
+
+/-- The map `Hⁿ(X, 𝒪(D)) → Hⁿ(X, 𝒪(E))` on Čech cohomology induced by multiplication by a
+meromorphic function `g` whose order is at least `D - E` at every point. -/
+def divisorCechCohomologyMeromorphicMul (g : MeromorphicFunction X)
+    (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (n : ℕ) :
+    divisorCechCohomology D n →ₗ[ℂ] divisorCechCohomology E n :=
+  ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+    (divisorSheafMeromorphicMul g hg).hom).hom
+
+/-- The multiplication map on cohomology is the Čech cohomology functor applied to the
+multiplication morphism of divisor sheaves. -/
+theorem divisorCechCohomologyMeromorphicMul_def (g : MeromorphicFunction X)
+    (hg : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g) (n : ℕ) :
+    divisorCechCohomologyMeromorphicMul g hg n =
+      ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+        (divisorSheafMeromorphicMul g hg).hom).hom :=
+  (rfl)
+
+/-- Multiplication on cohomology is additive in the multiplier. -/
+theorem divisorCechCohomologyMeromorphicMul_add (g₁ g₂ : MeromorphicFunction X)
+    (hg₁ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
+    (hg₂ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₂) (n : ℕ) :
+    divisorCechCohomologyMeromorphicMul (g₁ + g₂)
+        (fun x ↦ (le_min (hg₁ x) (hg₂ x)).trans ((MeromorphicFunction.order x).map_add _ _)) n =
+      divisorCechCohomologyMeromorphicMul g₁ hg₁ n +
+        divisorCechCohomologyMeromorphicMul g₂ hg₂ n := by
+  simp only [divisorCechCohomologyMeromorphicMul_def]
+  rw [divisorSheafMeromorphicMul_add g₁ g₂ hg₁ hg₂, ← ModuleCat.hom_add, ← Functor.map_add]
+  exact congrArg (fun φ ↦ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map φ).hom)
+    ((sheafToPresheaf _ _).map_add (X := divisorSheaf D) (Y := divisorSheaf E))
+
+/-- Multiplication by `g₁ - g₂` on cohomology is the difference of the multiplications by `g₁`
+and by `g₂`. -/
+theorem divisorCechCohomologyMeromorphicMul_sub (g₁ g₂ : MeromorphicFunction X)
+    (hg₁ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₁)
+    (hg₂ : ∀ x, ((D x - E x : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order x g₂) (n : ℕ) :
+    divisorCechCohomologyMeromorphicMul (g₁ - g₂)
+        (fun x ↦ (le_min (hg₁ x) (hg₂ x)).trans ((MeromorphicFunction.order x).map_sub _ _)) n =
+      divisorCechCohomologyMeromorphicMul g₁ hg₁ n -
+        divisorCechCohomologyMeromorphicMul g₂ hg₂ n := by
+  simp only [divisorCechCohomologyMeromorphicMul_def]
+  rw [divisorSheafMeromorphicMul_sub g₁ g₂ hg₁ hg₂, ← ModuleCat.hom_sub, ← Functor.map_sub]
+  exact congrArg (fun φ ↦ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map φ).hom)
+    ((sheafToPresheaf _ _).map_sub (X := divisorSheaf D) (Y := divisorSheaf E))
+
+/-- For `D ≤ E`, multiplication by a constant `c` on cohomology is `c` times the map induced by
+the inclusion `𝒪(D) ⟶ 𝒪(E)`. -/
+theorem divisorCechCohomologyMeromorphicMul_algebraMap (hDE : D ≤ E) (c : ℂ) (n : ℕ) :
+    divisorCechCohomologyMeromorphicMul (algebraMap ℂ (MeromorphicFunction X) c)
+        (sub_le_order_algebraMap hDE c) n =
+      c • divisorCechCohomologyMapOfLE hDE n := by
+  rw [divisorCechCohomologyMeromorphicMul_def, divisorSheafMeromorphicMul_algebraMap_hom,
+    Functor.map_smul, divisorCechCohomologyMapOfLE_def, ModuleCat.hom_smul]
+
+/-- **Nonzero multipliers on cohomology.** If the principal divisor of `f` is `D - F` and
+`F ≤ E`, the isomorphism `Hⁿ(X, 𝒪(D)) ≅ Hⁿ(X, 𝒪(F))` followed by the map induced by the
+inclusion `𝒪(F) ⟶ 𝒪(E)` is multiplication by `f` on cohomology. -/
+theorem divisorCechCohomologyMapOfLE_comp_divisorCechCohomologyIsoOfPrincipalDivisorEq_hom
+    [CompactSpace X] {F : WeilDivisor X} (f : Additive (MeromorphicFunction X)ˣ)
+    (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - F) (hFE : F ≤ E) (n : ℕ) :
+    divisorCechCohomologyMapOfLE hFE n ∘ₗ
+        (divisorCechCohomologyIsoOfPrincipalDivisorEq f hf n).hom.hom =
+      divisorCechCohomologyMeromorphicMul (f.toMul : MeromorphicFunction X) (fun x ↦ by
+        rw [← MeromorphicFunction.coe_coeff_principalDivisor_orderSystem, hf,
+          WeilDivisor.coeff, Finsupp.sub_apply]
+        exact_mod_cast sub_le_sub_left (hFE x) _) n := by
+  rw [divisorCechCohomologyMeromorphicMul_def, ←
+    divisorSheafIsoOfPrincipalDivisorEq_hom_comp_divisorSheafMapOfLE f hf hFE,
+    divisorCechCohomologyMapOfLE_def, divisorCechCohomologyIsoOfPrincipalDivisorEq_hom]
+  exact congrArg ModuleCat.Hom.hom
+    ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map_comp _ _).symm
+
+end CohomologyMultiplication
 
 end TauCeti.RiemannSurface
