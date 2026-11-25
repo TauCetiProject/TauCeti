@@ -8,10 +8,11 @@ module
 public import TauCeti.Algebra.TemperleyLieb.Star
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Positivity
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
--- Private: ring involution identities, basis coordinate transport, orthogonal generator and
--- even-bivector identities, functoriality of Clifford involutions, and real-form positivity are
--- used only inside proofs and internal transport constructions.
+-- Private: ring involution identities, `√2 * √2 = 2` in `ℂ`, basis coordinate transport,
+-- orthogonal generator and even-bivector identities, functoriality of Clifford involutions, and
+-- real-form positivity are used only inside proofs and internal transport constructions.
 import TauCeti.Algebra.Ring.Idempotent.Basic
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Basic.Complex.BigOperators
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
@@ -117,17 +118,13 @@ open scoped ComplexConjugate ComplexOrder TensorProduct
 
 namespace TauCeti.TemperleyLieb
 
-/-! ### Arithmetic helpers for `√2` in `ℂ` -/
+/-! ### The self-adjoint loop parameter `√2` -/
 
 /-- Registers `IsSelfAdjoint (Real.sqrt 2 : ℂ)` as a `Fact` so that
 `TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m` carries the analytic adjoint instances
 `TemperleyLieb.instStarRing` and `TemperleyLieb.instStarModule`. -/
 instance : Fact (IsSelfAdjoint (Real.sqrt 2 : ℂ)) :=
   ⟨Complex.conj_ofReal _⟩
-
-private theorem sqrt_two_coe_mul_self :
-    (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
-  exact_mod_cast Real.mul_self_sqrt zero_le_two
 
 /-! ### The quadratic form, even Clifford carrier, and Majorana generators -/
 
@@ -171,7 +168,7 @@ theorem isOrthoᵢ_associated_cliffordForm (m : ℕ) :
 /-- The standard sum-of-squares form `cliffordForm m` is nondegenerate for every `m`. -/
 theorem nondegenerate_cliffordForm (m : ℕ) : (cliffordForm m).Nondegenerate := by
   rw [cliffordForm_eq_weightedSumSquares]
-  exact QuadraticMap.nondegenerate_weightedSumSquares fun _ ↦ isRegular_one
+  exact QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun _ ↦ isRegular_one
 
 /-- The **even complex Clifford algebra** `Cl_m⁰` of `cliffordForm m`. -/
 noncomputable abbrev EvenClifford (m : ℕ) : Subalgebra ℂ (CliffordAlgebra (cliffordForm m)) :=
@@ -711,7 +708,7 @@ noncomputable def evenCliffordHom (m : ℕ) :
     (fun {i j} h ↦ Subtype.ext <| by
       simp only [Subalgebra.coe_mul, evenCliffordGenerator, smul_mul_assoc, mul_smul_comm,
         cliffordProjection_mul_cliffordProjection_mul_cliffordProjection h, smul_smul]
-      rw [sqrt_two_coe_mul_self]
+      rw [Complex.mul_self_ofReal_sqrt zero_le_two]
       norm_num)
     (fun {i j} h ↦ Subtype.ext <| by
       simp only [Subalgebra.coe_mul, evenCliffordGenerator]
@@ -764,7 +761,7 @@ private theorem majorana_mul_succ_mem_range_ambient {m : ℕ} (j : ℕ) (hj : j 
       (Real.sqrt 2 : ℂ) • cliffordProjection m i :=
     coe_evenCliffordHom_e m i
   have hscale : ((Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ)) * (2 : ℂ)⁻¹ = 1 := by
-    rw [sqrt_two_coe_mul_self]
+    rw [Complex.mul_self_ofReal_sqrt zero_le_two]
     norm_num
   rw [map_smul, map_sub, map_smul, he, cliffordProjection_def, smul_smul, smul_smul, hscale]
   simp [smul_smul, i]

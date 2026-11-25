@@ -57,6 +57,9 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
+* `TauCeti.lintegral_setLIntegral_enorm_sub_rpow_le`: an upper bound
+  `n μ(B(0, 1)) D ^ (n + s) / (n + s) · ν A` for the integral over a set of centres `p` of the
+  potential `∫ x in A, ‖x - p‖ ^ s dν` of an s-finite measure `ν`.
 * `TauCeti.ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le`: off-diagonal real-norm domination
   `‖f y‖ ≤ C * ‖x - y‖ ^ s` on a measurable set implies `∀ᵐ y, ‖f y‖ₑ ≤ ofReal C * ‖x - y‖ₑ ^ s`
   under any null-singleton measure.
@@ -71,8 +74,13 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.memLp_div_pow_compl_closedBall_iff` and
   `TauCeti.memLp_div_sub_pow_compl_closedBall_iff`: `a / (z - c) ^ m` is in `Lᵖ` off a disc
   centred at `c` exactly when `2 < m p`.
+* `Bornology.IsBounded.memLp_of_ae_norm_le_mul_norm_sub_rpow`: on a bounded set, a function
+  dominated almost everywhere by `C ‖x - y‖ ^ s` is `Lʳ` for every finite `r` with `-d < s r`.
 * `Bornology.IsBounded.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`:
   `‖x‖⁻¹` is `Lʳ` on bounded sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
+* `Bornology.IsBounded.memLp_norm_rpow_restrict`,
+  `Bornology.IsBounded.memLp_norm_rpow_restrict_iff`: `‖x‖ ^ s` is `Lᵖ` on a bounded
+  neighbourhood of the origin exactly when `-d < s p`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -475,9 +483,35 @@ theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
     setLIntegral_enorm_sub_rpow_le_of_mem_closure
       (s := 1 - (Module.finrank ℝ E : ℝ)) (by linarith) hb (subset_closure hx)
 
+/-- **Averaging the potential of a measure.** Let `ν` be an s-finite measure and suppose that
+every point of `A` lies within distance `D` of every point of `P`. For `s > -dim E`, the potential
+`p ↦ ∫ x in A, ‖x - p‖ ^ s dν` of `ν` restricted to `A` has integral over `P` at most
+`n μ(B(0, 1)) D ^ (n + s) / (n + s)` times `ν A`. For `s = -k` with `k < n`, the kernel
+`‖x - p‖ ^ (-k)` is, up to a constant, the `k`-th power of the local Lipschitz constant at `x` of a
+radial projection from `p` (`TauCeti.lipschitzOnWith_frontierRadialProjection_ball`), so this
+averages that power over the centre. -/
+theorem lintegral_setLIntegral_enorm_sub_rpow_le {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s) (ν : Measure E) [SFinite ν] {A P : Set E} {D : ℝ}
+    (hAP : ∀ x ∈ A, P ⊆ closedBall x D) :
+    ∫⁻ p in P, ∫⁻ x in A, ‖x - p‖ₑ ^ s ∂ν ∂mu ≤
+      ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball 0 1) *
+        (D ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s))) * ν A := by
+  rw [lintegral_lintegral_swap (by fun_prop), ← setLIntegral_const]
+  refine setLIntegral_mono measurable_const fun x hx ↦ ?_
+  rcases lt_or_ge D 0 with hD | hD
+  · simp [subset_empty_iff.1 ((hAP x hx).trans (closedBall_eq_empty.2 hD).subset)]
+  · exact (lintegral_mono_set (hAP x hx)).trans_eq (setLIntegral_closedBall_enorm_sub_rpow hs hD x)
+
 section Inverse
 
-open scoped ENNReal
+open scoped ENNReal Topology
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- `‖‖x‖ ^ s‖ ^ r = ‖x‖ ^ (s r)`: the `r`-th power of the norm of a norm power. -/
+private theorem norm_norm_rpow_rpow (s r : ℝ) :
+    (fun x : E => ‖‖x‖ ^ s‖ ^ r) = fun x => ‖x‖ ^ (s * r) := by
+  funext x
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _), ← Real.rpow_mul (norm_nonneg x)]
 
 /-- On a bounded set, `‖x‖ ^ s` is `Lʳ` for every finite exponent `r` with `-dim E < s r`. -/
 theorem _root_.Bornology.IsBounded.memLp_norm_rpow_restrict {K : Set E}
@@ -489,12 +523,44 @@ theorem _root_.Bornology.IsBounded.memLp_norm_rpow_restrict {K : Set E}
   · exact memLp_zero_iff_aestronglyMeasurable.2 hm.aestronglyMeasurable
   obtain ⟨R, hR⟩ := hK.subset_ball 0
   refine MemLp.mono_measure (Measure.restrict_mono hR le_rfl) ?_
-  rw [← integrable_norm_rpow_iff hm.aestronglyMeasurable hr0 hr]
-  have heq : (fun x : E => ‖‖x‖ ^ s‖ ^ r.toReal) = fun x => ‖x‖ ^ (s * r.toReal) := by
-    funext x
-    rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _), ← Real.rpow_mul (norm_nonneg x)]
-  rw [heq]
+  rw [← integrable_norm_rpow_iff hm.aestronglyMeasurable hr0 hr, norm_norm_rpow_rpow]
   exact integrableOn_norm_rpow_ball hs
+
+/-- **`Lᵖ` membership of a norm power.** On a nontrivial space, for `p < ∞` and a bounded
+neighbourhood `U` of the origin, `x ↦ ‖x‖ ^ s` is `Lᵖ` on `U` exactly when `-dim E < s p`. -/
+theorem _root_.Bornology.IsBounded.memLp_norm_rpow_restrict_iff [Nontrivial E] {U : Set E}
+    (hb : Bornology.IsBounded U) (hU : U ∈ 𝓝 (0 : E)) {p : ℝ≥0∞} (hp : p ≠ ∞) {s : ℝ} :
+    MemLp (fun x : E => ‖x‖ ^ s) p (mu.restrict U) ↔
+      -(Module.finrank ℝ E : ℝ) < s * p.toReal := by
+  refine ⟨fun h => ?_, hb.memLp_norm_rpow_restrict hp⟩
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [ENNReal.toReal_zero, mul_zero, neg_lt_zero]
+    exact_mod_cast Module.finrank_pos
+  obtain ⟨r, hr, hrU⟩ := nhds_basis_ball.mem_iff.1 hU
+  have h' := h.mono_measure (Measure.restrict_mono hrU le_rfl)
+  rw [← integrable_norm_rpow_iff (measurable_norm.pow_const s).aestronglyMeasurable hp0 hp,
+    norm_norm_rpow_rpow] at h'
+  exact (integrableOn_norm_rpow_ball_iff hr).1 h'
+
+/-- On a bounded set `K`, a function dominated almost everywhere on `K` by `C ‖x - y‖ ^ s`, a
+power of the distance to a pole `x`, is `Lʳ` on `K` for every finite exponent `r` with
+`-dim E < s r`. -/
+theorem _root_.Bornology.IsBounded.memLp_of_ae_norm_le_mul_norm_sub_rpow {F : Type*}
+    [NormedAddCommGroup F] {K : Set E} (hK : Bornology.IsBounded K) {f : E → F} {s C : ℝ}
+    {r : ℝ≥0∞} (hr : r ≠ ∞) (hs : -(Module.finrank ℝ E : ℝ) < s * r.toReal) (x : E)
+    (hf : AEStronglyMeasurable f (mu.restrict K))
+    (hle : ∀ᵐ y ∂mu.restrict K, ‖f y‖ ≤ C * ‖x - y‖ ^ s) :
+    MemLp f r (mu.restrict K) := by
+  have hm : Measurable fun y : E => C * ‖x - y‖ ^ s := by fun_prop
+  refine MemLp.of_le ?_ hf (hle.mono fun y hy => hy.trans (Real.le_norm_self _))
+  rcases eq_or_ne r 0 with rfl | hr0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm.aestronglyMeasurable
+  rw [← integrable_norm_rpow_iff hm.aestronglyMeasurable hr0 hr]
+  refine ((integrableOn_norm_sub_rpow_of_isBounded (mu := mu) hs hK x).const_mul
+    (|C| ^ r.toReal)).congr (Filter.Eventually.of_forall fun y => ?_)
+  have hy : 0 ≤ ‖x - y‖ ^ s := Real.rpow_nonneg (norm_nonneg _) _
+  simp only [Real.norm_eq_abs, abs_mul, abs_of_nonneg hy, Real.mul_rpow (abs_nonneg C) hy,
+    ← Real.rpow_mul (norm_nonneg (x - y))]
 
 /-- On a bounded set, a function dominated by `C ‖x‖ ^ s` is `Lʳ` for every finite exponent `r`
 with `-dim E < s r`. -/
@@ -503,8 +569,8 @@ theorem _root_.Bornology.IsBounded.memLp_of_norm_le_mul_norm_rpow {F : Type*}
     {r : ℝ≥0∞} (hr : r ≠ ∞) (hs : -(Module.finrank ℝ E : ℝ) < s * r.toReal)
     (hf : AEStronglyMeasurable f (mu.restrict K)) (hle : ∀ x, ‖f x‖ ≤ C * ‖x‖ ^ s) :
     MemLp f r (mu.restrict K) :=
-  ((hK.memLp_norm_rpow_restrict hr hs).const_mul C).of_le hf <|
-    Filter.Eventually.of_forall fun x => (hle x).trans (Real.le_norm_self _)
+  hK.memLp_of_ae_norm_le_mul_norm_sub_rpow hr hs 0 hf <|
+    Filter.Eventually.of_forall fun y => by simpa using hle y
 
 /-- On a bounded set, `‖x‖⁻¹` is `Lʳ` for every exponent `r < dim E`. -/
 theorem _root_.Bornology.IsBounded.memLp_norm_inv_restrict {K : Set E}
@@ -525,17 +591,10 @@ theorem not_memLp_norm_inv_closedBall [Nontrivial E] {ε : ℝ} (hε : 0 < ε) {
   have : IsFiniteMeasure (mu.restrict (closedBall (0 : E) ε)) :=
     isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
   have h2 := h.mono_exponent hr
-  rw [← integrable_norm_rpow_iff (by fun_prop) (by simp [Module.finrank_pos.ne'])
-    (by simp)] at h2
-  have heq : (fun x : E => ‖‖x‖⁻¹‖ ^ (Module.finrank ℝ E : ℝ≥0∞).toReal) =
-      fun x => ‖x‖ ^ (-(Module.finrank ℝ E : ℝ)) := by
-    funext x
-    rw [Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg x)), Real.inv_rpow (norm_nonneg x),
-      Real.rpow_neg (norm_nonneg x), ENNReal.toReal_natCast]
-  rw [heq] at h2
-  have h3 : IntegrableOn (fun x : E => ‖x‖ ^ (-(Module.finrank ℝ E : ℝ))) (ball 0 ε) mu :=
-    IntegrableOn.mono_set h2 ball_subset_closedBall
-  exact lt_irrefl _ ((integrableOn_norm_rpow_ball_iff hε).1 h3)
+  -- `‖x‖⁻¹ = ‖x‖ ^ (-1)`, and `-1 * dim E > -dim E` fails.
+  simp only [← Real.rpow_neg_one] at h2
+  exact lt_irrefl _ (((isBounded_closedBall.memLp_norm_rpow_restrict_iff
+    (closedBall_mem_nhds 0 hε) (by simp)).1 h2).trans_eq (by simp))
 
 end Inverse
 

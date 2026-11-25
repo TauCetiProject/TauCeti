@@ -8,6 +8,7 @@ module
 public import TauCeti.Examples.RingTheory.Huber.CompleteRankOneBase
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Saturated
 
+import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.NumberTheory.Padics.Complex.MaximalIdeal
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.WeightedEval.Completion

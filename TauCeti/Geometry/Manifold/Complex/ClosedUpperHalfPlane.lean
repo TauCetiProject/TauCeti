@@ -154,6 +154,16 @@ theorem _root_.OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage 
     range_closedUpperHalfPlaneModel, mem_inter_iff, mem_preimage, mem_ofPred_eq]
   tauto
 
+/-- The part of the target of the extended chart at `x` of a manifold modelled on the closed upper
+half-plane lying over an open set is relatively open in the closed upper half-plane: it is
+`Ω ∩ {z | 0 ≤ z.im}` for an open `Ω ⊆ ℂ`. This is
+`OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage` for the chart at `x`. -/
+theorem exists_isOpen_extChartAt_target_inter_preimage {M : Type*} [TopologicalSpace M]
+    [ChartedSpace ClosedUpperHalfPlane M] (x : M) {W : Set M} (hW : IsOpen W) :
+    ∃ Ω : Set ℂ, IsOpen Ω ∧ (extChartAt closedUpperHalfPlaneModel x).target ∩
+      (extChartAt closedUpperHalfPlaneModel x).symm ⁻¹' W = Ω ∩ {z | 0 ≤ z.im} :=
+  (chartAt ClosedUpperHalfPlane x).exists_isOpen_extend_target_inter_preimage hW
+
 /-- The manifold interior of the model consists exactly of points with positive imaginary part. -/
 @[simp]
 theorem closedUpperHalfPlaneModel_isInteriorPoint_iff (z : ClosedUpperHalfPlane) :
@@ -415,14 +425,14 @@ theorem ClosedUpperHalfPlane.toHomeomorph_euclideanHalfSpaceDiffeomorph (n : ℕ
   Homeomorph.ext fun z ↦ Subtype.ext (by simp)
 
 /-- The canonical native half-space charts of a closed-upper-half-plane charted space.
-The original charts are composed with the existing real coordinate homeomorphism. This is
-an explicitly chosen charted-space structure, rather than a global instance on every `M`. -/
+The original charts are followed by the existing real coordinate homeomorphism
+(`Homeomorph.chartedSpaceComp`). This is an explicitly chosen charted-space structure, rather
+than a global instance on every `M`. -/
 @[instance_reducible]
 def ClosedUpperHalfPlane.euclideanHalfSpaceChartedSpace (M : Type*)
     [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] :
     ChartedSpace (EuclideanHalfSpace (1 + 1)) M :=
-  letI := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  ChartedSpace.comp (EuclideanHalfSpace (1 + 1)) ClosedUpperHalfPlane M
+  euclideanHalfSpaceHomeomorph.chartedSpaceComp M
 
 /-- The preferred chart of the native half-space transfer is the original chart followed by
 the existing real coordinate homeomorphism. -/
@@ -431,8 +441,8 @@ theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace (M : Type*)
     letI := euclideanHalfSpaceChartedSpace M
     chartAt (EuclideanHalfSpace (1 + 1)) x =
       (chartAt ClosedUpperHalfPlane x).trans
-        euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph := by
-  rfl
+        euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph :=
+  euclideanHalfSpaceHomeomorph.chartAt_chartedSpaceComp x
 
 /-- Evaluation of the preferred chart in the native half-space transfer. -/
 @[simp]
@@ -474,7 +484,6 @@ theorem ClosedUpperHalfPlane.isManifold_euclideanHalfSpace {n : ℕ∞ω} (M : T
     [IsManifold closedUpperHalfPlaneModel n M] :
     letI := euclideanHalfSpaceChartedSpace M
     IsManifold (𝓡∂ (1 + 1)) n M := by
-  let := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
   have h := (euclideanHalfSpaceDiffeomorph n).isManifold_chartedSpaceComp M
   rwa [toHomeomorph_euclideanHalfSpaceDiffeomorph] at h
 

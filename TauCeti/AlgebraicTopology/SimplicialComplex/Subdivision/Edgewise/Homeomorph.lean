@@ -380,7 +380,7 @@ theorem iUnion_convexHull_range_edgewisePoint (K : AbstractSimplicialComplex ι)
     obtain ⟨y, rfl⟩ := edgewiseSubdivisionRealizationMap_surjective (K := K) hk x
     let ρ := carrier _ y
     let t : StandardSimplex ρ.val := ⟨y.val, mem_convexHull_carrier _ y⟩
-    have ht : faceInclusion _ ρ t = y := Subtype.ext (faceInclusion_val _ _ _)
+    have ht : faceInclusion _ ρ t = y := faceInclusion_mk_val _ _ _ _
     exact mem_iUnion.mpr ⟨ρ, t, by simp only [ht]⟩
 
 /-- The edgewise realization map is bijective for `k ≠ 0`. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import TauCeti.Probability.DysonBrownianMotion.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -119,6 +120,23 @@ theorem continuous_truncatedDysonPath : Continuous (truncatedDysonPath hε n x w
 @[simp]
 theorem truncatedDysonPath_eval_zero : truncatedDysonPath hε n x w hw 0 = x + w 0 := by
   simp [truncatedDysonPath]
+
+/-- After subtracting the continuous forcing, the truncated trajectory has the prescribed drift
+as its derivative on the nonnegative half-line, including the right derivative at zero. -/
+theorem hasDerivWithinAt_truncatedDysonPath_sub (r : ℝ) (hr : 0 ≤ r) :
+    HasDerivWithinAt
+      (fun s : ℝ ↦ truncatedDysonPath hε n x w hw s.toNNReal - w s.toNNReal)
+      (truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw r.toNNReal)) (Ici 0) r := by
+  have heq (s : ℝ) (hs : 0 ≤ s) :
+      truncatedDysonPath hε n x w hw s.toNNReal - w s.toNNReal =
+        shiftedTruncatedCurve hε n x w hw s := by
+    simp [truncatedDysonPath, Real.coe_toNNReal s hs]
+  have hd := hasDerivAt_shiftedTruncatedCurve hε n x w hw r
+  have hfield : shiftedTruncatedField ε n w r (shiftedTruncatedCurve hε n x w hw r) =
+      truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw r.toNNReal) := by
+    simp [shiftedTruncatedField, truncatedDysonPath, Real.coe_toNNReal r hr]
+  rw [hfield] at hd
+  exact hd.hasDerivWithinAt.congr (fun s hs ↦ heq s hs) (heq r hr)
 
 /-- **Integral equation of `truncatedDysonPath`.** Every coordinate satisfies the `ε`-truncated
 Dyson integral equation driven by `w`. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Ungraded
 public import TauCeti.LowDimTopology.Bordered.TypeD
+import TauCeti.Data.Matrix.Block
 
 /-!
 # The box tensor product of a type `A` module with a type `D` structure
@@ -660,11 +661,6 @@ theorem typeABoxMap_add_typeABoxMap_of_act_eq_zero [CharP R 2] (N : TypeDStructu
   rw [typeABoxDifferential_typeABoxMap_of_act_eq_zero N N' Mm hK, hH,
     typeABoxMap_add_of_act_eq_zero N N' Mm hK, LinearMap.add_apply]
 
-/-- The height on `X ⊕ X'` of two heights on `X` and `X'`, that of `X'` shifted above that of
-`X`. -/
-private def sumHeight (h : X → ℕ) (h' : X' → ℕ) : X ⊕ X' → ℕ :=
-  Sum.elim h fun y => univ.sup h + 1 + h' y
-
 /-- The block upper-triangular matrices increase `sumHeight h h'` when `δ` and `δ'` increase `h`
 and `h'`. -/
 private theorem bound_of_lt {N : TypeDStructure d ι X} {N' : TypeDStructure d ι X'}
@@ -673,30 +669,10 @@ private theorem bound_of_lt {N : TypeDStructure d ι X} {N' : TypeDStructure d �
     Bound N N' Mm {P | ∀ a b, P a b ≠ 0 → sumHeight h h' a < sumHeight h h' b}
       (univ.sup h + univ.sup h' + 2) where
   act_eq_zero n hn u hu := by
-    have hsup : univ.sup (sumHeight h h') ≤ univ.sup h + univ.sup h' + 1 :=
-      Finset.sup_le fun a _ => by
-        rcases a with x | y
-        · have := le_sup (f := h) (mem_univ x)
-          simp only [sumHeight, Sum.elim_inl]
-          omega
-        · have := le_sup (f := h') (mem_univ y)
-          simp only [sumHeight, Sum.elim_inr]
-          omega
+    have := univ_sup_sumHeight_le h h'
     exact Mm.matrixAct_eq_zero_of_lt _ _ (by omega) fun l => hu l
-  fromBlocks_mem G a b hab := by
-    have hle (x : X) : h x ≤ univ.sup h := le_sup (f := h) (mem_univ x)
-    rcases a with x | x <;> rcases b with y | y <;>
-      simp only [sumHeight, Sum.elim_inl, Sum.elim_inr, Matrix.fromBlocks_apply₁₁,
-        Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂] at hab ⊢
-    · exact hh x y hab
-    · have := hle x; omega
-    · simp at hab
-    · have := hh' x y hab; omega
-  fromBlocks_zero_mem G a b hab := by
-    have hle (x : X) : h x ≤ univ.sup h := le_sup (f := h) (mem_univ x)
-    rcases a with x | x <;> rcases b with y | y <;> simp at hab
-    simp only [sumHeight, Sum.elim_inl, Sum.elim_inr]
-    have := hle x; omega
+  fromBlocks_mem G _ _ := sumHeight_lt_of_fromBlocks h hh h' hh' G
+  fromBlocks_zero_mem G _ _ := sumHeight_lt_of_fromBlocks h (by simp) h' (by simp) G
   map_mem P hP a b hab := hP a b fun h0 => hab (by simp [h0])
 
 /-- **The induced maps with bounded type `D` structures.** Over a ring of characteristic two, if

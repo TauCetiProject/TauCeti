@@ -130,6 +130,22 @@ theorem simpleGains_def (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X 
       ∑ j ∈ range n, a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) :=
   (rfl)
 
+/-- An order embedding of the time axis preserves elementary holdings at embedded times. -/
+@[simp]
+theorem simpleHolding_map {κ : Type*} [LinearOrder κ]
+    (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (e : ι ↪o κ) (t : ι) (ω : Ω) :
+    simpleHolding (fun j ↦ e (τ j)) n a (e t) ω = simpleHolding τ n a t ω := by
+  simp [simpleHolding_def, Set.indicator_apply]
+
+/-- A monotone change of time preserves elementary gains after pulling back the price path. -/
+@[simp]
+theorem simpleGains_map {κ : Type*} [LinearOrder κ]
+    (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X : κ → Ω → ℝ) (e : ι → κ)
+    (he : Monotone e) (t : ι) (ω : Ω) :
+    simpleGains (fun j ↦ e (τ j)) n a X (e t) ω =
+      simpleGains τ n a (fun u ↦ X (e u)) t ω := by
+  simp only [simpleGains_def, he.map_min]
+
 /-- Elementary gains only inspect the price at the clipped endpoints of the grid.
 No order condition on the grid is needed for this identity. -/
 theorem simpleGains_congr_price {X Y : ι → Ω → ℝ} (ω : Ω)
@@ -273,6 +289,16 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   simp only [simpleHolding_def, mul_sum]
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
+
+/-- Applying a function fixing zero to each height applies that function to the holding
+process, because the trading intervals are disjoint. No continuity of the function is needed. -/
+theorem simpleHolding_comp {f : ℝ → ℝ} (hf : f 0 = 0)
+    (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω : Ω) :
+    simpleHolding τ n (fun j ω ↦ f (a j ω)) t ω = f (simpleHolding τ n a t ω) := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, ht⟩ := exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj ht, simpleHolding_of_mem_Ioc hτ hj ht]
+  · rw [simpleHolding_of_notMem_Ioc hτ ht, simpleHolding_of_notMem_Ioc hτ ht, hf]
 
 /-! ### Measurability -/
 
