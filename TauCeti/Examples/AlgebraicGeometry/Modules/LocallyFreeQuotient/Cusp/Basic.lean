@@ -99,11 +99,14 @@ theorem span_D_eq_top :
 
 variable {k}
 
+/-- In characteristic `2`, `2 = 0` in the cusp ring. -/
+theorem two_eq_zero_cuspRing (h2 : (2 : k) = 0) : (2 : CuspRing k) = 0 := by
+  rw [← map_ofNat (algebraMap k (CuspRing k)) 2, h2, map_zero]
+
 /-- In characteristic `2`, `x² dx = 0` on the cusp: `d(y²) = 2y dy = 0` and `d(x³) = 3x² dx`. -/
 theorem cuspX_sq_smul_D_cuspX_eq_zero (h2 : (2 : k) = 0) :
     cuspX k ^ 2 • D k (CuspRing k) (cuspX k) = 0 := by
-  have h2' : (2 : CuspRing k) = 0 := by
-    rw [← map_ofNat (algebraMap k (CuspRing k)) 2, h2, map_zero]
+  have h2' := two_eq_zero_cuspRing h2
   have h3 : (3 : CuspRing k) = 1 := by
     linear_combination h2'
   have h := congrArg (D k (CuspRing k)) (cuspY_sq k)

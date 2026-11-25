@@ -42,20 +42,24 @@ def cuspDualMap (h2 : (2 : k) = 0) : CuspRing k →ₐ[k] TrivSqZeroExt (CuspRin
   AdjoinRoot.liftAlgHom _
     ((TrivSqZeroExt.inlAlgHom k (CuspRing k) (CuspRing k)).comp (AdjoinRoot.ofAlgHom k _))
     (TrivSqZeroExt.inl (cuspY k) + TrivSqZeroExt.inr 1) (by
-      have h2' : (2 : CuspRing k) = 0 := by
-        rw [← map_ofNat (algebraMap k (CuspRing k)) 2, h2, map_zero]
       simp only [cuspPolynomial, eval₂_sub, eval₂_X_pow, eval₂_C]
       ext
       · simp [← cuspX_def, sq]
         linear_combination cuspY_sq k
       · simp [← cuspX_def, sq, MulOpposite.smul_eq_mul_unop]
-        linear_combination cuspY k * h2')
+        linear_combination cuspY k * two_eq_zero_cuspRing h2)
 
 /-- The ring map `A → A[ε]` sends `a ∈ k[x]` to `a`. -/
 @[simp]
 theorem cuspDualMap_of (h2 : (2 : k) = 0) (a : Polynomial k) :
     cuspDualMap h2 (AdjoinRoot.of _ a) = TrivSqZeroExt.inl (AdjoinRoot.of _ a) :=
   AdjoinRoot.liftAlgHom_of _ _ _ _ _
+
+/-- The ring map `A → A[ε]` sends `x` to `x`. -/
+@[simp]
+theorem cuspDualMap_cuspX (h2 : (2 : k) = 0) :
+    cuspDualMap h2 (cuspX k) = TrivSqZeroExt.inl (cuspX k) := by
+  rw [cuspX_def, cuspDualMap_of]
 
 /-- The ring map `A → A[ε]` sends `y` to `y + ε`. -/
 @[simp]
@@ -85,7 +89,7 @@ theorem cuspDerivationY_cuspY (h2 : (2 : k) = 0) : cuspDerivationY h2 (cuspY k) 
 /-- `∂x/∂y = 0`. -/
 @[simp]
 theorem cuspDerivationY_cuspX (h2 : (2 : k) = 0) : cuspDerivationY h2 (cuspX k) = 0 := by
-  simp [cuspDerivationY_apply, cuspX_def]
+  simp [cuspDerivationY_apply]
 
 /-- In characteristic `2`, the quotient `Ω[A⁄k] → A^1` of the differentials of the cusp ring
 induced by `∂/∂y`: `dx ↦ 0`, `dy ↦ 1`. -/
