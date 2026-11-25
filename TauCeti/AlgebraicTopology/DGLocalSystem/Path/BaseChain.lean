@@ -44,30 +44,27 @@ with the coefficients `ε(m_{x,y})`. In the relative cubical homology of the pai
 
 `∂ [χ_x] = ∑_y ε(m_{x,y}) [χ_y]`:
 
-the augmentations of the degree-one rows of Brown's cocycle are the coefficients of the cellular
-boundary of the characteristic cubes. This is the cellular reduction of Brown's twisting cocycle;
-the comparison of the classes of the characteristic cubes with the generators of the cellular
-chain groups is not made here.
+the augmentations of the entries `m_{x,y}` of index difference one (chains of degree zero) of
+Brown's cocycle are the coefficients of the cellular boundary of the characteristic cubes. This is
+the cellular reduction of Brown's twisting cocycle; the comparison of the classes of the
+characteristic cubes with the generators of the cellular chain groups is not made here.
 
-## Main definitions
+## Main definition
 
 * `TauCeti.BrownModel.baseChain M x`: the base chain of the generator `x` of a Brown model `M`.
-* `TauCeti.cellCube C n j`: the characteristic map of the `n`-cell `j`, read on the cube.
 
 ## Main results
 
-* `TauCeti.cubicalChainModuleLinearMap_endpoint_smul`: the end point map is linear over the
-  augmentation of the loop chains.
 * `TauCeti.BrownModel.cubicalChainModuleDifferential_baseChain`: `∂ e_x = ∑_y ε(m_{x,y}) e_y`.
 * `TauCeti.cubicalChainModuleLinearMap_endpoint_cellPathChain`: the end point of the chain of a
   cell is its characteristic cube.
 * `TauCeti.brownModel_baseChain_mem_cubicalChainModuleSupportedIn`,
-  `TauCeti.brownModel_baseChain_sub_mem_cubicalChainModuleSupportedIn`: in Brown's model of a CW
-  complex, the base chain of an `n`-cell lies over the `n`-skeleton and is its characteristic cube
-  modulo the `(n - 1)`-skeleton.
-* `TauCeti.brownModel_cubicalChainModuleDifferential_baseChain_sub_mem`: modulo the
-  `(n - 2)`-skeleton, the boundary of the base chain of an `n`-cell is the combination
-  of the characteristic cubes with the augmented row as coefficients.
+  `TauCeti.brownModel_baseChain_sub_cellCube_mem_cubicalChainModuleSupportedIn`: in Brown's model
+  of a CW complex, the base chain of an `n`-cell lies over the `n`-skeleton and is its
+  characteristic cube modulo the `(n - 1)`-skeleton.
+* Modulo the `(n - 2)`-skeleton, the boundary of the base chain of an `n`-cell is the combination
+  of the characteristic cubes with the augmented row as coefficients
+  (`brownModel_cubicalChainModuleDifferential_baseChain_sub_mem_cubicalChainModuleSupportedIn`).
 
 ## References
 
@@ -88,18 +85,7 @@ namespace TauCeti
 
 section Endpoint
 
-variable {B : Type uB} [TopologicalSpace B] {b : B} {H H' : Type*} {R : Type uR} [CommRing R]
-
-/-- **The end point map is linear over the augmentation of the loop chains**: pushing a chain on
-the based path space forward to `B` along the end point, `ev_* (a · m) = ε(a) ev_* m` for a chain
-`a` on the Moore loops at `b`. -/
-theorem cubicalChainModuleLinearMap_endpoint_smul (a : loopChainAlgebra B b R)
-    (m : cubicalChainModule (MoorePathFrom B b) H R) :
-    cubicalChainModuleLinearMap (G' := H') R (MoorePathFrom.endpoint B b) (a • m) =
-      loopChainAugmentation B b R a •
-        cubicalChainModuleLinearMap R (MoorePathFrom.endpoint B b) m := by
-  rw [loopChainAugmentation_def]
-  exact cubicalChainModuleLinearMap_smul_of_apply_smul _ MoorePathFrom.endpoint_leftAct a m
+variable {B : Type uB} [TopologicalSpace B] {b : B} {H : Type*} {R : Type uR} [CommRing R]
 
 namespace BrownModel
 
@@ -138,25 +124,6 @@ section CW
 variable {B : Type} [TopologicalSpace B] [T2Space B] {b : B} {C : Set B} [CWComplex C]
   {H : Type*} {R : Type} [CommRing R]
 
-variable (C) in
-/-- The **characteristic cube** of an `n`-cell `j`: its characteristic map, read on the cube `Iⁿ`
-through `TauCeti.cubeHomeomorphClosedBall`. -/
-def cellCube (n : ℕ) (j : cell C n) : SingularCube B n :=
-  (sigmaCellMap C n).comp (cellCubeMap C n j)
-
-omit [T2Space B] in
-@[simp]
-theorem cellCube_apply (n : ℕ) (j : cell C n) (d : Fin n → unitInterval) :
-    cellCube C n j d = map n j (cubeHomeomorphClosedBall (Fin n) d) := by
-  rw [cellCube, ContinuousMap.comp_apply, cellCubeMap_apply, sigmaCellMap_apply]
-
-omit [T2Space B] in
-/-- The characteristic cube of a `0`-cell is the `0`-cube at the point of the cell. -/
-theorem cellCube_zero (j : cell C 0) : cellCube C 0 j = SingularCube.point (map 0 j 0) := by
-  rw [SingularCube.eq_point (cellCube C 0 j), cellCube_apply]
-  congr 2
-  exact Subsingleton.elim _ _
-
 omit [T2Space B] in
 /-- **The end point of the chain of a cell is its characteristic cube**: pushed forward to `B` along
 the end point map, the chain `TauCeti.cellPathChain τ n j` of the `n`-cell `j` on the based path
@@ -179,7 +146,7 @@ theorem cubicalChainModuleLinearMap_endpoint_cellPathChain
       NormalizedCubicalChain.map_ofCube]
     congr 2
     ext d
-    simp [cellCube]
+    simp
 
 /-- The chains of `B` over the `q`-skeleton of `C`, read through the identity of `B`, are the chains
 supported over the preimage of the `q`-skeleton under the end point map, pushed forward. -/
@@ -202,7 +169,7 @@ theorem brownModel_baseChain_mem_cubicalChainModuleSupportedIn (x : Σ n, cell C
 
 /-- **In Brown's model of a CW complex, the base chain of an `n`-cell is its characteristic cube
 modulo the `(n - 1)`-skeleton.** -/
-theorem brownModel_baseChain_sub_mem_cubicalChainModuleSupportedIn (x : Σ n, cell C n) :
+theorem brownModel_baseChain_sub_cellCube_mem_cubicalChainModuleSupportedIn (x : Σ n, cell C n) :
     (brownModel H R τ hC).baseChain x -
         cubicalChainModuleLof B H R x.1 (NormalizedCubicalChain.ofCube B R (cellCube C x.1 x.2)) ∈
       cubicalChainModuleSupportedIn H R (preimageSkeleton C id ((x.1 : ℤ) - 1)) := by
@@ -215,9 +182,11 @@ characteristic cubes.** In Brown's model of a CW complex, the boundary of the ba
 `n`-cell `x` is, modulo the chains over the `(n - 2)`-skeleton, the combination
 `∑_y ε(m_{x,y}) χ_y` of the characteristic cubes of the cells `y` with the augmentations of the row
 of `x` as coefficients. Since the base chain of `x` is its characteristic cube `χ_x` modulo the
-`(n - 1)`-skeleton (`TauCeti.brownModel_baseChain_sub_mem_cubicalChainModuleSupportedIn`), this
-says `∂ [χ_x] = ∑_y ε(m_{x,y}) [χ_y]` in the relative homology of the skeleta `(Bⁿ⁻¹, Bⁿ⁻²)`. -/
-theorem brownModel_cubicalChainModuleDifferential_baseChain_sub_mem (x : Σ n, cell C n) :
+`(n - 1)`-skeleton
+(`TauCeti.brownModel_baseChain_sub_cellCube_mem_cubicalChainModuleSupportedIn`), this says
+`∂ [χ_x] = ∑_y ε(m_{x,y}) [χ_y]` in the relative homology of the skeleta `(Bⁿ⁻¹, Bⁿ⁻²)`. -/
+theorem brownModel_cubicalChainModuleDifferential_baseChain_sub_mem_cubicalChainModuleSupportedIn
+    (x : Σ n, cell C n) :
     cubicalChainModuleDifferential B H R ((brownModel H R τ hC).baseChain x) -
         ((brownModel H R τ hC).cocycle.m x).sum (fun y a ↦ loopChainAugmentation B b R a •
           cubicalChainModuleLof B H R y.1
@@ -231,7 +200,7 @@ theorem brownModel_cubicalChainModuleDifferential_baseChain_sub_mem (x : Σ n, c
     brownModel_cocycle_m_mem_supported (H := H) τ hC x (Finsupp.mem_support_iff.2 hy)
   rw [← smul_sub]
   refine Submodule.smul_mem _ _ (cubicalChainModuleSupportedIn_mono ?_
-    (brownModel_baseChain_sub_mem_cubicalChainModuleSupportedIn τ hC y))
+    (brownModel_baseChain_sub_cellCube_mem_cubicalChainModuleSupportedIn τ hC y))
   exact monotone_preimageSkeleton _ (by omega)
 
 end CW
