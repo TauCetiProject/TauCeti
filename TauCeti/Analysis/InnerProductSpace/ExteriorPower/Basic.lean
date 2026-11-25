@@ -643,7 +643,8 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
 
 /-- Contracting a two-vector coming from a subspace `W ≤ V` against a vector of `W` agrees with
 contracting inside `W`. -/
-theorem twoVectorContraction_map_subtype (W : Submodule ℝ V) (X : ⋀[ℝ]^2 W) (w : W) :
+theorem _root_.Submodule.twoVectorContraction_map_subtype (W : Submodule ℝ V)
+    (X : ⋀[ℝ]^2 W) (w : W) :
     twoVectorContraction (map 2 W.subtype X) (W.subtype w) =
       W.subtype (twoVectorContraction X w) := by
   have key : LinearMap.applyₗ (R := ℝ) (W.subtype w) ∘ₗ twoVectorContractionₗ ∘ₗ map 2 W.subtype =
@@ -705,7 +706,7 @@ theorem twoVectorContraction_injective :
   have hX₀ : twoVectorContraction X₀ = 0 := by
     ext w
     have hX' : twoVectorContraction (map 2 W.subtype X₀) = 0 := hX
-    rw [← Submodule.coe_subtype, ← twoVectorContraction_map_subtype, hX']
+    rw [← Submodule.coe_subtype, ← W.twoVectorContraction_map_subtype, hX']
     simp
   have h0 : X₀ = 0 := by
     refine (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ W) bijective_innerₗ
