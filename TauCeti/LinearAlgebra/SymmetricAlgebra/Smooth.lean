@@ -73,25 +73,28 @@ instance instSmooth [Module.Projective R M] [Module.Finite R M] :
   letI : Module.FinitePresentation R M := Module.finitePresentation_of_projective R M
   ⟨inferInstance, inferInstance⟩
 
+section Augmentation
+
+private local instance : Algebra (SymmetricAlgebra R M) R :=
+  (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
+
+private local instance : IsScalarTower R (SymmetricAlgebra R M) R :=
+  .of_algebraMap_eq fun r ↦ (_root_.SymmetricAlgebra.algebraMap_leftInverse M r).symm
+
 /-- `SymmetricAlgebra R M` is formally smooth over `R` if and only if `M` is projective over `R`. -/
 theorem formallySmooth_iff :
-    Algebra.FormallySmooth R (SymmetricAlgebra R M) ↔ Module.Projective R M := by
-  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
-  let : Algebra (SymmetricAlgebra R M) R :=
-    (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
-  have : IsScalarTower R (SymmetricAlgebra R M) R :=
-    .of_algebraMap_eq fun r ↦ (_root_.SymmetricAlgebra.algebraMap_leftInverse M r).symm
-  exact .of_equiv (_root_.SymmetricAlgebra.tensorKaehlerDifferentialEquiv R M)
+    Algebra.FormallySmooth R (SymmetricAlgebra R M) ↔ Module.Projective R M :=
+  ⟨fun _ ↦ .of_equiv (_root_.SymmetricAlgebra.tensorKaehlerDifferentialEquiv R M),
+    fun _ ↦ inferInstance⟩
 
 /-- `SymmetricAlgebra R M` is smooth over `R` if and only if `M` is projective and finite over
 `R`. -/
 theorem smooth_iff :
-    Algebra.Smooth R (SymmetricAlgebra R M) ↔ Module.Projective R M ∧ Module.Finite R M := by
-  refine ⟨fun h ↦ ⟨(formallySmooth_iff R M).mp h.formallySmooth, ?_⟩, fun ⟨_, _⟩ ↦ inferInstance⟩
-  let : Algebra (SymmetricAlgebra R M) R :=
-    (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
-  have : IsScalarTower R (SymmetricAlgebra R M) R :=
-    .of_algebraMap_eq fun r ↦ (_root_.SymmetricAlgebra.algebraMap_leftInverse M r).symm
-  exact .equiv (_root_.SymmetricAlgebra.tensorKaehlerDifferentialEquiv R M)
+    Algebra.Smooth R (SymmetricAlgebra R M) ↔ Module.Projective R M ∧ Module.Finite R M :=
+  ⟨fun h ↦ ⟨(formallySmooth_iff R M).mp h.formallySmooth,
+    .equiv (_root_.SymmetricAlgebra.tensorKaehlerDifferentialEquiv R M)⟩,
+    fun ⟨_, _⟩ ↦ inferInstance⟩
+
+end Augmentation
 
 end TauCeti.SymmetricAlgebra

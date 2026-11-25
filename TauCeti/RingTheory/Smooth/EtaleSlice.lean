@@ -16,6 +16,7 @@ import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Kaehler
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Smooth
 import TauCeti.RingTheory.Kaehler.BaseChange
+import TauCeti.RingTheory.Kaehler.Conormal
 import TauCeti.RingTheory.Kaehler.FormallyEtale
 
 /-!
@@ -42,12 +43,13 @@ The construction has two steps, following Stacks Project Lemma 15.13.3 (Tag 0H74
    Jacobi–Zariski sequence splits globally, giving a global `B`-basis of `Ω[B⁄R]` of rank `n`.
 2. **Transverse coordinates along `ker ψ`**
    (`Module.Basis.exists_ker_and_det_D_eq_one_of_surjective` and
-   `Module.Basis.exists_etale_quotient_localizationAway`): expanding each basis vector of `Ω[B⁄R]`
-   as `∑ c_j • d y_j` and shifting each `y_j` by an `R`-lift of `ψ(y_j)` produces elements
-   `x : Fin n → B` in `ker ψ` whose Jacobian matrix in the basis reduces under `ψ` to the identity
-   matrix over `T`. Inverting the Jacobian determinant `d` and quotienting `B[1/d]` by `(x₁, …, xₙ)`
-   cuts out an étale `R`-algebra (`Module.Basis.etale_quotient_span_range`) through which `ψ`
-   factors.
+   `Module.Basis.exists_etale_quotient_localizationAway`): lifting the basis elements of `Ω[B⁄R]`
+   modulo `(ker ψ) • Ω[B⁄R]` via the conormal surjection
+   (`KaehlerDifferential.exists_mem_and_mk_D_eq`) produces elements `x : Fin n → B` in `ker ψ`
+   whose Jacobian matrix in the basis reduces under `ψ` to the identity matrix over `T`. Inverting
+   the Jacobian determinant `d` (`Module.Basis.exists_basis_D_localizationAway_det`) and quotienting
+   `B[1/d]` by `(x₁, …, xₙ)` cuts out an étale `R`-algebra
+   (`Module.Basis.etale_quotient_span_range`) through which `ψ` factors.
 
 ## Main results
 
@@ -88,47 +90,30 @@ theorem exists_ker_and_det_D_eq_one_of_surjective {R B T ι : Type*} [CommRing R
     ∃ x : ι → B, (∀ i, ψ (x i) = 0) ∧
       ψ.toRingHom.mapMatrix (b.toMatrix (fun i ↦ D R B (x i))) = 1 ∧
       ψ (b.det fun i ↦ D R B (x i)) = 1 := by
-  -- Express each basis element `b j` as a `B`-linear combination `∑ y, f j y • D R B y`.
-  have hspan (j : ι) : b j ∈ Submodule.span B (Set.range (D R B)) := by
-    rw [KaehlerDifferential.span_range_derivation]
-    trivial
-  choose f hf using fun j ↦ Finsupp.mem_span_range_iff_exists_finsupp.mp (hspan j)
-  -- Lift each `ψ y` along the surjection `algebraMap R T` so `y' y := y - s y` lies in `ker ψ`
-  -- while having the same `R`-differential `D R B (y' y) = D R B y`.
-  choose s hs using fun y : B ↦ hsurj (ψ y)
-  let y' : B → B := fun y ↦ y - algebraMap R B (s y)
-  have hψy' (y : B) : ψ (y' y) = 0 := by
-    simp [y', AlgHom.commutes, hs]
-  have hDy' (y : B) : D R B (y' y) = D R B y := by
-    simp [y']
-  let x : ι → B := fun j ↦ (f j).sum fun y c ↦ c * y' y
-  have hψx (j : ι) : ψ (x j) = 0 := by
-    simp [x, Finsupp.sum, map_sum, hψy']
-  have hDx (j : ι) : D R B (x j) = b j + (f j).sum fun y c ↦ y' y • D R B c := by
-    have hfj : ∑ y ∈ (f j).support, f j y • D R B y = b j := by
-      simpa [Finsupp.sum] using hf j
-    calc D R B (x j)
-        = ∑ y ∈ (f j).support, (f j y • D R B (y' y) + y' y • D R B (f j y)) := by
-          simp only [x, Finsupp.sum, map_sum, Derivation.leibniz]
-      _ = (∑ y ∈ (f j).support, f j y • D R B y) +
-            ∑ y ∈ (f j).support, y' y • D R B (f j y) := by
-          simp only [Finset.sum_add_distrib, hDy']
-      _ = b j + (f j).sum fun y c ↦ y' y • D R B c := by
-          rw [hfj, Finsupp.sum]
+  set J : Ideal B := RingHom.ker ψ
+  -- `R → B ⧸ J` is surjective since `R → T` is surjective, so `B ⧸ J` is formally unramified.
+  have hRJ : Function.Surjective (algebraMap R (B ⧸ J)) := fun z ↦ by
+    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective z
+    obtain ⟨r, hr⟩ := hsurj (ψ y)
+    exact ⟨r, (Ideal.Quotient.eq.mpr (by simp [J, RingHom.mem_ker, ← hr])).symm⟩
+  have : Algebra.FormallyUnramified R (B ⧸ J) := .of_surjective (Algebra.ofId R (B ⧸ J)) hRJ
+  choose x hxJ hxb using fun j ↦
+    KaehlerDifferential.exists_mem_and_mk_D_eq J (Submodule.Quotient.mk (b j))
   have hmat : ψ.toRingHom.mapMatrix (b.toMatrix (fun j ↦ D R B (x j))) = 1 := by
     ext i j
-    have hij : ψ (b.repr (D R B (x j)) i) = if i = j then 1 else 0 := by
-      rw [← Module.Basis.coord_apply, hDx j, map_add, Module.Basis.coord_apply,
-        Module.Basis.repr_self, Finsupp.sum, map_sum, map_add, map_sum]
-      simp only [LinearMap.map_smul, smul_eq_mul, map_mul, hψy', zero_mul, Finset.sum_const_zero,
-        add_zero, Finsupp.single_apply, @eq_comm _ j i]
-      split_ifs <;> simp
-    simpa only [RingHom.mapMatrix_apply, Matrix.map_apply, Module.Basis.toMatrix_apply,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Matrix.one_apply] using hij
-  refine ⟨x, hψx, hmat, ?_⟩
-  have hmat' := hmat
-  rw [AlgHom.toRingHom_eq_coe] at hmat'
-  rw [Module.Basis.det_apply, ← AlgHom.coe_toRingHom, RingHom.map_det, hmat', Matrix.det_one]
+    -- `D R B (x j) - b j ∈ J • Ω[B⁄R]`, so its `i`-th coordinate in `b` lies in `J = ker ψ`.
+    have hmem : b.coord i (D R B (x j)) - b.coord i (b j) ∈ J := by
+      rw [← map_sub]
+      have hmap := Submodule.mem_map_of_mem (f := b.coord i)
+        ((Submodule.Quotient.eq _).mp (hxb j))
+      rw [Submodule.map_smul''] at hmap
+      exact Submodule.smul_le.mpr (fun r hr c _ ↦ J.mul_mem_right c hr) hmap
+    have hij : ψ (b.coord i (D R B (x j))) = ψ (b.coord i (b j)) :=
+      sub_eq_zero.mp (by rw [← map_sub]; exact RingHom.mem_ker.mp hmem)
+    simpa [Module.Basis.toMatrix_apply, Finsupp.single_apply, Matrix.one_apply, eq_comm] using hij
+  refine ⟨x, hxJ, hmat, ?_⟩
+  rw [Module.Basis.det_apply, ← AlgHom.coe_toRingHom, RingHom.map_det]
+  simpa using congrArg Matrix.det hmat
 
 /-- When `B` is smooth over `R` and `Ω[B⁄R]` admits a `B`-basis `b` indexed by `ι`, any `R`-algebra
 map `ψ : B →ₐ[R] T` with `algebraMap R T` surjective factors through an étale quotient
@@ -166,19 +151,10 @@ theorem exists_etale_quotient_localizationAway {R B T ι : Type*} [CommRing R] [
     set d := b.det fun i ↦ D R B (x i)
     let W := Localization.Away d
     -- On `W = B[1/d]`, `d` is invertible so the images of `x i` have differentials forming a basis.
-    let bW := TauCeti.kaehlerBasisOfFormallyEtale R B W b
-    let xW : ι → W := algebraMap B W ∘ x
-    have hdetW : bW.det (fun i ↦ D R W (xW i)) = algebraMap B W d := by
-      rw [← TauCeti.kaehlerBasisOfFormallyEtale_det_map]
-      congr 1
-      ext i
-      simp [xW]
-    obtain ⟨hli, hspan⟩ := bW.is_basis_iff_det.mpr
-      (hdetW ▸ IsLocalization.Away.algebraMap_isUnit d)
+    obtain ⟨bx, hbx⟩ := b.exists_basis_D_localizationAway_det x
     have : Algebra.Smooth R W := .comp R B W
-    let bx : Module.Basis ι W Ω[W⁄R] := .mk hli hspan.ge
-    have het : Algebra.Etale R (W ⧸ Ideal.span (Set.range xW)) :=
-      bx.etale_quotient_span_range fun i ↦ by simp [bx]
+    let xW : ι → W := algebraMap B W ∘ x
+    have het : Algebra.Etale R (W ⧸ Ideal.span (Set.range xW)) := bx.etale_quotient_span_range hbx
     -- `ψ` inverts `d` (`ψ d = 1`) and vanishes on every `x i`, so it factors through `W ⧸ (xW)`.
     let ψW : W →ₐ[R] T := IsLocalization.Away.liftAlgHom d (f := ψ) (by simp [hψd])
     have hψW (a : B) : ψW (algebraMap B W a) = ψ a := by

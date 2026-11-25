@@ -178,20 +178,13 @@ theorem exists_basis_D_localizationAway_det_hessian {ι : Type*} [Fintype ι] [D
     ∃ b' : Basis ι (Localization.Away (hessian (fun i ↦ (b.coord i).compDer (D A W)) f).det)
         Ω[Localization.Away (hessian (fun i ↦ (b.coord i).compDer (D A W)) f).det⁄A],
       ∀ i, b' i = D A _ (algebraMap W _ ((b.coord i).compDer (D A W) f)) := by
-  set δ := (hessian (fun i ↦ (b.coord i).compDer (D A W)) f).det
-  set b₀ := kaehlerBasisOfFormallyEtale A W (Localization.Away δ) b
-  -- In the basis `b`, the matrix of the differentials `d(∂ⱼ f)` is the Hessian of `f`.
-  have hdet : b₀.det (fun j ↦ D A _ (algebraMap W _ ((b.coord j).compDer (D A W) f))) =
-      algebraMap W (Localization.Away δ) δ := by
-    have : b.det (fun j ↦ D A W ((b.coord j).compDer (D A W) f)) = δ := by
-      rw [Basis.det_apply]
-      congr 1
-      ext i j
-      simp [Basis.toMatrix_apply]
-    rw [← congrArg (algebraMap W _) this, ← kaehlerBasisOfFormallyEtale_det_map]
-    simp [b₀]
-  obtain ⟨hli, hspan⟩ := b₀.is_basis_iff_det.mpr (hdet ▸ IsLocalization.Away.algebraMap_isUnit δ)
-  exact ⟨.mk hli hspan.ge, fun i ↦ by simp⟩
+  have hdet : b.det (fun j ↦ D A W ((b.coord j).compDer (D A W) f)) =
+      (hessian (fun i ↦ (b.coord i).compDer (D A W)) f).det := by
+    rw [Basis.det_apply]
+    congr 1
+    ext i j
+    simp [Basis.toMatrix_apply]
+  exact hdet ▸ b.exists_basis_D_localizationAway_det fun j ↦ (b.coord j).compDer (D A W) f
 
 /-- Let `bW` be a basis of `Ω[W⁄A]` with dual partial derivatives `∂ᵢ`, and let `W'` be an
 `A'`-algebra over `W` in which the partial derivatives `yᵢ = ∂ᵢ f` of `f ∈ W` become étale
