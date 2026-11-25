@@ -46,6 +46,8 @@ totalizations of morphisms, on which these formulas rest, is in
   on a homogeneous summand.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
   components of the inverse unitors, through the degree-`0` summand of `𝟙_ _`.
+* `HomologicalComplex.ι_leftUnitor_hom_f` and `HomologicalComplex.ι_rightUnitor_hom_f`: the
+  unitors on the summands `(𝟙_ _).X 0 ⊗ X.X j` and `X.X j ⊗ (𝟙_ _).X 0`.
 * `HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight` and
   `HomologicalComplex.mapBifunctor₂₃.ι_eq_whiskerLeft`: the inclusions of the summand
   `X.X p ⊗ Y.X q ⊗ Z.X r` into `(X ⊗ Y) ⊗ Z` and `X ⊗ (Y ⊗ Z)` via whiskered `ιTensorObj`.
@@ -53,8 +55,20 @@ totalizations of morphisms, on which these formulas rest, is in
   associator and its inverse on the summand `X.X p ⊗ Y.X q ⊗ Z.X r`, with arbitrary intermediate
   degrees.
 
-The analogous formula for the differential of a tensor product is
-`HomologicalComplex.ι_tensorObj_d` in `TauCeti/Algebra/Homology/Monoidal/Tensor/Differential.lean`.
+The analogous formulas for the differential of a tensor product are in
+`TauCeti/Algebra/Homology/Monoidal/Tensor/Differential.lean`.  For
+`HomologicalComplex.tensorObj X Y` of any shape `c` with tensor signs,
+`HomologicalComplex.ιTensorObj_d_of_rel` applies when both summand degrees have outgoing shape
+relations (`c.Rel p p'` and `c.Rel q q'`) towards the target degree `j'` with `p' + q = j'` (the
+tensor signs then force `p + q' = j'`).  When one factor has no outgoing shape relation and the
+other has one landing in `j'` (`p + q' = j'`, resp. `p' + q = j'`), use the boundary rules
+`HomologicalComplex.ιTensorObj_d_of_not_rel_left` and
+`HomologicalComplex.ιTensorObj_d_of_not_rel_right`; when neither factor has an outgoing shape
+relation, `HomologicalComplex.ιTensorObj_d_eq_zero` gives zero.  For the monoidal tensor product
+`X ⊗ Y`, `HomologicalComplex.tensor_d` identifies its differential with that of
+`HomologicalComplex.tensorObj X Y` for any shape with tensor signs, and
+`HomologicalComplex.ιTensorObj_tensor_d` specializes the formula to `X ⊗ Y` of cochain complexes
+indexed by `ℤ`.
 -/
 
 public section
@@ -166,6 +180,34 @@ lemma rightUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
   -- `𝟙_ (HomologicalComplex C c)`.
   refine Eq.trans ?_ (rightUnitor'_inv X j)
   simp [MonoidalCategoryStruct.rightUnitor, rightUnitor]
+
+/-- The left unitor of homological complexes on the summand `(𝟙_).X 0 ⊗ X.X j` of `𝟙_ ⊗ X`: the
+identification of the degree-zero term of the tensor unit with `𝟙_ C`, followed by the left
+unitor of `C`. -/
+@[reassoc]
+lemma ι_leftUnitor_hom_f (X : HomologicalComplex C c) (j : I) :
+    ιTensorObj (𝟙_ (HomologicalComplex C c)) X 0 j j (zero_add j) ≫ (λ_ X).hom.f j =
+      ((singleObjXSelf c 0 (𝟙_ C)).hom ▷ X.X j) ≫ (λ_ (X.X j)).hom := by
+  rw [← cancel_mono ((λ_ X).inv.f j), Category.assoc, Category.assoc, ← comp_f, Iso.hom_inv_id,
+    id_f, leftUnitor_inv_f, Iso.hom_inv_id_assoc, ← comp_whiskerRight_assoc,
+    Iso.hom_inv_id, id_whiskerRight, Category.id_comp]
+  -- `ιTensorObj` lands in `(tensorObj 𝟙_ X).X j`, the definition of `(𝟙_ ⊗ X).X j`, so
+  -- `Category.comp_id` applies only up to unfolding the monoidal tensor product.
+  exact Category.comp_id _
+
+/-- The right unitor of homological complexes on the summand `X.X j ⊗ (𝟙_).X 0` of `X ⊗ 𝟙_`: the
+identification of the degree-zero term of the tensor unit with `𝟙_ C`, followed by the right
+unitor of `C`. -/
+@[reassoc]
+lemma ι_rightUnitor_hom_f (X : HomologicalComplex C c) (j : I) :
+    ιTensorObj X (𝟙_ (HomologicalComplex C c)) j 0 j (add_zero j) ≫ (ρ_ X).hom.f j =
+      (X.X j ◁ (singleObjXSelf c 0 (𝟙_ C)).hom) ≫ (ρ_ (X.X j)).hom := by
+  rw [← cancel_mono ((ρ_ X).inv.f j), Category.assoc, Category.assoc, ← comp_f, Iso.hom_inv_id,
+    id_f, rightUnitor_inv_f, Iso.hom_inv_id_assoc, ← whiskerLeft_comp_assoc,
+    Iso.hom_inv_id, whiskerLeft_id, Category.id_comp]
+  -- `ιTensorObj` lands in `(tensorObj X 𝟙_).X j`, the definition of `(X ⊗ 𝟙_).X j`, so
+  -- `Category.comp_id` applies only up to unfolding the monoidal tensor product.
+  exact Category.comp_id _
 
 /-- The inclusion `HomologicalComplex.mapBifunctor₁₂.ι` of the summand `X.X p ⊗ Y.X q ⊗ Z.X r`
 into `(X ⊗ Y) ⊗ Z`, written with the monoidal whiskering and `HomologicalComplex.ιTensorObj`.

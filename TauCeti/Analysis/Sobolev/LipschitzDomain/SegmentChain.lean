@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
@@ -24,9 +25,9 @@ segment `[x, y]` itself lies in `Ω`, and a Lebesgue number of a finite cover of
 
 With the mean value inequality along the three segments
 (`TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset`), a map whose derivative is
-bounded by `L` on `Ω` is `C L`-Lipschitz between points of `Ω` at distance less than `δ`. This
-replaces convexity in the Hölder bounds for lower derivatives of `C^{k,α}` functions on a bounded
-Lipschitz domain
+bounded by `L` on `Ω` is `C L`-Lipschitz between points of `Ω` at distance less than `δ`
+(`Set.IsLipschitzDomain.exists_dist_le_of_norm_fderiv_le`). This replaces convexity in the Hölder
+bounds for lower derivatives of `C^{k,α}` functions on a bounded Lipschitz domain
 (`TauCeti.CkHolderSpaceOn.exists_holderOnWith_iteratedFDeriv_of_isLipschitzDomain`).
 Some geometric condition is needed: on a slit disc the two sides of the slit are close in the
 plane but far apart within the domain.
@@ -234,6 +235,24 @@ theorem exists_segment_chain [ProperSpace F] {Ω : Set F} (hΩ : Ω.IsLipschitzD
     have hK : (K' : ℝ) ≤ K := by exact_mod_cast hK'
     push_cast
     gcongr
+
+/-- On a bounded Lipschitz domain there are constants `C` and `δ > 0`, depending only on `Ω`,
+such that every map `g` differentiable on `Ω` with `‖fderiv ℝ g‖ ≤ L` on `Ω` satisfies
+`dist (g x) (g y) ≤ C L dist x y` for `x, y ∈ Ω` with `dist x y < δ`: the mean value inequality
+along a chain of segments in `Ω` joining `x` to `y`
+(`Set.IsLipschitzDomain.exists_segment_chain`). On a convex set this holds for all `x, y` with
+`C = 1` (`Convex.lipschitzOnWith_of_nnNorm_fderiv_le`). -/
+theorem exists_dist_le_of_norm_fderiv_le [ProperSpace F] {Ω : Set F}
+    (hΩ : Ω.IsLipschitzDomain E) (hb : Bornology.IsBounded Ω) :
+    ∃ C δ : ℝ≥0, 0 < δ ∧ ∀ {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {g : F → G}
+      {L : ℝ}, (∀ x ∈ Ω, DifferentiableAt ℝ g x) → (∀ x ∈ Ω, ‖fderiv ℝ g x‖ ≤ L) →
+        ∀ x ∈ Ω, ∀ y ∈ Ω, dist x y < δ → dist (g x) (g y) ≤ C * L * dist x y := by
+  obtain ⟨C, δ, hδ, hchain⟩ := hΩ.exists_segment_chain hb
+  refine ⟨C, δ, hδ, fun {G} _ _ g L hdiff hder x hx y hy hxy ↦ ?_⟩
+  obtain ⟨p, q, h1, h2, h3, hlen⟩ := hchain x hx y hy hxy
+  rw [dist_comm, dist_eq_norm, mul_comm (C : ℝ), mul_assoc]
+  exact (TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset hdiff hder h1 h2
+    h3).trans (mul_le_mul_of_nonneg_left hlen ((norm_nonneg _).trans (hder x hx)))
 
 end IsLipschitzDomain
 
