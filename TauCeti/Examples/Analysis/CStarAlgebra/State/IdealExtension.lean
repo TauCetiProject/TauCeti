@@ -113,14 +113,10 @@ theorem norm_unit : ‖unit‖ = 1 := by
   simp [unit, Prod.norm_def]
 
 /-- **`τ = tr₂` is a tracial state of `I`.** -/
-theorem isTracialState_trace : IsTracialState (A := I) trace := by
-  refine isTracialState_traceFst.comp_of_norm_eq_one I.starAlgHom <|
-    (norm_eq_of_apply_map_eq I.starAlgHom (isTracialState_traceFst.norm_eq_one.trans_le ?_)
-      fun _ ↦ rfl).symm.trans isTracialState_traceFst.norm_eq_one
-  have h := (trace : I →L[ℂ] ℂ).le_opNorm unit
-  rw [norm_unit, mul_one] at h
-  have h1 : (trace : I →L[ℂ] ℂ) unit = 1 := by simpa using trace_unit
-  rwa [h1, norm_one] at h
+theorem isTracialState_trace : IsTracialState (A := I) trace :=
+  isTracialState_normalizedTraceMap.comp_of_surjective
+    ((NonUnitalStarAlgHom.fst ℂ M₂ ℂ).comp I.starAlgHom)
+    fun x ↦ ⟨⟨(x, 0), (mem_I_iff _).mpr rfl⟩, by simp⟩
 
 /-- **Uniqueness of the extension.** Every positive functional of norm at most one on `A` that
 restricts to `τ` on `I` is `γ(x, λ) = tr₂(x)`. -/
