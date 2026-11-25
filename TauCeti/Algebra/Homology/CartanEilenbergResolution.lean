@@ -63,6 +63,11 @@ the sphere parts
 these choices, so it is not functorial on the nose, and no identity or composition lemmas are
 stated for it.
 
+A morphism `ψ` of Cartan–Eilenberg resolutions induces morphisms of the resolutions of the
+homology `ChainComplex.cartanEilenbergResolution.homologyResolutionMap ψ j`, functorially in `ψ`,
+lying over `Hⱼ(g)` when `ψ` lies over `g`
+(`ChainComplex.cartanEilenbergResolution.homologyResolutionMap_f_zero_comp_π_f_zero`).
+
 ## References
 
 * C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge University Press, 1994,
@@ -502,5 +507,59 @@ lemma cartanEilenbergResolutionMap_π {K K' : ChainComplex C ℕ} (g : K ⟶ K')
       cartanEilenbergResolutionπ K ≫ g :=
   -- the augmentation is the projection onto `kernels K 0 = K`
   cartanEilenbergResolutionMap_f_rowπ g 0
+
+namespace cartanEilenbergResolution
+
+variable {K K' K'' : ChainComplex C ℕ}
+
+/-- The morphism `homologyResolution K j ⟶ homologyResolution K' j` of the complexes of the
+projective resolutions of `Hⱼ(K)` and `Hⱼ(K')` induced by a morphism `ψ` of Cartan–Eilenberg
+resolutions: in degree `p` it is `Hⱼ(ψ.f p)`. When `ψ` lies over `g : K ⟶ K'`, it lies over
+`Hⱼ(g)` (`ChainComplex.cartanEilenbergResolution.homologyResolutionMap_f_zero_comp_π_f_zero`). -/
+def homologyResolutionMap (ψ : cartanEilenbergResolution K ⟶ cartanEilenbergResolution K')
+    (j : ℕ) : (homologyResolution K j).complex ⟶ (homologyResolution K' j).complex :=
+  ((HomologicalComplex.homologyFunctor C _ j).mapHomologicalComplex _).map ψ
+
+/-- In degree `p`, the morphism `homologyResolutionMap ψ j` is `Hⱼ(ψ.f p)`. -/
+@[simp]
+lemma homologyResolutionMap_f (ψ : cartanEilenbergResolution K ⟶ cartanEilenbergResolution K')
+    (j p : ℕ) : (homologyResolutionMap ψ j).f p = homologyMap (ψ.f p) j :=
+  (rfl)
+
+/-- The identity of a Cartan–Eilenberg resolution induces the identity of the resolutions of the
+homology. -/
+@[simp]
+lemma homologyResolutionMap_id (j : ℕ) :
+    homologyResolutionMap (𝟙 (cartanEilenbergResolution K)) j = 𝟙 _ := by
+  rw [homologyResolutionMap, CategoryTheory.Functor.map_id]
+  -- the complex of `homologyResolution K j` is the row homology by definition
+  rfl
+
+/-- `homologyResolutionMap` is compatible with composition. -/
+@[simp]
+lemma homologyResolutionMap_comp
+    (ψ : cartanEilenbergResolution K ⟶ cartanEilenbergResolution K')
+    (ψ' : cartanEilenbergResolution K' ⟶ cartanEilenbergResolution K'') (j : ℕ) :
+    homologyResolutionMap (ψ ≫ ψ') j = homologyResolutionMap ψ j ≫ homologyResolutionMap ψ' j := by
+  rw [homologyResolutionMap, CategoryTheory.Functor.map_comp]
+  -- the complexes of `homologyResolution` are the row homology by definition
+  rfl
+
+/-- If `ψ` lies over `g`, then `homologyResolutionMap ψ j` lies over `Hⱼ(g)`: it is a morphism of
+the projective resolutions `homologyResolution K j` and `homologyResolution K' j` over `Hⱼ(g)`,
+as in `ProjectiveResolution.isoLeftDerivedObj_hom_naturality`. -/
+@[reassoc]
+lemma homologyResolutionMap_f_zero_comp_π_f_zero
+    (ψ : cartanEilenbergResolution K ⟶ cartanEilenbergResolution K') (g : K ⟶ K')
+    (hψ : ψ.f 0 ≫ cartanEilenbergResolutionπ K' = cartanEilenbergResolutionπ K ≫ g) (j : ℕ) :
+    (homologyResolutionMap ψ j).f 0 ≫ (homologyResolution K' j).π.f 0 =
+      (homologyResolution K j).π.f 0 ≫ homologyMap g j := by
+  rw [homologyResolutionMap_f, homologyResolution_π_f_zero, homologyResolution_π_f_zero]
+  -- the terms of `homologyResolution` are the row homology only by definition, so the composites
+  -- are combined as terms rather than by rewriting
+  exact (homologyMap_comp _ _ j).symm.trans
+    ((congrArg (homologyMap · j) hψ).trans (homologyMap_comp _ _ j))
+
+end cartanEilenbergResolution
 
 end ChainComplex

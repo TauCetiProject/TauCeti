@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import TauCeti.NumberTheory.Padics.IntegerGrid
 public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Interpolation
+import Mathlib.Analysis.Normed.Algebra.Ultra
 import TauCeti.NumberTheory.Padics.Exp.Disc
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -180,6 +181,7 @@ private theorem norm_sum_intCast_mul_log_mul_lt (hc : 1 ≤ c)
   have hP : 0 < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) :=
     Real.rpow_pos_of_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) _
   rw [← lt_div_iff₀ hc0]
+  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := K)
   refine norm_sum_intCast_mul_log_lt (p := p) (div_pos hP hc0) ?_
     (fun j hj ↦ (lt_div_iff₀ hc0).mpr (hα j hj)) l
   rw [amiceRadius_def]

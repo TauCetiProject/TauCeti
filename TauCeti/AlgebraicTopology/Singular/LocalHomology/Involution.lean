@@ -49,51 +49,47 @@ namespace TopPair
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
   {S Y : TopCat.{w}} [T1Space S] {a : S ⟶ S} {p : S} {U : Set S}
 
-/-- The inclusion `(U, U ∖ {p}) ⟶ (S, S ∖ {p, a p})` for a set `U` not containing `a p`. -/
-private def interPairToComplPair (hapU : a p ∉ U) :
-    interPair U {p}ᶜ ⟶ ofSubset ({p}ᶜ ∩ {a p}ᶜ : Set S) :=
-  ofSubsetMap (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
-    fun u hu ↦ ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.property)⟩
-
 omit [T1Space S] in
-/-- Followed by the inclusion `(S, S ∖ {p, a p}) ⟶ (S, S ∖ {p})`, the inclusion of
-`(U, U ∖ {p})` is the excision map. -/
-private lemma interPairToComplPair_comp_ofSubsetMap_id (hapU : a p ∉ U) :
-    interPairToComplPair hapU ≫ ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1) = excisionMap U {p}ᶜ :=
-  (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun _ h ↦ h) (Category.comp_id _)).trans
-    (hom_ext_of_fst _ (TopCat.ext fun u ↦
-      (ofSubsetMap_fst_apply _ _ u).trans (excisionMap_fst_apply _ _ u).symm))
+/-- For a set `U` not containing `a p`, `U ∖ {p}` lies in `S ∖ {p, a p}`, so `U` includes as
+`TopPair.interPairMapOfSubset` into `(S, S ∖ {p, a p})`. -/
+private lemma inter_compl_singleton_subset (hapU : a p ∉ U) :
+    U ∩ {p}ᶜ ⊆ ({p}ᶜ ∩ {a p}ᶜ : Set S) :=
+  fun _ hu ↦ ⟨hu.2, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ hu.1)⟩
 
 omit [T1Space S] in
 /-- Since `U` misses `a p`, the inclusion `(U, U ∖ {p}) ⟶ (S, S ∖ {a p})` is zero on homology. -/
-private lemma singularHomologyMap_interPairToComplPair_comp_eq_zero (hapU : a p ∉ U) (n : ℕ) :
+private lemma singularHomologyMap_interPairMapOfSubset_comp_eq_zero (hapU : a p ∉ U) (n : ℕ) :
     TopPair.singularHomologyMap
-      (interPairToComplPair hapU ≫ ofSubsetMap (𝟙 S) (B' := ({a p}ᶜ : Set S)) fun _ h ↦ h.2)
+      (interPairMapOfSubset (inter_compl_singleton_subset hapU) ≫
+        ofSubsetMap (𝟙 S) (B' := ({a p}ᶜ : Set S)) fun _ h ↦ h.2)
       R n = 0 := by
   have hU (u : U) : u.val ∈ ({a p}ᶜ : Set S) := fun (h : u.val = a p) ↦ hapU (h ▸ u.property)
   refine (congrArg (TopPair.singularHomologyMap · R n)
-    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun u _ ↦ hU u) rfl)).trans ?_
-  exact singularHomologyMap_eq_zero_of_fac _ R
+    (interPairMapOfSubset_comp_ofSubsetMap_id _ _)).trans ?_
+  refine singularHomologyMap_eq_zero_of_fac _ R
     (TopCat.ofHom (⟨fun u ↦ ⟨u.val, hU u⟩, continuous_subtypeVal.subtype_mk _⟩ :
-      C(U, ({a p}ᶜ : Set S)))) (TopCat.ext fun u ↦ (ofSubsetMap_fst_apply _ _ u).symm) n
+      C(U, ({a p}ᶜ : Set S)))) ?_ n
+  exact TopCat.ext fun u ↦ (interPairMapOfSubset_fst_apply _ u).symm
 
 omit [T1Space S] in
 /-- Since `a` carries `U` into the complement of `p`, the map `(U, U ∖ {p}) ⟶ (S, S ∖ {p})`
 induced by `a` is zero on homology. -/
-private lemma singularHomologyMap_interPairToComplPair_comp_ofSubsetMap_comp_eq_zero
+private lemma singularHomologyMap_interPairMapOfSubset_comp_ofSubsetMap_comp_eq_zero
     (ha : Function.Involutive a) (hapU : a p ∉ U)
     (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ)) (n : ℕ) :
-    TopPair.singularHomologyMap (interPairToComplPair hapU ≫ ofSubsetMap a haP ≫
+    TopPair.singularHomologyMap (interPairMapOfSubset (inter_compl_singleton_subset hapU) ≫
+      ofSubsetMap a haP ≫
       ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1)) R n = 0 := by
   have hU (u : U) : a u.val ∈ ({p}ᶜ : Set S) := fun (h : a u.val = p) ↦
     hapU ((ha u.val).symm.trans (congrArg a h) ▸ u.property)
-  refine (congrArg (TopPair.singularHomologyMap · R n) ((whisker_eq _
+  refine (congrArg (TopPair.singularHomologyMap · R n) (whisker_eq _
     (ofSubsetMap_comp_ofSubsetMap_of_comp_eq haP _ (fun _ h ↦ (haP h).1)
-      (Category.comp_id _))).trans
-    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun u _ ↦ hU u) rfl))).trans ?_
-  exact singularHomologyMap_eq_zero_of_fac _ R (TopCat.ofHom (⟨fun u ↦ ⟨a u.val, hU u⟩,
-      (a.hom.continuous.comp continuous_subtypeVal).subtype_mk _⟩ : C(U, ({p}ᶜ : Set S))))
-    (TopCat.ext fun u ↦ (ofSubsetMap_fst_apply _ _ u).symm) n
+      (Category.comp_id _)))).trans ?_
+  refine singularHomologyMap_eq_zero_of_fac _ R (TopCat.ofHom (⟨fun u ↦ ⟨a u.val, hU u⟩,
+      (a.hom.continuous.comp continuous_subtypeVal).subtype_mk _⟩ : C(U, ({p}ᶜ : Set S)))) ?_ n
+  refine TopCat.ext fun u ↦ ?_
+  simp only [Hom.fst_comp, ConcreteCategory.comp_apply, interPairMapOfSubset_fst_apply]
+  exact (ofSubsetMap_fst_apply a _ _).symm
 
 /-- The map `(S, S ∖ {p}) ⟶ (S, S ∖ {a p})` induced by an involution `a`. -/
 private def complSingletonMap (ha : Function.Involutive a) :
@@ -118,22 +114,26 @@ private lemma ofSubsetMap_comp_ofSubsetMap_id_comp_complSingletonMap (ha : Funct
     (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (TopCat.ext ha))
 
 omit [T1Space S] in
-private lemma interPairToComplPair_comp_ofSubsetMap (hapU : a p ∉ U) {y : Y} (f : S ⟶ Y)
+private lemma interPairMapOfSubset_comp_ofSubsetMap (hapU : a p ∉ U) {y : Y} (f : S ⟶ Y)
     (hfP : Set.MapsTo f ({p}ᶜ ∩ {a p}ᶜ) {y}ᶜ)
     (hfU : Set.MapsTo (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ ≫ f)
       (Subtype.val ⁻¹' {p}ᶜ : Set U) {y}ᶜ) :
-    interPairToComplPair hapU ≫ ofSubsetMap f hfP = ofSubsetMap _ hfU :=
-  ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ rfl
+    interPairMapOfSubset (inter_compl_singleton_subset hapU) ≫ ofSubsetMap f hfP =
+      ofSubsetMap _ hfU :=
+  hom_ext_of_fst _ (TopCat.ext fun u ↦ by
+    simp only [Hom.fst_comp, ConcreteCategory.comp_apply, interPairMapOfSubset_fst_apply]
+    exact (ofSubsetMap_fst_apply f _ _).trans (ofSubsetMap_fst_apply _ hfU u).symm)
 
 omit [T1Space S] in
-private lemma interPairToComplPair_comp_ofSubsetMap_comp_ofSubsetMap (hapU : a p ∉ U) {y : Y}
+private lemma interPairMapOfSubset_comp_ofSubsetMap_comp_ofSubsetMap (hapU : a p ∉ U) {y : Y}
     (f : S ⟶ Y) (hf : ∀ s, f (a s) = f s) (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ))
     (hfP : Set.MapsTo f ({p}ᶜ ∩ {a p}ᶜ) {y}ᶜ)
     (hfU : Set.MapsTo (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ ≫ f)
       (Subtype.val ⁻¹' {p}ᶜ : Set U) {y}ᶜ) :
-    interPairToComplPair hapU ≫ ofSubsetMap a haP ≫ ofSubsetMap f hfP = ofSubsetMap _ hfU :=
+    interPairMapOfSubset (inter_compl_singleton_subset hapU) ≫ ofSubsetMap a haP ≫
+      ofSubsetMap f hfP = ofSubsetMap _ hfU :=
   (whisker_eq _ (ofSubsetMap_comp_ofSubsetMap_of_comp_eq haP hfP hfP (TopCat.ext hf))).trans
-    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ rfl)
+    (interPairMapOfSubset_comp_ofSubsetMap hapU f hfP hfU)
 
 /-- **The local degree of a map invariant under an involution.** Let `a` be an involution of a
 T₁ space `S`, `p` a point with `a p ≠ p`, and `U` a set not containing `a p`. Let `f : S ⟶ Y`
@@ -166,16 +166,20 @@ theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Invo
     rw [isOpen_compl_singleton.interior_eq, isOpen_compl_singleton.interior_eq,
       ← Set.compl_inter, Set.singleton_inter_eq_empty.2 (Set.mem_singleton_iff.not.2 hp.symm),
       Set.compl_empty]
+  have hUP := inter_compl_singleton_subset (a := a) hapU
+  have hUe : interPairMapOfSubset hUP ≫ ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.1) =
+      excisionMap U {p}ᶜ :=
+    (interPairMapOfSubset_comp_ofSubsetMap_id _ _).trans interPairMapOfSubset_eq_excisionMap
   have hρa := ofSubsetMap_comp_ofSubsetMap_id_eq ha haP
   have haρ := ofSubsetMap_comp_ofSubsetMap_id_comp_complSingletonMap ha haP
   -- The class `s` is the sum of its contribution `t` near `p` and the image of `ε • t` under `a`.
-  have hdec : s = t ≫ TopPair.singularHomologyMap (interPairToComplPair hapU) R n + ε • (t ≫
-      TopPair.singularHomologyMap (interPairToComplPair hapU ≫ ofSubsetMap a haP) R n) := by
+  have hdec : s = t ≫ TopPair.singularHomologyMap (interPairMapOfSubset hUP) R n + ε • (t ≫
+      TopPair.singularHomologyMap (interPairMapOfSubset hUP ≫ ofSubsetMap a haP) R n) := by
     refine singularHomology_inter_hom_ext R hcov (fun _ h ↦ h.1) (fun _ h ↦ h.2) n ?_ ?_
     · rw [Preadditive.add_comp, Linear.smul_comp, Category.assoc, Category.assoc,
         ← singularHomologyMap_comp, ← singularHomologyMap_comp,
-        interPairToComplPair_comp_ofSubsetMap_id, ht, Category.assoc,
-        singularHomologyMap_interPairToComplPair_comp_ofSubsetMap_comp_eq_zero R ha hapU haP,
+        hUe, ht, Category.assoc,
+        singularHomologyMap_interPairMapOfSubset_comp_ofSubsetMap_comp_eq_zero R ha hapU haP,
         comp_zero, smul_zero, add_zero]
     · calc s ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.2)) R n
           = (s ≫ TopPair.singularHomologyMap (ofSubsetMap a haP) R n) ≫
@@ -186,20 +190,20 @@ theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Invo
         _ = ε • (t ≫ TopPair.singularHomologyMap (excisionMap U {p}ᶜ) R n ≫
               TopPair.singularHomologyMap (complSingletonMap ha) R n) := by
             rw [hs, Linear.smul_comp, reassoc_of% ht]
-        _ = (t ≫ TopPair.singularHomologyMap (interPairToComplPair hapU) R n +
+        _ = (t ≫ TopPair.singularHomologyMap (interPairMapOfSubset hUP) R n +
               ε • (t ≫ TopPair.singularHomologyMap
-                (interPairToComplPair hapU ≫ ofSubsetMap a haP) R n)) ≫
+                (interPairMapOfSubset hUP ≫ ofSubsetMap a haP) R n)) ≫
               TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) (by exact fun _ h ↦ h.2)) R n := by
             conv_rhs => rw [Preadditive.add_comp, Linear.smul_comp, Category.assoc,
               Category.assoc, ← singularHomologyMap_comp,
               ← singularHomologyMap_comp,
-              singularHomologyMap_interPairToComplPair_comp_eq_zero R hapU, comp_zero, zero_add,
-              Category.assoc, hρa, ← Category.assoc, interPairToComplPair_comp_ofSubsetMap_id,
+              singularHomologyMap_interPairMapOfSubset_comp_eq_zero R hapU, comp_zero, zero_add,
+              Category.assoc, hρa, ← Category.assoc, hUe,
               singularHomologyMap_comp]
   rw [hdec, Preadditive.add_comp, Linear.smul_comp, Category.assoc, Category.assoc,
     ← singularHomologyMap_comp, ← singularHomologyMap_comp,
-    interPairToComplPair_comp_ofSubsetMap hapU f hfP hfU, Category.assoc,
-    interPairToComplPair_comp_ofSubsetMap_comp_ofSubsetMap hapU f hf haP hfP hfU, add_smul,
+    interPairMapOfSubset_comp_ofSubsetMap hapU f hfP hfU, Category.assoc,
+    interPairMapOfSubset_comp_ofSubsetMap_comp_ofSubsetMap hapU f hf haP hfP hfU, add_smul,
     one_smul]
 
 end TopPair

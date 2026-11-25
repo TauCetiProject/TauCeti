@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
+import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!
 # Binary monomials
@@ -24,6 +25,8 @@ standard vectors `TauCeti.polynomialAction` scales `x ^ (d - i) * y ^ i` by
 
 * `TauCeti.coeff_polynomialMonomial`: the binary monomial has coefficient `1` at the exponent
   `(d - i, i)` when `i ≤ d`, and `0` elsewhere.
+* `TauCeti.sum_coeff_smul_polynomialMonomial`: a form of degree `d` is the combination of the
+  binary monomials with its coefficients.
 * `TauCeti.polynomialAction_diagonal_polynomialMonomial`: the binary monomial has weight
   `(d - i, i)`.
 
@@ -120,6 +123,22 @@ theorem coeff_polynomialMonomial_of_ne {s : Fin 2 →₀ ℕ}
     (polynomialMonomial R d i).coeff s = 0 := by
   rw [coeff_polynomialMonomial, ite_eq_right_iff]
   exact fun h ↦ (hs h.2.symm).elim
+
+/-- **A form is the combination of the binary monomials with its coefficients**: a homogeneous
+polynomial `f` of degree `d` in two variables is `∑_{i ≤ d} f_(d - i, i) e_i^d`, where
+`f_(d - i, i)` is its coefficient at the exponent `(d - i, i)`. -/
+theorem sum_coeff_smul_polynomialMonomial {f : MvPolynomial (Fin 2) R} (hf : f.IsHomogeneous d) :
+    ∑ i ∈ Finset.range (d + 1),
+      f.coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) • polynomialMonomial R d i = f := by
+  -- Expand `f` in the monomial basis, reindexed by the exponent of `y` through
+  -- `finsuppDegreeFinTwoEquiv` composed with `Fin.revPerm`.
+  refine Eq.trans ?_ (congrArg Subtype.val (((homogeneousMonomialBasis (R := R) d).reindex
+    ((finsuppDegreeFinTwoEquiv d).trans Fin.revPerm)).sum_repr ⟨f, hf⟩))
+  rw [← Fin.sum_univ_eq_sum_range (fun i : ℕ ↦
+    f.coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) • polynomialMonomial R d i),
+    Submodule.coe_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [polynomialMonomial_eq_monomial i.is_le, Nat.sub_sub_self i.is_le]
 
 variable (R d i) in
 /-- **The weight of `e_i^d` is `(d - i, i)`**: the diagonal matrix `diag(t₀, t₁)` scales the
