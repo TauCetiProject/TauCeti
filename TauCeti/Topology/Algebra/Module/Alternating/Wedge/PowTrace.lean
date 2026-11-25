@@ -1,0 +1,154 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
+import TauCeti.Logic.Equiv.Fin.Basic
+
+/-!
+# A two-form wedged with a power of a two-form on standard pairs
+
+Let `ω` and `α` be real two-forms on a real vector space, and let `qᵢ = b (i, 0)` and
+`pᵢ = b (i, 1)`, for `i ≤ m`, be vectors with `ω(qᵢ, qⱼ) = 0`, `ω(qᵢ, pⱼ) = δᵢⱼ` and
+`ω(pᵢ, pⱼ) = 0`: a symplectic basis of their span. Then
+
+`(ω ^ m ∧ α)(q₀, p₀, …, qₘ, pₘ) = m! · ∑ᵢ α(qᵢ, pᵢ)`
+
+(`ContinuousAlternatingMap.pairedWedge_wedgePow_apply_finProdFinEquiv`). For `α = ω` it is the
+value `(m + 1)!` of the top power (`ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv`). It
+is the pointwise content of the trace identity `n α ∧ ω ^ (n - 1) = (tr_ω α) ω ^ n` of Kähler
+geometry.
+
+The proof is by induction on `m`, expanding along `q₀` and then `p₀` with the interior-product
+rule for the wedge (`ContinuousAlternatingMap.curryLeftTopological_pairedWedge`) and the power
+rule `ι_v ω ^ (m + 1) = (m + 1) ι_v ω ∧ ω ^ m`
+(`ContinuousAlternatingMap.wedgePow_succ_apply_vecCons`). Inserting `q₀` into `ω ^ (m + 1)`
+leaves the one-form `ω(q₀, ·)`, which kills the later pairs and pairs with `p₀` to one, so that
+term reduces to the induction hypothesis. Inserting `q₀` into `α` and then `p₀` leaves
+`α(q₀, p₀) ω ^ (m + 1)` on the later pairs, plus a term with `ω(p₀, ·)`, which kills them.
+-/
+
+public section
+
+open TauCeti
+
+namespace ContinuousAlternatingMap
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+
+/-- Inserting `q` into `ω ^ (m + 1)` and wedging with `α`: when `ω(q, p) = 1` and `ω(q, ·)` kills
+the vectors of `R`, the value on `(p, R)` is `(m + 1) (ω ^ m ∧ α)(R)`. -/
+private theorem pairedWedge_curry_wedgePow_succ_apply (ω α : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ)
+    (q p : E) (R : Fin (2 * (m + 1)) → E) (hqp : ω ![q, p] = 1) (hqR : ∀ i, ω ![q, R i] = 0) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+        (curryLeftTopological (n := 2 * m + 1) (wedgePow ω (m + 1)) q) α
+        (Matrix.vecCons p R ∘ Fin.cast (by omega) : Fin (2 * m + 1 + 2) → E) =
+      (m + 1) * pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
+        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (wedgePow ω m) α R := by
+  rw [pairedWedge_apply_of_left_eq_smul_cast _ _ (Nat.add_comm 1 (2 * m)) ((m : ℝ) + 1)
+    (fun w ↦ by rw [curryLeftTopological_apply_apply, wedgePow_succ_apply_vecCons, smul_eq_mul]),
+    smul_eq_mul]
+  congr 1
+  rw [pairedWedge_assoc _ _ _ _ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (fun a b c ↦ by simp [mul_assoc])]
+  have h := pairedWedge_apply_vecCons_of_forall (ContinuousLinearMap.mul ℝ ℝ)
+    (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (curryLeftTopological (n := 1) ω q)
+    (pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+      (wedgePow ω m) α) p R (fun i ↦ by rw [curryLeftTopological_apply_apply]; simpa using hqR i)
+  rw [curryLeftTopological_apply_apply, ContinuousLinearMap.mul_apply'] at h
+  rw [show (Matrix.vecCons q ![p] : Fin 2 → E) = ![q, p] from rfl, hqp, one_mul] at h
+  exact h
+
+/-- Inserting `q` into `α` and wedging with `ω ^ (m + 1)`: when `ω(p, ·)` kills the vectors of
+`R`, the value on `(p, R)` is `α(q, p) ω ^ (m + 1)(R)`. -/
+private theorem pairedWedge_wedgePow_succ_curry_apply (ω α : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ)
+    (q p : E) (R : Fin (2 * (m + 1)) → E) (hpR : ∀ i, ω ![p, R i] = 0) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+        (wedgePow ω (m + 1)) (curryLeftTopological (n := 1) α q) (Matrix.vecCons p R) =
+      wedgePow ω (m + 1) R * α ![q, p] := by
+  rw [← curryLeftTopological_apply_apply (n := 2 * m + 1 + 1 + 0),
+    curryLeftTopological_pairedWedge (k := 2 * m + 1) (l := 0)]
+  -- The term with `ω(p, ·)` vanishes on vectors that it kills.
+  have hzero : ∀ w : Fin (2 * m + 1 + (0 + 1)) → E, (∀ i, ω ![p, w i] = 0) →
+      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+        (curryLeftTopological (n := 2 * m + 1) (wedgePow ω (m + 1)) p)
+        (curryLeftTopological (n := 1) α q) w = 0 := by
+    intro w hw
+    rw [pairedWedge_apply]
+    refine smul_eq_zero_of_right _ (Finset.sum_eq_zero fun σ _ ↦ ?_)
+    rw [curryLeftTopological_apply_apply, wedgePow_succ_apply_vecCons,
+      pairedWedge_apply_eq_zero_of_forall _ _ _ _ _ fun i ↦ ?_]
+    · simp
+    · rw [curryLeftTopological_apply_apply]
+      simpa using hw _
+  rw [hzero (R ∘ Fin.cast (by omega)) fun i ↦ hpR _, zero_add, pairedWedge_apply_zero_right,
+    ContinuousLinearMap.mul_apply', curryLeftTopological_apply_apply,
+    curryLeftTopological_apply_apply, Even.neg_one_pow ⟨m + 1, by ring⟩, one_smul]
+  congr 4
+  exact Subsingleton.elim _ _
+
+/-- **A two-form wedged with a power of a two-form on standard pairs.** If the vectors
+`qᵢ = b (i, 0)` and `pᵢ = b (i, 1)`, `i ≤ m`, satisfy `ω(qᵢ, qⱼ) = 0`, `ω(qᵢ, pⱼ) = δᵢⱼ` and
+`ω(pᵢ, pⱼ) = 0`, then `(ω ^ m ∧ α)(q₀, p₀, …, qₘ, pₘ) = m! · ∑ᵢ α(qᵢ, pᵢ)`. -/
+theorem pairedWedge_wedgePow_apply_finProdFinEquiv (ω α : E [⋀^Fin 2]→L[ℝ] ℝ) {m : ℕ}
+    (b : Fin (m + 1) × Fin 2 → E) (h₀₀ : ∀ i j, ω ![b (i, 0), b (j, 0)] = 0)
+    (h₀₁ : ∀ i j, ω ![b (i, 0), b (j, 1)] = if i = j then 1 else 0)
+    (h₁₁ : ∀ i j, ω ![b (i, 1), b (j, 1)] = 0) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+        (wedgePow ω m) α
+        (fun r : Fin (2 * (m + 1)) ↦
+          b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r))) =
+      m.factorial * ∑ i, α ![b (i, 0), b (i, 1)] := by
+  induction m with
+  | zero =>
+    rw [comp_finProdFinEquiv_symm_succ, pairedWedge_apply_zero_left, wedgePow_zero_apply,
+      ContinuousLinearMap.mul_apply', one_mul, Nat.factorial_zero, Nat.cast_one, one_mul,
+      Fin.sum_univ_one]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  | succ m ih =>
+    set b' := b ∘ Prod.map Fin.succ id with hb'
+    set R : Fin (2 * (m + 1)) → E :=
+      fun r ↦ b' (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r))
+    have hqR : ∀ r, ω ![b (0, 0), R r] = 0 := by
+      intro r
+      change ω ![b (0, 0), b (Prod.map Fin.succ id
+        (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r)))] = 0
+      generalize finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r) = jk
+      obtain ⟨j, k⟩ := jk
+      fin_cases k
+      · exact h₀₀ 0 j.succ
+      · simpa [(Fin.succ_ne_zero j).symm] using h₀₁ 0 j.succ
+    have hpR : ∀ r, ω ![b (0, 1), R r] = 0 := by
+      intro r
+      change ω ![b (0, 1), b (Prod.map Fin.succ id
+        (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r)))] = 0
+      generalize finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r) = jk
+      obtain ⟨j, k⟩ := jk
+      fin_cases k
+      · rw [apply_vecCons_swap, neg_eq_zero]
+        simpa [Fin.succ_ne_zero j] using h₀₁ j.succ 0
+      · exact h₁₁ 0 j.succ
+    have h₀₀' : ∀ i j, ω ![b' (i, 0), b' (j, 0)] = 0 := fun i j ↦ h₀₀ _ _
+    have h₀₁' : ∀ i j, ω ![b' (i, 0), b' (j, 1)] = if i = j then 1 else 0 :=
+      fun i j ↦ by simpa [hb'] using h₀₁ i.succ j.succ
+    have h₁₁' : ∀ i j, ω ![b' (i, 1), b' (j, 1)] = 0 := fun i j ↦ h₁₁ _ _
+    have e1 := pairedWedge_curry_wedgePow_succ_apply ω α m (b (0, 0)) (b (0, 1)) R
+      (by simpa using h₀₁ 0 0) hqR
+    have e2 := pairedWedge_wedgePow_succ_curry_apply ω α m (b (0, 0)) (b (0, 1)) R hpR
+    rw [comp_finProdFinEquiv_symm_succ, ← curryLeftTopological_apply_apply (n := 2 * (m + 1) + 1),
+      curryLeftTopological_pairedWedge (k := 2 * m + 1) (l := 1),
+      Even.neg_one_pow ⟨m + 1, by ring⟩, one_smul]
+    erw [e1, e2, ih b' h₀₀' h₀₁' h₁₁', wedgePow_apply_finProdFinEquiv ω b' h₀₀' h₀₁']
+    rw [Fin.sum_univ_succ (f := fun i : Fin (m + 1 + 1) ↦ α ![b (i, 0), b (i, 1)]),
+      Nat.factorial_succ]
+    simp only [hb', Function.comp_apply, Prod.map_apply, id]
+    push_cast
+    ring
+
+end ContinuousAlternatingMap
