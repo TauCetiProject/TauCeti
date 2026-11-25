@@ -33,8 +33,9 @@ fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
 
 * `TauCeti.StripSobolev.stripMeasure` is Lebesgue measure on `ℝ × [0, 1]`; it is the product of
   Lebesgue measure on `ℝ` and on `[0, 1]` (`TauCeti.StripSobolev.stripMeasure_eq_prod`), and
-  Lebesgue measure on the band `ℝ × [0, 1)`
-  (`TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ico`).
+  Lebesgue measure on the bands `ℝ × [0, 1)` and `ℝ × (0, 1)`
+  (`TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ico`,
+  `TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ioo`).
   A section that is bounded on a box `[-R, R] × [0, 1]` and vanishes outside it lies in every `Lᵖ`
   of the strip (`TauCeti.StripSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a
   continuous section vanishing for `|s|` large
@@ -101,6 +102,14 @@ theorem stripMeasure_eq_restrict_univ_prod_Ico :
     stripMeasure = volume.restrict ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1) := by
   rw [stripMeasure_eq_prod, Measure.restrict_congr_set (μ := volume (α := ℝ))
     (Ico_ae_eq_Icc (a := (0 : ℝ)) (b := 1)).symm, Measure.volume_eq_prod,
+    ← Measure.prod_restrict, Measure.restrict_univ]
+
+/-- The strip measure is Lebesgue measure on the open band `ℝ × (0, 1)`: the two differ by the
+null lines `ℝ × {0}` and `ℝ × {1}`. -/
+theorem stripMeasure_eq_restrict_univ_prod_Ioo :
+    stripMeasure = volume.restrict ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) := by
+  rw [stripMeasure_eq_prod, Measure.restrict_congr_set (μ := volume (α := ℝ))
+    (Ioo_ae_eq_Icc (a := (0 : ℝ)) (b := 1)).symm, Measure.volume_eq_prod,
     ← Measure.prod_restrict, Measure.restrict_univ]
 
 /-- The jet `(ξ, ∂s ξ, ∂t ξ)` of a map `ξ : ℝ × ℝ → V`. -/

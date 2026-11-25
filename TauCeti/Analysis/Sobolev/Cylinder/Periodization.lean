@@ -22,10 +22,11 @@ regularity, on the other hand, is stated on open subsets of the plane, for local
 annihilating an operator on compactly supported test maps. This file passes between the two.
 
 * **Periodization.** For a compactly supported map `ξ`, the sum `∑ₙ ξ (s, t + n)` over `n ∈ ℤ`
-  is locally finite. It is `C^k` when `ξ` is
-  (`TauCeti.CylinderSobolev.contDiff_tsum_add_intCast`), and a test section of the cylinder when
-  `ξ` is `C²` (`TauCeti.CylinderSobolev.tsum_add_intCast_mem_testSection`); its jet is the sum of
-  the translates of the jet of `ξ` (`TauCeti.CylinderSobolev.jet_tsum_add_intCast`).
+  is locally finite (`TauCeti.CylinderSobolev.exists_finset_eventually_eq_zero_add_intCast`).
+  It is `C^k` when `ξ` is (`TauCeti.CylinderSobolev.contDiff_tsum_add_intCast`), and a test
+  section of the cylinder when `ξ` is `C²`
+  (`TauCeti.CylinderSobolev.tsum_add_intCast_mem_testSection`); its jet is the sum of the
+  translates of the jet of `ξ` (`TauCeti.CylinderSobolev.jet_tsum_add_intCast`).
 * **Periodic extension.** An `Lᵖ` function on the strip agrees there with a strongly measurable
   function of period one in `t`
   (`TauCeti.CylinderSobolev.exists_stronglyMeasurable_periodic_ae_eq`), and such a function is
@@ -60,12 +61,12 @@ section Periodization
 
 variable {ξ : ℝ × ℝ → V}
 
-omit [NormedSpace ℝ V] in
-/-- Near any point, all but finitely many of the integer translates `(s, t) ↦ ξ (s, t + n)` of a
-compactly supported map vanish. -/
-private lemma exists_finset_eventually_eq_zero (hξ : HasCompactSupport ξ) (z : ℝ × ℝ) :
-    ∃ S : Finset ℤ, ∀ᶠ w in 𝓝 z, ∀ n ∉ S, ξ (w.1, w.2 + n) = 0 := by
-  obtain ⟨N, hN⟩ := (hξ.isCompact.image continuous_snd).isBounded.subset_closedBall 0
+/-- **The integer translates of a compactly supported map are locally finite.** Near any point,
+all but finitely many of the translates `(s, t) ↦ g (s, t + n)`, `n ∈ ℤ`, vanish. -/
+theorem exists_finset_eventually_eq_zero_add_intCast {X : Type*} [Zero X] {g : ℝ × ℝ → X}
+    (hg : HasCompactSupport g) (z : ℝ × ℝ) :
+    ∃ S : Finset ℤ, ∀ᶠ w in 𝓝 z, ∀ n ∉ S, g (w.1, w.2 + n) = 0 := by
+  obtain ⟨N, hN⟩ := (hg.isCompact.image continuous_snd).isBounded.subset_closedBall 0
   refine ⟨Finset.Icc ⌊-z.2 - N - 1⌋ ⌈-z.2 + N + 1⌉, ?_⟩
   filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
     (Ioo_mem_nhds (sub_one_lt z.2) (lt_add_one z.2))] with w hw n hn
@@ -79,7 +80,7 @@ private lemma exists_finset_eventually_eq_zero (hξ : HasCompactSupport ξ) (z :
 theorem contDiff_tsum_add_intCast {k : WithTop ℕ∞} (hξ : ContDiff ℝ k ξ)
     (hc : HasCompactSupport ξ) : ContDiff ℝ k fun z : ℝ × ℝ ↦ ∑' n : ℤ, ξ (z.1, z.2 + n) :=
   contDiff_iff_contDiffAt.2 fun z ↦ by
-    obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero hc z
+    obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero_add_intCast hc z
     exact S.contDiffAt_tsum_of_eventually_eq_zero
       (fun n _ ↦ (hξ.comp (contDiff_fst.prodMk (contDiff_snd.add contDiff_const))).contDiffAt) hS
 
@@ -128,7 +129,7 @@ private lemma jet_add_intCast_eq_zero {S : Finset ℤ} {z : ℝ × ℝ}
 supported `C¹` map `ξ`, the jet of `z ↦ ∑ₙ ξ (z.1, z.2 + n)` at `z` is `∑ₙ jet ξ (z.1, z.2 + n)`. -/
 theorem jet_tsum_add_intCast (hξ : ContDiff ℝ 1 ξ) (hc : HasCompactSupport ξ) (z : ℝ × ℝ) :
     jet (fun w : ℝ × ℝ ↦ ∑' n : ℤ, ξ (w.1, w.2 + n)) z = ∑' n : ℤ, jet ξ (z.1, z.2 + n) := by
-  obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero hc z
+  obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero_add_intCast hc z
   have hd (n : ℤ) : DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ ξ (w.1, w.2 + n)) z :=
     (hξ.differentiable one_ne_zero).differentiableAt.comp z
       (differentiableAt_fst.prodMk (differentiableAt_snd.add_const _))
@@ -231,7 +232,7 @@ theorem integral_inner_jet_eq_zero_of_forall_inner_jetOperator_eq_zero
   rw [MeasureTheory.L2.inner_def] at h0
   -- Pointwise on the plane, `⟪g, M (jet P)⟫` is the sum of the translates of `F`.
   have hsum (z : ℝ × ℝ) : ⟪g z, M z (jet P z)⟫_ℝ = ∑' n : ℤ, F (z.1, z.2 + n • (1 : ℝ)) := by
-    obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero hξc z
+    obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero_add_intCast hξc z
     have hsumm : Summable fun n : ℤ ↦ jet ξ (z.1, z.2 + n) :=
       summable_of_ne_finset_zero fun n hn ↦ jet_add_intCast_eq_zero hS hn
     rw [jet_tsum_add_intCast hξ1 hξc z, ← innerSL_apply_apply (𝕜 := ℝ),

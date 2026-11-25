@@ -26,11 +26,15 @@ band `s ×ˢ [a, a + c)` (`TauCeti.integrableOn_prod_Ico_sub_of_periodic`,
 integral over one period (`TauCeti.integrableOn_prod_Ico_sub_add_of_periodic`,
 `TauCeti.setIntegral_prod_Ico_sub_add_of_periodic`).
 
-Conversely, the integral over `α × ℝ` of any integrable `f` unfolds onto one period band: it is
-the integral over `univ ×ˢ [a, a + c)` of the sum `∑ₙ f (x, t + n c)` of the translates of `f` by
-the multiples of the period (`TauCeti.integral_eq_setIntegral_tsum_add_zsmul`). This is the band
-case of the unfolding of an integral over a fundamental domain
-(`MeasureTheory.IsAddFundamentalDomain.integral_eq_tsum`), with the sum taken inside the integral.
+Translating by `n c` carries integrability on, and the integral over, the band
+`s ×ˢ [a + n c, a + (n + 1) c)` to those of the translate `(x, t) ↦ f (x, t + n c)` on the band
+`s ×ˢ [a, a + c)` (`TauCeti.integrableOn_prod_Ico_add_zsmul_iff`,
+`TauCeti.setIntegral_prod_Ico_add_zsmul`), for any `f`. Hence the integral over `α × ℝ` of an
+integrable `f` unfolds onto one period band: it is the integral over `univ ×ˢ [a, a + c)` of the
+sum `∑ₙ f (x, t + n c)` of the translates of `f` by the multiples of the period
+(`TauCeti.integral_eq_setIntegral_tsum_add_zsmul`). This is the band case of the unfolding of an
+integral over a fundamental domain (`MeasureTheory.IsAddFundamentalDomain.integral_eq_tsum`), with
+the sum taken inside the integral.
 
 When `α` is a metric space, the integral of a function periodic in its second variable with
 period `d` over a ball about `(x, t + d)` is its integral over the ball about `(x, t)`
@@ -147,7 +151,7 @@ private lemma preimage_prodMap_add_zsmul_prod_Ico (n : ℤ) :
 omit [NormedSpace ℝ E] in
 /-- Translating by `n c` carries integrability on the band `s ×ˢ [a + n c, a + (n + 1) c)` to
 integrability of the translate on the band `s ×ˢ [a, a + c)`. -/
-private lemma integrableOn_prod_Ico_add_zsmul_iff (n : ℤ) :
+theorem integrableOn_prod_Ico_add_zsmul_iff (n : ℤ) :
     IntegrableOn f (s ×ˢ Ico (a + n • c) (a + (n + 1) • c)) (μ.prod volume) ↔
       IntegrableOn (fun z ↦ f (z.1, z.2 + n • c)) (s ×ˢ Ico a (a + c)) (μ.prod volume) := by
   obtain ⟨hm, he⟩ := measurePreserving_prodMap_add_right μ (n • c)
@@ -156,7 +160,7 @@ private lemma integrableOn_prod_Ico_add_zsmul_iff (n : ℤ) :
 
 /-- The integral over the band `s ×ˢ [a + n c, a + (n + 1) c)` is the integral of the translate by
 `n c` over the band `s ×ˢ [a, a + c)`. -/
-private lemma setIntegral_prod_Ico_add_zsmul (n : ℤ) :
+theorem setIntegral_prod_Ico_add_zsmul (n : ℤ) :
     ∫ z in s ×ˢ Ico (a + n • c) (a + (n + 1) • c), f z ∂μ.prod volume =
       ∫ z in s ×ˢ Ico a (a + c), f (z.1, z.2 + n • c) ∂μ.prod volume := by
   obtain ⟨hm, he⟩ := measurePreserving_prodMap_add_right μ (n • c)

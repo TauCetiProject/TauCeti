@@ -8,7 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
 import TauCeti.Analysis.Sobolev.Cylinder.Periodization
-import TauCeti.Topology.Algebra.Module.Span
+import TauCeti.LinearAlgebra.Submodule.Quotient
+import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.Compactness.Normed
+import TauCeti.Topology.UniformSpace.UniformConvergence.Periodic
 
 /-!
 # The universal linearized Floer operator along a Floer trajectory is surjective
@@ -38,9 +41,9 @@ almost complex structures for which every Floer trajectory is regular.
   of finite codimension. Hence finitely many variations `Y₁, …, Y_N` already make
   `(ξ, c) ↦ D_u ξ + ∑ cᵢ Yᵢ(u) (∂t u - X_H(u))` onto
   (`TauCeti.SymplecticForm.exists_surjective_floerSobolevOperator_coprod`), by
-  `Submodule.exists_finset_subset_sup_span_eq_top_of_dense`. This is the universal operator of the
-  family `J + ∑ cᵢ Yᵢ`, in the form taken by the parametric transversality theorem of
-  `TauCeti.Analysis.Fredholm.Parametric`.
+  `Submodule.sup_eq_top_of_dense` and `Submodule.exists_finset_subset_sup_span_eq_top`. This is
+  the universal operator of the family `J + ∑ cᵢ Yᵢ`, in the form taken by the parametric
+  transversality theorem of `TauCeti.Analysis.Fredholm.Parametric`.
 
 ## References
 
@@ -62,53 +65,16 @@ open StripSobolev (stripMeasure)
 
 variable {V : Type*} [NormedAddCommGroup V]
 
-/-- A map of period one in `t` converging uniformly on `[0, 1]` to a periodic loop `x` along a
-filter `l` in `s` converges to `x t` jointly in `(s, t)`. -/
-private lemma tendsto_prod_of_tendstoUniformlyOn_Icc {u : ℝ × ℝ → V}
-    (hper : ∀ s t, u (s, t + 1) = u (s, t)) {x : ℝ → V} (hx : Continuous x) (hxper : Periodic x 1)
-    {l : Filter ℝ} (h : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1)) (t : ℝ) :
-    Tendsto u (l ×ˢ 𝓝 t) (𝓝 (x t)) := by
-  have hfract (f : ℝ → V) (hf : Periodic f 1) (t : ℝ) : f (Int.fract t) = f t := by
-    simpa [← Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
-  -- By periodicity, the convergence is uniform in `t ∈ ℝ`, also along `l ×ˢ 𝓝 t`.
-  have hU : TendstoUniformly (fun q : ℝ × ℝ ↦ fun t ↦ u (q.1, t)) x (l ×ˢ 𝓝 t) := by
-    refine Metric.tendstoUniformly_iff.2 fun ε hε ↦ ?_
-    filter_upwards [(Metric.tendstoUniformlyOn_iff.1 h ε hε).prod_inl (𝓝 t)] with q hq t'
-    have := hq (Int.fract t') ⟨Int.fract_nonneg t', (Int.fract_lt_one t').le⟩
-    rwa [hfract x hxper, hfract (fun t ↦ u (q.1, t)) (fun t ↦ hper q.1 t)] at this
-  exact hU.tendsto_comp hx.continuousAt tendsto_snd
-
-/-- The Lebesgue measure of the open strip `ℝ × (0, 1)` is the strip measure. -/
-private lemma volume_restrict_univ_prod_Ioo :
-    volume.restrict ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) = stripMeasure := by
-  rw [StripSobolev.stripMeasure_eq_prod, Measure.restrict_congr_set (μ := volume (α := ℝ))
-    (Ioo_ae_eq_Icc (a := (0 : ℝ)) (b := 1)).symm, Measure.volume_eq_prod,
-    ← Measure.prod_restrict, Measure.restrict_univ]
-
-omit [NormedAddCommGroup V] in
-/-- A continuous field `Y (t, x)` vanishing for `x` outside a compact set is bounded for
-`t ∈ [0, 1]`. -/
-private lemma exists_forall_norm_le_of_eventually_eq_zero {W : Type*} [TopologicalSpace V]
-    [NormedAddCommGroup W] {Y : ℝ × V → W} (hY : Continuous Y)
-    (hYc : ∀ᶠ p in comap Prod.snd (cocompact V), Y p = 0) :
-    ∃ C, ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, ‖Y (t, x)‖ ≤ C := by
-  obtain ⟨s, hs, hsY⟩ := mem_comap.1 hYc
-  obtain ⟨K, hK, hKs⟩ := mem_cocompact.1 hs
-  obtain ⟨C, hC⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hY.continuousOn
-  refine ⟨max C 0, fun t ht x ↦ ?_⟩
-  by_cases hx : x ∈ K
-  · exact (hC (t, x) ⟨ht, hx⟩).trans (le_max_left _ _)
-  · rw [show Y (t, x) = 0 from hsY (hKs hx), norm_zero]
-    exact le_max_right _ _
-
-/-- The variation `z ↦ Y (t, u z) (δ z)` of a field `Y` as above is square integrable on the
-strip when `δ` is. -/
+/-- The variation `z ↦ Y (t, u z) (δ z)` of a continuous field `Y (t, x)` vanishing for `x` outside
+a compact set is square integrable on the strip when `δ` is. -/
 private lemma memLp_apply_of_eventually_eq_zero {W : Type*} [NormedAddCommGroup W]
     [NormedSpace ℝ W] {Y : ℝ × V → W →L[ℝ] W} (hY : Continuous Y)
     (hYc : ∀ᶠ p in comap Prod.snd (cocompact V), Y p = 0) {u : ℝ × ℝ → V} (hu : Continuous u)
     {δ : ℝ × ℝ → W} (hδ : MemLp δ 2 stripMeasure) :
     MemLp (fun z ↦ Y (z.2, u z) (δ z)) 2 stripMeasure := by
-  obtain ⟨C, hC⟩ := exists_forall_norm_le_of_eventually_eq_zero hY hYc
+  obtain ⟨C, hC⟩ :=
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_forall_norm_le_of_eventually_eq_zero
+      hY.continuousOn hYc
   have hYu : Continuous fun z : ℝ × ℝ ↦ Y (z.2, u z) := hY.comp (continuous_snd.prodMk hu)
   refine hδ.of_le_mul (c := C) ((continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable₂
     (g := fun (L : W →L[ℝ] W) v ↦ L v) hYu.aestronglyMeasurable hδ.aestronglyMeasurable) ?_
@@ -207,7 +173,7 @@ theorem eq_zero_of_forall_inner_floerSobolevOperator_eq_zero (ω : SymplecticFor
         ∫ z in univ ×ˢ Ioo 0 1, ηc z (deriv (fun τ : ℝ ↦ ω.floerOperator
           (fun w x ↦ Jd w x + τ • Y (w.2, x)) (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) 0) = 0 := by
     intro Y h₁ h₂ h₃ h₄
-    rw [volume_restrict_univ_prod_Ioo]
+    rw [← StripSobolev.stripMeasure_eq_restrict_univ_prod_Ioo]
     refine (integral_congr_ae ?_).trans (hY Y h₁ h₂ h₃ h₄)
     filter_upwards [hgη] with z hz
     rw [(ω.hasDerivAt_floerOperator_add_smul Jd (fun w x ↦ Y (w.2, x)) _ _ u z 0).deriv]
@@ -215,8 +181,8 @@ theorem eq_zero_of_forall_inner_floerSobolevOperator_eq_zero (ω : SymplecticFor
   -- Weak cokernel elements of the universal operator vanish.
   have h0 := ω.ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator
     (J := fun p : ℝ × V ↦ J p.1 p.2) hJ hn (fun p ↦ hJω p.1 p.2) (fun t x ↦ hJper t x) hJu hH hu
-    hF hne hxm hxp (tendsto_prod_of_tendstoUniformlyOn_Icc huper hxm hxmper huxm)
-    (tendsto_prod_of_tendstoUniformlyOn_Icc huper hxp hxpper huxp) (by norm_num) hηc hD' hY'
+    hF hne hxm hxp (tendsto_prod_of_tendstoUniformlyOn_Icc one_pos huper hxm hxmper huxm)
+    (tendsto_prod_of_tendstoUniformlyOn_Icc one_pos huper hxp hxpper huxp) (by norm_num) hηc hD' hY'
   have hg0 : g =ᵐ[stripMeasure] 0 := ae_restrict_of_ae <| h0.mono fun z hz ↦ by
     simpa [ηc, innerSL_apply_norm] using congrArg norm hz
   exact Lp.eq_zero_iff_ae_eq_zero.2 (hgη.symm.trans hg0)
@@ -308,8 +274,8 @@ theorem exists_surjective_floerSobolevOperator_coprod (ω : SymplecticForm F)
     filter_upwards [hm.coeFn_toLp] with z hz
     rw [hz]
   -- Finitely many variations already span a complement of the closed range of `D_u`.
-  obtain ⟨t, hts, htop⟩ :=
-    Submodule.exists_finset_subset_sup_span_eq_top_of_dense hD.isClosed_range hdense
+  obtain ⟨t, hts, htop⟩ := Submodule.exists_finset_subset_sup_span_eq_top (by
+    simpa only [← sup_assoc, sup_idem] using Submodule.sup_eq_top_of_dense hD.isClosed_range hdense)
   choose! Y hY using fun y (hy : y ∈ t) ↦ hts hy
   set e := t.equivFin
   refine ⟨t.card, fun i ↦ Y (e.symm i), fun i ↦ e.symm i, fun i ↦ hY _ (e.symm i).property, ?_⟩
