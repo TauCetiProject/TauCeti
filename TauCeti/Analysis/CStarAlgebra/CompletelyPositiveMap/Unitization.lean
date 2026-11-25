@@ -119,15 +119,12 @@ theorem IsNPositive.unitizationLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ :
   have hee0 : 0 ≤ e * e := he0.isSelfAdjoint.mul_self_nonneg
   have hee : 0 ≤ φ (e * e) := hφ.map_nonneg hn hee0
   have hc : 0 ≤ Unitization.inl (t : ℂ) - (φ (e * e) : B⁺¹) := by
-    have h1 := IsSelfAdjoint.le_algebraMap_norm_self (φ (e * e) : B⁺¹)
-      (Unitization.inr_nonneg_iff ℂ |>.mpr hee).isSelfAdjoint
     have h2 : ‖φ (e * e)‖ ≤ t := ht _ hee0 ((norm_mul_le _ _).trans (by nlinarith [norm_nonneg e]))
-    rw [sub_nonneg]
-    refine h1.trans ?_
     have hinl : Unitization.inl (t : ℂ) = algebraMap ℝ B⁺¹ t := by
       simp [Unitization.algebraMap_eq_inl_comp]
-    rw [Unitization.norm_inr, hinl]
-    exact algebraMap_mono _ h2
+    rw [sub_nonneg, hinl]
+    exact (CStarAlgebra.norm_le_iff_le_algebraMap _ ((norm_nonneg _).trans h2)
+      (Unitization.inr_nonneg_iff ℂ |>.mpr hee)).mp (by rwa [Unitization.norm_inr])
   have hy := hφ.map_cstarMatrix_nonneg (compress_nonneg hM he0.star_eq)
   have hy' := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
     (CompletelyPositiveMapClass.map_cstarMatrix_nonneg'
