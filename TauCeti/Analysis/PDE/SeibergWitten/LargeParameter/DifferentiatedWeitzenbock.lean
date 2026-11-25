@@ -389,16 +389,6 @@ private theorem complement_arith_le {n r c B b A G N : ℝ} (hn0 : 0 ≤ n) (hn 
     mul_le_mul_of_nonneg_right h4 hW]
 
 
-/-- The bound `|β|² ≤ (C / r) w₊ + C / r²` forces `C ≥ 0`. -/
-private theorem nonneg_of_sq_le {r C b w : ℝ} (hr : 1 ≤ r)
-    (h : b ^ 2 ≤ C / r * max w 0 + C / r ^ 2) : 0 ≤ C := by
-  by_contra! hC
-  have h1 : C / r * max w 0 ≤ 0 :=
-    mul_nonpos_of_nonpos_of_nonneg (div_nonpos_of_nonpos_of_nonneg hC.le (by linarith))
-      (le_max_right _ _)
-  have h2 : C / r ^ 2 < 0 := div_neg_of_neg_of_pos hC (by positivity)
-  linarith [sq_nonneg b]
-
 /-- The bound `a² + b² ≤ 1 + C / r` with `C ≥ 0` and `r ≥ 1` gives `a ≤ 1 + C`. -/
 private theorem le_one_add_of_sq_add_sq_le {r C a b : ℝ} (hr : 1 ≤ r) (hC : 0 ≤ C) (ha : 0 ≤ a)
     (h : a ^ 2 + b ^ 2 ≤ 1 + C / r) : a ≤ 1 + C := by
