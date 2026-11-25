@@ -57,10 +57,7 @@ For perturbations of the form `g ∘ ψ` with `ψ` close to the identity in `C¹
 as they arise when localized perturbations are composed one after another, nondegeneracy and the
 avoidance of a closed set by the graph of an iterate hold for all `ψ` close enough to the identity
 (`TauCeti.eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp`,
-`TauCeti.eventually_forall_isNearId_iterate_comp_notMem`). Near a point of least period `k`, small
-closed balls are left by every orbit starting in them until time `k`
-(`TauCeti.exists_pos_closedBall_subset_and_iterate_notMem`), which is what localized perturbations
-of a single orbit point need.
+`TauCeti.eventually_forall_isNearId_iterate_comp_notMem`).
 
 ## Main results
 
@@ -78,8 +75,6 @@ of a single orbit point need.
 * `TauCeti.eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp`,
   `TauCeti.eventually_forall_isNearId_iterate_comp_notMem`: nondegeneracy and avoidance persist
   for `g ∘ ψ` with `ψ` close enough to the identity in `C¹`.
-* `TauCeti.exists_pos_closedBall_subset_and_iterate_notMem`: small balls around a point of least
-  period `k` are left by every orbit starting in them until time `k`.
 
 ## References
 
@@ -364,40 +359,5 @@ theorem eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp {g : E �
   obtain ⟨U, hU, hUn⟩ := exists_isCompact_mem_nhdsSet_iUnion_iterate_image hg.continuous hL k
   exact eventually_forall_isNearId_comp hg hU
     (hL.exists_pos_forall_isNondegenerateFixedPt_iterate (fun _ _ _ _ ↦ hg.contDiffAt) hnd hUn)
-
-/-! ### Small balls around points of least period `k` -/
-
-/-- Around a point `x ∈ W` whose first `k - 1` iterates under a continuous self-map `φ` of a
-metric space differ from it, the closed balls of small enough radius `r` lie in `W` and are left
-by every orbit starting in them until time `k`. -/
-theorem exists_pos_closedBall_subset_and_iterate_notMem {X : Type*} [MetricSpace X] {φ : X → X}
-    (hφ : Continuous φ) {W : Set X} (hW : IsOpen W) {x : X} (hx : x ∈ W) {k : ℕ}
-    (hmin : ∀ j, 0 < j → j < k → φ^[j] x ≠ x) :
-    ∃ r > 0, closedBall x r ⊆ W ∧
-      ∀ y ∈ closedBall x r, ∀ j, 0 < j → j < k → φ^[j] y ∉ closedBall x r := by
-  suffices h : ∀ᶠ r in 𝓝[>] (0 : ℝ), closedBall x r ⊆ W ∧
-      ∀ j ∈ Finset.range k, 0 < j → ∀ y ∈ closedBall x r, φ^[j] y ∉ closedBall x r by
-    obtain ⟨r, ⟨hrW, hr⟩, hr0⟩ := (h.and self_mem_nhdsWithin).exists
-    exact ⟨r, hr0, hrW, fun y hy j hj hjk ↦ hr j (Finset.mem_range.2 hjk) hj y hy⟩
-  obtain ⟨ρ, hρ, hρW⟩ := Metric.isOpen_iff.1 hW x hx
-  refine Filter.Eventually.and ?_ ((Finset.eventually_all _).2 fun j hj ↦ ?_)
-  · filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
-    exact (closedBall_subset_ball hr.2).trans hρW
-  · -- With `d = dist (φ^[j] x) x > 0`, take `r < d / 2` and `r` below a radius on which
-    -- `φ^[j]` moves points by less than `d / 2`.
-    by_cases hj0 : 0 < j
-    · have hd : 0 < dist (φ^[j] x) x :=
-        dist_pos.2 (hmin j hj0 (Finset.mem_range.1 hj))
-      obtain ⟨ρ', hρ', hcont⟩ := Metric.continuousAt_iff.1 (hφ.iterate j).continuousAt
-        (dist (φ^[j] x) x / 2) (half_pos hd)
-      filter_upwards [Ioo_mem_nhdsGT (lt_min hρ' (half_pos hd))] with r hr _ y hy
-      rw [mem_closedBall] at hy ⊢
-      have hr₁ := hr.2.trans_le (min_le_left _ _)
-      have hr₂ := hr.2.trans_le (min_le_right _ _)
-      have h := hcont (hy.trans_lt (by linarith))
-      have := dist_triangle (φ^[j] x) (φ^[j] y) x
-      rw [dist_comm] at h
-      linarith
-    · exact Eventually.of_forall fun r h ↦ absurd h hj0
 
 end TauCeti

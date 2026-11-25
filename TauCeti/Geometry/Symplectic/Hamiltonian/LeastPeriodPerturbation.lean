@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TranslationPerturbation
 public import TauCeti.Dynamics.PeriodicPts.Persistence
 import TauCeti.Analysis.Calculus.FDeriv.Perturbation
+import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
 
 /-!
 # Making the points of least period `k` nondegenerate by a symplectic perturbation
