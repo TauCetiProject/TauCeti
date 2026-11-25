@@ -27,20 +27,24 @@ Mathlib's `RootPairing.Base.equivOfCartanMatrixEq` directly, with
 type `t` are each labelled by the nodes of `t`, and composing the two labellings identifies their
 supports compatibly with the Cartan matrices.
 
-Without `[IsRootSystem]` or equal ambient base rings, `RootPairing.Base.indexEquivOfCartanMatrixEq`
-transports simple-root coefficient columns (`RootPairing.Base.rootCoefficients`) along `e.symm`
-using `RootPairing.Base.iUnion_orbit_single_eq_range_rootCoefficients` and
-`Matrix.comp_equiv_mem_orbit`, yielding a bijection `ι ≃ ι₂` between root index types that
-intertwines `P.rootSpanMem ℤ` with `b.toWeightBasisInt.equiv b₂.toWeightBasisInt e` and preserves
-root heights, positivity, and maximal root height across characteristic-zero base rings.
+Over arbitrary characteristic-zero domains and without `[IsRootSystem]`, a
+Cartan-matrix-preserving bijection `e : b.support ≃ b₂.support` between the simple roots of two
+finite reduced crystallographic root pairings extends via
+`RootPairing.Base.indexEquivOfCartanMatrixEq` to a bijection `ι ≃ ι₂` between their root index
+types. It relabels simple-root coordinates along `e.symm`, intertwines `P.rootSpanMem ℤ` with
+`b.toWeightBasisInt.equiv b₂.toWeightBasisInt e`, and preserves root heights, positivity, the
+positive roots, maximal root height (when the root sets are nonempty), and the highest root (when
+`P₂` is irreducible).
 
 ## Main results
 
 * `RootPairing.Base.indexEquivOfCartanMatrixEq`: bijection `ι ≃ ι₂` induced by a
   Cartan-matrix-preserving bijection of simple roots, without `[IsRootSystem]` or equal base rings,
-  together with `rootCoefficients_indexEquivOfCartanMatrixEq`,
-  `rootSpanMem_indexEquivOfCartanMatrixEq`, `height_indexEquivOfCartanMatrixEq`,
-  `isPos_indexEquivOfCartanMatrixEq_iff`, and `indexEquivOfCartanMatrixEq_highestRoot`.
+  together with `rootCoefficients_indexEquivOfCartanMatrixEq`, `indexEquivOfCartanMatrixEq_symm`,
+  `rootSpanMem_indexEquivOfCartanMatrixEq`, `indexEquivOfCartanMatrixEq_apply_support`,
+  `height_indexEquivOfCartanMatrixEq`, `isPos_indexEquivOfCartanMatrixEq_iff`,
+  `image_indexEquivOfCartanMatrixEq_posRoots`, `height_highestRoot_eq_of_cartanMatrixEq`, and
+  `indexEquivOfCartanMatrixEq_highestRoot`.
 * `TauCeti.equivOfCartanMatrixEq_indexEquiv_apply`: the isomorphism constructed from a Cartan
   matrix relabelling carries each simple-root index according to that relabelling.
 * `TauCeti.map_equivOfCartanMatrixEq`: transporting the first base along that isomorphism gives
