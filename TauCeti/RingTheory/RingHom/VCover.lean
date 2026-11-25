@@ -81,12 +81,12 @@ namespace TauCeti
 
 variable {A B : Type u} [CommRing A] [CommRing B]
 
-/-- Let `V` be a valuation domain and `B` an algebra over `A`, with `A →+* V` the structure map.
+/-- Let `V` be a local ring and `B` an algebra over `A`, with `A →+* V` the structure map.
 It lifts along `A →+* B` after an injective local homomorphism `V →+* W` to a valuation domain
 if and only if there are primes `P ≤ Q` of `V ⊗[A] B` lying over the zero ideal and over the
 maximal ideal of `V`. -/
-theorem exists_lift_iff_exists_isPrime_le (V : Type u) [CommRing V] [IsDomain V]
-    [ValuationRing V] [Algebra A V] [Algebra A B] :
+theorem exists_lift_iff_exists_isPrime_le (V : Type u) [CommRing V] [IsLocalRing V]
+    [Algebra A V] [Algebra A B] :
     (∃ (W : Type u) (_ : CommRing W) (_ : IsDomain W) (_ : ValuationRing W) (e : V →+* W)
       (ψ : B →+* W), Function.Injective e ∧ IsLocalHom e ∧
         ψ.comp (algebraMap A B) = e.comp (algebraMap A V)) ↔
