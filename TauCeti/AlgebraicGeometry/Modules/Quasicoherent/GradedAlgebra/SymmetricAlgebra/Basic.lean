@@ -319,13 +319,14 @@ open Limits in
 the multiplication `Symⁿ⁻¹ F ⊗ F ⟶ Symⁿ F` is an epimorphism out of a zero sheaf. -/
 theorem isZero_gradedSymmetricAlgebra_obj_X {F : QuasicoherentSheaf X} (hF : IsZero F.obj)
     {n : ℕ} (hn : n ≠ 0) : IsZero (((gradedSymmetricAlgebra X).obj F).obj.X n) := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   set A := ((gradedSymmetricAlgebra X).obj F).obj
   have h1 : IsZero (A.X 1) := hF.of_iso (gradedSymmetricAlgebraXOneIso F)
   have h : IsZero (A.X m ⊗ A.X 1) := (MonoidalCategory.tensorLeft (A.X m)).map_isZero h1
-  -- The epimorphism instance is passed explicitly: instance search does not find it for the
-  -- multiplication as elaborated here.
-  exact @IsZero.of_epi _ _ _ _ _ _ (epi_mul_gradedSymmetricAlgebra F m 1) h
+  -- `mul m 1` lands in `A.X (m + 1)` with the addition of the grading monoid `ℕ`, which
+  -- instance search does not identify with the goal's `m + 1`; elaborating without the expected
+  -- type (`(e :)`) lets it find `epi_mul_gradedSymmetricAlgebra` before unifying with the goal.
+  exact (IsZero.of_epi (A.toMon.mul m 1) h :)
 
 /-- Morphisms of graded quasicoherent algebras out of the graded symmetric algebra `Sym F` are
 determined by their degree-one components. -/
