@@ -23,7 +23,8 @@ near an orbit segment of one of them move its initial point to the same place. I
 time maps are the identity near every point outside the support of the Hamiltonian, and they
 translate a point by `t • c` when the vector field is the constant `c` along the segment of that
 translation. A bound `M` on the vector field bounds the displacement of the time-`t` map by
-`M |t|`. For a `C²`
+`M |t|`, and a Lipschitz constant `K` of the vector field bounds the distance of the derivative
+of the time-`t` map from the identity by `exp (K |t|) - 1`. For a `C²`
 Hamiltonian, every time map preserves the symplectic form on tangent vectors: differentiating the
 pairing of two variations and using symmetry of the Hessian gives zero. A linear
 symplectomorphism `e` conjugates the flow of `G ∘ e` to the flow of `G`
@@ -163,6 +164,26 @@ theorem apply_fderiv_hamiltonianFlow (hX : LipschitzWith K (ω.hamiltonianVector
   have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt)
     (fun s ↦ (hd s).deriv) t 0
   simpa using hc
+
+/-- The Hamiltonian flow does not depend on the chosen Lipschitz constant of the Hamiltonian
+vector field. -/
+theorem hamiltonianFlow_congr {K' : ℝ≥0} (hX : LipschitzWith K (ω.hamiltonianVectorField H))
+    (hX' : LipschitzWith K' (ω.hamiltonianVectorField H)) :
+    ω.hamiltonianFlow H hX = ω.hamiltonianFlow H hX' :=
+  flowOfLipschitz_congr hX hX'
+
+/-- **The linearized flow of a `C²` Hamiltonian is close to the identity.** If the Hamiltonian
+vector field is `K`-Lipschitz, the derivative of the time-`t` map differs from the identity by at
+most `exp (K |t|) - 1` in operator norm. Since the flow does not depend on the Lipschitz constant
+(`TauCeti.SymplecticForm.hamiltonianFlow_congr`), any Lipschitz constant of the field bounds the
+derivative of the time-`t` map. -/
+theorem norm_fderiv_hamiltonianFlow_sub_id_le
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ 2 H) (t : ℝ) (x : V) :
+    ‖fderiv ℝ (ω.hamiltonianFlow H hX t) x - ContinuousLinearMap.id ℝ V‖ ≤
+      Real.exp (K * |t|) - 1 :=
+  norm_fderiv_flowOfLipschitz_sub_id_le hX
+    ((ω.contDiff_hamiltonianFlow_apply H 0 hX (by simpa using hH) t).differentiable
+      (by simp) x)
 
 /-- **Linear symplectomorphisms conjugate Hamiltonian flows.** If `e : (V, ω₁) → (W, ω₂)` is a
 linear symplectomorphism, then `e` carries the flow of `G ∘ e` for `ω₁` to the flow of `G` for

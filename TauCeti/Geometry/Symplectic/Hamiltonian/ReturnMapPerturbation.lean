@@ -31,7 +31,8 @@ smooth compactly supported Hamiltonian `H` whose time-one map `ψ`
 
 * fixes every `p i` and every point outside the discs, so that the orbits are unchanged and so is
   `φ` near their other points;
-* moves no point by more than a prescribed `ε > 0`;
+* moves no point by more than a prescribed `ε > 0`, and has derivative within `ε` of the
+  identity at every point, so that it is `ε`-close to the identity in `C¹`;
 * turns each `p i` into a periodic point of `φ ∘ ψ`, of the same period `k i`, whose linearized
   return map `B` satisfies `det (1 - B ^ n) ≠ 0` for every `n ≥ 1`.
 
@@ -50,8 +51,13 @@ some power of that map degenerate
 (`LinearMap.countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero`), and the angles of
 different orbits can be chosen independently, as small as the displacement bound
 `‖ψ w - w‖ ≤ max |θ i| sup |G'| r / 3` requires
-(`TauCeti.norm_hamiltonianFlow_radialHamiltonian_sub_le_mul_sqrt`). A single orbit is the special
-case `TauCeti.exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero`.
+(`TauCeti.norm_hamiltonianFlow_radialHamiltonian_sub_le_mul_sqrt`). The derivative of `ψ` is
+controlled in the same way: near the disc about `p i` the map `ψ` is the time-one map of the `i`-th
+twist alone, whose vector field is `θ i` times that of the twist with profile `G`, hence
+`|θ i| L`-Lipschitz for a constant `L` independent of the angles, so the derivative of `ψ` is
+within `exp (|θ i| L) - 1` of the identity there
+(`TauCeti.SymplecticForm.norm_fderiv_hamiltonianFlow_sub_id_le`); elsewhere `ψ` is the identity.
+A single orbit is the special case `TauCeti.exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero`.
 
 The statements concern finitely many given orbits of a map of the plane. Points of other periodic
 orbits within distance `r` of some `p i` may be moved by `ψ`, and `φ ∘ ψ` may have periodic orbits
@@ -87,10 +93,12 @@ open scoped ContDiff
 `p i` be finitely many points of the plane at mutual distance at least `r > 0`. There is a
 constant `C` such that for all angles `θ i` some smooth compactly supported Hamiltonian `H` has
 a time-one map `ψ` that agrees near each `p i` with the rotation by `θ i` about `p i`, is the
-identity near every point at distance at least `r` from all the `p i`, and moves no point by more
-than `C D r` when all `|θ i| ≤ D`. The Hamiltonian is a sum of radial twists supported in the
-discs of radius `r / 3` about the `p i`. The conclusions hold for every Lipschitz constant of the
-Hamiltonian vector field, one of which exists. -/
+identity near every point at distance at least `r` from all the `p i`, and, when all
+`|θ i| ≤ D`, moves no point by more than `C D r` and has derivative within `exp (C D) - 1` of the
+identity everywhere. So `ψ` tends to the identity in `C¹` as the angles tend to `0`. The
+Hamiltonian is a sum of radial twists supported in the discs of radius `r / 3` about the `p i`.
+The conclusions hold for every Lipschitz constant of the Hamiltonian vector field, one of which
+exists. -/
 theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p : ι → ℂ} {r : ℝ}
     (hr : 0 < r) (hp : Pairwise fun i j ↦ r ≤ ‖p i - p j‖) :
     ∃ C : ℝ, ∀ θ : ι → ℝ, ∃ H : ℂ → ℝ, ContDiff ℝ ∞ H ∧ HasCompactSupport H ∧
@@ -100,7 +108,9 @@ theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p
           fun w ↦ p i + exp (I * θ i) * (w - p i)) ∧
         (∀ w, (∀ i, r ≤ ‖w - p i‖) → stdComplexSymplecticForm.hamiltonianFlow H hX 1 =ᶠ[𝓝 w] id) ∧
         ∀ D, 0 ≤ D → (∀ i, |θ i| ≤ D) →
-          ∀ w, ‖stdComplexSymplecticForm.hamiltonianFlow H hX 1 w - w‖ ≤ C * D * r := by
+          (∀ w, ‖stdComplexSymplecticForm.hamiltonianFlow H hX 1 w - w‖ ≤ C * D * r) ∧
+          ∀ w, ‖fderiv ℝ (stdComplexSymplecticForm.hamiltonianFlow H hX 1) w -
+            ContinuousLinearMap.id ℝ ℂ‖ ≤ Real.exp (C * D) - 1 := by
   cases nonempty_fintype ι
   -- A smooth cutoff `G₁` of the identity, vanishing on `[r² / 9, ∞)`, with bounded derivative.
   obtain ⟨G₁, hG₁, -, hG₁R', hG₁d⟩ := exists_contDiff_cutoff_id
@@ -109,9 +119,12 @@ theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p
   have hG₁c : HasCompactSupport G₁ :=
     HasCompactSupport.intro (isCompact_closedBall 0 (r ^ 2 / 9)) fun s hs ↦
       hG₁R' s (by simpa using hs : r ^ 2 / 9 < |s|).le
-  obtain ⟨C, hC⟩ := (hG₁.continuous_deriv (by simp)).bounded_above_of_compact_support hG₁c.deriv
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  refine ⟨C, fun θ ↦ ?_⟩
+  obtain ⟨C₀, hC⟩ := (hG₁.continuous_deriv (by simp)).bounded_above_of_compact_support hG₁c.deriv
+  -- Lipschitz constants `K₁ i` of the fields of the twists with profile `G₁`.
+  choose K₁ hX₁ using fun i ↦ exists_lipschitzWith_hamiltonianVectorField_radialHamiltonian
+    (hG₁.of_le (by simp)) hG₁R (p i)
+  have hC0 : 0 ≤ max C₀ (∑ j, (K₁ j : ℝ)) := ((norm_nonneg _).trans (hC 0)).trans (le_max_left _ _)
+  refine ⟨max C₀ (∑ j, (K₁ j : ℝ)), fun θ ↦ ?_⟩
   -- The profile `θ i G₁` twists the disc of radius `r / 3` about `p i`, with slope `θ i` near `0`.
   let G : ι → ℝ → ℝ := fun i s ↦ θ i * G₁ s
   have hGc (i : ι) : ContDiff ℝ ∞ (G i) := contDiff_const.mul hG₁
@@ -120,9 +133,6 @@ theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p
   have hG0 (i : ι) : ∀ᶠ s in 𝓝 0, HasDerivAt (G i) (θ i) s :=
     (eventually_abs_sub_lt 0 (by positivity : 0 < r ^ 2 / 18)).mono fun s hs ↦ by
       simpa using (hG₁d s (by simpa using hs)).const_mul (θ i)
-  have hGd (i : ι) (s : ℝ) : |deriv (G i) s| ≤ |θ i| * C := by
-    rw [deriv_const_mul_field', abs_mul]
-    exact mul_le_mul_of_nonneg_left (by simpa using hC s) (abs_nonneg _)
   have hsep : ((Finset.univ : Finset ι) : Set ι).Pairwise
       fun i j ↦ 4 * (r ^ 2 / 9) < ‖p i - p j‖ ^ 2 :=
     fun i _ j _ hij ↦ by nlinarith [hp hij]
@@ -131,10 +141,14 @@ theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p
   have hHs : HasCompactSupport fun w ↦ ∑ i, radialHamiltonian (G i) (p i) w := by
     rw [← Finset.sum_fn]
     exact HasCompactSupport.finset_sum fun i _ ↦ hasCompactSupport_radialHamiltonian (hGR i) (p i)
-  choose K' hXi using fun i ↦ exists_lipschitzWith_hamiltonianVectorField_radialHamiltonian
-    ((hGc i).of_le (by simp)) (hGR i) (p i)
+  -- The field of the `i`-th twist is `θ i` times that of the twist with profile `G₁`.
+  have hXi (i : ι) : LipschitzWith (‖θ i‖₊ * K₁ i)
+      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian (G i) (p i))) := by
+    rw [radialHamiltonian_const_mul, stdComplexSymplecticForm.hamiltonianVectorField_const_mul']
+    exact (lipschitzWith_smul (θ i)).comp (hX₁ i)
   refine ⟨_, hHc, hHs, stdComplexSymplecticForm.exists_lipschitzWith_hamiltonianVectorField
-    (hHc.of_le (by simp)) hHs, fun hX ↦ ⟨fun i ↦ ?_, fun w hw ↦ ?_, fun D hD hθD w ↦ ?_⟩⟩
+    (hHc.of_le (by simp)) hHs, fun hX ↦ ⟨fun i ↦ ?_, fun w hw ↦ ?_, fun D hD hθD ↦
+      ⟨fun w ↦ ?_, fun w ↦ ?_⟩⟩⟩
   · -- Near `p i` the time-one map is that of the `i`-th twist alone, a rotation by `θ i`.
     have hball : ∀ᶠ w in 𝓝 (p i), ‖w - p i‖ ^ 2 < r ^ 2 / 9 := by
       have : Continuous fun w : ℂ ↦ ‖w - p i‖ ^ 2 := by fun_prop
@@ -146,23 +160,22 @@ theorem exists_hamiltonianFlow_eventuallyEq_rotation {ι : Type*} [Finite ι] {p
   · -- Away from the discs the time-one map is the identity.
     exact hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id hX (fun j _ ↦ hGR j)
       (fun j _ ↦ by nlinarith [hw j]) 1
-  · -- Points of the disc about `p i` turn through an angle at most `|θ i| C`.
-    by_cases h : ∃ i, ‖w - p i‖ ^ 2 ≤ r ^ 2 / 9
-    · obtain ⟨i, hi⟩ := h
-      rw [hamiltonianFlow_sum_radialHamiltonian hX (fun j _ ↦ hGR j) hsep (Finset.mem_univ i)
-        (hXi i) (hGdiff i _) hi]
-      calc _ ≤ |1| * (|θ i| * C) * Real.sqrt (r ^ 2 / 9) :=
-            norm_hamiltonianFlow_radialHamiltonian_sub_le_mul_sqrt (hXi i) (hGdiff i) (hGd i)
-              (hGR i) w 1
-        _ ≤ C * D * r := by
-          rw [abs_one, one_mul, show r ^ 2 / 9 = (r / 3) ^ 2 by ring,
-            Real.sqrt_sq (by positivity)]
-          have h₁ : |θ i| * C ≤ D * C := mul_le_mul_of_nonneg_right (hθD i) hC0
-          nlinarith [mul_le_mul_of_nonneg_right h₁ (by positivity : 0 ≤ r / 3), mul_nonneg hD hC0]
-    · simp only [not_exists, not_le] at h
-      rw [hamiltonianFlow_sum_radialHamiltonian_eq_self hX (fun j _ ↦ hGR j) (fun j _ ↦ h j),
-        sub_self, norm_zero]
-      exact mul_nonneg (mul_nonneg hC0 hD) hr.le
+  · -- Points of the disc about `p i` turn through an angle at most `|θ i| C₀ ≤ D C₀`.
+    refine (norm_hamiltonianFlow_sum_radialHamiltonian_sub_le hX (fun i _ ↦ hGdiff i)
+      (fun i _ ↦ hGR i) hsep (fun i _ ↦ hXi i) (M := D * C₀) (fun i _ s ↦ ?_)
+      (mul_nonneg hD ((norm_nonneg _).trans (hC 0))) 1 w).trans ?_
+    · rw [deriv_const_mul_field', abs_mul]
+      exact mul_le_mul (hθD i) (by simpa using hC s) (abs_nonneg _) hD
+    · rw [abs_one, one_mul, show r ^ 2 / 9 = (r / 3) ^ 2 by ring, Real.sqrt_sq (by positivity)]
+      nlinarith [mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
+        (le_max_left C₀ (∑ j, (K₁ j : ℝ))) hD) hr.le, mul_nonneg hD ((norm_nonneg _).trans (hC 0))]
+  · -- The field of the `i`-th twist is `|θ i| K₁ i`-Lipschitz, with `|θ i| K₁ i ≤ C D`.
+    refine (norm_fderiv_hamiltonianFlow_sum_radialHamiltonian_sub_id_le hX
+      (fun i _ ↦ (hGc i).of_le (by simp)) (fun i _ ↦ hGR i) hsep (fun i _ ↦ hXi i)
+      (fun i _ ↦ ?_) (mul_nonneg hC0 hD) 1 w).trans (by simp)
+    rw [NNReal.coe_mul, coe_nnNorm, Real.norm_eq_abs, mul_comm _ D]
+    exact mul_le_mul (hθD i) ((Finset.single_le_sum (fun j _ ↦ (K₁ j).coe_nonneg)
+      (Finset.mem_univ i)).trans (le_max_right _ _)) (K₁ i).coe_nonneg hD
 
 /-- **Localized Hamiltonian twists make finitely many periodic orbits nondegenerate in all
 iterates.** Let `p i` be finitely many periodic points on pairwise distinct orbits, of periods
@@ -170,7 +183,8 @@ iterates.** Let `p i` be finitely many periodic points on pairwise distinct orbi
 `A i` have determinant one. Let `r > 0` be at most the distance from each `p i` to every other
 point of its own orbit and to every point of the other orbits. For every `ε > 0` there is a smooth
 compactly supported Hamiltonian `H` whose time-one map `ψ` fixes every `p i` and every point at
-distance at least `r` from all the `p i`, moves no point by more than `ε`, and makes each `p i` a
+distance at least `r` from all the `p i`, moves no point by more than `ε`, has derivative within
+`ε` of the identity everywhere, and makes each `p i` a
 periodic point of `φ ∘ ψ` of period `k i` whose linearized return map `B` has
 `det (1 - B ^ n) ≠ 0` for every `n ≠ 0`. The conclusions hold for every Lipschitz constant of the
 Hamiltonian vector field, one of which exists.
@@ -190,18 +204,31 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero_of_finite {ι : Ty
         (∀ i, stdComplexSymplecticForm.hamiltonianFlow H hX 1 (p i) = p i) ∧
         (∀ w, (∀ i, r ≤ ‖w - p i‖) → stdComplexSymplecticForm.hamiltonianFlow H hX 1 w = w) ∧
         (∀ w, ‖stdComplexSymplecticForm.hamiltonianFlow H hX 1 w - w‖ ≤ ε) ∧
+        (∀ w, ‖fderiv ℝ (stdComplexSymplecticForm.hamiltonianFlow H hX 1) w -
+          ContinuousLinearMap.id ℝ ℂ‖ ≤ ε) ∧
         ∀ i, (φ ∘ stdComplexSymplecticForm.hamiltonianFlow H hX 1)^[k i] (p i) = p i ∧
           ∃ B : ℂ →L[ℝ] ℂ, HasFDerivAt (φ ∘ stdComplexSymplecticForm.hamiltonianFlow H hX 1)^[k i]
             B (p i) ∧ ∀ n ≠ 0, (1 - B ^ n).det ≠ 0 := by
   obtain ⟨C, hC⟩ := exists_hamiltonianFlow_eventuallyEq_rotation hr fun i j hij ↦ by
     simpa using horb j i 0 (hk i) (Or.inr hij)
+  -- Angles at most `δ / 2` make the displacement and derivative bounds smaller than `ε`.
+  obtain ⟨δ, hδ0, hδ⟩ := Metric.eventually_nhds_iff.1
+    ((ContinuousAt.eventually_lt (f := fun D : ℝ ↦ C * D * r) (g := fun _ ↦ ε) (x₀ := 0)
+      (by fun_prop) continuousAt_const (by simpa using hε)).and
+    (ContinuousAt.eventually_lt (f := fun D : ℝ ↦ Real.exp (C * D) - 1) (g := fun _ ↦ ε)
+      (x₀ := 0) (by fun_prop) continuousAt_const (by simpa using hε)))
+  obtain ⟨hδr, hδe⟩ := hδ (show dist (δ / 2) 0 < δ by
+    rw [dist_zero_right, Real.norm_of_nonneg (by positivity)]
+    linarith)
   -- Choose for each orbit a small angle outside the countable set of degenerate angles.
   choose θ hθ hθ0 hθε using fun i ↦
     ((LinearMap.countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero (hdet i)).dense_compl
-      ℝ).exists_between (show (0 : ℝ) < ε / ((|C| + 1) * r) by positivity)
+      ℝ).exists_between (half_pos hδ0)
   obtain ⟨H, hHc, hHs, hHX, hψ⟩ := hC θ
   refine ⟨H, hHc, hHs, hHX, fun hX ↦ ?_⟩
-  obtain ⟨hrot, hid, hdisp⟩ := hψ hX
+  obtain ⟨hrot, hid, hsmall⟩ := hψ hX
+  obtain ⟨hdisp, hderiv⟩ := hsmall (δ / 2) (by positivity)
+    fun i ↦ (abs_of_pos (hθ0 i)).trans_le (hθε i).le
   set ψ := stdComplexSymplecticForm.hamiltonianFlow H hX 1
   have hψp (i : ι) : ψ (p i) = p i := by simpa using (hrot i).eq_of_nhds
   have hψ' (i : ι) : HasFDerivAt ψ (exp (I * θ i) • ContinuousLinearMap.id ℝ ℂ) (p i) :=
@@ -210,17 +237,10 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero_of_finite {ι : Ty
   -- `ψ` is the identity near the points of the orbits other than the `p i`.
   have hidorb (i : ι) (j : ℕ) (hj : 0 < j) (hjk : j < k i) : ψ =ᶠ[𝓝 (φ^[j] (p i))] id :=
     hid _ fun l ↦ horb l i j hjk (Or.inl hj)
-  refine ⟨hψp, fun w hw ↦ (hid w hw).eq_of_nhds, fun w ↦ (hdisp _ (by positivity)
-    (fun i ↦ (abs_of_pos (hθ0 i)).trans_le (hθε i).le) w).trans ?_, fun i ↦ ⟨?_, _,
+  refine ⟨hψp, fun w hw ↦ (hid w hw).eq_of_nhds, fun w ↦ (hdisp w).trans hδr.le,
+    fun w ↦ (hderiv w).trans hδe.le, fun i ↦ ⟨?_, _,
     (hA i).iterate_comp_of_eventuallyEq_id (hψ' i) (hk i) (hψp i) (hφ i) (hidorb i),
     fun n hn h ↦ hθ i ⟨n, hn, ?_⟩⟩⟩
-  · -- The angles are small enough for the displacement bound.
-    calc C * (ε / ((|C| + 1) * r)) * r = C / (|C| + 1) * ε := by field_simp
-      _ ≤ 1 * ε := by
-        gcongr
-        rw [div_le_one (by positivity)]
-        linarith [le_abs_self C]
-      _ = ε := one_mul ε
   · rw [(Function.iterate_comp_eventuallyEq_of_eventuallyEq_id (hk i) (hψp i)
       (hψ' i).continuousAt (hφ i) (hidorb i)).eq_of_nhds, Function.comp_apply, hψp, hp]
   · -- The return map `A i ∘ exp (I * θ i)` is nondegenerate in all iterates by the choice of `θ i`.
@@ -237,7 +257,8 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero_of_finite {ι : Ty
 whose linearized return map `A` has determinant one, and let `r > 0` be at most the distance from
 `p` to the other points of its orbit. For every `ε > 0` there is a smooth compactly supported
 Hamiltonian `H` whose time-one map `ψ` fixes `p` and every point at distance at least `r` from `p`,
-moves no point by more than `ε`, and makes `p` a periodic point of `φ ∘ ψ` of period `k` whose
+moves no point by more than `ε`, has derivative within `ε` of the identity everywhere, and makes
+`p` a periodic point of `φ ∘ ψ` of period `k` whose
 linearized return map `B` has `det (1 - B ^ n) ≠ 0` for every `n ≠ 0`. The conclusions hold for
 every Lipschitz constant of the Hamiltonian vector field, one of which exists. This is the case of
 a single orbit in `TauCeti.exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero_of_finite`. -/
@@ -251,6 +272,8 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero {φ : ℂ → ℂ}
         stdComplexSymplecticForm.hamiltonianFlow H hX 1 p = p ∧
         (∀ w, r ≤ ‖w - p‖ → stdComplexSymplecticForm.hamiltonianFlow H hX 1 w = w) ∧
         (∀ w, ‖stdComplexSymplecticForm.hamiltonianFlow H hX 1 w - w‖ ≤ ε) ∧
+        (∀ w, ‖fderiv ℝ (stdComplexSymplecticForm.hamiltonianFlow H hX 1) w -
+          ContinuousLinearMap.id ℝ ℂ‖ ≤ ε) ∧
         (φ ∘ stdComplexSymplecticForm.hamiltonianFlow H hX 1)^[k] p = p ∧
         ∃ B : ℂ →L[ℝ] ℂ, HasFDerivAt (φ ∘ stdComplexSymplecticForm.hamiltonianFlow H hX 1)^[k]
           B p ∧ ∀ n ≠ 0, (1 - B ^ n).det ≠ 0 := by
@@ -259,7 +282,7 @@ theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero {φ : ℂ → ℂ}
     (fun _ ↦ hA) (fun _ ↦ hdet) (fun _ ↦ hφ) hr
     (fun _ _ j hjk h ↦ horb j (h.resolve_right (by simp)) hjk) hε
   refine ⟨H, hHc, hHs, hHX, fun hX ↦ ?_⟩
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := hψ hX
-  exact ⟨h₁ (), fun w hw ↦ h₂ w fun _ ↦ hw, h₃, h₄ ()⟩
+  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := hψ hX
+  exact ⟨h₁ (), fun w hw ↦ h₂ w fun _ ↦ hw, h₃, h₄, h₅ ()⟩
 
 end TauCeti

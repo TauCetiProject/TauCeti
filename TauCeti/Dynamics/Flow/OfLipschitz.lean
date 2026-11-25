@@ -44,6 +44,10 @@ the initial condition, and the joint continuity required by `Flow` is
   segment from `x` to `x + t • c`, the time-`t` map translates `x` by `t • c`.
 * `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
   map is `exp (K |t|)`-Lipschitz, and its `fderiv` has norm at most `exp (K |t|)`.
+* `TauCeti.lipschitzWith_flowOfLipschitz_sub_id`, `TauCeti.norm_fderiv_flowOfLipschitz_sub_id_le`:
+  the displacement `x ↦ φₜ x - x` is `(exp (K |t|) - 1)`-Lipschitz, so the time-`t` map is within
+  `exp (K |t|) - 1` of the identity in derivative. This is Grönwall's inequality for the difference
+  of two orbits and their initial points.
 * `TauCeti.flowOfLipschitz_eq_add_integral`: orbits satisfy the integral equation.
 
 ## References
@@ -226,6 +230,69 @@ theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ
     ‖fderiv ℝ (flowOfLipschitz v hv t) x‖ ≤ Real.exp (K * |t|) := by
   simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
     norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz hv t) (x₀ := x)
+
+/-- A function vanishing at `0` whose derivative at `s` is bounded by `K exp (K |s|) c` is
+bounded at `t` by `(exp (K |t|) - 1) c`, the integral of that bound from `0` to `t`. -/
+private theorem norm_le_exp_sub_one_mul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f f' : ℝ → F} {L c : ℝ} (hf : ∀ s, HasDerivAt f (f' s) s) (hf0 : f 0 = 0)
+    (hf' : ∀ s, ‖f' s‖ ≤ L * Real.exp (L * |s|) * c) (t : ℝ) :
+    ‖f t‖ ≤ (Real.exp (L * |t|) - 1) * c := by
+  -- Forward in time this is the comparison with the boundary `s ↦ (exp (L s) - 1) c`.
+  have hfwd {g g' : ℝ → F} (hg : ∀ s, HasDerivAt g (g' s) s) (hg0 : g 0 = 0)
+      (hg' : ∀ s, 0 ≤ s → ‖g' s‖ ≤ L * Real.exp (L * s) * c) {t : ℝ} (ht : 0 ≤ t) :
+      ‖g t‖ ≤ (Real.exp (L * t) - 1) * c := by
+    have hB (s : ℝ) : HasDerivAt (fun s ↦ (Real.exp (L * s) - 1) * c)
+        (L * Real.exp (L * s) * c) s := by
+      convert ((((hasDerivAt_id' (x := s)).const_mul L).exp).sub_const 1).mul_const c using 1
+      ring
+    exact image_norm_le_of_norm_deriv_right_le_deriv_boundary
+      (fun s _ ↦ (hg s).continuousAt.continuousWithinAt) (fun s _ ↦ (hg s).hasDerivWithinAt)
+      (by simp [hg0]) hB (fun s hs ↦ hg' s hs.1) ⟨ht, le_rfl⟩
+  rcases le_total 0 t with ht | ht
+  · rw [abs_of_nonneg ht]
+    exact hfwd hf hf0 (fun s hs ↦ by simpa [abs_of_nonneg hs] using hf' s) ht
+  · -- Backward in time, apply the forward bound to `s ↦ f (-s)`.
+    have h := hfwd (g := fun s ↦ f (-s)) (g' := fun s ↦ -f' (-s))
+      (fun s ↦ by simpa [Function.comp_def] using (hf (-s)).scomp s (hasDerivAt_neg s))
+      (by simpa using hf0)
+      (fun s hs ↦ by simpa [norm_neg, abs_of_nonneg hs] using hf' (-s)) (neg_nonneg.2 ht)
+    rwa [neg_neg, ← abs_of_nonpos ht] at h
+
+/-- **The time-`t` map of the flow is close to the identity.** For a `K`-Lipschitz vector field,
+the displacement `x ↦ φₜ x - x` of the time-`t` map is `(exp (K |t|) - 1)`-Lipschitz. In
+particular it tends to a constant map in the Lipschitz sense as `K |t| → 0`. -/
+theorem lipschitzWith_flowOfLipschitz_sub_id (hv : LipschitzWith K v) (t : ℝ) :
+    LipschitzWith (Real.exp (K * |t|) - 1).toNNReal (fun x ↦ flowOfLipschitz v hv t x - x) := by
+  refine LipschitzWith.of_dist_le_mul fun a b ↦ ?_
+  rw [Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp (by positivity))), dist_eq_norm,
+    dist_eq_norm, mul_comm]
+  -- The difference of the two displacements has derivative `v (φₛ a) - v (φₛ b)`, bounded through
+  -- the Lipschitz bound `exp (K |s|)` on the flow.
+  have hbound (s : ℝ) : ‖v (flowOfLipschitz v hv s a) - v (flowOfLipschitz v hv s b)‖ ≤
+      K * Real.exp (K * |s|) * ‖a - b‖ := by
+    rw [← dist_eq_norm, mul_assoc]
+    refine (hv.dist_le_mul _ _).trans (mul_le_mul_of_nonneg_left ?_ K.coe_nonneg)
+    rw [flowOfLipschitz_apply, flowOfLipschitz_apply, mul_comm, ← dist_eq_norm]
+    exact ODE.dist_globalSolution_le v hv a b s
+  have h := norm_le_exp_sub_one_mul (f := fun s ↦
+      (flowOfLipschitz v hv s a - a) - (flowOfLipschitz v hv s b - b))
+    (fun s ↦ by
+      exact ((hasDerivAt_flowOfLipschitz hv a s).sub_const a).fun_sub
+        ((hasDerivAt_flowOfLipschitz hv b s).sub_const b)) (by simp) hbound t
+  simpa [mul_comm] using h
+
+/-- **The derivative of the time-`t` map is close to the identity.** For a `K`-Lipschitz vector
+field, wherever the time-`t` map of the flow is differentiable (everywhere for a `C¹` field), its
+derivative differs from the identity by at most `exp (K |t|) - 1` in operator norm. -/
+theorem norm_fderiv_flowOfLipschitz_sub_id_le (hv : LipschitzWith K v) {x : E} {t : ℝ}
+    (hx : DifferentiableAt ℝ (flowOfLipschitz v hv t) x) :
+    ‖fderiv ℝ (flowOfLipschitz v hv t) x - ContinuousLinearMap.id ℝ E‖ ≤
+      Real.exp (K * |t|) - 1 := by
+  have h := norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz_sub_id hv t) (x₀ := x)
+  have hd : HasFDerivAt (fun y ↦ flowOfLipschitz v hv t y - y)
+      (fderiv ℝ (flowOfLipschitz v hv t) x - ContinuousLinearMap.id ℝ E) x :=
+    hx.hasFDerivAt.sub (hasFDerivAt_id x)
+  rwa [hd.fderiv, Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp (by positivity)))] at h
 
 /-- **The integral equation of the flow**: `φₜ y = y + ∫₀ᵗ v (φ_τ y) dτ`. -/
 theorem flowOfLipschitz_eq_add_integral (hv : LipschitzWith K v) (y : E) (t : ℝ) :
