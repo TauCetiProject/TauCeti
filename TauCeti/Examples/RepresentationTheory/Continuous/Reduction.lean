@@ -8,22 +8,23 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
-public import Mathlib.Topology.Algebra.Ring.Compact
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.RepresentationTheory.Continuous.Reduction
+public import TauCeti.Topology.Algebra.Ring.Compact
 
 /-!
 # Examples for the raw reduction of a continuous representation
 
 Give the residue field `𝔽_ℓ = ℤ_ℓ ⧸ ℓ` of `ℤ_ℓ` the discrete topology; the residue map is
-continuous because the maximal ideal of `ℤ_ℓ` is open. Let `ℤ` (discrete) act on `ℚ_ℓ²` through
-the unipotent matrix `(1 a; 0 1)` with `a ∈ ℤ_ℓ^×`. The stable lattice `ℤ_ℓ²` has the action
-`n ↦ (1 na; 0 1)` in its standard basis, and the stable lattice `ℤ_ℓ e₁ ⊕ ℓℤ_ℓ e₂` has the action
-`n ↦ (1 ℓna; 0 1)` in its basis `e₁, ℓ e₂`. The inclusion of the second lattice in the first,
-`diag(1, ℓ)` in these bases, becomes an isomorphism after extending scalars to `ℚ_ℓ`, so both are
-lattices of the same `ℚ_ℓ`-representation. Their raw reductions are not isomorphic: the first is a
-non-trivial unipotent representation of `ℤ` on `𝔽_ℓ²`, the second is trivial. So the raw
-reduction depends on the lattice, and no semisimplification is applied.
+continuous because the maximal ideal of `ℤ_ℓ` is open (`IsLocalRing.continuous_residue`). Let
+`ℤ` (discrete) act on `ℚ_ℓ²` through the unipotent matrix `(1 a; 0 1)` with `a ∈ ℤ_ℓ^×`. The
+stable lattice `ℤ_ℓ²` has the action `n ↦ (1 na; 0 1)` in its standard basis, and the stable
+lattice `ℤ_ℓ e₁ ⊕ ℓℤ_ℓ e₂` has the action `n ↦ (1 ℓna; 0 1)` in its basis `e₁, ℓ e₂`. The
+inclusion of the second lattice in the first, `diag(1, ℓ)` in these bases, becomes an isomorphism
+after extending scalars to `ℚ_ℓ`, so both are lattices of the same `ℚ_ℓ`-representation. Their
+raw reductions are not isomorphic: the first is a non-trivial unipotent representation of `ℤ` on
+`𝔽_ℓ²`, the second is trivial. So the raw reduction depends on the lattice, and no
+semisimplification is applied.
 -/
 
 public section
@@ -41,22 +42,11 @@ local instance : TopologicalSpace (ResidueField ℤ_[ℓ]) := ⊥
 
 local instance : DiscreteTopology (ResidueField ℤ_[ℓ]) := ⟨rfl⟩
 
-/-- The residue map of `ℤ_ℓ` is continuous for the discrete topology on its residue field: its
-fibres are the cosets of the open maximal ideal. -/
-theorem continuous_residue : Continuous (residue ℤ_[ℓ]) := by
-  refine continuous_discrete_rng.2 fun b ↦ ?_
-  obtain ⟨a, rfl⟩ := residue_surjective b
-  have : residue ℤ_[ℓ] ⁻¹' {residue ℤ_[ℓ] a} = (fun x ↦ x - a) ⁻¹' (maximalIdeal ℤ_[ℓ]) := by
-    ext x
-    rw [Set.mem_preimage, Set.mem_preimage, SetLike.mem_coe, Set.mem_singleton_iff, ← sub_eq_zero,
-      ← map_sub, residue_eq_zero_iff]
-  rw [this]
-  exact (isOpen_maximalIdeal ℤ_[ℓ]).preimage (continuous_id.sub continuous_const)
-
 local instance : ContinuousSMul ℤ_[ℓ] (ResidueField ℤ_[ℓ]) :=
   ⟨by
     simp_rw [Algebra.smul_def, ResidueField.algebraMap_eq]
-    exact ((continuous_residue ℓ).comp continuous_fst).mul continuous_snd⟩
+    exact ((continuous_residue (isOpen_maximalIdeal ℤ_[ℓ])).comp continuous_fst).mul
+      continuous_snd⟩
 
 /-- The module topology on `𝔽_ℓ ⊗ ℤ_ℓ²`. -/
 local instance : TopologicalSpace (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ])) :=

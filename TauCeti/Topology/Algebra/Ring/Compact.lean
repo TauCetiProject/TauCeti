@@ -22,10 +22,16 @@ contains one of them. Hence the topology of `R` is its `m`-adic topology, with n
 or discreteness hypothesis. This identifies the neighbourhoods of the identity in the groups of
 points over `R` of an affine group of finite type with its congruence subgroups.
 
+More generally, whenever the maximal ideal of a local ring is open, as it is for a compact
+Hausdorff local ring (`IsLocalRing.isOpen_maximalIdeal`), the residue map is continuous for the
+discrete topology on the residue field, its fibres being the cosets of the maximal ideal.
+
 ## Main results
 
 * `IsLocalRing.isAdic_maximalIdeal`: the topology of a compact Hausdorff noetherian local ring is
   its `m`-adic topology.
+* `IsLocalRing.continuous_residue`: the residue map of a local ring with open maximal ideal is
+  continuous for the discrete topology on its residue field.
 -/
 
 public section
@@ -49,5 +55,20 @@ theorem isAdic_maximalIdeal : IsAdic (maximalIdeal R) := by
     (fun n ↦ Ideal.isCompact_of_fg (IsNoetherian.noetherian _)) (by rwa [hinter, nhdsSet_singleton])
   · exact Ideal.pow_le_pow_right (le_max_left i j)
   · exact Ideal.pow_le_pow_right (le_max_right i j)
+
+/-- **The residue map is continuous when the maximal ideal is open**, for the discrete topology on
+the residue field: the fibre over `residue a` is the coset `a + m`, the preimage of the open set
+`m` under the translation `x ↦ x + -a`. -/
+theorem continuous_residue {S : Type*} [CommRing S] [IsLocalRing S] [TopologicalSpace S]
+    [ContinuousAdd S] [TopologicalSpace (ResidueField S)] [DiscreteTopology (ResidueField S)]
+    (h : IsOpen (maximalIdeal S : Set S)) : Continuous (residue S) := by
+  refine continuous_discrete_rng.2 fun b ↦ ?_
+  obtain ⟨a, rfl⟩ := residue_surjective b
+  have : residue S ⁻¹' {residue S a} = (· + -a) ⁻¹' (maximalIdeal S) := by
+    ext x
+    rw [Set.mem_preimage, Set.mem_preimage, SetLike.mem_coe, Set.mem_singleton_iff, ← sub_eq_zero,
+      ← map_sub, residue_eq_zero_iff, sub_eq_add_neg]
+  rw [this]
+  exact h.preimage (continuous_id.add continuous_const)
 
 end IsLocalRing
