@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 
 /-!
 # The argument of a quotient, and rotations onto the nonpositive real axis
@@ -24,7 +25,8 @@ common instances: two points of the open upper half-plane, of the open lower hal
 open right half-plane have arguments in a common open interval of length `π`, so the argument of
 their quotient is the difference of their arguments. It also records that every
 complex number is rotated onto the nonpositive real axis by the square of a unit complex number,
-and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`.
+and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`, and that of
+`1 - e^{iθ}` for `0 < θ < 2π`.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by a punctured ball about its
 vertex, is the image of an open rectangle in polar coordinates. On the slit plane `|arg z| < π`,
 rotating `z` by `-arg z / 2` lands in the open right half-plane, and the exponential maps the
@@ -56,6 +58,7 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
   the punctured truncated sector `{|arg ((z - v) / b)| < α}` is the image of an open rectangle.
 * `Complex.arg_neg_exp_of_div_pi_ne`: if `φ / π` is not an integer, then
   `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
+* `Complex.arg_one_sub_exp_mul_I`: `arg (1 - exp (θ i)) = (θ - π) / 2` for `0 < θ < 2π`.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`, `Complex.abs_arg_div_two_le_pi_div_two`,
   `Complex.abs_arg_div_two_lt_pi_div_two`: `|arg z / 2| ≤ π / 2` for every `z`, with strict
@@ -192,6 +195,23 @@ theorem arg_neg_exp_of_div_pi_ne {φ : ℝ} (hφ : ∀ k : ℤ, φ / π ≠ k) :
   have hfr : 0 < Int.fract (φ / π) := Int.fract_pos.2 fun h ↦ hφ _ h
   rw [hψ]
   constructor <;> nlinarith [pi_pos, Int.fract_lt_one (φ / π)]
+
+/-- The argument of `1 - exp (θ i)` for `0 < θ < 2π`: since
+`1 - exp (θ i) = 2 sin (θ / 2) exp ((θ - π) i / 2)` with `sin (θ / 2) > 0`, it is `(θ - π) / 2`. -/
+theorem arg_one_sub_exp_mul_I {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
+    arg (1 - exp (θ * I)) = (θ - π) / 2 := by
+  -- `1 - e^{iθ} = -2i e^{iθ/2} sin (θ/2) = 2 sin (θ/2) e^{i(θ - π)/2}`, with `sin (θ/2) > 0`
+  have hfac : 1 - exp (θ * I) =
+      ((2 * Real.sin (θ / 2) : ℝ) : ℂ) * exp (((θ - π) / 2 : ℝ) * I) := by
+    rw [mul_comm (θ : ℂ) I, one_sub_exp_mul_I, show (((θ - π) / 2 : ℝ) : ℂ) * I =
+      I * θ / 2 + -(π / 2) * I by push_cast; ring, Complex.exp_add, ← log_neg_I,
+      exp_log (neg_ne_zero.2 I_ne_zero)]
+    push_cast
+    ring
+  have hsin : 0 < Real.sin (θ / 2) :=
+    Real.sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2])
+  rw [hfac, arg_ofReal_mul (by positivity), arg_exp_mul_I, toIocMod_eq_self]
+  constructor <;> linarith [hθ.1, hθ.2, Real.pi_pos]
 
 /-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
 theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :

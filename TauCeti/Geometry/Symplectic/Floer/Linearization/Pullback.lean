@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -115,6 +116,19 @@ theorem covectorPullback_apply (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ 
       (η (φ w)).comp ((fderiv ℝ φ w stdComplexLineReal).1 • (1 : V →L[ℝ] V) +
         (fderiv ℝ φ w stdComplexLineReal).2 • J (φ w) (u (φ w))) :=
   (rfl)
+
+/-- The pulled-back covector field is `C^n` when `η ∘ φ` is, and the factor
+`a + b J(φ ·, u ∘ φ)` is `C^n` on an open set containing the support of `η ∘ φ`. -/
+theorem contDiff_covectorPullback_of_contDiffOn {φ : ℝ × ℝ → ℝ × ℝ}
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {n : WithTop ℕ∞}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hM : ContDiffOn ℝ n (fun ζ ↦ (fderiv ℝ φ ζ stdComplexLineReal).1 • (1 : V →L[ℝ] V) +
+      (fderiv ℝ φ ζ stdComplexLineReal).2 • J (φ ζ) (u (φ ζ))) U)
+    (hηφ : ContDiff ℝ n (η ∘ φ)) (hsupp : tsupport (η ∘ φ) ⊆ U) :
+    ContDiff ℝ n (covectorPullback φ J u η) := by
+  have h := (ContinuousLinearMap.compL ℝ V V ℝ).flip.contDiff_of_tsupport_subset_right hM
+    hηφ.contDiffOn hU hsupp
+  rwa [funext (covectorPullback_apply φ J u η)]
 
 /-- The pulled-back covector field is `a η + b (η ∘ J)`, with `η` and `J` taken at `φ w`. -/
 theorem covectorPullback_eq_add (φ : ℝ × ℝ → ℝ × ℝ) (J : ℝ × ℝ → V → V →L[ℝ] V)

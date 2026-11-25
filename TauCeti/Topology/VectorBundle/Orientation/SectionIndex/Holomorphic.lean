@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.LocalIndex
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.Degree
 import TauCeti.Analysis.Analytic.Order
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # The local index of a section at a holomorphic zero is its order
@@ -25,6 +26,19 @@ analytic at `φ z`, then the local index of `s` at `z`
 both sides vanish at a zero which is not isolated. At an isolated zero the order is a positive
 integer (`TauCeti.VectorBundleOrientation.sectionIndex_pos_of_analyticAt`).
 
+More generally, `f` only needs to be holomorphic up to a nonvanishing factor: if `f = v * σ` near
+`φ z`, for `v` continuous and nonzero at `φ z` and `σ` analytic at `φ z`, the local index of `s` at
+`z` is the order of vanishing of `σ` at `φ z`
+(`TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt_of_eventually_eq_mul`),
+positive at an isolated zero
+(`TauCeti.VectorBundleOrientation.sectionIndex_pos_of_eventually_eq_mul`). Near `z`, such a section
+vanishes exactly where `σ ∘ φ` does
+(`Bundle.Trivialization.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul`), so it vanishes near
+`z` or has no other zero near `z`
+(`Bundle.Trivialization.eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul`). These are
+the factorizations which the similarity principle provides for solutions of Cauchy–Riemann
+inequalities, treated in `TauCeti.Topology.VectorBundle.Orientation.SectionIndex.CauchyRiemann`.
+
 Over a compact surface, if a section has finitely many zeros and is complex analytic in such
 coordinates at each of them, the Euler number `⟨e(E), [M]⟩` is the sum of the orders of the zeros,
 hence nonnegative
@@ -37,8 +51,8 @@ source of `φ`, the orientation pulled back from `ℂ` along `φ` agrees at `z` 
 from `M` (`TauCeti.HomologicalOrientation.comap_apply_eq_of_localHomologyMap_chart_sub`), and the
 local index only sees the orientations at the point and its image
 (`TauCeti.HomologicalOrientation.localIndex_eq_localIndex_of_apply_eq`). Finally, the local index
-of a holomorphic map is its order of vanishing
-(`TauCeti.HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_sub`).
+of a holomorphic map times a nonvanishing factor is the order of vanishing of the holomorphic map
+(`TauCeti.HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_of_eventually_eq_mul`).
 
 On the trivial line bundle over `ℂ`, the section `z ↦ z ^ m` has local index `m` at `0`
 (`TauCeti.VectorBundleOrientation.sectionIndex_trivial_pow`), while `z ↦ conj z`, which is not
@@ -50,6 +64,12 @@ holomorphic, has local index `-1` (`TauCeti.VectorBundleOrientation.sectionIndex
   is complex analytic in oriented coordinates, the local index is the order of vanishing.
 * `TauCeti.VectorBundleOrientation.sectionIndex_pos_of_analyticAt`: at an isolated such zero it is
   positive.
+* `TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt_of_eventually_eq_mul` and
+  `TauCeti.VectorBundleOrientation.sectionIndex_pos_of_eventually_eq_mul`: the same for a section
+  which is holomorphic up to a continuous nonvanishing factor.
+* `Bundle.Trivialization.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul` and
+  `Bundle.Trivialization.eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul`: the zeros
+  of such a section near `z`.
 * `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt`: the
   Euler number is the sum of the orders of the zeros of a section with finitely many zeros, each
   complex analytic in oriented coordinates.
@@ -73,6 +93,56 @@ noncomputable section
 
 open Bundle CategoryTheory Filter Module Set Topology
 
+namespace Bundle.Trivialization
+
+variable {M : Type} [TopologicalSpace M] {E : M → Type} [TopologicalSpace (TotalSpace ℂ E)]
+  [∀ x, AddCommMonoid (E x)] [∀ x, Module ℝ (E x)] (e : Trivialization ℂ (π ℂ E))
+  [e.IsLinear ℝ]
+  (φ : OpenPartialHomeomorph M ℂ) {z : M} {s : ∀ x, E x} {v σ : ℂ → ℂ}
+
+/-- **The zeros of a section which is holomorphic up to a nonvanishing factor.** Let `e` be a
+linear trivialization of a real plane bundle `E` with fibre `ℂ` and `φ` a chart of `M` with values
+in `ℂ`, both defined at `z`. If the section `s`, read in these coordinates as
+`y ↦ (e (s (φ⁻¹ y))).2`, agrees near `φ z` with `v * σ`, for a function `v` continuous and nonzero
+at `φ z`, then near `z` the section vanishes exactly where `σ ∘ φ` does. -/
+theorem eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul (hze : z ∈ e.baseSet)
+    (hzφ : z ∈ φ.source) (hv : ContinuousAt v (φ z)) (hv₀ : v (φ z) ≠ 0)
+    (hfac : ∀ᶠ y in 𝓝 (φ z),
+      (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2 = v y * σ y) :
+    ∀ᶠ x in 𝓝 z, s x = 0 ↔ σ (φ x) = 0 := by
+  filter_upwards [(φ.continuousAt hzφ).eventually (hv.eventually_ne hv₀),
+    (φ.continuousAt hzφ).eventually hfac, φ.open_source.mem_nhds hzφ,
+    e.open_baseSet.mem_nhds hze] with x hvx hfx hxφ hxe
+  rw [φ.left_inv hxφ] at hfx
+  have hne := e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' ℂ x (s x)) hxe
+  rw [hfx] at hne
+  exact ⟨fun h0 ↦ by_contra fun hσx ↦ hne.1 (mul_ne_zero hvx hσx) h0,
+    fun hσx ↦ by_contra fun h0 ↦ right_ne_zero_of_mul (hne.2 h0) hσx⟩
+
+/-- **A section which is holomorphic up to a nonvanishing factor vanishes near a point or has no
+zeros near it except possibly the point itself.** Under the hypotheses of
+`Bundle.Trivialization.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul`, with `σ` analytic at
+`φ z`, either `s` vanishes on a neighbourhood of `z`, or `s` does not vanish on a punctured
+neighbourhood of `z`. -/
+theorem eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul (hze : z ∈ e.baseSet)
+    (hzφ : z ∈ φ.source) (hv : ContinuousAt v (φ z)) (hv₀ : v (φ z) ≠ 0)
+    (hσ : AnalyticAt ℂ σ (φ z))
+    (hfac : ∀ᶠ y in 𝓝 (φ z),
+      (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2 = v y * σ y) :
+    (∀ᶠ x in 𝓝 z, s x = 0) ∨ ∀ᶠ x in 𝓝[≠] z, s x ≠ 0 := by
+  have hsσ := e.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul φ hze hzφ hv hv₀ hfac
+  rcases hσ.eventually_eq_zero_or_eventually_ne_zero with h | h
+  · left
+    filter_upwards [(φ.continuousAt hzφ).eventually h, hsσ] with x hσx hx
+    exact hx.2 hσx
+  · -- The chart sends a punctured neighbourhood of `z` into one of `φ z`.
+    right
+    filter_upwards [(φ.tendsto_nhdsNE hzφ).eventually h,
+      eventually_nhdsWithin_of_eventually_nhds hsσ] with x hσx hx
+    exact fun h0 ↦ hσx (hx.1 h0)
+
+end Bundle.Trivialization
+
 namespace TauCeti
 
 namespace VectorBundleOrientation
@@ -89,6 +159,74 @@ variable {M : Type} [TopologicalSpace M] [T2Space M] [ChartedSpace ℂ M] {E : M
 section Local
 
 variable (e : Trivialization ℂ (π ℂ E)) [e.IsLinear ℝ]
+
+/-- **The local index of a section at a zero which is holomorphic up to a nonvanishing factor.**
+Let `e` be a linear trivialization of a real plane bundle `E` with fibre `ℂ` and `φ` a chart of `M`
+with values in `ℂ`, both defined at `z`. Suppose that near `z` the trivialization `e` reads the
+orientation of every fibre as the orientation `ω` of `ℂ`, and that `φ`, followed by the translation
+taking `φ z` to the origin, carries the local orientation `oM z` to the local orientation of `ℂ`
+selected by `ω`. If the section, read in these coordinates as `y ↦ (e (s (φ⁻¹ y))).2`, agrees near
+`φ z` with `v * σ`, for a function `v` continuous and nonzero at `φ z` and a function `σ` analytic
+at `φ z`, then the local index of `s` at `z` is the order of vanishing of `σ` at `φ z`. Both sides
+are `0` when `s z ≠ 0` and when `z` is a zero which is not isolated. -/
+theorem sectionIndex_eq_analyticOrderNatAt_of_eventually_eq_mul (φ : OpenPartialHomeomorph M ℂ)
+    {z : M} (hze : z ∈ e.baseSet) (hzφ : z ∈ φ.source) {ω : Orientation ℝ ℂ (Fin (1 + 1))}
+    (ho : ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ e.baseSet, e.mapOrientation (Fin (1 + 1)) hx (o x) = ω)
+    (hφ : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩ :
+          C(φ.source, ℂ)) (S := {⟨z, hzφ⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext (φ.injOn x.property hzφ (sub_eq_zero.1 hx))) (1 + 1)
+        ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ⟩
+          (1 + 1)).symm (oM z)).val =
+      (ω.localOrientation hF).val)
+    {v σ : ℂ → ℂ} (hv : ContinuousAt v (φ z)) (hv₀ : v (φ z) ≠ 0) (hσ : AnalyticAt ℂ σ (φ z))
+    (hfac : ∀ᶠ y in 𝓝 (φ z),
+      (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2 = v y * σ y) :
+    o.sectionIndex hF oM hs z = analyticOrderNatAt σ (φ z) := by
+  set f : ℂ → ℂ := fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2 with hf
+  have hfφ : ∀ x ∈ φ.source, f (φ x) = (e (TotalSpace.mk' ℂ x (s x))).2 := fun x hx ↦ by
+    simp only [hf]
+    rw [φ.left_inv hx]
+  have hfσ : f (φ z) = v (φ z) * σ (φ z) := hfac.self_of_nhds
+  by_cases hsz : s z = 0
+  swap
+  · -- Away from the zeros both sides vanish.
+    have hf0 : f (φ z) ≠ 0 := by
+      rw [hfφ z hzφ]
+      exact (e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' ℂ z (s z)) hze).2 hsz
+    rw [o.sectionIndex_of_ne_zero hF oM hs hsz, analyticOrderNatAt,
+      analyticOrderAt_eq_zero.2 (Or.inr (right_ne_zero_of_mul (hfσ ▸ hf0)))]
+    rfl
+  -- The common domain `U` of `e` and `φ`, the orientation `oF` of `ℂ` selected by `ω`, and the
+  -- restriction of `φ` to `U`.
+  let U : TopologicalSpace.Opens M := ⟨φ.source ∩ e.baseSet, φ.open_source.inter e.open_baseSet⟩
+  have hz : z ∈ U := ⟨hzφ, hze⟩
+  have hUe : (U : Set M) ⊆ e.baseSet := fun _ hx ↦ hx.2
+  have hUφ : (U : Set M) ⊆ φ.source := fun _ hx ↦ hx.1
+  have hf0 : f (φ z) = 0 := (hfφ z hzφ).trans
+    ((fiberCoord_apply hs e hUe ⟨z, hz⟩).symm.trans ((fiberCoord_eq_zero_iff hs e hUe _).2 hsz))
+  have hσ₀ : σ (φ z) = 0 := (mul_eq_zero.1 (hfσ ▸ hf0)).resolve_left hv₀
+  let oF : HomologicalOrientation ℂ ℂ (1 + 1) :=
+    .ofSimplyConnectedSpace 0 (ω.localOrientation hF)
+  have hoF : oF 0 = ω.localOrientation hF :=
+    HomologicalOrientation.ofSimplyConnectedSpace_apply_self _ _
+  let W : TopologicalSpace.Opens M := ⟨φ.source, φ.open_source⟩
+  have hj : IsOpenEmbedding (fun x : U ↦ φ x) := φ.isOpenEmbedding_restrict.comp
+    ((IsOpenEmbedding.of_comp_iff (fun x : U ↦ (⟨x.val, hUφ x.property⟩ : W)) W.isOpenEmbedding').1
+      U.isOpenEmbedding')
+  -- The orientation of `U` pulled back from `oF` along `φ` agrees at `z` with the one restricted
+  -- from `oM`.
+  have horient := HomologicalOrientation.comap_apply_eq_of_localHomologyMap_chart_sub oF hF oM φ U
+    hz hUφ (hoF ▸ hφ) hj
+  rw [o.sectionIndex_eq_localIndex_fiberCoord hF oM hs e U hz hsz hUe ho oF hoF,
+    HomologicalOrientation.localIndex_eq_localIndex_of_apply_eq _ oF _ horient.symm
+      (p' := oF.comap IsOpenEmbedding.id) (by rw [HomologicalOrientation.comap_id])]
+  exact HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_of_eventually_eq_mul oF hj
+    IsOpenEmbedding.id (f := fiberCoord hs e hUe) (φ := f)
+    (.of_forall fun x ↦ (hfφ x.val (hUφ x.property)).trans (fiberCoord_apply hs e hUe x).symm)
+    hv hv₀ hσ hσ₀ hfac
 
 /-- **The local index of a section at a holomorphic zero is its order.** Let `e` be a linear
 trivialization of a real plane bundle `E` with fibre `ℂ` and `φ` a chart of `M` with values in
@@ -112,47 +250,51 @@ theorem sectionIndex_eq_analyticOrderNatAt (φ : OpenPartialHomeomorph M ℂ) {z
       (ω.localOrientation hF).val)
     (hA : AnalyticAt ℂ (fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2) (φ z)) :
     o.sectionIndex hF oM hs z =
-      analyticOrderNatAt (fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2) (φ z) := by
-  set f : ℂ → ℂ := fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2 with hf
-  have hfφ : ∀ x ∈ φ.source, f (φ x) = (e (TotalSpace.mk' ℂ x (s x))).2 := fun x hx ↦ by
-    simp only [hf]
-    rw [φ.left_inv hx]
-  by_cases hsz : s z = 0
-  swap
-  · -- Away from the zeros both sides vanish.
-    have hf0 : f (φ z) ≠ 0 := by
-      rw [hfφ z hzφ]
-      exact (e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' ℂ z (s z)) hze).2 hsz
-    rw [o.sectionIndex_of_ne_zero hF oM hs hsz, analyticOrderNatAt,
-      analyticOrderAt_eq_zero.2 (Or.inr hf0)]
-    rfl
-  -- The common domain `U` of `e` and `φ`, the orientation `oF` of `ℂ` selected by `ω`, and the
-  -- restriction of `φ` to `U`.
-  let U : TopologicalSpace.Opens M := ⟨φ.source ∩ e.baseSet, φ.open_source.inter e.open_baseSet⟩
-  have hz : z ∈ U := ⟨hzφ, hze⟩
-  have hUe : (U : Set M) ⊆ e.baseSet := fun _ hx ↦ hx.2
-  have hUφ : (U : Set M) ⊆ φ.source := fun _ hx ↦ hx.1
-  have hf0 : f (φ z) = 0 := (hfφ z hzφ).trans
-    ((fiberCoord_apply hs e hUe ⟨z, hz⟩).symm.trans ((fiberCoord_eq_zero_iff hs e hUe _).2 hsz))
-  let oF : HomologicalOrientation ℂ ℂ (1 + 1) :=
-    .ofSimplyConnectedSpace 0 (ω.localOrientation hF)
-  have hoF : oF 0 = ω.localOrientation hF :=
-    HomologicalOrientation.ofSimplyConnectedSpace_apply_self _ _
-  let W : TopologicalSpace.Opens M := ⟨φ.source, φ.open_source⟩
-  have hj : IsOpenEmbedding (fun x : U ↦ φ x) := φ.isOpenEmbedding_restrict.comp
-    ((IsOpenEmbedding.of_comp_iff (fun x : U ↦ (⟨x.val, hUφ x.property⟩ : W)) W.isOpenEmbedding').1
-      U.isOpenEmbedding')
-  -- The orientation of `U` pulled back from `oF` along `φ` agrees at `z` with the one restricted
-  -- from `oM`.
-  have horient := HomologicalOrientation.comap_apply_eq_of_localHomologyMap_chart_sub oF hF oM φ U
-    hz hUφ (hoF ▸ hφ) hj
-  rw [o.sectionIndex_eq_localIndex_fiberCoord hF oM hs e U hz hsz hUe ho oF hoF,
-    HomologicalOrientation.localIndex_eq_localIndex_of_apply_eq _ oF _ horient.symm
-      (p' := oF.comap IsOpenEmbedding.id) (by rw [HomologicalOrientation.comap_id]),
-    HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_sub oF hj IsOpenEmbedding.id
-      (f := fiberCoord hs e hUe) (φ := f)
-      (.of_forall fun x ↦ (hfφ x.val (hUφ x.property)).trans (fiberCoord_apply hs e hUe x).symm) hA]
-  simp only [hf0, sub_zero]
+      analyticOrderNatAt (fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2) (φ z) :=
+  o.sectionIndex_eq_analyticOrderNatAt_of_eventually_eq_mul hF oM hs e φ hze hzφ ho hφ
+    continuousAt_const one_ne_zero hA (.of_forall fun _ ↦ (one_mul _).symm)
+
+/-- **The local index of a section at an isolated zero which is holomorphic up to a nonvanishing
+factor is positive.** Under the hypotheses of
+`TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt_of_eventually_eq_mul`, if `z`
+is an isolated zero of `s`, the local index of `s` at `z` is positive: the holomorphic factor `σ`
+vanishes at `φ z`, and not identically near `φ z`, so its order of vanishing there is a positive
+integer. -/
+theorem sectionIndex_pos_of_eventually_eq_mul (φ : OpenPartialHomeomorph M ℂ) {z : M}
+    (hze : z ∈ e.baseSet) (hzφ : z ∈ φ.source) {ω : Orientation ℝ ℂ (Fin (1 + 1))}
+    (ho : ∀ᶠ x in 𝓝 z, ∀ hx : x ∈ e.baseSet, e.mapOrientation (Fin (1 + 1)) hx (o x) = ω)
+    (hφ : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩ :
+          C(φ.source, ℂ)) (S := {⟨z, hzφ⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext (φ.injOn x.property hzφ (sub_eq_zero.1 hx))) (1 + 1)
+        ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hzφ⟩
+          (1 + 1)).symm (oM z)).val =
+      (ω.localOrientation hF).val)
+    {v σ : ℂ → ℂ} (hv : ContinuousAt v (φ z)) (hv₀ : v (φ z) ≠ 0) (hσ : AnalyticAt ℂ σ (φ z))
+    (hfac : ∀ᶠ y in 𝓝 (φ z),
+      (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2 = v y * σ y)
+    (hsz : s z = 0) (hiso : ∀ᶠ x in 𝓝[≠] z, s x ≠ 0) :
+    0 < o.sectionIndex hF oM hs z := by
+  rw [o.sectionIndex_eq_analyticOrderNatAt_of_eventually_eq_mul hF oM hs e φ hze hzφ ho hφ hv hv₀
+      hσ hfac, Nat.cast_pos, analyticOrderNatAt, Nat.pos_iff_ne_zero, ne_eq, ENat.toNat_eq_zero,
+    not_or]
+  -- In these coordinates `s x = 0` exactly when `σ (φ x) = 0`, for `x` near `z`.
+  have hsσ := e.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul φ hze hzφ hv hv₀ hfac
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · -- The order is not `0`, since `σ` vanishes at `φ z`.
+    exact (analyticOrderAt_eq_zero.1 h).resolve_left (not_not.2 hσ) (hsσ.self_of_nhds.1 hsz)
+  · -- The order is not infinite, since `s` does not vanish near `z` except at `z`: read through
+    -- the inverse chart, points near `φ z` other than `φ z` give points near `z` other than `z`.
+    have htarget : ∀ᶠ y in 𝓝 (φ z), y ∈ φ.target := φ.open_target.mem_nhds (φ.map_source hzφ)
+    have hsym := φ.tendsto_symm_nhdsNE hzφ
+    obtain ⟨y, ⟨⟨hσy, hyt⟩, hsy⟩, hsσy⟩ :=
+      (((eventually_nhdsWithin_of_eventually_nhds ((analyticOrderAt_eq_top.1 h).and
+        htarget)).and (hsym.eventually hiso)).and
+        (hsym.eventually (eventually_nhdsWithin_of_eventually_nhds hsσ))).exists
+    rw [φ.right_inv hyt] at hsσy
+    exact hsy (hsσy.2 hσy)
 
 /-- **The local index of a section at an isolated holomorphic zero is positive.** Under the
 hypotheses of `TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt`, if `z` is an
@@ -173,28 +315,9 @@ theorem sectionIndex_pos_of_analyticAt (φ : OpenPartialHomeomorph M ℂ) {z : M
       (ω.localOrientation hF).val)
     (hA : AnalyticAt ℂ (fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2) (φ z))
     (hsz : s z = 0) (hiso : ∀ᶠ x in 𝓝[≠] z, s x ≠ 0) :
-    0 < o.sectionIndex hF oM hs z := by
-  rw [o.sectionIndex_eq_analyticOrderNatAt hF oM hs e φ hze hzφ ho hφ hA,
-    Nat.cast_pos, analyticOrderNatAt, Nat.pos_iff_ne_zero, ne_eq, ENat.toNat_eq_zero, not_or]
-  set f : ℂ → ℂ := fun y ↦ (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2
-  have hf (x : M) (hxφ : x ∈ φ.source) (hxe : x ∈ e.baseSet) : f (φ x) = 0 ↔ s x = 0 := by
-    simp only [f]
-    rw [φ.left_inv hxφ]
-    exact not_iff_not.1 (e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' ℂ x (s x)) hxe)
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · -- The order is not `0`, since `f` vanishes at `φ z`.
-    exact (analyticOrderAt_eq_zero.1 h).resolve_left (not_not.2 hA) ((hf z hzφ hze).2 hsz)
-  · -- The order is not infinite, since near `φ z` the function `f` vanishes only at `φ z`.
-    obtain ⟨W, hW, hWo, hzW⟩ := eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 hiso)
-    have hUo : IsOpen (φ.source ∩ e.baseSet ∩ W) :=
-      (φ.open_source.inter e.open_baseSet).inter hWo
-    refine analyticOrderAt_ne_top_of_zeros_subset (S := {φ z})
-      (φ.isOpen_image_of_subset_source hUo fun _ hx ↦ hx.1.1)
-      (mem_image_of_mem φ ⟨⟨hzφ, hze⟩, hzW⟩) ?_
-    rintro _ ⟨x, ⟨⟨hxφ, hxe⟩, hxW⟩, rfl⟩ h0
-    rw [Finset.mem_singleton]
-    by_contra hne
-    exact hW x hxW (fun hxz ↦ hne (congrArg φ hxz)) ((hf x hxφ hxe).1 h0)
+    0 < o.sectionIndex hF oM hs z :=
+  o.sectionIndex_pos_of_eventually_eq_mul hF oM hs e φ hze hzφ ho hφ continuousAt_const
+    one_ne_zero hA (.of_forall fun _ ↦ (one_mul _).symm) hsz hiso
 
 end Local
 
