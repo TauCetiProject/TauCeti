@@ -280,6 +280,18 @@ theorem normalizedTrace_star_mul_self_eq_zero_iff {x : CStarMatrix n n ℂ} :
     normalizedTrace (star x * x) = 0 ↔ x = 0 := by
   simp [normalizedTrace_star_mul_self]
 
+/-- The Schwarz defect of the normalized trace at `x` is `tr_k(y⋆y)` for `y = x - tr_k(x)·1`:
+`tr_k(x⋆x) - conj (tr_k x) tr_k(x) = tr_k((x - tr_k(x)·1)⋆(x - tr_k(x)·1))`. -/
+theorem normalizedTrace_star_mul_self_sub [DecidableEq n] (x : CStarMatrix n n ℂ) :
+    normalizedTrace (star x * x) - star (normalizedTrace x) * normalizedTrace x =
+      normalizedTrace (star (x - normalizedTrace x • 1) * (x - normalizedTrace x • 1)) := by
+  cases isEmpty_or_nonempty n
+  · simp
+  simp only [star_sub, star_smul, star_one, sub_mul, mul_sub, smul_mul_assoc, mul_smul_comm,
+    one_mul, mul_one, normalizedTrace_sub, normalizedTrace_smul, normalizedTrace_star,
+    normalizedTrace_one]
+  ring
+
 /-- The triangle inequality for the normalized 2-norm. -/
 theorem normalizedTwoNorm_add_le (x y : CStarMatrix n n ℂ) :
     normalizedTwoNorm (x + y) ≤ normalizedTwoNorm x + normalizedTwoNorm y := by

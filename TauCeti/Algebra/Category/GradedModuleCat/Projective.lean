@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
+import TauCeti.Algebra.Module.GradedModule.Nakayama
+import TauCeti.Algebra.Module.Submodule.Map
 
 /-!
 # Projective objects in the category of graded modules
@@ -30,8 +32,15 @@ Projectivity is stable under the grading shifts, since these are autoequivalence
 a projective graded module lifts not only degree-zero maps but maps of every degree `p` along
 graded epimorphisms: such a map is a degree-zero map into the shift by `-p`.
 
+For a projective graded module with grading bounded below, any homogeneous endomorphism congruent
+to the identity modulo `A₊ P` is an isomorphism (`isIso_of_sub_id_mem_positive_smul_top`): graded
+Nakayama shows it is surjective, projectivity splits it, and graded Nakayama on the kernel shows it
+is injective. No grading decomposition of `𝒜` is needed.
+
 ## References
 
+* D. Eisenbud, *Commutative Algebra with a View Toward Algebraic Geometry*, Section 20
+  (Theorem 20.2 and Lemma 20.3), for the projective Nakayama rigidity argument.
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
 * Mathlib's `ModuleCat.projective_of_categoryTheory_projective` supplies the corresponding
   ungraded lifting argument; here the lift is additionally made homogeneous.
@@ -95,6 +104,44 @@ theorem exists_isHomogeneous_comp_eq_of_epi (P : GradedModuleCat.{v} 𝒜) [Proj
         (Projective.factorThru u' ((shiftFunctor (-p)).map g)).isHomogeneous
   · have hl := congrArg Hom.hom (Projective.factorThru_comp u' ((shiftFunctor (-p)).map g))
     rwa [hom_comp, hom_shiftFunctor_map] at hl
+
+/-- On a projective graded module with grading bounded below, any homogeneous endomorphism that
+agrees with the identity modulo `A₊ P` is an isomorphism in `GradedModuleCat 𝒜`. -/
+theorem isIso_of_sub_id_mem_positive_smul_top
+    {P : GradedModuleCat.{v} 𝒜} [Projective P] {b : ℤ} (hb : ∀ p < b, P.grading.piece p = ⊥)
+    {f : P ⟶ P}
+    (hf : ∀ x : P, f.hom x - x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k P)) :
+    IsIso f := by
+  have hrange : LinearMap.range f.hom = ⊤ :=
+    InternalGrading.eq_top_of_piece_le_sup_positive_smul_top 𝒜 (LinearMap.range f.hom)
+      f.isHomogeneous.isHomogeneous_range b hb fun p x _ ↦
+        Submodule.mem_sup.mpr ⟨f.hom x, LinearMap.mem_range_self f.hom x, -(f.hom x - x),
+          neg_mem (hf x), by rw [neg_sub, add_sub_cancel]⟩
+  have hsurj : Function.Surjective f.hom := LinearMap.range_eq_top.mp hrange
+  have : Epi f := (epi_iff_surjective f).mpr hsurj
+  let σ : P ⟶ P := Projective.factorThru (𝟙 P) f
+  have hσ : σ ≫ f = 𝟙 P := Projective.factorThru_comp (𝟙 P) f
+  let π : P →ₗ[A] kernelObj f :=
+    LinearMap.codRestrict (LinearMap.ker f.hom) (LinearMap.id - σ.hom.comp f.hom) fun y ↦ by
+      have hy : (σ ≫ f).hom (f.hom y) = f.hom y := by simp [hσ]
+      simpa [LinearMap.mem_ker, sub_eq_zero] using hy.symm
+  have hker_top :
+      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (kernelObj f)) = ⊤ := by
+    refine top_unique fun z _ ↦ ?_
+    have hz : z.val ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k P) := by
+      have hz0 : f.hom z.val = 0 := z.property
+      simpa [hz0] using neg_mem (hf z.val)
+    have hπz : π z.val = z := Subtype.ext (by simp [π])
+    exact hπz ▸ Submodule.map_mem_smul_top _ π hz
+  have hker_below : ∀ p < b, (kernelObj f).grading.piece p = ⊥ := fun p hp ↦
+    (Submodule.eq_bot_iff _).mpr fun z hz ↦ Subtype.ext <|
+      (Submodule.eq_bot_iff _).mp (hb p hp) z.val ((InternalGrading.mem_ker_piece _ _).mp hz)
+  let _ := (kernelObj f).gradedSMul
+  have : Subsingleton (kernelObj f) :=
+    InternalGrading.subsingleton_of_positive_smul_top_eq_top 𝒜 b hker_below hker_top
+  have hinj : Function.Injective f.hom :=
+    LinearMap.ker_eq_bot.mp Submodule.eq_bot_of_subsingleton
+  exact (isIso_iff_bijective f).mpr ⟨hinj, hsurj⟩
 
 variable [DirectSum.Decomposition 𝒜]
 

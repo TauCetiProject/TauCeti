@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Semireal.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -85,6 +87,12 @@ Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies `
 (`Complex.norm_bounds_of_abs_re_le_of_abs_im_le`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
+
+There is no ring homomorphism from `ℂ` to a semireal semiring, such as `ℝ` or any linearly
+ordered ring (`Complex.instIsEmptyRingHom`).
+
+An `n`-th root (`n ≠ 0`) of a complex number `w` with `w * conj w = 1` has its inverse as
+conjugate (`Complex.conj_eq_inv_of_pow_eq`).
 -/
 
 public section
@@ -511,6 +519,23 @@ theorem norm_bounds_of_abs_re_le_of_abs_im_le (w : ℂ) (ε : ℝ) (hre : |w.re|
   rcases hside with h | h
   · exact h ▸ abs_re_le_norm w
   · exact h ▸ abs_im_le_norm w
+
+/-- There is no ring homomorphism from `ℂ` to a semireal semiring `R` (one in which `1 + s ≠ 0`
+for every sum of squares `s`), such as `ℝ` or any linearly ordered ring: it would send
+`1 + I * I = 0` to `1 + f I * f I = 0`. -/
+instance instIsEmptyRingHom {R : Type*} [NonAssocSemiring R] [IsSemireal R] :
+    IsEmpty (ℂ →+* R) :=
+  ⟨fun f => IsSemireal.one_add_ne_zero (IsSumSq.mul_self (f I)) <| by
+    rw [← map_one f, ← map_mul, ← map_add, I_mul_I, add_neg_cancel, map_zero]⟩
+
+/-- An `n`-th root `z`, `n ≠ 0`, of a complex number `w` with `w * conj w = 1` lies on the unit
+circle, so its conjugate is its inverse. -/
+theorem conj_eq_inv_of_pow_eq {z w : ℂ} {n : ℕ} (hn : n ≠ 0) (hz : z ^ n = w)
+    (hw : w * conj w = 1) : conj z = z⁻¹ := by
+  have hw' : ‖w‖ = 1 := TauCeti.RCLike.mul_conj_eq_one_iff.1 hw
+  have hz' : ‖z‖ = 1 :=
+    (pow_eq_one_iff_of_nonneg (norm_nonneg z) hn).mp (by rw [← norm_pow, hz, hw'])
+  exact (inv_eq_conj hz').symm
 
 end Complex
 

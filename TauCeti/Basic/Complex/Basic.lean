@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Basic.Complex.Basic
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
@@ -22,6 +23,10 @@ needed to clear the denominator of kernels such as `t / (1 + t ^ 2)`.
 Even natural powers of `I` simplify via `Complex.I_pow_two_mul`: `I ^ (2 * k) = (-1 : ℂ) ^ k`, and
 the imaginary part of `I ^ n * w` is given by `Complex.im_I_pow_two_mul_mul` (even `n`) and
 `Complex.im_I_pow_two_mul_add_one_mul` (odd `n`).
+
+Every real number cast to `ℂ` is self-adjoint, registered as the instance
+`TauCeti.instFactIsSelfAdjointComplexOfReal : Fact (IsSelfAdjoint (r : ℂ))`. It supplies the
+self-adjointness hypotheses of star structures with a real parameter.
 -/
 
 public section
@@ -57,3 +62,13 @@ theorem im_I_pow_two_mul_add_one_mul (k : ℕ) (w : ℂ) :
     im_ofReal_mul, I_mul_im]
 
 end Complex
+
+namespace TauCeti
+
+/-- A real number cast to `ℂ` is self-adjoint. This supplies the `Fact (IsSelfAdjoint _)`
+hypothesis of star structures with a parameter, such as the analytic adjoint on Temperley–Lieb
+algebras with a real loop value. -/
+instance instFactIsSelfAdjointComplexOfReal (r : ℝ) : Fact (IsSelfAdjoint (r : ℂ)) :=
+  ⟨Complex.conj_ofReal r⟩
+
+end TauCeti
