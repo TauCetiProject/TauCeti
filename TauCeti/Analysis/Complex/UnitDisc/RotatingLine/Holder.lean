@@ -128,9 +128,8 @@ private theorem differentiableOn_add_and_fderiv_add_and_conjWirtingerDeriv_add {
   have hpD (z : ℂ) (hz : z ∈ U) : DifferentiableAt ℂ p z := hp.differentiableAt (hU.mem_nhds hz)
   refine ⟨hu.add fun z hz ↦ ((hpD z hz).restrictScalars ℝ).differentiableWithinAt,
     fun z hz ↦ fderiv_add (huD z hz) ((hpD z hz).restrictScalars ℝ), fun z hz ↦ ?_⟩
-  rw [conjWirtingerDeriv_add (huD z hz) ((hpD z hz).restrictScalars ℝ), add_apply,
-    (hpD z hz).conjWirtingerDeriv_eq_zero]
-  simp
+  rw [add_comm u p]
+  exact congr($((hpD z hz).conjWirtingerDeriv_add_left (f := u)) 1)
 
 /-! ### Existence -/
 
