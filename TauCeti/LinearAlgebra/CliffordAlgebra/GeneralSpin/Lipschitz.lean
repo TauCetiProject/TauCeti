@@ -151,7 +151,7 @@ theorem mem_normOneSpinGroup_iff_mem_spinGroup (hQ : Q.Nondegenerate) (hv : ∃ 
   constructor
   · rintro ⟨hx, h⟩
     have hx' := hx
-    rw [gspinGroup_def, Subgroup.mem_inf, mem_evenUnits_iff] at hx'
+    rw [mem_gspinGroup_iff] at hx'
     have h' : star (x : CliffordAlgebra Q) * x = 1 := by
       rw [star_mul_self_eq_reverse_mul_self_of_mem_even hx'.2]
       exact h

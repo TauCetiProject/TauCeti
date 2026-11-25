@@ -13,9 +13,9 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer.Basic
 
 For a quadratic form `Q` on a free module `M` over a commutative ring, in every characteristic,
 twisted conjugation `v ↦ α(g) v g⁻¹` by an element `g` of the vector normalizer
-`CliffordAlgebra.vectorNormalizer Q` preserves the vectors `ι(M)`. Reading off the vector with the
-left inverse `CliffordAlgebra.vectorPart` of `ι` gives a linear automorphism of `M`, and these
-form a group homomorphism `CliffordAlgebra.vectorNormalizerAction`.
+`CliffordAlgebra.vectorNormalizer Q` preserves the vectors `ι(M)`. Reading off the vector with a
+linear left inverse of `ι` (`CliffordAlgebra.exists_leftInverse_ι_of_free`) gives a linear
+automorphism of `M`, and these form a group homomorphism `CliffordAlgebra.vectorNormalizerAction`.
 
 ## Main declarations
 
@@ -34,21 +34,23 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   [Module.Free R M] {Q : QuadraticForm R M}
 
 variable (Q) in
-/-- Twisted conjugation by a unit, followed by the vector part. -/
+/-- Twisted conjugation by a unit, followed by a chosen linear left inverse of `ι`. -/
 private noncomputable def twistedVectorMap (x : (CliffordAlgebra Q)ˣ) : M →ₗ[R] M where
-  toFun m := vectorPart Q (involute (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹)
+  toFun m :=
+    (exists_leftInverse_ι_of_free Q).choose (involute (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹)
   map_add' a b := by rw [map_add, mul_add, add_mul, map_add]
   map_smul' r a := by rw [map_smul, mul_smul_comm, smul_mul_assoc, map_smul, RingHom.id_apply]
 
 private theorem twistedVectorMap_apply (x : (CliffordAlgebra Q)ˣ) (m : M) :
-    twistedVectorMap Q x m = vectorPart Q (involute (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹) :=
+    twistedVectorMap Q x m =
+      (exists_leftInverse_ι_of_free Q).choose (involute (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹) :=
   rfl
 
 private theorem ι_twistedVectorMap {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ vectorNormalizer Q)
     (m : M) :
     ι Q (twistedVectorMap Q x m) = involute (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹ := by
   obtain ⟨w, hw⟩ := ((mem_vectorNormalizer_iff Q x).mp hx).1 m
-  rw [twistedVectorMap_apply, ← hw, vectorPart_ι]
+  rw [twistedVectorMap_apply, ← hw, (exists_leftInverse_ι_of_free Q).choose_spec]
 
 variable (Q) in
 private noncomputable def twistedEndHom : vectorNormalizer Q →* Module.End R M where

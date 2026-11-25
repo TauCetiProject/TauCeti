@@ -58,7 +58,7 @@ and `spinGroup` (over a field of characteristic not two) are in
 * `CliffordAlgebra.IsLocallyHomogeneous`, `CliffordAlgebra.locallyHomogeneousUnits`,
   `CliffordAlgebra.evenUnits`: locally homogeneous and even Clifford units.
 * `CliffordAlgebra.gpinGroup`, `CliffordAlgebra.gspinGroup`: the Clifford and general spin groups.
-* `CliffordAlgebra.mem_gspinGroup_iff`: `GSpin(Q)` is given by untwisted conjugation.
+* `CliffordAlgebra.mem_gspinGroup_iff_conj`: `GSpin(Q)` is given by untwisted conjugation.
 * `CliffordAlgebra.gpinNorm`: the norm `GPin(Q) → Z(C(Q))ˣ`, with
   `CliffordAlgebra.normOnePinGroup` and `CliffordAlgebra.normOneSpinGroup` its kernels.
 * `CliffordAlgebra.gpinToOrthogonal`: the vector action `GPin(Q) → O(Q)` for free `M`.
@@ -117,8 +117,7 @@ theorem IsLocallyHomogeneous.exists_involute_eq_smul {x : CliffordAlgebra Q}
   refine ⟨2 * e - 1, by linear_combination 4 * he.eq, ?_⟩
   have hsplit : x = e • x + (1 - e) • x := by rw [← add_smul, add_sub_cancel, one_smul]
   conv_lhs => rw [hsplit]
-  rw [map_add, map_smul, map_smul, ← map_smul, ← map_smul (involute (Q := Q)) (1 - e),
-    involute_eq_of_mem_even h0, involute_eq_of_mem_odd h1]
+  rw [map_add, involute_eq_of_mem_even h0, involute_eq_of_mem_odd h1]
   conv_rhs => rw [hsplit]
   module
 
@@ -229,6 +228,13 @@ theorem mem_gpinGroup_iff {x : (CliffordAlgebra Q)ˣ} :
     x ∈ gpinGroup Q ↔ x ∈ vectorNormalizer Q ∧ IsLocallyHomogeneous (x : CliffordAlgebra Q) :=
   Iff.rfl
 
+/-- A unit lies in the general spin group when it normalizes the vectors under twisted conjugation
+and is even. -/
+@[simp]
+theorem mem_gspinGroup_iff {x : (CliffordAlgebra Q)ˣ} :
+    x ∈ gspinGroup Q ↔ x ∈ vectorNormalizer Q ∧ (x : CliffordAlgebra Q) ∈ even Q := by
+  rw [gspinGroup, Subgroup.mem_inf, mem_evenUnits_iff]
+
 variable (Q) in
 /-- The general spin group lies in the Clifford group. -/
 theorem gspinGroup_le_gpinGroup : gspinGroup Q ≤ gpinGroup Q :=
@@ -240,27 +246,24 @@ theorem gpinGroup_le_vectorNormalizer : gpinGroup Q ≤ vectorNormalizer Q := in
 
 /-- **`GSpin(Q)` is cut out by untwisted conjugation**: an even unit `g` lies in the general spin
 group exactly when `g ι(M) g⁻¹ ⊆ ι(M)` and `g⁻¹ ι(M) g ⊆ ι(M)`. -/
-theorem mem_gspinGroup_iff {x : (CliffordAlgebra Q)ˣ} :
+theorem mem_gspinGroup_iff_conj {x : (CliffordAlgebra Q)ˣ} :
     x ∈ gspinGroup Q ↔ (x : CliffordAlgebra Q) ∈ even Q ∧
       (∀ m, (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹ ∈ LinearMap.range (ι Q)) ∧
       (∀ m, ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m * ↑x ∈
         LinearMap.range (ι Q)) := by
-  rw [gspinGroup, Subgroup.mem_inf, mem_vectorNormalizer_iff]
+  have hinv (hx : (x : CliffordAlgebra Q) ∈ even Q) :
+      ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q :=
+    (mem_evenUnits_iff Q).mp (inv_mem ((mem_evenUnits_iff Q).mpr hx))
+  rw [mem_gspinGroup_iff, mem_vectorNormalizer_iff]
   constructor
   · rintro ⟨⟨h1, h2⟩, hx⟩
-    have hx' : (x : CliffordAlgebra Q) ∈ even Q := (mem_evenUnits_iff Q).mp hx
-    have hinv : ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q :=
-      (mem_evenUnits_iff Q).mp (inv_mem hx)
-    refine ⟨hx', fun m => ?_, fun m => ?_⟩
-    · simpa only [involute_eq_of_mem_even hx'] using h1 m
-    · simpa only [involute_eq_of_mem_even hinv] using h2 m
-  · rintro ⟨hx, h1, h2⟩
-    have hxu : x ∈ evenUnits Q := (mem_evenUnits_iff Q).mpr hx
-    have hinv : ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q :=
-      (mem_evenUnits_iff Q).mp (inv_mem hxu)
-    refine ⟨⟨fun m => ?_, fun m => ?_⟩, hxu⟩
+    refine ⟨hx, fun m => ?_, fun m => ?_⟩
     · simpa only [involute_eq_of_mem_even hx] using h1 m
-    · simpa only [involute_eq_of_mem_even hinv] using h2 m
+    · simpa only [involute_eq_of_mem_even (hinv hx)] using h2 m
+  · rintro ⟨hx, h1, h2⟩
+    refine ⟨⟨fun m => ?_, fun m => ?_⟩, hx⟩
+    · simpa only [involute_eq_of_mem_even hx] using h1 m
+    · simpa only [involute_eq_of_mem_even (hinv hx)] using h2 m
 
 /-! ### The Clifford norm -/
 
@@ -322,11 +325,12 @@ noncomputable def gpinNorm : gpinGroup Q →* Subgroup.center (CliffordAlgebra Q
   map_one' := Subtype.ext <| by simp
   map_mul' x y := Subtype.ext <| Units.ext <| by
     simp only [Subgroup.coe_mul, Units.val_mul, Units.coe_star, star_mul]
-    rw [mul_assoc, ← mul_assoc _ ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q),
-      ← mul_assoc (star ((y : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)),
-      ← (commute_star_mul_self x.property
-        (star ((y : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))).eq]
-    simp only [mul_assoc]
+    set g : CliffordAlgebra Q := ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
+    set h : CliffordAlgebra Q := ((y : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
+    -- `star(g) g` is central, so it moves past `star h`.
+    calc star h * star g * (g * h) = star h * (star g * g) * h := by simp only [mul_assoc]
+      _ = star g * g * (star h * h) := by
+        rw [← (commute_star_mul_self x.property (star h)).eq, mul_assoc]
 
 /-- The Clifford norm is `star(g) g`. -/
 @[simp]
@@ -340,8 +344,7 @@ theorem coe_gpinNorm_of_mem_gspinGroup {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ g
     (((gpinNorm Q ⟨x, gspinGroup_le_gpinGroup Q hx⟩ : (CliffordAlgebra Q)ˣ)) :
         CliffordAlgebra Q) =
       reverse (x : CliffordAlgebra Q) * x := by
-  rw [coe_gpinNorm, star_mul_self_eq_reverse_mul_self_of_mem_even
-    ((mem_evenUnits_iff Q).mp (inf_le_right (a := vectorNormalizer Q) hx))]
+  rw [coe_gpinNorm, star_mul_self_eq_reverse_mul_self_of_mem_even (mem_gspinGroup_iff.mp hx).2]
 
 variable (Q) in
 /-- **The norm-one Pin group** `Pin(Q) = ker N`: the elements of the Clifford group of Clifford

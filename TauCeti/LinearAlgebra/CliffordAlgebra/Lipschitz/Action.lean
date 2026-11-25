@@ -169,9 +169,7 @@ private theorem ι_vectorMap_apply {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ lipsc
   rw [twistedConj_apply]
   exact ι_vectorMap_apply_of_mem_range_ι Q (lipschitzGroup.involute_act_ι_mem_range_ι hx m)
 
-/-- **Twisted conjugation by a unit carrying vectors to vectors preserves the quadratic form.**
-The twisted conjugate of `ι Q m` and its grade involute `x * ι Q m * involute x⁻¹` multiply to the
-scalar `Q m`. -/
+/-- **Twisted conjugation by a unit carrying vectors to vectors preserves the quadratic form.** -/
 theorem vectorMap_map_app_of_involute_act_ι_mem_range_ι {x : (CliffordAlgebra Q)ˣ}
     (hx : ∀ m, involute (Q := Q) (x : CliffordAlgebra Q) * ι Q m *
       ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ LinearMap.range (ι Q)) (m : M) :
