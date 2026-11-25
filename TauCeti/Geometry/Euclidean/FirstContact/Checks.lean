@@ -77,9 +77,7 @@ theorem nonempty_translatedGraph_inter_range_coe_sphere_iff (hn : 1 ≤ n) (he :
         simp [real_inner_smul_left, real_inner_smul_right, hew, norm_smul, he, hw, hs]
       nlinarith [norm_nonneg y]
     refine ⟨y, (mem_translatedGraph_univ_zero_iff he).2 ?_, ⟨y, by simpa using hy⟩, rfl⟩
-    rw [inner_add_right, real_inner_smul_right, real_inner_smul_right, hew,
-      real_inner_self_eq_norm_sq, he]
-    ring
+    simp [y, inner_add_right, real_inner_smul_right, hew, he]
 
 /-- **First contact of a hyperplane with the sphere.** For the hyperplanes `S_t = {⟪e, y⟫ = t}`
 and `T = 2`, the first-contact lemma gives the largest contact time `t₀ = 1`; the only contact
@@ -184,8 +182,7 @@ theorem nonempty_translatedGraph_inter_range_oneSubExpNegSqGraph_iff (he : ‖e�
       neg_nonneg.2 (Real.log_nonpos (by linarith) (by linarith))
     refine ⟨_, (oneSubExpNegSqGraph_mem_translatedGraph_iff he ht1 (√(-Real.log (1 - t)) • w)).2 ?_,
       mem_range_self _⟩
-    rw [Submodule.coe_smul, norm_smul, hw, mul_one, Real.norm_eq_abs, sq_abs,
-      Real.sq_sqrt hl]
+    simp [norm_smul, hw, Real.sq_sqrt hl]
 
 omit [FiniteDimensional ℝ F] in
 /-- **Boundedness is needed for a first contact.** When `F` has dimension at least two,
@@ -219,8 +216,7 @@ theorem not_isBounded_and_not_exists_firstContact_oneSubExpNegSqGraph (he : ‖e
     have h1 := mem_closedBall_zero_iff.1 (hR hk)
     have h2 := norm_le_norm_oneSubExpNegSqGraph k
     have h3 : ‖k‖ = |R| + 1 := by
-      rw [norm_smul, ← Submodule.norm_coe w, hw, mul_one, Real.norm_eq_abs,
-        abs_of_pos (by positivity)]
+      simp [k, norm_smul, ← Submodule.norm_coe w, hw, abs_of_nonneg (by positivity : 0 ≤ |R| + 1)]
     linarith [le_abs_self R]
   · have ht₀1 := (hiff t₀ ht₀.1).1 hne
     have h := hmax ((t₀ + 1) / 2) ⟨by linarith [ht₀.1], by linarith⟩

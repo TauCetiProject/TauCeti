@@ -12,16 +12,15 @@ public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 /-!
 # The first-contact lemma for translated graphs
 
-Let `e` be a unit vector of a finite-dimensional real inner product space `F`, `P` the orthogonal
+Let `e` be a unit vector of a proper real inner product space `F`, `P` the orthogonal
 projection onto `e^⊥`, `Ω` a closed subset of `e^⊥` and `g : e^⊥ → ℝ` continuous on `Ω`. The barrier
 `S_t = {k + (g(k) + t) e : k ∈ Ω}` is the graph of `g` translated by `t e`, and its boundary
 `∂S_t` is the part over the frontier of `Ω`. A point `y` lies on `S_t` exactly when `P y ∈ Ω` and
 its height `⟪e, y⟫ - g(P y)` above the graph of `g` is `t`.
 
 Let `f : Σ → F` be a proper map with `S_T ∩ f(Σ) = ∅` and `S_0 ∩ f(Σ) ≠ ∅`, such that no `∂S_t`
-with `t ∈ [0, T]` meets `f(Σ)` and `⋃_{t ∈ [0, T]} S_t ∩ f(Σ)` is bounded. Then the contact set,
-on which the height of `f` lies in `[0, T]`, is compact, and the height attains a maximum `t₀`
-there: `t₀` is the largest contact time. At every contact point at time `t₀`, the projection
+with `t ∈ [0, T]` meets `f(Σ)` and `⋃_{t ∈ [0, T]} S_t ∩ f(Σ)` is bounded. Then there is
+a largest contact time `t₀ ∈ [0, T)`. At every contact point at time `t₀`, the projection
 lies in the interior of `Ω` and `f` stays below `S_{t₀}` nearby. If `Σ` is a manifold without
 boundary, `f` is differentiable and `g` is differentiable on the interior of `Ω`, the height has
 a local maximum there, so `df` takes values in the tangent space `{k + dg(k) e}` of `S_{t₀}`.
@@ -122,11 +121,11 @@ theorem continuousOn_heightAboveGraph {Ω : Set (ℝ ∙ e)ᗮ} {g : (ℝ ∙ e)
   (continuous_const.inner continuous_id).continuousOn.sub
     (hg.comp (ℝ ∙ e)ᗮ.orthogonalProjectionOnto.continuous.continuousOn fun _ hy ↦ hy)
 
-variable [FiniteDimensional ℝ F] {M : Type*} [TopologicalSpace M] {f : M → F}
+variable [ProperSpace F] {M : Type*} [TopologicalSpace M] {f : M → F}
   {Ω : Set (ℝ ∙ e)ᗮ} {g : (ℝ ∙ e)ᗮ → ℝ}
   {T : ℝ}
 
-omit [FiniteDimensional ℝ F] in
+omit [ProperSpace F] in
 private theorem eventually_heightAboveGraph_le_of_maximal
     (hf : Continuous f) (hg : ContinuousOn g Ω) {x : M} {t₀ : ℝ}
     (hint : (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (f x) ∈ interior Ω)
@@ -138,11 +137,10 @@ private theorem eventually_heightAboveGraph_le_of_maximal
   let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
   have hPf : ContinuousAt (fun y ↦ P (f y)) x := (P.continuous.comp hf).continuousAt
   have hev := hPf.preimage_mem_nhds (isOpen_interior.mem_nhds hint)
-  have hgx : ContinuousAt g (P (f x)) :=
-    hg.continuousAt (mem_of_superset (isOpen_interior.mem_nhds hint) interior_subset)
   have hhx : ContinuousAt (fun y ↦ heightAboveGraph e g (f y)) x :=
-    (continuous_const.inner hf).continuousAt.sub
-      (ContinuousAt.comp (f := fun y ↦ P (f y)) hgx hPf)
+    ((continuousOn_heightAboveGraph hg).continuousAt
+      (P.continuous.continuousAt.preimage_mem_nhds
+        (mem_of_superset (isOpen_interior.mem_nhds hint) interior_subset))).comp hf.continuousAt
   have hevT := hhx.preimage_mem_nhds (Iio_mem_nhds (hxt.symm ▸ hT))
   filter_upwards [hev, hevT] with y hy hyT
   refine ⟨hy, le_of_not_gt fun hgt ↦ ?_⟩
@@ -211,7 +209,7 @@ section Tangency
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [ChartedSpace H M] [I.Boundaryless]
 
-omit [FiniteDimensional ℝ F] [I.Boundaryless] in
+omit [ProperSpace F] [I.Boundaryless] in
 /-- **Tangency at a one-sided contact.** If the height of `f` above the graph of `g` has a local
 extremum at an interior point `x` of the source manifold, `f` is differentiable at `x` and `g`
 is differentiable at `P(f(x))`, then `df_x`
@@ -234,9 +232,8 @@ theorem inner_mvfderiv_eq_fderiv_of_isLocalExtr {x : M} (hx : I.IsInteriorPoint 
   have h0 : mvfderiv I (heightAboveGraph e g ∘ f) x v = 0 := by
     rw [Function.comp_def, hc, zero_apply]
   rw [h0] at h
-  have h' : ⟪e, mvfderiv I f x v⟫_ℝ - fderiv ℝ g (P (f x)) (P (mvfderiv I f x v)) = 0 :=
-    h.symm
-  linarith
+  simp only [sub_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply] at h
+  exact sub_eq_zero.mp h.symm
 
 /-- **The first-contact lemma with tangency.** Under the hypotheses of `exists_firstContact`, if
 moreover `Σ` is a manifold without boundary, `f` is differentiable and `g` is differentiable on
