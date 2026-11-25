@@ -42,38 +42,23 @@ noncomputable abbrev N : ModuleCat.{u} (CommRingCat.of (MvPolynomial (Fin 2) k))
 noncomputable abbrev punctured : (Spec (CommRingCat.of (MvPolynomial (Fin 2) k))).Opens :=
   PrimeSpectrum.basicOpen (X 0) ⊔ PrimeSpectrum.basicOpen (X 1)
 
-/-- If `f` kills the `R`-module `M` and does not lie in the prime `p`, then `M_p = 0`. -/
-private theorem subsingleton_localizedModule {R M : Type*} [CommRing R] [AddCommGroup M]
-    [Module R M] {p : Ideal R} [p.IsPrime] {f : R} (hf : f ∉ p) (hfM : ∀ m : M, f • m = 0) :
-    Subsingleton (LocalizedModule p.primeCompl M) :=
-  (IsLocalizedModule.subsingleton_iff p.primeCompl
-    (LocalizedModule.mkLinearMap p.primeCompl M)).2 fun m ↦ ⟨f, hf, hfM m⟩
-
-/-- `x²` kills `N`. -/
-private theorem X_zero_sq_smul (m : N k) : (X 0 ^ 2 : MvPolynomial (Fin 2) k) • m = 0 := by
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective (m : MvPolynomial (Fin 2) k ⧸ I k)
-  change Ideal.Quotient.mk (I k) _ * Ideal.Quotient.mk (I k) a = 0
-  rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem]
-  exact Ideal.mul_mem_right _ _ (Ideal.subset_span (by simp))
-
-/-- `y³` kills `N`. -/
-private theorem X_one_cube_smul (m : N k) : (X 1 ^ 3 : MvPolynomial (Fin 2) k) • m = 0 := by
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective (m : MvPolynomial (Fin 2) k ⧸ I k)
-  change Ideal.Quotient.mk (I k) _ * Ideal.Quotient.mk (I k) a = 0
-  rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem]
-  exact Ideal.mul_mem_right _ _ (Ideal.subset_span (by simp))
+/-- Every element of `I` kills `N`, since `I` is the annihilator of `k[x, y]/I`. -/
+private theorem smul_eq_zero_of_mem {r : MvPolynomial (Fin 2) k} (hr : r ∈ I k) (m : N k) :
+    r • m = 0 :=
+  Module.mem_annihilator.mp (by rwa [Ideal.annihilator_quotient]) m
 
 /-- **`N~` vanishes off the origin.** The sections of `N~` over any open contained in
 `D(x) ∪ D(y)` vanish. -/
 theorem subsingleton_tilde_of_le_punctured
     {W : (Spec (CommRingCat.of (MvPolynomial (Fin 2) k))).Opens} (hW : W ≤ punctured k) :
     Subsingleton Γ(tilde (N k), W) := by
-  refine subsingleton_tilde_of_forall_subsingleton fun p hp ↦ ?_
+  refine subsingleton_tilde_of_forall_notMem_support fun p hp ↦
+    Module.notMem_support_iff'.mpr fun m ↦ ?_
   rcases hW hp with hx | hy
-  · exact subsingleton_localizedModule
-      (fun h ↦ hx (p.isPrime.mem_of_pow_mem 2 h)) (X_zero_sq_smul k)
-  · exact subsingleton_localizedModule
-      (fun h ↦ hy (p.isPrime.mem_of_pow_mem 3 h)) (X_one_cube_smul k)
+  · exact ⟨X 0 ^ 2, fun h ↦ hx (p.isPrime.mem_of_pow_mem 2 h),
+      smul_eq_zero_of_mem k (Ideal.subset_span (by simp)) m⟩
+  · exact ⟨X 1 ^ 3, fun h ↦ hy (p.isPrime.mem_of_pow_mem 3 h),
+      smul_eq_zero_of_mem k (Ideal.subset_span (by simp)) m⟩
 
 /-- **The supported kernel of `N~` off the origin is everything.** Every section of `N~` vanishes
 on `D(x) ∪ D(y)`, so lies in the supported kernel along the inclusion of `D(x) ∪ D(y)`. -/
@@ -108,11 +93,7 @@ theorem span_pow_four_smul_eq_bot :
     · exact Ideal.mul_le_left.trans (le_trans (Ideal.pow_le_pow_right h) hA)
     · exact Ideal.mul_le_right.trans
         (le_trans (Ideal.pow_le_pow_right (show 3 ≤ 4 - m by omega)) hB)
-  refine eq_bot_iff.mpr (Submodule.smul_le.mpr fun r hr n _ ↦ ?_)
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective (n : MvPolynomial (Fin 2) k ⧸ I k)
-  rw [Submodule.mem_bot]
-  change Ideal.Quotient.mk (I k) r * Ideal.Quotient.mk (I k) a = 0
-  rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem]
-  exact Ideal.mul_mem_right _ _ (hJ hr)
+  exact eq_bot_iff.mpr (Submodule.smul_le.mpr fun r hr n _ ↦
+    (Submodule.mem_bot _).mpr (smul_eq_zero_of_mem k (hJ hr) n))
 
 end TauCeti.SupportedKernelTorsionExample
