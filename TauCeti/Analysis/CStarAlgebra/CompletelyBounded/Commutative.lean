@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyBounded.Basic
 import Mathlib.Analysis.CStarAlgebra.GelfandDuality
-import Mathlib.Analysis.CStarAlgebra.Hom
+import Mathlib.Algebra.Order.Star.Unitization
+import TauCeti.Analysis.CStarAlgebra.CompletelyBounded.Isometry
 import Mathlib.Analysis.CStarAlgebra.Unitization
 
 /-!
@@ -88,16 +89,12 @@ compose with the isometric inclusion into the unitization. -/
 private theorem norm_map_le_opNorm_mul_of_comm (u : A →L[ℂ] B) {κ : Type*} [Fintype κ]
     (x : CStarMatrix κ κ A) : ‖x.map (u : A →ₗ[ℂ] B)‖ ≤ ‖u‖ * ‖x‖ := by
   let ι := Unitization.inrNonUnitalStarAlgHom ℂ B
-  let u' : A →L[ℂ] Unitization ℂ B := ((ι : B →ₗ[ℂ] Unitization ℂ B) ∘ₗ u).mkContinuous ‖u‖
-    fun a => by simpa [ι, Unitization.norm_inr] using u.le_opNorm a
-  have hι : Function.Injective (CStarMatrix.mapₙₐ (n := κ) ι) :=
-    CStarMatrix.map_injective Unitization.inr_injective
-  have hmap : CStarMatrix.mapₙₐ ι (x.map (u : A →ₗ[ℂ] B)) =
-      x.map (u' : A →ₗ[ℂ] Unitization ℂ B) := by
-    refine CStarMatrix.ext fun i j => ?_
-    simp [u', ι, CStarMatrix.mapₙₐ_apply]
-  rw [← NonUnitalStarAlgHom.norm_map _ hι, hmap]
-  exact (norm_map_le_opNorm_mul_of_unital u' x).trans (by
+  have hbound (a : A) : ‖((ι : B →ₗ[ℂ] Unitization ℂ B) ∘ₗ u) a‖ ≤ ‖u‖ * ‖a‖ := by
+    simpa [ι, Unitization.norm_inr] using u.le_opNorm a
+  have hι := NonUnitalStarAlgHom.isCompleteIsometry ι Unitization.inr_injective
+  rw [← hι.norm_map (x.map (u : A →ₗ[ℂ] B)), CStarMatrix.map_map, ← LinearMap.coe_comp,
+    ← LinearMap.mkContinuous_coe _ _ hbound]
+  exact (norm_map_le_opNorm_mul_of_unital (LinearMap.mkContinuous _ _ hbound) x).trans (by
     gcongr
     exact LinearMap.mkContinuous_norm_le _ (norm_nonneg u) _)
 
