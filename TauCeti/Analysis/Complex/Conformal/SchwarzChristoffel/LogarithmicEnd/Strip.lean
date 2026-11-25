@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicEnd.Basic
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Log.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Log
 
 /-!
 # Strip bounds near logarithmic Schwarz--Christoffel ends

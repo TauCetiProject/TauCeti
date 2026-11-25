@@ -9,9 +9,12 @@ public import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 public import TauCeti.Probability.Distributions.Semicircle.Moments
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.Convex
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.GCongr
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.Analysis.SpecificLimits.Catalan
-import TauCeti.Analysis.Real.Inequalities
 
 /-!
 # The resolvent transform of the semicircle law
@@ -38,6 +41,10 @@ is written as `v * (m * m) + (z - a) * m + 1`, the shape used by Mathlib's `disc
   Catalan moments.
 * `TauCeti.Probability.resolventTransform_semicircleReal_quadratic_eq_zero`: the quadratic
   equation off the support.
+* `TauCeti.Probability.resolventTransform_semicircleReal_zero_one_quadratic_eq_zero`: the
+  standard-law quadratic equation at every nonreal point.
+* `TauCeti.Probability.im_resolventTransform_semicircleReal_zero_one_pos`: positivity of the
+  standard-law resolvent's imaginary part in the upper half-plane.
 * `TauCeti.Probability.resolventTransform_semicircleReal_eq_iff`: in the upper half-plane, `m(z)`
   is the only root of the quadratic with positive imaginary part.
 * `TauCeti.Probability.resolventTransform_semicircleReal_zero_one_I`: for the standard law,
@@ -172,6 +179,20 @@ theorem resolventTransform_semicircleReal_quadratic_eq_zero
       (convex_halfSpace_im_gt 0) (fun _ h ↦ h.ne') (z₀ := ⟨a, R + 1⟩)
       hpos (lt_norm_mk_sub (lt_abs.2 (.inl (by linarith)))) him
 
+/-- The standard semicircle resolvent satisfies `m² + z m + 1 = 0` at every nonreal point. -/
+theorem resolventTransform_semicircleReal_zero_one_quadratic_eq_zero (hz : z.im ≠ 0) :
+    resolventTransform (semicircleReal 0 1) z *
+      resolventTransform (semicircleReal 0 1) z +
+      z * resolventTransform (semicircleReal 0 1) z + 1 = 0 := by
+  have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1) (z := z)
+    (Complex.notMem_image_ofReal_of_im_ne_zero hz)
+  simpa using h
+
+/-- The standard semicircle resolvent has positive imaginary part in the upper half-plane. -/
+theorem im_resolventTransform_semicircleReal_zero_one_pos (hz : 0 < z.im) :
+    0 < (resolventTransform (semicircleReal 0 1) z).im :=
+  im_resolventTransform_pos (μ := semicircleReal 0 1) (IsProbabilityMeasure.ne_zero _) hz
+
 /-- In the upper half-plane, the resolvent transform of `semicircleReal a v` is the unique root of
 `v * (w * w) + (z - a) * w + 1 = 0` with positive imaginary part. -/
 theorem resolventTransform_semicircleReal_eq_iff (hz : 0 < z.im) {w : ℂ} :
@@ -288,19 +309,12 @@ theorem resolventTransform_semicircleReal_zero_one_I :
   linear_combination (-1 / 4 : ℂ) * h5c + (((√5 : ℂ) - 1) / 2 * (((√5 : ℂ) - 1) / 2) +
     ((√5 : ℂ) - 1) / 2) * I_sq
 
-private def standardSemicircleResolvent (z : ℂ) : ℂ :=
-  resolventTransform (semicircleReal 0 1) z
-
-private theorem standardSemicircleResolvent_im_pos (hz : 0 < z.im) :
-    0 < (standardSemicircleResolvent z).im :=
-  im_resolventTransform_pos (μ := semicircleReal 0 1) (IsProbabilityMeasure.ne_zero _) hz
-
 private def standardSemicircleResolventAt (x ε : ℝ) : ℂ :=
-  standardSemicircleResolvent ((x : ℂ) + (ε : ℂ) * Complex.I)
+  resolventTransform (semicircleReal 0 1) ((x : ℂ) + (ε : ℂ) * Complex.I)
 
 private theorem standardSemicircleResolventAt_im_pos {x ε : ℝ} (hε : 0 < ε) :
     0 < (standardSemicircleResolventAt x ε).im :=
-  standardSemicircleResolvent_im_pos (by simpa using hε)
+  im_resolventTransform_semicircleReal_zero_one_pos (by simpa using hε)
 
 private def standardSemicircleResolventNormSq (x ε : ℝ) : ℝ :=
   Complex.normSq (standardSemicircleResolventAt x ε)
@@ -321,12 +335,10 @@ private theorem standard_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
   have hz : 0 < ((x : ℂ) + (ε : ℂ) * Complex.I).im := by simpa using hε
   have hmc : m * star m = (q : ℂ) := by
     rw [Complex.star_def, Complex.mul_conj]
-    rfl
+    simp [m, q, standardSemicircleResolventNormSq, Complex.normSq_apply]
   have hquad : m * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * m + 1 = 0 := by
-    have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1)
-      (z := (x : ℂ) + (ε : ℂ) * Complex.I)
-      (Complex.notMem_image_ofReal_of_im_ne_zero hz.ne')
-    simpa [m, standardSemicircleResolventAt, standardSemicircleResolvent] using h
+    simpa [m, standardSemicircleResolventAt] using
+      resolventTransform_semicircleReal_zero_one_quadratic_eq_zero hz.ne'
   have hmul := congrArg (fun w => w * star m) hquad
   have hrelmul : (q : ℂ) * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * (q : ℂ) + star m =
       (m * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * m + 1) * star m := by
@@ -364,6 +376,28 @@ private theorem standard_boundary_normSq_lt_one {x ε : ℝ} (hε : 0 < ε) :
   rw [himag] at hnonpos
   linarith
 
+private theorem standard_boundary_quadratic_bound {a b q x : ℝ}
+    (hqdef : q = a ^ 2 + b ^ 2) (hreal : a * (q + 1) = -x * q) (hx2 : x ^ 2 ≤ 4) :
+    q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
+  have hq : 0 ≤ q := by rw [hqdef]; exact add_nonneg (sq_nonneg a) (sq_nonneg b)
+  have hreal_sq : a ^ 2 * (q + 1) ^ 2 = x ^ 2 * q ^ 2 := by
+    have h := congrArg (fun t : ℝ ↦ t ^ 2) hreal
+    nlinarith [h]
+  have hfactor :
+      b ^ 2 * (q + 1) ^ 2 = q * ((q + 1) ^ 2 - x ^ 2 * q) := by
+    nlinarith [hreal_sq, hqdef]
+  have hfactor_le : (1 - q) ^ 2 ≤ (q + 1) ^ 2 - x ^ 2 * q := by
+    have h4x : 0 ≤ 4 - x ^ 2 := by linarith
+    nlinarith [mul_nonneg hq h4x]
+  rw [hfactor]
+  exact mul_le_mul_of_nonneg_left hfactor_le hq
+
+/-- A point in the support of the standard semicircle law has square at most four. -/
+theorem sq_le_four_of_mem_Icc {x : ℝ} (hx : x ∈ Icc (-2) 2) : x ^ 2 ≤ 4 := by
+  have hleft : 0 ≤ 2 + x := by linarith [hx.1]
+  have hright : 0 ≤ 2 - x := by linarith [hx.2]
+  nlinarith [mul_nonneg hleft hright]
+
 private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     (hx : x ∈ Icc (-2) 2) (hε : 0 < ε) :
     (1 - standardSemicircleResolventNormSq x ε) ^ 2 ≤ 2 * ε := by
@@ -381,12 +415,9 @@ private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
   have hq_lt : q < 1 := by
     have := standard_boundary_normSq_lt_one (x := x) hε
     simpa [q] using this
-  have hx2 : x ^ 2 ≤ 4 := by
-    have hxleft : 0 ≤ 2 + x := by linarith [hx.1]
-    have hxright : 0 ≤ 2 - x := by linarith [hx.2]
-    nlinarith [mul_nonneg hxleft hxright]
+  have hx2 : x ^ 2 ≤ 4 := sq_le_four_of_mem_Icc hx
   have hbound_b : q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
-    exact Real.mul_one_sub_sq_le_sq_mul_add_one_sq hqdef hreal hx2
+    exact standard_boundary_quadratic_bound hqdef hreal hx2
   have himag_sq : b ^ 2 * (1 - q) ^ 2 = ε ^ 2 * q ^ 2 := by
     have h := congrArg (fun t : ℝ ↦ t ^ 2) himag
     nlinarith [h]
@@ -525,25 +556,8 @@ theorem tendsto_resolventTransform_semicircleReal_zero_one_of_mem_Icc {x : ℝ}
       (𝓝 (((-x / 2 : ℝ) : ℂ) + (Real.sqrt (1 - x ^ 2 / 4) : ℂ) * Complex.I)) := by
   have hRe := tendsto_standard_resolvent_re_of_mem_Icc hx
   have hIm := tendsto_standard_resolvent_im_of_mem_Icc hx
-  have hpair : Tendsto (fun ε : ℝ ↦
-      ((standardSemicircleResolventAt x ε).re, (standardSemicircleResolventAt x ε).im))
-      (𝓝[>] 0) (𝓝 (-x / 2, Real.sqrt (1 - x ^ 2 / 4))) := by
-    simpa [nhds_prod_eq] using hRe.prodMk hIm
-  have hcomplex : Tendsto
-      (fun ε : ℝ ↦ Complex.equivRealProdCLM (standardSemicircleResolventAt x ε))
-      (𝓝[>] 0)
-      (𝓝 ((-x / 2, Real.sqrt (1 - x ^ 2 / 4)) : ℝ × ℝ)) := by
-    simpa [standardSemicircleResolventAt] using hpair
-  have h := Complex.equivRealProdCLM.symm.continuous.continuousAt.tendsto.comp hcomplex
-  have hEq : (fun ε : ℝ ↦
-      Complex.equivRealProdCLM.symm
-        (Complex.equivRealProdCLM (standardSemicircleResolventAt x ε))) =
-      fun ε ↦ standardSemicircleResolventAt x ε := by
-    funext ε
-    exact Complex.equivRealProdCLM.symm_apply_apply _
-  have h' := Filter.Tendsto.congr' (EventuallyEq.symm (Filter.EventuallyEq.of_eq hEq)) h
-  simpa [Complex.equivRealProdCLM_symm_apply, standardSemicircleResolventAt,
-    standardSemicircleResolvent] using h'
+  simpa only [Complex.re_add_im, standardSemicircleResolventAt] using
+    hRe.ofReal.add (hIm.ofReal.mul_const Complex.I)
 
 /-- The resolvent of a positive-variance semicircle law is obtained from the standard law
 by its location-scale transformation. -/

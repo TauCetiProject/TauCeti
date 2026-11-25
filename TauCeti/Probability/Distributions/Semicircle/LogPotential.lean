@@ -114,23 +114,15 @@ private theorem hasDerivAt_m (hz : 0 < z.im) : ∃ d, HasDerivAt m d z := by
   exact ⟨_, hasDerivAt_resolventTransform (μ := semicircleReal 0 1) z
     (Complex.notMem_image_ofReal_of_im_ne_zero hz.ne')⟩
 
-private theorem m_quad (hz : 0 < z.im) : m z * m z + z * m z + 1 = 0 := by
-  have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1) (z := z) (by
-    exact Complex.notMem_image_ofReal_of_im_ne_zero hz.ne')
-  simpa using h
-
-private theorem m_im_pos (hz : 0 < z.im) : 0 < (m z).im :=
-  im_resolventTransform_pos (μ := semicircleReal 0 1) (IsProbabilityMeasure.ne_zero _) hz
-
 private theorem mem_slitPlane_neg_m (hz : 0 < z.im) : -(m z) ∈ Complex.slitPlane := by
   rw [Complex.mem_slitPlane_iff]
   right
-  have hm := (m_im_pos hz).ne'
+  have hm := (im_resolventTransform_semicircleReal_zero_one_pos hz).ne'
   simpa using neg_ne_zero.mpr hm
 
 private theorem m_ne_zero (hz : 0 < z.im) : m z ≠ 0 := by
   intro hm
-  have h := m_quad hz
+  have h := resolventTransform_semicircleReal_zero_one_quadratic_eq_zero hz.ne'
   rw [hm] at h
   norm_num at h
 
@@ -146,7 +138,7 @@ private theorem deriv_m_quad (hz : 0 < z.im) {d : ℂ} (hdm : HasDerivAt m d z) 
       ring
   have hEq : (fun w : ℂ ↦ m w * m w + w * m w + 1) =ᶠ[𝓝 z] fun _ ↦ 0 := by
     filter_upwards [Metric.ball_mem_nhds z (by positivity : 0 < z.im / 2)] with w hw
-    simpa using m_quad (by
+    simpa using resolventTransform_semicircleReal_zero_one_quadratic_eq_zero (by
       have h := im_gt_of_mem_ball hw
       linarith)
   have hzero := (hasDerivAt_const z 0).congr_of_eventuallyEq hEq
@@ -175,7 +167,7 @@ private theorem hasDerivAt_primitive (hz : 0 < z.im) :
       simp only [Pi.neg_apply]
       ring
   have hval : -(m z + z * d) / 2 - (-d) / (-(m z)) = -m z := by
-    have hq1 := m_quad hz
+    have hq1 := resolventTransform_semicircleReal_zero_one_quadratic_eq_zero hz.ne'
     field_simp [hm0]
     linear_combination m z * hq0 - 2 * d * hq1
   convert hprim using 1
@@ -390,9 +382,7 @@ private theorem tendsto_primitive_re_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) 
       (𝓝[>] 0) (𝓝 (x ^ 2 / 4 - 1 / 2)) := by
   let c : ℂ := ((-x / 2 : ℝ) : ℂ) + (Real.sqrt (1 - x ^ 2 / 4) : ℂ) * Complex.I
   have hrad : 0 ≤ 1 - x ^ 2 / 4 := by
-    have hleft : 0 ≤ x + 2 := by linarith [hx.1]
-    have hright : 0 ≤ 2 - x := by linarith [hx.2]
-    nlinarith [mul_nonneg hleft hright]
+    linarith [sq_le_four_of_mem_Icc hx]
   have hcSq : Complex.normSq c = 1 := by
     rw [Complex.normSq_apply]
     simp [c]

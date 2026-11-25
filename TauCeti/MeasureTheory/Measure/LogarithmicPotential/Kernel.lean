@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 
 /-!
-# Logarithmic kernels in the upper half-plane
+# Logarithmic kernels for real-measure potentials
 
 The logarithmic kernel is continuous in its real argument when its complex parameter is nonreal.
 Away from its singularity, it converges to its real-axis value as the imaginary offset tends to
