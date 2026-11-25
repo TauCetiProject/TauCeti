@@ -115,7 +115,7 @@ theorem IsIntertwiningMap.tensorAlgebraMap {N : Type*} [AddCommMonoid N] [Module
       (TensorAlgebra.lift R ((TensorAlgebra.ι R).comp (σ g))).comp
         (TensorAlgebra.lift R ((TensorAlgebra.ι R).comp f)) := by
     ext m
-    simp [hf.1 g m]
+    simp [hf.isIntertwining g m]
   exact DFunLike.congr_fun h p
 
 end Representation

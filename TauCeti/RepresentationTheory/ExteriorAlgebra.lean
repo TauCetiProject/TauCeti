@@ -104,7 +104,7 @@ theorem IsIntertwiningMap.exteriorAlgebraMap {N : Type*} [AddCommGroup N] [Modul
       (ExteriorAlgebra.map (σ g)).comp (ExteriorAlgebra.map f) := by
     rw [ExteriorAlgebra.map_comp_map, ExteriorAlgebra.map_comp_map]
     congr 1
-    exact LinearMap.ext (hf.1 g)
+    exact LinearMap.ext (hf.isIntertwining g)
   exact DFunLike.congr_fun h p
 
 /-- The canonical quotient from the tensor algebra to the exterior algebra is equivariant. -/
