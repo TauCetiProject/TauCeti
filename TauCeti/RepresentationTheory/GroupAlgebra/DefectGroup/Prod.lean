@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
+public import TauCeti.Algebra.Group.Subgroup.Prod
+public import TauCeti.GroupTheory.PGroup
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 
 /-!
@@ -27,7 +29,6 @@ and is not proved here.
 
 * `TauCeti.coeff_tensorEquiv_tmul`: the coefficient of `x ⊗ y` at `(g₁, g₂)` is `x(g₁) y(g₂)`.
 * `TauCeti.mem_centralizer_prod_iff`: `C(Q) = C(Q₁) × C(Q₂)`.
-* `TauCeti.isPGroup_prod`: the product of two `p`-subgroups is a `p`-group.
 * `TauCeti.brauerProjection_tensorEquiv_tmul_ne_zero_iff`: `Br_Q(x ⊗ y) ≠ 0` exactly when
   `Br_{Q₁}(x) ≠ 0` and `Br_{Q₂}(y) ≠ 0`.
 * `TauCeti.isDefectGroup_tensorEquiv_tmul_iff`: the defect groups of `x ⊗ y` are the
@@ -48,18 +49,6 @@ variable {G₁ G₂ : Type*} [Group G₁] [Group G₂]
 
 section Subgroup
 
-/-- The first projection of `H₁ × H₂` is `H₁`. -/
-theorem map_fst_prod (H₁ : Subgroup G₁) (H₂ : Subgroup G₂) :
-    (H₁.prod H₂).map (MonoidHom.fst G₁ G₂) = H₁ := by
-  ext x
-  exact ⟨fun ⟨y, hy, hyx⟩ ↦ hyx ▸ hy.1, fun hx ↦ ⟨(x, 1), ⟨hx, H₂.one_mem⟩, rfl⟩⟩
-
-/-- The second projection of `H₁ × H₂` is `H₂`. -/
-theorem map_snd_prod (H₁ : Subgroup G₁) (H₂ : Subgroup G₂) :
-    (H₁.prod H₂).map (MonoidHom.snd G₁ G₂) = H₂ := by
-  ext x
-  exact ⟨fun ⟨y, hy, hyx⟩ ↦ hyx ▸ hy.2, fun hx ↦ ⟨(1, x), ⟨H₁.one_mem, hx⟩, rfl⟩⟩
-
 /-- **Centralizers in a direct product.** An element `c` of `G₁ × G₂` centralizes `Q` exactly when
 its components centralize the projections `Q₁` and `Q₂` of `Q`. -/
 theorem mem_centralizer_prod_iff {Q : Subgroup (G₁ × G₂)} {c : G₁ × G₂} :
@@ -70,18 +59,6 @@ theorem mem_centralizer_prod_iff {Q : Subgroup (G₁ × G₂)} {c : G₁ × G₂
     MonoidHom.coe_snd, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, Prod.ext_iff,
     Prod.fst_mul, Prod.snd_mul]
   exact ⟨fun h ↦ ⟨fun q hq ↦ (h q hq).1, fun q hq ↦ (h q hq).2⟩, fun h q hq ↦ ⟨h.1 q hq, h.2 q hq⟩⟩
-
-/-- The product of two `p`-subgroups is a `p`-group. -/
-theorem isPGroup_prod {p : ℕ} {H₁ : Subgroup G₁} {H₂ : Subgroup G₂} (h₁ : IsPGroup p H₁)
-    (h₂ : IsPGroup p H₂) : IsPGroup p (H₁.prod H₂) := by
-  rintro ⟨g, hg⟩
-  obtain ⟨k₁, hk₁⟩ := h₁ ⟨g.1, hg.1⟩
-  obtain ⟨k₂, hk₂⟩ := h₂ ⟨g.2, hg.2⟩
-  have hk₁' : g.1 ^ p ^ k₁ = 1 := congrArg Subtype.val hk₁
-  have hk₂' : g.2 ^ p ^ k₂ = 1 := congrArg Subtype.val hk₂
-  refine ⟨k₁ + k₂, Subtype.ext (Prod.ext ?_ ?_)⟩
-  · simp [pow_add, pow_mul, hk₁']
-  · simp [pow_add, mul_comm (p ^ k₁), pow_mul, hk₂']
 
 end Subgroup
 
@@ -114,7 +91,7 @@ theorem brauerProjection_prod_tensorEquiv_tmul_ne_zero_iff {D₁ : Subgroup G₁
     {D₂ : Subgroup G₂} {x : MonoidAlgebra R G₁} {y : MonoidAlgebra R G₂} :
     brauerProjection (D₁.prod D₂) (tensorEquiv R (x ⊗ₜ y)) ≠ 0 ↔
       brauerProjection D₁ x ≠ 0 ∧ brauerProjection D₂ y ≠ 0 := by
-  rw [brauerProjection_tensorEquiv_tmul_ne_zero_iff, map_fst_prod, map_snd_prod]
+  rw [brauerProjection_tensorEquiv_tmul_ne_zero_iff, Subgroup.prod_map_fst, Subgroup.prod_map_snd]
 
 /-- **Defect groups of a direct product.** Over a semiring without zero divisors, the defect
 groups of `x ⊗ y ∈ R[G₁ × G₂]` are exactly the products `D₁ × D₂` of a defect group `D₁` of `x`
@@ -132,7 +109,7 @@ theorem isDefectGroup_tensorEquiv_tmul_iff {p : ℕ} {x : MonoidAlgebra R G₁}
     have key : ∀ (R₁ : Subgroup G₁) (R₂ : Subgroup G₂), IsPGroup p R₁ → IsPGroup p R₂ →
         brauerProjection R₁ x ≠ 0 → brauerProjection R₂ y ≠ 0 → Q ≤ R₁.prod R₂ →
           R₁.prod R₂ = Q := fun R₁ R₂ hp₁ hp₂ hb₁ hb₂ hle ↦
-      hmax _ (isPGroup_prod hp₁ hp₂)
+      hmax _ ((hp₁.prod hp₂).of_equiv (Subgroup.prodEquiv R₁ R₂).symm)
         (brauerProjection_prod_tensorEquiv_tmul_ne_zero_iff.2 ⟨hb₁, hb₂⟩) hle
     have hp₁ : IsPGroup p Q₁ := hQ.map _
     have hp₂ : IsPGroup p Q₂ := hQ.map _
@@ -141,19 +118,19 @@ theorem isDefectGroup_tensorEquiv_tmul_iff {p : ℕ} {x : MonoidAlgebra R G₁}
     refine ⟨Q₁, Q₂, isDefectGroup_iff.2 ⟨hp₁, hBr₁, fun R₁ hR₁ hb₁ hle ↦ ?_⟩,
       isDefectGroup_iff.2 ⟨hp₂, hBr₂, fun R₂ hR₂ hb₂ hle ↦ ?_⟩, hQeq.symm⟩
     · have := key R₁ Q₂ hR₁ hp₂ hb₁ hBr₂ (hQeq ▸ Subgroup.prod_mono hle le_rfl)
-      rw [← map_fst_prod R₁ Q₂, this]
+      rw [← Subgroup.prod_map_fst R₁ Q₂, this]
     · have := key Q₁ R₂ hp₁ hR₂ hBr₁ hb₂ (hQeq ▸ Subgroup.prod_mono le_rfl hle)
-      rw [← map_snd_prod Q₁ R₂, this]
+      rw [← Subgroup.prod_map_snd Q₁ R₂, this]
   · rintro ⟨D₁, D₂, h₁, h₂, rfl⟩
     obtain ⟨hp₁, hBr₁, hmax₁⟩ := isDefectGroup_iff.1 h₁
     obtain ⟨hp₂, hBr₂, hmax₂⟩ := isDefectGroup_iff.1 h₂
-    refine isDefectGroup_iff.2 ⟨isPGroup_prod hp₁ hp₂,
+    refine isDefectGroup_iff.2 ⟨(hp₁.prod hp₂).of_equiv (Subgroup.prodEquiv D₁ D₂).symm,
       brauerProjection_prod_tensorEquiv_tmul_ne_zero_iff.2 ⟨hBr₁, hBr₂⟩, fun Q hQ hBr hle ↦ ?_⟩
     obtain ⟨hb₁, hb₂⟩ := brauerProjection_tensorEquiv_tmul_ne_zero_iff.1 hBr
     have hle₁ : D₁ ≤ Q.map (MonoidHom.fst G₁ G₂) :=
-      map_fst_prod D₁ D₂ ▸ Subgroup.map_mono hle
+      Subgroup.prod_map_fst D₁ D₂ ▸ Subgroup.map_mono hle
     have hle₂ : D₂ ≤ Q.map (MonoidHom.snd G₁ G₂) :=
-      map_snd_prod D₁ D₂ ▸ Subgroup.map_mono hle
+      Subgroup.prod_map_snd D₁ D₂ ▸ Subgroup.map_mono hle
     have he₁ := hmax₁ _ (hQ.map _) hb₁ hle₁
     have he₂ := hmax₂ _ (hQ.map _) hb₂ hle₂
     exact le_antisymm (Subgroup.le_prod_iff.2 ⟨he₁.le, he₂.le⟩) hle
