@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Analysis.SpecialFunctions.Gaussian.DecimalBounds
 import TauCeti.Probability.Distributions.Gaussian.Basic
-import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # Decimal checks for shifting intervals under the standard Gaussian measure
@@ -36,86 +35,38 @@ public noncomputable section
 
 namespace TauCeti.Examples.GaussianIntervalShift
 
-/-- Two-sided bounds on `Φ(1) − 1/2` from the error function series. -/
-private theorem cdf_bounds_one :
-    1 / √(2 * π) * ∑ i ∈ range (2 * 5),
-        (-1) ^ i * ((1 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤
-      cdf (gaussianReal 0 1) 1 - 1 / 2 ∧
-    cdf (gaussianReal 0 1) 1 - 1 / 2 ≤
-      1 / √(2 * π) * ∑ i ∈ range (2 * 5 + 1),
-        (-1) ^ i * ((1 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) :=
-  ⟨mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half (by norm_num) (by norm_num) 5,
-    cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one (by norm_num) (by norm_num) 5⟩
+/-- Two-sided bounds on `Φ(r) − 1/2` from the first ten and eleven terms of the error function
+series. -/
+private theorem cdf_bounds {r : ℝ} (hr : 0 ≤ r) (hr6 : r ^ 2 ≤ 6) :
+    r / √(2 * π) * ∑ i ∈ range (2 * 5),
+        (-1) ^ i * (r ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤
+      cdf (gaussianReal 0 1) r - 1 / 2 ∧
+    cdf (gaussianReal 0 1) r - 1 / 2 ≤
+      r / √(2 * π) * ∑ i ∈ range (2 * 5 + 1),
+        (-1) ^ i * (r ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) :=
+  ⟨mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half hr hr6 5,
+    cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one hr hr6 5⟩
 
-/-- Two-sided bounds on `Φ(0.408796) − 1/2` from the error function series. -/
-private theorem cdf_bounds_shift :
-    0.408796 / √(2 * π) * ∑ i ∈ range (2 * 5),
-        (-1) ^ i * ((0.408796 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤
-      cdf (gaussianReal 0 1) 0.408796 - 1 / 2 ∧
-    cdf (gaussianReal 0 1) 0.408796 - 1 / 2 ≤
-      0.408796 / √(2 * π) * ∑ i ∈ range (2 * 5 + 1),
-        (-1) ^ i * ((0.408796 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) :=
-  ⟨mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half (by norm_num) (by norm_num) 5,
-    cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one (by norm_num) (by norm_num) 5⟩
-
-/-- Two-sided bounds on `Φ(0.063724) − 1/2` from the error function series. -/
-private theorem cdf_bounds_shift_one :
-    0.063724 / √(2 * π) * ∑ i ∈ range (2 * 5),
-        (-1) ^ i * ((0.063724 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤
-      cdf (gaussianReal 0 1) 0.063724 - 1 / 2 ∧
-    cdf (gaussianReal 0 1) 0.063724 - 1 / 2 ≤
-      0.063724 / √(2 * π) * ∑ i ∈ range (2 * 5 + 1),
-        (-1) ^ i * ((0.063724 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) :=
-  ⟨mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half (by norm_num) (by norm_num) 5,
-    cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one (by norm_num) (by norm_num) 5⟩
-
-/-- Two-sided bounds on `Φ(0.9) − 1/2` from the error function series. -/
-private theorem cdf_bounds_nine_tenths :
-    0.9 / √(2 * π) * ∑ i ∈ range (2 * 5),
-        (-1) ^ i * ((0.9 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤
-      cdf (gaussianReal 0 1) 0.9 - 1 / 2 ∧
-    cdf (gaussianReal 0 1) 0.9 - 1 / 2 ≤
-      0.9 / √(2 * π) * ∑ i ∈ range (2 * 5 + 1),
-        (-1) ^ i * ((0.9 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) :=
-  ⟨mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half (by norm_num) (by norm_num) 5,
-    cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one (by norm_num) (by norm_num) 5⟩
-
-/-- Two-sided bounds on `Φ(0.385003) − 1/2` from the error function series. -/
-private theorem cdf_bounds_shift_two :
-    0.385003 / √(2 * π) * ∑ i ∈ range (2 * 5),
-        (-1) ^ i * ((0.385003 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤
-      cdf (gaussianReal 0 1) 0.385003 - 1 / 2 ∧
-    cdf (gaussianReal 0 1) 0.385003 - 1 / 2 ≤
-      0.385003 / √(2 * π) * ∑ i ∈ range (2 * 5 + 1),
-        (-1) ^ i * ((0.385003 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) :=
-  ⟨mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half (by norm_num) (by norm_num) 5,
-    cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one (by norm_num) (by norm_num) 5⟩
-
-/-- Two-sided bounds on `Φ(0.5) − 1/2` from the error function series. -/
-private theorem cdf_bounds_half :
-    0.5 / √(2 * π) * ∑ i ∈ range (2 * 5),
-        (-1) ^ i * ((0.5 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤
-      cdf (gaussianReal 0 1) 0.5 - 1 / 2 ∧
-    cdf (gaussianReal 0 1) 0.5 - 1 / 2 ≤
-      0.5 / √(2 * π) * ∑ i ∈ range (2 * 5 + 1),
-        (-1) ^ i * ((0.5 : ℝ) ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) :=
-  ⟨mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half (by norm_num) (by norm_num) 5,
-    cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one (by norm_num) (by norm_num) 5⟩
-
-/-- `γ¹((0, 1)) = Φ(1) − Φ(0) = 0.341345`. -/
-theorem measure_Ioo_zero_one : |(cdf (gaussianReal 0 1) 1 - cdf (gaussianReal 0 1) 0) - 0.341345| <
-    5e-7 := by
-  obtain ⟨hlo, hhi⟩ := cdf_bounds_one
+/-- Two-sided bounds on `φ(x)` for `x² ≤ 2`, from the bounds on `(2π)^{−1/2}` and the eight-term
+bound `Real.exp_bound` on `e^{−x²/2}`, whose remainder is `(x²/2)⁸ · 9 / (8! · 8)`. -/
+private theorem gaussianPDFReal_bounds {x : ℝ} (hx : x ^ 2 ≤ 2) :
+    0.39894228 * (∑ i ∈ range 8, (-(x ^ 2 / 2)) ^ i / i.factorial -
+        (x ^ 2 / 2) ^ 8 * (9 / (40320 * 8))) < gaussianPDFReal 0 1 x ∧
+    gaussianPDFReal 0 1 x < 0.39894229 * (∑ i ∈ range 8, (-(x ^ 2 / 2)) ^ i / i.factorial +
+        (x ^ 2 / 2) ^ 8 * (9 / (40320 * 8))) := by
+  have hx0 : 0 ≤ x ^ 2 / 2 := by positivity
+  have he := Real.exp_bound (x := -(x ^ 2 / 2)) (by rw [abs_neg, abs_of_nonneg hx0]; linarith)
+    (n := 8) (by norm_num)
+  rw [abs_neg, abs_of_nonneg hx0, abs_le] at he
+  norm_num [Nat.factorial] at he
   have h1 := inv_sqrt_two_mul_pi_gt_d8
   have h2 := inv_sqrt_two_mul_pi_lt_d8
-  rw [cdf_gaussianReal_self 0 one_ne_zero, abs_sub_lt_iff]
-  rw [one_div √(2 * π)] at hlo hhi
-  generalize (√(2 * π))⁻¹ = s at hlo hhi h1 h2
-  norm_num [sum_range_succ, Nat.factorial] at hlo hhi h1 h2 ⊢
-  constructor <;> linarith
+  have h3 := exp_pos (-(x ^ 2 / 2))
+  rw [gaussianPDFReal_zero_one]
+  constructor <;> nlinarith
 
 /-- `φ(0) + φ(1) = 0.640913`: the Gaussian perimeter of `(0, 1)`. -/
-theorem perimeter_Ioo_zero_one :
+theorem abs_gaussianPDFReal_zero_add_gaussianPDFReal_one_sub_lt :
     |(gaussianPDFReal 0 1 0 + gaussianPDFReal 0 1 1) - 0.640913| < 5e-7 := by
   rw [gaussianPDFReal_zero_one, gaussianPDFReal_zero_one, abs_sub_lt_iff]
   have h1 := inv_sqrt_two_mul_pi_gt_d8
@@ -125,9 +76,20 @@ theorem perimeter_Ioo_zero_one :
   norm_num at h1 h2 h3 h4 ⊢
   constructor <;> nlinarith
 
+/-- `γ¹((0, 1)) = Φ(1) − Φ(0) = 0.341345`. -/
+example : |(cdf (gaussianReal 0 1) 1 - cdf (gaussianReal 0 1) 0) - 0.341345| < 5e-7 := by
+  obtain ⟨hlo, hhi⟩ := cdf_bounds (r := 1) (by norm_num) (by norm_num)
+  have h1 := inv_sqrt_two_mul_pi_gt_d8
+  have h2 := inv_sqrt_two_mul_pi_lt_d8
+  rw [cdf_gaussianReal_self 0 one_ne_zero, abs_sub_lt_iff]
+  rw [one_div √(2 * π)] at hlo hhi
+  generalize (√(2 * π))⁻¹ = s at hlo hhi h1 h2
+  norm_num [sum_range_succ, Nat.factorial] at hlo hhi h1 h2 ⊢
+  constructor <;> linarith
+
 /-- `γ¹((0.408796, ∞)) = 1 − Φ(0.408796) = 0.341345`, up to `10⁻⁶`. -/
-theorem measure_Ioi_shift : |(1 - cdf (gaussianReal 0 1) 0.408796) - 0.341345| < 1e-6 := by
-  obtain ⟨hlo, hhi⟩ := cdf_bounds_shift
+example : |(1 - cdf (gaussianReal 0 1) 0.408796) - 0.341345| < 1e-6 := by
+  obtain ⟨hlo, hhi⟩ := cdf_bounds (r := 0.408796) (by norm_num) (by norm_num)
   have h1 := inv_sqrt_two_mul_pi_gt_d8
   have h2 := inv_sqrt_two_mul_pi_lt_d8
   rw [abs_sub_lt_iff]
@@ -137,28 +99,25 @@ theorem measure_Ioi_shift : |(1 - cdf (gaussianReal 0 1) 0.408796) - 0.341345| <
   constructor <;> nlinarith
 
 /-- `φ(0.408796) = 0.366963`, up to `10⁻⁶`. -/
-theorem gaussianPDFReal_shift : |gaussianPDFReal 0 1 0.408796 - 0.366963| < 1e-6 := by
-  rw [gaussianPDFReal_zero_one, abs_sub_lt_iff]
-  have h1 := inv_sqrt_two_mul_pi_gt_d8
-  have h2 := inv_sqrt_two_mul_pi_lt_d8
-  have he := Real.exp_bound (x := -((0.408796 : ℝ) ^ 2 / 2)) (by norm_num [abs_le]) (n := 8)
-    (by norm_num)
-  norm_num [sum_range_succ, Nat.factorial, abs_le] at he h1 h2 ⊢
-  constructor <;> nlinarith
+example : |gaussianPDFReal 0 1 0.408796 - 0.366963| < 1e-6 := by
+  have h := gaussianPDFReal_bounds (x := 0.408796) (by norm_num)
+  norm_num [sum_range_succ, Nat.factorial] at h
+  rw [abs_sub_lt_iff]
+  constructor <;> linarith
 
 /-- The right shift `(0.408796, ∞)` of `(0, 1)` has smaller Gaussian perimeter. -/
-theorem gaussianPDFReal_shift_lt :
-    gaussianPDFReal 0 1 0.408796 < gaussianPDFReal 0 1 0 + gaussianPDFReal 0 1 1 := by
-  have h1 := gaussianPDFReal_shift
-  have h2 := perimeter_Ioo_zero_one
-  rw [abs_sub_lt_iff] at h1 h2
-  linarith [h1.1, h2.2]
+example : gaussianPDFReal 0 1 0.408796 < gaussianPDFReal 0 1 0 + gaussianPDFReal 0 1 1 := by
+  have h := gaussianPDFReal_bounds (x := 0.408796) (by norm_num)
+  have h0 := abs_gaussianPDFReal_zero_add_gaussianPDFReal_one_sub_lt
+  norm_num [sum_range_succ, Nat.factorial] at h
+  rw [abs_sub_lt_iff] at h0
+  linarith
 
 /-- `γ¹((−0.9, 0.063724)) = Φ(0.063724) − Φ(−0.9) = 0.341345`, up to `10⁻⁶`. -/
-theorem measure_Ioo_shift_one :
+example :
     |(cdf (gaussianReal 0 1) 0.063724 - cdf (gaussianReal 0 1) (-0.9)) - 0.341345| < 1e-6 := by
-  obtain ⟨hlo, hhi⟩ := cdf_bounds_shift_one
-  obtain ⟨hlo', hhi'⟩ := cdf_bounds_nine_tenths
+  obtain ⟨hlo, hhi⟩ := cdf_bounds (r := 0.063724) (by norm_num) (by norm_num)
+  obtain ⟨hlo', hhi'⟩ := cdf_bounds (r := 0.9) (by norm_num) (by norm_num)
   have h1 := inv_sqrt_two_mul_pi_gt_d8
   have h2 := inv_sqrt_two_mul_pi_lt_d8
   rw [cdf_gaussianReal_zero_one_neg, abs_sub_lt_iff]
@@ -168,10 +127,10 @@ theorem measure_Ioo_shift_one :
   constructor <;> nlinarith
 
 /-- `γ¹((−0.5, 0.385003)) = Φ(0.385003) − Φ(−0.5) = 0.341345`, up to `10⁻⁶`. -/
-theorem measure_Ioo_shift_two :
+example :
     |(cdf (gaussianReal 0 1) 0.385003 - cdf (gaussianReal 0 1) (-0.5)) - 0.341345| < 1e-6 := by
-  obtain ⟨hlo, hhi⟩ := cdf_bounds_shift_two
-  obtain ⟨hlo', hhi'⟩ := cdf_bounds_half
+  obtain ⟨hlo, hhi⟩ := cdf_bounds (r := 0.385003) (by norm_num) (by norm_num)
+  obtain ⟨hlo', hhi'⟩ := cdf_bounds (r := 0.5) (by norm_num) (by norm_num)
   have h1 := inv_sqrt_two_mul_pi_gt_d8
   have h2 := inv_sqrt_two_mul_pi_lt_d8
   rw [cdf_gaussianReal_zero_one_neg, abs_sub_lt_iff]
@@ -181,61 +140,50 @@ theorem measure_Ioo_shift_two :
   constructor <;> nlinarith
 
 /-- `φ(−0.9) = 0.2660852`, up to `10⁻⁷`. -/
-theorem gaussianPDFReal_neg_nine_tenths : |gaussianPDFReal 0 1 (-0.9) - 0.2660852| < 1e-7 := by
-  rw [gaussianPDFReal_zero_one, abs_sub_lt_iff]
-  have h1 := inv_sqrt_two_mul_pi_gt_d8
-  have h2 := inv_sqrt_two_mul_pi_lt_d8
-  have he := Real.exp_bound (x := -(((-0.9) : ℝ) ^ 2 / 2)) (by norm_num [abs_le]) (n := 8)
-    (by norm_num)
-  norm_num [sum_range_succ, Nat.factorial, abs_le] at he h1 h2 ⊢
-  constructor <;> nlinarith
+example : |gaussianPDFReal 0 1 (-0.9) - 0.2660852| < 1e-7 := by
+  have h := gaussianPDFReal_bounds (x := -0.9) (by norm_num)
+  norm_num [sum_range_succ, Nat.factorial] at h
+  rw [abs_sub_lt_iff]
+  constructor <;> linarith
 
 /-- `φ(0.063724) = 0.3981331`, up to `10⁻⁷`. -/
-theorem gaussianPDFReal_shift_one : |gaussianPDFReal 0 1 0.063724 - 0.3981331| < 1e-7 := by
-  rw [gaussianPDFReal_zero_one, abs_sub_lt_iff]
-  have h1 := inv_sqrt_two_mul_pi_gt_d8
-  have h2 := inv_sqrt_two_mul_pi_lt_d8
-  have he := Real.exp_bound (x := -((0.063724 : ℝ) ^ 2 / 2)) (by norm_num [abs_le]) (n := 8)
-    (by norm_num)
-  norm_num [sum_range_succ, Nat.factorial, abs_le] at he h1 h2 ⊢
-  constructor <;> nlinarith
+example : |gaussianPDFReal 0 1 0.063724 - 0.3981331| < 1e-7 := by
+  have h := gaussianPDFReal_bounds (x := 0.063724) (by norm_num)
+  norm_num [sum_range_succ, Nat.factorial] at h
+  rw [abs_sub_lt_iff]
+  constructor <;> linarith
 
 /-- `φ(−0.5) = 0.3520653`, up to `10⁻⁷`. -/
-theorem gaussianPDFReal_neg_half : |gaussianPDFReal 0 1 (-0.5) - 0.3520653| < 1e-7 := by
-  rw [gaussianPDFReal_zero_one, abs_sub_lt_iff]
-  have h1 := inv_sqrt_two_mul_pi_gt_d8
-  have h2 := inv_sqrt_two_mul_pi_lt_d8
-  have he := Real.exp_bound (x := -(((-0.5) : ℝ) ^ 2 / 2)) (by norm_num [abs_le]) (n := 8)
-    (by norm_num)
-  norm_num [sum_range_succ, Nat.factorial, abs_le] at he h1 h2 ⊢
-  constructor <;> nlinarith
+example : |gaussianPDFReal 0 1 (-0.5) - 0.3520653| < 1e-7 := by
+  have h := gaussianPDFReal_bounds (x := -0.5) (by norm_num)
+  norm_num [sum_range_succ, Nat.factorial] at h
+  rw [abs_sub_lt_iff]
+  constructor <;> linarith
 
 /-- `φ(0.385003) = 0.3704443`, up to `10⁻⁷`. -/
-theorem gaussianPDFReal_shift_two : |gaussianPDFReal 0 1 0.385003 - 0.3704443| < 1e-7 := by
-  rw [gaussianPDFReal_zero_one, abs_sub_lt_iff]
-  have h1 := inv_sqrt_two_mul_pi_gt_d8
-  have h2 := inv_sqrt_two_mul_pi_lt_d8
-  have he := Real.exp_bound (x := -((0.385003 : ℝ) ^ 2 / 2)) (by norm_num [abs_le]) (n := 8)
-    (by norm_num)
-  norm_num [sum_range_succ, Nat.factorial, abs_le] at he h1 h2 ⊢
-  constructor <;> nlinarith
+example : |gaussianPDFReal 0 1 0.385003 - 0.3704443| < 1e-7 := by
+  have h := gaussianPDFReal_bounds (x := 0.385003) (by norm_num)
+  norm_num [sum_range_succ, Nat.factorial] at h
+  rw [abs_sub_lt_iff]
+  constructor <;> linarith
 
 /-- The right shifts of `(−1, 0)` have perimeters `0.664218` and `0.722510`, both larger than
 the perimeter `0.640913` of `(0, 1)`: the shift lemma needs `a + b ≥ 0`. -/
-theorem perimeter_shifts :
+example :
     |(gaussianPDFReal 0 1 (-0.9) + gaussianPDFReal 0 1 0.063724) - 0.664218| < 1e-6 ∧
       |(gaussianPDFReal 0 1 (-0.5) + gaussianPDFReal 0 1 0.385003) - 0.722510| < 1e-6 ∧
       gaussianPDFReal 0 1 0 + gaussianPDFReal 0 1 1 <
         gaussianPDFReal 0 1 (-0.9) + gaussianPDFReal 0 1 0.063724 ∧
       gaussianPDFReal 0 1 0 + gaussianPDFReal 0 1 1 <
         gaussianPDFReal 0 1 (-0.5) + gaussianPDFReal 0 1 0.385003 := by
-  have h1 := gaussianPDFReal_neg_nine_tenths
-  have h2 := gaussianPDFReal_shift_one
-  have h3 := gaussianPDFReal_neg_half
-  have h4 := gaussianPDFReal_shift_two
-  have h0 := perimeter_Ioo_zero_one
-  rw [abs_sub_lt_iff] at h0 h1 h2 h3 h4 ⊢
-  rw [abs_sub_lt_iff]
+  have h1 := gaussianPDFReal_bounds (x := -0.9) (by norm_num)
+  have h2 := gaussianPDFReal_bounds (x := 0.063724) (by norm_num)
+  have h3 := gaussianPDFReal_bounds (x := -0.5) (by norm_num)
+  have h4 := gaussianPDFReal_bounds (x := 0.385003) (by norm_num)
+  have h0 := abs_gaussianPDFReal_zero_add_gaussianPDFReal_one_sub_lt
+  norm_num [sum_range_succ, Nat.factorial] at h1 h2 h3 h4
+  rw [abs_sub_lt_iff] at h0
+  rw [abs_sub_lt_iff, abs_sub_lt_iff]
   refine ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩, by linarith, by linarith⟩
 
 end TauCeti.Examples.GaussianIntervalShift
