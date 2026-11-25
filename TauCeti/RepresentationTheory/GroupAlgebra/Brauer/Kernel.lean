@@ -17,16 +17,18 @@ coefficients on the centralizer `C_G(P)`. Its kernel is the sum of the relative 
 Lemma 12.5.3).
 
 Both inclusions are coefficient computations. The coefficient of `Tr_Q^P(a)` at `c ∈ C_G(P)` is
-`|P : Q|` times that of `a`, which vanishes in characteristic `p` when `Q < P`. Conversely, an
-element `x ∈ R[G]^P` has coefficients constant on the `P`-conjugacy orbits of `G`. For `g` in its
-support, outside `C_G(P)` when `Br_P(x) = 0`, the orbit sum of `g` is the relative trace of `g`
-from its stabilizer `Q = P ⊓ C_G(g) < P` (`TauCeti.coeff_relTrace_single_inf_centralizer`), so
-`x` is `x_g` times that trace plus an element of `R[G]^P` whose support misses the orbit of `g`,
-and induction on the support writes `x` as a sum of such traces. This direction uses neither the
-characteristic nor that `P` is a `p`-group.
+`|P : Q ∩ P|` times that of `a`, which vanishes in characteristic `p` when `P ≰ Q`, in particular
+when `Q < P`. Conversely, an element `x ∈ R[G]^P` has coefficients constant on the
+`P`-conjugacy orbits of `G`. For `g` in its support, outside `C_G(P)` when `Br_P(x) = 0`, the
+orbit sum of `g` is the relative trace of `g` from its stabilizer `Q = P ⊓ C_G(g) < P`
+(`TauCeti.coeff_relTrace_single_inf_centralizer`), so `x` is `x_g` times that trace plus an element
+of `R[G]^P` whose support misses the orbit of `g`, and induction on the support writes `x` as a sum
+of such traces. This direction uses neither the characteristic nor that `P` is a `p`-group.
 
 ## Main results
 
+* `TauCeti.brauerProjection_relTrace_eq_zero_of_not_le`: `Br_P` kills `Tr_Q^P(a)` whenever
+  `P ≰ Q`.
 * `TauCeti.brauerProjection_relTrace_eq_zero`: `Br_P` kills `Tr_Q^P(a)` for `Q < P`.
 * `TauCeti.ker_brauerHom`: `ker Br_P = ∑_{Q < P} R[G]^P_Q`.
 
@@ -45,22 +47,31 @@ variable {R G : Type*} [CommSemiring R] [Group G]
 
 /-! ### Traces from proper subgroups lie in the kernel -/
 
-/-- **The Brauer projection kills traces from proper subgroups.** For a `p`-subgroup `P` in
-characteristic `p` and `Q < P`, `Br_P(Tr_Q^P(a)) = 0`, since `|P : Q|` is a positive power of
-`p`. -/
-theorem brauerProjection_relTrace_eq_zero {p : ℕ} [Fact p.Prime] [CharP R p] {Q P : Subgroup G}
-    [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hQP : Q < P) (a : conjInvariants R Q) :
+/-- **The Brauer projection kills traces from subgroups not containing `P`.** For a `p`-subgroup
+`P` in characteristic `p` and a subgroup `Q` not containing `P`, `Br_P(Tr_Q^P(a)) = 0`, where
+`Tr_Q^P` is the trace from `Q ∩ P`: `|P : Q ∩ P|` is a positive power of `p`. -/
+theorem brauerProjection_relTrace_eq_zero_of_not_le {p : ℕ} [Fact p.Prime] [CharP R p]
+    {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hPQ : ¬ P ≤ Q)
+    (a : conjInvariants R Q) :
     brauerProjection P (relTrace R Q P a : MonoidAlgebra R G) = 0 := by
   obtain ⟨n, hn⟩ := hP.index (Q.subgroupOf P)
   have hn0 : n ≠ 0 := by
     rintro rfl
     rw [pow_zero, Subgroup.index_eq_one, Subgroup.subgroupOf_eq_top] at hn
-    exact hQP.not_ge hn
+    exact hPQ hn
   have hp : ((Q.subgroupOf P).index : R) = 0 := by
     rw [hn, Nat.cast_pow, CharP.cast_eq_zero, zero_pow hn0]
   ext c
   rw [coeff_brauerProjection, coeff_relTrace_of_mem_centralizer a c.property, nsmul_eq_mul, hp,
     zero_mul, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+
+/-- **The Brauer projection kills traces from proper subgroups.** For a `p`-subgroup `P` in
+characteristic `p` and `Q < P`, `Br_P(Tr_Q^P(a)) = 0`, since `|P : Q|` is a positive power of
+`p`. -/
+theorem brauerProjection_relTrace_eq_zero {p : ℕ} [Fact p.Prime] [CharP R p] {Q P : Subgroup G}
+    [(Q.subgroupOf P).FiniteIndex] (hP : IsPGroup p P) (hQP : Q < P) (a : conjInvariants R Q) :
+    brauerProjection P (relTrace R Q P a : MonoidAlgebra R G) = 0 :=
+  brauerProjection_relTrace_eq_zero_of_not_le hP hQP.not_ge a
 
 /-! ### The kernel -/
 
