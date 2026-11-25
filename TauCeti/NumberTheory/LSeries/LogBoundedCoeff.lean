@@ -21,6 +21,7 @@ converges absolutely on `Re s > 1`. For `0 < ε ≤ 1` the coefficients are at m
 
 ## Main results
 
+* `TauCeti.LSeries.nonneg_of_norm_le_mul_log`: such a bound has `B ≥ 0`.
 * `TauCeti.LSeries.LSeriesSummable_of_norm_le_mul_log`: absolute convergence on `Re s > 1`.
 * `TauCeti.LSeries.norm_LSeries_le_of_norm_le_mul_log_of_lt`:
   `‖L(f, s)‖ ≤ (B / ε) (1 + 1 / (Re s - ε - 1))` for `0 < ε ≤ 1` and `1 + ε < Re s`.
@@ -36,7 +37,8 @@ namespace TauCeti.LSeries
 
 variable {f : ℕ → ℂ} {B : ℝ}
 
-private theorem nonneg_of_norm_le_mul_log (hf : ∀ n : ℕ, 1 ≤ n → ‖f n‖ ≤ B * Real.log (n + 1)) :
+/-- If `‖f n‖ ≤ B log (n + 1)` for `n ≥ 1`, then `B ≥ 0`: at `n = 1` the logarithm is positive. -/
+theorem nonneg_of_norm_le_mul_log (hf : ∀ n : ℕ, 1 ≤ n → ‖f n‖ ≤ B * Real.log (n + 1)) :
     0 ≤ B := by
   have h1 := hf 1 le_rfl
   norm_num at h1
