@@ -16,8 +16,10 @@ Two points `p` and `q` are near for a relation `r` (`TauCeti.IsNear r p q`) when
 interval between them, in either direction, is finite. For a linear order, nearness is the
 relation whose classes are the finite condensation classes: `IsNear (· ≤ ·) p q` says that
 `Set.uIcc p q` is finite (`TauCeti.isNear_le_iff`). Nearness is symmetric
-(`TauCeti.isNear_comm`), and a relation isomorphism preserves it (`TauCeti.isNear_map`,
-`TauCeti.setOf_isNear_map`).
+(`TauCeti.isNear_comm`, `TauCeti.IsNear.symm`), reflexive for an antisymmetric relation
+(`TauCeti.isNear_refl`), and transitive for a linear order (`TauCeti.IsNear.trans`), so it is an
+equivalence relation for a linear order (`TauCeti.isNear_equivalence`). A relation isomorphism
+preserves it (`TauCeti.isNear_map`, `TauCeti.setOf_isNear_map`).
 -/
 
 public section
@@ -43,10 +45,32 @@ theorem isNear_iff {r : α → α → Prop} {p q : α} :
 theorem isNear_comm {r : α → α → Prop} {p q : α} : IsNear r p q ↔ IsNear r q p := by
   simp only [isNear_iff, or_comm]
 
+/-- Nearness is symmetric. -/
+theorem IsNear.symm {r : α → α → Prop} {p q : α} (h : IsNear r p q) : IsNear r q p :=
+  isNear_comm.1 h
+
+/-- For an antisymmetric relation, every point is near itself: the only point between `p` and
+`p` is `p`. -/
+theorem isNear_refl (r : α → α → Prop) [Std.Antisymm r] (p : α) : IsNear r p p :=
+  (finite_singleton p).subset fun _ hz ↦ by
+    rcases hz with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> exact antisymm h₂ h₁
+
 /-- For a linear order, `p` and `q` are near exactly when the unordered closed interval
 `Set.uIcc p q` is finite. -/
 theorem isNear_le_iff [LinearOrder α] {p q : α} : IsNear (· ≤ ·) p q ↔ (uIcc p q).Finite := by
   simp only [isNear_iff, ← mem_uIcc, ofPred_mem_eq]
+
+/-- For a linear order, nearness is transitive, since `Set.uIcc p s` is covered by
+`Set.uIcc p q` and `Set.uIcc q s`. -/
+theorem IsNear.trans [LinearOrder α] {p q s : α} (h₁ : IsNear (· ≤ ·) p q)
+    (h₂ : IsNear (· ≤ ·) q s) : IsNear (· ≤ ·) p s := by
+  rw [isNear_le_iff] at *
+  exact (h₁.union h₂).subset uIcc_subset_uIcc_union_uIcc
+
+/-- For a linear order, nearness is an equivalence relation; its classes are the finite
+condensation classes. -/
+theorem isNear_equivalence [LinearOrder α] : Equivalence (IsNear (α := α) (· ≤ ·)) :=
+  ⟨isNear_refl _, IsNear.symm, IsNear.trans⟩
 
 /-- A relation isomorphism `r ≃r r'` preserves nearness. -/
 @[simp]
