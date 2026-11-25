@@ -325,8 +325,8 @@ theorem limitZeroCharge_eq_sum [l.NeBot] {κ : Type} [Fintype κ] {σ : C(𝔻, 
   have hN : IsOpen N := (isOpen_setOf_norm_lt ρ₀).inter
     (isOpen_iUnion fun i ↦ isOpen_ball.preimage Complex.UnitDisc.continuous_coe)
   have hsN (i : κ) (w : 𝔻) (hw : s i w ∈ N) : ‖(w : ℂ)‖ < t₀ i :=
-    (coe_subdisc_mem_ball_mul_iff w (t₀ i)).1 <| mem_ball_mul_of_mem_iUnion hr hdisj
-      (fun i ↦ (ht₀₁ i).le) (by
+    (coe_subdisc_mem_ball_mul_iff w (t₀ i)).1 <|
+      mem_ball_mul_of_mem_iUnion (fun i ↦ (hr i).le) hdisj (fun i ↦ (ht₀₁ i).le) (by
         obtain ⟨j, hj⟩ := mem_iUnion.1 hw.2
         exact mem_iUnion.2 ⟨j, hj⟩) (mem_range_subdisc.1 ⟨w, rfl⟩)
   have hσN (z : 𝔻) (hz : σ z ∈ Z) : z ∈ N := by

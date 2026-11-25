@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
 import Mathlib.Analysis.Normed.Module.RCLike.Real
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Round subdiscs of the open unit disc
@@ -221,13 +222,9 @@ theorem isCompact_subdisc_preimage_of_subset_iUnion {ι : Type*} {c : ι → ℂ
     (hK : IsCompact K) (hKc : ∀ z ∈ K, ∃ j, (z : ℂ) ∈ ball (c j) (r j)) (i : ι) :
     IsCompact (subdisc (c i) (r i) (hc i) (hr i) ⁻¹' K) := by
   refine isCompact_subdisc_preimage hK fun z hz hzc ↦ ?_
-  -- A point of the circle about `cᵢ` lies in the closure of `B(cᵢ, rᵢ)`, which misses `B(cⱼ, rⱼ)`.
   obtain ⟨j, hj⟩ := hKc z hz
-  have hzi : (z : ℂ) ∈ closure (ball (c i) (r i)) := by
-    rw [closure_ball _ (hr i).ne', mem_closedBall, dist_eq_norm, hzc]
   obtain rfl | hij := eq_or_ne i j
-  · rw [mem_ball, dist_eq_norm, hzc] at hj
-    exact lt_irrefl _ hj
-  · exact Set.disjoint_left.1 ((hdisj hij).closure_left isOpen_ball) hzi hj
+  · exact (mem_ball_iff_norm.1 hj).ne hzc
+  · exact norm_sub_ne_of_disjoint_ball (hr i).ne' (hdisj hij) hj hzc
 
 end TauCeti.Complex.UnitDisc
