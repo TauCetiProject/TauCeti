@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Contact.Coorientation
 public import TauCeti.Geometry.Contact.Symplectization.Trivialization
-public import TauCeti.Topology.VectorBundle.Orientation.PositiveSection
 public import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
 
 /-!
@@ -34,9 +33,10 @@ section in the annihilator line `ξ⁰ ⊂ T*M`
 
 Both statements rest on the topology of real line bundles: the complement of the zero section of a
 line bundle over a connected base is connected exactly when the bundle is not orientable
-(`TauCeti.connectedSpace_zeroSectionCompl_iff_isEmpty`), and the annihilator line of a contact
-structure is orientable exactly when the structure is the kernel of a global contact form
-(`TauCeti.IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_nonempty_orientation`).
+(`TauCeti.connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation`), and the
+annihilator line of a contact structure is orientable exactly when the structure is the kernel of a
+global contact form (`exists_isContactForm_kerDistribution_eq_iff_nonempty_vectorBundleOrientation`
+in `TauCeti.Geometry.Contact.Coorientation`).
 
 For example, the contact structure of the space of contact elements `ℝ² × ℝP¹` of the plane is not
 coorientable; its symplectization is identified with the nonzero covectors `T*ℝ² ∖ 0`, which form
@@ -44,9 +44,6 @@ a connected space.
 
 ## Main results
 
-* `TauCeti.IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_nonempty_orientation`:
-  a contact structure is the kernel of a global contact form exactly when its annihilator line is
-  orientable.
 * `TauCeti.IsContactDistribution.not_connectedSpace_annihilatorPunctured`: the symplectization of
   the kernel of a contact form is disconnected.
 * `TauCeti.IsContactDistribution.connectedSpace_annihilatorPunctured_iff`: the symplectization is
@@ -85,66 +82,6 @@ local instance : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le
 
 variable [Nonempty M] (hξ : IsContactDistribution I ∞ ξ)
 
-/-- If a contact structure `ξ` is the kernel of a contact form `α`, its annihilator line is
-orientable: `x ↦ α_x` is a continuous section of `ξ⁰` vanishing nowhere. -/
-theorem nonempty_vectorBundleOrientation_of_isContactForm {α : SmoothForm I M ℝ 1}
-    (hα : α.IsContactForm) (hαξ : α.kerDistribution = ξ) :
-    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
-    haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
-    Nonempty (VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x) (Fin 1)) :=
-  letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
-  haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
-  by
-  have hj := hξ.isContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion (n := ∞)
-    hξ.finrank_sub_one_add_one
-  -- The covector `α_x` vanishes on `ker α_x = ξ x`.
-  have hmem (x : M) : SmoothForm.degreeOneEquiv α x ∈ annihilatorSpace I ξ x := by
-    refine mem_annihilatorSpace_iff.2 fun v hv ↦ ?_
-    rw [← hαξ, SmoothForm.mem_kerDistribution] at hv
-    rw [SmoothForm.degreeOneEquiv_apply_apply_vec, hv]
-  let s (x : M) : annihilatorSpace I ξ x := ⟨_, hmem x⟩
-  -- Followed by the embedding `ξ⁰ → T*M`, the section `s` is the smooth section `x ↦ α_x`.
-  have hs : Continuous fun x ↦ TotalSpace.mk' (Fin 1 → ℝ) x (s x) := by
-    refine hj.isEmbedding.isInducing.continuous_iff.2 ?_
-    have hcomp :
-        annihilatorInclusion I ξ (Fin 1 → ℝ) ∘ (fun x ↦ TotalSpace.mk' (Fin 1 → ℝ) x (s x)) =
-          fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x) :=
-      funext fun x ↦ by simp [s]
-    rw [hcomp]
-    exact (SmoothForm.degreeOneEquiv α).contMDiff.continuous
-  -- A contact form vanishes nowhere.
-  have hs₀ (x : M) : s x ≠ 0 := fun h ↦ by
-    obtain ⟨v, hv⟩ := hα.exists_ne_zero x
-    have h' := congrArg (fun p : annihilatorSpace I ξ x ↦ (p : TangentSpace I x →L[ℝ] ℝ) v) h
-    simp only [s, ZeroMemClass.coe_zero, SmoothForm.degreeOneEquiv_apply_apply_vec] at h'
-    exact hv h'
-  exact ⟨VectorBundleOrientation.ofContinuousNonvanishingSection
-    (fun x ↦ (VectorBundle.continuousLinearEquivAt ℝ (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x)
-      x).toLinearEquiv.finrank_eq.trans (finrank_fin_fun ℝ)) hs hs₀⟩
-
-/-- **Coorientability is orientability of the annihilator line.** On a Hausdorff σ-compact
-manifold, a contact structure `ξ` is the kernel of a global contact form exactly when its
-annihilator line `ξ⁰`, the dual of the contact line `TM ⧸ ξ`, is orientable. -/
-theorem exists_isContactForm_kerDistribution_eq_iff_nonempty_orientation [T2Space M]
-    [SigmaCompactSpace M] :
-    letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
-    haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
-    (∃ α : SmoothForm I M ℝ 1, α.IsContactForm ∧ α.kerDistribution = ξ) ↔
-      Nonempty (VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x) (Fin 1)) :=
-  letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
-  haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
-  by
-  refine ⟨fun ⟨α, hα, hαξ⟩ ↦ hξ.nonempty_vectorBundleOrientation_of_isContactForm hα hαξ,
-    fun ⟨o⟩ ↦ ?_⟩
-  -- An orientation of `ξ⁰` gives a continuous nowhere-vanishing section of `ξ⁰`, hence of `T*M`.
-  have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
-  obtain ⟨s, hs, hs₀⟩ := o.exists_continuous_section_ne_zero (by simp)
-  refine hξ.exists_isContactForm_kerDistribution_eq_iff_exists_continuous.2
-    ⟨fun x ↦ s x, ?_, fun x ↦ ⟨fun h ↦ hs₀ x (Subtype.ext h), (s x).property⟩⟩
-  refine ((hξ.isContMDiffDistribution.contMDiff_annihilatorInclusion
-    hξ.finrank_sub_one_add_one).continuous.comp hs).congr fun x ↦ ?_
-  simp
-
 /-- **The symplectization of a non-coorientable contact structure is connected.** On a connected
 Hausdorff σ-compact manifold, the complement `ξ⁰ ∖ 0` of the zero section in the annihilator line
 of a contact structure `ξ` is connected exactly when `ξ` is not the kernel of any global contact
@@ -157,8 +94,9 @@ theorem connectedSpace_annihilatorPunctured_iff [ConnectedSpace M] [T2Space M]
   letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
   haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
   by
-  rw [hξ.exists_isContactForm_kerDistribution_eq_iff_nonempty_orientation, not_nonempty_iff,
-    ← connectedSpace_zeroSectionCompl_iff_isEmpty (finrank_fin_fun ℝ),
+  rw [hξ.exists_isContactForm_kerDistribution_eq_iff_nonempty_vectorBundleOrientation,
+    not_nonempty_iff,
+    ← connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation (finrank_fin_fun ℝ),
     ← coe_annihilatorPunctured]
   exact Iff.rfl
 
@@ -182,7 +120,8 @@ theorem not_connectedSpace_annihilatorPunctured {α : SmoothForm I M ℝ 1} (hα
   have h' : ConnectedSpace (zeroSectionCompl (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x) := by
     rw [← coe_annihilatorPunctured]
     exact h
-  exact ((connectedSpace_zeroSectionCompl_iff_isEmpty (finrank_fin_fun ℝ)).1 h').false o
+  exact ((connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation
+    (finrank_fin_fun ℝ)).1 h').false o
 
 /-- For a nowhere vanishing one-form `α` with kernel a contact structure `ξ`, the covectors
 `eᵗ α_x` of `ξ⁰ ∖ 0`, the image of `κ_α`, form a preconnected set when `M` is preconnected. -/

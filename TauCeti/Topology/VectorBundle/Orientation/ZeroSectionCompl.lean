@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.PathConnected
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Analysis.Convex.Orientation
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 public import TauCeti.Topology.VectorBundle.Trivialization
@@ -29,9 +30,9 @@ In particular `E₀` is connected exactly when the orientation cover is
 connected exactly when the bundle is not orientable
 (`TauCeti.VectorBundleOrientation.nonempty_iff_not_connectedSpace`), so the nonzero vectors of a
 line bundle over a connected base form a connected space exactly when the bundle admits no
-orientation (`TauCeti.connectedSpace_zeroSectionCompl_iff_isEmpty`). For the Möbius line bundle
-over the circle, `E₀` is a single open annulus; for the trivial line bundle `B × ℝ` over a
-connected base, it is `B × (ℝ ∖ 0)`, with two components.
+orientation (`TauCeti.connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation`). For
+the Möbius line bundle over the circle, `E₀` is a single open annulus; for the trivial line bundle
+`B × ℝ` over a connected base, it is `B × (ℝ ∖ 0)`, with two components.
 
 This is the topological input for the components of the symplectization of a contact structure,
 the complement of the zero section in its annihilator line.
@@ -44,8 +45,8 @@ the complement of the zero section in its annihilator line.
 * `TauCeti.isConnected_preimage_zeroSectionComplOrientation`: its fibres are connected.
 * `TauCeti.preimage_connectedComponent_zeroSectionComplOrientation`: the components of `E₀` are
   the preimages of the components of the orientation cover.
-* `TauCeti.connectedSpace_zeroSectionCompl_iff_isEmpty`: over a connected base, `E₀` is connected
-  exactly when the line bundle is not orientable.
+* `TauCeti.connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation`: over a connected
+  base, `E₀` is connected exactly when the line bundle is not orientable.
 
 ## References
 
@@ -73,8 +74,8 @@ cover. -/
 def zeroSectionComplOrientation (hF : finrank ℝ F = 1) (v : zeroSectionCompl F E) :
     VectorBundleOrientationCover F E (Fin 1) :=
   ⟨v.val.proj, (FiniteDimensional.basisSingleton (Fin 1)
-    ((VectorBundle.continuousLinearEquivAt ℝ F E v.val.proj).toLinearEquiv.finrank_eq.trans hF)
-    v.val.snd (mem_zeroSectionCompl.1 v.prop)).orientation⟩
+    ((VectorBundle.finrank_eq ℝ F E v.val.proj).trans hF) v.val.snd
+    (mem_zeroSectionCompl.1 v.prop)).orientation⟩
 
 variable (hF : finrank ℝ F = 1)
 
@@ -83,8 +84,8 @@ given by the one-vector basis `(v)`. -/
 theorem zeroSectionComplOrientation_apply (v : zeroSectionCompl F E) :
     zeroSectionComplOrientation hF v =
       ⟨v.val.proj, (FiniteDimensional.basisSingleton (Fin 1)
-        ((VectorBundle.continuousLinearEquivAt ℝ F E v.val.proj).toLinearEquiv.finrank_eq.trans hF)
-        v.val.snd (mem_zeroSectionCompl.1 v.prop)).orientation⟩ :=
+        ((VectorBundle.finrank_eq ℝ F E v.val.proj).trans hF) v.val.snd
+        (mem_zeroSectionCompl.1 v.prop)).orientation⟩ :=
   (rfl)
 
 /-- The orientation through a nonzero vector lies over the base point of that vector. -/
@@ -121,7 +122,7 @@ vector. -/
 theorem surjective_zeroSectionComplOrientation :
     Function.Surjective (zeroSectionComplOrientation (E := E) hF) := by
   rintro ⟨b, o⟩
-  have hb := (VectorBundle.continuousLinearEquivAt ℝ F E b).toLinearEquiv.finrank_eq.trans hF
+  have hb := (VectorBundle.finrank_eq ℝ F E b).trans hF
   have : FiniteDimensional ℝ (E b) := Module.finite_of_finrank_eq_succ hb
   let β := o.someBasis (by rw [hb, Fintype.card_fin])
   exact ⟨⟨⟨b, β default⟩, mem_zeroSectionCompl.2 (β.ne_zero default)⟩,
@@ -135,8 +136,7 @@ private theorem mapOrientation_orientation_basisSingleton (e : Trivialization F 
     [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) {w : E b} (hw : w ≠ 0) {f : F} (hf : f ≠ 0)
     (hwf : (e ⟨b, w⟩).snd = f) :
     e.mapOrientation (Fin 1) hb
-        (FiniteDimensional.basisSingleton (Fin 1)
-          ((VectorBundle.continuousLinearEquivAt ℝ F E b).toLinearEquiv.finrank_eq.trans hF) w
+        (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E b).trans hF) w
           hw).orientation =
       (FiniteDimensional.basisSingleton (Fin 1) hF f hf).orientation := by
   rw [Trivialization.mapOrientation_apply, ← Basis.orientation_map]
@@ -267,7 +267,7 @@ theorem connectedSpace_zeroSectionCompl_iff (hF : finrank ℝ F = 1) :
 /-- **The nonzero vectors of a non-orientable line bundle are connected.** Over a connected base,
 the complement of the zero section of a real line bundle is connected exactly when the bundle
 admits no orientation. -/
-theorem connectedSpace_zeroSectionCompl_iff_isEmpty [ConnectedSpace B]
+theorem connectedSpace_zeroSectionCompl_iff_isEmpty_vectorBundleOrientation [ConnectedSpace B]
     (hF : finrank ℝ F = 1) :
     ConnectedSpace (zeroSectionCompl F E) ↔ IsEmpty (VectorBundleOrientation F E (Fin 1)) := by
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF

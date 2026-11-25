@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Manifold.Distribution.Coorientation
+public import TauCeti.Topology.VectorBundle.Orientation.PositiveSection
+import Mathlib.Topology.VectorBundle.FiniteDimensional
+import TauCeti.Topology.VectorBundle.Orientation.Cover
 
 /-!
 # Coorientable contact structures and global contact forms
@@ -34,6 +37,9 @@ which vanishes nowhere is a contact form
 * `TauCeti.IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_exists_trivialization`:
   a contact structure is the kernel of a global contact form exactly when its annihilator line
   bundle is smoothly trivial.
+* `exists_isContactForm_kerDistribution_eq_iff_nonempty_vectorBundleOrientation`, in the namespace
+  `TauCeti.IsContactDistribution`: a contact structure is the kernel of a global contact form
+  exactly when its annihilator line bundle is orientable.
 
 ## References
 
@@ -56,6 +62,48 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {σ : Π x : M, TangentSpace I x →L[ℝ] ℝ}
 
 namespace IsContactDistribution
+
+/-- If a contact structure `D` is the kernel of a contact form `α`, its annihilator line is
+orientable: `x ↦ α_x` is a continuous section of `D⁰` vanishing nowhere. -/
+theorem nonempty_vectorBundleOrientation_of_isContactForm [Nonempty M]
+    (hD : IsContactDistribution I ∞ D) {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm)
+    (hαD : α.kerDistribution = D) :
+    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+    letI := hD.isContMDiffDistribution.annihilatorFiberBundle hD.finrank_sub_one_add_one
+    haveI := hD.isContMDiffDistribution.annihilatorVectorBundle hD.finrank_sub_one_add_one
+    Nonempty (VectorBundleOrientation (Fin 1 → ℝ)
+      (fun x ↦ CotangentBundle.annihilatorSpace I D x) (Fin 1)) :=
+  haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  letI := hD.isContMDiffDistribution.annihilatorFiberBundle hD.finrank_sub_one_add_one
+  haveI := hD.isContMDiffDistribution.annihilatorVectorBundle hD.finrank_sub_one_add_one
+  by
+  have hj := hD.isContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion (n := ∞)
+    hD.finrank_sub_one_add_one
+  -- The covector `α_x` vanishes on `ker α_x = D x`.
+  have hmem (x : M) : SmoothForm.degreeOneEquiv α x ∈ CotangentBundle.annihilatorSpace I D x := by
+    refine CotangentBundle.mem_annihilatorSpace_iff.2 fun v hv ↦ ?_
+    rw [← hαD, SmoothForm.mem_kerDistribution] at hv
+    rw [SmoothForm.degreeOneEquiv_apply_apply_vec, hv]
+  let s (x : M) : CotangentBundle.annihilatorSpace I D x := ⟨_, hmem x⟩
+  -- Followed by the embedding `D⁰ → T*M`, the section `s` is the smooth section `x ↦ α_x`.
+  have hs : Continuous fun x ↦ TotalSpace.mk' (Fin 1 → ℝ) x (s x) := by
+    refine hj.isEmbedding.isInducing.continuous_iff.2 ?_
+    have hcomp : CotangentBundle.annihilatorInclusion I D (Fin 1 → ℝ) ∘
+        (fun x ↦ TotalSpace.mk' (Fin 1 → ℝ) x (s x)) =
+          fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x) :=
+      funext fun x ↦ by simp [s]
+    rw [hcomp]
+    exact (SmoothForm.degreeOneEquiv α).contMDiff.continuous
+  -- A contact form vanishes nowhere.
+  have hs₀ (x : M) : s x ≠ 0 := fun h ↦ by
+    obtain ⟨v, hv⟩ := hα.exists_ne_zero x
+    have h' := congrArg
+      (fun p : CotangentBundle.annihilatorSpace I D x ↦ (p : TangentSpace I x →L[ℝ] ℝ) v) h
+    simp only [s, ZeroMemClass.coe_zero, SmoothForm.degreeOneEquiv_apply_apply_vec] at h'
+    exact hv h'
+  exact ⟨VectorBundleOrientation.ofContinuousNonvanishingSection
+    (fun x ↦ (VectorBundle.finrank_eq ℝ (Fin 1 → ℝ)
+      (fun x ↦ CotangentBundle.annihilatorSpace I D x) x).trans (Module.finrank_fin_fun ℝ)) hs hs₀⟩
 
 variable [T2Space M] [SigmaCompactSpace M]
 
@@ -118,6 +166,32 @@ theorem exists_isContactForm_kerDistribution_eq_iff_exists_trivialization [Nonem
   simp only [hD.isContactForm_and_kerDistribution_eq_iff]
   exact hD.isContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization
     hD.finrank_sub_one_add_one
+
+/-- **Coorientability is orientability of the annihilator line.** On a Hausdorff σ-compact
+manifold, a contact structure `D` is the kernel of a global contact form exactly when its
+annihilator line `D⁰`, the dual of the contact line `TM ⧸ D`, is orientable. -/
+theorem exists_isContactForm_kerDistribution_eq_iff_nonempty_vectorBundleOrientation [Nonempty M]
+    (hD : IsContactDistribution I ∞ D) :
+    haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+    letI := hD.isContMDiffDistribution.annihilatorFiberBundle hD.finrank_sub_one_add_one
+    haveI := hD.isContMDiffDistribution.annihilatorVectorBundle hD.finrank_sub_one_add_one
+    (∃ α : SmoothForm I M ℝ 1, α.IsContactForm ∧ α.kerDistribution = D) ↔
+      Nonempty (VectorBundleOrientation (Fin 1 → ℝ)
+        (fun x ↦ CotangentBundle.annihilatorSpace I D x) (Fin 1)) :=
+  haveI : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  letI := hD.isContMDiffDistribution.annihilatorFiberBundle hD.finrank_sub_one_add_one
+  haveI := hD.isContMDiffDistribution.annihilatorVectorBundle hD.finrank_sub_one_add_one
+  by
+  refine ⟨fun ⟨α, hα, hαD⟩ ↦ hD.nonempty_vectorBundleOrientation_of_isContactForm hα hαD,
+    fun ⟨o⟩ ↦ ?_⟩
+  -- An orientation of `D⁰` gives a continuous nowhere-vanishing section of `D⁰`, hence of `T*M`.
+  have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
+  obtain ⟨s, hs, hs₀⟩ := o.exists_continuous_section_ne_zero (by simp)
+  refine hD.exists_isContactForm_kerDistribution_eq_iff_exists_continuous.2
+    ⟨fun x ↦ s x, ?_, fun x ↦ ⟨fun h ↦ hs₀ x (Subtype.ext h), (s x).property⟩⟩
+  refine ((hD.isContMDiffDistribution.contMDiff_annihilatorInclusion
+    hD.finrank_sub_one_add_one).continuous.comp hs).congr fun x ↦ ?_
+  simp
 
 end IsContactDistribution
 
