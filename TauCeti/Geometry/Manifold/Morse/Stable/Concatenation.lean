@@ -33,7 +33,7 @@ point and the levels are regular values. Then:
   it (`TauCeti.concatLevelRecords_self_left`, `TauCeti.concatLevelRecords_self_right`);
 * it sends broken trajectories from `p` to `q` and from `q` to `r` to a broken trajectory from `p`
   to `r` (`TauCeti.IsAdaptedPseudoGradient.concatLevelRecords_mem`), through the two chains of
-  critical points put end to end;
+  critical points put end to end (`TauCeti.IsAdaptedPseudoGradient.chain_concatLevelRecords`);
 * every broken trajectory from `p` to `r ≠ p` is either unbroken or the concatenation at its first
   breaking point `q` of an unbroken trajectory from `p` to `q` and a broken trajectory from `q` to
   `r` (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords_eq_union`);
@@ -43,10 +43,10 @@ point and the levels are regular values. Then:
 So when `c` has a level between any two critical values, the broken trajectories from `p` to
 `r ≠ p` that are not unbroken are exactly the union, over the critical points `q ≠ p, r`, of the
 images of the concatenation maps `𝓜(p, q) × 𝓜(q, r) → 𝓜(p, r)`. Bundled as continuous maps
-between the spaces of broken trajectories
-(`TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat`), these are the maps from which the
-composition maps of the compactified trajectory spaces of Barraud and Cornea are built, on which
-twisting chain systems (`TauCeti.TwistingChainSystem`) live.
+between the spaces of broken trajectories (`TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat`),
+associative as well (`TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat_assoc`), these are the
+maps from which the composition maps of the compactified trajectory spaces of Barraud and Cornea
+are built, on which twisting chain systems (`TauCeti.TwistingChainSystem`) live.
 
 ## Main definitions
 
@@ -60,6 +60,8 @@ twisting chain systems (`TauCeti.TwistingChainSystem`) live.
 * `TauCeti.concatLevelRecords_assoc`: concatenation is associative.
 * `TauCeti.IsAdaptedPseudoGradient.concatLevelRecords_mem`: the concatenation of broken
   trajectories is a broken trajectory.
+* `TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat_assoc`: concatenation of broken trajectories
+  is associative.
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords_eq_union`: a broken trajectory is
   unbroken or a concatenation at its first breaking point.
 * `TauCeti.IsAdaptedPseudoGradient.concatLevelRecords_notMem_morseTrajectoryRecords`: if `q ≠ r`
@@ -149,6 +151,7 @@ theorem concatLevelRecords_assoc {s : M} (hs : ∀ i, c i ≠ f s) (hsq : f s �
   split_ifs <;> first | rfl | (exfalso; grind)
 
 /-- Concatenation of records is continuous. -/
+@[fun_prop]
 theorem continuous_concatLevelRecords [TopologicalSpace M] :
     Continuous fun w : (c ⁻¹' Ioo (f q) (f p) → M) × (c ⁻¹' Ioo (f r) (f q) → M) ↦
       concatLevelRecords c hq w.1 w.2 :=
@@ -190,6 +193,48 @@ theorem exists_flow_append_eq_concatLevelRecords {k₁ k₂ : ℕ} {z₁ : Fin k
     (fun i ↦ (h₁ i).elim fun j h ↦ ⟨Fin.castAdd k₂ j, by rwa [Fin.append_left]⟩)
     (fun i ↦ (h₂ i).elim fun j h ↦ ⟨Fin.natAdd k₁ j, by rwa [Fin.append_right]⟩) i
 
+variable {hX} in
+/-- **The glued chain of two broken trajectories records their concatenation.** If `w₁` is
+recorded along the chain `x₁` of critical points from `p` to `q`, joined by the orbits of the
+points `z₁ j`, and `w₂` along the chain `x₂` from `q` to `r`, joined by the orbits of the points
+`z₂ j`, then the concatenation of `w₁` and `w₂` is recorded along the chain
+`Fin.append (Fin.init x₁) x₂` from `p` to `r`, joined by the orbits of the points
+`Fin.append z₁ z₂`. -/
+theorem chain_concatLevelRecords {k₁ : ℕ} {x₁ : Fin (k₁ + 1) → M} {z₁ : Fin k₁ → M}
+    (hx0₁ : x₁ 0 = p) (hxk₁ : x₁ (Fin.last k₁) = q)
+    (hxc₁ : ∀ j, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (x₁ j) = 0)
+    (hxne₁ : ∀ j : Fin k₁, x₁ j.castSucc ≠ x₁ j.succ)
+    (hz₁ : ∀ j : Fin k₁, z₁ j ∈ hX.flow.unstableSet (x₁ j.castSucc) ∩ hX.flow.stableSet (x₁ j.succ))
+    (hw₁ : ∀ i, f (w₁ i) = c i ∧ ∃ j t, hX.flow t (z₁ j) = w₁ i)
+    {k₂ : ℕ} {x₂ : Fin (k₂ + 1) → M} {z₂ : Fin k₂ → M} (hx0₂ : x₂ 0 = q)
+    (hxk₂ : x₂ (Fin.last k₂) = r) (hxc₂ : ∀ j, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (x₂ j) = 0)
+    (hxne₂ : ∀ j : Fin k₂, x₂ j.castSucc ≠ x₂ j.succ)
+    (hz₂ : ∀ j : Fin k₂, z₂ j ∈ hX.flow.unstableSet (x₂ j.castSucc) ∩ hX.flow.stableSet (x₂ j.succ))
+    (hw₂ : ∀ i, f (w₂ i) = c i ∧ ∃ j t, hX.flow t (z₂ j) = w₂ i) :
+    Fin.append (Fin.init x₁) x₂ (0 : Fin (k₁ + k₂ + 1)) = p ∧
+      Fin.append (Fin.init x₁) x₂ (Fin.last (k₁ + k₂)) = r ∧
+      (∀ j : Fin (k₁ + k₂ + 1), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (Fin.append (Fin.init x₁) x₂ j) = 0) ∧
+      (∀ j : Fin (k₁ + k₂),
+        Fin.append (Fin.init x₁) x₂ j.castSucc ≠ Fin.append (Fin.init x₁) x₂ j.succ) ∧
+      (∀ j : Fin (k₁ + k₂), Fin.append z₁ z₂ j ∈
+        hX.flow.unstableSet (Fin.append (Fin.init x₁) x₂ j.castSucc) ∩
+          hX.flow.stableSet (Fin.append (Fin.init x₁) x₂ j.succ)) ∧
+      ∀ i, f (concatLevelRecords c hq w₁ w₂ i) = c i ∧
+        ∃ j t, hX.flow t (Fin.append z₁ z₂ j) = concatLevelRecords c hq w₁ w₂ i := by
+  -- The broken trajectory runs through the first one up to `q`, and then through the second one.
+  have h₁₂ : x₁ (Fin.last k₁) = x₂ 0 := hxk₁.trans hx0₂.symm
+  refine ⟨(Fin.append_init_zero h₁₂).trans hx0₁, Fin.append_init_last.trans hxk₂, fun l ↦ ?_,
+    Fin.forall_append_init_castSucc_succ (z₁ := z₁) (z₂ := z₂) (P := fun a b _ ↦ a ≠ b) h₁₂
+      hxne₁ hxne₂,
+    Fin.forall_append_init_castSucc_succ
+      (P := fun a b y ↦ y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) h₁₂ hz₁ hz₂,
+    fun i ↦ ⟨concatLevelRecords_induction (P := fun i m ↦ f m = c i) hq w₁ w₂
+      (fun i ↦ (hw₁ i).1) (fun i ↦ (hw₂ i).1) i,
+      exists_flow_append_eq_concatLevelRecords hq (fun i ↦ (hw₁ i).2) (fun i ↦ (hw₂ i).2) i⟩⟩
+  rcases Fin.append_init_eq_or_eq l with ⟨l₁, h⟩ | ⟨l₂, h⟩
+  · exact h ▸ hxc₁ l₁
+  · exact h ▸ hxc₂ l₂
+
 variable (hw₁ : w₁ ∈ hX.morseBrokenTrajectoryRecords p q ((c ⁻¹' Ioo (f q) (f p)).domRestrict c))
   (hw₂ : w₂ ∈ hX.morseBrokenTrajectoryRecords q r ((c ⁻¹' Ioo (f r) (f q)).domRestrict c))
 include hw₁ hw₂
@@ -203,21 +248,8 @@ theorem concatLevelRecords_mem :
     hX.mem_morseBrokenTrajectoryRecords.1 hw₁
   obtain ⟨k₂, x₂, z₂, hx0₂, hxk₂, hxc₂, hxne₂, hz₂, hrec₂⟩ :=
     hX.mem_morseBrokenTrajectoryRecords.1 hw₂
-  -- The broken trajectory runs through the first one up to `q`, and then through the second one.
-  have h₁₂ : x₁ (Fin.last k₁) = x₂ 0 := hxk₁.trans hx0₂.symm
-  refine hX.mem_morseBrokenTrajectoryRecords.2 ⟨k₁ + k₂, (Fin.append (Fin.init x₁) x₂ :),
-    Fin.append z₁ z₂, (Fin.append_init_zero h₁₂).trans hx0₁, Fin.append_init_last.trans hxk₂,
-    fun l ↦ ?_,
-    Fin.forall_append_init_castSucc_succ (z₁ := z₁) (z₂ := z₂) (P := fun a b _ ↦ a ≠ b) h₁₂
-      hxne₁ hxne₂,
-    Fin.forall_append_init_castSucc_succ
-      (P := fun a b y ↦ y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) h₁₂ hz₁ hz₂,
-    fun i ↦ ⟨concatLevelRecords_induction (P := fun i m ↦ f m = c i) hq w₁ w₂
-      (fun i ↦ (hrec₁ i).1) (fun i ↦ (hrec₂ i).1) i,
-      exists_flow_append_eq_concatLevelRecords hq (fun i ↦ (hrec₁ i).2) (fun i ↦ (hrec₂ i).2) i⟩⟩
-  rcases Fin.append_init_eq_or_eq l with ⟨l₁, h⟩ | ⟨l₂, h⟩
-  · exact h ▸ hxc₁ l₁
-  · exact h ▸ hxc₂ l₂
+  exact hX.mem_morseBrokenTrajectoryRecords.2 ⟨k₁ + k₂, (Fin.append (Fin.init x₁) x₂ :), _,
+    chain_concatLevelRecords hq hx0₁ hxk₁ hxc₁ hxne₁ hz₁ hrec₁ hx0₂ hxk₂ hxc₂ hxne₂ hz₂ hrec₂⟩
 
 /-- **Concatenations are not unbroken.** If `q ≠ r` and some level of `c` lies strictly between
 `f q` and `f p`, the concatenation at `q` of records of broken trajectories from `p` to `q` and
@@ -258,6 +290,17 @@ theorem coe_morseRecordsConcat (hq : ∀ i, c i ≠ f q)
       hX.morseBrokenTrajectoryRecords q r ((c ⁻¹' Ioo (f r) (f q)).domRestrict c)) :
     (hX.morseRecordsConcat hq w : _ → M) = concatLevelRecords c hq w.1.val w.2.val :=
   (rfl)
+
+/-- **Concatenation of broken trajectories is associative.** If no level of `c` is the level of
+`q` or of `s`, concatenating at `q` and then at `s` is concatenating at `s` and then at `q`. -/
+theorem morseRecordsConcat_assoc {s : M} (hq : ∀ i, c i ≠ f q) (hs : ∀ i, c i ≠ f s)
+    (a : hX.morseBrokenTrajectoryRecords p q ((c ⁻¹' Ioo (f q) (f p)).domRestrict c))
+    (b : hX.morseBrokenTrajectoryRecords q s ((c ⁻¹' Ioo (f s) (f q)).domRestrict c))
+    (d : hX.morseBrokenTrajectoryRecords s r ((c ⁻¹' Ioo (f r) (f s)).domRestrict c)) :
+    hX.morseRecordsConcat hs (hX.morseRecordsConcat hq (a, b), d) =
+      hX.morseRecordsConcat hq (a, hX.morseRecordsConcat hs (b, d)) :=
+  Subtype.ext <| concatLevelRecords_assoc hq hs
+    (hX.value_le_of_mem_morseBrokenTrajectoryRecords b.property) _ _ _
 
 end ConcatMap
 

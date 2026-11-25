@@ -744,24 +744,11 @@ private theorem exists_chain_concatLevelRecords {k₁ : ℕ} {x₁ : Fin (k₁ +
         ∃ j t, hX.flow t (z j) = concatLevelRecords c hq w₁ w₂ i) ∧
       (∀ m, hX.OnChain x₁ z₁ m → hX.OnChain x z m) ∧
       (∀ m, hX.OnChain x₂ z₂ m → hX.OnChain x z m) := by
-  -- The broken trajectory runs through the first one up to `q`, and then through the second one.
-  have h₁₂ : x₁ (Fin.last k₁) = x₂ 0 := hxk₁.trans hx0₂.symm
-  refine ⟨(Fin.append (Fin.init x₁) x₂ :), Fin.append z₁ z₂,
-    (Fin.append_init_zero h₁₂).trans hx0₁, Fin.append_init_last.trans hxk₂,
-    fun l ↦ ?_,
-    Fin.forall_append_init_castSucc_succ (z₁ := z₁) (z₂ := z₂) (P := fun a b _ ↦ a ≠ b) h₁₂
-      hxne₁ hxne₂,
-    Fin.forall_append_init_castSucc_succ
-      (P := fun a b y ↦ y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) h₁₂ hz₁ hz₂,
-    fun i ↦ ⟨concatLevelRecords_induction (P := fun i m ↦ f m = c i) hq w₁ w₂
-      (fun i ↦ (hw₁ i).1) (fun i ↦ (hw₂ i).1) i,
-      exists_flow_append_eq_concatLevelRecords hq (fun i ↦ (hw₁ i).2) (fun i ↦ (hw₂ i).2) i⟩,
-    ?_, ?_⟩
-  · rcases Fin.append_init_eq_or_eq l with ⟨l₁, h⟩ | ⟨l₂, h⟩
-    · exact h ▸ hxc₁ l₁
-    · exact h ▸ hxc₂ l₂
+  obtain ⟨hx0, hxk, hxc, hxne, hz, hrec⟩ := chain_concatLevelRecords hq hx0₁ hxk₁ hxc₁ hxne₁ hz₁ hw₁
+    hx0₂ hxk₂ hxc₂ hxne₂ hz₂ hw₂
+  refine ⟨(Fin.append (Fin.init x₁) x₂ :), Fin.append z₁ z₂, hx0, hxk, hxc, hxne, hz, hrec, ?_, ?_⟩
   · rintro m (⟨l₁, rfl⟩ | ⟨j₁, t, rfl⟩)
-    · exact Or.inl ⟨_, Fin.append_init_castLE h₁₂ l₁⟩
+    · exact Or.inl ⟨_, Fin.append_init_castLE (hxk₁.trans hx0₂.symm) l₁⟩
     · exact Or.inr ⟨Fin.castAdd k₂ j₁, t, by rw [Fin.append_left]⟩
   · rintro m (⟨l₂, rfl⟩ | ⟨j₂, t, rfl⟩)
     · exact Or.inl ⟨Fin.natAdd k₁ l₂, Fin.append_right _ _ l₂⟩
