@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
-public import TauCeti.Topology.VectorBundle.Thom.CoverChainMap
 public import TauCeti.Topology.VectorBundle.Thom.EquivariantCap
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap
 
 /-!
 # Lifted orientation-twisted cocycles and the equivariant Thom quasi-isomorphism
@@ -41,8 +41,9 @@ representation (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`), whic
 which `2` is invertible the twisted Thom isomorphism is proved by a transfer instead
 (`thomPairSingularHomologyEquivTwistedHomology`); the argument here needs no such hypothesis.
 
-The lifted cocycles are those of `TauCeti.Topology.VectorBundle.Thom.CoverChainMap`, whose index
-type of orientations lies in `Type`, so the base, the fibres and the ring live in `Type` here.
+The lifted cocycles are those of `TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap`,
+whose index type of orientations lies in `Type`, so the base, the fibres and the ring live in `Type`
+here.
 
 ## Main results
 
@@ -50,6 +51,8 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
 
 * `isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap`: lifted cocycles are semi-invariant
   for the sign character of `ℤˣ`.
+* `isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap`: if the lifted class of a twisted
+  cocycle is a Thom class, so is the class of its lift, read in the cochains of `(E', E'₀)`.
 * `quasiIso_singularChainsRepCap_cyclesMap_thomPairSignCochainMap`: the equivariant cap product
   with the lift of a twisted cocycle whose lifted class is a Thom class is a quasi-isomorphism.
 
@@ -95,15 +98,6 @@ local instance : MulAction ℤˣ
 -- `TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient`.
 attribute [local instance] thomPairFstMulAction thomPairSndMulAction
 
-omit [Fintype ι] in
-/-- The unit `-1` acts on the total space of the pulled-back bundle by the lift of the deck
-involution. -/
-theorem neg_one_smul_eq_deckThomPairMap_fst_apply
-    (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
-    (-1 : ℤˣ) • v = TopPair.Hom.fst (deckThomPairMap F E ι) v :=
-  Pullback.totalSpace_ext ((neg_one_smul_eq_deck v.proj).trans (deckThomPairMap_fst_proj v).symm)
-    ((lift_smul _ v).trans (lift_deckThomPairMap_fst v).symm)
-
 /-- The continuity `thomPairFstMulAction_continuousConstSMul` of the action of `ℤˣ` on the total
 space of the Thom pair of the bundle pulled back to the orientation cover. -/
 local instance : ContinuousConstSMul ℤˣ
@@ -115,16 +109,6 @@ vectors of the Thom pair of the bundle pulled back to the orientation cover. -/
 local instance : ContinuousConstSMul ℤˣ
     (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd :=
   thomPairSndMulAction_continuousConstSMul
-
-omit [Fintype ι] in
-/-- The unit `-1` acts on the total space of the pulled-back bundle by the lift of the deck
-involution, as a morphism of topological spaces. -/
-theorem neg_one_smul_eq_deckThomPairMap_fst :
-    TopCat.ofHom ⟨((-1 : ℤˣ) • · : (thomPair F
-        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst → _),
-      continuous_const_smul _⟩ =
-      TopPair.Hom.fst (deckThomPairMap F E ι) :=
-  TopCat.ext neg_one_smul_eq_deckThomPairMap_fst_apply
 
 /-- **Lifted cocycles are semi-invariant for the sign character.** A relative cocycle `φ` of
 `(E, E₀)` with coefficients in the orientation system lifts to a cocycle of the Thom pair
@@ -165,6 +149,26 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
     -- As in the case `1`, the two sides differ only in the instances of the composites.
     rfl
 
+/-- If the lifted class `thomPairSignCohomologyMap [φ]` of a relative cocycle `φ` of `(E, E₀)` with
+coefficients in the orientation system is a Thom class of the bundle `E'` pulled back to the
+orientation cover, then so is the class of the lifted cocycle, read in the cochains of the Thom
+pair `(E', E'₀)`. -/
+theorem isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap
+    {φ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) R
+      (ModuleCat.of R R)).cycles (finrank ℝ F)}
+    (hφ : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι R R (ModuleCat.of R R) (finrank ℝ F)
+        (((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) R
+          (ModuleCat.of R R)).homologyπ (finrank ℝ F) φ))) :
+    IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      ((TopPair.singularCochainComplex
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+        (ModuleCat.of R R) R (ModuleCat.of R R)).homologyπ (finrank ℝ F)
+          (HomologicalComplex.cyclesMap (thomPairSignCochainMap F E hι R R (ModuleCat.of R R))
+            (finrank ℝ F) φ)) := by
+  rwa [← ConcreteCategory.comp_apply, thomPairSignCohomologyMap_def,
+    HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply] at hφ
+
 /-- **The equivariant Thom quasi-isomorphism of the orientation cover.** Let `φ` be a relative
 cocycle of `(E, E₀)` of degree `r` with coefficients in the orientation system, whose lifted class
 `thomPairSignCohomologyMap [φ]` is a Thom class of the bundle `E'` pulled back to the orientation
@@ -180,15 +184,11 @@ theorem quasiIso_singularChainsRepCap_cyclesMap_thomPairSignCochainMap
           (ModuleCat.of R R)).homologyπ (finrank ℝ F) φ))) :
     QuasiIso (TopPair.singularChainsRepCap
       (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-      (G := ℤˣ) (p₀ := thomPairProj F _) (fun u v ↦
-        (thomPairProj_apply F _ (u • v)).trans <| (proj_smul_totalSpace u v).trans <|
-          congrArg (u • ·) (thomPairProj_apply F _ v).symm)
+      (G := ℤˣ) (p₀ := thomPairProj F _) thomPairProj_smul
       (Units.map (Int.castRingHom R : ℤ →* R))
-      (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι R φ) (fun _ _ ↦ rfl)) := by
-  refine quasiIso_singularChainsRepCap_thomPair _ _ _ _ ?_
-  -- The class of the lifted cocycle is the lift of the class of `φ`.
-  rwa [← ConcreteCategory.comp_apply, thomPairSignCohomologyMap_def,
-    HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply] at hφ
+      (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι R φ) (fun _ _ ↦ rfl)) :=
+  quasiIso_singularChainsRepCap_thomPair _ _ _ _
+    (isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι R hφ)
 
 end SemiInvariant
 
