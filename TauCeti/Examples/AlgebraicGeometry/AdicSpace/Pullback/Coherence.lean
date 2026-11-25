@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglyNoetherian
 public import TauCeti.RingTheory.Huber.Padic.Field
+public import TauCeti.RingTheory.Huber.Pair.PowerBounded
 public import TauCeti.RingTheory.Huber.Restricted.Noetherian
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Complete
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
@@ -61,25 +62,17 @@ noncomputable abbrev S : Pair ℚ_[2] := Pair.powerBounded ℚ_[2]
 /-- The Huber pair `(ℚ₂⟨X⟩, ℤ₂⟨X⟩)` of the disc `Spa D`. -/
 noncomputable abbrev T : Pair D := Pair.powerBounded D
 
-/-- A continuous ring map `φ : A → B` out of a Tate ring preserves power-boundedness, so it is a
-morphism `(A, A°) → (B, B°)` of the Huber pairs of power-bounded elements. -/
-private noncomputable def powerBoundedHom {A B : Type} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] [IsTateRing A] [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
-    [IsHuberRing B] (φ : A →+* B) (hφ : Continuous φ) :
-    (Pair.powerBounded A).Hom (Pair.powerBounded B) where
-  toRingHom := φ
-  continuous_toRingHom := hφ
-  map_mem_plus _ ha := by
-    rw [Pair.powerBounded_plus] at ha ⊢
-    exact mem_powerBoundedSubring.mpr <| (mem_powerBoundedSubring.mp ha).map_of_isTateRing
-      hφ.continuousAt
-
 /-- The structure morphism `(ℚ₂, ℤ₂) → (ℚ₂⟨X⟩, ℤ₂⟨X⟩)`. -/
 noncomputable def f : S.Hom T :=
-  powerBoundedHom (algebraMap ℚ_[2] D)
+  Pair.powerBoundedHom (algebraMap ℚ_[2] D)
     (continuous_algebraMap_restrictedMvPowerSeriesCompletion 1 ℚ_[2])
 
-private theorem f_toRingHom : f.toRingHom = algebraMap ℚ_[2] D := rfl
+private theorem f_toRingHom : f.toRingHom = algebraMap ℚ_[2] D :=
+  Pair.Hom.toRingHom_powerBoundedHom _ _
+
+/-- `ℚ₂ → ℚ₂⟨X⟩` carries `ℤ₂` into `ℤ₂⟨X⟩`. -/
+private theorem algebraMap_mem_plus_T : ∀ a ∈ S.plus, algebraMap ℚ_[2] D a ∈ T.plus :=
+  f_toRingHom ▸ f.map_mem_plus
 
 /-- `(ℚ₂, ℤ₂)` is sheafy. -/
 theorem isSheafyForEveryPresentation_S : IsSheafyForEveryPresentation S.plus :=
@@ -156,11 +149,11 @@ private noncomputable def evalAt {a : ℚ_[2]} (ha : IsPowerBounded a) :
 /-- The evaluation `X ↦ a` at a power-bounded `a ∈ ℚ₂`, a morphism `(ℚ₂⟨X⟩, ℤ₂⟨X⟩) → (ℚ₂, ℤ₂)`:
 the ring map of `evalAt`, which also preserves the plus ring `ℤ₂⟨X⟩` of `T`. -/
 private noncomputable def ev {a : ℚ_[2]} (ha : IsPowerBounded a) : T.Hom S :=
-  powerBoundedHom (evalAt ha).toRingHom (evalAt ha).continuous_toRingHom
+  Pair.powerBoundedHom (evalAt ha).toRingHom (evalAt ha).continuous_toRingHom
 
 private theorem ev_toRingHom {a : ℚ_[2]} (ha : IsPowerBounded a) :
     (ev ha).toRingHom = (evalAt ha).toRingHom :=
-  rfl
+  Pair.Hom.toRingHom_powerBoundedHom _ _
 
 private theorem ev_polydiscVar {a : ℚ_[2]} (ha : IsPowerBounded a) :
     (ev ha).toRingHom (Pair.polydiscVar 1 ℚ_[2] 0) = a := by
@@ -229,18 +222,16 @@ theorem exists_symmetry_moves_point :
   obtain ⟨z, hz₁, hz₂⟩ := exists_ofPair_completedTensor_point isSheafyForEveryPresentation_S
     isSheafyForEveryPresentation_T isSheafyForEveryPresentation_T
     isSheafyForEveryPresentation_completedTensor f f f_toRingHom f_toRingHom y₀ y₁ hy₀₁
-  rw [← pr₁.eq_1] at hz₁
-  rw [← pr₂.eq_1] at hz₂
+  replace hz₁ : pr₁.hom.base z = y₀ := by rw [pr₁]; exact hz₁
+  replace hz₂ : pr₂.hom.base z = y₁ := by rw [pr₂]; exact hz₂
   have hσ₁ : pr₁.hom.base (σ.hom.base z) = y₁ := by
-    rw [← hz₂, ← σ_comp_pr₁, ObjectProperty.FullSubcategory.comp_hom, comp_base, TopCat.comp_app]
+    rw [← comp_base_apply, ← ObjectProperty.FullSubcategory.comp_hom, σ_comp_pr₁, hz₂]
   have hσ₂ : pr₂.hom.base (σ.hom.base z) = y₀ := by
-    rw [← hz₁, ← σ_comp_pr₂, ObjectProperty.FullSubcategory.comp_hom, comp_base, TopCat.comp_app]
+    rw [← comp_base_apply, ← ObjectProperty.FullSubcategory.comp_hom, σ_comp_pr₂, hz₁]
   refine ⟨y₀, y₁, z, hv₀, hv₁, hy_ne, hy₀₁, hz₁, hz₂, hσ₁, hσ₂, fun h ↦ hy_ne ?_, ?_⟩
   · rw [← hz₁, ← hσ₁, h]
-  · have h := congrArg (fun φ ↦ φ.hom.base z) σ_comp_σ
-    simpa only [ObjectProperty.FullSubcategory.comp_hom, comp_base, TopCat.comp_app,
-      ObjectProperty.FullSubcategory.id_hom, id_toHom, AlgebraicGeometry.PresheafedSpace.id_base,
-      TopCat.hom_id, ContinuousMap.id_apply] using h
+  · rw [← comp_base_apply, ← ObjectProperty.FullSubcategory.comp_hom, σ_comp_σ,
+      ObjectProperty.FullSubcategory.id_hom, id_base_apply]
 
 /-! ### The unit -/
 
@@ -248,9 +239,9 @@ theorem exists_symmetry_moves_point :
 isomorphism of adic spaces, with inverse `Spa` of the multiplication `b ⊗ a ↦ b·a`. -/
 example :
     IsIso (comapOfPair isSheafyForEveryPresentation_T
-      (isSheafyForEveryPresentation_T.completedTensor_rightUnitor S f.map_mem_plus)
+      (isSheafyForEveryPresentation_T.completedTensor_rightUnitor S algebraMap_mem_plus_T)
       (Pair.completedTensor.inl ℚ_[2] T S)) :=
-  rightUnitorAffinoid_hom S isSheafyForEveryPresentation_T f.map_mem_plus ▸
-    (rightUnitorAffinoid S isSheafyForEveryPresentation_T f.map_mem_plus).isIso_hom
+  rightUnitorAffinoid_hom S isSheafyForEveryPresentation_T algebraMap_mem_plus_T ▸
+    (rightUnitorAffinoid S isSheafyForEveryPresentation_T algebraMap_mem_plus_T).isIso_hom
 
 end TauCeti.Examples.SymmetryOnChartsSpaChecks
