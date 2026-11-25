@@ -40,6 +40,8 @@ constructions on Laurent series are natural.
 * `HahnSeries.map_embDomain`: coefficientwise maps commute with exponent embeddings.
 * `HahnSeries.map_ofPowerSeries`: coefficientwise maps commute with the inclusion of power
   series, `PowerSeries.map` on the source side.
+* `HahnSeries.mapRingHom_ofPowerSeries_eq_ofPowerSeries_iff`: comparing a mapped power series
+  with another power series inside Hahn series, coefficient by coefficient.
 * `HahnSeries.map_aeval`: coefficientwise algebra maps commute with evaluating multivariate
   polynomials at Hahn series.
 * `HahnSeries.mem_map_rangeS`: the range of a coefficientwise map consists of the series
@@ -364,6 +366,14 @@ theorem map_ofPowerSeries (f : R →+* S) (p : R⟦X⟧) :
   rw [ofPowerSeries_apply, ofPowerSeries_apply, map_embDomain]
   refine congrArg _ (HahnSeries.ext <| funext fun n ↦ ?_)
   simp
+
+/-- A coefficientwise map sends the Hahn series of a power series `p` to that of `q` exactly
+when it sends every coefficient of `p` to the corresponding coefficient of `q`. -/
+theorem mapRingHom_ofPowerSeries_eq_ofPowerSeries_iff {f : R →+* S} {p : R⟦X⟧} {q : S⟦X⟧} :
+    mapRingHom f (ofPowerSeries Γ R p) = ofPowerSeries Γ S q ↔
+      ∀ n, f (p.coeff n) = q.coeff n := by
+  rw [mapRingHom_apply, map_ofPowerSeries, ofPowerSeries_injective.eq_iff, PowerSeries.ext_iff]
+  simp only [PowerSeries.coeff_map]
 
 end PowerSeries
 

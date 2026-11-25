@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
-import TauCeti.Geometry.Manifold.VectorBundle.TotalSpaceMFDeriv
+import TauCeti.Geometry.Manifold.VectorBundle.TotalSpace.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.FiberBundle.Trivialization

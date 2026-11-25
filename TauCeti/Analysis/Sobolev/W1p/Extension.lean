@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
 # Extending a `W^{1,p}_0` function by zero
@@ -139,13 +140,6 @@ theorem Sobolev1JetLp.gradient_extendByZeroₗᵢ (hsub : Omega ≤ Omega')
 
 /-! ### Test functions extend to test functions -/
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
-/-- A test function on `Ω`, viewed on the larger open set `Ω'`, is the same function. -/
-private theorem coe_monoCLM (hsub : Omega ≤ Omega') (phi : 𝓓(Omega, ℝ)) :
-    ((TestFunction.monoCLM ℝ phi : 𝓓(Omega', ℝ)) : E → ℝ) = (phi : E → ℝ) := by
-  rw [TestFunction.monoCLM_apply]
-  simp [hsub]
-
 omit [FiniteDimensional ℝ E] in
 /-- Extending a test function's `Lᵖ` class by zero gives the class of the same test function on
 the larger open set: it already vanished outside `Ω`. -/
@@ -157,7 +151,7 @@ private theorem extendByZeroLpₗᵢ_testFunctionLp (hsub : Omega ≤ Omega') (p
     ((subset_tsupport _).trans phi.tsupport_subset) (testFunctionLp_apply_ae (mu := mu) p phi) <| by
       filter_upwards [testFunctionLp_apply_ae (mu := mu) (Omega := Omega') p
         (TestFunction.monoCLM ℝ phi)] with x hx
-      rw [hx, coe_monoCLM hsub phi]
+      rw [hx, TestFunction.coe_monoCLM_of_le le_rfl hsub phi]
 
 /-- Extending a test function's gradient by zero gives the gradient of the same test function on
 the larger open set. -/
@@ -171,7 +165,7 @@ private theorem extendByZeroLpₗᵢ_gradientTestFunctionLp (hsub : Omega ≤ Om
     (gradientTestFunctionLp_apply_ae (mu := mu) p phi) <| by
       filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) (Omega := Omega') p
         (TestFunction.monoCLM ℝ phi)] with x hx
-      rw [hx, coe_monoCLM hsub phi]
+      rw [hx, TestFunction.coe_monoCLM_of_le le_rfl hsub phi]
 
 /-- The zero-extension of a test-function jet is the jet of the same test function on the larger
 open set. -/
@@ -425,7 +419,7 @@ theorem W1p0.dense_iUnion_range_extendByZeroL {κ : Type*} [Nonempty κ] {U : κ
     refine Subtype.ext ?_
     rw [W1p0.coe_extendByZeroL, Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ]
     congr 2
-    exact TestFunction.ext fun x ↦ congrFun (coe_monoCLM (hU k) psi) x
+    exact TestFunction.ext fun x ↦ congrFun (TestFunction.coe_monoCLM_of_le le_rfl (hU k) psi) x
   have hsub : (w1p0Submodule mu Omega p : Set (W1p mu Omega p)) ⊆ closure ((↑) '' D) :=
     w1p0Submodule_subset_of_isClosed isClosed_closure fun phi ↦ subset_closure (htest phi)
   intro u

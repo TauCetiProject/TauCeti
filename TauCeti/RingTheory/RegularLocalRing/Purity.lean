@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Etale.Purity
 public import TauCeti.RingTheory.RegularLocalRing.MiracleFlatness
 import Mathlib.RingTheory.Flat.TorsionFree
-import Mathlib.RingTheory.Smooth.Fiber
+import TauCeti.RingTheory.Etale.FlatUnramified
 import TauCeti.RingTheory.IntegralClosure.GoingDown
 import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
@@ -104,8 +104,7 @@ theorem etale_of_isUnramifiedAt_height_eq_one_of_ringKrullDim_le_two
     have := IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr h1
     have : Algebra.FormallyUnramified A B := Algebra.formallyUnramified_iff_forall.mpr fun q ↦
       key q.asIdeal (by exact_mod_cast h1 ▸ Ideal.height_le_ringKrullDim_of_isPrime)
-    have := Algebra.FinitePresentation.of_finiteType.mp (inferInstance : Algebra.FiniteType A B)
-    exact Algebra.Etale.of_formallyUnramified_of_flat
+    exact Etale.of_formallyUnramified_of_flat_of_isNoetherianRing
   · -- Dimension two: a prime not lying over the closed point lies over a prime of height at
     -- most one, and purity for `A` applies.
     refine etale_of_finiteNormal_of_ringKrullDim_eq_two h2 hnormal fun q _ hq ↦ key q ?_
