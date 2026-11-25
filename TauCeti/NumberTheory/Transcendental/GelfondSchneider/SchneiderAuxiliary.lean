@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.SiegelsLemma
 
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.NumberTheory.NumberField.House
 
 /-!
 # Schneider's auxiliary function
@@ -197,17 +198,6 @@ theorem isIntegral_intCast_pow_mul_schneider_value {m : ℤ} {α β γ : K}
 end CommRing
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- Bounds on the houses of two factors bound the house of their product. -/
-private theorem house_mul_le_of_le {x y : K} {X Y : ℝ} (hx : house x ≤ X) (hy : house y ≤ Y) :
-    house (x * y) ≤ X * Y :=
-  (house_mul_le x y).trans (mul_le_mul hx hy (house_nonneg y) ((house_nonneg x).trans hx))
-
-/-- A bound on the house of `x` bounds the house of its powers. -/
-private theorem house_pow_le_of_le {x : K} {X : ℝ} (hx : house x ≤ X) (n : ℕ) :
-    house (x ^ n) ≤ X ^ n := by
-  rw [house_pow]
-  exact pow_le_pow_left₀ (house_nonneg x) hx n
 
 /-- The house bound for an entry of Schneider's linear system: if `x`, `z`, `w` have house at
 most `H` and `y` has house at most `L H`, then for `i ≤ D` and `i + s + t ≤ n` the entry

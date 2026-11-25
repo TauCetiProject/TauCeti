@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.FieldTheory.AbsoluteGaloisGroup
 public import Mathlib.RingTheory.HopfAlgebra.GroupLike
+public import TauCeti.Algebra.Bialgebra.GroupLike.BaseChange
 public import TauCeti.Algebra.Bialgebra.GroupLike.ScalarAut
 
 /-!
@@ -41,6 +42,8 @@ It also identifies absolute Galois automorphisms with `k`-algebra automorphisms 
   induced action on geometric characters.
 * `TauCeti.CommHopfAlgCat.instAdditiveCharacterGroupGaloisAction`: an instance bridge for the
   transported additive action.
+* `TauCeti.CommHopfAlgCat.smul_groupLikeBaseChange`: characters defined over `k` are fixed by the
+  absolute Galois group.
 * `Field.absoluteGaloisGroup.toAlgEquiv`: an absolute Galois automorphism viewed as a
   `k`-algebra automorphism of `AlgebraicClosure k`.
 * `Field.absoluteGaloisGroup.smul_def`: the action on the algebraic closure is evaluation.
@@ -140,6 +143,16 @@ theorem toMul_smul {A : Type v} [Semiring A] [Bialgebra k A]
   by
     unfold Field.absoluteGaloisGroup at sigma ⊢
     exact @Additive.toMul_smul _ _ _ _ ScalarAut.instGroupLikeDistribMulAction sigma x
+
+/-- A character defined over the ground field is fixed by the absolute Galois group. -/
+@[simp]
+theorem smul_groupLikeBaseChange {A : Type v} [Semiring A] [Bialgebra k A]
+    (σ : Field.absoluteGaloisGroup k) (g : _root_.GroupLike k A) :
+    σ • (groupLikeBaseChange g :
+      _root_.GroupLike (AlgebraicClosure k) (AlgebraicClosure k ⊗[k] A)) =
+      groupLikeBaseChange g := by
+  apply _root_.GroupLike.val_injective
+  rw [val_smul, val_groupLikeBaseChange, ScalarAut.smul_tmul, map_one]
 
 end CommHopfAlgCat
 

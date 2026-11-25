@@ -24,9 +24,9 @@ Morse index (`TauCeti.Analysis.Calculus.WittenLaplacian.Gap`) shows that there a
 eigenvalues there. This file proves the quasimode lower bound in every degree: given finitely many
 separated nondegenerate critical points near each of which `f` is exactly a diagonal quadratic
 model, in degree `m` the quadratic form of `Δ_t` is small on a space of test forms whose dimension
-is the number of those points of index `m`. The matching upper bound in degrees that are Morse
-indices needs, in addition, a gap above the ground state in the degree of the index, which is not
-proved here.
+is the number of those points of index `m`. The matching upper bound, which uses the gap above
+the ground state in the degree of the index, is proved in
+`TauCeti.Analysis.Calculus.WittenLaplacian.LowEnergy`.
 
 The test forms are the ground states of the harmonic-oscillator models, cut off near their
 critical points. Suppose that near `p` the function `f` is the quadratic model
@@ -59,8 +59,8 @@ points of `f`, if any, are not counted. As in `TauCeti.Analysis.Calculus.WittenL
 these are statements about the quadratic form on compactly supported smooth forms, not about a
 self-adjoint realization of `Δ_t`. For a self-adjoint realization whose quadratic form extends
 this one, min-max would turn the statement into a lower bound on the number of low-lying
-eigenvalues in degree `m`; the matching upper bound when `P` contains every critical point also
-needs the gap in the other degrees and a gap above the ground state in the degree of the index.
+eigenvalues in degree `m`. The matching upper bound when `P` contains every critical point is
+`TauCeti.exists_forall_rank_le_of_integral_sum_euclideanWittenLaplacian_mul_le`.
 
 ## Main results
 
@@ -276,10 +276,13 @@ private theorem integral_sub_mul_exp_le {a p : ι → ℝ} {c ρ t K : ℝ} (hρ
   refine integral_mono hint ((hA.const_mul t).add hB |>.mul_const _) fun x ↦ ?_
   by_cases hx : x ∈ ball p ρ
   · simp only [hw₁ρ x hx, hw₀ρ x hx, mul_zero, sub_zero, zero_mul, abs_zero, add_zero, le_refl]
+  -- On `ℝ`, the squared coordinate distances are the squared differences.
+  have hsum : c * ρ ^ 2 ≤ ∑ i, |a i| * (x i - p i) ^ 2 := by
+    simpa only [Real.dist_eq, sq_abs] using
+      mul_sq_le_sum_mul_dist_sq_of_notMem_ball hρ.le (fun i ↦ abs_nonneg (a i)) hca hx
   have hexp : Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)) ≤
-      Real.exp (-(t * (c * ρ ^ 2))) := Real.exp_le_exp.2
-    (neg_le_neg (mul_le_mul_of_nonneg_left
-      (mul_sq_le_sum_mul_sub_sq_of_notMem_ball hρ (fun i ↦ abs_nonneg (a i)) hca hx) ht))
+      Real.exp (-(t * (c * ρ ^ 2))) :=
+    Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_left hsum ht))
   have h₁ : t * w₁ x - w₀ x ≤ t * |w₁ x| + |w₀ x| := by
     nlinarith [le_abs_self (w₁ x), neg_abs_le (w₀ x)]
   calc (t * w₁ x - w₀ x) * (K * Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)))
@@ -308,8 +311,10 @@ private theorem mul_le_integral_sq_mul_exp {a p : ι → ℝ} {δ ρ t K : ℝ} 
     (setIntegral_le_integral hint (Eventually.of_forall fun x ↦ by positivity))
   rw [hθ1 x (ball_subset_ball hδρ hx), one_pow, one_mul]
   gcongr
-  exact sum_mul_sub_sq_le_mul_sq_of_mem_closedBall (fun i ↦ abs_nonneg (a i))
-    (ball_subset_closedBall hx)
+  -- On `ℝ`, the squared coordinate distances are the squared differences.
+  simpa only [Real.dist_eq, sq_abs] using
+    sum_mul_dist_sq_le_mul_sq_of_mem_closedBall (fun i ↦ abs_nonneg (a i))
+      (ball_subset_closedBall hx)
 
 /-- The weight of `t` in the pointwise energy of a cut-off ground state. -/
 private def weight₁ (a p : ι → ℝ) (θ : (ι → ℝ) → ℝ) (x : ι → ℝ) : ℝ :=
@@ -480,9 +485,8 @@ smooth forms. For a self-adjoint realization of `Δ_t` whose quadratic form exte
 min-max would bound the number of low-lying eigenvalues in degree `m` from below by the number of
 points of `P` of index `m`. The gap of
 `TauCeti.exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul` gives the
-matching statement in degrees that are no Morse index; the full comparison with the critical points
-in Witten's proof of the Morse inequalities also needs a gap above the ground state in degrees
-that are Morse indices. -/
+matching statement in degrees that are no Morse index, and
+`TauCeti.exists_forall_rank_le_of_integral_sum_euclideanWittenLaplacian_mul_le` in every degree. -/
 theorem exists_forall_exists_finrank_eq_forall_integral_sum_euclideanWittenLaplacian_mul_le
     {f : (ι → ℝ) → ℝ} {P : Finset (ι → ℝ)} {r : ℝ} (hr : 0 < r)
     (hP : ∀ p ∈ P, ∀ q ∈ P, p ≠ q → 2 * r ≤ dist p q) {a : (ι → ℝ) → ι → ℝ}

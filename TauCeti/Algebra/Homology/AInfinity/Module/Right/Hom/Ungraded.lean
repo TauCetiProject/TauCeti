@@ -75,7 +75,11 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
 * `TauCeti.UngradedAInfinityRightModuleHom.ofLinearMap`: the strict morphism of a linear map
   commuting with the operations.
 * `TauCeti.UngradedAInfinityRightModuleHom.id`: the identity morphism.
-* `TauCeti.UngradedAInfinityRightModuleHom.Homotopy`: a homotopy between two morphisms.
+* `TauCeti.UngradedAInfinityRightModuleHom.Homotopy`: a homotopy between two morphisms, with
+  `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.refl`,
+  `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.symm` and
+  `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.trans` making homotopy an equivalence relation
+  over a ring of characteristic two.
 * `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.toConeHom`: a homotopy between `f` and `g` as
   a morphism into the mapping cone of `f + g`.
 * `TauCeti.IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom`: an `A`-linear chain map of
@@ -232,6 +236,17 @@ theorem matrixAct_cone_apply (X : Type*) [Fintype X] [DecidableEq X] (n : ℕ)
   · rw [Prod.snd_sum, ← sum_add_distrib]
     exact sum_congr rfl fun x _ => by split_ifs <;> simp
 
+/-- On row vectors `x ↦ (φ x, 0)` with values in `M`, the second component of the operations of
+the matrix module of the mapping cone is the sum over the paths `x₀ → ⋯ → xₙ = z` of
+`f_{n+1}(φ x₀, F₁ x₀ x₁, …, Fₙ xₙ₋₁ xₙ)`. -/
+theorem snd_matrixAct_cone_apply_inl (X : Type*) [Fintype X] [DecidableEq X] (n : ℕ)
+    (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :
+    (f.cone.matrixAct X n F (fun x => (φ x, 0)) z).2 =
+      ∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
+        f.map n (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0)) else 0 := by
+  have h0 : Mm'.matrixAct X n F (fun _ => 0) = 0 := map_zero _
+  simp [matrixAct_cone_apply, h0]
+
 /-! ### Strict morphisms -/
 
 /-- The components of a strict morphism: `f₁ = L` and `f_{n+1} = 0` for `n ≥ 1`. -/
@@ -313,6 +328,10 @@ variable (Mm) in
 noncomputable def id [CharP R 2] : UngradedAInfinityRightModuleHom Mm Mm :=
   ofLinearMap Mm Mm LinearMap.id fun _ _ _ => rfl
 
+/-- The identity morphism is the strict morphism of the identity map. -/
+theorem id_eq_ofLinearMap [CharP R 2] : id Mm = ofLinearMap Mm Mm LinearMap.id fun _ _ _ => rfl :=
+  (rfl)
+
 @[simp]
 theorem id_map_zero [CharP R 2] (a : Fin 0 → A) (m : M) : (id Mm).map 0 a m = m :=
   (rfl)
@@ -333,18 +352,44 @@ theorem id_map_eq_zero [CharP R 2] {n : ℕ} (hn : n ≠ 0) : (id Mm).map n = 0 
 
 /-! ### Sums of morphisms -/
 
+variable (Mm Mm') in
+/-- The left-hand side of the relation of length `n` for a family of components `F`, as in the
+field `TauCeti.UngradedAInfinityRightModuleHom.stasheff`. -/
+private noncomputable def relationLHS
+    (F : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M')) (n : ℕ)
+    (a : Fin n → A) (m : M) : M' :=
+  ∑ k : Fin (n + 1), F (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+      (Mm.act k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) +
+    ∑ k : Fin (n + 1), Mm'.act (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+      (F k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) +
+    ungradedStasheffDiff F d n a m + ungradedStasheffMul F n a m
+
+/-- Every term of the relations is additive in the components, so the left-hand side of a
+relation for `F + G` is the sum of those for `F` and `G`. -/
+private theorem relationLHS_add
+    (F G : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M')) (n : ℕ)
+    (a : Fin n → A) (m : M) :
+    relationLHS Mm Mm' (fun n => F n + G n) n a m =
+      relationLHS Mm Mm' F n a m + relationLHS Mm Mm' G n a m := by
+  simp only [relationLHS, ungradedStasheffDiff_add, ungradedStasheffMul_add, add_apply,
+    LinearMap.add_apply, map_add, sum_add_distrib]
+  abel
+
+/-- The relation of length `n` of a morphism, through `relationLHS`, which is by definition the
+left-hand side of its field `TauCeti.UngradedAInfinityRightModuleHom.stasheff`. -/
+private theorem relationLHS_eq_zero (f : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ)
+    (a : Fin n → A) (m : M) : relationLHS Mm Mm' f.map n a m = 0 :=
+  f.stasheff n a m
+
 /-- The **sum** of two morphisms, componentwise: `(f + g)_{n+1} = f_{n+1} + g_{n+1}`. Every term
 of the relations is additive in the components, so the relations of `f + g` are the sums of
 those of `f` and `g`. -/
-instance : Add (UngradedAInfinityRightModuleHom Mm Mm') where
+@[no_expose] instance : Add (UngradedAInfinityRightModuleHom Mm Mm') where
   add f g :=
     { map := fun n => f.map n + g.map n
-      stasheff := fun n a m => by
-        convert congrArg₂ (· + ·) (f.stasheff n a m) (g.stasheff n a m) using 1
-        · rw [ungradedStasheffDiff_add, ungradedStasheffMul_add]
-          simp only [add_apply, LinearMap.add_apply, map_add, sum_add_distrib]
-          abel
-        · rw [add_zero] }
+      -- The field `stasheff` of `f + g` is by definition `relationLHS` of its components.
+      stasheff := fun n a m => (relationLHS_add f.map g.map n a m).trans <| by
+        rw [relationLHS_eq_zero f, relationLHS_eq_zero g, add_zero] }
 
 @[simp]
 theorem add_map (f g : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ) :
@@ -377,6 +422,54 @@ structure Homotopy (f g : UngradedAInfinityRightModuleHom Mm Mm') where
     f.map n a m + g.map n a m
 
 namespace Homotopy
+
+section Equivalence
+
+variable {f g k : UngradedAInfinityRightModuleHom Mm Mm'}
+
+/-- The zero homotopy from a morphism to itself, over a ring of characteristic two. -/
+def refl [CharP R 2] (f : UngradedAInfinityRightModuleHom Mm Mm') : Homotopy f f where
+  map := 0
+  stasheff n a m := by
+    cases n <;>
+      simp [ungradedStasheffDiff_apply, ungradedStasheffMul_succ_apply,
+        add_self_eq_zero_of_charTwo R]
+
+@[simp]
+theorem refl_map [CharP R 2] : (refl f).map = 0 :=
+  (rfl)
+
+/-- A homotopy between `f` and `g` is a homotopy between `g` and `f`, since its defect
+`f_{n+1} + g_{n+1}` is symmetric. -/
+def symm (H : Homotopy f g) : Homotopy g f where
+  map := H.map
+  stasheff n a m := by rw [H.stasheff, add_comm]
+
+@[simp]
+theorem symm_map (H : Homotopy f g) : H.symm.map = H.map :=
+  (rfl)
+
+/-- The homotopy relation of length `n`, through `relationLHS`, which is by definition the
+left-hand side of the field `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.stasheff`. -/
+private theorem relationLHS_eq (H : Homotopy f g) (n : ℕ) (a : Fin n → A) (m : M) :
+    relationLHS Mm Mm' H.map n a m = f.map n a m + g.map n a m :=
+  H.stasheff n a m
+
+/-- The sum of homotopies between `f` and `g` and between `g` and `k` is a homotopy between `f`
+and `k`, over a ring of characteristic two: its defect is `(f + g) + (g + k) = f + k`. -/
+def trans [CharP R 2] (H : Homotopy f g) (H' : Homotopy g k) : Homotopy f k where
+  map n := H.map n + H'.map n
+  -- The field `stasheff` of the sum is by definition `relationLHS` of its components.
+  stasheff n a m := (relationLHS_add H.map H'.map n a m).trans <| by
+    rw [H.relationLHS_eq, H'.relationLHS_eq, add_assoc, ← add_assoc (g.map n a m),
+      add_self_eq_zero_of_charTwo R, zero_add]
+
+@[simp]
+theorem trans_map [CharP R 2] (H : Homotopy f g) (H' : Homotopy g k) (n : ℕ) :
+    (H.trans H').map n = H.map n + H'.map n :=
+  (rfl)
+
+end Equivalence
 
 variable [CharP R 2] {f g : UngradedAInfinityRightModuleHom Mm Mm'} (H : Homotopy f g)
 

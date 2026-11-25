@@ -25,6 +25,8 @@ is one side of the archimedean local-image formula of explicit `2`-descent, whic
 
 * `WeierstrassCurve.Affine.card_ker_nsmul_two`: `#W(K)[2]` is the number of roots of `f` in `K`,
   plus one for the origin.
+* `WeierstrassCurve.Affine.splits_f_iff_card_ker_nsmul_two_eq_four`: `f` splits over `K` exactly
+  when `#W(K)[2] = 4`.
 
 ## Provenance
 
