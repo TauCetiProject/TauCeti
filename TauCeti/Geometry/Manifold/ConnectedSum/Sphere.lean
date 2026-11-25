@@ -190,7 +190,7 @@ theorem connectedSumMap_injective (he : Injective e) : Injective (h.connectedSum
   have key : ∀ (x : puncture e) (w : E), (x : M) = e w →
       ConnectedSum.inl e s x = ConnectedSum.inr e s (h.homeomorphPuncture w) := fun x w hxw ↦ by
     have hw : w ≠ 0 := by rintro rfl; exact mem_puncture.1 x.property hxw
-    rw [inl_eq_inr_iff he h.injective]
+    rw [inl_eq_inr_iff he]
     exact ⟨w, hw, hxw.symm, by simp [h.apply_eq_inversion w hw]⟩
   intro p q hpq
   obtain ⟨x | y, rfl⟩ := ConnectedSum.mk_surjective e s p <;>

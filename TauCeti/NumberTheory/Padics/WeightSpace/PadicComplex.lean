@@ -28,7 +28,7 @@ variable {p : ℕ} [Fact p.Prime]
 /-- Every `ℂ_p`-valued weight takes values in `𝓞_ℂ_p`. -/
 theorem coe_mem_padicComplexInt (κ : WeightSpace p ℂ_[p]) (x : ℤ_[p]ˣ) :
     (κ x : ℂ_[p]) ∈ 𝓞_ℂ_[p] :=
-  PadicComplex.mem_padicComplexInt_iff.mpr
+  PadicComplexInt.mem_iff_norm_le_one.mpr
     (ContinuousMonoidHom.norm_apply_eq_one_of_compactSpace κ x).le
 
 /-- Restriction of a `ℂ_p`-valued weight `κ : ℤ_pˣ →ₜ* ℂ_pˣ` to the unit group `(𝓞_ℂ_p)ˣ`. -/

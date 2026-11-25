@@ -214,13 +214,16 @@ theorem isNondegenerateUpToPeriod_catMapUnit_smul (N : ℕ) :
   (AddCircle.isNondegenerateUpToPeriod_generalLinearGroup_smul_iff p catMapUnit N).2
     fun _ hk _ ↦ (det_one_sub_catMap_pow_neg hk.ne').ne
 
+omit [Fact (0 < p)] in
 /-- **The number of fixed points of the iterates of the cat map.** The `n`-th iterate of the cat
 map of the torus has `|2 - tr (Pⁿ)| = |det (1 - Pⁿ)|` fixed points: one for `n = 1`, five for
-`n = 2`, sixteen for `n = 3`. For `n = 0` every point is fixed and both sides are `0`. -/
-theorem nat_card_fixedPoints_iterate_catMapUnit_smul (n : ℕ) :
+`n = 2`, sixteen for `n = 3`. For `n = 0` every point is fixed and both sides are `0`. The period
+`p` may be any nonzero real number. -/
+theorem nat_card_fixedPoints_iterate_catMapUnit_smul (hp : p ≠ 0) (n : ℕ) :
     Nat.card (fixedPoints (fun x : Fin 2 → AddCircle p ↦ catMapUnit • x)^[n]) =
       (2 - (catMap ^ n).trace).natAbs := by
-  rw [smul_iterate, AddCircle.nat_card_fixedPoints_generalLinearGroup_smul,
+  rw [smul_iterate,
+    AddCircle.nat_card_fixedPoints_generalLinearGroup_smul p _ hp,
     det_one_sub_coe_catMapUnit_pow]
 
 /-- **The signed fixed-point counts of the cat map.** The fixed points of the `n`-th iterate `φⁿ`

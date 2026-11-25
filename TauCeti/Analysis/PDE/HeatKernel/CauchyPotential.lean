@@ -12,10 +12,12 @@ public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.FDeriv.Extend
 import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.MeanValue.Pow
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # The Cauchy heat potential, its derivatives and its parabolic Hölder estimate
@@ -497,6 +499,37 @@ theorem exists_norm_laplacian_heatCauchyPotential_le :
         mul_le_mul_of_nonneg_left (h2.trans h3) hn
     _ = n * C₂ * H * t ^ ((α : ℝ) / 2 - 1) := by ring
 
+/-- **The time-Lipschitz bound of the Cauchy potential at positive times.** If `g` is essentially
+bounded, `0 ≤ β ≤ 1` and the norm of the Laplacian of `u(r, ·)` at `x` is at most `D r^(β - 1)`
+for every `r > 0`, then `‖u(b, x) - u(a, x)‖ ≤ 2 D |b - a| a^(β - 1)` for `0 < a` and
+`a / 2 ≤ b`. -/
+private theorem norm_heatCauchyPotential_sub_le_of_half_le {D β : ℝ} (hβ₀ : 0 ≤ β)
+    (hβ₁ : β ≤ 1) (hM : ∀ᵐ y, ‖g y‖ ≤ M) {x : E}
+    (hΔ : ∀ r, 0 < r → ‖Δ (heatCauchyPotential g r) x‖ ≤ D * r ^ (β - 1)) {a b : ℝ} (ha : 0 < a)
+    (hb : a / 2 ≤ b) :
+    ‖heatCauchyPotential g b x - heatCauchyPotential g a x‖ ≤
+      2 * D * (|b - a| * a ^ (β - 1)) := by
+  have hb0 : 0 < b := (half_pos ha).trans_le hb
+  have hpos : uIcc a b ⊆ Ioi 0 := ordConnected_Ioi.uIcc_subset ha hb0
+  have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hΔ a ha))
+    (rpow_pos_of_pos ha _)
+  -- Both endpoints are at least `a / 2`, which costs a factor `2` in `r ^ (β - 1)`.
+  have h2 : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) := by
+    simpa only [neg_sub] using
+      Real.div_rpow_neg_le_mul_rpow_neg (by linarith : 1 - β ≤ 1) one_le_two ha.le
+  have hmax : max (a ^ (β - 1)) (b ^ (β - 1)) ≤ 2 * a ^ (β - 1) :=
+    max_le ((rpow_le_rpow_of_nonpos (half_pos ha) (half_le_self ha.le) (by linarith)).trans h2)
+      ((rpow_le_rpow_of_nonpos (half_pos ha) hb (by linarith)).trans h2)
+  calc ‖heatCauchyPotential g b x - heatCauchyPotential g a x‖
+      ≤ D * (|b - a| * max (a ^ (β - 1)) (b ^ (β - 1))) :=
+        norm_sub_le_mul_abs_sub_mul_max_rpow_of_hasDerivWithinAt
+          (u := fun r ↦ heatCauchyPotential g r x) ha hb0
+          (fun r hr ↦
+            (hasDerivAt_heatCauchyPotential_of_ae_norm_le hM (hpos hr) x).hasDerivWithinAt)
+          (fun r hr ↦ hΔ r (hpos hr))
+    _ ≤ D * (|b - a| * (2 * a ^ (β - 1))) := by gcongr
+    _ = 2 * D * (|b - a| * a ^ (β - 1)) := by ring
+
 /-- **The time-Lipschitz bound of the Cauchy potential.** For `α ≤ 2` there is a constant `C`,
 depending only on `α` and the dimension, with the following property. If `g` is bounded,
 continuous and `α`-Hölder with constant `H`, then for every `a ≠ 0` and every `b`,
@@ -531,39 +564,41 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
   -- `set` does not fold the applications `heatCauchyPotential g r x` into `u r`.
   change ‖u b - u a‖ ≤ _
   have hneg : ∀ r ≤ 0, u r = g x := fun r hr => heatCauchyPotential_of_nonpos g hr x
-  have hrate : ∀ r, 0 ≤ r → ‖u r - g x‖ ≤ H * Mα * r ^ β := fun r hr =>
-    norm_heatCauchyPotential_sub_le hg hgc hr x
+  have hrate : ∀ r, 0 ≤ r → dist (u r) (g x) ≤ H * Mα * r ^ β := fun r hr =>
+    (dist_eq_norm _ _).trans_le (norm_heatCauchyPotential_sub_le hg hgc hr x)
+  -- Each case bounds the increment by `k H |b - a| P` with a coefficient `k ≤ 2 C₂ + 4 Mα`.
+  have hweak : ∀ {k P : ℝ}, 0 ≤ P → k ≤ 2 * C₂ + 4 * Mα →
+      ‖u b - u a‖ ≤ k * (H * (|b - a| * P)) →
+      ‖u b - u a‖ ≤ (2 * C₂ + 4 * Mα) * H * |b - a| * P := fun hP hk h ↦
+    (h.trans (mul_le_mul_of_nonneg_right hk
+      (mul_nonneg H.coe_nonneg (mul_nonneg (abs_nonneg _) hP)))).trans_eq (by ring)
   rcases lt_or_gt_of_ne ha with ha | ha
   · rw [abs_of_neg ha]
-    have hd : 0 < -a := neg_pos.2 ha
-    calc ‖u b - u a‖ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
-          norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hneg hrate ha b
+    refine hweak (k := Mα) (rpow_nonneg (neg_nonneg.2 ha.le) _) (by linarith) ?_
+    calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
+      _ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
+          dist_le_mul_abs_sub_mul_rpow_of_neg_right hβ₀ hβ₁ (mul_nonneg H.coe_nonneg hMα) ha
+            (fun hb ↦ by rw [hneg b hb, hneg a ha.le, dist_self])
+            (fun hb ↦ by rw [hneg a ha.le]; exact hrate b hb.le)
       _ = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by ring
-      _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * (-a) ^ (β - 1))) := by
-        gcongr
-        nlinarith
-      _ = _ := by ring
   rw [abs_of_pos ha]
   rcases le_or_gt (a / 2) b with hb | hb
   · -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
-    have := norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt (u := u)
-      (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) hβ₀ hβ₁
-      (fun r hr => hasDerivAt_heatCauchyPotential_of_ae_norm_le
-        (ae_of_all _ hM) hr x)
-      (fun r hr => hC₂ (ae_of_all _ hM) hg hr x) ha hb
-    calc ‖u b - u a‖ ≤ 2 * (C₂ * H) * (|b - a| * a ^ (β - 1)) := this
-      _ = 2 * C₂ * (H * (|b - a| * a ^ (β - 1))) := by ring
-      _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
-        gcongr
-        linarith
-      _ = _ := by ring
-  · calc ‖u b - u a‖ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
-          norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half hβ₀ hneg hrate ha hb
+    refine hweak (k := 2 * C₂) (rpow_nonneg ha.le _) (by linarith) ?_
+    exact (norm_heatCauchyPotential_sub_le_of_half_le hβ₀ (by linarith) (ae_of_all _ hM)
+      (fun r hr ↦ hC₂ (ae_of_all _ hM) hg hr x) ha hb).trans_eq (by ring)
+  · refine hweak (k := 4 * Mα) (rpow_nonneg ha.le _) (by linarith) ?_
+    calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
+      _ ≤ 2 * 2 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
+          dist_le_mul_abs_sub_mul_rpow_of_le_mul_abs_sub ha
+            (by rw [abs_of_neg (by linarith : b - a < 0)]; linarith) ?_ (hrate a ha.le)
       _ = 4 * Mα * (H * (|b - a| * a ^ (β - 1))) := by ring
-      _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
-        gcongr
-        nlinarith
-      _ = _ := by ring
+    -- `u b` is within `H Mα b ^ β ≤ H Mα a ^ β` of `g x`, and equals it if `b ≤ 0`.
+    rcases le_or_gt b 0 with hb0 | hb0
+    · rw [hneg b hb0, dist_self]
+      exact mul_nonneg (mul_nonneg H.coe_nonneg hMα) (rpow_nonneg ha.le β)
+    · exact (hrate b hb0.le).trans (mul_le_mul_of_nonneg_left
+        (rpow_le_rpow hb0.le (by linarith) hβ₀) (mul_nonneg H.coe_nonneg hMα))
 
 /-! ### The temporal Hölder estimate for data with a Hölder derivative -/
 

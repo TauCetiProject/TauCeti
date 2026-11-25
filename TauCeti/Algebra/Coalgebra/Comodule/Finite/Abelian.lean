@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Abelian
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Product
 public import Mathlib.CategoryTheory.Abelian.Subcategory
-import Mathlib.CategoryTheory.Preadditive.LeftExact
+public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
 /-!
 # The abelian category of finite comodules
@@ -21,7 +21,13 @@ comodules are surjective and injective (`TauCeti.FGComoduleCat.surjective_of_epi
 `TauCeti.FGComoduleCat.injective_of_mono`). For coordinate Hopf algebras this supplies the
 abelian and exact structures of the Tannakian representation category.
 
-The full-subcategory argument uses Mathlib's `ObjectProperty` kernel and cokernel closure API.
+The full-subcategory argument shows that finite generation is closed under kernels and
+cokernels; closure under finite products is in
+`TauCeti.Algebra.Coalgebra.Comodule.Finite.Product`. Mathlib's `ObjectProperty`
+abelian-subcategory instance then makes finite comodules abelian, and
+`CategoryTheory.ObjectProperty.preservesFiniteLimits_ι` and
+`CategoryTheory.ObjectProperty.preservesFiniteColimits_ι` make their inclusion into all comodules
+exact.
 -/
 
 public section
@@ -65,32 +71,6 @@ end ComoduleCat
 namespace FGComoduleCat
 
 variable [IsNoetherianRing R] [Module.Flat R C]
-
-/-- Finite comodules over a flat coalgebra over a Noetherian commutative ring are abelian. -/
-instance : Abelian (FGComoduleCat.{u, v, w} R C) where
-
-instance {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
-    PreservesLimit (parallelPair f 0) (incl (R := R) (C := C)) :=
-  (ComoduleCat.isFG R C).preservesKernels_ι f
-
-omit [IsNoetherianRing R] [Module.Flat R C] in
-instance {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
-    PreservesColimit (parallelPair f 0) (incl (R := R) (C := C)) :=
-  (ComoduleCat.isFG R C).preservesCokernels_ι f
-
-/-- Inclusion of finite comodules preserves finite limits. -/
-instance : PreservesFiniteLimits (incl (R := R) (C := C) :
-    FGComoduleCat.{u, v, w} R C ⥤ _) :=
-  Functor.preservesFiniteLimits_of_preservesKernels _
-
-omit [IsNoetherianRing R] [Module.Flat R C] in
-/-- Inclusion of finite comodules preserves finite colimits. -/
-instance : PreservesFiniteColimits (incl (R := R) (C := C) :
-    FGComoduleCat.{u, v, w} R C ⥤ _) :=
-  by
-    let : HasCoequalizers (FGComoduleCat.{u, v, w} R C) :=
-      Preadditive.hasCoequalizers_of_hasCokernels
-    exact Functor.preservesFiniteColimits_of_preservesCokernels _
 
 /-- The underlying-module functor on finite comodules preserves finite limits. -/
 instance : PreservesFiniteLimits

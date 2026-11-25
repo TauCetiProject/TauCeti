@@ -27,17 +27,21 @@ The characteristic contraction equation determines the field uniquely, and the f
 off the topological support of `H`
 (`TauCeti.SymplecticForm.hamiltonianVectorField_eq_zero_of_notMem_tsupport`). Since `dH(X_H) = 0`, a
 differentiable Hamiltonian is constant along every integral curve of `X_H`
-(`TauCeti.SymplecticForm.apply_eq_of_hasDerivWithinAt_hamiltonianVectorField`). The linearization of
-`X_H` is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
-identity used to show that Hamiltonian flows preserve the symplectic form. Contracting the
-linearization with `ω` gives the Hessian, so `dX_H(x)` has the kernel of the Hessian
-(`TauCeti.SymplecticForm.fderiv_hamiltonianVectorField_apply_eq_zero_iff`).
+(`TauCeti.SymplecticForm.apply_eq_of_hasDerivWithinAt_hamiltonianVectorField`), and so is every
+differentiable function Poisson-commuting with it
+(`TauCeti.SymplecticForm.apply_eq_of_hasDerivWithinAt_of_poissonBracket_eq_zero`). The
+linearization of `X_H` is infinitesimally symplectic when `H` is twice continuously
+differentiable; this is the identity used to show that Hamiltonian flows preserve the symplectic
+form. Contracting the linearization with `ω` gives the Hessian, so `dX_H(x)` has the kernel of
+the Hessian (`TauCeti.SymplecticForm.fderiv_hamiltonianVectorField_apply_eq_zero_iff`).
 A Lipschitz bound `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on a ball gives the second-order Taylor bound
 `|G(y) - G(y₀) - dG(y₀)(y - y₀)| ≤ ‖ω‖ L ‖y - y₀‖²` there
 (`TauCeti.SymplecticForm.abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le`).
 A compactly supported `C²` Hamiltonian has a globally Lipschitz Hamiltonian vector field
 (`TauCeti.SymplecticForm.exists_lipschitzWith_hamiltonianVectorField`), so its flow is defined
-for all times.
+for all times. For a compactly supported `C³` Hamiltonian the first two derivatives of the
+Hamiltonian vector field are bounded
+(`TauCeti.SymplecticForm.exists_forall_norm_fderiv_hamiltonianVectorField_le`).
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
 the bilinear form `g = ω(·, J ·)`
@@ -134,21 +138,6 @@ theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → �
     fderiv ℝ H x (ω.hamiltonianVectorField H x) = 0 := by
   rw [← ω.apply_hamiltonianVectorField H x, ω.self_eq_zero]
 
-/-- **Conservation of energy.** A Hamiltonian is constant along every integral curve of its
-Hamiltonian vector field on a preconnected set of times, provided it is differentiable at
-every point of the curve; the curve need only have its derivative within the set of times. -/
-theorem apply_eq_of_hasDerivWithinAt_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
-    {γ : ℝ → V} {s : Set ℝ} (hs' : IsPreconnected s)
-    (hγ : ∀ t ∈ s, HasDerivWithinAt γ (ω.hamiltonianVectorField H (γ t)) s t)
-    (hH : ∀ t ∈ s, DifferentiableAt ℝ H (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
-    H (γ t) = H (γ t₀) := by
-  have hd (t : ℝ) (ht : t ∈ s) : HasDerivWithinAt (H ∘ γ) 0 s t := by
-    simpa using (hH t ht).hasFDerivAt.comp_hasDerivWithinAt t (hγ t ht)
-  have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := H ∘ γ) (f' := fun _ ↦ 0)
-    (C := 0) (fun x hx ↦ hd x hx) (fun _ _ ↦ by simp)
-    (isPreconnected_iff_ordConnected.1 hs').convex ht₀ ht
-  simpa [sub_eq_zero] using h
-
 /-- For a `J`-invariant symplectic form, `J X_H(x)` is the gradient of `H` at `x` for the
 bilinear form `g = ω(·, J ·)`: `g(J X_H(x), w) = dH(x) w`. -/
 theorem Invariant.associatedBilinForm_hamiltonianVectorField {ω : SymplecticForm V}
@@ -163,18 +152,35 @@ theorem contDiff_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
   ω.toBilinForm.toContinuousBilinearMap.inverse.contDiff.comp
     (hH.fderiv_right le_rfl)
 
+/-- A Hamiltonian with compact support has a Hamiltonian vector field with compact support. -/
+theorem hasCompactSupport_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    (hc : HasCompactSupport H) : HasCompactSupport (ω.hamiltonianVectorField H) := by
+  have h : ω.hamiltonianVectorField H =
+      ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ H :=
+    funext (ω.hamiltonianVectorField_def H)
+  exact h ▸ (hc.fderiv ℝ).comp_left (map_zero _)
+
 /-- A `C²` Hamiltonian with compact support has a globally Lipschitz Hamiltonian vector field, so
 its flow `TauCeti.SymplecticForm.hamiltonianFlow` is defined for all times. -/
 theorem exists_lipschitzWith_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
     (hH : ContDiff ℝ 2 H) (hc : HasCompactSupport H) :
     ∃ K, LipschitzWith K (ω.hamiltonianVectorField H) := by
-  refine (ω.contDiff_hamiltonianVectorField (n := 1)
-    (by simpa only [one_add_one_eq_two] using hH)).lipschitzWith_of_hasCompactSupport ?_
-    one_ne_zero
-  have h : ω.hamiltonianVectorField H =
-      ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ H :=
-    funext (ω.hamiltonianVectorField_def H)
-  exact h ▸ (hc.fderiv ℝ).comp_left (map_zero _)
+  exact (ω.contDiff_hamiltonianVectorField (n := 1)
+    (by simpa only [one_add_one_eq_two] using hH)).lipschitzWith_of_hasCompactSupport
+    (ω.hasCompactSupport_hamiltonianVectorField hc) one_ne_zero
+
+/-- A `C³` Hamiltonian with compact support has a Hamiltonian vector field whose first and second
+derivatives are bounded on all of `V`. -/
+theorem exists_forall_norm_fderiv_hamiltonianVectorField_le (ω : SymplecticForm V) {H : V → ℝ}
+    (hH : ContDiff ℝ 3 H) (hc : HasCompactSupport H) :
+    ∃ a c, ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a ∧
+      ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c := by
+  have hXc := ω.hasCompactSupport_hamiltonianVectorField hc
+  have hdX := (ω.contDiff_hamiltonianVectorField (n := 2) hH).fderiv_right (m := 1) (by norm_num)
+  obtain ⟨a, ha⟩ := hdX.continuous.bounded_above_of_compact_support (hXc.fderiv ℝ)
+  obtain ⟨c, hc⟩ := (hdX.continuous_fderiv one_ne_zero).bounded_above_of_compact_support
+    ((hXc.fderiv ℝ).fderiv ℝ)
+  exact ⟨a, c, fun x ↦ ⟨ha x, hc x⟩⟩
 
 /-- Contracting the linearization of the Hamiltonian vector field gives the Hessian. -/
 theorem apply_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
@@ -530,6 +536,34 @@ theorem poissonBracket_comb (ω : SymplecticForm V) (F G : V → ℝ) (a b c d :
           fun hB ↦ hFG (differentiableAt_and_of_differentiableAt_comb hdet hA hB)
         simp [hzero _ hB]
       · simp [hzero _ hA]
+
+/-- **Conservation of first integrals.** A function `F` which Poisson-commutes with `G` along an
+integral curve of the Hamiltonian vector field of `G` on a preconnected set of times is constant
+along it, provided `F` is differentiable at every point of the curve. -/
+theorem apply_eq_of_hasDerivWithinAt_of_poissonBracket_eq_zero (ω : SymplecticForm V)
+    {F G : V → ℝ} {γ : ℝ → V} {s : Set ℝ} (hs : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivWithinAt γ (ω.hamiltonianVectorField G (γ t)) s t)
+    (hF : ∀ t ∈ s, DifferentiableAt ℝ F (γ t)) (hFG : ∀ t ∈ s, ω.poissonBracket F G (γ t) = 0)
+    {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    F (γ t) = F (γ t₀) := by
+  have hd (t : ℝ) (ht : t ∈ s) : HasDerivWithinAt (F ∘ γ) 0 s t := by
+    have h := (hF t ht).hasFDerivAt.comp_hasDerivWithinAt t (hγ t ht)
+    rwa [← poissonBracket_eq_fderiv, hFG t ht] at h
+  have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := F ∘ γ) (f' := fun _ ↦ 0)
+    (C := 0) (fun x hx ↦ hd x hx) (fun _ _ ↦ by simp)
+    (isPreconnected_iff_ordConnected.1 hs).convex ht₀ ht
+  simpa [sub_eq_zero] using h
+
+/-- **Conservation of energy.** A Hamiltonian is constant along every integral curve of its
+Hamiltonian vector field on a preconnected set of times, provided it is differentiable at
+every point of the curve; the curve need only have its derivative within the set of times. -/
+theorem apply_eq_of_hasDerivWithinAt_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    {γ : ℝ → V} {s : Set ℝ} (hs' : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivWithinAt γ (ω.hamiltonianVectorField H (γ t)) s t)
+    (hH : ∀ t ∈ s, DifferentiableAt ℝ H (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    H (γ t) = H (γ t₀) :=
+  ω.apply_eq_of_hasDerivWithinAt_of_poissonBracket_eq_zero hs' hγ hH
+    (fun _ _ ↦ ω.poissonBracket_self H _) ht₀ ht
 
 end PoissonBracket
 

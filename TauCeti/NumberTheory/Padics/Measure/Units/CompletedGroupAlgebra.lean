@@ -140,7 +140,7 @@ section AdicPadicComplex
 /-- Every `ℂ_p`-valued weight specialisation takes values in `𝓞_ℂ_p`. -/
 theorem WeightSpace.specializeRingHom_mem_padicComplexInt (κ : WeightSpace p ℂ_[p])
     (x : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) : κ.specializeRingHom x ∈ 𝓞_ℂ_[p] :=
-  PadicComplex.mem_padicComplexInt_iff.mpr (κ.norm_specializeRingHom_le_one x)
+  PadicComplexInt.mem_iff_norm_le_one.mpr (κ.norm_specializeRingHom_le_one x)
 
 /-- Under `PadicComplex.padicIntAlgebra p`, the adic specialisation of `κ.toPadicComplexInt` into
 `𝓞_ℂ_p` agrees with the unit-ball factorisation of `κ.specializeRingHom`. -/

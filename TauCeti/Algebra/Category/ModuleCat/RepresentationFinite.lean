@@ -16,7 +16,7 @@ import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.ModuleCat.Equivalence
 import TauCeti.Algebra.Category.ModuleCat.Indecomposable
-import TauCeti.CategoryTheory.ObjectProperty
+import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 import TauCeti.CategoryTheory.Skeletal
 import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
 
@@ -299,8 +299,8 @@ theorem skeletonFiniteIndecomposableModulesEquiv_toSkeleton_eq_toSkeleton_iff
       toSkeleton ((congrFiniteIndecomposable e).functor.obj M) := by
     rw [skeletonFiniteIndecomposableModulesEquiv, Functor.objEquiv, Equiv.ofBijective_apply,
       Functor.mapSkeleton_obj_toSkeleton]
-  rw [hM, ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso, congrFiniteIndecomposable,
-    congrFullSubcategory_functor_obj_obj]
+  rw [hM, ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso]
+  simp [congrFiniteIndecomposable]
 
 /-- The inverse of the correspondence induced by an equivalence of module categories is the
 correspondence induced by the inverse equivalence. -/

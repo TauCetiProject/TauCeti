@@ -64,17 +64,15 @@ theorem IsPoissonRandomMeasure.isFilteredPoissonProcess_natural_count
   have : IsLocallyFiniteMeasure ((α : ℝ≥0∞) • nnvolume) :=
     nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
   have hmono := h.ae_monotone_nat_count
-  refine HasIndepIncrements.isFilteredPoissonProcess_natural ?_ hmeas
+  refine HasIndepIncrements.isFilteredPoissonProcess_natural
+    (h.hasIndepIncrements_nat_count.natCast fun _ _ hst ↦ hmono.mono fun _ hω ↦ hω hst) hmeas
     (ae_of_all _ fun ω => by simp) fun s t hst => ?_
-  · -- Integer increments are those of the natural counts, by almost-sure monotonicity.
-    simpa using (h.hasIndepIncrements_nat_count.natCast hmono).map' (f := Int.castAddHom ℝ)
-      (measurable_of_countable _)
-  · have hcast := (hasLaw_map (P := poissonMeasure (α * (t - s)))
-      (measurable_of_countable (Nat.cast : ℕ → ℝ)).aemeasurable).fun_comp
-      (h.hasLaw_nat_count_sub_smul_nnvolume hst)
-    refine hcast.congr ?_
-    filter_upwards [hmono] with ω hω
-    simp [Nat.cast_sub (hω hst)]
+  have hcast := (hasLaw_map (P := poissonMeasure (α * (t - s)))
+    (measurable_of_countable (Nat.cast : ℕ → ℝ)).aemeasurable).fun_comp
+    (h.hasLaw_nat_count_sub_smul_nnvolume hst)
+  refine hcast.congr ?_
+  filter_upwards [hmono] with ω hω
+  simp [Nat.cast_sub (hω hst)]
 
 /-- **Existence of Poisson processes.** For every rate `α`, some probability space carries a
 Poisson process of rate `α` relative to its natural filtration whose paths are all counting

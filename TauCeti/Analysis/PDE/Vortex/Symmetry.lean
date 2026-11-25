@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import Mathlib.Topology.Algebra.Field
 import TauCeti.Analysis.Calculus.FDeriv.Comp
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.RCLike.AtInfinity
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -49,8 +49,9 @@ At a point, `rotateField u` and `rotateTarget u` act on values by the linear iso
 `gaugeFixedFirstOrder_fieldRotation`).
 
 These are identities of smooth differential expressions. Their counterparts for the `H¹`
-realization of `L_x` are in `TauCeti.Analysis.PDE.Vortex.RigidMotion`; the induced action on the
-divisor of a vortex is not treated here.
+realization of `L_x` are in `TauCeti.Analysis.PDE.Vortex.RigidMotion`; the induced action on
+smooth framed vortices, their divisors and their moduli is in
+`TauCeti.Analysis.PDE.Vortex.Moduli.Symmetry`.
 
 ## Main results
 

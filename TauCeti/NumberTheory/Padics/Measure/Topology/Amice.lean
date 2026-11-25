@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.PiTopology
-public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra
+public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra.Basic
 public import TauCeti.NumberTheory.Padics.Measure.PhiPsi
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.PowerSeries
 import TauCeti.NumberTheory.Padics.Measure.Norm
