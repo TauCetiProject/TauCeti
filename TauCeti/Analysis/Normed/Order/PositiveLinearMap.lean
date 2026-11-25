@@ -60,18 +60,23 @@ namespace PositiveLinearMap
 variable {F E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [LE E]
   [FunLike F E ℝ] [LinearMapClass F ℝ E ℝ] {u : E}
 
+/-- An order-preserving linear functional is nonnegative at a dominating element `u`, since
+`-φ u ≤ ‖u‖ * φ u`. Order preservation is an explicit hypothesis, as in `abs_apply_le_mul_norm`;
+for a positive linear map `φ`, pass `fun _ _ => map_rel φ`. -/
+theorem apply_nonneg_of_forall_le_norm_smul (φ : F) (hφ : ∀ ⦃f g : E⦄, f ≤ g → φ f ≤ φ g)
+    (hu : ∀ f : E, f ≤ ‖f‖ • u) : 0 ≤ φ u := by
+  have := hφ (hu (-u))
+  rw [map_neg, norm_neg, map_smul, smul_eq_mul] at this
+  nlinarith [norm_nonneg u]
+
 /-- An order-preserving linear functional is controlled in absolute value by its value at a
 dominating element `u`, scaled by the norm. Order preservation is an explicit hypothesis, so this
 also applies to monotone functionals on a preordered space, which do not bundle into
 `E →ₚ[ℝ] ℝ`; for a positive linear map `φ`, pass `fun _ _ => map_rel φ`. -/
 theorem abs_apply_le_mul_norm (φ : F) (hφ : ∀ ⦃f g : E⦄, f ≤ g → φ f ≤ φ g)
     (hu : ∀ f : E, f ≤ ‖f‖ • u) (f : E) : |φ f| ≤ φ u * ‖f‖ := by
-  -- `φ u` is nonnegative, since `-φ u ≤ ‖u‖ * φ u`
-  have hφu : 0 ≤ φ u := by
-    have := hφ (hu (-u))
-    rw [map_neg, norm_neg, map_smul, smul_eq_mul] at this
-    nlinarith [norm_nonneg u]
-  simpa [abs_of_nonneg hφu] using TauCeti.isOrderUnitNorm_real_one.norm_map_le hu φ hφ f
+  simpa [abs_of_nonneg (apply_nonneg_of_forall_le_norm_smul φ hφ hu)] using
+    TauCeti.isOrderUnitNorm_real_one.norm_map_le hu φ hφ f
 
 /-- An order-preserving linear functional vanishing at a dominating element `u` vanishes
 identically. -/
@@ -80,10 +85,6 @@ theorem apply_eq_zero_of_apply_eq_zero (φ : F) (hφ : ∀ ⦃f g : E⦄, f ≤ 
   abs_nonpos_iff.1 (by simpa [hφu] using abs_apply_le_mul_norm φ hφ hu f)
 
 variable [OrderHomClass F E ℝ] (φ : F)
-
-/-- A positive linear functional is nonnegative at a dominating element `u`. -/
-theorem apply_nonneg_of_forall_le_norm_smul (hu : ∀ f : E, f ≤ ‖f‖ • u) : 0 ≤ φ u :=
-  nonneg_of_abs_le_mul (abs_apply_le_mul_norm φ (fun _ _ => map_rel φ) hu u) (norm_nonneg u)
 
 /-- A positive linear functional is controlled by its value at a dominating element `u`, scaled by
 the norm of the difference of the arguments. -/
@@ -113,7 +114,7 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Preorder E]
 theorem opNorm_eq_apply_of_monotone (ψ : E →L[ℝ] ℝ) (hψ : Monotone ψ)
     (hu : ∀ f : E, f ≤ ‖f‖ • u) (hu₁ : ‖u‖ ≤ 1) : ‖ψ‖ = ψ u := by
   rw [TauCeti.isOrderUnitNorm_real_one.opNorm_eq_norm_apply hu hu₁ ψ hψ, Real.norm_of_nonneg]
-  exact nonneg_of_abs_le_mul (PositiveLinearMap.abs_apply_le_mul_norm ψ hψ hu u) (norm_nonneg u)
+  exact PositiveLinearMap.apply_nonneg_of_forall_le_norm_smul ψ hψ hu
 
 end ContinuousLinearMap
 

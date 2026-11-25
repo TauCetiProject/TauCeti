@@ -382,9 +382,8 @@ nonnegative scaling. -/
 theorem posSMulMono [NormSMulClass ℝ E] (h : IsOrderUnitNorm e) : PosSMulMono ℝ E :=
   PosSMulMono.of_smul_nonneg fun r hr b hb => by
     rw [h.nonneg_iff_norm_smul_sub_le] at hb ⊢
-    rw [norm_smul, Real.norm_of_nonneg hr, mul_smul, ← smul_sub, norm_smul,
-      Real.norm_of_nonneg hr]
-    exact mul_le_mul_of_nonneg_left hb hr
+    simpa [norm_smul, abs_of_nonneg hr, mul_smul, ← smul_sub] using
+      mul_le_mul_of_nonneg_left hb hr
 
 end IsOrderUnitNorm
 
