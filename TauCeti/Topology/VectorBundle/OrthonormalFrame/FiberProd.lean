@@ -205,8 +205,8 @@ theorem Equiv.fiberProd_refl (s : OrthonormalFrameLift F E n G ρ)
   ext x z
   refine FiberProd.ext (P := s.P) (Q := Q) ?_ ?_ <;> simp
 
-/-- The inverses of an equivalence of lifts and of an equivariant bijection `ψ` induce the inverse
-of the induced equivalence of fibre products. -/
+/-- The inverse of the equivalence of fibre products induced by `φ` and an equivariant bijection
+`ψ` is induced by the inverses of `φ` and `ψ`. -/
 @[simp]
 theorem Equiv.fiberProd_symm {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
     {Q' : X → Type w} [TopologicalSpace (TotalSpace H Q')] [∀ x, TopologicalSpace (Q' x)]
@@ -214,18 +214,16 @@ theorem Equiv.fiberProd_symm {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equ
     (ψ : ∀ x, Q x ≃ Q' x) (hψ : ∀ x (q : Q x) (h : H), ψ x (op h • q) = op h • ψ x q)
     (hψc : Continuous fun q : TotalSpace H Q ↦ (⟨q.proj, ψ q.proj q.snd⟩ : TotalSpace H Q'))
     (hψc' : Continuous fun q : TotalSpace H Q' ↦
-      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q))
-    (hψs : ∀ x (q : Q' x) (h : H), (ψ x).symm (op h • q) = op h • (ψ x).symm q)
-    (hψsc : Continuous fun q : TotalSpace H Q' ↦
-      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q))
-    (hψsc' : Continuous fun q : TotalSpace H Q ↦
-      (⟨q.proj, (ψ q.proj).symm.symm q.snd⟩ : TotalSpace H Q')) :
-    φ.symm.fiberProd (fun x ↦ (ψ x).symm) hψs hψsc hψsc' = (φ.fiberProd ψ hψ hψc hψc').symm := by
+      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q)) :
+    (φ.fiberProd ψ hψ hψc hψc').symm =
+      φ.symm.fiberProd (fun x ↦ (ψ x).symm)
+        (fun x q h ↦ (ψ x).symm_apply_eq.2 (by rw [hψ, _root_.Equiv.apply_symm_apply]))
+        hψc' hψc := by
   ext x z
   refine FiberProd.ext (P := s.P) (Q := Q) ?_ ?_ <;> simp
 
-/-- Composites of equivalences of lifts and of equivariant bijections induce the composite of the
-induced equivalences of fibre products. -/
+/-- The composite of the equivalences of fibre products induced by `φ, ψ` and by `φ', ψ'` is
+induced by the composites `φ.trans φ'` and `ψ.trans ψ'`. -/
 @[simp]
 theorem Equiv.fiberProd_trans {s t u : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
     (φ' : t.Equiv u)
@@ -240,16 +238,23 @@ theorem Equiv.fiberProd_trans {s t u : OrthonormalFrameLift F E n G ρ} (φ : s.
     (ψ' : ∀ x, Q' x ≃ Q'' x) (hψ' : ∀ x (q : Q' x) (h : H), ψ' x (op h • q) = op h • ψ' x q)
     (hψ'c : Continuous fun q : TotalSpace H Q' ↦ (⟨q.proj, ψ' q.proj q.snd⟩ : TotalSpace H Q''))
     (hψ'c' : Continuous fun q : TotalSpace H Q'' ↦
-      (⟨q.proj, (ψ' q.proj).symm q.snd⟩ : TotalSpace H Q'))
-    (hψψ' : ∀ x (q : Q x) (h : H), (ψ x).trans (ψ' x) (op h • q) = op h • (ψ x).trans (ψ' x) q)
-    (hψψ'c : Continuous fun q : TotalSpace H Q ↦
-      (⟨q.proj, (ψ q.proj).trans (ψ' q.proj) q.snd⟩ : TotalSpace H Q''))
-    (hψψ'c' : Continuous fun q : TotalSpace H Q'' ↦
-      (⟨q.proj, ((ψ q.proj).trans (ψ' q.proj)).symm q.snd⟩ : TotalSpace H Q)) :
-    (φ.trans φ').fiberProd (fun x ↦ (ψ x).trans (ψ' x)) hψψ' hψψ'c hψψ'c' =
-      (φ.fiberProd ψ hψ hψc hψc').trans (φ'.fiberProd ψ' hψ' hψ'c hψ'c') := by
+      (⟨q.proj, (ψ' q.proj).symm q.snd⟩ : TotalSpace H Q')) :
+    (φ.fiberProd ψ hψ hψc hψc').trans (φ'.fiberProd ψ' hψ' hψ'c hψ'c') =
+      (φ.trans φ').fiberProd (fun x ↦ (ψ x).trans (ψ' x))
+        (fun x q h ↦ by simp only [_root_.Equiv.trans_apply, hψ, hψ'])
+        (hψ'c.comp hψc) (hψc'.comp hψ'c') := by
   ext x z
-  refine FiberProd.ext (P := u.P) (Q := Q'') ?_ ?_ <;> simp
+  -- `simp` cannot rewrite the right-hand side with `fiberProd_toEquiv_fst`/`_snd`: the types of
+  -- the composite proofs match the lemmas' hypotheses only after unfolding `Function.comp` and
+  -- `Equiv.trans`, so the lemmas are instantiated explicitly.
+  have hψψ' : ∀ x (q : Q x) (h : H),
+      (ψ x).trans (ψ' x) (op h • q) = op h • (ψ x).trans (ψ' x) q := fun x q h ↦ by
+    simp only [_root_.Equiv.trans_apply, hψ, hψ']
+  refine FiberProd.ext (P := u.P) (Q := Q'') ?_ ?_
+  · simpa using (Equiv.fiberProd_toEquiv_fst (φ.trans φ') (fun x ↦ (ψ x).trans (ψ' x)) hψψ'
+      (hψ'c.comp hψc) (hψc'.comp hψ'c') x z).symm
+  · simpa using (Equiv.fiberProd_toEquiv_snd (φ.trans φ') (fun x ↦ (ψ x).trans (ψ' x)) hψψ'
+      (hψ'c.comp hψc) (hψc'.comp hψ'c') x z).symm
 
 end OrthonormalFrameLift
 
