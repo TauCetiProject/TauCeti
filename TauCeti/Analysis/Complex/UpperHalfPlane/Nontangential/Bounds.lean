@@ -29,8 +29,6 @@ be finite, and the bound is localised:
 * **Local weak type.** There is `C_R`, depending only on `R`, with
   `t |{x ∈ [-R, R] : M_1 P[|g| dx](x) > t}| ≤ C_R ‖g‖_{L¹(Π)}`.
 
-This is part of §2.3 of the DiracScatteringAndNonlinearFourierTransform roadmap.
-
 ## Main results
 
 * `TauCeti.lintegral_rpow_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le`: the
@@ -45,6 +43,8 @@ This is part of §2.3 of the DiracScatteringAndNonlinearFourierTransform roadmap
 ## References
 
 * J. B. Garnett, *Bounded Analytic Functions*, revised 1st ed., Springer (2007), Chapter I, §4.
+* L. Mauth, *On pointwise convergence of the non-linear Fourier transform*, arXiv:2210.12286
+  (2022), Lemmas 5 and 6 and Corollary 1.
 -/
 
 public section
@@ -237,37 +237,13 @@ theorem nontangentialMaximalFunction_one_one_upperHalfPlanePoissonLIntegral_le {
   nontangentialMaximalFunction_le_iff.2 fun _ hz => by
     simpa using upperHalfPlanePoissonLIntegral_le_of_mem_nontangentialCone_one hg hx hz
 
-/-- On `[-R - 2, R + 2]` the Lebesgue integral of `|g|` is at most `1 + (R + 2) ^ 2` times its
-integral against the Poisson measure. -/
-private theorem lintegral_indicator_le_mul_lintegral_upperHalfPlanePoissonMeasure {g : ℝ → F}
-    (hg : AEMeasurable (fun s => ‖g s‖ₑ)) (R : ℝ) :
-    ∫⁻ s, ‖(Icc (-(R + 2)) (R + 2)).indicator g s‖ₑ ≤
-      ENNReal.ofReal (1 + (R + 2) ^ 2) * ∫⁻ s, ‖g s‖ₑ ∂upperHalfPlanePoissonMeasure := by
-  have hd : Measurable fun s : ℝ => ENNReal.ofReal (1 + s ^ 2)⁻¹ := by fun_prop
-  simp_rw [eNorm_indicator_eq_indicator_eNorm]
-  rw [lintegral_indicator measurableSet_Icc, upperHalfPlanePoissonMeasure_eq_withDensity,
-    lintegral_withDensity_eq_lintegral_mul₀ hd.aemeasurable hg,
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine (setLIntegral_le_lintegral _ _).trans' (setLIntegral_mono' measurableSet_Icc
-    fun s hs => ?_)
-  simp only [Pi.mul_apply]
-  rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
-  have hs2 : s ^ 2 ≤ (R + 2) ^ 2 := by
-    rw [← sq_abs, ← sq_abs (R + 2)]
-    exact pow_le_pow_left₀ (abs_nonneg _) ((abs_le.2 hs).trans (le_abs_self _)) 2
-  have h1 : 1 ≤ (1 + (R + 2) ^ 2) * (1 + s ^ 2)⁻¹ := by
-    rw [← div_eq_mul_inv, one_le_div (by positivity)]
-    linarith
-  calc ‖g s‖ₑ = ENNReal.ofReal 1 * ‖g s‖ₑ := by simp
-    _ ≤ _ := by gcongr
-
-/-- A point of `[-R, R]` where `M_1 P[|g| dx] > t` has `M(g 1_{[-R-2, R+2]}) > t / 6` or
+/-- A point of `[-R, R]` where `M_1 P[|g| dx] > t` has `M(g 1_{[-R-2, R+2]}) > t / 2 / 3` or
 `2 (R + 2) ^ 2 / π · ∫ |g| dΠ > t / 2`. -/
 private theorem lt_maximalFunction_or_lt_of_lt {g : ℝ → F} (hg : AEMeasurable (fun s => ‖g s‖ₑ))
     {R x : ℝ} (hxR : x ∈ Icc (-R) R) {t : ℝ≥0∞}
     (hx : t < nontangentialMaximalFunction 1 1
       (upperHalfPlanePoissonLIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x) :
-    t / 6 < maximalFunction volume ((Icc (-(R + 2)) (R + 2)).indicator g) x ∨
+    t / 2 / 3 < maximalFunction volume ((Icc (-(R + 2)) (R + 2)).indicator g) x ∨
       t / 2 < ENNReal.ofReal (2 * (R + 2) ^ 2 / π) *
         ∫⁻ s, ‖g s‖ₑ ∂upperHalfPlanePoissonMeasure := by
   have hle := nontangentialMaximalFunction_one_one_upperHalfPlanePoissonLIntegral_le hg
@@ -275,18 +251,15 @@ private theorem lt_maximalFunction_or_lt_of_lt {g : ℝ → F} (hg : AEMeasurabl
   by_contra hAB
   rw [not_or, not_lt, not_lt] at hAB
   have h1 : 3 * maximalFunction volume ((Icc (-(R + 2)) (R + 2)).indicator g) x ≤ t / 2 := by
-    calc _ ≤ 3 * (t / 6) := by gcongr; exact hAB.1
-      _ = t / 2 := by
-        rw [show (6 : ℝ≥0∞) = 3 * 2 by norm_num, ENNReal.div_eq_inv_mul,
-          ENNReal.div_eq_inv_mul, ENNReal.mul_inv (by simp) (by simp), ← mul_assoc,
-          ← mul_assoc, ENNReal.mul_inv_cancel (by simp) (by simp), one_mul]
+    calc _ ≤ 3 * (t / 2 / 3) := by gcongr; exact hAB.1
+      _ = t / 2 := ENNReal.mul_div_cancel (by simp) (by simp)
   have := hx.trans_le (hle.trans (add_le_add h1 hAB.2))
   rw [ENNReal.add_halves] at this
   exact lt_irrefl _ this
 
-/-- **The local weak type bound for functions in `L¹(Π)`.** For `R ≥ 0` there is a constant
-`C_R`, depending only on `R`, such that
-`t |{x ∈ [-R, R] : M_1 P[|g| dx](x) > t}| ≤ C_R ∫ |g| dΠ` for every `g` and `t`. -/
+/-- **The local weak type bound for functions in `L¹(Π)`.** For `R` there is a constant `C_R`,
+depending only on `R`, such that `t |{x ∈ [-R, R] : M_1 P[|g| dx](x) > t}| ≤ C_R ∫ |g| dΠ` for
+every `g` with `‖g‖ₑ` a.e.-measurable and every `t`. -/
 theorem exists_mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le
     (R : ℝ) : ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ g : ℝ → F, AEMeasurable (fun s => ‖g s‖ₑ) → ∀ t : ℝ≥0∞,
       t * volume {x ∈ Icc (-R) R | t < nontangentialMaximalFunction 1 1
@@ -300,19 +273,22 @@ theorem exists_mul_volume_lt_nontangentialMaximalFunction_upperHalfPlanePoissonL
       measure_Icc_lt_top.ne⟩, fun g hg t => ?_⟩
   set S := Icc (-(R + 2)) (R + 2)
   set N := ∫⁻ s, ‖g s‖ₑ ∂upperHalfPlanePoissonMeasure
-  set A := {x | t / 6 < maximalFunction volume (S.indicator g) x}
+  set A := {x | t / 2 / 3 < maximalFunction volume (S.indicator g) x}
   set B := {x ∈ Icc (-R) R | t / 2 < c * N}
   have hsub : {x ∈ Icc (-R) R | t < nontangentialMaximalFunction 1 1
       (upperHalfPlanePoissonLIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x} ⊆ A ∪ B :=
     fun x ⟨hxR, hx⟩ => (lt_maximalFunction_or_lt_of_lt hg hxR hx).imp id fun h => ⟨hxR, h⟩
   have hA : t * volume A ≤ 24 * d * N := by
-    have hw := mul_measure_lt_maximalFunction_le volume (S.indicator g) (t / 6)
+    have hw := mul_measure_lt_maximalFunction_le volume (S.indicator g) (t / 2 / 3)
     simp only [Module.finrank_self, pow_one] at hw
-    calc t * volume A = 6 * (t / 6 * volume A) := by
-          rw [← mul_assoc, ENNReal.mul_div_cancel (by simp) (by simp)]
-      _ ≤ 6 * (4 * (d * N)) := by
-          refine mul_le_mul' le_rfl (hw.trans (mul_le_mul' le_rfl ?_))
-          exact lintegral_indicator_le_mul_lintegral_upperHalfPlanePoissonMeasure hg R
+    calc t * volume A = 2 * (3 * (t / 2 / 3 * volume A)) := by
+          rw [← mul_assoc 3, ENNReal.mul_div_cancel (by simp) (by simp), ← mul_assoc,
+            ENNReal.mul_div_cancel (by simp) (by simp)]
+      _ ≤ 2 * (3 * (4 * (d * N))) := by
+          refine mul_le_mul' le_rfl (mul_le_mul' le_rfl (hw.trans (mul_le_mul' le_rfl ?_)))
+          simp_rw [eNorm_indicator_eq_indicator_eNorm]
+          rw [lintegral_indicator measurableSet_Icc]
+          exact setLIntegral_Icc_le_mul_lintegral_upperHalfPlanePoissonMeasure _ (R + 2)
       _ = 24 * d * N := by ring
   have hB : t * volume B ≤ 2 * c * volume (Icc (-R) R) * N := by
     by_cases hcN : t / 2 < c * N
