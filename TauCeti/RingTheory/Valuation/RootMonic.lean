@@ -45,8 +45,9 @@ coefficients and unit discriminant the derivative is a unit, is stated over a co
 * `Valuation.exists_pow_le_map_coeff_of_root_monic` and
   `Valuation.exists_map_coeff_le_mul_pow_of_root`: a root `t` is bounded above by a lower
   coefficient of a monic polynomial it annihilates and, if `ν t ≠ 0`, below by a ratio of two
-  coefficients of any polynomial it annihilates. Over an integral extension these bounds compare
-  the values of a valuation with those of its restriction.
+  coefficients of any polynomial it annihilates that has a coefficient of nonzero value. Over an
+  integral extension these bounds compare the values of a valuation with those of its
+  restriction.
 * `Valuation.le_one_of_root_monic`: a root of a monic polynomial with `ν`-integral coefficients
   has value at most one.
 * `Valuation.map_quadratic_eq_of_one_lt` and `Valuation.one_lt_map_sq_add_mul_sub_iff`:
