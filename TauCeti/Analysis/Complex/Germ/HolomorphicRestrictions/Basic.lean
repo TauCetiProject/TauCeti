@@ -251,6 +251,7 @@ theorem HolomorphicFunctions.comp_inclusion_mem_holomorphicRestrictions {U : Ope
   exact holomorphicGerms.toContinuousMap_mem_holomorphicRestrictions _
 
 /-- On an open set `U`, `O(U)` is the algebra of holomorphic functions on `U`. -/
+@[simp]
 theorem holomorphicRestrictions_coe_opens (U : Opens ℂ) :
     holomorphicRestrictions (U : Set ℂ) = holomorphicFunctions U := by
   ext φ

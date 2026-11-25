@@ -121,11 +121,16 @@ private def invSqRestrict : C(closedBall (0 : ℂ) 1, ℂ) :=
     (tendstoUniformlyOn_invSqCoeff.continuousOn (Frequently.of_forall fun N ↦
       (differentiable_partialSum_invSqCoeff N).continuous.continuousOn)).domRestrict⟩
 
+@[simp]
+private theorem invSqRestrict_apply (z : closedBall (0 : ℂ) 1) :
+    invSqRestrict z = ofScalarsSum invSqCoeff (z : ℂ) :=
+  rfl
+
 private theorem invSqRestrict_notMem :
     invSqRestrict ∉ holomorphicRestrictions (closedBall (0 : ℂ) 1) := fun h ↦ by
   obtain ⟨U, g, hU, hDU, hg, hgΦ⟩ := mem_holomorphicRestrictions_iff_exists_open.mp h
   exact not_exists_differentiableOn_eq_ofScalarsSum_invSqCoeff
-    ⟨U, g, hU, hDU, hg, fun z hz ↦ hgΦ ⟨z, hz⟩⟩
+    ⟨U, g, hU, hDU, hg, fun z hz ↦ (hgΦ ⟨z, hz⟩).trans (invSqRestrict_apply _)⟩
 
 /-- The algebra `O(D)` of restrictions to the closed unit disc `D` of functions holomorphic near
 `D` is not closed in `C(D, ℂ)`. -/
@@ -139,7 +144,8 @@ theorem not_isClosed_holomorphicRestrictions_closedBall :
       (differentiable_partialSum_invSqCoeff N).continuous.continuousOn.domRestrict⟩
   refine fun hclosed ↦ invSqRestrict_notMem <|
     hclosed.mem_of_tendsto (f := S) (b := atTop) ?_ (Eventually.of_forall fun N ↦ ?_)
-  · rw [ContinuousMap.tendsto_iff_tendstoUniformly]
+  · rw [ContinuousMap.tendsto_iff_tendstoUniformly,
+      show ⇑invSqRestrict = ofScalarsSum invSqCoeff ∘ Subtype.val from funext invSqRestrict_apply]
     exact tendstoUniformlyOn_iff_tendstoUniformly_comp_coe.mp tendstoUniformlyOn_invSqCoeff
   · exact mem_holomorphicRestrictions_iff_exists_open.mpr ⟨univ, _, isOpen_univ, subset_univ _,
       (differentiable_partialSum_invSqCoeff N).differentiableOn, fun _ ↦ rfl⟩
@@ -152,7 +158,8 @@ theorem exists_mem_holomorphicFunctions_interior_notMem_holomorphicRestrictions_
           holomorphicFunctions (Opens.interior (closedBall (0 : ℂ) 1)) ∧
         φ ∉ holomorphicRestrictions (closedBall (0 : ℂ) 1) := by
   refine ⟨invSqRestrict,
-    (mem_holomorphicFunctions_iff_of_eqOn (g := ofScalarsSum invSqCoeff) fun _ ↦ rfl).mpr ?_,
+    (mem_holomorphicFunctions_iff_of_eqOn (g := ofScalarsSum invSqCoeff) fun z ↦
+      (invSqRestrict_apply ⟨z, interior_subset z.property⟩).symm).mpr ?_,
     invSqRestrict_notMem⟩
   rw [Opens.coe_interior, interior_closedBall _ one_ne_zero]
   exact differentiableOn_ofScalarsSum_invSqCoeff
