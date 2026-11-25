@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDoub
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.PartitionOfUnity.MVFDeriv
+import TauCeti.Analysis.Complex.FDerivSign
 
 /-!
 # An odd defining function of the seam of a Schottky double
@@ -28,19 +30,21 @@ positive on the first interior sheet, negative on the second and zero on the sea
 (`TauCeti.SchottkyDouble.mem_range_interiorInl_iff_im_chartAt_pos` and its companions). At a seam
 point `q` its differential is positive on the vector `i` of the preferred chart at `q`: it vanishes
 on the real direction, along which the chart stays on the seam, is nonnegative on `i`, along which
-the chart enters the first sheet, and is nonzero since the chart is a local diffeomorphism. A smooth
-partition of unity subordinate to the chart domains glues these local functions into `g₀`, with the
-same signs and differential positive on `i` at the seam. Its antisymmetrization
-`g = (g₀ - g₀ ∘ τ) / 2` is odd, keeps the signs because `τ` exchanges the two sheets and fixes the
-seam, and has the same differential as `g₀` on the seam because `τ` reads as `z ↦ conj z` in the
-doubled charts.
+the chart enters the first sheet, and is nonzero since the chart is a local diffeomorphism
+(`TauCeti.Complex.fderiv_apply_I_pos`). A smooth partition of unity subordinate to the chart
+domains glues these local functions into `g₀`, with the same signs and differential positive on `i`
+at the seam (`SmoothPartitionOfUnity.mvfderiv_finsum_smul_pos`, the gluing step also used for
+boundary defining functions in `TauCeti.Geometry.Manifold.Boundary.DefiningFunction.Basic`). Its
+antisymmetrization `g = g₀ - g₀ ∘ τ` is odd, keeps the signs because `τ` exchanges the two sheets
+and fixes the seam, and on the seam has twice the differential of `g₀` on `i`, because `τ` reads as
+`z ↦ conj z` in the doubled charts (`TauCeti.SchottkyDouble.hasMFDerivAt_swap`) and so reverses
+`i`.
 
 Such a function is the input for a collar projection of the seam which is invariant under `τ`, by
 flowing to its zero level along a field which `τ` reverses.
 
 ## Main results
 
-* `TauCeti.SchottkyDouble.hasMFDerivAt_swap`: the differential of the sheet swap is conjugation.
 * `TauCeti.SchottkyDouble.exists_odd_definingFunction`: a smooth defining function of the seam
   which is odd under the sheet swap and positive on the first sheet.
 
@@ -64,77 +68,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
 
 local notation "A" => (borderedInterior M : Set M)ᶜ
 local notation "D" => SchottkyDouble M
-
-/-- **The differential of the sheet swap is conjugation**, in the doubled charts at a point and at
-its image, which coincide. -/
-theorem hasMFDerivAt_swap (z : D) :
-    HasMFDerivAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (DoubleAlong.swap A) z
-      (conjCLE : ℂ ≃L[ℝ] ℂ).toContinuousLinearMap := by
-  refine ⟨(DoubleAlong.swap A).continuous.continuousAt, ?_⟩
-  rw [modelWithCornersSelf_coe, range_id, hasFDerivWithinAt_univ]
-  exact (conjCLE : ℂ ≃L[ℝ] ℂ).toContinuousLinearMap.hasFDerivAt.congr_of_eventuallyEq
-    (writtenInExtChartAt_swap_eventuallyEq_conj (𝕜 := ℝ) z)
-
-/-- Every point of the double lies on the first interior sheet, on the second, or on the seam. -/
-private theorem mem_range_interiorInl_or_mem_range_interiorInr_or_mem_seam (z : D) :
-    z ∈ range (interiorInl M) ∨ z ∈ range (interiorInr M) ∨ z ∈ DoubleAlong.inl A '' A := by
-  induction z using DoubleAlong.induction_on with
-  | hl x =>
-    by_cases hx : x ∈ borderedInterior M
-    · exact Or.inl ⟨⟨x, hx⟩, interiorInl_apply _⟩
-    · exact Or.inr (Or.inr ⟨x, hx, rfl⟩)
-  | hr x =>
-    by_cases hx : x ∈ borderedInterior M
-    · exact Or.inr (Or.inl ⟨⟨x, hx⟩, interiorInr_apply _⟩)
-    · exact Or.inr (Or.inr ⟨x, hx, (DoubleAlong.inl_eq_inr_iff A).2 ⟨rfl, hx⟩⟩)
-
-/-- A real-linear form on `ℂ` vanishing on `1` and nonzero vanishes nowhere on `i`. -/
-private theorem apply_I_ne_zero {L : ℂ →L[ℝ] ℝ} (h1 : L 1 = 0) {v : ℂ} (hv : L v ≠ 0) :
-    L I ≠ 0 := by
-  intro hI
-  apply hv
-  have hv' : v = v.re • (1 : ℂ) + v.im • I := by
-    simp only [real_smul, mul_one, re_add_im]
-  rw [hv', map_add, map_smul, map_smul, h1, hI, smul_zero, smul_zero, add_zero]
-
-/-- **The sign test in coordinates.** Let `F : ℂ → ℝ` have nonzero derivative at `x₀`, vanish near
-`x₀` on the horizontal line through `x₀`, and be positive near `x₀` above it. Then its derivative at
-`x₀` is positive on `i`. -/
-private theorem fderiv_apply_I_pos {F : ℂ → ℝ} {x₀ v : ℂ} (hne : fderiv ℝ F x₀ v ≠ 0)
-    (hreal : ∀ᶠ w in 𝓝 x₀, w.im = x₀.im → F w = 0)
-    (hpos : ∀ᶠ w in 𝓝 x₀, x₀.im < w.im → 0 < F w) :
-    0 < fderiv ℝ F x₀ I := by
-  have hd : DifferentiableAt ℝ F x₀ := by
-    by_contra hnd
-    exact hne (by rw [fderiv_zero_of_not_differentiableAt hnd]; rfl)
-  have hF0 : F x₀ = 0 := hreal.self_of_nhds rfl
-  -- Along the real direction `F` vanishes, so its derivative on `1` is zero.
-  have h1 : fderiv ℝ F x₀ 1 = 0 := by
-    have hγ : HasDerivAt (fun t : ℝ ↦ x₀ + t) 1 0 := by
-      simpa only [ofRealCLM_apply, ofReal_one] using
-        (ofRealCLM.hasDerivAt (x := (0 : ℝ))).const_add x₀
-    have h := hd.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) hγ (by simp)
-    have hev : (F ∘ fun t : ℝ ↦ x₀ + t) =ᶠ[𝓝 0] fun _ ↦ 0 := by
-      have ht : Tendsto (fun t : ℝ ↦ x₀ + t) (𝓝 0) (𝓝 x₀) := by
-        simpa using hγ.continuousAt.tendsto
-      filter_upwards [ht.eventually hreal] with t ht
-      exact ht (by simp)
-    exact h.unique ((hasDerivAt_const (0 : ℝ) (0 : ℝ)).congr_of_eventuallyEq hev)
-  -- Along `i` the function is positive for positive times, so its derivative on `i` is `≥ 0`.
-  have hI : 0 ≤ fderiv ℝ F x₀ I := by
-    have hγ : HasDerivAt (fun t : ℝ ↦ x₀ + t * I) I 0 := by
-      simpa only [ofRealCLM_apply, ofReal_one, one_mul] using
-        ((ofRealCLM.hasDerivAt (x := (0 : ℝ))).mul_const I).const_add x₀
-    have h := hd.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) hγ (by simp)
-    have ht : Tendsto (fun t : ℝ ↦ x₀ + t * I) (𝓝 0) (𝓝 x₀) := by
-      simpa using hγ.continuousAt.tendsto
-    refine ge_of_tendsto h.tendsto_slope_zero_right ?_
-    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (ht.eventually hpos)] with t ht0 ht
-    have hFt := ht (by simpa using ht0)
-    simp only [zero_add, Function.comp_apply, ofReal_zero, zero_mul, add_zero, hF0, sub_zero,
-      smul_eq_mul]
-    exact mul_nonneg (inv_nonneg.2 (le_of_lt ht0)) hFt.le
-  exact lt_of_le_of_ne hI (apply_I_ne_zero h1 hne).symm
 
 /-- **Antisymmetrizing at a fixed point of the swap.** At a fixed point `q` of the sheet swap, the
 differential of `g₀ - g₀ ∘ τ` on the vector `i` of the preferred chart is twice that of `g₀`, since
@@ -215,53 +148,11 @@ private theorem mvfderiv_im_chartAt_I_pos {p q : D} (hqp : q ∈ (chartAt ℂ p)
       imCLM_apply, I_im] at h
     exact fun h0 ↦ one_ne_zero (h.symm.trans ((hLv v).trans h0))
   rw [hLv]
-  refine fderiv_apply_I_pos hLne ?_ ?_
+  refine TauCeti.Complex.fderiv_apply_I_pos hLne ?_ ?_
   · filter_upwards [hev] with w hw hwi
     exact (hsign w hw.1 hw.2).1 (hwi.trans hx₀)
   · filter_upwards [hev] with w hw hwi
     exact (hsign w hw.1 hw.2).2 (hx₀ ▸ hwi)
-
-/-- **The glued function at the seam.** For a smooth partition of unity `φ` subordinate to the
-doubled chart domains, the differential of `∑ᶠ i, φ i • im (chartAt i)` at a seam point `q` is
-positive on the vector `i` of the preferred chart at `q`: near `q` it is the finite sum
-`∑ φ i q • d (im (chartAt i))` over the indices `i` with `q` in the topological support of `φ i`,
-since every such `im (chartAt i)` vanishes at `q`. -/
-private theorem mvfderiv_finsum_im_chartAt_I_pos
-    {φ : SmoothPartitionOfUnity D 𝓘(ℝ, ℂ) D univ}
-    (hφ : φ.IsSubordinate fun i ↦ (chartAt ℂ i).source) {q : D}
-    (hq : q ∈ DoubleAlong.inl A '' A) :
-    0 < mvfderiv 𝓘(ℝ, ℂ) (fun z ↦ ∑ᶠ i, φ i z • (chartAt ℂ i z).im) q I := by
-  have : IsManifold 𝓘(ℝ, ℂ) 1 D := IsManifold.of_le (n := ω) le_top
-  -- The vector `i`, read as a tangent vector at `q`.
-  set w : TangentSpace 𝓘(ℝ, ℂ) q := I
-  have hU {i : D} (hi : i ∈ φ.fintsupport q) : q ∈ (chartAt ℂ i).source :=
-    hφ i ((φ.mem_fintsupport_iff q i).mp hi)
-  have hdh {i : D} (hi : i ∈ φ.fintsupport q) :
-      MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ) (fun z ↦ (chartAt ℂ i z).im) q :=
-    (imCLM.contMDiff.contMDiffAt.comp q ((contMDiffOn_chart (n := 1)).contMDiffAt
-      ((chartAt ℂ i).open_source.mem_nhds (hU hi)))).mdifferentiableAt one_ne_zero
-  -- Near `q` the sum runs over the finite set of `i` with `q` in the topological support of `φ i`.
-  have heq : (fun z ↦ ∑ᶠ i, φ i z • (chartAt ℂ i z).im) =ᶠ[𝓝 q]
-      fun z ↦ ∑ i ∈ φ.fintsupport q, φ i z • (chartAt ℂ i z).im := by
-    filter_upwards [φ.eventually_fintsupport_subset q] with y hy
-    refine finsum_eq_sum_of_support_subset _ fun i hi ↦ hy ?_
-    exact (φ.mem_fintsupport_iff y i).mpr (subset_tsupport _ (left_ne_zero_of_smul hi))
-  have hdφ (i : D) : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ) (φ i) q :=
-    (φ i).contMDiff.mdifferentiableAt (by simp)
-  have hterm (i : D) (hi : i ∈ φ.fintsupport q) :
-      mvfderiv 𝓘(ℝ, ℂ) (fun z ↦ φ i z • (chartAt ℂ i z).im) q w =
-        φ i q * mvfderiv 𝓘(ℝ, ℂ) (fun z ↦ (chartAt ℂ i z).im) q w := by
-    rw [mvfderiv_fun_smul (hdφ i) (hdh hi),
-      (mem_image_inl_compl_iff_im_chartAt_eq_zero (hU hi)).1 hq]
-    simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul,
-      mul_zero, add_zero]
-  rw [heq.mvfderiv_eq, mvfderiv_fun_sum (f := fun i z ↦ φ i z • (chartAt ℂ i z).im)
-      fun i hi ↦ (hdφ i).smul (hdh hi), sum_apply, Finset.sum_congr rfl hterm]
-  obtain ⟨j, hj⟩ := φ.exists_pos_of_mem (mem_univ q)
-  have hjF : j ∈ φ.fintsupport q := (φ.mem_fintsupport_iff q j).mpr (subset_tsupport _ hj.ne')
-  exact Finset.sum_pos' (fun i hi ↦ mul_nonneg (φ.nonneg i q)
-    (mvfderiv_im_chartAt_I_pos (hU hi) hq).le)
-    ⟨j, hjF, mul_pos hj (mvfderiv_im_chartAt_I_pos (hU hjF) hq)⟩
 
 /-- **Gluing the imaginary parts of the doubled charts.** There is a smooth function on the double
 which is positive on the first interior sheet, negative on the second, and whose differential at
@@ -287,7 +178,12 @@ private theorem exists_sheet_sign_function [T2Space M] [SecondCountableTopology 
   have hneg : ∀ z ∈ range (interiorInr M), g₀ z < 0 := fun z hz ↦
     φ.finsum_smul_mem_convex (g := fun i z ↦ (chartAt ℂ i z).im) (t := Iio 0) (mem_univ z)
       (fun i hi ↦ (mem_range_interiorInr_iff_im_chartAt_neg (hmem hi)).1 hz) (convex_Iio 0)
-  exact ⟨g₀, hg₀, hpos, hneg, fun q hq ↦ mvfderiv_finsum_im_chartAt_I_pos hφ hq⟩
+  -- At the seam every local function vanishes and has positive differential on `i`.
+  refine ⟨g₀, hg₀, hpos, hneg, fun q hq ↦ φ.mvfderiv_finsum_smul_pos hφ (fun i hi ↦ ?_)
+    (fun i hi ↦ (mem_image_inl_compl_iff_im_chartAt_eq_zero hi).1 hq)
+    fun i hi ↦ mvfderiv_im_chartAt_I_pos hi hq⟩
+  exact (imCLM.contMDiff.contMDiffAt.comp q ((contMDiffOn_chart (n := 1)).contMDiffAt
+    ((chartAt ℂ i).open_source.mem_nhds hi))).mdifferentiableAt one_ne_zero
 
 /-- **An odd defining function of the seam.** On the Schottky double of a Hausdorff,
 second-countable Riemann surface with boundary there is a smooth real function `g` which is odd
@@ -321,7 +217,7 @@ theorem exists_odd_definingFunction [T2Space M] [SecondCountableTopology M] :
     fun x hx ↦ by simpa only [interiorInl_apply] using hgl ⟨x, hx⟩, fun q hq ↦ ?_⟩
   · simp only [hg_def, DoubleAlong.swap_swap, neg_sub]
   · refine ⟨fun h0 ↦ ?_, fun hz ↦ by simp only [hg_def, hswap0 z hz, sub_self]⟩
-    rcases mem_range_interiorInl_or_mem_range_interiorInr_or_mem_seam z with
+    rcases mem_range_interiorInl_or_mem_range_interiorInr_or_mem_image_inl_compl z with
       ⟨u, rfl⟩ | ⟨u, rfl⟩ | hz
     · exact absurd h0 (hgl u).ne'
     · exact absurd h0 (hgr u).ne
