@@ -9,10 +9,8 @@ public import TauCeti.Analysis.Complex.Conformal.Koebe
 public import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Uniqueness
 public import Mathlib.Analysis.Complex.Order
 import Mathlib.Analysis.Complex.Isometry
-import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Equivalence
-import TauCeti.Data.Set.Function
 
 /-!
 # The normalized Riemann map
@@ -55,7 +53,7 @@ domain, since the size of `deriv f z₀` is not free once the image is required 
 ## Main statements
 
 * `TauCeti.IsNormalizedRiemannMapOn` — the normalization, as a predicate, together with basic
-  consequences (`norm_deriv_pos`, `isSimplyConnected`, `ne_univ`, `deriv_eq`, `bijOn_invFunOn`,
+  consequences (`norm_deriv_pos`, `isSimplyConnected`, `ne_univ`, `deriv_eq`,
   `differentiableOn_invFunOn`, `invFunOn_zero`).
 * `TauCeti.isNormalizedRiemannMapOn_norm_deriv_div_deriv_mul` — rotating an origin-centered
   holomorphic bijection `Ω → 𝔻` by `‖deriv f z₀‖ / deriv f z₀` normalizes it.
@@ -233,12 +231,6 @@ theorem deriv_eq (hf : IsNormalizedRiemannMapOn f Ω z₀) (hg : IsNormalizedRie
     (hΩo : IsOpen Ω) : deriv f z₀ = deriv g z₀ :=
   Filter.EventuallyEq.deriv_eq <|
     eventually_nhds_iff.mpr ⟨Ω, fun _ hz => hf.eqOn hg hΩo hz, hΩo, hf.base_mem⟩
-
-/-- The inverse `Function.invFunOn f Ω` of a normalized Riemann map carries the open unit disc
-bijectively onto `Ω`. -/
-theorem bijOn_invFunOn (hf : IsNormalizedRiemannMapOn f Ω z₀) :
-    BijOn (Function.invFunOn f Ω) (ball (0 : ℂ) 1) Ω :=
-  hf.bijOn.invFunOn
 
 /-- On an open domain `Ω`, the inverse `Function.invFunOn f Ω` of a normalized Riemann map is
 holomorphic on `ball 0 1`. -/

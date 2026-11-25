@@ -42,8 +42,10 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   automorphism does not vanish at a real boundary point in Cayley coordinates.
 * `TauCeti.bijOn_sub_I_div_add_I_upperHalfPlaneSet`: the transform is a bijection from the open
   upper half-plane onto the open unit disc.
-* `TauCeti.bijOn_sub_one_div_add_one_setOf_re_pos`: the right-half-plane Cayley transform
-  `z ↦ (z - 1) / (z + 1)` is a bijection from `{z | 0 < z.re}` onto the open unit disc.
+* `TauCeti.bijOn_I_mul_setOf_re_pos_upperHalfPlaneSet` and
+  `TauCeti.bijOn_sub_one_div_add_one_setOf_re_pos`: left multiplication by `i` rotates
+  `{z | 0 < z.re}` bijectively onto the open upper half-plane, and the right-half-plane Cayley
+  transform `z ↦ (z - 1) / (z + 1)` maps `{z | 0 < z.re}` bijectively onto the open unit disc.
 * `TauCeti.bijOn_I_mul_one_add_div_one_sub_ball`: its inverse `w ↦ i (1 + w) / (1 - w)` is a
   bijection from the open unit disc onto the open upper half-plane.
 * `TauCeti.bijOn_sub_I_div_add_I_im_nonneg`: the transform is a bijection from the closed upper
@@ -226,17 +228,22 @@ theorem bijOn_sub_I_div_add_I_upperHalfPlaneSet :
     rw [UpperHalfPlane.upperHalfPlaneSet, mem_ofPred_eq, ← norm_sub_I_div_add_I_lt_one_iff hne, heq]
     exact mem_ball_zero_iff.mp hw
 
+/-- Left multiplication by `i` rotates the open right half-plane `{z | 0 < z.re}` bijectively onto
+the open upper half-plane. -/
+theorem bijOn_I_mul_setOf_re_pos_upperHalfPlaneSet :
+    BijOn (I * ·) {z : ℂ | 0 < z.re} UpperHalfPlane.upperHalfPlaneSet :=
+  InvOn.bijOn (f' := (-I * ·))
+    ⟨fun z _ => by dsimp only; rw [← mul_assoc]; simp,
+      fun w _ => by dsimp only; rw [← mul_assoc]; simp⟩
+    (fun z hz => by simpa [UpperHalfPlane.upperHalfPlaneSet, mul_im] using hz)
+    (fun w hw => by simpa [UpperHalfPlane.upperHalfPlaneSet, mul_re] using hw)
+
 /-- **The Cayley transform of the open right half-plane.** The map `z ↦ (z - 1) / (z + 1)` is a
 bijection from `{z | 0 < z.re}` onto the open unit disc. -/
 theorem bijOn_sub_one_div_add_one_setOf_re_pos :
     BijOn (fun z : ℂ => (z - 1) / (z + 1)) {z : ℂ | 0 < z.re} (ball 0 1) := by
-  have hrot : BijOn (I * ·) {z : ℂ | 0 < z.re} UpperHalfPlane.upperHalfPlaneSet := by
-    refine InvOn.bijOn (f' := (-I * ·))
-      ⟨fun z _ => by dsimp only; rw [← mul_assoc]; simp,
-        fun w _ => by dsimp only; rw [← mul_assoc]; simp⟩
-      (fun z hz => by simpa [UpperHalfPlane.upperHalfPlaneSet, mul_im] using hz)
-      (fun w hw => by simpa [UpperHalfPlane.upperHalfPlaneSet, mul_re] using hw)
-  refine (bijOn_sub_I_div_add_I_upperHalfPlaneSet.comp hrot).congr fun z _ => ?_
+  refine (bijOn_sub_I_div_add_I_upperHalfPlaneSet.comp
+    bijOn_I_mul_setOf_re_pos_upperHalfPlaneSet).congr fun z _ => ?_
   have hnum : I * z - I = I * (z - 1) := by ring
   have hden : I * z + I = I * (z + 1) := by ring
   simp only [Function.comp_apply, hnum, hden, mul_div_mul_left _ _ I_ne_zero]

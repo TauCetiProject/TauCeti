@@ -375,7 +375,7 @@ theorem norm_deriv_mul_riemannConformalRadius_le_one
   by_cases helig : IsOpen Ω ∧ IsSimplyConnected Ω ∧ Ω ≠ univ ∧ z₀ ∈ Ω
   · obtain ⟨φ, hφ⟩ := exists_isNormalizedRiemannMapOn helig.1 helig.2.1 helig.2.2.1 helig.2.2.2
     obtain ⟨-, -, -, -, hle⟩ := deriv_comp_zero_and_norm_mul_le_one helig.1
-      (hφ.differentiableOn_invFunOn helig.1) hφ.bijOn_invFunOn.mapsTo hφ.invFunOn_zero
+      (hφ.differentiableOn_invFunOn helig.1) hφ.bijOn.invFunOn.mapsTo hφ.invFunOn_zero
       hψd hψm hψ0
     simpa [hφ.deriv_invFunOn_zero helig.1] using hle
   · rw [riemannConformalRadius_eq_zero_of_not helig, mul_zero]
@@ -390,7 +390,7 @@ theorem riemannConformalRadius_mono (hΩ'o : IsOpen Ω') (hΩ'c : IsSimplyConnec
   by_cases helig : IsOpen Ω ∧ IsSimplyConnected Ω ∧ Ω ≠ univ ∧ z₀ ∈ Ω
   · obtain ⟨φ, hφ⟩ := exists_isNormalizedRiemannMapOn helig.1 helig.2.1 helig.2.2.1 helig.2.2.2
     have hle := norm_deriv_le_riemannConformalRadius_of_mapsTo_ball hΩ'o hΩ'c hΩ'
-      (hφ.differentiableOn_invFunOn helig.1) (hφ.bijOn_invFunOn.mapsTo.mono_right hsub)
+      (hφ.differentiableOn_invFunOn helig.1) (hφ.bijOn.invFunOn.mapsTo.mono_right hsub)
       hφ.invFunOn_zero
     simpa [hφ.deriv_invFunOn_zero helig.1] using hle
   · rw [riemannConformalRadius_eq_zero_of_not helig]
@@ -409,9 +409,9 @@ theorem riemannConformalRadius_lt_of_ssubset (hΩ'o : IsOpen Ω') (hΩ'c : IsSim
       simp [← heq, hφ.deriv_invFunOn_zero helig.1]
     have hbij' : BijOn (Function.invFunOn φ Ω) (ball (0 : ℂ) 1) Ω' :=
       (norm_deriv_eq_riemannConformalRadius_iff_bijOn hΩ'o hΩ'c hΩ'
-        (hφ.differentiableOn_invFunOn helig.1) (hφ.bijOn_invFunOn.mapsTo.mono_right hsub.subset)
+        (hφ.differentiableOn_invFunOn helig.1) (hφ.bijOn.invFunOn.mapsTo.mono_right hsub.subset)
         hφ.invFunOn_zero).mp hnorm
-    exact hsub.ne (hφ.bijOn_invFunOn.image_eq.symm.trans hbij'.image_eq)
+    exact hsub.ne (hφ.bijOn.invFunOn.image_eq.symm.trans hbij'.image_eq)
   · rw [riemannConformalRadius_eq_zero_of_not helig]
     exact riemannConformalRadius_pos hΩ'o hΩ'c hΩ' (hsub.subset hz₀)
 
@@ -596,15 +596,6 @@ theorem tendsto_riemannConformalRadius_iUnion {ι : Type*} [Preorder ι] [IsDire
     simp_rw [hzero, riemannConformalRadius_eq_zero_of_notMem hz₀]
     exact tendsto_const_nhds
 
-/-- Named-target form of `tendsto_riemannConformalRadius_iUnion` when `⋃ i, U i = Ω`. -/
-theorem tendsto_riemannConformalRadius_of_iUnion_eq {ι : Type*} [Preorder ι] [IsDirected ι (· ≤ ·)]
-    [Nonempty ι] {U : ι → Set ℂ} (hmono : Monotone U) (hUo : ∀ i, IsOpen (U i))
-    (hUc : ∀ i, IsSimplyConnected (U i)) (hUΩ : ⋃ i, U i = Ω) (hΩ : Ω ≠ univ) (z₀ : ℂ) :
-    Tendsto (fun i => riemannConformalRadius (U i) z₀) atTop
-      (𝓝 (riemannConformalRadius Ω z₀)) := by
-  subst hUΩ
-  exact tendsto_riemannConformalRadius_iUnion hmono hUo hUc hΩ z₀
-
 /-! ### Closed-form evaluations on discs, half-planes, and the slit plane -/
 
 /-- **Conformal radius of the open unit disc.** At any point `z₀ ∈ ball 0 1`, the conformal radius
@@ -716,15 +707,9 @@ theorem riemannConformalRadius_setOf_re_pos (hz₀ : 0 < z₀.re) :
 theorem riemannConformalRadius_upperHalfPlaneSet (hz₀ : z₀ ∈ UpperHalfPlane.upperHalfPlaneSet) :
     riemannConformalRadius UpperHalfPlane.upperHalfPlaneSet z₀ = 2 * z₀.im := by
   have him : 0 < z₀.im := by simpa [UpperHalfPlane.upperHalfPlaneSet] using hz₀
-  have himg : (I * ·) '' {z : ℂ | 0 < z.re} = UpperHalfPlane.upperHalfPlaneSet := by
-    ext w
-    simp only [mem_image, mem_ofPred_eq, UpperHalfPlane.upperHalfPlaneSet]
-    refine ⟨?_, fun hw => ⟨-I * w, by simpa [mul_re] using hw, by rw [← mul_assoc]; simp⟩⟩
-    rintro ⟨z, hz, rfl⟩
-    simpa [mul_im] using hz
   have hpt : I * (-I * z₀) = z₀ := by rw [← mul_assoc]; simp
   have hre : 0 < (-I * z₀).re := by simpa [mul_re] using him
-  conv_lhs => rw [← himg, ← hpt]
+  conv_lhs => rw [← bijOn_I_mul_setOf_re_pos_upperHalfPlaneSet.image_eq, ← hpt]
   rw [riemannConformalRadius_image_mul_left, norm_I, one_mul,
     riemannConformalRadius_setOf_re_pos hre]
   simp [mul_re]
