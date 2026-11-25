@@ -294,7 +294,7 @@ theorem irreducibleCharactersOver_eq_setOf_restrict_eq_of_isMulCommutative
     fun ⟨hψ, hψres⟩ => mem_irreducibleCharactersOver_of_restrict_eq hψ hθ hψres⟩
   obtain ⟨β, hβ, rfl⟩ := (gallagher_bijOn hχ hθ hres).surjOn hψ
   simp [(QuotientGroup.eq_one_iff (n : G)).mpr n.property, hres,
-    apply_one_eq_one_of_isMulCommutative hβ]
+    apply_one_eq_one_of_mem_irreducibleCharacters_of_isMulCommutative hβ]
 
 open scoped IsMulCommutative in
 /-- The number of irreducible extensions of an extendible irreducible character across an abelian

@@ -80,7 +80,7 @@ take their familiar Hermitian form, because inversion conjugates character value
   positive (`TauCeti.characterDegree_pos`) and have squares summing to `|G|`
   (`TauCeti.sum_characterDegree_sq_eq_card`); in characteristic zero they moreover divide `|G|`
   (`TauCeti.characterDegree_dvd_card`). For a commutative group every degree is one
-  (`TauCeti.apply_one_eq_one_of_isMulCommutative`).
+  (`TauCeti.apply_one_eq_one_of_mem_irreducibleCharacters_of_isMulCommutative`).
 * `TauCeti.mem_irreducibleCharactersOver_of_restrict_eq`: an irreducible character restricting to
   an irreducible character `θ` of a finite subgroup lies over `θ`.
 
@@ -188,8 +188,8 @@ theorem apply_one_ne_zero_of_mem_irreducibleCharacters [CharZero k] {f : G → k
 
 /-- **An irreducible character of a commutative group is linear**: its value at the identity, its
 degree, is one. -/
-theorem apply_one_eq_one_of_isMulCommutative [IsAlgClosed k] [IsMulCommutative G] {f : G → k}
-    (hf : f ∈ irreducibleCharacters k G) : f 1 = 1 := by
+theorem apply_one_eq_one_of_mem_irreducibleCharacters_of_isMulCommutative [IsAlgClosed k]
+    [IsMulCommutative G] {f : G → k} (hf : f ∈ irreducibleCharacters k G) : f 1 = 1 := by
   obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
   rw [Representation.char_one, Representation.IsIrreducible.finrank_eq_one_of_isMulCommutative ρ,
     Nat.cast_one]

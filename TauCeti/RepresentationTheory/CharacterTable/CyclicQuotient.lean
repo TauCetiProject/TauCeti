@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Gallagher
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
--- Non-public: existence of primitive roots in the proof of the restriction criterion.
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
 # Character twists across a cyclic quotient
