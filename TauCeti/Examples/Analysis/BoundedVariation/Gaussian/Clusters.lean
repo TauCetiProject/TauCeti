@@ -50,25 +50,17 @@ def halfSpaces {ν : E} (hν : ‖ν‖ = 1) (s : ℝ) : Cluster (gaussianWeight
     · exact (isOpen_lt continuous_const hc).measurableSet.nullMeasurableSet
   pairwise_disjoint i j hij := by
     fin_cases i <;> fin_cases j <;> try exact (hij rfl).elim
-    all_goals
-      simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one,
-        Matrix.cons_val_fin_one, disjoint_left, mem_ofPred_eq, not_lt]
-      exact fun _ => le_of_lt
+    all_goals simpa [disjoint_left] using fun _ => le_of_lt
   volume_compl_iUnion := by
     refine measure_mono_null (fun x hx => ?_) (Measure.addHaar_setOf_inner_eq volume
       (norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero)) s)
-    simp only [mem_compl_iff, mem_iUnion, not_exists, Fin.forall_fin_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one, mem_ofPred_eq, not_lt] at hx
-    exact le_antisymm hx.2 hx.1
+    simp [Fin.forall_fin_two] at hx ⊢
+    linarith
   weightedPerimeter_lt_top i := by
     rw [← gaussianPerimeter_def]
     fin_cases i
     · simp [gaussianPerimeter_setOf_inner_lt hν]
-    · have hν' : ‖-ν‖ = 1 := by rw [norm_neg, hν]
-      have h : {x : E | s < ⟪x, ν⟫} = {x | ⟪x, -ν⟫ < -s} := by
-        ext x
-        simp [inner_neg_right]
-      simp [h, gaussianPerimeter_setOf_inner_lt hν']
+    · simp [gaussianPerimeter_setOf_lt_inner hν]
 
 /-- The cells of `halfSpaces hν s` are `{⟪x, ν⟫ < s}` and `{⟪x, ν⟫ > s}`. -/
 @[simp]
@@ -139,8 +131,10 @@ theorem not_exists_cluster_one_halfSpace (ν : E) :
     rcases eq_or_ne ν 0 with rfl | hν
     · simpa using isOpen_univ.measure_pos (volume : Measure E) univ_nonempty
     · exact ((isOpen_lt continuous_const hc).measure_pos volume
-        ⟨ν, show 0 < ⟪ν, ν⟫ from real_inner_self_pos.2 hν⟩).trans_le
-          (measure_mono fun x (hx : 0 < ⟪x, ν⟫) => hx.le)
+        ⟨ν, by simpa only [mem_ofPred_eq] using real_inner_self_pos.2 hν⟩).trans_le
+          (measure_mono fun x hx => by
+            simp only [mem_ofPred_eq] at hx ⊢
+            exact hx.le)
   have h0 : volume (Ω.cell 0)ᶜ = 0 := ae_eq_univ.1 (Ω.cell_ae_eq_univ 0)
   rw [hΩ] at h0
   exact hpos.ne' (measure_mono_null (fun x hx => by simpa using hx) h0)
