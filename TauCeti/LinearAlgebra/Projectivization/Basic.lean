@@ -45,7 +45,9 @@ point under an injective semilinear map is the image of its line. A semilinear e
 a bijection of projective spaces (`LinearEquiv.mapProjectivization`), and a vector lies on the line
 of a point exactly when it is zero or spans that point (`Projectivization.mem_submodule_iff`).
 Rescaling an injective semilinear map by a nonzero scalar does not change the map it induces on
-projective spaces (`Projectivization.map_smul_eq_map`).
+projective spaces (`Projectivization.map_smul_eq_map`), and the line of a point lies in the kernel
+of a semilinear map exactly when the map kills its representative
+(`Projectivization.submodule_le_ker_iff`, `Projectivization.submodule_mk_le_ker_iff`).
 Over a field, `Projectivization.mk_eq_mk_iff_forall_mul_eq` characterizes equality of projective
 points by vanishing of all their `2 × 2` homogeneous minors.
 
@@ -318,5 +320,22 @@ theorem map_smul_eq_map {K L V W : Type*} [DivisionRing K] [Field L] [AddCommGro
   induction x using ind with | h v hv =>
   rw [map_mk, map_mk, mk_eq_mk_iff']
   exact ⟨c, by simp⟩
+
+section Ker
+
+variable {L W : Type*} [Semiring L] [AddCommMonoid W] [Module L W] {τ : K →+* L}
+
+/-- The line of `[v]` lies in the kernel of a semilinear map exactly when the map kills `v`. -/
+theorem submodule_mk_le_ker_iff (f : V →ₛₗ[τ] W) {v : V} (hv : v ≠ 0) :
+    (mk K v hv).submodule ≤ LinearMap.ker f ↔ f v = 0 := by
+  rw [submodule_mk, Submodule.span_singleton_le_iff_mem, LinearMap.mem_ker]
+
+/-- The line of a projective point lies in the kernel of a semilinear map exactly when the map
+kills its representative. -/
+theorem submodule_le_ker_iff (f : V →ₛₗ[τ] W) (x : Projectivization K V) :
+    x.submodule ≤ LinearMap.ker f ↔ f x.rep = 0 := by
+  rw [← submodule_mk_le_ker_iff f x.rep_ne_zero, mk_rep]
+
+end Ker
 
 end Projectivization

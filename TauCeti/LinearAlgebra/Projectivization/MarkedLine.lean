@@ -61,9 +61,11 @@ which sends `[1 : 0]` to `[w]`, `[1 : 1]` to `[φ(w) v] = [v]` and `[0 : 1]` to 
   orientations; that orientation comparison is not formalized here.
 * **The projective statement.** For points `p ≠ q` of `ℙ(V)` off `H`, exactly one map
   `ℙ(K²) → ℙ(V)` induced by an injective linear map sends `[0 : 1]` into `H`, `[1 : 1]` to `p` and
-  `[1 : 0]` to `q` (`TauCeti.existsUnique_markedLine`). Two injective linear maps satisfying the
-  conditions differ by a nonzero scalar, which does not change the induced map
-  (`Projectivization.map_smul_eq_map`).
+  `[1 : 0]` to `q` (`TauCeti.existsUnique_markedLine`). An injective linear map satisfies the
+  incidence conditions for the representatives of `p` and `q` exactly when the map it induces
+  satisfies these projective conditions (`TauCeti.mem_ker_markedLineIncidence_iff_map`). Two
+  injective linear maps satisfying the conditions differ by a nonzero scalar, which does not
+  change the induced map (`Projectivization.map_smul_eq_map`).
 
 The hypotheses cannot be dropped. If `p` lies on `H` but `q` does not, `φ` vanishes at the marked
 points `0` and `1`, hence at the difference `A [1 : 0]` of their representatives, which lies on the
@@ -160,6 +162,14 @@ theorem markedLine_injective (hvw : LinearIndependent K ![v, w]) (hv : φ v ≠ 
 
 /-! ### The incidence conditions -/
 
+/-- In the homogeneous coordinates `A` of a marked line, the marked point `0 = [0 : 1]` is the
+difference of the marked points `1 = [1 : 1]` and `∞ = [1 : 0]`. -/
+theorem apply_single_one_eq_sub (A : (Fin 2 → K) →ₗ[K] V) :
+    A (Pi.single 1 1) = A 1 - A (Pi.single 0 1) := by
+  rw [eq_sub_iff_add_eq, ← map_add, add_comm]
+  congr 1
+  simpa [Fin.sum_univ_two] using Finset.univ_sum_single (1 : Fin 2 → K)
+
 /-- **The incidence conditions of a marked line.** For homogeneous coordinates `A : K² → V` of a
 marked line, the triple `(φ (A [0 : 1]), A [1 : 1] mod K v, A [1 : 0] mod K w)`. It vanishes
 exactly when the marked point `0` lies on `ker φ`, the marked point `1` on the line `K v` and the
@@ -199,9 +209,7 @@ theorem ker_markedLineIncidence (hv : φ v ≠ 0) :
   obtain ⟨a, ha⟩ := mem_span_singleton.1 ha
   obtain ⟨b, hb⟩ := mem_span_singleton.1 hb
   -- The marked point `0` is `A [1 : 1] - A [1 : 0] = a v - b w`, and it lies on `ker φ`.
-  have h₁ : A (Pi.single 1 1) = a • v - b • w := by
-    rw [ha, hb, ← Finset.univ_sum_single (1 : Fin 2 → K), Fin.sum_univ_two]
-    simp
+  have h₁ : A (Pi.single 1 1) = a • v - b • w := by rw [apply_single_one_eq_sub, ha, hb]
   have hab : a * φ v = b * φ w := by simpa [h₁, sub_eq_zero] using hφ
   -- Solving `hab` for `a`, the marked point `0` is `(b / φ v) (φ w v - φ v w)`.
   have ha' : a = b / φ v * φ w := by field_simp; exact hab
@@ -260,17 +268,16 @@ theorem markedLineIncidenceEquiv_mk (hv : φ v ≠ 0) (A : (Fin 2 → K) →ₗ[
 
 /-! ### The marked line through two points of projective space -/
 
-/-- An injective linear map sending `[0 : 1]` into `ℙ(ker φ)`, `[1 : 1]` to `p` and `[1 : 0]` to
-`q` satisfies the incidence conditions for the representatives of `p` and `q`. -/
-private theorem mem_ker_markedLineIncidence_of_map {p q : ℙ K V} {A : (Fin 2 → K) →ₗ[K] V}
-    (hA : Injective A)
-    (h₀ : (map A hA (mk K (Pi.single 1 1) (by simp))).submodule ≤ LinearMap.ker φ)
-    (h₁ : map A hA (mk K 1 one_ne_zero) = p) (h₂ : map A hA (mk K (Pi.single 0 1) (by simp)) = q) :
-    A ∈ LinearMap.ker (markedLineIncidence φ p.rep q.rep) := by
-  rw [map_mk, submodule_mk, span_singleton_le_iff_mem, LinearMap.mem_ker] at h₀
-  rw [map_mk, ← mk_rep p, mk_eq_mk_iff_mem_span] at h₁
-  rw [map_mk, ← mk_rep q, mk_eq_mk_iff_mem_span] at h₂
-  exact mem_ker_markedLineIncidence_iff.2 ⟨h₀, h₁, h₂⟩
+/-- **The incidence conditions in projective terms.** An injective linear map `A` satisfies the
+incidence conditions for the representatives of `p` and `q` exactly when the map it induces sends
+`[0 : 1]` into `ℙ(ker φ)`, `[1 : 1]` to `p` and `[1 : 0]` to `q`. -/
+theorem mem_ker_markedLineIncidence_iff_map {p q : ℙ K V} {A : (Fin 2 → K) →ₗ[K] V}
+    (hA : Injective A) :
+    A ∈ LinearMap.ker (markedLineIncidence φ p.rep q.rep) ↔
+      (map A hA (mk K (Pi.single 1 1) (by simp))).submodule ≤ LinearMap.ker φ ∧
+        map A hA (mk K 1 one_ne_zero) = p ∧ map A hA (mk K (Pi.single 0 1) (by simp)) = q := by
+  rw [mem_ker_markedLineIncidence_iff, map_mk, map_mk, map_mk, submodule_mk_le_ker_iff]
+  conv_rhs => rw [← mk_rep p, ← mk_rep q, mk_eq_mk_iff_mem_span, mk_eq_mk_iff_mem_span]
 
 /-- **The line through two points, marked at its point on a hyperplane.** Let `p ≠ q` be points of
 `ℙ(V)` off the hyperplane `ℙ(ker φ)`. Exactly one map `ℙ(K²) → ℙ(V)` induced by an injective
@@ -285,13 +292,13 @@ theorem existsUnique_markedLine {p q : ℙ K V} (hpq : p ≠ q)
       (∃ (A : (Fin 2 → K) →ₗ[K] V) (hA : Injective A), map A hA = u) ∧
         (u (mk K (Pi.single 1 1) (by simp))).submodule ≤ LinearMap.ker φ ∧
         u (mk K 1 one_ne_zero) = p ∧ u (mk K (Pi.single 0 1) (by simp)) = q := by
-  rw [submodule_eq, span_singleton_le_iff_mem, LinearMap.mem_ker] at hp hq
+  rw [submodule_le_ker_iff] at hp hq
   have hpq' : LinearIndependent K ![p.rep, q.rep] := by
     rw [← independent_mk_iff_LinearIndependent p.rep_ne_zero q.rep_ne_zero, mk_rep, mk_rep]
     exact (independent_pair_iff_ne p q).2 hpq
   have hM := markedLine_injective hpq' hp hq
   refine ⟨map _ hM, ⟨⟨_, hM, rfl⟩, ?_, ?_, ?_⟩, ?_⟩
-  · rw [map_mk, submodule_mk, span_singleton_le_iff_mem, LinearMap.mem_ker]
+  · rw [map_mk, submodule_mk_le_ker_iff]
     exact apply_markedLine_single_one_eq_zero
   · simp_rw [map_mk, markedLine_one]
     exact ((mk_eq_mk_iff_mem_span _ p.rep_ne_zero).2
@@ -301,7 +308,7 @@ theorem existsUnique_markedLine {p q : ℙ K V} (hpq : p ≠ q)
       (smul_mem _ _ (mem_span_singleton_self _))).trans (mk_rep q)
   · rintro u ⟨⟨A, hA, rfl⟩, h₀, h₁, h₂⟩
     -- `A` solves the incidence conditions, so it is a nonzero multiple of the marked line.
-    have hker := mem_ker_markedLineIncidence_of_map hA h₀ h₁ h₂
+    have hker := (mem_ker_markedLineIncidence_iff_map hA).2 ⟨h₀, h₁, h₂⟩
     rw [ker_markedLineIncidence hp] at hker
     obtain ⟨c, rfl⟩ := mem_span_singleton.1 hker
     exact map_smul_eq_map hM hA
@@ -315,15 +322,15 @@ theorem not_exists_markedLine_of_le_ker {p q : ℙ K V} (hp : p.submodule ≤ Li
       (map A hA (mk K (Pi.single 1 1) (by simp))).submodule ≤ LinearMap.ker φ ∧
         map A hA (mk K 1 one_ne_zero) = p ∧ map A hA (mk K (Pi.single 0 1) (by simp)) = q := by
   rintro ⟨A, hA, h₀, h₁, h₂⟩
-  rw [submodule_eq, span_singleton_le_iff_mem, LinearMap.mem_ker] at hp hq
+  rw [submodule_le_ker_iff] at hp hq
   obtain ⟨hφ, ha, hb⟩ :=
-    mem_ker_markedLineIncidence_iff.1 (mem_ker_markedLineIncidence_of_map hA h₀ h₁ h₂)
+    mem_ker_markedLineIncidence_iff.1 ((mem_ker_markedLineIncidence_iff_map hA).2 ⟨h₀, h₁, h₂⟩)
   obtain ⟨a, ha⟩ := mem_span_singleton.1 ha
   obtain ⟨b, hb⟩ := mem_span_singleton.1 hb
   -- `φ` vanishes at `A [1 : 0] = A [1 : 1] - A [0 : 1] = b q.rep`, so `b = 0`.
   have hφb : b * φ q.rep = 0 := by
-    have h := congrArg (φ ∘ A) (Finset.univ_sum_single (1 : Fin 2 → K))
-    simpa [Fin.sum_univ_two, hφ, ← ha, ← hb, hp, eq_comm] using h
+    rw [apply_single_one_eq_sub, map_sub, ← ha, ← hb, map_smul, map_smul, hp] at hφ
+    simpa using hφ
   have hb₀ : b = 0 := (mul_eq_zero.1 hφb).resolve_right hq
   have : A (Pi.single 0 1) = 0 := by rw [← hb, hb₀, zero_smul]
   exact (Pi.single_ne_zero_iff.2 one_ne_zero) (hA (this.trans (map_zero A).symm))
