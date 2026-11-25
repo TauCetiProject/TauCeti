@@ -51,6 +51,10 @@ Its group cohomology is read off in
 * `AddEquiv.mem_ker_cyclicRep_refl_norm_iff`, `AddEquiv.mem_range_cyclicRep_refl_norm_iff`: for
   the trivial action, given by the identity automorphism, the kernel of the norm is the
   `m`-torsion and its image is `m T`.
+* `AddEquiv.mem_range_cyclicRep_neg_norm_iff`, `AddEquiv.mem_ker_cyclicRep_neg_applyAsHom_sub_iff`,
+  `AddEquiv.mem_range_cyclicRep_neg_applyAsHom_sub_iff`: for the action of `C₂` by negation
+  (`AddEquiv.iterate_neg_two`), the norm vanishes, the fixed points of the generator are the
+  `2`-torsion `T[2]`, and the image of `ρ(g) - 𝟙` is `2 T`.
 * `AddMonoidHom.exists_apply_eq_sum_range_iterate`,
   `AddMonoidHom.sum_range_iterate_add_apply`: for an exact sequence `0 → Λ → E → T` with maps
   intertwining automorphisms of order dividing `m`, the norm of a lift of a norm-zero element of
@@ -194,6 +198,50 @@ theorem mem_range_cyclicRep_refl_applyAsHom_sub_iff (x : T) :
       x = 0 := by
   rw [mem_range_cyclicRep_applyAsHom_sub_iff]
   simp [eq_comm]
+
+/-! ### The action by negation -/
+
+variable (T) in
+/-- Negation has order dividing `2`. Its cyclic representation is the action of
+`C₂ = Multiplicative (ZMod 2)` on `T` in which the generator acts by `x ↦ -x`. -/
+theorem iterate_neg_two : (⇑(AddEquiv.neg T))^[2] = id :=
+  funext fun x ↦ by simp
+
+/-- For the action of `C₂` by negation, the norm `x + (-x)` vanishes. -/
+theorem cyclicRep_neg_norm_apply (x : T) :
+    ((neg T).cyclicRep (iterate_neg_two T)).norm.asHom.hom.toLinearMap x = 0 := by
+  rw [cyclicRep_norm_apply]
+  simp [Finset.sum_range_succ]
+
+/-- For the action of `C₂` by negation, every element lies in the kernel of the norm. -/
+theorem mem_ker_cyclicRep_neg_norm (x : T) :
+    x ∈ LinearMap.ker ((neg T).cyclicRep (iterate_neg_two T)).norm.asHom.hom.toLinearMap :=
+  LinearMap.mem_ker.2 (cyclicRep_neg_norm_apply x)
+
+/-- For the action of `C₂` by negation, the image of the norm is zero. -/
+theorem mem_range_cyclicRep_neg_norm_iff (x : T) :
+    x ∈ LinearMap.range ((neg T).cyclicRep (iterate_neg_two T)).norm.asHom.hom.toLinearMap ↔
+      x = 0 := by
+  rw [mem_range_cyclicRep_norm_iff]
+  simp [Finset.sum_range_succ, eq_comm]
+
+/-- For the action of `C₂` by negation, the fixed points of the generator are the `2`-torsion. -/
+theorem mem_ker_cyclicRep_neg_applyAsHom_sub_iff (x : T) :
+    x ∈ LinearMap.ker
+      (applyAsHom ((neg T).cyclicRep (iterate_neg_two T)) (.ofAdd 1) - 𝟙 _).hom.toLinearMap ↔
+      x ∈ Submodule.torsionBy ℤ T 2 := by
+  rw [mem_ker_cyclicRep_applyAsHom_sub_iff, Submodule.mem_torsionBy_iff, neg_apply,
+    neg_eq_iff_add_eq_zero, ← two_zsmul]
+
+/-- For the action of `C₂` by negation, the image of `ρ(g) - 𝟙`, for the generator `g`, is
+`2 T`. -/
+theorem mem_range_cyclicRep_neg_applyAsHom_sub_iff (x : T) :
+    x ∈ LinearMap.range
+      (applyAsHom ((neg T).cyclicRep (iterate_neg_two T)) (.ofAdd 1) - 𝟙 _).hom.toLinearMap ↔
+      ∃ y, (2 : ℤ) • y = x := by
+  rw [mem_range_cyclicRep_applyAsHom_sub_iff]
+  -- `b - (-b) = 2 • b`.
+  simp [two_zsmul]
 
 end AddEquiv
 

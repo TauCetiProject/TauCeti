@@ -36,8 +36,9 @@ the Morse–Smale pair `(-X₁, -X₀)` (`IsMorseSmalePair.neg`).
 
 When `ind p = ind r + 1`, the intersection is one-dimensional and these configurations are the
 two kinds of ends that pair up in the proof that a continuation map is a chain map
-(`IsMorseSmalePair.closure_unstableSet_inter_stableSet_subset`). Each of them with `y` off the
-critical point where it breaks is then an endpoint: recording a point `x` of the intersection by
+(`IsMorseSmalePair.closure_unstableSet_inter_stableSet_subset`). Each of them, including those
+with `y` the critical point where it breaks, is then an endpoint: recording a point `x` of the
+intersection by
 `x` together with the point of its `X₀`-orbit on the level of a point `a₁` of the trajectory from
 `p` to `a`, a configuration breaking at the source has a neighbourhood among these records
 homeomorphic to a half-open interval `[0, δ)` (`IsMorseSmalePair.exists_homeomorph_Ico_of_source`,
@@ -57,8 +58,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmalePair`:
   a limit of points of `W^u_{X₀}(p) ∩ W^s_{X₁}(r)`, whose `X₁`-orbits pass near the trajectory of
   `X₁`.
 * `exists_homeomorph_Ico_of_source`, `exists_homeomorph_Ico_of_target`: for `ind p = ind r + 1`,
-  a configuration breaking at the source or at the target, with `y` off the critical point where
-  it breaks (`y ≠ a`, respectively `y ≠ b`), is an endpoint of the compactified one-dimensional
+  a configuration breaking at the source or at the target, possibly at the critical point where it
+  breaks (`y = a`, respectively `y = b`), is an endpoint of the compactified one-dimensional
   intersection.
 
 ## References
@@ -159,7 +160,8 @@ theorem mem_closure_unstableSet_inter_stableSet_of_target (h : IsMorseSmalePair 
 
 /-- **Half-open charts at the source.** Let `(X₀, X₁)` be a Morse–Smale pair with `X₀`
 Morse–Smale, `a₁` a point of a trajectory of `X₀` from `p` to a critical point `a` with
-`ind p = ind a + 1`, and `y ≠ a` a point of `W^u_{X₀}(a) ∩ W^s_{X₁}(r)`, where `ind a = ind r`.
+`ind p = ind a + 1`, and `y` a point of `W^u_{X₀}(a) ∩ W^s_{X₁}(r)`, possibly `a` itself, where
+`ind a = ind r`.
 Record a point `x` of the one-dimensional intersection `W^u_{X₀}(p) ∩ W^s_{X₁}(r)` by the pair
 `(w, x)`, where `w` is the point of its `X₀`-orbit on the level of `a₁`, and the configuration
 breaking at the source by `(a₁, y)`. Then `(a₁, y)` has a neighbourhood among these pairs
@@ -169,7 +171,7 @@ theorem exists_homeomorph_Ico_of_source (h : IsMorseSmalePair hX₀ hX₁) (h₀
     (hpa : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₀ a + 1)
     (har : manifoldMorseIndex 𝓘(ℝ, E) f₀ a = manifoldMorseIndex 𝓘(ℝ, E) f₁ r)
     (ha₁ : a₁ ∈ hX₀.flow.unstableSet p ∩ hX₀.flow.stableSet a)
-    (hy : y ∈ hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet r) (hya : y ≠ a) :
+    (hy : y ∈ hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet r) :
     ∃ (N : Set (M × M)) (δ : ℝ) (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N),
       (e ⟨0, left_mem_Ico.2 hδ⟩ : M × M) = (a₁, y) ∧
       N ⊆ insert (a₁, y) {w | w.2 ∈ hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r ∧
@@ -179,12 +181,13 @@ theorem exists_homeomorph_Ico_of_source (h : IsMorseSmalePair hX₀ hX₁) (h₀
   -- `W^s_{X₁}(r)` is flattened near `y`, of dimension `n - ind a`, and transverse to `W^u_{X₀}(a)`.
   obtain ⟨L, φ, hL, hyφ, hφ, hS⟩ :=
     hX₁.exists_isSliceChart_stableSet (hX₁.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
-  exact h₀.exists_homeomorph_Ico_of_isSliceChart hf₀ hpa ha₁ hy.1 hya hφ hS hyφ hy.2
+  exact h₀.exists_homeomorph_Ico_of_isSliceChart hf₀ hpa ha₁ hy.1 hφ hS hyφ hy.2
     (by rw [har]; exact hL) (by rw [sup_comm]; exact h.span_mtangentConeAt_sup_eq_top hy)
 
 /-- **Half-open charts at the target.** Let `(X₀, X₁)` be a Morse–Smale pair with `X₁`
 Morse–Smale, `a₂` a point of a trajectory of `X₁` from a critical point `b` to `r` with
-`ind b = ind r + 1`, and `y ≠ b` a point of `W^u_{X₀}(p) ∩ W^s_{X₁}(b)`, where `ind p = ind b`.
+`ind b = ind r + 1`, and `y` a point of `W^u_{X₀}(p) ∩ W^s_{X₁}(b)`, possibly `b` itself, where
+`ind p = ind b`.
 Record a point `x` of the one-dimensional intersection `W^u_{X₀}(p) ∩ W^s_{X₁}(r)` by the pair
 `(w, x)`, where `w` is the point of its `X₁`-orbit on the level of `a₂`, and the configuration
 breaking at the target by `(a₂, y)`. Then `(a₂, y)` has a neighbourhood among these pairs
@@ -194,7 +197,7 @@ theorem exists_homeomorph_Ico_of_target (h : IsMorseSmalePair hX₀ hX₁) (h₁
     (hbr : manifoldMorseIndex 𝓘(ℝ, E) f₁ b = manifoldMorseIndex 𝓘(ℝ, E) f₁ r + 1)
     (hpb : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ b)
     (ha₂ : a₂ ∈ hX₁.flow.unstableSet b ∩ hX₁.flow.stableSet r)
-    (hy : y ∈ hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet b) (hyb : y ≠ b) :
+    (hy : y ∈ hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet b) :
     ∃ (N : Set (M × M)) (δ : ℝ) (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N),
       (e ⟨0, left_mem_Ico.2 hδ⟩ : M × M) = (a₂, y) ∧
       N ⊆ insert (a₂, y) {w | w.2 ∈ hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r ∧
@@ -228,7 +231,7 @@ theorem exists_homeomorph_Ico_of_target (h : IsMorseSmalePair hX₀ hX₁) (h₁
         have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
         omega)
     (hX₁.unstableSet_inter_stableSet_eq_neg hX₁ hf₁ hf₁ b r ▸ ha₂)
-    (hX₀.unstableSet_inter_stableSet_eq_neg hX₁ hf₀ hf₁ p b ▸ hy) hyb
+    (hX₀.unstableSet_inter_stableSet_eq_neg hX₁ hf₀ hf₁ p b ▸ hy)
 
 end IsMorseSmalePair
 

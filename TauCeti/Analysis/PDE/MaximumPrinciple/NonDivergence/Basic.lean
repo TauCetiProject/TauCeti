@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Topology.Frontier
 

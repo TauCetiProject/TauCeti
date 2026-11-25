@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Lattice
+public import Mathlib.Algebra.Group.Submonoid.Saturation
 public import Mathlib.GroupTheory.Subgroup.Saturated
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 
@@ -35,6 +36,8 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
 
 * `Submonoid.PowSaturated.comap` and `Submonoid.PowSaturated.inf`: `PowSaturated` is preserved by
   pullbacks and binary intersections.
+* `Submonoid.MulSaturated.powSaturated`: a submonoid saturated under products, such as a face of
+  an affine semigroup, is `PowSaturated`.
 * `Submonoid.powSaturation`: the elements of `M` having a positive power in `s`.
 * `Submonoid.mem_powSaturation`: the membership criterion.
 * `Submonoid.le_powSaturation`: `s` is contained in its saturation.
@@ -46,6 +49,8 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
   is `PowSaturated` iff it equals its saturation.
 * `Submonoid.powSaturation_comap` and `Submonoid.powSaturation_inf`: saturation commutes with
   `comap` and `⊓`.
+* `AddMonoidHom.mem_powSaturation_mrange_toMultiplicative`: the saturation of the range of the
+  multiplicative form of an additive monoid homomorphism is the saturation of its range.
 * `Submonoid.subgroupClosure_powSaturation_inf_closure`,
   `Submonoid.powSaturationInfClosureToGroupClosure`, `Submonoid.powSaturationInfClosureEquiv`,
   and `Submonoid.powSaturated_comap_subtype_closure_iff`: saturation inside the generated subgroup.
@@ -74,6 +79,16 @@ theorem PowSaturated.inf {s t : Submonoid M} (hs : s.PowSaturated) (ht : t.PowSa
   rcases hs h.1 with rfl | hxs
   · exact Or.inl rfl
   · exact (ht h.2).imp_right fun hxt => ⟨hxs, hxt⟩
+
+/-- A submonoid that contains both factors of each of its products is `PowSaturated`: it
+contains a positive power of an element only if it contains the element. -/
+@[to_additive /-- An additive submonoid that contains both summands of each of its sums, such as a
+face of an affine semigroup, is `NSMulSaturated`: it contains a positive multiple of an element
+only if it contains the element. -/]
+theorem MulSaturated.powSaturated {s : Submonoid M} (hs : s.MulSaturated) : s.PowSaturated := by
+  rintro (_ | n) x hx
+  · exact Or.inl rfl
+  · exact Or.inr (hs (by rwa [pow_succ] at hx)).2
 
 end Monoid
 
@@ -351,3 +366,22 @@ theorem nsmulSaturationInfClosureEquiv_inclusion_apply (s : S) :
   simp
 
 end AddSubmonoid
+
+namespace AddMonoidHom
+
+variable {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
+
+/-- An element of `Multiplicative N` lies in the saturation of the range of the multiplicative
+form of `p : M →+ N` exactly when the corresponding element of `N` lies in the saturation of the
+range of `p`. -/
+theorem mem_powSaturation_mrange_toMultiplicative (p : M →+ N) {x : Multiplicative N} :
+    x ∈ (MonoidHom.mrange (AddMonoidHom.toMultiplicative p)).powSaturation ↔
+      x.toAdd ∈ (AddMonoidHom.mrange p).nsmulSaturation := by
+  simp only [Submonoid.mem_powSaturation, AddSubmonoid.mem_nsmulSaturation, MonoidHom.mem_mrange,
+    AddMonoidHom.mem_mrange, AddMonoidHom.coe_toMultiplicative, Function.comp_apply]
+  refine exists_congr fun n ↦ and_congr_right fun _ ↦ ⟨fun ⟨m, hm⟩ ↦ ⟨m.toAdd, ?_⟩,
+    fun ⟨m, hm⟩ ↦ ⟨Multiplicative.ofAdd m, ?_⟩⟩
+  · rw [← toAdd_pow, ← hm, toAdd_ofAdd]
+  · rw [toAdd_ofAdd, hm, ofAdd_nsmul, ofAdd_toAdd]
+
+end AddMonoidHom

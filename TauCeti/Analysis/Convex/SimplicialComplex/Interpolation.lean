@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
 public import TauCeti.Analysis.Normed.Affine.Interpolation
-import Mathlib.Analysis.Convex.Topology
 import Mathlib.Data.Set.UnionLift
 import Mathlib.Topology.LocallyFinite
+import TauCeti.Analysis.Convex.SimplicialComplex.Basic
 
 /-!
 # Interpolation of vertex values on geometric simplicial complexes
@@ -54,8 +54,7 @@ theorem eqOn_of_simplexwise_affine
   have hAB : EqOn A B (s : Set E) := by
     intro v hv
     have hvs := subset_convexHull ℝ (s : Set E) hv
-    have hvK : v ∈ K.vertices :=
-      K.down_closed hs (Finset.singleton_subset_iff.2 hv) (Finset.singleton_nonempty v)
+    have hvK : v ∈ K.vertices := mem_vertices_of_mem_faces hs hv
     exact (hA hvs).symm.trans ((hfg hvK).trans (hB hvs))
   exact (hA hxs).trans ((AffineMap.eqOn_affineSpan hAB
     (convexHull_subset_affineSpan (s : Set E) hxs)).trans (hB hxs).symm)
