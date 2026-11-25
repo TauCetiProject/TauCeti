@@ -46,6 +46,7 @@ further choices.
 * `TauCeti.QuadraticOrder.ringHom_eq_complexEmbeddingOfSqrt_or_eq_conjugate`: `ι_K` and its
   conjugate are the two complex embeddings of `K`.
 * `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_algEquivOfSqrt`,
+  `TauCeti.QuadraticOrder.ringHom_comp_algEquivOfSqrt_eq_complexEmbedding_iff`,
   `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_omega`: compatibility with the model
   equivalences, whose composites with `ℚ`-isomorphisms are described by
   `TauCeti.QuadraticOrder.algEquivOfSqrt_trans`.
@@ -128,25 +129,32 @@ theorem eq_complexEmbeddingOfSqrt_iff (φ : K →ₐ[ℚ] ℂ) :
   ext x
   simpa using AlgHom.congr_fun hcomp (e.symm x)
 
+/-- **Transport along the model equivalence**: a complex embedding of `K` is `ι_K` exactly when its
+composite with the model equivalence `ℚ(√d) ≃ₐ[ℚ] K` is the distinguished embedding of the
+model. -/
+-- Not `@[simp]`: it is the transport step behind the `K`-side characterizations below, which are
+-- the intended interface.
+theorem ringHom_comp_algEquivOfSqrt_eq_complexEmbedding_iff [Fact (¬ IsSquare d)]
+    (φ : K →+* ℂ) :
+    φ.comp (algEquivOfSqrt d θ hθ hK : QuadraticAlgebra ℚ (d : ℚ) 0 →+* K) =
+        (complexEmbedding (a := (d : ℚ)) (by exact_mod_cast hd.le) :
+          QuadraticAlgebra ℚ (d : ℚ) 0 →+* ℂ) ↔
+      φ = (complexEmbeddingOfSqrt d hd θ hθ hK : K →+* ℂ) := by
+  refine ⟨fun h ↦ RingHom.ext fun x ↦ ?_, ?_⟩
+  · rw [RingHom.coe_coe, complexEmbeddingOfSqrt_apply]
+    simpa using RingHom.congr_fun h ((algEquivOfSqrt d θ hθ hK).symm x)
+  · rintro rfl
+    ext z
+    exact complexEmbeddingOfSqrt_algEquivOfSqrt hd hθ hK z
+
 /-- **The upper half-plane picks out `ι_K`**: a complex embedding of `K` is `ι_K` exactly when it
 sends `θ` to a complex number with positive imaginary part. -/
 theorem ringHom_eq_complexEmbeddingOfSqrt_iff (φ : K →+* ℂ) :
     φ = (complexEmbeddingOfSqrt d hd θ hθ hK : K →+* ℂ) ↔ 0 < (φ θ).im := by
   have : Fact (¬ IsSquare d) := ⟨not_isSquare_of_neg hd⟩
-  have hd' : (d : ℚ) < 0 := by exact_mod_cast hd
-  set e := algEquivOfSqrt d θ hθ hK
-  have hω : e ω = θ := algEquivOfSqrt_apply_omega d θ hθ hK
-  have key := ringHom_eq_complexEmbedding_iff hd' (φ.comp (e : QuadraticAlgebra ℚ (d : ℚ) 0 →+* K))
-  rw [RingHom.comp_apply, RingHom.coe_coe, hω] at key
-  rw [← key]
-  constructor
-  · rintro rfl
-    ext z
-    exact complexEmbeddingOfSqrt_algEquivOfSqrt hd hθ hK z
-  · intro h
-    ext x
-    rw [RingHom.coe_coe, complexEmbeddingOfSqrt_apply]
-    simpa [e] using RingHom.congr_fun h (e.symm x)
+  rw [← ringHom_comp_algEquivOfSqrt_eq_complexEmbedding_iff hd hθ hK,
+    ringHom_eq_complexEmbedding_iff (by exact_mod_cast hd), RingHom.comp_apply, RingHom.coe_coe,
+    algEquivOfSqrt_apply_omega]
 
 /-- **The two complex embeddings of a presented imaginary quadratic field**: every complex
 embedding of `K` is `ι_K` or its complex conjugate. -/
@@ -157,9 +165,7 @@ theorem ringHom_eq_complexEmbeddingOfSqrt_or_eq_conjugate (φ : K →+* ℂ) :
   set e := algEquivOfSqrt d θ hθ hK
   rcases ringHom_eq_or_eq_conjugate (by exact_mod_cast hd.le)
       (φ.comp (e : QuadraticAlgebra ℚ (d : ℚ) 0 →+* K)) with h | h
-  · refine Or.inl (RingHom.ext fun x ↦ ?_)
-    rw [RingHom.coe_coe, complexEmbeddingOfSqrt_apply]
-    simpa [e] using RingHom.congr_fun h (e.symm x)
+  · exact Or.inl ((ringHom_comp_algEquivOfSqrt_eq_complexEmbedding_iff hd hθ hK φ).mp h)
   · refine Or.inr (RingHom.ext fun x ↦ ?_)
     rw [ComplexEmbedding.conjugate_coe_eq, RingHom.coe_coe, complexEmbeddingOfSqrt_apply]
     simpa [e, ComplexEmbedding.conjugate_coe_eq] using RingHom.congr_fun h (e.symm x)
