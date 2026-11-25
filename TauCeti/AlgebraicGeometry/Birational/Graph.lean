@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Birational.RationalMap
 public import Mathlib.AlgebraicGeometry.Noetherian
-public import TauCeti.AlgebraicGeometry.Birational.RationalMap.ValuationRing
+public import TauCeti.AlgebraicGeometry.Birational.RationalMap.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.GraphClosure
 
 /-!

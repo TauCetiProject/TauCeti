@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Birational.RationalMap
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
+public import TauCeti.AlgebraicGeometry.Birational.RationalMap.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
@@ -41,11 +42,6 @@ the sections of a proper `f : X ⟶ S` with the morphisms `Spec K(S) ⟶ X` over
 (`AlgebraicGeometry.Scheme.Hom.sectionEquivOfValuationRing`). On a model of a curve over a Dedekind
 base, this extends every rational point of the generic fibre to a section, along which it
 specializes to each closed fibre.
-
-For a reduced source and a separated target, any partial map representing a rational map, in
-particular its representative, is the restriction of `toPartialMap` on the domain of definition
-(`AlgebraicGeometry.Scheme.PartialMap.hom_eq_homOfLE_comp_toPartialMap`,
-`AlgebraicGeometry.Scheme.RationalMap.representative_hom_eq`).
 
 ## Main definitions
 
@@ -107,26 +103,6 @@ theorem PartialMap.SpecMap_stalkSpecializes_fromSpecStalkOfMem [IrreducibleSpace
   simp only [PartialMap.fromSpecStalkOfMem, Opens.SpecMap_stalkSpecializes_fromSpecStalkOfMem_assoc]
 
 /-! ### Rational maps defined everywhere -/
-
-/-- The domain of the representative `RationalMap.toPartialMap` is the domain of definition. -/
-theorem RationalMap.toPartialMap_domain [IsReduced X] [Y.IsSeparated] (f : X ⤏ Y) :
-    f.toPartialMap.domain = f.domain := (rfl)
-
-/-- A partial map from a reduced scheme to a separated scheme is the restriction to its domain of
-`toPartialMap` of its rational map. -/
-theorem PartialMap.hom_eq_homOfLE_comp_toPartialMap [IsReduced X] [Y.IsSeparated]
-    (P : X.PartialMap Y) {f : X ⤏ Y} (hP : P.toRationalMap = f)
-    (h : P.domain ≤ f.toPartialMap.domain) :
-    P.hom = X.homOfLE h ≫ f.toPartialMap.hom := by
-  subst hP
-  exact P.toPartialMap_toRationalMap_restrict.symm.trans (PartialMap.restrict_hom _ _ _ _)
-
-/-- The representative of a rational map from a reduced scheme to a separated scheme lies in the
-domain of definition, where it is the restriction of `toPartialMap`. -/
-theorem RationalMap.representative_hom_eq [IsReduced X] [Y.IsSeparated] (f : X ⤏ Y) :
-    f.representative.hom = X.homOfLE (f.representative.le_domain_toRationalMap.trans_eq
-      (by rw [f.toRationalMap_representative, toPartialMap_domain])) ≫ f.toPartialMap.hom :=
-  f.representative.hom_eq_homOfLE_comp_toPartialMap f.toRationalMap_representative _
 
 /-- A rational map from a reduced scheme to a separated scheme which is defined everywhere, as a
 morphism: its representative on its domain of definition `⊤`. -/
