@@ -16,8 +16,8 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 # The derivative of the Euclidean minimal graph flux
 
 The derivative of the normalized gradient flux is the principal graph operator multiplied by
-`(1 + ‖p‖²)⁻³ᐟ²`. Its eigenvalues lie between `(1 + ‖p‖²)⁻³ᐟ²` and
-`(1 + ‖p‖²)⁻¹ᐟ²`, so a local gradient bound supplies a positive ellipticity constant.
+`(1 + ‖p‖²)^(-3/2)`. Its eigenvalues lie between `(1 + ‖p‖²)^(-3/2)` and
+`(1 + ‖p‖²)^(-1/2)`, so a local gradient bound supplies a positive ellipticity constant.
 
 The chain rule identifies this operator with the derivative of the native graph area flux.
 In particular, twice continuous differentiability of the height suffices for continuously
