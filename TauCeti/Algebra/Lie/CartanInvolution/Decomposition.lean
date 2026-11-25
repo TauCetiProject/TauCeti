@@ -27,7 +27,6 @@ For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 
 
 * `LieEquiv.cartanP`: the `-1`-eigenspace `𝔭` of a Lie algebra automorphism.
 * `LieEquiv.twistedKillingForm`: the bilinear form `B_θ(x, y) = -B(x, θ y)`.
-* `LieEquiv.conj`: the transport `e ∘ θ ∘ e⁻¹` of an automorphism `θ` of `L` along `e : L ≃ L'`.
 
 ## Main results
 
@@ -174,25 +173,7 @@ section Conj
 
 variable {L' : Type*} [LieRing L'] [LieAlgebra R L']
 
-/-- The transport `e ∘ θ ∘ e⁻¹` of an automorphism `θ` of `L` along an isomorphism `e : L ≃ L'`. -/
-def conj (e : L ≃ₗ⁅R⁆ L') (θ : L ≃ₗ⁅R⁆ L) : L' ≃ₗ⁅R⁆ L' :=
-  (e.symm.trans θ).trans e
-
-@[simp]
-theorem conj_apply (e : L ≃ₗ⁅R⁆ L') (θ : L ≃ₗ⁅R⁆ L) (x : L') : e.conj θ x = e (θ (e.symm x)) :=
-  (rfl)
-
-/-- Transporting along `e` and then along `e⁻¹` gives back `θ`. -/
-@[simp]
-theorem symm_conj_conj (e : L ≃ₗ⁅R⁆ L') (θ : L ≃ₗ⁅R⁆ L) : e.symm.conj (e.conj θ) = θ :=
-  LieEquiv.ext fun x ↦ by simp
-
 variable {e : L ≃ₗ⁅R⁆ L'}
-
-/-- The transport of an involution is an involution. -/
-theorem involutive_conj (hθ : Function.Involutive θ) :
-    Function.Involutive (e.conj θ) :=
-  fun x ↦ by simp [hθ (e.symm x)]
 
 /-- The `-1`-eigenspace of `e ∘ θ ∘ e⁻¹` is the image under `e` of that of `θ`. -/
 @[simp]
