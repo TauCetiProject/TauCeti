@@ -36,9 +36,11 @@ and the `G`-finite vectors are dense (`ContRepresentation.continuousLinearMap_ex
   continuous representation `e_σ` is `isotypicProjector`.
 * `ContRepresentation.banachIsotypicProjector_apply_of_mem`: on a finite-dimensional
   subrepresentation `e_σ` is the isotypic projector of the restricted representation.
-* `ContRepresentation.banachIsotypicProjector_idempotent`: `e_σ` is idempotent.
+* `ContRepresentation.banachIsotypicProjector_idempotent`: `e_σ` is idempotent, pointwise
+  `ContRepresentation.banachIsotypicProjector_apply_apply`.
 * `ContRepresentation.banachIsotypicProjector_comp_of_not_equiv`: `e_σ ∘ e_τ = 0` for
-  inequivalent irreducibles `σ` and `τ`.
+  inequivalent irreducibles `σ` and `τ`, pointwise
+  `ContRepresentation.banachIsotypicProjector_apply_apply_of_not_equiv`.
 
 ## References
 
@@ -133,6 +135,17 @@ theorem banachIsotypicProjector_idempotent (σ : ContRepresentation k G W) (hσ 
     banachIsotypicProjector_apply_of_mem π hπ σ hσ S (Subtype.property _)]
   exact hP
 
+/-- Pointwise idempotence: `e_σ (e_σ v) = e_σ v` for an irreducible `σ`. -/
+@[simp]
+theorem banachIsotypicProjector_apply_apply (σ : ContRepresentation k G W) (hσ : Continuous σ)
+    (hirr : Representation.IsIrreducible σ.toRepresentation) (v : V) :
+    banachIsotypicProjector π hπ σ hσ (banachIsotypicProjector π hπ σ hσ v) =
+      banachIsotypicProjector π hπ σ hσ v := by
+  simpa only [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
+    ContIntertwiningMap.toContinuousLinearMap_apply] using DFunLike.congr_fun
+      (congrArg ContIntertwiningMap.toContinuousLinearMap
+        (banachIsotypicProjector_idempotent π hπ σ hσ hirr)) v
+
 /-- **Orthogonality.** For inequivalent irreducibles `σ` and `τ`, `e_σ ∘ e_τ = 0`. -/
 theorem banachIsotypicProjector_comp_of_not_equiv (σ : ContRepresentation k G W)
     (hσ : Continuous σ) (hσirr : Representation.IsIrreducible σ.toRepresentation)
@@ -154,5 +167,18 @@ theorem banachIsotypicProjector_comp_of_not_equiv (σ : ContRepresentation k G W
   rw [banachIsotypicProjector_apply_of_mem π hπ τ hτ S hvS,
     banachIsotypicProjector_apply_of_mem π hπ σ hσ S w.property]
   exact congrArg Subtype.val h0
+
+/-- Pointwise orthogonality: `e_σ (e_τ v) = 0` for inequivalent irreducibles `σ` and `τ`. -/
+theorem banachIsotypicProjector_apply_apply_of_not_equiv (σ : ContRepresentation k G W)
+    (hσ : Continuous σ) (hσirr : Representation.IsIrreducible σ.toRepresentation)
+    (τ : ContRepresentation k G W') (hτ : Continuous τ)
+    (hτirr : Representation.IsIrreducible τ.toRepresentation)
+    (hne : IsEmpty (τ.toRepresentation.asModule ≃ₗ[k[G]] σ.toRepresentation.asModule)) (v : V) :
+    banachIsotypicProjector π hπ σ hσ (banachIsotypicProjector π hπ τ hτ v) = 0 := by
+  simpa only [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
+    ContIntertwiningMap.toContinuousLinearMap_zero, zero_apply,
+    ContIntertwiningMap.toContinuousLinearMap_apply] using DFunLike.congr_fun
+      (congrArg ContIntertwiningMap.toContinuousLinearMap
+        (banachIsotypicProjector_comp_of_not_equiv π hπ σ hσ hσirr τ hτ hτirr hne)) v
 
 end ContRepresentation
