@@ -88,14 +88,14 @@ theorem mem_sectionPoints_iff {p : TotalSpace (realCliffordSpinCGroupZero (n + 1
 
 /-- A point `p` over `x` is adapted exactly when its frame `s.frameAt p` sends the last coordinate
 vector to `σ x`. -/
-private theorem mk_mem_sectionPoints_iff {x : X} {p : s.P x} :
+theorem mk_mem_sectionPoints_iff {x : X} {p : s.P x} :
     (⟨x, p⟩ : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) ∈ s.sectionPoints σ ↔
       s.frameAt p (WithLp.toLp 2 (Pi.single (Fin.last n) 1)) = σ x := by
   rw [sectionPoints, mem_preimage, s.toFrame_mk, OrthonormalFrameBundle.mk_mem_sectionFrames_iff]
 
 /-- The point `p • g` over `x` is adapted exactly when the frame of `p` sends the rotation by `g` of
 the last coordinate vector to `σ x` (`TauCeti.OrthonormalFrameLift.frameAt_smul`). -/
-private theorem smul_mk_mem_sectionPoints_iff {x : X} {p : s.P x}
+theorem smul_mk_mem_sectionPoints_iff {x : X} {p : s.P x}
     (g : realCliffordSpinCGroupZero (n + 1)) :
     (⟨x, op g • p⟩ : TotalSpace (realCliffordSpinCGroupZero (n + 1)) s.P) ∈ s.sectionPoints σ ↔
       s.frameAt p (WithLp.toLp 2
