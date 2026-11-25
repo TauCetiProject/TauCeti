@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Calculus.ACL.Basic
 public import TauCeti.Analysis.SpecialFunctions.CantorFunction
 public import Mathlib.Analysis.Calculus.Deriv.Abs
-public import Mathlib.Analysis.Calculus.Deriv.Shift
 
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
@@ -28,7 +28,7 @@ with coordinates `x₁ = x 0` and `x₂ = x 1`.
   everywhere (`TauCeti.ACLChecks.ae_formalDeriv_cantorFst_eq_zero`), but it is not `ACL`
   (`TauCeti.ACLChecks.not_isACLOn_cantorFst`): every line function in the first direction on the
   box `[0, 1]²` is `c` on `[0, 1]`.
-* The indicator of `{0}` is absolutely continuous on every coordinate segment missing `0`
+* The indicator of `{0}` is absolutely continuous on every segment of a coordinate line missing `0`
   (`TauCeti.ACLChecks.absolutelyContinuousOnInterval_lineFunction_indicatorZero`) but is not
   `ACL`, since it is not continuous (`TauCeti.ACLChecks.not_isACLOn_indicatorZero`).
 * The formal derivative takes partial derivatives as columns: for `u(x₁, x₂) = (x₂, 0)` it is
@@ -53,15 +53,12 @@ namespace TauCeti.ACLChecks
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 local notation "e" => EuclideanSpace.single
 
-/-- If `u(x + t eᵢ) = g(xᵢ + t)` for all `t` and `g` has derivative `g'` at `xᵢ`, then the `i`-th
-partial derivative of `u` at `x` is `g'`. -/
-private theorem hasLineDerivAt_single_of_hasDerivAt {u : ℝ² → ℝ} {x : ℝ²} {i : Fin 2}
-    {g : ℝ → ℝ} {g' : ℝ} (hg : HasDerivAt g g' (x i))
-    (hu : ∀ t : ℝ, u (x + t • e i 1) = g (x i + t)) :
-    HasLineDerivAt ℝ u g' x (e i 1) := by
-  unfold HasLineDerivAt
-  rw [← add_zero (x i)] at hg
-  exact (hg.comp_const_add (x i) 0).congr_of_eventuallyEq (Eventually.of_forall hu)
+/-- The set of points of `ℝ²` whose `i`-th coordinate lies in a null set is null. -/
+private theorem volume_setOf_apply_mem_eq_zero {s : Set ℝ} (hs : volume s = 0) (i : Fin 2) :
+    volume {x : ℝ² | x i ∈ s} = 0 := by
+  have hpi := Measure.pi_eval_preimage_null (μ := fun _ : Fin 2 ↦ (volume : Measure ℝ)) (i := i) hs
+  rw [← volume_pi] at hpi
+  exact (PiLp.volume_preserving_ofLp (Fin 2)).quasiMeasurePreserving.preimage_null hpi
 
 /-! ### `|x₁|` -/
 
@@ -86,13 +83,13 @@ theorem isACLpOn_absFst : IsACLpOn absFst ∞ univ :=
 theorem formalDeriv_absFst_single_zero {x : ℝ²} (hx : x 0 ≠ 0) :
     formalDeriv absFst x (e 0 1) = SignType.sign (x 0) := by
   rw [formalDeriv_apply_single]
-  exact (hasLineDerivAt_single_of_hasDerivAt (hasDerivAt_abs hx) fun t ↦ by
+  exact ((hasDerivAt_abs hx).hasLineDerivAt_of_add_smul fun t ↦ by
     simp [absFst_apply]).lineDeriv
 
 /-- The formal derivative of `|x₁|` sends `e₂` to `0`. -/
 theorem formalDeriv_absFst_single_one (x : ℝ²) : formalDeriv absFst x (e 1 1) = 0 := by
   rw [formalDeriv_apply_single]
-  exact (hasLineDerivAt_single_of_hasDerivAt (hasDerivAt_const (x 1) |x 0|) fun t ↦ by
+  exact ((hasDerivAt_const (x 1) |x 0|).hasLineDerivAt_of_add_smul fun t ↦ by
     simp [absFst_apply]).lineDeriv
 
 /-- On the line `x₁ = 0`, the first partial derivative of `|x₁|` does not exist. -/
@@ -112,16 +109,7 @@ theorem formalDeriv_absFst_single_zero_of_eq_zero {x : ℝ²} (hx : x 0 = 0) :
 
 /-- The line `x₁ = 0` is a null set in `ℝ²`. -/
 theorem volume_setOf_fst_eq_zero : volume {x : ℝ² | x 0 = 0} = 0 := by
-  have h : {x : ℝ² | x 0 = 0} =
-      ((LinearMap.ker (EuclideanSpace.proj (0 : Fin 2) : ℝ² →L[ℝ] ℝ).toLinearMap :
-        Submodule ℝ ℝ²) : Set ℝ²) := by
-    ext x
-    simp
-  rw [h]
-  refine Measure.addHaar_submodule _ _ fun htop ↦ ?_
-  have : e 0 (1 : ℝ) ∈ LinearMap.ker (EuclideanSpace.proj (0 : Fin 2) : ℝ² →L[ℝ] ℝ).toLinearMap :=
-    htop ▸ Submodule.mem_top
-  simp at this
+  simpa using volume_setOf_apply_mem_eq_zero (Real.volume_singleton (a := 0)) 0
 
 /-! ### The Cantor function of `x₁` -/
 
@@ -162,19 +150,15 @@ theorem not_isACLOn_cantorFst : ¬ IsACLOn cantorFst univ := by
 `ACL` asking only for partial derivatives almost everywhere would accept `c(x₁)`. -/
 theorem ae_hasLineDerivAt_cantorFst :
     ∀ᵐ x : ℝ², ∀ i, HasLineDerivAt ℝ cantorFst 0 x (e i 1) := by
-  have hnull : volume {x : ℝ² | ¬ HasDerivAt cantorFunction 0 (x 0)} = 0 := by
-    have hpi := Measure.pi_eval_preimage_null (μ := fun _ : Fin 2 ↦ (volume : Measure ℝ))
-      (i := 0) (ae_iff.1 ae_hasDerivAt_cantorFunction)
-    rw [← volume_pi] at hpi
-    exact (PiLp.volume_preserving_ofLp (Fin 2)).quasiMeasurePreserving.preimage_null hpi
-  refine ae_iff.2 (measure_mono_null (fun x hx ↦ ?_) hnull)
+  refine ae_iff.2 (measure_mono_null (fun x hx ↦ ?_)
+    (volume_setOf_apply_mem_eq_zero (ae_iff.1 ae_hasDerivAt_cantorFunction) 0))
   simp only [mem_ofPred_eq] at hx ⊢
   intro h
   apply hx
   intro i
   fin_cases i
-  · exact hasLineDerivAt_single_of_hasDerivAt h fun t ↦ by simp [cantorFst_apply]
-  · exact hasLineDerivAt_single_of_hasDerivAt (hasDerivAt_const (x 1) (cantorFunction (x 0)))
+  · exact h.hasLineDerivAt_of_add_smul fun t ↦ by simp [cantorFst_apply]
+  · exact (hasDerivAt_const (x 1) (cantorFunction (x 0))).hasLineDerivAt_of_add_smul
       fun t ↦ by simp [cantorFst_apply]
 
 /-- The formal derivative of `c(x₁)` vanishes almost everywhere. -/
