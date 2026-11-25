@@ -339,13 +339,12 @@ theorem norm_quadraticTwoFormPolar_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q 
   set p := quadraticTwoFormPolar o ρ hkl ψ φ
   by_cases hp : p = 0
   · rw [hp, norm_zero]; positivity
-  have hpair := inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ (p : ⋀[ℝ]^2 V) ψ φ
-  change ⟪(p : ⋀[ℝ]^2 V), (p : ⋀[ℝ]^2 V)⟫ = _ at hpair
+  have hpair : ⟪(p : ⋀[ℝ]^2 V), (p : ⋀[ℝ]^2 V)⟫ = (⟪φ, cliffordRestriction o ρ p ψ⟫_ℂ).re / 2 :=
+    inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ p ψ φ
   rw [real_inner_self_eq_norm_sq, Submodule.norm_coe] at hpair
   have hcs := re_inner_le_norm (𝕜 := ℂ) φ (cliffordRestriction o ρ p ψ)
-  rw [norm_cliffordRestriction_apply_of_hodgeStar_eq_self o hQ hρ hkl
+  rw [RCLike.re_to_complex, norm_cliffordRestriction_apply_of_hodgeStar_eq_self o hQ hρ hkl
     (o.hodgeStar_coe_of_mem_eigenspace_one hkl p), Submodule.norm_coe] at hcs
-  change (⟪φ, cliffordRestriction o ρ p ψ⟫_ℂ).re ≤ _ at hcs
   have hb : 2 * ‖p‖ ≤ √2 * (‖ψ‖ * ‖φ‖) := by
     apply (mul_le_mul_iff_right₀ (norm_pos_iff.2 hp)).1
     nlinarith only [hpair, hcs]
