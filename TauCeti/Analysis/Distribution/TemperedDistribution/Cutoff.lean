@@ -9,9 +9,11 @@ public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.SmulLeft
 public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Cut-off distributions as tempered distributions
@@ -61,6 +63,9 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
   with `φ`.
 * `Distribution.isVanishingOn_sub_toDistribution_cutoffTempered`: `χ T` agrees with `T` where
   `χ = 1`.
+* `Distribution.cutoffTempered_ofFun_apply`, `Distribution.cutoffTempered_ofFun_eq`,
+  `Distribution.ae_eq_of_cutoffTempered_ofFun_eq`: for the distribution `T` of a locally
+  integrable function `f`, `φ T` is the tempered distribution of the function `φ f`.
 
 ## References
 
@@ -371,5 +376,60 @@ theorem isVanishingOn_sub_toDistribution_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ
   · simp [image_eq_zero_of_notMem_tsupport hx]
 
 end ToDistribution
+
+end Distribution
+
+/-! ### Cut-offs of functions -/
+
+open scoped ENNReal
+
+namespace Distribution
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {Ω : Opens E}
+
+variable {f : E → ℂ}
+
+/-- The cut-off `φ T` of the distribution `T` of a locally integrable function `f`, evaluated on a
+Schwartz function `ψ`, is the integral of `ψ φ f`. -/
+theorem cutoffTempered_ofFun_apply (hf : LocallyIntegrableOn f Ω) (φ : 𝓓(Ω, ℂ)) (ψ : 𝓢(E, ℂ)) :
+    (ofFun Ω f volume ⊤).cutoffTempered φ ψ = ∫ x, ψ x * (φ x * f x) := by
+  rw [cutoffTempered_def, complexPairing_ofFun hf]
+  congr 1
+  ext x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+  ring
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- The cut-off `φ T` of the distribution `T` of a locally integrable function `f` is the tempered
+distribution of any `Lᵖ` function agreeing almost everywhere with `φ f`. -/
+theorem cutoffTempered_ofFun_eq (hf : LocallyIntegrableOn f Ω) (φ : 𝓓(Ω, ℂ))
+    {g : Lp ℂ p (volume : Measure E)} (hg : g =ᵐ[volume] fun x ↦ φ x * f x) :
+    (ofFun Ω f volume ⊤).cutoffTempered φ = (g : 𝓢'(E, ℂ)) := by
+  ext ψ
+  rw [cutoffTempered_ofFun_apply hf, Lp.toTemperedDistribution_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [hg] with x hx
+  rw [hx, smul_eq_mul]
+
+/-- An `Lᵖ` function whose tempered distribution is the cut-off `φ T` of the distribution `T` of a
+locally integrable function `f` agrees almost everywhere with `φ f`. -/
+theorem ae_eq_of_cutoffTempered_ofFun_eq (hf : LocallyIntegrableOn f Ω) (φ : 𝓓(Ω, ℂ))
+    {g : Lp ℂ p (volume : Measure E)}
+    (hg : (ofFun Ω f volume ⊤).cutoffTempered φ = (g : 𝓢'(E, ℂ))) :
+    g =ᵐ[volume] fun x ↦ φ x * f x := by
+  have hφf : Integrable (fun x ↦ φ x * f x) volume :=
+    hf.integrable_smul_left_of_hasCompactSupport φ.continuous.continuousOn φ.hasCompactSupport
+      φ.tsupport_subset
+  refine ae_eq_of_integral_contDiff_smul_eq ((Lp.memLp g).locallyIntegrable Fact.out)
+    hφf.locallyIntegrable fun χ hχ hχc ↦ ?_
+  -- Test both sides against the complexification of `χ`, a Schwartz function.
+  have hχ' : ContDiff ℝ ∞ fun x ↦ (χ x : ℂ) := ofRealCLM.contDiff.comp hχ
+  have h := congrArg (fun T : 𝓢'(E, ℂ) ↦ T ((hχc.comp_left ofReal_zero).toSchwartzMap hχ')) hg
+  simp only [cutoffTempered_ofFun_apply hf, Lp.toTemperedDistribution_apply,
+    HasCompactSupport.toSchwartzMap_toFun] at h
+  simp only [real_smul]
+  exact h.symm
 
 end Distribution
