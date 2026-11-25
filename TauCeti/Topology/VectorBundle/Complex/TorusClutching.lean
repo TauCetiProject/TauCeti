@@ -69,11 +69,14 @@ homotopy classes of loops.
 
 ## Main results
 
+* `TauCeti.IsTorusFrame.apply_right_eq_left`, `TauCeti.IsTorusFrame.apply_top_eq_bottom`: a map
+  of the square with a torus frame agrees on opposite edges.
 * `TauCeti.IsTorusFrame.relativeClutchingNumber_eq`: independence of the torus frame.
 * `TauCeti.exists_isTorusFrame_homotopy`, `TauCeti.exists_isTorusFrame`: torus frames exist along
   homotopies of maps of the torus and along maps of the torus.
 * `TauCeti.IsTorusFrame.torusClutchingNumber_eq`: the torus clutching number is the relative
   clutching number relative to any torus frame.
+* `TauCeti.torusClutchingNumber_eq_zero_of_not_periodic`: the value `0` off maps of the torus.
 * `TauCeti.torusClutchingNumber_eq_of_homotopy`: homotopy invariance.
 * `TauCeti.torusClutchingNumber_eq_clutchingNumber`: comparison with spheres.
 * `TauCeti.IsTorusFrame.map`: bundle maps carry torus frames to torus frames.
@@ -128,6 +131,20 @@ structure IsTorusFrame (u : C(Fin 2 → I, X)) (τ : ∀ y, F ≃L[ℂ] E (u y))
   top_eq_bottom (s : I) (v : F) :
     TotalSpace.mk' F (u ![s, 1]) (τ ![s, 1] v) = TotalSpace.mk' F (u ![s, 0]) (τ ![s, 0] v)
 
+omit [FiniteDimensional ℂ F] [FiberBundle F E] [VectorBundle ℂ F E]
+  [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
+/-- A map of the square with a torus frame agrees on the right and left edges. -/
+theorem IsTorusFrame.apply_right_eq_left {u : C(Fin 2 → I, X)} {τ : ∀ y, F ≃L[ℂ] E (u y)}
+    (hτ : IsTorusFrame u τ) (t : I) : u ![1, t] = u ![0, t] :=
+  congrArg TotalSpace.proj (hτ.right_eq_left t 0)
+
+omit [FiniteDimensional ℂ F] [FiberBundle F E] [VectorBundle ℂ F E]
+  [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
+/-- A map of the square with a torus frame agrees on the top and bottom edges. -/
+theorem IsTorusFrame.apply_top_eq_bottom {u : C(Fin 2 → I, X)} {τ : ∀ y, F ≃L[ℂ] E (u y)}
+    (hτ : IsTorusFrame u τ) (s : I) : u ![s, 1] = u ![s, 0] :=
+  congrArg TotalSpace.proj (hτ.top_eq_bottom s 0)
+
 /-- **Independence of the torus frame.** Two torus frames along `u` have the same relative
 clutching number. -/
 theorem IsTorusFrame.relativeClutchingNumber_eq {u : C(Fin 2 → I, X)}
@@ -138,8 +155,10 @@ theorem IsTorusFrame.relativeClutchingNumber_eq {u : C(Fin 2 → I, X)}
   have hper : squareBoundaryDegree (fun y ↦ ((τ' y).trans (τ y).symm).normalizedDet) = 0 :=
     squareBoundaryDegree_eq_zero_of_periodic
       (continuousOn_normalizedDet_trans_symm hτ.continuousOn hτ'.continuousOn)
-      (fun t ↦ by rw [trans_symm_eq_of_mk'_eq (hτ'.right_eq_left t) (hτ.right_eq_left t)])
-      fun s ↦ by rw [trans_symm_eq_of_mk'_eq (hτ'.top_eq_bottom s) (hτ.top_eq_bottom s)]
+      (fun t ↦ by
+        rw [frame_trans_symm_eq_of_totalSpaceMk'_eq (hτ'.right_eq_left t) (hτ.right_eq_left t)])
+      fun s ↦ by
+        rw [frame_trans_symm_eq_of_totalSpaceMk'_eq (hτ'.top_eq_bottom s) (hτ.top_eq_bottom s)]
   have h : (fun y ↦ ((τ' y).trans (φ y).symm).normalizedDet) =
       (fun y ↦ ((τ' y).trans (τ y).symm).normalizedDet) *
         fun y ↦ ((τ y).trans (φ y).symm).normalizedDet :=
@@ -238,7 +257,7 @@ theorem exists_isTorusFrame_homotopy (H : C(I × (Fin 2 → I), X))
     (hedge (fun s ↦ ![s, 0]) (by fun_prop)) (hedge (fun s ↦ ![s, 1]) (by fun_prop))
   -- At the corner `(1, 1)` both ways around the seams compare `Φ` there with `Φ` at `(0, 0)`.
   have hAB (r : I) : (B (r, 0)).trans (A (r, 1)) = (A (r, 0)).trans (B (r, 1)) :=
-    eq_of_mk'_eq (φ := Φ (r, ![1, 1])) (φ' := Φ (r, ![0, 0]))
+    eq_of_frame_comp_totalSpaceMk'_eq (φ := Φ (r, ![1, 1])) (φ' := Φ (r, ![0, 0]))
       (fun v ↦ (hA (r, 1) (B (r, 0) v)).trans (hB (r, 0) v))
       fun v ↦ (hB (r, 1) (A (r, 0) v)).trans (hA (r, 0) v)
   obtain ⟨ψ, hψc, hψR, hψT⟩ := exists_twisted_boundary hAc hBc hAB
@@ -272,8 +291,10 @@ open Classical in
 /-- The **clutching number of a torus**: the first Chern number of `E` on a map `u : I² → X` of the
 square agreeing on opposite edges, read as a map of the torus. It is the relative clutching number
 of `E` along `u` relative to any torus frame
-(`TauCeti.IsTorusFrame.torusClutchingNumber_eq`), and torus frames exist when `u` agrees on
-opposite edges (`TauCeti.exists_isTorusFrame`). When `u` has no torus frame it is `0`. -/
+(`TauCeti.IsTorusFrame.torusClutchingNumber_eq`), and torus frames exist exactly when `u` agrees
+on opposite edges (`TauCeti.exists_isTorusFrame`, `TauCeti.IsTorusFrame.apply_right_eq_left`,
+`TauCeti.IsTorusFrame.apply_top_eq_bottom`). Otherwise it is `0`
+(`TauCeti.torusClutchingNumber_eq_zero_of_not_periodic`). -/
 def torusClutchingNumber (u : C(Fin 2 → I, X)) : ℤ :=
   if h : ∃ τ : ∀ y, F ≃L[ℂ] E (u y), IsTorusFrame u τ then relativeClutchingNumber u h.choose
   else 0
@@ -284,6 +305,13 @@ theorem IsTorusFrame.torusClutchingNumber_eq {u : C(Fin 2 → I, X)} {τ : ∀ y
   have h : ∃ τ : ∀ y, F ≃L[ℂ] E (u y), IsTorusFrame u τ := ⟨τ, hτ⟩
   rw [torusClutchingNumber, dite_eq_left h]
   exact h.choose_spec.relativeClutchingNumber_eq hτ
+
+/-- The torus clutching number of a map of the square that does not agree on opposite edges, and
+so is not a map of the torus, is `0`. -/
+theorem torusClutchingNumber_eq_zero_of_not_periodic {u : C(Fin 2 → I, X)}
+    (h : ¬((∀ t, u ![1, t] = u ![0, t]) ∧ ∀ s, u ![s, 1] = u ![s, 0])) :
+    torusClutchingNumber F E u = 0 :=
+  dite_eq_right fun ⟨_, hτ⟩ ↦ h ⟨hτ.apply_right_eq_left, hτ.apply_top_eq_bottom⟩
 
 /-- **Homotopy invariance.** If `H : I × I² → X` is a homotopy through maps of the torus, the two
 ends `H (0, ·)` and `H (1, ·)` have the same torus clutching number. -/

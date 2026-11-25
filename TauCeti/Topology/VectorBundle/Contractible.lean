@@ -65,8 +65,9 @@ needed.
   source, for instance the model fibre.
 * `TauCeti.exists_continuous_transition_of_continuous_frame`: continuous frames along two
   pointwise equal maps differ by a continuous family of automorphisms of the model fibre.
-* `TauCeti.trans_symm_eq_of_mk'_eq`, `TauCeti.eq_of_mk'_eq`: frames that agree as maps to the
-  total space have the same transitions, and determine the automorphisms they are composed with.
+* `TauCeti.frame_trans_symm_eq_of_totalSpaceMk'_eq`,
+  `TauCeti.eq_of_frame_comp_totalSpaceMk'_eq`: frames that agree as maps to the total space have
+  the same transitions, and determine the automorphisms they are composed with.
 * `TauCeti.exists_orthonormal_trivialization_baseSet_eq_univ_of_contractibleSpace`: for a
   finite-rank real bundle with continuous fibre metric, the trivialization can be chosen
   isometric on every fibre.
@@ -164,7 +165,8 @@ variable {𝕜 : Type*} [Semiring 𝕜] {X : Type*}
 
 /-- Two pairs of frames at the points `b` and `b'` that agree in the total space have the same
 transitions. -/
-theorem trans_symm_eq_of_mk'_eq {b b' : X} {σ₁ σ₂ : F ≃L[𝕜] E b} {ρ₁ ρ₂ : F ≃L[𝕜] E b'}
+theorem frame_trans_symm_eq_of_totalSpaceMk'_eq {b b' : X} {σ₁ σ₂ : F ≃L[𝕜] E b}
+    {ρ₁ ρ₂ : F ≃L[𝕜] E b'}
     (h₁ : ∀ v, TotalSpace.mk' F b (σ₁ v) = TotalSpace.mk' F b' (ρ₁ v))
     (h₂ : ∀ v, TotalSpace.mk' F b (σ₂ v) = TotalSpace.mk' F b' (ρ₂ v)) :
     σ₁.trans σ₂.symm = ρ₁.trans ρ₂.symm := by
@@ -185,7 +187,8 @@ private theorem mk'_frameCast {b b' : X} (h : b = b') (φ : F ≃L[𝕜] E b) (v
   rfl
 
 /-- An automorphism of `F` is determined by what a frame at `b` makes of it in the total space. -/
-theorem eq_of_mk'_eq {b b' : X} {φ : F ≃L[𝕜] E b} {φ' : F ≃L[𝕜] E b'}
+theorem eq_of_frame_comp_totalSpaceMk'_eq {b b' : X} {φ : F ≃L[𝕜] E b}
+    {φ' : F ≃L[𝕜] E b'}
     {S T : F ≃L[𝕜] F} (hS : ∀ v, TotalSpace.mk' F b (φ (S v)) = TotalSpace.mk' F b' (φ' v))
     (hT : ∀ v, TotalSpace.mk' F b (φ (T v)) = TotalSpace.mk' F b' (φ' v)) : S = T :=
   ContinuousLinearEquiv.ext <| funext fun v ↦
