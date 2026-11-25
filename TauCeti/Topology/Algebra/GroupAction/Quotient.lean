@@ -196,14 +196,17 @@ by right addition, whose orbit space is `G ⧸ Γ`. -/]
 theorem compactSpace_iff_exists_isCompact_mul_eq_univ [TopologicalSpace G]
     [SeparatelyContinuousMul G] [WeaklyLocallyCompactSpace G] :
     CompactSpace (G ⧸ Γ) ↔ ∃ K : Set G, IsCompact K ∧ K * (Γ : Set G) = univ := by
+  -- `G ⧸ Γ` is by definition `MulAction.orbitRel.Quotient Γ.op G`, since `QuotientGroup.leftRel Γ`
+  -- is by definition `MulAction.orbitRel Γ.op G`.
   refine (TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact (G := Γ.op)
     (X := G)).trans (exists_congr fun K ↦ and_congr_right fun _ ↦ ?_)
   -- A compact set meets every orbit of `Γ.op` exactly when it meets every left coset of `Γ`.
   rw [← image_mk_eq_univ_iff, eq_univ_iff_forall, mk_surjective.forall]
-  refine forall_congr' fun x ↦
-    ⟨fun ⟨γ, hγ⟩ ↦ ⟨_, hγ, Quotient.sound ⟨γ, rfl⟩⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
-  obtain ⟨γ, rfl⟩ := MulAction.orbitRel_apply.1 (Quotient.exact hyx)
-  exact ⟨γ, hy⟩
+  refine forall_congr' fun x ↦ ⟨fun ⟨γ, hγ⟩ ↦ ⟨_, hγ, ?_⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
+  · rw [Subgroup.smul_def, MulOpposite.smul_eq_mul_unop]
+    exact mk_mul_of_mem x (Subgroup.mem_op.1 γ.property)
+  · refine ⟨⟨MulOpposite.op (x⁻¹ * y), Subgroup.mem_op.2 (QuotientGroup.eq.1 hyx.symm)⟩, ?_⟩
+    rwa [Subgroup.mk_smul, op_smul_eq_mul, mul_inv_cancel_left]
 
 end QuotientGroup
 
