@@ -38,7 +38,7 @@ that `A² ≃ 𝔭 × 𝔭`.
 
 Consequently the reduced class `x = [𝔭] - [A]` satisfies `2 x = 0`, and `x ≠ 0` because `𝔭` is not
 principal. At the same time `𝔭` has rank one at every prime, and `x` maps to zero in projective
-`K₀` of every commutative local ring receiving `A`, in particular of every localization `A_q` at a
+`K₀` of every local ring receiving `A`, in particular of every localization `A_q` at a
 prime `q`, where `K₀` is torsion-free. So `x` is a nonzero class of order two which no local rank
 and no localization detects: neither the local ranks nor the classes in all prime localizations
 determine a projective class.
@@ -69,7 +69,7 @@ determine a projective class.
   `[𝔭] - [A]` has order two.
 * `TauCeti.NumberField.SqrtNegFive.primeAboveTwo.map_classOf_eq_zero_of_isLocalRing`,
   `TauCeti.NumberField.SqrtNegFive.primeAboveTwo.map_classOf_localization_eq_zero`: the reduced
-  class vanishes in projective `K₀` of every commutative local ring receiving `A`, in particular
+  class vanishes in projective `K₀` of every local ring receiving `A`, in particular
   of every prime localization.
 
 ## References
@@ -416,10 +416,10 @@ theorem addOrderOf_classOf :
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   addOrderOf_eq_prime two_nsmul_classOf classOf_ne_zero
 
-/-- **`[𝔭] - [A]` is invisible locally**: it maps to zero in projective `K₀` of every commutative
-local ring `B` receiving `ℤ[√-5]`. There `K₀(B)` is torsion-free
+/-- **`[𝔭] - [A]` is invisible locally**: it maps to zero in projective `K₀` of every local
+ring `B` receiving `ℤ[√-5]`. There `K₀(B)` is torsion-free
 (`TauCeti.FiniteProjectiveModules.isAddTorsionFree_splitK0`), while `[𝔭] - [A]` is `2`-torsion. -/
-theorem map_classOf_eq_zero_of_isLocalRing {B : Type} [CommRing B] [IsLocalRing B]
+theorem map_classOf_eq_zero_of_isLocalRing {B : Type} [Ring B] [IsLocalRing B]
     (f : QuadraticAlgebra ℤ (-5) 0 →+* B) :
     SplitK0.map.{0, 0} f.finiteProjectiveModulesExtendScalars
       (classOf (QuadraticAlgebra ℤ (-5) 0) primeAboveTwo 1) = 0 := by
