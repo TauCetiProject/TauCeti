@@ -57,7 +57,9 @@ algebra with the invariant of its binary cubic form.
 
 The structure and its additive and scalar instances follow the layout of Mathlib's
 `QuadraticAlgebra` (`Mathlib.Algebra.QuadraticAlgebra.Defs`): each instance is stated under the
-least structure on `R` it needs, and the multiplication starts at `CommRing R`.
+least structure on `R` it needs, and the multiplication starts at `CommRing R`. The base change
+`mapRingHom`, with its injectivity, surjectivity and functoriality lemmas, follows Mathlib's
+`QuadraticAlgebra.mapRingHom` (`Mathlib.Algebra.QuadraticAlgebra.Basic`).
 
 ## References
 
@@ -548,6 +550,18 @@ theorem mapRingHom_surjective (hφ : Function.Surjective φ) :
   obtain ⟨x₁, hx₁⟩ := hφ y.imOmega
   obtain ⟨x₂, hx₂⟩ := hφ y.imTheta
   exact ⟨⟨x₀, x₁, x₂⟩, by ext <;> simp [hx₀, hx₁, hx₂]⟩
+
+@[simp]
+theorem mapRingHom_id : mapRingHom (.id R) P = .id P.CubicAlgebra := rfl
+
+theorem mapRingHom_comp [CommRing T] (ψ : S →+* T) :
+    (mapRingHom ψ (P.map φ)).comp (mapRingHom φ P) = mapRingHom (ψ.comp φ) P := rfl
+
+@[simp]
+theorem trace_mapRingHom (x : P.CubicAlgebra) :
+    Algebra.trace S (P.map φ).CubicAlgebra (mapRingHom φ P x) =
+      φ (Algebra.trace R P.CubicAlgebra x) := by
+  simp [trace_apply, map_ofNat]
 
 end Map
 
