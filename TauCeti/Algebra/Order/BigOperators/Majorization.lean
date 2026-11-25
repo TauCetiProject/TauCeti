@@ -55,7 +55,9 @@ constant vector with the same total is majorized by every vector.
 * `TauCeti.maxSubsetSum_eq_prefixSum_sortDesc`: on `Fin n`, the largest sum of `i` coordinates
   is a prefix sum of the decreasing rearrangement.
 * `TauCeti.majorizes_iff_prefixSum`, `TauCeti.weaklyMajorizes_iff_prefixSum`,
-  `TauCeti.majorizes_iff_dominates`: the sorted forms of majorization and weak majorization.
+  `TauCeti.majorizes_iff_dominates`: the sorted forms of majorization and weak majorization;
+  `TauCeti.weaklyMajorizes_iff_prefixSum_of_antitone`: the same for antitone tuples, without
+  rearranging.
 * `TauCeti.majorizes_comp_equiv_iff`, `TauCeti.majorizes_comp_perm_left_iff`,
   `TauCeti.majorizes_comp_perm_right_iff`, and the same for `TauCeti.WeaklyMajorizes`:
   invariance under reindexing and under permuting either vector.
@@ -371,18 +373,24 @@ theorem majorizes_iff_prefixSum (x y : Fin n → M) :
   · exact h k hk
   · rw [prefixSum_of_le hk, prefixSum_of_le hk, sum_comp_sortDesc, sum_comp_sortDesc, hsum]
 
+/-- For antitone tuples, `x ≺_w y` exactly when every prefix sum of `x` is at most that of `y`. -/
+theorem weaklyMajorizes_iff_prefixSum_of_antitone {x y : Fin n → M} (hx : Antitone x)
+    (hy : Antitone y) : WeaklyMajorizes x y ↔ ∀ k, prefixSum k x ≤ prefixSum k y := by
+  simp only [weaklyMajorizes_iff, hx.maxSubsetSum_eq_prefixSum, hy.maxSubsetSum_eq_prefixSum]
+  refine ⟨fun h k ↦ ?_, fun h ↦ ⟨?_, fun i ↦ h i⟩⟩
+  · rcases lt_or_ge k n with hk | hk
+    · exact h.2 ⟨k, by simpa using hk⟩
+    · simpa only [prefixSum_of_le hk] using h.1
+  · simpa only [prefixSum_of_le le_rfl] using h n
+
 /-- **Sorted form of weak majorization.** On `Fin n`, `x ≺_w y` exactly when every prefix sum
 of the decreasing rearrangement of `x` is at most that of `y`. -/
 theorem weaklyMajorizes_iff_prefixSum (x y : Fin n → M) :
     WeaklyMajorizes x y ↔
       ∀ k, prefixSum k (x ∘ Tuple.sortDesc x) ≤ prefixSum k (y ∘ Tuple.sortDesc y) := by
-  rw [weaklyMajorizes_iff, forall_maxSubsetSum_le_iff_prefixSum]
-  refine ⟨fun h k ↦ ?_, fun h ↦ ⟨?_, fun k _ ↦ h k⟩⟩
-  · rcases lt_or_ge k n with hk | hk
-    · exact h.2 k hk
-    · rw [prefixSum_of_le hk, prefixSum_of_le hk, sum_comp_sortDesc, sum_comp_sortDesc]
-      exact h.1
-  · simpa only [prefixSum_of_le le_rfl, sum_comp_sortDesc] using h n
+  rw [← weaklyMajorizes_iff_prefixSum_of_antitone (Tuple.antitone_sortDesc x)
+    (Tuple.antitone_sortDesc y), weaklyMajorizes_comp_perm_left_iff,
+    weaklyMajorizes_comp_perm_right_iff]
 
 /-- On `Fin n`, `x ≺ y` exactly when the decreasing rearrangement of `x` is below that of `y` in
 the dominance order. -/
