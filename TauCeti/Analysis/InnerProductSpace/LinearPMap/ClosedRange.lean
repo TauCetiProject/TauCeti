@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
-public import TauCeti.Analysis.Normed.Operator.LinearPMap.GraphSpace
+public import TauCeti.Analysis.Normed.Operator.LinearPMap.Graph.Space
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 
 /-!

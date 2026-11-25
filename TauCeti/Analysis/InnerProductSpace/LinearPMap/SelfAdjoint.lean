@@ -353,8 +353,10 @@ theorem sub_re_mul_norm_le_norm_smul_sub_of_mul_norm_sq_le_re_inner
   · simp [hx0]
   have hre :
       (γ - RCLike.re c) * ‖(x : E)‖ ^ 2 ≤ RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) := by
-    simp [inner_sub_left, inner_smul_left, sub_mul]
-    linarith [hγ x]
+    have heq : RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) =
+        RCLike.re (inner 𝕜 (A x) (x : E)) - RCLike.re c * ‖(x : E)‖ ^ 2 := by
+      simp [inner_sub_left, inner_smul_left]
+    linarith [hγ x, heq]
   have hcs : RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) ≤
       ‖c • (x : E) - A x‖ * ‖(x : E)‖ := by
     calc RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E))

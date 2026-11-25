@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
-public import TauCeti.Analysis.Normed.Operator.LinearPMap.GraphSpace
+public import TauCeti.Analysis.Normed.Operator.LinearPMap.Graph.Space
 
 /-!
 # The graph inner product
 
 Let `f : E →ₗ.[𝕜] F` be a partial linear map between inner product spaces. Its graph space
-`f.graphSpace` (`TauCeti.Analysis.Normed.Operator.LinearPMap.GraphSpace`) is a subspace of the
+`f.graphSpace` (`TauCeti.Analysis.Normed.Operator.LinearPMap.Graph.Space`) is a subspace of the
 Hilbert direct sum `WithLp 2 (E × F)`, so it carries the *graph inner product*
 
 `⟪(x, f x), (y, f y)⟫ = ⟪x, y⟫ + ⟪f x, f y⟫`

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.LinearPMap.GraphSpace
+public import TauCeti.Analysis.Normed.Operator.LinearPMap.Graph.Space
 public import TauCeti.RepresentationTheory.Continuous.StronglyContinuous
 public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
 public import TauCeti.RepresentationTheory.Continuous.WithLpProd

@@ -48,9 +48,20 @@ variable {𝕜 G E F : Type*} [RCLike 𝕜]
 `(ker u)ᗮ` of the partial isometry `u`. -/
 theorem IsPartialIsometry.adjoint_compPMap_compPMap {u : E →L[𝕜] F} (hu : u.IsPartialIsometry)
     {M : G →ₗ.[𝕜] E} (hrange : LinearMap.range M.toFun ≤ u.kerᗮ) :
-    (u.adjoint : F →ₗ[𝕜] E).compPMap ((u : E →ₗ[𝕜] F).compPMap M) = M :=
-  LinearPMap.ext rfl fun x hx _ ↦
-    hu.adjoint_apply_apply (hrange (LinearMap.mem_range_self M.toFun ⟨x, hx⟩))
+    (u.adjoint : F →ₗ[𝕜] E).compPMap ((u : E →ₗ[𝕜] F).compPMap M) = M := by
+  refine LinearPMap.ext ((LinearMap.compPMap_domain _ _).trans (LinearMap.compPMap_domain _ _))
+    fun x hx₁ hx₂ ↦ ?_
+  have hx' : x ∈ ((u : E →ₗ[𝕜] F).compPMap M).domain := by
+    rwa [LinearMap.compPMap_domain] at hx₁
+  calc ((u.adjoint : F →ₗ[𝕜] E).compPMap ((u : E →ₗ[𝕜] F).compPMap M)) ⟨x, hx₁⟩
+      = u.adjoint (((u : E →ₗ[𝕜] F).compPMap M) ⟨x, hx'⟩) := by
+        rw [LinearMap.compPMap_apply, coe_coe]
+        exact congrArg u.adjoint (congrArg _ (Subtype.ext rfl))
+    _ = u.adjoint (u (M ⟨x, hx₂⟩)) := by
+        rw [LinearMap.compPMap_apply, coe_coe]
+        exact congrArg u.adjoint (congrArg u (congrArg M (Subtype.ext rfl)))
+    _ = M ⟨x, hx₂⟩ :=
+        hu.adjoint_apply_apply (hrange (LinearMap.mem_range_self M.toFun ⟨x, hx₂⟩))
 
 /-- Composing a partial linear map `M` on the left with a bounded partial isometry `u` whose
 initial space `(ker u)ᗮ` contains `range M` preserves and reflects graph closedness. -/

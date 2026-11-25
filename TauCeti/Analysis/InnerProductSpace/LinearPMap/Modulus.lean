@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Sqrt
 public import TauCeti.Analysis.InnerProductSpace.Modulus
-import TauCeti.Analysis.Normed.Operator.LinearPMap.GraphCore
+import TauCeti.Analysis.Normed.Operator.LinearPMap.Graph.Core
 import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
@@ -41,6 +41,8 @@ every `x ∈ D(T)`. Consequently `ker |T| = ker T`, `(range |T|)ᗮ = ker T`, an
   `LinearPMap.IsClosed.topologicalClosure_range_modulus`: kernel and range-closure identities.
 * `IsSelfAdjoint.modulus_eq_of_re_inner_nonneg`: a nonnegative self-adjoint operator equals its
   own modulus.
+* `LinearPMap.IsClosed.modulus_adjoint_eq_sqrt_compAdjoint`: `|T†| = (T T†)^(1/2)` for any closed
+  operator `T`.
 * `ContinuousLinearMap.toPMap_top_modulus`: compatibility with `ContinuousLinearMap.modulus` for
   bounded operators viewed on `⊤`.
 
@@ -206,6 +208,12 @@ theorem _root_.IsSelfAdjoint.modulus_eq_of_re_inner_nonneg {A : E →ₗ.[𝕜] 
 theorem IsClosed.modulus_modulus {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) : T.modulus.modulus = T.modulus :=
   (hT.isSelfAdjoint_modulus hd).modulus_eq_of_re_inner_nonneg (hT.re_inner_modulus_nonneg hd)
+
+/-- For a closed operator `T`, the modulus of `T†` is the positive square root of `T T†`:
+`|T†| = (T T†)^(1/2)`. -/
+theorem IsClosed.modulus_adjoint_eq_sqrt_compAdjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) :
+    (T†).modulus = T.compAdjoint.sqrt := by
+  rw [modulus_eq_sqrt_adjointComp, hT.compAdjoint_eq_adjoint_adjointComp]
 
 end Closed
 

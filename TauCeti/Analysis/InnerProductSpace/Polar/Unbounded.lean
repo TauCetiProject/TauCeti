@@ -37,11 +37,10 @@ For a closed densely defined operator `T`:
   `T = (v : E →ₗ[𝕜] F).compPMap M` are uniquely determined as `(T.polarFactor, T.modulus)` when
   `M` is nonnegative self-adjoint and `v` is a partial isometry with `v.ker = M.ker`
   (`LinearPMap.eq_modulus_and_eq_polarFactor`).
-* **Adjoint and left polar decomposition:** `(T†).modulus = (v : E →ₗ[𝕜] F).compPMap T† = (T T†)^½`
-  (`LinearPMap.IsClosed.modulus_adjoint_eq_polarFactor_compPMap_adjoint`,
-  `LinearPMap.IsClosed.modulus_adjoint_eq_sqrt_compAdjoint`), `(T†).polarFactor = v†`
-  (`LinearPMap.IsClosed.polarFactor_adjoint`), and `T = |T†| ∘ v` on maximal domain
-  (`LinearPMap.IsClosed.modulus_adjoint_comp_polarFactor`).
+* **Adjoint and left polar decomposition:** `(T†).modulus = (v : E →ₗ[𝕜] F).compPMap T†`
+  (`LinearPMap.IsClosed.modulus_adjoint_eq_polarFactor_compPMap_adjoint`),
+  `(T†).polarFactor = v†` (`LinearPMap.IsClosed.polarFactor_adjoint`), and `T = |T†| ∘ v` on
+  maximal domain (`LinearPMap.IsClosed.modulus_adjoint_comp_polarFactor`).
 * **Bounded compatibility:** for `B : E →L[𝕜] F`, `((B : E →ₗ[𝕜] F).toPMap ⊤).polarFactor` agrees
   with `ContinuousLinearMap.polarFactor B` (`ContinuousLinearMap.toPMap_top_polarFactor`).
 
@@ -58,8 +57,7 @@ For a closed densely defined operator `T`:
   of `(v, |T|)`.
 * `LinearPMap.IsClosed.adjoint_eq_modulus_comp_adjoint_polarFactor`: `T† = |T| ∘ v†` on maximal
   domain.
-* `LinearPMap.IsClosed.modulus_adjoint_eq_polarFactor_compPMap_adjoint` and
-  `LinearPMap.IsClosed.modulus_adjoint_eq_sqrt_compAdjoint`: `|T†| = v ∘ T† = (T T†)^(1/2)`.
+* `LinearPMap.IsClosed.modulus_adjoint_eq_polarFactor_compPMap_adjoint`: `|T†| = v ∘ T†`.
 * `LinearPMap.IsClosed.polarFactor_adjoint`: `(T†).polarFactor = v†`.
 * `LinearPMap.IsClosed.modulus_adjoint_comp_polarFactor`: left polar decomposition `|T†| ∘ v = T`
   on maximal domain.
@@ -201,8 +199,11 @@ theorem IsClosed.polarFactor_modulus_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClo
 domain equality `D(v ∘ |T|) = D(|T|) = D(T)`. -/
 theorem IsClosed.polarFactor_compPMap_modulus {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) :
-    (T.polarFactor : E →ₗ[𝕜] F).compPMap T.modulus = T :=
-  LinearPMap.ext (hT.modulus_domain hd) fun _ hxM hx ↦ hT.polarFactor_modulus_apply hd hxM hx
+    (T.polarFactor : E →ₗ[𝕜] F).compPMap T.modulus = T := by
+  refine LinearPMap.ext ((LinearMap.compPMap_domain _ _).trans (hT.modulus_domain hd))
+    fun _ _ hx ↦ ?_
+  rw [LinearMap.compPMap_apply, ContinuousLinearMap.coe_coe]
+  exact hT.polarFactor_modulus_apply hd _ hx
 
 /-- The polar factor vanishes on `ker T`. -/
 theorem IsClosed.polarFactor_apply_of_mem_ker {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
@@ -314,9 +315,11 @@ theorem IsClosed.adjoint_polarFactor_apply_apply {T : E →ₗ.[𝕜] F} (hT : T
 /-- Composing `v†` on the left with `T` recovers `|T|`: `(v† : F →ₗ[𝕜] E).compPMap T = |T|`. -/
 theorem IsClosed.adjoint_polarFactor_compPMap {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) :
-    (T.polarFactor.adjoint : F →ₗ[𝕜] E).compPMap T = T.modulus :=
-  LinearPMap.ext (hT.modulus_domain hd).symm fun _ hx hxM ↦
-    hT.adjoint_polarFactor_apply_apply hd hx hxM
+    (T.polarFactor.adjoint : F →ₗ[𝕜] E).compPMap T = T.modulus := by
+  refine LinearPMap.ext ((LinearMap.compPMap_domain _ _).trans (hT.modulus_domain hd).symm)
+    fun _ _ hxM ↦ ?_
+  rw [LinearMap.compPMap_apply, ContinuousLinearMap.coe_coe]
+  exact hT.adjoint_polarFactor_apply_apply hd _ hxM
 
 /-- **Adjoint of the right polar decomposition:** `T† = |T| ∘ v†` on its maximal domain
 `{y : F | v† y ∈ D(|T|)}`. -/
@@ -396,12 +399,6 @@ theorem IsClosed.modulus_adjoint_eq_polarFactor_compPMap_adjoint {T : E →ₗ.[
   exact ((adjoint_isClosed hd).eq_modulus (dense_adjoint_domain hT.isClosable) hQ hQpos
     ((hT.isPartialIsometry_polarFactor hd).compPMap_adjointComp
       hT.range_adjoint_le_orthogonal_ker_polarFactor)).symm
-
-/-- For a closed operator `T`, the modulus of `T†` is the positive square root of `T T†`:
-`|T†| = (T T†)^(1/2)`. -/
-theorem IsClosed.modulus_adjoint_eq_sqrt_compAdjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) :
-    (T†).modulus = T.compAdjoint.sqrt := by
-  rw [modulus_eq_sqrt_adjointComp, hT.compAdjoint_eq_adjoint_adjointComp]
 
 /-- For a closed densely defined operator `T`, the polar factor of `T†` is `v†`. -/
 @[simp]
