@@ -226,9 +226,8 @@ theorem sqrt_apply_lie_le (hQ : Q.PosDef) (X Y : L) :
   have ha : 0 < √(Q X) := Real.sqrt_pos.mpr (hQ X hX)
   have hb : 0 < √(Q Y) := Real.sqrt_pos.mpr (hQ Y hY)
   -- Normalize `X` and `Y` to unit length.
-  have hunit {Z : L} (hZ : 0 < √(Q Z)) : Q ((√(Q Z))⁻¹ • Z) ≤ 1 := by
-    rw [← Real.sqrt_le_one, sqrt_map_smul, abs_of_pos (inv_pos.mpr hZ), inv_mul_cancel₀ hZ.ne']
-  have h := sqrt_apply_lie_le_lieBracketNorm hQ (hunit ha) (hunit hb)
+  have h := sqrt_apply_lie_le_lieBracketNorm hQ (map_inv_sqrt_smul_eq_one (hQ X hX)).le
+    (map_inv_sqrt_smul_eq_one (hQ Y hY)).le
   rw [smul_lie, lie_smul, sqrt_map_smul, sqrt_map_smul, abs_of_pos (inv_pos.mpr ha),
     abs_of_pos (inv_pos.mpr hb)] at h
   -- `h : |X|⁻¹ (|Y|⁻¹ |⁅X, Y⁆|) ≤ γ₀`; clear the denominators.
