@@ -143,7 +143,8 @@ estimates do not see the boundary.
   `TauCeti.PDE.UniformlyEllipticOn.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift`: the
   corresponding `H¹`-norm lower bound for any function satisfying a Poincaré inequality.
 * `TauCeti.PDE.mul_norm_gradient_sq_le_energyFormH1_self`: the same bound `λ‖∇u‖²_{L²} ≤ a(u, u)`
-  with no drift, from almost-everywhere bounds `λ‖ξ‖² ≤ ξ ⬝ a ξ` and `0 ≤ c` alone.
+  for a drift vanishing almost everywhere, from almost-everywhere bounds `λ‖ξ‖² ≤ ξ ⬝ a ξ` and
+  `0 ≤ c` alone; the uniformly elliptic version is derived from it.
 * `TauCeti.PDE.abs_energyFormH1_sub_energyFormH1_le`: `|B(u, v) - B'(u, v)| ≤ (Λ + β + γ) ‖u‖ ‖v‖`
   when the coefficient differences are bounded by `Λ, β, γ`.
 * `TauCeti.PDE.norm_energyFormH1L_le_of_bounds`: the bundled form's operator-norm bound, stated
@@ -725,23 +726,27 @@ theorem integrable_energyIntegrand_jetField
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
 
-/-- **The drift-free energy dominates the Dirichlet energy.** If the principal coefficient
-satisfies `λ‖ξ‖² ≤ ξ ⬝ a(x) ξ` and the mass coefficient satisfies `0 ≤ c(x)` for almost every
-`x ∈ Ω`, and the energy density is essentially bounded, then
-`λ‖∇u‖²_{L²} ≤ ∫_Ω ⟨a ∇u, ∇u⟩ + c u²` for every `u ∈ H¹(Ω)`. Only the lower quadratic bound on
+/-- **The drift-free energy dominates the Dirichlet energy.** If the drift vanishes almost
+everywhere on `Ω`, the principal coefficient satisfies `λ‖ξ‖² ≤ ξ ⬝ a(x) ξ` and the mass
+coefficient satisfies `0 ≤ c(x)` for almost every `x ∈ Ω`, and the energy density is essentially
+bounded, then `λ‖∇u‖²_{L²} ≤ a(u, u)` for every `u ∈ H¹(Ω)`. Only the lower quadratic bound on
 `a` enters, with no symmetry; for an inverse-coercive `a` it is part of
 `TauCeti.PDE.IsUniformlyEllipticAE.ae_bounds`. -/
 theorem mul_norm_gradient_sq_le_energyFormH1_self
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hb : b =ᵐ[mu.restrict Omega] 0)
     (ha : ∀ᵐ x ∂mu.restrict Omega, ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
     (hc : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c x) (u : W1p mu Omega 2) :
-    lam * ‖W1p.gradient u‖ ^ 2 ≤ energyFormH1 a 0 c u u := by
+    lam * ‖W1p.gradient u‖ ^ 2 ≤ energyFormH1 a b c u u := by
+  have hcoeff0 : MemLp (fun x => energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι →
+      EuclideanSpace ℝ ι) x) (c x)) ⊤ (mu.restrict Omega) :=
+    hcoeff.ae_eq (hb.mono fun x hx => by rw [hx])
   have key := integral_mul_norm_snd_sq_le_energyFormIntegral_zero_drift_self
     (μ := mu.restrict Omega) (a := a) (c := c) (U := jetField u) ha hc
     ((integrable_norm_jetField_snd_sq u).const_mul lam)
-    (integrable_energyIntegrand_jetField (b := 0) hcoeff u u)
-  rw [← integral_norm_jetField_snd_sq_eq_norm_gradient_sq u, ← integral_const_mul,
-    energyFormH1_def]
+    (integrable_energyIntegrand_jetField hcoeff0 u u)
+  rw [energyFormH1_congr_ae .rfl hb .rfl, ← integral_norm_jetField_snd_sq_eq_norm_gradient_sq u,
+    ← integral_const_mul, energyFormH1_def]
   exact key.trans_eq (energyFormIntegral_def _ _ _ _ _ _)
 
 /-- Adding an essentially bounded function `c'` to the mass coefficient adds the weighted `L²`
@@ -1258,21 +1263,13 @@ theorem mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) (u : W1p mu Omega 2) :
     lam * ‖W1p.gradient u‖ ^ 2 ≤ energyFormH1 a b c u u := by
   have hmem := ae_mem_restrict (mu := mu) (Omega := Omega)
-  have hb_zero_ae : b =ᵐ[mu.restrict Omega] fun _ => 0 := hmem.mono hb_zero
-  have henergy_zero := integrable_energyIntegrand_jetField (b := fun _ => 0) (beta := 0)
-    h ha aestronglyMeasurable_const hc (by simp) hc_bound u u
-  have key := integral_mul_norm_snd_sq_le_energyFormIntegral_zero_drift_self
-    (μ := mu.restrict Omega) (a := a) (c := c) (U := jetField u)
+  rw [energyFormH1_congr_ae .rfl (hmem.mono hb_zero) .rfl]
+  exact mul_norm_gradient_sq_le_energyFormH1_self
+    (memLp_energyIntegrand_of_bounds (beta := 0) h.upper_nonneg ha aestronglyMeasurable_const hc
+      (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) hc_bound) .rfl
     (hmem.mono fun x hx xi => by
       simpa [Matrix.toQuadraticForm'_apply] using h.lower_bound hx xi)
-    (hmem.mono hc_nonneg) ((integrable_norm_jetField_snd_sq u).const_mul lam) henergy_zero
-  rw [← integral_norm_jetField_snd_sq_eq_norm_gradient_sq u, ← integral_const_mul,
-    energyFormH1_def]
-  exact key.trans_eq ((energyFormIntegral_congr_ae (μ := mu.restrict Omega)
-    (a := a) (b := fun _ => 0) (c := c) (U := jetField u) (V := jetField u)
-    Filter.EventuallyEq.rfl hb_zero_ae.symm Filter.EventuallyEq.rfl
-      Filter.EventuallyEq.rfl Filter.EventuallyEq.rfl).trans
-        (energyFormIntegral_def _ _ _ _ _ _))
+    (hmem.mono hc_nonneg) u
 
 /-- **An `H¹`-norm lower bound with no drift.** When the drift vanishes on `Ω` there is no
 condition: a Poincaré inequality alone gives

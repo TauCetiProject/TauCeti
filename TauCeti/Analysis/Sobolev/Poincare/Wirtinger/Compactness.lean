@@ -58,22 +58,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {S : Set E}
 
-/-- On a preconnected domain, a Sobolev function with vanishing gradient and vanishing integral
-over a set of positive measure is zero. -/
-private theorem W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero
-    (hconn : IsPreconnected (Omega : Set E)) (hS : S ⊆ (Omega : Set E)) (hS0 : mu.real S ≠ 0)
-    {u : W1p mu Omega p} (hu : W1p.gradient u = 0) (hint : ∫ y in S, W1p.value u y ∂mu = 0) :
-    u = 0 := by
-  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hconn hu
-  rw [integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hS hc), setIntegral_const,
-    smul_eq_mul] at hint
-  have hc0 : c = 0 := (mul_eq_zero.1 hint).resolve_left hS0
-  apply W1p.ext_value
-  rw [← W1p.valueL_apply, ← W1p.valueL_apply, map_zero]
-  apply Lp.ext
-  filter_upwards [hc, Lp.coeFn_zero ℝ p (mu.restrict (Omega : Set E))] with x hx h0
-  rw [W1p.valueL_apply, hx, hc0, h0, Pi.zero_apply]
-
 /-- **The Poincaré–Wirtinger inequality from compactness.** Let `Ω` be preconnected and of finite
 measure, let `S ⊆ Ω` have positive measure, and let `1 ≤ p`. If the value map
 `W^{1,p}(Ω) → Lᵖ(Ω)` is compact, then the deviation of every `u ∈ W^{1,p}(Ω)` from its mean over

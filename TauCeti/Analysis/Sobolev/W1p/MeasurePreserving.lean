@@ -55,6 +55,8 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
 * `TauCeti.W1p.isCompactOperator_valueL_of_affineIsometryEquiv`: compactness of the value map
   `W^{1,p} → Lᵖ` transfers along an affine isometry.
+* `AffineIsometryEquiv.isFiniteMeasure_volume_restrict_preimage`: an affine-isometric preimage of
+  a bounded set has finite volume.
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
   `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
   coordinates.
@@ -288,11 +290,29 @@ theorem W1p.compMeasurePreservingL_mem_w1p0Submodule_of_contDiff (hΦc : ContDif
 
 /-! ### Affine isometries -/
 
+/-- For an affine isometric equivalence `g`, the relation `s = g⁻¹(t)` can be inverted to
+`t = (g⁻¹)⁻¹(s)`. -/
+theorem _root_.AffineIsometryEquiv.eq_symm_preimage_of_eq_preimage {𝕜 V₁ V₂ P₁ P₂ : Type*}
+    [NormedField 𝕜] [SeminormedAddCommGroup V₁] [NormedSpace 𝕜 V₁] [PseudoMetricSpace P₁]
+    [NormedAddTorsor V₁ P₁] [SeminormedAddCommGroup V₂] [NormedSpace 𝕜 V₂] [PseudoMetricSpace P₂]
+    [NormedAddTorsor V₂ P₂] (g : P₁ ≃ᵃⁱ[𝕜] P₂) {s : Set P₁} {t : Set P₂} (h : s = g ⁻¹' t) :
+    t = g.symm ⁻¹' s := by
+  rw [h, ← Set.preimage_comp]
+  ext x
+  simp
+
 section AffineIsometry
 
 variable {F F' : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] [NormedAddCommGroup F'] [InnerProductSpace ℝ F']
   [FiniteDimensional ℝ F'] [MeasurableSpace F'] [BorelSpace F'] {U : Opens F} {V : Opens F'}
+
+omit [FiniteDimensional ℝ F'] [MeasurableSpace F'] [BorelSpace F'] in
+/-- **A rigid copy of a bounded set has finite volume.** For an affine isometric equivalence `g`
+and a bounded set `t`, the restriction of the volume to `g⁻¹(t)` is a finite measure. -/
+theorem _root_.AffineIsometryEquiv.isFiniteMeasure_volume_restrict_preimage (g : F ≃ᵃⁱ[ℝ] F')
+    {t : Set F'} (ht : Bornology.IsBounded t) : IsFiniteMeasure (volume.restrict (g ⁻¹' t)) :=
+  isFiniteMeasure_restrict.2 (g.isometry.antilipschitzWith.isBounded_preimage ht).measure_lt_top.ne
 
 /-- **Rigid changes of variables in `W^{1,p}`.** Precomposition with an affine isometry `g` is a
 bounded operator from `W^{1,p}(V)` to `W^{1,p}(U)` for `U = g⁻¹(V)`, of norm at most one
@@ -372,10 +392,7 @@ theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule
     (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p} :
     W1p.compAffineIsometryEquivL g hUV u ∈ w1p0Submodule volume U p ↔
       u ∈ w1p0Submodule volume V p := by
-  have hVU : (V : Set F') = g.symm ⁻¹' U := by
-    rw [hUV, ← Set.preimage_comp]
-    ext x
-    simp
+  have hVU := g.eq_symm_preimage_of_eq_preimage hUV
   refine ⟨fun hu => ?_, W1p.compAffineIsometryEquivL_mem_w1p0Submodule g hUV⟩
   rw [← W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL g hUV hVU u]
   exact W1p.compAffineIsometryEquivL_mem_w1p0Submodule g.symm hVU hu
@@ -387,10 +404,7 @@ theorem W1p.isCompactOperator_valueL_of_affineIsometryEquiv (g : F ≃ᵃⁱ[ℝ
     (hUV : (U : Set F) = g ⁻¹' V)
     (hK : IsCompactOperator (W1p.valueL (mu := volume) (Omega := V) (p := p))) :
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := U) (p := p)) := by
-  have hVU : (V : Set F') = g.symm ⁻¹' U := by
-    rw [hUV, ← Set.preimage_comp]
-    ext x
-    simp
+  have hVU := g.eq_symm_preimage_of_eq_preimage hUV
   have hmp : MeasurePreserving g (volume.restrict (U : Set F)) (volume.restrict (V : Set F')) := by
     rw [hUV]
     exact g.measurePreserving.restrict_preimage V.isOpen.measurableSet

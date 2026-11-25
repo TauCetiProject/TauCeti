@@ -13,7 +13,6 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
-import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -96,42 +95,27 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam : ℝ}
 
+/-- The pairing `v ↦ ∫_Ω f v` of `H¹(Ω)` with a datum `f ∈ L²(Ω)`. -/
+private def pairingL (f : Lp ℝ 2 (mu.restrict Omega)) : StrongDual ℝ (W1p mu Omega 2) :=
+  (innerSL ℝ f).comp W1p.valueL
+
+private theorem pairingL_apply (f : Lp ℝ 2 (mu.restrict Omega)) (v : W1p mu Omega 2) :
+    pairingL f v = ∫ x in Omega, f x * W1p.value v x ∂mu := by
+  simp only [pairingL, ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.valueL_apply,
+    L2.inner_def, RCLike.inner_apply, conj_trivial]
+  exact integral_congr_ae (ae_of_all _ fun _ => mul_comm _ _)
+
 section FiniteMeasure
 
 variable [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))]
 
-/-- The integral `∫_Ω u` as a continuous linear functional on `H¹(Ω)`. -/
-private def integralL : W1p mu Omega 2 →L[ℝ] ℝ :=
-  (setIntegralLp (μ := mu.restrict Omega) (𝕜 := ℝ) univ (measure_lt_top _ _)).comp W1p.valueL
-
-private theorem integralL_apply (u : W1p mu Omega 2) :
-    integralL u = ∫ x in Omega, W1p.value u x ∂mu := by
-  rw [integralL, ContinuousLinearMap.comp_apply, setIntegralLp_apply, Measure.restrict_univ,
-    W1p.valueL_apply]
-
-private theorem integralL_const (δ : ℝ) :
-    integralL (W1p.const δ : W1p mu Omega 2) = mu.real Omega * δ := by
-  rw [integralL_apply, ← smul_eq_mul, ← setIntegral_const]
+private theorem pairingL_const_one (f : Lp ℝ 2 (mu.restrict Omega)) :
+    pairingL f (W1p.const 1) = ∫ x in Omega, f x ∂mu := by
+  rw [pairingL_apply]
   refine integral_congr_ae ?_
-  filter_upwards [Lp.coeFn_const 2 (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) δ] with x hx
-  rw [W1p.value_const, hx, Function.const_apply]
-
-/-- A constant whose integral over `Ω` vanishes is zero in `H¹(Ω)`: either the constant is `0`, or
-`Ω` is a null set and `H¹(Ω)` is trivial. -/
-private theorem const_eq_zero_of_integralL_eq_zero {δ : ℝ}
-    (h : integralL (W1p.const δ : W1p mu Omega 2) = 0) : (W1p.const δ : W1p mu Omega 2) = 0 := by
-  rw [integralL_const] at h
-  have hδ : ∀ᵐ _x ∂mu.restrict Omega, δ = 0 := by
-    rcases mul_eq_zero.1 h with h0 | h0
-    · simp [Measure.restrict_eq_zero.2
-        ((measureReal_eq_zero_iff (isFiniteMeasure_restrict.1 inferInstance)).1 h0)]
-    · exact ae_of_all _ fun _ => h0
-  apply W1p.ext_value
-  rw [← W1p.valueL_apply, ← W1p.valueL_apply, map_zero, W1p.valueL_apply, W1p.value_const]
-  refine Lp.ext ?_
-  filter_upwards [hδ, Lp.coeFn_const 2 (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) δ,
-    Lp.coeFn_zero ℝ 2 (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))] with x h0 h1 h2
-  rw [h1, h2, Function.const_apply, h0, Pi.zero_apply]
+  filter_upwards [Lp.coeFn_const 2 (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) (1 : ℝ)]
+    with x hx
+  rw [W1p.value_const, hx, Function.const_apply, mul_one]
 
 /-- Shortcut seminormed group instance on `W^{1,2}(Ω)`, to aid instance search for continuous
 bilinear forms on it. -/
@@ -150,18 +134,18 @@ private theorem isCoercive_energyFormH1L_add_integralL
     (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega)) (hlam : 0 < lam)
     (ha : ∀ᵐ x ∂mu.restrict Omega, ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ)) :
     IsCoercive (energyFormH1L (b := 0) (c := 0) hcoeff +
-      (ContinuousLinearMap.mul ℝ ℝ).bilinearComp (integralL (mu := mu) (Omega := Omega))
-        (integralL (mu := mu) (Omega := Omega))) := by
+      (ContinuousLinearMap.mul ℝ ℝ).bilinearComp
+        (W1p.integralL (mu := mu) (Omega := Omega) (p := 2))
+        (W1p.integralL (mu := mu) (Omega := Omega) (p := 2))) := by
   -- The gradient together with the mean is injective on a preconnected domain.
   let T := (W1p.gradientL (mu := mu) (Omega := Omega) (p := 2)).prod
-    (integralL (mu := mu) (Omega := Omega))
+    (W1p.integralL (mu := mu) (Omega := Omega) (p := 2))
   have hdisj : Disjoint T.ker (⊤ : Submodule ℝ (W1p mu Omega 2)) := by
     rw [Submodule.disjoint_def]
     intro u hu _
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.prod_apply,
       Prod.mk_eq_zero, W1p.gradientL_apply] at hu
-    obtain ⟨δ, rfl⟩ := W1p.exists_eq_const_of_gradient_eq_zero hconn hu.1
-    exact const_eq_zero_of_integralL_eq_zero hu.2
+    exact W1p.eq_zero_of_gradient_eq_zero_of_integralL_eq_zero hconn hu.1 hu.2
   -- With the compact value map it bounds the `H¹` norm below (Peetre).
   obtain ⟨c, hc, hcT⟩ := T.exists_pos_mul_norm_le_of_compact_estimate (C := 1) hK
     (fun u => by
@@ -171,21 +155,21 @@ private theorem isCoercive_energyFormH1L_add_integralL
       linarith)
     (by simp) hdisj
   refine ⟨min lam 1 * c ^ 2, by positivity, fun u => ?_⟩
-  have hT : c * ‖u‖ ≤ max ‖W1p.gradient u‖ |integralL u| := by
+  have hT : c * ‖u‖ ≤ max ‖W1p.gradient u‖ |W1p.integralL u| := by
     simpa [T, Prod.norm_def] using hcT u Submodule.mem_top
-  have hsq : (c * ‖u‖) ^ 2 ≤ ‖W1p.gradient u‖ ^ 2 + integralL u ^ 2 := by
+  have hsq : (c * ‖u‖) ^ 2 ≤ ‖W1p.gradient u‖ ^ 2 + W1p.integralL u ^ 2 := by
     have h0 : 0 ≤ c * ‖u‖ := by positivity
-    rcases le_total ‖W1p.gradient u‖ |integralL u| with hle | hle
+    rcases le_total ‖W1p.gradient u‖ |W1p.integralL u| with hle | hle
     · rw [max_eq_right hle] at hT
-      nlinarith [sq_abs (integralL u), sq_nonneg ‖W1p.gradient u‖]
+      nlinarith [sq_abs (W1p.integralL u), sq_nonneg ‖W1p.gradient u‖]
     · rw [max_eq_left hle] at hT
-      nlinarith [sq_nonneg (integralL u)]
-  have hE := mul_norm_gradient_sq_le_energyFormH1_self (c := 0) hcoeff ha
+      nlinarith [sq_nonneg (W1p.integralL u)]
+  have hE := mul_norm_gradient_sq_le_energyFormH1_self (b := 0) (c := 0) hcoeff .rfl ha
     (ae_of_all _ fun _ => le_rfl) u
-  have hmin : min lam 1 * (‖W1p.gradient u‖ ^ 2 + integralL u ^ 2) ≤
-      lam * ‖W1p.gradient u‖ ^ 2 + integralL u ^ 2 := by
+  have hmin : min lam 1 * (‖W1p.gradient u‖ ^ 2 + W1p.integralL u ^ 2) ≤
+      lam * ‖W1p.gradient u‖ ^ 2 + W1p.integralL u ^ 2 := by
     nlinarith [min_le_left lam 1, min_le_right lam 1, sq_nonneg ‖W1p.gradient u‖,
-      sq_nonneg (integralL u)]
+      sq_nonneg (W1p.integralL u)]
   simp only [add_apply, energyFormH1L_apply,
     ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.mul_apply']
   nlinarith [mul_le_mul_of_nonneg_left hsq (le_min hlam.le zero_le_one)]
@@ -201,7 +185,7 @@ theorem exists_eq_add_const_of_forall_energyFormH1_eq
     {u₁ u₂ : W1p mu Omega 2}
     (h : ∀ v : W1p mu Omega 2, energyFormH1 a 0 0 u₁ v = energyFormH1 a 0 0 u₂ v) :
     ∃ δ : ℝ, u₁ = u₂ + W1p.const δ := by
-  have hE := mul_norm_gradient_sq_le_energyFormH1_self (c := 0) hcoeff ha
+  have hE := mul_norm_gradient_sq_le_energyFormH1_self (b := 0) (c := 0) hcoeff .rfl ha
     (ae_of_all _ fun _ => le_rfl) (u₁ - u₂)
   rw [energyFormH1_sub_left (b := 0) (c := 0) hcoeff, h, sub_self] at hE
   have hg : W1p.gradient (u₁ - u₂) = 0 := by
@@ -230,27 +214,29 @@ theorem existsUnique_setIntegral_eq_zero_forall_energyFormH1_eq
       ∀ v : W1p mu Omega 2, energyFormH1 a 0 0 u v = ℓ v := by
   obtain ⟨u, hu⟩ :=
     (isCoercive_energyFormH1L_add_integralL hK hconn hcoeff hlam ha).exists_forall_eq ℓ
-  have hB (v : W1p mu Omega 2) : energyFormH1 a 0 0 u v + integralL u * integralL v = ℓ v := by
+  have hB (v : W1p mu Omega 2) :
+      energyFormH1 a 0 0 u v + W1p.integralL u * W1p.integralL v = ℓ v := by
     simpa using hu v
   -- Testing with the constant `1` shows that `u` has mean zero.
-  have hm : integralL u = 0 := by
+  have hm : W1p.integralL u = 0 := by
     have h1 := hB (W1p.const 1)
-    rw [energyFormH1_const_right, zero_add, hℓ, integralL_const, mul_one] at h1
+    rw [energyFormH1_const_right, zero_add, hℓ, W1p.integralL_const, mul_one] at h1
     rcases mul_eq_zero.1 h1 with h0 | h0
     · exact h0
-    · rw [integralL_apply]
+    · rw [W1p.integralL_apply]
       exact setIntegral_measure_zero _
         ((measureReal_eq_zero_iff (isFiniteMeasure_restrict.1 inferInstance)).1 h0)
-  refine ⟨u, ⟨(integralL_apply u).symm.trans hm, fun v => ?_⟩, fun w hw => ?_⟩
+  refine ⟨u, ⟨(W1p.integralL_apply u).symm.trans hm, fun v => ?_⟩, fun w hw => ?_⟩
   · simpa [hm] using hB v
   -- Two solutions of mean zero differ by a constant of mean zero, which vanishes.
   obtain ⟨δ, hδ⟩ := exists_eq_add_const_of_forall_energyFormH1_eq hconn hcoeff hlam ha
     (u₁ := w) (u₂ := u) fun v => (hw.2 v).trans (by simpa [hm] using (hB v).symm)
-  have hint : integralL (W1p.const δ : W1p mu Omega 2) = 0 := by
-    have h := congrArg integralL hδ
-    rw [map_add, integralL_apply, integralL_apply, hw.1, hm.symm.trans (integralL_apply u)] at h
-    linarith
-  rw [hδ, const_eq_zero_of_integralL_eq_zero hint, add_zero]
+  have hint : W1p.integralL (W1p.const δ : W1p mu Omega 2) = 0 := by
+    have h := congrArg W1p.integralL hδ
+    rw [map_add, hm, W1p.integralL_apply, hw.1, zero_add] at h
+    exact h.symm
+  rw [hδ, W1p.eq_zero_of_gradient_eq_zero_of_integralL_eq_zero hconn (W1p.gradient_const δ) hint,
+    add_zero]
 
 /-- **Solvability of the Neumann problem.** Under the hypotheses of
 `TauCeti.PDE.existsUnique_setIntegral_eq_zero_forall_energyFormH1_eq`, the problem
@@ -284,20 +270,9 @@ theorem exists_forall_energyFormH1_eq_setIntegral_iff
     (∃ u : W1p mu Omega 2, ∀ v : W1p mu Omega 2,
         energyFormH1 a 0 0 u v = ∫ x in Omega, f x * W1p.value v x ∂mu) ↔
       ∫ x in Omega, f x ∂mu = 0 := by
-  let ℓ : StrongDual ℝ (W1p mu Omega 2) := (innerSL ℝ f).comp W1p.valueL
-  have hℓ (v : W1p mu Omega 2) : ℓ v = ∫ x in Omega, f x * W1p.value v x ∂mu := by
-    simp only [ℓ, ContinuousLinearMap.comp_apply, innerSL_apply_apply, W1p.valueL_apply,
-      L2.inner_def, RCLike.inner_apply, conj_trivial]
-    exact integral_congr_ae (ae_of_all _ fun _ => mul_comm _ _)
-  have h1 : ℓ (W1p.const 1) = ∫ x in Omega, f x ∂mu := by
-    rw [hℓ]
-    refine integral_congr_ae ?_
-    filter_upwards [Lp.coeFn_const 2 (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) (1 : ℝ)]
-      with x hx
-    rw [W1p.value_const, hx, Function.const_apply, mul_one]
-  have key := exists_forall_energyFormH1_eq_iff hK hconn hcoeff hlam ha ℓ
-  rw [h1] at key
-  simpa only [hℓ] using key
+  have key := exists_forall_energyFormH1_eq_iff hK hconn hcoeff hlam ha (pairingL f)
+  rw [pairingL_const_one] at key
+  simpa only [pairingL_apply] using key
 
 end FiniteMeasure
 
@@ -306,26 +281,6 @@ section LipschitzDomain
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {V : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0}
   {Ω : Opens (EuclideanSpace ℝ ι)}
-
-/-- An isometric copy `Ω` of a bounded Lipschitz domain has finite measure, and its value map
-`H¹(Ω) → L²(Ω)` is compact. -/
-private theorem isFiniteMeasure_and_isCompactOperator_valueL
-    (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hVb : IsBounded (V : Set (WithLp 2 (ℝ × E))))
-    (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
-    (hVΩ : (V : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' Ω) :
-    IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ ι))) ∧
-      IsCompactOperator (W1p.valueL (mu := volume) (Omega := Ω) (p := 2)) := by
-  have hΩV : (Ω : Set (EuclideanSpace ℝ ι)) = e ⁻¹' V := by
-    rw [hVΩ, ← preimage_comp]
-    ext x
-    simp
-  have hΩb : IsBounded (Ω : Set (EuclideanSpace ℝ ι)) := by
-    rw [hΩV]
-    exact e.isometry.antilipschitzWith.isBounded_preimage hVb
-  exact ⟨isFiniteMeasure_restrict.2 hΩb.measure_lt_top.ne,
-    W1p.isCompactOperator_valueL_of_affineIsometryEquiv e hΩV
-      (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hV hVb)⟩
 
 /-- **The Neumann problem on a bounded Lipschitz domain.** Let an affine isometry `e` carry
 `Ω ⊆ EuclideanSpace ℝ ι` onto a bounded Lipschitz domain `V`, and let `Ω` be connected. Let `a`
@@ -351,7 +306,10 @@ theorem exists_forall_energyFormH1_eq_setIntegral_iff_of_isLipschitzDomainWith
     (∃ u : W1p volume Ω 2, ∀ v : W1p volume Ω 2,
         energyFormH1 a 0 0 u v = ∫ x in Ω, f x * W1p.value v x) ↔
       ∫ x in Ω, f x = 0 := by
-  obtain ⟨_, hK⟩ := isFiniteMeasure_and_isCompactOperator_valueL hV hVb e hVΩ
+  have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ ι))) :=
+    e.symm.eq_symm_preimage_of_eq_preimage hVΩ ▸ e.isFiniteMeasure_volume_restrict_preimage hVb
+  have hK := W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
+    (p := 2) hV hVb e hVΩ
   exact exists_forall_energyFormH1_eq_setIntegral_iff hK hconn hcoeff hlam ha f
 
 /-- **The Neumann problem with a boundary datum.** Under the hypotheses of
@@ -383,17 +341,20 @@ theorem exists_forall_energyFormH1_eq_setIntegral_add_frontierTrace_iff
               (W1p.compAffineIsometryEquivL e.symm hVΩ v) y ∂μHE[finrank ℝ E]) ↔
       (∫ x in Ω, f x) +
         ∫ y in frontier (V : Set (WithLp 2 (ℝ × E))), h y ∂μHE[finrank ℝ E] = 0 := by
-  obtain ⟨_, hK⟩ := isFiniteMeasure_and_isCompactOperator_valueL hV hVb e hVΩ
-  let ℓ : StrongDual ℝ (W1p volume Ω 2) := (innerSL ℝ f).comp W1p.valueL +
+  have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ ι))) :=
+    e.symm.eq_symm_preimage_of_eq_preimage hVΩ ▸ e.isFiniteMeasure_volume_restrict_preimage hVb
+  have hK := W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
+    (p := 2) hV hVb e hVΩ
+  let ℓ : StrongDual ℝ (W1p volume Ω 2) := pairingL f +
     (innerSL ℝ h).comp ((W1p.frontierTrace (p := 2) ENNReal.ofNat_ne_top hV hVb).comp
       (W1p.compAffineIsometryEquivL e.symm hVΩ))
   have hℓ (v : W1p volume Ω 2) : ℓ v = (∫ x in Ω, f x * W1p.value v x) +
       ∫ y in frontier (V : Set (WithLp 2 (ℝ × E))), h y *
         W1p.frontierTrace ENNReal.ofNat_ne_top hV hVb
           (W1p.compAffineIsometryEquivL e.symm hVΩ v) y ∂μHE[finrank ℝ E] := by
-    simp only [ℓ, add_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
-      W1p.valueL_apply, L2.inner_def, RCLike.inner_apply, conj_trivial]
-    congr 1 <;> exact integral_congr_ae (ae_of_all _ fun _ => mul_comm _ _)
+    simp only [ℓ, add_apply, pairingL_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
+      L2.inner_def, RCLike.inner_apply, conj_trivial]
+    exact congrArg _ (integral_congr_ae (ae_of_all _ fun _ => mul_comm _ _))
   -- The constant `1` has value `1` on `V` after the change of coordinates, hence trace `1`.
   have hv1 : W1p.value (W1p.compAffineIsometryEquivL e.symm hVΩ (W1p.const 1 : W1p volume Ω 2))
       =ᵐ[volume.restrict (V : Set (WithLp 2 (ℝ × E)))] fun _ => (1 : ℝ) := by
@@ -411,13 +372,9 @@ theorem exists_forall_energyFormH1_eq_setIntegral_add_frontierTrace_iff
     continuousOn_const hv1
   have h1 : ℓ (W1p.const 1) = (∫ x in Ω, f x) +
       ∫ y in frontier (V : Set (WithLp 2 (ℝ × E))), h y ∂μHE[finrank ℝ E] := by
-    rw [hℓ]
-    congr 1
-    · refine integral_congr_ae ?_
-      filter_upwards [Lp.coeFn_const 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ ι))) (1 : ℝ)]
-        with x hx
-      rw [W1p.value_const, hx, Function.const_apply, mul_one]
-    · exact integral_congr_ae (hT1.mono fun y hy => by simp only [hy, mul_one])
+    simp only [ℓ, add_apply, pairingL_const_one, ContinuousLinearMap.comp_apply,
+      innerSL_apply_apply, L2.inner_def, RCLike.inner_apply, conj_trivial]
+    exact congrArg _ (integral_congr_ae (hT1.mono fun y hy => by simp only [hy, one_mul]))
   have key := exists_forall_energyFormH1_eq_iff hK hconn hcoeff hlam ha ℓ
   rw [h1] at key
   simpa only [hℓ] using key

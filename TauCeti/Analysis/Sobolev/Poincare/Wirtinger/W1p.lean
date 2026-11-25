@@ -69,6 +69,13 @@ measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
   function with vanishing weak gradient is almost everywhere constant.
 * `TauCeti.W1p.exists_eq_const_of_gradient_eq_zero`: if moreover `Ω` has finite measure, such a
   Sobolev function is the constant `TauCeti.W1p.const c`.
+* `TauCeti.W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero`: on a preconnected `Ω`, a
+  Sobolev function with vanishing gradient and vanishing integral over a set of positive measure
+  is zero.
+* `TauCeti.W1p.integralL`: the integral `∫_Ω u` as a continuous linear functional on
+  `W^{1,p}(Ω)`, for `Ω` of finite measure.
+* `TauCeti.W1p.eq_zero_of_gradient_eq_zero_of_integralL_eq_zero`: on a preconnected `Ω` of finite
+  measure, a Sobolev function with vanishing gradient and vanishing integral over `Ω` is zero.
 * `TauCeti.W1p.eq_zero_of_gradient_eq_zero`: for `p < ∞`, a Sobolev function on the whole of a
   nontrivial space with vanishing weak gradient is zero.
 * `TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`: on a preconnected `Ω`, a Sobolev
@@ -562,6 +569,61 @@ theorem W1p.exists_eq_const_of_gradient_eq_zero [IsFiniteMeasure (mu.restrict (O
   refine ⟨c, W1p.ext_value (Lp.ext ?_)⟩
   filter_upwards [hc, Lp.coeFn_const p (mu.restrict (Omega : Set E)) c] with x h1 h2
   rw [h1, W1p.value_const, h2, Function.const_apply]
+
+/-- On a preconnected domain, a Sobolev function with vanishing gradient and vanishing integral
+over a set of positive measure is zero. -/
+theorem W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero
+    (hconn : IsPreconnected (Omega : Set E)) (hS : S ⊆ (Omega : Set E)) (hS0 : mu.real S ≠ 0)
+    {u : W1p mu Omega p} (hu : W1p.gradient u = 0) (hint : ∫ y in S, W1p.value u y ∂mu = 0) :
+    u = 0 := by
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hconn hu
+  rw [integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hS hc), setIntegral_const,
+    smul_eq_mul] at hint
+  have hc0 : c = 0 := (mul_eq_zero.1 hint).resolve_left hS0
+  refine W1p.ext_value (Lp.ext ?_)
+  filter_upwards [hc, Lp.coeFn_zero ℝ p (mu.restrict (Omega : Set E))] with x hx h0
+  rw [hx, hc0, W1p.value_zero, h0, Pi.zero_apply]
+
+section IntegralL
+
+variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- The integral `∫_Ω u` as a continuous linear functional on `W^{1,p}(Ω)`, for `Ω` of finite
+measure. -/
+def W1p.integralL : W1p mu Omega p →L[ℝ] ℝ :=
+  (setIntegralLp (μ := mu.restrict (Omega : Set E)) (𝕜 := ℝ) univ (measure_lt_top _ _)).comp
+    W1p.valueL
+
+omit [FiniteDimensional ℝ E] in
+/-- `TauCeti.W1p.integralL` is the integral of the value over `Ω`. -/
+@[simp]
+theorem W1p.integralL_apply (u : W1p mu Omega p) :
+    W1p.integralL u = ∫ x in Omega, W1p.value u x ∂mu := by
+  rw [W1p.integralL, ContinuousLinearMap.comp_apply, setIntegralLp_apply, Measure.restrict_univ,
+    W1p.valueL_apply]
+
+/-- The integral of a constant `c` over `Ω` is `|Ω| c`. -/
+theorem W1p.integralL_const (c : ℝ) :
+    W1p.integralL (W1p.const c : W1p mu Omega p) = mu.real Omega * c := by
+  rw [W1p.integralL_apply, ← smul_eq_mul, ← setIntegral_const]
+  refine integral_congr_ae ?_
+  filter_upwards [Lp.coeFn_const p (mu.restrict (Omega : Set E)) c] with x hx
+  rw [W1p.value_const, hx, Function.const_apply]
+
+/-- **A Sobolev function with vanishing gradient and mean is zero.** On a preconnected domain of
+finite measure, if the weak gradient of `u ∈ W^{1,p}(Ω)` and its integral over `Ω` both vanish,
+then `u = 0`. If `Ω` is a null set this holds because `W^{1,p}(Ω)` is trivial. -/
+theorem W1p.eq_zero_of_gradient_eq_zero_of_integralL_eq_zero
+    (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0)
+    (hint : W1p.integralL u = 0) : u = 0 := by
+  by_cases h0 : mu.real Omega = 0
+  · have hae : ae (mu.restrict (Omega : Set E)) = ⊥ := ae_restrict_eq_bot.2
+      ((measureReal_eq_zero_iff (isFiniteMeasure_restrict.1 inferInstance)).1 h0)
+    exact W1p.ext_value (Lp.ext (hae.le Filter.eventually_bot))
+  · rw [W1p.integralL_apply] at hint
+    exact W1p.eq_zero_of_gradient_eq_zero_of_setIntegral_eq_zero hconn subset_rfl h0 hu hint
+
+end IntegralL
 
 /-- **A Sobolev function on the whole space with vanishing gradient is zero.** For `p < ∞` and a
 nontrivial space `E`, if the weak gradient of `u ∈ W^{1,p}(E)` vanishes, then `u = 0`: it is
