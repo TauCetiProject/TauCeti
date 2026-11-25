@@ -68,6 +68,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   `h ∈ L¹(Π)` for the Poisson measure `Π` exactly when `P[|h| dx](i) < ∞`.
 * `TauCeti.differentiableOn_upperHalfPlaneSchwarzIntegral`: `S[ν]` is holomorphic on `ℂ₊`.
 * `TauCeti.re_upperHalfPlaneSchwarzIntegral`: `Re S[ν] = P[ν]`.
+* `TauCeti.I_mul_upperHalfPlaneSchwarzIntegral`: `i S[ν]` is the integral of the subtracted
+  resolvent kernel against `ν / π`.
 * `TauCeti.harmonicOnNhd_upperHalfPlanePoissonIntegral`: `P[ν]` is harmonic on `ℂ₊`.
 
 ## References
@@ -475,6 +477,17 @@ theorem upperHalfPlaneSchwarzIntegral_def (ν : Measure ℝ) (z : ℂ) :
     upperHalfPlaneSchwarzIntegral ν z =
       ((π : ℂ) * I)⁻¹ * ∫ x, subtractedResolventKernel z x ∂ν := by
   rw [upperHalfPlaneSchwarzIntegral]
+
+/-- `i S[ν](z) = (1 / π) ∫ (1 / (x - z) - x / (1 + x ^ 2)) dν(x)` is the integral of the
+subtracted resolvent kernel against the measure `ν / π`, the form of a Herglotz representation. -/
+theorem I_mul_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) (z : ℂ) :
+    I * upperHalfPlaneSchwarzIntegral ν z =
+      ∫ x, subtractedResolventKernel z x ∂(ENNReal.ofReal π⁻¹ • ν) := by
+  rw [upperHalfPlaneSchwarzIntegral_def, integral_smul_measure,
+    ENNReal.toReal_ofReal (by positivity), Complex.real_smul, ← mul_assoc]
+  congr 1
+  push_cast
+  field_simp
 
 /-- Off the real axis, the Schwarz integral of a measure that is not Poisson-finite takes the junk
 value `0`, since the subtracted resolvent kernel is not integrable there. -/

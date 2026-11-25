@@ -110,6 +110,16 @@ lemma add_principalDivisor_nonneg_iff
     WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
   omega
 
+/-- The coefficient of `D - div g` at a codimension-one point `x` is the coefficient of `D` minus
+the order of vanishing of `g` at `x`. -/
+lemma coeff_sub_principalDivisor (D : SchemeWeilDivisor X) (g : Additive X.functionFieldˣ)
+    (x : CodimensionOnePoint X) :
+    WeilDivisor.coeff (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) x =
+      WeilDivisor.coeff D x -
+        X.ord ((Additive.toMul g : X.functionFieldˣ) : X.functionField) x := by
+  rw [WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
+
 /-- Restricting a principal Weil divisor on `X` along a nonempty open immersion `j : U ⟶ X` gives
 the principal Weil divisor of the pulled-back rational function. -/
 theorem pullback_principalDivisor_of_isOpenImmersion {U : Scheme.{u}} (j : U ⟶ X)
