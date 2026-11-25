@@ -166,6 +166,8 @@ private def toPerm : MulAut Q₈ →* Equiv.Perm (Fin 4) :=
         (funext fun d ↦ (diagonalMap_mul φ ψ d).trans Function.comp_apply.symm).trans
           (Function.End.mul_def (diagonalMap φ) (diagonalMap ψ)).symm }
 
+/-- `toPerm` acts by `diagonalMap`. Mathlib has no `MonoidHom.toHomPerm_apply` lemma, so this
+holds by unfolding `MonoidHom.toHomPerm`; later proofs use this lemma rather than the unfolding. -/
 private theorem toPerm_apply (φ : MulAut Q₈) (d : Fin 4) : toPerm φ d = diagonalMap φ d :=
   rfl
 
@@ -174,13 +176,7 @@ private theorem toPerm_injective : Function.Injective toPerm := by
   have h := eq_of_diagonal_image_vertex ⟨_, isGenPair_mulAut φ⟩ fun d ↦ by
     rw [← coe_eq_ofGens φ]
     exact (toPerm_apply φ d).symm.trans (DFunLike.congr_fun hφ d)
-  have h1 : φ (a 1) = a 1 := congrArg Prod.fst h
-  have h2 : φ (xa 0) = xa 0 := congrArg Prod.snd h
-  refine MulEquiv.ext fun x ↦ ?_
-  rw [← ofGens_apply_eq φ, h1, h2]
-  cases x with
-  | a i => simp [ofGens, a_one_pow]
-  | xa i => simp [ofGens, a_one_pow, xa_mul_a]
+  exact mulAutEquiv.injective (Subtype.ext h)
 
 /-- **`MulAut Q₈ ≅ S₄`**: the automorphism group of the quaternion group is isomorphic to the
 symmetric group on four letters. -/
