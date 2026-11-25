@@ -173,8 +173,7 @@ def partialSumCLM (φ : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞) [Fact
         rw [MemBesov.toDistr_toBesovSpace, toDistr_sub, hr, sub_sub_cancel]
       have htail : ‖u.weightedBlocks -
           ∑ i ∈ Finset.range N, lp.single q i (u.weightedBlocks i)‖ ≤ ‖u‖ :=
-        (lp.norm_sub_sum_single_le (zero_lt_one.trans_le Fact.out).ne' _ _).trans_eq
-          (norm_weightedBlocks u)
+        (lp.norm_sub_sum_single_le _ _).trans_eq (norm_weightedBlocks u)
       calc ‖(memBesov_sum_littlewoodPaleyBlock s q N u).toBesovSpace‖
           = ‖u - r‖ := congrArg norm hur
         _ ≤ ‖u‖ + ‖r‖ := norm_sub_le _ _

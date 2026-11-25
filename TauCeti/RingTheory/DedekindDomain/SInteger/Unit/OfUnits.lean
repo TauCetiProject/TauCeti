@@ -51,4 +51,10 @@ theorem coe_unitOfUnits (u : Rˣ) :
   apply Units.ext
   exact val_unitOfUnits S K u
 
+/-- The canonical homomorphism from the units of a Dedekind domain to its `S`-units is
+injective. -/
+theorem unitOfUnits_injective : Function.Injective (unitOfUnits S K) := fun a b h ↦
+  Units.ext <| IsFractionRing.injective R K <| by
+    rw [← val_unitOfUnits S K a, ← val_unitOfUnits S K b, h]
+
 end TauCeti.SUnit

@@ -432,7 +432,7 @@ theorem foldedNormalMeasure_eq_withDensity (m s : ℝ) :
   by_cases hs : 0 < s
   · have hv : (s ^ 2).toNNReal ≠ 0 := (Real.toNNReal_pos.2 (pow_pos hs 2)).ne'
     rw [foldedNormalMeasure_of_scale_pos hs, gaussianReal_of_var_ne_zero m hv,
-      map_abs_withDensity (measurable_gaussianPDF m _)]
+      map_abs_withDensity (measurable_gaussianPDF m _).aemeasurable]
     apply withDensity_congr_ae
     refine .of_forall fun x ↦ ?_
     by_cases hx : 0 < x

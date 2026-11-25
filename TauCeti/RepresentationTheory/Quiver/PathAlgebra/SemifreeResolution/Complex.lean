@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.SemifreeResolution.Basic
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BimoduleResolution.Grading
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.SemifreeResolution.Grading
 public import TauCeti.Algebra.Homology.GradedCochainComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
@@ -47,18 +46,6 @@ variable (k : Type w) [CommRing k] (Q : Type u) [Quiver.{v} Q] [Fintype Q]
 local notation "A" => pathAlgebra k Q
 include hd hdε
 
-/-- The differential on the vertex term raises total arrow weight by one. -/
-theorem isHomogeneous_vertexTensorBimoduleDifferential :
-    LinearMap.IsHomogeneous (vertexTensorBimoduleDifferential wt d)
-      (vertexTensorGrading k Q wt).piece (vertexTensorGrading k Q wt).piece 1 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro n x hx
-  rw [mem_vertexTensorGrading_piece_iff, coe_vertexTensorBimoduleDifferential hd hdε]
-  have h := isHomogeneous_envelopeDifferential
-    (InternalGrading.mk (gradeBy k wt) (isInternal_gradeBy k wt)) rfl
-    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ hd.map_mem hx) 0
-  exact h.map_mem ((mem_vertexTensorGrading_piece_iff k Q wt).mp hx)
-
 /-- The vertex term with its total-weight grading and enveloping differential. -/
 noncomputable abbrev vertexTensorComplex : CochainComplex (ModuleCat k) ℤ :=
   gradedCochainComplex (M := vertexTensorBimodule k Q) (vertexTensorGrading k Q wt).piece
@@ -67,19 +54,6 @@ noncomputable abbrev vertexTensorComplex : CochainComplex (ModuleCat k) ℤ :=
     (fun _ x ↦ vertexTensorBimoduleDifferential_vertexTensorBimoduleDifferential hd hdε x)
 
 variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
-
-/-- The twisted differential on the arrow term raises total arrow weight by one. -/
-theorem isHomogeneous_arrowTensorBimoduleDifferential :
-    LinearMap.IsHomogeneous (arrowTensorBimoduleDifferential wt d)
-      (arrowTensorGrading k Q wt).piece (arrowTensorGrading k Q wt).piece 1 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro n x hx
-  rw [mem_arrowTensorGrading_piece_iff,
-    coe_arrowTensorDifferential_arrowTensorBimoduleDifferential hd hdε]
-  have h := (isHomogeneous_vertexTensorBimoduleDifferential k Q wt d hd hdε).map_mem
-    ((isHomogeneous_arrowTensorDifferential k Q wt).map_mem hx)
-  simpa only [add_zero, mem_vertexTensorGrading_piece_iff,
-    coe_vertexTensorBimoduleDifferential hd hdε] using h
 
 /-- The arrow term with its arrow-weight grading and twisted differential. -/
 noncomputable abbrev arrowTensorComplex : CochainComplex (ModuleCat k) ℤ :=

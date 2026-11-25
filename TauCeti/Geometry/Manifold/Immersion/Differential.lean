@@ -10,9 +10,11 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Prod
 public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
 # Immersion normal forms from split differentials
@@ -45,8 +47,10 @@ map with a global left inverse differentiable along its image is an immersion
 (`ContMDiff.isImmersion_of_leftInverse`). More generally, a `C^n` map into a manifold with
 finite-dimensional model is an immersion when its composite with a map differentiable along its
 image is one
-(`ContMDiff.isImmersion_of_isImmersion_comp`). Pairing an immersion with any `C^n` map into a
-finite-dimensional manifold gives an immersion (`Manifold.IsImmersion.prodMk`).
+(`ContMDiff.isImmersion_of_isImmersion_comp`). So a map whose composite with a smooth embedding is
+an immersion is itself one, with no separate smoothness hypothesis
+(`Manifold.IsSmoothEmbedding.isImmersion_of_isImmersion_comp`). Pairing an immersion with any
+`C^n` map into a finite-dimensional manifold gives an immersion (`Manifold.IsImmersion.prodMk`).
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
 theorem), and Chapter 8, §1 (its use in isotopy extension).
@@ -320,6 +324,18 @@ theorem ContMDiff.isImmersion_of_isImmersion_comp [FiniteDimensional 𝕜 E'] {E
     hf.contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv isOpen_univ (mem_univ x) hn
       (isDiffImmersionAt_iff.mp ((hgf.isDiffImmersionAt hn0 x).of_comp
         ((hf x).mdifferentiableAt hn0) (hg x)))
+
+omit [CompleteSpace E'] in
+/-- A map between boundaryless manifolds, with finite-dimensional target model and `1 ≤ n`, is a
+`C^n` immersion when its composite with a `C^n` smooth embedding is one. -/
+theorem Manifold.IsSmoothEmbedding.isImmersion_of_isImmersion_comp [FiniteDimensional 𝕜 E']
+    {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [TopologicalSpace HP]
+    {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P] {φ : N → P}
+    (hφ : IsSmoothEmbedding J IP n φ) (hn : 1 ≤ n) (h : IsImmersion I IP n (φ ∘ f)) :
+    IsImmersion I J n f := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  exact (hφ.contMDiff_iff_comp.2 h.contMDiff).isImmersion_of_isImmersion_comp hn
+    (fun _ ↦ hφ.contMDiff.mdifferentiableAt hn0) h
 
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [CompleteSpace EP]
   [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P]

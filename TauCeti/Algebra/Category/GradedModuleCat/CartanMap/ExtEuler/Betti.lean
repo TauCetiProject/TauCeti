@@ -54,6 +54,8 @@ resolutions, forces those resolutions to be linear.
   `P(q) = B(q, 1)` once the resolutions are linear.
 * `gradedCartanMatrix_trunc_mul_maslovEulerPowerSeries_bettiPoincarePowerSeriesMatrix_eq_one`, in
   the namespace `TauCeti`: the identity `C(q) · P(-q) = I` for linear resolutions of the simples.
+* `TauCeti.gradedCartanMatrix_trunc_mul_diagonalBettiPoincarePowerSeries_eq_one`: the same
+  identity with `P(-q)` written through the diagonal Betti numbers `∑ₙ (-1)ⁿ βⁿ_{i,n}(Sⱼ) qⁿ`.
 
 ## References
 
@@ -71,50 +73,6 @@ open CategoryTheory CategoryTheory.Abelian LaurentPolynomial
 open scoped Matrix Pointwise
 
 universe uk uA uI
-
-section BettiExtComparison
-
-variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] [Module.Finite k A]
-  [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
-  {I : Type uI}
-  (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e : I → A}
-  (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
-  (hI : ∀ i, (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜)
-  (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
-  (bP : Module.Basis I (LaurentPolynomial ℤ)
-    (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
-  (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
-    ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
-      gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i) (hI i)⟩)
-  (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
-
-include he he₀ hne hbP hconc in
-/-- At `t = -1`, `dᵢ = dim_k(eᵢ • Sᵢ)` times the Betti Poincaré series of a minimal resolution at
-`Pᵢ` is the Alexander-graded Euler power series of Ext against `Sᵢ`, for any finiteness
-witnesses. -/
-private theorem GradedProjectiveResolution.IsMinimal.C_finrank_mul_eulerPowerSeries_betti
-    {M : GradedModuleCat.{uA} 𝒜}
-    {r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading} [∀ n, Module.Finite A (r.X n)]
-    (hr : r.IsMinimal) (i : I) (hB : Bigraded.HasEulerPowerSeries (r.bettiPoincarePowerSeries bP i))
-    (h : IsGradedExtInternallyFinite.{uA} k (GradedModuleCat.shift 𝒜) M (S i).obj)
-    (hE : Bigraded.HasEulerPowerSeries
-      (bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h)) :
-    PowerSeries.C (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ) *
-        Bigraded.eulerPowerSeries hB =
-      Bigraded.eulerPowerSeries hE := by
-  have (m : ℕ) : Module.Finite k (r.X m) := Module.Finite.trans A (r.X m)
-  let _ : Module.Finite A (S i).obj := gradedFiniteModules_iff.mp (S i).property
-  let _ : Module.Finite k (S i).obj := Module.Finite.trans A _
-  have hEq : PowerSeries.C (C (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ)) *
-      r.bettiPoincarePowerSeries bP i =
-        bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h := by
-    rw [← GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ (hconc i)]
-    exact hr.C_smulGradedDimension_mul_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc i h
-  rw [← Bigraded.eulerPowerSeries_C_mul hB _ (hB.C_mul _)]
-  exact Bigraded.eulerPowerSeries_congr _ _ hEq
-
-end BettiExtComparison
 
 section CartanBetti
 
@@ -151,7 +109,8 @@ private theorem ext_eulerPowerSeries_matrix_eq_transpose_diagonal_mul_betti
         Matrix.of fun i j ↦ Bigraded.eulerPowerSeries (hB i j))ᵀ :=
   Matrix.ext fun i j ↦ by
     rw [Matrix.transpose_apply, Matrix.diagonal_mul, Matrix.of_apply, Matrix.of_apply]
-    exact ((hr i).C_finrank_mul_eulerPowerSeries_betti S he he₀ hI hne bP hbP hconc j _ _ _).symm
+    exact ((hr i).C_finrank_mul_eulerPowerSeries S he he₀ hI hne bP hbP j (hconc j)
+      (hB j i) (h i j) (hE i j)).symm
 
 include hbP in
 /-- **The alternating Euler identity `C(q) · B(q, -1) = I`.** Over a finite-dimensional
@@ -168,8 +127,8 @@ theorem gradedCartanMatrix_trunc_mul_eulerPowerSeries_bettiPoincarePowerSeries_e
     (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS)).map
         (fun p ↦ (p.trunc : PowerSeries ℤ)) *
       Matrix.of (fun i j ↦ Bigraded.eulerPowerSeries
-        ((hr j).hasEulerPowerSeries_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc
-          (fun p hp ↦ hconc j p hp.ne) i (hself i))) = 1 := by
+        ((hr j).hasEulerPowerSeries_bettiPoincarePowerSeries_of_nonneg S he he₀ hI hne bP hbP hneg
+          (fun p hp ↦ hconc j p hp.ne) i (hconc i) (hself i))) = 1 := by
   have (i : I) (n : ℕ) : Module.Finite k ((r i).X n) := Module.Finite.trans A ((r i).X n)
   set Cps := (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS)).map
     fun p ↦ (p.trunc : PowerSeries ℤ)
@@ -230,9 +189,10 @@ theorem forall_isLinear_iff_cartan_betti_maslovEulerPowerSeries
       ∀ (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
         (PowerSeries.coeff n ((r j).bettiPoincarePowerSeries bP i)).coeff p = 0 := by
     exact Bigraded.eulerPowerSeries_eq_maslovEulerPowerSeries_iff hB
-      ((hr j).coeff_coeff_bettiPoincarePowerSeries_nonneg S he he₀ hI hne bP hbP hconc i (hself i))
-      (fun n p hpn ↦ (hr j).coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt S he he₀ hI hne bP
-        hbP hconc (fun q hq ↦ hconc j q hq.ne) i (hself i) (by omega))
+      ((hr j).coeff_coeff_bettiPoincarePowerSeries_nonneg S he he₀ hI hne bP hbP i (hconc i)
+        (hself i))
+      (fun n p hpn ↦ (hr j).coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt_of_nonneg S he he₀
+        hI hne bP hbP hneg (fun q hq ↦ hconc j q hq.ne) i (hconc i) (hself i) (by omega))
   rw [forall_isLinear_iff_diagonal_bettiPoincarePowerSeriesMatrix S he he₀ hI hne bP hbP hconc r
     hr hneg hS hself]
   simp only [bettiPoincarePowerSeriesMatrix_apply]
@@ -266,6 +226,32 @@ theorem gradedCartanMatrix_trunc_mul_maslovEulerPowerSeries_bettiPoincarePowerSe
       (bettiPoincarePowerSeriesMatrix r bP).map Bigraded.maslovEulerPowerSeries = 1 :=
   (forall_isLinear_iff_cartan_betti_maslovEulerPowerSeries S he he₀ hI hne hself hS bP hbP r
     (fun i ↦ (hr i).isMinimal hneg) hneg hconc).mp hr
+
+include hbP in
+/-- **The Cartan–Poincaré identity `C(q) · P(-q) = I` via diagonal Betti numbers.** Over a
+finite-dimensional nonnegatively graded algebra, let `Sᵢ` be an exhaustive degree-zero simple
+family with chosen linear resolutions `rⱼ` by finitely generated terms. Their Betti Poincaré
+series are supported on the diagonal, so they are recorded by the one-variable Poincaré matrix
+`P(q) = B(q, 1)`, whose `(i, j)` entry is `∑ₙ βⁿ_{i,n}(Sⱼ) qⁿ`. With `C_ps` the graded Cartan
+matrix truncated into `PowerSeries ℤ`, `C_ps · P(-q) = I`. The resolutions may be infinite. -/
+theorem gradedCartanMatrix_trunc_mul_diagonalBettiPoincarePowerSeries_eq_one
+    (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (S j).obj.grading)
+    [∀ j n, Module.Finite A ((r j).X n)] (hr : ∀ j, (r j).IsLinear)
+    (hneg : ∀ p < 0, 𝒜 p = ⊥) (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) :
+    (gradedCartanMatrix 𝒜 bP (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS)).map
+        (fun p ↦ (p.trunc : PowerSeries ℤ)) *
+      Matrix.of (fun i j ↦ PowerSeries.rescale (-1 : ℤ) (PowerSeries.mk fun n ↦
+        (PowerSeries.coeff n (bettiPoincarePowerSeriesMatrix r bP i j)).coeff n)) = 1 := by
+  have hmin (j : I) : (r j).IsMinimal := (hr j).isMinimal hneg
+  have hdiag := (forall_isLinear_iff_diagonal_bettiPoincarePowerSeriesMatrix S he he₀ hI hne bP
+    hbP hconc r hmin hneg hS hself).1 hr
+  rw [← gradedCartanMatrix_trunc_mul_eulerPowerSeries_bettiPoincarePowerSeries_eq_one
+    S he he₀ hI hne hself hS bP hbP r hmin hneg hconc]
+  congr 1
+  refine Matrix.ext fun i j ↦ ?_
+  rw [Matrix.of_apply, Matrix.of_apply, Bigraded.eulerPowerSeries_of_diagonal _
+    (by simpa only [bettiPoincarePowerSeriesMatrix_apply] using hdiag i j),
+    bettiPoincarePowerSeriesMatrix_apply]
 
 end CartanBetti
 

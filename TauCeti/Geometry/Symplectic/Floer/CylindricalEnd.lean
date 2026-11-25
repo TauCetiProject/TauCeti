@@ -15,7 +15,7 @@ import TauCeti.Analysis.Complex.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Algebra.Order.Floor.Ring
-import TauCeti.Geometry.Symplectic.Floer.Breaking
+import TauCeti.Geometry.Symplectic.Floer.Breaking.Basic
 import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
@@ -83,8 +83,8 @@ subsequence `φ` and a `1`-periodic orbit `x` of `X_{H_t}` such that the transla
 uniformly on `ℝ × ℝ`. On each band `[-m, m] × ℝ` the translates are eventually uniformly
 Lipschitz with values in `K`, so the Arzelà–Ascoli theorem along exhausting bands
 (`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`) gives a convergent
-subsequence, and `TauCeti.Geometry.Symplectic.Floer.Breaking` identifies every such limit as a
-stationary cylinder over a Hamiltonian orbit. This is the behaviour of a sequence of Floer
+subsequence, and `TauCeti.Geometry.Symplectic.Floer.Breaking.Basic` identifies every such limit
+as a stationary cylinder over a Hamiltonian orbit. This is the behaviour of a sequence of Floer
 cylinders of bounded energy along its necks, between the levels at which its energy concentrates.
 For a single finite-energy half-cylinder translated along its end it is **breaking off an orbit
 at the end**

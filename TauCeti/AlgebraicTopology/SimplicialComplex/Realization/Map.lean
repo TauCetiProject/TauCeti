@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Maps
 public import Mathlib.Topology.ContinuousMap.Basic
@@ -23,6 +24,8 @@ For a vertex map `f`, the barycentric coordinate at a target vertex `b` is the s
 source coordinates over vertices sent to `b`. On each face, the induced map is the affine
 extension of `f` into the simplex on the image vertex set; `realizationMap_comp_faceInclusion`
 characterizes this restriction. The induced map is injective exactly when the vertex map is.
+`AbstractSimplicialComplex.linearExtension_realizationMap` expresses naturality of barycentric
+extension under these maps.
 
 ## Main definitions
 
@@ -318,3 +321,22 @@ theorem image_realizationMap_ofPred_support {α β : Type*} [DecidableEq β]
     Set.image_preimage_eq {y : Realization L | Q y.val.support} hf
 
 end TauCeti.PreAbstractSimplicialComplex.SimplicialMap
+
+namespace AbstractSimplicialComplex
+
+variable {ι : Type*} {E : Type*} [AddCommMonoid E] [Module ℝ E]
+  {K : AbstractSimplicialComplex ι}
+
+/-- Pulling a linear extension back along a simplicial realization map pulls back vertex data. -/
+@[simp]
+theorem linearExtension_realizationMap {κ : Type*} [DecidableEq κ]
+    {L : AbstractSimplicialComplex κ}
+    (f : PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (p : κ → E) (x : Realization K) :
+    L.linearExtension p (f.realizationMap x) = K.linearExtension (p ∘ f) x := by
+  rw [linearExtension_apply, linearExtension_apply,
+    PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val,
+    Finsupp.linearCombination_mapDomain]
+
+end AbstractSimplicialComplex

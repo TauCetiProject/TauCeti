@@ -16,8 +16,9 @@ The characters `CharacterModule M = M →+ AddCircle (1 : ℚ)` of an abelian gr
 points, and when `M` is finite its character module is finite with as many elements as `M`; when
 `M` is infinite, so is its character module:
 
+* `TauCeti.CharacterModule.zero_apply`: the zero character vanishes everywhere;
 * `TauCeti.CharacterModule.eval_injective`: evaluation embeds `M` in its double character module;
-* an instance `Finite (CharacterModule M)` for finite `M`;
+* instances `Finite (CharacterModule M)` and `Finite (M →+ AddCircle (1 : ℚ))` for finite `M`;
 * `TauCeti.natCard_characterModule`: `Nat.card (CharacterModule M) = Nat.card M` for every abelian
   group `M`; when `M` is infinite both sides are `0`.
 
@@ -35,11 +36,23 @@ public section
 
 namespace TauCeti
 
+/-- The zero character vanishes everywhere. -/
+@[simp]
+theorem CharacterModule.zero_apply {A : Type*} [AddCommGroup A] (a : A) :
+    (0 : CharacterModule A) a = 0 :=
+  rfl
+
 /-- The character module of a finite abelian group is finite. -/
 instance (M : Type*) [AddCommGroup M] [Finite M] : Finite (CharacterModule M) :=
   Finite.of_injective (fun c : CharacterModule M ↦ expCircle.compAddMonoidHom c)
     (expCircle.compAddMonoidHom_injective_right (AddChar.injective_iff.2
       fun _ hx ↦ expCircle_eq_one_iff.mp hx))
+
+/-- The additive homomorphisms `M →+ AddCircle (1 : ℚ)` of a finite abelian group form a finite
+type. This is the previous instance, read through the definitional equality
+`CharacterModule M = M →+ AddCircle (1 : ℚ)`, for maps stated with the unfolded type. -/
+instance (M : Type*) [AddCommGroup M] [Finite M] : Finite (M →+ AddCircle (1 : ℚ)) :=
+  inferInstanceAs (Finite (CharacterModule M))
 
 private theorem card_characterModule_le (M : Type*) [AddCommGroup M] [Finite M] :
     Nat.card (CharacterModule M) ≤ Nat.card M := by

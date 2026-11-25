@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Integrals.CosinePower
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.Bochner.CharFun.Basic
 
 /-!
 # Fractional absolute moments from characteristic functions
@@ -48,18 +49,12 @@ theorem lintegral_rpow_mul_sub_re_charFun (hq : 0 < q) (hq2 : q < 2) :
     have hcos : Integrable (fun x : ℝ ↦ cos (t * x)) μ :=
       (integrable_const (1 : ℝ)).mono' (by fun_prop)
         (ae_of_all _ fun x ↦ by simpa using abs_cos_le_one (t * x))
-    have hchar : ∫ x, cos (t * x) ∂μ = (charFun μ t).re := by
-      have he : Integrable (fun x : ℝ ↦ Complex.exp (t * x * Complex.I)) μ := by
-        apply Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop)
-        filter_upwards with x
-        simp [Complex.norm_exp]
-      simpa [charFun_apply_real, Complex.exp_re] using integral_re he
     have hint : Integrable (fun x : ℝ ↦ t ^ (-(q + 1)) * (1 - cos (t * x))) μ :=
       ((integrable_const (1 : ℝ)).sub hcos).const_mul _
     rw [← ofReal_integral_eq_lintegral_ofReal hint
       (ae_of_all _ fun x ↦ mul_nonneg (rpow_nonneg ht.le _) (hnonneg t x)),
       integral_const_mul, integral_sub (integrable_const _) hcos,
-      integral_const, smul_eq_mul, mul_one, hchar]
+      integral_const, smul_eq_mul, mul_one, integral_cos_mul_eq_re_charFun t]
   calc
     _ = ∫⁻ t in Ioi (0 : ℝ), ∫⁻ x,
         ENNReal.ofReal (t ^ (-(q + 1)) * (1 - cos (t * x))) ∂μ := by

@@ -511,6 +511,7 @@ The identity combines them without division, which is the integral step needed i
 
 ## Main results
 
+* `TauCeti.Ring.choose_one_of_two_le`: `(1 choose n) = 0` for `n ≥ 2`.
 * `TauCeti.Ring.choose_neg_one` and `TauCeti.Ring.choose_neg_natCast_sub_one`: upper negation at
   `-1` (`(-1 choose n) = (-1) ^ n`) and at `-k - 1`
   (`(-k - 1 choose i) = (-1) ^ i * (k + i choose i)`), together with the signed cancellation
@@ -524,7 +525,8 @@ The identity combines them without division, which is the integral step needed i
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
 * `TauCeti.Ring.choose_mul_add_one_eq`: the analogue `(r choose k) (r + 1) =
   (r + 1 choose k) (r + 1 - k)` of `Nat.choose_mul_succ_eq`.
-* `TauCeti.Ring.add_one_nsmul_multichoose_add_one`: the product recursion
+* `TauCeti.Ring.add_one_nsmul_choose_add_one` and `TauCeti.Ring.add_one_nsmul_multichoose_add_one`:
+  the product recursions `(k + 1) (r choose (k + 1)) = (r choose k) (r - k)` and
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
 * `TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer`: expression of
   `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero
@@ -592,6 +594,17 @@ theorem choose_mul_add_one_eq (r : R) (k : ℕ) :
     Polynomial.smeval_C] at h
   simpa using h.symm
 
+/-- The product recursion for binomial coefficients:
+
+```text
+(k + 1) (r choose (k + 1)) = (r choose k) (r - k).
+```
+-/
+theorem add_one_nsmul_choose_add_one (r : R) (k : ℕ) :
+    (k + 1) • _root_.Ring.choose r (k + 1) = _root_.Ring.choose r k * (r - k) := by
+  simpa [Nat.choose_succ_self_right] using
+    _root_.Ring.choose_smul_choose r (n := k + 1) (k := k) (Nat.le_succ k)
+
 end WeightedPascal
 
 /-! ## The product recursion for multiset coefficients -/
@@ -621,6 +634,14 @@ theorem multichoose_eq_inv_factorial_mul_eval_ascPochhammer {R : Type*} [Divisio
   have h := _root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
   rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
   rw [← h, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
+
+/-! ## The coefficients of one -/
+
+/-- `(1 choose n) = 0` for `n ≥ 2`, the analogue of `Ring.choose_zero_pos` for `1`. -/
+theorem choose_one_of_two_le (R : Type*) [NonAssocRing R] [Pow R ℕ] [NatPowAssoc R]
+    [BinomialRing R] {n : ℕ} (hn : 2 ≤ n) : _root_.Ring.choose (1 : R) n = 0 := by
+  rw [← Nat.cast_one, _root_.Ring.choose_natCast, Nat.choose_eq_zero_of_lt (by omega),
+    Nat.cast_zero]
 
 /-! ## Negating the argument -/
 
