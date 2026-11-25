@@ -60,6 +60,9 @@ theorem vecLinearEquiv_symm_apply (v : n × m → R) (i : m) (j : n) :
 @[simp]
 theorem vec_vecLinearEquiv_symm (v : n × m → R) : ((vecLinearEquiv S).symm v).vec = v := (rfl)
 
+@[simp]
+theorem vecLinearEquiv_symm_vec (A : Matrix m n R) : (vecLinearEquiv S).symm A.vec = A := (rfl)
+
 end LinearEquiv
 
 variable {R l m n p : Type*} [Fintype l] [Fintype m] [Fintype n] [Fintype p]
