@@ -42,7 +42,8 @@ coefficients:
   locally compact field with an ultrametric norm, for instance a finite-dimensional
   `ℚ_p`-representation of `zHat`.
 
-The action is only assumed to be by continuous additive maps; it need not commute with the scalars.
+The action is a continuous (`ContinuousSMul`) action by additive maps; it need not be linear over
+the coefficient ring or field.
 
 For profinite `M`, a continuous `1`-cocycle `f` is the same as a continuous homomorphic section
 `g ↦ (f g, g)` of the semidirect product `M ⋊ zHat`, which is a profinite group. Such a section
