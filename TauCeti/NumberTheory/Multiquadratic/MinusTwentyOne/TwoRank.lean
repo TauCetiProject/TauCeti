@@ -48,7 +48,7 @@ factors as `(-4) · (-3) · (-7)` into three prime discriminants, so three ratio
 `Cl ≅ (ℤ/2ℤ)²`. -/
 theorem twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one
     (hmin : minpoly ℤ θ = X ^ 2 - C (-21 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    TauCeti.ClassGroup.twoRank (𝓞 K) = 2 := by
+    ClassGroup.twoRank (𝓞 K) = 2 := by
   have hs : ∀ P ∈ ({-4, -3, -7} : Finset ℤ), IsPrimeDiscriminant P := by
     intro P hP
     fin_cases hP
@@ -75,7 +75,7 @@ class-group `2`-rank `2`. Not `@[simp]`: the `@[simp]` lemma `twoRank_def` unfol
 side `twoRank _`, so this closed form is not in simp-normal form (`simpNF` rejects it), unlike the
 non-unfolded `classNumber` companion. -/
 theorem twoRank_adjoinRoot_sqrt_neg_twenty_one_eq_two :
-    TauCeti.ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (-21 : ℚ)))) = 2 := by
+    ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (-21 : ℚ)))) = 2 := by
   obtain ⟨θ, hmin, hgen⟩ := NumberField.exists_minpoly_eq_X_sq_add_twenty_one_and_adjoin_eq_top
   exact twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
 
@@ -89,7 +89,7 @@ theorem nonempty_classGroup_mulEquiv_zmod_two_sq_of_minpoly_eq_X_sq_add_twenty_o
     simpa [NumberField.classNumber] using
       NumberField.classNumber_eq_four_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
   have hrank : TauCeti.twoRank (ClassGroup (𝓞 K)) = 2 := by
-    rw [TauCeti.twoRank_def, ← TauCeti.ClassGroup.twoRank_def]
+    rw [TauCeti.twoRank_def, ← ClassGroup.twoRank_def]
     exact twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one hmin hgen
   have := TauCeti.isKleinFour_of_card_eq_four_of_twoRank_eq_two hcard hrank
   exact IsKleinFour.nonempty_mulEquiv

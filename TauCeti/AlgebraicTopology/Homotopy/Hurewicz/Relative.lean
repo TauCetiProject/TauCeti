@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.BasepointChange
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Hurewicz
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubePair
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Pair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Relative
 
 /-!
@@ -131,7 +131,7 @@ theorem exists_hurewicz_eq_singularHomologyMap (b : B) (hB : IsPathConnected B) 
     rwa [TopPair.range_ofSubset_map] at this
   obtain ⟨b', -, p, hgp⟩ := exists_homotopicWith_relGenLoop g hg
   -- Transport that relative cube along a path in `B` from `b'` to `b`.
-  let γ : Path b' b := (hB.joinedIn _ b'.2 _ b.2).joined_subtype.somePath
+  let γ : Path b' b := (hB.joinedIn _ b'.property _ b.property).joined_subtype.somePath
   let q := RelGenLoop.transport γ p
   have hpq := (RelGenLoop.collarHomotopyAlong γ p).homotopicWith
   rw [TopPair.range_ofSubset_map] at hpq
@@ -139,7 +139,7 @@ theorem exists_hurewicz_eq_singularHomologyMap (b : B) (hB : IsPathConnected B) 
   rw [RelHomotopyGroup.hurewicz_mk, RelGenLoop.hurewicz_def]
   congr 1
   -- The relative cube `q` is homotopic to `g`, that is to `c`, through maps of pairs.
-  have H : q.1.HomotopicWith g
+  have H : q.val.HomotopicWith g
       fun f ↦ MapsTo f (Cube.prodBoundary (Fin n)) (range (TopPair.ofSubset B).map) := by
     rw [TopPair.range_ofSubset_map]
     exact (hgp.trans hpq).symm
@@ -205,7 +205,7 @@ theorem surjective_hurewicz (b : B) {n : ℕ} (h₀ : ∀ y : Y, ∃ a ∈ B, Jo
   -- The relative homotopy sets vanish at every point of `B`, by base-point change.
   obtain ⟨D⟩ := nonempty_subspaceCubeDeformation_of_relHomotopyGroup (n := (n + 2 : ℕ)) h₀
     fun k hk a ↦ (subsingleton_iff_of_joined (N := Fin k) (X := ⟨TopPair.ofSubset B, b⟩)
-      (hB.joinedIn _ b.2 _ a.2).joined_subtype).1 (h k (by exact_mod_cast hk))
+      (hB.joinedIn _ b.property _ a.property).joined_subtype).1 (h k (by exact_mod_cast hk))
   rw [← TopPair.range_ofSubset_map (B := B)] at D
   intro y
   let iso := TopPair.singularCubicalHomologyIso ℤ (TopPair.ofSubset B) (n + 2)
@@ -294,7 +294,7 @@ theorem bijective_hurewicz_of_subsingleton_homotopyGroup (b : B)
   have : Nonempty Y := ⟨b⟩
   have : PathConnectedSpace Y := hpc (hY 0 (by lia))
   -- The relative homotopy sets below degree `n + 2` vanish, by the exact homotopy sequence.
-  refine surjective_hurewicz b (fun y ↦ ⟨b, b.2, PathConnectedSpace.joined y b⟩)
+  refine surjective_hurewicz b (fun y ↦ ⟨b, b.property, PathConnectedSpace.joined y b⟩)
     (isPathConnected_iff_pathConnectedSpace.2 (hpc (hB 0 (by lia)))) fun k hk ↦
       subsingleton_of_subsingleton_homotopyGroup (hB k (by lia)) ?_
   exact @Equiv.subsingleton _ _ (HomotopyGroup.congrEquiv (finSuccEquiv k)).symm

@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Exact Lagrangian maps
@@ -34,6 +37,12 @@ The main facts are:
 * **Transport by exact symplectomorphisms.** A diffeomorphism `ψ : M → M₂` with `ψ^*σ₂ = σ` and
   `ψ^*θ₂ = θ + dg` carries exact Lagrangian maps `f` with primitive `h` to exact Lagrangian maps
   `ψ ∘ f` with primitive `h + g ∘ f`, and conversely.
+* **Isotropic maps into a symplectic vector space.** The radial primitive `λ` of a linear
+  symplectic form `σ` on `V` satisfies `dλ = σ`, so the pullback of `λ` along a smooth map
+  `f : M → V` has exterior derivative the pullback of `σ`. Hence `λ` pulls back to a closed
+  one-form along every isotropic map, for instance along a Lagrangian immersion. Its periods along
+  closed curves in `M` are then the symplectic areas of the discs these curves bound in `V`, which
+  is how they measure the area of holomorphic discs with Lagrangian boundary.
 
 The cotangent examples, the zero section and the graphs of exact one-forms, are in
 `TauCeti.Geometry.Symplectic.Cotangent.Bundle.Graph`.
@@ -50,6 +59,8 @@ The cotangent examples, the zero section and the graphs of exact one-forms, are 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_add_mextDeriv_iff`: change of
   primitive one-form.
 * `Diffeomorph.isExactLagrangianMap_comp_iff`: transport by exact symplectomorphisms.
+* `TauCeti.SymplecticForm.isClosed_mpullback_radialPrimitive`: an isotropic map pulls the radial
+  primitive back to a closed form.
 
 ## References
 
@@ -92,14 +103,15 @@ structure IsExactLagrangianMap (θ : SmoothForm I M ℝ 1) (f : N → M) (h : N 
   /-- The primitive of an exact Lagrangian map is smooth. -/
   contMDiff_primitive : ContMDiff J 𝓘(ℝ) ∞ h
   /-- An exact Lagrangian map pulls the one-form back to the differential of its primitive. -/
-  mpullback_eq : mpullback J I f θ.1 = mextDeriv (RoughForm.ofFunction J h)
+  mpullback_eq : mpullback J I f θ.val = mextDeriv (RoughForm.ofFunction J h)
 
 /-- An exact Lagrangian map is a Lagrangian map with a smooth primitive `h` of the pulled-back
 one-form, `f^*θ = dh`. -/
 theorem isExactLagrangianMap_iff :
     hσ.IsExactLagrangianMap J θ f h ↔ hσ.IsLagrangianMap J f ∧ ContMDiff J 𝓘(ℝ) ∞ h ∧
-      mpullback J I f θ.1 = mextDeriv (RoughForm.ofFunction J h) :=
-  ⟨fun hL ↦ ⟨hL.1, hL.2, hL.3⟩, fun hL ↦ ⟨hL.1, hL.2.1, hL.2.2⟩⟩
+      mpullback J I f θ.val = mextDeriv (RoughForm.ofFunction J h) :=
+  ⟨fun hL ↦ ⟨hL.isLagrangianMap, hL.contMDiff_primitive, hL.mpullback_eq⟩, fun hL ↦ ⟨hL.1, hL.2.1,
+      hL.2.2⟩⟩
 
 /-! ### Exactness forces isotropy -/
 
@@ -111,7 +123,7 @@ variable [IsManifold J ∞ N]
 differential of a `C²` function `h`, then `f^*σ = -d(dh) = 0`, so `f` is isotropic for `σ`. -/
 theorem isIsotropicMap_of_mpullback_eq_mextDeriv (hθ : σ = -mextDerivₗ I 1 θ)
     (hf : ContMDiff J I ∞ f) (hh : ContMDiff J 𝓘(ℝ) 2 h)
-    (hfh : mpullback J I f θ.1 = mextDeriv (RoughForm.ofFunction J h)) :
+    (hfh : mpullback J I f θ.val = mextDeriv (RoughForm.ofFunction J h)) :
     hσ.IsIsotropicMap J f := by
   rw [isIsotropicMap_iff_mpullback_eq_zero hf, hθ, map_neg, ← SmoothForm.mextDerivₗ_mpullback,
     neg_eq_zero]
@@ -128,7 +140,7 @@ theorem isExactLagrangianMap_iff_of_finrank (hθ : σ = -mextDerivₗ I 1 θ)
     (hf : ContMDiff J I ∞ f) (hinj : ∀ x, Function.Injective (mfderiv J I f x))
     (hdim : 2 * finrank ℝ E' = finrank ℝ E) :
     hσ.IsExactLagrangianMap J θ f h ↔
-      ContMDiff J 𝓘(ℝ) ∞ h ∧ mpullback J I f θ.1 = mextDeriv (RoughForm.ofFunction J h) :=
+      ContMDiff J 𝓘(ℝ) ∞ h ∧ mpullback J I f θ.val = mextDeriv (RoughForm.ofFunction J h) :=
   isExactLagrangianMap_iff.trans ⟨fun hL ↦ hL.2, fun ⟨hh, hfh⟩ ↦
     ⟨(isIsotropicMap_of_mpullback_eq_mextDeriv hθ hf (hh.of_le (by simp)) hfh
       |>.isLagrangianMap_of_finrank hinj hdim), hh, hfh⟩⟩
@@ -168,7 +180,6 @@ theorem add_const (hL : hσ.IsExactLagrangianMap J θ f h) (c : ℝ) :
   ⟨hL.isLagrangianMap, hL.contMDiff_primitive.add contMDiff_const, by
     rw [hL.mpullback_eq]
     exact funext fun x ↦ (mextDeriv_ofFunction_eq_of_eventuallyEq_add_const
-      (hL.contMDiff_primitive.mdifferentiableAt (by simp))
       (Filter.Eventually.of_forall fun _ ↦ rfl)).symm⟩
 
 /-- **Primitives differ by a constant on a connected source.** Two primitives of the same exact
@@ -190,13 +201,13 @@ end IsExactLagrangianMap
 exactly when it is one for `θ` with primitive `h`. -/
 theorem isExactLagrangianMap_add_mextDeriv_iff (hf : ContMDiff J I ∞ f)
     {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g)
-    (hθ' : θ'.1 = θ.1 + mextDeriv (RoughForm.ofFunction I g)) :
+    (hθ' : θ'.val = θ.val + mextDeriv (RoughForm.ofFunction I g)) :
     hσ.IsExactLagrangianMap J θ' f (h + g ∘ f) ↔ hσ.IsExactLagrangianMap J θ f h := by
   have hgf : ContMDiff J 𝓘(ℝ) ∞ (g ∘ f) := hg.comp hf
   have hgfd : MDifferentiable J 𝓘(ℝ) (g ∘ f) := hgf.mdifferentiable (by simp)
   -- `f^*θ' = f^*θ + d(g ∘ f)`.
-  have hpull : mpullback J I f θ'.1 =
-      mpullback J I f θ.1 + mextDeriv (RoughForm.ofFunction J (g ∘ f)) := by
+  have hpull : mpullback J I f θ'.val =
+      mpullback J I f θ.val + mextDeriv (RoughForm.ofFunction J (g ∘ f)) := by
     rw [hθ', mpullback_add, mpullback_mextDeriv_ofFunction (hf.mdifferentiable (by simp))
       (hg.mdifferentiable (by simp))]
   -- The primitive `h + g ∘ f` is smooth exactly when `h` is.
@@ -221,7 +232,7 @@ theorem _root_.Diffeomorph.isExactLagrangianMap_comp_iff_of_mpullback_eq (ψ : M
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ)
     (hψθ : SmoothForm.mpullback ψ ψ.contMDiff θ₂ = θ) :
     hσ₂.IsExactLagrangianMap J θ₂ (ψ ∘ f) h ↔ hσ.IsExactLagrangianMap J θ f h := by
-  have hpull : mpullback J I₂ (ψ ∘ f) θ₂.1 = mpullback J I f θ.1 := by
+  have hpull : mpullback J I₂ (ψ ∘ f) θ₂.val = mpullback J I f θ.val := by
     rw [mpullback_comp_of_mdifferentiableAt_comp_iff (ψ.mdifferentiable (by simp))
       fun _ ↦ ψ.mdifferentiableAt_comp_iff (by simp),
       ← SmoothForm.coe_mpullback ψ ψ.contMDiff, hψθ]
@@ -234,7 +245,7 @@ Lagrangian map for `θ₂` with primitive `h + g ∘ f` exactly when `f` is an e
 `θ` with primitive `h`. -/
 theorem _root_.Diffeomorph.isExactLagrangianMap_comp_iff (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g)
-    (hψθ : mpullback I I₂ ψ θ₂.1 = θ.1 + mextDeriv (RoughForm.ofFunction I g))
+    (hψθ : mpullback I I₂ ψ θ₂.val = θ.val + mextDeriv (RoughForm.ofFunction I g))
     (hf : ContMDiff J I ∞ f) :
     hσ₂.IsExactLagrangianMap J θ₂ (ψ ∘ f) (h + g ∘ f) ↔ hσ.IsExactLagrangianMap J θ f h := by
   rw [ψ.isExactLagrangianMap_comp_iff_of_mpullback_eq hψ rfl,
@@ -246,5 +257,31 @@ end Transport
 end IsNondegenerate
 
 end SmoothTwoForm
+
+/-! ### The radial primitive along isotropic maps -/
+
+section Isotropic
+
+/- The scoped `ContDiff` notation makes `ω` a notation, so the symplectic form is called `σ` in
+this section. -/
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-- **Isotropic maps pull the radial primitive back to closed forms.** Along a smooth map `f`
+whose tangent images are isotropic for `σ`, `d(f^* λ) = f^* σ = 0`. -/
+theorem SymplecticForm.isClosed_mpullback_radialPrimitive (σ : SymplecticForm V) {f : M → V}
+    (hf : ContMDiff I 𝓘(ℝ, V) ∞ f) (h : (isNondegenerate_constSmooth σ).IsIsotropicMap I f) :
+    (SmoothForm.mpullback f hf σ.radialPrimitive).IsClosed := by
+  have hprim : IsSmoothBundleForm (I := 𝓘(ℝ, V)) (F := ℝ) (V := Bundle.Trivial V ℝ) 1
+      σ.radialPrimitive.val :=
+    (isSmoothBundleForm_def 1 _).mpr (σ.radialPrimitive.contMDiff.of_le (by simp))
+  rw [SmoothForm.isClosed_def, SmoothForm.coe_mpullback,
+    ← mpullback_mextDeriv (hf.of_le (by simp)) hprim, mextDeriv_radialPrimitive,
+    ← SmoothForm.coe_mpullback f hf,
+    (SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero hf).1 h]
+  exact ZeroMemClass.coe_zero _
+
+end Isotropic
 
 end TauCeti

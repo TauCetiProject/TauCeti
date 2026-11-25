@@ -22,6 +22,8 @@ for constructing and differentiating Picard residuals.
 
 * `ContinuousMap.applyContinuousLinearMap`: pointwise application of a continuous family of
   continuous linear maps, as a bounded bilinear operator.
+* `ContinuousMap.smulContinuousLinearMap`: pointwise multiplication by a continuous scalar
+  function, as a bounded bilinear operator.
 * `ContinuousMap.intervalIntegralOperator` and `ContinuousMap.unitIntervalIntegral`: the Volterra
   integral operator on continuous paths over a compact real interval and over the unit interval.
 * `ContinuousMap.hasFDerivAt_of_apply`: pointwise differentiation of a parameter family in
@@ -72,6 +74,39 @@ theorem applyContinuousLinearMap_apply (A : C(K, E →L[𝕜] F)) (f : C(K, E)) 
     applyContinuousLinearMap A f x = A x (f x) := by
   simp [applyContinuousLinearMap]
 
+/-- Pointwise scalar multiplication of a continuous map by a continuous scalar function, as a
+bounded bilinear operator. -/
+def smulContinuousLinearMap : C(K, 𝕜) →L[𝕜] C(K, E) →L[𝕜] C(K, E) := by
+  let L : C(K, 𝕜) →ₗ[𝕜] C(K, E) →ₗ[𝕜] C(K, E) :=
+    { toFun := fun g =>
+        { toFun := fun f => g • f
+          map_add' := fun _ _ => by ext x; simp
+          map_smul' := fun _ _ => by ext x; simp [smul_comm (g x)] }
+      map_add' := fun _ _ => by ext f x; simp [add_smul]
+      map_smul' := fun _ _ => by ext f x; simp [smul_smul] }
+  exact LinearMap.mkContinuous₂ L 1 fun g f => by
+    rw [one_mul]
+    refine (norm_le _ (mul_nonneg (norm_nonneg g) (norm_nonneg f))).2 fun x => ?_
+    exact (norm_smul_le (g x) (f x)).trans <|
+      mul_le_mul (norm_coe_le_norm g x) (norm_coe_le_norm f x) (norm_nonneg _) (norm_nonneg _)
+
+/-- `smulContinuousLinearMap g f` is the action `g • f` of `C(K, 𝕜)` on `C(K, E)`. -/
+theorem smulContinuousLinearMap_apply_eq_smul (g : C(K, 𝕜)) (f : C(K, E)) :
+    smulContinuousLinearMap g f = g • f := by
+  simp [smulContinuousLinearMap]
+
+/-- Evaluating `smulContinuousLinearMap g f` at `x` multiplies `f x` by `g x`. -/
+@[simp]
+theorem smulContinuousLinearMap_apply (g : C(K, 𝕜)) (f : C(K, E)) (x : K) :
+    smulContinuousLinearMap g f x = g x • f x := by
+  rw [smulContinuousLinearMap_apply_eq_smul, smul_apply']
+
+/-- Pointwise scalar multiplication has operator norm at most one. -/
+theorem norm_smulContinuousLinearMap_le :
+    ‖smulContinuousLinearMap (K := K) (𝕜 := 𝕜) (E := E)‖ ≤ 1 := by
+  rw [smulContinuousLinearMap]
+  exact LinearMap.mkContinuous₂_norm_le _ zero_le_one _
+
 end Apply
 
 section IntervalIntegral
@@ -103,7 +138,7 @@ private def intervalPrimitive (a b : ℝ) [Fact (a ≤ b)]
   ⟨fun t ↦ ∫ s in a..t, intervalExtension a b f s,
     (intervalIntegral.continuous_primitive
       (fun x y ↦ (intervalExtension a b f).continuous.intervalIntegrable x y) a).comp
-        continuous_subtype_val⟩
+        continuous_subtypeVal⟩
 
 private theorem intervalPrimitive_apply (a b : ℝ) [Fact (a ≤ b)]
     (f : C(Set.Icc a b, E)) (t : Set.Icc a b) :
@@ -139,8 +174,8 @@ def intervalIntegralOperator (a b : ℝ) (hab : a ≤ b) :
         intervalIntegral.norm_integral_le_of_norm_le_const fun s _ ↦
           norm_coe_le_norm f (projIccCM s)
       _ ≤ (b - a) * ‖f‖ := by
-        rw [abs_of_nonneg (sub_nonneg.mpr t.2.1), mul_comm (b - a)]
-        exact mul_le_mul_of_nonneg_left (sub_le_sub_right t.2.2 a) (norm_nonneg f)
+        rw [abs_of_nonneg (sub_nonneg.mpr t.property.1), mul_comm (b - a)]
+        exact mul_le_mul_of_nonneg_left (sub_le_sub_right t.property.2 a) (norm_nonneg f)
 
 /-- The Volterra integral operator on `[a, b]` has operator norm at most the interval length. -/
 theorem norm_intervalIntegralOperator_le (a b : ℝ) (hab : a ≤ b) :

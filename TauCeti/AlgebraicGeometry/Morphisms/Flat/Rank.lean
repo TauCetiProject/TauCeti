@@ -273,4 +273,24 @@ theorem Scheme.Hom.finrank_eq_finsum_residueDegree_mul_length {K : Type u} [Fiel
   rw [mul_comm, he, (φ.restrictScalars K).toLinearEquiv.finrank_eq, h,
     f.finrank_residueField_stalk x rfl]
 
+/-- **Rank at a point via the fibre over its residue field.** For a finite flat morphism
+`g : X ⟶ S` and `p : S`, `g.finrank p` is the `S.residueField p`-dimension of the global sections
+of the fibre `Spec (S.residueField p) ×_S X`. -/
+theorem Scheme.Hom.finrank_eq_finrank_pullback_fromSpecResidueField
+    (g : X ⟶ S) [Flat g] [IsFinite g] (p : S)
+    [Algebra (S.residueField p) Γ(pullback (S.fromSpecResidueField p) g, ⊤)]
+    (hg : algebraMap (S.residueField p) Γ(pullback (S.fromSpecResidueField p) g, ⊤) =
+      ((Scheme.ΓSpecIso (S.residueField p)).inv ≫
+        (pullback.fst (S.fromSpecResidueField p) g).appTop).hom) :
+    g.finrank p =
+      Module.finrank (S.residueField p) Γ(pullback (S.fromSpecResidueField p) g, ⊤) := by
+  let r := S.fromSpecResidueField p
+  let q : Spec (S.residueField p) := IsLocalRing.closedPoint (S.residueField p)
+  calc g.finrank p = g.finrank (r q) := by rw [S.fromSpecResidueField_apply]
+    _ = (pullback.snd g r).finrank q := (Scheme.Hom.finrank_pullback_snd g r q).symm
+    _ = (pullback.fst r g).finrank q := by
+      rw [← pullbackSymmetry_hom_comp_fst g r, Scheme.Hom.finrank_comp_left_of_isIso]
+    _ = Module.finrank (S.residueField p) Γ(pullback r g, ⊤) :=
+      Scheme.Hom.finrank_eq_finrank_of_field (K := S.residueField p) (pullback.fst r g) hg q
+
 end AlgebraicGeometry

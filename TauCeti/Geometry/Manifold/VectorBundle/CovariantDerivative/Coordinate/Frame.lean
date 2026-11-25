@@ -25,9 +25,9 @@ derivative at `x` of the vector fields with constant coordinates in the chart at
 
 * `TauCeti.Manifold.covariantDerivative_localFrame_comm`: a torsion-free covariant derivative
   differentiates a coordinate frame symmetrically.
-* `TauCeti.Manifold.christoffelSymbol_comm` and `TauCeti.Manifold.christoffelMap_comm`: the
-  Christoffel symbols and Christoffel map of a torsion-free covariant derivative are symmetric in
-  their two lower arguments.
+* `TauCeti.Manifold.christoffelSymbol_comm`, `TauCeti.Manifold.christoffelMap_comm` and
+  `TauCeti.Manifold.christoffelForm_comm`: the Christoffel symbols, Christoffel map and Christoffel
+  form of a torsion-free covariant derivative are symmetric in their two lower arguments.
 * `TauCeti.Manifold.covariantDerivative_extend_eq_christoffelMap`: at `x`, the covariant derivative
   of the vector field with constant coordinates `w` in the chart at `x` is the Christoffel map.
 
@@ -111,6 +111,26 @@ theorem christoffelMap_comm (ht : cov.IsTorsionFree) (b : Basis ι 𝕜 E) (x₀
     exact Finset.sum_congr rfl fun k _ ↦ by rw [christoffelSymbol_comm ht b x₀ hx i j k]
   conv_lhs => rw [hsymm]
   rw [ContinuousLinearMap.flip_apply]
+
+omit [CompleteSpace E] in
+/-- **The Christoffel form of a torsion-free connection is symmetric.**  In the frame of the
+canonical tangent-bundle trivialization at `x₀`, the Christoffel form of a torsion-free covariant
+derivative is a symmetric bilinear map on each tangent space of the chart. -/
+theorem christoffelForm_comm (ht : cov.IsTorsionFree) (b : Basis ι 𝕜 E) (x₀ : M)
+    (hx : x ∈ (extChartAt I x₀).source) (u w : TangentSpace I x) :
+    christoffelForm b (cov.isCovariantDerivativeOn
+        (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) x u w =
+      christoffelForm b (cov.isCovariantDerivativeOn
+        (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) x w u := by
+  have hbase : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hx
+  have h := christoffelMap_comm ht b x₀ hx
+    ((trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt 𝕜 x u)
+    ((trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt 𝕜 x w)
+  rw [christoffelMap_apply, christoffelMap_apply,
+    Trivialization.symmL_continuousLinearMapAt _ hbase,
+    Trivialization.symmL_continuousLinearMapAt _ hbase] at h
+  simpa only [Trivialization.symmL_continuousLinearMapAt _ hbase] using
+    congrArg ((trivializationAt E (TangentSpace I) x₀).symmL 𝕜 x) h
 
 omit [CompleteSpace E] in
 /-- **The Christoffel map in the chart at a point.** At `x`, a covariant derivative differentiates

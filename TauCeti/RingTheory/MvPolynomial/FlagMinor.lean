@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.RowSubset
 import TauCeti.Data.Finset.Sort
 
@@ -48,6 +48,10 @@ flag-minor algebra, is a separate theorem not proved here.
 * `TauCeti.degree_rename_toLex_flagMinor` and `TauCeti.monic_rename_toLex_flagMinor`: for the
   row-major lexicographic order, a flag minor is monic with leading exponent its diagonal exponent.
 * `TauCeti.flagMinor_univ`: the flag minor of all rows is the determinant of the generic matrix.
+* `TauCeti.flagMinor_pair` and `TauCeti.flagDiagonalExponent_pair`: the flag minor of two rows is a
+  `2 × 2` minor, with diagonal exponent that of `z_(i,0) z_(j,1)`.
+* `TauCeti.flagMinor_singleton_mul_flagMinor_pair_sub_add_eq_zero`: the three-term relation
+  `z_(i,0) Δ_(j,k) - z_(j,0) Δ_(i,k) + z_(k,0) Δ_(i,j) = 0` among flag minors of one and two rows.
 * `TauCeti.flagMinor_injective`: distinct sets of rows have distinct flag minors.
 * `TauCeti.GTPattern.exponentEntries_succ_sub`: the exponent is recovered from its partial column
   sums by successive differences.
@@ -101,7 +105,38 @@ theorem flagMinor_singleton (r : Fin n) : flagMinor R {r} = X (r, ⟨0, r.pos⟩
   have : Unique (Fin #{r}) := card_singleton r ▸ inferInstance
   rw [flagMinor_def, Matrix.mvPolynomialMinor_one, mem_singleton.1 (orderEmbOfFin_mem _ _ _)]
   congr
-  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).2.trans_eq (card_singleton r)))
+  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).isLt.trans_eq (card_singleton r)))
+
+/-- The first column, reindexed from the rows of a two-element set. -/
+private theorem castLE_cast_zero {d : ℕ} (h : d ≤ n + 2) (h' : 2 = d) :
+    Fin.castLE h (Fin.cast h' 0) = 0 :=
+  Fin.ext (by simp)
+
+/-- The second column, reindexed from the rows of a two-element set. -/
+private theorem castLE_cast_one {d : ℕ} (h : d ≤ n + 2) (h' : 2 = d) :
+    Fin.castLE h (Fin.cast h' 1) = 1 :=
+  Fin.ext (by simp)
+
+/-- The flag minor of two rows `i < j` is the `2 × 2` minor on these rows and the first two
+columns. -/
+@[simp]
+theorem flagMinor_pair {i j : Fin (n + 2)} (hij : i < j) :
+    flagMinor R {i, j} = X (i, 0) * X (j, 1) - X (i, 1) * X (j, 0) := by
+  rw [flagMinor_def, Matrix.mvPolynomialMinor_eq_det_submatrix,
+    ← Matrix.det_submatrix_equiv_self (finCongr (card_pair hij.ne).symm), Matrix.det_fin_two]
+  simp [orderEmbOfFin_apply, sort_pair _ hij.le hij.ne, castLE_cast_zero, castLE_cast_one]
+
+/-- **The three-term relation** among the flag minors of one and two rows: for rows `i < j < k`,
+`z_(i,0) Δ_(j,k) - z_(j,0) Δ_(i,k) + z_(k,0) Δ_(i,j) = 0`, where `Δ` denotes the flag minor of two
+rows. It is the expansion along the first column of the vanishing `3 × 3` determinant on the rows
+`i, j, k` and the columns `0, 0, 1`. -/
+theorem flagMinor_singleton_mul_flagMinor_pair_sub_add_eq_zero {i j k : Fin (n + 2)} (hij : i < j)
+    (hjk : j < k) :
+    flagMinor R {i} * flagMinor R {j, k} - flagMinor R {j} * flagMinor R {i, k} +
+      flagMinor R {k} * flagMinor R {i, j} = 0 := by
+  simp only [flagMinor_singleton, Fin.zero_eta, flagMinor_pair R hij, flagMinor_pair R hjk,
+    flagMinor_pair R (hij.trans hjk)]
+  ring
 
 /-- The exponent of the main diagonal `∏_(c < d) z_(i_c, c)` of the flag minor of
 `I = {i_0 < ⋯ < i_(d-1)}`, in the variables indexed by the lexicographically ordered pairs. -/
@@ -125,7 +160,7 @@ theorem flagDiagonalExponent_apply (I : Finset (Fin n)) (r c : Fin n) :
   · refine Fintype.sum_eq_zero _ fun d ↦ Finsupp.single_eq_of_ne fun h ↦ hc ?_
     have := congrArg (fun x ↦ ((ofLex x).2 : ℕ)) h
     simp only [ofLex_toLex, Fin.val_castLE] at this
-    exact this ▸ d.2
+    exact this ▸ d.isLt
 
 /-- The diagonal exponent of a single row `r` is that of the variable `z_(r,0)`. -/
 @[simp]
@@ -134,7 +169,16 @@ theorem flagDiagonalExponent_singleton (r : Fin n) :
   have : Unique (Fin #{r}) := card_singleton r ▸ inferInstance
   rw [flagDiagonalExponent, Fintype.sum_unique, mem_singleton.1 (orderEmbOfFin_mem _ _ _)]
   congr
-  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).2.trans_eq (card_singleton r)))
+  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).isLt.trans_eq (card_singleton r)))
+
+/-- The diagonal exponent of two rows `i < j` is that of the diagonal `z_(i,0) z_(j,1)`. -/
+@[simp]
+theorem flagDiagonalExponent_pair {i j : Fin (n + 2)} (hij : i < j) :
+    flagDiagonalExponent {i, j} =
+      Finsupp.single (toLex (i, 0)) 1 + Finsupp.single (toLex (j, 1)) 1 := by
+  rw [flagDiagonalExponent,
+    ← Fintype.sum_equiv (finCongr (card_pair hij.ne).symm) _ _ fun _ ↦ rfl, Fin.sum_univ_two]
+  simp [orderEmbOfFin_apply, sort_pair _ hij.le hij.ne, castLE_cast_zero, castLE_cast_one]
 
 /-- The diagonal exponent of all rows is that of the main diagonal `∏_c z_(c,c)`. -/
 theorem flagDiagonalExponent_univ :
@@ -241,8 +285,8 @@ theorem exponentEntries_succ_sub (e : Fin n ×ₗ Fin n →₀ ℕ) (r c : Fin n
     ext r'
     simp only [mem_filter, mem_univ, true_and, mem_insert, Fin.ext_iff]
     omega
-  have h₁ : (c : ℕ) < n ∧ (r : ℕ) + 1 ≤ n := ⟨c.2, r.2⟩
-  have h₂ : (c : ℕ) < n ∧ (r : ℕ) ≤ n := ⟨c.2, r.2.le⟩
+  have h₁ : (c : ℕ) < n ∧ (r : ℕ) + 1 ≤ n := ⟨c.isLt, r.isLt⟩
+  have h₂ : (c : ℕ) < n ∧ (r : ℕ) ≤ n := ⟨c.isLt, r.isLt.le⟩
   simp only [exponentEntries_apply, h₁, h₂, and_self, dite_true, hfilter]
   rw [sum_insert (by simp), add_sub_cancel_right]
 

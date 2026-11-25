@@ -77,12 +77,12 @@ restriction maps are the `presentationLimitMap`s, as for `presentationLimitPresh
 complexes for families in `Set.Iic W` are those of covers of `W`. -/
 noncomputable def presentationLimitAddCommGrpPresheaf (W : Opens ↥(spa Aplus)) :
     (Set.Iic W)ᵒᵖ ⥤ AddCommGrpCat.{v} where
-  obj V := AddCommGrpCat.of (presentationLimit (P := P) Aplus V.unop.1)
+  obj V := AddCommGrpCat.of (presentationLimit (P := P) Aplus V.unop.val)
   map h := AddCommGrpCat.ofHom
-    (presentationLimitMap (P := P) (Subtype.coe_le_coe.mpr (leOfHom h.unop))).hom.1.toAddMonoidHom
+    (presentationLimitMap (P := P) (Subtype.coe_le_coe.mpr (leOfHom h.unop))).hom.val.toAddMonoidHom
   map_id V := by
     ext x
-    exact ConcreteCategory.congr_hom (presentationLimitMap_refl (P := P) Aplus V.unop.1) x
+    exact ConcreteCategory.congr_hom (presentationLimitMap_refl (P := P) Aplus V.unop.val) x
   map_comp h₁ h₂ := by
     ext x
     exact (presentationLimitMap_apply_presentationLimitMap_apply (P := P) _ _ x).symm
@@ -92,7 +92,7 @@ noncomputable def presentationLimitAddCommGrpPresheaf (W : Opens ↥(spa Aplus))
 -- Not `@[simp]`: rewriting the objects of the functor would put its morphisms in mismatched types.
 theorem presentationLimitAddCommGrpPresheaf_obj (W : Opens ↥(spa Aplus)) (V : (Set.Iic W)ᵒᵖ) :
     (presentationLimitAddCommGrpPresheaf P Aplus W).obj V =
-      AddCommGrpCat.of (presentationLimit (P := P) Aplus V.unop.1) :=
+      AddCommGrpCat.of (presentationLimit (P := P) Aplus V.unop.val) :=
   (rfl)
 
 /-- The sections of `presentationLimitAddCommGrpPresheaf` over `V`, identified with the additive
@@ -100,7 +100,7 @@ group of `presentationLimit Aplus V`. -/
 noncomputable def presentationLimitAddCommGrpPresheafObjEquiv {W : Opens ↥(spa Aplus)}
     (V : Set.Iic W) :
     (presentationLimitAddCommGrpPresheaf P Aplus W).obj (op V) ≃+
-      presentationLimit (P := P) Aplus V.1 :=
+      presentationLimit (P := P) Aplus V.val :=
   AddEquiv.refl _
 
 /-- Under `presentationLimitAddCommGrpPresheafObjEquiv`, the restriction maps of
@@ -111,8 +111,33 @@ theorem presentationLimitAddCommGrpPresheafObjEquiv_map_apply {W : Opens ↥(spa
     (x : (presentationLimitAddCommGrpPresheaf P Aplus W).obj (op V)) :
     presentationLimitAddCommGrpPresheafObjEquiv P Aplus V'
         ((presentationLimitAddCommGrpPresheaf P Aplus W).map h.op x) =
-      (presentationLimitMap (P := P) (Subtype.coe_le_coe.mpr (leOfHom h))).hom.1
+      (presentationLimitMap (P := P) (Subtype.coe_le_coe.mpr (leOfHom h))).hom.val
         (presentationLimitAddCommGrpPresheafObjEquiv P Aplus V x) :=
+  (rfl)
+
+/-- The sections of `presentationLimitAddCommGrpPresheaf` over `V` are the image of
+`presentationLimit Aplus V` under the forgetful functors from complete separated topological rings
+to abelian groups. -/
+-- Not `@[simp]`, for the same reason as `presentationLimitAddCommGrpPresheaf_obj`.
+theorem presentationLimitAddCommGrpPresheaf_obj_eq_forget₂ {W : Opens ↥(spa Aplus)}
+    (V : Set.Iic W) :
+    (presentationLimitAddCommGrpPresheaf P Aplus W).obj (op V) =
+      (forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat).obj
+        ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
+          (presentationLimit (P := P) Aplus V.val)) :=
+  (rfl)
+
+/-- Under `presentationLimitAddCommGrpPresheaf_obj_eq_forget₂`, the restriction maps of
+`presentationLimitAddCommGrpPresheaf` are the images of the `presentationLimitMap`s under the
+forgetful functors. -/
+theorem presentationLimitAddCommGrpPresheaf_map_eq_forget₂ {W : Opens ↥(spa Aplus)}
+    {V V' : Set.Iic W} (h : V' ⟶ V) :
+    (presentationLimitAddCommGrpPresheaf P Aplus W).map h.op =
+      eqToHom (presentationLimitAddCommGrpPresheaf_obj_eq_forget₂ P Aplus V) ≫
+        (forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat).map
+          ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+            (presentationLimitMap (P := P) (Subtype.coe_le_coe.mpr (leOfHom h)))) ≫
+        eqToHom (presentationLimitAddCommGrpPresheaf_obj_eq_forget₂ P Aplus V').symm :=
   (rfl)
 
 /-! ### Restriction to a smaller open -/
@@ -122,8 +147,8 @@ section Restrict
 variable {Aplus} {W : Opens ↥(spa Aplus)}
 
 /-- Intersection with `Y`, from the opens contained in `W` to the opens contained in `Y`. -/
-private noncomputable def interFunctor (Y : Set.Iic W) : Set.Iic W ⥤ Set.Iic Y.1 :=
-  Monotone.functor (f := fun V ↦ ⟨Y.1 ⊓ V.1, Set.mem_Iic.2 inf_le_left⟩)
+private noncomputable def interFunctor (Y : Set.Iic W) : Set.Iic W ⥤ Set.Iic Y.val :=
+  Monotone.functor (f := fun V ↦ ⟨Y.val ⊓ V.val, Set.mem_Iic.2 inf_le_left⟩)
     fun _ _ h ↦ inf_le_inf_left _ h
 
 /-- The structure presheaf restricted to `Y`, as a presheaf on the opens contained in `W`, is the
@@ -131,12 +156,12 @@ pullback of the structure presheaf on the opens contained in `Y` along intersect
 components are restriction maps between equal opens. -/
 private noncomputable def restrIso (Y : Set.Iic W) :
     (prod.functor.obj Y).op ⋙ presentationLimitAddCommGrpPresheaf P Aplus W ≅
-      (interFunctor Y).op ⋙ presentationLimitAddCommGrpPresheaf P Aplus Y.1 :=
+      (interFunctor Y).op ⋙ presentationLimitAddCommGrpPresheaf P Aplus Y.val :=
   NatIso.ofComponents (fun V ↦
-    have e : ((prod.functor.obj Y).obj V.unop).1 = ((interFunctor Y).obj V.unop).1 :=
+    have e : ((prod.functor.obj Y).obj V.unop).val = ((interFunctor Y).obj V.unop).val :=
       congrArg Subtype.val (CompleteLattice.prod_eq_inf Y V.unop)
-    { hom := AddCommGrpCat.ofHom (presentationLimitMap (P := P) e.ge).hom.1.toAddMonoidHom
-      inv := AddCommGrpCat.ofHom (presentationLimitMap (P := P) e.le).hom.1.toAddMonoidHom
+    { hom := AddCommGrpCat.ofHom (presentationLimitMap (P := P) e.ge).hom.val.toAddMonoidHom
+      inv := AddCommGrpCat.ofHom (presentationLimitMap (P := P) e.le).hom.val.toAddMonoidHom
       hom_inv_id := by
         ext x
         exact (presentationLimitMap_apply_presentationLimitMap_apply _ _ x).trans
@@ -160,33 +185,34 @@ theorem quasiIso_cechAugmentation_prod_iff [HasProducts.{w} AddCommGrpCat.{v}] (
     QuasiIso (cechAugmentation U isTerminalTop
         ((prod.functor.obj Y).op ⋙ presentationLimitAddCommGrpPresheaf P Aplus W)) ↔
       QuasiIso (cechAugmentation
-        (fun i ↦ (⟨Y.1 ⊓ (U i).1, Set.mem_Iic.2 inf_le_left⟩ : Set.Iic Y.1)) isTerminalTop
-        (presentationLimitAddCommGrpPresheaf P Aplus Y.1)) := by
+        (fun i ↦ (⟨Y.val ⊓ (U i).val, Set.mem_Iic.2 inf_le_left⟩ : Set.Iic Y.val)) isTerminalTop
+        (presentationLimitAddCommGrpPresheaf P Aplus Y.val)) := by
   rw [quasiIso_cechAugmentation_iff_of_iso _ _ _ (restrIso P Y)]
   -- intersection with `Y` sends products of members into the intersection of their product
   have hG (m : ℕ) (a : Fin (m + 1) → ι) :
       Nonempty ((∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))) ⟶
         (interFunctor Y).obj (∏ᶜ fun j ↦ U (a j))) := by
-    refine ⟨homOfLE (Subtype.mk_le_mk.2 (le_inf (∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).2 ?_))⟩
+    refine ⟨homOfLE (Subtype.mk_le_mk.2 (le_inf (∏ᶜ fun j ↦ (interFunctor Y).obj (U
+        (a j))).property ?_))⟩
     let Z : Set.Iic W :=
-      ⟨_, Set.mem_Iic.2 ((∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).2.trans Y.2)⟩
-    have hπ (j : Fin (m + 1)) : (∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).1 ≤
-        ((interFunctor Y).obj (U (a j))).1 :=
+      ⟨_, Set.mem_Iic.2 ((∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).property.trans Y.property)⟩
+    have hπ (j : Fin (m + 1)) : (∏ᶜ fun j ↦ (interFunctor Y).obj (U (a j))).val ≤
+        ((interFunctor Y).obj (U (a j))).val :=
       Subtype.coe_le_coe.2 (leOfHom (Pi.π _ j))
     have hZ : Z ⟶ ∏ᶜ fun j ↦ U (a j) := Pi.lift fun j ↦ homOfLE (Subtype.coe_le_coe.1
-      ((hπ j).trans (show Y.1 ⊓ (U (a j)).1 ≤ _ from inf_le_right)))
+      ((hπ j).trans (show Y.val ⊓ (U (a j)).val ≤ _ from inf_le_right)))
     exact leOfHom hZ
   -- intersection with `Y` sends `W` to `Y`
   have hGT : IsTerminal ((interFunctor Y).obj ⊤) :=
-    isTerminalTop.ofIso (eqToIso (Subtype.ext (inf_eq_left.2 Y.2)).symm)
+    isTerminalTop.ofIso (eqToIso (Subtype.ext (inf_eq_left.2 Y.property)).symm)
   rw [quasiIso_cechAugmentation_op_comp_iff (interFunctor Y) _ _ (fun n a ↦
     (iso_of_both_ways _ (hG n a).some).isIso_hom) isTerminalTop hGT]
-  suffices h : ∀ {T : Set.Iic Y.1} (hT : IsTerminal T), T = ⊤ →
+  suffices h : ∀ {T : Set.Iic Y.val} (hT : IsTerminal T), T = ⊤ →
       (QuasiIso (cechAugmentation (fun i ↦ (interFunctor Y).obj (U i)) hT
-        (presentationLimitAddCommGrpPresheaf P Aplus Y.1)) ↔
+        (presentationLimitAddCommGrpPresheaf P Aplus Y.val)) ↔
       QuasiIso (cechAugmentation (fun i ↦ (interFunctor Y).obj (U i)) isTerminalTop
-        (presentationLimitAddCommGrpPresheaf P Aplus Y.1))) from
-    h hGT (Subtype.ext (inf_eq_left.2 Y.2))
+        (presentationLimitAddCommGrpPresheaf P Aplus Y.val))) from
+    h hGT (Subtype.ext (inf_eq_left.2 Y.property))
   rintro T hT rfl
   rw [Subsingleton.elim hT isTerminalTop]
 
@@ -212,8 +238,8 @@ private noncomputable def locImageFunctor (W : Opens ↥(spa Aplus)) :
   letI := isUniformAddGroup_locUniformSpace P T s S hden
   letI := isTopologicalRing_locUniformSpace P T s S hden
   Monotone.functor
-    (f := fun V ↦ ⟨(isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden).functor.obj V.1,
-      Set.mem_Iic.2 <| (spaComapLoc_functor_obj_mono P Aplus hP T s S hden V.2).trans <| by
+    (f := fun V ↦ ⟨(isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden).functor.obj V.val,
+      Set.mem_Iic.2 <| (spaComapLoc_functor_obj_mono P Aplus hP T s S hden V.property).trans <| by
         rw [← SetLike.coe_subset_coe, IsOpenMap.coe_functor_obj, coe_locOpensComap,
           coe_spaComapLocHom]
         exact Set.image_preimage_subset _ _⟩)
@@ -235,12 +261,12 @@ private theorem nonempty_pi_locImageFunctor_obj_hom {W : Opens ↥(spa Aplus)} {
   intro V
   let G := locImageFunctor P T s S hden hP W
   -- the intersection of the `V j` lies in every `V j`, hence in their product
-  have hV : (⟨⨅ j, (V j).1, Set.mem_Iic.2 ((iInf_le _ 0).trans (V 0).2)⟩ :
+  have hV : (⟨⨅ j, (V j).val, Set.mem_Iic.2 ((iInf_le _ 0).trans (V 0).property)⟩ :
       Set.Iic (locOpensComap P Aplus T s S hden W)) ≤ ∏ᶜ V :=
     leOfHom <| Pi.lift fun j ↦ homOfLE (Subtype.mk_le_mk.2 (iInf_le _ j))
   let hj := isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden
   -- the product of the `G.obj (V j)` lies in every `j(V j)`
-  have hZ : (∏ᶜ fun j ↦ G.obj (V j)).1 ≤ ⨅ i, hj.functor.obj (V i).1 :=
+  have hZ : (∏ᶜ fun j ↦ G.obj (V j)).val ≤ ⨅ i, hj.functor.obj (V i).val :=
     le_iInf fun i ↦ (Pi.π (fun j ↦ G.obj (V j)) i).le
   -- and the image of an intersection is the intersection of the images, `j` being injective
   rw [← hj.functor_obj_iInf] at hZ
@@ -303,9 +329,9 @@ private noncomputable def locImageIso (W : Opens ↥(spa Aplus)) :
   letI := isUniformAddGroup_locUniformSpace P T s S hden
   letI := isTopologicalRing_locUniformSpace P T s S hden
   NatIso.ofComponents (fun V ↦
-    let e := locImageIsoApp P T s S hden hAplus hP hT V.unop.1
-    { hom := AddCommGrpCat.ofHom e.hom.hom.1.toAddMonoidHom
-      inv := AddCommGrpCat.ofHom e.inv.hom.1.toAddMonoidHom
+    let e := locImageIsoApp P T s S hden hAplus hP hT V.unop.val
+    { hom := AddCommGrpCat.ofHom e.hom.hom.val.toAddMonoidHom
+      inv := AddCommGrpCat.ofHom e.inv.hom.val.toAddMonoidHom
       hom_inv_id := by
         ext x
         exact ConcreteCategory.congr_hom e.hom_inv_id x
@@ -334,8 +360,8 @@ theorem quasiIso_cechAugmentation_iff_locOpensComap [HasProducts.{w} AddCommGrpC
     letI := isTopologicalRing_locUniformSpace P T s S hden
     QuasiIso (cechAugmentation U isTerminalTop (presentationLimitAddCommGrpPresheaf P Aplus W)) ↔
       QuasiIso (cechAugmentation
-        (fun i ↦ (⟨locOpensComap P Aplus T s S hden (U i).1,
-          Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden (U i).2)⟩ :
+        (fun i ↦ (⟨locOpensComap P Aplus T s S hden (U i).val,
+          Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden (U i).property)⟩ :
             Set.Iic (locOpensComap P Aplus T s S hden W))) isTerminalTop
         (presentationLimitAddCommGrpPresheaf (completionLocalization P T s S hden)
           (completedPlusSubring P Aplus T s S hden) (locOpensComap P Aplus T s S hden W))) := by
@@ -346,16 +372,16 @@ theorem quasiIso_cechAugmentation_iff_locOpensComap [HasProducts.{w} AddCommGrpC
   rw [← quasiIso_cechAugmentation_iff_of_iso _ _ _ (locImageIso P T s S hden hAplus hP hT W)]
   -- an open contained in `W` is the image of its pullback
   have himage (V : Set.Iic W) : (isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden).functor.obj
-      (locOpensComap P Aplus T s S hden V.1) = V.1 :=
-    spaComapLoc_functor_obj_locOpensComap P Aplus hP T s S hden (V.2.trans hWT)
+      (locOpensComap P Aplus T s S hden V.val) = V.val :=
+    spaComapLoc_functor_obj_locOpensComap P Aplus hP T s S hden (V.property.trans hWT)
   -- the image functor sends `j⁻¹(W)` to `W`
   have hGT : IsTerminal (G.obj ⊤) := isTerminalTop.ofIso (eqToIso (Subtype.ext (himage ⊤)).symm)
   rw [quasiIso_cechAugmentation_op_comp_iff G _ _
     (fun _ _ ↦ (iso_of_both_ways _
       (nonempty_pi_locImageFunctor_obj_hom P T s S hden hP _).some).isIso_hom) isTerminalTop hGT]
   -- the images of the pullbacks of the members are the members
-  have hU : (fun i ↦ G.obj ⟨locOpensComap P Aplus T s S hden (U i).1,
-      Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden (U i).2)⟩) = U :=
+  have hU : (fun i ↦ G.obj ⟨locOpensComap P Aplus T s S hden (U i).val,
+      Set.mem_Iic.2 (locOpensComap_mono P Aplus T s S hden (U i).property)⟩) = U :=
     funext fun i ↦ Subtype.ext (himage (U i))
   rw [hU]
   suffices h : ∀ {T' : Set.Iic W} (hT' : IsTerminal T'), T' = ⊤ →

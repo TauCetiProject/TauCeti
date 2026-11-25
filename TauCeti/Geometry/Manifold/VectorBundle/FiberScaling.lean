@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import Mathlib.Geometry.Manifold.Instances.Icc
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
 # Fibre scaling on a vector bundle
@@ -17,6 +18,8 @@ identity. It fixes the zero section at all times and is smooth on the cylinder `
 (`TauCeti.contMDiff_vectorBundleFiberScaling`). Since it is constant in time along the zero
 section, its derivative kills the time direction there
 (`TauCeti.mfderiv_vectorBundleFiberScaling_zeroSection_time`).
+Read in a preferred chart of the total space, which is linear in the fibre, fibre scaling by `t`
+multiplies the fibre coordinate by `t` (`TauCeti.vectorBundleFiberScaling_extChartAt_symm`).
 
 The time is the last factor, as in the cylinder `M × [0, 1]` of the homotopy operator on
 differential forms.
@@ -39,12 +42,12 @@ retraction `v ↦ 0_(π v)` onto the zero section to the identity. This is the w
 contraction `TauCeti.IsTubularNeighborhood.radialContraction`, with the time last as in the
 cylinder `V × [0, 1]` of `TauCeti.homotopyOperator`. -/
 def vectorBundleFiberScaling (p : TotalSpace FV V × Icc (0 : ℝ) 1) : TotalSpace FV V :=
-  ⟨p.1.proj, (p.2 : ℝ) • p.1.2⟩
+  ⟨p.1.proj, (p.2 : ℝ) • p.1.snd⟩
 
 /-- Fibre scaling multiplies the vector by the time and keeps its base point. -/
 @[simp]
 theorem vectorBundleFiberScaling_apply (v : TotalSpace FV V) (t : Icc (0 : ℝ) 1) :
-    vectorBundleFiberScaling FV V (v, t) = ⟨v.proj, (t : ℝ) • v.2⟩ :=
+    vectorBundleFiberScaling FV V (v, t) = ⟨v.proj, (t : ℝ) • v.snd⟩ :=
   (rfl)
 
 /-- At time one, fibre scaling is the identity. -/
@@ -88,5 +91,20 @@ theorem mfderiv_vectorBundleFiberScaling_zeroSection_time (b : B) (t : Icc (0 : 
     funext fun z ↦ vectorBundleFiberScaling_zeroSection b z
   rw [hconst, mfderiv_const]
   exact (add_zero _).trans (ContinuousLinearMap.map_zero _)
+
+/-- **Fibre scaling in a preferred chart of the total space.** Read through the inverse of a
+preferred chart of the total space, fibre scaling by `t` multiplies the fibre coordinate by `t`
+and keeps the base coordinate. -/
+theorem vectorBundleFiberScaling_extChartAt_symm (p : TotalSpace FV V) {y : EB × FV}
+    (hy : y ∈ (extChartAt (IB.prod 𝓘(ℝ, FV)) p).target) (t : Icc (0 : ℝ) 1) :
+    vectorBundleFiberScaling FV V ((extChartAt (IB.prod 𝓘(ℝ, FV)) p).symm y, t) =
+      (extChartAt (IB.prod 𝓘(ℝ, FV)) p).symm (y.1, (t : ℝ) • y.2) := by
+  obtain ⟨q, w⟩ := y
+  rw [FiberBundle.extChartAt_target] at hy
+  have hb : (extChartAt IB p.proj).symm q ∈ (trivializationAt FV V p.proj).baseSet := hy.1.2
+  rw [extChartAt_symm_apply_of_mem_baseSet p hb, extChartAt_symm_apply_of_mem_baseSet p hb,
+    vectorBundleFiberScaling_apply]
+  -- The inverse of a linear trivialization is linear on each fibre over its base set.
+  simp only [← Trivialization.symmₗ_apply (R := ℝ) _ hb, map_smul]
 
 end TauCeti

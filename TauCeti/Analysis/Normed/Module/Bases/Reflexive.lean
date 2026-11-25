@@ -19,6 +19,17 @@ with bounded initial partial sums gives a convergent basis expansion.
 James's basis criterion characterizes reflexivity by these two properties.
 All series here use initial segments, rather than unconditional summation.
 
+## Main definitions
+
+* `SchauderBasis.IsShrinking`: the coordinate functionals span a norm-dense subspace of the dual.
+* `SchauderBasis.IsBoundedlyComplete`: bounded initial partial sums give a convergent expansion.
+
+## Main results
+
+* `SchauderBasis.surjective_inclusionInDoubleDual_iff`: **James's basis criterion**, a real or
+  complex Banach space with a Schauder basis is reflexive if and only if the basis is shrinking and
+  boundedly complete.
+
 ## References
 
 * R. E. Megginson, *An Introduction to Banach Space Theory*, §4.4, Theorem 4.4.15.
@@ -71,7 +82,7 @@ theorem isBoundedlyComplete_iff : b.IsBoundedlyComplete ↔
   constructor
   · intro h a ha
     obtain ⟨x, hx⟩ := h a ha
-    exact ⟨x, fun i ↦ b.coord_eq_of_hasSum hx i⟩
+    exact ⟨x, fun i ↦ b.coord_eq_of_hasSum hx i (by simp)⟩
   · intro h a ha
     obtain ⟨x, hx⟩ := h a ha
     exact ⟨x, by simpa only [hx] using b.expansion x⟩
@@ -97,7 +108,7 @@ theorem isShrinking_of_surjective_inclusionInDoubleDual
   -- Fix the normed structure on the dual before synthesizing the quotient's instances.
   let : NormedAddCommGroup (StrongDual 𝕜 E) := inferInstance
   let S := (Submodule.span 𝕜 (range b.coord)).topologicalClosure
-  let : IsClosed (S : Set (StrongDual 𝕜 E)) := Submodule.isClosed_topologicalClosure _
+  have : IsClosed (S : Set (StrongDual 𝕜 E)) := Submodule.isClosed_topologicalClosure _
   rw [b.isShrinking_iff]
   apply top_unique
   intro f _
@@ -141,7 +152,8 @@ theorem isBoundedlyComplete_of_surjective_inclusionInDoubleDual
 
 variable [CompleteSpace E]
 
-/-- A shrinking and boundedly complete Schauder basis makes its space reflexive. -/
+/-- A shrinking and boundedly complete Schauder basis of a real or complex Banach space makes the
+space reflexive. -/
 theorem surjective_inclusionInDoubleDual_of_isShrinking_of_isBoundedlyComplete
     (hs : b.IsShrinking) (hc : b.IsBoundedlyComplete) :
     Surjective (inclusionInDoubleDual 𝕜 E) := by

@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.BrownianMotion.ExponentialMartingale
 public import TauCeti.Probability.BrownianMotion.Integral.L2
-public import TauCeti.Probability.BrownianMotion.Tilted
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Probability.BrownianMotion.Tilted
 import TauCeti.Probability.Process.ElementaryDensity
 
 /-!
@@ -105,12 +106,11 @@ private theorem inner_exponential_rectangle
       (hW.memLp_exponentialMartingale θ T (by norm_num : (2 : ℝ≥0∞) ≠ ∞)).coeFn_toLp)
   simp only [Pi.mul_apply] at heq
   rw [heq]
-  trans ∫ ω in A, exponentialMartingale θ W T ω * (W t ω - W s ω) ∂P
-  · rw [← integral_indicator (ℱ.le s A hA)]
-    congr 1
-    funext ω
-    by_cases hω : ω ∈ A <;> simp [hω, mul_comm]
-  · exact hW.setIntegral_exponentialMartingale_mul_sub θ hst ht hA
+  have h := hW.integral_exponentialMartingale_mul_mul_sub θ hst ht
+    (stronglyMeasurable_const.indicator hA : StronglyMeasurable[ℱ s] (A.indicator fun _ ↦ (1 : ℝ)))
+  simp_rw [← indicator_mul_right A (exponentialMartingale θ W s) (fun _ ↦ (1 : ℝ)),
+    mul_one, integral_indicator (ℱ.le s A hA)] at h
+  simpa only [mul_comm (_ * _) (exponentialMartingale θ W T _)] using h
 
 private theorem inner_exponential_l2Integral
     (hW : IsFilteredPreBrownianReal ℱ W P) (hpred : IsStronglyPredictable ℱ W)
@@ -171,9 +171,14 @@ private theorem norm_sq_exponential_integrand
   rw [ℱ.integral_predictableMeasure P hZZ T,
     integral_prod _ ((ℱ.memLp_predictableMeasure_iff P hZ T 2).mp hF).integrable_sq]
   simp_rw [hW.integral_sq_exponentialMartingale]
-  rw [integral_timeMeasure T (fun u : ℝ ↦ exp (θ ^ 2 * u)),
-    ← intervalIntegral.integral_of_le T.coe_nonneg, ← smul_eq_mul,
-    intervalIntegral.smul_integral_comp_mul_left, integral_exp, mul_zero, exp_zero]
+  have htime : (∫ u, exp (θ ^ 2 * u) ∂timeMeasure T) = ∫ u in (0 : ℝ)..T, exp (θ ^ 2 * u) := by
+    rw [integral_timeMeasure]
+    apply intervalIntegral.integral_congr
+    intro u hu
+    rw [uIcc_of_le T.coe_nonneg] at hu
+    simp only [Real.coe_toNNReal u hu.1]
+  rw [htime, ← smul_eq_mul, intervalIntegral.smul_integral_comp_mul_left, integral_exp,
+    mul_zero, exp_zero]
 
 /-- The constant-parameter Brownian exponential satisfies its stochastic integral equation
 in the completed predictable L² integral: `∫₀ᵀ θ Z_u dW_u = Z_T - 1`.
