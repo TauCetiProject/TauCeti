@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.IntegralCurve.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Topology.OmegaLimit
-import TauCeti.Topology.Order.MonotoneConvergence
+import TauCeti.Topology.Order.Monotone.Convergence
 
 /-!
 # Convergence of negative gradient trajectories trapped in a compact set

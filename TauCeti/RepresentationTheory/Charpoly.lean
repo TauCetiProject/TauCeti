@@ -29,6 +29,7 @@ eigenvalues of arithmetic and geometric Frobenius.
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
+* `Representation.eq_one_of_mem_roots_map_charpoly_trivial`: its roots in any domain are `1`.
 * `Representation.charpoly_apply_inv`, `Representation.aroots_charpoly_apply_inv`: the
   characteristic polynomial and the characteristic roots of `g⁻¹`.
 * `Representation.charpoly_dual_apply`, `Representation.aroots_charpoly_dual_apply`: the
@@ -67,6 +68,16 @@ representation. -/
 theorem charpoly_trivial_apply (g : G) : (trivial R G V g).charpoly = (X - 1) ^ finrank R V := by
   nontriviality R
   rw [isTrivial_def, ← Module.End.one_eq_id, LinearMap.charpoly_one]
+
+/-- Every root of the characteristic polynomial of an element of the trivial representation, mapped
+to a domain `S`, is `1`. -/
+theorem eq_one_of_mem_roots_map_charpoly_trivial {S : Type*} [CommRing S] [IsDomain S]
+    {φ : R →+* S} {g : G} {z : S} (hz : z ∈ ((trivial R G V g).charpoly.map φ).roots) :
+    z = 1 := by
+  have h := (mem_roots'.mp hz).2
+  simp only [charpoly_trivial_apply, IsRoot.def, eval_map, eval₂_pow, eval₂_sub, eval₂_X,
+    eval₂_one] at h
+  exact sub_eq_zero.mp (eq_zero_of_pow_eq_zero h)
 
 end Monoid
 
