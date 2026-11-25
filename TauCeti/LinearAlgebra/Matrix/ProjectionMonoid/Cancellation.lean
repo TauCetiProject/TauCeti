@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.MurrayVonNeumann
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
-import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
 # Projection cancellation
@@ -20,8 +18,9 @@ same class in `K₀(R)` if and only if they are equivalent. Over a unital star r
 cancel identity matrices `r = 1ₖ`, since `r ⊕ (1 - r) ∼ 1ₖ`.
 
 Cancellation is not automatic: for a Cuntz pair in `O₂`, `1 ⊕ 1 ∼ 1 = 1 ⊕ 0` while `1 ≁ 0`. Over
-`ℝ` or `ℂ` (any `RCLike` field) it holds, since matrix projections there are equivalent exactly
-when they have the same rank, and rank is additive on block sums.
+`ℝ` or `ℂ` (any `RCLike` field) it holds (`TauCeti.hasProjectionCancellation_rclike` in
+`TauCeti.Analysis.Matrix.ProjectionCancellation`), since matrix projections there are equivalent
+exactly when they have the same rank, and rank is additive on block sums.
 
 ## Main definitions
 
@@ -29,15 +28,16 @@ when they have the same rank, and rank is additive on block sums.
 
 ## Main statements
 
+* `TauCeti.isMurrayVonNeumannEquivalent_of_fromBlocks`: if `V(R)` is cancellative, then
+  `p ⊕ r ∼ q ⊕ r` implies `p ∼ q` for matrix projections indexed by arbitrary finite types.
 * `TauCeti.hasProjectionCancellation_iff_isCancelAdd`: projection cancellation is cancellativity
   of `V(R)`.
-* `TauCeti.hasProjectionCancellation_iff_injective_of`: projection cancellation is injectivity of
+* `TauCeti.hasProjectionCancellation_iff_of_injective`: projection cancellation is injectivity of
   the class map `V(R) → K₀(R)`.
-* `TauCeti.HasProjectionCancellation.of_mk_eq_of_mk_iff`: under projection cancellation, `[p] = [q]`
-  in `K₀(R)` exactly when `p ∼ q`.
+* `TauCeti.HasProjectionCancellation.of_mk_eq_of_mk_iff_isMurrayVonNeumannEquivalent`: under
+  projection cancellation, `[p] = [q]` in `K₀(R)` exactly when `p ∼ q`.
 * `TauCeti.hasProjectionCancellation_iff_one`: over a unital star ring, cancelling identity
   matrices suffices.
-* `TauCeti.hasProjectionCancellation_rclike`: every `RCLike` field has projection cancellation.
 
 ## References
 
@@ -56,35 +56,53 @@ variable (R : Type*) [NonUnitalSemiring R] [StarRing R]
 /-- A star ring `R` has **projection cancellation** when matrix projections `p`, `q`, `r` over
 `R` with `p ⊕ r ∼ q ⊕ r` satisfy `p ∼ q`, where `∼` is Murray–von Neumann equivalence of matrix
 projections of possibly different sizes. -/
-def HasProjectionCancellation : Prop :=
+@[expose] def HasProjectionCancellation : Prop :=
   ∀ ⦃k l j : ℕ⦄ (p : Matrix (Fin k) (Fin k) R) (q : Matrix (Fin l) (Fin l) R)
     (r : Matrix (Fin j) (Fin j) R),
     IsMurrayVonNeumannEquivalent (fromBlocks p 0 0 r) (fromBlocks q 0 0 r) →
       IsMurrayVonNeumannEquivalent p q
 
-variable {R}
+variable {R} {m n l : Type*} [Fintype m] [Fintype n] [Fintype l]
+
+/-- If `p ⊕ r ∼ q ⊕ r`, then `p`, `q` and `r` are projections and `[p] + [r] = [q] + [r]` in
+`V(R)`. -/
+theorem ProjectionMonoid.exists_mk_add_mk_eq_mk_add_mk_of_isMurrayVonNeumannEquivalent
+    {p : Matrix m m R} {q : Matrix n n R} {r : Matrix l l R}
+    (hpqr : IsMurrayVonNeumannEquivalent (fromBlocks p 0 0 r) (fromBlocks q 0 0 r)) :
+    ∃ (hp : IsStarProjection p) (hq : IsStarProjection q) (hr : IsStarProjection r),
+      mk p hp + mk r hr = mk q hq + mk r hr := by
+  obtain ⟨hp, hr⟩ := isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_left
+  have hq := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_right).1
+  refine ⟨hp, hq, hr, ?_⟩
+  rw [← mk_fromBlocks, ← mk_fromBlocks]
+  exact mk_eq_mk hpqr
+
+/-- If `V(R)` is cancellative, then `p ⊕ r ∼ q ⊕ r` implies `p ∼ q` for matrix projections indexed
+by arbitrary finite types. -/
+theorem isMurrayVonNeumannEquivalent_of_fromBlocks [IsCancelAdd (ProjectionMonoid R)]
+    {p : Matrix m m R} {q : Matrix n n R} {r : Matrix l l R}
+    (hpqr : IsMurrayVonNeumannEquivalent (fromBlocks p 0 0 r) (fromBlocks q 0 0 r)) :
+    IsMurrayVonNeumannEquivalent p q := by
+  obtain ⟨hp, hq, _, e⟩ :=
+    ProjectionMonoid.exists_mk_add_mk_eq_mk_add_mk_of_isMurrayVonNeumannEquivalent hpqr
+  exact (ProjectionMonoid.mk_eq_mk_iff hp hq).1 (add_right_cancel e)
 
 /-- **Projection cancellation is cancellativity of `V(R)`.** -/
 theorem hasProjectionCancellation_iff_isCancelAdd :
     HasProjectionCancellation R ↔ IsCancelAdd (ProjectionMonoid R) := by
-  refine ⟨fun h ↦ ?_, fun h k l j p q r hpqr ↦ ?_⟩
-  · have : IsRightCancelAdd (ProjectionMonoid R) := ⟨fun z x y hxy ↦ by
-      induction x using ProjectionMonoid.ind with | mk _ p hp => ?_
-      induction y using ProjectionMonoid.ind with | mk _ q hq => ?_
-      induction z using ProjectionMonoid.ind with | mk _ r hr => ?_
-      simp only at hxy
-      rw [← ProjectionMonoid.mk_fromBlocks, ← ProjectionMonoid.mk_fromBlocks,
-        ProjectionMonoid.mk_eq_mk_iff] at hxy
-      exact ProjectionMonoid.mk_eq_mk (h p q r hxy)⟩
-    exact AddCommMagma.IsRightCancelAdd.toIsCancelAdd _
-  · have hp := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_left).1
-    obtain ⟨hq, hr⟩ := isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_right
-    have e := ProjectionMonoid.mk_eq_mk hpqr
-    rw [ProjectionMonoid.mk_fromBlocks hp hr, ProjectionMonoid.mk_fromBlocks hq hr] at e
-    exact (ProjectionMonoid.mk_eq_mk_iff hp hq).1 (add_right_cancel e)
+  refine ⟨fun h ↦ ?_, fun _ _ _ _ _ _ _ ↦ isMurrayVonNeumannEquivalent_of_fromBlocks⟩
+  have : IsRightCancelAdd (ProjectionMonoid R) := ⟨fun z x y hxy ↦ by
+    induction x using ProjectionMonoid.ind with | mk _ p hp => ?_
+    induction y using ProjectionMonoid.ind with | mk _ q hq => ?_
+    induction z using ProjectionMonoid.ind with | mk _ r hr => ?_
+    simp only at hxy
+    rw [← ProjectionMonoid.mk_fromBlocks, ← ProjectionMonoid.mk_fromBlocks,
+      ProjectionMonoid.mk_eq_mk_iff] at hxy
+    exact ProjectionMonoid.mk_eq_mk (h p q r hxy)⟩
+  exact AddCommMagma.IsRightCancelAdd.toIsCancelAdd _
 
 /-- **Projection cancellation is injectivity of the class map `V(R) → K₀(R)`.** -/
-theorem hasProjectionCancellation_iff_injective_of :
+theorem hasProjectionCancellation_iff_of_injective :
     HasProjectionCancellation R ↔
       Function.Injective (GrothendieckAddGroup.of : ProjectionMonoid R →+ ProjectionKZero R) := by
   rw [hasProjectionCancellation_iff_isCancelAdd]
@@ -95,29 +113,23 @@ theorem hasProjectionCancellation_iff_injective_of :
 
 namespace HasProjectionCancellation
 
-variable {m n l : Type*} [Fintype m] [Fintype n] [Fintype l]
-
 /-- Under projection cancellation, `p ⊕ r ∼ q ⊕ r` implies `p ∼ q` for matrix projections indexed
 by arbitrary finite types. -/
 theorem isMurrayVonNeumannEquivalent (h : HasProjectionCancellation R) {p : Matrix m m R}
     {q : Matrix n n R} {r : Matrix l l R}
     (hpqr : IsMurrayVonNeumannEquivalent (fromBlocks p 0 0 r) (fromBlocks q 0 0 r)) :
-    IsMurrayVonNeumannEquivalent p q := by
-  have hp := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_left).1
-  obtain ⟨hq, hr⟩ := isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_right
+    IsMurrayVonNeumannEquivalent p q :=
   have := hasProjectionCancellation_iff_isCancelAdd.1 h
-  have e := ProjectionMonoid.mk_eq_mk hpqr
-  rw [ProjectionMonoid.mk_fromBlocks hp hr, ProjectionMonoid.mk_fromBlocks hq hr] at e
-  exact (ProjectionMonoid.mk_eq_mk_iff hp hq).1 (add_right_cancel e)
+  isMurrayVonNeumannEquivalent_of_fromBlocks hpqr
 
 /-- Under projection cancellation, matrix projections have the same class in `K₀(R)` exactly
 when they are Murray–von Neumann equivalent. -/
-theorem of_mk_eq_of_mk_iff (h : HasProjectionCancellation R) {p : Matrix m m R}
-    {q : Matrix n n R} (hp : IsStarProjection p) (hq : IsStarProjection q) :
+theorem of_mk_eq_of_mk_iff_isMurrayVonNeumannEquivalent (h : HasProjectionCancellation R)
+    {p : Matrix m m R} {q : Matrix n n R} (hp : IsStarProjection p) (hq : IsStarProjection q) :
     (GrothendieckAddGroup.of (ProjectionMonoid.mk p hp) : ProjectionKZero R) =
         GrothendieckAddGroup.of (ProjectionMonoid.mk q hq) ↔
       IsMurrayVonNeumannEquivalent p q := by
-  rw [(hasProjectionCancellation_iff_injective_of.1 h).eq_iff, ProjectionMonoid.mk_eq_mk_iff]
+  rw [(hasProjectionCancellation_iff_of_injective.1 h).eq_iff, ProjectionMonoid.mk_eq_mk_iff]
 
 end HasProjectionCancellation
 
@@ -131,27 +143,13 @@ theorem hasProjectionCancellation_iff_one {A : Type*} [Ring A] [StarRing A] :
           (fromBlocks q 0 0 (1 : Matrix (Fin j) (Fin j) A)) →
         IsMurrayVonNeumannEquivalent p q := by
   refine ⟨fun h _ _ _ p q ↦ h p q 1, fun h k l j p q r hpqr ↦ h (j := j) p q ?_⟩
-  have hp := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_left).1
-  obtain ⟨hq, hr⟩ := isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_right
   -- In `V(A)`: `[p] + [1] = [p] + [r] + [1 - r] = [q] + [r] + [1 - r] = [q] + [1]`.
-  have e := ProjectionMonoid.mk_eq_mk hpqr
-  rw [ProjectionMonoid.mk_fromBlocks hp hr, ProjectionMonoid.mk_fromBlocks hq hr] at e
+  obtain ⟨hp, hq, hr, e⟩ :=
+    ProjectionMonoid.exists_mk_add_mk_eq_mk_add_mk_of_isMurrayVonNeumannEquivalent hpqr
   rw [← ProjectionMonoid.mk_eq_mk_iff (hp.fromBlocks_zero₁₂_zero₂₁ (.one _))
       (hq.fromBlocks_zero₁₂_zero₂₁ (.one _)), ProjectionMonoid.mk_fromBlocks hp (.one _),
     ProjectionMonoid.mk_fromBlocks hq (.one _), ← ProjectionMonoid.mk_add_mk_one_sub hr,
     ← add_assoc, ← add_assoc, e]
-
-/-- **Projection cancellation over `ℝ` and `ℂ`.** Over an `RCLike` field, matrix projections are
-equivalent exactly when they have the same rank, and the rank of a block sum is the sum of the
-ranks, so ranks cancel. -/
-theorem hasProjectionCancellation_rclike (𝕜 : Type*) [RCLike 𝕜] :
-    HasProjectionCancellation 𝕜 := by
-  intro k l j p q r hpqr
-  have hp := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_left).1
-  have hq := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.1 hpqr.isStarProjection_right).1
-  have e := hpqr.rank_eq
-  rw [rank_fromBlocks_zero₁₂_zero₂₁, rank_fromBlocks_zero₁₂_zero₂₁] at e
-  exact (isMurrayVonNeumannEquivalent_iff_rank_eq hp hq).2 (Nat.add_right_cancel e)
 
 /-- The zero ring has projection cancellation: `V(R)` has a single element. -/
 theorem hasProjectionCancellation_of_subsingleton [Subsingleton R] :
