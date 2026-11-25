@@ -47,32 +47,24 @@ variable {E F : Type*}
 
 /-- The full subgroupoid on an open set, with the restricted manifold atlases, is proper étale. -/
 theorem isProperEtaleGroupoid_fullSubcategory :
-    letI := P.fullSubcategoryChartedSpace (H := H) hP
-    letI := P.fullSubcategoryTotalChartedSpace (K := K) hP
+    let := P.fullSubcategoryChartedSpace (H := H) hP
+    let := P.fullSubcategoryTotalChartedSpace (K := K) hP
       (IsLieGroupoid.contMDiff_source I J C).continuous
       (IsLieGroupoid.contMDiff_target I J C).continuous
-    letI : IsManifold I ∞ P.FullSubcategory :=
+    let : IsManifold I ∞ P.FullSubcategory :=
       (isOpenEmbedding_obj_fullSubcategory hP).isLocalHomeomorph.isManifold_chartedSpaceComap
-    letI : IsManifold J ∞ (Quiver.Total P.FullSubcategory) :=
+    let : IsManifold J ∞ (Quiver.Total P.FullSubcategory) :=
       (isOpenEmbedding_total_fullSubcategory hP (IsLieGroupoid.contMDiff_source I J C).continuous
         (IsLieGroupoid.contMDiff_target I J C).continuous).isLocalHomeomorph
           |>.isManifold_chartedSpaceComap (I := J) (n := ∞)
     IsProperEtaleGroupoid I J P.FullSubcategory := by
+  intro _ _ _ _
   let := IsLieGroupoid.isTopologicalGroupoid I J C
   let := IsLieGroupoid.secondCountableTopology_arrows (I := I) (J := J) (C := C)
   let := IsProperEtaleGroupoid.t2Space_arrows (I := I) (J := J) (C := C)
-  have hObj := (isOpenEmbedding_obj_fullSubcategory hP).isLocalHomeomorph
-  have hArr := (isOpenEmbedding_total_fullSubcategory hP
-    IsTopologicalGroupoid.continuous_source
-    IsTopologicalGroupoid.continuous_target).isLocalHomeomorph
   have hObj' := P.isLocalDiffeomorph_obj_ι hP I ∞
   have hArr' := P.isLocalDiffeomorph_mapTotal_ι hP J ∞
     IsTopologicalGroupoid.continuous_source IsTopologicalGroupoid.continuous_target
-  let := P.fullSubcategoryChartedSpace (H := H) hP
-  let := P.fullSubcategoryTotalChartedSpace (K := K) hP
-    IsTopologicalGroupoid.continuous_source IsTopologicalGroupoid.continuous_target
-  have : IsManifold I ∞ P.FullSubcategory := hObj.isManifold_chartedSpaceComap
-  have : IsManifold J ∞ (Quiver.Total P.FullSubcategory) := hArr.isManifold_chartedSpaceComap
   have hs := IsProperEtaleGroupoid.isLocalDiffeomorph_source (I := I) (J := J) (C := C)
   have ht := IsProperEtaleGroupoid.isLocalDiffeomorph_target (I := I) (J := J) (C := C)
   refine IsProperEtaleGroupoid.of_isTopologicalGroupoid ?_ ?_
@@ -118,10 +110,11 @@ variable {E₀ F₀ H₀ K₀ : Type*} [NormedAddCommGroup E₀] [NormedSpace �
 
 /-- Products preserve proper étale presentations. -/
 theorem IsProperEtaleGroupoid.prod :
-    letI := (totalProdHomeomorph C D).pullbackChartedSpace (H := ModelProd H K)
-    letI : IsManifold (J.prod J') ∞ (Quiver.Total (C × D)) :=
+    let := (totalProdHomeomorph C D).pullbackChartedSpace (H := ModelProd H K)
+    let : IsManifold (J.prod J') ∞ (Quiver.Total (C × D)) :=
       (totalProdHomeomorph C D).pullback_isManifold (J.prod J') ∞
     IsProperEtaleGroupoid (I.prod I') (J.prod J') (C × D) := by
+  intro _ _
   let := IsLieGroupoid.isTopologicalGroupoid I J C
   let := IsLieGroupoid.isTopologicalGroupoid I' J' D
   let := IsLieGroupoid.secondCountableTopology_arrows (I := I) (J := J) (C := C)
@@ -129,8 +122,6 @@ theorem IsProperEtaleGroupoid.prod :
   let := IsProperEtaleGroupoid.t2Space_arrows (I := I) (J := J) (C := C)
   let := IsProperEtaleGroupoid.t2Space_arrows (I := I') (J := J') (C := D)
   let e := totalProdHomeomorph C D
-  let := e.pullbackChartedSpace (H := ModelProd H K)
-  have : IsManifold (J.prod J') ∞ (Quiver.Total (C × D)) := e.pullback_isManifold (J.prod J') ∞
   have hs := (isLocalDiffeomorph_source (I := I) (J := J) (C := C)).prodMap
     (isLocalDiffeomorph_source (I := I') (J := J') (C := D))
   have ht := (isLocalDiffeomorph_target (I := I) (J := J) (C := C)).prodMap
