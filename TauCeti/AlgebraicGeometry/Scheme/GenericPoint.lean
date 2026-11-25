@@ -73,7 +73,7 @@ spectrum of the function field of `Spec R` over `Spec R`, so that generic fibres
 * `TauCeti.AlgebraicGeometry.Scheme.algEquivAppPreimageSpecExtension`: on an integral scheme, for
   a field extension `L` of `k(X)`, the sections of `Spec L` over the preimage of a nonempty open `U`
   along `Spec L ⟶ Spec k(X) ⟶ X` are `L`, as a `Γ(X, U)`-algebra.
-* `TauCeti.isFractionRingFunctionFieldSpec`: for a domain `R`, the function field of `Spec R` is
+* `TauCeti.isFractionRing_functionField_spec`: for a domain `R`, the function field of `Spec R` is
   an `R`-algebra (`TauCeti.algebraFunctionFieldSpec`) and a fraction field of `R`.
 * `TauCeti.specFractionRingIsoFunctionField`: `Spec K ≅ Spec k(Spec R)` for a fraction field `K`
   of a domain `R`, compatibly with the maps to `Spec R`
@@ -388,7 +388,7 @@ noncomputable instance algebraFunctionFieldSpec : Algebra R (Spec (.of R)).funct
 
 /-- The function field of `Spec R` is a fraction field of the domain `R`, so it is isomorphic as an
 `R`-algebra to any chosen fraction field `K` of `R` (`IsLocalization.algEquiv`). -/
-instance isFractionRingFunctionFieldSpec : IsFractionRing R (Spec (.of R)).functionField :=
+instance isFractionRing_functionField_spec : IsFractionRing R (Spec (.of R)).functionField :=
   functionField_isFractionRing_of_affine (.of R)
 
 /-- The spectrum of a chosen fraction field `K` of a domain `R` is isomorphic to the spectrum of
