@@ -36,11 +36,10 @@ With `U = log X` and `T` a set of logarithms, this chooses a window of scales
 
 ## References
 
-* The statement follows `UpperTheory.V.Win.window1`
-  (`Development/AutomorphicArithmetic/AutomorphicVarieties/LayeredIsomorphisms/Window1.lean`) of
-  L. Alpöge et al., Lean formalization of the Riemann hypothesis for Dirichlet L-functions,
-  <https://github.com/leanprover-community/riemann-hypothesis>, for `B > 1`.
-  That development was not consulted; the proof here is independent.
+* The statement follows, for `B > 1`, `UpperTheory.V.Win.window1`
+  (`src/Development/AutomorphicArithmetic/AutomorphicVarieties/LayeredIsomorphisms/Window1.lean`)
+  of L. Alpöge, Lean formalization of the Riemann hypothesis for Dirichlet L-functions,
+  <https://github.com/leanprover-community/riemann-hypothesis/tree/40e56bab026552e089d7afcfeff08d2defb9c005>.
 -/
 
 public section
@@ -52,7 +51,7 @@ namespace Finset
 variable {𝕜 : Type*} [Semifield 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {B : 𝕜}
 
 /-- The pigeonhole on scales with `R = #T`, for every `U ≥ 0` at once. -/
-private theorem exists_mem_Icc_card (hB : 1 ≤ 2 * B) (T : Finset 𝕜) :
+private theorem exists_mem_Icc_card (T : Finset 𝕜) (hB : 1 ≤ 2 * B) :
     ∀ U : 𝕜, 0 ≤ U → ∃ y ∈ Icc (U / (2 ^ (#T + 2) * B ^ #T)) (U / 2),
       ∀ a ∈ T, 2 * y < a ∨ B * a ≤ y := by
   have hB0 : 0 < B := pos_of_mul_pos_right (one_pos.trans_le hB) zero_le_two
@@ -94,10 +93,10 @@ private theorem exists_mem_Icc_card (hB : 1 ≤ 2 * B) (T : Finset 𝕜) :
 /-- **A pigeonhole on scales.** Let `2 B ≥ 1`, `U ≥ 0` and let `T` be a finite set of at most `R`
 elements of a linearly ordered semifield. Then some `y ∈ [U / (2 ^ (R + 2) B ^ R), U / 2]` has
 `2 y < a` or `B a ≤ y` for every `a ∈ T`, that is, no point of `T` lies in `(y / B, 2 y]`. -/
-theorem exists_mem_Icc_forall_two_mul_lt_or_mul_le (hB : 1 ≤ 2 * B) {U : 𝕜} (hU : 0 ≤ U)
-    {R : ℕ} {T : Finset 𝕜} (hT : #T ≤ R) :
+theorem exists_mem_Icc_forall_two_mul_lt_or_mul_le (T : Finset 𝕜) (hB : 1 ≤ 2 * B) {U : 𝕜}
+    (hU : 0 ≤ U) {R : ℕ} (hT : #T ≤ R) :
     ∃ y ∈ Icc (U / (2 ^ (R + 2) * B ^ R)) (U / 2), ∀ a ∈ T, 2 * y < a ∨ B * a ≤ y := by
-  obtain ⟨y, ⟨hy₁, hy₂⟩, hy⟩ := exists_mem_Icc_card hB T U hU
+  obtain ⟨y, ⟨hy₁, hy₂⟩, hy⟩ := exists_mem_Icc_card T hB U hU
   refine ⟨y, ⟨le_trans ?_ hy₁, hy₂⟩, hy⟩
   -- the lower end decreases in `R`, as `2 ^ (n + 2) B ^ n = 4 (2 B) ^ n` and `2 B ≥ 1`
   have hpow (n : ℕ) : (2 : 𝕜) ^ (n + 2) * B ^ n = 4 * (2 * B) ^ n := by ring
