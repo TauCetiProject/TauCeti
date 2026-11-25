@@ -109,6 +109,15 @@ noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
     Set.range fun ij : Fin n × Fin n =>
       relationMatrix R n q ij.1 ij.2 + relationMatrix R n q ij.2 ij.1
 
+/-- The defining relations are the diagonal entries and the symmetric sums of the relation
+matrix. -/
+theorem relationSet_def :
+    relationSet R n q =
+      Set.range (fun i => relationMatrix R n q i i) ∪
+        Set.range fun ij : Fin n × Fin n =>
+          relationMatrix R n q ij.1 ij.2 + relationMatrix R n q ij.2 ij.1 := by
+  rw [relationSet]
+
 /-- Mapping the relation matrix through an algebra morphism gives the relation of the image of
 the generic matrix. -/
 theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]

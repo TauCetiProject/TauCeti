@@ -33,6 +33,8 @@ Mathlib's `QuadraticForm.baseChange` instead lives on `A ⊗[R] R^ι` and assume
   triangular coefficient matrix of a quadratic form in an ordered basis.
 * `QuadraticForm.baseChangeForm`, `QuadraticForm.baseChangeForm_apply` and
   `QuadraticForm.baseChangeForm_self`: the form with the same coefficients over an `R`-algebra.
+* `QuadraticForm.coefficientMatrix_baseChangeForm`: the coefficient matrix of `q_A` is that of `q`
+  read in `A`.
 -/
 
 public section
@@ -103,6 +105,31 @@ theorem baseChangeForm_self (q : QuadraticForm R (ι → R)) : baseChangeForm q 
   simp only [baseChangeForm, coefficientMatrix, Algebra.algebraMap_self, RingHom.coe_id,
     Matrix.map_id, Matrix.toQuadraticForm', LinearMap.toMatrix₂_basisFun,
     Matrix.toLinearMap₂'_toMatrix', QuadraticMap.toQuadraticMap_toBilin]
+
+/-- **The coefficients of `q_A` are those of `q`.** The coefficient matrix of the form `q_A` on
+`A^ι` with the coefficients of `q` is the coefficient matrix of `q` read in `A`, since the
+coefficient matrix is upper triangular. -/
+@[simp]
+theorem coefficientMatrix_baseChangeForm (q : QuadraticForm R (ι → R)) (A : Type*) [CommRing A]
+    [Algebra R A] :
+    coefficientMatrix (baseChangeForm q A) (Pi.basisFun A ι) =
+      (coefficientMatrix q (Pi.basisFun R ι)).map (algebraMap R A) := by
+  classical
+  have hlow : ∀ i j, j < i → coefficientMatrix q (Pi.basisFun R ι) i j = 0 :=
+    fun i j hji ↦ by simp [coefficientMatrix_apply, ne_of_gt hji, not_lt.mpr hji.le]
+  have hsingle (i j : ι) : (Pi.single i 1 : ι → A) ⬝ᵥ
+      ((coefficientMatrix q (Pi.basisFun R ι)).map (algebraMap R A) *ᵥ Pi.single j 1) =
+        algebraMap R A (coefficientMatrix q (Pi.basisFun R ι) i j) := by
+    simp
+  ext i j
+  rw [coefficientMatrix_apply]
+  split_ifs with hij hlt
+  · subst hij
+    rw [Pi.basisFun_apply, baseChangeForm_apply, hsingle, Matrix.map_apply]
+  · simp only [QuadraticMap.polar, Pi.basisFun_apply, baseChangeForm_apply, Matrix.mulVec_add,
+      dotProduct_add, add_dotProduct, hsingle, hlow j i hlt, map_zero, Matrix.map_apply]
+    ring
+  · rw [Matrix.map_apply, hlow i j (lt_of_le_of_ne (not_lt.mp hlt) (Ne.symm hij)), map_zero]
 
 end Coefficients
 
