@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.RamificationInertia.Unramified
 
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
-import Mathlib.RingTheory.Smooth.Fiber
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.Etale.FlatUnramified
 import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.RamificationInertia.Bijective
@@ -311,13 +311,11 @@ theorem isUnramifiedWRT_iff_etale :
   have : Module.Finite A (integralClosure A L) := IsIntegralClosure.finite A K L _
   have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
   have : Module.Free A (integralClosure A L) := IsIntegralClosure.module_free A K L _
-  have : Algebra.FinitePresentation A (integralClosure A L) :=
-    Algebra.FinitePresentation.of_finiteType.mp inferInstance
   rw [isUnramifiedWRT_iff_forall_isUnramifiedAt A K L]
   refine ⟨fun h ↦ ?_, fun _ P _ ↦ inferInstance⟩
   have : FormallyUnramified A (integralClosure A L) :=
     formallyUnramified_iff_forall.mpr fun q ↦ h q.asIdeal
-  exact .of_formallyUnramified_of_flat
+  exact Etale.of_formallyUnramified_of_flat_of_isNoetherianRing
 
 /-- A finite separable extension `L` of the fraction field `K` of a discrete valuation ring `A` is
 totally ramified with respect to `A` iff some maximal ideal of the integral closure of `A` in `L`

@@ -620,14 +620,14 @@ endomorphisms for the inner product, whose sign is chosen to match the Clifford 
 theorem twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint (F : ⋀[ℝ]^2 V) :
     twoVectorContraction F =
       -(LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
-        (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner) F : Module.End ℝ V) := by
+        isSymm_innerₗ F : Module.End ℝ V) := by
   let : LieRing (Module.End ℝ V) := LieRing.ofAssociativeRing
   let : LieAlgebra ℝ (Module.End ℝ V) := LieAlgebra.ofAssociativeAlgebra
   -- Both sides are linear in `F`, so it suffices to compare them on pure wedges.
   have key : (twoVectorContractionₗ : ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V) =
       -((skewAdjointLieSubalgebra (innerₗ V)).toSubmodule.subtype ∘ₗ
         (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
-          (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)).toLinearMap) := by
+          isSymm_innerₗ).toLinearMap) := by
     refine linearMap_ext_ιMulti_two fun a b ↦ ?_
     ext u
     simp [real_inner_comm u]
@@ -637,7 +637,7 @@ theorem twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint (F : ⋀[ℝ]
 theorem twoVectorContraction_injective :
     Function.Injective (twoVectorContraction : ⋀[ℝ]^2 V → Module.End ℝ V) := fun X Y h ↦ by
   refine (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
-    (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)).injective (Subtype.ext ?_)
+    isSymm_innerₗ).injective (Subtype.ext ?_)
   rw [← neg_inj, ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint,
     ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint, h]
 
