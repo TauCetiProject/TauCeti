@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Isoperimetric
-import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.PowerGrowth
-import TauCeti.Analysis.Calculus.TangentCone.Basic
-import TauCeti.MeasureTheory.Integral.Disc
+import TauCeti.Analysis.Complex.ReImTopology
+import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Radial
 import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.Topology.MetricSpace.Annulus
 
 /-!
 # Power decay of energy at a boundary puncture
@@ -35,8 +35,9 @@ for the energy of the half-disc of radius `r`. No extension of `u` over the punc
   by Stokes' theorem with the primitive `½ ω(x, ·)` of `ω`, which vanishes along `L`, and the
   isoperimetric inequality for arcs with endpoints in `L`. The inner term disappears in the limit:
   the energies of small half-discs tend to zero, and since `E` is finite, its radial derivative
-  `E'(a) = a ∫₀^π ‖∂ₛu(x₀ + a e^{iθ})‖² dθ` has `a E'(a)` arbitrarily small at arbitrarily small
-  radii (`TauCeti.exists_mem_Ioo_mul_lt_of_hasDerivAt`).
+  `E'(a) = a ∫₀^π ‖∂ₛu(x₀ + a e^{iθ})‖² dθ`
+  (`TauCeti.hasDerivAt_integral_norm_fderivWithin_one_sq_inter_ball`) has `a E'(a)` arbitrarily
+  small at arbitrarily small radii (`TauCeti.exists_mem_Ioo_mul_lt_of_hasDerivAt`).
 * **The Euler inequality.** Hence `2 c E(r) ≤ (1 + M)² r E'(r)`
   (`TauCeti.SymplecticForm.mul_integral_norm_fderivWithin_one_sq_inter_ball_le_mul_deriv`).
 * **Power decay.** So `E(r) / r^(2μ)` is nondecreasing, with `μ = c / (1 + M)²`, and
@@ -71,25 +72,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {u : ℂ → V} {J : V → V →L[ℝ] V} {L : Submodule ℝ V} {x₀ : ℂ} {R c M : ℝ}
 
 omit [FiniteDimensional ℝ V] in
-/-- The energy `∫_{{0 ≤ im z} ∩ B_t(x₀)} ‖∂ₛu‖²` of the half-disc of radius `t` about a point `x₀`
-of the real axis has radial derivative `t ∫₀^π ‖∂ₛu(x₀ + t e^{iθ})‖² dθ`. -/
-private theorem hasDerivAt_integral_norm_fderivWithin_one_sq_inter_ball (hx₀ : x₀.im = 0)
-    (hu : ContDiffOn ℝ 1 u ({z | 0 ≤ z.im} ∩ (ball x₀ R \ {x₀})))
-    (henergy : IntegrableOn (fun z ↦ ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2)
-      ({z | 0 ≤ z.im} ∩ ball x₀ R))
-    {r : ℝ} (hr : r ∈ Ioo 0 R) :
-    HasDerivAt (fun t ↦ ∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ t,
-        ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2)
-      (r * ∫ θ in 0..π, ‖fderivWithin ℝ u {z | 0 ≤ z.im} (circleMap x₀ r θ) 1‖ ^ 2) r := by
-  have hcont : ContinuousOn (fun z ↦ ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2)
-      ({z | 0 ≤ z.im} ∩ (ball x₀ R \ {x₀})) :=
-    ((hu.continuousOn_fderivWithin_of_inter (uniqueDiffOn_setOfPred_le_im 0)
-      (isOpen_ball.sdiff isClosed_singleton) le_rfl).clm_apply continuousOn_const).norm.pow 2
-  have hH : {z : ℂ | 0 ≤ z.im} = {z | x₀.im ≤ z.im} := by rw [hx₀]
-  rw [hH] at hcont henergy ⊢
-  simpa only [smul_eq_mul] using henergy.hasDerivAt_integral_inter_ball hcont hr
-
-omit [FiniteDimensional ℝ V] in
 /-- At some radius `a ∈ (0, r)` the half-disc energy and its boundary density
 `a (a ∫₀^π ‖∂ₛu(x₀ + a e^{iθ})‖² dθ)` are both below any `δ > 0`: the energies of small half-discs
 tend to zero, and the energy has finite radial derivative. -/
@@ -102,7 +84,7 @@ private theorem exists_mem_Ioo_integral_lt_and_mul_lt (hx₀ : x₀.im = 0)
       (∫ z in {z : ℂ | 0 ≤ z.im} ∩ ball x₀ a, ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2) < δ ∧
       a * (a * ∫ θ in 0..π, ‖fderivWithin ℝ u {z | 0 ≤ z.im} (circleMap x₀ a θ) 1‖ ^ 2) < δ := by
   set H : Set ℂ := {z | 0 ≤ z.im}
-  have hH : MeasurableSet H := (isClosed_le continuous_const continuous_im).measurableSet
+  have hH : MeasurableSet H := (Complex.isClosed_setOfPred_le_im 0).measurableSet
   -- The energies of small half-discs tend to zero.
   obtain ⟨a₁, ha₁, hsmall⟩ := Metric.tendsto_nhds_nhds.1
     (henergy.tendsto_setIntegral_ball_nhds_zero x₀) δ hδ
@@ -133,7 +115,7 @@ private theorem integral_inter_ball_le_add_integral_upperHalfAnnulus
         ∫ z in {z : ℂ | 0 ≤ z.im ∧ a ≤ ‖z - x₀‖ ∧ ‖z - x₀‖ ≤ r},
           ‖fderivWithin ℝ u {z | 0 ≤ z.im} z 1‖ ^ 2 := by
   set H : Set ℂ := {z | 0 ≤ z.im}
-  have hH : MeasurableSet H := (isClosed_le continuous_const continuous_im).measurableSet
+  have hH : MeasurableSet H := (Complex.isClosed_setOfPred_le_im 0).measurableSet
   have hdiff := setIntegral_sdiff (hH.inter measurableSet_ball)
     (henergy.mono_set (inter_subset_inter_right _ (ball_subset_ball hr.le)))
     (inter_subset_inter_right _ (ball_subset_ball har))
@@ -187,11 +169,8 @@ theorem two_mul_mul_integral_norm_fderivWithin_one_sq_inter_ball_le
     henergy hr (div_pos hε hden)
   -- Bound the energy of the half-annulus between `a` and `r` by its two boundary densities.
   have hSsub : {z : ℂ | 0 ≤ z.im ∧ a ≤ ‖z - x₀‖ ∧ ‖z - x₀‖ ≤ r} ⊆
-      {z | 0 ≤ z.im} ∩ (ball x₀ R \ {x₀}) := fun z hz ↦
-    ⟨hz.1, mem_ball_iff_norm.2 (hz.2.2.trans_lt hr.2), fun hzx ↦ by
-      have h := hz.2.1
-      rw [mem_singleton_iff.1 hzx, sub_self, norm_zero] at h
-      linarith [ha.1]⟩
+      {z | 0 ≤ z.im} ∩ (ball x₀ R \ {x₀}) := fun _ hz ↦
+    ⟨hz.1, setOf_le_norm_sub_le_subset_ball_sdiff_singleton ha.1 hr.2 hz.2⟩
   have hannulus := ω.two_mul_mul_integral_norm_fderivWithin_one_sq_upperHalfAnnulus_le hg
     ha.1.le ha.2.le hx₀ (isOpen_ball.sdiff isClosed_singleton) (fun z hz ↦ (hSsub hz).2) hu
     (fun z hz ↦ hCR z (hSsub hz)) (fun z hz ↦ htame z (hSsub hz)) (fun z hz ↦ hJ z (hSsub hz))

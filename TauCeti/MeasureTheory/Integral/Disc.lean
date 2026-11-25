@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Topology.MetricSpace.Annulus
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -141,7 +142,7 @@ theorem hasDerivAt_integral_inter_ball {f : ℂ → F} {z₀ : ℂ} {R r : ℝ}
     HasDerivAt (fun t ↦ ∫ z in {z | z₀.im ≤ z.im} ∩ ball z₀ t, f z)
       (r • ∫ θ in 0..π, f (circleMap z₀ r θ)) r := by
   set H : Set ℂ := {z | z₀.im ≤ z.im}
-  have hH : MeasurableSet H := (isClosed_le continuous_const Complex.continuous_im).measurableSet
+  have hH : MeasurableSet H := (Complex.isClosed_setOfPred_le_im z₀.im).measurableSet
   -- Work on a half-annulus containing the radius, where the boundary density is continuous.
   obtain ⟨a, ha, har⟩ := exists_between hr.1
   obtain ⟨b, hrb, hbR⟩ := exists_between hr.2
