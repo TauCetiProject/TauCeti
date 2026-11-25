@@ -76,8 +76,8 @@ ring `R` with no excellence or Japanese assumption
 
 ## References
 
-* The Stacks Project, Tag 035H (relative normalization), Lemma 29.53.5 (03GV), and
-  Lemma 55.8.3 (0C2U).
+* The Stacks Project, Tag 035H (relative normalization), Lemma 29.53.5 (03GV),
+  Lemma 55.8.2 (0C2T), and Lemma 55.8.3 (0C2U).
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Oxford University Press, 2002, Section 4.1.2
   (normalization) and Chapter 10 (models of curves); Section 8.3 for desingularization by
   normalized blowups.
