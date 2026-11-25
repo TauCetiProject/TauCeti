@@ -21,7 +21,8 @@ lifts to smaller opens makes them a presheaf of sets on `T'`
 covers it is a sheaf (`TauCeti.AlgebraicGeometry.isSheaf_liftPresheaf`,
 `TauCeti.AlgebraicGeometry.liftSheaf`). For `f` smooth and `i` a
 first-order thickening, the sheaf of lifts has a section near every point of `T'`
-(`TauCeti.AlgebraicGeometry.exists_mem_and_nonempty_liftPresheaf`), and by
+(`TauCeti.AlgebraicGeometry.exists_thickeningLift_restrict`, whose lifts are exactly the
+sections `(liftPresheaf i a f h).obj (op U)`), and by
 `TauCeti.AlgebraicGeometry.ThickeningLift.instAddTorsor` its nonempty sets of sections are torsors
 under derivations. This is the sheaf of lifts of Stacks, Lemma 37.9.5 (04FJ).
 
@@ -34,8 +35,6 @@ under derivations. This is the sheaf of lifts of Stacks, Lemma 37.9.5 (04FJ).
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.isSheaf_liftPresheaf`: the presheaf of lifts is a sheaf.
-* `TauCeti.AlgebraicGeometry.exists_mem_and_nonempty_liftPresheaf`: for `f` smooth and `i` a
-  first-order thickening, lifts exist locally on `T'`.
 
 ## References
 
@@ -45,7 +44,7 @@ under derivations. This is the sheaf of lifts of Stacks, Lemma 37.9.5 (04FJ).
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry Opposite TopologicalSpace
+open CategoryTheory Limits AlgebraicGeometry TopologicalSpace
 
 universe u
 
@@ -160,12 +159,5 @@ noncomputable def liftSheaf : TopCat.Sheaf (Type u) T'.carrier :=
 @[simp]
 theorem liftSheaf_obj : (liftSheaf i a f h).obj = liftPresheaf i a f h := by
   rw [liftSheaf]
-
-/-- **Lifts exist locally.** For `f` smooth and `i` a first-order thickening, every point of `T'`
-has an open neighbourhood over which the sheaf of lifts has a section. -/
-theorem exists_mem_and_nonempty_liftPresheaf [Smooth f] [IsFirstOrderThickening i]
-    (ha : a ≫ f = i ≫ h) (x : T') :
-    ∃ U : T'.Opens, x ∈ U ∧ Nonempty ((liftPresheaf i a f h).obj (op U)) :=
-  exists_thickeningLift_restrict h ha x
 
 end TauCeti.AlgebraicGeometry
