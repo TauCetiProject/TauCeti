@@ -480,6 +480,30 @@ private theorem prod_pow_shift {A : Type*} [CommRing A] {i : Fin n} (j : Fin n) 
   simp only [ite_true, Finsupp.erase_same, pow_zero, one_mul, mul_pow, map_pow]
   ring
 
+/-- Moving the exponent of `y_i` to `y_{i+1}`: if two exponents become equal after this move and
+the first has at most as much at `i`, then it is the same or colexicographically larger. -/
+private theorem colex_lt_of_shift_eq {γ η : Fin n →₀ ℕ} {i j : Fin n} (hij : (j : ℕ) = i + 1)
+    (hσ : η.erase i + Finsupp.single j (η i) = γ.erase i + Finsupp.single j (γ i))
+    (hle : η i ≤ γ i) (hne : η ≠ γ) : γ ≺[colex] η := by
+  classical
+  have hij' : i < j := by rw [Fin.lt_def]; omega
+  -- `η` agrees with `γ` off the columns `i` and `j`, and `η i + η j = γ i + γ j`.
+  have hval (l : Fin n) := DFunLike.congr_fun hσ l
+  have h_off (l : Fin n) (hli : l ≠ i) (hlj : l ≠ j) : η l = γ l := by
+    simpa [Finsupp.erase_ne hli, Finsupp.single_apply, Ne.symm hlj] using hval l
+  have h_j : η j + η i = γ j + γ i := by
+    simpa [Finsupp.erase_ne hij'.ne'] using hval j
+  rcases hle.lt_or_eq with hlt | heq
+  · have h_lt_j : γ j < η j := by omega
+    exact MonomialOrder.colex_lt_of_eq_of_lt j (fun l hl => (h_off l
+      (by rintro rfl; exact absurd (hij'.trans hl) (lt_irrefl _)) hl.ne').symm) h_lt_j
+  · refine absurd (Finsupp.ext fun l => ?_) hne
+    by_cases hli : l = i
+    · subst hli; exact heq
+    by_cases hlj : l = j
+    · subst hlj; omega
+    exact h_off l hli hlj
+
 /-- **Interlacing.** Let `f ≠ 0` be a dual Weyl vector of column degrees `d` for `N + 1` rows,
 and `γ` the leading exponent of its expansion in the last row, for the colexicographic order.
 Then `γ i + d (i + 1) ≤ d i` for every column `i`: the column degrees `d - γ` of the leading
@@ -523,30 +547,11 @@ theorem degree_lastRowEquiv_add_le (hf : f ∈ dualWeylModule R (N + 1) d) (hf0 
     · simp [δ, E, Polynomial.coeff_mul_X_pow']
     · intro η hη hne
       split_ifs with hσ
-      swap
+      · rw [Polynomial.coeff_mul_X_pow']
+        split_ifs with hle
+        · exact absurd (colex.le_degree hη) (not_le_of_gt (colex_lt_of_shift_eq hij hσ hle hne))
+        · rfl
       · simp
-      -- `η` agrees with `γ` off the columns `i` and `j`, and `η i + η j = γ i + γ j`.
-      have hval (l : Fin n) := DFunLike.congr_fun hσ l
-      have h_off (l : Fin n) (hli : l ≠ i) (hlj : l ≠ j) : η l = γ l := by
-        simpa [δ, Finsupp.erase_ne hli, Finsupp.single_apply, Ne.symm hlj] using hval l
-      have h_j : η j + η i = γ j + γ i := by
-        simpa [δ, Finsupp.erase_ne hij'.ne'] using hval j
-      rw [Polynomial.coeff_mul_X_pow']
-      split_ifs with hle
-      · exfalso
-        rcases hle.lt_or_eq with hlt | heq
-        · -- `η` is larger than the leading exponent `γ`.
-          have h_lt_j : γ j < η j := by omega
-          refine not_lt_of_ge (colex.le_degree hη) (MonomialOrder.colex_lt_of_eq_of_lt j
-            (fun l hl => (h_off l (by rintro rfl; exact absurd (hij'.trans hl) (lt_irrefl _))
-              hl.ne').symm) h_lt_j)
-        · refine hne (Finsupp.ext fun l => ?_)
-          by_cases hli : l = i
-          · subst hli; exact heq
-          by_cases hlj : l = j
-          · subst hlj; omega
-          exact h_off l hli hlj
-      · rfl
     · intro hγ
       simp [notMem_support_iff.mp hγ]
   · rw [mul_comm, coeff_C_mul, coeff_map, mul_comm, Polynomial.coeff_C_mul_X_pow]

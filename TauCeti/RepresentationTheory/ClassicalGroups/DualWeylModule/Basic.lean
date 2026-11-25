@@ -263,67 +263,73 @@ theorem mvPolynomialMinor_comp_equiv {k k' : Type*} [Fintype k] [DecidableEq k] 
 columns. -/
 def initialColumns (n k : ℕ) (s : Fin n) : ℕ := if (s : ℕ) < k then 1 else 0
 
+/-- Every monomial of a minor on the first `k` columns uses each of these columns once. -/
+private theorem mvPolynomialMinor_mem_restrictSupport {k : ℕ} (hk : k ≤ n) (r : Fin k → Fin N) :
+    Matrix.mvPolynomialMinor R r (Fin.castLE hk) ∈
+      restrictSupport R {m | ∀ s, ∑ a, m (a, s) = initialColumns n k s} := by
+  classical
+  rw [Matrix.mvPolynomialMinor_eq_det_submatrix, Matrix.det_apply]
+  refine Submodule.sum_mem _ fun σ _ => Submodule.smul_of_tower_mem _ _ ?_
+  have h_prod : ∏ i, (Matrix.mvPolynomialX (Fin N) (Fin n) R).submatrix r (Fin.castLE hk)
+      (σ i) i = monomial (∑ i, Finsupp.single (r (σ i), Fin.castLE hk i) 1) (1 : R) := by
+    simp [monomial_sum_one, X]
+  rw [h_prod, monomial_mem_restrictSupport]
+  refine Or.inl fun s => ?_
+  simp only [Finsupp.finsetSum_apply, Finsupp.single_apply, Prod.mk.injEq]
+  rw [Finset.sum_comm]
+  have h_inner (i : Fin k) : (∑ a, if r (σ i) = a ∧ Fin.castLE hk i = s then 1 else 0) =
+      if Fin.castLE hk i = s then 1 else 0 := by
+    by_cases h : Fin.castLE hk i = s <;> simp [h]
+  simp only [h_inner, Finset.sum_boole, initialColumns]
+  split_ifs with hs
+  · rw [Nat.cast_eq_one, Finset.card_eq_one]
+    exact ⟨⟨s, hs⟩, by ext i; simp [Fin.ext_iff]⟩
+  · simp only [Nat.cast_eq_zero, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+    exact fun i _ h => hs (h ▸ i.isLt)
+
+/-- A column operation fixes a minor on the first `k` columns: on these columns it adds `T` times
+the column `s` to the column `t`, or it changes nothing. -/
+private theorem columnOperation_mvPolynomialMinor {k : ℕ} (hk : k ≤ n) (r : Fin k → Fin N)
+    {s t : Fin n} (hst : s < t) :
+    columnOperation R s t (Matrix.mvPolynomialMinor R r (Fin.castLE hk)) =
+      Polynomial.C (Matrix.mvPolynomialMinor R r (Fin.castLE hk)) := by
+  let A : Matrix (Fin N) (Fin n) (Polynomial (MvPolynomial (Fin N × Fin n) R)) :=
+    Matrix.of fun a b => Polynomial.C (X (a, b)) +
+      if b = t then Polynomial.X * Polynomial.C (X (a, s)) else 0
+  let B := ((Matrix.mvPolynomialX (Fin N) (Fin n) R).submatrix r (Fin.castLE hk)).map
+    (Polynomial.C (R := MvPolynomial (Fin N × Fin n) R))
+  have h_eval : columnOperation R s t = aeval fun p : Fin N × Fin n => A p.1 p.2 :=
+    columnOperation_def R s t
+  have h_C : Polynomial.C (Matrix.mvPolynomialMinor R r (Fin.castLE hk)) = B.det := by
+    rw [Matrix.mvPolynomialMinor_eq_det_submatrix, RingHom.map_det]
+    rfl
+  rw [h_eval, Matrix.aeval_mvPolynomialMinor, h_C]
+  by_cases htk : (t : ℕ) < k
+  · have hsk : (s : ℕ) < k := lt_trans hst htk
+    have h_upd : A.submatrix r (Fin.castLE hk) = B.updateCol ⟨t, htk⟩
+        fun a => B a ⟨t, htk⟩ + (Polynomial.X : Polynomial (MvPolynomial (Fin N × Fin n) R)) •
+          B a ⟨s, hsk⟩ := by
+      ext a b
+      by_cases hb : b = ⟨t, htk⟩
+      · subst hb
+        simp [A, B, Matrix.updateCol_self]
+      · have hb' : Fin.castLE hk b ≠ t := fun h => hb (Fin.ext (by simpa [Fin.ext_iff] using h))
+        simp [A, B, hb, hb']
+    rw [h_upd, Matrix.det_updateCol_add_smul_self _ (fun h => hst.ne' (by
+      simpa [Fin.ext_iff] using h))]
+  · congr 1
+    ext a b
+    have hb : Fin.castLE hk b ≠ t := fun h => htk (h ▸ b.isLt)
+    simp [A, B, hb]
+
 /-- **Minors on initial columns are dual Weyl vectors.** The minor of `x` on any `k` rows `r` and
 the first `k` columns lies in the dual Weyl module of the column degrees `(1, …, 1, 0, …, 0)`, with
 `k` ones: a column operation either adds a multiple of one of these columns to another, which does
 not change the determinant, or does not touch them. -/
 theorem mvPolynomialMinor_mem_dualWeylModule {k : ℕ} (hk : k ≤ n) (r : Fin k → Fin N) :
-    Matrix.mvPolynomialMinor R r (Fin.castLE hk) ∈ dualWeylModule R N (initialColumns n k) := by
-  classical
-  rw [mem_dualWeylModule]
-  refine ⟨fun m hm s => ?_, fun s t hst => ?_⟩
-  · -- Every monomial of the Leibniz expansion uses each of the first `k` columns once.
-    have h_mem : Matrix.mvPolynomialMinor R r (Fin.castLE hk) ∈
-        restrictSupport R {m | ∀ s, ∑ a, m (a, s) = initialColumns n k s} := by
-      rw [Matrix.mvPolynomialMinor_eq_det_submatrix, Matrix.det_apply]
-      refine Submodule.sum_mem _ fun σ _ => Submodule.smul_of_tower_mem _ _ ?_
-      have h_prod : ∏ i, (Matrix.mvPolynomialX (Fin N) (Fin n) R).submatrix r (Fin.castLE hk)
-          (σ i) i = monomial (∑ i, Finsupp.single (r (σ i), Fin.castLE hk i) 1) (1 : R) := by
-        simp [monomial_sum_one, X]
-      rw [h_prod, monomial_mem_restrictSupport]
-      refine Or.inl fun s => ?_
-      simp only [Finsupp.finsetSum_apply, Finsupp.single_apply, Prod.mk.injEq]
-      rw [Finset.sum_comm]
-      have h_inner (i : Fin k) : (∑ a, if r (σ i) = a ∧ Fin.castLE hk i = s then 1 else 0) =
-          if Fin.castLE hk i = s then 1 else 0 := by
-        by_cases h : Fin.castLE hk i = s <;> simp [h]
-      simp only [h_inner, Finset.sum_boole, initialColumns]
-      split_ifs with hs
-      · rw [Nat.cast_eq_one, Finset.card_eq_one]
-        exact ⟨⟨s, hs⟩, by ext i; simp [Fin.ext_iff]⟩
-      · simp only [Nat.cast_eq_zero, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
-        exact fun i _ h => hs (h ▸ i.isLt)
-    exact h_mem hm s
-  · -- The column operation is the evaluation at the matrix `A`; on the chosen columns it adds
-    -- `T` times the column `s` to the column `t`, or it changes nothing.
-    let A : Matrix (Fin N) (Fin n) (Polynomial (MvPolynomial (Fin N × Fin n) R)) :=
-      Matrix.of fun a b => Polynomial.C (X (a, b)) +
-        if b = t then Polynomial.X * Polynomial.C (X (a, s)) else 0
-    let B := ((Matrix.mvPolynomialX (Fin N) (Fin n) R).submatrix r (Fin.castLE hk)).map
-      (Polynomial.C (R := MvPolynomial (Fin N × Fin n) R))
-    have h_eval : columnOperation R s t = aeval fun p : Fin N × Fin n => A p.1 p.2 :=
-      columnOperation_def R s t
-    have h_C : Polynomial.C (Matrix.mvPolynomialMinor R r (Fin.castLE hk)) = B.det := by
-      rw [Matrix.mvPolynomialMinor_eq_det_submatrix, RingHom.map_det]
-      rfl
-    rw [h_eval, Matrix.aeval_mvPolynomialMinor, h_C]
-    by_cases htk : (t : ℕ) < k
-    · have hsk : (s : ℕ) < k := lt_trans hst htk
-      have h_upd : A.submatrix r (Fin.castLE hk) = B.updateCol ⟨t, htk⟩
-          fun a => B a ⟨t, htk⟩ + (Polynomial.X : Polynomial (MvPolynomial (Fin N × Fin n) R)) •
-            B a ⟨s, hsk⟩ := by
-        ext a b
-        by_cases hb : b = ⟨t, htk⟩
-        · subst hb
-          simp [A, B, Matrix.updateCol_self]
-        · have hb' : Fin.castLE hk b ≠ t := fun h => hb (Fin.ext (by simpa [Fin.ext_iff] using h))
-          simp [A, B, hb, hb']
-      rw [h_upd, Matrix.det_updateCol_add_smul_self _ (fun h => hst.ne' (by
-        simpa [Fin.ext_iff] using h))]
-    · congr 1
-      ext a b
-      have hb : Fin.castLE hk b ≠ t := fun h => htk (h ▸ b.isLt)
-      simp [A, B, hb]
+    Matrix.mvPolynomialMinor R r (Fin.castLE hk) ∈ dualWeylModule R N (initialColumns n k) :=
+  mem_dualWeylModule.mpr ⟨fun _ hm s => mvPolynomialMinor_mem_restrictSupport R hk r hm s,
+    fun _ _ hst => columnOperation_mvPolynomialMinor R hk r hst⟩
 
 /-- The weight `w_a` counting the variables of the row `a`: a monomial is weighted homogeneous of
 degree `k` for it when it has degree `k` in the row `a`. -/
