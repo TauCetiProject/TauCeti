@@ -801,10 +801,14 @@ private theorem biprodIsoProd_hom_lift_homologyMap_apply (U V : Opens M) (k : �
           (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
             (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) (contMDiff_inclusion _)) k) x) =
       mayerVietorisToProd I U V k x := by
-  rw [ModuleCat.biprodIsoProd_hom_apply, ← ConcreteCategory.comp_apply,
-    ← ConcreteCategory.comp_apply, biprod.lift_fst, biprod.lift_snd, deRhamComplex.homologyMap_map,
-    deRhamComplex.homologyMap_map, ModuleCat.ofHom_apply, ModuleCat.ofHom_apply,
-    mayerVietorisToProd_apply]
+  have h : biprod.lift
+        (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (le_sup_left : U ≤ U ⊔ V)) (contMDiff_inclusion _)) k)
+        (HomologicalComplex.homologyMap (deRhamComplex.map (I := I) (I' := I)
+          (Opens.inclusion (le_sup_right : V ≤ U ⊔ V)) (contMDiff_inclusion _)) k) =
+      ModuleCat.ofHom (mayerVietorisToProd I U V k) ≫ (ModuleCat.biprodIsoProd _ _).inv := by
+    apply biprod.hom_ext <;> ext y <;> simp [deRhamComplex.homologyMap_map]
+  simp [h]
 
 /-- Under the identification of the biproduct with the product module, the map induced on
 cohomology by the second map of the Mayer–Vietoris short complex is `mayerVietorisFromProd`. -/

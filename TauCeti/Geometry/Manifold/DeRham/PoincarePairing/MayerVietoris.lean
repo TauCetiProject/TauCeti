@@ -237,8 +237,8 @@ private theorem prodPoincarePairing_apply (o : Manifold.Orientation I M (Fin (k 
     (x : deRhamCohomology I U k × deRhamCohomology I V k)
     (y : compactlySupportedDeRhamCohomology I U l × compactlySupportedDeRhamCohomology I V l) :
     prodPoincarePairing o U V x y =
-      poincarePairing I U (o.restrict U) x.1 y.1 + poincarePairing I V (o.restrict V) x.2 y.2 :=
-  (rfl)
+      poincarePairing I U (o.restrict U) x.1 y.1 + poincarePairing I V (o.restrict V) x.2 y.2 := by
+  simp [prodPoincarePairing]
 
 omit [SigmaCompactSpace M] in
 private theorem bijective_prodPoincarePairing (o : Manifold.Orientation I M (Fin (k + l)))
