@@ -20,6 +20,11 @@ common eigenvectors (`Module.Basis.map_symmetricPower_of_apply`), and a represen
 common eigenvectors is semisimple (`Representation.isSemisimpleRepresentation_of_span_eq_top`).
 Hence the symmetric powers of such a representation are semisimple.
 
+For example, the Weil group `W_ℂ = ℂˣ` of `ℂ` (`TauCeti.ClassFieldTheory.WeilGroupComplex`) is
+commutative and `ℂ` is algebraically closed, so the symmetric powers of a finite-dimensional
+semisimple complex representation of `W_ℂ` are semisimple; for a representation of dimension `n`,
+`Sym^m` has dimension `binom(n + m - 1, m)` (`SymmetricPower.finrank_eq_choose`).
+
 ## Main results
 
 * `Representation.isSemisimpleRepresentation_symmetricPower`: the symmetric powers of a

@@ -26,7 +26,7 @@ The dual of a finite-dimensional semisimple representation is semisimple
 of `σ` and of `σ.dual` and carry complements to complements.
 
 A representation is semisimple exactly when it is the sum of its irreducible subrepresentations
-(`Representation.isSemisimpleRepresentation_iff_eq_top_of_forall_atom_le`).
+(`Representation.isSemisimpleRepresentation_iff_iSup_atoms_eq_top`).
 
 Every subrepresentation `S` of a semisimple representation has an equivariant projection onto it
 (`Subrepresentation.exists_equivariant_projection`): the first component of the splitting
@@ -40,9 +40,8 @@ Every subrepresentation `S` of a semisimple representation has an equivariant pr
   a surjective intertwining map from a semisimple representation is semisimple.
 * `Representation.isSemisimpleRepresentation_dual`: the dual of a finite-dimensional semisimple
   representation is semisimple.
-* `Representation.isSemisimpleRepresentation_iff_eq_top_of_forall_atom_le`: a representation is
-  semisimple exactly when the only subrepresentation containing its irreducible
-  subrepresentations is `⊤`.
+* `Representation.isSemisimpleRepresentation_iff_iSup_atoms_eq_top`: a representation is
+  semisimple exactly when it is the sum of its irreducible subrepresentations.
 * `Subrepresentation.exists_equivariant_projection`: a subrepresentation of a semisimple
   representation has an equivariant projection onto it.
 -/
@@ -86,24 +85,38 @@ instance Representation.isSemisimpleRepresentation_dual {G : Type*} [Group G]
 
 open scoped MonoidAlgebra in
 /-- **A representation is semisimple exactly when it is the sum of its irreducible
-subrepresentations**: the only subrepresentation containing every minimal nonzero one is `⊤`. This
-is `sSup_simples_eq_top_iff_isSemisimpleModule` for the module over the group algebra, read across
+subrepresentations**: the subspaces of its minimal nonzero subrepresentations span it. This is
+`sSup_simples_eq_top_iff_isSemisimpleModule` for the module over the group algebra, read across
 `Subrepresentation.subrepresentationSubmoduleOrderIso`. -/
-theorem Representation.isSemisimpleRepresentation_iff_eq_top_of_forall_atom_le :
+theorem Representation.isSemisimpleRepresentation_iff_iSup_atoms_eq_top :
     ρ.IsSemisimpleRepresentation ↔
-      ∀ σ : Subrepresentation ρ, (∀ τ : Subrepresentation ρ, IsAtom τ → τ ≤ σ) → σ = ⊤ := by
+      ⨆ σ : {σ : Subrepresentation ρ // IsAtom σ}, (σ : Subrepresentation ρ).toSubmodule = ⊤ := by
   let e := Subrepresentation.subrepresentationSubmoduleOrderIso (ρ := ρ)
-  have hle (σ : Subrepresentation ρ) : (∀ τ : Subrepresentation ρ, IsAtom τ → τ ≤ σ) ↔
+  -- The sum of the atoms is itself a subrepresentation `τ`.
+  let τ : Subrepresentation ρ :=
+    ⟨⨆ σ : {σ : Subrepresentation ρ // IsAtom σ}, (σ : Subrepresentation ρ).toSubmodule,
+      fun g w hw ↦ Submodule.iSup_induction _ (motive := fun w ↦ ρ g w ∈ _) hw
+        (fun σ _ hx ↦ Submodule.mem_iSup_of_mem σ (σ.val.apply_mem_toSubmodule g hx))
+        (by rw [map_zero]; exact zero_mem _)
+        fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy⟩
+  have hle (σ : Subrepresentation ρ) : τ ≤ σ ↔
       sSup {m : Submodule k[G] ρ.asModule | IsSimpleModule k[G] m} ≤ e σ := by
-    rw [sSup_le_iff]
-    refine ⟨fun h m hm ↦ ?_, fun h τ hτ ↦ e.le_iff_le.1 <|
-      h _ (Subrepresentation.isSimpleModule_asSubmodule_iff.2 hτ)⟩
-    rw [← e.apply_symm_apply m, e.le_iff_le]
-    exact h _ (Subrepresentation.isSimpleModule_asSubmodule_iff.1 hm)
+    rw [← Subrepresentation.toSubmodule_le_toSubmodule, sSup_le_iff]
+    refine ⟨fun h m hm ↦ ?_, fun h ↦ iSup_le fun τ ↦ Subrepresentation.toSubmodule_le_toSubmodule.2
+      (e.le_iff_le.1 <| h _ (Subrepresentation.isSimpleModule_asSubmodule_iff.2 τ.property))⟩
+    rw [← e.apply_symm_apply m, e.le_iff_le, ← Subrepresentation.toSubmodule_le_toSubmodule]
+    exact le_trans (le_iSup_of_le
+      ⟨e.symm m, Subrepresentation.isSimpleModule_asSubmodule_iff.1 hm⟩ le_rfl) h
   rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule,
     ← sSup_simples_eq_top_iff_isSemisimpleModule]
-  refine ⟨fun h σ hσ ↦ (map_eq_top_iff e).1 (top_le_iff.1 (h ▸ (hle σ).1 hσ)), fun h ↦ ?_⟩
-  rw [← e.apply_symm_apply (sSup _), h _ ((hle _).2 (e.apply_symm_apply _).ge), map_top]
+  change _ ↔ τ.toSubmodule = ⊤
+  rw [← Subrepresentation.toSubmodule_top (ρ := ρ), Subrepresentation.toSubmodule_injective.eq_iff]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hτ := (hle τ).1 le_rfl
+    rwa [h, top_le_iff, map_eq_top_iff] at hτ
+  · have hτ := (hle (e.symm _)).2 (e.apply_symm_apply _).ge
+    rw [h, top_le_iff] at hτ
+    rw [← e.apply_symm_apply (sSup _), hτ, map_top]
 
 namespace Subrepresentation
 

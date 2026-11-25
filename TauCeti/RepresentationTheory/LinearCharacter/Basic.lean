@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Simple.Basic
+public import TauCeti.RepresentationTheory.Subrepresentation.Eigenvector
 
 /-!
 # One-dimensional representations from linear characters
@@ -300,17 +301,14 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
     rw [← mul_apply_eq_comp, (hcomm g h).eq, mul_apply_eq_comp]
   obtain ⟨v, hv⟩ := exists_ne (0 : W)
   -- The line through `v` is stable, hence everything: `W` is one-dimensional.
-  let line : Subrepresentation W.ρ :=
-    ⟨k ∙ v, fun g w hw => by
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hw
-      rw [map_smul, hc, smul_smul]
-      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)⟩
-  have hline : line = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top line).resolve_left fun h => hv <| by
-    have hmem : v ∈ line.toSubmodule := Submodule.mem_span_singleton_self v
-    rw [h] at hmem
-    exact hmem
-  have hfin : Module.finrank k W = 1 :=
-    (finrank_eq_one_iff_of_ne_zero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
+  have hev : ∀ g, ∃ a : k, W.ρ g v = a • v := fun g => ⟨c g, hc g v⟩
+  have hline : Representation.lineSubrepresentation W.ρ v hev = ⊤ :=
+    (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left
+      (Representation.isAtom_lineSubrepresentation W.ρ hev hv).1
+  have hfin : Module.finrank k W = 1 := by
+    refine (finrank_eq_one_iff_of_ne_zero v hv).mpr ?_
+    rw [← Representation.toSubmodule_lineSubrepresentation W.ρ v hev, hline,
+      Subrepresentation.toSubmodule_top]
   let χ : G →* k :=
     { toFun := c
       map_one' := Representation.map_one_of_forall_apply_eq_smul W.ρ hc
