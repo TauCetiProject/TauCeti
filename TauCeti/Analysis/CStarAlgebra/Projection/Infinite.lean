@@ -26,7 +26,7 @@ proper star (for instance a C⋆-algebra) an infinite projection is nonzero
 `p · ww⋆ = 0` force `ww⋆ = 0`, hence `w = 0` and `p = w⋆w = 0`.
 
 The matrix algebra `M_n(𝕜)` over `𝕜 = ℝ` or `ℂ` has no infinite projection
-(`TauCeti.not_isInfiniteProjection_matrix`): `p - vv⋆` is positive semidefinite with trace
+(`Matrix.not_isInfiniteProjection`): `p - vv⋆` is positive semidefinite with trace
 `tr(v⋆v) - tr(vv⋆) = 0`, so `vv⋆ = p`.
 
 ## References
@@ -110,7 +110,7 @@ theorem IsProperlyInfiniteProjection.isInfiniteProjection {p : R}
 open scoped MatrixOrder
 
 /-- The matrix algebra `M_n(𝕜)` has no infinite projection. -/
-theorem not_isInfiniteProjection_matrix {𝕜 n : Type*} [RCLike 𝕜] [Fintype n]
+theorem _root_.Matrix.not_isInfiniteProjection {𝕜 n : Type*} [RCLike 𝕜] [Fintype n]
     (p : _root_.Matrix n n 𝕜) : ¬ IsInfiniteProjection p := by
   -- `p - vv⋆` is positive semidefinite of trace `tr(v⋆v) - tr(vv⋆) = 0`, so `vv⋆ = p`.
   rintro ⟨-, v, hv, hle, hne⟩
