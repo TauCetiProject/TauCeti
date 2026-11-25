@@ -190,21 +190,16 @@ private theorem complexChartCompression_mulLeft_comp_comp_mulLeft_eq_smul
       g * e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤)) := by
     ext p
     by_cases hp : p ∈ e.source
-    · simp only [ContMDiffMap.coe_mul, Pi.mul_apply,
-        OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he _ _ hp,
-        ContMDiffMap.coe_ofContDiff, hw]
-      have h := congrFun (EqOn.smul_eq_right (f := fun q ↦ ψ₁ (e q))
-        (g := fun q ↦ g (e.symm (e q)) * ψ (e q) • u (e q)) fun q hq ↦
-          hψ₁ ⟨subset_tsupport _ (left_ne_zero_of_smul (right_ne_zero_of_mul hq)),
-            subset_tsupport _ (left_ne_zero_of_mul hq)⟩) p
-      simp only [Pi.smul_apply', e.left_inv hp] at h
-      rw [smul_comm (ψ (e p)) (ψ₁ (e p)), mul_smul_comm, h]
+    · rw [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+        e.mul_complexCutoffPullback_apply_of_eq_smul he ψ hψ₁
+          (fun y ↦ by rw [ContMDiffMap.coe_ofContDiff, hw]) hp,
+        e.complexCutoffPullback_apply_of_mem he _ _ hp, ContMDiffMap.coe_ofContDiff]
     · simp [OpenPartialHomeomorph.complexCutoffPullback_apply_of_notMem he _ _ hp]
   simp only [OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
     LinearMap.mulLeft_apply, hinput, ContMDiffMap.coe_mul, Pi.mul_apply]
-  exact congrFun (EqOn.smul_eq_right (f := φ₁) fun y hy ↦
-    hφ₁ ⟨subset_tsupport _ (left_ne_zero_of_smul hy),
-      subset_tsupport _ (left_ne_zero_of_mul (right_ne_zero_of_smul hy))⟩) x
+  exact smul_eq_right_of_ne_zero_imp_eq_one fun h ↦
+    hφ₁ ⟨subset_tsupport _ (left_ne_zero_of_smul h),
+      subset_tsupport _ (left_ne_zero_of_mul (right_ne_zero_of_smul h))⟩
 
 /-- **Pseudolocality.** If `P` is a classical pseudodifferential operator and `f`, `g` are smooth
 functions with disjoint supports, then `u ↦ f · P (g u)` has order `-∞`. -/

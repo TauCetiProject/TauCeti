@@ -212,12 +212,12 @@ theorem chartQuantization_eq_mulLeft_comp_comp_mulLeft {φ ψ : 𝓓(⟨e.target
       e.complexCutoffPullback he ψ 1 * u := by
     ext q
     by_cases hq : q ∈ e.source
-    · simp only [complexCutoffPullback_apply_of_mem he _ _ hq, ContMDiffMap.coe_mul,
-        Pi.mul_apply, ContMDiffMap.coe_ofContDiff, hv, e.left_inv hq, ContMDiffMap.coe_one,
-        Pi.one_apply, smul_one_mul]
-      rw [smul_comm]
-      exact congrFun (EqOn.smul_eq_right (f := fun q ↦ ψ₁ (e q)) fun q hq ↦
-        hψ₁ (subset_tsupport _ (left_ne_zero_of_smul hq))) q
+    · have h := mul_complexCutoffPullback_apply_of_eq_smul he ψ (g := 1)
+        (hψ₁.mono inter_subset_left) (f := ContMDiffMap.ofContDiff v (v.smooth ⊤))
+        (fun y ↦ by rw [ContMDiffMap.coe_ofContDiff, hv]) hq
+      rw [Pi.one_apply, one_mul, one_mul, e.left_inv hq] at h
+      rw [h, ContMDiffMap.coe_mul, Pi.mul_apply, complexCutoffPullback_apply_of_mem he _ _ hq,
+        ContMDiffMap.coe_one, Pi.one_apply, smul_one_mul]
     · simp [complexCutoffPullback_apply_of_notMem he _ _ hq]
   by_cases hp : p ∈ e.source
   · rw [chartQuantization_apply_of_mem he φ₁ ψ₁ a u hv hp, ha, complexChartCompression_apply,
@@ -225,8 +225,8 @@ theorem chartQuantization_eq_mulLeft_comp_comp_mulLeft {φ ψ : 𝓓(⟨e.target
     simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
       complexCutoffPullback_apply_of_mem he _ _ hp, ContMDiffMap.coe_one, Pi.one_apply,
       smul_one_mul]
-    exact congrFun (EqOn.smul_eq_right (f := fun q ↦ φ₁ (e q)) fun q hq ↦
-      hφ₁ (subset_tsupport _ (left_ne_zero_of_smul hq))) p
+    exact smul_eq_right_of_ne_zero_imp_eq_one fun h ↦
+      hφ₁ (subset_tsupport _ (left_ne_zero_of_smul h))
   · simp [chartQuantization_apply_of_notMem he _ _ a u hp,
       complexCutoffPullback_apply_of_notMem he _ _ hp]
 

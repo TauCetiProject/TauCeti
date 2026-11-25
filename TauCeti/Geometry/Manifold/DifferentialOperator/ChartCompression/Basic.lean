@@ -188,8 +188,8 @@ theorem exists_cutoffPullback_one_eq [FiniteDimensional ℝ E] {g : C^∞⟮𝓘
   ext p
   by_cases hp : p ∈ e.source
   · rw [cutoffPullback_one_apply_of_mem he _ hp, TestFunction.coe_mk, e.left_inv hp]
-    exact congrFun (EqOn.mul_eq_right (f := fun q ↦ θ (e q)) fun q hq ↦
-      hθ.self_of_nhdsSet _ (mem_image_of_mem e (subset_tsupport _ hq))) p
+    exact mul_eq_right_of_ne_zero_imp_eq_one fun hgp ↦
+      hθ.self_of_nhdsSet _ (mem_image_of_mem e (subset_tsupport _ hgp))
   · rw [cutoffPullback_apply_of_notMem he _ _ hp,
       image_eq_zero_of_notMem_tsupport fun h ↦ hp (hg h)]
 
@@ -414,6 +414,20 @@ theorem complexCutoffPullback_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_tar
     (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∉ e.source) :
     e.complexCutoffPullback he ψ f x = 0 := by
   simp [complexCutoffPullback, cutoffPullback_apply_of_notMem he _ _ hx]
+
+/-- On the chart source, the complex pullback `(ψ f) ∘ e` multiplied by `g` only sees `f` on the
+points of the support of `ψ` read on `M` inside the support of `g`: if `f = ψ₁ • F` for a function
+`ψ₁` equal to `1` there, then `g · (ψ f) ∘ e = g · (ψ F) ∘ e`. -/
+theorem mul_complexCutoffPullback_apply_of_eq_smul (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    {g : M → ℂ} {ψ₁ : E → ℝ} (hψ₁ : EqOn ψ₁ 1 (tsupport ψ ∩ e.symm ⁻¹' tsupport g))
+    {f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯} {F : E → ℂ} (hf : ∀ y, f y = ψ₁ y • F y) {x : M}
+    (hx : x ∈ e.source) :
+    g x * e.complexCutoffPullback he ψ f x = g x * (ψ (e x) • F (e x)) := by
+  rw [complexCutoffPullback_apply_of_mem he _ _ hx, hf, smul_comm (ψ (e x)), mul_smul_comm]
+  refine smul_eq_right_of_ne_zero_imp_eq_one fun h ↦ hψ₁ ⟨subset_tsupport _
+    (left_ne_zero_of_smul (right_ne_zero_of_mul h)), ?_⟩
+  rw [mem_preimage, e.left_inv hx]
+  exact subset_tsupport _ (left_ne_zero_of_mul h)
 
 /-- The complex pullback of the constant `1` by a cutoff is the real pullback of `1`, read as a
 complex number. -/
