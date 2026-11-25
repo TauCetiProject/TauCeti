@@ -21,8 +21,8 @@ the quotient map `R → R ⧸ J` gives `(R ⧸ J) ⊗[R] M ≃ M ⧸ J • M`, a
   of scalars of `M` along `Ideal.Quotient.mk J` and `M ⧸ J • M`.
 * `Ideal.not_isZero_extendScalars_mk_of_ne_top`: for `J ≠ ⊤`, the extension of scalars of `R`
   along `R → R ⧸ J` is nonzero.
-* `Ideal.extendScalars_mk_map_ofHom_mulLeft`: for `r ∈ J`, multiplication by `r` on `R` reduces
-  to zero along `R → R ⧸ J`.
+* `Ideal.extendScalars_mk_map_ofHom_mulLeft_eq_zero`: for `r ∈ J`, multiplication by `r` on `R`
+  reduces to zero along `R → R ⧸ J`.
 -/
 
 public section
@@ -74,7 +74,7 @@ variable {J} in
 /-- For `r ∈ J`, extending scalars along `R → R ⧸ J` sends multiplication by `r` on `R` to the
 zero map. -/
 @[simp]
-theorem extendScalars_mk_map_ofHom_mulLeft {r : R} (hr : r ∈ J) :
+theorem extendScalars_mk_map_ofHom_mulLeft_eq_zero {r : R} (hr : r ∈ J) :
     (ModuleCat.extendScalars (Ideal.Quotient.mk J)).map
       (ModuleCat.ofHom (LinearMap.mulLeft R r)) = 0 := by
   have h : ModuleCat.ofHom (LinearMap.mulLeft R r) = r • 𝟙 (ModuleCat.of R R) := by

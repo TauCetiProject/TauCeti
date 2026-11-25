@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
-import TauCeti.Algebra.Category.ModuleCat.Projective.RegularElementResolution
+import TauCeti.Algebra.Category.ModuleCat.Quotient
 
 /-!
 # Complete flatness of modules

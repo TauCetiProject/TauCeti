@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Algebra.Homology.ModuleCat.CompletelyFlat
+import TauCeti.Algebra.Homology.ModuleCat.CompletelyFlat.Basic
 import TauCeti.Algebra.Homology.ModuleCat.CompletelyFlat.RegularElement
 import TauCeti.Examples.RingTheory.Flat.CompletelyFlat
 import Mathlib.RingTheory.Flat.TorsionFree
@@ -60,14 +60,14 @@ example : ¬ Limits.IsZero ((homologyFunctor (ModuleCat (ℤ ⧸ Ideal.span {(p 
   have hp : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
   have hf := mem_nonZeroDivisors_of_ne_zero hp.ne_zero
   have hI := Ideal.span_singleton_ne_top hp.not_isUnit
-  ⟨not_isZero_homology_derivedReduction_quotient hf hI, not_isCompletelyFlat_quotient hf hI⟩
+  ⟨not_isZero_homology_derivedReduction_quotient hf hI, not_isCompletelyFlat_quotient_self hf hI⟩
 
 -- `(ℤ_p ⧸ p)[0]` is not `p`-completely flat in `D(ℤ_p)`.
 example [HasDerivedCategory.{w} (ModuleCat.{0} ℤ_[p])]
     [HasDerivedCategory.{w'} (ModuleCat.{0} (ℤ_[p] ⧸ Ideal.span {(p : ℤ_[p])}))] :
     ¬ IsCompletelyFlat (Ideal.span {(p : ℤ_[p])})
       ((singleFunctor (ModuleCat ℤ_[p]) 0).obj (.of ℤ_[p] (ℤ_[p] ⧸ Ideal.span {(p : ℤ_[p])}))) :=
-  not_isCompletelyFlat_quotient (mem_nonZeroDivisors_of_ne_zero PadicInt.prime_p.ne_zero)
+  not_isCompletelyFlat_quotient_self (mem_nonZeroDivisors_of_ne_zero PadicInt.prime_p.ne_zero)
     (Ideal.span_singleton_ne_top PadicInt.prime_p.not_isUnit)
 
 end Padic

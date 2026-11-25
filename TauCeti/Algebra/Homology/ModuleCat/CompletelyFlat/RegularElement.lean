@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.ModuleCat.CompletelyFlat
+public import TauCeti.Algebra.Homology.ModuleCat.CompletelyFlat.Basic
 import Mathlib.CategoryTheory.Abelian.Projective.Extend
 import TauCeti.Algebra.Category.ModuleCat.ExtendScalarsQuotient
-import TauCeti.Algebra.Category.ModuleCat.Projective.RegularElementResolution
+import TauCeti.Algebra.Category.ModuleCat.Quotient
 import TauCeti.Algebra.Homology.ModuleCat.KFlat.Basic
 import TauCeti.CategoryTheory.Abelian.LeftDerived
 
@@ -31,7 +31,7 @@ because `f` maps to zero in `A ⧸ (f)`. For `A = ℤ` and `f = p` this shows th
 
 * `TauCeti.DerivedDeRham.not_isZero_homology_derivedReduction_quotient`: the derived reduction of
   `A ⧸ (f)` has nonzero cohomology in degree `-1`.
-* `TauCeti.DerivedDeRham.not_isCompletelyFlat_quotient`: `A ⧸ (f)` in degree zero is not
+* `TauCeti.DerivedDeRham.not_isCompletelyFlat_quotient_self`: `A ⧸ (f)` in degree zero is not
   `(f)`-completely flat.
 -/
 
@@ -83,7 +83,7 @@ theorem not_isZero_homology_derivedReduction_quotient (hf : f ∈ nonZeroDivisor
   -- rewriting along these equations would break the types of the degree identifications of
   -- `R.cochainComplex`, so the vanishing of the reduced differential is restated instead
   have hd : F.map (R.complex.d 1 0) = 0 :=
-    Ideal.extendScalars_mk_map_ofHom_mulLeft (Ideal.mem_span_singleton_self f)
+    Ideal.extendScalars_mk_map_ofHom_mulLeft_eq_zero (Ideal.mem_span_singleton_self f)
   have hout : B.d (-1) 0 = 0 := by
     simp only [B, Functor.mapHomologicalComplex_obj_d]
     rw [R.cochainComplex_d (-1) 0 1 0, Functor.map_comp, Functor.map_comp, hd, zero_comp,
@@ -97,7 +97,7 @@ theorem not_isZero_homology_derivedReduction_quotient (hf : f ∈ nonZeroDivisor
 /-- **`A ⧸ (f)` is not `(f)`-completely flat.** For a nonzerodivisor `f` with `(f) ≠ A`, the
 quotient `A ⧸ (f)` placed in degree zero of `D(A)` is not `(f)`-completely flat: its derived
 reduction has nonzero cohomology in degree `-1`, which a module placed in degree zero has not. -/
-theorem not_isCompletelyFlat_quotient (hf : f ∈ nonZeroDivisors A) (hI : Ideal.span {f} ≠ ⊤) :
+theorem not_isCompletelyFlat_quotient_self (hf : f ∈ nonZeroDivisors A) (hI : Ideal.span {f} ≠ ⊤) :
     ¬ IsCompletelyFlat (Ideal.span {f})
       ((singleFunctor (ModuleCat.{u} A) 0).obj (ModuleCat.of A (A ⧸ Ideal.span {f}))) := by
   intro h
