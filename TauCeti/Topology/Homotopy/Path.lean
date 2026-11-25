@@ -35,6 +35,9 @@ prescribed end paths as a path between paths. The smoothing of caps in
 `Geometry/Symplectic/Floer/Cap/Smoothing.lean` feeds such families to
 `Path.homotopic_of_continuous_square`, and `IsSmoothBasedCap.toPath` in
 `Geometry/Symplectic/Floer/Cap/Area.lean` is built with `Path.ofContinuousFamily`.
+`ContinuousMap.pathTrans` and `ContinuousMap.pathSymm` concatenate and reverse continuous families
+of paths pointwise; `Topology/Homotopy/Homotopic/Homotopy.lean` matches them with the
+concatenation and reversal of homotopies between constant maps.
 
 `Path.homotopic_of_continuous_square` is likewise adapted from Kim Morrison's
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292). It is used by
@@ -324,6 +327,28 @@ def ofContinuousFamily {x₀ x₁ : X} {p q : Path x₀ x₁} (F : I → I → X
 theorem ofContinuousFamily_apply {x₀ x₁ : X} {p q : Path x₀ x₁} (F : I → I → X)
     (hF : Continuous ↿F) (h₀ : ∀ s, F s 0 = x₀) (h₁ : ∀ s, F s 1 = x₁) (hp : ∀ t, F 0 t = p t)
     (hq : ∀ t, F 1 t = q t) (s t : I) : ofContinuousFamily F hF h₀ h₁ hp hq s t = F s t :=
+  (rfl)
+
+/-- The pointwise concatenation of continuous families of paths. -/
+noncomputable def _root_.ContinuousMap.pathTrans {Y : Type*} [TopologicalSpace Y] {x₀ x₁ x₂ : X}
+    (α : C(Y, Path x₀ x₁)) (β : C(Y, Path x₁ x₂)) : C(Y, Path x₀ x₂) where
+  toFun y := (α y).trans (β y)
+  continuous_toFun := α.continuous.path_trans β.continuous
+
+@[simp]
+theorem _root_.ContinuousMap.pathTrans_apply {Y : Type*} [TopologicalSpace Y] {x₀ x₁ x₂ : X}
+    (α : C(Y, Path x₀ x₁)) (β : C(Y, Path x₁ x₂)) (y : Y) : α.pathTrans β y = (α y).trans (β y) :=
+  (rfl)
+
+/-- The pointwise reversal of a continuous family of paths. -/
+def _root_.ContinuousMap.pathSymm {Y : Type*} [TopologicalSpace Y] {x₀ x₁ : X}
+    (α : C(Y, Path x₀ x₁)) : C(Y, Path x₁ x₀) where
+  toFun y := (α y).symm
+  continuous_toFun := Path.continuous_symm.comp α.continuous
+
+@[simp]
+theorem _root_.ContinuousMap.pathSymm_apply {Y : Type*} [TopologicalSpace Y] {x₀ x₁ : X}
+    (α : C(Y, Path x₀ x₁)) (y : Y) : α.pathSymm y = (α y).symm :=
   (rfl)
 
 /-- **A square with prescribed edges is a path homotopy.** A continuous map on `I × I` that

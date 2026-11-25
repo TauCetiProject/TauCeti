@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
--- Private: `Path.Homotopy.reflTransSymm_apply` is used only in the proof of
--- `Homotopic.trans_symm`, so this import is not re-exported.
-import TauCeti.Topology.Homotopy.Path
+public import TauCeti.Topology.Homotopy.Path
 
 /-!
 # Homotopies between homotopies
@@ -43,9 +41,9 @@ classes of maps `X → Ω Y y`.
   `symm_trans`: the groupoid laws.
 * `ContinuousMap.Homotopy.Homotopic.trans_symm_trans`, `symm_trans_trans`: appending and taking
   differences are inverse up to homotopy.
-* `ContinuousMap.Homotopy.evalAtEquiv`: homotopies between constant maps are families of paths.
-* `ContinuousMap.pathTrans`, `ContinuousMap.pathSymm`: pointwise concatenation and reversal of
-  families of paths, which `evalAtEquiv` matches with `Homotopy.trans` and `Homotopy.symm`.
+* `ContinuousMap.Homotopy.evalAtEquiv`: homotopies between constant maps are families of paths;
+  it matches `Homotopy.trans` and `Homotopy.symm` with the pointwise operations
+  `ContinuousMap.pathTrans` and `ContinuousMap.pathSymm` of `TauCeti.Topology.Homotopy.Path`.
 
 ## References
 
@@ -271,27 +269,6 @@ theorem evalAtEquiv_refl (y : Y) :
     evalAtEquiv (Homotopy.refl (const X y)) = const X (Path.refl y) := by
   ext
   simp
-
-/-- The pointwise concatenation of continuous families of paths. -/
-noncomputable def _root_.ContinuousMap.pathTrans {y₀ y₁ y₂ : Y} (α : C(X, Path y₀ y₁))
-    (β : C(X, Path y₁ y₂)) : C(X, Path y₀ y₂) where
-  toFun x := (α x).trans (β x)
-  continuous_toFun := α.continuous.path_trans β.continuous
-
-@[simp]
-theorem _root_.ContinuousMap.pathTrans_apply {y₀ y₁ y₂ : Y} (α : C(X, Path y₀ y₁))
-    (β : C(X, Path y₁ y₂)) (x : X) : α.pathTrans β x = (α x).trans (β x) :=
-  (rfl)
-
-/-- The pointwise reversal of a continuous family of paths. -/
-def _root_.ContinuousMap.pathSymm {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) : C(X, Path y₁ y₀) where
-  toFun x := (α x).symm
-  continuous_toFun := Path.continuous_symm.comp α.continuous
-
-@[simp]
-theorem _root_.ContinuousMap.pathSymm_apply {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) (x : X) :
-    α.pathSymm x = (α x).symm :=
-  (rfl)
 
 /-- Concatenating homotopies between constant maps concatenates their families of paths. -/
 @[simp]
