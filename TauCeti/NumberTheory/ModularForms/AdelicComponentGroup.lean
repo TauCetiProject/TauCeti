@@ -22,7 +22,7 @@ functoriality of `Γ_{g,U}`: it is monotone in `U`, and for `q ∈ GL₂(ℚ)` a
 satisfies `Γ_{qgu,U} = qΓ_{g,U}q⁻¹`. Finally, if the principal level `K(M)` (the kernel of
 reduction modulo `M` on the integral points of `GL₂(𝔸_f)`) lies in `gUg⁻¹`, then the principal
 congruence subgroup `Γ(M)` of `SL₂(ℤ)` lies in `Γ_{g,U}`, so for `M ≠ 0` the integral matrices
-of `Γ_{g,U}` form a subgroup of finite index of `SL₂(ℤ)`.
+of `Γ_{g,U}` form a congruence subgroup, in particular of finite index, of `SL₂(ℤ)`.
 
 That every element of `Γ_{g,U}` has determinant `1` is a direct computation with determinants.
 The determinants of the compact group `gUg⁻¹` form a compact subgroup of `𝔸_f^×`, and every
@@ -45,8 +45,8 @@ number whose principal finite idele lies in `Ô^×` is a unit of `ℤ`, hence eq
 * `TauCeti.AdelicExamples.GL2.componentGroup_mul_mul`: `Γ_{qgu,U} = qΓ_{g,U}q⁻¹`.
 * `TauCeti.AdelicExamples.GL2.map_Gamma_le_componentGroup`: `Γ(M) ⊆ Γ_{g,U}` when
   `K(M) ⊆ gUg⁻¹`.
-* `TauCeti.AdelicExamples.GL2.finiteIndex_comap_mapGL_componentGroup`: then, for `M ≠ 0`,
-  `Γ_{g,U} ∩ SL₂(ℤ)` has finite index in `SL₂(ℤ)`.
+* `TauCeti.AdelicExamples.GL2.isCongruenceSubgroup_comap_mapGL_componentGroup`: then, for
+  `M ≠ 0`, `Γ_{g,U} ∩ SL₂(ℤ)` is a congruence subgroup of `SL₂(ℤ)`, hence of finite index.
 
 ## References
 
@@ -166,14 +166,16 @@ theorem map_Gamma_le_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing �
   rw [← hu']
   simpa [mul_assoc] using hu
 
-/-- **`Γ_{g,U} ∩ SL₂(ℤ)` has finite index in `SL₂(ℤ)`** when the principal level `K(M)`,
-`M ≠ 0`, lies in `gUg⁻¹`: it contains `Γ(M)`. -/
-theorem finiteIndex_comap_mapGL_componentGroup
+/-- **`Γ_{g,U} ∩ SL₂(ℤ)` is a congruence subgroup of `SL₂(ℤ)`** when the principal level
+`K(M)`, `M ≠ 0`, lies in `gUg⁻¹`: it contains `Γ(M)`. In particular it has finite index in
+`SL₂(ℤ)` (`CongruenceSubgroup.IsCongruenceSubgroup.finiteIndex`). -/
+theorem isCongruenceSubgroup_comap_mapGL_componentGroup
     {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))} {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)}
     {M : ℕ} [NeZero M]
     (h : principalLevel ℚ (Ideal.span {(M : ℤ)}) ≤ U.map (MulAut.conj g).toMonoidHom) :
-    ((componentGroup U g).comap (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ)).FiniteIndex :=
-  Subgroup.finiteIndex_of_le (Subgroup.map_le_iff_le_comap.mp (map_Gamma_le_componentGroup h))
+    CongruenceSubgroup.IsCongruenceSubgroup
+      ((componentGroup U g).comap (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ)) :=
+  ⟨M, NeZero.ne M, Subgroup.map_le_iff_le_comap.mp (map_Gamma_le_componentGroup h)⟩
 
 end AdelicExamples.GL2
 

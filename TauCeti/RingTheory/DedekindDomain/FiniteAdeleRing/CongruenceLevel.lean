@@ -247,8 +247,10 @@ theorem map_algebraMap_mem_principalLevel {N : Ideal R} {g : GL (Fin 2) R}
     (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) R) i j - (1 : Matrix (Fin 2) (Fin 2) R) i j ∈ N) :
     Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K N := by
   rw [mem_principalLevel_iff]
-  refine ⟨fun i j ↦ (integralAdeles R K).algebraMap_mem _, fun i j ↦ ?_, fun i j ↦ ?_⟩
-  · rw [← map_inv]
+  refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
+  · rw [Matrix.GeneralLinearGroup.map_apply]
+    exact (integralAdeles R K).algebraMap_mem _
+  · rw [← map_inv, Matrix.GeneralLinearGroup.map_apply]
     exact (integralAdeles R K).algebraMap_mem _
   · convert algebraMap_mem_completedIdeal (K := K) (hg i j) using 1
     ext
