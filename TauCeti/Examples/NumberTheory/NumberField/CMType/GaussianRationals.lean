@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.NumberTheory.NumberField.CMType.ReflexField
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 
 /-!
 # CM types and the reflex field of `ℚ(i)`
@@ -15,61 +16,20 @@ public import TauCeti.NumberTheory.NumberField.CMType.ReflexField
 This file checks the CM-type and reflex-field API of `TauCeti.CMType` on `ℚ(i)`, modelled as the
 fourth cyclotomic field `CyclotomicField 4 ℚ` with its primitive fourth root of unity `ζ = i`.
 
-On any commutative ring with a complex embedding, neither the full embedding set nor the empty set
-is a CM type (`TauCeti.CMType.not_exists_coe_eq_univ`, `TauCeti.CMType.not_exists_coe_eq_empty`):
-a condition asking only for at least one embedding from each conjugate pair would accept the full
-set. When the embeddings are exactly `φ` and its distinct conjugate, the singleton `{φ}` is a CM
-type (`TauCeti.CMType.ofPair`).
-
 The embeddings of `ℚ(i)` are `i ↦ I` and `i ↦ -I`
 (`TauCeti.GaussianRationalsCMType.eq_or_eq_star`); each singleton is a CM type
-(`exists_coe_eq_singleton`), and every CM type has one element (`natCard_eq_one`). For
-`Φ = {i ↦ I}` the type trace of `i` is `I` (`typeTrace_Φ_ζ`), so the reflex field is
-`ℚ(I) ⊆ ℂ` (`reflexField_Φ`) and is not `ℚ` (`reflexField_Φ_ne_bot`), while the full trace of `i`
-vanishes (`trace_ζ`): a reflex field defined through the full trace would be `ℚ`.
+(`exists_coe_eq_singleton`, through `TauCeti.CMType.ofPair`), and every CM type has one element
+(`natCard_eq_one`). Since `ℚ(i)` has an embedding, no CM type of `ℚ(i)` is the full embedding set
+or empty (`TauCeti.CMType.coe_ne_univ`, `TauCeti.CMType.coe_ne_empty`): a condition asking only for
+at least one embedding from each conjugate pair would accept the full set. For `Φ = {i ↦ I}` the
+type trace of `i` is `I` (`typeTrace_Φ_ζ`), so the reflex field is `ℚ(I) ⊆ ℂ` (`reflexField_Φ`)
+and is not `ℚ` (`reflexField_Φ_ne_bot`), while the full trace of `i` vanishes (`trace_ζ`), unlike
+its type trace.
 -/
 
 public section
 
 open NumberField Polynomial IntermediateField
-
-namespace TauCeti.CMType
-
-variable {E : Type*} [CommRing E]
-
-/-- The full set of embeddings is not a CM type when `E` has an embedding: it contains every
-conjugate pair entirely. -/
-theorem not_exists_coe_eq_univ [Nonempty (E →+* ℂ)] :
-    ¬ ∃ Φ : CMType E, (Φ : Set (E →+* ℂ)) = Set.univ := by
-  rintro ⟨Φ, hΦ⟩
-  obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
-  have h := Φ.star_mem_iff φ
-  simp [← SetLike.mem_coe, hΦ] at h
-
-/-- The empty set is not a CM type when `E` has an embedding: it misses every conjugate pair. -/
-theorem not_exists_coe_eq_empty [Nonempty (E →+* ℂ)] :
-    ¬ ∃ Φ : CMType E, (Φ : Set (E →+* ℂ)) = ∅ := by
-  rintro ⟨Φ, hΦ⟩
-  obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
-  have h := Φ.star_mem_iff φ
-  simp [← SetLike.mem_coe, hΦ] at h
-
-/-- If the embeddings of `E` are exactly an embedding `φ` and its distinct conjugate, then the
-singleton `{φ}` is a CM type. -/
-def ofPair (φ : E →+* ℂ) (hφ : star φ ≠ φ) (h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ) :
-    CMType E where
-  carrier := {φ}
-  star_mem_iff' ψ := by
-    rcases h ψ with rfl | rfl
-    · simpa using hφ
-    · simpa [eq_comm] using hφ
-
-@[simp]
-theorem coe_ofPair (φ : E →+* ℂ) (hφ : star φ ≠ φ) (h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ) :
-    (ofPair φ hφ h : Set (E →+* ℂ)) = {φ} :=
-  (rfl)
-
-end TauCeti.CMType
 
 namespace TauCeti.GaussianRationalsCMType
 
@@ -103,19 +63,19 @@ theorem φₐ_ζ : φₐ ζ = Complex.I := by
   exact h.symm
 
 @[simp]
-theorem φ_ζ : φ ζ = Complex.I := φₐ_ζ
+theorem φ_ζ : φ ζ = Complex.I := by
+  rw [φ, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, φₐ_ζ]
 
 theorem star_φ_ζ : star φ ζ = -Complex.I := by
   simp [RingHom.star_apply]
 
-theorem star_φ_ne : star φ ≠ φ := fun h ↦ by
+theorem star_φ_ne_self : star φ ≠ φ := fun h ↦ by
   have := congrArg (· ζ) h
   rw [star_φ_ζ, φ_ζ] at this
   exact Complex.I_ne_zero (by linear_combination -this / 2)
 
 theorem card_ringHom : Fintype.card (K →+* ℂ) = 2 := by
-  rw [Embeddings.card, IsCyclotomicExtension.finrank K irreducible_cyclotomic_four]
-  decide
+  rw [Embeddings.card, finrank_eq_two_of_isCyclotomicExtension_four]
 
 /-- The embeddings of `ℚ(i)` are `i ↦ I` and `i ↦ -I`. -/
 theorem eq_or_eq_star (ψ : K →+* ℂ) : ψ = φ ∨ ψ = star φ := by
@@ -123,48 +83,45 @@ theorem eq_or_eq_star (ψ : K →+* ℂ) : ψ = φ ∨ ψ = star φ := by
   by_contra h
   simp only [not_or] at h
   have h3 : ({φ, star φ, ψ} : Finset (K →+* ℂ)).card = 3 :=
-    Finset.card_eq_three.2 ⟨φ, star φ, ψ, star_φ_ne.symm, Ne.symm h.1, Ne.symm h.2, rfl⟩
+    Finset.card_eq_three.2 ⟨φ, star φ, ψ, star_φ_ne_self.symm, Ne.symm h.1, Ne.symm h.2, rfl⟩
   have := Finset.card_le_univ ({φ, star φ, ψ} : Finset (K →+* ℂ))
   have := card_ringHom
   omega
 
 /-- The CM type `{i ↦ I}` of `ℚ(i)`. -/
-noncomputable def Φ : CMType K := CMType.ofPair φ star_φ_ne eq_or_eq_star
+noncomputable def Φ : CMType K := CMType.ofPair φ star_φ_ne_self eq_or_eq_star
 
 @[simp]
-theorem coe_Φ : (Φ : Set (K →+* ℂ)) = {φ} := (rfl)
+theorem coe_Φ : (Φ : Set (K →+* ℂ)) = {φ} :=
+  CMType.coe_ofPair _ _ _
 
 /-- **Each singleton of an embedding of `ℚ(i)` is a CM type.** -/
 theorem exists_coe_eq_singleton (ψ : K →+* ℂ) : ∃ Ψ : CMType K, (Ψ : Set (K →+* ℂ)) = {ψ} := by
   rcases eq_or_eq_star ψ with rfl | rfl
   · exact ⟨Φ, coe_Φ⟩
-  · refine ⟨star Φ, ?_⟩
-    ext χ
-    rcases eq_or_eq_star χ with rfl | rfl
-    · simpa using star_φ_ne.symm
-    · simpa using star_φ_ne
+  · exact ⟨CMType.ofPair (star φ) (by simpa using star_φ_ne_self.symm)
+      (fun χ ↦ by simpa [or_comm] using eq_or_eq_star χ), CMType.coe_ofPair _ _ _⟩
 
 /-- **Every CM type of `ℚ(i)` has one embedding.** -/
 theorem natCard_eq_one (Ψ : CMType K) : Nat.card Ψ = 1 := by
   have h := Ψ.two_mul_card_eq_finrank
-  rw [IsCyclotomicExtension.finrank K irreducible_cyclotomic_four] at h
-  have : Nat.totient 4 = 2 := by decide
+  rw [finrank_eq_two_of_isCyclotomicExtension_four] at h
   omega
 
-/-- Neither the full embedding set nor the empty set of `ℚ(i)` is a CM type. -/
-theorem not_exists_coe_eq_univ_or_empty :
-    (¬ ∃ Ψ : CMType K, (Ψ : Set (K →+* ℂ)) = Set.univ) ∧
-      ¬ ∃ Ψ : CMType K, (Ψ : Set (K →+* ℂ)) = ∅ :=
-  have : Nonempty (K →+* ℂ) := ⟨φ⟩
-  ⟨CMType.not_exists_coe_eq_univ, CMType.not_exists_coe_eq_empty⟩
+/-! `ℚ(i)` has a complex embedding, so its CM types are neither the full embedding set
+(`TauCeti.CMType.coe_ne_univ`) nor empty (`TauCeti.CMType.coe_ne_empty`). -/
+
+example (Ψ : CMType K) : (Ψ : Set (K →+* ℂ)) ≠ Set.univ := Ψ.coe_ne_univ
+
+example (Ψ : CMType K) : (Ψ : Set (K →+* ℂ)) ≠ ∅ := Ψ.coe_ne_empty
 
 /-- **The type trace of `{i ↦ I}` at `i` is `I`.** -/
 @[simp]
 theorem typeTrace_Φ_ζ : Φ.typeTrace ζ = Complex.I := by
   rw [CMType.typeTrace_apply, coe_Φ, finsum_mem_singleton, φ_ζ]
 
-/-- The full trace of `i` vanishes, so a reflex field defined through the full trace over all
-embeddings would be `ℚ`. -/
+/-- The full trace of `i` vanishes, whereas its type trace for `{i ↦ I}` is `I`
+(`typeTrace_Φ_ζ`). -/
 theorem trace_ζ : Algebra.trace ℚ K ζ = 0 := by
   have h := Φ.typeTrace_add_typeTrace_star_eq_trace ζ
   rw [CMType.typeTrace_star, typeTrace_Φ_ζ, Complex.conj_I, add_neg_cancel] at h

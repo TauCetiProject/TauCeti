@@ -29,12 +29,16 @@ complex.
 * `TauCeti.CMType E`: the CM types on `E`, a `SetLike` family of sets of embeddings `E →+* ℂ`.
 * `star Φ`: the complementary CM type `ιΦ = {conj ∘ φ : φ ∈ Φ}`, whose embeddings are those not in
   `Φ`; this makes `CMType E` an `InvolutiveStar`.
+* `TauCeti.CMType.ofPair φ`: the CM type `{φ}` when the embeddings are exactly `φ` and its
+  distinct conjugate, as for an imaginary quadratic field.
 * `TauCeti.CMType.induced Φ₀ f`: the CM type induced along `f : E₀ →+* E` by a CM type `Φ₀` on
   `E₀`, consisting of the embeddings `φ` with `φ ∘ f ∈ Φ₀`.
 
 ## Main results
 
 * `TauCeti.CMType.star_mem_iff`: `star φ ∈ Φ ↔ φ ∉ Φ`.
+* `TauCeti.CMType.coe_ne_univ`, `TauCeti.CMType.coe_ne_empty`: when `E` has an embedding, a CM
+  type is neither the full set of embeddings nor empty.
 * `TauCeti.CMType.coe_star_eq_image`: `ιΦ` is the image of `Φ` under conjugation.
 * `TauCeti.CMType.card_ringHom_eq_two_mul`: `#Hom(E, ℂ) = 2 * #Φ`, and
   `TauCeti.CMType.two_mul_card_eq_finrank`: `2 * #Φ = [E : ℚ]` for a number field `E`.
@@ -95,6 +99,36 @@ theorem star_mem_iff (Φ : CMType E) (φ : E →+* ℂ) : star φ ∈ Φ ↔ φ 
 /-- No embedding is its own conjugate when `E` carries a CM type. -/
 theorem ringHom_star_ne_self (Φ : CMType E) (φ : E →+* ℂ) : star φ ≠ φ := fun h ↦
   iff_not_self (h ▸ Φ.star_mem_iff φ)
+
+/-- A CM type is not the full set of embeddings when `E` has an embedding: it would contain a
+whole conjugate pair. -/
+theorem coe_ne_univ [Nonempty (E →+* ℂ)] (Φ : CMType E) : (Φ : Set (E →+* ℂ)) ≠ Set.univ :=
+  fun hΦ ↦ by
+    obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
+    have h := Φ.star_mem_iff φ
+    simp [← SetLike.mem_coe, hΦ] at h
+
+/-- A CM type is not empty when `E` has an embedding: it would miss a whole conjugate pair. -/
+theorem coe_ne_empty [Nonempty (E →+* ℂ)] (Φ : CMType E) : (Φ : Set (E →+* ℂ)) ≠ ∅ :=
+  fun hΦ ↦ by
+    obtain ⟨φ⟩ := ‹Nonempty (E →+* ℂ)›
+    have h := Φ.star_mem_iff φ
+    simp [← SetLike.mem_coe, hΦ] at h
+
+/-- If the embeddings of `E` are exactly an embedding `φ` and its distinct conjugate, then the
+singleton `{φ}` is a CM type. -/
+def ofPair (φ : E →+* ℂ) (hφ : star φ ≠ φ) (h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ) :
+    CMType E where
+  carrier := {φ}
+  star_mem_iff' ψ := by
+    rcases h ψ with rfl | rfl
+    · simpa using hφ
+    · simpa [eq_comm] using hφ
+
+@[simp]
+theorem coe_ofPair (φ : E →+* ℂ) (hφ : star φ ≠ φ) (h : ∀ ψ : E →+* ℂ, ψ = φ ∨ ψ = star φ) :
+    (ofPair φ hφ h : Set (E →+* ℂ)) = {φ} :=
+  (rfl)
 
 /-- **Existence of CM types.** A commutative ring carries a CM type exactly when no complex
 embedding is its own conjugate: choose one embedding from each conjugate pair. -/
