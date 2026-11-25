@@ -189,11 +189,8 @@ read as a power series, the exponential `∑ aⁿ / n!` in the period topology i
 exponential: `exp a = (exp K).subst a`. -/
 theorem toPowerSeries_exp {a : NovikovSeries K ℕ (Nat.castAddMonoidHom ℝ)} (ha : a.coeff 0 = 0) :
     toPowerSeries (NormedSpace.exp a) = (PowerSeries.exp K).subst (toPowerSeries a) := by
-  let b : nonnegSubring K (Nat.castAddMonoidHom ℝ) :=
-    ⟨a, mem_nonnegSubring.2 fun h hh ↦ absurd hh (by simp)⟩
-  have hb : b ∈ posIdeal K (Nat.castAddMonoidHom ℝ) := mem_posIdeal.2 fun h hh ↦ by
-    obtain rfl : h = 0 := by simpa using hh
-    exact ha
+  let b : nonnegSubring K (Nat.castAddMonoidHom ℝ) := ⟨a, mem_nonnegSubring_nat a⟩
+  have hb : b ∈ posIdeal K (Nat.castAddMonoidHom ℝ) := mem_posIdeal_nat_iff.2 ha
   have hsum : HasSum (fun n : ℕ ↦ (n.factorial : ℚ)⁻¹ • a ^ n) (NormedSpace.exp a) := by
     have := ((isTopologicallyNilpotent_of_mem_posIdeal' hb).hasSum_exp).map
       (nonnegSubring K (Nat.castAddMonoidHom ℝ)).subtype continuous_subtypeVal
@@ -221,10 +218,7 @@ theorem ofPowerSeries_subst_exp {γ : H} (hγ : 0 < N γ) {f : K⟦X⟧}
   rw [RingEquiv.apply_symm_apply] at h
   rw [← h, ofPowerSeries_apply, ofPowerSeries_apply, RingEquiv.symm_apply_apply,
     ← mapRingHom_apply, ← mapRingHom_apply]
-  exact mapRingHom_exp (a := ⟨_, mem_nonnegSubring.2 fun h hh ↦ absurd hh (by simp)⟩) _ _ _
-    (mem_posIdeal.2 fun h hh ↦ by
-      obtain rfl : h = 0 := by simpa using hh
-      exact hf')
+  exact mapRingHom_exp (a := ⟨_, mem_nonnegSubring_nat _⟩) _ _ _ (mem_posIdeal_nat_iff.2 hf')
 
 end PowerSeries
 
