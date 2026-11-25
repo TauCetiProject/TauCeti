@@ -13,7 +13,7 @@ public import TauCeti.RepresentationTheory.Crystal.Tensor
 A weight annihilating the simple coroots can be added to every weight of a normal crystal
 without changing its root operators or string lengths. `NormalCrystal.weightTwist` constructs
 this twist on the same carrier. The zero, addition and duality laws make the offsets explicit;
-strict morphisms can be twisted by the same offset on source and target.
+strict morphisms and strict isomorphisms can be twisted by the same offset on source and target.
 
 These twists retain the central characters of reductive root data. In particular, translating
 a highest weight by a central character changes its weighted crystal even though the root
@@ -84,6 +84,14 @@ theorem weightTwist_ε : (c.weightTwist χ hχ).ε = c.ε := (rfl)
 @[simp]
 theorem weightTwist_φ : (c.weightTwist χ hχ).φ = c.φ := (rfl)
 
+/-- Equal central offsets produce equal weight-twisted crystals. -/
+theorem weightTwist_congr {χ₁ χ₂ : X} (h : χ₁ = χ₂)
+    (hχ₁ : ∀ i : b.support, P.toLinearMap χ₁ (P.coroot i) = 0)
+    (hχ₂ : ∀ i : b.support, P.toLinearMap χ₂ (P.coroot i) = 0) :
+    c.weightTwist χ₁ hχ₁ = c.weightTwist χ₂ hχ₂ := by
+  subst h
+  rfl
+
 /-- Twisting by zero leaves a normal crystal unchanged. -/
 @[simp]
 theorem weightTwist_zero : c.weightTwist 0 (by simp) = c := by
@@ -150,6 +158,39 @@ theorem weightTwist_comp (f : StrictHom c d) (f' : StrictHom d g) :
   simp
 
 end StrictHom
+
+namespace StrictIso
+
+variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'}
+  {d' : NormalCrystal P b B''}
+
+/-- Twist the source and target of a strict crystal isomorphism by the same central weight. -/
+def weightTwist (ψ : StrictIso c d) (χ : X)
+    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
+    StrictIso (c.weightTwist χ hχ) (d.weightTwist χ hχ) where
+  toEquiv := ψ.toEquiv
+  wt_toFun x := by simp
+  e_toFun i x := by simp
+
+@[simp]
+theorem coe_weightTwist (ψ : StrictIso c d) (χ : X) (hχ) : ⇑(ψ.weightTwist χ hχ) = ψ := (rfl)
+
+@[simp]
+theorem weightTwist_refl (c : NormalCrystal P b B) :
+    (StrictIso.refl c).weightTwist χ hχ = StrictIso.refl (c.weightTwist χ hχ) :=
+  StrictIso.ext fun _ ↦ by simp
+
+@[simp]
+theorem weightTwist_symm (ψ : StrictIso c d) :
+    (ψ.weightTwist χ hχ).symm = ψ.symm.weightTwist χ hχ :=
+  StrictIso.ext fun y ↦ EquivLike.injective (ψ.weightTwist χ hχ) (by simp)
+
+@[simp]
+theorem weightTwist_trans (ψ : StrictIso c d) (φ : StrictIso d d') :
+    (ψ.trans φ).weightTwist χ hχ = (ψ.weightTwist χ hχ).trans (φ.weightTwist χ hχ) :=
+  StrictIso.ext fun _ ↦ by simp
+
+end StrictIso
 
 /-- The one-element normal crystal of a weight annihilating the simple coroots. -/
 def central : NormalCrystal P b PUnit where

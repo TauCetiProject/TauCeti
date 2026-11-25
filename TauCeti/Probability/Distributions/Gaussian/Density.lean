@@ -58,6 +58,8 @@ form into the one of `S⁻¹`.
   bridge
   and the identification of `MeasureTheory.pdf`;
 * `TauCeti.Probability.rnDeriv_multivariateGaussian` — the Radon–Nikodym derivative;
+* `TauCeti.Probability.multivariateGaussian_absolutelyContinuous` — absolute continuity with
+  respect to Lebesgue measure;
 * `TauCeti.Probability.mutuallySingular_multivariateGaussian_volume` — singularity at every
   covariance
   parameter that is not positive definite.
@@ -338,8 +340,10 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
   refine withDensity_congr_ae (.of_forall fun y => ?_)
   simp only [multivariateGaussianPDF, multivariateGaussianPDFReal,
     Matrix.toEuclideanCLE_symm_apply]
-  rw [← ENNReal.ofReal_mul (by positivity), hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt,
-    abs_of_pos (by positivity), hdetR, hrpow]
+  have hnorm : ‖(CFC.sqrt S)⁻¹.toEuclideanLin (y - m)‖ ^ 2 =
+      ⟪y - m, S⁻¹.toEuclideanLin (y - m)⟫ := by
+    simpa using hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt (y - m)
+  rw [← ENNReal.ofReal_mul (by positivity), hnorm, abs_of_pos (by positivity), hdetR, hrpow]
   congr 1
   ring
 
@@ -363,6 +367,13 @@ theorem rnDeriv_multivariateGaussian (hS : S.PosDef) (m : EuclideanSpace ℝ ι)
     (multivariateGaussian m S).rnDeriv volume =ᵐ[volume] multivariateGaussianPDF m S := by
   rw [multivariateGaussian_eq_withDensity hS]
   exact Measure.rnDeriv_withDensity _ (measurable_multivariateGaussianPDF m S)
+
+/-- A nondegenerate multivariate Gaussian law is absolutely continuous with respect to Lebesgue
+measure. -/
+theorem multivariateGaussian_absolutelyContinuous (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
+    multivariateGaussian m S ≪ volume := by
+  rw [multivariateGaussian_eq_withDensity hS]
+  exact withDensity_absolutelyContinuous _ _
 
 /-- **Every degenerate multivariate Gaussian law is singular.** A positive-semidefinite but
 singular covariance carries the law on the proper affine subspace `m + range (CFC.sqrt S)`; any

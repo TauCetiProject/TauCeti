@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.Normed.Ring.StableSequence
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Stable sequences of operators
@@ -47,8 +48,9 @@ theorem IsStableSequence.exists_forall_norm_le {A : ∀ n, E n →L[𝕜] E n}
     (hA : IsStableSequence A) : ∃ M : ℝ, ∀ᶠ n in atTop, ∀ x, ‖x‖ ≤ M * ‖A n x‖ := by
   obtain ⟨M, hM⟩ := (isStableSequence_def _).mp hA
   refine ⟨M, hM.mono fun n ⟨hu, hn⟩ x ↦ ?_⟩
-  exact (ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply hu x).trans
-    (mul_le_mul_of_nonneg_right hn (norm_nonneg _))
+  have hx := (ContinuousLinearMap.isInvertible_iff_isUnit.mpr hu).norm_le_norm_inverse_mul_norm x
+  rw [← ContinuousLinearMap.ringInverse_eq_inverse] at hx
+  exact hx.trans (mul_le_mul_of_nonneg_right hn (norm_nonneg _))
 
 /-- A sequence of operators on finite-dimensional spaces is stable exactly when its members are
 eventually uniformly bounded below. -/

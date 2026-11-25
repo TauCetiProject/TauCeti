@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -24,6 +25,11 @@ arbitrary base `R` to lifting problems over `S` itself.
 When an `R`-algebra map `φ : A →ₐ[R] B` into an `S`-algebra `B` carries an `R`-basis of `A` to an
 `S`-basis of `B`, the induced `S`-algebra multiplication map `AlgHom.liftEquiv R S A B φ` is
 bijective (`AlgHom.liftEquiv_bijective_of_basis`).
+
+For Mathlib's `Algebra.TensorProduct.liftEquivRight`, the same adjunction with a commutative ring
+as target, extensions commute with base change along an `R`-algebra map `ρ : A → B`
+(`AlgHom.liftEquivRight_comp_map`), and extensions `A ⊗[R] M → A ⊗[R] N → A ⊗[R] M` compose to
+the identity once they do so on `M` (`AlgHom.liftEquivRight_comp_liftEquivRight_eq_id`).
 -/
 
 public section
@@ -72,5 +78,33 @@ theorem liftEquiv_bijective_of_basis {R S A B ι : Type*} [CommSemiring R] [Comm
       rw [LinearEquiv.coe_coe, (b.baseChange S).equiv_apply]
       simp [liftEquiv_tmul, hb]
   exact (liftEquiv R S A B φ).coe_toLinearMap ▸ he ▸ e.bijective
+
+section LiftEquivRight
+
+open Algebra.TensorProduct (includeRight liftEquivRight map)
+
+variable {R A N : Type*} [CommSemiring R] [CommRing A] [Algebra R A] [CommSemiring N]
+  [Algebra R N]
+
+/-- `liftEquivRight` commutes with base change along an `R`-algebra map `ρ : A → B`: extending
+`ρ ⊗ id ∘ φ` to `B ⊗[R] M` and precomposing with `ρ ⊗ id` is `ρ ⊗ id` after the extension of
+`φ` to `A ⊗[R] M`. -/
+theorem liftEquivRight_comp_map {B M : Type*} [CommRing B] [Algebra R B] [Semiring M]
+    [Algebra R M] (ρ : A →ₐ[R] B) (φ : M →ₐ[R] A ⊗[R] N) :
+    ((liftEquivRight R B M _ ((map ρ (AlgHom.id R N)).comp φ)).restrictScalars R).comp
+        (map ρ (AlgHom.id R M)) =
+      (map ρ (AlgHom.id R N)).comp ((liftEquivRight R A M _ φ).restrictScalars R) := by
+  ext <;> simp
+
+/-- If the extension of `ψ : N → A ⊗[R] M` to `A ⊗[R] N` sends `φ m` to `1 ⊗ m` for every `m`,
+then the extensions of `φ` and `ψ` compose to the identity of `A ⊗[R] M`. -/
+theorem liftEquivRight_comp_liftEquivRight_eq_id {M : Type*} [CommSemiring M] [Algebra R M]
+    (φ : M →ₐ[R] A ⊗[R] N) (ψ : N →ₐ[R] A ⊗[R] M)
+    (h : ((liftEquivRight R A N _ ψ).restrictScalars R).comp φ = includeRight) :
+    (liftEquivRight R A N _ ψ).comp (liftEquivRight R A M _ φ) = AlgHom.id A _ := by
+  refine Algebra.TensorProduct.ext (Subsingleton.elim _ _) (AlgHom.ext fun x ↦ ?_)
+  simpa [← Algebra.TensorProduct.one_def] using congr($h x)
+
+end LiftEquivRight
 
 end AlgHom

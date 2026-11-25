@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Analysis.Complex.UnitDisc.Manifold
 public import TauCeti.Analysis.Complex.UnitDisc.Subdisc
 public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Deriv
 
 /-!
@@ -61,10 +63,16 @@ surfaces carries fundamental class to fundamental class
   preferred charts.
 * `TauCeti.complexHomologicalOrientation_apply_of_mem_maximalAtlas`: the canonical local
   orientations, read in any holomorphic chart.
+* `TauCeti.localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas`: a holomorphic chart,
+  centred at a point of its source, carries the canonical local orientation there to the local
+  orientation of `ℂ` at `0` selected by `Complex.orientation`.
 * `TauCeti.comap_complexHomologicalOrientation`: local biholomorphisms that are open embeddings
   pull canonical homological orientations back to canonical homological orientations.
 * `TauCeti.comap_subtypeVal_complexHomologicalOrientation`: the canonical homological orientation
   restricts to that of each open subset.
+* `TauCeti.comap_complexHomologicalOrientation_of_mem_maximalAtlas`: on an open subset of the
+  source of a holomorphic chart, the canonical homological orientation is pulled back from that of
+  `ℂ` along the chart.
 * `TauCeti.comap_coe_comp_subdisc_complexHomologicalOrientation`: the round subdisc maps of the
   open unit disc preserve the restriction of the canonical homological orientation of `ℂ`.
 * `Diffeomorph.mapFundamentalClass_complexHomologicalOrientation`,
@@ -156,6 +164,39 @@ theorem complexHomologicalOrientation_apply_of_mem_maximalAtlas {k : ℕ∞ω} [
   rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign_det_smul _ _ (chartAt ℂ x) e
     (mem_chart_source ℂ x) hx hd.hasFDerivAt hdet.ne', sign_pos hdet, SignType.coe_one, one_smul]
 
+/-- **The canonical orientation read in a holomorphic chart.** A `C^k` holomorphic chart `e` of a
+Riemann surface, for `k ≠ 0`, centred at a point `z` of its source, carries the canonical local
+orientation at `z` to the local orientation of `ℂ` at `0` selected by its standard orientation
+`Complex.orientation`. -/
+theorem localHomologyMap_complexHomologicalOrientation_of_mem_maximalAtlas {k : ℕ∞ω} [NeZero k]
+    {e : OpenPartialHomeomorph M ℂ} (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, ℂ) k M) {z : M}
+    (hz : z ∈ e.source) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (⟨fun x : e.source ↦ e x - e z, e.continuousOn.domRestrict.sub continuous_const⟩ :
+          C(e.source, ℂ)) (S := {⟨z, hz⟩}) (T := {0})
+        (by
+          rintro x hx
+          exact Subtype.ext (e.injOn x.property hz (sub_eq_zero.1 hx))) (1 + 1)
+        ((e.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩
+          (1 + 1)).symm (complexHomologicalOrientation M z)).val =
+      (Complex.orientation.localOrientation Complex.finrank_real_complex).val := by
+  set φ := e
+  rw [complexHomologicalOrientation_apply_of_mem_maximalAtlas he hz]
+  have hσ : (((ContinuousLinearEquiv.refl ℝ ℂ : ℂ →L[ℝ] ℂ) : C(ℂ, ℂ)).comp
+      ((⟨fun y ↦ y - φ z, by fun_prop⟩ : C(ℂ, ℂ)).comp φ.sourceRestrict)) =
+      (⟨fun y : φ.source ↦ φ y - φ z,
+        φ.continuousOn.domRestrict.sub continuous_const⟩ : C(φ.source, ℂ)) :=
+    ContinuousMap.ext fun y ↦ congrArg (fun w ↦ w - φ z) (φ.sourceRestrict_apply y)
+  have hφ := φ.localHomologyMap_chart_localOrientationOfOrientedChart hz
+    (ContinuousLinearEquiv.refl ℝ ℂ) Complex.orientation
+    Complex.finrank_real_complex Complex.finrank_real_complex (by
+      rw [hσ]
+      exact fun y hy ↦ Subtype.ext (φ.injOn y.property hz (sub_eq_zero.1 hy)))
+  simp only [hσ] at hφ
+  -- `Orientation.map` uses the underlying linear identity, rather than the continuous structure.
+  have hid : (ContinuousLinearEquiv.refl ℝ ℂ).toLinearEquiv = LinearEquiv.refl ℝ ℂ := (rfl)
+  simpa only [hid, Orientation.map_refl, Equiv.refl_apply] using hφ
+
 variable {N : Type} [TopologicalSpace N] [T2Space N] [ChartedSpace ℂ N] [IsManifold 𝓘(ℂ, ℂ) 1 N]
 
 /-- **Naturality of the canonical homological orientation.** Pulling the canonical homological
@@ -188,6 +229,19 @@ theorem comap_subtypeVal_complexHomologicalOrientation {U : TopologicalSpace.Ope
     (hj : IsOpenEmbedding (Subtype.val : U → M)) :
     (complexHomologicalOrientation M).comap hj = complexHomologicalOrientation U :=
   comap_complexHomologicalOrientation (k := 1) hj isLocalDiffeomorph_subtype_val
+
+/-- The canonical homological orientation of an open subset `U` of a Riemann surface `M`, lying in
+the source of a holomorphic chart `e`, is pulled back from the canonical homological orientation
+of `ℂ` along `e`. -/
+theorem comap_complexHomologicalOrientation_of_mem_maximalAtlas {e : OpenPartialHomeomorph M ℂ}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, ℂ) 1 M) {U : TopologicalSpace.Opens M}
+    (hU : (U : Set M) ⊆ e.source) :
+    (complexHomologicalOrientation ℂ).comap
+        (e.isOpenEmbedding_comp U.isOpenEmbedding' (by simpa using hU)) =
+      complexHomologicalOrientation U :=
+  comap_complexHomologicalOrientation (k := 1) _ fun u ↦
+    IsLocalDiffeomorphAt.comp (K := 𝓘(ℂ, ℂ)) (P := ℂ) (isLocalDiffeomorph_subtype_val u)
+      (e.isLocalDiffeomorphAt_of_mem_maximalAtlas he (hU u.property))
 
 /-- The round subdisc maps `z ↦ c + r z`, `r > 0`, of the open unit disc
 (`TauCeti.Complex.UnitDisc.subdisc`), read in `ℂ`, pull the canonical homological orientation of

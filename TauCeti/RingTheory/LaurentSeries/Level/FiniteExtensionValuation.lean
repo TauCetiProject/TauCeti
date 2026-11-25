@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.LaurentSeries.Level.Valuation
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.FiniteExtension
 public import TauCeti.RingTheory.RamificationInertia.Bijective
+import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
 # Valuation integers of finite Laurent extensions
