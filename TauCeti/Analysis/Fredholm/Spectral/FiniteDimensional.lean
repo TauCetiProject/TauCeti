@@ -28,6 +28,13 @@ spectral cut of `A` on all of `[a, b]` (`TauCeti.isSpectralCutOn_of_forall_norm_
 of eigenvalues of `A t` in `[0, c]` is then the number `dim H - n⁻(A t)` of its nonnegative
 eigenvalues (`TauCeti.spectralCount_eq_finrank_pointSpectralSubspace`).
 
+For a scalar path `t ↦ f t • 1` with `f` continuous on `[a, b]`, the one eigenvalue `f t` has full
+multiplicity, so the spectral flow is the dimension of `H` times the change of the indicator of
+`0 ≤ f` between the endpoints (`TauCeti.spectralFlow_algebraMap_comp`): its net number of upward
+crossings of `0` is `1`, `0` or `-1`. For `f a < 0 ≤ f b` the eigenvalue's net crossing of `0` is
+upward and the spectral flow is the dimension; this is the sign convention in which positive
+crossings count positively.
+
 Every operator on a finite-dimensional space is Fredholm, so the regular-crossing formula of
 `TauCeti.Analysis.Fredholm.Spectral.RegularCrossings`
 (`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`) applies to every continuous path
@@ -50,6 +57,7 @@ of the trajectory operator `d/ds + A`; see
   number of nonnegative eigenvalues.
 * `TauCeti.spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank`: the spectral flow is
   `n⁻(A a) - n⁻(A b)`.
+* `TauCeti.spectralFlow_algebraMap_comp`: the spectral flow of a scalar path.
 
 ## References
 
@@ -151,5 +159,48 @@ theorem spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank {a b : ℝ} (h
   have h₂ := hAb.finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl (Iio 0)
   rw [compl_Iio] at h₁ h₂
   omega
+
+/-! ### Scalar paths -/
+
+omit [FiniteDimensional 𝕜 H] [CompleteSpace H]
+  [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint]
+  [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
+/-- The scalar path `t ↦ t • 1` of operators is continuous. -/
+private theorem continuous_algebraMap_real :
+    Continuous fun t : ℝ ↦ algebraMap ℝ (H →L[𝕜] H) t := by
+  -- The `ℝ`-action on operators comes from the `NormedAlgebra` instance, so its continuity is
+  -- obtained from `NormedSpace.toIsBoundedSMul` explicitly.
+  have := (NormedSpace.toIsBoundedSMul (𝕜 := ℝ) (E := H →L[𝕜] H)).continuousSMul
+  exact continuous_algebraMap ℝ _
+
+/-- **Scalar paths.** On a finite-dimensional space, the spectral flow of the scalar path
+`t ↦ f t • 1`, for `f` continuous on `[a, b]`, is the dimension times the change of the indicator
+of `0 ≤ f` between the endpoints: its one eigenvalue `f t` has full multiplicity, and its net
+number of upward crossings of `0` is `1`, `0` or `-1`. -/
+theorem spectralFlow_algebraMap_comp {f : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hf : ContinuousOn f (Icc a b)) :
+    spectralFlow (fun t ↦ algebraMap ℝ (H →L[𝕜] H) (f t)) a b =
+      Module.finrank 𝕜 H * ((if 0 ≤ f b then 1 else 0) - if 0 ≤ f a then 1 else 0) := by
+  -- The scalar `x • 1` has all of `H` as its eigenspace at `x`, so it has `dim H` negative
+  -- eigenvalues if `x < 0`, and none otherwise.
+  have hn (x : ℝ) : (Module.finrank 𝕜 (Module.End.pointSpectralSubspace
+      ((algebraMap ℝ (H →L[𝕜] H) x : H →L[𝕜] H) : H →ₗ[𝕜] H) (Iio 0)) : ℤ) =
+      Module.finrank 𝕜 H * if 0 ≤ x then 0 else 1 := by
+    have hx : ((algebraMap ℝ (H →L[𝕜] H) x : H →L[𝕜] H) : H →ₗ[𝕜] H) =
+        (x : 𝕜) • LinearMap.id := by
+      ext v
+      simp [IsScalarTower.algebraMap_apply ℝ 𝕜 (H →L[𝕜] H), RCLike.algebraMap_eq_ofReal]
+    by_cases h : 0 ≤ x
+    · rw [hx, Module.End.pointSpectralSubspace_smul_id_of_notMem (not_lt.2 h : ¬x < 0),
+        finrank_bot]
+      simp [h]
+    · rw [hx, Module.End.pointSpectralSubspace_smul_id_of_mem (mem_Iio.2 (not_le.1 h)),
+        finrank_top]
+      simp [h]
+  rw [spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank
+    (A := fun t ↦ algebraMap ℝ (H →L[𝕜] H) (f t)) hab
+    (continuous_algebraMap_real.comp_continuousOn hf) fun t _ ↦ cfc_predicate_algebraMap (f t),
+    hn, hn]
+  split_ifs <;> ring
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Realization
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.Algebra.Lie.Derivation.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Derivation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Four
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
@@ -91,37 +92,9 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
     rw [ι_ιRangeEquiv_symm_apply]
     rfl
   -- Differentiating the polarized Clifford relation makes `f` skew-adjoint.
-  have hf_skew : f ∈ (QuadraticMap.polarBilin Q).skewAdjointSubmodule := by
-    rw [LinearMap.mem_skewAdjointSubmodule]
-    intro u v
-    have hsum :
-        algebraMap K (CliffordAlgebra Q)
-            (QuadraticMap.polar Q (f u) v + QuadraticMap.polar Q u (f v)) = 0 := by
-      have hxu := TauCeti.derivationLieAlgebra.leibniz
-        (TauCeti.innerDerivation K x) (ι Q u) (ι Q v)
-      have hxv := TauCeti.derivationLieAlgebra.leibniz
-        (TauCeti.innerDerivation K x) (ι Q v) (ι Q u)
-      simp only [TauCeti.coe_innerDerivation, LieAlgebra.ad_apply] at hxu hxv
-      rw [map_add, ← ι_mul_ι_add_swap, ← ι_mul_ι_add_swap]
-      calc
-        ι Q (f u) * ι Q v + ι Q v * ι Q (f u) +
-              (ι Q u * ι Q (f v) + ι Q (f v) * ι Q u) =
-            ⁅x, ι Q u * ι Q v + ι Q v * ι Q u⁆ := by
-              rw [lie_add, hxu, hxv, hf_lie, hf_lie]
-              abel
-        _ = ⁅x, algebraMap K (CliffordAlgebra Q) (QuadraticMap.polar Q u v)⁆ := by
-              rw [ι_mul_ι_add_swap]
-        _ = 0 := by
-              rw [Ring.lie_def, Algebra.commutes]
-              exact sub_self _
-    have hpolar :
-        QuadraticMap.polar Q (f u) v + QuadraticMap.polar Q u (f v) = 0 :=
-      (algebraMap K (CliffordAlgebra Q)).injective (by simpa using hsum)
-    -- Unfold skew-adjointness to its bilinear-form equation.
-    change QuadraticMap.polarBilin Q (f u) v =
-      QuadraticMap.polarBilin Q u ((-f) v)
-    simp only [QuadraticMap.polarBilin_apply_apply, LinearMap.neg_apply, map_neg]
-    exact eq_neg_of_add_eq_zero_left hpolar
+  have hf_skew : f ∈ (QuadraticMap.polarBilin Q).skewAdjointSubmodule :=
+    (LinearMap.mem_skewAdjointSubmodule f).2 (isSkewAdjoint_polarBilin_of_derivation
+      (TauCeti.innerDerivation K x) (by simpa using hf_lie))
   -- Compare with the canonical quadratic element realizing the same endomorphism.
   let fs : skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q) := ⟨f, hf_skew⟩
   let q : CliffordAlgebra Q := soEquivQuadratic Q hQ fs

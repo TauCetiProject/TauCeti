@@ -50,6 +50,7 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
+* `isBigO_fderiv_norm_rpow_cobounded`: that derivative is `O(‖x‖ ^ (p - 1))` at infinity.
 * `gradient_norm_rpow_of_ne`: the corresponding gradient `p ‖x‖ ^ (p - 2) x`.
 * `tendsto_norm_sub_rpow_nhdsNE_atTop`: for `p < 0`, `‖x - c‖ ^ p` tends to infinity at `c`.
 * `hasFDerivAt_norm_rpow_smul_self`: for `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable
@@ -188,6 +189,15 @@ theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
   have hp : p - 2 + 1 = p - 1 := by ring
   rw [fderiv_norm_rpow_of_ne p hx, norm_smul, innerSL_apply_norm, Real.norm_eq_abs, abs_mul,
     abs_of_nonneg (Real.rpow_nonneg hx'.le _), mul_assoc, ← Real.rpow_add_one hx'.ne', hp]
+
+/-- The derivative of `x ↦ ‖x‖ ^ p` is `O(‖x‖ ^ (p - 1))` as `‖x‖ → ∞`. -/
+theorem isBigO_fderiv_norm_rpow_cobounded (p : ℝ) :
+    (fun x : E ↦ fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x) =O[Bornology.cobounded E]
+      fun x ↦ ‖x‖ ^ (p - 1) := by
+  refine Asymptotics.IsBigO.of_bound |p| ?_
+  filter_upwards [eventually_cobounded_le_norm 1] with x hx
+  rw [norm_fderiv_norm_rpow_of_ne _ (norm_pos_iff.1 (zero_lt_one.trans_le hx)),
+    Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)]
 
 /-- The norm of the classical derivative `p ‖x‖ ^ (p - 2) ⟨x, ·⟩` of `x ↦ ‖x‖ ^ p` is at most
 `|p| ‖x‖ ^ (p - 1)`, with equality away from the origin (`norm_fderiv_norm_rpow_of_ne`). -/
