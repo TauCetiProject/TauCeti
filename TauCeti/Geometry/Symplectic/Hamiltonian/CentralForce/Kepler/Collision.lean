@@ -34,8 +34,8 @@ square of `L = q₁p₂ - q₂p₁` (`TauCeti.sq_angularMomentum`).
   bounds the momentum, so the position moves at bounded speed, and over every bounded time
   interval the motion stays in a compact subset of the punctured phase space. By the escape lemma
   for maximal integral curves (`maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo`)
-  the motion is defined for all time. This holds at every energy, including the unbounded
-  parabolic and hyperbolic motions with `H ≥ 0`.
+  the motion is defined for all time (`TauCeti.exists_forall_hasDerivAt_kepler`). This holds at
+  every energy, including the unbounded parabolic and hyperbolic motions with `H ≥ 0`.
 
 Together these identify the **collision domain**: the maximal integral curve of the Kepler
 Hamiltonian vector field on the punctured phase space through a state is defined for all time
@@ -233,6 +233,24 @@ theorem maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ (hm :
   refine ⟨Subtype.val ⁻¹' K, ?_, fun t ht ↦ hmem t ht⟩
   rwa [Subtype.isCompact_iff, image_preimage_eq_of_subset fun y hy ↦
     ⟨⟨y, mem_puncturedPhaseSpace.2 (hK0 y hy)⟩, rfl⟩]
+
+/-- **Nonradial Kepler motions are global.** For `m, κ > 0`, through every state off the collision
+set with nonzero angular momentum, `‖q‖² ‖p‖² - ⟪q, p⟫² ≠ 0`, there is a solution of Hamilton's
+equations for the Kepler energy which is defined for all time and avoids the collision set. -/
+theorem exists_forall_hasDerivAt_kepler (hm : 0 < m) (hκ : 0 < κ) {x : V × V} (hq : x.1 ≠ 0)
+    (hx : ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 ≠ 0) :
+    ∃ η : ℝ → V × V, η 0 = x ∧ ∀ t, (η t).1 ≠ 0 ∧
+      HasDerivAt η ((stdSymplecticForm (V := V)).hamiltonianVectorField
+        (centralForceHamiltonian m (fun r ↦ -κ / r)) (η t)) t := by
+  set x' : puncturedPhaseSpace V := ⟨x, mem_puncturedPhaseSpace.2 hq⟩
+  have huniv := maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ hm hκ x' hx
+  refine ⟨fun t ↦ ((maximalIntegralCurve (SmoothTwoForm.hamiltonianVectorField
+      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
+        (stdSymplecticForm (V := V)).constSmooth)
+      (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x' t :
+        puncturedPhaseSpace V) : V × V), by simp [maximalIntegralCurve_zero, x'], fun t ↦
+    ⟨mem_puncturedPhaseSpace.1 (maximalIntegralCurve _ x' t).property,
+      hasDerivAt_coe_maximalIntegralCurve_kepler x' (huniv ▸ mem_univ t)⟩⟩
 
 /-- **The collision domain of the Kepler problem.** For `m, κ > 0`, the maximal integral curve of
 the Kepler Hamiltonian vector field on the punctured phase space through a state is defined for
