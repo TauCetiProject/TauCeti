@@ -143,4 +143,12 @@ theorem coe_continuousOutEquivUnits_mk (φ : ContinuousAut (Multiplicative ℝ))
   rw [continuousOutEquivUnits, MulEquiv.trans_apply,
     ContinuousOut.mulEquivOfIsMulCommutative_mk, coe_continuousAutEquivUnits_apply]
 
+/-- The inverse of `continuousOutEquivUnits` sends `c` to the class of multiplication by `c`. -/
+@[simp]
+theorem continuousOutEquivUnits_symm_apply (c : ℝˣ) :
+    continuousOutEquivUnits.symm c =
+      (continuousAutOfUnit c : ContinuousOut (Multiplicative ℝ)) := by
+  rw [continuousOutEquivUnits, MulEquiv.symm_trans_apply, continuousAutEquivUnits_symm_apply,
+    ContinuousOut.mulEquivOfIsMulCommutative_symm_apply]
+
 end TauCeti.Real
