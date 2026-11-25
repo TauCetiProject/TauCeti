@@ -110,6 +110,15 @@ theorem SMulMemIff.smul_eq_mk (g : H) (p : S)
     op g • p = ⟨_, hgp⟩ :=
   reductionMulAction_smul_eq_mk _ g p hgp
 
+/-- A map on `S` takes the value `x` at the point `op g • p` of `S` if it does so at the point
+`⟨op g • p, hgp⟩` for every proof `hgp` that it lies in `S`. This turns the equivariance of a
+trivialization in the form of `TauCeti.IsLocallyTrivialReduction` into the form of the action. -/
+theorem SMulMemIff.apply_smul_eq_of_apply_mk_eq {X : Type*} {f : S → X} {g : H} {p : S} {x : X}
+    (h : ∀ hgp : op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) ∈ S,
+      f ⟨_, hgp⟩ = x) :
+    f (op g • p) = x :=
+  (congrArg f (smul_eq_mk g p _)).trans (h ((smul_mem_iff p.property).2 g.property))
+
 /-- The action of `H` on `S` is free. -/
 @[simp↓]
 theorem SMulMemIff.smul_eq_self_iff {g : H} {p : S} : op g • p = p ↔ g = 1 := by
