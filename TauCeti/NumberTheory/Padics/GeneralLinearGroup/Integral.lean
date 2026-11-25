@@ -7,11 +7,25 @@ module
 
 -- `ℤ_[p]`, `ℚ_[p]` and the inclusion `PadicInt.Coe.ringHom` occur in the statements below.
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+-- The reduction `PadicInt.toZModPow` occurs in the statement of
+-- `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`.
+public import Mathlib.NumberTheory.Padics.RingHoms
 -- `Matrix.GeneralLinearGroup.map` and the `GL` notation occur in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+-- The topology of `GL n ℚ_[p]` as the unit group of the matrix ring occurs in the statements of
+-- `TauCeti.GLPadicInt.isOpen` and `TauCeti.GLPadicInt.isCompact`.
+public import Mathlib.Topology.Algebra.Group.Units
+public import Mathlib.Topology.Instances.Matrix
+-- Non-public: the compactness of `ℤ_[p]` is used only in the compactness proof, and the
+-- ultrametric determinant bound only in `TauCeti.GLPadicInt.mem_iff_inv`.
+import Mathlib.NumberTheory.Padics.ProperSpace
+import TauCeti.Analysis.Matrix.Ultra
 -- Non-public: injectivity of `Matrix.GeneralLinearGroup.map` along an injective ring hom, used only
 -- to build `TauCeti.GLPadicInt.mulEquiv`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+-- Non-public: `PadicInt.toZModPow_eq_iff_dvd_sub`, used only in the proof of
+-- `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`.
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The integral subgroup `GLₙ(ℤ_p)` of `GLₙ(ℚ_p)`
@@ -36,6 +50,15 @@ of the entries alone is not enough: `!![p, 0; 0, 1]` has integral entries, but i
 
 * `TauCeti.GLPadicInt.mem_iff`: `g ∈ GLₙ(ℤ_p)` if and only if every entry of `g` has norm at most
   `1` and `‖det g‖ = 1`.
+* `TauCeti.GLPadicInt.mem_iff_inv`: `g ∈ GLₙ(ℤ_p)` if and only if `g` and `g⁻¹` have integral
+  entries.
+* `TauCeti.GLPadicInt.isOpen`, `TauCeti.GLPadicInt.isCompact`: `GLₙ(ℤ_p)` is open and compact.
+* `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`: an invertible matrix over `ℤ_p` that reduces
+  to `1` modulo `p ^ m` is `1 + p ^ m C` for a matrix `C` over `ℤ_p`.
+
+## References
+
+* P. Colmez, *Représentations de `GL₂(ℚ_p)` et `(φ, Γ)`-modules*, Astérisque 330 (2010), §III.1.1.
 -/
 
 public section
@@ -90,6 +113,57 @@ theorem mem_iff {g : GL n ℚ_[p]} :
     ext i j
     simp [A]
 
+/-- **`GLₙ(ℤ_p)` is the stabiliser of the standard lattice**: an element of `GLₙ(ℚ_p)` lies in
+`GLₙ(ℤ_p)` exactly when it and its inverse have integral entries. -/
+theorem mem_iff_inv {g : GL n ℚ_[p]} :
+    g ∈ GLPadicInt n p ↔ (∀ i j, ‖(g : Matrix n n ℚ_[p]) i j‖ ≤ 1) ∧
+      ∀ i j, ‖((g⁻¹ : GL n ℚ_[p]) : Matrix n n ℚ_[p]) i j‖ ≤ 1 := by
+  refine ⟨fun hg ↦ ⟨(mem_iff.mp hg).1, (mem_iff.mp (Subgroup.inv_mem _ hg)).1⟩, ?_⟩
+  rintro ⟨hg, hg'⟩
+  refine mem_iff.mpr ⟨hg, ?_⟩
+  -- `det g * det g⁻¹ = 1` with both factors integral forces `‖det g‖ = 1`.
+  have h1 : ‖(g : Matrix n n ℚ_[p]).det‖ * ‖((g⁻¹ : GL n ℚ_[p]) : Matrix n n ℚ_[p]).det‖ = 1 := by
+    simp [(Matrix.isUnits_det_units g).ne_zero]
+  -- By the ultrametric inequality an integral matrix has integral determinant.
+  have h2 : ‖(g : Matrix n n ℚ_[p]).det‖ ≤ 1 := by
+    simpa using Matrix.norm_det_le_prod_of_norm_le (c := fun _ ↦ 1) hg
+  have h3 : ‖((g⁻¹ : GL n ℚ_[p]) : Matrix n n ℚ_[p]).det‖ ≤ 1 := by
+    simpa using Matrix.norm_det_le_prod_of_norm_le (c := fun _ ↦ 1) hg'
+  nlinarith [norm_nonneg ((g : Matrix n n ℚ_[p]).det),
+    norm_nonneg (((g⁻¹ : GL n ℚ_[p]) : Matrix n n ℚ_[p]).det)]
+
+variable (n p) in
+/-- `GLₙ(ℤ_p)` is open in `GLₙ(ℚ_p)`. -/
+theorem isOpen : IsOpen (GLPadicInt n p : Set (GL n ℚ_[p])) := by
+  have hball : IsOpen (Metric.closedBall (0 : ℚ_[p]) 1) :=
+    IsUltrametricDist.isOpen_closedBall _ one_ne_zero
+  have hset : (GLPadicInt n p : Set (GL n ℚ_[p])) =
+      (⋂ (i : n) (j : n), (fun g : GL n ℚ_[p] ↦
+        (g : Matrix n n ℚ_[p]) i j) ⁻¹' Metric.closedBall 0 1) ∩
+      ⋂ (i : n) (j : n), (fun g : GL n ℚ_[p] ↦
+        ((g⁻¹ : GL n ℚ_[p]) : Matrix n n ℚ_[p]) i j) ⁻¹' Metric.closedBall 0 1 := by
+    ext g
+    simp [mem_iff_inv]
+  rw [hset]
+  refine IsOpen.inter
+    (isOpen_iInter_of_finite (ι := n) fun i ↦ isOpen_iInter_of_finite (ι := n) fun j ↦
+      hball.preimage ?_)
+    (isOpen_iInter_of_finite (ι := n) fun i ↦ isOpen_iInter_of_finite (ι := n) fun j ↦
+      hball.preimage ?_)
+  · exact Units.continuous_val.matrix_elem i j
+  · exact (Units.continuous_val.comp continuous_inv).matrix_elem i j
+
+variable (n p) in
+/-- `GLₙ(ℤ_p)` is compact: it is the continuous image of the compact group `GLₙ(ℤ_p)`. -/
+theorem isCompact : IsCompact (GLPadicInt n p : Set (GL n ℚ_[p])) := by
+  have hcont : Continuous
+      (GeneralLinearGroup.map (n := n) (PadicInt.Coe.ringHom (p := p))) :=
+    Continuous.units_map _ (continuous_id.matrix_map continuous_subtypeVal)
+  -- `Matrix` is a type synonym for a function type, so instance search does not find its
+  -- compactness, which the compactness instance of the unit group `GL n ℤ_[p]` needs.
+  have : CompactSpace (Matrix n n ℤ_[p]) := inferInstanceAs (CompactSpace (n → n → ℤ_[p]))
+  exact isCompact_range hcont
+
 variable (n p) in
 /-- `GLₙ(ℤ_p)` is isomorphic to its image in `GLₙ(ℚ_p)`: the entrywise inclusion `ℤ_p ⊆ ℚ_p` is
 injective. -/
@@ -106,3 +180,28 @@ theorem coe_mulEquiv_apply (γ : GL n ℤ_[p]) :
 end GLPadicInt
 
 end TauCeti
+
+namespace PadicInt
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- An invertible matrix over `ℤ_[p]` that reduces to `1` modulo `p ^ m`, that is, an element of
+the principal congruence subgroup of level `p ^ m`, is `1 + p ^ m C` for a matrix `C` over
+`ℤ_[p]`. -/
+theorem exists_eq_one_add_pow_smul_of_mem_ker {n : Type*} [Fintype n] [DecidableEq n] {m : ℕ}
+    {γ : GL n ℤ_[p]} (hγ : γ ∈ (Matrix.GeneralLinearGroup.map (toZModPow (p := p) m)).ker) :
+    ∃ C : Matrix n n ℤ_[p], (γ : Matrix n n ℤ_[p]) = 1 + (p : ℤ_[p]) ^ m • C := by
+  have hentry (i j : n) :
+      (p : ℤ_[p]) ^ m ∣ (γ : Matrix n n ℤ_[p]) i j - (1 : Matrix n n ℤ_[p]) i j := by
+    have h := congrArg (fun x : GL n (ZMod (p ^ m)) ↦ (x : Matrix n n (ZMod (p ^ m))) i j)
+      (MonoidHom.mem_ker.mp hγ)
+    simp only [Matrix.GeneralLinearGroup.map_apply, Units.val_one] at h
+    refine (toZModPow_eq_iff_dvd_sub m).mp ?_
+    rw [h, Matrix.one_apply, Matrix.one_apply]
+    split_ifs <;> simp
+  choose C hC using hentry
+  refine ⟨Matrix.of C, ?_⟩
+  ext i j
+  rw [Matrix.add_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul, ← hC, add_sub_cancel]
+
+end PadicInt

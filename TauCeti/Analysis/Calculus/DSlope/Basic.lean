@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DSlope
-import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Elementary facts about `dslope`
 
 Elementary divided-slope facts. Away from its base point `dslope` is the plain difference quotient,
-so most of these are statements about a normed field and its norm; only the product rule and the
-germ congruence also involve the value `deriv f a` of `dslope f a` at its base point.
+so most of these are statements about a normed field and its norm. The product rule, germ
+congruence, and coordinate factorization also use the derivative at the base point.
 
 ## Main results
 
@@ -29,8 +29,11 @@ germ congruence also involve the value `deriv f a` of `dslope f a` at its base p
   of the `j`-th iterated divided difference `(swap dslope a)^[j] f` and `q_n` is the `n`-th one.
   For an analytic `f` the `c_j` are its Taylor coefficients at `a` and `q_n` is analytic.
 * `TauCeti.dslope_mul`: the product rule for divided differences.
+* `TauCeti.dslope_neg`: the divided difference of `-f` is the negative of that of `f`.
 * `Filter.EventuallyEq.dslope`: divided differences at `a` of functions with the same germ at `a`
   have the same germ at `a`.
+* `TauCeti.eventuallyEq_dslope_update_of_factorization`: a local coordinate factorization
+  identifies the coordinate divided difference with its factor.
 -/
 
 public section
@@ -93,6 +96,16 @@ theorem dslope_mul {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A
     congr 1
     noncomm_ring
 
+/-- The divided difference of `-f` is the negative of the divided difference of `f`. -/
+@[simp]
+theorem dslope_neg {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (f : 𝕜 → E) (a : 𝕜) : dslope (-f) a = -dslope f a := by
+  ext b
+  rcases eq_or_ne b a with rfl | hb
+  · rw [Pi.neg_apply, dslope_same, dslope_same, deriv.neg]
+  · rw [Pi.neg_apply, dslope_of_ne _ hb, dslope_of_ne _ hb, slope_neg_fun, Pi.neg_apply,
+      Pi.neg_apply]
+
 /-- Divided differences at `a` of functions with the same germ at `a` have the same germ at `a`. -/
 theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : 𝕜 → E} {a : 𝕜} (h : f =ᶠ[nhds a] g) :
@@ -102,5 +115,42 @@ theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedFi
   · rw [dslope_same, dslope_same, h.deriv_eq]
   · rw [dslope_of_ne _ hba, dslope_of_ne _ hba, slope_def_module, slope_def_module, hb,
       h.eq_of_nhds]
+
+/-- A local factorization by a coordinate difference identifies the coordinate divided
+difference with its factor. On the base hyperplane only continuity of the factor's
+one-dimensional slices is needed; the index type can be infinite and the base coordinate
+need not agree with the coordinate of the germ's center. -/
+theorem eventuallyEq_dslope_update_of_factorization {𝕜 ι F : Type*}
+    [NontriviallyNormedField 𝕜] [DecidableEq ι]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f g : (ι → 𝕜) → F} {x : ι → 𝕜} {i : ι} {ζ : 𝕜}
+    (hg : ∀ᶠ z in nhds x, z i = ζ →
+      ContinuousAt (fun w ↦ g (Function.update z i w)) ζ)
+    (hfg : (fun z ↦ f z - f (Function.update z i ζ)) =ᶠ[nhds x]
+      fun z ↦ (z i - ζ) • g z) :
+    (fun z ↦ dslope (fun w ↦ f (Function.update z i w)) ζ (z i)) =ᶠ[nhds x] g := by
+  filter_upwards [hfg.eventually_nhds, hg] with z hz hgz
+  by_cases hzi : z i = ζ
+  · have huz : Function.update z i ζ = z := by rw [← hzi, Function.update_eq_self]
+    have hu : ContinuousAt (Function.update z i) ζ :=
+      continuousAt_const.update i continuousAt_id
+    have heq := hu.tendsto.eventually (huz ▸ hz)
+    have heq' : (fun w ↦ f (Function.update z i w) - f z) =ᶠ[nhds ζ]
+        (fun w ↦ (w - ζ) • g (Function.update z i w)) := by
+      filter_upwards [heq] with w hw
+      simpa only [Function.update_self, Function.update_idem, huz] using hw
+    have hd : HasDerivAt (fun w ↦ (w - ζ) • g (Function.update z i w))
+        (g z) ζ := by
+      simpa only [id_eq, one_smul, huz] using
+        ((hasDerivAt_id ζ).sub_const ζ).smul_of_eq_zero (hgz hzi) (sub_self ζ)
+    have hd' : HasDerivAt (fun w ↦ f (Function.update z i w)) (g z) ζ :=
+      (hasDerivAt_sub_const_iff (f z)).mp (hd.congr_of_eventuallyEq heq')
+    simpa only [hzi, dslope_same] using hd'.deriv
+  · have hmul : (z i - ζ) •
+        dslope (fun w ↦ f (Function.update z i w)) ζ (z i) =
+          (z i - ζ) • g z := by
+      rw [sub_smul_dslope, Function.update_eq_self]
+      exact mem_of_mem_nhds hz
+    exact smul_right_injective _ (sub_ne_zero.mpr hzi) hmul
 
 end TauCeti
