@@ -83,7 +83,8 @@ fixed and represent their own classes.
   Mathematics 166 (2007), Appendix A, the representing chain systems of compactified trajectory
   spaces.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
-  coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Chapter 5.
+  coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Chapter 5, the twisting
+  cocycle, and Chapter 6, the continuation morphisms between twisting cocycles.
 -/
 
 public section
@@ -477,7 +478,7 @@ twisting chain systems representing classes `μ x y` of `H_{ind x - ind y - 1}(M
 Then some continuation chain system from `S` to `S'` represents the classes `ν`. For the
 fundamental classes rel boundary of compactified spaces of continuation trajectories, the last
 condition compares the boundary orientation of each face with its product orientation; no
-condition is imposed at the corners. -/
+condition is imposed at the corners (BDHO, Chapter 6, the continuation morphisms). -/
 theorem ContinuationChainSystem.exists_isRepresenting_of_faces (hS : S.IsRepresenting A μ)
     (hS' : S'.IsRepresenting A' μ')
     {E : P → Q → Type u} [∀ x y, NormedAddCommGroup (E x y)] [∀ x y, NormedSpace ℝ (E x y)]

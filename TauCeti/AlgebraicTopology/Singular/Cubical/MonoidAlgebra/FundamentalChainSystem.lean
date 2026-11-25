@@ -66,7 +66,8 @@ orientation of each face with its product orientation, which is not done here.
   Mathematics 166 (2007), Lemma 2.2 and Appendix A, the representing chain systems of
   compactified trajectory spaces over `ℤ/2`.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
-  coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Proposition 5.2.6.
+  coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Proposition 5.2.6, and Chapter 6,
+  the fundamental chains of the spaces of continuation trajectories.
 * A. Hatcher, *Algebraic Topology*, Section 3.3, the mod `2` fundamental class.
 -/
 
@@ -233,7 +234,7 @@ twisting chain systems representing classes `μ x y ∈ H(M x y, ∂ M x y; k)` 
 Then some continuation chain system from `S` to `S'` represents the classes `ν`. For the
 compactified spaces of continuation trajectories of a homotopy between two Morse functions, this
 is the existence over `ℤ/2` of the fundamental chains whose push-forwards form the continuation
-cocycle between the Barraud–Cornea cocycles of the two functions. -/
+cocycle between the Barraud–Cornea cocycles of the two functions (BDHO, Chapter 6). -/
 theorem ContinuationChainSystem.exists_isRepresenting_of_subsingleton_units [Subsingleton kˣ]
     [∀ x y, T1Space (M x y)] [∀ x y, T1Space (M' x y)] [∀ x y, T2Space (N x y)]
     [∀ x y, CompactSpace (N x y)]
