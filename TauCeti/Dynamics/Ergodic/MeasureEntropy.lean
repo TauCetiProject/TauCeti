@@ -28,14 +28,15 @@ of the partitions `T^[-k] a`, `k < n`. At `n = 0` it is the unique empty tuple.
 * `TauCeti.measurable_iteratedPartitionLabel`: itineraries of a measurable label under a
   measurable map are measurable.
 * `TauCeti.measureEntropy_id`: the identity has entropy zero; its itineraries repeat one label.
-* `TauCeti.measureEntropy_of_forall`: if every measurable label has entropy zero, for instance
-  under a Dirac probability (`TauCeti.countablePartitionEntropy_dirac`) or the zero measure,
-  then every map has entropy zero.
+* `TauCeti.measureEntropy_eq_zero_of_forall`: if every measurable label has entropy zero, for
+  instance under a Dirac probability (`TauCeti.countablePartitionEntropy_dirac`) or the zero
+  measure, then every map has entropy zero.
 
 ## References
 
-* The definitions follow the roadmap GeometryOfNumbersAndQuadraticArithmetic, §4.2, Entropy and
-  Haar measure on leaves.
+* G. A. Margulis and G. M. Tomanov, Invariant measures for actions of unipotent groups over local
+  fields on homogeneous spaces, Invent. Math. 116 (1994), 347–392, §9.3, pp. 381–383,
+  doi:10.1007/BF01231565.
 -/
 
 public section
@@ -52,9 +53,20 @@ It labels the join of the partitions given by `a ∘ T^[k]` for `k < n`. -/
 def iteratedPartitionLabel (T : X → X) (a : X → ι) (n : ℕ) : X → (Fin n → ι) :=
   fun x k ↦ a (T^[k] x)
 
+@[simp]
 theorem iteratedPartitionLabel_apply (T : X → X) (a : X → ι) (n : ℕ) (x : X) (k : Fin n) :
     iteratedPartitionLabel T a n x k = a (T^[k] x) :=
   (rfl)
+
+/-- The length-one itinerary is the label itself, viewed as a constant tuple. -/
+theorem iteratedPartitionLabel_one (T : X → X) (a : X → ι) :
+    iteratedPartitionLabel T a 1 = Function.const (Fin 1) ∘ a :=
+  funext fun x ↦ funext fun k ↦ by simp [Fin.fin_one_eq_zero k]
+
+/-- Under the identity every itinerary repeats the label. -/
+theorem iteratedPartitionLabel_id (a : X → ι) (n : ℕ) :
+    iteratedPartitionLabel id a n = Function.const (Fin n) ∘ a :=
+  funext fun x ↦ funext fun k ↦ by simp
 
 /-- Itineraries of a measurable label under a measurable map are measurable. -/
 theorem measurable_iteratedPartitionLabel [MeasurableSpace ι] {T : X → X} (hT : Measurable T)
@@ -71,6 +83,25 @@ theorem partitionEntropyRate_def (μ : Measure X) (T : X → X) (a : X → ι) :
       ⨅ n : ℕ, countablePartitionEntropy μ (iteratedPartitionLabel T a (n + 1)) / (n + 1) :=
   (rfl)
 
+/-- The entropy rate is at most the entropy of every positive-length itinerary divided by its
+length. -/
+theorem partitionEntropyRate_le_div {n : ℕ} (hn : 0 < n) (μ : Measure X) (T : X → X)
+    (a : X → ι) :
+    partitionEntropyRate μ T a ≤
+      countablePartitionEntropy μ (iteratedPartitionLabel T a n) / n := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hn
+  rw [zero_add, Nat.cast_succ]
+  exact iInf_le _ m
+
+/-- A lower bound for the entropy rate is a lower bound for every normalised itinerary entropy of
+positive length. -/
+theorem le_partitionEntropyRate_iff {T : X → X} {a : X → ι} {c : ℝ≥0∞} :
+    c ≤ partitionEntropyRate μ T a ↔
+      ∀ n, 0 < n → c ≤ countablePartitionEntropy μ (iteratedPartitionLabel T a n) / n := by
+  refine ⟨fun h n hn ↦ h.trans (partitionEntropyRate_le_div hn μ T a), fun h ↦ le_iInf fun n ↦ ?_⟩
+  have := h (n + 1) n.succ_pos
+  rwa [Nat.cast_succ] at this
+
 /-- The Kolmogorov–Sinai entropy of `T` with respect to `μ`: the supremum of the entropy rates of
 the measurable labels `a : X → ℕ` of finite entropy. -/
 noncomputable def measureEntropy (μ : Measure X) (T : X → X) : ℝ≥0∞ :=
@@ -82,6 +113,13 @@ theorem measureEntropy_def (μ : Measure X) (T : X → X) :
       (_ : countablePartitionEntropy μ a ≠ ∞), partitionEntropyRate μ T a :=
   (rfl)
 
+/-- An upper bound for the measure entropy is an upper bound for the rate of every measurable
+label into `ℕ` of finite entropy. -/
+theorem measureEntropy_le_iff {T : X → X} {c : ℝ≥0∞} :
+    measureEntropy μ T ≤ c ↔ ∀ a : X → ℕ, Measurable a → countablePartitionEntropy μ a ≠ ∞ →
+      partitionEntropyRate μ T a ≤ c := by
+  simp only [measureEntropy_def, iSup_le_iff]
+
 /-- The rate of a measurable label of finite entropy is at most the measure entropy. -/
 theorem partitionEntropyRate_le_measureEntropy {T : X → X} {a : X → ℕ} (ha : Measurable a)
     (hfin : countablePartitionEntropy μ a ≠ ∞) :
@@ -91,11 +129,9 @@ theorem partitionEntropyRate_le_measureEntropy {T : X → X} {a : X → ℕ} (ha
 /-- The entropy rate is at most the entropy of the label itself. -/
 theorem partitionEntropyRate_le (μ : Measure X) (T : X → X) (a : X → ι) :
     partitionEntropyRate μ T a ≤ countablePartitionEntropy μ a := by
-  refine iInf_le_of_le 0 ?_
-  simp only [Nat.cast_zero, zero_add, div_one]
-  rw [show iteratedPartitionLabel T a 1 = Function.const (Fin 1) ∘ a from
-    funext fun x ↦ funext fun k ↦ by simp [iteratedPartitionLabel, Fin.fin_one_eq_zero k]]
-  exact (countablePartitionEntropy_comp_of_injective a Function.const_injective).le
+  refine (partitionEntropyRate_le_div one_pos μ T a).trans_eq ?_
+  rw [Nat.cast_one, div_one, iteratedPartitionLabel_one,
+    countablePartitionEntropy_comp_of_injective a Function.const_injective]
 
 /-- Under the identity the length-`(n + 1)` itinerary is the label repeated `n + 1` times, and so
 has the same entropy as the label. -/
@@ -103,8 +139,7 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_id (μ : Measure X) (a 
     (n : ℕ) :
     countablePartitionEntropy μ (iteratedPartitionLabel id a (n + 1)) =
       countablePartitionEntropy μ a := by
-  rw [show iteratedPartitionLabel id a (n + 1) = Function.const (Fin (n + 1)) ∘ a from
-    funext fun x ↦ funext fun k ↦ by simp [iteratedPartitionLabel]]
+  rw [iteratedPartitionLabel_id]
   exact countablePartitionEntropy_comp_of_injective a Function.const_injective
 
 /-- A label of finite entropy has rate zero under the identity. -/
@@ -122,40 +157,25 @@ theorem partitionEntropyRate_id {a : X → ι} (hfin : countablePartitionEntropy
 
 /-- The identity has Kolmogorov–Sinai entropy zero. -/
 @[simp]
-theorem measureEntropy_id : measureEntropy μ id = 0 := by
-  simp only [measureEntropy_def]
-  exact ENNReal.iSup_eq_zero.mpr fun a ↦ ENNReal.iSup_eq_zero.mpr fun _ ↦
-    ENNReal.iSup_eq_zero.mpr fun hfin ↦ partitionEntropyRate_id hfin
+theorem measureEntropy_id : measureEntropy μ id = 0 :=
+  nonpos_iff_eq_zero.mp <|
+    measureEntropy_le_iff.mpr fun _ _ hfin ↦ (partitionEntropyRate_id hfin).le
 
 /-- If every measurable label into `ℕ` has entropy zero, every map has entropy zero. -/
-theorem measureEntropy_of_forall
+theorem measureEntropy_eq_zero_of_forall
     (h : ∀ a : X → ℕ, Measurable a → countablePartitionEntropy μ a = 0) (T : X → X) :
-    measureEntropy μ T = 0 := by
-  simp only [measureEntropy_def]
-  exact ENNReal.iSup_eq_zero.mpr fun a ↦ ENNReal.iSup_eq_zero.mpr fun ha ↦
-    ENNReal.iSup_eq_zero.mpr fun _ ↦ le_antisymm ((partitionEntropyRate_le μ T a).trans
-      (h a ha).le) bot_le
-
-/-- Under a Dirac probability every atom has mass `0` or `1`, so every partition has entropy
-zero. -/
-@[simp]
-theorem countablePartitionEntropy_dirac [MeasurableSpace ι] [MeasurableSingletonClass ι]
-    {a : X → ι} (ha : Measurable a) (x : X) :
-    countablePartitionEntropy (Measure.dirac x) a = 0 := by
-  classical
-  rw [countablePartitionEntropy_def]
-  refine tsum_eq_zero_iff.mpr fun i ↦ ?_
-  rw [measureReal_def, Measure.dirac_apply' _ (ha (measurableSet_singleton i))]
-  by_cases h : x ∈ a ⁻¹' {i} <;> simp [h]
+    measureEntropy μ T = 0 :=
+  nonpos_iff_eq_zero.mp (measureEntropy_le_iff.mpr fun a ha _ ↦
+    (partitionEntropyRate_le μ T a).trans (h a ha).le)
 
 /-- The Kolmogorov–Sinai entropy of any map with respect to a Dirac probability is zero. -/
 @[simp]
 theorem measureEntropy_dirac (x : X) (T : X → X) : measureEntropy (Measure.dirac x) T = 0 :=
-  measureEntropy_of_forall (fun _ ha ↦ countablePartitionEntropy_dirac ha x) T
+  measureEntropy_eq_zero_of_forall (fun a _ ↦ countablePartitionEntropy_dirac a x) T
 
 /-- The Kolmogorov–Sinai entropy of any map with respect to the zero measure is zero. -/
 @[simp]
 theorem measureEntropy_zero_measure (T : X → X) : measureEntropy (0 : Measure X) T = 0 :=
-  measureEntropy_of_forall (fun a _ ↦ countablePartitionEntropy_zero_measure a) T
+  measureEntropy_eq_zero_of_forall (fun a _ ↦ countablePartitionEntropy_zero_measure a) T
 
 end TauCeti

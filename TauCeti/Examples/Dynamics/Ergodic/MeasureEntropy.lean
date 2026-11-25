@@ -108,12 +108,12 @@ example : countablePartitionEntropy (0 : Measure Bool) id = 0 :=
 /-- Iterating a binary label under the identity repeats it. -/
 example (x : Bool) : iteratedPartitionLabel id id 3 x = ![x, x, x] := by
   ext k
-  fin_cases k <;> simp [iteratedPartitionLabel_apply]
+  fin_cases k <;> simp
 
 /-- Iterating the two-point flip from `false` gives `(false, true, false)`. -/
 example : iteratedPartitionLabel not id 3 false = ![false, true, false] := by
   ext k
-  fin_cases k <;> simp [iteratedPartitionLabel_apply]
+  fin_cases k <;> simp
 
 /-- The length-zero itinerary is the empty function. -/
 example (T : Bool → Bool) (x : Bool) : iteratedPartitionLabel T id 0 x = Fin.elim0 :=
