@@ -14,6 +14,11 @@ import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 /-!
 # Basic properties of sub-Gaussian moment-generating functions
 
+A sub-Gaussian moment-generating function bound forces the total mass to be at most `1`, so the
+measure is finite; the zero random variable satisfies the bound exactly when the total mass is at
+most `1`, and a random variable has variance proxy `0` exactly when, in addition, it vanishes
+almost everywhere.
+
 Under a zero or probability measure, the quadratic MGF bound forces a sub-Gaussian random
 variable to have mean zero and bounds its second moment by the variance proxy. The bound is
 monotone in the proxy and, under any measure, bounds the first absolute moment by `√(2c)`. By
@@ -34,6 +39,23 @@ namespace ProbabilityTheory.HasSubgaussianMGF
 theorem mono {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ} {c₁ c₂ : ℝ≥0}
     (h : HasSubgaussianMGF X c₁ μ) (hle : c₁ ≤ c₂) : HasSubgaussianMGF X c₂ μ :=
   ⟨h.integrable_exp_mul, fun t ↦ (h.mgf_le t).trans <| by gcongr⟩
+
+/-- A sub-Gaussian moment-generating function bound forces the total mass to be at most `1`. -/
+theorem measure_univ_le_one {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
+    {c : ℝ≥0} (h : HasSubgaussianMGF X c μ) : μ Set.univ ≤ 1 := by
+  simpa using (HasSubgaussianMGF_iff_kernel.1 h).measure_univ_le_one
+
+/-- A measure carrying a random variable with a sub-Gaussian moment-generating function bound is
+finite. -/
+theorem isFiniteMeasure {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
+    {c : ℝ≥0} (h : HasSubgaussianMGF X c μ) : IsFiniteMeasure μ :=
+  ⟨h.measure_univ_le_one.trans_lt ENNReal.one_lt_top⟩
+
+/-- A sub-Gaussian moment-generating function bound forces the real-valued total mass to be at
+most `1`: it is the moment-generating function at `0`. -/
+theorem measureReal_univ_le_one {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
+    {c : ℝ≥0} (h : HasSubgaussianMGF X c μ) : μ.real Set.univ ≤ 1 := by
+  simpa using h.mgf_le 0
 
 /-- Under a zero or probability measure, a sub-Gaussian MGF bound forces the expectation to
 vanish. -/
@@ -179,3 +201,28 @@ theorem of_forall_exists_abs_sub_le {Ω : Type*} [MeasurableSpace Ω] {μ : Meas
   exact hω n
 
 end ProbabilityTheory.HasSubgaussianMGF
+
+namespace ProbabilityTheory
+
+/-- The zero random variable has a sub-Gaussian moment-generating function bound, with any
+variance proxy, exactly when the total mass is at most `1`. -/
+@[simp]
+theorem hasSubgaussianMGF_fun_zero_iff {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {c : ℝ≥0} : HasSubgaussianMGF (fun _ : Ω ↦ (0 : ℝ)) c μ ↔ μ Set.univ ≤ 1 := by
+  refine ⟨HasSubgaussianMGF.measure_univ_le_one, fun hμ ↦ ?_⟩
+  have : IsFiniteMeasure μ := ⟨hμ.trans_lt ENNReal.one_lt_top⟩
+  refine ⟨fun t ↦ by simp, fun t ↦ ?_⟩
+  have hreal : μ.real Set.univ ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa)
+  calc mgf (fun _ ↦ (0 : ℝ)) μ t = μ.real Set.univ := mgf_zero_fun
+    _ ≤ 1 := hreal
+    _ ≤ exp ((c : ℝ) * t ^ 2 / 2) := Real.one_le_exp (by positivity)
+
+/-- A random variable has a sub-Gaussian moment-generating function bound with variance proxy `0`
+exactly when it vanishes almost everywhere and the total mass is at most `1`. -/
+@[simp]
+theorem hasSubgaussianMGF_zero_proxy_iff {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {X : Ω → ℝ} : HasSubgaussianMGF X 0 μ ↔ (∀ᵐ ω ∂μ, X ω = 0) ∧ μ Set.univ ≤ 1 :=
+  ⟨fun h ↦ ⟨h.ae_eq_zero_of_hasSubgaussianMGF_zero, h.measure_univ_le_one⟩,
+    fun ⟨hX, hμ⟩ ↦ (hasSubgaussianMGF_fun_zero_iff.2 hμ).congr (hX.mono fun _ h ↦ h.symm)⟩
+
+end ProbabilityTheory

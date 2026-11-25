@@ -52,8 +52,7 @@ inequalities.
 Without a Thom class the untwisted statement can fail: over a field of characteristic other than
 `2`, the contribution of a piece whose negative normal bundle is not orientable is its homology
 twisted by the orientation local system of that bundle, not its ordinary homology. Those
-inequalities, over fields in which `2` is invertible, are in
-`TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities`.
+inequalities, over every field, are in `TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities`.
 
 The proof follows Bott. Cut the values of `f` at regular values `s 0 < ⋯ < s (N + 1)` so that each
 band `f⁻¹[s j, s (j + 1)]` contains at most one critical value. The Morse–Bott inequalities are then

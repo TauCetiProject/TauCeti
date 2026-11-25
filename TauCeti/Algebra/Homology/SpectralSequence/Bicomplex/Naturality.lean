@@ -27,6 +27,14 @@ identified by `HomologicalComplex₂.columnFiltrationAbutmentIso`, it is again t
 the homology of the original total complexes
 (`HomologicalComplex₂.columnFiltrationSpectralObjectMap_abutment_naturality`).
 
+On the first page, identified with the homology of the rows, the morphism of spectral sequences is
+the map induced in homology by the morphisms of rows
+(`HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso_hom_naturality`). This comes from
+the naturality of the identification of the graded pieces of the row filtration with the rows
+(`HomologicalComplex₂.rowFiltrationGradedIso_hom_naturality`). For the column filtrations, it is
+the map induced in homology by the components `φ.f p` on the columns
+(`HomologicalComplex₂.columnFiltrationSpectralSequenceFirstPageXIso_hom_naturality`).
+
 ## Main definitions and results
 
 * `HomologicalComplex₂.rowFiltrationFunctorMap`,
@@ -34,10 +42,15 @@ the homology of the original total complexes
   `HomologicalComplex₂.rowFiltrationSpectralSequenceMap`: the induced morphisms, compatible
   with identities and composition, and their column versions
   `HomologicalComplex₂.columnFiltrationSpectralObjectMap`,
-  `HomologicalComplex₂.columnFiltrationSpectralSequenceMap`.
+  `HomologicalComplex₂.columnFiltrationSpectralSequenceMap`, the latter described by
+  `HomologicalComplex₂.columnFiltrationSpectralSequenceMap_eq`.
 * `HomologicalComplex₂.rowFiltrationSpectralObjectMap_abutment_naturality`,
   `HomologicalComplex₂.columnFiltrationSpectralObjectMap_abutment_naturality`: the induced
   morphisms on the abutments.
+* `HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIsoTotalRow_hom_naturality`,
+  `HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso_hom_naturality`,
+  `HomologicalComplex₂.columnFiltrationSpectralSequenceFirstPageXIso_hom_naturality`: the induced
+  morphisms on the first pages.
 -/
 
 public section
@@ -148,6 +161,14 @@ abbrev columnFiltrationSpectralSequenceMap :
     K.columnFiltrationSpectralSequence ⟶ L.columnFiltrationSpectralSequence :=
   rowFiltrationSpectralSequenceMap ((flipFunctor C _ _).map φ)
 
+/-- The morphism of the spectral sequences of the column filtrations is that of the row
+filtrations along the morphism `K.flip ⟶ L.flip` of flipped bicomplexes induced by `φ`. -/
+lemma columnFiltrationSpectralSequenceMap_eq :
+    columnFiltrationSpectralSequenceMap φ =
+      rowFiltrationSpectralSequenceMap (K := K.flip) (L := L.flip) ((flipFunctor C _ _).map φ) :=
+  -- `(flipFunctor C _ _).obj K` is `K.flip` by definition
+  (rfl)
+
 -- The identity of `(flipFunctor C _ _).obj K` is that of `K.flip` only after unfolding
 -- `flipFunctor`, so the lemmas on the flipped bicomplexes are applied up to that unfolding.
 @[simp]
@@ -210,5 +231,85 @@ lemma columnFiltrationSpectralObjectMap_abutment_naturality (n : ℕ) :
   rw [total_map_flip_totalFlipIso_hom φ (down ℕ)]
   -- `(flipFunctor C _ _).obj K` is `K.flip` by definition
   rfl
+
+/-! ### The first page -/
+
+/-- The identification `HomologicalComplex₂.rowFiltrationGradedIso` of the graded pieces of the row
+filtration with the rows is natural: the morphism of graded pieces induced by
+`HomologicalComplex₂.rowFiltrationFunctorMap φ` is the morphism of rows `mapTotalRow s φ`. -/
+@[reassoc]
+lemma rowFiltrationGradedIso_hom_naturality (s : ℕ) :
+    cokernel.map
+        ((CochainComplex.filtrationFunctor K.rowFiltration K.monotone_rowFiltration).map
+          (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : (s : ℤ) = s) rfl)))
+        ((CochainComplex.filtrationFunctor L.rowFiltration L.monotone_rowFiltration).map
+          (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : (s : ℤ) = s) rfl)))
+        ((rowFiltrationFunctorMap φ).app _) ((rowFiltrationFunctorMap φ).app _)
+        ((rowFiltrationFunctorMap φ).naturality _).symm ≫ (L.rowFiltrationGradedIso s).hom =
+      (K.rowFiltrationGradedIso s).hom ≫
+        HomologicalComplex.extendMap (mapTotalRow s φ) embeddingDownNat := by
+  have : Mono (HomologicalComplex.extendMap (L.totalRowι s) embeddingDownNat) :=
+    ((L.totalRowShortComplex_shortExact s).extend embeddingDownNat).mono_f
+  rw [← cancel_epi (cokernel.π _),
+    ← cancel_mono (HomologicalComplex.extendMap (L.totalRowι s) embeddingDownNat)]
+  simp only [Category.assoc, cokernel.π_desc_assoc, π_rowFiltrationGradedIso_hom_totalRowι,
+    rowFiltrationFunctorMap_app_comp_assoc]
+  rw [← HomologicalComplex.extendMap_comp (mapTotalRow s φ), ← totalRowι_naturality,
+    HomologicalComplex.extendMap_comp, π_rowFiltrationGradedIso_hom_totalRowι_assoc,
+    ← HomologicalComplex.extendMap_comp, ← HomologicalComplex.extendMap_comp,
+    toTotalRowsGE_naturality]
+
+/-- **The morphism of spectral sequences of the row filtrations on the first page**, through the
+identifications `HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIsoTotalRow`: it is the
+map induced in homology by the morphism of rows `HomologicalComplex₂.mapTotalRow s φ`. -/
+@[reassoc]
+lemma rowFiltrationSpectralSequenceFirstPageXIsoTotalRow_hom_naturality (p : ℤ) (s : ℕ) :
+    ((rowFiltrationSpectralSequenceMap φ).hom 2).f (p, s) ≫
+        (L.rowFiltrationSpectralSequenceFirstPageXIsoTotalRow p s).hom =
+      (K.rowFiltrationSpectralSequenceFirstPageXIsoTotalRow p s).hom ≫
+        HomologicalComplex.homologyMap
+          (HomologicalComplex.extendMap (mapTotalRow s φ) embeddingDownNat) (p + s) := by
+  rw [rowFiltrationSpectralSequenceFirstPageXIsoTotalRow_eq,
+    rowFiltrationSpectralSequenceFirstPageXIsoTotalRow_eq, Iso.trans_hom, Iso.trans_hom,
+    CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality_assoc,
+    HomologicalComplex.homologyMapIso_hom, HomologicalComplex.homologyMapIso_hom,
+    ← HomologicalComplex.homologyMap_comp, rowFiltrationGradedIso_hom_naturality,
+    HomologicalComplex.homologyMap_comp, Category.assoc]
+
+/-- **The morphism of spectral sequences of the row filtrations on the first page**: through the
+identifications `HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso` of the first pages
+with the homology of the rows, it is the map induced in homology by the morphism of rows `s`. -/
+@[reassoc]
+lemma rowFiltrationSpectralSequenceFirstPageXIso_hom_naturality (p : ℤ) (s k : ℕ)
+    (hp : p + 2 * s + k = 0) :
+    ((rowFiltrationSpectralSequenceMap φ).hom 2).f (p, s) ≫
+        (L.rowFiltrationSpectralSequenceFirstPageXIso p s k hp).hom =
+      (K.rowFiltrationSpectralSequenceFirstPageXIso p s k hp).hom ≫
+        HomologicalComplex.homologyMap
+          (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).map φ) k := by
+  simp only [rowFiltrationSpectralSequenceFirstPageXIso_eq, Iso.trans_hom,
+    rowFiltrationSpectralSequenceFirstPageXIsoTotalRow_hom_naturality_assoc,
+    HomologicalComplex.extendHomologyIso_hom_naturality_assoc,
+    totalRowHomologyIso_hom_naturality, Category.assoc]
+
+/-- **The morphism of spectral sequences of the column filtrations on the first page**: through
+the identifications `HomologicalComplex₂.columnFiltrationSpectralSequenceFirstPageXIso` of the
+first pages with the homology of the columns, it is the map induced in homology by the component
+`φ.f p` of `φ` on the columns `p`. -/
+@[reassoc]
+lemma columnFiltrationSpectralSequenceFirstPageXIso_hom_naturality (p k : ℕ) :
+    ((columnFiltrationSpectralSequenceMap φ).hom 2).f (-(k : ℤ) - 2 * p, p) ≫
+        (L.columnFiltrationSpectralSequenceFirstPageXIso p k).hom =
+      (K.columnFiltrationSpectralSequenceFirstPageXIso p k).hom ≫
+        HomologicalComplex.homologyMap (φ.f p) k := by
+  rw [columnFiltrationSpectralSequenceFirstPageXIso_eq,
+    columnFiltrationSpectralSequenceFirstPageXIso_eq, Iso.trans_hom, Iso.trans_hom,
+    HomologicalComplex.homologyMapIso_hom, HomologicalComplex.homologyMapIso_hom,
+    columnFiltrationSpectralSequenceMap_eq,
+    rowFiltrationSpectralSequenceFirstPageXIso_hom_naturality_assoc, Category.assoc,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
+  congr 2
+  ext q
+  simp
 
 end HomologicalComplex₂

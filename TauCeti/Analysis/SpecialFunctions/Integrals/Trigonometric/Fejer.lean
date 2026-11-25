@@ -18,11 +18,13 @@ For `T > 0`, the decreasing triangular weight `1 - t / T` on `[0, T]` has cosine
 normalization, this is the Fejér kernel of the real line. Stated with the oriented interval
 integral `∫ t in 0..T`, the identity holds for all real `T` and `y`. For `T > 0` the kernel is
 nonnegative, being `T / 2` times a square, and at most `T / 2` since `|sinc| ≤ 1`. It is at
-least `T / 4` while `|y| ≤ T⁻¹` (`TauCeti.div_four_le_mul_sinc_sq`). Integrated against a finite
-measure, the kernel centred at `v` becomes the integral over `[0, T]`, weighted by `1 - t / T`, of
-the real part of the characteristic function rotated by the phase `-t * v`. Since the kernel is at
-least `T / 4` on the ball of radius `T⁻¹` about `v`, the mass of that ball is then at most `4 / T`
-times the integral of the modulus of the characteristic function over `[0, T]`.
+least `T / 2 * (23 / 24) ^ 2` while `|y| ≤ T⁻¹`, since then `sinc (T * y / 2) ≥ 23 / 24`
+(`TauCeti.le_sinc_of_abs_le_half`). Integrated against a finite measure, the kernel centred at
+`v` becomes the integral over `[0, T]`, weighted by `1 - t / T`, of the real part of the
+characteristic function rotated by the phase `-t * v`. Since the kernel is at least
+`T / 2 * (23 / 24) ^ 2` on the ball of radius `T⁻¹` about `v`, the mass of that ball is then at
+most `2 * (24 / 23) ^ 2 / T` times the integral of the modulus of the characteristic function over
+`[0, T]`.
 -/
 
 public section

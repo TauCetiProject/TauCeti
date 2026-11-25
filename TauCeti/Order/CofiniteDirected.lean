@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.Order.Cofinal
 
@@ -29,11 +30,14 @@ inclusion, and mapped to a chosen greatest element.
 * `TauCeti.FinsetWithGreatest.greatest_monotone` and
   `TauCeti.FinsetWithGreatest.isCofinal_range_greatest`: the chosen greatest element is a
   monotone map with cofinal range.
-* `TauCeti.FinsetWithGreatest.finite_Iic`: the order is cofinite.
+* `TauCeti.FinsetWithGreatest.finite_Iic`: the order is cofinite, and so a locally finite
+  order with respect to lower intervals (`LocallyFiniteOrderBot`).
 
 ## References
 
 * M. Artin and B. Mazur, *Étale homotopy*, Lecture Notes in Math. 100, Appendix, §2.
+* D. A. Edwards and H. M. Hastings, *Čech and Steenrod homotopy theories with applications to
+  geometric topology*, Lecture Notes in Mathematics 542, §2.1.
 * S. Mardešić and J. Segal, *Shape theory*, Chapter I, §1.2, Theorem 2.
 * D. Isaksen, *A model structure on the category of pro-simplicial sets*, Trans. Amer. Math.
   Soc. 353 (2001), §2.
@@ -96,6 +100,12 @@ theorem finite_Iic (s : FinsetWithGreatest α) : (Set.Iic s).Finite :=
   (s.toFinset.powerset.finite_toSet.preimage toFinset_injective.injOn).subset
     fun _ ht ↦ Finset.mem_coe.2 (Finset.mem_powerset.2 ht)
 
+/-- Every element has finitely many elements below it (`finite_Iic`), so finite subsets with a
+greatest element form a locally finite order with respect to lower intervals. -/
+noncomputable instance : LocallyFiniteOrderBot (FinsetWithGreatest α) := by
+  classical
+  exact LocallyFiniteOrderBot.ofIic _ (fun s ↦ (finite_Iic s).toFinset) fun _ _ ↦ by simp
+
 end FinsetWithGreatest
 
 end LE
@@ -103,6 +113,11 @@ end LE
 namespace FinsetWithGreatest
 
 variable {α} [Preorder α]
+
+/-- In a partial order the chosen greatest element is the unique one. -/
+theorem greatest_eq {α : Type*} [PartialOrder α] {s : FinsetWithGreatest α} {a : α}
+    (h : IsGreatest (s.toFinset : Set α) a) : s.greatest = a :=
+  s.isGreatest_greatest.unique h
 
 /-- Enlarging a finite subset can only increase its chosen greatest element. -/
 theorem greatest_monotone : Monotone (greatest : FinsetWithGreatest α → α) :=
