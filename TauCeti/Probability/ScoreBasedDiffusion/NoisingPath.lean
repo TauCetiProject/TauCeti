@@ -22,8 +22,8 @@ with `c₁ ≠ 0` and `(c₂ / c₁) ^ 2 * s₁ ^ 2 ≤ s₂ ^ 2`, the Gaussian 
 first level to the one at the second, and so carries the law at the first level to the law at
 the second for every data law. These transition kernels satisfy the Chapman–Kolmogorov
 equation. The condition on the two levels says that the noise-to-signal ratio `|s / c|` does not
-decrease, so a path along which `|s / c|` is nondecreasing has a transition kernel between any two
-of its times.
+decrease, so a path along which `c` does not vanish and `|s / c|` is nondecreasing has a transition
+kernel from any time to any later time.
 
 The main example is the variance-preserving path of a noise schedule `β`, with signal
 level `vpSignal β t = exp (-(∫₀ᵗ β) / 2)` and noise level `vpNoise β t = √(1 - (vpSignal β t) ^ 2)`.
