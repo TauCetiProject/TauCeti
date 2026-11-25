@@ -52,6 +52,8 @@ interval of length `d`; this is the companion of Mathlib's `div_mul_cancel_of_im
 * `TauCeti.zpow_neg_two_pow_eq_zpow₀`: `(a ^ (-2)) ^ r = a ^ k` when `a ^ (2 * r + k) = 1`.
 * `TauCeti.subsingleton_units_of_natCard_eq_two`: a group with zero with two elements has a
   trivial unit group.
+* `TauCeti.natCard_eq_two_iff_forall_eq_zero_or_eq_one`: a group with zero has two elements
+  exactly when each of its elements is `0` or `1`.
 * `TauCeti.isUnit_natCast_of_isUnit_natCast`: a natural number invertible in the target of a
   local ring homomorphism is invertible in its source.
 * `TauCeti.instInfiniteUnitsOfInfiniteGroupWithZero`: the units of an infinite group with zero
@@ -101,6 +103,17 @@ its elements, by `Nat.card_units`, so there is exactly one of them. -/
 theorem subsingleton_units_of_natCard_eq_two {G₀ : Type*} [GroupWithZero G₀]
     (h : Nat.card G₀ = 2) : Subsingleton G₀ˣ :=
   (Nat.card_eq_one_iff_unique.1 (by rw [Nat.card_units G₀, h])).1
+
+/-- **A group with zero has two elements exactly when every element is `0` or `1`.** A nonzero
+element is a unit, and the unit group is trivial (`subsingleton_units_of_natCard_eq_two`). -/
+theorem natCard_eq_two_iff_forall_eq_zero_or_eq_one {G₀ : Type*} [GroupWithZero G₀] :
+    Nat.card G₀ = 2 ↔ ∀ d : G₀, d = 0 ∨ d = 1 := by
+  refine ⟨fun h d ↦ ?_, fun h ↦ Nat.card_eq_two_iff.mpr
+    ⟨0, 1, zero_ne_one, Set.eq_univ_of_forall fun d ↦ by simpa using h d⟩⟩
+  have := subsingleton_units_of_natCard_eq_two h
+  by_cases hd : d = 0
+  · exact Or.inl hd
+  · exact Or.inr (congrArg Units.val (Subsingleton.elim (Units.mk0 d hd) 1))
 
 /-- **A natural number invertible after a local ring homomorphism was already invertible**: `f`
 carries `n` to `n`, and a local homomorphism reflects units. -/
