@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Holder.Atlas
 public import TauCeti.Geometry.Manifold.VectorBundle.Holder.Little.Basic
+public import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
 # Independence of the little Hölder space of sections from the atlas
@@ -74,13 +75,9 @@ theorem littleHolder_comap_atlasEquiv (hα : α ≤ 1) (hn : (k : WithTop ℕ∞
     (littleHolder B k α).comap
       (atlasEquiv A B k α hα hn : HolderSection A k α →ₗ[ℝ] HolderSection B k α) =
       littleHolder A k α := by
-  apply SetLike.coe_injective
-  rw [Submodule.comap_coe, coe_littleHolder, coe_littleHolder,
-    ← smoothSections_comap_atlasLinearEquiv hα hn (A := A) (B := B), Submodule.comap_coe,
+  rw [littleHolder_def, littleHolder_def, ContinuousLinearEquiv.comap_topologicalClosure,
+    ← smoothSections_comap_atlasLinearEquiv hα hn (A := A) (B := B),
     ← toLinearEquiv_atlasEquiv hα hn]
-  simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
-    ContinuousLinearEquiv.coe_toHomeomorph] using
-    (atlasEquiv A B k α hα hn).toHomeomorph.preimage_closure _
 
 /-- An element of `C^{k,α}(V)` for `A` lies in the little Hölder space of `A` exactly when its
 image under the identification of the Hölder spaces lies in that of `B`. -/
