@@ -352,12 +352,15 @@ theorem _root_.Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_hodgeComponent (
     Submodule.stabilizerHopfIdeal_eq_bot_iff, Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace,
     ← hodgeIndexEquiv.iSup_comp]
   simp only [hV, Function.comp_apply, DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace]
-  -- The two sides differ only in the comodule instance of `Comodule.weightSpace`: on the left
-  -- the local `Comodule.Corestrict φ.toCoalgHom`, on the right
-  -- `Comodule.Corestrict ↑↑splittingBialgEquiv` from `weightSpace_eq_comoduleWeightSpace`.
-  -- Their coalgebra structures on `ℂ ⊗[ℝ] S` are `TensorProduct.instCoalgebraStruct` and
-  -- `Coalgebra.toCoalgebraStruct`, which agree only after unfolding instances, so `simp` cannot
-  -- rewrite one into the other.
-  rfl
+  -- The two sides differ only in the comodule structure defining `Comodule.weightSpace`: on the
+  -- left the corestriction along `φ.toCoalgHom`, from `stabilizerHopfIdeal_corestrict_eq_bot_iff`,
+  -- on the right the corestriction along the coalgebra map that `hodgeComponent` uses. Both
+  -- coactions are `(id ⊗ φ) ∘ ρ`, so compare the weight spaces through the underlying linear maps.
+  have hφ' : φ.toLinearMap = ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ]
+      MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) : _ →ₗc[ℂ] _).toLinearMap :=
+    LinearMap.ext fun x ↦ by simp [φ, BialgHom.toCoalgHom_apply]
+  refine Iff.of_eq <| congrArg (_ = ·) <| iSup_congr fun _ ↦ congrArg (_ ⊓ ·) <|
+    Submodule.ext fun v ↦ ?_
+  simp only [Comodule.mem_weightSpace, Comodule.corestrict_coact_apply, hφ']
 
 end TauCeti.DeligneTorus
