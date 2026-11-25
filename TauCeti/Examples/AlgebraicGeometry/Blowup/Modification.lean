@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Basic
+public import TauCeti.AlgebraicGeometry.Blowup.IsoLocus
 public import TauCeti.AlgebraicGeometry.Blowup.Modification
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Stalk
 import Mathlib.RingTheory.MvPolynomial.Ideal
@@ -22,7 +23,9 @@ and Noetherian, the blowup at the origin is a modification, and its centre lies 
 The ideal `(x, y)` is not an effective Cartier divisor on any affine open neighbourhood `U` of the
 origin: its stalk at the origin is the maximal ideal of the local ring `k[x, y]_(x, y)`, which has
 dimension two since `(x, y)` is a maximal ideal of `k[x, y]`, while the stalks of an effective
-Cartier divisor are principal.
+Cartier divisor are principal. The same argument applies on every open neighbourhood, so the
+blowup is an isomorphism over no neighbourhood of the origin, and its centre is exactly the origin
+(`centre_blowupToBase_originIdealSheaf`).
 -/
 
 public section
@@ -116,5 +119,28 @@ theorem not_isEffectiveCartier_comap_fromSpec {U : (Spec (.of (MvPolynomial (Fin
     (Flat.stalkMap _ y) (hy ▸ stalkIdeal_originIdealSheaf_origin k)
   rw [hy] at hdim
   exact absurd ((ringKrullDim_stalk_origin k).ge.trans hdim) (by decide)
+
+/-- **The origin is not a Cartier divisor on any neighbourhood of the origin.** On no open
+neighbourhood `U` of the origin of `𝔸²_k` does the ideal `(x, y)` restrict to an effective Cartier
+divisor. -/
+theorem not_isEffectiveCartier_comap_ι {U : (Spec (.of (MvPolynomial (Fin 2) k))).Opens}
+    (hoU : origin k ∈ U) : ¬ ((originIdealSheaf k).comap U.ι).IsEffectiveCartier := by
+  intro h
+  have hdim := Scheme.IdealSheafData.ringKrullDim_stalk_le_one_of_comap U.ι h ⟨origin k, hoU⟩
+    (Flat.stalkMap _ _) (stalkIdeal_originIdealSheaf_origin k)
+  exact absurd ((ringKrullDim_stalk_origin k).ge.trans hdim) (by decide)
+
+/-- **The centre of the blowup of the plane at the origin is the origin.** The blowup
+`Bl_0 𝔸²_k ⟶ 𝔸²_k` is an isomorphism exactly over the complement of the origin. -/
+theorem centre_blowupToBase_originIdealSheaf :
+    (originIdealSheaf k).blowupToBase.centre = {origin k} := by
+  ext x
+  refine ⟨fun hx ↦ (mem_support_originIdealSheaf_iff k x).1
+    (Scheme.IdealSheafData.centre_blowupToBase_subset hx), ?_⟩
+  rintro rfl
+  rw [Scheme.Hom.centre_def, Set.mem_compl_iff, SetLike.mem_coe,
+    Scheme.IdealSheafData.mem_isoLocus_blowupToBase_iff]
+  rintro ⟨U, hoU, hU⟩
+  exact not_isEffectiveCartier_comap_ι k hoU hU
 
 end TauCeti.BlowupModificationExample
