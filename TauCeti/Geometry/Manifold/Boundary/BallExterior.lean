@@ -277,7 +277,7 @@ theorem contMDiff_subtypeVal_ballExteriorChartedSpace {k : WithTop ℕ∞}
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have : IsManifold (𝓡 n) k (sphere (0 : E) 1) := IsManifold.of_le le_top
   exact (hφ.isBicollar_sphereBicollar hr).contMDiff_subtypeVal_sideChartedSpace (n := n)
-    (isLocalDiffeomorph_sphereBicollar hφd hk hr.ne')
+    (isLocalDiffeomorph_sphereBicollar hφd hk hr.ne').contMDiff
     (preimage_sphereBicollar_ballExterior hφ.injective hr) (hφ.isOpen_ballExterior_sdiff_range hr)
 
 end Topology.IsOpenEmbedding

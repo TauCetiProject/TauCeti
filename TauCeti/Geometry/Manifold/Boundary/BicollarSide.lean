@@ -361,7 +361,7 @@ private theorem contMDiffAt_collarChart_symm_pair [IsManifold (𝓡 n) k N] (y :
 /-- Read through the inverse of a collar chart, the point of `M` depends smoothly on the chart
 coordinates. -/
 private theorem contMDiffAt_collarChart_symm_coe [IsManifold (𝓡 n) k N]
-    (hbd : IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k b) (y : N)
+    (hbd : ContMDiff ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k b) (y : N)
     {z : EuclideanHalfSpace (n + 1)}
     (hz : ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm z).1 ∈
       (chartAt (EuclideanSpace ℝ (Fin n)) y).target) :
@@ -375,7 +375,7 @@ private theorem contMDiffAt_collarChart_symm_coe [IsManifold (𝓡 n) k N]
     contMDiff_fst.prodMk ((contDiff_piLp_apply 2).contMDiff.comp
       ((𝓡∂ 1).contMDiff.comp contMDiff_snd))
   -- Elaborated without the expected type, which would unify the pair map with `collarDiffeomorph`.
-  have h := hbd.contMDiff.contMDiffAt.comp z (hq.contMDiffAt.comp z hp)
+  have h := hbd.contMDiffAt.comp z (hq.contMDiffAt.comp z hp)
   exact h
 
 /-- In an interior chart, the point of `M` depends smoothly on the chart coordinates. -/
@@ -473,7 +473,7 @@ private theorem contMDiffOn_collarChart_symm_trans_interiorChart [IsManifold (�
   have hzs' := (mem_interiorChart_source hCo x hx hzs).2
   rw [collarChart_symm_apply, coe_collarPiece] at hzs'
   exact (contMDiffAt_interiorEmbedding_chartAt (x : M)
-    (contMDiffAt_collarChart_symm_coe hbd y (mem_collarChart_target hb hC y hzt))
+    (contMDiffAt_collarChart_symm_coe hbd.contMDiff y (mem_collarChart_target hb hC y hzt))
     hzs').contMDiffWithinAt
 
 omit [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
@@ -610,7 +610,7 @@ theorem isManifold_sideChartedSpace [IsManifold (𝓡 (n + 1)) k M] [IsManifold 
 manifold structure of `TauCeti.IsBicollar.isManifold_sideChartedSpace`. -/
 theorem contMDiff_subtypeVal_sideChartedSpace [IsManifold (𝓡 (n + 1)) k M]
     [IsManifold (𝓡 n) k N] (hb : IsBicollar f b)
-    (hbd : IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k b)
+    (hbd : ContMDiff ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k b)
     (hC : b ⁻¹' C = univ ×ˢ Ici 0) (hCo : IsOpen (C \ range f)) :
     letI := hb.sideChartedSpace (n := n) hC hCo
     ContMDiff (𝓡∂ (n + 1)) (𝓡 (n + 1)) k (Subtype.val : C → M) := by
