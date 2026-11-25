@@ -44,7 +44,7 @@ example : (frobenius p).hom.app (op (affineLine p)) (1 : Γ((affineLine p).left,
     (1 : Γ((affineLine p).left, ⊤)) :=
   (gaFrobenius_app_apply _ _ _ _).trans (one_pow (M := Γ((affineLine p).left, ⊤)) p)
 
-/-- The Frobenius of `𝔾_a` sends the coordinate `t` of `𝔸¹_{𝔽_p}` to `t ^ p ≠ t`. -/
+/-- The coordinate `t` of `𝔸¹_{𝔽_p}` satisfies `t ^ p ≠ t`. -/
 theorem coordinate_pow_ne : coordinate p ^ p ≠ coordinate p := by
   rw [← map_pow, Ne, (ConcreteCategory.bijective_of_isIso
     (ΓSpecIso (CommRingCat.of (ZMod p)[X])).inv).injective.eq_iff]
@@ -53,6 +53,7 @@ theorem coordinate_pow_ne : coordinate p ^ p ≠ coordinate p := by
   rw [natDegree_X_pow, natDegree_X] at this
   exact (Fact.out : p.Prime).one_lt.ne' this
 
+/-- The Frobenius of `𝔾_a` sends the coordinate `t` of `𝔸¹_{𝔽_p}` to `t ^ p ≠ t`. -/
 example : (frobenius p).hom.app (op (affineLine p)) (coordinate p) ≠ coordinate p :=
   (gaFrobenius_app_apply _ _ _ _).trans_ne (coordinate_pow_ne p)
 

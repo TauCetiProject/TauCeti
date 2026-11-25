@@ -53,11 +53,12 @@ noncomputable def gaFrobenius (hS : (p : Γ(S, ⊤)) = 0) : Ga S ⟶ Ga S where
         (TauCeti.powRingHom Γ(T.unop.left, ⊤) p
           (natCast_eq_zero_of_hom T.unop.hom hS)).toAddMonoidHom
       naturality T T' f := by
-        ext a
-        change TauCeti.powRingHom _ p _ (f.unop.left.appTop a) =
-          f.unop.left.appTop (TauCeti.powRingHom _ p _ a)
-        exact (TauCeti.powRingHom_apply _ _).trans ((map_pow _ _ _).symm.trans
-          (congrArg _ (TauCeti.powRingHom_apply _ _).symm)) }
+        ext (a : Γ(T.unop.left, ⊤))
+        -- The restriction maps of `𝔾_a` are the ring homomorphisms `f.unop.left.appTop`.
+        change TauCeti.powRingHom _ p (natCast_eq_zero_of_hom T'.unop.hom hS)
+            (f.unop.left.appTop a) =
+          f.unop.left.appTop (TauCeti.powRingHom _ p (natCast_eq_zero_of_hom T.unop.hom hS) a)
+        rw [TauCeti.powRingHom_apply, TauCeti.powRingHom_apply, map_pow] }
 
 /-- The Frobenius endomorphism of `𝔾_a` is the `p`-th power map on every test scheme. -/
 @[simp]
@@ -69,19 +70,20 @@ variable {S}
 
 omit [Fact p.Prime] in
 /-- If an endomorphism `φ` of the unit module over the big structure sheaf of `S` is the `p`-th
-power map on every test scheme, then the `p`-th power map is the identity on every test scheme:
-`a = a • 1` is sent to `a • φ(1) = a • 1 ^ p = a`. -/
+power map on every test scheme, then the `p`-th power map is the identity on every test
+scheme. -/
 theorem pow_eq_self_of_unit_hom_app_eq_pow
     (φ : SheafOfModules.unit (bigRingCatSheaf S) ⟶ SheafOfModules.unit (bigRingCatSheaf S))
     (hφ : ∀ (T : Over S) (a : Γ(T.left, ⊤)), φ.val.app (op T) a = a ^ p)
     (T : Over S) (a : Γ(T.left, ⊤)) : a ^ p = a := by
-  let one : (SheafOfModules.unit (bigRingCatSheaf S)).val.obj (op T) := (1 : Γ(T.left, ⊤))
-  let r : (bigRingCatSheaf S).obj.obj (op T) := a
-  have h := (φ.val.app (op T)).hom.map_smul r one
-  -- In the unit module, `r • b` is the product `a * b`.
-  change φ.val.app (op T) (a * 1 : Γ(T.left, ⊤)) =
-    a * (show Γ(T.left, ⊤) from φ.val.app (op T) (1 : Γ(T.left, ⊤))) at h
-  rwa [mul_one, hφ, hφ, one_pow, mul_one] at h
+  -- By definition, the sections of the unit module over `T` and its ring of scalars are both
+  -- `Γ(T.left, ⊤)`, acting on itself by multiplication, so `φ` over `T` is a linear endomorphism
+  -- of `Γ(T.left, ⊤)`.
+  let ψ : Γ(T.left, ⊤) →ₗ[Γ(T.left, ⊤)] Γ(T.left, ⊤) := (φ.val.app (op T)).hom
+  have hψ (b : Γ(T.left, ⊤)) : ψ b = b ^ p := hφ T b
+  -- `a = a • 1` is sent to `a • ψ 1 = a • 1 ^ p = a`.
+  have h := ψ.map_smul a 1
+  rwa [smul_eq_mul, smul_eq_mul, mul_one, hψ, hψ, one_pow, mul_one] at h
 
 omit [Fact p.Prime] in
 /-- The Frobenius of `𝔾_a` does not lift to the unit module over the big structure sheaf: if some
