@@ -406,8 +406,7 @@ finite subgroup of the circle. -/
 theorem isCyclic_stabilizer_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) (hε : 0 < ε)
     (z : weightedEllipsoid a b ε) : IsCyclic (MulAction.stabilizer Circle z) := by
   have := finite_stabilizer_weightedEllipsoid ha hb hε z
-  exact isCyclic_of_injective_ringHom (Circle.coeHom.comp (MulAction.stabilizer Circle z).subtype)
-    (Circle.coe_injective.comp Subtype.val_injective)
+  infer_instance
 
 /-! ### The weighted Hopf map -/
 

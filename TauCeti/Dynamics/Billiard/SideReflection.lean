@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.MeasureTheory.Group.Circle
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 public import TauCeti.MeasureTheory.Group.Circle
+public import TauCeti.Analysis.Complex.LinearIsometryGroup
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Complex.Circle.Basic
 
@@ -18,8 +19,9 @@ import TauCeti.Analysis.Complex.Circle.Basic
 
 The plane is `ℂ`, and a direction is a unit complex number, an element of `Circle`. For a side of
 a polygonal billiard table with unit direction `d`, the linear reflection in the line spanned by
-`d` is `σ_d(v) = d² · conj v`. It fixes `d`, negates `i · d`, depends on `d` only up to sign, is an
-involution, and commutes with `v ↦ -v`. The composite of two such reflections is the rotation
+`d` is `σ_d(v) = d² · conj v`, the reflection `TauCeti.Complex.conjReflection (d²)`. It fixes
+`d`, negates `i · d`, depends on `d` only up to sign, is an involution, and commutes with
+`v ↦ -v`. The composite of two such reflections is the rotation
 through twice the angle between their lines: `σ_d ∘ σ_e` is multiplication by `(d · e⁻¹)²`.
 
 On directions, the reflection is the involution `v ↦ d² / v` of `Circle`, Mathlib's
@@ -34,6 +36,9 @@ the image of the Haar measure `volume` of `AddCircle (2π)` under `AddCircle.hom
 
 ## Main results
 
+* `TauCeti.Billiard.sideReflection_eq_conjReflection_sq`: `σ_d` is the reflection
+  `TauCeti.Complex.conjReflection (d²)`, so the general facts about rotations and reflections
+  apply to it.
 * `TauCeti.Billiard.sideReflection_eq_reflection`: `σ_d` is Mathlib's `reflection (ℝ ∙ d)`.
 * `TauCeti.Billiard.sideReflection_neg`: `σ_{-d} = σ_d`.
 * `TauCeti.Billiard.sideReflection_sideReflection`: `σ_d` is an involution.
@@ -51,20 +56,24 @@ public section
 
 noncomputable section
 
-open Complex ComplexConjugate MeasureTheory
+open Complex ComplexConjugate MeasureTheory TauCeti.Complex
 
 namespace TauCeti.Billiard
 
 /-- **The linear reflection in a side direction.** For a unit direction `d`, the real linear
 isometry `z ↦ d² · conj z` of `ℂ`, the reflection in the line `ℝ · d`. -/
 def sideReflection (d : Circle) : ℂ ≃ₗᵢ[ℝ] ℂ :=
-  conjLIE.trans (rotation (d ^ 2))
+  conjReflection (d ^ 2)
+
+/-- The side reflection `σ_d` is the reflection `v ↦ d² conj v`. -/
+theorem sideReflection_eq_conjReflection_sq (d : Circle) :
+    sideReflection d = conjReflection (d ^ 2) :=
+  (rfl)
 
 @[simp]
 theorem sideReflection_apply (d : Circle) (z : ℂ) :
     sideReflection d z = (d : ℂ) ^ 2 * conj z := by
-  rw [sideReflection, LinearIsometryEquiv.trans_apply, rotation_apply, conjLIE_apply,
-    Circle.coe_pow]
+  rw [sideReflection_eq_conjReflection_sq, conjReflection_apply, Circle.coe_pow]
 
 /-- `σ_d` is Mathlib's reflection `reflection (ℝ ∙ d)` of `ℂ` in the real line spanned by `d`. -/
 theorem sideReflection_eq_reflection (d : Circle) :
@@ -103,27 +112,22 @@ theorem sideReflection_involutive (d : Circle) : Function.Involutive (sideReflec
   sideReflection_sideReflection d
 
 @[simp]
-theorem sideReflection_symm (d : Circle) : (sideReflection d).symm = sideReflection d := by
-  rw [sideReflection_eq_reflection]
-  exact Submodule.reflection_symm
+theorem sideReflection_symm (d : Circle) : (sideReflection d).symm = sideReflection d :=
+  conjReflection_symm _
 
 /-- **Composite of two reflections.** Reflecting in `ℝ · e` and then in `ℝ · d` is the rotation
 by `(d · e⁻¹)²`, through twice the angle from `e` to `d`. -/
 theorem sideReflection_trans_sideReflection (d e : Circle) :
     (sideReflection e).trans (sideReflection d) = rotation ((d * e⁻¹) ^ 2) := by
-  ext z
-  simp only [LinearIsometryEquiv.trans_apply, sideReflection_apply, rotation_apply]
-  simp only [Circle.coe_pow, Circle.coe_mul, Circle.coe_inv_eq_conj, map_mul, map_pow,
-    Complex.conj_conj]
-  ring
+  rw [← LinearIsometryEquiv.mul_def, sideReflection_eq_conjReflection_sq,
+    sideReflection_eq_conjReflection_sq, conjReflection_mul_conjReflection, mul_pow, inv_pow]
 
 /-- Conjugating a reflection by a rotation reflects in the rotated direction. -/
 theorem rotation_trans_sideReflection_trans_rotation (a d : Circle) :
     ((rotation a⁻¹).trans (sideReflection d)).trans (rotation a) = sideReflection (a * d) := by
-  ext z
-  simp only [LinearIsometryEquiv.trans_apply, sideReflection_apply, rotation_apply,
-    Circle.coe_inv_eq_conj, Circle.coe_mul, map_mul, Complex.conj_conj]
-  ring
+  simp only [← LinearIsometryEquiv.mul_def, sideReflection_eq_conjReflection_sq,
+    conjReflection_mul_rotation, rotation_mul_conjReflection, conjReflection_inj, inv_inv]
+  simp [sq, mul_comm, mul_left_comm]
 
 /-- Reflections commute with time reversal `v ↦ -v`. -/
 theorem sideReflection_apply_neg (d : Circle) (z : ℂ) :
