@@ -62,17 +62,36 @@ theorem coe_ringOfIntegersToIntegralClosure (E : IntermediateField F (AlgebraicC
     (ringOfIntegersToIntegralClosure E y : AlgebraicClosure F) = ((y : E) : AlgebraicClosure F) :=
   (rfl)
 
+/-- The inclusion `𝓞 E → O` is injective. -/
+theorem ringOfIntegersToIntegralClosure_injective (E : IntermediateField F (AlgebraicClosure F)) :
+    Function.Injective (ringOfIntegersToIntegralClosure E) := fun x y h ↦ by
+  have h' := congrArg (fun z : integralClosure (𝓞 F) (AlgebraicClosure F) ↦
+    (z : AlgebraicClosure F)) h
+  simp only [coe_ringOfIntegersToIntegralClosure] at h'
+  exact RingOfIntegers.ext (Subtype.val_injective h')
+
+/-- The inclusion `𝓞 E → O` is compatible with the `𝓞 F`-algebra structures of `𝓞 E` and `O`. -/
+@[simp]
+theorem ringOfIntegersToIntegralClosure_algebraMap (E : IntermediateField F (AlgebraicClosure F))
+    (x : 𝓞 F) :
+    ringOfIntegersToIntegralClosure E (algebraMap (𝓞 F) (𝓞 E) x) =
+      algebraMap (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F)) x :=
+  Subtype.ext <| by
+    rw [coe_ringOfIntegersToIntegralClosure, Subalgebra.coe_algebraMap,
+      RingOfIntegers.coe_eq_algebraMap, ← IntermediateField.algebraMap_apply,
+      ← IsScalarTower.algebraMap_apply (𝓞 F) (𝓞 E) E, IsScalarTower.algebraMap_apply (𝓞 F) F E,
+      ← IsScalarTower.algebraMap_apply F E, ← IsScalarTower.algebraMap_apply (𝓞 F) F]
+
 /-- The inclusion `𝓞 E → O` is compatible with the `𝓞 F`-algebra structures of `𝓞 E` and `O`. -/
 theorem ringOfIntegersToIntegralClosure_comp_algebraMap
     (E : IntermediateField F (AlgebraicClosure F)) :
     (ringOfIntegersToIntegralClosure E).comp (algebraMap (𝓞 F) (𝓞 E)) =
       algebraMap (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F)) :=
-  RingHom.ext fun x ↦ Subtype.ext <| by
-    rw [RingHom.comp_apply, coe_ringOfIntegersToIntegralClosure]
-    rfl
+  RingHom.ext (ringOfIntegersToIntegralClosure_algebraMap E)
 
 /-- For `E` normal over `F`, the inclusion `𝓞 E → O` intertwines the action on `𝓞 E` of the
 restriction of `σ ∈ G_F` to `E` (`AlgEquiv.restrictNormalHom`) with the action of `σ` on `O`. -/
+@[simp]
 theorem ringOfIntegersToIntegralClosure_smul (E : IntermediateField F (AlgebraicClosure F))
     [Normal F E] (σ : Field.absoluteGaloisGroup F) (y : 𝓞 E) :
     ringOfIntegersToIntegralClosure E (AlgEquiv.restrictNormalHom E σ • y) =

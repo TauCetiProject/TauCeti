@@ -50,9 +50,11 @@ theorem ramificationSet_subset_ramifiedPrimes (E : IntermediateField F (Algebrai
     ρ.ramificationSet ⊆ (Chebotarev.ramifiedPrimes F E : Set (HeightOneSpectrum (𝓞 F))) := by
   intro v hv
   by_contra hvE
-  refine (mem_ramificationSet_iff.1 hv) (isUnramifiedAt_iff.2 fun Q hQ hQv ↦ ?_)
+  rw [Finset.mem_coe] at hvE
+  refine (mem_ramificationSet_iff.1 hv) (isUnramifiedAt_iff.2 fun Q hQ hQv σ hσ ↦ ?_)
   have := hQ.isPrime
-  exact fun σ hσ ↦ hE (GaloisRep.inertiaGroup_le_fixingSubgroup E hQv hvE hσ)
+  rw [← coe_toRepresentation, ← MonoidHom.mem_ker]
+  exact hE (GaloisRep.inertiaGroup_le_fixingSubgroup E hQv hvE hσ)
 
 /-- **A representation with open kernel has finite ramification set.** The kernel contains the
 fixing subgroup of a finite normal subextension `E` of `F^alg / F` (Krull topology), `ρ` is
