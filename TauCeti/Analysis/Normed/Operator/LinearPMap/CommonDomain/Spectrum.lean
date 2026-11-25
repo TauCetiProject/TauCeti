@@ -43,8 +43,8 @@ invertible, are dense (`ContinuousLinearMap.eventually_isInvertible_ofReal_smul_
 `ContinuousLinearMap.exists_mem_Ioo_isInvertible_ofReal_smul_sub`). For a continuous family
 `A t`, an admissible shift at one time stays admissible nearby
 (`ContinuousLinearMap.exists_mem_Ioo_eventually_isInvertible_ofReal_smul_sub`), and over a compact
-set of times there is a uniform radius `δ > 0` such that every `δ`-ball of times carries a common
-admissible shift in any prescribed open interval
+set `s` of times, given a nonempty open interval, there is a radius `δ > 0` such that every
+`δ`-ball of times in `s` carries a common admissible shift from that interval
 (`ContinuousLinearMap.exists_pos_forall_exists_mem_Ioo_isInvertible_ofReal_smul_sub`). These are
 the local choices from which constructions along a path of unbounded self-adjoint operators,
 such as the spectral flow of the bounded transforms `c A (c ι - A)⁻¹`, are glued.
@@ -84,17 +84,20 @@ variable {𝕜 D H : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup D] [NormedSpace 𝕜 D] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
   {ι A : D →L[𝕜] H} {c₀ c : 𝕜}
 
+/-- A shift `c • ι - A` differs from the shift `c₀ • ι - A` by `(c₀ - c) • ι`. -/
+private theorem smul_sub_eq_smul_sub_sub (c₀ c : 𝕜) (ι A : D →L[𝕜] H) :
+    c • ι - A = (c₀ • ι - A) - (c₀ - c) • ι := by
+  rw [sub_smul]
+  abel
+
 /-- Away from an invertible shift `c₀ • ι - A`, a vector is killed by the shift `c • ι - A` exactly
 when it is an eigenvector of `(c₀ • ι - A)⁻¹ ∘ ι` with eigenvalue `(c₀ - c)⁻¹`. -/
 private theorem smul_sub_apply_eq_zero_iff (h₀ : (c₀ • ι - A).IsInvertible) (hc : c ≠ c₀)
     (x : D) :
     (c • ι - A) x = 0 ↔ ((c₀ • ι - A).inverse ∘L ι) x = (c₀ - c)⁻¹ • x := by
   have hc' : c₀ - c ≠ 0 := sub_ne_zero.2 hc.symm
-  have hsplit : (c • ι - A) x = (c₀ • ι - A) x - (c₀ - c) • ι x := by
-    simp only [sub_apply, smul_apply, sub_smul]
-    abel
-  rw [hsplit, sub_eq_zero, eq_comm, ← h₀.inverse_apply_eq, map_smul, comp_apply,
-    eq_inv_smul_iff₀ hc', eq_comm]
+  rw [smul_sub_eq_smul_sub_sub c₀, sub_apply, smul_apply, sub_eq_zero, eq_comm,
+    ← h₀.inverse_apply_eq, map_smul, comp_apply, eq_inv_smul_iff₀ hc', eq_comm]
 
 /-- **Fredholm alternative for shifts.** If `ι` is compact and one shift `c₀ • ι - A` is
 invertible, a shift `c • ι - A` is invertible exactly when it is injective. -/
@@ -122,11 +125,9 @@ theorem isInvertible_smul_sub_iff_injective [CompleteSpace D] (hcpt : IsCompactO
     have hKx : (c₀ • ι - A) (K x) = ι x := h₀.self_apply_inverse (ι x)
     have hu : (algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c) *
         (algebraMap 𝕜 (D →L[𝕜] D) (c₀ - c)⁻¹ - K)) x = x - (c₀ - c) • K x := by
-      rw [mul_apply_eq_comp, algebraMap_apply, sub_apply, algebraMap_apply, smul_sub, smul_smul,
-        mul_inv_cancel₀ hc', one_smul]
-    rw [comp_apply, hu, map_sub, map_smul, hKx]
-    simp only [sub_apply, smul_apply, sub_smul]
-    abel
+      simp [smul_sub, smul_smul, hc', -map_sub]
+    rw [comp_apply, hu, map_sub, map_smul, hKx, smul_sub_eq_smul_sub_sub c₀, sub_apply,
+      smul_apply]
   rw [hfac]
   exact h₀.comp (isInvertible_iff_isUnit.2 ((isUnit_iff_ne_zero.2 hc').map _ |>.mul hres))
 
