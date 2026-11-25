@@ -250,9 +250,8 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
   -- `J₀'` is built from `(J₀ : V →L[ℝ] V).toLinearMap`, so `J₀' v` unfolds to `J₀ v`: this lets
   -- `Unitary.inner_map_map J₀` say that `J₀'` is orthogonal, and `hβ₁`, `hβ₃` (about `J₀'`) serve
   -- below as statements about `J₀ : V →L[ℝ] V`.
-  obtain ⟨β, -, hβ₁, hβ₃⟩ := AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one
-    (J := J₀') (Unitary.inner_map_map J₀)
-    ((stdOrthonormalBasis ℝ V).orthonormal.1 ⟨0, by omega⟩)
+  obtain ⟨β, hβ₁, hβ₃⟩ :=
+    AlmostComplexStructure.exists_unitary_orthonormalBasis (J := J₀') (Unitary.inner_map_map J₀)
   let e := trivializationAt F E x
   let cF := Module.finBasisOfFinrankEq ℝ F hF
   -- Some vector of `β` lies outside the complex line of `β 0` for `J` read at `x`.

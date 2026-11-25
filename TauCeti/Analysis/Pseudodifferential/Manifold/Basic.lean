@@ -62,9 +62,8 @@ values on compactly supported functions, and hence by its chart compressions.
 * `TauCeti.complexifyLinearMap_mem_classicalPseudodifferentialOperators`: the complexification of a
   differential operator of order at most `m` on the real-valued smooth functions on `M`, in
   Grothendieck's sense, is a classical pseudodifferential operator of order `m`. Its symbol in a
-  chart is the polynomial symbol of the compression
-  (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_chartCompression`), with
-  no smoothing remainder.
+  chart is the polynomial symbol of the compression, with no smoothing remainder
+  (`ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression`).
 
 ## References
 
@@ -355,34 +354,22 @@ end Multiplication
 
 /-! ### Differential operators -/
 
-/-- **Differential operators are classical pseudodifferential operators.** The complexification of
-a differential operator `D` of order at most `m` on the real-valued smooth functions on `M`, in
-Grothendieck's sense of iterated commutators with multiplication operators, is a classical
-pseudodifferential operator of order `m`. In a chart, its compression is exactly the quantization
-of the polynomial symbol of the compression of `D`
-(`TauCeti.ClassicalSymbol.ofDifferentialOperator`), whose principal symbol is read from the
-geometric principal symbol of `D`
-(`TauCeti.ClassicalSymbol.coefficient_principal_ofDifferentialOperator_chartCompression`). -/
-theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
-    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℕ}
-    {D : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
-    (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m) :
-    ContMDiffMap.complexifyLinearMap D ∈
-      classicalPseudodifferentialOperators (n := n) (M := M) m := by
-  -- Like `D`, its complexification is local, so it is properly supported.
-  have hloc (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M)
-      (hf : ∀ᶠ y in 𝓝 x, f y = 0) : ContMDiffMap.complexifyLinearMap D f x = 0 := by
-    have hD₀ (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hg : ∀ᶠ y in 𝓝 x, g y = 0) :
-        D g x = 0 := by
-      simpa using differentialOperators_apply_eq_of_eventuallyEq hD (g := 0) hg
-    simp [ContMDiffMap.complex_smul_apply, ContMDiffMap.ofReal_apply,
-      hD₀ (ContMDiffMap.re f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.re_apply, hy]),
-      hD₀ (ContMDiffMap.im f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.im_apply, hy])]
-  refine mem_classicalPseudodifferentialOperators_iff.2
-    ⟨IsProperlySupported.of_local hloc, fun e he φ ψ ↦ ?_⟩
-  refine ⟨ClassicalSymbol.ofDifferentialOperator ℂ
-    (e.chartCompressionDifferentialOperators he φ ψ m ⟨D, hD⟩), fun u x ↦ ?_⟩
+/-- **Differential operators on manifolds are quantizations in charts.** For a differential
+operator `D` of order at most `m` on the real-valued smooth functions on `M`, in Grothendieck's
+sense, the chart compression of its complexification by `φ` and `ψ` agrees on Schwartz functions
+with the quantization of the polynomial symbol of the chart compression of `D`
+(`TauCeti.ClassicalSymbol.ofDifferentialOperator`). -/
+theorem ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {m : ℕ}
+    (D : differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m)
+    (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (ClassicalSymbol.ofDifferentialOperator ℂ
+        (e.chartCompressionDifferentialOperators he φ ψ m D)).toSymbol.coefficient u x =
+      e.complexChartCompression he φ ψ (ContMDiffMap.complexifyLinearMap D.val)
+        (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x := by
   rw [ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_chartCompression]
   -- The real and imaginary parts of `u` as smooth functions, in the form in which they enter
   -- the compression of `D`; both sides evaluate to `(u y).re` (resp. `(u y).im`). The right-hand
@@ -407,5 +394,34 @@ theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
   rw [hre, him]
   push_cast
   ring
+
+/-- **Differential operators are classical pseudodifferential operators.** The complexification of
+a differential operator `D` of order at most `m` on the real-valued smooth functions on `M`, in
+Grothendieck's sense of iterated commutators with multiplication operators, is a classical
+pseudodifferential operator of order `m`. In a chart, its compression is exactly the quantization
+of the polynomial symbol of the compression of `D`
+(`ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression`),
+whose principal symbol is read from the geometric principal symbol of `D`
+(`TauCeti.ClassicalSymbol.coefficient_principal_ofDifferentialOperator_chartCompression`). -/
+theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℕ}
+    {D : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m) :
+    ContMDiffMap.complexifyLinearMap D ∈
+      classicalPseudodifferentialOperators (n := n) (M := M) m := by
+  -- Like `D`, its complexification is local, so it is properly supported.
+  have hloc (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M)
+      (hf : ∀ᶠ y in 𝓝 x, f y = 0) : ContMDiffMap.complexifyLinearMap D f x = 0 := by
+    have hD₀ (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hg : ∀ᶠ y in 𝓝 x, g y = 0) :
+        D g x = 0 := by
+      simpa using differentialOperators_apply_eq_of_eventuallyEq hD (g := 0) hg
+    simp [ContMDiffMap.complex_smul_apply, ContMDiffMap.ofReal_apply,
+      hD₀ (ContMDiffMap.re f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.re_apply, hy]),
+      hD₀ (ContMDiffMap.im f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.im_apply, hy])]
+  exact mem_classicalPseudodifferentialOperators_iff.2
+    ⟨IsProperlySupported.of_local hloc, fun e he φ ψ ↦ ⟨_,
+      ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression he φ
+        ψ ⟨D, hD⟩⟩⟩
 
 end TauCeti
