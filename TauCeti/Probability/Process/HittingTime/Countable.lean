@@ -134,7 +134,7 @@ theorem hittingAfter_eq_iInf_of_isOpen {ι Ω E κ : Type*} [ConditionallyComple
     (hU : IsOpen U) {d : κ → ι} (hd : DenseRange d) (a : ι) :
     hittingAfter X U a ω =
       ⨅ k, if a ≤ d k ∧ X (d k) ω ∈ U then (d k : WithTop ι) else ⊤ :=
-  hf.hittingAfter_eq_iInf_of_isOpen_of_isCofinal hU hd hd.isCofinal_range a
+  hf.hittingAfter_eq_iInf_of_isOpen_of_isCofinal hU hd (Dense.exists_ge hd) a
 
 end IsRightContinuous
 

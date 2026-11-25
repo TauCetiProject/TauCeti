@@ -47,8 +47,6 @@ visits `U` at some point of `D ∩ [a, t]`.
   `f u` onto a point of a dense set `D` in `(u, v)`.
 * `Dense.exists_mem_Icc_apply_mem_iff_of_isOpen`: on a densely ordered space, visiting an open set
   `U` on `[a, t]` is equivalent to visiting `U` at `t` or at a point of `D ∩ [a, t]`.
-* `DenseRange.isCofinal_range`: in a linear order without maximal elements whose lower rays are
-  closed, any map with dense range has cofinal range.
 * `TopologicalSpace.exists_denseRange_isCofinal`: every nonempty separable linear order with closed
   lower rays admits a sequence with dense, cofinal range.
 * `TauCeti.le_of_forall_rat_add_le`: a function right-continuous at `t + h` that does not
@@ -229,15 +227,6 @@ theorem Dense.exists_mem_Icc_apply_mem_iff_of_isOpen {ι α : Type*} [LinearOrde
     · exact ⟨t, ⟨hat, le_rfl⟩, ht⟩
     · exact ⟨x, hx, hfx⟩
 
-/-- In a linear order without maximal elements whose lower rays are closed, the range of any map
-with dense range is cofinal. -/
-theorem DenseRange.isCofinal_range {ι κ : Type*} [LinearOrder ι] [NoMaxOrder ι]
-    [TopologicalSpace ι] [ClosedIicTopology ι] {d : κ → ι} (hd : DenseRange d) :
-    IsCofinal (range d) := fun x ↦
-  let ⟨y, hxy⟩ := exists_gt x
-  let ⟨k, hk⟩ := hd.exists_mem_open isOpen_Ioi ⟨y, hxy⟩
-  ⟨d k, mem_range_self k, hk.le⟩
-
 /-- Every nonempty separable linear order with closed lower rays admits a sequence with dense,
 cofinal range. -/
 theorem TopologicalSpace.exists_denseRange_isCofinal {ι : Type*} [LinearOrder ι]
@@ -251,7 +240,7 @@ theorem TopologicalSpace.exists_denseRange_isCofinal {ι : Type*} [LinearOrder �
       fun x ↦ ⟨m, ⟨0, rfl⟩, hm.isTop x⟩⟩
   · have : NoMaxOrder ι := ⟨fun x ↦ not_isMax_iff.mp fun hx ↦ h ⟨x, hx⟩⟩
     exact ⟨TopologicalSpace.denseSeq ι, TopologicalSpace.denseRange_denseSeq ι,
-      (TopologicalSpace.denseRange_denseSeq ι).isCofinal_range⟩
+      Dense.exists_ge (TopologicalSpace.denseRange_denseSeq ι)⟩
 
 end OpenTarget
 

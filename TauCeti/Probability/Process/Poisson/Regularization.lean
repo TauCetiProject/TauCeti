@@ -12,7 +12,7 @@ import TauCeti.Probability.Distributions.Poisson.SmallRate
 import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Process.MonotoneAE
 import TauCeti.Probability.Process.Poisson.Microscopic
-import TauCeti.Topology.Instances.Real.DyadicGrid
+import TauCeti.Topology.Instances.NNReal.Dyadic.Grid
 
 /-!
 # Regularization of filtered Poisson processes
@@ -99,41 +99,44 @@ theorem measure_sub_gt_one_le (h : IsFilteredPoissonProcess ℱ α N P) (s t : �
 
 /-! ### Dyadic grid and good sample-path event -/
 
-private instance (t : ℝ≥0) : Nonempty {p : ℕ × ℕ // t < dyadicNNReal p.1 p.2} :=
-  ⟨⟨(0, ⌊(t : ℝ)⌋₊ + 1), by simpa using lt_dyadicNNReal_floor_add_one 0 t⟩⟩
+private instance (t : ℝ≥0) : Nonempty {p : ℕ × ℕ // t < (dyadicNNRat p.1 p.2 : ℝ≥0)} :=
+  ⟨⟨(0, ⌊(t : ℝ)⌋₊ + 1), by simpa using lt_coe_dyadicNNRat_floor_add_one 0 t⟩⟩
 
 private structure IsDyadicGood (N : ℝ≥0 → Ω → ℝ) (ω : Ω) : Prop where
-  exists_nat (m j : ℕ) : ∃ n : ℕ, N (dyadicNNReal m j) ω = n
+  exists_nat (m j : ℕ) : ∃ n : ℕ, N (dyadicNNRat m j) ω = n
   mono ⦃m₁ j₁ m₂ j₂ : ℕ⦄ :
-    dyadicNNReal m₁ j₁ ≤ dyadicNNReal m₂ j₂ → N (dyadicNNReal m₁ j₁) ω ≤ N (dyadicNNReal m₂ j₂) ω
-  zero : ∃ m : ℕ, N (dyadicNNReal m 1) ω = 0
+    (dyadicNNRat m₁ j₁ : ℝ≥0) ≤ (dyadicNNRat m₂ j₂ : ℝ≥0) →
+      N (dyadicNNRat m₁ j₁) ω ≤ N (dyadicNNRat m₂ j₂) ω
+  zero : ∃ m : ℕ, N (dyadicNNRat m 1) ω = 0
   jump (T : ℕ) : ∃ m : ℕ, ∀ k < (T + 1) * 2 ^ m,
-    N (dyadicNNReal m (k + 2)) ω - N (dyadicNNReal m k) ω ≤ 1
+    N (dyadicNNRat m (k + 2)) ω - N (dyadicNNRat m k) ω ≤ 1
 
 private lemma measurableSet_isDyadicGood (hN : ∀ t, Measurable (N t)) :
     MeasurableSet {ω | IsDyadicGood N ω} := by
   have heq : {ω | IsDyadicGood N ω} =
-      (⋂ (m : ℕ) (j : ℕ), ⋃ n : ℕ, {ω | N (dyadicNNReal m j) ω = n}) ∩
-      (⋂ (m₁ : ℕ) (j₁ : ℕ) (m₂ : ℕ) (j₂ : ℕ) (_ : dyadicNNReal m₁ j₁ ≤ dyadicNNReal m₂ j₂),
-        {ω | N (dyadicNNReal m₁ j₁) ω ≤ N (dyadicNNReal m₂ j₂) ω}) ∩
-      (⋃ m : ℕ, {ω | N (dyadicNNReal m 1) ω = 0}) ∩
+      (⋂ (m : ℕ) (j : ℕ), ⋃ n : ℕ, {ω | N (dyadicNNRat m j) ω = n}) ∩
+      (⋂ (m₁ : ℕ) (j₁ : ℕ) (m₂ : ℕ) (j₂ : ℕ)
+        (_ : (dyadicNNRat m₁ j₁ : ℝ≥0) ≤ (dyadicNNRat m₂ j₂ : ℝ≥0)),
+        {ω | N (dyadicNNRat m₁ j₁) ω ≤ N (dyadicNNRat m₂ j₂) ω}) ∩
+      (⋃ m : ℕ, {ω | N (dyadicNNRat m 1) ω = 0}) ∩
       (⋂ T : ℕ, ⋃ m : ℕ, ⋂ (k : ℕ) (_ : k < (T + 1) * 2 ^ m),
-        {ω | N (dyadicNNReal m (k + 2)) ω - N (dyadicNNReal m k) ω ≤ 1}) := by
+        {ω | N (dyadicNNRat m (k + 2)) ω - N (dyadicNNRat m k) ω ≤ 1}) := by
     ext ω
     simp only [mem_ofPred_eq, mem_inter_iff, mem_iInter, mem_iUnion]
     exact ⟨fun h ↦ ⟨⟨⟨h.exists_nat, h.mono⟩, h.zero⟩, h.jump⟩,
       fun ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ ↦ ⟨h1, h2, h3, h4⟩⟩
-  have h1 : MeasurableSet (⋂ (m : ℕ) (j : ℕ), ⋃ n : ℕ, {ω | N (dyadicNNReal m j) ω = n}) :=
+  have h1 : MeasurableSet (⋂ (m : ℕ) (j : ℕ), ⋃ n : ℕ, {ω | N (dyadicNNRat m j) ω = n}) :=
     .iInter fun _ ↦ .iInter fun _ ↦ .iUnion fun _ ↦ measurableSet_eq_fun (hN _) measurable_const
   have h2 : MeasurableSet
-      (⋂ (m₁ : ℕ) (j₁ : ℕ) (m₂ : ℕ) (j₂ : ℕ) (_ : dyadicNNReal m₁ j₁ ≤ dyadicNNReal m₂ j₂),
-        {ω | N (dyadicNNReal m₁ j₁) ω ≤ N (dyadicNNReal m₂ j₂) ω}) :=
+      (⋂ (m₁ : ℕ) (j₁ : ℕ) (m₂ : ℕ) (j₂ : ℕ)
+        (_ : (dyadicNNRat m₁ j₁ : ℝ≥0) ≤ (dyadicNNRat m₂ j₂ : ℝ≥0)),
+        {ω | N (dyadicNNRat m₁ j₁) ω ≤ N (dyadicNNRat m₂ j₂) ω}) :=
     .iInter fun _ ↦ .iInter fun _ ↦ .iInter fun _ ↦ .iInter fun _ ↦ .iInter fun _ ↦
       measurableSet_le (hN _) (hN _)
-  have h3 : MeasurableSet (⋃ m : ℕ, {ω | N (dyadicNNReal m 1) ω = 0}) :=
+  have h3 : MeasurableSet (⋃ m : ℕ, {ω | N (dyadicNNRat m 1) ω = 0}) :=
     .iUnion fun _ ↦ measurableSet_eq_fun (hN _) measurable_const
   have h4 : MeasurableSet (⋂ T : ℕ, ⋃ m : ℕ, ⋂ (k : ℕ) (_ : k < (T + 1) * 2 ^ m),
-      {ω | N (dyadicNNReal m (k + 2)) ω - N (dyadicNNReal m k) ω ≤ 1}) :=
+      {ω | N (dyadicNNRat m (k + 2)) ω - N (dyadicNNRat m k) ω ≤ 1}) :=
     .iInter fun _ ↦ .iUnion fun _ ↦ .iInter fun _ ↦ .iInter fun _ ↦
       measurableSet_le ((hN _).sub (hN _)) measurable_const
   rw [heq]
@@ -141,18 +144,18 @@ private lemma measurableSet_isDyadicGood (hN : ∀ t, Measurable (N t)) :
 
 private lemma ae_dyadic_double_cell_le_one (h : IsFilteredPoissonProcess ℱ α N P) (T : ℕ) :
     ∀ᵐ ω ∂P, ∃ m : ℕ, ∀ k < (T + 1) * 2 ^ m,
-      N (dyadicNNReal m (k + 2)) ω - N (dyadicNNReal m k) ω ≤ 1 := by
+      N (dyadicNNRat m (k + 2)) ω - N (dyadicNNRat m k) ω ≤ 1 := by
   let bad : ℕ → Set Ω := fun m ↦
     ⋃ k ∈ Finset.range ((T + 1) * 2 ^ m),
-      {ω | 1 < N (dyadicNNReal m (k + 2)) ω - N (dyadicNNReal m k) ω}
+      {ω | 1 < N (dyadicNNRat m (k + 2)) ω - N (dyadicNNRat m k) ω}
   have hbad (m : ℕ) :
       P (bad m) ≤ ((2 * (T + 1) * α ^ 2 : ℝ≥0) : ℝ≥0∞) * (2 : ℝ≥0∞)⁻¹ ^ m := by
     refine (measure_biUnion_finset_le _ _).trans ?_
     have hterm (k : ℕ) :
-        P {ω | 1 < N (dyadicNNReal m (k + 2)) ω - N (dyadicNNReal m k) ω} ≤
+        P {ω | 1 < N (dyadicNNRat m (k + 2)) ω - N (dyadicNNRat m k) ω} ≤
           (((α * (2 * (2⁻¹ : ℝ≥0) ^ m)) ^ 2 / 2 : ℝ≥0) : ℝ≥0∞) := by
-      simpa only [dyadicNNReal_add_two_sub] using
-        h.measure_sub_gt_one_le (dyadicNNReal m k) (dyadicNNReal m (k + 2))
+      simpa [dyadicNNRat_add, inv_pow, div_eq_mul_inv] using
+        h.measure_sub_gt_one_le (dyadicNNRat m k) (dyadicNNRat m (k + 2))
     refine (Finset.sum_le_sum fun k _ ↦ hterm k).trans ?_
     simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
     have hnn : (((T + 1) * 2 ^ m : ℕ) : ℝ≥0) * ((α * (2 * (2⁻¹ : ℝ≥0) ^ m)) ^ 2 / 2) =
@@ -175,21 +178,22 @@ private lemma ae_dyadic_double_cell_le_one (h : IsFilteredPoissonProcess ℱ α 
 
 private lemma ae_isDyadicGood (h : IsFilteredPoissonProcess ℱ α N P) :
     ∀ᵐ ω ∂P, IsDyadicGood N ω := by
-  have hnat : ∀ᵐ ω ∂P, ∀ m j : ℕ, ∃ n : ℕ, N (dyadicNNReal m j) ω = n :=
-    ae_all_iff.mpr fun m ↦ ae_all_iff.mpr fun j ↦ h.ae_exists_nat_eq (dyadicNNReal m j)
-  have hmono : ∀ᵐ ω ∂P, ∀ m₁ j₁ m₂ j₂ : ℕ, dyadicNNReal m₁ j₁ ≤ dyadicNNReal m₂ j₂ →
-      N (dyadicNNReal m₁ j₁) ω ≤ N (dyadicNNReal m₂ j₂) ω :=
+  have hnat : ∀ᵐ ω ∂P, ∀ m j : ℕ, ∃ n : ℕ, N (dyadicNNRat m j) ω = n :=
+    ae_all_iff.mpr fun m ↦ ae_all_iff.mpr fun j ↦ h.ae_exists_nat_eq (dyadicNNRat m j)
+  have hmono : ∀ᵐ ω ∂P, ∀ m₁ j₁ m₂ j₂ : ℕ,
+      (dyadicNNRat m₁ j₁ : ℝ≥0) ≤ (dyadicNNRat m₂ j₂ : ℝ≥0) →
+      N (dyadicNNRat m₁ j₁) ω ≤ N (dyadicNNRat m₂ j₂) ω :=
     ae_all_iff.mpr fun m₁ ↦ ae_all_iff.mpr fun j₁ ↦ ae_all_iff.mpr fun m₂ ↦
       ae_all_iff.mpr fun j₂ ↦ by
-        by_cases hle : dyadicNNReal m₁ j₁ ≤ dyadicNNReal m₂ j₂
+        by_cases hle : (dyadicNNRat m₁ j₁ : ℝ≥0) ≤ (dyadicNNRat m₂ j₂ : ℝ≥0)
         · exact (h.ae_le hle).mono fun _ hω _ ↦ hω
         · exact ae_of_all _ fun _ hbad ↦ False.elim (hle hbad)
-  have hzero : ∀ᵐ ω ∂P, ∃ m : ℕ, N (dyadicNNReal m 1) ω = 0 := by
+  have hzero : ∀ᵐ ω ∂P, ∃ m : ℕ, N (dyadicNNRat m 1) ω = 0 := by
     filter_upwards [h.ae_eventually_eval_add_two_inv_pow_eq 0, h.eval_zero_ae_eq_zero] with ω hω h0
     obtain ⟨m, hm⟩ := hω.exists
-    exact ⟨m, by simpa [dyadicNNReal_one, h0] using hm⟩
+    exact ⟨m, by simpa [coe_dyadicNNRat, inv_pow, h0] using hm⟩
   have hjump : ∀ᵐ ω ∂P, ∀ T : ℕ, ∃ m : ℕ, ∀ k < (T + 1) * 2 ^ m,
-      N (dyadicNNReal m (k + 2)) ω - N (dyadicNNReal m k) ω ≤ 1 :=
+      N (dyadicNNRat m (k + 2)) ω - N (dyadicNNRat m k) ω ≤ 1 :=
     ae_all_iff.mpr fun T ↦ ae_dyadic_double_cell_le_one h T
   filter_upwards [hnat, hmono, hzero, hjump] with ω h1 h2 h3 h4 using ⟨h1, h2, h3, h4⟩
 
@@ -198,11 +202,12 @@ private lemma ae_isDyadicGood (h : IsFilteredPoissonProcess ℱ α N P) :
 @[irreducible]
 private noncomputable def dyadicReg (N : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) : Ω → ℕ :=
   {ω | IsDyadicGood N ω}.indicator fun ω ↦
-    ⨅ p : {p : ℕ × ℕ // t < dyadicNNReal p.1 p.2}, ⌊N (dyadicNNReal p.val.1 p.val.2) ω⌋₊
+    ⨅ p : {p : ℕ × ℕ // t < (dyadicNNRat p.1 p.2 : ℝ≥0)}, ⌊N (dyadicNNRat p.val.1 p.val.2) ω⌋₊
 
 private lemma dyadicReg_of_good {ω : Ω} (hω : IsDyadicGood N ω) (t : ℝ≥0) :
     dyadicReg N t ω =
-      ⨅ p : {p : ℕ × ℕ // t < dyadicNNReal p.1 p.2}, ⌊N (dyadicNNReal p.val.1 p.val.2) ω⌋₊ := by
+      ⨅ p : {p : ℕ × ℕ // t < (dyadicNNRat p.1 p.2 : ℝ≥0)},
+        ⌊N (dyadicNNRat p.val.1 p.val.2) ω⌋₊ := by
   unfold dyadicReg
   exact indicator_of_mem hω _
 
@@ -214,24 +219,25 @@ private lemma dyadicReg_of_not_good {ω : Ω} (hω : ¬ IsDyadicGood N ω) (t : 
 private lemma measurable_dyadicReg (hN : ∀ t, Measurable (N t)) (t : ℝ≥0) :
     Measurable (dyadicReg N t) := by
   unfold dyadicReg
-  exact (Measurable.iInf fun (p : {p : ℕ × ℕ // t < dyadicNNReal p.1 p.2}) ↦
-    (hN (dyadicNNReal p.val.1 p.val.2)).nat_floor).indicator (measurableSet_isDyadicGood hN)
+  exact (Measurable.iInf fun (p : {p : ℕ × ℕ // t < (dyadicNNRat p.1 p.2 : ℝ≥0)}) ↦
+    (hN (dyadicNNRat p.val.1 p.val.2)).nat_floor).indicator (measurableSet_isDyadicGood hN)
 
 private lemma dyadicReg_le_of_lt {ω : Ω} (hω : IsDyadicGood N ω) {t : ℝ≥0} {m j : ℕ}
-    (ht : t < dyadicNNReal m j) :
-    dyadicReg N t ω ≤ ⌊N (dyadicNNReal m j) ω⌋₊ := by
+    (ht : t < (dyadicNNRat m j : ℝ≥0)) :
+    dyadicReg N t ω ≤ ⌊N (dyadicNNRat m j) ω⌋₊ := by
   rw [dyadicReg_of_good hω]
-  exact ciInf_le (OrderBot.bddBelow _) (⟨(m, j), ht⟩ : {p : ℕ × ℕ // t < dyadicNNReal p.1 p.2})
+  exact ciInf_le (OrderBot.bddBelow _)
+    (⟨(m, j), ht⟩ : {p : ℕ × ℕ // t < (dyadicNNRat p.1 p.2 : ℝ≥0)})
 
 private lemma le_dyadicReg_of_le {ω : Ω} (hω : IsDyadicGood N ω) {s : ℝ≥0} {m k : ℕ}
-    (hs : dyadicNNReal m k ≤ s) :
-    ⌊N (dyadicNNReal m k) ω⌋₊ ≤ dyadicReg N s ω := by
+    (hs : (dyadicNNRat m k : ℝ≥0) ≤ s) :
+    ⌊N (dyadicNNRat m k) ω⌋₊ ≤ dyadicReg N s ω := by
   rw [dyadicReg_of_good hω]
   exact le_ciInf fun p ↦ Nat.floor_mono (hω.mono (hs.trans p.property.le))
 
-private lemma floor_dyadicNNReal_add_two_le {ω : Ω} (hω : IsDyadicGood N ω) {m k : ℕ}
-    (hle : N (dyadicNNReal m (k + 2)) ω - N (dyadicNNReal m k) ω ≤ 1) :
-    ⌊N (dyadicNNReal m (k + 2)) ω⌋₊ ≤ ⌊N (dyadicNNReal m k) ω⌋₊ + 1 := by
+private lemma floor_dyadicNNRat_add_two_le {ω : Ω} (hω : IsDyadicGood N ω) {m k : ℕ}
+    (hle : N (dyadicNNRat m (k + 2)) ω - N (dyadicNNRat m k) ω ≤ 1) :
+    ⌊N (dyadicNNRat m (k + 2)) ω⌋₊ ≤ ⌊N (dyadicNNRat m k) ω⌋₊ + 1 := by
   obtain ⟨a, ha⟩ := hω.exists_nat m k
   obtain ⟨b, hb⟩ := hω.exists_nat m (k + 2)
   rw [ha, hb, Nat.floor_natCast, Nat.floor_natCast]
@@ -247,8 +253,8 @@ private lemma dyadicReg_monotone {ω : Ω} (hω : IsDyadicGood N ω) :
 
 private lemma dyadicReg_isRightContinuous {ω : Ω} (hω : IsDyadicGood N ω) :
     IsRightContinuous (dyadicReg N · ω) := fun t ↦ by
-  let F : {p : ℕ × ℕ // t < dyadicNNReal p.1 p.2} → ℕ :=
-    fun p ↦ ⌊N (dyadicNNReal p.val.1 p.val.2) ω⌋₊
+  let F : {p : ℕ × ℕ // t < (dyadicNNRat p.1 p.2 : ℝ≥0)} → ℕ :=
+    fun p ↦ ⌊N (dyadicNNRat p.val.1 p.val.2) ω⌋₊
   obtain ⟨p, hp⟩ := mem_range.mp (ciInf_mem F)
   rw [← dyadicReg_of_good hω] at hp
   refine tendsto_const_nhds.congr' ?_
@@ -259,33 +265,35 @@ private lemma dyadicReg_le_add_one {ω : Ω} (hω : IsDyadicGood N ω) ⦃t : �
     ∃ s < t, dyadicReg N t ω ≤ dyadicReg N s ω + 1 := by
   let T : ℕ := ⌊(t : ℝ)⌋₊
   obtain ⟨m, hm⟩ := hω.jump T
-  by_cases hsmall : t < dyadicNNReal m 1
+  by_cases hsmall : t < (dyadicNNRat m 1 : ℝ≥0)
   · refine ⟨0, ht, ?_⟩
-    have hlt2 : t < dyadicNNReal m 2 := hsmall.trans (dyadicNNReal_strictMono m one_lt_two)
+    have hlt2 : t < (dyadicNNRat m 2 : ℝ≥0) :=
+      hsmall.trans (NNRat.cast_lt.mpr (dyadicNNRat_strictMono m one_lt_two))
     exact (dyadicReg_le_of_lt hω hlt2).trans
-      ((floor_dyadicNNReal_add_two_le hω (hm 0 (by positivity))).trans
-        (Nat.add_le_add_right (le_dyadicReg_of_le hω (dyadicNNReal_zero m).le) 1))
-  · let j : ℕ := ⌊(t : ℝ) * (2 : ℝ) ^ m⌋₊
+      ((floor_dyadicNNRat_add_two_le hω (hm 0 (by positivity))).trans
+        (Nat.add_le_add_right (le_dyadicReg_of_le hω (by simp)) 1))
+  · let j : ℕ := ⌊(t : ℝ) * 2 ^ m⌋₊
     have hj1 : 1 ≤ j := Nat.le_floor <| by
-      have h1 : dyadicNNReal m 1 ≤ t := not_lt.mp hsmall
+      have h1 : (dyadicNNRat m 1 : ℝ≥0) ≤ t := not_lt.mp hsmall
       simpa only [Nat.cast_one] using
-        (div_le_iff₀ (by positivity : (0 : ℝ) < (2 : ℝ) ^ m)).mp
-          (by simpa [dyadicNNReal_def] using NNReal.coe_le_coe.mpr h1)
+        (div_le_iff₀ (by positivity : (0 : ℝ) < 2 ^ m)).mp
+          (by simpa [coe_dyadicNNRat] using NNReal.coe_le_coe.mpr h1)
     have hjT : j < (T + 1) * 2 ^ m := by
       rw [← Nat.cast_lt (α := ℝ)]
       calc
-        (j : ℝ) ≤ (t : ℝ) * (2 : ℝ) ^ m := Nat.floor_le (by positivity)
-        _ < ((T : ℝ) + 1) * (2 : ℝ) ^ m :=
+        (j : ℝ) ≤ (t : ℝ) * 2 ^ m := Nat.floor_le (by positivity)
+        _ < ((T : ℝ) + 1) * 2 ^ m :=
           mul_lt_mul_of_pos_right (Nat.lt_floor_add_one (t : ℝ)) (by positivity)
         _ = (((T + 1) * 2 ^ m : ℕ) : ℝ) := by push_cast; ring
-    have hst : dyadicNNReal m (j - 1) < t :=
-      (dyadicNNReal_strictMono m (by omega : j - 1 < j)).trans_le (dyadicNNReal_floor_le m t)
-    have htk2 : t < dyadicNNReal m (j - 1 + 2) := by
-      convert lt_dyadicNNReal_floor_add_one m t using 2
-      omega
-    refine ⟨dyadicNNReal m (j - 1), hst, ?_⟩
+    have hst : (dyadicNNRat m (j - 1) : ℝ≥0) < t :=
+      (NNRat.cast_lt.mpr (dyadicNNRat_strictMono m (by omega : j - 1 < j))).trans_le
+        (by simpa only [approxDyadicNNRat_def] using coe_approxDyadicNNRat_le m t)
+    have htk2 : t < (dyadicNNRat m (j - 1 + 2) : ℝ≥0) := by
+      rw [show j - 1 + 2 = j + 1 by omega]
+      exact lt_coe_dyadicNNRat_floor_add_one m t
+    refine ⟨dyadicNNRat m (j - 1), hst, ?_⟩
     exact (dyadicReg_le_of_lt hω htk2).trans
-      ((floor_dyadicNNReal_add_two_le hω (hm (j - 1) (by omega))).trans
+      ((floor_dyadicNNRat_add_two_le hω (hm (j - 1) (by omega))).trans
         (Nat.add_le_add_right (le_dyadicReg_of_le hω le_rfl) 1))
 
 private lemma isSimpleCountingPath_dyadicReg (ω : Ω) :
@@ -293,24 +301,25 @@ private lemma isSimpleCountingPath_dyadicReg (ω : Ω) :
   by_cases hω : IsDyadicGood N ω
   · refine ⟨?_, dyadicReg_monotone hω, dyadicReg_isRightContinuous hω, dyadicReg_le_add_one hω⟩
     obtain ⟨m, hm⟩ := hω.zero
-    have hpos : (0 : ℝ≥0) < dyadicNNReal m 1 := by
-      rw [dyadicNNReal_one]
+    have hpos : (0 : ℝ≥0) < (dyadicNNRat m 1 : ℝ≥0) := by
+      rw [coe_dyadicNNRat]
       positivity
-    exact Nat.eq_zero_of_le_zero ((dyadicReg_le_of_lt hω hpos).trans_eq (by simp [hm]))
+    exact Nat.eq_zero_of_le_zero
+      ((dyadicReg_le_of_lt hω hpos).trans_eq (by rw [hm, Nat.floor_zero]))
   · simp [dyadicReg_of_not_good hω]
 
 private lemma dyadicReg_ae_eq (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
     (fun ω ↦ (dyadicReg N t ω : ℝ)) =ᵐ[P] N t := by
-  have habove : ∀ᵐ ω ∂P, ∀ p : {p : ℕ × ℕ // t < dyadicNNReal p.1 p.2},
-      N t ω ≤ N (dyadicNNReal p.val.1 p.val.2) ω :=
+  have habove : ∀ᵐ ω ∂P, ∀ p : {p : ℕ × ℕ // t < (dyadicNNRat p.1 p.2 : ℝ≥0)},
+      N t ω ≤ N (dyadicNNRat p.val.1 p.val.2) ω :=
     ae_all_iff.mpr fun p ↦ h.ae_le p.property.le
   filter_upwards [ae_isDyadicGood h, h.ae_exists_nat_eq t, habove,
     h.ae_eventually_eval_eq_of_sub_le_two_inv_pow
-      (fun n ↦ (lt_dyadicNNReal_floor_add_one n t).le)
-      (fun n ↦ dyadicNNReal_floor_add_one_sub_le n t)] with ω hω ⟨c, hc⟩ hle hev
+      (fun n ↦ (lt_coe_dyadicNNRat_floor_add_one n t).le)
+      (fun n ↦ coe_dyadicNNRat_floor_add_one_sub_le n t)] with ω hω ⟨c, hc⟩ hle hev
   obtain ⟨n, hn⟩ := hev.exists
   have hupper : dyadicReg N t ω ≤ c := by
-    refine (dyadicReg_le_of_lt hω (lt_dyadicNNReal_floor_add_one n t)).trans_eq ?_
+    refine (dyadicReg_le_of_lt hω (lt_coe_dyadicNNRat_floor_add_one n t)).trans_eq ?_
     rw [hn, hc, Nat.floor_natCast]
   have hlower : c ≤ dyadicReg N t ω := by
     rw [dyadicReg_of_good hω]
