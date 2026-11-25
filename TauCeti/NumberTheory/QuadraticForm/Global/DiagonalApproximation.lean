@@ -77,7 +77,8 @@ theorem exists_form_discr_eq_equivalent_at_places
     have hQ : Q.Nondegenerate := by
       dsimp only [Q]
       rw [weightedSumSquares_units]
-      exact nondegenerate_weightedSumSquares (fun i => isRegular_iff_ne_zero.mpr (c i).ne_zero)
+      exact nondegenerate_weightedSumSquares_iff.mpr fun i =>
+        isRegular_iff_ne_zero.mpr (c i).ne_zero
     -- Coordinatewise square rescaling gives actual isometries after localization.
     refine ⟨Q, hQ, ?_, ?_, ?_⟩
     · rw [discr_formClass Q hQ ⟨n + 1, c⟩ (by

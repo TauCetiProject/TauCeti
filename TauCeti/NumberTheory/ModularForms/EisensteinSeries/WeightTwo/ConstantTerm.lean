@@ -64,7 +64,7 @@ lemma tendsto_E2_slash_scaleGL_slash_atImInfty (γ : SL(2, ℤ)) :
       (𝓝 ((Int.gcd (γ 1 0) t : ℂ) ^ 2 / t)) := by
   obtain ⟨δ, ha, hc⟩ := γ.exists_scaled_cusp_reduction (t := t)
   let β := (mapGL ℝ δ)⁻¹ * (scaleGL t * mapGL ℝ γ)
-  obtain ⟨h10, h11⟩ := γ.scaled_cusp_upperTriangular δ ha hc
+  obtain ⟨-, h10, h11⟩ := γ.scaled_cusp_upperTriangular δ ha hc
   have hdet : (β.det : ℝ) = t := by simp [β]
   have hdetpos : 0 < (β : Matrix (Fin 2) (Fin 2) ℝ).det := by
     rw [← GeneralLinearGroup.val_det_apply, hdet]
