@@ -79,9 +79,8 @@ theorem charpoly_lsmul_asModule_of (g : G) :
   rw [← ρ.asModuleEquiv.charpoly_conj]
   congr 1
   ext x
-  simp [LinearEquiv.conj_apply]
-  -- `ρ.asModuleEquiv : ρ.asModule ≃ₗ[R] V` is the identity of the type synonym `ρ.asModule`.
-  rfl
+  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, Algebra.lsmul_coe,
+    ← asModuleEquiv_symm_map_rho, LinearEquiv.apply_symm_apply]
 
 end Monoid
 
