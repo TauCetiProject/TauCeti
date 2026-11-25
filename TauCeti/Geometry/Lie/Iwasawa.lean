@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Iwasawa
-public import TauCeti.Geometry.Lie.Subgroup.Unitary
+public import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Diagonal
 public import TauCeti.Geometry.Lie.Subgroup.UpperUnitriangular
 public import TauCeti.Analysis.Matrix.Normed

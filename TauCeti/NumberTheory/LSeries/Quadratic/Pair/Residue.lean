@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Basic
 public import TauCeti.Analysis.Contour.Residue.Basic
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
-# Poles of the four-factor Dirichlet L-function product
+# Regularity and poles of the four-factor Dirichlet L-function product
 
-For nonprincipal characters `χ` and `ψ`, the product
-`F(s) = ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` has a simple pole at `1` if the product
+For arbitrary characters `χ` and `ψ` of positive levels `M` and `N`, the product
+`F(s) = ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` is meromorphic on `ℂ` and analytic away from `1`.
+For nonprincipal characters `χ` and `ψ`, `F(s)` has a simple pole at `1` if the product
 character is nonprincipal, and a double pole otherwise. This includes characters of different
 levels: the product character is taken at their least common multiple, exactly as in
 `DirichletCharacter.zetaMulPairCoeffs`.
@@ -43,9 +46,6 @@ namespace DirichletCharacter
 variable {M N : ℕ} [NeZero M] [NeZero N]
 variable (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
 
-private theorem LFunctionTrivChar₁_one_apply_one : LFunctionTrivChar₁ 1 1 = 1 := by
-  simp [LFunctionTrivChar₁]
-
 private theorem tendsto_LFunction_nhdsNE_one (hχ : χ ≠ 1) :
     Tendsto χ.LFunction (𝓝[≠] 1) (𝓝 (χ.LFunction 1)) :=
   (differentiable_LFunction hχ).continuous.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
@@ -61,7 +61,7 @@ private theorem pair_simple_factorization :
         (LFunctionTrivChar₁ 1 s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s) := by
   filter_upwards [self_mem_nhdsWithin] with s hs
   have hs1 : s ≠ 1 := hs
-  rw [LFunctionTrivChar₁, Function.update_of_ne hs1, LFunctionTrivChar, LFunction_modOne_eq]
+  rw [LFunctionTrivChar₁_one_apply_of_ne_one hs1]
   simp only [smul_eq_mul, zpow_neg_one]
   field_simp
 
@@ -72,8 +72,8 @@ private theorem pair_double_factorization (hχψ : χ.mul ψ = 1) :
           LFunctionTrivChar₁ (Nat.lcm M N) s) := by
   filter_upwards [self_mem_nhdsWithin] with s hs
   have hs1 : s ≠ 1 := hs
-  rw [hχψ, LFunctionTrivChar₁, Function.update_of_ne hs1, LFunctionTrivChar, LFunction_modOne_eq,
-    LFunctionTrivChar₁, Function.update_of_ne hs1]
+  rw [hχψ, LFunctionTrivChar₁_one_apply_of_ne_one hs1,
+    LFunctionTrivChar₁_apply_of_ne_one _ hs1]
   simp only [smul_eq_mul, zpow_neg, zpow_ofNat]
   field_simp
 
@@ -90,6 +90,21 @@ private theorem analyticAt_pair_double_regularization (hχ : χ ≠ 1) (hψ : ψ
   ((((differentiable_LFunctionTrivChar₁ 1).mul (differentiable_LFunction hχ)).mul
     (differentiable_LFunction hψ)).mul
       (differentiable_LFunctionTrivChar₁ (Nat.lcm M N))).analyticAt 1
+
+/-- The four-factor product `ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` of arbitrary characters of
+positive levels is analytic at every `s ≠ 1`. -/
+theorem analyticAt_pair {s : ℂ} (hs : s ≠ 1) :
+    AnalyticAt ℂ
+      (fun z ↦ riemannZeta z * χ.LFunction z * ψ.LFunction z * (χ.mul ψ).LFunction z) s :=
+  (((analyticOn_riemannZeta s hs).mul (χ.analyticAt_LFunction (.inl hs))).mul
+    (ψ.analyticAt_LFunction (.inl hs))).mul ((χ.mul ψ).analyticAt_LFunction (.inl hs))
+
+/-- The four-factor product `ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` of arbitrary characters of
+positive levels is meromorphic on `ℂ`. -/
+theorem meromorphic_pair :
+    Meromorphic fun s ↦ riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s :=
+  fun s ↦ (((TauCeti.meromorphic_riemannZeta s).mul (χ.meromorphic_LFunction s)).mul
+    (ψ.meromorphic_LFunction s)).mul ((χ.mul ψ).meromorphic_LFunction s)
 
 /-- The four-factor product of nonprincipal characters has an exactly simple pole at `1`
 when the product character is nonprincipal. -/

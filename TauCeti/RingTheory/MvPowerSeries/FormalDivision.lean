@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import TauCeti.RingTheory.MvPowerSeries.InitialDiagram
@@ -63,6 +64,10 @@ When `σ` is finite and the coefficients form a field `K`, choosing generators o
 * `MonomialOrder.isCompl_restrictScalars_complementSubmodule`,
   `MonomialOrder.snd_eq_normalRemainder_of_eq_sum_mul_add`: complement decomposition and agreement
   of formal-division remainders with `ord.normalRemainder I`.
+* `MonomialOrder.finrank_complementSubmodule`,
+  `MonomialOrder.finrank_quotient_eq_ncard_compl_initialDiagram`: when the complement of
+  `ord.initialDiagram I` is finite, the complementary submodule has rank its cardinality, and over
+  a field so does the quotient by `I`.
 * `MonomialOrder.eq_standardGenerator_iff`, `MonomialOrder.initialExp_standardGenerator`,
   `MonomialOrder.span_image_standardGenerator_initialDiagramVertices`: uniqueness, initial data,
   and ideal generation for Hironaka's normalized vertex generators.
@@ -621,6 +626,35 @@ theorem span_range_eq_of_forall_mem_initialDiagram_exists_le_of_divisionRing
   rw [← hexp]
   exact (ord.coeff_initialExp_ne_zero hf0).isUnit
 
+/-- If the complement of the initial diagram of `I` is finite, the series supported on it have
+rank equal to its cardinality: the coefficients on the complement are coordinates. -/
+theorem finrank_complementSubmodule {R : Type*} [Ring R] [StrongRankCondition R]
+    {I : Ideal (MvPowerSeries σ R)} (h : (ord.initialDiagram I)ᶜ.Finite) :
+    Module.finrank R (ord.complementSubmodule I) = (ord.initialDiagram I)ᶜ.ncard := by
+  classical
+  set S := (ord.initialDiagram I)ᶜ
+  have := h.fintype
+  let φ : ord.complementSubmodule I →ₗ[R] S → R :=
+    LinearMap.pi fun α ↦ (MvPowerSeries.coeff (α : σ →₀ ℕ)).comp (Submodule.subtype _)
+  have hφ : Function.Bijective φ := by
+    refine ⟨fun f g hfg ↦ Subtype.ext <| MvPowerSeries.ext fun β ↦ ?_, fun c ↦ ?_⟩
+    · by_cases hβ : β ∈ S
+      · exact congr_fun hfg ⟨β, hβ⟩
+      · -- Outside `S`, both coefficients vanish because the supports avoid `D(I)`.
+        have hf := (ord.mem_complementSubmodule_iff.mp f.property) β
+        have hg := (ord.mem_complementSubmodule_iff.mp g.property) β
+        simp only [S, Set.mem_compl_iff, not_not] at hβ
+        rw [MvPowerSeries.mem_support, not_imp_not] at hf hg
+        rw [hf hβ, hg hβ]
+    · refine ⟨⟨∑ α : S, MvPowerSeries.monomial (α : σ →₀ ℕ) (c α),
+        Submodule.sum_mem _ fun α _ ↦ (ord.monomial_mem_complementSubmodule_iff).mpr
+          (Or.inr α.property)⟩, funext fun β ↦ ?_⟩
+      simp only [φ, LinearMap.pi_apply, LinearMap.comp_apply, Submodule.subtype_apply, map_sum,
+        MvPowerSeries.coeff_monomial]
+      simp [Subtype.coe_inj]
+  rw [(LinearEquiv.ofBijective φ hφ).finrank_eq, Module.finrank_fintype_fun_eq_card,
+    ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+
 section Field
 
 variable {K : Type*} [Field K] [Finite σ]
@@ -636,7 +670,7 @@ private theorem exists_vertex_family (I : Ideal (MvPowerSeries σ K)) :
   let V := ord.initialDiagramVertices I
   let e : Fin V.card ≃ {v // v ∈ V} := (Finset.equivFin V).symm
   have hmem : ∀ i : Fin V.card, ∃ f ∈ I, f ≠ 0 ∧ ord.initialExp f = (e i : σ →₀ ℕ) :=
-    fun i ↦ ord.mem_initialDiagram_iff.mp (ord.initialDiagramVertices_subset I (e i).2)
+    fun i ↦ ord.mem_initialDiagram_iff.mp (ord.initialDiagramVertices_subset I (e i).property)
   choose F hFI hF0 hFexp using hmem
   refine ⟨V.card, F, fun i ↦ (e i : σ →₀ ℕ), hFI,
     fun i ↦ ord.isLeast_toSyn_support_iff_ne_zero_and_initialExp_eq.mpr ⟨hF0 i, hFexp i⟩,
@@ -795,6 +829,13 @@ theorem quotientEquivComplementSubmodule_symm_apply (I : Ideal (MvPowerSeries σ
       Ideal.Quotient.mk I (f : MvPowerSeries σ K) := by
   simp [quotientEquivComplementSubmodule, ← Ideal.Quotient.mk_eq_mk]
 
+/-- **Dimension from the initial diagram.** Over a field, if the complement of the initial
+diagram of `I` is finite, then `K[[X]] ⧸ I` has dimension its cardinality. -/
+theorem finrank_quotient_eq_ncard_compl_initialDiagram
+    {I : Ideal (MvPowerSeries σ K)} (h : (ord.initialDiagram I)ᶜ.Finite) :
+    Module.finrank K (MvPowerSeries σ K ⧸ I) = (ord.initialDiagram I)ᶜ.ncard :=
+  (ord.quotientEquivComplementSubmodule I).finrank_eq.trans (ord.finrank_complementSubmodule h)
+
 /-- Hironaka's normalized generator of `I` at an exponent `v : σ →₀ ℕ`:
 `monomial v 1 - ord.normalRemainder I (monomial v 1)`. For `v ∈ ord.initialDiagram I`, this is the
 unique element of `I` whose difference from `monomial v 1` is supported outside
@@ -949,7 +990,7 @@ theorem span_image_standardGenerator_initialDiagramVertices (I : Ideal (MvPowerS
   refine ord.span_range_eq_of_forall_mem_initialDiagram_exists_le_of_divisionRing
     (α := fun v : ord.initialDiagramVertices I ↦ (v : σ →₀ ℕ))
     (fun v ↦ ord.standardGenerator_mem I v)
-    (fun v ↦ ord.isLeast_toSyn_standardGenerator (ord.initialDiagramVertices_subset I v.2))
+    (fun v ↦ ord.isLeast_toSyn_standardGenerator (ord.initialDiagramVertices_subset I v.property))
     fun γ hγ ↦ ?_
   obtain ⟨v, hvV, hle⟩ := (ord.mem_initialDiagram_iff_exists_mem_initialDiagramVertices_le).mp hγ
   exact ⟨⟨v, hvV⟩, hle⟩

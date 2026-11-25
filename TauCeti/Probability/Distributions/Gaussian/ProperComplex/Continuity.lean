@@ -39,27 +39,27 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 semidefinite covariance, including singular and zero covariances. -/
 theorem continuous_properComplexGaussianMeasure :
     Continuous (fun p : (ι → ℂ) × {C : Matrix ι ι ℂ // C.PosSemidef} ↦
-      (properComplexGaussianMeasure p.1 p.2.1).toProbabilityMeasure) := by
+      (properComplexGaussianMeasure p.1 p.2.val).toProbabilityMeasure) := by
   have hmean : Continuous (fun p : (ι → ℂ) × {C : Matrix ι ι ℂ // C.PosSemidef} ↦
       complexToRealEuclidean ι p.1) :=
     (complexToRealEuclidean ι).continuous.comp continuous_fst
   have hcov : Continuous (fun p : (ι → ℂ) × {C : Matrix ι ι ℂ // C.PosSemidef} ↦
-      complexGaussianRealCovariance p.2.1) :=
-    continuous_complexGaussianRealCovariance.comp (continuous_subtype_val.comp continuous_snd)
+      complexGaussianRealCovariance p.2.val) :=
+    continuous_complexGaussianRealCovariance.comp (continuous_subtypeVal.comp continuous_snd)
   have h := (ProbabilityMeasure.continuous_map (complexToRealEuclidean ι).symm.continuous).comp
     (hmean.multivariateGaussian hcov fun p ↦
-      (posSemidef_complexGaussianRealCovariance_iff p.2.1).2 p.2.2)
+      (posSemidef_complexGaussianRealCovariance_iff p.2.val).2 p.2.property)
   refine h.congr fun p ↦ ?_
   apply ProbabilityMeasure.toMeasure_injective
   simp only [Function.comp_apply, ProbabilityMeasure.toMeasure_map,
     Measure.coe_toProbabilityMeasure]
-  exact (properComplexGaussianMeasure_def p.1 p.2.1).symm
+  exact (properComplexGaussianMeasure_def p.1 p.2.val).symm
 
 /-- As the positive semidefinite covariance tends to zero, the proper complex Gaussian law
 converges weakly to the point mass at its mean. -/
 theorem tendsto_properComplexGaussianMeasure_nhds_zero_dirac (m : ι → ℂ) :
     Tendsto (fun C : {C : Matrix ι ι ℂ // C.PosSemidef} ↦
-      (properComplexGaussianMeasure m C.1).toProbabilityMeasure)
+      (properComplexGaussianMeasure m C.val).toProbabilityMeasure)
       (𝓝 ⟨0, Matrix.PosSemidef.zero⟩) (𝓝 (Measure.dirac m).toProbabilityMeasure) := by
   have h := (continuous_properComplexGaussianMeasure.comp
     (continuous_const.prodMk continuous_id : Continuous fun

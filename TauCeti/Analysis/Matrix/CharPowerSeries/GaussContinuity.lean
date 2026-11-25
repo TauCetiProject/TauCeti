@@ -48,9 +48,9 @@ theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_common_majorant
       (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
   let b := fun n : ℕ ↦ C ^ T.card * (1 / 2 : ℝ) ^ (n - T.card)
   have hbA (a : α) (n : ℕ) : ‖(A a).charCoeff n‖ * ρ ^ n ≤ b n :=
-    Matrix.norm_charCoeff_mul_pow_le (hA a) hρ (by norm_num) hC T hT hrC n
+    Matrix.norm_charCoeff_mul_pow_le (hA a) hρ.le (by norm_num) hC T hT hrC n
   have hbB (n : ℕ) : ‖B.charCoeff n‖ * ρ ^ n ≤ b n :=
-    Matrix.norm_charCoeff_mul_pow_le hB hρ (by norm_num) hC T hT hrC n
+    Matrix.norm_charCoeff_mul_pow_le hB hρ.le (by norm_num) hC T hT hrC n
   refine PowerSeries.tendsto_gaussNorm_zero_of_coeff_bound (b := fun n ↦ 2 * b n)
     (fun n ↦ ?_) (fun a n ↦ ?_) (by simpa [b] using hlim.const_mul 2)
   · simpa only [map_sub, Matrix.coeff_charPowerSeries, sub_self] using

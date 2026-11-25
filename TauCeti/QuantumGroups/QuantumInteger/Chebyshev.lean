@@ -42,9 +42,13 @@ computes the same values from the three-term recurrence.
 * `TauCeti.qInt_mul`: `[mn]` at `δ` is `[m]` at `δ` times `[n]` at `Cₘ(δ)`, where `Cₘ` is the
   rescaled Chebyshev polynomial of the first kind, so that `Cₘ(q + q⁻¹) = qᵐ + q⁻ᵐ`.
 * `TauCeti.qInt_dvd_qInt`: `[m] ∣ [n]` whenever `m ∣ n`.
+* `TauCeti.qInt_neg`: negating the loop parameter multiplies `[n]` by `(-1) ^ (n + 1)`.
 * `TauCeti.qInt_two_left`, `TauCeti.qInt_neg_two_left`: at `δ = 2` and `δ = -2`, `[n]` is `n` and
   `(-1)^(n+1) n`; in characteristic zero these never vanish for `n ≥ 1`, while in characteristic
   `p` they vanish at `n = p`.
+* `TauCeti.qInt_six_of_mul_self_eq_three`: if `δ * δ = 3`, as at `δ = √3`, then `[6] = 0`; the
+  lemmas `qInt_three_of_mul_self_eq_three` to `qInt_five_of_mul_self_eq_three` give
+  `[3], [4], [5] = 2, δ, 1`.
 * `RingHom.map_qInt`: quantum integers commute with ring homomorphisms.
 * `IsSelfAdjoint.qInt`: the quantum integers at a self-adjoint loop parameter are self-adjoint.
 
@@ -125,6 +129,26 @@ theorem qInt_dvd_qInt (δ : R) {m n : ℕ} (h : m ∣ n) : qInt R δ m ∣ qInt 
   obtain ⟨k, rfl⟩ := h
   exact Dvd.intro _ (qInt_mul δ m k).symm
 
+/-- Negating the loop parameter multiplies the quantum integer `[n]` by `(-1) ^ (n + 1)`. -/
+theorem qInt_neg (δ : R) (n : ℕ) : qInt R (-δ) n = (-1) ^ (n + 1) * qInt R δ n := by
+  induction n using Nat.twoStepInduction with
+  | zero => simp
+  | one => simp
+  | more n ih1 ih2 =>
+    rw [qInt_add_two, qInt_add_two, ih1, ih2]
+    simp only [pow_succ]
+    ring
+
+/-- Vanishing of a quantum integer is invariant under negating the loop parameter. -/
+@[simp]
+theorem qInt_neg_eq_zero_iff {δ : R} {n : ℕ} : qInt R (-δ) n = 0 ↔ qInt R δ n = 0 := by
+  rw [qInt_neg, (isUnit_one.neg.pow (n + 1)).mul_right_eq_zero]
+
+/-- Invertibility of a quantum integer is invariant under negating the loop parameter. -/
+@[simp]
+theorem isUnit_qInt_neg_iff {δ : R} {n : ℕ} : IsUnit (qInt R (-δ) n) ↔ IsUnit (qInt R δ n) := by
+  rw [qInt_neg, IsUnit.mul_iff, and_iff_right (isUnit_one.neg.pow (n + 1))]
+
 /-- At the loop parameter `δ = 2` the quantum integer `[n]` is the integer `n`. -/
 @[simp]
 theorem qInt_two_left (n : ℕ) : qInt R 2 n = n := by
@@ -136,6 +160,26 @@ theorem qInt_neg_two_left (n : ℕ) : qInt R (-2) n = (-1) ^ (n + 1) * n := by
   rcases n with _ | n
   · simp
   · simp [qInt_def, pow_succ]
+
+/-- If `δ * δ = 3`, as at `δ = √3 = 2 cos (π / 6)`, then `[3] = 2`. -/
+theorem qInt_three_of_mul_self_eq_three {δ : R} (h : δ * δ = 3) : qInt R δ 3 = 2 := by
+  rw [qInt_add_two δ 1, qInt_two, qInt_one, h]
+  norm_num
+
+/-- If `δ * δ = 3`, as at `δ = √3 = 2 cos (π / 6)`, then `[4] = δ`. -/
+theorem qInt_four_of_mul_self_eq_three {δ : R} (h : δ * δ = 3) : qInt R δ 4 = δ := by
+  rw [qInt_add_two δ 2, qInt_three_of_mul_self_eq_three h, qInt_two]
+  ring
+
+/-- If `δ * δ = 3`, as at `δ = √3 = 2 cos (π / 6)`, then `[5] = 1`. -/
+theorem qInt_five_of_mul_self_eq_three {δ : R} (h : δ * δ = 3) : qInt R δ 5 = 1 := by
+  rw [qInt_add_two δ 3, qInt_four_of_mul_self_eq_three h, qInt_three_of_mul_self_eq_three h, h]
+  norm_num
+
+/-- If `δ * δ = 3`, as at `δ = √3 = 2 cos (π / 6)`, then `[6] = 0`. -/
+theorem qInt_six_of_mul_self_eq_three {δ : R} (h : δ * δ = 3) : qInt R δ 6 = 0 := by
+  rw [qInt_add_two δ 4, qInt_five_of_mul_self_eq_three h, qInt_four_of_mul_self_eq_three h]
+  ring
 
 end TauCeti
 

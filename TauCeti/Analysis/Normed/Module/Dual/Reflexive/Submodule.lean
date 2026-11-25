@@ -47,7 +47,7 @@ theorem surjective_inclusionInDoubleDual (S : Submodule 𝕜 E) (hS : IsClosed (
     -- Otherwise some `f` vanishing on `S` has `f x = 1`, but `hx` gives `f x = Φ 0 = 0`.
     by_contra hxS
     obtain ⟨f, hfS, hf⟩ := exists_dual_forall_mem_eq_zero_eq_one hS hxS
-    have hres : f.comp S.subtypeL = 0 := ContinuousLinearMap.ext fun y ↦ hfS y y.2
+    have hres : f.comp S.subtypeL = 0 := ContinuousLinearMap.ext fun y ↦ hfS y y.property
     have h := congrArg (fun Ψ ↦ Ψ f) hx
     simp only [dual_def, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.precomp_apply, hres, map_zero, hf] at h

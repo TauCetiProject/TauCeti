@@ -27,6 +27,9 @@ cancellativity hypothesis is used.
 ## Main definitions
 
 * `Algebra.GrothendieckAddGroup.liftAddEquiv`: Mathlib's `lift` as an additive isomorphism.
+* `Algebra.GrothendieckAddGroup.natIntLocalizationMap` and
+  `Algebra.GrothendieckAddGroup.natIntLocalizationMap_apply`: the localization map witnessing `ℤ`
+  as the Grothendieck group of `ℕ`.
 * `Algebra.GrothendieckAddGroup.instRing` and `Algebra.GrothendieckAddGroup.instCommRing`: the
   ring structure, commutative when the semiring is.
 * `Algebra.GrothendieckAddGroup.ofRingHom`: the canonical semiring map into the completion.
@@ -45,6 +48,16 @@ namespace Algebra.GrothendieckAddGroup
 variable {M : Type*} [AddCommMonoid M] {G : Type*} [AddCommGroup G]
 
 /-! ### The universal property, in additive form -/
+
+/-- The localization map witnessing `ℤ` as the Grothendieck group of `ℕ`. -/
+def natIntLocalizationMap : (⊤ : AddSubmonoid ℕ).LocalizationMap ℤ where
+  __ := Nat.castAddMonoidHom ℤ
+  isLocalizationMap := AddSubmonoid.isLocalizationMap_top_nat_int
+
+/-- Evaluating `natIntLocalizationMap` on a natural number yields its cast to `ℤ`. -/
+@[simp]
+theorem natIntLocalizationMap_apply (n : ℕ) : natIntLocalizationMap n = (n : ℤ) :=
+  (rfl)
 
 /-- Restricting the extension of `f` along `of` recovers `f`. -/
 theorem lift_comp_of (f : M →+ G) : (lift f).comp (of : M →+ _) = f :=
@@ -68,6 +81,14 @@ theorem addHom_ext {F₁ F₂ : GrothendieckAddGroup M →+ G}
 theorem exists_eq_sub_of (x : GrothendieckAddGroup M) : ∃ a b : M, x = of a - of b := by
   obtain ⟨⟨a, s⟩, h⟩ := (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).surj x
   exact ⟨a, s, eq_sub_of_add_eq h⟩
+
+/-- Two elements of the monoid have the same image in the Grothendieck group exactly when they
+become equal after adding a common element. -/
+theorem of_eq_of_iff {a b : M} :
+    (of a : GrothendieckAddGroup M) = of b ↔ ∃ c : M, a + c = b + c :=
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid M)).eq_iff_exists.trans
+    ⟨fun ⟨c, h⟩ ↦ ⟨c, by rwa [add_comm a, add_comm b]⟩,
+      fun ⟨c, h⟩ ↦ ⟨⟨c, trivial⟩, by rwa [add_comm _ a, add_comm _ b]⟩⟩
 
 /-- The universal property of the Grothendieck group, upgraded to an isomorphism of the additive
 groups of homomorphisms. -/

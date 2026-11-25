@@ -9,12 +9,13 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.NumberTheory.Chebyshev
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.Factorial
+import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import TauCeti.NumberTheory.Chebyshev.LogFactorial
 import TauCeti.NumberTheory.PrimeCounting
 
 /-!
-# Mertens' first theorem for rational primes
+# Mertens' first and second theorems for rational primes
 
 Chebyshev's identity `log ⌊x⌋₊! = ∑_{1 ≤ n ≤ x} Λ(n) ⌊x / n⌋₊`
 (`Chebyshev.log_floor_factorial_eq_sum_vonMangoldt`) sandwiches `log ⌊x⌋₊!` between
@@ -39,6 +40,15 @@ real cutoff `y ≤ x` (`Nat.sum_primesLE_floor_eq_add_filter_gt`) gives the inte
 `∑_{p ≥ y} log p / p` or `∑_{p > y} log p / p` is summable, contrasting with the `O(1 / y)` tail
 of `∑_{p ≥ y} log p / p ^ 2`.
 
+Partial summation against `1 / log t` (`TauCeti.exists_abs_sum_Icc_div_log_sub_log_log_sub_le`)
+turns the uniform bound `log 4 + 4` of the first theorem into Mertens' second theorem with an
+explicit error: there is a constant `B` with `|∑_{p ≤ x} 1 / p - log log x - B| ≤
+2 (log 4 + 4) / log x` for every real `x ≥ 2`. The same argument applied to the von Mangoldt form
+gives `|∑_{2 ≤ n ≤ x} Λ(n) / (n log n) - log log x - B'| ≤ 2 (log 4 + 4) / log x` with another
+constant `B'`. The constant `B` is the Meissel–Mertens constant `mertensConstant ℚ` of
+`TauCeti.NumberTheory.LFunctions.Mertens`, where the bound is restated with it
+(`TauCeti.LFunctions.abs_sum_primesLE_one_div_sub_log_log_sub_mertensConstant_le`).
+
 ## Main results
 
 * `Chebyshev.log_floor_factorial_le_mul_sum_vonMangoldt_div`,
@@ -51,6 +61,8 @@ of `∑_{p ≥ y} log p / p ^ 2`.
   `Chebyshev.abs_sum_primesLE_log_div_sub_log_le`,
   `Chebyshev.abs_sum_primesLE_log_div_sub_log_natCast_le`,
   `Chebyshev.isBigO_sum_primesLE_log_div_sub_log`: Mertens' first theorem on `Nat.primesLE`.
+* `Chebyshev.sum_primesLE_inv_le`: the crude bound `∑_{p ≤ x} 1 / p ≤ (log x + log 4 + 4) / log 2`
+  for `x ≥ 1`.
 * `Chebyshev.sum_primesLE_log_div_sub_filter_lt_le`,
   `Chebyshev.abs_sum_primesLE_filter_lt_log_div_sub_log_le`,
   `Chebyshev.abs_sum_primesBelow_log_div_sub_log_le`,
@@ -62,10 +74,15 @@ of `∑_{p ≥ y} log p / p ^ 2`.
   `Chebyshev.not_summable_prime_log_div_ge`, `Chebyshev.not_summable_prime_log_div_gt`,
   `Nat.Primes.not_summable_log_div`: divergence of the logarithmic prime sum and non-summability of
   the full series and its tails.
+* `Chebyshev.exists_abs_sum_primesLE_one_div_sub_log_log_sub_le`: Mertens' second theorem,
+  `∑_{p ≤ x} 1 / p = log log x + B + O(1 / log x)` with an explicit uniform error on `x ≥ 2`.
+* `Chebyshev.exists_abs_sum_vonMangoldt_div_mul_log_sub_log_log_sub_le`: Mertens' second theorem in
+  von Mangoldt form, `∑_{2 ≤ n ≤ x} Λ(n) / (n log n) = log log x + B' + O(1 / log x)`.
 
 ## References
 
-* D. Koukoulopoulos, *The Distribution of Prime Numbers*, Theorem 3.4(a) and its proof, p. 40.
+* D. Koukoulopoulos, *The Distribution of Prime Numbers*, Theorem 3.4(a), (b) and their proofs,
+  pp. 40–41.
 * G. H. Hardy and E. M. Wright, *An Introduction to the Theory of Numbers*, Theorem 425.
 -/
 
@@ -184,6 +201,19 @@ theorem sum_vonMangoldt_div_sub_sum_primesLE_log_div_le (N : ℕ) :
 theorem sum_primesLE_log_div_le {x : ℝ} (hx : 1 ≤ x) :
     ∑ p ∈ Nat.primesLE ⌊x⌋₊, Real.log p / p ≤ Real.log x + (Real.log 4 + 4) :=
   (sum_primesLE_log_div_le_sum_vonMangoldt_div ⌊x⌋₊).trans (sum_vonMangoldt_div_le hx)
+
+/-- `∑_{p ≤ x} 1 / p ≤ (log x + log 4 + 4) / log 2` for `x ≥ 1`, a crude form of Mertens's first
+theorem. -/
+theorem sum_primesLE_inv_le {x : ℝ} (hx : 1 ≤ x) :
+    ∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹ ≤ (Real.log x + (Real.log 4 + 4)) / Real.log 2 := by
+  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
+  rw [le_div_iff₀ hlog2, sum_mul]
+  refine le_trans (sum_le_sum fun p hp ↦ ?_) (Chebyshev.sum_primesLE_log_div_le hx)
+  have hp := (Nat.mem_primesLE.1 hp).2
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.pos
+  rw [inv_mul_eq_div]
+  exact div_le_div_of_nonneg_right
+    (Real.log_le_log two_pos (by exact_mod_cast hp.two_le)) hp0.le
 
 /-- Explicit lower bound in Mertens' first theorem: for `x ≥ 0`,
 `log x - (2 log 4 + 3 / 2) ≤ ∑_{p ≤ x} log p / p`. -/
@@ -361,6 +391,51 @@ theorem not_summable_prime_log_div_gt (y : ℝ) :
   refine mt (summable_congr_atTop ?_).mp not_summable_prime_log_div
   filter_upwards [tendsto_natCast_atTop_atTop.eventually_gt_atTop y] with n hn
   simp [hn]
+
+/-! ### Mertens' second theorem -/
+
+/-- **Mertens' second theorem.** There is a constant `B` such that for every real `x ≥ 2`,
+`|∑_{p ≤ x} 1 / p - log log x - B| ≤ 2 (log 4 + 4) / log x`, the sum running over the primes in
+`Nat.primesLE ⌊x⌋₊`. The constant is `TauCeti.LFunctions.mertensConstant ℚ`
+(`TauCeti.LFunctions.abs_sum_primesLE_one_div_sub_log_log_sub_mertensConstant_le`). -/
+theorem exists_abs_sum_primesLE_one_div_sub_log_log_sub_le :
+    ∃ B : ℝ, ∀ x : ℝ, 2 ≤ x →
+      |∑ p ∈ Nat.primesLE ⌊x⌋₊, 1 / (p : ℝ) - Real.log (Real.log x) - B| ≤
+        2 * (Real.log 4 + 4) / Real.log x := by
+  have hsum (g : ℕ → ℝ) (n : ℕ) :
+      ∑ k ∈ Icc 2 n, (if k.Prime then g k else 0) = ∑ p ∈ Nat.primesLE n, g p := by
+    rw [← sum_filter, Nat.primesLE_eq_filter_Icc_two]
+  obtain ⟨B, hB⟩ := TauCeti.exists_abs_sum_Icc_div_log_sub_log_log_sub_le
+    (c := fun k ↦ if k.Prime then Real.log k / k else 0) fun t ht ↦ by
+      simpa only [hsum] using abs_sum_primesLE_log_div_sub_log_le (one_le_two.trans ht)
+  refine ⟨B, fun x hx ↦ ?_⟩
+  have hdiv (k : ℕ) : (if k.Prime then Real.log k / k else 0) / Real.log k =
+      if k.Prime then 1 / (k : ℝ) else 0 := by
+    split_ifs with hk
+    · have hlog : Real.log k ≠ 0 := (Real.log_pos (mod_cast hk.one_lt)).ne'
+      field_simp
+    · exact zero_div _
+  simpa only [hdiv, hsum] using hB x hx
+
+/-- **Mertens' second theorem in von Mangoldt form.** There is a constant `B` such that for every
+real `x ≥ 2`, `|∑_{2 ≤ n ≤ x} Λ(n) / (n log n) - log log x - B| ≤ 2 (log 4 + 4) / log x`. -/
+theorem exists_abs_sum_vonMangoldt_div_mul_log_sub_log_log_sub_le :
+    ∃ B : ℝ, ∀ x : ℝ, 2 ≤ x →
+      |∑ n ∈ Icc 2 ⌊x⌋₊, Λ n / (n * Real.log n) - Real.log (Real.log x) - B| ≤
+        2 * (Real.log 4 + 4) / Real.log x := by
+  -- The term `n = 1` of `∑_{1 ≤ n ≤ t} Λ(n) / n` vanishes.
+  have hsum (n : ℕ) : ∑ k ∈ Icc 2 n, Λ k / (k : ℝ) = ∑ k ∈ Ioc 0 n, Λ k / k := by
+    refine sum_subset (fun k hk ↦ ?_) fun k hk hk' ↦ ?_
+    · simp only [mem_Icc, mem_Ioc] at hk ⊢
+      omega
+    · obtain rfl : k = 1 := by
+        simp only [mem_Icc, mem_Ioc] at hk hk'
+        omega
+      simp
+  obtain ⟨B, hB⟩ := TauCeti.exists_abs_sum_Icc_div_log_sub_log_log_sub_le
+    (c := fun k ↦ Λ k / k) fun t ht ↦ by
+      simpa only [hsum] using abs_sum_vonMangoldt_div_sub_log_le (one_le_two.trans ht)
+  exact ⟨B, fun x hx ↦ by simpa only [div_div] using hB x hx⟩
 
 end Chebyshev
 

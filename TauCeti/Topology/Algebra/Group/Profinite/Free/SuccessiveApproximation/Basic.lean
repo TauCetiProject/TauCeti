@@ -179,17 +179,17 @@ theorem exists_continuousMonoidHom_inv_mul_apply_mem_pLowerCentralSeries
     -- `φ r` is again a relator with class `ρ`: `φ` is congruent to the identity modulo `λ_2` on
     -- `λ_1`.
     have hφr : φ r ∈ pLowerCentralSeries p (freeProP p X) 1 :=
-      φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous 1 ⟨r, r.2, rfl⟩
+      φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous 1 ⟨r, r.property, rfl⟩
     have hρ : gradedMk p (freeProP p X) 1 ⟨φ r, hφr⟩ = gradedMk p (freeProP p X) 1 r := by
       rw [gradedMk_eq_gradedMk_iff]
       exact (QuotientGroup.eq.mpr
-        (inv_mul_apply_mem_pLowerCentralSeries φ.toMonoidHom φ.continuous hφ r.2)).symm
+        (inv_mul_apply_mem_pLowerCentralSeries φ.toMonoidHom φ.continuous hφ r.property)).symm
     -- The deviation `(φ r)⁻¹ * w` lies in `Z`, because `φ` is admissible; the constrained span
     -- statement absorbs it by an admissible correction.
     obtain ⟨ω, hωC, hω⟩ := hspan (k + 1) (by omega) le_rfl ⟨(φ r)⁻¹ * w, hr⟩ (hZ φ hφ hφC)
     -- The correction `ω`, read as a family in `λ_1(F)`: the stability hypothesis applies to it.
     let ω₁ : X → pLowerCentralSeries p (freeProP p X) 1 := fun i ↦
-      ⟨ω i, pLowerCentralSeries_antitone (by omega) (ω i).2⟩
+      ⟨ω i, pLowerCentralSeries_antitone (by omega) (ω i).property⟩
     have hω₁ : basisModification ω₁ = basisModification ω :=
       hom_ext fun i ↦ by rw [basisModification_of, basisModification_of]
     refine ⟨(basisModification ω).comp φ, fun g ↦ ?_, fun i ↦ ?_, ?_⟩

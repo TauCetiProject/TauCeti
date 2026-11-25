@@ -13,7 +13,9 @@ public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
 Composing restriction maps along inclusions of opens in both directions gives the identity after
 any morphism into the starting section object, since the inclusions force the opens to be equal;
-in particular restriction from an open to itself is the identity on sections.
+in particular restriction from an open to itself is the identity on sections. Because the category
+of opens is thin, two successive restrictions of a section agree with the single restriction between
+the same opens.
 A family of sections over opens is compatible as soon as any two of its sections are restrictions
 of a common section in the family, and two sections of a sheaf of types that agree on the
 intersection of their domains glue to a section over the union.
@@ -22,8 +24,15 @@ intersection of their domains glue to a section over the union.
 
 * `TopCat.Presheaf.comp_map_comp_map_eq_self`: composing restriction maps along inclusions in both
   directions gives the identity after any morphism into the starting section object.
+* `TopCat.Presheaf.map_comp_map_eq`: composing two restriction maps yields the unique restriction
+  map between the endpoints.
+* `TopCat.Presheaf.map_eq_id`: restriction from an open to itself is the identity morphism.
 * `TopCat.Presheaf.map_apply_eq_self`: restriction from an open to itself is the identity on
   sections.
+* `TopCat.Presheaf.map_map_apply`: two successive restrictions of a section agree with any single
+  restriction between the same opens.
+* `TopCat.Presheaf.map_map_apply_eq_map_map_apply`: two composites of two restrictions between the
+  same opens agree on sections.
 * `TopCat.Presheaf.isCompatible_of_directed`: a family of sections, any two of which are
   restrictions of a common member, is compatible.
 * `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: two sections of a sheaf of types that agree on the
@@ -49,13 +58,50 @@ theorem comp_map_comp_map_eq_self {F : T.Presheaf C} {A : C} {V V' : Opens T}
     (a ≫ F.map i) ≫ F.map j = a := by
   rw [Category.assoc, ← F.map_comp, Subsingleton.elim (i ≫ j) (𝟙 _), F.map_id, Category.comp_id]
 
-/-- Restriction from an open to itself is the identity on sections: there is only one morphism
+/-- Composing two restriction maps of a presheaf yields the unique restriction map between the
+endpoints, identifying parallel arrows in the opens preorder. -/
+@[reassoc]
+theorem map_comp_map_eq (F : Presheaf C T) {U V W : Opens T}
+    (i : op U ⟶ op V) (j : op V ⟶ op W) (k : op U ⟶ op W) :
+    F.map i ≫ F.map j = F.map k :=
+  (F.map_comp i j).symm.trans (congrArg F.map (Subsingleton.elim _ _))
+
+/-- Two composites of two restriction maps of a presheaf with the same endpoints are equal. -/
+theorem map_comp_eq_map_comp (F : Presheaf C T) {U V₁ V₂ W : Opens T}
+    (i₁ : op U ⟶ op V₁) (j₁ : op V₁ ⟶ op W) (i₂ : op U ⟶ op V₂) (j₂ : op V₂ ⟶ op W) :
+    F.map i₁ ≫ F.map j₁ = F.map i₂ ≫ F.map j₂ :=
+  (F.map_comp_map_eq i₁ j₁ (i₁ ≫ j₁)).trans (F.map_comp_map_eq i₂ j₂ (i₁ ≫ j₁)).symm
+
+/-- Restriction from an open to itself is the identity morphism: there is only one morphism
 from an open to itself, the identity. -/
 @[simp]
+theorem map_eq_id (F : Presheaf C T) {V : Opens T} (i : op V ⟶ op V) :
+    F.map i = 𝟙 (F.obj (op V)) := by
+  rw [Subsingleton.elim i (𝟙 _), F.map_id]
+
+/-- Restriction from an open to itself is the identity on sections: there is only one morphism
+from an open to itself, the identity. -/
 theorem map_apply_eq_self {FC : C → C → Type*} {CC : C → Type*}
     [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] (F : Presheaf C T)
     {V : Opens T} (i : op V ⟶ op V) (s : ToType (F.obj (op V))) : F.map i s = s := by
-  rw [Subsingleton.elim i (𝟙 _), F.map_id, ConcreteCategory.id_apply]
+  rw [map_eq_id, ConcreteCategory.id_apply]
+
+/-- Two successive restrictions of a section agree with any single restriction between the same
+opens: in the thin category of opens there is only one morphism between two opens. -/
+theorem map_map_apply {FC : C → C → Type*} {CC : C → Type*}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] (F : Presheaf C T)
+    {V W Y : Opens T} (i : op Y ⟶ op W) (j : op W ⟶ op V) (k : op Y ⟶ op V)
+    (s : ToType (F.obj (op Y))) : F.map j (F.map i s) = F.map k s := by
+  rw [← ConcreteCategory.comp_apply, ← F.map_comp, Subsingleton.elim (i ≫ j) k]
+
+/-- Two composites of two restriction maps with the same source and target opens agree on
+sections, whatever the intermediate opens. -/
+theorem map_map_apply_eq_map_map_apply {FC : C → C → Type*} {CC : C → Type*}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC] (F : Presheaf C T)
+    {V W₁ W₂ Y : Opens T} (a : op Y ⟶ op W₁) (b : op W₁ ⟶ op V) (c : op Y ⟶ op W₂)
+    (d : op W₂ ⟶ op V) (s : ToType (F.obj (op Y))) :
+    F.map b (F.map a s) = F.map d (F.map c s) := by
+  rw [map_map_apply F a b (a ≫ b), map_map_apply F c d (a ≫ b)]
 
 /-- A family of sections over a directed family of opens is compatible as soon as any two of its
 sections are restrictions of a common section in the family. -/

@@ -8,17 +8,24 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Finite
 
 /-!
-# Enumerating the elements of a finite subgroup
+# Finite subgroups
 
 For a finite subgroup `H` of a group, such as any subgroup of a finite group,
 `Subgroup.fintypeOfFinite H` is a `Fintype` structure on the elements of `H`, so that finite sums
 and products can be indexed over `H`. Examples are the sum over a subgroup in the relative norm,
 and the sums over a subgroup and its cosets in the transfer.
 
+A homomorphism `f : G →* H` from a finite group with `f.range = K` and `Nat.card G ≤ Nat.card K`
+is an isomorphism onto `K`. This is how a finite presentation is recognised as a concrete
+group: an order bound on the presented group, compared with the order of the image of the
+presentation map, upgrades that map to `MonoidHom.mulEquivOfRangeEq`.
+
 ## Main definitions
 
 * `Subgroup.fintypeOfFinite`: the `Fintype` structure `Fintype.ofFinite` on the elements of a
   finite subgroup.
+* `MonoidHom.mulEquivOfRangeEq`: a homomorphism from a finite group onto a subgroup `K` with at
+  least as many elements, as an isomorphism with `K`.
 -/
 
 public section
@@ -37,3 +44,24 @@ noncomputable def fintypeOfFinite (H : Subgroup G) [Finite H] : Fintype H :=
   Fintype.ofFinite H
 
 end Subgroup
+
+namespace MonoidHom
+
+variable {G H : Type*} [Group G] [Group H]
+
+/-- A homomorphism from a finite group whose range is `K`, where `K` has at least as many elements
+as the source, is an isomorphism onto `K`. -/
+noncomputable def mulEquivOfRangeEq [Finite G] (f : G →* H) {K : Subgroup H} (hK : f.range = K)
+    (hcard : Nat.card G ≤ Nat.card K) : G ≃* K :=
+  MulEquiv.ofBijective ((MulEquiv.subgroupCongr hK).toMonoidHom.comp f.rangeRestrict) <|
+    Function.Surjective.bijective_of_nat_card_le
+      ((MulEquiv.subgroupCongr hK).surjective.comp f.rangeRestrict_surjective) hcard
+
+/-- The isomorphism `MonoidHom.mulEquivOfRangeEq` is `f`, read in `K`. -/
+@[simp]
+theorem coe_mulEquivOfRangeEq_apply [Finite G] (f : G →* H) {K : Subgroup H} (hK : f.range = K)
+    (hcard : Nat.card G ≤ Nat.card K) (g : G) : (f.mulEquivOfRangeEq hK hcard g : H) = f g := by
+  simp only [mulEquivOfRangeEq, MulEquiv.ofBijective_apply, MonoidHom.coe_comp,
+    MulEquiv.coe_toMonoidHom, Function.comp_apply, MulEquiv.subgroupCongr_apply, coe_rangeRestrict]
+
+end MonoidHom

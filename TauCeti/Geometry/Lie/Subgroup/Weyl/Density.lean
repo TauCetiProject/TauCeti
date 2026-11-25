@@ -64,7 +64,7 @@ endomorphism of `𝔤 ⧸ Lie(K)` induced by `Ad t⁻¹ - 1`. -/
 def weylDensity (K : Subgroup G) (t : K) : ℝ :=
   |LinearMap.det
     (Submodule.mapQ _ _ ((Ad (I := I) ((t : G)⁻¹)).toLinearEquiv.toLinearMap - LinearMap.id)
-      (lieSubalgebraOfSubgroup_le_comap_Ad_sub_id (Subgroup.le_normalizer (K.inv_mem t.2))))|
+      (lieSubalgebraOfSubgroup_le_comap_Ad_sub_id (Subgroup.le_normalizer (K.inv_mem t.property))))|
 
 theorem weylDensity_def (K : Subgroup G) (t : K) :
     weylDensity (I := I) K t =
@@ -72,7 +72,7 @@ theorem weylDensity_def (K : Subgroup G) (t : K) :
         (Submodule.mapQ _ _
           ((Ad (I := I) ((t : G)⁻¹)).toLinearEquiv.toLinearMap - LinearMap.id)
           (lieSubalgebraOfSubgroup_le_comap_Ad_sub_id
-            (Subgroup.le_normalizer (K.inv_mem t.2))))| := by
+            (Subgroup.le_normalizer (K.inv_mem t.property))))| := by
   rw [weylDensity]
 
 @[simp]
@@ -118,6 +118,6 @@ theorem continuous_weylDensity (K : Subgroup G) : Continuous (weylDensity (I := 
   have hAd : Continuous fun p : G × LeftInvariantDerivation I G => Ad (I := I) p.1 p.2 :=
     (contMDiff_Ad_apply (I := I) (G := G)).continuous
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  exact hAd.comp (continuous_subtype_val.inv.prodMk continuous_const)
+  exact hAd.comp (continuous_subtypeVal.inv.prodMk continuous_const)
 
 end TauCeti.Lie

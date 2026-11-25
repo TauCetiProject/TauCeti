@@ -95,7 +95,7 @@ in house. -/
 private theorem exists_matrix_hasseDerivRow_house_le [NumberField K] (α : K) {b : ℕ}
     (hbα : IsIntegral ℤ ((b : K) * α)) (r : ι → ℕ) (rows : Finset (ι → ℕ)) :
     ∃ a : Matrix rows (∀ i, Fin (r i + 1)) (𝓞 K),
-      (∀ d μ, (a d μ : K) = hasseDerivRow r (fun _ ↦ α) (Finsupp.equivFunOnFinite.symm d.1) μ *
+      (∀ d μ, (a d μ : K) = hasseDerivRow r (fun _ ↦ α) (Finsupp.equivFunOnFinite.symm d.val) μ *
         (b : K) ^ ∑ i, r i) ∧
       ∀ d μ, NumberField.house (a d μ : K) ≤
         (2 * b * max 1 (NumberField.house α)) ^ ∑ i, r i := by
@@ -105,23 +105,23 @@ private theorem exists_matrix_hasseDerivRow_house_le [NumberField K] (α : K) {b
   -- The equation for `d`, multiplied by `b ^ R`, has coefficient `e d μ` at the unknown
   -- coefficient of `X ^ μ`.
   let e : rows → (∀ i, Fin (r i + 1)) → K := fun d μ ↦
-    hasseDerivRow r (fun _ ↦ α) (Finsupp.equivFunOnFinite.symm d.1) μ * (b : K) ^ R
+    hasseDerivRow r (fun _ ↦ α) (Finsupp.equivFunOnFinite.symm d.val) μ * (b : K) ^ R
   have he_eq (d : rows) (μ : ∀ i, Fin (r i + 1)) : e d μ =
-      ((∏ j, (μ j : ℕ).choose (d.1 j) : ℕ) : K) *
-        ((b : K) ^ R * α ^ ∑ j, ((μ j : ℕ) - d.1 j)) := by
+      ((∏ j, (μ j : ℕ).choose (d.val j) : ℕ) : K) *
+        ((b : K) ^ R * α ^ ∑ j, ((μ j : ℕ) - d.val j)) := by
     simp only [e, hasseDerivRow_def, prod_mul_distrib, prod_pow_eq_pow_sum, Nat.cast_prod,
       Finsupp.coe_equivFunOnFinite_symm]
     ring
-  have hdeg (d : rows) (μ : ∀ i, Fin (r i + 1)) : ∑ j, ((μ j : ℕ) - d.1 j) ≤ R :=
+  have hdeg (d : rows) (μ : ∀ i, Fin (r i + 1)) : ∑ j, ((μ j : ℕ) - d.val j) ≤ R :=
     sum_le_sum fun j _ ↦ (Nat.sub_le _ _).trans (hle μ j)
-  have hchoose (d : rows) (μ : ∀ i, Fin (r i + 1)) : ∏ j, (μ j : ℕ).choose (d.1 j) ≤ 2 ^ R :=
-    calc ∏ j, (μ j : ℕ).choose (d.1 j) ≤ ∏ j, 2 ^ (μ j : ℕ) :=
+  have hchoose (d : rows) (μ : ∀ i, Fin (r i + 1)) : ∏ j, (μ j : ℕ).choose (d.val j) ≤ 2 ^ R :=
+    calc ∏ j, (μ j : ℕ).choose (d.val j) ≤ ∏ j, 2 ^ (μ j : ℕ) :=
           prod_le_prod fun j _ ↦ Nat.choose_le_two_pow _ _
       _ = 2 ^ ∑ j, (μ j : ℕ) := prod_pow_eq_pow_sum _ _ _
       _ ≤ 2 ^ R := Nat.pow_le_pow_right two_pos (sum_le_sum fun j _ ↦ hle μ j)
   have he (d : rows) (μ : ∀ i, Fin (r i + 1)) : IsIntegral ℤ (e d μ) := by
     rw [he_eq]
-    exact (isIntegral_natCast _).mul (isIntegral_natCast_pow_mul_pow hbα (hdeg d μ))
+    exact (isIntegral_natCast _).mul (hbα.natCast_pow_mul_pow (hdeg d μ))
   -- The entry `a d μ` coerces to `e d μ` by `RingOfIntegers.map_mk`, which holds by `rfl`.
   refine ⟨fun d μ ↦ (⟨e d μ, he d μ⟩ : 𝓞 K), fun _ _ ↦ rfl, fun d μ ↦ ?_⟩
   change NumberField.house (e d μ) ≤ _
