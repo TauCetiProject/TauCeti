@@ -11,7 +11,6 @@ import Mathlib.MeasureTheory.Covering.Besicovitch
 import Mathlib.MeasureTheory.Integral.PeakFunction
 import Mathlib.MeasureTheory.Measure.Sub
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Atoms
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
@@ -189,22 +188,6 @@ private theorem withDensity_restrict_le_of_tendsto {s : Set ℝ} (hs : IsOpen s)
   exact lintegral_Ioc_ofReal_le_measure_Icc_of_tendsto
     ((ae_restrict_mem measurableSet_Ioc).mono fun y hy ↦ h y (hball (Ioc_subset_Icc_self hy)))
 
-private theorem tendsto_integral_Ioc_poissonKernel (x : ℝ) :
-    Tendsto (fun η : ℝ ↦ ∫ t in Ioc (x - 1) (x + 1), π⁻¹ * (η / ((t - x) ^ 2 + η ^ 2)))
-      (𝓝[>] 0) (𝓝 1) := by
-  have h := ((Real.tendsto_arctan_div_nhdsGT_zero 1).sub
-    (Real.tendsto_arctan_div_nhdsGT_zero (-1))).const_mul π⁻¹
-  have hd : x - 1 ≤ x + 1 := by linarith
-  convert h using 1
-  · ext η
-    rw [integral_const_mul, ← intervalIntegral.integral_of_le hd]
-    have hkernel (t : ℝ) : η / ((t - x) ^ 2 + η ^ 2) = η / ((x - t) ^ 2 + η ^ 2) := by
-      rw [← neg_sub x t, neg_sq]
-    simp_rw [hkernel]
-    rw [Real.integral_div_sub_sq_add_sq]
-    ring_nf
-  · simp [Real.sign_of_pos, Real.sign_of_neg, Real.pi_ne_zero]
-
 /-- The normalized imaginary resolvent transform of a finite measure with nonnegative density
 approaches the density at each point of continuity. -/
 theorem tendsto_pi_inv_mul_im_resolventTransform_withDensity {g : ℝ → ℝ≥0}
@@ -229,14 +212,16 @@ theorem tendsto_pi_inv_mul_im_resolventTransform_withDensity {g : ℝ → ℝ≥
         nlinarith [sq_abs (t - x), pow_le_pow_left₀ hr.le hrt 2]
       _ = η / (π * r ^ 2) := by ring
       _ < ε := (div_lt_iff₀ (by positivity)).2 hη.2
+  have ha : x - 1 < x := by linarith
+  have hb : x < x + 1 := by linarith
   have hpeak := tendsto_integral_peak_smul_of_integrable_of_tendsto (μ := volume)
-    measurableSet_Ioc (Ioc_mem_nhds (by linarith) (by linarith)) (by simp [Real.volume_Ioc])
+    measurableSet_Ioc (Ioc_mem_nhds ha hb) (by simp [Real.volume_Ioc])
     (φ := P) (by
       filter_upwards [self_mem_nhdsWithin] with η hη
       have : 0 < η := hη
       intro t
       dsimp [P]
-      positivity) hoff (tendsto_integral_Ioc_poissonKernel x)
+      positivity) hoff (Real.tendsto_integral_Ioc_poissonKernel x ha hb)
     (.of_forall fun η ↦ (by fun_prop : Measurable (P η)).aestronglyMeasurable)
     hg (NNReal.continuous_coe.continuousAt.comp hx).tendsto
   have hfinite : IsFiniteMeasure (volume.withDensity (fun t ↦ (g t : ℝ≥0∞))) := by

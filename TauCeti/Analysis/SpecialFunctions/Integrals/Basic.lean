@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -73,6 +74,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
 * `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
   over an interval is a difference of arctangents.
+* `Real.tendsto_integral_Ioc_poissonKernel`: the normalized Poisson kernel has limiting mass
+  one on any interval containing its center in the interior.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
 * `Complex.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the
@@ -629,6 +632,21 @@ theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
   simp_rw [← neg_sub _ t, neg_sq, add_comm _ (η ^ 2)]
   rw [intervalIntegral.integral_comp_sub_right (fun x => η / (η ^ 2 + x ^ 2)),
     integral_div_sq_add_sq]
+
+open Filter MeasureTheory Set Topology in
+/-- The integral of the normalized Poisson kernel over `(a, b]` tends to `1` as the
+height tends to zero from above, provided the center `x` lies strictly between `a` and `b`. -/
+theorem tendsto_integral_Ioc_poissonKernel (x : ℝ) {a b : ℝ} (ha : a < x) (hb : x < b) :
+    Tendsto (fun η : ℝ ↦ ∫ t in Ioc a b, π⁻¹ * (η / ((t - x) ^ 2 + η ^ 2)))
+      (𝓝[>] 0) (𝓝 1) := by
+  have h := ((tendsto_arctan_div_nhdsGT_zero (b - x)).sub
+    (tendsto_arctan_div_nhdsGT_zero (a - x))).const_mul π⁻¹
+  simp [sign_of_pos (sub_pos.mpr hb), sign_of_neg (sub_neg.mpr ha), pi_ne_zero] at h
+  refine h.congr fun η ↦ ?_
+  rw [integral_const_mul, ← intervalIntegral.integral_of_le (ha.trans hb).le]
+  have hkernel (t : ℝ) : η / ((t - x) ^ 2 + η ^ 2) = η / ((x - t) ^ 2 + η ^ 2) := by
+    rw [← neg_sub x t, neg_sq]
+  simp_rw [hkernel, integral_div_sub_sq_add_sq]
 
 open Set intervalIntegral in
 /-- The reciprocal-square kernel has an elementary integral on each nonnegative interval:
