@@ -7,9 +7,9 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 public import TauCeti.NumberTheory.NumberField.TateEmbedding.Basic
-import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Meromorphic.TrailingCoefficient
 import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Basic
 import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 
@@ -56,8 +56,9 @@ private theorem finrank_tateEmbeddingSpace_pred {n : ℕ} (hn : 2 ≤ n) :
     simp [Nat.not_even_iff_odd.mpr ho,
       TauCeti.NumberField.finrank_tateEmbeddingSpace_of_even (F := K) h]
 
-private theorem one_sub_natCast_ne_zero {n : ℕ} (hn : 2 ≤ n) : (1 : ℂ) - n ≠ 0 :=
-  sub_ne_zero.mpr (by exact_mod_cast (show 1 ≠ n by omega))
+private theorem one_sub_natCast_ne_zero {n : ℕ} (hn : 2 ≤ n) : (1 : ℂ) - n ≠ 0 := by
+  have hne : 1 ≠ n := by omega
+  exact sub_ne_zero.mpr (by exact_mod_cast hne)
 
 private theorem one_sub_natCast_ne_one {n : ℕ} (hn : 2 ≤ n) : (1 : ℂ) - n ≠ 1 := by
   have h : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
@@ -65,7 +66,8 @@ private theorem one_sub_natCast_ne_one {n : ℕ} (hn : 2 ≤ n) : (1 : ℂ) - n 
 
 private theorem one_lt_re_natCast {n : ℕ} (hn : 2 ≤ n) : 1 < (n : ℂ).re := by
   rw [natCast_re]
-  exact_mod_cast (show 1 < n by omega)
+  have hn_nat : 1 < n := by omega
+  exact_mod_cast hn_nat
 
 /-- The analytic factor left over after removing the reciprocal Gamma factors from the
 functional equation. -/
@@ -87,9 +89,7 @@ private theorem leadingTermFactor_ne_zero {n : ℕ} (hn : 2 ≤ n) :
   have hd : ((|discr K| : ℤ) : ℂ) ≠ 0 := by exact_mod_cast (abs_discr_pos K).ne'
   rw [leadingTermFactor, completedDedekindZeta_one_sub,
     completedDedekindZeta_eq_mul_dedekindZeta K hs]
-  have hζ : dedekindZeta K n ≠ 0 := by
-    have h := dedekindZeta_re_pos (K := K) (s := n) (by simpa using hs)
-    exact fun he ↦ h.ne' (by simpa only [zero_re, ofReal_natCast] using congrArg re he)
+  have hζ : dedekindZeta K n ≠ 0 := dedekindZeta_ne_zero_of_one_lt_re hs
   simp [hd, pow_ne_zero _ hR, pow_ne_zero _ hC, hζ]
 
 private theorem eventuallyEq_dedekindZetaC_mul_reciprocalGamma {s : ℂ} (h₀ : s ≠ 0) (h₁ : s ≠ 1) :
@@ -168,21 +168,6 @@ private theorem exists_rat_meromorphicTrailingCoeffAt_dedekindZetaC_one_sub_nat
         Nat.cast_ofNat]
       ring
 
-/-- Any function analytic off `1` and agreeing with the Dedekind zeta series on `Re s > 1`
-agrees with the continued Dedekind zeta function off `1`. -/
-theorem eqOn_dedekindZetaC_of_eqOn_dedekindZeta {Z : ℂ → ℂ}
-    (hZ : ∀ z ≠ 1, AnalyticAt ℂ Z z)
-    (hseries : Set.EqOn Z (dedekindZeta K) {z | 1 < z.re}) :
-    Set.EqOn Z (dedekindZetaC K) ({1}ᶜ : Set ℂ) := by
-  refine AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq (fun z hz ↦ hZ z hz)
-    (fun _ hz ↦ analyticAt_dedekindZetaC K hz)
-    (isConnected_compl_singleton_of_one_lt_rank
-      (rank_real_complex ▸ Nat.one_lt_ofNat) 1).isPreconnected
-    (z₀ := 2) (by norm_num) ?_
-  filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
-    (by norm_num : 1 < (2 : ℂ).re)] with z hz
-  exact (hseries hz).trans (dedekindZetaC_eq_dedekindZeta K hz).symm
-
 /-- The real part of the degree-`d` Taylor coefficient of the continued Dedekind zeta
 function at `1 - n`, where `d` is the dimension of the embedding Tate space in twist `n - 1`.
 For `n ≥ 2` this is its real, nonzero leading coefficient. -/
@@ -229,11 +214,19 @@ theorem dedekindZeta_continuation_leadingTerm {n : ℕ} (hn : 2 ≤ n) {Z : ℂ 
     rw [(hZ a ha).meromorphicTrailingCoeffAt_eq_inv_factorial_smul_iteratedDeriv hord,
       smul_eq_mul, div_eq_inv_mul]
   obtain ⟨q, hq, hvalue⟩ := exists_rat_meromorphicTrailingCoeffAt_dedekindZetaC_one_sub_nat K hn
-  have hnat : (1 : ℝ) < n := by exact_mod_cast (show 1 < n by omega)
+  have hn_nat : 1 < n := by omega
+  have hnat : (1 : ℝ) < n := by exact_mod_cast hn_nat
   have hζ : ((dedekindZeta K n).re : ℂ) = dedekindZeta K n := by
-    rw [← ofReal_natCast, dedekindZeta_ofReal_eq_exp_tsum_neg_log_one_sub (K := K) hnat, ofReal_re]
+    simpa only [ofReal_natCast] using dedekindZeta_ofReal_re (K := K) (n : ℝ)
+  have hformula :
+      ((q * Real.sqrt (|discr K| : ℤ) *
+        Real.pi ^ ((d : ℤ) - (finrank ℚ K : ℤ) * n) * (dedekindZeta K n).re : ℝ) : ℂ) =
+      (q : ℂ) * (Real.sqrt (|discr K| : ℤ) : ℂ) *
+        (Real.pi : ℂ) ^ ((d : ℤ) - (finrank ℚ K : ℤ) * n) * dedekindZeta K n := by
+    push_cast
+    rw [hζ]
   rw [← meromorphicTrailingCoeffAt_congr_nhdsNE (hagree.filter_mono nhdsWithin_le_nhds), hc,
-    ← hζ, ← ofReal_ratCast, ← ofReal_zpow, ← ofReal_mul, ← ofReal_mul, ← ofReal_mul] at hvalue
+    ← hformula] at hvalue
   have hcoeff : (iteratedDeriv d Z a / (d.factorial : ℂ)).re = dedekindZetaCLeadingCoeff K n := by
     rw [hagree.iteratedDeriv_eq, dedekindZetaCLeadingCoeff_def]
   have hreal := congrArg re hvalue
