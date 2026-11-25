@@ -99,17 +99,8 @@ theorem bfzOccurrence_eq_iff (w : List (Fin r × Bool)) (i : Fin r)
     (n : Fin (bfzOccurrencePositions w i).card) (k : Fin (r + w.length)) :
     bfzOccurrence w i n = k ↔ (bfzLetter w k).1 = i ∧
       ((bfzOccurrencePositions w i).filter (fun j ↦ j < k)).card = n := by
-  constructor
-  · rintro rfl
-    exact ⟨bfzLetter_bfzOccurrence_fst w i n,
-      Finset.card_filter_lt_orderEmbOfFin (bfzOccurrencePositions w i) rfl n⟩
-  · rintro ⟨hk, hn⟩
-    obtain ⟨m, rfl⟩ :=
-      exists_bfzOccurrence_eq_of_bfzLetter_fst_eq w i hk
-    have hCount : ((bfzOccurrencePositions w i).filter (fun j ↦ j < bfzOccurrence w i m)).card =
-        (m : ℕ) := Finset.card_filter_lt_orderEmbOfFin (bfzOccurrencePositions w i) rfl m
-    have hm : (m : ℕ) = n := hCount.symm.trans hn
-    exact congrArg (bfzOccurrence w i) (Fin.ext hm).symm
+  simpa only [bfzOccurrence, mem_bfzOccurrencePositions] using
+    Finset.orderEmbOfFin_eq_iff (bfzOccurrencePositions w i) rfl n k
 
 /-- Occurrence zero is the distinguished negative-prefix position, independently of the
 proof of the cardinality bound. -/
