@@ -192,15 +192,18 @@ variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module K M₂] [AddCommG
 
 /-- The **equivalence of component pairings** induced by an equivalence of root pairings `e`: the
 restrictions of the weight and coweight equivalences of `e` to the component spaces of `C` and of
-the corresponding component of `Q`, along the bijection of the roots of the two components. -/
-noncomputable def componentPairingEquiv (e : P.Equiv Q) (C : P.Component) :
-    (P.componentPairing C).Equiv (Q.componentPairing (e.componentEquiv C)) where
+the corresponding component `D = e.componentEquiv C` of `Q`, along the bijection of the roots of the
+two components. Taking `D` with a proof `hD` of this equality, rather than `e.componentEquiv C`
+itself, lets an automorphism mapping `C` to itself restrict to an automorphism of the pairing
+of `C`. -/
+noncomputable def componentPairingEquiv (e : P.Equiv Q) (C : P.Component) {D : Q.Component}
+    (hD : e.componentEquiv C = D) : (P.componentPairing C).Equiv (Q.componentPairing D) where
   weightMap := (e.weightEquiv.submoduleMap (P.componentSpace C)).trans
-    (LinearEquiv.ofEq _ _ (e.map_componentSpace C))
-  coweightMap := ((e.coweightEquiv.submoduleMap
-    (Q.corootComponentSpace (e.componentEquiv C))).trans
-      (LinearEquiv.ofEq _ _ (e.map_corootComponentSpace C))).toLinearMap
-  indexEquiv := e.indexEquiv.subtypeEquiv fun _ ↦ e.indexEquiv_mem_supp_iff.symm
+    (LinearEquiv.ofEq _ _ ((e.map_componentSpace C).trans (congrArg Q.componentSpace hD)))
+  coweightMap := ((e.coweightEquiv.submoduleMap (Q.corootComponentSpace D)).trans
+    (LinearEquiv.ofEq _ _ ((congrArg (fun D ↦ (Q.corootComponentSpace D).map
+      e.coweightEquiv.toLinearMap) hD.symm).trans (e.map_corootComponentSpace C)))).toLinearMap
+  indexEquiv := e.indexEquiv.subtypeEquiv fun _ ↦ hD ▸ e.indexEquiv_mem_supp_iff.symm
   weight_coweight_transpose := by
     ext y x
     simpa using e.toLinearMap_weightEquiv x.val y.val
@@ -213,29 +216,30 @@ noncomputable def componentPairingEquiv (e : P.Equiv Q) (C : P.Component) :
   bijective_weightMap := LinearEquiv.bijective _
   bijective_coweightMap := LinearEquiv.bijective _
 
+variable (e : P.Equiv Q) (C : P.Component) {D : Q.Component} (hD : e.componentEquiv C = D)
+
 @[simp]
-theorem coe_componentPairingEquiv_weightMap_apply (e : P.Equiv Q) (C : P.Component)
-    (x : P.componentSpace C) :
-    ((e.componentPairingEquiv C).toHom.weightMap x : M₂) = e.toHom.weightMap x :=
+theorem coe_componentPairingEquiv_weightMap_apply (x : P.componentSpace C) :
+    ((e.componentPairingEquiv C hD).toHom.weightMap x : M₂) = e.toHom.weightMap x :=
   (rfl)
 
 @[simp]
-theorem coe_componentPairingEquiv_coweightMap_apply (e : P.Equiv Q) (C : P.Component)
-    (y : Q.corootComponentSpace (e.componentEquiv C)) :
-    ((e.componentPairingEquiv C).toHom.coweightMap y : N) = e.toHom.coweightMap y :=
+theorem coe_componentPairingEquiv_coweightMap_apply (y : Q.corootComponentSpace D) :
+    ((e.componentPairingEquiv C hD).toHom.coweightMap y : N) = e.toHom.coweightMap y :=
   (rfl)
 
 @[simp]
-theorem coe_componentPairingEquiv_indexEquiv_apply (e : P.Equiv Q) (C : P.Component)
-    (i : C.supp) : ((e.componentPairingEquiv C).indexEquiv i : ι₂) = e.indexEquiv i :=
+theorem coe_componentPairingEquiv_indexEquiv_apply (i : C.supp) :
+    ((e.componentPairingEquiv C hD).indexEquiv i : ι₂) = e.indexEquiv i :=
   (rfl)
 
 /-- **The equivalence of component pairings intertwines the component projections**: projecting
 onto the component space of `C` and then applying the equivalence of component pairings is
 applying `e` and then projecting onto the component space of the corresponding component. -/
-theorem componentPairingEquiv_weightMap_componentProj (e : P.Equiv Q) (C : P.Component) (x : M) :
-    (e.componentPairingEquiv C).toHom.weightMap (P.componentProj C x) =
-      Q.componentProj (e.componentEquiv C) (e.toHom.weightMap x) := by
+theorem componentPairingEquiv_weightMap_componentProj (x : M) :
+    (e.componentPairingEquiv C hD).toHom.weightMap (P.componentProj C x) =
+      Q.componentProj D (e.toHom.weightMap x) := by
+  subst hD
   suffices h : e.toHom.weightMap ∘ₗ (P.componentSpace C).subtype ∘ₗ P.componentProj C =
       (Q.componentSpace (e.componentEquiv C)).subtype ∘ₗ
         Q.componentProj (e.componentEquiv C) ∘ₗ e.toHom.weightMap from

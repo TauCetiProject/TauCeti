@@ -142,6 +142,13 @@ lemma mem_supportedSubmodule_iff {S : Closeds X} {W : Opens X} {s : F.obj.obj (o
     s ∈ F.supportedSubmodule S W ↔ F.obj.map (S.complInclusion W).op s = 0 :=
   Iff.rfl
 
+/-- A section is supported in `S` exactly when its support, the set of points at which its germ
+is nonzero, lies in `S`. -/
+lemma mem_supportedSubmodule_iff_sectionSupport_subset {S : Closeds X} {W : Opens X}
+    {s : F.obj.obj (op W)} : s ∈ F.supportedSubmodule S W ↔
+      TopCat.Presheaf.sectionSupport F.obj s ⊆ S :=
+  TopCat.Presheaf.map_eq_zero_iff_sectionSupport_subset F S s
+
 /-- A morphism of sheaves of modules maps sections supported in `S` to sections supported
 in `S`. -/
 lemma map_mem_supportedSubmodule {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)}

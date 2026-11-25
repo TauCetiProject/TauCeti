@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.Riemannian.Hessian.SecondDerivativeTest
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 
 /-!
 # The maximum principle for the Laplace–Beltrami operator
@@ -136,7 +137,9 @@ theorem hessian_self_le_of_eventuallyLE_of_eq {g : M → ℝ}
     simpa only [Pi.sub_apply, ← heq, sub_self] using sub_nonneg.mpr hy
   have hh : 0 ≤ hessian I (g - f) x v v :=
     hessian_self_nonneg_of_isLocalMin (hg.sub hf) hx hmin v
-  rw [hessian_sub_of_contMDiffAt I (f := g) (g := f) hg hf] at hh
+  rw [I.hessian_sub_of_mdifferentiableAt_mgradient (f := g) (g := f)
+    (hg.eventually_mdifferentiableAt two_ne_zero) (hf.eventually_mdifferentiableAt two_ne_zero)
+    (mdifferentiableAt_mgradient hg) (mdifferentiableAt_mgradient hf)] at hh
   exact sub_nonneg.mp hh
 
 /-- If `g` touches `f` from above at an interior point, its Laplace–Beltrami operator is larger. -/

@@ -38,6 +38,8 @@ hypothesis.
 * `TauCeti.GeneralLinear.coordinateHopfAlgebra`: the bundled commutative Hopf algebra.
 * `TauCeti.GeneralLinear.adjoin_coordinateHopfAlgebra_X_union_antipode_X`: its generic entries
   and their antipode images generate its carrier as an algebra.
+* `TauCeti.GeneralLinear.adjoin_range_map_genericMatrix`: the images of the generic entries
+  generate the target of a surjective morphism once they generate the inverse image matrix.
 * `TauCeti.GeneralLinear.finiteTypeCoordinateHopfAlgebra`: its finite-type package.
 
 ## References
@@ -696,6 +698,30 @@ theorem adjoin_coordinateHopfAlgebra_X_union_antipode_X :
       coordinateHopfAlgebra_antipode_apply]
   rw [himage, Algebra.adjoin_image, adjoin_X_union_antipode_X, Algebra.map_top]
   exact (AlgHom.range_eq_top _).mpr (coordinateHopfAlgebraAlgEquiv R n).surjective
+
+/-- Under a surjective algebra morphism `q` out of `O(GLₙ)`, the images of the generic entries
+generate the target as soon as the entries of the inverse of the image matrix lie in the
+subalgebra they generate. -/
+theorem adjoin_range_map_genericMatrix {T : Type*} [CommRing T] [Algebra R T]
+    {q : coordinateHopfAlgebra R n →ₐ[R] T} (hq : Function.Surjective q)
+    (hinv : ∀ i j, ((genericMatrix R n).map q)⁻¹ i j ∈
+      Algebra.adjoin R (Set.range fun ij : Fin n × Fin n ↦ (genericMatrix R n).map q ij.1 ij.2)) :
+    Algebra.adjoin R (Set.range fun ij : Fin n × Fin n ↦ (genericMatrix R n).map q ij.1 ij.2) =
+      ⊤ := by
+  -- The images of the generators of `O(GLₙ)` are the entries of the image matrix and of its
+  -- inverse.
+  have himage := congrArg (Subalgebra.map q) (adjoin_coordinateHopfAlgebra_X_union_antipode_X R n)
+  rw [Algebra.map_top, (AlgHom.range_eq_top q).mpr hq, ← Algebra.adjoin_image, Set.image_union,
+    ← Set.range_comp, ← Set.range_comp] at himage
+  rw [eq_top_iff, ← himage, Algebra.adjoin_le_iff]
+  rintro _ (⟨⟨i, j⟩, rfl⟩ | ⟨⟨i, j⟩, rfl⟩)
+  · exact Algebra.subset_adjoin ⟨(i, j), by
+      beta_reduce
+      rw [Function.comp_apply, Matrix.map_apply, genericMatrix_apply]⟩
+  · rw [Function.comp_apply, ← HopfAlgebra.antipodeAlgHom_apply, ← genericMatrix_apply,
+      ← Matrix.map_apply (f := HopfAlgebra.antipodeAlgHom R _), map_antipode_genericMatrix,
+      ← Matrix.map_apply (f := q), map_inv_genericMatrix]
+    exact hinv i j
 
 /-- The general linear coordinate Hopf algebra bundled with its finite-type algebra property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
