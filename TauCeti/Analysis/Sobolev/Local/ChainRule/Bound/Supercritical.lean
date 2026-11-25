@@ -118,6 +118,78 @@ private theorem exists_eLpNormWkp_bilin_le_of_two_lt_add_sub_mul_of_fixed {V E :
   refine ⟨C * ‖Φ‖₊, fun D v => (hC Φ D v).trans (le_of_eq ?_)⟩
   rw [ENNReal.coe_mul, eNorm_eq_nnNorm]
 
+/-- To bound `L` by `C (1 + X)^n Y` with `C ≠ 0` and `n ≠ 0`, it suffices to treat finite `X` and
+`Y`, provided `L` vanishes when `Y` does. -/
+private theorem le_mul_one_add_pow_mul_of_ne_top_imp_le {L X Y : ℝ≥0∞} {C : ℝ≥0} (hC : C ≠ 0)
+    {n : ℕ} (hn : n ≠ 0) (h0 : Y = 0 → L = 0) (hfin : X ≠ ∞ → Y ≠ ∞ → L ≤ C * (1 + X) ^ n * Y) :
+    L ≤ C * (1 + X) ^ n * Y := by
+  by_cases hY0 : Y = 0
+  · rw [h0 hY0]
+    exact zero_le
+  by_cases hX : X = ∞
+  · rw [hX, add_top, ENNReal.top_pow hn, ENNReal.mul_top (by simpa using hC),
+      ENNReal.top_mul hY0]
+    exact le_top
+  by_cases hY : Y = ∞
+  · rw [hY, ENNReal.mul_top (mul_ne_zero (by simpa using hC) (pow_ne_zero _ (by simp)))]
+    exact le_top
+  exact hfin hX hY
+
+/-- The arithmetic of the inductive step: the three bounds for the `Lᵖ` part and the two
+Leibniz terms combine into one bound with the power raised by one. -/
+private theorem add_add_le_mul_one_add_pow_succ_mul (C₀ Cl Cr N : ℝ≥0) (X Y : ℝ≥0∞) (m : ℕ) :
+    C₀ * (1 + X) ^ m * Y + (Cl * (1 + X) ^ m * (N * X * Y) + Cr * (1 + X) ^ m * Y) ≤
+      ↑(C₀ + Cr + Cl * N + 1) * (1 + X) ^ (m + 1) * Y := by
+  have hpow : (1 + X) ^ m ≤ (1 + X) ^ (m + 1) := pow_le_pow_right₀ le_self_add (by omega)
+  have hpowX : (1 + X) ^ m * X ≤ (1 + X) ^ (m + 1) := by
+    rw [pow_succ]
+    exact mul_le_mul' le_rfl (le_add_self : X ≤ 1 + X)
+  calc
+    _ = C₀ * (1 + X) ^ m * Y + (Cl * N * ((1 + X) ^ m * X) * Y + Cr * (1 + X) ^ m * Y) := by
+      ring
+    _ ≤ C₀ * (1 + X) ^ (m + 1) * Y +
+        (Cl * N * (1 + X) ^ (m + 1) * Y + Cr * (1 + X) ^ (m + 1) * Y) := by
+      gcongr
+    _ = ↑(C₀ + Cr + Cl * N) * (1 + X) ^ (m + 1) * Y := by
+      push_cast
+      ring
+    _ ≤ _ := by
+      gcongr ?_ * _ * _
+      exact_mod_cast le_self_add
+
+/-- The Leibniz step of the induction. For `u` and `v` of finite norms `X = ‖u‖_{W^{k+1,p}(Ω)}`
+and `Y = ‖v‖_{W^{b+1,p}(Ω)}` there are weak derivatives `Du` and `Dv` of norms at most `X` and `Y`
+such that `‖B(g ∘ u, v)‖_{W^{m+1,p}(U)}` is at most the sum of the `W^{m,p}(U)` norms of
+`B(g ∘ u, v)`, of `Φ(Du, v)` evaluated at `Dg(u)`, and of `B(g ∘ u, Dv)`. -/
+private theorem exists_eLpNormWkp_succ_bilin_comp_le {G V H : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [FiniteDimensional ℝ V] [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
+    (B : G →L[ℝ] V →L[ℝ] H) {Φ : (ℂ →L[ℝ] F) →L[ℝ] V →L[ℝ] (F →L[ℝ] G) →L[ℝ] ℂ →L[ℝ] H}
+    (hΦ : ∀ D v A, Φ D v A = B.precompL ℂ (A.comp D) v) {p : ℝ≥0} (hp : 1 < p) {k b m : ℕ}
+    (hkp : 2 < ((k + 1 : ℕ) : ℝ≥0) * p) {W : Set F} (hW : IsOpen W) {g : F → G}
+    (hg : ContDiffOn ℝ 1 g W) {Ω : Opens ℂ} {U : Set ℂ} (hUΩ : U ⊆ Ω) {u : ℂ → F} {v : ℂ → V}
+    (huc : ContinuousOn u Ω) (huW : MapsTo u Ω W) (hX : eLpNormWkp p Ω (k + 1) u ≠ ∞)
+    (hY : eLpNormWkp p Ω (b + 1) v ≠ ∞) :
+    ∃ (Du : ℂ → ℂ →L[ℝ] F) (Dv : ℂ → ℂ →L[ℝ] V),
+      eLpNormWkp p Ω k Du ≤ eLpNormWkp p Ω (k + 1) u ∧
+      eLpNormWkp p Ω b Dv ≤ eLpNormWkp p Ω (b + 1) v ∧
+      eLpNormWkp p U (m + 1) (fun z => B (g (u z)) (v z)) ≤
+        eLpNormWkp p U m (fun z => B (g (u z)) (v z)) +
+          (eLpNormWkp p U m (fun z =>
+              ContinuousLinearMap.apply ℝ (ℂ →L[ℝ] H) (fderiv ℝ g (u z)) (Φ (Du z) (v z))) +
+            eLpNormWkp p U m (fun z => B.precompR ℂ (g (u z)) (Dv z))) := by
+  obtain ⟨Du, hDu, -, hXeq⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hX
+  obtain ⟨Dv, hDv, -, hYeq⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hY
+  have hLeib := hDu.bilin_comp_of_two_lt_mul B hp hkp (memWkpLoc_of_eLpNormWkp_ne_top hX) huc hW
+    huW hg hDv ((memWkpLoc_of_eLpNormWkp_ne_top hY).of_le (by omega))
+  have hΦfun : (fun z => B.precompL ℂ ((fderiv ℝ g (u z)).comp (Du z)) (v z)) =
+      fun z => ContinuousLinearMap.apply ℝ (ℂ →L[ℝ] H) (fderiv ℝ g (u z)) (Φ (Du z) (v z)) :=
+    funext fun z => by simp only [ContinuousLinearMap.apply_apply, hΦ]
+  refine ⟨Du, Dv, le_add_self.trans_eq hXeq.symm, le_add_self.trans_eq hYeq.symm, ?_⟩
+  rw [← hΦfun]
+  exact (eLpNormWkp_succ_le (hLeib.mono fun z hz => hUΩ (interior_subset hz))).trans
+    (add_le_add eLpNorm_le_eLpNormWkp (eLpNormWkp_add_le (by exact_mod_cast hp.le)))
+
 /-- The general bound behind `TauCeti.exists_eLpNormWkp_comp_le_of_two_lt_mul`: for `1 < p` and
 `kp > 2`, a continuous bilinear map `B`, a `Cᵐ` map `g` on `W ⊇ L` with `m ≤ k`, and orders
 `m ≤ b` with `(b + k - m) p > 2`, there is `C` with
@@ -162,77 +234,24 @@ private theorem exists_eLpNormWkp_bilin_comp_le_aux {p : ℝ≥0} (hp : 1 < p) {
     have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hp.le
     have hp0 : (p : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le hp1).ne'
     have hUΩ' : U ⊆ Ω := subset_closure.trans hUΩ
-    have hC0 : ((C₀ + Cr + Cl * N + 1 : ℝ≥0) : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 (by positivity)
     set X := eLpNormWkp p Ω (k + 1) u
     set Y := eLpNormWkp p Ω (b + 1) v
-    -- If `v` vanishes almost everywhere on `Ω`, so does the product on `U`.
-    by_cases hY0 : Y = 0
-    · have hv0 := ae_eq_zero_of_eLpNormWkp_eq_zero hp0 hY0
+    refine le_mul_one_add_pow_mul_of_ne_top_imp_le (by positivity) (by omega) (fun hY0 => ?_)
+      fun hX hY => ?_
+    · -- If `v` vanishes almost everywhere on `Ω`, so does the product on `U`.
       have h0 : (fun z => B (g (u z)) (v z)) =ᵐ[volume.restrict U] 0 :=
-        Filter.Eventually.mono (ae_mono (Measure.restrict_mono hUΩ' le_rfl) hv0) fun z hz => by
-          simp [hz]
+        Filter.Eventually.mono (ae_mono (Measure.restrict_mono hUΩ' le_rfl)
+          (ae_eq_zero_of_eLpNormWkp_eq_zero hp0 hY0)) fun z hz => by simp [hz]
       rw [eLpNormWkp_congr_ae h0, eLpNormWkp_zero_fun]
-      exact zero_le
-    -- An infinite norm on the right makes the bound trivial.
-    by_cases hfin : X = ∞ ∨ Y = ∞
-    · have h : (1 + X) ^ (m + 1) * Y = ∞ := by
-        rcases hfin with h | h
-        · rw [h, add_top, ENNReal.top_pow (by omega), ENNReal.top_mul hY0]
-        · rw [h, ENNReal.mul_top (pow_ne_zero _ (by simp))]
-      rw [mul_assoc, h, ENNReal.mul_top hC0]
-      exact le_top
-    push Not at hfin
-    obtain ⟨hX, hY⟩ := hfin
-    -- Weak derivatives realizing the norms on `Ω`, and the weak Leibniz rule.
-    obtain ⟨Du, hDu, -, hXeq⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hX
-    obtain ⟨Dv, hDv, -, hYeq⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hY
-    have hLeib := hDu.bilin_comp_of_two_lt_mul B hp hkp (memWkpLoc_of_eLpNormWkp_ne_top hX) huc
-      hW (huL.mono_right hLW) (hg.of_le (by norm_cast; omega)) hDv
-      ((memWkpLoc_of_eLpNormWkp_ne_top hY).of_le (by omega))
-    have hDuX : eLpNormWkp p Ω k Du ≤ X := by
-      simp only [X, hXeq]
-      exact le_add_self
-    have hDvY : eLpNormWkp p Ω b Dv ≤ Y := by
-      simp only [Y, hYeq]
-      exact le_add_self
+    obtain ⟨Du, Dv, hDuX, hDvY, hstep⟩ := exists_eLpNormWkp_succ_bilin_comp_le (m := m) B hΦdef hp
+      hkp hW (hg.of_le (by norm_cast; omega)) hUΩ' huc (huL.mono_right hLW) hX hY
     have hVΩ' : (V' : Set ℂ) ⊆ Ω := subset_closure.trans hVΩ
-    have huV : eLpNormWkp p V' (k + 1) u ≤ X := eLpNormWkp_mono_set hVΩ'
-    have hpow : (1 + X) ^ m ≤ (1 + X) ^ (m + 1) := pow_le_pow_right₀ le_self_add (by omega)
-    have hpowX : (1 + X) ^ m * X ≤ (1 + X) ^ (m + 1) := by
-      rw [pow_succ]
-      exact mul_le_mul' le_rfl (le_add_self : X ≤ 1 + X)
-    -- The first Leibniz term is `Φ(Du, v)` evaluated at `Dg(u)`.
-    have hΦfun : (fun z => B.precompL ℂ ((fderiv ℝ g (u z)).comp (Du z)) (v z)) =
-        fun z => ContinuousLinearMap.apply ℝ (ℂ →L[ℝ] H) (fderiv ℝ g (u z)) (Φ (Du z) (v z)) :=
-      funext fun z => by simp only [ContinuousLinearMap.apply_apply, hΦdef]
-    calc
-      _ ≤ eLpNorm (fun z => B (g (u z)) (v z)) p (volume.restrict U) +
-          eLpNormWkp p U m (fun z => B.precompL ℂ ((fderiv ℝ g (u z)).comp (Du z)) (v z) +
-            B.precompR ℂ (g (u z)) (Dv z)) :=
-        eLpNormWkp_succ_le (hLeib.mono fun z hz => hUΩ' (interior_subset hz))
-      _ ≤ eLpNormWkp p U m (fun z => B (g (u z)) (v z)) +
-          (eLpNormWkp p U m (fun z => B.precompL ℂ ((fderiv ℝ g (u z)).comp (Du z)) (v z)) +
-            eLpNormWkp p U m (fun z => B.precompR ℂ (g (u z)) (Dv z))) :=
-        add_le_add eLpNorm_le_eLpNormWkp (eLpNormWkp_add_le hp1)
-      _ ≤ C₀ * (1 + X) ^ m * Y + (Cl * (1 + X) ^ m * (N * X * Y) + Cr * (1 + X) ^ m * Y) := by
-        gcongr ?_ + (?_ + ?_)
-        · exact hC₀ u v huc huL
-        · rw [hΦfun]
-          refine (hCl u _ (huc.mono hVΩ') (huL.mono_left hVΩ')).trans ?_
-          gcongr
-          exact (hN Du v).trans (by gcongr)
-        · exact (hCr u Dv huc huL).trans (by gcongr)
-      _ = C₀ * (1 + X) ^ m * Y + (Cl * N * ((1 + X) ^ m * X) * Y + Cr * (1 + X) ^ m * Y) := by
-        ring
-      _ ≤ C₀ * (1 + X) ^ (m + 1) * Y +
-          (Cl * N * (1 + X) ^ (m + 1) * Y + Cr * (1 + X) ^ (m + 1) * Y) := by
-        gcongr
-      _ = ↑(C₀ + Cr + Cl * N) * (1 + X) ^ (m + 1) * Y := by
-        push_cast
-        ring
-      _ ≤ _ := by
-        gcongr ?_ * _ * _
-        exact_mod_cast le_self_add
+    refine hstep.trans ((add_le_add (hC₀ u v huc huL) (add_le_add ?_ ((hCr u Dv huc huL).trans
+      (by gcongr)))).trans (add_add_le_mul_one_add_pow_succ_mul C₀ Cl Cr N X Y m))
+    refine (hCl u _ (huc.mono hVΩ') (huL.mono_left hVΩ')).trans ?_
+    gcongr
+    · exact eLpNormWkp_mono_set hVΩ'
+    · exact (hN Du v).trans (by gcongr)
 
 variable {G : Type uG} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
   {Ω : Opens ℂ}
