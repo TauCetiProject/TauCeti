@@ -10,8 +10,10 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Topology.Order.Sublevel
 import TauCeti.Geometry.Manifold.Flow.Complete
+import TauCeti.Geometry.Manifold.Flow.Parametric
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.VectorField.Normalized
+import TauCeti.Geometry.Manifold.VectorField.Parametric
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -44,6 +46,19 @@ In both cases the deformation retraction moves each point of `{f ≤ b}` with `a
 depend on `Y`. The construction of `TauCeti.exists_sublevelDeformation` uses instead a field built
 from charts, with no metric or pseudo-gradient.
 
+The retractions obtained from two descending fields `Y₀` and `Y₁` are homotopic relative to
+`{f ≤ a}`, and the homotopy can be taken through retractions of the same kind
+(`TauCeti.exists_homotopyRel_sublevelRetraction_of_mvfderiv_lt_zero`). The normalized fields `X₀`
+and `X₁` both have `df(Xᵢ) = -1` near the band, which is an affine condition, so every field
+`(1 - s) • X₀ + s • X₁` of the segment between them has it too. These fields form a jointly smooth
+family (`ContMDiff.one_sub_smul_add_smul_vectorField`), so their flows depend continuously on `s`
+(`TauCeti.contMDiffAt_flowOf_param`), and following them for the time `max (f x - a) 0` deforms
+the retraction along `X₀` into the retraction along `X₁`
+(`TauCeti.exists_homotopyRel_sublevelRetraction_of_apply_eq_sub`). In particular the retractions
+along a rescaled adapted pseudo-gradient and along the normalized gradient are homotopic relative
+to `{f ≤ a}`
+(`TauCeti.IsAdaptedPseudoGradient.exists_homotopyRel_sublevelRetraction_neg_mgradient`).
+
 ## Main results
 
 * `TauCeti.exists_flow_apply_eq_sub_of_mvfderiv_lt_zero`: the flow of the cut-off normalized field
@@ -54,6 +69,12 @@ from charts, with no metric or pseudo-gradient.
   negative gradient `-grad f / ‖grad f‖²` of a smooth Riemannian metric.
 * `TauCeti.IsAdaptedPseudoGradient.exists_sublevelDeformation`: the same along a rescaled adapted
   pseudo-gradient.
+* `TauCeti.exists_homotopyRel_sublevelRetraction_of_mvfderiv_lt_zero`: the retractions along two
+  normalized descending fields are homotopic relative to `{f ≤ a}` through the retractions along
+  the segment of fields between them.
+* `TauCeti.IsAdaptedPseudoGradient.exists_homotopyRel_sublevelRetraction_neg_mgradient`: the
+  retractions along a rescaled adapted pseudo-gradient and along the normalized gradient are
+  homotopic relative to `{f ≤ a}`.
 
 ## References
 
@@ -102,14 +123,11 @@ theorem exists_flow_apply_eq_sub_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ)
     hX.of_le (by simp)
   have hcomplete := isCompleteVectorField_of_isCompact_of_eq_zero_off hX1 hC hXC
   have hfd : MDifferentiable I 𝓘(ℝ) f := hf.mdifferentiable (by simp)
-  -- On `U` the field `X` is `Y / (-df(Y))`, so `df(X) = -1` there.
-  have hdfX : ∀ y ∈ U, mvfderiv I f y (X y) = -1 := fun y hy ↦ by
-    rw [(hXU y hy).2, map_smul, smul_eq_mul, inv_mul_eq_div, div_neg, div_self (hXU y hy).1.ne]
-  refine ⟨X, hX, hXY, ⟨U, hU, hKU, fun x hx ↦ (hXU x hx).2⟩, globalFlow X hX1 hcomplete,
+  refine ⟨X, hX, hXY, ⟨U, hU, hKU, fun x hx ↦ (hXU x hx).2.1⟩, globalFlow X hX1 hcomplete,
     contMDiff_globalFlow_uncurry hcomplete le_top hX, isMIntegralCurve_globalFlow hX1 hcomplete,
     fun x ↦ (isMIntegralCurve_globalFlow hX1 hcomplete x).antitone_comp (fun _ ↦ hfd _)
       fun _ ↦ hXle _, fun x t ht hxt hxb ↦ ?_⟩
-  exact apply_globalFlow_eq_sub hX1 hcomplete hf.continuous hU hdfX
+  exact apply_globalFlow_eq_sub hX1 hcomplete hf.continuous hU (fun y hy ↦ (hXU y hy).2.2)
     (fun y hya hyb ↦ hKU ⟨hya, hyb⟩) ht hxt hxb
 
 /-- **Deformation of sublevels along a normalized descending field** (Milnor, Theorem 3.1). Let
@@ -161,18 +179,85 @@ theorem exists_sublevelDeformation_neg_mgradient
           (∀ x, r (sublevelInclusion f a b hab x) = x) ∧
           Nonempty (ContinuousMap.HomotopyRel ((sublevelInclusion f a b hab).comp r)
             (ContinuousMap.id _) {x | f x ≤ a}) := by
-  have hY : ContMDiff I I.tangent ∞
-      (fun x ↦ (⟨x, -mgradient I f x⟩ : TangentBundle I M)) :=
-    have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-    contMDiff_neg_mgradient (n := ∞) (by simpa using hf)
   -- Along `-grad f` the derivative of `f` is `-‖grad f‖²`, negative off the critical points.
-  obtain ⟨X, hX, ⟨U, hU, hKU, hXU⟩, rest⟩ := exists_sublevelDeformation_of_mvfderiv_lt_zero hf hY
-    hab hcompact fun x hxa hxb ↦ by
-      rw [mvfderiv_apply_neg_mgradient, neg_lt_zero]
-      exact pow_pos (norm_pos_iff.2 fun h ↦
-        hreg x hxa hxb (mvfderiv_eq_zero_iff.1 (mgradient_eq_zero_iff.1 h))) 2
+  obtain ⟨X, hX, ⟨U, hU, hKU, hXU⟩, rest⟩ := exists_sublevelDeformation_of_mvfderiv_lt_zero hf
+    (contMDiff_mgradient_infty hf).neg_section hab hcompact fun x hxa hxb ↦
+      mvfderiv_apply_neg_mgradient_lt_zero fun h ↦ hreg x hxa hxb (mvfderiv_eq_zero_iff.1 h)
   exact ⟨X, hX, ⟨U, hU, hKU, fun x hx ↦ by
-    rw [hXU x hx, mvfderiv_apply_neg_mgradient, neg_neg]⟩, rest⟩
+    rw [hXU x hx, Pi.neg_apply, mvfderiv_apply_neg_mgradient, neg_neg]⟩, rest⟩
+
+/-- **The retractions along two normalized descending fields are homotopic through retractions of
+the same kind.** Let `f` be smooth, `a ≤ b`, let the band `f⁻¹[a, b]` be compact, and let `Y₀` and
+`Y₁` be smooth vector fields with `df(Yᵢ) < 0` on the band. Then there are smooth vector fields
+`X₀` and `X₁`, equal to the normalized fields `Yᵢ / (-df(Yᵢ))` on an open neighbourhood `U` of the
+band, such that every field `Xₛ = (1 - s) • X₀ + s • X₁`, `s ∈ ℝ`, is complete and has
+`df(Xₛ) = -1` on `U`. For `s ∈ [0, 1]`, following the flow of `Xₛ` from each point `x` of
+`{f ≤ b}` for the time `max (f x - a) 0` is a retraction of `{f ≤ b}` onto `{f ≤ a}`, and these
+retractions form a homotopy, relative to `{f ≤ a}`, from the retraction `r₀` along `X₀` to the
+retraction `r₁` along `X₁`. So the retractions built from `Y₀` and from `Y₁` are homotopic
+through retractions of the same kind. -/
+theorem exists_homotopyRel_sublevelRetraction_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {Y₀ Y₁ : (x : M) → TangentSpace I x}
+    (hY₀ : ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, Y₀ x⟩ : TangentBundle I M)))
+    (hY₁ : ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, Y₁ x⟩ : TangentBundle I M))) {a b : ℝ}
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hband₀ : ∀ x, a ≤ f x → f x ≤ b → mvfderiv I f x (Y₀ x) < 0)
+    (hband₁ : ∀ x, a ≤ f x → f x ≤ b → mvfderiv I f x (Y₁ x) < 0) :
+    ∃ X₀ X₁ : (x : M) → TangentSpace I x,
+      ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, X₀ x⟩ : TangentBundle I M)) ∧
+      ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, X₁ x⟩ : TangentBundle I M)) ∧
+      (∃ U, IsOpen U ∧ f ⁻¹' Icc a b ⊆ U ∧ ∀ x ∈ U,
+        X₀ x = (-mvfderiv I f x (Y₀ x))⁻¹ • Y₀ x ∧ X₁ x = (-mvfderiv I f x (Y₁ x))⁻¹ • Y₁ x ∧
+          ∀ s : ℝ, mvfderiv I f x ((1 - s) • X₀ x + s • X₁ x) = -1) ∧
+      (∀ s : ℝ, IsCompleteVectorField fun x ↦ (1 - s) • X₀ x + s • X₁ x) ∧
+      ∃ r₀ r₁ : C({x | f x ≤ b}, {x | f x ≤ a}),
+        (∀ x, (r₀ x : M) = flowOf X₀ (max (f x - a) 0) x) ∧
+        (∀ x, (r₁ x : M) = flowOf X₁ (max (f x - a) 0) x) ∧
+        (∀ x, r₀ (sublevelInclusion f a b hab x) = x) ∧
+        (∀ x, r₁ (sublevelInclusion f a b hab x) = x) ∧
+        ∃ F : ContinuousMap.HomotopyRel r₀ r₁ {x | f x ≤ a}, ∀ s x,
+          (F (s, x) : M) =
+            flowOf (fun y ↦ (1 - (s : ℝ)) • X₀ y + (s : ℝ) • X₁ y) (max (f x - a) 0) x := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  obtain ⟨X₀, hX₀, -, -, ⟨U₀, hU₀, hKU₀, hXU₀⟩, C₀, hC₀, hXC₀⟩ :=
+    exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero hf hY₀ hcompact fun x hx ↦
+      hband₀ x hx.1 hx.2
+  obtain ⟨X₁, hX₁, -, -, ⟨U₁, hU₁, hKU₁, hXU₁⟩, C₁, hC₁, hXC₁⟩ :=
+    exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero hf hY₁ hcompact fun x hx ↦
+      hband₁ x hx.1 hx.2
+  set v : ℝ → (x : M) → TangentSpace I x := fun s x ↦ (1 - s) • X₀ x + s • X₁ x
+  have hv : ContMDiff (𝓘(ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, v p.1 p.2⟩ : TangentBundle I M)) :=
+    (hX₀.one_sub_smul_add_smul_vectorField hX₁).of_le (by simp)
+  -- Every field of the segment vanishes off the compact set `C₀ ∪ C₁`, so it is complete.
+  have hcomplete : ∀ s, IsCompleteVectorField (v s) := fun s ↦
+    isCompleteVectorField_of_isCompact_of_eq_zero_off (hv.apply_param s) (hC₀.union hC₁)
+      fun x hx ↦ by
+        rw [mem_union, not_or] at hx
+        simp [v, hXC₀ x hx.1, hXC₁ x hx.2]
+  -- On `U₀ ∩ U₁` both ends lower `f` at unit speed, hence so does every field of the segment.
+  have hdf : ∀ s, ∀ y ∈ U₀ ∩ U₁, mvfderiv I f y (v s y) = -1 := fun s y hy ↦ by
+    simp only [v, map_add, map_smul, smul_eq_mul, (hXU₀ y hy.1).2.2, (hXU₁ y hy.2).2.2]
+    ring
+  -- The flows of the segment depend continuously on the parameter, the time and the point, and
+  -- each lowers `f` at unit speed through the band.
+  have hcont : Continuous fun p : ℝ × ℝ × M ↦ flowOf (v p.1) p.2.1 p.2.2 :=
+    continuous_iff_continuousAt.2 fun p ↦ (contMDiffAt_flowOf_param le_rfl hv
+      ((hcomplete p.1).mem_flowDomain p.2.1 p.2.2)).continuousAt
+  obtain ⟨r₀, r₁, hr₀, hr₁, hincl₀, hincl₁, F, hF⟩ :=
+    exists_homotopyRel_sublevelRetraction_of_apply_eq_sub hf.continuous hab
+      (fun s ↦ flowOf (v s)) (hcont.comp (continuous_subtypeVal.prodMap continuous_id))
+      (fun s ↦ flowOf_zero (v s)) fun s x t ht hxt hxb ↦ by
+        rw [flowOf_eq_globalFlow (hv.apply_param s) (hcomplete s)]
+        exact apply_globalFlow_eq_sub (hv.apply_param s) (hcomplete s) hf.continuous
+          (hU₀.inter hU₁) (hdf s) (fun y hya hyb ↦ ⟨hKU₀ ⟨hya, hyb⟩, hKU₁ ⟨hya, hyb⟩⟩) ht hxt hxb
+  have hv₀ : v 0 = X₀ := funext fun x ↦ by simp [v]
+  have hv₁ : v 1 = X₁ := funext fun x ↦ by simp [v]
+  refine ⟨X₀, X₁, hX₀, hX₁, ⟨U₀ ∩ U₁, hU₀.inter hU₁, fun x hx ↦ ⟨hKU₀ hx, hKU₁ hx⟩,
+    fun x hx ↦ ⟨(hXU₀ x hx.1).2.1, (hXU₁ x hx.2).2.1, fun s ↦ hdf s x hx⟩⟩, hcomplete, r₀, r₁,
+    fun x ↦ ?_, fun x ↦ ?_, hincl₀, hincl₁, F, hF⟩
+  · rw [hr₀, Set.Icc.coe_zero, hv₀]
+  · rw [hr₁, Set.Icc.coe_one, hv₁]
 
 
 namespace IsAdaptedPseudoGradient
@@ -204,6 +289,50 @@ theorem exists_sublevelDeformation (hY : IsAdaptedPseudoGradient f Y)
             (ContinuousMap.id _) {x | f x ≤ a}) :=
   exists_sublevelDeformation_of_mvfderiv_lt_zero hf hY.contMDiff hab hcompact
     fun x hxa hxb ↦ hY.mvfderiv_apply_lt_zero x (hreg x hxa hxb)
+
+/-- **The pseudo-gradient and normalized-gradient retractions are homotopic.** Let `Y` be a
+pseudo-gradient adapted to a smooth function `f` on a manifold with a smooth Riemannian metric, let
+`a ≤ b`, and let the band `f⁻¹[a, b]` be compact and contain no critical point of `f`. Let `X` be
+the rescaled pseudo-gradient `Y / (-df(Y))` and `X'` the normalized negative gradient
+`-grad f / ‖grad f‖²` on an open neighbourhood of the band, both complete smooth vector fields.
+Following their flows from each point `x` of `{f ≤ b}` for the time `max (f x - a) 0` gives
+retractions `r` and `r'` of `{f ≤ b}` onto `{f ≤ a}`: each brings a point `x` of the band into
+`{f ≤ a}` at time `f x - a` and fixes `{f ≤ a}`. These two retractions are homotopic relative to
+`{f ≤ a}`, through the retractions along the fields `(1 - s) • X + s • X'` of the segment from `X`
+to `X'`: the homotopy `F` follows the flow of the field at parameter `s` from each point `x` for
+the time `max (f x - a) 0`. This is
+`TauCeti.exists_homotopyRel_sublevelRetraction_of_mvfderiv_lt_zero` for `Y` and `-grad f`. -/
+theorem exists_homotopyRel_sublevelRetraction_neg_mgradient
+    [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
+    [IsContMDiffRiemannianBundle 𝓘(ℝ, E) ∞ E (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
+    (hY : IsAdaptedPseudoGradient f Y) (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) {a b : ℝ} (hab : a ≤ b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x ≠ 0) :
+    ∃ X X' : (x : M) → TangentSpace 𝓘(ℝ, E) x,
+      ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞ (fun x ↦ (⟨x, X x⟩ : TangentBundle 𝓘(ℝ, E) M)) ∧
+      ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞ (fun x ↦ (⟨x, X' x⟩ : TangentBundle 𝓘(ℝ, E) M)) ∧
+      IsCompleteVectorField X ∧ IsCompleteVectorField X' ∧
+      (∃ U, IsOpen U ∧ f ⁻¹' Icc a b ⊆ U ∧ ∀ x ∈ U,
+        X x = (-mvfderiv 𝓘(ℝ, E) f x (Y x))⁻¹ • Y x ∧
+        X' x = (‖mgradient 𝓘(ℝ, E) f x‖ ^ 2)⁻¹ • -mgradient 𝓘(ℝ, E) f x) ∧
+      ∃ r r' : C({x | f x ≤ b}, {x | f x ≤ a}),
+        (∀ x, (r x : M) = flowOf X (max (f x - a) 0) x) ∧
+        (∀ x, (r' x : M) = flowOf X' (max (f x - a) 0) x) ∧
+        (∀ x, r (sublevelInclusion f a b hab x) = x) ∧
+        (∀ x, r' (sublevelInclusion f a b hab x) = x) ∧
+        ∃ F : ContinuousMap.HomotopyRel r r' {x | f x ≤ a}, ∀ s x,
+          (F (s, x) : M) =
+            flowOf (fun y ↦ (1 - (s : ℝ)) • X y + (s : ℝ) • X' y) (max (f x - a) 0) x := by
+  -- Along `-grad f` the derivative of `f` is `-‖grad f‖²`, negative off the critical points.
+  obtain ⟨X, X', hX, hX', ⟨U, hU, hKU, hXU⟩, hcomplete, r, r', hr, hr', hrr, hrr', F, hF⟩ :=
+    exists_homotopyRel_sublevelRetraction_of_mvfderiv_lt_zero hf hY.contMDiff
+      (contMDiff_mgradient_infty hf).neg_section hab hcompact
+      (fun x hxa hxb ↦ hY.mvfderiv_apply_lt_zero x (hreg x hxa hxb)) fun x hxa hxb ↦
+        mvfderiv_apply_neg_mgradient_lt_zero fun h ↦ hreg x hxa hxb (mvfderiv_eq_zero_iff.1 h)
+  refine ⟨X, X', hX, hX', by simpa using hcomplete 0, by simpa using hcomplete 1,
+    ⟨U, hU, hKU, fun x hx ↦ ⟨(hXU x hx).1, by
+      rw [(hXU x hx).2.1, Pi.neg_apply, mvfderiv_apply_neg_mgradient, neg_neg]⟩⟩,
+    r, r', hr, hr', hrr, hrr', F, hF⟩
 
 end IsAdaptedPseudoGradient
 

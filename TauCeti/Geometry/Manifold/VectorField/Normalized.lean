@@ -49,7 +49,8 @@ theorem exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero (hf : ContMDiff I �
       ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, X x⟩ : TangentBundle I M)) ∧
       (∀ x, ∃ c : ℝ, 0 ≤ c ∧ X x = c • Y x) ∧ (∀ x, mvfderiv I f x (X x) ≤ 0) ∧
       (∃ U, IsOpen U ∧ K ⊆ U ∧
-        ∀ x ∈ U, mvfderiv I f x (Y x) < 0 ∧ X x = (-mvfderiv I f x (Y x))⁻¹ • Y x) ∧
+        ∀ x ∈ U, mvfderiv I f x (Y x) < 0 ∧ X x = (-mvfderiv I f x (Y x))⁻¹ • Y x ∧
+          mvfderiv I f x (X x) = -1) ∧
       ∃ C, IsCompact C ∧ ∀ x ∉ C, X x = 0 := by
   -- The derivative `g = df(Y)` is smooth, and negative on an open set containing `K`.
   obtain ⟨g, hg⟩ : ∃ g : M → ℝ, ∀ y, g y = mvfderiv I f y (Y y) := ⟨_, fun _ ↦ rfl⟩
@@ -82,7 +83,7 @@ theorem exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero (hf : ContMDiff I �
     · simp [hy]
     · exact mul_nonneg (hσ01 y).1 (inv_nonneg.2 (by linarith [hσg y hy]))
   · have hσy : σ y = 1 := interior_subset hy
-    refine ⟨?_, by rw [hX, hσy, one_smul, hg]⟩
+    refine ⟨?_, by rw [hX, hσy, one_smul, hg], by rw [hdfX, hσy]⟩
     rw [← hg]
     exact hσg y (by rw [hσy]; exact one_ne_zero)
   · rw [hX, image_eq_zero_of_notMem_tsupport hy, zero_smul]

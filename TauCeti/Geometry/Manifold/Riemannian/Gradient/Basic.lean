@@ -47,6 +47,9 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
   differential does, and `TauCeti.Manifold.norm_mgradient_eq_norm_mvfderiv`: it has the same
   length as the differential.
+* `TauCeti.Manifold.mvfderiv_apply_neg_mgradient`: `df(-grad f) = -‖grad f‖²`, so
+  `TauCeti.Manifold.mvfderiv_apply_neg_mgradient_lt_zero`: `f` strictly decreases along its
+  negative gradient off the critical points.
 * `TauCeti.Manifold.contMDiffAt_mgradient`: the gradient of a function that is `C^{n+1}` at a
   point for a `C^n` metric is `C^n` at that point.
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
@@ -142,6 +145,13 @@ theorem mvfderiv_apply_neg_mgradient :
 @[simp]
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
+
+/-- Off the critical points, `f` strictly decreases along its negative gradient:
+`df(-grad f) < 0` where `df ≠ 0`. -/
+theorem mvfderiv_apply_neg_mgradient_lt_zero (h : mvfderiv I f x ≠ 0) :
+    mvfderiv I f x (-mgradient I f x) < 0 := by
+  rw [mvfderiv_apply_neg_mgradient, neg_lt_zero]
+  exact pow_pos (norm_pos_iff.2 fun h' ↦ h (mgradient_eq_zero_iff.1 h')) 2
 
 variable (I) in
 /-- The gradient of a compactly supported function is compactly supported, since it vanishes off
