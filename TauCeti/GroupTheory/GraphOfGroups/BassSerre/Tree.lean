@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Serre.Component
 public import TauCeti.GroupTheory.GraphOfGroups.NormalForm
 public import TauCeti.GroupTheory.GTree.Basic
 public import Mathlib.Algebra.Group.Action.Sigma
@@ -34,43 +35,55 @@ vertex group element, which by the normal form theorem forces `k = 0`.
 The stabilizer of the vertex `p A_b` is the conjugate `p A_b p⁻¹` of the vertex group, and the
 stabilizer of the dart `p α_e(A_e)` is the conjugate `p α_e(A_e) p⁻¹` of the edge group. Over a
 graph without edges, every `𝔸`-path from `a` is homotopic to an element of `A_a`, so `X(𝔸, a)` is a
-single vertex.
+single vertex with no darts. When all vertex groups are trivial, the vertices of `X(𝔸, a)`
+correspond bijectively to reduced edge paths of `Γ` starting at `a`.
 
-Sending `p A_b` to `b` and `p α_e(A_e)` to `e` projects `X(𝔸, a)` onto `Γ`, and `π₁(𝔸, a)` acts
-transitively on each fibre: `q p⁻¹` carries `p A_b` to `q A_b`. Hence the quotient graph
-`X(𝔸, a) / π₁(𝔸, a)` maps injectively to `Γ`, onto the connected component of `a`; when `Γ` is
-connected, the quotient graph is `Γ`.
+Sending `p A_b` to `b` and `p α_e(A_e)` to `e` projects `X(𝔸, a)` onto `Γ` and onto the connected
+component `Γ.component a`, and `π₁(𝔸, a)` acts transitively on each fibre: `q p⁻¹` carries `p A_b`
+to `q A_b`. Hence the quotient graph `X(𝔸, a) / π₁(𝔸, a)` is canonically isomorphic to
+`Γ.component a` (`bassSerreQuotientIsoComponent`), and to `Γ` when `Γ` is preconnected
+(`bassSerreQuotientIso`).
 
 ## Main definitions
 
 * `TauCeti.GraphOfGroups.bassSerreTree`: the Bass–Serre tree `X(𝔸, a)`, a tree for `π₁(𝔸, a)`.
-* `TauCeti.GraphOfGroups.bassSerreVertex`: the vertex `p A_b` of an `𝔸`-path `p`.
-* `TauCeti.GraphOfGroups.bassSerreDart`: the dart `p α_e(A_e)` of an `𝔸`-path `p` and a dart `e`.
-* `TauCeti.GraphOfGroups.bassSerreProjection`: the projection of `X(𝔸, a)` onto `Γ`.
-* `TauCeti.GraphOfGroups.bassSerreQuotientHom`: the induced morphism from the quotient graph to
-  `Γ`.
-* `TauCeti.GraphOfGroups.bassSerreQuotientIso`: for connected `Γ`, the quotient graph is `Γ`.
+* `TauCeti.GraphOfGroups.bassSerreVertex`, `TauCeti.GraphOfGroups.bassSerreDart`: the vertex
+  `p A_b` and dart `p α_e(A_e)`, with eliminators `bassSerreVertexLift`, `bassSerreDartLift`,
+  `bassSerreVertex_induction_on`, and `bassSerreDart_induction_on`.
+* `TauCeti.GraphOfGroups.HomotopyPathFrom.toBassSerreVertex`: the quotient map from homotopy
+  classes of based `𝔸`-paths at `a` to vertices of `X(𝔸, a)`.
+* `TauCeti.GraphOfGroups.bassSerreProjection`,
+  `TauCeti.GraphOfGroups.bassSerreProjectionComponent`: projections to `Γ` and `Γ.component a`.
+* `TauCeti.GraphOfGroups.bassSerreQuotientHom`,
+  `TauCeti.GraphOfGroups.bassSerreQuotientHomComponent`,
+  `TauCeti.GraphOfGroups.bassSerreQuotientIsoComponent`,
+  `TauCeti.GraphOfGroups.bassSerreQuotientIso`: morphisms and isomorphisms from the quotient graph
+  `X(𝔸, a) / π₁(𝔸, a)` to `Γ.component a` and (for preconnected `Γ`) to `Γ`.
+* `TauCeti.GraphOfGroups.bassSerreVertexEquivReducedPath`: bijection between `(bassSerreTree 𝔸 a).V`
+  and reduced edge paths of `Γ` from `a` when all vertex groups are trivial.
 
 ## Main results
 
 * `TauCeti.GraphOfGroups.bassSerreVertex_eq_bassSerreVertex_iff`,
   `TauCeti.GraphOfGroups.bassSerreDart_eq_bassSerreDart_iff`: when two paths give the same vertex
   or dart.
+* `TauCeti.GraphOfGroups.HomotopyPathFrom.not_injective_toBassSerreVertex`: when a reachable vertex
+  group is nontrivial, `toBassSerreVertex` is not injective.
 * `TauCeti.GraphOfGroups.src_bassSerreDart`, `TauCeti.GraphOfGroups.rev_bassSerreDart`,
   `TauCeti.GraphOfGroups.tgt_bassSerreDart`: the incidence of the tree.
-* `TauCeti.GraphOfGroups.smul_bassSerreVertex`, `TauCeti.GraphOfGroups.smul_bassSerreDart`: the
-  action of `π₁(𝔸, a)`.
+* `TauCeti.GraphOfGroups.smul_bassSerreVertex`, `TauCeti.GraphOfGroups.smul_bassSerreDart`,
+  `TauCeti.GraphOfGroups.vertexHom_smul_bassSerreVertex`,
+  `TauCeti.GraphOfGroups.vertexHom_smul_bassSerreVertex_cons_dart`: the action of `π₁(𝔸, a)`.
 * `TauCeti.GraphOfGroups.stabilizer_bassSerreVertex`,
-  `TauCeti.GraphOfGroups.stabilizer_bassSerreDart`: the vertex and dart stabilizers are the
-  conjugates of the vertex groups and of the edge group images.
-* `TauCeti.GraphOfGroups.stabilizer_bassSerreVertex_eq_bot`,
-  `TauCeti.GraphOfGroups.stabilizer_bassSerreTree_dart_eq_bot`: trivial vertex groups give
-  trivial vertex stabilizers, and trivial edge groups give trivial dart stabilizers.
+  `TauCeti.GraphOfGroups.stabilizer_bassSerreDart`,
+  `TauCeti.GraphOfGroups.stabilizer_bassSerreDart_cons_vertex`,
+  `TauCeti.GraphOfGroups.isRelative_bassSerreTree`: vertex and dart stabilizers and relativity.
+* `TauCeti.GraphOfGroups.stabilizer_bassSerreTree_vertex_eq_bot`,
+  `TauCeti.GraphOfGroups.stabilizer_bassSerreTree_dart_eq_bot`: trivial vertex or edge groups give
+  trivial stabilizers.
 * `TauCeti.GraphOfGroups.vertexHom_smul_bassSerreDart_eq_self_iff`,
   `TauCeti.GraphOfGroups.vertexHom_cons_smul_bassSerreDart_eq_self_iff`: which elements of the
   stabilizers of the endpoints of a dart fix the dart.
-* `TauCeti.GraphOfGroups.instUniqueVBassSerreTreeOfIsEmptyE`: over a graph without edges, the
-  Bass–Serre tree has exactly one vertex.
 * `TauCeti.GraphOfGroups.exists_smul_bassSerreVertex_eq`,
   `TauCeti.GraphOfGroups.exists_smul_bassSerreDart_eq`: the action is transitive on the fibres of
   the projection to `Γ`.
@@ -522,6 +535,63 @@ theorem bassSerreDart_surjective (d : (bassSerreTree 𝔸 a).E) :
     ∃ (b c : Γ.V) (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c), bassSerreDart p e = d :=
   bsDart_surjective d
 
+/-- Eliminate a property on the vertices of the Bass–Serre tree by checking it on `𝔸`-paths from
+`a`. -/
+@[elab_as_elim] theorem bassSerreVertex_induction_on {P : (bassSerreTree 𝔸 a).V → Prop}
+    (y : (bassSerreTree 𝔸 a).V)
+    (h : ∀ {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩), P (bassSerreVertex p)) : P y := by
+  obtain ⟨_, p, rfl⟩ := bassSerreVertex_surjective y
+  exact h p
+
+/-- Eliminate a property on the darts of the Bass–Serre tree by checking it on pairs `(p, e)`. -/
+@[elab_as_elim] theorem bassSerreDart_induction_on {P : (bassSerreTree 𝔸 a).E → Prop}
+    (d : (bassSerreTree 𝔸 a).E)
+    (h : ∀ {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c), P (bassSerreDart p e)) : P d := by
+  obtain ⟨_, _, p, e, rfl⟩ := bassSerreDart_surjective d
+  exact h p e
+
+/-- A function on `𝔸`-paths from `a` that is invariant under homotopy and right multiplication by
+vertex group elements descends to the vertices of the Bass–Serre tree. -/
+noncomputable def bassSerreVertexLift {β : Sort*} (f : ∀ {b : Γ.V}, 𝔸.Path ⟨a⟩ ⟨b⟩ → β)
+    (h_hom : ∀ {b : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩}, p.Homotopic q → f p = f q)
+    (h_vertex : ∀ {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b),
+      f (p.cons (.vertex g)) = f p) :
+    (bassSerreTree 𝔸 a).V → β :=
+  fun ⟨_, y⟩ ↦ Quotient.lift f
+    (by rintro p _ ⟨g, _, hq⟩; exact (h_vertex p g).symm.trans (h_hom hq).symm) y
+
+@[simp] theorem bassSerreVertexLift_bassSerreVertex {β : Sort*}
+    (f : ∀ {b : Γ.V}, 𝔸.Path ⟨a⟩ ⟨b⟩ → β)
+    (h_hom : ∀ {b : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩}, p.Homotopic q → f p = f q)
+    (h_vertex : ∀ {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b),
+      f (p.cons (.vertex g)) = f p)
+    {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    bassSerreVertexLift f h_hom h_vertex (bassSerreVertex p) = f p :=
+  (rfl)
+
+/-- A function on pairs `(p, e)` of an `𝔸`-path from `a` to `b` and an arrow `e : b ⟶ c` that is
+invariant under homotopy of `p` and right multiplication by `α_e(A_e)` descends to the darts of the
+Bass–Serre tree. -/
+noncomputable def bassSerreDartLift {β : Sort*}
+    (f : ∀ {b c : Γ.V}, 𝔸.Path ⟨a⟩ ⟨b⟩ → (b ⟶ c) → β)
+    (h_hom : ∀ {b c : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (e : b ⟶ c), p.Homotopic q → f p e = f q e)
+    (h_αArrow : ∀ {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
+      (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)),
+      f (p.cons (.vertex (𝔸.αArrow e c₀))) e = f p e) :
+    (bassSerreTree 𝔸 a).E → β :=
+  fun ⟨_, _, e, y⟩ ↦ Quotient.lift (fun p ↦ f p e)
+    (by rintro p _ ⟨_, ⟨c₀, rfl⟩, hq⟩; exact (h_αArrow p e c₀).symm.trans (h_hom e hq).symm) y
+
+@[simp] theorem bassSerreDartLift_bassSerreDart {β : Sort*}
+    (f : ∀ {b c : Γ.V}, 𝔸.Path ⟨a⟩ ⟨b⟩ → (b ⟶ c) → β)
+    (h_hom : ∀ {b c : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (e : b ⟶ c), p.Homotopic q → f p e = f q e)
+    (h_αArrow : ∀ {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
+      (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)),
+      f (p.cons (.vertex (𝔸.αArrow e c₀))) e = f p e)
+    {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c) :
+    bassSerreDartLift f h_hom h_αArrow (bassSerreDart p e) = f p e :=
+  (rfl)
+
 /-- Two `𝔸`-paths `p` and `q` from `a` to `b` give the same vertex exactly when `q` is homotopic
 to `p g` for some `g ∈ A_b`. -/
 theorem bassSerreVertex_eq_bassSerreVertex_iff {b : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} :
@@ -550,11 +620,65 @@ theorem bassSerreDart_congr {b c : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (h : 
     (g : 𝔸.vertexGroup b) : bassSerreVertex (p.cons (.vertex g)) = bassSerreVertex p :=
   bsVertex_cons_vertex p g
 
+/-- Composing a path on the right with a single vertex-group element leaves the represented
+Bass–Serre vertex unchanged. -/
+theorem bassSerreVertex_comp_ofVertex {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
+    bassSerreVertex (p.comp (Path.ofVertex g)) = bassSerreVertex p := by
+  rw [Path.comp_ofVertex, bassSerreVertex_cons_vertex]
+
+@[simp] theorem bassSerreVertex_ofVertex (g : 𝔸.vertexGroup a) :
+    bassSerreVertex (Path.ofVertex g) = bassSerreVertex .nil := by
+  simp [Path.ofVertex_eq_nil_cons]
+
 /-- Right multiplication by an element of `α_e(A_e)` does not change the dart `p α_e(A_e)`. -/
 @[simp] theorem bassSerreDart_cons_vertex_αArrow {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
     (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
     bassSerreDart (p.cons (.vertex (𝔸.αArrow e c₀))) e = bassSerreDart p e :=
   (bassSerreDart_eq_bassSerreDart_iff.2 ⟨c₀, .refl _⟩).symm
+
+@[simp] theorem bassSerreDart_cons_vertex_α (e : Γ.E) (p : 𝔸.Path ⟨a⟩ ⟨Γ.src e⟩)
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
+    bassSerreDart (p.cons (.vertex (𝔸.α e c₀))) (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) =
+      bassSerreDart p (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) := by
+  simpa only [𝔸.αArrow_mk] using
+    bassSerreDart_cons_vertex_αArrow p (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) c₀
+
+@[simp] theorem bassSerreDart_ofVertex_αArrow {c : Γ.V} (e : a ⟶ c)
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
+    bassSerreDart (Path.ofVertex (𝔸.αArrow e c₀)) e = bassSerreDart .nil e := by
+  rw [Path.ofVertex_eq_nil_cons, bassSerreDart_cons_vertex_αArrow]
+
+@[simp] theorem bassSerreDart_ofVertex_α (e : Γ.E) (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
+    bassSerreDart (Path.ofVertex (𝔸.α e c₀)) (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) =
+      bassSerreDart .nil (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) := by
+  simpa only [𝔸.αArrow_mk] using
+    bassSerreDart_ofVertex_αArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) c₀
+
+/-- The quotient map sending the homotopy class of a based `𝔸`-path `p` from `a` to `b` to its
+right-coset vertex `p A_b` in `X(𝔸, a)`. -/
+noncomputable def HomotopyPathFrom.toBassSerreVertex :
+    𝔸.HomotopyPathFrom a → (bassSerreTree 𝔸 a).V :=
+  HomotopyPathFrom.lift (fun p ↦ bassSerreVertex p) fun _ _ ↦ bassSerreVertex_congr
+
+@[simp] theorem HomotopyPathFrom.toBassSerreVertex_ofPath {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    (HomotopyPathFrom.ofPath p).toBassSerreVertex = bassSerreVertex p :=
+  HomotopyPathFrom.lift_ofPath ..
+
+/-- When a vertex `b` reachable from `a` by an `𝔸`-path `p` has nontrivial vertex group `A_b`, the
+quotient map `HomotopyPathFrom.toBassSerreVertex` is not injective. -/
+theorem HomotopyPathFrom.not_injective_toBassSerreVertex {b : Γ.V} [Nontrivial (𝔸.vertexGroup b)]
+    (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    ¬ Function.Injective (HomotopyPathFrom.toBassSerreVertex (𝔸 := 𝔸) (a := a)) := by
+  obtain ⟨g, hg⟩ := exists_ne (1 : 𝔸.vertexGroup b)
+  intro hinj
+  have hEq : (HomotopyPathFrom.ofPath (p.cons (.vertex g))).toBassSerreVertex =
+      (HomotopyPathFrom.ofPath p).toBassSerreVertex := by simp
+  have hhom : Path.Homotopic (p.cons (.vertex g)) p :=
+    HomotopyPathFrom.ofPath_eq_ofPath_iff.1 (hinj hEq)
+  rw [← Path.comp_ofVertex] at hhom
+  have h1 : Path.Homotopic (Path.ofVertex g) .nil :=
+    Path.Homotopic.comp_left_iff.1 (by simpa only [Quiver.Path.comp_nil] using hhom)
+  exact hg (Path.ofVertex_homotopic_nil_iff.1 h1)
 
 /-- The dart `p α_e(A_e)` starts at `p A_b`. -/
 @[simp] theorem src_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c) :
@@ -578,11 +702,32 @@ theorem bassSerreDart_congr {b c : Γ.V} {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (h : 
   rw [bassSerreTree_smul_vertex]
   exact congrArg (Sigma.mk b) (PathCoset.smul_mk γ p)
 
+@[simp] theorem HomotopyPathFrom.toBassSerreVertex_smul (g : π₁ 𝔸 a) (x : 𝔸.HomotopyPathFrom a) :
+    (g • x).toBassSerreVertex = g • x.toBassSerreVertex :=
+  π₁.induction_on g fun _ ↦ HomotopyPathFrom.induction_on x fun _ ↦ by simp
+
 /-- The fundamental group acts on darts by concatenation on the left. -/
 @[simp] theorem smul_bassSerreDart (γ : 𝔸.Path ⟨a⟩ ⟨a⟩) {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
     (e : b ⟶ c) : π₁.mk γ • bassSerreDart p e = bassSerreDart (γ.comp p) e := by
   rw [bassSerreTree_smul_dart]
   exact congrArg (fun y ↦ (⟨b, c, e, y⟩ : BSDart 𝔸 a)) (PathCoset.smul_mk γ p)
+
+/-- Conjugating an element of `A_b` along `p` fixes the vertex `p A_b`. -/
+@[simp] theorem vertexHom_smul_bassSerreVertex {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
+    (g : 𝔸.vertexGroup b) : π₁.vertexHom p g • bassSerreVertex p = bassSerreVertex p := by
+  rw [π₁.vertexHom_apply, smul_bassSerreVertex]
+  exact (bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp _ p)).trans
+    (bassSerreVertex_comp_ofVertex p g)
+
+/-- Acting by `π₁.vertexHom p g` on the adjacent vertex `p e A_c` inserts `g` before `e`, producing
+`p g e A_c`. -/
+theorem vertexHom_smul_bassSerreVertex_cons_dart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
+    (g : 𝔸.vertexGroup b) (e : b ⟶ c) :
+    π₁.vertexHom p g • bassSerreVertex (p.cons (.dart e)) =
+      bassSerreVertex ((p.cons (.vertex g)).cons (.dart e)) := by
+  rw [π₁.vertexHom_apply, smul_bassSerreVertex, ← Path.comp_ofDart p e, ← Path.comp_ofDart,
+    ← Path.comp_ofVertex]
+  exact bassSerreVertex_congr (Path.Homotopic.comp_reverse_comp_comp _ p _)
 
 /-- The stabilizer of the vertex `p A_b` is the conjugate `p A_b p⁻¹` of the vertex group. -/
 theorem stabilizer_bassSerreVertex {b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
@@ -602,19 +747,30 @@ theorem stabilizer_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e
   exact sigma_mk_injective.eq_iff.trans <| sigma_mk_injective.eq_iff.trans
     sigma_mk_injective.eq_iff
 
+/-- The stabilizer of the dart `(p g) α_e(A_e)` joining `p A_b` to `p g e A_c` is the conjugate
+`p g α_e(A_e) g⁻¹ p⁻¹`. -/
+theorem stabilizer_bassSerreDart_cons_vertex {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
+    (g : 𝔸.vertexGroup b) (e : b ⟶ c) :
+    stabilizer (π₁ 𝔸 a) (bassSerreDart (p.cons (.vertex g)) e) =
+      (((𝔸.αArrow e).range).map (MulAut.conj g : 𝔸.vertexGroup b →* 𝔸.vertexGroup b)).map
+        (π₁.vertexHom p) := by
+  rw [stabilizer_bassSerreDart, π₁.vertexHom_cons_vertex, Subgroup.map_map]
+
+/-- The Bass–Serre tree is relative to families `(𝒜, ℋ)` whenever `𝒜` contains all edge group
+images along `𝔸`-paths from `a` and every subgroup in `ℋ` is elliptic. -/
+theorem isRelative_bassSerreTree {𝒜 ℋ : Set (Subgroup (π₁ 𝔸 a))}
+    (h𝒜 : ∀ {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c),
+      (𝔸.αArrow e).range.map (π₁.vertexHom p) ∈ 𝒜)
+    (hℋ : ∀ H ∈ ℋ, (bassSerreTree 𝔸 a).IsEllipticSubgroup H) :
+    (bassSerreTree 𝔸 a).IsRelative 𝒜 ℋ :=
+  GTree.isRelative_iff.2 ⟨fun d ↦ bassSerreDart_induction_on d fun p e ↦ by
+    rw [stabilizer_bassSerreDart]; exact h𝒜 p e, hℋ⟩
+
 /-- A vertex `p A_b` with trivial vertex group `A_b` has trivial stabilizer. -/
 theorem stabilizer_bassSerreVertex_eq_bot {b : Γ.V} [Subsingleton (𝔸.vertexGroup b)]
     (p : 𝔸.Path ⟨a⟩ ⟨b⟩) : stabilizer (π₁ 𝔸 a) (bassSerreVertex p) = ⊥ := by
   rw [stabilizer_bassSerreVertex, MonoidHom.range_eq_bot_iff]
   exact Subsingleton.elim _ _
-
-/-- When every edge group is trivial, for instance for a free product, every dart of the
-Bass–Serre tree has trivial stabilizer. -/
-theorem stabilizer_bassSerreTree_dart_eq_bot [∀ z, Subsingleton (𝔸.edgeGroup z)]
-    (d : (bassSerreTree 𝔸 a).E) : stabilizer (π₁ 𝔸 a) d = ⊥ := by
-  obtain ⟨b, c, p, e, rfl⟩ := bassSerreDart_surjective d
-  rw [stabilizer_bassSerreDart, MonoidHom.range_eq_bot_iff.2 (Subsingleton.elim _ _),
-    Subgroup.map_bot]
 
 /-- The element `p g p⁻¹` with `g ∈ A_b` fixes the dart `p α_e(A_e)` exactly when
 `g ∈ α_e(A_e)`. -/
@@ -653,6 +809,10 @@ theorem exists_smul_bassSerreDart_eq {b c : Γ.V} (p q : 𝔸.Path ⟨a⟩ ⟨b�
 
 /-! ### Graphs without edges -/
 
+/-- Over a graph without edges, the Bass–Serre tree has no darts. -/
+instance [IsEmpty Γ.E] : IsEmpty (bassSerreTree 𝔸 a).E :=
+  ⟨fun d ↦ bassSerreDart_induction_on d fun _ e ↦ isEmptyElim e.val⟩
+
 /-- Over a graph without edges, for instance for the trivial splitting of a group as a single
 vertex group, the Bass–Serre tree is a point: every `𝔸`-path from `a` stays at `a` and is homotopic
 to a single element of `A_a`. -/
@@ -686,6 +846,33 @@ variable {𝔸 a}
     (e : b ⟶ c) : (bassSerreProjection 𝔸 a).mapE (bassSerreDart p e) = e.val :=
   (rfl)
 
+/-- When the vertex group at the underlying vertex of `y` is trivial, `y` has trivial stabilizer in
+`π₁(𝔸, a)`. -/
+@[simp] theorem stabilizer_bassSerreTree_vertex_eq_bot (y : (bassSerreTree 𝔸 a).V)
+    [Subsingleton (𝔸.vertexGroup ((bassSerreProjection 𝔸 a).mapV y))] :
+    stabilizer (π₁ 𝔸 a) y = ⊥ := by
+  have h := @bassSerreVertex_induction_on _ _ _
+    (fun y ↦ ∀ [Subsingleton (𝔸.vertexGroup ((bassSerreProjection 𝔸 a).mapV y))],
+      stabilizer (π₁ 𝔸 a) y = ⊥) y fun p ↦ by
+    rw [bassSerreProjection_mapV_bassSerreVertex]
+    intro
+    exact stabilizer_bassSerreVertex_eq_bot p
+  exact h
+
+/-- When the edge group of the underlying dart of `d` is trivial, `d` has trivial stabilizer in
+`π₁(𝔸, a)`. -/
+@[simp] theorem stabilizer_bassSerreTree_dart_eq_bot (d : (bassSerreTree 𝔸 a).E)
+    [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge ((bassSerreProjection 𝔸 a).mapE d)))] :
+    stabilizer (π₁ 𝔸 a) d = ⊥ := by
+  have h := @bassSerreDart_induction_on _ _ _
+    (fun d ↦ ∀ [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge ((bassSerreProjection 𝔸 a).mapE d)))],
+      stabilizer (π₁ 𝔸 a) d = ⊥) d fun p e ↦ by
+    rw [bassSerreProjection_mapE_bassSerreDart]
+    intro
+    rw [stabilizer_bassSerreDart, MonoidHom.range_eq_bot_iff.2 (Subsingleton.elim _ _),
+      Subgroup.map_bot]
+  exact h
+
 /-- The projection to `Γ` is invariant under the action on vertices. -/
 @[simp] theorem bassSerreProjection_mapV_smul (g : π₁ 𝔸 a) (y : (bassSerreTree 𝔸 a).V) :
     (bassSerreProjection 𝔸 a).mapV (g • y) = (bassSerreProjection 𝔸 a).mapV y := by
@@ -710,6 +897,59 @@ theorem bassSerreProjection_comp_toHom (g : π₁ 𝔸 a) :
     (funext fun d ↦ by rw [SerreGraph.Hom.comp_mapE, Function.comp_apply,
       GTree.action_toHom_mapE, bassSerreProjection_mapE_smul])
 
+/-- Every vertex of `X(𝔸, a)` projects into the connected component of `a` in `Γ`. -/
+theorem bassSerreProjection_mapV_mem_componentVertices (y : (bassSerreTree 𝔸 a).V) :
+    (bassSerreProjection 𝔸 a).mapV y ∈ Γ.componentVertices a :=
+  bassSerreVertex_induction_on y fun p ↦ (Γ.mem_componentVertices_iff a _).2 ⟨p.edgePath⟩
+
+/-- Every dart of `X(𝔸, a)` projects into the connected component of `a` in `Γ`. -/
+theorem bassSerreProjection_mapE_mem_componentDarts (d : (bassSerreTree 𝔸 a).E) :
+    (bassSerreProjection 𝔸 a).mapE d ∈ Γ.componentDarts a := by
+  rw [Γ.mem_componentDarts_iff, (bassSerreProjection 𝔸 a).map_src]
+  exact (Γ.mem_componentVertices_iff a _).1
+    (bassSerreProjection_mapV_mem_componentVertices ((bassSerreTree 𝔸 a).src d))
+
+variable (𝔸 a) in
+/-- The canonical projection from `X(𝔸, a)` onto the connected component `Γ.component a` of the
+base vertex. -/
+noncomputable def bassSerreProjectionComponent : (bassSerreTree 𝔸 a).Hom (Γ.component a) where
+  mapV y := ⟨(bassSerreProjection 𝔸 a).mapV y, bassSerreProjection_mapV_mem_componentVertices y⟩
+  mapE d := ⟨(bassSerreProjection 𝔸 a).mapE d, bassSerreProjection_mapE_mem_componentDarts d⟩
+  map_src d := Subtype.ext ((bassSerreProjection 𝔸 a).map_src d)
+  map_rev d := Subtype.ext ((bassSerreProjection 𝔸 a).map_rev d)
+
+@[simp] theorem bassSerreProjectionComponent_mapV_val (y : (bassSerreTree 𝔸 a).V) :
+    ((bassSerreProjectionComponent 𝔸 a).mapV y).val = (bassSerreProjection 𝔸 a).mapV y :=
+  (rfl)
+
+@[simp] theorem bassSerreProjectionComponent_mapE_val (d : (bassSerreTree 𝔸 a).E) :
+    ((bassSerreProjectionComponent 𝔸 a).mapE d).val = (bassSerreProjection 𝔸 a).mapE d :=
+  (rfl)
+
+@[simp] theorem bassSerreProjectionComponent_mapV_nil :
+    (bassSerreProjectionComponent 𝔸 a).mapV
+      (bassSerreVertex (Quiver.Path.nil : 𝔸.Path ⟨a⟩ ⟨a⟩)) = Γ.componentBase a :=
+  Subtype.ext <| (bassSerreProjection_mapV_bassSerreVertex
+    (Quiver.Path.nil : 𝔸.Path ⟨a⟩ ⟨a⟩)).trans (Γ.componentBase_val a).symm
+
+@[simp] theorem componentInclusion_comp_bassSerreProjectionComponent :
+    (Γ.componentInclusion a).comp (bassSerreProjectionComponent 𝔸 a) = bassSerreProjection 𝔸 a := by
+  ext <;> rfl
+
+/-- The projection to `Γ.component a` is invariant under the action of `π₁(𝔸, a)`. -/
+theorem bassSerreProjectionComponent_comp_toHom (g : π₁ 𝔸 a) :
+    (bassSerreProjectionComponent 𝔸 a).comp ((bassSerreTree 𝔸 a).action g).toHom =
+      bassSerreProjectionComponent 𝔸 a :=
+  SerreGraph.Hom.ext _
+    (funext fun y ↦ Subtype.ext <| by
+      rw [SerreGraph.Hom.comp_mapV, Function.comp_apply, GTree.action_toHom_mapV,
+        bassSerreProjectionComponent_mapV_val, bassSerreProjectionComponent_mapV_val,
+        bassSerreProjection_mapV_smul])
+    (funext fun d ↦ Subtype.ext <| by
+      rw [SerreGraph.Hom.comp_mapE, Function.comp_apply, GTree.action_toHom_mapE,
+        bassSerreProjectionComponent_mapE_val, bassSerreProjectionComponent_mapE_val,
+        bassSerreProjection_mapE_smul])
+
 variable (𝔸 a)
 
 /-- The morphism from the quotient graph `X(𝔸, a) / π₁(𝔸, a)` to `Γ` induced by the projection.
@@ -718,6 +958,13 @@ It is injective, with image the connected component of `a`
 when `Γ` is connected (`bassSerreQuotientIso`). -/
 noncomputable def bassSerreQuotientHom : (bassSerreTree 𝔸 a).quotient.Hom Γ :=
   SerreGraph.quotientLift _ (bassSerreProjection 𝔸 a) bassSerreProjection_comp_toHom
+
+/-- The morphism from the quotient graph `X(𝔸, a) / π₁(𝔸, a)` to `Γ.component a` induced by the
+`π₁(𝔸, a)`-invariant projection onto the connected component. -/
+noncomputable def bassSerreQuotientHomComponent :
+    (bassSerreTree 𝔸 a).quotient.Hom (Γ.component a) :=
+  SerreGraph.quotientLift _ (bassSerreProjectionComponent 𝔸 a)
+    bassSerreProjectionComponent_comp_toHom
 
 variable {𝔸 a}
 
@@ -730,6 +977,31 @@ variable {𝔸 a}
     (bassSerreQuotientHom 𝔸 a).mapE ((bassSerreTree 𝔸 a).quotientMap.mapE d) =
       (bassSerreProjection 𝔸 a).mapE d :=
   SerreGraph.quotientLift_mapE_quotientMap _ _ d
+
+@[simp] theorem bassSerreQuotientHomComponent_comp_quotientMap :
+    (bassSerreQuotientHomComponent 𝔸 a).comp (bassSerreTree 𝔸 a).quotientMap =
+      bassSerreProjectionComponent 𝔸 a :=
+  SerreGraph.quotientLift_comp_quotientMap ..
+
+@[simp] theorem bassSerreQuotientHomComponent_mapV_quotientMap (y : (bassSerreTree 𝔸 a).V) :
+    (bassSerreQuotientHomComponent 𝔸 a).mapV ((bassSerreTree 𝔸 a).quotientMap.mapV y) =
+      (bassSerreProjectionComponent 𝔸 a).mapV y :=
+  SerreGraph.quotientLift_mapV_quotientMap _ _ y
+
+@[simp] theorem bassSerreQuotientHomComponent_mapE_quotientMap (d : (bassSerreTree 𝔸 a).E) :
+    (bassSerreQuotientHomComponent 𝔸 a).mapE ((bassSerreTree 𝔸 a).quotientMap.mapE d) =
+      (bassSerreProjectionComponent 𝔸 a).mapE d :=
+  SerreGraph.quotientLift_mapE_quotientMap _ _ d
+
+@[simp] theorem componentInclusion_comp_bassSerreQuotientHomComponent :
+    (Γ.componentInclusion a).comp (bassSerreQuotientHomComponent 𝔸 a) =
+      bassSerreQuotientHom 𝔸 a := by
+  refine ((bassSerreTree 𝔸 a).quotientMap.cancel_right
+    (bassSerreTree 𝔸 a).quotientMap_mapV_surjective
+    (bassSerreTree 𝔸 a).quotientMap_mapE_surjective).1 ?_
+  rw [← SerreGraph.Hom.comp_assoc, bassSerreQuotientHomComponent_comp_quotientMap,
+    componentInclusion_comp_bassSerreProjectionComponent, bassSerreQuotientHom,
+    SerreGraph.quotientLift_comp_quotientMap]
 
 /-- Vertices of the Bass–Serre tree over the same vertex of `Γ` lie in one orbit. -/
 theorem bassSerreQuotientHom_mapV_injective :
@@ -780,9 +1052,105 @@ theorem range_bassSerreQuotientHom_mapE :
       (bassSerreDart ((dartPrefunctor 𝔸).mapPath q) (Γ.dart e)), ?_⟩
     simp
 
+private theorem bassSerreQuotientHomComponent_mapV_bijective :
+    Function.Bijective (bassSerreQuotientHomComponent 𝔸 a).mapV := by
+  refine ⟨fun y₁ y₂ h ↦ bassSerreQuotientHom_mapV_injective ?_, fun ⟨b, hb⟩ ↦ ?_⟩
+  · rw [← componentInclusion_comp_bassSerreQuotientHomComponent]
+    exact congrArg (Γ.componentInclusion a).mapV h
+  · obtain ⟨y, hy⟩ := (Set.ext_iff.1 range_bassSerreQuotientHom_mapV b).2
+      ((Γ.mem_componentVertices_iff a b).1 hb)
+    exact ⟨y, Subtype.ext (by
+      simpa [← componentInclusion_comp_bassSerreQuotientHomComponent] using hy)⟩
+
+private theorem bassSerreQuotientHomComponent_mapE_bijective :
+    Function.Bijective (bassSerreQuotientHomComponent 𝔸 a).mapE := by
+  refine ⟨fun d₁ d₂ h ↦ bassSerreQuotientHom_mapE_injective ?_, fun ⟨e, he⟩ ↦ ?_⟩
+  · rw [← componentInclusion_comp_bassSerreQuotientHomComponent]
+    exact congrArg (Γ.componentInclusion a).mapE h
+  · obtain ⟨d, hd⟩ := (Set.ext_iff.1 range_bassSerreQuotientHom_mapE e).2
+      ((Γ.mem_componentDarts_iff a e).1 he)
+    exact ⟨d, Subtype.ext (by
+      simpa [← componentInclusion_comp_bassSerreQuotientHomComponent] using hd)⟩
+
 variable (𝔸 a)
 
-/-- For a connected graph `Γ`, the quotient of the Bass–Serre tree by `π₁(𝔸, a)` is `Γ`. -/
+/-- The quotient graph `X(𝔸, a) / π₁(𝔸, a)` is canonically isomorphic to the connected component of
+`a` in `Γ`. -/
+noncomputable def bassSerreQuotientIsoComponent :
+    (bassSerreTree 𝔸 a).quotient.Iso (Γ.component a) :=
+  (bassSerreQuotientHomComponent 𝔸 a).toIso
+    bassSerreQuotientHomComponent_mapV_bijective
+    bassSerreQuotientHomComponent_mapE_bijective
+
+section ComponentIso
+
+variable {𝔸 a}
+
+@[simp] theorem bassSerreQuotientIsoComponent_toHom :
+    (bassSerreQuotientIsoComponent 𝔸 a).toHom = bassSerreQuotientHomComponent 𝔸 a :=
+  SerreGraph.Hom.toIso_toHom _ _ _
+
+@[simp] theorem bassSerreQuotientIsoComponent_equivV_quotientMap (y : (bassSerreTree 𝔸 a).V) :
+    (bassSerreQuotientIsoComponent 𝔸 a).equivV ((bassSerreTree 𝔸 a).quotientMap.mapV y) =
+      (bassSerreProjectionComponent 𝔸 a).mapV y := by
+  rw [← SerreGraph.Iso.toHom_mapV, bassSerreQuotientIsoComponent_toHom,
+    bassSerreQuotientHomComponent_mapV_quotientMap]
+
+@[simp] theorem bassSerreQuotientIsoComponent_equivE_quotientMap (d : (bassSerreTree 𝔸 a).E) :
+    (bassSerreQuotientIsoComponent 𝔸 a).equivE ((bassSerreTree 𝔸 a).quotientMap.mapE d) =
+      (bassSerreProjectionComponent 𝔸 a).mapE d := by
+  rw [← SerreGraph.Iso.toHom_mapE, bassSerreQuotientIsoComponent_toHom,
+    bassSerreQuotientHomComponent_mapE_quotientMap]
+
+@[simp] theorem bassSerreQuotientIsoComponent_equivV_symm_mapV (y : (bassSerreTree 𝔸 a).V) :
+    (bassSerreQuotientIsoComponent 𝔸 a).equivV.symm
+      ((bassSerreProjectionComponent 𝔸 a).mapV y) = (bassSerreTree 𝔸 a).quotientMap.mapV y :=
+  (bassSerreQuotientIsoComponent 𝔸 a).equivV.symm_apply_eq.2
+    (bassSerreQuotientIsoComponent_equivV_quotientMap y).symm
+
+@[simp] theorem bassSerreQuotientIsoComponent_equivV_symm_componentBase :
+    (bassSerreQuotientIsoComponent 𝔸 a).equivV.symm (Γ.componentBase a) =
+      (bassSerreTree 𝔸 a).quotientMap.mapV (bassSerreVertex .nil) := by
+  rw [← bassSerreProjectionComponent_mapV_nil, bassSerreQuotientIsoComponent_equivV_symm_mapV]
+
+/-- Evaluating the inverse vertex equivalence of `bassSerreQuotientIsoComponent` on a vertex
+reached from `a` by an edge path `γ` lifts `γ` to the Bass–Serre tree and projects to the
+quotient. -/
+theorem bassSerreQuotientIsoComponent_equivV_symm_mk {b : Γ.V} (γ : Γ.Path a b) :
+    (bassSerreQuotientIsoComponent 𝔸 a).equivV.symm
+      ⟨b, (Γ.mem_componentVertices_iff a b).2 ⟨γ⟩⟩ =
+      (bassSerreTree 𝔸 a).quotientMap.mapV
+        (bassSerreVertex ((dartPrefunctor 𝔸).mapPath γ)) := by
+  have h : (bassSerreProjectionComponent 𝔸 a).mapV
+      (bassSerreVertex ((dartPrefunctor 𝔸).mapPath γ)) =
+      ⟨b, (Γ.mem_componentVertices_iff a b).2 ⟨γ⟩⟩ :=
+    Subtype.ext (bassSerreProjection_mapV_bassSerreVertex ((dartPrefunctor 𝔸).mapPath γ))
+  rw [← h, bassSerreQuotientIsoComponent_equivV_symm_mapV]
+
+@[simp] theorem bassSerreQuotientIsoComponent_equivE_symm_mapE (d : (bassSerreTree 𝔸 a).E) :
+    (bassSerreQuotientIsoComponent 𝔸 a).equivE.symm
+      ((bassSerreProjectionComponent 𝔸 a).mapE d) = (bassSerreTree 𝔸 a).quotientMap.mapE d :=
+  (bassSerreQuotientIsoComponent 𝔸 a).equivE.symm_apply_eq.2
+    (bassSerreQuotientIsoComponent_equivE_quotientMap d).symm
+
+/-- Evaluating the inverse dart equivalence of `bassSerreQuotientIsoComponent` on a dart `e` whose
+source is reached from `a` by an edge path `γ` lifts `(γ, e)` to the Bass–Serre tree and projects
+to the quotient. -/
+theorem bassSerreQuotientIsoComponent_equivE_symm_mk {e : Γ.E} (γ : Γ.Path a (Γ.src e)) :
+    (bassSerreQuotientIsoComponent 𝔸 a).equivE.symm
+      ⟨e, (Γ.mem_componentDarts_iff a e).2 ⟨γ⟩⟩ =
+      (bassSerreTree 𝔸 a).quotientMap.mapE
+        (bassSerreDart ((dartPrefunctor 𝔸).mapPath γ) (Γ.dart e)) := by
+  have h : (bassSerreProjectionComponent 𝔸 a).mapE
+      (bassSerreDart ((dartPrefunctor 𝔸).mapPath γ) (Γ.dart e)) =
+      ⟨e, (Γ.mem_componentDarts_iff a e).2 ⟨γ⟩⟩ :=
+    Subtype.ext <| (bassSerreProjection_mapE_bassSerreDart
+      ((dartPrefunctor 𝔸).mapPath γ) (Γ.dart e)).trans (Γ.dart_val e)
+  rw [← h, bassSerreQuotientIsoComponent_equivE_symm_mapE]
+
+end ComponentIso
+
+/-- For a preconnected graph `Γ`, the quotient of the Bass–Serre tree by `π₁(𝔸, a)` is `Γ`. -/
 noncomputable def bassSerreQuotientIso (hΓ : Γ.Preconnected) :
     (bassSerreTree 𝔸 a).quotient.Iso Γ :=
   (bassSerreQuotientHom 𝔸 a).toIso
@@ -791,13 +1159,135 @@ noncomputable def bassSerreQuotientIso (hΓ : Γ.Preconnected) :
     ⟨bassSerreQuotientHom_mapE_injective, fun e ↦
       (Set.ext_iff.1 range_bassSerreQuotientHom_mapE e).2 ((Γ.preconnected_iff.1 hΓ) a _)⟩
 
-variable {𝔸 a} in
+section PreconnectedIso
+
+variable {𝔸 a}
+
 /-- The isomorphism from the quotient graph to `Γ` is the morphism `bassSerreQuotientHom`. -/
 @[simp] theorem bassSerreQuotientIso_toHom (hΓ : Γ.Preconnected) :
     (bassSerreQuotientIso 𝔸 a hΓ).toHom = bassSerreQuotientHom 𝔸 a :=
   SerreGraph.Hom.toIso_toHom _ _ _
 
+@[simp] theorem bassSerreQuotientIsoComponent_trans_componentIsoOfPreconnected
+    (hΓ : Γ.Preconnected) :
+    (bassSerreQuotientIsoComponent 𝔸 a).trans (Γ.componentIsoOfPreconnected hΓ) =
+      bassSerreQuotientIso 𝔸 a hΓ := by
+  have hhom : ((bassSerreQuotientIsoComponent 𝔸 a).trans (Γ.componentIsoOfPreconnected hΓ)).toHom =
+      (bassSerreQuotientIso 𝔸 a hΓ).toHom := by
+    simp
+  exact SerreGraph.Iso.ext
+    (fun x ↦ congrFun (congrArg SerreGraph.Hom.mapV hhom) x)
+    (fun d ↦ congrFun (congrArg SerreGraph.Hom.mapE hhom) d)
+
+@[simp] theorem bassSerreQuotientIso_equivV_quotientMap (hΓ : Γ.Preconnected)
+    (y : (bassSerreTree 𝔸 a).V) :
+    (bassSerreQuotientIso 𝔸 a hΓ).equivV ((bassSerreTree 𝔸 a).quotientMap.mapV y) =
+      (bassSerreProjection 𝔸 a).mapV y := by
+  rw [← SerreGraph.Iso.toHom_mapV, bassSerreQuotientIso_toHom,
+    bassSerreQuotientHom_mapV_quotientMap]
+
+@[simp] theorem bassSerreQuotientIso_equivE_quotientMap (hΓ : Γ.Preconnected)
+    (d : (bassSerreTree 𝔸 a).E) :
+    (bassSerreQuotientIso 𝔸 a hΓ).equivE ((bassSerreTree 𝔸 a).quotientMap.mapE d) =
+      (bassSerreProjection 𝔸 a).mapE d := by
+  rw [← SerreGraph.Iso.toHom_mapE, bassSerreQuotientIso_toHom,
+    bassSerreQuotientHom_mapE_quotientMap]
+
+@[simp] theorem bassSerreQuotientIso_equivV_symm_mapV (hΓ : Γ.Preconnected)
+    (y : (bassSerreTree 𝔸 a).V) :
+    (bassSerreQuotientIso 𝔸 a hΓ).equivV.symm ((bassSerreProjection 𝔸 a).mapV y) =
+      (bassSerreTree 𝔸 a).quotientMap.mapV y :=
+  (bassSerreQuotientIso 𝔸 a hΓ).equivV.symm_apply_eq.2
+    (bassSerreQuotientIso_equivV_quotientMap hΓ y).symm
+
+@[simp] theorem bassSerreQuotientIso_equivV_symm_self (hΓ : Γ.Preconnected) :
+    (bassSerreQuotientIso 𝔸 a hΓ).equivV.symm a =
+      (bassSerreTree 𝔸 a).quotientMap.mapV (bassSerreVertex .nil) :=
+  bassSerreQuotientIso_equivV_symm_mapV hΓ (bassSerreVertex .nil)
+
+@[simp] theorem bassSerreQuotientIso_equivE_symm_mapE (hΓ : Γ.Preconnected)
+    (d : (bassSerreTree 𝔸 a).E) :
+    (bassSerreQuotientIso 𝔸 a hΓ).equivE.symm ((bassSerreProjection 𝔸 a).mapE d) =
+      (bassSerreTree 𝔸 a).quotientMap.mapE d :=
+  (bassSerreQuotientIso 𝔸 a hΓ).equivE.symm_apply_eq.2
+    (bassSerreQuotientIso_equivE_quotientMap hΓ d).symm
+
+/-- For preconnected `Γ`, evaluating the inverse vertex equivalence of `bassSerreQuotientIso` on a
+vertex reached from `a` by `γ` lifts `γ` to the Bass–Serre tree and projects to the quotient. -/
+theorem bassSerreQuotientIso_equivV_symm_of_path (hΓ : Γ.Preconnected) {b : Γ.V}
+    (γ : Γ.Path a b) :
+    (bassSerreQuotientIso 𝔸 a hΓ).equivV.symm b =
+      (bassSerreTree 𝔸 a).quotientMap.mapV
+        (bassSerreVertex ((dartPrefunctor 𝔸).mapPath γ)) :=
+  (congrArg (bassSerreQuotientIso 𝔸 a hΓ).equivV.symm
+    (bassSerreProjection_mapV_bassSerreVertex ((dartPrefunctor 𝔸).mapPath γ)).symm).trans
+    (bassSerreQuotientIso_equivV_symm_mapV hΓ (bassSerreVertex ((dartPrefunctor 𝔸).mapPath γ)))
+
+/-- For preconnected `Γ`, evaluating the inverse dart equivalence of `bassSerreQuotientIso` on a
+dart `e` whose source is reached from `a` by `γ` lifts `(γ, e)` to the Bass–Serre tree and projects
+to the quotient. -/
+theorem bassSerreQuotientIso_equivE_symm_of_path (hΓ : Γ.Preconnected) {e : Γ.E}
+    (γ : Γ.Path a (Γ.src e)) :
+    (bassSerreQuotientIso 𝔸 a hΓ).equivE.symm e =
+      (bassSerreTree 𝔸 a).quotientMap.mapE
+        (bassSerreDart ((dartPrefunctor 𝔸).mapPath γ) (Γ.dart e)) :=
+  (congrArg (bassSerreQuotientIso 𝔸 a hΓ).equivE.symm
+    ((bassSerreProjection_mapE_bassSerreDart ((dartPrefunctor 𝔸).mapPath γ) (Γ.dart e)).trans
+      (Γ.dart_val e)).symm).trans
+    (bassSerreQuotientIso_equivE_symm_mapE hΓ
+      (bassSerreDart ((dartPrefunctor 𝔸).mapPath γ) (Γ.dart e)))
+
+end PreconnectedIso
+
 end Graph
+
+/-! ### Universal cover for trivial vertex groups -/
+
+section Subsingleton
+
+variable (𝔸) (a : Γ.V) [∀ b, Subsingleton (𝔸.vertexGroup b)]
+
+/-- When all vertex groups are trivial, the vertices of `X(𝔸, a)` correspond bijectively to the
+reduced edge paths of `Γ` starting at `a`. -/
+noncomputable def bassSerreVertexEquivReducedPath :
+    (bassSerreTree 𝔸 a).V ≃
+      {q : Σ b : Γ.V, Γ.Path a b // SerreGraph.Path.IsReduced Γ q.2} :=
+  (Equiv.ofBijective
+    (fun q : {q : Σ b : Γ.V, Γ.Path a b // SerreGraph.Path.IsReduced Γ q.2} ↦
+      bassSerreVertex ((dartPrefunctor 𝔸).mapPath q.val.2))
+    ⟨fun ⟨⟨b₁, γ₁⟩, h₁⟩ ⟨⟨b₂, γ₂⟩, h₂⟩ h ↦ by
+      have hb : b₁ = b₂ :=
+        (bassSerreProjection_mapV_bassSerreVertex ((dartPrefunctor 𝔸).mapPath γ₁)).symm.trans
+          ((congrArg (bassSerreProjection 𝔸 a).mapV h).trans
+            (bassSerreProjection_mapV_bassSerreVertex ((dartPrefunctor 𝔸).mapPath γ₂)))
+      subst hb
+      obtain ⟨g, hg⟩ := bassSerreVertex_eq_bassSerreVertex_iff.1 h.symm
+      rw [Subsingleton.elim g 1] at hg
+      have hhom : SerreGraph.Path.Homotopic Γ γ₁ γ₂ :=
+        (Path.homotopic_mapPath_dartPrefunctor_iff (𝔸 := 𝔸)).1 (hg.trans (Path.Homotopic.one _))
+      exact Subtype.ext (congrArg (Sigma.mk b₁) (hhom.eq_of_isReduced Γ h₁ h₂)),
+    fun y ↦ bassSerreVertex_induction_on y fun {b} p ↦
+      ⟨⟨⟨b, SerreGraph.Path.reduce Γ p.edgePath⟩, SerreGraph.Path.isReduced_reduce Γ p.edgePath⟩,
+        bassSerreVertex_congr <|
+          ((SerreGraph.Path.homotopic_reduce Γ p.edgePath).symm.mapPath_dartPrefunctor 𝔸).trans
+            (Path.homotopic_mapPath_edgePath p).symm⟩⟩).symm
+
+@[simp] theorem bassSerreVertexEquivReducedPath_symm_apply
+    (q : {q : Σ b : Γ.V, Γ.Path a b // SerreGraph.Path.IsReduced Γ q.2}) :
+    (bassSerreVertexEquivReducedPath 𝔸 a).symm q =
+      bassSerreVertex ((dartPrefunctor 𝔸).mapPath q.val.2) :=
+  (rfl)
+
+@[simp] theorem bassSerreVertexEquivReducedPath_bassSerreVertex {b : Γ.V}
+    (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    bassSerreVertexEquivReducedPath 𝔸 a (bassSerreVertex p) =
+      ⟨⟨b, SerreGraph.Path.reduce Γ p.edgePath⟩,
+        SerreGraph.Path.isReduced_reduce Γ p.edgePath⟩ :=
+  (Equiv.eq_symm_apply _).1 <| (bassSerreVertex_congr <|
+    ((SerreGraph.Path.homotopic_reduce Γ p.edgePath).symm.mapPath_dartPrefunctor 𝔸).trans
+      (Path.homotopic_mapPath_edgePath p).symm).symm
+
+end Subsingleton
 
 end GraphOfGroups
 

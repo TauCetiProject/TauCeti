@@ -644,6 +644,8 @@ in `A`. Its carriers compute to these subtypes so that paths can be lifted throu
 
 instance [Finite A] : Finite (Γ.subgraph A D hsrc hrev).V := inferInstanceAs (Finite A)
 instance [Finite D] : Finite (Γ.subgraph A D hsrc hrev).E := inferInstanceAs (Finite D)
+instance [IsEmpty A] : IsEmpty (Γ.subgraph A D hsrc hrev).V := inferInstanceAs (IsEmpty A)
+instance [IsEmpty D] : IsEmpty (Γ.subgraph A D hsrc hrev).E := inferInstanceAs (IsEmpty D)
 
 /-- Inclusion of a subgraph into the ambient graph. Its vertex map computes to `Subtype.val`, so
 that a path of the subgraph mapped by the inclusion has the ambient endpoints and can be compared
@@ -867,6 +869,10 @@ vertex `b` to the vertex `!b`. -/
 
 /-- Every vertex of the segment is the source of a dart: the dart with the same Boolean label. -/
 theorem segment_src_surjective : Function.Surjective segment.src := fun b => ⟨b, segment_src b⟩
+
+/-- Distinct darts of the segment have distinct sources. -/
+theorem segment_src_injective : Function.Injective segment.src :=
+  fun _ _ h => (segment_src _).symm.trans (h.trans (segment_src _))
 
 @[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
 
