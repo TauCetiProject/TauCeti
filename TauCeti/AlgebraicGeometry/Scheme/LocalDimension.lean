@@ -43,7 +43,8 @@ the components through `x` (`PrimeSpectrum.topologicalKrullDimAt_le_iSup_ringKru
 
 ## Main results
 
-All in the namespace `TauCeti.AlgebraicGeometry`:
+All in the namespace `TauCeti.AlgebraicGeometry`, except the last, which is in
+`AlgebraicGeometry.Scheme.Hom`:
 
 * `topologicalKrullDim_closure_singleton_eq_toNat_trdeg_residueField`: `dim {x}⁻ = trdeg_k κ(x)`.
 * `topologicalKrullDimAt_eq_ringKrullDim_stalk_add_toNat_trdeg_residueField`:
@@ -59,6 +60,11 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
 * `height_apply_eq_height_of_residueDegree_ne_zero`: a morphism over `k` preserves the height of
   a point with finite residue field extension.
 * `height_apply_of_isOpenImmersion`: an open immersion into `X` preserves the height of points.
+* `trdeg_residueField_lt_aleph0`: every residue field `κ(x)` has finite transcendence degree
+  over `k`.
+* `AlgebraicGeometry.Scheme.Hom.trdeg_residueField_eq_of_isIso_residueFieldMap`: over any
+  commutative ring `k`, a morphism over `Spec k` inducing an isomorphism `κ(f x) ≅ κ(x)` preserves
+  the transcendence degree over `k` of the residue field.
 
 ## References
 

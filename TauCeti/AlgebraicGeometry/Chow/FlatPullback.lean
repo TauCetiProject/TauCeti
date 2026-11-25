@@ -27,12 +27,12 @@ Theory*, §1.7.
 
 ## Main definitions and results
 
-* `Chow.cyclesFlatPullback k f n`: for `f` over a field `k`, of pure relative dimension `n`,
+* `Chow.cyclesPullback k f n`: for `f` over a field `k`, of pure relative dimension `n`,
   between schemes locally of finite type over `k`, the pullback `Z_m(Y) →+ Z_{m+n}(X)` of
-  `m`-cycles.
-* `Chow.coe_cyclesFlatPullback_eq_coe_cyclesRestrict`: along an open immersion, of pure relative
+  `m`-cycles. Flatness is not assumed; for `f` flat this is the flat pullback.
+* `Chow.coe_cyclesPullback_eq_coe_cyclesRestrict`: along an open immersion, of pure relative
   dimension zero, the pullback is the restriction `Chow.cyclesRestrict`; in particular
-  `Chow.coe_cyclesFlatPullback_id`.
+  `Chow.coe_cyclesPullback_id`.
 -/
 
 public section
@@ -76,7 +76,7 @@ dimension `n` between schemes locally of finite type over a field `k`:
 For `f` flat this is the flat pullback `f^*[V] = [f⁻¹(V)]_{m+n}` of
 [Stacks, Section 42.14](https://stacks.math.columbia.edu/tag/02RA) and Fulton, *Intersection
 Theory*, §1.7. -/
-noncomputable def cyclesFlatPullback (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (n : ℕ)
+noncomputable def cyclesPullback (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (n : ℕ)
     [PureRelativeDimension n f] {m : ℤ} :
     cyclesOfDimension Y m →+ cyclesOfDimension X (m + n) :=
   letI := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
@@ -89,36 +89,36 @@ variable {k}
 /-- The coefficient of a pullback of `m`-cycles at `x` is the coefficient at `f x` times the
 multiplicity. -/
 @[simp]
-lemma cyclesFlatPullback_apply (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (n : ℕ)
+lemma cyclesPullback_apply (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (n : ℕ)
     [PureRelativeDimension n f] {m : ℤ} (α : cyclesOfDimension Y m) (x : X) :
-    (cyclesFlatPullback k f n α : AlgebraicCycle X ℤ) x =
+    (cyclesPullback k f n α : AlgebraicCycle X ℤ) x =
       (α : AlgebraicCycle Y ℤ) (f x) * AlgebraicCycle.pullbackMultiplicity f x :=
   letI := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   AlgebraicCycle.pullback_apply f _ x
 
 /-- The pullback of `m`-cycles is the pullback of the underlying cycles. -/
-lemma coe_cyclesFlatPullback [IsLocallyNoetherian X] (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
+lemma coe_cyclesPullback [IsLocallyNoetherian X] (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
     (n : ℕ) [PureRelativeDimension n f] {m : ℤ} (α : cyclesOfDimension Y m) :
-    (cyclesFlatPullback k f n α : AlgebraicCycle X ℤ) =
+    (cyclesPullback k f n α : AlgebraicCycle X ℤ) =
       AlgebraicCycle.pullback f (α : AlgebraicCycle Y ℤ) :=
   (rfl)
 
 /-- Along an open immersion, of pure relative dimension zero, the pullback of `m`-cycles is the
 restriction `Chow.cyclesRestrict`. -/
-lemma coe_cyclesFlatPullback_eq_coe_cyclesRestrict (j : X ⟶ Y) [IsOpenImmersion j]
+lemma coe_cyclesPullback_eq_coe_cyclesRestrict (j : X ⟶ Y) [IsOpenImmersion j]
     [j.IsOver (Spec (.of k))] {m : ℤ} (α : cyclesOfDimension Y m) :
-    (cyclesFlatPullback k j 0 α : AlgebraicCycle X ℤ) =
+    (cyclesPullback k j 0 α : AlgebraicCycle X ℤ) =
       (cyclesRestrict k j α : AlgebraicCycle X ℤ) := by
   have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  rw [coe_cyclesFlatPullback, AlgebraicCycle.pullback_eq_comap_of_isOpenImmersion]
+  rw [coe_cyclesPullback, AlgebraicCycle.pullback_eq_comap_of_isOpenImmersion]
   refine Function.locallyFinsuppWithin.ext fun x ↦ ?_
   rw [cyclesRestrict_apply, Function.locallyFinsupp.comap_apply]
 
 /-- Pulling back `m`-cycles along the identity does nothing. This is not a simp lemma: `simp`
 rewrites the cast `((0 : ℕ) : ℤ)` in the dimension `m + 0` of its left-hand side. -/
-lemma coe_cyclesFlatPullback_id {m : ℤ} (α : cyclesOfDimension X m) :
-    (cyclesFlatPullback k (𝟙 X) 0 α : AlgebraicCycle X ℤ) = (α : AlgebraicCycle X ℤ) := by
-  rw [coe_cyclesFlatPullback_eq_coe_cyclesRestrict, cyclesRestrict_id, AddMonoidHom.id_apply]
+lemma coe_cyclesPullback_id {m : ℤ} (α : cyclesOfDimension X m) :
+    (cyclesPullback k (𝟙 X) 0 α : AlgebraicCycle X ℤ) = (α : AlgebraicCycle X ℤ) := by
+  rw [coe_cyclesPullback_eq_coe_cyclesRestrict, cyclesRestrict_id, AddMonoidHom.id_apply]
 
 end OverField
 

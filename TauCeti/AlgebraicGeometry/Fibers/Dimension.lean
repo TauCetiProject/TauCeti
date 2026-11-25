@@ -27,7 +27,7 @@ Globally, for a morphism `f : X ⟶ Y` over a field `k` between schemes locally 
 taken in the scheme-theoretic fibre `F` of `f` over `f x`; this comes from additivity of
 transcendence degrees of residue fields. When `f` has pure relative dimension `n` and `x` is a
 generic point of its fibre, the last term is `n`. This gives the dimension shift of the pullback of
-algebraic cycles, `TauCeti.AlgebraicGeometry.Chow.cyclesFlatPullback`.
+algebraic cycles, `TauCeti.AlgebraicGeometry.Chow.cyclesPullback`.
 
 ## Main declarations
 

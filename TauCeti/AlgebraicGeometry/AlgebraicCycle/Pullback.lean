@@ -23,7 +23,7 @@ points. Thus `f^*[y] = Σ_x m_f(x) [x]`, the sum over the generic points `x` of 
 over `y`. For `f` flat of pure relative dimension between schemes locally of finite type over a
 field, this is the flat pullback of
 [Stacks, Section 42.14](https://stacks.math.columbia.edu/tag/02RA); the version on cycles of
-fixed dimension is `TauCeti.AlgebraicGeometry.Chow.cyclesFlatPullback`.
+fixed dimension is `TauCeti.AlgebraicGeometry.Chow.cyclesPullback`.
 
 ## Main definitions and results
 
