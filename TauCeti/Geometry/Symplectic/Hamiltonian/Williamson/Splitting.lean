@@ -45,11 +45,7 @@ nondegenerate (`TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.restrict`,
 the span of the family and an even polynomial `p`, the vectors killed by a power of `p(A_P)` form
 such a subspace (`IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval`). The
 Hamiltonian endomorphism of the restriction of a form to such a subspace is the restriction of its
-Hamiltonian endomorphism (`TauCeti.SymplecticForm.hamiltonianEnd_comp_subtype`), and the
-invariance of `L` passes to `L^ω`
-(`TauCeti.SymplecticForm.orthogonal_mem_invtSubmodule_hamiltonianEnd`). Darboux bases of `L` and
-`L^ω` assemble to one of `V`
-(`TauCeti.SymplecticForm.IsSymplectic.exists_isDarbouxBasis_castAdd_natAdd`). Since `A_P` is
+Hamiltonian endomorphism (`TauCeti.SymplecticForm.hamiltonianEnd_comp_subtype`). Since `A_P` is
 semisimple, `p(A_P)` vanishes on that subspace
 (`Module.End.IsSemisimple.aeval_apply_eq_zero_of_mem_maxGenEigenspace`), and polynomials in `A_P`
 commute with the Hamiltonian endomorphisms of the family
@@ -77,8 +73,6 @@ form a nondegenerate family
   polynomials in one of its Hamiltonian endomorphisms are nondegenerate.
 * `TauCeti.SymplecticForm.commute_aeval_hamiltonianEnd_of_mem_span`: for `P` and `R` in the span
   of a Poisson-commuting family, polynomials in `A_P` commute with `A_R`.
-* `TauCeti.SymplecticForm.IsSymplectic.exists_isDarbouxBasis_castAdd_natAdd`: Darboux bases of a
-  symplectic subspace and of its symplectic complement assemble to a Darboux basis of `V`.
 
 ## References
 
@@ -391,31 +385,6 @@ theorem hamiltonianEnd_comp_subtype (hL : ω.IsSymplectic L) {R : QuadraticForm 
       (ω.hamiltonianEnd R).restrict hR :=
   ((ω.restrict L hL.nondegenerate_restrict).eq_hamiltonianEnd_iff.2 fun v w ↦ by
     simp [QuadraticMap.polar]).symm
-
-/-- **Invariance of the symplectic complement.** If the Hamiltonian endomorphism of a quadratic
-form `R` preserves a subspace `L`, it preserves its symplectic complement `L^ω`. -/
-theorem orthogonal_mem_invtSubmodule_hamiltonianEnd {R : QuadraticForm ℝ V}
-    (hR : L ∈ Module.End.invtSubmodule (ω.hamiltonianEnd R)) :
-    ω.orthogonal L ∈ Module.End.invtSubmodule (ω.hamiltonianEnd R) :=
-  (Module.End.mem_invtSubmodule _).2 fun _ hv ↦ mem_orthogonal_iff.2 fun _ hy ↦ by
-    rw [apply_hamiltonianEnd_right, ← apply_hamiltonianEnd,
-      mem_orthogonal_iff.1 hv _ ((Module.End.mem_invtSubmodule _).1 hR hy), neg_zero]
-
-/-- **Assembling Darboux bases along `V = L ⊕ L^ω`.** Darboux bases of a symplectic subspace `L`,
-with `m` planes, and of its symplectic complement, with `n` planes, assemble to a Darboux basis of
-`V` whose first `m` planes are those of `L` and whose last `n` planes are those of `L^ω`. -/
-theorem IsSymplectic.exists_isDarbouxBasis_castAdd_natAdd (hL : ω.IsSymplectic L) {m n : ℕ}
-    {b₁ : Basis (Fin m × Fin 2) ℝ L}
-    (hb₁ : (ω.restrict L hL.nondegenerate_restrict).IsDarbouxBasis b₁)
-    {b₂ : Basis (Fin n × Fin 2) ℝ (ω.orthogonal L)}
-    (hb₂ : (ω.restrict _ hL.orthogonal.nondegenerate_restrict).IsDarbouxBasis b₂) :
-    ∃ b : Basis (Fin (m + n) × Fin 2) ℝ V, ω.IsDarbouxBasis b ∧
-      (∀ i a, b (Fin.castAdd n i, a) = b₁ (i, a)) ∧ ∀ i a, b (Fin.natAdd m i, a) = b₂ (i, a) :=
-  ⟨((b₁.prod b₂).reindex ((Equiv.sumProdDistrib _ _ _).symm.trans
-      (finSumFinEquiv.prodCongr (Equiv.refl _)))).map
-        (Submodule.prodEquivOfIsCompl L (ω.orthogonal L) hL.isCompl),
-    (hb₁.prod hb₂).map (ω.isSymplectomorphism_prodEquivOfIsCompl hL.isCompl),
-    fun _ _ ↦ by simp [Basis.reindex_apply], fun _ _ ↦ by simp [Basis.reindex_apply]⟩
 
 /-- For `P` and `R` in the span of a Poisson-commuting family, every polynomial in `A_P` commutes
 with `A_R`. -/

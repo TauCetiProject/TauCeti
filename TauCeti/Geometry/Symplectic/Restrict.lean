@@ -38,6 +38,8 @@ A compatible pair `(ω, J)` restricts to a compatible pair on a `J`-invariant su
 * `TauCeti.SymplecticForm.restrict_mem_skewAdjointLieSubalgebra`: an element of `sp(V, ω)`
   preserving such a subspace restricts to an element of the symplectic Lie algebra of the
   restricted form.
+* `TauCeti.SymplecticForm.orthogonal_mem_invtSubmodule`: an element of `sp(V, ω)` preserving a
+  subspace `L` preserves its symplectic complement `L^ω`.
 * `TauCeti.SymplecticForm.Compatible.restrict`: compatibility passes to these restrictions.
 -/
 
@@ -98,6 +100,19 @@ theorem restrict_mem_skewAdjointLieSubalgebra {ω : SymplecticForm V} {A : Modul
   -- (`SymplecticForm.restrict_apply`, `LinearMap.restrict_apply`), definitionally.
   (LinearMap.mem_skewAdjointSubmodule _).2 fun u w ↦
     (LinearMap.mem_skewAdjointSubmodule A).1 hA u w
+
+/-- **Invariance of the symplectic complement.** An element `A ∈ sp(V, ω)` preserving a subspace
+`L` preserves its symplectic complement `L^ω`: for `v ∈ L^ω` and `y ∈ L`,
+`ω(y, A v) = -ω(A y, v) = 0`. -/
+theorem orthogonal_mem_invtSubmodule {ω : SymplecticForm V} {A : Module.End ℝ V}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {L : Submodule ℝ V}
+    (hL : L ∈ Module.End.invtSubmodule A) :
+    ω.orthogonal L ∈ Module.End.invtSubmodule A :=
+  (Module.End.mem_invtSubmodule _).2 fun v hv ↦ mem_orthogonal_iff.2 fun y hy ↦ by
+    have h : ω (A y) v = -ω y (A v) :=
+      ((LinearMap.mem_skewAdjointSubmodule A).1 hA y v).trans (map_neg _ _)
+    rwa [mem_orthogonal_iff.1 hv _ ((Module.End.mem_invtSubmodule _).1 hL hy), eq_comm,
+      neg_eq_zero] at h
 
 /-- The symplectic complement of a subspace complementary to it also carries a nondegenerate
 restriction of `ω`: a vector of `L^ω` orthogonal to `L^ω` is orthogonal to `L` as well, hence to

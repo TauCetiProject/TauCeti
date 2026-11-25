@@ -254,15 +254,10 @@ private theorem exists_isDarbouxBasis_aux {ι : Type*} (n : ℕ) :
       le_rfl
   have hbP := isDarbouxBasis_restrict_lineBasis hq hqJq hcompl
   -- Concatenate the bases of the line and of `W` along their direct sum.
-  let σ : (Fin 1 × Fin 2) ⊕ (Fin m × Fin 2) ≃ Fin (1 + m) × Fin 2 :=
-    (Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _))
-  let b := (((lineBasis J hq).prod bW).reindex σ).map (Submodule.prodEquivOfIsCompl _ _ hcompl)
-  have hb : ω.IsDarbouxBasis b :=
-    (hbP.prod hbW).map (ω.isSymplectomorphism_prodEquivOfIsCompl hcompl)
-  have hbl (a : Fin 2) : b (Fin.castAdd m 0, a) = ![q, J q] a := by
-    simp [b, σ, Basis.reindex_apply, coe_lineBasis_apply]
-  have hbr (j : Fin m) (a : Fin 2) : b (Fin.natAdd 1 j, a) = (bW (j, a) : U) := by
-    simp [b, σ, Basis.reindex_apply]
+  obtain ⟨b, hb, hbl, hbr⟩ :=
+    (isSymplectic_iff_isCompl.2 hcompl).exists_isDarbouxBasis_castAdd_natAdd hbP hbW
+  replace hbl (a : Fin 2) : b (Fin.castAdd m 0, a) = ![q, J q] a := by
+    rw [hbl, coe_lineBasis_apply]
   refine ⟨1 + m, b, hb, fun k ↦ ?_, fun i k ↦ ?_⟩
   · induction k using Fin.addCases with
     | left k =>

@@ -182,7 +182,7 @@ theorem IsDarbouxBasis.hamiltonianEnd_williamsonBlocks_inr_apply_castAdd
   obtain ⟨j, l⟩ := l
   have h (p : Fin (k * 2)) (c' : Fin 2) :
       b.coord (Fin.natAdd m p, c') (b (Fin.castAdd _ i, c)) = 0 := by
-    simp [Fin.natAdd_ne_castAdd]
+    simp
   fin_cases l <;>
     simp [williamsonBlocks, hb.hamiltonianEnd_linMulLin_coord_apply, h]
 
@@ -240,7 +240,7 @@ theorem IsDarbouxBasis.quadraticPoissonBracket_williamsonBlocks (hb : ω.IsDarbo
     rcases x with i₁ | ⟨j₁, l₁⟩ <;> rcases y with i₂ | ⟨j₂, l₂⟩
     · fin_cases c <;>
         simp [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd, Fin.natAdd_ne_castAdd]
+          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd]
     all_goals
       fin_cases i <;> fin_cases c <;> (try fin_cases l₁) <;> (try fin_cases l₂) <;>
       simp only [Fin.zero_eta, Fin.mk_one, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
@@ -252,7 +252,7 @@ theorem IsDarbouxBasis.quadraticPoissonBracket_williamsonBlocks (hb : ω.IsDarbo
       simp_all [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
         hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
         hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-        hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, Fin.natAdd_ne_castAdd]
+        hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd]
 
 /-! ### Dimension counts -/
 
@@ -404,7 +404,8 @@ private theorem mem_span_williamsonBlocks {L : Submodule ℝ V} (hL : ω.IsSympl
       obtain ⟨⟨j', i'⟩, rfl⟩ := finProdFinEquiv.surjective p
       have hRL' : ∀ v ∈ ω.orthogonal L, ω.hamiltonianEnd R v ∈ ω.orthogonal L :=
         (Module.End.mem_invtSubmodule _).1
-          (orthogonal_mem_invtSubmodule_hamiltonianEnd ((Module.End.mem_invtSubmodule _).2 hRL))
+          (orthogonal_mem_invtSubmodule (ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra R)
+            ((Module.End.mem_invtSubmodule _).2 hRL))
       have hL₂ : ω.hamiltonianEnd R (b (Fin.natAdd m (finProdFinEquiv (j', i')), a)) =
           ((ω.restrict _ hL.orthogonal.nondegenerate_restrict).hamiltonianEnd
             (R.comp (ω.orthogonal L).subtype) (b₂ (finProdFinEquiv (j', i'), a)) : V) := by
@@ -487,8 +488,8 @@ theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
       (QuadraticMap.comp_mem_span_range_comp hP _) hL'c.symm hc0 fun z hz ↦ by
         obtain ⟨v, w, hv, hAv, hAw⟩ := hPc z hz
         rw [hamiltonianEnd_comp_subtype hL.orthogonal ((Module.End.mem_invtSubmodule _).1
-          (orthogonal_mem_invtSubmodule_hamiltonianEnd ((Module.End.mem_invtSubmodule _).2
-            (hRL hP))))]
+          (orthogonal_mem_invtSubmodule (ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra _)
+            ((Module.End.mem_invtSubmodule _).2 (hRL hP))))]
         exact Module.End.exists_restrict_apply_eq _ (hc0 z hz).2.ne'
           (maxGenEigenspace_aeval_focusFocusPolynomial_le_orthogonal hA s (hc0 z hz).1.ne'
             (hc0 z hz).2.ne' ((Module.End.mem_maxGenEigenspace _ _ _).2
@@ -550,8 +551,7 @@ private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_natAdd
   simp [williamsonRegular, map_sum, LinearMap.sum_apply,
     hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
     hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-    hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, Fin.natAdd_ne_castAdd, smul_ite,
-    Finset.sum_add_distrib]
+    hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, smul_ite, Finset.sum_add_distrib]
 
 /-- In a Darboux basis, the square of the Hamiltonian endomorphism of the regular element has the
 eigenvalue `-(i + 1)²` if the plane `i < m` is elliptic and `(i + 1)²` if it is hyperbolic. -/

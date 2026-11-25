@@ -247,11 +247,13 @@ theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
   rfl
 
 /-- The first `m` indices of `Fin (m + n)` are distinct from the last `n`. -/
+@[simp]
 theorem castAdd_ne_natAdd {m n : ℕ} (i : Fin m) (j : Fin n) : castAdd n i ≠ natAdd m j := by
   simp only [ne_eq, Fin.ext_iff, val_castAdd, val_natAdd]
   omega
 
 /-- The last `n` indices of `Fin (m + n)` are distinct from the first `m`. -/
+@[simp]
 theorem natAdd_ne_castAdd {m n : ℕ} (i : Fin m) (j : Fin n) : natAdd m j ≠ castAdd n i :=
   (castAdd_ne_natAdd i j).symm
 
