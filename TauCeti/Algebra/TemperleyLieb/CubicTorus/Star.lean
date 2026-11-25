@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
+public import TauCeti.Algebra.MonoidAlgebra.Twisted.Star
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace
 public import TauCeti.Analysis.StarAlgebra.GNS.Basic
 import TauCeti.Algebra.Group.Fin.Tuple
@@ -18,7 +19,8 @@ The cubic quantum torus `G_N = CubicTorus N` of `TauCeti.Algebra.TemperleyLieb.C
 has basis `W(a)`, `a : Fin N → ZMod 3`, with `W(a) W(b) = α(a, b) W(a + b)` for the factor set
 `α(a, b) = ω ^ (2 B(a, b))`, where `B` is the alternating chain form and `ω = exp (2 π i / 3)`.
 This file equips `G_N` with its *adjoint*, the conjugate-linear map
-`(Σ z_a W(a))⋆ = Σ conj(z_a) W(-a)`. It is an anti-multiplicative involution because
+`(Σ z_a W(a))⋆ = Σ conj(z_a) W(-a)`. It is the adjoint of a twisted group algebra from
+`TauCeti.Algebra.MonoidAlgebra.Twisted.Star`, which applies because
 `conj (α(a, b)) = ω ^ (-2 B(a, b)) = α(-b, -a)`, so `G_N` is a star algebra in which every `W(a)`,
 in particular every site unitary `U_j`, is unitary, and every `p_j = 3⁻¹ (1 + U_j + U_j ^ 2)` is a
 self-adjoint idempotent. The inversion `θ_N : W(a) ↦ W(-a)` commutes with the adjoint, so the
@@ -26,17 +28,17 @@ inversion-fixed subalgebra `C_N` is closed under it and is a star subalgebra
 (`cubicFixedStarSubalgebra`), and so does the inclusion `I_N : W(a) ↦ W(a, 0)` of `G_N` in
 `G_(N+1)`.
 
-The scalar coefficient `s_N`, the coefficient of `W(0) = 1`, is compatible with the adjoint and
-satisfies the Parseval identity `s_N(x⋆ x) = Σ_a conj(x_a) x_a`. Hence `s_N` is a positive
-functional with trivial null space (`cubicStarPositiveFunctional`,
+The scalar coefficient `s_N`, the coefficient of `W(0) = 1`, is compatible with the adjoint.
+Since `α(-a, a) = 1`, it satisfies the Parseval identity `s_N(x⋆ x) = Σ_a conj(x_a) x_a`. Hence
+`s_N` is a positive functional with trivial null space (`cubicStarPositiveFunctional`,
 `nullSubmodule_cubicStarPositiveFunctional`): a faithful normalized positive trace on `G_N`. This
 is what identifies the kernel of the comparison map from the Temperley–Lieb algebra at `δ = √3`
 with the trace radical, in `TauCeti.Algebra.TemperleyLieb.CubicTorus.Quotient`.
 
 ## Main definitions
 
-* `TauCeti.TemperleyLieb.instStarRingCubicTorus` and
-  `TauCeti.TemperleyLieb.instStarModuleCubicTorus`: the conjugate-linear adjoint on `G_N`.
+* `TauCeti.TemperleyLieb.instIsStarFactorSetCubicFactor`: the factor set of `G_N` is compatible
+  with conjugation, so `G_N` carries the conjugate-linear adjoint.
 * `TauCeti.TemperleyLieb.cubicFixedStarSubalgebra`: the inversion-fixed subalgebra `C_N` as a
   star subalgebra.
 * `TauCeti.TemperleyLieb.cubicStarPositiveFunctional`: the scalar coefficient as a positive
@@ -44,8 +46,7 @@ with the trace radical, in `TauCeti.Algebra.TemperleyLieb.CubicTorus.Quotient`.
 
 ## Main results
 
-* `TauCeti.TemperleyLieb.star_weyl` and `TauCeti.TemperleyLieb.repr_star`: the adjoint on the basis
-  and on coefficients.
+* `TauCeti.TemperleyLieb.star_weyl`: the adjoint on the basis.
 * `TauCeti.TemperleyLieb.weyl_mem_unitary`, `TauCeti.TemperleyLieb.star_cubicSite` and
   `TauCeti.TemperleyLieb.isStarProjection_cubicProjection`: the basis elements are unitary,
   `U_j⋆ = U_j ^ 2`, and the `p_j` are projections.
@@ -78,91 +79,29 @@ variable {N : ℕ}
 
 section Adjoint
 
-variable (N) in
-/-- The conjugate-linear map `Σ z_g W(g) ↦ Σ conj(z_g) W(g⁻¹)` underlying the adjoint. -/
-private noncomputable def cubicStarₗ : CubicTorus N →ₗ⋆[ℂ] CubicTorus N where
-  toFun x := ∑ g, star ((basis ℂ _ (cubicFactor N)).repr x g) • of g⁻¹
-  map_add' x y := by
-    simp only [map_add, Finsupp.add_apply, star_add, add_smul, Finset.sum_add_distrib]
-  map_smul' c x := by
-    simp only [map_smul, Finsupp.smul_apply, smul_eq_mul, star_mul', mul_smul, Finset.smul_sum,
-      starRingEnd_apply]
-
-private theorem cubicStarₗ_of (g : Multiplicative (Fin N → ZMod 3)) :
-    cubicStarₗ N (of g) = of g⁻¹ := by
-  classical
-  simp only [cubicStarₗ, LinearMap.coe_mk, AddHom.coe_mk, repr_of]
-  rw [Finset.sum_eq_single g (fun h _ hh ↦ by simp [Ne.symm hh])
-    (by simp)]
-  simp
-
-/-- Conjugating the factor set reverses and inverts its arguments:
-`conj (α(g, h)) = α(h⁻¹, g⁻¹)`. -/
 private theorem star_cubicFactor (g h : Multiplicative (Fin N → ZMod 3)) :
     star (cubicFactor N g h : ℂ) = cubicFactor N h⁻¹ g⁻¹ := by
   simp [cubicFactor_apply, chainForm_swap g.toAdd h.toAdd]
 
-private theorem cubicStarₗ_mul (x y : CubicTorus N) :
-    cubicStarₗ N (x * y) = cubicStarₗ N y * cubicStarₗ N x := by
-  -- Both sides are conjugate-linear in each argument, so compare them on basis elements.
-  have hof (g : Multiplicative (Fin N → ZMod 3)) :
-      (cubicStarₗ N).comp (LinearMap.mulLeft ℂ (of g)) =
-        (LinearMap.mulRight ℂ (of g⁻¹)).comp (cubicStarₗ N) :=
-    (basis ℂ _ (cubicFactor N)).ext fun h ↦ by
-      simp [cubicStarₗ_of, starRingEnd_apply, star_cubicFactor]
-  have key : (cubicStarₗ N).comp (LinearMap.mulRight ℂ y) =
-      (LinearMap.mulLeft ℂ (cubicStarₗ N y)).comp (cubicStarₗ N) :=
-    (basis ℂ _ (cubicFactor N)).ext fun g ↦ by
-      simpa [cubicStarₗ_of] using LinearMap.congr_fun (hof g) y
-  simpa using LinearMap.congr_fun key x
+/-- Conjugating the factor set reverses and inverts its arguments:
+`conj (α(g, h)) = α(h⁻¹, g⁻¹)`. So the cubic quantum torus carries the adjoint
+`(Σ z_a W(a))⋆ = Σ conj(z_a) W(-a)` of `TauCeti.Algebra.MonoidAlgebra.Twisted.Star`. -/
+instance instIsStarFactorSetCubicFactor : IsStarFactorSet (cubicFactor N) where
+  star_apply := star_cubicFactor
 
-private theorem cubicStarₗ_cubicStarₗ (x : CubicTorus N) :
-    cubicStarₗ N (cubicStarₗ N x) = x := by
-  have key : (cubicStarₗ N).comp (cubicStarₗ N) = LinearMap.id :=
-    (basis ℂ _ (cubicFactor N)).ext fun g ↦ by simp [cubicStarₗ_of]
-  exact LinearMap.congr_fun key x
-
-/-- The **adjoint** on the cubic quantum torus: the conjugate-linear, product-reversing involution
-`(Σ z_a W(a))⋆ = Σ conj(z_a) W(-a)`. -/
-@[no_expose]
-noncomputable instance instStarRingCubicTorus : StarRing (CubicTorus N) where
-  star := cubicStarₗ N
-  star_involutive := cubicStarₗ_cubicStarₗ
-  star_mul := cubicStarₗ_mul
-  star_add := map_add (cubicStarₗ N)
-
-private theorem star_eq_cubicStarₗ (x : CubicTorus N) : star x = cubicStarₗ N x :=
-  (rfl)
-
-/-- The adjoint on the cubic quantum torus is conjugate-linear. -/
-instance instStarModuleCubicTorus : StarModule ℂ (CubicTorus N) where
-  star_smul c x := by
-    simpa only [star_eq_cubicStarₗ, starRingEnd_apply] using map_smulₛₗ (cubicStarₗ N) c x
+private theorem cubicFactor_inv_self (g : Multiplicative (Fin N → ZMod 3)) :
+    (cubicFactor N g⁻¹ g : ℂ) = 1 := by
+  simp [cubicFactor_apply, chainForm_self]
 
 /-- The adjoint on the basis: `W(a)⋆ = W(-a)`. -/
 @[simp]
 theorem star_weyl (a : Fin N → ZMod 3) : star (weyl N a) = weyl N (-a) := by
-  rw [star_eq_cubicStarₗ, weyl_def, cubicStarₗ_of, weyl_def, ofAdd_neg]
-
-/-- The coefficients of the adjoint: the coefficient of `x⋆` at `g` is the conjugate of the
-coefficient of `x` at `g⁻¹`. -/
-@[simp]
-theorem repr_star (x : CubicTorus N) (g : Multiplicative (Fin N → ZMod 3)) :
-    (basis ℂ _ (cubicFactor N)).repr (star x) g =
-      star ((basis ℂ _ (cubicFactor N)).repr x g⁻¹) := by
-  have key : (LinearMap.proj g ∘ₗ (basis ℂ _ (cubicFactor N)).equivFun.toLinearMap).comp
-      (cubicStarₗ N) =
-        ((starLinearEquiv ℂ (A := ℂ)).toLinearMap.comp (LinearMap.proj g⁻¹ ∘ₗ
-          (basis ℂ _ (cubicFactor N)).equivFun.toLinearMap)) :=
-    (basis ℂ _ (cubicFactor N)).ext fun h ↦ by
-      classical
-      simp [cubicStarₗ_of, Finsupp.single_apply, inv_eq_iff_eq_inv]
-  simpa [star_eq_cubicStarₗ] using LinearMap.congr_fun key x
+  rw [weyl_def, star_of, weyl_def, ofAdd_neg]
 
 /-- Every basis element `W(a)` is unitary. -/
 theorem weyl_mem_unitary (a : Fin N → ZMod 3) : weyl N a ∈ unitary (CubicTorus N) := by
-  rw [Unitary.mem_iff, star_weyl]
-  constructor <;> simp
+  rw [weyl_def]
+  exact of_mem_unitary (cubicFactor_inv_self _)
 
 /-- The adjoint of a site unitary is its inverse `U_j ^ 2`. -/
 @[simp]
@@ -188,14 +127,9 @@ theorem isStarProjection_cubicProjection (j : Fin N) : IsStarProjection (cubicPr
 /-- The inversion commutes with the adjoint. -/
 @[simp]
 theorem cubicInversion_star (x : CubicTorus N) :
-    cubicInversion N (star x) = star (cubicInversion N x) := by
-  have key : (cubicInversion N).toLinearMap.comp (cubicStarₗ N) =
-      (cubicStarₗ N).comp (cubicInversion N).toLinearMap :=
-    (basis ℂ _ (cubicFactor N)).ext fun g ↦ by
-      simp only [LinearMap.comp_apply, basis_apply, AlgHom.toLinearMap_apply, of_eq_weyl,
-        ← star_eq_cubicStarₗ, star_weyl, cubicInversion_weyl]
-  simpa only [star_eq_cubicStarₗ, LinearMap.comp_apply, AlgHom.toLinearMap_apply] using
-    LinearMap.congr_fun key x
+    cubicInversion N (star x) = star (cubicInversion N x) :=
+  map_star_of_map_of_inv (cubicInversion N).toLinearMap
+    (fun g ↦ by simp [of_eq_weyl, cubicInversion_weyl]) x
 
 /-- The inversion-fixed subalgebra `C_N` is closed under the adjoint. -/
 theorem star_mem_cubicFixed {x : CubicTorus N} (hx : x ∈ cubicFixed N) :
@@ -221,13 +155,9 @@ theorem mem_cubicFixedStarSubalgebra {x : CubicTorus N} :
 
 /-- The inclusion `I_N : W(a) ↦ W(a, 0)` of cubic quantum tori commutes with the adjoints. -/
 @[simp]
-theorem cubicIncl_star (x : CubicTorus N) : cubicIncl N (star x) = star (cubicIncl N x) := by
-  have key : (cubicIncl N).toLinearMap.comp (cubicStarₗ N) =
-      (cubicStarₗ (N + 1)).comp (cubicIncl N).toLinearMap :=
-    (basis ℂ _ (cubicFactor N)).ext fun g ↦ by
-      simp [of_eq_weyl, ← star_eq_cubicStarₗ, cubicIncl_weyl, Fin.neg_snoc]
-  simpa only [star_eq_cubicStarₗ, LinearMap.comp_apply, AlgHom.toLinearMap_apply] using
-    LinearMap.congr_fun key x
+theorem cubicIncl_star (x : CubicTorus N) : cubicIncl N (star x) = star (cubicIncl N x) :=
+  map_star_of_map_of_inv (cubicIncl N).toLinearMap
+    (fun g ↦ by simp [of_eq_weyl, cubicIncl_weyl, Fin.neg_snoc]) x
 
 end Adjoint
 
@@ -235,45 +165,43 @@ end Adjoint
 
 section ScalarCoefficient
 
+private theorem cubicScalarCoefficient_apply (x : CubicTorus N) :
+    cubicScalarCoefficient N x = (basis ℂ _ (cubicFactor N)).repr x 1 := by
+  classical
+  have key : cubicScalarCoefficient N = (basis ℂ _ (cubicFactor N)).coord 1 :=
+    (basis ℂ _ (cubicFactor N)).ext fun g ↦ by
+      rw [basis_apply, of_eq_weyl, cubicScalarCoefficient_weyl, ← of_eq_weyl]
+      simp [Finsupp.single_apply]
+  rw [key, Module.Basis.coord_apply]
+
 /-- The scalar coefficient commutes with the adjoint: `s_N(x⋆) = conj (s_N(x))`. -/
 @[simp]
 theorem cubicScalarCoefficient_star (x : CubicTorus N) :
-    cubicScalarCoefficient N (star x) = star (cubicScalarCoefficient N x) := by
-  have key : (cubicScalarCoefficient N).comp (cubicStarₗ N) =
-      (starLinearEquiv ℂ (A := ℂ)).toLinearMap.comp (cubicScalarCoefficient N) :=
-    (basis ℂ _ (cubicFactor N)).ext fun g ↦ by
-      simp only [LinearMap.comp_apply, basis_apply, of_eq_weyl, ← star_eq_cubicStarₗ, star_weyl,
-        cubicScalarCoefficient_weyl, neg_eq_zero, LinearEquiv.coe_coe, starLinearEquiv_apply]
-      split_ifs <;> simp
-  simpa only [star_eq_cubicStarₗ, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    starLinearEquiv_apply] using LinearMap.congr_fun key x
+    cubicScalarCoefficient N (star x) = star (cubicScalarCoefficient N x) :=
+  map_star_of_map_of_inv (cubicScalarCoefficient N) (fun g ↦ by
+    simp only [of_eq_weyl, toAdd_inv, cubicScalarCoefficient_weyl, neg_eq_zero]
+    split_ifs <;> simp) x
 
 /-- **The Parseval identity**: `s_N(x⋆ x)` is the sum of the squared moduli `conj(x_g) x_g` of the
 coefficients of `x`. -/
 theorem cubicScalarCoefficient_star_mul_self (x : CubicTorus N) :
     cubicScalarCoefficient N (star x * x) =
       ∑ g, star ((basis ℂ _ (cubicFactor N)).repr x g) * (basis ℂ _ (cubicFactor N)).repr x g := by
-  classical
-  conv_lhs => rw [← (basis ℂ _ (cubicFactor N)).sum_repr x]
-  simp only [star_sum, star_smul, basis_apply, of_eq_weyl, star_weyl, Finset.sum_mul_sum,
-    smul_mul_smul_comm, map_sum, map_smul, cubicScalarCoefficient_weyl_mul_weyl, smul_eq_mul,
-    neg_add_eq_zero, mul_ite, mul_one, mul_zero, EmbeddingLike.apply_eq_iff_eq, Finset.sum_ite_eq,
-    Finset.mem_univ, ite_true]
+  rw [cubicScalarCoefficient_apply, repr_star_mul_self_apply_one cubicFactor_inv_self,
+    Finsupp.sum_fintype _ _ (by simp)]
 
 /-- The scalar coefficient is nonnegative on squares. -/
 theorem cubicScalarCoefficient_star_mul_self_nonneg (x : CubicTorus N) :
     0 ≤ cubicScalarCoefficient N (star x * x) := by
-  rw [cubicScalarCoefficient_star_mul_self]
-  exact Finset.sum_nonneg fun g _ ↦ star_mul_self_nonneg _
+  rw [cubicScalarCoefficient_apply]
+  exact repr_star_mul_self_apply_one_nonneg cubicFactor_inv_self x
 
 /-- **The scalar coefficient is faithful**: `s_N(x⋆ x) = 0` only for `x = 0`. -/
 @[simp]
 theorem cubicScalarCoefficient_star_mul_self_eq_zero_iff (x : CubicTorus N) :
     cubicScalarCoefficient N (star x * x) = 0 ↔ x = 0 := by
-  rw [cubicScalarCoefficient_star_mul_self,
-    Finset.sum_eq_zero_iff_of_nonneg fun g _ ↦ star_mul_self_nonneg _,
-    ← (basis ℂ _ (cubicFactor N)).forall_coord_eq_zero_iff]
-  simp [mul_eq_zero]
+  rw [cubicScalarCoefficient_apply]
+  exact repr_star_mul_self_apply_one_eq_zero_iff cubicFactor_inv_self x
 
 variable (N) in
 /-- The scalar coefficient `s_N` of the cubic quantum torus, as a positive functional. -/
