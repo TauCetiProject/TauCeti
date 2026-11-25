@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.DisjointGlue
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.TopDual
-public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.TwistingSheaf
 public import TauCeti.AlgebraicGeometry.Limits.Sigma
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
@@ -23,9 +22,8 @@ The module `F` on `⨿ₙ ℙⁿ_R` that is `𝒪(-n-1)` on the component `ℙ�
 `n`: over the component `Spec R` of index `n`, the sections of `Rⁿ f_* F` are
 `Hⁿ(ℙⁿ_R, 𝒪(-n-1))` (`AlgebraicGeometry.Scheme.Hom.nontrivial_higherDirectImage_disjointGlue`),
 which is nonzero, by the top cohomology of projective space for `n ≥ 1` and by the sections of
-`𝒪(-1)` on `ℙ⁰_R = Spec R` for `n = 0`. This is the SchemeAndStackFoundations §2.6 Check on
-`⨿ₙ ℙⁿ_k → ⨿ₙ Spec k`: no uniform vanishing bound holds for qcqs morphisms to a base that is not
-quasi-compact.
+`𝒪(-1)` on `ℙ⁰_R = Spec R` for `n = 0`. This shows that no uniform vanishing bound holds for qcqs
+morphisms to a base that is not quasi-compact.
 
 * `TauCeti.AlgebraicGeometry.DisjointProjectiveSpacesExample.toSigma`: the morphism `f`.
 * `TauCeti.AlgebraicGeometry.DisjointProjectiveSpacesExample.twist`: the module `F`.
@@ -112,23 +110,11 @@ abbrev twistOn (n : ULift.{u} ℕ) : (toSigma R ⁻¹ᵁ component R n).toScheme
 abbrev twist : (∐ projSpace R).Modules :=
   disjointGlue _ (twistOn R)
 
-/-- `Hⁿ(ℙⁿ_R, 𝒪(-n-1)) ≠ 0` for a nonzero ring `R`. -/
-lemma nontrivial_cohomology_twistingSheaf [Nontrivial R] (n : ℕ) :
-    Nontrivial (Cohomology (Proj.twistingSheaf
-      (TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Fin (n + 1) → R))
-      (-((n + 1 : ℕ) : ℤ))) n) := by
-  cases n with
-  | zero =>
-    exact TauCeti.SymmetricAlgebra.nontrivial_cohomology_zero_twistingSheaf_of_unique
-      (Pi.basisFun R (Fin 1)) _
-  | succ k =>
-    exact (Pi.basisFun R (Fin (k + 2))).nontrivial_cohomology_top_twistingSheaf_of_le_neg_card
-      (Fintype.card_fin _) le_rfl
-
 /-- The cohomology of `twistOn R n` is that of `𝒪(-n-1)` on `ℙⁿ_R`. -/
 lemma nontrivial_cohomology_twistOn [Nontrivial R] (n : ULift.{u} ℕ) :
     Nontrivial (Cohomology (twistOn R n) n.down) := by
-  have := nontrivial_cohomology_twistingSheaf R n.down
+  have := (Pi.basisFun R (Fin (n.down + 1))).nontrivial_cohomology_top_twistingSheaf_of_le_neg_card
+    (Fintype.card_fin _) le_rfl
   let ψ := (preimageComponentIso R n).hom
   let M := Proj.twistingSheaf
     (TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Fin (n.down + 1) → R))
