@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.Flow.Monodromy
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
+import TauCeti.Geometry.Manifold.Flow.Integral
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.LinearAlgebra.Charpoly.Quotient
 
@@ -140,16 +141,13 @@ theorem forall_mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
         mvfderiv I f (flowOf X t x) (α.reebVectorField (flowOf X t x)) = 0 := by
   have hX1 : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
     hX.contMDiff hα (by simp) (hf.of_le (by norm_num))
-  -- The times of the orbit form an open interval `J` containing `0`, on which `R_α f` along the
-  -- orbit is continuous.
+  -- The times of the orbit form an open set `J` containing `0`, and `R_α f` is continuous.
   set J : Set ℝ := {s | (s, x) ∈ flowDomain X}
   set h : ℝ → ℝ := fun s ↦ mvfderiv I f (flowOf X s x) (α.reebVectorField (flowOf X s x))
-  have hJ : IsOpen J :=
-    (isOpen_flowDomain hX1).preimage (continuous_id.prodMk continuous_const)
-  have hh : ContinuousOn h J :=
-    (((ContMDiff.contMDiff_mvfderiv_apply hf (m := 0) (by norm_num)).comp
-      (hα.contMDiff_reebVectorField.of_le (by simp))).continuous).comp_continuousOn
-        (isMIntegralCurveOn_flowOf hX1 x).continuousOn
+  have hJ : IsOpen J := isOpen_setOf_mem_flowDomain hX1 continuous_id continuous_const
+  have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
+    ((ContMDiff.contMDiff_mvfderiv_apply hf (m := 0) (by norm_num)).comp
+      (hα.contMDiff_reebVectorField.of_le (by simp))).continuous
   have hα₀ : (α.val x : E [⋀^Fin 1]→L[ℝ] ℝ) ≠ 0 :=
     (isContactForm_iff_forall_isContactFormAt.mp hα x).ne_zero
   -- By the rescaling formula, `(φₜ^* α)ₓ = αₓ` exactly when `∫₀ᵗ h = 0`.
@@ -160,10 +158,8 @@ theorem forall_mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
       fun he ↦ by rw [he, one_smul]⟩
   refine ⟨fun hpull t ht ↦ ?_, fun hzero t ht ↦ (hiff t ht).2 ?_⟩
   · -- `u ↦ ∫₀ᵘ h` vanishes on the open set `J`, so its derivative `h t` at `t ∈ J` vanishes.
-    have hd : HasDerivAt (fun u ↦ ∫ s in 0..u, h s) (h t) t :=
-      intervalIntegral.integral_hasDerivAt_right
-        ((hh.mono (uIcc_subset_setOf_mem_flowDomain ht)).intervalIntegrable)
-        (hh.stronglyMeasurableAtFilter hJ t ht) (hh.continuousAt (hJ.mem_nhds ht))
+    have hd : HasDerivAt (fun u ↦ ∫ s in 0..u, h s) (h t) t := by
+      simpa only [flowIntegral_def] using hasDerivAt_flowIntegral hX1 hRf ht
     have hev : (fun _ : ℝ ↦ (0 : ℝ)) =ᶠ[𝓝 t] fun u ↦ ∫ s in 0..u, h s := by
       filter_upwards [hJ.mem_nhds ht] with u hu
       exact ((hiff u hu).1 (hpull u hu)).symm

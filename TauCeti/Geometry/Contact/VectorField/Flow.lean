@@ -74,8 +74,8 @@ theorem preservesDistribution_kerDistribution_of_mfderiv_flowOf_mem (hα : ∀ x
   -- They vanish for small `s`, since `φₛ` is then defined at `x` and maps `v` into `ker α`.
   have hev : (fun _ : ℝ ↦ (0 : ℝ)) =ᶠ[𝓝 0]
       fun s ↦ TauCeti.mpullback I I (flowOf X s) α.val x ![v] := by
-    filter_upwards [((isOpen_flowDomain hX).preimage
-      (continuous_id.prodMk continuous_const)).mem_nhds (mem_flowDomain_zero hX x)] with s hs
+    filter_upwards [(isOpen_setOf_mem_flowDomain hX continuous_id continuous_const).mem_nhds
+      (mem_flowDomain_zero hX x)] with s hs
     have hs' := mem_kerDistribution.1 (h s x hs v hv)
     rw [TauCeti.mpullback_apply_one]
     exact hs'.symm
