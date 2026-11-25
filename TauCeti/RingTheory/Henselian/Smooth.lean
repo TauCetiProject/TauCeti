@@ -35,8 +35,9 @@ along square-zero kernels.
 Applying this to the nonzero powers `J ^ n` (`Ideal.henselianRing_pow`) approximates completed
 points of smooth algebras over arbitrary Henselian pairs (`exists_algHom_comp_eq_evalₐ`): for every
 `n : ℕ`, every `R`-algebra map `A →ₐ[R] AdicCompletion J S` agrees modulo `J ^ n` with an actual
-`R`-algebra map `A →ₐ[R] S`. This is the smooth case (`h = 0`, `V = Spec A`) of Elkik's
-approximation theorem, holding without any Noetherian assumption on `S`.
+`R`-algebra map `A →ₐ[R] S`. This is the smooth case (`h = 1`, where the Jacobian ideal is the
+unit ideal and the smooth locus is all of `Spec A`) of Elkik's approximation theorem, holding
+without any Noetherian assumption on `S`.
 
 The proof combines `Algebra.Smooth.exists_etale_algHom_comp_eq` — which factors any closed-fibre
 point `A →ₐ[S] S ⧸ J` of a smooth `S`-algebra through an étale slice `C` — with the étale section

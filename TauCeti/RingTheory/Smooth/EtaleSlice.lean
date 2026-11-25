@@ -196,15 +196,16 @@ end Module.Basis
 namespace Algebra.Smooth
 
 /-- **Every smooth algebra is a retract of a smooth algebra with globally free differentials.**
-For a smooth `R`-algebra `A`, choosing a split surjection `(Fin n → A) →ₗ[A] Ω[A⁄R]` with finite
-projective kernel `K` makes `B := SymmetricAlgebra A K` a smooth `R`-algebra containing `A` as a
-retract via the augmentation `SymmetricAlgebra.algebraMapInv`, while the split Jacobi–Zariski
-sequence identifies `Ω[B⁄R]` with `(Fin n → B)`. -/
+Every smooth `R`-algebra `A` is an `R`-algebra retract (`β.comp α = AlgHom.id R A`) of a smooth
+`R`-algebra `B` in the same universe whose module of Kähler differentials `Ω[B⁄R]` is finite free
+(with a `B`-basis indexed by `Fin n`). -/
 theorem exists_retract_basis_kaehlerDifferential (R : Type u) (A : Type v) [CommRing R]
     [CommRing A] [Algebra R A] [Algebra.Smooth R A] :
     ∃ (n : ℕ) (B : Type v) (_ : CommRing B) (_ : Algebra R B) (_ : Algebra.Smooth R B)
       (α : A →ₐ[R] B) (β : B →ₐ[R] A),
       β.comp α = AlgHom.id R A ∧ Nonempty (Module.Basis (Fin n) B Ω[B⁄R]) := by
+  -- Choose a split surjection `(Fin n → A) →ₗ[A] Ω[A⁄R]` with finite projective kernel `K`, and
+  -- set `B := SymmetricAlgebra A K` with augmentation retract `SymmetricAlgebra.algebraMapInv`.
   obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' A Ω[A⁄R]
   obtain ⟨l, hl⟩ := Module.projective_lifting_property g LinearMap.id hg
   let K := LinearMap.ker g
