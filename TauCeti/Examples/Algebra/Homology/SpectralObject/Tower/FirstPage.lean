@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Algebra.Homology.SpectralObject.FirstPageFin
-import TauCeti.Algebra.Homology.SpectralObject.TowerFirstPage
+import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
+import TauCeti.Algebra.Homology.SpectralObject.Tower.FirstPage
 
 /-!
 # Checks for the towers of the spectral sequence of a spectral object through the first page
@@ -20,7 +21,12 @@ The general statements specialize, with their explicit indices, to the recipes
 * For `X` indexed by `Fin (l + 1)` at `(p, q)`, with `l = 2`, `r = 3` and `q = 1`: the clamped
   indices are `(0, 1, 2, 2)`, so `Z_3` is the kernel of `δ : H^n(1 ≤ 2) ⟶ H^{n+1}(0 ≤ 1)` and
   `B_3` the image of `δ : H^{n-1}(2 ≤ 2) ⟶ H^n(1 ≤ 2)`; this source is `0`, so `B_3 = ⊥`.
-* On the first page the formulas give `Z_2 = ⊤` and `B_2 = ⊥`.
+* On the first page `r = 2` of the recipe `coreE₂Cohomological`, the formulas give `Z_2 = ⊤` and
+  `B_2 = ⊥`: the target `H^{n+1}(q ≤ q)` of the first `δ` and the source `H^{n-1}(q + 1 ≤ q + 1)` of
+  the second are `0`.
+* Naturality of the towers in the spectral object is the naturality of the towers of any spectral
+  sequence (`CategoryTheory.SpectralSequence.cyclesSubobject_le_pullback`), applied to the induced
+  morphism `spectralSequenceMap data φ`.
 -/
 
 namespace TauCeti.Examples
@@ -70,5 +76,34 @@ example (X : SpectralObject C (Fin 3)) (p : ℤ) :
     (0 : _ ⟶ ((X.spectralSequence (coreE₂CohomologicalFin 2)).page 2).X (p, 1)) = ⊥) using 2
   exact (X.isZero_H_obj_of_isIso _ ⟨⟨𝟙 _, Subsingleton.elim _ _, Subsingleton.elim _ _⟩⟩
     _).eq_of_src _ _
+
+-- On the first page nothing leaves `(p, q)`: the target `H^{n+1}(q ≤ q)` of `δ` is `0`.
+example (X : SpectralObject C EInt) [X.HasSpectralSequence coreE₂Cohomological] (p q : ℤ) :
+    (X.spectralSequence coreE₂Cohomological).cyclesSubobject (p, q) 2 le_rfl = ⊤ := by
+  rw [X.cyclesSubobject_spectralSequence_eq_kernelSubobject_δ coreE₂Cohomological (p, q) 2 le_rfl
+    q q ((q + 1 : ℤ) : EInt) (by simp) rfl rfl _ rfl]
+  convert kernelSubobject_zero using 2
+  exact (X.isZero_H_obj_of_isIso _ ⟨⟨𝟙 _, Subsingleton.elim _ _, Subsingleton.elim _ _⟩⟩
+    _).eq_of_tgt _ _
+
+-- On the first page nothing enters `(p, q)`: the source `H^{n-1}(q + 1 ≤ q + 1)` of `δ` is `0`.
+example (X : SpectralObject C EInt) [X.HasSpectralSequence coreE₂Cohomological] (p q : ℤ) :
+    (X.spectralSequence coreE₂Cohomological).boundariesSubobject (p, q) 2 le_rfl = ⊥ := by
+  rw [X.boundariesSubobject_spectralSequence_eq_imageSubobject_δ coreE₂Cohomological (p, q) 2
+    le_rfl q ((q + 1 : ℤ) : EInt) ((q + 1 : ℤ) : EInt) rfl rfl (by simp; lia) _ rfl]
+  convert (imageSubobject_zero : imageSubobject
+    (0 : _ ⟶ ((X.spectralSequence coreE₂Cohomological).page 2).X (p, q)) = ⊥) using 2
+  exact (X.isZero_H_obj_of_isIso _ ⟨⟨𝟙 _, Subsingleton.elim _ _, Subsingleton.elim _ _⟩⟩
+    _).eq_of_src _ _
+
+-- Naturality in the spectral object, through the first-page component of `spectralSequenceMap`.
+example {ι κ : Type*} [Preorder ι] {X Y : SpectralObject C ι} (φ : X ⟶ Y)
+    {c : ℤ → ComplexShape κ} {r₀ : ℤ} (data : SpectralSequenceDataCore ι c r₀)
+    [X.HasSpectralSequence data] [Y.HasSpectralSequence data] (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
+    (X.spectralSequence data).cyclesSubobject pq r hr ≤
+      (Subobject.pullback (spectralSequencePageXMap data φ r₀ le_rfl pq)).obj
+        ((Y.spectralSequence data).cyclesSubobject pq r hr) := by
+  simpa using (X.spectralSequence data).cyclesSubobject_le_pullback pq
+    (spectralSequenceMap data φ) r hr
 
 end TauCeti.Examples
