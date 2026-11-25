@@ -7,12 +7,19 @@ module
 
 public import Mathlib.Analysis.Complex.Exponential
 public import TauCeti.Analysis.InnerProductSpace.Isometry
+public import Mathlib.Analysis.Complex.Isometry
+public import Mathlib.GroupTheory.SpecificGroups.Dihedral
+import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+import Mathlib.RingTheory.IntegralDomain
+import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 import Mathlib.Analysis.Complex.Conformal
 import Mathlib.Analysis.InnerProductSpace.TwoDim
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
-# Distance-preserving maps of a disc about the origin
+# Isometries of the plane: discs about the origin, and finite groups of linear isometries
+
+## Distance-preserving maps of a disc about the origin
 
 Mathlib's `Mathlib/Analysis/Complex/Isometry.lean` classifies the **linear** isometries of the
 plane: `linear_isometry_complex` says that every `f : ℂ ≃ₗᵢ[ℝ] ℂ` is `rotation a` or
@@ -71,6 +78,7 @@ this Euclidean one together with the Moebius factor that moves the base point. T
 criterion `TauCeti.exists_apply_eq_mul_exp` is used by
 `TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean` to recognise a
 monodromy of a unitary frame along an orbit torus as a rotation.
+
 -/
 
 public section
@@ -238,3 +246,192 @@ theorem exists_apply_eq_mul_exp {C : ℂ →ₗ[ℝ] ℂ} (hCI : C I = I * C 1)
   exact ⟨θ, fun z => by rw [hC z, hθ]⟩
 
 end TauCeti
+
+noncomputable section
+
+open Complex ComplexConjugate
+
+namespace TauCeti.Complex
+
+/-! ### Rotations and reflections -/
+
+/-- The reflection `v ↦ b · conj v`, in the line spanned by a square root of `b`. -/
+def conjReflection (b : Circle) : ℂ ≃ₗᵢ[ℝ] ℂ :=
+  conjLIE.trans (rotation b)
+
+/-- The reflection `conjReflection b` is complex conjugation followed by the rotation by `b`. -/
+theorem conjReflection_def (b : Circle) : conjReflection b = conjLIE.trans (rotation b) :=
+  (rfl)
+
+@[simp]
+theorem conjReflection_apply (b : Circle) (z : ℂ) : conjReflection b z = b * conj z := by
+  rw [conjReflection_def, LinearIsometryEquiv.trans_apply, rotation_apply, conjLIE_apply]
+
+/-- Every real linear isometry of `ℂ` is a rotation or a reflection. -/
+theorem exists_eq_rotation_or_eq_conjReflection (f : ℂ ≃ₗᵢ[ℝ] ℂ) :
+    (∃ a, f = rotation a) ∨ ∃ b, f = conjReflection b := by
+  obtain ⟨a, h | h⟩ := linear_isometry_complex f
+  · exact Or.inl ⟨a, h⟩
+  · exact Or.inr ⟨a, h⟩
+
+@[simp]
+theorem conjReflection_one : conjReflection 1 = conjLIE := by
+  rw [conjReflection_def, map_one, LinearIsometryEquiv.one_def, LinearIsometryEquiv.trans_refl]
+
+theorem conjReflection_injective : Function.Injective conjReflection := fun a b h =>
+  Circle.coe_injective (by simpa using DFunLike.congr_fun h 1)
+
+@[simp]
+theorem conjReflection_inj {a b : Circle} : conjReflection a = conjReflection b ↔ a = b :=
+  conjReflection_injective.eq_iff
+
+/-- A reflection is not a rotation. -/
+@[simp]
+theorem conjReflection_ne_rotation (a b : Circle) : conjReflection b ≠ rotation a := by
+  intro h
+  refine rotation_ne_conjLIE (b⁻¹ * a) ?_
+  rw [← rotation_trans, ← h, conjReflection_def, ← LinearIsometryEquiv.trans_assoc, rotation_trans,
+    inv_mul_cancel, map_one, LinearIsometryEquiv.one_def, LinearIsometryEquiv.trans_refl]
+
+/-- A rotation is not a reflection. -/
+@[simp]
+theorem rotation_ne_conjReflection (a b : Circle) : rotation a ≠ conjReflection b :=
+  (conjReflection_ne_rotation a b).symm
+
+/-- The product of two reflections is a rotation. -/
+@[simp]
+theorem conjReflection_mul_conjReflection (a b : Circle) :
+    conjReflection b * conjReflection a = rotation (b * a⁻¹) := by
+  ext z
+  simp only [LinearIsometryEquiv.coe_mul, Function.comp_apply, conjReflection_apply, rotation_apply,
+    map_mul, Complex.conj_conj, Circle.coe_inv_eq_conj]
+
+/-- A reflection followed by a rotation is a reflection. -/
+@[simp]
+theorem conjReflection_mul_rotation (a b : Circle) :
+    conjReflection b * rotation a = conjReflection (b * a⁻¹) := by
+  ext z
+  simp only [LinearIsometryEquiv.coe_mul, Function.comp_apply, conjReflection_apply, rotation_apply,
+    map_mul, Circle.coe_mul, Circle.coe_inv_eq_conj]
+  ring
+
+/-- A rotation followed by a reflection is a reflection. -/
+@[simp]
+theorem rotation_mul_conjReflection (a b : Circle) :
+    rotation a * conjReflection b = conjReflection (a * b) := by
+  ext z
+  simp only [LinearIsometryEquiv.coe_mul, Function.comp_apply, conjReflection_apply, rotation_apply,
+    Circle.coe_mul]
+  ring
+
+/-- A reflection is an involution. -/
+theorem conjReflection_mul_self (b : Circle) : conjReflection b * conjReflection b = 1 := by
+  rw [conjReflection_mul_conjReflection, mul_inv_cancel, map_one]
+
+@[simp]
+theorem conjReflection_inv (b : Circle) : (conjReflection b)⁻¹ = conjReflection b :=
+  inv_eq_of_mul_eq_one_right (conjReflection_mul_self b)
+
+@[simp]
+theorem conjReflection_symm (b : Circle) : (conjReflection b).symm = conjReflection b :=
+  conjReflection_inv b
+
+/-! ### The rotation subgroup -/
+
+/-- The rotation subgroup of a group `G` of real linear isometries of `ℂ`: the unit complex
+numbers `a` whose rotation `v ↦ a v` lies in `G`. -/
+def rotationSubgroup (G : Subgroup (ℂ ≃ₗᵢ[ℝ] ℂ)) : Subgroup Circle :=
+  G.comap rotation
+
+@[simp]
+theorem mem_rotationSubgroup {G : Subgroup (ℂ ≃ₗᵢ[ℝ] ℂ)} {a : Circle} :
+    a ∈ rotationSubgroup G ↔ rotation a ∈ G :=
+  Iff.rfl
+
+variable {G : Subgroup (ℂ ≃ₗᵢ[ℝ] ℂ)}
+
+/-- If `G` contains the reflection `conjReflection c`, it contains the reflection
+`conjReflection b` exactly when it contains the rotation by `b c⁻¹`. -/
+theorem conjReflection_mem_iff {b c : Circle} (hc : conjReflection c ∈ G) :
+    conjReflection b ∈ G ↔ b * c⁻¹ ∈ rotationSubgroup G := by
+  rw [mem_rotationSubgroup, ← conjReflection_mul_conjReflection, G.mul_mem_cancel_right hc]
+
+instance finite_rotationSubgroup [Finite G] : Finite (rotationSubgroup G) :=
+  Finite.of_injective _ (rotation.subgroupComap_injective G rotation_injective)
+
+/-- A finite rotation subgroup is cyclic: it is a finite group of units of `ℂ`. -/
+instance isCyclic_rotationSubgroup [Finite (rotationSubgroup G)] : IsCyclic (rotationSubgroup G) :=
+  isCyclic_of_injective_ringHom (Circle.coeHom.comp (rotationSubgroup G).subtype)
+    fun _ _ h => Subtype.ext (Circle.coe_injective h)
+
+/-- A group of real linear isometries of `ℂ` is finite exactly when its rotation subgroup is: its
+reflections, if any, are `conjReflection (a c)` for a fixed reflection `conjReflection c` and `a`
+in the rotation subgroup. -/
+theorem finite_iff_finite_rotationSubgroup : Finite G ↔ Finite (rotationSubgroup G) := by
+  refine ⟨fun _ => inferInstance, fun hK => ?_⟩
+  by_cases h : ∃ c, conjReflection c ∈ G
+  · obtain ⟨c, hc⟩ := h
+    have hsub : (G : Set (ℂ ≃ₗᵢ[ℝ] ℂ)) ⊆ Set.range (Sum.elim
+        (fun a : rotationSubgroup G => rotation (a : Circle))
+        fun a : rotationSubgroup G => conjReflection ((a : Circle) * c)) := by
+      intro f hf
+      rcases exists_eq_rotation_or_eq_conjReflection f with ⟨a, rfl⟩ | ⟨b, rfl⟩
+      · exact ⟨.inl ⟨a, mem_rotationSubgroup.2 hf⟩, rfl⟩
+      · exact ⟨.inr ⟨_, (conjReflection_mem_iff hc).1 hf⟩, by simp⟩
+    exact ((Set.finite_range _).subset hsub).to_subtype
+  · simp only [not_exists] at h
+    have hsub : (G : Set (ℂ ≃ₗᵢ[ℝ] ℂ)) ⊆
+        Set.range fun a : rotationSubgroup G => rotation (a : Circle) := by
+      intro f hf
+      rcases exists_eq_rotation_or_eq_conjReflection f with ⟨a, rfl⟩ | ⟨b, rfl⟩
+      · exact ⟨⟨a, mem_rotationSubgroup.2 hf⟩, rfl⟩
+      · exact absurd hf (h b)
+    exact ((Set.finite_range _).subset hsub).to_subtype
+
+/-- **A finite group of isometries containing a reflection is dihedral.** A finite group `G` of
+real linear isometries of `ℂ` containing a reflection is isomorphic to the dihedral group of order
+`2N`, where `N` is the order of its rotation subgroup. -/
+theorem nonempty_mulEquiv_dihedralGroup [Finite G] {b : Circle} (hb : conjReflection b ∈ G) :
+    Nonempty (G ≃* DihedralGroup (Nat.card (rotationSubgroup G))) := by
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := rotationSubgroup G)
+  -- The rotations of `G`, as an injective homomorphism from its rotation subgroup.
+  obtain ⟨φ, hφ, hφi⟩ : ∃ φ : rotationSubgroup G →* G,
+      (∀ a, (φ a : ℂ ≃ₗᵢ[ℝ] ℂ) = rotation a) ∧ Function.Injective φ :=
+    ⟨rotation.subgroupComap G, fun _ => rfl, rotation.subgroupComap_injective G rotation_injective⟩
+  -- The reflection `s` and the reflection `t = s ρ`, `ρ` a generating rotation.
+  set s : G := ⟨conjReflection b, hb⟩
+  set t : G := s * φ g
+  have hs : s * s = 1 := Subtype.ext (conjReflection_mul_self b)
+  have ht : t * t = 1 := Subtype.ext (by simp [t, s, hφ])
+  have hs1 : s ≠ 1 := fun h =>
+    conjReflection_ne_rotation 1 b (by simpa [s] using congrArg Subtype.val h)
+  have ht1 : t ≠ 1 := fun h => conjReflection_ne_rotation 1 (b * (g : Circle)⁻¹)
+    (by simpa [t, s, hφ] using congrArg Subtype.val h)
+  have hst : s * t = φ g := by rw [← mul_assoc, hs, one_mul]
+  have hN : orderOf (s * t) = Nat.card (rotationSubgroup G) := by
+    rw [hst, orderOf_injective _ hφi, orderOf_eq_card_of_forall_mem_zpowers hg]
+  have hrot (a : rotationSubgroup G) : φ a ∈ Subgroup.closure {s, t} := by
+    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 (hg a)
+    rw [map_zpow, ← hst]
+    exact zpow_mem (Subgroup.mul_mem _ (Subgroup.subset_closure (by simp))
+      (Subgroup.subset_closure (by simp))) k
+  have hgen : Subgroup.closure ({s, t} : Set G) = ⊤ := by
+    refine eq_top_iff.2 fun f _ => ?_
+    obtain ⟨f, hf⟩ := f
+    rcases exists_eq_rotation_or_eq_conjReflection f with ⟨a, rfl⟩ | ⟨c, rfl⟩
+    · rw [show (⟨rotation a, hf⟩ : G) = φ ⟨a, hf⟩ from Subtype.ext (hφ ⟨a, hf⟩).symm]
+      exact hrot _
+    · have hsf : s * ⟨conjReflection c, hf⟩ =
+          φ ⟨_, (conjReflection_mem_iff hf).1 hb⟩ := Subtype.ext (by simp [s, hφ])
+      rw [← one_mul (⟨conjReflection c, hf⟩ : G), ← hs, mul_assoc, hsf]
+      exact Subgroup.mul_mem _ (Subgroup.subset_closure (by simp)) (hrot _)
+  exact ⟨(dihedralGroupMulEquiv hs ht hs1 ht1 hN hgen).symm⟩
+
+/-- A finite group of isometries containing a reflection has twice as many elements as its
+rotation subgroup. -/
+theorem natCard_eq_two_mul_natCard_rotationSubgroup [Finite G] {b : Circle}
+    (hb : conjReflection b ∈ G) : Nat.card G = 2 * Nat.card (rotationSubgroup G) := by
+  obtain ⟨e⟩ := nonempty_mulEquiv_dihedralGroup hb
+  rw [Nat.card_congr e.toEquiv, DihedralGroup.nat_card]
+
+end TauCeti.Complex

@@ -78,6 +78,10 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
+* `Circle.exp_two_mul_pi_div_pow` and `Circle.sq_exp_mul_inv`: `exp(2π/n)ⁿ = 1`, and the square
+  of the quotient of `exp(jθ)` by `exp(kθ)` is the power `exp(2θ)^(j - k)`.
+* `Circle.sq_mul_inv_ne_one`: `(d e⁻¹)² ≠ 1` for unit directions `d` and `e` that are not
+  parallel.
 * `Circle.differentiableAt_coe_inv` and `Circle.contDiff_coe_inv`: the pointwise inverse of a
   differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
@@ -487,6 +491,37 @@ theorem infinite_setOf_sq_eq_one_pi {ι : Type*} [Infinite ι] :
   funext i
   rw [Pi.pow_apply, Pi.one_apply, Function.comp_apply]
   split_ifs <;> simp
+
+/-- The rotation through the angle `2π / n` has order dividing `n`: `exp(2π/n)ⁿ = 1`. -/
+theorem exp_two_mul_pi_div_pow (n : ℕ) : Circle.exp (2 * (Real.pi / n)) ^ n = 1 := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [pow_zero]
+  rw [← Circle.exp_natCast_mul, ← Circle.exp_two_pi]
+  congr 1
+  field_simp
+
+/-- The square of the quotient of `exp(jθ)` by `exp(kθ)` is the power `exp(2θ)^(j - k)`. -/
+theorem sq_exp_mul_inv (θ : ℝ) (j k : ℤ) :
+    (Circle.exp (j * θ) * (Circle.exp (k * θ))⁻¹) ^ 2 = Circle.exp (2 * θ) ^ (j - k) := by
+  rw [← Circle.exp_neg, ← Circle.exp_add, ← Circle.exp_natCast_mul, ← Circle.exp_intCast_mul]
+  congr 1
+  push_cast
+  ring
+
+/-- The rotation by `(d e⁻¹)²` is not the identity when the directions `d` and `e` are not
+parallel. -/
+theorem sq_mul_inv_ne_one {d e : Circle} (hde : d ≠ e) (hde' : d ≠ -e) : (d * e⁻¹) ^ 2 ≠ 1 := by
+  intro h
+  have h' : ((d : ℂ) * (e : ℂ)⁻¹) * ((d : ℂ) * (e : ℂ)⁻¹) = 1 := by
+    rw [← sq]
+    exact_mod_cast congrArg ((↑) : Circle → ℂ) h
+  have he : (e : ℂ) ≠ 0 := Circle.coe_ne_zero e
+  rcases mul_self_eq_one_iff.1 h' with h₁ | h₁
+  · exact hde (Circle.coe_injective (by field_simp at h₁; exact h₁))
+  · refine hde' (Circle.coe_injective ?_)
+    field_simp at h₁
+    rw [Circle.coe_neg]
+    linear_combination h₁
 
 end Circle
 
