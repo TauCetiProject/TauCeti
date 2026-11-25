@@ -8,12 +8,13 @@ module
 public import TauCeti.Analysis.Contour.Cycle.HomologyCauchy
 public import TauCeti.Analysis.Contour.Residue.Cycle
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 
 /-!
 # The classical residue theorem for contour cycles
 
-This file extends the classical residue theorem from one parametrized closed curve to a finite
+This file extends the classical residue theorem from one closed piecewise-`C¹` curve to a finite
 formal integer cycle `C` of such curves. For `f` differentiable on `U ∖ S` and meromorphic at each
 point of the finite set `S` lying in `U`, and a cycle `C` in `U` that is **null-homologous** there
 and whose trace **avoids** `S`,
@@ -36,7 +37,7 @@ and the null-homology-free identity
 the generators of `C` with their coefficients. Only then is the analytic remainder `g` discharged,
 by the homology Cauchy theorem for cycles
 (`TauCeti.Contour.Cycle.homologyCauchyTheorem`), which does see the cancellations between
-generators. Its `S = ∅` case is exactly that theorem.
+generators. Its `S = ∅` case is the scalar case of that theorem.
 
 Cauchy's integral formula for a cycle follows, as usual, by applying the residue theorem to the
 Cauchy kernel `w ↦ f w / (w − z) ^ (k + 1)`, whose only singularity in `U` is at `z`. For a
@@ -98,17 +99,18 @@ theorem integral_eq_analyticRemainder_add_sum (decomp : PolarPartDecomposition f
       + 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s := by
   classical
   -- The single-curve splitting, applied to each generator in the canonical support.
-  have hgen : ∀ γ ∈ FreeAbelianGroup.support C,
+  have hgen : ∀ γ ∈ FreeAddCommGroup.support C,
       (∫ t in γ.a..γ.b, deriv (⇑γ) t • f (γ t))
         = (∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
           + 2 * (Real.pi : ℂ) * Complex.I *
               ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s := fun γ hγ ↦
-    decomp.intervalIntegral_deriv_smul_eq_analyticRemainder_add_sum γ.isPiecewiseC1On
+    decomp.intervalIntegral_deriv_smul_eq_analyticRemainder_add_sum
+      γ.isPiecewiseC1On.absolutelyContinuousOnInterval
       (fun t ht ↦ isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)) γ.source_eq_target
       (fun t ht hmem ↦ hoff _ (Finset.mem_coe.mp hmem) (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩))
   calc
     integral f C
-        = ∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
+        = ∑ γ ∈ FreeAddCommGroup.support C, FreeAddCommGroup.coeff γ C •
             ((∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
               + 2 * (Real.pi : ℂ) * Complex.I *
                   ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s) := by
@@ -132,9 +134,9 @@ of them null-homologous, is. Points of `S` outside `U` are harmless rather than 
 winding number vanishing by null-homology, and `S` may list regular points of `f`, whose residues
 are `0`.
 
-Its `S = ∅` case is the homology Cauchy theorem for cycles
-(`TauCeti.Contour.Cycle.homologyCauchyTheorem`), and its one-generator case is the single-curve
-theorem `TauCeti.Contour.classicalResidueTheorem_nullHomologous`. -/
+Its `S = ∅` case is the scalar case of the homology Cauchy theorem for cycles
+(`TauCeti.Contour.Cycle.homologyCauchyTheorem`), and its one-generator case is the piecewise-`C¹`
+case of the single-curve theorem `TauCeti.Contour.classicalResidueTheorem_nullHomologous`. -/
 theorem classicalResidueTheorem_nullHomologous (hU : IsOpen U)
     (hf : DifferentiableOn ℂ f (U \ (↑S : Set ℂ))) (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s)
     {C : Cycle} (hCU : IsIn C U) (hoff : ∀ s ∈ S, s ∉ trace C) (hnull : IsNullHomologous C U) :

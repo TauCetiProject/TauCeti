@@ -440,7 +440,7 @@ private theorem exists_eq_pair_of_mem_orbit {C : Set (Fin 6)}
   refine ⟨(g : Perm (Fin 6)) 0, ?_⟩
   have h3 : (g : Perm (Fin 6)) 3 = (finRotate 6 ^ 3) ((g : Perm (Fin 6)) 0) := by
     have h03 : (finRotate 6 ^ 3) 0 = 3 := by decide
-    rw [← h03, ← Perm.mul_apply, mul_finRotate_pow_three_comm g.2, Perm.mul_apply]
+    rw [← h03, ← Perm.mul_apply, mul_finRotate_pow_three_comm g.property, Perm.mul_apply]
   simp only [Set.smul_set_insert, Set.smul_set_singleton, Subgroup.smul_def, Perm.smul_def, h3]
 
 /-- The pair `{0, 3}` is a block of the monodromy action of the triple of `6T6-6_6_3.3-a`: its
@@ -483,7 +483,7 @@ theorem cycleData_blockQuotient_toTriple_genusTwoStoredTriple
       (hτ : ∀ i, (e.symm (τ i) : Set (Fin 6)) = σ '' (e.symm i : Set (Fin 6))) (i : Fin 3) :
       τ i ≠ i := by
     intro h
-    obtain ⟨a, ha⟩ := exists_eq_pair_of_mem_orbit (e.symm i).2
+    obtain ⟨a, ha⟩ := exists_eq_pair_of_mem_orbit (e.symm i).property
     have hi := hτ i
     rw [h, ha] at hi
     rcases Set.image_subset_iff.mp hi.symm.subset (Set.mem_insert a _) with h' | h'
@@ -601,8 +601,8 @@ theorem monodromyGroup_toTriple_genusTwoStoredTriple :
     genusTwoStoredTriple.toTriple.monodromyGroup =
       Subgroup.closure {c[0, 2, 4] * c[1, 3, 5], c[2, 5]} := by
   rw [StoredTriple.monodromyGroup_toTriple]
-  set r := genusTwoStoredTriple.1.1
-  set s := genusTwoStoredTriple.1.2.1
+  set r := genusTwoStoredTriple.val.1
+  set s := genusTwoStoredTriple.val.2.1
   set a : Perm (Fin 6) := c[0, 2, 4] * c[1, 3, 5]
   set b : Perm (Fin 6) := c[2, 5]
   have hr : r ∈ Subgroup.closure {r, s} := Subgroup.subset_closure (Set.mem_insert _ _)
@@ -632,10 +632,10 @@ stored generators and their inverses. -/
 private theorem mem_genusTwoMonodromyList {g : Perm (Fin 6)}
     (hg : g ∈ genusTwoStoredTriple.toTriple.monodromyGroup) : g ∈ genusTwoMonodromyList := by
   have h : 1 ∈ genusTwoMonodromyList ∧ ∀ y ∈ genusTwoMonodromyList,
-      genusTwoStoredTriple.1.1 * y ∈ genusTwoMonodromyList ∧
-        genusTwoStoredTriple.1.2.1 * y ∈ genusTwoMonodromyList ∧
-        genusTwoStoredTriple.1.1⁻¹ * y ∈ genusTwoMonodromyList ∧
-        genusTwoStoredTriple.1.2.1⁻¹ * y ∈ genusTwoMonodromyList := by
+      genusTwoStoredTriple.val.1 * y ∈ genusTwoMonodromyList ∧
+        genusTwoStoredTriple.val.2.1 * y ∈ genusTwoMonodromyList ∧
+        genusTwoStoredTriple.val.1⁻¹ * y ∈ genusTwoMonodromyList ∧
+        genusTwoStoredTriple.val.2.1⁻¹ * y ∈ genusTwoMonodromyList := by
     decide +kernel
   rw [StoredTriple.monodromyGroup_toTriple] at hg
   induction hg using Subgroup.closure_induction_left with
@@ -686,30 +686,30 @@ theorem classSet_passportOf_genusTwoStoredTriple :
   -- Relabel by `τ`, so that the monodromy group is that of `t₀`. The components over `0` and `1`
   -- are then non-commuting six-cycles of that group, and a finite check conjugates them onto `t₀`.
   set s' := τ • s
-  have hG : s'.1.monodromyGroup = t₀.1.monodromyGroup := by
+  have hG : s'.val.monodromyGroup = t₀.val.monodromyGroup := by
     rw [ConnectedTriple.coe_smul, monodromyGroup_smul, hτ]
-  have hcd' : s'.1.cycleData = ({6}, {6}, {3, 3}) := by
+  have hcd' : s'.val.cycleData = ({6}, {6}, {3, 3}) := by
     rw [ConnectedTriple.coe_smul, cycleData_smul, hcd, cycleData_toTriple_genusTwoStoredTriple]
-  have h0 : s'.1.σ0.computedCycleType = {6} := by
+  have h0 : s'.val.σ0.computedCycleType = {6} := by
     rw [Perm.computedCycleType_eq_fullCycleType, Perm.fullCycleType_def, ← cycleData_σ0, hcd']
-  have h1 : s'.1.σ1.computedCycleType = {6} := by
+  have h1 : s'.val.σ1.computedCycleType = {6} := by
     rw [Perm.computedCycleType_eq_fullCycleType, Perm.fullCycleType_def, ← cycleData_σ1, hcd']
-  have hinf : (s'.1.σ1 * s'.1.σ0)⁻¹.computedCycleType = {3, 3} := by
+  have hinf : (s'.val.σ1 * s'.val.σ0)⁻¹.computedCycleType = {3, 3} := by
     rw [← σinf_eq_inv, Perm.computedCycleType_eq_fullCycleType, Perm.fullCycleType_def,
       ← cycleData_σinf, hcd']
-  have ha := mem_genusTwoMonodromyList (hG ▸ s'.1.σ0_mem_monodromyGroup)
-  have hb := mem_genusTwoMonodromyList (hG ▸ s'.1.σ1_mem_monodromyGroup)
+  have ha := mem_genusTwoMonodromyList (hG ▸ s'.val.σ0_mem_monodromyGroup)
+  have hb := mem_genusTwoMonodromyList (hG ▸ s'.val.σ1_mem_monodromyGroup)
   -- Commuting components would centralize the monodromy group.
-  have hab : s'.1.σ0 * s'.1.σ1 ≠ s'.1.σ1 * s'.1.σ0 := by
+  have hab : s'.val.σ0 * s'.val.σ1 ≠ s'.val.σ1 * s'.val.σ0 := by
     intro hcomm
-    have hcen : s'.1.σ0 ∈ Subgroup.centralizer (t₀.1.monodromyGroup : Set (Perm (Fin 6))) := by
+    have hcen : s'.val.σ0 ∈ Subgroup.centralizer (t₀.val.monodromyGroup : Set (Perm (Fin 6))) := by
       rw [← hG, ← automorphismGroup_eq_centralizer_monodromyGroup, automorphismGroup_eq_centralizer,
         Subgroup.mem_centralizer_iff]
       rintro _ (rfl | rfl)
       exacts [rfl, hcomm.symm]
     rw [Subgroup.mem_centralizer_iff] at hcen
     exact not_commute_of_mem_genusTwoMonodromyList _ ha h0
-      (hcen _ t₀.1.σ0_mem_monodromyGroup).symm (hcen _ t₀.1.σ1_mem_monodromyGroup).symm
+      (hcen _ t₀.val.σ0_mem_monodromyGroup).symm (hcen _ t₀.val.σ1_mem_monodromyGroup).symm
   obtain ⟨ν, -, hν0, hν1⟩ :=
     exists_conj_eq_of_mem_genusTwoMonodromyList _ ha h0 _ hb h1 hinf hab
   refine (ConnectedIsoClass.mk_eq_mk_iff_exists_smul.mpr ⟨ν * τ, Subtype.ext ?_⟩).symm

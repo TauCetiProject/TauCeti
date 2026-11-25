@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Covering
+public import TauCeti.Algebra.Algebra.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Map
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Gauge
 
@@ -48,6 +49,8 @@ which every arrow has its head coloured `true`, the rescaling is the identity.
 * `TauCeti.signlessPreprojectiveIdeal` and `TauCeti.signlessPreprojectiveAlgebra`: the relation
   ideal and the quotient algebra, with quotient map `TauCeti.signlessPreprojectiveMk` and universal
   property `TauCeti.signlessPreprojectiveLift`.
+* `TauCeti.signlessPreprojectiveTraceLift`: the descent to the signless algebra of a trace on the
+  path algebra which kills the products `s_v * x`.
 * `TauCeti.symmetrifySignlessPreprojectiveAlgebraEquiv`: **the signless algebra of the doubled
   quiver of a bipartite quiver is its preprojective algebra**, by an explicit sign rescaling.
 
@@ -57,6 +60,10 @@ which every arrow has its head coloured `true`, the rescaling is the identity.
   backtracks into and the tail backtracks out of the vertex.
 * `TauCeti.signlessPreprojectiveRelator_congr`: it does not depend on the finiteness structure
   chosen on the star.
+* `TauCeti.map_eq_zero_of_mem_signlessPreprojectiveIdeal`: a trace on the path algebra which kills
+  the products `s_v * x` kills the signless ideal.
+* `TauCeti.commutatorSubmodule_le_ker_signlessPreprojectiveTraceLift`: its descent kills the
+  commutator submodule.
 * `TauCeti.gaugedPreprojectiveRelator_bipartite_eq_sum_smul`: the preprojective relator with arrows
   signed by the colour of their heads is a signed sum of the signless relators.
 * `TauCeti.gaugedPreprojectiveRelator_bipartite_vertexCorner_eq_smul`: its corner at `v` is
@@ -197,6 +204,25 @@ theorem signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal (v : R) :
   rw [signlessPreprojectiveIdeal_eq_span]
   exact TwoSidedIdeal.subset_span ⟨v, rfl⟩
 
+variable {R} in
+/-- The signless ideal lies in a two-sided ideal exactly when every signless relator does. -/
+theorem signlessPreprojectiveIdeal_le_iff {I : TwoSidedIdeal (pathAlgebra k R)} :
+    signlessPreprojectiveIdeal k R ≤ I ↔ ∀ v : R, signlessPreprojectiveRelator k v ∈ I := by
+  rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le, Set.range_subset_iff]
+  rfl
+
+variable {R} in
+/-- The signless ideal, as a left ideal, lies in a two-sided ideal exactly when every signless
+relator does. -/
+theorem signlessPreprojectiveIdeal_asIdeal_le_iff [Finite R] {I : Ideal (pathAlgebra k R)}
+    [I.IsTwoSided] :
+    (signlessPreprojectiveIdeal k R).asIdeal ≤ I ↔
+      ∀ v : R, signlessPreprojectiveRelator k v ∈ I := by
+  refine ⟨fun h v => h (TwoSidedIdeal.mem_asIdeal.2
+    (signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k v)), fun h _ hx => ?_⟩
+  exact Ideal.mem_toTwoSided.1 ((signlessPreprojectiveIdeal_le_iff k).2
+    (fun v => Ideal.mem_toTwoSided.2 (h v)) (TwoSidedIdeal.mem_asIdeal.1 hx))
+
 end Ideal
 
 section Algebra
@@ -247,11 +273,8 @@ variable {k : Type w} {R : Type u} {B : Type*} [CommRing k] [Quiver.{v} R] [HasR
 /-- An algebra map out of the path algebra which kills every signless relator kills the signless
 ideal. -/
 theorem signlessPreprojectiveIdeal_le_ker (hf : ∀ v : R, f (signlessPreprojectiveRelator k v) = 0) :
-    signlessPreprojectiveIdeal k R ≤ TwoSidedIdeal.ker f := by
-  rw [signlessPreprojectiveIdeal_eq_span]
-  refine TwoSidedIdeal.span_le.2 ?_
-  rintro _ ⟨v, rfl⟩
-  exact (TwoSidedIdeal.mem_ker f).2 (hf v)
+    signlessPreprojectiveIdeal k R ≤ TwoSidedIdeal.ker f :=
+  (signlessPreprojectiveIdeal_le_iff k).2 fun v => (TwoSidedIdeal.mem_ker f).2 (hf v)
 
 /-- **The universal property of the signless algebra**: an algebra map out of the path algebra
 which kills every signless relator descends to the quotient. -/
@@ -284,6 +307,78 @@ theorem signlessPreprojectiveLift_unique (hf : ∀ v : R, f (signlessPreprojecti
   rw [signlessPreprojectiveLift_signlessPreprojectiveMk, ← hg, AlgHom.comp_apply]
 
 end Lift
+
+/-! ### Traces on the signless algebra -/
+
+section Trace
+
+variable {k : Type w} {R : Type u} {M : Type*} [CommRing k] [Quiver.{v} R] [HasReverse R]
+  [∀ x : R, Fintype (Quiver.Star x)] [AddCommGroup M] [Module k M]
+  (f : pathAlgebra k R →ₗ[k] M)
+
+/-- **A trace which kills the signless relators kills the signless ideal.** Let `f` be a linear
+map out of the path algebra taking the same value on `x * y` and on `y * x`, and vanishing on
+every product `s_v * x` of a signless relator with an element of the path algebra. Then `f`
+vanishes on the signless ideal, with no finiteness assumption on the vertices: `s_v = s_v * e_v`,
+and by the trace property `f (a * s_v * b) = f (s_v * (b * a))`. -/
+theorem map_eq_zero_of_mem_signlessPreprojectiveIdeal (hf : ∀ x y, f (x * y) = f (y * x))
+    (hrel : ∀ (v : R) (x : pathAlgebra k R), f (signlessPreprojectiveRelator k v * x) = 0)
+    {x : pathAlgebra k R} (hx : x ∈ signlessPreprojectiveIdeal k R) : f x = 0 := by
+  rw [signlessPreprojectiveIdeal_eq_span] at hx
+  suffices h : f x = 0 ∧ ∀ c, f (x * c) = 0 from h.1
+  induction hx using TwoSidedIdeal.span_induction with
+  | mem x hx =>
+    obtain ⟨v, rfl⟩ := hx
+    -- No unit is needed: the relator at `v` absorbs the vertex idempotent `e_v` on the right.
+    exact ⟨by simpa using hrel v (vertexIdempotent k v), hrel v⟩
+  | zero => simp
+  | add x y _ _ hx hy =>
+    exact ⟨by rw [map_add, hx.1, hy.1, add_zero],
+      fun c => by rw [add_mul, map_add, hx.2, hy.2, add_zero]⟩
+  | neg x _ hx =>
+    exact ⟨by rw [map_neg, hx.1, neg_zero], fun c => by rw [neg_mul x c, map_neg, hx.2, neg_zero]⟩
+  | left_absorb c x _ hx =>
+    -- Rotate the absorbed factor `c` to the back.
+    exact ⟨by rw [hf, hx.2], fun d => by rw [mul_assoc, hf, mul_assoc, hx.2]⟩
+  | right_absorb c x _ hx => exact ⟨hx.2 c, fun d => by rw [mul_assoc, hx.2]⟩
+
+variable [Finite R]
+
+/-- **The descent of a trace to the signless algebra**: a linear map out of the path algebra which
+takes the same value on `x * y` and on `y * x`, and kills every product `s_v * x` of a signless
+relator with an element of the path algebra, descends to the signless preprojective algebra. -/
+noncomputable def signlessPreprojectiveTraceLift (hf : ∀ x y, f (x * y) = f (y * x))
+    (hrel : ∀ (v : R) (x : pathAlgebra k R), f (signlessPreprojectiveRelator k v * x) = 0) :
+    signlessPreprojectiveAlgebra k R →ₗ[k] M :=
+  (signlessPreprojectiveMk k R).toLinearMap.liftOfSurjective
+    (signlessPreprojectiveMk_surjective k R)
+    ⟨f, fun _ hx => LinearMap.mem_ker.2 (map_eq_zero_of_mem_signlessPreprojectiveIdeal f hf hrel
+      ((signlessPreprojectiveMk_eq_zero_iff k R).1 (LinearMap.mem_ker.1 hx)))⟩
+
+variable (hf : ∀ x y, f (x * y) = f (y * x))
+  (hrel : ∀ (v : R) (x : pathAlgebra k R), f (signlessPreprojectiveRelator k v * x) = 0)
+
+/-- The descended trace sends the class of `x` to `f x`. -/
+@[simp]
+theorem signlessPreprojectiveTraceLift_signlessPreprojectiveMk (x : pathAlgebra k R) :
+    signlessPreprojectiveTraceLift f hf hrel (signlessPreprojectiveMk k R x) = f x :=
+  LinearMap.equivOfSurjective_apply _ _
+
+/-- **The descended trace is a trace.** -/
+theorem signlessPreprojectiveTraceLift_mul_comm (x y : signlessPreprojectiveAlgebra k R) :
+    signlessPreprojectiveTraceLift f hf hrel (x * y) =
+      signlessPreprojectiveTraceLift f hf hrel (y * x) := by
+  obtain ⟨x, rfl⟩ := signlessPreprojectiveMk_surjective k R x
+  obtain ⟨y, rfl⟩ := signlessPreprojectiveMk_surjective k R y
+  simp only [← map_mul, signlessPreprojectiveTraceLift_signlessPreprojectiveMk, hf x y]
+
+/-- **The descended trace kills the commutator submodule.** -/
+theorem commutatorSubmodule_le_ker_signlessPreprojectiveTraceLift :
+    commutatorSubmodule k (signlessPreprojectiveAlgebra k R) ≤
+      LinearMap.ker (signlessPreprojectiveTraceLift f hf hrel) :=
+  (commutatorSubmodule_le_ker_iff _).2 (signlessPreprojectiveTraceLift_mul_comm f hf hrel)
+
+end Trace
 
 /-! ### Symmetrified quivers -/
 

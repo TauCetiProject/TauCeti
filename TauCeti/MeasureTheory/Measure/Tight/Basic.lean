@@ -9,7 +9,11 @@ public import Mathlib.MeasureTheory.Measure.Tight
 public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 
 /-!
-# Tightness of a finite family of finite measures
+# Tight sets of measures
+
+A tight set of measures has a common σ-compact carrier: compact sets `K j` whose complements have
+mass at most `j⁻¹` under every measure of the set, so that the union of the `K j` carries every
+measure of the set.
 
 Mathlib's `MeasureTheory.isTightMeasureSet_singleton` says that a single finite measure on a
 complete second-countable pseudo-metrizable space is tight, and `IsTightMeasureSet.union` says
@@ -19,6 +23,9 @@ the finitely many exceptional members of a family for which a uniform tail bound
 
 ## Main declarations
 
+* `MeasureTheory.IsTightMeasureSet.exists_seq_isCompact_measure_compl_le`: a tight set of measures
+  has compact sets `K j` with uniform tail bounds `j⁻¹` whose union carries every measure of the
+  set.
 * `TauCeti.isTightMeasureSet_of_finite`: a finite set of finite measures is tight.
 * `TauCeti.isTightMeasureSet_range_of_finite`: a family of finite measures indexed by a finite type
   has tight range.
@@ -29,12 +36,28 @@ the finitely many exceptional members of a family for which a uniform tail bound
 public section
 
 open Filter MeasureTheory Set
+open scoped ENNReal
 
 namespace TauCeti
 
 variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α]
   [TopologicalSpace.IsCompletelyPseudoMetrizableSpace α] [SecondCountableTopology α]
   [BorelSpace α]
+
+omit [TopologicalSpace.IsCompletelyPseudoMetrizableSpace α] [SecondCountableTopology α]
+  [BorelSpace α] in
+/-- **A tight set of measures has a common σ-compact carrier.** There are compact sets `K j` whose
+complements have mass at most `j⁻¹` under every measure of the set, and their union carries every
+measure of the set. -/
+theorem _root_.MeasureTheory.IsTightMeasureSet.exists_seq_isCompact_measure_compl_le
+    {S : Set (Measure α)} (hS : IsTightMeasureSet S) :
+    ∃ K : ℕ → Set α, (∀ j, IsCompact (K j)) ∧ (∀ j, ∀ μ ∈ S, μ (K j)ᶜ ≤ (j : ℝ≥0∞)⁻¹) ∧
+      ∀ μ ∈ S, μ (⋃ j, K j)ᶜ = 0 := by
+  choose K hKc hKS using fun j : ℕ ↦ isTightMeasureSet_iff_exists_isCompact_measure_compl_le.mp
+    hS (j : ℝ≥0∞)⁻¹ (ENNReal.inv_pos.2 (ENNReal.natCast_ne_top j))
+  refine ⟨K, hKc, hKS, fun μ hμ ↦ nonpos_iff_eq_zero.mp <|
+    ge_of_tendsto' ENNReal.tendsto_inv_nat_nhds_zero fun j ↦ ?_⟩
+  exact (measure_mono (compl_subset_compl.2 (subset_iUnion K j))).trans (hKS j μ hμ)
 
 /-- **A finite set of finite measures is tight.** Singletons are tight and tightness is closed
 under unions; the empty case routes through an arbitrary singleton, as Mathlib has no dedicated

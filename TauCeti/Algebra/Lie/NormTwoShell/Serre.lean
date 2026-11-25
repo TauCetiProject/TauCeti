@@ -92,14 +92,15 @@ theorem ad_root_pow_lie_root (hB : B.PosDef) (hev : ∀ i, Even (B i i)) {a b : 
   by_cases heq : a = b
   · subst heq
     rw [ShellLieAlgebra.lie_self hS hev, map_zero]
-  have hle := hB.dotProduct_mulVec_le_one a.2 b.2 (Subtype.coe_injective.ne heq)
-  have hge := hB.neg_one_le_dotProduct_mulVec a.2 b.2 fun h ↦ hab (by rw [h, neg_add_cancel])
+  have hcases := hB.dotProduct_mulVec_cases a.property b.property (Subtype.coe_injective.ne heq)
+    fun h ↦ hab (by rw [h, neg_add_cancel])
   rcases (by omega : 0 ≤ (a : I → ℤ) ⬝ᵥ B *ᵥ b ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1) with hp | hp
   · rw [root_lie_root, rootBracket_eq_zero_of_nonneg hS hp, map_zero]
   -- The string `b, a + b` stops at `a + b`, which pairs to `1` with `a`.
-  have hm : (a : I → ℤ) + b ∈ B.normTwoShell := (hS.add_mem_normTwoShell_iff a.2 b.2).2 hp
+  have hm : (a : I → ℤ) + b ∈ B.normTwoShell := (hS.add_mem_normTwoShell_iff a.property
+      b.property).2 hp
   have hp' : 0 ≤ (a : I → ℤ) ⬝ᵥ B *ᵥ ((⟨_, hm⟩ : B.normTwoShell) : I → ℤ) := by
-    rw [mulVec_add, dotProduct_add, mem_normTwoShell.mp a.2, hp]
+    rw [mulVec_add, dotProduct_add, mem_normTwoShell.mp a.property, hp]
     norm_num
   rw [hp, neg_neg, Int.toNat_one, pow_one, ad_apply, root_lie_root, rootBracket_of_mem hm,
     ShellLieAlgebra.lie_units_smul, root_lie_root, rootBracket_eq_zero_of_nonneg hS hp', smul_zero]
@@ -226,9 +227,9 @@ theorem lieSpan_chevalleyE_chevalleyF_eq_top (hB : B.PosDef) (hdiag : ∀ i, B i
     rw [chevalleyF_def, root_lie_root, rootBracket_of_mem hm, hc]
     exact ⟨_, rfl⟩
   have hroot (c : B.normTwoShell) : root B c ∈ K := by
-    rcases hB.nonneg_or_nonpos_of_mem_normTwoShell hev hoff c.2 with h | h
-    · exact hpos c c.2 h
-    · have := hneg (-c) (by rw [neg_neg]; exact c.2) (neg_nonneg.mpr h)
+    rcases hB.nonneg_or_nonpos_of_mem_normTwoShell hev hoff c.property with h | h
+    · exact hpos c c.property h
+    · have := hneg (-c) (by rw [neg_neg]; exact c.property) (neg_nonneg.mpr h)
       simpa only [neg_neg] using this
   have hcartan (i : I) : cartan B (Pi.single i 1) ∈ K := by
     rw [← (isSerreSystem hB hdiag hoff).lie_E_F_self i]

@@ -252,19 +252,6 @@ theorem diagDiff_self_apply (a : A) (z : A ⊗[R] A) :
     simp [mul_comm]
   | add x y hx hy => rw [map_add, mul_add, hx, hy]
 
-/-- An `A`-submodule predicate holds on `KaehlerDifferential.ideal R A` once it holds on every
-diagonal generator `1 ⊗ₜ a - a ⊗ₜ 1`. -/
-@[elab_as_elim]
-private theorem kaehlerIdeal_induction {p : A ⊗[R] A → Prop} {u : A ⊗[R] A}
-    (hu : u ∈ KaehlerDifferential.ideal R A)
-    (diag : ∀ a : A, p ((1 : A) ⊗ₜ[R] a - a ⊗ₜ[R] (1 : A)))
-    (zero : p 0) (add : ∀ x y, p x → p y → p (x + y))
-    (smul : ∀ (c : A) x, p x → p (c • x)) : p u := by
-  rw [← Submodule.restrictScalars_mem A,
-    ← KaehlerDifferential.submodule_span_range_eq_ideal] at hu
-  exact Submodule.span_induction (by rintro _ ⟨a, rfl⟩; exact diag a) zero
-    (fun x y _ _ ↦ add x y) (fun c x _ ↦ smul c x) hu
-
 private theorem iSup_map_diagDiff_self (J : Ideal (A ⊗[R] A)) :
     (⨆ a : A, (J.restrictScalars A).map (diagDiff R a)) =
       (KaehlerDifferential.ideal R A * J).restrictScalars A := by
@@ -275,9 +262,12 @@ private theorem iSup_map_diagDiff_self (J : Ideal (A ⊗[R] A)) :
     exact Submodule.mul_mem_mul (KaehlerDifferential.one_smul_sub_smul_one_mem_ideal R a) hz
   · intro z (hz : z ∈ KaehlerDifferential.ideal R A * J)
     refine Submodule.mul_induction_on hz (fun u hu y hy ↦ ?_) fun _ _ h₁ h₂ ↦ add_mem h₁ h₂
-    refine kaehlerIdeal_induction hu (fun a ↦ ?_) (by simp)
-      (fun _ _ ih₁ ih₂ ↦ by rw [add_mul]; exact add_mem ih₁ ih₂)
-      (fun c _ ih₁ ↦ by rw [smul_mul_assoc]; exact Submodule.smul_mem _ c ih₁)
+    rw [← Submodule.restrictScalars_mem A,
+      ← KaehlerDifferential.submodule_span_range_eq_ideal] at hu
+    refine Submodule.span_induction ?_ (by simp)
+      (fun _ _ _ _ ih₁ ih₂ ↦ by rw [add_mul]; exact add_mem ih₁ ih₂)
+      (fun c _ _ ih₁ ↦ by rw [smul_mul_assoc]; exact Submodule.smul_mem _ c ih₁) hu
+    rintro _ ⟨a, rfl⟩
     rw [← diagDiff_self_apply]
     exact Submodule.mem_iSup_of_mem a (Submodule.mem_map_of_mem hy)
 
@@ -382,12 +372,12 @@ variable {N : Type*} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R
 `PrincipalParts R A M m`. -/
 def lift {m : ℕ} (D : differentialOperators R A M N m) :
     PrincipalParts R A M m →ₗ[A] N :=
-  (principalPartsRel R A M m).liftQ (D.1.liftBaseChange A)
-    (principalPartsRel_le_ker_liftBaseChange_iff.2 D.2)
+  (principalPartsRel R A M m).liftQ (D.val.liftBaseChange A)
+    (principalPartsRel_le_ker_liftBaseChange_iff.2 D.property)
 
 @[simp]
 theorem lift_mkQ {m : ℕ} (D : differentialOperators R A M N m) (z : A ⊗[R] M) :
-    lift D (mkQ R A M m z) = D.1.liftBaseChange A z :=
+    lift D (mkQ R A M m z) = D.val.liftBaseChange A z :=
   Submodule.liftQ_apply _ _ z
 
 @[simp]
@@ -706,20 +696,26 @@ private theorem tensorLsmul_mem_of_mem_ideal_pow :
     ∀ (m : ℕ) {u : A ⊗[R] A}, u ∈ (KaehlerDifferential.ideal R A) ^ (m + 1) →
       ∀ z : A ⊗[R] M, tensorLsmul R A M u z ∈ principalPartsRel R A M m
   | 0, u, hu, z => by
-    rw [pow_one] at hu
-    refine kaehlerIdeal_induction hu (fun a ↦ ?_) (by simp)
-      (fun _ _ ih₁ ih₂ ↦ by rw [map_add, LinearMap.add_apply]; exact add_mem ih₁ ih₂)
-      (fun c _ ih₁ ↦ by rw [map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁)
+    rw [pow_one, ← Submodule.restrictScalars_mem A,
+      ← KaehlerDifferential.submodule_span_range_eq_ideal] at hu
+    refine Submodule.span_induction ?_ (by simp)
+      (fun _ _ _ _ ih₁ ih₂ ↦ by rw [map_add, LinearMap.add_apply]; exact add_mem ih₁ ih₂)
+      (fun c _ _ ih₁ ↦ by rw [map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁) hu
+    rintro _ ⟨a, rfl⟩
     rw [tensorLsmul_diag]
     exact diagDiff_mem_principalPartsRel_zero a z
   | m + 1, u, hu, z => by
     rw [pow_succ'] at hu
     refine Submodule.mul_induction_on hu (fun v hv w hw ↦ ?_) fun _ _ hx hy ↦ by
       rw [map_add, LinearMap.add_apply]; exact add_mem hx hy
-    refine kaehlerIdeal_induction hv (fun a ↦ ?_) (by simp)
-      (fun _ _ ih₁ ih₂ ↦ by rw [add_mul, map_add, LinearMap.add_apply]; exact add_mem ih₁ ih₂)
-      (fun c _ ih₁ ↦ by
-        rw [smul_mul_assoc, map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁)
+    rw [← Submodule.restrictScalars_mem A,
+      ← KaehlerDifferential.submodule_span_range_eq_ideal] at hv
+    refine Submodule.span_induction ?_ (by simp)
+      (fun _ _ _ _ ih₁ ih₂ ↦ by
+        rw [add_mul, map_add, LinearMap.add_apply]; exact add_mem ih₁ ih₂)
+      (fun c _ _ ih₁ ↦ by
+        rw [smul_mul_assoc, map_smul, LinearMap.smul_apply]; exact Submodule.smul_mem _ c ih₁) hv
+    rintro _ ⟨a, rfl⟩
     rw [map_mul, mul_apply_eq_comp, tensorLsmul_diag]
     exact diagDiff_mem_principalPartsRel_succ a (tensorLsmul_mem_of_mem_ideal_pow m hw z)
 
@@ -882,7 +878,8 @@ at most `m` and `n` factors as `lift P ∘ₗ map R m (lift Q) ∘ₗ comul R A 
 theorem lift_comp {N O : Type*} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
     [AddCommGroup O] [Module R O] [Module A O] [IsScalarTower R A O]
     {m n : ℕ} (P : differentialOperators R A N O m) (Q : differentialOperators R A M N n) :
-    lift ⟨(P : N →ₗ[R] O) ∘ₗ (Q : M →ₗ[R] N), comp_mem_differentialOperators P.2 Q.2⟩ =
+    lift ⟨(P : N →ₗ[R] O) ∘ₗ (Q : M →ₗ[R] N),
+      comp_mem_differentialOperators P.property Q.property⟩ =
       lift P ∘ₗ map R m (lift Q) ∘ₗ comul R A M m n := by
   ext x
   simp

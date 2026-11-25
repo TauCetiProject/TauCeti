@@ -43,16 +43,16 @@ theorem norm_freeCumulant_const_le_pow (φ : A → R) (a : A) {s : Finset α} {C
   rw [freeCumulant_const_eq_coeff_freeCumulantSeries, coeff_freeCumulantSeries]
   have hbound : ‖freeCumulant φ (fun _ : Fin #s => a) univ‖ ≤
       ∑ π : NoncrossingPartition (univ : Finset (Fin #s)),
-        ‖mu R π ⊤‖ * ∏ B ∈ π.1.parts, C ^ #B :=
+        ‖mu R π ⊤‖ * ∏ B ∈ π.val.parts, C ^ #B :=
     norm_freeCumulant_const_le φ a (fun k hk hk' => hm k hk (by simpa using hk'))
   refine hbound.trans ?_
   calc
     (∑ π : NoncrossingPartition (univ : Finset (Fin #s)),
-        ‖mu R π ⊤‖ * ∏ B ∈ π.1.parts, C ^ #B)
+        ‖mu R π ⊤‖ * ∏ B ∈ π.val.parts, C ^ #B)
         ≤ ∑ _π : NoncrossingPartition (univ : Finset (Fin #s)), (4 : ℝ) ^ #s * C ^ #s := by
       refine sum_le_sum fun π _ => ?_
-      have hprod : ∏ B ∈ π.1.parts, C ^ #B = C ^ #s := by
-        rw [prod_pow_eq_pow_sum, π.1.sum_card_parts, card_univ, Fintype.card_fin]
+      have hprod : ∏ B ∈ π.val.parts, C ^ #B = C ^ #s := by
+        rw [prod_pow_eq_pow_sum, π.val.sum_card_parts, card_univ, Fintype.card_fin]
       rw [hprod]
       exact mul_le_mul_of_nonneg_right (NoncrossingPartition.norm_mu_top_le π) (pow_nonneg hC _)
     _ ≤ (4 : ℝ) ^ #s * ((4 : ℝ) ^ #s * C ^ #s) := by

@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.LSPath.SimpleRootString
 
 import Mathlib.Tactic.Ring
 import TauCeti.RepresentationTheory.LSPath.Concatenation
-import TauCeti.RepresentationTheory.LSPath.LinearMap
 
 /-!
 # Categorical operations and simple-root strings on path crystals
@@ -151,7 +150,7 @@ noncomputable def centralStraightIso (hf : Function.Injective f)
 theorem centralStraightIso_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) (u : PUnit) :
-    (centralStraightIso hf hF χ hχ u).1 = straight 𝕜 (f χ) :=
+    (centralStraightIso hf hF χ hχ u).val = straight 𝕜 (f χ) :=
   (rfl)
 
 /-- Embed the one-element central crystal of `χ` into `normalCrystal` as `straight 𝕜 (f χ)`. -/
@@ -166,7 +165,7 @@ noncomputable def centralHom (hf : Function.Injective f)
 theorem centralHom_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (χ : X) (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) (u : PUnit) :
-    (centralHom hf hF χ hχ u).1 = straight 𝕜 (f χ) := by
+    (centralHom hf hF χ hχ u).val = straight 𝕜 (f χ) := by
   simp [centralHom]
 
 /-- The unit embedding of the trivial zero-weight crystal into `normalCrystal` as the constant path
@@ -180,7 +179,7 @@ noncomputable def oneHom (hf : Function.Injective f)
 @[simp]
 theorem oneHom_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (u : PUnit) :
-    (oneHom hf hF u).1 = 1 := by
+    (oneHom hf hF u).val = 1 := by
   simp [oneHom]
 
 end Central
@@ -238,10 +237,10 @@ noncomputable def reverseIso (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) :
     NormalCrystal.StrictIso (normalCrystal hf hF).dual (normalCrystal hf hF) where
   toEquiv :=
-    { toFun := fun π ↦ ⟨π.1.reverse, π.2.reverse hF⟩
-      invFun := fun π ↦ ⟨π.1.reverse, π.2.reverse hF⟩
-      left_inv := fun π ↦ Subtype.ext (reverse_reverse π.1)
-      right_inv := fun π ↦ Subtype.ext (reverse_reverse π.1) }
+    { toFun := fun π ↦ ⟨π.val.reverse, π.property.reverse hF⟩
+      invFun := fun π ↦ ⟨π.val.reverse, π.property.reverse hF⟩
+      left_inv := fun π ↦ Subtype.ext (reverse_reverse π.val)
+      right_inv := fun π ↦ Subtype.ext (reverse_reverse π.val) }
   wt_toFun π := hf (by simp)
   e_toFun i π := by simp [normalCrystalOn_e_eq_map_iff, raise_reverse]
 
@@ -249,15 +248,15 @@ noncomputable def reverseIso (hf : Function.Injective f)
 theorem reverseIso_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (π : {π : PLPath 𝕜 V | IsIntegralPath b f F π}) :
-    (reverseIso hf hF π).1 = π.1.reverse :=
+    (reverseIso hf hF π).val = π.val.reverse :=
   (rfl)
 
 @[simp]
 theorem reverseIso_symm_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (π : {π : PLPath 𝕜 V | IsIntegralPath b f F π}) :
-    ((reverseIso hf hF).symm π).1 = π.1.reverse := by
-  have h := congrArg (fun x ↦ x.1.reverse) ((reverseIso hf hF).apply_symm_apply π)
+    ((reverseIso hf hF).symm π).val = π.val.reverse := by
+  have h := congrArg (fun x ↦ x.val.reverse) ((reverseIso hf hF).apply_symm_apply π)
   rwa [reverseIso_apply, reverse_reverse] at h
 
 /-- Applying `reverseIso` twice returns the original integral path. -/
@@ -266,7 +265,7 @@ theorem reverseIso_reverseIso (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (π : {π : PLPath 𝕜 V | IsIntegralPath b f F π}) :
     reverseIso hf hF (reverseIso hf hF π) = π :=
-  Subtype.ext (reverse_reverse π.1)
+  Subtype.ext (reverse_reverse π.val)
 
 end Reversal
 
@@ -332,6 +331,22 @@ theorem IsIntegralPath.pow (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.cor
   | zero => simp
   | succ n ih => rw [pow_succ]; exact ih.mul hF h
 
+/-- For every integral straight path `straight 𝕜 (f lam)` and every `n : ℕ`, the straight path
+`straight 𝕜 (f (n • lam))` is also an integral path. -/
+theorem IsIntegralPath.straight_nsmul
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {lam : X} (h : IsIntegralPath b f F (straight 𝕜 (f lam))) (n : ℕ) :
+    IsIntegralPath b f F (straight 𝕜 (f (n • lam))) := by
+  rw [map_nsmul, ← Nat.cast_smul_eq_nsmul 𝕜, straight_natCast_smul]
+  exact h.pow hF n
+
+/-- Dilation by any `n : ℕ` preserves integrality of straight paths. -/
+theorem IsIntegralPath.map_natCast_smul_straight
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {v : V} (h : IsIntegralPath b f F (straight 𝕜 v)) (n : ℕ) :
+    IsIntegralPath b f F ((straight 𝕜 v).map ((n : 𝕜) • LinearMap.id)) := by
+  simpa using h.pow hF n
+
 /-- Path concatenation induces a strict crystal morphism from the Kashiwara tensor product of two
 `normalCrystalOn` crystals to any `normalCrystalOn` crystal containing their concatenations. -/
 noncomputable def mulOnHom (hf : Function.Injective f)
@@ -341,12 +356,12 @@ noncomputable def mulOnHom (hf : Function.Injective f)
     NormalCrystal.StrictHom
       ((normalCrystalOn hf hF h₁).tensor (normalCrystalOn hf hF h₂))
       (normalCrystalOn hf hF hT) where
-  toFun x := ⟨x.1.1 * x.2.1, hmul x.1.2 x.2.2⟩
+  toFun x := ⟨x.1.val * x.2.val, hmul x.1.property x.2.property⟩
   wt_toFun x := hf (by simp)
   e_toFun i x := by
     obtain ⟨x₁, x₂⟩ := x
     by_cases hle : (normalCrystalOn hf hF h₂).ε i x₂ ≤ (normalCrystalOn hf hF h₁).φ i x₁
-    · have hle' : -x₂.1.minHeight (F i) ≤ F i x₁.1.endpoint - x₁.1.minHeight (F i) := by
+    · have hle' : -x₂.val.minHeight (F i) ≤ F i x₁.val.endpoint - x₁.val.minHeight (F i) := by
         have : ((normalCrystalOn hf hF h₂).ε i x₂ : 𝕜) ≤ (normalCrystalOn hf hF h₁).φ i x₁ := by
           exact_mod_cast hle
         simpa [cast_normalCrystalOn_ε, cast_normalCrystalOn_φ] using this
@@ -354,7 +369,7 @@ noncomputable def mulOnHom (hf : Function.Injective f)
         Function.comp_def, raise_mul_of_le (x := f (P.root i)) hle']
     · have hlt : (normalCrystalOn hf hF h₁).φ i x₁ < (normalCrystalOn hf hF h₂).ε i x₂ :=
         Nat.lt_of_not_ge hle
-      have hr : F i x₁.1.endpoint - x₁.1.minHeight (F i) + 1 ≤ -x₂.1.minHeight (F i) := by
+      have hr : F i x₁.val.endpoint - x₁.val.minHeight (F i) + 1 ≤ -x₂.val.minHeight (F i) := by
         have : (((normalCrystalOn hf hF h₁).φ i x₁ + 1 : ℕ) : 𝕜) ≤
             (normalCrystalOn hf hF h₂).ε i x₂ := by exact_mod_cast hlt
         simpa [cast_normalCrystalOn_φ, cast_normalCrystalOn_ε] using this
@@ -367,7 +382,7 @@ theorem mulOnHom_apply (hf : Function.Injective f)
     {S₁ S₂ T : Set (PLPath 𝕜 V)} (h₁ : IsCrystalSet b f F S₁) (h₂ : IsCrystalSet b f F S₂)
     (hT : IsCrystalSet b f F T) (hmul : ∀ ⦃π₁⦄, π₁ ∈ S₁ → ∀ ⦃π₂⦄, π₂ ∈ S₂ → π₁ * π₂ ∈ T)
     (x : S₁ × S₂) :
-    (mulOnHom hf hF h₁ h₂ hT hmul x).1 = x.1.1 * x.2.1 :=
+    (mulOnHom hf hF h₁ h₂ hT hmul x).val = x.1.val * x.2.val :=
   (rfl)
 
 /-- **Path concatenation realizes the crystal tensor product** (with Kashiwara's tie convention) as
@@ -384,7 +399,7 @@ noncomputable def mulHom (hf : Function.Injective f)
 theorem mulHom_apply (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (x : {π : PLPath 𝕜 V | IsIntegralPath b f F π} × {π : PLPath 𝕜 V | IsIntegralPath b f F π}) :
-    (mulHom hf hF x).1 = x.1.1 * x.2.1 :=
+    (mulHom hf hF x).val = x.1.val * x.2.val :=
   (rfl)
 
 /-- Associativity of path concatenation matches the crystal tensor associator. -/
@@ -483,17 +498,17 @@ noncomputable def mapHom (hf' : Function.Injective f')
         (.of_comp (f := g) (by simpa only [Function.comp_def, hgf] using hf'))
         (apply_eq_coroot'_of_comp hF' hgf hFg))
       (normalCrystal hf' hF') where
-  toFun π := ⟨π.1.map g, π.2.map hgf hFg⟩
+  toFun π := ⟨π.val.map g, π.property.map hgf hFg⟩
   wt_toFun π := hf' (by
     rw [apply_normalCrystalOn_wt, endpoint_map, ← hgf, apply_normalCrystalOn_wt])
-  e_toFun i π := by simp [normalCrystalOn_e_eq_map_iff, ← hgf, raise_map π.1 (hFg i)]
+  e_toFun i π := by simp [normalCrystalOn_e_eq_map_iff, ← hgf, raise_map π.val (hFg i)]
 
 @[simp]
 theorem mapHom_apply (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (g : V →ₗ[𝕜] W) (hgf : ∀ x, g (f x) = f' x) (hFg : ∀ i, (F' i).comp g = F i)
     (π : {π : PLPath 𝕜 V | IsIntegralPath b f F π}) :
-    (mapHom hf' hF' g hgf hFg π).1 = π.1.map g :=
+    (mapHom hf' hF' g hgf hFg π).val = π.val.map g :=
   (rfl)
 
 /-- A linear equivalence intertwining two realizations induces a strict crystal isomorphism between
@@ -527,7 +542,7 @@ theorem mapIso_apply (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (e : V ≃ₗ[𝕜] W) (hef : ∀ x, e (f x) = f' x) (hFe : ∀ i, (F' i).comp e.toLinearMap = F i)
     (π : {π : PLPath 𝕜 V | IsIntegralPath b f F π}) :
-    (mapIso hf' hF' e hef hFe π).1 = π.1.map e.toLinearMap :=
+    (mapIso hf' hF' e hef hFe π).val = π.val.map e.toLinearMap :=
   (rfl)
 
 @[simp]
@@ -535,8 +550,8 @@ theorem mapIso_symm_apply (hf' : Function.Injective f')
     (hF' : ∀ (i : b.support) (x : X), F' i (f' x) = (P.coroot' i x : 𝕜))
     (e : V ≃ₗ[𝕜] W) (hef : ∀ x, e (f x) = f' x) (hFe : ∀ i, (F' i).comp e.toLinearMap = F i)
     (π : {π : PLPath 𝕜 W | IsIntegralPath b f' F' π}) :
-    ((mapIso hf' hF' e hef hFe).symm π).1 = π.1.map e.symm.toLinearMap := by
-  have h := congrArg (fun x ↦ x.1.map e.symm.toLinearMap)
+    ((mapIso hf' hF' e hef hFe).symm π).val = π.val.map e.symm.toLinearMap := by
+  have h := congrArg (fun x ↦ x.val.map e.symm.toLinearMap)
     ((mapIso hf' hF' e hef hFe).apply_symm_apply π)
   rw [mapIso_apply, map_map] at h
   simpa using h
@@ -552,7 +567,7 @@ one), the three-element simple-root string `{straight α_i, simpleRootBent, stra
 crystal-admissible. -/
 theorem isCrystalSet_simpleRootString
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support)
-    (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0) :
+    (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0) :
     IsCrystalSet b f F
       {straight 𝕜 (f (P.root i)), simpleRootBent 𝕜 f i, straight 𝕜 (-f (P.root i))} := by
   have hv := apply_root_eq_two hF i
@@ -594,13 +609,13 @@ theorem isCrystalSet_simpleRootString
 an integral path. -/
 theorem isIntegralPath_straight_root
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support)
-    (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0) :
+    (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0) :
     IsIntegralPath b f F (straight 𝕜 (f (P.root i))) :=
   (isCrystalSet_simpleRootString hF i hi).subset_isIntegralPath (Or.inl rfl)
 
 private theorem infinite_subtype_endpoint_eq_zero_isIntegralPath_of_isolated
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support)
-    (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0) :
+    (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0) :
     Infinite {π : PLPath 𝕜 V // π.endpoint = 0 ∧ IsIntegralPath b f F π} := by
   have hv := apply_root_eq_two hF i
   have hpos_int := isIntegralPath_straight_root hF i hi
@@ -632,14 +647,14 @@ contains an isolated simple node `i` (in particular for every rank-one root datu
 distinct values `2 n` on them. -/
 theorem infinite_zero_weight_normalCrystal_of_isolated (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support)
-    (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0) :
+    (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0) :
     Infinite
       {x : {π : PLPath 𝕜 V | IsIntegralPath b f F π} // (normalCrystal hf hF).wt x = 0} := by
   have := infinite_subtype_endpoint_eq_zero_isIntegralPath_of_isolated hF i hi
   exact Infinite.of_injective
     (fun x : {π : PLPath 𝕜 V // π.endpoint = 0 ∧ IsIntegralPath b f F π} ↦
-      ⟨⟨x.1, x.2.2⟩, normalCrystalOn_wt_eq_iff.mpr (by simp [x.2.1])⟩)
-    fun _ _ h ↦ Subtype.ext (congrArg (fun z ↦ z.1.1) h)
+      ⟨⟨x.val, x.property.2⟩, normalCrystalOn_wt_eq_iff.mpr (by simp [x.property.1])⟩)
+    fun _ _ h ↦ Subtype.ext (congrArg (fun z ↦ z.val.val) h)
 
 /-- Over any rank-one root datum (`Nonempty b.support` and `Subsingleton b.support`), the
 zero-weight fibre of Littelmann's ambient integral-path crystal is infinite. -/
@@ -656,12 +671,12 @@ theorem infinite_zero_weight_normalCrystal [Nonempty b.support] [Subsingleton b.
 infinite. -/
 theorem infinite_isIntegralPath_of_isolated
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜)) (i : b.support)
-    (hi : ∀ j : b.support, j ≠ i → P.pairing i.1 j.1 = 0) :
+    (hi : ∀ j : b.support, j ≠ i → P.pairing i.val j.val = 0) :
     Infinite {π : PLPath 𝕜 V | IsIntegralPath b f F π} := by
   have := infinite_subtype_endpoint_eq_zero_isIntegralPath_of_isolated hF i hi
   exact Infinite.of_injective
-    (fun x : {π : PLPath 𝕜 V // π.endpoint = 0 ∧ IsIntegralPath b f F π} ↦ ⟨x.1, x.2.2⟩)
-    fun _ _ h ↦ Subtype.ext (congrArg (fun z ↦ z.1) h)
+    (fun x : {π : PLPath 𝕜 V // π.endpoint = 0 ∧ IsIntegralPath b f F π} ↦ ⟨x.val, x.property.2⟩)
+    fun _ _ h ↦ Subtype.ext (congrArg (fun z ↦ z.val) h)
 
 /-- Over any rank-one root datum, Littelmann's ambient crystal of integral paths is infinite. -/
 theorem infinite_isIntegralPath [Nonempty b.support] [Subsingleton b.support]

@@ -123,18 +123,6 @@ variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
   [AddCommGroup M_S] [Module R M_S] [Module A M_S]
   [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
 
-private theorem algebraMap_smul_map_units_inv_smul {P : Type*} [AddCommGroup P]
-    (S : Submonoid A) (B : Type*) [CommRing B] [Algebra A B] [IsLocalization S B] [Module B P]
-    (s : S) (z : P) :
-    algebraMap A B s • (((IsLocalization.map_units B s).unit⁻¹ : Bˣ) • z) = z := by
-  simpa [Units.smul_def] using smul_inv_smul (IsLocalization.map_units B s).unit z
-
-private theorem map_units_inv_smul_algebraMap_smul {P : Type*} [AddCommGroup P]
-    (S : Submonoid A) (B : Type*) [CommRing B] [Algebra A B] [IsLocalization S B] [Module B P]
-    (s : S) (z : P) :
-    (((IsLocalization.map_units B s).unit⁻¹ : Bˣ) : B) • (algebraMap A B s • z) = z := by
-  simpa [Units.smul_def] using inv_smul_smul (IsLocalization.map_units B s).unit z
-
 /-- Cocycle rule for the localized commutators `C a`: `[D, a₁ * a₂]` acts on `y : M_S` as
 `a₁ • C a₂ y + C a₁ (a₂ • y)`. -/
 private theorem commutator_mul_eq (S : Submonoid A) (B : Type*) [CommRing B]
@@ -211,8 +199,13 @@ private theorem extendSuccFun_wellDefined (S : Submonoid A) (B : Type*) [CommRin
     rw [ht, mul_comm (s₂ : A) s₁]
   apply (IsLocalization.map_units B s₁).smul_left_cancel.mp
   apply (IsLocalization.map_units B s₂).smul_left_cancel.mp
-  rw [algebraMap_smul_map_units_inv_smul, smul_comm (algebraMap A B s₂) (algebraMap A B s₁),
-    algebraMap_smul_map_units_inv_smul]
+  have h₁ (z : N) :
+      algebraMap A B s₁ • (((IsLocalization.map_units B s₁).unit⁻¹ : Bˣ) • z) = z := by
+    simpa [Units.smul_def] using smul_inv_smul (IsLocalization.map_units B s₁).unit z
+  have h₂ (z : N) :
+      algebraMap A B s₂ • (((IsLocalization.map_units B s₂).unit⁻¹ : Bˣ) • z) = z := by
+    simpa [Units.smul_def] using smul_inv_smul (IsLocalization.map_units B s₂).unit z
+  rw [h₁, smul_comm (algebraMap A B s₂) (algebraMap A B s₁), h₂]
   exact hcross
 
 private def extendSuccFun (S : Submonoid A) (B : Type*) [CommRing B]
@@ -233,8 +226,8 @@ private theorem smul_extendSuccFun (S : Submonoid A) (B : Type*) [CommRing B]
     {y : M_S} {x : M} {s : S} (hs : s • y = fM x) :
     algebraMap A B s • extendSuccFun S B fM D C y = D x - C s y := by
   dsimp only [extendSuccFun]
-  rw [extendSuccFun_wellDefined S B fM hC_mem hC_f (IsLocalizedModule.surj S fM y).choose_spec hs,
-    algebraMap_smul_map_units_inv_smul]
+  rw [extendSuccFun_wellDefined S B fM hC_mem hC_f (IsLocalizedModule.surj S fM y).choose_spec hs]
+  simpa [Units.smul_def] using smul_inv_smul (IsLocalization.map_units B s).unit (D x - C s y)
 
 private def extendSuccLinearMap (S : Submonoid A) (B : Type*) [CommRing B]
     [Algebra A B] [Algebra R B] [IsScalarTower R A B] [IsLocalization S B]
@@ -353,7 +346,12 @@ private theorem extendSuccLinearMap_mem_differentialOperators (S : Submonoid A) 
       (((IsLocalization.map_units B t).unit⁻¹ : Bˣ) : B) •
         (algebraMap A B t • smulCommutator R b E) ∈ differentialOperators R B M_S N m :=
     smul_mem_differentialOperators _ hsub
-  rwa [map_units_inv_smul_algebraMap_smul] at hinv
+  have hcancel :
+      (((IsLocalization.map_units B t).unit⁻¹ : Bˣ) : B) •
+        (algebraMap A B t • smulCommutator R b E) = smulCommutator R b E := by
+    simpa [Units.smul_def] using
+      inv_smul_smul (IsLocalization.map_units B t).unit (smulCommutator R b E)
+  rwa [hcancel] at hinv
 
 private def extendAux (S : Submonoid A) (B : Type*) [CommRing B]
     [Algebra A B] [Algebra R B] [IsScalarTower R A B] [IsLocalization S B]
@@ -371,11 +369,13 @@ private def extendAux (S : Submonoid A) (B : Type*) [CommRing B]
       fun x ↦ by simp [g]⟩
   | m + 1, D =>
     let c := fun a : A ↦
-      extendAux S B fM ⟨smulCommutator R a D.1, (mem_differentialOperators_succ_iff.1 D.2) a⟩
-    ⟨⟨extendSuccLinearMap S B fM D.1 (fun a ↦ (c a).1.1) (fun a ↦ (c a).1.2)
-        (fun a ↦ (c a).2),
-      extendSuccLinearMap_mem_differentialOperators S B fM (fun a ↦ (c a).1.2) (fun a ↦ (c a).2)⟩,
-      extendSuccLinearMap_apply_f S B fM (fun a ↦ (c a).1.2) (fun a ↦ (c a).2)⟩
+      extendAux S B fM
+        ⟨smulCommutator R a D.val, (mem_differentialOperators_succ_iff.1 D.property) a⟩
+    ⟨⟨extendSuccLinearMap S B fM D.val (fun a ↦ (c a).val.val) (fun a ↦ (c a).val.property)
+        (fun a ↦ (c a).property),
+      extendSuccLinearMap_mem_differentialOperators S B fM
+        (fun a ↦ (c a).val.property) (fun a ↦ (c a).property)⟩,
+      extendSuccLinearMap_apply_f S B fM (fun a ↦ (c a).val.property) (fun a ↦ (c a).property)⟩
 
 /-- Every differential operator `D : differentialOperators R A M N m` into a `B`-module `N` extends
 uniquely along a module localization `fM : M →ₗ[A] M_S` to `differentialOperators R B M_S N m`. -/
@@ -386,7 +386,7 @@ def extendOfIsLocalization (S : Submonoid A) (B : Type*) [CommRing B]
     (fM : M →ₗ[A] M_S) [IsLocalizedModule S fM] {m : ℕ}
     (D : differentialOperators R A M N m) :
     differentialOperators R B M_S N m :=
-  (extendAux S B fM D).1
+  (extendAux S B fM D).val
 
 @[simp]
 theorem extendOfIsLocalization_apply (S : Submonoid A) (B : Type*) [CommRing B]
@@ -396,7 +396,7 @@ theorem extendOfIsLocalization_apply (S : Submonoid A) (B : Type*) [CommRing B]
     (fM : M →ₗ[A] M_S) [IsLocalizedModule S fM] {m : ℕ}
     (D : differentialOperators R A M N m) (x : M) :
     (extendOfIsLocalization S B fM D : M_S →ₗ[R] N) (fM x) = (D : M →ₗ[R] N) x :=
-  (extendAux S B fM D).2 x
+  (extendAux S B fM D).property x
 
 /-- Uniqueness characterization of `extendOfIsLocalization`. -/
 theorem eq_extendOfIsLocalization (S : Submonoid A) (B : Type*) [CommRing B]
@@ -407,8 +407,8 @@ theorem eq_extendOfIsLocalization (S : Submonoid A) (B : Type*) [CommRing B]
     {D : differentialOperators R A M N m} {E : differentialOperators R B M_S N m}
     (hE : ∀ x : M, (E : M_S →ₗ[R] N) (fM x) = (D : M →ₗ[R] N) x) :
     E = extendOfIsLocalization S B fM D :=
-  Subtype.ext <| IsLocalizedModule.eq_of_mem_differentialOperators S fM E.2
-    (extendOfIsLocalization S B fM D).2 fun x ↦
+  Subtype.ext <| IsLocalizedModule.eq_of_mem_differentialOperators S fM E.property
+    (extendOfIsLocalization S B fM D).property fun x ↦
       (hE x).trans (extendOfIsLocalization_apply S B fM D x).symm
 
 @[simp]
@@ -483,7 +483,7 @@ theorem coe_extendOfIsLocalization_derivation (S : Submonoid A) (B : Type*) [Com
   refine IsLocalizedModule.eq_of_mem_differentialOperators S (Algebra.linearMap A B)
     (D.extendOfIsLocalization S (T := B)).mem_differentialOperators_one
     (extendOfIsLocalization S B (Algebra.linearMap A B)
-      ⟨D.toLinearMap, D.mem_differentialOperators_one⟩).2 fun a ↦ ?_
+      ⟨D.toLinearMap, D.mem_differentialOperators_one⟩).property fun a ↦ ?_
   rw [extendOfIsLocalization_apply]
   simp
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.IndexTwo
 
@@ -96,7 +96,7 @@ the restricted homomorphism `y|_U`, in explicit `H¹(U, 𝔽₂)`. -/
 theorem explicitRes1_evensHomCocycle (U : Subgroup G) (y : G →* Multiplicative (ZMod 2))
     (hy : Continuous y) :
     explicitRes1 G (trivialF2 G).V U (evensHomCocycle y hy : H1 G (trivialF2 G).V) =
-      (evensHomCocycleAmbient U (y.comp U.subtype) (hy.comp continuous_subtype_val) :
+      (evensHomCocycleAmbient U (y.comp U.subtype) (hy.comp continuous_subtypeVal) :
         H1 U (trivialF2 G).V) := by
   rw [explicitRes1_mk]
   exact congrArg (fun z : Z1 U (trivialF2 G).V => (z : H1 U (trivialF2 G).V))
@@ -114,7 +114,7 @@ of `y|_U` is `[y] ⌣ [y] + [χ_U] ⌣ [y]` in explicit `H²(G, 𝔽₂)`, with 
 and `⌣` the `(1,1)` cup product for the multiplication pairing of `𝔽₂`. -/
 theorem evensGraphCocycle_comp_subtype (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
     {s : G} (hs : s ∉ U) (y : G →* Multiplicative (ZMod 2)) (hy : Continuous y) :
-    (evensGraphCocycle U s (y.comp U.toSubgroup.subtype) hU hs (hy.comp continuous_subtype_val) :
+    (evensGraphCocycle U s (y.comp U.toSubgroup.subtype) hU hs (hy.comp continuous_subtypeVal) :
         H2 G (trivialF2 G).V) =
       explicitCup11 G (trivialF2 G).V (trivialF2 G).V (trivialF2 G).V (trivialF2Pairing G)
           continuous_of_discreteTopology (trivialF2Pairing_smul_smul G)
@@ -144,7 +144,7 @@ restriction of `[y]` by `TauCeti.ContCohomology.explicitRes1_evensHomCocycle`, i
 `(1,1)` cup product for the multiplication pairing of `𝔽₂`. -/
 theorem explicitGraphClass_comp_subtype (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
     (y : G →* Multiplicative (ZMod 2)) (hy : Continuous y) :
-    explicitGraphClass U hU (y.comp U.toSubgroup.subtype) (hy.comp continuous_subtype_val) =
+    explicitGraphClass U hU (y.comp U.toSubgroup.subtype) (hy.comp continuous_subtypeVal) =
       explicitCup11 G (trivialF2 G).V (trivialF2 G).V (trivialF2 G).V (trivialF2Pairing G)
           continuous_of_discreteTopology (trivialF2Pairing_smul_smul G)
           (evensHomCocycle y hy : H1 G (trivialF2 G).V)

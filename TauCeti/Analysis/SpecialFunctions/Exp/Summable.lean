@@ -36,7 +36,7 @@ theorem summable_exp_neg_two_pi_mul_abs_sub_one :
       (Real.exp_lt_one_iff.mpr (by linarith [Real.pi_pos]))).mul_left _
   have hexp (n : ℕ) : Real.exp (-2 * π * (|((n : ℤ) : ℝ)| - 1)) =
       Real.exp (2 * π) * Real.exp (-2 * π) ^ n := by
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_natCast_mul, ← Real.exp_add]
     congr 1
     push_cast
     rw [abs_of_nonneg (Nat.cast_nonneg n)]
