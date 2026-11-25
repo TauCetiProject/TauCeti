@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Normed.Field.CompletedAlgClosure.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.AlgEquiv
 public import TauCeti.Topology.Algebra.UniformRing
 
-import Mathlib.FieldTheory.KrullTopology
+import TauCeti.FieldTheory.KrullTopology
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 import Mathlib.Topology.MetricSpace.Completion
 
@@ -29,19 +29,20 @@ automorphism `σ_C` of `C`. This file proves that `σ ↦ σ_C` identifies `G_K`
 
 * `TauCeti.SpectralAlgClosure.absoluteGaloisGroupEquiv K`: `G_K` as the `K`-algebra automorphisms
   of `K^alg`, transported along `SpectralAlgClosure.algEquiv K`.
-* `TauCeti.CompletedAlgClosure.galoisExtension σ`: the extension `σ_C : C ≃A[K] C` of `σ ∈ G_K`.
+* `Field.absoluteGaloisGroup.toContinuousAlgEquiv σ`: the extension `σ_C : C ≃A[K] C` of
+  `σ ∈ G_K`.
 
 ## Main results
 
-* `TauCeti.CompletedAlgClosure.galoisExtension_coe`: `σ_C` extends `σ`.
-* `TauCeti.CompletedAlgClosure.eq_galoisExtension_of_continuous`: `σ_C` is the unique continuous
-  map `C → C` extending `σ`.
-* `TauCeti.CompletedAlgClosure.galoisExtension_mul`, `galoisExtension_one`,
-  `galoisExtension_symm`: `(στ)_C = σ_C ∘ τ_C`, `1_C = id` and `(σ_C)⁻¹ = (σ⁻¹)_C`.
-* `TauCeti.CompletedAlgClosure.isometry_galoisExtension`: `σ_C` is an isometry.
-* `TauCeti.CompletedAlgClosure.exists_galoisExtension_eq`: every continuous `K`-algebra
-  endomorphism of `C` is some `σ_C`.
-* `TauCeti.CompletedAlgClosure.continuous_galoisExtension_apply`: `(σ, x) ↦ σ_C x` is jointly
+* `Field.absoluteGaloisGroup.toContinuousAlgEquiv_coe`: `σ_C` extends `σ`.
+* `Field.absoluteGaloisGroup.eq_toContinuousAlgEquiv_of_continuous`: `σ_C` is the unique
+  continuous map `C → C` extending `σ`.
+* `Field.absoluteGaloisGroup.toContinuousAlgEquiv_mul`, `toContinuousAlgEquiv_one`,
+  `toContinuousAlgEquiv_symm`: `(στ)_C = σ_C ∘ τ_C`, `1_C = id` and `(σ_C)⁻¹ = (σ⁻¹)_C`.
+* `Field.absoluteGaloisGroup.isometry_toContinuousAlgEquiv`: `σ_C` is an isometry.
+* `ContinuousAlgHom.exists_eq_absoluteGaloisGroup_toContinuousAlgEquiv`: every continuous
+  `K`-algebra endomorphism of `C` is some `σ_C`.
+* `Field.absoluteGaloisGroup.continuous_toContinuousAlgEquiv_apply`: `(σ, x) ↦ σ_C x` is jointly
   continuous.
 * `TauCeti.CompletedAlgClosure.exists_galois_continuousAut_equiv`: `G_K ≅ Aut_cont(C/K)`: the
   map `σ ↦ σ_C` extends `σ`, respects composition, is bijective, and the action of `G_K` on `C`
@@ -99,157 +100,151 @@ theorem SpectralAlgClosure.continuous_absoluteGaloisGroupEquiv (K : Type u) [Fie
   -- first factor `Field.absoluteGaloisGroup.toAlgEquiv` is the identity.
   continuous_autCongr_algEquiv K
 
+end TauCeti
+
+namespace Field.absoluteGaloisGroup
+
+open TauCeti UniformSpace SpectralAlgClosure
+
 variable {K : Type u} [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
-/-- A `K`-algebra automorphism of `K^alg` is an isometry for the spectral norm. -/
-theorem SpectralAlgClosure.isometry_algEquiv
-    (σ : SpectralAlgClosure K ≃ₐ[K] SpectralAlgClosure K) : Isometry σ :=
-  (σ : SpectralAlgClosure K →ₐ[K] SpectralAlgClosure K).isometry
-
-namespace CompletedAlgClosure
-
-open UniformSpace SpectralAlgClosure
-
 /-- The extension `σ_C : C ≃A[K] C` of an element `σ` of the absolute Galois group of `K` to the
-completed algebraic closure: the completion of `σ`, an isometry of `K^alg`. -/
-def galoisExtension (σ : Field.absoluteGaloisGroup K) :
+completed algebraic closure `C = CompletedAlgClosure K`: the completion of `σ`, which is an
+isometry of `K^alg` (`AlgHom.isometry`). -/
+def toContinuousAlgEquiv (σ : Field.absoluteGaloisGroup K) :
     CompletedAlgClosure K ≃A[K] CompletedAlgClosure K where
   toAlgEquiv := Completion.mapAlgEquiv (absoluteGaloisGroupEquiv K σ)
-    (isometry_algEquiv (absoluteGaloisGroupEquiv K σ)).continuous
-    (isometry_algEquiv (absoluteGaloisGroupEquiv K σ).symm).continuous
+    (absoluteGaloisGroupEquiv K σ).toAlgHom.isometry.continuous
+    (absoluteGaloisGroupEquiv K σ).symm.toAlgHom.isometry.continuous
   continuous_toFun := Completion.continuous_mapAlgEquiv _ _ _
   continuous_invFun := Completion.continuous_mapAlgEquiv_symm _ _ _
 
 /-- `σ_C` is the completion of `σ`. -/
-theorem galoisExtension_apply (σ : Field.absoluteGaloisGroup K) (x : CompletedAlgClosure K) :
-    galoisExtension σ x =
-      Completion.map (absoluteGaloisGroupEquiv K σ) x :=
+theorem toContinuousAlgEquiv_apply (σ : Field.absoluteGaloisGroup K)
+    (x : CompletedAlgClosure K) :
+    σ.toContinuousAlgEquiv x = Completion.map (absoluteGaloisGroupEquiv K σ) x :=
   Completion.mapAlgEquiv_apply (absoluteGaloisGroupEquiv K σ) _ _ x
 
 /-- `σ_C` extends `σ`. -/
 @[simp]
-theorem galoisExtension_coe (σ : Field.absoluteGaloisGroup K) (x : SpectralAlgClosure K) :
-    galoisExtension σ x =
-      ((absoluteGaloisGroupEquiv K σ) x : CompletedAlgClosure K) :=
+theorem toContinuousAlgEquiv_coe (σ : Field.absoluteGaloisGroup K) (x : SpectralAlgClosure K) :
+    σ.toContinuousAlgEquiv x = ((absoluteGaloisGroupEquiv K σ) x : CompletedAlgClosure K) :=
   Completion.mapAlgEquiv_coe (absoluteGaloisGroupEquiv K σ) _ _ x
 
 /-- **Uniqueness of the extension**: a continuous map `C → C` extending `σ` is `σ_C`. -/
-theorem eq_galoisExtension_of_continuous (σ : Field.absoluteGaloisGroup K)
+theorem eq_toContinuousAlgEquiv_of_continuous (σ : Field.absoluteGaloisGroup K)
     {f : CompletedAlgClosure K → CompletedAlgClosure K} (hf : Continuous f)
     (h : ∀ x : SpectralAlgClosure K,
       f x = ((absoluteGaloisGroupEquiv K σ) x : CompletedAlgClosure K)) :
-    f = galoisExtension σ :=
-  Completion.ext hf (galoisExtension σ).continuous fun x ↦ by rw [h, galoisExtension_coe]
+    f = σ.toContinuousAlgEquiv :=
+  Completion.ext hf σ.toContinuousAlgEquiv.continuous fun x ↦ by
+    rw [h, toContinuousAlgEquiv_coe]
 
 /-- `σ ↦ σ_C` is compatible with composition: `(στ)_C = σ_C ∘ τ_C`. -/
-theorem galoisExtension_mul (σ τ : Field.absoluteGaloisGroup K) :
-    galoisExtension (σ * τ) = (galoisExtension τ).trans (galoisExtension σ) := by
+theorem toContinuousAlgEquiv_mul (σ τ : Field.absoluteGaloisGroup K) :
+    (σ * τ).toContinuousAlgEquiv = τ.toContinuousAlgEquiv.trans σ.toContinuousAlgEquiv := by
   have h : absoluteGaloisGroupEquiv K (σ * τ) =
       (absoluteGaloisGroupEquiv K τ).trans (absoluteGaloisGroupEquiv K σ) := map_mul _ σ τ
   refine ContinuousAlgEquiv.toAlgEquiv_injective ?_
   rw [ContinuousAlgEquiv.trans_toAlgEquiv]
-  simp only [galoisExtension, h]
+  simp only [toContinuousAlgEquiv, h]
   exact Completion.mapAlgEquiv_trans _ _ _ _ _ _
 
 /-- `(στ)_C x = σ_C (τ_C x)`. -/
 @[simp]
-theorem galoisExtension_mul_apply (σ τ : Field.absoluteGaloisGroup K)
+theorem toContinuousAlgEquiv_mul_apply (σ τ : Field.absoluteGaloisGroup K)
     (x : CompletedAlgClosure K) :
-    galoisExtension (σ * τ) x = galoisExtension σ (galoisExtension τ x) := by
-  rw [galoisExtension_mul, ContinuousAlgEquiv.trans_apply]
+    (σ * τ).toContinuousAlgEquiv x = σ.toContinuousAlgEquiv (τ.toContinuousAlgEquiv x) := by
+  rw [toContinuousAlgEquiv_mul, ContinuousAlgEquiv.trans_apply]
 
 /-- The extension of the identity is the identity. -/
 @[simp]
-theorem galoisExtension_one :
-    galoisExtension (1 : Field.absoluteGaloisGroup K) =
+theorem toContinuousAlgEquiv_one :
+    (1 : Field.absoluteGaloisGroup K).toContinuousAlgEquiv =
       ContinuousAlgEquiv.refl K (CompletedAlgClosure K) := by
   have h : absoluteGaloisGroupEquiv K 1 = AlgEquiv.refl := map_one _
   refine ContinuousAlgEquiv.toAlgEquiv_injective (?_ : _ = AlgEquiv.refl)
-  simp only [galoisExtension, h]
+  simp only [toContinuousAlgEquiv, h]
   exact Completion.mapAlgEquiv_refl
 
 /-- The inverse of `σ_C` is the extension of `σ⁻¹`. -/
 @[simp]
-theorem galoisExtension_symm (σ : Field.absoluteGaloisGroup K) :
-    (galoisExtension σ).symm = galoisExtension σ⁻¹ :=
+theorem toContinuousAlgEquiv_symm (σ : Field.absoluteGaloisGroup K) :
+    σ.toContinuousAlgEquiv.symm = σ⁻¹.toContinuousAlgEquiv :=
   ContinuousAlgEquiv.ext <| funext fun x ↦ by
-    rw [ContinuousAlgEquiv.symm_apply_eq, ← galoisExtension_mul_apply, mul_inv_cancel,
-      galoisExtension_one, ContinuousAlgEquiv.refl_apply]
+    rw [ContinuousAlgEquiv.symm_apply_eq, ← toContinuousAlgEquiv_mul_apply, mul_inv_cancel,
+      toContinuousAlgEquiv_one, ContinuousAlgEquiv.refl_apply]
 
 /-- `(σ_C)⁻¹ x = (σ⁻¹)_C x`. -/
-theorem galoisExtension_symm_apply (σ : Field.absoluteGaloisGroup K) (x : CompletedAlgClosure K) :
-    (galoisExtension σ).symm x = galoisExtension σ⁻¹ x := by
-  rw [galoisExtension_symm]
+theorem toContinuousAlgEquiv_symm_apply (σ : Field.absoluteGaloisGroup K)
+    (x : CompletedAlgClosure K) :
+    σ.toContinuousAlgEquiv.symm x = σ⁻¹.toContinuousAlgEquiv x := by
+  rw [toContinuousAlgEquiv_symm]
 
 /-- `σ_C` is an isometry. -/
-theorem isometry_galoisExtension (σ : Field.absoluteGaloisGroup K) :
-    Isometry (galoisExtension σ) := by
-  rw [show ⇑(galoisExtension σ) = _ from funext (galoisExtension_apply σ)]
-  exact (isometry_algEquiv (absoluteGaloisGroupEquiv K σ)).completion_map
+theorem isometry_toContinuousAlgEquiv (σ : Field.absoluteGaloisGroup K) :
+    Isometry σ.toContinuousAlgEquiv := by
+  rw [show ⇑σ.toContinuousAlgEquiv = _ from funext (toContinuousAlgEquiv_apply σ)]
+  exact (absoluteGaloisGroupEquiv K σ).toAlgHom.isometry.completion_map
 
 /-- `σ_C` preserves the norm. -/
 @[simp]
-theorem norm_galoisExtension (σ : Field.absoluteGaloisGroup K) (x : CompletedAlgClosure K) :
-    ‖galoisExtension σ x‖ = ‖x‖ := by
-  simpa using (isometry_galoisExtension σ).norm_map_of_map_zero (map_zero _) x
+theorem norm_toContinuousAlgEquiv (σ : Field.absoluteGaloisGroup K) (x : CompletedAlgClosure K) :
+    ‖σ.toContinuousAlgEquiv x‖ = ‖x‖ := by
+  simpa using (isometry_toContinuousAlgEquiv σ).norm_map_of_map_zero (map_zero _) x
 
 /-- `σ ↦ σ_C` is injective: `σ_C` restricts to `σ` on `K^alg`. -/
-theorem galoisExtension_injective :
-    Function.Injective (galoisExtension (K := K)) := fun σ τ h ↦
+theorem toContinuousAlgEquiv_injective :
+    Function.Injective (toContinuousAlgEquiv (K := K)) := fun σ τ h ↦
   (absoluteGaloisGroupEquiv K).injective <| AlgEquiv.ext fun x : SpectralAlgClosure K ↦
     Completion.coe_injective _ <| by simpa using congr($h (x : CompletedAlgClosure K))
 
 /-- **Every continuous `K`-algebra endomorphism of `C` is some `σ_C`.** -/
-theorem exists_galoisExtension_eq (τ : CompletedAlgClosure K →A[K] CompletedAlgClosure K) :
-    ∃ σ : Field.absoluteGaloisGroup K, ⇑τ = galoisExtension σ :=
+theorem _root_.ContinuousAlgHom.exists_eq_absoluteGaloisGroup_toContinuousAlgEquiv
+    (τ : CompletedAlgClosure K →A[K] CompletedAlgClosure K) :
+    ∃ σ : Field.absoluteGaloisGroup K, ⇑τ = σ.toContinuousAlgEquiv :=
   -- `τ` preserves the normal subextension `K^alg` of `C / K`; its restriction is `σ`.
   ⟨(absoluteGaloisGroupEquiv K).symm
       ((τ : CompletedAlgClosure K →ₐ[K] CompletedAlgClosure K).restrictNormal'
         (SpectralAlgClosure K)),
-    eq_galoisExtension_of_continuous _ τ.continuous fun a ↦ by
+    eq_toContinuousAlgEquiv_of_continuous _ τ.continuous fun a ↦ by
       rw [MulEquiv.apply_symm_apply]
       exact ((τ : CompletedAlgClosure K →ₐ[K] CompletedAlgClosure K).restrictNormal_commutes
         (SpectralAlgClosure K) a).symm⟩
 
 /-- Every continuous `K`-algebra automorphism of `C` is some `σ_C`. -/
-theorem galoisExtension_surjective (τ : CompletedAlgClosure K ≃A[K] CompletedAlgClosure K) :
-    ∃ σ : Field.absoluteGaloisGroup K, galoisExtension σ = τ :=
-  (exists_galoisExtension_eq (τ : CompletedAlgClosure K →A[K] CompletedAlgClosure K)).imp
+theorem toContinuousAlgEquiv_surjective :
+    Function.Surjective (toContinuousAlgEquiv (K := K)) := fun τ ↦
+  (ContinuousAlgHom.exists_eq_absoluteGaloisGroup_toContinuousAlgEquiv
+    (τ : CompletedAlgClosure K →A[K] CompletedAlgClosure K)).imp
     fun _ h ↦ ContinuousAlgEquiv.ext h.symm
 
 /-- `σ ↦ σ_C` is a bijection from `G_K` onto the continuous `K`-algebra automorphisms of `C`. -/
-theorem galoisExtension_bijective : Function.Bijective (galoisExtension (K := K)) :=
-  ⟨galoisExtension_injective, galoisExtension_surjective⟩
+theorem toContinuousAlgEquiv_bijective :
+    Function.Bijective (toContinuousAlgEquiv (K := K)) :=
+  ⟨toContinuousAlgEquiv_injective, toContinuousAlgEquiv_surjective⟩
 
 /-- **Joint continuity**: the action map `G_K × C → C`, `(σ, x) ↦ σ_C x`, is continuous for the
-Krull topology. -/
-theorem continuous_galoisExtension_apply :
+Krull topology. Each `σ_C` is an isometry, and on the dense subset `K^alg` the orbit maps are
+locally constant (`IsIntegral.isLocallyConstant_apply`). -/
+theorem continuous_toContinuousAlgEquiv_apply :
     Continuous fun p : Field.absoluteGaloisGroup K × CompletedAlgClosure K ↦
-      galoisExtension p.1 p.2 := by
-  refine continuous_iff_continuousAt.2 fun ⟨σ₀, x⟩ ↦ Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  obtain ⟨a, ha⟩ := Completion.denseRange_coe.exists_dist_lt x (by positivity : 0 < ε / 3)
-  have hS : IsOpen (absoluteGaloisGroupEquiv K ⁻¹'
-      (MulAction.stabilizer (SpectralAlgClosure K ≃ₐ[K] SpectralAlgClosure K) a : Set _)) :=
-    (continuous_absoluteGaloisGroupEquiv K).isOpen_preimage _
-      (stabilizer_isOpen_of_isIntegral (K := K) a)
-  have hU := hS.preimage
-    (continuous_const.mul continuous_id : Continuous fun σ : Field.absoluteGaloisGroup K ↦ σ₀⁻¹ * σ)
-  filter_upwards [prod_mem_nhds (hU.mem_nhds (by simp)) (Metric.ball_mem_nhds x
-    (by positivity : 0 < ε / 3))] with ⟨σ, y⟩ ⟨hσ, hy⟩
-  have hσa : (absoluteGaloisGroupEquiv K σ) a = (absoluteGaloisGroupEquiv K σ₀) a := by
-    simpa [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, AlgEquiv.aut_mul,
-      AlgEquiv.symm_apply_eq] using hσ
-  have h1 : dist (galoisExtension σ y) (galoisExtension σ a) < 2 * (ε / 3) := by
-    rw [(isometry_galoisExtension σ).dist_eq]
-    linarith [dist_triangle y x a, Metric.mem_ball.1 hy]
-  have h2 : galoisExtension σ a = galoisExtension σ₀ a := by
-    simp only [galoisExtension_coe, hσa]
-  have h3 : dist (galoisExtension σ₀ a) (galoisExtension σ₀ x) < ε / 3 := by
-    rwa [(isometry_galoisExtension σ₀).dist_eq, dist_comm]
-  calc dist (galoisExtension σ y) (galoisExtension σ₀ x)
-      ≤ dist (galoisExtension σ y) (galoisExtension σ a) +
-        dist (galoisExtension σ₀ a) (galoisExtension σ₀ x) := h2 ▸ dist_triangle _ _ _
-    _ < ε := by linarith
+      p.1.toContinuousAlgEquiv p.2 := by
+  refine continuous_prod_of_dense_continuous_lipschitzWith' _ 1 Completion.denseRange_coe
+    (fun σ ↦ (isometry_toContinuousAlgEquiv σ).lipschitzWith) ?_
+  rintro _ ⟨a, rfl⟩
+  simp only [toContinuousAlgEquiv_coe]
+  exact (Completion.continuous_coe _).comp <|
+    (Algebra.IsIntegral.isIntegral (R := K) a).isLocallyConstant_apply.continuous.comp
+      (continuous_absoluteGaloisGroupEquiv K)
+
+end Field.absoluteGaloisGroup
+
+namespace TauCeti.CompletedAlgClosure
+
+open Field.absoluteGaloisGroup
+
+variable {K : Type u} [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
 /-- **`G_K ≅ Aut_cont(C/K)`** (de Jong–van der Put, §3.6). Let `K` be a field complete for a
 nontrivial ultrametric absolute value, of any characteristic. The map `σ ↦ σ_C` from the absolute
@@ -266,14 +261,12 @@ theorem exists_galois_continuousAut_equiv :
         e (σ * τ) x = e σ (e τ x)) ∧
       Function.Bijective e ∧
       Continuous (fun p : Field.absoluteGaloisGroup K × CompletedAlgClosure K ↦ e p.1 p.2) :=
-  ⟨galoisExtension, fun σ x ↦ by
-      rw [Completion.algebraMap_def, Algebra.algebraMap_self_apply, galoisExtension_coe,
-        absoluteGaloisGroupEquiv_apply_eq_toAlgHom]
+  ⟨toContinuousAlgEquiv, fun σ x ↦ by
+      rw [UniformSpace.Completion.algebraMap_def, Algebra.algebraMap_self_apply,
+        toContinuousAlgEquiv_coe, SpectralAlgClosure.absoluteGaloisGroupEquiv_apply_eq_toAlgHom]
       -- The right side is the coercion `K^alg → C` of `σ x`.
       rfl,
-    galoisExtension_mul_apply,
-    galoisExtension_bijective, continuous_galoisExtension_apply⟩
+    toContinuousAlgEquiv_mul_apply,
+    toContinuousAlgEquiv_bijective, continuous_toContinuousAlgEquiv_apply⟩
 
-end CompletedAlgClosure
-
-end TauCeti
+end TauCeti.CompletedAlgClosure
