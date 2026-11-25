@@ -13,8 +13,8 @@ public import Mathlib.Algebra.Module.Rat
 
 Mathlib records that the iterates `f^[n]` of an additive map preserve zero, addition, negation
 and integer multiples (`iterate_map_zero`, `iterate_map_add`, ...). This file adds finite sums
-and rational scalar multiplication, telescoping products and sums of iterates, and the fact that
-once an iterate kills a vector, every later iterate kills it too.
+and rational scalar multiplication, and the fact that once an iterate kills a vector, every
+later iterate kills it too.
 
 ## Main results
 
@@ -28,16 +28,6 @@ once an iterate kills a vector, every later iterate kills it too.
 public section
 
 namespace TauCeti
-
-/-- The quotient of the image of the product of the first `n` iterates by that product
-is the quotient of the last iterate by the initial value. -/
-@[to_additive /-- Applying an additive endomorphism to the sum of the first `n` iterates
-and subtracting that sum gives the last iterate minus the initial value. -/]
-theorem map_prod_iterate_div {F M : Type*} [CommGroup M] [FunLike F M M] [MonoidHomClass F M M]
-    (f : F) (n : ℕ) (x : M) :
-    f (∏ i ∈ Finset.range n, f^[i] x) / ∏ i ∈ Finset.range n, f^[i] x = f^[n] x / x := by
-  simp only [map_prod, ← Finset.prod_div_distrib, ← Function.iterate_succ_apply']
-  exact Finset.prod_range_div (fun i ↦ f^[i] x) n
 
 variable {F M : Type*} [FunLike F M M]
 

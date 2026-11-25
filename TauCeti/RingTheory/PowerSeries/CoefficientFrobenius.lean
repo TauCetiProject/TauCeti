@@ -32,7 +32,7 @@ namespace TauCeti.PowerSeries
 
 /-- A finite sum of coefficientwise ring endomorphisms with power-series multipliers is
 surjective if its reduction on constant coefficients is surjective. -/
-theorem surjective_sum_mul_map_of_surjective_constantCoeff {R ι : Type*} [CommRing R]
+theorem surjective_sum_mul_map_of_surjective_constantCoeff {R ι : Type*} [Ring R]
     (s : Finset ι) (a : ι → R⟦X⟧) (τ : ι → R →+* R)
     (hlead : Surjective (fun x => ∑ i ∈ s, PowerSeries.constantCoeff (a i) * τ i x)) :
     Surjective (fun x => ∑ i ∈ s, a i * PowerSeries.map (τ i) x) := by
@@ -59,8 +59,9 @@ theorem surjective_sum_mul_map_of_surjective_constantCoeff {R ι : Type*} [CommR
       PowerSeries.coeff n (a i * PowerSeries.map (τ i) (PowerSeries.mk c)) =
         (∑ j ∈ range n, PowerSeries.coeff (n - j) (a i) * τ i (c j)) +
           PowerSeries.constantCoeff (a i) * τ i (c n) := by
-    rw [mul_comm, PowerSeries.coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_range_succ]
-    simp [PowerSeries.coeff_zero_eq_constantCoeff, mul_comm]
+    rw [PowerSeries.coeff_mul, ← Nat.sum_antidiagonal_swap,
+      Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_range_succ]
+    simp [PowerSeries.coeff_zero_eq_constantCoeff]
   simp only [map_sum, hmul, sum_add_distrib, hc, lower]
   abel
 

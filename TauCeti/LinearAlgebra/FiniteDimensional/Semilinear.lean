@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
-import TauCeti.Algebra.Module.LinearMap.Iterate
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!

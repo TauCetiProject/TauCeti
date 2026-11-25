@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.GroupTheory.FixedPointFree
-import TauCeti.Algebra.Module.LinearMap.Iterate
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # Surjective Lang maps and fixed lifts
