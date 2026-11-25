@@ -23,22 +23,25 @@ public section
 
 open Set SymbolicDynamics.FullShift
 
-namespace TauCeti.Subshift
+namespace SymbolicDynamics.FullShift
 
-variable {Γ S : Type*} [Group Γ]
-
-/-- Mathlib's shift by `g` is precomposition with the action of `g` on `Γ` by left
+/-- Mathlib's shift by `g` is precomposition with the action of `g` on `G` by left
 multiplication: `mulShift g ω = fun i => ω (g • i)`. -/
-theorem mulShift_eq_fun_smul (g : Γ) (ω : Γ → S) : mulShift g ω = fun i => ω (g • i) :=
+theorem mulShift_eq_fun_smul {G S : Type*} [Monoid G] (g : G) (ω : G → S) :
+    mulShift g ω = fun i => ω (g • i) :=
   (rfl)
 
-variable [TopologicalSpace S]
+end SymbolicDynamics.FullShift
+
+namespace TauCeti.Subshift
+
+variable {Γ S : Type*} [Group Γ] [TopologicalSpace S]
 
 /-- For `Γ` acting on itself by left multiplication, the action on a subshift is Mathlib's shift
 by the inverse: `g • ω = mulShift g⁻¹ ω`. -/
 theorem coe_smul_eq_mulShift {X : Subshift Γ Γ S} (g : Γ) (ω : X) :
     ((g • ω : X) : Γ → S) = mulShift g⁻¹ (ω : Γ → S) :=
-  (mulShift_eq_fun_smul g⁻¹ (ω : Γ → S)).symm
+  (coe_smul g ω).trans (mulShift_eq_fun_smul g⁻¹ (ω : Γ → S)).symm
 
 /-- A subshift of `Γ` acting on itself as one of Mathlib's subshifts: the carrier is invariant
 under every `mulShift g`, which is the action of `g⁻¹`. -/
@@ -67,6 +70,12 @@ theorem toMulSubshift_carrier (X : Subshift Γ Γ S) :
 theorem mem_ofMulSubshift {Y : MulSubshift S Γ} {ω : Γ → S} :
     ω ∈ ofMulSubshift Y ↔ ω ∈ Y.carrier :=
   Iff.rfl
+
+/-- The set of configurations of the subshift attached to a Mathlib subshift. -/
+@[simp]
+theorem coe_ofMulSubshift (Y : MulSubshift S Γ) :
+    ((ofMulSubshift Y : Subshift Γ Γ S) : Set (Γ → S)) = Y.carrier :=
+  (rfl)
 
 /-- Going to Mathlib's subshifts and back gives the original subshift. -/
 @[simp]
