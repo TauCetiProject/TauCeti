@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 public import TauCeti.Topology.Algebra.Module.Spaces.CompactConvergenceCLM
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 

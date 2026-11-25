@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Density.OpenSubset
 public import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 
 /-!
 # Restriction of native bundle distributions

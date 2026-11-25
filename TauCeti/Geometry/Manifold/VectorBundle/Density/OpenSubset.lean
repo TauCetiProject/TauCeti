@@ -300,7 +300,7 @@ theorem contMDiff_openHomFromPullback :
   exact (hq ((openHomEquiv q.proj).symm q.snd)).symm.trans (by rfl)
 
 /-- Intrinsic real bundle-dual densities are diffeomorphic to the ambient pullback. -/
-def openHomDiffeomorph :
+@[expose] def openHomDiffeomorph :
     let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     TotalSpace (F →L[ℝ] ℝ) ((fun x : U ↦ (c *ᵖ V) x →L[ℝ] TauCeti.DensityBundle I U x))
       ≃ₘ^∞⟮I.prod 𝓘(ℝ, F →L[ℝ] ℝ), I.prod 𝓘(ℝ, F →L[ℝ] ℝ)⟯
@@ -324,16 +324,13 @@ theorem openHomDiffeomorph_proj
     (openHomDiffeomorph (I := I) (F := F) (V := V) p).proj = p.proj) := by rfl
 
 omit [ContMDiffVectorBundle ∞ F V I] in
-/-- The dual-density diffeomorphism acts by the native fibre comparison after transport along
-its public base-point identity. The cast keeps the dependent bundle fibre explicit. -/
+/-- The dual-density diffeomorphism acts by the native fibre comparison. -/
 @[simp]
 theorem openHomDiffeomorph_snd
     (p : TotalSpace (F →L[ℝ] ℝ) (localCoefficients (I := I) (V := V) (U := U))) :
     dsimp% only [ContinuousMap.coe_mk] (
-    cast (congrArg (pulledAmbientCoefficients (I := I) (V := V) (U := U))
-      (openHomDiffeomorph_proj p))
-      (openHomDiffeomorph (I := I) (F := F) (V := V) p).snd =
-        openHomEquiv p.proj p.snd) := by rfl
+    (openHomDiffeomorph (I := I) (F := F) (V := V) p).snd = openHomEquiv p.proj p.snd) := by
+  rfl
 
 omit [ContMDiffVectorBundle ∞ F V I] in
 /-- The inverse dual-density diffeomorphism preserves the open base point. -/
@@ -344,16 +341,14 @@ theorem openHomDiffeomorph_symm_proj
     ((openHomDiffeomorph (I := I) (F := F) (V := V)).symm p).proj = p.proj) := by rfl
 
 omit [ContMDiffVectorBundle ∞ F V I] in
-/-- The inverse dual-density diffeomorphism acts by the inverse native fibre comparison after
-transport along its public base-point identity. -/
+/-- The inverse dual-density diffeomorphism acts by the inverse native fibre comparison. -/
 @[simp]
 theorem openHomDiffeomorph_symm_snd
     (p : TotalSpace (F →L[ℝ] ℝ) (pulledAmbientCoefficients (I := I) (V := V) (U := U))) :
     dsimp% only [ContinuousMap.coe_mk] (
-    cast (congrArg (localCoefficients (I := I) (V := V) (U := U))
-      (openHomDiffeomorph_symm_proj p))
-      ((openHomDiffeomorph (I := I) (F := F) (V := V)).symm p).snd =
-        (openHomEquiv p.proj).symm p.snd) := by rfl
+    ((openHomDiffeomorph (I := I) (F := F) (V := V)).symm p).snd =
+      (openHomEquiv p.proj).symm p.snd) := by
+  rfl
 
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I]
