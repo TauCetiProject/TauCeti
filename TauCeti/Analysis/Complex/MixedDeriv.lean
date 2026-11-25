@@ -30,7 +30,9 @@ the Cauchy–Riemann equation `DH(p) (0, I) = I • DH(p) (0, 1)` holds at every
 `z ↦ DH(x, z)`. Restricting `DH` to the two factors, the parameter derivative and the complex
 derivative `deriv (H (x, ·))` are holomorphic in `z` as well
 (`ContDiffOn.differentiableOn_fderiv_partial`, `ContDiffOn.differentiableOn_deriv_snd`), and the
-complex derivative is jointly `C^m` for `m + 1 ≤ n` (`ContDiffOn.contDiffOn_deriv_snd`).
+complex derivative is jointly `C^m` for `m + 1 ≤ n` (`ContDiffOn.contDiffOn_deriv_snd`). For a
+single function, the complex derivative of a real `C²` holomorphic function is holomorphic without
+any completeness of `G` (`ContDiffOn.differentiableOn_deriv`).
 
 By induction, every parameter derivative of order `k < n` is again holomorphic in `z`:
 `z ↦ iteratedFDeriv ℝ k (fun x' ↦ H (x', z)) x` is complex differentiable on `V`, with values in
@@ -134,28 +136,30 @@ theorem differentiableOn_fderiv_partial (hH : ContDiffOn ℝ 2 H (W ×ˢ V)) (hW
   simpa using fderiv_slice_left
     ((hH.contDiffAt ((hW.prod hV).mem_nhds ⟨hx, hz⟩)).differentiableAt (by norm_num))
 
-/-- The complex derivative of `H` in its second variable is its total real derivative applied to
-`(0, 1)`. -/
-private theorem deriv_eq_fderiv_apply_zero_one {x : X} {z : ℂ}
-    (hH : DifferentiableAt ℝ H (x, z)) (hhol : DifferentiableAt ℂ (fun w ↦ H (x, w)) z) :
-    deriv (fun w ↦ H (x, w)) z = fderiv ℝ H (x, z) (0, 1) := by
-  simpa using (hhol.fderiv_restrictScalars_eq_smul_deriv ℝ 1).symm.trans
-    (congrArg (fun L : ℂ →L[ℝ] G ↦ L 1) (fderiv_slice_right hH))
+/-- **Holomorphy of the complex derivative.** If `f : ℂ → G` is real `C²` and holomorphic on an
+open set `V`, then its complex derivative `deriv f` is holomorphic on `V`. Unlike
+`DifferentiableOn.deriv`, this needs no completeness of `G`. -/
+theorem differentiableOn_deriv {f : ℂ → G} (hf : ContDiffOn ℝ 2 f V) (hV : IsOpen V)
+    (hhol : DifferentiableOn ℂ f V) : DifferentiableOn ℂ (deriv f) V := by
+  -- View `f` as a family over the parameter space `ℝ`, constant in the parameter.
+  have hH : ContDiffOn ℝ 2 (fun p : ℝ × ℂ ↦ f p.2) (univ ×ˢ V) :=
+    hf.comp contDiffOn_snd fun p hp ↦ hp.2
+  refine ((ContinuousLinearMap.apply ℝ G ((0 : ℝ), (1 : ℂ))).comp_differentiableOn_of_map_smul
+    (fun c L ↦ by simp) (differentiableOn_fderiv_comp_prodMk hH isOpen_univ hV
+      (fun _ _ ↦ hhol) (mem_univ 0))).congr fun z hz ↦ ?_
+  exact deriv_slice_right_eq_fderiv_apply_zero_one (f := fun p : ℝ × ℂ ↦ f p.2)
+    ((hH.contDiffAt ((isOpen_univ.prod hV).mem_nhds ⟨mem_univ _, hz⟩)).differentiableAt
+      (by norm_num)) (hhol.differentiableAt (hV.mem_nhds hz))
 
-/-- **Holomorphy of the complex derivative.** If `H : X × ℂ → G` is `C²` on an open product
-`W ×ˢ V` and holomorphic in its complex variable on `V`, then its complex derivative
-`deriv (fun w ↦ H (x, w))` is holomorphic on `V` for every `x ∈ W`. This needs no completeness
-of `G`. -/
-theorem differentiableOn_deriv_snd (hH : ContDiffOn ℝ 2 H (W ×ˢ V)) (hW : IsOpen W)
-    (hV : IsOpen V) (hhol : ∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ H (x, z)) V) {x : X}
-    (hx : x ∈ W) :
-    DifferentiableOn ℂ (deriv fun w ↦ H (x, w)) V := by
-  refine ((ContinuousLinearMap.apply ℝ G ((0 : X), (1 : ℂ))).comp_differentiableOn_of_map_smul
-    (fun c L ↦ by simp) (differentiableOn_fderiv_comp_prodMk hH hW hV hhol hx)).congr
-    fun z hz ↦ ?_
-  exact deriv_eq_fderiv_apply_zero_one
-    ((hH.contDiffAt ((hW.prod hV).mem_nhds ⟨hx, hz⟩)).differentiableAt (by norm_num))
-    ((hhol x hx).differentiableAt (hV.mem_nhds hz))
+/-- **Holomorphy of the complex derivative of a family.** If `H : X × ℂ → G` is `C²` on
+`W ×ˢ V` with `V` open, and `x ∈ W` is such that `z ↦ H (x, z)` is holomorphic on `V`, then the
+complex derivative `deriv (fun w ↦ H (x, w))` is holomorphic on `V`. This needs no completeness of
+`G`. -/
+theorem differentiableOn_deriv_snd (hH : ContDiffOn ℝ 2 H (W ×ˢ V)) (hV : IsOpen V) {x : X}
+    (hx : x ∈ W) (hhol : DifferentiableOn ℂ (fun z ↦ H (x, z)) V) :
+    DifferentiableOn ℂ (deriv fun w ↦ H (x, w)) V :=
+  (hH.comp (contDiffOn_const.prodMk contDiffOn_id) fun _ hz ↦ ⟨hx, hz⟩).differentiableOn_deriv
+    hV hhol
 
 /-- **Regularity of the complex derivative.** If `H : X × ℂ → G` is `C^n` on an open product
 `W ×ˢ V` and holomorphic in its complex variable on `V`, then for `m + 1 ≤ n` its complex
@@ -167,7 +171,7 @@ theorem contDiffOn_deriv_snd {m n : WithTop ℕ∞} (hH : ContDiffOn ℝ n H (W 
   have hU : IsOpen (W ×ˢ V) := hW.prod hV
   refine ((hH.fderiv_of_isOpen hU hmn).clm_apply
     (contDiffOn_const (c := ((0 : X), (1 : ℂ))))).congr fun p hp ↦ ?_
-  exact deriv_eq_fderiv_apply_zero_one
+  exact deriv_slice_right_eq_fderiv_apply_zero_one
     ((hH.contDiffAt (hU.mem_nhds hp)).differentiableAt
       (zero_lt_one.trans_le (le_add_self.trans hmn)).ne')
     ((hhol p.1 hp.1).differentiableAt (hV.mem_nhds hp.2))
@@ -223,7 +227,7 @@ private theorem fderiv_deriv_comm (hH : ContDiffOn ℝ 2 H (W ×ˢ V)) (hW : IsO
     (hDH.hasFDerivAt.comp x (hasFDerivAt_prodMk_left x z))).congr_of_eventuallyEq
     (f₁ := fun y ↦ deriv (fun w ↦ H (y, w)) z) (by
       filter_upwards [hW.mem_nhds hx] with y hy
-      exact deriv_eq_fderiv_apply_zero_one (hd ⟨hy, hz⟩)
+      exact deriv_slice_right_eq_fderiv_apply_zero_one (hd ⟨hy, hz⟩)
         ((hhol y hy).differentiableAt (hV.mem_nhds hz)))
   -- In `w`, the parameter derivative is `DH (x, w)` restricted to `X × {0}`.
   have hR := (((ContinuousLinearMap.compL ℝ X (X × ℂ) G).flip
@@ -441,8 +445,8 @@ private theorem norm_iteratedFDeriv_iteratedFDeriv_partial_le (hW : IsOpen W) (h
       · simpa using hcauchy j (by omega) z (mem_closedBall_self (half_pos hr).le)
       · exact ih j (H := fun p ↦ deriv (fun w ↦ H (p.1, w)) p.2)
           (hH.contDiffOn_deriv_snd hW hV hhol (by norm_cast; omega))
-          (fun x' hx' ↦ (hH.of_le (by norm_cast; omega)).differentiableOn_deriv_snd hW hV hhol
-            hx')
+          (fun x' hx' ↦ (hH.of_le (by norm_cast; omega)).differentiableOn_deriv_snd hV hx'
+            (hhol x' hx'))
           hx (half_pos hr) hhalf fun k hk w hw ↦ hcauchy k (by omega) w hw
     have hpow : (2 : ℝ) ^ m / (r / 2) = 2 ^ (m + 1) / r := by field_simp; ring
     rw [hpow] at h₂

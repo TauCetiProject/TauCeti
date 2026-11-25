@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Affine
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
+import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -34,6 +35,8 @@ commutes with `𝕜'`-scalars preserves differentiability over `𝕜'`.
 * `DifferentiableAt.fderiv_restrictScalars_smul`: the derivative over `𝕜` is `𝕜'`-linear.
 * `DifferentiableAt.fderiv_restrictScalars_eq_smul_deriv`: on the line `𝕜'`, it is
   multiplication by the derivative.
+* `TauCeti.deriv_slice_right_eq_fderiv_apply_zero_one`: the derivative over `𝕜'` of a
+  second-variable slice is the derivative over `𝕜` applied to `(0, 1)`.
 * `DifferentiableAt.norm_fderiv_restrictScalars_eq_norm_deriv`: on the line `𝕜'`, its norm is
   the norm of the derivative.
 * `DifferentiableAt.range_fderiv_restrictScalars`: the range of the derivative does not depend
@@ -71,6 +74,21 @@ theorem _root_.DifferentiableAt.fderiv_restrictScalars_smul (hi : Differentiable
 theorem _root_.DifferentiableAt.fderiv_restrictScalars_eq_smul_deriv {f : 𝕜' → E} {x : 𝕜'}
     (hf : DifferentiableAt 𝕜' f x) (v : 𝕜') : fderiv 𝕜 f x v = v • deriv f x := by
   rw [hf.fderiv_restrictScalars 𝕜, ContinuousLinearMap.coe_restrictScalars', fderiv_eq_smul_deriv]
+
+variable {𝕜} in
+/-- The derivative over `𝕜'` of the second-variable slice `w ↦ f (a, w)` of a map `f` on
+`X × 𝕜'` is the derivative of `f` over `𝕜` applied to `(0, 1)`. For a map `H : X × ℂ → G`
+holomorphic in its second variable, the complex derivative `deriv (fun w ↦ H (x, w)) z` is
+`fderiv ℝ H (x, z) (0, 1)`. -/
+theorem deriv_slice_right_eq_fderiv_apply_zero_one {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] {f : X × 𝕜' → E} {a : X} {z : 𝕜'} (hf : DifferentiableAt 𝕜 f (a, z))
+    (hz : DifferentiableAt 𝕜' (fun w ↦ f (a, w)) z) :
+    deriv (fun w ↦ f (a, w)) z = fderiv 𝕜 f (a, z) (0, 1) := by
+  have h : HasFDerivAt (fun w ↦ f (a, w))
+      ((fderiv 𝕜 f (a, z)).comp (ContinuousLinearMap.inr 𝕜 X 𝕜')) z :=
+    hf.hasFDerivAt.comp z (hasFDerivAt_prodMk_right a z)
+  rw [← one_smul 𝕜' (deriv _ z), ← hz.fderiv_restrictScalars_eq_smul_deriv 𝕜, h.fderiv]
+  simp
 
 /-- The derivative over `𝕜` of a map on `𝕜'` which is differentiable over `𝕜'` has the norm of
 its derivative. For a holomorphic `f : ℂ → E`, `‖fderiv ℝ f z‖ = ‖deriv f z‖`. -/
