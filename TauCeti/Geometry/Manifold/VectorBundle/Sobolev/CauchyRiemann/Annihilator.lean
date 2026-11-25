@@ -18,6 +18,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.ExtendByZero
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
 # Annihilators of the range of a smooth real Cauchy–Riemann operator
@@ -452,23 +453,17 @@ theorem exists_eLpNorm_le_of_forall_eq_setIntegral (i : Fin A.n) {Q Q' : Opens �
   have hq₁ : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   have hQ'' := subset_image_tangentHom A (hQ'.trans hQi)
   let b := finBasis ℝ F
-  let κ (c : Fin (finrank ℝ F)) : F →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (b.coord c)
+  -- `κ` is the dual basis of `b`, as continuous functionals.
+  let κ : Module.Basis (Fin (finrank ℝ F)) ℝ (F →L[ℝ] ℝ) :=
+    b.dualBasis.map LinearMap.toContinuousLinearMap
   refine ⟨∑ c, ‖κ c‖ * ‖antilinearExtL (p := p) A hQ'' (b c)‖, fun Λ θ hθ hrep ↦ ?_⟩
-  -- `θ` expanded in the dual basis: `θ z = ∑_c θ z (b c) • b.coord c`.
-  have hexp : θ = ∑ c, fun z ↦ θ z (b c) • κ c := by
-    funext z
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    simpa [κ, LinearMap.sum_apply, smul_eq_mul, mul_comm] using
-      (LinearMap.congr_fun (b.sum_dual_apply_smul_coord (θ z : F →ₗ[ℝ] ℝ)) v).symm
+  -- The coordinates of `θ z` in `κ` are its values on `b`.
+  have hcoord (c : Fin (finrank ℝ F)) (z : ℂ) : κ.coord c (θ z) = θ z (b c) := by
+    simp [κ, Module.Basis.coord_apply, Module.Basis.map_repr, Module.Basis.dualBasis_repr]
   have hle : eLpNorm θ q (volume.restrict Q') ≤ ∑ c, ENNReal.ofReal ‖κ c‖ *
       eLpNorm (fun z ↦ θ z (b c)) q (volume.restrict Q') := by
-    conv_lhs => rw [hexp]
-    refine (eLpNorm_sum_le (f := fun c z ↦ θ z (b c) • κ c) (s := Finset.univ)
-      (μ := volume.restrict (Q' : Set ℂ)) hq₁.out).trans (Finset.sum_le_sum fun c _ ↦ ?_)
-    have hm := (hθ.continuousLinearMap_comp
-      (ContinuousLinearMap.apply ℝ ℝ (b c))).aestronglyMeasurable.smul_const (κ c)
-    refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul hm (.of_forall fun z ↦ ?_) q
-    rw [norm_smul, mul_comm, ContinuousLinearMap.apply_apply]
+    simpa only [hcoord, ofReal_norm] using
+      κ.eLpNorm_le_sum_enorm_mul_eLpNorm_coord hθ.aestronglyMeasurable
   have hfin (c : Fin (finrank ℝ F)) :
       ENNReal.ofReal ‖κ c‖ * eLpNorm (fun z ↦ θ z (b c)) q (volume.restrict Q') ≠ ⊤ :=
     ENNReal.mul_ne_top ENNReal.ofReal_ne_top
