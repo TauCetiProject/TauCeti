@@ -46,6 +46,8 @@ only finitely many rounded families have entries in `[-R, R]`.
   than `δ` in each entry, every family with entries in `[-R, R]`.
 * `TauCeti.floor_div_eq_of_forall_intCast_mul_notMem_uIcc`: if no multiple of `δ > 0` lies
   between `a` and `b`, then `⌊a / δ⌋ = ⌊b / δ⌋`.
+* `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points of `[a, b]`
+  in `(1 / N) ℤ` form a finite set.
 * `TauCeti.encard_setOf_intCast_mul_mem_Ioo_le`: an open interval of length `L` contains at most
   `⌈L / δ⌉₊` multiples of `δ > 0`.
 * `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
@@ -137,6 +139,20 @@ theorem floor_div_eq_of_forall_intCast_mul_notMem_uIcc (hδ : 0 < δ) {a b : K}
     exact (Int.lt_floor_add_one _).le
   · rw [← le_div_iff₀ hδ]
     exact (Int.cast_le.2 (Int.add_one_le_iff.2 hlt)).trans (Int.floor_le _)
+
+/-- The points `q` of `[a, b]` with `N q` an integer for a fixed `N ≠ 0`, that is, the points of
+`[a, b]` in `(1 / N) ℤ`, form a finite set. -/
+theorem finite_setOf_mem_Icc_natCast_mul_eq_intCast {N : ℕ} (hN : N ≠ 0) (a b : K) :
+    {q : K | q ∈ Set.Icc a b ∧ ∃ m : ℤ, (N : K) * q = m}.Finite := by
+  have hN' : (0 : K) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
+  refine ((Set.finite_Icc ⌊N * a⌋ ⌈N * b⌉).image fun m : ℤ ↦ (m : K) / N).subset ?_
+  rintro q ⟨⟨ha, hb⟩, m, hm⟩
+  refine ⟨m, ⟨Int.floor_le_iff.mpr ?_, Int.le_ceil_iff.mpr ?_⟩, ?_⟩
+  · rw [← hm]
+    linarith [mul_le_mul_of_nonneg_left ha hN'.le]
+  · rw [← hm]
+    linarith [mul_le_mul_of_nonneg_left hb hN'.le]
+  · simp only [← hm, mul_div_cancel_left₀ q hN'.ne']
 
 /-- An open interval of length `L` contains at most `⌈L / δ⌉₊` multiples of a step `δ > 0`. -/
 theorem encard_setOf_intCast_mul_mem_Ioo_le (hδ : 0 < δ) (c L : K) :

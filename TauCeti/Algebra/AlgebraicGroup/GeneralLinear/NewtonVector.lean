@@ -7,20 +7,14 @@ module
 
 public import Mathlib.Algebra.Order.Ring.Rat
 public import Mathlib.Data.Set.Finite.Basic
-public import TauCeti.Algebra.Order.BigOperators.Dominance
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.TwoWeylVectorPairing
 import Mathlib.Data.Fintype.Pi
-import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Factorial.Basic
 import Mathlib.Data.Rat.Floor
-import Mathlib.Order.Interval.Finset.Fin
-import Mathlib.Order.Interval.Finset.Nat
-import Mathlib.Tactic.Abel
-import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Module
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
 # Newton vectors of the general linear group
@@ -34,24 +28,23 @@ these vectors that the Newton stratification needs.
 * The order on `B(GL_n)` is the dominance order `TauCeti.Dominates`: equal total slopes and
   inequalities of the leading partial sums. For integer vectors it is the coroot order
   (`TauCeti.GeneralLinear.dominates_iff_rootLE_flip`).
-* For an integral cocharacter `μ`, the set `B(GL_n, μ)` of `μ`-admissible classes consists of the
-  Newton vectors dominated by `μ`. It is finite: the coordinates of an admissible vector lie
-  between the last and the first coordinate of `μ`, and the multiplicity condition makes
-  `n! • ν` integral.
-* The pairing `⟨2ρ, ν⟩ = ∑_{i < j} (νᵢ - νⱼ)` with the sum of the positive roots of the
-  upper-triangular Borel is the invariant `d_b = ⟨2ρ, ν_b⟩` of a Newton class, the dimension of
-  its central leaf in the geometric applications. It is strictly monotone for dominance:
-  `ν ≼ ν'` gives `⟨2ρ, ν⟩ ≤ ⟨2ρ, ν'⟩`, with equality only for `ν = ν'`. The reason is the
-  prefix-sum formula `⟨2ρ, x⟩ = ∑_{k = 0}^{n} (2 ∑_{i < k} xᵢ - ∑_i xᵢ)`.
+* For an integral cocharacter `μ` in its dominant form, that is, a weakly decreasing integer
+  vector representing its conjugacy class, the set `B(GL_n, μ)` of `μ`-admissible classes
+  consists of the Newton vectors dominated by `μ`. The definition does not sort `μ`: for an
+  arbitrary integer vector it is the set of Newton vectors dominated by that vector, which is
+  `B(GL_n, μ)` once `μ` is replaced by its decreasing rearrangement. It is finite for every
+  integer vector `μ`: the coordinates of an admissible vector lie between the last and the first
+  coordinate of `μ`, and the multiplicity condition makes `n! • ν` integral.
+* The invariant `d_b = ⟨2ρ, ν_b⟩` of a Newton class is
+  `TauCeti.GeneralLinear.twoWeylVectorPairing`, which is strictly monotone for dominance.
 
 For `μ = (1, 0)` the admissible set has exactly the two elements `(1, 0)` (ordinary) and
-`(1/2, 1/2)` (basic). The multiplicity condition is what excludes vectors such as `(3/4, 1/4)`,
-which are weakly decreasing and dominated by `(1, 0)`: a slope of multiplicity one must be an
-integer.
+`(1/2, 1/2)` (basic), and the basic class is the smaller one. The multiplicity condition is what
+excludes vectors such as `(3/4, 1/4)`, which are weakly decreasing and dominated by `(1, 0)`: a
+slope of multiplicity one must be an integer.
 
 ## Main definitions
 
-* `TauCeti.GeneralLinear.twoWeylVectorPairing`: the pairing `⟨2ρ, x⟩ = ∑_{i < j} (xᵢ - xⱼ)`.
 * `TauCeti.GeneralLinear.IsNewtonVector`: weakly decreasing rational vectors satisfying the
   multiplicity condition.
 * `TauCeti.GeneralLinear.admissibleNewtonVectors μ`: the Newton vectors dominated by the integral
@@ -59,16 +52,14 @@ integer.
 
 ## Main results
 
-* `TauCeti.GeneralLinear.twoWeylVectorPairing_eq_sum_zsmul`: `⟨2ρ, x⟩ = ∑ᵢ (n - 1 - 2i) • xᵢ`, the
-  coordinates of `2ρ` of `TauCeti.GeneralLinear.twoWeylVector_diagonalRootBase_apply`.
-* `TauCeti.Dominates.twoWeylVectorPairing_le`, `TauCeti.Dominates.twoWeylVectorPairing_lt`,
-  `TauCeti.Dominates.twoWeylVectorPairing_eq_iff`: the pairing is strictly monotone for
-  dominance.
 * `TauCeti.GeneralLinear.IsNewtonVector.exists_factorial_mul_eq_intCast`: the coordinates of a
   Newton vector of height `n` lie in `(1 / n!) ℤ`.
 * `TauCeti.GeneralLinear.admissibleNewtonVectors_finite`: `B(GL_n, μ)` is finite.
 * `TauCeti.GeneralLinear.admissibleNewtonVectors_one_zero`: `B(GL_2, (1, 0))` consists of the
   ordinary and the basic class.
+* `TauCeti.GeneralLinear.dominates_half_half_one_zero`,
+  `TauCeti.GeneralLinear.not_dominates_one_zero_half_half`: in `B(GL_2, (1, 0))` the basic class
+  lies strictly below the ordinary class.
 
 ## References
 
@@ -82,124 +73,6 @@ integer.
 public section
 
 open Finset
-
-namespace TauCeti.GeneralLinear
-
-variable {M : Type*} {n : ℕ}
-
-section Pairing
-
-variable [AddCommGroup M]
-
-/-- The pairing `⟨2ρ, x⟩ = ∑_{i < j} (xᵢ - xⱼ)` of a vector `x` of (rational) coweight coordinates
-of the diagonal torus of `GL_n` with the sum `2ρ` of the positive roots `eᵢ - eⱼ`, `i < j`, of the
-upper-triangular Borel subgroup. For the Newton vector `ν_b` of a class `b ∈ B(GL_n)` this is the
-invariant `d_b = ⟨2ρ, ν_b⟩`. -/
-def twoWeylVectorPairing (x : Fin n → M) : M :=
-  ∑ i, ∑ j ∈ Ioi i, (x i - x j)
-
-/-- The defining formula of `TauCeti.GeneralLinear.twoWeylVectorPairing`: the sum over the
-positive roots `eᵢ - eⱼ`, `i < j`. -/
-theorem twoWeylVectorPairing_def (x : Fin n → M) :
-    twoWeylVectorPairing x = ∑ i, ∑ j ∈ Ioi i, (x i - x j) :=
-  (rfl)
-
-/-- **The coordinates of `2ρ`.** `⟨2ρ, x⟩ = ∑ᵢ (n - 1 - 2i) xᵢ`. -/
-theorem twoWeylVectorPairing_eq_sum_zsmul (x : Fin n → M) :
-    twoWeylVectorPairing x = ∑ i : Fin n, ((n : ℤ) - 1 - 2 * (i : ℕ)) • x i := by
-  have hcomm : ∑ i : Fin n, ∑ j ∈ Ioi i, x j = ∑ j : Fin n, ∑ _i ∈ Iio j, x j :=
-    sum_comm' fun i j ↦ by simp
-  simp only [twoWeylVectorPairing_def, sum_sub_distrib, hcomm, sum_const, Fin.card_Ioi,
-    Fin.card_Iio]
-  rw [← sum_sub_distrib]
-  refine sum_congr rfl fun i _ ↦ ?_
-  have hi := i.isLt
-  rw [Nat.sub_sub, ← natCast_zsmul, ← natCast_zsmul, Nat.cast_sub (by omega)]
-  push_cast
-  module
-
-/-- **The prefix-sum formula for `⟨2ρ, x⟩`.**
-`⟨2ρ, x⟩ = ∑_{k = 0}^{n} (2 ∑_{i < k} xᵢ - ∑ᵢ xᵢ)`. -/
-theorem twoWeylVectorPairing_eq_sum_prefixSum (x : Fin n → M) :
-    twoWeylVectorPairing x = ∑ k ∈ range (n + 1), (2 • prefixSum k x - ∑ i, x i) := by
-  -- The coordinate `xᵢ` enters the prefix sums of lengths `i + 1, …, n`.
-  have sum_range_prefixSum :
-      ∑ k ∈ range (n + 1), prefixSum k x = ∑ i : Fin n, (n - (i : ℕ)) • x i := by
-    simp only [prefixSum_def]
-    rw [sum_comm' (t' := univ) (s' := fun i : Fin n ↦ (range (n + 1)).filter fun k ↦ (i : ℕ) < k)
-      fun k i ↦ by simp]
-    refine sum_congr rfl fun i _ ↦ ?_
-    have hfilter : (range (n + 1)).filter (fun k ↦ (i : ℕ) < k) = Ioc (i : ℕ) n := by
-      ext k
-      simp only [mem_filter, mem_range, mem_Ioc]
-      omega
-    rw [sum_const, hfilter, Nat.card_Ioc]
-  rw [sum_sub_distrib, sum_nsmul, sum_range_prefixSum, twoWeylVectorPairing_eq_sum_zsmul,
-    sum_const, card_range, ← sum_nsmul, ← sum_nsmul, ← sum_sub_distrib]
-  refine sum_congr rfl fun i _ ↦ ?_
-  have hi := i.isLt
-  simp only [← natCast_zsmul, Nat.cast_sub hi.le]
-  push_cast
-  module
-
-end Pairing
-
-end TauCeti.GeneralLinear
-
-namespace TauCeti.Dominates
-
-open TauCeti.GeneralLinear
-
-variable {M : Type*} {n : ℕ}
-
-section Pairing
-
-/-- The difference of the pairings with `2ρ` along a dominance `x ≼ y` is twice the sum of the
-differences of the prefix sums. -/
-private theorem twoWeylVectorPairing_sub [AddCommGroup M] [LE M] {x y : Fin n → M}
-    (h : Dominates x y) :
-    twoWeylVectorPairing y - twoWeylVectorPairing x =
-      ∑ k ∈ range (n + 1), 2 • (prefixSum k y - prefixSum k x) := by
-  rw [twoWeylVectorPairing_eq_sum_prefixSum, twoWeylVectorPairing_eq_sum_prefixSum,
-    ← sum_sub_distrib, (dominates_def.mp h).1]
-  exact sum_congr rfl fun _ _ ↦ by rw [nsmul_sub]; abel
-
-variable [AddCommGroup M] [PartialOrder M] [IsOrderedAddMonoid M]
-
-/-- **`⟨2ρ, ·⟩` is monotone for dominance.** -/
-theorem twoWeylVectorPairing_le {x y : Fin n → M} (h : Dominates x y) :
-    twoWeylVectorPairing x ≤ twoWeylVectorPairing y := by
-  have hle := (dominates_iff_forall_prefixSum_le.mp h).2
-  refine sub_nonneg.mp ?_
-  rw [h.twoWeylVectorPairing_sub]
-  exact sum_nonneg fun k _ ↦ nsmul_nonneg (sub_nonneg.mpr (hle k)) 2
-
-/-- **`⟨2ρ, ·⟩` is strictly monotone for dominance**: along a dominance `x ≼ y` the pairings
-are equal only when `x = y`. -/
-theorem twoWeylVectorPairing_eq_iff {x y : Fin n → M} (h : Dominates x y) :
-    twoWeylVectorPairing x = twoWeylVectorPairing y ↔ x = y := by
-  refine ⟨fun heq ↦ ?_, fun hxy ↦ hxy ▸ rfl⟩
-  have hle := (dominates_iff_forall_prefixSum_le.mp h).2
-  have hsum : ∑ k ∈ range (n + 1), 2 • (prefixSum k y - prefixSum k x) = 0 := by
-    rw [← h.twoWeylVectorPairing_sub, heq, sub_self]
-  rw [sum_eq_zero_iff_of_nonneg fun k _ ↦ nsmul_nonneg (sub_nonneg.mpr (hle k)) 2] at hsum
-  refine eq_of_forall_prefixSum_eq fun k ↦ ?_
-  rcases le_or_gt k n with hk | hk
-  · have h2 := hsum k (mem_range.mpr (Nat.lt_succ_of_le hk))
-    rw [two_nsmul, add_eq_zero_iff_of_nonneg (sub_nonneg.mpr (hle k)) (sub_nonneg.mpr (hle k)),
-      and_self, sub_eq_zero] at h2
-    exact h2.symm
-  · rw [prefixSum_of_le hk.le, prefixSum_of_le hk.le, (dominates_def.mp h).1]
-
-/-- **`⟨2ρ, ·⟩` is strictly monotone for dominance**: a strict dominance `x ≼ y`, `x ≠ y`, gives
-`⟨2ρ, x⟩ < ⟨2ρ, y⟩`. -/
-theorem twoWeylVectorPairing_lt {x y : Fin n → M} (h : Dominates x y) (hne : x ≠ y) :
-    twoWeylVectorPairing x < twoWeylVectorPairing y :=
-  h.twoWeylVectorPairing_le.lt_of_ne fun heq ↦ hne (h.twoWeylVectorPairing_eq_iff.mp heq)
-
-end Pairing
-
-end TauCeti.Dominates
 
 namespace TauCeti.GeneralLinear
 
@@ -226,9 +99,11 @@ theorem IsNewtonVector.exists_factorial_mul_eq_intCast {ν : Fin n → ℚ} (hν
 
 /-- The **`μ`-admissible Newton vectors** `B(GL_n, μ)` of an integral cocharacter `μ`: the Newton
 vectors dominated by `μ`, that is, with the total slope of `μ` and leading partial sums at most
-those of `μ`. For the dominant representative `μ` of a conjugacy class of cocharacters these are
-the classes `b ∈ B(GL_n)` with `ν_b ≼ μ`; for `GL_n` the condition `κ(b) = μ♭` on the Kottwitz
-invariant is the equality of total slopes. -/
+those of `μ`. For the dominant (weakly decreasing) representative `μ` of a conjugacy class of
+cocharacters these are the classes `b ∈ B(GL_n)` with `ν_b ≼ μ`; for `GL_n` the condition
+`κ(b) = μ♭` on the Kottwitz invariant is the equality of total slopes. The definition does not
+sort `μ`, so it is `B(GL_n, μ)` only for weakly decreasing `μ`; for another integer vector it is
+the set of Newton vectors dominated by that vector. -/
 def admissibleNewtonVectors (μ : Fin n → ℤ) : Set (Fin n → ℚ) :=
   {ν | IsNewtonVector ν ∧ Dominates ν fun i ↦ (μ i : ℚ)}
 
@@ -237,28 +112,17 @@ theorem mem_admissibleNewtonVectors {μ : Fin n → ℤ} {ν : Fin n → ℚ} :
     ν ∈ admissibleNewtonVectors μ ↔ IsNewtonVector ν ∧ Dominates ν fun i ↦ (μ i : ℚ) :=
   Iff.rfl
 
-/-- **`B(GL_n, μ)` is finite.** The coordinates of an admissible Newton vector lie between the
-last and the first coordinate of `μ`, and in `(1 / n!) ℤ`. -/
+/-- **`B(GL_n, μ)` is finite**, for every integer vector `μ`. The coordinates of an admissible
+Newton vector lie between the last and the first coordinate of `μ`, and in `(1 / n!) ℤ`. -/
 theorem admissibleNewtonVectors_finite (μ : Fin n → ℤ) : (admissibleNewtonVectors μ).Finite := by
-  -- The rationals in `[a, b]` lying in `(1 / N) ℤ` form a finite set.
-  have finite_setOf_mul_eq_intCast (N : ℕ) (hN : 0 < N) (a b : ℚ) :
-      {q : ℚ | a ≤ q ∧ q ≤ b ∧ ∃ m : ℤ, (N : ℚ) * q = m}.Finite := by
-    refine ((Set.finite_Icc ⌊N * a⌋ ⌈N * b⌉).image fun m : ℤ ↦ (m : ℚ) / N).subset ?_
-    rintro q ⟨ha, hb, m, hm⟩
-    have : (0 : ℚ) < N := by exact_mod_cast hN
-    refine ⟨m, ⟨Int.floor_le_iff.mpr ?_, Int.le_ceil_iff.mpr ?_⟩, ?_⟩
-    · rw [← hm]; nlinarith
-    · rw [← hm]; nlinarith
-    · simp only [← hm]
-      field_simp
   cases n with
   | zero => exact Set.toFinite _
   | succ n =>
-    refine (Set.Finite.pi (t := fun _ ↦ {q : ℚ | (μ (Fin.last n) : ℚ) ≤ q ∧ q ≤ μ 0 ∧
+    refine (Set.Finite.pi (t := fun _ ↦ {q : ℚ | q ∈ Set.Icc (μ (Fin.last n) : ℚ) (μ 0) ∧
         ∃ m : ℤ, ((n + 1).factorial : ℚ) * q = m}) fun _ ↦
-      finite_setOf_mul_eq_intCast _ (Nat.factorial_pos _) _ _).subset ?_
+      finite_setOf_mem_Icc_natCast_mul_eq_intCast (Nat.factorial_ne_zero _) _ _).subset ?_
     rintro ν ⟨hν, hdom⟩ i -
-    exact ⟨hdom.apply_last_le_apply hν.antitone i, hdom.apply_le_apply_zero hν.antitone i,
+    exact ⟨⟨hdom.apply_last_le_apply hν.antitone i, hdom.apply_le_apply_zero hν.antitone i⟩,
       hν.exists_factorial_mul_eq_intCast i⟩
 
 /-- **`B(GL_2, (1, 0))` has exactly two elements**: the ordinary class with slopes `(1, 0)` and the
@@ -312,5 +176,18 @@ theorem admissibleNewtonVectors_one_zero :
       · fin_cases i <;> fin_cases j <;> simp
       · rw [hcard]
         fin_cases i <;> norm_num
+
+/-- **The basic class lies below the ordinary class** in `B(GL_2, (1, 0))`: the basic slopes
+`(1/2, 1/2)` are dominated by the ordinary slopes `(1, 0)`. -/
+theorem dominates_half_half_one_zero : Dominates (![1 / 2, 1 / 2] : Fin 2 → ℚ) ![1, 0] := by
+  rw [dominates_iff_fin_two]
+  norm_num
+
+/-- **The ordinary class does not lie below the basic class** in `B(GL_2, (1, 0))`: the ordinary
+slopes `(1, 0)` are not dominated by the basic slopes `(1/2, 1/2)`. Together with
+`TauCeti.GeneralLinear.dominates_half_half_one_zero`, the basic class is strictly smaller. -/
+theorem not_dominates_one_zero_half_half : ¬ Dominates (![1, 0] : Fin 2 → ℚ) ![1 / 2, 1 / 2] := by
+  rw [dominates_iff_fin_two]
+  norm_num
 
 end TauCeti.GeneralLinear

@@ -12,6 +12,7 @@ public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Data.Fin.Rev
+import Mathlib.Order.Interval.Finset.Nat
 
 /-!
 # Finite partial sums
@@ -28,6 +29,8 @@ This file contains basic facts about finite partial sums.
   prefix sum of full length is the total sum.
 * `TauCeti.sum_sub_prefixSum`: successive differences of a function of the prefix sums
   telescope.
+* `TauCeti.sum_range_prefixSum`: the prefix sums of lengths `0, …, n` add up to
+  `∑ᵢ (n - i) • xᵢ`.
 * `TauCeti.eq_of_forall_prefixSum_eq`, `TauCeti.monotone_prefixSum`: a tuple is determined by its
   prefix sums, which are monotone in the length for nonnegative tuples.
 * `TauCeti.prefixSum_eq_sum_castLE`, `TauCeti.prefixSum_comp_rev`: up to `n`, prefix sums are sums
@@ -103,6 +106,20 @@ theorem sum_sub_prefixSum {G : Type*} [AddCommGroup G] (F : M → G) (k : ℕ) (
       exact sub_add_sub_cancel' _ _ _
     · rw [filter_congr (q := fun i : Fin n ↦ i.val < k) (fun i _ ↦ by omega), ih,
         prefixSum_of_le (by omega), prefixSum_of_le (by omega)]
+
+/-- **The sum of all prefix sums.** The prefix sums of lengths `0, …, n` add up to
+`∑ᵢ (n - i) • xᵢ`: the coordinate `xᵢ` enters the prefix sums of lengths `i + 1, …, n`. -/
+theorem sum_range_prefixSum (x : Fin n → M) :
+    ∑ k ∈ range (n + 1), prefixSum k x = ∑ i : Fin n, (n - (i : ℕ)) • x i := by
+  simp only [prefixSum_def]
+  rw [sum_comm' (t' := univ) (s' := fun i : Fin n ↦ (range (n + 1)).filter fun k ↦ (i : ℕ) < k)
+    fun k i ↦ by simp]
+  refine sum_congr rfl fun i _ ↦ ?_
+  have hfilter : (range (n + 1)).filter (fun k ↦ (i : ℕ) < k) = Ioc (i : ℕ) n := by
+    ext k
+    simp only [mem_filter, mem_range, mem_Ioc]
+    omega
+  rw [sum_const, hfilter, Nat.card_Ioc]
 
 /-- A tuple is determined by its prefix sums. -/
 theorem eq_of_forall_prefixSum_eq [IsLeftCancelAdd M] {x y : Fin n → M}
