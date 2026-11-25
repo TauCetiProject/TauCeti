@@ -61,6 +61,7 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
   `φ`, then `φ (χ T) = φ T` and `φ ∂^m (χ T) = φ ∂^m T`.
 * `Distribution.smulLeftCLM_cutoffTempered_of_eqOn_one`: if `g = 1` on the support of `φ`, then
   `g (φ T) = φ T`.
+* `Distribution.smulLeftCLM_cutoffTempered_of_mul_eq`: if `g φ = χ`, then `g (φ T) = χ T`.
 * `Distribution.cutoffTempered_toDistribution`: for a tempered distribution `u`, restricted to `Ω`
   by `TemperedDistribution.toDistribution`, the tempered distribution `φ u` is the product of `u`
   with `φ`.
@@ -291,22 +292,29 @@ theorem lineDerivOp_cutoffTempered (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (v 
     map_neg]
   ring
 
-/-- **Cutting off a cut-off distribution.** If `χ = 1` on the support of `φ`, then
-`φ (χ T) = φ T`. -/
-theorem smulLeftCLM_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ φ : 𝓓(Ω, ℂ)}
-    (h : ∀ x ∈ tsupport φ, χ x = 1) :
-    TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (T.cutoffTempered χ) = T.cutoffTempered φ := by
+/-- **Changing the cutoff by a multiplier.** If a function `g` of temperate growth satisfies
+`g φ = χ`, then `g (φ T) = χ T`. -/
+theorem smulLeftCLM_cutoffTempered_of_mul_eq (T : 𝓓'(Ω, ℂ)) {φ χ : 𝓓(Ω, ℂ)} {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (h : ∀ x, g x * φ x = χ x) :
+    TemperedDistribution.smulLeftCLM ℂ g (T.cutoffTempered φ) = T.cutoffTempered χ := by
   ext ψ
   rw [TemperedDistribution.smulLeftCLM_apply_apply, cutoffTempered_def, cutoffTempered_def]
   congr 1
   ext x
   simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
-    SchwartzMap.smulLeftCLM_apply (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff),
-    smul_eq_mul]
-  by_cases hx : x ∈ tsupport φ
-  · rw [h x hx]
-    ring
-  · simp [image_eq_zero_of_notMem_tsupport hx]
+    SchwartzMap.smulLeftCLM_apply_apply hg, smul_eq_mul, ← h x]
+  ring
+
+/-- **Cutting off a cut-off distribution.** If `χ = 1` on the support of `φ`, then
+`φ (χ T) = φ T`. -/
+theorem smulLeftCLM_cutoffTempered (T : 𝓓'(Ω, ℂ)) {χ φ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport φ, χ x = 1) :
+    TemperedDistribution.smulLeftCLM ℂ (φ : E → ℂ) (T.cutoffTempered χ) = T.cutoffTempered φ :=
+  smulLeftCLM_cutoffTempered_of_mul_eq T (φ.hasCompactSupport.hasTemperateGrowth φ.contDiff)
+    fun x ↦ by
+      by_cases hx : x ∈ tsupport φ
+      · rw [h x hx, mul_one]
+      · simp [image_eq_zero_of_notMem_tsupport hx]
 
 /-- **Multiplying a cut-off distribution by a function equal to one on the cutoff.** If a function
 `g` of temperate growth equals `1` on the support of `φ`, then `g (φ T) = φ T`. -/

@@ -32,6 +32,13 @@ cut-off distribution `φ T` with `φ` a test function supported in `U` lies in `
 For `p = 2` the notion agrees with the Fourier description `Distribution.IsLocallySobolevAt` used
 for the `H^s` wave front set (`Distribution.isLocallyMemSobolevAt_two_iff`).
 
+It can be tested with a single cutoff: for `1 < p < ∞`, `T` is `H^{s,p}` near `x` exactly when
+`φ T ∈ H^{s,p}` for some test function `φ` with `φ x ≠ 0`
+(`Distribution.isLocallyMemSobolevAt_iff_exists_memSobolev_cutoffTempered`), since test functions
+multiply `H^{s,p}` into itself (`TemperedDistribution.MemSobolev.smulLeftCLM_testFunction`).
+Conversely, if `T` is `H^{s,p}` near every point of the support of `χ`, then `χ T ∈ H^{s,p}`
+(`Distribution.memSobolev_cutoffTempered_of_forall_isLocallyMemSobolevAt`).
+
 Smooth multiples preserve the notion (`Distribution.IsLocallyMemSobolevAt.smulLeftCLM`), and for
 `1 < p < ∞` each derivative costs one order (`Distribution.IsLocallyMemSobolevAt.lineDerivOp`,
 `Distribution.IsLocallyMemSobolevAt.iteratedLineDerivOp`). Hence a differential operator of order
@@ -282,6 +289,76 @@ theorem isLocallyMemSobolevAt_two_iff :
   · obtain ⟨U, hU, hT⟩ := h.exists_nhds_forall_memSobolev_cutoffTempered
     exact ⟨U ∩ Ω, inter_mem hU (Ω.isOpen.mem_nhds h.mem), inter_subset_right,
       fun φ hφ ↦ hT φ (hφ.trans inter_subset_left)⟩
+
+/-! ### Testing with cutoffs -/
+
+/-- Let `1 < p < ∞`. Multiplying a tempered distribution in `H^{s,p}` by a test function keeps it
+in `H^{s,p}`. -/
+theorem _root_.TemperedDistribution.MemSobolev.smulLeftCLM_testFunction {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] (hp : 1 < p)
+    (hp_top : p ≠ ∞) {u : 𝓢'(E, F)} (hu : TemperedDistribution.MemSobolev s p u) (ψ : 𝓓(Ω, ℂ)) :
+    TemperedDistribution.MemSobolev s p (TemperedDistribution.smulLeftCLM F (ψ : E → ℂ) u) := by
+  -- The derivatives of `ψ` are bounded by the seminorms of `ψ` as a Schwartz function.
+  refine hu.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top fun n _ ↦
+    ⟨SchwartzMap.seminorm ℝ 0 n (TestFunction.toSchwartzMapCLM ℂ ψ), fun y ↦ ?_⟩
+  have h := SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ (TestFunction.toSchwartzMapCLM ℂ ψ) n y
+  rwa [TestFunction.coe_toSchwartzMapCLM] at h
+
+/-- **Testing with one cutoff.** Let `1 < p < ∞`. A distribution is `H^{s,p}` near `x` exactly
+when `φ T ∈ H^{s,p}` for some test function `φ` with `φ x ≠ 0`. Indeed `φ` does not vanish near
+`x`, so for a cutoff `χ` equal to one near `x` and supported there, `χ T = (χ / φ) (φ T)`. -/
+theorem isLocallyMemSobolevAt_iff_exists_memSobolev_cutoffTempered (hp : 1 < p) (hp_top : p ≠ ∞) :
+    T.IsLocallyMemSobolevAt s p x ↔
+      ∃ φ : 𝓓(Ω, ℂ), φ x ≠ 0 ∧ TemperedDistribution.MemSobolev s p (T.cutoffTempered φ) := by
+  refine ⟨fun ⟨U, hU, hUΩ, hT⟩ ↦ ?_, fun ⟨φ, hφx, hT⟩ ↦ ?_⟩
+  · obtain ⟨φ, hφU, hφx⟩ := TestFunction.exists_tsupport_subset_apply_eq (n := ⊤) hU hUΩ (1 : ℂ)
+    exact ⟨φ, by simp [hφx], hT φ hφU⟩
+  -- A cutoff `χ` equal to one near `x`, supported where `φ ≠ 0`.
+  have hWΩ : Function.support φ ⊆ Ω := (subset_tsupport φ).trans φ.tsupport_subset
+  obtain ⟨χ, hχ1, hχW⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    isCompact_singleton (isOpen_ne_fun φ.continuous continuous_const)
+    (singleton_subset_iff.2 hφx) hWΩ
+  rw [nhdsSet_singleton] at hχ1
+  have hχ0 {y : E} (hy : φ y = 0) : y ∉ tsupport χ := fun h ↦ hχW h hy
+  -- The quotient `χ / φ` is a test function.
+  have hg : ContDiff ℝ (⊤ : ℕ∞) fun y ↦ χ y * (φ y)⁻¹ := by
+    refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
+    by_cases hy : φ y = 0
+    · refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 (hχ0 hy)] with z hz
+      simp [hz]
+    · exact χ.contDiff.contDiffAt.mul (φ.contDiff.contDiffAt.inv hy)
+  let g : 𝓓(Ω, ℂ) := ⟨fun y ↦ χ y * (φ y)⁻¹, hg, χ.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans χ.tsupport_subset⟩
+  have hgφ (y : E) : g y * φ y = χ y := by
+    by_cases hy : φ y = 0
+    · simp [hy, image_eq_zero_of_notMem_tsupport (hχ0 hy)]
+    · simp [g, hy]
+  have hχT : TemperedDistribution.MemSobolev s p (T.cutoffTempered χ) := by
+    rw [← smulLeftCLM_cutoffTempered_of_mul_eq T (g := g) (g.hasCompactSupport.hasTemperateGrowth
+      g.contDiff) hgφ]
+    exact hT.smulLeftCLM_testFunction hp hp_top g
+  -- On the set where `χ = 1`, every cut-off distribution `ψ T` is the smooth multiple `ψ (χ T)`.
+  have hxΩ : x ∈ Ω := hWΩ hφx
+  refine ⟨{y | χ y = 1} ∩ Ω, inter_mem hχ1 (Ω.isOpen.mem_nhds hxΩ), inter_subset_right,
+    fun ψ hψ ↦ ?_⟩
+  rw [← smulLeftCLM_cutoffTempered T fun y hy ↦ (hψ hy).1]
+  exact hχT.smulLeftCLM_testFunction hp hp_top ψ
+
+/-- **From local to global regularity.** If `T` is `H^{s,p}` near every point of the support of a
+test function `χ`, then `χ T ∈ H^{s,p}`. -/
+theorem memSobolev_cutoffTempered_of_forall_isLocallyMemSobolevAt {χ : 𝓓(Ω, ℂ)}
+    (h : ∀ x ∈ tsupport χ, T.IsLocallyMemSobolevAt s p x) :
+    TemperedDistribution.MemSobolev s p (T.cutoffTempered χ) := by
+  -- Each point of `tsupport χ` has a neighbourhood on which every cutoff gives an `H^{s,p}`
+  -- product.
+  choose U hU _ hUs using fun x : tsupport χ ↦ h x x.property
+  -- Split `χ` into finitely many test functions supported in these neighbourhoods.
+  obtain ⟨t, ψ, hψU, hψχ, -⟩ := χ.exists_sum_subordinate (fun x ↦ interior (U x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  rw [← hψχ, cutoffTempered_sum_cutoff]
+  exact TemperedDistribution.MemSobolev.sum fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
 
 /-- If `χ = 1` on the support of `φ` and `χ T ∈ H^r` with `n < 2 (r + 2k)`, then
 `φ T = φ (χ T) ∈ H^{-2k,p}`. -/
