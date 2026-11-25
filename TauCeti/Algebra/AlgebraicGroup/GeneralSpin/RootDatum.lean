@@ -45,7 +45,7 @@ The dualities of root data hold as follows:
 
 The bases of `GSpin_{2n+1}` and `GSp₂ₙ` come from the base `TauCeti.soOddBase` of `SO_{2n+1}`,
 the dual of `TauCeti.Symplectic.diagonalRootBase`, those of `GSpin_{2n}` and `GSO₂ₙ` from
-`TauCeti.DynkinType.typeDClassicalBase`, which needs `4 ≤ n`.
+`TauCeti.DynkinType.typeDClassicalBase`, for `2 ≤ n`.
 
 ## Main declarations
 
@@ -416,14 +416,14 @@ theorem gspinEvenRootDatum_toLinearMap_gspinEvenUpsilon_inr :
     (gspinEvenRootDatum n).toLinearMap (gspinEvenUpsilon n) (0, 1) = 2 :=
   RootPairing.extendCoroot_toLinearMap_inr _ _ _ _ _
 
-variable {n} (hn : 4 ≤ n)
+variable {n} (hn : 2 ≤ n)
 
-/-- **The base of `GSpin_{2n}`**, for `4 ≤ n`: simple roots `εᵢ - εᵢ₊₁` and `εₙ₋₁ + εₙ`, with
+/-- **The base of `GSpin_{2n}`**, for `2 ≤ n`: simple roots `εᵢ - εᵢ₊₁` and `εₙ₋₁ + εₙ`, with
 simple coroots `εᵢ∨ - εᵢ₊₁∨` and `εₙ₋₁∨ + εₙ∨ - ε₀∨`. -/
 noncomputable def gspinEvenBase : (gspinEvenRootDatum n).Base :=
   (typeDClassicalBase hn).extendCoroot _ _ _
 
-/-- **The base of `GSO₂ₙ`**, for `4 ≤ n`: simple roots `εᵢ - εᵢ₊₁` and `εₙ₋₁ + εₙ - ε₀`. -/
+/-- **The base of `GSO₂ₙ`**, for `2 ≤ n`: simple roots `εᵢ - εᵢ₊₁` and `εₙ₋₁ + εₙ - ε₀`. -/
 noncomputable def gsoBase : (gsoRootDatum n).Base :=
   (typeDClassicalBase hn).extendRoot _ _ _
 
@@ -459,6 +459,13 @@ example : IsEmpty (GLSymplecticFin.RootSubgroupIndex 0) := inferInstance
 
 /-- `GSpin₂` has no roots: there are no roots of type `D₁`. -/
 example : IsEmpty (DynkinType.TypeDRoot 1) := inferInstance
+
+/-- `GSpin₄` and `GSpin₆` have bases, of types `A₁ × A₁` and `A₃`, with two and three simple
+roots. -/
+example : (gspinEvenBase (n := 2) le_rfl).support.card = 2 ∧
+    (gspinEvenBase (n := 3) (by norm_num)).support.card = 3 := by
+  simp only [gspinEvenBase, RootPairing.Base.extendCoroot_support,
+    DynkinType.card_typeDClassicalBase_support, and_self]
 
 /-- In `GSp₄`, the coroot of the long root `2ε₁ - ε₀` is `ε₁∨`: it pairs to `0` with `ε₀` and to
 `2` with `2ε₁ - ε₀`. -/

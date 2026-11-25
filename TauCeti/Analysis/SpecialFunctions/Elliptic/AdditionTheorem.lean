@@ -38,6 +38,8 @@ surjectivity of `P` (`PeriodPair.weierstrassPoint_surjective`), it gives the gro
   map, which is surjective by `PeriodPair.weierstrassPoint_surjective`, with
   `PeriodPair.weierstrassPointEquiv_mk` and `PeriodPair.weierstrassPointEquiv_symm_weierstrassPoint`
   for the isomorphism and its inverse on the class of `z`.
+* `PeriodPair.pointHom_ext`: homomorphisms out of `E(ℂ)` are determined by their values on the
+  points `P(z)`.
 
 ## Implementation notes
 
@@ -512,5 +514,13 @@ lemma weierstrassPointEquiv_mk (z : ℂ) :
 lemma weierstrassPointEquiv_symm_weierstrassPoint (z : ℂ) :
     L.weierstrassPointEquiv.symm (L.weierstrassPoint z) = QuotientAddGroup.mk z := by
   rw [AddEquiv.symm_apply_eq, weierstrassPointEquiv_mk]
+
+/-- Two homomorphisms out of the points of the Weierstrass curve of `L` agree if they agree on
+every `P(z)`. -/
+lemma pointHom_ext {G : Type*} [AddZero G] {f g : L.weierstrassCurve.toAffine.Point →+ G}
+    (h : ∀ z, f (L.weierstrassPoint z) = g (L.weierstrassPoint z)) : f = g := by
+  ext P
+  obtain ⟨z, rfl⟩ := L.weierstrassPoint_surjective P
+  exact h z
 
 end PeriodPair

@@ -10,7 +10,7 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 public import TauCeti.NumberTheory.Modular.Generators
 import Mathlib.Data.ZMod.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
-import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
