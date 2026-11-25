@@ -148,41 +148,6 @@ theorem spatialTensorLinearMap_injective :
 
 end TauCeti
 
-section TensorProductMap
-
-variable {R A B C D : Type*} [CommSemiring R]
-  [NonUnitalSemiring A] [Module R A] [StarRing A] [NonUnitalSemiring B] [Module R B] [StarRing B]
-  [NonUnitalSemiring C] [Module R C] [StarRing C] [NonUnitalSemiring D] [Module R D] [StarRing D]
-  (f : A →⋆ₙₐ[R] C) (g : B →⋆ₙₐ[R] D)
-
-/-- The tensor product of non-unital star algebra homomorphisms is multiplicative. Stated for
-general algebras because instance search for distributivity on concrete tensor products of
-operator algebras times out. -/
-private theorem map_mul_of_nonUnitalStarAlgHom
-    [SMulCommClass R A A] [IsScalarTower R A A] [SMulCommClass R B B] [IsScalarTower R B B]
-    [SMulCommClass R C C] [IsScalarTower R C C] [SMulCommClass R D D] [IsScalarTower R D D]
-    (x y : A ⊗[R] B) :
-    TensorProduct.map (f : A →ₗ[R] C) (g : B →ₗ[R] D) (x * y) =
-      TensorProduct.map (f : A →ₗ[R] C) (g : B →ₗ[R] D) x *
-        TensorProduct.map (f : A →ₗ[R] C) (g : B →ₗ[R] D) y := by
-  induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']
-  | tmul a b =>
-    induction y using TensorProduct.inductionOn with
-    | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
-    | tmul a' b' => simp [Algebra.TensorProduct.tmul_mul_tmul]
-
-/-- The tensor product of non-unital star algebra homomorphisms commutes with `star`. -/
-private theorem map_star_of_nonUnitalStarAlgHom [StarRing R] [StarModule R A] [StarModule R B]
-    [StarModule R C] [StarModule R D] (x : A ⊗[R] B) :
-    TensorProduct.map (f : A →ₗ[R] C) (g : B →ₗ[R] D) (star x) =
-      star (TensorProduct.map (f : A →ₗ[R] C) (g : B →ₗ[R] D) x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => simp only [star_add, map_add, hx, hx']
-  | tmul a b => simp [map_star]
-
-end TensorProductMap
-
 /-! ### Concrete operator algebras -/
 
 namespace NonUnitalStarSubalgebra
@@ -371,17 +336,14 @@ variable {A B} {A₀ : NonUnitalStarSubalgebra 𝕜 (E →L[𝕜] E)}
 
 /-- The star homomorphism `A₀ ⊗[𝕜] B₀ → A ⊗[𝕜] B`, `a ⊗ b ↦ a ⊗ b`, induced by inclusions
 `A₀ ≤ A` and `B₀ ≤ B`. -/
-def tensorInclusion : A₀ ⊗[𝕜] B₀ →⋆ₙₐ[𝕜] A ⊗[𝕜] B where
-  __ := TensorProduct.map (inclusion hA : A₀ →ₗ[𝕜] A) (inclusion hB : B₀ →ₗ[𝕜] B)
-  map_zero' := map_zero _
-  map_mul' := map_mul_of_nonUnitalStarAlgHom (inclusion hA) (inclusion hB)
-  map_star' := map_star_of_nonUnitalStarAlgHom (inclusion hA) (inclusion hB)
+def tensorInclusion : A₀ ⊗[𝕜] B₀ →⋆ₙₐ[𝕜] A ⊗[𝕜] B :=
+  Algebra.TensorProduct.mapNonUnitalStarAlgHom (inclusion hA) (inclusion hB)
 
 /-- The induced star homomorphism sends `a ⊗ b` to `a ⊗ b`. -/
 @[simp]
 theorem tensorInclusion_tmul (a : A₀) (b : B₀) :
     tensorInclusion hA hB (a ⊗ₜ b) = inclusion hA a ⊗ₜ inclusion hB b :=
-  TensorProduct.map_tmul _ _ _ _
+  Algebra.TensorProduct.mapNonUnitalStarAlgHom_tmul _ _ _ _
 
 /-- For inclusions `A₀ ≤ A` and `B₀ ≤ B`, the spatial tensor homomorphism of `A` and `B` extends
 that of `A₀` and `B₀`. -/
@@ -393,8 +355,10 @@ theorem spatialTensorHom_tensorInclusion (x : A₀ ⊗[𝕜] B₀) :
   | tmul a b => simp
 
 /-- The map of algebraic tensor products induced by inclusions is injective. -/
-theorem tensorInclusion_injective : Function.Injective (tensorInclusion hA hB) :=
-  TensorProduct.map_injective_of_flat_flat _ _ (inclusion_injective hA) (inclusion_injective hB)
+theorem tensorInclusion_injective : Function.Injective (tensorInclusion hA hB) := by
+  rw [tensorInclusion, Algebra.TensorProduct.coe_mapNonUnitalStarAlgHom]
+  exact TensorProduct.map_injective_of_flat_flat _ _ (inclusion_injective hA)
+    (inclusion_injective hB)
 
 /-- **The spatial norm is functorial for inclusions**: for `A₀ ≤ A` and `B₀ ≤ B`, the inclusion
 `A₀ ⊗[𝕜] B₀ → A ⊗[𝕜] B` is isometric for the spatial norms. -/
