@@ -202,6 +202,14 @@ theorem isStrictlyTopologicallyFiniteType_iff {φ : A →+* B} :
           π.comp (algebraMap A (restrictedMvPowerSeriesCompletion k A)) = φ :=
   (Iff.rfl)
 
+/-- A strictly topologically finite type `A`-algebra `B` admits a surjective `A`-algebra
+homomorphism from a completed restricted power-series algebra `A⟨X₁, …, Xₖ⟩`. -/
+theorem IsStrictlyTopologicallyFiniteType.exists_surjective_algHom [Algebra A B]
+    (h : IsStrictlyTopologicallyFiniteType (algebraMap A B)) :
+    ∃ (k : ℕ) (π : restrictedMvPowerSeriesCompletion k A →ₐ[A] B), Function.Surjective π := by
+  obtain ⟨k, π, hπ, hcomm⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
+  exact ⟨k, { π with commutes' := RingHom.congr_fun hcomm }, hπ.surjective⟩
+
 /-- **The presentation by the identity**: the structure map `A → A⟨X₁, …, Xₖ⟩` is strictly
 topologically of finite type. This is the witness that the conditions are simultaneously
 satisfiable. At `k = 0` it presents the structure map `A → A⟨⟩`; for the completion map `A → Â`
@@ -685,7 +693,7 @@ private theorem coe_mem_closure_image_weightSubst
   obtain ⟨q, hq, hqp⟩ := exists_aeval_eq_of_forall_coeff_mem ht p hpU
   refine ⟨(weightedPolynomialHom T hT p : Completion (weightedRestrictedSubring T hT)), ?_,
     _, ⟨weightedPolynomialHom _ isWeightFamily_one_weight q,
-      mem_weightedNhd.mpr fun μ ↦ by simpa using hq μ, rfl⟩,
+      weightedPolynomialHom_mem_weightedNhd.mpr fun μ ↦ by simpa using hq μ, rfl⟩,
     by rw [weightSubst_coe_weightedPolynomialHom, hqp]⟩
   have hpN : ((h - (h - weightedPolynomialHom T hT p) : weightedRestrictedSubring T hT) :
       Completion (weightedRestrictedSubring T hT)) ∈ N :=

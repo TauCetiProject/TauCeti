@@ -386,8 +386,8 @@ theorem exists_trajectorySign_eq_one_and_eq_neg_one_of_stableSet [Orientable �
   -- Stage 2: the stable comparison maps flip `oM` between `z₁` and `z₂`, hence flip `op`.
   have hC₁ := bijective_trajectoryComparison hφp hφq hMS hf hpq hz₁
   have hC₂ := bijective_trajectoryComparison hφp hφq hMS hf hpq hz₂
-  have hA₁ := bijective_stableComparison hφp hφq hMS hf hp hpq hz₁
-  have hA₂ := bijective_stableComparison hφp hφq hMS hf hp hpq hz₂
+  have hA₁ := bijective_mvfderiv_prod_stableNormal hMS hf hφp hφq hp hpq hz₁
+  have hA₂ := bijective_mvfderiv_prod_stableNormal hMS hf hφp hφq hp hpq hz₂
   have hoE (x : E) : oE.orientationAt x = oE.orientationAt 0 :=
     Manifold.Orientation.orientationAt_eq_orientationAt oE x 0
   have hflip := hX.map_stableComparison_eq_neg hφq (by omega) u₀.property hoE h0₁ h0₂ hto₁ hto₂

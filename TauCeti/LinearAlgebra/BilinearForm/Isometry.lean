@@ -14,6 +14,7 @@ public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.Algebra.Module.Equiv.AutCongr
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
+public import TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -22,10 +23,12 @@ import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 # The isometry group of a bilinear form
 
 An endomorphism `f` of a module `M` is an *isometry* of a bilinear form `B` when
-`B (f x) (f y) = B x y`. Starting from the predicate `TauCeti.BilinForm.IsIsometry` defined in the
-dependency-light module `TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic`, this file builds the
-group it cuts out inside the linear automorphisms of `M`, `LinearMap.BilinForm.isometryGroup B`,
-together with the API a consumer of the group needs: a Gram-matrix criterion, the resulting
+`B (f x) (f y) = B x y`. The isometry group of `B` is `LinearMap.isometryGroup B`, the isometry
+group of `B` as a sesquilinear form, defined in
+`TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup`. This file links it to the predicate
+`TauCeti.BilinForm.IsIsometry` from the dependency-light module
+`TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic` (`LinearMap.BilinForm.mem_isometryGroup`) and
+adds the bilinear-specific API a consumer of the group needs: a Gram-matrix criterion, the resulting
 constraint `(det f) ^ 2 = 1`, functoriality in the module and in the base ring, and stability of
 orthogonal complements.
 
@@ -36,11 +39,12 @@ predicate here is stated over a commutative semiring and an additive commutative
 to the bundled map (`TauCeti.BilinForm.IsIsometry.toIsometry`,
 `TauCeti.BilinForm.isIsometry_toLinearMap`) lives with the predicate; the bridge to the bundled
 equivalence is `LinearMap.BilinForm.isometryGroupEquivIsometryEquiv` here, an equivalence of *types*
-between the subgroup and `B.IsometryEquiv B`. What this file adds is the group structure on the
-isometric automorphisms, needed as soon as one wants subgroups of it, group homomorphisms into it,
-or a group action, none of which a bare type of bundled equivalences provides, together with the
+between the subgroup and `B.IsometryEquiv B`. The group structure on the isometric automorphisms,
+needed as soon as one wants subgroups of it, group homomorphisms into it, or a group action, none of
+which a bare type of bundled equivalences provides, comes from the subgroup
+`LinearMap.isometryGroup B`. What this file adds is this equivalence with `B.IsometryEquiv B`, the
 automatic-invertibility theorem below, which turns "preserves `B`" on an endomorphism one already
-has into membership of the group.
+has into membership of the group, and the bilinear API above.
 
 Two statements are worth singling out.
 
@@ -58,7 +62,6 @@ Two statements are worth singling out.
 
 ## Main definitions
 
-* `LinearMap.BilinForm.isometryGroup`: the isometry group `Aut(M, B) ≤ M ≃ₗ[R] M`.
 * `LinearMap.BilinForm.isometryGroupEquivIsometryEquiv`: the isometry group as a type, equivalent to
   Mathlib's self-isometries `B.IsometryEquiv B`.
 * `Module.Basis.isometryEquivOfToMatrixEq`: two bilinear forms with the same matrix in some bases
@@ -184,8 +187,15 @@ end TauCeti
 
 /-! ### The isometry group
 
-These declarations live in Mathlib's `LinearMap.BilinForm` namespace so that dot notation such as
-`B.isometryGroup` works on a bilinear form `B`. -/
+The isometry group `Aut(M, B) ≤ M ≃ₗ[R] M` of a bilinear form `B` is the isometry group
+`LinearMap.isometryGroup B` of `B` as a sesquilinear form. The declarations below, specific to
+bilinear forms, live in Mathlib's `LinearMap.BilinForm` namespace so that dot notation such as
+`B.isometryGroupEquivIsometryEquiv` works on a bilinear form `B`.
+
+For a finite free `ℤ`-module `V` carrying an integral form `Q` this group is the arithmetic group
+`Aut(V, Q)`; when `Q` is preserved by monodromy, a variation of Hodge structure has its monodromy
+representation land in this group and act on the complexification through
+`LinearMap.BilinForm.isometryGroupBaseChange`. -/
 
 namespace LinearMap.BilinForm
 
@@ -197,34 +207,14 @@ section CommSemiring
 variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
   [Module R M'] {B : BilinForm R M}
 
-/-- The isometry group `Aut(M, B)` of a bilinear form `B` on `M`: the linear automorphisms of `M`
-that preserve `B`.
-
-For a finite free `ℤ`-module `V` carrying an integral form `Q` this is the arithmetic group
-`Aut(V, Q)`; when `Q` is preserved by monodromy, a variation of Hodge structure has its monodromy
-representation land in this group and act on the complexification through
-`LinearMap.BilinForm.isometryGroupBaseChange`. -/
-def isometryGroup (B : BilinForm R M) : Subgroup (M ≃ₗ[R] M) where
-  carrier := {e | IsIsometry B (e : M →ₗ[R] M)}
-  one_mem' := isIsometry_iff.mpr fun _ _ => rfl
-  mul_mem' := fun {a b} ha hb => isIsometry_iff.mpr fun x y =>
-    (ha.apply (b x) (b y)).trans (hb.apply x y)
-  inv_mem' := fun {a} ha => isIsometry_iff.mpr fun x y => by
-    simpa using (ha.apply (a.symm x) (a.symm y)).symm
-
-/-- Membership in the isometry group is the isometry predicate. -/
+/-- Membership in the isometry group `Aut(M, B) = LinearMap.isometryGroup B` of a bilinear form is
+the isometry predicate. -/
 theorem mem_isometryGroup {e : M ≃ₗ[R] M} :
-    e ∈ isometryGroup B ↔ IsIsometry B (e : M →ₗ[R] M) := Iff.rfl
-
-/-- A self-equivalence lies in `Aut(M, B)` exactly when it preserves `B` on every pair of
-vectors. -/
-@[simp]
-theorem mem_isometryGroup_iff {e : M ≃ₗ[R] M} :
-    e ∈ isometryGroup B ↔ ∀ x y, B (e x) (e y) = B x y :=
-  mem_isometryGroup.trans isIsometry_iff
+    e ∈ isometryGroup B ↔ IsIsometry B (e : M →ₗ[R] M) :=
+  mem_isometryGroup_iff.trans isIsometry_iff.symm
 
 /-- Membership in `Aut(M, B)` is exactly Mathlib's notion of a self-isometry of `B`: the subgroup
-`LinearMap.BilinForm.isometryGroup B` and the type `LinearMap.BilinForm.IsometryEquiv B B` carry the
+`LinearMap.isometryGroup B` and the type `LinearMap.BilinForm.IsometryEquiv B B` carry the
 same data, the subgroup adding the group structure. -/
 def isometryGroupEquivIsometryEquiv (B : BilinForm R M) :
     isometryGroup B ≃ B.IsometryEquiv B where

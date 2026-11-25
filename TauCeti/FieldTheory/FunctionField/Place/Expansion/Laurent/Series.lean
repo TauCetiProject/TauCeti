@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Completion
 public import TauCeti.RingTheory.LaurentSeries.Basic
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Laurent-series expansions at rational places

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Stable.ChartChange
 public import TauCeti.LinearAlgebra.Orientation.LinearMapSign
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Analysis.Normed.Module.Orientation
+import TauCeti.Data.Set.Card
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 import TauCeti.LinearAlgebra.Determinant.Prod
@@ -91,8 +92,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 ## Main results
 
-* `bijective_trajectoryComparison`, `bijective_stableComparison`: the comparison map and the
-  stable comparison map `v ↦ (df_y v, Nq v)` are isomorphisms at the points of trajectories
+* `bijective_trajectoryComparison`, `bijective_mvfderiv_prod_stableNormal`: the comparison map and
+  the stable comparison map `v ↦ (df_y v, Nq v)` are isomorphisms at the points of trajectories
   between critical points of consecutive index (and top source index).
 * `trajectorySign_eq_one_or_eq_neg_one`: so the sign of such a trajectory is `±1`.
 * `exists_trajectorySign_eq_and_map_eq`, `trajectorySign_eq_of_map_eq`: where the comparison map
@@ -463,11 +464,16 @@ theorem bijective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse �
     φq.finrank_negativeWeight_fun]
   omega
 
+omit hφp hφq in
 /-- **The stable comparison map along a trajectory from a critical point of top index.** At a
 point `z` of a trajectory from a critical point `p` of index `n` to a critical point `q` of index
 `n - 1`, the map `v ↦ (df_z v, N_q v)` is an isomorphism: it is the comparison map after the
 inverse of the unstable frame of `p`. -/
-theorem bijective_stableComparison (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+theorem bijective_mvfderiv_prod_stableNormal (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    (hφp : ∀ y ∈ φp.toChart.source, φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
+      fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
+    (hφq : ∀ y ∈ φq.toChart.source, φq.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φq.toChart y (X y)) =
+      fun i ↦ -(φq.weight i * φq.coord (φq.toChart y) i))
     (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = Module.finrank ℝ E)
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {z : M}
     (hz : z ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
@@ -642,13 +648,11 @@ theorem intCast_signedTrajectoryCount (hMS : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f) :
     (hX.signedTrajectoryCount φp φq op oq hpq : ZMod 2) =
       ((hX.morseTrajectorySlice p q).ncard : ZMod 2) := by
-  have hfin := hMS.finite_morseTrajectorySlice hf hpq
-  rw [signedTrajectoryCount_def, finsum_mem_eq_finite_toFinset_sum _ hfin, Int.cast_sum,
-    ncard_eq_toFinset_card _ hfin, Finset.card_eq_sum_ones, Nat.cast_sum]
-  refine Finset.sum_congr rfl fun y hy ↦ ?_
-  rw [Finite.mem_toFinset, mem_morseTrajectorySlice] at hy
-  rcases trajectorySign_eq_one_or_eq_neg_one hφp hφq hMS hf ⟨hy.1, hy.2.1⟩ with h | h <;>
-    rw [h] <;> decide
+  rw [signedTrajectoryCount_def]
+  exact intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one
+    (hMS.finite_morseTrajectorySlice hf hpq) fun _ hy ↦ by
+      obtain ⟨hu, hs, -⟩ := hX.mem_morseTrajectorySlice.1 hy
+      exact trajectorySign_eq_one_or_eq_neg_one hφp hφq hMS hf ⟨hu, hs⟩
 
 /-- If two points of `W^u(p) ∩ W^s(q)` carry opposite trajectory signs, then the middle-level slice
 `morseTrajectorySlice p q` contains a point of sign `+1` and a point of sign `-1`. -/
