@@ -60,6 +60,8 @@ is invariant under permutations and, with countably many symbols on a countable 
 
 * `TauCeti.FunctionalConfiguration.isoSetoid_eq_orbitRel`: isomorphism is the orbit relation of
   the action of `Equiv.Perm V`.
+* `TauCeti.FunctionalConfiguration.isomorphismInvariant_iff_isInvariantBlock`: isomorphism
+  invariance is invariance under the action of `Equiv.Perm V`.
 * `TauCeti.FunctionalConfiguration.instContinuousSMulPerm`: for discrete `V`, the action is jointly
   continuous.
 * `TauCeti.FunctionalConfiguration.continuous_graphCode`,
@@ -344,6 +346,23 @@ def IsomorphismInvariant (K : Set (FunctionalConfiguration L V)) : Prop :=
 theorem isomorphismInvariant_iff {K : Set (FunctionalConfiguration L V)} :
     IsomorphismInvariant K ↔ ∀ ⦃F G⦄, isoSetoid L V F G → F ∈ K → G ∈ K :=
   Iff.rfl
+
+/-- Isomorphic functional configurations lie in the same isomorphism-invariant sets. -/
+theorem IsomorphismInvariant.mem_iff {K : Set (FunctionalConfiguration L V)}
+    (hK : IsomorphismInvariant K) {F G : FunctionalConfiguration L V} (h : isoSetoid L V F G) :
+    F ∈ K ↔ G ∈ K :=
+  ⟨hK h, hK ((isoSetoid L V).symm h)⟩
+
+/-- **Isomorphism invariance is invariance under the logic action**: a set of functional
+configurations is isomorphism invariant exactly when every permutation of the carrier maps it into
+itself. -/
+theorem isomorphismInvariant_iff_isInvariantBlock {K : Set (FunctionalConfiguration L V)} :
+    IsomorphismInvariant K ↔ MulAction.IsInvariantBlock (Equiv.Perm V) K := by
+  refine ⟨fun hK σ => ?_, fun hK F G h hF => ?_⟩
+  · rintro _ ⟨F, hF, rfl⟩
+    exact hK (isoSetoid_iff_exists_perm_smul_eq.2 ⟨σ, rfl⟩) hF
+  · obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
+    exact hK σ (smul_mem_smul_set hF)
 
 /-! ### The graph code -/
 

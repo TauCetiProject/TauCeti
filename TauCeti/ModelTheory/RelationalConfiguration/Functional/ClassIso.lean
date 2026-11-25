@@ -85,11 +85,10 @@ theorem classIso_iff_exists_perm_smul_eq {F G : K} :
 /-- **The graph code maps invariant classes to invariant classes**, being equivariant. -/
 theorem isomorphismInvariant_image_graphCode (hK : IsomorphismInvariant K) :
     RelationalConfiguration.IsomorphismInvariant (graphCode '' K) := by
-  refine RelationalConfiguration.isomorphismInvariant_iff.2 ?_
-  rintro c d hcd ⟨F, hF, rfl⟩
-  obtain ⟨σ, rfl⟩ := RelationalConfiguration.isoSetoid_iff_exists_perm_smul_eq.1 hcd
-  exact ⟨σ • F, FunctionalConfiguration.isomorphismInvariant_iff.1 hK
-    (isoSetoid_iff_exists_perm_smul_eq.2 ⟨σ, rfl⟩) hF, graphCode_perm_smul σ F⟩
+  refine RelationalConfiguration.isomorphismInvariant_iff_isInvariantBlock.2 fun σ => ?_
+  rintro _ ⟨_, ⟨F, hF, rfl⟩, rfl⟩
+  exact ⟨σ • F, FunctionalConfiguration.isomorphismInvariant_iff_isInvariantBlock.1 hK σ
+    (smul_mem_smul_set hF), graphCode_perm_smul σ F⟩
 
 variable [TopologicalSpace V] [DiscreteTopology V] [Countable V]
   [∀ n, Countable (L.Functions n)] [∀ n, Countable (L.Relations n)]
