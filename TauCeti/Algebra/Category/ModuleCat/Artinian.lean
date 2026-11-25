@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.RingTheory.Artinian.Module
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 
 /-!

@@ -66,13 +66,15 @@ def adicCompletionResidueMap :
         (ResidueField (_root_.AdicCompletion (maximalIdeal R) R)) := by
     have htop : (maximalIdeal R).primaryComponent
         (ResidueField (_root_.AdicCompletion (maximalIdeal R) R)) = ⊤ :=
-      Ideal.primaryComponent_eq_top_of_le_annihilator _ fun r hr ↦
-        Module.mem_annihilator.mpr fun x ↦ by
-          rw [← algebraMap_smul (_root_.AdicCompletion (maximalIdeal R) R),
-            Algebra.smul_def, ResidueField.algebraMap_eq,
-            (residue_eq_zero_iff (R := _root_.AdicCompletion (maximalIdeal R) R) _).mpr
-              ((_root_.AdicCompletion.maximalIdeal_eq_map (R := R)).ge
-                (Ideal.mem_map_of_mem _ hr)), zero_mul]
+      Ideal.primaryComponent_eq_top_of_le_annihilator _ (n := 1) (by
+        rw [pow_one]
+        exact fun r hr ↦
+          Module.mem_annihilator.mpr fun x ↦ by
+            rw [← algebraMap_smul (_root_.AdicCompletion (maximalIdeal R) R),
+              Algebra.smul_def, ResidueField.algebraMap_eq,
+              (residue_eq_zero_iff (R := _root_.AdicCompletion (maximalIdeal R) R) _).mpr
+                ((_root_.AdicCompletion.maximalIdeal_eq_map (R := R)).ge
+                  (Ideal.mem_map_of_mem _ hr)), zero_mul])
     exact fun x ↦ htop.ge Submodule.mem_top
   exact (AdicCompletion.restrictScalarsEquivOfPrimaryComponent
     (maximalIdeal R).fg_of_isNoetherianRing hκ).symm

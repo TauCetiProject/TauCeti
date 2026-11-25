@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Perfectoid.FontaineTheta
 public import TauCeti.RingTheory.Huber.Pair.Complete
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Plus
 import TauCeti.RingTheory.Ideal.Quotient.Frobenius
-import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 
 /-!
 # Fontaine's map for the tilt of a complete uniform Tate ring

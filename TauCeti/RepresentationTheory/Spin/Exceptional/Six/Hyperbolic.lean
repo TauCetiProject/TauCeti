@@ -96,10 +96,6 @@ theorem spinSixWedgeBasis_inr (i : Fin 3) :
       (fun j ↦ Pi.single ((![![2, 3], ![1, 3], ![1, 2]] : Fin 3 → Fin 2 → Fin 4) i j) 1) := by
   simp [spinSixWedgeBasis_apply, wedgePairSign, wedgePairIndices]
 
-/-- The standard dual-coordinate and coordinate basis of three split hyperbolic planes. -/
-noncomputable def splitSixBasis : Basis (Fin 3 ⊕ Fin 3) K (SplitEvenSpace K 3) :=
-  (Pi.basisFun K (Fin 3)).dualBasis.prod (Pi.basisFun K (Fin 3))
-
 private theorem spinSixWedgeForm_basis (i j : Fin 3 ⊕ Fin 3) :
     spinSixWedgeForm K (spinSixWedgeBasis K i) (spinSixWedgeBasis K j) =
       Matrix.fromBlocks (0 : Matrix (Fin 3) (Fin 3) K) 1 1 0 i j := by
@@ -140,20 +136,15 @@ theorem spinSixWedgeForm_basis_inr_inl (i j : Fin 3) :
       (spinSixWedgeBasis K (Sum.inl j)) = if i = j then 1 else 0 := by
   simpa [Matrix.one_apply] using spinSixWedgeForm_basis K (Sum.inr i) (Sum.inl j)
 
-private theorem spinSixWedgeBasis_pairing (i j : Fin 3 ⊕ Fin 3) :
-    spinSixWedgeForm K (spinSixWedgeBasis K i) (spinSixWedgeBasis K j) =
-      (splitEvenForm K 3).polarBilin (splitSixBasis K i) (splitSixBasis K j) := by
-  rcases i with i | i <;> rcases j with j | j <;>
-    simp [splitSixBasis, Basis.prod_apply, polar_splitEvenForm,
-      QuadraticMap.polarBilin_apply_apply, Pi.basisFun_apply, Pi.single_apply, eq_comm]
-
 /-- Hyperbolic coordinates identify the wedge pairing with the un-halved polar form of three
 hyperbolic planes. This comparison does not require two to be invertible. -/
 noncomputable def spinSixWedgeIsometryEquivPolarSplit :
     (spinSixWedgeForm K).IsometryEquiv (splitEvenForm K 3).polarBilin :=
-  (spinSixWedgeBasis K).isometryEquivOfToMatrixEq (splitSixBasis K)
-    (by ext i j; simpa only [LinearMap.BilinForm.toMatrix_apply] using
-      spinSixWedgeBasis_pairing K i j)
+  (spinSixWedgeBasis K).isometryEquivOfToMatrixEq (splitEvenDualBasis K 3)
+    (by
+      rw [toMatrix_polarBilin_splitEvenForm]
+      ext i j
+      simpa only [LinearMap.BilinForm.toMatrix_apply] using spinSixWedgeForm_basis K i j)
 
 /-- The first half of the wedge basis maps to the standard dual-coordinate axis. -/
 @[simp↓]
@@ -162,7 +153,7 @@ theorem spinSixWedgeIsometryEquivPolarSplit_apply_inl (i : Fin 3) :
       ((Pi.basisFun K (Fin 3)).coord i, 0) := by
   simp only [spinSixWedgeIsometryEquivPolarSplit,
     Basis.isometryEquivOfToMatrixEq_apply_basis]
-  simp [splitSixBasis, Basis.prod_apply]
+  simp
 
 /-- The second half of the wedge basis maps to the standard coordinate axis. -/
 @[simp↓]
@@ -171,7 +162,7 @@ theorem spinSixWedgeIsometryEquivPolarSplit_apply_inr (i : Fin 3) :
       (0, Pi.single i 1) := by
   simp only [spinSixWedgeIsometryEquivPolarSplit,
     Basis.isometryEquivOfToMatrixEq_apply_basis]
-  simp [splitSixBasis, Basis.prod_apply, Pi.basisFun_apply]
+  simp
 
 /-- The inverse hyperbolic coordinates recover the first half of the wedge basis. -/
 @[simp]
@@ -191,30 +182,17 @@ theorem spinSixWedgeIsometryEquivPolarSplit_symm_apply_inr (i : Fin 3) :
   -- Bilinear isometry inversion is defined using the underlying linear equivalence.
   exact (spinSixWedgeIsometryEquivPolarSplit K).toLinearEquiv.symm_apply_apply _
 
-omit [Nontrivial K] in
-/-- The first half of the split basis consists of the standard dual-coordinate axes. -/
-@[simp]
-theorem splitSixBasis_inl (i : Fin 3) :
-    splitSixBasis K (Sum.inl i) = ((Pi.basisFun K (Fin 3)).coord i, 0) := by
-  simp [splitSixBasis, Basis.prod_apply]
-
-omit [Nontrivial K] in
-/-- The second half of the split basis consists of the standard coordinate axes. -/
-@[simp]
-theorem splitSixBasis_inr (i : Fin 3) :
-    splitSixBasis K (Sum.inr i) = (0, Pi.single i 1) := by
-  simp [splitSixBasis, Basis.prod_apply, Pi.basisFun_apply]
-
 /-- Transporting the wedge basis gives the existing standard split basis. -/
 @[simp]
-theorem spinSixWedgeBasis_map_eq_splitSixBasis :
+theorem spinSixWedgeBasis_map_eq_splitEvenDualBasis :
     (spinSixWedgeBasis K).map (spinSixWedgeIsometryEquivPolarSplit K).toLinearEquiv =
-      splitSixBasis K := by
+      splitEvenDualBasis K 3 := by
   ext i : 1
   rcases i with i | i <;>
     simp only [Basis.map_apply, LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
       spinSixWedgeIsometryEquivPolarSplit_apply_inl,
-      spinSixWedgeIsometryEquivPolarSplit_apply_inr, splitSixBasis_inl, splitSixBasis_inr]
+      spinSixWedgeIsometryEquivPolarSplit_apply_inr, splitEvenDualBasis_inl,
+      splitEvenDualBasis_inr]
 
 variable [Invertible (2 : K)]
 
