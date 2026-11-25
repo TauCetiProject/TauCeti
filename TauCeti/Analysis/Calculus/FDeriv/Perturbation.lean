@@ -200,6 +200,10 @@ structure IsNearId (𝕜 : Type*) [NontriviallyNormedField 𝕜] {E : Type*} [No
 theorem isNearId_id {η : ℝ} (hη : 0 ≤ η) : IsNearId 𝕜 η (id : E → E) :=
   ⟨differentiable_id, by simpa using hη, by simpa [fderiv_id] using hη⟩
 
+/-- The bound of a map close to the identity in `C¹` is nonnegative. -/
+theorem IsNearId.nonneg {η : ℝ} {ψ : E → E} (h : IsNearId 𝕜 η ψ) : 0 ≤ η :=
+  (norm_nonneg _).trans (h.norm_sub_le 0)
+
 /-- Closeness to the identity in `C¹` is monotone in the bound. -/
 theorem IsNearId.mono {η η' : ℝ} {ψ : E → E} (h : IsNearId 𝕜 η ψ) (hη : η ≤ η') :
     IsNearId 𝕜 η' ψ :=
@@ -210,10 +214,10 @@ theorem IsNearId.mono {η η' : ℝ} {ψ : E → E} (h : IsNearId 𝕜 η ψ) (h
 `(a + b + a * b)`-close to it. -/
 theorem IsNearId.comp {a b : ℝ} {Ψ ψ : E → E} (hΨ : IsNearId 𝕜 a Ψ) (hψ : IsNearId 𝕜 b ψ) :
     IsNearId 𝕜 (a + b + a * b) (Ψ ∘ ψ) := by
+  have ha : 0 ≤ a := hΨ.nonneg
+  have hb : 0 ≤ b := hψ.nonneg
   obtain ⟨hΨd, hΨ₀, hΨ₁⟩ := hΨ
   obtain ⟨hψd, hψ₀, hψ₁⟩ := hψ
-  have ha : 0 ≤ a := (norm_nonneg _).trans (hΨ₀ 0)
-  have hb : 0 ≤ b := (norm_nonneg _).trans (hψ₀ 0)
   refine ⟨hΨd.comp hψd, fun w ↦ ?_, fun w ↦ ?_⟩
   · calc ‖Ψ (ψ w) - w‖ ≤ ‖Ψ (ψ w) - ψ w‖ + ‖ψ w - w‖ := norm_sub_le_norm_sub_add_norm_sub ..
       _ ≤ a + b := add_le_add (hΨ₀ _) (hψ₀ w)

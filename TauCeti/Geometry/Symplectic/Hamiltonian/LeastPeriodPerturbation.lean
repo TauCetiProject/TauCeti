@@ -94,7 +94,7 @@ private theorem exists_isNearId_isNondegenerateFixedPt_iterate_comp_closedBall
     (fun y hy j hj hjk h ↦ hret y (ball_subset_closedBall hy) j hj hjk (ball_subset_closedBall h))
     hη
   obtain ⟨-, -, hdisp, hderiv, hnd⟩ := hψ hX
-  have hH' (n : ℕ) : ContDiff ℝ (n + 2) H := hH.of_le (WithTop.coe_le_coe.2 le_top)
+  have hH' (n : ℕ) : ContDiff ℝ (n + 2) H := hH.of_le (by simp)
   have hψs (n : ℕ) : ContDiff ℝ (n + 1) (ω.hamiltonianFlow H hX 1) :=
     ω.contDiff_hamiltonianFlow_apply H n hX (hH' n) 1
   refine ⟨ω.hamiltonianFlow H hX 1, contDiff_infty.2 fun n ↦ (hψs n).of_le (by norm_cast; omega),
@@ -172,15 +172,15 @@ nondegenerate.** Let `φ` be a `C¹` self-map of a finite-dimensional symplectic
 let `k > 0`, and let `K ⊆ W` be a compact subset of an open set every point of which of period `k`
 has least period exactly `k`. For every `ε > 0` there is a smooth map `ψ` preserving `ω`, equal to
 the identity outside a compact subset of `W`, moving no point by more than `ε` and with derivative
-within `ε` of the identity everywhere, such that every point `x ∈ K` with `(φ ∘ ψ)^[k] x = x` is a
-nondegenerate fixed point of `(φ ∘ ψ)^[k]`. Since `ψ` preserves `ω`, the perturbed map `φ ∘ ψ`
-is symplectic whenever `φ` is. -/
+within `ε` of the identity everywhere (`IsNearId ℝ ε ψ`), such that every point `x ∈ K` with
+`(φ ∘ ψ)^[k] x = x` is a nondegenerate fixed point of `(φ ∘ ψ)^[k]`. Since `ψ` preserves `ω`, the
+perturbed map `φ ∘ ψ` is symplectic whenever `φ` is. -/
 theorem exists_isNondegenerateFixedPt_iterate_comp (ω : SymplecticForm V) {φ : V → V}
     (hφ : ContDiff ℝ 1 φ) {k : ℕ} (hk : 0 < k) {K W : Set V} (hK : IsCompact K) (hW : IsOpen W)
     (hKW : K ⊆ W) (hmin : ∀ x ∈ K, IsPeriodicPt φ k x → minimalPeriod φ x = k) {ε : ℝ}
     (hε : 0 < ε) :
     ∃ ψ : V → V, ContDiff ℝ (⊤ : ℕ∞) ψ ∧ (∃ S, IsCompact S ∧ S ⊆ W ∧ ∀ w ∉ S, ψ w = w) ∧
-      (∀ w, ‖ψ w - w‖ ≤ ε) ∧ (∀ w, ‖fderiv ℝ ψ w - ContinuousLinearMap.id ℝ V‖ ≤ ε) ∧
+      IsNearId ℝ ε ψ ∧
       (∀ w u v, ω (fderiv ℝ ψ w u) (fderiv ℝ ψ w v) = ω u v) ∧
       ∀ x ∈ K, IsFixedPt (φ ∘ ψ)^[k] x → IsNondegenerateFixedPt 𝓘(ℝ, V) (φ ∘ ψ)^[k] x := by
   classical
@@ -214,9 +214,7 @@ theorem exists_isNondegenerateFixedPt_iterate_comp (ω : SymplecticForm V) {φ :
         fun y hy hfix ↦ hy.2 (hPt ⟨hy.1, hfix⟩), fun x hx ↦ absurd hx (Finset.notMem_empty x)⟩
       fun _ _ ha hs has ⟨Ψ, hΨ⟩ ↦ hΨ.exists_insert hφ hk (fun x hx ↦ hr x (htP x hx))
         (fun x hx ↦ hrW x (htP x hx)) hK' hc hε hcε ha hs has
-  refine ⟨Ψ, hΨs, hS, fun w ↦ (hΨn.norm_sub_le w).trans hcε,
-    fun w ↦ (hΨn.norm_fderiv_sub_id_le w).trans hcε, hΨω,
-    fun x hx hfix ↦ ?_⟩
+  refine ⟨Ψ, hΨs, hS, hΨn.mono hcε, hΨω, fun x hx hfix ↦ ?_⟩
   by_cases hxb : x ∈ ⋃ y ∈ t, ball y (r y)
   · obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 hxb
     exact hnd y hy x (ball_subset_closedBall hxy) hfix
