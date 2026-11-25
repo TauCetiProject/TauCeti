@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Approximation
 public import TauCeti.Analysis.BoundedVariation.RegularLevel
-import Mathlib.MeasureTheory.Integral.Average
-import TauCeti.Analysis.Calculus.Sard.OutermostStratum
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.LayerCake
 
@@ -19,8 +17,8 @@ Let `Ω` be an open subset of a finite-dimensional real inner product space with
 measure `μ`, and let `s` be null-measurable. This file proves that there are functions `u_j`
 smooth on `Ω` and levels `t_j ∈ (0, 1)`, regular for `u_j` on `Ω`, such that `{u_j > t_j}`
 converges to `s` in measure on `Ω` and `P({u_j > t_j}; Ω) → P(s; Ω)`, finite or infinite
-(`TauCeti.exists_contDiffOn_perimeter_approximation`). Neither `s` nor `Ω` is assumed to have
-finite volume, and `s` need not have finite perimeter in `Ω`.
+(`MeasureTheory.NullMeasurableSet.exists_contDiffOn_perimeter_approximation`). Neither `s` nor
+`Ω` is assumed to have finite volume, and `s` need not have finite perimeter in `Ω`.
 
 The route applies the strict approximation on open sets
 (`MeasureTheory.LocallyIntegrableOn.exists_contDiffOn_strict_approximation`) to the indicator of
@@ -28,8 +26,7 @@ The route applies the strict approximation on open sets
 `TauCeti.totalVariationOn_eq_lintegral_perimeter` and the Morse–Sard theorem on `Ω`
 (`TauCeti.addHaar_image_criticalPoints_eq_zero`) give, in every interval `(a, b)`, a level regular
 on `Ω` whose superlevel set has perimeter in `Ω` at most the variation on `Ω` divided by `b - a`
-(`ContDiffOn.exists_mem_Ioo_surjective_fderiv_perimeter_le`, the `Ω`-local form of
-`ContDiff.exists_mem_Ioo_surjective_fderiv_perimeter_le`). Thresholding at a level in
+(`ContDiffOn.exists_mem_Ioo_surjective_fderiv_perimeter_le`). Thresholding at a level in
 `(δ, 1 - δ)` controls the volume error by the `L¹(Ω)` error divided by `δ`
 (`MeasureTheory.Measure.measure_symmDiff_setOf_lt_indicator_le`), and lower semicontinuity of the
 perimeter gives the reverse inequality. The whole-space form for sets of finite volume is
@@ -37,10 +34,13 @@ perimeter gives the reverse inequality. The whole-space form for sets of finite 
 
 ## Main results
 
-* `ContDiffOn.exists_mem_Ioo_surjective_fderiv_perimeter_le`: a regular level on `Ω` with the
-  perimeter bound, for a function smooth on `Ω`.
-* `TauCeti.exists_contDiffOn_perimeter_approximation`: relative smooth approximation of a set in
-  measure and in perimeter on `Ω`.
+* `MeasureTheory.NullMeasurableSet.exists_contDiffOn_perimeter_approximation`: relative smooth
+  approximation of a set in measure and in perimeter on `Ω`.
+
+## References
+
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 13 (§13.2).
+* L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, §5.2.2.
 -/
 
 public section
@@ -51,39 +51,6 @@ open scoped ENNReal Topology ContDiff symmDiff
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   {u : E → ℝ} {Ω : Opens E} {a b : ℝ} {s : Set E}
-
-/-- A function smooth on an open set `Ω` has a level in every nonempty interval `(a, b)` that is
-regular on `Ω` and whose superlevel set has perimeter in `Ω` at most the variation of the function
-on `Ω` divided by `b - a`. The estimate also holds when the variation is infinite. -/
-theorem ContDiffOn.exists_mem_Ioo_surjective_fderiv_perimeter_le (hu : ContDiffOn ℝ ∞ u Ω)
-    (hab : a < b) :
-    ∃ t ∈ Ioo a b, (∀ x ∈ Ω, u x = t → Surjective (fderiv ℝ u x)) ∧
-      TauCeti.perimeter μ Ω {x | t < u x} ≤
-        TauCeti.totalVariationOn μ Ω u / ENNReal.ofReal (b - a) := by
-  let ν : Measure ℝ := volume.restrict (Ioo a b)
-  let N : Set ℝ := (Ioo a b)ᶜ ∪ u '' ((Ω : Set E) ∩ {x | ¬ Surjective (fderiv ℝ u x)})
-  have hν : ν ≠ 0 := by
-    rw [Ne, Measure.restrict_eq_zero, Real.volume_Ioo, ENNReal.ofReal_eq_zero]
-    exact not_le.mpr (sub_pos.mpr hab)
-  have hN : ν N = 0 := by
-    refine measure_union_null ?_ ?_
-    · simp [ν]
-    · exact le_antisymm ((Measure.restrict_apply_le _ _).trans_eq
-        (TauCeti.addHaar_image_criticalPoints_eq_zero volume
-          (fun x hx ↦ (hu x hx).contDiffAt (Ω.isOpen.mem_nhds hx))
-          (ENat.natCast_le_of_coe_top_le_withTop le_rfl _))) bot_le
-  have hmeas : Measurable (fun t ↦ TauCeti.perimeter μ Ω {x | t < u x}) :=
-    TauCeti.measurable_perimeter_setOf_lt (hu.continuousOn.aemeasurable Ω.isOpen.measurableSet)
-  obtain ⟨t, htN, ht⟩ := exists_notMem_null_le_laverage hν hmeas.aemeasurable hN
-  have htI : t ∈ Ioo a b := by simpa [N] using (not_or.mp htN).1
-  refine ⟨t, htI, fun x hx hxt ↦ ?_, ht.trans ?_⟩
-  · by_contra hcrit
-    exact (not_or.mp htN).2 ⟨x, ⟨hx, hcrit⟩, hxt⟩
-  · rw [laverage_eq, Measure.restrict_apply_univ, Real.volume_Ioo]
-    gcongr
-    exact (setLIntegral_le_lintegral (Ioo a b) _).trans_eq
-      (TauCeti.totalVariationOn_eq_lintegral_perimeter
-        (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)).symm
 
 namespace TauCeti
 
@@ -126,7 +93,8 @@ private theorem measure_symmDiff_inter_le {w : E → ℝ} (hw : ContinuousOn w �
 `Ω`, there are functions `u n` smooth on `Ω` and levels `t n ∈ (0, 1)`, regular for `u n` on `Ω`,
 such that the superlevel sets `{u n > t n}` converge to `s` in measure on `Ω` and their perimeters
 in `Ω` converge to `P(s; Ω)`, finite or infinite. Neither `s` nor `Ω` needs finite volume. -/
-theorem exists_contDiffOn_perimeter_approximation (hs : NullMeasurableSet s μ) (Ω : Opens E) :
+theorem _root_.MeasureTheory.NullMeasurableSet.exists_contDiffOn_perimeter_approximation
+    (hs : NullMeasurableSet s μ) (Ω : Opens E) :
     ∃ (u : ℕ → E → ℝ) (t : ℕ → ℝ),
       (∀ n, ContDiffOn ℝ ∞ (u n) Ω ∧ t n ∈ Ioo 0 1 ∧
         ∀ x ∈ Ω, u n x = t n → Surjective (fderiv ℝ (u n) x)) ∧
@@ -155,7 +123,7 @@ theorem exists_contDiffOn_perimeter_approximation (hs : NullMeasurableSet s μ) 
   choose m hkm hm using hidx
   have hmT : Tendsto m atTop atTop := tendsto_atTop_mono hkm tendsto_id
   choose t ht hreg hP using fun k ↦
-    (hw (m k)).exists_mem_Ioo_surjective_fderiv_perimeter_le (μ := μ) (hδ' k)
+    (hw (m k)).exists_mem_Ioo_surjective_fderiv_perimeter_le (μ := μ) Ω.isOpen subset_rfl (hδ' k)
   have hvol (k : ℕ) : μ (({x | t k < w (m k) x} ∆ s) ∩ Ω) ≤ ENNReal.ofReal (ε k) :=
     measure_symmDiff_inter_le (hw (m k)).continuousOn hs (hδ k) (hε k) (ht k) (hm k)
   have hvolconv : Tendsto (fun k ↦ μ (({x | t k < w (m k) x} ∆ s) ∩ Ω)) atTop (𝓝 0) :=

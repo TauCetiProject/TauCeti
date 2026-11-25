@@ -21,7 +21,8 @@ dimension `n`, and write `ω = μ (ball 0 1)`. A ball of radius `r > 0` has peri
 in the whole space (`TauCeti.perimeter_ball`, `TauCeti.perimeter_ball_eq_ofReal_div_mul`). For
 `μ` the volume of `EuclideanSpace ℝ (Fin n)` this is the classical surface area `n ω_n r^(n-1)`
 of the sphere of radius `r`, where `ω_n` is the volume of the unit ball. The perimeter only sees a
-set up to null sets, so the closed ball has the same perimeter (`TauCeti.perimeter_closedBall`).
+set up to null sets, so the closed ball has the same perimeter (`TauCeti.perimeter_closedBall`),
+and so does its complement (`TauCeti.perimeter_compl_closedBall`).
 In dimension `n ≥ 1` balls satisfy `P(ball c r)^n = n^n ω μ (ball c r)^(n-1)`
 (`TauCeti.perimeter_ball_pow`): they attain equality in the isoperimetric inequality
 `P(E)^n ≥ n^n ω μ E^(n-1)`, whose constant is fixed by this identity.
@@ -50,6 +51,8 @@ of `r ↦ r^n ω`.
 * `TauCeti.perimeter_ball`: `P(ball c r) = n r^(n-1) μ (ball 0 1)` for `r > 0`.
 * `TauCeti.perimeter_ball_eq_ofReal_div_mul`: `P(ball c r) = (n / r) μ (ball c r)`.
 * `TauCeti.perimeter_closedBall`: the same formula for closed balls.
+* `TauCeti.perimeter_compl_closedBall`, `TauCeti.perimeter_compl_closedBall_lt_top`: the
+  complement of a closed ball has the same, finite, perimeter.
 * `TauCeti.perimeter_ball_pow`: `P(ball c r)^n = n^n μ (ball 0 1) μ (ball c r)^(n-1)`.
 * `TauCeti.perimeter_ball_sdiff_closedBall`, `TauCeti.perimeter_ball_sdiff_closedBall_of_pos`: the
   perimeter of an annulus.
@@ -206,6 +209,19 @@ theorem perimeter_closedBall (hr : 0 < r) :
       finrank ℝ E * ENNReal.ofReal (r ^ (finrank ℝ E - 1)) * μ (ball 0 1) := by
   rw [perimeter_congr_ae (ae_restrict_of_ae (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero c r
     hr.ne')), perimeter_ball hr]
+
+/-- **The perimeter of the exterior of a ball.** The complement of a closed ball of radius `r > 0`
+has the perimeter `n r^(n-1) μ (ball 0 1)` of the ball. -/
+theorem perimeter_compl_closedBall (hr : 0 < r) :
+    perimeter μ ⊤ (closedBall c r)ᶜ =
+      finrank ℝ E * ENNReal.ofReal (r ^ (finrank ℝ E - 1)) * μ (ball 0 1) := by
+  rw [perimeter_compl, perimeter_closedBall hr]
+
+/-- The complement of a closed ball has finite perimeter. -/
+theorem perimeter_compl_closedBall_lt_top (hr : 0 < r) : perimeter μ ⊤ (closedBall c r)ᶜ < ⊤ := by
+  rw [perimeter_compl_closedBall hr]
+  exact ENNReal.mul_lt_top (ENNReal.mul_lt_top (ENNReal.natCast_lt_top _) ENNReal.ofReal_lt_top)
+    measure_ball_lt_top
 
 /-- **Balls are isoperimetric equality cases.** In dimension `n ≥ 1`, a ball of radius `r > 0`
 satisfies `P(ball c r)^n = n^n μ (ball 0 1) μ (ball c r)^(n-1)`, equality in the isoperimetric
