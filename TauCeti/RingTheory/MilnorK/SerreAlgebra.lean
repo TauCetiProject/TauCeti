@@ -625,8 +625,7 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : SerreAlgebra k} (hx : x ∈ de
       simp only [← mul_assoc, ← pow_add]
       rw [show (i + 1) * (j + 1) + (i + 1) = (i + 1) * j + 2 * (i + 1) by ring,
         show (i + 1) * (j + 1) + (j + 1) * i = (j + 1) + 2 * (i * (j + 1)) by ring,
-        pow_add _ ((i + 1) * j), pow_add _ (j + 1), (even_two_mul _).neg_one_pow,
-        (even_two_mul _).neg_one_pow, mul_one, mul_one]
+        neg_one_pow_add_two_mul, neg_one_pow_add_two_mul]
       abel
 
 end SerreAlgebra

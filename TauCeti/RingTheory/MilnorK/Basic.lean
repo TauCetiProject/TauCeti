@@ -691,8 +691,7 @@ theorem ofUnit_mul_of_mem_degree (a : Fˣ) {n : ℕ} {x : MilnorK F} (hx : x ∈
     ofUnit a * x = (-1) ^ n * (x * ofUnit a) := by
   have h := ofUnit_mul_involute a x
   rw [involute_of_mem_degree hx, mul_neg_one_pow_mul] at h
-  rw [← h, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
-  simp
+  rw [← h, neg_one_pow_mul_neg_one_pow_mul]
 
 /-- **Graded commutativity** of Milnor K-theory: for `x ∈ K_mᴹ(F)` and `y ∈ K_nᴹ(F)`,
 `x y = (-1) ^ (m n) y x`. -/
