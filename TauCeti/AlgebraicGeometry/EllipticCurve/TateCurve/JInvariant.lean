@@ -136,10 +136,7 @@ theorem norm_tateParameterOfJ_lt_one (j : K) (hj : 1 < ‖j‖) :
 
 /-- A Tate parameter of norm below one is uniquely determined by its j-invariant. -/
 @[simp] theorem tateParameterOfJ_j_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    tateParameterOfJ (tateCurveAt q hq).j
-      (by
-        rw [norm_tateCurveAt_j]
-        exact (one_lt_inv₀ (norm_pos_iff.mpr q.ne_zero)).mpr hq) = q := by
+    tateParameterOfJ (tateCurveAt q hq).j (one_lt_norm_tateCurveAt_j q hq) = q := by
   apply Units.ext
   have h := congrArg (evalIntSeries (q : K) hq) tateParameterSeries_subst_tateReciprocalJ
   rw [evalIntSeries_subst _ _ _ _ constantCoeff_tateReciprocalJ, evalIntSeries_X] at h

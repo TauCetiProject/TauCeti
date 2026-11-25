@@ -65,6 +65,8 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
   for instance an integral form read over `ℤ_p` or `ℚ`.
 * The instance `MulAction SL(2, R) (TauCeti.BinaryQuadraticForm R)`: the action
   `γ • f = f ∘ γ⁻¹`, for a commutative ring `R`.
+* `TauCeti.BinaryQuadraticForm.formsOfDiscrim D`: the binary quadratic forms over `R` of fixed
+  discriminant `D`, as a sub-action of `SL(2, R)`.
 * `TauCeti.BinaryQuadraticForm.posDef D`: for `D ≠ 0`, the positive definite integral forms of
   discriminant `-D`, as a sub-action of `SL(2, ℤ)`.
 
@@ -73,14 +75,18 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
 * `TauCeti.BinaryQuadraticForm.smul_a`, `TauCeti.BinaryQuadraticForm.smul_b` and
   `TauCeti.BinaryQuadraticForm.smul_c`: the coefficients of `γ • f`.
 * `TauCeti.BinaryQuadraticForm.eval_smul`: `γ • f` is `f ∘ γ⁻¹`.
+* `TauCeti.BinaryQuadraticForm.exists_eval_smul_iff`: `γ • f` and `f` take the same values.
 * `TauCeti.BinaryQuadraticForm.discrim_smul`: the discriminant is invariant under `SL(2, R)`.
 * `TauCeti.BinaryQuadraticForm.smul_map`: mapping coefficients is equivariant for the entrywise
   map `SL(2, R) →* SL(2, S)`, so automorphs map to automorphs
   (`TauCeti.BinaryQuadraticForm.map_mem_stabilizer_map`).
 * `TauCeti.BinaryQuadraticForm.T_zpow_smul`, `TauCeti.BinaryQuadraticForm.T_smul` and
   `TauCeti.BinaryQuadraticForm.S_smul`: the action of `T ^ k`, `T` and `S` on coefficients.
+* `TauCeti.BinaryQuadraticForm.eval_add_mul_add_mul_of_sq_eq_zero`: the first-order coordinate
+  change, which adds `ε * disc(f) * (x u + y v)` to `f(x, y)` when `ε ^ 2 = 0`.
 * `TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity`: a coordinate change
   producing a unit discriminant has unit determinant over any commutative ring.
+* `TauCeti.BinaryQuadraticForm.mem_formsOfDiscrim`: membership in `formsOfDiscrim D`.
 * `TauCeti.BinaryQuadraticForm.mem_posDef`: membership in `posDef D`.
 
 ## Implementation notes
@@ -96,6 +102,8 @@ is also exposed to transport the module structure.
 * D. A. Buell, *Binary Quadratic Forms: Classical Theory and Modern Computations*, Springer, 1989.
 * A. Popa and D. Zagier, *An elementary proof of the Eichler–Selberg trace formula*,
   J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327.
+* F. F. Knudsen, *A closer look at the stacks of stable pointed curves*, arXiv:1106.1588v2
+  (2012), Lemma 2.6 (the first-order coordinate change).
 -/
 
 public section
@@ -392,11 +400,31 @@ protected def discrim (f : BinaryQuadraticForm R) : R :=
 theorem discrim_def (f : BinaryQuadraticForm R) : f.discrim = discrim f.a f.b f.c :=
   rfl
 
+/-- The first-order coordinate change of a binary quadratic form: when `ε ^ 2 = 0`, moving the
+coordinates by `ε * (-2 * c * u + b * v)` and `ε * (b * u - 2 * a * v)` adds
+`ε * (disc(f) * (x * u + y * v))` to `f(x, y)`. No division by `2` is involved. When the
+discriminant is a unit, every first-order perturbation `ε * (α * x + β * y)` linear in `(x, y)` is
+thus absorbed by a coordinate change (Knudsen, arXiv:1106.1588v2, Lemma 2.6). -/
+theorem eval_add_mul_add_mul_of_sq_eq_zero (f : BinaryQuadraticForm R) {ε : R} (hε : ε ^ 2 = 0)
+    (x y u v : R) :
+    f.eval (x + ε * (-2 * f.c * u + f.b * v)) (y + ε * (f.b * u - 2 * f.a * v)) =
+      f.eval x y + ε * (f.discrim * (x * u + y * v)) := by
+  rw [eval_def, eval_def, discrim_def, discrim]
+  linear_combination (f.a * (-2 * f.c * u + f.b * v) ^ 2 +
+    f.b * (-2 * f.c * u + f.b * v) * (f.b * u - 2 * f.a * v) +
+    f.c * (f.b * u - 2 * f.a * v) ^ 2) * hε
+
 /-- The discriminant of an integral binary form is zero or one modulo four. -/
 theorem discrim_emod_four_eq_zero_or_one (f : BinaryQuadraticForm ℤ) :
     f.discrim % 4 = 0 ∨ f.discrim % 4 = 1 := by
   rw [discrim_def, Int.discrim_emod_four]
   exact Int.emod_two_eq_zero_or_one f.b
+
+/-- The discriminant of an integral binary form has the parity of its middle coefficient. -/
+theorem discrim_emod_two (f : BinaryQuadraticForm ℤ) : f.discrim % 2 = f.b % 2 := by
+  have := Int.discrim_emod_four f.a f.b f.c
+  rw [discrim_def]
+  omega
 
 /-- A form of nonsquare discriminant has nonzero leading coefficient. -/
 theorem a_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
@@ -456,6 +484,23 @@ theorem eval_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) (x y : R) :
     (γ • f).eval x y = f.eval (γ 1 1 * x - γ 0 1 * y) (-γ 1 0 * x + γ 0 0 * y) := by
   simp only [eval_def, smul_a, smul_b, smul_c]
   ring
+
+/-- `γ • f` takes at `γ (x, y) = (p x + q y, r x + s y)` the value of `f` at `(x, y)`, for
+`γ = !![p, q; r, s]`. -/
+theorem eval_smul_apply (γ : SL(2, R)) (f : BinaryQuadraticForm R) (x y : R) :
+    (γ • f).eval (γ 0 0 * x + γ 0 1 * y) (γ 1 0 * x + γ 1 1 * y) = f.eval x y := by
+  have hdet := γ.fin_two_mul_sub_mul_eq_one
+  rw [eval_smul]
+  congr 1
+  · linear_combination x * hdet
+  · linear_combination y * hdet
+
+/-- A form and its translate `γ • f` take the same values: some value of `γ • f` satisfies `P`
+exactly when some value of `f` does. -/
+theorem exists_eval_smul_iff (γ : SL(2, R)) (f : BinaryQuadraticForm R) (P : R → Prop) :
+    (∃ x y, P ((γ • f).eval x y)) ↔ ∃ x y, P (f.eval x y) :=
+  ⟨fun ⟨_, _, h⟩ ↦ ⟨_, _, by rwa [eval_smul] at h⟩,
+    fun ⟨x, y, h⟩ ↦ ⟨_, _, by rwa [eval_smul_apply γ f x y]⟩⟩
 
 /-- `f ↦ f ∘ γ⁻¹` is a left action of `SL(2, R)` on binary quadratic forms. -/
 instance : MulAction SL(2, R) (BinaryQuadraticForm R) where
@@ -528,6 +573,18 @@ theorem map_mem_stabilizer_map (φ : R →+* S) {f : BinaryQuadraticForm R} {γ 
   rw [smul_map, hγ]
 
 end Map
+
+/-- The binary quadratic forms over `R` of fixed discriminant `D`, as a sub-action of
+`SL(2, R)`. -/
+def formsOfDiscrim (D : R) : SubMulAction SL(2, R) (BinaryQuadraticForm R) where
+  carrier := {f | f.discrim = D}
+  smul_mem' γ f hf := (discrim_smul γ f).trans hf
+
+/-- A form lies in `formsOfDiscrim D` exactly when its discriminant is `D`. -/
+@[simp]
+theorem mem_formsOfDiscrim {D : R} {f : BinaryQuadraticForm R} :
+    f ∈ formsOfDiscrim D ↔ f.discrim = D :=
+  Iff.rfl
 
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
 sub-action of `SL(2, ℤ)`: the forms of discriminant `-D` whose leading coefficient is positive. -/

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.AlgHom
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
-import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 import TauCeti.AlgebraicGeometry.Scheme.Place.Hom
 
 /-!

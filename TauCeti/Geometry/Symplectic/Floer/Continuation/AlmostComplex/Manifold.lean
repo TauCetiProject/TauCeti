@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Path
 
 /-!
 # The continuation homotopy of almost complex structures on a manifold

@@ -346,9 +346,8 @@ theorem symm_mem_of_mul_norm_lt_fst (hc : IsLipschitzChart Ω e γ K h r) (hγ :
     {z : WithLp 2 (ℝ × E)} (hz : z ∈ normalCylinder h r) (hlt : K * ‖z.snd‖ < z.fst) :
     e.symm z ∈ Ω := by
   rw [hc.mem_iff (by simpa using hz), AffineIsometryEquiv.apply_symm_apply]
-  have := hc.lipschitzWith.dist_le_mul z.snd 0
-  rw [hγ, Real.dist_eq, sub_zero, dist_zero_right] at this
-  linarith [le_abs_self (γ z.snd)]
+  linarith [le_abs_self (γ z.snd), (Real.norm_eq_abs _).symm.trans_le
+    (hc.lipschitzWith.norm_le_mul hγ z.snd)]
 
 /-- **Downward cone.** If the graph of a Lipschitz chart passes through the origin, no point of
 the cylinder below the cone `t < -(K * ‖y‖)` corresponds to a point of `Ω`. -/
@@ -356,9 +355,8 @@ theorem symm_notMem_of_fst_lt_neg_mul_norm (hc : IsLipschitzChart Ω e γ K h r)
     {z : WithLp 2 (ℝ × E)} (hz : z ∈ normalCylinder h r)
     (hlt : z.fst < -(K * ‖z.snd‖)) : e.symm z ∉ Ω := by
   rw [hc.mem_iff (by simpa using hz), AffineIsometryEquiv.apply_symm_apply, not_lt]
-  have := hc.lipschitzWith.dist_le_mul z.snd 0
-  rw [hγ, Real.dist_eq, sub_zero, dist_zero_right] at this
-  linarith [neg_abs_le (γ z.snd)]
+  linarith [neg_abs_le (γ z.snd), (Real.norm_eq_abs _).symm.trans_le
+    (hc.lipschitzWith.norm_le_mul hγ z.snd)]
 
 /-- **The exterior chart.** If `e` is a Lipschitz chart of `Ω` with graph `γ`, then `e` followed by
 the reflection `(t, y) ↦ (-t, y)` of the normal coordinate is a Lipschitz chart of the exterior
@@ -477,7 +475,7 @@ theorem exists_finite_cover (hΩ : Ω.IsLipschitzDomain E) (hcompact : IsCompact
     ∃ (K : ℝ≥0) (m : ℕ) (e : Fin m → F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : Fin m → E → ℝ)
       (h r : Fin m → ℝ), (∀ i, IsLipschitzChart Ω (e i) (γ i) K (h i) (r i)) ∧
         frontier Ω ⊆ ⋃ i, e i ⁻¹' normalCylinder (h i) (r i) := by
-  choose e γ K h r hc hex using fun x : frontier Ω => hΩ x x.2
+  choose e γ K h r hc hex using fun x : frontier Ω => hΩ x x.property
   obtain ⟨t, ht⟩ := hcompact.elim_finite_subcover
     (fun x : frontier Ω => e x ⁻¹' normalCylinder (h x) (r x))
     (fun x => (isOpen_normalCylinder _ _).preimage (e x).continuous)
@@ -486,7 +484,7 @@ theorem exists_finite_cover (hΩ : Ω.IsLipschitzDomain E) (hcompact : IsCompact
         zero_mem_normalCylinder (E := E) (hc ⟨x, hx⟩).height_pos (hc ⟨x, hx⟩).radius_pos⟩
   let f : Fin t.card → frontier Ω := fun i => t.equivFin.symm i
   refine ⟨t.sup K, t.card, fun i => e (f i), fun i => γ (f i), fun i => h (f i),
-    fun i => r (f i), fun i => (hc (f i)).weaken (t.le_sup (t.equivFin.symm i).2), ?_⟩
+    fun i => r (f i), fun i => (hc (f i)).weaken (t.le_sup (t.equivFin.symm i).property), ?_⟩
   intro x hx
   obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 (ht hx)
   exact mem_iUnion.2 ⟨t.equivFin ⟨y, hy⟩, by simpa [f] using hxy⟩

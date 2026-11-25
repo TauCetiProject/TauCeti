@@ -17,6 +17,9 @@ The ring of Weierstrass coordinate changes over a ring `B` is
 dimension four and faithfully flat. The identity change gives a section, so the projection
 is surjective even over rings with nilpotents and in characteristics two and three.
 
+Coefficient extension `B[u, u⁻¹, r, s, t] →+* B'[u, u⁻¹, r, s, t]` along a flat map
+`B →+* B'` is flat (`TauCeti.WeierstrassChange.ChangeRing.flat_map`), being a base change.
+
 These results hold over an arbitrary commutative coefficient ring. Their application to the
 source and target projections of the Weierstrass groupoid is in
 `TauCeti/AlgebraicGeometry/EllipticCurve/VariableChange/Groupoid.lean`.
@@ -31,6 +34,8 @@ and principal localizations.
 -/
 
 public noncomputable section
+
+universe u
 
 open CategoryTheory AlgebraicGeometry
 
@@ -75,5 +80,16 @@ instance surjective_specMap :
     Surjective (Spec.map (CommRingCat.ofHom (algebraMap B (ChangeRing B)))) :=
   ((flat_and_surjective_SpecMap_iff _).mpr
     (RingHom.faithfullyFlat_algebraMap_iff.mpr (faithfullyFlat B))).2
+
+/-- **Coefficient extension along a flat map is flat.** The ring `B'[u, u⁻¹, r, s, t]` is the
+base change of `B[u, u⁻¹, r, s, t]` along `f : B →+* B'` (`ChangeRing.isPushout`, stated for
+rings in a common universe), so the coefficient extension `ChangeRing.map f` is flat when `f`
+is. -/
+theorem flat_map {B B' : Type u} [CommRing B] [CommRing B'] {f : B →+* B'} (hf : f.Flat) :
+    (map f).Flat :=
+  have := RingHom.isStableUnderCobaseChange_toMorphismProperty_iff.mpr
+    RingHom.Flat.isStableUnderBaseChange
+  MorphismProperty.of_isPushout (P := RingHom.toMorphismProperty RingHom.Flat)
+    (isPushout f).flip hf
 
 end TauCeti.WeierstrassChange.ChangeRing

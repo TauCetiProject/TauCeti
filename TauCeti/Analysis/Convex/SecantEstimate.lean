@@ -16,7 +16,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 import Mathlib.Topology.UniformSpace.HeineCantor
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 
 /-!
 # The secant estimate on a simplex
@@ -207,9 +207,7 @@ theorem norm_linearCombination_sub_le [DecidableEq α] {F : (α → ℝ) → E}
     ‖Fintype.linearCombination ℝ (fun a => F (Pi.single a 1)) v - A v‖ ≤ ε * ∑ a, |v a| := by
   set S := range fun t : Convexity.StdSimplex ℝ α => ⇑t.weights
   have hvert (a : α) : Pi.single a 1 ∈ S :=
-    ⟨.single a, by
-      dsimp only
-      rw [Convexity.StdSimplex.weights_single, Finsupp.single_eq_pi_single]⟩
+    Convexity.StdSimplex.pi_single_mem_range_toFun_comp_weights a
   -- The vertices of the simplex are at mutual distance at most one.
   have hdist (a b : α) : ‖(Pi.single a 1 : α → ℝ) - Pi.single b 1‖ ≤ 1 := by
     rw [← dist_eq_norm]
@@ -274,9 +272,7 @@ theorem HasFDerivWithinAt.apply_eq_of_sum_eq_zero {F : (α → ℝ) → E} {f₁
   -- The edge from `y` to every vertex is tangent to the simplex at `y`.
   have hedge (a : α) : f₁ (Pi.single a 1 - y) = f₂ (Pi.single a 1 - y) := by
     have hvert : Pi.single a 1 ∈ S :=
-      ⟨.single a, by
-        dsimp only
-        rw [Convexity.StdSimplex.weights_single, Finsupp.single_eq_pi_single]⟩
+      Convexity.StdSimplex.pi_single_mem_range_toFun_comp_weights a
     exact h₁.unique_on h₂ (mem_tangentConeAt_of_segment_subset
       ((Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ α).segment_subset hy hvert))
   -- A direction is the combination of these edges with its own coordinates as coefficients.
@@ -303,13 +299,13 @@ theorem ContDiffOn.exists_continuousOn_hasFDerivWithinAt_stdSimplex {F : (α →
   -- `P z` is the projection onto the directions of the simplex along `z`.
   let σ : (α → ℝ) →L[ℝ] ℝ := ∑ a, ContinuousLinearMap.proj a
   let P : (α → ℝ) → (α → ℝ) →L[ℝ] α → ℝ := fun z =>
-    ContinuousLinearMap.id ℝ (α → ℝ) - ContinuousLinearMap.smulRightL ℝ (α → ℝ) (α → ℝ) σ z
+    ContinuousLinearMap.id ℝ (α → ℝ) - ContinuousLinearMap.smulRightL ℝ ℝ ℝ (α → ℝ) (α → ℝ) σ z
   have hP (z v : α → ℝ) : P z v = v - (∑ a, v a) • z := by
     simp [P, σ, Finset.sum_smul]
   have hPdir {z : α → ℝ} (hz : z ∈ S) (v : α → ℝ) : ∑ a, P z v a = 0 := by
     simp [hP, Finset.sum_sub_distrib, ← Finset.mul_sum, hsum hz]
   have hPcont : Continuous P :=
-    continuous_const.sub (ContinuousLinearMap.smulRightL ℝ (α → ℝ) (α → ℝ) σ).continuous
+    continuous_const.sub (ContinuousLinearMap.smulRightL ℝ ℝ ℝ (α → ℝ) (α → ℝ) σ).continuous
   have hdiff := hF.differentiableOn one_ne_zero
   refine ⟨fun z => (fderivWithin ℝ F S z).comp (P z), fun y hy => ?_, fun y hy => ?_⟩
   · -- On the simplex, `P y` fixes every difference `x - y`, so the projected derivative is still a

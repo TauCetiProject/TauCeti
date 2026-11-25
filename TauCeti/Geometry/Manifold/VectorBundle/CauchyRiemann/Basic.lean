@@ -18,6 +18,7 @@ import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -52,7 +53,9 @@ differentiable.
 * `TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartAt_symm`: on a
   complex curve, a `(0,1)`-form read in a chart is `w ↦ conj w • η (∂/∂x)`.
 * `TauCeti.IsRealCauchyRiemannOperator.apply_eq_of_eventuallyEq`: locality, a real Cauchy–Riemann
-  operator at `x` only sees the germ at `x` of a section differentiable at `x`.
+  operator at `x` only sees the germ at `x` of a section differentiable at `x`, and
+  `TauCeti.IsRealCauchyRiemannOperator.apply_eq_zero_of_notMem_closure`: it vanishes off the
+  closure of the nonzero locus of the section.
 * `TauCeti.IsRealCauchyRiemannOperator.leibniz_complex`: the Leibniz rule
   `D (f • ξ) = f • D ξ + (∂bar f) ⊗ ξ` of a complex linear real Cauchy–Riemann operator for
   complex valued `f`.
@@ -549,6 +552,18 @@ theorem apply_eq_of_eventuallyEq [VectorBundle ℝ F V] (hD : IsRealCauchyRieman
     simp [τ]
   rw [hστ, hD.add hσ' hτ, hDτ, add_zero]
 
+/-- **Locality.** A real Cauchy–Riemann operator vanishes off the closure of the nonzero locus of
+the section. -/
+theorem apply_eq_zero_of_notMem_closure [VectorBundle ℝ F V]
+    (hD : IsRealCauchyRiemannOperator F j D) {σ : Π x : M, V x} {x : M}
+    (hx : x ∉ closure {y | σ y ≠ 0}) : D σ x = 0 := by
+  have hev : ∀ᶠ y in 𝓝 x, σ y = (0 : Π y : M, V y) y := by
+    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hx] with y hy
+    exact Bundle.apply_eq_zero_of_notMem_closure hy
+  have h0 : MDiffAt (T% (0 : Π y : M, V y)) x := mdifferentiableAt_zeroSection ..
+  rw [hD.apply_eq_of_eventuallyEq h0 hev]
+  simpa using hD.smul_const 0 h0
+
 section Difference
 
 variable [VectorBundle ℝ F V] [FiniteDimensional ℝ F] [ContMDiffVectorBundle 1 F V I]
@@ -766,11 +781,7 @@ theorem SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartA
   set L := mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm (range 𝓘(ℝ, ℂ)) z
   -- `dφ⁻¹` is complex linear, so `dφ⁻¹ i = j (dφ⁻¹ 1)`, on which `η` is `-i • η (dφ⁻¹ 1)`.
   have hLI : L Complex.I = ofComplexManifold ℂ M _ (L (1 : ℂ)) := by
-    have h : L (Complex.I • (1 : ℂ)) = (Complex.I • ContinuousLinearMap.id ℝ ℂ) (L (1 : ℂ)) :=
-      mfderivWithin_extChartAt_symm_smul ℝ (𝕜' := ℂ) hz Complex.I (1 : ℂ)
-    rw [smul_eq_mul, mul_one] at h
-    rw [h]
-    exact (ofComplexManifold_apply (E := ℂ) _ _).symm
+    exact (ofComplexManifold_apply_mfderivWithin_extChartAt_symm_one hz).symm
   have hηI : η (L Complex.I) = -(Complex.I • η (L (1 : ℂ))) := by
     rw [hLI]
     exact isZeroOneForm_iff.1 hη _
@@ -781,6 +792,39 @@ theorem SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartA
   simp only [map_add, map_mul, Complex.conj_ofReal, Complex.conj_I,
     RCLike.real_smul_eq_coe_smul (K := ℂ) (E := V _)]
   module
+
+namespace SmoothAlmostComplexStructure.IsZeroOneForm
+
+omit [∀ x, IsScalarTower ℝ ℂ (V x)] in
+/-- On a complex curve, a `(0,1)`-form vanishes exactly when it vanishes on the nonzero
+coordinate vector `dφ⁻¹ 1`. -/
+theorem eq_zero_iff_apply_mfderivWithin_extChartAt_symm_one
+    {x₀ : M} {z : ℂ} (hz : z ∈ (extChartAt 𝓘(ℝ, ℂ) x₀).target)
+    {η : TangentSpace 𝓘(ℝ, ℂ) ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z) →L[ℝ]
+      V ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z)}
+    (hη : (ofComplexManifold ℂ M).IsZeroOneForm η) :
+    η = 0 ↔ η (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+      (range 𝓘(ℝ, ℂ)) z (1 : ℂ)) = 0 := by
+  constructor
+  · rintro rfl
+    exact zero_apply _
+  · intro h
+    set L := mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+      (range 𝓘(ℝ, ℂ)) z
+    have hLI : L Complex.I = ofComplexManifold ℂ M _ (L (1 : ℂ)) := by
+      exact (ofComplexManifold_apply_mfderivWithin_extChartAt_symm_one hz).symm
+    have hI : η (L Complex.I) = 0 := by rw [hLI, hη, h, smul_zero, neg_zero]
+    have hLinv : L.IsInvertible := isInvertible_mfderivWithin_extChartAt_symm hz
+    obtain ⟨Linv, hL⟩ := hLinv
+    ext v
+    obtain ⟨w, rfl⟩ : ∃ w, L w = v := ⟨Linv.symm v, by
+      rw [← hL, ContinuousLinearEquiv.coe_coe]
+      exact Linv.apply_symm_apply v⟩
+    have hval : η (L w) = w.re • η (L (1 : ℂ)) + w.im • η (L Complex.I) := by
+      exact LinearMap.apply_eq_re_smul_one_add_im_smul_I (η.comp L).toLinearMap w
+    simpa only [h, hI, smul_zero, add_zero, zero_apply] using hval
+
+end SmoothAlmostComplexStructure.IsZeroOneForm
 
 end Curve
 

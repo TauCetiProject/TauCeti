@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.LaurentSeries.Level.Kummer
 public import TauCeti.RingTheory.LaurentSeries.Valuation.Ring
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.Discrete.Order
+import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
 # Valuation, integers and ramification of the ramified Laurent-series levels
@@ -172,8 +173,8 @@ private noncomputable def spanBasisEquiv :
       x ∈ (valuation K d).valuationSubring := by
     rw [Basis.mem_span_iff_repr_mem, mem_valuationSubring_iff]
     simp [basis_repr_apply]
-  { toFun x := ⟨x, (h x).mp x.2⟩
-    invFun x := ⟨x, (h x).mpr x.2⟩
+  { toFun x := ⟨x, (h x).mp x.property⟩
+    invFun x := ⟨x, (h x).mpr x.property⟩
     map_add' _ _ := rfl
     map_smul' c x := Subtype.ext (Algebra.smul_def (c : K⸨X⸩) (x : Level K d)) }
 
@@ -249,7 +250,7 @@ namely the constant coefficient. -/
 theorem exists_sub_algebraMap_mem_maximalIdeal (x : (valuation K d).valuationSubring) :
     ∃ a : (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring,
       x - Algebra.algebraMap _ _ a ∈ maximalIdeal (valuation K d).valuationSubring := by
-  have hx := x.2
+  have hx := x.property
   rw [Valuation.mem_valuationSubring_iff, valuation_apply, valuation_le_one_iff] at hx
   refine ⟨⟨HahnSeries.C ((ringEquivLaurentSeries K d x).coeff 0), by
     rw [Valuation.mem_valuationSubring_iff, valuation_le_one_iff]

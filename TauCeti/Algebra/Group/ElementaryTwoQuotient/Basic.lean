@@ -59,6 +59,9 @@ names around it. The cardinality identity is still expressed through the squarin
   model and the quotient by the additive form of `G²`.
 * `TauCeti.card_elementaryTwoQuotient_eq_index_square`: the quotient cardinality as the index of
   the subgroup of squares.
+* `TauCeti.card_elementaryTwoQuotientMk_fiber` and
+  `TauCeti.card_elementaryTwoQuotientMk_fiber_mul_card`: every square class has `|G²|` elements,
+  so `|fibre| · |G/G²| = |G|`.
 * `TauCeti.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|G/G²| = |{g | g² = 1}|`.
 * `TauCeti.card_le_card_elementaryTwoQuotient_of_forall_sq_eq_one` and
   `TauCeti.le_twoRank_of_card_eq_two_pow`: a subgroup of exponent dividing two bounds the
@@ -360,6 +363,30 @@ theorem card_elementaryTwoQuotient_eq_index_square :
     _ = (Subgroup.square G).index := by
           rw [← AddSubgroup.index_eq_card, Subgroup.index_toAddSubgroup]
 
+variable {G} in
+/-- **Every square class has as many elements as the subgroup of squares.** The fibre of the
+class map `G → G/G²` over any class is a coset of `G²`. -/
+theorem card_elementaryTwoQuotientMk_fiber (x : ElementaryTwoQuotient G) :
+    Nat.card {g : G // elementaryTwoQuotientMk g = x} = Nat.card (Subgroup.square G) := by
+  obtain ⟨g₀, rfl⟩ := elementaryTwoQuotientMk_surjective x
+  calc Nat.card {g : G // elementaryTwoQuotientMk g = elementaryTwoQuotientMk g₀}
+      = Nat.card (QuotientGroup.mk' (Subgroup.square G) ⁻¹' {QuotientGroup.mk' _ g₀}) :=
+        Nat.card_congr <| Equiv.subtypeEquivRight fun g => by
+          simp [elementaryTwoQuotientMk_eq_iff, QuotientGroup.eq_iff_div_mem]
+    _ = Nat.card (QuotientGroup.mk' (Subgroup.square G)).ker :=
+        Nat.card_congr (MonoidHom.fiberEquivKer _ g₀)
+    _ = Nat.card (Subgroup.square G) := by rw [QuotientGroup.ker_mk']
+
+variable {G} in
+/-- **All square classes have the same size, `|G| / |G/G²|`.** For every class, the fibre of
+`G → G/G²` over it satisfies `|fibre| · |G/G²| = |G|`. Cardinalities are read via `Nat.card`, so
+no finiteness is assumed; for an infinite `G` both sides are `0`. -/
+theorem card_elementaryTwoQuotientMk_fiber_mul_card (x : ElementaryTwoQuotient G) :
+    Nat.card {g : G // elementaryTwoQuotientMk g = x} * Nat.card (ElementaryTwoQuotient G) =
+      Nat.card G := by
+  rw [card_elementaryTwoQuotientMk_fiber, card_elementaryTwoQuotient_eq_index_square,
+    Subgroup.card_mul_index]
+
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
 `|G/G²| = |{g | g² = 1}|`. The squaring endomorphism `g ↦ g²` has range `G²` and kernel the
 2-torsion; when its kernel has finite index, the index of the range equals the cardinality of the
@@ -455,7 +482,7 @@ Such a subgroup sits inside the 2-torsion `{g | g² = 1}`, which is equinumerous
 theorem card_le_card_elementaryTwoQuotient_of_forall_sq_eq_one {H : Subgroup G}
     (hH : ∀ x ∈ H, x ^ 2 = 1) : Nat.card H ≤ Nat.card (ElementaryTwoQuotient G) := by
   rw [card_elementaryTwoQuotient_eq_card_twoTorsion]
-  exact Nat.card_le_card_of_injective (fun x => ⟨(x : G), hH x x.2⟩)
+  exact Nat.card_le_card_of_injective (fun x => ⟨(x : G), hH x x.property⟩)
     fun _ _ hxy => Subtype.ext (by simpa using hxy)
 
 /-- **A subgroup of exponent dividing two and order `2 ^ r` forces the 2-rank to be at least `r`.**
@@ -491,7 +518,9 @@ theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv (e : G ≃* H) :
 theorem twoRank_eq_of_mulEquiv (e : G ≃* H) : twoRank G = twoRank H :=
   finrank_elementaryTwoQuotient_eq_of_mulEquiv e
 
-/-- A surjective homomorphism of commutative groups does not increase the 2-rank. -/
+/-- A surjective homomorphism of commutative groups does not increase the 2-rank, provided the
+source quotient `G / G²` is finite-dimensional over `ZMod 2` (without it `twoRank G` is `0` by
+convention). -/
 theorem twoRank_le_twoRank_of_surjective [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)]
     (f : G →* H) (hf : Function.Surjective f) : twoRank H ≤ twoRank G :=
   LinearMap.finrank_le_finrank_of_surjective (elementaryTwoQuotientMap_surjective f hf)
@@ -521,10 +550,10 @@ theorem _root_.MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker (f : G �
     Nat.card (LinearMap.ker (elementaryTwoQuotientMap f)) ≤ Nat.card (MonoidHom.ker f) :=
   Nat.card_le_card_of_surjective
     (fun g => ⟨elementaryTwoQuotientMk (g : G), by
-      have hg : f (g : G) = 1 := g.2
+      have hg : f (g : G) = 1 := g.property
       rw [LinearMap.mem_ker, elementaryTwoQuotientMap_mk, hg, elementaryTwoQuotientMk_one]⟩)
     fun x => by
-      obtain ⟨g, hg, hgx⟩ := f.exists_mem_ker_elementaryTwoQuotientMk_eq hf x.2
+      obtain ⟨g, hg, hgx⟩ := f.exists_mem_ker_elementaryTwoQuotientMk_eq hf x.property
       exact ⟨⟨g, hg⟩, Subtype.ext hgx⟩
 
 /-- **A surjection with a small kernel barely drops the 2-rank.** If `f : G →* H` is surjective
@@ -558,8 +587,8 @@ theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
     exact Nat.zero_le _
 
 /-- **A surjection keeps the 2-rank exactly when its kernel consists of squares.** For a
-surjective `f : G →* H`, the groups `G` and `H` have the same 2-rank if and only if every element
-of `ker f` is a square in `G`. -/
+surjective `f : G →* H` with `G / G²` finite-dimensional over `ZMod 2`, the groups `G` and `H`
+have the same 2-rank if and only if every element of `ker f` is a square in `G`. -/
 theorem _root_.MonoidHom.twoRank_eq_twoRank_iff_ker_le_square
     [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] (f : G →* H)
     (hf : Function.Surjective f) :
