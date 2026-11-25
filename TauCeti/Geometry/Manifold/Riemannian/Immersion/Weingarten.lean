@@ -33,8 +33,7 @@ For a torsion-free connection the second fundamental form is symmetric
 
 ## References
 
-* J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 8
-  (the convention reference of the RiemannianGeometry roadmap).
+* J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 8.
 -/
 
 public section
@@ -71,16 +70,12 @@ theorem inner_immersionShapeOperator_mfderiv
     inner ℝ (immersionShapeOperator cov f ν X x) (mfderiv I J f x (Y x)) =
       inner ℝ (immersionSecondFundamentalForm cov f X Y x) (ν x) := by
   have h0 : (fun y ↦ inner ℝ (ν y) (mfderiv I J f y (Y y))) =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) :=
-    hνn.mono fun y hy ↦ by
-      rw [orthogonalNormalSpace_def] at hy
-      exact Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ _) hy
+    hνn.mono fun y hy ↦ inner_coe_orthogonalNormalSpace_mfderiv ⟨_, hy⟩ (Y y)
   have hd := hcov.mvfderiv_inner_alongMap hf hν hY (X x)
   rw [h0.mvfderiv_eq, mvfderiv_const, zero_apply] at hd
   have hνx : ν x ∈ orthogonalNormalSpace I J f x := hνn.self_of_nhds
-  have hN : inner ℝ (immersionNormalConnection cov f ν X x) (mfderiv I J f x (Y x)) = 0 := by
-    have h := immersionNormalConnection_mem (cov := cov) ν X x
-    rw [orthogonalNormalSpace_def] at h
-    exact Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ _) h
+  have hN : inner ℝ (immersionNormalConnection cov f ν X x) (mfderiv I J f x (Y x)) = 0 :=
+    inner_coe_orthogonalNormalSpace_mfderiv ⟨_, immersionNormalConnection_mem ν X x⟩ (Y x)
   rw [← neg_immersionShapeOperator_add_immersionNormalConnection, inner_add_left, inner_neg_left,
     hN, real_inner_comm _ (ν x), ← inner_immersionSecondFundamentalForm_of_mem X Y hνx] at hd
   linarith
