@@ -116,17 +116,11 @@ instance isHaarMeasure_unitsFormMeasure : (unitsFormMeasure K μ).IsHaarMeasure 
 measure `μ` on `K`, the form measure `|dx/x|_K` is `(1 - q⁻¹) μ(𝒪[K]) d^×x`. -/
 theorem unitsFormMeasure_eq_smul_unitsHaar :
     unitsFormMeasure K μ = ((1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * μ 𝒪[K]) • unitsHaar K := by
-  have h0 := (isOpen_unitFiltration 0).measure_ne_zero (unitsFormMeasure K μ) ⟨1, one_mem _⟩
-  have htop := ((isCompact_unitFiltration (K := K) 0).measure_lt_top
-    (μ := unitsFormMeasure K μ)).ne
-  have : SigmaFinite ((unitsFormMeasure K μ (unitFiltration K 0))⁻¹ • unitsFormMeasure K μ) := by
-    rw [← ENNReal.coe_toNNReal (ENNReal.inv_ne_top.2 h0), ← ENNReal.smul_def]
-    infer_instance
-  have h := (unitsHaar_eq_iff K
-    ((unitsFormMeasure K μ (unitFiltration K 0))⁻¹ • unitsFormMeasure K μ)).2 (by
-      rw [smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel h0 htop])
-  rw [← unitsFormMeasure_unitFiltration_zero, h, smul_smul, ENNReal.mul_inv_cancel h0 htop,
-    one_smul]
+  have := (Units.isEmbedding_val₀ (G₀ := K)).secondCountableTopology
+  rw [measure_eq_div_smul (unitsFormMeasure K μ) (unitsHaar K) (s := unitFiltration K 0)
+      (by rw [unitsHaar_unitFiltration_zero]; exact one_ne_zero)
+      (by rw [unitsHaar_unitFiltration_zero]; exact ENNReal.one_ne_top),
+    unitsHaar_unitFiltration_zero, div_one, unitsFormMeasure_unitFiltration_zero]
 
 /-- **The normalized Haar measure of `Kˣ` is the form measure with its convergence factor.**
 For the additive Haar measure `μ` on `K` with `μ 𝒪[K] = 1`, the Haar measure `d^×x` of `Kˣ`
