@@ -98,6 +98,14 @@ namespace PullbackData
 variable {U V : C} {q : V ⟶ U} {A A' : Obj.{w} J F U} {B B' : Obj.{w} J F V}
 
 omit [HasPullbacks C] in
+/-- A local section `c = b ≫ P.β j` of `A` lies over the image under `q` of the morphism
+`b ≫ B.f j` below `b`. -/
+lemma comp_f_eq (P : PullbackData q A B) ⦃T : C⦄ ⦃j : B.ι⦄ {b : T ⟶ B.X j}
+    {c : T ⟶ A.X (P.α j)} (h : b ≫ P.β j = c) :
+    c ≫ A.f (P.α j) = (b ≫ B.f j) ≫ q := by
+  rw [← h, Category.assoc, P.w, Category.assoc]
+
+omit [HasPullbacks C] in
 /-- The inverse identifications of pullback data are compatible with pullback. -/
 @[simp]
 lemma pullHom_iso_inv (P : PullbackData q A B) ⦃T : C⦄ ⦃j : B.ι⦄ (b : T ⟶ B.X j)
@@ -320,7 +328,7 @@ lemma app_transport_refl {B : Obj.{w} J F U} (P : PullbackData (𝟙 U) A B) (φ
     ⦃j : B.ι⦄ ⦃j' : A'.ι⦄ (b : T ⟶ B.X j) (b' : T ⟶ A'.X j') (w : b ≫ B.f j = b' ≫ A'.f j')
     (c : T ⟶ A.X (P.α j)) (h : b ≫ P.β j = c) :
     Hom.app (transport P (refl A') φ) b b' w = (P.iso b c h).hom ≫
-      Hom.app φ c b' (by rw [← h, Category.assoc, P.w, reassoc_of% w, Category.comp_id]) := by
+      Hom.app φ c b' (by rw [P.comp_f_eq h, w, Category.comp_id]) := by
   rw [app_transport P (refl A') φ b b' w c b' h (Category.comp_id b')]
   simp only [transportApp, refl, DescentData.iso_inv]
   rw [A'.D.hom_self _ _ rfl, Category.comp_id]
@@ -336,8 +344,8 @@ lemma app_transport_trans {E : Obj.{w} J F W} (rq : W ⟶ U) (hrq : r ≫ q = rq
     (hc' : m' ≫ P'.β (R'.α k') = c') :
     Hom.app (transport P (R'.trans P' rq hrq) φ) e e' w = (P.iso e c h).hom ≫
       Hom.app φ c c' (by
-        rw [← h, ← hc', ← hm', Category.assoc, P.w, Category.assoc, Category.assoc, P'.w,
-          ← Category.assoc (R'.β k'), R'.w, reassoc_of% w, Category.assoc, hrq]) ≫
+        rw [P.comp_f_eq h, P'.comp_f_eq hc', R'.comp_f_eq hm', w, ← hrq]
+        simp only [Category.assoc]) ≫
       (P'.iso m' c' hc').inv ≫ (R'.iso e' m' hm').inv := by
   subst h hm' hc'
   rw [app_transport P (R'.trans P' rq hrq) φ e e' w _ _ rfl (Category.assoc _ _ _).symm]
