@@ -12,12 +12,11 @@ public import TauCeti.Topology.VectorBundle.Hom
 /-!
 # Linear intertwiners on associated vector bundles
 
-A continuous linear intertwiner induces continuous linear maps on the fibres of associated
-bundles. These are the existing associated maps, now bundled linearly, rather than maps on a
-second quotient. In any common principal frame they are exactly the original intertwiner.
-In particular they are independent of the frame, respect composition, and induce a continuous
+A continuous linear intertwiner induces `TauCeti.AssociatedBundle.map` on the fibres of
+associated bundles, bundled as continuous linear maps. In every common principal frame the
+fibre map is the original intertwiner. These maps respect composition and induce a continuous
 section of the native Hom bundle. Equivariant continuous linear equivalences induce fibrewise
-continuous linear equivalences.
+continuous linear equivalences and association commutes with taking inverses.
 
 This interface lets representation comparisons be used as vector-bundle maps, for example when
 identifying different models of a spinor representation. The fibre maps require normed model
@@ -130,20 +129,20 @@ def associatedBundleMap (f : F ≃L[𝕜] F')
     fun g v ↦ by simpa only [ContinuousLinearEquiv.coe_coe] using hf g v
   let hf' : ∀ (g : G) v,
       f.symm.toContinuousLinearMap (g • v) = g • f.symm.toContinuousLinearMap v := fun g v ↦ by
-    simp only [ContinuousLinearEquiv.coe_coe]
-    apply f.injective
-    simp only [ContinuousLinearEquiv.apply_symm_apply, hf]
-  ContinuousLinearEquiv.equivOfInverse
+    simpa only [ContinuousLinearEquiv.coe_coe] using
+      (Function.Semiconj.inverse_left (ga := (g • ·)) (gb := (g • ·)) (fun x ↦ hf g x)
+        f.symm_apply_apply f.apply_symm_apply).eq v
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (f.toContinuousLinearMap.associatedBundleMap hf₀ b)
     (f.symm.toContinuousLinearMap.associatedBundleMap hf' b)
-    (fun v ↦ by
+    (by
+      ext v
       obtain ⟨p, v, rfl⟩ := exists_mk v
-      rw [ContinuousLinearMap.associatedBundleMap_mk, ContinuousLinearMap.associatedBundleMap_mk]
-      exact congrArg (AssociatedBundle.mk G p) (f.symm_apply_apply v))
-    (fun v ↦ by
+      simp)
+    (by
+      ext v
       obtain ⟨p, v, rfl⟩ := exists_mk v
-      rw [ContinuousLinearMap.associatedBundleMap_mk, ContinuousLinearMap.associatedBundleMap_mk]
-      exact congrArg (AssociatedBundle.mk G p) (f.apply_symm_apply v))
+      simp)
 
 /-- The linear operator underlying the associated equivalence is the associated intertwiner. -/
 @[simp]
@@ -152,7 +151,7 @@ theorem toContinuousLinearMap_associatedBundleMap (f : F ≃L[𝕜] F')
     (f.associatedBundleMap (P := P) hf b).toContinuousLinearMap =
       f.toContinuousLinearMap.associatedBundleMap hf b := by
   unfold associatedBundleMap
-  exact toContinuousLinearMap_equivOfInverse _ _ _ _
+  exact toContinuousLinearMap_ofContinuousLinearMap _ _ _ _
 
 /-- The induced equivalence applies the model equivalence in any principal frame. -/
 @[simp]
@@ -161,14 +160,26 @@ theorem associatedBundleMap_mk (f : F ≃L[𝕜] F')
     f.associatedBundleMap hf b (AssociatedBundle.mk G p v) = AssociatedBundle.mk G p (f v) :=
   f.toContinuousLinearMap.associatedBundleMap_mk hf p v
 
-/-- The inverse associated equivalence applies the inverse model equivalence. -/
+/-- Association commutes with taking the inverse of an equivariant equivalence. -/
 @[simp]
+theorem associatedBundleMap_symm (f : F ≃L[𝕜] F')
+    (hf : ∀ (g : G) v, f (g • v) = g • f v) (b : B) :
+    (f.associatedBundleMap (P := P) hf b).symm =
+      f.symm.associatedBundleMap (fun g v ↦
+        (Function.Semiconj.inverse_left (ga := (g • ·)) (gb := (g • ·)) (fun x ↦ hf g x)
+          f.symm_apply_apply f.apply_symm_apply).eq v) b := by
+  ext v
+  obtain ⟨p, v, rfl⟩ := exists_mk v
+  apply (f.associatedBundleMap hf b).injective
+  rw [apply_symm_apply, associatedBundleMap_mk, associatedBundleMap_mk, apply_symm_apply]
+
+/-- The inverse associated equivalence applies the inverse model equivalence. -/
 theorem associatedBundleMap_symm_mk (f : F ≃L[𝕜] F')
     (hf : ∀ (g : G) v, f (g • v) = g • f v) {b : B} (p : P b) (v : F') :
     (f.associatedBundleMap hf b).symm (AssociatedBundle.mk G p v) =
       AssociatedBundle.mk G p (f.symm v) := by
-  apply (f.associatedBundleMap hf b).injective
-  simp
+  rw [associatedBundleMap_symm]
+  exact f.symm.associatedBundleMap_mk _ p v
 
 /-- Association sends the identity equivalence to the identity on each associated fibre. -/
 @[simp]
