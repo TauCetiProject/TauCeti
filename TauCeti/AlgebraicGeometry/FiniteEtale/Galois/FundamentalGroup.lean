@@ -192,21 +192,17 @@ theorem fiberCompInclIso_hom_app_smul_left (X : FiniteEtaleScheme (Spec (.of K))
         Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω)) ≫
           ((algSpec (.of K)).map (CommAlgCat.ofHom φ).op).left := by
     subst h
-    rw [CommAlgCat.ofHom_comp, op_comp, Functor.map_comp, Over.comp_left]
+    rw [CommAlgCat.ofHom_comp, op_comp, Functor.map_comp, Over.comp_left, algSpec_map_left]
+    -- `commAlgCatEquivUnder` has no computation lemma for `Under.Hom.right`; by definition it
+    -- sends `CommAlgCat.ofHom σ` to `CommRingCat.ofHom σ`.
     rfl
   have h₃ := key _ _ (fiberIsoFiniteEtaleFiber_hom_app_smul K Ω X σ y)
   have h₄ := h₁.symm.trans (h₃.trans (congrArg (_ ≫ ·) h₂))
-  simp only [Over.comp_left] at h₄
   have : IsIso ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of K)).counitIso.inv.app
       X).hom.left :=
     ((finiteEtaleSchemeProperty _).ι ⋙ Over.forget _).map_isIso _
-  have (Y Z : Over (Spec (.of K))) (h : Y = Z) : IsIso (eqToHom h).left := by
-    subst h
-    exact inferInstanceAs (IsIso (𝟙 _))
-  have cancel {A B C D : Scheme.{u}} (a b : A ⟶ B) (c : B ⟶ C) (d : C ⟶ D) [IsIso c] [IsIso d]
-      (h : a ≫ c ≫ d = b ≫ c ≫ d) : a = b := by
-    rwa [cancel_mono] at h
-  exact cancel _ _ _ _ (h₄.trans (Category.assoc _ _ _).symm)
+  simp only [Over.comp_left, Over.eqToHom_left, ← Category.assoc] at h₄
+  exact (cancel_mono _).1 ((cancel_mono _).1 h₄)
 
 variable [IsGalois K Ω]
 

@@ -32,7 +32,9 @@ The fibre functor is corepresented by the geometric point itself:
 `FiniteEtaleScheme.fiberCompInclIso` identifies `fiber x` with the set of lifts of `x` to
 `X`, that is, with morphisms `Over.mk x ⟶ X` in `Over S`. Its proof combines the adjunction
 `Over.map x ⊣ Over.pullback x` with `equivOfIsSepClosedFunctorCompInclIso`, which identifies
-the finite set attached to a finite étale `Spec Ω`-scheme with its set of sections.
+the finite set attached to a finite étale `Spec Ω`-scheme with its set of sections; the lift
+attached to a point is that section composed with the projection `X ×_S Spec Ω ⟶ X`
+(`fiberCompInclIso_hom_app_left`).
 Changing the geometric point along a morphism of bases is `pullbackCompFiberIso`, compatibly with
 identities and composites (`pullbackCompFiberIso_id_hom_app`, `pullbackCompFiberIso_comp_hom_app`).
 On lifts, `pullbackCompFiberIso` composes a lift to `X ×_S T` with the projection to `X`
@@ -262,6 +264,20 @@ theorem fiberCompInclIso_hom_app_apply (x : Spec (.of Ω) ⟶ S) (X : FiniteEtal
         ((equivOfIsSepClosedFunctorCompInclIso Ω).hom.app ((pullback x).obj X) y) :=
   (rfl)
 
+/-- The lift of `x` given by a point `y` of the fibre is the section of `X ×_S Spec Ω`
+corresponding to `y` under `equivOfIsSepClosedFunctorCompInclIso`, composed with the projection
+`X ×_S Spec Ω ⟶ X`. -/
+theorem fiberCompInclIso_hom_app_left (x : Spec (.of Ω) ⟶ S) (X : FiniteEtaleScheme S)
+    (y : (fiber x).obj X) :
+    ((fiberCompInclIso x).hom.app X y).left =
+      ((equivOfIsSepClosedFunctorCompInclIso Ω).hom.app ((pullback x).obj X) y).left ≫
+        Limits.pullback.fst _ _ := by
+  rw [fiberCompInclIso_hom_app_apply]
+  simp only [Over.comp_left, Over.homMk_left, Category.id_comp]
+  -- `Over.mapPullbackAdj` has no projection lemma for its hom-equivalence; this is the
+  -- computation rule in its definition.
+  rfl
+
 variable (Ω) in
 /-- The geometric fibre functor of `Spec Ω` at its identity point is the classification of
 finite étale schemes over the separably closed field `Ω` by finite sets. -/
@@ -345,22 +361,16 @@ theorem fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left (f : T ⟶ S)
         Limits.pullback.fst _ _ := by
   have h := NatTrans.naturality_apply (equivOfIsSepClosedFunctorCompInclIso Ω).hom
     ((pullbackComp x f).inv.app X) z
-  have hc : ((Over.pullbackComp x f).inv.app X.obj).left ≫ Limits.pullback.fst _ _ =
-      Limits.pullback.fst _ _ ≫ Limits.pullback.fst _ _ := by
+  have key
+      (s : Over.mk (𝟙 (Spec (.of Ω))) ⟶ (Over.pullback x).obj ((Over.pullback f).obj X.obj)) :
+      (s ≫ (Over.pullbackComp x f).inv.app X.obj).left ≫ Limits.pullback.fst X.obj.hom (x ≫ f) =
+        (s.left ≫ Limits.pullback.fst _ x) ≫ Limits.pullback.fst X.obj.hom f := by
     simp [Over.pullbackComp]
-  have key (s : Over.mk (𝟙 (Spec (.of Ω))) ⟶ ((pullback x).obj ((pullback f).obj X)).obj) :
-      (s ≫ ((pullbackComp x f).inv.app X).hom).left ≫ Limits.pullback.fst _ _ =
-        (s.left ≫ Limits.pullback.fst _ _) ≫ Limits.pullback.fst _ _ := by
-    rw [Over.comp_left]
-    refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ?_).trans (Category.assoc _ _ _).symm)
-    rw [pullbackComp_inv_app_hom]
-    exact hc
-  rw [fiberCompInclIso_hom_app_apply, fiberCompInclIso_hom_app_apply, pullbackCompFiberIso_hom_app]
+  rw [fiberCompInclIso_hom_app_left, fiberCompInclIso_hom_app_left, pullbackCompFiberIso_hom_app]
   -- `erw`: the naturality square is stated for the composite `equivOfIsSepClosed Ω ⋙ incl`.
   erw [h]
-  -- Both sides unfold, through the adjunction `Over.map ⊣ Over.pullback`, to `key`.
-  exact (Category.id_comp _).trans ((key ((equivOfIsSepClosedFunctorCompInclIso Ω).hom.app
-    ((pullback x).obj ((pullback f).obj X)) z)).trans
-      (congrArg (· ≫ _) (Category.id_comp _).symm))
+  -- The coyoneda functor acts on a section by postcomposition, and the components of
+  -- `pullbackComp` are those of `Over.pullbackComp` (`pullbackComp_inv_app_hom`).
+  exact key _
 
 end TauCeti.FiniteEtaleScheme
