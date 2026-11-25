@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Trace.Continuous
 public import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace.Prod
 import TauCeti.Analysis.Sobolev.Trace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
@@ -41,7 +42,7 @@ tangential translations, the linear isometries of `E`, and the Lipschitz shears 
 an affine isometry `e : E ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E')` and a Lipschitz `β : E' → ℝ`, the map
 `e⁻¹ ∘ TauCeti.graphFlattening β ∘ e` subtracts `β` of the other coordinates from the first
 coordinate of `e y`. It preserves volume (`TauCeti.measurePreserving_graphFlattening`,
-`TauCeti.AffineIsometryEquiv.measurePreserving`), is Lipschitz
+`AffineIsometryEquiv.measurePreserving`), is Lipschitz
 (`TauCeti.lipschitzWith_graphFlattening`), and carries the region `{y | β (e y).snd < (e y).fst}`
 of the boundary hyperplane onto `{y | 0 < (e y).fst}`. Together with the graph flattening of the
 normal coordinate, which carries the region above a Lipschitz graph onto a half-space
@@ -75,16 +76,6 @@ open scoped ENNReal NNReal Distributions
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {ψ : E → E}
   {Φ : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {M : ℝ}
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A map of `ℝ × E` that keeps the normal coordinate preserves each half-space `{a < t}`. -/
-@[simp]
-theorem preimage_withLpMap_prodMap_id_normalHalfSpace (ψ : E → E) (a : ℝ) :
-    WithLp.map 2 (Prod.map (id : ℝ → ℝ) ψ) ⁻¹'
-        (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) =
-      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-  ext x
-  simp
 
 /-- **The flat trace commutes with changes of variables acting tangentially on the hyperplane.**
 Let `Φ` be a volume-preserving map of `ℝ × E`, locally Lipschitz with `‖DΦ‖ ≤ M`, that maps each
@@ -208,7 +199,7 @@ theorem W1p.halfSpaceTrace_compMeasurePreservingL_withLpMap_prodMap_id (hp : p �
         (fun _ _ => norm_fderiv_le_of_lipschitz ℝ (LipschitzWith.id.withLpProdMap hψl)) u) =
       Lp.compMeasurePreserving ψ hψ (W1p.halfSpaceTrace hp a u) :=
   W1p.halfSpaceTrace_compMeasurePreservingL hp a _ _ _ _
-    (LipschitzWith.id.withLpProdMap hψl).continuous.continuousOn hψ (fun _ => rfl) u
+    (LipschitzWith.id.withLpProdMap hψl).continuous.continuousOn hψ (fun _ => by simp) u
 
 /-- **Tangential changes of variables carry the zero set of the half-space trace.** With `Φ` and
 `ψ` as in `TauCeti.W1p.halfSpaceTrace_compMeasurePreservingL` and a measurable set `S ⊆ E`, the
@@ -228,18 +219,6 @@ theorem W1p.halfSpaceTrace_compMeasurePreservingL_ae_eq_zero_iff (hp : p ≠ ∞
         W1p.halfSpaceTrace hp a (W1p.compMeasurePreservingL hΦ hUV hΦl hM u) y = 0) ↔
       ∀ᵐ z ∂volume, z ∈ S → W1p.halfSpaceTrace hp a u z = 0 := by
   rw [W1p.halfSpaceTrace_compMeasurePreservingL hp a hΦ hUV hΦl hM hΦc hψ hΦa]
-  set T := W1p.halfSpaceTrace hp a u
-  have hmeas : MeasurableSet {z | z ∈ S → T z = 0} := by
-    have h := hS.compl.union ((Lp.stronglyMeasurable T).measurable (measurableSet_singleton 0))
-    convert h using 1
-    ext z
-    simp [imp_iff_not_or]
-  have key : (∀ᵐ z ∂volume, z ∈ S → T z = 0) ↔ ∀ᵐ y ∂volume, ψ y ∈ S → T (ψ y) = 0 := by
-    have h := ae_map_iff (μ := volume) hψ.measurable.aemeasurable hmeas
-    rwa [hψ.map_eq] at h
-  rw [key]
-  refine Filter.eventually_congr ?_
-  filter_upwards [Lp.coeFn_compMeasurePreserving T hψ] with y hy
-  rw [hy, Function.comp_apply]
+  exact Lp.ae_compMeasurePreserving_eq_zero_iff hψ hS _
 
 end TauCeti
