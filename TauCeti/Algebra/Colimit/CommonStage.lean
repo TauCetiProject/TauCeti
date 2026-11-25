@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fintype.Order
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.DirectedInverseSystem
 
@@ -23,7 +24,8 @@ subsets `Sᵢ ⊆ Aᵢ` preserved by the transition maps lift into a common `S�
 (`TauCeti.DirectLimit.exists_lift_mem`). If moreover two elements of a stage with the
 same image in `L` become equal at a later stage, then two pairs of elements of two stages with
 the same images in `L` become equal at a common later stage
-(`TauCeti.DirectLimit.exists_eq_eq_of_eq_eq`).
+(`TauCeti.DirectLimit.exists_eq_eq_of_eq_eq`), and so do two finite families of elements of one
+stage with the same images in `L` (`TauCeti.DirectLimit.exists_forall_eq_of_forall_eq`).
 
 ## Main results
 
@@ -32,6 +34,8 @@ the same images in `L` become equal at a common later stage
   of subsets `Sᵢ ⊆ Aᵢ` lift into a common `Sⱼ`.
 * `TauCeti.DirectLimit.exists_eq_eq_of_eq_eq`: two pairs of elements with the same images in the
   colimit become equal at a common later stage.
+* `TauCeti.DirectLimit.exists_forall_eq_of_forall_eq`: two finite families of elements of a stage
+  with the same images in the colimit become equal at a common later stage.
 -/
 
 public section
@@ -89,5 +93,19 @@ theorem exists_eq_eq_of_eq_eq [DirectedSystem A fun i j h ↦ t i j h]
   · have := congrArg (t l' m hl'm) hbl'
     simp only [DirectedSystem.map_map (f := fun i j h ↦ t i j h)] at this
     exact this
+
+/-- Two finite families of elements of a stage `i` with the same images in the colimit become
+equal at a common later stage. -/
+theorem exists_forall_eq_of_forall_eq [DirectedSystem A fun i j h ↦ t i j h]
+    (hker : ∀ i (a b : A i), φ i a = φ i b → ∃ j, ∃ h : i ≤ j, t i j h a = t i j h b)
+    {α : Type*} [Finite α] {i : ι} {a b : α → A i} (hab : ∀ x, φ i (a x) = φ i (b x)) :
+    ∃ j, ∃ h : i ≤ j, ∀ x, t i j h (a x) = t i j h (b x) := by
+  choose j hj hjab using fun x ↦ hker i (a x) (b x) (hab x)
+  have : Nonempty ι := ⟨i⟩
+  obtain ⟨l, hl⟩ := Finite.exists_le j
+  obtain ⟨k, hik, hlk⟩ := directed_of (· ≤ ·) i l
+  refine ⟨k, hik, fun x ↦ ?_⟩
+  have := congrArg (t (j x) k ((hl x).trans hlk)) (hjab x)
+  simpa only [DirectedSystem.map_map (f := fun i j h ↦ t i j h)] using this
 
 end TauCeti.DirectLimit

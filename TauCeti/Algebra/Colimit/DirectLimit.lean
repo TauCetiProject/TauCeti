@@ -9,11 +9,12 @@ public import Mathlib.Algebra.Colimit.DirectLimit
 public import Mathlib.Data.Set.Finite.Lattice
 
 /-!
-# Directed colimits of monoids and algebras
+# Directed colimits of monoids, rings and algebras
 
 Basic API for Mathlib's generic `DirectLimit G f` of a directed system of monoids or groups `G i`
-with monoid homomorphisms as transition maps, and of a directed system of `A`-algebras with
-`A`-algebra transition maps.
+with monoid homomorphisms as transition maps, of a directed system of rings with ring
+homomorphisms as transition maps, and of a directed system of `A`-algebras with `A`-algebra
+transition maps.
 
 Mathlib equips `DirectLimit G f` with its monoid and group structures and bundles the canonical
 maps from the components as linear maps and ring homomorphisms. Here they are bundled as monoid
@@ -29,12 +30,20 @@ many elements at a time pass to direct limits.
 
 ## Main declarations
 
+* `TauCeti.DirectLimit.exists_eq_of_mk_eq`: two elements of a stage with the same image in the
+  direct limit of any directed system agree at a later stage.
 * `TauCeti.DirectLimit.Monoid.of`: the canonical map from a component, as a monoid homomorphism.
 * `TauCeti.DirectLimit.Monoid.lift`: the universal property of the direct limit of monoids.
 * `TauCeti.DirectLimit.Monoid.hom_ext`: monoid homomorphisms out of the direct limit agree when
   they agree on every component.
 * `TauCeti.DirectLimit.Monoid.exists_subset_range_of`: every finite subset of the direct limit lies
   in the image of a single component.
+* `TauCeti.DirectLimit.Ring.of_comp_f`: the canonical ring homomorphisms into a direct limit of
+  rings are compatible with the transition maps.
+* `TauCeti.DirectLimit.Ring.exists_of`, `TauCeti.DirectLimit.Ring.exists_eq_of_of_eq`: every
+  element of a direct limit of rings comes from some stage, and two elements of a stage with the
+  same image agree at a later stage. These are the forms of Mathlib's `Module.DirectLimit.exists_of`
+  and `Module.DirectLimit.exists_eq_of_of_eq` for the generic `DirectLimit`.
 * `TauCeti.DirectLimit.Algebra.of_comp_f`: the canonical maps into a direct limit of algebras are
   compatible with the transition maps. This is the algebra version of
   `TauCeti.Ring.DirectLimit.of_comp_f` in `TauCeti/Algebra/Colimit/Ring/Basic.lean`.
@@ -43,6 +52,22 @@ many elements at a time pass to direct limits.
 public section
 
 namespace TauCeti
+
+namespace DirectLimit
+
+variable {ι : Type*} [Preorder ι] {F : ι → Type*} {T : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
+  {f : ∀ _ _ h, T h} [∀ i j (h : i ≤ j), FunLike (T h) (F i) (F j)] [DirectedSystem F (f · · ·)]
+  [IsDirectedOrder ι]
+
+/-- Two elements of a stage with the same image in the direct limit of a directed system agree at
+a later stage. -/
+theorem exists_eq_of_mk_eq {i : ι} {x y : F i}
+    (h : (⟦⟨i, x⟩⟧ : _root_.DirectLimit F f) = ⟦⟨i, y⟩⟧) :
+    ∃ j, ∃ hij : i ≤ j, f i j hij x = f i j hij y := by
+  obtain ⟨j, hij, _, hj⟩ := Quotient.eq.mp h
+  exact ⟨j, hij, hj⟩
+
+end DirectLimit
 
 namespace DirectLimit.Monoid
 
@@ -127,5 +152,41 @@ theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of B f j).comp (f i j hij) = of 
   AlgHom.ext fun _ ↦ of_f _ _
 
 end DirectLimit.Algebra
+
+namespace DirectLimit.Ring
+
+open _root_.DirectLimit _root_.DirectLimit.Ring
+
+section RingHomClass
+
+variable {ι : Type*} [Preorder ι] {G : ι → Type*} {T : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
+  {f : ∀ _ _ h, T h} [∀ i j (h : i ≤ j), FunLike (T h) (G i) (G j)] [DirectedSystem G (f · · ·)]
+  [IsDirectedOrder ι] [Nonempty ι] [∀ i, NonAssocSemiring (G i)]
+  [∀ i j h, RingHomClass (T h) (G i) (G j)]
+
+/-- Every element of a direct limit of rings is the image of an element of some stage. -/
+theorem exists_of (z : DirectLimit G f) : ∃ i x, of G f i x = z := by
+  obtain ⟨i, x, rfl⟩ := exists_eq_mk _ z
+  exact ⟨i, x, of_apply ..⟩
+
+/-- Two elements of a stage with the same image in a direct limit of rings agree at a later
+stage. -/
+theorem exists_eq_of_of_eq {i : ι} {x y : G i} (h : of G f i x = of G f i y) :
+    ∃ j, ∃ hij : i ≤ j, f i j hij x = f i j hij y := by
+  rw [of_apply, of_apply] at h
+  exact exists_eq_of_mk_eq h
+
+end RingHomClass
+
+variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, NonAssocSemiring (G i)]
+  {f : ∀ i j, i ≤ j → G i →+* G j} [DirectedSystem G (f · · ·)] [IsDirectedOrder ι] [Nonempty ι]
+
+/-- The canonical ring homomorphisms into a direct limit of rings are compatible with the
+transition maps. -/
+@[simp]
+theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of G f j).comp (f i j hij) = of G f i :=
+  RingHom.ext (of_f hij)
+
+end DirectLimit.Ring
 
 end TauCeti
