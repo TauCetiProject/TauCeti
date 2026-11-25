@@ -61,6 +61,7 @@ theorem symmetricPower_apply (ρ : Representation R G M) (d : ℕ) (g : G) :
   (rfl)
 
 /-- Symmetric powers commute with restriction along a monoid homomorphism. -/
+@[simp]
 theorem symmetricPower_comp {H : Type*} [Monoid H] (ρ : Representation R G M) (f : H →* G)
     (d : ℕ) : symmetricPower (ρ.comp f) d = (ρ.symmetricPower d).comp f :=
   MonoidHom.ext fun _ ↦ rfl

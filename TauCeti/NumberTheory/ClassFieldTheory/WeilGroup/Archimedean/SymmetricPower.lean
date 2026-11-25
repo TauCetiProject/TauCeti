@@ -22,10 +22,9 @@ so a semisimple representation is diagonalizable, and the symmetric power of a d
 action is diagonalizable. For `W_ℝ`, restriction to the subgroup `ℂˣ` of index two detects
 semisimplicity in characteristic zero
 (`TauCeti.ClassFieldTheory.WeilGroupReal.isSemisimpleRepresentation_comp_includeComplex_iff`):
-restriction to a normal subgroup preserves semisimplicity
-(`Representation.isSemisimpleRepresentation_comp_subtype`), and the relative Maschke theorem
-(`Representation.isSemisimpleRepresentation_of_comp_subtype`) gives the converse because the index
-`2` is invertible in `ℂ`. Symmetric powers commute with restriction, so the `W_ℂ` case gives the
+restriction to a normal subgroup whose index is invertible detects semisimplicity
+(`Representation.isSemisimpleRepresentation_comp_subtype_iff`), and the index `2` is invertible in
+`ℂ`. Symmetric powers commute with restriction, so the `W_ℂ` case gives the
 `W_ℝ` case.
 
 ## Main results
@@ -63,9 +62,8 @@ theorem isSemisimpleRepresentation_comp_includeComplex_iff
     IsSemisimpleRepresentation (ρ.comp includeComplex) ↔ IsSemisimpleRepresentation ρ := by
   rw [comp_includeComplex_eq, MonoidHom.isSemisimpleRepresentation_comp_surjective_iff _
     includeComplex.rangeRestrict_surjective]
-  refine ⟨fun _ ↦ ?_, fun _ ↦ isSemisimpleRepresentation_comp_subtype ρ _⟩
   have : NeZero (includeComplex.range.index : ℂ) := ⟨by simp [index_range_includeComplex]⟩
-  exact isSemisimpleRepresentation_of_comp_subtype ρ includeComplex.range
+  exact isSemisimpleRepresentation_comp_subtype_iff ρ _
 
 /-- The restriction to `ℂˣ` of a semisimple finite-dimensional complex representation of `W_ℝ` is
 semisimple. -/
