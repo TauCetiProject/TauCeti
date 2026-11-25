@@ -33,14 +33,15 @@ variable {X : AlgebraicGeometry.Scheme.{u}} (Q : ElementaryDistinguishedSquare X
 
 /-- If the open part `U` of an elementary distinguished square is empty, the image of `j` is the
 empty open. -/
+@[simp]
 lemma opensRange_j_eq_bot [IsEmpty Q.U] : Q.j.opensRange = ⊥ := by
   ext x
   simp only [AlgebraicGeometry.Scheme.Hom.coe_opensRange, Set.mem_range, Opens.coe_bot,
     Set.mem_empty_iff_false, iff_false, not_exists]
   exact fun u ↦ isEmptyElim u
 
-/-- **An elementary distinguished square with empty open part over a reduced scheme is an
-isomorphism**: the reduced closed complement of `U = ∅` is `X`, over which `p` is an
+/-- **The map `p` of an elementary distinguished square with empty open part over a reduced
+scheme is an isomorphism**: the reduced closed complement of `U = ∅` is `X`, over which `p` is an
 isomorphism. -/
 theorem isIso_p_of_isEmpty [IsReduced X] [IsEmpty Q.U] : IsIso Q.p := by
   set I := AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl
@@ -57,9 +58,9 @@ theorem isIso_p_of_isEmpty [IsReduced X] [IsEmpty Q.U] : IsIso Q.p := by
     infer_instance
   exact IsIso.of_isIso_comp_left (pullback.fst Q.p I.subschemeι) Q.p
 
-/-- An étale morphism `q : V ⟶ X` onto a reduced scheme that is not an isomorphism is not, up to
+/-- A morphism `q : V ⟶ X` to a reduced scheme that is not an isomorphism is not, up to
 isomorphism over `X`, the `p` of an elementary distinguished square with empty open part. -/
-theorem not_nonempty_iso_of_isEmpty [IsReduced X] [IsEmpty Q.U] {V : AlgebraicGeometry.Scheme.{u}}
+theorem isEmpty_iso_of_not_isIso [IsReduced X] [IsEmpty Q.U] {V : AlgebraicGeometry.Scheme.{u}}
     (q : V ⟶ X) (hq : ¬ IsIso q) : IsEmpty (Over.mk Q.p ≅ Over.mk q) := by
   refine ⟨fun e ↦ hq ?_⟩
   have := Q.isIso_p_of_isEmpty

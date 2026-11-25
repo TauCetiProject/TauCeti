@@ -31,33 +31,28 @@ open TauCeti.AlgebraicGeometry.Scheme
 
 universe u
 
-/-- For a field extension `K → L` of degree other than one, `Spec L ⟶ Spec K` is not an
+/-- **An extension of degree other than one is not distinguished with empty `U`.** For an algebra
+`K → L` over a nontrivial reduced commutative ring `K` with `finrank K L ≠ 1` (for instance a field
+extension of degree two), no elementary distinguished square over `Spec K` with empty open part
+has `p` isomorphic over `Spec K` to `Spec L ⟶ Spec K`, since that morphism is not an
 isomorphism. -/
-theorem not_isIso_spec_algebraMap (K L : Type u) [Field K] [Field L] [Algebra K L]
-    (h : Module.finrank K L ≠ 1) :
-    ¬ IsIso (Spec.map (CommRingCat.ofHom (algebraMap K L))) := by
-  intro hi
-  have : IsIso (Scheme.Spec.map (CommRingCat.ofHom (algebraMap K L)).op) := hi
-  have : IsIso (CommRingCat.ofHom (algebraMap K L)).op := isIso_of_reflects_iso _ Scheme.Spec
-  have : IsIso (CommRingCat.ofHom (algebraMap K L)) := isIso_of_op _
-  have hb : Function.Bijective (algebraMap K L) :=
-    ConcreteCategory.bijective_of_isIso (CommRingCat.ofHom (algebraMap K L))
-  exact h ((AlgEquiv.ofBijective (Algebra.ofId K L) hb).toLinearEquiv.finrank_eq.symm.trans
-    (Module.finrank_self K))
-
-/-- **A degree-two extension is not distinguished with empty `U`.** For a field extension `K → L`
-of degree two, no elementary distinguished square over `Spec K` with empty open part has `p`
-isomorphic over `Spec K` to `Spec L ⟶ Spec K`. -/
-theorem isEmpty_iso_spec_of_finrank_eq_two (K L : Type u) [Field K] [Field L] [Algebra K L]
-    (h : Module.finrank K L = 2) (Q : ElementaryDistinguishedSquare (Spec (.of K)))
-    [IsEmpty Q.U] :
+theorem isEmpty_iso_SpecMap_of_finrank_ne_one (K L : Type u) [CommRing K] [IsReduced K]
+    [Nontrivial K] [CommRing L] [Algebra K L] (h : Module.finrank K L ≠ 1)
+    (Q : ElementaryDistinguishedSquare (Spec (.of K))) [IsEmpty Q.U] :
     IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :=
-  Q.not_nonempty_iso_of_isEmpty _ (not_isIso_spec_algebraMap K L (by omega))
+  Q.isEmpty_iso_of_not_isIso _ fun hi ↦
+    h (Module.finrank_of_bijective_algebraMap (isIso_SpecMap_iff.1 hi))
+
+/-- The degree-two case. -/
+example (K L : Type u) [Field K] [Field L] [Algebra K L] (h : Module.finrank K L = 2)
+    (Q : ElementaryDistinguishedSquare (Spec (.of K))) [IsEmpty Q.U] :
+    IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :=
+  isEmpty_iso_SpecMap_of_finrank_ne_one K L (by omega) Q
 
 /-- The case `ℝ → ℂ`. -/
 example (Q : ElementaryDistinguishedSquare (Spec (.of ℝ))) [IsEmpty Q.U] :
     IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ)))) :=
-  isEmpty_iso_spec_of_finrank_eq_two ℝ ℂ Complex.finrank_real_complex Q
+  isEmpty_iso_SpecMap_of_finrank_ne_one ℝ ℂ (by rw [Complex.finrank_real_complex]; omega) Q
 
 /-- The morphism `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ`: the identity on `Spec ℝ` and `Spec ℂ ⟶ Spec ℝ`. -/
 noncomputable abbrev realComplexToReal :
@@ -77,6 +72,6 @@ theorem not_isIso_realComplexToReal : ¬ IsIso realComplexToReal := by
 open part has `p` isomorphic over `Spec ℝ` to `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ`. -/
 theorem isEmpty_iso_realComplexToReal (Q : ElementaryDistinguishedSquare (Spec (.of ℝ)))
     [IsEmpty Q.U] : IsEmpty (Over.mk Q.p ≅ Over.mk realComplexToReal) :=
-  Q.not_nonempty_iso_of_isEmpty _ not_isIso_realComplexToReal
+  Q.isEmpty_iso_of_not_isIso _ not_isIso_realComplexToReal
 
 end TauCeti.AlgebraicGeometry.DistinguishedSquareEmptyOpenExample
