@@ -55,8 +55,12 @@ theorem centralIdempotents_corner_subset (hb : IsPrimitiveIdempotent b)
     congrArg Subtype.val (isIdempotentElem_of_mem_centralIdempotents hz).eq
   -- The unit of the corner is `b`, so `f = b` in the centre gives `z = 1` in the corner.
   rcases hb.eq_zero_or_eq (f := f) (Subtype.ext hzz) (Subtype.ext hbz) (Subtype.ext hzb) with h | h
-  · exact Or.inl (Subtype.ext (congrArg Subtype.val h :))
-  · exact Or.inr (Subtype.ext (congrArg Subtype.val h :))
+  · refine Or.inl (Subtype.ext ?_)
+    rw [IsIdempotentElem.Corner.val_zero]
+    simpa [f] using congrArg Subtype.val h
+  · refine Or.inr (Subtype.ext ?_)
+    rw [IsIdempotentElem.Corner.val_one]
+    simpa [f] using congrArg Subtype.val h
 
 end IsPrimitiveIdempotent
 

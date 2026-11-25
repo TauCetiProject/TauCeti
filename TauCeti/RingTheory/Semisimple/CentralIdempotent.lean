@@ -37,10 +37,11 @@ theorem IsSemisimpleRing.isSimpleRing_of_centralIdempotents_subset {R : Type*} [
     IsSimpleRing R := by
   obtain ⟨n, D, d, _, _, hd, ⟨φ⟩⟩ := IsSemisimpleRing.exists_algEquiv_pi_matrix_divisionRing ℤ R
   have : ∀ i, Nonempty (Fin (d i)) := fun i ↦ ⟨⟨0, NeZero.pos (d i)⟩⟩
+  have h01 : centralIdempotents R = {0, 1} :=
+    h.antisymm (by simp [Set.insert_subset_iff, zero_mem_centralIdempotents,
+      one_mem_centralIdempotents])
   have hcard := RingEquiv.card_centralIdempotents_congr φ.toRingEquiv
-  rw [card_centralIdempotents_pi_of_isSimpleRing, Nat.card_fin,
-    Set.Subset.antisymm h (Set.insert_subset_iff.2 ⟨zero_mem_centralIdempotents,
-      Set.singleton_subset_iff.2 one_mem_centralIdempotents⟩), Nat.card_coe_set_eq,
+  rw [card_centralIdempotents_pi_of_isSimpleRing, Nat.card_fin, h01, Nat.card_coe_set_eq,
     Set.ncard_pair zero_ne_one] at hcard
   obtain rfl : n = 1 := Nat.pow_right_injective le_rfl (by simpa using hcard.symm)
   exact IsSimpleRing.of_ringEquiv (φ.toRingEquiv.trans (RingEquiv.piUnique _)).symm inferInstance
