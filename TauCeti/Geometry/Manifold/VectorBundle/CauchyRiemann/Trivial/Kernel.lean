@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Complex
-public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial.Basic
+import Mathlib.Geometry.Manifold.Complex
 
 /-!
 # The kernel of `∂bar` on functions over a compact connected complex manifold
@@ -18,7 +18,8 @@ holomorphic (`TauCeti.SmoothAlmostComplexStructure.dbarFunction_ofComplexManifol
 hence constant by the maximum modulus principle (`MDifferentiable.exists_eq_const_of_compactSpace`).
 So the kernel of `∂bar` on real-differentiable functions
 (`TauCeti.SmoothAlmostComplexStructure.dbarFunctionKernel`) is the space of constant functions,
-a copy of `F` (`TauCeti.SmoothAlmostComplexStructure.dbarFunctionKernel_eq_range_const`); for
+a copy of `F` (`TauCeti.SmoothAlmostComplexStructure.dbarFunctionKernel_eq_range_const`, through
+`LinearMap.const`); for
 `M` nonempty its real dimension is that of `F`
 (`TauCeti.SmoothAlmostComplexStructure.finrank_dbarFunctionKernel`). For `F = ℂ`, on a compact
 connected Riemann surface, the kernel of `∂bar` on functions has real dimension `2`
@@ -30,6 +31,8 @@ the Riemann–Roch formula for real Cauchy–Riemann operators (McDuff–Salamon
 
 * `TauCeti.SmoothAlmostComplexStructure.dbarFunctionKernel`: the real subspace of
   real-differentiable functions `M → F` with `∂bar σ = 0`.
+* `TauCeti.SmoothAlmostComplexStructure.constDbarFunctionKernelEquiv`: for `M` nonempty, the
+  identification of `F` with the kernel by constant functions.
 
 ## Main results
 
@@ -80,6 +83,7 @@ def dbarFunctionKernel : Submodule ℝ (M → F) where
   smul_mem' c σ hσ := ⟨hσ.1.const_smul c, fun x ↦ by
     rw [dbarFunction_const_smul, hσ.2 x, smul_zero]⟩
 
+@[simp]
 theorem mem_dbarFunctionKernel {σ : M → F} :
     σ ∈ dbarFunctionKernel E M F ↔
       MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ, F) σ ∧ ∀ x, (ofComplexManifold E M).dbarFunction σ x = 0 :=
@@ -104,9 +108,9 @@ theorem exists_eq_const_of_dbarFunction_eq_zero {σ : M → F}
 variable (E M F) in
 /-- **The kernel of `∂bar` on functions is the constants.** On a compact connected complex
 manifold, the real-differentiable functions `σ : M → F` with `∂bar σ = 0` are exactly the
-constant functions. -/
+constant functions: the kernel is the range of `LinearMap.const`. -/
 theorem dbarFunctionKernel_eq_range_const :
-    (dbarFunctionKernel E M F : Set (M → F)) = range (Function.const M) := by
+    dbarFunctionKernel E M F = LinearMap.range (LinearMap.const (R := ℝ) (ι := M) (M₂ := F)) := by
   ext σ
   refine ⟨fun hσ ↦ ?_, ?_⟩
   · obtain ⟨v, rfl⟩ := exists_eq_const_of_dbarFunction_eq_zero hσ.1 hσ.2
@@ -118,16 +122,22 @@ variable (E M F) in
 /-- On a nonempty compact connected complex manifold, the constant functions identify `F` with the
 kernel of `∂bar` on functions. -/
 def constDbarFunctionKernelEquiv [Nonempty M] : F ≃ₗ[ℝ] dbarFunctionKernel E M F :=
-  LinearEquiv.ofBijective
-    { toFun := fun v ↦ ⟨Function.const M v, const_mem_dbarFunctionKernel v⟩
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-    ⟨fun v w h ↦ congrFun (congrArg Subtype.val h) (Classical.arbitrary M),
-    fun σ ↦ by
-      obtain ⟨v, hv⟩ : (σ : M → F) ∈ range (Function.const M) := by
-        rw [← dbarFunctionKernel_eq_range_const E M F]
-        exact σ.property
-      exact ⟨v, Subtype.ext hv⟩⟩
+  (LinearEquiv.ofInjective (LinearMap.const (R := ℝ) (ι := M) (M₂ := F))
+    Function.const_injective).trans
+    (LinearEquiv.ofEq _ _ (dbarFunctionKernel_eq_range_const E M F).symm)
+
+@[simp]
+theorem coe_constDbarFunctionKernelEquiv_apply [Nonempty M] (v : F) :
+    (constDbarFunctionKernelEquiv E M F v : M → F) = Function.const M v :=
+  (rfl)
+
+@[simp]
+theorem constDbarFunctionKernelEquiv_symm_apply [Nonempty M] (σ : dbarFunctionKernel E M F)
+    (x : M) : (constDbarFunctionKernelEquiv E M F).symm σ = (σ : M → F) x := by
+  conv_rhs => rw [← (constDbarFunctionKernelEquiv E M F).apply_symm_apply σ,
+    coe_constDbarFunctionKernelEquiv_apply]
+  -- The constant function `Function.const M v` takes the value `v` at `x`.
+  rfl
 
 variable (E M F) in
 /-- **The real dimension of the kernel of `∂bar`.** On a nonempty compact connected complex
