@@ -265,22 +265,21 @@ theorem exists_memLp_forall_integral_eq_zero_of_annihilator (hp : 1 < p) (hp_top
 
 section Bound
 
-omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- The normed-group structure of the `Lᵖ` `(0,1)`-forms as a subspace, given directly: nested
-instance search for it, below the operator norm, fails to unfold `SobolevSection`. -/
-private instance instNormedAddCommGroupZeroOneSobolevSections :
-    NormedAddCommGroup (zeroOneSobolevSections A volume p 0) :=
-  Submodule.normedAddCommGroup _
-
-omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- The normed-space structure of the `Lᵖ` `(0,1)`-forms as a subspace, given directly for the
-same reason. -/
-private instance instNormedSpaceZeroOneSobolevSections :
-    NormedSpace ℝ (zeroOneSobolevSections A volume p 0) :=
-  Submodule.normedSpace _
-
 variable {i : Fin A.n} {Q' : Opens ℂ}
 
+omit [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
+/-- A subset of the image of chart `i` of `A` lies in the image of chart `i` of the atlas
+`A.tangentHom` of `V`-valued one-forms: the two chart images agree. -/
+private theorem subset_image_tangentHom {s : Set ℂ} (h : s ⊆ A.image i) :
+    s ⊆ A.tangentHom.image i := by
+  rwa [A.image_tangentHom]
+
+omit [T2Space M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
+/-- A subset of the image of chart `i` of `A` lies in the image of chart `i` of the section chart
+data of `V`-valued one-forms. -/
+private theorem subset_sectionChartData_image_tangentHom {s : Set ℂ} (h : s ⊆ A.image i) :
+    s ⊆ A.tangentHom.sectionChartData.image i := by
+  rwa [sectionChartData_image_tangentHom]
 
 omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 /-- Chart-`i` data of one-forms built from `g ∈ Lᵖ(Q')` and `v : F`: the components, in
@@ -365,8 +364,8 @@ private theorem chartValueL_antilinearExtL_ae (hQ' : closure (Q' : Set ℂ) ⊆ 
 
 /-- **Pairing with `antilinearExtL`.** If `Λ` is represented over `Q` by `θ`, then on
 `antilinearExtL v g` it is the pairing of `g` with `θ(·) v` over `Q'`. -/
-private theorem apply_antilinearExtL_eq {Q : Opens ℂ} (hQi : closure (Q : Set ℂ) ⊆ A.image i)
-    (hQ' : closure (Q' : Set ℂ) ⊆ Q) (hQ'' : closure (Q' : Set ℂ) ⊆ A.tangentHom.image i)
+private theorem apply_antilinearExtL_eq {Q : Opens ℂ} (hQi : (Q : Set ℂ) ⊆ A.image i)
+    (hQ' : closure (Q' : Set ℂ) ⊆ Q)
     (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) {θ : ℂ → F →L[ℝ] ℝ}
     (hrep : ∀ w : zeroOneSobolevSections A volume p 0,
       (w : SobolevSection A.tangentHom volume p 0) ∈
@@ -375,13 +374,9 @@ private theorem apply_antilinearExtL_eq {Q : Opens ℂ} (hQi : closure (Q : Set 
           ((w : SobolevSection A.tangentHom volume p 0) :
             A.tangentHom.sectionChartData.SobolevData volume p 0) z 1))
     (v : F) (g : Lp ℝ p (volume.restrict (Q' : Set ℂ))) :
-    Λ (antilinearExtL A hQ'' v g) = ∫ z in Q', g z * θ z v := by
-  have hQt : (Q : Set ℂ) ⊆ A.tangentHom.image i := by
-    rw [A.image_tangentHom]
-    exact subset_closure.trans hQi
-  have hQs : (Q : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
-    rw [sectionChartData_image_tangentHom]
-    exact subset_closure.trans hQi
+    Λ (antilinearExtL A (subset_image_tangentHom A (hQ'.trans hQi)) v g) =
+      ∫ z in Q', g z * θ z v := by
+  have hQ'' := subset_image_tangentHom A (hQ'.trans hQi)
   -- `antilinearExtL v g` vanishes off the points read in chart `i` inside `closure Q' ⊆ Q`. The
   -- charts of `A.tangentHom` are those of `A` by definition.
   have hmem : (antilinearExtL A hQ'' v g : SobolevSection A.tangentHom volume p 0) ∈
@@ -393,18 +388,19 @@ private theorem apply_antilinearExtL_eq {Q : Opens ℂ} (hQi : closure (Q : Set 
   refine Eq.trans ?_ ((setIntegral_indicator Q'.isOpen.measurableSet).trans
     (by rw [inter_eq_right.2 (subset_closure.trans hQ')]))
   refine integral_congr_ae ?_
-  filter_upwards [ae_restrict_of_ae_restrict_of_subset hQs
-      (chartValueL_antilinearExtL_ae A hQ'' v g),
-    ae_restrict_of_ae_restrict_of_subset hQt (coeFn_extendByZeroLpₗᵢ ℝ
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset
+      (subset_sectionChartData_image_tangentHom A hQi) (chartValueL_antilinearExtL_ae A hQ'' v g),
+    ae_restrict_of_ae_restrict_of_subset (subset_image_tangentHom A hQi) (coeFn_extendByZeroLpₗᵢ ℝ
       Q'.isOpen.measurableSet.nullMeasurableSet (subset_closure.trans hQ'') g)] with z h₁ h₂
   rw [h₁, map_smul, smul_eq_mul, h₂, Set.indicator_mul_left]
 
-include hq₁ hpq in
+omit hq₁ in
+include hpq in
 /-- **The `L^q` bound of the representing field, in one direction.** For `v : F`, the `L^q(Q')`
 norm of `θ(·) v` is at most `‖antilinearExtL v‖ ‖Λ‖`: by the duality of `L^q` and `Lᵖ`, it is
 the norm of `g ↦ ∫_{Q'} g θ(·) v = Λ (antilinearExtL v g)`. -/
-private theorem eLpNorm_apply_le {Q : Opens ℂ} (hQi : closure (Q : Set ℂ) ⊆ A.image i)
-    (hQ' : closure (Q' : Set ℂ) ⊆ Q) (hQ'' : closure (Q' : Set ℂ) ⊆ A.tangentHom.image i)
+private theorem eLpNorm_apply_le {Q : Opens ℂ} (hQi : (Q : Set ℂ) ⊆ A.image i)
+    (hQ' : closure (Q' : Set ℂ) ⊆ Q)
     (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) {θ : ℂ → F →L[ℝ] ℝ}
     (hθ : MemLp θ q (volume.restrict Q'))
     (hrep : ∀ w : zeroOneSobolevSections A volume p 0,
@@ -415,7 +411,9 @@ private theorem eLpNorm_apply_le {Q : Opens ℂ} (hQi : closure (Q : Set ℂ) �
             A.tangentHom.sectionChartData.SobolevData volume p 0) z 1))
     (v : F) :
     (eLpNorm (fun z ↦ θ z v) q (volume.restrict Q')).toReal ≤
-      ‖antilinearExtL (p := p) A hQ'' v‖ * ‖Λ‖ := by
+      ‖antilinearExtL (p := p) A (subset_image_tangentHom A (hQ'.trans hQi)) v‖ * ‖Λ‖ := by
+  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
+  have hQ'' := subset_image_tangentHom A (hQ'.trans hQi)
   have hθv : MemLp (fun z ↦ θ z v) q (volume.restrict (Q' : Set ℂ)) :=
     hθ.continuousLinearMap_comp (ContinuousLinearMap.apply ℝ ℝ v)
   rw [← Lp.norm_toLp _ hθv, ← (Lp.toDual ℝ (volume.restrict (Q' : Set ℂ)) q p).norm_map]
@@ -423,7 +421,7 @@ private theorem eLpNorm_apply_le {Q : Opens ℂ} (hQi : closure (Q : Set ℂ) �
   rw [Lp.toDual_apply]
   -- The pairing is `Λ (antilinearExtL v g)`.
   have hpair : ∫ z in Q', hθv.toLp _ z * g z = Λ (antilinearExtL A hQ'' v g) := by
-    rw [apply_antilinearExtL_eq A hQi hQ' hQ'' Λ hrep v g]
+    rw [apply_antilinearExtL_eq A hQi hQ' Λ hrep v g]
     refine integral_congr_ae ?_
     filter_upwards [hθv.coeFn_toLp] with z hz
     rw [hz, mul_comm]
@@ -433,34 +431,29 @@ private theorem eLpNorm_apply_le {Q : Opens ℂ} (hQi : closure (Q : Set ℂ) �
         mul_le_mul_of_nonneg_left ((antilinearExtL (p := p) A hQ'' v).le_opNorm g) (norm_nonneg _)
     _ = _ := by ring
 
-include hq₁ hpq in
-/-- **The `L^q` bound of the field representing a functional.** Let `Q` be open with closure in
-the image of chart `i`, and `Q'` open with closure in `Q`. There is a constant `C` such that,
-whenever `θ ∈ L^q(Q)` represents a continuous functional `Λ` on the `Lᵖ` `(0,1)`-forms over `Q`,
+omit hq₁ in
+include hpq in
+/-- **The `L^q` bound of the field representing a functional.** Let `Q` be an open subset of the
+image of chart `i`, and `Q'` open with closure in `Q`. There is a constant `C` such that, whenever
+`θ ∈ L^q(Q')` represents a continuous functional `Λ` on the `Lᵖ` `(0,1)`-forms over `Q`,
 `Λ w = ∫_Q θ (wᵢ(1))` for every `(0,1)`-form `w` vanishing off the points read in chart `i` inside
-`Q`, the `L^q(Q')` norm of `θ` is at most `C K` for every bound `‖Λ w‖ ≤ K ‖w‖`, that is, at
-most `C ‖Λ‖`. -/
+`Q`, the `L^q(Q')` norm of `θ` is at most `C ‖Λ‖`. -/
 theorem exists_eLpNorm_le_of_forall_eq_setIntegral (i : Fin A.n) {Q Q' : Opens ℂ}
-    (hQi : closure (Q : Set ℂ) ⊆ A.image i) (hQ' : closure (Q' : Set ℂ) ⊆ Q) :
+    (hQi : (Q : Set ℂ) ⊆ A.image i) (hQ' : closure (Q' : Set ℂ) ⊆ Q) :
     ∃ C : ℝ, ∀ (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) (θ : ℂ → F →L[ℝ] ℝ),
-      MemLp θ q (volume.restrict Q) →
+      MemLp θ q (volume.restrict Q') →
       (∀ w : zeroOneSobolevSections A volume p 0,
         (w : SobolevSection A.tangentHom volume p 0) ∈
             SobolevSection.aeZeroOff A.tangentHom volume p 0 ((A.chart i).symm '' Q) →
           Λ w = ∫ z in Q, θ z (A.tangentHom.sectionChartData.chartValueL volume p 0 i
             ((w : SobolevSection A.tangentHom volume p 0) :
               A.tangentHom.sectionChartData.SobolevData volume p 0) z 1)) →
-      ∀ K : ℝ≥0, (∀ w, ‖Λ w‖ ≤ K * ‖w‖) →
-      (eLpNorm θ q (volume.restrict Q')).toReal ≤ C * K := by
-  have hQ'' : closure (Q' : Set ℂ) ⊆ A.tangentHom.image i := by
-    rw [A.image_tangentHom]
-    exact hQ'.trans (subset_closure.trans hQi)
+      (eLpNorm θ q (volume.restrict Q')).toReal ≤ C * ‖Λ‖ := by
+  have hq₁ : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
+  have hQ'' := subset_image_tangentHom A (hQ'.trans hQi)
   let b := finBasis ℝ F
   let κ (c : Fin (finrank ℝ F)) : F →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (b.coord c)
-  refine ⟨∑ c, ‖κ c‖ * ‖antilinearExtL (p := p) A hQ'' (b c)‖, fun Λ θ hθ hrep K hK ↦ ?_⟩
-  have hθ' : MemLp θ q (volume.restrict Q') :=
-    hθ.mono_measure (Measure.restrict_mono (subset_closure.trans hQ') le_rfl)
-  have hΛ : ‖Λ‖ ≤ K := Λ.opNorm_le_bound K.prop hK
+  refine ⟨∑ c, ‖κ c‖ * ‖antilinearExtL (p := p) A hQ'' (b c)‖, fun Λ θ hθ hrep ↦ ?_⟩
   -- `θ` expanded in the dual basis: `θ z = ∑_c θ z (b c) • b.coord c`.
   have hexp : θ = ∑ c, fun z ↦ θ z (b c) • κ c := by
     funext z
@@ -472,20 +465,19 @@ theorem exists_eLpNorm_le_of_forall_eq_setIntegral (i : Fin A.n) {Q Q' : Opens �
     conv_lhs => rw [hexp]
     refine (eLpNorm_sum_le (f := fun c z ↦ θ z (b c) • κ c) (s := Finset.univ)
       (μ := volume.restrict (Q' : Set ℂ)) hq₁.out).trans (Finset.sum_le_sum fun c _ ↦ ?_)
-    have hm := (hθ'.continuousLinearMap_comp
+    have hm := (hθ.continuousLinearMap_comp
       (ContinuousLinearMap.apply ℝ ℝ (b c))).aestronglyMeasurable.smul_const (κ c)
     refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul hm (.of_forall fun z ↦ ?_) q
     rw [norm_smul, mul_comm, ContinuousLinearMap.apply_apply]
   have hfin (c : Fin (finrank ℝ F)) :
       ENNReal.ofReal ‖κ c‖ * eLpNorm (fun z ↦ θ z (b c)) q (volume.restrict Q') ≠ ⊤ :=
     ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-      (hθ'.continuousLinearMap_comp (ContinuousLinearMap.apply ℝ ℝ (b c))).eLpNorm_ne_top
+      (hθ.continuousLinearMap_comp (ContinuousLinearMap.apply ℝ ℝ (b c))).eLpNorm_ne_top
   refine (ENNReal.toReal_mono (ENNReal.sum_ne_top.2 fun c _ ↦ hfin c) hle).trans ?_
   rw [ENNReal.toReal_sum fun c _ ↦ hfin c, Finset.sum_mul]
   refine Finset.sum_le_sum fun c _ ↦ ?_
   rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (norm_nonneg _), mul_assoc]
-  exact mul_le_mul_of_nonneg_left ((eLpNorm_apply_le A hQi hQ' hQ'' Λ hθ' hrep (b c)).trans
-    (mul_le_mul_of_nonneg_left hΛ (norm_nonneg _))) (norm_nonneg _)
+  exact mul_le_mul_of_nonneg_left (eLpNorm_apply_le A hQi hQ' Λ hθ hrep (b c)) (norm_nonneg _)
 
 end Bound
 
