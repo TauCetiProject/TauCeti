@@ -403,20 +403,30 @@ theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
 
 end TubeLemma
 
-/-- For an antitone sequence of sets in `X × Ω` whose fibers over `Ω` are compact in a Hausdorff
-space `X`, projection onto `Ω` commutes with the countable intersection. -/
-theorem image_snd_iInter_eq_of_isCompact {X Ω : Type*} [TopologicalSpace X] [T2Space X]
-    {e : ℕ → Set (X × Ω)} (hanti : Antitone e)
-    (hK : ∀ n ω, IsCompact {x : X | (x, ω) ∈ e n}) :
-    Prod.snd '' (⋂ n, e n) = ⋂ n, Prod.snd '' (e n) := by
-  refine subset_antisymm (image_iInter_subset _ _) fun ω hω ↦ ?_
+/-- For a sequence of sets in `X × Ω` whose fibers over `ω` are antitone and compact in a Hausdorff
+space `X`, `ω` belongs to the projection of the intersection if and only if it belongs to the
+projection of every stage. -/
+theorem mem_image_snd_iInter_iff_of_isCompact {X Ω : Type*} [TopologicalSpace X] [T2Space X]
+    {e : ℕ → Set (X × Ω)} {ω : Ω} (hanti : Antitone fun n ↦ {x : X | (x, ω) ∈ e n})
+    (hK : ∀ n, IsCompact {x : X | (x, ω) ∈ e n}) :
+    ω ∈ Prod.snd '' (⋂ n, e n) ↔ ω ∈ ⋂ n, Prod.snd '' e n := by
+  refine ⟨fun h ↦ image_iInter_subset _ _ h, fun hω ↦ ?_⟩
   let C : ℕ → Set X := fun n ↦ {x | (x, ω) ∈ e n}
   have hne (n : ℕ) : (C n).Nonempty := by
     obtain ⟨⟨x, _⟩, hx, rfl⟩ := mem_iInter.mp hω n
     exact ⟨x, hx⟩
   obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed C
-    (fun n _ h ↦ hanti (Nat.le_succ n) h) hne (hK 0 ω) fun n ↦ (hK n ω).isClosed
+    (fun n _ h ↦ hanti (Nat.le_succ n) h) hne (hK 0) fun n ↦ (hK n).isClosed
   exact ⟨(x, ω), mem_iInter.mpr fun n ↦ mem_iInter.mp hx n, rfl⟩
+
+/-- For an antitone sequence of sets in `X × Ω` whose fibers over `Ω` are compact in a Hausdorff
+space `X`, projection onto `Ω` commutes with the countable intersection. -/
+theorem image_snd_iInter_eq_of_isCompact {X Ω : Type*} [TopologicalSpace X] [T2Space X]
+    {e : ℕ → Set (X × Ω)} (hanti : Antitone e)
+    (hK : ∀ n ω, IsCompact {x : X | (x, ω) ∈ e n}) :
+    Prod.snd '' (⋂ n, e n) = ⋂ n, Prod.snd '' (e n) :=
+  Set.ext fun ω ↦ mem_image_snd_iInter_iff_of_isCompact
+    (fun _ _ h _ hx ↦ hanti h hx) fun n ↦ hK n ω
 
 /-- A countable intersection of sets in `X × Ω` with compact fibers in a Hausdorff space `X` again
 has compact fibers. -/

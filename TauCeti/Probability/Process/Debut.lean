@@ -205,22 +205,17 @@ theorem debut_iInter_eq_iSup_of_isCompact [T2Space ι] {e : ℕ → Set (ι × �
   cases ha : ⨆ n, debut (e n) ω with
   | top => exact le_top
   | coe t =>
-    -- Restrict the second coordinate to `{ω}` since fiber compactness is assumed only at `ω`.
-    have hK' (n : ℕ) (ω' : Ω) : IsCompact {u : ι | (u, ω') ∈ e n ∩ (Iic t ×ˢ {ω})} := by
-      by_cases hω : ω' = ω
-      · subst hω
-        have heq : {u : ι | (u, ω') ∈ e n ∩ (Iic t ×ˢ {ω'})} = {u | (u, ω') ∈ e n} ∩ Iic t := by
-          ext; simp
-        rw [heq]
-        exact (hK n).inter_right isClosed_Iic
-      · simp [hω]
-    have hmem : ω ∈ ⋂ n, Prod.snd '' (e n ∩ (Iic t ×ˢ {ω})) := mem_iInter.mpr fun n ↦ by
+    have hmem : ω ∈ ⋂ n, Prod.snd '' (e n ∩ (Iic t ×ˢ univ)) := mem_iInter.mpr fun n ↦ by
       have hle : debut (e n) ω ≤ t := by
         simpa only [ha] using le_iSup (fun k ↦ debut (e k) ω) n
       obtain ⟨u, hut, hu⟩ := (debut_le_coe_iff_of_isCompact (hK n)).mp hle
-      exact ⟨(u, ω), ⟨hu, hut, rfl⟩, rfl⟩
-    rw [← image_snd_iInter_eq_of_isCompact
-      (fun _ _ h ↦ inter_subset_inter_left _ (hanti h)) hK'] at hmem
+      exact ⟨(u, ω), ⟨hu, hut, mem_univ ω⟩, rfl⟩
+    have hK' (n : ℕ) : IsCompact {u : ι | (u, ω) ∈ e n ∩ (Iic t ×ˢ univ)} := by
+      have heq : {u : ι | (u, ω) ∈ e n ∩ (Iic t ×ˢ univ)} = {u | (u, ω) ∈ e n} ∩ Iic t := by
+        ext; simp
+      exact heq ▸ (hK n).inter_right isClosed_Iic
+    rw [← mem_image_snd_iInter_iff_of_isCompact
+      (fun _ _ h _ hx ↦ inter_subset_inter_left _ (hanti h) hx) hK'] at hmem
     obtain ⟨⟨u, _⟩, hu, rfl⟩ := hmem
     exact (debut_le_of_mem (mem_iInter.mpr fun n ↦ (mem_iInter.mp hu n).1)).trans
       (WithTop.coe_le_coe.mpr (mem_iInter.mp hu 0).2.1)

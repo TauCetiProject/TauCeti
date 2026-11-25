@@ -84,22 +84,24 @@ variable {ℱ}
 
 /-- The empty set belongs to `predictablePaving` as an empty union. -/
 theorem empty_mem_predictablePaving : ∅ ∈ ℱ.predictablePaving :=
-  ⟨0, Fin.elim0, Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, by simp⟩
+  ℱ.mem_predictablePaving_iff.mpr
+    ⟨0, Fin.elim0, Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, by simp⟩
 
 /-- Every single closed stochastic interval `[[σ, τ]]` with predictable `σ` and finite stopping `τ`
 belongs to `predictablePaving`. -/
 theorem Icc_mem_predictablePaving {σ τ : Ω → WithTop ℝ≥0}
     (hσ : TauCeti.IsPredictableTime ℱ σ) (hτ : IsStoppingTime ℱ τ) (hfin : ∀ ω, τ ω ≠ ⊤) :
     {p : ℝ≥0 × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ℝ≥0) ≤ τ p.2} ∈ ℱ.predictablePaving :=
-  ⟨1, fun _ ↦ σ, fun _ ↦ τ, fun _ ↦ hσ, fun _ ↦ hτ, fun _ ↦ hfin, (iUnion_const _).symm⟩
+  ℱ.mem_predictablePaving_iff.mpr
+    ⟨1, fun _ ↦ σ, fun _ ↦ τ, fun _ ↦ hσ, fun _ ↦ hτ, fun _ ↦ hfin, (iUnion_const _).symm⟩
 
 /-- `predictablePaving` is closed under binary unions. -/
 theorem union_mem_predictablePaving {u v : Set (ℝ≥0 × Ω)}
     (hu : u ∈ ℱ.predictablePaving) (hv : v ∈ ℱ.predictablePaving) :
     u ∪ v ∈ ℱ.predictablePaving := by
-  rcases hu with ⟨m₁, σ₁, τ₁, hσ₁, hτ₁, hfin₁, rfl⟩
-  rcases hv with ⟨m₂, σ₂, τ₂, hσ₂, hτ₂, hfin₂, rfl⟩
-  refine ⟨m₁ + m₂, Fin.addCases σ₁ σ₂, Fin.addCases τ₁ τ₂,
+  rcases ℱ.mem_predictablePaving_iff.mp hu with ⟨m₁, σ₁, τ₁, hσ₁, hτ₁, hfin₁, rfl⟩
+  rcases ℱ.mem_predictablePaving_iff.mp hv with ⟨m₂, σ₂, τ₂, hσ₂, hτ₂, hfin₂, rfl⟩
+  refine ℱ.mem_predictablePaving_iff.mpr ⟨m₁ + m₂, Fin.addCases σ₁ σ₂, Fin.addCases τ₁ τ₂,
     fun i ↦ Fin.addCases (fun j ↦ by simpa only [Fin.addCases_left] using hσ₁ j)
       (fun j ↦ by simpa only [Fin.addCases_right] using hσ₂ j) i,
     fun i ↦ Fin.addCases (fun j ↦ by simpa only [Fin.addCases_left] using hτ₁ j)
@@ -119,10 +121,10 @@ theorem union_mem_predictablePaving {u v : Set (ℝ≥0 × Ω)}
 theorem inter_mem_predictablePaving {u v : Set (ℝ≥0 × Ω)}
     (hu : u ∈ ℱ.predictablePaving) (hv : v ∈ ℱ.predictablePaving) :
     u ∩ v ∈ ℱ.predictablePaving := by
-  rcases hu with ⟨m₁, σ₁, τ₁, hσ₁, hτ₁, hfin₁, rfl⟩
-  rcases hv with ⟨m₂, σ₂, τ₂, hσ₂, hτ₂, _, rfl⟩
+  rcases ℱ.mem_predictablePaving_iff.mp hu with ⟨m₁, σ₁, τ₁, hσ₁, hτ₁, hfin₁, rfl⟩
+  rcases ℱ.mem_predictablePaving_iff.mp hv with ⟨m₂, σ₂, τ₂, hσ₂, hτ₂, _, rfl⟩
   let e : Fin (m₁ * m₂) ≃ Fin m₁ × Fin m₂ := finProdFinEquiv.symm
-  refine ⟨m₁ * m₂,
+  refine ℱ.mem_predictablePaving_iff.mpr ⟨m₁ * m₂,
     fun k ω ↦ max (σ₁ (e k).1 ω) (σ₂ (e k).2 ω),
     fun k ω ↦ min (τ₁ (e k).1 ω) (τ₂ (e k).2 ω),
     fun k ↦ (hσ₁ _).max (hσ₂ _),
@@ -139,7 +141,7 @@ theorem inter_mem_predictablePaving {u v : Set (ℝ≥0 × Ω)}
 theorem isCompact_fiber_of_mem_predictablePaving {u : Set (ℝ≥0 × Ω)}
     (hu : u ∈ ℱ.predictablePaving) (ω : Ω) :
     IsCompact {t : ℝ≥0 | (t, ω) ∈ u} := by
-  rcases hu with ⟨n, σ, τ, _, _, hfin, rfl⟩
+  rcases ℱ.mem_predictablePaving_iff.mp hu with ⟨n, σ, τ, _, _, hfin, rfl⟩
   have heq : {t : ℝ≥0 |
       (t, ω) ∈ ⋃ i, {p : ℝ≥0 × Ω | σ i p.2 ≤ p.1 ∧ (p.1 : WithTop ℝ≥0) ≤ τ i p.2}} =
       ⋃ i, {t : ℝ≥0 | σ i ω ≤ t ∧ (t : WithTop ℝ≥0) ≤ τ i ω} := by
@@ -163,7 +165,7 @@ theorem isCompact_fiber_of_mem_predictablePaving {u : Set (ℝ≥0 × Ω)}
 theorem isPredictableTime_debut_of_mem_predictablePaving {u : Set (ℝ≥0 × Ω)}
     (hu : u ∈ ℱ.predictablePaving) :
     TauCeti.IsPredictableTime ℱ (TauCeti.debut u) := by
-  rcases hu with ⟨n, σ, τ, hσ, hτ, _, rfl⟩
+  rcases ℱ.mem_predictablePaving_iff.mp hu with ⟨n, σ, τ, hσ, hτ, _, rfl⟩
   have heq : TauCeti.debut
       (⋃ i, {p : ℝ≥0 × Ω | σ i p.2 ≤ p.1 ∧ (p.1 : WithTop ℝ≥0) ≤ τ i p.2}) =
       fun ω ↦ Finset.univ.inf fun i ↦ if σ i ω ≤ τ i ω then σ i ω else ⊤ := by
@@ -188,7 +190,7 @@ theorem measurableSet_image_snd_of_mem_predictablePaving {u : Set (ℝ≥0 × Ω
 theorem measurableSet_predictable_of_mem_predictablePaving {u : Set (ℝ≥0 × Ω)}
     (hu : u ∈ ℱ.predictablePaving) :
     MeasurableSet[ℱ.predictable] u := by
-  rcases hu with ⟨n, σ, τ, hσ, hτ, _, rfl⟩
+  rcases ℱ.mem_predictablePaving_iff.mp hu with ⟨n, σ, τ, hσ, hτ, _, rfl⟩
   exact MeasurableSet.iUnion fun i ↦ (hσ i).measurableSet_predictable_Icc (hτ i)
 
 end PavingProperties
@@ -259,7 +261,7 @@ private theorem gt_stopping_mem_souslinClosure {τ : Ω → WithTop ℝ≥0}
 theorem compl_mem_souslinClosure_predictablePaving {u : Set (ℝ≥0 × Ω)}
     (hu : u ∈ ℱ.predictablePaving) :
     uᶜ ∈ TauCeti.souslinClosure ℱ.predictablePaving := by
-  rcases hu with ⟨n, σ, τ, hσ, hτ, _, rfl⟩
+  rcases ℱ.mem_predictablePaving_iff.mp hu with ⟨n, σ, τ, hσ, hτ, _, rfl⟩
   cases n with
   | zero =>
     have hc : (⋃ i : Fin 0,
@@ -404,12 +406,24 @@ section GraphToAnnouncement
 variable {Ω : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
   {P : Measure Ω} [IsFiniteMeasure P] {τ : Ω → WithTop ℝ≥0}
 
+-- Event where a predictable section `D` of the finite graph of `τ` misses a finite value of `τ`.
+private def graphSectionMissEvent (τ D : Ω → WithTop ℝ≥0) : Set Ω :=
+  {ω | τ ω ≠ ⊤ ∧ D ω = ⊤}
+
+-- Event where an announcing stage `b` lags behind a finite `D` by more than `1 / (k + 1)`.
+private def finiteLagEvent (D b : Ω → WithTop ℝ≥0) (k : ℕ) : Set Ω :=
+  {ω | D ω ≠ ⊤ ∧ b ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) < D ω}
+
+-- Event where an announcing stage `b` stays below height `k` on `{D = ⊤}`.
+private def infiniteEscapeEvent (D b : Ω → WithTop ℝ≥0) (k : ℕ) : Set Ω :=
+  {ω | D ω = ⊤ ∧ b ω < ((k : ℝ≥0) : WithTop ℝ≥0)}
+
 -- Apply the predictable section theorem to the finite graph of `τ` with geometric error `2⁻ᵏ`.
 private theorem exists_predictable_graph_section
     (hgraph : MeasurableSet[ℱ.predictable] {p : ℝ≥0 × Ω | τ p.2 = p.1}) (k : ℕ) :
     ∃ D : Ω → WithTop ℝ≥0, TauCeti.IsPredictableTime ℱ D ∧
       (∀ ω, τ ω ≤ D ω) ∧ (∀ ω, D ω ≠ ⊤ → D ω = τ ω) ∧
-      P {ω | τ ω ≠ ⊤ ∧ D ω = ⊤} ≤ (2⁻¹ : ℝ≥0∞) ^ k := by
+      P (graphSectionMissEvent τ D) ≤ (2⁻¹ : ℝ≥0∞) ^ k := by
   have hproj : Prod.snd '' {p : ℝ≥0 × Ω | τ p.2 = p.1} = {ω | τ ω ≠ ⊤} := by
     rw [TauCeti.image_snd_eq_setOf_debut_ne_top, TauCeti.debut_setOf_eq]
   obtain ⟨D, hD, hsec, hmass⟩ := TauCeti.exists_isPredictableTime_section_le_add hgraph P
@@ -429,18 +443,20 @@ private theorem exists_predictable_graph_section
   have hsdiff : P ({ω | τ ω ≠ ⊤} \ {ω | D ω ≠ ⊤}) ≤ (2⁻¹ : ℝ≥0∞) ^ k :=
     (measure_sdiff_le_iff_le_add hD.isStoppingTime.measurableSet_eq_top.compl.nullMeasurableSet
       hsub (measure_ne_top P _)).mpr hmass
-  have heq : {ω | τ ω ≠ ⊤} \ {ω | D ω ≠ ⊤} = {ω | τ ω ≠ ⊤ ∧ D ω = ⊤} := by
-    ext ω; simp
+  have heq : {ω | τ ω ≠ ⊤} \ {ω | D ω ≠ ⊤} = graphSectionMissEvent τ D := by
+    ext ω; simp [graphSectionMissEvent]
   rw [heq] at hsdiff
   exact ⟨D, hD, hD_ge, hD_eq, hsdiff⟩
 
--- Along an announcing sequence, finite-lag failures above tolerance `c > 0` have empty
+-- Along an announcing sequence, finite-lag failures above tolerance `1 / (k + 1)` have empty
 -- intersection.
 private theorem iInter_finite_lag_eq_empty {D : Ω → WithTop ℝ≥0} {a : ℕ → Ω → WithTop ℝ≥0}
-    (ha : TauCeti.IsAnnouncingSequence ℱ a D) {c : ℝ≥0} (hc : 0 < c) :
-    (⋂ m, {ω | D ω ≠ ⊤ ∧ a m ω + (c : WithTop ℝ≥0) < D ω}) = ∅ := by
+    (ha : TauCeti.IsAnnouncingSequence ℱ a D) (k : ℕ) :
+    (⋂ m, finiteLagEvent D (a m) k) = ∅ := by
+  let c : ℝ≥0 := 1 / (k + 1 : ℝ≥0)
+  have hc : 0 < c := by positivity
   ext ω
-  simp only [mem_iInter, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_forall]
+  simp only [finiteLagEvent, mem_iInter, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_forall]
   by_cases htop : D ω = ⊤
   · exact ⟨0, fun h ↦ h.1 htop⟩
   · obtain ⟨t, ht⟩ := WithTop.ne_top_iff_exists.mp htop
@@ -461,9 +477,10 @@ private theorem iInter_finite_lag_eq_empty {D : Ω → WithTop ℝ≥0} {a : ℕ
 -- Along an announcing sequence, infinite-escape failures below height `k` have empty intersection.
 private theorem iInter_infinite_escape_eq_empty {D : Ω → WithTop ℝ≥0} {a : ℕ → Ω → WithTop ℝ≥0}
     (ha : TauCeti.IsAnnouncingSequence ℱ a D) (k : ℕ) :
-    (⋂ m, {ω | D ω = ⊤ ∧ a m ω < ((k : ℝ≥0) : WithTop ℝ≥0)}) = ∅ := by
+    (⋂ m, infiniteEscapeEvent D (a m) k) = ∅ := by
   ext ω
-  simp only [mem_iInter, mem_ofPred_eq, mem_empty_iff_false, iff_false, not_forall]
+  simp only [infiniteEscapeEvent, mem_iInter, mem_ofPred_eq, mem_empty_iff_false, iff_false,
+    not_forall]
   by_cases htop : D ω = ⊤
   · have hlt : ((k : ℝ≥0) : WithTop ℝ≥0) < D ω := htop ▸ WithTop.coe_lt_top (k : ℝ≥0)
     obtain ⟨m, hm⟩ := ((ha.tendsto ω).eventually (isOpen_Ioi.mem_nhds hlt)).exists
@@ -473,16 +490,11 @@ private theorem iInter_infinite_escape_eq_empty {D : Ω → WithTop ℝ≥0} {a 
 -- Choose a single index `M` simultaneously bounding both finite-lag and infinite-escape failures.
 private theorem exists_announcing_index {D : Ω → WithTop ℝ≥0} {a : ℕ → Ω → WithTop ℝ≥0}
     (ha : TauCeti.IsAnnouncingSequence ℱ a D) (k : ℕ) :
-    ∃ M : ℕ,
-      P {ω | D ω ≠ ⊤ ∧ a M ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) < D ω} ≤
-        (2⁻¹ : ℝ≥0∞) ^ k ∧
-      P {ω | D ω = ⊤ ∧ a M ω < ((k : ℝ≥0) : WithTop ℝ≥0)} ≤ (2⁻¹ : ℝ≥0∞) ^ k := by
+    ∃ M : ℕ, P (finiteLagEvent D (a M) k) ≤ (2⁻¹ : ℝ≥0∞) ^ k ∧
+      P (infiniteEscapeEvent D (a M) k) ≤ (2⁻¹ : ℝ≥0∞) ^ k := by
   let c : ℝ≥0 := 1 / (k + 1 : ℝ≥0)
-  have hc : 0 < c := by positivity
   let hD := ha.isStoppingTime_limit
-  let E₁ : ℕ → Set Ω := fun m ↦ {ω | D ω ≠ ⊤ ∧ a m ω + (c : WithTop ℝ≥0) < D ω}
-  let E₂ : ℕ → Set Ω := fun m ↦ {ω | D ω = ⊤ ∧ a m ω < ((k : ℝ≥0) : WithTop ℝ≥0)}
-  let E : ℕ → Set Ω := fun m ↦ E₁ m ∪ E₂ m
+  let E : ℕ → Set Ω := fun m ↦ finiteLagEvent D (a m) k ∪ infiniteEscapeEvent D (a m) k
   have hmeas (m : ℕ) : MeasurableSet (E m) := by
     have hle : MeasurableSet {ω | D ω ≤ a m ω + (c : WithTop ℝ≥0)} :=
       hD.measurableSpace_le _
@@ -491,22 +503,25 @@ private theorem exists_announcing_index {D : Ω → WithTop ℝ≥0} {a : ℕ �
       simpa only [compl_ofPred, not_le] using hle.compl
     have hlt₂ : MeasurableSet {ω | a m ω < ((k : ℝ≥0) : WithTop ℝ≥0)} :=
       (ha.isStoppingTime m).measurableSpace_le _ ((ha.isStoppingTime m).measurableSet_lt' k)
-    have h₁ : MeasurableSet (E₁ m) := by
-      simpa only [E₁, compl_ofPred, ← ofPred_and] using hD.measurableSet_eq_top.compl.inter hlt₁
-    have h₂ : MeasurableSet (E₂ m) := by
-      simpa only [E₂, ← ofPred_and] using hD.measurableSet_eq_top.inter hlt₂
+    have h₁ : MeasurableSet (finiteLagEvent D (a m) k) := by
+      simpa only [finiteLagEvent, c, compl_ofPred, ← ofPred_and] using
+        hD.measurableSet_eq_top.compl.inter hlt₁
+    have h₂ : MeasurableSet (infiniteEscapeEvent D (a m) k) := by
+      simpa only [infiniteEscapeEvent, ← ofPred_and] using hD.measurableSet_eq_top.inter hlt₂
     exact h₁.union h₂
   have hanti : Antitone E := fun _ _ hm _ h ↦ h.elim
     (fun ⟨h1, h2⟩ ↦ Or.inl ⟨h1, (add_le_add (ha.monotone _ hm) le_rfl).trans_lt h2⟩)
     (fun ⟨h1, h2⟩ ↦ Or.inr ⟨h1, (ha.monotone _ hm).trans_lt h2⟩)
   have hempty : (⋂ m, E m) = ∅ := subset_empty_iff.mp fun ω hω ↦ by
     by_cases htop : D ω = ⊤
-    · have hmem : ω ∈ ⋂ m, E₂ m := mem_iInter.mpr fun m ↦
+    · have hmem : ω ∈ ⋂ m, infiniteEscapeEvent D (a m) k := mem_iInter.mpr fun m ↦
         (mem_iInter.mp hω m).resolve_left fun h ↦ h.1 htop
-      exact iInter_infinite_escape_eq_empty ha k ▸ hmem
-    · have hmem : ω ∈ ⋂ m, E₁ m := mem_iInter.mpr fun m ↦
+      rw [iInter_infinite_escape_eq_empty ha k] at hmem
+      exact hmem
+    · have hmem : ω ∈ ⋂ m, finiteLagEvent D (a m) k := mem_iInter.mpr fun m ↦
         (mem_iInter.mp hω m).resolve_right fun h ↦ htop h.1
-      exact iInter_finite_lag_eq_empty ha hc ▸ hmem
+      rw [iInter_finite_lag_eq_empty ha k] at hmem
+      exact hmem
   have htend : Tendsto (P ∘ E) atTop (𝓝 0) := by
     simpa [hempty] using tendsto_measure_iInter_atTop
       (fun m ↦ (hmeas m).nullMeasurableSet) hanti ⟨0, measure_ne_top P _⟩
@@ -514,26 +529,29 @@ private theorem exists_announcing_index {D : Ω → WithTop ℝ≥0} {a : ℕ �
     (htend.eventually (Iic_mem_nhds (ENNReal.pow_pos (a := (2⁻¹ : ℝ≥0∞)) (by simp) k))).exists
   exact ⟨M, (measure_mono subset_union_left).trans hM, (measure_mono subset_union_right).trans hM⟩
 
--- Stage-`k` failure event where either `D k` misses a finite value of `τ`, `b k` lags behind a
--- finite `D k` by more than `1 / (k + 1)`, or `b k` stays below `k` when `D k = ⊤`.
+-- Stage-`k` failure event combining section misses, finite lags, and infinite escapes.
 private def graphBadEvent (τ : Ω → WithTop ℝ≥0) (D b : ℕ → Ω → WithTop ℝ≥0) (k : ℕ) : Set Ω :=
-  {ω | τ ω ≠ ⊤ ∧ D k ω = ⊤} ∪
-    ({ω | D k ω ≠ ⊤ ∧ b k ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) < D k ω} ∪
-      {ω | D k ω = ⊤ ∧ b k ω < ((k : ℝ≥0) : WithTop ℝ≥0)})
+  graphSectionMissEvent τ (D k) ∪ (finiteLagEvent (D k) (b k) k ∪ infiniteEscapeEvent (D k) (b k) k)
+
+-- Extract the three good-stage bounds on an outcome outside `graphBadEvent τ D b k`.
+private theorem notMem_graphBadEvent_iff {D b : ℕ → Ω → WithTop ℝ≥0} {k : ℕ} {ω : Ω} :
+    ω ∉ graphBadEvent τ D b k ↔
+      (τ ω ≠ ⊤ → D k ω ≠ ⊤) ∧
+      (D k ω ≠ ⊤ → D k ω ≤ b k ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0)) ∧
+      (D k ω = ⊤ → ((k : ℝ≥0) : WithTop ℝ≥0) ≤ b k ω) := by
+  simp only [graphBadEvent, graphSectionMissEvent, finiteLagEvent, infiniteEscapeEvent,
+    mem_union, mem_ofPred_eq, not_or, not_and, not_lt]
 
 omit [IsFiniteMeasure P] in
 private theorem tsum_measure_graphBadEvent_ne_top {D b : ℕ → Ω → WithTop ℝ≥0}
-    (hD_err : ∀ k, P {ω | τ ω ≠ ⊤ ∧ D k ω = ⊤} ≤ (2⁻¹ : ℝ≥0∞) ^ k)
-    (hM₁ : ∀ k,
-      P {ω | D k ω ≠ ⊤ ∧ b k ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) < D k ω} ≤
-        (2⁻¹ : ℝ≥0∞) ^ k)
-    (hM₂ : ∀ k, P {ω | D k ω = ⊤ ∧ b k ω < ((k : ℝ≥0) : WithTop ℝ≥0)} ≤ (2⁻¹ : ℝ≥0∞) ^ k) :
+    (hD_err : ∀ k, P (graphSectionMissEvent τ (D k)) ≤ (2⁻¹ : ℝ≥0∞) ^ k)
+    (hM₁ : ∀ k, P (finiteLagEvent (D k) (b k) k) ≤ (2⁻¹ : ℝ≥0∞) ^ k)
+    (hM₂ : ∀ k, P (infiniteEscapeEvent (D k) (b k) k) ≤ (2⁻¹ : ℝ≥0∞) ^ k) :
     ∑' k, P (graphBadEvent τ D b k) ≠ ∞ := by
   have hle (k : ℕ) : P (graphBadEvent τ D b k) ≤ 3 * (2⁻¹ : ℝ≥0∞) ^ k := by
     calc P (graphBadEvent τ D b k)
-      _ ≤ P {ω | τ ω ≠ ⊤ ∧ D k ω = ⊤} +
-          (P {ω | D k ω ≠ ⊤ ∧ b k ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) < D k ω} +
-            P {ω | D k ω = ⊤ ∧ b k ω < ((k : ℝ≥0) : WithTop ℝ≥0)}) :=
+      _ ≤ P (graphSectionMissEvent τ (D k)) +
+          (P (finiteLagEvent (D k) (b k) k) + P (infiniteEscapeEvent (D k) (b k) k)) :=
           (measure_union_le _ _).trans (add_le_add le_rfl (measure_union_le _ _))
       _ ≤ (2⁻¹ : ℝ≥0∞) ^ k + ((2⁻¹ : ℝ≥0∞) ^ k + (2⁻¹ : ℝ≥0∞) ^ k) :=
           add_le_add (hD_err k) (add_le_add (hM₁ k) (hM₂ k))
@@ -553,9 +571,8 @@ private theorem biInf_tendsto_and_lt_of_eq_top {D b : ℕ → Ω → WithTop ℝ
     fun n ↦ (biInf_le (f := fun k ↦ b k ω) (le_rfl : n ≤ n)).trans_lt (hb_ne_top n ω).lt_top⟩
   refine eventually_atTop.mpr ⟨K, fun n hn ↦ le_iInf₂ fun k (hk : n ≤ k) ↦ ?_⟩
   have hD_top : D k ω = ⊤ := top_le_iff.mp (hτ_val ▸ hD_ge k ω)
-  have hnot : ¬ b k ω < ((k : ℝ≥0) : WithTop ℝ≥0) := fun hlt ↦
-    hK k (hn.trans hk) (Or.inr (Or.inr ⟨hD_top, hlt⟩))
-  exact (WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hk)).trans (not_lt.mp hnot)
+  exact (WithTop.coe_le_coe.mpr (Nat.cast_le.mpr hk)).trans
+    ((notMem_graphBadEvent_iff.mp (hK k (hn.trans hk))).2.2 hD_top)
 
 -- On `{τ = t}`, avoiding `graphBadEvent` beyond `K` forces `D k ω = t` and squeezes
 -- `⨅ k ≥ n, b k ω` between `t - 1 / (n + 1)` and `t`, staying strictly below `t` when `0 < t`.
@@ -566,10 +583,12 @@ private theorem biInf_tendsto_and_lt_of_eq_coe {D b : ℕ → Ω → WithTop ℝ
     {K : ℕ} (hK : ∀ k, K ≤ k → ω ∉ graphBadEvent τ D b k) :
     Tendsto (fun n ↦ ⨅ k ∈ Ici n, b k ω) atTop (𝓝 (t : WithTop ℝ≥0)) ∧
       ∀ n, (0 : WithTop ℝ≥0) < t → (⨅ k ∈ Ici n, b k ω) < t := by
-  have hfin (n : ℕ) : D (max n K) ω = t := by
-    have hne : D (max n K) ω ≠ ⊤ := fun htop ↦
-      hK _ (le_max_right n K) (Or.inl ⟨hτ_val ▸ WithTop.coe_ne_top, htop⟩)
-    exact (hD_eq _ ω hne).trans hτ_val
+  have hgood {k : ℕ} (hk : K ≤ k) :
+      D k ω = t ∧ D k ω ≤ b k ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) := by
+    obtain ⟨hmiss, hlag, _⟩ := notMem_graphBadEvent_iff.mp (hK k hk)
+    have hne : D k ω ≠ ⊤ := hmiss (hτ_val ▸ WithTop.coe_ne_top)
+    exact ⟨(hD_eq k ω hne).trans hτ_val, hlag hne⟩
+  have hfin (n : ℕ) : D (max n K) ω = t := (hgood (le_max_right n K)).1
   -- Upper squeeze bound from `k = max n K`, where `D k ω = t`.
   have hle_all (n : ℕ) : (⨅ k ∈ Ici n, b k ω) ≤ t :=
     (biInf_le (f := fun k ↦ b k ω) (le_max_left n K)).trans ((hb_le _ ω).trans (hfin n).le)
@@ -577,15 +596,10 @@ private theorem biInf_tendsto_and_lt_of_eq_coe {D b : ℕ → Ω → WithTop ℝ
   have hge_ev : ∀ᶠ n : ℕ in atTop,
       ((t - 1 / ((n : ℝ≥0) + 1) : ℝ≥0) : WithTop ℝ≥0) ≤ ⨅ k ∈ Ici n, b k ω := by
     refine eventually_atTop.mpr ⟨K, fun n hn ↦ le_iInf₂ fun k (hk : n ≤ k) ↦ ?_⟩
-    have hne : D k ω ≠ ⊤ := fun htop ↦
-      hK k (hn.trans hk) (Or.inl ⟨hτ_val ▸ WithTop.coe_ne_top, htop⟩)
-    have hDk : D k ω = t := (hD_eq k ω hne).trans hτ_val
-    have hnot : ¬ b k ω + ((1 / (k + 1 : ℝ≥0) : ℝ≥0) : WithTop ℝ≥0) < D k ω :=
-      fun hlt ↦ hK k (hn.trans hk) (Or.inr (Or.inl ⟨hne, hlt⟩))
+    obtain ⟨hDk, hle⟩ := hgood (hn.trans hk)
     obtain ⟨u, hu⟩ := WithTop.ne_top_iff_exists.mp (hb_ne_top k ω)
     have h1 : t ≤ u + 1 / (k + 1 : ℝ≥0) := by
-      have := not_lt.mp hnot
-      rwa [hDk, ← hu, ← WithTop.coe_add, WithTop.coe_le_coe] at this
+      rwa [hDk, ← hu, ← WithTop.coe_add, WithTop.coe_le_coe] at hle
     have htu : t ≤ u + 1 / ((n : ℝ≥0) + 1) := h1.trans (add_le_add le_rfl
       (one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hk 1)))
     exact hu ▸ WithTop.coe_le_coe.mpr (tsub_le_iff_right.mpr htu)
