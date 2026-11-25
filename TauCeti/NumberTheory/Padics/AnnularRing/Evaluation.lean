@@ -13,9 +13,9 @@ import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Group.NullFamily
 import TauCeti.NumberTheory.Padics.Basic
-import TauCeti.NumberTheory.Padics.NormedAlgebra
 
 /-!
 # Evaluating the annular coefficient ring on the annulus `p⁻¹ < |t| < 1`
@@ -411,7 +411,9 @@ theorem eq_zero_of_forall_eval_eq_zero [IsAlgClosed K] {x : AnnularRing p}
   by_contra hx
   have : IsUltrametricDist K := IsUltrametricDist.of_normedAlgebra ℚ_[p]
   obtain ⟨k, hk, m₀, hm₀, hdom⟩ := exists_exponent_lt x hx
-  obtain ⟨t, ht⟩ := exists_norm_pow_eq_inv_pow (K := K) p k (N := 2 * k + 1) (by omega)
+  obtain ⟨t, ht⟩ := NormedField.exists_norm_pow_eq_of_isAlgClosed ((p : K) ^ k)
+    (N := 2 * k + 1) (by omega)
+  rw [norm_pow, norm_natCast_p] at ht
   have h₀ := lt_norm_of_norm_pow_eq (by omega) ht
   have h₁ := norm_lt_one_of_norm_pow_eq hk ht
   -- At `t`, the term of index `m₀` strictly dominates, so the value has its nonzero norm.
