@@ -117,6 +117,11 @@ theorem inter_of_left [LE β] (h : HasBoundedSublevelsOn E S) (T : Set X) :
     HasBoundedSublevelsOn E (S ∩ T) :=
   h.mono inter_subset_left
 
+/-- Bounded sublevels are inherited by the intersection of any set with the admissible set. -/
+theorem inter_of_right [LE β] (h : HasBoundedSublevelsOn E S) (T : Set X) :
+    HasBoundedSublevelsOn E (T ∩ S) :=
+  h.mono inter_subset_right
+
 /-- Bounded sublevels on two admissible sets give bounded sublevels on their union. -/
 theorem union [LE β] (hS : HasBoundedSublevelsOn E S) (hT : HasBoundedSublevelsOn E T) :
     HasBoundedSublevelsOn E (S ∪ T) := by
@@ -173,6 +178,13 @@ theorem comp_add_right {V : Type*} [SeminormedAddCommGroup V] [LE β] {E : V →
     (h : HasBoundedSublevelsOn E S) (a : V) :
     HasBoundedSublevelsOn (fun u ↦ E (u + a)) ((· + a) ⁻¹' S) :=
   h.comp_antilipschitzWith (isometry_add_right a).antilipschitzWith
+
+/-- **Affine translation on the left.** If `E` has bounded sublevels on `S`, then `u ↦ E (a + u)`
+has bounded sublevels on the translate `{u | a + u ∈ S}`. -/
+theorem comp_add_left {V : Type*} [SeminormedAddCommGroup V] [LE β] {E : V → β} {S : Set V}
+    (h : HasBoundedSublevelsOn E S) (a : V) :
+    HasBoundedSublevelsOn (fun u ↦ E (a + u)) ((a + ·) ⁻¹' S) :=
+  h.comp_antilipschitzWith (isometry_add_left a).antilipschitzWith
 
 /-- **Change of variables by a continuous linear equivalence.** If `E` has bounded sublevels on
 `S ⊆ W` and `L : V ≃L[𝕜] W`, then `E ∘ L` has bounded sublevels on `L ⁻¹' S`. -/
@@ -268,6 +280,13 @@ section ChangeOfVariables
     HasBoundedSublevelsOn (fun u ↦ E (u + a)) ((· + a) ⁻¹' S) ↔ HasBoundedSublevelsOn E S := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp_add_right a⟩
   simpa only [neg_add_cancel_right, preimage_preimage, preimage_id'] using h.comp_add_right (-a)
+
+/-- Translating the variable on the left does not affect bounded sublevels. -/
+@[simp] theorem hasBoundedSublevelsOn_comp_add_left_iff {V β : Type*}
+    [SeminormedAddCommGroup V] [LE β] {E : V → β} {S : Set V} (a : V) :
+    HasBoundedSublevelsOn (fun u ↦ E (a + u)) ((a + ·) ⁻¹' S) ↔ HasBoundedSublevelsOn E S := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_add_left a⟩
+  simpa only [add_neg_cancel_left, preimage_preimage, preimage_id'] using h.comp_add_left (-a)
 
 /-- Changing variables by a continuous linear equivalence does not affect bounded sublevels. -/
 @[simp] theorem hasBoundedSublevelsOn_comp_continuousLinearEquiv_iff {𝕜 V W β : Type*}
