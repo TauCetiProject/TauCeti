@@ -182,7 +182,8 @@ theorem iterate_derivative_pow_mul_aeval (a b c d : K) (n : ℕ) (f : K[X]) :
       rw [← Polynomial.coeff_zero_eq_aeval_zero', Derivation.map_algebraMap]
     rw [h, mul_zero, mul_comm ((C c * X + C 0) ^ n),
       Derivation.iterate_apply_mul_of_apply_eq_zero _ hf,
-      Derivation.iterate_apply_pow _ (derivative_derivative_C_mul_X_add_C c 0)]
+      Derivation.iterate_apply_pow_of_apply_apply_eq_zero _
+        (derivative_derivative_C_mul_X_add_C c 0)]
     simp
   · have hLM : (C c * X + C d) * (C c * X + C d)⁻¹ = 1 := PowerSeries.mul_inv_cancel _ (by simpa)
     rw [(d⁄dX).iterate_apply_pow_mul_aeval (derivative_derivative_C_mul_X_add_C a b)

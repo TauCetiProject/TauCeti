@@ -55,7 +55,8 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
 * `Derivation.iterate_apply_mul_of_apply_eq_zero`: iterates commute with multiplication by a
   constant.
-* `Derivation.iterate_apply_pow`: the iterated derivatives of `N ^ p` when `D (D N) = 0`.
+* `Derivation.iterate_apply_pow_of_apply_apply_eq_zero`: the iterated derivatives of `N ^ p` when
+  `D (D N) = 0`.
 * `Derivation.iterate_apply_pow_mul_pow_eq_zero`: `Dᵏ (N ^ p * L ^ q) = 0` when `p + q < k` and
   `N`, `L` have vanishing second derivative.
 * `Derivation.iterate_apply_pow_of_apply_eq_one`: if `D x = 1`, then `D^[j] (x ^ k)` is the
@@ -155,7 +156,8 @@ theorem iterate_apply_mul_of_apply_eq_zero (D : Derivation R A A) {c : A} (hc : 
 /-- The iterated derivatives of a power of an element `N` with `D (D N) = 0`:
 `D^i (N ^ p) = p (p - 1) ⋯ (p - i + 1) • D N ^ i * N ^ (p - i)`. In particular they vanish for
 `i > p`. -/
-theorem iterate_apply_pow (D : Derivation R A A) {N : A} (hN : D (D N) = 0) (i p : ℕ) :
+theorem iterate_apply_pow_of_apply_apply_eq_zero (D : Derivation R A A) {N : A} (hN : D (D N) = 0)
+    (i p : ℕ) :
     D^[i] (N ^ p) = p.descFactorial i • (D N ^ i * N ^ (p - i)) := by
   induction i with
   | zero => simp
@@ -172,7 +174,8 @@ theorem iterate_apply_pow_mul_pow_eq_zero (D : Derivation R A A) {N L : A} (hN :
   rw [iterate_apply_mul]
   refine Finset.sum_eq_zero fun ij hij => ?_
   rw [Finset.mem_antidiagonal] at hij
-  rw [iterate_apply_pow D hN, iterate_apply_pow D hL]
+  rw [iterate_apply_pow_of_apply_apply_eq_zero D hN,
+    iterate_apply_pow_of_apply_apply_eq_zero D hL]
   rcases lt_or_ge p ij.1 with hp | hp
   · simp [Nat.descFactorial_eq_zero_iff_lt.2 hp]
   · simp [Nat.descFactorial_eq_zero_iff_lt.2 (by omega : q < ij.2)]
@@ -182,7 +185,8 @@ theorem iterate_apply_pow_mul_pow_eq_zero (D : Derivation R A A) {N L : A} (hN :
 particular `D^[k] (x ^ k) = k !`, and `D^[j] (x ^ k) = 0` for `j > k`. -/
 theorem iterate_apply_pow_of_apply_eq_one (D : Derivation R A A) {x : A} (hx : D x = 1)
     (k j : ℕ) : D^[j] (x ^ k) = k.descFactorial j * x ^ (k - j) := by
-  rw [iterate_apply_pow D (by simp [hx]), hx, one_pow, one_mul, nsmul_eq_mul]
+  rw [iterate_apply_pow_of_apply_apply_eq_zero D (by simp [hx]), hx, one_pow, one_mul,
+    nsmul_eq_mul]
 
 /-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
 theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :
