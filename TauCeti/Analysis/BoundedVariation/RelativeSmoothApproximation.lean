@@ -87,6 +87,41 @@ theorem ContDiffOn.exists_mem_Ioo_surjective_fderiv_perimeter_le (hu : ContDiffO
 
 namespace TauCeti
 
+/-- Lower semicontinuity for superlevel sets of functions continuous on `Ω`: if they converge to
+`s` in measure on `Ω`, then `P(s; Ω)` is at most the lower limit of their perimeters in `Ω`. -/
+private theorem perimeter_le_liminf_setOf_lt {w : ℕ → E → ℝ} {t : ℕ → ℝ}
+    (hw : ∀ k, ContinuousOn (w k) Ω) (hs : NullMeasurableSet s μ)
+    (hvol : Tendsto (fun k ↦ μ (({x | t k < w k x} ∆ s) ∩ Ω)) atTop (𝓝 0)) :
+    perimeter μ Ω s ≤ liminf (fun k ↦ perimeter μ Ω {x | t k < w k x}) atTop := by
+  -- Apply lower semicontinuity to the open sets `Ω ∩ {w k > t k}`.
+  have hcongr (k : ℕ) : perimeter μ Ω {x | t k < w k x} =
+      perimeter μ Ω ((Ω : Set E) ∩ {x | t k < w k x}) :=
+    perimeter_congr_of_inter_eq (by rw [inter_comm (Ω : Set E), inter_assoc, inter_self])
+  simp_rw [hcongr]
+  refine perimeter_le_liminf (.of_forall fun k ↦ ?_) hs fun K _ hKΩ ↦ ?_
+  · exact ((hw k).isOpen_inter_preimage Ω.isOpen isOpen_Ioi).measurableSet.nullMeasurableSet
+  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hvol
+      (fun _ ↦ zero_le) fun k ↦ measure_mono ?_
+    rintro x ⟨hx, hxK⟩
+    have hxΩ : x ∈ (Ω : Set E) := hKΩ hxK
+    refine ⟨?_, hxΩ⟩
+    simpa [mem_symmDiff, hxΩ] using hx
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
+/-- Thresholding a function continuous on `Ω` at a level in `[δ, 1 - δ]` approximates `s` in
+measure on `Ω` within its `L¹(Ω)` distance from the indicator divided by `δ`. -/
+private theorem measure_symmDiff_inter_le {w : E → ℝ} (hw : ContinuousOn w Ω)
+    (hs : NullMeasurableSet s μ) {δ ε t : ℝ} (hδ : 0 < δ) (hε : 0 < ε) (ht : t ∈ Ioo δ (1 - δ))
+    (hL : ∫⁻ x in Ω, ‖w x - s.indicator 1 x‖ₑ ∂μ < ENNReal.ofReal (ε * δ)) :
+    μ (({x | t < w x} ∆ s) ∩ Ω) ≤ ENNReal.ofReal ε := by
+  rw [← Measure.restrict_apply' Ω.isOpen.measurableSet]
+  refine ((μ.restrict Ω).measure_symmDiff_setOf_lt_indicator_le
+    (hw.aestronglyMeasurable Ω.isOpen.measurableSet) (hs.mono Measure.restrict_le_self) hδ
+    ht.1.le ht.2.le).trans ?_
+  rw [ENNReal.div_le_iff (ne_of_gt (ENNReal.ofReal_pos.2 hδ)) ENNReal.ofReal_ne_top,
+    ← ENNReal.ofReal_mul hε.le]
+  exact hL.le
+
 /-- **Relative smooth approximation in perimeter.** For a null-measurable set `s` and an open set
 `Ω`, there are functions `u n` smooth on `Ω` and levels `t n ∈ (0, 1)`, regular for `u n` on `Ω`,
 such that the superlevel sets `{u n > t n}` converge to `s` in measure on `Ω` and their perimeters
@@ -121,15 +156,8 @@ theorem exists_contDiffOn_perimeter_approximation (hs : NullMeasurableSet s μ) 
   have hmT : Tendsto m atTop atTop := tendsto_atTop_mono hkm tendsto_id
   choose t ht hreg hP using fun k ↦
     (hw (m k)).exists_mem_Ioo_surjective_fderiv_perimeter_le (μ := μ) (hδ' k)
-  have hvol (k : ℕ) :
-      μ (({x | t k < w (m k) x} ∆ s) ∩ Ω) ≤ ENNReal.ofReal (ε k) := by
-    rw [← Measure.restrict_apply' Ω.isOpen.measurableSet]
-    refine ((μ.restrict Ω).measure_symmDiff_setOf_lt_indicator_le
-      ((hw (m k)).continuousOn.aestronglyMeasurable Ω.isOpen.measurableSet) hsΩ (hδ k)
-      (ht k).1.le (ht k).2.le).trans ?_
-    rw [ENNReal.div_le_iff (ne_of_gt (ENNReal.ofReal_pos.2 (hδ k))) ENNReal.ofReal_ne_top,
-      ← ENNReal.ofReal_mul (hε k).le]
-    exact (hm k).le
+  have hvol (k : ℕ) : μ (({x | t k < w (m k) x} ∆ s) ∩ Ω) ≤ ENNReal.ofReal (ε k) :=
+    measure_symmDiff_inter_le (hw (m k)).continuousOn hs (hδ k) (hε k) (ht k) (hm k)
   have hvolconv : Tendsto (fun k ↦ μ (({x | t k < w (m k) x} ∆ s) ∩ Ω)) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (by simpa [ε] using (ENNReal.tendsto_ofReal
@@ -138,20 +166,7 @@ theorem exists_contDiffOn_perimeter_approximation (hs : NullMeasurableSet s μ) 
   refine ⟨fun k ↦ w (m k), t, fun k ↦ ⟨hw (m k), ⟨(hδ k).trans (ht k).1,
     (ht k).2.trans (by linarith [hδ k])⟩, hreg k⟩, hvolconv, ?_⟩
   refine tendsto_of_le_liminf_of_limsup_le ?_ ?_
-  · -- Lower semicontinuity, applied to the open sets `Ω ∩ {w (m k) > t k}`.
-    have hcongr (k : ℕ) : perimeter μ Ω {x | t k < w (m k) x} =
-        perimeter μ Ω ((Ω : Set E) ∩ {x | t k < w (m k) x}) :=
-      perimeter_congr_of_inter_eq (by rw [inter_comm (Ω : Set E), inter_assoc, inter_self])
-    simp_rw [hcongr]
-    refine perimeter_le_liminf (.of_forall fun k ↦ ?_) hs fun K _ hKΩ ↦ ?_
-    · exact ((hw (m k)).continuousOn.isOpen_inter_preimage Ω.isOpen
-        isOpen_Ioi).measurableSet.nullMeasurableSet
-    · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hvolconv
-        (fun _ ↦ zero_le) fun k ↦ measure_mono ?_
-      rintro x ⟨hx, hxK⟩
-      have hxΩ : x ∈ (Ω : Set E) := hKΩ hxK
-      refine ⟨?_, hxΩ⟩
-      simpa [mem_symmDiff, hxΩ] using hx
+  · exact perimeter_le_liminf_setOf_lt (fun k ↦ (hw (m k)).continuousOn) hs hvolconv
   · have hδconv : Tendsto δ atTop (𝓝 0) := by
       simpa [δ, Function.comp_def, Nat.cast_add] using
         ((tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ)).comp (tendsto_add_atTop_nat 3))
