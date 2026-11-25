@@ -103,9 +103,8 @@ private theorem isGTCompletable_rowSubset
   have h₃ := prefixSum_succ (k := j) (by omega) γ.val
   have h₄ : prefixSum (j + 2) γ.val = prefixSum (j + 1) γ.val + γ.val ⟨j + 1, by omega⟩ :=
     prefixSum_succ (by omega) γ.val
-  have hle : (⟨j, by omega⟩ : Fin n) ≤ ⟨j + 1, by omega⟩ := Fin.mk_le_mk.mpr (by omega)
-  have := lam.antitone hle
-  have := γ.antitone hle
+  have := prefixSum_add_prefixSum_add_two_le lam.antitone hj
+  have := prefixSum_add_prefixSum_add_two_le γ.antitone hj
   have := hγ ⟨j, by omega⟩
   have := hγ ⟨j + 1, by omega⟩
   push_cast; omega
@@ -182,6 +181,12 @@ theorem boundary_verticalPieriHive (hγ : ∀ i, lam.val i ≤ γ.val i ∧ γ.v
   · have := mt hi.mpr (by exact_mod_cast h)
     omega
 
+/-- The entries of a `0`/`1` weight lie in `[0, 1]`, so its last entry is at least `0` and its first
+entry is at most `1`. -/
+private theorem zero_le_last_and_first_le_one (hμ : ∀ i, 0 ≤ μ.val i ∧ μ.val i ≤ 1) (hn : 0 < n) :
+    0 ≤ μ.val ⟨n - 1, by omega⟩ ∧ μ.val ⟨0, hn⟩ ≤ 1 :=
+  ⟨(hμ _).1, (hμ _).2⟩
+
 /-- **Vertical strip condition**: if an integer hive has boundary `(λ, μ, γ*)` with `μ` a `0`/`1`
 weight, then `γ - λ` is a `0`/`1` vector. -/
 theorem le_and_le_add_one_of_productBoundary_of_zero_le_le_one {h : IntegerHive n}
@@ -189,8 +194,7 @@ theorem le_and_le_add_one_of_productBoundary_of_zero_le_le_one {h : IntegerHive 
     lam.val k ≤ γ.val k ∧ γ.val k ≤ lam.val k + 1 := by
   have := k.isLt
   have hk := sub_mem_Icc_of_productBoundary hb k
-  have := hμ ⟨n - 1, by omega⟩
-  have := hμ ⟨0, by omega⟩
+  have := zero_le_last_and_first_le_one hμ (by omega)
   simp only [Set.mem_Icc] at hk
   omega
 
@@ -205,8 +209,7 @@ theorem eq_verticalPieriHive_of_productBoundary_of_zero_le_le_one {h : IntegerHi
     by_cases hij : i < j ∧ j ≤ n
     · have hk := h.toGTPattern.entry_mem_Icc hij.1 hij.2
       rw [topRow_toGTPattern_of_productBoundary hb] at hk
-      have := hμ ⟨n - 1, by omega⟩
-      have := hμ ⟨0, by omega⟩
+      have := zero_le_last_and_first_le_one hμ (by omega)
       simp only [Set.mem_Icc] at hk
       omega
     · exact Or.inl (h.toGTPattern.entry_eq_zero (by omega))

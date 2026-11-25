@@ -58,11 +58,7 @@ theorem isGTCompletable_highest (lam μ : DominantWeight n) :
   rw [gtCompletion_highest lam μ hij (by omega), gtCompletion_highest lam μ (by omega) hj,
     gtCompletion_highest lam μ (by omega : i ≤ j + 1) (by omega),
     gtCompletion_highest lam μ (by omega : i + 1 ≤ j + 1) (by omega)]
-  have h₁ := prefixSum_succ (k := j) (by omega) lam.val
-  have h₂ : prefixSum (j + 2) lam.val = prefixSum (j + 1) lam.val + lam.val ⟨j + 1, by omega⟩ :=
-    prefixSum_succ (by omega) lam.val
-  have := lam.antitone (show (⟨j, by omega⟩ : Fin n) ≤ ⟨j + 1, by omega⟩ from
-    Fin.mk_le_mk.mpr (by omega))
+  have := prefixSum_add_prefixSum_add_two_le lam.antitone hj
   omega
 
 /-- The **top hive** of `(λ, μ)`: the hive of the highest-weight pattern of `μ` over `λ`, with value
@@ -123,6 +119,6 @@ instance (lam μ : DominantWeight n) :
 /-- For `λ = μ = (1, 0)`, the top hive is the hive `exampleTwo` of the output `(2, 0)`. -/
 theorem topHive_two_std_std : topHive ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ = exampleTwo :=
   (eq_topHive_of_productBoundary (boundary_exampleTwo.trans (by
-    congr 1; ext i; fin_cases i <;> rfl))).symm
+    congr 1; ext i; fin_cases i <;> simp [DominantWeight.coe_add]))).symm
 
 end TauCeti.Hive
