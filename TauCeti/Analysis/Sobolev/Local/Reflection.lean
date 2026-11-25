@@ -1034,6 +1034,12 @@ theorem imDilation_higherReflectionNode_fin_one (j : Fin 1) (z : ℂ) :
   rw [Fin.fin_one_eq_zero j, imDilation_apply, higherReflectionNode_eq]
   apply Complex.ext <;> simp
 
+/-- At order one the node dilation of the reflection is conjugation, as a continuous linear map. -/
+theorem imDilation_higherReflectionNode_fin_one_eq_conjCLE (j : Fin 1) :
+    imDilation (higherReflectionNode j) = (conjCLE : ℂ →L[ℝ] ℂ) :=
+  ContinuousLinearMap.ext fun z => by
+    rw [imDilation_higherReflectionNode_fin_one, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
+
 /-- If conjugation maps the lower part of a set into the set, so does the node dilation of the
 order-one reflection, which is conjugation: the stability hypothesis of the
 `TauCeti.planarReflection` lemmas with a single weight. -/
