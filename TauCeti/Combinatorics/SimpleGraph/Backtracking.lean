@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import TauCeti.Combinatorics.SimpleGraph.Dart
+import TauCeti.Data.List.Chain
 
 /-!
 # Walks without backtracking in a simple graph
@@ -22,6 +23,8 @@ of a graph and by the traces of the powers of its Hashimoto matrix.
 
 ## Main definitions
 
+* `SimpleGraph.NonBacktrackingDartAdj`: two darts can be consecutive in a walk that does not
+  backtrack.
 * `SimpleGraph.Walk.IsNonBacktrackingCycle`: a closed walk none of whose darts is followed by its
   reverse, the last dart being followed by the first.
 
@@ -48,6 +51,13 @@ public section
 namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V}
+
+variable (G) in
+/-- Two darts are *non-backtracking adjacent* when they can be consecutive darts of a walk that
+does not backtrack: the first ends where the second starts, and the second is not the reverse of
+the first. -/
+abbrev NonBacktrackingDartAdj (d d' : G.Dart) : Prop :=
+  d.snd = d'.fst ∧ d' ≠ d.symm
 
 namespace Walk
 
@@ -85,13 +95,8 @@ the walk of length zero, its first dart is not the reverse of its last one (it h
 theorem isNonBacktrackingCycle_iff {u : V} (p : G.Walk u u) :
     p.IsNonBacktrackingCycle ↔ p.darts.IsChain (fun d d' => d' ≠ d.symm) ∧
       ∀ hp : ¬p.Nil, p.firstDart hp ≠ (p.lastDart hp).symm := by
-  rw [IsNonBacktrackingCycle]
-  by_cases hp : p.Nil
-  · simp [hp, darts_eq_nil.mpr hp]
-  · have hne : p.darts ≠ [] := darts_eq_nil.not.mpr hp
-    rw [List.isChain_append, List.getLast?_eq_some_getLast hne, List.take_one,
-      List.head?_eq_some_head hne]
-    simp [hp]
+  rw [IsNonBacktrackingCycle, List.isChain_append_take_one_iff]
+  simp
 
 /-- A closed walk is a non-backtracking cycle exactly when its darts form a chain as a cycle for
 the relation of not being followed by the reverse. -/
@@ -103,19 +108,13 @@ theorem isNonBacktrackingCycle_iff_chain {u : V} (p : G.Walk u u) :
   | cons d l => simp [Cycle.chain_coe_cons]
 
 /-- A closed walk is a non-backtracking cycle exactly when its darts, followed by its first dart
-again, form a chain in which each dart ends where the next starts and is not followed by its
-reverse. -/
+again, form a chain of non-backtracking adjacent darts. -/
 theorem isNonBacktrackingCycle_iff_isChain {u : V} (p : G.Walk u u) :
     p.IsNonBacktrackingCycle ↔
-      (p.darts ++ p.darts.take 1).IsChain fun d d' => d.snd = d'.fst ∧ d' ≠ d.symm := by
+      (p.darts ++ p.darts.take 1).IsChain G.NonBacktrackingDartAdj := by
   refine ⟨fun h => ?_, fun h => h.imp fun _ _ h => h.2⟩
-  have hadj : (p.darts ++ p.darts.take 1).IsChain G.DartAdj := by
-    by_cases hp : p.Nil
-    · simp [darts_eq_nil.mpr hp]
-    · have hne : p.darts ≠ [] := darts_eq_nil.not.mpr hp
-      rw [List.isChain_append, List.getLast?_eq_some_getLast hne, List.take_one,
-        List.head?_eq_some_head hne]
-      simp [p.isChain_dartAdj_darts, DartAdj]
+  have hadj : (p.darts ++ p.darts.take 1).IsChain G.DartAdj :=
+    List.isChain_append_take_one_iff.mpr ⟨p.isChain_dartAdj_darts, fun _ => by simp [DartAdj]⟩
   rw [IsNonBacktrackingCycle, List.isChain_iff_forall_rel_of_append_cons_cons] at h
   rw [List.isChain_iff_forall_rel_of_append_cons_cons] at hadj ⊢
   exact fun _ _ _ _ hl => ⟨hadj hl, h hl⟩

@@ -25,6 +25,8 @@ determinant formula `ζ(u) = det(1 - u B)⁻¹`.
 ## Main definitions
 
 * `SimpleGraph.hashimotoMatrix R G`: the Hashimoto matrix of `G` with entries in `R`.
+* `SimpleGraph.NonBacktrackingDartSeq k a b`: the sequences `a = d₀, d₁, …, d_k = b` of
+  non-backtracking adjacent darts.
 * `SimpleGraph.closedNonBacktrackingCount G m`: the number `N_m` of closed non-backtracking walks
   of length `m` (`SimpleGraph.Walk.IsNonBacktrackingCycle`), each counted with its starting vertex.
 
@@ -54,6 +56,13 @@ open Finset Matrix
 namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V}
+
+/-- The sequences of darts `a = d₀, d₁, …, d_k = b` in which each dart ends where the next starts
+and is not followed by its reverse (`SimpleGraph.NonBacktrackingDartAdj`), recorded as the list `l`
+of the `k` darts after `a`. -/
+abbrev NonBacktrackingDartSeq (k : ℕ) (a b : G.Dart) : Type _ :=
+  {l : List G.Dart // l.length = k ∧ (a :: l).IsChain G.NonBacktrackingDartAdj ∧
+    (a :: l).getLast (List.cons_ne_nil a l) = b}
 
 /-- The number `N_m` of closed non-backtracking walks of length `m`
 (`SimpleGraph.Walk.IsNonBacktrackingCycle`), each counted with its starting vertex: a cycle of
@@ -125,10 +134,8 @@ theorem sum_col_hashimotoMatrix [AddCommMonoidWithOne R] (b : G.Dart) :
 omit [DecidableEq V] [Fintype V] [DecidableRel G.Adj] in
 /-- There are finitely many sequences of `k` darts after a given dart, as there are finitely many
 lists of darts of length `k`. -/
-private theorem finite_hashimotoSequence [Finite G.Dart] (k : ℕ) (a b : G.Dart) :
-    Finite {l : List G.Dart // l.length = k ∧
-      (a :: l).IsChain (fun d d' => d.snd = d'.fst ∧ d' ≠ d.symm) ∧
-      (a :: l).getLast (List.cons_ne_nil a l) = b} :=
+private theorem finite_nonBacktrackingDartSeq [Finite G.Dart] (k : ℕ) (a b : G.Dart) :
+    Finite (NonBacktrackingDartSeq k a b) :=
   have := (List.finite_length_eq G.Dart k).to_subtype
   Finite.of_injective (fun l => (⟨l.val, l.property.1⟩ : {l : List G.Dart | l.length = k}))
     fun _ _ h => Subtype.ext (by simpa using h)
@@ -137,9 +144,7 @@ private theorem finite_hashimotoSequence [Finite G.Dart] (k : ℕ) (a b : G.Dart
 `a = d₀, d₁, …, d_k = b` in which each dart ends where the next starts and is not followed by its
 reverse, here written `a :: l`. -/
 theorem hashimotoMatrix_pow_apply [Semiring R] (k : ℕ) (a b : G.Dart) :
-    (G.hashimotoMatrix R ^ k) a b = Nat.card {l : List G.Dart // l.length = k ∧
-      (a :: l).IsChain (fun d d' => d.snd = d'.fst ∧ d' ≠ d.symm) ∧
-      (a :: l).getLast (List.cons_ne_nil a l) = b} := by
+    (G.hashimotoMatrix R ^ k) a b = Nat.card (NonBacktrackingDartSeq k a b) := by
   induction k generalizing a with
   | zero =>
     rw [pow_zero, Matrix.one_apply]
@@ -147,13 +152,11 @@ theorem hashimotoMatrix_pow_apply [Semiring R] (k : ℕ) (a b : G.Dart) :
     · subst h
       rw [Nat.card_eq_one_iff_exists.mpr ⟨⟨[], rfl, by simp, rfl⟩, fun ⟨l, hl, _⟩ =>
         Subtype.ext (List.eq_nil_of_length_eq_zero hl)⟩, Nat.cast_one]
-    · have : IsEmpty {l : List G.Dart // l.length = 0 ∧
-          (a :: l).IsChain (fun d d' => d.snd = d'.fst ∧ d' ≠ d.symm) ∧
-          (a :: l).getLast (List.cons_ne_nil a l) = b} :=
+    · have : IsEmpty (NonBacktrackingDartSeq 0 a b) :=
         ⟨fun ⟨l, hl, _, hb⟩ => h (by simpa [List.eq_nil_of_length_eq_zero hl] using hb)⟩
       rw [Nat.card_of_isEmpty, Nat.cast_zero]
   | succ k ih =>
-    have (c : G.Dart) := finite_hashimotoSequence k c b
+    have (c : G.Dart) := finite_nonBacktrackingDartSeq k c b
     rw [pow_succ', Matrix.mul_apply]
     simp_rw [ih, hashimotoMatrix_apply, boole_mul]
     rw [← sum_filter, sum_subtype _ (fun _ => mem_filter_univ _), ← Nat.cast_sum,
@@ -177,7 +180,7 @@ omit [DecidableEq V] [Fintype V] [DecidableRel G.Adj] in
 followed by its reverse lists the darts of a closed non-backtracking walk at the start of `a`,
 followed by `a` again. -/
 private theorem exists_isNonBacktrackingCycle_darts {a : G.Dart} {l : List G.Dart} (hl : l ≠ [])
-    (hc : (a :: l).IsChain fun d d' => d.snd = d'.fst ∧ d' ≠ d.symm)
+    (hc : (a :: l).IsChain G.NonBacktrackingDartAdj)
     (hb : (a :: l).getLast (List.cons_ne_nil a l) = a) :
     ∃ p : G.Walk a.fst a.fst, p.IsNonBacktrackingCycle ∧ p.darts ++ p.darts.take 1 = a :: l := by
   have hsplit : a :: l = (a :: l.dropLast) ++ [a] := by
@@ -200,13 +203,11 @@ omit [DecidableEq V] [Fintype V] [DecidableRel G.Adj] in
 `a, d₁, …, d_k, a` of darts in which each dart ends where the next starts and is not followed by
 its reverse: a walk is sent to its darts followed by its first dart again. -/
 private theorem closedNonBacktrackingCount_add_one (k : ℕ) :
-    G.closedNonBacktrackingCount (k + 1) = Nat.card (Σ a : G.Dart, {l : List G.Dart //
-      l.length = k + 1 ∧ (a :: l).IsChain (fun d d' => d.snd = d'.fst ∧ d' ≠ d.symm) ∧
-      (a :: l).getLast (List.cons_ne_nil a l) = a}) := by
+    G.closedNonBacktrackingCount (k + 1) =
+      Nat.card (Σ a : G.Dart, NonBacktrackingDartSeq (k + 1) a a) := by
   -- `ψ` reads a sequence of darts as a list.
-  let ψ : (Σ a : G.Dart, {l : List G.Dart // l.length = k + 1 ∧
-      (a :: l).IsChain (fun d d' => d.snd = d'.fst ∧ d' ≠ d.symm) ∧
-      (a :: l).getLast (List.cons_ne_nil a l) = a}) → List G.Dart := fun ⟨a, l, _⟩ => a :: l
+  let ψ : (Σ a : G.Dart, NonBacktrackingDartSeq (k + 1) a a) → List G.Dart :=
+    fun ⟨a, l, _⟩ => a :: l
   have hψ : Function.Injective ψ := by
     rintro ⟨a, l, hl⟩ ⟨b, l', hl'⟩ h
     simp only [ψ, List.cons.injEq] at h
@@ -221,9 +222,7 @@ private theorem closedNonBacktrackingCount_add_one (k : ℕ) :
     simp [hdl]
   -- `φ` sends a closed walk to its darts followed by its first dart again.
   let φ : {c : Σ u : V, G.Walk u u // c.2.length = k + 1 ∧ c.2.IsNonBacktrackingCycle} →
-      Σ a : G.Dart, {l : List G.Dart // l.length = k + 1 ∧
-        (a :: l).IsChain (fun d d' => d.snd = d'.fst ∧ d' ≠ d.symm) ∧
-        (a :: l).getLast (List.cons_ne_nil a l) = a} := fun ⟨⟨_, p⟩, hp, hnb⟩ =>
+      Σ a : G.Dart, NonBacktrackingDartSeq (k + 1) a a := fun ⟨⟨_, p⟩, hp, hnb⟩ =>
     ⟨p.darts.head (hne hp), (p.darts ++ p.darts.take 1).tail, by simp [hp],
       by rw [hcons hp]; exact (Walk.isNonBacktrackingCycle_iff_isChain p).mp hnb,
       by simp only [hcons hp]; simp [List.take_one, List.head?_eq_some_head (hne hp)]⟩
@@ -256,7 +255,7 @@ vertex. For `m = 0` the trace is the number of darts, while `N₀` is the number
 theorem trace_hashimotoMatrix_pow [Semiring R] {m : ℕ} (hm : m ≠ 0) :
     (G.hashimotoMatrix R ^ m).trace = G.closedNonBacktrackingCount m := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
-  have (a : G.Dart) := finite_hashimotoSequence (k + 1) a a
+  have (a : G.Dart) := finite_nonBacktrackingDartSeq (k + 1) a a
   simp only [trace, diag_apply, hashimotoMatrix_pow_apply]
   rw [← Nat.cast_sum, ← Nat.card_sigma, Nat.succ_eq_add_one, closedNonBacktrackingCount_add_one]
 
