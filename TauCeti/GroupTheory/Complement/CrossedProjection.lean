@@ -205,19 +205,14 @@ theorem IsLocalComplement.leftProjection_conj_coe_smul {K H : Subgroup G}
     (h : N.IsLocalComplement K H) (a : N) (x : H) :
     (h.conj_smul_of_mem (h.left_le a.property)).leftProjection x =
       h.leftProjection x * (x • a / a) := by
-  -- `c x` and `x • a` both lie in the abelian subgroup `N`, so they commute
-  have hcy : ((x : G) * a * (x : G)⁻¹)⁻¹ * (h.leftProjection x : G)⁻¹ =
-      (h.leftProjection x : G)⁻¹ * ((x : G) * a * (x : G)⁻¹)⁻¹ := by
-    have hc := congrArg Subtype.val (mul_comm (h.leftProjection x) (x • a))
-    simp only [coe_mul, Subgroup.smul_def, coe_conjugationAction_smul] at hc
-    rw [← mul_inv_rev, ← mul_inv_rev, hc]
-  rw [leftProjection_eq_iff, mem_pointwise_smul_iff_inv_smul_mem]
+  -- `N` is abelian, so `x • a` can be moved past `c x` inside `N`
+  have hN : h.leftProjection x * (x • a / a) = x • a * h.leftProjection x * a⁻¹ := by
+    rw [div_eq_mul_inv, mul_left_comm, mul_assoc]
+  rw [leftProjection_eq_iff, mem_pointwise_smul_iff_inv_smul_mem, hN]
   convert (h.leftProjection_eq_iff x _).mp rfl using 1
   simp only [MulAut.smul_def, MulAut.conj_inv_apply, coe_mul, coe_inv, Subgroup.smul_def,
-    coe_conjugationAction_smul, div_eq_mul_inv]
-  calc _ = ((x : G) * a * (x : G)⁻¹)⁻¹ * (h.leftProjection x : G)⁻¹ * (x * a) := by group
-    _ = (h.leftProjection x : G)⁻¹ * ((x : G) * a * (x : G)⁻¹)⁻¹ * (x * a) := by rw [hcy]
-    _ = _ := by group
+    coe_conjugationAction_smul]
+  group
 
 /-- Two local complements `K` and `K'` of an abelian normal subgroup `N` in `H` are conjugate by
 `a ∈ N` exactly when their left projections differ by the principal crossed map
@@ -469,8 +464,7 @@ theorem apply_inclusion_add_smul_sub {c : H → Additive N}
     (hn : ∀ n : N, c (inclusion hNH n) = Additive.ofMul n) (a n : N) :
     c (inclusion hNH n) + (inclusion hNH n • Additive.ofMul a - Additive.ofMul a) =
       Additive.ofMul n := by
-  rw [hn, Subgroup.smul_def, coe_inclusion, ← Additive.ofMul_smul, conjugationAction_coe_smul,
-    sub_self, add_zero]
+  simp [hn, Subgroup.smul_def, ← Additive.ofMul_smul, conjugationAction_coe_smul]
 
 /-- **Principal crossed maps conjugate zero loci.** Let `c : H → N` be a crossed map on an
 intermediate subgroup `H ≥ N` which is the identity on `N`, read additively, and let `a ∈ N`. The
