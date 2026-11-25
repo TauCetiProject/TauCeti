@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorField.Regularity
-import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The derivative of a vector field in a chart
@@ -208,21 +207,18 @@ theorem det_fderiv_mpullback_extChartAt_symm_of_eq_zero
         (fderiv 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I x').symm V) (extChartAt I x' x) :
           E →ₗ[𝕜] E) =
       LinearMap.det (vectorFieldChartDerivative I V x) := by
-  rw [fderiv_mpullback_extChartAt_symm_of_eq_zero hV hV₀ hx, vectorFieldChartDerivative_def]
+  have hmem : x ∈ (extChartAt I x').source ∩ (extChartAt I x).source ∩ (extChartAt I x').source :=
+    ⟨⟨hx, mem_extChartAt_source x⟩, hx⟩
+  have hmem' : x ∈ (extChartAt I x).source ∩ (extChartAt I x').source ∩ (extChartAt I x).source :=
+    ⟨⟨mem_extChartAt_source x, hx⟩, mem_extChartAt_source x⟩
   -- The derivatives of the two transition maps at `x` are mutually inverse.
-  -- They are the coordinate changes between the tangent trivializations at `x` and `x'`.
-  have hb : x ∈ (trivializationAt E (TangentSpace I) x).baseSet ∩
-      (trivializationAt E (TangentSpace I) x').baseSet :=
-    ⟨by simp, by simpa using hx⟩
-  set e := (trivializationAt E (TangentSpace I) x).coordChangeL 𝕜
-    (trivializationAt E (TangentSpace I) x') x
-  have he : (e : E →L[𝕜] E) = tangentCoordChange I x x' x :=
-    (tangentBundleCore I M).trivializationAt_coordChangeL hb
-  have he' : (e.symm : E →L[𝕜] E) = tangentCoordChange I x' x x := by
-    rw [Bundle.Trivialization.symm_coordChangeL _ _ hb.symm]
-    exact (tangentBundleCore I M).trivializationAt_coordChangeL hb.symm
-  rw [← he, ← he']
-  exact LinearMap.det_conj _ e.toLinearEquiv
+  let e : E ≃ₗ[𝕜] E := LinearEquiv.ofLinearMap (f := (tangentCoordChange I x x' x : E →ₗ[𝕜] E))
+    (g := (tangentCoordChange I x' x x : E →ₗ[𝕜] E))
+    (LinearMap.ext fun v ↦ (tangentCoordChange_comp hmem).trans (tangentCoordChange_self hx))
+    (LinearMap.ext fun v ↦ (tangentCoordChange_comp hmem').trans
+      (tangentCoordChange_self (mem_extChartAt_source x)))
+  rw [fderiv_mpullback_extChartAt_symm_of_eq_zero hV hV₀ hx, vectorFieldChartDerivative_def]
+  exact LinearMap.det_conj _ e
 
 end Boundaryless
 
