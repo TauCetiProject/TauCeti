@@ -42,6 +42,8 @@ value `1/2`, so it is not integral; here `e = 2`, and `2 E^∨ = E₀^∨` is pr
 ## Main results
 
 * `LinearMap.BilinForm.dualForm_toDual_toDual`: `Q^∨(Q♭ x, Q♭ y) = Q(x, y)`.
+* `LinearMap.BilinForm.comp_scaledDualPreimage`: `Q` pulls back along `η ↦ y_η` to `a` times
+  the integral form `a Q^∨`.
 * `LinearMap.BilinForm.algebraMap_scaledDualForm`: `a Q^∨` restricts to the integral form.
 * `LinearMap.BilinForm.isPerfPair_scaledDualForm_one`: the dual form of a principal form is
   integral and principal.
@@ -167,6 +169,14 @@ theorem scaledDualForm_apply_right (ξ : Dual R Λ) (y : Λ) :
   have hpre : Q.scaledDualPreimage hQ a ha (Q y) = a • y :=
     (Q.scaledDualPreimage_eq_iff hQ a ha _ _).mpr (by rw [map_smul])
   rw [scaledDualForm_apply, hpre, map_smul, smul_eq_mul]
+
+/-- `Q` pulled back along `η ↦ y_η` is `a` times the integral form `a Q^∨`:
+`Q(y_ξ, y_η) = a ξ(y_η)`. -/
+theorem comp_scaledDualPreimage :
+    Q.comp (Q.scaledDualPreimage hQ a ha) (Q.scaledDualPreimage hQ a ha) =
+      a • Q.scaledDualForm hQ a ha := by
+  ext ξ η
+  simp [scaledDualForm_apply]
 
 /-- When `Q♭ : Λ → Hom(Λ, R)` is a perfect pairing, `1` kills its cokernel. -/
 theorem one_smul_mem_range_of_isPerfPair [Q.IsPerfPair] (η : Dual R Λ) :

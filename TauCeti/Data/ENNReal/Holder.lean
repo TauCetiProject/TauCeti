@@ -22,6 +22,8 @@ Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most
 ## Main declarations
 
 * `ENNReal.HolderTriple.of_le`: for `q ≤ p`, the triple `(p, (q⁻¹ - p⁻¹)⁻¹, q)`.
+* `ENNReal.HolderTriple.exists_le_of_inv_add_inv_le`: for `1/p + 1/q ≤ 1/r`, a triple
+  `(p, q', r)` with `q' ≤ q`.
 * `ENNReal.one_le_left_of_inv_add_inv_le_one`, `ENNReal.one_le_right_of_inv_add_inv_le_one`:
   `1/p + 1/q ≤ 1` forces `1 ≤ p` and `1 ≤ q`.
 * `ENNReal.conjExponent_le_of_inv_add_inv_le_one`: `1/p + 1/q ≤ 1` forces `p' ≤ q` for the
@@ -44,6 +46,17 @@ namespace ENNReal.HolderTriple
 /-- For `q ≤ p`, the exponent `r = (q⁻¹ - p⁻¹)⁻¹` satisfies `1/p + 1/r = 1/q`. -/
 theorem of_le {p q : ℝ≥0∞} (hqp : q ≤ p) : HolderTriple p (q⁻¹ - p⁻¹)⁻¹ q :=
   ⟨by rw [inv_inv, add_tsub_cancel_of_le (ENNReal.inv_le_inv.2 hqp)]⟩
+
+/-- If `1/p + 1/q ≤ 1/r`, there is an exponent `q' ≤ q` with `1/p + 1/q' = 1/r`. -/
+theorem exists_le_of_inv_add_inv_le {p q r : ℝ≥0∞} (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) :
+    ∃ q', HolderTriple p q' r ∧ q' ≤ q := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · obtain rfl : r = 0 := ENNReal.inv_eq_top.1 (top_le_iff.1 (by simpa using hpqr))
+    exact ⟨0, inferInstance, zero_le⟩
+  refine ⟨(r⁻¹ - p⁻¹)⁻¹, of_le (ENNReal.inv_le_inv.1 (le_self_add.trans hpqr)),
+    ENNReal.inv_le_inv.1 ?_⟩
+  rw [inv_inv]
+  exact ENNReal.le_sub_of_add_le_left (ENNReal.inv_ne_top.2 hp) hpqr
 
 end ENNReal.HolderTriple
 

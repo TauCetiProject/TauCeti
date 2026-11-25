@@ -37,6 +37,10 @@ particular `L` is an integral domain, and any homogeneous element of degree `m` 
 only variables `X k` with `2k < m`, so a degree-`2n` element congruent to `c • xₙ` modulo `I²`
 corresponds to `c • X n` plus a polynomial in variables of index strictly below `n`.
 
+A ring homomorphism `L →+* R`, and hence a commutative formal group law over `R`, is therefore the
+same as a family `(vₙ)` of elements of `R`, the values of the generators
+(`TauCeti.LazardRing.homEquiv`). We call them the Lazard coordinates of the law.
+
 Since `L` is a polynomial ring, ring homomorphisms out of `L` lift along surjective ring
 homomorphisms (`MvPolynomial.exists_comp_eq_of_surjective`). By the universal property of `L`,
 every commutative formal group law over `S` is therefore the base change of a commutative formal
@@ -48,10 +52,14 @@ formal group law exist over every ring surjecting onto its coefficient ring.
 
 * `TauCeti.LazardRing.mvPolynomialEquiv`: the isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` sending `xₙ` to
   the generator `xₙ`.
+* `TauCeti.LazardRing.homEquiv`: ring homomorphisms `L →+* R` are families `ℕ+ → R`, by their
+  values on the generators (the Lazard coordinates).
 
 ## Main results
 
 * `TauCeti.LazardRing.adjoin_range_generator`: the generators `xₙ` generate `L` as a ring.
+* `TauCeti.LazardRing.ringHom_ext`: a ring homomorphism out of `L` is determined by its values on
+  the generators.
 * `TauCeti.LazardRing.augmentation_mvPolynomialEquiv` and
   `TauCeti.LazardRing.augmentationIdeal_eq_span_generator`: under `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L`, the
   augmentation is `constantCoeff`, `L` is an integral domain, and the augmentation ideal is
@@ -144,6 +152,53 @@ theorem mvPolynomialEquiv_X (n : ℕ+) : mvPolynomialEquiv (MvPolynomial.X n) = 
 theorem mvPolynomialEquiv_symm_generator (n : ℕ+) :
     mvPolynomialEquiv.symm (generator n) = MvPolynomial.X n := by
   rw [AlgEquiv.symm_apply_eq, mvPolynomialEquiv_X]
+
+section homEquiv
+
+variable {R : Type*} [CommRing R]
+
+/-- **Lazard coordinates.** Ring homomorphisms out of the Lazard ring `L = ℤ[x₁, x₂, …]` are the
+same as families of elements indexed by the generators: `φ` corresponds to `n ↦ φ xₙ`. -/
+def homEquiv : (LazardRing →+* R) ≃ (ℕ+ → R) where
+  toFun φ n := φ (generator n)
+  invFun v := (MvPolynomial.eval₂Hom (Int.castRingHom R) v).comp
+    (mvPolynomialEquiv.symm : LazardRing →+* MvPolynomial ℕ+ ℤ)
+  left_inv φ := by
+    have h : MvPolynomial.eval₂Hom (Int.castRingHom R) (fun n ↦ φ (generator n)) =
+        φ.comp (mvPolynomialEquiv : MvPolynomial ℕ+ ℤ →+* LazardRing) :=
+      MvPolynomial.ringHom_ext (fun _ ↦ by simp) (fun _ ↦ by simp)
+    ext x
+    simp [h]
+  right_inv v := funext fun n ↦ by simp
+
+@[simp]
+theorem homEquiv_apply (φ : LazardRing →+* R) (n : ℕ+) : homEquiv φ n = φ (generator n) :=
+  (rfl)
+
+/-- The homomorphism with Lazard coordinates `v` evaluates a polynomial in the generators at `v`. -/
+theorem homEquiv_symm_apply (v : ℕ+ → R) (x : LazardRing) :
+    homEquiv.symm v x =
+      MvPolynomial.eval₂Hom (Int.castRingHom R) v (mvPolynomialEquiv.symm x) :=
+  (rfl)
+
+/-- The homomorphism with Lazard coordinates `v` sends the generator `xₙ` to `v n`. -/
+@[simp]
+theorem homEquiv_symm_apply_generator (v : ℕ+ → R) (n : ℕ+) :
+    homEquiv.symm v (generator n) = v n := by
+  simp [homEquiv_symm_apply]
+
+/-- A ring homomorphism out of the Lazard ring is determined by its values on the generators. -/
+@[ext]
+theorem ringHom_ext {φ ψ : LazardRing →+* R} (h : ∀ n, φ (generator n) = ψ (generator n)) :
+    φ = ψ :=
+  homEquiv.injective (funext h)
+
+/-- The Lazard coordinates of a base change are the images of the Lazard coordinates. -/
+theorem comp_homEquiv_symm {S : Type*} [CommRing S] (g : R →+* S) (v : ℕ+ → R) :
+    g.comp (homEquiv.symm v) = homEquiv.symm (g ∘ v) :=
+  ringHom_ext fun n ↦ by simp
+
+end homEquiv
 
 /-- The Lazard ring is an integral domain, transferred from `ℤ[x₁, x₂, …]` via Lazard's polynomial
 presentation (`TauCeti.LazardRing.mvPolynomialEquiv`). -/
