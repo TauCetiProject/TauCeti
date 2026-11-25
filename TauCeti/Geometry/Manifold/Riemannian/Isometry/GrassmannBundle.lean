@@ -24,8 +24,10 @@ are continuous in tangent coordinates
 
 of Grassmann bundles (`TauCeti.grassmannBundle.map`, `TauCeti.grassmannBundle.continuous_map`),
 whose inverse is the map induced by `Φ⁻¹`, since `d(Φ⁻¹)_{Φ x} = dΦ_x⁻¹`. This is the
-homeomorphism `TauCeti.RiemannianIsometry.grassmannBundleHomeomorph`; no compactness, finite
-dimension or separation is needed. It is functorial: the identity isometry induces the identity
+homeomorphism `TauCeti.RiemannianIsometry.grassmannBundleHomeomorph`, an instance of the
+homeomorphism `TauCeti.grassmannBundle.mapHomeomorphOfInverse` induced by mutually inverse maps of
+bundles; no compactness, finite dimension or separation is needed. It is functorial: the
+identity isometry induces the identity
 (`TauCeti.RiemannianIsometry.grassmannBundleHomeomorph_refl`), a composite of isometries induces
 the composite (`TauCeti.RiemannianIsometry.grassmannBundleHomeomorph_trans`, by the chain rule),
 and the inverse isometry induces the inverse homeomorphism
@@ -72,41 +74,33 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
   [RiemannianBundle (fun z : P ↦ TangentSpace K z)]
 
-variable [IsManifold I 1 M] [IsManifold J 1 N] [CompleteSpace E] [CompleteSpace F]
+/-- On the tangent bundle, `(Φ⁻¹, dΦ⁻¹)` undoes `(Φ, dΦ)`, since the differential of `Φ⁻¹` at
+`Φ x` inverts the differential of `Φ` at `x`. -/
+private theorem mk_symm_mfderivToLinearIsometryEquiv (Φ : RiemannianIsometry I J M N) (x : M)
+    (v : TangentSpace I x) :
+    (⟨Φ.symm (Φ x), Φ.symm.mfderivToLinearIsometryEquiv (Φ x)
+      (Φ.mfderivToLinearIsometryEquiv x v)⟩ : TotalSpace E (TangentSpace I : M → Type _)) =
+      ⟨x, v⟩ := by
+  refine TotalSpace.ext (Φ.symm_apply_apply x) (heq_of_eq ?_)
+  rw [mfderivToLinearIsometryEquiv_apply Φ.symm, ← mfderivToLinearIsometryEquiv_symm_apply,
+    LinearIsometryEquiv.symm_apply_apply]
 
-/-- The map of Grassmann bundles induced by `Φ⁻¹` inverts the map induced by `Φ`, since the
-differential of `Φ⁻¹` at `Φ x` inverts the differential of `Φ` at `x`. -/
-private theorem map_symm_comp_map (k : ℕ) (Φ : RiemannianIsometry I J M N) :
-    (grassmannBundle.map Φ.symm Φ.symm.mfderivToLinearIsometryEquiv :
-      grassmannBundle F (TangentSpace J : N → Type _) k →
-        grassmannBundle E (TangentSpace I : M → Type _) k) ∘
-      grassmannBundle.map Φ Φ.mfderivToLinearIsometryEquiv = id := by
-  rw [← grassmannBundle.map_comp, ← grassmannBundle.map_id]
-  refine grassmannBundle.map_congr fun x v ↦ TotalSpace.ext (Φ.symm_apply_apply x) (heq_of_eq ?_)
-  rw [LinearIsometryEquiv.trans_apply, mfderivToLinearIsometryEquiv_apply Φ.symm,
-    ← mfderivToLinearIsometryEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
-  -- Both sides are the vector `v`, typed in the fibres `TangentSpace I (Φ.symm (Φ x))` and
-  -- `TangentSpace I x`, which are both `E` by definition; `simp` only reduces this to `v = v`.
-  rfl
+variable [IsManifold I 1 M] [IsManifold J 1 N] [CompleteSpace E] [CompleteSpace F]
 
 variable (k : ℕ) in
 /-- **The homeomorphism of Grassmann bundles induced by a smooth Riemannian isometry**
 `Φ : M → N`: `(x, P) ↦ (Φ x, dΦ_x P dΦ_x⁻¹)`, with inverse induced by `Φ⁻¹`. -/
 def grassmannBundleHomeomorph (Φ : RiemannianIsometry I J M N) :
     grassmannBundle E (TangentSpace I : M → Type _) k ≃ₜ
-      grassmannBundle F (TangentSpace J : N → Type _) k where
-  toFun := grassmannBundle.map Φ Φ.mfderivToLinearIsometryEquiv
-  invFun := grassmannBundle.map Φ.symm Φ.symm.mfderivToLinearIsometryEquiv
-  left_inv := congrFun (map_symm_comp_map k Φ)
-  right_inv := by
-    have h := map_symm_comp_map k Φ.symm
-    rw [symm_symm] at h
-    exact congrFun h
-  continuous_toFun := grassmannBundle.continuous_map
+      grassmannBundle F (TangentSpace J : N → Type _) k :=
+  grassmannBundle.mapHomeomorphOfInverse k Φ Φ.mfderivToLinearIsometryEquiv Φ.symm
+    Φ.symm.mfderivToLinearIsometryEquiv (mk_symm_mfderivToLinearIsometryEquiv Φ)
+    (fun y v ↦ by
+      have h := mk_symm_mfderivToLinearIsometryEquiv Φ.symm y v
+      rwa [symm_symm] at h)
     (by rw [← coe_toDiffeomorph]; exact Φ.toDiffeomorph.continuous)
-    Φ.continuousAt_inCoordinates_mfderivToLinearIsometryEquiv
-  continuous_invFun := grassmannBundle.continuous_map
     (by rw [← coe_toDiffeomorph]; exact Φ.symm.toDiffeomorph.continuous)
+    Φ.continuousAt_inCoordinates_mfderivToLinearIsometryEquiv
     Φ.symm.continuousAt_inCoordinates_mfderivToLinearIsometryEquiv
 
 /-- The induced homeomorphism is the map of Grassmann bundles induced by the differentials. -/
@@ -114,7 +108,7 @@ theorem coe_grassmannBundleHomeomorph (Φ : RiemannianIsometry I J M N) :
     (grassmannBundleHomeomorph k Φ : grassmannBundle E (TangentSpace I : M → Type _) k →
       grassmannBundle F (TangentSpace J : N → Type _) k) =
       grassmannBundle.map Φ Φ.mfderivToLinearIsometryEquiv :=
-  (rfl)
+  grassmannBundle.coe_mapHomeomorphOfInverse ..
 
 /-- The induced homeomorphism sends `(x, P)` to `(Φ x, dΦ_x P dΦ_x⁻¹)`. -/
 @[simp]
@@ -134,8 +128,10 @@ theorem proj_grassmannBundleHomeomorph (Φ : RiemannianIsometry I J M N)
 /-- The inverse isometry induces the inverse homeomorphism. -/
 @[simp]
 theorem grassmannBundleHomeomorph_symm (Φ : RiemannianIsometry I J M N) :
-    (grassmannBundleHomeomorph k Φ).symm = grassmannBundleHomeomorph k Φ.symm :=
-  Homeomorph.ext fun _ ↦ rfl
+    (grassmannBundleHomeomorph k Φ).symm = grassmannBundleHomeomorph k Φ.symm := by
+  refine Homeomorph.ext (congrFun ?_)
+  rw [coe_grassmannBundleHomeomorph, grassmannBundleHomeomorph,
+    grassmannBundle.coe_mapHomeomorphOfInverse_symm]
 
 variable (I M k) in
 /-- The identity isometry induces the identity of the Grassmann bundle. -/
