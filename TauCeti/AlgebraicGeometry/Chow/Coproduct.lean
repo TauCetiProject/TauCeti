@@ -76,8 +76,7 @@ private lemma cyclesSigmaRestrict_apply (α : cyclesOfDimension (∐ X) k) (i : 
 private lemma cyclesSigmaRestrict_injective : Function.Injective (cyclesSigmaRestrict X k) := by
   intro α β h
   refine Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ ?_)
-  obtain ⟨i, y, rfl⟩ : ∃ i y, Sigma.ι X i y = x :=
-    (sigmaOpenCover X).exists_eq _
+  obtain ⟨i, y, rfl⟩ := sigmaι_jointly_surjective X x
   rw [← cyclesSigmaRestrict_apply, ← cyclesSigmaRestrict_apply, h]
 
 private lemma cyclesSigmaRestrict_surjective : Function.Surjective (cyclesSigmaRestrict X k) := by
@@ -99,8 +98,7 @@ private lemma cyclesSigmaRestrict_surjective : Function.Surjective (cyclesSigmaR
   have hmem : α ∈ cyclesOfDimension (∐ X) k := by
     rw [mem_cyclesOfDimension_iff]
     intro x hx
-    obtain ⟨i, y, rfl⟩ : ∃ i y, Sigma.ι X i y = x :=
-    (sigmaOpenCover X).exists_eq _
+    obtain ⟨i, y, rfl⟩ := sigmaι_jointly_surjective X x
     rw [Function.mem_support, hα] at hx
     simpa only [mem_pointsOfDimension, Scheme.Hom.height_apply_eq_height] using
       mem_cyclesOfDimension_iff.mp (γ i).property hx
@@ -211,8 +209,7 @@ private noncomputable def sigma (F : (i : I) → RatEquivFamily (X i) k) :
   r p := (F p.fst).r p.snd
   locallyFinite := by
     intro x
-    obtain ⟨i, y, rfl⟩ : ∃ i y, Sigma.ι X i y = x :=
-    (sigmaOpenCover X).exists_eq _
+    obtain ⟨i, y, rfl⟩ := sigmaι_jointly_surjective X x
     obtain ⟨t, ht, hfin⟩ := (F i).locallyFinite y
     refine ⟨Sigma.ι X i '' t, (Sigma.ι X i).isOpenEmbedding.image_mem_nhds.mpr ht,
       (hfin.image (Sigma.mk i)).subset ?_⟩
@@ -263,8 +260,7 @@ theorem mem_ratEquiv_sigma_iff {α : cyclesOfDimension (∐ X) k} :
   · choose F hF using fun i ↦ mem_ratEquiv_iff.mp (h i)
     refine mem_ratEquiv_iff.mpr
       ⟨RatEquivFamily.sigma F, Function.locallyFinsuppWithin.ext fun x ↦ ?_⟩
-    obtain ⟨i, y, rfl⟩ : ∃ i y, Sigma.ι X i y = x :=
-    (sigmaOpenCover X).exists_eq _
+    obtain ⟨i, y, rfl⟩ := sigmaι_jointly_surjective X x
     rw [RatEquivFamily.cycle_sigma_apply, hF, cyclesSigmaEquiv_apply]
 
 namespace ChowGroup
