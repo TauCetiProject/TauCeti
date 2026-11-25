@@ -41,7 +41,7 @@ variable {R : Type*} [CommRing R] (d l : R)
 
 /-- The labelled roots of a scaled Legendre equation with nonzero discriminant
 give nonsingular affine points. -/
-theorem nonsingular_scaledLegendre_labelledRoot (hΔ : (scaledLegendre d l).Δ ≠ 0) (i : Fin 3) :
+theorem nonsingular_scaledLegendreRoots (hΔ : (scaledLegendre d l).Δ ≠ 0) (i : Fin 3) :
     (scaledLegendre d l).toAffine.Nonsingular (scaledLegendreRoots d l i) 0 := by
   apply (Affine.equation_iff_nonsingular_of_Δ_ne_zero hΔ).mp
   rw [equation_scaledLegendre_iff, scaledLegendreRoots_def]
@@ -53,7 +53,7 @@ variable (hΔ : (scaledLegendre d l).Δ ≠ 0)
 equation with nonzero discriminant. Over a field these are precisely the nonzero points killed by
 two. -/
 def scaledLegendreTwoTorsionPoint (i : Fin 3) : (scaledLegendre d l).toAffine.Point :=
-  .some (scaledLegendreRoots d l i) 0 (nonsingular_scaledLegendre_labelledRoot d l hΔ i)
+  .some (scaledLegendreRoots d l i) 0 (nonsingular_scaledLegendreRoots d l hΔ i)
 
 /-- The point with label `i` has x-coordinate `scaledLegendreRoots d l i` and y-coordinate zero,
 for any nonsingularity witness. -/
@@ -67,14 +67,14 @@ theorem scaledLegendreTwoTorsionPoint_eq_some (i : Fin 3)
 theorem xRep_scaledLegendreTwoTorsionPoint (i : Fin 3) :
     (scaledLegendreTwoTorsionPoint d l hΔ i).xRep = ![scaledLegendreRoots d l i, 1] := by
   rw [scaledLegendreTwoTorsionPoint_eq_some d l hΔ i
-    (nonsingular_scaledLegendre_labelledRoot d l hΔ i), Affine.Point.xRep_some]
+    (nonsingular_scaledLegendreRoots d l hΔ i), Affine.Point.xRep_some]
 
 /-- None of the three labelled points is the origin. -/
 @[simp]
 theorem scaledLegendreTwoTorsionPoint_ne_zero (i : Fin 3) :
     scaledLegendreTwoTorsionPoint d l hΔ i ≠ 0 := by
   rw [scaledLegendreTwoTorsionPoint_eq_some d l hΔ i
-    (nonsingular_scaledLegendre_labelledRoot d l hΔ i)]
+    (nonsingular_scaledLegendreRoots d l hΔ i)]
   exact Affine.Point.some_ne_zero _
 
 /-- Each labelled point is its own negative. -/
@@ -82,7 +82,7 @@ theorem scaledLegendreTwoTorsionPoint_ne_zero (i : Fin 3) :
 theorem neg_scaledLegendreTwoTorsionPoint (i : Fin 3) :
     -scaledLegendreTwoTorsionPoint d l hΔ i = scaledLegendreTwoTorsionPoint d l hΔ i := by
   rw [scaledLegendreTwoTorsionPoint_eq_some d l hΔ i
-    (nonsingular_scaledLegendre_labelledRoot d l hΔ i)]
+    (nonsingular_scaledLegendreRoots d l hΔ i)]
   simp [Affine.negY]
 
 /-- Distinct labels give distinct affine points. -/
@@ -109,11 +109,19 @@ private noncomputable def scaledLegendreRootEquiv (hΔ : (scaledLegendre d l).Δ
     Fin 3 ≃ {x : K // (scaledLegendre d l).toAffine.f.eval x = 0} :=
   (Equiv.ofInjective _ (scaledLegendreRoots_injective d l hΔ)).trans
     (Equiv.subtypeEquivRight fun x ↦ by
-      have h := ((scaledLegendre d l).toAffine.equation_iff_eval_f_eq_sq x 0).symm.trans
-        (equation_scaledLegendre_iff d l x 0)
-      simpa only [scaledLegendreRoots_def, Matrix.range_cons, Matrix.range_empty, Set.union_empty,
-        Set.mem_union, Set.mem_singleton_iff, zero_pow (by decide : (2 : ℕ) ≠ 0),
-        eq_comm (a := (0 : K)), mul_eq_zero, sub_eq_zero, or_assoc] using h.symm)
+      have hf : (scaledLegendre d l).toAffine.f.eval x = 0 ↔
+          x = 0 ∨ x = d ∨ x = d * l := by
+        have h := ((scaledLegendre d l).toAffine.equation_iff_eval_f_eq_sq x 0).symm.trans
+          (equation_scaledLegendre_iff d l x 0)
+        simpa only [zero_pow two_ne_zero, eq_comm (a := (0 : K)), mul_eq_zero, sub_eq_zero,
+          or_assoc] using h
+      rw [hf, scaledLegendreRoots_def, Matrix.range_cons, Matrix.range_cons_cons_empty]
+      simp only [Set.mem_union, Set.mem_singleton_iff, Set.mem_insert_iff])
+
+@[simp]
+private theorem scaledLegendreRootEquiv_apply_coe (hΔ : (scaledLegendre d l).Δ ≠ 0) (i : Fin 3) :
+    (scaledLegendreRootEquiv d l hΔ i : K) = scaledLegendreRoots d l i := by
+  simp [scaledLegendreRootEquiv, Equiv.subtypeEquivRight_apply]
 
 variable [DecidableEq K] (hΔ : (scaledLegendre d l).Δ ≠ 0)
 
@@ -136,7 +144,8 @@ theorem ker_nsmul_two_scaledLegendre :
   have hcomp : rootPoint ∘ scaledLegendreRootEquiv d l hΔ =
       scaledLegendreTwoTorsionPoint d l hΔ := by
     funext i
-    exact (scaledLegendreTwoTorsionPoint_eq_some d l hΔ i _).symm
+    rw [scaledLegendreTwoTorsionPoint_eq_some d l hΔ i (nonsingular_scaledLegendreRoots d l hΔ i)]
+    exact (Affine.Point.some.injEq ..).mpr ⟨scaledLegendreRootEquiv_apply_coe d l hΔ i, rfl⟩
   rw [← hcomp, EquivLike.range_comp]
 
 /-- The origin and the three labelled points exhaust the points killed by two. -/
@@ -160,18 +169,18 @@ theorem card_ker_nsmul_two_scaledLegendre (hΔ : (scaledLegendre d l).Δ ≠ 0) 
 @[simp]
 theorem sum_scaledLegendreTwoTorsionPoint_eq_zero :
     ∑ i : Fin 3, scaledLegendreTwoTorsionPoint d l hΔ i = 0 := by
-  obtain ⟨_, hd, hdl, hdd⟩ := scaledLegendre_root_inequalities d l hΔ
+  obtain ⟨_, hd, hdl, hdd⟩ := two_ne_zero_and_scaledLegendreRoots_ne_of_Δ_ne_zero d l hΔ
   rw [Fin.sum_univ_three,
     scaledLegendreTwoTorsionPoint_eq_some d l hΔ 0
-      (nonsingular_scaledLegendre_labelledRoot d l hΔ 0),
+      (nonsingular_scaledLegendreRoots d l hΔ 0),
     scaledLegendreTwoTorsionPoint_eq_some d l hΔ 1
-      (nonsingular_scaledLegendre_labelledRoot d l hΔ 1),
+      (nonsingular_scaledLegendreRoots d l hΔ 1),
     scaledLegendreTwoTorsionPoint_eq_some d l hΔ 2
-      (nonsingular_scaledLegendre_labelledRoot d l hΔ 2)]
+      (nonsingular_scaledLegendreRoots d l hΔ 2)]
   exact Affine.Point.some_add_some_add_some_eq_zero (μ := 0) (ν := 0)
-    (nonsingular_scaledLegendre_labelledRoot d l hΔ 0)
-    (nonsingular_scaledLegendre_labelledRoot d l hΔ 1)
-    (nonsingular_scaledLegendre_labelledRoot d l hΔ 2)
+    (nonsingular_scaledLegendreRoots d l hΔ 0)
+    (nonsingular_scaledLegendreRoots d l hΔ 1)
+    (nonsingular_scaledLegendreRoots d l hΔ 2)
     (by simpa [scaledLegendreRoots_def] using hd.symm)
     (by simpa [scaledLegendreRoots_def] using hdl.symm)
     (by simpa [scaledLegendreRoots_def] using hdd) (by simp) (by simp) (by simp)

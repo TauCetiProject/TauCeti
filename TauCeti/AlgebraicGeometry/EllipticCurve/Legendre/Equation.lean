@@ -214,7 +214,7 @@ theorem scaledLegendre_Δ : (scaledLegendre d l).Δ = 16 * d ^ 6 * l ^ 2 * (1 - 
 
 /-- A nonzero discriminant forces `2` to be nonzero and the three scaled Legendre roots to
 be pairwise distinct. -/
-theorem scaledLegendre_root_inequalities (hΔ : (scaledLegendre d l).Δ ≠ 0) :
+theorem two_ne_zero_and_scaledLegendreRoots_ne_of_Δ_ne_zero (hΔ : (scaledLegendre d l).Δ ≠ 0) :
     (2 : R) ≠ 0 ∧ d ≠ 0 ∧ d * l ≠ 0 ∧ d ≠ d * l := by
   rw [scaledLegendre_eq_freyCurve, freyCurve_Δ, ← sub_eq_add_neg, neg_sq,
     show (16 : R) = 2 ^ 4 by norm_num] at hΔ
@@ -224,9 +224,11 @@ theorem scaledLegendre_root_inequalities (hΔ : (scaledLegendre d l).Δ ≠ 0) :
 /-- The ordered roots of a scaled Legendre cubic with nonzero discriminant are distinct. -/
 theorem scaledLegendreRoots_injective (hΔ : (scaledLegendre d l).Δ ≠ 0) :
     Function.Injective (scaledLegendreRoots d l) := by
-  obtain ⟨_, hd, hdl, hdd⟩ := scaledLegendre_root_inequalities d l hΔ
-  simp only [scaledLegendreRoots_def, Matrix.vecCons, Fin.cons_injective_iff]
-  simp [hd.symm, hdl.symm, hdd, Function.injective_of_subsingleton]
+  obtain ⟨_, hd, hdl, hdd⟩ := two_ne_zero_and_scaledLegendreRoots_ne_of_Δ_ne_zero d l hΔ
+  rw [scaledLegendreRoots_def, ← Matrix.Fin.cons_vecCons (0 : R) d, Fin.cons_injective_iff]
+  refine ⟨by simp [hd.symm, hdl.symm], ?_⟩
+  rw [← Matrix.Fin.cons_vecCons d (d * l), Fin.cons_injective_iff]
+  exact ⟨by simp [hdd], Function.injective_of_subsingleton (![d * l] : Fin 1 → R)⟩
 
 /-- The `c₄` of the Legendre equation is `16 (l² - l + 1)`. -/
 theorem legendre_c₄ : (legendre l).c₄ = 16 * (l ^ 2 - l + 1) := by
