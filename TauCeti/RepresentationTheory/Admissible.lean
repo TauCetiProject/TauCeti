@@ -12,31 +12,37 @@ public import TauCeti.RepresentationTheory.Irreducible
 # Multiplicities and admissible representations
 
 For a representation `ρ` of a monoid `G` on a vector space `V` over a field `k`, the multiplicity
-of a representation `σ` in `ρ` is the dimension of `Hom_G(σ, ρ)`, and `ρ` is admissible when
-`Hom_G(σ, ρ)` is finite-dimensional for every irreducible `σ`. These are the notions used for the
-`K`-action of a `(𝔤, K)`-module (`TauCeti/RepresentationTheory/GKModule/Basic.lean`), where `K` is
-a maximal compact subgroup of a real reductive group.
+of a representation `σ` in `ρ` is the dimension of `Hom_G(σ, ρ)`, and `ρ` has finite
+multiplicities when `Hom_G(σ, ρ)` is finite-dimensional for every irreducible `σ`. These are the
+notions used for the `K`-action of a `(𝔤, K)`-module
+(`TauCeti/RepresentationTheory/GKModule/Basic.lean`), where `K` is a maximal compact subgroup of a
+real reductive group: such a module is *admissible* when its `K`-action has finite multiplicities.
+This is not the admissibility of smooth representations of topological groups,
+`Representation.IsAdmissible` (`TauCeti/RepresentationTheory/Smooth/Admissible.lean`), which asks
+for finitely generated invariants under compact open subgroups.
 
 ## Main definitions
 
 * `Representation.multiplicity ρ σ`: the dimension of `Hom_G(σ, ρ)` in `ℕ∞`, equal to `⊤` when it
   is infinite.
-* `Representation.IsAdmissible ρ`: `Hom_G(σ, ρ)` is finite-dimensional for every irreducible `σ`.
+* `Representation.HasFiniteMultiplicities ρ`: `Hom_G(σ, ρ)` is finite-dimensional for every
+  irreducible `σ`.
 
 ## Main statements
 
-* `Representation.IsAdmissible.finiteDimensional`: in an admissible representation,
-  `Hom_G(σ, ρ)` is finite-dimensional for every irreducible `σ`, in any universe.
-* `Representation.IsAdmissible.subrepresentation`, `Representation.IsAdmissible.directSum`:
-  admissibility passes to subrepresentations and to finite direct sums.
-* `Representation.isAdmissible_of_finiteDimensional`: a finite-dimensional representation is
-  admissible.
+* `Representation.HasFiniteMultiplicities.finiteDimensional`: in a representation with finite
+  multiplicities, `Hom_G(σ, ρ)` is finite-dimensional for every irreducible `σ`, in any universe.
+* `Representation.HasFiniteMultiplicities.subrepresentation`,
+  `Representation.HasFiniteMultiplicities.directSum`: finite multiplicities pass to
+  subrepresentations and to finite direct sums.
+* `Representation.hasFiniteMultiplicities_of_finiteDimensional`: a finite-dimensional
+  representation has finite multiplicities.
 
 ## Implementation notes
 
 For irreducible `σ` with `Hom_G(σ, ρ)` finite-dimensional, when `k` is not algebraically closed
 the multiplicity is the number of copies of `σ` in the `σ`-isotypic component multiplied by the
-dimension of the division algebra `End_G(σ)`. Admissibility is quantified over the irreducible
+dimension of the division algebra `End_G(σ)`. The predicate is quantified over the irreducible
 subrepresentations of `V`, which avoids fixing a universe for `σ`: an irreducible representation
 with a nonzero map to `V` is isomorphic to its image.
 
@@ -73,28 +79,29 @@ theorem multiplicity_lt_top_iff :
     ρ.multiplicity σ < ⊤ ↔ FiniteDimensional k (IntertwiningMap σ ρ) := by
   rw [multiplicity_def, Cardinal.toENat_lt_top, Module.rank_lt_aleph0_iff]
 
-/-- A representation is **admissible** when `Hom_G(σ, ρ)` is finite-dimensional for every
-irreducible representation `σ` of `G`. Only an irreducible `σ` with a nonzero map to `V` can
-violate this, and such a `σ` is isomorphic to its image, so the definition quantifies over the
-irreducible subrepresentations of `ρ`; `Representation.IsAdmissible.finiteDimensional` gives the
-statement for every irreducible `σ`, in any universe. -/
-def IsAdmissible : Prop :=
+/-- A representation **has finite multiplicities** when `Hom_G(σ, ρ)` is finite-dimensional for
+every irreducible representation `σ` of `G`; for the `K`-action of a `(𝔤, K)`-module this is
+admissibility. Only an irreducible `σ` with a nonzero map to `V` can violate this, and such a `σ`
+is isomorphic to its image, so the definition quantifies over the irreducible subrepresentations
+of `ρ`; `Representation.HasFiniteMultiplicities.finiteDimensional` gives the statement for every
+irreducible `σ`, in any universe. -/
+def HasFiniteMultiplicities : Prop :=
   ∀ U : Subrepresentation ρ, U.toRepresentation.IsIrreducible →
     FiniteDimensional k (IntertwiningMap U.toRepresentation ρ)
 
-theorem isAdmissible_iff :
-    ρ.IsAdmissible ↔ ∀ U : Subrepresentation ρ, U.toRepresentation.IsIrreducible →
+theorem hasFiniteMultiplicities_iff :
+    ρ.HasFiniteMultiplicities ↔ ∀ U : Subrepresentation ρ, U.toRepresentation.IsIrreducible →
       FiniteDimensional k (IntertwiningMap U.toRepresentation ρ) :=
   Iff.rfl
 
-namespace IsAdmissible
+namespace HasFiniteMultiplicities
 
 variable {ρ}
 
-/-- In an admissible representation `ρ`, `Hom_G(σ, ρ)` is finite-dimensional for every
-irreducible `σ`. -/
-theorem finiteDimensional (hρ : ρ.IsAdmissible) {W : Type w} [AddCommGroup W] [Module k W]
-    (σ : Representation k G W) [hσ : σ.IsIrreducible] :
+/-- In a representation `ρ` with finite multiplicities, `Hom_G(σ, ρ)` is finite-dimensional for
+every irreducible `σ`. -/
+theorem finiteDimensional (hρ : ρ.HasFiniteMultiplicities) {W : Type w} [AddCommGroup W]
+    [Module k W] (σ : Representation k G W) [hσ : σ.IsIrreducible] :
     FiniteDimensional k (IntertwiningMap σ ρ) := by
   by_cases h : ∃ f : IntertwiningMap σ ρ, f ≠ 0
   swap
@@ -114,15 +121,16 @@ theorem finiteDimensional (hρ : ρ.IsAdmissible) {W : Type w} [AddCommGroup W] 
   simpa [← IntertwiningMap.comp_def] using congr($h (e w))
 
 /-- A representation on `V` in which `Hom_G(σ, ρ)` is finite-dimensional for every irreducible
-`σ` on a carrier in the universe of `V` is admissible. -/
+`σ` on a carrier in the universe of `V` has finite multiplicities. -/
 theorem of_forall {V : Type v} [AddCommGroup V] [Module k V] {ρ : Representation k G V}
     (h : ∀ (W : Type v) [AddCommGroup W] [Module k W] (σ : Representation k G W),
       σ.IsIrreducible → FiniteDimensional k (IntertwiningMap σ ρ)) :
-    ρ.IsAdmissible := fun U hU ↦ h U.toSubmodule U.toRepresentation hU
+    ρ.HasFiniteMultiplicities := fun U hU ↦ h U.toSubmodule U.toRepresentation hU
 
-/-- A subrepresentation of an admissible representation is admissible. -/
-theorem subrepresentation (hρ : ρ.IsAdmissible) (N : Subrepresentation ρ) :
-    N.toRepresentation.IsAdmissible := by
+/-- A subrepresentation of a representation with finite multiplicities has finite
+multiplicities. -/
+theorem subrepresentation (hρ : ρ.HasFiniteMultiplicities) (N : Subrepresentation ρ) :
+    N.toRepresentation.HasFiniteMultiplicities := by
   intro U hU
   have := hρ.finiteDimensional U.toRepresentation
   refine Module.Finite.of_injective
@@ -131,10 +139,12 @@ theorem subrepresentation (hρ : ρ.IsAdmissible) (N : Subrepresentation ρ) :
   have h' : N.subtype (f w) = N.subtype (f' w) := congr($h w)
   simpa using h'
 
-/-- A finite direct sum of admissible representations is admissible. -/
+/-- A finite direct sum of representations with finite multiplicities has finite
+multiplicities. -/
 theorem directSum {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
-    [∀ i, Module k (V i)] {ρ : ∀ i, Representation k G (V i)} (hρ : ∀ i, (ρ i).IsAdmissible) :
-    (Representation.directSum ρ).IsAdmissible := by
+    [∀ i, Module k (V i)] {ρ : ∀ i, Representation k G (V i)}
+    (hρ : ∀ i, (ρ i).HasFiniteMultiplicities) :
+    (Representation.directSum ρ).HasFiniteMultiplicities := by
   intro U hU
   have := fun i ↦ (hρ i).finiteDimensional U.toRepresentation
   let c : IntertwiningMap U.toRepresentation (Representation.directSum ρ) →ₗ[k]
@@ -151,10 +161,11 @@ theorem directSum {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommGro
   ext w i
   exact congr($h i w)
 
-end IsAdmissible
+end HasFiniteMultiplicities
 
-/-- A finite-dimensional representation is admissible. -/
-theorem isAdmissible_of_finiteDimensional [FiniteDimensional k V] : ρ.IsAdmissible :=
+/-- A finite-dimensional representation has finite multiplicities. -/
+theorem hasFiniteMultiplicities_of_finiteDimensional [FiniteDimensional k V] :
+    ρ.HasFiniteMultiplicities :=
   fun _ _ ↦ inferInstance
 
 end Representation

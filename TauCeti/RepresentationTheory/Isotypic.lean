@@ -18,9 +18,9 @@ of `ρ` is the sum of the images of the `G`-equivariant maps from `σ` to `ρ`. 
 `G`. For irreducible `σ` it is Mathlib's `isotypicComponent` of the simple `k[G]`-module
 `σ.asModule` in `ρ.asModule`, and evaluating `Hom_G(σ, ρ)` at a nonzero vector of `W` embeds it
 into `V(σ)`. This bounds the multiplicity of `σ` in `ρ` by the dimension of `V(σ)`, so a
-representation with finite-dimensional isotypic components is admissible. For a `(𝔤, K)`-module
-`M` (`TauCeti/RepresentationTheory/GKModule/Basic.lean`), the isotypic components of `M.ρ` are
-`K`-stable but not `𝔤`-stable in general, since `𝔤` moves `K`-types.
+representation with finite-dimensional isotypic components has finite multiplicities. For a
+`(𝔤, K)`-module `M` (`TauCeti/RepresentationTheory/GKModule/Basic.lean`), the isotypic components
+of `M.ρ` are `K`-stable but not `𝔤`-stable in general, since `𝔤` moves `K`-types.
 
 ## Main definitions
 
@@ -37,8 +37,8 @@ representation with finite-dimensional isotypic components is admissible. For a 
   `w` embeds `Hom_G(σ, ρ)` into the isotypic component `V(σ)`.
 * `Representation.multiplicity_le_rank_isotypic`: for irreducible `σ`, the multiplicity of `σ` is
   at most the dimension of the isotypic component.
-* `Representation.isAdmissible_of_finiteDimensional_isotypic`: a representation whose isotypic
-  components are finite-dimensional is admissible.
+* `Representation.hasFiniteMultiplicities_of_finiteDimensional_isotypic`: a representation whose
+  isotypic components are finite-dimensional has finite multiplicities.
 
 ## References
 
@@ -188,12 +188,13 @@ theorem multiplicity_le_rank_isotypic [σ.IsIrreducible] :
     (LinearMap.lift_rank_le_of_injective _ (evalIntertwiningMap_injective (ρ := ρ) (σ := σ) hw))
   rwa [Cardinal.toENat_lift, Cardinal.toENat_lift, ← multiplicity_def] at h
 
-/-- A representation whose isotypic components are finite-dimensional is admissible. -/
-theorem isAdmissible_of_finiteDimensional_isotypic
+/-- A representation whose isotypic components are finite-dimensional has finite
+multiplicities. -/
+theorem hasFiniteMultiplicities_of_finiteDimensional_isotypic
     (h : ∀ U : Subrepresentation ρ, U.toRepresentation.IsIrreducible →
       FiniteDimensional k (ρ.isotypic U.toRepresentation)) :
-    ρ.IsAdmissible :=
-  ρ.isAdmissible_iff.2 fun U hU ↦
+    ρ.HasFiniteMultiplicities :=
+  ρ.hasFiniteMultiplicities_iff.2 fun U hU ↦
     have := h U hU
     finiteDimensional_intertwiningMap_of_isotypic (σ := U.toRepresentation)
 
