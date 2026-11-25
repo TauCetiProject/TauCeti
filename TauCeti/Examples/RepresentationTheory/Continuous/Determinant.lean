@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.RepresentationTheory.Continuous.Determinant
+import TauCeti.RepresentationTheory.Continuous.DeterminantOperations
 
 /-!
 # Examples: the determinant character
@@ -13,6 +14,7 @@ import TauCeti.RepresentationTheory.Continuous.Determinant
 * On the zero module the determinant character is `1`.
 * The trivial representation has trivial determinant character.
 * The determinant of a rank-one character line is the character itself, not its inverse.
+* The determinant of the direct sum of two character lines is the product of the characters.
 -/
 
 open TauCeti ContinuousRep
@@ -30,3 +32,8 @@ example : (trivial Γ A (Fin 2 → A)).det = 1 :=
 -- The determinant of a character line is the character.
 example [IsTopologicalRing A] (χ : Γ →ₜ* Aˣ) : (ofCharacter χ).det = χ :=
   det_ofCharacter χ
+
+-- The determinant of the direct sum of two character lines is the product `χψ`.
+example [IsTopologicalRing A] (χ ψ : Γ →ₜ* Aˣ) :
+    ((ofCharacter χ).prod (ofCharacter ψ)).det = (χ : Γ →* Aˣ) * ψ := by
+  rw [det_prod, det_ofCharacter, det_ofCharacter]
