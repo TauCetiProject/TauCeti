@@ -76,10 +76,12 @@ modules. -/
 @[simp] theorem piTensorProduct_V (A : ι → DiscreteRep.{u, v, w} R G) :
     (piTensorProduct A).V = ⨂[R] i, (A i).V := (rfl)
 
-/-- The tensor product of discrete representations carries the factorwise representation. -/
+/-- The tensor product of discrete representations carries the factorwise representation: `g`
+acts by the tensor product of its actions on the factors. -/
 theorem piTensorProduct_ρ_apply (A : ι → DiscreteRep.{u, v, w} R G) (g : G)
     (z : ⨂[R] i, (A i).V) :
-    (piTensorProduct A).ρ g z = Representation.piTensorProduct (fun i ↦ (A i).ρ) g z := (rfl)
+    (piTensorProduct A).ρ g z = PiTensorProduct.map (fun i ↦ (A i).ρ g) z :=
+  LinearMap.congr_fun (Representation.piTensorProduct_apply _ g) z
 
 /-- On a pure tensor, every factor is acted on in its own discrete representation. -/
 @[simp] theorem piTensorProduct_ρ_apply_tprod (A : ι → DiscreteRep.{u, v, w} R G) (g : G)

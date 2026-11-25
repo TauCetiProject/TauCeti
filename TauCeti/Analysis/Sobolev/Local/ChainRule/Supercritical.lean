@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Supercritical
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
@@ -56,6 +57,7 @@ The case `B(x, c) = c x` and `v = 1` gives the theorem.
 * `TauCeti.MemWkpLoc.contDiff_comp_of_two_lt_mul`: composition with globally `Cᵏ` maps.
 * `TauCeti.MemWkpLoc.contDiffOn_comp_graph_of_two_lt_mul`: the domain-dependent composition
   `z ↦ g(z, u z)`.
+* `TauCeti.HasWeakFDerivOn.bilin_comp_of_two_lt_mul`: the weak Leibniz rule for `B(g ∘ u, v)`.
 
 ## References
 
@@ -76,18 +78,42 @@ universe uF uG uH
 variable {F : Type uF} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {Ω : Opens ℂ}
 
-omit [FiniteDimensional ℝ F] in
-/-- The continuous bilinear map `(D, v) ↦ (A ↦ B(A ∘ D, v))`, which writes `B(A ∘ D, v)` as a
-product of `A` with `Φ(D, v)`. It is stated as an existence statement so that `Φ` stays opaque in
-the proof below, where unfolding it makes unification of its iterated operator spaces slow. -/
-private theorem exists_bilin_comp_precompL {G V H : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup H]
-    [NormedSpace ℝ H] (B : G →L[ℝ] V →L[ℝ] H) :
-    ∃ Φ : (ℂ →L[ℝ] F) →L[ℝ] V →L[ℝ] (F →L[ℝ] G) →L[ℝ] ℂ →L[ℝ] H,
-      ∀ D v A, Φ D v A = B.precompL ℂ (A.comp D) v :=
-  ⟨(((ContinuousLinearMap.compL ℝ (F →L[ℝ] G) (ℂ →L[ℝ] G) (ℂ →L[ℝ] H)).comp
-    (B.precompL ℂ).flip).flip).comp (ContinuousLinearMap.compL ℝ ℂ F G).flip,
-    fun _ _ _ => rfl⟩
+/-- **The weak Leibniz rule for `B(g ∘ u, v)` for `kp > 2`.** Let `1 < p` and `k p > 2`, let
+`u ∈ W^{k,p}_loc(Ω)` be continuous with weak derivative `Du`, let `g` be `C¹` on an open set `W`
+containing `u '' Ω`, and let `v ∈ W^{1,p}_loc(Ω)` have weak derivative `Dv`. Then
+`B(Dg(u) ∘ Du, v) + B(g ∘ u, Dv)` is a weak derivative of `B(g ∘ u, v)` on `Ω`. The factor
+`g ∘ u` is locally bounded, and `u` lies in `W^{1,r}_loc` for some `r > 2`. -/
+theorem HasWeakFDerivOn.bilin_comp_of_two_lt_mul {G V H : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [FiniteDimensional ℝ V]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] (B : G →L[ℝ] V →L[ℝ] H)
+    {p : ℝ≥0} (hp : 1 < p) {k : ℕ} (hkp : 2 < (k : ℝ≥0) * p) {u : ℂ → F} {W : Set F}
+    {Du : ℂ → ℂ →L[ℝ] F} (hDu : HasWeakFDerivOn volume Ω u Du) (hu : MemWkpLoc p Ω k u)
+    (huc : ContinuousOn u Ω) (hW : IsOpen W) (huW : MapsTo u Ω W) {g : F → G}
+    (hg : ContDiffOn ℝ 1 g W) {v : ℂ → V} {Dv : ℂ → ℂ →L[ℝ] V}
+    (hDv : HasWeakFDerivOn volume Ω v Dv) (hv : MemWkpLoc p Ω 1 v) :
+    HasWeakFDerivOn volume Ω (fun z => B (g (u z)) (v z))
+      (fun z => B.precompL ℂ ((fderiv ℝ g (u z)).comp (Du z)) (v z) +
+        B.precompR ℂ (g (u z)) (Dv z)) := by
+  have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hp.le
+  -- `u` lies in `W^{1,r}_loc` for some `r > 2` with `p ≤ r`.
+  obtain ⟨r, hr, hpr, hur⟩ : ∃ r : ℝ≥0, 2 < r ∧ p ≤ r ∧ MemWkpLoc r Ω 1 u := by
+    by_cases hp2 : 2 < p
+    · obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by
+        rcases k with _ | k
+        · simp at hkp
+        · omega⟩
+      exact ⟨p, hp2, le_rfl, hu.of_le (by omega)⟩
+    obtain ⟨r, hr, hur⟩ := hu.exists_two_lt_memWkpLoc_one_of_two_lt_mul hp1
+      (by exact_mod_cast hkp)
+    exact ⟨r, hr, (not_lt.1 hp2).trans hr.le, hur⟩
+  have hgc : ContinuousOn (fun z => g (u z)) Ω := hg.continuousOn.comp huc huW
+  have hDgc : ContinuousOn (fun z => fderiv ℝ g (u z)) Ω :=
+    (hg.continuousOn_fderiv_of_isOpen hW le_rfl).comp huc huW
+  exact (hDu.contDiffOn_comp huc hW hg huW).bilin_of_finrank_lt B (by simpa using hr) hp hpr
+    hgc.memLpLoc
+    ((hur.memWkpLoc_of_hasWeakFDerivOn hDu).memLpLoc.continuousOn_clm_comp hDgc) hDv
+    hv.memLpLoc (hv.memWkpLoc_of_hasWeakFDerivOn hDv).memLpLoc
 
 /-- The general statement behind `TauCeti.MemWkpLoc.contDiffOn_comp_of_two_lt_mul`: for
 `u ∈ W^{k,p}_loc` continuous with `1 < p` and `kp > 2`, a map `g` that is `Cᵐ` on `W ⊇ u '' Ω`
@@ -110,29 +136,17 @@ private theorem MemWkpLoc.bilin_comp_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {k
   | succ m ih =>
     obtain ⟨b, rfl⟩ : ∃ b', b = b' + 1 := ⟨b - 1, by omega⟩
     obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
-    have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hp.le
-    -- `u` lies in `W^{1,r}_loc` for some `r > 2` with `p ≤ r`.
-    obtain ⟨r, hr, hpr, hur⟩ : ∃ r : ℝ≥0, 2 < r ∧ p ≤ r ∧ MemWkpLoc r Ω 1 u := by
-      by_cases hp2 : 2 < p
-      · exact ⟨p, hp2, le_rfl, hu.of_le (by omega)⟩
-      obtain ⟨r, hr, hur⟩ := hu.exists_two_lt_memWkpLoc_one_of_two_lt_mul hp1
-        (by exact_mod_cast hkp)
-      exact ⟨r, hr, (not_lt.1 hp2).trans hr.le, hur⟩
-    obtain ⟨Du, hDu, hDur⟩ := hur.exists_weakFDeriv_of_isOpen
+    obtain ⟨Du, hDu, hDuk⟩ := hu.exists_weakFDeriv_of_isOpen
     obtain ⟨Dv, hDv, hDvb⟩ := hv.exists_weakFDeriv_of_isOpen
-    have hDuk : MemWkpLoc p Ω k Du := hu.memWkpLoc_of_hasWeakFDerivOn hDu
     have hgc : ContinuousOn (fun z => g (u z)) Ω := hg.continuousOn.comp huc huW
-    have hDgc : ContinuousOn (fun z => fderiv ℝ g (u z)) Ω :=
-      (hg.continuousOn_fderiv_of_isOpen hW (by simp)).comp huc huW
-    -- The weak Leibniz rule for `B(g ∘ u, v)`, with `g ∘ u` bounded and in `W^{1,r}_loc`.
-    have hD := hDu.contDiffOn_comp huc hW (hg.of_le (by simp)) huW
-    have hDf : MemLpLoc r Ω (fun z => (fderiv ℝ g (u z)).comp (Du z)) :=
-      hDur.memLpLoc.continuousOn_clm_comp hDgc
-    have hLeib := hD.bilin_of_memLpLoc B hr hp hpr hgc.memLpLoc hDf hDv hv.memLpLoc
-      hDvb.memLpLoc
+    have hLeib := hDu.bilin_comp_of_two_lt_mul B hp hkp hu huc hW huW (hg.of_le (by simp)) hDv
+      (hv.of_le (by omega))
     -- The first term is `Φ(Du, v)` evaluated at `Dg(u)`.
     have h₁ : MemWkpLoc p Ω m (fun z => B.precompL ℂ ((fderiv ℝ g (u z)).comp (Du z)) (v z)) := by
-      obtain ⟨Φ, hΦdef⟩ := exists_bilin_comp_precompL (F := F) B
+      -- `Φ = B.compPrecompL ℂ F`, kept opaque: unfolding it makes unification slow.
+      obtain ⟨Φ, hΦdef⟩ : ∃ Φ : (ℂ →L[ℝ] F) →L[ℝ] V →L[ℝ] (F →L[ℝ] G) →L[ℝ] ℂ →L[ℝ] H,
+          ∀ D v A, Φ D v A = B.precompL ℂ (A.comp D) v :=
+        ⟨B.compPrecompL ℂ F, B.compPrecompL_apply⟩
       have hΦ : MemWkpLoc p Ω m (fun z => Φ (Du z) (v z)) :=
         MemWkpLoc.bilin_of_two_lt_add_sub_mul (H := (F →L[ℝ] G) →L[ℝ] ℂ →L[ℝ] H) (B := Φ) hp hDuk
           hv (c := m) (by omega) (by omega)

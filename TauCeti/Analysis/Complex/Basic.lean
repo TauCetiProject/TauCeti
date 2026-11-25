@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Semireal.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Trigonometric
+public import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -35,6 +38,9 @@ half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in 
 
 As a continuous real-linear equivalence, conjugation is its own inverse (`Complex.conjCLE_symm`,
 the counterpart of Mathlib's `Complex.conjLIE_symm`).
+
+The real part of `exp (θ * I) ^ j` is `cos (j θ)` (`Complex.re_exp_ofReal_mul_I_pow`), the real
+part of de Moivre's formula.
 
 Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
 (respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
@@ -81,7 +87,17 @@ through such a `z` has norm at least `(‖z‖ + s) / 2`
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 
+At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
+(`Complex.one_le_norm_sub_one`), so `s ≠ 1` (`Complex.ne_one_of_one_le_abs_im`) and
+`‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`).
+
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
+
+There is no ring homomorphism from `ℂ` to a semireal semiring, such as `ℝ` or any linearly
+ordered ring (`Complex.instIsEmptyRingHom`).
+
+An `n`-th root (`n ≠ 0`) of a complex number `w` with `w * conj w = 1` has its inverse as
+conjugate (`Complex.conj_eq_inv_of_pow_eq`).
 -/
 
 public section
@@ -325,6 +341,11 @@ namespace Complex
 
 open ComplexConjugate
 
+/-- The real part of `exp (θ * I) ^ j` is `cos (j θ)`: the real part of de Moivre's formula. -/
+@[simp]
+theorem re_exp_ofReal_mul_I_pow (θ : ℝ) (j : ℕ) : (exp (θ * I) ^ j).re = Real.cos (j * θ) := by
+  rw [← exp_natCast_mul, ← mul_assoc, ← ofReal_natCast, ← ofReal_mul, exp_ofReal_mul_I_re]
+
 /-- Complex conjugation, as a continuous real-linear equivalence, is its own inverse. -/
 @[simp]
 theorem conjCLE_symm : conjCLE.symm = conjCLE := by
@@ -492,12 +513,45 @@ theorem one_le_re_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ (1 + z).re := by
 theorem one_le_norm_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ ‖1 + z‖ :=
   (one_le_re_one_add hz).trans (re_le_norm _)
 
+/-- A point at height `1 ≤ |Im s|` is at distance at least `1` from `1`. -/
+theorem one_le_norm_sub_one {s : ℂ} (ht : 1 ≤ |s.im|) : 1 ≤ ‖s - 1‖ := by
+  have h := abs_im_le_norm (s - 1)
+  rw [sub_im, one_im, sub_zero] at h
+  exact ht.trans h
+
+/-- A point at height `1 ≤ |Im s|` is not `1`. -/
+theorem ne_one_of_one_le_abs_im {s : ℂ} (ht : 1 ≤ |s.im|) : s ≠ 1 := by
+  rintro rfl
+  norm_num at ht
+
+/-- At height `1 ≤ |Im s|`, `‖(s - 1)⁻¹‖ ≤ 1`. -/
+theorem norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹‖ ≤ 1 := by
+  rw [norm_inv]
+  exact inv_le_one_of_one_le₀ (one_le_norm_sub_one ht)
+
 /-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
 theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=
   fun h0 ↦ by
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- There is no ring homomorphism from `ℂ` to a semireal semiring `R` (one in which `1 + s ≠ 0`
+for every sum of squares `s`), such as `ℝ` or any linearly ordered ring: it would send
+`1 + I * I = 0` to `1 + f I * f I = 0`. -/
+instance instIsEmptyRingHom {R : Type*} [NonAssocSemiring R] [IsSemireal R] :
+    IsEmpty (ℂ →+* R) :=
+  ⟨fun f => IsSemireal.one_add_ne_zero (IsSumSq.mul_self (f I)) <| by
+    rw [← map_one f, ← map_mul, ← map_add, I_mul_I, add_neg_cancel, map_zero]⟩
+
+/-- An `n`-th root `z`, `n ≠ 0`, of a complex number `w` with `w * conj w = 1` lies on the unit
+circle, so its conjugate is its inverse. -/
+theorem conj_eq_inv_of_pow_eq {z w : ℂ} {n : ℕ} (hn : n ≠ 0) (hz : z ^ n = w)
+    (hw : w * conj w = 1) : conj z = z⁻¹ := by
+  have hw' : ‖w‖ = 1 := TauCeti.RCLike.mul_conj_eq_one_iff.1 hw
+  have hz' : ‖z‖ = 1 :=
+    (pow_eq_one_iff_of_nonneg (norm_nonneg z) hn).mp (by rw [← norm_pow, hz, hw'])
+  exact (inv_eq_conj hz').symm
 
 end Complex
 

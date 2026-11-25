@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.SpinStructure.FirstChernClass
 public import TauCeti.Topology.VectorBundle.SpinStructure.OfSpin
-public import TauCeti.Topology.VectorBundle.SpinStructure.Reflection
+public import TauCeti.Topology.VectorBundle.SpinStructure.Reflection.Basic
 import TauCeti.Topology.VectorBundle.Orientation.Complex.FiberwiseEquiv
 
 /-!
@@ -87,14 +87,14 @@ private def determinantLinePrecompEquiv (x : X) :
     s.determinantLine x ≃L[ℂ] (s.precompIsometry f).determinantLine x :=
   (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (Classical.arbitrary (s.P x))).symm.trans
     (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (PrincipalBundle.Extend.inl
-      (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)
+      (precompIsometryHom f) (continuous_precompIsometryHom f)
       (Classical.arbitrary (s.P x))))
 
 /-- The comparison of determinant lines is the inverse of the identification
 `PrincipalBundle.Extend.associatedEquiv` of associated bundles of an extended principal bundle. -/
 private theorem determinantLinePrecompEquiv_apply {x : X} (z : s.determinantLine x) :
     determinantLinePrecompEquiv f s x z = (PrincipalBundle.Extend.associatedEquiv
-      (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)
+      (precompIsometryHom f) (continuous_precompIsometryHom f)
       (precompIsometryHom_smul f) x).symm z := by
   obtain ⟨w, rfl⟩ := (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (F := DeterminantModel n)
     (Classical.arbitrary (s.P x))).surjective z
@@ -102,7 +102,7 @@ private theorem determinantLinePrecompEquiv_apply {x : X} (z : s.determinantLine
     ContinuousLinearEquiv.symm_apply_apply, AssociatedBundle.mkContinuousLinearEquiv_apply]
   exact (AssociatedBundle.mkContinuousLinearEquiv_apply _ _).trans
     (PrincipalBundle.Extend.associatedEquiv_symm_mk (precompIsometryHom f)
-    (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) (precompIsometryHom_smul f) (P := s.P)
+    (continuous_precompIsometryHom f) (precompIsometryHom_smul f) (P := s.P)
     (Classical.arbitrary (s.P x)) w).symm
 
 /-- **The first Chern class is unchanged by precomposing with an isometry**: for an isometry `f`
@@ -116,7 +116,7 @@ theorem firstChernClass_precompIsometry :
   refine (complexEulerClass_eq_of_fiberwise (DeterminantModel.finrank_eq_one n)
     (DeterminantModel.finrank_eq_one n) (φ := determinantLinePrecompEquiv f s) ?_).symm
   refine (PrincipalBundle.Extend.associatedHomeomorph (P := s.P) (precompIsometryHom f)
-    (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)
+    (continuous_precompIsometryHom f)
     (precompIsometryHom_smul f)).symm.continuous.congr fun z ↦ ?_
   rw [PrincipalBundle.Extend.associatedHomeomorph_symm_apply, determinantLinePrecompEquiv_apply]
   rfl

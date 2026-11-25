@@ -82,6 +82,14 @@ theorem isTotallyIsotropic_comp_iff {f : M' →ₗ[R] M} {T : Submodule R M'} :
   simp only [isTotallyIsotropic_iff, Submodule.mem_map, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂, comp_apply]
 
+/-- The image of a totally isotropic submodule under an isometric equivalence `e : Q ≃ Q'` is
+totally isotropic for `Q'`. -/
+theorem IsTotallyIsotropic.map_isometryEquiv {Q' : QuadraticMap R M' N}
+    (hW : Q.IsTotallyIsotropic W) (e : Q.IsometryEquiv Q') :
+    Q'.IsTotallyIsotropic (W.map e.toLinearEquiv.toLinearMap) := by
+  rintro _ ⟨v, hv, rfl⟩
+  exact (e.map_app v).trans (hW v hv)
+
 /-- The preimage of a totally isotropic submodule under a linear map `f` is totally isotropic
 for `Q.comp f`. -/
 theorem IsTotallyIsotropic.comap (hW : Q.IsTotallyIsotropic W) (f : M' →ₗ[R] M) :
